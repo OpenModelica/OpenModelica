@@ -1130,7 +1130,7 @@ algorithm
 end insertEnumLiterals;
 
 protected function insertEnumLiteral
-  "Extends the environment with an enumeration."
+  "Extends the environment with an enumeration literal."
   input SCode.Enum inEnum;
   input Absyn.Path inEnumPath;
   input Integer inValue;

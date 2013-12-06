@@ -92,6 +92,15 @@ algorithm
   outPrefix := fromPath2(inPath, inPrefix);
 end addPath;
 
+public function addString
+  "Prefixes the prefix with the given String."
+  input String inName;
+  input Prefix inPrefix;
+  output Prefix outPrefix;
+algorithm
+  outPrefix := PREFIX(inName, {}, inPrefix);
+end addString;
+
 public function addStringList
   "Prefixes the prefix with the given list of strings."
   input list<String> inStrings;

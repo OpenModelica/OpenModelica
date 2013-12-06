@@ -793,14 +793,29 @@ algorithm
       Context c;
       DAE.Const const,const1,const2,const3;
       list<DAE.Const> constList;
-      Absyn.Path fnName;
+      Absyn.Path fnName, name;
       DAE.CallAttributes attrs;
       Function func;
 
-    case (DAE.ICONST(integer = _), _, _, st, _) then (inExp, DAE.T_INTEGER_DEFAULT, DAE.C_CONST(), st);
-    case (DAE.RCONST(real = _), _, _, st, _) then (inExp, DAE.T_REAL_DEFAULT, DAE.C_CONST(), st);
-    case (DAE.SCONST(string = _), _, _, st, _) then (inExp, DAE.T_STRING_DEFAULT, DAE.C_CONST(), st);
-    case (DAE.BCONST(bool = _), _, _, st, _) then (inExp, DAE.T_BOOL_DEFAULT, DAE.C_CONST(), st);
+    case (DAE.ICONST(integer = _), _, _, st, _) 
+      then (inExp, DAE.T_INTEGER_DEFAULT, DAE.C_CONST(), st);
+
+    case (DAE.RCONST(real = _), _, _, st, _) 
+      then (inExp, DAE.T_REAL_DEFAULT, DAE.C_CONST(), st);
+
+    case (DAE.SCONST(string = _), _, _, st, _) 
+      then (inExp, DAE.T_STRING_DEFAULT, DAE.C_CONST(), st);
+
+    case (DAE.BCONST(bool = _), _, _, st, _) 
+      then (inExp, DAE.T_BOOL_DEFAULT, DAE.C_CONST(), st);
+
+    case (DAE.ENUM_LITERAL(name = name), _, _, st, _) 
+      equation
+        NFInstTypes.TYPED_COMPONENT(ty = ty) =
+          NFInstSymbolTable.lookupName(name, st);
+      then
+        (inExp, ty, DAE.C_CONST(), st);
+
     case (DAE.CREF(componentRef = cref), ep, c, st, _)
       equation
         (e1, ty, const, st) = typeCref(cref, ep, c, st, inFunctionTable);

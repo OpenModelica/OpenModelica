@@ -808,6 +808,12 @@ algorithm
 
     case DAE.ICONST(idim) then DAE.DIM_INTEGER(idim);
 
+    case DAE.ARRAY(ty = DAE.T_ARRAY(ty =
+        DAE.T_ENUMERATION(index = NONE(), path = path, names = enum_lits),
+        dims = {DAE.DIM_INTEGER(dim_size)}))
+      then
+        DAE.DIM_ENUM(path, enum_lits, dim_size);
+        
     case DAE.CREF(ty = ty)
       equation
         DAE.T_ENUMERATION(path = path, names = enum_lits) =

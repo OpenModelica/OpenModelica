@@ -140,9 +140,8 @@ algorithm
         //// Instantiate that class.
         functions = HashTablePathToFunction.emptyHashTableSized(BaseHashTable.lowBucketSize);
         constants = NFInstSymbolTable.create();
-        (cls, _, _, (constants, functions)) = instClassEntry(inClassPath, top_cls,
-          NFInstTypes.NOMOD(), NFInstTypes.NO_PREFIXES(), env,
-          NFInstPrefix.makeEmptyPrefix(inClassPath), (constants, functions));
+        (cls, _, _, (constants, functions)) = instClassEntryNoMod(inClassPath, top_cls,
+          env, NFInstPrefix.makeEmptyPrefix(inClassPath), (constants, functions));
 
         //builtin_el = instBuiltinElements((constants, functions));
 
@@ -249,6 +248,22 @@ algorithm
     instClassEntry_impl(inTypePath, el, entry, inClassMod, inPrefixes, inEnv,
       inPrefix, inGlobals);
 end instClassEntry;
+
+protected function instClassEntryNoMod
+  "Instantiates a class entry without modifiers and prefixes."
+  input Absyn.Path inTypePath;
+  input Entry inEntry;
+  input Env inEnv;
+  input Prefix inPrefix;
+  input Globals inGlobals;
+  output Class outClass;
+  output DAE.Type outType;
+  output Prefixes outPrefixes;
+  output Globals outGlobals;
+algorithm
+  (outClass, outType, outPrefixes, outGlobals) := instClassEntry(inTypePath, inEntry,
+    NFInstTypes.NOMOD(), NFInstTypes.NO_PREFIXES(), inEnv, inPrefix, inGlobals);
+end instClassEntryNoMod;
 
 protected function instClassEntry_impl
   input Absyn.Path inTypePath;
@@ -2130,7 +2145,7 @@ algorithm
       equation
         (entry, env) = NFLookup.lookupVariableName(inCrefPath, inEnv, inInfo);
         prefix = NFEnv.envPrefix(env);
-        globals = instPackageConstant(entry, env, SOME(prefix), inInfo, inGlobals);
+        globals = instPackageConstant(inCref, entry, env, SOME(prefix), inInfo, inGlobals);
       then
         (inCref, globals);
 
@@ -2152,7 +2167,7 @@ algorithm
         // If the cref refers to a package constant, make sure it's instantiated
         // and added to the symbol table.
         opt_prefix = makePackageConstantPrefix(is_class, opt_prefix, env, base_env);
-        globals = instPackageConstant(entry, env, opt_prefix, inInfo, inGlobals);
+        globals = instPackageConstant(cref, entry, env, opt_prefix, inInfo, inGlobals);
       then
         (cref, globals);
 
@@ -2261,6 +2276,7 @@ end makePackageConstantPrefix;
 protected function instPackageConstant
   "If given some prefix, instantiates the given entry and adds it to the global
    symbol table."
+  input DAE.ComponentRef inCref;
   input Entry inEntry;
   input Env inEnv;
   input Option<Prefix> inPrefix;
@@ -2268,19 +2284,31 @@ protected function instPackageConstant
   input Globals inGlobals;
   output Globals outGlobals;
 algorithm
-  outGlobals := match(inEntry, inEnv, inPrefix, inInfo, inGlobals)
+  outGlobals := matchcontinue(inCref, inEntry, inEnv, inPrefix, inInfo, inGlobals)
     local
       Prefix prefix;
       SymbolTable consts;
       FunctionHashTable funcs;
       Element elem;
       Env env;
+      Globals globals;
 
     // No prefix => not a package constant. Nothing should be done.
-    case (_, _, NONE(), _, _) then inGlobals;
+    case (_, _, _, NONE(), _, _) then inGlobals;
+
+    // Skip instantiation if the package constant has already been instantiated.
+    case (_, _, _, _, _, (consts, _))
+      equation
+        _ = NFInstSymbolTable.lookupCref(inCref, consts);
+      then
+        inGlobals;
+
+    // An enumeration typename used as a dimension or for range.
+    case (_, _, _, SOME(prefix), _, (consts, funcs))
+      then instPackageEnumType(inEntry, inEnv, prefix, inInfo, inGlobals);
 
     // A prefix => a package constant. Instantiate the given entry.
-    case (_, _, SOME(prefix), _, _)
+    case (_, _, _, SOME(prefix), _, _)
       equation
         env = NFEnv.setScopePrefix(prefix, inEnv);
         (elem, (consts, funcs)) = 
@@ -2289,9 +2317,127 @@ algorithm
       then
         ((consts, funcs));
 
-  end match;
+  end matchcontinue;
 end instPackageConstant;
-        
+
+protected function instPackageEnumType
+  "Instantiates an enumeration typename used as a dimension or for range."
+  input Entry inEntry;
+  input Env inEnv;
+  input Prefix inPrefix;
+  input Absyn.Info inInfo;
+  input Globals inGlobals;
+  output Globals outGlobals;
+algorithm
+  outGlobals := match(inEntry, inEnv, inPrefix, inInfo, inGlobals)
+    local
+      SymbolTable consts;
+      FunctionHashTable funcs;
+      String name;
+      Prefix prefix;
+      Component comp;
+      Absyn.Path path;
+      Env env;
+      list<String> lit_names;
+      DAE.Type ty;
+
+    case (_, _, _, _, _)
+      equation
+        // Make sure that we got a class.
+        SCode.CLASS(name = name) = NFEnv.entryElement(inEntry);
+        prefix = NFInstPrefix.addString(name, inPrefix);
+        path = NFInstPrefix.toPath(prefix);
+
+        // Instantiate the class.
+        (_, ty, _, (consts, funcs)) =
+          instClassEntryNoMod(path, inEntry, inEnv, prefix, inGlobals);
+
+        // Make sure it was an enumeration, and make a component for the
+        // enumeration typename which has an array of all literals as binding.
+        DAE.T_ENUMERATION(names = lit_names) = ty;
+        comp = instEnumTypeComponent(lit_names, path, inInfo);
+        consts = NFInstSymbolTable.addComponent(comp, consts);
+
+        // Add all literals to the symbol table too.
+        consts = instPackageEnumTypeLiterals(lit_names, prefix, ty, 1, consts);
+      then
+        ((consts, funcs));
+
+  end match;
+end instPackageEnumType;
+
+protected function instPackageEnumTypeLiterals
+  "Adds all literals for an enumeration to the symbol table."
+  input list<String> inLiterals;
+  input Prefix inPrefix;
+  input DAE.Type inType;
+  input Integer inIndex;
+  input SymbolTable inConstants;
+  output SymbolTable outConstants;
+algorithm
+  outConstants := match(inLiterals, inPrefix, inType, inIndex, inConstants)
+    local
+      String lit;
+      list<String> rest_lits;
+      Absyn.Path name;
+      Component comp;
+      SymbolTable consts;
+      Integer idx;
+
+    case (lit :: rest_lits, _, _, _, _)
+      equation
+        name = NFInstPrefix.prefixPath(Absyn.IDENT(lit), inPrefix);
+        comp = NFInstUtil.makeEnumLiteralComp(name, inType, inIndex);
+        consts = NFInstSymbolTable.addComponent(comp, inConstants);
+        idx = inIndex + 1;
+      then
+        instPackageEnumTypeLiterals(rest_lits, inPrefix, inType, idx, consts);
+
+    else inConstants;
+
+  end match;
+end instPackageEnumTypeLiterals;
+
+protected function makeEnumArray
+  "Expands an enumeration type to an array of it's enumeration literals."
+  input Absyn.Path inTypeName;
+  input list<String> inLiterals;
+  output DAE.Exp outArrayExp;
+  output DAE.Type outType;
+protected
+  list<String> names;
+  list<DAE.Exp> enum_lit_expl;
+  Integer sz;
+  DAE.Type ety;
+algorithm
+  enum_lit_expl := Expression.makeEnumLiterals(inTypeName, inLiterals);
+  sz := listLength(inLiterals);
+  ety := DAE.T_ARRAY(
+  DAE.T_ENUMERATION(NONE(), inTypeName, inLiterals, {}, {}, DAE.emptyTypeSource),
+    {DAE.DIM_ENUM(inTypeName, inLiterals, sz)},
+    DAE.emptyTypeSource);
+  outArrayExp := DAE.ARRAY(ety, true, enum_lit_expl);
+  outType := ety;
+end makeEnumArray;
+
+protected function instEnumTypeComponent
+  "Creates a component for an enumeration typename which has an array of all
+   literals as binding."
+  input list<String> inLiterals;
+  input Absyn.Path inEnumPath;
+  input Absyn.Info inInfo;
+  output Component outComponent;
+protected
+  DAE.Type ty;
+  DAE.Exp enum_arr;
+  Binding binding;
+algorithm
+  (enum_arr, ty) := makeEnumArray(inEnumPath, inLiterals);
+  binding := NFInstTypes.TYPED_BINDING(enum_arr, ty, 0, inInfo);
+  outComponent := NFInstTypes.TYPED_COMPONENT(inEnumPath, ty, NONE(),
+    NFInstTypes.DEFAULT_CONST_DAE_PREFIXES, binding, inInfo);
+end instEnumTypeComponent;
+  
 protected function prefixPath
   "Prefixes a path so that it can be uniquely identified."
   input Absyn.Path inPath;
@@ -2485,9 +2631,8 @@ algorithm
     //case (_, _, false, _, _)
     case (_, _, _, _, _)
       equation
-        (cls, ty, _, globals) = instClassEntry(inPath, inEntry,
-          NFInstTypes.NOMOD(), NFInstTypes.NO_PREFIXES(), inEnv,
-          NFInstPrefix.makeEmptyPrefix(inPath), inGlobals);
+        (cls, ty, _, globals) = instClassEntryNoMod(inPath, inEntry,
+          inEnv, NFInstPrefix.makeEmptyPrefix(inPath), inGlobals);
       then
         (cls, ty, globals);
 
