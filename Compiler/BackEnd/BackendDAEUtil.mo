@@ -7935,6 +7935,7 @@ algorithm
   daeHandler := getIndexReductionMethod(strdaeHandler);
 
   Debug.fcall2(Flags.DUMP_DAE_LOW, BackendDump.dumpBackendDAE, inDAE, "dumpdaelow");
+  Debug.bcall2(Flags.isSet(Flags.DUMP_DAE_LOW) and Flags.isSet(Flags.ADDITIONAL_GRAPHVIZ_DUMP), BackendDump.graphvizBackendDAE, inDAE, "dumpdaelow");
   System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   
   // pre-optimization phase
