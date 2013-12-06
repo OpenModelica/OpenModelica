@@ -1110,16 +1110,16 @@ end setScopePrefixOpt;
 
 public function buildInitialEnv
   input SCode.Program inProgram;
+  input SCode.Program inBuiltin;
   output Env outEnv;
 protected
   Env env;
   SCode.Program prog, builtin;
 algorithm
   env := openScope(NONE(), NFInstTypes.BUILTIN_SCOPE(), emptyEnv);
-  (builtin, prog) := List.splitOnTrue(inProgram, SCode.isBuiltinElement);
-  env := List.fold1(builtin, insertElementWithOrigin, {NFInstTypes.BUILTIN_ORIGIN()}, env);
+  env := List.fold1(inBuiltin, insertElementWithOrigin, {NFInstTypes.BUILTIN_ORIGIN()}, env);
   env := openScope(NONE(), NFInstTypes.TOP_SCOPE(), env);
-  outEnv := List.fold(prog, insertElement, env);
+  outEnv := List.fold(inProgram, insertElement, env);
 end buildInitialEnv;
 
 end NFEnv;

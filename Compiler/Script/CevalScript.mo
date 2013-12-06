@@ -3308,9 +3308,9 @@ algorithm
       Absyn.Class absynClass;
       String str,re;
       Option<SCode.Program> fp;
-      SCode.Program scodeP, scodePNew;
+      SCode.Program scodeP, scodePNew, scode_builtin;
       list<GlobalScript.InstantiatedClass> ic,ic_1;
-      Absyn.Program p,ptot;
+      Absyn.Program p,ptot,p_builtin;
       list<GlobalScript.Variable> iv;
       list<GlobalScript.CompiledCFunction> cf;
       list<GlobalScript.LoadedFile> lf;
@@ -3345,7 +3345,10 @@ algorithm
         // remove extends Modelica.Icons.*
         //scodeP = SCodeSimplify.simplifyProgram(scodeP);
 
-        nfenv = NFEnv.buildInitialEnv(scodeP);
+        p_builtin = Builtin.getInitialFunctions();
+        scode_builtin = SCodeUtil.translateAbsyn2SCode(p_builtin);
+
+        nfenv = NFEnv.buildInitialEnv(scodeP, scode_builtin);
         (dae, funcs) = NFInst.instClass(className, nfenv);
 
         cache = Env.emptyCache();
