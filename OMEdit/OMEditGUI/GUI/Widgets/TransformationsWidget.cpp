@@ -189,8 +189,6 @@ VariablePage::VariablePage(TransformationsWidget *pTransformationsWidget)
   mpOperationsTreeWidget->setIndentation(Helper::treeIndentation);
   mpOperationsTreeWidget->setColumnCount(1);
   mpOperationsTreeWidget->setTextElideMode(Qt::ElideMiddle);
-  mpOperationsTreeWidget->setSortingEnabled(true);
-  mpOperationsTreeWidget->sortByColumn(0, Qt::AscendingOrder);
   mpOperationsTreeWidget->setHeaderLabel(tr("Operations"));
   connect(mpOperationsTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)),
           this, SLOT(operationsItemChanged(QTreeWidgetItem*)));
@@ -510,8 +508,6 @@ EquationPage::EquationPage(TransformationsWidget *pTransformationsWidget)
   mpOperationsTreeWidget->setIndentation(Helper::treeIndentation);
   mpOperationsTreeWidget->setColumnCount(1);
   mpOperationsTreeWidget->setTextElideMode(Qt::ElideMiddle);
-  mpOperationsTreeWidget->setSortingEnabled(true);
-  mpOperationsTreeWidget->sortByColumn(0, Qt::AscendingOrder);
   mpOperationsTreeWidget->setHeaderLabel(tr("Operations"));
   connect(mpOperationsTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)),
           this, SLOT(operationsItemChanged(QTreeWidgetItem*)));
