@@ -198,7 +198,7 @@ algorithm
       fileName = ("taskGraph"+&filenamePrefix+&".graphml"); 
       schedulerInfo = arrayCreate(arrayLength(taskGraph), (-1,-1));   
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph, taskGraphData, fileName, "", {}, {}, sccSimEqMapping ,schedulerInfo);
-      Debug.execStat("hpcom dumpTaskGraph", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES); 
+      Debug.execStat("hpcom dump TaskGraph", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES); 
 
       //Create Costs
       //------------
@@ -210,7 +210,7 @@ algorithm
       taskGraphOde = arrayCopy(taskGraph);
       taskGraphDataOde = HpcOmTaskGraph.copyTaskGraphMeta(taskGraphData);
       (taskGraphOde,taskGraphDataOde) = HpcOmTaskGraph.getOdeSystem(taskGraphOde,taskGraphDataOde,inBackendDAE,filenamePrefix);
-      Debug.execStat("hpcom get ode system", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
+      Debug.execStat("hpcom get ODE system", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
       
       taskGraphMetaValid = HpcOmTaskGraph.validateTaskGraphMeta(taskGraphDataOde, inBackendDAE);
       taskGraphMetaMessage = Util.if_(taskGraphMetaValid, "TaskgraphMeta valid\n", "TaskgraphMeta invalid\n");
@@ -227,11 +227,14 @@ algorithm
       criticalPathInfo = criticalPathInfo +& " sum: (" +& realString(graphCosts) +& " ; " +& intString(graphOps) +& ")";
       fileName = ("taskGraph"+&filenamePrefix+&"ODE.graphml");  
       schedulerInfo = arrayCreate(arrayLength(taskGraphOde), (-1,-1));
+      Debug.execStat("hpcom assign levels / get crit. path", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOde, taskGraphDataOde, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo);  
+      Debug.execStat("hpcom dump ODE TaskGraph", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
 
       //Apply filters
       //-------------
-      (taskGraph1,taskGraphData1) = applyFiltersToGraph(taskGraphOde,taskGraphDataOde,inBackendDAE,true);
+      (taskGraph1,taskGraphData1) = applyFiltersToGraph(taskGraphOde,taskGraphDataOde,inBackendDAE,true); //TODO: Rename this to applyGRS or someting like that
+      Debug.execStat("hpcom GRS", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
       //Debug.fcall(Flags.HPCOM_DUMP,HpcOmTaskGraph.printTaskGraph,taskGraph1);
       //Debug.fcall(Flags.HPCOM_DUMP,HpcOmTaskGraph.printTaskGraphMeta,taskGraphData1);
       
@@ -245,16 +248,19 @@ algorithm
             
       taskScheduleSimCode = HpcOmScheduler.convertScheduleToSimCodeSchedule(schedule);
       schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(schedule,arrayLength(taskGraph));      
-      
+      Debug.execStat("hpcom create schedule", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
+     
       fileName = ("taskGraph"+&filenamePrefix+&"ODE_schedule.graphml");  
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph1, taskGraphData1, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo);
       //HpcOmScheduler.printSchedule(schedule);
+      Debug.execStat("hpcom dump schedule TaskGraph", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
       
       SimCode.SIMCODE(modelInfo, simCodeLiterals, simCodeRecordDecls, simCodeExternalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, 
                  parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, stateSets, constraints, classAttributes, zeroCrossings, relations, sampleLookup, whenClauses, 
                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT, _) = simCode;
 
       checkOdeSystemSize(taskGraphOde,odeEquations);
+      Debug.execStat("hpcom check ODE system size", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
 
       simCode = SimCode.SIMCODE(modelInfo, simCodeLiterals, simCodeRecordDecls, simCodeExternalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, 
                  parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, stateSets, constraints, classAttributes, zeroCrossings, relations, sampleLookup, whenClauses, 
