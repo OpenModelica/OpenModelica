@@ -102,12 +102,12 @@ static void handler(int signo, siginfo_t *si, void *ptr)
   int isStackOverflow,unused;
   isStackOverflow = si->si_addr < stackBottom && (si->si_addr > stackBottom - LIMIT_FOR_STACK_OVERFLOW);
   if (isStackOverflow) {
-    setTrace(3,0);
+    setTrace(1,0);
     sigprocmask(SIG_UNBLOCK, &segvset, NULL);
     longjmp(*((threadData_t*)pthread_getspecific(mmc_thread_data_key))->mmc_stack_overflow_jumper,1);
   }
   /* This backtrace uses very little stack-space, and segmentation faults we always want to print... */
-  setTrace(3,16);
+  setTrace(1,16);
   unused=write(2, "\nLimited backtrace at point of segmentation fault\n", 50);
   backtrace_symbols_fd(trace+trace_size_skip, trace_size-trace_size_skip, 2);
   sigaction(SIGSEGV, &default_segv_action, 0);
