@@ -1108,6 +1108,22 @@ algorithm
   outEnv := NFInstTypes.FRAME(name, inPrefix, st, entries) :: rest_env;
 end setScopePrefixOpt;
 
+public function copyScopePrefix
+  input Env inSrc;
+  input Env inDest;
+  output Env outDest;
+protected
+  Option<String> name;
+  Option<Prefix> prefix;
+  ScopeType st;
+  AvlTree entries;
+  Env rest_env;
+algorithm
+  NFInstTypes.FRAME(prefix = prefix) :: _ := inSrc;
+  NFInstTypes.FRAME(name, _, st, entries) :: rest_env := inDest;
+  outDest := NFInstTypes.FRAME(name, prefix, st, entries) :: rest_env;
+end copyScopePrefix;
+  
 public function buildInitialEnv
   input SCode.Program inProgram;
   input SCode.Program inBuiltin;

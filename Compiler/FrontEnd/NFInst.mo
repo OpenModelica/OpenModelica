@@ -242,10 +242,10 @@ protected
   Env env;
 algorithm
   mod := NFEnv.entryModifier(inEntry);
-  (entry, _, _) := redeclareComponent(inEntry, mod, inEnv);
+  (entry, _, env) := redeclareEntry(inEntry, mod, inEnv);
   el := NFEnv.entryElement(entry);
   (outClass, outType, outPrefixes, outGlobals) :=
-    instClassEntry_impl(inTypePath, el, entry, inClassMod, inPrefixes, inEnv,
+    instClassEntry_impl(inTypePath, el, entry, inClassMod, inPrefixes, env,
       inPrefix, inGlobals);
 end instClassEntry;
 
@@ -796,7 +796,7 @@ algorithm
   end match;
 end getRedeclaredModifier;
 
-protected function redeclareComponent
+protected function redeclareEntry
   input Entry inEntry;
   input Modifier inModifier;
   input Env inEnv;
@@ -819,6 +819,7 @@ algorithm
         name = SCode.elementName(orig_el);
         smod = getRedeclaredModifier(orig_el);
         origin = NFInstTypes.REDECLARED_ORIGIN(inEntry, inEnv);
+        env = NFEnv.copyScopePrefix(inEnv, env);
       then
         (NFInstTypes.ENTRY(name, el, mod, {origin}), (smod, inEnv), env);
 
@@ -831,7 +832,7 @@ algorithm
         (inEntry, (smod, inEnv), inEnv);
       
   end match;
-end redeclareComponent;
+end redeclareEntry;
     
 protected function instComponentEntry
   input Entry inEntry;
@@ -849,7 +850,7 @@ protected
   Env env;
 algorithm
   mod := NFEnv.entryModifier(inEntry);
-  (entry, orig_mod, env) := redeclareComponent(inEntry, mod, inEnv);
+  (entry, orig_mod, env) := redeclareEntry(inEntry, mod, inEnv);
   el := NFEnv.entryElement(entry);
   mod := NFEnv.entryModifier(entry);
   (outElement, outGlobals) := instComponentElement(el, orig_mod, mod,
@@ -2292,6 +2293,7 @@ algorithm
       Element elem;
       Env env;
       Globals globals;
+      String cref_str;
 
     // No prefix => not a package constant. Nothing should be done.
     case (_, _, _, NONE(), _, _) then inGlobals;
@@ -2305,17 +2307,29 @@ algorithm
 
     // An enumeration typename used as a dimension or for range.
     case (_, _, _, SOME(prefix), _, (consts, funcs))
-      then instPackageEnumType(inEntry, inEnv, prefix, inInfo, inGlobals);
+      equation
+        true = NFEnv.isClassEntry(inEntry);
+      then
+        instPackageEnumType(inEntry, inEnv, prefix, inInfo, inGlobals);
 
     // A prefix => a package constant. Instantiate the given entry.
     case (_, _, _, SOME(prefix), _, _)
       equation
+        false = NFEnv.isClassEntry(inEntry);
         env = NFEnv.setScopePrefix(prefix, inEnv);
         (elem, (consts, funcs)) = 
           instComponentEntry(inEntry, NFInstTypes.NO_PREFIXES(), env, inGlobals);
         consts = NFInstSymbolTable.addElement(elem, consts);
       then
         ((consts, funcs));
+
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        cref_str = ComponentReference.printComponentRefStr(inCref);
+        Debug.traceln("- NFInst.instPackageConstant failed on " +& cref_str);
+      then
+        fail();
 
   end matchcontinue;
 end instPackageConstant;
@@ -2354,6 +2368,7 @@ algorithm
 
         // Make sure it was an enumeration, and make a component for the
         // enumeration typename which has an array of all literals as binding.
+        ty = Types.derivedBasicType(ty);
         DAE.T_ENUMERATION(names = lit_names) = ty;
         comp = instEnumTypeComponent(lit_names, path, inInfo);
         consts = NFInstSymbolTable.addComponent(comp, consts);

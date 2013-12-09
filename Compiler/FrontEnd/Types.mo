@@ -1171,7 +1171,7 @@ algorithm
     local
       Type ty;
 
-    case DAE.T_SUBTYPE_BASIC(complexType = ty) then ty;
+    case DAE.T_SUBTYPE_BASIC(complexType = ty) then derivedBasicType(ty);
     else inType;
   end match;
 end derivedBasicType;
