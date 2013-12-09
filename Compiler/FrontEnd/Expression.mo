@@ -1208,6 +1208,11 @@ algorithm
     case (DAE.DIV_SCALAR_ARRAY(ty = _), _) then DAE.DIV(inType);
     case (DAE.POW_ARRAY_SCALAR(ty = _), _) then DAE.POW(inType);
     case (DAE.POW_SCALAR_ARRAY(ty = _), _) then DAE.POW(inType);
+    case (DAE.UMINUS_ARR(ty = _), _)       then DAE.UMINUS(inType);
+    case (DAE.ADD_ARR(ty = _), _)          then DAE.ADD(inType);
+    case (DAE.SUB_ARR(ty = _), _)          then DAE.SUB(inType);
+    case (DAE.MUL_ARR(ty = _), _)          then DAE.MUL(inType);
+    case (DAE.DIV_ARR(ty = _), _)          then DAE.DIV(inType);
     else inOperator;
   end match;
 end makeScalarOpFromArrayOp;

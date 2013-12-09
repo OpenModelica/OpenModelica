@@ -860,6 +860,7 @@ algorithm
       equation
         e1 = subscriptExp(e1, inEqSubscripts, inAllSubscripts);
         e2 = subscriptExp(e2, inEqSubscripts, inAllSubscripts);
+        op = Expression.unliftOperatorX(op, listLength(inEqSubscripts));
       then
         DAE.BINARY(e1, op, e2);
 

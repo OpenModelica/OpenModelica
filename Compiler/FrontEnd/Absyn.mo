@@ -2948,6 +2948,22 @@ algorithm
   end match;
 end pathFirstIdent;
 
+public function pathSecondIdent
+  input Path inPath;
+  output Ident outIdent;
+algorithm
+  outIdent := match(inPath)
+    local
+      Ident n;
+      Path p;
+
+    case QUALIFIED(path = QUALIFIED(name = n)) then n;
+    case QUALIFIED(path = IDENT(name = n)) then n;
+    case FULLYQUALIFIED(path = p) then pathSecondIdent(p);
+
+  end match;
+end pathSecondIdent;
+
 public function pathPrefix
   "Returns the prefix of a path, i.e. this.is.a.path => this.is.a"
   input Path path;

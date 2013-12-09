@@ -82,6 +82,9 @@ protected uniontype LookupState
   record STATE_FUNC "Found name is function." end STATE_FUNC;
   record STATE_PREDEF_COMP "Found name is predefined component." end STATE_PREDEF_COMP;
   record STATE_PREDEF_CLASS "Found name is predefined class." end STATE_PREDEF_CLASS;
+  record STATE_ERROR "An error occured during lookup."
+    LookupState errorState;
+  end STATE_ERROR;
 end LookupState;
 
 public function lookupClassName
@@ -96,7 +99,7 @@ protected
 algorithm
   (outEntry, outEnv, state) := lookupName(inName, inEnv, STATE_BEGIN(), inInfo, 
     Error.LOOKUP_ERROR);
-  validateEndState(state, STATE_CLASS(), inName, inInfo);
+  validateEndState(state, STATE_CLASS(), outEntry, inName, inInfo);
 end lookupClassName;
 
 public function lookupBaseClassName
@@ -111,7 +114,7 @@ protected
 algorithm
   (outEntry, outEnv, state) := lookupName(inName, inEnv, STATE_BEGIN(), inInfo,
       Error.LOOKUP_BASECLASS_ERROR);
-  validateEndState(state, STATE_CLASS(), inName, inInfo);
+  validateEndState(state, STATE_CLASS(), outEntry, inName, inInfo);
 end lookupBaseClassName;
 
 public function lookupVariableName
@@ -127,7 +130,7 @@ algorithm
   (outEntry, outEnv, state) := lookupName(inName, inEnv, STATE_BEGIN(), inInfo,
     Error.LOOKUP_VARIABLE_ERROR);
   state := fixEnumTypenameLookup(state, outEntry);
-  validateEndState(state, STATE_COMP(), inName, inInfo);
+  validateEndState(state, STATE_COMP(), outEntry, inName, inInfo);
 end lookupVariableName;
 
 protected function fixEnumTypenameLookup
@@ -160,7 +163,7 @@ algorithm
   /* TODO: Handle Integer and String also. */
   (outEntry, outEnv, state) := lookupName(inName, inEnv, STATE_BEGIN(), inInfo,
     Error.LOOKUP_FUNCTION_ERROR);
-  validateEndState(state, STATE_FUNC(), inName, inInfo);
+  validateEndState(state, STATE_FUNC(), outEntry, inName, inInfo);
 end lookupFunctionName;
 
 public function lookupLocalName
@@ -384,32 +387,34 @@ protected function validateEndState
    STATE_FUNC, and represents the kind of element we expected to find."
   input LookupState inEndState;
   input LookupState inExpectedState;
+  input Entry inEntry;
   input Absyn.Path inName;
   input Absyn.Info inInfo;
 algorithm
-  _ := match(inEndState, inExpectedState, inName, inInfo)
+  _ := match(inEndState, inExpectedState, inEntry, inName, inInfo)
     local
-      String name, found_str, expected_str;
+      String name, name2, full_name, found_str, expected_str;
+      Absyn.Info info;
 
     // Found the expected kind of element.
-    case (STATE_COMP(),         STATE_COMP(), _, _) then ();
-    case (STATE_COMP_COMP(),    STATE_COMP(), _, _) then ();
-    case (STATE_PREDEF_COMP(),  STATE_COMP(), _, _) then ();
-    case (STATE_PACKAGE(),      STATE_CLASS(), _, _) then ();
-    case (STATE_CLASS(),        STATE_CLASS(), _, _) then ();
-    case (STATE_PREDEF_CLASS(), STATE_CLASS(), _, _) then ();
-    case (STATE_FUNC(),         STATE_FUNC(), _, _) then ();
-    case (STATE_COMP_FUNC(),    STATE_FUNC(), _, _) then ();
+    case (STATE_COMP(),         STATE_COMP(), _, _, _) then ();
+    case (STATE_COMP_COMP(),    STATE_COMP(), _, _, _) then ();
+    case (STATE_PREDEF_COMP(),  STATE_COMP(), _, _, _) then ();
+    case (STATE_PACKAGE(),      STATE_CLASS(), _, _, _) then ();
+    case (STATE_CLASS(),        STATE_CLASS(), _, _, _) then ();
+    case (STATE_PREDEF_CLASS(), STATE_CLASS(), _, _, _) then ();
+    case (STATE_FUNC(),         STATE_FUNC(), _, _, _) then ();
+    case (STATE_COMP_FUNC(),    STATE_FUNC(), _, _, _) then ();
     
     // Found a class via a component, but expected a function.
-    case (STATE_COMP_CLASS(), STATE_FUNC(), _, _)
+    case (STATE_COMP_CLASS(), STATE_FUNC(), _, _, _)
       equation
         printFoundWrongTypeError(inEndState, inExpectedState, inName, inInfo);
       then
         fail();
 
     // Found a function via a component, but didn't expect a function.
-    case (STATE_COMP_FUNC(), _, _, _)
+    case (STATE_COMP_FUNC(), _, _, _, _)
       equation
         name = Absyn.pathString(inName);
         Error.addSourceMessage(Error.FOUND_FUNC_NAME_VIA_COMP_NONCALL, {name}, inInfo);
@@ -418,10 +423,48 @@ algorithm
 
     // Found a class via a component. Only component and functions are allowed
     // to be looked up via a component.
-    case (STATE_COMP_CLASS(), _, _, _)
+    case (STATE_COMP_CLASS(), _, _, _, _)
       equation
         name = Absyn.pathString(inName);
         Error.addSourceMessage(Error.FOUND_CLASS_NAME_VIA_COMPONENT, {name}, inInfo);
+      then
+        fail();
+
+    // Invalid form when looking for a function via a component, only c.C1..Cn.f
+    // is allowed.
+    case (STATE_ERROR(errorState = STATE_COMP_FUNC()), STATE_FUNC(), _, _, _)
+      equation
+        (name, info) = SCode.elementNameInfo(NFEnv.entryElement(inEntry));
+        Error.addSourceMessage(Error.NON_CLASS_IN_COMP_FUNC_NAME, {name}, info);
+      then
+        fail();
+
+    // Invalid lookup of non-function via component.
+    case (STATE_ERROR(errorState = STATE_COMP_FUNC()), _, _, _, _)
+      equation
+        name = Absyn.pathFirstIdent(inName);
+        name2 = Absyn.pathSecondIdent(inName);
+        full_name = Absyn.pathString(inName);
+        Error.addSourceMessage(Error.LOOKUP_VIA_COMP_NON_FUNCALL,
+          {name2, name, full_name}, inInfo);
+      then
+        fail();
+
+    // Found class when looking up a composite component name.
+    case (STATE_ERROR(errorState = STATE_COMP_COMP()), STATE_COMP(), _, _, _)
+      equation
+        (name, info) = SCode.elementNameInfo(NFEnv.entryElement(inEntry));
+        Error.addSourceMessage(Error.CLASS_IN_COMPOSITE_COMP_NAME, {name}, info);
+      then
+        fail();
+
+    // Found class via composite component name when actually looking for a class.
+    case (STATE_ERROR(errorState = STATE_COMP_COMP()), _, _, _, _)
+      equation
+        name = SCode.elementName(NFEnv.entryElement(inEntry));
+        full_name = Absyn.pathString(inName);
+        Error.addSourceMessage(Error.LOOKUP_CLASS_VIA_COMP_COMP,
+          {name, full_name}, inInfo);
       then
         fail();
 
@@ -573,8 +616,7 @@ protected function nextState2
 algorithm
   outNextState := match(inElementState, inCurrentState, inElement)
     local
-      String name;
-      Absyn.Info info;
+      String str;
 
     // Transitions from BEGIN.
     case (_,               STATE_BEGIN(), _)      then inElementState;
@@ -610,23 +652,23 @@ algorithm
     case (STATE_PACKAGE(), STATE_COMP_FUNC(), _)  then STATE_COMP_CLASS();
 
     // When looking for a function in a component the only valid form is
-    // c.M1..MN.f, where M1..Mn are classes, but we found a component instead.
+    // c.M1..Mn.f, where M1..Mn are classes, but we found a component instead.
     case (STATE_COMP(), _, _)
-      equation
-        (name, info) = SCode.elementNameInfo(inElement);
-        Error.addSourceMessage(Error.NON_CLASS_IN_COMP_FUNC_NAME, {name}, info);
-      then
-        fail();
-        
+      then STATE_ERROR(STATE_COMP_FUNC());
+
     // We found a class when only components are allowed, i.e. when not looking
     // for a function via a component.
     case (_,               STATE_COMP_COMP(), _)
+      then STATE_ERROR(STATE_COMP_COMP());
+
+    else
       equation
-        (name, info) = SCode.elementNameInfo(inElement);
-        Error.addSourceMessage(Error.CLASS_IN_COMPOSITE_COMP_NAME, {name}, info);
+        str = SCode.elementName(inElement);
+        str = "NFLookup.nextState2 failed on unknown transition for element " +& str;
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
         fail();
-
+          
   end match;
 end nextState2;
 
@@ -830,6 +872,11 @@ algorithm
       Entry entry;
       Env env;
       LookupState state;
+
+    // An error has occured, return the entry found so far and let the caller
+    // handle the error reporting.
+    case (_, _, _, STATE_ERROR(_))
+      then (inEntry, inEnv, inState);
 
     case (_, _, _, _)
       equation
