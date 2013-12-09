@@ -1437,12 +1437,13 @@ author: Waurich TUD 2013-10 "
   input array<list<Integer>> iSccSimEqMapping;
   output Schedule oSchedule;
 protected
-  Integer size;
+  Integer size, numSfLocks;
   array<list<Task>> threads;
   array<list<Integer>> taskGraphT;
   array<Real> alapArray;  // this is the latest possible starting time of every node
   list<Real> alapLst, alapSorted, priorityLst;
   list<Integer> order;
+  list<Task> removeLocks;
   array<Integer> taskAss; //<idx>=task, <value>=processor
   array<list<Integer>> procAss; //<idx>=processor, <value>=task; 
   array<list<Task>> threadTask;
@@ -1460,12 +1461,87 @@ algorithm
   // create the schedule
   threadTask := arrayCreate(numProc,{});
   schedule := THREADSCHEDULE(threadTask,{});
-  schedule := createSchedulerFromAssignments(taskAss,procAss,SOME(order),iTaskGraph,taskGraphT,iTaskGraphMeta,iSccSimEqMapping,schedule);
+  removeLocks := {};
+  (schedule,removeLocks) := createScheduleFromAssignments(taskAss,procAss,SOME(order),iTaskGraph,taskGraphT,iTaskGraphMeta,iSccSimEqMapping,removeLocks,order,schedule); 
+  // remove superfluous locks
+  numSfLocks := intDiv(listLength(removeLocks),2);
+  Debug.fcall(Flags.HPCOM_DUMP,print,"number of removed superfluous locks: "+&intString(numSfLocks)+&"\n");
+  schedule := traverseAndUpdateThreadsInSchedule(schedule,removeLocksFromThread,removeLocks);
+  schedule := updateLockIdcsInThreadschedule(schedule,removeLocksFromLockIds,removeLocks);
   oSchedule := schedule;
 end createMCPschedule;
 
 
-protected function createSchedulerFromAssignments  
+protected function updateLockIdcsInThreadschedule "executes the given function on the lockIdc in THREADSCHEDULE.
+author:Waurich TUD 2013-12"
+  input Schedule scheduleIn;
+  input FuncType inFunc;
+  input ArgType extraArg;
+  output Schedule scheduleOut;
+partial function FuncType
+  input list<String> locksIn;
+  input ArgType inArg;
+  output list<String> locksOut;
+end FuncType;
+replaceable type ArgType subtypeof Any;
+algorithm
+  scheduleOut := match(scheduleIn,inFunc,extraArg)
+    local
+      Schedule schedule;
+      array<list<Task>> threadTasks;
+      list<String> lockIdc;
+    case(THREADSCHEDULE(threadTasks=threadTasks,lockIdc=lockIdc),_,_)
+      equation
+        lockIdc = inFunc(lockIdc,extraArg);
+        schedule = THREADSCHEDULE(threadTasks,lockIdc);
+      then
+        schedule;
+    else
+      equation
+        print("this is not a thread schedule!\n");
+      then
+        scheduleIn;
+  end match;
+end updateLockIdcsInThreadschedule;
+
+
+protected function traverseAndUpdateThreadsInSchedule "traverses all Threads in a schedule.
+author: Waurich TUD 2013-12"
+  input Schedule scheduleIn;
+  input FuncType funcIn;
+  input ArgType extraArg;
+  output Schedule scheduleOut;
+partial function FuncType
+  input list<Task> taskIn;
+  input ArgType argIn;
+  output list<Task> outArg;
+end FuncType;
+replaceable type ArgType subtypeof Any;
+algorithm
+  scheduleOut := match(scheduleIn,funcIn,extraArg)
+    local
+      array<list<Task>> threadTasks;
+      list<String> lockIdc;
+      list<list<Integer>> eqsOfLevels;
+      Schedule schedule;
+    case(LEVELSCHEDULE(eqsOfLevels=eqsOfLevels),_,_)
+      then
+        scheduleIn;
+    case(THREADSCHEDULE(threadTasks=threadTasks,lockIdc=lockIdc),_,_)
+      equation
+        threadTasks = Util.arrayMap1(threadTasks,funcIn,extraArg);
+        schedule = THREADSCHEDULE(threadTasks,lockIdc);
+      then
+        schedule;
+    case(EMPTYSCHEDULE(),_,_)
+      then
+        scheduleIn;
+  end match;
+end traverseAndUpdateThreadsInSchedule;
+
+
+protected function createScheduleFromAssignments"creates the ThreadSchedule from the taskAssignment i.e. which task is computed in which thread.
+author:Waurich TUD 2013-12"
   input array<Integer> taskAss;
   input array<list<Integer>> procAss;
   input Option<list<Integer>> orderOpt;
@@ -1473,12 +1549,15 @@ protected function createSchedulerFromAssignments
   input HpcOmTaskGraph.TaskGraph taskGraphTIn;
   input HpcOmTaskGraph.TaskGraphMeta taskGraphMetaIn;
   input array<list<Integer>> SccSimEqMappingIn;
+  input list<Task> removeLocksIn;
+  input list<Integer> orderIn;  // need the complete order for removeSuperfluousLocks
   input Schedule scheduleIn;
   output Schedule scheduleOut;
+  output list<Task> removeLocksOut;
 algorithm
-  scheduleOut := match(taskAss,procAss,orderOpt,taskGraphIn,taskGraphTIn,taskGraphMetaIn,SccSimEqMappingIn,scheduleIn)
+  (scheduleOut,removeLocksOut) := match(taskAss,procAss,orderOpt,taskGraphIn,taskGraphTIn,taskGraphMetaIn,SccSimEqMappingIn,removeLocksIn,orderIn,scheduleIn)
     local
-      Integer node,proc,mark;
+      Integer node,proc,mark,numProc;
       Real exeCost,commCost;
       list<Integer> order, rest, components, simEqIdc, parentNodes,childNodes, sameProcTasks, otherParents, otherChildren;
       list<String> assLockIdc,relLockIdc,lockIdc;
@@ -1487,16 +1566,16 @@ algorithm
       array<tuple<Integer,Real>> exeCosts;
       array<list<tuple<Integer,Integer,Integer>>> commCosts;
       array<list<Task>> threadTasks;
-      list<Task> taskLst1,taskLst,taskLstAss,taskLstRel;
+      list<Task> taskLst1,taskLst,taskLstAss,taskLstRel, removeLocks;
       Schedule schedule;
       Task task;
-    case(_,_,SOME({}),_,_,_,_,THREADSCHEDULE(threadTasks=threadTasks, lockIdc=lockIdc))
+    case(_,_,SOME({}),_,_,_,_,_,_,THREADSCHEDULE(threadTasks=threadTasks, lockIdc=lockIdc))
       equation
-        schedule = THREADSCHEDULE(threadTasks,lockIdc);  
       then
-        schedule; 
-    case(_,_,SOME(order),_,_,_,_,THREADSCHEDULE(threadTasks=threadTasks, lockIdc=lockIdc))
+        (scheduleIn,removeLocksIn); 
+    case(_,_,SOME(order),_,_,_,_,_,_,THREADSCHEDULE(threadTasks=threadTasks, lockIdc=lockIdc))
       equation
+        numProc = arrayLength(procAss);
         (node::rest) = order;
         proc = arrayGet(taskAss,node);
         taskLst = arrayGet(threadTasks, proc);
@@ -1505,7 +1584,10 @@ algorithm
         childNodes = arrayGet(taskGraphIn,node);
         sameProcTasks = arrayGet(procAss,proc);
         (_,otherParents,_) = List.intersection1OnTrue(parentNodes,sameProcTasks,intEq);
-        (_,otherChildren,_) = List.intersection1OnTrue(childNodes,sameProcTasks,intEq);
+        (_,otherChildren,_) = List.intersection1OnTrue(childNodes,sameProcTasks,intEq);       
+        // keep the locks that are superfluous, remove them later
+        removeLocks = getSuperfluousLocks(otherParents,node,taskAss,orderIn,numProc,removeLocksIn); 
+        
         assLockIdc = List.map1(otherParents,getAssignLockString,node);
         taskLstAss = List.map(assLockIdc,getAssignLockTask);
         relLockIdc = List.map1(otherChildren,getReleaseLockString,node);
@@ -1525,16 +1607,186 @@ algorithm
         threadTasks = arrayUpdate(threadTasks,proc,taskLst);
         lockIdc = listAppend(lockIdc,assLockIdc);
         schedule = THREADSCHEDULE(threadTasks,lockIdc);  
-        schedule = createSchedulerFromAssignments(taskAss,procAss,SOME(rest),taskGraphIn,taskGraphTIn,taskGraphMetaIn,SccSimEqMappingIn,schedule);
+        (schedule,removeLocks) = createScheduleFromAssignments(taskAss,procAss,SOME(rest),taskGraphIn,taskGraphTIn,taskGraphMetaIn,SccSimEqMappingIn,removeLocks,orderIn,schedule);
       then
-        schedule;     
-    case(_,_,NONE(),_,_,_,_,THREADSCHEDULE(threadTasks=threadTasks, lockIdc=lockIdc))
+        (schedule,removeLocks);     
+    case(_,_,NONE(),_,_,_,_,_,_,THREADSCHEDULE(threadTasks=threadTasks, lockIdc=lockIdc))
       equation
         print("createSchedulerFromAssignments failed.implement this!\n");
       then
-        fail();       
+        fail();
   end match;      
-end createSchedulerFromAssignments;
+end createScheduleFromAssignments;
+
+
+protected function isEqualTaskId"checks if the lockId or the calcTaskIdx is the same. emptyTasks are not handled as equal.
+author:Waurich TUD 2013-12"
+  input Task task1;
+  input Task task2;
+  output Boolean isEqOut;
+algorithm
+  isEqOut := match(task1,task2)
+    local
+      Boolean isEq;
+      Integer id1,id2;
+      String lockId1,lockId2;
+    case(ASSIGNLOCKTASK(lockId=lockId1),ASSIGNLOCKTASK(lockId=lockId2))
+      equation
+        isEq = stringEq(lockId1,lockId2);
+      then
+        isEq;
+    case(RELEASELOCKTASK(lockId=lockId1),RELEASELOCKTASK(lockId=lockId2))
+      equation
+        isEq = stringEq(lockId1,lockId2);
+      then
+        isEq;
+    case(CALCTASK(weighting=_,index=id1,calcTime=_,timeFinished=_,threadIdx=_,eqIdc=_),CALCTASK(weighting=_,index=id2,calcTime=_,timeFinished=_,threadIdx=_,eqIdc=_))
+      equation
+        isEq = intEq(id1,id2);
+      then
+        isEq;
+    case(TASKEMPTY(),TASKEMPTY())
+      equation
+      then
+        false;
+    else
+      then
+        false;
+  end match;
+end isEqualTaskId;
+
+
+protected function removeLocksFromLockIds "removes all locks from the list of locks.
+author:Waurich TUD 2013-12"
+  input list<String> lockIdsIn;
+  input list<Task> lockTasks;
+  output list<String> lockIdsOut;
+protected
+  list<String> lockIdStrings;
+algorithm
+  lockIdStrings := List.map(lockTasks,getLockIdString);
+  (_,lockIdsOut,_) := List.intersection1OnTrue(lockIdsIn,lockIdStrings,stringEq);
+end removeLocksFromLockIds;
+
+
+protected function removeLocksFromThread "removes all lockTasks that are given in the locksLst from the thread.
+author:Waurich TUD 2013-12"
+  input list<Task> threadIn;
+  input list<Task> lockLst;
+  output list<Task> threadOut;
+algorithm
+  (_,threadOut,_) := List.intersection1OnTrue(threadIn,lockLst,isEqualTaskId);
+end removeLocksFromThread;
+
+
+protected function getLockIdString "gets the lockId string.
+author:Waurich TUD 2013-12"
+  input Task taskIn;
+  output String idStringOut;
+algorithm
+  idStringOut := match(taskIn)
+    local
+      String lockId;
+    case(ASSIGNLOCKTASK(lockId=lockId))
+      then
+        lockId;
+    case(RELEASELOCKTASK(lockId=lockId))
+      then
+        lockId;
+    else
+      then
+        "";
+  end match;
+end getLockIdString;
+
+
+protected function getSuperfluousLocks "gets the locks that are unnecessary. e.g. if a task has multiple parentTasks from one thread, we just need the lock from the last executed task.
+author:Waurich TUD 2013-12"
+  input list<Integer> otherParentsIn;
+  input Integer nodeIn;
+  input array<Integer> taskAssIn;
+  input list<Integer> orderIn;
+  input Integer numProc;
+  input list<Task> removeLocksIn;
+  output list<Task> removeLocksOut;
+protected
+  array<list<Integer>> parentsOnThreads, arr;
+  array<String> s;
+  list<Integer> otherParentsProcs, lockCandidatesFlat;
+  list<String> assLockIdc, relLockIdc;
+  list<list<Integer>> lockCandidates;
+  list<Task> removeLocks, taskLstAss, taskLstRel;
+algorithm
+  otherParentsProcs := List.map1(otherParentsIn,Util.arrayGetIndexFirst,taskAssIn);
+  parentsOnThreads := arrayCreate(numProc,{});
+  parentsOnThreads := List.fold1(List.intRange(listLength(otherParentsProcs)),listIndecesForValues,otherParentsProcs,parentsOnThreads);
+  parentsOnThreads := Util.arrayMap1(parentsOnThreads,mapListGet,otherParentsIn);
+  lockCandidates := List.filterOnTrue(arrayList(parentsOnThreads),lengthNotOne);
+  lockCandidates := List.map1(lockCandidates,removeLatestTaskFromList,orderIn);
+  lockCandidatesFlat := List.flatten(lockCandidates);
+  assLockIdc := List.map1(lockCandidatesFlat,getAssignLockString,nodeIn);
+  taskLstAss := List.map(assLockIdc,getAssignLockTask);
+  relLockIdc := List.map1(lockCandidatesFlat,getReleaseLockStringR,nodeIn);
+  taskLstRel := List.map(relLockIdc,getReleaseLockTask);
+  removeLocks := listAppend(removeLocksIn,taskLstAss);
+  removeLocksOut := listAppend(removeLocks,taskLstRel);
+end getSuperfluousLocks;
+
+
+protected function removeLatestTaskFromList
+  input list<Integer> taskLstIn;
+  input list<Integer> taskOrderIn;
+  output list<Integer> taskLstOut;
+algorithm
+  taskLstOut := match(taskLstIn,taskOrderIn)
+    local
+     list<Integer> posInOrder, taskLst;
+     Integer latestTask;
+    case({},_)
+      equation
+        then
+          taskLstIn;
+    case(_,_)
+      equation
+        posInOrder = List.map1(taskLstIn,List.position,taskOrderIn);  //just to remember, index starts at one
+        latestTask = List.fold(posInOrder,intMax,-1);
+        latestTask = listGet(taskOrderIn,latestTask+1);
+        taskLst = List.removeOnTrue(latestTask,intEq,taskLstIn);
+     then
+       taskLst;
+  end match;       
+end removeLatestTaskFromList;
+
+
+protected function lengthNotOne
+  input list<Integer> lstIn;
+  output Boolean b;
+algorithm
+  b := intNe(listLength(lstIn),1);
+end lengthNotOne;
+
+protected function mapListGet
+  input list<Integer> mapLstIn;
+  input list<Integer> argLst;
+  output list<Integer> mapLstOut;
+algorithm
+  mapLstOut := List.map1(mapLstIn,List.getIndexFirst,argLst);
+end mapListGet;
+
+protected function listIndecesForValues "folding function: write the index in array[i] whereas i is inLst(i) "
+  input Integer idx;
+  input list<Integer> lstIn;
+  input array<list<Integer>> arrayIn;
+  output array<list<Integer>> arrayOut;
+protected
+  Integer value;
+  list<Integer> valueLst;
+algorithm
+  value := listGet(lstIn,idx);
+  valueLst := arrayGet(arrayIn,value);
+  valueLst := idx::valueLst;
+  arrayOut := arrayUpdate(arrayIn,value,valueLst);
+end listIndecesForValues;
 
 
 protected function getAssignLockTask "outputs a AssignLockTsk for the given lockId.
@@ -1571,6 +1823,15 @@ protected function getReleaseLockString
 algorithm
   lockId := intString(successor)+&"_"+&intString(taskIdx);  
 end getReleaseLockString;
+
+
+protected function getReleaseLockStringR
+  input Integer successor;
+  input Integer taskIdx;
+  output String lockId;
+algorithm
+  lockId := intString(taskIdx)+&"_"+&intString(successor);  
+end getReleaseLockStringR;
 
 
 protected function getTaskAssignmentMCP "gets the assignment which nodes is computed of which processor for the MCP algorithm.
@@ -2076,7 +2337,6 @@ algorithm
         //get the criticalPath
         ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC),parallelSets) = HpcOmTaskGraph.longestPathMethod(taskGraphIn,taskGraphMetaIn);
         criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
-        Debug.fcall(Flags.HPCOM_DUMP,print,criticalPathInfo);
         //predict speedup etc.
         (serTime,parTime,speedUp,speedUpMax) = predictExecutionTime(scheduleIn,SOME(cpCostsWoC),numProcIn,taskGraphIn,taskGraphMetaIn);
         Debug.fcall(Flags.HPCOM_DUMP,print,"the serialCosts: "+&realString(serTime)+&"\n");
