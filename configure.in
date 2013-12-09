@@ -826,16 +826,16 @@ else
   LIBGC="build/lib/omc/libgc.so"
   LIBSIMULATION=libSimulationRuntimeC.so
   LIBRUNTIME=libOpenModelicaRuntimeC.so
-  LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.a
+  LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.so
   LIBFMILIB=libfmilib_shared.so
   FMILIB_SHARED=ON
   # For static runtime on Linux:
   # -Wl,-whole-archive -lSimulationRuntimeC -Wl,-no-whole-archive
-  RT_LDFLAGS_SIM="-Wl,-rpath,'\$\$ORIGIN' $RT_LDFLAGS $SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $LIBRT -linteractive -llis -Wl,-Bstatic -lf2c -Wl,-Bdynamic -lexpat -lgc $LIBRT -lpthread -lm -ldl -lstdc++"
-  RT_LDFLAGS="$RT_LDFLAGS $LD_LAPACK -lgc $LIBRT -lpthread -lm -ldl -lstdc++"
+  RT_LDFLAGS_SIM="-Wl,-rpath,'\$\$ORIGIN' $RT_LDFLAGS $SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $LIBRT -linteractive -llis -Wl,-Bstatic -lf2c -Wl,-Bdynamic -lexpat -lgc $LIBRT -lpthread -lm -ldl -lstdc++ -rdynamic"
+  RT_LDFLAGS="$RT_LDFLAGS $LD_LAPACK -lgc $LIBRT -lpthread -lm -ldl -lstdc++ -rdynamic"
   # All libraries are dynamically linked; we don't need anything else
-  RT_LDFLAGS_GENERATED_CODE="-lOpenModelicaRuntimeC $LD_LAPACK -lm"
-  RT_LDFLAGS_GENERATED_CODE_SIM="-lSimulationRuntimeC $LD_LAPACK -lm -lgc"
+  RT_LDFLAGS_GENERATED_CODE="-lOpenModelicaRuntimeC $LD_LAPACK -lm -rdynamic"
+  RT_LDFLAGS_GENERATED_CODE_SIM="-lSimulationRuntimeC $LD_LAPACK -lm -lgc -lpthread -rdynamic"
   LINK="cp -frl"
   RPATH="-Wl,-rpath,'\$\$ORIGIN/../lib/omc'"
   OS_TARGET="linux"

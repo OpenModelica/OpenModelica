@@ -191,16 +191,17 @@ template simulationFile_nls(SimCode simCode, String guid)
 ::=
   match simCode
     case simCode as SIMCODE(__) then
+    let modelNamePrefixStr = modelNamePrefix(simCode)
     <<
     /* Non Linear Systems */
     <%simulationFileHeader(simCode)%>
     #include "<%simCode.fileNamePrefix%>_12jac.h"
-    <%functionNonLinearResiduals(initialEquations)%>
-    <%functionNonLinearResiduals(inlineEquations)%>
-    <%functionNonLinearResiduals(parameterEquations)%>
-    <%functionNonLinearResiduals(allEquations)%>
+    <%functionNonLinearResiduals(initialEquations,modelNamePrefixStr)%>
+    <%functionNonLinearResiduals(inlineEquations,modelNamePrefixStr)%>
+    <%functionNonLinearResiduals(parameterEquations,modelNamePrefixStr)%>
+    <%functionNonLinearResiduals(allEquations,modelNamePrefixStr)%>
 
-    <%functionInitialNonLinearSystems(initialEquations, inlineEquations, parameterEquations, allEquations, modelNamePrefix(simCode))%>
+    <%functionInitialNonLinearSystems(initialEquations, inlineEquations, parameterEquations, allEquations, modelNamePrefixStr)%>
     
     <%\n%>
     >>
@@ -313,11 +314,12 @@ template simulationFile_eqs(SimCode simCode, String guid)
 ::=
   match simCode
     case simCode as SIMCODE(__) then
+    let modelNamePrefixStr = modelNamePrefix(simCode)
     <<
     /* Equations */
     <%simulationFileHeader(simCode)%>
     
-    <%functionInlineEquations(inlineEquations)%>
+    <%functionInlineEquations(inlineEquations,modelNamePrefixStr)%>
         
     <%\n%>
     >>
@@ -390,11 +392,12 @@ template simulationFile_mix(SimCode simCode, String guid, Text &header)
 ::=
   match simCode
     case simCode as SIMCODE(__) then
+    let modelNamePrefixStr = modelNamePrefix(simCode)
     <<
     /* Mixed Systems */
     <%simulationFileHeader(simCode)%>
     #include "<%simCode.fileNamePrefix%>_11mix.h"
-    <%functionSetupMixedSystems(initialEquations, inlineEquations, parameterEquations, allEquations, collectAllJacobianEquations(jacobianMatrixes), &header)%>
+    <%functionSetupMixedSystems(initialEquations, inlineEquations, parameterEquations, allEquations, collectAllJacobianEquations(jacobianMatrixes), &header, modelNamePrefixStr)%>
         
     <%\n%>
     >>
@@ -475,6 +478,12 @@ template simulationFile(SimCode simCode, String guid)
   match simCode
     case simCode as SIMCODE(__) then
     let modelNamePrefixStr = modelNamePrefix(simCode)
+    let mainBody =
+      <<
+      <%symbolName(modelNamePrefixStr,"setupDataStruc")%>(&simulation_data);
+      <%if boolAnd(Flags.isSet(HPCOM), boolNot(stringEq(getConfigString(HPCOM_CODE),"pthreads_spin"))) then 'omc_alloc_interface = omc_alloc_interface_pooled;<%\n%>'%>omc_alloc_interface.init();
+      res = _main_SimulationRuntime(argc, argv, &simulation_data);
+      >>
     <<
     /* Main Simulation File */    
     <%simulationFileHeader(simCode)%>  
@@ -591,14 +600,24 @@ template simulationFile(SimCode simCode, String guid)
     }
     #endif
 
+    static int rml_execution_failed()
+    {
+      fflush(NULL);
+      fprintf(stderr, "Execution failed!\n");
+      fflush(NULL);
+      return 1;
+    }
+
+    #if defined(threadData)
+    #undef threadData
+    #endif
     /* call the simulation runtime main from our main! */
     int main(int argc, char**argv)
     {
       int res;
-      DATA data;
-      <%symbolName(modelNamePrefixStr,"setupDataStruc")%>(&data);
-      <%if boolAnd(Flags.isSet(HPCOM), boolNot(stringEq(getConfigString(HPCOM_CODE),"pthreads_spin"))) then 'omc_alloc_interface = omc_alloc_interface_pooled;<%\n%>'%>omc_alloc_interface.init();
-      res = _main_SimulationRuntime(argc, argv, &data);
+      DATA simulation_data;
+      MMC_INIT();
+      <%mainTop(mainBody,"https://trac.openmodelica.org/OpenModelica/newticket")%>
       return res;
     }
     <%\n%>
@@ -606,6 +625,29 @@ template simulationFile(SimCode simCode, String guid)
     /* adrpo: leave a newline at the end of file to get ridsymbolName(String fileNamePrefix of the warning */
   end match
 end simulationFile;
+
+template mainTop(Text mainBody, String url)
+::=
+  <<
+  {
+    MMC_TRY_TOP()
+
+    MMC_TRY_STACK()
+
+    <%mainBody%>
+
+    MMC_ELSE()
+    rml_execution_failed();
+    fprintf(stderr, "Stack overflow detected and was not caught.\nSend us a bug report at <%url%>\n    Include the following trace:\n");
+    printStacktraceMessages();
+    fflush(NULL);
+    return 1;
+    MMC_CATCH_STACK()
+
+    MMC_CATCH_TOP(return rml_execution_failed());
+  }
+  >>
+end mainTop;
 
 template symbolName(String modelNamePrefix, String symbolName)
   "Creates a unique name for the function"
@@ -1242,14 +1284,14 @@ template functionInitialMixedSystemsTemp(list<SimEqSystem> allEquations)
 end functionInitialMixedSystemsTemp;
 
 
-template functionSetupMixedSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> inlineEquations, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, list<SimEqSystem> jacobianEquations, Text &header)
+template functionSetupMixedSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> inlineEquations, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, list<SimEqSystem> jacobianEquations, Text &header, String modelNamePrefixStr)
   "Generates functions in simulation file."
 ::=
-  let initbody = functionSetupMixedSystemsTemp(initialEquations,&header)
-  let inlinebody = functionSetupMixedSystemsTemp(inlineEquations,&header)
-  let parambody = functionSetupMixedSystemsTemp(parameterEquations,&header)
-  let body = functionSetupMixedSystemsTemp(allEquations,&header)
-  let jacobianbody = functionSetupMixedSystemsTemp(jacobianEquations,&header)
+  let initbody = functionSetupMixedSystemsTemp(initialEquations,&header,modelNamePrefixStr)
+  let inlinebody = functionSetupMixedSystemsTemp(inlineEquations,&header,modelNamePrefixStr)
+  let parambody = functionSetupMixedSystemsTemp(parameterEquations,&header,modelNamePrefixStr)
+  let body = functionSetupMixedSystemsTemp(allEquations,&header,modelNamePrefixStr)
+  let jacobianbody = functionSetupMixedSystemsTemp(jacobianEquations,&header,modelNamePrefixStr)
   <<
   /* initial mixed systems */
   <%initbody%>
@@ -1264,7 +1306,7 @@ template functionSetupMixedSystems(list<SimEqSystem> initialEquations, list<SimE
   >>
 end functionSetupMixedSystems;
 
-template functionSetupMixedSystemsTemp(list<SimEqSystem> allEquations, Text &header)
+template functionSetupMixedSystemsTemp(list<SimEqSystem> allEquations, Text &header, String modelNamePrefixStr)
   "Generates functions in simulation file."
 ::=
   (allEquations |> eqn => (match eqn
@@ -1284,7 +1326,7 @@ template functionSetupMixedSystemsTemp(list<SimEqSystem> allEquations, Text &hea
        void updateContinuousPart<%index%>(void *inData)
        {
          DATA* data = (DATA*) inData;
-         eqFunction_<%contEqsIndex%>(data);
+         <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%contEqsIndex%>(data);
          data->simulationInfo.mixedSystemData[<%indexMixedSystem%>].continuous_solution = <%solvedContinuous%>;
        }
 
@@ -1455,37 +1497,37 @@ template functionInitialNonLinearSystemsTemp(list<SimEqSystem> allEquations, Str
    ;separator="\n\n")
 end functionInitialNonLinearSystemsTemp;
 
-template functionExtraResidualsPreBody(SimEqSystem eq, Text &varDecls /*BUFP*/, Text &eqs)
+template functionExtraResidualsPreBody(SimEqSystem eq, Text &varDecls /*BUFP*/, Text &eqs, String modelNamePrefixStr)
  "Generates an equation."
 ::=
   match eq
   case e as SES_RESIDUAL(__)
   then ""
   else
-  equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &eqs)
+  equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &eqs, modelNamePrefixStr)
   end match
 end functionExtraResidualsPreBody;
 
-template equationNamesExtraResidualsPreBody(SimEqSystem eq)
+template equationNamesExtraResidualsPreBody(SimEqSystem eq, String modelNamePrefixStr)
  "Generates an equation."
 ::=
   match eq
   case e as SES_RESIDUAL(__)
   then ""
   else
-  equationNames_(eq, contextSimulationDiscrete)
+  equationNames_(eq, contextSimulationDiscrete, modelNamePrefixStr)
   end match
 end equationNamesExtraResidualsPreBody;
 
-template functionNonLinearResiduals(list<SimEqSystem> allEquations)
+template functionNonLinearResiduals(list<SimEqSystem> allEquations, String modelNamePrefix)
   "Generates functions in simulation file."
 ::=
   (allEquations |> eqn => (match eqn
-     case eq as SES_MIXED(__) then functionNonLinearResiduals(fill(eq.cont,1))
+     case eq as SES_MIXED(__) then functionNonLinearResiduals(fill(eq.cont,1),modelNamePrefix)
      case eq as SES_NONLINEAR(__) then
      let &varDecls = buffer "" /*BUFD*/
      let &tmp = buffer ""
-     let innerEqs = functionNonLinearResiduals(eqs)
+     let innerEqs = functionNonLinearResiduals(eqs,modelNamePrefix)
      let xlocs = (crefs |> cr hasindex i0 => '<%cref(cr)%> = xloc[<%i0%>];' ;separator="\n")
      let body_initializeStaticNLSData = (crefs |> cr hasindex i0 =>
       <<
@@ -1495,7 +1537,7 @@ template functionNonLinearResiduals(list<SimEqSystem> allEquations)
       nlsData->max[i++]   = $P$ATTRIBUTE<%cref(cr)%>.max;
       >> ;separator="\n")
      let prebody = (eq.eqs |> eq2 =>
-         functionExtraResidualsPreBody(eq2, &varDecls /*BUFD*/, &tmp)
+         functionExtraResidualsPreBody(eq2, &varDecls /*BUFD*/, &tmp, modelNamePrefix)
        ;separator="\n")
      let body = (eq.eqs |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
          let &preExp = buffer "" /*BUFD*/
@@ -1591,7 +1633,7 @@ template functionUpdateBoundStartValues(list<SimEqSystem> startValueEquations, S
   let &varDecls = buffer "" /*BUFD*/
   let &tmp = buffer ""
   let eqPart = (startValueEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
-      equation_(eq, contextOther, &varDecls /*BUFD*/, &tmp)
+      equation_(eq, contextOther, &varDecls /*BUFD*/, &tmp, modelNamePrefix)
     ;separator="\n")
 
   <<
@@ -1628,7 +1670,7 @@ template functionUpdateBoundParameters(list<SimEqSystem> parameterEquations, Str
    */
   let body = (parameterEquations |> eq  =>
       <<
-      <%equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &tmp)%>
+      <%equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &tmp, modelNamePrefix)%>
       >>
     ;separator="\n")
   <<
@@ -1660,7 +1702,7 @@ template functionInitialResidualBody(SimEqSystem eq, Text &varDecls /*BUFP*/, Te
       >>
     end match
   else
-  equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &eqs)
+  equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &eqs, modelNamePrefix)
   end match
 end functionInitialResidualBody;
 
@@ -1722,7 +1764,7 @@ template functionInitialEquations(Boolean useSymbolicInitialization, list<SimEqS
   let &tmp = buffer ""
   let body = (initalEquations |> eq  =>
       <<
-      <%equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &tmp)%>
+      <%equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &tmp, modelNamePrefix)%>
       >>
     ;separator="\n")
 
@@ -1751,14 +1793,14 @@ end functionInitialEquations;
 //   - int functionInlineEquations(DATA *data)
 // =============================================================================
 
-template functionInlineEquations(list<SimEqSystem> inlineEquations)
+template functionInlineEquations(list<SimEqSystem> inlineEquations, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
   let () = System.tmpTickReset(0)
   let &varDecls = buffer "" /*BUFD*/
   let &tmp = buffer ""
   let body = (inlineEquations |> eq  =>
-      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &tmp)
+      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &tmp, modelNamePrefix)
     ;separator="\n")
   <<
   <%&tmp%>
@@ -1913,9 +1955,9 @@ end functionWhenReinitStatementThen;
 // Begin: Modified functions for HpcOm
 //------------------------------------
 
-template functionXXX_systems_HPCOM(list<list<SimEqSystem>> eqs, String name, Text &loop, Text &varDecls, Option<ScheduleSimCode> hpcOmScheduleOpt)
+template functionXXX_systems_HPCOM(list<list<SimEqSystem>> eqs, String name, Text &loop, Text &varDecls, Option<ScheduleSimCode> hpcOmScheduleOpt, String modelNamePrefixStr)
 ::=
- let funcs = (eqs |> eq hasindex i0 fromindex 0 => functionXXX_system_HPCOM(eq,name,i0,hpcOmScheduleOpt) ; separator="\n")
+ let funcs = (eqs |> eq hasindex i0 fromindex 0 => functionXXX_system_HPCOM(eq,name,i0,hpcOmScheduleOpt, modelNamePrefixStr) ; separator="\n")
  match listLength(eqs)
      case 0 then //empty case
        let &loop += 
@@ -1955,11 +1997,11 @@ template functionXXX_systems_HPCOM(list<list<SimEqSystem>> eqs, String name, Tex
        >>
 end functionXXX_systems_HPCOM;
 
-template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String name, Integer n, Option<ScheduleSimCode> hpcOmScheduleOpt)
+template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String name, Integer n, Option<ScheduleSimCode> hpcOmScheduleOpt, String modelNamePrefixStr)
 ::=
   match hpcOmScheduleOpt 
     case SOME(hpcOmSchedule as LEVELSCHEDULESC(__)) then
-      let odeEqs = hpcOmSchedule.eqsOfLevels |> eqs => functionXXX_system0_HPCOM_Level(derivativEquations,name,eqs); separator="\n"
+      let odeEqs = hpcOmSchedule.eqsOfLevels |> eqs => functionXXX_system0_HPCOM_Level(derivativEquations,name,eqs,modelNamePrefixStr); separator="\n"
       <<
       static void function<%name%>_system<%n%>(DATA *data)
       {
@@ -1974,7 +2016,7 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
       let assignLocks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_assignLock(idx, "lock", type); separator="\n"
       match type 
         case ("openmp") then
-          let taskEqs = functionXXX_system0_HPCOM_Thread(derivativEquations,name,hpcOmSchedule.threadTasks, type); separator="\n"
+          let taskEqs = functionXXX_system0_HPCOM_Thread(derivativEquations,name,hpcOmSchedule.threadTasks, type, modelNamePrefixStr); separator="\n"
           <<
           //using type: <%type%>
           static int initialized = 0;
@@ -1998,7 +2040,7 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
           >>
         case ("pthreads") then
           let threadDecl = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_decl(i0); separator="\n"
-          let threadFuncs = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_func(derivativEquations, name, n, hpcOmSchedule.threadTasks, type, i0); separator="\n"
+          let threadFuncs = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_func(derivativEquations, name, n, hpcOmSchedule.threadTasks, type, i0, modelNamePrefixStr); separator="\n"
           let threadFuncCalls = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_call(name, n, i0); separator="\n"
           let threadStart = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_start(i0); separator="\n"
           
@@ -2049,7 +2091,7 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
           >>
         case ("pthreads_spin") then
           let threadDecl = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_decl(i0); separator="\n"
-          let threadFuncs = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_func(derivativEquations, name, n, hpcOmSchedule.threadTasks, type, i0); separator="\n"
+          let threadFuncs = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_func(derivativEquations, name, n, hpcOmSchedule.threadTasks, type, i0, modelNamePrefixStr); separator="\n"
           let threadFuncCalls = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_call(name, n, i0); separator="\n"
           let threadStart = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_start(i0); separator="\n"
           
@@ -2101,10 +2143,10 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
    
 end functionXXX_system_HPCOM;
 
-template functionXXX_system0_HPCOM_Level(list<SimEqSystem> derivativEquations, String name, list<Integer> eqsOfLevel)
+template functionXXX_system0_HPCOM_Level(list<SimEqSystem> derivativEquations, String name, list<Integer> eqsOfLevel, String modelNamePrefixStr)
 ::=
   //let odeEqs = "#pragma omp parallel sections\n{"
-  let odeEqs = eqsOfLevel |> eq => equationNamesHPCOM_(eq,derivativEquations,contextSimulationNonDiscrete); separator="\n"
+  let odeEqs = eqsOfLevel |> eq => equationNamesHPCOM_(eq,derivativEquations,contextSimulationNonDiscrete,modelNamePrefixStr); separator="\n"
   <<
   #pragma omp parallel sections
   {
@@ -2113,9 +2155,9 @@ template functionXXX_system0_HPCOM_Level(list<SimEqSystem> derivativEquations, S
   >>
 end functionXXX_system0_HPCOM_Level;
 
-template functionXXX_system0_HPCOM_Thread(list<SimEqSystem> derivativEquations, String name, list<list<Task>> threadTasks, String iType)
+template functionXXX_system0_HPCOM_Thread(list<SimEqSystem> derivativEquations, String name, list<list<Task>> threadTasks, String iType, String modelNamePrefixStr)
 ::=
-  let odeEqs = threadTasks |> tt => functionXXX_system0_HPCOM_Thread0(derivativEquations,name,tt,iType); separator="\n"
+  let odeEqs = threadTasks |> tt => functionXXX_system0_HPCOM_Thread0(derivativEquations,name,tt,iType,modelNamePrefixStr); separator="\n"
   match iType 
     case ("openmp") then
       <<
@@ -2135,9 +2177,9 @@ template functionXXX_system0_HPCOM_Thread(list<SimEqSystem> derivativEquations, 
 
 end functionXXX_system0_HPCOM_Thread;
 
-template functionXXX_system0_HPCOM_Thread0(list<SimEqSystem> derivativEquations, String name, list<Task> threadTaskList, String iType)
+template functionXXX_system0_HPCOM_Thread0(list<SimEqSystem> derivativEquations, String name, list<Task> threadTaskList, String iType, String modelNamePrefixStr)
 ::=
-  let threadTasks = threadTaskList |> tt => function_HPCOM_Task(derivativEquations,name,tt,iType); separator="\n"
+  let threadTasks = threadTaskList |> tt => function_HPCOM_Task(derivativEquations,name,tt,iType,modelNamePrefixStr); separator="\n"
   match iType 
     case ("openmp") then
       <<
@@ -2156,11 +2198,11 @@ template functionXXX_system0_HPCOM_Thread0(list<SimEqSystem> derivativEquations,
       >>
 end functionXXX_system0_HPCOM_Thread0;
 
-template function_HPCOM_Task(list<SimEqSystem> derivativEquations, String name, Task iTask, String iType)
+template function_HPCOM_Task(list<SimEqSystem> derivativEquations, String name, Task iTask, String iType, String modelNamePrefixStr)
 ::=
   match iTask 
     case (task as CALCTASK(__)) then
-      let odeEqs = task.eqIdc |> eq => equationNamesHPCOM_Thread_(eq,derivativEquations,contextSimulationNonDiscrete); separator="\n"
+      let odeEqs = task.eqIdc |> eq => equationNamesHPCOM_Thread_(eq,derivativEquations,contextSimulationNonDiscrete,modelNamePrefixStr); separator="\n"
       <<
       // Task <%task.index%>
       <%odeEqs%>
@@ -2248,9 +2290,9 @@ template function_HPCOM_releaseLock(String lockIdx, String prefix, String iType)
       >>
 end function_HPCOM_releaseLock;
 
-template functionXXX_system0_HPCOM_PThread_func(list<SimEqSystem> derivativEquations, String name, Integer n, list<list<Task>> threadTasks, String iType, Integer idx)
+template functionXXX_system0_HPCOM_PThread_func(list<SimEqSystem> derivativEquations, String name, Integer n, list<list<Task>> threadTasks, String iType, Integer idx, String modelNamePrefixStr)
 ::=
-  let taskEqs = functionXXX_system0_HPCOM_Thread0(derivativEquations, name, listNth(threadTasks,idx), iType); separator="\n"
+  let taskEqs = functionXXX_system0_HPCOM_Thread0(derivativEquations, name, listNth(threadTasks,idx), iType, modelNamePrefixStr); separator="\n"
   let assLock = function_HPCOM_assignLock(idx, "th_lock", "pthreads"); separator="\n"
   let relLock = function_HPCOM_releaseLock(idx, "th_lock1", "pthreads"); separator="\n"
   <<
@@ -2287,7 +2329,7 @@ template functionXXX_system0_HPCOM_PThread_start(Integer idx)
   >>
 end functionXXX_system0_HPCOM_PThread_start;
 
-template equationNamesHPCOM_Thread_(Integer idx, list<SimEqSystem> derivativEquations, Context context)
+template equationNamesHPCOM_Thread_(Integer idx, list<SimEqSystem> derivativEquations, Context context, String modelNamePrefixStr)
  "Generates an equation.
   This template should not be used for a SES_RESIDUAL.
   Residual equations are handled differently."
@@ -2300,7 +2342,7 @@ case SIMULATION_CONTEXT(genDiscrete=true) then
   else
   let ix = equationIndex(getSimCodeEqByIndex(derivativEquations, idx))
   <<
-  eqFunction_<%ix%>(data);
+  <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(data);
   >>
   //<<
   //#pragma omp section
@@ -2321,7 +2363,7 @@ else
   else
   let ix = equationIndex(getSimCodeEqByIndex(derivativEquations, idx))
   <<
-  eqFunction_<%ix%>(data);
+  <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(data);
   >>
   //<<
   //#ifdef _OMC_MEASURE_TIME
@@ -2334,7 +2376,7 @@ else
   //>>
 end equationNamesHPCOM_Thread_;
 
-template equationNamesHPCOM_(Integer idx, list<SimEqSystem> derivativEquations, Context context)
+template equationNamesHPCOM_(Integer idx, list<SimEqSystem> derivativEquations, Context context, String modelNamePrefixStr)
  "Generates an equation.
   This template should not be used for a SES_RESIDUAL.
   Residual equations are handled differently."
@@ -2352,7 +2394,7 @@ case SIMULATION_CONTEXT(genDiscrete=true) then
       #ifdef _OMC_MEASURE_TIME
         SIM_PROF_TICK_EQEXT(<%ix%>);
       #endif
-      eqFunction_<%ix%>(data);
+      <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(data);
       #ifdef _OMC_MEASURE_TIME
         SIM_PROF_ACC_EQEXT(<%ix%>);
       #endif
@@ -2370,7 +2412,7 @@ else
       #ifdef _OMC_MEASURE_TIME
         SIM_PROF_TICK_EQEXT(<%ix%>);
       #endif
-      eqFunction_<%ix%>(data);
+      <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(data);
       #ifdef _OMC_MEASURE_TIME
         SIM_PROF_ACC_EQEXT(<%ix%>);
       #endif
@@ -2382,10 +2424,10 @@ end equationNamesHPCOM_;
 // End: Modified functions for HpcOm
 //----------------------------------
 
-template functionXXX_system(list<SimEqSystem> derivativEquations, String name, Integer n)
+template functionXXX_system(list<SimEqSystem> derivativEquations, String name, Integer n, String modelNamePrefixStr)
 ::=
-  let odeEqs = derivativEquations |> eq => equationNames_(eq,contextSimulationNonDiscrete); separator="\n"
-  let forwardEqs = derivativEquations |> eq => equationForward_(eq,contextSimulationNonDiscrete); separator="\n"
+  let odeEqs = derivativEquations |> eq => equationNames_(eq,contextSimulationNonDiscrete,modelNamePrefixStr); separator="\n"
+  let forwardEqs = derivativEquations |> eq => equationForward_(eq,contextSimulationNonDiscrete,modelNamePrefixStr); separator="\n"
   <<
   
   /* forwarded equations */
@@ -2398,9 +2440,9 @@ template functionXXX_system(list<SimEqSystem> derivativEquations, String name, I
   >>
 end functionXXX_system;
 
-template functionXXX_systems(list<list<SimEqSystem>> eqs, String name, Text &loop, Text &varDecls)
+template functionXXX_systems(list<list<SimEqSystem>> eqs, String name, Text &loop, Text &varDecls, String modelNamePrefixStr)
 ::=
-  let funcs = (eqs |> eq hasindex i0 fromindex 0 => functionXXX_system(eq,name,i0) ; separator="\n")
+  let funcs = (eqs |> eq hasindex i0 fromindex 0 => functionXXX_system(eq,name,i0,modelNamePrefixStr) ; separator="\n")
   match listLength(eqs)
   case 0 then //empty case
     let &loop += 
@@ -2443,11 +2485,11 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Op
   let &varDecls2 = buffer "" /*BUFD*/
   let &varDecls = buffer ""
   let &loop = buffer ""
-  let systems = if Flags.isSet(Flags.HPCOM) then (functionXXX_systems_HPCOM(derivativEquations, "ODE", &loop, &varDecls, hpcOmSchedule)) else (functionXXX_systems(derivativEquations, "ODE", &loop, &varDecls))
+  let systems = if Flags.isSet(Flags.HPCOM) then (functionXXX_systems_HPCOM(derivativEquations, "ODE", &loop, &varDecls, hpcOmSchedule, modelNamePrefix)) else (functionXXX_systems(derivativEquations, "ODE", &loop, &varDecls, modelNamePrefix))
   /* let systems = functionXXX_systems(derivativEquations, "ODE", &loop, &varDecls) */
   let &tmp = buffer ""
   let stateContPartInline = (derivativEquations |> eqs => (eqs |> eq =>
-    equation_(eq, contextInlineSolver, &varDecls2 /*BUFC*/, &tmp); separator="\n")
+    equation_(eq, contextInlineSolver, &varDecls2 /*BUFC*/, &tmp, modelNamePrefix); separator="\n")
     ;separator="\n")
 
   <<
@@ -2509,7 +2551,7 @@ template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations, String mo
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let &loop = buffer ""
-  let systems = functionXXX_systems(algebraicEquations, "Alg", &loop, &varDecls)
+  let systems = functionXXX_systems(algebraicEquations, "Alg", &loop, &varDecls, modelNamePrefix)
   <<
   <%systems%>
   /* for continuous time variables */
@@ -2523,13 +2565,13 @@ template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations, String mo
   >>
 end functionAlgebraic;
 
-template functionAliasEquation(list<SimEqSystem> removedEquations)
+template functionAliasEquation(list<SimEqSystem> removedEquations, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let &tmp = buffer ""
   let removedPart = (removedEquations |> eq =>
-      equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFC*/, &tmp)
+      equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFC*/, &tmp, modelNamePrefix)
     ;separator="\n")
   <<
   <%&tmp%>
@@ -2552,7 +2594,7 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause>
   let &varDecls = buffer "" /*BUFD*/
   let &tmp = buffer ""
   let eqs = (allEquationsPlusWhen |> eq =>
-    equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &tmp)
+    equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &tmp, modelNamePrefix)
     ;separator="\n")
   let reinit = (whenClauses |> when hasindex i0 =>
     genreinits(when, &varDecls,i0)
@@ -2827,7 +2869,7 @@ template functionAssertsforCheck(list<SimEqSystem> algAndEqAssertsEquations, Str
   let &varDecls = buffer "" /*BUFD*/
   let &tmp = buffer ""
   let algAndEqAssertsPart = (algAndEqAssertsEquations |> eq =>
-    equation_(eq, contextSimulationDiscrete, &varDecls /*BUFC*/, &tmp)
+    equation_(eq, contextSimulationDiscrete, &varDecls /*BUFC*/, &tmp, modelNamePrefix)
     ;separator="\n")
 
   <<
@@ -3117,7 +3159,7 @@ template functionJac(list<SimEqSystem> jacEquations, list<SimVar> tmpVars, Strin
   let &varDecls = buffer "" /*BUFD*/
   let &tmp = buffer ""
   let eqns_ = (jacEquations |> eq =>
-    equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFD*/, &tmp); separator="\n")
+    equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFD*/, &tmp, modelNamePrefix); separator="\n")
 
   <<
   <%&tmp%>
@@ -3260,15 +3302,15 @@ template dumpEqs(list<SimEqSystem> eqs)
       >>
 end dumpEqs;
 
-template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Text &eqs)
+template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Text &eqs, String modelNamePrefix)
  "Generates an equation.
   This template should not be used for a SES_RESIDUAL.
   Residual equations are handled differently."
 ::=
-  match context case INLINE_CONTEXT() then old_equation_(eq,context,&varDecls) else
+  match context case INLINE_CONTEXT() then old_equation_(eq,context,&varDecls,modelNamePrefix) else
   match eq
   case e as SES_MIXED(__)
-  then equationMixed(e, context, &varDecls /*BUFD*/, &eqs)
+  then equationMixed(e, context, &varDecls /*BUFD*/, &eqs, modelNamePrefix)
   case e as SES_ALGORITHM(statements={})
   then ""
   else
@@ -3286,14 +3328,14 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Tex
   case e as SES_ARRAY_CALL_ASSIGN(__)
     then equationArrayCallAssign(e, context, &varD /*BUFD*/)
   case e as SES_IFEQUATION(__)
-    then equationIfEquationAssign(e, context, &varD /*BUFD*/, &tempeqns/*EQNSBUF*/)
+    then equationIfEquationAssign(e, context, &varD /*BUFD*/, &tempeqns/*EQNSBUF*/, modelNamePrefix)
   case e as SES_ALGORITHM(__)
     then equationAlgorithm(e, context, &varD /*BUFD*/)
   case e as SES_LINEAR(__)
     then equationLinear(e, context, &varD /*BUFD*/)
   case e as SES_NONLINEAR(__) then
-    let &tempeqns += (e.eqs |> eq => 'void eqFunction_<%equationIndex(eq)%>(DATA*);' ; separator = "\n")
-    equationNonlinear(e, context, &varD /*BUFD*/)
+    let &tempeqns += (e.eqs |> eq => 'void <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*);' ; separator = "\n")
+    equationNonlinear(e, context, &varD /*BUFD*/, modelNamePrefix)
   case e as SES_WHEN(__)
     then equationWhen(e, context, &varD /*BUFD*/)
   case e as SES_RESIDUAL(__)
@@ -3309,19 +3351,19 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Tex
   /*
    <%dumpEqs(fill(eq,1))%>
    */
-  void eqFunction_<%ix%>(DATA *data)
+  void <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>(DATA *data)
   {
     <%&varD%>
     <%x%>
   }
   >>
   <<
-  eqFunction_<%ix%>(data);
+  <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>(data);
   >>
   )
 end equation_;
 
-template equationForward_(SimEqSystem eq, Context context)
+template equationForward_(SimEqSystem eq, Context context, String modelNamePrefixStr)
  "Generates an equation.
   This template should not be used for a SES_RESIDUAL.
   Residual equations are handled differently."
@@ -3334,7 +3376,7 @@ case SIMULATION_CONTEXT(genDiscrete=true) then
   else
   let ix = equationIndex(eq)
   <<
-  extern void eqFunction_<%ix%>(DATA* data);
+  extern void <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(DATA* data);
   >>
 else
  match eq
@@ -3343,11 +3385,11 @@ else
   else
   let ix = equationIndex(eq)
   <<
-  extern void eqFunction_<%ix%>(DATA* data);
+  extern void <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(DATA* data);
   >>
 end equationForward_;
 
-template equationNames_(SimEqSystem eq, Context context)
+template equationNames_(SimEqSystem eq, Context context, String modelNamePrefixStr)
  "Generates an equation.
   This template should not be used for a SES_RESIDUAL.
   Residual equations are handled differently."
@@ -3363,7 +3405,7 @@ case SIMULATION_CONTEXT(genDiscrete=true) then
   #ifdef _OMC_MEASURE_TIME
     SIM_PROF_TICK_EQEXT(<%ix%>);
   #endif
-  eqFunction_<%ix%>(data);
+  <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(data);
   #ifdef _OMC_MEASURE_TIME
     SIM_PROF_ACC_EQEXT(<%ix%>);
   #endif
@@ -3378,14 +3420,14 @@ else
   #ifdef _OMC_MEASURE_TIME
     SIM_PROF_TICK_EQEXT(<%ix%>);
   #endif
-  eqFunction_<%ix%>(data);
+  <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(data);
   #ifdef _OMC_MEASURE_TIME
     SIM_PROF_ACC_EQEXT(<%ix%>);
   #endif
   >>
 end equationNames_;
 
-template old_equation_(SimEqSystem eq, Context context, Text &varDecls)
+template old_equation_(SimEqSystem eq, Context context, Text &varDecls, String modelNamePrefix)
  "Generates an equation.
   This template should not be used for a SES_RESIDUAL.
   Residual equations are handled differently."
@@ -3401,72 +3443,12 @@ template old_equation_(SimEqSystem eq, Context context, Text &varDecls)
   case e as SES_LINEAR(__)
     then equationLinear(e, context, &varDecls)
   case e as SES_NONLINEAR(__)
-    then equationNonlinear(e, context, &varDecls)
+    then equationNonlinear(e, context, &varDecls, modelNamePrefix)
   case e as SES_WHEN(__)
     then equationWhen(e, context, &varDecls)
   else
     "NOT IMPLEMENTED EQUATION old_equation_"
 end old_equation_;
-
-template myequation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
- "Generates an equation.
-  This template should not be used for a SES_RESIDUAL.
-  Residual equations are handled differently."
-::=
-  let &tmp = buffer ""
-  match eq
-  case e as SES_SIMPLE_ASSIGN(__)
-    then
-    <<
-    printf("Line <%System.tmpTick()%>\n");
-    <%equationSimpleAssign(e, context, &varDecls /*BUFD*/)%>
-    printf("OK\n");
-    >>
-  case e as SES_ARRAY_CALL_ASSIGN(__)
-    then
-    <<
-    printf("Line <%System.tmpTick()%>\n");
-    <%equationArrayCallAssign(e, context, &varDecls /*BUFD*/)%>
-    printf("OK\n");
-    >>
-  case e as SES_ALGORITHM(__)
-    then
-    <<
-    printf("Line <%System.tmpTick()%>\n");
-    <%equationAlgorithm(e, context, &varDecls /*BUFD*/)%>
-    printf("OK\n");
-    >>
-  case e as SES_LINEAR(__)
-    then
-    <<
-    printf("Line <%System.tmpTick()%>\n");
-    <%equationLinear(e, context, &varDecls /*BUFD*/)%>
-    printf("OK\n");
-    >>
-  case e as SES_MIXED(__)
-    then
-    <<
-    printf("Line <%System.tmpTick()%>\n");
-    <%equationMixed(e, context, &varDecls, &tmp /*BUFD*/)%>
-    printf("OK\n");
-    >>
-  case e as SES_NONLINEAR(__)
-    then
-    <<
-    printf("Line <%System.tmpTick()%>\n");
-    <%equationNonlinear(e, context, &varDecls /*BUFD*/)%>
-    printf("OK\n");
-    >>
-  case e as SES_WHEN(__)
-    then
-    <<
-    printf("Line <%System.tmpTick()%>\n");
-    <%equationWhen(e, context, &varDecls /*BUFD*/)%>
-    printf("OK\n");
-    >>
-  else
-    "NOT IMPLEMENTED EQUATION myequation_"
-end myequation_;
 
 template inlineArray(Context context, String arr, ComponentRef c)
 ::= match context case INLINE_CONTEXT(__) then match c
@@ -3604,12 +3586,12 @@ case SES_LINEAR(__) then
 end equationLinear;
 
 
-template equationMixed(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Text &tmp)
+template equationMixed(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Text &tmp, String modelNamePrefixStr)
  "Generates a mixed equation system."
 ::=
 match eq
 case eqn as SES_MIXED(__) then
-  let contEqs = equation_(cont, context, &varDecls /*BUFD*/, &tmp)
+  let contEqs = equation_(cont, context, &varDecls /*BUFD*/, &tmp, modelNamePrefixStr)
   let numDiscVarsStr = listLength(discVars)
   <<
   #ifdef _OMC_MEASURE_TIME
@@ -3626,7 +3608,7 @@ case eqn as SES_MIXED(__) then
 end equationMixed;
 
 
-template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
+template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, String modelNamePrefix)
  "Generates a non linear equation system."
 ::=
   match eq
@@ -3634,7 +3616,7 @@ template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls /*BUF
       let size = listLength(crefs)
       let &tmp = buffer ""
       let innerBody = (eqs |> eq2 =>
-         functionExtraResidualsPreBody(eq2, &varDecls /*BUFD*/, &tmp)
+         functionExtraResidualsPreBody(eq2, &varDecls /*BUFD*/, &tmp, modelNamePrefix)
        ;separator="\n")
       let nonlinindx = indexNonLinearSystem
       <<
@@ -3798,7 +3780,7 @@ match ty
 end whenAssign;
 
 
-template equationIfEquationAssign(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Text &eqnsDecls /*EQNBUF*/)
+template equationIfEquationAssign(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Text &eqnsDecls /*EQNBUF*/, String modelNamePrefixStr)
  "Generates a if equation."
 ::=
 match eq
@@ -3807,7 +3789,7 @@ case SES_IFEQUATION(ifbranches=ifbranches, elsebranch=elsebranch) then
   let IfEquation = (ifbranches |> (e, eqns) hasindex index0 =>
     let condition = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let ifequations = ( eqns |> eqn =>
-       let eqnStr = equation_(eqn, context, &varDecls, &eqnsDecls /*EQNBUF*/)
+       let eqnStr = equation_(eqn, context, &varDecls, &eqnsDecls /*EQNBUF*/, modelNamePrefixStr)
        <<
        <%eqnStr%>
        >>
@@ -3822,7 +3804,7 @@ case SES_IFEQUATION(ifbranches=ifbranches, elsebranch=elsebranch) then
     >>
     ;separator="\n")
   let elseequations = ( elsebranch |> eqn =>
-     let eqnStr = equation_(eqn, context, &varDecls, &eqnsDecls /*EQNBUF*/)
+     let eqnStr = equation_(eqn, context, &varDecls, &eqnsDecls /*EQNBUF*/, modelNamePrefixStr)
        <<
        <%eqnStr%>
        >>
@@ -10470,7 +10452,7 @@ void (*omc_throw)() = omc_throw_function;
 int (*force_link_omp)(void) = omp_get_num_threads;
 #endif
 
-int rml_execution_failed()
+static int rml_execution_failed()
 {
   fflush(NULL);
   fprintf(stderr, "Execution failed!\n");
@@ -10485,22 +10467,11 @@ int main(int argc, char **argv)
   void *lst = mmc_mk_nil();
   int i = 0;
 
-  for (i=argc-1; i>0; i--)
+  for (i=argc-1; i>0; i--) {
     lst = mmc_mk_cons(mmc_mk_scon(argv[i]), lst);
+  }
 
-  MMC_TRY_TOP()
-
-  MMC_TRY_STACK()
-  <%name%>(threadData, lst);
-  MMC_ELSE()
-  rml_execution_failed();
-  fprintf(stderr, "Stack overflow detected and was not caught.\nSend us a bug report at <%url%>\n    Include the following trace:\n");
-  printStacktraceMessages();
-  fflush(NULL);
-  return 1;
-  MMC_CATCH_STACK()
-
-  MMC_CATCH_TOP(return rml_execution_failed());
+  <%mainTop('<%name%>(threadData, lst);',url)%>
   }
 
   fflush(NULL);
