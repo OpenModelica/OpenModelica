@@ -528,7 +528,7 @@ algorithm
 
     case (NFSCodeEnv.CLASS(cls = SCode.CLASS(restriction = res)), _, _)
       equation
-        true = isInstantiableClassRestriction(res);
+        true = SCode.isInstantiableClassRestriction(res);
       then
         ();
 
@@ -550,22 +550,6 @@ algorithm
 
   end matchcontinue;
 end checkInstanceRestriction;
-
-protected function isInstantiableClassRestriction
-  input SCode.Restriction inRestriction;
-  output Boolean outIsInstantiable;
-algorithm
-  outIsInstantiable := match(inRestriction)
-    case SCode.R_CLASS() then true;
-    case SCode.R_MODEL() then true;
-    case SCode.R_RECORD(_) then true;
-    case SCode.R_BLOCK() then true;
-    case SCode.R_CONNECTOR(isExpandable = _) then true;
-    case SCode.R_TYPE() then true;
-    case SCode.R_ENUMERATION() then true;
-    else false;
-  end match;
-end isInstantiableClassRestriction;
 
 public function checkPartialInstance
   "Checks if the given item is partial, and prints out an error message in that

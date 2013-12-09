@@ -5413,5 +5413,21 @@ algorithm
   end matchcontinue;
 end getExternalObjectConstructor;
 
+public function isInstantiableClassRestriction
+  input Restriction inRestriction;
+  output Boolean outIsInstantiable;
+algorithm
+  outIsInstantiable := match(inRestriction)
+    case R_CLASS() then true;
+    case R_MODEL() then true;
+    case R_RECORD(_) then true;
+    case R_BLOCK() then true;
+    case R_CONNECTOR(isExpandable = _) then true;
+    case R_TYPE() then true;
+    case R_ENUMERATION() then true;
+    else false;
+  end match;
+end isInstantiableClassRestriction;
+
 end SCode;
 

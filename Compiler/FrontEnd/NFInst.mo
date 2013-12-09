@@ -1036,9 +1036,7 @@ algorithm
       equation
         // Lookup the class of the component.
         (cls_entry, env) = NFLookup.lookupClassName(tpath, inEnv, info);
-        //(cls_entry, env) = redeclareElement(cls_entry, env);
-
-        // NFSCodeCheck.checkPartialInstance(cls_entry, info);
+        checkPartialInstance(cls_entry, info);
 
         // Instantiate array dimensions and add them to the prefix.
         prefix = NFEnv.scopePrefix(inEnv);
@@ -1046,7 +1044,7 @@ algorithm
         comp_prefix = NFInstPrefix.add(name, dims, prefix);
 
         // Check that it's legal to instantiate the class.
-        //NFSCodeCheck.checkInstanceRestriction(cls_entry, prefix, info);
+        checkInstanceRestriction(cls_entry, name, info);
 
         // Translate the component's modification.
         dim_count = listLength(ad);
@@ -1086,6 +1084,60 @@ algorithm
 
   end match;
 end instComponent;
+
+protected function checkInstanceRestriction
+  input Entry inClass;
+  input String inName;
+  input Absyn.Info inInfo;
+algorithm
+  _ := matchcontinue(inClass, inName, inInfo)
+    local
+      SCode.Restriction res;
+      String res_str;
+
+    case (_, _, _)
+      equation
+        SCode.CLASS(restriction = res) = NFEnv.entryElement(inClass);
+        true = SCode.isInstantiableClassRestriction(res);
+      then
+        ();
+
+    else
+      equation
+        SCode.CLASS(restriction = res) = NFEnv.entryElement(inClass);
+        res_str = SCodeDump.restrictionStringPP(res);
+        Error.addSourceMessage(Error.INVALID_CLASS_RESTRICTION,
+          {res_str, inName}, inInfo);
+      then
+        fail();
+
+  end matchcontinue;
+end checkInstanceRestriction;
+
+protected function checkPartialInstance
+  input Entry inEntry;
+  input Absyn.Info inInfo;
+algorithm
+  _ := matchcontinue(inEntry, inInfo)
+    local
+      String name;
+
+    case (_, _)
+      equation
+        SCode.CLASS(partialPrefix = SCode.NOT_PARTIAL()) =
+          NFEnv.entryElement(inEntry);
+      then
+        ();
+
+    else
+      equation
+        SCode.CLASS(name = name) = NFEnv.entryElement(inEntry);
+        Error.addSourceMessage(Error.INST_PARTIAL_CLASS, {name}, inInfo);
+      then
+        fail();
+
+  end matchcontinue;
+end checkPartialInstance;
 
 protected function instExtends
   input SCode.Element inExtends;
