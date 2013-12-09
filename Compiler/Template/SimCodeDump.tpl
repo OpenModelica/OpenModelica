@@ -108,7 +108,16 @@ template dumpVars(list<SimVar> vars, Boolean withOperations)
   vars |> v as SIMVAR(__) =>
   let variability = getVariablity(varKind)
   <<
-  <variable name="<%Util.escapeModelicaStringToXmlString(crefStrNoUnderscore(v.name))%>" comment="<%escapeModelicaStringToXmlString(v.comment)%>" variability = "<%variability%>" isDiscrete = "<%isDiscrete%>">
+  <%match v
+  case SIMVAR(arrayCref=SOME(c)) then
+  <<
+  <variable name="<%Util.escapeModelicaStringToXmlString(crefStrNoUnderscore(c))%>" comment="<%escapeModelicaStringToXmlString(v.comment)%>" variability = "<%variability%>" isDiscrete = "<%isDiscrete%>">
+    <%ScalarVariableType(unit, displayUnit, minValue, maxValue, initialValue, nominalValue, isFixed, type_)%>
+    <%dumpAlias(v.aliasvar)%>
+    <%dumpElementSource(v.source,withOperations)%>
+  </variable><%\n%>
+  >>
+  %><variable name="<%Util.escapeModelicaStringToXmlString(crefStrNoUnderscore(v.name))%>" comment="<%escapeModelicaStringToXmlString(v.comment)%>" variability = "<%variability%>" isDiscrete = "<%isDiscrete%>">
     <%ScalarVariableType(unit, displayUnit, minValue, maxValue, initialValue, nominalValue, isFixed, type_)%>
     <%dumpAlias(v.aliasvar)%>
     <%dumpElementSource(v.source,withOperations)%>

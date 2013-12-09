@@ -5289,6 +5289,7 @@ public function extractUniqueCrefsFromExp
   input DAE.Exp inExp;
   output list<DAE.ComponentRef> ocrefs;
 algorithm
+  // ocrefs := List.unique(List.flatten(List.map1(extractCrefsFromExp(inExp), ComponentReference.expandCref, true)));
   ocrefs := List.unique(extractCrefsFromExp(inExp));
 end extractUniqueCrefsFromExp;
 
