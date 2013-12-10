@@ -66,11 +66,11 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
   iData->current_var = 0;
   iData->current_time = 0;
   iData->data = data;
-  iData->mayer_index = 0;
-  iData->lagrange_index = 1;
-
   iData->mayer = (short) (mayer(data, &obj) >= 0);
   iData->lagrange = (short) (lagrange(data, &obj) >= 0);
+
+  iData->mayer_index = 0;
+  iData->lagrange_index = (iData->mayer)? 1 : 0;
 
   iData->matrixA = data->callback->initialAnalyticJacobianA((void*) iData->data);
   iData->matrixB = data->callback->initialAnalyticJacobianB((void*) iData->data);
@@ -135,16 +135,8 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
     /* AddIpoptNumOption(nlp,"derivative_test_perturbation",1e-6); */
     AddIpoptIntOption(nlp, "max_iter", 5000);
 
-    for(i=0, tmp = 1;i<=4;++i){
-        res = IpoptSolve(nlp, (*iData).v, NULL, &obj, (*iData).mult_g, (*iData).mult_x_L, (*iData).mult_x_U, (void*)iData);
-        if(res!= Solve_Succeeded)
-          {
-            AddIpoptNumOption(nlp,"mu_init",tmp);
-            tmp *=10.0;
-            AddIpoptIntOption(nlp, "max_iter", 500);
-          }else {break;}
-    }
-    
+    res = IpoptSolve(nlp, (*iData).v, NULL, &obj, (*iData).mult_g, (*iData).mult_x_L, (*iData).mult_x_U, (void*)iData);
+
     FreeIpoptProblem(nlp);
 
     if(ACTIVE_STREAM(LOG_IPOPT))
