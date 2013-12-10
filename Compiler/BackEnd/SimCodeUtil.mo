@@ -5370,40 +5370,40 @@ end findSimVars;
 
 protected function findSimVarsCompare 
    input tuple<SimCode.SimVar, tuple<list<DAE.ComponentRef>, list<SimCode.SimVar>>> inTuple; 
- 	 output tuple<SimCode.SimVar, tuple<list<DAE.ComponentRef>, list<SimCode.SimVar>>> outTuple; 
- 	algorithm 
- 		  outTuple := matchcontinue(inTuple) 
- 		  local 
- 		    DAE.ComponentRef cref; 
- 		    list<DAE.ComponentRef> crefs; 
- 		    list<SimCode.SimVar> simvars; 
- 		    SimCode.SimVar var; 
- 		  case((var as (SimCode.SIMVAR(name=cref)), (crefs, simvars))) 
- 		    equation 
- 		      true = listMember(cref, crefs); 
- 		      true = not List.isMemberOnTrue(var, simvars, compareSimVarName); 
- 		    then ((var, (crefs,  listAppend(simvars, {var})))); 
- 		  case(_) then inTuple; 
- 		  end matchcontinue; 
+    output tuple<SimCode.SimVar, tuple<list<DAE.ComponentRef>, list<SimCode.SimVar>>> outTuple; 
+   algorithm 
+       outTuple := matchcontinue(inTuple) 
+       local 
+         DAE.ComponentRef cref; 
+         list<DAE.ComponentRef> crefs; 
+         list<SimCode.SimVar> simvars; 
+         SimCode.SimVar var; 
+       case((var as (SimCode.SIMVAR(name=cref)), (crefs, simvars))) 
+         equation 
+           true = listMember(cref, crefs); 
+           true = not List.isMemberOnTrue(var, simvars, compareSimVarName); 
+         then ((var, (crefs,  listAppend(simvars, {var})))); 
+       case(_) then inTuple; 
+       end matchcontinue; 
 end findSimVarsCompare; 
 
 protected function compareSimVarName 
   input SimCode.SimVar var; 
   input SimCode.SimVar var1; 
   output Boolean b; 
- 	algorithm 
- 		  b := matchcontinue(var, var1) 
- 		    local 
- 		      DAE.ComponentRef name, name1; 
- 		    case (SimCode.SIMVAR(name = name), SimCode.SIMVAR(name = name1))     
- 		      equation 
- 		        true = ComponentReference.crefEqual(name, name1); 
- 		      then true; 
- 		     
- 		    else false; 
- 		  end matchcontinue; 
+   algorithm 
+       b := matchcontinue(var, var1) 
+         local 
+           DAE.ComponentRef name, name1; 
+         case (SimCode.SIMVAR(name = name), SimCode.SIMVAR(name = name1))     
+           equation 
+             true = ComponentReference.crefEqual(name, name1); 
+           then true; 
+          
+         else false; 
+       end matchcontinue; 
 end compareSimVarName;
- 	
+   
 protected function creatallDiffedVars
   // function: help function for creatallDiffedVars
   // author: wbraun
