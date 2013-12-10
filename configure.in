@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([OpenModelica],[dev],[https://trac.modelica.org/Modelica],[openmodelica],[https://trac.openmodelica.org/OpenModelica])
+AC_INIT([OpenModelica],[dev],[https://trac.openmodelica.org/OpenModelica],[openmodelica],[https://openmodelica.org])
 AC_SUBST(date)
 AC_SUBST(rmlc_bin)
 AC_SUBST(rmlhome)
