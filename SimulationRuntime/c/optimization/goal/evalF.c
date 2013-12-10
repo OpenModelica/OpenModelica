@@ -250,8 +250,7 @@ int diff_symColoredObject(IPOPT_DATA_ *iData, double *dF, int this_it)
       }
     }
   }
-  for(i =0; i<=nx; ++i)
-    dF[i] = iData->gradFomc[this_it][i];
+  memcpy(dF, iData->gradFomc[this_it], sizeof(double)*iData->nv);
   return 0;
 }
 #endif
