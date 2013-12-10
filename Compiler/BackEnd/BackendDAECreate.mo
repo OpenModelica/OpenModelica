@@ -4741,8 +4741,7 @@ algorithm
     case (v, e, true, {DAE.OPTIMIZATION_ATTRS(objetiveE=mayer, objectiveIntegrandE=lagrange)})
       equation
         leftcref = ComponentReference.makeCrefIdent("$TMP_mayerTerm", DAE.T_REAL_DEFAULT, {});
-        dummyVar = BackendDAE.VAR(DAE.CREF_IDENT("$TMP_mayerTerm", DAE.T_REAL_DEFAULT, {}), BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
-        dummyVar = BackendVariable.setVarDirection(dummyVar, DAE.OUTPUT());
+        dummyVar = BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
         objectEqn = BackendEquation.generateSolvedEqnsfromOption(leftcref, mayer, DAE.emptyElementSource);
         b = not List.isEmpty(objectEqn);
         
@@ -4750,8 +4749,7 @@ algorithm
         e = Util.if_(b, listAppend(e, objectEqn), e);
 
         leftcref = ComponentReference.makeCrefIdent("$TMP_lagrangeTerm", DAE.T_REAL_DEFAULT, {});
-        dummyVar = BackendDAE.VAR(DAE.CREF_IDENT("$TMP_lagrangeTerm", DAE.T_REAL_DEFAULT, {}), BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
-        dummyVar = BackendVariable.setVarDirection(dummyVar, DAE.OUTPUT());
+        dummyVar = BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
         objectEqn = BackendEquation.generateSolvedEqnsfromOption(leftcref, lagrange, DAE.emptyElementSource);
         b = not List.isEmpty(objectEqn);
         

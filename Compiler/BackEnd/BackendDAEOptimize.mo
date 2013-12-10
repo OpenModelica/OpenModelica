@@ -3166,7 +3166,6 @@ algorithm
       BackendDAE.BackendDAE backendDAE,backendDAE2;
 
       list<BackendDAE.Var>  varlst, knvarlst,  states, inputvars, inputvars2, outputvars, paramvars, states_inputs;
-      BackendDAE.Var mayer, lagrange;
       list<DAE.ComponentRef> comref_states, comref_inputvars, comref_outputvars, comref_vars, comref_knvars;
       DAE.ComponentRef leftcref;
 
@@ -3263,16 +3262,12 @@ algorithm
         inputvarsarr = BackendVariable.listVar1(inputvars);
         paramvarsarr = BackendVariable.listVar1(paramvars);
         outputvarsarr = BackendVariable.listVar1(outputvars);
-
-        leftcref = ComponentReference.makeCrefIdent("$TMP_mayerTerm", DAE.T_REAL_DEFAULT, {});
-        mayer = BackendDAE.VAR(DAE.CREF_IDENT("$TMP_mayerTerm", DAE.T_REAL_DEFAULT, {}), BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
-        mayer = BackendVariable.setVarDirection(mayer, DAE.OUTPUT());      
-         
-        leftcref = ComponentReference.makeCrefIdent("$TMP_lagrangeTerm", DAE.T_REAL_DEFAULT, {});
-        lagrange = BackendDAE.VAR(DAE.CREF_IDENT("$TMP_lagrangeTerm", DAE.T_REAL_DEFAULT, {}), BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
-        lagrange = BackendVariable.setVarDirection(lagrange, DAE.OUTPUT());   
-        
-        object = BackendVariable.listVar1({mayer,lagrange});
+        //BackendDump.printVariables(outputvarsarr);
+        object = checkObjectIsSet(outputvarsarr,"$TMP_mayerTerm");
+        object = BackendVariable.mergeVariables(object, checkObjectIsSet(outputvarsarr,"$TMP_lagrangeTerm"));
+        //BackendDump.printVariables(object);
+        //print(intString(BackendVariable.numVariables(object)));
+        //object = BackendVariable.listVar1(object);
 
         // Differentiate the System w.r.t states for matrices A
         (linearModelMatrix, sparsePattern, sparseColoring, functionTree) = createJacobian(backendDAE2,states,statesarr,inputvarsarr,paramvarsarr,statesarr,varlst,"A");
@@ -3293,7 +3288,7 @@ algorithm
 
 
         // Differentiate the System w.r.t inputs for matrices D
-        (linearModelMatrix, sparsePattern, sparseColoring, funcs) = createJacobian(backendDAE2,inputvars2,statesarr,inputvarsarr,paramvarsarr,outputvarsarr,varlst,"D");
+        (linearModelMatrix, sparsePattern, sparseColoring, funcs) = createJacobian(backendDAE2,{},statesarr,inputvarsarr,paramvarsarr,BackendVariable.emptyVars(),varlst,"D");
         functionTree = DAEUtil.joinAvlTrees(functionTree, funcs);
         linearModelMatrices = listAppend(linearModelMatrices,{(SOME(linearModelMatrix),sparsePattern,sparseColoring)});
         Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> generated system for matrix D time: " +& realString(clock()) +& "\n");
@@ -3869,6 +3864,29 @@ algorithm
       then fail();
   end matchcontinue;
 end differentiateVarWithRespectToX;
+
+protected function checkObjectIsSet
+"check: mayer or lagrange term are set"
+input BackendDAE.Variables inVars;
+input String CrefName;
+output BackendDAE.Variables outVar;
+
+algorithm
+  outVar := matchcontinue(inVars,CrefName)
+  local
+    DAE.ComponentRef leftcref;
+    BackendDAE.Var dummyVar;
+  case(_,_) equation
+    leftcref = ComponentReference.makeCrefIdent(CrefName, DAE.T_REAL_DEFAULT, {});
+    failure((_,_)=BackendVariable.getVar(leftcref,inVars));
+  then  BackendVariable.emptyVars();
+  else equation
+    leftcref = ComponentReference.makeCrefIdent(CrefName, DAE.T_REAL_DEFAULT, {});
+    dummyVar = BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(),  DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());   
+    then BackendVariable.listVar1({dummyVar});
+  end matchcontinue;
+
+end checkObjectIsSet;
 
 // =============================================================================
 // parallel backend stuff
