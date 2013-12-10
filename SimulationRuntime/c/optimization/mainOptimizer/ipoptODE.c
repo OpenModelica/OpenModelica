@@ -129,8 +129,10 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
 
      AddIpoptStrOption(nlp,"nlp_scaling_method","gradient-based");
      AddIpoptNumOption(nlp,"mu_init",1e-6);
-     if(ACTIVE_STREAM(LOG_JAC))
+     if(ACTIVE_STREAM(LOG_JAC)){
+       AddIpoptIntOption(nlp, "print_level", 4);
        AddIpoptStrOption(nlp, "derivative_test", "second-order");
+     }
      /*AddIpoptStrOption(nlp, "derivative_test_print_all", "yes");*/
     /* AddIpoptNumOption(nlp,"derivative_test_perturbation",1e-6); */
     AddIpoptIntOption(nlp, "max_iter", 5000);

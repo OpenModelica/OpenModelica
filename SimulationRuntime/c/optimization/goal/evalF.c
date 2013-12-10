@@ -208,19 +208,10 @@ int diff_symColoredObject(IPOPT_DATA_ *iData, double *dF, int this_it)
   int i,j,l,ii,nx;
   int *cC,*lindex;
 
-#if 1
-  for(i = 0; i<iData->nv; ++i)
-  {
-    data->simulationInfo.analyticJacobians[index].seedVars[i] = 1.0;
-    data->callback->functionJacC_column(data);
-    data->simulationInfo.analyticJacobians[index].seedVars[i] = 0.0;
-      dF[i] = data->simulationInfo.analyticJacobians[index].resultVars[this_it];
-  }
-
-#else
-
   /*ToDo*/
   nx = data->simulationInfo.analyticJacobians[index].sizeCols;
+
+  
   cC =  (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols;
   lindex = (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex;
 
@@ -236,14 +227,18 @@ int diff_symColoredObject(IPOPT_DATA_ *iData, double *dF, int this_it)
 
     data->callback->functionJacC_column(data);
 
-    for(ii = 0; ii < nx; ii++)
+    for(ii = 0; ii < nx; ++ii)
     {
       if(cC[ii] == i)
       {
         if(ii == 0) j = 0;
         else j = lindex[ii-1];
-        if(j<lindex[ii])
-          dF[ii] = data->simulationInfo.analyticJacobians[index].resultVars[this_it];
+        
+        for(; j<lindex[ii]; ++j)
+        {
+          l = data->simulationInfo.analyticJacobians[index].sparsePattern.index[j];
+          iData->gradFomc[l][ii] = data->simulationInfo.analyticJacobians[index].resultVars[l];
+        }
       }
     }
 
@@ -255,7 +250,8 @@ int diff_symColoredObject(IPOPT_DATA_ *iData, double *dF, int this_it)
       }
     }
   }
-#endif
+  for(i =0; i<=nx; ++i)
+    dF[i] = iData->gradFomc[this_it][i];
   return 0;
 }
 #endif

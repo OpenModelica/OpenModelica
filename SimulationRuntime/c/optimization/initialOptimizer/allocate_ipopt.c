@@ -125,8 +125,8 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   for(i = 0; i < iData->nx; i++)
     iData->J0[i] = (double*) calloc(iData->nv, sizeof(double));
 
-  iData->gradFomc = (double**) malloc((iData->nx+2) * sizeof(double*));
-  for(i = 0; i < iData->nx; i++)
+  iData->gradFomc = (double**) malloc((2) * sizeof(double*));
+  for(i = 0; i < 2; i++)
     iData->gradFomc[i] = (double*) calloc(iData->nv, sizeof(double));
 
   iData->numJ = (double**) malloc(iData->nx * sizeof(double*));
