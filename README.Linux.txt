@@ -220,4 +220,4 @@ GENERAL NOTES:
 - On some Linux systems when running simulate(Model, ...) the
   executable for the Model enters an infinite loop. To fix this, add -ffloat-store to CFLAGS
 
-Last updated 2013-04-05. Much is still outdated.
+Last updated 2013-12-10. Much is still outdated.
