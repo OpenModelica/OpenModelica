@@ -92,6 +92,21 @@ algorithm
   outPrefix := fromPath2(inPath, inPrefix);
 end addPath;
 
+public function addOptPath
+  input Option<Absyn.Path> inOptPath;
+  input Prefix inPrefix;
+  output Prefix outPrefix;
+algorithm
+  outPrefix := match(inOptPath, inPrefix)
+    local
+      Absyn.Path p;
+
+    case (NONE(), _) then inPrefix;
+    case (SOME(p), _) then addPath(p, inPrefix);
+
+  end match;
+end addOptPath;
+    
 public function addString
   "Prefixes the prefix with the given String."
   input String inName;

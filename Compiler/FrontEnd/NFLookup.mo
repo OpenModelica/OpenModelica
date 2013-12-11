@@ -241,6 +241,28 @@ algorithm
   end match;
 end lookupTypeSpec;
 
+public function lookupScopeEntry
+  input Env inEnv;
+  output Entry outEntry;
+  output Env outEnv;
+algorithm
+  (outEntry, outEnv) := match(inEnv)
+    local
+      String scope_name;
+      Env env;
+      Entry entry;
+
+    case _
+      equation
+        scope_name = NFEnv.scopeName(inEnv);
+        env = NFEnv.exitScope(inEnv);
+        entry = NFEnv.lookupEntry(scope_name, env);
+      then
+        (entry, env);
+
+  end match;
+end lookupScopeEntry;
+
 protected function makeDummyMetaType
   input String inTypeName;
   output SCode.Element outClass;
@@ -1044,7 +1066,7 @@ algorithm
       inOrigins, inEnv, inSplitFunc, inInfo, inAccumEnv)
     local
       list<SCode.Element> elems, cls_vars, exts, imps;
-      Env env;
+      Env env, der_env;
       list<EntryOrigin> origin;
       Entry entry;
       list<SCode.Enum> enums;
@@ -1056,6 +1078,8 @@ algorithm
       SCode.Mod smod;
       Modifier mod;
       String enum_name;
+      Absyn.ArrayDim ad;
+      Integer dim_count;
 
     case (SCode.PARTS(elementLst = elems), _, _, _, _, _, _, env)
       equation
@@ -1082,22 +1106,25 @@ algorithm
       then
         (env, ext_mods);
 
-    case (SCode.DERIVED(typeSpec = ty, modifications = smod), _, _, _, _, _, _, _)
+    case (SCode.DERIVED(typeSpec = ty, modifications = smod,
+        attributes = SCode.ATTR(arrayDims = ad)), _, _, _, _, _, _, _)
       equation
         // Apply the modifier from the derived declaration.
-        // TODO: The prefix and dimensions are wrong.
-        mod = NFMod.translateMod(smod, "", 0, inEnv);
+        dim_count = listLength(ad);
+        mod = NFMod.translateMod(smod, "", dim_count, inEnv);
         mod = NFMod.mergeMod(inModifier, mod);
 
-        (entry, env) = lookupTypeSpec(ty, inEnv, inInfo);
+        (entry, der_env) = lookupTypeSpec(ty, inEnv, inInfo);
         (el as SCode.CLASS(classDef = cdef)) = NFEnv.entryElement(entry);
         // TODO: Only create this environment if needed, i.e. if the cdef
         // contains extends.
-        env = openClassScope(el, NONE(), env);
-        (env, _) = populateEnvWithClassDef(cdef, mod, inVisibility,
+        env = openClassScope(el, NONE(), der_env);
+        (der_env, _) = populateEnvWithClassDef(cdef, mod, inVisibility,
           inOrigins, env, elementSplitterExtends, inInfo, inAccumEnv);
+
+        env = NFEnv.copyScopePrefix(inEnv, env);
         (env, ext_mods) = populateEnvWithClassDef(cdef, mod,
-          inVisibility, inOrigins, env, inSplitFunc, inInfo, inAccumEnv);
+          inVisibility, inOrigins, der_env, inSplitFunc, inInfo, env);
       then
         (env, ext_mods);
 

@@ -3788,19 +3788,44 @@ algorithm
   outPath := match (inPath)
     local
       Ident str;
-      Path p_1,p;
-    case (IDENT(name = _)) then fail();
-    case (QUALIFIED(name = str,path = IDENT(name = _))) then IDENT(str);
-    case (QUALIFIED(name = str,path = p))
+      Path p;
+
+    case QUALIFIED(name = str, path = IDENT(name = _)) 
+      then IDENT(str);
+
+    case QUALIFIED(name = str, path = p)
       equation
-        p_1 = stripLast(p);
+        p = stripLast(p);
       then
-        QUALIFIED(str,p_1);
-    case (FULLYQUALIFIED(p)) equation
-      p_1 = stripLast(p);
-    then FULLYQUALIFIED(p_1);
+        QUALIFIED(str, p);
+
+    case FULLYQUALIFIED(p)
+      equation
+        p = stripLast(p);
+      then
+        FULLYQUALIFIED(p);
+
   end match;
 end stripLast;
+
+public function stripLastOpt
+  input Path inPath;
+  output Option<Path> outPath;
+algorithm
+  outPath := match(inPath)
+    local
+      Path p;
+
+    case IDENT(name = _) then NONE();
+
+    else
+      equation
+        p = stripLast(inPath);
+      then
+        SOME(p);
+
+  end match;
+end stripLastOpt;
 
 public function crefStripLast "Returns the path given as argument to
   the function minus the last ident."

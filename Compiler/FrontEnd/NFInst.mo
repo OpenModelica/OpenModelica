@@ -981,7 +981,7 @@ algorithm
         Absyn.QUALIFIED(name = enum_idx_str, path = tpath) = tpath;
         enum_idx = stringInt(enum_idx_str);
 
-        (cls_entry, env) = NFLookup.lookupClassName(tpath, inEnv, info);
+        (cls_entry, env) = NFLookup.lookupScopeEntry(inEnv);
         prefix = NFEnv.scopePrefix(inEnv);
         path = NFInstPrefix.prefixPath(Absyn.IDENT(name), prefix);
 
@@ -2219,7 +2219,7 @@ algorithm
 
         // If the cref refers to a package constant, make sure it's instantiated
         // and added to the symbol table.
-        opt_prefix = makePackageConstantPrefix(is_class, opt_prefix, env, base_env);
+        opt_prefix = makePackageConstantPrefix(is_class, opt_prefix, inCrefPath, prefix);
         globals = instPackageConstant(cref, entry, env, opt_prefix, inInfo, inGlobals);
       then
         (cref, globals);
@@ -2278,52 +2278,34 @@ protected function makePackageConstantPrefix
    a package constant that needs to be instantiated."
   input Boolean inIsClass;
   input Option<Prefix> inPrefix;
-  input Env inEnv;
-  input Env inBaseEnv;
+  input Absyn.Path inCrefPath;
+  input Prefix inCrefPrefix;
   output Option<Prefix> outPrefix;
 algorithm
-  outPrefix := matchcontinue(inIsClass, inPrefix, inEnv, inBaseEnv)
+  outPrefix :=
+  match(inIsClass, inPrefix, inCrefPath, inCrefPrefix)
     local
       Prefix prefix;
-      list<String> env_strl, base_env_strl;
 
-    // The first part of the cref refers to a class and the scope has a prefix.
-    // This happens when for example a cref refer to a package constant in a
-    // local class. Add the difference of the environment the cref was found in
-    // and the environment where the first identifier of the cref was found in
-    // to the scope's prefix.
-    case (true, SOME(prefix), _, _) 
-      equation
-        env_strl = NFEnv.scopeNames(inEnv);
-        base_env_strl = NFEnv.scopeNames(inBaseEnv);
-        (env_strl, _) =
-          List.removeEqualPrefix(env_strl, base_env_strl, stringEq);
-        prefix = NFInstPrefix.toPackagePrefix(prefix);
-        prefix = NFInstPrefix.addStringList(env_strl, prefix);
-      then
-        SOME(prefix);
-
-    // A component in a scope with a package prefix, i.e. a package constant
-    // which should be instantiated because it's a dependency of another package
-    // constant (due to e.g. a binding or modifier). Use the given prefix.
+    // A component found in a scope with a prefix. If the prefix is a package
+    // prefix then the cref is a package constant which should be instantiated
+    // because it's a dependency of another package constant, in which case the
+    // given prefix should be used. Otherwise it's not a package constant and
+    // will be instantiated normally, in which case NONE() is returned.
     case (false, SOME(prefix), _, _)
+      then Util.if_(NFInstPrefix.isPackagePrefix(prefix), inPrefix, NONE());
+        
+    // Otherwise we have a component without a prefix or a class.
+    else
       equation
-        true = NFInstPrefix.isPackagePrefix(prefix);
-      then
-        inPrefix;
-
-    // A component in a scope with a non-package prefix, not a package constant.
-    case (false, SOME(_), _, _) then NONE();
-
-    // Anything in a scope without a prefix is a package constant that should be
-    // prefixed with the environment path.
-    case (_, NONE(), _, _)
-      equation
-        prefix = NFEnv.envPrefix(inEnv);
+        // If the scope has a prefix, use that. Otherwise use the cref prefix.
+        prefix = Util.getOptionOrDefault(inPrefix, inCrefPrefix);
+        // Add the cref path except for the last identifier to the prefix.
+        prefix = NFInstPrefix.addOptPath(Absyn.stripLastOpt(inCrefPath), prefix);
       then
         SOME(prefix);
 
-  end matchcontinue;
+  end match;
 end makePackageConstantPrefix;
 
 protected function instPackageConstant

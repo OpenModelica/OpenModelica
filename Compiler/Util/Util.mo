@@ -2323,11 +2323,12 @@ public function stringOption "author: PA
   input Option<String> inStringOption;
   output String outString;
 algorithm
-  outString:=
-  match (inStringOption)
-    local String s;
-    case (NONE()) then "";
-    case (SOME(s)) then s;
+  outString:= match(inStringOption)
+    local 
+      String s;
+
+    case SOME(s) then s;
+    else "";
   end match;
 end stringOption;
 
@@ -2344,26 +2345,31 @@ end getOption;
 public function getOptionOrDefault
 "Returns an option value if SOME, otherwise the default"
   input Option<Type_a> inOption;
-  input Type_a default;
-  output Type_a unOption;
+  input Type_a inDefault;
+  output Type_a outOption;
   replaceable type Type_a subtypeof Any;
 algorithm
-  unOption := matchcontinue (inOption,default)
-    local Type_a item;
-    case (SOME(item),_) then item;
-    case (_,_) then default;
-  end matchcontinue;
+  outOption := match(inOption, inDefault)
+    local
+      Type_a item;
+
+    case (SOME(item), _) then item;
+    else inDefault;
+  end match;
 end getOptionOrDefault;
 
 public function genericOption "author: BZ
   Returns a list with single value or an empty list if there is no optional value."
   input Option<Type_a> inOption;
-  output list<Type_a> unOption;
+  output list<Type_a> outOption;
   replaceable type Type_a subtypeof Any;
-algorithm unOption := match (inOption)
-    local Type_a item;
-    case (NONE()) then {};
-    case (SOME(item)) then {item};
+algorithm 
+  outOption := match(inOption)
+    local
+      Type_a item;
+
+    case SOME(item) then {item};
+    else {};
   end match;
 end genericOption;
 
