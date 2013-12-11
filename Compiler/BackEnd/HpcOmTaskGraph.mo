@@ -1579,7 +1579,7 @@ end createSccMapping0;
 
 
 protected function othersInTearComp " gets the remaining algebraic vars and equations from the torn block.
-this function is just for checking if there exists an equation with more than one var(because i dont know why theres a list of vars)
+Remark: there can be more than 1 var per equation.
 author:Waurich TUD 2013-06"
   input tuple<Integer,list<Integer>> otherEqnVarTpl;
   input tuple<list<Integer>,list<Integer>> othersIn;
@@ -1595,10 +1595,9 @@ algorithm
     case(_,_)
       equation
       (eq,varTplLst)=otherEqnVarTpl;  
-      true = intEq(listLength(varTplLst),1);
       var = listGet(varTplLst,1);
       (eqLst,varLst) = othersIn;
-      varLst = var::varLst;
+      varLst = listAppend(varTplLst,varLst);
       eqLst = eq::eqLst;
       then
         ((eqLst,varLst));
