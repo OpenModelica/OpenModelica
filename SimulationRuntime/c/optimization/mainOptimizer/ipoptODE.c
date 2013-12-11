@@ -178,6 +178,7 @@ int refreshSimData(double *x, double *u, double t, IPOPT_DATA_ *iData)
 
   sData->timeValue = t;
   /* updateContinuousSystem(iData->data); */
+  data->simulationInfo.discreteCall=1;
   data->callback->functionODE(data);
 
   return 0;

@@ -149,7 +149,7 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
       for(p = 1;p <iData->deg +1;++p,x += iData->nv)
       {
         mayer_yes = iData->mayer && ii+1 == iData->nsi && p == iData->deg;
-        num_hessian(x, iData->time[p], iData,ll,iData->lagrange,mayer_yes,obj_factor);
+        num_hessian(x, iData->time[ii*iData->deg + p], iData,ll,iData->lagrange,mayer_yes,obj_factor);
 
         for(i=0;i< iData->nv;++i)
           for(j = 0; j< i+1; ++j)
