@@ -940,7 +940,7 @@ algorithm
         eqLst = List.fold2(List.intRange(listLength(resEqIdcs)),replaceAtPositionFromList,resEqs,resEqIdcs,eqLst);  // replaces the old residualEquations with the new ones
         vars = BackendVariable.listVar1(varLst);  // !!! BackendVariable.listVar outputs the reversed order therefore listVar1
         eqs = BackendEquation.listEquation(eqLst);      
-        print("number of equations added: "+&intString(listLength(eqLst))+&" and the size of the linear torn system: "+&intString(listLength(tvarIdcs))+&"\n");
+        Debug.fcall(Flags.HPCOM_DUMP,print,"number of equations added: "+&intString(listLength(eqLst))+&" and the size of the linear torn system: "+&intString(listLength(tvarIdcs))+&"\n");
         //print("new systemsize:"+&intString(listLength(varLst))+&" vars. and "+&intString(listLength(eqLst))+&" eqs\n");
                 
         // build the matching
