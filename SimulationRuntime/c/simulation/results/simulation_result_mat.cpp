@@ -217,8 +217,7 @@ void mat4_init(simulation_result *self,DATA *data)
   matData->startTime = data->simulationInfo.startTime;
   matData->stopTime = data->simulationInfo.stopTime;
 
-  try
-  {
+  try {
     /* open file */
     matData->fp.open(self->filename, std::ofstream::binary|std::ofstream::trunc);
     if(!matData->fp) {

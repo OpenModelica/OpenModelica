@@ -330,132 +330,96 @@ int startInteractiveSimulation(int argc, char**argv, void* data)
  * Read the variable filter and mark variables that should not be part of the result file.
  * This phase is skipped for interactive simulations
  */
-void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilter)
+void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilter, int resultFormatHasCheapAliasesAndParameters)
 {
 #ifndef _MSC_VER
+  int cheap = resultFormatHasCheapAliasesAndParameters;
   std::string varfilter(variableFilter);
   regex_t myregex;
   int flags = REG_EXTENDED;
   int rc;
   string tmp = ("^(" + varfilter + ")$");
   const char *filter = tmp.c_str(); // C++ strings are horrible to work with...
-  if(modelData->nStates > 0 && 0 == strcmp(modelData->realVarsData[0].info.name, "$dummy")) {
+  if (modelData->nStates > 0 && 0 == strcmp(modelData->realVarsData[0].info.name, "$dummy")) {
     modelData->realVarsData[0].filterOutput = 1;
     modelData->realVarsData[modelData->nStates].filterOutput = 1;
   }
-  if(0 == strcmp(filter, ".*")) // This matches all variables, so we don't need to do anything
+  if(0 == strcmp(filter, ".*")) { // This matches all variables, so we don't need to do anything
     return;
+  }
 
 #if defined(OMC_EMCC)
   /* We do not have libregex in javascript */
     return;
 #endif
   rc = regcomp(&myregex, filter, flags);
-  if(rc)
-  {
+  if(rc) {
     char err_buf[2048] = {0};
     regerror(rc, &myregex, err_buf, 2048);
     std::cerr << "Failed to compile regular expression: " << filter << " with error: " << err_buf << ". Defaulting to outputting all variables." << std::endl;
     return;
   }
 
-  /* new imple */
-  for(long i=0; i<modelData->nVariablesReal; i++) if(!modelData->realVarsData[i].filterOutput)
+  for(long i=0; i<modelData->nVariablesReal; i++) if(!modelData->realVarsData[i].filterOutput) {
     modelData->realVarsData[i].filterOutput = regexec(&myregex, modelData->realVarsData[i].info.name, 0, NULL, 0) != 0;
-  for(long i=0; i<modelData->nAliasReal; i++)
-  {
-    if(modelData->realAlias[i].aliasType == 0)  /* variable */
-    {
-      if(!modelData->realAlias[i].filterOutput && !modelData->realVarsData[modelData->realAlias[i].nameID].filterOutput)
-        modelData->realAlias[i].filterOutput = regexec(&myregex, modelData->realAlias[i].info.name, 0, NULL, 0) != 0;
-      else
-      {
-        modelData->realAlias[i].filterOutput = 0;
+  }
+  for(long i=0; i<modelData->nAliasReal; i++) {
+    if(modelData->realAlias[i].aliasType == 0)  /* variable */ {
+      modelData->realAlias[i].filterOutput = regexec(&myregex, modelData->realAlias[i].info.name, 0, NULL, 0) != 0;
+      if (0 == modelData->realAlias[i].filterOutput) {
         modelData->realVarsData[modelData->realAlias[i].nameID].filterOutput = 0;
       }
-    }
-    else if(modelData->realAlias[i].aliasType == 1)  /* parameter */
-    {
-      if(!modelData->realAlias[i].filterOutput && !modelData->realParameterData[modelData->realAlias[i].nameID].filterOutput)
-        modelData->realAlias[i].filterOutput = regexec(&myregex, modelData->realAlias[i].info.name, 0, NULL, 0) != 0;
-      else
-      {
-        modelData->realAlias[i].filterOutput = 0;
+    } else if(modelData->realAlias[i].aliasType == 1)  /* parameter */ {
+      modelData->realAlias[i].filterOutput = regexec(&myregex, modelData->realAlias[i].info.name, 0, NULL, 0) != 0;
+      if (0 == modelData->realAlias[i].filterOutput && resultFormatHasCheapAliasesAndParameters) {
         modelData->realParameterData[modelData->realAlias[i].nameID].filterOutput = 0;
       }
     }
   }
-  for(long i=0; i<modelData->nVariablesInteger; i++) if(!modelData->integerVarsData[i].filterOutput)
+  for (long i=0; i<modelData->nVariablesInteger; i++) if(!modelData->integerVarsData[i].filterOutput) {
     modelData->integerVarsData[i].filterOutput = regexec(&myregex, modelData->integerVarsData[i].info.name, 0, NULL, 0) != 0;
-  for(long i=0; i<modelData->nAliasInteger; i++)
-  {
-    if(modelData->integerAlias[i].aliasType == 0)  /* variable */
-    {
-      if(!modelData->integerAlias[i].filterOutput && !modelData->integerVarsData[modelData->integerAlias[i].nameID].filterOutput)
-        modelData->integerAlias[i].filterOutput = regexec(&myregex, modelData->integerAlias[i].info.name, 0, NULL, 0) != 0;
-      else
-      {
-        modelData->integerAlias[i].filterOutput = 0;
+  }
+  for (long i=0; i<modelData->nAliasInteger; i++) {
+    if(modelData->integerAlias[i].aliasType == 0)  /* variable */ {
+      modelData->integerAlias[i].filterOutput = regexec(&myregex, modelData->integerAlias[i].info.name, 0, NULL, 0) != 0;
+      if (0 == modelData->integerAlias[i].filterOutput) {
         modelData->integerVarsData[modelData->integerAlias[i].nameID].filterOutput = 0;
       }
-    }
-    else if(modelData->integerAlias[i].aliasType == 1)  /* parameter */
-    {
-      if(!modelData->integerAlias[i].filterOutput && !modelData->integerParameterData[modelData->integerAlias[i].nameID].filterOutput)
-        modelData->integerAlias[i].filterOutput = regexec(&myregex, modelData->integerAlias[i].info.name, 0, NULL, 0) != 0;
-      else
-      {
-        modelData->integerAlias[i].filterOutput = 0;
+    } else if(modelData->integerAlias[i].aliasType == 1)  /* parameter */ {
+      modelData->integerAlias[i].filterOutput = regexec(&myregex, modelData->integerAlias[i].info.name, 0, NULL, 0) != 0;
+      if (0 == modelData->integerAlias[i].filterOutput && resultFormatHasCheapAliasesAndParameters) {
         modelData->integerParameterData[modelData->integerAlias[i].nameID].filterOutput = 0;
       }
     }
   }
-  for(long i=0; i<modelData->nVariablesBoolean; i++) if(!modelData->booleanVarsData[i].filterOutput)
+  for (long i=0; i<modelData->nVariablesBoolean; i++) if(!modelData->booleanVarsData[i].filterOutput) {
     modelData->booleanVarsData[i].filterOutput = regexec(&myregex, modelData->booleanVarsData[i].info.name, 0, NULL, 0) != 0;
-  for(long i=0; i<modelData->nAliasBoolean; i++)
-  {
-    if(modelData->booleanAlias[i].aliasType == 0)  /* variable */
-    {
-      if(!modelData->booleanAlias[i].filterOutput && !modelData->booleanVarsData[modelData->booleanAlias[i].nameID].filterOutput)
-        modelData->booleanAlias[i].filterOutput = regexec(&myregex, modelData->booleanAlias[i].info.name, 0, NULL, 0) != 0;
-      else
-      {
-        modelData->booleanAlias[i].filterOutput = 0;
+  }
+  for (long i=0; i<modelData->nAliasBoolean; i++) {
+    if(modelData->booleanAlias[i].aliasType == 0)  /* variable */ {
+      modelData->booleanAlias[i].filterOutput = regexec(&myregex, modelData->booleanAlias[i].info.name, 0, NULL, 0) != 0;
+      if (0 == modelData->booleanAlias[i].filterOutput) {
         modelData->booleanVarsData[modelData->booleanAlias[i].nameID].filterOutput = 0;
       }
-    }
-    else if(modelData->booleanAlias[i].aliasType == 1)  /* parameter */
-    {
-      if(!modelData->booleanAlias[i].filterOutput && !modelData->booleanParameterData[modelData->booleanAlias[i].nameID].filterOutput)
-        modelData->booleanAlias[i].filterOutput = regexec(&myregex, modelData->booleanAlias[i].info.name, 0, NULL, 0) != 0;
-      else
-      {
-        modelData->booleanAlias[i].filterOutput = 0;
+    } else if(modelData->booleanAlias[i].aliasType == 1)  /* parameter */ {
+      modelData->booleanAlias[i].filterOutput = regexec(&myregex, modelData->booleanAlias[i].info.name, 0, NULL, 0) != 0;
+      if (0 == modelData->booleanAlias[i].filterOutput && resultFormatHasCheapAliasesAndParameters) {
         modelData->booleanParameterData[modelData->booleanAlias[i].nameID].filterOutput = 0;
       }
     }
   }
-  for(long i=0; i<modelData->nVariablesString; i++) if(!modelData->stringVarsData[i].filterOutput)
+  for (long i=0; i<modelData->nVariablesString; i++) if(!modelData->stringVarsData[i].filterOutput) {
     modelData->stringVarsData[i].filterOutput = regexec(&myregex, modelData->stringVarsData[i].info.name, 0, NULL, 0) != 0;
-  for(long i=0; i<modelData->nAliasString; i++)
-  {
-    if(modelData->stringAlias[i].aliasType == 0)  /* variable */
-    {
-      if(!modelData->stringAlias[i].filterOutput && !modelData->stringVarsData[modelData->stringAlias[i].nameID].filterOutput)
-        modelData->stringAlias[i].filterOutput = regexec(&myregex, modelData->stringAlias[i].info.name, 0, NULL, 0) != 0;
-      else
-      {
-        modelData->stringAlias[i].filterOutput = 0;
+  }
+  for (long i=0; i<modelData->nAliasString; i++) {
+    if(modelData->stringAlias[i].aliasType == 0)  /* variable */ {
+      modelData->stringAlias[i].filterOutput = regexec(&myregex, modelData->stringAlias[i].info.name, 0, NULL, 0) != 0;
+      if (0 == modelData->stringAlias[i].filterOutput) {
         modelData->stringVarsData[modelData->stringAlias[i].nameID].filterOutput = 0;
       }
-    }
-    else if(modelData->stringAlias[i].aliasType == 1)  /* parameter */
-    {
-      if(!modelData->stringAlias[i].filterOutput && !modelData->stringParameterData[modelData->stringAlias[i].nameID].filterOutput)
-        modelData->stringAlias[i].filterOutput = regexec(&myregex, modelData->stringAlias[i].info.name, 0, NULL, 0) != 0;
-      else
-      {
-        modelData->stringAlias[i].filterOutput = 0;
+    } else if(modelData->stringAlias[i].aliasType == 1)  /* parameter */ {
+      modelData->stringAlias[i].filterOutput = regexec(&myregex, modelData->stringAlias[i].info.name, 0, NULL, 0) != 0;
+      if (0 == modelData->stringAlias[i].filterOutput && resultFormatHasCheapAliasesAndParameters) {
         modelData->stringParameterData[modelData->stringAlias[i].nameID].filterOutput = 0;
       }
     }
@@ -635,6 +599,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
  */
 int initializeResultData(DATA* simData, string result_file_cstr, int cpuTime)
 {
+  int resultFormatHasCheapAliasesAndParameters = 0;
   int retVal = 0;
   long maxSteps = 4 * simData->simulationInfo.numSteps;
   sim_result.filename = strdup(result_file_cstr.c_str());
@@ -652,6 +617,7 @@ int initializeResultData(DATA* simData, string result_file_cstr, int cpuTime)
     sim_result.emit = mat4_emit;
     sim_result.writeParameterData = mat4_writeParameterData;
     sim_result.free = mat4_free;
+    resultFormatHasCheapAliasesAndParameters = 1;
   } else if(0 == strcmp("plt", simData->simulationInfo.outputFormat)) {
     sim_result.init = plt_init;
     sim_result.emit = plt_emit;
@@ -661,6 +627,7 @@ int initializeResultData(DATA* simData, string result_file_cstr, int cpuTime)
     cerr << "Unknown output format: " << simData->simulationInfo.outputFormat << endl;
     return 1;
   }
+  initializeOutputFilter(&(simData->modelData), simData->simulationInfo.variableFilter, resultFormatHasCheapAliasesAndParameters);
   sim_result.init(&sim_result, simData);
   infoStreamPrint(LOG_SOLVER, 0, "Allocated simulation result data storage for method '%s' and file='%s'", simData->simulationInfo.outputFormat, sim_result.filename);
   return 0;
@@ -827,7 +794,6 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
   data->simulationInfo.lsMethod = getlinearSolverMethod(argc, argv);
 
   read_input_xml(&(data->modelData), &(data->simulationInfo));
-  initializeOutputFilter(&(data->modelData), data->simulationInfo.variableFilter);
   /* set the global stepsize variable */
   stepSize = data->simulationInfo.stepSize;
 
