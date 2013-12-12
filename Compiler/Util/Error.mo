@@ -349,6 +349,8 @@ public constant Message LOOKUP_VIA_COMP_NON_FUNCALL = MESSAGE(111, TRANSLATION()
 Util.gettext("Lookup of element %s is not allowed via component %s when looking for %s (only function calls may be looked up via a component)."));
 public constant Message LOOKUP_CLASS_VIA_COMP_COMP = MESSAGE(112, TRANSLATION(), ERROR(),
   Util.gettext("Lookup of class %s is not allowed in composite component name %s (only components may be looked up in this way)."));
+public constant Message SUBSCRIPTED_FUNCTION_CALL = MESSAGE(113, TRANSLATION(), ERROR(), 
+  Util.gettext("Function call %s contains subscripts."));
 public constant Message IF_EQUATION_UNBALANCED = MESSAGE(114, TRANSLATION(), ERROR(),
   Util.gettext("In equation %s. If-equation with conditions that are not parameter expressions must have the same number of equations in each branch, equation count is %s for each respective branch."));
 public constant Message IF_EQUATION_MISSING_ELSE = MESSAGE(115, TRANSLATION(), ERROR(),

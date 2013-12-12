@@ -42,6 +42,7 @@ encapsulated package NFInst
 public import Absyn;
 public import NFConnect2;
 public import DAE;
+public import NFBuiltin;
 public import NFInstPrefix;
 public import NFInstTypes;
 public import HashTablePathToFunction;
@@ -142,8 +143,6 @@ algorithm
         constants = NFInstSymbolTable.create();
         (cls, _, _, (constants, functions)) = instClassEntryNoMod(inClassPath, top_cls,
           env, NFInstPrefix.makeEmptyPrefix(inClassPath), (constants, functions));
-
-        //builtin_el = instBuiltinElements((constants, functions));
 
         //print(NFInstDump.modelStr(name, cls)); print("\n");
 
@@ -313,12 +312,22 @@ algorithm
 
     // A builtin type (only builtin types can be PARTS).
     case (_, SCode.CLASS(name = name, restriction = SCode.R_TYPE(),
-          classDef = SCode.PARTS(elementLst = _)), _, _, _, _, _, globals)
+          classDef = SCode.PARTS(elementLst = {})), _, _, _, _, _, globals)
       equation
         (vars, globals) = instBasicTypeAttributes(inClassMod, name, globals);
         ty = instBasicType(name, vars);
       then
         (NFInstTypes.BASIC_TYPE(inTypePath), ty, NFInstTypes.NO_PREFIXES(), globals);
+
+    case (_, SCode.CLASS(name = name, restriction = SCode.R_TYPE(),
+        classDef = SCode.PARTS(elementLst = el)), _, _, _, _, _, globals)
+      equation
+        cdef = makeDerivedTypeClassDef(el);
+        scls = SCode.setElementClassDefinition(cdef, inElement);
+        (cls, ty, prefs, globals) = instClassEntry_impl(inTypePath, scls,
+          inEntry, inClassMod, inPrefixes, inEnv, inPrefix, globals);
+      then
+        (cls, ty, prefs, globals);
 
     // A class with parts, instantiate all elements in it.
     case (_, SCode.CLASS(name = name, restriction = res,
@@ -408,6 +417,21 @@ algorithm
 
   end match;
 end instClassEntry_impl;
+
+protected function makeDerivedTypeClassDef
+  input list<SCode.Element> inElements;
+  output SCode.ClassDef outClassDef;
+algorithm
+  outClassDef := match(inElements)
+    local
+      Absyn.Path path;
+      SCode.Mod mod;
+
+    case ({SCode.EXTENDS(baseClassPath = path, modifications = mod)})
+      then SCode.DERIVED(Absyn.TPATH(path, NONE()), mod, SCode.defaultVarAttr);
+
+  end match;
+end makeDerivedTypeClassDef;
 
 protected function instClassExtends
   input SCode.Element inClassExtends;
@@ -612,6 +636,7 @@ algorithm
     case ("Integer", _, _) then getBasicTypeAttrTypeInt(inAttributeName);
     case ("Boolean", _, _) then getBasicTypeAttrTypeBool(inAttributeName);
     case ("String", _, _) then getBasicTypeAttrTypeString(inAttributeName);
+    case ("StateSelect", _, _) then getBasicTypeAttrTypeStateSelect(inAttributeName);
     else
       equation
         Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
@@ -673,6 +698,24 @@ algorithm
   end match;
 end getBasicTypeAttrTypeString;
 
+protected function getBasicTypeAttrTypeStateSelect
+  input String inAttributeName;
+  output DAE.Type outType;
+algorithm
+  outType := match(inAttributeName)
+    case "quantity" then DAE.T_STRING_DEFAULT;
+    case "min" then NFBuiltin.BUILTIN_TYPE_STATE_SELECT;
+    case "max" then NFBuiltin.BUILTIN_TYPE_STATE_SELECT;
+    case "start" then NFBuiltin.BUILTIN_TYPE_STATE_SELECT;
+    case "fixed" then DAE.T_BOOL_DEFAULT;
+    case "never" then NFBuiltin.BUILTIN_TYPE_STATE_SELECT;
+    case "avoid" then NFBuiltin.BUILTIN_TYPE_STATE_SELECT;
+    case "default" then NFBuiltin.BUILTIN_TYPE_STATE_SELECT;
+    case "prefer" then NFBuiltin.BUILTIN_TYPE_STATE_SELECT;
+    case "always" then NFBuiltin.BUILTIN_TYPE_STATE_SELECT;
+  end match;
+end getBasicTypeAttrTypeStateSelect;
+  
 protected function instElementList
   input list<SCode.Element> inElements;
   input list<Modifier> inExtendsMods;
@@ -1235,26 +1278,6 @@ algorithm
   end match;
 end hasSpecialExtends;
 
-//protected function instBuiltinElements
-//  input Globals inGlobals;
-//  output Class outElements;
-//algorithm
-//  outElements := matchcontinue(inGlobals)
-//    local
-//      Class stateselect_cls;
-//
-//    case (_)
-//      equation
-//        (stateselect_cls, _, _, _) = instClassItem(Absyn.IDENT("StateSelect"),
-//          NFLookup.BUILTIN_STATESELECT, NFInstTypes.NOMOD(),
-//          NFInstTypes.NO_PREFIXES(), {}, NFInstTypes.EMPTY_PREFIX(NONE()),
-//          inGlobals);
-//      then
-//        stateselect_cls;
-//
-//  end matchcontinue;
-//end instBuiltinElements;
-//
 protected function instBinding
   input Binding inBinding;
   input Integer inCompDimensions;
@@ -2187,9 +2210,9 @@ algorithm
       SCode.Element elem;
 
     // Builting names should not be prefixed.
-    case (_, Absyn.IDENT(name_str), _, _, _)
+    case (_, _, _, _, _)
       equation
-        _ = NFLookup.lookupBuiltinSimpleName(name_str);
+        (_, _) = NFLookup.lookupBuiltinName(inCrefPath, inEnv);
       then
         (inCref, inGlobals);
 
@@ -2627,10 +2650,10 @@ algorithm
 
     case (_, _, _, _)
       equation
-        path = Absyn.crefToPath(inName);
+        path = instFunctionName(inName, inInfo);
         (entry, env) = NFLookup.lookupFunctionName(path, inEnv, inInfo);
         is_builtin = NFEnv.entryHasBuiltinOrigin(entry);
-        path = instFunctionName(path, is_builtin, inEnv);
+        path = prefixFunctionName(path, is_builtin, inEnv);
         (cls, ty, (consts, functions)) =
           instFunctionEntry(path, entry, is_builtin, env, inGlobals);
         is_record = Types.isRecord(ty);
@@ -2650,6 +2673,27 @@ algorithm
 end instFunction;
 
 protected function instFunctionName
+  input Absyn.ComponentRef inName;
+  input Absyn.Info inInfo;
+  output Absyn.Path outName;
+algorithm
+  outName := matchcontinue(inName, inInfo)
+    local
+      String name;
+
+    case (_, _) then Absyn.crefToPath(inName);
+
+    else
+      equation
+        name = Dump.printComponentRefStr(inName);
+        Error.addSourceMessage(Error.SUBSCRIPTED_FUNCTION_CALL, {name}, inInfo);
+      then
+        fail();
+
+  end matchcontinue;
+end instFunctionName;
+
+protected function prefixFunctionName
   input Absyn.Path inPath;
   input Boolean inBuiltin;
   input Env inEnv;
@@ -2659,7 +2703,7 @@ algorithm
     case (_, true, _) then inPath; // Don't prefix builtin functions.
     else prefixPath(inPath, inEnv);
   end match;
-end instFunctionName;
+end prefixFunctionName;
 
 protected function instFunctionEntry
   input Absyn.Path inPath;

@@ -2881,6 +2881,9 @@ algorithm
       then
         name +& dim_str;
         
+    case DAE.T_SUBTYPE_BASIC(complexType = ty as DAE.T_SUBTYPE_BASIC(complexType = _))
+      then unparseType(ty);
+
     case DAE.T_SUBTYPE_BASIC(complexType = bc_tp) then Types.unparseType(bc_tp);
     else Types.unparseType(tp);
   end matchcontinue;

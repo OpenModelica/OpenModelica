@@ -8904,7 +8904,7 @@ algorithm
         (accum, found);
 
     case (true, _, _, _) then (listAppend(listReverse(inAccum), inList), true);
-    case (_, {}, _, _) then (inAccum, false);
+    case (_, {}, _, _) then (listReverse(inAccum), false);
 
   end match;
 end findMap_tail;
@@ -8959,7 +8959,7 @@ algorithm
         (accum, found);
 
     case (true, _, _, _, _) then (listAppend(listReverse(inAccum), inList), true);
-    case (_, {}, _, _, _) then (inAccum, false);
+    case (_, {}, _, _, _) then (listReverse(inAccum), false);
 
   end match;
 end findMap1_tail;
@@ -9018,7 +9018,7 @@ algorithm
         (accum, found);
 
     case (true, _, _, _, _, _) then (listAppend(listReverse(inAccum), inList), true);
-    case (_, {}, _, _, _, _) then (inAccum, false);
+    case (_, {}, _, _, _, _) then (listReverse(inAccum), false);
 
   end match;
 end findMap2_tail;
@@ -9081,7 +9081,7 @@ algorithm
         (accum, found);
 
     case (true, _, _, _, _, _, _) then (listAppend(listReverse(inAccum), inList), true);
-    case (_, {}, _, _, _, _, _) then (inAccum, false);
+    case (_, {}, _, _, _, _, _) then (listReverse(inAccum), false);
 
   end match;
 end findMap3_tail;

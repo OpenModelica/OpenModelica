@@ -667,8 +667,15 @@ algorithm
 end mergeSubMod_tail2;
 
 protected function compactMod
+  "This function merges the submodifiers in a modifier so that each submodifier
+    only occurs once. Ex:
+
+    compactMod((x.start = 2.0, y = 4.0, x(min = 1.0, max = 3.0))) =>
+      (x(start = 2.0, min = 1.0, max = 3.0), y = 4.0)
+      
+  "
   input Modifier inModifier;
-  input tuple<Prefix, String> inModName;
+  input tuple<Prefix, String> inModName "Modifier name for error reporting.";
   output Modifier outModifier;
 algorithm
   outModifier := match(inModifier, inModName)
@@ -692,6 +699,7 @@ algorithm
 end compactMod;
 
 protected function compactSubMods
+  "Merges a list of modifiers so that each modifier occurs only once in the list."
   input list<Modifier> inSubMods;
   input tuple<Prefix, String> inModName;
   output list<Modifier> outSubMods;
@@ -699,10 +707,14 @@ protected
   list<tuple<String, Modifier>> mods;
 algorithm
   mods := List.fold1(inSubMods, compactSubMod, inModName, {});
+  mods := listReverse(mods);
   outSubMods := List.map(mods, Util.tuple22);
 end compactSubMods;
 
 protected function compactSubMod
+  "Helper function to compactSubMods. Tries to merge the given modifier with an
+   existing modifier in the accumulation list. If a matching modifier is not
+   found in the list it's added instead."
   input Modifier inSubMod;
   input tuple<Prefix, String> inModName;
   input list<tuple<String, Modifier>> inAccumMods;
@@ -714,12 +726,14 @@ algorithm
       list<tuple<String, Modifier>> mods;
       Boolean found;
 
+    // Strip out any NOMODs.
     case (NFInstTypes.NOMOD(), _, _) then inAccumMods;
 
     else
       equation
         name = modifierName(inSubMod);
-
+        // Try to find an existing modifier with the same name and merge the
+        // given modifier with it. If not found, add it to the list instead.
         (mods, found) = List.findMap3(inAccumMods, compactSubMod2, name, inSubMod, inModName);
       then
         List.consOnTrue(not found, (name, inSubMod), mods);
@@ -728,6 +742,8 @@ algorithm
 end compactSubMod;
 
 protected function compactSubMod2
+  "Helper function to compactSubMod. Merges the given modifier with the existing
+    modifier if they have the same name, otherwise does nothing."
   input tuple<String, Modifier> inExistingMod;
   input String inName;
   input Modifier inNewMod;
@@ -740,12 +756,14 @@ algorithm
       String name;
       Modifier mod;
 
+    // Names not equal, do nothing.
     case ((name, _), _, _, _)
       equation
         false = stringEqual(name, inName);
       then
         (inExistingMod, false);
 
+    // Names equal, try to merge the modifiers.
     case ((name, mod), _, _, _)
       equation
         mod = mergeModsInSameScope(mod, inNewMod, name, inModName);
@@ -756,6 +774,8 @@ algorithm
 end compactSubMod2;
 
 protected function splitMod
+  "Splits a modifier into a list of its submodifiers, where each element in the
+   list is a tuple of the modifier's name and the modifier itself."
   input Modifier inMod;
   output list<tuple<String, Modifier>> outSubMods;
 algorithm

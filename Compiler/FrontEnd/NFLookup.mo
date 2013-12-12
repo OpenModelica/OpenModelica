@@ -66,9 +66,22 @@ protected constant Entry BOOL_TYPE_ENTRY = NFInstTypes.ENTRY(
     "Boolean", NFBuiltin.BUILTIN_BOOLEAN, NOMOD, {NFInstTypes.BUILTIN_ORIGIN()});
 protected constant Entry STRING_TYPE_ENTRY = NFInstTypes.ENTRY(
     "String", NFBuiltin.BUILTIN_STRING, NOMOD, {NFInstTypes.BUILTIN_ORIGIN()});
+protected constant Entry STATESELECT_TYPE_ENTRY = NFInstTypes.ENTRY(
+    "StateSelect", NFBuiltin.BUILTIN_STATESELECT, NOMOD, {NFInstTypes.BUILTIN_ORIGIN()});
 protected constant Entry TIME_COMP_ENTRY = NFInstTypes.ENTRY(
     "time", NFBuiltin.BUILTIN_TIME, NOMOD, {NFInstTypes.BUILTIN_ORIGIN()});
 
+protected constant Entry STATESELECT_NEVER_ENTRY = NFInstTypes.ENTRY(
+    "never", NFBuiltin.BUILTIN_STATESELECT_NEVER, NOMOD, {NFInstTypes.BUILTIN_ORIGIN()});
+protected constant Entry STATESELECT_AVOID_ENTRY = NFInstTypes.ENTRY(
+    "avoid", NFBuiltin.BUILTIN_STATESELECT_AVOID, NOMOD, {NFInstTypes.BUILTIN_ORIGIN()});
+protected constant Entry STATESELECT_DEFAULT_ENTRY = NFInstTypes.ENTRY(
+    "default", NFBuiltin.BUILTIN_STATESELECT_DEFAULT, NOMOD, {NFInstTypes.BUILTIN_ORIGIN()});
+protected constant Entry STATESELECT_PREFER_ENTRY = NFInstTypes.ENTRY(
+    "prefer", NFBuiltin.BUILTIN_STATESELECT_PREFER, NOMOD, {NFInstTypes.BUILTIN_ORIGIN()});
+protected constant Entry STATESELECT_ALWAYS_ENTRY = NFInstTypes.ENTRY(
+    "always", NFBuiltin.BUILTIN_STATESELECT_ALWAYS, NOMOD, {NFInstTypes.BUILTIN_ORIGIN()});
+    
 protected uniontype LookupState
   "LookupState is used by the name lookup to keep track of what state it's in,
    so that the rules for composite name lookup can be enforced. See nextState."
@@ -275,14 +288,16 @@ algorithm
     SCode.noComment, Absyn.dummyInfo);
 end makeDummyMetaType;
 
-public function lookupBuiltinSimpleName
-  input String inName;
+public function lookupBuiltinName
+  input Absyn.Path inName;
+  input Env inEnv;
   output Entry outEntry;
+  output Env outEnv;
 algorithm
-  (outEntry, _) := lookupBuiltinName2(inName);
-end lookupBuiltinSimpleName;
+  (outEntry, outEnv, _) := lookupBuiltinName2(inName, inEnv);
+end lookupBuiltinName;
 
-protected function lookupBuiltinName
+protected function lookupBuiltinName2
   input Absyn.Path inName;
   input Env inEnv;
   output Entry outEntry;
@@ -298,15 +313,22 @@ algorithm
 
     case (Absyn.IDENT(name = name), _)
       equation
-        (entry, state) = lookupBuiltinName2(name);
+        (entry, state) = lookupBuiltinSimpleName(name);
         env = NFEnv.builtinScope(inEnv);
       then
         (entry, env, state);
 
-  end match;
-end lookupBuiltinName;
+    case (Absyn.QUALIFIED(name = "StateSelect", path = Absyn.IDENT(name = name)), _)
+      equation
+        entry = lookupStateSelectEntry(name);
+        env = NFEnv.builtinScope(inEnv);
+      then
+        (entry, env, STATE_PREDEF_COMP());
 
-protected function lookupBuiltinName2
+  end match;
+end lookupBuiltinName2;
+
+protected function lookupBuiltinSimpleName
   input String inName;
   output Entry outEntry;
   output LookupState outState;
@@ -316,9 +338,23 @@ algorithm
     case "Integer" then (INT_TYPE_ENTRY, STATE_PREDEF_CLASS());
     case "Boolean" then (BOOL_TYPE_ENTRY, STATE_PREDEF_CLASS());
     case "String" then (STRING_TYPE_ENTRY, STATE_PREDEF_CLASS());
+    case "StateSelect" then (STATESELECT_TYPE_ENTRY, STATE_PREDEF_CLASS());
     case "time" then (TIME_COMP_ENTRY, STATE_PREDEF_COMP());
   end match;
-end lookupBuiltinName2;
+end lookupBuiltinSimpleName;
+
+protected function lookupStateSelectEntry
+  input String inName;
+  output Entry outEntry;
+algorithm
+  outEntry := match(inName)
+    case "never" then STATESELECT_NEVER_ENTRY;
+    case "avoid" then STATESELECT_AVOID_ENTRY;
+    case "default" then STATESELECT_DEFAULT_ENTRY;
+    case "prefer" then STATESELECT_PREFER_ENTRY;
+    case "always" then STATESELECT_ALWAYS_ENTRY;
+  end match;
+end lookupStateSelectEntry;
 
 protected function lookupName
   input Absyn.Path inName;
@@ -341,7 +377,7 @@ algorithm
 
     case (_, _, _, _, _)
       equation
-        (entry, env, state) = lookupBuiltinName(inName, inEnv);
+        (entry, env, state) = lookupBuiltinName2(inName, inEnv);
       then
         (entry, env, state);
 
@@ -909,42 +945,6 @@ algorithm
 
   end match;
 end lookupNameInEntry;
-
-public function isNameGlobal
-  "Returns whether a simple name is global or not, as well as it's entry and
-   environment. Global in this case means a name not defined in the local scope."
-  input String inName;
-  input Env inEnv;
-  output Boolean outIsGlobal;
-  output Entry outEntry;
-  output Env outEnv;
-algorithm
-  (outIsGlobal, outEntry, outEnv) := matchcontinue(inName, inEnv)
-    local
-      Boolean is_global;
-      Env env;
-      Entry entry;
-
-    case (_, _)
-      equation
-        (entry, _) = lookupBuiltinName2(inName);
-        env = NFEnv.builtinScope(inEnv);
-      then
-        (false, entry, env);
-
-    else
-      equation
-        // Look up the name unresolved and check if it's a local name.
-        (entry, env) = lookupSimpleName_impl(inName, inEnv);  
-        is_global = not referenceEq(env, inEnv);
-        // Then resolve the entry and check if it refers to a class.
-        (entry, env) = NFEnv.resolveEntry(entry, env);
-        is_global = is_global or NFEnv.isClassEntry(entry); 
-      then
-        (is_global, entry, env);
-
-  end matchcontinue;
-end isNameGlobal;
 
 public function enterEntryScope
   input Entry inEntry;

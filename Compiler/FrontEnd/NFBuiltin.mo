@@ -42,6 +42,7 @@ encapsulated package NFBuiltin
   "
 
 public import Absyn;
+public import DAE;
 public import SCode;
 
 // Default parts of the declarations for builtin elements and types:
@@ -185,7 +186,7 @@ public constant list<SCode.Element> BUILTIN_REAL_ATTRIBUTES = {
 
 public constant SCode.Element BUILTIN_REAL = SCode.CLASS("Real",
   SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
-  SCode.PARTS(BUILTIN_REAL_ATTRIBUTES, {}, {}, {}, {}, {}, {}, NONE()),
+  SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
   SCode.noComment,Absyn.dummyInfo);
 
 
@@ -199,7 +200,7 @@ public constant list<SCode.Element> BUILTIN_INTEGER_ATTRIBUTES = {
 
 public constant SCode.Element BUILTIN_INTEGER = SCode.CLASS("Integer",
   SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
-  SCode.PARTS(BUILTIN_INTEGER_ATTRIBUTES, {}, {}, {}, {}, {}, {}, NONE()),
+  SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
   SCode.noComment,Absyn.dummyInfo);
 
 
@@ -211,7 +212,7 @@ public constant list<SCode.Element> BUILTIN_BOOLEAN_ATTRIBUTES = {
 
 public constant SCode.Element BUILTIN_BOOLEAN = SCode.CLASS("Boolean",
   SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
-  SCode.PARTS(BUILTIN_BOOLEAN_ATTRIBUTES, {}, {}, {}, {}, {}, {}, NONE()),
+  SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
   SCode.noComment,Absyn.dummyInfo);
 
 
@@ -222,13 +223,26 @@ public constant list<SCode.Element> BUILTIN_STRING_ATTRIBUTES = {
 
 public constant SCode.Element BUILTIN_STRING = SCode.CLASS("String",
   SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
-  SCode.PARTS(BUILTIN_STRING_ATTRIBUTES, {}, {}, {}, {}, {}, {}, NONE()),
+  SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
   SCode.noComment,Absyn.dummyInfo);
 
 
+public constant SCode.Element BUILTIN_STATESELECT = SCode.CLASS("StateSelect",
+  SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
+  SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
+  SCode.noComment, Absyn.dummyInfo);
+  
 // Builtin variable time:
 public constant SCode.Element BUILTIN_TIME = SCode.COMPONENT("time", SCode.defaultPrefixes,
     SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.INPUT()),
     Absyn.TPATH(Absyn.IDENT("Real"), NONE()), SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
+
+
+public constant DAE.Type BUILTIN_TYPE_STATE_SELECT = DAE.T_ENUMERATION(
+  NONE(),
+  Absyn.IDENT("StateSelect"),
+  {"never", "avoid", "default", "prefer", "always"}, {}, {},
+  DAE.emptyTypeSource
+);
 
 end NFBuiltin;
