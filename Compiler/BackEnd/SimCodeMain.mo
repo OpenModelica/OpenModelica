@@ -73,6 +73,7 @@ protected import DAEUtil;
 protected import Debug;
 protected import Error;
 protected import Flags;
+protected import HpcOmEqSystems;
 protected import HpcOmSimCode;
 protected import Settings;
 protected import SimCodeDump;
@@ -393,18 +394,18 @@ algorithm
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
       true = numProc == 0;
       print("hpcom computes the ideal number of processors. If you want to set the number manually, use the flag +n=_ \n");
-      backendDAE2 = Debug.fcallret3(Flags.PARTLINTORNSYSTEM, HpcOmSimCode.traverseEqSystemsWithIndex, 1,1, inBackendDAE, inBackendDAE);
+      backendDAE2 = Debug.fcallret3(Flags.PARTLINTORNSYSTEM, HpcOmEqSystems.traverseEqSystemsWithIndex, 1,1, inBackendDAE, inBackendDAE);
     then HpcOmSimCode.createSimCode(backendDAE2, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
       
     case(_, _, _, _, _, _, _, _, _, _, _, _) equation
       true = Flags.isSet(Flags.HPCOM);
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
       true = (numProc > 0);
-      backendDAE2 = Debug.fcallret3(Flags.PARTLINTORNSYSTEM, HpcOmSimCode.traverseEqSystemsWithIndex, 1,1, inBackendDAE, inBackendDAE);
+      backendDAE2 = Debug.fcallret3(Flags.PARTLINTORNSYSTEM, HpcOmEqSystems.traverseEqSystemsWithIndex, 1,1, inBackendDAE, inBackendDAE);
     then HpcOmSimCode.createSimCode(backendDAE2, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
     
     else equation
-      backendDAE2 = Debug.fcallret3(Flags.PARTLINTORNSYSTEM, HpcOmSimCode.traverseEqSystemsWithIndex, 1,1, inBackendDAE, inBackendDAE);
+      backendDAE2 = Debug.fcallret3(Flags.PARTLINTORNSYSTEM, HpcOmEqSystems.traverseEqSystemsWithIndex, 1,1, inBackendDAE, inBackendDAE);
       (tmpSimCode, _) = SimCodeUtil.createSimCode(backendDAE2, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
     then tmpSimCode;
   end matchcontinue;
