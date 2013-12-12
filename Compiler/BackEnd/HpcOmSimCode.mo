@@ -921,7 +921,7 @@ algorithm
         comp = listGet(compsIn,compIdx);
         BackendDAE.TORNSYSTEM(tearingvars = tvarIdcs, residualequations = resEqIdcs, otherEqnVarTpl = otherEqnVarTpl, linear = linear) = comp;
         true = linear;
-        print("handle linear torn systems of size: "+&intString(listLength(tvarIdcs)+listLength(otherEqnVarTpl))+&"\n");
+        Debug.fcall(Flags.HPCOM_DUMP,print,"handle linear torn systems of size: "+&intString(listLength(tvarIdcs)+listLength(otherEqnVarTpl))+&"\n");
            //print("handle tornsystem with compnumber:"+&intString(compIdx)+&"\n");
            //BackendDump.dumpEqSystem(systIn,"the original system");
         // build the new components, the new variables and the new equations
@@ -1015,6 +1015,7 @@ protected
   list<list<BackendDAE.Equation>> g_i_lst, g_i_lst1, h_i_lst, h_i_lst1, hs_i_lst, hs_i_lst1, hs_0_lst;
   list<list<BackendDAE.Var>> xa_i_lst, xa_i_lst1, r_i_lst, r_i_lst1, a_i_lst, a_i_lst1;
   list<DAE.ComponentRef> tcrs,ovcrs;
+  Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
 algorithm
    // handle torn systems for the linear case
    BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs = eqns, matching = BackendDAE.MATCHING(comps=comps)) := isyst;
@@ -1094,13 +1095,73 @@ algorithm
    resEqsOut := hs1;
    
    //// get the strongComponent for the residual equations and add it at the end of the new StrongComponents
-   rComp := BackendDAE.EQUATIONSYSTEM(residualEqs,tearingVars,NONE(),BackendDAE.JAC_NO_ANALYTIC());   
+   
+   jac := buildLinearJacobian(a_i_lst);  // TODO: check this flatten
+   //print("Jac:\n" +& BackendDump.dumpJacobianStr(jac) +& "\n");
+   rComp := BackendDAE.EQUATIONSYSTEM(residualEqs,tearingVars,jac,BackendDAE.JAC_TIME_VARYING());   
+   //rComp := BackendDAE.EQUATIONSYSTEM(residualEqs,tearingVars,NONE(),BackendDAE.JAC_NO_ANALYTIC());   
+   //rComp := BackendDAE.TORNSYSTEM(tearingVars,residualEqs,{},true);
+   //BackendDump.dumpEquationList(resEqsOut,"the equatinos of the system\n");
+   //BackendDump.dumpVarList(tvars, "the vars of the system\n");
    
    oComps := List.appendElt(rComp,compsNew);
    matchingOut := BackendDAE.MATCHING(ass1New,ass2New,oComps);
    
    //printPartLinTornInfo(tcrs,reqns,otherEqnsLst,ovcrs,xa_i_lst,g_i_lst,r_i_lst,h_i_lst,a_i_lst,hs_i_lst,hs,compsNew);
 end reduceLinearTornSystem2; 
+
+
+protected function buildLinearJacobian "builds the jac structure out of the given jacobian-entries (all on the diagonal).
+author:Waurich TUD 2013-12"
+  input list<list<BackendDAE.Var>> inElements;  //outer list refers to the row, inner list to the column
+  output Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> outJac;
+protected
+  list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
+algorithm
+  jac := List.fold1(List.intRange(listLength(inElements)),buildLinearJacobian1,inElements,{});  
+  jac := listReverse(jac); 
+  outJac := SOME(jac); 
+end buildLinearJacobian;
+
+
+protected function buildLinearJacobian1 "builds the jac structure out of the given jacobian-entries (all on the diagonal).
+author:Waurich TUD 2013-12"
+  input Integer rowIdx;
+  input list<list<BackendDAE.Var>> inElements;
+  input list<tuple<Integer, Integer, BackendDAE.Equation>> inJac;
+  output list<tuple<Integer, Integer, BackendDAE.Equation>> outJac;
+protected
+  list<BackendDAE.Var> elements;
+  list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
+algorithm
+  elements := listGet(inElements,rowIdx);
+  outJac := List.fold2(List.intRange(listLength(inElements)),buildLinearJacobian2,elements,rowIdx,inJac);  
+end buildLinearJacobian1;
+
+
+protected function buildLinearJacobian2 "builds the jac structure out of the given jacobian-entries (all on the diagonal).
+author:Waurich TUD 2013-12"
+  input Integer colIdx;
+  input list<BackendDAE.Var> inElements;
+  input Integer rowIdx;
+  input list<tuple<Integer, Integer, BackendDAE.Equation>> inJac;
+  output list<tuple<Integer, Integer, BackendDAE.Equation>> outJac;
+protected
+  DAE.ComponentRef cref;
+  DAE.Exp exp;
+  BackendDAE.Equation eq;
+  BackendDAE.Var elem;
+  tuple<Integer,Integer,BackendDAE.Equation> entry;
+  list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
+algorithm
+  elem := listGet(inElements,colIdx);
+  cref := BackendVariable.varCref(elem);
+  exp := DAE.CREF(cref,DAE.T_REAL_DEFAULT);
+  exp := DAE.UNARY(DAE.UMINUS(DAE.T_REAL_DEFAULT),exp);
+  eq := BackendDAE.RESIDUAL_EQUATION(exp,DAE.emptyElementSource,false);
+  entry := (colIdx,rowIdx,eq);
+  outJac := entry::inJac;
+end buildLinearJacobian2;
 
 
 protected function updateMatching "inserts the information of matching2 into matching1 by adding an index offset for the vars and eqs of matching2.Actually only one assignment for matching 2 is needed.
