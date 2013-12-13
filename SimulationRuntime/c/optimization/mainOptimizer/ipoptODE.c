@@ -173,13 +173,15 @@ int refreshSimData(double *x, double *u, double t, IPOPT_DATA_ *iData)
     sData->realVars[j] = x[j]*iData->vnom[j];
   }
 
-  for(i = 0, k = iData->index_u; i<iData->nu;++i,++j,++k)
-    sData->realVars[k] = u[i]*iData->vnom[j];
-
+  for(i = 0, k = iData->index_u; i<iData->nu;++i,++j,++k){
+    data->simulationInfo.inputVars[i] = u[i]*iData->vnom[j];
+  }
+  data->callback->input_function(data);
   sData->timeValue = t;
   /* updateContinuousSystem(iData->data); */
   data->simulationInfo.discreteCall=1;
-  data->callback->functionODE(data);
+  /*data->callback->functionODE(data);*/
+  data->callback->functionDAE(data);
 
   return 0;
 }
@@ -241,13 +243,15 @@ static int res2file(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
       sData->realVars[i] = iData->v[k++]*iData->vnom[i];
     }
     
-    for(i=0,j=iData->nx; i< iData->nu; ++i,++j)
-      sData->realVars[iData->index_u + i] = iData->v[k++]*iData->vnom[j];
+    for(i=0,j=iData->nx; i< iData->nu; ++i,++j){
+      data->simulationInfo.inputVars[i] = iData->v[k++]*iData->vnom[j];
+    }
 
     solverInfo->currentTime = iData->time[iData->current_time++];
     sData->timeValue = solverInfo->currentTime;
 
     data->simulationInfo.terminal = 1;
+    data->callback->input_function(data);
     data->callback->functionDAE(data);
     sim_result.emit(&sim_result,data);
     data->simulationInfo.terminal = 0;

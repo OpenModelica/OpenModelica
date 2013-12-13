@@ -105,7 +105,7 @@ Bool evalfF(Index n, double * v, Bool new_x, Number *objValue, void * useData)
 Bool goal_func_mayer(double* vn, double *obj_value, IPOPT_DATA_ *iData)
 {  
   refreshSimData(vn, vn + iData->nx, iData->tf, iData);
-  iData->data->callback->functionAlgebraics(iData->data);
+  /*iData->data->callback->functionAlgebraics(iData->data);*/
   mayer(iData->data, obj_value);
   
   return TRUE;
@@ -118,7 +118,7 @@ Bool goal_func_mayer(double* vn, double *obj_value, IPOPT_DATA_ *iData)
 Bool goal_func_lagrange(double* vn, double *obj_value, double t, IPOPT_DATA_ *iData)
 {  
   refreshSimData(vn, vn + iData->nx, iData->tf, iData);
-  iData->data->callback->functionAlgebraics(iData->data);
+  /*iData->data->callback->functionAlgebraics(iData->data);*/
   lagrange(iData->data, obj_value);
   
   return TRUE;
@@ -150,7 +150,7 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
         for(k=0; k<iData->deg; ++k, x+=iData->nv)
         {
           refreshSimData(x,x+ iData->nx,iData->time[i*iData->deg+k],iData);
-          iData->data->callback->functionAlgebraics(iData->data);
+          /*iData->data->callback->functionAlgebraics(iData->data);*/
           diff_symColoredObject(iData, iData->gradF, iData->lagrange_index);
           for(j = 0; j<iData->nv; ++j)
           {
@@ -164,7 +164,7 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
         for(k=0; k<iData->deg+1; ++k, x+=iData->nv)
         {
           refreshSimData(x,x+ iData->nx,iData->time[i*iData->deg+k],iData);
-          iData->data->callback->functionAlgebraics(iData->data);
+          /*iData->data->callback->functionAlgebraics(iData->data);*/
           diff_symColoredObject(iData, iData->gradF,iData->lagrange_index);
           for(j=0; j<iData->nv; ++j)
           {
@@ -182,7 +182,7 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
     x = v + iData->endN;
 
     refreshSimData(x, x +iData->nx, iData->tf, iData);
-    iData->data->callback->functionAlgebraics(iData->data);
+    /*iData->data->callback->functionAlgebraics(iData->data);*/
     diff_symColoredObject(iData, iData->gradF, iData->mayer_index);
     for(j=0; j<iData->nv; ++j)
     {

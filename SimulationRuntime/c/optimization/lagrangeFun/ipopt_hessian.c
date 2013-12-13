@@ -263,7 +263,7 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
  */
 static int updateCost(double *v, double t, IPOPT_DATA_ *iData, short lagrange_yes, short mayer_yes, double *F1, double *F2)
 {
-  iData->data->callback->functionAlgebraics(iData->data);
+  /*iData->data->callback->functionAlgebraics(iData->data);*/
   if(lagrange_yes)
     diff_symColoredObject(iData, F1, iData->lagrange_index);
 
