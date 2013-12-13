@@ -1,6 +1,7 @@
 // Note: Run with +g=MetaModelica
 
 if regularFileExists("CustomCommands.mos") then runScript("CustomCommands.mos") else "";
+customCommandsStr := if regularFileExists("CustomCommands.mos") then ("<pre>" + escapeXML(readFile("CustomCommands.mos")) + "</pre>") else "";
 library:=$TypeName(Modelica);
 libraryVersion:="default";
 referenceFiles:=getInstallationDirectoryPath()+"/../testsuite/simulation/libraries/msl32/ReferenceFiles";
@@ -26,12 +27,12 @@ system("date +'%Y-%m-%d %H:%M:%S' > tmp.date");
 dateAndTime:=readFile("tmp.date");
 system("rm -f tmp.date");
 
-loadModelCommand:="\nloadModel("+libraryString+",{\""+libraryVersion+"\"});\n";
+loadModelCommand:=(if regularFileExists("CustomCommands.mos") then "\nrunScript(\"CustomCommands.mos\");" else "") + "\nloadModel("+libraryString+",{\""+libraryVersion+"\"});\n";
 
 omc:=getInstallationDirectoryPath()+"/bin/omc";
 dygraphs:=getInstallationDirectoryPath()+"/share/doc/omc/testmodels/dygraph-combined.js";
 
-a:={typeNameString(x) for x guard isExperiment(x) in getClassNames(library,recursive=true,sort=true)};
+a:={typeNameString(x) for x guard isExperiment(x) in getClassNames(Modelica.Blocks,recursive=true,sort=true)};
 getErrorString();
 
 // writeFile("x",sum(s + "\n" for s in a));
@@ -249,8 +250,9 @@ str:="<h1>Recursive BuildModel Test</h1>
 <p>BuildModel time limit: "+ulimitOmc+"s</p>
 <p>Simulation time limit: "+ulimitExe+"s</p>
 <p>Default tolerance: "+String(default_tolerance)+"</p>
-<p>Flags: setCommandLineOptions(\"+d=nogen,initialization\"); setMatchingAlgorithm(\"PFPlusExt\"); setIndexReductionMethod(\"dynamicStateSelection\");</p>
-<p>Links are provided if getErrorString() or the simulation generates output. <font style=\"background-color:#00FF00\">Green</font> means success, <font style=\"background-color:#FFFF00\">yellow</font> means success if +d=scodeInstShortcut was used. <font style=\"background-color:#FF0000\">Red</font> is bad and in general signifies a failure.</p>
+<p>Flags: setCommandLineOptions(\"+d=nogen,initialization\"); setMatchingAlgorithm(\"PFPlusExt\"); setIndexReductionMethod(\"dynamicStateSelection\");</p>" 
++ customCommandsStr +
+"<p>Links are provided if getErrorString() or the simulation generates output. <font style=\"background-color:#00FF00\">Green</font> means success, <font style=\"background-color:#FFFF00\">yellow</font> means success if +d=scodeInstShortcut was used. <font style=\"background-color:#FF0000\">Red</font> is bad and in general signifies a failure.</p>
 ";
 writeFile(log,"<html><head><title>BuildModel Results</title></head><body>" + str);
 writeFile(log,"<table><tr><th>Model</th>"+(if referenceFiles == "" then "" else "<th>Verified</th>")+"<th>Simulate</th><th>Total buildModel</th><th>Frontend</th><th>Backend</th><th>SimCode</th><th>Templates</th><th>Compile</th></tr>\n",append=true);getErrorString();
