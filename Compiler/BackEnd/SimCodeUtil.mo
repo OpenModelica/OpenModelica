@@ -3334,10 +3334,12 @@ algorithm
     local
       list<DAE.Exp> rest, expl;
       DAE.Type ty;
-      DAE.ComponentRef cr, arraycr;
+      DAE.ComponentRef cr;
       SimCode.SimVar var;
       Option<DAE.ComponentRef> arrayCref;
       list<SimCode.SimVar> tempvars;
+      list<DAE.Subscript> inst_dims;
+      list<String> numArrayElement;
       
     case({}, _) then itempvars;
 
@@ -3356,7 +3358,9 @@ algorithm
     case(DAE.CREF(cr, ty)::rest, _)
       equation
         arrayCref = getArrayCref(cr);
-        var = SimCode.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, arrayCref, SimCode.NOALIAS(), DAE.emptyElementSource, SimCode.NONECAUS(), NONE(), {}, false);
+        inst_dims = getArraySubs(cr);
+        numArrayElement = List.map(inst_dims, ExpressionDump.subscriptString);
+        var = SimCode.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, arrayCref, SimCode.NOALIAS(), DAE.emptyElementSource, SimCode.NONECAUS(), NONE(), numArrayElement, false);
       then
         greateTempVarsforCrefs(rest, var::itempvars);
   end match;
@@ -8639,6 +8643,23 @@ algorithm
     then NONE();
   end matchcontinue;
 end getArrayCref;
+
+public function getArraySubs
+  input DAE.ComponentRef name;
+  output list<DAE.Subscript> arraySubs;
+algorithm
+  (arraySubs) :=
+  matchcontinue (name)
+    local
+      list<DAE.Subscript> arrayCrefSubs;
+    case (_)
+      equation
+        arrayCrefSubs = ComponentReference.crefSubs(name);
+      then arrayCrefSubs;
+    case (_)
+    then {};
+  end matchcontinue;
+end getArraySubs;
 
 protected function unparseCommentOptionNoAnnotationNoQuote
   input Option<SCode.Comment> absynComment;
