@@ -77,29 +77,33 @@ void omc_csv_emit(simulation_result *self, DATA *data)
   for(i = 0; i < data->modelData.nVariablesString; i++) if(!data->modelData.stringVarsData[i].filterOutput)
     fprintf(fout, formatstring, (data->localData[0])->stringVars[i]);
 
-  for(i = 0; i < data->modelData.nAliasReal; i++) if(!data->modelData.realAlias[i].filterOutput) {
-    if(data->modelData.realAlias[i].aliasType == 2)
+  for(i = 0; i < data->modelData.nAliasReal; i++) if(!data->modelData.realAlias[i].filterOutput && data->modelData.realAlias[i].aliasType != 1) {
+    if (data->modelData.realAlias[i].aliasType == 2) {
       value = (data->localData[0])->timeValue;
-    else
+    } else {
       value = (data->localData[0])->realVars[data->modelData.realAlias[i].nameID];
-    if(data->modelData.realAlias[i].negate)
+    }
+    if (data->modelData.realAlias[i].negate) {
       fprintf(fout, format, -value);
-    else
+    } else {
       fprintf(fout, format, value);
+    }
   }
-  for(i = 0; i < data->modelData.nAliasInteger; i++) if(!data->modelData.integerAlias[i].filterOutput) {
-    if(data->modelData.integerAlias[i].negate)
+  for(i = 0; i < data->modelData.nAliasInteger; i++) if(!data->modelData.integerAlias[i].filterOutput && data->modelData.integerAlias[i].aliasType != 1) {
+    if (data->modelData.integerAlias[i].negate) {
       fprintf(fout, formatint, -(data->localData[0])->integerVars[data->modelData.integerAlias[i].nameID]);
-    else
+    } else {
       fprintf(fout, formatint, (data->localData[0])->integerVars[data->modelData.integerAlias[i].nameID]);
+    }
   }
-  for(i = 0; i < data->modelData.nAliasBoolean; i++) if(!data->modelData.booleanAlias[i].filterOutput) {
-    if(data->modelData.booleanAlias[i].negate)
+  for(i = 0; i < data->modelData.nAliasBoolean; i++) if(!data->modelData.booleanAlias[i].filterOutput && data->modelData.booleanAlias[i].aliasType != 1) {
+    if (data->modelData.booleanAlias[i].negate) {
       fprintf(fout, formatbool, (data->localData[0])->booleanVars[data->modelData.booleanAlias[i].nameID]==1?0:1);
-    else
+    } else {
       fprintf(fout, formatbool, (data->localData[0])->booleanVars[data->modelData.booleanAlias[i].nameID]);
+    }
   }
-  for(i = 0; i < data->modelData.nAliasString; i++) if(!data->modelData.stringAlias[i].filterOutput) {
+  for(i = 0; i < data->modelData.nAliasString; i++) if(!data->modelData.stringAlias[i].filterOutput && data->modelData.stringAlias[i].aliasType != 1) {
     /* there would no negation of a string happen */
     fprintf(fout, formatstring, (data->localData[0])->stringVars[data->modelData.stringAlias[i].nameID]);
   }
@@ -129,13 +133,13 @@ void omc_csv_init(simulation_result *self, DATA *data)
   for(i = 0; i < mData->nVariablesString; i++) if(!mData->stringVarsData[i].filterOutput)
     fprintf(fout, format, mData->stringVarsData[i].info.name);
 
-  for(i = 0; i < mData->nAliasReal; i++) if(!mData->realAlias[i].filterOutput)
+  for(i = 0; i < mData->nAliasReal; i++) if(!mData->realAlias[i].filterOutput && data->modelData.realAlias[i].aliasType != 1)
     fprintf(fout, format, mData->realAlias[i].info.name);
-  for(i = 0; i < mData->nAliasInteger; i++) if(!mData->integerAlias[i].filterOutput)
+  for(i = 0; i < mData->nAliasInteger; i++) if(!mData->integerAlias[i].filterOutput && data->modelData.integerAlias[i].aliasType != 1)
     fprintf(fout, format, mData->integerAlias[i].info.name);
-  for(i = 0; i < mData->nAliasBoolean; i++) if(!mData->booleanAlias[i].filterOutput)
+  for(i = 0; i < mData->nAliasBoolean; i++) if(!mData->booleanAlias[i].filterOutput && data->modelData.booleanAlias[i].aliasType != 1)
     fprintf(fout, format, mData->booleanAlias[i].info.name);
-  for(i = 0; i < mData->nAliasString; i++) if(!mData->stringAlias[i].filterOutput)
+  for(i = 0; i < mData->nAliasString; i++) if(!mData->stringAlias[i].filterOutput && data->modelData.stringAlias[i].aliasType != 1)
     fprintf(fout, format, mData->stringAlias[i].info.name);
   fprintf(fout,"\n");
   self->storage = fout;
