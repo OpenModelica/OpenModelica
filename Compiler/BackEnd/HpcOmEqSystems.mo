@@ -254,6 +254,7 @@ author: Waurich TUD 2013-07"
   output list<BackendDAE.Equation> resEqsOut;
   output BackendDAE.Matching matchingOut;
 protected
+  Boolean isSingleEq;
   array<Integer> ass1New, ass2New;
   Integer size, otherEqSize, compSize;
   list<Integer> otherEqnsInts, otherVarsInts, tVarRange, rEqIdx;
@@ -274,7 +275,6 @@ protected
   list<list<BackendDAE.Equation>> g_i_lst, g_i_lst1, h_i_lst, h_i_lst1, hs_i_lst, hs_i_lst1, hs_0_lst;
   list<list<BackendDAE.Var>> xa_i_lst, xa_i_lst1, r_i_lst, r_i_lst1, a_i_lst, a_i_lst1;
   list<DAE.ComponentRef> tcrs,ovcrs;
-  Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
 algorithm
    // handle torn systems for the linear case
    BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs = eqns, matching = BackendDAE.MATCHING(comps=comps)) := isyst;
@@ -354,15 +354,11 @@ algorithm
    resEqsOut := hs1;
    
    //// get the strongComponent for the residual equations and add it at the end of the new StrongComponents
+   //BackendDump.dumpEquationList(resEqsOut,"the equations of the system\n");
+   //BackendDump.dumpVarList(tVarsOut, "the vars of the system\n");
    
-   jac := buildLinearJacobian(a_i_lst);  // TODO: check this flatten
-   //print("Jac:\n" +& BackendDump.dumpJacobianStr(jac) +& "\n");
-   rComp := BackendDAE.EQUATIONSYSTEM(residualEqs,tearingVars,jac,BackendDAE.JAC_TIME_VARYING());   
-   //rComp := BackendDAE.EQUATIONSYSTEM(residualEqs,tearingVars,NONE(),BackendDAE.JAC_NO_ANALYTIC());   
-   //rComp := BackendDAE.TORNSYSTEM(tearingVars,residualEqs,{},true);
-   //BackendDump.dumpEquationList(resEqsOut,"the equatinos of the system\n");
-   //BackendDump.dumpVarList(tvars, "the vars of the system\n");
-   
+   isSingleEq := intEq(listLength(resEqsOut),1);
+   rComp := buildEqSystemComponent(isSingleEq,tearingVars,residualEqs,a_i_lst);
    oComps := List.appendElt(rComp,compsNew);
    matchingOut := BackendDAE.MATCHING(ass1New,ass2New,oComps);
    
@@ -370,7 +366,44 @@ algorithm
 end reduceLinearTornSystem2; 
 
 
-protected function buildLinearJacobian "builds the jac structure out of the given jacobian-entries (all on the diagonal).
+protected function buildEqSystemComponent "builds a strongComponent for the reduced System. if the system size is 1, a SingleEquation is built, otherwise a EqSystem with jacobian.
+author:Waurich TUD 2013-12"
+  input Boolean isSingleEq;
+  input list<Integer> varIdcsIn;
+  input list<Integer> eqIdcsIn;
+  input list<list<BackendDAE.Var>> jacValuesIn;
+  output BackendDAE.StrongComponent outComp;
+algorithm
+  outComp := match(isSingleEq,varIdcsIn,eqIdcsIn,jacValuesIn)
+    local
+      Integer eqIdx,varIdx;
+      Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
+      BackendDAE.StrongComponent comp;
+    case(true,_,_,_)
+      equation
+        eqIdx = listGet(eqIdcsIn,1);
+        varIdx = listGet(varIdcsIn,1);
+        comp = BackendDAE.SINGLEEQUATION(eqIdx,varIdx);
+        Debug.fcall(Flags.HPCOM_DUMP,print,"a linear equationsystem of size 1 was found and was replaced by a single equation\n\n");
+      then
+        comp;
+    case(false,_,_,_)
+      equation
+        jac = buildLinearJacobian(jacValuesIn);
+        //print("Jac:\n" +& BackendDump.dumpJacobianStr(jac) +& "\n");
+        comp = BackendDAE.EQUATIONSYSTEM(eqIdcsIn,varIdcsIn,jac,BackendDAE.JAC_TIME_VARYING());   
+        //print("the eqs of the sys: "+&stringDelimitList(List.map(varIdcsIn,intString),"n")+&"\n");
+        //print("the vars of the sys: "+&stringDelimitList(List.map(eqIdcsIn,intString),"n")+&"\n");
+        //rComp := BackendDAE.EQUATIONSYSTEM(residualEqs,tearingVars,NONE(),BackendDAE.JAC_NO_ANALYTIC());   
+        //rComp := BackendDAE.TORNSYSTEM(tearingVars,residualEqs,{},true);
+        Debug.fcall(Flags.HPCOM_DUMP,print,"a linear equationsystem of size "+&intString(listLength(eqIdcsIn))+&" is left from the partitioning.\n\n");
+      then
+        comp;
+  end match;
+end buildEqSystemComponent;  
+  
+
+protected function buildLinearJacobian "builds the jacobian out of the given jacobian-entries
 author:Waurich TUD 2013-12"
   input list<list<BackendDAE.Var>> inElements;  //outer list refers to the row, inner list to the column
   output Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> outJac;
@@ -383,7 +416,7 @@ algorithm
 end buildLinearJacobian;
 
 
-protected function buildLinearJacobian1 "builds the jac structure out of the given jacobian-entries (all on the diagonal).
+protected function buildLinearJacobian1 "helper for buildLinearJacobian.
 author:Waurich TUD 2013-12"
   input Integer rowIdx;
   input list<list<BackendDAE.Var>> inElements;
@@ -398,7 +431,7 @@ algorithm
 end buildLinearJacobian1;
 
 
-protected function buildLinearJacobian2 "builds the jac structure out of the given jacobian-entries (all on the diagonal).
+protected function buildLinearJacobian2 "helper for buildLinearJacobian
 author:Waurich TUD 2013-12"
   input Integer colIdx;
   input list<BackendDAE.Var> inElements;
