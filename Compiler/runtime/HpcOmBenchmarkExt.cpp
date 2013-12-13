@@ -313,6 +313,7 @@ public:
 
     } while (!done);
     XML_ParserFree(parser);
+    fclose(xmlFile);
 
     //Copy equation list to result list
     for (std::list<Equation*>::iterator it = eqList.begin();

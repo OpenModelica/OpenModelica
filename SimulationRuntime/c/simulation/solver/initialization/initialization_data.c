@@ -290,12 +290,12 @@ void computeInitialResidualScalingCoefficients(INIT_DATA *initData)
 {
   long i, j, ix;
 
-  double *tmpResidual1 = (double*)calloc(initData->nInitResiduals, sizeof(double));
-  double *tmpResidual2 = (double*)calloc(initData->nInitResiduals, sizeof(double));
-  double *tmpStartResidual1 = (double*)calloc(initData->nStartValueResiduals, sizeof(double));
-  double *tmpStartResidual2 = (double*)calloc(initData->nStartValueResiduals, sizeof(double));
-  double *residualScalingCoefficients = (double*)calloc(initData->nInitResiduals, sizeof(double));
-  double *startValueResidualScalingCoefficients = (double*)calloc(initData->nStartValueResiduals, sizeof(double));
+  double *tmpResidual1;
+  double *tmpResidual2;
+  double *tmpStartResidual1;
+  double *tmpStartResidual2;
+  double *residualScalingCoefficients;
+  double *startValueResidualScalingCoefficients;
 
   const double h = 1e-6;
 
@@ -303,6 +303,13 @@ void computeInitialResidualScalingCoefficients(INIT_DATA *initData)
 
   if(!(initData->nominal && initData->residualScalingCoefficients && initData->startValueResidualScalingCoefficients))
     return;
+
+  tmpResidual1 = (double*)calloc(initData->nInitResiduals, sizeof(double));
+  tmpResidual2 = (double*)calloc(initData->nInitResiduals, sizeof(double));
+  tmpStartResidual1 = (double*)calloc(initData->nStartValueResiduals, sizeof(double));
+  tmpStartResidual2 = (double*)calloc(initData->nStartValueResiduals, sizeof(double));
+  residualScalingCoefficients = (double*)calloc(initData->nInitResiduals, sizeof(double));
+  startValueResidualScalingCoefficients = (double*)calloc(initData->nStartValueResiduals, sizeof(double));
 
   for(i=0; i<initData->nInitResiduals; ++i)
     initData->residualScalingCoefficients[i] = 1.0;
@@ -324,11 +331,11 @@ void computeInitialResidualScalingCoefficients(INIT_DATA *initData)
     if(data->modelData.realParameterData[i].attribute.useStart && !data->modelData.realParameterData[i].attribute.fixed)
       tmpStartResidual1[ix++] = data->modelData.realParameterData[i].attribute.start - data->localData[0]->realVars[i];
   /* for real discrete */
-  for(i=data->modelData.nVariablesReal-data->modelData.nDiscreteReal; i<data->modelData.nDiscreteReal; ++i)
-    if(data->modelData.realVarsData[j].attribute.useStart && !data->modelData.realVarsData[j].attribute.fixed)
+  for(i=data->modelData.nVariablesReal-data->modelData.nDiscreteReal; i<data->modelData.nVariablesReal; ++i)
+    if(data->modelData.realVarsData[i].attribute.useStart && !data->modelData.realVarsData[i].attribute.fixed)
       tmpStartResidual1[ix++] = data->modelData.realVarsData[i].attribute.start - data->localData[0]->realVars[i];
-  
-    for(i=0; i<initData->nVars; ++i)
+
+  for(i=0; i<initData->nVars; ++i)
   {
     initData->vars[i] += h;
 
@@ -337,7 +344,7 @@ void computeInitialResidualScalingCoefficients(INIT_DATA *initData)
       tmpResidual2[j] = initData->initialResiduals[j];
 
     ix = 0;
-    
+
     /* TODO: is data->localData[0]->realVars[j] correct??? */
     /* for real variables */
     for(j=0; j<data->modelData.nVariablesReal; ++j)
@@ -348,7 +355,7 @@ void computeInitialResidualScalingCoefficients(INIT_DATA *initData)
       if(data->modelData.realParameterData[j].attribute.useStart && !data->modelData.realParameterData[j].attribute.fixed)
         tmpStartResidual2[ix++] = data->modelData.realParameterData[j].attribute.start - data->localData[0]->realVars[j];
     /* for real discrete */
-    for(j=data->modelData.nVariablesReal-data->modelData.nDiscreteReal; j<data->modelData.nDiscreteReal; ++j)
+    for(j=data->modelData.nVariablesReal-data->modelData.nDiscreteReal; j<data->modelData.nVariablesReal; ++j)
       if(data->modelData.realVarsData[j].attribute.useStart && !data->modelData.realVarsData[j].attribute.fixed)
         tmpStartResidual2[ix++] = data->modelData.realVarsData[j].attribute.start - data->localData[0]->realVars[j];
 
@@ -466,7 +473,7 @@ void updateSimData(INIT_DATA *initData)
   for(i=0; i<initData->simData->modelData.nParametersReal; ++i)
     if(initData->simData->modelData.realParameterData[i].attribute.fixed == 0)
       initData->simData->simulationInfo.realParameter[i] = initData->vars[j++];
-    
+
   /* for real discrete */
   for(i=initData->simData->modelData.nVariablesReal-initData->simData->modelData.nDiscreteReal; i<initData->simData->modelData.nVariablesReal; ++i)
     if(initData->simData->modelData.realVarsData[i].attribute.fixed == 0)

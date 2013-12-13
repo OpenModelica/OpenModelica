@@ -445,6 +445,7 @@ void GraphMLParser::ParseGraph(Graph *currentGraph, const char* fileName, bool (
     }
   } while (!done);
   XML_ParserFree(parser);
+  fclose(graphFile);
 
   //Add all elements of the node-set to the graph
   for (std::set<Node*, bool (*)(Node*, Node*)>::iterator iter = userData.nodeSet->begin(); iter != userData.nodeSet->end(); iter++)

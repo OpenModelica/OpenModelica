@@ -246,7 +246,7 @@ bool Unit::isDimensionless() {
     if (!(*p).isZero())
       return false;
   }
-  return (typeParamVec.size() == 0);
+  return (typeParamVec.empty());
 }
 
 bool Unit::isBaseUnit() {
@@ -370,9 +370,9 @@ void UnitParser::accumulateWeight(const string unitSymbol, double weight) {
 UnitRes UnitParser::commit() {
   list<DerivedInfo> tmp;
   int initSize = _tempDerived.size();
-  while (_tempDerived.size() != 0) {
+  while (!_tempDerived.empty()) {
     unsigned int startSize = _tempDerived.size();
-    while (_tempDerived.size() != 0) {
+    while (!_tempDerived.empty()) {
       DerivedInfo d = _tempDerived.front();
       UnitRes res = addDerivedInternal(d.quantityName, d.unitName,
           d.unitSymbol, d.unitStrExp, d.prefixExpo, d.scaleFactor,

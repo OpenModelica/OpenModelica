@@ -726,7 +726,7 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
         } else {
           fprintf(fout, "%.15g,%.15g,%.15g,%.15g",calibrated_values[i],high[i],low[i],error[i]);
         }
-        if (ref.time[i] == actualoriginal.time[j] && j < actualoriginal.size) {
+        if (j < actualoriginal.size && ref.time[i] == actualoriginal.time[j]) {
           fprintf(fout, ",%.15g%s\n",actualoriginal.values[j++],rbracket);
         } else {
           fprintf(fout, ",%s%s\n",empty,rbracket);
@@ -734,7 +734,7 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
       } else {
         fputs(isHtml ? "null,null,null,null,null],\n" : ",,,,\n", fout);
       }
-      while (ref.time[i] > actualoriginal.time[j] && j < actualoriginal.size) {
+      while (j < actualoriginal.size && ref.time[i] > actualoriginal.time[j]) {
         fprintf(fout, "%s%.15g,%s,%s,%s,%s,%s,%.15g%s\n",lbracket,actualoriginal.time[j],empty,empty,empty,empty,empty,actualoriginal.values[j],rbracket);
         j++;
       }

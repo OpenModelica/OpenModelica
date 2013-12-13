@@ -278,7 +278,7 @@ int solveNewton(DATA *data, int sysNumber)
     /* check for error  */
     xerror_scaled = enorm_(&solverData->n, solverData->resScaling);
     xerror = enorm_(&solverData->n, solverData->fvec);
-    
+
     /* solution found */
     if((xerror <= solverData->ftol || xerror_scaled <= solverData->ftol) && solverData->info > 0)
     {
@@ -312,15 +312,15 @@ int solveNewton(DATA *data, int sysNumber)
       nfunc_evals += solverData->nfev;
       infoStreamPrint(LOG_NLS, 0, " - iteration making no progress:\t vary solution point by 1%%.");
       /* try to vary the initial values */
-      }
-      else if(retries < 2)
-      {
-        for(i = 0; i < solverData->n; i++)
-          solverData->x[i] = systemData->nominal[i];
-        retries++;
-        giveUp = 0;
-        nfunc_evals += solverData->nfev;
-        infoStreamPrint(LOG_NLS, 0, " - iteration making no progress:\t try nominal values as initial solution.");
+    }
+    else if(retries < 3)
+    {
+      for(i = 0; i < solverData->n; i++)
+        solverData->x[i] = systemData->nominal[i];
+      retries++;
+      giveUp = 0;
+      nfunc_evals += solverData->nfev;
+      infoStreamPrint(LOG_NLS, 0, " - iteration making no progress:\t try nominal values as initial solution.");
     }
     else
     {
@@ -335,7 +335,7 @@ int solveNewton(DATA *data, int sysNumber)
       }
     }
   }
-  
+
   if (ACTIVE_STREAM(LOG_NLS)) messageClose(LOG_NLS);
 
   /* take the best approximation */

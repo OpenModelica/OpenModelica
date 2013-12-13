@@ -147,7 +147,7 @@ static void pop_message(threadData_t *threadData, bool rollback)
     ErrorMessage *msg = members->errorMessageQueue->top();
     if (msg->getSeverity() == ErrorLevel_error || msg->getSeverity() == ErrorLevel_internal) members->numErrorMessages--;
     members->errorMessageQueue->pop();
-    pop_more = (members->errorMessageQueue->size() > 0 && !(rollback && members->errorMessageQueue->size() <= members->checkPoints->back().first) && msg->getFullMessage() == members->errorMessageQueue->top()->getFullMessage());
+    pop_more = (!(members->errorMessageQueue->empty()) && !(rollback && members->errorMessageQueue->size() <= members->checkPoints->back().first) && msg->getFullMessage() == members->errorMessageQueue->top()->getFullMessage());
     delete msg;
   } while (pop_more);
 }
@@ -235,7 +235,7 @@ static void printCheckpointStack(threadData_t *threadData)
   {
     cp = (*members->checkPoints)[i];
     printf("%5d %s   message:", i, cp.second.c_str());
-    while(members->errorMessageQueue->size() > cp.first && members->errorMessageQueue->size() > 0){
+    while(members->errorMessageQueue->size() > cp.first && !members->errorMessageQueue->empty()){
       res = members->errorMessageQueue->top()->getMessage()+string(" ")+res;
       pop_message(threadData,false);
     }
@@ -284,10 +284,10 @@ extern void ErrorImpl__rollBack(threadData_t *threadData,const char* id)
   // fprintf(stderr, "rollBack(%s)\n",id); fflush(NULL);
   if (members->checkPoints->size() > 0){
     //printf(" ERROREXT: rollback to: %d from %d\n",checkPoints->back(),errorMessageQueue->size());
-    std::string res("");
+    //std::string res("");
     //printf(res.c_str());
     //printf(" rollback from: %d to: %d\n",errorMessageQueue->size(),checkPoints->back().first);
-    while(members->errorMessageQueue->size() > members->checkPoints->back().first && members->errorMessageQueue->size() > 0){
+    while(members->errorMessageQueue->size() > members->checkPoints->back().first && !members->errorMessageQueue->empty()){
       //printf("*** %d deleted %d ***\n",errorMessageQueue->size(),checkPoints->back().first);
       /*if(!errorMessageQueue->empty()){
         res = res+errorMessageQueue->top()->getMessage()+string("\n");
@@ -321,7 +321,7 @@ extern char* ErrorImpl__rollBackAndPrint(threadData_t *threadData,const char* id
   std::string res("");
   // fprintf(stderr, "rollBackAndPrint(%s)\n",id); fflush(stderr);
   if (members->checkPoints->size() > 0){
-    while(members->errorMessageQueue->size() > members->checkPoints->back().first && members->errorMessageQueue->size() > 0){
+    while(members->errorMessageQueue->size() > members->checkPoints->back().first && !members->errorMessageQueue->empty()){
       res = members->errorMessageQueue->top()->getMessage()+string("\n")+res;
       pop_message(threadData,true);
     }

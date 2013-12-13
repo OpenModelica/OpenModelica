@@ -1019,6 +1019,7 @@ extern char* SystemImpl__readFileNoNumeric(const char* filename)
   buf = (char*) GC_malloc_atomic(statstr.st_size+1);
   bufRes = (char*) GC_malloc_atomic((statstr.st_size+70)*sizeof(char));
   if( (res = fread(buf, sizeof(char), statstr.st_size, file)) != statstr.st_size) {
+    fclose(file);
     return "Failed while reading file";
   }
   buf[statstr.st_size] = '\0';

@@ -225,6 +225,7 @@ struct csv_data* read_csv(const char *filename)
   }
   variables = read_csv_variables(fin,&dummy);
   if (!variables) {
+    fclose(fin);
     return NULL;
   }
   fseek(fin,0,SEEK_SET);

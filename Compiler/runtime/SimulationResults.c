@@ -171,6 +171,7 @@ static double SimulationResultsImpl__val(const char *filename, const char *varna
         return NAN;
       }
     } while (strcmp(strToFind,line));
+    free(strToFind);
     while (fscanf(simresglob->pltReader,"%lg, %lg\n",&t,&v) == 2) {
       nread++;
       if (t > timeStamp) break;

@@ -284,7 +284,6 @@ extern const char* SettingsImpl__getTempDirectoryPath(void)
   // which is usually TMP or TEMP or windows catalogue.
   #ifdef WIN32
     int numChars;
-    char* str,str1;
     char tempDirectory[1024];
       //extract the temp path
     numChars= GetTempPath(1024, tempDirectory);
@@ -293,7 +292,7 @@ extern const char* SettingsImpl__getTempDirectoryPath(void)
       exit(1);
     } else {
       // Must do replacement in two steps, since the _replace function can not have similar source as target.
-      str = _replace(tempDirectory, (char*)"\\", (char*)"/");
+      char *str = _replace(tempDirectory, (char*)"\\", (char*)"/");
       tempDirectoryPath= _replace(str, (char*)"/", (char*)"\\\\");
       free(str);
     }

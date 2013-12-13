@@ -654,7 +654,6 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
     cmpvars = getVars(allvarsref,&ncmpvars);
     if (ncmpvars==0) return mk_cons(mk_scon("Error Get Vars!"),mk_nil());
   }
-  cmpdiffvars = (char**)malloc(sizeof(char*)*(ncmpvars));
 #ifdef DEBUGOUTPUT
   fprintf(stderr, "Compare Vars:\n");
   for(i=0;i<ncmpvars;i++)
@@ -673,6 +672,7 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
   if (timeref.n==0) {
     return mk_cons(mk_scon("Error get ref time!"),mk_nil());
   }
+  cmpdiffvars = (char**)malloc(sizeof(char*)*(ncmpvars));
   /* check if time is larger or less reftime */
   res = mk_nil();
   if (fabs(time.data[time.n-1]-timeref.data[timeref.n-1]) > reltol*fabs(timeref.data[timeref.n-1])) {

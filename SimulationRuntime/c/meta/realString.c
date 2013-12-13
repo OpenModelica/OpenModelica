@@ -168,17 +168,9 @@ static void* dtostr(double d)
     strcpy(res,cp);
     res += ndig;
   } else {
-    if (expt == 0) {
-      *res++ = '0';
-      *res++ = '.';
-    } else {
-      *res++ = *cp++;
-      if (expt && ndig > 1) *res++ = '.';
-      if (expt == 1 && ndig == 1) {
-        *res++ = '.';
-        *res++ = '0';
-      }
-    }
+    *res++ = *cp++;
+    if (ndig > 1) *res++ = '.';
+
     strcpy(res,cp);
     res += ndig-1;
     if (expt) {
