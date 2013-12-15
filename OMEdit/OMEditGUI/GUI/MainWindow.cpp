@@ -1042,7 +1042,6 @@ void MainWindow::showFindReplaceDialog()
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
   if (pModelWidget)
   {
-    mpFindReplaceDialog->readFindTextFromSettings();
     mpFindReplaceDialog->setTextEdit(pModelWidget->getModelicaTextWidget()->getModelicaTextEdit());
     mpFindReplaceDialog->show();
     mpFindReplaceDialog->raise();

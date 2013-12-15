@@ -989,6 +989,17 @@ FindReplaceDialog::FindReplaceDialog (QWidget *pParent)
 
 void FindReplaceDialog::show()
 {
+  QTextCursor currentTextCursor = mpModelicaTextEdit->textCursor();
+  if (currentTextCursor.hasSelection())
+  {
+    QString selectedText = currentTextCursor.selectedText();
+    saveFindTextToSettings(selectedText);
+    readFindTextFromSettings();
+  }
+  else
+  {
+    readFindTextFromSettings();
+  }
   mpFindComboBox->lineEdit()->selectAll();
   setVisible(true);
 }
@@ -1094,7 +1105,10 @@ void FindReplaceDialog::findText(bool forward)
   mpModelicaTextEdit->setTextCursor(newTextCursor);
 
   if(!result)
-    showError(tr("Can't find the text"));
+  {
+    QString message = QString( "Can't find the text '" ) + textToFind + QString( " '." );
+    QMessageBox::information( this, "Find", message );
+  }
 }
 
 /*!
@@ -1102,15 +1116,20 @@ void FindReplaceDialog::findText(bool forward)
   */
 void FindReplaceDialog::replace()
 {
-  if (!mpModelicaTextEdit->textCursor().hasSelection())
-  {
-    find();
-  }
+  int compareString(0);
+  if(mpCaseSensitiveCheckBox->isChecked())
+    compareString = Qt::CaseSensitive;
   else
+    compareString = Qt::CaseInsensitive;
+  find();
+  int same = mpModelicaTextEdit->textCursor().selectedText().compare(mpFindComboBox->currentText(),( Qt::CaseSensitivity)compareString );
+  if (mpModelicaTextEdit->textCursor().hasSelection()&& same == 0  )
   {
     mpModelicaTextEdit->textCursor().insertText(mpReplaceWithTextBox->text());
     find();
   }
+  else
+    find();
 }
 
 /*!
@@ -1118,14 +1137,35 @@ void FindReplaceDialog::replace()
   */
 void FindReplaceDialog::replaceAll()
 {
+  // move cursor to start of text
+  QTextCursor cursor = mpModelicaTextEdit->textCursor();
+  cursor.movePosition(QTextCursor::Start);
+  mpModelicaTextEdit->setTextCursor(cursor);
+
+  QTextDocument::FindFlags flags;
+  if (mpCaseSensitiveCheckBox->isChecked())
+    flags |= QTextDocument::FindCaseSensitively;
+  if (mpWholeWordCheckBox->isChecked())
+    flags |= QTextDocument::FindWholeWords;
+
+  // save the find text in settings
+  saveFindTextToSettings(mpFindComboBox->currentText());
+  // replace all
   int i=0;
-  while (mpModelicaTextEdit->textCursor().hasSelection())
+  mpModelicaTextEdit->textCursor().beginEditBlock();
+  while(mpModelicaTextEdit->find(mpFindComboBox->currentText(), flags ))
   {
     mpModelicaTextEdit->textCursor().insertText(mpReplaceWithTextBox->text());
-    find();
     i++;
   }
-  showMessage(tr("Replaced %1 occurrence(s)").arg(i));
+  mpModelicaTextEdit->textCursor().endEditBlock();
+
+  // show message box with status information
+  QString message;
+  message.setNum(i);
+  message += QString( " occurence(s) of the text '" ) + mpFindComboBox->currentText() +
+    QString( "' was replaced with the text '" ) + mpReplaceWithTextBox->text() + QString( "'." );
+    QMessageBox::information( this, "Replace All", message );
 }
 
 void FindReplaceDialog::updateButtons()
@@ -1202,6 +1242,5 @@ void FindReplaceDialog::regularExpressionSelected(bool selected)
 void FindReplaceDialog::textToFindChanged()
 {
   mpFindButton->setEnabled(mpFindComboBox->currentText().size() > 0);
-
 }
 
