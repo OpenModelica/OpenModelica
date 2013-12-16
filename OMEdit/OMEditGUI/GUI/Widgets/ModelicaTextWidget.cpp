@@ -914,8 +914,6 @@ FindReplaceDialog::FindReplaceDialog (QWidget *pParent)
   : QDialog(pParent, Qt::WindowTitleHint)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Find/Replace")));
-  // message label
-  mpMessageLabel = new Label;
   // Find Label and text box
   mpFindLabel = new Label(tr("Find:"));
   mpFindComboBox = new QComboBox;
@@ -970,10 +968,10 @@ FindReplaceDialog::FindReplaceDialog (QWidget *pParent)
   pDirectionsOptionsHorizontalLayout->addWidget(mpOptionsBox);
   // set buttons layout
   QGridLayout *pButtonsGridLayout = new QGridLayout;
-  pButtonsGridLayout->addWidget(mpFindButton, 0, 0);
-  pButtonsGridLayout->addWidget(mpReplaceButton, 0, 1);
-  pButtonsGridLayout->addWidget(mpReplaceAllButton, 1, 0);
-  pButtonsGridLayout->addWidget(mpCloseButton, 1, 1);
+  pButtonsGridLayout->addWidget(mpFindButton);
+  pButtonsGridLayout->addWidget(mpReplaceButton);
+  pButtonsGridLayout->addWidget(mpReplaceAllButton);
+  pButtonsGridLayout->addWidget(mpCloseButton);
   // set main layout
   QGridLayout *pMainGridLayout = new QGridLayout;
   pMainGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -981,9 +979,8 @@ FindReplaceDialog::FindReplaceDialog (QWidget *pParent)
   pMainGridLayout->addWidget(mpFindComboBox, 0, 1);
   pMainGridLayout->addWidget(mpReplaceWithLabel, 1, 0);
   pMainGridLayout->addWidget(mpReplaceWithTextBox, 1, 1);
-  pMainGridLayout->addWidget(mpMessageLabel, 2, 0, 1, 2);
-  pMainGridLayout->addLayout(pDirectionsOptionsHorizontalLayout, 3, 0, 1, 2);
-  pMainGridLayout->addLayout(pButtonsGridLayout, 4, 0, 1, 2, Qt::AlignRight);
+  pMainGridLayout->addLayout(pDirectionsOptionsHorizontalLayout, 2, 0, 3, 2);
+  pMainGridLayout->addLayout(pButtonsGridLayout, 0, 2, 4, 2, Qt::AlignRight);
   setLayout(pMainGridLayout);
 }
 
@@ -1121,7 +1118,6 @@ void FindReplaceDialog::replace()
     compareString = Qt::CaseSensitive;
   else
     compareString = Qt::CaseInsensitive;
-  find();
   int same = mpModelicaTextEdit->textCursor().selectedText().compare(mpFindComboBox->currentText(),( Qt::CaseSensitivity)compareString );
   if (mpModelicaTextEdit->textCursor().hasSelection()&& same == 0  )
   {
@@ -1175,53 +1171,18 @@ void FindReplaceDialog::updateButtons()
 }
 
 /*!
-  Shows an error in the dialog
-  */
-void FindReplaceDialog::showError(const QString &error)
-{
-  if (error == "")
-  {
-    mpMessageLabel->setText("");
-  }
-  else
-  {
-    mpMessageLabel->setText("<span style=\" font-weight:600; color:#ff0000;\">" + error + "</span>");
-  }
-}
-
-/*!
-  Shows a message in the dialog
-  */
-void FindReplaceDialog::showMessage(const QString &message)
-{
-  if (message == "")
-  {
-    mpMessageLabel->setText("");
-  }
-  else
-  {
-    mpMessageLabel->setText("<span style=\" font-weight:600; color:green;\">" + message + "</span>");
-  }
-}
-
-/*!
   Checks whether the passed text is a valid regular expression
   */
 void FindReplaceDialog::validateRegularExpression(const QString &text)
 {
   if (!mpRegularExpressionCheckBox->isChecked() || text.size() == 0)
   {
-    mpMessageLabel->setText("");
     return; // nothing to validate
   }
   QRegExp reg(text, (mpCaseSensitiveCheckBox->isChecked() ? Qt::CaseSensitive : Qt::CaseInsensitive));
-  if (reg.isValid())
+  if (!reg.isValid())
   {
-    showError("");
-  }
-  else
-  {
-    showError(reg.errorString());
+    QMessageBox::critical( this, "Find", reg.errorString());
   }
 }
 

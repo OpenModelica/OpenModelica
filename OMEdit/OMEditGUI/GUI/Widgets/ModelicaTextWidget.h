@@ -203,7 +203,6 @@ public:
   void saveFindTextToSettings(QString textToFind);
 private:
   ModelicaTextEdit *mpModelicaTextEdit;
-  Label *mpMessageLabel;
   Label *mpFindLabel;
   QComboBox *mpFindComboBox;
   Label *mpReplaceWithLabel;
@@ -226,9 +225,6 @@ public slots:
   void replace();
   void replaceAll();
   void updateButtons();
-protected:
-  void showError(const QString &error);
-  void showMessage(const QString &message);
 protected slots:
   void validateRegularExpression(const QString &text);
   void regularExpressionSelected(bool selected);
