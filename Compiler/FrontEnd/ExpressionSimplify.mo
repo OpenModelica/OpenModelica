@@ -3836,7 +3836,7 @@ algorithm
         ty = Expression.typeof(e1);
         true = Expression.operatorEqual(op2,DAE.DIV(ty)) or
         Expression.operatorEqual(op2,DAE.MUL(ty)); 
-        res = DAE.BINARY(e1, DAE.MUL(ty),e2);
+        res = DAE.BINARY(e1, op2, e2);
       then Expression.makeBuiltinCall("abs",{res},ty);
 
     // exp(e1) * exp(e2) => exp(e1 + e2)
