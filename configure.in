@@ -518,7 +518,7 @@ AC_TRY_LINK([
     #include <libintl.h>
   ], [
       gettext("");
-  ], [AC_MSG_RESULT([in intl]);RT_LDFLAGS="$RT_LDFLAGS $LIBS"],
+  ], [AC_MSG_RESULT([in intl]);RT_LDFLAGS_GENERATED_CODE="$RT_LDFLAGS_GENERATED_CODE $LIBS"],
       [AC_MSG_ERROR([no])])
 ])
 
@@ -788,8 +788,8 @@ if test "Darwin" = `uname`; then
   RT_LDFLAGS_SIM="$LDFLAGS $RT_LDFLAGS $SUNDIALS_LDFLAGS $IPOPT_LDFLAGS -linteractive -llis -lf2c -lexpat -liconv -lgc -lpthread -lm -ldl -lstdc++"
   RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS $LD_LAPACK -liconv -lgc -lpthread -lm -ldl -lstdc++"
   # All libraries are dynamically linked; we don't need anything else
-  RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $LD_LAPACK -lm"
-  RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC $LD_LAPACK -lm -lgc"
+  RT_LDFLAGS_GENERATED_CODE="$RT_LDFLAGS_GENERATED_CODE $LDFLAGS -lOpenModelicaRuntimeC $LD_LAPACK -lm"
+  RT_LDFLAGS_GENERATED_CODE_SIM="$RT_LDFLAGS_GENERATED_CODE $LDFLAGS -lSimulationRuntimeC $LD_LAPACK -lm -lgc"
   LINK="cp -fr"
   RPATH="-Wl,-rpath,'@loader_path/../lib/omc'"
   MSL_EXTRA_ARGS="--disable-hdf5 --enable-static-zlib --enable-static --disable-shared"
@@ -810,8 +810,8 @@ elif test "$host" = "i586-pc-mingw32msvc"; then
   FMILIB_SHARED=OFF
   RT_LDFLAGS_SIM="$LDFLAGS $RT_LDFLAGS $SUNDIALS_LDFLAGS $IPOPT_LDFLAGS -linteractive -llis -lstdc++ -lf2c -lgc -lexpat -lm"
   RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS $LD_LAPACK -lgc -lexpat -lpthread -lm"
-  RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $RT_LDFLAGS"
-  RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC $RT_LDFLAGS_SIM"
+  RT_LDFLAGS_GENERATED_CODE="$RT_LDFLAGS_GENERATED_CODE $LDFLAGS -lOpenModelicaRuntimeC $RT_LDFLAGS"
+  RT_LDFLAGS_GENERATED_CODE_SIM="$RT_LDFLAGS_GENERATED_CODE $LDFLAGS -lSimulationRuntimeC $RT_LDFLAGS_SIM"
   LINK="cp -frl"
   RPATH="-Wl,-rpath,'\$\$ORIGIN/../lib/omc'"
   OS_TARGET="windows"
@@ -834,8 +834,8 @@ else
   RT_LDFLAGS_SIM="-Wl,-rpath,'\$\$ORIGIN' $RT_LDFLAGS $SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $LIBRT -linteractive -llis -Wl,-Bstatic -lf2c -Wl,-Bdynamic -lexpat -lgc $LIBRT -lpthread -lm -ldl -lstdc++ -rdynamic"
   RT_LDFLAGS="$RT_LDFLAGS $LD_LAPACK -lgc $LIBRT -lpthread -lm -ldl -lstdc++ -rdynamic"
   # All libraries are dynamically linked; we don't need anything else
-  RT_LDFLAGS_GENERATED_CODE="-lOpenModelicaRuntimeC $LD_LAPACK -lm -rdynamic"
-  RT_LDFLAGS_GENERATED_CODE_SIM="-lSimulationRuntimeC $LD_LAPACK -lm -lgc -lpthread -rdynamic"
+  RT_LDFLAGS_GENERATED_CODE="$RT_LDFLAGS_GENERATED_CODE -lOpenModelicaRuntimeC $LD_LAPACK -lm -rdynamic"
+  RT_LDFLAGS_GENERATED_CODE_SIM="$RT_LDFLAGS_GENERATED_CODE -lSimulationRuntimeC $LD_LAPACK -lm -lgc -lpthread -rdynamic"
   LINK="cp -frl"
   RPATH="-Wl,-rpath,'\$\$ORIGIN/../lib/omc'"
   OS_TARGET="linux"
