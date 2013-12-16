@@ -28,7 +28,7 @@ else
  CORBALIBS=
 endif
 
-LDFLAGS = @LDFLAGS@ -lm -L$(RMLHOME)/lib/plain -lrml $(LIBSOCKET) $(CORBALIBS) $(LIBLPSOLVE55) -L../../build/lib/omc @RPATH@ @OMC_LIBS@ -lgc -lexpat @RT_LDFLAGS_GENERATED_CODE@
+LDFLAGS = @LDFLAGS@ -lm -L$(RMLHOME)/lib/plain -lrml $(LIBSOCKET) $(CORBALIBS) $(LIBLPSOLVE55) -L../../build/lib/omc @RPATH@ @OMC_LIBS@ -lgc -lexpat @RT_LDFLAGS@
 
 PROG = omc
 RMLC	= @rmlc_bin@
