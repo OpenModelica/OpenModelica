@@ -3062,7 +3062,7 @@ algorithm
   end match;
 end applyIndexType;
 
-protected function incidenceMatrixDispatch
+public function incidenceMatrixDispatch
 "@author: adrpo
   Calculates the incidence matrix as an array of list of integers"
   input BackendDAE.Variables vars;
