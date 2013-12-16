@@ -4285,6 +4285,7 @@ algorithm
       SCode.Final fp;
       SCode.Ident ident;
       list<DAE.Element> el;
+      SCode.Visibility vis;
 
     // Just return the element if nothing needs to be changed.
     case (_,
@@ -4294,6 +4295,7 @@ algorithm
           variability = SCode.VAR(),
           direction = Absyn.BIDIR()),
         SCode.PREFIXES(
+          visibility = SCode.PUBLIC(),
           finalPrefix = SCode.NOT_FINAL(),
           innerOuter = Absyn.NOT_INNER_OUTER()), _)
       then inElement;
@@ -4320,12 +4322,14 @@ algorithm
           variability = var,
           direction = dir),
         SCode.PREFIXES(
+          visibility = vis,
           finalPrefix = fp,
           innerOuter = io1), _)
       equation
         vdir = propagateDirection(vdir, dir, cr, inInfo);
         vk = propagateVariability(vk, var);
         vprl = propagateParallelism(vprl,sprl,cr,inInfo);
+        vvis = propagateVisibility(vvis, vis);
         var_attrs = propagateFinal(var_attrs, fp);
         io2 = propagateInnerOuter(io2, io1);
         ct2 = propagateConnectorType(ct2, ct1, cr, inInfo);
@@ -4432,6 +4436,19 @@ algorithm
         daeprl2;
   end matchcontinue;
 end propagateParallelism;
+
+protected function propagateVisibility
+  "Helper function to propagateAttributes. Propagates the visibility (public or
+   protected) attribute to variables of a structured component."
+  input DAE.VarVisibility inVarVisibility;
+  input SCode.Visibility inVisibility;
+  output DAE.VarVisibility outVarVisibility;
+algorithm
+  outVarVisibility := match(inVarVisibility, inVisibility)
+    case (_, SCode.PROTECTED()) then DAE.PROTECTED();
+    else inVarVisibility;
+  end match;
+end propagateVisibility;
 
 protected function propagateVariability
   "Helper function to propagateAttributes. Propagates the variability (parameter
