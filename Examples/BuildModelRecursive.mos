@@ -32,7 +32,7 @@ loadModelCommand:=(if regularFileExists("CustomCommands.mos") then "\nrunScript(
 omc:=getInstallationDirectoryPath()+"/bin/omc";
 dygraphs:=getInstallationDirectoryPath()+"/share/doc/omc/testmodels/dygraph-combined.js";
 
-a:={typeNameString(x) for x guard isExperiment(x) in getClassNames(Modelica.Blocks,recursive=true,sort=true)};
+a:={typeNameString(x) for x guard isExperiment(x) in getClassNames(library,recursive=true,sort=true)};
 getErrorString();
 
 // writeFile("x",sum(s + "\n" for s in a));
