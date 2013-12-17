@@ -182,7 +182,7 @@ algorithm
         BackendDAE.TORNSYSTEM(tearingvars = tvarIdcs, residualequations = resEqIdcs, otherEqnVarTpl = otherEqnVarTpl, linear = linear) = comp;
         true = linear;
         Debug.fcall(Flags.HPCOM_DUMP,print,"handle linear torn systems of size: "+&intString(listLength(tvarIdcs)+listLength(otherEqnVarTpl))+&"\n");
-        Debug.fcall2(Flags.HPCOM_DUMP,dumpTornSystemGraphML,(systIn,tornSysIdxIn),comp);
+        Debug.fcall2(Flags.HPCOM_DUMP,dumpEquationSystemGraphML,(systIn,tornSysIdxIn),comp);
            //print("handle tornsystem with compnumber:"+&intString(compIdx)+&"\n");
            //BackendDump.dumpEqSystem(systIn,"the original system");
         // build the new components, the new variables and the new equations
@@ -190,7 +190,6 @@ algorithm
         (varsNew,eqsNew,tvars,resEqs,matchingNew) = reduceLinearTornSystem2(systIn,sharedIn,tvarIdcs,resEqIdcs,otherEqnVarTpl,tornSysIdxIn);
         
         BackendDAE.MATCHING(ass1=ass1New, ass2=ass2New, comps=compsNew) = matchingNew;
-                  
         // add the new vars and equations to the original EqSystem
         BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqs, stateSets = stateSets) = systIn;
         varsOld = BackendVariable.varList(vars);
@@ -394,10 +393,10 @@ algorithm
         jac = buildLinearJacobian(jacValuesIn);
         //print("Jac:\n" +& BackendDump.dumpJacobianStr(jac) +& "\n");
         comp = BackendDAE.EQUATIONSYSTEM(eqIdcsIn,varIdcsIn,jac,BackendDAE.JAC_TIME_VARYING());   
-        //print("the eqs of the sys: "+&stringDelimitList(List.map(varIdcsIn,intString),"n")+&"\n");
-        //print("the vars of the sys: "+&stringDelimitList(List.map(eqIdcsIn,intString),"n")+&"\n");
-        //rComp := BackendDAE.EQUATIONSYSTEM(residualEqs,tearingVars,NONE(),BackendDAE.JAC_NO_ANALYTIC());   
-        //rComp := BackendDAE.TORNSYSTEM(tearingVars,residualEqs,{},true);
+        //print("the eqs of the sys: "+&stringDelimitList(List.map(varIdcsIn,intString),"\n")+&"\n");
+        //print("the vars of the sys: "+&stringDelimitList(List.map(eqIdcsIn,intString),"\n")+&"\n");
+        //comp = BackendDAE.EQUATIONSYSTEM(eqIdcsIn,varIdcsIn,NONE(),BackendDAE.JAC_NO_ANALYTIC());   
+        //comp = BackendDAE.TORNSYSTEM(varIdcsIn,eqIdcsIn,{},true);
         Debug.fcall(Flags.HPCOM_DUMP,print,"a linear equationsystem of size "+&intString(listLength(eqIdcsIn))+&" is left from the partitioning.\n\n");
       then
         comp;
@@ -1753,7 +1752,7 @@ end oneSideConstant;
 // functions to dump the equation system as .graphml
 //-------------------------------------------------//
 
-protected function dumpTornSystemGraphML  "dumps the torn system as graphml.
+protected function dumpEquationSystemGraphML  "dumps the torn system or the equationsystem as graphml.
 author:Waurich TUD 2013-12"
   input tuple<BackendDAE.EqSystem,Integer> tplIn;
   input BackendDAE.StrongComponent tornSysCompIn;
@@ -1775,7 +1774,6 @@ algorithm
     case(_,BackendDAE.TORNSYSTEM(tearingvars=tvars,residualequations=resEqs, otherEqnVarTpl=otherEqVarTpl, linear=lin))
       equation
         (eqSysIn,sysIdx) = tplIn;
-        print("collect all the stuff\n");
         BackendDAE.EQSYSTEM(orderedVars,orderedEqs,_,_,_,_) = eqSysIn;
         otherEqs = List.map(otherEqVarTpl,Util.tuple21);
         allEqs = listAppend(resEqs,otherEqs);
@@ -1789,8 +1787,35 @@ algorithm
         vars = BackendVariable.listVar(varLst);
         mEqSys = arrayCreate(listLength(allVars), {});
         numberOfEqs = BackendDAEUtil.equationArraySize(eqs);
-        numberOfVars = listLength(tvars)+listLength(otherVars);
-        print("get the incidence matrix\n");
+        numberOfVars = listLength(allVars);
+        (mEqSys,mEqSysT) = BackendDAEUtil.incidenceMatrixDispatch(vars,eqs,{},mEqSys, 0, numberOfEqs, intLt(0, numberOfEqs), BackendDAE.ABSOLUTE(), NONE());
+        BackendDump.dumpVariables(vars, "vars of the torn system");
+        BackendDump.dumpEquationArray(eqs,"eqs of the torn system");
+        BackendDump.dumpIncidenceMatrix(mEqSys);      
+        BackendDump.dumpIncidenceMatrixT(mEqSysT);   
+        varRange = List.intRange(numberOfVars);
+        eqRange = List.intRange(numberOfEqs);
+        graph = GraphML.getGraph("TornSystemGraph", true);
+        (typeAttIdx,graph) = GraphML.addAttribute("", "type", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graph);
+        (nameAttIdx,graph) = GraphML.addAttribute("", "name", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graph);
+        graph = List.fold2(varRange,addVarNodeToGraph,vars,{nameAttIdx,typeAttIdx}, graph);
+        graph = List.fold2(eqRange,addEqNodeToGraph,eqs,{nameAttIdx,typeAttIdx}, graph);
+        graph = List.fold1(eqRange,addEdgeToGraph,mEqSys,graph);
+        GraphML.dumpGraph(graph,"TornSystemGraph"+&intString(sysIdx)+&".graphml");
+      then
+        ();
+case(_,BackendDAE.EQUATIONSYSTEM(eqns=allEqs,vars=allVars, jac=_, jacType=_))
+      equation
+        (eqSysIn,sysIdx) = tplIn;
+        BackendDAE.EQSYSTEM(orderedVars,orderedEqs,_,_,_,_) = eqSysIn;
+        eqLst = BackendEquation.getEqns(allEqs,orderedEqs);
+        eqs = BackendEquation.listEquation(eqLst);
+        varLst = BackendVariable.varList(orderedVars);
+        varLst = List.map1(allVars,List.getIndexFirst,varLst);
+        vars = BackendVariable.listVar(varLst);
+        mEqSys = arrayCreate(listLength(allVars), {});
+        numberOfEqs = BackendDAEUtil.equationArraySize(eqs);
+        numberOfVars = listLength(allVars);
         (mEqSys,mEqSysT) = BackendDAEUtil.incidenceMatrixDispatch(vars,eqs,{},mEqSys, 0, numberOfEqs, intLt(0, numberOfEqs), BackendDAE.ABSOLUTE(), NONE());
         BackendDump.dumpVariables(vars, "vars of the torn system");
         BackendDump.dumpEquationArray(eqs,"eqs of the torn system");
@@ -1807,7 +1832,7 @@ algorithm
       then
         ();
   end match;
-end dumpTornSystemGraphML;
+end dumpEquationSystemGraphML;
 
 
 protected function addEdgeToGraph "adds an edge to the graph by traversing the incidence matrix.
@@ -1835,7 +1860,7 @@ protected
 algorithm
   eqNodeId := getEqNodeIdx(eqIdx);
   varNodeId := getVarNodeIdx(varIdx);
-  graphOut := GraphML.addEdge("Edge_"+&intString(varIdx)+&intString(eqIdx),varNodeId,eqNodeId,GraphML.COLOR_BLACK,GraphML.LINE(),GraphML.LINEWIDTH_STANDARD,NONE(),(NONE(),NONE()),{}, graphIn);
+  graphOut := GraphML.addEdge("Edge_"+&intString(varIdx)+&"_"+&intString(eqIdx),varNodeId,eqNodeId,GraphML.COLOR_BLACK,GraphML.LINE(),GraphML.LINEWIDTH_STANDARD,NONE(),(NONE(),NONE()),{}, graphIn);
 end addEdgeToGraph2;
 
 
