@@ -35,7 +35,7 @@ Adrian Pop, Adrian.Pop@liu.se, date above.
    to OpenModelica/.externalToolBuilders/OMDev-MINGW-OpenModelicaBuilder.launch and do whatever
    modifications are needed on it to reflect your paths.
 
-6. Installing Modelica Development Tooling (MDT) and Setting your Eclipse workspace
+6. Installing Modelica Development Tooling (MDT) and setting your Eclipse workspace
    Start Eclipse and follow instructions from:
    http://www.ida.liu.se/~pelab/modelica/OpenModelica/MDT/
    to install MDT. Eclipse will restart at the end.
@@ -47,28 +47,34 @@ Adrian Pop, Adrian.Pop@liu.se, date above.
      c:\some_patsh\dev\
    - The Eclipse restarts
 
-7. Setting your project.
+7. To compile the OpenModelica clients (OMNotebook, OMShell, OMEdit,...) you need to install qt from:
+   - http://download.qt-project.org/archive/qt/4.8/4.8.0/qt-win-opensource-4.8.0-mingw.exe
+   - Ignore error message (say ok) of the missing MiniGW installation (it's already included in OMDev)
+
+8. Setting your project.
    - File -> New -> (Modelica Project) or
      File -> New -> Project -> Modelica -> Modelica Project
    - Type the name of your OpenModelica directory installation
      For me "OpenModelica"
-   - Say ok.
+   - Say Finish.
 
-8. Editing the OMDev-MINGW-OpenModelicaBuilder
+9. Editing the OMDev-MINGW-OpenModelicaBuilder
    - Project->Project Properties->Builders->OMDev-MINGW-OpenModelicaBuilder->Edit
    - NOTE: In tab Main you have to change the Working Directory from "OpenModelica" to
            your directory name
    - Go to Environment tab and change the name of the OMDEV variable from there
      to point to your OMDev installation:
      /c/path/to/your/omdev (/c/OMDev)
+   - To compile qtclints you need to edit (add, not replace) in the same tab
+     the eclipse PATH variable with your qt path. (e.g. "c:/qt/4.8.0/bin/;")
 
-9. Running the OMDev-MINGW-OpenModelica builder:
-   To run the OMDev-MINGW-OpenModelicaBuilder press Ctrl+B or right-click project and say rebuild.
-   Then the OMDev-MINGW-OpenModelicaBuilder will start
-   and compile an OpenModelica/build/omc.exe.
-   If the builder refuse to start, please check the ***NOTES*** below.
+10. Running the OMDev-MINGW-OpenModelica builder:
+    To run the OMDev-MINGW-OpenModelicaBuilder press Ctrl+B or right-click project and say rebuild.
+    Then the OMDev-MINGW-OpenModelicaBuilder will start
+    and compile an OpenModelica/build/omc.exe.
+    If the builder refuse to start, please check the ***NOTES*** below.
 
-10. Available options for OMDev-MINGW-OpenModelicaBuilder
+11. Available options for OMDev-MINGW-OpenModelicaBuilder
     In the Environment tab of the OMDev-MINGW-OpenModelicaBuilder
     you have several variables.
     - OMC_BUILD_STATIC which is not present in Environment tab
@@ -76,10 +82,15 @@ Adrian Pop, Adrian.Pop@liu.se, date above.
       independent (static) omc.exe.
     - to build omc for a release you need to make it static.
 
-11. To install the Modelica Standard Library into the build directory:
+12. To install the Modelica Standard Library into the build directory:
     - Ctrl+B and type: omlibrary
 
-12. To run the OpenModelica testsuite:
+13. To build the OpenModelica clients:
+    - Ctrl+B and type: qtclients
+      Compiles OMNotebook, OMShell, OMEdit, OMPlot, OMVisualize, OMOptim
+      Copies the binaries in trunk\build\bin and libraries in trunk\build\lib
+
+14. To run the OpenModelica testsuite:
     - Ctrl+B and type: testlog
       Will get you a trunk\testsuite\testsuite-trace.txt
     To run the testsuite from MSYS terminal:
@@ -90,35 +101,33 @@ Adrian Pop, Adrian.Pop@liu.se, date above.
       >cd testsuite
       testsuite> make
       
-13. To install the OpenModelica Python Interface:
+15. To install the OpenModelica Python Interface:
     - Ctrl+B and type: install-python
       Generates the python stub files.
       Copies the OMPython files in trunk\build\share\omc\scripts\PythonInterface
-      
-14. To build the OpenModelica clients:
-    - Ctrl+B and type: qtclients
-      Compiles OMNotebook, OMShell, OMEdit, OMPlot, OMVisualize, OMOptim
-      Copies the binaries in trunk\build\bin and libraries in trunk\build\lib
+
 
 ***NOTES*** ON PROBLEMS WITH THE ECLIPSE PROJECT/OMDev BUILDER:
 ---------------------------------------------------------------
 If something does not work in Eclipse, please check:
-1. is OMDev installed into c:\OMDev?
+1. is the Modelica perspective chosen in eclipse?
+   Set it up in the right top corner.
+2. is OMDev installed into c:\OMDev?
    Be sure in C:\OMDev you have directories "tools", "bin", "include"
    and not another OMDev directory.
    Set a OMDEV variable to point to it. Right Click on
    My Computer->Properties->Advanced Tab->Environment Variables
    Add variable OMDEV and set the text to C:\OMDev
    Close and restart Eclipse to pick up the OMDEV variable.
-2. rename the:
+3. rename the:
 /OpenModelica/.externalToolBuilders/OMDev-MINGW-OpenModelicaBuilder.launch-sample
 to:
 /OpenModelica/.externalToolBuilders/OMDev-MINGW-OpenModelicaBuilder.launch
-3. right click on the OpenModelica project in Eclipse and say Refresh
-4. right click on the OpenModelica project in Eclipse and say Properties
+4. right click on the OpenModelica project in Eclipse and say Refresh
+5. right click on the OpenModelica project in Eclipse and say Properties
   + go to Builders and see if you have the builder :
     OMDev-MINGW-OpenModelicaBuilder available.
-5. right click on the OpenModelica project and say "Rebuild"
+6. right click on the OpenModelica project and say "Rebuild"
 
 If these do not work, look into your OpenModelica/.project
 to see if you have any reference to: OMDev-MINGW-OpenModelicaBuilder
@@ -135,6 +144,5 @@ For problems with OMDev package, contact:
 Adrian Pop,
 adrpo@ida.liu.se
 
-Last Update:     2011-03-05
-Previous Update: 2007-03-09 
-
+Last Update:     2013-12-17
+Previous Update: 2011-03-05
