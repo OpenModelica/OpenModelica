@@ -374,6 +374,13 @@ algorithm
       then
         (cache,newval,stOpt);
 
+    // Cast of records  (Check done by static, so ok to just evaluate the expression and return)
+    case(cache,env,DAE.CAST(ty = ty,exp = e),impl,stOpt,msg,_)
+      equation
+        true = Types.isRecord(ty);
+        (cache,value,stOpt) = ceval(cache, env, e, impl, stOpt,msg,numIter+1);
+      then (cache,value,stOpt);
+
     // Try Interactive functions last
     case (cache,env,(e as DAE.CALL(path = _)),(impl as true),SOME(st),msg,_)
       equation
