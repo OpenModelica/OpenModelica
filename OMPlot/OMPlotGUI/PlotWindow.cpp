@@ -842,7 +842,7 @@ void PlotWindow::enablePanMode(bool on)
 
 void PlotWindow::exportDocument()
 {
-  QString fileName = QFileDialog::getSaveFileName(this, tr("Save File As"), QDir::currentPath(), tr("Image Files (*.png *.svg *.bmp *.jpg)"));
+  QString fileName = QFileDialog::getSaveFileName(this, tr("Save File As"), QDir::currentPath(), tr("Image Files (*.png *.svg *.bmp)"));
 
   if ( !fileName.isEmpty() )
   {
@@ -862,7 +862,7 @@ void PlotWindow::exportDocument()
       plotRenderer.renderDocument(mpPlot, fileName, QSizeF(mpPlot->widthMM(), mpPlot->heightMM()));
 #endif
     }
-    // export png, bmp, jpg
+    // export png, bmp
     else
     {
 #if QWT_VERSION < 0x060000
