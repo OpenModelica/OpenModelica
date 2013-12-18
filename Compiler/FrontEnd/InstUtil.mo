@@ -6013,7 +6013,7 @@ algorithm
     case (cache,env,SCode.EXTERNALDECL(funcName = id,lang = lang,output_ = retcr,args = absexps),impl,pre,_)
       equation
         (cache,exps,props,_) = elabExpListExt(cache,env, absexps, impl,NONE(),pre,info);
-        (cache,extargs) = instExtGetFargs2(cache, env, exps, props);
+        (cache,extargs) = instExtGetFargs2(cache, env, exps, props, lang, info);
       then
         (cache,extargs);
     case (_,_,_,impl,_,_)
@@ -6031,10 +6031,12 @@ protected function instExtGetFargs2
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input list<DAE.Properties> inTypesPropertiesLst;
+  input Option<String> lang;
+  input Absyn.Info info;
   output Env.Cache outCache;
   output list<DAE.ExtArg> outDAEExtArgLst;
 algorithm
-  (outCache,outDAEExtArgLst) := match (inCache,inEnv,inExpExpLst,inTypesPropertiesLst)
+  (outCache,outDAEExtArgLst) := match (inCache,inEnv,inExpExpLst,inTypesPropertiesLst,lang,info)
     local
       list<DAE.ExtArg> extargs;
       DAE.ExtArg extarg;
@@ -6044,11 +6046,11 @@ algorithm
       DAE.Properties p;
       list<DAE.Properties> props;
       Env.Cache cache;
-    case (cache,_,{},_) then (cache,{});
-    case (cache,env,(e :: exps),(p :: props))
+    case (cache,_,{},_,_,_) then (cache,{});
+    case (cache,env,(e :: exps),(p :: props),_,_)
       equation
-        (cache,extargs) = instExtGetFargs2(cache, env, exps, props);
-        (cache,extarg) = instExtGetFargsSingle(cache, env, e, p);
+        (cache,extarg) = instExtGetFargsSingle(cache, env, e, p, lang, info);
+        (cache,extargs) = instExtGetFargs2(cache, env, exps, props, lang, info);
       then
         (cache,extarg :: extargs);
   end match;
@@ -6061,10 +6063,12 @@ protected function instExtGetFargsSingle
   input Env.Env inEnv;
   input DAE.Exp inExp;
   input DAE.Properties inProperties;
+  input Option<String> lang;
+  input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.ExtArg outExtArg;
 algorithm
-  (outCache,outExtArg) := matchcontinue (inCache,inEnv,inExp,inProperties)
+  (outCache,outExtArg) := matchcontinue (inCache,inEnv,inExp,inProperties,lang,info)
     local
       DAE.Attributes attr;
       DAE.Type ty,varty;
@@ -6079,52 +6083,47 @@ algorithm
       Env.Cache cache;
       SCode.Variability variability;
       Values.Value val;
+      String str;
 
-    case (cache,env,DAE.CREF(componentRef = cref,ty = crty),DAE.PROP(type_ = ty,constFlag = cnst))
+    case (cache,env,DAE.CREF(componentRef = cref as DAE.CREF_IDENT(ident=_),ty = crty),DAE.PROP(type_ = ty,constFlag = DAE.C_VAR()),_,_)
       equation
         (cache,attr,ty,bnd,_,_,_,_,_) = Lookup.lookupVarLocal(cache,env,cref);
       then
         (cache,DAE.EXTARG(cref,attr,ty));
 
-    // adrpo: these can be non-local if they are constants or parameters!
-    case (cache,env,DAE.CREF(componentRef = cref,ty = crty),DAE.PROP(type_ = ty,constFlag = cnst))
-      equation
-        (cache,attr as DAE.ATTR(variability = variability),ty,bnd,_,_,_,_,_) = Lookup.lookupVar(cache,env,cref);
-        true = SCode.isConstant(variability);
-        (cache, exp, prop) = Ceval.cevalIfConstant(cache, env, inExp, inProperties, false, Absyn.dummyInfo);
-      then
-        (cache,DAE.EXTARGEXP(exp, ty));
-
-    // adrpo: these can be non-local if they are constants or parameters!
-    case (cache,env,DAE.CREF(componentRef = cref,ty = crty),DAE.PROP(type_ = ty,constFlag = cnst))
-      equation
-        (cache,attr as DAE.ATTR(variability = variability),ty,bnd,_,_,_,_,_) = Lookup.lookupVar(cache,env,cref);
-        true = SCode.isParameterOrConst(variability);
-      then
-        (cache,DAE.EXTARG(cref, attr, ty));
-
-    case (cache,env,DAE.CREF(componentRef = cref,ty = crty),DAE.PROP(type_ = ty,constFlag = cnst))
+    case (cache,env,DAE.CREF(componentRef = cref,ty = crty),DAE.PROP(type_ = ty,constFlag = cnst),_,_)
       equation
         failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVarLocal(cache,env,cref));
         crefstr = ComponentReference.printComponentRefStr(cref);
         scope = Env.printEnvPathStr(env);
         Error.addMessage(Error.LOOKUP_VARIABLE_ERROR, {crefstr,scope});
-      then
-        fail();
+      then fail();
 
-    case (cache,env,DAE.SIZE(exp = DAE.CREF(componentRef = cref,ty = crty),sz = SOME(dim)),DAE.PROP(type_ = ty,constFlag = cnst))
+    case (cache,env,DAE.SIZE(exp = DAE.CREF(componentRef = cref,ty = crty),sz = SOME(dim)),DAE.PROP(type_ = ty),_,_)
       equation
         (cache,attr,varty,bnd,_,_,_,_,_) = Lookup.lookupVarLocal(cache,env, cref);
       then
         (cache,DAE.EXTARGSIZE(cref,attr,varty,dim));
 
-    case (cache,env,exp,DAE.PROP(type_ = ty,constFlag = cnst)) then (cache,DAE.EXTARGEXP(exp,ty));
-
-    case (cache,_,exp,prop)
+    // adrpo: these can be non-local if they are constants or parameters!
+    case (cache,env,_,DAE.PROP(type_ = ty,constFlag = DAE.C_CONST()),_,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "#-- Inst.instExtGetFargsSingle failed for expression: " +& ExpressionDump.printExpStr(exp));
-      then
-        fail();
+        (cache, exp, prop) = Ceval.cevalIfConstant(cache, env, inExp, inProperties, false, info);
+        // TODO: Check it is a scalar
+      then (cache,DAE.EXTARGEXP(exp, ty));
+
+    case (cache,env,DAE.CALL(path=Absyn.QUALIFIED("OpenModelica",Absyn.IDENT("threadData"))),DAE.PROP(type_ = ty),_,_)
+      then (cache,DAE.EXTARGEXP(inExp, ty));
+
+    case (cache,env,_,DAE.PROP(type_ = ty),SOME("builtin"),_)
+      then (cache,DAE.EXTARGEXP(inExp, ty));
+
+    case (cache,env,exp,DAE.PROP(type_ = ty,constFlag = cnst),_,_)
+      equation
+        str = ExpressionDump.printExpStr(exp);
+        Error.addSourceMessage(Error.EXTERNAL_ARG_WRONG_EXP,{str},info);
+      then fail();
+
   end matchcontinue;
 end instExtGetFargsSingle;
 
@@ -6159,7 +6158,7 @@ algorithm
     case (cache,env,SCode.EXTERNALDECL(funcName = n,lang = lang,output_ = SOME(cref),args = args),impl,pre,_)
       equation
         (cache,SOME((exp,prop,attr))) = Static.elabCref(cache,env,cref,impl,false /* Do NOT vectorize arrays; we require a CREF */,pre,info);
-        (cache,extarg) = instExtGetFargsSingle(cache,env,exp,prop);
+        (cache,extarg) = instExtGetFargsSingle(cache,env,exp,prop,lang,info);
         assertExtArgOutputIsCrefVariable(lang,extarg,Types.getPropType(prop),Types.propAllConst(prop),info);
       then
         (cache,extarg);

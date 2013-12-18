@@ -611,6 +611,8 @@ public constant Message REINIT_MUST_BE_VAR_OR_ARRAY = MESSAGE(225, TRANSLATION()
   Util.gettext("The first argument to reinit must be a variable of type Real or an array of such variables."));
 public constant Message SLICE_ASSIGN_NON_ARRAY = MESSAGE(226, SCRIPTING(), ERROR(),
   Util.gettext("Cannot assign slice to non-initialized array %s."));
+public constant Message EXTERNAL_ARG_WRONG_EXP = MESSAGE(227, TRANSLATION(), ERROR(),
+  Util.gettext("Expression %s cannot be an external argument. Only simple identifiers, constant scalars, and size-expressions are allowed."));
 
 public constant Message UNBOUND_PARAMETER_WITH_START_VALUE_WARNING = MESSAGE(499, TRANSLATION(), WARNING(),
   Util.gettext("Parameter %s has no value, and is fixed during initialization (fixed=true), using available start value (start=%s) as default value."));
