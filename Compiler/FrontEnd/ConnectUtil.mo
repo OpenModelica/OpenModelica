@@ -2998,14 +2998,14 @@ algorithm
                     expLst = {DAE.CREF(componentRef = cr, ty = ty)}), sets))
       equation
         e = evaluateInStream(cr, sets);
-        // print("Evaluated inStream(" +& ExpressionDump.dumpExpStr(DAE.CREF(cr, ty), 0) +& ") ->\n" +& ExpressionDump.dumpExpStr(e, 0) +& "\n");
+        //print("Evaluated inStream(" +& ExpressionDump.dumpExpStr(DAE.CREF(cr, ty), 0) +& ") ->\n" +& ExpressionDump.dumpExpStr(e, 0) +& "\n");
       then
         ((e, sets));
     case ((DAE.CALL(path = Absyn.IDENT("actualStream"),
                     expLst = {DAE.CREF(componentRef = cr, ty = ty)}), sets))
       equation
         e = evaluateActualStream(cr, sets);
-        // print("Evaluated actualStream(" +& ExpressionDump.dumpExpStr(DAE.CREF(cr, ty), 0) +& ") ->\n" +& ExpressionDump.dumpExpStr(e, 0) +& "\n");
+        //print("Evaluated actualStream(" +& ExpressionDump.dumpExpStr(DAE.CREF(cr, ty), 0) +& ") ->\n" +& ExpressionDump.dumpExpStr(e, 0) +& "\n");
       then
         ((e, sets));
 
@@ -3179,10 +3179,11 @@ algorithm
         flow_exp = Expression.crefExp(flow_cr);
         stream_exp = Expression.crefExp(inStreamCref);
         instream_exp = evaluateInStream(inStreamCref, inSets);
-        // actualStream(stream_var) = if flow_var > 0 then inStream(stream_var)
-        //                                            else stream_var;
-        e = DAE.IFEXP(DAE.RELATION(flow_exp, DAE.GREATER(ety), DAE.RCONST(0.0),-1,NONE()),
-            instream_exp, stream_exp);
+        // actualStream(stream_var) = smooth(0, if flow_var > 0 then inStream(stream_var)
+        //                                            else stream_var);
+        e = DAE.CALL(Absyn.IDENT("smooth"), {DAE.ICONST(0), 
+                                             DAE.IFEXP(DAE.RELATION(flow_exp, DAE.GREATER(ety), DAE.RCONST(0.0),-1,NONE()),
+                                                       instream_exp, stream_exp)}, DAE.callAttrBuiltinReal);
       then
         e;
   end match;
