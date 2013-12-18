@@ -219,9 +219,9 @@ template simulationFile_lsy(SimCode simCode, String guid)
     <%simulationFileHeader(simCode)%>
     #include "<%simCode.fileNamePrefix%>_12jac.h"
 
-    <%functionSetupLinearSystems(initialEquations, inlineEquations, parameterEquations, allEquations, collectAllJacobianEquations(jacobianMatrixes))%>
+    <%functionSetupLinearSystems(initialEquations, inlineEquations, parameterEquations, allEquations, jacobianEquations)%>
     
-    <%functionInitialLinearSystems(initialEquations, inlineEquations, parameterEquations, allEquations, collectAllJacobianEquations(jacobianMatrixes), modelNamePrefix(simCode))%>
+    <%functionInitialLinearSystems(initialEquations, inlineEquations, parameterEquations, allEquations, jacobianEquations, modelNamePrefix(simCode))%>
     
     <%\n%>
     >>
@@ -284,7 +284,7 @@ template simulationFile_inz(SimCode simCode, String guid)
     <%functionInitialResidual(residualEquations, modelNamePrefix(simCode))%>
     <%functionInitialEquations(useSymbolicInitialization, initialEquations, modelNamePrefix(simCode))%>    
 
-    <%functionInitialMixedSystems(initialEquations, inlineEquations, parameterEquations, allEquations, collectAllJacobianEquations(jacobianMatrixes), modelNamePrefix(simCode))%>
+    <%functionInitialMixedSystems(initialEquations, inlineEquations, parameterEquations, allEquations, jacobianEquations, modelNamePrefix(simCode))%>
     
     <%\n%>
     >>
@@ -397,7 +397,7 @@ template simulationFile_mix(SimCode simCode, String guid, Text &header)
     /* Mixed Systems */
     <%simulationFileHeader(simCode)%>
     #include "<%simCode.fileNamePrefix%>_11mix.h"
-    <%functionSetupMixedSystems(initialEquations, inlineEquations, parameterEquations, allEquations, collectAllJacobianEquations(jacobianMatrixes), &header, modelNamePrefixStr)%>
+    <%functionSetupMixedSystems(initialEquations, inlineEquations, parameterEquations, allEquations, jacobianEquations, &header, modelNamePrefixStr)%>
         
     <%\n%>
     >>

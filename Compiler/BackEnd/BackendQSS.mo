@@ -995,7 +995,7 @@ algorithm
       list<SimCode.RecordDeclaration> recordDecls;
       list<String> externalFunctionIncludes;
       list<list<SimCode.SimEqSystem>> algebraicEquations,odeEquations;
-      list<SimCode.SimEqSystem> allEquations,residualEquations,startValueEquations,parameterEquations,inlineEquations,removedEquations,algorithmAndEquationAsserts;
+      list<SimCode.SimEqSystem> allEquations,residualEquations,startValueEquations,parameterEquations,inlineEquations,removedEquations,algorithmAndEquationAsserts,jacobianEquations;
       list<SimCode.StateSet> stateSets;
       Boolean useSymbolicInitialization, useHomotopy;
       list<SimCode.SimEqSystem> initialEquations;
@@ -1017,7 +1017,7 @@ algorithm
       
     case (SimCode.SIMCODE(modelInfo,literals,recordDecls,externalFunctionIncludes,allEquations,odeEquations,
           algebraicEquations,residualEquations,useSymbolicInitialization,useHomotopy,initialEquations,startValueEquations,
-          parameterEquations,inlineEquations,removedEquations,algorithmAndEquationAsserts,stateSets,constraints,classAttributes,zeroCrossings,relations,
+          parameterEquations,inlineEquations,removedEquations,algorithmAndEquationAsserts,jacobianEquations,stateSets,constraints,classAttributes,zeroCrossings,relations,
           sampleLookup,whenClauses,discreteModelVars,extObjInfo,makefileParams,
           delayedExps,jacobianMatrixes,simulationSettingsOpt,fileNamePrefix,crefToSimVarHT,hpcOmSchedule),_)
     equation
@@ -1026,7 +1026,7 @@ algorithm
     then SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes,
                          allEquations, {eqs}, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy,
                          initialEquations, startValueEquations, parameterEquations, inlineEquations,
-                         removedEquations, algorithmAndEquationAsserts, stateSets, constraints, classAttributes,
+                         removedEquations, algorithmAndEquationAsserts, jacobianEquations, stateSets, constraints, classAttributes,
                          zeroCrossings, relations, sampleLookup,
                          whenClauses, discreteModelVars, extObjInfo,
                          makefileParams, delayedExps, jacobianMatrixes,

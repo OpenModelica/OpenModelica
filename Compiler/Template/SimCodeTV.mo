@@ -138,6 +138,7 @@ package SimCode
       list<SimEqSystem> inlineEquations;
       list<SimEqSystem> removedEquations;
       list<SimEqSystem> algorithmAndEquationAsserts;
+      list<SimEqSystem> jacobianEquations;
       //list<DAE.Statement> algorithmAndEquationAsserts;
       list<StateSet> stateSets;
       list<DAE.Constraint> constraints;
@@ -425,6 +426,7 @@ package SimCode
       list<SimVar> intConstVars;
       list<SimVar> boolConstVars;
       list<SimVar> stringConstVars;
+      list<SimVar> jacobianVars;
     end SIMVARS;
   end SimVars;
   
@@ -656,11 +658,6 @@ package SimCodeUtil
     input DAE.Exp inExp;
     output DAE.Exp outExp;
   end createAssertforSqrt;
-
-  function collectAllJacobianEquations
-    input list<SimCode.JacobianMatrix> inJacobianMatrix;
-    output list<SimCode.SimEqSystem> eqn;
-  end collectAllJacobianEquations;
  
   function appendLists
     input list<SimCode.SimEqSystem> inEqn1;

@@ -92,6 +92,7 @@ uniontype SimCode
     list<SimEqSystem> inlineEquations;
     list<SimEqSystem> removedEquations;
     list<SimEqSystem> algorithmAndEquationAsserts;
+    list<SimEqSystem> jacobianEquations;
     //list<DAE.Statement> algorithmAndEquationAsserts;
     list<StateSet> stateSets;
     list<DAE.Constraint> constraints;
@@ -222,11 +223,12 @@ uniontype SimVars "Container for metadata about variables in a Modelica model."
     list<SimVar> intConstVars;
     list<SimVar> boolConstVars;
     list<SimVar> stringConstVars;
+    list<SimVar> jacobianVars;
   end SIMVARS;
 end SimVars;
 
 public constant SimVars emptySimVars = SIMVARS({}, {}, {}, {}, {}, {}, {}, {},
-  {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {});
+  {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {});
 
 uniontype SimVar "Information about a variable in a Modelica model."
   record SIMVAR
