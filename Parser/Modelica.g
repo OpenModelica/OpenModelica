@@ -1053,7 +1053,6 @@ expression returns [void* ast] :
   ( e=if_expression { ast = e; }
   | e=simple_expression { ast = e; }
   | e=code_expression { ast = e; }
-  | e=part_eval_function_expression { ast = e; }
   | e=match_expression { ast = e; }
   )
   ;
@@ -1368,7 +1367,7 @@ function_arguments returns [void* ast]
 for_or_expression_list returns [void* ast, int isFor]
 @init{ e = 0; el = 0; forind = 0; } :
   ( {LA(1)==IDENT || LA(1)==OPERATOR && LA(2) == EQUALS || LA(1) == RPAR || LA(1) == RBRACE}? { $ast = mk_nil(); $isFor = 0; }
-  | ( e=expression
+  | ( (e=expression | e=part_eval_function_expression)
       ( (COMMA el=for_or_expression_list2)
       | (FOR forind=for_indices)
       )?
@@ -1389,7 +1388,7 @@ for_or_expression_list returns [void* ast, int isFor]
 for_or_expression_list2 returns [void* ast] 
 @init{ e = 0; el = 0; } :
     {LA(2) == EQUALS}? { ast = mk_nil(); }
-  | e=expression (COMMA el=for_or_expression_list2)? { ast = mk_cons(e, or_nil(el)); }
+  | (e=expression | e=part_eval_function_expression) (COMMA el=for_or_expression_list2)? { ast = mk_cons(e, or_nil(el)); }
   ;
 
 named_arguments returns [void* ast] 
@@ -1399,7 +1398,7 @@ named_arguments returns [void* ast]
 
 named_argument returns [void* ast]
 @init{ id = 0; e = 0; } :
-  ( id=IDENT | id=OPERATOR) EQUALS e=expression { ast = Absyn__NAMEDARG(token_to_scon(id),e); }
+  ( id=IDENT | id=OPERATOR) EQUALS (e=expression | e=part_eval_function_expression) { ast = Absyn__NAMEDARG(token_to_scon(id),e); }
   ;
 
 output_expression_list [int* isTuple] returns [void* ast]
