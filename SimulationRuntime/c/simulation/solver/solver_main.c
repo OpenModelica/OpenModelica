@@ -148,7 +148,7 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   solverInfo->didEventStep = 0;
   solverInfo->stateEvents = 0;
   solverInfo->sampleEvents = 0;
-  solverInfo->stepPrecision = 15;
+  solverInfo->stepPrecision = fmin(15,abs(log10(simInfo->stepSize)+fmax(log10(simInfo->startTime),-4)+log10(simInfo->tolerance)));
 
   if(solverInfo->solverMethod == 2)
   {
