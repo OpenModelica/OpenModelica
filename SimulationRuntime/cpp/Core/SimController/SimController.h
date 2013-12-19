@@ -12,8 +12,8 @@ public:
     SimController(PATH library_path,PATH modelicasystem_path);
     virtual ~SimController();
    
-	
-	///Load and translates a Modelica modell to IMixedSystem dll
+  
+  ///Load and translates a Modelica modell to IMixedSystem dll
     virtual std::pair<boost::weak_ptr<IMixedSystem>,boost::weak_ptr<ISimData> > LoadSystem(string modelLib,string modelKey);
     virtual std::pair<boost::weak_ptr<IMixedSystem>,boost::weak_ptr<ISimData> > LoadModelicaSystem(PATH modelica_path,string modelKey);
     /// Starts the simulation

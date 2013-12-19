@@ -25,10 +25,10 @@ public:
     /// Enumeration to control the time integration
 
     virtual ~ISimController()    {};
-	virtual std::pair<boost::weak_ptr<IMixedSystem>,boost::weak_ptr<ISimData> > LoadSystem(string modelLib,string modelKey)=0;
+  virtual std::pair<boost::weak_ptr<IMixedSystem>,boost::weak_ptr<ISimData> > LoadSystem(string modelLib,string modelKey)=0;
     virtual std::pair<boost::weak_ptr<IMixedSystem>,boost::weak_ptr<ISimData> > LoadModelicaSystem(PATH modelica_path,string modelKey) =0;
    
-	/*
+  /*
     Starts the simulation
     modelKey: Modelica model name
     modelica_path: path to Modelica system dll

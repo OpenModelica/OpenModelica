@@ -50,53 +50,53 @@ template simulationMainFile(SimCode simCode)
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
   <<
-  	#ifndef BOOST_ALL_DYN_LINK
-	#define BOOST_ALL_DYN_LINK
-  	#endif
-	#include <boost/shared_ptr.hpp>
-	#include <boost/weak_ptr.hpp>
-	#include <boost/numeric/ublas/vector.hpp>
-	#include <boost/numeric/ublas/matrix.hpp>
-	#include <string>
-	#include <vector>
-	#include <map>
-	using std::string;
-	using std::vector;
-	using std::map;
-	namespace ublas = boost::numeric::ublas;
-	#include <SimCoreFactory/Policies/FactoryConfig.h>
-	#include <SimController/ISimController.h>
-	//#include "OMCpp<%lastIdentOfPath(modelInfo.name)%>.h"
-	#if defined(_MSC_VER) || defined(__MINGW32__)
-	#include <tchar.h>
-	int _tmain(int argc, _TCHAR* argv[])
-	#else
-	int main(int argc, const char* argv[])
-	#endif
-	{
+    #ifndef BOOST_ALL_DYN_LINK
+  #define BOOST_ALL_DYN_LINK
+    #endif
+  #include <boost/shared_ptr.hpp>
+  #include <boost/weak_ptr.hpp>
+  #include <boost/numeric/ublas/vector.hpp>
+  #include <boost/numeric/ublas/matrix.hpp>
+  #include <string>
+  #include <vector>
+  #include <map>
+  using std::string;
+  using std::vector;
+  using std::map;
+  namespace ublas = boost::numeric::ublas;
+  #include <SimCoreFactory/Policies/FactoryConfig.h>
+  #include <SimController/ISimController.h>
+  //#include "OMCpp<%lastIdentOfPath(modelInfo.name)%>.h"
+  #if defined(_MSC_VER) || defined(__MINGW32__)
+  #include <tchar.h>
+  int _tmain(int argc, _TCHAR* argv[])
+  #else
+  int main(int argc, const char* argv[])
+  #endif
+  {
 
-    	try
-    	{
-			boost::shared_ptr<OMCFactory>  _factory =  boost::shared_ptr<OMCFactory>(new OMCFactory());
+      try
+      {
+      boost::shared_ptr<OMCFactory>  _factory =  boost::shared_ptr<OMCFactory>(new OMCFactory());
             //SimController to start simulation
             
             std::pair<boost::shared_ptr<ISimController>,SimSettings> simulation =  _factory->createSimulation(argc,argv);
            
-			
-			  //create Modelica system
+      
+        //create Modelica system
             std::pair<boost::weak_ptr<IMixedSystem>,boost::weak_ptr<ISimData> > system = simulation.first->LoadSystem("OMCpp<%lastIdentOfPath(modelInfo.name)%><%makefileParams.dllext%>","<%lastIdentOfPath(modelInfo.name)%>");
        
             simulation.first->Start(system.first,simulation.second);
        
 
-    	}
-    	catch(std::exception& ex)
-    	{
-        	std::string error = ex.what();
-        	std::cerr << "Simulation stopped: "<<  error ;
-        	return 1;
-    	}
-	}
+      }
+      catch(std::exception& ex)
+      {
+          std::string error = ex.what();
+          std::cerr << "Simulation stopped: "<<  error ;
+          return 1;
+      }
+  }
 >>
 end simulationMainFile;
 
