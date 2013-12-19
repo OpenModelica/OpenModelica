@@ -66,6 +66,11 @@ Component::Component(QString annotation, QString name, QString className, Compon
   mpTransformation->parseTransformationString(transformation, boundingRect().width(), boundingRect().height());
   if (transformation.isEmpty())
   {
+    // snap to grid while creating component
+	qreal stepX = mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep();
+	qreal stepY = mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep();
+	position.setX(stepX*floor((position.x())/stepX+0.5));
+	position.setY(stepY*floor((position.y())/stepY+0.5));
     mpTransformation->setOrigin(position);
     qreal initialScale = mpCoOrdinateSystem->getInitialScale();
     mpTransformation->setExtent1(QPointF(initialScale * boundingRect().left(), initialScale * boundingRect().top()));
@@ -676,7 +681,7 @@ void Component::getExtents(QPointF *pExtent1, QPointF *pExtent2)
   }
 }
 
-QString Component::getTransformationAnnotationString()
+QString Component::getTransformationAnnotation()
 {
   QString annotationString;
   if (mpGraphicsView->getViewType() == StringHandler::Icon)
@@ -712,24 +717,24 @@ QString Component::getPlacementAnnotation()
       Component *pComponent;
       pComponent = mpGraphicsView->getModelWidget()->getDiagramGraphicsView()->getComponentObject(getName());
       if (pComponent)
-        placementAnnotationString.append(", ").append(pComponent->getTransformationAnnotationString());
+        placementAnnotationString.append(", ").append(pComponent->getTransformationAnnotation());
       // then get the icon transformations
-      placementAnnotationString.append(", ").append(getTransformationAnnotationString());
+      placementAnnotationString.append(", ").append(getTransformationAnnotation());
     }
     else if (mpGraphicsView->getViewType() == StringHandler::Diagram)
     {
       // first get the component from diagram view and get the transformations
-      placementAnnotationString.append(", ").append(getTransformationAnnotationString());
+      placementAnnotationString.append(", ").append(getTransformationAnnotation());
       // then get the icon transformations
       Component *pComponent;
       pComponent = mpGraphicsView->getModelWidget()->getIconGraphicsView()->getComponentObject(getName());
       if (pComponent)
-        placementAnnotationString.append(", ").append(pComponent->getTransformationAnnotationString());
+        placementAnnotationString.append(", ").append(pComponent->getTransformationAnnotation());
     }
   }
   else
   {
-    placementAnnotationString.append(", ").append(getTransformationAnnotationString());
+    placementAnnotationString.append(", ").append(getTransformationAnnotation());
   }
   placementAnnotationString.append(")");
   return placementAnnotationString;
@@ -903,6 +908,15 @@ void Component::prepareResizeComponent(ResizerItem *pResizerItem)
 void Component::resizeComponent(int index, QPointF newPosition)
 {
   Q_UNUSED(index);
+  qreal stepX = mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep();
+  qreal stepY = mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep();
+  // refine snapping if Shift key is pressed
+  if (QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)){
+    stepX = stepX/10;
+    stepY = stepY/10;
+  }
+  newPosition.setX(stepX*floor((newPosition.x())/stepX+0.5));
+  newPosition.setY(stepY*floor((newPosition.y())/stepY+0.5));
   float xDistance; //X distance between the current position of the mouse and the starting position mouse
   float yDistance; //Y distance between the current position of the mouse and the starting position mouse
   //Calculates the X distance
@@ -1403,7 +1417,7 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
     {
       showResizerItems();
       setCursor(Qt::SizeAllCursor);
-      /* Only allow manipulations on component if the class is not a system library class OR component is not an inherited component. */
+      // Only allow manipulations on component if the class is not a system library class OR component is not an inherited component.
       if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedComponent())
       {
         connect(mpGraphicsView->getDeleteAction(), SIGNAL(triggered()), SLOT(deleteMe()), Qt::UniqueConnection);
@@ -1487,7 +1501,25 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
   }
   else if (change == QGraphicsItem::ItemPositionHasChanged)
   {
-    emit componentTransformChange();
+	emit componentTransformChange();
+  }
+  else if (change == QGraphicsItem::ItemPositionChange && scene()) {
+    // snap to grid while dragging component
+    QPointF newPos = value.toPointF();
+    qreal stepX = mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep();
+    qreal stepY = mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep();
+    // refine snapping if Shift key is pressed
+    if (QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)){
+      stepX = stepX/10;
+      stepY = stepY/10;
+    }
+    qreal originX = mpTransformation->getOrigin().x();
+    qreal originY = mpTransformation->getOrigin().y();
+    qreal oldXn = (newPos.x()+originX)/stepX;
+    qreal oldYn = (newPos.y()+originY)/stepY;
+    newPos.setX(stepX*floor(oldXn+0.5) - originX);
+    newPos.setY(stepY*floor(oldYn+0.5) - originY);
+    return newPos;
   }
   return value;
 }

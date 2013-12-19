@@ -117,7 +117,7 @@ public:
   void setComponentFlags();
   void unsetComponentFlags();
   void getExtents(QPointF *pExtent1, QPointF *pExtent2);
-  QString getTransformationAnnotationString();
+  QString getTransformationAnnotation();
   QString getPlacementAnnotation();
   void applyRotation(qreal angle);
   void addConnectionDetails(LineAnnotation *pConnectorLineAnnotation);

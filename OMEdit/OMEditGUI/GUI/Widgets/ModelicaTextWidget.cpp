@@ -1103,7 +1103,7 @@ void FindReplaceDialog::findText(bool forward)
 
   if(!result)
   {
-    QString message = QString( "Can't find the text '" ) + textToFind + QString( " '." );
+    QString message = QString( tr("Can't find the text '") ) + textToFind + QString( "'." );
     QMessageBox::information( this, "Find", message );
   }
 }
