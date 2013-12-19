@@ -1152,12 +1152,13 @@ algorithm
         (zero, inFunctionTree);
       
     // dependenent variable cref
-    case ((e as DAE.CREF(componentRef = cr,ty=tp)), _, _, BackendDAE.DIFFERENTAION_FUNCTION(), _)
+    case ((e as DAE.CREF(componentRef = cr,ty=tp)), _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), BackendDAE.DIFFERENTAION_FUNCTION(), _)
       equation
         //se1 = ExpressionDump.printExpStr(e);
         //print("\nExp-Cref\n dependent cref: " +& se1);
         
         cr = ComponentReference.prependStringCref(BackendDAE.functionDerivativeNamePrefix, cr);
+        cr = ComponentReference.prependStringCref(matrixName, cr);
         res = Expression.makeCrefExp(cr, tp);
         
         //se1 = ExpressionDump.printExpStr(res);
@@ -1929,6 +1930,8 @@ algorithm
       list<tuple<DAE.Exp,Boolean>> expBoolLst;
     
       BackendDAE.Variables indepVars;
+      
+      String funcname;
 
     case (DAE.CALL(path=path,expLst=expl,attr=DAE.CALL_ATTR(tuple_=b,builtin=c,isImpure=isImpure,ty=ty,tailCall=tc)), _, _, _, _)
       equation
@@ -1995,7 +1998,8 @@ algorithm
         protectedVars  = DAEUtil.getFunctionProtectedVars(func);
         bodyStmts = DAEUtil.getFunctionAlgorithmStmts(func);
         
-        diffFuncData = BackendDAE.noInputData;
+        funcname = Util.modelicaStringToCStr(Absyn.pathString(path), false);
+        diffFuncData = BackendDAE.DIFFINPUTDATA(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),SOME(funcname));
 
         (inputVarsDer, functions, inputVarsNoDer, blst) = differentiateElementVars(inputVars, inDiffwrtCref, diffFuncData, BackendDAE.DIFFERENTAION_FUNCTION(), inFunctionTree, {}, {}, {});
         (outputVarsDer, functions, outputVarsNoDer, _) = differentiateElementVars(outputVars, inDiffwrtCref, diffFuncData, BackendDAE.DIFFERENTAION_FUNCTION(), functions, {}, {}, {});
