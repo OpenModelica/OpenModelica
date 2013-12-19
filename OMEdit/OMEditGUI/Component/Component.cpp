@@ -67,10 +67,10 @@ Component::Component(QString annotation, QString name, QString className, Compon
   if (transformation.isEmpty())
   {
     // snap to grid while creating component
-	qreal stepX = mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep();
-	qreal stepY = mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep();
-	position.setX(stepX*floor((position.x())/stepX+0.5));
-	position.setY(stepY*floor((position.y())/stepY+0.5));
+  qreal stepX = mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep();
+  qreal stepY = mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep();
+  position.setX(stepX*floor((position.x())/stepX+0.5));
+  position.setY(stepY*floor((position.y())/stepY+0.5));
     mpTransformation->setOrigin(position);
     qreal initialScale = mpCoOrdinateSystem->getInitialScale();
     mpTransformation->setExtent1(QPointF(initialScale * boundingRect().left(), initialScale * boundingRect().top()));
@@ -1501,7 +1501,7 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
   }
   else if (change == QGraphicsItem::ItemPositionHasChanged)
   {
-	emit componentTransformChange();
+  emit componentTransformChange();
   }
   else if (change == QGraphicsItem::ItemPositionChange && scene()) {
     // snap to grid while dragging component
