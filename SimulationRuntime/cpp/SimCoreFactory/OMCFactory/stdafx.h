@@ -40,6 +40,7 @@
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
 #include <boost/math/tools/real_cast.hpp>
+#include <boost/program_options.hpp>
 using std::vector;
 using std::map;
 using std::string;

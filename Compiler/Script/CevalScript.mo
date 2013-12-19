@@ -1416,7 +1416,8 @@ algorithm
         cit = winCitation();
         ifcpp=Util.equal(Config.simCodeTarget(),"Cpp");
         ifmsvc = Util.equal(Config.simulationCodeTarget(),"msvc");
-        exeDir=Util.if_(ifcpp,Settings.getInstallationDirectoryPath() +& "/bin/" ,compileDir);
+        //exeDir=Util.if_(ifcpp,Settings.getInstallationDirectoryPath() +& "/bin/" ,compileDir);
+        exeDir=compileDir;
         libDir= Settings.getInstallationDirectoryPath();
         libDir = Util.if_(ifmsvc, libDir +& "/lib/omc/cpp/msvc",libDir+& "/lib/omc/cpp");
          (cache,simSettings) = calculateSimulationSettings(cache,env,vals,st_1,msg);
@@ -1430,7 +1431,7 @@ algorithm
         num_intervalls_str = intString(interval);
         tol_str = realString(tol);
         simflags2=Util.if_(ifcpp,stringAppendList({"-r ",libDir," ","-m ",compileDir," ","-R ",result_file," ","-c ",configDir," ","-s ",starttime_str," ","-e ",stoptime_str," ","-f ", stepsize_str," ","-i ",method_str, " ","-v ",num_intervalls_str, " ","-y ",tol_str  }), simflags);
-        executable1=Util.if_(ifcpp,"OMCppSimulation",executable);
+        executable1=Util.if_(ifcpp,"OMCpp"+& executable,executable);
         executableSuffixedExe = stringAppend(executable1, System.getExeExt());
         logFile = stringAppend(executable1,".log");
         // adrpo: log file is deleted by buildModel! do NOT DELTE IT AGAIN!

@@ -54,7 +54,7 @@
      /*Defines*/
     #define PATH fs::path
     #include "LibrariesConfig.h"
-    #include <OMCFactory/OMCFactory.h>
+    #include <SimCoreFactory/OMCFactory/OMCFactory.h>
 #else
     #error "operating system not supported"
 #endif

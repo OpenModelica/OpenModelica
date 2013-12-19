@@ -8,7 +8,7 @@ target_link_libraries (${ModelicaName}  ${SystemName} ${ModelicaExternalCName}  
 
 
 GET_TARGET_PROPERTY(libModelicaSystem ${ModelicaName} LOCATION)
-GET_FILENAME_COMPONENT(libModelicaSystemName ${libModelicaSystem} NAME)
+GET_FILENAME_COMPONENT(libModelicaSystemNameExt ${libModelicaSystem} EXT)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   include(CheckTypeSize)
@@ -26,10 +26,13 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(FMI_ARCH_DIR "win32")
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
+#GET_TARGET_PROPERTY(libboostSystem ${Boost_SYSTEM_LIBRARY} LOCATION)
+#GET_FILENAME_COMPONENT(libboostSystemNAME ${libboostSystem} NAME)
+#set(Boost_SYSTEM_LIBRARY_NAME ${libboostSystemNAME})
 
 set (BOOST_INCLUDE ${Boost_INCLUDE_DIRS})
 set (BOOST_LIBS ${Boost_LIBRARY_DIRS})
-set (MODELICA_SYSTEM_LIB ${libModelicaSystemName})
+set (MODELICA_SYSTEM_LIB_EXT ${libModelicaSystemNameExt})
  configure_file (
   "ModelicaConfic.inc.in"
   "${PROJECT_BINARY_DIR}/ModelicaConfic.inc"

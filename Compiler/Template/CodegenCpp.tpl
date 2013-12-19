@@ -8,10 +8,11 @@ template translateModel(SimCode simCode) ::=
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
   let target  = simulationCodeTarget()
-  let()= textFile(simulationHeaderFile(simCode), '<%lastIdentOfPath(modelInfo.name)%>.h')
-  let()= textFile(simulationCppFile(simCode), '<%lastIdentOfPath(modelInfo.name)%>.cpp')
-  let()= textFile(simulationFunctionsHeaderFile(simCode,modelInfo.functions,literals), 'Functions.h')
-  let()= textFile(simulationFunctionsFile(simCode, modelInfo.functions,literals), 'Functions.cpp')
+   let()= textFile(simulationMainFile(simCode), 'OMCpp<%lastIdentOfPath(modelInfo.name)%>Main.cpp')
+  let()= textFile(simulationHeaderFile(simCode), 'OMCpp<%lastIdentOfPath(modelInfo.name)%>.h')
+  let()= textFile(simulationCppFile(simCode), 'OMCpp<%lastIdentOfPath(modelInfo.name)%>.cpp')
+  let()= textFile(simulationFunctionsHeaderFile(simCode,modelInfo.functions,literals), 'OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.h')
+  let()= textFile(simulationFunctionsFile(simCode, modelInfo.functions,literals), 'OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.cpp')
   let()= textFile(simulationMakefile(target,simCode), '<%fileNamePrefix%>.makefile')
   algloopfiles(listAppend(allEquations,initialEquations),simCode)
   // empty result of the top-level template .., only side effects
@@ -43,6 +44,62 @@ case SIMCODE(__) then
 end simulationHeaderFile;
 
 
+template simulationMainFile(SimCode simCode)
+ "Generates code for header file for simulation target."
+::=
+match simCode
+case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
+  <<
+  	#ifndef BOOST_ALL_DYN_LINK
+	#define BOOST_ALL_DYN_LINK
+  	#endif
+	#include <boost/shared_ptr.hpp>
+	#include <boost/weak_ptr.hpp>
+	#include <boost/numeric/ublas/vector.hpp>
+	#include <boost/numeric/ublas/matrix.hpp>
+	#include <string>
+	#include <vector>
+	#include <map>
+	using std::string;
+	using std::vector;
+	using std::map;
+	namespace ublas = boost::numeric::ublas;
+	#include <SimCoreFactory/Policies/FactoryConfig.h>
+	#include <SimController/ISimController.h>
+	//#include "OMCpp<%lastIdentOfPath(modelInfo.name)%>.h"
+	#if defined(_MSC_VER) || defined(__MINGW32__)
+	#include <tchar.h>
+	int _tmain(int argc, _TCHAR* argv[])
+	#else
+	int main(int argc, const char* argv[])
+	#endif
+	{
+
+    	try
+    	{
+			boost::shared_ptr<OMCFactory>  _factory =  boost::shared_ptr<OMCFactory>(new OMCFactory());
+            //SimController to start simulation
+            
+            std::pair<boost::shared_ptr<ISimController>,SimSettings> simulation =  _factory->createSimulation(argc,argv);
+           
+			
+			  //create Modelica system
+            std::pair<boost::weak_ptr<IMixedSystem>,boost::weak_ptr<ISimData> > system = simulation.first->LoadSystem("OMCpp<%lastIdentOfPath(modelInfo.name)%><%makefileParams.dllext%>","<%lastIdentOfPath(modelInfo.name)%>");
+       
+            simulation.first->Start(system.first,simulation.second);
+       
+
+    	}
+    	catch(std::exception& ex)
+    	{
+        	std::string error = ex.what();
+        	std::cerr << "Simulation stopped: "<<  error ;
+        	return 1;
+    	}
+	}
+>>
+end simulationMainFile;
+
 
 template algloopHeaderFile(SimCode simCode,SimEqSystem eq)
  "Generates code for header file for simulation target."
@@ -63,7 +120,7 @@ match simCode
 case SIMCODE(modelInfo=MODELINFO(__)) then
   <<
   #include "Modelica.h"
-  #include "Functions.h"
+  #include "OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.h"
 
    Functions::Functions()
    {
@@ -163,7 +220,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /DNOMINMAX - Define NOMINMAX (does what it says)
   # /TP - Use C++ Compiler
   CFLAGS=  /ZI /Od /EHa /MP /fp:except /I"<%makefileParams.omhome%>/include/omc/cpp/Core/" /I"<%makefileParams.omhome%>/include/omc/cpp/" -I"$(BOOST_INCLUDE)" /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY
-
+    
+  CPPFLAGS = /DOMC_BUILD
   # /ZI enable Edit and Continue debug info 
   CDFLAGS = /ZI
 
@@ -171,19 +229,23 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /link - [linker options and libraries]
   # /LIBPATH: - Directories where libs can be found
   #LDFLAGS=/MDd   /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppMath.lib OMCppModelicaExternalC.lib
-  LDFLAGS=/MD /Debug  /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppModelicaUtilities.lib  OMCppMath.lib OMCppModelicaExternalC.lib    
+  LDSYTEMFLAGS=/MD /Debug  /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppModelicaUtilities.lib  OMCppMath.lib OMCppModelicaExternalC.lib    OMCppOMCFactory.lib
+  LDMAINFLAGS=/MD /Debug  /link /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/msvc" OMCppOMCFactory.lib  /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)"    
   # /MDd link with MSVCRTD.LIB debug lib
   # lib names should not be appended with a d just switch to lib/omc/cpp
 
 
   FILEPREFIX=<%fileNamePrefix%>
-  FUNCTIONFILE=Functions.cpp
-  MAINFILE=<%lastIdentOfPath(modelInfo.name)%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
-  MAINOBJ=$(MODELICA_SYSTEM_LIB)
+  FUNCTIONFILE=OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.cpp
+  SYSTEMFILE=OMCpp<%lastIdentOfPath(modelInfo.name)%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
+  MAINFILE = OMCpp<%lastIdentOfPath(modelInfo.name)%>Main.cpp
+  MAINOBJ=OMCpp<%fileNamePrefix%>$(EXEEXT)
+  SYSTEMOBJ=OMCpp<%lastIdentOfPath(modelInfo.name)%>$(DLLEXT)
   GENERATEDFILES=$(MAINFILE) $(FUNCTIONFILE)  <%algloopcppfilenames(allEquations,simCode)%> 
  
   $(MODELICA_SYSTEM_LIB)$(DLLEXT): 
-  <%\t%>$(CXX) /Fe$(MODELICA_SYSTEM_LIB) $(MAINFILE) $(FUNCTIONFILE)  <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%> $(CFLAGS) $(LDFLAGS)  
+  <%\t%>$(CXX)  /Fe$(SYSTEMOBJ) $(SYSTEMFILE) $(FUNCTIONFILE)   <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%> $(CFLAGS) $(LDSYTEMFLAGS)  
+   <%\t%>$(CXX) $(CPPFLAGS) /Fe$(MAINOBJ)  $(MAINFILE)   $(CFLAGS) $(LDMAINFLAGS)
   >>
 end match
 case "gcc" then      
@@ -205,15 +267,18 @@ EXEEXT=<%makefileParams.exeext%>
 DLLEXT=<%makefileParams.dllext%>
 CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
 CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -I"<%makefileParams.omhome%>/include/omc/cpp/Core" -I"<%makefileParams.omhome%>/include/omc/cpp/"  -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %>
-LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp"    -L"$(BOOST_LIBS)"
-
-MAINFILE=<%lastIdentOfPath(modelInfo.name)%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
-FUNCTIONFILE=Functions.cpp
-
+LDSYTEMFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp"    -L"$(BOOST_LIBS)"
+LDMAINFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" -L"<%makefileParams.omhome%>/bin"   -L"$(BOOST_LIBS)" -l:$(BOOST_SYSTEM_LIB) -l:$(BOOST_FILESYSTEM_LIB)  -l:$(BOOST_PROGRAM_OPTIONS_LIB)  -lOMCppOMCFactory 
+CPPFLAGS = -DOMC_BUILD -DBOOST_SYSTEM_NO_DEPRICATED
+SYSTEMFILE=OMCpp<%lastIdentOfPath(modelInfo.name)%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
+FUNCTIONFILE=OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.cpp
+MAINFILE = OMCpp<%lastIdentOfPath(modelInfo.name)%>Main.cpp
+MAINOBJ=OMCpp<%fileNamePrefix%>$(EXEEXT)
+SYSTEMOBJ=OMCpp<%lastIdentOfPath(modelInfo.name)%>$(DLLEXT)
 .PHONY: <%lastIdentOfPath(modelInfo.name)%>
 <%lastIdentOfPath(modelInfo.name)%>: $(MAINFILE) 
-<%\t%>$(CXX) -shared -I. -o $(MODELICA_SYSTEM_LIB) $(MAINFILE) $(FUNCTIONFILE)  <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%>     $(CFLAGS)  $(LDFLAGS) -lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath -lOMCppModelicaExternalC
-     
+<%\t%>$(CXX)  -shared -I. -o $(SYSTEMOBJ) $(SYSTEMFILE)  $(FUNCTIONFILE)  <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%>     $(CFLAGS)  $(LDSYTEMFLAGS)  -lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath -lOMCppModelicaExternalC
+<%\t%>$(CXX) $(CPPFLAGS) -I. -o $(MAINOBJ)  $(MAINFILE)  $(CFLAGS)  $(LDMAINFLAGS)     
 >>
 end simulationMakefile;
 
@@ -226,15 +291,16 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
    #include "Modelica.h"
-   #include "<%lastIdentOfPath(modelInfo.name)%>.h"
+   #include "OMCpp<%lastIdentOfPath(modelInfo.name)%>.h"
+
 
 
   using boost::extensions::factory;
    BOOST_EXTENSION_TYPE_MAP_FUNCTION {
     types.get<std::map<std::string, factory<IMixedSystem,IGlobalSettings*,boost::shared_ptr<IAlgLoopSolverFactory>,boost::shared_ptr<ISimData> > > >()
-    ["ModelicaSystem"].set<<%lastIdentOfPath(modelInfo.name)%>>();
+    ["<%lastIdentOfPath(modelInfo.name)%>"].set<<%lastIdentOfPath(modelInfo.name)%>>();
     }
-
+  
     
     <%lastIdentOfPath(modelInfo.name)%>::<%lastIdentOfPath(modelInfo.name)%>(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData) 
    :SystemDefaultImplementation(*globalSettings)
@@ -325,8 +391,8 @@ match eq
 
   <<
    #include "Modelica.h"
-   #include "<%modelname%>Algloop<%index%>.h"
-    #include "<%lastIdentOfPath(modelInfo.name)%>.h"
+   #include "OMCpp<%modelname%>Algloop<%index%>.h"
+   #include "OMCpp<%lastIdentOfPath(modelInfo.name)%>.h"
    <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then '#include "Math/ArrayOperations.h"'%>
 
 
@@ -2105,7 +2171,7 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   #define BOOST_EXTENSION_EVENTHANDLING_DECL BOOST_EXTENSION_EXPORT_DECL
   #include "System/EventHandling.h"
   #include "System/SystemDefaultImplementation.h"
-  #include "Functions.h"
+  #include "OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.h"
   #include "HistoryImpl.h"
   <%algloopfilesInclude(listAppend(allEquations,initialEquations),simCode)%>
   <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
@@ -2144,7 +2210,7 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   #include "System/IMixedSystem.h"
   #include "System/AlgLoopDefaultImplementation.h"
   #include "System/EventHandling.h"
-  #include "Functions.h"
+  #include "OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.h"
   class <%lastIdentOfPath(modelInfo.name)%>;
   >>
 end generateAlgloopHeaderInlcudeString;
@@ -2967,7 +3033,7 @@ match simVar
       >>  
     case SIMVAR(numArrayElement={},arrayCref=NONE()) then
       <<
-      <%type%> <%cref(name)%>;
+      <%type%> <%cref(name)%>; //test 2
       >>
     case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_),numArrayElement=num) 
     then
@@ -3036,7 +3102,7 @@ match simVar
       >>
       case SIMVAR(numArrayElement={},arrayCref=NONE()) then
       <<
-      <%variableType(type_)%> <%cref(name)%>;
+      <%variableType(type_)%> <%cref(name)%>;/*test 1*/
       >>
     case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_),numArrayElement=num)
      then
@@ -3157,7 +3223,7 @@ case MODELINFO(vars = vars as SIMVARS(__))
 end arrayConstruct;
 
 template arrayConstruct1(list<SimVar> varsLst) ::=
-  varsLst |> v as SIMVAR(arrayCref=SOME(_)) =>
+  varsLst |> v as SIMVAR(arrayCref=SOME(_),numArrayElement=_::_) =>
   <<
   ,<%arraycref(name)%>(boost::extents<%boostextentDims(name,v.numArrayElement)%>)
   >>
@@ -3252,11 +3318,14 @@ template arraycref2(ComponentRef cr, Text& dims)
   case CREF_IDENT(ident = "time") then "time"
   case WILD(__) then ''
   else "_"+crefToCStrForArray(cr,dims)
-end arraycref2;
+end arraycref2;    
 /*
 template boostextentDims(ComponentRef cr, list<String> arraydims)
 ::=
    match cr
+   
+case CREF_IDENT(subscriptLst={}) then
+    '<%ident%>_NO_SUBS'
   case CREF_IDENT(__) then
    '[<%arraydims;separator="]["%>]'
    //subscriptsToCStr(subscriptLst)
@@ -3271,8 +3340,12 @@ end boostextentDims;
 
 template boostextentDims(ComponentRef cr, list<String> arraydims)
 ::=
-   match cr
+    match cr
+case CREF_IDENT(subscriptLst={}) then
+  '<%ident%>_NO_SUBS'
+ //subscriptsToCStr(subscriptLst)
   case CREF_IDENT(subscriptLst=dims) then
+  //    '_<%ident%>_INVALID_<%listLength(dims)%>_<%listLength(arraydims)%>'
     '[<%List.lastN(arraydims,listLength(dims));separator="]["%>]'
     //subscriptsToCStr(subscriptLst)
   case CREF_QUAL(componentRef=c) then
@@ -3479,7 +3552,8 @@ case MODELINFO(vars = vars as SIMVARS(__))
 end arrayReindex;
 
 template arrayReindex1(list<SimVar> varsLst) ::=
-  varsLst |> SIMVAR(arrayCref=SOME(_)) =>
+ 
+  varsLst |> SIMVAR(arrayCref=SOME(_),numArrayElement=_::_) =>
   <<
   <%arraycref(name)%>.reindex(1);
   >>
@@ -4682,7 +4756,7 @@ template algloopfilesInclude2(SimEqSystem eq, Context context, Text &varDecls, S
       let num = index
       match simCode
           case SIMCODE(modelInfo = MODELINFO(__)) then
-         <<#include "<%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>.h">>
+         <<#include "OMCpp<%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>.h">>
    end match
   case e as SES_MIXED(cont = eq_sys)
   then
@@ -4735,16 +4809,16 @@ template algloopfiles2(SimEqSystem eq, Context context, Text &varDecls, SimCode 
   let num = index
       match simCode
           case SIMCODE(modelInfo = MODELINFO(__)) then
-              let()= textFile(algloopHeaderFile(simCode,eq), '<%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>.h')
-              let()= textFile(algloopCppFile(simCode,eq), '<%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>.cpp')
+              let()= textFile(algloopHeaderFile(simCode,eq), 'OMCpp<%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>.h')
+              let()= textFile(algloopCppFile(simCode,eq), 'OMCpp<%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>.cpp')
             " "
         end match
   case e as SES_MIXED(cont = eq_sys)
     then
        match simCode
           case SIMCODE(modelInfo = MODELINFO(__)) then
-              let()= textFile(algloopHeaderFile(simCode, eq_sys), '<%lastIdentOfPath(modelInfo.name)%>Algloop<%algloopfilesindex(eq_sys)%>.h')
-              let()= textFile(algloopCppFile(simCode, eq_sys), '<%lastIdentOfPath(modelInfo.name)%>Algloop<%algloopfilesindex(eq_sys)%>.cpp')
+              let()= textFile(algloopHeaderFile(simCode, eq_sys), 'OMCpp<%lastIdentOfPath(modelInfo.name)%>Algloop<%algloopfilesindex(eq_sys)%>.h')
+              let()= textFile(algloopCppFile(simCode, eq_sys), 'OMCpp<%lastIdentOfPath(modelInfo.name)%>Algloop<%algloopfilesindex(eq_sys)%>.cpp')
             " "
         end match
   else
@@ -4791,13 +4865,13 @@ template algloopcppfilenames2(SimEqSystem eq, Context context, Text &varDecls, S
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
    <<
-   <%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>.cpp
+   OMCpp<%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>.cpp
    >>
    end match
    case e as SES_MIXED(cont = eq_sys)
   then
    <<
-   <%algloopcppfilenames2(eq_sys,context,varDecls,simCode)%>
+   OMCpp<%algloopcppfilenames2(eq_sys,context,varDecls,simCode)%>
    >>
  else
     " "

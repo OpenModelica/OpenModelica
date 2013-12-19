@@ -45,7 +45,7 @@ SET(OMCFactoryName ${LIBPREFIX}OMCFactory)
 set(MathName ${LIBPREFIX}Math)
 set(ModelicaExternalName ${LIBPREFIX}ModelicaExternalC)
 set(SimulationSettings ${LIBPREFIX}SimulationSettings)
-set(SimManagerName ${LIBPREFIX}Simulation)
+set(SimControllerName ${LIBPREFIX}SimController)
 set(CVodeName ${LIBPREFIX}CVode)
 set(EulerName ${LIBPREFIX}Euler)
 set(IdaName ${LIBPREFIX}Ida)
@@ -142,8 +142,8 @@ include_directories ("${PROJECT_BINARY_DIR}")
 message(STATUS "Boost dirs "${Boost_LIBRARY_DIRS} " , " ${Boost_INCLUDE_DIR})
 
 #build of simulation.core
+include_directories ("Include")
 include_directories ("Include/Core")
-include_directories ("Include/SimCoreFactory")
 include_directories ("Include/SimCoreFactory")
 add_subdirectory (Core/Math)
 
@@ -218,6 +218,9 @@ GET_FILENAME_COMPONENT(libSystemName ${libSystem} NAME)
 GET_TARGET_PROPERTY(libSolver ${SolverName} LOCATION)
 GET_FILENAME_COMPONENT(libSolverName ${libSolver} NAME)
 
+GET_TARGET_PROPERTY(libSimController ${SimControllerName} LOCATION)
+GET_FILENAME_COMPONENT(libSimControllerName ${libSimController} NAME)
+
 GET_TARGET_PROPERTY(libMath ${MathName} LOCATION)
 GET_FILENAME_COMPONENT(libMathName ${libMath} NAME)
 
@@ -238,6 +241,7 @@ set (MATH_LIB ${libMathName})
 set (HYBRJ_LIB ${libHybrjName})
 set (SIMOBJFACTORY_LIB ${libSimObjFactoryName})
 set (DATAEXCHANGE_LIB ${libDataExchangeName})
+set (SIMCONRTOLLER_LIB ${libSimControllerName})
 
 # configure a header file to pass some library names
 # to the source code which are used to dynamic load and instantiate

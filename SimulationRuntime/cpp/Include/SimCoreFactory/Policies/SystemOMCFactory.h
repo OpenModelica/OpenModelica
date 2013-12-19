@@ -60,10 +60,10 @@ public:
         return algloopsolverfactory;
     }
 
-     std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> >  createSystem(string modelKey,IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory)
+     std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> >  createSystem(string modelLib,string modelKey,IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory)
     {
-        PATH modelica_path = ObjectFactory<CreationPolicy>::_modelicasystem_path;
-        PATH modelica_name(MODELICASYSTEM_LIB);
+       PATH modelica_path = ObjectFactory<CreationPolicy>::_modelicasystem_path;
+        PATH modelica_name(modelLib);
         modelica_path/=modelica_name;
         LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(modelica_path.string(),*_system_type_map);
         if (result != LOADER_SUCCESS)
@@ -104,4 +104,4 @@ private:
     type_map* _system_type_map;
 
 
-};
+}; 

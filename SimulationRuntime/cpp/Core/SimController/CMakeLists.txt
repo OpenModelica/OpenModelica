@@ -1,12 +1,13 @@
 cmake_minimum_required (VERSION 2.6)
 
-project(${SimManagerName})
-add_executable(${SimManagerName}  Configuration.cpp Main.cpp FactoryExport.cpp Initialization.cpp SimController.cpp SimManager.cpp)
-target_link_libraries( ${SimManagerName}  ${OMCFactoryName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} )
+project(${SimControllerName})
+add_library(${SimControllerName} SHARED Configuration.cpp  FactoryExport.cpp Initialization.cpp SimController.cpp SimManager.cpp)
+target_link_libraries( ${SimControllerName}  ${OMCFactoryName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} )
 
 
-install (TARGETS ${SimManagerName} DESTINATION bin)
+install (TARGETS ${SimControllerName} DESTINATION lib/omc/${LIBINSTALLEXT})
 
 install (FILES ${CMAKE_SOURCE_DIR}/Include/Core/SimController/ISimData.h
+			   ${CMAKE_SOURCE_DIR}/Include/Core/SimController/ISimController.h
         
       DESTINATION include/omc/cpp/Core/SimController)

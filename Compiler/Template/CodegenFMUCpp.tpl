@@ -59,11 +59,11 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let guid = getUUIDStr()
   let target  = simulationCodeTarget()
   let name = lastIdentOfPath(modelInfo.name)
-  let()= textFile(simulationHeaderFile(simCode), '<%name%>.h')
-  let()= textFile(simulationCppFile(simCode), '<%name%>.cpp')
-  let()= textFile(simulationFunctionsHeaderFile(simCode,modelInfo.functions,literals), 'Functions.h')
-  let()= textFile(simulationFunctionsFile(simCode, modelInfo.functions,literals), 'Functions.cpp')
-  let()= textFile(fmuModelWrapperFile(simCode,guid,name), '<%name%>FMU.cpp')
+  let()= textFile(simulationHeaderFile(simCode), 'OMCpp<%name%>.h')
+  let()= textFile(simulationCppFile(simCode), 'OMCpp<%name%>.cpp')
+  let()= textFile(simulationFunctionsHeaderFile(simCode,modelInfo.functions,literals), 'OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.h')
+  let()= textFile(simulationFunctionsFile(simCode, modelInfo.functions,literals), 'OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.cpp')
+  let()= textFile(fmuModelWrapperFile(simCode,guid,name), 'OMCpp<%name%>FMU.cpp')
   let()= textFile(fmuModelDescriptionFileCpp(simCode,guid), 'modelDescription.xml')
   let()= textFile(fmudeffile(simCode), '<%name%>.def')
   let()= textFile(fmuMakefile(target,simCode), '<%fileNamePrefix%>_FMU.makefile')
@@ -144,7 +144,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   #define MODEL_GUID "{<%guid%>}"
 
   #include "Modelica.h"
-  #include "<%modelName%>.h"
+  #include "OMCpp<%lastIdentOfPath(modelInfo.name)%>.h"
   
   <%ModelDefineData(modelInfo)%>
   #define NUMBER_OF_EVENT_INDICATORS <%zerocrosslength(simCode)%>
@@ -458,9 +458,9 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
 
 
   FILEPREFIX=<%fileNamePrefix%>
-  FUNCTIONFILE=Functions.cpp
-  MAINFILE=<%lastIdentOfPath(modelInfo.name)%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
-  MAINFILEFMU=<%lastIdentOfPath(modelInfo.name)%>FMU.cpp
+  FUNCTIONFILE=OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.cpp
+  MAINFILE=OMCpp<%lastIdentOfPath(modelInfo.name)%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
+  MAINFILEFMU=OMCpp<%lastIdentOfPath(modelInfo.name)%>FMU.cpp
   MAINOBJ=$(MODELICA_SYSTEM_LIB)
   GENERATEDFILES=$(MAINFILEFMU) $(MAINFILE) $(FUNCTIONFILE)  <%algloopcppfilenames(allEquations,simCode)%>
 
@@ -490,11 +490,11 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
   
   CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -I"<%makefileParams.omhome%>/include/omc/cpp" -I"<%makefileParams.omhome%>/include/omc/cpp/Core" -I"<%makefileParams.omhome%>/include/omc/cpp/SimCoreFactory" -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %>
-  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" -L$(BOOST_LIBS)
+  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" -L$(BOOST_LIBS)  -L"$(BOOST_LIBS)" -l:$(BOOST_SYSTEM_LIB) -l:$(BOOST_FILESYSTEM_LIB)  -l:$(BOOST_PROGRAM_OPTIONS_LIB) 
   PLATFORM="<%platformstr%>"
-  SRC=<%modelName%>.cpp
-  SRC+= <%modelName%>FMU.cpp
-  SRC+= Functions.cpp
+  SRC=OMCpp<%modelName%>.cpp
+  SRC+= OMCpp<%modelName%>FMU.cpp
+  SRC+= OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.cpp
   SRC+= <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%>
   
   LIBS= -lOMCppSystem_static -lOMCppDataExchange_static -lOMCppOMCFactory
