@@ -1343,10 +1343,8 @@ void Component::mousePressEvent(QGraphicsSceneMouseEvent *event)
  */
 void Component::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
 {
-  MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
-  if (!pMainWindow->getConnectModeAction()->isChecked())
-    getRootParentComponent()->showParameters(); /* if user has double clicked on a component and not on a connector. */
-  QGraphicsItem::mouseDoubleClickEvent(event);
+  Q_UNUSED(event);
+  emit showParameters();
 }
 
 //! Event when mouse cursor enters component icon.
