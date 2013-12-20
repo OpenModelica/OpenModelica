@@ -50,31 +50,31 @@ template simulationMainFile(SimCode simCode)
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
   <<
-    #ifndef BOOST_ALL_DYN_LINK
-  #define BOOST_ALL_DYN_LINK
-    #endif
-  #include <boost/shared_ptr.hpp>
-  #include <boost/weak_ptr.hpp>
-  #include <boost/numeric/ublas/vector.hpp>
-  #include <boost/numeric/ublas/matrix.hpp>
-  #include <string>
-  #include <vector>
-  #include <map>
-  using std::string;
-  using std::vector;
-  using std::map;
-  namespace ublas = boost::numeric::ublas;
-  #include <SimCoreFactory/Policies/FactoryConfig.h>
-  #include <SimController/ISimController.h>
-  //#include "OMCpp<%lastIdentOfPath(modelInfo.name)%>.h"
-  #if defined(_MSC_VER) || defined(__MINGW32__)
-  #include <tchar.h>
-  int _tmain(int argc, _TCHAR* argv[])
-  #else
-  int main(int argc, const char* argv[])
-  #endif
-  {
 
+  	#ifndef BOOST_ALL_DYN_LINK
+	#define BOOST_ALL_DYN_LINK
+  	#endif
+	#include <boost/shared_ptr.hpp>
+	#include <boost/weak_ptr.hpp>
+	#include <boost/numeric/ublas/vector.hpp>
+	#include <boost/numeric/ublas/matrix.hpp>
+	#include <string>
+	#include <vector>
+	#include <map>
+	using std::string;
+	using std::vector;
+	using std::map;
+	namespace ublas = boost::numeric::ublas;
+	#include <SimCoreFactory/Policies/FactoryConfig.h>
+	#include <SimController/ISimController.h>
+	//#include "OMCpp<%lastIdentOfPath(modelInfo.name)%>.h"
+	#if defined(_MSC_VER) || defined(__MINGW32__)
+	#include <tchar.h>
+	int _tmain(int argc, const _TCHAR* argv[])
+	#else
+	int main(int argc, const char* argv[])
+	#endif
+	{
       try
       {
       boost::shared_ptr<OMCFactory>  _factory =  boost::shared_ptr<OMCFactory>(new OMCFactory());
@@ -182,6 +182,37 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   >>
 
 end simulationFunctionsHeaderFile;
+
+template simulationRunScript(SimCode simCode)
+::=
+match simCode
+case SIMCODE(makefileParams=MAKEFILE_PARAMS(__)) then
+<<
+<%simulationRunScript2(makefileParams.platform,simCode)%>
+>>
+end simulationRunScript;
+
+template simulationRunScript2(String platform,SimCode simCode)
+ "Generates the contents of the makefile for the simulation case."
+::=
+match platform
+case "win32" then
+match simCode
+case SIMCODE(makefileParams=MAKEFILE_PARAMS(__)) then
+<<
+"Test1"
+>>
+end match
+case "linux" then
+match simCode
+case SIMCODE(makefileParams=MAKEFILE_PARAMS(__)) then
+<<
+"Test2"
+>>
+end match
+end match
+end simulationRunScript2;
+
 
 
 template simulationMakefile(String target,SimCode simCode)

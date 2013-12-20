@@ -24,7 +24,7 @@ void OMCFactory::UnloadAllLibs(void)
         UnloadLibrary(iter->second);
     }
 }
-SimSettings OMCFactory::ReadSimulationParameter(int argc,  char* argv[])
+SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
 {
      int opt;
      int portnum;
@@ -109,7 +109,7 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  char* argv[])
      return settings;
 
 }
-std::pair<boost::shared_ptr<ISimController>,SimSettings> OMCFactory::createSimulation(int argc,  char* argv[])
+std::pair<boost::shared_ptr<ISimController>,SimSettings> OMCFactory::createSimulation(int argc, const char* argv[])
 {
      SimSettings settings = ReadSimulationParameter(argc,argv);
      type_map simcontroller_type_map;

@@ -16,10 +16,13 @@ class OMCFactory
         void UnloadAllLibs(void);
         LOADERRESULT LoadLibrary(string libName,type_map& current_map);
         LOADERRESULT UnloadLibrary(shared_library lib);
-    std::pair<boost::shared_ptr<ISimController>,SimSettings> createSimulation(int argc,  char* argv[]);
+
+       std::pair<boost::shared_ptr<ISimController>,SimSettings> createSimulation(int argc,  const char* argv[]);
+
     private:
-    SimSettings ReadSimulationParameter(int argc,  char* argv[]); 
-    boost::shared_ptr<ISimController> _simController;
+
+        SimSettings ReadSimulationParameter(int argc, const char* argv[]); 
+        boost::shared_ptr<ISimController> _simController;
         map<string,shared_library> _modules;
         PATH _library_path;
         PATH _modelicasystem_path;
