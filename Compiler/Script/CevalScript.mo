@@ -4080,7 +4080,7 @@ public function compileModel "Compiles a model given a file-prefix, helper funct
 algorithm
   _ := matchcontinue (inFilePrefix,inLibsList,inFileDir,solverMethod)
     local
-      String pd,omhome,omhome_1,cd_path,libsfilename,libs_str,win_call,make_call,s_call,fileprefix,file_dir,filename,str,fileDLL, fileEXE, fileLOG, make,target,numParallelStr;
+      String pd,omhome,omhome_1,cd_path,libsfilename,libs_str,win_call,make_call,s_call,fileprefix,file_dir,filename,str,fileDLL, fileEXE, fileLOG, make,target,numParallelStr,winCompileMode;
       list<String> libs;
       Boolean isWindows;
       Integer numParallel;
@@ -4105,8 +4105,9 @@ algorithm
         //        to the environment variable! Don't ask me why, ask Microsoft.
         isWindows = System.os() ==& "Windows_NT";
         target = Config.simulationCodeTarget();
+        winCompileMode = Util.if_(Config.getRunningTestsuite(), "serial", "parallel");
         omhome = Util.if_(isWindows, "set OPENMODELICAHOME=\"" +& System.stringReplace(omhome_1, "/", "\\") +& "\"&& ", "");
-        win_call = stringAppendList({omhome,"\"",omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile","\""," ",fileprefix," ",target});
+        win_call = stringAppendList({omhome,"\"",omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile","\""," ",fileprefix," ",target," ", winCompileMode});
         make = System.getMakeCommand();
         numParallel = Util.if_(Config.getRunningTestsuite(), 1, Config.noProc());
         numParallelStr = intString(numParallel);

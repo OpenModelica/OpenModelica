@@ -6,6 +6,7 @@ set C_INCLUDE_PATH=
 set LIBRARY_PATH=
 set OLD_PATH=%PATH%
 set MINGW=%OPENMODELICAHOME%\MinGW
+set ADDITIONAL_ARGS=
 REM If OMDEV is set, use MinGW from there instead of OPENMODELICAHOME
 REM It is not certain that release OMC is installed
 if not %OMDEV%a==a set MINGW=%OMDEV%\tools\MinGW
@@ -39,7 +40,8 @@ goto :Final
 
 :MINGW
 REM echo "MINGW"
-%MinGW%\bin\mingw32-make -f %1.makefile >> %1.log 2>&1
+if "%3"=="parallel" set ADDITIONAL_ARGS=-j%NUMBER_OF_PROCESSORS%
+%MinGW%\bin\mingw32-make -f %1.makefile %ADDITIONAL_ARGS% >> %1.log 2>&1
 goto :Final
 
 
