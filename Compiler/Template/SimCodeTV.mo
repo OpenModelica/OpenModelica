@@ -193,6 +193,7 @@ package SimCode
       list<String> includes;
       list<String> libs;
       String platform;
+      String compileDir;
     end MAKEFILE_PARAMS;
   end MakefileParams;
   

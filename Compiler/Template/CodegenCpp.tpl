@@ -14,11 +14,10 @@ template translateModel(SimCode simCode) ::=
   let()= textFile(simulationFunctionsHeaderFile(simCode,modelInfo.functions,literals), 'OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.h')
   let()= textFile(simulationFunctionsFile(simCode, modelInfo.functions,literals), 'OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.cpp')
   let()= textFile(simulationMakefile(target,simCode), '<%fileNamePrefix%>.makefile')
+  let()= textFile(simulationMainRunScrip(simCode), 'OMCpp<%fileNamePrefix%>Run<%simulationMainRunScripSuffix(simCode)%>')
   algloopfiles(listAppend(allEquations,initialEquations),simCode)
   // empty result of the top-level template .., only side effects
 end translateModel;
-
-
 
 template translateFunctions(FunctionCode functionCode)
  "Generates C code and Makefile for compiling and calling Modelica and
@@ -42,6 +41,104 @@ case SIMCODE(__) then
 
    >>
 end simulationHeaderFile;
+
+
+template simulationMainRunScrip(SimCode simCode)
+ "Generates code for header file for simulation target."
+::=
+match simCode
+case SIMCODE(makefileParams=MAKEFILE_PARAMS(__)) then
+  <<
+  <%simulationMainRunScrip2(makefileParams.platform,simCode)%>
+>>
+end simulationMainRunScrip;
+
+
+template simulationMainRunScrip2(String platform, SimCode simCode)
+ "Generates code for header file for simulation target."
+::=
+match platform
+case  "linux64"
+case  "linux32" then
+match simCode
+case SIMCODE(modelInfo=MODELINFO(__),makefileParams=MAKEFILE_PARAMS(__)) then
+<<
+
+>>
+end match
+case  "win32"
+case  "win64" then
+match simCode
+case SIMCODE(modelInfo=MODELINFO(__),makefileParams=MAKEFILE_PARAMS(__),simulationSettingsOpt = SOME(settings as SIMULATION_SETTINGS(__))) then
+let start = settings.startTime
+let end = settings.stopTime
+let stepsize = settings.stepSize
+let intervals = settings.numberOfIntervals
+let tol = settings.tolerance
+let solver = settings.method
+let moLib =  makefileParams.compileDir
+let home = makefileParams.omhome
+<<
+set PATHTMP=%PATH%
+set PATH = %PATH%;<%home%>/bin
+OMCpp<%fileNamePrefix%>.exe -s <%start%> -e <%end%> -f <%stepsize%> -v <%intervals%> -y <%tol%> -i <%solver%> -r <%simulationLibDir(simulationCodeTarget(),simCode)%> -m <%moLib%> -R <%simulationResults(getRunningTestsuite(),simCode)%>
+set PATH = %PATHTMP%
+>>
+end match
+end simulationMainRunScrip2;
+
+
+template simulationLibDir(String target, SimCode simCode)
+ "Generates code for header file for simulation target."
+::=
+match target
+case "msvc" then
+match simCode
+case SIMCODE(makefileParams=MAKEFILE_PARAMS(__)) then
+<< <%makefileParams.omhome%>/lib/omc/cpp/msvc >>
+end match
+else
+match simCode
+case SIMCODE(makefileParams=MAKEFILE_PARAMS(__)) then
+<<<%makefileParams.omhome%>/lib/omc/cpp/ >>
+end match
+end simulationLibDir;
+
+
+template simulationResults(Boolean test, SimCode simCode)
+ "Generates code for header file for simulation target."
+::=
+match simCode
+case SIMCODE(modelInfo=MODELINFO(__),makefileParams=MAKEFILE_PARAMS(__),simulationSettingsOpt = SOME(settings as SIMULATION_SETTINGS(__))) then
+let results = if test then ""  else '<%makefileParams.omhome%>/'
+<<
+<%results%><%lastIdentOfPath(modelInfo.name)%>res_.<%settings.outputFormat%>
+>>
+end simulationResults;
+
+
+template simulationMainRunScripSuffix(SimCode simCode)
+ "Generates code for header file for simulation target."
+::=
+match simCode
+case SIMCODE( makefileParams=MAKEFILE_PARAMS(__)) then
+<<<%simulationMainRunScripSuffix2(makefileParams.platform,simCode)%>>>
+end simulationMainRunScripSuffix;
+
+
+
+template simulationMainRunScripSuffix2(String platform,SimCode simCode)
+ "Generates code for header file for simulation target."
+::=
+match platform
+case  "linux64"
+case  "linux32" then
+<<.sh>>
+case  "win32"
+case  "win64" then
+<<.bat>>
+end simulationMainRunScripSuffix2;
+
 
 
 template simulationMainFile(SimCode simCode)

@@ -114,6 +114,8 @@ uniontype SimCode
   end SIMCODE;
 end SimCode;
 
+
+
 uniontype DelayedExpression
   "Delayed expressions type"
   record DELAYED_EXPRESSIONS
@@ -507,6 +509,7 @@ uniontype MakefileParams
     list<String> includes;
     list<String> libs;
     String platform;
+    String compileDir;
   end MAKEFILE_PARAMS;
 end MakefileParams;
 

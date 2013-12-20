@@ -5776,7 +5776,7 @@ public function createMakefileParams
   input Boolean isFunction;
   output SimCode.MakefileParams makefileParams;
 protected
-  String omhome, ccompiler, cxxcompiler, linker, exeext, dllext, cflags, ldflags, rtlibs, platform, fopenmp;
+  String omhome, ccompiler, cxxcompiler, linker, exeext, dllext, cflags, ldflags, rtlibs, platform, fopenmp,compileDir;
 algorithm
   ccompiler   := Util.if_(stringEq(Config.simCodeTarget(),"JavaScript"),"emcc",
                  Util.if_(Flags.isSet(Flags.OPENMP) or Flags.isSet(Flags.HPCOM),System.getOMPCCompiler(),
@@ -5792,8 +5792,9 @@ algorithm
   ldflags := System.getLDFlags();
   rtlibs := Util.if_(isFunction, System.getRTLibs(), System.getRTLibsSim());
   platform := System.modelicaPlatform();
+  compileDir :=  System.pwd() +& System.pathDelimiter();
   makefileParams := SimCode.MAKEFILE_PARAMS(ccompiler, cxxcompiler, linker, exeext, dllext, 
-        omhome, cflags, ldflags, rtlibs, includes, libs, platform);
+        omhome, cflags, ldflags, rtlibs, includes, libs, platform,compileDir);
 end createMakefileParams;
 
 protected function elaborateRecordDeclarationsFromTypes
