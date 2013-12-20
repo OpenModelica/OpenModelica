@@ -183,6 +183,29 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
 
 end simulationFunctionsHeaderFile;
 
+template simulationMainDLLib(SimCode simCode)
+::=
+match simCode
+case SIMCODE(makefileParams=MAKEFILE_PARAMS(__)) then
+<<
+<%simulationMainDLLib2(makefileParams.platform)%>
+>>
+end simulationMainDLLib;
+
+template simulationMainDLLib2(String platform)
+::=
+match platform
+case "linux64"
+case "linux32" then
+<<
+"-ldl"
+>>
+else
+""
+end simulationMainDLLib2;
+
+
+
 template simulationRunScript(SimCode simCode)
 ::=
 match simCode
@@ -299,7 +322,7 @@ DLLEXT=<%makefileParams.dllext%>
 CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
 CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -I"<%makefileParams.omhome%>/include/omc/cpp/Core" -I"<%makefileParams.omhome%>/include/omc/cpp/"  -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %>
 LDSYTEMFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp"    -L"$(BOOST_LIBS)"
-LDMAINFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" -L"<%makefileParams.omhome%>/bin"   -L"$(BOOST_LIBS)" -l:$(BOOST_SYSTEM_LIB) -l:$(BOOST_FILESYSTEM_LIB)  -l:$(BOOST_PROGRAM_OPTIONS_LIB)  -lOMCppOMCFactory 
+LDMAINFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" <%simulationMainDLLib(simCode)%> -L"<%makefileParams.omhome%>/bin"  -L"$(BOOST_LIBS)" -l:$(BOOST_SYSTEM_LIB) -l:$(BOOST_FILESYSTEM_LIB)  -l:$(BOOST_PROGRAM_OPTIONS_LIB)  -lOMCppOMCFactory 
 CPPFLAGS = $(CFLAGS) -DOMC_BUILD -DBOOST_SYSTEM_NO_DEPRICATED
 SYSTEMFILE=OMCpp<%lastIdentOfPath(modelInfo.name)%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
 FUNCTIONFILE=OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.cpp
@@ -316,9 +339,10 @@ OFILES=$(CPPFILES:.cpp=.o)
 <%\t%>$(CXX) -shared -I. -o $(SYSTEMOBJ) $(OFILES) $(CPPFLAGS) $(LDSYTEMFLAGS) -lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath -lOMCppModelicaExternalC
 <%\t%>$(CXX) $(CPPFLAGS) -I. -o $(MAINOBJ) $(MAINFILE) $(LDMAINFLAGS)     
 >>
+
 end simulationMakefile;
 
-
+   
 
 template simulationCppFile(SimCode simCode)
  "Generates code for main cpp file for simulation target."
