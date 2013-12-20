@@ -3209,6 +3209,76 @@ algorithm
   end matchcontinue;
 end arrayMember;
 
+
+public function arrayMemberNoOpt
+"returns the index if found or 0 if not found.
+ considers array indexed from 1"
+  input array<Type_a> inArr;
+  input Integer inFilledSize "the filled size of the array, it might be less than arrayLength";
+  input Type_a inElement;
+  output Integer index;
+protected
+  replaceable type Type_a subtypeof Any;
+algorithm
+  index := matchcontinue(inArr, inFilledSize, inElement)
+    local
+      array<Type_a> arr;
+      Integer i, len, pos;
+    // array is empty
+    case (arr, _, _)
+      equation
+        true = intEq(0, inFilledSize);
+      then 0;
+    // array is not empty
+    case (arr, _, _)
+      equation
+        i = arrayMemberLoopNoOpt(arr, inElement, 1, inFilledSize);
+      then i;
+  end matchcontinue;
+end arrayMemberNoOpt;
+
+
+protected function arrayMemberLoopNoOpt
+"returns the index if found or 0 if not found.The array has no Option like in arrayMember
+ considers array indexed from 1"
+  input array<Type_a> inArr;
+  input Type_a inElement;
+  input Integer currentIndex;
+  input Integer length;
+  output Integer index;
+protected
+  replaceable type Type_a subtypeof Any;
+algorithm
+  index := matchcontinue(inArr, inElement, currentIndex, length)
+    local
+      array<Type_a> arr;
+      Integer i, len, pos;
+      Type_a e;
+
+    // we're at the end
+    case (arr, _, i, len)
+      equation
+        true = intEq(i, len);
+      then 0;
+
+    // not at the end, see if we find it
+    case (arr, _, i, len)
+      equation
+        e = arrayGet(arr, i);
+        true = valueEq(e, inElement);
+      then i;
+
+    // not at the end, see if we find it
+    case (arr, _, i, len)
+      equation
+        e = arrayGet(arr, i);
+        false = valueEq(e, inElement);
+        i = arrayMemberLoopNoOpt(arr, inElement, i + 1, len);
+      then i;
+  end matchcontinue;
+end arrayMemberLoopNoOpt;
+
+
 protected function arrayMemberLoop
 "returns the index if found or 0 if not found.
  considers array indexed from 1"
