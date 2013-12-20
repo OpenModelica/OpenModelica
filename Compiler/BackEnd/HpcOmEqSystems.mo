@@ -1814,9 +1814,11 @@ case(_,BackendDAE.EQUATIONSYSTEM(eqns=allEqs,vars=allVars, jac=_, jacType=_))
         varLst = List.map1(allVars,List.getIndexFirst,varLst);
         vars = BackendVariable.listVar(varLst);
         mEqSys = arrayCreate(listLength(allVars), {});
+        //mEqSysT = arrayCreate(listLength(allVars), {});
         numberOfEqs = BackendDAEUtil.equationArraySize(eqs);
         numberOfVars = listLength(allVars);
         (mEqSys,mEqSysT) = BackendDAEUtil.incidenceMatrixDispatch(vars,eqs,{},mEqSys, 0, numberOfEqs, intLt(0, numberOfEqs), BackendDAE.ABSOLUTE(), NONE());
+        //(mEqSys,mEqSysT) = BackendDAEUtil.incidenceMatrixDispatch(vars,eqs,{},mEqSysT, 0, numberOfEqs, intLt(0, numberOfEqs), BackendDAE.ABSOLUTE(), NONE());
         BackendDump.dumpVariables(vars, "vars of the torn system");
         BackendDump.dumpEquationArray(eqs,"eqs of the torn system");
         BackendDump.dumpIncidenceMatrix(mEqSys);       
@@ -1833,6 +1835,31 @@ case(_,BackendDAE.EQUATIONSYSTEM(eqns=allEqs,vars=allVars, jac=_, jacType=_))
         ();
   end match;
 end dumpEquationSystemGraphML;
+
+
+public function dumpEquationSystemGraphML1
+  input BackendDAE.Variables varsIn;
+  input BackendDAE.EquationArray eqsIn;
+  input BackendDAE.IncidenceMatrix mIn;
+  input String name;
+protected
+  Integer nameAttIdx,typeAttIdx, numberOfVars,numberOfEqs;
+  list<Integer> varRange,eqRange;
+  BackendDAE.IncidenceMatrix m;
+  GraphML.Graph graph;
+algorithm
+  numberOfEqs := BackendDAEUtil.equationArraySize(eqsIn);
+  numberOfVars := BackendVariable.varsSize(varsIn);
+  varRange := List.intRange(numberOfVars);
+  eqRange := List.intRange(numberOfEqs);
+  graph := GraphML.getGraph("EqSystemGraph", true);
+  (typeAttIdx,graph) := GraphML.addAttribute("", "type", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graph);
+  (nameAttIdx,graph) := GraphML.addAttribute("", "name", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graph);
+  graph := List.fold2(varRange,addVarNodeToGraph,varsIn,{nameAttIdx,typeAttIdx}, graph);
+  graph := List.fold2(eqRange,addEqNodeToGraph,eqsIn,{nameAttIdx,typeAttIdx}, graph);
+  graph := List.fold1(eqRange,addEdgeToGraph,mIn,graph);
+  GraphML.dumpGraph(graph,name+&".graphml");
+end dumpEquationSystemGraphML1;
 
 
 protected function addEdgeToGraph "adds an edge to the graph by traversing the incidence matrix.
