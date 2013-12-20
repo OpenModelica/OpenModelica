@@ -82,6 +82,7 @@ Bool evalfF(Index n, double * v, Bool new_x, Number *objValue, void * useData)
 
     for(; i<iData->nsi; ++i)
     {
+      erg = 0.0;
       for(j=0; j<iData->deg; ++j, x+=iData->nv, ++k)
       {
         goal_func_lagrange(x, &tmp, iData->time[k], iData);
