@@ -6992,7 +6992,7 @@ protected function resolveLoops1
 protected
   Integer numSimpEqs, numVars, numSimpVars;
   list<Integer> simpVarIdcs, nonLoopVarIdcs, varCrossLst, eqCrossLst;
-  list<list<Integer>> partitions;
+  array<list<Integer>> partitions;
   //list<list<Integer>> eqLoops; //list of loops
   BackendDAE.Variables vars,simpVars;
   BackendDAE.EquationArray eqs,simpEqs;
@@ -7050,7 +7050,8 @@ algorithm
   //partition graph
   partitions := partitionBipartiteGraph(m,mT);
 
-  // get the crossroad-nodes
+  // go through all partitions
+  
   varCrossLst := List.fold1(List.intRange(numSimpEqs),gatherCrossNodes,m,{});
   eqCrossLst :=List.fold1(List.intRange(numSimpVars),gatherCrossNodes,mT,{});
   print("varCrossLst "+&stringDelimitList(List.map(varCrossLst,intString),",")+&"\n");
@@ -7061,26 +7062,57 @@ algorithm
 end resolveLoops1;
 
 
+protected function analysePartitions
+  input list<Integer> lstIn;
+  output list<Integer> lstOut;
+algorithm
+  print("the partition: "+&stringDelimitList(List.map(lstIn,intString),",")+&"\n");
+  lstOut := lstIn;
+end analysePartitions;
+
 protected function partitionBipartiteGraph "checks if there are independent subgraphs in the BIPARTITE graph.the given indeces refer to the equation indeces (rows in the incidenceMatrix)
 author:Waurich TUD 2013-12"
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mT;
-  output list<list<Integer>> partitions;
+  output array<list<Integer>> partitionsOut;
 protected
   Integer numParts;
   array<Integer> markNodes;
+  array<list<Integer>> partitions;
 algorithm
   markNodes := arrayCreate(arrayLength(m),0);
-  (markNodes,numParts) := partitionBipartiteGraph1(m,mT,{1},markNodes,1);
-  partitions := {};
+  (markNodes,numParts) := colorNodePartitions(m,mT,{1},{},markNodes,1);
+  print("THE FINAL MARKED ARRAY:\n"+&stringDelimitList(List.map(arrayList(markNodes),intString),"\n")+&"\n"); 
+  print("we have found "+&intString(numParts)+&" independent subgraphs.\n");
+  partitions := arrayCreate(numParts,{});
+  partitionsOut := List.fold1(List.intRange(arrayLength(markNodes)),getPartitions,markNodes,partitions);
 end partitionBipartiteGraph;
 
 
-protected function partitionBipartiteGraph1 "helper for partitionsGraph1.
+protected function getPartitions "goes through the markedArray and writes the index to the corresponding (the entry in the marked array) partition section
+author:Waurich TUD 2013-12"
+  input Integer idx;
+  input array<Integer> markedArray;
+  input array<list<Integer>> partitionArrayIn;
+  output array<list<Integer>> partitionArrayOut;
+protected
+  Boolean b;
+  Integer entry;
+  list<Integer> partition;
+algorithm
+  entry := arrayGet(markedArray,idx);
+  partition := arrayGet(partitionArrayIn,entry);
+  partition := idx::partition;
+  partitionArrayOut := arrayUpdate(partitionArrayIn,entry,partition); 
+end getPartitions;
+
+
+protected function colorNodePartitions "helper for partitionsGraph1.
 author:Waurich TUD 2013-12"
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mT;
   input list<Integer> checkNextIn;
+  input list<Integer> alreadyChecked;
   input array<Integer> markNodesIn;
   input Integer currNumberIn;
   output array<Integer> markNodesOut;
@@ -7089,66 +7121,72 @@ protected
   Boolean hasChanged;
   Integer node, currNumber;
   array<Integer> markNodes;
-  list<Integer> rest, vars, nextEqs,eqs;
+  list<Integer> rest, vars, nextEqs,eqs,checked;
 algorithm
- (markNodesOut,currNumberOut) := matchcontinue(m,mT,checkNextIn,markNodesIn,currNumberIn)
+ (markNodesOut,currNumberOut) := matchcontinue(m,mT,checkNextIn,alreadyChecked,markNodesIn,currNumberIn)
     local
-    case(_,_,{0},_,_)
+    case(_,_,{0},_,_,_)
       equation
+        currNumber = currNumberIn-1;
+        print("finished with "+&intString(currNumber)+&" partitions.\n");
         then
-          (markNodesIn,currNumberIn-1);
-    case(_,_,node::rest,_,_)
+          (markNodesIn,currNumber);
+    case(_,_,node::rest,_,_,_)
       equation
+        // get adjacent equation nodes
+        checked = node::alreadyChecked;
         vars = arrayGet(m,node);
         eqs = List.fold1(vars,getArrayEntryAndAppend,mT,{});
-        (markNodes,nextEqs) = arrayUpdateAndGetNextEqs(eqs,currNumberIn,markNodesIn,{});
-        hasChanged = List.isNotEmpty(nextEqs);
-        nextEqs = listAppend(nextEqs,checkNextIn);
-        (markNodes,currNumber) = partitionBipartiteGraph1(m,mT,nextEqs,markNodes,currNumberIn);
+        (_,eqs,_) = List.intersection1OnTrue(eqs,checked,intEq);
+        print("check for the eqNode: "+&intString(node)+&" with the  neighbor eqNodes: "+&stringDelimitList(List.map(eqs,intString),",")+&"\n");
+        
+        //write the eq as marked in the array and check if this is a new equation
+        (markNodes,hasChanged) = arrayUpdateAndCheckChange(node,currNumberIn,markNodesIn);
+        
+        // get the next nodes
+        nextEqs = listAppend(eqs,rest);
+        nextEqs = List.unique(nextEqs);
+        print("we havent seen the eqs: "+&stringDelimitList(List.map(nextEqs,intString),",")+&"\n");
+        (markNodes,currNumber) = colorNodePartitions(m,mT,nextEqs,checked,markNodes,currNumberIn);
       then
         (markNodes,currNumber);       
-    case(_,_,{},_,_)
+    case(_,_,{},_,_,_)
       equation
         node = Util.arrayMemberNoOpt(markNodesIn,arrayLength(markNodesIn),0);
-        (markNodes,currNumber) = partitionBipartiteGraph1(m,mT,{node},markNodesIn,currNumberIn+1);
+        print("skip to node: "+&intString(node)+&"\n");
+        (markNodes,currNumber) = colorNodePartitions(m,mT,{node},alreadyChecked,markNodesIn,currNumberIn+1);
         then
-          (markNodes,currNumberIn);
+          (markNodes,currNumber);
   end matchcontinue;
-end partitionBipartiteGraph1;  
+end colorNodePartitions;  
 
 
-protected function arrayUpdateAndGetNextEqs
-  input list<Integer> eqLst;
+protected function arrayUpdateAndCheckChange
+  input Integer eq;
   input Integer currNumber;
   input array<Integer> markNodesIn;
-  input list<Integer> nextNodesIn;
   output array<Integer> markNodesOut;
-  output list<Integer> nextNodesOut;
+  output Boolean changedOut;
 algorithm
-  (markNodesOut,nextNodesOut) := matchcontinue(eqLst,currNumber,markNodesIn,nextNodesIn)
+  (markNodesOut,changedOut) := matchcontinue(eq,currNumber,markNodesIn)
     local
       Boolean hasChanged, isAnotherPartition;
-      Integer eq,entry;
+      Integer entry;
       array<Integer> markNodes;
-      list<Integer> rest, nextNodes;
-    case(eq::rest,_,_,_)
+    case(_,_,_)
       equation
+        print("CHECK eqNode: "+&intString(eq)+&"\n");
         entry = arrayGet(markNodesIn,eq);
         hasChanged = intEq(entry,0);
         isAnotherPartition = intNe(entry,currNumber);
-        isAnotherPartition = boolOr(boolNot(hasChanged),isAnotherPartition);
+        isAnotherPartition = boolAnd(boolNot(hasChanged),isAnotherPartition);
         Debug.bcall(isAnotherPartition,print,"in arrayUpdateAndGetNextEqs: "+&intString(eq)+&" cannot be assigned to a partition.check this"+&"\n");
         markNodes = arrayUpdate(markNodesIn,eq,currNumber);
-        nextNodes = Util.if_(hasChanged,eq::nextNodesIn,nextNodesIn);
-        (markNodes,nextNodes) = arrayUpdateAndGetNextEqs(rest,currNumber,markNodes,nextNodes);       
+        print("THE MARKED ARRAY:\n"+&stringDelimitList(List.map(arrayList(markNodes),intString),"\n")+&"\n");      
       then
-        (markNodes,nextNodes);
-    case({},_,_,_)
-      equation
-        then
-          (markNodesIn,nextNodesIn);
+        (markNodes,hasChanged);
   end matchcontinue;      
-end arrayUpdateAndGetNextEqs;
+end arrayUpdateAndCheckChange;
 
 
 protected function getArrayEntryAndAppend
