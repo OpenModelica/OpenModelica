@@ -62,6 +62,7 @@ class ParametersScrollArea : public QScrollArea
   Q_OBJECT
 public:
   ParametersScrollArea();
+  bool eventFilter(QObject *o, QEvent *e);
   void addGroupBox(QGroupBox *pGroupBox, QGridLayout *pGroupBoxLayout);
   QGroupBox* getGroupBox(QString title);
   QGridLayout* getGroupBoxLayout(QString title);

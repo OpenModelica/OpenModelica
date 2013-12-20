@@ -188,10 +188,24 @@ ParametersScrollArea::ParametersScrollArea()
   setFrameShape(QFrame::NoFrame);
   setBackgroundRole(QPalette::Base);
   setWidgetResizable(true);
+  setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+  setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   mpVerticalLayout = new QVBoxLayout;
   mpVerticalLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
   mpWidget->setLayout(mpVerticalLayout);
   setWidget(mpWidget);
+}
+
+/*!
+ * Override eventFilter
+ * No vertical scroll bar in dialogs with long parameter explanation
+ */
+bool ParametersScrollArea::eventFilter(QObject *o, QEvent *e)
+{
+  if(o == mpWidget && e->type() == QEvent::Resize)
+    setMinimumHeight(mpWidget->minimumSizeHint().height() + horizontalScrollBar()->height());
+
+  return false;
 }
 
 /*!
@@ -294,12 +308,12 @@ void ComponentParameters::setUpDialog()
   mHorizontalLine->setFrameShadow(QFrame::Sunken);
   // parameters tab widget
   mpParametersTabWidget = new QTabWidget;
-  /* Component Group Box */
+  // Component Group Box
   mpComponentGroupBox = new QGroupBox(tr("Component"));
-  /* Component name */
+  // Component name
   mpComponentNameLabel = new Label(Helper::name);
   mpComponentNameTextBox = new Label(mpComponent->getName());
-  /* Component class name */
+  // Component class name
   mpComponentClassNameLabel = new Label(Helper::path);
   mpComponentClassNameTextBox = new Label(mpComponent->getClassName());
   QGridLayout *pComponentGroupBoxLayout = new QGridLayout;
@@ -309,9 +323,9 @@ void ComponentParameters::setUpDialog()
   pComponentGroupBoxLayout->addWidget(mpComponentClassNameLabel, 1, 0);
   pComponentGroupBoxLayout->addWidget(mpComponentClassNameTextBox, 1, 1);
   mpComponentGroupBox->setLayout(pComponentGroupBoxLayout);
-  /* Create General tab and Parameters GroupBox */
+  // Create General tab and Parameters GroupBox
   ParametersScrollArea *pParametersScrollArea = new ParametersScrollArea;
-  /* first add the Component Group Box */
+  // first add the Component Group Box
   pParametersScrollArea->getLayout()->addWidget(mpComponentGroupBox);
   QGroupBox *pGroupBox = new QGroupBox("Parameters");
   QGridLayout *pGroupBoxLayout = new QGridLayout;
@@ -323,7 +337,7 @@ void ComponentParameters::setUpDialog()
   createParameters(mpComponent->getOMCProxy(), mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->getNameStructure(),
                    "", mpComponent->getClassName(), mpComponent->getName(), mpComponent->isInheritedComponent(),
                    mpComponent->getInheritedClassName());
-  /* if component doesn't have any parameters then hide the parameters Group Box */
+  // if component doesn't have any parameters then hide the parameters Group Box
   if (mParametersList.isEmpty())
   {
     ParametersScrollArea *pParametersScrollArea;
