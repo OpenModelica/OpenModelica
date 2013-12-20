@@ -4556,7 +4556,6 @@ protected function makeAsubIndex
   output DAE.Exp asub;
 algorithm
   (asub,_) := ExpressionSimplify.simplify1(Expression.makeASUB(expr, {DAE.ICONST(index)}));
-  asub := Debug.bcallret1(Expression.isCrefScalar(asub), Expression.unliftExp, asub, asub);
 end makeAsubIndex;
 
 protected function makeEnumLiteralIndices
