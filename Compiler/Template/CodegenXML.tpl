@@ -734,12 +734,12 @@ match modelInfo
 case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars),vars=SIMVARS(__)) then
   <<
   <equ:InitialEquations>
-  	<%vars.stateVars |> var => initialEquationXml(var) ;separator="\n"%>
-  	<%vars.derivativeVars |> var => initialEquationXml(var) ;separator="\n"%>
-  	<%vars.algVars |> var => initialEquationXml(var) ;separator="\n"%>
-  	<%vars.intAlgVars |> var => initialEquationXml(var) ;separator="\n"%>
-  	<%vars.boolAlgVars |> var => initialEquationXml(var) ;separator="\n"%>
-  	<%vars.stringAlgVars |> var => initialEquationXml(var) ;separator="\n"%>
+    <%vars.stateVars |> var => initialEquationXml(var) ;separator="\n"%>
+    <%vars.derivativeVars |> var => initialEquationXml(var) ;separator="\n"%>
+    <%vars.algVars |> var => initialEquationXml(var) ;separator="\n"%>
+    <%vars.intAlgVars |> var => initialEquationXml(var) ;separator="\n"%>
+    <%vars.boolAlgVars |> var => initialEquationXml(var) ;separator="\n"%>
+    <%vars.stringAlgVars |> var => initialEquationXml(var) ;separator="\n"%>
   </equ:InitialEquations> 
   >>
 end initialEquationsXml;
@@ -756,10 +756,10 @@ end initialEquationsXml;
       let &preExp = buffer "" /*BUFD*/
          <<
          <equ:Equation>
-         	<equ:Sub>
-         		<%identName%>
-         		<%daeExpXml(exp, contextOther, &preExp, &varDecls)%>
-         	</equ:Sub>
+           <equ:Sub>
+             <%identName%>
+             <%daeExpXml(exp, contextOther, &preExp, &varDecls)%>
+           </equ:Sub>
          </equ:Equation><%\n%>
          >>      
 end initialEquationXml;
