@@ -51,7 +51,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
     <%equationsXml(allEquations, whenClauses)%>
  
-    <%initialEquationsXml(initialEquations)%>
+    <%initialEquationsXml(modelInfo)%>
        
     <%algorithmicEquationsXml(allEquations)%>
 
@@ -727,18 +727,42 @@ let alg =(statements |> stmt =>
   >>
 end equationAlgorithmXml;
 
-template initialEquationsXml( list<SimEqSystem> initalEquations)
-  "Generates function in simulation file."
+ template initialEquationsXml(ModelInfo modelInfo)
+ "Function for Inititial Equations." 
 ::=
-  let &varDecls = buffer "" /*BUFD*/
-  let &tmp = buffer ""
-  let initialEqn = (initalEquations |> eq  => equation_Xml(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &tmp);separator="\n")
+match modelInfo
+case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars),vars=SIMVARS(__)) then
   <<
   <equ:InitialEquations>
-   <%&tmp%>
-  </equ:InitialEquations>  
+  	<%vars.stateVars |> var => initialEquationXml(var) ;separator="\n"%>
+  	<%vars.derivativeVars |> var => initialEquationXml(var) ;separator="\n"%>
+  	<%vars.algVars |> var => initialEquationXml(var) ;separator="\n"%>
+  	<%vars.intAlgVars |> var => initialEquationXml(var) ;separator="\n"%>
+  	<%vars.boolAlgVars |> var => initialEquationXml(var) ;separator="\n"%>
+  	<%vars.stringAlgVars |> var => initialEquationXml(var) ;separator="\n"%>
+  </equ:InitialEquations> 
   >>
 end initialEquationsXml;
+
+ template initialEquationXml(SimVar var)
+   "Generates XML code for Inititial Equations."  
+ ::=
+  match var
+    case SIMVAR(__) then 
+    let identName = '<%crefXml(name)%>'
+    match initialValue 
+      case SOME(exp) then 
+      let &varDecls = buffer "" /*BUFD*/
+      let &preExp = buffer "" /*BUFD*/
+         <<
+         <equ:Equation>
+         	<equ:Sub>
+         		<%identName%>
+         		<%daeExpXml(exp, contextOther, &preExp, &varDecls)%>
+         	</equ:Sub>
+         </equ:Equation><%\n%>
+         >>      
+end initialEquationXml;
 
  /*****************************************************************************
  *       SECTION: GENERATE All EQUATIONS IN SIMULATION FILE
@@ -751,7 +775,7 @@ template equation_Xml(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, 
 ::=
   match context case INLINE_CONTEXT() then old_equation_Xml(eq,context,&varDecls) else
   match eq
-  case e as SES_MIXED(__) then " "
+  case e as SES_MIXED(__) then " MIXED EQUATION NOT IMPLEMENTED "
   case e as SES_ALGORITHM(statements={}) then " "
   case e as SES_ALGORITHM(__) then " "
   case e as SES_WHEN(__)
@@ -766,8 +790,12 @@ template equation_Xml(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, 
     then  equationSimpleAssignXml(e, context, &varD /*BUFD*/)
   case e as SES_ARRAY_CALL_ASSIGN(__)
     then  equationArrayCallAssignXml(e, context, &varD /*BUFD*/)
-  case e as SES_LINEAR(__) then " "
-  case e as SES_NONLINEAR(__) then " "
+  case e as SES_IFEQUATION(__)
+    then 'IfEquation Assign Not implemente yet'
+  case e as SES_LINEAR(__) 
+    then  equationLinearXml(e, context, &varD /*BUFD*/)
+  case e as SES_NONLINEAR(__) 
+    then  equationNonlinearXml(e, context, &varD /*BUFD*/)
   case e as SES_WHEN(__)
     then " " 
   else
@@ -797,8 +825,8 @@ template old_equation_Xml(SimEqSystem eq, Context context, Text &varDecls)
   case e as SES_ARRAY_CALL_ASSIGN(__)
     then equationArrayCallAssignXml(e, context, &varDecls)
   case e as SES_ALGORITHM(__) then " "
-  case e as SES_LINEAR(__) then " "
-  case e as SES_NONLINEAR(__) then " "
+  case e as SES_LINEAR(__) then " equations are not implemented yet"
+  case e as SES_NONLINEAR(__) then "equations are not implemented yet "
   case e as SES_WHEN(__)
     then equationWhenXml(e, context, &varDecls)
   else
@@ -855,6 +883,59 @@ case eqn as SES_ARRAY_CALL_ASSIGN(__) then
 %>
 >>
 end equationArrayCallAssignXml;
+
+
+template equationLinearXml(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
+ "Generates a when equation XML."
+::=
+match eq
+case SES_LINEAR(__) then
+  <<
+  <%simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
+     let &preExp = buffer "" /*BUFD*/
+     let expPart = daeExpXml(eq.exp, context, &preExp /*BUFC*/,  &varDecls /*BUFD*/)
+ '<%preExp%>
+  <%expPart%>' ;separator="\n"%>
+  <%beqs |> exp hasindex i0 =>
+     let &preExp = buffer "" /*BUFD*/
+     let expPart = daeExpXml(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+  '<%preExp%> 
+   <%expPart%>' ;separator="\n"%>
+  >>
+end equationLinearXml;
+
+template equationNonlinearXml(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
+ "Generates a when equation XML."
+::=
+match eq
+  case SES_NONLINEAR(__) then
+   let &varDecls = buffer "" /*BUFD*/
+   let &tmp = buffer ""
+   let prebody = (eqs |> eq2 =>
+       functionExtraResidualsPreBody(eq2, &varDecls /*BUFD*/, &tmp)
+     ;separator="\n")
+   let body = (eqs |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
+       let &preExp = buffer "" /*BUFD*/
+       let expPart = daeExpXml(eq2.exp, contextSimulationDiscrete,
+                      &preExp /*BUFC*/, &varDecls /*BUFD*/)
+ '<%preExp%>
+  <%expPart%>;';separator="\n")
+  <<
+  <%&tmp%>
+  <%prebody%>
+  <%body%>
+  >>
+end equationNonlinearXml;
+
+template functionExtraResidualsPreBody(SimEqSystem eq, Text &varDecls /*BUFP*/, Text &eqs)
+ "Generates an equation."
+::=
+  match eq
+  case e as SES_RESIDUAL(__) then ""
+  else equation_Xml(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &eqs)
+  end match
+end functionExtraResidualsPreBody;
+
 
 template equationWhenXml(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
  "Generates a when equation XML."
@@ -2955,37 +3036,27 @@ template daeExpIfXml(Exp exp, Context context, Text &preExp /*BUFP*/,
 ::=
 match exp
 case IFEXP(__) then
-  let condExp = daeExpXml(expCond, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-  let &preExpThen = buffer "" /*BUFD*/
-  let eThen = daeExpXml(expThen, context, &preExpThen /*BUFC*/, &varDecls /*BUFD*/)
-  let &preExpElse = buffer "" /*BUFD*/
-  let eElse = daeExpXml(expElse, context, &preExpElse /*BUFC*/, &varDecls /*BUFD*/)
-  let shortIfExp = if preExpThen then "" else if preExpElse then "" else if isArrayType(typeof(exp)) then "" else "x"
-  (if shortIfExp
-    then
-      // Safe to do if eThen and eElse don't emit pre-expressions
-      <<
-      <fun:If>
-        <fun:Condition>
-          <%condExp%>
-        </fun:Condition>
-        <fun:Statements>
-          <%eThen%>
-        </fun:Statements>
-      </fun:If>
-      <fun:Else>
-        <%eElse%>
-      </fun:Else>
-      >>
-    else
-      let condVar = tempDeclXml("modelica_boolean", &varDecls /*BUFD*/)
-      let resVarType = expTypeFromExpArrayIfXml(expThen)
-      let resVar = tempDeclXml(resVarType, &varDecls /*BUFD*/)
-      let &preExp +=
-      <<
-
-      >>
-      resVar)
+  let condExp = daeExpXml(expCond, context, &preExp, &varDecls /*BUFD*/)
+  let &resVar = buffer ""
+  let &preExpThen = buffer ""
+  let eThen = daeExpXml(expThen, context, &preExpThen, &varDecls /*BUFD*/)
+  let &preExpElse = buffer ""
+  let eElse = daeExpXml(expElse, context, &preExpElse, &varDecls /*BUFD*/)
+  let &preExp +=  
+  <<   
+  <fun:If>
+    <fun:Condition>
+      <%condExp%> 
+     </fun:Condition>
+     <fun:Statements>
+       <%eThen%>
+     </fun:Statements>
+  </fun:If>
+  <fun:Else>
+    <%eElse%>
+  </fun:Else>
+  >>
+  resVar
 end daeExpIfXml;
 
 template daeExpCallXml(Exp call, Context context, Text &preExp /*BUFP*/,
@@ -3121,15 +3192,25 @@ template daeExpCallXml(Exp call, Context context, Text &preExp /*BUFP*/,
         <%argStr%>
       </exp:Sqrt>
       >>
+      
   case CALL(path=IDENT(name="div"), expLst={e1,e2}, attr=CALL_ATTR(ty = T_INTEGER(__))) then
     let var1 = daeExpXml(e1, context, &preExp, &varDecls)
     let var2 = daeExpXml(e2, context, &preExp, &varDecls)
-    'ldiv(<%var1%>,<%var2%>).quot testcallC'
-
+      <<
+      <exp:Div>
+        <%var1%>
+        <%var2%>
+      </exp:Div>
+      >>
   case CALL(path=IDENT(name="div"), expLst={e1,e2}) then
     let var1 = daeExpXml(e1, context, &preExp, &varDecls)
     let var2 = daeExpXml(e2, context, &preExp, &varDecls)
-    'trunc(<%var1%>/<%var2%>)testcallB'
+      <<
+      <exp:Div>
+        <%var1%>
+        <%var2%>
+      </exp:Div>
+      >>
 
   case CALL(path=IDENT(name="mod"), expLst={e1,e2}, attr=CALL_ATTR(ty = ty)) then
     let var1 = daeExpXml(e1, context, &preExp, &varDecls)
@@ -3235,12 +3316,9 @@ template daeExpCallXml(Exp call, Context context, Text &preExp /*BUFP*/,
     '<%tvar%>'
 
   case CALL(path=IDENT(name="delay"), expLst={ICONST(integer=index), e, d, delayMax}) then
-    let tvar = tempDeclXml("modelica_real", &varDecls /*BUFD*/)
-
     let var1 = daeExpXml(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let var2 = daeExpXml(d, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let var3 = daeExpXml(delayMax, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    let &preExp += '<%tvar%> = delayImplXml(<%index%>, <%var1%>, time, <%var2%>, <%var3%>);<%\n%>'
       <<
       <exp:Delay>
         <%var1%>
@@ -3540,9 +3618,7 @@ template daeExpAsubXml(Exp inExp, Context context, Text &preExp /*BUFP*/,
 
   case ASUB(exp=e, sub=indexes) then
     let exp = daeExpXml(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    let typeShort = expTypeFromExpShortXml(e)
-    let expIndexes = (indexes |> index => '<%daeExpASubIndexXml(index, context, &preExp, &varDecls)%>' ;separator=", ")
-    '<%typeShort%>_get<%match listLength(indexes) case 1 then "" case i then '_<%i%>D'%>(&<%exp%>, <%expIndexes%>)'
+    '<%exp%>'
 
   case exp then
     error(sourceInfo(),'OTHER_ASUB <%printExpStr(exp)%>')
