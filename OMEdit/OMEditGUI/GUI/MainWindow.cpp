@@ -1436,6 +1436,11 @@ void MainWindow::toggleShapesButton()
   foreach (QAction *shapeAction, shapeActions)
     if (shapeAction != clickedAction)
       shapeAction->setChecked(false);
+
+  // cancel connection if another tools is chosen
+  GraphicsView *pGraphicsView = mpModelWidgetContainer->getCurrentModelWidget()->getDiagramGraphicsView();
+  if (pGraphicsView->isCreatingConnection())
+    pGraphicsView->removeConnection();
 }
 
 void MainWindow::openRecentModelWidget()

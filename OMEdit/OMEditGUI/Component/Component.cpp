@@ -1344,7 +1344,8 @@ void Component::mousePressEvent(QGraphicsSceneMouseEvent *event)
 void Component::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
 {
   Q_UNUSED(event);
-  emit showParameters();
+  if(!mpParentComponent) //if component (not a connector) is double clicked
+    emit showParameters();
 }
 
 //! Event when mouse cursor enters component icon.
