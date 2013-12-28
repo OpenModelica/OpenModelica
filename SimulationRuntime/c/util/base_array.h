@@ -57,7 +57,7 @@ void clone_base_array_spec(const base_array_t *source, base_array_t *dest);
 void clone_reverse_base_array_spec(const base_array_t* source, base_array_t* dest);
 
 int ndims_base_array(const base_array_t* a);
-int size_of_dimension_base_array(const base_array_t a, int i);
+int size_of_dimension_base_array(const base_array_t *a, int i);
 
 /* Helper functions */
 int base_array_ok(const base_array_t *a);

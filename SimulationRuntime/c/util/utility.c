@@ -55,7 +55,6 @@ modelica_real real_int_pow(modelica_real base, modelica_integer n)
 
 extern int OpenModelica_regexImpl(const char* str, const char* re, const int maxn, int extended, int sensitive, void*(*mystrdup)(const char*), void **outMatches)
 {
-  char *dup;
   regex_t myregex;
   int nmatch=0,i,rc,res;
   int flags = (extended ? REG_EXTENDED : 0) | (sensitive ? REG_ICASE : 0) | (maxn ? 0 : REG_NOSUB);
@@ -97,7 +96,7 @@ extern int OpenModelica_regexImpl(const char* str, const char* re, const int max
   if (!maxn)
     nmatch += res == 0 ? 1 : 0;
   else if (maxn) {
-    dup = strdup(str);
+    char *dup = strdup(str);
     for (i=0; i<maxn; i++) {
       if (!res && matches[i].rm_so != -1) {
         memcpy(dup, str + matches[i].rm_so, matches[i].rm_eo - matches[i].rm_so);

@@ -1361,7 +1361,7 @@ template inlineArray(Context context, String arr, ComponentRef c)
 ::= match context case INLINE_CONTEXT(__) then match c
 case CREF_QUAL(ident = "$DER") then <<
 
-inline_integrate_array(size_of_dimension_real_array(<%arr%>,1),<%cref(c)%>);
+inline_integrate_array(size_of_dimension_real_array(&<%arr%>,1),<%cref(c)%>);
 
 >>
 end inlineArray;
@@ -3097,7 +3097,7 @@ template extArg(SimExtArg extArg, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/
     let typeStr = expTypeShort(type_)
     let name = if outputIndex then 'out.targ<%outputIndex%>' else contextCref(c,contextFunction)
     let dim = daeExp(exp, contextFunction, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    'size_of_dimension_<%typeStr%>_array(<%name%>, <%dim%>)'
+    'size_of_dimension_<%typeStr%>_array(&<%name%>, <%dim%>)'
 end extArg;
 
 template extArgF77(SimExtArg extArg, Text &preExp, Text &varDecls)
@@ -3126,7 +3126,7 @@ template extArgF77(SimExtArg extArg, Text &preExp, Text &varDecls)
     let sizeVar = tempDecl("int", &varDecls)
     let dim = daeExp(exp, contextFunction, &preExp, &varDecls)
     let size_call = 'size_of_dimension_<%expTypeShort(type_)%>_array'
-    let &preExp += '<%sizeVar%> = <%size_call%>(<%contextCref(c,contextFunction)%>, <%dim%>);<%\n%>'
+    let &preExp += '<%sizeVar%> = <%size_call%>(&<%contextCref(c,contextFunction)%>, <%dim%>);<%\n%>'
     '&<%sizeVar%>'
 end extArgF77;
 
@@ -3497,7 +3497,7 @@ template algStmtForGeneric_impl(Exp exp, Ident iterator, String type,
   {
     <%type%> <%iterName%>;
 
-    for(<%tvar%> = 1; <%tvar%> <= size_of_dimension_<%arrayType%>(<%evar%>, 1); ++<%tvar%>) {
+    for(<%tvar%> = 1; <%tvar%> <= size_of_dimension_<%arrayType%>(&<%evar%>, 1); ++<%tvar%>) {
       <%if not acceptMetaModelicaGrammar() then '<%stateVar%> = get_memory_state();'%>
       <%stmtStuff%>
       <%body%>
@@ -3899,7 +3899,7 @@ template daeExpCrefRhsIndexSpec(list<Subscript> subs, Context context,
       case SLICE(__) then
         let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
         let tmp = tempDecl("modelica_integer", &varDecls /*BUFD*/)
-        let &preExp += '<%tmp%> = size_of_dimension_integer_array(<%expPart%>, 1);<%\n%>'
+        let &preExp += '<%tmp%> = size_of_dimension_integer_array(&<%expPart%>, 1);<%\n%>'
         <<
         (int) <%tmp%>, integer_array_make_index_array(&<%expPart%>), 'A'
         >>
@@ -4811,7 +4811,7 @@ template daeExpSize(Exp exp, Context context, Text &preExp /*BUFP*/,
     let dimPart = daeExp(dim, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let resVar = tempDecl("modelica_integer", &varDecls /*BUFD*/)
     let typeStr = '<%expTypeArray(exp.ty)%>'
-    let &preExp += '<%resVar%> = size_of_dimension_<%typeStr%>(<%expPart%>, <%dimPart%>);<%\n%>'
+    let &preExp += '<%resVar%> = size_of_dimension_<%typeStr%>(&<%expPart%>, <%dimPart%>);<%\n%>'
     resVar
   else "size(X) not implemented"
 end daeExpSize;
@@ -4850,8 +4850,8 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
     case SOME(v) then daeExp(valueExp(v),context,&preDefault,&tmpVarDecls)
     end match
   let guardCond = match iter.guardExp case SOME(grd) then daeExp(grd, context, &guardExpPre, &tmpVarDecls) else "1"
-  let empty = match identType case "modelica_metatype" then 'listEmpty(<%loopVar%>)' else '0 == size_of_dimension_base_array(<%loopVar%>, 1)'
-  let length = match identType case "modelica_metatype" then 'listLength(<%loopVar%>)' else 'size_of_dimension_base_array(<%loopVar%>, 1)'
+  let empty = match identType case "modelica_metatype" then 'listEmpty(<%loopVar%>)' else '0 == size_of_dimension_base_array(&<%loopVar%>, 1)'
+  let length = match identType case "modelica_metatype" then 'listLength(<%loopVar%>)' else 'size_of_dimension_base_array(&<%loopVar%>, 1)'
   let reductionBodyExpr = "_$reductionFoldTmpA"
   let bodyExprType = expTypeArrayIf(typeof(r.expr))
   let reductionBodyExprWork = daeExp(r.expr, context, &bodyExpPre, &tmpVarDecls)
@@ -4906,7 +4906,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
     >>
     else
     <<
-    while (<%firstIndex%> <= size_of_dimension_<%arrayType%>(<%loopVar%>, 1)) {
+    while (<%firstIndex%> <= size_of_dimension_<%arrayType%>(&<%loopVar%>, 1)) {
       <%identType%> <%iteratorName%>;
       <%iteratorName%> = *(<%arrayType%>_element_addr1(&<%loopVar%>, 1, <%firstIndex%>++));
       <%if not acceptMetaModelicaGrammar() then '<%stateVar%> = get_memory_state();'%>

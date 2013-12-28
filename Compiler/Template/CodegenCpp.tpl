@@ -5082,7 +5082,7 @@ template inlineArray(Context context, String arr, ComponentRef c)
     match c
       case CREF_QUAL(ident = "$DER") then
         <<
-        inline_integrate_array(size_of_dimension_real_array(<%arr%>,1),<%cref(c)%>);
+        inline_integrate_array(size_of_dimension_real_array(&<%arr%>,1),<%cref(c)%>);
         >>
 end inlineArray;
 

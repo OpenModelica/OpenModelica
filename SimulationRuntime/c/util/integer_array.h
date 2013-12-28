@@ -224,7 +224,7 @@ extern void promote_alloc_integer_array(const integer_array_t * a, int n,
 
 static inline int ndims_integer_array(const integer_array_t * a)
 { return ndims_base_array(a); }
-static inline int size_of_dimension_integer_array(integer_array_t a, int i)
+static inline int size_of_dimension_integer_array(integer_array_t *a, int i)
 { return size_of_dimension_base_array(a, i); }
 /* This is defined in integer_array since we return an integer array */
 extern void sizes_of_dimensions_base_array(const base_array_t *a, integer_array_t *dest);

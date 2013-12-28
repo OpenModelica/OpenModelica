@@ -160,7 +160,7 @@ extern void promote_alloc_boolean_array(const boolean_array_t* a, int n,
 
 static inline int ndims_boolean_array(const boolean_array_t* a)
 { return ndims_base_array(a); }
-static inline int size_of_dimension_boolean_array(boolean_array_t a, int i)
+static inline int size_of_dimension_boolean_array(boolean_array_t *a, int i)
 { return size_of_dimension_base_array(a, i); }
 static inline modelica_boolean *data_of_boolean_array(const boolean_array_t*a)
 { return (modelica_boolean *) a->data; }

@@ -475,13 +475,13 @@ void write_noretcall(type_description *desc)
 
 void write_real_array(type_description *desc, const real_array_t *arr)
 {
-  size_t nr_elements = 0;
   if(desc->type != TYPE_DESC_NONE) {
     desc = add_tuple_item(desc);
   }
   desc->type = TYPE_DESC_REAL_ARRAY;
   if(desc->retval) {
     /* Can't use memory pool for these */
+    size_t nr_elements;
     desc->data.real_array.ndims = arr->ndims;
     desc->data.real_array.dim_size = (_index_t*)malloc(sizeof(*(arr->dim_size)) * arr->ndims);
     memcpy(desc->data.real_array.dim_size, arr->dim_size, sizeof(*(arr->dim_size)) * arr->ndims);
@@ -496,13 +496,13 @@ void write_real_array(type_description *desc, const real_array_t *arr)
 
 void write_integer_array(type_description *desc, const integer_array_t *arr)
 {
-  size_t nr_elements = 0;
   if(desc->type != TYPE_DESC_NONE) {
     desc = add_tuple_item(desc);
   }
   desc->type = TYPE_DESC_INT_ARRAY;
   if(desc->retval) {
     /* Can't use memory pool for these */
+    size_t nr_elements;
     desc->data.int_array.ndims = arr->ndims;
     desc->data.int_array.dim_size = (_index_t*)malloc(sizeof(*(arr->dim_size)) * arr->ndims);
     memcpy(desc->data.int_array.dim_size, arr->dim_size, sizeof(*(arr->dim_size)) * arr->ndims);
@@ -518,13 +518,13 @@ void write_integer_array(type_description *desc, const integer_array_t *arr)
 
 void write_boolean_array(type_description *desc, const boolean_array_t *arr)
 {
-  size_t nr_elements = 0;
   if(desc->type != TYPE_DESC_NONE) {
     desc = add_tuple_item(desc);
   }
   desc->type = TYPE_DESC_BOOL_ARRAY;
   if(desc->retval) {
     /* Can't use memory pool for these */
+    size_t nr_elements;
     desc->data.bool_array.ndims = arr->ndims;
     desc->data.bool_array.dim_size = (_index_t*)malloc(sizeof(*(arr->dim_size)) * arr->ndims);
     memcpy(desc->data.bool_array.dim_size, arr->dim_size, sizeof(*(arr->dim_size)) * arr->ndims);
@@ -539,13 +539,13 @@ void write_boolean_array(type_description *desc, const boolean_array_t *arr)
 
 void write_string_array(type_description *desc, const string_array_t *arr)
 {
-  size_t nr_elements = 0;
   if(desc->type != TYPE_DESC_NONE) {
     desc = add_tuple_item(desc);
   }
   desc->type = TYPE_DESC_STRING_ARRAY;
   if(desc->retval) {
     size_t i;
+    size_t nr_elements;
     modelica_string_t *dst = NULL, *src = NULL;
     desc->data.string_array.ndims = arr->ndims;
     desc->data.string_array.dim_size = (_index_t*)malloc(sizeof(*(arr->dim_size)) * arr->ndims);
@@ -583,14 +583,13 @@ int read_modelica_string(type_description **descptr, modelica_string_t *str)
 
 void write_modelica_string(type_description *desc, modelica_string *str)
 {
-  size_t len = 0;
   if(desc->type != TYPE_DESC_NONE) {
     desc = add_tuple_item(desc);
   }
   desc->type = TYPE_DESC_STRING;
   if(desc->retval) {
     /* Can't use memory pool */
-    len = modelica_string_length(*str);
+    size_t len = modelica_string_length(*str);
     desc->data.string = (modelica_string_const)malloc(len + 1);
     memcpy((char*)desc->data.string, *str, len + 1);
   } else {

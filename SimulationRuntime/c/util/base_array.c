@@ -338,11 +338,11 @@ int ndims_base_array(const base_array_t* a)
     return a->ndims;
 }
 
-int size_of_dimension_base_array(const base_array_t a, int i)
+int size_of_dimension_base_array(const base_array_t * a, int i)
 {
-    assert(base_array_ok(&a));
-    assert((i > 0) && (i <= a.ndims));
-    return a.dim_size[i-1];
+    assert(base_array_ok(a));
+    assert((i > 0) && (i <= a->ndims));
+    return a->dim_size[i-1];
 }
 
 void clone_reverse_base_array_spec(const base_array_t* source, base_array_t* dest)

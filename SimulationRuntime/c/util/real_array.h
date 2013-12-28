@@ -206,7 +206,7 @@ extern void promote_alloc_real_array(const real_array_t * a, int n, real_array_t
 
 static inline int ndims_real_array(const real_array_t * a)
 { return ndims_base_array(a); }
-static inline int size_of_dimension_real_array(real_array_t a, int i)
+static inline int size_of_dimension_real_array(real_array_t *a, int i)
 { return size_of_dimension_base_array(a, i); }
 static inline modelica_real *data_of_real_array(const real_array_t *a)
 { return (modelica_real *) a->data; }

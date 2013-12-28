@@ -155,10 +155,10 @@ modelica_string_t *calc_string_index_va(const string_array_t *source, int ndims,
 
 void print_string_matrix(const string_array_t *source)
 {
-    _index_t i,j;
-    modelica_string_t value;
-
     if(source->ndims == 2) {
+        _index_t i,j;
+        modelica_string_t value;
+
         printf("%d X %d matrix:\n", (int) source->dim_size[0], (int) source->dim_size[1]);
         for(i = 0; i < source->dim_size[0]; ++i) {
             for(j = 0; j < source->dim_size[1]; ++j) {
@@ -174,8 +174,7 @@ void print_string_matrix(const string_array_t *source)
 
 void print_string_array(const string_array_t *source)
 {
-    size_t k, n;
-    _index_t i,j;
+    _index_t i;
     modelica_string_t *data;
     assert(base_array_ok(source));
 
@@ -189,6 +188,9 @@ void print_string_array(const string_array_t *source)
             printf("%s", (*data));
         }
     } else if(source->ndims > 1) {
+        size_t k, n;
+        _index_t j;
+ 
         n = base_array_nr_of_elements(source) /
             (source->dim_size[0] * source->dim_size[1]);
         for(k = 0; k < n; ++k) {
@@ -459,7 +461,7 @@ void simple_index_string_array2(const string_array_t * source,
 
 void array_string_array(string_array_t* dest,int n,string_array_t* first,...)
 {
-    int i,j,c,m;
+    int i,j,c;
     va_list ap;
 
     string_array_t **elts=(string_array_t**)malloc(sizeof(string_array_t *) * n);
@@ -475,7 +477,7 @@ void array_string_array(string_array_t* dest,int n,string_array_t* first,...)
     check_base_array_dim_sizes((const base_array_t **)elts,n);
 
     for(i = 0, c = 0; i < n; ++i) {
-        m = base_array_nr_of_elements(elts[i]);
+        int m = base_array_nr_of_elements(elts[i]);
         for(j = 0; j < m; ++j) {
             string_set(dest, c, string_get(elts[i], j));
             c++;
@@ -487,7 +489,7 @@ void array_string_array(string_array_t* dest,int n,string_array_t* first,...)
 void array_alloc_string_array(string_array_t* dest, int n,
                               string_array_t* first,...)
 {
-    int i,j,c,m;
+    int i,j,c;
     va_list ap;
 
     string_array_t **elts = (string_array_t**)malloc(sizeof(string_array_t *) * n);
@@ -517,7 +519,7 @@ void array_alloc_string_array(string_array_t* dest, int n,
     }
 
     for(i = 0, c = 0; i < n; ++i) {
-        m = base_array_nr_of_elements(elts[i]);
+        int m = base_array_nr_of_elements(elts[i]);
         for(j = 0; j < m; ++j) {
             string_set(dest, c, string_get(elts[i], j));
             c++;
