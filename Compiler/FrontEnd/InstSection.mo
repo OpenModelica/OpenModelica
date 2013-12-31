@@ -1692,12 +1692,13 @@ protected function instArrayEquation
 algorithm
   dae := matchcontinue(lhs, rhs, tp, inConst, source, initial_)
     local
-      Boolean b1, b2;
+      Boolean b, b1, b2;
       DAE.Dimensions ds;
       DAE.Dimension dim, lhs_dim, rhs_dim;
       list<DAE.Exp> lhs_idxs, rhs_idxs;
       DAE.Type t;
       String lhs_str, rhs_str, eq_str;
+      DAE.Element elt;
 
     /* Initial array equations with function calls => initial array equations */
     case (_, _, _, _, _, SCode.INITIAL())
@@ -1754,8 +1755,10 @@ algorithm
         true = Expression.dimensionKnown(dim);
         true = Expression.isRange(lhs) or Expression.isRange(rhs) or Expression.isReduction(lhs) or Expression.isReduction(rhs);
         ds = Types.getDimensions(tp);
+        b = SCode.isInitial(initial_);
+        elt = Util.if_(b, DAE.INITIAL_ARRAY_EQUATION(ds, lhs, rhs, source), DAE.ARRAY_EQUATION(ds, lhs, rhs, source));
       then
-        DAE.DAE({DAE.ARRAY_EQUATION(ds, lhs, rhs, source)});
+        DAE.DAE({elt});
 
     // Array dimension of unknown size, expanding case.
     case (_, _, DAE.T_ARRAY(ty = t, dims = {dim}), _, _, _)

@@ -5429,5 +5429,15 @@ algorithm
   end match;
 end isInstantiableClassRestriction;
 
+public function isInitial
+  input Initial _initial;
+  output Boolean isIn;
+algorithm
+  isIn := match _initial
+    case INITIAL() then true;
+    else false;
+  end match;
+end isInitial;
+
 end SCode;
 
