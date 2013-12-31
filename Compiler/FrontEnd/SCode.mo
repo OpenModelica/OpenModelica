@@ -5430,10 +5430,10 @@ algorithm
 end isInstantiableClassRestriction;
 
 public function isInitial
-  input Initial _initial;
+  input Initial inInitial;
   output Boolean isIn;
 algorithm
-  isIn := match _initial
+  isIn := match inInitial
     case INITIAL() then true;
     else false;
   end match;
