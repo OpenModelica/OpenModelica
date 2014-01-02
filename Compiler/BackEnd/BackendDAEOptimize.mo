@@ -7198,7 +7198,7 @@ original equation."
   input list<BackendDAE.Equation> daeEqsIn;
   output list<BackendDAE.Equation> daeEqsOut;
 algorithm
-  eqsOut := matchcontinue(partitionsIn,mIn,mTIn,eqMapping,varMapping,daeVarsIn,daeEqsIn)
+  daeEqsOut := matchcontinue(partitionsIn,mIn,mTIn,eqMapping,varMapping,daeVarsIn,daeEqsIn)
    local
      Boolean isSingleLoop;
      Integer startEqDaeIdx,startEqIdx;
@@ -7411,9 +7411,8 @@ algorithm
   exp2 := sumUp2Expressions(sumUp,exp2,exp4);
     //print("exp2\n");
     //ExpressionDump.dumpExp(exp2);
-  eqOut := BackendDAE.EQUATION(exp1,exp2,DAE.emptyElementSource(),false);
+  eqOut := BackendDAE.EQUATION(exp1,exp2,DAE.emptyElementSource,false);
 end sumUp2Equations;
-
 
 protected function sumUp2Expressions "sums up or subtracts 2 expressions, depending on the boolen (true=+, false =-)
 author:Waurich TUD 2013-12"
@@ -7438,7 +7437,7 @@ author:Waurich TUD 2013-12"
   input BackendDAE.Equation eqIn;
   output Boolean isPos;
 algorithm
-  osPos := matchcontinue(crefIn,eqIn)
+  isPos := matchcontinue(crefIn,eqIn)
     local
       Boolean exists1, exists2 ,sign1, sign2;
       DAE.Exp e1,e2;
