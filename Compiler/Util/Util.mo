@@ -2633,7 +2633,7 @@ end makeTuple;
 public function makeTupleR
   input Type_a a;
   input Type_b b;
-  output tuple<Type_a,Type_b> out;
+  output tuple<Type_b,Type_a> out;
   replaceable type Type_a subtypeof Any;
   replaceable type Type_b subtypeof Any;
 algorithm
