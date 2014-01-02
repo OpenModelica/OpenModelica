@@ -850,7 +850,7 @@ algorithm
 end getVarString;
    
 //TODO: Replace with CDATA
-protected function prepareXML " map-function for deletion of forbidden chars from given string
+public function prepareXML " map-function for deletion of forbidden chars from given string
 author:Waurich TUD 2013-06"
   input String iString;
   output String oString;

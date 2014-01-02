@@ -55,6 +55,7 @@ protected import Debug;
 protected import Expression;
 protected import Flags;
 protected import GraphML;
+protected import HpcOmTaskGraph;
 protected import List;
 protected import Matching;
 protected import SimCodeUtil;
@@ -1925,6 +1926,7 @@ algorithm
   typeAttIdx := listGet(attributeIdcs,2); // if its a tearingvar or residual or an other
   var := BackendVariable.getVarAt(vars,indx);
   varString := BackendDump.varString(var);
+  varString := HpcOmTaskGraph.prepareXML(varString);
   varNodeId := getVarNodeIdx(indx);
   graphOut := GraphML.addNode(varNodeId,intString(indx),GraphML.COLOR_ORANGE,GraphML.ELLIPSE(),SOME(varString),{(nameAttrIdx,varString)},{},graphIn);
 end addVarNodeToGraph;
@@ -1945,6 +1947,7 @@ algorithm
   nameAttrIdx := listGet(attributeIdcs,1);
   {eq} := BackendEquation.getEqns({indx}, eqs);
   eqString := BackendDump.equationString(eq);
+  eqString := HpcOmTaskGraph.prepareXML(eqString);
   eqNodeId := getEqNodeIdx(indx);
   graphOut := GraphML.addNode(eqNodeId,intString(indx),GraphML.COLOR_GREEN,GraphML.RECTANGLE(),SOME(eqString),{(nameAttrIdx,eqString)},{},graphIn);
 end addEqNodeToGraph;

@@ -2629,6 +2629,18 @@ algorithm
   out := (a,b);
 end makeTuple;
 
+
+public function makeTupleR
+  input Type_a a;
+  input Type_b b;
+  output tuple<Type_a,Type_b> out;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+algorithm
+  out := (b,a);
+end makeTupleR;
+
+
 public function make3Tuple
   input Type_a a;
   input Type_b b;
