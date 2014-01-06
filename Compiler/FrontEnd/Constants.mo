@@ -416,9 +416,17 @@ record Dialog
    parameter String group = \"Parameters\";
    parameter Boolean enable = true;
    parameter Boolean showStartAttribute = false;
+   parameter Boolean colorSelector = false;
+   parameter Selector loadSelector;
+   parameter Selector saveSelector;
    parameter String groupImage = \"\";
    parameter Boolean connectorSizing = false;
 end Dialog;
+
+record Selector
+  parameter String filter=\"\";
+  parameter String caption=\"\";
+end Selector;
 
 //
 // connector Frame \"Frame of a mechanical system\"

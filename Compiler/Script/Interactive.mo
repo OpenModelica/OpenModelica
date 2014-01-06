@@ -13630,7 +13630,7 @@ protected function getComponentitemsAnnotationsElArgs
 algorithm
   outStringLst := matchcontinue (inElArgLst,inEnv,inClass,inFullProgram,inModelPath)
     local
-      list<Env.Frame> env,env_1;
+      list<Env.Frame> env,env_1,env_2;
       SCode.Element c,c_1;
       SCode.Mod mod_1;
       DAE.Mod mod_2;
@@ -13651,12 +13651,14 @@ algorithm
         modification = SOME(Absyn.CLASSMOD(mod,Absyn.NOMOD())), info = info) :: rest,env,_,_,_)
       equation
 
-        (cache,c,env_1) = Lookup.lookupClass(Env.emptyCache(),env, Absyn.IDENT(annName), false);
+        (cache, env_2, _) = buildEnvForGraphicProgram(inFullProgram, inModelPath, mod, annName);
+
+        (cache,c,env_1) = Lookup.lookupClass(cache, env, Absyn.IDENT(annName), false);
         mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(mod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
-        (cache,mod_2) = Mod.elabMod(cache, env_1, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false, Absyn.dummyInfo);
+        (cache,mod_2) = Mod.elabMod(cache, env_2, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false, Absyn.dummyInfo);
         c_1 = SCode.classSetPartial(c, SCode.NOT_PARTIAL());
         (_,_,_,_,dae,cs,t,state,_,_) =
-          Inst.instClass(cache, env_1,InnerOuter.emptyInstHierarchy,
+          Inst.instClass(cache, env_1, InnerOuter.emptyInstHierarchy,
             UnitAbsyn.noStore, mod_2, Prefix.NOPRE(), c_1, {}, false,
             InstTypes.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
         gexpstr = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
@@ -18727,7 +18729,7 @@ algorithm
   end match;
 end getBaseClassNameFromExtends;
 
-protected function printIstmtStr "Prints an interactive statement to a string."
+public function printIstmtStr "Prints an interactive statement to a string."
   input GlobalScript.Statements inStatements;
   output String strIstmt;
 algorithm
