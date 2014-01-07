@@ -2530,53 +2530,9 @@ int <%lastIdentOfPath(modelInfo.name)%>::getDimRHS() const
      return(SystemDefaultImplementation::getDimRHS());
 }
 
-
-
-void <%lastIdentOfPath(modelInfo.name)%>::getBoolean(bool* z)
-{
-   
-}
-
-void <%lastIdentOfPath(modelInfo.name)%>::getInteger(int* z)
-{
-   
-}
-
 void <%lastIdentOfPath(modelInfo.name)%>::getContinuousStates(double* z)
 {
     SystemDefaultImplementation::getContinuousStates(z);
-}
-
-
-void <%lastIdentOfPath(modelInfo.name)%>::getReal(double* z)
-{
-
-}
-
-void <%lastIdentOfPath(modelInfo.name)%>::getString(string* z)
-{
- 
-}
-
-
-void <%lastIdentOfPath(modelInfo.name)%>::setBoolean(const bool* z)
-{
- 
-}
-// Provide variables with given index to the system
-void <%lastIdentOfPath(modelInfo.name)%>::setInteger(const int* z)
-{
-    
-}
-// Provide variables with given index to the system
-void <%lastIdentOfPath(modelInfo.name)%>::setReal(const double* z)
-{
-    
-}
-// Provide variables with given index to the system
-void <%lastIdentOfPath(modelInfo.name)%>::setString(const string*  z)
-{
-    
 }
 
 // Set variables with given index to the system
@@ -2788,14 +2744,6 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     virtual void setVariables(const ublas::vector<double>& variables, const ublas::vector<double>& variables2);
 
     >>%>
-    bool getReal(int handle, double& value);
-    bool getInteger(int handle, int& value);
-    bool getBoolean(int handle, bool& value);
-
-    bool setReal(int handle, double& value);
-    bool setInteger(int handle, int& value);
-    bool setBoolean(int handle, bool& value);
-    
     
      /// Provide boolean variables
     virtual void getBoolean(bool* z);
@@ -8762,91 +8710,69 @@ template giveVariables(ModelInfo modelInfo)
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
   <<
-  bool <%lastIdentOfPath(name)%>::getReal(int handle, double& value)
+
+  void <%lastIdentOfPath(name)%>::getReal(double* z)
   {
-    switch(handle)
-    {
-    <%System.tmpTickReset(0)%>
-    <%vars.stateVars |> var hasindex i0 fromindex 0 => giveVariablesState(var, System.tmpTick(), "__z", i0) ;separator="\n"%>
-    <%vars.derivativeVars |> var hasindex i0 fromindex 0 => giveVariablesState(var, System.tmpTick(), "__zDot", i0) ;separator="\n"%>
-    <%vars.algVars |> var => giveVariablesDefault(var, System.tmpTick()) ;separator="\n"%>
-    <%vars.paramVars |> var => giveVariablesDefault(var, System.tmpTick()) ;separator="\n"%>
-    default:
-      return false;
-    }
+    <%listAppend( vars.algVars, vars.paramVars ) |>
+        var hasindex i0 fromindex 0 => giveVariablesDefault(var, i0)
+        ;separator="\n"%>
   }
 
-  bool <%lastIdentOfPath(name)%>::getInteger(int handle, int& value)
+  void <%lastIdentOfPath(name)%>::getInteger(int* z)
   {
-    switch(handle)
-    {
     <%listAppend( listAppend( vars.intAlgVars, vars.intParamVars ), vars.intAliasVars ) |>
         var hasindex i0 fromindex 0 => giveVariablesDefault(var, i0)
         ;separator="\n"%>
-    default:
-      return false;
-    }
   }
 
-  bool <%lastIdentOfPath(name)%>::getBoolean(int handle, bool& value)
+  void <%lastIdentOfPath(name)%>::getBoolean(bool* z)
   {
-    switch(handle)
-    {
     <%listAppend( listAppend( vars.boolAlgVars, vars.boolParamVars ), vars.boolAliasVars ) |>
         var hasindex i0 fromindex 0 => giveVariablesDefault(var, i0)
         ;separator="\n"%>
-    default:
-      return false;
-    }
   }
+  
+  void <%lastIdentOfPath(name)%>::getString(string* z)
+  {
   /*
   <%System.tmpTickReset(0)%>
   <%vars.stringAlgVars |> var => giveVariablesDefault(var, System.tmpTick()) ;separator="\n"%>
   <%vars.stringParamVars |> var => giveVariablesDefault(var, System.tmpTick()) ;separator="\n"%>
   <%vars.stringAliasVars |> var => giveVariablesDefault(var, System.tmpTick()) ;separator="\n"%>
   */
-  bool <%lastIdentOfPath(name)%>::setReal(int handle, double& value)
+  }
+  
+  void <%lastIdentOfPath(name)%>::setReal(const double* z)
   {
-    switch(handle)
-    {
     <%listAppend(vars.algVars, vars.paramVars) |>
-        var hasindex i0
-            fromindex intAdd(listLength(vars.stateVars), listLength(vars.derivativeVars))
-            => setVariablesDefault(var, i0) ;separator="\n"%>
-    default:
-      return false;
-    }
+        var hasindex i0 fromindex 0 => setVariablesDefault(var, i0)
+        ;separator="\n"%>
   }
 
-  bool <%lastIdentOfPath(name)%>::setInteger(int handle, int& value)
+  void <%lastIdentOfPath(name)%>::setInteger(const int* z)
   {
-    switch(handle)
-    {
     <%listAppend( listAppend( vars.intAlgVars, vars.intParamVars ), vars.intAliasVars ) |>
         var hasindex i0 fromindex 0 => setVariablesDefault(var, i0)
         ;separator="\n"%>
-    default:
-      return false;
-    }
   }
 
-  bool <%lastIdentOfPath(name)%>::setBoolean(int handle, bool& value)
+  void <%lastIdentOfPath(name)%>::setBoolean(const bool* z)
   {
-    switch(handle)
-    {
     <%listAppend( listAppend( vars.boolAlgVars, vars.boolParamVars ), vars.boolAliasVars ) |>
         var hasindex i0 fromindex 0 => setVariablesDefault(var, i0)
         ;separator="\n"%>
-    default:
-      return false;
-    }
   }
+  
+  void <%lastIdentOfPath(name)%>::setString(const string* z)
+  {
   /*
   <%System.tmpTickReset(0)%>
   <%vars.stringAlgVars |> var => giveVariablesDefault(var, System.tmpTick()) ;separator="\n"%>
   <%vars.stringParamVars |> var => giveVariablesDefault(var, System.tmpTick()) ;separator="\n"%>
   <%vars.stringAliasVars |> var => giveVariablesDefault(var, System.tmpTick()) ;separator="\n"%>
   */
+  }
+  
   >>
 end giveVariables;
 
@@ -8857,7 +8783,7 @@ match simVar
   case SIMVAR(__) then
   let description = if comment then '// "<%comment%>"'
   <<
-  case <%valueReference%> : value = <%arrayName%>[<%index%>]; return true; <%description%>
+  z[<%valueReference%>] = <%arrayName%>[<%index%>]; <%description%>
   >>
 end giveVariablesState;
 
@@ -8868,7 +8794,7 @@ match simVar
   case SIMVAR(__) then
   let description = if comment then '// "<%comment%>"'
   <<
-  case <%valueReference%> : value = <%cref(name)%>; return true; <%description%>
+  z[<%valueReference%>] = <%cref(name)%>; <%description%>
   >>
 end giveVariablesDefault;
 
@@ -8882,11 +8808,11 @@ match simVar
   match causality
     case INPUT() then 
       <<
-      case <%valueReference%> : <%variablename%> = value; return true; <%description%>
+      <%variablename%> = z[<%valueReference%>]; <%description%>
       >>
     else
       <<
-      //case <%valueReference%> : <%variablename%> = value; return true; // not an input
+      //<%variablename%> = z[<%valueReference%>]; <%description%>
       >>
   end match
 end setVariablesDefault;

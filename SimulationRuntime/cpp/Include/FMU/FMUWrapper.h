@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <string>
+#include <vector>
 #include <assert.h>
 #include "FMU/IFMUInterface.h"
 #include "FMU/FMUGlobalSettings.h"
@@ -41,6 +42,9 @@ public:
 private:
     FMUGlobalSettings _global_settings;
     boost::shared_ptr<MODEL_IDENTIFIER> _model;
+    std::vector<fmiReal> _tmp_real_buffer;
+    std::vector<fmiInteger> _tmp_int_buffer;
+    std::vector<fmiBoolean> _tmp_bool_buffer;
     double _need_update;
     void updateModel();
 };

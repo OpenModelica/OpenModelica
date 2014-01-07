@@ -22,6 +22,9 @@ FMUWrapper::FMUWrapper(fmiString instanceName, fmiString GUID,
   _model = boost::shared_ptr<MODEL_IDENTIFIER>
       (new MODEL_IDENTIFIER(&_global_settings, solver_factory,boost::shared_ptr<ISimData>(new SimData())));
   _model->setInitial(true);
+  _tmp_real_buffer.resize(_model->getDimContinuousStates() + _model->getDimRHS() + _model->getDimReal());
+  _tmp_int_buffer.resize(_model->getDimInteger());
+  _tmp_bool_buffer.resize(_model->getDimBoolean());
 }
 
 FMUWrapper::~FMUWrapper() 
@@ -83,19 +86,44 @@ fmiStatus FMUWrapper::completedIntegratorStep(fmiBoolean& callEventUpdate)
 // Functions for setting inputs and start values
 fmiStatus FMUWrapper::setReal(const fmiValueReference vr[], size_t nvr,
     const fmiReal value[])
-{ _need_update = true; return fmiOK; }
+{
+  _model->getReal(&_tmp_real_buffer[_model->getDimContinuousStates() + _model->getDimRHS()]);
+  for(size_t i = 0; i < nvr; ++i)
+    _tmp_int_buffer[vr[i]] = value[i];
+  _model->setReal(&_tmp_real_buffer[_model->getDimContinuousStates() + _model->getDimRHS()]);
+  _need_update = true;
+  return fmiOK;
+}
 
 fmiStatus FMUWrapper::setInteger(const fmiValueReference vr[], size_t nvr,
     const fmiInteger value[])
-{ _need_update = true; return fmiOK; }
+{
+  _model->getInteger(&_tmp_int_buffer[0]);
+  for(size_t i = 0; i < nvr; ++i)
+    _tmp_int_buffer[vr[i]] = value[i];
+  _model->setInteger(&_tmp_int_buffer[0]);
+  _need_update = true;
+  return fmiOK;
+}
 
 fmiStatus FMUWrapper::setBoolean(const fmiValueReference vr[], size_t nvr,
     const fmiBoolean value[])
-{ _need_update = true; return fmiOK; }
+{
+  _model->getBoolean((bool*) &_tmp_bool_buffer[0]);
+  for(size_t i = 0; i < nvr; ++i)
+    _tmp_bool_buffer[vr[i]] = value[i];
+  _model->setBoolean((bool*) &_tmp_bool_buffer[0]);
+  _need_update = true;
+  return fmiOK;
+}
 
 fmiStatus FMUWrapper::setString(const fmiValueReference vr[], size_t nvr,
     const fmiString  value[])
-{ _need_update = true; return fmiOK; }
+{
+  // TODO implement strings
+  _need_update = true;
+  return fmiOK;
+}
 
 /*  of the model equations */
 fmiStatus FMUWrapper::initialize(fmiBoolean toleranceControlled, fmiReal relativeTolerance, fmiEventInfo& eventInfo)
@@ -143,24 +171,29 @@ fmiStatus FMUWrapper::getEventIndicators(fmiReal eventIndicators[], size_t ni)
 fmiStatus FMUWrapper::getReal(const fmiValueReference vr[], size_t nvr, fmiReal value[])
 {
   updateModel();
+  _model->getContinuousStates(&_tmp_real_buffer[0]);
+  _model->getRHS(&_tmp_real_buffer[_model->getDimContinuousStates()]);
+  _model->getReal(&_tmp_real_buffer[_model->getDimContinuousStates() + _model->getDimRHS()]);
   for(size_t i = 0; i < nvr; ++i)
-    _model->getReal(vr[i], value[i]);
+    value[i] = _tmp_real_buffer[vr[i]];
   return fmiOK;
 }
 
 fmiStatus FMUWrapper::getInteger(const fmiValueReference vr[], size_t nvr, fmiInteger value[])
 {
   updateModel();
+  _model->getInteger(&_tmp_int_buffer[0]);
   for(size_t i = 0; i < nvr; ++i)
-    _model->getInteger(vr[i], value[i]);
+    value[i] = _tmp_int_buffer[vr[i]];
   return fmiOK;
 }
 
 fmiStatus FMUWrapper::getBoolean(const fmiValueReference vr[], size_t nvr, fmiBoolean value[])
 {
   updateModel();
+  _model->getBoolean((bool*) &_tmp_bool_buffer[0]);
   for(size_t i = 0; i < nvr; ++i)
-    _model->getBoolean(vr[i], (bool&) value[i]);
+    value[i] = _tmp_bool_buffer[vr[i]];
   return fmiOK;
 }
 
