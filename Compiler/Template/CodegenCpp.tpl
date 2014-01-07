@@ -43,6 +43,9 @@ case SIMCODE(__) then
 end simulationHeaderFile;
 
 
+
+
+
 template simulationMainRunScrip(SimCode simCode)
  "Generates code for header file for simulation target."
 ::=
@@ -61,9 +64,18 @@ match platform
 case  "linux64"
 case  "linux32" then
 match simCode
-case SIMCODE(modelInfo=MODELINFO(__),makefileParams=MAKEFILE_PARAMS(__)) then
+case SIMCODE(modelInfo=MODELINFO(__),makefileParams=MAKEFILE_PARAMS(__),simulationSettingsOpt = SOME(settings as SIMULATION_SETTINGS(__))) then
+let start = settings.startTime
+let end = settings.stopTime
+let stepsize = settings.stepSize
+let intervals = settings.numberOfIntervals
+let tol = settings.tolerance
+let solver = settings.method
+let moLib =  makefileParams.compileDir
+let home = makefileParams.omhome
 <<
-
+> #!/bin/sh
+> exec OMCpp<%fileNamePrefix%> -s <%start%> -e <%end%> -f <%stepsize%> -v <%intervals%> -y <%tol%> -i <%solver%> -r <%simulationLibDir(simulationCodeTarget(),simCode)%> -m <%moLib%> -R <%simulationResults(getRunningTestsuite(),simCode)%> $*
 >>
 end match
 case  "win32"
@@ -303,35 +315,7 @@ end simulationMainDLLib2;
 
 
 
-template simulationRunScript(SimCode simCode)
-::=
-match simCode
-case SIMCODE(makefileParams=MAKEFILE_PARAMS(__)) then
-<<
-<%simulationRunScript2(makefileParams.platform,simCode)%>
->>
-end simulationRunScript;
 
-template simulationRunScript2(String platform,SimCode simCode)
- "Generates the contents of the makefile for the simulation case."
-::=
-match platform
-case "win32" then
-match simCode
-case SIMCODE(makefileParams=MAKEFILE_PARAMS(__)) then
-<<
-"Test1"
->>
-end match
-case "linux" then
-match simCode
-case SIMCODE(makefileParams=MAKEFILE_PARAMS(__)) then
-<<
-"Test2"
->>
-end match
-end match
-end simulationRunScript2;
 
 
 
