@@ -6474,7 +6474,7 @@ algorithm
         true = numErrorMessages == Error.getNumErrorMessages();
         name = Absyn.printComponentRefStr(fn);
         s = stringDelimitList(List.map(args, Dump.printExpStr), ", ");
-        s = stringAppendList({name,"(",s,")'.\n"});
+        s = stringAppendList({name,"(",s,").\n"});
         prestr = PrefixUtil.printPrefixStr3(pre);
         Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s,prestr}, info);
       then fail();
