@@ -30,6 +30,9 @@ LINK=@LINK@
 MSL_EXTRA_ARGS=@MSL_EXTRA_ARGS@
 GC_THREADS=--enable-threads=posix
 LIBFMILIB=@LIBFMILIB@
+# This should probably have an @ around it
+# @Martin: Can you fix this, please?
+LIBCMINPACKLIB=libcminpack.a
 LD_LAPACK=@LD_LAPACK@
 LAPACK_TARGET=@LAPACK_TARGET@
 OPENBLAS_EXTRA_ARGS=@OPENBLAS_EXTRA_ARGS@

@@ -10,10 +10,18 @@ SET(BLAS_DIRY "$ENV{OMDEV}/lib/3rdParty/Lapack/Lib/" CACHE LOCATION "where was y
 
 ########################################
 # TEST
- #SET(MINPACK_LIBRARIES  "$ENV{OMDEV}/lib/3rdParty/Minpack/lib/minpack_mt_vc100.lib")
-#include_directories ("$ENV{OMDEV}/lib/3rdParty/Minpack/include/")
+FIND_PATH(CMINPACK_INCLUDE_DIR cminpack.h
+          HINTS "${CMAKE_SOURCE_DIR}/../../3rdParty/CMinpack/install"
+          PATH_SUFFIXES include include/cminpack include/cminpack-1)
 
+FIND_LIBRARY(CMINPACK_LIBRARY 
+             NAMES cminpack
+             HINTS "${CMAKE_SOURCE_DIR}/../../3rdParty/CMinpack/install"
+             PATH_SUFFIXES lib lib64)
+             
+#include_directories(CMINPACK_INCLUDE_DIR)
 # END TEST
+
 ########################################
 
 # Disable Optimization for RelWithDebInfo on Windows
@@ -139,7 +147,7 @@ include_directories (${Boost_INCLUDE_DIR})
 include_directories ("${PROJECT_SOURCE_DIR}")
 include_directories ("${PROJECT_BINARY_DIR}")
 
-message(STATUS "Boost dirs "${Boost_LIBRARY_DIRS} " , " ${Boost_INCLUDE_DIR})
+message(STATUS "Boost dirs '${Boost_LIBRARY_DIRS}', '${Boost_INCLUDE_DIR}'")
 
 #build of simulation.core
 include_directories ("Include")

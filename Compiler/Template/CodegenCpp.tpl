@@ -5028,7 +5028,7 @@ template algloopcppfilenames2(SimEqSystem eq, Context context, Text &varDecls, S
    case e as SES_MIXED(cont = eq_sys)
   then
    <<
-   OMCpp<%algloopcppfilenames2(eq_sys,context,varDecls,simCode)%>
+   <%algloopcppfilenames2(eq_sys,context,varDecls,simCode)%>
    >>
  else
     ""
