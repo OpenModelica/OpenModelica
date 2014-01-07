@@ -197,6 +197,25 @@ static void generateLowTube(privates *priv, double *x, double *y)
   }
 }
 
+static privates* skipCalculateTubes(double *x, double *y, size_t length)
+{
+  privates *priv = (privates*) GC_malloc(sizeof(privates));
+  int i;
+  /* set tStart and tStop */
+  priv->length = length;
+  priv->tStart = x[0];
+  priv->tStop = x[length - 1];
+  priv->xRelEps = 1e-15;
+  priv->xMinStep = ((priv->tStop - priv->tStart) + fabs(priv->tStart)) * priv->xRelEps;
+  priv->countLow = length;
+  priv->countHigh = length;
+  priv->yHigh = (double*)GC_malloc_atomic(sizeof(double)*length);
+  priv->yLow  = (double*)GC_malloc_atomic(sizeof(double)*length);
+  memcpy(priv->yHigh, y, length * sizeof(double));
+  memcpy(priv->yHigh, y, length * sizeof(double));
+  return priv;
+}
+
 /* This method generates tubes around a given curve */
 static privates* calculateTubes(double *x, double *y, size_t length, double r)
 {
@@ -616,13 +635,14 @@ static double* validate(int n, addTargetEventTimesRes ref, double *low, double *
 
 static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time, DataField *reftime, DataField *data, DataField *refdata, double reltol, double rangeDelta, double reltolDiffMaxMin, DiffDataField *ddf, char **cmpdiffvars, unsigned int vardiffindx, int keepEqualResults, void **diffLst, const char *prefix, int isHtml, char **htmlOut)
 {
+  int withTubes = 0 == rangeDelta;
   int i;
   FILE *fout = NULL;
   char *fname = NULL;
   char *html;
   size_t html_size=0;
   /* The tolerance for detecting events is proportional to the number of output points in the file */
-  double xabstol = (reftime->data[reftime->n-1]-reftime->data[0])*rangeDelta / fmax(time->n,reftime->n);
+  double xabstol = (reftime->data[reftime->n-1]-reftime->data[0])*(withTubes ? rangeDelta : 1e-3) / fmax(time->n,reftime->n);
   /* Calculate the tubes without additional events added */
   addTargetEventTimesRes ref,actual,actualoriginal;
   ref.values = refdata->data;
@@ -634,12 +654,12 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
   actual = actualoriginal;
   /* assertMonotonic(ref); */
   /* assertMonotonic(actual); */
-  ref = removeUneventfulPoints(ref, reltol*reltol, xabstol);
-  actual = removeUneventfulPoints(actual, reltol*reltol, xabstol);
+  /* ref = removeUneventfulPoints(ref, reltol*reltol, xabstol); */
+  /* actual = removeUneventfulPoints(actual, reltol*reltol, xabstol); */
   /* assertMonotonic(ref); */
   /* assertMonotonic(actual); */
-  privates *priv = calculateTubes(ref.time,ref.values,ref.size,rangeDelta);
-  ref = mergeTimelines(ref,actual,xabstol);
+  privates *priv = withTubes ? skipCalculateTubes(ref.time,ref.values,ref.size) : calculateTubes(ref.time,ref.values,ref.size,rangeDelta);
+  /* ref = mergeTimelines(ref,actual,xabstol); */
   /* assertMonotonic(ref); */
   size_t n = ref.size;
   double *calibrated_values = calibrateValues(ref.time,actual.time,actual.values,&n,actual.size,xabstol);
@@ -780,14 +800,16 @@ fprintf(fout, "{title: '%s',\n"
   if (fname) GC_free(fname);
   GC_free(low);
   GC_free(high);
-  GC_free(priv->mh);
-  GC_free(priv->i0h);
-  GC_free(priv->i1h);
-  GC_free(priv->ml);
-  GC_free(priv->i0l);
-  GC_free(priv->i1l);
-  GC_free(priv->xHigh);
-  GC_free(priv->xLow);
+  if (withTubes) {
+    GC_free(priv->mh);
+    GC_free(priv->i0h);
+    GC_free(priv->i1h);
+    GC_free(priv->ml);
+    GC_free(priv->i0l);
+    GC_free(priv->i1l);
+    GC_free(priv->xHigh);
+    GC_free(priv->xLow);
+  }
   GC_free(priv->yHigh);
   GC_free(priv->yLow);
   GC_free(priv);
