@@ -394,7 +394,11 @@ void ComponentParameters::createTabsAndGroupBoxes(OMCProxy *pOMCProxy, QString c
   QStringList componentAnnotations = pOMCProxy->getComponentAnnotations(componentClassName);
   foreach (ComponentInfo *pComponentInfo, componentInfoList)
   {
-    if (pComponentInfo->getProtected())
+    /*
+      Ticket #2531
+      Do not show the protected & final parameters.
+      */
+    if (pComponentInfo->getProtected() || pComponentInfo->getFinal())
     {
       i++;
       continue;
@@ -470,7 +474,11 @@ void ComponentParameters::createParameters(OMCProxy *pOMCProxy, QString classNam
   foreach (ComponentInfo *pComponentInfo, componentInfoList)
   {
     i++;
-    if (pComponentInfo->getProtected())
+    /*
+      Ticket #2531
+      Do not show the protected & final parameters.
+      */
+    if (pComponentInfo->getProtected() || pComponentInfo->getFinal())
       continue;
     QString tab = QString("General");
     QString groupBox = QString("Parameters");
