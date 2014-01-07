@@ -7743,4 +7743,15 @@ algorithm
   end matchcontinue;
 end typeErrorSanityCheck;
 
+public function dimNotFixed
+  input DAE.Dimension dim;
+  output Boolean b;
+algorithm
+  b := match dim
+    case DAE.DIM_UNKNOWN() then true;
+    case DAE.DIM_EXP(exp=_) then true;
+    else false;
+  end match;
+end dimNotFixed;
+
 end Types;

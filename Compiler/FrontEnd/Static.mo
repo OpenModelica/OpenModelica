@@ -8129,33 +8129,11 @@ algorithm
         (vect_exp_1, prop) = vectorizeCall(e, DAE.DIM_INTEGER(1) :: ad, slots, prop, info);
       then
         (vect_exp_1, prop);
-      /* TODO: Remove me :D */
-    case (e, (DAE.DIM_EXP(exp=_) :: ad), slots, prop, _)
-      equation
-        true = Flags.getConfigBool(Flags.CHECK_MODEL);
-        (vect_exp_1, prop) = vectorizeCall(e, DAE.DIM_INTEGER(1) :: ad, slots, prop, info);
-      then
-        (vect_exp_1, prop);
 
-    /* Scalar expression, i.e function call with unknown dimensions
-    case (e as DAE.CALL(path = fn,expLst = {arg},tuple_ = tuple_,builtin = builtin,ty = etp,inlineType=inl),(dim as DAE.DIM_UNKNOWN()) :: ad,slots,DAE.PROP(tp,c))
+    /* Single dimension is possible to change to a reduction */
+    case (DAE.CALL(fn,es,attr),{dim},slots,prop as DAE.PROP(tp,c),_)
       equation
-        exp_type = Types.simplifyType(Types.liftArray(tp, dim)) "pass type of vectorized result expr";
-        tickID = "i_" +& Util.tickStr();
-        crefID = ComponentReference.makeCrefIdent(tickID, DAE.T_INTEGER_DEFAULT, {});
-        vect_exp =
-         DAE.REDUCTION(
-           fn,
-           DAE.ASUB(arg, {DAE.CREF(crefID, DAE.T_INTEGER_DEFAULT)}),
-           tickID,
-           DAE.RANGE(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource), DAE.ICONST(1), NONE(), DAE.END()));
-        tp = Types.liftArray(tp, dim);
-        (vect_exp_1,prop) = vectorizeCall(vect_exp, ad, slots, DAE.PROP(tp,c));
-      then
-        (vect_exp_1,prop);*/
-
-    case (DAE.CALL(fn,es,attr),{DAE.DIM_UNKNOWN()},slots,prop as DAE.PROP(tp,c),_)
-      equation
+        true = Types.dimNotFixed(dim);
         (es,vect_exp) = vectorizeCallUnknownDimension(es,slots,{},NONE(),info);
         tp0 = Types.liftArrayRight(tp, DAE.DIM_INTEGER(0));
         tp = Types.liftArrayRight(tp, DAE.DIM_UNKNOWN());
