@@ -8218,20 +8218,41 @@ case rel as RELATION(__) then
       let e1 = daeExp(rel.exp1, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
       let e2 = daeExp(rel.exp2, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
       let res = tempDecl("modelica_boolean", &varDecls /*BUFC*/)
-      match rel.operator
-      case LESS(__) then
-        let &preExp += '<%res%> = Less(<%e1%>,<%e2%>);<%\n%>'
-        res
-      case LESSEQ(__) then
-        let &preExp += '<%res%> = LessEq(<%e1%>,<%e2%>);<%\n%>'
-        res
-      case GREATER(__) then
-        let &preExp += '<%res%> = Greater(<%e1%>,<%e2%>);<%\n%>'
-        res
-      case GREATEREQ(__) then
-        let &preExp += '<%res%> = GreaterEq(<%e1%>,<%e2%>);<%\n%>'
-        res
-      end match
+      if intEq(rel.index,-1) then
+        match rel.operator
+        case LESS(__) then
+          let &preExp += '<%res%> = Less(<%e1%>,<%e2%>);<%\n%>'
+          res
+        case LESSEQ(__) then
+          let &preExp += '<%res%> = LessEq(<%e1%>,<%e2%>);<%\n%>'
+          res
+        case GREATER(__) then
+          let &preExp += '<%res%> = Greater(<%e1%>,<%e2%>);<%\n%>'
+          res
+        case GREATEREQ(__) then
+          let &preExp += '<%res%> = GreaterEq(<%e1%>,<%e2%>);<%\n%>'
+          res
+        end match
+      else
+        let isReal = if isRealType(typeof(rel.exp1)) then (if isRealType(typeof(rel.exp2)) then 'true' else '') else ''
+        match rel.operator
+        case LESS(__) then
+          let hysteresisfunction = if isReal then 'LessZC(<%e1%>,<%e2%>, data->simulationInfo.hysteresisEnabled[<%rel.index%>])' else 'Less(<%e1%>,<%e2%>)'
+          let &preExp += '<%res%> = <%hysteresisfunction%>;<%\n%>'
+          res
+        case LESSEQ(__) then
+          let hysteresisfunction = if isReal then 'LessEqZC(<%e1%>,<%e2%>, data->simulationInfo.hysteresisEnabled[<%rel.index%>])' else 'LessEq(<%e1%>,<%e2%>)'
+          let &preExp += '<%res%> = <%hysteresisfunction%>;<%\n%>'
+          res
+        case GREATER(__) then
+          let hysteresisfunction = if isReal then 'GreaterZC(<%e1%>,<%e2%>, data->simulationInfo.hysteresisEnabled[<%rel.index%>])' else 'Greater(<%e1%>,<%e2%>)'
+          let &preExp += '<%res%> = <%hysteresisfunction%>;<%\n%>'
+          res
+        case GREATEREQ(__) then
+          let hysteresisfunction = if isReal then 'GreaterEqZC(<%e1%>,<%e2%>, data->simulationInfo.hysteresisEnabled[<%rel.index%>])' else 'GreaterEq(<%e1%>,<%e2%>)'
+          let &preExp += '<%res%> = <%hysteresisfunction%>;<%\n%>'
+          res
+        end match
     end match
   end match
 end match
