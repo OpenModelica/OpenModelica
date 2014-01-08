@@ -2015,6 +2015,16 @@ algorithm
         resstr = getExtendsModifierValue(class_, crident, subident, p);
       then
         (resstr, st);
+        
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
+      equation
+        matchApiFunction(istmts, "isExtendsModifierFinal");
+        {Absyn.CREF(componentRef = class_),
+         Absyn.CREF(componentRef = crident),
+         Absyn.CREF(componentRef = subident)} = getApiFunctionArgs(istmts);
+        resstr = isExtendsModifierFinal(class_, crident, subident, p);
+      then
+        (resstr, st);
 
     case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
@@ -5749,6 +5759,88 @@ algorithm
     case (_,_,_,_) then "Error";
   end matchcontinue;
 end getExtendsModifierValue;
+
+protected function isExtendsModifierFinal
+" Return true if the modifier of an extends clause has final prefix.
+   for instance,
+   model test extends A(final p1=3);end test;
+   isExtendsModifierFinal(test,A,p1) => true
+   inputs:  (Absyn.ComponentRef, /* class */
+               Absyn.ComponentRef, /* ident */
+               Absyn.ComponentRef, /* subident */
+               Absyn.Program)
+   outputs:  boolean"
+  input Absyn.ComponentRef inComponentRef1;
+  input Absyn.ComponentRef inComponentRef2;
+  input Absyn.ComponentRef inComponentRef3;
+  input Absyn.Program inProgram4;
+  output String outString;
+algorithm
+  outString:=
+  matchcontinue (inComponentRef1,inComponentRef2,inComponentRef3,inProgram4)
+    local
+      Absyn.Path p_class,name,extpath;
+      Absyn.Class cdef;
+      list<Env.Frame> env;
+      list<Absyn.ElementSpec> exts,exts_1;
+      list<Absyn.ElementArg> extmod;
+      Absyn.Modification mod;
+      String res;
+      Boolean finalPrefix;
+      Absyn.ComponentRef class_,inherit_name,subident;
+      Absyn.Program p;
+    case (class_,inherit_name,subident,p)
+      equation
+        p_class = Absyn.crefToPath(class_);
+        name = Absyn.crefToPath(inherit_name);
+        cdef = getPathedClassInProgram(p_class, p);
+        env = getClassEnv(p, p_class);
+        exts = getExtendsElementspecInClass(cdef);
+        exts_1 = List.map1(exts, makeExtendsFullyQualified, env);
+        {Absyn.EXTENDS(extpath,extmod,_)} = List.select1(exts_1, extendsElementspecNamed, name);
+        finalPrefix = isModifierfinal(extmod, Absyn.crefToPath(subident));
+        res = Util.if_(finalPrefix,"true","false");
+      then
+        res;
+    case (_,_,_,_) then "Error";
+  end matchcontinue;
+end isExtendsModifierFinal;
+
+public function isModifierfinal
+" Helper function to isExtendsModifierFinal."
+  input list<Absyn.ElementArg> inAbsynElementArgLst;
+  input Absyn.Path inPath;
+  output Boolean outBoolean;
+algorithm
+  outBoolean:=
+  matchcontinue (inAbsynElementArgLst,inPath)
+    local
+      Boolean f;
+      Absyn.Each each_;
+      Absyn.Path p1,p2;
+      Absyn.Modification mod;
+      Option<String> cmt;
+      list<Absyn.ElementArg> rest,args;
+      String name1,name2;
+    case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,path = p1,modification = SOME(mod),comment = cmt) :: rest),p2)
+      equation
+        true = Absyn.pathEqual(p1, p2);
+      then
+        f;
+    case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,path = Absyn.IDENT(name = name1),modification = SOME(Absyn.CLASSMOD(elementArgLst=args)),comment = cmt) :: rest),Absyn.QUALIFIED(name = name2,path = p2))
+      equation
+        true = stringEq(name1, name2);
+        f = isModifierfinal(args, p2);
+      then
+        f;
+    case ((_ :: rest),_)
+      equation
+        f = isModifierfinal(rest, inPath);
+      then
+        f;
+    case (_,_) then false;
+  end matchcontinue;
+end isModifierfinal;
 
 protected function makeExtendsFullyQualified
 " Makes an EXTENDS ElementSpec having a
