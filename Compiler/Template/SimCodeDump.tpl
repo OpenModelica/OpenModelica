@@ -382,7 +382,7 @@ template dumpOperation(SymbolicOperation op, Info info)
       <<
       <dummyderivative>
         <chosen><%crefStrNoUnderscore(op.chosen)%></chosen>
-        <%op.candidates |> cr => '<candidate><%crefStrNoUnderscore(cr)%></candidate>' ; separator = "\n"%>'
+        <%op.candidates |> cr => '<candidate><%crefStrNoUnderscore(cr)%></candidate>' ; separator = "\n"%>
       </dummyderivative>
       >>
     else Tpl.addSourceTemplateError("Unknown operation",info)
