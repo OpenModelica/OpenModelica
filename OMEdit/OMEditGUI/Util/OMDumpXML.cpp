@@ -446,7 +446,7 @@ bool MyHandler::fatalError(const QXmlParseException & exception)
 }
 
 const QSet<QString> MyHandler::operationTags = QSet<QString>() << "simplify" << "substitution" << "inline" << "scalarize" << "solved" << "linear-solved" << "solve" << "derivative" << "op-residual" << "dummyderivative";
-const QSet<QString> MyHandler::operationExpTags = QSet<QString>() << "before" << "after" << "lhs" << "rhs" << "exp" << "result" << "with-respect-to" << "chosen";
+const QSet<QString> MyHandler::operationExpTags = QSet<QString>() << "before" << "after" << "lhs" << "rhs" << "exp" << "result" << "with-respect-to" << "chosen" << "candidate";
 const QSet<QString> MyHandler::equationTags = QSet<QString>() << "residual" << "assign" << "statement" << "linear" << "nonlinear" << "mixed" << "when" << "ifequation";
 const QSet<QString> MyHandler::equationPartTags = QSet<QString>() << "residual" << "rhs" << "statement" << "row" << "cell";
 
