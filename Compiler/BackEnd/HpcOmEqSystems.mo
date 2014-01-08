@@ -1921,12 +1921,15 @@ protected
   BackendDAE.Var var;
   Integer nameAttrIdx,typeAttIdx;
   String varString, varNodeId;
+  list<String> varChars;
 algorithm
   nameAttrIdx := listGet(attributeIdcs,1);
   typeAttIdx := listGet(attributeIdcs,2); // if its a tearingvar or residual or an other
   var := BackendVariable.getVarAt(vars,indx);
   varString := BackendDump.varString(var);
-  varString := HpcOmTaskGraph.prepareXML(varString);
+  varChars := stringListStringChar(varString);
+  varChars := List.map(varChars,HpcOmTaskGraph.prepareXML);
+  varString := stringCharListString(varChars); 
   varNodeId := getVarNodeIdx(indx);
   graphOut := GraphML.addNode(varNodeId,intString(indx),GraphML.COLOR_ORANGE,GraphML.ELLIPSE(),SOME(varString),{(nameAttrIdx,varString)},{},graphIn);
 end addVarNodeToGraph;
@@ -1943,11 +1946,14 @@ protected
   BackendDAE.Equation eq;
   Integer nameAttrIdx;
   String eqString, eqNodeId;
+  list<String> eqChars;
 algorithm
   nameAttrIdx := listGet(attributeIdcs,1);
   {eq} := BackendEquation.getEqns({indx}, eqs);
   eqString := BackendDump.equationString(eq);
-  eqString := HpcOmTaskGraph.prepareXML(eqString);
+  eqChars := stringListStringChar(eqString);
+  eqChars := List.map(eqChars,HpcOmTaskGraph.prepareXML);
+  eqString := stringCharListString(eqChars); 
   eqNodeId := getEqNodeIdx(indx);
   graphOut := GraphML.addNode(eqNodeId,intString(indx),GraphML.COLOR_GREEN,GraphML.RECTANGLE(),SOME(eqString),{(nameAttrIdx,eqString)},{},graphIn);
 end addEqNodeToGraph;
