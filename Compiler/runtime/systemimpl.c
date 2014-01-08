@@ -526,7 +526,7 @@ int SystemImpl__systemCall(const char* str, const char* outFile)
   fflush(NULL); /* flush output so the testsuite is deterministic */
 #if defined(__MINGW32__) || defined(_MSC_VER)
   if (*outFile) {
-    const char *command = malloc(strlen(str) + strlen(outFile) + 9);
+    char *command = malloc(strlen(str) + strlen(outFile) + 9);
     sprintf(command, "%s > %s 2>&1", str, outFile);
     status = system(command);
     free(command);
@@ -643,7 +643,7 @@ static void* systemCallWorkerThread(void *argVoid)
 void* SystemImpl__systemCallParallel(void *lst, int numThreads)
 {
   void *tmp = lst;
-  int sz = 0, i;
+  int sz = 0, i = 0;
   char **calls;
   int *results;
   while (RML_NILHDR != RML_GETHDR(tmp)) {

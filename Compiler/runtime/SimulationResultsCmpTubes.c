@@ -200,7 +200,7 @@ static void generateLowTube(privates *priv, double *x, double *y)
 static privates* skipCalculateTubes(double *x, double *y, size_t length)
 {
   privates *priv = (privates*) GC_malloc(sizeof(privates));
-  int i;
+
   /* set tStart and tStop */
   priv->length = length;
   priv->tStart = x[0];
@@ -212,7 +212,7 @@ static privates* skipCalculateTubes(double *x, double *y, size_t length)
   priv->yHigh = (double*)GC_malloc_atomic(sizeof(double)*length);
   priv->yLow  = (double*)GC_malloc_atomic(sizeof(double)*length);
   memcpy(priv->yHigh, y, length * sizeof(double));
-  memcpy(priv->yHigh, y, length * sizeof(double));
+  memcpy(priv->yLow, y, length * sizeof(double));
   return priv;
 }
 
@@ -369,18 +369,21 @@ static inline double linearInterpolation(double x, double x0, double x1, double 
 /* Calibrate the target time+value pair onto the source timeline */
 static double* calibrateValues(double* sourceTimeLine, double* targetTimeLine, double* targetValues, size_t *nsource, size_t ntarget, double xabstol)
 {
+  double* interpolatedValues;
+  int j, i;
+  double x0, x1, y0, y1;
+  size_t n;
+
   if (0 == nsource) {
     return NULL;
   }
 
-  double* interpolatedValues = (double*) GC_malloc_atomic(sizeof(double)**nsource);
+  n = *nsource;
+  interpolatedValues = (double*) GC_malloc_atomic(sizeof(double)*n);
 
-  int j = 1, i;
-  double x, x0, x1, y0, y1;
-  size_t n = *nsource;
-
+  j = 1;
   for (i = 0; i < n; i++) {
-    x = sourceTimeLine[i];
+    double x = sourceTimeLine[i];
 
     if (targetTimeLine[j] > sourceTimeLine[n - 1] && targetTimeLine[j-1] > sourceTimeLine[n - 1]) { // Avoid extrapolation by cutting the sequence
       interpolatedValues[i] = linearInterpolation(x,x0,x1,y0,y1,xabstol);
@@ -391,7 +394,7 @@ static double* calibrateValues(double* sourceTimeLine, double* targetTimeLine, d
     x1 = targetTimeLine[j];
     y1 = targetValues[j];
 
-    while (x1 <= x && j + 1 < ntarget) { // step source timline to the current moment
+    while ((x1 <= x) && ((j + 1) < ntarget)) { // step source timline to the current moment
       j++;
       x1 = targetTimeLine[j];
       y1 = targetValues[j];
@@ -519,13 +522,13 @@ static addTargetEventTimesRes mergeTimelines(addTargetEventTimesRes ref, addTarg
 
 static addTargetEventTimesRes removeUneventfulPoints(addTargetEventTimesRes in, double reltol, double xabstol)
 {
-  int i,iter;
+  int i;
   addTargetEventTimesRes res;
   res.values = (double*) GC_malloc_atomic(in.size * sizeof(double));
   res.time = (double*) GC_malloc_atomic(in.size * sizeof(double));
 
   do {
-    iter=0;
+    int iter = 0;
     /* Don't remove first point */
     res.values[0] = in.values[0];
     res.time[0] = in.time[0];
@@ -636,11 +639,9 @@ static double* validate(int n, addTargetEventTimesRes ref, double *low, double *
 static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time, DataField *reftime, DataField *data, DataField *refdata, double reltol, double rangeDelta, double reltolDiffMaxMin, DiffDataField *ddf, char **cmpdiffvars, unsigned int vardiffindx, int keepEqualResults, void **diffLst, const char *prefix, int isHtml, char **htmlOut)
 {
   int withTubes = 0 == rangeDelta;
-  int i;
   FILE *fout = NULL;
   char *fname = NULL;
   char *html;
-  size_t html_size=0;
   /* The tolerance for detecting events is proportional to the number of output points in the file */
   double xabstol = (reftime->data[reftime->n-1]-reftime->data[0])*(withTubes ? rangeDelta : 1e-3) / fmax(time->n,reftime->n);
   /* Calculate the tubes without additional events added */
@@ -677,6 +678,7 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
   double *error = validate(n,ref,low,high,calibrated_values,reltol,abstol,xabstol);
   if (isHtml ) {
 #if _XOPEN_SOURCE >= 700 || _POSIX_C_SOURCE >= 200809L
+    size_t html_size=0;
     fout = open_memstream(&html, &html_size);
 #endif
 
@@ -729,6 +731,7 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
   }
   size_t maxn = intmax(intmax(intmax(ref.size,actual.size),priv->countHigh),priv->countLow);
   if (fout) {
+    int i;
     const char *empty = isHtml ? "null" : "";
     const char *lbracket = isHtml ? "[" : "";
     const char *rbracket = isHtml ? "]," : "";

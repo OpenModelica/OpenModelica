@@ -229,10 +229,9 @@ void sk_cheap_rand(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids,
 
   int* randarr = (int*)malloc(n * sizeof(int));
   for(i = 0; i < n; i++){randarr[i] = i;}
-  int temp;
   for(i = n-1; i >= 0; i--) {
     int z = omc_tinymt64_generate_fast_int_range(&random_seed,i+1);
-    temp = randarr[i]; randarr[i] = randarr[z]; randarr[z] = temp;
+    int temp = randarr[i]; randarr[i] = randarr[z]; randarr[z] = temp;
   }
 
   int stop = 0;
@@ -531,7 +530,7 @@ void cheap_matching(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids,
 void cheapmatching(int* col_ptrs, int* col_ids, int* match, int* row_match, int n, int m, int cheap_id, int clear_match) {
   int* row_ptrs;
   int* row_ids;
-  int i, sp, ep, row;
+  int i;
 
   if (clear_match==1)
   {
@@ -544,7 +543,6 @@ void cheapmatching(int* col_ptrs, int* col_ids, int* match, int* row_match, int 
   }
 
   if(cheap_id > do_old_cheap) {
-
     row_ptrs = (int*) malloc((m+1) * sizeof(int));
     memset(row_ptrs, 0, (m+1) * sizeof(int));
 
@@ -559,11 +557,11 @@ void cheapmatching(int* col_ptrs, int* col_ids, int* match, int* row_match, int 
     row_ids = (int*) malloc(nz * sizeof(int));
 
     for(i = 0; i < n; i++) {
-      sp = col_ptrs[i];
-      ep = col_ptrs[i+1];
+      int sp = col_ptrs[i];
+      int ep = col_ptrs[i+1];
 
       for(;sp < ep; sp++) {
-        row = col_ids[sp];
+        int row = col_ids[sp];
         row_ids[t_row_ptrs[row]++] = i;
       }
     }

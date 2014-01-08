@@ -396,13 +396,13 @@ string UnitParser::prettyPrintUnit2str(Unit unit) {
 
 Unit UnitParser::solveMIP(Unit unit, bool innerCall) {
 #ifndef NO_LPLIB
-  int numBaseUnits = _base.size();
-  int numDerivedUnits = 0;
+  unsigned int numBaseUnits = _base.size();
+  unsigned int numDerivedUnits = 0;
   // Counting the derived units by traversing all units
   for (map<string, Unit>::iterator it = _units.begin(); it != _units.end(); it++)
     if (!it->second.isBaseUnit())
       numDerivedUnits++;
-  int NU = numBaseUnits + numDerivedUnits;
+  unsigned int NU = numBaseUnits + numDerivedUnits;
 
   // Create MIP with 2*NU variables(columns)
   lprec *lp = make_lp(0, 2 * NU);
@@ -414,7 +414,7 @@ Unit UnitParser::solveMIP(Unit unit, bool innerCall) {
   }
 
   /* Set name of variables for debug printing */
-  int i;
+  unsigned int i;
   for (i = 1; i <= numBaseUnits; i++) {
     char * s1 = (char*) _base[i - 1].unitName.c_str();
     char * s2 = (char*) (string("-") + string(s1)).c_str();
@@ -452,9 +452,9 @@ Unit UnitParser::solveMIP(Unit unit, bool innerCall) {
     return unit;
   }
 
-  int c;
+  unsigned int c;
   // Set the constraint
-  for (int r = 0; r < numBaseUnits; r++) {
+  for (unsigned int r = 0; r < numBaseUnits; r++) {
     int j = 0;
     /* Set 0..numBaseUnits-1 first columns */
     for (c = 0; c < numBaseUnits; c++) {
@@ -471,7 +471,7 @@ Unit UnitParser::solveMIP(Unit unit, bool innerCall) {
         c++;
       }
     }
-    for (int j2 = 0; j2 < NU; j2++) {
+    for (unsigned int j2 = 0; j2 < NU; j2++) {
       colno[j] = colno[j2] + NU;
       row[j++] = -row[j2];
     }
@@ -487,11 +487,11 @@ Unit UnitParser::solveMIP(Unit unit, bool innerCall) {
 
   /* Set the objective */
   int j = 0;
-  int c2;
+  unsigned int c2;
   /* element 0..numBaseUnits-1*/
   for (c2 = 0; c2 < numBaseUnits; c2++) {
     double cost = 1;
-    for (int r2 = 0; r2 < numBaseUnits; r2++) {
+    for (unsigned int r2 = 0; r2 < numBaseUnits; r2++) {
       double b = r2 < unit.unitVec.size() ? unit.unitVec[r2].toReal()
           : 0.0;
       cost += fabs(b - (c2 == r2 ? 1 : 0));
@@ -506,7 +506,7 @@ Unit UnitParser::solveMIP(Unit unit, bool innerCall) {
     double cost = 1;
     Unit u = it->second;
     if (!u.isBaseUnit()) {
-      for (int r2 = 0; r2 < numBaseUnits; r2++) {
+      for (unsigned int r2 = 0; r2 < numBaseUnits; r2++) {
         double b1 =
             r2 < unit.unitVec.size() ? unit.unitVec[r2].toReal()
                 : 0.0;
@@ -521,9 +521,9 @@ Unit UnitParser::solveMIP(Unit unit, bool innerCall) {
     }
   }
   /* elements NU .. NU+numBaseUnits-1 */
-  for (int c2 = 0; c2 < numBaseUnits; c2++) {
+  for (unsigned int c2 = 0; c2 < numBaseUnits; c2++) {
     double cost = 1;
-    for (int r2 = 0; r2 < numBaseUnits; r2++) {
+    for (unsigned int r2 = 0; r2 < numBaseUnits; r2++) {
       double b = r2 < unit.unitVec.size() ? unit.unitVec[r2].toReal()
           : 0.0;
       cost += fabs(b - (c2 == r2 ? -1 : 0));
@@ -538,7 +538,7 @@ Unit UnitParser::solveMIP(Unit unit, bool innerCall) {
     double cost = 1;
     Unit u = it->second;
     if (!u.isBaseUnit()) {
-      for (int r2 = 0; r2 < numBaseUnits; r2++) {
+      for (unsigned int r2 = 0; r2 < numBaseUnits; r2++) {
         double b1 =
             r2 < unit.unitVec.size() ? unit.unitVec[r2].toReal()
                 : 0.0;
@@ -560,7 +560,7 @@ Unit UnitParser::solveMIP(Unit unit, bool innerCall) {
   }
 
   /* Set up domain , Reals for base units, Integers for derived units */
-  int v = 0;
+  unsigned int v = 0;
   for (; v < numBaseUnits; v++)
     set_int(lp, v + 1, FALSE);
   for (; v < NU; v++)
@@ -586,7 +586,7 @@ Unit UnitParser::solveMIP(Unit unit, bool innerCall) {
   Unit prettyUnit, retVal;
   if (res == 0) {
     //cout << "result =" << get_var_primalresult(lp,0) << endl;
-    for (int i = 0; i < 2 * NU; i++) {
+    for (unsigned int i = 0; i < 2 * NU; i++) {
       double res = get_var_primalresult(lp, i + 1 + numBaseUnits);
       //cerr << i << " : " << res << endl ;
       if (i >= NU) {
@@ -637,7 +637,7 @@ Unit UnitParser::solveMIP(Unit unit, bool innerCall) {
 int UnitParser::actualNumDerived(Unit unit) {
   int res = 0;
   int numBaseUnits = _base.size();
-  for (int i = numBaseUnits; i < unit.unitVec.size(); i++) {
+  for (unsigned int i = numBaseUnits; i < unit.unitVec.size(); i++) {
     if (!unit.unitVec[i].isZero()) {
       res++;
     }
@@ -662,7 +662,7 @@ Unit UnitParser::minimizeDerivedUnits(Unit unit,Unit origUnit, double factor) {
 
   stack<int> stack; // stack of indices for derived units =! 0
   if (actualNumDerived(unit) > 1) {
-    for (int i = numBaseUnits; i < unit.unitVec.size(); i++) {
+    for (unsigned int i = numBaseUnits; i < unit.unitVec.size(); i++) {
       if (!unit.unitVec[i].isZero()) {
         stack.push(i); // store nth position in unit map
       }
@@ -683,7 +683,7 @@ Unit UnitParser::minimizeDerivedUnits(Unit unit,Unit origUnit, double factor) {
       resetNthUnitWeight(indx,factor);
     }
     if (actualNumDerived(newUnit)==1) break;
-    for (int i = numBaseUnits; i < newUnit.unitVec.size(); i++) {
+    for (unsigned int i = numBaseUnits; i < newUnit.unitVec.size(); i++) {
           if (!newUnit.unitVec[i].isZero()&&_derivedUnitsVisited.find(i) == _derivedUnitsVisited.end()) {
             stack.push(i); // store nth position in unit map
             cout << "adding " << i << " to stack" << endl;

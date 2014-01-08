@@ -399,7 +399,7 @@ static int PrintImpl__writeBufConvertLines(threadData_t *threadData,const char *
 #else /* real OSes */
   const char *re_str[2] = {"^ */[*]#modelicaLine .([^:]*):([0-9]*):[0-9]*-[0-9]*:[0-9]*.[*]/$", "^ */[*]#endModelicaLine[*]/$"};
 #endif
-  const char *modelicaFileName = NULL;
+  char *modelicaFileName = NULL;
   char* strtmp = NULL;
   str[nfilled] = '\0';
 

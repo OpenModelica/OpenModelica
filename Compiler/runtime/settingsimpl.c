@@ -59,6 +59,7 @@ extern char* _replace(char* source_str,char* search_str,char* replace_str); //De
 
 static char* winPath = NULL;
 
+#if defined(linux) || defined(__APPLE_CC__)
 /* Helper function to strip /bin/... from the executable path of omc */
 static void stripbinpath(char *omhome)
 {
@@ -67,7 +68,9 @@ static void stripbinpath(char *omhome)
   *tmp = '\0';
   assert(tmp = strrchr(omhome,'/'));
   *tmp = '\0';
+  return;
 }
+#endif
 
 /* Do not free or modify the returned variable of getInstallationDirectoryPath. It's part of the environment! */
 #if defined(linux)
@@ -298,9 +301,11 @@ extern const char* SettingsImpl__getTempDirectoryPath(void)
     }
   #else
     const char* str = getenv("TMPDIR");
-    if (str == NULL)
-      str = strdup("/tmp");
-    tempDirectoryPath = strdup(str);
+    if (str == NULL) {
+      tempDirectoryPath = strdup("/tmp");
+    } else {
+      tempDirectoryPath = strdup(str);
+    }
   #endif
   }
   return tempDirectoryPath;

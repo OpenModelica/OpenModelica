@@ -731,7 +731,7 @@ void match_abmp(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids, int* m
       temp, stack_col, ptr, eptr, next_col_i, start_col_i,
       pcount = 1, desired_level, L, desired, stack_last, current_col,
       lim = 0.1*sqrt(m + n), nunmatched = 0, level_ptr,
-      update_counter = n, counter_limit = n, tunmatched = 0,level_0, ppcount;
+      update_counter = n, counter_limit = n, tunmatched = 0,level_0, ppcount = 0;
 
   level_0 = 0;
   for(i = 0; i < m; i++) {
@@ -1233,7 +1233,7 @@ void match_pr_fifo_fair(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids
 void matching(int* col_ptrs, int* col_ids, int* match, int* row_match, int n, int m, int matching_id, int cheap_id, double relabel_period, int clear_match) {
   int* row_ptrs;
   int* row_ids;
-  int i, sp, ep, row;
+  int i;
 
   if (clear_match==1)
   {
@@ -1261,11 +1261,11 @@ void matching(int* col_ptrs, int* col_ids, int* match, int* row_match, int n, in
     row_ids = (int*) malloc(nz * sizeof(int));
 
     for(i = 0; i < n; i++) {
-      sp = col_ptrs[i];
-      ep = col_ptrs[i+1];
+      int sp = col_ptrs[i];
+      int ep = col_ptrs[i+1];
 
       for(;sp < ep; sp++) {
-        row = col_ids[sp];
+        int row = col_ids[sp];
         row_ids[t_row_ptrs[row]++] = i;
       }
     }

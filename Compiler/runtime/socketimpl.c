@@ -86,7 +86,7 @@ fsync (int fd)
 #include "errorext.h"
 
 static int serversocket;
-static unsigned int fromlen;
+static int fromlen;
 static struct sockaddr_in clientAddr;
 
 static int
@@ -167,7 +167,7 @@ extern char* SocketImpl_handlerequest(int sock)
   FD_SET(sock,&sockSet); // create fd set of
   if (len == bufSize) { // If we filled the buffer, check for more
     while ( select(sock+1,&sockSet,NULL,NULL,&timeout) > 0) {
-      tmpBufSize*=(int)(bufSize*1.4);
+      tmpBufSize=(int)(bufSize*1.4);
       nAdditionalElts = tmpBufSize-bufSize;
       tmpBuf=(char*)malloc(tmpBufSize);
       if (tmpBuf == NULL) {
