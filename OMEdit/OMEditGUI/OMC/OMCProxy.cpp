@@ -1238,6 +1238,19 @@ bool OMCProxy::setExtendsModifierValue(QString className, QString extendsClassNa
 }
 
 /*!
+  Gets the extends class modifier final prefix.
+  \param className - is the name of the class.
+  \param extendsClassName - is the name of the extends class whose modifier value is retrieved.
+  \param modifierName - is the name of the modifier.
+  \return the final prefix.
+  */
+bool OMCProxy::isExtendsModifierFinal(QString className, QString extendsClassName, QString modifierName)
+{
+  sendCommand("isExtendsModifierFinal(" + className + "," + extendsClassName + "," + modifierName + ")", true, className);
+  return StringHandler::unparseBool(getResult());
+}
+
+/*!
   Gets the Icon Annotation of a specified class from OMC.
   \param className - is the name of the class.
   \return the icon annotation.

@@ -138,6 +138,7 @@ public:
   QStringList getExtendsModifierNames(QString className, QString extendsClassName);
   QString getExtendsModifierValue(QString className, QString extendsClassName, QString modifierName);
   bool setExtendsModifierValue(QString className, QString extendsClassName, QString modifierName, QString modifierValue);
+  bool isExtendsModifierFinal(QString className, QString extendsClassName, QString modifierName);
   QString getIconAnnotation(QString className);
   QString getDiagramAnnotation(QString className);
   int getConnectionCount(QString className);

@@ -81,7 +81,7 @@ public:
   ComponentParameters(bool parametersOnly, Component *pComponent, MainWindow *pMainWindow);
   ~ComponentParameters();
   void setUpDialog();
-  void createTabsAndGroupBoxes(OMCProxy *pOMCProxy, QString componentClassName);
+  void createTabsAndGroupBoxes(OMCProxy *pOMCProxy, QString componentClassName, QString componentBaseClassName = QString());
   void createParameters(OMCProxy *pOMCProxy, QString className, QString componentBaseClassName, QString componentClassName,
                         QString componentName, bool inheritedComponent, QString inheritedClassName, bool isInheritedCycle = false);
   QList<Parameter*> getParametersList();
