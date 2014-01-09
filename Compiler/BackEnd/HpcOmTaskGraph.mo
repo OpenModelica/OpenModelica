@@ -2978,8 +2978,7 @@ algorithm
 end printNodeMark;
 
 
-
-protected function intLstString "function to print a list<Integer>
+public function intLstString "function to print a list<Integer>
 author:Waurich TUD 2013-07"
   input list<Integer> lstIn;
   output String strOut;
