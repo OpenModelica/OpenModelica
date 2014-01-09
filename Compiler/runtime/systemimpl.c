@@ -529,7 +529,7 @@ int SystemImpl__systemCall(const char* str, const char* outFile)
     char *command = malloc(strlen(str) + strlen(outFile) + 9);
     sprintf(command, "%s > %s 2>&1", str, outFile);
     status = system(command);
-    free(command);
+    free((void*)command);
   } else {
     status = system(str);
   }

@@ -4361,6 +4361,26 @@ algorithm
   end matchcontinue;
 end subtractDummy;
 
+protected function dumpXMLDAEFrontEnd
+"@author: adrpo
+ this function runs the front-end for the dumpXMLDAE function"
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.Path inClassName;
+  input GlobalScript.SymbolTable inInteractiveSymbolTable;
+  output Env.Cache outCache;
+  output Env.Env outEnv; 
+  output DAE.DAElist outDae;
+protected
+  Absyn.Program p;
+  SCode.Program scode;
+algorithm
+  GlobalScript.SYMBOLTABLE(ast = p) := inInteractiveSymbolTable;  
+  scode := SCodeUtil.translateAbsyn2SCode(p);
+  (outCache, outEnv, _, outDae) := Inst.instantiateClass(inCache, InnerOuter.emptyInstHierarchy, scode, inClassName);
+  outDae := DAEUtil.transformationsBeforeBackend(outCache,outEnv,outDae);
+end dumpXMLDAEFrontEnd;
+
 protected function dumpXMLDAE " author: fildo
  This function outputs the DAE system corresponding to a specific model."
   input Env.Cache inCache;
@@ -4387,15 +4407,16 @@ algorithm
       DAE.DAElist dae_1,dae;
       list<SCode.Element> p_1;
 
-    case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),Values.STRING(string="flat"),Values.BOOL(addOriginalIncidenceMatrix),Values.BOOL(addSolvingInfo),Values.BOOL(addMathMLCode),Values.BOOL(dumpResiduals),Values.STRING(filenameprefix)},(st as GlobalScript.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),Values.STRING(string="flat"),Values.BOOL(addOriginalIncidenceMatrix),Values.BOOL(addSolvingInfo),Values.BOOL(addMathMLCode),Values.BOOL(dumpResiduals),Values.STRING(filenameprefix)},st,msg)
       equation
         Error.clearMessages() "Clear messages";
+        
+        (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname, st);
+        
         compileDir = System.pwd() +& System.pathDelimiter();
         cname_str = Absyn.pathString(classname);
         filenameprefix = Util.if_(filenameprefix ==& "<default>", cname_str, filenameprefix);
-        p_1 = SCodeUtil.translateAbsyn2SCode(p);
-        (cache,env,_,dae_1) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, p_1, classname);
-        dae = DAEUtil.transformationsBeforeBackend(cache,env,dae_1);
+        
         dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(filenameprefix)); //Verificare cosa fa
         dlow_1 = BackendDAEUtil.preOptimizeBackendDAE(dlow,NONE());
         dlow_1 = BackendDAECreate.findZeroCrossings(dlow_1);
@@ -4412,12 +4433,13 @@ algorithm
       equation
         //asInSimulationCode==false => it's NOT necessary to do all the translation's steps before dumping with xml
         Error.clearMessages() "Clear messages";
+        
+        (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname, st);
+        
         compileDir = System.pwd() +& System.pathDelimiter();
         cname_str = Absyn.pathString(classname);
         filenameprefix = Util.if_(filenameprefix ==& "<default>", cname_str, filenameprefix);
-        p_1 = SCodeUtil.translateAbsyn2SCode(p);
-        (cache,env,_,dae_1) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, p_1, classname);
-        dae = DAEUtil.transformationsBeforeBackend(cache,env,dae_1);
+        
         dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(filenameprefix)); //Verificare cosa fa
         dlow_1 = BackendDAEUtil.preOptimizeBackendDAE(dlow,NONE());
         dlow_1 = BackendDAEUtil.transformBackendDAE(dlow_1,NONE(),NONE(),NONE());
@@ -4435,12 +4457,13 @@ algorithm
       equation
         //asInSimulationCode==true => it's necessary to do all the translation's steps before dumping with xml
         Error.clearMessages() "Clear messages";
+        
+        (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname, st);
+        
         compileDir = System.pwd() +& System.pathDelimiter();
         cname_str = Absyn.pathString(classname);
         filenameprefix = Util.if_(filenameprefix ==& "<default>", cname_str, filenameprefix);
-        p_1 = SCodeUtil.translateAbsyn2SCode(p);
-        (cache,env,_,dae_1) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, p_1, classname);
-        dae = DAEUtil.transformationsBeforeBackend(cache,env,dae_1);
+        
         dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(filenameprefix));
         indexed_dlow = BackendDAEUtil.getSolvedSystem(dlow, NONE(), NONE(), NONE(), NONE());
         xml_filename = stringAppendList({filenameprefix,".xml"});
@@ -4456,12 +4479,13 @@ algorithm
       equation
         //asInSimulationCode==true => it's necessary to do all the translation's steps before dumping with xml
         Error.clearMessages() "Clear messages";
+        
+        (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname, st);
+        
         compileDir = System.pwd() +& System.pathDelimiter();
         cname_str = Absyn.pathString(classname);
         filenameprefix = Util.if_(filenameprefix ==& "<default>", cname_str, filenameprefix);
-        p_1 = SCodeUtil.translateAbsyn2SCode(p);
-        (cache,env,_,dae_1) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, p_1, classname);
-        dae = DAEUtil.transformationsBeforeBackend(cache,env,dae_1);
+        
         dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(filenameprefix));
         indexed_dlow = BackendDAEUtil.getSolvedSystem(dlow, NONE(), NONE(), NONE(), NONE());
         xml_filename = stringAppendList({filenameprefix,".xml"});

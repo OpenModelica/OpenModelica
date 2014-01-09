@@ -1323,12 +1323,14 @@ algorithm
 
     else
       equation
+        // print("Sets:\n" +& ConnectUtil.printSetsStr(inSets) +& "\n");
         // Only keep inside connections with matching prefix for this class.
         // csets will remain unfiltered for other components in "outer class".
         filtered_sets = filterConnectionSetCrefs(inSets, inPrefix);
         // Add connection crefs from equations to connection sets.
         crefs = extractConnectionCrefs(inEquations, {});
         sets = ConnectUtil.addConnectionCrefs(inSets, crefs);
+        // print("Env: " +& Env.printEnvPathStr(inEnv) +& "\n\t" +& "prefix: " +& PrefixUtil.printPrefixStr(inPrefix) +& "\n\t" +& "crefs:" +& stringDelimitList(List.map(crefs, ComponentReference.printComponentRefStr), ", ") +& "\n");
         filtered_sets = ConnectUtil.addConnectionCrefs(filtered_sets, crefs);
         // Add filtered connection sets to env so ceval can reach it.
         (env, ih) = addConnectionSetToEnv(filtered_sets, inPrefix, inEnv, inIH);

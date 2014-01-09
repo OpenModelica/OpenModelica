@@ -246,7 +246,8 @@ CevalScript.mo \
 Interactive.mo \
 GlobalScript.mo \
 Refactor.mo \
-StaticScript.mo
+StaticScript.mo \
+RewriteRules.mo
 
 MAIN = \
 Main.mo

@@ -67,6 +67,7 @@ protected import Interactive;
 protected import List;
 protected import Parser;
 protected import Print;
+protected import RewriteRules;
 protected import Settings;
 protected import SimCode;
 protected import SimCodeMain;
@@ -1009,6 +1010,7 @@ algorithm
         System.realtimeTick(GlobalScript.RT_CLOCK_SIMULATE_TOTAL);
         args_1 = Flags.new(args);
         System.gettextInit(Util.if_(Config.getRunningTestsuite(),"C",Flags.getConfigString(Flags.LOCALE_FLAG)));
+        RewriteRules.loadRules();
         main2(args_1);
       then ();
     else

@@ -185,7 +185,7 @@ algorithm
       list<list<DAE.Exp>> expll;
       Values.Value v,newval,value,sval,elt1,elt2,v_1,lhs_1,rhs_1,resVal,lhvVal,rhvVal;
       DAE.Exp lh,rh,e,lhs,rhs,start,stop,step,e1,e2,cond;
-      Absyn.Path funcpath,name;
+      Absyn.Path funcpath, name, recName;
       DAE.Operator relop;
       Env.Cache cache;
       DAE.Exp expExp;
@@ -204,6 +204,8 @@ algorithm
       DAE.ReductionIterators iterators;
       list<list<Values.Value>> valMatrix;
       Absyn.Info info;
+      list<Values.Value> orderd;
+      list<String> comp;
 
     // uncomment for debugging 
     // case (cache,env,inExp,_,st,_,_) 
@@ -240,6 +242,20 @@ algorithm
         (cache,Values.CODE(Absyn.C_ELEMENT(elt_1)),stOpt);
     
     case (cache,env,DAE.CODE(code = c),_,stOpt,_,_) then (cache,Values.CODE(c),stOpt);
+
+    /*/ Cast of records  (Check done by static, so ok to just evaluate the expression and return)
+    case(cache,env,DAE.CAST(ty = ty,exp = e),impl,stOpt,msg,_)
+      equation
+        true = Types.isRecord(ty);
+        name = Types.getRecordPath(ty);
+        (cache,value,stOpt) = ceval(cache, env, e, impl, stOpt, msg, numIter+1);
+        Values.RECORD(recName, orderd, comp, index) = value;
+        value = Values.RECORD(name, orderd, comp, index);
+        print("DAE.CAST: " +& 
+          Absyn.pathString(name) +& " -> " +& 
+          Absyn.pathString(recName) +& "\n"); 
+      then 
+        (cache,value,stOpt);*/
     
     case (cache,env,DAE.ARRAY(array = es, ty = DAE.T_ARRAY(dims = arrayDims)),impl,stOpt,msg,_)
       equation
@@ -378,7 +394,7 @@ algorithm
     case(cache,env,DAE.CAST(ty = ty,exp = e),impl,stOpt,msg,_)
       equation
         true = Types.isRecord(ty);
-        (cache,value,stOpt) = ceval(cache, env, e, impl, stOpt,msg,numIter+1);
+        (cache,value,stOpt) = ceval(cache, env, e, impl, stOpt, msg, numIter+1);
       then (cache,value,stOpt);
 
     // Try Interactive functions last
@@ -1060,7 +1076,7 @@ algorithm
         (cache,v,st);
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,attr = DAE.CALL_ATTR(builtin = true))),impl,(st as NONE()),msg,_)
       equation
-        (cache,vallst,st) = cevalList(cache, env, expl, impl, st,msg,numIter);
+        (cache,vallst,st) = cevalList(cache, env, expl, impl, st, msg, numIter);
         (cache,newval,st) = CevalScript.cevalCallFunction(cache, env, e, vallst, impl, st,msg,numIter+1);
       then
         (cache,newval,st);
@@ -1818,6 +1834,7 @@ algorithm
   outST := inST;
   {exp} := inExpExpLst;
   outValue := cevalCardinality(exp, inEnv);
+  // print("ceval: env:" +& Env.printEnvPathStr(inEnv) +& "\n\t" +& "cardinality(" +& ExpressionDump.printExpStr(exp) +& ") -> " +& ValuesUtil.printValStr(outValue) +& "\n");
 end cevalBuiltinCardinality;
 
 protected function cevalCardinality "author: PA

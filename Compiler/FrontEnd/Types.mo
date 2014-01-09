@@ -492,6 +492,16 @@ algorithm
   end matchcontinue;
 end isRecord;
 
+public function getRecordPath "gets the record path"
+  input DAE.Type tp;
+  output Absyn.Path p;
+algorithm
+  p := matchcontinue(tp)
+    case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(p))) 
+      then p;
+  end matchcontinue;
+end getRecordPath;
+
 public function isRecordWithOnlyReals "Returns true if type is a record only containing Reals"
   input DAE.Type tp;
   output Boolean b;

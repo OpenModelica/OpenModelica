@@ -828,6 +828,10 @@ constant ConfigFlag HPCOM_CODE = CONFIG_FLAG(52, "hpcomCode",
   NONE(), EXTERNAL(), STRING_FLAG("openmp"), NONE(),
   Util.gettext("Sets the code-type produced by hpcom (openmp | pthreads | pthreads_spin). Default: openmp."));
 
+constant ConfigFlag REWRITE_RULES_FILE = CONFIG_FLAG(53, "rewriteRulesFile", NONE(), EXTERNAL(),
+  STRING_FLAG(""), NONE(),
+  Util.gettext("Activates user given rewrite rules for Absyn expressions. The rules are read from the given file and are of the form rewrite(fromExp, toExp);"));
+
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
 // sorted by index (and thus have unique indices).
@@ -883,7 +887,8 @@ constant list<ConfigFlag> allConfigFlags = {
   CORBA_OBJECT_REFERENCE_FILE_PATH,
   HPCOM_SCHEDULER,
   TEARING_HEURISTIC,
-  HPCOM_CODE
+  HPCOM_CODE,
+  REWRITE_RULES_FILE
 };
 
 public function new
