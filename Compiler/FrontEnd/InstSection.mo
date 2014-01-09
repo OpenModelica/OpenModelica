@@ -2080,7 +2080,7 @@ protected function instForStatement_dispatch
   output list<DAE.Statement> outStatements "for statements can produce more statements than one by unrolling";
 algorithm
   (outCache,outStatements) :=
-  match(inCache,inEnv,inIH,inPrefix,ci_state,iterator,range,inForBody,info,inSource,inInitial,inBool,unrollForLoops)
+  matchcontinue(inCache,inEnv,inIH,inPrefix,ci_state,iterator,range,inForBody,info,inSource,inInitial,inBool,unrollForLoops)
     local
       Env.Cache cache;
       list<Env.Frame> env,env_1;
@@ -2100,6 +2100,19 @@ algorithm
       DAE.Const cnst;
       InstanceHierarchy ih;
       DAE.ElementSource source;
+
+    // empty range, i.e. 1:0, return nothing!
+    case (cache,env,ih,pre,_,i,SOME(e),sl,_,source,initial_,impl,_)
+      equation
+        (cache,e_1,(prop as DAE.PROP(t,cnst)),_) = Static.elabExp(cache, env, e, impl, NONE(), true, pre, info);
+        (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl, info);
+        
+        // only do this if the range is parameter or constant!
+        true = listMember(cnst, {DAE.C_CONST(), DAE.C_PARAM()});
+        // is empty range array?
+        (cache, Values.ARRAY(valueLst = {}), _) = Ceval.ceval(cache, env, e_1, impl, NONE(), Absyn.MSG(info), 0);        
+      then
+        (cache,{});
 
     // one iterator
     case (cache,env,ih,pre,_,i,SOME(e),sl,_,source,initial_,impl,_)
@@ -2133,7 +2146,7 @@ algorithm
       then
         (cache,{stmt});
 
-  end match;
+  end matchcontinue;
 end instForStatement_dispatch;
 
 protected function instComplexEquation "instantiate a comlex equation, i.e. c = Complex(1.0,-1.0) when Complex is a record"
@@ -2871,7 +2884,7 @@ algorithm
     case (cache,_,_,_,_,_,Values.ARRAY(valueLst = {}),_,_,_,_,_)
       then (cache,{});
 
-    /* array equation, use instAlgorithms */
+    // array equation, use instAlgorithms
     case (cache,env,ih,pre,_,i,Values.ARRAY(valueLst = (fst :: rest), dimLst = dim :: dims),
           algs,_,initial_,impl,_)
       equation
