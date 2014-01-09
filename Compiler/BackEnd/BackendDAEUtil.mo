@@ -8604,8 +8604,8 @@ algorithm
                        (IndexReduction.findStateOrder,"findStateOrder",false),
                        (BackendDAEOptimize.simplifyIfEquations, "simplifyIfEquations", false),
                        (BackendDAEOptimize.replaceEdgeChange, "replaceEdgeChange", false),
-                       (BackendDAEOptimize.residualForm, "residualForm", false)
-                       //(BackendDAEOptimize.resolveLoops, "resolveLoops",false)
+                       (BackendDAEOptimize.residualForm, "residualForm", false),
+                       (BackendDAEOptimize.resolveLoops0, "resolveLoops",false)
                        };
   strPreOptModules := getPreOptModulesString();
   strPreOptModules := Util.getOptionOrDefault(ostrPreOptModules,strPreOptModules);

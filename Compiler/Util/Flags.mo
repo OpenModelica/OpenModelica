@@ -373,6 +373,8 @@ constant DebugFlag INFO_XML_OPERATIONS = DEBUG_FLAG(103, "infoXmlOperations", fa
   Util.gettext("Enables output of the operations in the _info.xml file when translating models."));
 constant DebugFlag HPCOM_DUMP = DEBUG_FLAG(104, "hpcomDump", false,
   Util.gettext("dumps additional information on the parallel execution with hpcom"));
+constant DebugFlag RESOLVE_LOOPS = DEBUG_FLAG(105, "resolveLoops", false,
+  Util.gettext("activates the resolveLoops module"));
   
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -482,7 +484,8 @@ constant list<DebugFlag> allDebugFlags = {
   DUMP_DISCRETEVARS_INFO,
   ADDITIONAL_GRAPHVIZ_DUMP,
   INFO_XML_OPERATIONS,
-  HPCOM_DUMP
+  HPCOM_DUMP,
+  RESOLVE_LOOPS
 };
 
 // CONFIGURATION FLAGS
