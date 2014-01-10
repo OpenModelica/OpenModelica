@@ -1447,7 +1447,37 @@ algorithm
         (cache,simValue,newst) = createSimulationResultFromcallModelExecutable(resI,timeTotal,timeSimulation,resultValues,cache,className,vals,st,result_file,logFile);
       then
         (cache,simValue,newst);
-
+/*
+System.realtimeTick(GlobalScript.RT_CLOCK_SIMULATE_TOTAL);
+        (cache,st,compileDir,executable,method_str,outputFormat_str,_,simflags,resultValues) = buildModel(cache,env,vals,st_1,msg);
+        cit = winCitation();
+        ifcpp=Util.equal(Config.simCodeTarget(),"Cpp");
+        ifmsvc = Util.equal(Config.simulationCodeTarget(),"msvc");
+        exeDir=compileDir;
+        libDir= Settings.getInstallationDirectoryPath();
+        libDir = Util.if_(ifmsvc, libDir +& "/lib/omc/cpp/msvc",libDir+& "/lib/omc/cpp");
+         (cache,simSettings) = calculateSimulationSettings(cache,env,vals,st_1,msg);
+        SimCode.SIMULATION_SETTINGS(startTime=starttime,stopTime=stoptime,tolerance=tol,numberOfIntervals=interval,stepSize=stepsize,method = method_str, outputFormat = outputFormat_str)
+           = simSettings;
+        result_file = stringAppendList(List.consOnTrue(not Config.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
+        executable1=Util.if_(ifcpp,executable+& "Run",executable);
+        executableSuffixedExe = stringAppend(executable1, System.getExeExt());
+        executableSuffixedExe2 = Util.if_(ifcpp,"OMCpp" +& executable1+&getRunScriptExtension( System.platform()),executableSuffixedExe);
+        logFile = stringAppend(executable1,".log");
+        // adrpo: log file is deleted by buildModel! do NOT DELTE IT AGAIN!
+        // we should really have different log files for simulation/compilation!
+        // as the buildModel log file will be deleted here and that gives less information to the user!
+        0 = Debug.bcallret1(System.regularFileExists(logFile),System.removeFile,logFile,0);
+        sim_call = stringAppendList({cit,exeDir,executableSuffixedExe2,cit," ",simflags});
+        System.realtimeTick(GlobalScript.RT_CLOCK_SIMULATE_SIMULATION);
+        SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
+        resI = System.systemCall(sim_call,logFile);
+        timeSimulation = System.realtimeTock(GlobalScript.RT_CLOCK_SIMULATE_SIMULATION);
+        timeTotal = System.realtimeTock(GlobalScript.RT_CLOCK_SIMULATE_TOTAL);
+        (cache,simValue,newst) = createSimulationResultFromcallModelExecutable(resI,timeTotal,timeSimulation,resultValues,cache,className,vals,st,result_file,logFile);
+      then
+        (cache,simValue,newst);
+    */
     case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st,_)
       equation
         omhome = Settings.getInstallationDirectoryPath() "simulation fail for some other reason than OPENMODELICAHOME not being set." ;
@@ -3993,6 +4023,23 @@ algorithm
 
   end match;
 end buildOpenTURNSInterface;
+
+protected function getRunScriptExtension
+input String inString;
+output String outString;
+algorithm
+  outString:=match(inString)
+  local
+    case "LINUX32"
+      then ".sh";
+    case "LINUX64"
+      then ".sh";
+    case "WIN32"
+      then ".bat";
+    case "WIN64"
+      then ".bat";
+   end match;
+ end getRunScriptExtension;     
 
 protected function runOpenTURNSPythonScript
 "runs OpenTURNS with the given python script returning the log file"
