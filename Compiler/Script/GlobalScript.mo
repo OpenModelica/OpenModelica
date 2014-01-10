@@ -210,9 +210,11 @@ uniontype ComponentReplacementRules
 
 end ComponentReplacementRules;
 
+public constant AbsynDep.Depends emptyDepends = AbsynDep.DEPENDS(AbsynDep.AVLTREENODE(NONE(),0,NONE(),NONE()),AbsynDep.AVLTREENODE(NONE(),0,NONE(),NONE()));
+
 public constant SymbolTable emptySymboltable =
      SYMBOLTABLE(Absyn.PROGRAM({},Absyn.TOP(),Absyn.dummyTimeStamp),
-                 AbsynDep.DEPENDS(AbsynDep.AVLTREENODE(NONE(),0,NONE(),NONE()),AbsynDep.AVLTREENODE(NONE(),0,NONE(),NONE())),
+                 emptyDepends,
                  NONE(),
                  {},
                  {},

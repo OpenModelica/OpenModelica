@@ -2335,7 +2335,7 @@ algorithm
         re,vis,_,_,inst_dims,impl,callscope,graph,csets,_,_,_)
       equation
         false = Util.getStatefulBoolean(stopInst);
-        UnitParserExt.checkpoint();
+        Debug.bcall0(Flags.getConfigBool(Flags.UNIT_CHECKING),UnitParserExt.checkpoint);
         //Debug.traceln(" Instclassdef for: " +& PrefixUtil.printPrefixStr(pre) +& "." +&  className +& " mods: " +& Mod.printModStr(mods));
         ci_state1 = ClassInf.trans(ci_state, ClassInf.NEWDEF());
         els = InstUtil.extractConstantPlusDeps(els,instSingleCref,{},className);
@@ -2506,7 +2506,7 @@ algorithm
         // adrpo: moved bunch of a lot of expensive unit checking operations to this function
         (cache,env5,store) = InstUtil.handleUnitChecking(cache,env5,store,pre,dae1,{dae2,dae3,dae4,dae5},className);
 
-        UnitParserExt.rollback(); // print("rollback for "+&className+&"\n");
+        Debug.bcall0(Flags.getConfigBool(Flags.UNIT_CHECKING),UnitParserExt.rollback); // print("rollback for "+&className+&"\n");
 
         // Search for equalityConstraint
         eqConstraint = InstUtil.equalityConstraint(env5, els, info);

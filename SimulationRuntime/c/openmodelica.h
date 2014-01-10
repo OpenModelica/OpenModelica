@@ -241,12 +241,14 @@ enum {
   LOCAL_ROOT_USER_DEFINED_8,
   LOCAL_ROOT_ERROR_MO,
   LOCAL_ROOT_PRINT_MO,
+  LOCAL_ROOT_SYSTEM_MO,
   MAX_LOCAL_ROOTS
 };
 #define MAX_LOCAL_ROOTS 16
 typedef struct threadData_s {
   jmp_buf *mmc_jumper;
   jmp_buf *mmc_stack_overflow_jumper;
+  jmp_buf *mmc_thread_work_exit;
   void *localRoots[MAX_LOCAL_ROOTS];
 } threadData_t;
 
@@ -285,6 +287,15 @@ typedef struct {
 extern omc_alloc_interface_t omc_alloc_interface;
 extern omc_alloc_interface_t omc_alloc_interface_pooled;
 typedef threadData_t* OpenModelica_threadData_ThreadData;
+
+/* g++ does not allow putting attributes next to labels
+ * clang++ does allow it however...
+ */
+#if defined(__cplusplus) && defined(__GNUC__)
+#define OMC_LABEL_UNUSED
+#else
+#define OMC_LABEL_UNUSED __attribute__((unused))
+#endif
 
 #if defined(__cplusplus)
 } /* end extern "C" */

@@ -573,32 +573,20 @@ end getHasInnerOuterDefinitions;
 public function tmpTick
   "returns a tick that can be reset"
   output Integer tickNo;
-  external "C" tickNo = SystemImpl_tmpTick() annotation(Library = "omcruntime");
+  external "C" tickNo = SystemImpl_tmpTick(OpenModelica.threadData()) annotation(Library = "omcruntime");
 end tmpTick;
 
 public function tmpTickReset
   "resets the tick so it restarts on start"
   input Integer start;
-  external "C" SystemImpl_tmpTickReset(start) annotation(Library = "omcruntime");
+  external "C" SystemImpl_tmpTickReset(OpenModelica.threadData(),start) annotation(Library = "omcruntime");
 end tmpTickReset;
-
-public function parForTick
-  "returns a tick that can be reset. used to uniquely identify parallel for loops"
-  output Integer loopNo;
-  external "C" loopNo = SystemImpl_parForTick() annotation(Library = "omcruntime");
-end parForTick;
-
-public function parForTickReset
-  "Resets parfor loop id for second round"
-  input Integer start;
-  external "C" SystemImpl_parForTickReset(start) annotation(Library = "omcruntime");
-end parForTickReset;
 
 public function tmpTickIndex
   "returns a tick that can be reset. TODO: remove me when bootstrapped (default argument index=0)"
   input Integer index;
   output Integer tickNo;
-  external "C" tickNo = SystemImpl_tmpTickIndex(index) annotation(Library = "omcruntime");
+  external "C" tickNo = SystemImpl_tmpTickIndex(OpenModelica.threadData(),index) annotation(Library = "omcruntime");
 end tmpTickIndex;
 
 public function tmpTickIndexReserve
@@ -607,28 +595,28 @@ public function tmpTickIndexReserve
   input Integer index;
   input Integer reserve "current tick + reserve";
   output Integer tickNo;
-  external "C" tickNo = SystemImpl_tmpTickIndexReserve(index,reserve) annotation(Library = "omcruntime");
+  external "C" tickNo = SystemImpl_tmpTickIndexReserve(OpenModelica.threadData(),index,reserve) annotation(Library = "omcruntime");
 end tmpTickIndexReserve;
 
 public function tmpTickResetIndex
   "resets the tick so it restarts on start. TODO: remove me when bootstrapped (default argument index=0)"
   input Integer start;
   input Integer index;
-  external "C" SystemImpl_tmpTickResetIndex(start,index) annotation(Library = "omcruntime");
+  external "C" SystemImpl_tmpTickResetIndex(OpenModelica.threadData(),start,index) annotation(Library = "omcruntime");
 end tmpTickResetIndex;
 
 public function tmpTickSetIndex
   "sets the index, like tmpTickResetIndex, but does not reset the maximum counter"
   input Integer start;
   input Integer index;
-  external "C" SystemImpl_tmpTickSetIndex(start,index) annotation(Library = "omcruntime");
+  external "C" SystemImpl_tmpTickSetIndex(OpenModelica.threadData(),start,index) annotation(Library = "omcruntime");
 end tmpTickSetIndex;
 
 public function tmpTickMaximum
   "returns the max tick since the last reset"
   input Integer index;
   output Integer maxIndex;
-  external "C" maxIndex=SystemImpl_tmpTickMaximum(index) annotation(Library = "omcruntime");
+  external "C" maxIndex=SystemImpl_tmpTickMaximum(OpenModelica.threadData(),index) annotation(Library = "omcruntime");
 end tmpTickMaximum;
 
 public function getRTLibs
@@ -1026,12 +1014,7 @@ public function numProcessors
   external "C" result = System_numProcessors() annotation(Library = {"omcruntime"});
 end numProcessors;
 
-public function forkAvailable
-  output Boolean result;
-  external "C" result = System_forkAvailable() annotation(Library = {"omcruntime"});
-end forkAvailable;
-
-public function forkCall "Takes a list of inputs and produces a list of Boolean (true if the function call was successful). The function is called by using forks. If fork is unavailable, the function fails."
+public function forkCall "Takes a list of inputs and produces a list of Boolean (true if the function call was successful). The function is called by not using forks (experimental version using threads because fork doesn't play nice)."
   input Integer numThreads;
   input list<Any> inData;
   input ForkFunction func;
@@ -1047,6 +1030,10 @@ public function exit "Exits the compiler at this point with the given exit statu
   input Integer status;
 external "C" exit(status);
 end exit;
+
+public function threadWorkFailed "Exits the current thread with a failure."
+  external "C" System_threadFail(OpenModelica.threadData());
+end threadWorkFailed;
 
 public function getMemorySize
   output Real memory(unit="MB");

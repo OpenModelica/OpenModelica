@@ -1013,7 +1013,7 @@ annotation(preferredView="text");
 end generateHeader;
 
 function generateSeparateCode
-  input TypeName className[:] := fill($TypeName(AllLoadedClasses),0);
+  input TypeName className;
   input Boolean cleanCache := false "If true, the cache is reset between each generated package. This conserves memory at the cost of speed.";
   output Boolean success;
 external "builtin";
@@ -2977,27 +2977,17 @@ annotation(
 </html>"));
 end numProcessors;
 
-function forkAvailable
-  output Boolean result;
-external "builtin";
-annotation(
-  Documentation(info="<html>
-<p>Returns true if the fork system call is available on the platform.</p>
-</html>"));
-end forkAvailable;
-
 function runScriptParallel
   input String scripts[:];
   input Integer numThreads := numProcessors();
-  input Boolean fork := false;
+  input Boolean useThreads := false;
   output Boolean results[:];
 external "builtin";
 annotation(
   Documentation(info="<html>
 <p>As <a href=\"modelica://OpenModelica.Scripting.runScript\">runScript</a>, but runs the commands in parallel.</p>
-<p>If useFork=false (default), the script will be run in an empty environment (same as running a new omc process) with default config flags.</p>
-<p>If useFork=true (only available on platforms that implement fork), the script will run in the same (forked) environment as previously.
-No changes made to the environment will be visible in the main process and the rest of the commands that are executed.</p>
+<p>If useThreads=false (default), the script will be run in an empty environment (same as running a new omc process) with default config flags.</p>
+<p>If useThreads=true (experimental), the scripts will run in parallel in the same address space and with the same environment (which will not be updated).</p>
 </html>"));
 end runScriptParallel;
 
@@ -3009,6 +2999,14 @@ annotation(
 <p>Forces omc to quit with the given exit status.</p>
 </html>"));
 end exit;
+
+function threadWorkFailed
+external "builtin";
+annotation(
+  Documentation(info="<html>
+<p>(Experimental) Exits the current (<a href=\"modelica://OpenModelica.Scripting.runScriptParallel\">worker thread</a>) signalling a failure.</p>
+</html>"));
+end threadWorkFailed;
 
 function getMemorySize
   output Real memory(unit="MiB");

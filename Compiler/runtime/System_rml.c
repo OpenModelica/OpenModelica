@@ -722,69 +722,51 @@ RML_BEGIN_LABEL(System__setUsesCardinality)
 }
 RML_END_LABEL
 
-/*
- * @author ppriv
- */
-
 RML_BEGIN_LABEL(System__tmpTick)
 {
-  rmlA0 = (void*) mk_icon(SystemImpl_tmpTick());
+  rmlA0 = (void*) mk_icon(SystemImpl_tmpTick(NULL));
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(System__tmpTickReset)
 {
-  SystemImpl_tmpTickReset(RML_UNTAGFIXNUM(rmlA0));
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__parForTick)
-{
-  rmlA0 = (void*) mk_icon(SystemImpl_parForTick());
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__parForTickReset)
-{
-  SystemImpl_parForTickReset(RML_UNTAGFIXNUM(rmlA0));
+  SystemImpl_tmpTickReset(NULL,RML_UNTAGFIXNUM(rmlA0));
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(System__tmpTickIndex)
 {
-  rmlA0 = (void*) mk_icon(SystemImpl_tmpTickIndex(RML_UNTAGFIXNUM(rmlA0)));
+  rmlA0 = (void*) mk_icon(SystemImpl_tmpTickIndex(NULL,RML_UNTAGFIXNUM(rmlA0)));
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(System__tmpTickIndexReserve)
 {
-  rmlA0 = (void*) mk_icon(SystemImpl_tmpTickIndexReserve(RML_UNTAGFIXNUM(rmlA0),RML_UNTAGFIXNUM(rmlA1)));
+  rmlA0 = (void*) mk_icon(SystemImpl_tmpTickIndexReserve(NULL,RML_UNTAGFIXNUM(rmlA0),RML_UNTAGFIXNUM(rmlA1)));
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(System__tmpTickResetIndex)
 {
-  SystemImpl_tmpTickResetIndex(RML_UNTAGFIXNUM(rmlA0),RML_UNTAGFIXNUM(rmlA1));
+  SystemImpl_tmpTickResetIndex(NULL,RML_UNTAGFIXNUM(rmlA0),RML_UNTAGFIXNUM(rmlA1));
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(System__tmpTickSetIndex)
 {
-  SystemImpl_tmpTickSetIndex(RML_UNTAGFIXNUM(rmlA0),RML_UNTAGFIXNUM(rmlA1));
+  SystemImpl_tmpTickSetIndex(NULL,RML_UNTAGFIXNUM(rmlA0),RML_UNTAGFIXNUM(rmlA1));
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(System__tmpTickMaximum)
 {
-  rmlA0 = (void*) mk_icon(SystemImpl_tmpTickMaximum(RML_UNTAGFIXNUM(rmlA0)));
+  rmlA0 = (void*) mk_icon(SystemImpl_tmpTickMaximum(NULL,RML_UNTAGFIXNUM(rmlA0)));
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -1828,13 +1810,6 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__numProcessors)
 {
   rmlA0 = mk_icon(System_numProcessors());
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__forkAvailable)
-{
-  rmlA0 = mk_icon(0);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

@@ -53,7 +53,7 @@
 metamodelica_string intString(modelica_integer i)
 {
   /* 64-bit integer: 1+log_10(2**63)+1 = 20 digits max */
-  static char buffer[32];
+  char buffer[22];
   void *res;
   if (i>=0 && i<=9) /* Small integers are used so much it makes sense to cache them */
     return mmc_strings_len1['0'+i];
@@ -706,17 +706,29 @@ void boxptr_equality(threadData_t *threadData,modelica_metatype in1, modelica_me
 
 modelica_metatype boxptr_getGlobalRoot(threadData_t *threadData, modelica_metatype i) {
   int ix = mmc_unbox_integer(i);
-  if (!mmc_GC_state->global_roots[ix])
+  void *val = 0;
+  if (ix < 0 || ix >= MMC_GC_GLOBAL_ROOTS_SIZE) {
     MMC_THROW_INTERNAL();
-  return mmc_GC_state->global_roots[ix];
+  } else if (ix > 8) {
+    val = mmc_GC_state->global_roots[ix];
+  } else {
+    val = threadData->localRoots[ix];
+  }
+  if (!val) {
+    MMC_THROW_INTERNAL();
+  }
+  return val;
 }
 
-void setGlobalRoot(int ix, modelica_metatype val) {
-  mmc_GC_state->global_roots[ix] = val;
-}
-
-void boxptr_setGlobalRoot(threadData_t *threadData,modelica_metatype ix, modelica_metatype val) {
-  mmc_GC_state->global_roots[MMC_UNTAGFIXNUM(ix)] = val;
+void boxptr_setGlobalRoot(threadData_t *threadData, modelica_metatype i, modelica_metatype val) {
+  int ix = mmc_unbox_integer(i);
+  if (ix < 0 || ix >= MMC_GC_GLOBAL_ROOTS_SIZE) {
+    MMC_THROW_INTERNAL();
+  } else if (ix > 8) {
+    mmc_GC_state->global_roots[ix] = val;
+  } else {
+    threadData->localRoots[ix] = val;
+  }
 }
 
 modelica_metatype boxptr_valueConstructor(threadData_t *threadData,modelica_metatype val) {

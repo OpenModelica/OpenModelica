@@ -140,8 +140,7 @@ extern void boxptr_equality(threadData_t *,modelica_metatype, modelica_metatype)
 
 /* Weird RML stuff */
 #define getGlobalRoot(X) boxptr_getGlobalRoot(threadData,mmc_mk_icon(X))
-extern modelica_metatype boxptr_getGlobalRoot(threadData_t *,modelica_metatype ix);
-extern void setGlobalRoot(int ix, modelica_metatype val);
+#define setGlobalRoot(X,V) boxptr_setGlobalRoot(threadData,mmc_mk_icon(X),V)
 #define valueConstructor(val) MMC_HDRCTOR(MMC_GETHDR(val))
 
 extern modelica_metatype boxptr_getGlobalRoot(threadData_t*,modelica_metatype);

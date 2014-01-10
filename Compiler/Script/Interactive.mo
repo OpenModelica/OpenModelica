@@ -52,6 +52,7 @@ public import AbsynDep;
 public import ConnectionGraph;
 public import DAE;
 public import Env;
+public import Global;
 public import GlobalScript;
 public import SCode;
 public import SCodeUtil;
@@ -200,10 +201,14 @@ algorithm
       String mosfile;
       GlobalScript.Statements statements;
       GlobalScript.SymbolTable st;
-    case ((mosfile,st))
+      Absyn.Program ast;
+      Option<SCode.Program> explodedAst;
+
+    case ((mosfile,GlobalScript.SYMBOLTABLE(ast,_,explodedAst,_,_,_,_)))
       equation
+        setGlobalRoot(Global.instOnlyForcedFunctions,  NONE()); // thread-local root that has to be set!
         statements = Parser.parseexp(mosfile);
-        _ = evaluateToStdOut(statements,st,true);
+        _ = evaluateToStdOut(statements,GlobalScript.SYMBOLTABLE(ast,GlobalScript.emptyDepends,explodedAst,{},{},{},{}),true);
         print(Error.printMessagesStr());
       then ();
     else

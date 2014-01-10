@@ -710,103 +710,10 @@ extern int System_fileIsNewerThan(const char *file1, const char *file2)
   return res;
 }
 
-extern int System_forkAvailable()
-{
-  /* On OSX, we fail with thread_suspend error if we fork() omc */
-#if defined(__MINGW32__) || defined(_MSC_VER) || defined(__APPLE_CC__)
-  return 0;
-#else
-  return 1;
-#endif
-}
-
-#if 1
-static int System_forkCallJoin(int *statuses, int *ids, int len, int *working)
-{
-  while (1) {
-    int status = 1, id, i;
-    id = wait(&status);
-    if (id == -1) {
-      const char *tokens[1] = {strerror(errno)};
-      c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("Failed to wait for forked process to return: %s"),tokens,1);
-      MMC_THROW();
-    }
-    if (WIFEXITED(status)) {
-      status = ! WEXITSTATUS(status);
-    } else {
-      status = 0;
-    }
-    for (i=0; i<len; i++) {
-      int idw = working[i];
-      if (ids[idw] == id) {
-        statuses[idw] = status;
-        return i;
-      }
-    }
-    /* Keep on waiting for processes as long as we get them... */
-  }
-}
-
-extern void* System_forkCall(int numThreads, void *dataLst, void (*fn)(threadData_t*,void*))
-{
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("Fork is not available on Windows"),NULL,0);
-  MMC_THROW();
-#elif defined(__APPLE_CC__)
-  c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("Fork is not safe to use on OSX"),NULL,0);
-  MMC_THROW();
-#else
-  threadData_t *threadData = (threadData_t *) pthread_getspecific(mmc_thread_data_key);
-  int len = listLength(dataLst);
-  void *commands[len];
-  int status[len], ids[len];
-  int i = 0, numWorking = 0, fail = 0;
-  int working[numThreads];
-  void *result = mmc_mk_nil();
-  for (i=0; i<len; i++, dataLst = MMC_CDR(dataLst)) {
-    commands[i] = MMC_CAR(dataLst);
-  }
-  for (i=0; i<len; i++) {
-    int thisNum;
-    /* Dynamic workload. Once we reach max number of threads, wait for one to finish. Else spawn new ones and join all at the end. */
-    if (numWorking == numThreads) {
-      thisNum = System_forkCallJoin(status, ids, len, working);
-    } else {
-      thisNum = numWorking++;
-    }
-    pid_t id = fork();
-    if (id == -1) {
-      const char *tokens[1] = {strerror(errno)};
-      c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("fork() failed: %s"),tokens,1);
-      MMC_THROW();
-    } else if (id == 0) {
-      int exitstatus = 1;
-      MMC_TRY()
-      fn(threadData,commands[i]);
-      exitstatus = 0;
-      MMC_CATCH()
-      exit(exitstatus);
-    } else {
-      working[thisNum] = i;
-      ids[i] = id;
-      status[i] = 0;
-    }
-  }
-  while (numWorking) {
-    System_forkCallJoin(status, ids, len, working);
-    numWorking--;
-  }
-  for (i=len-1; i>=0; i--) {
-    result = mmc_mk_cons(mmc_mk_icon(status[i]), result);
-  }
-  return result;
-#endif
-}
-#else
 /* Work in progress: Threading support in OMC */
 typedef struct thread_data {
   pthread_mutex_t mutex;
-  void (*fn)(void*);
+  void (*fn)(void*,void*);
   int fail;
   int current;
   int len;
@@ -824,10 +731,11 @@ static void* System_forkCallThread(void *in)
     n = data->current++;
     pthread_mutex_unlock(&data->mutex);
     if (data->fail || data->current > data->len) break;
-    MMC_TRY()
-    data->fn(data->commands[n]);
+    MMC_TRY_TOP()
+    threadData->mmc_thread_work_exit = threadData->mmc_jumper;
+    data->fn(threadData,data->commands[n]);
     exitstatus = 0;
-    MMC_CATCH()
+    MMC_CATCH_TOP()
     data->status[n] = ! exitstatus;
   }
   return NULL;
@@ -856,18 +764,26 @@ extern void* System_forkCall(int numThreads, void *dataLst, void (*fn)(void*))
     GC_pthread_create(&th[i],NULL,System_forkCallThread,&data);
   }
   for (i=0; i<numThreads; i++) {
-    pthread_join(th[i], NULL);
+    GC_pthread_join(th[i], NULL);
   }
   for (i=len-1; i>=0; i--) {
     result = mmc_mk_cons(mmc_mk_icon(status[i]), result);
   }
   return result;
 }
-#endif
 
 void System_initGarbageCollector(void)
 {
   SystemImpl__initGarbageCollector();
+}
+
+void System_threadFail(threadData_t *threadData)
+{
+  if (0 == threadData->mmc_thread_work_exit) {
+    fprintf(stderr, "System_threadFail called in something that is not a worker thread!\nThe application will now exit!\n");
+    abort();
+  }
+  longjmp(threadData->mmc_thread_work_exit,1);
 }
 
 #ifdef __cplusplus

@@ -2059,21 +2059,13 @@ algorithm
     case (cache,env,"generateSeparateCodeDependencies",_,(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       then (cache,Values.META_FAIL(),st);
 
-    case (cache,env,"generateSeparateCode",{Values.ARRAY(valueLst={}),Values.BOOL(b)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
+    case (cache,env,"generateSeparateCode",{v,Values.BOOL(b)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       equation
         sp = SCodeUtil.translateAbsyn2SCode(p);
+        name = getTypeNameIdent(v);
         setGlobalRoot(Global.instOnlyForcedFunctions,SOME(true));
-        (cache,env) = generateFunctions(cache,env,p,sp,b);
-        setGlobalRoot(Global.instOnlyForcedFunctions,NONE());
-      then (cache,Values.BOOL(true),st);
-
-    case (cache,env,"generateSeparateCode",{Values.ARRAY(valueLst=vals),Values.BOOL(b)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
-      equation
-        sp = SCodeUtil.translateAbsyn2SCode(p);
-        names = List.map(vals,getTypeNameIdent);
-        setGlobalRoot(Global.instOnlyForcedFunctions,SOME(true));
-        cls = List.map2(names,List.getMemberOnTrue, sp, SCode.isClassNamed);
-        (cache,env) = generateFunctions(cache,env,p,cls,b);
+        cl = List.getMemberOnTrue(name, sp, SCode.isClassNamed);
+        (cache,env) = generateFunctions(cache,env,p,{cl},b);
         setGlobalRoot(Global.instOnlyForcedFunctions,NONE());
       then (cache,Values.BOOL(true),st);
 
@@ -3143,11 +3135,6 @@ algorithm
       equation
         i = Config.noProc();
       then (cache,Values.INTEGER(i),st);
-
-    case (cache,env,"forkAvailable",{},st,_)
-      equation
-        b = System.forkAvailable();
-      then (cache,Values.BOOL(b),st);
 
     case (cache,env,"runScript",{Values.STRING(str)},st,_)
       equation

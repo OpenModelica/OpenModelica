@@ -826,17 +826,6 @@ package System
     output Integer tickNo;
   end tmpTickIndex;
 
-  function parForTick
-  "returns a tick that can be reset. used to uniquely identify parallel for loops.
-  parfor loops are generated in two rounds. We need to match them."
-    output Integer tickNo;
-  end parForTick;
-  
-  function parForTickReset
-  "Resets parfor loop id for second round"
-    input Integer start;
-  end parForTickReset;
-  
   function tmpTickIndexReserve
     input Integer index;
     input Integer reserve;

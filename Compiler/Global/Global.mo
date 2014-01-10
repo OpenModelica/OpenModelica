@@ -42,22 +42,24 @@ encapsulated package Global
 constant Integer recursionDepthLimit = 256;
 constant Integer maxFunctionFileLength = 50;
 
-// hash indexes in global array
-constant Integer instHashIndex = 0;
-constant Integer typesIndex = 1;
-constant Integer crefIndex = 2;
-constant Integer builtinIndex = 3;
-constant Integer builtinEnvIndex = 4;
-constant Integer profilerTime1Index = 5;
-constant Integer profilerTime2Index = 6;
-constant Integer flagsIndex = 7;
-constant Integer builtinGraphEnvIndex = 8;
-constant Integer instOnlyForcedFunctions = 9;
+// Thread-local roots
+constant Integer instOnlyForcedFunctions = 0;
+// Global roots start at index=9
+constant Integer instHashIndex = 9;
+constant Integer typesIndex = 10;
+constant Integer crefIndex = 11;
+constant Integer builtinIndex = 12;
+constant Integer builtinEnvIndex = 13;
+constant Integer profilerTime1Index = 14;
+constant Integer profilerTime2Index = 15;
+constant Integer flagsIndex = 16;
+constant Integer builtinGraphEnvIndex = 17;
 constant Integer rewriteRules = 10;
 
 // indexes in System.tick
 constant Integer backendDAE_fileSequence = 20;
 
+// Real-time clocks have nothing to do with the roots
 constant Integer RT_CLOCK_EXECSTAT_MAIN = 11 /* See GlobalScript.mo */;
 
 public function initialize "Called to initialize global roots (when needed)"

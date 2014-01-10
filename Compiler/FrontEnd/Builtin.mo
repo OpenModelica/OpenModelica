@@ -689,6 +689,7 @@ algorithm
         true = Config.acceptMetaModelicaGrammar();
         // getGlobalRoot can not be represented by a regular function...
         env = Env.extendFrameT(env, "getGlobalRoot", int2boxed);
+        env = Env.extendFrameT(env, "getLocalRoot", int2boxed);
       then env;
     case env then env;
   end matchcontinue;

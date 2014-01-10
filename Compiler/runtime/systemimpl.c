@@ -1950,69 +1950,101 @@ static inline int intMax(int a, int b)
   return a > b ? a : b;
 }
 
-static modelica_integer tmp_tick_no[MAX_TMP_TICK] = {0};
-static modelica_integer tmp_tick_max_no[MAX_TMP_TICK] = {0};
-static modelica_integer parfor_tick_no = 0;
+typedef struct systemMoData {
+  int tmp_tick_no[MAX_TMP_TICK];
+  int tmp_tick_max_no[MAX_TMP_TICK];
+} systemMoData;
 
-extern int SystemImpl_parForTick(void)
+pthread_once_t system_once_create_key = PTHREAD_ONCE_INIT;
+pthread_key_t systemMoKey;
+
+static void free_system_mo(void *data)
 {
-  return parfor_tick_no++;
+  systemMoData *members = (systemMoData*) data;
+  if (data == NULL) return;
+  free(members);
 }
 
-extern void SystemImpl_parForTickReset(int start)
+static void make_key()
 {
-  parfor_tick_no = start;
+  pthread_key_create(&systemMoKey,free_system_mo);
 }
 
-extern int SystemImpl_tmpTickIndex(int index)
+static systemMoData* getSystemMoData(threadData_t *threadData)
 {
-  int res = tmp_tick_no[index];
-  assert(index < MAX_TMP_TICK && index >= 0);
-  tmp_tick_no[index] += 1;
-  tmp_tick_max_no[index] = intMax(tmp_tick_no[index],tmp_tick_max_no[index]);
+  if (threadData && threadData->localRoots[LOCAL_ROOT_SYSTEM_MO]) {
+    return (systemMoData*) threadData->localRoots[LOCAL_ROOT_SYSTEM_MO];
+  }
+  pthread_once(&system_once_create_key,make_key);
+  systemMoData *res = (systemMoData*) pthread_getspecific(systemMoKey);
+  if (res != NULL) return res;
+  /* We use malloc instead of new because when we do dynamic loading of functions, C++ objects in TLS might be free'd upon return to the main process. */
+  res = (systemMoData*) calloc(1,sizeof(systemMoData));
+  pthread_setspecific(systemMoKey,res);
+  if (threadData) {
+    /* Still use pthreads API to free the buffer on thread exit even though we pass this thing around
+     * We could change this to storing the free function in MMC_CATCH_TOP, but this might be faster if we pool threads
+     */
+    threadData->localRoots[LOCAL_ROOT_SYSTEM_MO] = res;
+  }
   return res;
 }
 
-extern int SystemImpl_tmpTickIndexReserve(int index, int reserve)
+extern int SystemImpl_tmpTickIndex(threadData_t *threadData, int index)
 {
-  int res = tmp_tick_no[index];
+  systemMoData *data = getSystemMoData(threadData);
+  int res = data->tmp_tick_no[index];
   assert(index < MAX_TMP_TICK && index >= 0);
-  tmp_tick_no[index] += reserve;
-  tmp_tick_max_no[index] = intMax(tmp_tick_no[index],tmp_tick_max_no[index]);
+  data->tmp_tick_no[index] += 1;
+  data->tmp_tick_max_no[index] = intMax(data->tmp_tick_no[index],data->tmp_tick_max_no[index]);
   return res;
 }
 
-extern void SystemImpl_tmpTickResetIndex(int start, int index)
+extern int SystemImpl_tmpTickIndexReserve(threadData_t *threadData, int index, int reserve)
 {
+  systemMoData *data = getSystemMoData(threadData);
+  int res = data->tmp_tick_no[index];
   assert(index < MAX_TMP_TICK && index >= 0);
-  /* fprintf(stderr, "tmpTickResetIndex %d => %d\n", index, start); */
-  tmp_tick_no[index] = start;
-  tmp_tick_max_no[index] = start;
+  data->tmp_tick_no[index] += reserve;
+  data->tmp_tick_max_no[index] = intMax(data->tmp_tick_no[index],data->tmp_tick_max_no[index]);
+  return res;
 }
 
-extern void SystemImpl_tmpTickSetIndex(int start, int index)
+extern void SystemImpl_tmpTickResetIndex(threadData_t *threadData, int start, int index)
 {
+  systemMoData *data = getSystemMoData(threadData);
   assert(index < MAX_TMP_TICK && index >= 0);
   /* fprintf(stderr, "tmpTickResetIndex %d => %d\n", index, start); */
-  tmp_tick_no[index] = start;
-  tmp_tick_max_no[index] = intMax(start,tmp_tick_max_no[index]);
+  data->tmp_tick_no[index] = start;
+  data->tmp_tick_max_no[index] = start;
+}
+
+extern void SystemImpl_tmpTickSetIndex(threadData_t *threadData, int start, int index)
+{
+  systemMoData *data = getSystemMoData(threadData);
+  assert(index < MAX_TMP_TICK && index >= 0);
+  /* fprintf(stderr, "tmpTickResetIndex %d => %d\n", index, start); */
+  data->tmp_tick_no[index] = start;
+  data->tmp_tick_max_no[index] = intMax(start,data->tmp_tick_max_no[index]);
 }
 
 /* If you use negative reserve or set, the maximum can be different from the tick */
-extern int SystemImpl_tmpTickMaximum(int index)
+extern int SystemImpl_tmpTickMaximum(threadData_t *threadData, int index)
 {
+  systemMoData *data = getSystemMoData(threadData);
   assert(index < MAX_TMP_TICK && index >= 0);
-  return tmp_tick_max_no[index];
+  return data->tmp_tick_max_no[index];
 }
 
-extern int SystemImpl_tmpTick(void)
+extern int SystemImpl_tmpTick(threadData_t *threadData)
 {
-  return SystemImpl_tmpTickIndex(0);
+  int res = SystemImpl_tmpTickIndex(threadData,0);
+  return res;
 }
 
-extern void SystemImpl_tmpTickReset(int start)
+extern void SystemImpl_tmpTickReset(threadData_t *threadData, int start)
 {
-  return SystemImpl_tmpTickResetIndex(start,0);
+  return SystemImpl_tmpTickResetIndex(threadData,start,0);
 }
 
 extern int SystemImpl__reopenStandardStream(int id,const char *filename)

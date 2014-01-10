@@ -3863,7 +3863,7 @@ template simulationParModelicaKernelsFile(String filePrefix, list<Function> func
 ::=
 
   /* Reset the parfor loop id counter to 0*/
-  let()= System.parForTickReset(0)
+  let()= System.tmpTickResetIndex(0,20) /* parfor index */
 
   <<
   #include "OCLRuntimeUtil_new.cl"
@@ -3885,7 +3885,7 @@ template functionsParModelicaKernelsFile(String filePrefix, Option<Function> mai
 ::=
 
   /* Reset the parfor loop id counter to 0*/
-  let()= System.parForTickReset(0)
+  let()= System.tmpTickResetIndex(0,20) /* parfor index */
 
   <<
   #include "OCLRuntimeUtil_new.cl"
@@ -5147,14 +5147,14 @@ case FUNCTION(__) then
     <%funArgs%>
     /* functionBodyRegularFunction: locals */
     <%varDecls%>
-    _tailrecursive:
+    _tailrecursive: OMC_LABEL_UNUSED
     /* functionBodyRegularFunction: out inits */
     <%outVarInits%>
     /* functionBodyRegularFunction: var inits */
     <%varInits%>
     /* functionBodyRegularFunction: body */
     <%bodyPart%>
-    _return:
+    _return: OMC_LABEL_UNUSED
     /* functionBodyRegularFunction: out var copy */
     <%outVarCopy%>
     /* functionBodyRegularFunction: out var assign */
@@ -6928,7 +6928,7 @@ case STMT_PARFOR(range=rng as RANGE(__)) then
   let identType = expType(type_, iterIsArray)
   let identTypeShort = expTypeShort(type_)
 
-  let parforKernelName = 'parfor_<%System.parForTick()%>'
+  let parforKernelName = 'parfor_<%System.tmpTickIndex(20 /* parfor */)%>'
 
   let &loopVarDecls = buffer ""
   let body = (statementLst |> stmt => algStatement(stmt, context, &loopVarDecls)
@@ -7009,7 +7009,7 @@ case RANGE(__) then
 
   let cl_kernelVar = tempDecl("cl_kernel", &varDecls)
 
-  let parforKernelName = 'parfor_<%System.parForTick()%>'
+  let parforKernelName = 'parfor_<%System.tmpTickIndex(20 /* parfor */)%>'
 
   let kerArgNr = '<%parforKernelName%>_arg_nr'
 
@@ -8664,9 +8664,9 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     ""
 
   case exp as CALL(attr=attr as CALL_ATTR(__)) then
-    let argStr = if attr.builtin then (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>' ;separator=", ")
-                 else if isParallelFunctionContext(context) then (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>' ;separator=", ")
-                 else ("threadData" + (expLst |> exp => (", " + daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/))))
+    let argStr = if boolOr(attr.builtin,isParallelFunctionContext(context))
+                   then (expLst |> exp => '<%daeExp(exp, context, &preExp, &varDecls)%>' ;separator=", ")
+                 else ("threadData" + (expLst |> exp => (", " + daeExp(exp, context, &preExp, &varDecls))))
     let funName = '<%underscorePath(path)%>'
     let retType = if attr.builtin then (match attr.ty case T_NORETCALL(__) then ""
       else expTypeModelica(attr.ty))
@@ -9132,9 +9132,9 @@ template daeExpMatch(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varD
 match exp
 case exp as MATCHEXPRESSION(__) then
   let res = match et
-    case T_NORETCALL(__) then "#error ERROR_MATCH_EXPRESSION_NORETCALL"
-    case T_TUPLE(tupleType={}) then "#error ERROR_MATCH_EXPRESSION_EMPTY_TUPLE"
-    else tempDecl(expTypeModelica(et), &varDecls)
+    case T_NORETCALL(__) then error(sourceInfo(), 'match expression not returning anything should be caught in a noretcall statement and not reach this code')
+    case T_TUPLE(tupleType={}) then '#error "match expression returning an empty tuple should be caught in a noretcall statement and not reach this code"'
+    else tempDeclZero(expTypeModelica(et), &varDecls)
   let startIndexOutputs = "ERROR_INDEX"
   daeExpMatch2(exp,listExpLength1,res,startIndexOutputs,context,&preExp,&varDecls)
 end daeExpMatch;
@@ -9560,7 +9560,7 @@ template tempDeclMatchOutput(String ty, String prefix, String startIndex, String
         then 'tmpMeta[<%startIndex%>+<%index%>]'
       else
         let newVarIx = '<%prefix%>_c<%index%>'
-        let &varDecls += '<%ty%> <%newVarIx%>;<%\n%>'
+        let &varDecls += '<%ty%> <%newVarIx%> __attribute__((unused)) = 0;<%\n%>'
         newVarIx
   newVar
 end tempDeclMatchOutput;
@@ -10334,9 +10334,9 @@ template addRootsTempArray()
   let() = System.tmpTickResetIndex(0, 2)
   match System.tmpTickMaximum(1)
     case 0 then ""
-    case i then
+    case i then /* TODO: Find out where we add tmpIndex but discard its use causing us to generate unused tmpMeta with size 1 */ 
       <<
-      modelica_metatype tmpMeta[<%i%>] = {0};
+      modelica_metatype tmpMeta[<%i%>] __attribute__((unused)) = {0};
       >>
 end addRootsTempArray;
 

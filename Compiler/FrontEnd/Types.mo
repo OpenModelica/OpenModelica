@@ -5434,6 +5434,7 @@ algorithm
     case (DAE.T_UNKNOWN(_)) then true;
     case (DAE.T_METATYPE(ty = _)) then true;
     case (DAE.T_NORETCALL(source = _)) then true;
+    case (DAE.T_CODE(source = _)) then true;
     case _ then false;
   end matchcontinue;
 end isBoxedType;
