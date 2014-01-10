@@ -205,34 +205,20 @@ modelica_string _old_realString(modelica_real r)
    *
    * 64-bit (1+11+52) double: -d.[15 digits]E-[4 digits] = ~24 digits max.
    * Add safety margin in case some C runtime is trigger happy. */
-  static char buffer[32];
-  modelica_string res;
-  /* fprintf(stderr, "\nrealString(%g)\n", r);*/
-  if (isinf(r) && r < 0)
-    res = MMC_REFSTRINGLIT(_OMC_LIT_NEG_INF);
-  else if (isinf(r))
-    res = MMC_REFSTRINGLIT(_OMC_LIT_POS_INF);
-  else if (isnan(r))
-    res = MMC_REFSTRINGLIT(_OMC_LIT_NAN);
-  else {
-    char* endptr;
-    int ix = snprintf(buffer, 32, "%.15g", r);
-    long ignore;
-    if (ix < 0)
-      MMC_THROW();
-    errno = 0;
-    /* If it looks like an integer, we need to append .0 so it looks like real */
-    ignore = strtol(buffer,&endptr,10);
-    if (errno == 0 && *endptr == '\0') {
-      if (ix > 30)
-        MMC_THROW();
-      buffer[ix++] = '.';
-      buffer[ix++] = '0';
-      buffer[ix] = '\0';
-    }
-    res = mmc_mk_scon(buffer);
+  char buffer[32];
+  char* endptr;
+  int ix = snprintf(buffer, 32, "%.16g", r);
+  /* If it looks like an integer, we need to append .0 so it looks like real */
+  endptr = buffer;
+  while (isdigit(*endptr)) endptr++;
+  if (0 == *endptr) {
+    *endptr++ = '.';
+    *endptr++ = '0';
+    *endptr++ = '\0';
+  } else if ('E' == *endptr) {
+    *endptr = 'e';
   }
-  return res;
+  return mmc_mk_scon(buffer);
 }
 
 modelica_string realString(modelica_real r)
@@ -243,9 +229,9 @@ modelica_string realString(modelica_real r)
     return MMC_REFSTRINGLIT(_OMC_LIT_POS_INF);
   else if (isnan(r))
     return MMC_REFSTRINGLIT(_OMC_LIT_NAN);
-#if defined(_MSC_VER)
+#if 1 || defined(_MSC_VER)
   return _old_realString(r);
-#else /* Linux and MinGW seems to know how to handle this */
+#else /* Linux and MinGW seems to know how to handle this; but not multi-threaded */
   return dtostr(r);
 #endif
 }
