@@ -91,10 +91,8 @@ let solver = settings.method
 let moLib =  makefileParams.compileDir
 let home = makefileParams.omhome
 <<
-set PATHTMP=%PATH%
-set PATH = %PATH%;<%home%>/bin
-OMCpp<%fileNamePrefix%>.exe -s <%start%> -e <%end%> -f <%stepsize%> -v <%intervals%> -y <%tol%> -i <%solver%> -r <%simulationLibDir(simulationCodeTarget(),simCode)%> -m <%moLib%> -R <%simulationResults(getRunningTestsuite(),simCode)%>
-set PATH = %PATHTMP%
+@echo off
+<%moLib%>/OMCpp<%fileNamePrefix%>.exe -s <%start%> -e <%end%> -f <%stepsize%> -v <%intervals%> -y <%tol%> -i <%solver%> -r <%simulationLibDir(simulationCodeTarget(),simCode)%> -m <%moLib%> -R <%simulationResults(getRunningTestsuite(),simCode)%>
 >>
 end match
 end simulationMainRunScrip2;
@@ -122,11 +120,12 @@ template simulationResults(Boolean test, SimCode simCode)
 ::=
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__),makefileParams=MAKEFILE_PARAMS(__),simulationSettingsOpt = SOME(settings as SIMULATION_SETTINGS(__))) then
-let results = if test then ""  else '<%makefileParams.omhome%>/'
+let results = if test then ""  else '<%makefileParams.compileDir%>/'
 <<
-<%results%><%lastIdentOfPath(modelInfo.name)%>res_.<%settings.outputFormat%>
+<%results%><%lastIdentOfPath(modelInfo.name)%>_res.<%settings.outputFormat%>
 >>
 end simulationResults;
+
 
 
 template simulationMainRunScripSuffix(SimCode simCode)
