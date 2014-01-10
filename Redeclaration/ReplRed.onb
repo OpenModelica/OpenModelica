@@ -53,7 +53,7 @@ p, li { white-space: pre-wrap; }
         </TextCell>
         <GraphCell style="Graph" closed="false">
           <Input>type Voltage = Real(unit = "V");</Input>
-          <Output>{Voltage}</Output>
+          <Output>{Voltage,MicroCircuit}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -63,16 +63,11 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans'; font-size:10pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans'; font-size:10pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
           <Input>type Current = Real(unit = "A");</Input>
-          <Output>{Current}</Output>
+          <Output>{Current,Voltage,MicroCircuit}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -82,19 +77,14 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans'; font-size:10pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans'; font-size:10pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
           <Input>connector Pin
   Voltage     v;
   flow Current   i;
 end Pin;        </Input>
-          <Output>{Pin}</Output>
+          <Output>{Pin,Current,Voltage,MicroCircuit}</Output>
         </GraphCell>
       </GroupCell>
       <GroupCell closed="false">
@@ -117,7 +107,7 @@ p, li { white-space: pre-wrap; }
 equation
   v = R*i;
 end Resistor;</Input>
-          <Output>{Resistor}</Output>
+          <Output>{Resistor,Pin,Current,Voltage,MicroCircuit}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -127,12 +117,7 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans'; font-size:10pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans'; font-size:10pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
           <Input>model TempResistor                  "Temperature dependent Resistor"
@@ -146,7 +131,7 @@ p, li { white-space: pre-wrap; }
 equation
   v = i*(R + RT*(Temp - Tref));
 end TempResistor;</Input>
-          <Output>{TempResistor}</Output>
+          <Output>{TempResistor,Resistor,Pin,Current,Voltage,MicroCircuit}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -156,12 +141,7 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans'; font-size:10pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans'; font-size:10pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
           <Input>model SuperTempResistor                "Temperature dependent Resistor"
@@ -176,7 +156,7 @@ p, li { white-space: pre-wrap; }
 equation
   v = i*(R + RT*(Temp - Tref));
 end SuperTempResistor;</Input>
-          <Output>{SuperTempResistor}</Output>
+          <Output>{SuperTempResistor,TempResistor,Resistor,Pin,Current,Voltage,MicroCircuit}</Output>
         </GraphCell>
       </GroupCell>
       <GroupCell closed="false">
@@ -203,7 +183,7 @@ p, li { white-space: pre-wrap; }
         </TextCell>
         <GraphCell style="Graph" closed="false">
           <Input>class TempMicroCiruit = MicroCircuit(redeclare TempResistor R1);</Input>
-          <Output>{TempMicroCiruit}</Output>
+          <Output>{TempMicroCiruit,SuperTempResistor,TempResistor,Resistor,Pin,Current,Voltage,MicroCircuit}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -217,7 +197,7 @@ p, li { white-space: pre-wrap; }
         </TextCell>
         <GraphCell style="Graph" closed="false">
           <Input>class TempMicroCiruit2 = MicroCircuit(redeclare replaceable TempResistor R1);</Input>
-          <Output>{TempMicroCiruit2}</Output>
+          <Output>{TempMicroCiruit2,TempMicroCiruit,SuperTempResistor,TempResistor,Resistor,Pin,Current,Voltage,MicroCircuit}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -231,7 +211,7 @@ p, li { white-space: pre-wrap; }
         </TextCell>
         <GraphCell style="Graph" closed="false">
           <Input>class SuperTempMicroCiruit = TempMicroCiruit2(redeclare SuperTempResistor R1);</Input>
-          <Output>{SuperTempMicroCiruit}</Output>
+          <Output>{SuperTempMicroCiruit,TempMicroCiruit2,TempMicroCiruit,SuperTempResistor,TempResistor,Resistor,Pin,Current,Voltage,MicroCircuit}</Output>
         </GraphCell>
         <GroupCell closed="false">
           <TextCell style="Subsection">
@@ -246,19 +226,19 @@ p, li { white-space: pre-wrap; }
           </TextCell>
           <GroupCell closed="false">
             <GraphCell style="Graph" closed="false">
-              <Input>instantiateModel(MicroCircuit)  //??Error - flows and units missing</Input>
+              <Input>instantiateModel(MicroCircuit)  </Input>
               <Output>"class MicroCircuit
-  Real R1.p.v(unit = "V");
-  Real R1.p.i(unit = "A");
-  Real R1.n.v(unit = "V");
-  Real R1.n.i(unit = "A");
-  Real R1.v(unit = "V");
-  Real R1.i(unit = "A");
-  parameter Real R1.R(unit = "Ohm") = 4.0 "Resistance";
+  Real R1.p.v(unit = \"V\");
+  Real R1.p.i(unit = \"A\");
+  Real R1.n.v(unit = \"V\");
+  Real R1.n.i(unit = \"A\");
+  Real R1.v(unit = \"V\");
+  Real R1.i(unit = \"A\");
+  parameter Real R1.R(unit = \"Ohm\") = 4.0 \"Resistance\";
 equation
   R1.v = R1.R * R1.i;
-  R1.n.i = 0.0;
   R1.p.i = 0.0;
+  R1.n.i = 0.0;
 end MicroCircuit;
 "</Output>
             </GraphCell>
@@ -270,29 +250,29 @@ p, li { white-space: pre-wrap; }
 &lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Courier New'; font-size:11pt; color:#000000;">&amp;quot;model MicroCircuit\&lt;br />   Real(unit=\\&amp;quot;V\\&amp;quot;) R1.p.v;\&lt;br />   flow Real(unit=\\&amp;quot;A\\&amp;quot;) R1.p.i;\&lt;br />   Real(unit=\\&amp;quot;V\\&amp;quot;) R1.n.v;\&lt;br />   flow Real(unit=\\&amp;quot;A\\&amp;quot;) R1.n.i;\&lt;br />   Real(unit=\\&amp;quot;V\\&amp;quot;) R1.v;\&lt;br />   Real(unit=\\&amp;quot;A\\&amp;quot;) R1.i;\&lt;br />   parameter Real R1.R(unit=\\&amp;quot;Ohm\\&amp;quot;) \\&amp;quot;Resistance\\&amp;quot;;\&lt;br />   \&lt;br />equation\&lt;br />   R1.v = R1.R*R1.i ;\&lt;br />   \&lt;br />equation\&lt;br />   R1.p.i = 0;\&lt;br />   R1.n.i = 0 ;\&lt;br />end MicroCircuit;&amp;quot;&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
               <Rule name="GeneratedCell">False</Rule>
               <Rule name="CellAutoOverwrite">False</Rule>
             </TextCell>
           </GroupCell>
           <GroupCell closed="false">
             <GraphCell style="Graph" closed="false">
-              <Input>instantiateModel(TempMicroCiruit2)   //??Error - flows and units missing</Input>
+              <Input>instantiateModel(TempMicroCiruit2)   </Input>
               <Output>"class TempMicroCiruit2
-  Real R1.p.v(unit = "V");
-  Real R1.p.i(unit = "A");
-  Real R1.n.v(unit = "V");
-  Real R1.n.i(unit = "A");
-  Real R1.v(unit = "V");
-  Real R1.i(unit = "A");
-  parameter Real R1.R(unit = "Ohm") = 4.0 "Resistance at reference Temperature";
-  parameter Real R1.RT(unit = "Ohm/degC") = 0.0 "Temperature dependent Resistance";
-  parameter Real R1.Tref(unit = "degC") = 20.0 "Reference Temperature";
-  Real R1.Temp = 20.0 "Actual Temperature";
+  Real R1.p.v(unit = \"V\");
+  Real R1.p.i(unit = \"A\");
+  Real R1.n.v(unit = \"V\");
+  Real R1.n.i(unit = \"A\");
+  Real R1.v(unit = \"V\");
+  Real R1.i(unit = \"A\");
+  parameter Real R1.R(unit = \"Ohm\") = 4.0 \"Resistance at reference Temperature\";
+  parameter Real R1.RT(unit = \"Ohm/degC\") = 0.0 \"Temperature dependent Resistance\";
+  parameter Real R1.Tref(unit = \"degC\") = 20.0 \"Reference Temperature\";
+  Real R1.Temp = 20.0 \"Actual Temperature\";
 equation
   R1.v = R1.i * (R1.R + R1.RT * (R1.Temp - R1.Tref));
-  R1.n.i = 0.0;
   R1.p.i = 0.0;
+  R1.n.i = 0.0;
 end TempMicroCiruit2;
 "</Output>
             </GraphCell>
@@ -304,30 +284,30 @@ p, li { white-space: pre-wrap; }
 &lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Courier New'; font-size:11pt; color:#000000;">&amp;quot;model TempMicroCiruit2\&lt;br />   Real(unit=\\&amp;quot;V\\&amp;quot;) R1.p.v;\&lt;br />   flow Real(unit=\\&amp;quot;A\\&amp;quot;) R1.p.i;\&lt;br />   Real(unit=\\&amp;quot;V\\&amp;quot;) R1.n.v;\&lt;br />   flow Real(unit=\\&amp;quot;A\\&amp;quot;) R1.n.i;\&lt;br />   Real(unit=\\&amp;quot;V\\&amp;quot;) R1.v;\&lt;br />   Real(unit=\\&amp;quot;A\\&amp;quot;) R1.i;\&lt;br />   parameter Real R1.R(unit=\\&amp;quot;Ohm\\&amp;quot;) \\&amp;quot;Resistance at reference Temperature\\&amp;quot;;\&lt;br />   parameter Real R1.RT(unit=\\&amp;quot;Ohm/degC\\&amp;quot;)=0 \\&amp;quot;Temperature dependent Resistance\\&amp;quot;;\&lt;br />   parameter Real R1.Tref(unit=\\&amp;quot;degC\\&amp;quot;)=20 \\&amp;quot;Reference Temperature\\&amp;quot;;\&lt;br />   Real R1.Temp=20 \\&amp;quot;Actual Temperature\\&amp;quot;;\&lt;br />   \&lt;br />equation\&lt;br />   R1.v = R1.i*(R1.R+R1.RT*(R1.Temp-R1.Tref)) ;\&lt;br />   \&lt;br />equation\&lt;br />   R1.p.i = 0;\&lt;br />   R1.n.i = 0 ;\&lt;br />end TempMicroCiruit2;&amp;quot;&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
               <Rule name="GeneratedCell">False</Rule>
               <Rule name="CellAutoOverwrite">False</Rule>
             </TextCell>
           </GroupCell>
           <GroupCell closed="false">
             <GraphCell style="Graph" closed="false">
-              <Input>instantiateModel(SuperTempMicroCiruit)  //??Error - flows and units missing</Input>
+              <Input>instantiateModel(SuperTempMicroCiruit)  </Input>
               <Output>"class SuperTempMicroCiruit
-  Real R1.p.v(unit = "V");
-  Real R1.p.i(unit = "A");
-  Real R1.n.v(unit = "V");
-  Real R1.n.i(unit = "A");
-  Real R1.v(unit = "V");
-  Real R1.i(unit = "A");
-  parameter Real R1.R(unit = "Ohm") = 4.0 "Resistance at reference Temperature";
-  parameter Real R1.RT(unit = "Ohm/degC") = 0.0 "Temperature dependent Resistance";
-  parameter Real R1.Tref(unit = "degC") = 20.0 "Reference Temperature";
-  Real R1.Temp = 20.0 "Actual Temperature";
+  Real R1.p.v(unit = \"V\");
+  Real R1.p.i(unit = \"A\");
+  Real R1.n.v(unit = \"V\");
+  Real R1.n.i(unit = \"A\");
+  Real R1.v(unit = \"V\");
+  Real R1.i(unit = \"A\");
+  parameter Real R1.R(unit = \"Ohm\") = 4.0 \"Resistance at reference Temperature\";
+  parameter Real R1.RT(unit = \"Ohm/degC\") = 0.0 \"Temperature dependent Resistance\";
+  parameter Real R1.Tref(unit = \"degC\") = 20.0 \"Reference Temperature\";
+  Real R1.Temp = 20.0 \"Actual Temperature\";
   parameter Boolean R1.Super = true;
 equation
   R1.v = R1.i * (R1.R + R1.RT * (R1.Temp - R1.Tref));
-  R1.n.i = 0.0;
   R1.p.i = 0.0;
+  R1.n.i = 0.0;
 end SuperTempMicroCiruit;
 "</Output>
             </GraphCell>
@@ -339,7 +319,7 @@ p, li { white-space: pre-wrap; }
 &lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Courier New'; font-size:11pt; color:#000000;">&amp;quot;model SuperTempMicroCiruit\&lt;br />   Real(unit=\\&amp;quot;V\\&amp;quot;) R1.p.v;\&lt;br />   flow Real(unit=\\&amp;quot;A\\&amp;quot;) R1.p.i;\&lt;br />   Real(unit=\\&amp;quot;V\\&amp;quot;) R1.n.v;\&lt;br />   flow Real(unit=\\&amp;quot;A\\&amp;quot;) R1.n.i;\&lt;br />   Real(unit=\\&amp;quot;V\\&amp;quot;) R1.v;\&lt;br />   Real(unit=\\&amp;quot;A\\&amp;quot;) R1.i;\&lt;br />   parameter Real R1.R(unit=\\&amp;quot;Ohm\\&amp;quot;) \\&amp;quot;Resistance at reference Temperature\\&amp;quot;;\&lt;br />   parameter Real R1.RT(unit=\\&amp;quot;Ohm/degC\\&amp;quot;)=0 \\&amp;quot;Temperature dependent Resistance\\&amp;quot;;\&lt;br />   parameter Real R1.Tref(unit=\\&amp;quot;degC\\&amp;quot;)=20 \\&amp;quot;Reference Temperature\\&amp;quot;;\&lt;br />   Real R1.Temp=20 \\&amp;quot;Actual Temperature\\&amp;quot;;\&lt;br />   parameter Boolean R1.Super=true;\&lt;br />   \&lt;br />equation\&lt;br />   R1.v = R1.i*(R1.R+R1.RT*(R1.Temp-R1.Tref)) ;\&lt;br />   \&lt;br />equation\&lt;br />   R1.p.i = 0;\&lt;br />   R1.n.i = 0 ;\&lt;br />end SuperTempMicroCiruit;&amp;quot;&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
               <Rule name="GeneratedCell">False</Rule>
               <Rule name="CellAutoOverwrite">False</Rule>
             </TextCell>

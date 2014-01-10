@@ -22,7 +22,7 @@ p, li { white-space: pre-wrap; }
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />By using the keyword &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">redeclare&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> it is possible to modify the type and/or the prefixes and possibly the dimension sizes of a declared element. This kind of modification is called a redeclaration. In most cases a declaration that can be redeclared must include the prefix &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">replaceable&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">.&lt;br />&lt;br />The element in a redeclaration must have a type that is either a subtype of the replaceable element in the modified class or a subtype of a constraining type. An example is shown below with the concepts of redeclaration.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
       </TextCell>
-      <GroupCell closed="true">
+      <GroupCell closed="false">
         <TextCell style="Section">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
@@ -35,7 +35,7 @@ p, li { white-space: pre-wrap; }
         </TextCell>
         <GraphCell style="Graph" closed="false">
           <Input>type Voltage = Real(unit = "V");</Input>
-          <Output>Ok</Output>
+          <Output>{Voltage,C4Expanded,C4,C3}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -45,12 +45,11 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
           <Input>type Current = Real(unit = "A");</Input>
-          <Output>Ok</Output>
+          <Output>{Current,Voltage,C4Expanded,C4,C3}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -60,18 +59,17 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
           <Input>connector Pin
   Voltage     v;
   flow Current   i;
 end Pin;        </Input>
-          <Output>Ok</Output>
+          <Output>{Pin,Current,Voltage,C4Expanded,C4,C3}</Output>
         </GraphCell>
       </GroupCell>
-      <GroupCell closed="true">
+      <GroupCell closed="false">
         <TextCell style="Section">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
@@ -91,7 +89,7 @@ p, li { white-space: pre-wrap; }
 equation
   v = R*i;
 end Resistor;</Input>
-          <Output>Ok</Output>
+          <Output>{Resistor,Pin,Current,Voltage,C4Expanded,C4,C3}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -101,8 +99,7 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
           <Input>model TempResistor                  "Temperature dependent Resistor"
@@ -116,7 +113,7 @@ p, li { white-space: pre-wrap; }
 equation
   v = i*(R + RT*(Temp - Tref));
 end TempResistor;</Input>
-          <Output>Ok</Output>
+          <Output>{TempResistor,Resistor,Pin,Current,Voltage,C4Expanded,C4,C3}</Output>
         </GraphCell>
       </GroupCell>
       <GroupCell closed="false">
@@ -134,7 +131,7 @@ p, li { white-space: pre-wrap; }
           <Input>class MiniCircuit
   replaceable discrete Resistor R1;
 end MiniCircuit;</Input>
-          <Output>{MiniCircuit}</Output>
+          <Output>{MiniCircuit,TempResistor,Resistor,Pin,Current,Voltage,C4Expanded,C4,C3}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -150,7 +147,7 @@ p, li { white-space: pre-wrap; }
           <Input>class MiniCircuitRed
   MiniCircuit tempcircuit(redeclare parameter TempResistor R1);
 end MiniCircuitRed;</Input>
-          <Output>{MiniCircuitRed}</Output>
+          <Output>{MiniCircuitRed,MiniCircuit,TempResistor,Resistor,Pin,Current,Voltage,C4Expanded,C4,C3}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -166,7 +163,7 @@ p, li { white-space: pre-wrap; }
           <Input>class MiniCircuit2
   parameter TempResistor R1;
 end MiniCircuit2;</Input>
-          <Output>{MiniCircuit2}</Output>
+          <Output>{MiniCircuit2,MiniCircuitRed,MiniCircuit,TempResistor,Resistor,Pin,Current,Voltage,C4Expanded,C4,C3}</Output>
         </GraphCell>
       </GroupCell>
       <GroupCell closed="false">
@@ -194,7 +191,7 @@ p, li { white-space: pre-wrap; }
           <Input>class RedA
   parameter Real x;
 end RedA;</Input>
-          <Output>{RedA}</Output>
+          <Output>{RedA,MiniCircuit2,MiniCircuitRed,MiniCircuit,TempResistor,Resistor,Pin,Current,Voltage,C4Expanded,C4,C3}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -204,15 +201,14 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
           <Input>class RedA2                    // A2 is a subtype of A
   parameter Real x = 3.14;
   parameter Real y;
 end RedA2;  </Input>
-          <Output>{RedA2}</Output>
+          <Output>{RedA2,RedA,MiniCircuit2,MiniCircuitRed,MiniCircuit,TempResistor,Resistor,Pin,Current,Voltage,C4Expanded,C4,C3}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -222,14 +218,13 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
           <Input>class RedB
   replaceable RedA a(x = 1);
 end RedB;</Input>
-          <Output>{RedB}</Output>
+          <Output>{RedB,RedA2,RedA,MiniCircuit2,MiniCircuitRed,MiniCircuit,TempResistor,Resistor,Pin,Current,Voltage,C4Expanded,C4,C3}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -245,7 +240,7 @@ p, li { white-space: pre-wrap; }
           <Input>class RedB2
   extends RedB(redeclare RedA2 a(y = 2));    // The result after redeclaration is RedA2 a(x = 1, y = 2)
 end RedB2;</Input>
-          <Output>{RedB2}</Output>
+          <Output>{RedB2,RedB,RedA2,RedA,MiniCircuit2,MiniCircuitRed,MiniCircuit,TempResistor,Resistor,Pin,Current,Voltage,C4Expanded,C4,C3}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -261,7 +256,7 @@ p, li { white-space: pre-wrap; }
           <Input>class B2expanded
   RedA2 a(x = 1, y = 2);
 end B2expanded;</Input>
-          <Output>{B2expanded}</Output>
+          <Output>{B2expanded,RedB2,RedB,RedA2,RedA,MiniCircuit2,MiniCircuitRed,MiniCircuit,TempResistor,Resistor,Pin,Current,Voltage,C4Expanded,C4,C3}</Output>
         </GraphCell>
         <GroupCell closed="false">
           <TextCell style="Subsection">

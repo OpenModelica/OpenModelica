@@ -59,7 +59,7 @@ p, li { white-space: pre-wrap; }
   Point point2;
   Point point3;
 end MyPoints;</Input>
-          <Output>{MyPoints}</Output>
+          <Output>{MyPoints,Point}</Output>
         </GraphCell>
         <GroupCell closed="false">
           <TextCell style="Section">
@@ -103,9 +103,12 @@ p, li { white-space: pre-wrap; }
         <GraphCell style="Graph" closed="false">
           <Input>simulate( MyPoints )</Input>
           <Output>record SimulationResult
-    messages = "",
-    simulationTime = 0.19074265464196272
-end SimulationResult;</Output>
+    resultFile = "MyPoints_res.mat",
+    messages = ""
+end SimulationResult;
+OMC-ERROR: 
+"Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
+"</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -118,7 +121,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Try to plot the constant parameter point1.x:&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <OMCPlot PlotType="0" XRangeMin="0" Title="Plot by OpenModelica" LogX="false" XRangeMax="0" Grid="true" LogY="false" YRangeMin="0" YRangeMax="0" YLabel="" Legend="true" XLabel="time">
+          <OMCPlot PlotType="0" XRangeMin="0" Title="" LogX="false" XRangeMax="0" Grid="true" LogY="false" CurveStyle="1" YRangeMin="0" LegendPosition="top" YRangeMax="0" YLabel="" XLabel="time" CurveWidth="1">
             <Curve Title="point1.x" Visible="true" XData="AAAAAAAAAAA/8AAAAAAAAA==" YData="P/AAAAAAAAA/8AAAAAAAAA==" Color="4294901760"/>
           </OMCPlot>
           <Input>plot(point1.x)   </Input>
@@ -152,7 +155,7 @@ p, li { white-space: pre-wrap; }
   Point point2;
   Point point3;
 end MyPoints2;</Input>
-          <Output>{MyPoints2}</Output>
+          <Output>{MyPoints2,MyPoints,Point}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -162,14 +165,13 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
           <Input>class MyPoints2Inst
   MyPoints2 pts(point1.x = 1, point1.y = 2, point1.z = 3);
 end MyPoints2Inst;</Input>
-          <Output>{MyPoints2Inst}</Output>
+          <Output>{MyPoints2Inst,MyPoints2,MyPoints,Point}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -210,7 +212,7 @@ p, li { white-space: pre-wrap; }
           <Input>class MyPoints2Inst2
   MyPoints2 pts(point1(x = 1, y = 2, z = 3));
 end MyPoints2Inst2;</Input>
-          <Output>{MyPoints2Inst2}</Output>
+          <Output>{MyPoints2Inst2,MyPoints2Inst,MyPoints2,MyPoints,Point}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -263,11 +265,8 @@ p, li { white-space: pre-wrap; }
           <Input>class Arrays
   Real A3[2,2];                  // Array variable
   Real A4[2,2](start = {{1,0}, {0,1}}); // Array with explicit start value
-  Real A5[2,2](start[2,1] = 2.3); // Array with single element modification
 end Arrays;</Input>
-          <Output>Error occured building AST
-Syntax Error
-[&lt;interactive>:4:16-4:32:writable] Error: Subscripted modifier is illegal.</Output>
+          <Output>{Arrays,MyPoints2Inst2,MyPoints2Inst,MyPoints2,MyPoints,Point}</Output>
         </GraphCell>
       </GroupCell>
     </GroupCell>

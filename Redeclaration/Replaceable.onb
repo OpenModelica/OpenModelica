@@ -63,7 +63,7 @@ p, li { white-space: pre-wrap; }
         </TextCell>
         <GraphCell style="Graph" closed="false">
           <Input>class TempMicroCircuit = MicroCircuit(redeclare TempResistor comp1);</Input>
-          <Output>{TempMicroCircuit}</Output>
+          <Output>{TempMicroCircuit,MicroCircuit}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -80,7 +80,7 @@ p, li { white-space: pre-wrap; }
   replaceable type CompType = Resistor;
   replaceable CompType comp1;
 end GenMicroCircuit;  </Input>
-          <Output>{GenMicroCircuit}</Output>
+          <Output>{GenMicroCircuit,TempMicroCircuit,MicroCircuit}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -96,7 +96,7 @@ p, li { white-space: pre-wrap; }
           <Input>class InductorMicroCircuit =
           GenMicroCircuit(redeclare type CompType = Inductor);
 </Input>
-          <Output>{InductorMicroCircuit}</Output>
+          <Output>{InductorMicroCircuit,GenMicroCircuit,TempMicroCircuit,MicroCircuit}</Output>
         </GraphCell>
       </GroupCell>
       <GroupCell closed="false">
@@ -112,7 +112,7 @@ p, li { white-space: pre-wrap; }
         </TextCell>
         <GraphCell style="Graph" closed="false">
           <Input>type Voltage = Real(Unit = "V");</Input>
-          <Output>{Voltage}</Output>
+          <Output>{Voltage,InductorMicroCircuit,GenMicroCircuit,TempMicroCircuit,MicroCircuit}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -123,13 +123,11 @@ p, li { white-space: pre-wrap; }
 &lt;tr>
 &lt;td style="border: none;">
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans'; font-size:10pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans'; font-size:10pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
           <Input>type Current = Real(Unit = "A");</Input>
-          <Output>{Current}</Output>
+          <Output>{Current,Voltage,InductorMicroCircuit,GenMicroCircuit,TempMicroCircuit,MicroCircuit}</Output>
         </GraphCell>
       </GroupCell>
       <GroupCell closed="false">
@@ -148,7 +146,7 @@ p, li { white-space: pre-wrap; }
   Voltage v;
   flow Current i;
 end Pin;  </Input>
-          <Output>{Pin}</Output>
+          <Output>{Pin,Current,Voltage,InductorMicroCircuit,GenMicroCircuit,TempMicroCircuit,MicroCircuit}</Output>
         </GraphCell>
       </GroupCell>
       <GroupCell closed="false">
@@ -173,7 +171,7 @@ equation
   p.i + n.i = 0;
   i = p.i;
 end TwoPin;</Input>
-          <Output>{TwoPin}</Output>
+          <Output>{TwoPin,Pin,Current,Voltage,InductorMicroCircuit,GenMicroCircuit,TempMicroCircuit,MicroCircuit}</Output>
         </GraphCell>
       </GroupCell>
       <GroupCell closed="false">
@@ -202,7 +200,7 @@ p, li { white-space: pre-wrap; }
   replaceable type CompType = Resistor extends TwoPin;      // No inheritance!
   replaceable CompType comp1;
 end GenMicroCircuit2;  </Input>
-          <Output>{GenMicroCircuit2}</Output>
+          <Output>{GenMicroCircuit2,TwoPin,Pin,Current,Voltage,InductorMicroCircuit,GenMicroCircuit,TempMicroCircuit,MicroCircuit}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -212,15 +210,12 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans'; font-size:10pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans'; font-size:10pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
           <Input>class CapacitorMicroCircuit =
           GenMicroCircuit2(redeclare type CompType = Capacitor);</Input>
-          <Output>{CapacitorMicroCircuit}</Output>
+          <Output>{CapacitorMicroCircuit,GenMicroCircuit2,TwoPin,Pin,Current,Voltage,InductorMicroCircuit,GenMicroCircuit,TempMicroCircuit,MicroCircuit}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -235,7 +230,7 @@ p, li { white-space: pre-wrap; }
         <GraphCell style="Graph" closed="false">
           <Input>class GenCapacitorMicroCircuit =
           GenMicroCircuit2(redeclare replaceable type CompType = TempCapacitor);</Input>
-          <Output>{GenCapacitorMicroCircuit}</Output>
+          <Output>{GenCapacitorMicroCircuit,CapacitorMicroCircuit,GenMicroCircuit2,TwoPin,Pin,Current,Voltage,InductorMicroCircuit,GenMicroCircuit,TempMicroCircuit,MicroCircuit}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -251,7 +246,7 @@ p, li { white-space: pre-wrap; }
           <Input>class MicroCircuit2
   replaceable TempResistor R1 extends Resistor;
 end MicroCircuit2;</Input>
-          <Output>{MicroCircuit2}</Output>
+          <Output>{MicroCircuit2,GenCapacitorMicroCircuit,CapacitorMicroCircuit,GenMicroCircuit2,TwoPin,Pin,Current,Voltage,InductorMicroCircuit,GenMicroCircuit,TempMicroCircuit,MicroCircuit}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -261,14 +256,11 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans'; font-size:10pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans'; font-size:10pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
           <Input>class MicroCircuit3 = MicroCircuit2(R1 (R = 20));</Input>
-          <Output>{MicroCircuit3}</Output>
+          <Output>{MicroCircuit3,MicroCircuit2,GenCapacitorMicroCircuit,CapacitorMicroCircuit,GenMicroCircuit2,TwoPin,Pin,Current,Voltage,InductorMicroCircuit,GenMicroCircuit,TempMicroCircuit,MicroCircuit}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -278,16 +270,13 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans'; font-size:10pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans'; font-size:10pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
           <Input>class MicroCircuit3expanded
   replaceable TempResistor R1(R = 20) extends Resistor(R = 20);
 end MicroCircuit3expanded;    </Input>
-          <Output>{MicroCircuit3expanded}</Output>
+          <Output>{MicroCircuit3expanded,MicroCircuit3,MicroCircuit2,GenCapacitorMicroCircuit,CapacitorMicroCircuit,GenMicroCircuit2,TwoPin,Pin,Current,Voltage,InductorMicroCircuit,GenMicroCircuit,TempMicroCircuit,MicroCircuit}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -303,7 +292,7 @@ p, li { white-space: pre-wrap; }
           <Input>class MicroCircuit4
   replaceable TempResistor R1 extends Resistor(R=30);
 end MicroCircuit4;</Input>
-          <Output>{MicroCircuit4}</Output>
+          <Output>{MicroCircuit4,MicroCircuit3expanded,MicroCircuit3,MicroCircuit2,GenCapacitorMicroCircuit,CapacitorMicroCircuit,GenMicroCircuit2,TwoPin,Pin,Current,Voltage,InductorMicroCircuit,GenMicroCircuit,TempMicroCircuit,MicroCircuit}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -313,15 +302,12 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans'; font-size:10pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans'; font-size:10pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
           <Input>class MicroCircuit5 =
     MicroCircuit4(redeclare replaceable TempResistor2 R1 extends Resistor2);</Input>
-          <Output>{MicroCircuit5}</Output>
+          <Output>{MicroCircuit5,MicroCircuit4,MicroCircuit3expanded,MicroCircuit3,MicroCircuit2,GenCapacitorMicroCircuit,CapacitorMicroCircuit,GenMicroCircuit2,TwoPin,Pin,Current,Voltage,InductorMicroCircuit,GenMicroCircuit,TempMicroCircuit,MicroCircuit}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -332,15 +318,13 @@ p, li { white-space: pre-wrap; }
 &lt;tr>
 &lt;td style="border: none;">
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans'; font-size:10pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans'; font-size:10pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
           <Input>class MicroCircuit5expanded
   replaceable TempResistor2 R1(R = 30) extends Restistor2(R=30);
 end MicroCircuit5expanded;</Input>
-          <Output>{MicroCircuit5expanded}</Output>
+          <Output>{MicroCircuit5expanded,MicroCircuit5,MicroCircuit4,MicroCircuit3expanded,MicroCircuit3,MicroCircuit2,GenCapacitorMicroCircuit,CapacitorMicroCircuit,GenMicroCircuit2,TwoPin,Pin,Current,Voltage,InductorMicroCircuit,GenMicroCircuit,TempMicroCircuit,MicroCircuit}</Output>
         </GraphCell>
       </GroupCell>
     </GroupCell>
