@@ -28,6 +28,7 @@ CPPFLAGS=@CPPFLAGS@
 CXXFLAGS=@CXXFLAGS@
 LINK=@LINK@
 MSL_EXTRA_ARGS=@MSL_EXTRA_ARGS@
+# LIBGC configuration is different for Linux (this file) and Windows (Makefile.omdev.mingw)
 LIBGC_EXTRA_CONFIGURATION=--enable-threads=posix --enable-parallel-mark
 LIBFMILIB=@LIBFMILIB@
 # This should probably have an @ around it
