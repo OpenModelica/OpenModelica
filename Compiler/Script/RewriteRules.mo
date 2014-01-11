@@ -94,7 +94,7 @@ algorithm
 end loadRules;
 
 public function loadRulesFromFile
-"load the rewite rules in the global array: Global.rewriteRules"
+"load the rewite rules in the global array with index: Global.rewriteRulesIndex"
   input String inFile;
 algorithm
   _ := matchcontinue(inFile)
@@ -106,30 +106,30 @@ algorithm
     // no file, set it to NONE
     case ""
       equation
-        setGlobalRoot(Global.rewriteRules, NONE());
+        setGlobalRoot(Global.rewriteRulesIndex, NONE());
       then ();
     
     // already loaded
     case _ 
       equation
-        oR = getGlobalRoot(Global.rewriteRules);
+        oR = getGlobalRoot(Global.rewriteRulesIndex);
         true = Util.isSome(oR);
       then ();
     
     // not loaded, load it
     case _ 
       equation
-        NONE() = getGlobalRoot(Global.rewriteRules);
+        NONE() = getGlobalRoot(Global.rewriteRulesIndex);
         GlobalScript.ISTMTS(stmts, _) = parse(inFile);
         rules = stmtsToRules(stmts, {});
-        setGlobalRoot(Global.rewriteRules, SOME(rules));
+        setGlobalRoot(Global.rewriteRulesIndex, SOME(rules));
       then 
         ();
 
     case _
       equation
         Error.addInternalError("Unable to parse rewrite rules file: " +& inFile);
-        setGlobalRoot(Global.rewriteRules, NONE());
+        setGlobalRoot(Global.rewriteRulesIndex, NONE());
       then
         ();
   

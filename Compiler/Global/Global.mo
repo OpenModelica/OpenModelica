@@ -54,7 +54,7 @@ constant Integer profilerTime1Index = 14;
 constant Integer profilerTime2Index = 15;
 constant Integer flagsIndex = 16;
 constant Integer builtinGraphEnvIndex = 17;
-constant Integer rewriteRules = 10;
+constant Integer rewriteRulesIndex = 18;
 
 // indexes in System.tick
 constant Integer backendDAE_fileSequence = 20;
@@ -65,7 +65,7 @@ constant Integer RT_CLOCK_EXECSTAT_MAIN = 11 /* See GlobalScript.mo */;
 public function initialize "Called to initialize global roots (when needed)"
 algorithm
   setGlobalRoot(instOnlyForcedFunctions,  NONE());
-  setGlobalRoot(rewriteRules,  NONE());
+  setGlobalRoot(rewriteRulesIndex,  NONE());
 end initialize;
 
 end Global;
