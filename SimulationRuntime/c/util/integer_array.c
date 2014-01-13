@@ -255,7 +255,6 @@ void print_integer_matrix(const integer_array_t * source)
 
 void print_integer_array(const integer_array_t * source)
 {
-    size_t k, n;
     _index_t i,j;
     modelica_integer *data;
     assert(base_array_ok(source));
@@ -270,6 +269,7 @@ void print_integer_array(const integer_array_t * source)
             printf("%ld",*data);
         }
     } else if(source->ndims > 1) {
+        size_t k, n;
         n = base_array_nr_of_elements(source) /
             (source->dim_size[0] * source->dim_size[1]);
         for(k = 0; k < n; ++k) {
@@ -545,7 +545,7 @@ void simple_index_integer_array2(const integer_array_t * source,
 
 void array_integer_array(integer_array_t* dest,int n,integer_array_t* first,...)
 {
-    int i,j,c,m;
+    int i,j,c;
     va_list ap;
 
     integer_array_t **elts=(integer_array_t**)malloc(sizeof(integer_array_t *) * n);
@@ -561,7 +561,7 @@ void array_integer_array(integer_array_t* dest,int n,integer_array_t* first,...)
     check_base_array_dim_sizes((const base_array_t **)elts,n);
 
     for(i = 0, c = 0; i < n; ++i) {
-        m = base_array_nr_of_elements(elts[i]);
+        int m = base_array_nr_of_elements(elts[i]);
         for(j = 0; j < m; ++j) {
             integer_set(dest, c, integer_get(elts[i], j));
             c++;
@@ -573,7 +573,7 @@ void array_integer_array(integer_array_t* dest,int n,integer_array_t* first,...)
 void array_alloc_integer_array(integer_array_t* dest,int n,
                                integer_array_t* first,...)
 {
-    int i,j,c,m;
+    int i,j,c;
     va_list ap;
 
     integer_array_t **elts=(integer_array_t**)malloc(sizeof(integer_array_t *) * n);
@@ -603,7 +603,7 @@ void array_alloc_integer_array(integer_array_t* dest,int n,
     }
 
     for(i = 0, c = 0; i < n; ++i) {
-        m = base_array_nr_of_elements(elts[i]);
+        int m = base_array_nr_of_elements(elts[i]);
         for(j = 0; j < m; ++j) {
             integer_set(dest, c, integer_get(elts[i], j));
             c++;
@@ -1456,7 +1456,6 @@ void linspace_integer_array(modelica_integer x1, modelica_integer x2, int n,
 
 modelica_integer max_integer_array(const integer_array_t * a)
 {
-    size_t i;
     size_t nr_of_elements;
     modelica_integer max_element = 0;
 
@@ -1465,6 +1464,7 @@ modelica_integer max_integer_array(const integer_array_t * a)
     nr_of_elements = base_array_nr_of_elements(a);
 
     if(nr_of_elements > 0) {
+        size_t i;
         max_element = integer_get(a, 0);
         for(i = 1; i < nr_of_elements; ++i) {
             if(max_element < integer_get(a, i)) {
@@ -1478,7 +1478,6 @@ modelica_integer max_integer_array(const integer_array_t * a)
 
 modelica_integer min_integer_array(const integer_array_t * a)
 {
-  size_t i;
   size_t nr_of_elements;
   modelica_integer min_element = -LONG_MAX;
 
@@ -1487,6 +1486,7 @@ modelica_integer min_integer_array(const integer_array_t * a)
   nr_of_elements = base_array_nr_of_elements(a);
 
   if(nr_of_elements > 0) {
+    size_t i;
     min_element = integer_get(a, 0);
     for(i = 1; i < nr_of_elements; ++i) {
       if(min_element > integer_get(a, i)) {
@@ -1613,12 +1613,10 @@ _index_t* integer_array_make_index_array(const integer_array_t *arr)
  * in the first half of the array. */
 void pack_integer_array(integer_array_t *a)
 {
-  size_t i, n;
-  int *int_data;
-
   if(sizeof(int) != sizeof(modelica_integer)) {
-    int_data = (int*)a->data;
-    n = integer_array_nr_of_elements(a);
+    long i;
+    int * int_data = (int*)a->data;
+    size_t n = integer_array_nr_of_elements(a);
 
     for(i = 0; i < n; ++i) {
       int_data[i] = (int)integer_get(a, i);
@@ -1629,13 +1627,10 @@ void pack_integer_array(integer_array_t *a)
 /* Unpacks an integer_array that was packed with pack_integer_array */
 void unpack_integer_array(integer_array_t *a)
 {
-  size_t n;
-  long i;
-  int *int_data;
-
   if(sizeof(int) != sizeof(modelica_integer)) {
-    int_data = (int*)a->data;
-    n = integer_array_nr_of_elements(a);
+    long i;
+    int * int_data = (int*)a->data;
+    long n = (long)integer_array_nr_of_elements(a);
 
     for(i = n - 1; i >= 0; --i) {
       integer_set(a, i, int_data[i]);

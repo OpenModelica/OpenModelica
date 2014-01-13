@@ -12,7 +12,7 @@
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
  * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
  * ACCORDING TO RECIPIENTS CHOICE.
- * 
+ *
  * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
  * Public License (OSMC-PL) are obtained from OSMC, either from the above
  * address, from the URLs: http://www.openmodelica.org or
@@ -287,9 +287,9 @@ static inline void mmc_prim_set_real(struct mmc_real *p, double d)
 
 static inline void* mmc_mk_scon(const char *s)
 {
-    unsigned nbytes = strlen(s);
-    unsigned header = MMC_STRINGHDR(nbytes);
-    unsigned nwords = MMC_HDRSLOTS(header) + 1;
+    unsigned int nbytes = strlen(s);
+    unsigned int header = MMC_STRINGHDR(nbytes);
+    unsigned int nwords = MMC_HDRSLOTS(header) + 1;
     struct mmc_string *p;
     void *res;
     if (nbytes == 0) return mmc_emptystring;
@@ -312,10 +312,10 @@ static inline void* mmc_mk_scon(const char *s)
     return res;
 }
 
-static inline void* mmc_mk_scon_len(unsigned nbytes)
+static inline void* mmc_mk_scon_len(unsigned int nbytes)
 {
-    unsigned header = MMC_STRINGHDR(nbytes);
-    unsigned nwords = MMC_HDRSLOTS(header) + 1;
+    unsigned int header = MMC_STRINGHDR(nbytes);
+    unsigned int nwords = MMC_HDRSLOTS(header) + 1;
     struct mmc_string *p;
     void *res;
     p = (struct mmc_string *) mmc_alloc_words(nwords);
@@ -326,7 +326,7 @@ static inline void* mmc_mk_scon_len(unsigned nbytes)
 
 char* mmc_mk_scon_len_ret_ptr(size_t nbytes);
 
-static inline void *mmc_mk_box0(unsigned ctor)
+static inline void *mmc_mk_box0(unsigned int ctor)
 {
     struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(1);
     p->header = MMC_STRUCTHDR(0, ctor);
@@ -336,7 +336,7 @@ static inline void *mmc_mk_box0(unsigned ctor)
     return MMC_TAGPTR(p);
 }
 
-static inline void *mmc_mk_box1(unsigned ctor, void *x0)
+static inline void *mmc_mk_box1(unsigned int ctor, void *x0)
 {
   struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(2);
   p->header = MMC_STRUCTHDR(1, ctor);
@@ -349,7 +349,7 @@ static inline void *mmc_mk_box1(unsigned ctor, void *x0)
 
 void printAny(void* any);
 
-static inline void *mmc_mk_box2(unsigned ctor, void *x0, void *x1)
+static inline void *mmc_mk_box2(unsigned int ctor, void *x0, void *x1)
 {
   struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(3);
   void **data = p->data;
@@ -363,7 +363,7 @@ static inline void *mmc_mk_box2(unsigned ctor, void *x0, void *x1)
   return MMC_TAGPTR(p);
 }
 
-static inline void *mmc_mk_box3(unsigned ctor, void *x0, void *x1, void *x2)
+static inline void *mmc_mk_box3(unsigned int ctor, void *x0, void *x1, void *x2)
 {
   struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(4);
   void **data = p->data;
@@ -377,7 +377,7 @@ static inline void *mmc_mk_box3(unsigned ctor, void *x0, void *x1, void *x2)
   return MMC_TAGPTR(p);
 }
 
-static inline void *mmc_mk_box4(unsigned ctor, void *x0, void *x1, void *x2, void *x3)
+static inline void *mmc_mk_box4(unsigned int ctor, void *x0, void *x1, void *x2, void *x3)
 {
   struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(5);
   void **data = p->data;
@@ -392,7 +392,7 @@ static inline void *mmc_mk_box4(unsigned ctor, void *x0, void *x1, void *x2, voi
   return MMC_TAGPTR(p);
 }
 
-static inline void *mmc_mk_box5(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4)
+static inline void *mmc_mk_box5(unsigned int ctor, void *x0, void *x1, void *x2, void *x3, void *x4)
 {
   struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(6);
   void **data = p->data;
@@ -408,7 +408,7 @@ static inline void *mmc_mk_box5(unsigned ctor, void *x0, void *x1, void *x2, voi
   return MMC_TAGPTR(p);
 }
 
-static inline void *mmc_mk_box6(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4, void *x5)
+static inline void *mmc_mk_box6(unsigned int ctor, void *x0, void *x1, void *x2, void *x3, void *x4, void *x5)
 {
   struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(7);
   void **data = p->data;
@@ -425,7 +425,7 @@ static inline void *mmc_mk_box6(unsigned ctor, void *x0, void *x1, void *x2, voi
   return MMC_TAGPTR(p);
 }
 
-static inline void *mmc_mk_box7(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4, void *x5, void *x6)
+static inline void *mmc_mk_box7(unsigned int ctor, void *x0, void *x1, void *x2, void *x3, void *x4, void *x5, void *x6)
 {
   struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(8);
   void **data = p->data;
@@ -443,7 +443,7 @@ static inline void *mmc_mk_box7(unsigned ctor, void *x0, void *x1, void *x2, voi
   return MMC_TAGPTR(p);
 }
 
-static inline void *mmc_mk_box8(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4, void *x5, void *x6, void *x7)
+static inline void *mmc_mk_box8(unsigned int ctor, void *x0, void *x1, void *x2, void *x3, void *x4, void *x5, void *x6, void *x7)
 {
   struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(9);
   void **data = p->data;
@@ -462,7 +462,7 @@ static inline void *mmc_mk_box8(unsigned ctor, void *x0, void *x1, void *x2, voi
   return MMC_TAGPTR(p);
 }
 
-static inline void *mmc_mk_box9(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4, void *x5, void *x6, void *x7, void *x8)
+static inline void *mmc_mk_box9(unsigned int ctor, void *x0, void *x1, void *x2, void *x3, void *x4, void *x5, void *x6, void *x7, void *x8)
 {
   struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(10);
   void **data = p->data;
@@ -482,7 +482,7 @@ static inline void *mmc_mk_box9(unsigned ctor, void *x0, void *x1, void *x2, voi
   return MMC_TAGPTR(p);
 }
 
-static inline void *mmc_mk_box(int slots, unsigned ctor, ...)
+static inline void *mmc_mk_box(int slots, unsigned int ctor, ...)
 {
   int i;
   va_list argp;
@@ -518,8 +518,8 @@ static inline void *mmc_mk_some(void *x)
     return mmc_mk_box1(1, x);
 }
 
-extern void *mmc_mk_box_arr(int slots, unsigned ctor, void** args);
-extern void *mmc_mk_box_no_assign(int slots, unsigned ctor);
+extern void *mmc_mk_box_arr(int slots, unsigned int ctor, void** args);
+extern void *mmc_mk_box_no_assign(int slots, unsigned int ctor);
 
 extern modelica_boolean valueEq(modelica_metatype lhs,modelica_metatype rhs);
 

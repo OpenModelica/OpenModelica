@@ -155,7 +155,6 @@ void setGlobalVerboseLevel(int argc, char**argv)
   const char *cflags = omc_flagValue[FLAG_LV];
   const string *flags = cflags ? new string(cflags) : NULL;
   int i;
-  int error;
 
   if(omc_flag[FLAG_W])
     showAllWarnings = 1;
@@ -181,7 +180,7 @@ void setGlobalVerboseLevel(int argc, char**argv)
 
     do
     {
-      error = 1;
+      int error = 1;
       pos = flagList.find(",", 0);
       if(pos != string::npos)
       {
@@ -232,7 +231,7 @@ void setGlobalVerboseLevel(int argc, char**argv)
   /* print LOG_NLS if LOG_NLS_RES if active */
   if(useStream[LOG_NLS_RES])
     useStream[LOG_NLS] = 1;
-    
+
   /* print LOG_EVENTS if LOG_EVENTS_V if active */
   if(useStream[LOG_EVENTS_V]) {
     useStream[LOG_EVENTS] = 1;
@@ -533,29 +532,29 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   {
     init_initMethod = omc_flagValue[FLAG_IIM];
   }
-  
+
   if(omc_flag[FLAG_IOM])
   {
     init_optiMethod = omc_flagValue[FLAG_IOM];
   }
-  
+
   if(omc_flag[FLAG_IIF])
   {
     init_file = omc_flagValue[FLAG_IIF];
   }
-  
+
   if(omc_flag[FLAG_IIT])
   {
     init_time_string = omc_flagValue[FLAG_IIT];
     init_time = atof(init_time_string.c_str());
   }
-  
+
   if(omc_flag[FLAG_ILS])
   {
     init_lambda_steps_string = omc_flagValue[FLAG_ILS];
     init_lambda_steps = atoi(init_lambda_steps_string.c_str());
   }
-  
+
   if(omc_flag[FLAG_OUTPUT])
   {
     outputVariablesAtEnd = omc_flagValue[FLAG_OUTPUT];
@@ -702,7 +701,7 @@ int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
  */
 int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
 {
-  int i, j;
+  int i;
   initDumpSystem();
 
   if(helpFlagSet(argc, argv) || checkCommandLineArguments(argc, argv))
@@ -741,6 +740,8 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
     {
       if(option == std::string(FLAG_NAME[i]))
       {
+        int j;
+
         if(FLAG_TYPE[i] == FLAG_TYPE_FLAG)
           infoStreamPrint(LOG_STDOUT, 1, "detailed flag-description for: <-%s>\n%s", FLAG_NAME[i], FLAG_DETAILED_DESC[i]);
         else if(FLAG_TYPE[i] == FLAG_TYPE_OPTION)

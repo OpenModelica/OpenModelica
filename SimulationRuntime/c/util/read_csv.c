@@ -33,6 +33,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "read_csv.h"
+#include "read_matlab4.h"
 #include <gc.h>
 #include "libcsv.h"
 

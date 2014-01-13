@@ -155,7 +155,7 @@ double delayImpl(DATA* data, int exprNumber, double exprValue, double time, doub
     double time0, time1, value0, value1;
     int i;
 
-    assertStreamPrint(0.0 <= delayTime, 0, "Negative delay requested: delayTime = %g", delayTime);
+    assertStreamPrint(0.0 <= delayTime, "Negative delay requested: delayTime = %g", delayTime);
 
     /* find the row for the lower limit */
     if(timeStamp > ((TIME_AND_VALUE*)getRingData(delayStruct, length - 1))->t)

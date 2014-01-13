@@ -49,7 +49,7 @@ modelica_real division_error_time(modelica_real b, const char* division_str, mod
       "at Time=%f\n"
       "[line] %ld | [file] %s", division_str, time, line, file);
 #ifndef __APPLE_CC__
-    throwStreamPrint(0,"division by zero");
+    throwStreamPrint("division by zero");
 #endif
   }
   return b;
@@ -68,7 +68,7 @@ modelica_real division_error(modelica_real b, const char* division_str, const ch
   warningStreamPrint(LOG_STDOUT, 0, "division by zero in partial equation: %s\n"
                                  "[line] %ld | [file] %s", division_str, line, file);
 #ifndef __APPLE_CC__
-  throwStreamPrint(0,"division by zero");
+  throwStreamPrint("division by zero");
 #endif
   return b;
 }
@@ -85,7 +85,7 @@ modelica_real isnan_error(modelica_real b, const char* division_str, const char*
     warningStreamPrint(LOG_STDOUT, 0, "division result in NAN in partial equation: %s\n"
                                       "[line] %ld | [file] %s", division_str, line, file);
 #ifndef __APPLE_CC__
-    throwStreamPrint(0,"division by zero");
+    throwStreamPrint("division by zero");
 #endif
   }
   return b;

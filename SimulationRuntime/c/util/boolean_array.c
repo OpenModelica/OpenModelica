@@ -256,7 +256,6 @@ void print_boolean_matrix(const boolean_array_t *source)
 
 void print_boolean_array(const boolean_array_t *source)
 {
-    size_t k, n;
     _index_t i,j;
     modelica_boolean *data;
     assert(base_array_ok(source));
@@ -271,6 +270,7 @@ void print_boolean_array(const boolean_array_t *source)
             printf("%c", (*data) ? 'T' : 'F');
         }
     } else if(source->ndims > 1) {
+        size_t k, n;
         n = base_array_nr_of_elements(source) /
             (source->dim_size[0] * source->dim_size[1]);
         for(k = 0; k < n; ++k) {
@@ -546,7 +546,7 @@ void simple_index_boolean_array2(const boolean_array_t* source,
 
 void array_boolean_array(boolean_array_t* dest,int n,boolean_array_t* first,...)
 {
-    int i,j,c,m;
+    int i,j,c;
     va_list ap;
 
     boolean_array_t **elts=(boolean_array_t**)malloc(sizeof(boolean_array_t *) * n);
@@ -562,7 +562,7 @@ void array_boolean_array(boolean_array_t* dest,int n,boolean_array_t* first,...)
     check_base_array_dim_sizes((const base_array_t **)elts,n);
 
     for(i = 0, c = 0; i < n; ++i) {
-        m = base_array_nr_of_elements(elts[i]);
+        int m = base_array_nr_of_elements(elts[i]);
         for(j = 0; j < m; ++j) {
             boolean_set(dest, c, boolean_get(elts[i], j));
             c++;
@@ -574,7 +574,7 @@ void array_boolean_array(boolean_array_t* dest,int n,boolean_array_t* first,...)
 void array_alloc_boolean_array(boolean_array_t* dest, int n,
                                boolean_array_t* first,...)
 {
-    int i,j,c,m;
+    int i,j,c;
     va_list ap;
 
     boolean_array_t **elts = (boolean_array_t**)malloc(sizeof(boolean_array_t *) * n);
@@ -604,7 +604,7 @@ void array_alloc_boolean_array(boolean_array_t* dest, int n,
     }
 
     for(i = 0, c = 0; i < n; ++i) {
-        m = base_array_nr_of_elements(elts[i]);
+        int m = base_array_nr_of_elements(elts[i]);
         for(j = 0; j < m; ++j) {
             boolean_set(dest, c, boolean_get(elts[i], j));
             c++;

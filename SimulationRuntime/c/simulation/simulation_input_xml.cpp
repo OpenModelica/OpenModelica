@@ -214,11 +214,9 @@ void read_input_xml(MODEL_DATA* modelData,
     SIMULATION_INFO* simulationInfo)
 {
   omc_ModelInput mi;
-  char buf[BUFSIZ] = {0};
   std::string filename;
   FILE* file = NULL;
   XML_Parser parser = NULL;
-  int done = 0;
   std::map<std::string, long> mapAlias, mapAliasParam;
   std::map<std::string, long>::iterator it, itParam;
 
@@ -252,6 +250,8 @@ void read_input_xml(MODEL_DATA* modelData,
   XML_SetElementHandler(parser, startElement, endElement);
   if(NULL == modelData->initXMLData)
   {
+    int done;
+    char buf[BUFSIZ] = {0};
     do
     {
       size_t len = fread(buf, 1, sizeof(buf), file);
@@ -1143,8 +1143,11 @@ inline void read_value(std::string s, modelica_boolean* res)
 {
   if(s.compare("true") == 0)
     *res = 1;
+#if 0
+// no need to call compare when result is same as in else
   else if(s.compare("false") == 0)
     *res = 0;
+#endif
   else
     *res = 0;
 }

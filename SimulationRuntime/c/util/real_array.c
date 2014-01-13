@@ -234,7 +234,6 @@ void print_real_matrix(const real_array_t *source)
 
 void print_real_array(const real_array_t *source)
 {
-    size_t k, n;
     _index_t i,j;
     modelica_real *data;
     assert(base_array_ok(source));
@@ -249,6 +248,8 @@ void print_real_array(const real_array_t *source)
             printf("%e",*data);
         }
     } else if(source->ndims > 1) {
+        size_t k, n;
+
         n = base_array_nr_of_elements(source) /
             (source->dim_size[0] * source->dim_size[1]);
         for(k = 0; k < n; ++k) {
@@ -582,7 +583,7 @@ void simple_index_real_array2(const real_array_t * source,
 
 void array_real_array(real_array_t* dest,int n,real_array_t* first,...)
 {
-    int i,j,c,m;
+    int i,j,c;
     va_list ap;
 
     real_array_t **elts = (real_array_t**)malloc(sizeof(real_array_t *) * n);
@@ -598,7 +599,7 @@ void array_real_array(real_array_t* dest,int n,real_array_t* first,...)
     check_base_array_dim_sizes((const base_array_t **)elts,n);
 
     for(i = 0, c = 0; i < n; ++i) {
-        m = base_array_nr_of_elements(elts[i]);
+        int m = base_array_nr_of_elements(elts[i]);
         for(j = 0; j < m; ++j) {
             real_set(dest, c, real_get(elts[i], j));
             c++;
@@ -609,7 +610,7 @@ void array_real_array(real_array_t* dest,int n,real_array_t* first,...)
 
 void array_alloc_real_array(real_array_t* dest, int n, real_array_t* first,...)
 {
-    int i,j,c,m;
+    int i,j,c;
     va_list ap;
 
     real_array_t **elts = (real_array_t**)malloc(sizeof(real_array_t *) * n);
@@ -639,7 +640,7 @@ void array_alloc_real_array(real_array_t* dest, int n, real_array_t* first,...)
     }
 
     for(i = 0, c = 0; i < n; ++i) {
-        m = base_array_nr_of_elements(elts[i]);
+        int m = base_array_nr_of_elements(elts[i]);
         for(j = 0; j < m; ++j) {
             real_set(dest, c, real_get(elts[i], j));
             c++;
@@ -1495,7 +1496,6 @@ void linspace_real_array(modelica_real x1, modelica_real x2, int n,
 
 modelica_real max_real_array(const real_array_t * a)
 {
-    size_t i;
     size_t nr_of_elements;
     modelica_real max_element = 0;
 
@@ -1504,6 +1504,7 @@ modelica_real max_real_array(const real_array_t * a)
     nr_of_elements = base_array_nr_of_elements(a);
 
     if(nr_of_elements > 0) {
+        size_t i;
         max_element = real_get(a, 0);
         for(i = 1; i < nr_of_elements; ++i) {
             if(max_element < real_get(a, i)) {
@@ -1517,7 +1518,6 @@ modelica_real max_real_array(const real_array_t * a)
 
 modelica_real min_real_array(const real_array_t * a)
 {
-    size_t i;
     size_t nr_of_elements;
     modelica_real min_element = 0;
 
@@ -1526,6 +1526,7 @@ modelica_real min_real_array(const real_array_t * a)
     nr_of_elements = base_array_nr_of_elements(a);
 
     if(nr_of_elements > 0) {
+        size_t i;
         min_element = real_get(a, 0);
         for(i = 1; i < nr_of_elements; ++i) {
             if(min_element > real_get(a, i)) {

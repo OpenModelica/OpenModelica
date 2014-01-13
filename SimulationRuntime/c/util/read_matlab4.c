@@ -449,17 +449,17 @@ double* omc_matlab4_read_vals(ModelicaMatReader *reader, int varIndex)
 
 void matrix_transpose(double *m, int w, int h)
 {
-  int start, next, i;
+  int start;
   double tmp;
- 
+
   for (start = 0; start <= w * h - 1; start++) {
-    next = start;
-    i = 0;
+    int next = start;
+    int i = 0;
     do {  i++;
       next = (next % h) * w + next / h;
     } while (next > start);
     if (next < start || i == 1) continue;
- 
+
     tmp = m[next = start];
     do {
       i = (next % h) * w + next / h;
@@ -544,10 +544,9 @@ void find_closest_points(double key, double *vec, int nelem, int *index1, double
 {
   int min = 0;
   int max = nelem-1;
-  int mid;
   /* fprintf(stderr, "search closest: %g in %d elem\n", key, nelem); */
   do {
-    mid = min + (max-min)/2;
+    int mid = min + (max-min)/2;
     if(key == vec[mid]) {
       /* If we have events (multiple identical time stamps), use the right limit */
       while(mid < max && vec[mid] == vec[mid+1]) mid++;

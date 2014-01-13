@@ -75,9 +75,9 @@ typedef struct InterpolationTable2D
 } InterpolationTable2D;
 
 static InterpolationTable** interpolationTables=NULL;
-static size_t ninterpolationTables=0;
+static int ninterpolationTables=0;
 static InterpolationTable2D** interpolationTables2D=NULL;
-static size_t ninterpolationTables2D=0;
+static int ninterpolationTables2D=0;
 
 static InterpolationTable *InterpolationTable_init(double time,double startTime, int ipoType, int expoType,
          const char* tableName, const char* fileName,
@@ -131,7 +131,7 @@ int omcTableTimeIni(double timeIn, double startTime,int ipoType,int expoType,
         const char *tableName, const char* fileName,
         const double *table,int tableDim1, int tableDim2,int colWise)
 {
-  size_t i = 0;
+  int i = 0;
   InterpolationTable** tmp = NULL;
 #ifdef INFOS
   INFO10("Init Table \n timeIn %f \n startTime %f \n ipoType %d \n expoType %d \n tableName %s \n fileName %s \n table %p \n tableDim1 %d \n tableDim2 %d \n colWise %d", timeIn, startTime, ipoType, expoType, tableName, fileName, table, tableDim1, tableDim2, colWise);
@@ -227,7 +227,7 @@ double omcTableTimeTmin(int tableID)
 int omcTable2DIni(int ipoType, const char *tableName, const char* fileName,
       const double *table,int tableDim1,int tableDim2,int colWise)
 {
-  size_t i=0;
+  int i=0;
   InterpolationTable2D** tmp = NULL;
 #ifdef INFOS
   infoStreamPrint("Init Table \n ipoType %f \n tableName %f \n fileName %d \n table %p \n tableDim1 %d \n tableDim2 %d \n colWise %d", ipoType, tableName, fileName, table, tableDim1, tableDim2, colWise);
@@ -322,23 +322,28 @@ typedef struct TEXT_FILE
 
 static TEXT_FILE *Text_open(const char *filename)
 {
-  size_t l,i;
   TEXT_FILE *f=(TEXT_FILE*)calloc(1,sizeof(TEXT_FILE));
   if (!f) {
     ModelicaFormatError("Not enough memory for Filename: %s",filename);
   }
-  l = strlen(filename);
-  f->filename = (char*)malloc((l+1)*sizeof(char));
-  if (!f->filename) {
-    ModelicaFormatError("Not enough memory for Filename: %s",filename);
-  }
-  for(i=0;i<=l;i++)
+  else
   {
-    f->filename[i] = filename[i];
-  }
-  f->fp = fopen(filename,"r");
-  if (!f->fp) {
-    ModelicaFormatError("Cannot open File %s",filename);
+    size_t l = strlen(filename);
+    f->filename = (char*)malloc((l+1)*sizeof(char));
+    if (!f->filename) {
+      ModelicaFormatError("Not enough memory for Filename: %s",filename);
+    }
+    else
+    {
+      size_t i;
+      for(i=0;i<=l;i++) {
+        f->filename[i] = filename[i];
+      }
+      f->fp = fopen(filename,"r");
+      if (!f->fp) {
+        ModelicaFormatError("Cannot open File %s",filename);
+      }
+    }
   }
   return f;
 }
@@ -433,13 +438,13 @@ static size_t Text_readLine(TEXT_FILE *f, char **data, size_t *size)
 {
   size_t col = 0;
   size_t i = 0;
-  int ch = 0;
   char *buf = *data;
   memset(*data, 0, sizeof(char)*(*size));
 
   /* read whole line */
   while(!feof(f->fp))
   {
+    int ch;
     if(col >= *size)
     {
       size_t s = *size * 2 + 1024;
@@ -476,10 +481,10 @@ static char Text_findTable(TEXT_FILE *f, const char* tableName, size_t *cols, si
   size_t buflen=0;
   size_t _cols = 0;
   size_t _rows = 0;
-  size_t col = 0;
 
   while(!feof(f->fp))
   {
+    size_t col;
     /* start new line, update counters */
     ++f->line;
     /* read whole line */
@@ -510,11 +515,11 @@ static void Text_readTable(TEXT_FILE *f, double *buf, size_t rows, size_t cols)
   size_t j = 0;
   char *strLn=0;
   size_t buflen=0;
-  size_t sl=0;
-  char *number=0;
   char *entp = 0;
   for(i = 0; i < rows; ++i)
   {
+    size_t sl;
+    char *number;
     ++f->line;
     sl = Text_readLine(f,&strLn,&buflen);
     number = strLn;
@@ -608,11 +613,11 @@ static size_t Mat_getTypeSize(MAT_FILE *f, long type)
 static char Mat_findTable(MAT_FILE *f, const char* tableName, size_t *cols, size_t *rows)
 {
   char name[256];
-  long pos=0;
-  char *returnTmp;
   while(!feof(f->fp))
   {
-    returnTmp = fgets((char*)&f->hdr,sizeof(hdr_t),f->fp);
+    long pos;
+
+    char * returnTmp = fgets((char*)&f->hdr,sizeof(hdr_t),f->fp);
     if(ferror(f->fp))
     {
       fclose(f->fp);
@@ -669,10 +674,10 @@ inline static char getEndianness()
     type num; \
     unsigned char b[sizeof(type)]; \
   } elem_u_ ## stype; \
-  size_t i=0; \
   elem_u_ ## stype dat1, dat2; \
   if(getEndianness() != dataEndianness) \
   { \
+    size_t i; \
     dat1.num = _num; \
     for(i=0; i < sizeof(type); ++i) \
       dat2.b[i] = dat1.b[sizeof(type)-i-1]; \
@@ -717,12 +722,11 @@ static void Mat_readTable(MAT_FILE *f, double *buf, size_t rows, size_t cols)
   long P = (f->hdr.type%1000)/100;
   char isBigEndian = (f->hdr.type/1000) == 1;
   size_t elemSize = Mat_getTypeSize(f,f->hdr.type);
-  char *returnTmp;
 
   for(i=0; i < rows; ++i)
     for(j=0; j < cols; ++j)
     {
-      returnTmp = fgets(readbuf.p,elemSize,f->fp);
+      char * returnTmp = fgets(readbuf.p,elemSize,f->fp);
       if(ferror(f->fp))
       {
         fclose(f->fp);
@@ -745,23 +749,28 @@ typedef struct CSV_FILE
 
 static CSV_FILE *csv_open(const char *filename)
 {
-  size_t l,i;
   CSV_FILE *f=(CSV_FILE*)calloc(1,sizeof(CSV_FILE));
   if (!f) {
     ModelicaFormatError("Not enough memory for Filename %s",filename);
   }
-  l = strlen(filename);
-  f->filename = (char*)malloc((l+1)*sizeof(char));
-  if (!f->filename) {
-    ModelicaFormatError("Not enough memory for Filename %s",filename);
-  }
-  for(i=0;i<=l;i++)
+  else
   {
-    f->filename[i] = filename[i];
-  }
-  f->fp = fopen(filename,"r");
-  if (!f->fp) {
-    ModelicaFormatError("Cannot open File %s",filename);
+    size_t l = strlen(filename);
+    f->filename = (char*)malloc((l+1)*sizeof(char));
+    if (!f->filename) {
+      ModelicaFormatError("Not enough memory for Filename %s",filename);
+    }
+    else
+    {
+      size_t i;
+      for(i=0;i<=l;i++) {
+        f->filename[i] = filename[i];
+      }
+      f->fp = fopen(filename,"r");
+      if (!f->fp) {
+        ModelicaFormatError("Cannot open File %s",filename);
+      }
+    }
   }
   return f;
 }
@@ -781,13 +790,13 @@ static size_t csv_readLine(CSV_FILE *f, char **data, size_t *size)
 {
   size_t col = 0;
   size_t i = 0;
-  int ch = 0;
   char *buf = *data;
   memset(*data, 0, sizeof(char)*(*size));
 
   /* read whole line */
   while(!feof(f->fp))
   {
+    int ch;
     if(col >= *size)
     {
       size_t s = *size * 2 + 1024;
@@ -822,13 +831,13 @@ static char csv_findTable(CSV_FILE *f, const char *tableName, size_t *cols, size
   char *strLn=0;
   size_t buflen=0;
   size_t i=0;
-  size_t col = 0;
   size_t _cols = 1;
   char stop=0;
   *cols=0;
   *rows=0;
   while(!feof(f->fp))
   {
+    size_t col;
     /* start new line, update counters */
     ++f->line;
     /* read whole line */
@@ -881,8 +890,6 @@ static void csv_readTable(CSV_FILE *f, const char *tableName, double *data, size
 {
   char *strLn=NULL;
   size_t buflen=0;
-  size_t c=0;
-  size_t col=0;
   size_t row=0;
   size_t lh=0;
   char *number=NULL;
@@ -896,13 +903,13 @@ static void csv_readTable(CSV_FILE *f, const char *tableName, double *data, size
   */
   while(!feof(f->fp))
   {
-    col = csv_readLine(f,&strLn,&buflen);
+    size_t col = csv_readLine(f,&strLn,&buflen);
 
     if(strcmp(strLn,tableName)==0)
     {
       for(row=0;row<rows;row++)
       {
-        c = csv_readLine(f,&strLn,&buflen);
+        size_t c = csv_readLine(f,&strLn,&buflen);
         number = strLn;
         for(col=0;col<cols;col++)
         {
@@ -992,7 +999,6 @@ static void openFile(const char *filename, const char* tableName, size_t *rows, 
 static char *copyTableNameFile(const char *name)
 {
   size_t l = 0;
-  size_t i = 0;
   char *dst=NULL;
   l = strlen(name);
   if(l==0)
@@ -1003,6 +1009,7 @@ static char *copyTableNameFile(const char *name)
   }
   if(name)
   {
+    size_t i;
     for(i=0;i<=l;i++)
     {
       dst[i] = name[i];
@@ -1021,51 +1028,53 @@ static InterpolationTable* InterpolationTable_init(double time, double startTime
                const double* table, int tableDim1,
                int tableDim2, int colWise)
 {
-  size_t i=0;
   size_t size = tableDim1*tableDim2;
   InterpolationTable *tpl = 0;
   tpl = (InterpolationTable*)calloc(1,sizeof(InterpolationTable));
   if (!tpl) {
     ModelicaFormatError("Not enough memory for Table: %s",tableName);
   }
-
-  tpl->rows = tableDim1;
-  tpl->cols = tableDim2;
-  tpl->colWise = colWise;
-  tpl->ipoType = ipoType;
-  tpl->expoType = expoType;
-  tpl->startTime = startTime;
-
-  tpl->tablename = copyTableNameFile(tableName);
-  tpl->filename = copyTableNameFile(fileName);
-
-  if(fileName && strncmp("NoName",fileName,6) != 0)
+  else
   {
-    openFile(fileName,tableName,&(tpl->rows),&(tpl->cols),&(tpl->data));
-    tpl->own_data = 1;
-  } else
-  {
-#ifndef COPY_ARRAYS
-    if (!table) {
-      ModelicaFormatError("Not enough memory for Table: %s",tableName);
-    }
-    tpl->data = *(double**)((void*)&table);
-#else
-    /* tpl->data = const_cast<double*>(table); */
-    tpl->data = (double*)malloc(size*sizeof(double));
-    if (!tpl->data) {
-      ModelicaFormatError("Not enough memory for Table: %s",tableName);
-    }
-    tpl->own_data = 1;
+    tpl->rows = tableDim1;
+    tpl->cols = tableDim2;
+    tpl->colWise = colWise;
+    tpl->ipoType = ipoType;
+    tpl->expoType = expoType;
+    tpl->startTime = startTime;
 
-    for(i=0;i<size;i++)
+    tpl->tablename = copyTableNameFile(tableName);
+    tpl->filename = copyTableNameFile(fileName);
+
+    if(fileName && strncmp("NoName",fileName,6) != 0)
     {
-      tpl->data[i] = table[i];
-    }
+      openFile(fileName,tableName,&(tpl->rows),&(tpl->cols),&(tpl->data));
+      tpl->own_data = 1;
+    } else
+    {
+#ifndef COPY_ARRAYS
+      if (!table) {
+        ModelicaFormatError("Not enough memory for Table: %s",tableName);
+      }
+      tpl->data = *(double**)((void*)&table);
+#else
+      size_t i;
+      /* tpl->data = const_cast<double*>(table); */
+      tpl->data = (double*)malloc(size*sizeof(double));
+      if (!tpl->data) {
+        ModelicaFormatError("Not enough memory for Table: %s",tableName);
+      }
+      tpl->own_data = 1;
+
+      for(i=0;i<size;i++)
+      {
+        tpl->data[i] = table[i];
+      }
 #endif
+    }
+    /* check that time column is strictly monotonous */
+    InterpolationTable_checkValidityOfData(tpl);
   }
-  /* check that time column is strictly monotonous */
-  InterpolationTable_checkValidityOfData(tpl);
   return tpl;
 }
 
@@ -1125,7 +1134,6 @@ static char InterpolationTable_compare(InterpolationTable *tpl, const char* fnam
   {
     /* table loaded from file */
     return ((!strncmp(tpl->filename,fname,6)) && (!strncmp(tpl->tablename,tname,6)));
-  return 0;
   }
 }
 
@@ -1197,46 +1205,49 @@ static InterpolationTable2D* InterpolationTable2D_init(int ipoType, const char* 
            const char* fileName, const double *table,
            int tableDim1, int tableDim2, int colWise)
 {
-  size_t i=0;
   size_t size = tableDim1*tableDim2;
   InterpolationTable2D *tpl = 0;
   tpl = (InterpolationTable2D*)calloc(1,sizeof(InterpolationTable2D));
   if (!tpl) {
     ModelicaFormatError("Not enough memory for Table: %s",tableName);
   }
-  if (!((0 < ipoType) & (ipoType < 3))) {
-    ModelicaFormatError("Unknown interpolation Type %d for Table %s from file %s!",ipoType,tableName,fileName);
-  }
-  tpl->rows = tableDim1;
-  tpl->cols = tableDim2;
-  tpl->colWise = colWise;
-  tpl->ipoType = ipoType;
-
-  tpl->tablename = copyTableNameFile(tableName);
-  tpl->filename = copyTableNameFile(fileName);
-
-  if(fileName && strncmp("NoName",fileName,6) != 0)
+  else
   {
-    openFile(fileName,tableName,&(tpl->rows),&(tpl->cols),&(tpl->data));
-    tpl->own_data = 1;
-  } else {
-#ifndef COPY_ARRAYS
-    if (!table) {
-      ModelicaFormatError("Not enough memory for Table: %s",tableName);
+    if (!((0 < ipoType) & (ipoType < 3))) {
+      ModelicaFormatError("Unknown interpolation Type %d for Table %s from file %s!",ipoType,tableName,fileName);
     }
-    tpl->data = *(double**)((void*)&table);
-#else
-    tpl->data = (double*)malloc(size*sizeof(double));
-    if (!tpl->data) {
-      ModelicaFormatError("Not enough memory for Table: %s",tableName);
-    }
-    tpl->own_data = 1;
+    tpl->rows = tableDim1;
+    tpl->cols = tableDim2;
+    tpl->colWise = colWise;
+    tpl->ipoType = ipoType;
 
-    for(i=0;i<size;i++)
+    tpl->tablename = copyTableNameFile(tableName);
+    tpl->filename = copyTableNameFile(fileName);
+
+    if(fileName && strncmp("NoName",fileName,6) != 0)
     {
-      tpl->data[i] = table[i];
-    }
+      openFile(fileName,tableName,&(tpl->rows),&(tpl->cols),&(tpl->data));
+      tpl->own_data = 1;
+    } else {
+#ifndef COPY_ARRAYS
+      if (!table) {
+        ModelicaFormatError("Not enough memory for Table: %s",tableName);
+      }
+      tpl->data = *(double**)((void*)&table);
+#else
+      size_t i;
+      tpl->data = (double*)malloc(size*sizeof(double));
+      if (!tpl->data) {
+        ModelicaFormatError("Not enough memory for Table: %s",tableName);
+      }
+      tpl->own_data = 1;
+
+      for(i=0;i<size;i++)
+      {
+        tpl->data[i] = table[i];
+      }
 #endif
+}
   }
   /* check if table is valid */
   InterpolationTable2D_checkValidityOfData(tpl);
@@ -1255,27 +1266,25 @@ static void InterpolationTable2D_deinit(InterpolationTable2D *table)
 
 static double InterpolationTable2D_akime(double* tx, double* ty, size_t tlen, double x)
 {
-  double x1,x2,x3,y1,y2,y3,a,b,c,yd0,yd1,a1,a2,t,pd_li,pd_re,g0,g1,h0,h1,cden,t1,t2,t3;
-  double q[5];
+  double x1,x2,x3,y1,y2,y3,a,b,yd0,yd1,t,pd_li,pd_re,g0,g1,h0,h1,cden,t1,t2,t3;
   size_t index=0;
-  size_t pos=0;
-  size_t i=0;
   if (!(tlen>0)) {
     ModelicaFormatError("InterpolationTable2D_akime called with empty table!");
   }
   /* smooth interpolation with Akima Splines such that der(y) is continuous */
   if((tlen < 4) | (x < tx[2]) | (x > tx[tlen-3]))
   {
-  if(tlen < 3)
-  {
-    if(tlen < 2)
+    double c;
+    if(tlen < 3)
     {
-      return ty[0];
+      if(tlen < 2)
+      {
+        return ty[0];
+      }
+      /* Linear Interpolation */
+      return ((tx[1] - x)*ty[0] + (x - tx[0])*ty[1]) / (tx[1]-tx[0]);
     }
-    /* Linear Interpolation */
-    return ((tx[1] - x)*ty[0] + (x - tx[0])*ty[1]) / (tx[1]-tx[0]);
-  }
-  /* parable interpolation */
+    /* parable interpolation */
     if(x > tx[tlen-3])
     {
       x1 = tx[tlen-3];
@@ -1314,8 +1323,11 @@ static double InterpolationTable2D_akime(double* tx, double* ty, size_t tlen, do
   {
     if(index < tlen - 2)
     {
+      double a1, a2;
+      double q[5];
+      int i;
       /* calc */
-      pos = 0;
+      int pos = 0;
       for(i = -2; i < 3; ++i)
       {
         q[pos] = (ty[index+i]-ty[index+i-1])/(tx[index+i]-tx[index+i-1]);
@@ -1405,18 +1417,16 @@ static double InterpolationTable2D_akime(double* tx, double* ty, size_t tlen, do
 
 static double InterpolationTable2D_interpolate(InterpolationTable2D *table, double x1, double x2)
 {
-  size_t i, j, start, k, l, starte;
+  size_t i, j, start;
   double f_1, f_2;
   double tx[6];
   double ty[6];
-  double te[6];
   size_t tlen=0;
-  size_t telen=0;
   if(table->colWise)
   {
     double tmp = x1;
     x1 = x2;
-    x1 = tmp;
+    x2 = tmp;
   }
 
   /* if out of boundary, use first or last two points for x2 */
@@ -1487,6 +1497,8 @@ static double InterpolationTable2D_interpolate(InterpolationTable2D *table, doub
 
   if((table->ipoType == 2) && (table->rows != 3) && (table->cols != 3)  )
   {
+    size_t k, l, starte, telen;
+    double te[6];
     /* smooth interpolation with Akima Splines such that der(y) is continuous */
 
     /* interpolate rows */
@@ -1498,7 +1510,6 @@ static double InterpolationTable2D_interpolate(InterpolationTable2D *table, doub
       starte = 1;
     else
       starte = j-3;
-    telen=0;
     tlen=0;
     for(k = start; (k < table->rows) & (k < i+3); ++k)
     {

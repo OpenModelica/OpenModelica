@@ -207,7 +207,7 @@ static void XMLCALL endElement(void *userData, const char *name)
       xml->equationInfo[curIndex].vars[i] = var;
     }
     ((void**)userData)[1] = (void*) (curIndex+1);
-    
+
     return;
   }
   if(0 == strcmp("linear", name))
@@ -242,8 +242,6 @@ FUNCTION_INFO modelInfoXmlGetFunction(MODEL_DATA_XML* xml, size_t ix)
 
 void modelInfoXmlInit(MODEL_DATA_XML* xml)
 {
-  int done=0;
-  char buf[BUFSIZ] = {0};
   FILE* file;
   XML_Parser parser = NULL;
   void* userData[4] = {xml, (void*)1, (void*)0, (void*)0};
@@ -272,6 +270,8 @@ void modelInfoXmlInit(MODEL_DATA_XML* xml)
   XML_SetElementHandler(parser, startElement, endElement);
   if(!xml->infoXMLData)
   {
+    char buf[BUFSIZ] = {0};
+    int done;
     do {
       size_t len = fread(buf, 1, sizeof(buf), file);
       done = len < sizeof(buf);
@@ -328,7 +328,6 @@ EQUATION_INFO modelInfoXmlGetEquationIndexByProfileBlock(MODEL_DATA_XML* xml, si
 
 void freeModelInfoXml(MODEL_DATA_XML* xml)
 {
-  int i;
   if(xml->functionNames)
   {
     free(xml->functionNames);
@@ -336,6 +335,7 @@ void freeModelInfoXml(MODEL_DATA_XML* xml)
   }
   if(xml->equationInfo)
   {
+    int i;
     for(i=0;i<xml->nEquations;++i) {
       free(xml->equationInfo[i].vars);
       xml->equationInfo[i].vars = 0;

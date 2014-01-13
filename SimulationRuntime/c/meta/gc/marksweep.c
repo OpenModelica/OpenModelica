@@ -422,19 +422,19 @@ int compareSize (const void* a, const void* b)
 /* try to join all possible slots in the list! */
 mmc_GC_pages_type free_list_compact(mmc_GC_pages_type pages)
 {
-  size_t i = 0, j = 0, k = 0;
+  size_t i;
 
   for (i = 0; i < pages.current; i++)
   {
+    size_t j, k;
     size_t len = pages.start[i].free->szLarge.current;
     mmc_GC_free_slot_type* freeArr = (mmc_GC_free_slot_type*)malloc(sizeof(mmc_GC_free_slot_type) * len);
-    mmc_GC_free_slot_type slot = {0, 0}, joinSlot = {0, 0};
+    mmc_GC_free_slot_type joinSlot;
     memcpy(freeArr, pages.start[i].free->szLarge.start, len * sizeof(mmc_GC_free_slot_type));
     /* sort the array in the order of addresses */
     qsort (freeArr, len, sizeof(mmc_GC_free_slot_type), compareAddress);
     /* join the slots */
     k = 0;
-    slot = freeArr[0];
     joinSlot = freeArr[0];
     for (j = 1; j < len; j++)
     {

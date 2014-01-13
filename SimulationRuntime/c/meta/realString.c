@@ -30,6 +30,7 @@
  */
 
 #include "meta_modelica.h"
+#include <ctype.h>
 #include "dtoa.c"
 
 #define to_char(n) ((n) + '0')

@@ -65,8 +65,7 @@ static struct sigaction default_segv_action;
 
 void printStacktraceMessages() {
   int i,j=-1,k;
-  char **messages = (char **)NULL;
-  messages = backtrace_symbols(trace, trace_size);
+  char **messages = backtrace_symbols(trace, trace_size);
   fprintf(stderr,"[bt] Execution path:\n");
   for (i=trace_size_skip; i<trace_size; ++i)
   {

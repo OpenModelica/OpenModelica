@@ -131,7 +131,6 @@ mmc_GC_roots_type roots_decrease(mmc_GC_roots_type roots, size_t default_roots_s
 /* add pointers to roots */
 void mmc_GC_add_roots_fallback(modelica_metatype* p, int n, mmc_GC_local_state_type local_GC_state, const char* name)
 {
-  int i;
   /* init GC if is not already done
   if (!mmc_GC_state)
   {

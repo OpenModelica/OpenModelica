@@ -45,9 +45,8 @@ string array2string(double* array, int row, int col){
   int j=0;
   ostringstream retVal(ostringstream::out);
   retVal.precision(16);
-  int k;
   for(i=0;i<row;i++){
-    k = i;
+    int k = i;
     for(j=0;j<col-1;j++){
       retVal << array[k] << ",";
       k += row;
@@ -233,7 +232,7 @@ int linearize(DATA* data)
     double* matrixB = (double*)calloc(size_A*size_Inputs,sizeof(double));
     double* matrixC = (double*)calloc(size_Outputs*size_A,sizeof(double));
     double* matrixD = (double*)calloc(size_Outputs*size_Inputs,sizeof(double));
-    string strA, strB, strC, strD, strX, strU, filename, linearModel;
+    string strA, strB, strC, strD, strX, strU, filename;
 
     assertStreamPrint(0!=matrixA,"calloc failed");
     assertStreamPrint(0!=matrixB,"calloc failed");

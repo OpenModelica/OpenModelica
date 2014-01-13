@@ -217,11 +217,10 @@ void messageText(int type, int stream, int indentNext, char *msg, int subline, c
 
 void messageXML(int type, int stream, int indentNext, char *msg, int subline, const int *indexes)
 {
-  int i;
-
   printf("<message stream=\"%s\" type=\"%s\" text=\"", LOG_STREAM_NAME[stream], LOG_TYPE_DESC[type]);
   printEscapedXML(msg);
   if (indexes) {
+    int i;
     printf("\">\n");
     for (i=1; i<=*indexes; i++) {
       printf("<used index=\"%d\" />\n", indexes[i]);

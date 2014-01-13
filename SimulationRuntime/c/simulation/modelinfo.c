@@ -311,6 +311,11 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
   {
     warningStreamPrint(LOG_UTIL, 0, "time() failed: %s", strerror(errno));
     fclose(fout);
+#if defined(__MINGW32__) || defined(_MSC_VER) || defined(NO_PIPE)
+      fclose(plotCommands);
+#else
+      pclose(plotCommands);
+#endif
     return 1;
   }
   if(!strftime(buf, 250, "%Y-%m-%d %H:%M:%S", localtime(&t)))
