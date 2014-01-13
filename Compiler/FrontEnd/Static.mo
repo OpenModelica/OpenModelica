@@ -5471,22 +5471,12 @@ algorithm
 
     case (cache,env,{dim},_,impl,pre,_)
       equation
-        (cache,dim_exp,DAE.PROP(DAE.T_INTEGER(varLst = _),DAE.C_VAR()),_) = elabExp(cache,env, dim, impl,NONE(),true,pre,info);
+        (cache,dim_exp,DAE.PROP(DAE.T_INTEGER(varLst = _),c),_) = elabExp(cache,env,dim,impl,NONE(),true,pre,info);
         ty = Types.liftArrayListDims(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN(), DAE.DIM_UNKNOWN()});
         ety = Types.simplifyType(ty);
         call = Expression.makeBuiltinCall("identity", {dim_exp}, ety);
       then
-        (cache, call, DAE.PROP(ty,DAE.C_VAR()));
-
-    case (cache,env,{dim},_,impl,pre,_)
-      equation
-        true = Flags.getConfigBool(Flags.CHECK_MODEL);
-        (cache,dim_exp,DAE.PROP(type_ = DAE.T_INTEGER(varLst = _)),_) = elabExp(cache,env,dim,impl,NONE(),true,pre,info);
-        ty = Types.liftArrayListDims(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN(), DAE.DIM_UNKNOWN()});
-        ety = Types.simplifyType(ty);
-        call = Expression.makeBuiltinCall("identity", {dim_exp}, ety);
-      then
-        (cache, call, DAE.PROP(ty,DAE.C_VAR()));
+        (cache, call, DAE.PROP(ty,c));
 
   end matchcontinue;
 end elabBuiltinIdentity;
