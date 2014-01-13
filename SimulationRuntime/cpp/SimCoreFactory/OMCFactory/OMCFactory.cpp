@@ -32,7 +32,7 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
      po::options_description desc("Allowed options");
      desc.add_options()
           ("help", "produce help message")
-          ("runtime-libray,r", po::value<string>(),"path to cpp runtime libraries")
+          ("runtime-library,r", po::value<string>(),"path to cpp runtime libraries")
           ("Modelica-system-library,m",  po::value<string>(), "path to Modelica library")
           ("results-file,R", po::value<string>(),"name of results file")
           ("config-path,c", po::value< string >(),  "path to xml files")
@@ -54,10 +54,10 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
      double stepsize =  stoptime/vm["number-of-intervalls"].as<int>();
      double tollerance =vm["tollerance"].as<double>();
      string solver =  vm["solver"].as<string>();
-     if (vm.count("runtime-libray"))
+     if (vm.count("runtime-library"))
      {
-          //cout << "runtime library path set to " << vm["runtime-libray"].as<string>() << std::endl;
-          runtime_lib_path = vm["runtime-libray"].as<string>();
+          //cout << "runtime library path set to " << vm["runtime-library"].as<string>() << std::endl;
+          runtime_lib_path = vm["runtime-library"].as<string>();
 
      }
      else

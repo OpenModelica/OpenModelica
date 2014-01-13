@@ -14,7 +14,7 @@ template translateModel(SimCode simCode) ::=
   let()= textFile(simulationFunctionsHeaderFile(simCode,modelInfo.functions,literals), 'OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.h')
   let()= textFile(simulationFunctionsFile(simCode, modelInfo.functions,literals), 'OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.cpp')
   let()= textFile(simulationMakefile(target,simCode), '<%fileNamePrefix%>.makefile')
-  let()= textFile(simulationMainRunScrip(simCode), 'OMCpp<%fileNamePrefix%>Run<%simulationMainRunScripSuffix(simCode)%>')
+  let()= textFile(simulationMainRunScrip(simCode), '<%fileNamePrefix%><%simulationMainRunScripSuffix(simCode)%>')
   algloopfiles(listAppend(allEquations,initialEquations),simCode)
   // empty result of the top-level template .., only side effects
 end translateModel;
@@ -51,19 +51,10 @@ template simulationMainRunScrip(SimCode simCode)
 ::=
 match simCode
 case SIMCODE(makefileParams=MAKEFILE_PARAMS(__)) then
-  <<
-  <%simulationMainRunScrip2(makefileParams.platform,simCode)%>
->>
-end simulationMainRunScrip;
-
-
-template simulationMainRunScrip2(String platform, SimCode simCode)
- "Generates code for header file for simulation target."
-::=
-match platform
+(match makefileParams.platform
 case  "linux64"
 case  "linux32" then
-match simCode
+(match simCode
 case SIMCODE(modelInfo=MODELINFO(__),makefileParams=MAKEFILE_PARAMS(__),simulationSettingsOpt = SOME(settings as SIMULATION_SETTINGS(__))) then
 let start = settings.startTime
 let end = settings.stopTime
@@ -77,7 +68,7 @@ let home = makefileParams.omhome
 #!/bin/sh
 exec ./OMCpp<%fileNamePrefix%> -s <%start%> -e <%end%> -f <%stepsize%> -v <%intervals%> -y <%tol%> -i <%solver%> -r <%simulationLibDir(simulationCodeTarget(),simCode)%> -m <%moLib%> -R <%simulationResults(getRunningTestsuite(),simCode)%> $*
 >>
-end match
+end match)
 case  "win32"
 case  "win64" then
 match simCode
@@ -94,8 +85,8 @@ let home = makefileParams.omhome
 @echo off
 <%moLib%>/OMCpp<%fileNamePrefix%>.exe -s <%start%> -e <%end%> -f <%stepsize%> -v <%intervals%> -y <%tol%> -i <%solver%> -r <%simulationLibDir(simulationCodeTarget(),simCode)%> -m <%moLib%> -R <%simulationResults(getRunningTestsuite(),simCode)%>
 >>
-end match
-end simulationMainRunScrip2;
+end match)
+end simulationMainRunScrip;
 
 
 template simulationLibDir(String target, SimCode simCode)
@@ -122,7 +113,7 @@ match simCode
 case SIMCODE(modelInfo=MODELINFO(__),makefileParams=MAKEFILE_PARAMS(__),simulationSettingsOpt = SOME(settings as SIMULATION_SETTINGS(__))) then
 let results = if test then ""  else '<%makefileParams.compileDir%>/'
 <<
-<%results%><%lastIdentOfPath(modelInfo.name)%>_res.<%settings.outputFormat%>
+<%results%><%fileNamePrefix%>_res.<%settings.outputFormat%>
 >>
 end simulationResults;
 
@@ -132,25 +123,14 @@ template simulationMainRunScripSuffix(SimCode simCode)
  "Generates code for header file for simulation target."
 ::=
 match simCode
-case SIMCODE( makefileParams=MAKEFILE_PARAMS(__)) then
-<<<%simulationMainRunScripSuffix2(makefileParams.platform,simCode)%>>>
+case SIMCODE( makefileParams=params as MAKEFILE_PARAMS(__)) then
+  (match params.platform
+  case  "win32"
+  case  "win64" then
+  ".bat"
+  else
+  ".sh")
 end simulationMainRunScripSuffix;
-
-
-
-template simulationMainRunScripSuffix2(String platform,SimCode simCode)
- "Generates code for header file for simulation target."
-::=
-match platform
-case  "linux64"
-case  "linux32" then
-<<.sh>>
-case  "win32"
-case  "win64" then
-<<.bat>>
-end simulationMainRunScripSuffix2;
-
-
 
 template simulationMainFile(SimCode simCode)
  "Generates code for header file for simulation target."
@@ -417,7 +397,13 @@ OFILES=$(CPPFILES:.cpp=.o)
 
 <%lastIdentOfPath(modelInfo.name)%>: $(MAINFILE) $(OFILES)
 <%\t%>$(CXX) -shared -I. -o $(SYSTEMOBJ) $(OFILES) $(CPPFLAGS) $(LDSYTEMFLAGS) -lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath -lOMCppModelicaExternalC
-<%\t%>$(CXX) $(CPPFLAGS) -I. -o $(MAINOBJ) $(MAINFILE) $(LDMAINFLAGS)     
+<%\t%>$(CXX) $(CPPFLAGS) -I. -o $(MAINOBJ) $(MAINFILE) $(LDMAINFLAGS)
+<% if boolNot(stringEq(makefileParams.platform, "win32")) then
+  <<
+  <%\t%>chmod +x <%fileNamePrefix%>.sh
+  <%\t%>ln -s <%fileNamePrefix%>.sh <%fileNamePrefix%>
+  >>
+%>
 >>
 
 end simulationMakefile;
