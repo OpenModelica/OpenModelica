@@ -486,8 +486,8 @@ inline static int anyStringWorkCode(void* any, int ix, int id)
   }
   if (numslots>0 && ctor > 1) { /* RECORD */
     int base_id = globalId;
+    struct record_description* desc = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1));
     globalId += numslots-1;
-    struct record_description * desc = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1));
     for (i=2; i<=numslots; i++) {
       data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i));
       ix = anyStringWorkCode(data,ix,base_id+i-1);
