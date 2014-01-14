@@ -1814,9 +1814,23 @@ RML_BEGIN_LABEL(System__numProcessors)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__forkCall)
+RML_BEGIN_LABEL(System__launchParallelTasks)
 {
-  c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("Fork is not available when OpenModelica is compiled using RML"),NULL,0);
+  c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("Threads are not available when OpenModelica is compiled using RML"),NULL,0);
+  RML_TAILCALLK(rmlFC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__GC_5fenable)
+{
+  c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("Boehm GC (GC_enable) is not available when OpenModelica is compiled using RML"),NULL,0);
+  RML_TAILCALLK(rmlFC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__GC_5fdisable)
+{
+  c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("Boehm GC (GC_disable) is not available when OpenModelica is compiled using RML"),NULL,0);
   RML_TAILCALLK(rmlFC);
 }
 RML_END_LABEL

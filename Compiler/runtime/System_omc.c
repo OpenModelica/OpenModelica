@@ -302,12 +302,13 @@ extern void* System_strtok(const char *str0, const char *delimit)
   char *s;
   void *res = mmc_mk_nil();
   char *str = GC_strdup(str0);
-  s=strtok(str,delimit);
+  char *saveptr;
+  s=strtok_r(str,delimit,&saveptr);
   if (s == NULL) {
     return res;
   }
   res = mmc_mk_cons(mmc_mk_scon(s),res);
-  while ((s=strtok(NULL,delimit))) {
+  while ((s=strtok_r(NULL,delimit,&saveptr))) {
     res = mmc_mk_cons(mmc_mk_scon(s),res);
   }
   return listReverse(res);
@@ -710,45 +711,64 @@ extern int System_fileIsNewerThan(const char *file1, const char *file2)
   return res;
 }
 
+typedef void* voidp;
+
 /* Work in progress: Threading support in OMC */
 typedef struct thread_data {
   pthread_mutex_t mutex;
-  void (*fn)(void*,void*);
+  void* (*fn)(void*,void*);
   int fail;
   int current;
   int len;
   void **commands;
-  int *status;
+  void **status;
 } thread_data;
 
-static void* System_forkCallThread(void *in)
+static void* System_launchParallelTasksThread(void *in)
 {
   int exitstatus = 1;
   int n;
   thread_data *data = (thread_data*) in;
   while (1) {
+    int fail = 1;
     pthread_mutex_lock(&data->mutex);
     n = data->current++;
     pthread_mutex_unlock(&data->mutex);
     if (data->fail || data->current > data->len) break;
     MMC_TRY_TOP()
     threadData->mmc_thread_work_exit = threadData->mmc_jumper;
-    data->fn(threadData,data->commands[n]);
-    exitstatus = 0;
+    data->status[n] = data->fn(threadData,data->commands[n]);
+    fail = 0;
     MMC_CATCH_TOP()
-    data->status[n] = ! exitstatus;
+    if (fail) {
+      data->fail = 1;
+    }
   }
   return NULL;
 }
 
-extern void* System_forkCall(int numThreads, void *dataLst, void (*fn)(void*))
+static void* System_launchParallelTasksSerial(threadData_t *threadData, void *dataLst, void* (*fn)(void*,void*))
+{
+  void *result = mmc_mk_nil();
+  while (!listEmpty(dataLst)) {
+    result = mmc_mk_cons(fn(threadData, MMC_CAR(dataLst)),result);
+    dataLst = MMC_CDR(dataLst);
+  }
+  return listReverse(dataLst);
+}
+
+extern void* System_launchParallelTasks(threadData_t *threadData, int numThreads, void *dataLst, void* (*fn)(void*,void*))
 {
   int len = listLength(dataLst), i;
   void *commands[len];
-  int status[len], ids[len];
+  void *status[len];
+  int ids[len];
   void *result = mmc_mk_nil();
   pthread_t th[numThreads];
   thread_data data;
+  if (numThreads == 1 || len == 1) {
+    return System_launchParallelTasksSerial(threadData,dataLst,fn);
+  }
   pthread_mutex_init(&data.mutex,NULL);
   data.fn = fn;
   data.current = 0;
@@ -761,13 +781,16 @@ extern void* System_forkCall(int numThreads, void *dataLst, void (*fn)(void*))
   }
   numThreads = min(numThreads,len);
   for (i=0; i<numThreads; i++) {
-    GC_pthread_create(&th[i],NULL,System_forkCallThread,&data);
+    GC_pthread_create(&th[i],NULL,System_launchParallelTasksThread,&data);
   }
   for (i=0; i<numThreads; i++) {
     GC_pthread_join(th[i], NULL);
   }
+  if (data.fail) {
+    MMC_THROW_INTERNAL();
+  }
   for (i=len-1; i>=0; i--) {
-    result = mmc_mk_cons(mmc_mk_icon(status[i]), result);
+    result = mmc_mk_cons(status[i], result);
   }
   return result;
 }
@@ -783,7 +806,7 @@ void System_threadFail(threadData_t *threadData)
     fprintf(stderr, "System_threadFail called in something that is not a worker thread!\nThe application will now exit!\n");
     abort();
   }
-  longjmp(threadData->mmc_thread_work_exit,1);
+  longjmp(*threadData->mmc_thread_work_exit,1);
 }
 
 #ifdef __cplusplus

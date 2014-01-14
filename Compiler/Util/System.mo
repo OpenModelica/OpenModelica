@@ -1014,17 +1014,19 @@ public function numProcessors
   external "C" result = System_numProcessors() annotation(Library = {"omcruntime"});
 end numProcessors;
 
-public function forkCall "Takes a list of inputs and produces a list of Boolean (true if the function call was successful). The function is called by not using forks (experimental version using threads because fork doesn't play nice)."
+public function launchParallelTasks "Takes a list of inputs and produces a list of Boolean (true if the function call was successful). The function is called by not using forks (experimental version using threads because fork doesn't play nice). Only returns if all functions return."
   input Integer numThreads;
-  input list<Any> inData;
+  input list<AnyInput> inData;
   input ForkFunction func;
-  output list<Boolean> result;
+  output list<AnyOutput> result;
   partial function ForkFunction
-    input Any inData;
+    input AnyInput inData;
+    output AnyOutput outData;
   end ForkFunction;
-  replaceable type Any subtypeof Any;
-external "C" result = System_forkCall(numThreads, inData, func) annotation(Library = {"omcruntime"});
-end forkCall;
+  replaceable type AnyInput subtypeof Any;
+  replaceable type AnyOutput subtypeof Any;
+external "C" result = System_launchParallelTasks(OpenModelica.threadData(), numThreads, inData, func) annotation(Library = {"omcruntime"});
+end launchParallelTasks;
 
 public function exit "Exits the compiler at this point with the given exit status."
   input Integer status;
@@ -1043,5 +1045,13 @@ end getMemorySize;
 public function initGarbageCollector "this needs to be called first in Main.mo"
 external "C" System_initGarbageCollector() annotation(Library = {"omcruntime"});
 end initGarbageCollector;
+
+public function GC_enable
+external "C" annotation(Library = {"gc"});
+end GC_enable;
+
+public function GC_disable
+external "C" annotation(Library = {"gc"});
+end GC_disable;
 
 end System;

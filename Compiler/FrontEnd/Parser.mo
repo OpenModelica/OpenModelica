@@ -52,8 +52,11 @@ public function parse "Parse a mo-file"
   input String filename;
   input String encoding;
   output Absyn.Program outProgram;
+protected
+  String realpath;
 algorithm
-  outProgram := ParserExt.parse(System.realpath(filename), Util.testsuiteFriendly(System.realpath(filename)), Config.acceptedGrammar(), encoding, Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Config.getRunningTestsuite());
+  realpath := System.realpath(filename);
+  outProgram := ParserExt.parse(realpath, Util.testsuiteFriendly(System.realpath(filename)), Config.acceptedGrammar(), encoding, Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Config.getRunningTestsuite());
   /* Check that the program is not totally off the charts */
   _ := SCodeUtil.translateAbsyn2SCode(outProgram);
 end parse;

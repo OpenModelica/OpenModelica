@@ -916,6 +916,15 @@ external "builtin";
 annotation(preferredView="text");
 end loadFile;
 
+function loadFiles "load files (*.mo) and merges them with the loaded AST."
+  input String[:] fileNames;
+  input String encoding := "UTF-8";
+  input Integer numThreads := OpenModelica.Scripting.numProcessors();
+  output Boolean success;
+external "builtin";
+annotation(preferredView="text");
+end loadFiles;
+
 function loadString "Parses the data and merges the resulting AST with ithe
   loaded AST.
   If a filename is given, it is used to provide error-messages as if the string

@@ -338,7 +338,7 @@ algorithm
         checkOnLoadMessage(p1);
       then p1;
 
-    // faliling
+    // failing
     else
       equation
         Debug.fprint(Flags.FAILTRACE, "ClassLoader.loadFile failed: "+&name+&"\n");

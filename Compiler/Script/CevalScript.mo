@@ -840,6 +840,7 @@ algorithm
       list<Env.Frame> env;
       GlobalScript.SymbolTable newst,st_1,st;
       Absyn.Program p,pnew,newp,ptot;
+      list<Absyn.Program> newps;
       list<GlobalScript.InstantiatedClass> ic,ic_1;
       list<GlobalScript.Variable> iv;
       list<GlobalScript.CompiledCFunction> cf;
@@ -2091,6 +2092,25 @@ algorithm
     case (cache,env,"loadFile",_,st,_)
       then (cache,Values.BOOL(false),st);
 
+    case (cache,env,"loadFiles",{Values.ARRAY(valueLst=vals),Values.STRING(encoding),Values.INTEGER(i)},
+          (st as GlobalScript.SYMBOLTABLE(
+            ast = p,depends=aDep,instClsLst = ic,
+            lstVarVal = iv,compiledFunctions = cf,
+            loadedFiles = lf)),_)
+      equation
+        strs = List.mapMap(vals,ValuesUtil.extractValueString,Util.testsuiteFriendlyPath);
+        System.GC_disable();
+        newps = System.launchParallelTasks(i, List.map1(strs,Util.makeTuple,encoding), loadFileThread);
+        System.GC_enable();
+        newp = List.fold(newps, Interactive.updateProgram, p);
+      then
+        (Env.emptyCache(),Values.BOOL(true),GlobalScript.SYMBOLTABLE(newp,aDep,NONE(),ic,iv,cf,lf));
+
+    case (cache,env,"loadFiles",_,st,_)
+      equation
+        System.GC_enable();
+      then (cache,Values.BOOL(false),st);
+
     case (cache,env,"loadString",{Values.STRING(str),Values.STRING(name),Values.STRING(encoding)},
           (st as GlobalScript.SYMBOLTABLE(
             ast = p,depends=aDep,instClsLst = ic,
@@ -3124,7 +3144,7 @@ algorithm
     case (cache,env,"runScriptParallel",{Values.ARRAY(valueLst=vals),Values.INTEGER(i),Values.BOOL(true)},st,_)
       equation
         strs = List.map(vals,ValuesUtil.extractValueString);
-        blst = System.forkCall(i, List.map1(strs, Util.makeTuple, st), Interactive.evaluateFork);
+        blst = System.launchParallelTasks(i, List.map1(strs, Util.makeTuple, st), Interactive.evaluateFork);
         v = ValuesUtil.makeArray(List.map(blst, ValuesUtil.makeBoolean));
       then (cache,v,st);
 
@@ -7303,5 +7323,18 @@ algorithm
   b := List.exist1(str::strs,BaseHashSet.has,hs);
   // print(str +& ": " +&  boolString(b) +& "\n");
 end isChanged;
+
+protected function loadFileThread
+  input tuple<String,String> inFileEncoding;
+  output Absyn.Program program;
+algorithm
+  program := matchcontinue inFileEncoding
+    local
+      String filename,encoding;
+    case ((filename,encoding)) then ClassLoader.loadFile(filename,encoding);
+    /* TODO: Add locking mechanism to write to parent's error stream instead of stdout */
+    else equation print(Error.printMessagesStr()); then fail();
+  end matchcontinue;
+end loadFileThread;
 
 end CevalScript;

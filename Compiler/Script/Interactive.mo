@@ -195,8 +195,9 @@ public function evaluateFork
 "As evaluateToStdOut, but takes the inputs as a tuple of mos-script file and symbol table.
 As it is supposed to work in a thread without output, it also flushes the error-buffer since that will otherwise be lost to the void."
   input tuple<String,GlobalScript.SymbolTable> inTpl;
+  output Boolean b;
 algorithm
-  _ := matchcontinue inTpl
+  b := matchcontinue inTpl
     local
       String mosfile;
       GlobalScript.Statements statements;
@@ -210,11 +211,11 @@ algorithm
         statements = Parser.parseexp(mosfile);
         _ = evaluateToStdOut(statements,GlobalScript.SYMBOLTABLE(ast,GlobalScript.emptyDepends,explodedAst,{},{},{},{}),true);
         print(Error.printMessagesStr());
-      then ();
+      then true;
     else
       equation
         print(Error.printMessagesStr());
-      then fail();
+      then false;
   end matchcontinue;
 end evaluateFork;
 

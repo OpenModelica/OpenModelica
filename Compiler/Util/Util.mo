@@ -2535,45 +2535,15 @@ public function getAbsoluteDirectoryAndFile "author: x02lucpo
   splits the filepath in directory and filename
   (\"c:\\programs\\file.mo\") => (\"c:\\programs\",\"file.mo\")
   (\"..\\work\\file.mo\") => (\"c:\\openmodelica123\\work\", \"file.mo\")"
-  input String inString;
-  output String outString1;
-  output String outString2;
+  input String filename;
+  output String dirname;
+  output String basename;
+protected
+  String realpath;
 algorithm
-  (outString1,outString2):=
-  matchcontinue (inString)
-    local
-      String file,pd,path,res,file_1,file_path,dir_path,current_dir,name;
-      list<String> list_path_1,list_path;
-    case (file_1)
-      equation
-        file = replaceSlashWithPathDelimiter(file_1);
-        pd = System.pathDelimiter();
-        /* (pd_chr :: {}) = stringListStringChar(pd); */
-        (path :: {}) = stringSplitAtChar(file, pd) "same dir only filename as param" ;
-        res = System.pwd();
-      then
-        (res,path);
-    case (file_1)
-      equation
-        file = replaceSlashWithPathDelimiter(file_1);
-        pd = System.pathDelimiter();
-        /* (pd_chr :: {}) = stringListStringChar(pd); */
-        list_path = stringSplitAtChar(file, pd);
-        file_path = List.last(list_path);
-        list_path_1 = List.stripLast(list_path);
-        dir_path = stringDelimitList(list_path_1, pd);
-        current_dir = System.pwd();
-        0 = System.cd(dir_path);
-        res = System.pwd();
-        0 = System.cd(current_dir);
-      then
-        (res,file_path);
-    case (name)
-      equation
-        Debug.fprint(Flags.FAILTRACE, "- Util.getAbsoluteDirectoryAndFile failed");
-      then
-        fail();
-  end matchcontinue;
+  realpath := System.realpath(filename);
+  dirname := System.dirname(realpath);
+  basename := System.basename(realpath);
 end getAbsoluteDirectoryAndFile;
 
 

@@ -121,6 +121,7 @@ static inline void mmc_GC_add_roots(modelica_metatype* p, int n, mmc_GC_local_st
 #if defined(_MMC_USE_BOEHM_GC_) /* use the BOEHM Garbage collector */
 
 #define LARGE_CONFIG
+#define GC_REDIRECT_TO_LOCAL
 #include <gc.h>
 #include <pthread.h>
 /* gc.h doesn't include this by default; and the actual header redirects dlopen, which does not have an implementation */
@@ -133,7 +134,7 @@ int GC_pthread_join(pthread_t, void **);
 #define mmc_GC_collect(local_GC_state)
 
 /* Atomic pointers only work correctly if we use untagged pointers */
-#define mmc_alloc_words_atomic(nwords) GC_malloc_atomic((nwords) * sizeof(void*))
+#define mmc_alloc_words_atomic(nwords) GC_MALLOC_ATOMIC((nwords) * sizeof(void*))
 
 #else /* NO_GC */
 

@@ -32,7 +32,7 @@
 #include "ModelicaUtilities.h"
 #include "modelica_string.h"
 
-#define THREAD_LOCAL_ALLOC
+#define GC_REDIRECT_TO_LOCAL
 #include "gc.h"
 
 #include <stdio.h>
