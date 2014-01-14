@@ -7,9 +7,8 @@ SET(ENV{BOOST_ROOT} $ENV{OMDEV}"/lib/3rdParty/boost-1_49/")
 SET(BLAS_blas_LIBRARY $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/blas_win32.dll CACHE FILEPATH "Blas library")
 SET(LAPACK_lapack_LIBRARY  $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/lapack_win32.dll CACHE FILEPATH "Lapack library")
 SET(BLAS_DIRY "$ENV{OMDEV}/lib/3rdParty/Lapack/Lib/" CACHE LOCATION "where was yarp built?")
+SET(ENV{MINPACK_ROOT} ${CMAKE_SOURCE_DIR}"/../../3rdParty/CMinpack/install")
 
-########################################
-# TEST
 FIND_PATH(CMINPACK_INCLUDE_DIR cminpack.h
           HINTS "${CMAKE_SOURCE_DIR}/../../3rdParty/CMinpack/install"
           PATH_SUFFIXES include include/cminpack include/cminpack-1)
@@ -19,10 +18,11 @@ FIND_LIBRARY(CMINPACK_LIBRARY
              HINTS "${CMAKE_SOURCE_DIR}/../../3rdParty/CMinpack/install"
              PATH_SUFFIXES lib lib64)
              
-#include_directories(CMINPACK_INCLUDE_DIR)
-# END TEST
 
-########################################
+
+message(STATUS "Minpack librarie:")
+message(STATUS ${CMINPACK_INCLUDE_DIR})
+message(STATUS ${CMINPACK_LIBRARY})
 
 # Disable Optimization for RelWithDebInfo on Windows
 if (MSVC)
@@ -146,6 +146,7 @@ link_directories ( ${Boost_LIBRARY_DIRS} )
 include_directories (${Boost_INCLUDE_DIR})
 include_directories ("${PROJECT_SOURCE_DIR}")
 include_directories ("${PROJECT_BINARY_DIR}")
+include_directories ("${CMINPACK_INCLUDE_DIR}")
 
 message(STATUS "Boost dirs '${Boost_LIBRARY_DIRS}', '${Boost_INCLUDE_DIR}'")
 
