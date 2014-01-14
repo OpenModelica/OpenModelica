@@ -2519,17 +2519,28 @@ algorithm
   s := intString(tick());
 end tickStr;
 
-protected function replaceSlashWithPathDelimiter "author: x02lucpo
-  replace the / with the system-pathdelimiter.
-  On Windows must be \\ so that the function getAbsoluteDirectoryAndFile works"
-  input String str;
-  output String ret_string;
-protected
-  String pd;
+protected function replaceWindowsBackSlashWithPathDelimiter
+"@author: adrpo
+ replace \\ with path delimiter only in Windows!"
+  input String inPath;
+  output String outPath;
 algorithm
-  pd := System.pathDelimiter();
-  ret_string := System.stringReplace(str, "/", pd);
-end replaceSlashWithPathDelimiter;
+  outPath := matchcontinue(inPath)
+    local 
+      String pd;
+    
+    case _ 
+      equation
+        true = stringEq("Windows_NT", System.os());
+        pd = System.pathDelimiter();
+        outPath = System.stringReplace(inPath, "\\", pd);
+      then
+        outPath;
+    
+    else inPath;
+ 
+ end matchcontinue;
+end replaceWindowsBackSlashWithPathDelimiter;
 
 public function getAbsoluteDirectoryAndFile "author: x02lucpo
   splits the filepath in directory and filename
@@ -2544,8 +2555,8 @@ algorithm
   realpath := System.realpath(filename);
   dirname := System.dirname(realpath);
   basename := System.basename(realpath);
+  dirname := replaceWindowsBackSlashWithPathDelimiter(dirname);
 end getAbsoluteDirectoryAndFile;
-
 
 public function rawStringToInputString "author: x02lucpo
   replace the double-backslash with backslash"

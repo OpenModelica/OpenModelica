@@ -1088,9 +1088,9 @@ int scandir(const char* dirname,
     if (select == NULL || select(entry)) {
       struct dirent *entcopy = (struct dirent*)malloc(sizeof(struct dirent));
       if (count >= maxents) {
-  unsigned int oldmaxents = maxents;
-  maxents = maxents * 2;
-  reallocdirents(entries, oldmaxents, maxents);
+        unsigned int oldmaxents = maxents;
+        maxents = maxents * 2;
+        reallocdirents(entries, oldmaxents, maxents);
       }
       (*entries)[count] = entcopy;
       count++;
