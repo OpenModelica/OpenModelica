@@ -1414,22 +1414,13 @@ algorithm
         (cache,st,compileDir,executable,method_str,outputFormat_str,_,simflags,resultValues) = buildModel(cache,env,vals,st_1,msg);
 
         cit = winCitation();
-        ifcpp=Util.equal(Config.simCodeTarget(),"Cpp");
-        ifmsvc = Util.equal(Config.simulationCodeTarget(),"msvc");
+       
         exeDir=compileDir;
-        libDir= Settings.getInstallationDirectoryPath();
-        libDir = Util.if_(ifmsvc, libDir +& "/lib/omc/cpp/msvc",libDir+& "/lib/omc/cpp");
          (cache,simSettings) = calculateSimulationSettings(cache,env,vals,st_1,msg);
         SimCode.SIMULATION_SETTINGS(startTime=starttime,stopTime=stoptime,tolerance=tol,numberOfIntervals=interval,stepSize=stepsize,method = method_str, outputFormat = outputFormat_str)
            = simSettings;
-        configDir=Settings.getInstallationDirectoryPath() +& "/share/omc/runtime/cpp/";
         result_file = stringAppendList(List.consOnTrue(not Config.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
-        starttime_str = realString(starttime);
-        stoptime_str = realString(stoptime);
-        stepsize_str = realString(stepsize);
-        num_intervalls_str = intString(interval);
-        tol_str = realString(tol);
-        executableSuffixedExe = stringAppend(executable, System.getExeExt());
+        executableSuffixedExe = stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),System.platform()));
         logFile = stringAppend(executable,".log");
         // adrpo: log file is deleted by buildModel! do NOT DELTE IT AGAIN!
         // we should really have different log files for simulation/compilation!
@@ -1562,29 +1553,17 @@ algorithm
 
         (cache,st,compileDir,executable,method_str,outputFormat_str,_,simflags,resultValues) = buildModel(cache,env,vals,st_1,msg);
         cit = winCitation();
-        ifcpp=Util.equal(Config.simCodeTarget(),"Cpp");
-        ifmsvc = Util.equal(Config.simulationCodeTarget(),"msvc");
-        exeDir=Util.if_(ifcpp,Settings.getInstallationDirectoryPath() +& "/bin/" ,compileDir);
-        libDir= Settings.getInstallationDirectoryPath();
-        libDir = Util.if_(ifmsvc, libDir +& "/lib/omc/cpp/msvc",libDir+& "/lib/omc/cpp");
+        exeDir=compileDir;
         (cache,simSettings) = calculateSimulationSettings(cache,env,vals,st_1,msg); 
         SimCode.SIMULATION_SETTINGS(startTime=starttime,stopTime=stoptime,tolerance=tol,numberOfIntervals=interval,stepSize=stepsize,method = method_str, outputFormat = outputFormat_str) = simSettings;   
-        configDir=Settings.getInstallationDirectoryPath() +& "/share/omc/runtime/cpp/";
         result_file = stringAppendList(List.consOnTrue(not Config.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
-        starttime_str = realString(starttime);
-        stoptime_str = realString(stoptime);
-        stepsize_str = realString(stepsize);
-        num_intervalls_str = intString(interval);
-        tol_str = realString(tol);
-        simflags2=Util.if_(ifcpp,stringAppendList({"-r ",libDir," ","-m ",compileDir," ","-R ",result_file," ","-c ",configDir," ","-s ",starttime_str," ","-e ",stoptime_str," ","-f ", stepsize_str," ","-i ",method_str, " ","-v ",num_intervalls_str, " ","-y ",tol_str  }), simflags);
-        executable1=Util.if_(ifcpp,"OMCppSimulation",executable);
-        executableSuffixedExe = stringAppend(executable1, System.getExeExt());
-        logFile = stringAppend(executable1,".log");
+        executableSuffixedExe = stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),System.platform()));
+        logFile = stringAppend(executable,".log");
         // adrpo: log file is deleted by buildModel! do NOT DELTE IT AGAIN!
         // we should really have different log files for simulation/compilation!
         // as the buildModel log file will be deleted here and that gives less information to the user!
         0 = Debug.bcallret1(System.regularFileExists(logFile),System.removeFile,logFile,0);
-        sim_call = stringAppendList({cit,exeDir,executableSuffixedExe,cit," ",simflags2});
+        sim_call = stringAppendList({cit,exeDir,executableSuffixedExe,cit," ",simflags});
         System.realtimeTick(GlobalScript.RT_CLOCK_SIMULATE_SIMULATION);
         SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
         resI = System.systemCall(sim_call,logFile);
@@ -3176,6 +3155,24 @@ algorithm
 
  end matchcontinue;
 end cevalInteractiveFunctions2;
+
+
+protected function getSimulationExtension
+input String inString;
+input String inString2;
+output String outString;
+algorithm
+  outString:=match(inString,inString2)
+  local
+    case ("Cpp","WIN32")
+       then ".bat";
+    case ("Cpp","WIN64")
+       then ".bat";
+    else
+	then System.getExeExt(); 
+	end match;
+ end getSimulationExtension;    
+
 
 protected function sconstToString
 "@author: adrpo
