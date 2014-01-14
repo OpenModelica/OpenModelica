@@ -99,7 +99,7 @@ build/include/omc/gc_version.h: 3rdParty/gc-7.2/include/gc_version.h mkbuilddirs
 build/include/omc/gc_pthread_redirects.h: 3rdParty/gc-7.2/include/gc_pthread_redirects.h mkbuilddirs
 	cp -pPR $< $@
 3rdParty/gc-7.2/Makefile: 3rdParty/gc-7.2/Makefile.in 3rdParty/gc-7.2/configure
-	(cd 3rdParty/gc-7.2 && ./configure "--host=$(host)" $(LIBGC_EXTRA_CONFIGURATION) --disable-gcj-support --disable-java-finalization --enable-large-config CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS) -DTHREAD_LOCAL_ALLOC")
+	(cd 3rdParty/gc-7.2 && ./configure "--host=$(host)" $(LIBGC_EXTRA_CONFIGURATION) --disable-gcj-support --disable-java-finalization --enable-large-config CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS) -DLARGE_CONFIG -DTHREAD_LOCAL_ALLOC")
 
 3rdParty/Ipopt-3.11.6/Makefile: $(LAPACK_TARGET)
 	(cd 3rdParty/Ipopt-3.11.6 && ./configure --with-pic "CC=$(CC)" CXX="$(CXX)" F77="$(FC)" LDFLAGS=-L${abs_top_builddir}/build/lib/omc --with-lapack="$(LD_LAPACK)" --with-blas="$(LD_LAPACK)" --without-metis)

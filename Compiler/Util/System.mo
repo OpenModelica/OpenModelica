@@ -1054,4 +1054,17 @@ public function GC_disable
 external "C" annotation(Library = {"gc"});
 end GC_disable;
 
+public function GC_expand_hp
+  input Integer sz;
+  output Boolean success;
+external "C" success=GC_expand_hp_int(sz) annotation(Include="#define GC_expand_hp_int(sz) GC_expand_hp(sz)",Library = {"gc"});
+end GC_expand_hp;
+
+public function GC_set_free_space_divisor
+  input Integer divisor := 3;
+external "C" GC_set_free_space_divisor(divisor) annotation(Include="#define GC_set_free_space_divisor_int(divisor) GC_set_free_space_divisor(divisor)",Library = {"gc"},Documentation(info="<html>
+<p>NOTE: Do not set <3 as that seems to interfere with parallel threads.</p>
+</html>"));
+end GC_set_free_space_divisor;
+
 end System;

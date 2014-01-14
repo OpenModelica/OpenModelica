@@ -120,8 +120,6 @@ static inline void mmc_GC_add_roots(modelica_metatype* p, int n, mmc_GC_local_st
 
 #if defined(_MMC_USE_BOEHM_GC_) /* use the BOEHM Garbage collector */
 
-#define LARGE_CONFIG
-#define GC_REDIRECT_TO_LOCAL
 #include <gc.h>
 #include <pthread.h>
 /* gc.h doesn't include this by default; and the actual header redirects dlopen, which does not have an implementation */
