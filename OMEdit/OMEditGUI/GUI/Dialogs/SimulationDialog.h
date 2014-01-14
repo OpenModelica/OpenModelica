@@ -210,6 +210,7 @@ private:
   void saveSimulationOptions();
   void writeCompilationOutput(QString output, QColor color);
   void writeSimulationOutput(QString output, QColor color);
+  QList<QHash<QString, QString> > parseXMLLogOutput(QString output);
 public slots:
   void runSimulationExecutable(SimulationOptions simulationOptions);
   void browseModelSetupFile();
@@ -245,14 +246,16 @@ class SimulationOutputWidget : public QWidget
 public:
   SimulationOutputWidget(QString className, QString outputFile, bool showGeneratedFiles, MainWindow *pParent);
   QTabWidget* getGeneratedFilesTabWidget();
-  QPlainTextEdit* getSimulationOutputTextBox();
+  QTextBrowser* getSimulationOutputTextBrowser();
   QPlainTextEdit* getCompilationOutputTextBox();
   void addGeneratedFileTab(QString fileName);
 private:
   MainWindow *mpMainWindow;
   QTabWidget *mpGeneratedFilesTabWidget;
-  QPlainTextEdit *mpSimulationOutputTextBox;
+  QTextBrowser *mpSimulationOutputTextBrowser;
   QPlainTextEdit *mpCompilationOutputTextBox;
+public slots:
+  void openTransformationBrowser(QUrl url);
 };
 
 #endif // SIMULATIONDIALOG_H

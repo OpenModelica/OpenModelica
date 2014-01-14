@@ -601,21 +601,82 @@ void SimulationDialog::writeSimulationOutput(QString output, QColor color)
   {
     pSimulationOutputWidget->getGeneratedFilesTabWidget()->setTabEnabled(0, true);
     /* move the cursor down before adding to the logger. */
-    QTextCursor textCursor = pSimulationOutputWidget->getSimulationOutputTextBox()->textCursor();
+    QTextCursor textCursor = pSimulationOutputWidget->getSimulationOutputTextBrowser()->textCursor();
     textCursor.movePosition(QTextCursor::End);
-    pSimulationOutputWidget->getSimulationOutputTextBox()->setTextCursor(textCursor);
+    pSimulationOutputWidget->getSimulationOutputTextBrowser()->setTextCursor(textCursor);
     /* set the text color red */
-    QTextCharFormat charFormat = pSimulationOutputWidget->getSimulationOutputTextBox()->currentCharFormat();
+    QTextCharFormat charFormat = pSimulationOutputWidget->getSimulationOutputTextBrowser()->currentCharFormat();
     charFormat.setForeground(color);
-    pSimulationOutputWidget->getSimulationOutputTextBox()->setCurrentCharFormat(charFormat);
+    pSimulationOutputWidget->getSimulationOutputTextBrowser()->setCurrentCharFormat(charFormat);
     /* append the output */
-    pSimulationOutputWidget->getSimulationOutputTextBox()->insertPlainText(output);
+    QList<QHash<QString,QString> > messagesList = parseXMLLogOutput(output);
+    if (messagesList.isEmpty())
+    {
+      pSimulationOutputWidget->getSimulationOutputTextBrowser()->insertPlainText(output);
+    }
+    else
+    {
+      for (int i = 0 ; i < messagesList.size() ; i++)
+      {
+        QHash<QString, QString> messageHash = messagesList.at(i);
+        pSimulationOutputWidget->getSimulationOutputTextBrowser()->insertPlainText(messageHash.value("text"));
+        if (!messageHash.value("index").isEmpty())
+        {
+          pSimulationOutputWidget->getSimulationOutputTextBrowser()->insertHtml("&nbsp;<a href=\"file://" + mSimulationOptions.getOutputFileName() + "?path="+ mSimulationOptions.getWorkingDirectory() + "&index=" + messageHash.value("index") + "\">Debug more</a><br />");
+        }
+      }
+    }
     /* move the cursor */
     textCursor.movePosition(QTextCursor::End);
-    pSimulationOutputWidget->getSimulationOutputTextBox()->setTextCursor(textCursor);
+    pSimulationOutputWidget->getSimulationOutputTextBrowser()->setTextCursor(textCursor);
     /* make the compilation tab the current one */
     pSimulationOutputWidget->getGeneratedFilesTabWidget()->setCurrentIndex(0);
   }
+}
+
+/*!
+  Parses the xml output of simulation executable.
+  \param output - output string
+  \return list of messages
+  */
+/*
+  <message stream="stdout" type="info" text="output text">
+  <used index="2" />
+  </message>
+  */
+QList<QHash<QString,QString> > SimulationDialog::parseXMLLogOutput(QString output)
+{
+  QList<QHash<QString,QString> > messagesList;
+  QXmlStreamReader xmlReader(output);
+  while(!xmlReader.atEnd() && !xmlReader.hasError())
+  {
+    QHash<QString, QString> messageHash;
+    /* Read next element.*/
+    QXmlStreamReader::TokenType token = xmlReader.readNext();
+    /* If token is just StartDocument, we'll go to next.*/
+    if(token == QXmlStreamReader::StartDocument)
+      continue;
+    /* If token is StartElement, we'll see if we can read it.*/
+    if(token == QXmlStreamReader::StartElement && xmlReader.name() == "message")
+    {
+      QXmlStreamAttributes attributes = xmlReader.attributes();
+      /* Read the message attributes. */
+      messageHash["text"] = attributes.value("text").toString();
+      xmlReader.readNext();
+      while(!(xmlReader.tokenType() == QXmlStreamReader::EndElement && xmlReader.name() == "message"))
+      {
+        if(xmlReader.tokenType() == QXmlStreamReader::StartElement && xmlReader.name() == "used")
+        {
+          QXmlStreamAttributes attributes = xmlReader.attributes();
+          messageHash["index"] = attributes.value("index").toString();
+        }
+        xmlReader.readNext();
+      }
+      messagesList.append(messageHash);
+    }
+  }
+  xmlReader.clear();
+  return messagesList;
 }
 
 /*!
@@ -684,7 +745,7 @@ void SimulationDialog::runSimulationExecutable(SimulationOptions simulationOptio
   char buf[SOCKMAXLEN];
   server.listen(QHostAddress(QHostAddress::LocalHost));
   QStringList args(QString("-port=").append(QString::number(server.serverPort())));
-  args << simulationOptions.getSimulationFlags();
+  args << "-logFormat=xml" << simulationOptions.getSimulationFlags();
   // start the executable
   fileName = QString(simulationOptions.getWorkingDirectory()).append("/").append(fileName);
   fileName = fileName.replace("//", "/");
@@ -1171,9 +1232,12 @@ SimulationOutputWidget::SimulationOutputWidget(QString className, QString output
   mpGeneratedFilesTabWidget = new QTabWidget;
   mpGeneratedFilesTabWidget->setMovable(true);
   // Simulation Output TextBox
-  mpSimulationOutputTextBox = new QPlainTextEdit;
-  mpSimulationOutputTextBox->setFont(QFont(Helper::monospacedFontInfo.family()));
-  mpGeneratedFilesTabWidget->addTab(mpSimulationOutputTextBox, Helper::output);
+  mpSimulationOutputTextBrowser = new QTextBrowser;
+  mpSimulationOutputTextBrowser->setFont(QFont(Helper::monospacedFontInfo.family()));
+  mpSimulationOutputTextBrowser->setOpenLinks(false);
+  mpSimulationOutputTextBrowser->setOpenExternalLinks(false);
+  connect(mpSimulationOutputTextBrowser, SIGNAL(anchorClicked(QUrl)), SLOT(openTransformationBrowser(QUrl)));
+  mpGeneratedFilesTabWidget->addTab(mpSimulationOutputTextBrowser, Helper::output);
   mpGeneratedFilesTabWidget->setTabEnabled(0, false);
   // Compilation Output TextBox
   mpCompilationOutputTextBox = new QPlainTextEdit;
@@ -1252,9 +1316,9 @@ QTabWidget* SimulationOutputWidget::getGeneratedFilesTabWidget()
   Returns the pointer to mpSimulationOutputTextBox.
   \return the Simulation Output text box.
   */
-QPlainTextEdit* SimulationOutputWidget::getSimulationOutputTextBox()
+QTextBrowser* SimulationOutputWidget::getSimulationOutputTextBrowser()
 {
-  return mpSimulationOutputTextBox;
+  return mpSimulationOutputTextBrowser;
 }
 
 /*!
@@ -1277,5 +1341,32 @@ void SimulationOutputWidget::addGeneratedFileTab(QString fileName)
     pPlainTextEdit->setFont(QFont(Helper::monospacedFontInfo.family()));
     mpGeneratedFilesTabWidget->addTab(pPlainTextEdit, fileInfo.fileName());
     file.close();
+  }
+}
+
+/*!
+  Slot activated when a link is clicked from simulation output and anchorClicked signal of mpSimulationOutputTextBrowser is raised.\n
+  Parses the url and loads the TransformationsWidget with the used equation.
+  \param url - the url that is clicked
+  */
+/*
+  <a href="file://model_res.mat?path=working_directory&index=4></a>"
+  */
+void SimulationOutputWidget::openTransformationBrowser(QUrl url)
+{
+  /* read the file name */
+  QString fileName = QString(url.host()).remove(QRegExp("(_res.mat|_res.plt|_res.csv)"));
+  fileName.append("_info.xml");
+  /* read the file path */
+  QString filePath = url.queryItemValue("path");
+  filePath.append("/").append(fileName);
+  /* open the model_info.xml file */
+  if (QFileInfo(filePath).exists())
+  {
+    mpMainWindow->getTransformationsWidget()->showTransformations(filePath);
+    mpMainWindow->getTransformationsDockWidget()->show();
+    /* fetch the equation data */
+    mpMainWindow->getTransformationsWidget()->getEquationPage()->fetchEquationData(url.queryItemValue("index").toInt());
+    mpMainWindow->getTransformationsWidget()->nextPage();
   }
 }

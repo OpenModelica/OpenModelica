@@ -42,6 +42,18 @@ TransformationsWidget::TransformationsWidget(MainWindow *pMainWindow)
 {
   mpMainWindow = pMainWindow;
   mpInfoXMLFileHandler = 0;
+  // equation index
+  mpEquationIndexLabel = new Label(tr("Equation Index:"));
+  mpEquationIndexTextBox = new QLineEdit;
+  mpEquationIndexTextBox->setSizePolicy(QSizePolicy::Minimum, mpEquationIndexTextBox->sizePolicy().verticalPolicy());
+  mpSearchEquationIndexButton = new QPushButton(Helper::search);
+  connect(mpSearchEquationIndexButton, SIGNAL(clicked()), SLOT(searchEquationIndex()));
+  QHBoxLayout *pSearchEquationHorizontalLayout = new QHBoxLayout;
+  pSearchEquationHorizontalLayout->addWidget(mpEquationIndexLabel);
+  pSearchEquationHorizontalLayout->addWidget(mpEquationIndexTextBox);
+  pSearchEquationHorizontalLayout->addWidget(mpSearchEquationIndexButton);
+  QSpacerItem *pSpacerItem = new QSpacerItem(1, 1, QSizePolicy::Expanding, QSizePolicy::Fixed);
+  pSearchEquationHorizontalLayout->addSpacerItem(pSpacerItem);
   // create the previous button
   mpPreviousToolButton = new QToolButton;
   mpPreviousToolButton->setText(Helper::previous);
@@ -64,10 +76,11 @@ TransformationsWidget::TransformationsWidget(MainWindow *pMainWindow)
   /* set the layout */
   QGridLayout *pTopLayout = new QGridLayout;
   pTopLayout->setContentsMargins(0, 0, 0, 0);
-  pTopLayout->addWidget(mpPreviousToolButton, 0, 0);
-  pTopLayout->addWidget(mpNextToolButton, 0, 1);
-  pTopLayout->addWidget(mpInfoXMLFilePathLabel, 0, 2);
-  pTopLayout->addWidget(mpPagesWidget, 1, 0, 1, 3);
+  pTopLayout->addLayout(pSearchEquationHorizontalLayout, 0, 0, 1, 3);
+  pTopLayout->addWidget(mpPreviousToolButton, 1, 0);
+  pTopLayout->addWidget(mpNextToolButton, 1, 1);
+  pTopLayout->addWidget(mpInfoXMLFilePathLabel, 1, 2);
+  pTopLayout->addWidget(mpPagesWidget, 2, 0, 1, 3);
   QFrame *pTopFrame = new QFrame;
   pTopFrame->setLayout(pTopLayout);
   /* splitter */
@@ -116,6 +129,20 @@ void TransformationsWidget::showTransformations(QString fileName)
 void TransformationsWidget::showInfoText(QString message)
 {
   mpInfoTextBox->setPlainText(message);
+}
+
+void TransformationsWidget::searchEquationIndex()
+{
+  if (!mpInfoXMLFileHandler || mpEquationIndexTextBox->text().isEmpty())
+    return;
+
+  bool ok = false;
+  int index = mpEquationIndexTextBox->text().toInt(&ok);
+  if (!ok)
+    return;
+
+  mpEquationPage->fetchEquationData(index);
+  nextPage();
 }
 
 void TransformationsWidget::previousPage()

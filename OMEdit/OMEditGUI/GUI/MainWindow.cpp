@@ -308,6 +308,11 @@ TransformationsWidget* MainWindow::getTransformationsWidget()
   return mpTransformationsWidget;
 }
 
+QDockWidget* MainWindow::getTransformationsDockWidget()
+{
+  return mpTransformationsDockWidget;
+}
+
 SimulationDialog* MainWindow::getSimulationDialog()
 {
   return mpSimulationDialog;

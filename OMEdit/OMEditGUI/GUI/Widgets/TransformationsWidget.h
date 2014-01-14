@@ -57,6 +57,9 @@ public:
 private:
   MainWindow *mpMainWindow;
   MyHandler *mpInfoXMLFileHandler;
+  Label *mpEquationIndexLabel;
+  QLineEdit *mpEquationIndexTextBox;
+  QPushButton *mpSearchEquationIndexButton;
   QToolButton *mpPreviousToolButton;
   QToolButton *mpNextToolButton;
   Label *mpInfoXMLFilePathLabel;
@@ -65,6 +68,7 @@ private:
   EquationPage *mpEquationPage;
   QPlainTextEdit *mpInfoTextBox;
 public slots:
+  void searchEquationIndex();
   void previousPage();
   void nextPage();
 };

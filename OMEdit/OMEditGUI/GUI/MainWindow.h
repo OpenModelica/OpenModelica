@@ -97,6 +97,7 @@ public:
   VariablesWidget* getVariablesWidget();
   QDockWidget* getVariablesDockWidget();
   TransformationsWidget* getTransformationsWidget();
+  QDockWidget* getTransformationsDockWidget();
   SimulationDialog* getSimulationDialog();
   PlotWindowContainer* getPlotWindowContainer();
   //InteractiveSimulationTabWidget* getInteractiveSimulationTabWidget();
