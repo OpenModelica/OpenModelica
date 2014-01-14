@@ -46,6 +46,7 @@ TransformationsWidget::TransformationsWidget(MainWindow *pMainWindow)
   mpEquationIndexLabel = new Label(tr("Equation Index:"));
   mpEquationIndexTextBox = new QLineEdit;
   mpEquationIndexTextBox->setSizePolicy(QSizePolicy::Minimum, mpEquationIndexTextBox->sizePolicy().verticalPolicy());
+  connect(mpEquationIndexTextBox, SIGNAL(returnPressed()), SLOT(searchEquationIndex()));
   mpSearchEquationIndexButton = new QPushButton(Helper::search);
   connect(mpSearchEquationIndexButton, SIGNAL(clicked()), SLOT(searchEquationIndex()));
   QHBoxLayout *pSearchEquationHorizontalLayout = new QHBoxLayout;
