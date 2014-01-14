@@ -3169,8 +3169,8 @@ algorithm
     case ("Cpp","WIN64")
        then ".bat";
     else
-	then System.getExeExt(); 
-	end match;
+  then System.getExeExt(); 
+  end match;
  end getSimulationExtension;    
 
 
