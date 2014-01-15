@@ -96,7 +96,7 @@ goto rule ## func ## Ex; }}
   #define token_to_scon(tok) mk_scon((char*)tok->getText(tok)->chars)
   #define NYI(void) fprintf(stderr, "NYI \%s \%s:\%d\n", __FUNCTION__, __FILE__, __LINE__); exit(1);
 
-  #define PARSER_INFO(start) ((void*) Absyn__INFO(ModelicaParser_filename_RML, mk_bcon(ModelicaParser_readonly), mk_icon(start->line), mk_icon(start->line == 1 ? start->charPosition+2 : start->charPosition+1), mk_icon(LT(1)->line), mk_icon(LT(1)->charPosition+1), Absyn__TIMESTAMP(mk_rcon(0),mk_rcon(0))))
+  #define PARSER_INFO(start) ((void*) Absyn__INFO(ModelicaParser_filename_RML, mk_bcon(ModelicaParser_readonly), mk_icon(start->line), mk_icon(start->line == 1 ? start->charPosition+2 : start->charPosition+1), mk_icon(LT(1)->line), mk_icon(LT(1)->charPosition+1), ModelicaParser_timeStamp))
   typedef struct fileinfo_struct {
     int line1;
     int line2;
@@ -109,11 +109,6 @@ goto rule ## func ## Ex; }}
 {
   parser_members members;
   void* mk_box_eat_all(int ix, ...) {return NULL;}
-  double getCurrentTime(void) {             
-    time_t t;
-    time( &t );
-    return difftime(t, 0);
-  }
 }
 
 /*------------------------------------------------------------------
@@ -126,7 +121,7 @@ stored_definition returns [void* ast]
   cl=class_definition_list?
   EOF
     {
-      ast = Absyn__PROGRAM(or_nil(cl), within ? within : Absyn__TOP, Absyn__TIMESTAMP(mk_rcon(0.0), mk_rcon(getCurrentTime())));
+      ast = Absyn__PROGRAM(or_nil(cl), within ? within : Absyn__TOP, ModelicaParser_timeStamp);
     }
   ;
 

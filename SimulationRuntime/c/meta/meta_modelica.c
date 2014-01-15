@@ -852,10 +852,12 @@ void* boxptr_valueHashMod(threadData_t *threadData,void *p, void *mod)
 }
 
 pthread_once_t mmc_init_once = PTHREAD_ONCE_INIT;
-void mmc_init()
+void mmc_init(int withgc)
 {
   pthread_key_create(&mmc_thread_data_key,NULL);
   init_metamodelica_segv_handler();
-  mmc_GC_init(mmc_GC_settings_default);
+  if (withgc) {
+    mmc_GC_init(mmc_GC_settings_default);
+  }
   MMC_INIT_STACK_OVERFLOW();
 }

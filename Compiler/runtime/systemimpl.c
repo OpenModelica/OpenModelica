@@ -2563,6 +2563,13 @@ int SystemImpl__rename(const char *source, const char *dest)
   return 0==rename(source,dest);
 }
 
+char* SystemImpl__ctime(double time)
+{
+  char buf[64] = {0}; /* needs to be >=26 char */
+  time_t t = (time_t) time;
+  return GC_strdup(ctime_r(&t,buf));
+}
+
 #ifdef __cplusplus
 }
 #endif

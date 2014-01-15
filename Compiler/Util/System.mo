@@ -1067,4 +1067,12 @@ external "C" GC_set_free_space_divisor(divisor) annotation(Include="#define GC_s
 </html>"));
 end GC_set_free_space_divisor;
 
+public function ctime
+  input Real t;
+  output String str;
+external "C" str=SystemImpl__ctime(t) annotation(Library = {"omcruntime"},Documentation(info="<html>
+<p>Like <a href=\"http://linux.die.net/man/3/ctime\">ctime(3)</a>, except the input is of type real because of limited precision of Integer.</p>
+</html>"));
+end ctime;
+
 end System;

@@ -701,7 +701,7 @@ public function getInitialFunctions
 algorithm
   initialProgram := matchcontinue ()
     local
-      String fileModelica,fileMetaModelica,fileParModelica,initialFunctionStr,initialFunctionStrMM;
+      String fileModelica,fileMetaModelica,fileParModelica;
       list<tuple<Integer,Absyn.Program>> assocLst;
       list<Absyn.Class> classes,classes1,classes2;
     case ()
@@ -720,10 +720,8 @@ algorithm
         fileMetaModelica = Settings.getInstallationDirectoryPath() +& "/lib/omc/MetaModelicaBuiltin.mo";
         Error.assertionOrAddSourceMessage(System.regularFileExists(fileModelica),Error.FILE_NOT_FOUND_ERROR,{fileModelica},Absyn.dummyInfo);
         Error.assertionOrAddSourceMessage(System.regularFileExists(fileMetaModelica),Error.FILE_NOT_FOUND_ERROR,{fileMetaModelica},Absyn.dummyInfo);
-        initialFunctionStr = System.readFile(fileModelica);
-        initialFunctionStrMM = System.readFile(fileMetaModelica);
-        Absyn.PROGRAM(classes=classes1,within_=Absyn.TOP()) = Parser.parsebuiltinstring(initialFunctionStr, fileModelica);
-        Absyn.PROGRAM(classes=classes2,within_=Absyn.TOP()) = Parser.parsebuiltinstring(initialFunctionStrMM, fileMetaModelica);
+        Absyn.PROGRAM(classes=classes1,within_=Absyn.TOP()) = Parser.parsebuiltin(fileModelica,"UTF-8");
+        Absyn.PROGRAM(classes=classes2,within_=Absyn.TOP()) = Parser.parsebuiltin(fileMetaModelica,"UTF-8");
         classes = listAppend(classes1,classes2);
         initialProgram = Absyn.PROGRAM(classes,Absyn.TOP(),Absyn.dummyTimeStamp);
         assocLst = getGlobalRoot(Global.builtinIndex);
@@ -736,10 +734,8 @@ algorithm
         fileParModelica = Settings.getInstallationDirectoryPath() +& "/lib/omc/ParModelicaBuiltin.mo";
         Error.assertionOrAddSourceMessage(System.regularFileExists(fileModelica),Error.FILE_NOT_FOUND_ERROR,{fileModelica},Absyn.dummyInfo);
         Error.assertionOrAddSourceMessage(System.regularFileExists(fileParModelica),Error.FILE_NOT_FOUND_ERROR,{fileParModelica},Absyn.dummyInfo);
-        initialFunctionStr = System.readFile(fileModelica);
-        initialFunctionStrMM = System.readFile(fileParModelica);
-        Absyn.PROGRAM(classes=classes1,within_=Absyn.TOP()) = Parser.parsebuiltinstring(initialFunctionStr, fileModelica);
-        Absyn.PROGRAM(classes=classes2,within_=Absyn.TOP()) = Parser.parsebuiltinstring(initialFunctionStrMM, fileParModelica);
+        Absyn.PROGRAM(classes=classes1,within_=Absyn.TOP()) = Parser.parsebuiltin(fileModelica,"UTF-8");
+        Absyn.PROGRAM(classes=classes2,within_=Absyn.TOP()) = Parser.parsebuiltin(fileParModelica,"UTF-8");
         classes = listAppend(classes1,classes2);
         initialProgram = Absyn.PROGRAM(classes,Absyn.TOP(),Absyn.dummyTimeStamp);
         assocLst = getGlobalRoot(Global.builtinIndex);
@@ -750,8 +746,7 @@ algorithm
         true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.MODELICA) or intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.OPTIMICA);
         fileModelica = Settings.getInstallationDirectoryPath() +& "/lib/omc/ModelicaBuiltin.mo";
         Error.assertionOrAddSourceMessage(System.regularFileExists(fileModelica),Error.FILE_NOT_FOUND_ERROR,{fileModelica},Absyn.dummyInfo);
-        initialFunctionStr = System.readFile(fileModelica);
-        initialProgram = Parser.parsebuiltinstring(initialFunctionStr, fileModelica);
+        initialProgram = Parser.parsebuiltin(fileModelica,"UTF-8");
         assocLst = getGlobalRoot(Global.builtinIndex);
         setGlobalRoot(Global.builtinIndex, (Flags.MODELICA,initialProgram)::assocLst);
       then initialProgram;

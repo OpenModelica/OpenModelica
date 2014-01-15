@@ -720,7 +720,7 @@ public constant Message META_STRICT_RML_MATCH_IN_OUT = MESSAGE(5016, TRANSLATION
 public constant Message META_NONE_CREF = MESSAGE(5017, TRANSLATION(), ERROR(),
   Util.gettext("NONE is not acceptable syntax. Use NONE() instead."));
 public constant Message META_INVALID_PATTERN_NAMED_FIELD = MESSAGE(5018, TRANSLATION(), ERROR(),
-  Util.gettext("Invalid named fields: %s"));
+  Util.gettext("Invalid named fields: %s. Valid field names: %s."));
 public constant Message META_INVALID_LOCAL_ELEMENT = MESSAGE(5019, TRANSLATION(), ERROR(),
   Util.gettext("Only components without direction are allowed in local declarations, got: %s"));
 public constant Message META_INVALID_COMPLEX_TYPE = MESSAGE(5020, TRANSLATION(), ERROR(),

@@ -1873,3 +1873,10 @@ RML_BEGIN_LABEL(System__rename)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(System__ctime)
+{
+  rmlA0 = mk_scon(SystemImpl__ctime(rml_prim_get_real(rmlA0)));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL

@@ -2669,6 +2669,16 @@ annotation(preferredView = "text", Documentation(info = "<html>
 </html>"));
 end setDocumentationAnnotation;
 
+function getTimeStamp
+  input TypeName cl;
+  output Real timeStamp;
+  output String timeStampAsString;
+external "builtin";
+annotation(Documentation(info = "<html>
+<p>The given class corresponds to a file (or a buffer), with a given last time this file was modified at the time of loading this file. The timestamp along with its String representation is returned.</p>
+</html>"));
+end getTimeStamp;
+
 function typeNameString
   input TypeName cl;
   output String out;

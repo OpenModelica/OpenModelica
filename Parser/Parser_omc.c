@@ -30,6 +30,7 @@
 
 #include "meta_modelica.h"
 #include "rml_compatibility.h"
+#include "OpenModelicaBootstrappingHeader.h"
 #include "parse.c"
 
 void* ParserExt_parse(const char* filename, const char* infoname, int acceptedGrammer, int langStd, const char* encoding, int runningTestsuite)

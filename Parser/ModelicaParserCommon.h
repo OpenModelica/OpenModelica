@@ -43,6 +43,7 @@ extern pthread_key_t modelicaParserKey;
 
 #define omc_first_comment ((parser_members*)pthread_getspecific(modelicaParserKey))->first_comment
 #define ModelicaParser_filename_RML ((parser_members*)pthread_getspecific(modelicaParserKey))->filename_RML
+#define ModelicaParser_timeStamp ((parser_members*)pthread_getspecific(modelicaParserKey))->timestamp
 #define ModelicaParser_filename_C ((parser_members*)pthread_getspecific(modelicaParserKey))->filename_C
 #define ModelicaParser_filename_C_testsuiteFriendly ((parser_members*)pthread_getspecific(modelicaParserKey))->filename_C_testsuiteFriendly
 #define ModelicaParser_readonly ((parser_members*)pthread_getspecific(modelicaParserKey))->readonly
@@ -56,6 +57,7 @@ typedef struct antlr_members_struct {
   const char *encoding;
   long first_comment;
   void* filename_RML;
+  void* timestamp;
   const char* filename_C;
   const char* filename_C_testsuiteFriendly;
   int readonly;

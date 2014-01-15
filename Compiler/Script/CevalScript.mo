@@ -2232,6 +2232,16 @@ algorithm
       then
         (cache,Values.BOOL(false),st);
 
+    case (cache,env,"getTimeStamp",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      equation
+        Absyn.CLASS(info=Absyn.INFO(buildTimes=Absyn.TIMESTAMP(lastEditTime=r))) = Interactive.getPathedClassInProgram(classpath,p);
+        str = System.ctime(r);
+      then (cache,Values.TUPLE({Values.REAL(r),Values.STRING(str)}),st);
+
+    case (cache,env,"getTimeStamp",_,st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      then
+        (cache,Values.TUPLE({Values.REAL(0.0),Values.STRING("")}),st);
+
     case (cache,env,"isPackage",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
       equation
         b = Interactive.isPackage(classpath, p);

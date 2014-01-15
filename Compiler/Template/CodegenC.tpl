@@ -481,7 +481,7 @@ template simulationFile(SimCode simCode, String guid)
     let mainBody =
       <<
       <%symbolName(modelNamePrefixStr,"setupDataStruc")%>(&simulation_data);
-      <%if boolOr(boolAnd(Flags.isSet(HPCOM), boolNot(stringEq(getConfigString(HPCOM_CODE),"pthreads_spin"))),stringEq(Config.simCodeTarget(),"JavaScript")) then 'omc_alloc_interface = omc_alloc_interface_pooled;<%\n%>'%>omc_alloc_interface.init();
+      <%if boolOr(boolAnd(Flags.isSet(HPCOM), boolNot(stringEq(getConfigString(HPCOM_CODE),"pthreads_spin"))),stringEq(Config.simCodeTarget(),"JavaScript")) then 'MMC_INIT(0);omc_alloc_interface = omc_alloc_interface_pooled;<%\n%>' else "MMC_INIT(1);"%>omc_alloc_interface.init();
       res = _main_SimulationRuntime(argc, argv, &simulation_data);
       >>
     <<
@@ -616,7 +616,6 @@ template simulationFile(SimCode simCode, String guid)
     {
       int res;
       DATA simulation_data;
-      MMC_INIT();
       <%mainTop(mainBody,"https://trac.openmodelica.org/OpenModelica/newticket")%>
       return res;
     }

@@ -572,8 +572,8 @@ void mmc_catch_dummy_fn();
 
 extern pthread_key_t mmc_thread_data_key;
 extern pthread_once_t mmc_init_once;
-extern void mmc_init();
-#define MMC_INIT() pthread_once(&mmc_init_once,mmc_init)
+extern void mmc_init(int withgc);
+#define MMC_INIT(X) pthread_once(&mmc_init_once,mmc_init)
 #define MMC_TRY_INTERNAL(X) { jmp_buf new_mmc_jumper, *old_jumper = threadData->X; threadData->X = &new_mmc_jumper; if (setjmp(new_mmc_jumper) == 0) {
 #define MMC_TRY() { threadData_t *threadData = pthread_getspecific(mmc_thread_data_key); MMC_TRY_INTERNAL(mmc_jumper)
 

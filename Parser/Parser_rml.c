@@ -36,6 +36,7 @@ extern "C" {
 }
 #endif  
 
+#include "Absyn.h"
 #include "parse.c"
 
 #ifdef __cplusplusend

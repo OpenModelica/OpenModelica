@@ -22,7 +22,7 @@
  * This program is distributed WITHOUT ANY WARRANTY; without
  * even the implied warranty of  MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
  * OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
@@ -142,7 +142,7 @@ end Info;
 uniontype TimeStamp
  record TIMESTAMP
    Real lastBuildTime "Last Build Time";
-   Real lastEditTime "Last Edit Time";
+   Real lastEditTime "Last Edit Time; this is the same as mtime in stat(2)";
   end TIMESTAMP;
 end TimeStamp;
 

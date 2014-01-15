@@ -134,20 +134,22 @@ end findFieldExpInList;
 protected function checkInvalidPatternNamedArgs
 "Checks that there are no invalid named arguments in the pattern"
   input list<Absyn.NamedArg> args;
+  input list<String> fieldNameList;
   input Util.Status status;
   input Absyn.Info info;
   output Util.Status outStatus;
 algorithm
-  outStatus := match (args,status,info)
+  outStatus := match (args,fieldNameList,status,info)
     local
       list<String> argsNames;
-      String str1;
-    case ({},_,_) then status;
-    case (_,_,_)
+      String str1,str2;
+    case ({},_,_,_) then status;
+    case (_,_,_,_)
       equation
         (argsNames,_) = Absyn.getNamedFuncArgNamesAndValues(args);
         str1 = stringDelimitList(argsNames, ",");
-        Error.addSourceMessage(Error.META_INVALID_PATTERN_NAMED_FIELD, {str1}, info);
+        str2 = stringDelimitList(fieldNameList, ",");
+        Error.addSourceMessage(Error.META_INVALID_PATTERN_NAMED_FIELD, {str1,str2}, info);
       then Util.FAILURE();
   end match;
 end checkInvalidPatternNamedArgs;
@@ -398,7 +400,7 @@ algorithm
         checkMissingArgs(fqPath,numPosArgs,fieldNamesNamed,listLength(namedArgList),info);
         (funcArgsNamedFixed,invalidArgs) = generatePositionalArgs(fieldNamesNamed,namedArgList,{});
         funcArgs = listAppend(funcArgs,funcArgsNamedFixed);
-        Util.SUCCESS() = checkInvalidPatternNamedArgs(invalidArgs,Util.SUCCESS(),info);
+        Util.SUCCESS() = checkInvalidPatternNamedArgs(invalidArgs,fieldNameList,Util.SUCCESS(),info);
         (cache,patterns) = elabPatternTuple(cache,env,funcArgs,fieldTypeList,info,lhs);
       then (cache,DAE.PAT_CALL(fqPath,index,patterns,knownSingleton));
 
@@ -419,7 +421,7 @@ algorithm
 
         (funcArgsNamedFixed,invalidArgs) = generatePositionalArgs(fieldNamesNamed,namedArgList,{});
         funcArgs = listAppend(funcArgs,funcArgsNamedFixed);
-        Util.SUCCESS() = checkInvalidPatternNamedArgs(invalidArgs,Util.SUCCESS(),info);
+        Util.SUCCESS() = checkInvalidPatternNamedArgs(invalidArgs,fieldNameList,Util.SUCCESS(),info);
         (cache,patterns) = elabPatternTuple(cache,env,funcArgs,fieldTypeList,info,lhs);
         namedPatterns = List.thread3Tuple(patterns, fieldNameList, List.map(fieldTypeList,Types.simplifyType));
         namedPatterns = List.filter(namedPatterns, filterEmptyPattern);

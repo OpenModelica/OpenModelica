@@ -52,11 +52,8 @@ public function parse "Parse a mo-file"
   input String filename;
   input String encoding;
   output Absyn.Program outProgram;
-protected
-  String realpath;
 algorithm
-  realpath := System.realpath(filename);
-  outProgram := ParserExt.parse(realpath, Util.testsuiteFriendly(System.realpath(filename)), Config.acceptedGrammar(), encoding, Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Config.getRunningTestsuite());
+  outProgram := parsebuiltin(filename,encoding);
   /* Check that the program is not totally off the charts */
   _ := SCodeUtil.translateAbsyn2SCode(outProgram);
 end parse;
@@ -73,19 +70,22 @@ public function parsestring "Parse a string as if it were a stored definition"
   input String infoFilename := "<interactive>";
   output Absyn.Program outProgram;
 algorithm
-  outProgram := parsebuiltinstring(str,infoFilename);
+  outProgram := ParserExt.parsestring(str, infoFilename, Config.acceptedGrammar(), Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Config.getRunningTestsuite());
   /* Check that the program is not totally off the charts */
   _ := SCodeUtil.translateAbsyn2SCode(outProgram);
 end parsestring;
 
-public function parsebuiltinstring "Parse a string as if it were a stored definition. Skips the SCode check to avoid infinite loops for ModelicaBuiltin.mo."
-  input String str;
-  input String infoFilename := "<interactive>";
+public function parsebuiltin "Like parse, but skips the SCode check to avoid infinite loops for ModelicaBuiltin.mo."
+  input String filename;
+  input String encoding;
   output Absyn.Program outProgram;
   annotation(__OpenModelica_EarlyInline = true);
+protected
+  String realpath;
 algorithm
-  outProgram := ParserExt.parsestring(str,infoFilename, Config.acceptedGrammar(), Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Config.getRunningTestsuite());
-end parsebuiltinstring;
+  realpath := System.realpath(filename);
+  outProgram := ParserExt.parse(realpath, Util.testsuiteFriendly(realpath), Config.acceptedGrammar(), encoding, Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Config.getRunningTestsuite());
+end parsebuiltin;
 
 public function parsestringexp "Parse a string as if it was a sequence of statements"
   input String str;
