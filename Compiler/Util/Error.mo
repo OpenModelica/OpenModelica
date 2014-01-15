@@ -613,6 +613,10 @@ public constant Message SLICE_ASSIGN_NON_ARRAY = MESSAGE(226, SCRIPTING(), ERROR
   Util.gettext("Cannot assign slice to non-initialized array %s."));
 public constant Message EXTERNAL_ARG_WRONG_EXP = MESSAGE(227, TRANSLATION(), ERROR(),
   Util.gettext("Expression %s cannot be an external argument. Only simple identifiers, constant scalars, and size-expressions are allowed."));
+public constant Message OPERATOR_FUNCTION_NOT_EXPECTED = MESSAGE(228, TRANSLATION(), ERROR(),
+  Util.gettext("Only classes of type 'operator record' may contain elements of type 'operator function'; %s was found in a class that has restriction '%s'."));
+public constant Message OPERATOR_FUNCTION_EXPECTED = MESSAGE(229, TRANSLATION(), ERROR(),
+  Util.gettext("'operator record' classes may only contain elements of type 'operator function'; %s has restriction '%s'."));
 
 public constant Message UNBOUND_PARAMETER_WITH_START_VALUE_WARNING = MESSAGE(499, TRANSLATION(), WARNING(),
   Util.gettext("Parameter %s has no value, and is fixed during initialization (fixed=true), using available start value (start=%s) as default value."));

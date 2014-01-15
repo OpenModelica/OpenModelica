@@ -54,6 +54,7 @@ protected import List;
 protected import NFSCodeCheck;
 protected import NFSCodeFlattenRedeclare;
 protected import NFSCodeLookup;
+protected import SCodeDump;
 protected import System;
 protected import Util;
 
@@ -851,7 +852,7 @@ algorithm
       SCode.Ident name;
       SCode.Prefixes prefixes;
       SCode.Restriction res;
-      String errorMessage;
+      String str;
       list<Extends> exts;
       list<NFSCodeEnv.Redeclaration> redecls;
       NFSCodeFlattenRedeclare.Replacements repls;
@@ -909,11 +910,9 @@ algorithm
     //operators in any other class type are error.
     case (SCode.CLASS(name = name, restriction=SCode.R_OPERATOR(), info = info), _, _, _)
       equation
-        //mahge: FIX HERE.
-        errorMessage = "operators are allowed in OPERATOR RECORD only. Error on:" +& name;
-        Error.addSourceMessage(Error.LOOKUP_ERROR, {errorMessage, name}, info);
-      then
-        fail();
+        str = SCodeDump.restrString(inClassRestriction);
+        Error.addSourceMessage(Error.OPERATOR_FUNCTION_NOT_EXPECTED, {name, str}, info);
+      then fail();
 
     //operator functions in operator record might be used later.
     case (SCode.CLASS(name = name, restriction=SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION()), info = info), _, _, SCode.R_RECORD(true))
@@ -925,9 +924,8 @@ algorithm
      //operators functions in any other class type are error.
     case (SCode.CLASS(name = name, restriction=SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION()), info = info), _, _, _)
       equation
-        //mahge: FIX HERE.
-        errorMessage = "Operator functions are allowed in OPERATOR RECORD only. Error on:" +& name;
-        Error.addSourceMessage(Error.LOOKUP_ERROR, {errorMessage, name}, info);
+        str = SCodeDump.restrString(inClassRestriction);
+        Error.addSourceMessage(Error.OPERATOR_FUNCTION_NOT_EXPECTED, {name, str}, info);
       then
         fail();
 
@@ -944,9 +942,8 @@ algorithm
     case (SCode.CLASS(name = name, restriction = res, info = info), _, _, SCode.R_OPERATOR())
       equation
         false = SCode.isFunctionOrExtFunctionRestriction(res);
-        //mahge: FIX HERE.
-        errorMessage = "Operators can only contain functions. Error on:" +& name;
-        Error.addSourceMessage(Error.LOOKUP_ERROR, {errorMessage, name}, info);
+        str = SCodeDump.restrString(res);
+        Error.addSourceMessage(Error.OPERATOR_FUNCTION_EXPECTED, {name, str}, info);
       then
         fail();
 
