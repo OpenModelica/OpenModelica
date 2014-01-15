@@ -46,7 +46,8 @@ public:
   SimulationOptions()
   {
     mClassName = "";
-    mOutputFileName = "";
+    mFileNamePrefix = "";
+    mOutputFormat = "";
     mSimulationFlags = QStringList();
     mShowGeneratedFiles = false;
     mValid = false;
@@ -54,11 +55,12 @@ public:
     mProfiling = false;
     mWorkingDirectory = "";
   }
-  SimulationOptions(QString className, QString outputFileName, QStringList simulationFlags, bool showGeneratedFiles, bool profiling,
+  SimulationOptions(QString className, QString fileNamePrefix, QString outputFormat, QStringList simulationFlags, bool showGeneratedFiles, bool profiling,
                     QString workingDirectory)
   {
     mClassName = className;
-    mOutputFileName = outputFileName;
+    mFileNamePrefix = fileNamePrefix;
+    mOutputFormat = outputFormat;
     mSimulationFlags = simulationFlags;
     mShowGeneratedFiles = showGeneratedFiles;
     mValid = true;
@@ -71,7 +73,8 @@ public:
     return QVariant::fromValue(*this);
   }
   QString getClassName() {return mClassName;}
-  QString getOutputFileName() {return mOutputFileName;}
+  QString getFileNamePrefix() {return mFileNamePrefix;}
+  QString getOutputFileName() {return mFileNamePrefix + "_res." + mOutputFormat;}
   QStringList getSimulationFlags() {return mSimulationFlags;}
   bool getShowGeneratedFiles() {return mShowGeneratedFiles;}
   bool isValid() {return mValid;}
@@ -81,7 +84,8 @@ public:
   QString getWorkingDirectory() {return mWorkingDirectory;}
 private:
   QString mClassName;
-  QString mOutputFileName;
+  QString mFileNamePrefix;
+  QString mOutputFormat;
   QStringList mSimulationFlags;
   bool mShowGeneratedFiles;
   bool mValid;

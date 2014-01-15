@@ -37,6 +37,7 @@
 
 #include <QTcpSocket>
 #include <QTcpServer>
+#include <QDebug>
 
 #include "SimulationDialog.h"
 #include "VariablesWidget.h"
@@ -622,7 +623,7 @@ void SimulationDialog::writeSimulationOutput(QString output, QColor color)
         pSimulationOutputWidget->getSimulationOutputTextBrowser()->insertPlainText(messageHash.value("text"));
         if (!messageHash.value("index").isEmpty())
         {
-          pSimulationOutputWidget->getSimulationOutputTextBrowser()->insertHtml("&nbsp;<a href=\"file://" + mSimulationOptions.getOutputFileName() + "?path="+ mSimulationOptions.getWorkingDirectory() + "&index=" + messageHash.value("index") + "\">Debug more</a><br />");
+          pSimulationOutputWidget->getSimulationOutputTextBrowser()->insertHtml("&nbsp;<a href=\"omedittransformationsbrowser://" + QUrl::fromLocalFile(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getFileNamePrefix() + "_info.xml").path() + "?index=" + messageHash.value("index") + "\">Debug more</a><br />");
         }
       }
     }
@@ -1013,15 +1014,16 @@ void SimulationDialog::compilationProcessFinished(int exitCode, QProcess::ExitSt
   mIsCompilationProcessRunning = false;
   if (exitStatus == QProcess::NormalExit && exitCode == 0)
   {
-    QString outputFile = mpLibraryTreeNode->getNameStructure();
+    QString fileNamePrefix = mpLibraryTreeNode->getNameStructure();
+    QString outputFormat;
     if (!mpFileNameTextBox->text().isEmpty())
-      outputFile = mpFileNameTextBox->text().trimmed();
+      fileNamePrefix = mpFileNameTextBox->text().trimmed();
     QRegExp regExp("\\b(mat|plt|csv)\\b");
     if (regExp.indexIn(mpOutputFormatComboBox->currentText()) != -1)
     {
-      outputFile = outputFile + "_res." + mpOutputFormatComboBox->currentText();
+      outputFormat = mpOutputFormatComboBox->currentText();
     }
-    SimulationOptions simulationOptions(mpLibraryTreeNode->getNameStructure(), outputFile, mSimulationFlags,
+    SimulationOptions simulationOptions(mpLibraryTreeNode->getNameStructure(), fileNamePrefix, outputFormat, mSimulationFlags,
                                         mpShowGeneratedFilesCheckBox->isChecked(), mpProfilingCheckBox->isChecked(),
                                         mpMainWindow->getOMCProxy()->changeDirectory());
     runSimulationExecutable(simulationOptions);
@@ -1355,18 +1357,20 @@ void SimulationOutputWidget::addGeneratedFileTab(QString fileName)
 void SimulationOutputWidget::openTransformationBrowser(QUrl url)
 {
   /* read the file name */
-  QString fileName = QString(url.host()).remove(QRegExp("(_res.mat|_res.plt|_res.csv)"));
-  fileName.append("_info.xml");
-  /* read the file path */
-  QString filePath = url.queryItemValue("path");
-  filePath.append("/").append(fileName);
+  if (url.scheme() != "omedittransformationsbrowser") {
+    /* TODO: Write error-message?! */
+    return;
+  }
+  QString fileName = url.path();
   /* open the model_info.xml file */
-  if (QFileInfo(filePath).exists())
+  if (QFileInfo(fileName).exists())
   {
-    mpMainWindow->getTransformationsWidget()->showTransformations(filePath);
+    mpMainWindow->getTransformationsWidget()->showTransformations(fileName);
     mpMainWindow->getTransformationsDockWidget()->show();
     /* fetch the equation data */
     mpMainWindow->getTransformationsWidget()->getEquationPage()->fetchEquationData(url.queryItemValue("index").toInt());
     mpMainWindow->getTransformationsWidget()->nextPage();
+  } else {
+    /* TODO: Display error-message */
   }
 }
