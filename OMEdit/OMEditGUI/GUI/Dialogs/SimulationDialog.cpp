@@ -1362,6 +1362,9 @@ void SimulationOutputWidget::openTransformationBrowser(QUrl url)
     return;
   }
   QString fileName = url.path();
+#ifdef WIN32
+  if (fileName.startsWith("/")) fileName.remove(0, 1);
+#endif
   /* open the model_info.xml file */
   if (QFileInfo(fileName).exists())
   {
