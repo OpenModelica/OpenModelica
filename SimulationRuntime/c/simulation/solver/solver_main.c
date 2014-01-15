@@ -427,7 +427,6 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
 
   if(ACTIVE_STREAM(LOG_STATS))
   {
-    char * contextRun;
     rt_accumulate(SIM_TIMER_TOTAL);
 
     infoStreamPrint(LOG_STATS, 0, "### STATISTICS ###");
@@ -441,11 +440,9 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
     infoStreamPrint(LOG_STATS, 0, "%12gs [%5.1f%%] overhead", rt_accumulated(SIM_TIMER_OVERHEAD), rt_accumulated(SIM_TIMER_OVERHEAD)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
 
     if(solverInfo->solverMethod != S_OPTIMIZATION)
-      contextRun = "simulation";
+      infoStreamPrint(LOG_STATS, 0, "%12gs [%5.1f%%] simulation", rt_accumulated(SIM_TIMER_TOTAL)-rt_accumulated(SIM_TIMER_OVERHEAD)-rt_accumulated(SIM_TIMER_EVENT)-rt_accumulated(SIM_TIMER_OUTPUT)-rt_accumulated(SIM_TIMER_STEP)-rt_accumulated(SIM_TIMER_INIT)-rt_accumulated(SIM_TIMER_PREINIT), (rt_accumulated(SIM_TIMER_TOTAL)-rt_accumulated(SIM_TIMER_OVERHEAD)-rt_accumulated(SIM_TIMER_EVENT)-rt_accumulated(SIM_TIMER_OUTPUT)-rt_accumulated(SIM_TIMER_STEP)-rt_accumulated(SIM_TIMER_INIT)-rt_accumulated(SIM_TIMER_PREINIT))/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
     else
-      contextRun = "optimization";
-
-    infoStreamPrint(LOG_STATS, 0, "%12gs [%5.1f%%] %s", rt_accumulated(SIM_TIMER_TOTAL)-rt_accumulated(SIM_TIMER_OVERHEAD)-rt_accumulated(SIM_TIMER_EVENT)-rt_accumulated(SIM_TIMER_OUTPUT)-rt_accumulated(SIM_TIMER_STEP)-rt_accumulated(SIM_TIMER_INIT)-rt_accumulated(SIM_TIMER_PREINIT), (rt_accumulated(SIM_TIMER_TOTAL)-rt_accumulated(SIM_TIMER_OVERHEAD)-rt_accumulated(SIM_TIMER_EVENT)-rt_accumulated(SIM_TIMER_OUTPUT)-rt_accumulated(SIM_TIMER_STEP)-rt_accumulated(SIM_TIMER_INIT)-rt_accumulated(SIM_TIMER_PREINIT))/rt_accumulated(SIM_TIMER_TOTAL)*100.0, contextRun);
+      infoStreamPrint(LOG_STATS, 0, "%12gs [%5.1f%%] optimization", rt_accumulated(SIM_TIMER_TOTAL)-rt_accumulated(SIM_TIMER_OVERHEAD)-rt_accumulated(SIM_TIMER_EVENT)-rt_accumulated(SIM_TIMER_OUTPUT)-rt_accumulated(SIM_TIMER_STEP)-rt_accumulated(SIM_TIMER_INIT)-rt_accumulated(SIM_TIMER_PREINIT), (rt_accumulated(SIM_TIMER_TOTAL)-rt_accumulated(SIM_TIMER_OVERHEAD)-rt_accumulated(SIM_TIMER_EVENT)-rt_accumulated(SIM_TIMER_OUTPUT)-rt_accumulated(SIM_TIMER_STEP)-rt_accumulated(SIM_TIMER_INIT)-rt_accumulated(SIM_TIMER_PREINIT))/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
 
     infoStreamPrint(LOG_STATS, 0, "%12gs [%5.1f%%] total", rt_accumulated(SIM_TIMER_TOTAL), rt_accumulated(SIM_TIMER_TOTAL)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
     messageClose(LOG_STATS);
@@ -455,24 +452,30 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
     infoStreamPrint(LOG_STATS, 0, "%5ld time events", solverInfo->sampleEvents);
     messageClose(LOG_STATS);
 
-    infoStreamPrint(LOG_STATS, 1, "solver");
-    if(solverInfo->solverMethod == 3) /* dassl */
+    if(S_DASSL == solverInfo->solverMethod)
     {
       /* save dassl stats before print */
-      for(ui = 0; ui < numStatistics; ui++)
+      for(ui=0; ui<numStatistics; ui++)
         ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[ui] += ((DASSL_DATA*)solverInfo->solverData)->dasslStatisticsTmp[ui];
 
+      infoStreamPrint(LOG_STATS, 1, "solver: DASSL");
       infoStreamPrint(LOG_STATS, 0, "%5d steps taken", ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[0]);
       infoStreamPrint(LOG_STATS, 0, "%5d calls of functionODE", ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[1]);
       infoStreamPrint(LOG_STATS, 0, "%5d evaluations of jacobian", ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[2]);
       infoStreamPrint(LOG_STATS, 0, "%5d error test failures", ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[3]);
       infoStreamPrint(LOG_STATS, 0, "%5d convergence test failures", ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[4]);
+      messageClose(LOG_STATS);
     }
-    else if(solverInfo->solverMethod != S_OPTIMIZATION)
+    else if(S_OPTIMIZATION == solverInfo->solverMethod)
     {
-      infoStreamPrint(LOG_STATS, 0, "sorry - no solver statistics available. [not yet implemented]");
+      /* skip solver statistics for optimization */
     }
-    messageClose(LOG_STATS);
+    else
+    {
+      infoStreamPrint(LOG_STATS, 1, "solver");
+      infoStreamPrint(LOG_STATS, 0, "sorry - no solver statistics available. [not yet implemented]");
+      messageClose(LOG_STATS);
+    }
 
     infoStreamPrint(LOG_STATS, 0, "### END STATISTICS ###");
 
