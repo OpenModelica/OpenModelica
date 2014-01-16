@@ -597,7 +597,7 @@ algorithm
   (outDiffedExp, outFunctionTree) :=
     match(inExp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree)
     local
-      DAE.Exp e, e1, e2, e3;
+      DAE.Exp e, e1, e2, e3, actual, simplified;
       DAE.Exp res, res1, res2;
       DAE.Type tp;
       DAE.Operator op;
@@ -611,6 +611,9 @@ algorithm
       list<list<DAE.Exp>> matrix, dmatrix;
       
       DAE.FunctionTree functionTree;
+      
+      DAE.CallAttributes attr;
+      Absyn.Path p;
 
       
     // constants => results in zero
@@ -629,6 +632,18 @@ algorithm
         //se1 = ExpressionDump.printExpStr(res);
         //print("\nresults to exp: " +& se1);
       then (res, functionTree);
+
+    // differentiate homotopy
+    case( e as DAE.CALL(
+                path = p as Absyn.IDENT(name="homotopy"), 
+                expLst = {actual,simplified},
+                attr = attr), _, _, _, _)
+      equation
+        (e1, functionTree) = differentiateExp(actual, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
+        (e2, functionTree) = differentiateExp(simplified, inDiffwrtCref, inInputData, inDiffType, functionTree);
+        res = DAE.CALL(p, {e1, e2}, attr);
+      then 
+        (res, functionTree);
 
     // differentiate call
     case( e as DAE.CALL(path = _), _, _, _, _)
