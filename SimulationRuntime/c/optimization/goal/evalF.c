@@ -176,7 +176,7 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
       }
     }
   } else {
-    for(i=0; i<n; ++i)
+    for(i=0; i<iData->endN; ++i)
       gradF[i] = 0.0;
   }
   if(iData->mayer){

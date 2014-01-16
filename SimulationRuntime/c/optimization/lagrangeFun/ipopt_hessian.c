@@ -225,7 +225,7 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
   for(i = 0; i<iData->nv; ++i)
   {
     v_save = (long double)v[i];
-    h = (long double)DF_STEP(v_save, iData->vnom[i]);
+    h = (long double)DF_STEP(v_save, iData->vnom[i]); 
     v[i] += h;
     diff_functionODE(v, t , iData, iData->J);
 
@@ -238,18 +238,18 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
       for(j = i; j < iData->nv; ++j)
       {
         if(iData->knowedJ[l][j] + iData->knowedJ[l][i] >= 2)
-          iData->H[l][i][j]  = lambda[l]*(iData->J[l][j] - iData->J0[l][j])/h;
+          iData->H[l][i][j]  = (long double)lambda[l]*(iData->J[l][j] - iData->J0[l][j])/h;
         else
           iData->H[l][i][j] = (long double) 0.0;
 
         iData->H[l][j][i] = iData->H[l][i][j];
       }
     }
-
+    h = obj_factor/h; 
     if(lagrange_yes){
       for(j = i; j < iData->nv; ++j)
       {
-       iData->oH[i][j]  = (long double) obj_factor/h* (iData->gradF[j] - iData->gradF0[j]);
+       iData->oH[i][j]  = (long double) h* (iData->gradF[j] - iData->gradF0[j]);
        iData->oH[j][i]  = iData->oH[i][j] ; 
       }
     }
@@ -257,7 +257,7 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
     if(mayer_yes){
       for(j = i; j < iData->nv; ++j)
       {
-       iData->mH[i][j]  = (long double) obj_factor/h* (iData->gradF_[j] - iData->gradF00[j]);
+       iData->mH[i][j]  = (long double) h* (iData->gradF_[j] - iData->gradF00[j]);
        iData->mH[j][i]  = iData->mH[i][j] ; 
       }
     }
