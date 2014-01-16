@@ -49,6 +49,7 @@ QString Helper::OMCServerName = "OMEdit";
 QString Helper::omFileTypes = "Modelica Files (*.mo)";
 QString Helper::omnotebookFileTypes = "OMNotebook Files (*.onb *.onbz *.nb)";
 QString Helper::imageFileTypes = "SVG (*.svg);;PNG image (*.png);;Windows BMP image (*.bmp);;JPEG (*.jpg *.jpeg)";
+QString Helper::bitmapFileTypes = "PNG image (*.png);;Windows BMP image (*.bmp);;JPEG (*.jpg *.jpeg)";
 QString Helper::fmuFileTypes = "FMU Files (*.fmu)";
 QString Helper::xmlFileTypes = "XML Files (*.xml)";
 QString Helper::matFileTypes = "MAT Files (*.mat)";

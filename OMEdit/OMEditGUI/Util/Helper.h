@@ -60,6 +60,7 @@ public:
   static QString omFileTypes;
   static QString omnotebookFileTypes;
   static QString imageFileTypes;
+  static QString bitmapFileTypes;
   static QString fmuFileTypes;
   static QString xmlFileTypes;
   static QString matFileTypes;

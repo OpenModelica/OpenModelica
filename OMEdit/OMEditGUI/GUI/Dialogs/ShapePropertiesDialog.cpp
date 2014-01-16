@@ -852,7 +852,7 @@ bool ShapePropertiesDialog::applyShapeProperties()
 void ShapePropertiesDialog::browseImageFile()
 {
   QString imageFileName = StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
-                                                         NULL, Helper::imageFileTypes, NULL);
+                                                         NULL, Helper::bitmapFileTypes, NULL);
   if (imageFileName.isEmpty())
     return;
   mpFileTextBox->setText(imageFileName);
