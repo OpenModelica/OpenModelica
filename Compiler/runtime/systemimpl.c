@@ -2570,6 +2570,38 @@ char* SystemImpl__ctime(double time)
   return GC_strdup(ctime_r(&t,buf));
 }
 
+#if defined(__MINGW32__)
+/*
+ * strtok_r implementation
+ */
+char *omc_strtok_r(char *str, const char *delim, char **saveptr)
+{
+  char *token;
+  if (!str && !(str = *saveptr))
+  {
+     return NULL;
+  }
+  str += strspn(str, delim);
+  if (!*str) {
+    *saveptr = NULL;
+    return NULL;
+  }
+  token = str++;
+  str += strcspn(str, delim);
+  if (*str) {
+    *str = 0;
+    *saveptr = str+1;
+  } else {
+    *saveptr = NULL;
+  }
+
+  return token;
+}
+
+#define strtok_r omc_strtok_r
+
+#endif /* defined(__MINGW32__) */
+
 #ifdef __cplusplus
 }
 #endif
