@@ -1145,9 +1145,9 @@ void SimulationDialog::simulationProcessFinished(int exitCode, QProcess::ExitSta
   {
     QString exitCodeStr = tr("Simulation process exited with code %1").arg(QString::number(exitCode));
     if (mpSimulationProcess->error() == QProcess::UnknownError)
-      writeSimulationOutput(exitCodeStr, Qt::red);
+      writeSimulationOutput(exitCodeStr, Qt::red, true);
     else
-      writeSimulationOutput(mpSimulationProcess->errorString() + "\n" + exitCodeStr, Qt::red);
+      writeSimulationOutput(mpSimulationProcess->errorString() + "\n" + exitCodeStr, Qt::red, true);
   }
   else
   {
@@ -1195,7 +1195,7 @@ void SimulationDialog::writeSimulationStandardOutput()
   */
 void SimulationDialog::writeSimulationStandardError()
 {
-  writeSimulationOutput(QString(mpSimulationProcess->readAllStandardError()), Qt::red);
+  writeSimulationOutput(QString(mpSimulationProcess->readAllStandardError()), Qt::red, true);
 }
 
 /*!
