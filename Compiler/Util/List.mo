@@ -7383,6 +7383,73 @@ algorithm
   end matchcontinue;
 end extractOnTrue_tail;
 
+public function extract1OnTrue
+  "Takes a list of values and a filter function over the values and an extra argument and returns
+   two lists. one of values for which the matching function returns true and the
+   other containing the remaining elements.
+   N.B. The original list is lost in here. Will fix if I comeup with something more efficient.
+     Example:
+       extractOnTrue({1, 2, 3, 4, 5}, isEven) => {2, 4}, {1, 3, 5}"
+  input list<ElementType> inList;
+  input FilterFunc inFilterFunc;
+  input ArgType1 inArg;
+  output list<ElementType> outExtractedList;
+  output list<ElementType> outRemainingList;
+
+  partial function FilterFunc
+    input ElementType inElement;
+    input ArgType1 inArg;
+    output Boolean outResult;
+  end FilterFunc;
+algorithm
+  (outExtractedList, outRemainingList) := extract1OnTrue_tail(inList, inFilterFunc, inArg, {}, {});
+  outExtractedList := listReverse(outExtractedList);
+  outRemainingList := listReverse(outRemainingList);
+end extract1OnTrue;
+
+protected function extract1OnTrue_tail
+  "Tail recursive implementation of extractOnTrue."
+  input list<ElementType> inList;
+  input FilterFunc inFilterFunc;
+  input ArgType1 inArg;
+  input list<ElementType> inExtractedList;
+  input list<ElementType> inRemainingList;
+  output list<ElementType> outExtractedList;
+  output list<ElementType> outRemainingList;
+
+  partial function FilterFunc
+    input ElementType inElement;
+    input ArgType1 inArg;
+    output Boolean outResult;
+  end FilterFunc;
+algorithm
+  (outExtractedList, outRemainingList) := matchcontinue(inList, inFilterFunc, inArg, inExtractedList, inRemainingList)
+    local
+      ElementType e;
+      list<ElementType> rest;
+      list<ElementType> exted;
+      list<ElementType> remain;
+
+    case ({}, _, _, _, _) then (inExtractedList, inRemainingList);
+
+    // Add to front of extracted list if the condition works.
+    case (e :: rest, _, _, _, _)
+      equation
+        true = inFilterFunc(e,inArg);
+        (exted, remain) = extract1OnTrue_tail(rest, inFilterFunc, inArg, e :: inExtractedList, inRemainingList);
+      then
+        (exted, remain);
+
+    // Add to front of remaining list if the condition doesn't work.
+    case (e :: rest, _, _, _, _)
+      equation
+        (exted, remain) = extract1OnTrue_tail(rest, inFilterFunc, inArg, inExtractedList, e :: inRemainingList);
+      then
+        (exted, remain);
+
+  end matchcontinue;
+end extract1OnTrue_tail;
+
 public function filter
   "Takes a list of values and a filter function over the values and returns a
    sub list of values for which the matching function succeeds.
@@ -9394,5 +9461,14 @@ algorithm
 
   end match;
 end removeEqualPrefix2;
+
+
+public function listIsLonger  "outputs true if the lst1 is longer than lst2"
+  input list<ElementType> lst1;
+  input list<ElementType> lst2;
+  output Boolean isLonger;
+algorithm
+  isLonger := intGt(listLength(lst1),listLength(lst2));
+end listIsLonger;
 
 end List;
