@@ -47,7 +47,6 @@ typedef struct SOLVER_INFO
   double currentTime;
   double currentStepSize;
   double laststep;
-  double offset;
   int solverMethod;
   int stepPrecision;
 

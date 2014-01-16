@@ -142,7 +142,6 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   solverInfo->currentTime = simInfo->startTime;
   solverInfo->currentStepSize = simInfo->stepSize;
   solverInfo->laststep = 0;
-  solverInfo->offset = 0;
   solverInfo->solverRootFinding = 0;
   solverInfo->eventLst = allocList(sizeof(long));
   solverInfo->didEventStep = 0;

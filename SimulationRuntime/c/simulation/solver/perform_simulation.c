@@ -154,14 +154,17 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
       /* Calculate new step size after an event */
       if(solverInfo->didEventStep == 1)
       {
-        solverInfo->offset = solverInfo->currentTime - solverInfo->laststep;
-        if(solverInfo->offset + DBL_EPSILON > simInfo->stepSize)
-          solverInfo->offset = 0;
-        infoStreamPrint(LOG_SOLVER, 0, "offset value for the next step: %.10f", solverInfo->offset);
-      } else {
-        solverInfo->offset = 0;
+        if((solverInfo->currentTime - solverInfo->laststep) + DBL_EPSILON > simInfo->stepSize)
+          solverInfo->currentStepSize = simInfo->stepSize;
+        else
+          solverInfo->currentStepSize = simInfo->stepSize - (solverInfo->currentTime - solverInfo->laststep);
+        
+        infoStreamPrint(LOG_SOLVER, 0, "offset value for the next step: %.10f", (solverInfo->currentTime - solverInfo->laststep));
       }
-      solverInfo->currentStepSize = simInfo->stepSize - solverInfo->offset;
+      else
+      {
+        solverInfo->currentStepSize = simInfo->stepSize;
+      }
 
       /* adjust final step? */
       if(solverInfo->currentTime + solverInfo->currentStepSize > simInfo->stopTime) {
@@ -239,7 +242,6 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
 
       if(retry)
       {
-        solverInfo->offset = simInfo->stepSize - oldStepSize;
         simInfo->stepSize = oldStepSize;
         retry = 0;
       }
