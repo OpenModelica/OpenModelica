@@ -188,6 +188,7 @@ static int sumLagrange(IPOPT_DATA_ *iData, double * erg,int ii, int i, int j, in
   int l;
 
   sum = 0.0;
+  if(iData->Hg[j][i])
   for(l = 0; l<iData->nx; ++l)
     sum += iData->H[l][i][j];
 
@@ -233,16 +234,19 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
       updateCost(v,t,iData,lagrange_yes,mayer_yes, iData->gradF, iData->gradF_);
 
     v[i] = v_save;
-    for(l = 0; l< iData->nx; ++l)
-    {
-      for(j = i; j < iData->nv; ++j)
-      {
-        if(iData->knowedJ[l][j] + iData->knowedJ[l][i] >= 2)
-          iData->H[l][i][j]  = (long double)lambda[l]*(iData->J[l][j] - iData->J0[l][j])/h;
-        else
-          iData->H[l][i][j] = (long double) 0.0;
 
-        iData->H[l][j][i] = iData->H[l][i][j];
+    for(j = i; j < iData->nv; ++j)
+    {
+      if(iData->Hg[i][j]){
+		  for(l = 0; l< iData->nx; ++l)
+		  {
+			if(iData->knowedJ[l][j] + iData->knowedJ[l][i] >= 2)
+			  iData->H[l][i][j]  = (long double)lambda[l]*(iData->J[l][j] - iData->J0[l][j])/h;
+			else
+			  iData->H[l][i][j] = (long double) 0.0;
+
+			iData->H[l][j][i] = iData->H[l][i][j];
+		  }
       }
     }
     h = obj_factor/h; 

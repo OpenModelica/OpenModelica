@@ -45,6 +45,7 @@
 
 static int local_jac_struct(IPOPT_DATA_ *iData);
 static int check_nominal(IPOPT_DATA_ *iData, double min, double max, double nominal, short set, int i, double x0);
+
 /*!
  *  allocate
  *  author: Vitalij Ruge
@@ -466,11 +467,12 @@ int move_grid(IPOPT_DATA_ *iData)
  *  function calculates a jacobian matrix struct
  *  author: Willi
  */
-int local_jac_struct(IPOPT_DATA_ *iData)
+static int local_jac_struct(IPOPT_DATA_ *iData)
 {
   DATA * data = iData->data;
   const int index = 2;
   int **J;
+  short **Hg;
 
   int i,j,l,ii,nx;
   int *cC,*lindex;
@@ -480,7 +482,12 @@ int local_jac_struct(IPOPT_DATA_ *iData)
   for(i = 0; i < iData->nx; i++)
     iData->knowedJ[i] = (int*) calloc(iData->nv, sizeof(int));
 
+  iData->Hg = (int**) malloc(iData->nv * sizeof(int*));
+  for(i = 0; i < iData->nv; i++)
+    iData->Hg[i] = (int*) calloc(iData->nv, sizeof(int));
+
   J = iData->knowedJ;
+  Hg = iData->Hg;
 
   nx = data->simulationInfo.analyticJacobians[index].sizeCols;
   cC =  (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols;
@@ -531,6 +538,15 @@ int local_jac_struct(IPOPT_DATA_ *iData)
     J[ii][ii] = 1.0;
   }
 
+
+  for(i = 0; i <iData->nv; ++i)
+	for(j = 0; j < iData->nv; ++j)
+	  {
+		for(ii = 0; ii < iData->nx; ++ii)
+		  if(J[ii][i]+J[ii][j]> 1)
+		    Hg[i][j] += 1;
+	  }
+
   if(ACTIVE_STREAM(LOG_IPOPT))
   {
     for(ii = 0; ii < iData->nx; ++ii)
@@ -540,10 +556,19 @@ int local_jac_struct(IPOPT_DATA_ *iData)
         printf("%i \t",J[ii][j]);
       printf("\n");
     }
+    printf("\n***********");
+    for(ii = 0; ii < iData->nv; ++ii)
+    {
+      printf("\n");
+      for(j =0;j<iData->nv;++j)
+        printf("%i \t",Hg[ii][j]);
+      printf("\n");
+    }
   }
 
   return 0;
 }
+
 
 /*!
  *  heuristic for nominal value
@@ -572,5 +597,6 @@ static int check_nominal(IPOPT_DATA_ *iData, double min, double max, double nomi
   }
   return 0;
 }
+
 
 #endif

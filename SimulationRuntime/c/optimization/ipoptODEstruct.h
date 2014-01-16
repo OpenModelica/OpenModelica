@@ -166,6 +166,9 @@ typedef struct IPOPT_DATA_
   long double ***H;
   long double **oH;
   long double **mH;
+  short **Hg;
+  short **Hl;
+  short **HH;
 
   int * iRow;
   int * iCol;
