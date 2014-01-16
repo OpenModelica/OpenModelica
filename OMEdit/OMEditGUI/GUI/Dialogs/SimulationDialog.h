@@ -227,8 +227,7 @@ private:
   void writeCompilationOutput(QString output, QColor color);
   void writeSimulationOutput(QString output, QColor color, bool textFormat = false);
   QList<SimulationMessage> parseXMLLogOutput(QString output);
-  void parseXMLLogMessageTag(QXmlStreamReader &xmlReader, SimulationMessage *pSimulationMessage);
-  SimulationMessage parseXMLLogMessageTag1(QDomNode messageNode, int level);
+  SimulationMessage parseXMLLogMessageTag(QDomNode messageNode, int level);
   void writeSimulationMessage(SimulationMessage &simulationMessage);
 public slots:
   void runSimulationExecutable(SimulationOptions simulationOptions);
