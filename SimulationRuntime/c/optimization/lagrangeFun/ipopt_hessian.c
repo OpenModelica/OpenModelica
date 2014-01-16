@@ -238,15 +238,15 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
     for(j = i; j < iData->nv; ++j)
     {
       if(iData->Hg[i][j]){
-		  for(l = 0; l< iData->nx; ++l)
-		  {
-			if(iData->knowedJ[l][j] + iData->knowedJ[l][i] >= 2)
-			  iData->H[l][i][j]  = (long double)lambda[l]*(iData->J[l][j] - iData->J0[l][j])/h;
-			else
-			  iData->H[l][i][j] = (long double) 0.0;
+      for(l = 0; l< iData->nx; ++l)
+      {
+      if(iData->knowedJ[l][j] + iData->knowedJ[l][i] >= 2)
+        iData->H[l][i][j]  = (long double)lambda[l]*(iData->J[l][j] - iData->J0[l][j])/h;
+      else
+        iData->H[l][i][j] = (long double) 0.0;
 
-			iData->H[l][j][i] = iData->H[l][i][j];
-		  }
+      iData->H[l][j][i] = iData->H[l][i][j];
+      }
       }
     }
     h = obj_factor/h; 
