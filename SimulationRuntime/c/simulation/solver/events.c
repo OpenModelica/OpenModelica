@@ -168,8 +168,10 @@ int checkForStateEvent(DATA* data, LIST *eventList)
  */
 int checkEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* solverInfo)
 {
-  if (checkForStateEvent(data, solverInfo->eventLst)) {
-    if (!solverInfo->solverRootFinding) {
+  if (checkForStateEvent(data, solverInfo->eventLst))
+  {
+    if (!solverInfo->solverRootFinding)
+    {
       findRoot(data, solverInfo->eventLst, &(solverInfo->currentTime));
     }
   }
@@ -195,10 +197,6 @@ void handleEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* so
   double time = data->localData[0]->timeValue;
   long i;
   LIST_NODE* it;
-
-  /* prevent emit if noeventemit flag is used */
-  if (!(omc_flag[FLAG_NOEVENTEMIT]))
-    sim_result.emit(&sim_result,data);
 
   /* time event */
   if(data->simulationInfo.sampleActivated)

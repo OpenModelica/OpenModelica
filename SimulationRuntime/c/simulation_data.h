@@ -40,6 +40,7 @@
 #include "openmodelica.h"
 #include "ringbuffer.h"
 #include "omc_error.h"
+
 #if defined(__cplusplus)
 typedef void* f2c_integer_ptr;
 #else
@@ -107,14 +108,14 @@ typedef struct CHATTERING_INFO
 typedef enum {ERROR_AT_TIME,NO_PROGRESS_START_POINT,NO_PROGRESS_FACTOR,IMPROPER_INPUT} equationSystemError;
 
 /* SPARSE_PATTERN
-  *
-  * sparse pattern struct used by jacobians
-  * leadindex points to an index where to corresponding
-  * index of an row or column is noted in index.
-  * sizeofIndex contain number of elements in index
-  * colorsCols contain color of colored columns
-  *
-  */
+ *
+ * sparse pattern struct used by jacobians
+ * leadindex points to an index where to corresponding
+ * index of an row or column is noted in index.
+ * sizeofIndex contain number of elements in index
+ * colorsCols contain color of colored columns
+ *
+ */
 typedef struct SPARSE_PATTERN
 {
     unsigned int* leadindex;
@@ -125,17 +126,17 @@ typedef struct SPARSE_PATTERN
 }SPARSE_PATTERN;
 
 /* ANALYTIC_JACOBIAN
-  *
-  * analytic jacobian struct used for dassl and linearization.
-  * jacobianName contain "A" || "B" etc.
-  * sizeCols contain size of column
-  * sizeRows contain size of rows
-  * sparsePattern contain the sparse pattern include colors
-  * seedVars contain seed vector to the corresponding jacobian
-  * resultVars contain result of one column to the corresponding jacobian
-  * jacobian contains dense jacobian elements
-  *
-  */
+ *
+ * analytic jacobian struct used for dassl and linearization.
+ * jacobianName contain "A" || "B" etc.
+ * sizeCols contain size of column
+ * sizeRows contain size of rows
+ * sparsePattern contain the sparse pattern include colors
+ * seedVars contain seed vector to the corresponding jacobian
+ * resultVars contain result of one column to the corresponding jacobian
+ * jacobian contains dense jacobian elements
+ *
+ */
 typedef struct ANALYTIC_JACOBIAN
 {
     unsigned int sizeCols;
@@ -184,7 +185,6 @@ typedef struct DATA_STRING_ALIAS
   VAR_INFO info;
   modelica_boolean filterOutput;       /* true if this variable should be filtered */
 }DATA_STRING_ALIAS;
-
 
 /* collect all attributes from one variable in one struct */
 typedef struct REAL_ATTRIBUTE
@@ -296,24 +296,24 @@ typedef struct LINEAR_SYSTEM_DATA
 
   void (*setAElement)(int row, int col, double value, int nth, void *data);
 
-  modelica_integer nnz;               /* number of nonzero entries */
+  modelica_integer nnz;                 /* number of nonzero entries */
   modelica_integer size;
-  modelica_integer equationIndex;     /* index for EQUATION_INFO */
+  modelica_integer equationIndex;       /* index for EQUATION_INFO */
 
   void *solverData;
-  modelica_real *x;                /* solution vector x */
-  modelica_real *A;                /* matrix A */
-  modelica_real *b;                /* vector b */
+  modelica_real *x;                     /* solution vector x */
+  modelica_real *A;                     /* matrix A */
+  modelica_real *b;                     /* vector b */
 
-  modelica_integer method;          /* not used yet*/
-  modelica_real residualError;      /* not used yet*/
-  modelica_boolean solved;          /* 1: solved in current step - else not */
+  modelica_integer method;              /* not used yet*/
+  modelica_real residualError;          /* not used yet*/
+  modelica_boolean solved;              /* 1: solved in current step - else not */
 }LINEAR_SYSTEM_DATA;
 
 typedef struct MIXED_SYSTEM_DATA
 {
   modelica_integer size;
-  modelica_integer equationIndex;     /* index for EQUATION_INFO */
+  modelica_integer equationIndex;       /* index for EQUATION_INFO */
   modelica_boolean continuous_solution; /* indicates if the continuous part could be solved */
 
   /* solveContinuousPart */
