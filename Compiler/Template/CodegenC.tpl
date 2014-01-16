@@ -481,7 +481,7 @@ template simulationFile(SimCode simCode, String guid)
     let mainBody =
       <<
       <%symbolName(modelNamePrefixStr,"setupDataStruc")%>(&simulation_data);
-      <%if boolOr(boolAnd(Flags.isSet(HPCOM), boolNot(stringEq(getConfigString(HPCOM_CODE),"pthreads_spin"))),stringEq(Config.simCodeTarget(),"JavaScript")) then 'MMC_INIT(0);omc_alloc_interface = omc_alloc_interface_pooled;<%\n%>' else "MMC_INIT(1);"%>omc_alloc_interface.init();
+      <%if boolOr(boolAnd(Flags.isSet(HPCOM), boolNot(stringEq(getConfigString(HPCOM_CODE),"pthreads_spin"))),stringEq(Config.simCodeTarget(),"JavaScript")) then 'mmc_init_nogc();omc_alloc_interface = omc_alloc_interface_pooled;<%\n%>' else "MMC_INIT();"%>omc_alloc_interface.init();
       res = _main_SimulationRuntime(argc, argv, &simulation_data);
       >>
     <<
