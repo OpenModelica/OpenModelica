@@ -106,12 +106,6 @@ reference_rangeDelta:="+String(reference_rangeDelta)+";
 setCommandLineOptions(\"+d=nogen,initialization\"); setMatchingAlgorithm(\"PFPlusExt\"); setIndexReductionMethod(\"dynamicStateSelection\"); 
 res:=buildModel("+s+",tolerance=tolerance);
 greenColor := \"#00FF00\";
-if res[1] == \"\" then
-  err:=getErrorString();
-  setCommandLineOptions(\"+d=scodeInstShortcut\");
-  res:=buildModel("+s+",tolerance=tolerance);
-  greenColor := \"#FFFF00\";
-end if;
 errFile:=\"files/"+s+".err\";
 simFile:=\"files/"+s+".sim\";
 err:=getErrorString();
@@ -252,7 +246,7 @@ str:="<h1>Recursive BuildModel Test</h1>
 <p>Default tolerance: "+String(default_tolerance)+"</p>
 <p>Flags: setCommandLineOptions(\"+d=nogen,initialization\"); setMatchingAlgorithm(\"PFPlusExt\"); setIndexReductionMethod(\"dynamicStateSelection\");</p>" 
 + customCommandsStr +
-"<p>Links are provided if getErrorString() or the simulation generates output. <font style=\"background-color:#00FF00\">Green</font> means success, <font style=\"background-color:#FFFF00\">yellow</font> means success if +d=scodeInstShortcut was used. <font style=\"background-color:#FF0000\">Red</font> is bad and in general signifies a failure.</p>
+"<p>Links are provided if getErrorString() or the simulation generates output. <font style=\"background-color:#00FF00\">Green</font> means success. <font style=\"background-color:#FF0000\">Red</font> is bad and in general signifies a failure.</p>
 ";
 writeFile(log,"<html><head><title>BuildModel Results</title></head><body>" + str);
 writeFile(log,"<table><tr><th>Model</th>"+(if referenceFiles == "" then "" else "<th>Verified</th>")+"<th>Simulate</th><th>Total buildModel</th><th>Frontend</th><th>Backend</th><th>SimCode</th><th>Templates</th><th>Compile</th></tr>\n",append=true);getErrorString();
