@@ -595,7 +595,7 @@ void SimulationDialog::writeCompilationOutput(QString output, QColor color)
 /*!
   Writes the simulation standard output & standard error.
   */
-void SimulationDialog::writeSimulationOutput(QString output, QColor color)
+void SimulationDialog::writeSimulationOutput(QString output, QColor color, bool textFormat)
 {
   SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mSimulationOutputWidgetsList.last());
   if (pSimulationOutputWidget)
@@ -610,21 +610,16 @@ void SimulationDialog::writeSimulationOutput(QString output, QColor color)
     charFormat.setForeground(color);
     pSimulationOutputWidget->getSimulationOutputTextBrowser()->setCurrentCharFormat(charFormat);
     /* append the output */
-    QList<QHash<QString,QString> > messagesList = parseXMLLogOutput(output);
-    if (messagesList.isEmpty())
+    if (textFormat)
     {
       pSimulationOutputWidget->getSimulationOutputTextBrowser()->insertPlainText(output);
     }
     else
     {
-      for (int i = 0 ; i < messagesList.size() ; i++)
+      QList<SimulationMessage> simulationMessages = parseXMLLogOutput(output);
+      foreach (SimulationMessage simulationMessage, simulationMessages)
       {
-        QHash<QString, QString> messageHash = messagesList.at(i);
-        pSimulationOutputWidget->getSimulationOutputTextBrowser()->insertPlainText(messageHash.value("text"));
-        if (!messageHash.value("index").isEmpty())
-        {
-          pSimulationOutputWidget->getSimulationOutputTextBrowser()->insertHtml("&nbsp;<a href=\"omedittransformationsbrowser://" + QUrl::fromLocalFile(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getFileNamePrefix() + "_info.xml").path() + "?index=" + messageHash.value("index") + "\">Debug more</a><br />");
-        }
+        writeSimulationMessage(simulationMessage);
       }
     }
     /* move the cursor */
@@ -641,43 +636,187 @@ void SimulationDialog::writeSimulationOutput(QString output, QColor color)
   \return list of messages
   */
 /*
+  <message stream="LOG_STATS" type="info" text="events">
+    <message stream="LOG_STATS" type="info" text="    0 state events" />
+    <message stream="LOG_STATS" type="info" text="    0 time events" />
+  </message>
   <message stream="stdout" type="info" text="output text">
-  <used index="2" />
+    <used index="2" />
   </message>
   */
-QList<QHash<QString,QString> > SimulationDialog::parseXMLLogOutput(QString output)
+QList<SimulationMessage> SimulationDialog::parseXMLLogOutput(QString output)
 {
-  QList<QHash<QString,QString> > messagesList;
-  QXmlStreamReader xmlReader(output);
-  while(!xmlReader.atEnd() && !xmlReader.hasError())
+//  output = "<root><message stream=\"LOG_STATS\" type=\"info\" text=\"### STATISTICS ###\" />";
+//  output += "<message stream=\"LOG_STATS\" type=\"info\" text=\"events\">";
+//  output += "<message stream=\"LOG_STATS\" type=\"info\" text=\"    0 state events\" />";
+//  output += "<message stream=\"LOG_STATS\" type=\"info\" text=\"    0 time events\" />";
+//  output += "</message></root>";
+
+  QList<SimulationMessage> simulationMessages;
+  QDomDocument xmlDocument;
+  QString errorMsg;
+  int errorLine, errorColumn;
+  /*
+    We should enclose the output in root tag because there can be only one top level element.
+    */
+  output.prepend("<root>").append("</root>");
+  if (!xmlDocument.setContent(output, &errorMsg, &errorLine, &errorColumn))
   {
-    QHash<QString, QString> messageHash;
-    /* Read next element.*/
-    QXmlStreamReader::TokenType token = xmlReader.readNext();
-    /* If token is just StartDocument, we'll go to next.*/
-    if(token == QXmlStreamReader::StartDocument)
-      continue;
-    /* If token is StartElement, we'll see if we can read it.*/
-    if(token == QXmlStreamReader::StartElement && xmlReader.name() == "message")
+    qDebug() << tr("Error while parsing message xml %1 %2:%3").arg(errorMsg).arg(errorLine).arg(errorColumn);
+    return simulationMessages;
+  }
+  //Get the root element
+  QDomElement documentElement = xmlDocument.documentElement();
+  QDomNodeList messageNodes = documentElement.childNodes();
+  for (int i = 0; i < messageNodes.size(); i++)
+  {
+    if (messageNodes.at(i).nodeName() == "message")
     {
-      QXmlStreamAttributes attributes = xmlReader.attributes();
-      /* Read the message attributes. */
-      messageHash["text"] = attributes.value("text").toString();
-      xmlReader.readNext();
-      while(!(xmlReader.tokenType() == QXmlStreamReader::EndElement && xmlReader.name() == "message"))
-      {
-        if(xmlReader.tokenType() == QXmlStreamReader::StartElement && xmlReader.name() == "used")
-        {
-          QXmlStreamAttributes attributes = xmlReader.attributes();
-          messageHash["index"] = attributes.value("index").toString();
-        }
-        xmlReader.readNext();
-      }
-      messagesList.append(messageHash);
+      simulationMessages.append(parseXMLLogMessageTag1(messageNodes.at(i), 0));
     }
   }
-  xmlReader.clear();
-  return messagesList;
+  return simulationMessages;
+//  QXmlStreamReader xml(output);
+//  while (!xml.atEnd())
+//  {
+//    xml.readNext();
+//    qDebug() << xml.tokenString() << xml.name();
+//  }
+//  if (xml.hasError()) {
+//    qDebug() << "errorString : " << xml.error() << xml.lineNumber() << xml.columnNumber() << xml.errorString();
+//  }
+  /*
+    We should enclose the output in root tag because there can be only one top level element.
+    */
+//  output.prepend("<root>").append("</root>");
+////  qDebug() << output;
+//  QList<SimulationMessage> simulationMessages;
+//  QXmlStreamReader xmlReader(output);
+//  while (!xmlReader.atEnd() && !xmlReader.hasError())
+//  {
+//    /* Read next element.*/
+//    QXmlStreamReader::TokenType token = xmlReader.readNext();
+//    /* If token is just StartDocument, we'll go to next.*/
+//    if (token == QXmlStreamReader::StartDocument)
+//      continue;
+//    /* If token is StartElement, we'll see if we can read it.*/
+//    if (token == QXmlStreamReader::StartElement && xmlReader.name() == "message")
+//    {
+//      SimulationMessage simulationMessage;
+//      QXmlStreamAttributes attributes = xmlReader.attributes();
+//      /* Read the message attributes. */
+//      simulationMessage.mStream = attributes.value("stream").toString();
+//      simulationMessage.mType = attributes.value("type").toString();
+//      simulationMessage.mText = attributes.value("text").toString();
+//      xmlReader.readNext();
+//      while (!(xmlReader.tokenType() == QXmlStreamReader::EndElement && xmlReader.name() == "message"))
+//      {
+//        if (xmlReader.tokenType() == QXmlStreamReader::StartElement && xmlReader.name() == "message")
+//        {
+//          parseXMLLogMessageTag(xmlReader, &simulationMessage);
+//        }
+//        if (xmlReader.tokenType() == QXmlStreamReader::StartElement && xmlReader.name() == "used")
+//        {
+//          QXmlStreamAttributes attributes = xmlReader.attributes();
+//          simulationMessage.mIndex = attributes.value("index").toString();
+//        }
+//        xmlReader.readNext();
+//      }
+//      simulationMessages.append(simulationMessage);
+//    }
+//  }
+//  if (xmlReader.hasError())
+//  {
+//    qDebug() << tr("Error while parsing message xml ") << xmlReader.errorString()
+//             << xmlReader.lineNumber() << ":"
+//             << xmlReader.columnNumber() << ":"
+//             << xmlReader.characterOffset();
+//  }
+//  xmlReader.clear();
+//  return simulationMessages;
+}
+
+void SimulationDialog::parseXMLLogMessageTag(QXmlStreamReader &xmlReader, SimulationMessage *pSimulationMessage)
+{
+  if (xmlReader.tokenType() == QXmlStreamReader::StartElement && xmlReader.name() == "message")
+  {
+    SimulationMessage simulationMessage;
+    QXmlStreamAttributes attributes = xmlReader.attributes();
+    /* Read the message attributes. */
+    simulationMessage.mStream = attributes.value("stream").toString();
+    simulationMessage.mType = attributes.value("type").toString();
+    simulationMessage.mText = attributes.value("text").toString();
+    xmlReader.readNext();
+    while (!(xmlReader.tokenType() == QXmlStreamReader::EndElement && xmlReader.name() == "message"))
+    {
+      if (xmlReader.tokenType() == QXmlStreamReader::StartElement && xmlReader.name() == "message")
+      {
+        parseXMLLogMessageTag(xmlReader, &simulationMessage);
+      }
+      if (xmlReader.tokenType() == QXmlStreamReader::StartElement && xmlReader.name() == "used")
+      {
+        QXmlStreamAttributes attributes = xmlReader.attributes();
+        simulationMessage.mIndex = attributes.value("index").toString();
+      }
+      xmlReader.readNext();
+    }
+    pSimulationMessage->mChildren.append(simulationMessage);
+  }
+}
+
+SimulationMessage SimulationDialog::parseXMLLogMessageTag1(QDomNode messageNode, int level)
+{
+  SimulationMessage simulationMessage;
+  QDomElement messageElement = messageNode.toElement();
+  simulationMessage.mStream = messageElement.attribute("stream");
+  simulationMessage.mType = messageElement.attribute("type");
+  simulationMessage.mText = messageElement.attribute("text");
+  simulationMessage.mLevel = level;
+  QDomNodeList childNodes = messageNode.childNodes();
+  for (int i = 0; i < childNodes.size(); i++)
+  {
+    if (childNodes.at(i).nodeName() == "used")
+    {
+      simulationMessage.mIndex = childNodes.at(i).toElement().attribute("index");
+    }
+    else if (childNodes.at(i).nodeName() == "message")
+    {
+      simulationMessage.mChildren.append(parseXMLLogMessageTag1(childNodes.at(i), simulationMessage.mLevel + 1));
+    }
+  }
+  return simulationMessage;
+}
+
+void SimulationDialog::writeSimulationMessage(SimulationMessage &simulationMessage)
+{
+  SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mSimulationOutputWidgetsList.last());
+  static QString lastSream;
+  static QString lastType;
+  /* format the error message */
+  QString error = ((lastSream == simulationMessage.mStream && simulationMessage.mLevel > 0) ? "|" : simulationMessage.mStream) + "\t\t| ";
+  error += ((lastSream == simulationMessage.mStream && lastType == simulationMessage.mType && simulationMessage.mLevel > 0) ? "|" : simulationMessage.mType) + "\t | ";
+  for (int i = 0 ; i < simulationMessage.mLevel ; ++i)
+    error += "| ";
+  error += simulationMessage.mText;
+  /* write the error message */
+  pSimulationOutputWidget->getSimulationOutputTextBrowser()->insertPlainText(error);
+  /* write the error link */
+  if (!simulationMessage.mIndex.isEmpty())
+  {
+    pSimulationOutputWidget->getSimulationOutputTextBrowser()->insertHtml("&nbsp;<a href=\"omedittransformationsbrowser://" + QUrl::fromLocalFile(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getFileNamePrefix() + "_info.xml").path() + "?index=" + simulationMessage.mIndex + "\">Debug more</a><br />");
+  }
+  else
+  {
+    pSimulationOutputWidget->getSimulationOutputTextBrowser()->insertPlainText("\n");
+  }
+  /* save the current stream & type as last */
+  lastSream = simulationMessage.mStream;
+  lastType = simulationMessage.mType;
+  /* write the child messages */
+  foreach (SimulationMessage s, simulationMessage.mChildren)
+  {
+    writeSimulationMessage(s);
+  }
 }
 
 /*!
@@ -756,7 +895,7 @@ void SimulationDialog::runSimulationExecutable(SimulationOptions simulationOptio
 #endif
   mIsSimulationProcessRunning = true;
   mpSimulationProcess->start(fileName, args);
-  writeSimulationOutput(QString("%1 %2\n").arg(fileName).arg(args.join(" ")), Qt::blue);
+  writeSimulationOutput(QString("%1 %2\n").arg(fileName).arg(args.join(" ")), Qt::blue, true);
   while (mpSimulationProcess->state() == QProcess::Starting || mpSimulationProcess->state() == QProcess::Running)
   {
     if (!mIsSimulationProcessRunning)

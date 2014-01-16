@@ -40,6 +40,18 @@
 
 #include "MainWindow.h"
 
+struct SimulationMessage
+{
+  QString mStream;
+  QString mType;
+  QString mText;
+  int mLevel;
+  QString mIndex;
+  QList<SimulationMessage> mChildren;
+
+  SimulationMessage() {mStream = ""; mType = ""; mText = ""; mIndex = "";}
+};
+
 class SimulationOptions
 {
 public:
@@ -213,8 +225,11 @@ private:
   void compileModel();
   void saveSimulationOptions();
   void writeCompilationOutput(QString output, QColor color);
-  void writeSimulationOutput(QString output, QColor color);
-  QList<QHash<QString, QString> > parseXMLLogOutput(QString output);
+  void writeSimulationOutput(QString output, QColor color, bool textFormat = false);
+  QList<SimulationMessage> parseXMLLogOutput(QString output);
+  void parseXMLLogMessageTag(QXmlStreamReader &xmlReader, SimulationMessage *pSimulationMessage);
+  SimulationMessage parseXMLLogMessageTag1(QDomNode messageNode, int level);
+  void writeSimulationMessage(SimulationMessage &simulationMessage);
 public slots:
   void runSimulationExecutable(SimulationOptions simulationOptions);
   void browseModelSetupFile();
