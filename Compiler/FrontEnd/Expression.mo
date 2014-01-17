@@ -163,6 +163,8 @@ algorithm
       Absyn.CodeNode code;
       DAE.ReductionIterators riters;
       Absyn.ForIterators aiters;
+      DAE.Type ty;
+      DAE.Dimensions dims;
 
     case (DAE.ICONST(integer = i)) then Absyn.INTEGER(i);
     case (DAE.RCONST(real = r)) then Absyn.REAL(r);
@@ -231,6 +233,14 @@ algorithm
         acref = Absyn.pathToCref(path);
       then
         Absyn.PARTEVALFUNCTION(acref,Absyn.FUNCTIONARGS(aexpl,{}));
+
+    case (DAE.ARRAY(array = {}, ty = ty))
+      equation
+        (ty,dims) = Types.flattenArrayTypeOpt(ty);
+        ae1 = unleabZeroExpFromType(ty);
+        expl_1 = List.map(dims, unelabDimensionToFillExp);
+      then
+        Absyn.CALL(Absyn.CREF_IDENT("fill",{}),Absyn.FUNCTIONARGS(ae1::expl_1,{}));
 
     case (DAE.ARRAY(array = expl))
       equation
@@ -330,6 +340,38 @@ algorithm
       
   end matchcontinue;
 end unelabDimension;
+
+protected function unleabZeroExpFromType
+  input DAE.Type ty;
+  output Absyn.Exp outExp;
+algorithm
+  outExp := match ty
+    case DAE.T_BOOL(source=_) then Absyn.BOOL(false);
+    case DAE.T_STRING(source=_) then Absyn.STRING("");
+    case DAE.T_INTEGER(source=_) then Absyn.INTEGER(0);
+    case DAE.T_REAL(source=_) then Absyn.REAL(0.0);
+    case DAE.T_UNKNOWN(source=_) then Absyn.REAL(0.0); /* Look at the crap unelabMod needs... */
+  end match;
+end unleabZeroExpFromType;
+
+protected function unelabDimensionToFillExp
+"Transform an DAE.Dimension into Absyn.Exp, if possible"
+  input DAE.Dimension inDim;
+  output Absyn.Exp outExp;
+algorithm
+  outExp := matchcontinue (inDim)
+    local
+      Integer i;
+      DAE.Exp e;
+
+    case (DAE.DIM_INTEGER(i)) then Absyn.INTEGER(i);
+    
+    case (DAE.DIM_EXP(e)) then unelabExp(e);
+  
+    else Absyn.INTEGER(1); /* Probably bad, but only used with zero-length arrays */
+      
+  end matchcontinue;
+end unelabDimensionToFillExp;
 
 protected function unelabReductionIterator
   input DAE.ReductionIterator riter;
