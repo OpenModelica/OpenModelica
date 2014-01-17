@@ -585,7 +585,7 @@ static int initialize(DATA *data, int optiMethod, int lambda_steps)
   infoStreamPrint(LOG_INIT, 1, "### FINAL INITIALIZATION RESULTS ###");
   dumpInitialization(data,initData);
   retVal = reportResidualValue(initData);
-  messageClose(LOG_INIT);
+  if (ACTIVE_STREAM(LOG_INIT)) messageClose(LOG_INIT);
   freeInitData(initData);
 
   return retVal;
