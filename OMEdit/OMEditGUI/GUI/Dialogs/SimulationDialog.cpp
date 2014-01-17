@@ -605,7 +605,7 @@ void SimulationDialog::writeSimulationOutput(QString output, QColor color, bool 
     QTextCursor textCursor = pSimulationOutputWidget->getSimulationOutputTextBrowser()->textCursor();
     textCursor.movePosition(QTextCursor::End);
     pSimulationOutputWidget->getSimulationOutputTextBrowser()->setTextCursor(textCursor);
-    /* set the text color red */
+    /* set the text color */
     QTextCharFormat charFormat = pSimulationOutputWidget->getSimulationOutputTextBrowser()->currentCharFormat();
     charFormat.setForeground(color);
     pSimulationOutputWidget->getSimulationOutputTextBrowser()->setCurrentCharFormat(charFormat);
@@ -659,10 +659,18 @@ QList<SimulationMessage> SimulationDialog::parseXMLLogOutput(QString output)
   /*
     We should enclose the output in root tag because there can be only one top level element.
     */
-  output.prepend("<root>").append("</root>");
-  if (!xmlDocument.setContent(output, &errorMsg, &errorLine, &errorColumn))
+  QString output1 = output;
+  output1.prepend("<root>").append("</root>");
+  if (!xmlDocument.setContent(output1, &errorMsg, &errorLine, &errorColumn))
   {
-    qDebug() << tr("Error while parsing message xml %1 %2:%3").arg(errorMsg).arg(errorLine).arg(errorColumn);
+    SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mSimulationOutputWidgetsList.last());
+    /* make the text color red */
+    QTextCharFormat charFormat = pSimulationOutputWidget->getSimulationOutputTextBrowser()->currentCharFormat();
+    charFormat.setForeground(Qt::red);
+    pSimulationOutputWidget->getSimulationOutputTextBrowser()->setCurrentCharFormat(charFormat);
+    /* print the parser error alongwith the actual output. */
+    pSimulationOutputWidget->getSimulationOutputTextBrowser()->insertPlainText(tr("Error while parsing message xml %1 %2:%3\n").arg(errorMsg).arg(errorLine).arg(errorColumn));
+    pSimulationOutputWidget->getSimulationOutputTextBrowser()->insertPlainText(output);
     return simulationMessages;
   }
   //Get the root element
