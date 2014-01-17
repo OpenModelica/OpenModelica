@@ -110,18 +110,18 @@ int main(int argc, const char* argv[])
         {
             std::string eception_msg = "The output format is not supported yet. Please use outputFormat=\"csv\" in simulate command ";
             cerr << eception_msg.c_str();
-            return 0;
+            return 1;
         }
 
 
             
-            //SimController to start simulation
-             SimSettings settings = {solver,"newton",starttime,stoptime,stepsize,1e-20,0.01,tollerance,results_file_path.string()};
-            boost::shared_ptr<ISimController> sim_controller =  boost::shared_ptr<ISimController>(new SimController(runtime_lib_path,modelica_path));
-             //create Modelica system
-            std::pair<boost::weak_ptr<IMixedSystem>,boost::weak_ptr<ISimData> > system = sim_controller->LoadSystem("ModelicaSystem");
-       
-            sim_controller->Start(system.first,settings);
+        //SimController to start simulation
+         SimSettings settings = {solver,"newton",starttime,stoptime,stepsize,1e-20,0.01,tollerance,results_file_path.string()};
+        boost::shared_ptr<ISimController> sim_controller =  boost::shared_ptr<ISimController>(new SimController(runtime_lib_path,modelica_path));
+         //create Modelica system
+        std::pair<boost::weak_ptr<IMixedSystem>,boost::weak_ptr<ISimData> > system = sim_controller->LoadSystem("ModelicaSystem");
+   
+        sim_controller->Start(system.first,settings);
        
 
     }

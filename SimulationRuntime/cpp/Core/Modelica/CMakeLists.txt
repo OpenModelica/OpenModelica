@@ -34,15 +34,15 @@ set (BOOST_INCLUDE ${Boost_INCLUDE_DIRS})
 set (BOOST_LIBS ${Boost_LIBRARY_DIRS})
 set (MODELICA_SYSTEM_LIB_EXT ${libModelicaSystemNameExt})
  configure_file (
-  "ModelicaConfic.inc.in"
-  "${PROJECT_BINARY_DIR}/ModelicaConfic.inc"
+  "ModelicaConfig.inc.in"
+  "${PROJECT_BINARY_DIR}/ModelicaConfig.inc"
   )
 
 
 
 install (FILES
 
-				${PROJECT_BINARY_DIR}/ModelicaConfic.inc
+				${PROJECT_BINARY_DIR}/ModelicaConfig.inc
 				DESTINATION include/omc/cpp)
 
 
