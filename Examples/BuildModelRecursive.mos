@@ -1,14 +1,21 @@
 // Note: Run with +g=MetaModelica
 
-if regularFileExists("CustomCommands.mos") then runScript("CustomCommands.mos") else "";
-customCommandsStr := if regularFileExists("CustomCommands.mos") then ("<pre>" + escapeXML(readFile("CustomCommands.mos")) + "</pre>") else "";
+setCommandLineOptions("+d=nogen");
+if not regularFileExists("CustomCommands.mos") then
+  customCommands := "setCommandLineOptions(\"+d=nogen,initialization\");
+setMatchingAlgorithm(\"PFPlusExt\");
+setIndexReductionMethod(\"dynamicStateSelection\");";
+  writeFile("CustomCommands.mos",customCommands);
+end if;
+runScript("CustomCommands.mos");
+customCommandsStr := if regularFileExists("CustomCommands.mos") then ("Flags: <pre>" + escapeXML(readFile("CustomCommands.mos")) + "</pre>") else "";
 library:=$TypeName(Modelica);
 libraryVersion:="default";
 referenceFiles:=getInstallationDirectoryPath()+"/../testsuite/simulation/libraries/msl32/ReferenceFiles";
 referenceFileExtension:="mat";
 referenceFileNameDelimiter:=".";
 
-setCommandLineOptions({"+g=Modelica","+d=nogen,"});
+setCommandLineOptions({"+g=Modelica","+d=nogen"});
 OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
 log:="BuildModelRecursive.html";
 ulimitOmc:="1200"; // 20 minutes to generate the C-code
@@ -27,7 +34,7 @@ system("date +'%Y-%m-%d %H:%M:%S' > tmp.date");
 dateAndTime:=readFile("tmp.date");
 system("rm -f tmp.date");
 
-loadModelCommand:=(if regularFileExists("CustomCommands.mos") then "\nrunScript(\"CustomCommands.mos\");" else "") + "\nloadModel("+libraryString+",{\""+libraryVersion+"\"});\n";
+loadModelCommand:="\nrunScript(\"CustomCommands.mos\");\nloadModel("+libraryString+",{\""+libraryVersion+"\"});\n";
 
 omc:=getInstallationDirectoryPath()+"/bin/omc";
 dygraphs:=getInstallationDirectoryPath()+"/share/doc/omc/testmodels/dygraph-combined.js";
@@ -98,13 +105,13 @@ writeFile(statFile + \".flat\", testcase(0,false,\"killed\"));getErrorString();
 writeFile(statFile + \".compile\", testcase(0,false,\"killed\"));getErrorString();
 writeFile(statFile + \".sim\", testcase(0,false,\"killed\"));getErrorString();
 writeFile(statFile + \".verify\", testcase(0,false,\"killed\"));getErrorString();
+outputFormat:=\"mat\";
 "+loadModelCommand+"
 reference_reltol:="+String(reference_reltol)+";
 reference_reltolDiffMinMax:="+String(reference_reltolDiffMinMax)+";
 reference_rangeDelta:="+String(reference_rangeDelta)+";
 (startTime,stopTime,tolerance):=getSimulationOptions("+s+",defaultTolerance="+String(default_tolerance)+");
-setCommandLineOptions(\"+d=nogen,initialization\"); setMatchingAlgorithm(\"PFPlusExt\"); setIndexReductionMethod(\"dynamicStateSelection\"); 
-res:=buildModel("+s+",tolerance=tolerance);
+res:=buildModel("+s+",tolerance=tolerance,outputFormat=outputFormat);
 greenColor := \"#00FF00\";
 errFile:=\"files/"+s+".err\";
 simFile:=\"files/"+s+".sim\";
@@ -143,7 +150,7 @@ if simRes then
   prefix := \"files/"+s+".diff\";
   if referenceExists then
     OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
-    (referenceOK,diffVars) := diffSimulationResults(\""+s+"_res.mat\",reference,prefix,relTol=reference_reltol,relTolDiffMinMax=reference_reltolDiffMinMax,rangeDelta=reference_rangeDelta);
+    (referenceOK,diffVars) := diffSimulationResults(\""+s+"_res.\"+outputFormat,reference,prefix,relTol=reference_reltol,relTolDiffMinMax=reference_reltolDiffMinMax,rangeDelta=reference_rangeDelta);
     if referenceOK then
       system(\"touch "+s+".verifysuccess\");
     end if;
@@ -243,8 +250,7 @@ str:="<h1>Recursive BuildModel Test</h1>
 <p>Tested Library: "+libraryString+" "+libraryVersionRevision+"</p>
 <p>BuildModel time limit: "+ulimitOmc+"s</p>
 <p>Simulation time limit: "+ulimitExe+"s</p>
-<p>Default tolerance: "+String(default_tolerance)+"</p>
-<p>Flags: setCommandLineOptions(\"+d=nogen,initialization\"); setMatchingAlgorithm(\"PFPlusExt\"); setIndexReductionMethod(\"dynamicStateSelection\");</p>" 
+<p>Default tolerance: "+String(default_tolerance)+"</p>"
 + customCommandsStr +
 "<p>Links are provided if getErrorString() or the simulation generates output. <font style=\"background-color:#00FF00\">Green</font> means success. <font style=\"background-color:#FF0000\">Red</font> is bad and in general signifies a failure.</p>
 ";
