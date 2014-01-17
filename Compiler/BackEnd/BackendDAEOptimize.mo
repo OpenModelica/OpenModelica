@@ -7300,7 +7300,6 @@ algorithm
     equation
       // only eqCrossNodes
       loop1 = List.unique(loop1);
-      print("solve the loop: "+&stringDelimitList(List.map(loop1,intString),",")+&"\n");
       resolvedEq = resolveClosedLoop(loop1,mIn,mTIn,eqMapping,varMapping,eqLstIn,varLstIn);
       // update IncidenceMatrix
       (crossEqs,eqs,_) = List.intersection1OnTrue(loop1,eqCrossLstIn,intEq);  // replace a crossEq
@@ -7334,7 +7333,6 @@ algorithm
     equation
       // only varCrossNodes
       print("only varCrossNodes\n");
-      print("solve the loop: "+&stringDelimitList(List.map(loop1,intString),",")+&"\n");
       loop1 = List.unique(loop1);
       resolvedEq = resolveClosedLoop(loop1,mIn,mTIn,eqMapping,varMapping,eqLstIn,varLstIn);
       // update IncidenceMatrix
@@ -7359,7 +7357,6 @@ algorithm
       // single Loop
       loop1 = List.unique(loop1);
       print("single loop\n");
-      print("solve the loop: "+&stringDelimitList(List.map(loop1,intString),",")+&"\n");
       resolvedEq = resolveClosedLoop(loop1,mIn,mTIn,eqMapping,varMapping,eqLstIn,varLstIn);
       // update IncidenceMatrix
       (_,crossEqs,_) = List.intersection1OnTrue(loop1,replEqsIn,intEq);  // do not replace an already replaced Eq
@@ -7745,16 +7742,49 @@ protected function resolveClosedLoop"sums up all equations in a loop so that the
   output BackendDAE.Equation eqOut;
 protected
   Integer startEqIdx,startEqDaeIdx;
-  list<Integer> restLoop;
+  list<Integer> loop1, restLoop;
   BackendDAE.Equation eq;
 algorithm
-  startEqIdx := List.first(loopIn);
+  startEqIdx::restLoop := loopIn;
   startEqDaeIdx := listGet(eqMapping,startEqIdx);
+  loop1 := sortLoop(restLoop,m,mT,{startEqIdx});
+  print("solve the loop: "+&stringDelimitList(List.map(loop1,intString),",")+&"\n");
   eq := listGet(daeEqsIn,startEqDaeIdx);
-  print("start with equation no.: "+&intString(startEqDaeIdx)+&" which is:\n"+&BackendDump.equationString(eq)+&"\n");
-  eqOut := resolveClosedLoop2(eq,loopIn,m,mT,eqMapping,varMapping,daeEqsIn,daeVarsIn);
+  print("start with equation no.: "+&intString(startEqDaeIdx)+&" which is: \n"+&BackendDump.equationString(eq)+&"\n");
+  eqOut := resolveClosedLoop2(eq,loop1,m,mT,eqMapping,varMapping,daeEqsIn,daeVarsIn);
 end resolveClosedLoop;
 
+protected function sortLoop "sorts the equations in a loop.
+author:Waurich TUD 2014-01"
+  input list<Integer> loopIn;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrixT mT;
+  input list<Integer> sortLoopIn;
+  output list<Integer> sortLoopOut;
+algorithm
+  sortLoopOut := matchcontinue(loopIn,m,mT,sortLoopIn)
+    local
+      Integer start, next;
+      list<Integer> rest, vars, eqs;
+      list<list<Integer>> varEqs;
+    case({},_,_,_)
+      equation
+      then
+        listReverse(sortLoopIn);
+    case(_,_,_,start::rest) 
+      equation
+        vars = arrayGet(m,start);
+        varEqs = List.map1(vars,Util.arrayGetIndexFirst,mT);
+        eqs = List.flatten(varEqs);
+        eqs = List.unique(eqs);
+        (eqs,_,_) = List.intersection1OnTrue(eqs,loopIn,intEq);
+        next = List.first(eqs);
+        rest = List.deleteMember(loopIn,next);
+        rest = sortLoop(rest,m,mT,next::sortLoopIn);
+      then
+        rest;
+  end matchcontinue;
+end sortLoop;
 
 protected function resolveClosedLoop2"
 author:Waurich TUD 2013-12"
