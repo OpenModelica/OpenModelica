@@ -2611,6 +2611,26 @@ algorithm
   end match;
 end getFunctionType;
 
+public function getFunctionImpureAttribute
+  input DAE.Function fn;
+  output Boolean outImpure;
+algorithm
+  outImpure := match fn
+    local
+    case DAE.FUNCTION(isImpure = outImpure) then outImpure;
+  end match;
+end getFunctionImpureAttribute;
+
+public function getFunctionInlineType
+  input DAE.Function fn;
+  output DAE.InlineType outInlineType;
+algorithm
+  outImpure := match fn
+    local
+    case DAE.FUNCTION(inlineType = outInlineType) then outInlineType;
+  end match;
+end getFunctionInlineType;
+
 public function getFunctionInputVars
   input DAE.Function fn;
   output list<DAE.Element> outEls;

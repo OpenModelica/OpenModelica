@@ -611,7 +611,8 @@ uniontype DiffentiationType "Define the behavoir of differentation method for (e
   record SIMPLE_DIFFERENTAION "Used to solve expression for a cref or by the older jacobian generation, differation w.r.t. a given cref"
   end SIMPLE_DIFFERENTAION;
 
-  record DIFFERENTAION_FUNCTION "Used to solve expression for a cref or by the older jacobian generation, differation w.r.t. a given cref"
+  record DIFFERENTAION_FUNCTION "Used to differentiate a function call w.r.t. a given cref, which need to expand the input arguments 
+                                  by differentiate arguments."
   end DIFFERENTAION_FUNCTION;
   
   record FULL_JACOBIAN "Used to generate a full jacobian matrix"
