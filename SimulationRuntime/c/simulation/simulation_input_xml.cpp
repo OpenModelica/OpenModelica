@@ -404,7 +404,7 @@ void read_input_xml(MODEL_DATA* modelData,
     debugStreamPrint(LOG_DEBUG, 0, "read for %s colEnd %d from setup file", modelData->realVarsData[i].info.name, modelData->realVarsData[i].info.info.colEnd);
     read_value(mi.rSta[i]["fileWritable"], (modelica_integer*)&(modelData->realVarsData[i].info.info.readonly));
     debugStreamPrint(LOG_DEBUG, 0, "read for %s readonly %d from setup file", modelData->realVarsData[i].info.name, modelData->realVarsData[i].info.info.readonly);
-    if (ACTIVE_STREAM(LOG_DEBUG)) messageClose(LOG_DEBUG);
+    if (DEBUG_STREAM(LOG_DEBUG)) messageClose(LOG_DEBUG);
 
     /* read var attribute */
     read_value(mi.rSta[i]["useStart"], (modelica_boolean*)&(modelData->realVarsData[i].attribute.useStart));
@@ -451,7 +451,7 @@ void read_input_xml(MODEL_DATA* modelData,
     debugStreamPrint(LOG_DEBUG, 0, "read for %s colEnd %d from setup file",modelData->realVarsData[modelData->nStates+i].info.name,modelData->realVarsData[modelData->nStates+i].info.info.colEnd);
     read_value(mi.rDer[i]["fileWritable"], (modelica_integer*) &(modelData->realVarsData[modelData->nStates+i].info.info.readonly));
     debugStreamPrint(LOG_DEBUG, 0, "read for %s readonly %d from setup file",modelData->realVarsData[modelData->nStates+i].info.name,modelData->realVarsData[modelData->nStates+i].info.info.readonly);
-    if (ACTIVE_STREAM(LOG_DEBUG)) messageClose(LOG_DEBUG);
+    if (DEBUG_STREAM(LOG_DEBUG)) messageClose(LOG_DEBUG);
 
     /* read var attribute */
     read_value(mi.rDer[i]["useStart"], (modelica_boolean*)&(modelData->realVarsData[modelData->nStates+i].attribute.useStart));
@@ -500,7 +500,7 @@ void read_input_xml(MODEL_DATA* modelData,
     debugStreamPrint(LOG_DEBUG, 0, "read for %s colEnd %d from setup file",modelData->realVarsData[j].info.name,modelData->realVarsData[j].info.info.colEnd);
     read_value(mi.rAlg[i]["fileWritable"], (modelica_integer*) &(modelData->realVarsData[j].info.info.readonly));
     debugStreamPrint(LOG_DEBUG, 0, "read for %s readonly %d from setup file",modelData->realVarsData[j].info.name,modelData->realVarsData[j].info.info.readonly);
-    if (ACTIVE_STREAM(LOG_DEBUG)) messageClose(LOG_DEBUG);
+    if (DEBUG_STREAM(LOG_DEBUG)) messageClose(LOG_DEBUG);
 
     /* read var attribute */
     read_value(mi.rAlg[i]["useStart"], (modelica_boolean*)&(modelData->realVarsData[j].attribute.useStart));
@@ -547,7 +547,7 @@ void read_input_xml(MODEL_DATA* modelData,
     debugStreamPrint(LOG_DEBUG, 0, "read for %s colEnd %d from setup file",modelData->integerVarsData[i].info.name,modelData->integerVarsData[i].info.info.colEnd);
     read_value(mi.iAlg[i]["fileWritable"], (modelica_integer*) &(modelData->integerVarsData[i].info.info.readonly));
     debugStreamPrint(LOG_DEBUG, 0, "read for %s readonly %d from setup file",modelData->integerVarsData[i].info.name,modelData->integerVarsData[i].info.info.readonly);
-    if (ACTIVE_STREAM(LOG_DEBUG)) messageClose(LOG_DEBUG);
+    if (DEBUG_STREAM(LOG_DEBUG)) messageClose(LOG_DEBUG);
 
     /* read var attribute */
     read_value(mi.iAlg[i]["useStart"], &(modelData->integerVarsData[i].attribute.useStart));
@@ -592,7 +592,7 @@ void read_input_xml(MODEL_DATA* modelData,
     debugStreamPrint(LOG_DEBUG, 0, "read for %s colEnd %d from setup file",modelData->booleanVarsData[i].info.name,modelData->booleanVarsData[i].info.info.colEnd);
     read_value(mi.bAlg[i]["fileWritable"], (modelica_integer*) &(modelData->booleanVarsData[i].info.info.readonly));
     debugStreamPrint(LOG_DEBUG, 0, "read for %s readonly %d from setup file",modelData->booleanVarsData[i].info.name,modelData->booleanVarsData[i].info.info.readonly);
-    if (ACTIVE_STREAM(LOG_DEBUG)) messageClose(LOG_DEBUG);
+    if (DEBUG_STREAM(LOG_DEBUG)) messageClose(LOG_DEBUG);
 
     /* read var attribute */
     read_value(mi.bAlg[i]["useStart"], &(modelData->booleanVarsData[i].attribute.useStart));
@@ -635,7 +635,7 @@ void read_input_xml(MODEL_DATA* modelData,
     debugStreamPrint(LOG_DEBUG, 0, "read for %s colEnd %d from setup file",modelData->stringVarsData[i].info.name,modelData->stringVarsData[i].info.info.colEnd);
     read_value(mi.sAlg[i]["fileWritable"], (modelica_integer*) &(modelData->stringVarsData[i].info.info.readonly));
     debugStreamPrint(LOG_DEBUG, 0, "read for %s readonly %d from setup file",modelData->stringVarsData[i].info.name,modelData->stringVarsData[i].info.info.readonly);
-    if (ACTIVE_STREAM(LOG_DEBUG)) messageClose(LOG_DEBUG);
+    if (DEBUG_STREAM(LOG_DEBUG)) messageClose(LOG_DEBUG);
 
     /* read var attribute */
     read_value(mi.sAlg[i]["useStart"], &(modelData->stringVarsData[i].attribute.useStart));
@@ -680,7 +680,7 @@ void read_input_xml(MODEL_DATA* modelData,
     debugStreamPrint(LOG_DEBUG, 0, "read for %s colEnd %d from setup file",modelData->realParameterData[i].info.name,modelData->realParameterData[i].info.info.colEnd);
     read_value(mi.rPar[i]["fileWritable"], (modelica_integer*) &(modelData->realParameterData[i].info.info.readonly));
     debugStreamPrint(LOG_DEBUG, 0, "read for %s readonly %d from setup file",modelData->realParameterData[i].info.name,modelData->realParameterData[i].info.info.readonly);
-    if (ACTIVE_STREAM(LOG_DEBUG)) messageClose(LOG_DEBUG);
+    if (DEBUG_STREAM(LOG_DEBUG)) messageClose(LOG_DEBUG);
 
     /* read var attribute */
     read_value(mi.rPar[i]["useStart"], &(modelData->realParameterData[i].attribute.useStart));
@@ -727,7 +727,7 @@ void read_input_xml(MODEL_DATA* modelData,
     debugStreamPrint(LOG_DEBUG, 0, "read for %s colEnd %d from setup file",modelData->integerParameterData[i].info.name,modelData->integerParameterData[i].info.info.colEnd);
     read_value(mi.iPar[i]["fileWritable"], (modelica_integer*) &(modelData->integerParameterData[i].info.info.readonly));
     debugStreamPrint(LOG_DEBUG, 0, "read for %s readonly %d from setup file",modelData->integerParameterData[i].info.name,modelData->integerParameterData[i].info.info.readonly);
-    if (ACTIVE_STREAM(LOG_DEBUG)) messageClose(LOG_DEBUG);
+    if (DEBUG_STREAM(LOG_DEBUG)) messageClose(LOG_DEBUG);
 
     /* read var attribute */
     read_value(mi.iPar[i]["useStart"], (modelica_boolean*)&(modelData->integerParameterData[i].attribute.useStart));
@@ -771,7 +771,7 @@ void read_input_xml(MODEL_DATA* modelData,
     debugStreamPrint(LOG_DEBUG, 0, "read for %s colEnd %d from setup file", modelData->booleanParameterData[i].info.name, modelData->booleanParameterData[i].info.info.colEnd);
     read_value(mi.bPar[i]["fileWritable"], (modelica_integer*)&(modelData->booleanParameterData[i].info.info.readonly));
     debugStreamPrint(LOG_DEBUG, 0, "read for %s readonly %d from setup file", modelData->booleanParameterData[i].info.name, modelData->booleanParameterData[i].info.info.readonly);
-    if (ACTIVE_STREAM(LOG_DEBUG)) messageClose(LOG_DEBUG);
+    if (DEBUG_STREAM(LOG_DEBUG)) messageClose(LOG_DEBUG);
 
     /* read var attribute */
     read_value(mi.bPar[i]["useStart"], &(modelData->booleanParameterData[i].attribute.useStart));
@@ -813,7 +813,7 @@ void read_input_xml(MODEL_DATA* modelData,
     debugStreamPrint(LOG_DEBUG, 0, "read for %s colEnd %d from setup file",modelData->stringParameterData[i].info.name,modelData->stringParameterData[i].info.info.colEnd);
     read_value(mi.sPar[i]["fileWritable"], (modelica_integer*) &(modelData->stringParameterData[i].info.info.readonly));
     debugStreamPrint(LOG_DEBUG, 0, "read for %s readonly %d from setup file",modelData->stringParameterData[i].info.name,modelData->stringParameterData[i].info.info.readonly);
-    if (ACTIVE_STREAM(LOG_DEBUG)) messageClose(LOG_DEBUG);
+    if (DEBUG_STREAM(LOG_DEBUG)) messageClose(LOG_DEBUG);
 
     /* read var attribute */
     read_value(mi.sPar[i]["useStart"], &(modelData->stringParameterData[i].attribute.useStart));
@@ -856,7 +856,7 @@ void read_input_xml(MODEL_DATA* modelData,
     debugStreamPrint(LOG_DEBUG, 0, "read for %s colEnd %d from setup file",modelData->realAlias[i].info.name,modelData->realAlias[i].info.info.colEnd);
     read_value(mi.rAli[i]["fileWritable"], (modelica_integer*) &(modelData->realAlias[i].info.info.readonly));
     debugStreamPrint(LOG_DEBUG, 0, "read for %s readonly %d from setup file",modelData->realAlias[i].info.name,modelData->realAlias[i].info.info.readonly);
-    if (ACTIVE_STREAM(LOG_DEBUG)) messageClose(LOG_DEBUG);
+    if (DEBUG_STREAM(LOG_DEBUG)) messageClose(LOG_DEBUG);
 
     string aliasTmp;
     read_value(mi.rAli[i]["alias"], &aliasTmp);
@@ -926,7 +926,7 @@ void read_input_xml(MODEL_DATA* modelData,
     debugStreamPrint(LOG_DEBUG, 0, "read for %s colEnd %d from setup file",modelData->integerAlias[i].info.name,modelData->integerAlias[i].info.info.colEnd);
     read_value(mi.iAli[i]["fileWritable"], (modelica_integer*) &(modelData->integerAlias[i].info.info.readonly));
     debugStreamPrint(LOG_DEBUG, 0, "read for %s readonly %d from setup file",modelData->integerAlias[i].info.name,modelData->integerAlias[i].info.info.readonly);
-    if (ACTIVE_STREAM(LOG_DEBUG)) messageClose(LOG_DEBUG);
+    if (DEBUG_STREAM(LOG_DEBUG)) messageClose(LOG_DEBUG);
 
     string aliasTmp;
     read_value(mi.iAli[i]["alias"], &aliasTmp);
@@ -994,7 +994,7 @@ void read_input_xml(MODEL_DATA* modelData,
     debugStreamPrint(LOG_DEBUG, 0, "read for %s colEnd %d from setup file",modelData->booleanAlias[i].info.name,modelData->booleanAlias[i].info.info.colEnd);
     read_value(mi.bAli[i]["fileWritable"], (modelica_boolean*) &(modelData->booleanAlias[i].info.info.readonly));
     debugStreamPrint(LOG_DEBUG, 0, "read for %s readonly %d from setup file",modelData->booleanAlias[i].info.name,modelData->booleanAlias[i].info.info.readonly);
-    if (ACTIVE_STREAM(LOG_DEBUG)) messageClose(LOG_DEBUG);
+    if (DEBUG_STREAM(LOG_DEBUG)) messageClose(LOG_DEBUG);
 
     std::string aliasTmp;
     read_value(mi.bAli[i]["alias"], &aliasTmp);
@@ -1062,7 +1062,7 @@ void read_input_xml(MODEL_DATA* modelData,
     debugStreamPrint(LOG_DEBUG, 0, "read for %s colEnd %d from setup file",modelData->stringAlias[i].info.name,modelData->stringAlias[i].info.info.colEnd);
     read_value(mi.sAli[i]["fileWritable"], (modelica_string*) &(modelData->stringAlias[i].info.info.readonly));
     debugStreamPrint(LOG_DEBUG, 0, "read for %s readonly %d from setup file",modelData->stringAlias[i].info.name,modelData->stringAlias[i].info.info.readonly);
-    if (ACTIVE_STREAM(LOG_DEBUG)) messageClose(LOG_DEBUG);
+    if (DEBUG_STREAM(LOG_DEBUG)) messageClose(LOG_DEBUG);
 
     std::string aliasTmp;
     read_value(mi.sAli[i]["alias"], &aliasTmp);

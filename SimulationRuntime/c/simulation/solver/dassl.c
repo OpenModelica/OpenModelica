@@ -628,9 +628,8 @@ int functionJacASym(DATA* data, double* jac)
 
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 0.0;
   }
-  /*
-  // debug output
-  if(ACTIVE_STREAM(LOG_DEBUG))
+  // debug output; would be optimized away if the code compiled
+  /* if(DEBUG_STREAM(LOG_DEBUG))
   {
     infoStreamPrint("Print jac:");
     for(i=0;  i < data->simulationInfo.analyticJacobians[index].sizeRows;i++)
@@ -639,8 +638,7 @@ int functionJacASym(DATA* data, double* jac)
         printf("% .5e ",jac[i+j*data->simulationInfo.analyticJacobians[index].sizeCols]);
       printf("\n");
     }
-  }
-  */
+  } */
   return 0;
 }
 

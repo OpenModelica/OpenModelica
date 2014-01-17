@@ -273,7 +273,7 @@
       {
         functionJacG_sparse(ipopt_data->initData->simData, values);
 
-        if(ACTIVE_STREAM(LOG_DEBUG))
+        if(ACTIVE_STREAM(LOG_DEBUG)) /* TODO: This is not XML data, is it? */
         {
           int i, j;
           int idx = 0;
