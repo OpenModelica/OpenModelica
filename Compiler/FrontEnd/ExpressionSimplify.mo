@@ -329,6 +329,14 @@ algorithm
       Boolean b2;
       String idn;
       Integer n;
+    
+    // homotopy(e, e) => e
+    case DAE.CALL(path=Absyn.IDENT("homotopy"),expLst={e1,e2})
+      equation
+        true = Expression.expEqual(e1,e2);
+      then
+        e1;    
+    
     // noEvent propagated to relations and event triggering functions
     case DAE.CALL(path=Absyn.IDENT("noEvent"),expLst={e})
       equation

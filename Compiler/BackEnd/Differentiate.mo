@@ -633,7 +633,7 @@ algorithm
         //print("\nresults to exp: " +& se1);
       then (res, functionTree);
 
-    // differentiate homotopy
+    /*/ differentiate homotopy
     case( e as DAE.CALL(
                 path = p as Absyn.IDENT(name="homotopy"), 
                 expLst = {actual,simplified},
@@ -643,7 +643,7 @@ algorithm
         (e2, functionTree) = differentiateExp(simplified, inDiffwrtCref, inInputData, inDiffType, functionTree);
         res = DAE.CALL(p, {e1, e2}, attr);
       then 
-        (res, functionTree);
+        (res, functionTree);*/
 
     // differentiate call
     case( e as DAE.CALL(path = _), _, _, _, _)
@@ -784,7 +784,9 @@ algorithm
         Debug.fprint(Flags.FAILTRACE, serr);
       then
         fail();
+  
   end match;
+
 end differentiateExp;
 
 public function differentiateStatements
