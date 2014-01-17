@@ -2625,7 +2625,7 @@ public function getFunctionInlineType
   input DAE.Function fn;
   output DAE.InlineType outInlineType;
 algorithm
-  outImpure := match fn
+  outInlineType := match fn
     local
     case DAE.FUNCTION(inlineType = outInlineType) then outInlineType;
   end match;
