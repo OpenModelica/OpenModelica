@@ -68,7 +68,7 @@ public:
   std::string getShortMessage() const {return veryshort_msg;};
 
   // Returns the expanded message with inserted tokens.
-  std::string getMessage() const {return shortMessage;};
+  std::string getMessage(int warningsAsErrors) {if (!warningsAsErrors) {return shortMessage;} else {return getMessage_(warningsAsErrors);}};
 
   // Returns the complete message in string format corresponding to a Modeica vector.
   std::string getFullMessage() const {return fullMessage;};
@@ -102,7 +102,7 @@ private:
   std::string filename_;
 
   std::string getShortMessage_();
-  std::string getMessage_();
+  std::string getMessage_(int warningsAsErrors);
   std::string getFullMessage_();
 
 };

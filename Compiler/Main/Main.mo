@@ -244,14 +244,14 @@ algorithm
         Print.printBuf("Error occurred building AST\n");
         result = Print.getString();
         result = stringAppend(result, "Syntax Error\n");
-        result = stringAppend(result, Error.printMessagesStr());
+        result = stringAppend(result, Error.printMessagesStr(false));
       then (result, inSymbolTable);
 
     // A non-parser error occured, display the error message.
     case (_, _, _, _)
       equation
         true = Util.isSome(inStatements) or Util.isSome(inProgram);
-        result = Error.printMessagesStr();
+        result = Error.printMessagesStr(false);
       then (result, inSymbolTable);
 
     else
@@ -517,7 +517,7 @@ algorithm
         // Parse libraries and extra mo-files that might have been given at the command line.
         GlobalScript.SYMBOLTABLE(ast = pLibs) = loadLibs(libs, GlobalScript.emptySymboltable);
         // Show any errors that occured during parsing.
-        showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
+        showErrors(Print.getErrorString(), ErrorExt.printMessagesStr(false));
 
         // Merge our program with the possible libs and models from extra .mo-files.
         p = Interactive.updateProgram(pLibs, p);
@@ -559,7 +559,7 @@ algorithm
         // Run the backend.
         optimizeDae(cache, env, d, p, cname);
         // Show any errors or warnings if there are any!
-        showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
+        showErrors(Print.getErrorString(), ErrorExt.printMessagesStr(false));
       then ();
 
     /* Modelica script file .mos */
@@ -578,7 +578,7 @@ algorithm
 
         // are there any errors?
         // show errors if there are any
-        showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
+        showErrors(Print.getErrorString(), ErrorExt.printMessagesStr(false));
         // evaluate statements and print the result to stdout directly
         newst = Interactive.evaluateToStdOut(stmts, st, true);
       then
@@ -596,7 +596,7 @@ algorithm
         false = System.regularFileExists(f);
         print(System.gettext("File does not exist: ")); print(f); print("\n");
         // show errors if there are any
-        showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
+        showErrors(Print.getErrorString(), ErrorExt.printMessagesStr(false));
       then
         fail();
 
@@ -605,7 +605,7 @@ algorithm
         true = System.regularFileExists(f);
         print("Error processing file: "); print(f); print("\n");
         // show errors if there are any
-        showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
+        showErrors(Print.getErrorString(), ErrorExt.printMessagesStr(false));
       then
         fail();
   end matchcontinue;
@@ -1017,7 +1017,7 @@ algorithm
       equation
         ErrorExt.clearMessages();
         failure(_ = Flags.new(args));
-        print(ErrorExt.printMessagesStr()); print("\n");
+        print(ErrorExt.printMessagesStr(false)); print("\n");
       then fail();
   end matchcontinue;
 end main;
@@ -1131,7 +1131,7 @@ algorithm
         errstr = Print.getErrorString();
         Print.printBuf("\n\n----\n\nError buffer:\n\n");
         print(errstr);
-        print(ErrorExt.printMessagesStr()); print("\n");
+        print(ErrorExt.printMessagesStr(false)); print("\n");
       then
         fail();
 

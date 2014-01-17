@@ -859,7 +859,7 @@ algorithm
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       Values.Value ret_val,simValue,value,v,cvar,cvar2,v1,v2;
       Absyn.ComponentRef cr_1;
-      Integer size,resI,i,n, curveStyle;
+      Integer size,resI,i,i1,i2,i3,n,curveStyle;
       Option<Integer> fmiContext, fmiInstance, fmiModelVariablesInstance; /* void* implementation: DO NOT UNBOX THE POINTER AS THAT MIGHT CHANGE IT. Just treat this as an opaque type. */
       Integer fmiLogLevel;
       list<Integer> is;
@@ -867,7 +867,7 @@ algorithm
       FMI.ExperimentAnnotation fmiExperimentAnnotation;
       FMI.Info fmiInfo;
       list<String> vars_1,args,strings,strs,strs1,strs2,visvars,postOptModStrings,postOptModStringsOrg,mps,files,dirs;
-      Real timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2,r,linearizeTime,curveWidth,offset,offset1,offset2,scaleFactor,scaleFactor1,scaleFactor2;
+      Real timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2,r,r1,r2,linearizeTime,curveWidth,offset,offset1,offset2,scaleFactor,scaleFactor1,scaleFactor2;
       GlobalScript.Statements istmts;
       list<GlobalScript.Statements> istmtss;
       Boolean have_corba, bval, anyCode, b, b1, b2, externalWindow, grid, logX, logY,  gcc_res, omcfound, rm_res, touch_res, uname_res,  ifcpp, ifmsvc,sort, builtin, showProtected, inputConnectors, outputConnectors;
@@ -1440,7 +1440,7 @@ algorithm
     case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st,_)
       equation
         omhome = Settings.getInstallationDirectoryPath() "simulation fail for some other reason than OPENMODELICAHOME not being set." ;
-        errorStr = Error.printMessagesStr();
+        errorStr = Error.printMessagesStr(false);
         str = Absyn.pathString(className);
         res = stringAppendList({"Simulation failed for model: ", str, "\n", errorStr});
         simValue = createSimulationResultFailure(res, simOptionsAsString(vals));
@@ -1890,11 +1890,19 @@ algorithm
       then
         (cache,Values.STRING(str_1),st);
 
-    case (cache,env,"getErrorString",{},st,_)
+    case (cache,env,"getErrorString",{Values.BOOL(b)},st,_)
       equation
-        str = Error.printMessagesStr();
+        str = Error.printMessagesStr(b);
       then
         (cache,Values.STRING(str),st);
+
+    case (cache,env,"countMessages",_,st,_)
+      equation
+        i1 = Error.getNumMessages();
+        i2 = Error.getNumErrorMessages();
+        i3 = ErrorExt.getNumWarningMessages();
+      then
+        (cache,Values.TUPLE({Values.INTEGER(i1),Values.INTEGER(i2),Values.INTEGER(i3)}),st);
 
     case (cache,env,"clearMessages",{},st,_)
       equation
@@ -2109,6 +2117,24 @@ algorithm
     case (cache,env,"loadFiles",_,st,_)
       equation
         System.GC_enable();
+      then (cache,Values.BOOL(false),st);
+
+    case (cache,env,"reloadClass",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.STRING(encoding)},st as GlobalScript.SYMBOLTABLE(ast = p),_)
+      equation
+        Absyn.CLASS(info=Absyn.INFO(fileName=filename,buildTimes=Absyn.TIMESTAMP(lastEditTime=r2))) = Interactive.getPathedClassInProgram(classpath, p);
+        (true,_,r1) = System.stat(filename);
+        b = realEq(r1,r2);
+        st = Debug.bcallret3(not b, reloadClass, filename, encoding, st, st);
+      then (cache,Values.BOOL(true),st);
+
+    case (cache,env,"reloadClass",{Values.CODE(Absyn.C_TYPENAME(classpath)),_},st as GlobalScript.SYMBOLTABLE(ast = p),_)
+      equation
+        failure(_ = Interactive.getPathedClassInProgram(classpath, p));
+        str = Absyn.pathString(classpath);
+        Error.addMessage(Error.LOAD_MODEL_ERROR, {str});
+      then (cache,Values.BOOL(false),st);
+
+    case (cache,env,"reloadClass",_,st,_)
       then (cache,Values.BOOL(false),st);
 
     case (cache,env,"loadString",{Values.STRING(str),Values.STRING(name),Values.STRING(encoding)},
@@ -3104,7 +3130,7 @@ algorithm
     case (cache,env,"strictRMLCheck",_,st as GlobalScript.SYMBOLTABLE(ast = p),_)
       equation
         _ = List.map1r(List.map(Interactive.getFunctionsInProgram(p), SCodeUtil.translateClass), MetaUtil.strictRMLCheck, true);
-        str = Error.printMessagesStr();
+        str = Error.printMessagesStr(false);
         v = Values.STRING(str);
       then (cache,v,st);
 
@@ -3547,7 +3573,7 @@ algorithm
         (cache,outValMsg,st);
     case (cache,env,_,st,fileNamePrefix,_,_) /* mo file directory */
       equation
-         str = Error.printMessagesStr();
+         str = Error.printMessagesStr(false);
       then
         (cache,ValuesUtil.makeArray({Values.STRING("translateModelFMU error."),Values.STRING(str)}),st);
   end match;
@@ -3585,7 +3611,7 @@ algorithm
         (cache,outValMsg,st);
     case (cache,env,_,st,fileNamePrefix,_,_) /* mo file directory */
       equation
-         str = Error.printMessagesStr();
+         str = Error.printMessagesStr(false);
       then
         (cache,ValuesUtil.makeArray({Values.STRING("translateModelXML error."),Values.STRING(str)}),st);
   end match;
@@ -3635,7 +3661,7 @@ algorithm
 
     case (cache,_,_,st,_)
       equation
-        errorMsg = Error.printMessagesStr();
+        errorMsg = Error.printMessagesStr(false);
         strEmpty = (stringCompare("",errorMsg)==0);
         errorMsg = Util.if_(strEmpty,"Internal error, translating graphics to new version",errorMsg);
       then
@@ -4243,7 +4269,7 @@ algorithm
         simpleEqnSizeStr = intString(simpleEqnSize);
 
         classNameStr = Absyn.pathString(className);
-        warnings = Error.printMessagesStr();
+        warnings = Error.printMessagesStr(false);
         retStr=stringAppendList({"Check of ",classNameStr," completed successfully.\n\n",warnings,"\nClass ",classNameStr," has ",eqnSizeStr," equation(s) and ",
           varSizeStr," variable(s).\n",simpleEqnSizeStr," of these are trivial equation(s).\n"});
       then
@@ -4263,7 +4289,7 @@ algorithm
         //UnitParserExt.commit();
 
         classNameStr = Absyn.pathString(className);
-        warnings = Error.printMessagesStr();
+        warnings = Error.printMessagesStr(false);
         // TODO: add a check if warnings is empty, if so then remove \n... --> warnings,"\nClass  <--- line below.
         retStr=stringAppendList({"Check of ",classNameStr," completed successfully.\n\n",warnings,"\n"});
       then
@@ -4281,7 +4307,7 @@ algorithm
     case (cache,env,_,st,_)
       equation
       classNameStr = Absyn.pathString(className);
-      errorMsg = Error.printMessagesStr();
+      errorMsg = Error.printMessagesStr(false);
       strEmpty = (stringCompare("",errorMsg)==0);
       errorMsg = Util.if_(strEmpty,"Internal error! Check of: " +& classNameStr +& " failed with no error message.", errorMsg);
     then
@@ -4617,7 +4643,7 @@ algorithm
     case (_, b, _)
       equation
         parent_string = Absyn.pathString(inPath);
-        s = Error.printMessagesStr();
+        s = Error.printMessagesStr(false);
         s = stringAppendList({parent_string,"->","PROBLEM GETTING CLASS PATHS: ", s, "\n"});
         print(s);
       then {};
@@ -7343,8 +7369,22 @@ algorithm
       String filename,encoding;
     case ((filename,encoding)) then ClassLoader.loadFile(filename,encoding);
     /* TODO: Add locking mechanism to write to parent's error stream instead of stdout */
-    else equation print(Error.printMessagesStr()); then fail();
+    else equation print(Error.printMessagesStr(false)); then fail();
   end matchcontinue;
 end loadFileThread;
+
+protected function reloadClass
+  input String filename;
+  input String encoding;
+  input GlobalScript.SymbolTable inST;
+  output GlobalScript.SymbolTable outST;
+protected
+  Absyn.Program p,newp;
+algorithm
+  GlobalScript.SYMBOLTABLE(ast=p) := inST;
+  newp := Parser.parse(filename,encoding); /* Don't use the classloader since that can pull in entire directory structures. We only want to reload one single file. */
+  newp := Interactive.updateProgram(newp, p);
+  outST := Interactive.setSymbolTableAST(inST, newp);
+end reloadClass;
 
 end CevalScript;

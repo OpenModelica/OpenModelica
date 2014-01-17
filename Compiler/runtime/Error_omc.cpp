@@ -69,9 +69,9 @@ extern const char* Error_printErrorsNoWarning(threadData_t *threadData)
   return GC_strdup(res.c_str());
 }
 
-extern const char* Error_printMessagesStr(threadData_t *threadData)
+extern const char* Error_printMessagesStr(threadData_t *threadData,int warningsAsErrors)
 {
-  std::string res = ErrorImpl__printMessagesStr(threadData);
+  std::string res = ErrorImpl__printMessagesStr(threadData,warningsAsErrors);
   return GC_strdup(res.c_str());
 }
 

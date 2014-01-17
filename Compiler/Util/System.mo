@@ -1075,4 +1075,14 @@ external "C" str=SystemImpl__ctime(t) annotation(Library = {"omcruntime"},Docume
 </html>"));
 end ctime;
 
+public function stat
+  input String filename;
+  output Boolean success;
+  output Real st_size; /* An integer stored as double for higher precision  */
+  output Real st_mtime; /* An integer stored as double for higher precision  */
+external "C" success=SystemImpl__stat(filename,st_size,st_mtime) annotation(Library = {"omcruntime"},Documentation(info="<html>
+<p>Like <a href=\"http://linux.die.net/man/3/ctime\">ctime(3)</a>, except the input is of type real because of limited precision of Integer.</p>
+</html>"));
+end stat;
+
 end System;

@@ -1880,3 +1880,13 @@ RML_BEGIN_LABEL(System__ctime)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(System__stat)
+{
+  double size,mtime;
+  rmlA0 = mk_icon(SystemImpl__stat(RML_STRINGDATA(rmlA0),&size,&mtime));
+  rmlA1 = mk_rcon(size);
+  rmlA2 = mk_rcon(mtime);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL

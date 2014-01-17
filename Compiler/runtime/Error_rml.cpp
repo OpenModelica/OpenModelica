@@ -149,6 +149,13 @@ RML_BEGIN_LABEL(ErrorExt__getNumErrorMessages)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(ErrorExt__getNumWarningMessages)
+{
+  rmlA0 = mk_icon(ErrorImpl__getNumWarningMessages(NULL));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 RML_BEGIN_LABEL(ErrorExt__printErrorsNoWarning)
 {
   std::string res = ErrorImpl__printErrorsNoWarning(NULL);
@@ -159,7 +166,8 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(ErrorExt__printMessagesStr)
 {
-  std::string res = ErrorImpl__printMessagesStr(NULL);
+  int warningsAsErrors = RML_UNTAGFIXNUM(rmlA0);
+  std::string res = ErrorImpl__printMessagesStr(NULL,warningsAsErrors);
   rmlA0 = mk_scon((char*)res.c_str());
   RML_TAILCALLK(rmlSC);
 }

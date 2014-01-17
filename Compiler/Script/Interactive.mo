@@ -210,11 +210,11 @@ algorithm
         setGlobalRoot(Global.instOnlyForcedFunctions,  NONE()); // thread-local root that has to be set!
         statements = Parser.parseexp(mosfile);
         _ = evaluateToStdOut(statements,GlobalScript.SYMBOLTABLE(ast,GlobalScript.emptyDepends,explodedAst,{},{},{},{}),true);
-        print(Error.printMessagesStr());
+        print(Error.printMessagesStr(false));
       then true;
     else
       equation
-        print(Error.printMessagesStr());
+        print(Error.printMessagesStr(false));
       then false;
   end matchcontinue;
 end evaluateFork;
@@ -2182,7 +2182,7 @@ algorithm
       equation
         matchApiFunction(istmts, "getErrorString");
         {} = getApiFunctionArgs(istmts);
-        resstr = Error.printMessagesStr();
+        resstr = Error.printMessagesStr(false);
         resstr = stringAppendList({"\"", resstr, "\""});
       then
         (resstr,st);

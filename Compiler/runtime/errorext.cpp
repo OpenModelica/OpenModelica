@@ -66,6 +66,7 @@ const char* ErrorType_toStr(int ix) {
 typedef struct errorext_struct {
   bool pop_more_on_rollback;
   int numErrorMessages;
+  int numWarningMessages;
   absyn_info finfo;
   bool haveInfo;
   stack<ErrorMessage*> *errorMessageQueue; // Global variable of all error messages.
@@ -109,6 +110,7 @@ static errorext_members* getMembers(threadData_t *threadData)
   res = (errorext_members*) malloc(sizeof(errorext_members));
   res->pop_more_on_rollback = false;
   res->numErrorMessages = 0;
+  res->numWarningMessages = 0;
   res->haveInfo = false;
   res->errorMessageQueue = new stack<ErrorMessage*>;
   res->checkPoints = new vector<pair<int,string> >;
@@ -136,6 +138,7 @@ static void push_message(threadData_t *threadData,ErrorMessage *msg)
   // adrpo: ALWAYS PUSH THE ERROR MESSAGE IN THE QUEUE, even if we have showErrorMessages because otherwise the numErrorMessages is completely wrong!
   members->errorMessageQueue->push(msg);
   if (msg->getSeverity() == ErrorLevel_error || msg->getSeverity() == ErrorLevel_internal) members->numErrorMessages++;
+  if (msg->getSeverity() == ErrorLevel_warning) members->numWarningMessages++;
 }
 
 /* pop the top of the message stack (and any duplicate messages that have also been added) */
@@ -146,6 +149,7 @@ static void pop_message(threadData_t *threadData, bool rollback)
   do {
     ErrorMessage *msg = members->errorMessageQueue->top();
     if (msg->getSeverity() == ErrorLevel_error || msg->getSeverity() == ErrorLevel_internal) members->numErrorMessages--;
+    if (msg->getSeverity() == ErrorLevel_warning) members->numWarningMessages--;
     members->errorMessageQueue->pop();
     pop_more = (!(members->errorMessageQueue->empty()) && !(rollback && members->errorMessageQueue->size() <= members->checkPoints->back().first) && msg->getFullMessage() == members->errorMessageQueue->top()->getFullMessage());
     delete msg;
@@ -236,7 +240,7 @@ static void printCheckpointStack(threadData_t *threadData)
     cp = (*members->checkPoints)[i];
     printf("%5d %s   message:", i, cp.second.c_str());
     while(members->errorMessageQueue->size() > cp.first && !members->errorMessageQueue->empty()){
-      res = members->errorMessageQueue->top()->getMessage()+string(" ")+res;
+      res = members->errorMessageQueue->top()->getMessage(0)+string(" ")+res;
       pop_message(threadData,false);
     }
     printf("%s\n", res.c_str());
@@ -322,7 +326,7 @@ extern char* ErrorImpl__rollBackAndPrint(threadData_t *threadData,const char* id
   // fprintf(stderr, "rollBackAndPrint(%s)\n",id); fflush(stderr);
   if (members->checkPoints->size() > 0){
     while(members->errorMessageQueue->size() > members->checkPoints->back().first && !members->errorMessageQueue->empty()){
-      res = members->errorMessageQueue->top()->getMessage()+string("\n")+res;
+      res = members->errorMessageQueue->top()->getMessage(0)+string("\n")+res;
       pop_message(threadData,true);
     }
     pair<int,string> cp;
@@ -398,6 +402,10 @@ extern int ErrorImpl__getNumErrorMessages(threadData_t *threadData) {
   return getMembers(threadData)->numErrorMessages;
 }
 
+extern int ErrorImpl__getNumWarningMessages(threadData_t *threadData) {
+  return getMembers(threadData)->numWarningMessages;
+}
+
 extern void ErrorImpl__clearMessages(threadData_t *threadData)
 {
   // fprintf(stderr, "-> ErrorImpl__clearMessages error messages: %d queue size: %d\n", numErrorMessages, (int)errorMessageQueue->size()); fflush(NULL);
@@ -455,7 +463,7 @@ extern std::string ErrorImpl__printErrorsNoWarning(threadData_t *threadData)
     //if(strncmp(errorMessageQueue->top()->getSeverity(),"Error")==0){
     if(members->errorMessageQueue->top()->getSeverity() == ErrorLevel_error
         || members->errorMessageQueue->top()->getSeverity() == ErrorLevel_internal) {
-      res = members->errorMessageQueue->top()->getMessage()+string("\n")+res;
+      res = members->errorMessageQueue->top()->getMessage(0)+string("\n")+res;
       members->numErrorMessages--;
     }
     delete members->errorMessageQueue->top();
@@ -465,13 +473,13 @@ extern std::string ErrorImpl__printErrorsNoWarning(threadData_t *threadData)
 }
 
 // TODO: Use a string builder instead of creating intermediate results all the time?
-extern std::string ErrorImpl__printMessagesStr(threadData_t *threadData)
+extern std::string ErrorImpl__printMessagesStr(threadData_t *threadData, int warningsAsErrors)
 {
   errorext_members *members = getMembers(threadData);
   // fprintf(stderr, "-> ErrorImpl__printMessagesStr error messages: %d queue size: %d\n", numErrorMessages, (int)errorMessageQueue->size()); fflush(NULL);
   std::string res("");
   while(!members->errorMessageQueue->empty()) {
-    res = members->errorMessageQueue->top()->getMessage()+string("\n")+res;
+    res = members->errorMessageQueue->top()->getMessage(warningsAsErrors)+string("\n")+res;
     pop_message(threadData,false);
   }
   return res;

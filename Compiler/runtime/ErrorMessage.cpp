@@ -56,7 +56,7 @@
   endColumnNo_ = 0;
   isReadOnly_ = false;
   filename_ = std::string("");
-  shortMessage = getMessage_();
+  shortMessage = getMessage_(0);
   fullMessage = getFullMessage_();
 }
 
@@ -84,25 +84,22 @@ ErrorMessage::ErrorMessage(long errorID,
     message_(message),
     tokens_(tokens)
 {
-  shortMessage = getMessage_();
+  shortMessage = getMessage_(0);
   fullMessage = getFullMessage_();
 }
 
-std::string ErrorMessage::getMessage_()
+std::string ErrorMessage::getMessage_(int warningsAsErrors)
 {
   std::string::size_type str_pos = 0;
   TokenList::iterator tok = tokens_.begin();
   char index_symbol;
   int index;
 
-  while((str_pos = message_.find('%', str_pos)) != std::string::npos)
-  {
+  while((str_pos = message_.find('%', str_pos)) != std::string::npos) {
     index_symbol = message_[str_pos + 1];
 
-    if(index_symbol == 's')
-    {
-      if(tok == tokens_.end())
-      {
+    if(index_symbol == 's') {
+      if(tok == tokens_.end()) {
         std::cerr << "Internal error: no tokens left to replace %s with.\n";
         std::cerr << "Given message was: " << message_ << "\n";
         return "";
@@ -110,13 +107,10 @@ std::string ErrorMessage::getMessage_()
       message_.replace(str_pos, 2, *tok);
       str_pos += tok->size() + 1;
       *tok++;
-    }
-    else if(index_symbol >= '0' || index_symbol <= '9')
-    {
+    } else if(index_symbol >= '0' || index_symbol <= '9') {
       index = index_symbol - '0' - 1;
 
-      if(index >= tokens_.size() || index < 0)
-      {
+      if(index >= tokens_.size() || index < 0) {
         std::cerr << "Internal error: Invalid positional index %" << index + 1
           << " in error message.\n";
         std::cerr << "Given message was: " << message_ << "\n";
@@ -130,22 +124,19 @@ std::string ErrorMessage::getMessage_()
   veryshort_msg = message_;
 
   std::string ret_msg;
+  const char* severityStr = ErrorLevel_toStr(warningsAsErrors && severity_ == ErrorLevel_warning ? ErrorLevel_error : severity_);
 
   if(filename_ == "" && startLineNo_ == 0 && startColumnNo_ == 0 &&
-      endLineNo_ == 0 && endColumnNo_ == 0)
-  {
-    ret_msg = ErrorLevel_toStr(severity_) + (": " + message_);
-  }
-  else
-  {
+      endLineNo_ == 0 && endColumnNo_ == 0) {
+    ret_msg = severityStr + (": " + message_);
+  } else {
     std::stringstream str;
     str << "[" << filename_ << ":" << startLineNo_ << ":" << startColumnNo_ <<
       "-" << endLineNo_ << ":" << endColumnNo_ << ":" <<
-      (isReadOnly_ ? "readonly" : "writable") << "] " << ErrorLevel_toStr(severity_) << ": ";
+      (isReadOnly_ ? "readonly" : "writable") << "] " << severityStr << ": ";
     std::string positionInfo = str.str();
     ret_msg = positionInfo + message_;
   }
-
   return ret_msg;
 }
 

@@ -81,9 +81,10 @@ public function addSourceMessage
 end addSourceMessage;
 
 public function printMessagesStr
+  input Boolean warningsAsErrors := false;
   output String outString;
 
-  external "C" outString=Error_printMessagesStr(OpenModelica.threadData()) annotation(Library = "omcruntime");
+  external "C" outString=Error_printMessagesStr(OpenModelica.threadData(),warningsAsErrors) annotation(Library = "omcruntime");
 end printMessagesStr;
 
 public function getNumMessages
@@ -97,6 +98,12 @@ public function getNumErrorMessages
 
   external "C" num=ErrorImpl__getNumErrorMessages(OpenModelica.threadData()) annotation(Library = "omcruntime");
 end getNumErrorMessages;
+
+public function getNumWarningMessages
+  output Integer num;
+
+  external "C" num=ErrorImpl__getNumWarningMessages(OpenModelica.threadData()) annotation(Library = "omcruntime");
+end getNumWarningMessages;
 
 public function getMessages
   output list<Error.TotalMessage> res;

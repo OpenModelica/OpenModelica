@@ -925,6 +925,16 @@ external "builtin";
 annotation(preferredView="text");
 end loadFiles;
 
+function reloadClass "reloads the file associated with the given (loaded class)"
+  input TypeName name;
+  input String encoding := "UTF-8";
+  output Boolean success;
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Given an existing, loaded class in the compiler, compare the time stamp of the loaded class with the time stamp (mtime) of the file it was loaded from. If these differ, parse the file and merge it with the AST.</p>
+</html>"));
+end reloadClass;
+
 function loadString "Parses the data and merges the resulting AST with ithe
   loaded AST.
   If a filename is given, it is used to provide error-messages as if the string
@@ -1449,9 +1459,12 @@ annotation(preferredView="text");
 end readFileNoNumeric;
 
 function getErrorString "Returns the current error message. [file.mo:n:n-n:n:b] Error: message"
+  input Boolean warningsAsErrors := false;
   output String errorString;
 external "builtin";
-annotation(preferredView="text");
+annotation(preferredView="text", Documentation(info="<html>
+<p>Returns a user-friendly string containing the errors stored in the buffer. With warningsAsErrors=true, it reports warnings as if they were errors.</p>
+</html>"));
 end getErrorString;
 
 function getMessagesString
@@ -1498,6 +1511,16 @@ function getMessagesStringInternal
 external "builtin";
 annotation(preferredView="text");
 end getMessagesStringInternal;
+
+function countMessages
+  output Integer numMessages;
+  output Integer numErrors;
+  output Integer numWarnings;
+external "builtin"
+annotation(Documentation(info="<html>
+<p>Returns the total number of messages in the error buffer, as well as the number of errors and warnings.</p>
+</html>"));
+end countMessages;
 
 function clearMessages "Clears the error buffer."
   output Boolean success;

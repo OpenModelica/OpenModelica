@@ -914,9 +914,10 @@ end addMessageOrSourceMessage;
 public function printMessagesStr "Relations for pretty printing.
   function: printMessagesStr
   Prints messages to a string."
+  input Boolean warningsAsErrors := false;
   output String res;
 algorithm
-  res := ErrorExt.printMessagesStr();
+  res := ErrorExt.printMessagesStr(warningsAsErrors);
 end printMessagesStr;
 
 public function printErrorsNoWarning "

@@ -2574,7 +2574,7 @@ char* SystemImpl__ctime(double time)
 /*
  * strtok_r implementation
  */
-char *omc_strtok_r(char *str, const char *delim, char **saveptr)
+static char *omc_strtok_r(char *str, const char *delim, char **saveptr)
 {
   char *token;
   if (!str && !(str = *saveptr))
@@ -2601,6 +2601,19 @@ char *omc_strtok_r(char *str, const char *delim, char **saveptr)
 #define strtok_r omc_strtok_r
 
 #endif /* defined(__MINGW32__) */
+
+int SystemImpl__stat(const char *filename, double *size, double *mtime)
+{
+  struct stat stats;
+  if (0 != stat(filename, &stats)) {
+    *size = 0;
+    *mtime = 0;
+    return 0;
+  }
+  *size = stats.st_size;
+  *mtime = stats.st_mtime;
+  return 1;
+}
 
 #ifdef __cplusplus
 }
