@@ -138,9 +138,7 @@ void DocumentationWidget::showDocumentation(QString className)
   if ((mDocumentationHistoryPos >= 0) && (className == mpDocumentationHistoryList->at(mDocumentationHistoryPos).mUrl))
   {
     /* reload url */
-  }
-  else
-  {
+  } else {
     /* new url */
     /* remove all following urls */
     while (mpDocumentationHistoryList->count() > (mDocumentationHistoryPos+1))
@@ -152,15 +150,17 @@ void DocumentationWidget::showDocumentation(QString className)
     mDocumentationHistoryPos++;
   }
 
-  if (mDocumentationHistoryPos > 0)
+  if (mDocumentationHistoryPos > 0) {
     mpPreviousToolButton->setDisabled(false);
-  else
+  } else {
     mpPreviousToolButton->setDisabled(true);
+  }
 
-  if (mpDocumentationHistoryList->count() == (mDocumentationHistoryPos + 1))
+  if (mpDocumentationHistoryList->count() == (mDocumentationHistoryPos + 1)) {
     mpNextToolButton->setDisabled(true);
-  else
+  } else {
     mpNextToolButton->setDisabled(false);
+  }
 }
 
 void DocumentationWidget::previousDocumentation()
