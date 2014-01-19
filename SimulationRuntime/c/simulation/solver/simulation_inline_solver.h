@@ -69,13 +69,13 @@ extern const char* _omc_force_solver;
 #define _OMC_FORCE_SOLVER "inline-euler"
 #define _OMC_SOLVER_WORK_STATES_NDIMS 1
 
-#define begin_inline(void) { data->localData[0]->timeValue += stepSize;
+#define begin_inline(void) { data->localData[0]->timeValue = data->localData[1]->timeValue + stepSize;
 #define end_inline(void) swap_double_arr(data->localData[0]->realVars,work_states[0]);}
 
-#define inline_integrate(derx) { long _omc_index = &derx-(data->localData[0]->realVars + data->modelData.nStates); work_states[0][_omc_index] = data->localData[0]->realVars[_omc_index] + data->localData[0]->realVars[_omc_index + data->modelData.nStates] * stepSize; }
+#define inline_integrate(derx) { long _omc_index = &derx-(data->localData[0]->realVars + data->modelData.nStates); work_states[0][_omc_index] = data->localData[1]->realVars[_omc_index] + data->localData[0]->realVars[_omc_index + data->modelData.nStates] * stepSize; }
 #define inline_integrate_array(sz,derx) { long _omc_size = sz; long _omc_index; \
   for(_omc_index = &derx-(data->localData[0]->realVars + data->modelData.nStates); _omc_index < &derx-(data->localData[0]->realVars + data->modelData.nStates)+_omc_size; _omc_index++) \
-    work_states[0][_omc_index] = data->localData[0]->realVars[_omc_index] + data->localData[0]->realVars[_omc_index + data->modelData.nStates] * stepSize; \
+    work_states[0][_omc_index] = data->localData[1]->realVars[_omc_index] + data->localData[0]->realVars[_omc_index + data->modelData.nStates] * stepSize; \
 }
 
 #elif defined(_OMC_INLINE_RK)

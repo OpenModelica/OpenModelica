@@ -89,11 +89,12 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
 
   FILE *fmt = NULL;
   unsigned int stepNo=0;
-  double oldStepSize;
 
   SIMULATION_INFO *simInfo = &(data->simulationInfo);
 
   solverInfo->currentTime = simInfo->startTime;
+  
+  unsigned int __currStepNo = 0;
 
   if(measure_time_flag)
   {
@@ -149,26 +150,24 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
       rotateRingBuffer(data->simulationData, 1, (void**) data->localData);
 
       /***** Calculation next step size *****/
-      /* Calculate new step size after an event */
       if(solverInfo->didEventStep == 1)
       {
-        if((solverInfo->currentTime - solverInfo->laststep) + DBL_EPSILON > simInfo->stepSize)
-          solverInfo->currentStepSize = simInfo->stepSize;
-        else
-          solverInfo->currentStepSize = simInfo->stepSize - (solverInfo->currentTime - solverInfo->laststep);
-        
         infoStreamPrint(LOG_SOLVER, 0, "offset value for the next step: %.10f", (solverInfo->currentTime - solverInfo->laststep));
       }
       else
       {
-        solverInfo->currentStepSize = simInfo->stepSize;
+        __currStepNo++;
       }
+      solverInfo->currentStepSize = (double)(__currStepNo*(simInfo->stopTime-simInfo->startTime))/(simInfo->numSteps) + simInfo->startTime - solverInfo->currentTime;
 
-      /* adjust final step? */
-      if(solverInfo->currentTime + solverInfo->currentStepSize > simInfo->stopTime) {
-        solverInfo->currentStepSize = simInfo->stopTime - solverInfo->currentTime;
+      // if retry reduce stepsize 
+      if(retry)
+      {
+        solverInfo->currentStepSize /= 2;
       }
       /***** End calculation next step size *****/
+
+
 
       /* check for next time event */
       checkForSampleEvent(data, solverInfo);
@@ -239,7 +238,6 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
 
       if(retry)
       {
-        simInfo->stepSize = oldStepSize;
         retry=0;
       }
       
@@ -352,8 +350,6 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
       {
         /* reduce step size by a half and try again */
         solverInfo->laststep = solverInfo->currentTime - solverInfo->laststep;
-        oldStepSize = simInfo->stepSize;
-        simInfo->stepSize /= 2;
 
         /* restore old values and try another step with smaller step-size by dassl*/
         restoreOldValues(data);
