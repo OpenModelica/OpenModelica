@@ -492,7 +492,7 @@ algorithm
       Boolean impl,a,b,havereal,doVect;
       Integer l,i,nmax;
       Real r;
-      String expstr,str1,str2,s,msg;
+      String expstr,str1,str2,s,msg,replaceWith;
       DAE.Dimension dim1,dim2;
       Option<GlobalScript.SymbolTable> st,st_1,st_2;
       DAE.Exp exp,e1_1,e2_1,exp_1,e_1,mexp,mexp_1,arrexp;
@@ -534,7 +534,7 @@ algorithm
     // types. But since they are default, we can leave them out for now, unit=\"\" is not
     // that interesting to find out.
     case (cache,_,Absyn.INTEGER(value = i),impl,st,doVect,_,_,_)
-    then (cache,DAE.ICONST(i),DAE.PROP(DAE.T_INTEGER_DEFAULT,DAE.C_CONST()),st);
+      then (cache,DAE.ICONST(i),DAE.PROP(DAE.T_INTEGER_DEFAULT,DAE.C_CONST()),st);
 
     case (cache,_,Absyn.REAL(value = r),impl,st,doVect,_,_,_)
       then
@@ -663,7 +663,6 @@ algorithm
       then
         (cache,e_1,prop1,st);
 
-
     //Check if 'String' is overloaded. This can be moved down the chain to avoid checking for normal types.
     //However elab call prints error messags if it can not elaborate it even though the function might be overloaded.
     case (cache,env, e as Absyn.CALL(function_ = Absyn.CREF_IDENT("String",_),functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,doVect,pre,_,_)
@@ -672,9 +671,23 @@ algorithm
       then
         (cache,exp_1,prop,st_1);
 
+    // homotopy replacement (usually used for debugging only)
+    case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT("homotopy", _),functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,doVect,pre,_,_)
+      equation
+        replaceWith = Flags.getConfigString(Flags.REPLACE_HOMOTOPY);
+        // replace homotopy if Flags.REPLACE_HOMOTOPY is "actual" or "simplified"
+        false = stringEq(replaceWith, "none");
+        true = boolOr(stringEq(replaceWith, "actual"), stringEq(replaceWith, "simplified"));
+        // TODO, handle empy args and nargs for homotopy!
+        {e1, e2} = args;
+        e = Util.if_(stringEq(replaceWith, "actual"), e1, e2);
+        (cache,e_1,prop,st_1) = elabExp(cache, env, e, impl, st, doVect, pre, info);
+      then
+        (cache,e_1,prop,st_1);
+
     case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,doVect,pre,_,_)
       equation
-        (cache,e_1,prop,st_1) = elabCall(cache,env, fn, args, nargs, impl, st,pre,info,Error.getNumErrorMessages());
+        (cache,e_1,prop,st_1) = elabCall(cache, env, fn, args, nargs, impl, st, pre, info, Error.getNumErrorMessages()); 
         c = Types.propAllConst(prop);
         (e_1,_) = ExpressionSimplify.simplify1(e_1);
       then

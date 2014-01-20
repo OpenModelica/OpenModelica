@@ -822,7 +822,7 @@ constant ConfigFlag TEARING_HEURISTIC = CONFIG_FLAG(51, "tearingHeuristic",
     ("cellier5", Util.gettext("Modified cellier2, step 'count impossible assignments' before last step.")),
     ("cellier6", Util.gettext("Modified cellier4, step 'count impossible assignments' before last step.")),
   ("cellier7", Util.gettext("Modified cellier4, Two rounds, choose better potentials-set."))})),
-    Util.gettext("Sets the tearing heuristic to use for Cellier-tearing."));  
+    Util.gettext("Sets the tearing heuristic to use for Cellier-tearing."));
 
 constant ConfigFlag HPCOM_CODE = CONFIG_FLAG(52, "hpcomCode",
   NONE(), EXTERNAL(), STRING_FLAG("openmp"), NONE(),
@@ -831,6 +831,15 @@ constant ConfigFlag HPCOM_CODE = CONFIG_FLAG(52, "hpcomCode",
 constant ConfigFlag REWRITE_RULES_FILE = CONFIG_FLAG(53, "rewriteRulesFile", NONE(), EXTERNAL(),
   STRING_FLAG(""), NONE(),
   Util.gettext("Activates user given rewrite rules for Absyn expressions. The rules are read from the given file and are of the form rewrite(fromExp, toExp);"));
+
+constant ConfigFlag REPLACE_HOMOTOPY = CONFIG_FLAG(54, "replaceHomotopy",
+  NONE(), EXTERNAL(), STRING_FLAG("none"),
+  SOME(STRING_DESC_OPTION({
+    ("none", Util.gettext("Default, do not replace homotopy.")),
+    ("actual", Util.gettext("Replace homotopy(actual, simplified) with actual.")),
+    ("simplified", Util.gettext("Replace homotopy(actual, simplified with simplified."))
+    })),
+    Util.gettext("Replaces homotopy(actual, simplified) with the actual expression or the simplified expression. Good for debugging models which use homotopy. The default is to not replace homotopy."));
 
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
@@ -888,7 +897,8 @@ constant list<ConfigFlag> allConfigFlags = {
   HPCOM_SCHEDULER,
   TEARING_HEURISTIC,
   HPCOM_CODE,
-  REWRITE_RULES_FILE
+  REWRITE_RULES_FILE,
+  REPLACE_HOMOTOPY
 };
 
 public function new
