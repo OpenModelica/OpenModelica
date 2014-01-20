@@ -7840,8 +7840,8 @@ template daeExpBinary(Exp exp, Context context, Text &preExp /*BUFP*/,
 
 match exp
 case BINARY(__) then
-  let e1 = daeExp(exp1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-  let e2 = daeExp(exp2, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+  let e1 = daeExp(exp1, context, &preExp, &varDecls)
+  let e2 = daeExp(exp2, context, &preExp, &varDecls)
   match operator
   case ADD(ty = T_STRING(__)) then
     let tmpStr = if acceptMetaModelicaGrammar()

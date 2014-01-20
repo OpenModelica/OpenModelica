@@ -1633,6 +1633,7 @@ algorithm
       equation
         subs = List.map(expl_1,Expression.makeIndexSubscript);
         crefs = List.map1r(List.map(subs,List.create),ComponentReference.subscriptCref,cr);
+        t = Types.unliftArray(t);
         expl = List.map1(crefs,Expression.makeCrefExp,t);
         dim = listLength(expl);
         exp = simplifyCref2(DAE.ARRAY(DAE.T_ARRAY(t,{DAE.DIM_INTEGER(dim)},DAE.emptyTypeSource),true,expl),ssl);

@@ -9438,56 +9438,6 @@ algorithm
   end match;
 end expListFromSlots;
 
-protected function getExpInModifierFomEnvOrClass
-"@author: adrpo
-  we should get the modifier from the environemnt as it might have been changed by a extends modification!"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input SCode.Ident inComponentName;
-  input SCode.Element inClass;
-  output Absyn.Exp outExp;
-algorithm
-  outExp := matchcontinue(inCache,inEnv,inComponentName,inClass)
-    local
-      Env.Cache cache;
-      Env.Env env;
-      SCode.Ident id;
-      SCode.Element cls;
-      Absyn.Exp exp;
-      DAE.Mod extendsMod;
-      SCode.Mod scodeMod;
-
-    // no element in env
-    case (cache, env, id, cls)
-      equation
-        //(_, _, NONE(), _, _ ) = Lookup.lookupIdentLocal(cache, env, id);
-        //print("here1\n");
-        SCode.COMPONENT(modifications = SCode.MOD(binding = SOME((exp,_)))) = SCode.getElementNamed(id, cls);
-      then
-        exp;
-
-    // no modifier in env
-    case (cache, env, id, cls)
-      equation
-        (_, _, _, DAE.NOMOD(), _, _ ) = Lookup.lookupIdentLocal(cache, env, id);
-        print("here2");
-        SCode.COMPONENT(modifications = SCode.MOD(binding = SOME((exp,_)))) = SCode.getElementNamed(id, cls);
-      then
-        exp;
-
-    // some modifier in env, return that
-    case (cache, env, id, cls)
-      equation
-        (_, _, _, extendsMod, _, _ ) = Lookup.lookupIdentLocal(cache, env, id);
-        print("here3");
-        scodeMod = Mod.unelabMod(extendsMod);
-        SCode.MOD(binding = SOME((exp,_))) = scodeMod;
-      then
-        exp;
-
-  end matchcontinue;
-end getExpInModifierFomEnvOrClass;
-
 protected function fillDefaultSlot
   "This function takes a slot list and a class definition of a function
   and fills  default values into slots which have not been filled."
