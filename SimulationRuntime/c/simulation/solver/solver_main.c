@@ -147,7 +147,6 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   solverInfo->didEventStep = 0;
   solverInfo->stateEvents = 0;
   solverInfo->sampleEvents = 0;
-  solverInfo->stepPrecision = fmin(15,abs(log10(simInfo->stepSize)+fmax(log10(simInfo->startTime),-4)+log10(simInfo->tolerance)));
 
   if(solverInfo->solverMethod == 2)
   {
@@ -597,14 +596,7 @@ static int euler_ex_step(DATA* data, SOLVER_INFO* solverInfo)
   SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)data->localData[1];
   modelica_real* stateDer = sDataOld->realVars + data->modelData.nStates;
 
-   /* adjust next time step by rounding. No rounding, 
-   * when time event is activated, since then currectStepSize is exact */
-  if (data->simulationInfo.sampleActivated){
-    solverInfo->currentTime = sDataOld->timeValue + solverInfo->currentStepSize;
-  } else {
-    solverInfo->currentTime = _omc_round(sDataOld->timeValue + solverInfo->currentStepSize, solverInfo->stepPrecision);
-    solverInfo->currentStepSize = solverInfo->currentTime - sDataOld->timeValue;
-  }
+  solverInfo->currentTime = sDataOld->timeValue + solverInfo->currentStepSize;
 
   for(i = 0; i < data->modelData.nStates; i++)
   {
@@ -625,14 +617,7 @@ static int rungekutta_step(DATA* data, SOLVER_INFO* solverInfo)
   modelica_real* stateDer = sData->realVars + data->modelData.nStates;
   modelica_real* stateDerOld = sDataOld->realVars + data->modelData.nStates;
 
-  /* adjust next time step by rounding. No rounding, 
-   * when time event is activated, since then currectStepSize is exact */
-  if (data->simulationInfo.sampleActivated){
-    solverInfo->currentTime = sDataOld->timeValue + solverInfo->currentStepSize;
-  } else {
-    solverInfo->currentTime = _omc_round(sDataOld->timeValue + solverInfo->currentStepSize, solverInfo->stepPrecision);
-    solverInfo->currentStepSize = solverInfo->currentTime - sDataOld->timeValue;
-  }
+  solverInfo->currentTime = sDataOld->timeValue + solverInfo->currentStepSize;
 
   /* We calculate k[0] before returning from this function.
    * We only want to calculate f() 4 times per call */

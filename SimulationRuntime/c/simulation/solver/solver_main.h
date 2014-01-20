@@ -48,7 +48,6 @@ typedef struct SOLVER_INFO
   double currentStepSize;
   double laststep;
   int solverMethod;
-  int stepPrecision;
 
   /* set by solver if an internal root finding method is activated  */
   modelica_boolean solverRootFinding;

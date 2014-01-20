@@ -269,16 +269,7 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
 
   /* Calculate time steps until TOUT is reached
    * (DASSL calculates beyond TOUT unless info[6] is set to 1!) */
-  
-  /* adjust next time step by rounding. No rounding, 
-   * when time event is activated, since then currectStepSize is exact */
-  if (simData->simulationInfo.sampleActivated){
-    tout = solverInfo->currentTime + solverInfo->currentStepSize;
-  } else {
-    tout = _omc_round(solverInfo->currentTime + solverInfo->currentStepSize, solverInfo->stepPrecision);
-    solverInfo->currentStepSize = tout - solverInfo->currentTime;
-  }
-
+  tout = solverInfo->currentTime + solverInfo->currentStepSize;
   /* Check that tout is not less than timeValue
    * else will dassl get in trouble. If that is the case we skip the current step. */
   if(solverInfo->currentTime - tout >= -1e-13)
