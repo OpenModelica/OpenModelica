@@ -7754,6 +7754,7 @@ algorithm
   eqOut := resolveClosedLoop2(eq,loop1,m,mT,eqMapping,varMapping,daeEqsIn,daeVarsIn);
 end resolveClosedLoop;
 
+
 protected function sortLoop "sorts the equations in a loop.
 author:Waurich TUD 2014-01"
   input list<Integer> loopIn;
@@ -8062,6 +8063,9 @@ algorithm
   exp2 := sumUp2Expressions(sumUp,exp2,exp4);
     //print("exp2\n");
     //ExpressionDump.dumpExp(exp2);
+  exp2 := sumUp2Expressions(false,exp2,exp1);
+  (exp2,_) := ExpressionSimplify.simplify(exp2);
+  exp1 := DAE.RCONST(0.0);
   eqOut := BackendDAE.EQUATION(exp1,exp2,DAE.emptyElementSource,false);
 end sumUp2Equations;
 
