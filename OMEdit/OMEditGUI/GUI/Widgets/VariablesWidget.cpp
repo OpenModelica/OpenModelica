@@ -464,10 +464,15 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       variables = makeVariableParts(plotVariable);
     }
     int count = 1;
+    VariablesTreeItem *pParentVariablesTreeItem = 0;
     foreach (QString variable, variables)
     {
+      if (count == 1) /* first loop iteration */
+      {
+        pParentVariablesTreeItem = pTopVariablesTreeItem;
+      }
       QString findVariable = parentVariable.isEmpty() ? fileName + "." + variable : fileName + "." + parentVariable + "." + variable;
-      if (findVariablesTreeItem(findVariable, mpRootVariablesTreeItem))
+      if (pParentVariablesTreeItem = findVariablesTreeItem(findVariable, pParentVariablesTreeItem))
       {
         if (count == 1)
           parentVariable = variable;
@@ -476,8 +481,15 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
         count++;
         continue;
       }
-      VariablesTreeItem *pParentVariablesTreeItem = findVariablesTreeItem(fileName + "." + parentVariable, mpRootVariablesTreeItem);
-      if (!pParentVariablesTreeItem)
+      /*
+        If pParentVariablesTreeItem is 0 and it is first loop iteration then use pTopVariablesTreeItem as parent.
+        If loop iteration is not first and pParentVariablesTreeItem is 0 then find the parent item.
+        */
+      if (!pParentVariablesTreeItem && count > 1)
+      {
+        pParentVariablesTreeItem = findVariablesTreeItem(fileName + "." + parentVariable, pTopVariablesTreeItem);
+      }
+      else
       {
         pParentVariablesTreeItem = pTopVariablesTreeItem;
       }
@@ -757,15 +769,22 @@ void VariablesWidget::insertVariablesItemsToTree(QString fileName, QString fileP
                                                  SimulationOptions simulationOptions)
 {
   mpVariablesTreeView->setSortingEnabled(false);
+  /* In order to improve the response time of insertVariablesItems function we should clear the filter and collapse all the items. */
+  mpVariableTreeProxyModel->setFilterRegExp(QRegExp(""));
+  mpVariablesTreeView->collapseAll();
   /* Remove the simulation result if we already had it in tree */
   bool variableItemDeleted = mpVariablesTreeModel->removeVariableTreeItem(fileName);
   /* add the plot variables */
   mpVariablesTreeModel->insertVariablesItems(fileName, filePath, variablesList, simulationOptions);
   /* update the plot variables tree */
   if (variableItemDeleted)
+  {
     variablesUpdated();
+  }
   mpVariablesTreeView->setSortingEnabled(true);
   mpVariablesTreeView->sortByColumn(0, Qt::AscendingOrder);
+  /* since we cleared the filter above so we need to apply it back. */
+  findVariables();
 }
 
 void VariablesWidget::variablesUpdated()
