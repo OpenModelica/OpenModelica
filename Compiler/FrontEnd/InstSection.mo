@@ -3593,17 +3593,19 @@ algorithm
         // declare the added component in the DAE!
         (cache,c1_2) = PrefixUtil.prefixCref(cache, env, ih, pre, c1_2);
         
-        // get the dimensions from the type!
+        // get the dimensions from the ty1 type!
         daeDims = Types.getDimensions(ty1);
         arrDims = List.map(daeDims,Expression.unelabDimension);
-        daeExpandable = InstDAE.daeDeclare(c1_2, state, ty1,
-           SCode.ATTR(arrDims, ct1, prl1, vt1, Absyn.BIDIR()),
-           vis1, NONE(), {}, NONE(), NONE(),
-           SOME(SCode.COMMENT(NONE(), SOME("virtual variable in expandable connector"))),
-           io1, SCode.NOT_FINAL(), source, true);
+        daeExpandable = generateExpandableDAE(
+          c1_2,
+          state, 
+          ty1, 
+          SCode.ATTR(arrDims, ct1, prl1, vt1, Absyn.BIDIR()),
+          vis1,
+          io1,
+          source);
 
         dae = DAEUtil.joinDaes(dae, daeExpandable);
-
         // Debug.fprintln(Flags.EXPANDABLE, "<<<< connect(expandable, existing)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")\nDAE:" +&DAEDump.dump2str(daeExpandable));
       then
         (cache,env,ih,sets,dae,graph);
@@ -3634,6 +3636,92 @@ algorithm
         fail(); // fail to enter connect normally
   end matchcontinue;
 end connectExpandableConnectors;
+
+protected function generateExpandableDAE
+"@author: adrpo
+ connect(expandable, non-expandable)
+ should generate a DAE for the expandable part.
+ Expand the array if needed."
+ input DAE.ComponentRef cref;
+ input ClassInf.State state;
+ input DAE.Type ty;
+ input SCode.Attributes attrs;
+ input SCode.Visibility vis;
+ input Absyn.InnerOuter io;
+ input DAE.ElementSource source;
+ output DAE.DAElist outDAE;
+algorithm
+  outDAE := matchcontinue(cref, state, ty, attrs, vis, io, source)
+    local
+      Absyn.ArrayDim arrDims;
+      DAE.Dimensions daeDims;
+      DAE.DAElist daeExpandable;
+      list<DAE.ComponentRef> crefs;
+    
+    // scalars!
+    case (_, _, _, _, _, _, _)
+      equation   
+        // get the dimensions from the type!
+        (daeDims as {}) = Types.getDimensions(ty);
+        arrDims = List.map(daeDims,Expression.unelabDimension);
+        daeExpandable = InstDAE.daeDeclare(cref, state, ty,
+           attrs,
+           vis, NONE(), {}, NONE(), NONE(),
+           SOME(SCode.COMMENT(NONE(), SOME("virtual variable in expandable connector"))),
+           io, SCode.NOT_FINAL(), source, true);
+      then
+        daeExpandable;
+   
+    // arrays
+    case (_, _, _, _, _, _, _)
+      equation   
+        // get the dimensions from the type!
+        (daeDims as _::_) = Types.getDimensions(ty);
+        arrDims = List.map(daeDims,Expression.unelabDimension);
+        crefs = ComponentReference.expandCref(cref, false);
+        // print(" crefs: " +& stringDelimitList(List.map(crefs, ComponentReference.printComponentRefStr),", ") +& "\n");
+        daeExpandable = daeDeclareList(listReverse(crefs), state, ty, attrs, vis, io, source, DAE.emptyDae);
+      then
+        daeExpandable;
+  
+  end matchcontinue;
+end generateExpandableDAE;
+
+protected function daeDeclareList
+"declare a list of crefs, one for each array element"
+ input list<DAE.ComponentRef> crefs;
+ input ClassInf.State state;
+ input DAE.Type ty;
+ input SCode.Attributes attrs;
+ input SCode.Visibility vis;
+ input Absyn.InnerOuter io;
+ input DAE.ElementSource source;
+ input DAE.DAElist acc;
+ output DAE.DAElist outDAE;
+algorithm
+  outDAE := matchcontinue(crefs, state, ty, attrs, vis, io, source, acc)
+    local
+      Absyn.ArrayDim arrDims;
+      DAE.Dimensions daeDims;
+      DAE.DAElist daeExpandable;
+      list<DAE.ComponentRef> lst;
+      DAE.ComponentRef cref;
+   
+    case ({}, _, _, _, _, _, _, _) then acc;
+   
+    case (cref::lst, _, _, _, _, _, _, _)
+      equation
+        daeExpandable = InstDAE.daeDeclare(cref, state, ty,
+           attrs,
+           vis, NONE(), {}, NONE(), NONE(),
+           SOME(SCode.COMMENT(NONE(), SOME("virtual variable in expandable connector"))),
+           io, SCode.NOT_FINAL(), source, true);
+        daeExpandable = DAEUtil.joinDaes(daeExpandable, acc);
+        daeExpandable = daeDeclareList(lst, state, ty, attrs, vis, io, source, daeExpandable);
+      then
+        daeExpandable;
+  end matchcontinue;
+end daeDeclareList;
 
 protected function updateEnvComponentsOnQualPath
 "@author: adrpo 2010-10-05
