@@ -11359,14 +11359,14 @@ algorithm
       Boolean scalar;
       DAE.ComponentRef cref_;
 
-    case(exp1 as DAE.ICONST(integer=_),exp2 as DAE.CREF(DAE.CREF_IDENT(id,ty2,subs),_ ),ety )
+    case(exp1, exp2 as DAE.CREF(DAE.CREF_IDENT(id,ty2,subs),_ ),ety )
       equation
         crty = Expression.unliftArrayTypeWithSubs(DAE.INDEX(exp1)::subs,ty2);
         cref_ = ComponentReference.makeCrefIdent(id,ty2,(DAE.INDEX(exp1)::subs));
         exp2 = Expression.makeCrefExp(cref_,crty);
       then exp2;
 
-    case(exp1 as DAE.ICONST(integer=_), exp2 as DAE.ARRAY(_,_,expl1),ety )
+    case(exp1, exp2 as DAE.ARRAY(_,_,expl1),ety )
       equation
         expl1 = List.map2(expl1,applySubscript3,exp1,ety);
         exp2 = DAE.ARRAY(DAE.T_INTEGER_DEFAULT,false,expl1);
@@ -11396,14 +11396,14 @@ algorithm
       Boolean scalar;
       DAE.ComponentRef cref_;
 
-    case(exp2 as DAE.CREF(DAE.CREF_IDENT(id,ty2,subs),_), exp1 as DAE.ICONST(integer=_),ety )
+    case(exp2 as DAE.CREF(DAE.CREF_IDENT(id,ty2,subs),_), exp1, ety )
       equation
         crty = Expression.unliftArrayTypeWithSubs(DAE.INDEX(exp1)::subs,ty2);
         cref_ = ComponentReference.makeCrefIdent(id,ty2,(DAE.INDEX(exp1)::subs));
         exp2 = Expression.makeCrefExp(cref_,crty);
       then exp2;
 
-    case( exp2 as DAE.ARRAY(_,_,expl1), exp1 as DAE.ICONST(integer=_),ety)
+    case( exp2 as DAE.ARRAY(_,_,expl1), exp1, ety)
       equation
         expl1 = List.map2(expl1,applySubscript3,exp1,ety);
         exp2 = DAE.ARRAY(DAE.T_INTEGER_DEFAULT,false,expl1);
