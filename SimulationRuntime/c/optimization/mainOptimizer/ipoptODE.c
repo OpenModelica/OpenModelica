@@ -66,8 +66,8 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
   iData->current_var = 0;
   iData->current_time = 0;
   iData->data = data;
-  iData->mayer = (short) (mayer(data, &obj) >= 0);
-  iData->lagrange = (short) (lagrange(data, &obj) >= 0);
+  iData->mayer = (short) (iData->data->callback->mayer(data, &obj) >= 0);
+  iData->lagrange = (short) (iData->data->callback->lagrange(data, &obj) >= 0);
 
   iData->mayer_index = 0;
   iData->lagrange_index = (iData->mayer)? 1 : 0;

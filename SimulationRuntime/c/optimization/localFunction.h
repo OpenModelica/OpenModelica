@@ -76,10 +76,6 @@ int diff_symColoredObject(IPOPT_DATA_ *iData, double *gradF, int this_it);
 int functionODE_(double * x, double *u, double t, double * dotx, IPOPT_DATA_ *iData);
 int refreshSimData(double *x, double *u, double t, IPOPT_DATA_ *iData);
 
-extern int mayer(DATA* data, modelica_real* res);
-extern int lagrange(DATA* data, modelica_real* res);
-extern int pathConstraints(DATA* data, modelica_real* res, int* N);
-
 /*allocate*/
 int loadDAEmodel(DATA* data, IPOPT_DATA_ *iData);
 int get_moidel_info(DATA *data, IPOPT_DATA_ *iData);

@@ -107,7 +107,7 @@ Bool goal_func_mayer(double* vn, double *obj_value, IPOPT_DATA_ *iData)
 {  
   refreshSimData(vn, vn + iData->nx, iData->tf, iData);
   /*iData->data->callback->functionAlgebraics(iData->data);*/
-  mayer(iData->data, obj_value);
+  iData->data->callback->mayer(iData->data, obj_value);
   
   return TRUE;
 }
@@ -120,7 +120,7 @@ Bool goal_func_lagrange(double* vn, double *obj_value, double t, IPOPT_DATA_ *iD
 {  
   refreshSimData(vn, vn + iData->nx, iData->tf, iData);
   /*iData->data->callback->functionAlgebraics(iData->data);*/
-  lagrange(iData->data, obj_value);
+  iData->data->callback->lagrange(iData->data, obj_value);
   
   return TRUE;
 }

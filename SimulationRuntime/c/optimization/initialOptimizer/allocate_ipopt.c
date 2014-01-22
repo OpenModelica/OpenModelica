@@ -222,7 +222,7 @@ int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
   iData->nx = data->modelData.nStates;
   iData->nu = data->modelData.nInputVars;
   iData->nc = -1;
-  pathConstraints(data,u0,&iData->nc);
+  iData->data->callback->pathConstraints(data,u0,&iData->nc);
 
   iData->deg = 3;
   iData->nsi = data->simulationInfo.numSteps;
@@ -454,9 +454,9 @@ static int local_jac_struct(IPOPT_DATA_ *iData)
   for(i = 0; i < nJ; i++)
     iData->knowedJ[i] = (int*) calloc(iData->nv, sizeof(int));
 
-  iData->Hg = (int**) malloc(iData->nv * sizeof(int*));
+  iData->Hg = (short**) malloc(iData->nv * sizeof(int*));
   for(i = 0; i < iData->nv; i++)
-    iData->Hg[i] = (int*) calloc(iData->nv, sizeof(int));
+    iData->Hg[i] = (short*) calloc(iData->nv, sizeof(int));
 
   J = iData->knowedJ;
   Hg = iData->Hg;

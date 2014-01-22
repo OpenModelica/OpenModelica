@@ -255,6 +255,28 @@ int (*functionJacD_column)(void* data);
 /*#endif*/
 
 const char *(*linear_model_frame)(void); /* printf format-string with holes for 6 strings */
+
+/*
+ * This function is used only for optimization purpose
+ * and calculates the mayer term. In case it's not present
+ * a dummy function is added which return -1.
+ */
+int (*mayer)(DATA* data, modelica_real* res);
+
+/*
+ * This function is used only for optimization purpose
+ * and calculates the lagrange term. In case it's not present
+ * a dummy function is added which return -1.
+ */
+int (*lagrange)(DATA* data, modelica_real* res);
+
+/*
+ * This function is used only for optimization purpose
+ * and calculates the path constrains. In case it's not present
+ * a dummy function is added which return -1.
+ */
+int (*pathConstraints)(DATA* data, modelica_real* res, long int* N);
+
 };
 
 #ifdef __cplusplus

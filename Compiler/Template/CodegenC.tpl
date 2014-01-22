@@ -160,6 +160,7 @@ template generateSimulationFiles(SimCode simCode, String guid, String modelNameP
      let()= textFile(simulationFile_jac_header(simCode,guid), '<%fileNamePrefix%>_12jac.h')
      // optimization
      let()= textFileConvertLines(simulationFile_opt(simCode,guid), '<%fileNamePrefix%>_13opt.c')
+     let()= textFile(simulationFile_opt_header(simCode,guid), '<%fileNamePrefix%>_13opt.h')
      // linearization
      let()= textFileConvertLines(simulationFile_lnz(simCode,guid), '<%fileNamePrefix%>_14lnz.c')
      // main file
@@ -206,7 +207,7 @@ template simulationFile_nls(SimCode simCode, String guid)
     <%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
-  end match    
+  end match
 end simulationFile_nls;
 
 template simulationFile_lsy(SimCode simCode, String guid)
@@ -226,7 +227,7 @@ template simulationFile_lsy(SimCode simCode, String guid)
     <%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
-  end match    
+  end match
 end simulationFile_lsy;
 
 template simulationFile_set(SimCode simCode, String guid)
@@ -244,7 +245,7 @@ template simulationFile_set(SimCode simCode, String guid)
     <%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
-  end match    
+  end match
 end simulationFile_set;
 
 template simulationFile_evt(SimCode simCode, String guid)
@@ -267,7 +268,7 @@ template simulationFile_evt(SimCode simCode, String guid)
     <%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
-  end match    
+  end match
 end simulationFile_evt;
 
 template simulationFile_inz(SimCode simCode, String guid)
@@ -289,7 +290,7 @@ template simulationFile_inz(SimCode simCode, String guid)
     <%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
-  end match    
+  end match
 end simulationFile_inz;
 
 template simulationFile_dly(SimCode simCode, String guid)
@@ -367,7 +368,7 @@ template simulationFile_alg(SimCode simCode, String guid)
     <%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
-  end match    
+  end match
 end simulationFile_alg;
 
 template simulationFile_asr(SimCode simCode, String guid)
@@ -384,7 +385,7 @@ template simulationFile_asr(SimCode simCode, String guid)
     <%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
-  end match    
+  end match
 end simulationFile_asr;
 
 template simulationFile_mix(SimCode simCode, String guid, Text &header)
@@ -402,7 +403,7 @@ template simulationFile_mix(SimCode simCode, String guid, Text &header)
     <%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
-  end match    
+  end match
 end simulationFile_mix;
 
 template simulationFile_jac(SimCode simCode, String guid)
@@ -419,7 +420,7 @@ template simulationFile_jac(SimCode simCode, String guid)
     <%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
-  end match    
+  end match
 end simulationFile_jac;
 
 template simulationFile_jac_header(SimCode simCode, String guid)
@@ -433,7 +434,7 @@ template simulationFile_jac_header(SimCode simCode, String guid)
     <%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
-  end match    
+  end match
 end simulationFile_jac_header;
 
 template simulationFile_opt(SimCode simCode, String guid)
@@ -441,20 +442,38 @@ template simulationFile_opt(SimCode simCode, String guid)
 ::=
   match simCode
     case simCode as SIMCODE(__) then
+    let modelNamePrefixStr = modelNamePrefix(simCode)
     <<
     /* Optimization */
     <%simulationFileHeader(simCode)%>
     #include "<%fileNamePrefix%>_12jac.h"
-    <%if acceptOptimicaGrammar() then optimizationComponents(classAttributes, simCode) else 
-    "int mayer(DATA* data, modelica_real* res){return -1;}
-     int lagrange(DATA* data, modelica_real* res){return -1;}
-     int pathConstraints(DATA* data, modelica_real* res, int* N){return -1;}"%>    
-        
-    <%\n%>
+    
+    <%optimizationComponents(classAttributes, simCode, modelNamePrefixStr)%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
-  end match    
+  end match
 end simulationFile_opt;
+
+template simulationFile_opt_header(SimCode simCode, String guid)
+"Jacobians"
+::=
+  match simCode
+    case simCode as SIMCODE(__) then
+    let modelNamePrefixStr = modelNamePrefix(simCode)
+    <<
+    #if defined(_MSC_VER)
+    extern "C" {
+    #endif
+      int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real* res);
+      int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real* res);
+      int <%symbolName(modelNamePrefixStr,"pathConstraints")%>(DATA* data, modelica_real* res, long int* N);
+    #if defined(_MSC_VER)
+    }
+    #endif
+    >>
+    /* adrpo: leave a newline at the end of file to get rid of the warning */
+  end match
+end simulationFile_opt_header;
 
 template simulationFile_lnz(SimCode simCode, String guid)
 "Linearization"
@@ -470,7 +489,7 @@ template simulationFile_lnz(SimCode simCode, String guid)
     <%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
-  end match    
+  end match
 end simulationFile_lnz;
 
 template simulationFile(SimCode simCode, String guid)
@@ -516,6 +535,7 @@ template simulationFile(SimCode simCode, String guid)
     extern int _main_SimulationRuntime(int argc, char**argv, DATA *data);
 
     #include "<%simCode.fileNamePrefix%>_12jac.h"
+    #include "<%simCode.fileNamePrefix%>_13opt.h"
     extern void <%symbolName(modelNamePrefixStr,"callExternalObjectConstructors")%>(DATA *data);
     extern void <%symbolName(modelNamePrefixStr,"callExternalObjectDestructors")%>(DATA *_data);
     extern void <%symbolName(modelNamePrefixStr,"initialNonLinearSystem")%>(NONLINEAR_SYSTEM_DATA *data);
@@ -547,6 +567,9 @@ template simulationFile(SimCode simCode, String guid)
     extern int <%symbolName(modelNamePrefixStr,"functionJacC_column")%>(void* data);
     extern int <%symbolName(modelNamePrefixStr,"functionJacD_column")%>(void* data);
     extern const char* <%symbolName(modelNamePrefixStr,"linear_model_frame")%>(void);
+    extern int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real* res);
+    extern int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real* res);
+    extern int <%symbolName(modelNamePrefixStr,"pathConstraints")%>(DATA* data, modelica_real* res, long int* N); 
 
     struct OpenModelicaGeneratedFunctionCallbacks <%symbolName(modelNamePrefixStr,"callback")%> = {
        (int (*)(DATA *, void *)) <%symbolName(modelNamePrefixStr,"performSimulation")%>,
@@ -592,7 +615,11 @@ template simulationFile(SimCode simCode, String guid)
        <%symbolName(modelNamePrefixStr,"functionJacB_column")%>,
        <%symbolName(modelNamePrefixStr,"functionJacC_column")%>,
        <%symbolName(modelNamePrefixStr,"functionJacD_column")%>,
-       <%symbolName(modelNamePrefixStr,"linear_model_frame")%>
+       <%symbolName(modelNamePrefixStr,"linear_model_frame")%>,
+       <%symbolName(modelNamePrefixStr,"mayer")%>,
+       <%symbolName(modelNamePrefixStr,"lagrange")%>,
+       <%symbolName(modelNamePrefixStr,"pathConstraints")%>
+    <%\n%>
     };
 
     <%functionInitializeDataStruc(modelInfo, fileNamePrefix, guid, allEquations, jacobianMatrixes, delayedExps, modelNamePrefixStr)%>
@@ -10356,14 +10383,20 @@ end endModelicaLine;
  *         SECTION: GENERATE OPTIMIZATION IN SIMULATION FILE
  *****************************************************************************/
 
-template optimizationComponents( list<DAE.ClassAttributes> classAttributes ,SimCode simCode)
+template optimizationComponents( list<DAE.ClassAttributes> classAttributes ,SimCode simCode, String modelNamePrefixStr)
   "Generates C for Objective Functions."
 ::=
-    (classAttributes |> classAttribute => optimizationComponents1(classAttribute,simCode); separator="\n")
-
+    if acceptOptimicaGrammar() then 
+       (classAttributes |> classAttribute => optimizationComponents1(classAttribute,simCode, modelNamePrefixStr); separator="\n") 
+    else
+      <<
+      int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real* res){return -1;}
+      int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real* res){return -1;}
+      int <%symbolName(modelNamePrefixStr,"pathConstraints")%>(DATA* data, modelica_real* res, long int* N){return -1;}
+      >>   
 end optimizationComponents;
 
-template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode)
+template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode, String modelNamePrefixStr)
 "Generates C for class attributes of objective function."
 ::=
   match classAttribute
@@ -10391,7 +10424,7 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
         <<
             /* objectiveFunction */
 
-           int mayer(DATA* data, modelica_real* res)
+           int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real* res)
             {
               <%varDecls%>
               <%preExp%>
@@ -10400,7 +10433,7 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
             }
  
             /* objectiveIntegrand */
-            int lagrange(DATA* data, modelica_real* res)
+            int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real* res)
             {
               <%varDecls1%>
               <%preExp1%>
@@ -10409,7 +10442,7 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
             }
 
             /* constraints */
-            int pathConstraints(DATA* data, modelica_real* res, int* N)
+            int <%symbolName(modelNamePrefixStr,"pathConstraints")%>(DATA* data, modelica_real* res, long int* N)
             {
               if(*N < 0)
               {
