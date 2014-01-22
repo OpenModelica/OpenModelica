@@ -128,8 +128,8 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
            ll += nJ;
          }else{
            for(i = 0; i< iData->nx; ++i){
-             if(ll[i] != ll[i + iData->nx]){
-               if(iData->invd1_4*ll[i+2*iData->nx] != ll[i + iData->nx])
+             if(ll[i] != ll[i + nJ]){
+               if(iData->invd1_4*ll[i+2*nJ] != ll[i + nJ])
                  iData->sh[i] = iData->d1[4]*(ll[i] + (iData->invd1_4*ll[i+2*nJ] - ll[i + nJ]));
                else
                  iData->sh[i] = iData->d1[4]*ll[i];
@@ -137,8 +137,8 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
                iData->sh[i] = ll[i+2*nJ];
              }
            }
-           for(; i< nJ; ++i)
-             iData->sh[i] = ll[i];
+           //for(; i< nJ; ++i)
+            // iData->sh[i] = 0;
            num_hessian(x, iData->time[p], iData, iData->sh ,iData->lagrange,mayer_yes,obj_factor);
          }
 
@@ -190,7 +190,7 @@ static int sumLagrange(IPOPT_DATA_ *iData, double * erg,int ii, int i, int j, in
 {
   long double sum;
   int l;
-  int nJ = iData->nx + iData->nc;
+  int nJ = (ii) ? iData->nx + iData->nc : iData->nx;
   sum = 0.0;
   if(iData->Hg[j][i])
    for(l = 0; l<nJ; ++l)
@@ -220,6 +220,7 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
   long double h;
   int i, j, l;
   short upCost;
+  int nJ = (t>iData->t0) ? iData->nx + iData->nc : iData->nx;
 
   diff_functionODE(v, t , iData, iData->J0);
   upCost = (lagrange_yes || mayer_yes) && (obj_factor!=0);   
@@ -242,7 +243,7 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
     for(j = i; j < iData->nv; ++j)
     {
       if(iData->Hg[i][j]){
-      for(l = 0; l< (int)iData->nx + iData->nc; ++l)
+      for(l = 0; l< nJ; ++l)
       {
       if(iData->knowedJ[l][j] + iData->knowedJ[l][i] >= 2)
         iData->H[l][i][j]  = (long double)lambda[l]*(iData->J[l][j] - iData->J0[l][j])/h;
