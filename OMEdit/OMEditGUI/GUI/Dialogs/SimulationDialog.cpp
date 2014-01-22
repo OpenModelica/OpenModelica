@@ -443,6 +443,7 @@ void SimulationDialog::initializeFields()
     mpStartTimeTextBox->setText(QString::number(result.at(0).toFloat()));
     mpStopTimeTextBox->setText(QString::number(result.at(1).toFloat()));
     mpToleranceTextBox->setText(QString::number(result.at(2).toFloat()));
+    mpNumberofIntervalsSpinBox->setValue(result.at(3).toLong());
   }
 }
 
