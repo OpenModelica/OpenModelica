@@ -447,7 +447,8 @@ template simulationFile_opt(SimCode simCode, String guid)
     #include "<%fileNamePrefix%>_12jac.h"
     <%if acceptOptimicaGrammar() then optimizationComponents(classAttributes, simCode) else 
     "int mayer(DATA* data, modelica_real* res){return -1;}
-     int lagrange(DATA* data, modelica_real* res){return -1;}"%>    
+     int lagrange(DATA* data, modelica_real* res){return -1;}
+     int pathConstraints(DATA* data, modelica_real* res, int* N){return -1;}"%>    
         
     <%\n%>
     >>
