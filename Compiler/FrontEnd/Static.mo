@@ -10523,13 +10523,27 @@ algorithm
     // qualified ident with non-empty subscrips
     case (e as (DAE.CREF_QUAL(ident = id,subscriptLst = subs,componentRef = cref,identType = ty2 )),t)
       equation
-        // TODO!FIXME!
-        // ComponentReference.makeCrefIdent(id, ty2, subs) = fillCrefSubscripts(ComponentReference.makeCrefIdent(id, ty2, subs),t);
+        subs = fillSubscripts(subs, ty2);
+        t = stripPrefixType(t, ty2);
         cref_1 = fillCrefSubscripts(cref, t);
       then
         ComponentReference.makeCrefQual(id,ty2,subs,cref_1);
   end matchcontinue;
 end fillCrefSubscripts;
+
+protected function stripPrefixType
+  input DAE.Type inType;
+  input DAE.Type inPrefixType;
+  output DAE.Type outType;
+algorithm
+  outType := match(inType, inPrefixType)
+    local
+      DAE.Type t, pt;
+
+    case (DAE.T_ARRAY(ty = t), DAE.T_ARRAY(ty = pt)) then stripPrefixType(t, pt);
+    else inType;
+  end match;
+end stripPrefixType;
 
 protected function fillSubscripts
 "Helper function to fillCrefSubscripts."

@@ -1319,6 +1319,28 @@ algorithm
   end matchcontinue;
 end subscriptsAppend;
 
+public function subscriptsReplaceSlice
+  "Replaces the first slice subscript in the given list with the given subscript."
+  input list<DAE.Subscript> inSubscripts;
+  input DAE.Subscript inSubscript;
+  output list<DAE.Subscript> outSubscripts;
+algorithm
+  outSubscripts := match(inSubscripts, inSubscript)
+    local
+      list<DAE.Subscript> rest_subs;
+      DAE.Subscript sub;
+
+    case (DAE.WHOLEDIM() :: rest_subs, _) then inSubscript :: rest_subs;
+    case (DAE.SLICE(exp = _) :: rest_subs, _) then inSubscript :: rest_subs;
+    case (sub :: rest_subs, _)
+      equation
+        rest_subs = subscriptsReplaceSlice(rest_subs, inSubscript);
+      then
+        sub :: rest_subs;
+
+  end match;
+end subscriptsReplaceSlice;
+
 public function unliftArrayTypeWithSubs "
 helper function for renameVarsToUnderlineVar2 unlifts array type as much as we have subscripts"
   input list<DAE.Subscript> subs;

@@ -3010,6 +3010,12 @@ algorithm
       then
         c_1;
 
+    case (DAE.CREF_QUAL(idn, t2, s, c), _)
+      equation
+        s = Expression.subscriptsReplaceSlice(s, DAE.INDEX(sub));
+      then
+        ComponentReference.makeCrefQual(idn, t2, s, c);
+
     case (DAE.CREF_QUAL(idn,t2,s,c),_)
       equation
         c_1 = simplifyAsubCref(c,sub);
