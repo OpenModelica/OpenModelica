@@ -141,7 +141,7 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
 
   /*
   for(i = 0; i<ng;++i)
-	  printf("gmin = %g \t gmax = %g\n",iData->gmin[i],iData->gmax[i]);
+    printf("gmin = %g \t gmax = %g\n",iData->gmin[i],iData->gmax[i]);
   */
   return 0;
 }
