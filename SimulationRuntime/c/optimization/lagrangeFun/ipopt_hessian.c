@@ -111,10 +111,12 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
     double sum;
     long double mayer_term;
     short mayer_yes;
+    int nJ;
     r = 0;
     c = 0;
     k = 0;
 
+    nJ = iData->nx + iData->nc;
     for(ii = 0; ii <1; ++ii)
     {
       for(p = 0, x= v, ll = lambda;p <iData->deg+1;++p, x += iData->nv)
@@ -123,19 +125,19 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
 
          if(p){
            num_hessian(x, iData->time[p], iData, ll,iData->lagrange,mayer_yes,obj_factor);
-           ll += iData->nx;
+           ll += nJ;
          }else{
            for(i = 0; i< iData->nx; ++i){
              if(ll[i] != ll[i + iData->nx]){
                if(iData->invd1_4*ll[i+2*iData->nx] != ll[i + iData->nx])
-                 iData->sh[i] = iData->d1[4]*(ll[i] + (iData->invd1_4*ll[i+2*iData->nx] - ll[i + iData->nx]));
+                 iData->sh[i] = iData->d1[4]*(ll[i] + (iData->invd1_4*ll[i+2*nJ] - ll[i + nJ]));
                else
                  iData->sh[i] = iData->d1[4]*ll[i];
              }else{
-               iData->sh[i] = ll[i+2*iData->nx];
+               iData->sh[i] = ll[i+2*nJ];
              }
            }
-           for(; i< (int)iData->nx + iData->nc; ++i)
+           for(; i< nJ; ++i)
              iData->sh[i] = ll[i];
            num_hessian(x, iData->time[p], iData, iData->sh ,iData->lagrange,mayer_yes,obj_factor);
          }
@@ -169,14 +171,14 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
           }
         r += iData->nv;
         c += iData->nv;
-        ll += iData->nx;
+        ll += nJ;
 
       }
 
     }
   }
-   //printf("\n k = %i \t %i",k, (int)nele_hess);
-   //assert(k == nele_hess);
+   /*printf("\n k = %i \t %i",k, (int)nele_hess);
+   assert(k == nele_hess);*/
   return TRUE;
 }
 
@@ -188,10 +190,10 @@ static int sumLagrange(IPOPT_DATA_ *iData, double * erg,int ii, int i, int j, in
 {
   long double sum;
   int l;
-
+  int nJ = iData->nx + iData->nc;
   sum = 0.0;
   if(iData->Hg[j][i])
-   for(l = 0; l<iData->nx; ++l)
+   for(l = 0; l<nJ; ++l)
      sum += iData->H[l][i][j];
 
   if(iData->lagrange){
