@@ -8676,7 +8676,7 @@ algorithm
         daeEqLst = resolveLoops12(m,mT,eqIdcs,varIdcs,daeVarLst,daeEqLst,{});
         daeEqs = BackendEquation.listEquation(daeEqLst);
         
-        systTmp = BackendDAE.EQSYSTEM(daeVars,daeEqs,NONE(),NONE(),BackendDAE.NO_MATCHING,stateSets);
+        systTmp = BackendDAE.EQSYSTEM(daeVars,daeEqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets);
         systTmp = resolveLinearSystem(compIdx+1,compsIn,systTmp,sharedIn);
       then
         systTmp;
