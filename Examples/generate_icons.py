@@ -475,7 +475,7 @@ def getCoordinates(xy, graphics, minX, maxY, transformation, coordinateSystem):
 
 
 # get svg object from modelica graphics object
-def getSvgFromGraphics(dwg, graphics, minX, maxY, transformation=None, coordinateSystem=None):
+def getSvgFromGraphics(dwg, graphics, minX, maxY, includeInvisibleText, transformation=None, coordinateSystem=None):
     shape = None
     definitions = svgwrite.container.Defs()
     origin = None
@@ -620,7 +620,7 @@ def getSvgFromGraphics(dwg, graphics, minX, maxY, transformation=None, coordinat
 
         shape = dwg.text(graphics['textString'].replace('%', ''), None, [x], [y], **extra)
 
-        if graphics['textString'].find('%') != -1:
+        if includeInvisibleText and graphics['textString'].find('%') != -1:
             extra = {'class': "bbox", 'display': "none"}
             xmin = x0
             ymin = y0
@@ -961,7 +961,7 @@ def getSvgFromGraphics(dwg, graphics, minX, maxY, transformation=None, coordinat
 
 
 # generate svgs from graphics objects
-def generateSvg(filename, iconGraphics):
+def generateSvg(filename, iconGraphics, includeInvisibleText):
 
     width = 100
     height = 100
@@ -1041,7 +1041,7 @@ def generateSvg(filename, iconGraphics):
 
     for iconGraphic in iconGraphics:
         for graphics in iconGraphic['graphics']:
-            svgShape = getSvgFromGraphics(dwg, graphics, minX, maxY)
+            svgShape = getSvgFromGraphics(dwg, graphics, minX, maxY, includeInvisibleText)
             if svgShape:
                 dwg.add(svgShape[0])
                 dwg.add(svgShape[1])
@@ -1050,7 +1050,7 @@ def generateSvg(filename, iconGraphics):
         for port in iconGraphic['ports']:
             group = dwg.g(id=port['id'])
             for graphics in port['graphics']:
-                svgShape = getSvgFromGraphics(dwg, graphics, minX, maxY, port['transformation'], port['coordinateSystem'])
+                svgShape = getSvgFromGraphics(dwg, graphics, minX, maxY, includeInvisibleText, port['transformation'], port['coordinateSystem'])
                 if svgShape:
                     group.add(svgShape[0])
                     group.add(svgShape[1])
@@ -1073,7 +1073,7 @@ def generateSvg(filename, iconGraphics):
     return dwg
 
 
-def exportIcon(modelicaClass, base_classes):
+def exportIcon(modelicaClass, base_classes, includeInvisbleText):
     # get all icons
     iconGraphics = []
 
@@ -1087,7 +1087,7 @@ def exportIcon(modelicaClass, base_classes):
         json.dump(iconGraphics, f_p)
 
     # export svgs
-    dwg = generateSvg(os.path.join(output_dir, classToFileName(modelicaClass) + ".svg"), iconGraphics)
+    dwg = generateSvg(os.path.join(output_dir, classToFileName(modelicaClass) + ".svg"), iconGraphics, includeInvisbleText)
     return dwg
 
 
@@ -1105,6 +1105,7 @@ def main():
     t = time.time()
     parser = OptionParser()
     parser.add_option("--with-html", help="Generate an HTML report with all SVG-files", action="store_true", dest="with_html", default=False)
+    parser.add_option("--with-invisible-text", action="store_true", help="Includes invisible text containing the original text and bounding box, for debugging purposes", dest="includeInvisibleText", default=False)
     parser.add_option("--output-dir", help="Directory to generate SVG-files in", type="string", dest="output_dir", default=os.path.abspath('ModelicaIcons'))
     parser.add_option("--quiet", help="Do not output to the console", action="store_true", dest="quiet", default=False)
     (options, args) = parser.parse_args()
@@ -1114,6 +1115,7 @@ def main():
     global output_dir
     output_dir = options.output_dir
     with_html = options.with_html
+    includeInvisibleText = options.includeInvisibleText
     
     # create logger with 'spam_application'
     global logger
@@ -1183,7 +1185,7 @@ def main():
             # try:
             base_classes = []
             getBaseClasses(modelica_class, base_classes)
-            dwg = exportIcon(modelica_class, base_classes)
+            dwg = exportIcon(modelica_class, base_classes, includeInvisibleText)
             dwgs.append(dwg)
 
             logger.info('Done: ' + modelica_class)
