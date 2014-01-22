@@ -846,7 +846,7 @@ algorithm
       list<GlobalScript.CompiledCFunction> cf;
       GlobalScript.SimulationOptions simOpt;
       Real startTime,stopTime,tolerance,reltol,reltolDiffMinMax,rangeDelta;
-      DAE.Exp startTimeExp,stopTimeExp,toleranceExp;
+      DAE.Exp startTimeExp,stopTimeExp,toleranceExp,intervalExp;
       DAE.Type tp;
       Absyn.Class absynClass;
       Absyn.ClassDef cdef;
@@ -859,7 +859,7 @@ algorithm
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       Values.Value ret_val,simValue,value,v,cvar,cvar2,v1,v2;
       Absyn.ComponentRef cr_1;
-      Integer size,resI,i,i1,i2,i3,n,curveStyle;
+      Integer size,resI,i,i1,i2,i3,n,curveStyle,numberOfIntervals;
       Option<Integer> fmiContext, fmiInstance, fmiModelVariablesInstance; /* void* implementation: DO NOT UNBOX THE POINTER AS THAT MIGHT CHANGE IT. Just treat this as an opaque type. */
       Integer fmiLogLevel;
       list<Integer> is;
@@ -897,10 +897,8 @@ algorithm
       list<Boolean> blst;
       list<Error.TotalMessage> messages;
       UnitAbsyn.Unit u1,u2;
-   
-    Real stoptime,starttime,tol,stepsize;
-    Integer interval;
-    String stoptime_str,stepsize_str,starttime_str,tol_str,num_intervalls_str;
+      Real stoptime,starttime,tol,stepsize,interval;
+      String stoptime_str,stepsize_str,starttime_str,tol_str,num_intervalls_str;
     case (cache,env,"parseString",{Values.STRING(str1),Values.STRING(str2)},st,_)
       equation
         Absyn.PROGRAM(classes=classes,within_=within_) = Parser.parsestring(str1,str2);
@@ -1418,7 +1416,7 @@ algorithm
        
         exeDir=compileDir;
          (cache,simSettings) = calculateSimulationSettings(cache,env,vals,st_1,msg);
-        SimCode.SIMULATION_SETTINGS(startTime=starttime,stopTime=stoptime,tolerance=tol,numberOfIntervals=interval,stepSize=stepsize,method = method_str, outputFormat = outputFormat_str)
+        SimCode.SIMULATION_SETTINGS(startTime=starttime,stopTime=stoptime,tolerance=tol,stepSize=stepsize,method = method_str, outputFormat = outputFormat_str)
            = simSettings;
         result_file = stringAppendList(List.consOnTrue(not Config.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
         executableSuffixedExe = stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),System.platform()));
@@ -1556,7 +1554,7 @@ algorithm
         cit = winCitation();
         exeDir=compileDir;
         (cache,simSettings) = calculateSimulationSettings(cache,env,vals,st_1,msg); 
-        SimCode.SIMULATION_SETTINGS(startTime=starttime,stopTime=stoptime,tolerance=tol,numberOfIntervals=interval,stepSize=stepsize,method = method_str, outputFormat = outputFormat_str) = simSettings;   
+        SimCode.SIMULATION_SETTINGS(startTime=starttime,stopTime=stoptime,tolerance=tol,stepSize=stepsize,method = method_str, outputFormat = outputFormat_str) = simSettings;   
         result_file = stringAppendList(List.consOnTrue(not Config.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
         executableSuffixedExe = stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),System.platform()));
         logFile = stringAppend(executable,".log");
@@ -2333,19 +2331,22 @@ algorithm
       then
         (cache,Values.BOOL(false),st);
 
-    case (cache,env,"getSimulationOptions",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.REAL(startTime),Values.REAL(stopTime),Values.REAL(tolerance)},st as GlobalScript.SYMBOLTABLE(ast = p),_)
+    case (cache,env,"getSimulationOptions",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.REAL(startTime),Values.REAL(stopTime),Values.REAL(tolerance),Values.INTEGER(numberOfIntervals),Values.REAL(interval)},st as GlobalScript.SYMBOLTABLE(ast = p),_)
       equation
         cr_1 = Absyn.pathToCref(classpath);
         // ignore the name of the model
         ErrorExt.setCheckpoint("getSimulationOptions");
-        simOpt = GlobalScript.SIMULATION_OPTIONS(DAE.RCONST(startTime),DAE.RCONST(stopTime),DAE.ICONST(0),DAE.RCONST(0.0),DAE.RCONST(tolerance),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.BCONST(false),DAE.SCONST(""),DAE.SCONST(""));
+        simOpt = GlobalScript.SIMULATION_OPTIONS(DAE.RCONST(startTime),DAE.RCONST(stopTime),DAE.ICONST(numberOfIntervals),DAE.RCONST(0.0),DAE.RCONST(tolerance),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.BCONST(false),DAE.SCONST(""),DAE.SCONST(""));
         ErrorExt.rollBack("getSimulationOptions");
-        (_, _::startTimeExp::stopTimeExp::_::toleranceExp::_) = StaticScript.getSimulationArguments(Env.emptyCache(), {},{Absyn.CREF(cr_1)},{},false,SOME(st),Prefix.NOPRE(),Absyn.dummyInfo,SOME(simOpt));
+        (_, _::startTimeExp::stopTimeExp::intervalExp::toleranceExp::_) = StaticScript.getSimulationArguments(Env.emptyCache(), {},{Absyn.CREF(cr_1)},{},false,SOME(st),Prefix.NOPRE(),Absyn.dummyInfo,SOME(simOpt));
         startTime = ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,startTimeExp,Values.REAL(startTime)));
         stopTime = ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,stopTimeExp,Values.REAL(stopTime)));
         tolerance = ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,toleranceExp,Values.REAL(tolerance)));
+        Values.INTEGER(numberOfIntervals) = Util.makeValueOrDefault(Ceval.cevalSimple,intervalExp,Values.INTEGER(numberOfIntervals)); // number of intervals
+        interval = Util.if_(numberOfIntervals == 0, interval, realDiv(realSub(stopTime,startTime),intReal(intMax(numberOfIntervals,1))));
+        numberOfIntervals = Util.if_(numberOfIntervals == 0, realInt(realCeil(realDiv(realSub(stopTime,startTime),interval))), numberOfIntervals);
       then
-        (cache,Values.TUPLE({Values.REAL(startTime),Values.REAL(stopTime),Values.REAL(tolerance)}),st);
+        (cache,Values.TUPLE({Values.REAL(startTime),Values.REAL(stopTime),Values.REAL(tolerance),Values.INTEGER(numberOfIntervals),Values.REAL(interval)}),st);
 
     case (cache,env,"classAnnotationExists",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.CODE(Absyn.C_TYPENAME(path))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
       equation

@@ -105,13 +105,18 @@ writeFile(statFile + \".flat\", testcase(0,false,\"killed\"));getErrorString();
 writeFile(statFile + \".compile\", testcase(0,false,\"killed\"));getErrorString();
 writeFile(statFile + \".sim\", testcase(0,false,\"killed\"));getErrorString();
 writeFile(statFile + \".verify\", testcase(0,false,\"killed\"));getErrorString();
-outputFormat:=\"mat\";
+referenceFiles := \""+referenceFiles+"\";
+reference := \""+referenceFiles+"/"+OpenModelica.Scripting.stringReplace(s,".",referenceFileNameDelimiter)+"."+referenceFileExtension+"\";
+referenceExists := referenceFiles <> \"\" and regularFileExists(reference);
+outputFormat:=if referenceExists then \"mat\" else \"empty\";
 "+loadModelCommand+"
 reference_reltol:="+String(reference_reltol)+";
 reference_reltolDiffMinMax:="+String(reference_reltolDiffMinMax)+";
 reference_rangeDelta:="+String(reference_rangeDelta)+";
-(startTime,stopTime,tolerance):=getSimulationOptions("+s+",defaultTolerance="+String(default_tolerance)+");
-res:=buildModel("+s+",tolerance=tolerance,outputFormat=outputFormat);
+// Use twice as many output points as the experiment annotation suggests. Else aim for 5000 points.
+(startTime,stopTime,tolerance,numberOfIntervals,stepSize):=getSimulationOptions("+s+",defaultTolerance="+String(default_tolerance)+",defaultNumberOfIntervals=2500);
+numberOfIntervals := 2*numberOfIntervals;
+res:=buildModel("+s+",tolerance=tolerance,outputFormat=outputFormat,numberOfIntervals=numberOfIntervals);
 greenColor := \"#00FF00\";
 errFile:=\"files/"+s+".err\";
 simFile:=\"files/"+s+".sim\";
@@ -139,14 +144,10 @@ buildRes := res[1] <> \"\";
 simRes  := if not buildRes then false else 0 == system(\"ulimit -t "+ulimitExe+" ; ./"+s+" > \"+simFile+\" 2>&1\");
 system(\"sed -i '300,$ d' '\" + simFile + \"'\"); // Only keep the top 300 lines
 timeSim := OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
-referenceExists := false;
 referenceOK := false;
-referenceFiles := \""+referenceFiles+"\";
 referenceCell := if referenceFiles == \"\" then \"\" else \"<td>&nbsp;</td>\";
 if simRes then
   system(\"touch "+s+".simsuccess\");
-  reference := \""+referenceFiles+"/"+OpenModelica.Scripting.stringReplace(s,".",referenceFileNameDelimiter)+"."+referenceFileExtension+"\";
-  referenceExists := referenceFiles <> \"\" and regularFileExists(reference);
   prefix := \"files/"+s+".diff\";
   if referenceExists then
     OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);

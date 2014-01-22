@@ -403,7 +403,6 @@ match mcase
     let pat_str = dumpPatterns(patterns)
     let res_str = dumpExp(result, "\"")
     let body_str = DAEDumpTpl.dumpStatements(body)
-    let body_str = ""
     <<
     case (<%pat_str%>)
       algorithm
@@ -414,7 +413,6 @@ match mcase
   case CASE(__) then
     let pat_str = dumpPatterns(patterns)
     let body_str = DAEDumpTpl.dumpStatements(body)
-    let body_str = ""
     <<
     case (<%pat_str%>)
       algorithm

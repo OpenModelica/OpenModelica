@@ -2856,12 +2856,16 @@ function getSimulationOptions
   input Real defaultStartTime := 0.0;
   input Real defaultStopTime := 1.0;
   input Real defaultTolerance := 1e-6;
+  input Integer defaultNumberOfIntervals := 500 "May be overridden by defining defaultInterval instead";
+  input Real defaultInterval := 0.0 "If = 0.0, then numberOfIntervals is used to calculate the step size";
   output Real startTime;
   output Real stopTime;
   output Real tolerance;
+  output Real numberOfIntervals;
+  output Real interval;
 external "builtin";
 annotation(Documentation(info="<html>
-<p>Returns the startTime, stopTime, interval and tolerance based on the experiment annotation.</p>
+<p>Returns the startTime, stopTime, tolerance, and interval based on the experiment annotation.</p>
 </html>"));
 end getSimulationOptions;
 
