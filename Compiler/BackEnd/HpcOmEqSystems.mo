@@ -2027,16 +2027,16 @@ algorithm
         
         // build the incidenceMatrix, dump eqSystem as graphML
         numEqs = BackendDAEUtil.equationArraySize(eqs);
-		    numVars = BackendVariable.numVariables(vars);
-		    m = arrayCreate(numEqs, {});
-		    mT = arrayCreate(numVars, {});
-		    (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(vars,eqs,{},mT, 0, numEqs, intLt(0, numEqs), BackendDAE.ABSOLUTE(), NONE()); 
-		    dumpEquationSystemGraphML1(vars,eqs,m,"linSystem"+&intString(tornSysIdxIn));
-		    
-		    print("START RESOLVING THE COMPONENT\n");
-		    daeEqLst = BackendDAEOptimize.resolveLoops12(m,mT,eqIdcs,varIdcs,daeVarLst,daeEqLst,{});
-		    daeEqs = BackendEquation.listEquation(daeEqLst);
-		    
+        numVars = BackendVariable.numVariables(vars);
+        m = arrayCreate(numEqs, {});
+        mT = arrayCreate(numVars, {});
+        (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(vars,eqs,{},mT, 0, numEqs, intLt(0, numEqs), BackendDAE.ABSOLUTE(), NONE()); 
+        dumpEquationSystemGraphML1(vars,eqs,m,"linSystem"+&intString(tornSysIdxIn));
+        
+        print("START RESOLVING THE COMPONENT\n");
+        daeEqLst = BackendDAEOptimize.resolveLoops12(m,mT,eqIdcs,varIdcs,daeVarLst,daeEqLst,{});
+        daeEqs = BackendEquation.listEquation(daeEqLst);
+        
         systTmp = BackendDAE.EQSYSTEM(daeVars,daeEqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets);
         (systTmp,tornSysIdx) = resolveLinearSystem(compIdx+1,compsIn,ass1,ass2,systTmp,sharedIn,tornSysIdxIn+1);
       then

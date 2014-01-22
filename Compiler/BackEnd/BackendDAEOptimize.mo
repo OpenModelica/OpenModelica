@@ -6986,11 +6986,11 @@ algorithm
     case(_)
       equation
         true = Flags.isSet(Flags.RESOLVE_LOOPS); 
-				BackendDAE.DAE(eqs = eqSysts,shared = shared) = inDAE;
-				(eqSysts,shared) = List.mapFold(eqSysts,resolveLoops1,shared);
-				outDAE = BackendDAE.DAE(eqSysts,shared);
-		  then
-		    outDAE;
+        BackendDAE.DAE(eqs = eqSysts,shared = shared) = inDAE;
+        (eqSysts,shared) = List.mapFold(eqSysts,resolveLoops1,shared);
+        outDAE = BackendDAE.DAE(eqSysts,shared);
+      then
+        outDAE;
     else
       then
         inDAE;   
