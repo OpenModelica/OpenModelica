@@ -84,8 +84,9 @@ Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
     iData->u2 = x2 + iData->nx; /*6 + 2 = 8*/
     iData->u3 = x3 + iData->nx;
 
-    if(i > 0)
+    if(i)
     {
+      /*1*/
       functionODE_(x1, iData->u1, iData->time[i*iData->deg + 1], dotx1, iData);
       for(j=0; j<iData->nx; ++j)
       {
@@ -93,6 +94,7 @@ Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
       }
       iData->data->callback->pathConstraints(data,&g[k],&iData->nc);
 
+      /*2*/
       k += iData->nc;
       functionODE_(x2, iData->u2, iData->time[i*iData->deg + 2], dotx2, iData);
 
@@ -102,6 +104,7 @@ Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
       }
       iData->data->callback->pathConstraints(data,&g[k],&iData->nc);
 
+      /*3*/
       k += iData->nc;
       functionODE_(x3, iData->u3, iData->time[i*iData->deg + 3], dotx3, iData);
 
@@ -110,6 +113,7 @@ Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
         g[k++] = (a3[0]*x0[j] + a3[2]*x2[j] + scaldf[j]*dt[i]*dotx3[j]) - (a3[1]*x1[j] + a3[3]*x3[j]);
       }
       iData->data->callback->pathConstraints(data,&g[k],&iData->nc);
+      k += iData->nc;
     }
     else
     {

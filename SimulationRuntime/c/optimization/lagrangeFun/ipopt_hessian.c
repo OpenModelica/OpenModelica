@@ -135,6 +135,8 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
                iData->sh[i] = ll[i+2*iData->nx];
              }
            }
+           for(; i< (int)iData->nx + iData->nc; ++i)
+        	   iData->sh[i] = ll[i];
            num_hessian(x, iData->time[p], iData, iData->sh ,iData->lagrange,mayer_yes,obj_factor);
          }
 
@@ -189,8 +191,8 @@ static int sumLagrange(IPOPT_DATA_ *iData, double * erg,int ii, int i, int j, in
 
   sum = 0.0;
   if(iData->Hg[j][i])
-  for(l = 0; l<iData->nx; ++l)
-    sum += iData->H[l][i][j];
+   for(l = 0; l<iData->nx; ++l)
+     sum += iData->H[l][i][j];
 
   if(iData->lagrange){
     if(ii)
@@ -238,7 +240,7 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
     for(j = i; j < iData->nv; ++j)
     {
       if(iData->Hg[i][j]){
-      for(l = 0; l< iData->nx; ++l)
+      for(l = 0; l< (int)iData->nx + iData->nc; ++l)
       {
       if(iData->knowedJ[l][j] + iData->knowedJ[l][i] >= 2)
         iData->H[l][i][j]  = (long double)lambda[l]*(iData->J[l][j] - iData->J0[l][j])/h;

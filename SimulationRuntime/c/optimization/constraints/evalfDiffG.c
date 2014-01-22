@@ -68,20 +68,22 @@ Bool evalfDiffG(Index n, double * x, Bool new_x, Index m, Index njac, Index *iRo
     /* jac_struc(iRow, iCol, iData->nx, iData->nv, iData->nsi); */
     jac_struc(iData, iRow, iCol);
 
-/*
+   /*
     printf("\n m = %i , %i",m ,iData->NRes);
     printf("\nk = %i , %i" ,k ,njac);
     for(i = 0; i< njac; ++i)
       printf("\nJ(%i,%i) = 1; i= %i",iRow[i]+1, iCol[i]+1,i);
 
     assert(0);
-*/
+    */
+
   }
   else
   {
     ipoptDebuge(iData,x);
     long double tmp[3];
     int id;
+    int nng = iData->nx + iData->nc;
     double *a1, *a2, *a3;
     double *d1, *d2, *d3;
 
@@ -118,10 +120,13 @@ Bool evalfDiffG(Index n, double * x, Bool new_x, Index m, Index njac, Index *iRo
             break;
           }
         }
-        for(;j<iData->nx + iData->nc; ++j)
+        for(;j<nng; ++j)
+        {
           conJac(iData->J[j], values, iData->nv, &k, j,iData);
+        }
       }
-      /* printf("\nk = %i , %i" ,k ,njac); */
+
+
     }
 
     for(; i<iData->nsi; ++i)
@@ -144,13 +149,12 @@ Bool evalfDiffG(Index n, double * x, Bool new_x, Index m, Index njac, Index *iRo
             break;
           }
         }
-        for(;j<iData->nx + iData->nc; ++j)
+        for(;j<nng; ++j)
           conJac(iData->J[j], values, iData->nv, &k, j,iData);
       }
     }
+     /*assert(k == njac);*/
   }
-  
-  /* assert(k == njac); */
   return TRUE;
 }
 
@@ -481,7 +485,7 @@ static int jac_struc(IPOPT_DATA_ *iData, int *iRow, int *iCol)
         {
           if(iData->knowedJ[j][l] == 1)
           {
-            iRow[k] = iRow[k-1];
+            iRow[k] = r + j;
             iCol[k++] = c + l;
           }
         }
@@ -546,10 +550,11 @@ static int jac_struc(IPOPT_DATA_ *iData, int *iRow, int *iCol)
     c += nv;
   }
 
-  /*
-   * printf("\n\n%i = %i",iData->njac,k);
-   * assert(0);
-  */
+    /*
+    printf("\n\n%i = %i",iData->njac,k);
+    assert(0);
+    */
+
 
   return 0;
 }

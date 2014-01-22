@@ -103,7 +103,7 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
   if(flag == 5)
   {
      nlp = CreateIpoptProblem(iData->NV, iData->Vmin, iData->Vmax,
-         iData->NRes, iData->gmin, iData->gmax, iData->njac, iData->nhess, 0, &evalfF,
+         iData->NRes +iData->nc*iData->deg*iData->nsi, iData->gmin, iData->gmax, iData->njac, iData->nhess, 0, &evalfF,
                   &evalfG, &evalfDiffF, &evalfDiffG, &ipopt_h);
 
     AddIpoptNumOption(nlp, "tol", iData->data->simulationInfo.tolerance);
@@ -137,13 +137,13 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
     /* AddIpoptNumOption(nlp,"derivative_test_perturbation",1e-6); */
     AddIpoptIntOption(nlp, "max_iter", 5000);
 
-    res = IpoptSolve(nlp, (*iData).v, NULL, &obj, (*iData).mult_g, (*iData).mult_x_L, (*iData).mult_x_U, (void*)iData);
+    res = IpoptSolve(nlp, iData->v, NULL, &obj, iData->mult_g, iData->mult_x_L, iData->mult_x_U, (void*)iData);
 
     FreeIpoptProblem(nlp);
 
     if(ACTIVE_STREAM(LOG_IPOPT))
     {
-      for(i =0; i<iData->nv;i++)
+      for(i =0; i<iData->nv;++i)
         if(iData->pFile[i])
           fclose(iData->pFile[i]);
       if(iData->pFile)

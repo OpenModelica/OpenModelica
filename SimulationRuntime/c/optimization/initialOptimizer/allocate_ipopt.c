@@ -43,7 +43,7 @@
 
 #include "../localFunction.h"
 
-static int local_jac_struct(IPOPT_DATA_ *iData);
+static int local_jac_struct(IPOPT_DATA_ *iData, int *nng);
 static int check_nominal(IPOPT_DATA_ *iData, double min, double max, double nominal, short set, int i, double x0);
 
 /*!
@@ -55,6 +55,7 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   int deg1, deg2, i, j;
   int nJ = iData->nc + iData->nx;
   int ng = iData->NRes+iData->nc*iData->deg*iData->nsi;
+  int nng;
   deg1 = iData->deg + 1;
   deg2 = deg1 + 1;
 
@@ -129,11 +130,19 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   for(i = 0; i < iData->nv; i++)
     iData->mH[i] = (long double*) calloc(iData->nv, sizeof(long double));
 
-  if(iData->nc > 0)
-    for(i = iData->nx; i<ng-iData->nc; i+=nJ)
-      for(j=0;j<iData->nc;++j)
-        iData->gmin[i+j] = -1e32;
+  nng = ng-iData->nc;
+  if((int)iData->nc > (int)0){
+    for(i = iData->nx; i<nng; i+=nJ)
+      for(j=0;j<(int)iData->nc;++j)
+      {
+        iData->gmin[i+j] = -1e320;
+      }
+  }
 
+  /*
+  for(i = 0; i<ng;++i)
+	  printf("gmin = %g \t gmax = %g\n",iData->gmin[i],iData->gmax[i]);
+  */
   return 0;
 }
 
@@ -247,8 +256,8 @@ int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
   iData->endN = iData->NV - iData->nv;
 
   /* iData->njac =  iData->nX*iData->nsi*(iData->nv + iData->deg) + iData->nX*(iData->nv-1); */
-  local_jac_struct(iData);
-  iData->njac = iData->deg*(iData->nlocalJac-iData->nx+iData->nsi*iData->nlocalJac+iData->deg*iData->nsi*iData->nx) - iData->nc*iData->nv;
+  local_jac_struct(iData, &id);
+  iData->njac = iData->deg*(iData->nlocalJac-iData->nx+iData->nsi*iData->nlocalJac+iData->deg*iData->nsi*iData->nx)-iData->nc*iData->deg*id;
   iData->nhess = 0.5*iData->nv*(iData->nv + 1)*(1+iData->deg*iData->nsi);
 
   allocateIpoptData(iData);
@@ -438,16 +447,16 @@ int move_grid(IPOPT_DATA_ *iData)
  *  function calculates a jacobian matrix struct
  *  author: Willi
  */
-static int local_jac_struct(IPOPT_DATA_ *iData)
+static int local_jac_struct(IPOPT_DATA_ *iData, int * nng)
 {
   DATA * data = iData->data;
   const int index = 2;
   int **J;
   short **Hg;
-
-  int i,j,l,ii,nx;
+  int i,j,l,ii,nx, id;
   int *cC,*lindex;
   int nJ = (iData->nx+iData->nc);
+  id = 0;
 
   iData->nlocalJac = 0;
   iData->knowedJ = (int**) malloc( nJ* sizeof(int*));
@@ -489,6 +498,7 @@ static int local_jac_struct(IPOPT_DATA_ *iData)
           l = data->simulationInfo.analyticJacobians[index].sparsePattern.index[j];
           J[l][ii] = 1;
           ++iData->nlocalJac;
+          if(l>= iData->nx) id++;
         }
       }
     }
@@ -537,7 +547,7 @@ static int local_jac_struct(IPOPT_DATA_ *iData)
       printf("\n");
     }
   }
-
+  *nng = id;
   return 0;
 }
 
