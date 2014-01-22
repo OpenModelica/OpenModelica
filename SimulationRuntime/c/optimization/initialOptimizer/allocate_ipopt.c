@@ -131,8 +131,8 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
 
   if(iData->nc > 0)
     for(i = iData->nx; i<ng-iData->nc; i+=nJ)
-    	for(j=0;j<iData->nc;++j)
-    		iData->gmin[i+j] = -1e32;
+      for(j=0;j<iData->nc;++j)
+        iData->gmin[i+j] = -1e32;
 
   return 0;
 }
