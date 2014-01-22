@@ -2344,7 +2344,7 @@ algorithm
         tolerance = ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,toleranceExp,Values.REAL(tolerance)));
         Values.INTEGER(numberOfIntervals) = Util.makeValueOrDefault(Ceval.cevalSimple,intervalExp,Values.INTEGER(numberOfIntervals)); // number of intervals
         interval = Util.if_(numberOfIntervals == 0, interval, realDiv(realSub(stopTime,startTime),intReal(intMax(numberOfIntervals,1))));
-        numberOfIntervals = Util.if_(numberOfIntervals == 0, realInt(realCeil(realDiv(realSub(stopTime,startTime),interval))), numberOfIntervals);
+        numberOfIntervals = Util.if_(numberOfIntervals == 0, Util.if_(realGt(interval,0.0),realInt(realCeil(realDiv(realSub(stopTime,startTime),realMax(interval,1e-300 /* TODO: Use real if-expressions to skip these things */)))),0), numberOfIntervals);
       then
         (cache,Values.TUPLE({Values.REAL(startTime),Values.REAL(stopTime),Values.REAL(tolerance),Values.INTEGER(numberOfIntervals),Values.REAL(interval)}),st);
 

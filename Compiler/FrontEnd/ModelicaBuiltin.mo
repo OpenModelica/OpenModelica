@@ -2861,7 +2861,7 @@ function getSimulationOptions
   output Real startTime;
   output Real stopTime;
   output Real tolerance;
-  output Real numberOfIntervals;
+  output Integer numberOfIntervals;
   output Real interval;
 external "builtin";
 annotation(Documentation(info="<html>
