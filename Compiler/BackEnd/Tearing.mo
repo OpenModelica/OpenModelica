@@ -982,7 +982,7 @@ algorithm
         points = List.fold2(eqns,addEqnWeights,m,ass1,points);
           //points = List.fold2(freeVars,addOneEdgeEqnWeights,(m,mt),ass1,points);
            Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"Points after 'addEqnWeights':\n" +& stringDelimitList(List.map(arrayList(points),intString),",") +& "\n\n");
-        // 3rd: -10 points for each discrete variable
+        // 3rd: only one-tenth of points for each discrete variable
         points = List.fold1(freeVars,discriminateDiscrete,vars,points);
            Debug.fcall(Flags.TEARING_DUMPVERBOSE,print,"Points after 'discriminateDiscrete':\n" +& stringDelimitList(List.map(arrayList(points),intString),",") +& "\n\n");
         tvar = selectVarWithMostPoints(freeVars,points,-1,-1);
@@ -1183,7 +1183,7 @@ algorithm
   end matchcontinue;
 end isAssignedSaveEnhanced;
 
-protected function discriminateDiscrete " subtracts 10 points from each discrete variable 
+protected function discriminateDiscrete " leaves only one-tenth of points for each discrete variable 
  author: Frenkel TUD 2012-08"
  input Integer v;
  input BackendDAE.Variables vars;
@@ -1752,7 +1752,7 @@ protected function tearingSystem1_1 "  author: Waurich TUD 2012-10"
   output BackendDAE.StrongComponent ocomp;
   output Boolean outRunMatching;
 protected
-  list<Integer> tvars,residual,residual_coll,unsolvables,unassigned,potentials;
+  list<Integer> tvars,residual,residual_coll,unsolvables,unassigned,potentials,discreteVars;
   list<list<Integer>> othercomps,order;
   BackendDAE.EqSystem syst,subsyst;
   BackendDAE.Shared shared;
@@ -1786,6 +1786,9 @@ algorithm
   vars := BackendVariable.listVar1(var_lst);
   subsyst := BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),{});
   (subsyst,m,mt,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.NORMAL(),NONE());
+  // delete negtive entries from incidence matrix
+  m := Util.arrayMap(m,deleteNegativeEntries);
+  mt := Util.arrayMap(mt,deleteNegativeEntries);
      Debug.fcall(Flags.TEARING_DUMP, print, "\n\n###BEGIN print Strong Component#####################\n(Function:tearingsSystem1_1)\n");
      Debug.fcall(Flags.TEARING_DUMP, BackendDump.printEqSystem, subsyst);
      Debug.fcall(Flags.TEARING_DUMP, print, "\n###END print Strong Component#######################\n(Function:tearingsSystem1_1)\n\n\n");
@@ -1798,9 +1801,12 @@ algorithm
      Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n\nmapEqnIncRow:"); //+& stringDelimitList(List.map(List.flatten(arrayList(mapEqnIncRow)),intString),",") +& "\n\n");
      Debug.fcall(Flags.TEARING_DUMPVERBOSE, BackendDump.dumpIncidenceMatrix, mapEqnIncRow);
      Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nmapIncRowEqn:\n" +& stringDelimitList(List.map(arrayList(mapIncRowEqn),intString),",") +& "\n\n");
-  //determine unsolvable vars, unsolvable eqns and impossible assignments to consider solvability
+  //determine unsolvable vars to consider solvability
   unsolvables := getUnsolvableVars(1,size,meT,{});
      Debug.fcall(Flags.TEARING_DUMP, print, "\nUNSOLVABLES:\n" +& stringDelimitList(List.map(unsolvables,intString),",") +& "\n\n");
+  //determine discrete vars
+  discreteVars := findDiscrete(var_lst,{},1);  
+     Debug.fcall(Flags.TEARING_DUMP, print, "\nDiscrete Vars:\n" +& stringDelimitList(List.map(discreteVars,intString),",") +& "\n\n");
   ass1 := List.fill(-1,size);
   ass2 := List.fill(-1,size);
   orderIn := {{},{}};
@@ -1808,11 +1814,11 @@ algorithm
     // (OutTVars,_,_) := TearingSystemOlleroAmselem(m,mt,ass1,ass2);
     // (OutTVars,_,_) := TearingSystemSteward(m,mt,ass1,ass2);
      Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n" +& BORDER +& "\nBEGINNING of TearingSystemCellier\n\n");
-  (OutTVars, ass1, ass2, order) := TearingSystemCellier(false,m,mt,me,meT,ass1,ass2,unsolvables,{},orderIn,mapEqnIncRow,mapIncRowEqn);
+  (OutTVars, ass1, ass2, order) := TearingSystemCellier(false,m,mt,me,meT,ass1,ass2,unsolvables,{},discreteVars,orderIn,mapEqnIncRow,mapIncRowEqn);
      Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nEND of TearingSystemCellier\n" +& BORDER +& "\n\n");
   // check if tearing makes sense
-   tornsize := listLength(OutTVars);
-   true := intLt(tornsize,size-1);
+  tornsize := listLength(OutTVars);
+  true := intLt(tornsize,size-1);
   // unassigned equations are residual equations
   ((_,residual)) := List.fold(ass2,getUnassigned,(1,{}));
   residual_coll := List.map1r(residual,arrayGet,mapIncRowEqn);
@@ -1835,6 +1841,44 @@ algorithm
 end tearingSystem1_1;
 
 
+protected function deleteNegativeEntries 
+ "deletes all negative entries from incidence matrix, works with Util.arrayMap, needed for proper Cellier-Tearing
+  author:ptaeuber FHB 2014-01"
+  input list<Integer> rowIn;
+  output list<Integer> rowOut;
+algorithm
+  rowOut := List.map(rowIn,intAbs);
+  rowOut := List.unique(rowOut);
+end deleteNegativeEntries;
+
+
+protected function findDiscrete "takes a list of BackendDAE.Var and returns the indexes of the discrete Variables
+  author:ptaeuber FHB 2014-01"
+  input list<BackendDAE.Var> inVars;
+  input list<Integer> discreteVarsIn;
+  input Integer index;
+  output list<Integer> discreteVarsOut;
+algorithm
+  discreteVarsOut := matchcontinue(inVars,discreteVarsIn,index)
+  local
+	BackendDAE.Var head;
+	list<BackendDAE.Var> rest;
+  case({},_,_)
+   then discreteVarsIn;
+  case(head::rest,_,_)
+    equation
+	  true = BackendVariable.isVarDiscrete(head);
+     then findDiscrete(rest,index::discreteVarsIn,index+1);
+  case(head::rest,_,_)
+     then findDiscrete(rest,discreteVarsIn,index+1);
+  else
+    equation
+      print("findDiscrete in Tearing.mo failed");
+	 then {};
+  end matchcontinue;
+end findDiscrete;
+
+
 protected function TearingSystemCellier " selects Tearing Set and assigns Vars
   author:Waurich TUD 2012-11"
   input Boolean inCausal;
@@ -1842,14 +1886,14 @@ protected function TearingSystemCellier " selects Tearing Set and assigns Vars
   input BackendDAE.IncidenceMatrixT mtIn;
   input BackendDAE.AdjacencyMatrixEnhanced meIn;
   input BackendDAE.AdjacencyMatrixTEnhanced meTIn;
-  input list<Integer> ass1In,ass2In,Unsolvables,tvarsIn;
+  input list<Integer> ass1In,ass2In,Unsolvables,tvarsIn,discreteVars;
   input list<list<Integer>> orderIn;
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> mapIncRowEqn;
   output list<Integer> OutTVars, ass1Out, ass2Out;
   output list<list<Integer>> orderOut;
 algorithm
-  (OutTVars,ass1Out, ass2Out, orderOut) := matchcontinue(inCausal,mIn,mtIn,meIn,meTIn,ass1In,ass2In,Unsolvables,tvarsIn,orderIn,mapEqnIncRow,mapIncRowEqn)
+  (OutTVars,ass1Out, ass2Out, orderOut) := matchcontinue(inCausal,mIn,mtIn,meIn,meTIn,ass1In,ass2In,Unsolvables,tvarsIn,discreteVars,orderIn,mapEqnIncRow,mapIncRowEqn)
   local
     Integer tvar,unsolvable;
     list<Integer> ass1,ass2,tvars,unassigned,unsolvables;
@@ -1857,15 +1901,15 @@ algorithm
     BackendDAE.IncidenceMatrix m;
     BackendDAE.IncidenceMatrixT mt;
     Boolean causal;
-  case(true,_,_,_,_,_,_,_,_,_,_,_)
+  case(true,_,_,_,_,_,_,_,_,_,_,_,_)
     equation
      then 
        (tvarsIn,ass1In,ass2In,orderIn);
-  case(false,_,_,_,_,_,_,{},_,_,_,_)
+  case(false,_,_,_,_,_,_,{},_,_,_,_,_)
     equation
       // select tearing Var
          Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n" +& BORDER +& "\nBEGINNING of selectTearingVar\n\n");
-      tvar = selectTearingVar(meIn,meTIn,mIn,mtIn,ass1In,ass2In,mapEqnIncRow,mapIncRowEqn,1);
+      tvar = selectTearingVar(meIn,meTIn,mIn,mtIn,ass1In,ass2In,discreteVars,mapEqnIncRow,mapIncRowEqn,1);
          Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nEND of selectTearingVar\n" +& BORDER +& "\n\n");
          Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n###Function: TearingSystemCellier###################\n");
          Debug.fcall(Flags.TEARING_DUMP, print,"tearingVar: "+&intString(tvar)+&"\n");
@@ -1891,10 +1935,10 @@ algorithm
     (_,unsolvables,_) = List.intersection1OnTrue(unsolvables,tvars,intEq);
         // ((_,unassigned)) = List.fold(ass2,getUnassigned,(1,{}));
         // ((_,unassigned)) = List.fold(ass1,getUnassigned,(1,{}));
-      (tvars, ass1, ass2, order) = TearingSystemCellier(causal,m,mt,meIn,meTIn,ass1,ass2,unsolvables,tvars,order,mapEqnIncRow,mapIncRowEqn);
+      (tvars, ass1, ass2, order) = TearingSystemCellier(causal,m,mt,meIn,meTIn,ass1,ass2,unsolvables,tvars,discreteVars,order,mapEqnIncRow,mapIncRowEqn);
      then 
        (tvars,ass1,ass2,order);
-  case(false,_,_,_,_,_,_,unsolvables,_,_,_,_) 
+  case(false,_,_,_,_,_,_,unsolvables,_,_,_,_,_) 
     equation
         // First choose unsolvables as tVars
       tvars = unsolvables;
@@ -1918,7 +1962,7 @@ algorithm
       // find out if there are new unsolvables now
       unsolvables = getUnsolvableVarsConsiderMatching(1,arrayLength(meTIn),meTIn,listArray(ass1),listArray(ass2),{});
       (_,unsolvables,_) = List.intersection1OnTrue(unsolvables,tvars,intEq);
-    (tvars, ass1, ass2, order) = TearingSystemCellier(causal,m,mt,meIn,meTIn,ass1,ass2,unsolvables,tvars,order,mapEqnIncRow,mapIncRowEqn);    
+    (tvars, ass1, ass2, order) = TearingSystemCellier(causal,m,mt,meIn,meTIn,ass1,ass2,unsolvables,tvars,discreteVars,order,mapEqnIncRow,mapIncRowEqn);    
      then
        (tvars, ass1, ass2, order);
   end matchcontinue;
@@ -1935,33 +1979,33 @@ input BackendDAE.AdjacencyMatrixEnhanced me;
 input BackendDAE.AdjacencyMatrixTEnhanced meT;
 input BackendDAE.IncidenceMatrix m;
 input BackendDAE.IncidenceMatrixT mt;
-input list<Integer> ass1In,ass2In;
+input list<Integer> ass1In,ass2In,discreteVars;
 input array<list<Integer>> mapEqnIncRow;
 input array<Integer> mapIncRowEqn;
 input Integer algo;
 output Integer OutTVars;
 algorithm
   OutTVars :=
-  matchcontinue(me,meT,m,mt,ass1In,ass2In,mapEqnIncRow,mapIncRowEqn,algo)
+  matchcontinue(me,meT,m,mt,ass1In,ass2In,discreteVars,mapEqnIncRow,mapIncRowEqn,algo)
     local
       list<Integer> potentials;
       String heuristic;
-    case(_,_,_,_,_,_,_,_,1)
+    case(_,_,_,_,_,_,_,_,_,1)
       equation
            Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n" +& BORDER +& "\nBEGINNING of potentialsCellier\n\n");  
         heuristic = Config.getTearingHeuristic();
            Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Chosen Heuristic: " +& heuristic +& "\n\n");
-        potentials = Debug.bcallret6(stringEqual(heuristic,"cellier"),potentialsCellier,m,mt,me,meT,(ass1In,ass2In),(mapEqnIncRow,mapIncRowEqn),{});
-        potentials = Debug.bcallret6(stringEqual(heuristic,"cellier2"),potentialsCellier2,m,mt,me,meT,(ass1In,ass2In),(mapEqnIncRow,mapIncRowEqn),potentials);
-        potentials = Debug.bcallret6(stringEqual(heuristic,"cellier3"),potentialsCellier3,m,mt,me,meT,(ass1In,ass2In),(mapEqnIncRow,mapIncRowEqn),potentials);
-        potentials = Debug.bcallret6(stringEqual(heuristic,"cellier4"),potentialsCellier4,m,mt,me,meT,(ass1In,ass2In),(mapEqnIncRow,mapIncRowEqn),potentials);
-      potentials = Debug.bcallret6(stringEqual(heuristic,"cellier5"),potentialsCellier5,m,mt,me,meT,(ass1In,ass2In),(mapEqnIncRow,mapIncRowEqn),potentials);
-      potentials = Debug.bcallret6(stringEqual(heuristic,"cellier6"),potentialsCellier6,m,mt,me,meT,(ass1In,ass2In),(mapEqnIncRow,mapIncRowEqn),potentials);
-    potentials = Debug.bcallret6(stringEqual(heuristic,"cellier7"),potentialsCellier7,m,mt,me,meT,(ass1In,ass2In),(mapEqnIncRow,mapIncRowEqn),potentials);
+        potentials = Debug.bcallret6(stringEqual(heuristic,"cellier"),potentialsCellier,m,mt,me,meT,(ass1In,ass2In,discreteVars),(mapEqnIncRow,mapIncRowEqn),{});
+        potentials = Debug.bcallret6(stringEqual(heuristic,"cellier2"),potentialsCellier2,m,mt,me,meT,(ass1In,ass2In,discreteVars),(mapEqnIncRow,mapIncRowEqn),potentials);
+        potentials = Debug.bcallret6(stringEqual(heuristic,"cellier3"),potentialsCellier3,m,mt,me,meT,(ass1In,ass2In,discreteVars),(mapEqnIncRow,mapIncRowEqn),potentials);
+        potentials = Debug.bcallret6(stringEqual(heuristic,"cellier4"),potentialsCellier4,m,mt,me,meT,(ass1In,ass2In,discreteVars),(mapEqnIncRow,mapIncRowEqn),potentials);
+        potentials = Debug.bcallret6(stringEqual(heuristic,"cellier5"),potentialsCellier5,m,mt,me,meT,(ass1In,ass2In,discreteVars),(mapEqnIncRow,mapIncRowEqn),potentials);
+        potentials = Debug.bcallret6(stringEqual(heuristic,"cellier6"),potentialsCellier6,m,mt,me,meT,(ass1In,ass2In,discreteVars),(mapEqnIncRow,mapIncRowEqn),potentials);
+        potentials = Debug.bcallret6(stringEqual(heuristic,"cellier7"),potentialsCellier7,m,mt,me,meT,(ass1In,ass2In,discreteVars),(mapEqnIncRow,mapIncRowEqn),potentials);
            Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nEND of potentialsCellier\n" +& BORDER +& "\n\n");
       then 
         listGet(potentials,1);
-    case(_,_,_,_,_,_,_,_,3)
+    case(_,_,_,_,_,_,_,_,_,3)
       equation
         potentials = potentialsCarpanzano(me,meT,m,mt,2);
         then 
@@ -1979,24 +2023,27 @@ author: Waurich TUD 2012-11, enhanced: ptaeuber FHB 2013-10"
   input BackendDAE.IncidenceMatrix m,mt;
   input BackendDAE.AdjacencyMatrixEnhanced me;
   input BackendDAE.AdjacencyMatrixTEnhanced met;
-  input tuple<list<Integer>,list<Integer>> assIn;
+  input tuple<list<Integer>,list<Integer>,list<Integer>> assIn;
   input tuple<array<list<Integer>>,array<Integer>> mapInfo;
   output list<Integer> potentials;
 protected
   array<list<Integer>> mapEqnIncRow;
   array<Integer> mapIncRowEqn;
   list<list<Integer>> selectedcolsLst;
-  list<Integer> ass1In,ass2In,selectedcols1,selectedcols2,selectedrows,assEq,assEq_multi,assEq_single;
+  list<Integer> ass1In,ass2In,selectedcols1,selectedcols2,selectedrows,assEq,assEq_multi,assEq_single,discreteVars;
   BackendDAE.IncidenceMatrix mtsel,msel2,msel2t;
   list<BackendDAE.IncidenceMatrixElement> mLst;
 algorithm
-      (mapEqnIncRow,mapIncRowEqn) := mapInfo;
-    (ass1In,ass2In) := assIn;
+    (mapEqnIncRow,mapIncRowEqn) := mapInfo;
+    (ass1In,ass2In,discreteVars) := assIn;
       // Cellier heuristic
       // 1. choose rows(eqs) with most nonzero entries and write the column indexes(vars) for nonzeros in a list
       ((_,selectedcolsLst)) := Util.arrayFold(m,findMostEntries,(0,{}));
       selectedcols1 := List.unique(List.flatten(selectedcolsLst));
-         Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"1st: " +& stringDelimitList(List.map(selectedcols1,intString),",") +& "\n(Variables in the equation(s) with most Variables)\n\n");
+         Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"1st: " +& stringDelimitList(List.map(selectedcols1,intString),",") +& "\n");
+	  // Without discrete:
+      (_,selectedcols1,_) := List.intersection1OnTrue(selectedcols1,discreteVars,intEq);
+         Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Without Discrete: " +& stringDelimitList(List.map(selectedcols1,intString),",") +& "\n(Variables in the equation(s) with most Variables)\n\n");	  
       // 2. gather these columns in a new array (reduced mt)
       mtsel := Util.arraySelect(mt,selectedcols1);
       // 3. choose rows (vars) with most nonzero entries and write the indexes in a list
@@ -2024,19 +2071,19 @@ author: Waurich TUD 2012-11, enhanced: ptaeuber FHB 2013-10"
   input BackendDAE.IncidenceMatrix m,mt;
   input BackendDAE.AdjacencyMatrixEnhanced me;
   input BackendDAE.AdjacencyMatrixTEnhanced met;
-  input tuple<list<Integer>,list<Integer>> assIn;
+  input tuple<list<Integer>,list<Integer>,list<Integer>> assIn;
   input tuple<array<list<Integer>>,array<Integer>> mapInfo;
   output list<Integer> potentials;
 protected
   array<list<Integer>> mapEqnIncRow;
   array<Integer> mapIncRowEqn;
   list<list<Integer>> selectedcolsLst;
-  list<Integer> ass1In,ass2In,selectedcols1,selectedcols2,selectedrows,assEq,assEq_multi,assEq_single;
+  list<Integer> ass1In,ass2In,selectedcols1,selectedcols2,selectedrows,assEq,assEq_multi,assEq_single,discreteVars;
   BackendDAE.IncidenceMatrix mtsel,msel2,msel2t;
   list<BackendDAE.IncidenceMatrixElement> mLst;
 algorithm
-      (mapEqnIncRow,mapIncRowEqn) := mapInfo;
-    (ass1In,ass2In) := assIn;
+     (mapEqnIncRow,mapIncRowEqn) := mapInfo;
+     (ass1In,ass2In,discreteVars) := assIn;
       // modified Cellier heuristic
       // 1. choose rows(eqs) with most nonzero entries and write the column indexes(vars) for nonzeros in a list
       ((_,selectedcolsLst)) := Util.arrayFold(m,findMostEntries,(0,{}));
@@ -2072,19 +2119,19 @@ author: Waurich TUD 2012-11, enhanced: ptaeuber FHB 2013-10"
   input BackendDAE.IncidenceMatrix m,mt;
   input BackendDAE.AdjacencyMatrixEnhanced me;
   input BackendDAE.AdjacencyMatrixTEnhanced met;
-  input tuple<list<Integer>,list<Integer>> assIn;
+  input tuple<list<Integer>,list<Integer>,list<Integer>> assIn;
   input tuple<array<list<Integer>>,array<Integer>> mapInfo;
   output list<Integer> potentials;
 protected
   array<list<Integer>> mapEqnIncRow;
   array<Integer> mapIncRowEqn;
   list<list<Integer>> selectedcolsLst;
-  list<Integer> ass1In,ass2In,selectedcols1,selectedcols2,selectedrows,assEq,assEq_multi,assEq_single;
+  list<Integer> ass1In,ass2In,selectedcols1,selectedcols2,selectedrows,assEq,assEq_multi,assEq_single,discreteVars;
   BackendDAE.IncidenceMatrix mtsel,msel2,msel2t;
   list<BackendDAE.IncidenceMatrixElement> mLst;
 algorithm
-    (mapEqnIncRow,mapIncRowEqn) := mapInfo;
-  (ass1In,ass2In) := assIn;
+   (mapEqnIncRow,mapIncRowEqn) := mapInfo;
+   (ass1In,ass2In,discreteVars) := assIn;
     // modified Cellier heuristic
     // 1. choose rows (vars) with most nonzero entries and write the indexes in a list
     ((_,_,selectedcols1)) := Util.arrayFold(mt,findMostEntries2,(0,1,{}));
@@ -2109,19 +2156,19 @@ author: Waurich TUD 2012-11, enhanced: ptaeuber FHB 2013-10"
   input BackendDAE.IncidenceMatrix m,mt;
   input BackendDAE.AdjacencyMatrixEnhanced me;
   input BackendDAE.AdjacencyMatrixTEnhanced met;
-  input tuple<list<Integer>,list<Integer>> assIn;
+  input tuple<list<Integer>,list<Integer>,list<Integer>> assIn;
   input tuple<array<list<Integer>>,array<Integer>> mapInfo;
   output list<Integer> potentials;
 protected
   array<list<Integer>> mapEqnIncRow;
   array<Integer> mapIncRowEqn;
   list<list<Integer>> selectedcolsLst;
-  list<Integer> ass1In,ass2In,selectedcols1,selectedcols2,selectedrows,assEq,assEq_multi,assEq_single;
+  list<Integer> ass1In,ass2In,selectedcols1,selectedcols2,selectedrows,assEq,assEq_multi,assEq_single,discreteVars;
   BackendDAE.IncidenceMatrix mtsel,msel2,msel2t;
   list<BackendDAE.IncidenceMatrixElement> mLst;
 algorithm
-    (mapEqnIncRow,mapIncRowEqn) := mapInfo;
-  (ass1In,ass2In) := assIn;
+   (mapEqnIncRow,mapIncRowEqn) := mapInfo;
+   (ass1In,ass2In,discreteVars) := assIn;
     // modified Cellier heuristic
     // 1. choose rows (vars) with most nonzero entries and write the indexes in a list
     ((_,_,selectedcols1)) := Util.arrayFold(mt,findMostEntries2,(0,1,{}));
@@ -2149,19 +2196,19 @@ author: Waurich TUD 2012-11, enhanced: ptaeuber FHB 2013-10"
   input BackendDAE.IncidenceMatrix m,mt;
   input BackendDAE.AdjacencyMatrixEnhanced me;
   input BackendDAE.AdjacencyMatrixTEnhanced met;
-  input tuple<list<Integer>,list<Integer>> assIn;
+  input tuple<list<Integer>,list<Integer>,list<Integer>> assIn;
   input tuple<array<list<Integer>>,array<Integer>> mapInfo;
   output list<Integer> potentials;
 protected
   array<list<Integer>> mapEqnIncRow;
   array<Integer> mapIncRowEqn;
   list<list<Integer>> selectedcolsLst;
-  list<Integer> ass1In,ass2In,selectedcols1,selectedcols2,selectedrows,assEq,assEq_multi,assEq_single;
+  list<Integer> ass1In,ass2In,selectedcols1,selectedcols2,selectedrows,assEq,assEq_multi,assEq_single,discreteVars;
   BackendDAE.IncidenceMatrix mtsel,msel2,msel2t;
   list<BackendDAE.IncidenceMatrixElement> mLst;
 algorithm
-      (mapEqnIncRow,mapIncRowEqn) := mapInfo;
-    (ass1In,ass2In) := assIn;
+     (mapEqnIncRow,mapIncRowEqn) := mapInfo;
+     (ass1In,ass2In,discreteVars) := assIn;
       // modified Cellier heuristic
       // 1. choose rows(eqs) with most nonzero entries and write the column indexes(vars) for nonzeros in a list
       ((_,selectedcolsLst)) := Util.arrayFold(m,findMostEntries,(0,{}));
@@ -2197,19 +2244,19 @@ author: Waurich TUD 2012-11, enhanced: ptaeuber FHB 2013-10"
   input BackendDAE.IncidenceMatrix m,mt;
   input BackendDAE.AdjacencyMatrixEnhanced me;
   input BackendDAE.AdjacencyMatrixTEnhanced met;
-  input tuple<list<Integer>,list<Integer>> assIn;
+  input tuple<list<Integer>,list<Integer>,list<Integer>> assIn;
   input tuple<array<list<Integer>>,array<Integer>> mapInfo;
   output list<Integer> potentials;
 protected
   array<list<Integer>> mapEqnIncRow;
   array<Integer> mapIncRowEqn;
   list<list<Integer>> selectedcolsLst;
-  list<Integer> ass1In,ass2In,selectedcols1,selectedcols2,selectedrows,assEq,assEq_multi,assEq_single;
+  list<Integer> ass1In,ass2In,selectedcols1,selectedcols2,selectedrows,assEq,assEq_multi,assEq_single,discreteVars;
   BackendDAE.IncidenceMatrix mtsel,msel2,msel2t;
   list<BackendDAE.IncidenceMatrixElement> mLst;
 algorithm
-    (mapEqnIncRow,mapIncRowEqn) := mapInfo;
-  (ass1In,ass2In) := assIn;
+   (mapEqnIncRow,mapIncRowEqn) := mapInfo;
+   (ass1In,ass2In,discreteVars) := assIn;
     // modified Cellier heuristic
     // 1. choose rows (vars) with most nonzero entries and write the indexes in a list
     ((_,_,selectedcols1)) := Util.arrayFold(mt,findMostEntries2,(0,1,{}));
@@ -2237,7 +2284,7 @@ author: Waurich TUD 2012-11, enhanced: ptaeuber FHB 2013-10"
   input BackendDAE.IncidenceMatrix m,mt;
   input BackendDAE.AdjacencyMatrixEnhanced me;
   input BackendDAE.AdjacencyMatrixTEnhanced met;
-  input tuple<list<Integer>,list<Integer>> assIn;
+  input tuple<list<Integer>,list<Integer>,list<Integer>> assIn;
   input tuple<array<list<Integer>>,array<Integer>> mapInfo;
   output list<Integer> potentials;
 protected
@@ -2245,13 +2292,13 @@ protected
   array<Integer> mapIncRowEqn;
   Integer count,count1,count2,points1,points2;
   list<list<Integer>> selectedcolsLst;
-  list<Integer> ass1In,ass2In,selectedcols1,selectedcols2,selectedrows,potentials1,potentials2,assEq,assEq_multi,assEq_single;
+  list<Integer> ass1In,ass2In,selectedcols1,selectedcols2,selectedrows,potentials1,potentials2,assEq,assEq_multi,assEq_single,discreteVars;
   BackendDAE.IncidenceMatrix mtsel,msel2,msel2t;
   list<BackendDAE.IncidenceMatrixElement> mLst;
   Boolean b;
 algorithm
-    (mapEqnIncRow,mapIncRowEqn) := mapInfo;
-  (ass1In,ass2In) := assIn;
+   (mapEqnIncRow,mapIncRowEqn) := mapInfo;
+   (ass1In,ass2In,discreteVars) := assIn;
     // modified Cellier heuristic
      Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Start round 1:\n\n");
     // 1. choose rows (vars) with most nonzero entries and write the indexes in a list
@@ -2521,7 +2568,7 @@ algorithm
   markVar := List.unique(ass2In);
   (_,assVar,_) := List.intersection1OnTrue(assVar,markVar,intEq);
      Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"assEq: "+&stringDelimitList(List.map(assEq,intString),",")+&"\n");
-   Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"assEq_coll: "+&stringDelimitList(List.map(assEq_coll,intString),",")+&"\n");
+     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"assEq_coll: "+&stringDelimitList(List.map(assEq_coll,intString),",")+&"\n");
      Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"assVar: "+&stringDelimitList(List.map(assVar,intString),",")+&"\n");
      Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nTarjanGetAssignable:\n");
   (eqns,vars,orderOut,assignable) := TarjanGetAssignable(mIn,mtIn,meIn,metIn,assEq_coll,assVar,ass1In,ass2In,mapEqnIncRow,mapIncRowEqn,orderIn);
@@ -2568,8 +2615,8 @@ algorithm
         true = List.isNotEmpty(assVar);
            Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"assign from mt\n");
         ((_,vars,eqns)) = getpossibleEqnorVar((assVar,mt,met,listArray(ass1),listArray(ass2),mapEqnIncRow,2));
-    eq = listGet(eqns,1);
-    eq_coll = mapIncRowEqn[eq];
+        eq = listGet(eqns,1);
+        eq_coll = mapIncRowEqn[eq];
         order = listGet(orderIn,2);
         order = eq_coll::order;
         orderOut = List.replaceAt(order,1,orderIn);
@@ -2624,7 +2671,7 @@ algorithm
    case({},_,_,_,_,_,_)
      then (inAcc1,inAcc2);
    case(e::rest,_,_,_,_,_,_)
-     equation
+    equation
      length = listLength(m[e]);
      enonscalar = mapIncRowEqn[e];
      true = length == listLength(mapEqnIncRow[enonscalar]) + prescient;
@@ -2632,14 +2679,14 @@ algorithm
      (acc1,acc2) = traverseEqnsforAssignable(rest,m,mapEqnIncRow,mapIncRowEqn,prescient,inAcc1,e::inAcc2);
   then (acc1,acc2);
    case(e::rest,_,_,_,_,_,_)
-     equation
+    equation
      enonscalar = mapIncRowEqn[e];
      true = listLength(m[e]) == listLength(mapEqnIncRow[enonscalar]) + prescient;
      (acc1,acc2) = traverseEqnsforAssignable(rest,m,mapEqnIncRow,mapIncRowEqn,prescient,e::inAcc1,inAcc2);
   then (acc1,acc2);  
    case(e::rest,_,_,_,_,_,_)
     equation
-    (acc1,acc2) = traverseEqnsforAssignable(rest,m,mapEqnIncRow,mapIncRowEqn,prescient,inAcc1,inAcc2);
+     (acc1,acc2) = traverseEqnsforAssignable(rest,m,mapEqnIncRow,mapIncRowEqn,prescient,inAcc1,inAcc2);
     then (acc1,acc2);
  end matchcontinue;
 end traverseEqnsforAssignable;
@@ -2663,17 +2710,17 @@ algorithm
      then ((ass1In,ass2In,mIn,mtIn));
    case(eq::rest1,var::rest2,_,_,_,_)
     equation
-    ass1 = replaceAt(eq,var-1,ass1In);
+      ass1 = replaceAt(eq,var-1,ass1In);
       ass2 = replaceAt(var,eq-1,ass2In);
-       Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"assignment: Eq"+&intString(eq)+&" - Var"+&intString(var)+&"\n");
-    m = Util.arrayReplaceAtWithFill(eq,{},{},mIn);
+         Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"assignment: Eq"+&intString(eq)+&" - Var"+&intString(var)+&"\n");
+      m = Util.arrayReplaceAtWithFill(eq,{},{},mIn);
       m = updateIncidence(m,var,1);
       mt = Util.arrayReplaceAtWithFill(var,{},{},mtIn);
       mt = updateIncidence(mt,eq,1);
    then makeAssignment(rest1,rest2,ass1,ass2,m,mt);
    else
     equation
-    print("\n\nAssignment failed in Tearing.makeAssignment\n\n");
+      print("\n\nAssignment failed in Tearing.makeAssignment\n\n");
      then fail();
  end matchcontinue;
 end makeAssignment;
