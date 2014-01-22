@@ -67,6 +67,7 @@ typedef struct IPOPT_DATA_
   long int NU;
   long int NV;
   long int NRes;
+  long int nc;
   /* ODE */
   double * x0;
   double * xmin;

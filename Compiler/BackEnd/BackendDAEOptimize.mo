@@ -49,6 +49,7 @@ public import Env;
 public import HashTable2;
 
 protected import Algorithm;
+protected import BackendDAECreate;
 protected import BackendDAETransform;
 protected import BackendDAEUtil;
 protected import BackendDump;
@@ -3072,10 +3073,17 @@ protected
   BackendDAE.Shared shared;
   BackendDAE.SymbolicJacobians linearModelMatrixes;
   DAE.FunctionTree funcs, functionTree;
+  list< .DAE.Constraint> constraints;
+  BackendDAE.Variables v;
+  list<BackendDAE.Equation> eqns; 
 algorithm
   System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
   BackendDAE.DAE(eqs=eqs,shared=shared) := inBackendDAE;
-  (linearModelMatrixes, funcs) := createLinearModelMatrixes(inBackendDAE, Config.acceptOptimicaGrammar());
+  BackendDAE.SHARED(constraints=constraints) := shared;
+  eqns := {};
+  v := BackendVariable.emptyVars();
+  (v,eqns) := BackendDAECreate.addOptimizationVarsEqns2(constraints,1,v,eqns);
+  (linearModelMatrixes, funcs) := createLinearModelMatrixes(inBackendDAE, Config.acceptOptimicaGrammar(),v);
   shared := BackendDAEUtil.addBackendDAESharedJacobians(linearModelMatrixes, shared);
   functionTree := BackendDAEUtil.getFunctions(shared);
   functionTree := DAEUtil.joinAvlTrees(functionTree, funcs);
@@ -3158,12 +3166,13 @@ protected function createLinearModelMatrixes
  author: wbraun"
   input BackendDAE.BackendDAE inBackendDAE;
   input Boolean UseOtimica;
+  input BackendDAE.Variables conVars;
   output BackendDAE.SymbolicJacobians outJacobianMatrixes;
   output DAE.FunctionTree outFunctionTree;
   
 algorithm
   (outJacobianMatrixes, outFunctionTree) :=
-  match (inBackendDAE,UseOtimica)
+  match (inBackendDAE,UseOtimica,conVars)
     local
       BackendDAE.BackendDAE backendDAE,backendDAE2;
 
@@ -3183,7 +3192,7 @@ algorithm
       DAE.FunctionTree funcs, functionTree;
       list<DAE.Function> funcLst;
       
- case (backendDAE, false)
+ case (backendDAE, false,_)
       equation
         backendDAE2 = BackendDAEUtil.copyBackendDAE(backendDAE);
         backendDAE2 = collapseIndependentBlocks(backendDAE2);
@@ -3237,7 +3246,7 @@ algorithm
       then
         (linearModelMatrices, functionTree);
         
-    case (backendDAE, true) //  created linear model (matrixes) fir for optimize
+    case (backendDAE, true,_) //  created linear model (matrixes) fir for optimize
       equation
         backendDAE2 = BackendDAEUtil.copyBackendDAE(backendDAE);
         backendDAE2 = collapseIndependentBlocks(backendDAE2);
@@ -3255,7 +3264,6 @@ algorithm
         inputvars2 = List.select(knvarlst,BackendVariable.isVarOnTopLevelAndInput);
         outputvars = List.select(varlst, BackendVariable.isVarOnTopLevelAndOutput);
         states_inputs = listAppend(states, inputvars2);
-
         comref_states = List.map(states,BackendVariable.varCref);
         comref_inputvars = List.map(inputvars2,BackendVariable.varCref);
         comref_outputvars = List.map(outputvars,BackendVariable.varCref);
@@ -3276,9 +3284,8 @@ algorithm
         linearModelMatrices = {(SOME(linearModelMatrix),sparsePattern,sparseColoring)};
         Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> generated system for matrix A time: " +& realString(clock()) +& "\n");
 
-
         // Differentiate the System w.r.t states&inputs for matrices B
-        (linearModelMatrix, sparsePattern, sparseColoring, funcs) = createJacobian(backendDAE2,states_inputs,statesarr,inputvarsarr,paramvarsarr,statesarr,varlst,"B");
+        (linearModelMatrix, sparsePattern, sparseColoring, funcs) = createJacobian(backendDAE2,states_inputs,statesarr,inputvarsarr,paramvarsarr,BackendVariable.mergeVariables(statesarr, conVars),varlst,"B");
         functionTree = DAEUtil.joinAvlTrees(functionTree, funcs);
         linearModelMatrices = listAppend(linearModelMatrices,{(SOME(linearModelMatrix),sparsePattern,sparseColoring)});
         Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> generated system for matrix B time: " +& realString(clock()) +& "\n"); 
@@ -3287,7 +3294,6 @@ algorithm
         (linearModelMatrix, sparsePattern, sparseColoring, funcs) = createJacobian(backendDAE2,states_inputs,statesarr,inputvarsarr,paramvarsarr,object,varlst,"C");
         linearModelMatrices = listAppend(linearModelMatrices,{(SOME(linearModelMatrix),sparsePattern,sparseColoring)});
         Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> generated system for matrix C time: " +& realString(clock()) +& "\n");
-
 
         // Differentiate the System w.r.t inputs for matrices D
         (linearModelMatrix, sparsePattern, sparseColoring, funcs) = createJacobian(backendDAE2,{},statesarr,inputvarsarr,paramvarsarr,BackendVariable.emptyVars(),varlst,"D");

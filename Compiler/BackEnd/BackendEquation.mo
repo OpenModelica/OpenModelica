@@ -2171,6 +2171,29 @@ algorithm
   end match;
 end generateSolvedEqnsfromOption;
 
+public function generateResidualfromRealtion "
+Author: vitalij"
+  input DAE.ComponentRef iLhs;
+  input DAE.Exp iRhs;
+  input DAE.ElementSource Source;
+  output list<BackendDAE.Equation> outEqn;
+algorithm
+  outEqn :=  match (iLhs, iRhs, Source)
+  local
+    DAE.Exp rhs,e1,e2;
+    DAE.ComponentRef lhs;
+    case (lhs, DAE.RELATION(e1,DAE.LESS(_),e2,_,_), _)
+      then {BackendDAE.SOLVED_EQUATION(lhs,DAE.BINARY(e1,DAE.SUB(DAE.T_REAL_DEFAULT),e2),Source,false)};
+    case (lhs, DAE.RELATION(e1,DAE.LESSEQ(_),e2,_,_), _)
+      then {BackendDAE.SOLVED_EQUATION(lhs,DAE.BINARY(e1,DAE.SUB(DAE.T_REAL_DEFAULT),e2),Source,false)};
+    case (lhs, DAE.RELATION(e1,DAE.GREATER(_),e2,_,_), _)
+      then {BackendDAE.SOLVED_EQUATION(lhs,DAE.BINARY(e2,DAE.SUB(DAE.T_REAL_DEFAULT),e1),Source,false)};
+    case (lhs, DAE.RELATION(e1,DAE.GREATEREQ(_),e2,_,_), _)
+      then {BackendDAE.SOLVED_EQUATION(lhs,DAE.BINARY(e2,DAE.SUB(DAE.T_REAL_DEFAULT),e1),Source,false)};
+    else then {};
+  end match;
+end generateResidualfromRealtion;
+
 public function solveEquation
 "Author: wbraun
 solves an equation w.r.t. a component reference. All equations are transformed
