@@ -173,7 +173,13 @@ end itemFile;
 
 function toHtml
   input String str;
-  output String ostr := OpenModelica.Scripting.stringReplace(OpenModelica.Scripting.stringReplace(OpenModelica.Scripting.stringReplace(str,\"&\",\"&amp;\"),\"<\",\"&lt;\"),\">\",\"&gt;\");
+  output String ostr;
+protected
+  Integer n;
+  String[2] matches;
+algorithm
+  (n,matches) := OpenModelica.Scripting.regex(str,\"^[:space:]*<html>(.*)</html>[:space:]*\",caseInsensitive=true,maxMatches=2);
+  ostr := if n==2 then matches[2] else OpenModelica.Scripting.stringReplace(OpenModelica.Scripting.stringReplace(OpenModelica.Scripting.stringReplace(str,\"&\",\"&amp;\"),\"<\",\"&lt;\"),\">\",\"&gt;\");
 end toHtml;
 
 record Item
@@ -234,7 +240,7 @@ for cl in classNames loop
       dirpaths := strtok(dirname(file),"/");
       dirs := dirs + " \"" + dirpaths[end] + "\" ";
     end if;
-    comment := OpenModelica.Scripting.stringReplace(getClassComment(cl),"&","&amp;"); // let's escape "&" on the fly
+    comment := toHtml(getClassComment(cl)); // let's escape "&" on the fly
     fileName := filename(contentStr);
     writeFile(filetmp, "<tr><td>" + svgIcon("Icons/" + fileName + ".svg",fileName + ".html","svgiconsmall",readSymlinks=readSymlinks) + "<a href=\"" + fileName + ".html\">" + contentStr + "</a></td><td>" + comment + "</td><td>" + modelVersion + "</td></tr>", append = true);
   end if;
@@ -250,7 +256,7 @@ if genBuiltin then
     if base == "ModelicaBuiltin.mo" or base == "MetaModelicaBuiltin.mo" then
       contentStr := typeNameString(cl);
       modelVersion := getVersion(cl);
-      comment := OpenModelica.Scripting.stringReplace(getClassComment(cl),"&","&amp;"); // lets escape "&" on the fly
+      comment := toHtml(getClassComment(cl)); // lets escape "&" on the fly
       fileName := filename(contentStr);
       writeFile(filetmp, "<tr><td><a href=\"" + fileName + ".html\">" + contentStr + "</a></td><td>" + comment + "</td><td>" + modelVersion + "</td></tr>", append = true);
     end if;
