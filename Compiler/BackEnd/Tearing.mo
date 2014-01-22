@@ -1861,20 +1861,20 @@ protected function findDiscrete "takes a list of BackendDAE.Var and returns the 
 algorithm
   discreteVarsOut := matchcontinue(inVars,discreteVarsIn,index)
   local
-	BackendDAE.Var head;
-	list<BackendDAE.Var> rest;
+  BackendDAE.Var head;
+  list<BackendDAE.Var> rest;
   case({},_,_)
    then discreteVarsIn;
   case(head::rest,_,_)
     equation
-	  true = BackendVariable.isVarDiscrete(head);
+    true = BackendVariable.isVarDiscrete(head);
      then findDiscrete(rest,index::discreteVarsIn,index+1);
   case(head::rest,_,_)
      then findDiscrete(rest,discreteVarsIn,index+1);
   else
     equation
       print("findDiscrete in Tearing.mo failed");
-	 then {};
+   then {};
   end matchcontinue;
 end findDiscrete;
 
@@ -2041,9 +2041,9 @@ algorithm
       ((_,selectedcolsLst)) := Util.arrayFold(m,findMostEntries,(0,{}));
       selectedcols1 := List.unique(List.flatten(selectedcolsLst));
          Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"1st: " +& stringDelimitList(List.map(selectedcols1,intString),",") +& "\n");
-	  // Without discrete:
+    // Without discrete:
       (_,selectedcols1,_) := List.intersection1OnTrue(selectedcols1,discreteVars,intEq);
-         Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Without Discrete: " +& stringDelimitList(List.map(selectedcols1,intString),",") +& "\n(Variables in the equation(s) with most Variables)\n\n");	  
+         Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Without Discrete: " +& stringDelimitList(List.map(selectedcols1,intString),",") +& "\n(Variables in the equation(s) with most Variables)\n\n");    
       // 2. gather these columns in a new array (reduced mt)
       mtsel := Util.arraySelect(mt,selectedcols1);
       // 3. choose rows (vars) with most nonzero entries and write the indexes in a list
