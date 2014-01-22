@@ -573,7 +573,7 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     ("replaceEdgeChange", Util.gettext("Replace edge(b) = b and not pre(b) and change(b) = v <> pre(v).")),
     ("residualForm", Util.gettext("Transforms simple equations x=y to zero-sum equations 0=y-x.")),
     ("addInitialStmtsToAlgorithms", Util.gettext("Expands all algorithms with initial statements for outputs.")),
-    ("resolveLoops", Util.gettext("resolves simple equations in loops"))
+    ("resolveLoops", Util.gettext("resolves linear equations in loops"))
     })),
   Util.gettext("Sets the pre optimization modules to use in the back end. See +help=optmodules for more info."));
 
@@ -632,6 +632,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "removeConstants"
     // "partitionIndependentBlocks",
     // "addInitialStmtsToAlgorithms"
+    //"resolveLoops"
     }),
   SOME(STRING_DESC_OPTION({
     ("encapsulateWhenConditions", Util.gettext("Replace each when-condition with an discrete variable.")),

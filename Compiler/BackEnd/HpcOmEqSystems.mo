@@ -44,6 +44,7 @@ public import SimCode;
 
 // protected imports
 protected import BackendDump;
+protected import BackendDAEOptimize;
 protected import BackendEquation;
 protected import BackendDAEEXT;
 protected import BackendDAEUtil;
@@ -1959,6 +1960,98 @@ algorithm
 end addEqNodeToGraph;
 
 //--------------------------------------------------//
+// resolveLinearSystem
+//-------------------------------------------------//
+
+protected function resolveLinearSystem  "traverses all StrongComponents for tornSystems and tries to resolve the loops.
+author: Waurich TUD 2014-01"
+  input Integer compIdx;
+  input BackendDAE.StrongComponents compsIn;
+  input array<Integer> ass1;
+  input array<Integer> ass2;
+  input BackendDAE.EqSystem systIn;
+  input BackendDAE.Shared sharedIn;
+  input Integer tornSysIdxIn;
+  output BackendDAE.EqSystem systOut;
+  output Integer tornSysIdxOut;
+algorithm
+  (systOut,tornSysIdxOut) := matchcontinue(compIdx,compsIn,ass1,ass2,systIn,sharedIn,tornSysIdxIn)
+    local
+      Boolean linear;
+      Integer numEqs, numVars, tornSysIdx;
+      list<Integer> tvarIdcs, varIdcs, eqIdcs, resEqIdcs, otherEqsIdcs, otherVarsIdcs;
+      list<list<Integer>> otherVarsIntsLst;
+      list<tuple<Integer,list<Integer>>> otherEqnVarTpl;
+      BackendDAE.EquationArray daeEqs, eqs;
+      BackendDAE.EqSystem systTmp;
+      BackendDAE.IncidenceMatrix m;
+      BackendDAE.IncidenceMatrixT mT;
+      BackendDAE.StateSets stateSets;
+      BackendDAE.StrongComponent comp;
+      BackendDAE.Variables daeVars, vars;
+      
+      list<BackendDAE.Equation> eqLst, daeEqLst;
+      list<BackendDAE.Var> varLst, daeVarLst;
+    case(_,_,_,_,_,_,_)
+      equation
+        // completed
+        true = listLength(compsIn) < compIdx;
+          //print("finished at:"+&intString(compIdx)+&"\n");
+      then
+        (systIn,tornSysIdxIn);
+    case(_,_,_,_,_,_,_)
+      equation
+        // strongComponent is a linear tornSystem
+        true = listLength(compsIn) >= compIdx;
+        comp = listGet(compsIn,compIdx);
+        BackendDAE.TORNSYSTEM(tearingvars = tvarIdcs, residualequations = resEqIdcs, otherEqnVarTpl = otherEqnVarTpl, linear = linear) = comp;
+        true = linear;
+        print("we found a linear EQSYS\n");
+        BackendDAE.EQSYSTEM(orderedVars = daeVars, orderedEqs = daeEqs,stateSets = stateSets) = systIn;
+        daeVarLst = BackendVariable.varList(daeVars);
+        daeEqLst = BackendEquation.equationList(daeEqs);
+        
+        // collect the vars of the loop
+        otherVarsIntsLst = List.map(otherEqnVarTpl, Util.tuple22);
+        otherVarsIdcs = List.unionList(otherVarsIntsLst);
+        varIdcs = listAppend(tvarIdcs,otherVarsIdcs);
+        varLst = List.map1r(varIdcs, BackendVariable.getVarAt, daeVars);
+        vars = BackendVariable.listVar(varLst);
+        varIdcs = listReverse(varIdcs);
+        
+        // collect the eqs of the loops
+        otherEqsIdcs = List.map(otherEqnVarTpl, Util.tuple21);
+        eqIdcs = listAppend(resEqIdcs,otherEqsIdcs);
+        eqLst = BackendEquation.getEqns(eqIdcs,daeEqs);
+        eqs = BackendEquation.listEquation(eqLst);
+        
+        // build the incidenceMatrix, dump eqSystem as graphML
+        numEqs = BackendDAEUtil.equationArraySize(eqs);
+		    numVars = BackendVariable.numVariables(vars);
+		    m = arrayCreate(numEqs, {});
+		    mT = arrayCreate(numVars, {});
+		    (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(vars,eqs,{},mT, 0, numEqs, intLt(0, numEqs), BackendDAE.ABSOLUTE(), NONE()); 
+		    dumpEquationSystemGraphML1(vars,eqs,m,"linSystem"+&intString(tornSysIdxIn));
+		    
+		    print("START RESOLVING THE COMPONENT\n");
+		    daeEqLst = BackendDAEOptimize.resolveLoops12(m,mT,eqIdcs,varIdcs,daeVarLst,daeEqLst,{});
+		    daeEqs = BackendEquation.listEquation(daeEqLst);
+		    
+        systTmp = BackendDAE.EQSYSTEM(daeVars,daeEqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets);
+        (systTmp,tornSysIdx) = resolveLinearSystem(compIdx+1,compsIn,ass1,ass2,systTmp,sharedIn,tornSysIdxIn+1);
+      then
+        (systTmp,tornSysIdx);
+    else
+      // go to next StrongComponent
+      equation
+        //print("no torn system in comp:"+&intString(compIdx)+&"\n");
+        (systTmp,tornSysIdx) = resolveLinearSystem(compIdx+1,compsIn,ass1,ass2,systIn,sharedIn,tornSysIdxIn);
+      then
+        (systTmp,tornSysIdx);
+  end matchcontinue;
+end resolveLinearSystem;
+//--------------------------------------------------//
 // 
 //-------------------------------------------------//
+
 end HpcOmEqSystems;

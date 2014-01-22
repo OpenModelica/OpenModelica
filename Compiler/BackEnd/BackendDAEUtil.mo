@@ -53,6 +53,7 @@ public import BackendDAEFunc;
 public import DAE;
 public import Env;
 public import Util;
+public import HpcOmEqSystems;
 
 protected import Algorithm;
 protected import BackendDAECreate;
@@ -8605,7 +8606,7 @@ algorithm
                        (BackendDAEOptimize.simplifyIfEquations, "simplifyIfEquations", false),
                        (BackendDAEOptimize.replaceEdgeChange, "replaceEdgeChange", false),
                        (BackendDAEOptimize.residualForm, "residualForm", false),
-                       (BackendDAEOptimize.resolveLoops0, "resolveLoops",false)
+                       (BackendDAEOptimize.resolveLoops, "resolveLoops",false)
                        };
   strPreOptModules := getPreOptModulesString();
   strPreOptModules := Util.getOptionOrDefault(ostrPreOptModules,strPreOptModules);
@@ -8656,7 +8657,9 @@ algorithm
                         (BackendDAEOptimize.detectSparsePatternODE,"detectJacobianSparsePattern",false),
                         (BackendDAEOptimize.partitionIndependentBlocks, "partitionIndependentBlocks", true),
                         (Tearing.tearingSystem, "tearingSystem", false),
-                        (BackendDAEOptimize.addInitialStmtsToAlgorithms, "addInitialStmtsToAlgorithms", false)};
+                        (BackendDAEOptimize.addInitialStmtsToAlgorithms, "addInitialStmtsToAlgorithms", false)
+                        //(BackendDAEOptimize.resolveLoopsInComps,"resolveLoops", false)
+                        };
 
   strpostOptModules := getPostOptModulesString();
   strpostOptModules := Util.getOptionOrDefault(ostrpostOptModules,strpostOptModules);
