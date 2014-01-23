@@ -1775,7 +1775,7 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(__))  then
    let () = System.tmpTickReset(0)
    let &varDecls = buffer "" /*BUFD*/
-   let initVariables = initvar(modelInfo,simCode)
+   let initVariables = initvar(varDecls,modelInfo,simCode)
    let initFunctions = functionInitial(startValueEquations,varDecls,simCode)
    let initZeroCrossings = functionOnlyZeroCrossing(zeroCrossings,varDecls,simCode)
    let initEventHandling = eventHandlingInit(simCode)
@@ -1784,7 +1784,7 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
    let initALgloopSolvers = initAlgloopsolvers(odeEquations,algebraicEquations,whenClauses,parameterEquations,simCode)
 
    let initialequations  = functionInitialEquations(initialEquations,simCode)
-
+   let initextvars = functionCallExternalObjectConstructors(extObjInfo,simCode)
   <<
    void <%lastIdentOfPath(modelInfo.name)%>::initialize()
    {
@@ -1793,7 +1793,7 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
       _simTime = 0.0;
      _historyImpl->init();
     <%varDecls%>
-    <%initVariables%>
+     <%initVariables%>
    <%initFunctions%>
      _event_handling.initialize(this,<%helpvarlength(simCode)%>);
     
@@ -1804,8 +1804,9 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
     <%initOutputIndices%>
    _historyImpl->setOutputs(var_ouputs_idx);
    _historyImpl->clear();
-  
+   <%initextvars%>
     initEquations();
+   
       <%initALgloopSolvers%>
     for(int i=0;i<_dimZeroFunc;i++)
     {
@@ -1824,6 +1825,39 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
    }
     >>
 end init;
+
+
+template functionCallExternalObjectConstructors(ExtObjInfo extObjInfo,SimCode simCode)
+  "Generates function in simulation file."
+::=
+  match extObjInfo
+  case EXTOBJINFO(__) then
+    let &funDecls = buffer "" /*BUFD*/
+    let &varDecls = buffer "" /*BUFD*/
+    let ctorCalls = (vars |> var as SIMVAR(initialValue=SOME(exp)) =>
+        let &preExp = buffer "" /*BUFD*/
+        let arg = daeExp(exp, contextOther, &preExp, &varDecls,simCode)
+        /* Restore the memory state after each object has been initialized. Then we can
+         * initalize a really large number of external objects that play with strings :)
+         */
+        <<
+        <%preExp%>
+        <%cref(var.name)%> = <%arg%>;
+        >>
+      ;separator="\n")
+
+    <<
+  
+      <%varDecls%>
+     
+     
+      <%ctorCalls%>
+      <%aliases |> (var1, var2) => '<%cref(var1)%> = <%cref(var2)%>;' ;separator="\n"%>
+      
+  
+    >>
+  end match
+end functionCallExternalObjectConstructors;
 
 
 template functionInitialEquations(list<SimEqSystem> initalEquations, SimCode simCode)
@@ -1849,8 +1883,10 @@ template initAlgloop(SimCode simCode,SimEqSystem eq)
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   let modelname = lastIdentOfPath(modelInfo.name)
-  let initalgvars = initAlgloopvars(modelInfo,simCode)
   let &varDecls = buffer ""
+  let &preExp = buffer ""
+  let initalgvars = initAlgloopvars(preExp,varDecls,modelInfo,simCode)
+  
   match eq
   case SES_NONLINEAR(__) then
   <<
@@ -1883,8 +1919,10 @@ template getAMatrixCode(SimCode simCode,SimEqSystem eq)
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   let modelname = lastIdentOfPath(modelInfo.name)
-  let initalgvars = initAlgloopvars(modelInfo,simCode)
-  let &varDecls = buffer ""
+   let &varDecls = buffer ""
+   let &preExp= buffer ""
+  let initalgvars = initAlgloopvars(preExp,varDecls,modelInfo,simCode)
+ 
   match eq
   case SES_NONLINEAR(__) then
   <<
@@ -1909,8 +1947,10 @@ template algloopRHSCode(SimCode simCode,SimEqSystem eq)
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   let modelname = lastIdentOfPath(modelInfo.name)
-  let initalgvars = initAlgloopvars(modelInfo,simCode)
   let &varDecls = buffer ""
+  let &preExp = buffer ""
+  let initalgvars = initAlgloopvars(preExp,varDecls,modelInfo,simCode)
+
   match eq
   case SES_NONLINEAR(__)
   case SES_LINEAR(__) then
@@ -1976,8 +2016,10 @@ template isLinearCode(SimCode simCode,SimEqSystem eq)
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   let modelname = lastIdentOfPath(modelInfo.name)
-  let initalgvars = initAlgloopvars(modelInfo,simCode)
-  let &varDecls = buffer ""
+   let &varDecls = buffer ""
+   let &preExp = buffer ""
+  let initalgvars = initAlgloopvars(preExp,varDecls,modelInfo,simCode)
+ 
   match eq
   case SES_NONLINEAR(__) then
   <<
@@ -2826,6 +2868,9 @@ case MODELINFO(vars=SIMVARS(__)) then
    <%vars.stringConstVars |> var =>
     MemberVariableDefine("const string",var, "stringConstvariables")
   ;separator="\n"%>
+   <%vars.extObjVars |> var =>
+    MemberVariableDefine("void*",var, "extObjVars")
+  ;separator="\n"%>
    /*<%vars.stateVars |> var =>
     VariableAliasDefinition(var)
   ;separator="\n"%>
@@ -3107,7 +3152,7 @@ match simVar
       >>  
     case SIMVAR(numArrayElement={},arrayCref=NONE()) then
       <<
-      <%type%> <%cref(name)%>; //test 2
+      <%type%> <%cref(name)%>; 
       >>
     case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_),numArrayElement=num) 
     then
@@ -3176,7 +3221,7 @@ match simVar
       >>
       case SIMVAR(numArrayElement={},arrayCref=NONE()) then
       <<
-      <%variableType(type_)%> <%cref(name)%>;/*test 1*/
+      <%variableType(type_)%> <%cref(name)%>;
       >>
     case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_),numArrayElement=num)
      then
@@ -3957,32 +4002,49 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
   >>
  end savediscreteVars;
 
-template initvar(ModelInfo modelInfo,SimCode simCode)
+template initvar( Text &varDecls /*BUFP*/,ModelInfo modelInfo,SimCode simCode)
 ::=
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
  <<
-  <%initValst(vars.stateVars, simCode,contextOther)%>
-  <%initValst(vars.derivativeVars, simCode,contextOther)%>
-  <%initValst(vars.algVars, simCode,contextOther)%>
-  <%initValst(vars.intAlgVars, simCode,contextOther)%>
-  <%initValst(vars.boolAlgVars, simCode,contextOther)%>
-  <%initValst(vars.aliasVars, simCode,contextOther)%>
-  <%initValst(vars.intAliasVars, simCode,contextOther)%>
-  <%initValst(vars.boolAliasVars, simCode,contextOther)%>
-  <%initValst(vars.paramVars, simCode,contextOther)%>
+  <%initValst(varDecls,vars.stateVars, simCode,contextOther)%>
+  <%initValst(varDecls,vars.derivativeVars, simCode,contextOther)%>
+  <%initValst(varDecls,vars.algVars, simCode,contextOther)%>
+  <%initValst(varDecls,vars.intAlgVars, simCode,contextOther)%>
+  <%initValst(varDecls,vars.boolAlgVars, simCode,contextOther)%>
+  <%initValst(varDecls,vars.aliasVars, simCode,contextOther)%>
+  <%initValst(varDecls,vars.intAliasVars, simCode,contextOther)%>
+  <%initValst(varDecls,vars.boolAliasVars, simCode,contextOther)%>
+  <%initValst(varDecls,vars.paramVars, simCode,contextOther)%>
   
  >>
 end initvar;
 
-template initAlgloopvars(ModelInfo modelInfo,SimCode simCode)
+template initvarExtVar( Text &varDecls /*BUFP*/,ModelInfo modelInfo,SimCode simCode)
 ::=
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
  <<
-  <%initValst(vars.algVars, simCode,contextAlgloop)%>
-  <%initValst(vars.intAlgVars, simCode,contextAlgloop)%>
-  <%initValst(vars.boolAlgVars, simCode,contextAlgloop)%>
+  <%initValst(varDecls,vars.extObjVars, simCode,contextOther)%>
+  
+ >>
+end initvarExtVar;
+
+template initAlgloopvars( Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/,ModelInfo modelInfo,SimCode simCode)
+::=
+match modelInfo
+case MODELINFO(vars=SIMVARS(__)) then
+  let &varDecls = buffer "" /*BUFD*/
+  
+ let algvars =initValst(varDecls,vars.algVars, simCode,contextAlgloop)
+ let intvars = initValst(varDecls,vars.intAlgVars, simCode,contextAlgloop)
+ let boolvars = initValst(varDecls,vars.boolAlgVars, simCode,contextAlgloop)
+ <<
+  <%varDecls%>
+  
+  <%algvars%>
+  <%intvars%>
+  <%boolvars%>
   >>
 end initAlgloopvars;
 
@@ -4037,27 +4099,30 @@ match c
   case OUTPUT(__) then "output"
 end isOutput;
 
-template initValst(list<SimVar> varsLst, SimCode simCode, Context context) ::=
+template initValst(Text &varDecls /*BUFP*/,list<SimVar> varsLst, SimCode simCode, Context context) ::=
   varsLst |> sv as SIMVAR(__) =>
+      let &preExp = buffer "" /*BUFD*/
     match initialValue
       case SOME(v) then
-      let &preExp = buffer "" //dummy ... the value is always a constant
-      let &varDecls = buffer ""
       match daeExp(v, contextOther, &preExp, &varDecls,simCode)
       case vStr as "0"
       case vStr as "0.0"
       case vStr as "(0)" then
-       '<%cref1(sv.name,simCode,context)%>=<%vStr%>;//<%cref(sv.name)%>
+       '<%preExp%>
+        <%cref1(sv.name,simCode,context)%>=<%vStr%>;//<%cref(sv.name)%>
        _start_values["<%cref(sv.name)%>"]=<%vStr%>;'
       case vStr as "" then
-       '<%cref1(sv.name,simCode,context)%>=0;//<%cref(sv.name)%>
+       '<%preExp%>
+       <%cref1(sv.name,simCode,context)%>=0;//<%cref(sv.name)%>
         _start_values["<%cref(sv.name)%>"]=<%vStr%>;'
       case vStr then
-       '<%cref1(sv.name,simCode,context)%>=<%vStr%>;//<%cref(sv.name)%>
+       '<%preExp%>
+       <%cref1(sv.name,simCode,context)%>=<%vStr%>;//<%cref(sv.name)%>
        _start_values["<%cref(sv.name)%>"]=<%vStr%>;'
         end match
       else
-        '<%cref1(sv.name,simCode,context)%>=<%startValue(sv.type_)%>;
+        '<%preExp%>
+        <%cref1(sv.name,simCode,context)%>=<%startValue(sv.type_)%>;
        _start_values["<%cref(sv.name)%>"]=<%startValue(sv.type_)%>;'
   ;separator="\n"
 end initValst;
@@ -4225,7 +4290,7 @@ template expTypeShort(DAE.Type type)
   case T_ANYTYPE(__)     then "complex"
   case T_ARRAY(__)       then expTypeShort(ty)
   case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
-                      then "complex"
+                      then "void*"
   case T_COMPLEX(__)     then 'complex'
   case T_METATYPE(__) case T_METABOXED(__)    then "metatype"
   case T_FUNCTION_REFERENCE_VAR(__) then "fnptr"
@@ -5483,7 +5548,7 @@ case ARRAY(array=_::_, ty = arraytype) then
                 ;separator="\n")
    
    let boostExtents = if scalar then '<%arrayDim%><%arrayVar%>(boost::extents[<%listLength(array)%>]);' 
-                      else        '<%arrayDim%><%arrayVar%>(<%boostExtents(arraytype)%>,boost::fortran_storage_order());'
+                      else        '<%arrayDim%><%arrayVar%>(<%boostExtents(arraytype)%>/*,boost::fortran_storage_order()*/);'
                       
    let arrayassign =  if scalar then '<%arrayTypeStr%> <%arrayVar%>_data[]={<%params%>}; 
 <%arrayVar%>.assign(<%arrayVar%>_data,<%arrayVar%>_data+<%listLength(array)%>);<%\n%>'

@@ -431,20 +431,3 @@ void Hybrj::fcn(const int *n, const double *x, double *fvec, double *fjac, const
     }
 
 }
-/* OMC factory
-using boost::extensions::factory;
-
-BOOST_EXTENSION_TYPE_MAP_FUNCTION {
-types.get<std::map<std::string, factory<IAlgLoopSolver,IAlgLoop*, INonLinSolverSettings*> > >()
-["Hybrj"].set<Hybrj>();
-types.get<std::map<std::string, factory<INonLinSolverSettings> > >()
-["HybrjSettings"].set<HybrjSettings>();
-}
-*/
-
-/*Simster factory*/
-extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_hybrj(boost::extensions::factory_map & fm)
-{
-    fm.get<IAlgLoopSolver,int,IAlgLoop*, INonLinSolverSettings*>()[1].set<Hybrj>();
-    fm.get<INonLinSolverSettings,int >()[2].set<HybrjSettings>();
-}

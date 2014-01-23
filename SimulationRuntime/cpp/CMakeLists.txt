@@ -43,8 +43,12 @@ SET(SUNDIALS_LIBRARY_RELEASE_HOME  $ENV{OMDEV}/lib/3rdParty/Sundials/lib/release
 endif()
 SET(INSTALL_OMDEV_LIBS ON)
 ENDIF( WIN32 )
-SET(LIBINSTALLEXT "cpp")
 
+
+set(MODELICAEXTERNALCDIR  "${CMAKE_SOURCE_DIR}/../../libraries/Resources/C-Sources")
+set(USERTABDIR  "${CMAKE_SOURCE_DIR}/../../libraries/Resources/Data/Tables")
+
+SET(LIBINSTALLEXT "cpp")
 SET(MODELICA_MODEL "ModelicaSystem")
 SET(LIBPREFIX "OMCpp")
 SET(SolverName ${LIBPREFIX}Solver)
