@@ -92,8 +92,10 @@ int freeLapackData(void **voiddata)
  */
 int solveLapack(DATA *data, int sysNumber)
 {
+  int i, j, n;
   LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo.linearSystemData[sysNumber]);
   DATA_LAPACK* solverData = (DATA_LAPACK*)systemData->solverData;
+  n = systemData->size;
 
   /* We are given the number of the linear system.
    * We want to look it up among all equations. */
@@ -108,6 +110,34 @@ int solveLapack(DATA *data, int sysNumber)
   /* update vector b (rhs) */
   systemData->setb(data, systemData);
 
+  /* Log A*x=b */
+  if(ACTIVE_STREAM(LOG_LS_V))
+  {
+    char buffer[16384];
+	
+	/* A matrix */
+    infoStreamPrint(LOG_LS_V, 1, "A matrix [%dx%d]", n, n);
+    for(i=0; i<n; i++)
+    {
+      buffer[0] = 0;
+      for(j=0; j<n; j++)
+        sprintf(buffer, "%s%20.12g ", buffer, systemData->A[i + j*n]);
+      infoStreamPrint(LOG_LS_V, 0, "%s", buffer);
+    }
+	
+	/* b vector */
+    infoStreamPrint(LOG_LS_V, 1, "b vector [%d]", n);
+    for(i=0; i<n; i++)
+    {
+      buffer[0] = 0;
+      sprintf(buffer, "%s%20.12g ", buffer, systemData->b[i]);
+      infoStreamPrint(LOG_LS_V, 0, "%s", buffer);
+    }
+	
+    messageClose(LOG_LS_V);
+  }
+ 
+  /* Solve system */ 
   dgesv_((integer*) &systemData->size,
          (integer*) &solverData->nrhs,
          systemData->A,
