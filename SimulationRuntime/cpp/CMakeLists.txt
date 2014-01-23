@@ -8,22 +8,6 @@ SET(BLAS_blas_LIBRARY $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/blas_win32.dll CACHE F
 SET(LAPACK_lapack_LIBRARY  $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/lapack_win32.dll CACHE FILEPATH "Lapack library")
 SET(BLAS_DIRY "$ENV{OMDEV}/lib/3rdParty/Lapack/Lib/" CACHE LOCATION "where was yarp built?")
 
-########################################
-# TEST
-FIND_PATH(CMINPACK_INCLUDE_DIR cminpack.h
-          HINTS "${CMAKE_SOURCE_DIR}/../../3rdParty/CMinpack/install"
-          PATH_SUFFIXES include include/cminpack include/cminpack-1)
-
-FIND_LIBRARY(CMINPACK_LIBRARY 
-             NAMES cminpack
-             HINTS "${CMAKE_SOURCE_DIR}/../../3rdParty/CMinpack/install"
-             PATH_SUFFIXES lib lib64)
-             
-#include_directories(CMINPACK_INCLUDE_DIR)
-# END TEST
-
-########################################
-
 # Disable Optimization for RelWithDebInfo on Windows
 if (MSVC)
     STRING(REPLACE "/O2" "/Od" CMAKE_CXX_FLAGS_RELWITHDEBINFO ${CMAKE_CXX_FLAGS_RELWITHDEBINFO})
@@ -44,6 +28,17 @@ endif()
 SET(INSTALL_OMDEV_LIBS ON)
 ENDIF( WIN32 )
 
+
+FIND_PATH(CMINPACK_INCLUDE_DIR cminpack.h
+          HINTS "${CMAKE_SOURCE_DIR}/../../3rdParty/CMinpack/install"
+          PATH_SUFFIXES include include/cminpack include/cminpack-1)
+
+FIND_LIBRARY(CMINPACK_LIBRARY 
+             NAMES cminpack
+             HINTS "${CMAKE_SOURCE_DIR}/../../3rdParty/CMinpack/install"
+             PATH_SUFFIXES lib lib64)
+             
+include_directories(${CMINPACK_INCLUDE_DIR})
 
 set(MODELICAEXTERNALCDIR  "${CMAKE_SOURCE_DIR}/../../libraries/Resources/C-Sources")
 set(USERTABDIR  "${CMAKE_SOURCE_DIR}/../../libraries/Resources/Data/Tables")
