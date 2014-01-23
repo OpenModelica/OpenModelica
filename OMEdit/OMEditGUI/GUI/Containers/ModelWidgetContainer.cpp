@@ -2179,7 +2179,7 @@ void ModelWidget::getModelComponents(QString className, bool inheritedCycle)
       {
         // add the component to the icon view.
         mpIconGraphicsView->addComponentToView(pComponentInfo->getName(), pComponentInfo->getClassName(), transformation,
-                                               QPointF(0.0, 0.0), pComponentInfo, type, false, true, inheritedCycle, className);
+                                               QPointF(0.0, 0.0), new ComponentInfo(pComponentInfo), type, false, true, inheritedCycle, className);
       }
     }
     i++;

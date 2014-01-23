@@ -1549,6 +1549,31 @@ ComponentInfo::ComponentInfo(QString value)
   parseComponentInfoString(value);
 }
 
+ComponentInfo::ComponentInfo(ComponentInfo *pComponentInfo)
+{
+  mClassName = pComponentInfo->getClassName();
+  mName = pComponentInfo->getName();
+  mComment = pComponentInfo->getComment();
+  mIsProtected = pComponentInfo->getProtected();
+  mIsFinal = pComponentInfo->getFinal();
+  mIsFlow = pComponentInfo->getFlow();
+  mIsStream = pComponentInfo->getStream();
+  mIsReplaceable = pComponentInfo->getReplaceable();
+  mVariabilityMap.insert("constant", "constant");
+  mVariabilityMap.insert("discrete", "discrete");
+  mVariabilityMap.insert("parameter", "parameter");
+  mVariabilityMap.insert("unspecified", "default");
+  mVariability = pComponentInfo->getVariablity();
+  mIsInner = pComponentInfo->getInner();
+  mIsOuter = pComponentInfo->getOuter();
+  mCasualityMap.insert("input", "input");
+  mCasualityMap.insert("output", "output");
+  mCasualityMap.insert("unspecified", "none");
+  mCasuality = pComponentInfo->getCasuality();
+  mArrayIndex = pComponentInfo->getArrayIndex();
+  mIsArray = pComponentInfo->isArray();
+}
+
 void ComponentInfo::parseComponentInfoString(QString value)
 {
   if (value.isEmpty())

@@ -202,6 +202,7 @@ class ComponentInfo
 {
 public:
   ComponentInfo(QString value);
+  ComponentInfo(ComponentInfo *pComponentInfo);
   void parseComponentInfoString(QString value);
   QString getClassName();
   QString getName();
