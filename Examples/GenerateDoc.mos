@@ -41,12 +41,13 @@
 
 setDebugFlags("nogen") /* Don't generate dll/so-files when instantiating classes (performance) */;
 
-loadModel(Modelica);
+loadModel(FCSys);
+/*loadModel(Modelica);
 
 writeFile("loadModel.mos",sum("if loadModel(" + lib + ") then true else if loadModel(" + lib + ",languageStandard=\"2.x\") then true else loadModel(" + lib + ",languageStandard=\"1.x\");getErrorString();\n" for lib in getAvailableLibraries()));
 getErrorString();
 runScript("loadModel.mos");
-getErrorString();
+getErrorString();*/
 getClassNames();
 
 // should we keep readable names (nice online), or use the hashed names in the links (nice if you want a zipped version to work on Windows)
@@ -60,7 +61,7 @@ echo(false);
 self:=getInstallationDirectoryPath() + "/share/doc/omc/testmodels/GenerateDoc.mos";getErrorString();
 py:=getInstallationDirectoryPath() + "/share/doc/omc/testmodels/generate_icons.py";getErrorString();
 commands:={"(ulimit -t 600 ; python "+py+" --quiet --output-dir Icons "+typeNameString(cl)+" )" for cl in getClassNames(builtin=false)};getErrorString();
-res:=system_parallel(commands);getErrorString();
+//res:=system_parallel(commands);getErrorString();
 system("rm -f *.json");getErrorString();
 /* if max(res) <> 0 then
   exit(1);
@@ -92,6 +93,14 @@ function filename \"Replace characters that mess with filesystems and shell expa
 ;
 end filename;
 
+function uriEncode
+  input String str;
+  output String uri;
+algorithm
+  uri := OpenModelica.Scripting.stringReplace(str,\"'\",\"%27\");
+  uri := OpenModelica.Scripting.stringReplace(uri,\" \",\"%20\");
+end uriEncode;
+
 function notLast
   input String str[:];
   output String ostr[:] := str[1:end];
@@ -120,7 +129,7 @@ protected
 algorithm
   if OpenModelica.Scripting.regularFileExists(file) then
     hashedName := if readSymlinks then OpenModelica.Scripting.dirname(file) + \"/\" + OpenModelica.Scripting.basename(OpenModelica.Scripting.realpath(file)) else file;
-    tag := \"<a href=\\\"\" + (if link == file then hashedName else link) + \"\\\"><img class=\\\"\"+cssClass+\"\\\" src=\\\"\"+ hashedName +\"\\\" /></a> \";
+    tag := \"<a href=\\\"\" + uriEncode(if link == file then hashedName else link) + \"\\\"><img class=\\\"\"+cssClass+\"\\\" src=\\\"\"+ hashedName +\"\\\" /></a> \";
   else
     tag := \"\";
   end if;
@@ -201,7 +210,7 @@ items:={Item(
       OpenModelica.Scripting.getDocumentationAnnotation(c),
       preSuffixIfNotEmpty(
         "<h2>Contents</h2>\n<table><tr><th>Name</th><th>Description</th></tr>",
-        sum("<tr><td>"+ svgIcon("Icons/" + filename(OpenModelica.Scripting.typeNameString(cl)) + ".svg",filename(OpenModelica.Scripting.typeNameString(cl)) + ".html","svgiconsmall",readSymlinks=readSymlinks) +"<a href=\"" + filename(OpenModelica.Scripting.typeNameString(cl)) + ".html\">" +
+        sum("<tr><td>"+ svgIcon("Icons/" + filename(OpenModelica.Scripting.typeNameString(cl)) + ".svg",filename(OpenModelica.Scripting.typeNameString(cl)) + ".html","svgiconsmall",readSymlinks=readSymlinks) +"<a href=\"" + uriEncode(filename(OpenModelica.Scripting.typeNameString(cl))) + ".html\">" +
              last(OpenModelica.Scripting.typeNameStrings(cl)) + "</a></td>" + "<td>" +
              toHtml(OpenModelica.Scripting.getClassComment(cl)) +
              "</td></tr>\n"
@@ -242,7 +251,7 @@ for cl in classNames loop
     end if;
     comment := toHtml(getClassComment(cl)); // let's escape "&" on the fly
     fileName := filename(contentStr);
-    writeFile(filetmp, "<tr><td>" + svgIcon("Icons/" + fileName + ".svg",fileName + ".html","svgiconsmall",readSymlinks=readSymlinks) + "<a href=\"" + fileName + ".html\">" + contentStr + "</a></td><td>" + comment + "</td><td>" + modelVersion + "</td></tr>", append = true);
+    writeFile(filetmp, "<tr><td>" + svgIcon("Icons/" + fileName + ".svg",fileName + ".html","svgiconsmall",readSymlinks=readSymlinks) + "<a href=\"" + uriEncode(fileName) + ".html\">" + contentStr + "</a></td><td>" + comment + "</td><td>" + modelVersion + "</td></tr>", append = true);
   end if;
 end for;
 writeFile(filetmp, "</table>\n", append = true);
@@ -258,7 +267,7 @@ if genBuiltin then
       modelVersion := getVersion(cl);
       comment := toHtml(getClassComment(cl)); // lets escape "&" on the fly
       fileName := filename(contentStr);
-      writeFile(filetmp, "<tr><td><a href=\"" + fileName + ".html\">" + contentStr + "</a></td><td>" + comment + "</td><td>" + modelVersion + "</td></tr>", append = true);
+      writeFile(filetmp, "<tr><td><a href=\"" + uriEncode(fileName) + ".html\">" + contentStr + "</a></td><td>" + comment + "</td><td>" + modelVersion + "</td></tr>", append = true);
     end if;
   end for;
   writeFile(filetmp, "</table>\n", append = true);
@@ -278,8 +287,9 @@ import sys
 repls = ["+replaceCommands+"
  (re.compile(r'.*/omlibrary/'), ''),
  (re.compile(r' '), r'%20'),
- (re.compile(r'[Mm][Oo][Dd][Ee][Ll][Ii][Cc][Aa]://([A-Za-z0-9.\\'()_]*)#'), r'\\1.html#'),
- (re.compile(r'[Mm][Oo][Dd][Ee][Ll][Ii][Cc][Aa]://([A-Za-z0-9.\\'()_]*)'), r'\\1.html'),
+ (re.compile(r'\\''), r'%27'),
+ (re.compile(r'[Mm][Oo][Dd][Ee][Ll][Ii][Cc][Aa]://([A-Za-z0-9.\\'()_ %]*)#'), r'\\1.html#'),
+ (re.compile(r'[Mm][Oo][Dd][Ee][Ll][Ii][Cc][Aa]://([A-Za-z0-9.\\'()_ %]*)'), r'\\1.html'),
 ]
 rehttp = re.compile(r'https?://',flags=re.IGNORECASE)
 ignorebookmark = re.compile(r'^([^#]*)#.*')
@@ -297,6 +307,7 @@ def linkreplace(link,filepath):
   return result
 
 for filepath in sorted(glob.glob('*.html')):
+#  sub.call(['cp', filepath, filepath + '.original'])
   tag = '[Checking file %s]:\\n' % filepath
 #  sys.stdout.write(tag)  # not much point in writing the tags to stdout
   sys.stderr.write(tag)
