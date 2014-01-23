@@ -531,7 +531,7 @@ static int local_jac_struct(IPOPT_DATA_ *iData, int * nng)
 
   if(ACTIVE_STREAM(LOG_IPOPT))
   {
-	printf("\n***********");
+  printf("\n***********");
     for(ii = 0; ii < nJ; ++ii)
     {
       printf("\n");
