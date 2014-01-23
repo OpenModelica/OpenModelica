@@ -180,14 +180,18 @@ int diff_functionODE(double* v, double t, IPOPT_DATA_ *iData, double **J)
   double tmp;
   double *x, *u;
   long double rcal;
+  int nJ = iData->nx + iData->nc;
   x = v;
   u = v + iData->nx;
 
   refreshSimData(x,u,t,iData);
   diff_symColoredODE(v,t,iData,J);
-  for(i = 0;i<iData->nv;++i)
+  for(i = 0;i<iData->nv;++i){
     for(j = 0; j <iData->nx; ++j)
       J[j][i] *= iData->scalf[j]*iData->vnom[i];
+    for(; j <nJ; ++j)
+      J[j][i] *= iData->vnom[i];
+  }
 
   /*
   #ifdef JAC_ADOLC

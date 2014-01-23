@@ -193,7 +193,7 @@ static int sumLagrange(IPOPT_DATA_ *iData, double * erg,int ii, int i, int j, in
   int nJ = (ii) ? iData->nx + iData->nc : iData->nx;
   sum = 0.0;
   if(iData->Hg[j][i])
-   for(l = 0; l<nJ; ++l)
+   for(l = 0; l<iData->nx; ++l)
      sum += iData->H[l][i][j];
 
   if(iData->lagrange){
@@ -203,6 +203,8 @@ static int sumLagrange(IPOPT_DATA_ *iData, double * erg,int ii, int i, int j, in
       sum += iData->bl[p]*iData->oH[i][j];
   }
   sum = iData->dt[ii]*sum;
+  for(l = iData->nx; l<nJ; ++l)
+    sum += iData->H[l][i][j];
   if(mayer_yes)
     sum += iData->mH[i][j];
 
