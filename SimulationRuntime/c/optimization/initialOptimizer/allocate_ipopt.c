@@ -524,7 +524,7 @@ static int local_jac_struct(IPOPT_DATA_ *iData, int * nng)
   for(i = 0; i <iData->nv; ++i)
   for(j = 0; j < iData->nv; ++j)
     {
-    for(ii = 0; ii < iData->nx; ++ii)
+    for(ii = 0; ii < nJ; ++ii)
       if(J[ii][i]+J[ii][j]> 1)
         Hg[i][j] += 1;
     }
