@@ -92,10 +92,10 @@ int freeLapackData(void **voiddata)
  */
 int solveLapack(DATA *data, int sysNumber)
 {
-  int i, j, n;
+  int i, j;
   LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo.linearSystemData[sysNumber]);
   DATA_LAPACK* solverData = (DATA_LAPACK*)systemData->solverData;
-  n = systemData->size;
+  int n = systemData->size;
 
   /* We are given the number of the linear system.
    * We want to look it up among all equations. */
