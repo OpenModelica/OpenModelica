@@ -135,7 +135,7 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
      }
      /*AddIpoptStrOption(nlp, "derivative_test_print_all", "yes");*/
     /* AddIpoptNumOption(nlp,"derivative_test_perturbation",1e-6); */
-    AddIpoptIntOption(nlp, "max_iter", 5000);
+    AddIpoptIntOption(nlp, "max_iter", 250);
 
     res = IpoptSolve(nlp, iData->v, NULL, &obj, iData->mult_g, iData->mult_x_L, iData->mult_x_U, (void*)iData);
 

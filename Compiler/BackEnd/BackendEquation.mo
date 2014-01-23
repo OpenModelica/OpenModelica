@@ -2182,14 +2182,18 @@ algorithm
   local
     DAE.Exp rhs,e1,e2;
     DAE.ComponentRef lhs;
-    case (lhs, DAE.RELATION(e1,DAE.LESS(_),e2,_,_), _)
-      then {BackendDAE.SOLVED_EQUATION(lhs,DAE.BINARY(e1,DAE.SUB(DAE.T_REAL_DEFAULT),e2),Source,false)};
-    case (lhs, DAE.RELATION(e1,DAE.LESSEQ(_),e2,_,_), _)
-      then {BackendDAE.SOLVED_EQUATION(lhs,DAE.BINARY(e1,DAE.SUB(DAE.T_REAL_DEFAULT),e2),Source,false)};
-    case (lhs, DAE.RELATION(e1,DAE.GREATER(_),e2,_,_), _)
-      then {BackendDAE.SOLVED_EQUATION(lhs,DAE.BINARY(e2,DAE.SUB(DAE.T_REAL_DEFAULT),e1),Source,false)};
-    case (lhs, DAE.RELATION(e1,DAE.GREATEREQ(_),e2,_,_), _)
-      then {BackendDAE.SOLVED_EQUATION(lhs,DAE.BINARY(e2,DAE.SUB(DAE.T_REAL_DEFAULT),e1),Source,false)};
+    case (lhs, DAE.RELATION(e1,DAE.LESS(_),e2,_,_), _) equation
+      (rhs,_) = ExpressionSimplify.simplify(DAE.BINARY(e1,DAE.SUB(DAE.T_REAL_DEFAULT),e2));
+    then {BackendDAE.SOLVED_EQUATION(lhs,rhs,Source,false)};
+    case (lhs, DAE.RELATION(e1,DAE.LESSEQ(_),e2,_,_), _) equation
+      (rhs,_) = ExpressionSimplify.simplify(DAE.BINARY(e1,DAE.SUB(DAE.T_REAL_DEFAULT),e2));
+      then {BackendDAE.SOLVED_EQUATION(lhs,rhs,Source,false)};
+    case (lhs, DAE.RELATION(e1,DAE.GREATER(_),e2,_,_), _) equation
+      (rhs,_) = ExpressionSimplify.simplify(DAE.BINARY(e2,DAE.SUB(DAE.T_REAL_DEFAULT),e1));
+      then {BackendDAE.SOLVED_EQUATION(lhs,rhs,Source,false)};
+    case (lhs, DAE.RELATION(e1,DAE.GREATEREQ(_),e2,_,_), _) equation
+      (rhs,_) = ExpressionSimplify.simplify(DAE.BINARY(e2,DAE.SUB(DAE.T_REAL_DEFAULT),e1));
+      then {BackendDAE.SOLVED_EQUATION(lhs, rhs,Source,false)};
     else then {};
   end match;
 end generateResidualfromRealtion;

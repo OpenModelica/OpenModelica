@@ -257,7 +257,7 @@ int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
 
   /* iData->njac =  iData->nX*iData->nsi*(iData->nv + iData->deg) + iData->nX*(iData->nv-1); */
   local_jac_struct(iData, &id);
-  iData->njac = iData->deg*(iData->nlocalJac-iData->nx+iData->nsi*iData->nlocalJac+iData->deg*iData->nsi*iData->nx)-iData->nc*iData->deg*id;
+  iData->njac = iData->deg*(iData->nlocalJac-iData->nx+iData->nsi*iData->nlocalJac+iData->deg*iData->nsi*iData->nx)-iData->deg*id;
   iData->nhess = 0.5*iData->nv*(iData->nv + 1)*(1+iData->deg*iData->nsi);
 
   allocateIpoptData(iData);
@@ -455,7 +455,7 @@ static int local_jac_struct(IPOPT_DATA_ *iData, int * nng)
   short **Hg;
   int i,j,l,ii,nx, id;
   int *cC,*lindex;
-  int nJ = (iData->nx+iData->nc);
+  int nJ = (int)(iData->nx+iData->nc);
   id = 0;
 
   iData->nlocalJac = 0;
@@ -531,7 +531,8 @@ static int local_jac_struct(IPOPT_DATA_ *iData, int * nng)
 
   if(ACTIVE_STREAM(LOG_IPOPT))
   {
-    for(ii = 0; ii < iData->nx; ++ii)
+	printf("\n***********");
+    for(ii = 0; ii < nJ; ++ii)
     {
       printf("\n");
       for(j =0;j<iData->nv;++j)
