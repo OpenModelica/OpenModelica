@@ -7286,12 +7286,17 @@ algorithm
         print("there are both varCrossNodes and eqNodes\n");   
         
         // get the paths between the crossVarNodes and order them according to their length
-        paths = getPathTillNextCrossEq(varCrossLstIn,mTIn,mIn,varCrossLstIn,{},{});
+        paths = getPathTillNextCrossNodeComplex(varCrossLstIn,eqCrossLstIn,mTIn,mIn,varCrossLstIn,{},{});
+        print("all the paths: \n"+&stringDelimitList(List.map(paths,HpcOmTaskGraph.intLstString)," / ")+&"\n");
+        
+        paths = List.unique(paths);
+        paths = List.map(paths,List.unique);
+        print("reduced paths: \n"+&stringDelimitList(List.map(paths,HpcOmTaskGraph.intLstString)," / ")+&"\n");
         paths = List.sort(paths,List.listIsLonger);
-        paths = listReverse(paths);
+        paths = List.map1(paths,getEqNodesForVarLoop,mTIn);
         print("from all the paths: \n"+&stringDelimitList(List.map(paths,HpcOmTaskGraph.intLstString)," / ")+&"\n");
         (paths0,paths1) =  List.extract1OnTrue(paths,listLengthIs,listLength(List.first(paths)));
-        print("the longest paths: \n"+&stringDelimitList(List.map(paths0,HpcOmTaskGraph.intLstString)," / ")+&"\n");
+        print("the shortest paths: \n"+&stringDelimitList(List.map(paths0,HpcOmTaskGraph.intLstString)," / ")+&"\n");
         subLoop = List.first(paths0);
         
         // resolve the loop
@@ -8096,6 +8101,122 @@ algorithm
           fail();
   end matchcontinue;    
 end getPathTillNextCrossEq;
+
+
+protected function getPathTillNextCrossNodeComplex"collects the paths from the given crossEq to the next for a bipartite graph with both eqCrossNodes and varCrossNodes.
+The paths are build between the primary crossNodes. The distinction between primary and secondary nodes depends whether you want to get the paths between varNodes or eqNodes.
+author:Waurich TUD 2014-01"
+  input list<Integer> checkPrimCrossNodes; //these will be traversed
+  input list<Integer> secCrossNodes; 
+  input BackendDAE.IncidenceMatrix mIn;  // the matrix in which the rows correspond to the type of the primCrossNodes
+  input BackendDAE.IncidenceMatrixT mTIn;// the matrix in which the rows correspond to the type of the secCrossNodes
+  input list<Integer> allPrimCrossNodes;  // the paths will be build between these
+  input list<list<Integer>> unfinPathsIn;
+  input list<list<Integer>> primPathsIn;
+  output list<list<Integer>> primPathsOut;
+algorithm
+  primPathsOut := matchcontinue(checkPrimCrossNodes,secCrossNodes,mIn,mTIn,allPrimCrossNodes,unfinPathsIn,primPathsIn)
+    local
+      Integer crossNode, lastPrim, prevPrim, prevSec;
+      list<Integer> adjSecs, nextPrims, nextPrimsCross, endPrims, unfinPrims, restCrossNodes, pathStart, crossSecs, prevSec1, prevSec2;
+      list<list<Integer>> paths, paths1, adjPrims, adjPrimsCross, unfinPaths, unfinPaths1, restUnfinPaths;
+    case(crossNode::restCrossNodes,_,_,_,_,{},_)
+      equation
+          print("check path and start at primNode: "+&intString(crossNode)+&"\n");
+        // check the next eqNode of the crossEq whether the paths is finished here or the path goes on to another crossEq
+        adjSecs = arrayGet(mIn,crossNode);
+          print("the adj Secs: "+&stringDelimitList(List.map(adjSecs,intString),";")+&"\n");
+        adjPrims = List.map1(adjSecs,Util.arrayGetIndexFirst,mTIn);
+        adjPrims = List.map1(adjPrims,List.deleteMember,crossNode);// REMARK: this works only if there are no varCrossNodes
+        adjPrims = List.filterOnTrue(adjPrims,List.isNotEmpty);
+          print("the adjPrims: "+&stringDelimitList(List.map(adjPrims,HpcOmTaskGraph.intLstString),";")+&"\n");
+        nextPrims = List.map(adjPrims,List.first);
+        (endPrims,unfinPrims,_) = List.intersection1OnTrue(nextPrims,allPrimCrossNodes,intEq);
+        paths = List.map1(endPrims,cons1,{crossNode}); //TODO: replace this stupid cons1
+        paths = listAppend(paths,primPathsIn);
+          print("the finished paths: "+&stringDelimitList(List.map(paths,HpcOmTaskGraph.intLstString),"\n")+&"\n");
+        unfinPaths = List.map1(unfinPrims,cons1,{crossNode});
+        unfinPaths = listAppend(unfinPaths,unfinPathsIn);
+          print("the unfinished paths: "+&stringDelimitList(List.map(unfinPaths,HpcOmTaskGraph.intLstString),"\n")+&"\n");
+        paths = getPathTillNextCrossNodeComplex(restCrossNodes,secCrossNodes,mIn,mTIn,allPrimCrossNodes,unfinPaths,paths);
+      then
+        paths;
+    case(_,_,_,_,_,pathStart::restUnfinPaths,_)
+      equation
+        lastPrim = List.first(pathStart);
+        prevPrim = List.second(pathStart);
+        prevSec1 = arrayGet(mIn,lastPrim);
+        prevSec2 = arrayGet(mIn,prevPrim);
+        (prevSec2,_,_) = List.intersection1OnTrue(prevSec1,prevSec2,intEq); 
+        print("allPrevSecs: "+&stringDelimitList(List.map(prevSec2,intString),",")+&"\n");
+        prevSec = List.first(prevSec2); 
+          print("check the unfinished paths: "+&stringDelimitList(List.map(pathStart,intString),",")+&"\n");
+          print("the prevSec "+&intString(prevSec)+&"\n");
+          print("allPrimCrossNodes: "+&stringDelimitList(List.map(allPrimCrossNodes,intString),",")+&"\n");
+        adjSecs = arrayGet(mIn,lastPrim);
+          print("the adjSecs: "+&stringDelimitList(List.map(adjSecs,intString),";")+&"\n");
+        adjSecs = List.deleteMember(adjSecs,prevSec);
+        (crossSecs,adjSecs,_) = List.intersection1OnTrue(adjSecs,secCrossNodes,intEq);  
+          print("the adjSecs: "+&stringDelimitList(List.map(adjSecs,intString),";")+&"\n");
+          print("the adjCrossSecs: "+&stringDelimitList(List.map(crossSecs,intString),";")+&"\n");
+        
+        //follow the nonCrossPaths
+        print("FOLLOW THE NONCROSSPATHS\n");
+        adjPrims = List.map1(adjSecs,Util.arrayGetIndexFirst,mTIn);
+        adjPrims = List.map1(adjPrims,List.deleteMember,lastPrim);// REMARK: this works only if there are no varCrossNodes
+        adjPrims = List.filterOnTrue(adjPrims,List.isNotEmpty);
+          print("adjPrims: "+&stringDelimitList(List.map(adjPrims,HpcOmTaskGraph.intLstString),"\n")+&"\n");
+        nextPrims = List.map(adjPrims,List.first);
+          (nextPrims,_) = List.deleteMemberOnTrue(prevPrim,nextPrims,intEq); //do not take the path back to the previous node
+          print("nextPrims: "+&stringDelimitList(List.map(nextPrims,intString),",")+&"\n");
+        (endPrims,unfinPrims,_) = List.intersection1OnTrue(nextPrims,allPrimCrossNodes,intEq);
+          print("endPrims: "+&stringDelimitList(List.map(endPrims,intString),",")+&"\n");
+          print("unfinPrims: "+&stringDelimitList(List.map(unfinPrims,intString),",")+&"\n");
+        paths = List.map1(endPrims,cons1,pathStart); //TODO: replace this stupid cons1
+        paths = listAppend(paths,primPathsIn);
+          print("the finished paths: "+&stringDelimitList(List.map(paths,HpcOmTaskGraph.intLstString),"\n")+&"\n");
+        unfinPaths = List.map1(unfinPrims,cons1,pathStart);
+        unfinPaths = listAppend(unfinPaths,restUnfinPaths);
+          print("the unfinished paths: "+&stringDelimitList(List.map(unfinPaths,HpcOmTaskGraph.intLstString),"\n")+&"\n");  
+        
+        // follow the crossPaths
+        print("FOLLOW THE CROSSPATHS\n");
+        adjPrimsCross = List.map1(crossSecs,Util.arrayGetIndexFirst,mTIn);
+        print("adjPrimsCros1: "+&stringDelimitList(List.map(adjPrimsCross,HpcOmTaskGraph.intLstString),"\n")+&"\n");
+        adjPrimsCross = List.map1(adjPrimsCross,List.deleteMember,lastPrim);
+        print("adjPrimsCross2: "+&stringDelimitList(List.map(adjPrimsCross,HpcOmTaskGraph.intLstString),"\n")+&"\n");
+        adjPrimsCross = List.filterOnTrue(adjPrimsCross,List.isNotEmpty);
+          print("adjPrimsCross3: "+&stringDelimitList(List.map(adjPrimsCross,HpcOmTaskGraph.intLstString),"\n")+&"\n");
+        nextPrimsCross = List.flatten(adjPrimsCross);
+        (nextPrimsCross,_) = List.deleteMemberOnTrue(prevPrim,nextPrimsCross,intEq); //do not take the path back to the previous node
+          print("nextPrimsCross: "+&stringDelimitList(List.map(nextPrimsCross,intString),",")+&"\n");
+         
+         (endPrims,unfinPrims,_) = List.intersection1OnTrue(nextPrimsCross,allPrimCrossNodes,intEq);
+          print("endPrimsCross: "+&stringDelimitList(List.map(endPrims,intString),",")+&"\n");
+          print("unfinPrimsCross: "+&stringDelimitList(List.map(unfinPrims,intString),",")+&"\n");
+        paths1 = List.map1(endPrims,cons1,pathStart); //TODO: replace this stupid cons1
+        paths = listAppend(paths1,paths);
+          print("the finished paths: "+&stringDelimitList(List.map(paths,HpcOmTaskGraph.intLstString),"\n")+&"\n");
+        unfinPaths1 = List.map1(unfinPrims,cons1,pathStart);
+        unfinPaths = listAppend(unfinPaths1,unfinPaths);
+          print("the unfinished paths: "+&stringDelimitList(List.map(unfinPaths,HpcOmTaskGraph.intLstString),"\n")+&"\n");  
+
+        paths = getPathTillNextCrossNodeComplex(checkPrimCrossNodes,secCrossNodes,mIn,mTIn,allPrimCrossNodes,unfinPaths,paths);
+      then
+        paths;
+    case({},_,_,_,_,{},_)
+      equation
+        //print("checked all crossEqNodes\n");
+        //print("the paths: "+&stringDelimitList(List.map(eqPathsIn,HpcOmTaskGraph.intLstString),"\n")+&"\n");
+      then
+        primPathsIn;
+    else
+      equation
+        print("getPathTillNextCrossNodeComplex failed!\n");
+        then
+          fail();
+  end matchcontinue;    
+end getPathTillNextCrossNodeComplex;
   
   
 protected function cons1
@@ -8580,11 +8701,13 @@ algorithm
       case(_)
         equation
           false = Flags.isSet(Flags.RESOLVE_LOOPS);
+          print("case1\n");
         then
           daeIn;
       case(_)
         equation
           true = Flags.isSet(Flags.RESOLVE_LOOPS);
+          print("case2\n");
           daeOut = BackendDAEUtil.mapEqSystem(daeIn,resolveLinTornSystems);
         then
           daeOut;
@@ -8602,8 +8725,9 @@ protected
   BackendDAE.StrongComponents allComps;
 algorithm
   BackendDAE.EQSYSTEM(matching = BackendDAE.MATCHING(comps= allComps)) := systIn; 
-  //BackendDump.dumpEqSystem(systIn,"original system");
-  systOut := resolveLinearSystem(1, allComps, systIn, sharedIn);  //BackendDump.dumpEqSystem(systTmp,"new system");
+  BackendDump.dumpEqSystem(systIn,"original system");
+  systOut := resolveLinearSystem(1, allComps, systIn, sharedIn);
+  //BackendDump.dumpEqSystem(systTmp,"new system");
   sharedOut := sharedIn;
 end resolveLinTornSystems;
 
