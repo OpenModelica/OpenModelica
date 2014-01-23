@@ -114,8 +114,8 @@ int solveLapack(DATA *data, int sysNumber)
   if(ACTIVE_STREAM(LOG_LS_V))
   {
     char buffer[16384];
-	
-	/* A matrix */
+  
+  /* A matrix */
     infoStreamPrint(LOG_LS_V, 1, "A matrix [%dx%d]", n, n);
     for(i=0; i<n; i++)
     {
@@ -124,8 +124,8 @@ int solveLapack(DATA *data, int sysNumber)
         sprintf(buffer, "%s%20.12g ", buffer, systemData->A[i + j*n]);
       infoStreamPrint(LOG_LS_V, 0, "%s", buffer);
     }
-	
-	/* b vector */
+  
+  /* b vector */
     infoStreamPrint(LOG_LS_V, 1, "b vector [%d]", n);
     for(i=0; i<n; i++)
     {
@@ -133,7 +133,7 @@ int solveLapack(DATA *data, int sysNumber)
       sprintf(buffer, "%s%20.12g ", buffer, systemData->b[i]);
       infoStreamPrint(LOG_LS_V, 0, "%s", buffer);
     }
-	
+  
     messageClose(LOG_LS_V);
   }
  
