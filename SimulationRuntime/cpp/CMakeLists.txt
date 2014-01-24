@@ -171,7 +171,7 @@ include_directories ("Include/Solver")
 #add  Euler solver project
 add_subdirectory (Solver/Euler)
 add_subdirectory (Solver/Newton)
-add_subdirectory (Solver/Hybrj)
+#add_subdirectory (Solver/Hybrj)
 
 
 if(REDUCE_DAE)
