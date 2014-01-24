@@ -1046,6 +1046,10 @@ public function initGarbageCollector "this needs to be called first in Main.mo"
 external "C" System_initGarbageCollector() annotation(Library = {"omcruntime"});
 end initGarbageCollector;
 
+public function GC_gcollect_and_unmap
+external "C" annotation(Library = {"gc"});
+end GC_gcollect_and_unmap;
+
 public function GC_enable
 external "C" annotation(Library = {"gc"});
 end GC_enable;

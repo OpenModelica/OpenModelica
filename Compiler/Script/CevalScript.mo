@@ -1065,8 +1065,24 @@ algorithm
       then
         (cache,Values.STRING(str),st);
 
+    case (cache,env,"GC_gcollect_and_unmap",{},st,_)
+      equation
+        System.GC_gcollect_and_unmap();
+      then (cache,Values.BOOL(true),st);
+
     case (cache,env,"clear",{},st,_)
       then (cache,Values.BOOL(true),GlobalScript.emptySymboltable);
+
+    case (cache,env,"clearProgram",{},GlobalScript.SYMBOLTABLE(lstVarVal=iv),_)
+      equation
+        newst = GlobalScript.SYMBOLTABLE(Absyn.PROGRAM({},Absyn.TOP(),Absyn.dummyTimeStamp),
+                 GlobalScript.emptyDepends,
+                 NONE(),
+                 {},
+                 iv,
+                 {},
+                 {});
+      then (cache,Values.BOOL(true),newst);
 
     case (cache,env,"clearVariables",{},
         (st as GlobalScript.SYMBOLTABLE(

@@ -1821,6 +1821,12 @@ RML_BEGIN_LABEL(System__launchParallelTasks)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__GC_5fgcollect_5fand_5funmap)
+{
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 RML_BEGIN_LABEL(System__GC_5fenable)
 {
   RML_TAILCALLK(rmlSC);

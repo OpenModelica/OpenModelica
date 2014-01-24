@@ -105,6 +105,10 @@ end ElementSource;
 public constant ElementSource emptyElementSource = SOURCE(Absyn.dummyInfo,{},{},{},{},{},{});
 
 public uniontype SymbolicOperation
+  record FLATTEN "From one equation/statement to a list of DAE elements (in case it is expanded)"
+    SCode.EEquation scode;
+    Option<Element> dae;
+  end FLATTEN;
   record SIMPLIFY
     EquationExp before;
     EquationExp after;
@@ -1126,7 +1130,7 @@ uniontype EqMod "To generate the correct set of equations, the translator has to
     Exp modifierAsExp "modifier as expression" ;
     Option<Values.Value> modifierAsValue "modifier as Value option" ;
     Properties properties "properties" ;
-    Option<Absyn.Exp> modifierAsAbsynExp "keep the untyped modifier as an absyn expression for modification comparison";
+    Absyn.Exp modifierAsAbsynExp "keep the untyped modifier as an absyn expression for modification comparison";
     Absyn.Info info;
   end TYPED;
 

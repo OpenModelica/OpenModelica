@@ -6074,6 +6074,32 @@ algorithm
   end match;
 end addSymbolicTransformationDeriveLst;
 
+public function addSymbolicTransformationFlattenedEqs
+  input DAE.ElementSource source;
+  input DAE.Element elt;
+  output DAE.ElementSource outSource;
+algorithm
+  outSource := match (source,elt)
+    local
+      Absyn.Info info "the line and column numbers of the equations and algorithms this element came from";
+      list<Absyn.Path> typeLst "the absyn type of the element" ;
+      list<Absyn.Within> partOfLst "the models this element came from" ;
+      list<Option<DAE.ComponentRef>> instanceOptLst "the instance this element is part of" ;
+      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
+      list<DAE.SymbolicOperation> operations;
+      DAE.Exp h1,t1,t2;
+      list<SCode.Comment> comment;
+      SCode.EEquation scode;
+      list<DAE.Element> elts;
+    case (DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, DAE.FLATTEN(scode,NONE())::operations,comment),_)
+      then DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, DAE.FLATTEN(scode,SOME(elt))::operations,comment);
+    case (DAE.SOURCE(info=info),_)
+      equation
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {"Tried to add the flattened elements to the list of operations, but did not find the SCode equation"}, info);
+      then fail();
+  end match;
+end addSymbolicTransformationFlattenedEqs;
+
 public function addSymbolicTransformationSubstitutionLst
   input list<Boolean> add;
   input DAE.ElementSource isource;

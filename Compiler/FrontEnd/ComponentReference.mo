@@ -377,6 +377,12 @@ algorithm
         e_1 = Expression.unelabExp(e);
       then
         (Absyn.SUBSCRIPT(e_1) :: xs_1);
+    case (DAE.WHOLE_NONEXP(exp = e) :: xs)
+      equation
+        xs_1 = unelabSubscripts(xs);
+        e_1 = Expression.unelabExp(e);
+      then
+        (Absyn.SUBSCRIPT(e_1) :: xs_1);
   end match;
 end unelabSubscripts;
 

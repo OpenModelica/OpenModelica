@@ -535,11 +535,11 @@ public function instModEquation
   input DAE.ComponentRef inComponentRef;
   input DAE.Type inType;
   input DAE.Mod inMod;
-  input DAE.ElementSource source "the origin of the element";
+  input DAE.ElementSource inSource "the origin of the element";
   input Boolean inBoolean;
   output DAE.DAElist outDae;
 algorithm
-  outDae:= matchcontinue (inComponentRef,inType,inMod,source,inBoolean)
+  outDae:= matchcontinue (inComponentRef,inType,inMod,inSource,inBoolean)
     local
       DAE.Type t;
       DAE.DAElist dae;
@@ -549,6 +549,11 @@ algorithm
       DAE.Exp e,lhs;
       DAE.Properties prop2;
       Boolean impl;
+      Absyn.Exp aexp1,aexp2;
+      SCode.EEquation scode;
+      Absyn.ComponentRef acr;
+      Absyn.Info info;
+      DAE.ElementSource source;
 
     // Record constructors are different
     // If it's a constant binding, all fields will already be bound correctly. Don't return a DAE.
@@ -565,10 +570,14 @@ algorithm
         DAE.emptyDae;
 
     // Regular cases
-    case (cr,ty1,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,prop2,_,_)))),_,impl)
+    case (cr,ty1,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,prop2,aexp2,info)))),source,impl)
       equation
         t = Types.simplifyType(ty1);
         lhs = Expression.makeCrefExp(cr, t);
+        acr = ComponentReference.unelabCref(cr);
+        aexp1 = Absyn.CREF(acr);
+        scode = SCode.EQ_EQUALS(aexp1,aexp2,SCode.noComment,info);
+        source = DAEUtil.addSymbolicTransformation(source,DAE.FLATTEN(scode,NONE()));
         dae = InstSection.instEqEquation(lhs, DAE.PROP(ty1,DAE.C_VAR()), e, prop2, source, SCode.NON_INITIAL(), impl);
       then
         dae;

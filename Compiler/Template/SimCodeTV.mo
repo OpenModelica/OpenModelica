@@ -1658,6 +1658,10 @@ package DAE
   end ElementSource;
 
   uniontype SymbolicOperation
+    record FLATTEN "From one equation/statement to a list of DAE elements (in case it is expanded)"
+      SCode.EEquation scode;
+      Option<Element> dae;
+    end FLATTEN;
     record SIMPLIFY
       EquationExp before;
       EquationExp after;

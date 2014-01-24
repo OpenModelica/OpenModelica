@@ -2,6 +2,8 @@ package SimCodeDump
 
 import interface SimCodeTV;
 import CodegenUtil.*;
+import DAEDumpTpl.*;
+import SCodeDumpTpl.*;
 
 template dumpSimCode(SimCode code, Boolean withOperations)
 ::=
@@ -297,6 +299,13 @@ end dumpElementSource;
 template dumpOperation(SymbolicOperation op, Info info)
 ::=
   match op
+    case FLATTEN(__) then
+      <<
+      <flattening>
+        <original><% Util.escapeModelicaStringToXmlString(dumpEEquation(scode)) %></original>
+        <% match dae case SOME(dae) then '<flattened><% Util.escapeModelicaStringToXmlString(dumpEquation(dae)) %></flattened>' %>
+      </flattening>
+      >>
     case SIMPLIFY(__) then
       <<
       <simplify>

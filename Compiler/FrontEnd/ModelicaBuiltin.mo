@@ -1018,6 +1018,12 @@ external "builtin";
 annotation(preferredView="text");
 end clear;
 
+function clearProgram "Clears loaded ."
+  output Boolean success;
+external "builtin";
+annotation(preferredView="text");
+end clearProgram;
+
 function clearVariables "Clear all user defined variables."
   output Boolean success;
 external "builtin";
@@ -3062,6 +3068,14 @@ annotation(
 <p>Retrieves the physical memory size available on the system in megabytes.</p>
 </html>"));
 end getMemorySize;
+
+function GC_gcollect_and_unmap
+external "builtin";
+annotation(
+  Documentation(info="<html>
+<p>Forces GC to collect and unmap memory (we use it before we start and wait for memory-intensive tasks in child processes).</p>
+</html>"));
+end GC_gcollect_and_unmap;
 
 annotation(preferredView="text");
 end Scripting;

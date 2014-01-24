@@ -361,7 +361,7 @@ algorithm
     case (_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         state = ClassInf.trans(inState,ClassInf.FOUND_EQUATION());
-        (outCache,outEnv,outIH,outDae,outSets,outState,outGraph) = instEquationCommonWork(inCache,inEnv,inIH,inMod,inPrefix,inSets,state,inEEquation,inInitial,inBoolean,inGraph);
+        (outCache,outEnv,outIH,outDae,outSets,outState,outGraph) = instEquationCommonWork(inCache,inEnv,inIH,inMod,inPrefix,inSets,state,inEEquation,inInitial,inBoolean,inGraph,DAE.FLATTEN(inEEquation,NONE()));
         (outDae,_,_) = DAEUtil.traverseDAE(outDae,DAE.emptyFuncTree,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,(ExpressionSimplifyTypes.optionSimplifyOnly)));
       then (outCache,outEnv,outIH,outDae,outSets,outState,outGraph);
 
@@ -403,6 +403,7 @@ protected function instEquationCommonWork
   input SCode.Initial inInitial;
   input Boolean inBoolean;
   input ConnectionGraph.ConnectionGraph inGraph;
+  input DAE.SymbolicOperation flattenOp;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output InnerOuter.InstHierarchy outIH;
@@ -412,7 +413,7 @@ protected function instEquationCommonWork
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (outCache,outEnv,outIH,outDae,outSets,outState,outGraph):=
-  matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inEEquation,inInitial,inBoolean,inGraph)
+  matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inEEquation,inInitial,inBoolean,inGraph,flattenOp)
     local
       list<DAE.Properties> props;
       Connect.Sets csets_1,csets;
@@ -462,7 +463,7 @@ algorithm
       SCode.Comment comment;
 
     // connect statements
-    case (cache,env,ih,mods,pre,csets,ci_state,SCode.EQ_CONNECT(crefLeft = c1,crefRight = c2,info = info),initial_,impl,graph)
+    case (cache,env,ih,mods,pre,csets,ci_state,SCode.EQ_CONNECT(crefLeft = c1,crefRight = c2,info = info),initial_,impl,graph,_)
       equation
         (cache,env,ih,csets_1,dae,graph) = instConnect(cache,env,ih, csets,  pre, c1, c2, impl, graph, info);
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
@@ -470,7 +471,7 @@ algorithm
         (cache,env,ih,dae,csets_1,ci_state_1,graph);
 
     // equality equations e1 = e2
-    case (cache,env,ih,mods,pre,csets,ci_state,SCode.EQ_EQUALS(expLeft = e1,expRight = e2,info = info,comment=comment),initial_,impl,graph)
+    case (cache,env,ih,mods,pre,csets,ci_state,SCode.EQ_EQUALS(expLeft = e1,expRight = e2,info = info,comment=comment),initial_,impl,graph,_)
       equation
          // Do static analysis and constant evaluation of expressions.
         // Gives expression and properties
@@ -497,6 +498,7 @@ algorithm
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
 
         source = DAEUtil.addCommentToSource(source,SOME(comment));
+        source = DAEUtil.addSymbolicTransformation(source,flattenOp);
         //Check that the lefthandside and the righthandside get along.
         dae = instEqEquation(e1_2, prop1, e2_2, prop2, source, initial_, impl);
 
@@ -516,7 +518,7 @@ algorithm
 
     // if-equation
     // if the condition is constant this case will select the correct branch and remove the if-equation
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb,info=info),SCode.NON_INITIAL(),impl,graph)
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb,info=info),SCode.NON_INITIAL(),impl,graph,_)
       equation
         (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl,NONE(),true,pre,info);
         DAE.PROP(DAE.T_BOOL(varLst = _),cnst) = Types.propsAnd(props);
@@ -536,7 +538,7 @@ algorithm
     // a parameter without a binding, and which DAEUtil.ifEqToExpr can't handle.
     // If the model would have been instantiated one of the branches would have
     // been chosen, so this case therefore chooses one of the branches.
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb,info=info),SCode.NON_INITIAL(),impl,graph)
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb,info=info),SCode.NON_INITIAL(),impl,graph,_)
       equation
         true = Flags.getConfigBool(Flags.CHECK_MODEL);
         (cache, _,props,_) = Static.elabExpList(cache,env, conditions, impl,NONE(),true,pre,info);
@@ -548,7 +550,7 @@ algorithm
 
     // initial if-equation
     // if the condition is constant this case will select the correct branch and remove the initial if-equation
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb,info=info),SCode.INITIAL(),impl,graph)
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb,info=info),SCode.INITIAL(),impl,graph,_)
       equation
         (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl,NONE(),true,pre,info);
         DAE.PROP(DAE.T_BOOL(varLst = _),cnst) = Types.propsAnd(props);
@@ -561,7 +563,7 @@ algorithm
         (cache,env_1,ih,dae,csets_1,ci_state_1,graph);
 
     // if equation when condition is not constant
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb,info = info),SCode.NON_INITIAL(),impl,graph)
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb,info = info),SCode.NON_INITIAL(),impl,graph,_)
       equation
         (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl,NONE(),true,pre,info);
         DAE.PROP(DAE.T_BOOL(varLst = _),_) = Types.propsAnd(props);
@@ -569,6 +571,7 @@ algorithm
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = DAEUtil.addSymbolicTransformation(source,flattenOp);
 
         (cache,env_1,ih,daeLLst,_,ci_state_1,graph) = instIfTrueBranches(cache, env,ih, mod, pre, csets, ci_state, tb, false, impl, graph);
         (cache,env_2,ih,DAE.DAE(daeElts2),_,ci_state_2,graph) = Inst.instList(cache,env_1,ih, mod, pre, csets, ci_state, instEEquation, fb, impl, alwaysUnroll, graph) "There are no connections inside if-clauses." ;
@@ -577,7 +580,7 @@ algorithm
         (cache,env_1,ih,dae,csets,ci_state_1,graph);
 
     // initial if equation  when condition is not constant
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb, info = info),SCode.INITIAL(),impl,graph)
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb, info = info),SCode.INITIAL(),impl,graph,_)
       equation
         (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl,NONE(),true,pre,info);
         DAE.PROP(DAE.T_BOOL(varLst = _),_) = Types.propsAnd(props);
@@ -585,6 +588,7 @@ algorithm
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = DAEUtil.addSymbolicTransformation(source,flattenOp);
 
         (cache,env_1,ih,daeLLst,_,ci_state_1,graph) = instIfTrueBranches(cache,env,ih, mod, pre, csets, ci_state, tb, true, impl, graph);
         (cache,env_2,ih,DAE.DAE(daeElts2),_,ci_state_2,graph) = Inst.instList(cache,env_1,ih, mod, pre, csets, ci_state, instEInitialEquation, fb, impl, alwaysUnroll, graph) "There are no connections inside if-clauses." ;
@@ -594,7 +598,7 @@ algorithm
 
     // when equation statement
     // When statements are instantiated by evaluating the conditional expression.
-    case (cache,env,ih,mod,pre,csets,ci_state, eq as SCode.EQ_WHEN(condition = e,eEquationLst = el,elseBranches = ((ee,eel) :: eex),info=info),(initial_ as SCode.NON_INITIAL()),impl,graph)
+    case (cache,env,ih,mod,pre,csets,ci_state, eq as SCode.EQ_WHEN(condition = e,eEquationLst = el,elseBranches = ((ee,eel) :: eex),info=info),(initial_ as SCode.NON_INITIAL()),impl,graph,_)
       equation
         checkWhenEquation(eq);
         (cache,e_1,prop1,_) = Static.elabExp(cache, env, e, impl, NONE(), true, pre, info);
@@ -603,6 +607,7 @@ algorithm
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = DAEUtil.addSymbolicTransformation(source,flattenOp);
 
         (cache,env_1,ih,DAE.DAE(daeElts1),_,_,graph) = Inst.instList(cache, env, ih, mod, pre, csets, ci_state, instEEquation, el, impl, alwaysUnroll, graph);
         lhsCrefs = DAEUtil.verifyWhenEquation(daeElts1);
@@ -618,7 +623,7 @@ algorithm
       then
         (cache,env_2,ih,dae,csets,ci_state_2,graph);
 
-    case (cache,env,ih,mod,pre,csets,ci_state, eq as SCode.EQ_WHEN(condition = e,eEquationLst = el,elseBranches = {}, info = info),(initial_ as SCode.NON_INITIAL()),impl,graph)
+    case (cache,env,ih,mod,pre,csets,ci_state, eq as SCode.EQ_WHEN(condition = e,eEquationLst = el,elseBranches = {}, info = info),(initial_ as SCode.NON_INITIAL()),impl,graph,_)
       equation
         checkWhenEquation(eq);
         (cache,e_1,prop1,_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
@@ -627,6 +632,7 @@ algorithm
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = DAEUtil.addSymbolicTransformation(source,flattenOp);
 
         (cache,env_1,ih,DAE.DAE(daeElts1),_,_,graph) = Inst.instList(cache,env,ih, mod, pre, csets, ci_state, instEEquation, el, impl, alwaysUnroll, graph);
         lhsCrefs = DAEUtil.verifyWhenEquation(daeElts1);
@@ -640,7 +646,7 @@ algorithm
     // The loop expression is evaluated to a constant array of integers, and then the loop is unrolled.
 
     // Implicit range
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = NONE(),eEquationLst = el,info=info),initial_,impl,graph)
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = NONE(),eEquationLst = el,info=info),initial_,impl,graph,_)
       equation
         (lst as {}) = SCode.findIteratorInEEquationLst(i,el);
         Error.addSourceMessage(Error.IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY,{i},info);
@@ -648,7 +654,7 @@ algorithm
         fail();
 
     // for i loop ... end for; NOTE: This construct is encoded as range being NONE()
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = NONE(),eEquationLst = el, info=info),initial_,impl,graph)
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = NONE(),eEquationLst = el, info=info),initial_,impl,graph,_)
       equation
         (lst as _::_)=SCode.findIteratorInEEquationLst(i,el);
         tpl=List.first(lst);
@@ -663,7 +669,7 @@ algorithm
         (cache,env,ih,dae,csets_1,ci_state_1,graph);
 
     // for i in <expr> loop .. end for;
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = SOME(e),eEquationLst = el,info=info),initial_,impl,graph)
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = SOME(e),eEquationLst = el,info=info),initial_,impl,graph,_)
       equation
         (cache,e_1,DAE.PROP(type_ = DAE.T_ARRAY(ty = id_t), constFlag = cnst),_) = Static.elabExp(cache,env, e, impl,NONE(),true, pre, info);
         env_1 = addForLoopScope(env, i, id_t, SCode.VAR(), SOME(cnst));
@@ -675,7 +681,7 @@ algorithm
 
     // A for-equation with a parameter range without binding, which is ok when
     // doing checkModel. Use a range {1} to check that the loop can be instantiated.
-    case (cache, env, ih, mod, pre, csets, ci_state, SCode.EQ_FOR(index = i, range = SOME(e), eEquationLst = el,info=info), initial_, impl, graph)
+    case (cache, env, ih, mod, pre, csets, ci_state, SCode.EQ_FOR(index = i, range = SOME(e), eEquationLst = el,info=info), initial_, impl, graph,_)
       equation
         true = Flags.getConfigBool(Flags.CHECK_MODEL);
         (cache, e_1, DAE.PROP(type_ = DAE.T_ARRAY(ty = id_t), constFlag = cnst as DAE.C_PARAM()), _) =
@@ -689,7 +695,7 @@ algorithm
 
     // for i in <expr> loop .. end for;
     // where <expr> is not constant or parameter expression
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = SOME(e),eEquationLst = el,info=info),initial_,impl,graph)
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = SOME(e),eEquationLst = el,info=info),initial_,impl,graph,_)
       equation
         (cache,e_1,DAE.PROP(type_ = DAE.T_ARRAY(ty = _), constFlag = DAE.C_VAR()),_)
           = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
@@ -700,7 +706,7 @@ algorithm
         fail();
 
     // assert statements
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_ASSERT(condition = e1,message = e2,level = e3, info = info),initial_,impl,graph)
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_ASSERT(condition = e1,message = e2,level = e3, info = info),initial_,impl,graph,_)
       equation
         (cache,e1_1,prop1 as DAE.PROP(DAE.T_BOOL(varLst = _),_),_) = Static.elabExp(cache,env, e1, impl,NONE(),true,pre,info) "assert statement" ;
         (cache,e2_1,prop2 as DAE.PROP(DAE.T_STRING(varLst = _),_),_) = Static.elabExp(cache,env, e2, impl,NONE(),true,pre,info);
@@ -716,13 +722,14 @@ algorithm
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = DAEUtil.addSymbolicTransformation(source,flattenOp);
 
         dae = DAE.DAE({DAE.ASSERT(e1_2,e2_2,e3_2,source)});
       then
         (cache,env,ih,dae,csets,ci_state,graph);
 
     // terminate statements
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_TERMINATE(message= e1, info=info),initial_,impl,graph)
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_TERMINATE(message= e1, info=info),initial_,impl,graph,_)
       equation
         (cache,e1_1,prop1 as DAE.PROP(DAE.T_STRING(varLst = _),_),_) = Static.elabExp(cache,env, e1, impl,NONE(),true,pre,info);
         (cache, e1_1, prop1) = Ceval.cevalIfConstant(cache, env, e1_1, prop1, impl, info);
@@ -730,13 +737,14 @@ algorithm
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = DAEUtil.addSymbolicTransformation(source,flattenOp);
 
         dae = DAE.DAE({DAE.TERMINATE(e1_2,source)});
       then
         (cache,env,ih,dae,csets,ci_state,graph);
 
     // reinit statement
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_REINIT(cref = cr,expReinit = e2,info = info),initial_,impl,graph)
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_REINIT(cref = cr,expReinit = e2,info = info),initial_,impl,graph,_)
       equation
         (cache,SOME((e1_1 as DAE.CREF(cr_1,t),tprop1,_))) =
           Static.elabCrefNoEval(cache,env, cr, impl,false,pre,info) "reinit statement" ;
@@ -750,6 +758,7 @@ algorithm
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = DAEUtil.addSymbolicTransformation(source,flattenOp);
 
         DAE.DAE(daeElts) = instEqEquation(e1_2, tprop1, e2_2, tprop2, source, initial_, impl);
         daeElts = List.map(daeElts,makeDAEArrayEqToReinitForm);
@@ -760,7 +769,7 @@ algorithm
     // Connections.root(cr)
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
               function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("root", {})),
-              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {}))),initial_,impl,graph)
+              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {}))),initial_,impl,graph,_)
       equation
         (cache,SOME((DAE.CREF(cr_,t),_,_))) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre,info);
         (cache,cr_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr_);
@@ -772,7 +781,7 @@ algorithm
     // TODO: Merge all cases for potentialRoot below using standard way of handling named/positional arguments and type conversion Integer->Real
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
               function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("potentialRoot", {})),
-              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {}))),initial_,impl,graph)
+              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {}))),initial_,impl,graph,_)
       equation
         (cache,SOME((DAE.CREF(cr_,t),_,_))) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre,info);
         (cache,cr_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr_);
@@ -783,7 +792,7 @@ algorithm
     // Connections.potentialRoot(cr,priority) - priority as Integer positinal argument
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
               function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("potentialRoot", {})),
-              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr),Absyn.INTEGER(ipriority)}, {}))),initial_,impl,graph)
+              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr),Absyn.INTEGER(ipriority)}, {}))),initial_,impl,graph,_)
       equation
         (cache,SOME((DAE.CREF(cr_,t),_,_))) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre,info);
         (cache,cr_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr_);
@@ -794,7 +803,7 @@ algorithm
     // Connections.potentialRoot(cr,priority =prio ) - priority as named argument
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
               function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("potentialRoot", {})),
-              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {Absyn.NAMEDARG("priority", Absyn.REAL(priority))}))),initial_,impl,graph)
+              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {Absyn.NAMEDARG("priority", Absyn.REAL(priority))}))),initial_,impl,graph,_)
       equation
         Error.addSourceMessage(Error.ARGUMENT_MUST_BE_INTEGER,
           {"Second", "Connections.potentialRoot", ""}, info);
@@ -804,7 +813,7 @@ algorithm
     // Connections.branch(cr1,cr2)
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
               function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("branch", {})),
-              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr1), Absyn.CREF(cr2)}, {}))),initial_,impl,graph)
+              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr1), Absyn.CREF(cr2)}, {}))),initial_,impl,graph,_)
       equation
         (cache,SOME((DAE.CREF(cr1_,t),_,_))) = Static.elabCref(cache,env, cr1, false /* ??? */,false,pre,info);
         (cache,SOME((DAE.CREF(cr2_,t),_,_))) = Static.elabCref(cache,env, cr2, false /* ??? */,false,pre,info);
@@ -815,7 +824,7 @@ algorithm
         (cache,env,ih,DAE.emptyDae,csets,ci_state,graph);
 
     // no return calls
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(exp = e, info = info),initial_,impl,graph)
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(exp = e, info = info),initial_,impl,graph,_)
       equation
         (cache,exp,prop1,_) = Static.elabExp(cache,env,e,impl,NONE(),false,pre,info);
         // This is probably an external function call that the user wants to evaluat at runtime
@@ -824,13 +833,14 @@ algorithm
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        source = DAEUtil.addSymbolicTransformation(source,flattenOp);
 
         dae = instEquationNoRetCallVectorization(exp,source);
       then
         (cache,env,ih,dae,csets,ci_state,graph);
 
     // failure
-    case (_,env,ih,_,_,_,_,eqn,_,impl,graph)
+    case (_,env,ih,_,_,_,_,eqn,_,impl,graph,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         s = SCodeDump.equationStr(eqn);
@@ -1650,15 +1660,24 @@ public function makeDaeEquation
   either an initial equation or an ordinary equation."
   input DAE.Exp inExp1;
   input DAE.Exp inExp2;
-  input DAE.ElementSource source "the origin of the element";
+  input DAE.ElementSource inSource "the origin of the element";
   input SCode.Initial inInitial3;
   output DAE.DAElist outDae;
 algorithm
-  outDae := match (inExp1,inExp2,source,inInitial3)
-    local DAE.Exp e1,e2;
-    case (e1,e2,_,SCode.NON_INITIAL())
+  outDae := match (inExp1,inExp2,inSource,inInitial3)
+    local
+      DAE.Exp e1,e2;
+      DAE.ElementSource source;
+      DAE.Element elt;
+    case (e1,e2,source,SCode.NON_INITIAL())
+      equation
+        elt = DAE.EQUATION(e1,e2,source);
+        source = DAEUtil.addSymbolicTransformationFlattenedEqs(source, elt);
       then DAE.DAE({DAE.EQUATION(e1,e2,source)});
-    case (e1,e2,_,SCode.INITIAL())
+    case (e1,e2,source,SCode.INITIAL())
+      equation
+        elt = DAE.INITIALEQUATION(e1,e2,source);
+        source = DAEUtil.addSymbolicTransformationFlattenedEqs(source, elt);
       then DAE.DAE({DAE.INITIALEQUATION(e1,e2,source)});
   end match;
 end makeDaeEquation;
