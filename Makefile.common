@@ -191,6 +191,10 @@ CMinpack:
 	#TODO: Only copy required headers, add them in omc/fmi subfolder, and do not copy c/txt-files
 	#cp -rp 3rdParty/CMinpack/install/include/* $(builddir_inc)
 
+CMinpack-clean:
+	if test -f 3rdParty/CMinpack/build/Makefile; then make -C 3rdParty/CMinpack/build clean; fi
+	rm -f 3rdParty/CMinpack/build/Makefile
+    
 testfast: test
 
 test:
@@ -282,7 +286,7 @@ fmil-clean:
 gc-clean:
 	if test -f 3rdParty/gc-7.2/Makefile; then make -C 3rdParty/gc-7.2 clean; fi
 	rm -f 3rdParty/gc-7.2/Makefile
-clean: qtclean fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean
+clean: qtclean fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean
 	(cd SimulationRuntime/c && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd SimulationRuntime/interactive && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean)

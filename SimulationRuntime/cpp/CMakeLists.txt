@@ -28,14 +28,21 @@ endif()
 SET(INSTALL_OMDEV_LIBS ON)
 ENDIF( WIN32 )
 
+# Find CMinpack
+# Note: Visual Studio libs are located in install/msvc, libs for gcc are directly in install
+if(MSVC)
+    SET(CMinpack_Path "${CMAKE_SOURCE_DIR}/../../3rdParty/CMinpack/install/msvc")
+else(MSVC)
+    SET(CMinpack_Path "${CMAKE_SOURCE_DIR}/../../3rdParty/CMinpack/install")
+endif(MSVC)    
 
 FIND_PATH(CMINPACK_INCLUDE_DIR cminpack.h
-          HINTS "${CMAKE_SOURCE_DIR}/../../3rdParty/CMinpack/install"
+          HINTS ${CMinpack_Path}
           PATH_SUFFIXES include include/cminpack include/cminpack-1)
 
 FIND_LIBRARY(CMINPACK_LIBRARY 
              NAMES cminpack
-             HINTS "${CMAKE_SOURCE_DIR}/../../3rdParty/CMinpack/install"
+             HINTS ${CMinpack_Path}
              PATH_SUFFIXES lib lib64)
              
 include_directories(${CMINPACK_INCLUDE_DIR})
