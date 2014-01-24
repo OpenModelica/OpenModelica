@@ -4956,8 +4956,8 @@ template algloopfiles2(SimEqSystem eq, Context context, Text &varDecls, SimCode 
     then
        match simCode
           case SIMCODE(modelInfo = MODELINFO(__)) then
-              let()= textFile(algloopHeaderFile(simCode, eq_sys), 'OMCpp<%lastIdentOfPath(modelInfo.name)%>Algloop<%algloopfilesindex(eq_sys)%>.h')
-              let()= textFile(algloopCppFile(simCode, eq_sys), 'OMCpp<%lastIdentOfPath(modelInfo.name)%>Algloop<%algloopfilesindex(eq_sys)%>.cpp')
+              let()= textFile(algloopHeaderFile(simCode, eq_sys), 'OMCpp<%fileNamePrefix%>Algloop<%algloopfilesindex(eq_sys)%>.h')
+              let()= textFile(algloopCppFile(simCode, eq_sys), 'OMCpp<%fileNamePrefix%>Algloop<%algloopfilesindex(eq_sys)%>.cpp')
             " "
         end match
   else
