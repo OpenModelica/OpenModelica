@@ -1010,6 +1010,23 @@ bool LibraryTreeWidget::saveLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode)
   return result;
 }
 
+LibraryTreeNode* LibraryTreeWidget::findParentLibraryTreeNodeSavedInSameFile(LibraryTreeNode *pLibraryTreeNode, QFileInfo fileInfo)
+{
+  LibraryTreeNode *pParentLibraryTreeNode = getLibraryTreeNode(pLibraryTreeNode->getParentName());
+  if (pParentLibraryTreeNode)
+  {
+    QFileInfo libraryTreeNodeFileInfo(pParentLibraryTreeNode->getFileName());
+    if (fileInfo.absoluteFilePath().compare(libraryTreeNodeFileInfo.absoluteFilePath()) == 0)
+      return findParentLibraryTreeNodeSavedInSameFile(pParentLibraryTreeNode, fileInfo);
+    else
+      return pLibraryTreeNode;
+  }
+  else
+  {
+    return pLibraryTreeNode;
+  }
+}
+
 bool LibraryTreeWidget::saveLibraryTreeNodeHelper(LibraryTreeNode *pLibraryTreeNode)
 {
   mpMainWindow->getStatusBar()->showMessage(QString(tr("Saving")).append(" ").append(pLibraryTreeNode->getNameStructure()));

@@ -169,6 +169,7 @@ public:
   bool unloadClass(LibraryTreeNode *pLibraryTreeNode, bool askQuestion = true);
   void unloadClassHelper(LibraryTreeNode *pLibraryTreeNode);
   bool saveLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode);
+  LibraryTreeNode* findParentLibraryTreeNodeSavedInSameFile(LibraryTreeNode *pLibraryTreeNode, QFileInfo fileInfo);
 private:
   MainWindow *mpMainWindow;
   bool mIsSearchTree;

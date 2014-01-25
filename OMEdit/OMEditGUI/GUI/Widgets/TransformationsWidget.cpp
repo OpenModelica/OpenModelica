@@ -412,6 +412,28 @@ void VariablePage::fetchVariableData(QTreeWidgetItem *pVariableTreeItem, int col
   fetchDefinedInEquations(variable);
   /* fetch used in equations */
   fetchUsedInEquations(variable);
+  /* open the model with and go to the variable line */
+  MainWindow *pMainWindow = mpTransformationsWidget->getMainWindow();
+  QFileInfo fileInfo(variable.info.file);
+  foreach (LibraryTreeNode* pLibraryTreeNode, pMainWindow->getLibraryTreeWidget()->getLibraryTreeNodesList())
+  {
+    QFileInfo libraryTreeNodeFileInfo(pLibraryTreeNode->getFileName());
+    if (fileInfo.absoluteFilePath().compare(libraryTreeNodeFileInfo.absoluteFilePath()) == 0)
+    {
+      /* find the root library tree node. */
+      LibraryTreeNode *pParentLibraryTreeNode;
+      pParentLibraryTreeNode = pMainWindow->getLibraryTreeWidget()->findParentLibraryTreeNodeSavedInSameFile(pLibraryTreeNode, fileInfo);
+      if (pParentLibraryTreeNode)
+      {
+        pMainWindow->getLibraryTreeWidget()->showModelWidget(pParentLibraryTreeNode);
+        if (pParentLibraryTreeNode->getModelWidget())
+        {
+          pParentLibraryTreeNode->getModelWidget()->showModelicaTextView(true);
+          pParentLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->getModelicaTextEdit()->goToLineNumber(variable.info.lineStart);
+        }
+      }
+    }
+  }
 }
 
 void VariablePage::variablesItemChanged(QTreeWidgetItem *current)
@@ -564,7 +586,7 @@ void EquationPage::fetchEquationData(int equationIndex)
   fetchDepends(equation);
   /* fetch operations */
   fetchOperations(equation);
-  /* open the model with and go to the line */
+  /* open the model with and go to the equation line */
   MainWindow *pMainWindow = mpTransformationsWidget->getMainWindow();
   QFileInfo fileInfo(equation.info.file);
   foreach (LibraryTreeNode* pLibraryTreeNode, pMainWindow->getLibraryTreeWidget()->getLibraryTreeNodesList())
@@ -573,7 +595,8 @@ void EquationPage::fetchEquationData(int equationIndex)
     if (fileInfo.absoluteFilePath().compare(libraryTreeNodeFileInfo.absoluteFilePath()) == 0)
     {
       /* find the root library tree node. */
-      LibraryTreeNode *pParentLibraryTreeNode = pMainWindow->getLibraryTreeWidget()->getLibraryTreeNode(StringHandler::getFirstWordBeforeDot(pLibraryTreeNode->getNameStructure()));
+      LibraryTreeNode *pParentLibraryTreeNode;
+      pParentLibraryTreeNode = pMainWindow->getLibraryTreeWidget()->findParentLibraryTreeNodeSavedInSameFile(pLibraryTreeNode, fileInfo);
       if (pParentLibraryTreeNode)
       {
         pMainWindow->getLibraryTreeWidget()->showModelWidget(pParentLibraryTreeNode);
