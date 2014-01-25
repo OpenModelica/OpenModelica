@@ -565,7 +565,6 @@ void EquationPage::fetchEquationData(int equationIndex)
   /* fetch operations */
   fetchOperations(equation);
   /* open the model with and go to the line */
-  qDebug() << equation.info.toString();
   MainWindow *pMainWindow = mpTransformationsWidget->getMainWindow();
   QFileInfo fileInfo(equation.info.file);
   foreach (LibraryTreeNode* pLibraryTreeNode, pMainWindow->getLibraryTreeWidget()->getLibraryTreeNodesList())

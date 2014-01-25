@@ -141,6 +141,15 @@ public:
   QString toString();
 };
 
+class OMOperationFlattening : public OMOperation
+{
+public:
+  QString original;
+  QString flattened;
+  OMOperationFlattening(QStringList ops);
+  QString toString();
+};
+
 struct OMInfo {
   QString file;
   int lineStart,lineEnd,colStart,colEnd;

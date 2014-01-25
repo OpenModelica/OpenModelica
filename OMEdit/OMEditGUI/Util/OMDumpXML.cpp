@@ -153,6 +153,17 @@ QString OMOperationResidual::toString()
   return "residual: " + lhs + " = " + rhs + " => 0 = " + result;
 }
 
+OMOperationFlattening::OMOperationFlattening(QStringList ops)
+{
+  original = ops[0];
+  flattened = ops[1];
+}
+
+QString OMOperationFlattening::toString()
+{
+  return "original: " + original + " => flattened:" + flattened;
+}
+
 OMOperationDummyDerivative::OMOperationDummyDerivative(QStringList ops)
 {
   chosen = ops.takeFirst();
@@ -207,6 +218,8 @@ OMVariable::OMVariable(const OMVariable &var)
       ops.append(new OMOperationResidual(*dynamic_cast<OMOperationResidual*>(op)));
     else if (dynamic_cast<OMOperationDummyDerivative*>(op))
       ops.append(new OMOperationDummyDerivative(*dynamic_cast<OMOperationDummyDerivative*>(op)));
+    else if (dynamic_cast<OMOperationFlattening*>(op))
+      ops.append(new OMOperationFlattening(*dynamic_cast<OMOperationFlattening*>(op)));
     else
       ops.append(new OMOperation(*op));
   }
@@ -252,6 +265,8 @@ OMEquation::OMEquation(const OMEquation &eq)
       ops.append(new OMOperationResidual(*dynamic_cast<OMOperationResidual*>(op)));
     else if (dynamic_cast<OMOperationDummyDerivative*>(op))
       ops.append(new OMOperationDummyDerivative(*dynamic_cast<OMOperationDummyDerivative*>(op)));
+    else if (dynamic_cast<OMOperationFlattening*>(op))
+      ops.append(new OMOperationFlattening(*dynamic_cast<OMOperationFlattening*>(op)));
     else
       ops.append(new OMOperation(*op));
   }
@@ -433,6 +448,8 @@ bool MyHandler::endElement( const QString & namespaceURI, const QString & localN
     operations.append(new OMOperationResidual(texts));
   } else if (qName == "dummyderivative") {
     operations.append(new OMOperationDummyDerivative(texts));
+  } else if (qName == "flattening") {
+    operations.append(new OMOperationFlattening(texts));
   }
   return true;
 }
@@ -445,8 +462,8 @@ bool MyHandler::fatalError(const QXmlParseException & exception)
   return false;
 }
 
-const QSet<QString> MyHandler::operationTags = QSet<QString>() << "simplify" << "substitution" << "inline" << "scalarize" << "solved" << "linear-solved" << "solve" << "derivative" << "op-residual" << "dummyderivative";
-const QSet<QString> MyHandler::operationExpTags = QSet<QString>() << "before" << "after" << "lhs" << "rhs" << "exp" << "result" << "with-respect-to" << "chosen" << "candidate";
+const QSet<QString> MyHandler::operationTags = QSet<QString>() << "simplify" << "substitution" << "inline" << "scalarize" << "solved" << "linear-solved" << "solve" << "derivative" << "op-residual" << "dummyderivative" << "flattening";
+const QSet<QString> MyHandler::operationExpTags = QSet<QString>() << "before" << "after" << "lhs" << "rhs" << "exp" << "result" << "with-respect-to" << "chosen" << "candidate" << "original" << "flattened";
 const QSet<QString> MyHandler::equationTags = QSet<QString>() << "residual" << "assign" << "statement" << "linear" << "nonlinear" << "mixed" << "when" << "ifequation";
 const QSet<QString> MyHandler::equationPartTags = QSet<QString>() << "residual" << "rhs" << "statement" << "row" << "cell";
 
