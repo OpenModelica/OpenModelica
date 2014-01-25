@@ -117,6 +117,17 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   addDockWidget(Qt::RightDockWidgetArea, mpDocumentationDockWidget);
   setCorner(Qt::TopRightCorner, Qt::RightDockWidgetArea);
   mpDocumentationDockWidget->hide();
+  /*// create an object of SimulationBrowserWidget
+  mpSimulationBrowserWidget = new SimulationBrowserWidget(this);
+  // Create SimulationDockWidget dock
+  mpSimulationDockWidget = new QDockWidget(tr("Simulation Browser"), this);
+  mpSimulationDockWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+  mpSimulationDockWidget->setObjectName("SimulationBrowser");
+  mpSimulationDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+  mpSimulationDockWidget->setWidget(mpSimulationBrowserWidget);
+  addDockWidget(Qt::RightDockWidgetArea, mpSimulationDockWidget);
+  setCorner(Qt::TopRightCorner, Qt::RightDockWidgetArea);
+  mpSimulationDockWidget->hide();*/
   // Create VariablesWidget dock
   mpVariablesDockWidget = new QDockWidget(tr("Variables Browser"), this);
   mpVariablesDockWidget->setObjectName("Variables");
@@ -132,7 +143,6 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   mpTransformationsDockWidget->setAllowedAreas(Qt::TopDockWidgetArea);
   mpTransformationsDockWidget->setWidget(mpTransformationsWidget);
   addDockWidget(Qt::TopDockWidgetArea, mpTransformationsDockWidget);
-  mpTransformationsDockWidget->hide();
   //Create Actions, Toolbar and Menus
   pSplashScreen->showMessage(tr("Creating Widgets"), Qt::AlignRight, Qt::white);
   setAcceptDrops(true);
@@ -1937,6 +1947,7 @@ void MainWindow::createMenus()
   pViewWindowsMenu->addAction(pSearchClassAction);
   pViewWindowsMenu->addAction(mpLibraryTreeDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpDocumentationDockWidget->toggleViewAction());
+//  pViewWindowsMenu->addAction(mpSimulationDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpVariablesDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpMessagesDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpTransformationsDockWidget->toggleViewAction());
@@ -2017,7 +2028,6 @@ void MainWindow::switchToModelingPerspective()
   mpModelSwitcherToolButton->setEnabled(true);
   mpPlotWindowContainer->setVisible(false);
   mpVariablesDockWidget->hide();
-  mpTransformationsDockWidget->hide();
   mpPlotToolBar->setEnabled(false);
   //mpInteractiveSimualtionTabWidget->setVisible(false);
 }
@@ -2033,7 +2043,6 @@ void MainWindow::switchToPlottingPerspective()
     mpPlotWindowContainer->addPlotWindow();
   mpPlotWindowContainer->setVisible(true);
   mpVariablesDockWidget->show();
-  mpTransformationsDockWidget->hide();
   mpPlotToolBar->setEnabled(true);
   //mpInteractiveSimualtionTabWidget->setVisible(false);
 }
@@ -2046,7 +2055,6 @@ void MainWindow::switchToInteractiveSimulationPerspective()
   mpModelSwitcherToolButton->setEnabled(false);
   mpPlotWindowContainer->setVisible(false);
   mpVariablesDockWidget->hide();
-  mpTransformationsDockWidget->hide();
   mpPlotToolBar->setEnabled(false);
   //mpInteractiveSimualtionTabWidget->setVisible(true);
 }

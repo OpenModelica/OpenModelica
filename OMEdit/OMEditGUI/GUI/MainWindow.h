@@ -55,6 +55,7 @@
 #include "TransformationsWidget.h"
 #include "LibraryTreeWidget.h"
 #include "DocumentationWidget.h"
+//#include "SimulationBrowserWidget.h"
 #include "SimulationDialog.h"
 #include "GUI/Containers/PlotWindowContainer.h"
 #include "ModelWidgetContainer.h"
@@ -68,6 +69,7 @@ class TransformationsWidget;
 class SearchClassWidget;
 class LibraryTreeWidget;
 class DocumentationWidget;
+//class SimulationBrowserWidget;
 class VariablesWidget;
 class SimulationDialog;
 class PlotWindowContainer;
@@ -94,6 +96,7 @@ public:
   LibraryTreeWidget* getLibraryTreeWidget();
   DocumentationWidget* getDocumentationWidget();
   QDockWidget* getDocumentationDockWidget();
+//  SimulationBrowserWidget* getSimulationBrowserWidget() {return mpSimulationBrowserWidget;}
   VariablesWidget* getVariablesWidget();
   QDockWidget* getVariablesDockWidget();
   TransformationsWidget* getTransformationsWidget();
@@ -166,6 +169,8 @@ private:
   QDockWidget *mpLibraryTreeDockWidget;
   DocumentationWidget *mpDocumentationWidget;
   QDockWidget *mpDocumentationDockWidget;
+//  SimulationBrowserWidget *mpSimulationBrowserWidget;
+//  QDockWidget *mpSimulationDockWidget;
   VariablesWidget *mpVariablesWidget;
   QDockWidget *mpVariablesDockWidget;
   TransformationsWidget *mpTransformationsWidget;

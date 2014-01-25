@@ -89,6 +89,7 @@ SOURCES += main.cpp\
     Util/OMDumpXML.cpp \
     Util/Utilities.cpp \
     GUI/Widgets/TransformationsWidget.cpp
+#    GUI/Widgets/SimulationBrowserWidget.cpp
 
 HEADERS  += backtrace.h \
     Util/Helper.h \
@@ -123,6 +124,7 @@ HEADERS  += backtrace.h \
     Util/OMDumpXML.cpp \
     Util/Utilities.h \
     GUI/Widgets/TransformationsWidget.h
+#    GUI/Widgets/SimulationBrowserWidget.h
 
 # Windows libraries and includes
 win32 {

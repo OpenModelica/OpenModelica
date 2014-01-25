@@ -83,6 +83,7 @@ public:
   bool validateModelicaText();
   void lineNumberAreaPaintEvent(QPaintEvent *event);
   int lineNumberAreaWidth();
+  void goToLineNumber(int lineNumber);
 private:
   ModelicaTextWidget *mpModelicaTextWidget;
   QString mLastValidText;

@@ -42,31 +42,23 @@ TransformationsWidget::TransformationsWidget(MainWindow *pMainWindow)
 {
   mpMainWindow = pMainWindow;
   mpInfoXMLFileHandler = 0;
-  // equation index
-  mpEquationIndexLabel = new Label(tr("Equation Index:"));
-  mpEquationIndexTextBox = new QLineEdit;
-  mpEquationIndexTextBox->setSizePolicy(QSizePolicy::Minimum, mpEquationIndexTextBox->sizePolicy().verticalPolicy());
-  connect(mpEquationIndexTextBox, SIGNAL(returnPressed()), SLOT(searchEquationIndex()));
-  mpSearchEquationIndexButton = new QPushButton(Helper::search);
-  connect(mpSearchEquationIndexButton, SIGNAL(clicked()), SLOT(searchEquationIndex()));
-  QHBoxLayout *pSearchEquationHorizontalLayout = new QHBoxLayout;
-  pSearchEquationHorizontalLayout->addWidget(mpEquationIndexLabel);
-  pSearchEquationHorizontalLayout->addWidget(mpEquationIndexTextBox);
-  pSearchEquationHorizontalLayout->addWidget(mpSearchEquationIndexButton);
-  QSpacerItem *pSpacerItem = new QSpacerItem(1, 1, QSizePolicy::Expanding, QSizePolicy::Fixed);
-  pSearchEquationHorizontalLayout->addSpacerItem(pSpacerItem);
   // create the previous button
-  mpPreviousToolButton = new QToolButton;
-  mpPreviousToolButton->setText(Helper::previous);
-  mpPreviousToolButton->setIcon(QIcon(":/Resources/icons/previous.png"));
-  mpPreviousToolButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-  connect(mpPreviousToolButton, SIGNAL(clicked()), SLOT(previousPage()));
+  mpVariablesViewToolButton = new QToolButton;
+  mpVariablesViewToolButton->setText(tr("Variables View"));
+  mpVariablesViewToolButton->setCheckable(true);
+  mpVariablesViewToolButton->setToolButtonStyle(Qt::ToolButtonTextOnly);
+  connect(mpVariablesViewToolButton, SIGNAL(toggled(bool)), SLOT(showVariablesView(bool)));
   // create the next button
-  mpNextToolButton = new QToolButton;
-  mpNextToolButton->setText(Helper::next);
-  mpNextToolButton->setIcon(QIcon(":/Resources/icons/next.png"));
-  mpNextToolButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-  connect(mpNextToolButton, SIGNAL(clicked()), SLOT(nextPage()));
+  mpEquationViewToolButton = new QToolButton;
+  mpEquationViewToolButton->setText(tr("Equation View"));
+  mpEquationViewToolButton->setCheckable(true);
+  mpEquationViewToolButton->setToolButtonStyle(Qt::ToolButtonTextOnly);
+  connect(mpEquationViewToolButton, SIGNAL(toggled(bool)), SLOT(showEquationView(bool)));
+  /* buttons group */
+  QButtonGroup *pViewsButtonGroup = new QButtonGroup;
+  pViewsButtonGroup->setExclusive(true);
+  pViewsButtonGroup->addButton(mpVariablesViewToolButton);
+  pViewsButtonGroup->addButton(mpEquationViewToolButton);
   /* info xml file path label */
   mpInfoXMLFilePathLabel = new Label;
   /* create the stacked widget object */
@@ -77,11 +69,10 @@ TransformationsWidget::TransformationsWidget(MainWindow *pMainWindow)
   /* set the layout */
   QGridLayout *pTopLayout = new QGridLayout;
   pTopLayout->setContentsMargins(0, 0, 0, 0);
-  pTopLayout->addLayout(pSearchEquationHorizontalLayout, 0, 0, 1, 3);
-  pTopLayout->addWidget(mpPreviousToolButton, 1, 0);
-  pTopLayout->addWidget(mpNextToolButton, 1, 1);
-  pTopLayout->addWidget(mpInfoXMLFilePathLabel, 1, 2);
-  pTopLayout->addWidget(mpPagesWidget, 2, 0, 1, 3);
+  pTopLayout->addWidget(mpVariablesViewToolButton, 0, 0);
+  pTopLayout->addWidget(mpEquationViewToolButton, 0, 1);
+  pTopLayout->addWidget(mpInfoXMLFilePathLabel, 0, 2);
+  pTopLayout->addWidget(mpPagesWidget, 1, 0, 1, 3);
   QFrame *pTopFrame = new QFrame;
   pTopFrame->setLayout(pTopLayout);
   /* splitter */
@@ -123,6 +114,7 @@ void TransformationsWidget::showTransformations(QString fileName)
   mpVariablePage = new VariablePage(this);
   mpVariablePage->initialize();
   mpPagesWidget->addWidget(mpVariablePage);
+  mpVariablesViewToolButton->setChecked(true);
   mpEquationPage = new EquationPage(this);
   mpPagesWidget->addWidget(mpEquationPage);
 }
@@ -132,30 +124,18 @@ void TransformationsWidget::showInfoText(QString message)
   mpInfoTextBox->setPlainText(message);
 }
 
-void TransformationsWidget::searchEquationIndex()
+void TransformationsWidget::showVariablesView(bool checked)
 {
-  if (!mpInfoXMLFileHandler || mpEquationIndexTextBox->text().isEmpty())
-    return;
-
-  bool ok = false;
-  int index = mpEquationIndexTextBox->text().toInt(&ok);
-  if (!ok)
-    return;
-
-  mpEquationPage->fetchEquationData(index);
-  nextPage();
-}
-
-void TransformationsWidget::previousPage()
-{
+  if (!checked) return;
   int index = mpPagesWidget->currentIndex();
   if (index <= 0)
     return;
   mpPagesWidget->setCurrentIndex(--index);
 }
 
-void TransformationsWidget::nextPage()
+void TransformationsWidget::showEquationView(bool checked)
 {
+  if (!checked) return;
   int index = mpPagesWidget->currentIndex();
   if (index >= mpPagesWidget->count())
     return;
@@ -479,13 +459,26 @@ void VariablePage::showEquation(QTreeWidgetItem *pVariableTreeItem, int column)
   if (!pVariableTreeItem)
     return;
   mpTransformationsWidget->getEquationPage()->fetchEquationData(pVariableTreeItem->text(0).toInt());
-  mpTransformationsWidget->nextPage();
+  mpTransformationsWidget->getEquationViewToolButton()->setChecked(true);
 }
 
 EquationPage::EquationPage(TransformationsWidget *pTransformationsWidget)
   : QWidget(pTransformationsWidget)
 {
   mpTransformationsWidget = pTransformationsWidget;
+  // equation index
+  mpEquationIndexLabel = new Label(tr("Equation Index:"));
+  mpEquationIndexTextBox = new QLineEdit;
+  mpEquationIndexTextBox->setSizePolicy(QSizePolicy::Minimum, mpEquationIndexTextBox->sizePolicy().verticalPolicy());
+  connect(mpEquationIndexTextBox, SIGNAL(returnPressed()), SLOT(searchEquationIndex()));
+  mpSearchEquationIndexButton = new QPushButton(Helper::search);
+  connect(mpSearchEquationIndexButton, SIGNAL(clicked()), SLOT(searchEquationIndex()));
+  QHBoxLayout *pSearchEquationHorizontalLayout = new QHBoxLayout;
+  pSearchEquationHorizontalLayout->addWidget(mpEquationIndexLabel);
+  pSearchEquationHorizontalLayout->addWidget(mpEquationIndexTextBox);
+  pSearchEquationHorizontalLayout->addWidget(mpSearchEquationIndexButton);
+  QSpacerItem *pSpacerItem = new QSpacerItem(1, 1, QSizePolicy::Expanding, QSizePolicy::Fixed);
+  pSearchEquationHorizontalLayout->addSpacerItem(pSpacerItem);
   /* defines tree widget */
   Label *pDefinesLabel = new Label(tr("Defines"));
   mpDefinesTreeWidget = new QTreeWidget;
@@ -557,7 +550,8 @@ EquationPage::EquationPage(TransformationsWidget *pTransformationsWidget)
   /* set the layout */
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
-  pMainLayout->addWidget(pSplitter, 0, 0);
+  pMainLayout->addLayout(pSearchEquationHorizontalLayout, 0, 0);
+  pMainLayout->addWidget(pSplitter, 1, 0);
   setLayout(pMainLayout);
 }
 
@@ -570,6 +564,28 @@ void EquationPage::fetchEquationData(int equationIndex)
   fetchDepends(equation);
   /* fetch operations */
   fetchOperations(equation);
+  /* open the model with and go to the line */
+  qDebug() << equation.info.toString();
+  MainWindow *pMainWindow = mpTransformationsWidget->getMainWindow();
+  QFileInfo fileInfo(equation.info.file);
+  foreach (LibraryTreeNode* pLibraryTreeNode, pMainWindow->getLibraryTreeWidget()->getLibraryTreeNodesList())
+  {
+    QFileInfo libraryTreeNodeFileInfo(pLibraryTreeNode->getFileName());
+    if (fileInfo.absoluteFilePath().compare(libraryTreeNodeFileInfo.absoluteFilePath()) == 0)
+    {
+      /* find the root library tree node. */
+      LibraryTreeNode *pParentLibraryTreeNode = pMainWindow->getLibraryTreeWidget()->getLibraryTreeNode(StringHandler::getFirstWordBeforeDot(pLibraryTreeNode->getNameStructure()));
+      if (pParentLibraryTreeNode)
+      {
+        pMainWindow->getLibraryTreeWidget()->showModelWidget(pParentLibraryTreeNode);
+        if (pParentLibraryTreeNode->getModelWidget())
+        {
+          pParentLibraryTreeNode->getModelWidget()->showModelicaTextView(true);
+          pParentLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->getModelicaTextEdit()->goToLineNumber(equation.info.lineStart);
+        }
+      }
+    }
+  }
 }
 
 void EquationPage::fetchDefines(OMEquation &equation)
@@ -649,6 +665,19 @@ void EquationPage::fetchOperations(OMEquation &equation)
     pOperationTreeItem->setToolTip(0, toolTip);
     mpOperationsTreeWidget->addTopLevelItem(pOperationTreeItem);
   }
+}
+
+void EquationPage::searchEquationIndex()
+{
+  if (!mpTransformationsWidget->getInfoXMLFileHandler() || mpEquationIndexTextBox->text().isEmpty())
+    return;
+
+  bool ok = false;
+  int index = mpEquationIndexTextBox->text().toInt(&ok);
+  if (!ok)
+    return;
+
+  fetchEquationData(index);
 }
 
 void EquationPage::definesItemChanged(QTreeWidgetItem *current)

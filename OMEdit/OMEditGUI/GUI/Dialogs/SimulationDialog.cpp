@@ -1434,7 +1434,7 @@ void SimulationOutputWidget::openTransformationBrowser(QUrl url)
     mpMainWindow->getTransformationsDockWidget()->show();
     /* fetch the equation data */
     mpMainWindow->getTransformationsWidget()->getEquationPage()->fetchEquationData(url.queryItemValue("index").toInt());
-    mpMainWindow->getTransformationsWidget()->nextPage();
+    mpMainWindow->getTransformationsWidget()->getEquationViewToolButton()->setChecked(true);
   } else {
     /* TODO: Display error-message */
   }

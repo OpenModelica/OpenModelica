@@ -51,26 +51,23 @@ public:
   TransformationsWidget(MainWindow *pMainWindow);
   MainWindow* getMainWindow() {return mpMainWindow;}
   MyHandler* getInfoXMLFileHandler() {return mpInfoXMLFileHandler;}
+  QToolButton* getEquationViewToolButton() {return mpEquationViewToolButton;}
   EquationPage* getEquationPage() {return mpEquationPage;}
   void showTransformations(QString fileName);
   void showInfoText(QString message);
 private:
   MainWindow *mpMainWindow;
   MyHandler *mpInfoXMLFileHandler;
-  Label *mpEquationIndexLabel;
-  QLineEdit *mpEquationIndexTextBox;
-  QPushButton *mpSearchEquationIndexButton;
-  QToolButton *mpPreviousToolButton;
-  QToolButton *mpNextToolButton;
+  QToolButton *mpVariablesViewToolButton;
+  QToolButton *mpEquationViewToolButton;
   Label *mpInfoXMLFilePathLabel;
   QStackedWidget *mpPagesWidget;
   VariablePage *mpVariablePage;
   EquationPage *mpEquationPage;
   QPlainTextEdit *mpInfoTextBox;
 public slots:
-  void searchEquationIndex();
-  void previousPage();
-  void nextPage();
+  void showVariablesView(bool checked);
+  void showEquationView(bool checked);
 };
 
 class VariablePage : public QWidget
@@ -111,10 +108,14 @@ public:
   void fetchOperations(OMEquation &equation);
 private:
   TransformationsWidget *mpTransformationsWidget;
+  Label *mpEquationIndexLabel;
+  QLineEdit *mpEquationIndexTextBox;
+  QPushButton *mpSearchEquationIndexButton;
   QTreeWidget *mpDefinesTreeWidget;
   QTreeWidget *mpDependsTreeWidget;
   QTreeWidget *mpOperationsTreeWidget;
 public slots:
+  void searchEquationIndex();
   void definesItemChanged(QTreeWidgetItem *current);
   void dependsItemChanged(QTreeWidgetItem *current);
   void operationsItemChanged(QTreeWidgetItem *current);

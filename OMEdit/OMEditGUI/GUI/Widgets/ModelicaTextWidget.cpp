@@ -294,6 +294,22 @@ int ModelicaTextEdit::lineNumberAreaWidth()
   return space;
 }
 
+/*!
+  Takes the cursor to the specific line.
+  \param lineNumber - the line number to go.
+  */
+void ModelicaTextEdit::goToLineNumber(int lineNumber)
+{
+  const QTextBlock &block = document()->findBlockByNumber(lineNumber - 1); // -1 since text index start from 0
+  if (block.isValid())
+  {
+    QTextCursor cursor(block);
+    cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, 0);
+    setTextCursor(cursor);
+    centerCursor();
+  }
+}
+
 //! Updates the width of LineNumberArea.
 void ModelicaTextEdit::updateLineNumberAreaWidth(int newBlockCount)
 {
@@ -876,14 +892,7 @@ void GotoLineDialog::show()
 //! Slot activated when mpOkButton clicked signal raised.
 void GotoLineDialog::goToLineNumber()
 {
-  const QTextBlock &block = mpModelicaEditor->document()->findBlockByNumber(mpLineNumberTextBox->text().toInt() - 1); // -1 since text index start from 0
-  if (block.isValid())
-  {
-    QTextCursor cursor(block);
-    cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, 0);
-    mpModelicaEditor->setTextCursor(cursor);
-    mpModelicaEditor->centerCursor();
-  }
+  mpModelicaEditor->goToLineNumber(mpLineNumberTextBox->text().toInt());
   accept();
 }
 
