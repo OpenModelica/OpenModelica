@@ -214,16 +214,16 @@ static void write_param_table(std::ofstream &fp, MODEL_DATA *modelData) {
   write_description(fp, "time", "Time");
   for(long i=0;i<modelData->nParametersReal;i++)
     write_description(fp, modelData->realParameterData[i].info.name,
-		      modelData->realParameterData[i].info.comment);
+          modelData->realParameterData[i].info.comment);
   for(long i=0;i<modelData->nParametersInteger;i++)
     write_description(fp, modelData->integerParameterData[i].info.name,
-		      modelData->integerParameterData[i].info.comment);
+          modelData->integerParameterData[i].info.comment);
   for(long i=0;i<modelData->nParametersBoolean;i++)
     write_description(fp, modelData->booleanParameterData[i].info.name,
-		      modelData->booleanParameterData[i].info.comment);
+          modelData->booleanParameterData[i].info.comment);
   for(long i=0;i<modelData->nParametersString;i++)
     write_description(fp, modelData->stringParameterData[i].info.name,
-		      modelData->stringParameterData[i].info.comment);
+          modelData->stringParameterData[i].info.comment);
 }
 
 static void write_cont_table(std::ofstream &fp, MODEL_DATA *modelData) {
@@ -255,16 +255,16 @@ static void write_cont_table(std::ofstream &fp, MODEL_DATA *modelData) {
   write_description(fp, "time", "Time");
   for(long i=0;i<modelData->nVariablesReal;i++)
     write_description(fp, modelData->realVarsData[i].info.name,
-		      modelData->realVarsData[i].info.comment);
+          modelData->realVarsData[i].info.comment);
   for(long i=0;i<modelData->nVariablesInteger;i++)
     write_description(fp, modelData->integerVarsData[i].info.name,
-		      modelData->integerVarsData[i].info.comment);
+          modelData->integerVarsData[i].info.comment);
   for(long i=0;i<modelData->nVariablesBoolean;i++)
     write_description(fp, modelData->booleanVarsData[i].info.name,
-		      modelData->booleanVarsData[i].info.comment);
+          modelData->booleanVarsData[i].info.comment);
   for(long i=0;i<modelData->nVariablesString;i++)
     write_description(fp, modelData->stringVarsData[i].info.name,
-		      modelData->stringVarsData[i].info.comment);
+          modelData->stringVarsData[i].info.comment);
 }
 
 static void write_header(std::ofstream &fp, MODEL_DATA *modelData) {
@@ -295,7 +295,7 @@ void recon_wall_init(simulation_result *self,DATA *data)
 {
   wall_storage *storage = new wall_storage();
   static char header[14] = {0x72, 0x65, 0x63, 0x6f, 0x6e, 0x3a, 0x77,
-			    0x61, 0x6c, 0x6c, 0x3a, 0x76, 0x30, 0x31};
+          0x61, 0x6c, 0x6c, 0x3a, 0x76, 0x30, 0x31};
   static char blank_length[4] = {0x00, 0x00, 0x00, 0x00};
   self->storage = (void *)storage;
   try {
@@ -326,7 +326,7 @@ void recon_wall_init(simulation_result *self,DATA *data)
 }
 
 void write_parameter_data(std::ofstream &fp, double t,
-			  MODEL_DATA *modelData, const SIMULATION_INFO *sInfo) {
+        MODEL_DATA *modelData, const SIMULATION_INFO *sInfo) {
   long i;
 
   long length_pos = fp.tellp();
