@@ -36,7 +36,11 @@
 #include <string.h>
 #include <assert.h>
 
+#if defined(__MINGW32__) || defined(_MSC_VER)
+#include <winsock2.h> /* htonl */
+#else
 #include <arpa/inet.h> /* htonl */
+#endif
 
 #define PARAM_TABLE_NAME "params"
 #define CONT_TABLE_NAME "continuous"
