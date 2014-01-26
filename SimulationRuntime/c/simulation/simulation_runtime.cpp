@@ -451,7 +451,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
 
   /* calc numStep */
   data->simulationInfo.numSteps = static_cast<modelica_integer>(round((data->simulationInfo.stopTime - data->simulationInfo.startTime)/data->simulationInfo.stepSize));
-  infoStreamPrint(LOG_SOLVER, 0, "numberOfIntervals = %d", data->simulationInfo.numSteps);
+  infoStreamPrint(LOG_SOLVER, 0, "numberOfIntervals = %ld", (long) data->simulationInfo.numSteps);
 
   { /* Setup the clock */
     enum omc_rt_clock_t clock = OMC_CLOCK_REALTIME;

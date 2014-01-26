@@ -42,6 +42,8 @@
 #include <stdint.h>
 #include <assert.h>
 
+#include <arpa/inet.h> /* htonl */
+
 #define PARAM_TABLE_NAME "params"
 #define CONT_TABLE_NAME "continuous"
 
