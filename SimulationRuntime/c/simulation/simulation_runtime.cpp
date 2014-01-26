@@ -63,6 +63,7 @@
 #include "simulation_result_plt.h"
 #include "simulation_result_csv.h"
 #include "simulation_result_mat.h"
+#include "simulation_result_wall.h"
 #include "solver_main.h"
 #include "simulation_info_xml.h"
 #include "modelinfo.h"
@@ -617,6 +618,12 @@ int initializeResultData(DATA* simData, string result_file_cstr, int cpuTime)
     sim_result.emit = mat4_emit;
     sim_result.writeParameterData = mat4_writeParameterData;
     sim_result.free = mat4_free;
+    resultFormatHasCheapAliasesAndParameters = 1;
+  } else if(0 == strcmp("wall", simData->simulationInfo.outputFormat)) {
+    sim_result.init = recon_wall_init;
+    sim_result.emit = recon_wall_emit;
+    sim_result.writeParameterData = recon_wall_writeParameterData;
+    sim_result.free = recon_wall_free;
     resultFormatHasCheapAliasesAndParameters = 1;
   } else if(0 == strcmp("plt", simData->simulationInfo.outputFormat)) {
     sim_result.init = plt_init;

@@ -2,10 +2,10 @@
 # CMakefile for compilation of OMC
 
 # Quellen und Header
-SET(results_sources simulation_result_csv.cpp simulation_result.cpp
+SET(results_sources simulation_result_csv.cpp simulation_result.cpp simulation_wall.cpp
                     simulation_result_mat.cpp simulation_result_plt.cpp  )
 
-SET(results_headers ../../util/read_csv.h simulation_result_csv.h
+SET(results_headers ../../util/read_csv.h simulation_result_csv.h simulation_result_wall.h
                     simulation_result_mat.h simulation_result_plt.h
 					simulation_result.h)
 
