@@ -33,13 +33,7 @@
 #include "rtclock.h"
 
 #include <fstream>
-#include <iostream>
-#include <map>
-#include <string>
-#include <utility>
-#include <cstring>
-#include <cstdlib>
-#include <stdint.h>
+#include <string.h>
 #include <assert.h>
 
 #include <arpa/inet.h> /* htonl */
