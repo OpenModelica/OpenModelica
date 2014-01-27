@@ -5041,19 +5041,19 @@ case eqn as SES_ARRAY_CALL_ASSIGN(__) then
     //let &preExp += 'cast_integer_array_to_real(&<%expPart%>, &<%tvar%>);<%\n%>'
     <<
     <%preExp%>
-    <%cref(eqn.componentRef)%>=<%expPart%>;
+    <%cref(eqn.componentRef)%>=<%expPart%>;/*test1*/
     >>
   case "int" then
     let tvar = tempDecl("integer_array", &varDecls /*BUFD*/)
     //let &preExp += 'cast_integer_array_to_real(&<%expPart%>, &<%tvar%>);<%\n%>'
     <<
     <%preExp%>
-    <%cref(eqn.componentRef)%>=<%expPart%>;
+    <%cref(eqn.componentRef)%>=<%expPart%>;/*test2*/
     >>
   case "double" then
     <<
     <%preExp%>
-    <%cref(eqn.componentRef)%>=<%expPart%>;
+    <%cref(eqn.componentRef)%>=<%expPart%>;/*test3*/
     >>
 
 end equationArrayCallAssign;
@@ -5143,7 +5143,7 @@ match ty
       //let &preExp += 'cast_integer_array_to_real(&<%expPart%>, &<%tvar%>);<%\n%>'
       <<
       <%preExp%>
-      copy_integer_array_data_mem(&<%expPart%>, &<%cref(left)%>);<%inlineArray(context,tvar,left)%>
+      copy_integer_array_data_mem(&<%expPart%>, &<%cref(left)%>);<%inlineArray(context,tvar,left)%>/*test2*/
       >>
     case "real" then
       <<
@@ -7103,14 +7103,14 @@ case CREF(ty= t as DAE.T_ARRAY(__)) then
     assign_array(<%lhsStr%>,<%rhsStr%> );
     >>
   else
-    '<%lhsStr%> = <%rhsStr%>;'
+    '<%lhsStr%> = <%rhsStr%>;'/*test4*/
 case UNARY(exp = e as CREF(ty= t as DAE.T_ARRAY(__))) then
   let lhsStr = scalarLhsCref(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   match context
   case SIMULATION_CONTEXT(__) then
     <<
     usub_<%expTypeShort(t)%>_array(&<%rhsStr%>);<%\n%>
-    copy_<%expTypeShort(t)%>_array_data_mem(&<%rhsStr%>, &<%lhsStr%>);
+    copy_<%expTypeShort(t)%>_array_data_mem(&<%rhsStr%>, &<%lhsStr%>);/*test1*/
     >>
   else
     '<%lhsStr%> = -<%rhsStr%>;'
@@ -8673,7 +8673,7 @@ case STMT_ASSIGN_ARR(exp=e, componentRef=cr, type_=t) then
   else*/
     <<
     <%preExp%>
-    <%arrayCrefStr(cr)%> = <%expPart%>;
+    assign_array(<%contextArrayCref(cr, context)%>,<%expPart%>);
     >>
 end algStmtAssignArr;
 
