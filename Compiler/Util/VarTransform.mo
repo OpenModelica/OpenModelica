@@ -1392,7 +1392,7 @@ algorithm
         true = i > maxIter;
       then e;
     case (_,_,_,_,_,true) then e;
-    case (_,_,_,_,_,true)
+    case (_,_,_,_,_,_)
       equation
         (e1,b) = replaceExp(e,repl,func);
         res = replaceExpRepeated2(e1,repl,func,maxIter,i+1,not b /*Expression.expEqual(e,e1)*/);
