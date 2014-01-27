@@ -418,7 +418,7 @@ void Hybrj::calcJacobian(double *fjac)
 
 }
 
-void Hybrj::fcn(const int *n, const double *x, double *fvec, double *fjac, const int *ldfjac, int *iflag,void* userdata)
+void Hybrj::fcn(const int *n, const double *x, double *fvec, double *fjac, const int *ldfjac, int *iflag, void* userdata)
 {
     if(*iflag == 1)
     {

@@ -192,6 +192,7 @@ CMinpack:
 	#cp -rp 3rdParty/CMinpack/install/include/* $(builddir_inc)
 
 CMinpack-clean:
+	rm -rf 3rdParty/CMinpack/install
 	if test -f 3rdParty/CMinpack/build/Makefile; then make -C 3rdParty/CMinpack/build clean; fi
 	rm -f 3rdParty/CMinpack/build/Makefile
     
