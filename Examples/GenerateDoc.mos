@@ -41,13 +41,12 @@
 
 setDebugFlags("nogen") /* Don't generate dll/so-files when instantiating classes (performance) */;
 
-loadModel(FCSys);
-/*loadModel(Modelica);
+loadModel(Modelica);
 
 writeFile("loadModel.mos",sum("if loadModel(" + lib + ") then true else if loadModel(" + lib + ",languageStandard=\"2.x\") then true else loadModel(" + lib + ",languageStandard=\"1.x\");getErrorString();\n" for lib in getAvailableLibraries()));
 getErrorString();
 runScript("loadModel.mos");
-getErrorString();*/
+getErrorString();
 getClassNames();
 
 // should we keep readable names (nice online), or use the hashed names in the links (nice if you want a zipped version to work on Windows)
