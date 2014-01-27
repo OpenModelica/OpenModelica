@@ -12,7 +12,7 @@ template translateModel(SimCode simCode) ::=
   let()= textFile(simulationHeaderFile(simCode), 'OMCpp<%fileNamePrefix%>.h')
   let()= textFile(simulationCppFile(simCode), 'OMCpp<%fileNamePrefix%>.cpp')
   let()= textFile(simulationFunctionsHeaderFile(simCode,modelInfo.functions,literals), 'OMCpp<%fileNamePrefix%>Functions.h')
-  let()= textFile(simulationFunctionsFile(simCode, modelInfo.functions,literals), 'OMCpp<%fileNamePrefix%>Functions.cpp')
+  let()= textFile(simulationFunctionsFile(simCode, modelInfo.functions,literals,externalFunctionIncludes), 'OMCpp<%fileNamePrefix%>Functions.cpp')
   let()= textFile(simulationMakefile(target,simCode), '<%fileNamePrefix%>.makefile')
   let()= textFile(simulationMainRunScrip(simCode), '<%fileNamePrefix%><%simulationMainRunScripSuffix(simCode)%>')
   algloopfiles(listAppend(allEquations,initialEquations),simCode)
@@ -200,7 +200,7 @@ case SIMCODE(__) then
    >>
 end algloopHeaderFile;
 
-template simulationFunctionsFile(SimCode simCode, list<Function> functions, list<Exp> literals)
+template simulationFunctionsFile(SimCode simCode, list<Function> functions, list<Exp> literals,list<String> includes)
  "Generates the content of the Cpp file for functions in the simulation case."
 ::=
 match simCode
@@ -208,6 +208,8 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   <<
   #include "Modelica.h"
   #include "OMCpp<%fileNamePrefix%>Functions.h"
+
+  <%externalFunctionIncludes(includes)%>
 
    Functions::Functions()
    {
@@ -226,6 +228,22 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   >>
 
 end simulationFunctionsFile;
+
+
+template externalFunctionIncludes(list<String> includes)
+ "Generates external includes part in function files."
+::=
+  if includes then
+  <<
+  #ifdef __cplusplus
+  extern "C" {
+  #endif
+  <% (includes ;separator="\n") %>
+  #ifdef __cplusplus
+  }
+  #endif
+  >>
+end externalFunctionIncludes;
 
 template simulationFunctionsHeaderFile(SimCode simCode, list<Function> functions, list<Exp> literals)
 ::=
@@ -304,7 +322,7 @@ match target
 case "msvc" then
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
-  let dirExtra = if modelInfo.directory then '-L"<%modelInfo.directory%>"' //else ""
+   let dirExtra = if modelInfo.directory then '/LIBPATH:"<%modelInfo.directory%>"' //else ""
   let libsStr = (makefileParams.libs |> lib => lib ;separator=" ")
   let libsPos1 = if not dirExtra then libsStr //else ""
   let libsPos2 = if dirExtra then libsStr // else ""
@@ -332,7 +350,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /I - Include Directories
   # /DNOMINMAX - Define NOMINMAX (does what it says)
   # /TP - Use C++ Compiler
-  CFLAGS=  /ZI /Od /EHa /MP /fp:except /I"<%makefileParams.omhome%>/include/omc/cpp/Core/" /I"<%makefileParams.omhome%>/include/omc/cpp/" -I"$(BOOST_INCLUDE)" /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY
+  CFLAGS=  /ZI /Od /EHa /MP /fp:except /I"<%makefileParams.omhome%>/include/omc/cpp/Core/" /I"<%makefileParams.omhome%>/include/omc/cpp/" -I. <%makefileParams.includes%>  -I"$(BOOST_INCLUDE)" /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY
     
   CPPFLAGS = /DOMC_BUILD
   # /ZI enable Edit and Continue debug info 
@@ -357,13 +375,17 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   GENERATEDFILES=$(MAINFILE) $(FUNCTIONFILE)  <%algloopcppfilenames(allEquations,simCode)%> 
  
   $(MODELICA_SYSTEM_LIB)$(DLLEXT): 
-  <%\t%>$(CXX)  /Fe$(SYSTEMOBJ) $(SYSTEMFILE) $(FUNCTIONFILE)   <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%> $(CFLAGS) $(LDSYTEMFLAGS)  
+  <%\t%>$(CXX)  /Fe$(SYSTEMOBJ) $(SYSTEMFILE) $(FUNCTIONFILE)   <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%> $(CFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%>    $(LDSYTEMFLAGS) 
    <%\t%>$(CXX) $(CPPFLAGS) /Fe$(MAINOBJ)  $(MAINFILE)   $(CFLAGS) $(LDMAINFLAGS)
   >>
 end match
 case "gcc" then      
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
+let dirExtra = if modelInfo.directory then '-L"<%modelInfo.directory%>"' //else ""
+let libsStr = (makefileParams.libs |> lib => lib ;separator=" ")
+let libsPos1 = if not dirExtra then libsStr //else ""
+let libsPos2 = if dirExtra then libsStr // else ""
 let extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then
     '<%if s.measureTime then "-D_OMC_MEASURE_TIME "%> <%match s.method
        case "inline-euler" then "-D_OMC_INLINE_EULER"
@@ -379,7 +401,7 @@ LINK=<%makefileParams.linker%>
 EXEEXT=<%makefileParams.exeext%>
 DLLEXT=<%makefileParams.dllext%>
 CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
-CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -I"<%makefileParams.omhome%>/include/omc/cpp/Core" -I"<%makefileParams.omhome%>/include/omc/cpp/"  -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %>
+CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -I"<%makefileParams.omhome%>/include/omc/cpp/Core" -I"<%makefileParams.omhome%>/include/omc/cpp/"   -I. <%makefileParams.includes%> -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %>
 LDSYTEMFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp"    -L"$(BOOST_LIBS)"
 LDMAINFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" <%simulationMainDLLib(simCode)%> -L"<%makefileParams.omhome%>/bin" -lOMCppOMCFactory -L"$(BOOST_LIBS)" $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_PROGRAM_OPTIONS_LIB)   
 CPPFLAGS = $(CFLAGS) -DOMC_BUILD -DBOOST_SYSTEM_NO_DEPRICATED
@@ -395,7 +417,7 @@ OFILES=$(CPPFILES:.cpp=.o)
 .PHONY: <%lastIdentOfPath(modelInfo.name)%> $(CPPFILES)
 
 <%fileNamePrefix%>: $(MAINFILE) $(OFILES)
-<%\t%>$(CXX) -shared -I. -o $(SYSTEMOBJ) $(OFILES) $(CPPFLAGS) $(LDSYTEMFLAGS) -lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath -lOMCppModelicaExternalC
+<%\t%>$(CXX) -shared -I. -o $(SYSTEMOBJ) $(OFILES) $(CPPFLAGS) $(LDSYTEMFLAGS)  <%dirExtra%> <%libsPos1%> <%libsPos2%> -lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath -lOMCppModelicaExternalC
 <%\t%>$(CXX) $(CPPFLAGS) -I. -o $(MAINOBJ) $(MAINFILE) $(LDMAINFLAGS)
 <% if boolNot(stringEq(makefileParams.platform, "win32")) then
   <<

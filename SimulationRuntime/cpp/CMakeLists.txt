@@ -216,8 +216,8 @@ GET_FILENAME_COMPONENT(libNewtonName ${libNewton} NAME)
 GET_TARGET_PROPERTY(libEuler ${EulerName} LOCATION)
 GET_FILENAME_COMPONENT(libEulerName ${libEuler} NAME)
 
-#GET_TARGET_PROPERTY(libHybrj ${HybrjName} LOCATION)
-#GET_FILENAME_COMPONENT(libHybrjName ${libHybrj} NAME)
+GET_TARGET_PROPERTY(libHybrj ${HybrjName} LOCATION)
+GET_FILENAME_COMPONENT(libHybrjName ${libHybrj} NAME)
 
 
 GET_TARGET_PROPERTY(libSetFactory ${SimulationSettings} LOCATION)
