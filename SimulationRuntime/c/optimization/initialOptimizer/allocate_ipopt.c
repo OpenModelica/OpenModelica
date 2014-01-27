@@ -460,14 +460,12 @@ static int local_jac_struct(IPOPT_DATA_ *iData, int * nng)
 
   iData->nlocalJac = 0;
   iData->knowedJ = (int**) malloc( nJ* sizeof(int*));
-
-  for(i = 0; i < nJ; i++){
+  for(i = 0; i < nJ; i++)
     iData->knowedJ[i] = (int*) calloc(iData->nv, sizeof(int));
-  }
 
-  iData->Hg = (short**) malloc(iData->nv * sizeof(short*));
+  iData->Hg = (short**) malloc(iData->nv * sizeof(int*));
   for(i = 0; i < iData->nv; i++)
-    iData->Hg[i] = (short*) calloc(iData->nv, sizeof(short));
+    iData->Hg[i] = (short*) calloc(iData->nv, sizeof(int));
 
   J = iData->knowedJ;
   Hg = iData->Hg;
