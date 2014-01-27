@@ -7,13 +7,16 @@ setMatchingAlgorithm(\"PFPlusExt\");
 setIndexReductionMethod(\"dynamicStateSelection\");";
   writeFile("CustomCommands.mos",customCommands);
 end if;
+
+// May be overridde by CustomCommands.mos
+referenceFiles:=getInstallationDirectoryPath()+"/../testsuite/simulation/libraries/msl32/ReferenceFiles";
+referenceFileExtension:="mat";
+referenceFileNameDelimiter:=".";
+
 runScript("CustomCommands.mos");
 customCommandsStr := if regularFileExists("CustomCommands.mos") then ("Flags: <pre>" + escapeXML(readFile("CustomCommands.mos")) + "</pre>") else "";
 library:=$TypeName(Modelica);
 libraryVersion:="default";
-referenceFiles:=getInstallationDirectoryPath()+"/../testsuite/simulation/libraries/msl32/ReferenceFiles";
-referenceFileExtension:="mat";
-referenceFileNameDelimiter:=".";
 
 setCommandLineOptions({"+g=Modelica","+d=nogen"});
 OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
@@ -105,18 +108,31 @@ writeFile(statFile + \".flat\", testcase(0,false,\"killed\"));getErrorString();
 writeFile(statFile + \".compile\", testcase(0,false,\"killed\"));getErrorString();
 writeFile(statFile + \".sim\", testcase(0,false,\"killed\"));getErrorString();
 writeFile(statFile + \".verify\", testcase(0,false,\"killed\"));getErrorString();
-referenceFiles := \""+referenceFiles+"\";
-reference := \""+referenceFiles+"/"+OpenModelica.Scripting.stringReplace(s,".",referenceFileNameDelimiter)+"."+referenceFileExtension+"\";
-referenceExists := referenceFiles <> \"\" and regularFileExists(reference);
-outputFormat:=if referenceExists then \"mat\" else \"empty\";
+
+outputFormat:=\"default\";
 "+loadModelCommand+"
 reference_reltol:="+String(reference_reltol)+";
 reference_reltolDiffMinMax:="+String(reference_reltolDiffMinMax)+";
 reference_rangeDelta:="+String(reference_rangeDelta)+";
+
+referenceOK := false;
+referenceFiles := \""+referenceFiles+"\";
+referenceCell := if referenceFiles == \"\" then \"\" else \"<td>&nbsp;</td>\";
+reference := \""+referenceFiles+"/"+OpenModelica.Scripting.stringReplace(s,".",referenceFileNameDelimiter)+"."+referenceFileExtension+"\";
+referenceExists := referenceFiles <> \"\" and regularFileExists(reference);
+
+// outputFormat can be overridden in CustomCommands.mos, so we set it to 'default' first
+outputFormat := if outputFormat == \"default\" then (if referenceExists then \"mat\" else \"empty\") else outputFormat;
+
+variableFilter := if referenceExists
+  then sum((stringReplace(stringReplace(s,\"[\",\".\"),\"]\",\".\") + \"|\") for s in readSimulationResultVars(reference))
+  else \".*\";
+
 // Use twice as many output points as the experiment annotation suggests. Else aim for 5000 points.
 (startTime,stopTime,tolerance,numberOfIntervals,stepSize):=getSimulationOptions("+s+",defaultTolerance="+String(default_tolerance)+",defaultNumberOfIntervals=2500);
 numberOfIntervals := 2*numberOfIntervals;
-res:=buildModel("+s+",tolerance=tolerance,outputFormat=outputFormat,numberOfIntervals=numberOfIntervals);
+res:=buildModel("+s+",tolerance=tolerance,outputFormat=outputFormat,numberOfIntervals=numberOfIntervals,variableFilter=variableFilter);
+
 greenColor := \"#00FF00\";
 errFile:=\"files/"+s+".err\";
 simFile:=\"files/"+s+".sim\";
@@ -142,10 +158,9 @@ timeDiff := -1.0;
 OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
 buildRes := res[1] <> \"\";
 simRes  := if not buildRes then false else 0 == system(\"ulimit -t "+ulimitExe+" ; ./"+s+" > \"+simFile+\" 2>&1\");
+
 system(\"sed -i '300,$ d' '\" + simFile + \"'\"); // Only keep the top 300 lines
 timeSim := OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
-referenceOK := false;
-referenceCell := if referenceFiles == \"\" then \"\" else \"<td>&nbsp;</td>\";
 if simRes then
   system(\"touch "+s+".simsuccess\");
   prefix := \"files/"+s+".diff\";
