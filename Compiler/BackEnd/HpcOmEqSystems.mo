@@ -44,7 +44,6 @@ public import SimCode;
 
 // protected imports
 protected import BackendDump;
-protected import BackendDAEOptimize;
 protected import BackendEquation;
 protected import BackendDAEEXT;
 protected import BackendDAEUtil;
@@ -2034,13 +2033,13 @@ algorithm
         dumpEquationSystemGraphML1(vars,eqs,m,"linSystem"+&intString(tornSysIdxIn));
         
         print("START RESOLVING THE COMPONENT\n");
-        daeEqLst = BackendDAEOptimize.resolveLoops12(m,mT,eqIdcs,varIdcs,daeVarLst,daeEqLst,{});
-        daeEqs = BackendEquation.listEquation(daeEqLst);
+        //daeEqLst = BackendDAEOptimize.resolveLoops12(m,mT,eqIdcs,varIdcs,daeVarLst,daeEqLst,{});
+        //daeEqs = BackendEquation.listEquation(daeEqLst);
         
-        systTmp = BackendDAE.EQSYSTEM(daeVars,daeEqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets);
-        (systTmp,tornSysIdx) = resolveLinearSystem(compIdx+1,compsIn,ass1,ass2,systTmp,sharedIn,tornSysIdxIn+1);
+        //systTmp = BackendDAE.EQSYSTEM(daeVars,daeEqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets);
+        //(systTmp,tornSysIdx) = resolveLinearSystem(compIdx+1,compsIn,ass1,ass2,systTmp,sharedIn,tornSysIdxIn+1);
       then
-        (systTmp,tornSysIdx);
+        (systIn,tornSysIdxIn);
     else
       // go to next StrongComponent
       equation
