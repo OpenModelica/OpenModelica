@@ -54,6 +54,7 @@ int initial_guess_ipopt(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
   int err;
   double *v;
   long double tol;
+  short printGuess;
 
   DATA* data = iData->data;
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
@@ -84,7 +85,8 @@ int initial_guess_ipopt(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
     v[ii] = u0[j]*iData->scalVar[j + iData->nx];
   }
 
-  if(ACTIVE_STREAM(LOG_IPOPT) && !ACTIVE_STREAM(LOG_SOLVER))
+  printGuess = (short)(ACTIVE_STREAM(LOG_INIT) && !ACTIVE_STREAM(LOG_SOLVER));
+  if(printGuess)
   {
     printf("\n****initial guess****");
       printf("\n #####done time[%i] = %f",0,iData->time[0]);
@@ -99,7 +101,7 @@ int initial_guess_ipopt(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
       
       dasrt_step(data, solverInfo);
 
-      if(ACTIVE_STREAM(LOG_IPOPT) && !ACTIVE_STREAM(LOG_SOLVER))
+      if(printGuess)
         printf("\n #####done time[%i] = %f",k,iData->time[k]);
 
       for(j=0; j< iData->nx; ++j)
@@ -133,7 +135,7 @@ int initial_guess_ipopt(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
     }
   }
 
-  if(ACTIVE_STREAM(LOG_IPOPT))
+  if(printGuess)
     printf("\n*****initial guess done*****");
 
   dasrt_deinitial(solverInfo->solverData);

@@ -525,11 +525,11 @@ static int local_jac_struct(IPOPT_DATA_ *iData, int * nng)
   for(j = 0; j < iData->nv; ++j)
     {
     for(ii = 0; ii < nJ; ++ii)
-      if(J[ii][i]+J[ii][j]> 1)
-        Hg[i][j] += 1;
+      if(J[ii][i]*J[ii][j])
+        Hg[i][j] = 1;
     }
 
-  if(ACTIVE_STREAM(LOG_IPOPT))
+  if(ACTIVE_STREAM(LOG_JAC))
   {
   printf("\n***********");
     for(ii = 0; ii < nJ; ++ii)
