@@ -216,6 +216,8 @@ public:
   static QString description;
   static QString previous;
   static QString next;
+  static QString variablesView;
+  static QString equationView;
   static QString index;
   static QString equation;
 };

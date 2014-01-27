@@ -210,6 +210,8 @@ QString Helper::variables;
 QString Helper::description;
 QString Helper::previous;
 QString Helper::next;
+QString Helper::variablesView;
+QString Helper::equationView;
 QString Helper::index;
 QString Helper::equation;
 
@@ -336,6 +338,8 @@ void Helper::initHelperVariables()
   Helper::description = tr("Description");
   Helper::previous = tr("Previous");
   Helper::next = tr("Next");
+  Helper::variablesView = tr("Variables View");
+  Helper::equationView = tr("Equation View");
   Helper::index = tr("Index");
   Helper::equation = tr("Equation");
 }

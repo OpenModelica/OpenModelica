@@ -1922,10 +1922,10 @@ ModelWidget::ModelWidget(bool newClass, bool extendsClass, LibraryTreeNode *pLib
   mpFileLockToolButton->setAutoRaise(true);
   connect(mpFileLockToolButton, SIGNAL(clicked()), SLOT(makeFileWritAble()));
   // frame to contain view buttons
-  QFrame *viewsButtonsFrame = new QFrame;
-  QHBoxLayout *viewsButtonsHorizontalLayout = new QHBoxLayout;
-  viewsButtonsHorizontalLayout->setContentsMargins(0, 0, 0, 0);
-  viewsButtonsHorizontalLayout->setSpacing(0);
+  QFrame *pViewButtonsFrame = new QFrame;
+  QHBoxLayout *pViewButtonsHorizontalLayout = new QHBoxLayout;
+  pViewButtonsHorizontalLayout->setContentsMargins(0, 0, 0, 0);
+  pViewButtonsHorizontalLayout->setSpacing(0);
   // icon view tool button
   mpIconViewToolButton = new QToolButton;
   mpIconViewToolButton->setText(Helper::iconView);
@@ -1935,7 +1935,7 @@ ModelWidget::ModelWidget(bool newClass, bool extendsClass, LibraryTreeNode *pLib
   mpIconViewToolButton->setAutoRaise(true);
   mpIconViewToolButton->setCheckable(true);
   connect(mpIconViewToolButton, SIGNAL(toggled(bool)), SLOT(showIconView(bool)));
-  viewsButtonsHorizontalLayout->addWidget(mpIconViewToolButton);
+  pViewButtonsHorizontalLayout->addWidget(mpIconViewToolButton);
   // diagram view tool button
   mpDiagramViewToolButton = new QToolButton;
   mpDiagramViewToolButton->setText(Helper::diagramView);
@@ -1945,7 +1945,7 @@ ModelWidget::ModelWidget(bool newClass, bool extendsClass, LibraryTreeNode *pLib
   mpDiagramViewToolButton->setAutoRaise(true);
   mpDiagramViewToolButton->setCheckable(true);
   connect(mpDiagramViewToolButton, SIGNAL(toggled(bool)), SLOT(showDiagramView(bool)));
-  viewsButtonsHorizontalLayout->addWidget(mpDiagramViewToolButton);
+  pViewButtonsHorizontalLayout->addWidget(mpDiagramViewToolButton);
   // modelica text view tool button
   mpModelicaTextViewToolButton = new QToolButton;
   mpModelicaTextViewToolButton->setText(Helper::modelicaTextView);
@@ -1955,7 +1955,7 @@ ModelWidget::ModelWidget(bool newClass, bool extendsClass, LibraryTreeNode *pLib
   mpModelicaTextViewToolButton->setAutoRaise(true);
   mpModelicaTextViewToolButton->setCheckable(true);
   connect(mpModelicaTextViewToolButton, SIGNAL(toggled(bool)), SLOT(showModelicaTextView(bool)));
-  viewsButtonsHorizontalLayout->addWidget(mpModelicaTextViewToolButton);
+  pViewButtonsHorizontalLayout->addWidget(mpModelicaTextViewToolButton);
   // documentation view tool button
   mpDocumentationViewToolButton = new QToolButton;
   mpDocumentationViewToolButton->setText(Helper::documentationView);
@@ -1964,8 +1964,8 @@ ModelWidget::ModelWidget(bool newClass, bool extendsClass, LibraryTreeNode *pLib
   mpDocumentationViewToolButton->setToolTip(Helper::documentationView);
   mpDocumentationViewToolButton->setAutoRaise(true);
   connect(mpDocumentationViewToolButton, SIGNAL(clicked()), SLOT(showDocumentationView()));
-  viewsButtonsHorizontalLayout->addWidget(mpDocumentationViewToolButton);
-  viewsButtonsFrame->setLayout(viewsButtonsHorizontalLayout);
+  pViewButtonsHorizontalLayout->addWidget(mpDocumentationViewToolButton);
+  pViewButtonsFrame->setLayout(pViewButtonsHorizontalLayout);
   // view buttons box
   mpViewsButtonGroup = new QButtonGroup;
   mpViewsButtonGroup->setExclusive(true);
@@ -1977,7 +1977,7 @@ ModelWidget::ModelWidget(bool newClass, bool extendsClass, LibraryTreeNode *pLib
   mpModelStatusBar = new QStatusBar;
   mpModelStatusBar->setObjectName("ModelStatusBar");
   mpModelStatusBar->setSizeGripEnabled(false);
-  mpModelStatusBar->addPermanentWidget(viewsButtonsFrame, 0);
+  mpModelStatusBar->addPermanentWidget(pViewButtonsFrame, 0);
   mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
   mpModelStatusBar->addPermanentWidget(mpModelicaTypeLabel, 0);
   mpModelStatusBar->addPermanentWidget(mpViewTypeLabel, 0);

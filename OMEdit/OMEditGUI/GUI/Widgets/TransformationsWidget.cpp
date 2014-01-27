@@ -44,23 +44,41 @@ TransformationsWidget::TransformationsWidget(MainWindow *pMainWindow)
   mpInfoXMLFileHandler = 0;
   // create the previous button
   mpVariablesViewToolButton = new QToolButton;
-  mpVariablesViewToolButton->setText(tr("Variables View"));
+  mpVariablesViewToolButton->setToolTip(Helper::variablesView);
+  mpVariablesViewToolButton->setAutoRaise(true);
   mpVariablesViewToolButton->setCheckable(true);
-  mpVariablesViewToolButton->setToolButtonStyle(Qt::ToolButtonTextOnly);
+  mpVariablesViewToolButton->setChecked(true);
+  mpVariablesViewToolButton->setIcon(QIcon(":/Resources/icons/variables.svg"));
   connect(mpVariablesViewToolButton, SIGNAL(toggled(bool)), SLOT(showVariablesView(bool)));
   // create the next button
   mpEquationViewToolButton = new QToolButton;
-  mpEquationViewToolButton->setText(tr("Equation View"));
+  mpEquationViewToolButton->setToolTip(Helper::equationView);
+  mpEquationViewToolButton->setAutoRaise(true);
   mpEquationViewToolButton->setCheckable(true);
-  mpEquationViewToolButton->setToolButtonStyle(Qt::ToolButtonTextOnly);
+  mpEquationViewToolButton->setIcon(QIcon(":/Resources/icons/equations.svg"));
   connect(mpEquationViewToolButton, SIGNAL(toggled(bool)), SLOT(showEquationView(bool)));
   /* buttons group */
   QButtonGroup *pViewsButtonGroup = new QButtonGroup;
   pViewsButtonGroup->setExclusive(true);
   pViewsButtonGroup->addButton(mpVariablesViewToolButton);
   pViewsButtonGroup->addButton(mpEquationViewToolButton);
+  // frame to contain view buttons
+  QFrame *pViewButtonsFrame = new QFrame;
+  QHBoxLayout *pViewButtonsHorizontalLayout = new QHBoxLayout;
+  pViewButtonsHorizontalLayout->setContentsMargins(0, 0, 0, 0);
+  pViewButtonsHorizontalLayout->setSpacing(0);
+  pViewButtonsHorizontalLayout->addWidget(mpVariablesViewToolButton);
+  pViewButtonsHorizontalLayout->addWidget(mpEquationViewToolButton);
+  pViewButtonsFrame->setLayout(pViewButtonsHorizontalLayout);
   /* info xml file path label */
   mpInfoXMLFilePathLabel = new Label;
+  mpInfoXMLFilePathLabel->setWordWrap(true);
+  /* create status bar */
+  QStatusBar *pStatusBar = new QStatusBar;
+  pStatusBar->setObjectName("ModelStatusBar");
+  pStatusBar->setSizeGripEnabled(false);
+  pStatusBar->addPermanentWidget(pViewButtonsFrame, 0);
+  pStatusBar->addPermanentWidget(mpInfoXMLFilePathLabel, 1);
   /* create the stacked widget object */
   mpPagesWidget = new QStackedWidget;
   mpPagesWidget->addWidget(new VariablePage(this));
@@ -69,10 +87,8 @@ TransformationsWidget::TransformationsWidget(MainWindow *pMainWindow)
   /* set the layout */
   QGridLayout *pTopLayout = new QGridLayout;
   pTopLayout->setContentsMargins(0, 0, 0, 0);
-  pTopLayout->addWidget(mpVariablesViewToolButton, 0, 0);
-  pTopLayout->addWidget(mpEquationViewToolButton, 0, 1);
-  pTopLayout->addWidget(mpInfoXMLFilePathLabel, 0, 2);
-  pTopLayout->addWidget(mpPagesWidget, 1, 0, 1, 3);
+  pTopLayout->addWidget(pStatusBar, 0, 0);
+  pTopLayout->addWidget(mpPagesWidget, 1, 0);
   QFrame *pTopFrame = new QFrame;
   pTopFrame->setLayout(pTopLayout);
   /* splitter */
@@ -146,6 +162,9 @@ VariablePage::VariablePage(TransformationsWidget *pTransformationsWidget)
   : QWidget(pTransformationsWidget)
 {
   mpTransformationsWidget = pTransformationsWidget;
+  /* Equation View Heading */
+  mpVariablesViewHeadingLabel = new Label(Helper::variablesView);
+  mpVariablesViewHeadingLabel->setFont(QFont(Helper::systemFontInfo.family(), 14));
   /* variables tree widget */
   Label *pVariablesLabel = new Label(Helper::variables);
   mpVariablesTreeWidget = new QTreeWidget;
@@ -266,7 +285,8 @@ VariablePage::VariablePage(TransformationsWidget *pTransformationsWidget)
   /* set the layout */
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
-  pMainLayout->addWidget(pSplitter, 0, 0);
+  pMainLayout->addWidget(mpVariablesViewHeadingLabel, 0, 0);
+  pMainLayout->addWidget(pSplitter, 1, 0);
   setLayout(pMainLayout);
 }
 
@@ -488,6 +508,9 @@ EquationPage::EquationPage(TransformationsWidget *pTransformationsWidget)
   : QWidget(pTransformationsWidget)
 {
   mpTransformationsWidget = pTransformationsWidget;
+  /* Equation View Heading */
+  mpEquationViewHeadingLabel = new Label(Helper::equationView);
+  mpEquationViewHeadingLabel->setFont(QFont(Helper::systemFontInfo.family(), 14));
   // equation index
   mpEquationIndexLabel = new Label(tr("Equation Index:"));
   mpEquationIndexTextBox = new QLineEdit;
@@ -572,8 +595,9 @@ EquationPage::EquationPage(TransformationsWidget *pTransformationsWidget)
   /* set the layout */
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
-  pMainLayout->addLayout(pSearchEquationHorizontalLayout, 0, 0);
-  pMainLayout->addWidget(pSplitter, 1, 0);
+  pMainLayout->addWidget(mpEquationViewHeadingLabel, 0, 0);
+  pMainLayout->addLayout(pSearchEquationHorizontalLayout, 1, 0);
+  pMainLayout->addWidget(pSplitter, 2, 0);
   setLayout(pMainLayout);
 }
 

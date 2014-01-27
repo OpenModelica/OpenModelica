@@ -78,6 +78,7 @@ public:
   void initialize();
 private:
   TransformationsWidget *mpTransformationsWidget;
+  Label *mpVariablesViewHeadingLabel;
   QTreeWidget *mpVariablesTreeWidget;
   QTreeWidget *mpTypesTreeWidget;
   QTreeWidget *mpOperationsTreeWidget;
@@ -108,6 +109,7 @@ public:
   void fetchOperations(OMEquation &equation);
 private:
   TransformationsWidget *mpTransformationsWidget;
+  Label *mpEquationViewHeadingLabel;
   Label *mpEquationIndexLabel;
   QLineEdit *mpEquationIndexTextBox;
   QPushButton *mpSearchEquationIndexButton;
