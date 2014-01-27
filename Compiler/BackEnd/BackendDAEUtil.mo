@@ -52,7 +52,6 @@ public import BackendDAE;
 public import BackendDAEFunc;
 public import DAE;
 public import Env;
-public import SCode;
 public import Util;
 public import HpcOmEqSystems;
 
@@ -90,6 +89,7 @@ protected import List;
 protected import Matching;
 protected import OnRelaxation;
 protected import RemoveSimpleEquations;
+protected import SCode;
 protected import System;
 protected import Tearing;
 protected import Types;
@@ -1301,64 +1301,6 @@ algorithm
         fail();
   end matchcontinue;
 end addAliasVariables;
-
-public function isApproximatedEquation
-  input BackendDAE.Equation eqn;
-  output Boolean out;
-algorithm
-  out:= match(eqn)
-    local
-      list<SCode.Comment> comment;
-      Boolean ret;
-    case(BackendDAE.EQUATION(source=DAE.SOURCE(comment=comment)))
-      equation
-        ret = isApproximatedEquation2(comment);
-      then
-        ret;
-    case(_)
-      then
-        false;
-  end match;
-end isApproximatedEquation;
-
-public function isApproximatedEquation2
-  input list<SCode.Comment> commentIn;
-  output Boolean out;
- algorithm
-  out:= matchcontinue(commentIn)
-    local
-      SCode.Comment h;
-      list<SCode.Comment> t;
-      Boolean ret;
-      list<SCode.SubMod> subModLst;
-    case({})
-      equation
-        then false;
-    case(SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(SCode.MOD(subModLst=subModLst))))::t)
-      equation
-        ret = (List.exist(subModLst,isApproximatedEquation3)) or isApproximatedEquation2(t);
-      then
-        ret;
-    case(h::t)
-      equation
-        ret = isApproximatedEquation2(t);
-      then
-        ret;
-  end matchcontinue;
-end isApproximatedEquation2;
-
-protected function isApproximatedEquation3
-  input SCode.SubMod m;
-  output Boolean out;
-algorithm
-out:= match(m)
-  case(SCode.NAMEMOD("__OpenModelica_ApproximatedEquation",SCode.MOD(binding = SOME((Absyn.BOOL(true),_)))))
-    equation
-     then true;
-  case(_) equation
-     then false;
-   end match;
-end isApproximatedEquation3;
 
 public function isDiscreteEquation
   input BackendDAE.Equation eqn;

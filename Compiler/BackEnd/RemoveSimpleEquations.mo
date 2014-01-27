@@ -601,46 +601,40 @@ algorithm
       Integer index;
       array<list<Integer>> mT;
       Boolean b, differentiated;
-      BackendDAE.Equation e;
-    case (e as BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, differentiated=differentiated), _)
+    case (BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, differentiated=differentiated), _)
       equation
-        //false = BackendDAEUtil.isApproximatedEquation(e);
         Debug.fcall(Flags.DEBUG_ALIAS, BackendDump.debugStrExpStrExpStr, ("Found Equation ", e1, " = ", e2, " to handle.\n"));
-      then
+      then 
         simpleEquationAcausal(e1, e2, (source, differentiated), false, inTpl);
-
-    case (e as BackendDAE.ARRAY_EQUATION(left=e1, right=e2, source=source, differentiated=differentiated), _)
+    
+    case (BackendDAE.ARRAY_EQUATION(left=e1, right=e2, source=source, differentiated=differentiated), _)
       equation
-        //false = BackendDAEUtil.isApproximatedEquation(e);
         Debug.fcall(Flags.DEBUG_ALIAS, BackendDump.debugStrExpStrExpStr, ("Found Array Equation ", e1, " = ", e2, " to handle.\n"));
-      then
+      then 
         simpleEquationAcausal(e1, e2, (source, differentiated), false, inTpl);
-
-    case (e as BackendDAE.SOLVED_EQUATION(componentRef=cr, exp=e2, source=source, differentiated=differentiated), _)
+    
+    case (BackendDAE.SOLVED_EQUATION(componentRef=cr, exp=e2, source=source, differentiated=differentiated), _)
       equation
-        //false = BackendDAEUtil.isApproximatedEquation(e);
         e1 = Expression.crefExp(cr);
         Debug.fcall(Flags.DEBUG_ALIAS, BackendDump.debugStrExpStrExpStr, ("Found Solved Equation ", e1, " = ", e2, " to handle.\n"));
-      then
+      then 
         simpleEquationAcausal(e1, e2, (source, differentiated), false, inTpl);
-
-    case (e as BackendDAE.RESIDUAL_EQUATION(exp=e1, source=source, differentiated=differentiated), _)
+    
+    case (BackendDAE.RESIDUAL_EQUATION(exp=e1, source=source, differentiated=differentiated), _)
       equation
-        //false = BackendDAEUtil.isApproximatedEquation(e);
         Debug.fcall(Flags.DEBUG_ALIAS, BackendDump.debugStrExpStr, ("Found Residual Equation ", e1, " to handle.\n"));
-      then
+      then 
         simpleExpressionAcausal(e1, (source, differentiated), false, inTpl);
-
-    case (e as BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source, differentiated=differentiated), _)
+    
+    case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source, differentiated=differentiated), _)
       equation
-        //false = BackendDAEUtil.isApproximatedEquation(e);
         Debug.fcall(Flags.DEBUG_ALIAS, BackendDump.debugStrExpStrExpStr, ("Found Complex Equation ", e1, " = ", e2, " to handle.\n"));
-      then
+      then 
         simpleEquationAcausal(e1, e2, (source, differentiated), false, inTpl);
-
+    
     case (_, (v, s, eqns, seqns, index, mT, b))
       then ((v, s, eqn::eqns, seqns, index, mT, b));
-
+   
    end matchcontinue;
 end simpleEquationsFinder;
 

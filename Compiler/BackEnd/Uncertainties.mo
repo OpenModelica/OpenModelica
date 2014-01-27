@@ -162,7 +162,6 @@ algorithm
         approximatedEquations_one = getEquationsWithApproximatedAnnotation(dlow_1);
         approximatedEquations = List.flatten(List.map1r(approximatedEquations_one,listGet,arrayList(mapEqnIncRow)));
 
-//////////////////////////////
         mExt=removeEquations(mExt,approximatedEquations);
 
               printSep(getMathematicaText("Approximated equations to be removed"));
@@ -170,9 +169,6 @@ algorithm
 
               printSep(getMathematicaText("After eliminating approximated equations"));
               printSep(equationsToMathematicaGrid(getEquationsNumber(mExt),allEqs,allVars,sharedVars,mapIncRowEqn));
-
-//////////////////////
-
 
         // get the variable indices after the elimination
         variables = List.intRange(BackendVariable.varsSize(allVars));
@@ -209,9 +205,7 @@ algorithm
 
               printSep(getMathematicaText("Remaining equations"));
               printSep(equationsToMathematicaGrid(remainingEquations,allEqs,allVars,sharedVars,mapIncRowEqn));
-///////////////////
 
-/////////////////////////////////////////////////////////////
         (setC,removed_equations_squared)=getEquationsForKnownsSystem(mExt,knowns,unknowns,setS,allEqs,allVars,sharedVars,mapIncRowEqn);
 
         print(Util.if_(List.isNotEmpty(removed_equations_squared),"Warning: the system is ill-posed. One or more equations have been removed from squared system of knowns.\n",""));
@@ -538,7 +532,7 @@ algorithm
             {};
         case(h::t,i)
           equation
-            true=BackendDAEUtil.isApproximatedEquation(h);
+            true=isApproximatedEquation(h);
             inner_ret = getEquationsWithApproximatedAnnotation2(t,i+1);
           then
             i::inner_ret;
@@ -549,6 +543,64 @@ algorithm
             inner_ret;
       end matchcontinue;
 end getEquationsWithApproximatedAnnotation2;
+
+protected function isApproximatedEquation
+  input BackendDAE.Equation eqn;
+  output Boolean out;
+algorithm
+  out:= match(eqn)
+    local
+      list<SCode.Comment> comment;
+      Boolean ret;
+    case(BackendDAE.EQUATION(source=DAE.SOURCE(comment=comment)))
+      equation
+        ret = isApproximatedEquation2(comment);
+      then
+        ret;
+    case(_)
+      then
+        false;
+  end match;
+end isApproximatedEquation;
+
+protected function isApproximatedEquation2
+  input list<SCode.Comment> commentIn;
+  output Boolean out;
+ algorithm
+  out:= matchcontinue(commentIn)
+    local
+      SCode.Comment h;
+      list<SCode.Comment> t;
+      Boolean ret;
+      list<SCode.SubMod> subModLst;
+    case({})
+      equation
+        then false;
+    case(SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(SCode.MOD(subModLst=subModLst))))::t)
+      equation
+        ret = (List.exist(subModLst,isApproximatedEquation3)) or isApproximatedEquation2(t);
+      then
+        ret;
+    case(h::t)
+      equation
+        ret = isApproximatedEquation2(t);
+      then
+        ret;
+  end matchcontinue;
+end isApproximatedEquation2;
+
+protected function isApproximatedEquation3
+  input SCode.SubMod m;
+  output Boolean out;
+algorithm
+out:= match(m)
+  case(SCode.NAMEMOD("__OpenModelica_ApproximatedEquation",SCode.MOD(binding = SOME((Absyn.BOOL(true),_)))))
+     then true;
+  case(_)
+     then false;
+   end match;
+end isApproximatedEquation3;
+
 
 protected function flattenModel
   input Absyn.Path className;
@@ -2860,7 +2912,7 @@ protected function getSourceIfApproximated "Returns SOME(source) if the equation
     protected DAE.ElementSource temp;
 algorithm
     temp:=BackendEquation.equationSource(eqn);
-    source:=Util.if_(BackendDAEUtil.isApproximatedEquation(eqn),SOME(temp),NONE());
+    source:=Util.if_(isApproximatedEquation(eqn),SOME(temp),NONE());
 end getSourceIfApproximated;
 
 /*     Set handling functions    */
@@ -3123,7 +3175,7 @@ algorithm
   then ();
   case(SOME(DAE.SOURCE(comment=comment)))
   equation
-    str = Util.if_(BackendDAEUtil.isApproximatedEquation2(comment),"true","false");    
+    str = Util.if_(isApproximatedEquation2(comment),"true","false");    
     print(" *Approximated = "+&str);
   then ();
   end match;
