@@ -7007,7 +7007,7 @@ author: Waurich TUD 2014-01"
   output BackendDAE.Shared sharedOut;
 protected
   Integer numSimpEqs, numVars, numSimpVars;
-  list<Integer> eqMapping, varMapping, nonLoopVarIdcs;
+  list<Integer> eqMapping, varMapping, nonLoopVarIdcs, nonLoopEqIdcs;
   list<list<Integer>> partitions;
   BackendDAE.Variables vars,simpVars;
   BackendDAE.EquationArray eqs,simpEqs;
@@ -7022,17 +7022,9 @@ algorithm
   eqLst := BackendEquation.equationList(eqs);
   varLst := BackendVariable.varList(vars);
   
-    BackendDump.dumpEquationArray(eqs,"the complete DAE");
+    //BackendDump.dumpEquationArray(eqs,"the complete DAE");
     //BackendDump.dumpVariables(vars,"the complete DAE");
-
-  //output whole dae in a bipartite graph as graphML
-  numSimpEqs := BackendDAEUtil.equationArraySize(eqs);
-  numVars := BackendVariable.numVariables(vars);
-  m := arrayCreate(numSimpEqs, {});
-  mT := arrayCreate(numVars, {});
-  (m,mT) := BackendDAEUtil.incidenceMatrixDispatch(vars,eqs,{},mT, 0, numSimpEqs, intLt(0, numSimpEqs), BackendDAE.ABSOLUTE(), NONE()); 
-  HpcOmEqSystems.dumpEquationSystemGraphML1(vars,eqs,m,"wholeSystem");
-   
+     
   // get the linear equations and their vars
   simpEqLst := BackendEquation.traverseBackendDAEEqns(eqs, getSimpleEquations, {});
   eqMapping := List.map1(simpEqLst,List.position,eqLst);//index starts at zero
@@ -7051,40 +7043,48 @@ algorithm
   
   //output linear equations in a bipartite graph as graphML
   HpcOmEqSystems.dumpEquationSystemGraphML1(simpVars,simpEqs,m,"resolveLoops_before");
-
-    BackendDump.dumpEquationList(simpEqLst,"eqs before resolving");
+    //BackendDump.dumpEquationList(simpEqLst,"eqs before resolving");
     //BackendDump.dumpVariables(simpVars,"vars_before");
     //BackendDump.dumpIncidenceMatrix(m);     
     //BackendDump.dumpIncidenceMatrixT(mT);
  
+  //partition graph
+  partitions := arrayList(partitionBipartiteGraph(m,mT));
+    //print("Found "+&intString(listLength(partitions))+&" partitions!\n");
+    //print("the partitions: \n"+&stringDelimitList(List.map(partitions,HpcOmTaskGraph.intLstString),"\n")+&"\n\n");       
+  
   // cut the deadends (nonLoop vars and eqs)
-  (simpEqLst,simpVarLst,eqMapping,varMapping,m,mT) := cutDeadEndsInBipartiteGraph(simpEqLst,simpVarLst,eqMapping,varMapping,m,mT,true);
-  
-  // build the incidence matrix
-  numSimpEqs := listLength(simpEqLst);
-  numVars := listLength(simpVarLst);
-  simpEqs := BackendEquation.listEquation(simpEqLst);
-  simpVars := BackendVariable.listVar1(simpVarLst);  
-  m := arrayCreate(numSimpEqs, {});
-  mT := arrayCreate(numVars, {});
-  (m,mT) := BackendDAEUtil.incidenceMatrixDispatch(simpVars,simpEqs,{},mT, 0, numSimpEqs, intLt(0, numSimpEqs), BackendDAE.ABSOLUTE(), NONE()); 
-    
-  //output linear equations in a bipartite graph as graphML
-  HpcOmEqSystems.dumpEquationSystemGraphML1(simpVars,simpEqs,m,"resolveLoops_after");
-  
-    //BackendDump.dumpVariables(simpVars,"vars_after");
-    //BackendDump.dumpEquationList(simpEqLst,"after");
-    //BackendDump.dumpIncidenceMatrix(m);     
-    //BackendDump.dumpIncidenceMatrixT(mT);    
+  nonLoopVarIdcs := List.filter2OnTrue(List.intRange(numVars),arrayEntryLengthIs,mT,1);
+  (nonLoopEqIdcs,nonLoopVarIdcs) := getDeadEndsInBipartiteGraph(nonLoopVarIdcs,m,mT,{},nonLoopVarIdcs);
+    //print("the nonLoopVarIdcs: \n"+&stringDelimitList(List.map(nonLoopVarIdcs,intString),",")+&"\n");   
+    //print("the nonLoopEqIdcs: \n"+&stringDelimitList(List.map(nonLoopEqIdcs,intString),",")+&"\n");   
 
-  // finished
-  resolvedEqs := resolveLoops12(m,mT,eqMapping,varMapping,varLst,eqLst,{});
+  // resolve partitions
+  resolvedEqs := resolveLoops13(partitions,m,mT,eqMapping,varMapping,varLst,eqLst,nonLoopVarIdcs,nonLoopEqIdcs);
+  
+  //resolvedEqs := resolveLoops12(m,mT,eqMapping,varMapping,varLst,eqLst,{});
   eqs := BackendEquation.listEquation(resolvedEqs);
-    BackendDump.dumpEquationList(resolvedEqs,"the complete DAE after resolving");  
+    //BackendDump.dumpEquationList(resolvedEqs,"the complete DAE after resolving");  
   
   eqSysOut := BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets);
   sharedOut := sharedIn;
 end resolveLoops1;
+
+
+protected function arrayEntryLengthIs "gets the indexed entry of the array and compares the length with the given value,
+author:Waurich TUD 2014-01"
+  input Integer idx;
+  input array<list<Integer>> arr;
+  input Integer len;
+  output Boolean eqLen;
+protected
+  list<Integer> entry;
+  Integer len1;
+algorithm
+  entry := arrayGet(arr,idx);
+  len1 := listLength(entry);
+  eqLen := intEq(len,len1);  
+end arrayEntryLengthIs;
 
 
 protected function listIsEmptyFold "fold function that checks if the given list is empty.
@@ -7099,6 +7099,7 @@ algorithm
   bOut := b and bIn;
 end listIsEmptyFold;
 
+/*
 public function resolveLoops12  "takes the incidence-matrices of the bipartite graph, partitions it into independent subgraphs,
 analyses these subgraphs for loops and iteratively contractes the graph by contracting the resolvedLoops
 author:Waurich TUD 2014-01"
@@ -7152,7 +7153,6 @@ algorithm
   end matchcontinue;
 end resolveLoops12;
 
-
 protected function resolveLoops2  "traverses all partitions, gets the eqCrossNodes and varCrossNodes and resolves the loops.
 author: Waurich TUD 2014-01"
   input list<list<Integer>> partitionsIn;
@@ -7176,7 +7176,7 @@ algorithm
      list<BackendDAE.Var> varLst;
    case(partition::restPartitions,_,_,_,_,_,_,_)
      equation
-     print("Resolve the partition that consists of the equations: "+&stringDelimitList(List.map(partition,intString),",")+&"\n");
+       //print("Resolve the partition that consists of the equations: "+&stringDelimitList(List.map(partition,intString),",")+&"\n");
      
      // get the number of vars and eqs
      adjVarIdcs = List.map1(partition,Util.arrayGetIndexFirst,mIn);
@@ -7187,9 +7187,9 @@ algorithm
      
      // get the eqCrossNodes and varCrossNodes
      eqCrossLst =List.fold1(partition,gatherCrossNodes,mIn,{});
-     print("eqCrossLst "+&stringDelimitList(List.map(eqCrossLst,intString),",")+&"\n"); 
+       //print("eqCrossLst "+&stringDelimitList(List.map(eqCrossLst,intString),",")+&"\n"); 
      varCrossLst =List.fold1(varIdcs,gatherCrossNodes,mTIn,{});
-     print("varCrossLst "+&stringDelimitList(List.map(varCrossLst,intString),",")+&"\n\n"); 
+       //print("varCrossLst "+&stringDelimitList(List.map(varCrossLst,intString),",")+&"\n\n"); 
      
      // resolve the partition  
      (eqLst,replEqLst) = resolveComplexPartition(partition,numVars,numEqs,eqCrossLst,varCrossLst,mIn,mTIn,eqMapping,varMapping,daeEqsIn,daeVarsIn,replEqsIn);
@@ -7198,11 +7198,161 @@ algorithm
      (eqLst,replEqLst);
   else
     equation
-      print("resolveLoops2 done\n");
+        //print("resolveLoops2 done\n");
     then
       (daeEqsIn,replEqsIn);
   end matchcontinue;
 end resolveLoops2;
+*/
+
+
+protected function resolveLoops13  "checks all partitions if its worth to resolve them and continue or skip them
+author: Waurich TUD 2014-01"
+  input list<list<Integer>> partitionsIn;
+  input BackendDAE.IncidenceMatrix mIn;
+  input BackendDAE.IncidenceMatrix mTIn;
+  input list<Integer> eqMapping;
+  input list<Integer> varMapping;
+  input list<BackendDAE.Var> daeVarsIn;
+  input list<BackendDAE.Equation> daeEqsIn;
+  input list<Integer> nonLoopVarsIn;
+  input list<Integer> nonLoopEqsIn;
+  output list<BackendDAE.Equation> daeEqsOut;
+algorithm
+  daeEqsOut := matchcontinue(partitionsIn,mIn,mTIn,eqMapping,varMapping,daeVarsIn,daeEqsIn,nonLoopVarsIn,nonLoopEqsIn)
+   local
+     Integer numVars, numEqs, numInLoop, numOutLoop;
+     list<Integer> partition, loopVars, loopEqs, nonLoopVars, nonLoopEqs, eqCrossLst, varCrossLst;
+     list<list<Integer>>  restPartitions, loopVarLst;
+     list<BackendDAE.Equation> eqLst;
+     list<BackendDAE.Var> varLst;
+   case(partition::restPartitions,_,_,_,_,_,_,_,_)
+     equation
+       // get the eqs inside and outside the loop
+       (nonLoopEqs,loopEqs,_) = List.intersection1OnTrue(partition,nonLoopEqsIn,intEq);
+         //print("nonLoopEqs "+&stringDelimitList(List.map(nonLoopEqs,intString),",")+&"\n");
+         //print("loopEqs "+&stringDelimitList(List.map(loopEqs,intString),",")+&"\n");
+         
+       // check if its worth to resolve the loop. Therefore compare the amount of vars in and outside the loop
+       loopVarLst = List.map1(loopEqs,Util.arrayGetIndexFirst,mIn);
+       loopVars = List.flatten(loopVarLst);
+       loopVars = List.unique(loopVars);
+       (nonLoopVars,loopVars,_) = List.intersection1OnTrue(loopVars,nonLoopVarsIn,intEq);
+         //print("nonLoopVars "+&stringDelimitList(List.map(nonLoopVars,intString),",")+&"\n");
+         //print("loopVars "+&stringDelimitList(List.map(loopVars,intString),",")+&"\n");
+         
+       // get the eqCrossNodes and varCrossNodes
+       varCrossLst =List.fold1(loopVars,gatherCrossNodes,mTIn,{});
+         //print("varCrossLst "+&stringDelimitList(List.map(varCrossLst,intString),",")+&"\n\n"); 
+       numInLoop = listLength(loopVars)+listLength(varCrossLst);
+       numOutLoop = listLength(nonLoopVars)-2;
+         //print("numInLoop "+&intString(numInLoop)+&" and numOutLoop "+&intString(numOutLoop)+&"\n");
+       
+       // resolve the loop
+       true = intGt(numInLoop,numOutLoop);
+       
+         //print("RESOLVE THE PARTITION: "+&stringDelimitList(List.map(partition,intString),",")+&"\n\n");
+       
+       // remove nonLoopNodes from the incidenceMatrix
+       List.map2_0(nonLoopVars,Util.arrayUpdateIndexFirst,{},mTIn);
+       List.map2_0(nonLoopEqs,Util.arrayUpdateIndexFirst,{},mIn);
+       List.map2_0(loopVars,arrayGetDeleteInLst,nonLoopEqs,mTIn);
+       List.map2_0(loopEqs,arrayGetDeleteInLst,nonLoopVars,mIn);
+         //BackendDump.dumpIncidenceMatrix(mIn);
+         //BackendDump.dumpIncidenceMatrixT(mTIn);
+       
+       // the size of the eqs and vars
+       numEqs = listLength(loopEqs);
+       numVars = listLength(loopVars);
+     
+       // get the eqCrossNodes and varCrossNodes
+       eqCrossLst =List.fold1(loopEqs,gatherCrossNodes,mIn,{});
+         //print("eqCrossLst "+&stringDelimitList(List.map(eqCrossLst,intString),",")+&"\n"); 
+       varCrossLst =List.fold1(loopVars,gatherCrossNodes,mTIn,{});
+         //print("varCrossLst "+&stringDelimitList(List.map(varCrossLst,intString),",")+&"\n\n"); 
+       
+       // solve the loop
+       (eqLst,_) = resolveComplexPartition(loopEqs,numVars,numEqs,eqCrossLst,varCrossLst,mIn,mTIn,eqMapping,varMapping,daeEqsIn,daeVarsIn,{});
+       eqLst = resolveLoops13(restPartitions,mIn,mTIn,eqMapping,varMapping,daeVarsIn,eqLst,nonLoopVarsIn,nonLoopEqsIn);
+   then
+     eqLst;
+    case(partition::restPartitions,_,_,_,_,_,_,_,_)
+      equation
+        // skip this partition
+          //print("SKIP THE PARTITION: "+&stringDelimitList(List.map(partition,intString),",")+&"\n\n");
+        eqLst = resolveLoops13(restPartitions,mIn,mTIn,eqMapping,varMapping,daeVarsIn,daeEqsIn,nonLoopVarsIn,nonLoopEqsIn);
+        then
+          eqLst;         
+    case({},_,_,_,_,_,_,_,_)
+      equation
+          //print("resolveLoops13 done\n");
+      then
+        daeEqsIn;
+    else
+      equation
+        print("resolveLoops13 failed\n");
+      then
+        fail();
+  end matchcontinue;
+end resolveLoops13;
+
+
+protected function sortPathsAsChain "sorts the paths, so that the endNode of the next Path is an endNode of one of all already sorted path.
+author: Waurich TUD 2014-01"
+  input list<list<Integer>> pathsIn;
+  input list<Integer> contractedNodes;
+  input list<list<Integer>>sortedPathsIn;
+  output list<list<Integer>> sortedPathsOut;
+algorithm
+  sortedPathsOut := matchcontinue(pathsIn,contractedNodes,sortedPathsIn)
+    local
+      Integer startNode,endNode;
+      list<Integer> path, contrNodes, startNodes, endNodes;
+      list<list<Integer>> rest, sortedPaths;
+    case({},_,_)
+      equation
+        sortedPaths = listReverse(sortedPathsIn);
+      then
+        sortedPaths;
+    case(path::rest,_,{})
+      equation
+        startNode = List.first(path);
+        endNode = List.last(path);
+        contrNodes = listAppend({startNode,endNode},contractedNodes);
+        sortedPaths = sortPathsAsChain(rest,contrNodes,{path});
+      then
+        sortedPaths;
+    case(_,_,_)
+      equation
+        sortedPaths = List.filter1OnTrue(pathsIn,endNodesInLst,contractedNodes);
+        (sortedPaths,rest,_) = List.intersection1OnTrue(pathsIn,sortedPaths,intLstIsEqual);
+        startNodes = List.map(sortedPaths,List.first);
+        endNodes = List.map(sortedPaths,List.last);
+        contrNodes = listAppend(startNodes,endNodes);
+        contrNodes = List.unique(contrNodes);
+        contrNodes = listAppend(contrNodes,contractedNodes);
+        sortedPaths = listAppend(sortedPaths,sortedPathsIn);
+        sortedPaths = sortPathsAsChain(rest,contrNodes,sortedPaths);
+      then
+        sortedPaths;       
+  end matchcontinue;
+end sortPathsAsChain;
+
+protected function endNodesInLst"checks if an endnode(first or last) of teh given path is member of the given list.
+author: Waurich TUD 2014-01"
+  input list<Integer> path;
+  input list<Integer> lstIn;
+  output Boolean inLst;
+protected
+  Boolean b1, b2;
+  Integer startNode, endNode;
+algorithm
+  startNode := List.first(path);
+  endNode := List.last(path);
+  b1 := List.isMemberOnTrue(startNode,lstIn,intEq);
+  b2 := List.isMemberOnTrue(endNode,lstIn,intEq);
+  inLst := b1 or b2;
+end endNodesInLst;
 
 protected function resolveComplexPartition"handles the given partition of eqs and vars depending whether there are only varCrossNodes, only EqCrossNodes, both of them or none of them.
 author: Waurich TUD 2014-01"
@@ -7232,75 +7382,75 @@ algorithm
 
     case(_,_,_,eqIdx::eqCrossLst,{},_,_,_,_,_,_,_)
       equation 
-       print("partition has only eqCrossNodes\n");
+         //print("partition has only eqCrossNodes\n");
        
        // get the paths between the crossEqNodes and order them according to their length
         paths = getPathTillNextCrossEq(eqCrossLstIn,mIn,mTIn,eqCrossLstIn,{},{});       
         paths = List.sort(paths,List.listIsLonger);
-        print("from all the paths: \n"+&stringDelimitList(List.map(paths,HpcOmTaskGraph.intLstString)," / ")+&"\n");
-        (paths0,paths1) =  List.extract1OnTrue(paths,listLengthIs,listLength(List.first(paths)));
-        //closedPaths = doubleEntriesInLst(paths0,{},{});
-        paths0 = List.fold1(paths0,getReverseDoubles,paths0,{});
-        paths0 = List.unique(paths0);
-        print("solve the smallest loops: "+&stringDelimitList(List.map(paths0,HpcOmTaskGraph.intLstString)," / ")+&"\n");     
-       
+        paths = List.unique(paths);
+        paths0 = List.fold1(paths,getReverseDoubles,paths,{});        
+        
+          //print("paths0: \n"+&stringDelimitList(List.map(paths0,HpcOmTaskGraph.intLstString)," / ")+&"\n");
+        paths0 = List.sort(paths0,List.listIsLonger);  // solve the small loops first
+        paths0 = sortPathsAsChain(paths0,{},{});
+          //print("solve the loops: "+&stringDelimitList(List.map(paths0,HpcOmTaskGraph.intLstString)," / ")+&"\n\n");     
+        
         // resolve the loops
-        (eqLst,replEqs) = resolveLoops3(paths0,eqCrossLstIn,varCrossLstIn,mIn,mTIn,eqMapping,varMapping,daeEqsIn,daeVarsIn,replEqsIn);
-
+        (eqLst,replEqs) = resolveSubLoops(paths0,eqCrossLstIn,varCrossLstIn,mIn,mTIn,eqMapping,varMapping,daeEqsIn,daeVarsIn,replEqsIn);
       then
-        (eqLst,replEqsIn); 
+        (eqLst,replEqs); 
     case(_,_,_,{},varIdx::varCrossLst,_,_,_,_,_,_,_)
       equation 
-        print("partition has only varCrossNodes\n");   
+          //print("partition has only varCrossNodes\n");   
         // get the paths between the crossVarNodes and order them according to their length
         paths = getPathTillNextCrossEq(varCrossLstIn,mTIn,mIn,varCrossLstIn,{},{});
         paths = List.sort(paths,List.listIsLonger);
         paths = listReverse(paths);
-        print("from all the paths: \n"+&stringDelimitList(List.map(paths,HpcOmTaskGraph.intLstString)," / ")+&"\n");
-        (paths0,paths1) =  List.extract1OnTrue(paths,listLengthIs,listLength(List.first(paths)));
-        print("the longest paths: \n"+&stringDelimitList(List.map(paths0,HpcOmTaskGraph.intLstString)," / ")+&"\n");
+          //print("from all the paths: \n"+&stringDelimitList(List.map(paths,HpcOmTaskGraph.intLstString)," / ")+&"\n");
+
+        (paths0,paths1) =  List.extract1OnTrue(paths,listLengthIs,listLength(List.last(paths)));
+          //print("the shortest paths: \n"+&stringDelimitList(List.map(paths0,HpcOmTaskGraph.intLstString)," / ")+&"\n");
         
-          //closedPaths = List.fold1(paths0,getReverseDoubles,paths0,{});
-          //print("the closed paths: \n"+&stringDelimitList(List.map(closedPaths,HpcOmTaskGraph.intLstString)," / ")+&"\n");
-          //closedPaths = List.unique(closedPaths);
-          
-        closedPaths = List.map1(paths0,closePathDirectly,paths1);
+        //closedPaths = List.map1(paths0,closePathDirectly,paths1);
+        paths1 = Util.if_(List.isEmpty(paths1),paths0,paths1);
+        closedPaths = List.map1(paths1,closePathDirectly,paths0);
+        
         closedPaths = List.map1(closedPaths,List.sort,intGt);
         closedPaths = List.unique(closedPaths);
-        print("the closedPaths: \n"+&stringDelimitList(List.map(closedPaths,HpcOmTaskGraph.intLstString),"\n")+&"\n"); 
-        closedPaths = List.map(closedPaths,List.unique);// get the eqs for these varLoops
-        closedPaths = List.map1(closedPaths,getEqNodesForVarLoop,mTIn);
-        print("solve the smallest loops: \n"+&stringDelimitList(List.map(closedPaths,HpcOmTaskGraph.intLstString)," / ")+&"\n");
-        (eqLst,replEqs) = resolveLoops3(closedPaths,eqCrossLstIn,varCrossLstIn,mIn,mTIn,eqMapping,varMapping,daeEqsIn,daeVarsIn,replEqsIn);
+          //print("the closedPaths: \n"+&stringDelimitList(List.map(closedPaths,HpcOmTaskGraph.intLstString),"\n")+&"\n"); 
+        closedPaths = List.map(closedPaths,List.unique);
+        closedPaths = List.map1(closedPaths,getEqNodesForVarLoop,mTIn);// get the eqs for these varLoops
+          //print("solve the smallest loops: \n"+&stringDelimitList(List.map(closedPaths,HpcOmTaskGraph.intLstString)," / ")+&"\n");
+        (eqLst,replEqs) = resolveSubLoops(closedPaths,eqCrossLstIn,varCrossLstIn,mIn,mTIn,eqMapping,varMapping,daeEqsIn,daeVarsIn,replEqsIn);        
       then
         (eqLst,replEqs);
     case(_,_,_,{},{},_,_,_,_,_,_,_)
       equation
          // its a singleLoop
-         print("its a singleLoop\n");
-         (eqLst,replEqs) = resolveLoops3({partitionIn},eqCrossLstIn,varCrossLstIn,mIn,mTIn,eqMapping,varMapping,daeEqsIn,daeVarsIn,replEqsIn);
+           //print("its a singleLoop\n");
+         (eqLst,replEqs) = resolveSubLoops({partitionIn},eqCrossLstIn,varCrossLstIn,mIn,mTIn,eqMapping,varMapping,daeEqsIn,daeVarsIn,replEqsIn);
        then
          (eqLst,replEqs);
     case(_,_,_,eqIdx::eqCrossLst,varIdx::varCrossLst,_,_,_,_,_,_,_)
       equation 
-        print("there are both varCrossNodes and eqNodes\n");   
+          //print("there are both varCrossNodes and eqNodes\n");   
         
         // get the paths between the crossVarNodes and order them according to their length
         paths = getPathTillNextCrossNodeComplex(varCrossLstIn,eqCrossLstIn,mTIn,mIn,varCrossLstIn,{},{});
-        print("all the paths: \n"+&stringDelimitList(List.map(paths,HpcOmTaskGraph.intLstString)," / ")+&"\n");
+          //print("all the paths: \n"+&stringDelimitList(List.map(paths,HpcOmTaskGraph.intLstString)," / ")+&"\n");
         
         paths = List.unique(paths);
         paths = List.map(paths,List.unique);
-        print("reduced paths: \n"+&stringDelimitList(List.map(paths,HpcOmTaskGraph.intLstString)," / ")+&"\n");
+          //print("reduced paths: \n"+&stringDelimitList(List.map(paths,HpcOmTaskGraph.intLstString)," / ")+&"\n");
         paths = List.sort(paths,List.listIsLonger);
         paths = List.map1(paths,getEqNodesForVarLoop,mTIn);
-        print("from all the paths: \n"+&stringDelimitList(List.map(paths,HpcOmTaskGraph.intLstString)," / ")+&"\n");
+          //print("from all the paths: \n"+&stringDelimitList(List.map(paths,HpcOmTaskGraph.intLstString)," / ")+&"\n");
         (paths0,paths1) =  List.extract1OnTrue(paths,listLengthIs,listLength(List.first(paths)));
-        print("the shortest paths: \n"+&stringDelimitList(List.map(paths0,HpcOmTaskGraph.intLstString)," / ")+&"\n");
+          //print("the shortest paths: \n"+&stringDelimitList(List.map(paths0,HpcOmTaskGraph.intLstString)," / ")+&"\n");
         subLoop = List.first(paths0);
         
         // resolve the loop
-        (eqLst,replEqs) = resolveLoops3({subLoop},{},varCrossLstIn,mIn,mTIn,eqMapping,varMapping,daeEqsIn,daeVarsIn,replEqsIn);
+        (eqLst,replEqs) = resolveSubLoops({subLoop},{},varCrossLstIn,mIn,mTIn,eqMapping,varMapping,daeEqsIn,daeVarsIn,replEqsIn);
       then
         (eqLst,replEqs);
     else
@@ -7311,8 +7461,17 @@ algorithm
   end matchcontinue;
 end resolveComplexPartition;
 
+protected function intLstIsEqual
+  input list<Integer> lst1;
+  input list<Integer> lst2;
+  output Boolean bOut;
+algorithm
+  bOut := List.isEqualOnTrue(lst1,lst2,intEq);
+end intLstIsEqual;
 
-protected function resolveLoops3
+
+protected function resolveSubLoops" resolves a singleLoop. depending on whether there are only eqCrossNodes, varCrossNodes, both or none.
+author:Waurich TUD 2014-01"
   input list<list<Integer>> loopsIn;
   input list<Integer> eqCrossLstIn;
   input list<Integer> varCrossLstIn;
@@ -7329,13 +7488,13 @@ algorithm
   (eqLstOut,replEqsOut) := matchcontinue(loopsIn,eqCrossLstIn,varCrossLstIn,mIn,mTIn,eqMapping,varMapping,eqLstIn,varLstIn,replEqsIn)
     local
       Integer pos,crossEq,crossVar;
-      list<Integer> loop1, eqs, vars, vars2, crossEqs, crossEqs2, removeCrossEqs, crossVars, replEqs;
+      list<Integer> loop1, eqs, vars, crossEqs, crossEqs2, removeCrossEqs, crossVars, replEqs, loopVars, adjVars;
       list<list<Integer>> rest, eqVars;
       BackendDAE.Equation resolvedEq;
       list<BackendDAE.Equation> eqLst;
   case({},_,_,_,_,_,_,_,_,_)  
     equation
-      print("done!\n");
+        //print("done!\n");
       then
         (eqLstIn,replEqsIn);
   case(loop1::rest,crossEq::crossEqs,{},_,_,_,_,_,_,_)
@@ -7346,46 +7505,52 @@ algorithm
       
       // get the equation that will be replaced and the rest
       (crossEqs,eqs,_) = List.intersection1OnTrue(loop1,eqCrossLstIn,intEq);  // replace a crossEq in the loop
-      (_,crossEqs2,_) = List.intersection1OnTrue(crossEqs,replEqsIn,intEq);  // do not replace an already replaced eq if there is another unreplaced crossEq
-      crossEqs2 = Util.if_(List.isEmpty(crossEqs2),crossEqs,crossEqs2);
-      (pos::removeCrossEqs) = crossEqs2;  // the equation that will be replaced = pos
+        //print("crossEqs: "+&stringDelimitList(List.map(crossEqs,intString),",")+&"\n");
+        //print("eqs: "+&stringDelimitList(List.map(eqs,intString),",")+&"\n");
+        
+      // first try to replace a non cross node, otherweise an already replaced eq, or if none of them is available take a crossnode
+      pos = Debug.bcallret1(List.isNotEmpty(crossEqs),List.first,crossEqs,-1); 
+      pos = Debug.bcallret1(List.isNotEmpty(replEqsIn),List.first,replEqsIn,pos); 
+      pos = Debug.bcallret1(List.isNotEmpty(eqs),List.first,eqs,pos); // CHECK THIS
+
       eqs = List.deleteMember(loop1,pos);
-      print("contract eqs: "+&stringDelimitList(List.map(eqs,intString),",")+&" to eq "+&intString(pos)+&"\n");
+        //print("contract eqs: "+&stringDelimitList(List.map(eqs,intString),",")+&" to eq "+&intString(pos)+&"\n");
       
       // get the corresponding vars
-      eqVars = List.map1(eqs,Util.arrayGetIndexFirst,mIn);  // the eqVars the loop
-      vars2 = List.flatten(eqVars);  // the vars from the contracted eqs
-      vars = arrayGet(mIn,pos); // all adjVars from the replaced Eq
-      (_,_,vars) = List.intersection1OnTrue(vars2,vars,intEq);
-      print("redirected vars: "+&stringDelimitList(List.map(vars,intString),",")+&"\n");
-      print("disjoint vars: "+&stringDelimitList(List.map(vars2,intString),",")+&"\n");
+      eqVars = List.map1(loop1,Util.arrayGetIndexFirst,mIn);
+      vars = List.flatten(eqVars);
+      loopVars = doubleEntriesInLst(vars,{},{});  // the vars in the loop
+      (_,adjVars,_) = List.intersection1OnTrue(vars,loopVars,intEq); // the vars adjacent to the loop
+        //print("redirected vars: "+&stringDelimitList(List.map(adjVars,intString),",")+&"\n");
+        //print("disjoint vars: "+&stringDelimitList(List.map(loopVars,intString),",")+&"\n");
 
       // update incidenceMatrix
-      List.map2_0(loop1,Util.arrayUpdateIndexFirst,{},mIn);  //delete the equations in the loop
-      List.map2_0(vars2,Util.arrayUpdateIndexFirst,{},mTIn);  //delete the vars from the loop
-      _ = arrayUpdate(mIn,pos,vars);  // redirect the replaced equation to the vars outside of the loops
-      List.map2_0(vars,arrayGetDeleteInLst,loop1,mTIn);  // remove the loop eqs from the vars outside of the loops
-      List.map2_0(vars,arrayGetAppendLst,{pos},mTIn);  // redirect the vars outside of the loops to the redirected eq
-      BackendDump.dumpIncidenceMatrix(mIn);
-      BackendDump.dumpIncidenceMatrix(mTIn);
+      List.map2_0(loopVars,Util.arrayUpdateIndexFirst,{},mTIn);  //delete the vars in the loop
+      List.map2_0(adjVars,arrayGetDeleteInLst,loop1,mTIn);  // remove the loop eqs from the adjacent vars
+      List.map2_0(adjVars,arrayGetAppendLst,{pos},mTIn);  // redirect the adjacent vars to the replaced eq
+      
+      List.map2_0(loop1,Util.arrayUpdateIndexFirst,{},mIn);  //delete the eqs in the loop
+      _ = arrayUpdate(mIn,pos,adjVars);  // redirect the replaced equation to the vars outside of the loops
       
       // update remaining paths
-      rest = List.map2(rest,replaceContractedNodes,pos,crossEqs2);
+      //rest = List.map2(rest,replaceContractedNodes,pos,crossEqs2);
+      rest = List.map2(rest,replaceContractedNodes,pos,eqs);
       rest = List.unique(rest);
         //print("the remaining paths: "+&stringDelimitList(List.map(rest,HpcOmTaskGraph.intLstString),"\n")+&"\n\n");
         
       // replace Equation
-      pos = listGet(eqMapping,pos);
+        //print("replace equation "+&intString(pos)+&"\n");
       replEqs = pos::replEqsIn;
+      pos = listGet(eqMapping,pos);
       eqLst = List.replaceAt(resolvedEq,pos-1,eqLstIn);
       
-      (eqLst,replEqs) = resolveLoops3(rest,eqCrossLstIn,varCrossLstIn,mIn,mTIn,eqMapping,varMapping,eqLst,varLstIn,replEqs);
+      (eqLst,replEqs) = resolveSubLoops(rest,eqCrossLstIn,varCrossLstIn,mIn,mTIn,eqMapping,varMapping,eqLst,varLstIn,replEqs);
     then
       (eqLst,replEqs);
   case(loop1::rest,{},crossVar::crossVars,_,_,_,_,_,_,_)
     equation
       // only varCrossNodes
-      print("only varCrossNodes\n");
+         //print("only varCrossNodes\n");
       loop1 = List.unique(loop1);
       resolvedEq = resolveClosedLoop(loop1,mIn,mTIn,eqMapping,varMapping,eqLstIn,varLstIn);
       // update IncidenceMatrix
@@ -7395,48 +7560,44 @@ algorithm
       List.map2_0(vars,Util.arrayUpdateIndexFirst,{},mTIn);
       List.map2_0(crossVars,arrayGetDeleteInLst,loop1,mTIn);
       List.map2_0(loop1,Util.arrayUpdateIndexFirst,{},mIn);
-      BackendDump.dumpIncidenceMatrix(mIn);
-      BackendDump.dumpIncidenceMatrix(mTIn);
       // replace Equation
       pos = List.first(loop1);
-      print("replace equation "+&intString(pos)+&"\n");
+        //print("replace equation "+&intString(pos)+&"\n");
       replEqs = pos::replEqsIn;
       pos = listGet(eqMapping,pos);
       eqLst = List.replaceAt(resolvedEq,pos-1,eqLstIn);
-      (eqLst,replEqs) = resolveLoops3(rest,eqCrossLstIn,varCrossLstIn,mIn,mTIn,eqMapping,varMapping,eqLst,varLstIn,replEqs);
+      (eqLst,replEqs) = resolveSubLoops(rest,eqCrossLstIn,varCrossLstIn,mIn,mTIn,eqMapping,varMapping,eqLst,varLstIn,replEqs);
     then
       (eqLst,replEqs);
   case(loop1::rest,{},{},_,_,_,_,_,_,_)
     equation
       // single Loop
       loop1 = List.unique(loop1);
-      print("single loop\n");
+        //print("single loop\n");
       resolvedEq = resolveClosedLoop(loop1,mIn,mTIn,eqMapping,varMapping,eqLstIn,varLstIn);
       // update IncidenceMatrix
       (_,crossEqs,_) = List.intersection1OnTrue(loop1,replEqsIn,intEq);  // do not replace an already replaced Eq
       (pos::removeCrossEqs) = crossEqs;  // the equation that will be replaced = pos
       eqVars = List.map1(loop1,Util.arrayGetIndexFirst,mIn);
       vars = List.flatten(eqVars);     
-      print("delete vars: "+&stringDelimitList(List.map(vars,intString),",")+&" in the eqs: "+&stringDelimitList(List.map(crossEqs,intString),",")+&"\n");
+        //print("delete vars: "+&stringDelimitList(List.map(vars,intString),",")+&" in the eqs: "+&stringDelimitList(List.map(crossEqs,intString),",")+&"\n");
       List.map2_0(loop1,Util.arrayUpdateIndexFirst,{},mIn);  //delete the equations in the loop
       List.map2_0(vars,Util.arrayUpdateIndexFirst,{},mTIn);  //delete the vars from the loop
-      BackendDump.dumpIncidenceMatrix(mIn);
-      BackendDump.dumpIncidenceMatrix(mTIn);
       // replace Equation
-      print("replace equation "+&intString(pos)+&"\n");
+        //print("replace equation "+&intString(pos)+&"\n");
       pos = listGet(eqMapping,pos);
       replEqs = pos::replEqsIn;
       eqLst = List.replaceAt(resolvedEq,pos-1,eqLstIn);
-      (eqLst,replEqs) = resolveLoops3(rest,eqCrossLstIn,varCrossLstIn,mIn,mTIn,eqMapping,varMapping,eqLst,varLstIn,replEqs);
+      (eqLst,replEqs) = resolveSubLoops(rest,eqCrossLstIn,varCrossLstIn,mIn,mTIn,eqMapping,varMapping,eqLst,varLstIn,replEqs);
     then
       (eqLst,replEqs);
   else
     equation
-      print("resolveLoops3 failed!\n");
+      print("resolveSubLoops failed!\n");
     then
       fail();
   end matchcontinue;
-end resolveLoops3;
+end resolveSubLoops;
 
 protected function replaceContractedNodes "replaces the replNodes in the pathIn with the nodeIn"
   input list<Integer> pathIn;
@@ -7460,6 +7621,65 @@ algorithm
   entryOut := Util.if_(repl,nodeIn,entryIn);
 end replaceContractedNodes2;
   
+
+protected function getDeadEndsInBipartiteGraph "gets the deadEndNodes of a bipartiteGraph. update the incidencematrix
+author:Waurich TUD 2014-01"
+  input list<Integer> checkSecNodes;  //checks all these secondary nodes (vars)
+  input BackendDAE.IncidenceMatrix mIn;  // the rows correspond to the primary nodes
+  input BackendDAE.IncidenceMatrixT mTIn;
+  input list<Integer> primNodesIn;
+  input list<Integer> secNodesIn;
+  output list<Integer> primNodesOut;
+  output list<Integer> secNodesOut;
+algorithm
+  (primNodesOut,secNodesOut) := match(checkSecNodes,mIn,mTIn,primNodesIn,secNodesIn)
+    local
+      Integer secNode;
+      list<Integer> restSecNodes, adjPrimNodes, adjSecNodes, nonLoopVars, nonLoopEqs;
+      list<list<Integer>> adjSecNodesLst;
+      case(secNode::restSecNodes,_,_,_,_)
+        equation
+            //print("check varNode "+&intString(secNode)+&"\n");
+          adjPrimNodes = arrayGet(mTIn,secNode);
+            //print("adjPrimNodes1: "+&stringDelimitList(List.map(adjPrimNodes,intString),",")+&"\n");
+          (_,adjPrimNodes,_) = List.intersection1OnTrue(adjPrimNodes,primNodesIn,intEq);
+            //print("adjPrimNodes2: "+&stringDelimitList(List.map(adjPrimNodes,intString),",")+&"\n");
+          adjPrimNodes = List.filter2OnTrue(adjPrimNodes,isNoCrossNode,mIn,secNodesIn);
+            //print("adjPrimNodes3: "+&stringDelimitList(List.map(adjPrimNodes,intString),",")+&"\n");
+          adjSecNodesLst = List.map1(adjPrimNodes,Util.arrayGetIndexFirst,mIn);
+          adjSecNodes = List.flatten(adjSecNodesLst);
+            //print("adjSecNodes1: "+&stringDelimitList(List.map(adjSecNodes,intString),",")+&"\n");
+          (_,adjSecNodes,_) = List.intersection1OnTrue(adjSecNodes,secNodesIn,intEq);
+            //print("adjSecNodes2: "+&stringDelimitList(List.map(adjSecNodes,intString),",")+&"\n");
+          adjSecNodes = List.filter2OnTrue(adjSecNodes,arrayEntryLengthIs,mTIn,2);
+            //print("adjSecNodes3: "+&stringDelimitList(List.map(adjSecNodes,intString),",")+&"\n");
+          restSecNodes = listAppend(restSecNodes,adjSecNodes); 
+          adjPrimNodes = listAppend(adjPrimNodes,primNodesIn);
+          adjSecNodes = listAppend(adjSecNodes,secNodesIn);
+          (adjPrimNodes,adjSecNodes) = getDeadEndsInBipartiteGraph(restSecNodes,mIn,mTIn,adjPrimNodes,adjSecNodes);
+        then
+          (adjPrimNodes,adjSecNodes);
+      case({},_,_,_,_)
+        equation
+        then
+        (primNodesIn,secNodesIn);
+  end match;
+end getDeadEndsInBipartiteGraph;
+
+
+protected function isNoCrossNode "checks if the indexed node leads to only one or less other nodes (except doNotConcern).
+author:Waurich TUD 2014-01"
+  input Integer idx;
+  input array<list<Integer>> arr;
+  input list<Integer> doNotConsider;
+  output Boolean noCrossNode;
+protected
+  list<Integer> entry;
+algorithm
+  entry := arrayGet(arr,idx);
+  (_,entry,_) := List.intersection1OnTrue(entry,doNotConsider,intEq);
+  noCrossNode := intLe(listLength(entry),1);  
+end isNoCrossNode;
 
 
 protected function cutDeadEndsInBipartiteGraph "remove the eq and var nodes which are not part of a loop.
@@ -7758,7 +7978,7 @@ algorithm
         path;     
   end matchcontinue;
 end getShortLoop;
-*/
+
 
 protected function firstIsEqual "checks if the first entry in the list is equal to the value.
 author:Waurich TUD 2014-01"
@@ -7785,6 +8005,7 @@ algorithm
   isEq := intEq(last,value);
 end lastIsEqual;
 
+*/
 
 protected function resolveClosedLoop"sums up all equations in a loop so that the variables shared by the equations disappear"
   input list<Integer> loopIn;
@@ -7803,11 +8024,72 @@ algorithm
   startEqIdx::restLoop := loopIn;
   startEqDaeIdx := listGet(eqMapping,startEqIdx);
   loop1 := sortLoop(restLoop,m,mT,{startEqIdx});
-  print("solve the loop: "+&stringDelimitList(List.map(loop1,intString),",")+&"\n");
+    //print("solve the loop: "+&stringDelimitList(List.map(loop1,intString),",")+&"\n");
   eq := listGet(daeEqsIn,startEqDaeIdx);
-  print("start with equation no.: "+&intString(startEqDaeIdx)+&" which is: \n"+&BackendDump.equationString(eq)+&"\n");
+    //print("start with equation no.: "+&intString(startEqDaeIdx)+&" which is: \n"+&BackendDump.equationString(eq)+&"\n");
   eqOut := resolveClosedLoop2(eq,loop1,m,mT,eqMapping,varMapping,daeEqsIn,daeVarsIn);
 end resolveClosedLoop;
+
+
+protected function resolveClosedLoop2"
+author:Waurich TUD 2013-12"
+  input BackendDAE.Equation eqIn;
+  input list<Integer> loopIn; 
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrixT mT;
+  input list<Integer> eqMapping;
+  input list<Integer> varMapping;
+  input list<BackendDAE.Equation> daeEqsIn;
+  input list<BackendDAE.Var> daeVarsIn;
+  output BackendDAE.Equation eqOut;
+algorithm  
+  (eqOut) := matchcontinue(eqIn,loopIn,m,mT,eqMapping,varMapping,daeEqsIn,daeVarsIn)
+    local
+      Boolean isPosOnRhs1, isPosOnRhs2, algSign;
+      Integer eqIdx1, eqIdx2, eqDaeIdx2, varIdx, daeVarIdx;
+      list<Integer> adjVars, adjVars1 ,adjVars2, eqIdcs,varIdcs,varNodes,restLoop, row;
+      list<BackendDAE.Equation> eqs;
+      BackendDAE.Equation eq2,resolvedEq;
+      BackendDAE.Var var;
+      DAE.ComponentRef cref, eqCrefs;
+    case(_,{eqIdx1},_,_,_,_,_,_)
+      equation
+          //print("finished loop\n");
+      then
+        eqIn;
+    case(_,(eqIdx1::restLoop),_,_,_,_,_,_)
+      equation   
+        // the equation to add
+        eqIdx2 = List.first(restLoop);
+        eqDaeIdx2 = listGet(eqMapping,eqIdx2);
+        eq2 = listGet(daeEqsIn,eqDaeIdx2);
+          //print("resolve with eq: "+&intString(eqDaeIdx2)+&" which is:\n"+&BackendDump.equationString(eq2)+&"\n");
+        
+        // get the vars that are shared of the 2 equations
+        adjVars1 = arrayGet(m,eqIdx1);
+        adjVars2 = arrayGet(m,eqIdx2);
+        (adjVars,adjVars1,_) = List.intersection1OnTrue(adjVars1,adjVars2,intEq); 
+
+        // just take  the first
+        varIdx = listGet(adjVars,1);
+        daeVarIdx = listGet(varMapping,varIdx);
+        var = listGet(daeVarsIn,daeVarIdx);
+        cref = BackendVariable.varCref(var);
+          //print("resolve for :\n");
+          //BackendDump.printVar(var);
+        
+        // check the algebraic signs
+        isPosOnRhs1 = CRefIsPosOnRHS(cref,eqIn);
+        isPosOnRhs2 = CRefIsPosOnRHS(cref,eq2);
+        algSign = boolOr((not isPosOnRhs1) and isPosOnRhs2,(not isPosOnRhs2) and isPosOnRhs1); // XOR
+        resolvedEq = sumUp2Equations(algSign,eqIn,eq2);
+          //print("the resolved eq\n");
+          //BackendDump.printEquationList({resolvedEq});
+        resolvedEq = resolveClosedLoop2(resolvedEq,restLoop,m,mT,eqMapping,varMapping,daeEqsIn,daeVarsIn);
+      then
+        resolvedEq;
+  end matchcontinue;
+end resolveClosedLoop2;
 
 
 protected function sortLoop "sorts the equations in a loop.
@@ -7842,78 +8124,6 @@ algorithm
   end matchcontinue;
 end sortLoop;
 
-protected function resolveClosedLoop2"
-author:Waurich TUD 2013-12"
-  input BackendDAE.Equation eqIn;
-  input list<Integer> loopIn; 
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
-  input list<Integer> eqMapping;
-  input list<Integer> varMapping;
-  input list<BackendDAE.Equation> daeEqsIn;
-  input list<BackendDAE.Var> daeVarsIn;
-  output BackendDAE.Equation eqOut;
-algorithm  
-  (eqOut) := matchcontinue(eqIn,loopIn,m,mT,eqMapping,varMapping,daeEqsIn,daeVarsIn)
-    local
-      Boolean isPosOnRhs1, isPosOnRhs2, algSign;
-      Integer eqIdx1, eqIdx2, eqDaeIdx2, varIdx, daeVarIdx;
-      list<Integer> adjVars, adjVars1 ,adjVars2, eqIdcs,varIdcs,varNodes,restLoop, row;
-      list<BackendDAE.Equation> eqs;
-      BackendDAE.Equation eq2,resolvedEq;
-      BackendDAE.Var var;
-      DAE.ComponentRef cref, eqCrefs;
-    case(_,{eqIdx1},_,_,_,_,_,_)
-      equation
-        print("finished loop\n");
-      then
-        eqIn;
-    case(_,(eqIdx1::restLoop),_,_,_,_,_,_)
-      equation   
-        // the equation to add
-        eqIdx2 = List.first(restLoop);
-        eqDaeIdx2 = listGet(eqMapping,eqIdx2);
-        eq2 = listGet(daeEqsIn,eqDaeIdx2);
-        print("resolve with eq: "+&intString(eqDaeIdx2)+&" which is:\n"+&BackendDump.equationString(eq2)+&"\n");
-        
-        // get the vars that are shared of the 2 equations
-        adjVars1 = arrayGet(m,eqIdx1);
-        adjVars2 = arrayGet(m,eqIdx2);
-        (adjVars,adjVars1,_) = List.intersection1OnTrue(adjVars1,adjVars2,intEq); 
-        
-          // IS THIS NECESSARY AND CORRECT?
-            //row = arrayGet(m,eqIdx2);
-            //row = listAppend(adjVars1,row);
-            //_ = arrayUpdate(m,eqIdx2,row);
-        
-        // just take  the first
-        varIdx = listGet(adjVars,1);
-        print("varIDx "+&intString(varIdx)+&"\n");
-        daeVarIdx = listGet(varMapping,varIdx);
-        print("varMapping "+&stringDelimitList(List.map(varMapping,intString),",")+&"\n");
-        print("daeVarIdx "+&intString(daeVarIdx)+&"\n");
-        var = listGet(daeVarsIn,daeVarIdx);
-        cref = BackendVariable.varCref(var);
-        print("resolve for :\n");
-        BackendDump.printVar(var);
-        
-        // check the algebraic signs
-        isPosOnRhs1 = CRefIsPosOnRHS(cref,eqIn);
-        isPosOnRhs2 = CRefIsPosOnRHS(cref,eq2);
-          //print("isPosOnRhs1 "+&boolString(isPosOnRhs1)+&"\n");
-          //print("isPosOnRhs2 "+&boolString(isPosOnRhs2)+&"\n");
-        algSign = boolOr((not isPosOnRhs1) and isPosOnRhs2,(not isPosOnRhs2) and isPosOnRhs1); // XOR
-          //print("algSign "+&boolString(algSign)+&"\n");
-        resolvedEq = sumUp2Equations(algSign,eqIn,eq2);
-        print("the resolved eq\n");
-        BackendDump.printEquationList({resolvedEq});
-        resolvedEq = resolveClosedLoop2(resolvedEq,restLoop,m,mT,eqMapping,varMapping,daeEqsIn,daeVarsIn);
-      then
-        resolvedEq;
-  end matchcontinue;
-end resolveClosedLoop2;
-
-
 protected function closePathDirectly "tries to close the given path with the one of the paths from the list. It outputs the whole loop
 author:Waurich TUD 2014-01"
   input list<Integer> pathIn;
@@ -7940,7 +8150,6 @@ algorithm
         endNode = List.last(pathIn);
         path = findPathByEnds(pathLstIn,startNode,endNode);
         closed = List.isNotEmpty(path);
-        //path = Util.if_(closed,listAppend(path,restPath),{});
         path = Util.if_(closed,path,{});
         path = listAppend(pathIn,path);
         path = List.unique(path);
@@ -8687,7 +8896,7 @@ end isAddOrSubExp;
 //-------------------------------------------------------------------------
 // resolveLoops for components
 //-------------------------------------------------------------------------
-
+/*
 public function resolveLoopsInComps"traverses the strongComponents in a dae and looks for linear torn systems. the loops will be resolved.
 author:Waurich TUD 2014-01"
   input BackendDAE.BackendDAE daeIn;
@@ -8812,7 +9021,7 @@ algorithm
         systTmp;
   end matchcontinue;
 end resolveLinearSystem;
-
+*/
 
 
 end BackendDAEOptimize;
