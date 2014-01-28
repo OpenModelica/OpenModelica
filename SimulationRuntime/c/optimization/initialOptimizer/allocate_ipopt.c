@@ -201,7 +201,7 @@ int freeIpoptData(IPOPT_DATA_ *iData)
   free(iData->knowedJ);
 
   for(i=0;i<2;++i)
-	  free(iData->gradFomc[i]);
+    free(iData->gradFomc[i]);
 
   for(i = 0; i < iData->nv; i++){
     free(iData->oH[i]);
@@ -568,7 +568,7 @@ static int local_jac_struct(IPOPT_DATA_ *iData, int * nng)
 
   if(ACTIVE_STREAM(LOG_JAC))
   {
-	  local_jac_struct_print(iData);
+    local_jac_struct_print(iData);
   }
   *nng = id;
   return 0;
@@ -576,28 +576,28 @@ static int local_jac_struct(IPOPT_DATA_ *iData, int * nng)
 
 static int local_jac_struct_print(IPOPT_DATA_ *iData)
 {
-	int ii,j;
-	int nJ = (int)(iData->nx+iData->nc);
-	int **J;
-	short **Hg;
+  int ii,j;
+  int nJ = (int)(iData->nx+iData->nc);
+  int **J;
+  short **Hg;
 
-	J = iData->knowedJ;
-	Hg = iData->Hg;
+  J = iData->knowedJ;
+  Hg = iData->Hg;
 
-	printf("\n*****JAC******");
-	for(ii = 0; ii < nJ; ++ii){
-	  printf("\n");
-	  for(j =0;j<iData->nv;++j)
-	    printf("%i \t",J[ii][j]);
-	  printf("\n");
-	}
-	printf("\n*****HESSE******");
-	for(ii = 0; ii < iData->nv; ++ii){
-	  printf("\n");
-	  for(j =0;j<iData->nv;++j)
-	    printf("%i \t",Hg[ii][j]);
-	  printf("\n");
-	}
+  printf("\n*****JAC******");
+  for(ii = 0; ii < nJ; ++ii){
+    printf("\n");
+    for(j =0;j<iData->nv;++j)
+      printf("%i \t",J[ii][j]);
+    printf("\n");
+  }
+  printf("\n*****HESSE******");
+  for(ii = 0; ii < iData->nv; ++ii){
+    printf("\n");
+    for(j =0;j<iData->nv;++j)
+      printf("%i \t",Hg[ii][j]);
+    printf("\n");
+  }
 
 }
 
