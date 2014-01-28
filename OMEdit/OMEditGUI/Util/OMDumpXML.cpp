@@ -270,6 +270,7 @@ OMEquation::OMEquation(const OMEquation &eq)
     else
       ops.append(new OMOperation(*op));
   }
+  eqs = eq.eqs;
 }
 
 OMEquation::~OMEquation() {
@@ -357,6 +358,9 @@ bool MyHandler::startElement( const QString & namespaceURI, const QString & loca
     currentEquation.depends.clear();
     currentEquation.index = atts.value("index").toLong();
     currentEquation.kind = currentKind;
+    nestedEquations.clear();
+  } else if (qName == "eq") {
+    nestedEquations.append(atts.value("index").toLong());
   } else if (qName == "equations" ||
              qName == "jacobian-equations") {
     currentKind = regular;
@@ -400,6 +404,7 @@ bool MyHandler::endElement( const QString & namespaceURI, const QString & localN
   } else if (qName == "equation") {
     currentEquation.info = currentInfo;
     currentEquation.ops = operations;
+    currentEquation.eqs = nestedEquations;
     operations.clear();
     if (currentEquation.index != equations.size()) {
       printf("failing: %d expect %d\n", currentEquation.index, equations.size()+1);

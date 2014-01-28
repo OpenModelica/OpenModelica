@@ -177,6 +177,7 @@ struct OMEquation {
   QStringList defines;
   QStringList depends;
   QList<OMOperation*> ops;
+  QList<int> eqs;
   OMEquation();
   OMEquation(const OMEquation& eq);
   ~OMEquation();
@@ -193,6 +194,7 @@ public:
 private:
   OMVariable currentVariable;
   OMEquation currentEquation;
+  QList<int> nestedEquations;
   OMInfo currentInfo;
   OMEquationType currentKind;
   QString currentText;
