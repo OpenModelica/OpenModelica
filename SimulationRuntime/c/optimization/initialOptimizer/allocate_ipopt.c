@@ -270,7 +270,6 @@ int freeIpoptData(IPOPT_DATA_ *iData)
   }
   }
 
-
   free(iData);
   iData = NULL;
   return 0;
@@ -413,18 +412,20 @@ int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
   }
 
   iData->time[0] = iData->t0;
+  if(iData->deg == 3){
   for(i = 0,k=0,id=0; i<iData->nsi; ++i,id += iData->deg)
   {
-    if(i>0)
+    if(i)
     {
       iData->time[++k] = iData->time[id] + iData->c1*iData->dt[i];
       iData->time[++k] = iData->time[id] + iData->c2*iData->dt[i];
-      iData->time[++k] = iData->time[id] + iData->c3*iData->dt[i];
+      iData->time[++k] = (i+1)*iData->dt[i];
     }else{
       iData->time[++k] = iData->time[id] + iData->e1*iData->dt[i];
       iData->time[++k] = iData->time[id] + iData->e2*iData->dt[i];
-      iData->time[++k] = iData->time[id] + iData->e3*iData->dt[i];
+      iData->time[++k] = (i+1)*iData->dt[i];
     }
+  }
   }
   iData->time[k] = iData->tf;
 
