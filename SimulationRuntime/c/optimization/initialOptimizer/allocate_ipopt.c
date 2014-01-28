@@ -258,6 +258,18 @@ int freeIpoptData(IPOPT_DATA_ *iData)
   free(iData->rhs);
   free(iData->sv);
   free(iData->sh);
+
+  /*for(i = 0; i<3;++i);{
+	if(iData-data->simulationInfo.analyticJacobians[i].seedVars){
+      free(iData-data->simulationInfo.analyticJacobians[i].seedVars);
+      free(iData-data->simulationInfo.analyticJacobians[i].resultVars);
+      free(iData-data->simulationInfo.analyticJacobians[i].tmpVars);
+      free()
+	}
+  }
+  */
+
+
   free(iData);
   iData = NULL;
   return 0;
