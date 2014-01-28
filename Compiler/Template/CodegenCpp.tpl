@@ -417,7 +417,7 @@ OFILES=$(CPPFILES:.cpp=.o)
 .PHONY: <%lastIdentOfPath(modelInfo.name)%> $(CPPFILES)
 
 <%fileNamePrefix%>: $(MAINFILE) $(OFILES)
-<%\t%>$(CXX) -shared -I. -o $(SYSTEMOBJ) $(OFILES) $(CPPFLAGS) $(LDSYTEMFLAGS)  <%dirExtra%> <%libsPos1%> <%libsPos2%> -lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath -lOMCppModelicaExternalC
+<%\t%>$(CXX) -shared -I. -o $(SYSTEMOBJ) $(OFILES) $(CPPFLAGS) $(LDSYTEMFLAGS)  <%dirExtra%> <%libsPos1%> <%libsPos2%> -lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath 
 <%\t%>$(CXX) $(CPPFLAGS) -I. -o $(MAINOBJ) $(MAINFILE) $(LDMAINFLAGS)
 <% if boolNot(stringEq(makefileParams.platform, "win32")) then
   <<
