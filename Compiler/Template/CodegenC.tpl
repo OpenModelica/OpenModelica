@@ -10418,7 +10418,6 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
          *res =  $P$TMP_lagrangeTerm;
          return 0;
         >>
-      let listConstraintsLength = match simCode case SIMCODE(modelInfo = MODELINFO(__)) then listLength(constraints)  
      
       let constraints = match simCode case SIMCODE(modelInfo = MODELINFO(__)) then pathConstraints(constraints)              
         <<
@@ -10444,12 +10443,7 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
             /* constraints */
             int <%symbolName(modelNamePrefixStr,"pathConstraints")%>(DATA* data, modelica_real* res, long int* N)
             {
-              if(*N < 0)
-              {
-                *N = <%listConstraintsLength%>;
-                return 1;
-              }
-               <%constraints%>
+              <%constraints%>
               return 0;
             }
         >>
@@ -10473,9 +10467,12 @@ template pathConstraint(Constraint cons)
       let constrain = (constraintLst |> constraint =>
          daeExp(constraint, contextOptimization, &preExp /*BUFC*/, &varDecls /*BUFD*/)
           ;separator="\n")
+      let listConstraintsLength = listLength(constraintLst)  
       <<
-        else
-        {
+        if(*N<=0){
+         *N = <%listConstraintsLength%>;
+         return 1;
+        }else{
           int i = 0;
           <%varDecls%>
           <%preExp%>

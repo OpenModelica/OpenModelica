@@ -230,7 +230,7 @@ int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
 
   iData->nx = data->modelData.nStates;
   iData->nu = data->modelData.nInputVars;
-  iData->nc = -1;
+  iData->nc = 0;
   iData->data->callback->pathConstraints(data,u0,&iData->nc);
 
   iData->deg = 3;
