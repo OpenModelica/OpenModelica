@@ -160,7 +160,7 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
 
   nng = ng-iData->nc;
   if((int)iData->nc > (int)0){
-    for(i = iData->nx; i<nng; i+=nJ)
+    for(i = iData->nx; i<ng; i+=nJ)
       for(j=0;j<(int)iData->nc;++j)
       {
         iData->gmin[i+j] = -1e21;
