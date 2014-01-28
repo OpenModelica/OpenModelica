@@ -9581,7 +9581,7 @@ protected function generateExtFunctionLibraryDirectoryFlags
 algorithm
   outLibs := matchcontinue (program, path, inMod, inLibs)
     local
-      String str, str1, str2, str3, platform1, platform2;
+      String str, str1, str2, str3, platform1, platform2,target;
       list<String> libs;
       Boolean isLinux;
     case (_, _, _, {}) then {};
@@ -9593,10 +9593,11 @@ algorithm
         platform1 = System.openModelicaPlatform();
         platform2 = System.modelicaPlatform();
         isLinux = stringEq("linux",System.os());
+        target = Flags.getConfigString(Flags.TARGET);
         // please, take care about ordering these libraries, the most specific should go first (in reverse here)
-        libs = generateExtFunctionLibraryDirectoryFlags2(true, str, isLinux, libs);
-        libs = generateExtFunctionLibraryDirectoryFlags2(not stringEq(platform2,""), str +& "/" +& platform2, isLinux, libs);
-        libs = generateExtFunctionLibraryDirectoryFlags2(not stringEq(platform1,""), str +& "/" +& platform1, isLinux, libs);        
+        libs = generateExtFunctionLibraryDirectoryFlags2(true, str, isLinux, libs,target);
+        libs = generateExtFunctionLibraryDirectoryFlags2(not stringEq(platform2,""), str +& "/" +& platform2, isLinux, libs,target);
+        libs = generateExtFunctionLibraryDirectoryFlags2(not stringEq(platform1,""), str +& "/" +& platform1, isLinux, libs,target);        
       then libs;
     case (_, _, _, libs)
       equation
@@ -9605,10 +9606,11 @@ algorithm
         platform1 = System.openModelicaPlatform();
         platform2 = System.modelicaPlatform();
         isLinux = stringEq("linux",System.os());
+        target = Flags.getConfigString(Flags.TARGET);
         // please, take care about ordering these libraries, the most specific should go first (in reverse here)
-        libs = generateExtFunctionLibraryDirectoryFlags2(true, str, isLinux, libs);
-        libs = generateExtFunctionLibraryDirectoryFlags2(not stringEq(platform2,""), str +& "/" +& platform2, isLinux, libs);
-        libs = generateExtFunctionLibraryDirectoryFlags2(not stringEq(platform1,""), str +& "/" +& platform1, isLinux, libs);        
+        libs = generateExtFunctionLibraryDirectoryFlags2(true, str, isLinux, libs,target);
+        libs = generateExtFunctionLibraryDirectoryFlags2(not stringEq(platform2,""), str +& "/" +& platform2, isLinux, libs,target);
+        libs = generateExtFunctionLibraryDirectoryFlags2(not stringEq(platform1,""), str +& "/" +& platform1, isLinux, libs,target);        
       then libs;
     else inLibs;
   end matchcontinue;
@@ -9619,12 +9621,19 @@ protected function generateExtFunctionLibraryDirectoryFlags2
   input String dir;
   input Boolean isLinux;
   input list<String> inLibs;
+   input String target;
   output list<String> libs;
 algorithm
-  libs := match (add,dir,isLinux,inLibs)
+  libs := match (add,dir,isLinux,inLibs,target)
     local
       Boolean b;
-    case (true,_,_,libs)
+    case (true,_,_,libs,"msvc")
+      equation
+        b = System.directoryExists(dir);
+        libs = List.consOnTrue(b, "/LIBPATH:\"" +& dir +& "\"", libs);
+        libs = List.consOnTrue(b and isLinux, "-Wl,-rpath=\"" +& dir +& "\"", libs);
+      then libs;
+    case (true,_,_,libs,_)
       equation
         b = System.directoryExists(dir);
         libs = List.consOnTrue(b, "\"-L" +& dir +& "\"", libs);
