@@ -44,7 +44,25 @@
 #include "../localFunction.h"
 
 static int local_jac_struct(IPOPT_DATA_ *iData, int *nng);
+static int local_jac_struct_print(IPOPT_DATA_ *iData);
 static int check_nominal(IPOPT_DATA_ *iData, double min, double max, double nominal, short set, int i, double x0);
+
+
+/*!
+ *  free
+ *  intarface to simulation
+ *  author: Vitalij Ruge
+ **/
+int destroyIpopt(SOLVER_INFO* solverInfo)
+{
+  return freeIpoptData( (IPOPT_DATA_*)solverInfo->solverData );
+}
+
+
+
+/*
+ * allocate
+ */
 
 /*!
  *  allocate
@@ -130,12 +148,22 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   for(i = 0; i < iData->nv; i++)
     iData->mH[i] = (long double*) calloc(iData->nv, sizeof(long double));
 
+  iData->nlocalJac = 0;
+  iData->knowedJ = (int**) malloc( nJ* sizeof(int*));
+  for(i = 0; i < nJ; i++)
+    iData->knowedJ[i] = (int*) calloc(iData->nv, sizeof(int));
+
+  iData->Hg = (short**) malloc(iData->nv * sizeof(short*));
+  for(i = 0; i < iData->nv; i++)
+    iData->Hg[i] = (short*) calloc(iData->nv, sizeof(short));
+
+
   nng = ng-iData->nc;
   if((int)iData->nc > (int)0){
     for(i = iData->nx; i<nng; i+=nJ)
       for(j=0;j<(int)iData->nc;++j)
       {
-        iData->gmin[i+j] = -1e320;
+        iData->gmin[i+j] = -1e21;
       }
   }
 
@@ -146,6 +174,12 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   return 0;
 }
 
+/*
+ *
+ * free
+ *
+ */
+
 /*!
  *  free
  *  author: Vitalij Ruge
@@ -153,15 +187,32 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
 int freeIpoptData(IPOPT_DATA_ *iData)
 {
   int i,j;
-  for(i = 0; i < iData->nx; i++)
+  int nJ = (int) iData->nx + iData->nv;
+
+  for(i = 0; i < nJ; i++){
     free(iData->J[i]);
-  free(iData->J);
-
-  for(i = 0; i < iData->nx; i++)
     free(iData->J0[i]);
+    free(iData->numJ[i]);
+    free(iData->knowedJ[i]);
+  }
   free(iData->J0);
+  free(iData->J);
+  free(iData->numJ);
+  free(iData->knowedJ);
 
-  for(i = 0; i < iData->nx; i++)
+  for(i=0;i<2;++i)
+	  free(iData->gradFomc[i]);
+
+  for(i = 0; i < iData->nv; i++){
+    free(iData->oH[i]);
+    free(iData->mH[i]);
+    free(iData->Hg[i]);
+  }
+  free(iData->oH);
+  free(iData->mH);
+  free(iData->Hg);
+
+  for(i = 0; i < nJ; i++)
   {
     for(j = 0;j<iData->nv; ++j)
       free(iData->H[i][j]);
@@ -203,18 +254,13 @@ int freeIpoptData(IPOPT_DATA_ *iData)
   free(iData->time);
   free(iData->w);
   free(iData->dt);
+  free(iData->lhs);
+  free(iData->rhs);
+  free(iData->sv);
+  free(iData->sh);
   free(iData);
-    iData = NULL;
+  iData = NULL;
   return 0;
-}
-/*!
- *  free
- *  intarface to simulation
- *  author: Vitalij Ruge
- **/
-int destroyIpopt(SOLVER_INFO* solverInfo)
-{
-  return freeIpoptData( (IPOPT_DATA_*)solverInfo->solverData );
 }
 
 /*!
@@ -255,12 +301,10 @@ int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
 
   iData->endN = iData->NV - iData->nv;
 
-  /* iData->njac =  iData->nX*iData->nsi*(iData->nv + iData->deg) + iData->nX*(iData->nv-1); */
+  allocateIpoptData(iData);
   local_jac_struct(iData, &id);
   iData->njac = iData->deg*(iData->nlocalJac-iData->nx+iData->nsi*iData->nlocalJac+iData->deg*iData->nsi*iData->nx)-iData->deg*id;
   iData->nhess = 0.5*iData->nv*(iData->nv + 1)*(1+iData->deg*iData->nsi);
-
-  allocateIpoptData(iData);
 
   if(iData->deg == 3){
    iData->c1 = 0.15505102572168219018027159252941086080340525193433;
@@ -443,6 +487,8 @@ int move_grid(IPOPT_DATA_ *iData)
   return 0;
 }
 
+
+
 /*
  *  function calculates a jacobian matrix struct
  *  author: Willi
@@ -457,15 +503,6 @@ static int local_jac_struct(IPOPT_DATA_ *iData, int * nng)
   int *cC,*lindex;
   int nJ = (int)(iData->nx+iData->nc);
   id = 0;
-
-  iData->nlocalJac = 0;
-  iData->knowedJ = (int**) malloc( nJ* sizeof(int*));
-  for(i = 0; i < nJ; i++)
-    iData->knowedJ[i] = (int*) calloc(iData->nv, sizeof(int));
-
-  iData->Hg = (short**) malloc(iData->nv * sizeof(int*));
-  for(i = 0; i < iData->nv; i++)
-    iData->Hg[i] = (short*) calloc(iData->nv, sizeof(int));
 
   J = iData->knowedJ;
   Hg = iData->Hg;
@@ -531,25 +568,37 @@ static int local_jac_struct(IPOPT_DATA_ *iData, int * nng)
 
   if(ACTIVE_STREAM(LOG_JAC))
   {
-  printf("\n***********");
-    for(ii = 0; ii < nJ; ++ii)
-    {
-      printf("\n");
-      for(j =0;j<iData->nv;++j)
-        printf("%i \t",J[ii][j]);
-      printf("\n");
-    }
-    printf("\n***********");
-    for(ii = 0; ii < iData->nv; ++ii)
-    {
-      printf("\n");
-      for(j =0;j<iData->nv;++j)
-        printf("%i \t",Hg[ii][j]);
-      printf("\n");
-    }
+	  local_jac_struct_print(iData);
   }
   *nng = id;
   return 0;
+}
+
+static int local_jac_struct_print(IPOPT_DATA_ *iData)
+{
+	int ii,j;
+	int nJ = (int)(iData->nx+iData->nc);
+	int **J;
+	short **Hg;
+
+	J = iData->knowedJ;
+	Hg = iData->Hg;
+
+	printf("\n*****JAC******");
+	for(ii = 0; ii < nJ; ++ii){
+	  printf("\n");
+	  for(j =0;j<iData->nv;++j)
+	    printf("%i \t",J[ii][j]);
+	  printf("\n");
+	}
+	printf("\n*****HESSE******");
+	for(ii = 0; ii < iData->nv; ++ii){
+	  printf("\n");
+	  for(j =0;j<iData->nv;++j)
+	    printf("%i \t",Hg[ii][j]);
+	  printf("\n");
+	}
+
 }
 
 
