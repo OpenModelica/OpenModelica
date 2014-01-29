@@ -1562,15 +1562,15 @@ algorithm
           iSccIdx+1;
     case(BackendDAE.TORNSYSTEM(tearingvars = compVarIdc,residualequations = residuals, otherEqnVarTpl = tearEqVarTpl),_,_,_)
       equation
-      print("test1\n");
+      //print("test1\n");
       ((othereqs,othervars)) = List.fold(tearEqVarTpl,othersInTearComp,(({},{})));
-      print("test2\n");
+      //print("test2\n");
       compVarIdc = listAppend(othervars,compVarIdc);
-      print("test3\n");
+      //print("test3\n");
       eqns = listAppend(othereqs,residuals);
-      print("test4\n");
+      //print("test4\n");
       tmpVarSccMapping = List.fold1(compVarIdc,updateMapping,iSccIdx,varSccMapping);
-      print("test5\n");
+      //print("test5\n");
       tmpEqSccMapping = List.fold1(eqns,updateMapping,iSccIdx,eqSccMapping);
       then 
         iSccIdx+1;   
