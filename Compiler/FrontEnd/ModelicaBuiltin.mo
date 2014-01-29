@@ -1859,6 +1859,7 @@ function dumpXMLDAE "Outputs the DAE system corresponding to a specific model."
   input Boolean addMathMLCode := false;
   input Boolean dumpResiduals := false;
   input String fileNamePrefix := "<default>" "this is the className in string form by default";
+  input String rewriteRulesFile := "" "the file from where the rewiteRules are read, default is empty which means no rewrite rules";
   output Boolean success "if the function succeeded true/false";
   output String xmlfileName "the Xml file";
 external "builtin";

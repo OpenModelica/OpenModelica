@@ -115,6 +115,7 @@ protected import PrefixUtil;
 protected import VarTransform;
 protected import SCodeDump;
 protected import StaticScript;
+protected import RewriteRules;
 
 public function elabExpList "Expression elaboration of Absyn.Exp list, i.e. lists of expressions."
   input Env.Cache inCache;
@@ -287,8 +288,50 @@ function: elabExp
   output DAE.Properties outProperties;
   output Option<GlobalScript.SymbolTable> st;
 algorithm
-  (outCache,outExp,outProperties,st) := elabExp2(inCache,inEnv,inExp,inImplicit,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info,Error.getNumErrorMessages());
+  (outCache,outExp,outProperties,st) := matchcontinue(inCache,inEnv,inExp,inImplicit,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info)
+    local
+      Absyn.Exp expRewritten;
+    // we have some rewrite rules
+    case (_, _, _, _, _, _, _, _)
+      equation
+        false = RewriteRules.noRewriteRules();
+        expRewritten = RewriteRules.rewrite(inExp);
+        (outCache,outExp,outProperties,st) = elabExp_dispatch(inCache,inEnv,expRewritten,inImplicit,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info);
+      then
+        (outCache,outExp,outProperties,st);
+    
+    // we have no rewrite rules
+    case (_, _, _, _, _, _, _, _)
+      equation
+        true = RewriteRules.noRewriteRules();
+        (outCache,outExp,outProperties,st) = elabExp_dispatch(inCache,inEnv,inExp,inImplicit,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info);
+      then
+        (outCache,outExp,outProperties,st);
+  end matchcontinue;
 end elabExp;
+
+public function elabExp_dispatch "
+function: elabExp
+  Static analysis of expressions means finding out the properties of
+  the expression.  These properties are described by the
+  DAE.Properties type, and include the type and the variability of the
+  expression.  This function performs analysis, and returns an
+  DAE.Exp and the properties."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.Exp inExp;
+  input Boolean inImplicit;
+  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Boolean performVectorization;
+  input Prefix.Prefix inPrefix;
+  input Absyn.Info info;
+  output Env.Cache outCache;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+  output Option<GlobalScript.SymbolTable> st;
+algorithm
+  (outCache,outExp,outProperties,st) := elabExp2(inCache,inEnv,inExp,inImplicit,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info,Error.getNumErrorMessages());
+end elabExp_dispatch;
 
 public function elabExpInExpression "Like elabExp but casts PROP_TUPLE to a PROP"
   input Env.Cache inCache;
@@ -808,22 +851,22 @@ algorithm
 
        // The Absyn.LIST() node is used for list expressions that are
        // transformed from Absyn.ARRAY()
-  case (cache,env,Absyn.LIST({}),impl,st,doVect,_,_,_)
-    equation
-      t = DAE.T_METALIST_DEFAULT;
-      prop = DAE.PROP(t,DAE.C_CONST());
-    then (cache,DAE.LIST({}),prop,st);
+   case (cache,env,Absyn.LIST({}),impl,st,doVect,_,_,_)
+     equation
+       t = DAE.T_METALIST_DEFAULT;
+       prop = DAE.PROP(t,DAE.C_CONST());
+     then (cache,DAE.LIST({}),prop,st);
 
-  case (cache,env,Absyn.LIST(es),impl,st,doVect,pre,_,_)
-    equation
-      (cache,es_1,propList,st_2) = elabExpList(cache,env, es, impl, st,doVect,pre,info);
-      typeList = List.map(propList, Types.getPropType);
-      constList = Types.getConstList(propList);
-      c = List.fold(constList, Types.constAnd, DAE.C_CONST());
-      t = Types.boxIfUnboxedType(List.reduce(typeList, Types.superType));
-      (es_1,_) = Types.matchTypes(es_1, typeList, t, true);
-      prop = DAE.PROP(DAE.T_METALIST(t,DAE.emptyTypeSource),c);
-    then (cache,DAE.LIST(es_1),prop,st_2);
+   case (cache,env,Absyn.LIST(es),impl,st,doVect,pre,_,_)
+     equation
+       (cache,es_1,propList,st_2) = elabExpList(cache,env, es, impl, st,doVect,pre,info);
+       typeList = List.map(propList, Types.getPropType);
+       constList = Types.getConstList(propList);
+       c = List.fold(constList, Types.constAnd, DAE.C_CONST());
+       t = Types.boxIfUnboxedType(List.reduce(typeList, Types.superType));
+       (es_1,_) = Types.matchTypes(es_1, typeList, t, true);
+       prop = DAE.PROP(DAE.T_METALIST(t,DAE.emptyTypeSource),c);
+     then (cache,DAE.LIST(es_1),prop,st_2);
    // ----------------------------------
 
    // Pattern matching has its own module that handles match expressions

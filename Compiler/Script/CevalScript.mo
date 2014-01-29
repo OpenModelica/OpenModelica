@@ -135,6 +135,7 @@ protected import FGraphEnv;
 protected import FGraph;
 protected import UnitAbsynBuilder;
 protected import UnitParserExt;
+protected import RewriteRules;
 
 protected constant DAE.Type simulationResultType_rtest = DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),{
   DAE.TYPES_VAR("resultFile",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
@@ -4436,18 +4437,41 @@ protected function dumpXMLDAEFrontEnd
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path inClassName;
+  input String rewriteRulesFile;
   input GlobalScript.SymbolTable inInteractiveSymbolTable;
   output Env.Cache outCache;
   output Env.Env outEnv; 
   output DAE.DAElist outDae;
-protected
-  Absyn.Program p;
-  SCode.Program scode;
 algorithm
-  GlobalScript.SYMBOLTABLE(ast = p) := inInteractiveSymbolTable;  
-  scode := SCodeUtil.translateAbsyn2SCode(p);
-  (outCache, outEnv, _, outDae) := Inst.instantiateClass(inCache, InnerOuter.emptyInstHierarchy, scode, inClassName);
-  outDae := DAEUtil.transformationsBeforeBackend(outCache,outEnv,outDae);
+  (outCache, outEnv, outDae) := matchcontinue(inCache, inEnv, inClassName, rewriteRulesFile, inInteractiveSymbolTable)
+    local
+      Absyn.Program p;
+      SCode.Program scode;
+    
+    case (_, _, _, _, _) 
+      equation
+        // set the rewrite rules flag
+        Flags.setConfigString(Flags.REWRITE_RULES_FILE, rewriteRulesFile);
+        // load the rewrite rules
+        RewriteRules.loadRules();
+        GlobalScript.SYMBOLTABLE(ast = p) = inInteractiveSymbolTable;  
+        scode = SCodeUtil.translateAbsyn2SCode(p);
+        (outCache, outEnv, _, outDae) = Inst.instantiateClass(inCache, InnerOuter.emptyInstHierarchy, scode, inClassName);
+        outDae = DAEUtil.transformationsBeforeBackend(outCache,outEnv,outDae);
+        // clear the rewrite rules after running the front-end
+        Flags.setConfigString(Flags.REWRITE_RULES_FILE, "");
+        RewriteRules.clearRules();
+     then
+       (outCache, outEnv, outDae);
+       
+    case (_, _, _, _, _)
+      equation
+        // clear the rewrite rules if we fail!
+        Flags.setConfigString(Flags.REWRITE_RULES_FILE, "");
+        RewriteRules.clearRules();
+     then
+       fail();
+  end matchcontinue;
 end dumpXMLDAEFrontEnd;
 
 protected function dumpXMLDAE " author: fildo
@@ -4464,7 +4488,7 @@ algorithm
   (outCache,outInteractiveSymbolTable3,xml_filename) :=
   match (inCache,inEnv,vals,inInteractiveSymbolTable,inMsg)
     local
-      String cname_str,filenameprefix,compileDir;
+      String cname_str,filenameprefix,compileDir,rewriteRulesFile;
       list<Env.Frame> env;
       Absyn.Path classname;
       Absyn.Program p;
@@ -4476,11 +4500,14 @@ algorithm
       DAE.DAElist dae_1,dae;
       list<SCode.Element> p_1;
 
-    case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),Values.STRING(string="flat"),Values.BOOL(addOriginalIncidenceMatrix),Values.BOOL(addSolvingInfo),Values.BOOL(addMathMLCode),Values.BOOL(dumpResiduals),Values.STRING(filenameprefix)},st,msg)
+    case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),Values.STRING(string="flat"),
+                     Values.BOOL(addOriginalIncidenceMatrix),Values.BOOL(addSolvingInfo),
+                     Values.BOOL(addMathMLCode),Values.BOOL(dumpResiduals),
+                     Values.STRING(filenameprefix),Values.STRING(rewriteRulesFile)},st,msg)
       equation
         Error.clearMessages() "Clear messages";
         
-        (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname, st);
+        (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname, rewriteRulesFile, st);
         
         compileDir = System.pwd() +& System.pathDelimiter();
         cname_str = Absyn.pathString(classname);
@@ -4498,12 +4525,15 @@ algorithm
       then
         (cache,st,stringAppendList({compileDir,xml_filename}));
 
-    case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),Values.STRING(string="optimiser"),Values.BOOL(addOriginalIncidenceMatrix),Values.BOOL(addSolvingInfo),Values.BOOL(addMathMLCode),Values.BOOL(dumpResiduals),Values.STRING(filenameprefix)},(st as GlobalScript.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),Values.STRING(string="optimiser"),
+                     Values.BOOL(addOriginalIncidenceMatrix),Values.BOOL(addSolvingInfo),
+                     Values.BOOL(addMathMLCode),Values.BOOL(dumpResiduals),
+                     Values.STRING(filenameprefix),Values.STRING(rewriteRulesFile)},(st as GlobalScript.SYMBOLTABLE(ast = p)),msg)
       equation
         //asInSimulationCode==false => it's NOT necessary to do all the translation's steps before dumping with xml
         Error.clearMessages() "Clear messages";
         
-        (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname, st);
+        (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname, rewriteRulesFile, st);
         
         compileDir = System.pwd() +& System.pathDelimiter();
         cname_str = Absyn.pathString(classname);
@@ -4522,12 +4552,15 @@ algorithm
       then
         (cache,st,stringAppendList({compileDir,xml_filename}));
 
-    case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),Values.STRING(string="backEnd"),Values.BOOL(addOriginalIncidenceMatrix),Values.BOOL(addSolvingInfo),Values.BOOL(addMathMLCode),Values.BOOL(dumpResiduals),Values.STRING(filenameprefix)},(st as GlobalScript.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),Values.STRING(string="backEnd"),
+                     Values.BOOL(addOriginalIncidenceMatrix),Values.BOOL(addSolvingInfo),
+                     Values.BOOL(addMathMLCode),Values.BOOL(dumpResiduals),
+                     Values.STRING(filenameprefix),Values.STRING(rewriteRulesFile)},(st as GlobalScript.SYMBOLTABLE(ast = p)),msg)
       equation
         //asInSimulationCode==true => it's necessary to do all the translation's steps before dumping with xml
         Error.clearMessages() "Clear messages";
         
-        (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname, st);
+        (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname, rewriteRulesFile, st);
         
         compileDir = System.pwd() +& System.pathDelimiter();
         cname_str = Absyn.pathString(classname);
@@ -4544,12 +4577,15 @@ algorithm
       then
         (cache,st,stringAppendList({compileDir,xml_filename}));
         
-    case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),Values.STRING(string="stateSpace"),Values.BOOL(addOriginalIncidenceMatrix),Values.BOOL(addSolvingInfo),Values.BOOL(addMathMLCode),Values.BOOL(dumpResiduals),Values.STRING(filenameprefix)},(st as GlobalScript.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),Values.STRING(string="stateSpace"),
+                     Values.BOOL(addOriginalIncidenceMatrix),Values.BOOL(addSolvingInfo),
+                     Values.BOOL(addMathMLCode),Values.BOOL(dumpResiduals),
+                     Values.STRING(filenameprefix),Values.STRING(rewriteRulesFile)},(st as GlobalScript.SYMBOLTABLE(ast = p)),msg)
       equation
         //asInSimulationCode==true => it's necessary to do all the translation's steps before dumping with xml
         Error.clearMessages() "Clear messages";
         
-        (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname, st);
+        (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname, rewriteRulesFile, st);
         
         compileDir = System.pwd() +& System.pathDelimiter();
         cname_str = Absyn.pathString(classname);

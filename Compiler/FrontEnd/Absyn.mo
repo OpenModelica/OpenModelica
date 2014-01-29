@@ -6267,4 +6267,12 @@ algorithm
   end match;
 end mapCrefParts;
 
+public function opEqual
+ input Operator op1;
+ input Operator op2;
+ output Boolean isEqual;
+algorithm
+  isEqual := valueEq(op1, op2);
+end opEqual;
+
 end Absyn;
