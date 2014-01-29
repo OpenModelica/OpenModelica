@@ -108,18 +108,20 @@ public function getSystemComponents "author: marcusw
   "
   input BackendDAE.BackendDAE iDae;
   output BackendDAE.StrongComponents oComps;
-  output array<BackendDAE.EqSystem> oMapping; //Map each component to the EqSystem
+  output array<tuple<BackendDAE.EqSystem, Integer>> oMapping; //Map each component to <eqSystem, eqSystemIdx>
 
 protected
   BackendDAE.EqSystems systs;
-  List<BackendDAE.EqSystem> tmpSystems;
+  List<tuple<BackendDAE.EqSystem,Integer>> tmpSystems;
   BackendDAE.StrongComponents tmpComps;
   
 algorithm
   (oComps,oMapping) := match(iDae)
     case(BackendDAE.DAE(eqs=systs))
       equation
-        ((tmpComps, tmpSystems)) = List.fold(systs,getSystemComponents0,({},{}));
+        //print("getSystemComponents begin\n---------------------------\n");
+        ((tmpComps, tmpSystems,_)) = List.fold(systs,getSystemComponents0,({},{},1));
+        //print("getSystemComponents end\n-----------------------------\n");
       then (tmpComps,listArray(tmpSystems));
     else
       then fail();
@@ -128,21 +130,23 @@ end getSystemComponents;
   
 protected function getSystemComponents0
   input BackendDAE.EqSystem isyst;
-  input tuple<BackendDAE.StrongComponents, list<BackendDAE.EqSystem>> iSystMapping;
-  output tuple<BackendDAE.StrongComponents, list<BackendDAE.EqSystem>> oSystMapping; //Map each component to the EqSystem
+  input tuple<BackendDAE.StrongComponents, list<tuple<BackendDAE.EqSystem,Integer>>, Integer> iSystMapping; //last Integer is idx of isyst
+  output tuple<BackendDAE.StrongComponents, list<tuple<BackendDAE.EqSystem,Integer>>, Integer> oSystMapping; //Map each component to <eqSystem, eqSystemIdx>
   
 protected
   BackendDAE.StrongComponents tmpComps, comps;
-  list<BackendDAE.EqSystem> tmpSystMapping;
-  
+  list<tuple<BackendDAE.EqSystem,Integer>> tmpSystMapping;
+  Integer currentIdx;
 algorithm
   oSystMapping := match(isyst, iSystMapping)
-    case(BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)), (tmpComps,tmpSystMapping))
+    case(BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)), (tmpComps,tmpSystMapping,currentIdx))
       equation
-        tmpSystMapping = List.fold1(comps, getSystemComponents1, isyst, tmpSystMapping);
+        //print("--getSystemComponents0 begin\n");
+        tmpSystMapping = List.fold2(comps, getSystemComponents1, isyst, currentIdx, tmpSystMapping);
+        //print(stringDelimitList(List.map(comps, BackendDump.printComponent),","));
         tmpComps = listAppend(tmpComps,comps);
-        //print("getSystemComponents0 number of components " +& intString(listLength(comps)) +& "\n");
-      then ((tmpComps, tmpSystMapping));
+        //print("--getSystemComponents0 end\n");
+      then ((tmpComps, tmpSystMapping, currentIdx+1));
     else
       equation
         print("getSystemComponents0 failed");
@@ -154,11 +158,11 @@ end getSystemComponents0;
 protected function getSystemComponents1
   input BackendDAE.StrongComponent icomp;
   input BackendDAE.EqSystem isyst;
-  input list<BackendDAE.EqSystem> iMapping; //Map each component to the EqSystem
-  output list<BackendDAE.EqSystem> oMapping; //Map each component to the EqSystem
-  
+  input Integer isystIdx;
+  input list<tuple<BackendDAE.EqSystem,Integer>> iMapping; //Map each component to the EqSystem
+  output list<tuple<BackendDAE.EqSystem,Integer>> oMapping; //Map each component to the EqSystem
 algorithm
-  oMapping := listAppend(iMapping,{isyst});
+  oMapping := listAppend(iMapping,{(isyst,isystIdx)});
 end getSystemComponents1;
 
 protected function getEmptyTaskGraph "generates an empty TaskGraph and empty TaskGraphMeta for a graph with numComps nodes.
@@ -3781,6 +3785,7 @@ public function createCosts "author: marcusw
 
 protected
   array<BackendDAE.EqSystem> compMapping;
+  array<tuple<BackendDAE.EqSystem,Integer>> compMapping_withIdx;
   BackendDAE.Shared shared;
   BackendDAE.StrongComponents comps;
   tuple<Integer,Integer> reqTimeCom;
@@ -3796,7 +3801,8 @@ algorithm
   oTaskGraphMeta := matchcontinue(iDae,benchFileName,simEqSccMapping,iTaskGraphMeta)
     case(BackendDAE.DAE(shared=shared),_,_,TASKGRAPHMETA(inComps=inComps, commCosts=commCosts))
       equation
-        (comps,compMapping) = getSystemComponents(iDae); 
+        (comps,compMapping_withIdx) = getSystemComponents(iDae);
+        compMapping = Util.arrayMap(compMapping_withIdx, Util.tuple21);
         ((_,reqTimeCom)) = HpcOmBenchmark.benchSystem();
         reqTimeOpLstSimCode = HpcOmBenchmark.readCalcTimesFromXml(benchFileName);
         reqTimeOpSimCode = arrayCreate(listLength(reqTimeOpLstSimCode),(-1,-1.0));
@@ -4271,16 +4277,26 @@ algorithm
     local
       BackendDAE.StrongComponents systComps, graphComps;
       array<BackendDAE.StrongComponent> systCompsArray;
+      array<tuple<BackendDAE.EqSystem,Integer>> systCompEqSysMapping, graphCompEqSysMapping; //Map each component to the EqSystem
+      list<tuple<BackendDAE.StrongComponent,Integer>> systCompEqSysMappingIdx, graphCompEqSysMappingIdx;
     case(_,_)
       equation
         //Check if all StrongComponents are in the graph
-        (systComps,_) = getSystemComponents(iDae);
+        (systComps,systCompEqSysMapping) = getSystemComponents(iDae);
+        
+        //print("validateTaskGraphMeta_pre\n");
+        //BackendDump.dumpComponents(systComps);
+        //print("validateTaskGraphMeta_post\n");
+        
         systCompsArray = listArray(systComps);
-        graphComps = getGraphComponents(iTaskGraph,systCompsArray);
+        (graphComps,graphCompEqSysMapping) = getGraphComponents(iTaskGraph,systCompsArray,systCompEqSysMapping);
+        
+        ((_,_,systCompEqSysMappingIdx)) = validateTaskGraphMeta0(systCompEqSysMapping,(1,systComps,{}));
+        ((_,_,graphCompEqSysMappingIdx)) = validateTaskGraphMeta0(graphCompEqSysMapping,(1,graphComps,{}));
         //print("Graph components: " +& stringDelimitList(List.map(graphComps,BackendDump.printComponent), ";") +& "\n");
-        true = validateComponents(graphComps,systComps);
+        true = validateComponents(graphCompEqSysMappingIdx,systCompEqSysMappingIdx);
         //Check if no component was connected twice
-        true = checkForDuplicates(graphComps);
+        true = checkForDuplicates(graphCompEqSysMappingIdx);
         //Check if nodeNames,nodeDescs and exeCosts-array have the right size
         true = checkForExecutionCosts(iTaskGraph);
         // Check if every node has an execution cost > 0.
@@ -4290,14 +4306,36 @@ algorithm
   
 end validateTaskGraphMeta;
 
+public function validateTaskGraphMeta0  
+  input array<tuple<BackendDAE.EqSystem,Integer>> iEqSysMapping;
+  input tuple<Integer,BackendDAE.StrongComponents,list<tuple<BackendDAE.StrongComponent,Integer>>> iCompsTpl; //<current Index, list of remaining strong components, result>
+  output tuple<Integer,BackendDAE.StrongComponents,list<tuple<BackendDAE.StrongComponent,Integer>>> oCompsTpl;
+protected
+  Integer currentIdx, eqSysIdx;
+  BackendDAE.StrongComponents iComps, rest;
+  BackendDAE.StrongComponent head;
+  list<tuple<BackendDAE.StrongComponent,Integer>> iCompEqSysMapping, oCompEqSysMapping;
+  tuple<Integer,BackendDAE.StrongComponents,list<tuple<BackendDAE.StrongComponent,Integer>>> tmpCompsTpl;
+algorithm
+  oCompsTpl := match(iEqSysMapping,iCompsTpl)
+    case(_,(currentIdx,(head::rest),iCompEqSysMapping))
+      equation
+        ((_,eqSysIdx)) = arrayGet(iEqSysMapping,currentIdx);
+        oCompEqSysMapping = (head,eqSysIdx)::iCompEqSysMapping;
+        tmpCompsTpl = validateTaskGraphMeta0(iEqSysMapping,(currentIdx+1,rest,oCompEqSysMapping));
+      then tmpCompsTpl;
+    else then iCompsTpl;
+  end match;
+end validateTaskGraphMeta0;
+
 protected function validateComponents "author: marcusw
   Checks if the given component-lists are equal."
-  input BackendDAE.StrongComponents graphComps;
-  input BackendDAE.StrongComponents systComps;
+  input list<tuple<BackendDAE.StrongComponent,Integer>> graphComps; //<component, eqSysIdx>
+  input list<tuple<BackendDAE.StrongComponent,Integer>> systComps;
   output Boolean res;
   
 protected
-  BackendDAE.StrongComponents sortedGraphComps, sortedSystComps;
+  list<tuple<BackendDAE.StrongComponent,Integer>> sortedGraphComps, sortedSystComps;
   
 algorithm
   res := matchcontinue(graphComps,systComps)
@@ -4316,124 +4354,151 @@ end validateComponents;
 
 protected function checkForDuplicates "author: marcusw
   Returns true if every component is unique in the list."
-  input BackendDAE.StrongComponents iComps;
+  input list<tuple<BackendDAE.StrongComponent,Integer>> iComps; //<component, eqSysIdx>
   output Boolean res;
 protected
-  BackendDAE.StrongComponents sortedComps;
+  list<tuple<BackendDAE.StrongComponent,Integer>> sortedComps;
 algorithm
   sortedComps := List.sort(iComps,compareComponents);
-  //print("Components: " +& stringDelimitList(List.map(sortedComps,BackendDump.printComponent), ";") +& "\n");
+  //print("checkForDuplicates Components: " +& stringDelimitList(List.map(sortedComps,BackendDump.printComponent), ";") +& "\n");
   ((res,_)) := List.fold(sortedComps,checkForDuplicates0,(true,NONE()));
 end checkForDuplicates;
 
 protected function checkForDuplicates0
-  input BackendDAE.StrongComponent currentComp;
-  input tuple<Boolean,Option<BackendDAE.StrongComponent>> iLastComp; //<result,lastComp>
-  output tuple<Boolean,Option<BackendDAE.StrongComponent>> oLastComp; //<result,lastComp>
+  input tuple<BackendDAE.StrongComponent,Integer> currentComp_idx;
+  input tuple<Boolean,Option<tuple<BackendDAE.StrongComponent,Integer>>> iLastComp; //<result,lastComp>
+  output tuple<Boolean,Option<tuple<BackendDAE.StrongComponent,Integer>>> oLastComp; //<result,lastComp>
 protected
-  BackendDAE.StrongComponent lastComp;  
+  BackendDAE.StrongComponent lastComp,currentComp;
+  tuple<BackendDAE.StrongComponent,Integer> lastComp_idx;
+  Integer idxLast, idxCurrent;
 algorithm
-  oLastComp := matchcontinue(currentComp,iLastComp)
-    case(_,(false,_)) then ((false,SOME(currentComp)));
-    case(_,(_,NONE())) then ((true,SOME(currentComp)));
-    case(_,(_,SOME(lastComp)))
+  oLastComp := matchcontinue(currentComp_idx,iLastComp)
+    case(_,(false,_)) then ((false,SOME(currentComp_idx)));
+    case(_,(_,NONE())) then ((true,SOME(currentComp_idx)));
+    case((currentComp,idxCurrent),(_,SOME(lastComp_idx as (lastComp, idxLast))))
       equation
-        false = compareComponents(currentComp,lastComp);
-        print("The component " +& BackendDump.printComponent(currentComp) +& " was twice in the structure.\n");
-      then ((false,SOME(currentComp)));
-    else then ((true, SOME(currentComp)));
+        false = compareComponents(currentComp_idx,lastComp_idx);
+        print("Component duplicate detected in eqSystem " +& intString(idxCurrent) +& ": current: " +& BackendDump.printComponent(currentComp) +& " last " +& BackendDump.printComponent(lastComp) +& ".\n");
+      then ((false,SOME(currentComp_idx)));
+    else then ((true, SOME(currentComp_idx)));
   end matchcontinue;
 end checkForDuplicates0;
 
 protected function getGraphComponents "author: marcusw
   Returns all StrongComponents of the TaskGraphMeta-structure."
   input TaskGraphMeta iTaskGraphMeta;
-  input array<BackendDAE.StrongComponent> systComps;
+  input array<BackendDAE.StrongComponent> iSystComps;
+  input array<tuple<BackendDAE.EqSystem,Integer>> iCompEqSysMapping; //maps each iSystComps to <eqsystem,eqSystemIdx>
   output BackendDAE.StrongComponents oComps;
-  
+  output array<tuple<BackendDAE.EqSystem,Integer>> oCompEqGraphMapping;
 protected
   BackendDAE.StrongComponents tmpComps;
+  list<tuple<BackendDAE.EqSystem,Integer>> tmpMapping;
   array<list<Integer>> inComps;
   array<Integer> nodeMarks;
   
 algorithm
   tmpComps := {};
   TASKGRAPHMETA(inComps=inComps, nodeMark=nodeMarks) := iTaskGraphMeta;
-  tmpComps := Util.arrayFold1(inComps,getGraphComponents0,systComps,tmpComps);
-  ((_,tmpComps)) := Util.arrayFold1(nodeMarks,getGraphComponents2, systComps,(1,tmpComps));
+  ((tmpComps,tmpMapping)) := Util.arrayFold2(inComps,getGraphComponents0,iSystComps,iCompEqSysMapping,(tmpComps,{}));
+  ((_,(tmpComps,tmpMapping))) := Util.arrayFold2(nodeMarks,getGraphComponents2, iSystComps, iCompEqSysMapping, (1,(tmpComps,tmpMapping)));
   oComps := tmpComps;
+  oCompEqGraphMapping := listArray(tmpMapping);
 end getGraphComponents;
 
 
 protected function getGraphComponents0 "author: marcusw
-  Helper function of getGraphComponents. Returns all components which are not marked with -1."
+  Helper function of getGraphComponents. Returns all components which are not marked with -1 (all components that are part of the graph)."
   input list<Integer> inComp;
   input array<BackendDAE.StrongComponent> systComps;
-  input BackendDAE.StrongComponents iNodeComps;
-  output BackendDAE.StrongComponents oNodeComps;
+  input array<tuple<BackendDAE.EqSystem,Integer>> iCompEqSysMapping;
+  input tuple<BackendDAE.StrongComponents, list<tuple<BackendDAE.EqSystem,Integer>>> iNodeComps_Mapping; //list of components and list of mapping
+  output tuple<BackendDAE.StrongComponents, list<tuple<BackendDAE.EqSystem,Integer>>> oNodeComps_Mapping;
   
 protected
-  BackendDAE.StrongComponents tmpNodeComps;
+  tuple<BackendDAE.StrongComponents, list<BackendDAE.EqSystem>> tmpNodeComps;
+  BackendDAE.StrongComponents iNodeComps, tmpNodeComps;
+  list<tuple<BackendDAE.EqSystem,Integer>> iCompsMapping, tmpCompsMapping;
   
 algorithm
-  tmpNodeComps := List.fold1(inComp, getGraphComponents1, systComps, {});
-  oNodeComps := listAppend(iNodeComps,tmpNodeComps);
+  (iNodeComps,iCompsMapping) := iNodeComps_Mapping;
+  ((tmpNodeComps,tmpCompsMapping)) := List.fold2(inComp, getGraphComponents1, systComps, iCompEqSysMapping, ({},{}));
+  tmpNodeComps := listAppend(iNodeComps,tmpNodeComps);
+  tmpCompsMapping := listAppend(iCompsMapping,tmpCompsMapping);
+  oNodeComps_Mapping := ((tmpNodeComps,tmpCompsMapping));
 end getGraphComponents0;
 
 protected function getGraphComponents1
   input Integer compIdx;
   input array<BackendDAE.StrongComponent> systComps;
-  input BackendDAE.StrongComponents iComps;
-  output BackendDAE.StrongComponents oComps;
+  input array<tuple<BackendDAE.EqSystem,Integer>> iCompEqSysMapping;
+  input tuple<BackendDAE.StrongComponents, list<tuple<BackendDAE.EqSystem,Integer>>> iNodeComps_Mapping; 
+  output tuple<BackendDAE.StrongComponents, list<tuple<BackendDAE.EqSystem,Integer>>> oNodeComps_Mapping; 
   
 protected
   BackendDAE.StrongComponent comp;
-  
+  tuple<BackendDAE.EqSystem,Integer> eqSyst;
+  BackendDAE.StrongComponents tmpComps;
+  list<tuple<BackendDAE.EqSystem,Integer>> tmpSysts;
 algorithm
+  (tmpComps,tmpSysts) := iNodeComps_Mapping;
   comp := arrayGet(systComps,compIdx);
-  oComps := comp::iComps;
-  
+  eqSyst := arrayGet(iCompEqSysMapping,compIdx);
+  tmpComps := comp::tmpComps;
+  tmpSysts := eqSyst::tmpSysts;
+  oNodeComps_Mapping := (tmpComps,tmpSysts);
+  //print("getGraphComponents1: Add comp (index: " +& intString(compIdx) +& " comp: ");
+  //BackendDump.dumpComponent(comp);
+  //print("\n");
 end getGraphComponents1;
 
 protected function getGraphComponents2 "author: marcusw
   Append all components with mark -1 to the componentlist."
   input Integer nodeMark;
   input array<BackendDAE.StrongComponent> systComps;
-  input tuple<Integer,BackendDAE.StrongComponents> iComps; //<nodeIdx, components>
-  output tuple<Integer,BackendDAE.StrongComponents> oComps;
+  input array<tuple<BackendDAE.EqSystem,Integer>> iCompEqSysMapping;
+  input tuple<Integer,tuple<BackendDAE.StrongComponents, list<tuple<BackendDAE.EqSystem,Integer>>>> iNodeComps_Mapping; //<nodeIdx, <components,eqSystems>>
+  output tuple<Integer,tuple<BackendDAE.StrongComponents, list<tuple<BackendDAE.EqSystem,Integer>>>> oNodeComps_Mapping;
   
 protected
   Integer nodeIdx;
   BackendDAE.StrongComponent comp;
+  tuple<BackendDAE.EqSystem,Integer> eqSyst;
   BackendDAE.StrongComponents comps;
+  list<tuple<BackendDAE.EqSystem,Integer>> eqSysts;
   
 algorithm
-  oComps := matchcontinue(nodeMark, systComps, iComps)
-    case(_,_,(nodeIdx,comps))
+  oComps := matchcontinue(nodeMark, systComps, iCompEqSysMapping, iNodeComps_Mapping)
+    case(_,_,_,(nodeIdx,(comps,eqSysts)))
       equation
         true = intGe(nodeMark,0);
-      then ((nodeIdx+1,comps));
-    case(_,_,(nodeIdx,comps))
+      then ((nodeIdx+1,(comps,eqSysts)));
+    case(_,_,_,(nodeIdx,(comps,eqSysts)))
       equation
         comp = arrayGet(systComps,nodeIdx);
+        eqSyst = arrayGet(iCompEqSysMapping,nodeIdx);
         comps = comp :: comps;
-      then ((nodeIdx+1,comps));
+        eqSysts = eqSyst :: eqSysts;
+      then ((nodeIdx+1,(comps,eqSysts)));
   end matchcontinue;
 end getGraphComponents2;
 
 protected function compareComponents "author: marcusw
   Compares the given components and returns false if they are equal."
-  input BackendDAE.StrongComponent comp1;
-  input BackendDAE.StrongComponent comp2;
+  input tuple<BackendDAE.StrongComponent,Integer> iComp1;
+  input tuple<BackendDAE.StrongComponent,Integer> iComp2; //<component, eqSystIdx>
   output Boolean res;
   
 protected 
   String comp1Str,comp2Str;
-  Integer minLength;
-
+  Integer minLength, comp1Idx, comp2Idx;
+  BackendDAE.StrongComponent comp1, comp2;
 algorithm
-  comp1Str := BackendDump.printComponent(comp1);
-  comp2Str := BackendDump.printComponent(comp2);
+  (comp1, comp1Idx) := iComp1;
+  (comp2, comp2Idx) := iComp2;
+  comp1Str := BackendDump.printComponent(comp1) +& "_" +& intString(comp1Idx);
+  comp2Str := BackendDump.printComponent(comp2) +& "_" +& intString(comp2Idx);
   minLength := intMin(stringLength(comp1Str),stringLength(comp2Str));
   res := intGt(System.strncmp(comp1Str, comp2Str, minLength), 0);
 end compareComponents;
