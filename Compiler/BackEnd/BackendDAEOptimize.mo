@@ -6259,7 +6259,7 @@ algorithm
                               backendDAEType,
                               symjacs,
                               ei);
-  outDAE := Util.if_(intGt(index, 1), BackendDAE.DAE(systs, shared), inDAE);
+  outDAE := Util.if_(intGt(index, 1), partitionIndependentBlocks(BackendDAE.DAE(systs, shared)), inDAE);
   Debug.fcall2(Flags.DUMP_ENCAPSULATEWHENCONDITIONS, BackendDump.dumpBackendDAE, outDAE, "DAE after PreOptModule >>encapsulateWhenConditions<<");
 end encapsulateWhenConditions;
 
