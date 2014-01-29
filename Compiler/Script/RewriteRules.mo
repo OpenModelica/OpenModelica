@@ -82,7 +82,7 @@ algorithm
   outExp := match(inExp)
    local 
      Rules rules;
-   case (inExp)
+   case (_)
      equation
        rules = getRules();
        outExp = matchAndRewriteExp(inExp, rules);
@@ -614,8 +614,11 @@ end clearRules;
 public function getRules
 "get the loaded rules"
   output Rules outRules;
+protected
+  Option<Rules> orules;
 algorithm
-  SOME(outRules) := getGlobalRoot(Global.rewriteRulesIndex);
+  orules := getGlobalRoot(Global.rewriteRulesIndex);
+  SOME(outRules) := orules;
 end getRules;
 
 protected function parse
