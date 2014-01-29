@@ -185,8 +185,9 @@ CMinpack:
 	(cd 3rdParty/CMinpack/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -D CMAKE_AR:String="$(AR)" -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DCMAKE_INSTALL_PREFIX:String=../install .. -G $(CMAKE_TARGET))
 	test -f 3rdParty/CMinpack/build/install/lib/$(LIBCMINPACKLIB) || $(MAKE) -C 3rdParty/CMinpack/build
 	test -d 3rdParty/CMinpack/install || $(MAKE) -C 3rdParty/CMinpack/build install
-	# copy dll/so to bin folder
-	(cp -pf 3rdParty/CMinpack/install/lib*/$(LIBCMINPACKSO) $(builddir_lib)/omc/)
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libcminpack.1.3.2.dylib path/to/3rdParty/CMinpack/install/lib/libcminpack.1.3.2.dylib 
+	# copy dll/so to lib/omc/ folders
+	(cp -af 3rdParty/CMinpack/install/lib*/$(LIBCMINPACKSO) $(builddir_lib)/omc/)
 	#test "(" ! `uname` = Darwin ")" -o "(" ! -f 3rdParty/CMinpack/build/libfmilib_shared$(SHREXT) ")" || install_name_tool -id @rpath/libfmilib_shared$(SHREXT) 3rdParty/CMinpack/build/libfmilib_shared$(SHREXT)
 	#cp -pPR 3rdParty/CMinpack/build/install/$(LIBCMINPACKLIB) $(builddir_lib)/omc/
 	#test ! -f build/lib/omc/libfmilib_shared$(SHREXT) || ln -sf libfmilib_shared$(SHREXT) build/lib/omc/libfmilib$(SHREXT)
