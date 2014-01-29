@@ -4417,7 +4417,8 @@ protected function getGraphComponents0 "author: marcusw
   output tuple<BackendDAE.StrongComponents, list<tuple<BackendDAE.EqSystem,Integer>>> oNodeComps_Mapping;
   
 protected
-  tuple<BackendDAE.StrongComponents, list<BackendDAE.EqSystem>> tmpNodeComps;
+  // TODO! FIXME: bootstrapping bug (duplicate components) with different type! 
+  // tuple<BackendDAE.StrongComponents, list<BackendDAE.EqSystem>> tmpNodeComps;
   BackendDAE.StrongComponents iNodeComps, tmpNodeComps;
   list<tuple<BackendDAE.EqSystem,Integer>> iCompsMapping, tmpCompsMapping;
   
@@ -4469,11 +4470,13 @@ protected
   list<tuple<BackendDAE.EqSystem,Integer>> eqSysts;
   
 algorithm
-  oComps := matchcontinue(nodeMark, systComps, iCompEqSysMapping, iNodeComps_Mapping)
+  oNodeComps_Mapping := matchcontinue(nodeMark, systComps, iCompEqSysMapping, iNodeComps_Mapping)
+    
     case(_,_,_,(nodeIdx,(comps,eqSysts)))
       equation
         true = intGe(nodeMark,0);
       then ((nodeIdx+1,(comps,eqSysts)));
+    
     case(_,_,_,(nodeIdx,(comps,eqSysts)))
       equation
         comp = arrayGet(systComps,nodeIdx);
