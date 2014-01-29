@@ -1516,6 +1516,7 @@ algorithm
       array<Integer> tmpEqSccMapping;
       list<tuple<Integer,list<Integer>>> tearEqVarTpl;
       BackendDAE.StrongComponent condSys;
+      String helperStr;
     case(BackendDAE.SINGLEEQUATION(var = compVarIdx, eqn = eq),_,_,_)
       equation
         tmpVarSccMapping = arrayUpdate(varSccMapping,compVarIdx,iSccIdx);
@@ -1561,10 +1562,15 @@ algorithm
           iSccIdx+1;
     case(BackendDAE.TORNSYSTEM(tearingvars = compVarIdc,residualequations = residuals, otherEqnVarTpl = tearEqVarTpl),_,_,_)
       equation
+      print("test1\n");
       ((othereqs,othervars)) = List.fold(tearEqVarTpl,othersInTearComp,(({},{})));
+      print("test2\n");
       compVarIdc = listAppend(othervars,compVarIdc);
+      print("test3\n");
       eqns = listAppend(othereqs,residuals);
+      print("test4\n");
       tmpVarSccMapping = List.fold1(compVarIdc,updateMapping,iSccIdx,varSccMapping);
+      print("test5\n");
       tmpEqSccMapping = List.fold1(eqns,updateMapping,iSccIdx,eqSccMapping);
       then 
         iSccIdx+1;   
@@ -1576,7 +1582,8 @@ algorithm
           iSccIdx+1;
     else
       equation
-        print("createSccMapping0 - Unsupported component-type.");
+        helperStr = BackendDump.strongComponentString(component);
+        print("createSccMapping0 - Unsupported component-type:\n" +& helperStr +& "\n");
       then fail();
   end matchcontinue;
 end createSccMapping0;
@@ -1607,7 +1614,7 @@ algorithm
         ((eqLst,varLst));
     else
       equation
-      print("check number of vars in relation to number of eqs in otherEqnVarTpl int the torn system\n");
+      print("check number of vars in relation to number of eqs in otherEqnVarTpl in the torn system\n");
       then
         fail();  
   end matchcontinue;   
@@ -4400,13 +4407,13 @@ protected
   
 algorithm
   tmpComps := {};
+  tmpMapping := {};
   TASKGRAPHMETA(inComps=inComps, nodeMark=nodeMarks) := iTaskGraphMeta;
-  ((tmpComps,tmpMapping)) := Util.arrayFold2(inComps,getGraphComponents0,iSystComps,iCompEqSysMapping,(tmpComps,{}));
+  ((tmpComps,tmpMapping)) := Util.arrayFold2(inComps,getGraphComponents0,iSystComps,iCompEqSysMapping,(tmpComps,tmpMapping));
   ((_,(tmpComps,tmpMapping))) := Util.arrayFold2(nodeMarks,getGraphComponents2, iSystComps, iCompEqSysMapping, (1,(tmpComps,tmpMapping)));
   oComps := tmpComps;
   oCompEqGraphMapping := listArray(tmpMapping);
 end getGraphComponents;
-
 
 protected function getGraphComponents0 "author: marcusw
   Helper function of getGraphComponents. Returns all components which are not marked with -1 (all components that are part of the graph)."
@@ -4417,17 +4424,14 @@ protected function getGraphComponents0 "author: marcusw
   output tuple<BackendDAE.StrongComponents, list<tuple<BackendDAE.EqSystem,Integer>>> oNodeComps_Mapping;
   
 protected
-  // TODO! FIXME: bootstrapping bug (duplicate components) with different type! 
-  // tuple<BackendDAE.StrongComponents, list<BackendDAE.EqSystem>> tmpNodeComps;
   BackendDAE.StrongComponents iNodeComps, tmpNodeComps;
   list<tuple<BackendDAE.EqSystem,Integer>> iCompsMapping, tmpCompsMapping;
-  
 algorithm
   (iNodeComps,iCompsMapping) := iNodeComps_Mapping;
   ((tmpNodeComps,tmpCompsMapping)) := List.fold2(inComp, getGraphComponents1, systComps, iCompEqSysMapping, ({},{}));
   tmpNodeComps := listAppend(iNodeComps,tmpNodeComps);
   tmpCompsMapping := listAppend(iCompsMapping,tmpCompsMapping);
-  oNodeComps_Mapping := ((tmpNodeComps,tmpCompsMapping));
+  oNodeComps_Mapping := (tmpNodeComps,tmpCompsMapping);
 end getGraphComponents0;
 
 protected function getGraphComponents1
@@ -4449,9 +4453,6 @@ algorithm
   tmpComps := comp::tmpComps;
   tmpSysts := eqSyst::tmpSysts;
   oNodeComps_Mapping := (tmpComps,tmpSysts);
-  //print("getGraphComponents1: Add comp (index: " +& intString(compIdx) +& " comp: ");
-  //BackendDump.dumpComponent(comp);
-  //print("\n");
 end getGraphComponents1;
 
 protected function getGraphComponents2 "author: marcusw
@@ -4471,12 +4472,10 @@ protected
   
 algorithm
   oNodeComps_Mapping := matchcontinue(nodeMark, systComps, iCompEqSysMapping, iNodeComps_Mapping)
-    
     case(_,_,_,(nodeIdx,(comps,eqSysts)))
       equation
         true = intGe(nodeMark,0);
       then ((nodeIdx+1,(comps,eqSysts)));
-    
     case(_,_,_,(nodeIdx,(comps,eqSysts)))
       equation
         comp = arrayGet(systComps,nodeIdx);
