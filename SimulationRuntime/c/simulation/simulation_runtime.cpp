@@ -348,10 +348,6 @@ void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilte
     return;
   }
 
-#if defined(OMC_EMCC)
-  /* We do not have libregex in javascript */
-    return;
-#endif
   rc = regcomp(&myregex, filter, flags);
   if(rc) {
     char err_buf[2048] = {0};
@@ -961,7 +957,9 @@ static void omc_assert_simulation(FILE_INFO info, const char *msg, ...)
       fflush(NULL);
       va_end(ap);
     }
+#ifndef OMC_EMCC
     longjmp(nonlinearJmpbuf,1);
+#endif
     break;
   case ERROR_INTEGRATOR:
     if(ACTIVE_STREAM(LOG_DDASRT))

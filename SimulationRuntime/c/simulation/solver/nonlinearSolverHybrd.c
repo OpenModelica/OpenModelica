@@ -466,14 +466,17 @@ int solveHybrd(DATA *data, int sysNumber)
     int scaling = solverData->useXScaling;
     if(scaling)
       solverData->useXScaling = 0;
-
+#ifndef OMC_EMCC
     /* try */
     if(!setjmp(nonlinearJmpbuf))
     {
+#endif
       wrapper_fvec_hybrj(&solverData->n, solverData->x, solverData->fvec, solverData->fjac, &solverData->ldfjac, &iflag, data, sysNumber);
+#ifndef OMC_EMCC
     } else { /* catch */
       warningStreamPrint(LOG_STDOUT, 0, "Non-Linear Solver try to handle a problem with a called assert.");
     }
+#endif
     if(scaling) {
       solverData->useXScaling = 1;
     }
@@ -515,8 +518,10 @@ int solveHybrd(DATA *data, int sysNumber)
     giveUp = 1;
 
     /* try */
+#ifndef OMC_EMCC
     if(!setjmp(nonlinearJmpbuf))
     {
+#endif
       _omc_hybrj_(wrapper_fvec_hybrj, &solverData->n, solverData->x,
           solverData->fvec, solverData->fjac, &solverData->ldfjac, &solverData->xtol,
           &solverData->maxfev, solverData->diag, &solverData->mode,
@@ -524,6 +529,7 @@ int solveHybrd(DATA *data, int sysNumber)
           &solverData->nfev, &solverData->njev, solverData->r__,
           &solverData->lr, solverData->qtf, solverData->wa1,
           solverData->wa2, solverData->wa3, solverData->wa4, data, sysNumber);
+#ifndef OMC_EMCC
       if(assertCalled) {
         infoStreamPrint(LOG_NLS, 0, "After assertions failed, found a solution for which assertions did not fail.");
         memcpy(systemData->nlsxOld, solverData->x, solverData->n*(sizeof(double)));
@@ -552,6 +558,7 @@ int solveHybrd(DATA *data, int sysNumber)
       xerror = 1;
       assertCalled = 1;
     }
+#endif
 
     /* set residual function continuous */
     if(continuous)
@@ -585,9 +592,12 @@ int solveHybrd(DATA *data, int sysNumber)
         ((DATA*)data)->simulationInfo.solveContinuous = 0;
 
         /* try */
+#ifndef OMC_EMCC
         if(!setjmp(nonlinearJmpbuf))
         {
+#endif
           wrapper_fvec_hybrj(&solverData->n, solverData->x, solverData->fvec, solverData->fjac, &solverData->ldfjac, &iflag, data, sysNumber);
+#ifndef OMC_EMCC
         } else { /* catch */
           warningStreamPrint(LOG_STDOUT, 0, "Non-Linear Solver try to handle a problem with a called assert.");
 
@@ -596,6 +606,7 @@ int solveHybrd(DATA *data, int sysNumber)
           xerror = 1;
           assertCalled = 1;
         }
+#endif
 
         if(scaling)
           solverData->useXScaling = 1;
@@ -687,9 +698,12 @@ int solveHybrd(DATA *data, int sysNumber)
       memcpy(systemData->nlsx, solverData->x, solverData->n*(sizeof(double)));
  
       /* try */
+#ifndef OMC_EMCC
       if(!setjmp(nonlinearJmpbuf))
       {
+#endif
         wrapper_fvec_hybrj(&solverData->n, solverData->x, solverData->fvec, solverData->fjac, &solverData->ldfjac, &iflag, data, sysNumber);
+#ifndef OMC_EMCC
       }
       else
       { /* catch */
@@ -702,6 +716,7 @@ int solveHybrd(DATA *data, int sysNumber)
         success = 0;
         giveUp = 0;
       }
+#endif
       if(scaling)
         solverData->useXScaling = 1;
     }

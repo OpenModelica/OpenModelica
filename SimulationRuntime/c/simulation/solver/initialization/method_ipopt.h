@@ -44,7 +44,7 @@ extern "C"
 {
 #endif
 
-  extern int ipopt_initialization(DATA *data, INIT_DATA *initData, int useScaling);
+    // extern int ipopt_initialization(DATA *data, INIT_DATA *initData, int useScaling);
 
 #ifdef __cplusplus
 }

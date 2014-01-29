@@ -17,44 +17,54 @@ case SIMCODE(modelInfo = MODELINFO(functions = functions, varInfo = vi as VARINF
              simulationSettingsOpt = SOME(s as SIMULATION_SETTINGS(__)), makefileParams = makefileParams as MAKEFILE_PARAMS(__))
 then
 <<
+# OpenModelica simulation example
+## <%Util.escapeModelicaStringToXmlString(dotPath(modelInfo.name))%>
+
 ```yaml script=scriptloader
-- tinytimer.js
+- lib/tinytimer.js
 ```
 
 ```yaml script=dataloader
 xml: <%fileNamePrefix%>_init.xml
 ```
 
-# OpenModelica simulation example
-## <%Util.escapeModelicaStringToXmlString(dotPath(modelInfo.name))%>
+<style media="screen" type="text/css">
+label {font-weight:normal; size: 0.9em}
+</style>
 
-<img src="<%fileNamePrefix%>.svg" class="pull-right" style="width:540px; background-color:#ffffff; border:2px solid gray" />
+<br/>
+<br/>
 
-```yaml jquery=jsonForm class="form-horizontal" name=frm 
-schema: 
-  stopTime:
-    type: string
-    title: Stop time [s]
-    default: <%s.stopTime%>
-  intervals:
-    type: string
-    title: Output intervals
-    default: <%realDiv(s.stopTime,s.stepSize)%>
-  tolerance:
-    type: string
-    title: Tolerance
-    default: <%s.tolerance%>
-  solver: 
-    type: string
-    title: Solver
-    enum: 
-      - dassl
-      - euler
-      - rungekutta
-form: 
-  - "*"
-params:
-  fieldHtmlClass: input-medium
+<div id="status" style="text-align:center"><span id="statustext">
+Simulation loading</span>. &nbsp Time: <span id="statustimer"> </span></div>
+
+<br/>
+
+<div class = "row">
+<div class = "col-md-4">
+
+<br/>
+<br/>
+<br/>
+<br/>
+
+```yaml jquery=dform
+class : form-horizontal
+col1class : col-sm-7
+col2class : col-sm-5
+html: 
+  - name: stopTime
+    type: number
+    bs3caption: Stop time, sec
+    value: 0.1
+  - name: intervals
+    type: number
+    bs3caption: Output intervals
+    value: 500
+  - name: tolerance
+    type: number
+    bs3caption: Tolerance
+    value: 0.0001
 ```
 
 ```js
@@ -68,15 +78,15 @@ defex = $xml.find("DefaultExperiment")
 defex.attr("stopTime", stopTime)
 defex.attr("stepSize", +stopTime / intervals)
 defex.attr("tolerance", tolerance)
-defex.attr("solver", solver)
 
-// Set some model parameters - UNCOMMENT & CHANGE AS NEEDED
-//$xml.find("ScalarVariable[name = 'RL.R']").find("Real").attr("start", RL)
+// Set some model parameters
+// Example:
+// $xml.find("ScalarVariable[name = 'LAC']").find("Real").attr("start", LAC)
 
 // Write out the initialization file
 xmlstring = new XMLSerializer().serializeToString(xml)
 
-$("#statustext").html('<img src="wait.gif" /> Simulation running')
+$("#statustext").html('Simulation running')
 $("#statustimer").html("");
 $('#statustimer').tinyTimer({ from: Date.now() });
 
@@ -96,13 +106,7 @@ wworker.addEventListener('error', function(event) {
 
 ```
 
-<div id="status" style="text-align:center"><span id="statustext">
-Simulation loading</span>. &nbsp Time: <span id="statustimer"> </span></div>
 
-
-## Results
-
-<div id="yaxisform"> </div>
 
 ```js
 // read the csv file with the simulation results
@@ -122,55 +126,72 @@ wworker.addEventListener("message", function(e) {
     if (typeof(graphvarX) == "undefined") graphvarX = header[0];
     
     var jsonform = {
-      schema: {
-        graphvar: {
-          type: "string",
-          title: "Plot variable",
-          default: graphvar,
-          enum: header
-        }
-      },
-      form: [
-        {
-          key: "graphvar",
-          onChange: function (evt) {
-            calculate_forms();
-            $("#plotdiv").calculate();
-          }
-        }
-      ]
-    };
+      html: {
+        type: "select",
+        bs3caption: "Plot variable",
+        name: "graphvar",
+        selectvalue: graphvar,
+        choices: header
+    }};
     var jsonformX = {
-      schema: {
-        graphvarX: {
-          type: "string",
-          default: graphvarX,
-          enum: x.slice(0,1)[0]
-        }
-      },
-      form: [
-        {
-          key: "graphvarX",
-          onChange: function (evt) {
-            calculate_forms();
-            $("#plotdiv").calculate();
-          }
-        }
-      ]
-    };
+      html: {
+        type: "select",
+        bs3caption: "",
+        name: "graphvarX",
+        selectvalue: graphvarX,
+        choices: header
+    }};
+    updatefun = function (evt) {
+        calculate_forms();
+        $("#plotdiv").calculate();
+    }
+    
     
     $("#yaxisform").html("");
-    $("#yaxisform").jsonForm(jsonform);
+    $("#yaxisform").dform(jsonform);
+    $("#yaxisform").change(updatefun);
     $("#xaxisform").html("");
-    $("#xaxisform").jsonForm(jsonformX);
+    $("#xaxisform").dform(jsonformX);
+    $("#xaxisform").change(updatefun);
     $("#plotdiv").calculate();
     
 }, false);
 
 ```
 
+</div>
+
+<div class = "col-md-1">
+</div>
+
+
+<div class = "col-md-7">
+
+<!-- Nav tabs -->
+<ul class="nav nav-tabs" id="mytab">
+  <li class="active"><a href="#model" data-toggle="tab">Model</a></li>
+  <li><a href="#results" data-toggle="tab">Results</a></li>
+</ul>
+
+<!-- Tab panes -->
+<div class="tab-content">
+  <!-- Model pane -->
+  <div class="tab-pane active" id="model">
+
+<img src="<%fileNamePrefix%>.svg" style="width:100%; background-color:#ffffff; border:2px solid gray" />
+
+  </div>
+
+  <!-- Results pane -->
+  <div class="tab-pane" id="results">
+
+</br>
+
+<div id="yaxisform" style="width:15em; position:relative"> </div>
+
 ```js id=plotdiv
 if (typeof(header) != "undefined") {
+    $("#mytab a:last").tab("show"); // Select last tab
     yidx = header.indexOf(graphvar);
     xidx = header.indexOf(graphvarX);
     // pick out the column to plot
@@ -179,7 +200,15 @@ if (typeof(header) != "undefined") {
 }
 ```
 
-<div id="xaxisform" style="left:200px; width:300px; position:relative"> </div>
+<div id="xaxisform" class="center-block" style="text-align:center; width:15em; position:relative"> </div>
+
+
+  </div>
+</div>
+
+</div>
+</div>
+
 
 ## Comments
 
