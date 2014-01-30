@@ -179,7 +179,7 @@ AC_MSG_CHECKING([for omc])
 if test "$OMC" = "no" ; then
   AC_MSG_RESULT([building it through bootstrapping (you might end up unable to recompile omc if you modify source code)])
   OMC="$ac_pwd$ac_dir_suffix/build/bin/omc"
-elif "$OMC" ++v >& /dev/null; then
+elif "$OMC" ++v > /dev/null 2>&1; then
   AC_MSG_RESULT([$OMC])
 else
   AC_MSG_RESULT([failed (tried $OMC). Building it through bootstrapping (you might end up unable to recompile omc if you modify source code).])
@@ -245,7 +245,10 @@ fi
 
 dnl Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS(sys/time.h sqlite3.h, [], [AC_MSG_ERROR(Missing header files)])
+
+AC_CHECK_HEADERS(sys/time.h, [], [AC_MSG_ERROR(Missing header files)])
+# AC_CHECK_HEADERS(sqlite3.h, [], [AC_MSG_ERROR(Missing header files)])
+
 # OSX and other systems might have different sizes in f2c headers. Let's always use our own...
 # AC_CHECK_HEADERS(f2c.h, [], [LIBF2C=libf2c/libf2c.a])
 LIBF2C=libf2c/libf2c.a
@@ -403,9 +406,15 @@ dnl check for lpsolve55
 
 AC_ARG_WITH(static-lpsolve,  [  --with-static-lpsolve=DIR        (default to dynamic linking; searches /usr if no other directory is provided)],[WANT_STATIC_LPSOLVE="$withval"],[WANT_STATIC_LPSOLVE="no"])
 
+LIBS=""
+AC_SEARCH_LIBS(dlopen,dl)
+LIBDL="$LIBS"
+LIBS=""
+
 if test "$WANT_STATIC_LPSOLVE" = "no"; then
   LIBS=""
   AC_SEARCH_LIBS(dlopen,dl)
+  LIBDL="$LIBS"
   AC_SEARCH_LIBS(sqrt,m)
   AC_SEARCH_LIBS(colamd,colamd)
   AC_SEARCH_LIBS(make_lp,[lpsolve55_pic lpsolve55],[],[AC_MSG_ERROR([lpsolve linking failed using $LIBS])])
@@ -785,8 +794,8 @@ if test "Darwin" = `uname`; then
   LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.dylib
   LIBFMILIB=libfmilib_shared.dylib
   FMILIB_SHARED=ON
-  RT_LDFLAGS_SIM="$LDFLAGS $RT_LDFLAGS $SUNDIALS_LDFLAGS $IPOPT_LDFLAGS -linteractive -llis -lf2c -lexpat -liconv -lgc -lpthread -lm -ldl -lstdc++"
-  RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS $LD_LAPACK -liconv -lgc -lpthread -lm -ldl -lstdc++"
+  RT_LDFLAGS_SIM="$LDFLAGS $RT_LDFLAGS $SUNDIALS_LDFLAGS $IPOPT_LDFLAGS -linteractive -llis -lf2c -lexpat -liconv -lgc -lpthread -lm $LIBDL -lstdc++"
+  RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS $LD_LAPACK -liconv -lgc -lpthread -lm $LIBDL -lstdc++"
   # All libraries are dynamically linked; we don't need anything else
   RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $LD_LAPACK -lm"
   RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC $LD_LAPACK -lm -lgc"
@@ -831,13 +840,13 @@ else
   FMILIB_SHARED=ON
   # For static runtime on Linux:
   # -Wl,-whole-archive -lSimulationRuntimeC -Wl,-no-whole-archive
-  RT_LDFLAGS_SIM="-Wl,-rpath,'\$\$ORIGIN' $RT_LDFLAGS $SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $LIBRT -linteractive -llis -Wl,-Bstatic -lf2c -Wl,-Bdynamic -lexpat -lgc $LIBRT -lpthread -lm -ldl -lstdc++ -rdynamic"
-  RT_LDFLAGS="$RT_LDFLAGS $LD_LAPACK -lgc $LIBRT -lpthread -lm -ldl -lstdc++ -rdynamic"
+  RT_LDFLAGS_SIM="$LDFLAGS -Wl,-z,origin -Wl,-rpath,'\$\$ORIGIN' $RT_LDFLAGS $SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $LIBRT -linteractive -llis -Wl,-Bstatic -lf2c -Wl,-Bdynamic -lexpat -lgc $LIBRT -lpthread -lm $LIBDL -lstdc++ -rdynamic"
+  RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS $LD_LAPACK -lgc $LIBRT -lpthread -lm $LIBDL -lstdc++ -rdynamic"
   # All libraries are dynamically linked; we don't need anything else
-  RT_LDFLAGS_GENERATED_CODE="-lOpenModelicaRuntimeC $LD_LAPACK -lm -rdynamic"
-  RT_LDFLAGS_GENERATED_CODE_SIM="-lSimulationRuntimeC $LD_LAPACK -lm -lgc -lpthread -rdynamic"
+  RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $LD_LAPACK -lm -rdynamic"
+  RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC $LD_LAPACK -lm -lgc -lpthread -rdynamic"
   LINK="cp -frl"
-  RPATH="-Wl,-rpath,'\$\$ORIGIN/../lib/omc'"
+  RPATH="-Wl,-z,origin -Wl,-rpath,'\$\$ORIGIN/../lib/omc'"
   OS_TARGET="linux"
   AR_SH="$AR -ru"
   BOOTSTRAP_TARGET="main-shared"

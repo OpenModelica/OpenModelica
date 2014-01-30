@@ -26,6 +26,7 @@ CXX=@CXX@
 CFLAGS=@CFLAGS@
 CPPFLAGS=@CPPFLAGS@
 CXXFLAGS=@CXXFLAGS@
+LDFLAGS=@LDFLAGS@
 LINK=@LINK@
 MSL_EXTRA_ARGS=@MSL_EXTRA_ARGS@
 # LIBGC configuration is different for Linux (this file) and Windows (Makefile.omdev.mingw)
@@ -141,7 +142,9 @@ lis: lis-configure mkbuilddirs
 	$(MAKE) -C 3rdParty/lis-1.4.12
 	# Copy the library; not headers (as they are not used by the runtime system)
 	cp -Pp 3rdParty/lis-1.4.12/src/.libs/liblis@SHREXT@* build/lib/omc/
-
+	@# FreeBSD lis does not create the symlinks...
+	! test -f build/lib/omc/liblis.so.0.0 -a ! -f build/lib/omc/liblis.so.0 || ln -s liblis.so.0.0 build/lib/omc/liblis.so.0
+	! test -f build/lib/omc/liblis.so.0.0 -a ! -f build/lib/omc/liblis.so || ln -s liblis.so.0.0 build/lib/omc/liblis.so
 lis-configure: 
 	# Configure and build lis
 	if ! test -f 3rdParty/lis-1.4.12/Makefile; then cd 3rdParty/lis-1.4.12 && ./configure "--host=$(host)" --enable-shared --disable-static MPICC="false" CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS) @LIS_LDFLAGS@" && $(MAKE) clean; fi
