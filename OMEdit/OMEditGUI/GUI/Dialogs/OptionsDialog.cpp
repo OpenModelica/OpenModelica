@@ -261,6 +261,10 @@ void OptionsDialog::readSimulationSettings()
   }
   if (mSettings.contains("simulation/OMCFlags"))
     mpSimulationPage->getOMCFlagsTextBox()->setText(mSettings.value("simulation/OMCFlags").toString());
+  if (mSettings.contains("transformationalDebugger/alwaysShowTransformationalDebugger"))
+    mpSimulationPage->getAlwaysShowTransformationsCheckBox()->setChecked(mSettings.value("transformationalDebugger/alwaysShowTransformationalDebugger").toBool());
+  if (mSettings.contains("transformationalDebugger/generateOperations"))
+    mpSimulationPage->getGenerateOperationsCheckBox()->setChecked(mSettings.value("transformationalDebugger/generateOperations").toBool());
 }
 
 //! Reads the Notifications section settings from omedit.ini
@@ -493,6 +497,9 @@ void OptionsDialog::saveSimulationSettings()
   mpMainWindow->getOMCProxy()->clearCommandLineOptions();
   if (mpMainWindow->getOMCProxy()->setCommandLineOptions(mpSimulationPage->getOMCFlagsTextBox()->text()))
     mSettings.setValue("simulation/OMCFlags", mpSimulationPage->getOMCFlagsTextBox()->text());
+  mSettings.setValue("transformationalDebugger/alwaysShowTransformationalDebugger", mpSimulationPage->getAlwaysShowTransformationsCheckBox()->isChecked());
+  mSettings.setValue("transformationalDebugger/generateOperations", mpSimulationPage->getGenerateOperationsCheckBox()->isChecked());
+  mpMainWindow->getOMCProxy()->setCommandLineOptions("+d=infoXmlOperations");
 }
 
 //! Saves the Notifications section settings to omedit.ini
@@ -2260,11 +2267,22 @@ SimulationPage::SimulationPage(OptionsDialog *pParent)
   pSimulationLayout->addWidget(mpOMCFlagsLabel, 2, 0);
   pSimulationLayout->addWidget(mpOMCFlagsTextBox, 2, 1);
   mpSimulationGroupBox->setLayout(pSimulationLayout);
+  /* Transformational Debugger */
+  mpTransformationalDebuggerGroupBox = new QGroupBox(Helper::transformationalDebugger);
+  mpAlwaysShowTransformationsCheckBox = new QCheckBox(tr("Always show %1 after compilation.").arg(Helper::transformationalDebugger));
+  mpGenerateOperationsCheckBox = new QCheckBox(tr("Generate operations in the info xml."));
+  // set the layout of Transformational Debugger group
+  QGridLayout *pTransformationalDebuggerLayout = new QGridLayout;
+  pTransformationalDebuggerLayout->setAlignment(Qt::AlignTop);
+  pTransformationalDebuggerLayout->addWidget(mpAlwaysShowTransformationsCheckBox, 0, 0);
+  pTransformationalDebuggerLayout->addWidget(mpGenerateOperationsCheckBox, 1, 0);
+  mpTransformationalDebuggerGroupBox->setLayout(pTransformationalDebuggerLayout);
   // set the layout
   QVBoxLayout *pLayout = new QVBoxLayout;
   pLayout->setAlignment(Qt::AlignTop);
   pLayout->setContentsMargins(0, 0, 0, 0);
   pLayout->addWidget(mpSimulationGroupBox);
+  pLayout->addWidget(mpTransformationalDebuggerGroupBox);
   setLayout(pLayout);
 }
 

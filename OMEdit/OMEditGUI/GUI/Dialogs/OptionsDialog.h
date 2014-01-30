@@ -417,6 +417,8 @@ public:
   QComboBox* getMatchingAlgorithmComboBox();
   QComboBox* getIndexReductionMethodComboBox();
   QLineEdit* getOMCFlagsTextBox();
+  QCheckBox* getAlwaysShowTransformationsCheckBox() {return mpAlwaysShowTransformationsCheckBox;}
+  QCheckBox* getGenerateOperationsCheckBox() {return mpGenerateOperationsCheckBox;}
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpSimulationGroupBox;
@@ -426,6 +428,9 @@ private:
   QComboBox *mpIndexReductionMethodComboBox;
   Label *mpOMCFlagsLabel;
   QLineEdit *mpOMCFlagsTextBox;
+  QGroupBox *mpTransformationalDebuggerGroupBox;
+  QCheckBox *mpAlwaysShowTransformationsCheckBox;
+  QCheckBox *mpGenerateOperationsCheckBox;
 };
 
 class NotificationsPage : public QWidget

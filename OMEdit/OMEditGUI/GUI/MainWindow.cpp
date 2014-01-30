@@ -216,6 +216,8 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   // set the OMC Flags.
   if (!mpOptionsDialog->getSimulationPage()->getOMCFlagsTextBox()->text().isEmpty())
     mpOMCProxy->setCommandLineOptions(mpOptionsDialog->getSimulationPage()->getOMCFlagsTextBox()->text());
+  if (mpOptionsDialog->getSimulationPage()->getGenerateOperationsCheckBox()->isChecked())
+    mpOMCProxy->setCommandLineOptions("+d=infoXmlOperations");
   // restore OMEdit widgets state
   QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
   if (mpOptionsDialog->getGeneralSettingsPage()->getPreserveUserCustomizations())
@@ -918,6 +920,10 @@ TransformationsWidget *MainWindow::showTransformationsWidget(QString fileName)
   {
     pTransformationsWidget = new TransformationsWidget(fileName, this);
     mTransformationsWidgetHash.insert(fileName, pTransformationsWidget);
+  }
+  else
+  {
+    pTransformationsWidget->reloadTransformations();
   }
   pTransformationsWidget->show();
   pTransformationsWidget->raise();

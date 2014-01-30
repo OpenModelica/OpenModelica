@@ -1088,6 +1088,10 @@ void SimulationDialog::compilationProcessFinished(int exitCode, QProcess::ExitSt
     SimulationOptions simulationOptions(mpLibraryTreeNode->getNameStructure(), fileNamePrefix, outputFormat, mSimulationFlags,
                                         mpShowGeneratedFilesCheckBox->isChecked(), mpProfilingCheckBox->isChecked(),
                                         mpMainWindow->getOMCProxy()->changeDirectory());
+    /* show the Transformational Debugger */
+    if (mpMainWindow->getOptionsDialog()->getSimulationPage()->getAlwaysShowTransformationsCheckBox()->isChecked())
+      mpMainWindow->showTransformationsWidget(simulationOptions.getWorkingDirectory() + "/" + simulationOptions.getFileNamePrefix() + "_info.xml");
+    /* run the simulation */
     runSimulationExecutable(simulationOptions);
   }
   else if (!mIsCancelled)

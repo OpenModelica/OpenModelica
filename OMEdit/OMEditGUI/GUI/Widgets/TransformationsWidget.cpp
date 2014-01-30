@@ -414,7 +414,7 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   : mInfoXMLFullFileName(infoXMLFullFileName), mpMainWindow(pMainWindow)
 {
   setWindowIcon(QIcon(":/Resources/icons/debugger.svg"));
-  setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Transformational Debugger")));
+  setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::transformationalDebugger));
   QToolButton *pReloadToolButton = new QToolButton;
   pReloadToolButton->setToolTip(Helper::reload);
   pReloadToolButton->setAutoRaise(true);

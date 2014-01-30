@@ -214,6 +214,7 @@ QString Helper::next;
 QString Helper::reload;
 QString Helper::index;
 QString Helper::equation;
+QString Helper::transformationalDebugger;
 
 void Helper::initHelperVariables()
 {
@@ -342,6 +343,7 @@ void Helper::initHelperVariables()
   Helper::reload = tr("Reload");
   Helper::index = tr("Index");
   Helper::equation = tr("Equation");
+  Helper::transformationalDebugger = tr("Transformational Debugger");
 }
 
 QString GUIMessages::getMessage(int type)

@@ -220,6 +220,7 @@ public:
   static QString reload;
   static QString index;
   static QString equation;
+  static QString transformationalDebugger;
 };
 
 class GUIMessages : public QObject
