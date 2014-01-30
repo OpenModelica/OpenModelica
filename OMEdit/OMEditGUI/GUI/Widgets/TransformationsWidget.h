@@ -189,7 +189,7 @@ private:
   QTreeWidget *mpDefinesVariableTreeWidget;
   QTreeWidget *mpDependsVariableTreeWidget;
   QTreeWidget *mpEquationOperationsTreeWidget;
-  Label *mpTSourceEditorFileLabel;
+  ElidedLabel *mpTSourceEditorFileLabel;
   InfoBar *mpTSourceEditorInfoBar;
   TSourceEditor *mpTSourceEditor;
   QSplitter *mpVariablesNestedHorizontalSplitter;

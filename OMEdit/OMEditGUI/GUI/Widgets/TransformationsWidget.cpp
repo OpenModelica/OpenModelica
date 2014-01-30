@@ -421,8 +421,7 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   pReloadToolButton->setIcon(QIcon(":/Resources/icons/refresh.png"));
   connect(pReloadToolButton, SIGNAL(clicked()), SLOT(reloadTransformations()));
   /* info xml file path label */
-  Label *pInfoXMLFilePathLabel = new Label(mInfoXMLFullFileName);
-  pInfoXMLFilePathLabel->setWordWrap(true);
+  ElidedLabel *pInfoXMLFilePathLabel = new ElidedLabel(mInfoXMLFullFileName);
   /* create status bar */
   QStatusBar *pStatusBar = new QStatusBar;
   pStatusBar->setObjectName("ModelStatusBar");
@@ -430,7 +429,7 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   pStatusBar->addPermanentWidget(pReloadToolButton, 0);
   pStatusBar->addPermanentWidget(pInfoXMLFilePathLabel, 1);
   /* Variables Heading */
-  Label *pVariablesBrowserLabel = new Label(Helper::variablesBrowser);
+  ElidedLabel *pVariablesBrowserLabel = new ElidedLabel(Helper::variablesBrowser);
   pVariablesBrowserLabel->setObjectName("LabelWithBorder");
   // create the find text box
   mpFindVariablesTextBox = new QLineEdit(Helper::findVariables);
@@ -477,7 +476,7 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   QFrame *pVariablesFrame = new QFrame;
   pVariablesFrame->setLayout(pVariablesGridLayout);
   /* Defined in tree widget */
-  Label *pDefinedInLabel = new Label(tr("Defined In Equations"));
+  ElidedLabel *pDefinedInLabel = new ElidedLabel(tr("Defined In Equations"));
   pDefinedInLabel->setObjectName("LabelWithBorder");
   mpDefinedInEquationsTreeWidget = new QTreeWidget;
   mpDefinedInEquationsTreeWidget->setItemDelegate(new ItemDelegate(mpDefinedInEquationsTreeWidget));
@@ -501,7 +500,7 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   QFrame *pDefinedInFrame = new QFrame;
   pDefinedInFrame->setLayout(pDefinedInGridLayout);
   /* Used in tree widget  */
-  Label *pUsedInLabel = new Label(tr("Used In Equations"));
+  ElidedLabel *pUsedInLabel = new ElidedLabel(tr("Used In Equations"));
   pUsedInLabel->setObjectName("LabelWithBorder");
   mpUsedInEquationsTreeWidget = new QTreeWidget;
   mpUsedInEquationsTreeWidget->setItemDelegate(new ItemDelegate(mpUsedInEquationsTreeWidget));
@@ -525,7 +524,7 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   QFrame *pUsedInFrame = new QFrame;
   pUsedInFrame->setLayout(pUsedInGridLayout);
   /* variable operations tree widget */
-  Label *pOperationsLabel = new Label(tr("Variable Operations"));
+  ElidedLabel *pOperationsLabel = new ElidedLabel(tr("Variable Operations"));
   pOperationsLabel->setObjectName("LabelWithBorder");
   mpVariableOperationsTreeWidget = new QTreeWidget;
   mpVariableOperationsTreeWidget->setItemDelegate(new ItemDelegate(mpVariableOperationsTreeWidget));
@@ -542,7 +541,7 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   QFrame *pVariableOperationsFrame = new QFrame;
   pVariableOperationsFrame->setLayout(pVariableOperationsGridLayout);
   /* Equations Heading */
-  Label *pEquationsBrowserLabel = new Label(tr("Equations Browser"));
+  ElidedLabel *pEquationsBrowserLabel = new ElidedLabel(tr("Equations Browser"));
   pEquationsBrowserLabel->setObjectName("LabelWithBorder");
   /* Equations tree widget */
   mpEquationsTreeWidget = new QTreeWidget;
@@ -567,7 +566,7 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   QFrame *pEquationsFrame = new QFrame;
   pEquationsFrame->setLayout(pEquationsGridLayout);
   /* defines tree widget */
-  Label *pDefinesLabel = new Label(tr("Defines"));
+  ElidedLabel *pDefinesLabel = new ElidedLabel(tr("Defines"));
   pDefinesLabel->setObjectName("LabelWithBorder");
   mpDefinesVariableTreeWidget = new QTreeWidget;
   mpDefinesVariableTreeWidget->setItemDelegate(new ItemDelegate(mpDefinesVariableTreeWidget));
@@ -588,7 +587,7 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   QFrame *pDefinesFrame = new QFrame;
   pDefinesFrame->setLayout(pDefinesGridLayout);
   /* depends tree widget */
-  Label *pDependsLabel = new Label(tr("Depends"));
+  ElidedLabel *pDependsLabel = new ElidedLabel(tr("Depends"));
   pDependsLabel->setObjectName("LabelWithBorder");
   mpDependsVariableTreeWidget = new QTreeWidget;
   mpDependsVariableTreeWidget->setItemDelegate(new ItemDelegate(mpDependsVariableTreeWidget));
@@ -607,7 +606,7 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   QFrame *pDependsFrame = new QFrame;
   pDependsFrame->setLayout(pDependsGridLayout);
   /* operations tree widget */
-  Label *pEquationOperationsLabel = new Label(tr("Equation Operations"));
+  ElidedLabel *pEquationOperationsLabel = new ElidedLabel(tr("Equation Operations"));
   pEquationOperationsLabel->setObjectName("LabelWithBorder");
   mpEquationOperationsTreeWidget = new QTreeWidget;
   mpEquationOperationsTreeWidget->setItemDelegate(new ItemDelegate(mpEquationOperationsTreeWidget));
@@ -624,9 +623,9 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   QFrame *pEquationOperationsFrame = new QFrame;
   pEquationOperationsFrame->setLayout(pEquationOperationsGridLayout);
   /* TSourceEditor */
-  Label *pTSourceEditorBrowserLabel = new Label(tr("Source Browser"));
+  ElidedLabel *pTSourceEditorBrowserLabel = new ElidedLabel(tr("Source Browser"));
   pTSourceEditorBrowserLabel->setObjectName("LabelWithBorder");
-  mpTSourceEditorFileLabel = new Label;
+  mpTSourceEditorFileLabel = new ElidedLabel("");
   mpTSourceEditorFileLabel->hide();
   mpTSourceEditorInfoBar = new InfoBar(mpMainWindow);
   mpTSourceEditorInfoBar->hide();
@@ -669,7 +668,7 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   mpVariablesHorizontalSplitter->setContentsMargins(0, 0, 0, 0);
   mpVariablesHorizontalSplitter->addWidget(pVariablesFrame);
   mpVariablesHorizontalSplitter->addWidget(mpVariablesNestedVerticalSplitter);
-  Label *pVariablesHeadingLabel = new Label(Helper::variables);
+  ElidedLabel *pVariablesHeadingLabel = new ElidedLabel(Helper::variables);
   pVariablesHeadingLabel->setObjectName("LabelWithBorder");
   QVBoxLayout *pVariablesMainLayout = new QVBoxLayout;
   pVariablesMainLayout->setSpacing(1);
@@ -703,7 +702,7 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   mpEquationsHorizontalSplitter->setContentsMargins(0, 0, 0, 0);
   mpEquationsHorizontalSplitter->addWidget(pEquationsFrame);
   mpEquationsHorizontalSplitter->addWidget(mpEquationsNestedVerticalSplitter);
-  Label *pEquationsHeadingLabel = new Label(tr("Equations"));
+  ElidedLabel *pEquationsHeadingLabel = new ElidedLabel(tr("Equations"));
   pEquationsHeadingLabel->setObjectName("LabelWithBorder");
   QVBoxLayout *pEquationsMainLayout = new QVBoxLayout;
   pEquationsMainLayout->setSpacing(1);
@@ -1033,7 +1032,7 @@ void TransformationsWidget::fetchVariableData(const QModelIndex &index)
     return;
   QModelIndex modelIndex = mpTVariableTreeProxyModel->mapToSource(index);
   TVariablesTreeItem *pTVariableTreeItem = static_cast<TVariablesTreeItem*>(modelIndex.internalPointer());
-  if (!pTVariableTreeItem)
+  if (!pTVariableTreeItem || pTVariableTreeItem->getChildren().size() != 0)
     return;
 
   OMVariable variable = mpInfoXMLFileHandler->variables.value(pTVariableTreeItem->getVariableName());

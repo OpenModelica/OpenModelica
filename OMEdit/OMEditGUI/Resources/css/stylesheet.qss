@@ -92,8 +92,7 @@ QToolButton#ShapePointsButton {
   padding: 3px;
 }
 
-QLabel#LabelWithBorder {
+QFrame#LabelWithBorder {
   background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #d2d2d2, stop: 1 lightGray);
   border: 1px solid gray;
-  padding: 1px 1px 1px 0px;
 }

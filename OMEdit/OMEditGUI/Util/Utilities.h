@@ -76,6 +76,26 @@ private:
   void init() {setTextInteractionFlags(Qt::TextSelectableByMouse);}
 };
 
+class ElidedLabel : public QFrame
+{
+  Q_OBJECT
+  Q_PROPERTY(QString text READ text WRITE setText)
+  Q_PROPERTY(bool isElided READ isElided)
+public:
+  ElidedLabel(const QString &text, Qt::TextElideMode elideMode = Qt::ElideMiddle, QWidget *parent = 0);
+  void setText(const QString &text);
+  const QString & text() const { return content; }
+  bool isElided() const { return elided; }
+protected:
+  void paintEvent(QPaintEvent *event);
+signals:
+  void elisionChanged(bool elided);
+private:
+  bool elided;
+  QString content;
+  Qt::TextElideMode mElideMode;
+};
+
 //! @class DoubleSpinBox
 /*! \brief Only keeping this class so that if in future we need to change the way QDoubleSpinBox works then we don't have to change the
  * forms controls again.
