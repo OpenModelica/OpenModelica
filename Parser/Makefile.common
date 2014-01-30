@@ -131,3 +131,4 @@ clean:
 ModelicaParser.c ModelicaParser.h \
 *Modelica*_Lexer.c *Modelica*_Lexer.h \
 *.tokens *.stamp *.stamp.tmp
+	rm -f $(ANTLR)/antlr3config.h
