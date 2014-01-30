@@ -890,6 +890,9 @@ void TransformationsWidget::fetchEquationData(int equationIndex)
   fetchDepends(equation);
   /* fetch operations */
   fetchOperations(equation);
+
+  if (!equation.info.isValid)
+    return;
   /* open the model with and go to the equation line */
   QFile file(equation.info.file);
   if (file.exists())
@@ -1042,6 +1045,9 @@ void TransformationsWidget::fetchVariableData(const QModelIndex &index)
   fetchUsedInEquations(variable);
   /* fetch operations */
   fetchOperations(variable);
+
+  if (!variable.info.isValid)
+    return;
   /* open the model with and go to the variable line */
   QFile file(variable.info.file);
   if (file.exists())

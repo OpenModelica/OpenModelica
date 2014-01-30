@@ -175,6 +175,11 @@ QString OMOperationDummyDerivative::toString()
   return "dummy derivative: " + chosen + ", not chosen " + candidates.join(",");
 }
 
+OMInfo::OMInfo()
+{
+  isValid = false;
+}
+
 QString OMInfo::toString() {
   QString result;
   QTextStream(&result) << "[" << file << ":" << lineStart << ":" << colStart << "-" << lineEnd << ":" << colEnd << "]";
@@ -348,18 +353,21 @@ bool MyHandler::startElement( const QString & namespaceURI, const QString & loca
       currentVariable.usedIn[i].clear();
     }
     currentVariable.types.clear();
+    currentInfo = OMInfo();
   } else if (qName == "info") {
     currentInfo.file = atts.value("file");
     currentInfo.lineStart = atts.value("lineStart").toLong();
     currentInfo.lineEnd = atts.value("lineEnd").toLong();
     currentInfo.colStart = atts.value("colStart").toLong();
     currentInfo.colEnd = atts.value("colEnd").toLong();
+    currentInfo.isValid = true;
   } else if (qName == "equation") {
     currentEquation.defines.clear();
     currentEquation.depends.clear();
     currentEquation.index = atts.value("index").toLong();
     currentEquation.kind = currentKind;
     nestedEquations.clear();
+    currentInfo = OMInfo();
   } else if (qName == "eq") {
     nestedEquations.append(atts.value("index").toLong());
   } else if (qName == "equations" ||

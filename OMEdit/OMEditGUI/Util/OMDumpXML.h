@@ -153,6 +153,8 @@ public:
 struct OMInfo {
   QString file;
   int lineStart,lineEnd,colStart,colEnd;
+  bool isValid;
+  OMInfo();
   QString toString();
 };
 
