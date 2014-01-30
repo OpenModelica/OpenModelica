@@ -853,6 +853,19 @@ void TransformationsWidget::fetchEquations()
   }
 }
 
+QTreeWidgetItem* TransformationsWidget::findEquationTreeItem(int equationIndex)
+{
+  QTreeWidgetItemIterator it(mpEquationsTreeWidget);
+  while (*it)
+  {
+    QTreeWidgetItem *pEquationTreeItem = dynamic_cast<QTreeWidgetItem*>(*it);
+    if (pEquationTreeItem->text(0).toInt() == equationIndex)
+      return pEquationTreeItem;
+    ++it;
+  }
+  return 0;
+}
+
 void TransformationsWidget::fetchEquationData(int equationIndex)
 {
   OMEquation equation = mpInfoXMLFileHandler->getOMEquation(equationIndex);

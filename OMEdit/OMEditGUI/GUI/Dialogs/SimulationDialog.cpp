@@ -1435,7 +1435,14 @@ void SimulationOutputWidget::openTransformationBrowser(QUrl url)
   if (QFileInfo(fileName).exists())
   {
     TransformationsWidget *pTransformationsWidget = mpMainWindow->showTransformationsWidget(fileName);
-    pTransformationsWidget->fetchEquationData(url.queryItemValue("index").toInt());
+    int equationIndex = url.queryItemValue("index").toInt();
+    QTreeWidgetItem *pTreeWidgetItem = pTransformationsWidget->findEquationTreeItem(equationIndex);
+    if (pTreeWidgetItem)
+    {
+      pTransformationsWidget->getEquationsTreeWidget()->clearSelection();
+      pTreeWidgetItem->setSelected(true);
+    }
+    pTransformationsWidget->fetchEquationData(equationIndex);
   } else {
     /* TODO: Display error-message */
   }

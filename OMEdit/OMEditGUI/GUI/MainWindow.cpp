@@ -1644,7 +1644,6 @@ void MainWindow::createActions()
   connect(mpOpenResultFileAction, SIGNAL(triggered()), SLOT(showOpenResultFileDialog()));
   // open transformations file action
   mpOpenTransformationFileAction = new QAction(tr("Open Transformations File"), this);
-  mpOpenTransformationFileAction->setShortcut(QKeySequence("Ctrl+t"));
   mpOpenTransformationFileAction->setStatusTip(tr("Opens the class transformations file"));
   connect(mpOpenTransformationFileAction, SIGNAL(triggered()), SLOT(showOpenTransformationFileDialog()));
   // save file action

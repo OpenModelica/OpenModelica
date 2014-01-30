@@ -148,6 +148,7 @@ public:
   TransformationsWidget(QString infoXMLFullFileName, MainWindow *pMainWindow);
   MainWindow* getMainWindow() {return mpMainWindow;}
   MyHandler* getInfoXMLFileHandler() {return mpInfoXMLFileHandler;}
+  QTreeWidget* getEquationsTreeWidget() {return mpEquationsTreeWidget;}
   InfoBar* getTSourceEditorInfoBar() {return mpTSourceEditorInfoBar;}
   bool eventFilter(QObject *pObject, QEvent *pEvent);
   void loadTransformations();
@@ -155,6 +156,7 @@ public:
   void fetchUsedInEquations(OMVariable &variable);
   void fetchOperations(OMVariable &variable);
   void fetchEquations();
+  QTreeWidgetItem* findEquationTreeItem(int equationIndex);
   void fetchEquationData(int equationIndex);
   void fetchDefines(OMEquation &equation);
   void fetchDepends(OMEquation &equation);
