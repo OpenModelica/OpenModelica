@@ -99,8 +99,6 @@ public:
 //  SimulationBrowserWidget* getSimulationBrowserWidget() {return mpSimulationBrowserWidget;}
   VariablesWidget* getVariablesWidget();
   QDockWidget* getVariablesDockWidget();
-  TransformationsWidget* getTransformationsWidget();
-  QDockWidget* getTransformationsDockWidget();
   SimulationDialog* getSimulationDialog();
   PlotWindowContainer* getPlotWindowContainer();
   //InteractiveSimulationTabWidget* getInteractiveSimulationTabWidget();
@@ -156,6 +154,7 @@ public:
   void createOMNotebookTitleCell(LibraryTreeNode *pLibraryTreeNode, QDomDocument xmlDocument, QDomElement domElement);
   void createOMNotebookImageCell(LibraryTreeNode *pLibraryTreeNode, QDomDocument xmlDocument, QDomElement domElement, QString filePath);
   void createOMNotebookCodeCell(LibraryTreeNode *pLibraryTreeNode, QDomDocument xmlDocument, QDomElement domElement);
+  TransformationsWidget* showTransformationsWidget(QString fileName);
 private:
   OMCProxy *mpOMCProxy;
   bool mExitApplicationStatus;
@@ -173,8 +172,6 @@ private:
 //  QDockWidget *mpSimulationDockWidget;
   VariablesWidget *mpVariablesWidget;
   QDockWidget *mpVariablesDockWidget;
-  TransformationsWidget *mpTransformationsWidget;
-  QDockWidget *mpTransformationsDockWidget;
   FindReplaceDialog *mpFindReplaceDialog;
   SimulationDialog *mpSimulationDialog;
   PlotWindowContainer *mpPlotWindowContainer;
@@ -264,6 +261,7 @@ private:
   QToolButton *mpModelSwitcherToolButton;
   QMenu *mpModelSwitcherMenu;
   QToolBar *mpPlotToolBar;
+  QHash<QString, TransformationsWidget*> mTransformationsWidgetHash;
 public slots:
   void createNewModelicaClass();
   void openModelicaFile();

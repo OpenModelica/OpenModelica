@@ -37,309 +37,784 @@
 
 #include "TransformationsWidget.h"
 
-TransformationsWidget::TransformationsWidget(MainWindow *pMainWindow)
-  : QWidget(pMainWindow)
+/*!
+  \class TVariablesTreeItem
+  \brief Contains the information about the result variable.
+  */
+/*!
+  \param tVariableItemData - a list of items.\n
+  0 -> name\n
+  1 -> displayName\n
+  2 -> comment\n
+  3 -> lineNumber\n
+  4 -> filePath
+  */
+TVariablesTreeItem::TVariablesTreeItem(const QVector<QVariant> &tVariableItemData, TVariablesTreeItem *pParent, bool isRootItem)
 {
-  mpMainWindow = pMainWindow;
-  mpInfoXMLFileHandler = 0;
-  // create the previous button
-  mpVariablesViewToolButton = new QToolButton;
-  mpVariablesViewToolButton->setToolTip(Helper::variablesView);
-  mpVariablesViewToolButton->setAutoRaise(true);
-  mpVariablesViewToolButton->setCheckable(true);
-  mpVariablesViewToolButton->setChecked(true);
-  mpVariablesViewToolButton->setIcon(QIcon(":/Resources/icons/variables.svg"));
-  connect(mpVariablesViewToolButton, SIGNAL(toggled(bool)), SLOT(showVariablesView(bool)));
-  // create the next button
-  mpEquationViewToolButton = new QToolButton;
-  mpEquationViewToolButton->setToolTip(Helper::equationView);
-  mpEquationViewToolButton->setAutoRaise(true);
-  mpEquationViewToolButton->setCheckable(true);
-  mpEquationViewToolButton->setIcon(QIcon(":/Resources/icons/equations.svg"));
-  connect(mpEquationViewToolButton, SIGNAL(toggled(bool)), SLOT(showEquationView(bool)));
-  /* buttons group */
-  QButtonGroup *pViewsButtonGroup = new QButtonGroup;
-  pViewsButtonGroup->setExclusive(true);
-  pViewsButtonGroup->addButton(mpVariablesViewToolButton);
-  pViewsButtonGroup->addButton(mpEquationViewToolButton);
-  // frame to contain view buttons
-  QFrame *pViewButtonsFrame = new QFrame;
-  QHBoxLayout *pViewButtonsHorizontalLayout = new QHBoxLayout;
-  pViewButtonsHorizontalLayout->setContentsMargins(0, 0, 0, 0);
-  pViewButtonsHorizontalLayout->setSpacing(0);
-  pViewButtonsHorizontalLayout->addWidget(mpVariablesViewToolButton);
-  pViewButtonsHorizontalLayout->addWidget(mpEquationViewToolButton);
-  pViewButtonsFrame->setLayout(pViewButtonsHorizontalLayout);
-  /* info xml file path label */
-  mpInfoXMLFilePathLabel = new Label;
-  mpInfoXMLFilePathLabel->setWordWrap(true);
-  /* create status bar */
-  QStatusBar *pStatusBar = new QStatusBar;
-  pStatusBar->setObjectName("ModelStatusBar");
-  pStatusBar->setSizeGripEnabled(false);
-  pStatusBar->addPermanentWidget(pViewButtonsFrame, 0);
-  pStatusBar->addPermanentWidget(mpInfoXMLFilePathLabel, 1);
-  /* create the stacked widget object */
-  mpPagesWidget = new QStackedWidget;
-  mpPagesWidget->addWidget(new VariablePage(this));
-  mpInfoTextBox = new QPlainTextEdit;
-  mpInfoTextBox->setFont(QFont(Helper::monospacedFontInfo.family()));
-  /* set the layout */
-  QGridLayout *pTopLayout = new QGridLayout;
-  pTopLayout->setContentsMargins(0, 0, 0, 0);
-  pTopLayout->addWidget(pStatusBar, 0, 0);
-  pTopLayout->addWidget(mpPagesWidget, 1, 0);
-  QFrame *pTopFrame = new QFrame;
-  pTopFrame->setLayout(pTopLayout);
-  /* splitter */
-  QSplitter *pSplitter = new QSplitter;
-  pSplitter->setOrientation(Qt::Vertical);
-  pSplitter->setChildrenCollapsible(false);
-  pSplitter->setHandleWidth(4);
-  pSplitter->setContentsMargins(0, 0, 0, 0);
-  pSplitter->addWidget(pTopFrame);
-  pSplitter->addWidget(mpInfoTextBox);
-  QList<int> sizes;
-  sizes << pTopFrame->height() << 50;
-  pSplitter->setSizes(sizes);
-  /* set the layout */
-  QGridLayout *pMainLayout = new QGridLayout;
-  pMainLayout->setContentsMargins(0, 0, 0, 0);
-  pMainLayout->addWidget(pSplitter, 0, 0);
-  setLayout(pMainLayout);
+  mpParentTVariablesTreeItem = pParent;
+  mIsRootItem = isRootItem;
+  mVariableName = tVariableItemData[0].toString();
+  mDisplayVariableName = tVariableItemData[1].toString();
+  mComment = tVariableItemData[2].toString();
+  mLineNumber = tVariableItemData[3].toString();
+  mFilePath = tVariableItemData[4].toString();
 }
 
-void TransformationsWidget::showTransformations(QString fileName)
+TVariablesTreeItem::~TVariablesTreeItem()
 {
-  /* create the info xml handler */
-  if (mpInfoXMLFileHandler)
-    delete mpInfoXMLFileHandler;
-  QFile file(fileName);
-  mpInfoXMLFileHandler = new MyHandler(file);
-  mpInfoXMLFilePathLabel->setText(fileName);
-  /* clear the pages */
-  int i = 0;
-  while(i < mpPagesWidget->count())
+  qDeleteAll(mChildren);
+  mChildren.clear();
+}
+
+void TVariablesTreeItem::insertChild(int position, TVariablesTreeItem *pTVariablesTreeItem)
+{
+  mChildren.insert(position, pTVariablesTreeItem);
+}
+
+TVariablesTreeItem* TVariablesTreeItem::child(int row)
+{
+  return mChildren.value(row);
+}
+
+void TVariablesTreeItem::removeChildren()
+{
+  qDeleteAll(mChildren);
+  mChildren.clear();
+}
+
+void TVariablesTreeItem::removeChild(TVariablesTreeItem *pTVariablesTreeItem)
+{
+  mChildren.removeOne(pTVariablesTreeItem);
+}
+
+int TVariablesTreeItem::columnCount() const
+{
+  return 4;
+}
+
+QVariant TVariablesTreeItem::data(int column, int role) const
+{
+  switch (column)
   {
-    QWidget *pWidget = mpPagesWidget->widget(i);
-    mpPagesWidget->removeWidget(pWidget);
-    delete pWidget;
-    i = 0;   //Restart iteration
+    case 0:
+      switch (role)
+      {
+        case Qt::DisplayRole:
+          return mDisplayVariableName;
+        case Qt::ToolTipRole:
+          return mVariableName;
+        default:
+          return QVariant();
+      }
+    case 1:
+      switch (role)
+      {
+        case Qt::DisplayRole:
+          return mComment;
+        case Qt::ToolTipRole:
+          return mComment;
+        default:
+          return QVariant();
+      }
+    case 2:
+      switch (role)
+      {
+        case Qt::DisplayRole:
+          return mLineNumber;
+        case Qt::ToolTipRole:
+          return mLineNumber;
+        default:
+          return QVariant();
+      }
+    case 3:
+      switch (role)
+      {
+        case Qt::DisplayRole:
+          return mFilePath;
+        case Qt::ToolTipRole:
+          return mFilePath;
+        default:
+          return QVariant();
+      }
+    default:
+      return QVariant();
   }
-  /* create a VariablePage and add it to the stacked pages */
-  mpVariablePage = new VariablePage(this);
-  mpVariablePage->initialize();
-  mpPagesWidget->addWidget(mpVariablePage);
-  mpVariablesViewToolButton->setChecked(true);
-  mpEquationPage = new EquationPage(this);
-  mpPagesWidget->addWidget(mpEquationPage);
 }
 
-void TransformationsWidget::showInfoText(QString message)
+int TVariablesTreeItem::row() const
 {
-  mpInfoTextBox->setPlainText(message);
+  if (mpParentTVariablesTreeItem)
+    return mpParentTVariablesTreeItem->mChildren.indexOf(const_cast<TVariablesTreeItem*>(this));
+
+  return 0;
 }
 
-void TransformationsWidget::showVariablesView(bool checked)
+TVariablesTreeItem* TVariablesTreeItem::parent()
 {
-  if (!checked) return;
-  int index = mpPagesWidget->currentIndex();
-  if (index <= 0)
-    return;
-  mpPagesWidget->setCurrentIndex(--index);
+  return mpParentTVariablesTreeItem;
 }
 
-void TransformationsWidget::showEquationView(bool checked)
+TVariablesTreeModel::TVariablesTreeModel(TVariablesTreeView *pTVariablesTreeView)
+  : QAbstractItemModel(pTVariablesTreeView)
 {
-  if (!checked) return;
-  int index = mpPagesWidget->currentIndex();
-  if (index >= mpPagesWidget->count())
-    return;
-  mpPagesWidget->setCurrentIndex(++index);
+  mpTVariablesTreeView = pTVariablesTreeView;
+  QVector<QVariant> headers;
+  headers << "" << Helper::variables << tr("Comment") << tr("Line") << Helper::fileLocation;
+  mpRootTVariablesTreeItem = new TVariablesTreeItem(headers, 0, true);
 }
 
-VariablePage::VariablePage(TransformationsWidget *pTransformationsWidget)
-  : QWidget(pTransformationsWidget)
+int TVariablesTreeModel::columnCount(const QModelIndex &parent) const
 {
-  mpTransformationsWidget = pTransformationsWidget;
-  /* Equation View Heading */
-  mpVariablesViewHeadingLabel = new Label(Helper::variablesView);
-  mpVariablesViewHeadingLabel->setFont(QFont(Helper::systemFontInfo.family(), 14));
-  /* variables tree widget */
-  Label *pVariablesLabel = new Label(Helper::variables);
-  mpVariablesTreeWidget = new QTreeWidget;
-  mpVariablesTreeWidget->setItemDelegate(new ItemDelegate(mpVariablesTreeWidget));
-  mpVariablesTreeWidget->setObjectName("VariablesTree");
-  mpVariablesTreeWidget->setIndentation(0);
-  mpVariablesTreeWidget->setColumnCount(2);
-  mpVariablesTreeWidget->setTextElideMode(Qt::ElideMiddle);
-  mpVariablesTreeWidget->setSortingEnabled(true);
-  mpVariablesTreeWidget->sortByColumn(0, Qt::AscendingOrder);
-  QStringList headerLabels;
-  headerLabels << tr("Variable") << tr("Comment");
-  mpVariablesTreeWidget->setHeaderLabels(headerLabels);
-  connect(mpVariablesTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(fetchVariableData(QTreeWidgetItem*,int)));
-  connect(mpVariablesTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)),
-          this, SLOT(variablesItemChanged(QTreeWidgetItem*)));
-  connect(mpVariablesTreeWidget, SIGNAL(itemClicked(QTreeWidgetItem*,int)), this, SLOT(variablesItemChanged(QTreeWidgetItem*)));
-  QGridLayout *pVariablesGridLayout = new QGridLayout;
-  pVariablesGridLayout->setContentsMargins(0, 0, 0, 0);
-  pVariablesGridLayout->addWidget(pVariablesLabel, 0, 0);
-  pVariablesGridLayout->addWidget(mpVariablesTreeWidget, 1, 0);
-  QFrame *pVariablesFrame = new QFrame;
-  pVariablesFrame->setLayout(pVariablesGridLayout);
-  /* types tree widget */
-  Label *pTypesLabel = new Label(tr("Variable Types"));
-  mpTypesTreeWidget = new QTreeWidget;
-  mpTypesTreeWidget->setItemDelegate(new ItemDelegate(mpTypesTreeWidget));
-  mpTypesTreeWidget->setObjectName("TypesTree");
-  mpTypesTreeWidget->setIndentation(Helper::treeIndentation);
-  mpTypesTreeWidget->setColumnCount(1);
-  mpTypesTreeWidget->setTextElideMode(Qt::ElideMiddle);
-  mpTypesTreeWidget->setSortingEnabled(true);
-  mpTypesTreeWidget->sortByColumn(0, Qt::AscendingOrder);
-  mpTypesTreeWidget->setHeaderLabel(tr("Types"));
-  connect(mpTypesTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)),
-          this, SLOT(typesItemChanged(QTreeWidgetItem*)));
-  connect(mpTypesTreeWidget, SIGNAL(itemClicked(QTreeWidgetItem*,int)), this, SLOT(typesItemChanged(QTreeWidgetItem*)));
-  QGridLayout *pTypesGridLayout = new QGridLayout;
-  pTypesGridLayout->setContentsMargins(0, 0, 0, 0);
-  pTypesGridLayout->addWidget(pTypesLabel, 0, 0);
-  pTypesGridLayout->addWidget(mpTypesTreeWidget, 1, 0);
-  QFrame *pTypesFrame = new QFrame;
-  pTypesFrame->setLayout(pTypesGridLayout);
-  /* operations tree widget */
-  Label *pOperationsLabel = new Label(tr("Variable Operations"));
-  mpOperationsTreeWidget = new QTreeWidget;
-  mpOperationsTreeWidget->setItemDelegate(new ItemDelegate(mpOperationsTreeWidget));
-  mpOperationsTreeWidget->setObjectName("VariableOperationsTree");
-  mpOperationsTreeWidget->setIndentation(Helper::treeIndentation);
-  mpOperationsTreeWidget->setColumnCount(1);
-  mpOperationsTreeWidget->setTextElideMode(Qt::ElideMiddle);
-  mpOperationsTreeWidget->setHeaderLabel(tr("Operations"));
-  connect(mpOperationsTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)),
-          this, SLOT(operationsItemChanged(QTreeWidgetItem*)));
-  connect(mpOperationsTreeWidget, SIGNAL(itemClicked(QTreeWidgetItem*,int)), this, SLOT(operationsItemChanged(QTreeWidgetItem*)));
-  QGridLayout *pOperationsGridLayout = new QGridLayout;
-  pOperationsGridLayout->setContentsMargins(0, 0, 0, 0);
-  pOperationsGridLayout->addWidget(pOperationsLabel, 0, 0);
-  pOperationsGridLayout->addWidget(mpOperationsTreeWidget, 1, 0);
-  QFrame *pOperationsFrame = new QFrame;
-  pOperationsFrame->setLayout(pOperationsGridLayout);
-  /* Defined in tree widget */
-  Label *pDefinedInLabel = new Label(tr("Defined In Equations"));
-  mpDefinedInTreeWidget = new QTreeWidget;
-  mpDefinedInTreeWidget->setItemDelegate(new ItemDelegate(mpDefinedInTreeWidget));
-  mpDefinedInTreeWidget->setObjectName("DefinedInTree");
-  mpDefinedInTreeWidget->setIndentation(Helper::treeIndentation);
-  mpDefinedInTreeWidget->setColumnCount(3);
-  mpDefinedInTreeWidget->setTextElideMode(Qt::ElideMiddle);
-  mpDefinedInTreeWidget->setSortingEnabled(true);
-  mpDefinedInTreeWidget->sortByColumn(0, Qt::AscendingOrder);
-  headerLabels.clear();
-  headerLabels << Helper::index << Helper::type << Helper::equation;
-  mpDefinedInTreeWidget->setHeaderLabels(headerLabels);
-  connect(mpDefinedInTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(showEquation(QTreeWidgetItem*,int)));
-  connect(mpDefinedInTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)),
-          this, SLOT(definedInItemChanged(QTreeWidgetItem*)));
-  connect(mpDefinedInTreeWidget, SIGNAL(itemClicked(QTreeWidgetItem*,int)), this, SLOT(definedInItemChanged(QTreeWidgetItem*)));
-  QGridLayout *pDefinedInGridLayout = new QGridLayout;
-  pDefinedInGridLayout->setContentsMargins(0, 0, 0, 0);
-  pDefinedInGridLayout->addWidget(pDefinedInLabel, 0, 0);
-  pDefinedInGridLayout->addWidget(mpDefinedInTreeWidget, 1, 0);
-  QFrame *pDefinedInFrame = new QFrame;
-  pDefinedInFrame->setLayout(pDefinedInGridLayout);
-  /* Used in tree widget  */
-  Label *pUsedInLabel = new Label(tr("Used In Equations"));
-  mpUsedInTreeWidget = new QTreeWidget;
-  mpUsedInTreeWidget->setItemDelegate(new ItemDelegate(mpUsedInTreeWidget));
-  mpUsedInTreeWidget->setObjectName("UsedInTree");
-  mpUsedInTreeWidget->setIndentation(Helper::treeIndentation);
-  mpUsedInTreeWidget->setColumnCount(3);
-  mpUsedInTreeWidget->setTextElideMode(Qt::ElideMiddle);
-  mpUsedInTreeWidget->setSortingEnabled(true);
-  mpUsedInTreeWidget->sortByColumn(0, Qt::AscendingOrder);
-  headerLabels.clear();
-  headerLabels << Helper::index << Helper::type << Helper::equation;
-  mpUsedInTreeWidget->setHeaderLabels(headerLabels);
-  connect(mpUsedInTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(showEquation(QTreeWidgetItem*,int)));
-  connect(mpUsedInTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)),
-          this, SLOT(usedInItemChanged(QTreeWidgetItem*)));
-  connect(mpUsedInTreeWidget, SIGNAL(itemClicked(QTreeWidgetItem*,int)), this, SLOT(usedInItemChanged(QTreeWidgetItem*)));
-  QGridLayout *pUsedInGridLayout = new QGridLayout;
-  pUsedInGridLayout->setContentsMargins(0, 0, 0, 0);
-  pUsedInGridLayout->addWidget(pUsedInLabel, 0, 0);
-  pUsedInGridLayout->addWidget(mpUsedInTreeWidget, 1, 0);
-  QFrame *pUsedInFrame = new QFrame;
-  pUsedInFrame->setLayout(pUsedInGridLayout);
-  /* splitter */
-  QSplitter *pSplitter = new QSplitter;
-  pSplitter->setChildrenCollapsible(false);
-  pSplitter->setHandleWidth(4);
-  pSplitter->setContentsMargins(0, 0, 0, 0);
-  pSplitter->addWidget(pVariablesFrame);
-  pSplitter->addWidget(pTypesFrame);
-  pSplitter->addWidget(pOperationsFrame);
-  pSplitter->addWidget(pDefinedInFrame);
-  pSplitter->addWidget(pUsedInFrame);
-  /* set the layout */
-  QGridLayout *pMainLayout = new QGridLayout;
-  pMainLayout->setContentsMargins(0, 0, 0, 0);
-  pMainLayout->addWidget(mpVariablesViewHeadingLabel, 0, 0);
-  pMainLayout->addWidget(pSplitter, 1, 0);
-  setLayout(pMainLayout);
+  if (parent.isValid())
+    return static_cast<TVariablesTreeItem*>(parent.internalPointer())->columnCount();
+  else
+    return mpRootTVariablesTreeItem->columnCount();
 }
 
-void VariablePage::initialize()
+int TVariablesTreeModel::rowCount(const QModelIndex &parent) const
 {
-  QHashIterator<QString, OMVariable> variables(mpTransformationsWidget->getInfoXMLFileHandler()->variables);
+  TVariablesTreeItem *pParentTVariablesTreeItem;
+  if (parent.column() > 0)
+    return 0;
+
+  if (!parent.isValid())
+    pParentTVariablesTreeItem = mpRootTVariablesTreeItem;
+  else
+    pParentTVariablesTreeItem = static_cast<TVariablesTreeItem*>(parent.internalPointer());
+  return pParentTVariablesTreeItem->getChildren().size();
+}
+
+QVariant TVariablesTreeModel::headerData(int section, Qt::Orientation orientation, int role) const
+{
+  if (orientation == Qt::Horizontal && role == Qt::DisplayRole)
+    return mpRootTVariablesTreeItem->data(section);
+  return QVariant();
+}
+
+QModelIndex TVariablesTreeModel::index(int row, int column, const QModelIndex &parent) const
+{
+  if (!hasIndex(row, column, parent))
+    return QModelIndex();
+
+  TVariablesTreeItem *pParentTVariablesTreeItem;
+
+  if (!parent.isValid())
+    pParentTVariablesTreeItem = mpRootTVariablesTreeItem;
+  else
+    pParentTVariablesTreeItem = static_cast<TVariablesTreeItem*>(parent.internalPointer());
+
+  TVariablesTreeItem *pChildTVariablesTreeItem = pParentTVariablesTreeItem->child(row);
+  if (pChildTVariablesTreeItem)
+    return createIndex(row, column, pChildTVariablesTreeItem);
+  else
+    return QModelIndex();
+}
+
+QModelIndex TVariablesTreeModel::parent(const QModelIndex &index) const
+{
+  if (!index.isValid())
+    return QModelIndex();
+
+  TVariablesTreeItem *pChildTVariablesTreeItem = static_cast<TVariablesTreeItem*>(index.internalPointer());
+  TVariablesTreeItem *pParentTVariablesTreeItem = pChildTVariablesTreeItem->parent();
+  if (pParentTVariablesTreeItem == mpRootTVariablesTreeItem)
+    return QModelIndex();
+
+  return createIndex(pParentTVariablesTreeItem->row(), 0, pParentTVariablesTreeItem);
+}
+
+QVariant TVariablesTreeModel::data(const QModelIndex &index, int role) const
+{
+  if (!index.isValid())
+    return QVariant();
+
+  TVariablesTreeItem *pTVariablesTreeItem = static_cast<TVariablesTreeItem*>(index.internalPointer());
+  return pTVariablesTreeItem->data(index.column(), role);
+}
+
+Qt::ItemFlags TVariablesTreeModel::flags(const QModelIndex &index) const
+{
+  if (!index.isValid())
+      return 0;
+
+  Qt::ItemFlags flags;
+  TVariablesTreeItem *pTVariablesTreeItem = static_cast<TVariablesTreeItem*>(index.internalPointer());
+  if (pTVariablesTreeItem && pTVariablesTreeItem->getChildren().size() == 0)
+    flags |= Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+
+  return flags;
+}
+
+TVariablesTreeItem* TVariablesTreeModel::findTVariablesTreeItem(const QString &name, TVariablesTreeItem *root) const
+{
+  if (root->getVariableName() == name)
+    return root;
+  for (int i = root->getChildren().size(); --i >= 0; )
+    if (TVariablesTreeItem *item = findTVariablesTreeItem(name, root->getChildren().at(i)))
+      return item;
+  return 0;
+}
+
+QModelIndex TVariablesTreeModel::tVariablesTreeItemIndex(const TVariablesTreeItem *pTVariablesTreeItem) const
+{
+  return tVariablesTreeItemIndexHelper(pTVariablesTreeItem, mpRootTVariablesTreeItem, QModelIndex());
+}
+
+QModelIndex TVariablesTreeModel::tVariablesTreeItemIndexHelper(const TVariablesTreeItem *pTVariablesTreeItem,
+                                                             const TVariablesTreeItem *pParentTVariablesTreeItem,
+                                                             const QModelIndex &parentIndex) const
+{
+  if (pTVariablesTreeItem == pParentTVariablesTreeItem)
+    return parentIndex;
+  for (int i = pParentTVariablesTreeItem->getChildren().size(); --i >= 0; ) {
+    const TVariablesTreeItem *childItem = pParentTVariablesTreeItem->getChildren().at(i);
+    QModelIndex childIndex = index(i, 0, parentIndex);
+    QModelIndex index = tVariablesTreeItemIndexHelper(pTVariablesTreeItem, childItem, childIndex);
+    if (index.isValid())
+      return index;
+  }
+  return QModelIndex();
+}
+
+void TVariablesTreeModel::insertTVariablesItems()
+{
+  QHashIterator<QString, OMVariable> variables(mpTVariablesTreeView->getTransformationsWidget()->getInfoXMLFileHandler()->variables);
   while (variables.hasNext())
   {
     variables.next();
     OMVariable variable = variables.value();
-    QStringList values;
-    values << variable.name << variable.comment;
-    QTreeWidgetItem *pVariableTreeItem = new QTreeWidgetItem(values);
-    pVariableTreeItem->setToolTip(0, variable.name);
-    pVariableTreeItem->setToolTip(1, variable.comment);
-    mpVariablesTreeWidget->addTopLevelItem(pVariableTreeItem);
+    if (variable.name.startsWith("$PRE."))
+      continue;
+
+    QStringList tVariables;
+    QString parentTVariable;
+    if (variable.name.startsWith("der("))
+    {
+      QString str = variable.name;
+      str.chop((str.lastIndexOf("der(")/4)+1);
+      tVariables = StringHandler::makeVariableParts(str.mid(str.lastIndexOf("der(") + 4));
+    }
+    else
+    {
+      tVariables = StringHandler::makeVariableParts(variable.name);
+    }
+    int count = 1;
+    TVariablesTreeItem *pParentTVariablesTreeItem = 0;
+    foreach (QString tVariable, tVariables)
+    {
+      if (count == 1) /* first loop iteration */
+      {
+        pParentTVariablesTreeItem = mpRootTVariablesTreeItem;
+      }
+      QString findVariable = parentTVariable.isEmpty() ? tVariable : parentTVariable + "." + tVariable;
+      if (pParentTVariablesTreeItem = findTVariablesTreeItem(findVariable, pParentTVariablesTreeItem))
+      {
+        if (count == 1)
+          parentTVariable = tVariable;
+        else
+          parentTVariable += "." + tVariable;
+        count++;
+        continue;
+      }
+      /*
+        If pParentTVariablesTreeItem is 0 and it is first loop iteration then use mpRootTVariablesTreeItem as parent.
+        If loop iteration is not first and pParentTVariablesTreeItem is 0 then find the parent item.
+        */
+      if (!pParentTVariablesTreeItem && count > 1)
+      {
+        pParentTVariablesTreeItem = findTVariablesTreeItem(parentTVariable, mpRootTVariablesTreeItem);
+      }
+      else
+      {
+        pParentTVariablesTreeItem = mpRootTVariablesTreeItem;
+      }
+      QModelIndex index = tVariablesTreeItemIndex(pParentTVariablesTreeItem);
+      QVector<QVariant> tVariableData;
+      QString parentVarName = pParentTVariablesTreeItem->getVariableName();
+      parentVarName = parentVarName.isEmpty() ? parentVarName : parentVarName.append(".");
+      /* if last item */
+      if (tVariables.size() == count && variable.name.startsWith("der("))
+        tVariableData << variable.name << "der(" + tVariable + ")" << variable.comment << variable.info.lineStart << variable.info.file;
+      else
+        tVariableData << parentVarName + tVariable << tVariable << variable.comment << variable.info.lineStart << variable.info.file;
+      TVariablesTreeItem *pTVariablesTreeItem = new TVariablesTreeItem(tVariableData, pParentTVariablesTreeItem);
+      int row = rowCount(index);
+      beginInsertRows(index, row, row);
+      pParentTVariablesTreeItem->insertChild(row, pTVariablesTreeItem);
+      endInsertRows();
+      if (count == 1)
+        parentTVariable = tVariable;
+      else
+        parentTVariable += "." + tVariable;
+      count++;
+    }
   }
 }
 
-void VariablePage::fetchTypes(OMVariable &variable)
+void TVariablesTreeModel::clearTVariablesTreeItems()
 {
-  /* Clear the types tree. */
-  int i = 0;
-  while(i < mpTypesTreeWidget->topLevelItemCount())
+  beginRemoveRows(tVariablesTreeItemIndex(mpRootTVariablesTreeItem), 0, mpRootTVariablesTreeItem->getChildren().size());
+  mpRootTVariablesTreeItem->removeChildren();
+  endRemoveRows();
+}
+
+TVariableTreeProxyModel::TVariableTreeProxyModel(QObject *parent)
+  : QSortFilterProxyModel(parent)
+{
+}
+
+bool TVariableTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
+{
+  if (!filterRegExp().isEmpty())
   {
-    qDeleteAll(mpTypesTreeWidget->topLevelItem(i)->takeChildren());
-    delete mpTypesTreeWidget->topLevelItem(i);
-    i = 0;   //Restart iteration
+    QModelIndex index = sourceModel()->index(sourceRow, 0, sourceParent);
+    if (index.isValid())
+    {
+      // if any of children matches the filter, then current index matches the filter as well
+      int rows = sourceModel()->rowCount(index);
+      for (int i = 0 ; i < rows ; ++i)
+      {
+        if (filterAcceptsRow(i, index))
+        {
+          return true;
+        }
+      }
+      // check current index itself
+      TVariablesTreeItem *pTVariablesTreeItem = static_cast<TVariablesTreeItem*>(index.internalPointer());
+      if (pTVariablesTreeItem)
+      {
+        QString variableName = pTVariablesTreeItem->getVariableName();
+        variableName.remove(QRegExp("(_res.mat|_res.plt|_res.csv)"));
+        return variableName.contains(filterRegExp());
+      }
+      else
+      {
+        return sourceModel()->data(index).toString().contains(filterRegExp());
+      }
+      QString key = sourceModel()->data(index, filterRole()).toString();
+      return key.contains(filterRegExp());
+    }
   }
-  /* add varibale types */
-  for (int i = 1; i < variable.types.size() ; i++)
+  return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
+}
+
+TVariablesTreeView::TVariablesTreeView(TransformationsWidget *pTransformationsWidget)
+  : QTreeView(pTransformationsWidget)
+{
+  mpTransformationsWidget = pTransformationsWidget;
+  setItemDelegate(new ItemDelegate(this));
+  setTextElideMode(Qt::ElideMiddle);
+  setIndentation(Helper::treeIndentation);
+  setSortingEnabled(true);
+  sortByColumn(0, Qt::AscendingOrder);
+  setExpandsOnDoubleClick(false);
+}
+
+TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWindow *pMainWindow)
+  : mInfoXMLFullFileName(infoXMLFullFileName), mpMainWindow(pMainWindow)
+{
+  setWindowIcon(QIcon(":/Resources/icons/debugger.svg"));
+  setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Transformational Debugger")));
+  QToolButton *pReloadToolButton = new QToolButton;
+  pReloadToolButton->setToolTip(Helper::reload);
+  pReloadToolButton->setAutoRaise(true);
+  pReloadToolButton->setIcon(QIcon(":/Resources/icons/refresh.png"));
+  connect(pReloadToolButton, SIGNAL(clicked()), SLOT(reloadTransformations()));
+  /* info xml file path label */
+  Label *pInfoXMLFilePathLabel = new Label(mInfoXMLFullFileName);
+  pInfoXMLFilePathLabel->setWordWrap(true);
+  /* create status bar */
+  QStatusBar *pStatusBar = new QStatusBar;
+  pStatusBar->setObjectName("ModelStatusBar");
+  pStatusBar->setSizeGripEnabled(false);
+  pStatusBar->addPermanentWidget(pReloadToolButton, 0);
+  pStatusBar->addPermanentWidget(pInfoXMLFilePathLabel, 1);
+  /* Variables Heading */
+  Label *pVariablesBrowserLabel = new Label(Helper::variablesBrowser);
+  pVariablesBrowserLabel->setObjectName("LabelWithBorder");
+  // create the find text box
+  mpFindVariablesTextBox = new QLineEdit(Helper::findVariables);
+  mpFindVariablesTextBox->installEventFilter(this);
+  connect(mpFindVariablesTextBox, SIGNAL(returnPressed()), SLOT(findVariables()));
+  connect(mpFindVariablesTextBox, SIGNAL(textEdited(QString)), SLOT(findVariables()));
+  // create the case sensitivity checkbox
+  mpFindCaseSensitiveCheckBox = new QCheckBox(tr("Case Sensitive"));
+  connect(mpFindCaseSensitiveCheckBox, SIGNAL(toggled(bool)), SLOT(findVariables()));
+  // create the find syntax combobox
+  mpFindSyntaxComboBox = new QComboBox;
+  mpFindSyntaxComboBox->addItem(tr("Regular Expression"), QRegExp::RegExp);
+  mpFindSyntaxComboBox->setItemData(0, tr("A rich Perl-like pattern matching syntax."), Qt::ToolTipRole);
+  mpFindSyntaxComboBox->addItem(tr("Wildcard"), QRegExp::Wildcard);
+  mpFindSyntaxComboBox->setItemData(1, tr("A simple pattern matching syntax similar to that used by shells (command interpreters) for \"file globbing\"."), Qt::ToolTipRole);
+  mpFindSyntaxComboBox->addItem(tr("Fixed String"), QRegExp::FixedString);
+  mpFindSyntaxComboBox->setItemData(2, tr("Fixed string matching."), Qt::ToolTipRole);
+  connect(mpFindSyntaxComboBox, SIGNAL(currentIndexChanged(int)), SLOT(findVariables()));
+  // expand all button
+  mpExpandAllButton = new QPushButton(tr("Expand All"));
+  // collapse all button
+  mpCollapseAllButton = new QPushButton(tr("Collapse All"));
+  /* variables tree view */
+  mpTVariablesTreeView = new TVariablesTreeView(this);
+  mpTVariablesTreeModel = new TVariablesTreeModel(mpTVariablesTreeView);
+  mpTVariableTreeProxyModel = new TVariableTreeProxyModel;
+  mpTVariableTreeProxyModel->setDynamicSortFilter(true);
+  mpTVariableTreeProxyModel->setSourceModel(mpTVariablesTreeModel);
+  mpTVariablesTreeView->setModel(mpTVariableTreeProxyModel);
+  mpTVariablesTreeView->setColumnWidth(2, 40);  /* line number column */
+  connect(mpTVariablesTreeView, SIGNAL(doubleClicked(QModelIndex)), SLOT(fetchVariableData(QModelIndex)));
+  connect(mpExpandAllButton, SIGNAL(clicked()), mpTVariablesTreeView, SLOT(expandAll()));
+  connect(mpCollapseAllButton, SIGNAL(clicked()), mpTVariablesTreeView, SLOT(collapseAll()));
+  QGridLayout *pVariablesGridLayout = new QGridLayout;
+  pVariablesGridLayout->setSpacing(1);
+  pVariablesGridLayout->setContentsMargins(0, 0, 0, 0);
+  pVariablesGridLayout->addWidget(pVariablesBrowserLabel, 0, 0, 1, 2);
+  pVariablesGridLayout->addWidget(mpFindVariablesTextBox, 1, 0, 1, 2);
+  pVariablesGridLayout->addWidget(mpFindCaseSensitiveCheckBox, 2, 0);
+  pVariablesGridLayout->addWidget(mpFindSyntaxComboBox, 2, 1);
+  pVariablesGridLayout->addWidget(mpExpandAllButton, 3, 0);
+  pVariablesGridLayout->addWidget(mpCollapseAllButton, 3, 1);
+  pVariablesGridLayout->addWidget(mpTVariablesTreeView, 4, 0, 1, 2);
+  QFrame *pVariablesFrame = new QFrame;
+  pVariablesFrame->setLayout(pVariablesGridLayout);
+  /* Defined in tree widget */
+  Label *pDefinedInLabel = new Label(tr("Defined In Equations"));
+  pDefinedInLabel->setObjectName("LabelWithBorder");
+  mpDefinedInEquationsTreeWidget = new QTreeWidget;
+  mpDefinedInEquationsTreeWidget->setItemDelegate(new ItemDelegate(mpDefinedInEquationsTreeWidget));
+  mpDefinedInEquationsTreeWidget->setObjectName("DefinedInTree");
+  mpDefinedInEquationsTreeWidget->setIndentation(Helper::treeIndentation);
+  mpDefinedInEquationsTreeWidget->setColumnCount(3);
+  mpDefinedInEquationsTreeWidget->setTextElideMode(Qt::ElideMiddle);
+  mpDefinedInEquationsTreeWidget->setSortingEnabled(true);
+  mpDefinedInEquationsTreeWidget->sortByColumn(0, Qt::AscendingOrder);
+  mpDefinedInEquationsTreeWidget->setColumnWidth(0, 40);
+  mpDefinedInEquationsTreeWidget->setColumnWidth(1, 60);
+  QStringList headerLabels;
+  headerLabels << Helper::index << Helper::type << Helper::equation;
+  mpDefinedInEquationsTreeWidget->setHeaderLabels(headerLabels);
+  connect(mpDefinedInEquationsTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(fetchEquationData(QTreeWidgetItem*,int)));
+  QGridLayout *pDefinedInGridLayout = new QGridLayout;
+  pDefinedInGridLayout->setSpacing(1);
+  pDefinedInGridLayout->setContentsMargins(0, 0, 0, 0);
+  pDefinedInGridLayout->addWidget(pDefinedInLabel, 0, 0);
+  pDefinedInGridLayout->addWidget(mpDefinedInEquationsTreeWidget, 1, 0);
+  QFrame *pDefinedInFrame = new QFrame;
+  pDefinedInFrame->setLayout(pDefinedInGridLayout);
+  /* Used in tree widget  */
+  Label *pUsedInLabel = new Label(tr("Used In Equations"));
+  pUsedInLabel->setObjectName("LabelWithBorder");
+  mpUsedInEquationsTreeWidget = new QTreeWidget;
+  mpUsedInEquationsTreeWidget->setItemDelegate(new ItemDelegate(mpUsedInEquationsTreeWidget));
+  mpUsedInEquationsTreeWidget->setObjectName("UsedInTree");
+  mpUsedInEquationsTreeWidget->setIndentation(Helper::treeIndentation);
+  mpUsedInEquationsTreeWidget->setColumnCount(3);
+  mpUsedInEquationsTreeWidget->setTextElideMode(Qt::ElideMiddle);
+  mpUsedInEquationsTreeWidget->setSortingEnabled(true);
+  mpUsedInEquationsTreeWidget->sortByColumn(0, Qt::AscendingOrder);
+  mpUsedInEquationsTreeWidget->setColumnWidth(0, 40);
+  mpUsedInEquationsTreeWidget->setColumnWidth(1, 60);
+  headerLabels.clear();
+  headerLabels << Helper::index << Helper::type << Helper::equation;
+  mpUsedInEquationsTreeWidget->setHeaderLabels(headerLabels);
+  connect(mpUsedInEquationsTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(fetchEquationData(QTreeWidgetItem*,int)));
+  QGridLayout *pUsedInGridLayout = new QGridLayout;
+  pUsedInGridLayout->setSpacing(1);
+  pUsedInGridLayout->setContentsMargins(0, 0, 0, 0);
+  pUsedInGridLayout->addWidget(pUsedInLabel, 0, 0);
+  pUsedInGridLayout->addWidget(mpUsedInEquationsTreeWidget, 1, 0);
+  QFrame *pUsedInFrame = new QFrame;
+  pUsedInFrame->setLayout(pUsedInGridLayout);
+  /* variable operations tree widget */
+  Label *pOperationsLabel = new Label(tr("Variable Operations"));
+  pOperationsLabel->setObjectName("LabelWithBorder");
+  mpVariableOperationsTreeWidget = new QTreeWidget;
+  mpVariableOperationsTreeWidget->setItemDelegate(new ItemDelegate(mpVariableOperationsTreeWidget));
+  mpVariableOperationsTreeWidget->setObjectName("VariableOperationsTree");
+  mpVariableOperationsTreeWidget->setIndentation(Helper::treeIndentation);
+  mpVariableOperationsTreeWidget->setColumnCount(1);
+  mpVariableOperationsTreeWidget->setTextElideMode(Qt::ElideMiddle);
+  mpVariableOperationsTreeWidget->setHeaderLabel(tr("Operations"));
+  QGridLayout *pVariableOperationsGridLayout = new QGridLayout;
+  pVariableOperationsGridLayout->setSpacing(1);
+  pVariableOperationsGridLayout->setContentsMargins(0, 0, 0, 0);
+  pVariableOperationsGridLayout->addWidget(pOperationsLabel, 0, 0);
+  pVariableOperationsGridLayout->addWidget(mpVariableOperationsTreeWidget, 1, 0);
+  QFrame *pVariableOperationsFrame = new QFrame;
+  pVariableOperationsFrame->setLayout(pVariableOperationsGridLayout);
+  /* Equations Heading */
+  Label *pEquationsBrowserLabel = new Label(tr("Equations Browser"));
+  pEquationsBrowserLabel->setObjectName("LabelWithBorder");
+  /* Equations tree widget */
+  mpEquationsTreeWidget = new QTreeWidget;
+  mpEquationsTreeWidget->setItemDelegate(new ItemDelegate(mpDefinedInEquationsTreeWidget));
+  mpEquationsTreeWidget->setObjectName("EquationsTree");
+  mpEquationsTreeWidget->setIndentation(Helper::treeIndentation);
+  mpEquationsTreeWidget->setColumnCount(3);
+  mpEquationsTreeWidget->setTextElideMode(Qt::ElideMiddle);
+  mpEquationsTreeWidget->setSortingEnabled(true);
+  mpEquationsTreeWidget->sortByColumn(0, Qt::AscendingOrder);
+  mpEquationsTreeWidget->setColumnWidth(0, 40);
+  mpEquationsTreeWidget->setColumnWidth(1, 60);
+  headerLabels.clear();
+  headerLabels << Helper::index << Helper::type << Helper::equation;
+  mpEquationsTreeWidget->setHeaderLabels(headerLabels);
+  connect(mpEquationsTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(fetchEquationData(QTreeWidgetItem*,int)));
+  QGridLayout *pEquationsGridLayout = new QGridLayout;
+  pEquationsGridLayout->setSpacing(1);
+  pEquationsGridLayout->setContentsMargins(0, 0, 0, 0);
+  pEquationsGridLayout->addWidget(pEquationsBrowserLabel, 0, 0);
+  pEquationsGridLayout->addWidget(mpEquationsTreeWidget, 1, 0);
+  QFrame *pEquationsFrame = new QFrame;
+  pEquationsFrame->setLayout(pEquationsGridLayout);
+  /* defines tree widget */
+  Label *pDefinesLabel = new Label(tr("Defines"));
+  pDefinesLabel->setObjectName("LabelWithBorder");
+  mpDefinesVariableTreeWidget = new QTreeWidget;
+  mpDefinesVariableTreeWidget->setItemDelegate(new ItemDelegate(mpDefinesVariableTreeWidget));
+  mpDefinesVariableTreeWidget->setObjectName("DefinesTree");
+  mpDefinesVariableTreeWidget->setIndentation(0);
+  mpDefinesVariableTreeWidget->setColumnCount(1);
+  mpDefinesVariableTreeWidget->setTextElideMode(Qt::ElideMiddle);
+  mpDefinesVariableTreeWidget->setSortingEnabled(true);
+  mpDefinesVariableTreeWidget->sortByColumn(0, Qt::AscendingOrder);
+  headerLabels.clear();
+  headerLabels << tr("Variable");
+  mpDefinesVariableTreeWidget->setHeaderLabels(headerLabels);
+  QGridLayout *pDefinesGridLayout = new QGridLayout;
+  pDefinesGridLayout->setSpacing(1);
+  pDefinesGridLayout->setContentsMargins(0, 0, 0, 0);
+  pDefinesGridLayout->addWidget(pDefinesLabel, 0, 0);
+  pDefinesGridLayout->addWidget(mpDefinesVariableTreeWidget, 1, 0);
+  QFrame *pDefinesFrame = new QFrame;
+  pDefinesFrame->setLayout(pDefinesGridLayout);
+  /* depends tree widget */
+  Label *pDependsLabel = new Label(tr("Depends"));
+  pDependsLabel->setObjectName("LabelWithBorder");
+  mpDependsVariableTreeWidget = new QTreeWidget;
+  mpDependsVariableTreeWidget->setItemDelegate(new ItemDelegate(mpDependsVariableTreeWidget));
+  mpDependsVariableTreeWidget->setObjectName("DependsTree");
+  mpDependsVariableTreeWidget->setIndentation(Helper::treeIndentation);
+  mpDependsVariableTreeWidget->setColumnCount(1);
+  mpDependsVariableTreeWidget->setTextElideMode(Qt::ElideMiddle);
+  mpDependsVariableTreeWidget->setSortingEnabled(true);
+  mpDependsVariableTreeWidget->sortByColumn(0, Qt::AscendingOrder);
+  mpDependsVariableTreeWidget->setHeaderLabel(tr("Variable"));
+  QGridLayout *pDependsGridLayout = new QGridLayout;
+  pDependsGridLayout->setSpacing(1);
+  pDependsGridLayout->setContentsMargins(0, 0, 0, 0);
+  pDependsGridLayout->addWidget(pDependsLabel, 0, 0);
+  pDependsGridLayout->addWidget(mpDependsVariableTreeWidget, 1, 0);
+  QFrame *pDependsFrame = new QFrame;
+  pDependsFrame->setLayout(pDependsGridLayout);
+  /* operations tree widget */
+  Label *pEquationOperationsLabel = new Label(tr("Equation Operations"));
+  pEquationOperationsLabel->setObjectName("LabelWithBorder");
+  mpEquationOperationsTreeWidget = new QTreeWidget;
+  mpEquationOperationsTreeWidget->setItemDelegate(new ItemDelegate(mpEquationOperationsTreeWidget));
+  mpEquationOperationsTreeWidget->setObjectName("EquationOperationsTree");
+  mpEquationOperationsTreeWidget->setIndentation(Helper::treeIndentation);
+  mpEquationOperationsTreeWidget->setColumnCount(1);
+  mpEquationOperationsTreeWidget->setTextElideMode(Qt::ElideMiddle);
+  mpEquationOperationsTreeWidget->setHeaderLabel(tr("Operations"));
+  QGridLayout *pEquationOperationsGridLayout = new QGridLayout;
+  pEquationOperationsGridLayout->setSpacing(1);
+  pEquationOperationsGridLayout->setContentsMargins(0, 0, 0, 0);
+  pEquationOperationsGridLayout->addWidget(pEquationOperationsLabel, 0, 0);
+  pEquationOperationsGridLayout->addWidget(mpEquationOperationsTreeWidget, 1, 0);
+  QFrame *pEquationOperationsFrame = new QFrame;
+  pEquationOperationsFrame->setLayout(pEquationOperationsGridLayout);
+  /* TSourceEditor */
+  Label *pTSourceEditorBrowserLabel = new Label(tr("Source Browser"));
+  pTSourceEditorBrowserLabel->setObjectName("LabelWithBorder");
+  mpTSourceEditorFileLabel = new Label;
+  mpTSourceEditorFileLabel->hide();
+  mpTSourceEditorInfoBar = new InfoBar(mpMainWindow);
+  mpTSourceEditorInfoBar->hide();
+  mpTSourceEditor = new TSourceEditor(this);
+  ModelicaTextHighlighter *pModelicaTextHighlighter;
+  pModelicaTextHighlighter = new ModelicaTextHighlighter(mpMainWindow->getOptionsDialog()->getModelicaTextSettings(), mpMainWindow,
+                                                         mpTSourceEditor->document());
+  connect(mpMainWindow->getOptionsDialog(), SIGNAL(modelicaTextSettingsChanged()), pModelicaTextHighlighter, SLOT(settingsChanged()));
+  QVBoxLayout *pTSourceEditorVerticalLayout = new QVBoxLayout;
+  pTSourceEditorVerticalLayout->setSpacing(1);
+  pTSourceEditorVerticalLayout->setContentsMargins(0, 0, 0, 0);
+  pTSourceEditorVerticalLayout->addWidget(pTSourceEditorBrowserLabel);
+  pTSourceEditorVerticalLayout->addWidget(mpTSourceEditorFileLabel);
+  pTSourceEditorVerticalLayout->addWidget(mpTSourceEditorInfoBar);
+  pTSourceEditorVerticalLayout->addWidget(mpTSourceEditor);
+  QFrame *pTSourceEditorFrame = new QFrame;
+  pTSourceEditorFrame->setLayout(pTSourceEditorVerticalLayout);
+  /* variables nested horizontal splitter */
+  QSplitter *pVariablesNestedHorizontalSplitter = new QSplitter;
+  pVariablesNestedHorizontalSplitter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  pVariablesNestedHorizontalSplitter->setChildrenCollapsible(false);
+  pVariablesNestedHorizontalSplitter->setHandleWidth(4);
+  pVariablesNestedHorizontalSplitter->setContentsMargins(0, 0, 0, 0);
+  pVariablesNestedHorizontalSplitter->addWidget(pDefinedInFrame);
+  pVariablesNestedHorizontalSplitter->addWidget(pUsedInFrame);
+  /* variables vertical splitter */
+  QSplitter *pVariablesNestedVerticalSplitter = new QSplitter;
+  pVariablesNestedVerticalSplitter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  pVariablesNestedVerticalSplitter->setOrientation(Qt::Vertical);
+  pVariablesNestedVerticalSplitter->setChildrenCollapsible(false);
+  pVariablesNestedVerticalSplitter->setHandleWidth(4);
+  pVariablesNestedVerticalSplitter->setContentsMargins(0, 0, 0, 0);
+  pVariablesNestedVerticalSplitter->addWidget(pVariablesNestedHorizontalSplitter);
+  pVariablesNestedVerticalSplitter->addWidget(pVariableOperationsFrame);
+  /* variables horizontal splitter */
+  QSplitter *pVariablesHorizontalSplitter = new QSplitter;
+  pVariablesHorizontalSplitter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  pVariablesHorizontalSplitter->setChildrenCollapsible(false);
+  pVariablesHorizontalSplitter->setHandleWidth(4);
+  pVariablesHorizontalSplitter->setContentsMargins(0, 0, 0, 0);
+  pVariablesHorizontalSplitter->addWidget(pVariablesFrame);
+  pVariablesHorizontalSplitter->addWidget(pVariablesNestedVerticalSplitter);
+  Label *pVariablesHeadingLabel = new Label(Helper::variables);
+  pVariablesHeadingLabel->setObjectName("LabelWithBorder");
+  QVBoxLayout *pVariablesMainLayout = new QVBoxLayout;
+  pVariablesMainLayout->setSpacing(1);
+  pVariablesMainLayout->setContentsMargins(0, 0, 0, 0);
+  pVariablesMainLayout->addWidget(pVariablesHeadingLabel);
+  pVariablesMainLayout->addWidget(pVariablesHorizontalSplitter);
+  QFrame *pVariablesMainFrame = new QFrame;
+  pVariablesMainFrame->setLayout(pVariablesMainLayout);
+  /* Equations nested horizontal splitter */
+  QSplitter *pEquationsNestedHorizontalSplitter = new QSplitter;
+  pEquationsNestedHorizontalSplitter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  pEquationsNestedHorizontalSplitter->setChildrenCollapsible(false);
+  pEquationsNestedHorizontalSplitter->setHandleWidth(4);
+  pEquationsNestedHorizontalSplitter->setContentsMargins(0, 0, 0, 0);
+  pEquationsNestedHorizontalSplitter->addWidget(pDefinesFrame);
+  pEquationsNestedHorizontalSplitter->addWidget(pDependsFrame);
+  /* Equations nested vertical splitter */
+  QSplitter *pEquationsNestedVerticalSplitter = new QSplitter;
+  pEquationsNestedVerticalSplitter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  pEquationsNestedVerticalSplitter->setOrientation(Qt::Vertical);
+  pEquationsNestedVerticalSplitter->setChildrenCollapsible(false);
+  pEquationsNestedVerticalSplitter->setHandleWidth(4);
+  pEquationsNestedVerticalSplitter->setContentsMargins(0, 0, 0, 0);
+  pEquationsNestedVerticalSplitter->addWidget(pEquationsNestedHorizontalSplitter);
+  pEquationsNestedVerticalSplitter->addWidget(pEquationOperationsFrame);
+  /* equations horizontal splitter */
+  QSplitter *pEquationsHorizontalSplitter = new QSplitter;
+  pEquationsHorizontalSplitter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  pEquationsHorizontalSplitter->setChildrenCollapsible(false);
+  pEquationsHorizontalSplitter->setHandleWidth(4);
+  pEquationsHorizontalSplitter->setContentsMargins(0, 0, 0, 0);
+  pEquationsHorizontalSplitter->addWidget(pEquationsFrame);
+  pEquationsHorizontalSplitter->addWidget(pEquationsNestedVerticalSplitter);
+  Label *pEquationsHeadingLabel = new Label(tr("Equations"));
+  pEquationsHeadingLabel->setObjectName("LabelWithBorder");
+  QVBoxLayout *pEquationsMainLayout = new QVBoxLayout;
+  pEquationsMainLayout->setSpacing(1);
+  pEquationsMainLayout->setContentsMargins(0, 0, 0, 0);
+  pEquationsMainLayout->addWidget(pEquationsHeadingLabel);
+  pEquationsMainLayout->addWidget(pEquationsHorizontalSplitter);
+  QFrame *pEquationsMainFrame = new QFrame;
+  pEquationsMainFrame->setLayout(pEquationsMainLayout);
+  /* Transformations vertical splitter */
+  QSplitter *pTransformationsVerticalSplitter = new QSplitter;
+  pTransformationsVerticalSplitter->setObjectName("TransformationsVerticalSplitter");
+  pTransformationsVerticalSplitter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  pTransformationsVerticalSplitter->setOrientation(Qt::Vertical);
+  pTransformationsVerticalSplitter->setChildrenCollapsible(false);
+  pTransformationsVerticalSplitter->setHandleWidth(4);
+  pTransformationsVerticalSplitter->setContentsMargins(0, 0, 0, 0);
+  pTransformationsVerticalSplitter->addWidget(pVariablesMainFrame);
+  pTransformationsVerticalSplitter->addWidget(pEquationsMainFrame);
+  /* Transformations horizontal splitter */
+  QSplitter *pTransformationsHorizontalSplitter = new QSplitter;
+  pTransformationsHorizontalSplitter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  pTransformationsHorizontalSplitter->setChildrenCollapsible(false);
+  pTransformationsHorizontalSplitter->setHandleWidth(4);
+  pTransformationsHorizontalSplitter->setContentsMargins(0, 0, 0, 0);
+  pTransformationsHorizontalSplitter->addWidget(pTransformationsVerticalSplitter);
+  pTransformationsHorizontalSplitter->addWidget(pTSourceEditorFrame);
+  /* Load the transformations before setting the layout */
+  loadTransformations();
+  /* set the layout */
+  QGridLayout *pMainLayout = new QGridLayout;
+  pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->addWidget(pStatusBar, 0, 0);
+  pMainLayout->addWidget(pTransformationsHorizontalSplitter, 1, 0);
+  setLayout(pMainLayout);
+}
+
+bool TransformationsWidget::eventFilter(QObject *pObject, QEvent *pEvent)
+{
+  if (pObject != mpFindVariablesTextBox)
+    return false;
+  if (pEvent->type() == QEvent::FocusIn)
   {
-    QStringList values;
-    values << variable.types.value(i);
-    QString toolTip = variable.types.value(i);
-    QTreeWidgetItem *pTypesTreeItem = new QTreeWidgetItem(values);
-    pTypesTreeItem->setToolTip(0, toolTip);
-    mpTypesTreeWidget->addTopLevelItem(pTypesTreeItem);
+    if (mpFindVariablesTextBox->text().compare(Helper::findVariables) == 0)
+      mpFindVariablesTextBox->setText("");
+  }
+  if (pEvent->type() == QEvent::FocusOut)
+  {
+    if (mpFindVariablesTextBox->text().isEmpty())
+      mpFindVariablesTextBox->setText(Helper::findVariables);
+  }
+  return false;
+}
+
+void TransformationsWidget::loadTransformations()
+{
+  QFile infoXMLFile(mInfoXMLFullFileName);
+  mpInfoXMLFileHandler = new MyHandler(infoXMLFile);
+  mpTVariablesTreeModel->insertTVariablesItems();
+  /* load equations */
+  fetchEquations();
+}
+
+void TransformationsWidget::fetchDefinedInEquations(OMVariable &variable)
+{
+  /* Clear the defined in tree. */
+  clearTreeWidgetItems(mpDefinedInEquationsTreeWidget);
+  /* add defined in equations */
+  for (int i = 0; i < equationTypeSize; i++)
+  {
+    if (variable.definedIn[i])
+    {
+      OMEquation equation = mpInfoXMLFileHandler->getOMEquation(variable.definedIn[i]);
+      QStringList values;
+      values << QString::number(variable.definedIn[i]) << OMEquationTypeToString(equation.kind) << equation.toString();
+      QTreeWidgetItem *pDefinedInTreeItem = new IntegerTreeWidgetItem(values, mpDefinedInEquationsTreeWidget);
+      pDefinedInTreeItem->setToolTip(0, values[0]);
+      pDefinedInTreeItem->setToolTip(1, values[1]);
+      pDefinedInTreeItem->setToolTip(2, values[2]);
+      mpDefinedInEquationsTreeWidget->addTopLevelItem(pDefinedInTreeItem);
+    }
   }
 }
 
-void VariablePage::fetchOperations(OMVariable &variable)
+void TransformationsWidget::fetchUsedInEquations(OMVariable &variable)
+{
+  /* Clear the used in tree. */
+  clearTreeWidgetItems(mpUsedInEquationsTreeWidget);
+  /* add used in equations */
+  for (int i = 0; i < equationTypeSize; i++)
+  {
+    foreach (int index, variable.usedIn[i])
+    {
+      OMEquation equation = mpInfoXMLFileHandler->getOMEquation(index);
+      QStringList values;
+      values << QString::number(index) << OMEquationTypeToString(equation.kind) << equation.toString();
+      QTreeWidgetItem *pUsedInTreeItem = new IntegerTreeWidgetItem(values, mpUsedInEquationsTreeWidget);
+      pUsedInTreeItem->setToolTip(0, values[0]);
+      pUsedInTreeItem->setToolTip(1, values[1]);
+      pUsedInTreeItem->setToolTip(2, values[2]);
+      mpUsedInEquationsTreeWidget->addTopLevelItem(pUsedInTreeItem);
+    }
+  }
+}
+
+void TransformationsWidget::fetchOperations(OMVariable &variable)
 {
   /* Clear the operations tree. */
-  int i = 0;
-  while(i < mpOperationsTreeWidget->topLevelItemCount())
-  {
-    qDeleteAll(mpOperationsTreeWidget->topLevelItem(i)->takeChildren());
-    delete mpOperationsTreeWidget->topLevelItem(i);
-    i = 0;   //Restart iteration
-  }
+  clearTreeWidgetItems(mpVariableOperationsTreeWidget);
   /* add operations */
-  if (mpTransformationsWidget->getInfoXMLFileHandler()->hasOperationsEnabled)
+  if (mpInfoXMLFileHandler->hasOperationsEnabled)
   {
     foreach (OMOperation *op, variable.ops)
     {
@@ -348,7 +823,7 @@ void VariablePage::fetchOperations(OMVariable &variable)
       QString toolTip = op->toString();
       QTreeWidgetItem *pOperationTreeItem = new QTreeWidgetItem(values);
       pOperationTreeItem->setToolTip(0, toolTip);
-      mpOperationsTreeWidget->addTopLevelItem(pOperationTreeItem);
+      mpVariableOperationsTreeWidget->addTopLevelItem(pOperationTreeItem);
     }
   }
   else
@@ -359,251 +834,28 @@ void VariablePage::fetchOperations(OMVariable &variable)
     QString toolTip = message;
     QTreeWidgetItem *pOperationTreeItem = new QTreeWidgetItem(values);
     pOperationTreeItem->setToolTip(0, toolTip);
-    mpOperationsTreeWidget->addTopLevelItem(pOperationTreeItem);
+    mpVariableOperationsTreeWidget->addTopLevelItem(pOperationTreeItem);
   }
 }
 
-void VariablePage::fetchDefinedInEquations(OMVariable &variable)
+void TransformationsWidget::fetchEquations()
 {
-  /* Clear the defined in tree. */
-  int i = 0;
-  while(i < mpDefinedInTreeWidget->topLevelItemCount())
+  for (int i = 1 ; i < mpInfoXMLFileHandler->equations.size() ; i++)
   {
-    qDeleteAll(mpDefinedInTreeWidget->topLevelItem(i)->takeChildren());
-    delete mpDefinedInTreeWidget->topLevelItem(i);
-    i = 0;   //Restart iteration
-  }
-  /* add defined in equations */
-  for (int i = 0; i < equationTypeSize; i++)
-  {
-    if (variable.definedIn[i])
-    {
-      OMEquation equation = mpTransformationsWidget->getInfoXMLFileHandler()->getOMEquation(variable.definedIn[i]);
-      QStringList values;
-      values << QString::number(variable.definedIn[i]) << OMEquationTypeToString(i) << equation.toString();
-      QTreeWidgetItem *pDefinedInTreeItem = new QTreeWidgetItem(values);
-      pDefinedInTreeItem->setToolTip(0, values[0]);
-      pDefinedInTreeItem->setToolTip(1, values[1]);
-      pDefinedInTreeItem->setToolTip(2, values[2]);
-      mpDefinedInTreeWidget->addTopLevelItem(pDefinedInTreeItem);
-    }
+    OMEquation equation = mpInfoXMLFileHandler->equations[i];
+    QStringList values;
+    values << QString::number(equation.index) << OMEquationTypeToString(equation.kind) << equation.toString();
+    QTreeWidgetItem *pEquationTreeItem = new IntegerTreeWidgetItem(values, mpEquationsTreeWidget);
+    pEquationTreeItem->setToolTip(0, values[0]);
+    pEquationTreeItem->setToolTip(1, values[1]);
+    pEquationTreeItem->setToolTip(2, values[2]);
+    mpEquationsTreeWidget->addTopLevelItem(pEquationTreeItem);
   }
 }
 
-void VariablePage::fetchUsedInEquations(OMVariable &variable)
+void TransformationsWidget::fetchEquationData(int equationIndex)
 {
-  /* Clear the used in tree. */
-  int i = 0;
-  while(i < mpUsedInTreeWidget->topLevelItemCount())
-  {
-    qDeleteAll(mpUsedInTreeWidget->topLevelItem(i)->takeChildren());
-    delete mpUsedInTreeWidget->topLevelItem(i);
-    i = 0;   //Restart iteration
-  }
-  /* add used in equations */
-  for (int i = 0; i < equationTypeSize; i++)
-  {
-    foreach (int index, variable.usedIn[i])
-    {
-      OMEquation equation = mpTransformationsWidget->getInfoXMLFileHandler()->getOMEquation(index);
-      QStringList values;
-      values << QString::number(index) << OMEquationTypeToString(i) << equation.toString();
-      QTreeWidgetItem *pUsedInTreeItem = new QTreeWidgetItem(values);
-      pUsedInTreeItem->setToolTip(0, values[0]);
-      pUsedInTreeItem->setToolTip(1, values[1]);
-      pUsedInTreeItem->setToolTip(2, values[2]);
-      mpUsedInTreeWidget->addTopLevelItem(pUsedInTreeItem);
-    }
-  }
-}
-
-void VariablePage::fetchVariableData(QTreeWidgetItem *pVariableTreeItem, int column)
-{
-  Q_UNUSED(column);
-  if (!pVariableTreeItem)
-    return;
-  /* fetch types */
-  QString variableName = pVariableTreeItem->text(0);
-  OMVariable variable = mpTransformationsWidget->getInfoXMLFileHandler()->variables.value(variableName);
-  fetchTypes(variable);
-  /* fetch operations */
-  fetchOperations(variable);
-  /* fetch defined in equations */
-  fetchDefinedInEquations(variable);
-  /* fetch used in equations */
-  fetchUsedInEquations(variable);
-  /* open the model with and go to the variable line */
-  MainWindow *pMainWindow = mpTransformationsWidget->getMainWindow();
-  QFileInfo fileInfo(variable.info.file);
-  foreach (LibraryTreeNode* pLibraryTreeNode, pMainWindow->getLibraryTreeWidget()->getLibraryTreeNodesList())
-  {
-    QFileInfo libraryTreeNodeFileInfo(pLibraryTreeNode->getFileName());
-    if (fileInfo.absoluteFilePath().compare(libraryTreeNodeFileInfo.absoluteFilePath()) == 0)
-    {
-      /* find the root library tree node. */
-      LibraryTreeNode *pParentLibraryTreeNode;
-      pParentLibraryTreeNode = pMainWindow->getLibraryTreeWidget()->findParentLibraryTreeNodeSavedInSameFile(pLibraryTreeNode, fileInfo);
-      if (pParentLibraryTreeNode)
-      {
-        pMainWindow->getLibraryTreeWidget()->showModelWidget(pParentLibraryTreeNode);
-        if (pParentLibraryTreeNode->getModelWidget())
-        {
-          pParentLibraryTreeNode->getModelWidget()->showModelicaTextView(true);
-          pParentLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->getModelicaTextEdit()->goToLineNumber(variable.info.lineStart);
-        }
-      }
-    }
-  }
-}
-
-void VariablePage::variablesItemChanged(QTreeWidgetItem *current)
-{
-  if (!current) return;
-  QString info = "Variable : " + current->text(0) + "\nComment : " + current->text(1);
-  mpTransformationsWidget->showInfoText(info);
-}
-
-void VariablePage::typesItemChanged(QTreeWidgetItem *current)
-{
-  if (!current) return;
-  QString info = "Type : " + current->text(0);
-  mpTransformationsWidget->showInfoText(info);
-}
-
-void VariablePage::operationsItemChanged(QTreeWidgetItem *current)
-{
-  if (!current) return;
-  QString info = "Operation : " + current->text(0);
-  mpTransformationsWidget->showInfoText(info);
-}
-
-void VariablePage::definedInItemChanged(QTreeWidgetItem *current)
-{
-  if (!current) return;
-  QString info = "Index : " + current->text(0) + "\n";
-  info += "Type : " + current->text(1) + "\n";
-  info += "Equation : " + current->text(2) + "\n";
-  mpTransformationsWidget->showInfoText(info);
-}
-
-void VariablePage::usedInItemChanged(QTreeWidgetItem *current)
-{
-  if (!current) return;
-  QString info = "Index : " + current->text(0) + "\n";
-  info += "Type : " + current->text(1) + "\n";
-  info += "Equation : " + current->text(2) + "\n";
-  mpTransformationsWidget->showInfoText(info);
-}
-
-void VariablePage::showEquation(QTreeWidgetItem *pVariableTreeItem, int column)
-{
-  Q_UNUSED(column);
-  if (!pVariableTreeItem)
-    return;
-  mpTransformationsWidget->getEquationPage()->fetchEquationData(pVariableTreeItem->text(0).toInt());
-  mpTransformationsWidget->getEquationViewToolButton()->setChecked(true);
-}
-
-EquationPage::EquationPage(TransformationsWidget *pTransformationsWidget)
-  : QWidget(pTransformationsWidget)
-{
-  mpTransformationsWidget = pTransformationsWidget;
-  /* Equation View Heading */
-  mpEquationViewHeadingLabel = new Label(Helper::equationView);
-  mpEquationViewHeadingLabel->setFont(QFont(Helper::systemFontInfo.family(), 14));
-  // equation index
-  mpEquationIndexLabel = new Label(tr("Equation Index:"));
-  mpEquationIndexTextBox = new QLineEdit;
-  mpEquationIndexTextBox->setSizePolicy(QSizePolicy::Minimum, mpEquationIndexTextBox->sizePolicy().verticalPolicy());
-  connect(mpEquationIndexTextBox, SIGNAL(returnPressed()), SLOT(searchEquationIndex()));
-  mpSearchEquationIndexButton = new QPushButton(Helper::search);
-  connect(mpSearchEquationIndexButton, SIGNAL(clicked()), SLOT(searchEquationIndex()));
-  QHBoxLayout *pSearchEquationHorizontalLayout = new QHBoxLayout;
-  pSearchEquationHorizontalLayout->addWidget(mpEquationIndexLabel);
-  pSearchEquationHorizontalLayout->addWidget(mpEquationIndexTextBox);
-  pSearchEquationHorizontalLayout->addWidget(mpSearchEquationIndexButton);
-  QSpacerItem *pSpacerItem = new QSpacerItem(1, 1, QSizePolicy::Expanding, QSizePolicy::Fixed);
-  pSearchEquationHorizontalLayout->addSpacerItem(pSpacerItem);
-  /* defines tree widget */
-  Label *pDefinesLabel = new Label(tr("Defines"));
-  mpDefinesTreeWidget = new QTreeWidget;
-  mpDefinesTreeWidget->setItemDelegate(new ItemDelegate(mpDefinesTreeWidget));
-  mpDefinesTreeWidget->setObjectName("DefinesTree");
-  mpDefinesTreeWidget->setIndentation(0);
-  mpDefinesTreeWidget->setColumnCount(1);
-  mpDefinesTreeWidget->setTextElideMode(Qt::ElideMiddle);
-  mpDefinesTreeWidget->setSortingEnabled(true);
-  mpDefinesTreeWidget->sortByColumn(0, Qt::AscendingOrder);
-  QStringList headerLabels;
-  headerLabels << tr("Variable");
-  mpDefinesTreeWidget->setHeaderLabels(headerLabels);
-  connect(mpDefinesTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)),
-          this, SLOT(definesItemChanged(QTreeWidgetItem*)));
-  connect(mpDefinesTreeWidget, SIGNAL(itemClicked(QTreeWidgetItem*,int)), this, SLOT(definesItemChanged(QTreeWidgetItem*)));
-  QGridLayout *pDefinesGridLayout = new QGridLayout;
-  pDefinesGridLayout->setContentsMargins(0, 0, 0, 0);
-  pDefinesGridLayout->addWidget(pDefinesLabel, 0, 0);
-  pDefinesGridLayout->addWidget(mpDefinesTreeWidget, 1, 0);
-  QFrame *pDefinesFrame = new QFrame;
-  pDefinesFrame->setLayout(pDefinesGridLayout);
-  /* depends tree widget */
-  Label *pDependsLabel = new Label(tr("Depends"));
-  mpDependsTreeWidget = new QTreeWidget;
-  mpDependsTreeWidget->setItemDelegate(new ItemDelegate(mpDependsTreeWidget));
-  mpDependsTreeWidget->setObjectName("DependsTree");
-  mpDependsTreeWidget->setIndentation(Helper::treeIndentation);
-  mpDependsTreeWidget->setColumnCount(1);
-  mpDependsTreeWidget->setTextElideMode(Qt::ElideMiddle);
-  mpDependsTreeWidget->setSortingEnabled(true);
-  mpDependsTreeWidget->sortByColumn(0, Qt::AscendingOrder);
-  mpDependsTreeWidget->setHeaderLabel(tr("Variable"));
-  connect(mpDependsTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)),
-          this, SLOT(dependsItemChanged(QTreeWidgetItem*)));
-  connect(mpDependsTreeWidget, SIGNAL(itemClicked(QTreeWidgetItem*,int)), this, SLOT(dependsItemChanged(QTreeWidgetItem*)));
-  QGridLayout *pDependsGridLayout = new QGridLayout;
-  pDependsGridLayout->setContentsMargins(0, 0, 0, 0);
-  pDependsGridLayout->addWidget(pDependsLabel, 0, 0);
-  pDependsGridLayout->addWidget(mpDependsTreeWidget, 1, 0);
-  QFrame *pDependsFrame = new QFrame;
-  pDependsFrame->setLayout(pDependsGridLayout);
-  /* operations tree widget */
-  Label *pOperationsLabel = new Label(tr("Equation Operations"));
-  mpOperationsTreeWidget = new QTreeWidget;
-  mpOperationsTreeWidget->setItemDelegate(new ItemDelegate(mpOperationsTreeWidget));
-  mpOperationsTreeWidget->setObjectName("EquationOperationsTree");
-  mpOperationsTreeWidget->setIndentation(Helper::treeIndentation);
-  mpOperationsTreeWidget->setColumnCount(1);
-  mpOperationsTreeWidget->setTextElideMode(Qt::ElideMiddle);
-  mpOperationsTreeWidget->setHeaderLabel(tr("Operations"));
-  connect(mpOperationsTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)),
-          this, SLOT(operationsItemChanged(QTreeWidgetItem*)));
-  connect(mpOperationsTreeWidget, SIGNAL(itemClicked(QTreeWidgetItem*,int)), this, SLOT(operationsItemChanged(QTreeWidgetItem*)));
-  QGridLayout *pOperationsGridLayout = new QGridLayout;
-  pOperationsGridLayout->setContentsMargins(0, 0, 0, 0);
-  pOperationsGridLayout->addWidget(pOperationsLabel, 0, 0);
-  pOperationsGridLayout->addWidget(mpOperationsTreeWidget, 1, 0);
-  QFrame *pOperationsFrame = new QFrame;
-  pOperationsFrame->setLayout(pOperationsGridLayout);
-  /* splitter */
-  QSplitter *pSplitter = new QSplitter;
-  pSplitter->setChildrenCollapsible(false);
-  pSplitter->setHandleWidth(4);
-  pSplitter->setContentsMargins(0, 0, 0, 0);
-  pSplitter->addWidget(pDefinesFrame);
-  pSplitter->addWidget(pDependsFrame);
-  pSplitter->addWidget(pOperationsFrame);
-  /* set the layout */
-  QGridLayout *pMainLayout = new QGridLayout;
-  pMainLayout->setContentsMargins(0, 0, 0, 0);
-  pMainLayout->addWidget(mpEquationViewHeadingLabel, 0, 0);
-  pMainLayout->addLayout(pSearchEquationHorizontalLayout, 1, 0);
-  pMainLayout->addWidget(pSplitter, 2, 0);
-  setLayout(pMainLayout);
-}
-
-void EquationPage::fetchEquationData(int equationIndex)
-{
-  OMEquation equation = mpTransformationsWidget->getInfoXMLFileHandler()->getOMEquation(equationIndex);
+  OMEquation equation = mpInfoXMLFileHandler->getOMEquation(equationIndex);
   /* fetch defines */
   fetchDefines(equation);
   /* fetch depends */
@@ -611,39 +863,23 @@ void EquationPage::fetchEquationData(int equationIndex)
   /* fetch operations */
   fetchOperations(equation);
   /* open the model with and go to the equation line */
-  MainWindow *pMainWindow = mpTransformationsWidget->getMainWindow();
-  QFileInfo fileInfo(equation.info.file);
-  foreach (LibraryTreeNode* pLibraryTreeNode, pMainWindow->getLibraryTreeWidget()->getLibraryTreeNodesList())
+  QFile file(equation.info.file);
+  if (file.exists())
   {
-    QFileInfo libraryTreeNodeFileInfo(pLibraryTreeNode->getFileName());
-    if (fileInfo.absoluteFilePath().compare(libraryTreeNodeFileInfo.absoluteFilePath()) == 0)
-    {
-      /* find the root library tree node. */
-      LibraryTreeNode *pParentLibraryTreeNode;
-      pParentLibraryTreeNode = pMainWindow->getLibraryTreeWidget()->findParentLibraryTreeNodeSavedInSameFile(pLibraryTreeNode, fileInfo);
-      if (pParentLibraryTreeNode)
-      {
-        pMainWindow->getLibraryTreeWidget()->showModelWidget(pParentLibraryTreeNode);
-        if (pParentLibraryTreeNode->getModelWidget())
-        {
-          pParentLibraryTreeNode->getModelWidget()->showModelicaTextView(true);
-          pParentLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->getModelicaTextEdit()->goToLineNumber(equation.info.lineStart);
-        }
-      }
-    }
+    mpTSourceEditorFileLabel->setText(file.fileName());
+    mpTSourceEditorFileLabel->show();
+    file.open(QIODevice::ReadOnly);
+    mpTSourceEditor->setPlainText(QString(file.readAll()));
+    mpTSourceEditorInfoBar->hide();
+    file.close();
+    mpTSourceEditor->goToLineNumber(equation.info.lineStart);
   }
 }
 
-void EquationPage::fetchDefines(OMEquation &equation)
+void TransformationsWidget::fetchDefines(OMEquation &equation)
 {
   /* Clear the defines tree. */
-  int i = 0;
-  while(i < mpDefinesTreeWidget->topLevelItemCount())
-  {
-    qDeleteAll(mpDefinesTreeWidget->topLevelItem(i)->takeChildren());
-    delete mpDefinesTreeWidget->topLevelItem(i);
-    i = 0;   //Restart iteration
-  }
+  clearTreeWidgetItems(mpDefinesVariableTreeWidget);
   /* add defines */
   foreach (QString define, equation.defines)
   {
@@ -652,20 +888,14 @@ void EquationPage::fetchDefines(OMEquation &equation)
     QString toolTip = define;
     QTreeWidgetItem *pDefineTreeItem = new QTreeWidgetItem(values);
     pDefineTreeItem->setToolTip(0, toolTip);
-    mpDefinesTreeWidget->addTopLevelItem(pDefineTreeItem);
+    mpDefinesVariableTreeWidget->addTopLevelItem(pDefineTreeItem);
   }
 }
 
-void EquationPage::fetchDepends(OMEquation &equation)
+void TransformationsWidget::fetchDepends(OMEquation &equation)
 {
   /* Clear the depends tree. */
-  int i = 0;
-  while(i < mpDependsTreeWidget->topLevelItemCount())
-  {
-    qDeleteAll(mpDependsTreeWidget->topLevelItem(i)->takeChildren());
-    delete mpDependsTreeWidget->topLevelItem(i);
-    i = 0;   //Restart iteration
-  }
+  clearTreeWidgetItems(mpDependsVariableTreeWidget);
   /* add depends */
   foreach (QString depend, equation.depends)
   {
@@ -674,22 +904,16 @@ void EquationPage::fetchDepends(OMEquation &equation)
     QString toolTip = depend;
     QTreeWidgetItem *pDependTreeItem = new QTreeWidgetItem(values);
     pDependTreeItem->setToolTip(0, toolTip);
-    mpDependsTreeWidget->addTopLevelItem(pDependTreeItem);
+    mpDependsVariableTreeWidget->addTopLevelItem(pDependTreeItem);
   }
 }
 
-void EquationPage::fetchOperations(OMEquation &equation)
+void TransformationsWidget::fetchOperations(OMEquation &equation)
 {
   /* Clear the operations tree. */
-  int i = 0;
-  while(i < mpOperationsTreeWidget->topLevelItemCount())
-  {
-    qDeleteAll(mpOperationsTreeWidget->topLevelItem(i)->takeChildren());
-    delete mpOperationsTreeWidget->topLevelItem(i);
-    i = 0;   //Restart iteration
-  }
+  clearTreeWidgetItems(mpEquationOperationsTreeWidget);
   /* add operations */
-  if (mpTransformationsWidget->getInfoXMLFileHandler()->hasOperationsEnabled)
+  if (mpInfoXMLFileHandler->hasOperationsEnabled)
   {
     foreach (OMOperation *op, equation.ops)
     {
@@ -698,7 +922,7 @@ void EquationPage::fetchOperations(OMEquation &equation)
       QString toolTip = op->toString();
       QTreeWidgetItem *pOperationTreeItem = new QTreeWidgetItem(values);
       pOperationTreeItem->setToolTip(0, toolTip);
-      mpOperationsTreeWidget->addTopLevelItem(pOperationTreeItem);
+      mpEquationOperationsTreeWidget->addTopLevelItem(pOperationTreeItem);
     }
   }
   else
@@ -709,40 +933,106 @@ void EquationPage::fetchOperations(OMEquation &equation)
     QString toolTip = message;
     QTreeWidgetItem *pOperationTreeItem = new QTreeWidgetItem(values);
     pOperationTreeItem->setToolTip(0, toolTip);
-    mpOperationsTreeWidget->addTopLevelItem(pOperationTreeItem);
+    mpEquationOperationsTreeWidget->addTopLevelItem(pOperationTreeItem);
   }
 }
 
-void EquationPage::searchEquationIndex()
+void TransformationsWidget::clearTreeWidgetItems(QTreeWidget *pTreeWidget)
 {
-  if (!mpTransformationsWidget->getInfoXMLFileHandler() || mpEquationIndexTextBox->text().isEmpty())
+  int i = 0;
+  while(i < pTreeWidget->topLevelItemCount())
+  {
+    qDeleteAll(pTreeWidget->topLevelItem(i)->takeChildren());
+    delete pTreeWidget->topLevelItem(i);
+    i = 0;   //Restart iteration
+  }
+}
+
+void TransformationsWidget::reloadTransformations()
+{
+  /* clear trees */
+  mpTVariablesTreeModel->clearTVariablesTreeItems();
+  /* Clear the defined in tree. */
+  clearTreeWidgetItems(mpDefinedInEquationsTreeWidget);
+  /* Clear the used in tree. */
+  clearTreeWidgetItems(mpUsedInEquationsTreeWidget);
+  /* Clear the variable operations tree. */
+  clearTreeWidgetItems(mpVariableOperationsTreeWidget);
+  /* clear the variable tree filters. */
+  mpFindVariablesTextBox->setText(Helper::findVariables);
+  mpFindSyntaxComboBox->setCurrentIndex(0);
+  mpFindCaseSensitiveCheckBox->setChecked(false);
+  mpTVariableTreeProxyModel->setFilterRegExp(QRegExp());
+  /* clear equations tree */
+  clearTreeWidgetItems(mpEquationsTreeWidget);
+  /* clear defines in tree */
+  clearTreeWidgetItems(mpDefinesVariableTreeWidget);
+  /* clear depends tree */
+  clearTreeWidgetItems(mpDependsVariableTreeWidget);
+  /* clear equation operations tree */
+  clearTreeWidgetItems(mpEquationOperationsTreeWidget);
+  /* clear TSourceEditor */
+  mpTSourceEditorFileLabel->setText("");
+  mpTSourceEditorFileLabel->hide();
+  mpTSourceEditor->clear();
+  mpTSourceEditorInfoBar->hide();
+  /* Clear the equations tree. */
+  clearTreeWidgetItems(mpEquationsTreeWidget);
+  /* initialize all fields again */
+  loadTransformations();
+}
+
+void TransformationsWidget::findVariables()
+{
+  QString findText = mpFindVariablesTextBox->text();
+  if (mpFindVariablesTextBox->text().isEmpty() || (mpFindVariablesTextBox->text().compare(Helper::findVariables) == 0))
+  {
+    findText = "";
+  }
+  QRegExp::PatternSyntax syntax = QRegExp::PatternSyntax(mpFindSyntaxComboBox->itemData(mpFindSyntaxComboBox->currentIndex()).toInt());
+  Qt::CaseSensitivity caseSensitivity = mpFindCaseSensitiveCheckBox->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
+  QRegExp regExp(findText, caseSensitivity, syntax);
+  mpTVariableTreeProxyModel->setFilterRegExp(regExp);
+  /* expand all so that the filtered items can be seen. */
+  if (!findText.isEmpty())
+    mpTVariablesTreeView->expandAll();
+}
+
+void TransformationsWidget::fetchVariableData(const QModelIndex &index)
+{
+  if (!index.isValid())
+    return;
+  QModelIndex modelIndex = mpTVariableTreeProxyModel->mapToSource(index);
+  TVariablesTreeItem *pTVariableTreeItem = static_cast<TVariablesTreeItem*>(modelIndex.internalPointer());
+  if (!pTVariableTreeItem)
     return;
 
-  bool ok = false;
-  int index = mpEquationIndexTextBox->text().toInt(&ok);
-  if (!ok)
+  OMVariable variable = mpInfoXMLFileHandler->variables.value(pTVariableTreeItem->getVariableName());
+  /* fetch defined in equations */
+  fetchDefinedInEquations(variable);
+  /* fetch used in equations */
+  fetchUsedInEquations(variable);
+  /* fetch operations */
+  fetchOperations(variable);
+  /* open the model with and go to the variable line */
+  QFile file(variable.info.file);
+  if (file.exists())
+  {
+    mpTSourceEditorFileLabel->setText(file.fileName());
+    mpTSourceEditorFileLabel->show();
+    file.open(QIODevice::ReadOnly);
+    mpTSourceEditor->setPlainText(QString(file.readAll()));
+    mpTSourceEditorInfoBar->hide();
+    file.close();
+    mpTSourceEditor->goToLineNumber(variable.info.lineStart);
+  }
+}
+
+void TransformationsWidget::fetchEquationData(QTreeWidgetItem *pEquationTreeItem, int column)
+{
+  Q_UNUSED(column);
+  if (!pEquationTreeItem)
     return;
 
-  fetchEquationData(index);
-}
-
-void EquationPage::definesItemChanged(QTreeWidgetItem *current)
-{
-  if (!current) return;
-  QString info = "Variable : " + current->text(0);
-  mpTransformationsWidget->showInfoText(info);
-}
-
-void EquationPage::dependsItemChanged(QTreeWidgetItem *current)
-{
-  if (!current) return;
-  QString info = "Variable : " + current->text(0);
-  mpTransformationsWidget->showInfoText(info);
-}
-
-void EquationPage::operationsItemChanged(QTreeWidgetItem *current)
-{
-  if (!current) return;
-  QString info = "Operation : " + current->text(0);
-  mpTransformationsWidget->showInfoText(info);
+  fetchEquationData(pEquationTreeItem->text(0).toInt());
 }

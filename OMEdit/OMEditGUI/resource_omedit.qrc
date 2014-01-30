@@ -123,7 +123,6 @@
         <file>Resources/icons/mat.svg</file>
         <file>Resources/icons/plt.svg</file>
         <file>Resources/icons/csv.svg</file>
-        <file>Resources/icons/variables.svg</file>
-        <file>Resources/icons/equations.svg</file>
+        <file>Resources/icons/debugger.svg</file>
     </qresource>
 </RCC>

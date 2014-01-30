@@ -112,7 +112,6 @@ public:
   void parseInitXml(QXmlStreamReader &xmlReader);
   QHash<QString, QString> parseScalarVariable(QXmlStreamReader &xmlReader);
   void insertVariablesItems(QString fileName, QString filePath, QStringList variablesList, SimulationOptions simulationOptions);
-  QStringList makeVariableParts(QString variable);
   bool removeVariableTreeItem(QString variable);
   void unCheckVariables(VariablesTreeItem *pVariablelsTreeItem);
 private:

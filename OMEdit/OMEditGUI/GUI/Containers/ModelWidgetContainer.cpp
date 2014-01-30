@@ -37,7 +37,6 @@
 
 #include <QNetworkReply>
 
-#include "ModelicaTextWidget.h"
 #include "ModelWidgetContainer.h"
 #include "LibraryTreeWidget.h"
 #include "MainWindow.h"
@@ -1704,7 +1703,7 @@ WelcomePageWidget::WelcomePageWidget(MainWindow *parent)
   mpLatestNewsListWidget->setMovement(QListView::Static);
   mpLatestNewsListWidget->setIconSize(Helper::iconSize);
   mpLatestNewsListWidget->setCurrentRow(0, QItemSelectionModel::Select);
-  mpReloadLatestNewsButton = new QPushButton(tr("Reload"));
+  mpReloadLatestNewsButton = new QPushButton(Helper::reload);
   mpReloadLatestNewsButton->setStyleSheet("QPushButton{padding: 5px 15px 5px 15px;}");
   connect(mpReloadLatestNewsButton, SIGNAL(clicked()), SLOT(addLatestNewsListItems()));
   mpVisitWebsiteLabel = new Label(tr("For more details visit our website <u><a href=\"http://www.openmodelica.org\">www.openmodelica.org</a></u>"));

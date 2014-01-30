@@ -1430,11 +1430,8 @@ void SimulationOutputWidget::openTransformationBrowser(QUrl url)
   /* open the model_info.xml file */
   if (QFileInfo(fileName).exists())
   {
-    mpMainWindow->getTransformationsWidget()->showTransformations(fileName);
-    mpMainWindow->getTransformationsDockWidget()->show();
-    /* fetch the equation data */
-    mpMainWindow->getTransformationsWidget()->getEquationPage()->fetchEquationData(url.queryItemValue("index").toInt());
-    mpMainWindow->getTransformationsWidget()->getEquationViewToolButton()->setChecked(true);
+    TransformationsWidget *pTransformationsWidget = mpMainWindow->showTransformationsWidget(fileName);
+    pTransformationsWidget->fetchEquationData(url.queryItemValue("index").toInt());
   } else {
     /* TODO: Display error-message */
   }

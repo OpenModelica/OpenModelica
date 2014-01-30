@@ -1239,3 +1239,8 @@ void StringHandler::fillEncodingComboBox(QComboBox *pEncodingComboBox)
   if (currentIndex > -1)
     pEncodingComboBox->setCurrentIndex(currentIndex);
 }
+
+QStringList StringHandler::makeVariableParts(QString variable)
+{
+  return variable.split(QRegExp("\\.(?![^\\[\\]]*\\])"), QString::SkipEmptyParts);
+}

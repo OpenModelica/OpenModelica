@@ -213,7 +213,7 @@ VariablesTreeModel::VariablesTreeModel(VariablesTreeView *pVariablesTreeView)
 {
   mpVariablesTreeView = pVariablesTreeView;
   QVector<QVariant> headers;
-  headers << "" << "" << "Variables" << Helper::variables << tr("Value") << tr("Unit") << Helper::description << "";
+  headers << "" << "" << Helper::variables << Helper::variables << tr("Value") << tr("Unit") << Helper::description << "";
   mpRootVariablesTreeItem = new VariablesTreeItem(headers, 0, true);
 }
 
@@ -309,8 +309,8 @@ Qt::ItemFlags VariablesTreeModel::flags(const QModelIndex &index) const
   if (!index.isValid())
       return 0;
 
-  VariablesTreeItem *pVariablesTreeItem = static_cast<VariablesTreeItem*>(index.internalPointer());
   Qt::ItemFlags flags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+  VariablesTreeItem *pVariablesTreeItem = static_cast<VariablesTreeItem*>(index.internalPointer());
   if (index.column() == 0 && pVariablesTreeItem && pVariablesTreeItem->getChildren().size() == 0)
     flags |= Qt::ItemIsUserCheckable;
   else if (index.column() == 1 && pVariablesTreeItem && pVariablesTreeItem->getChildren().size() == 0 && pVariablesTreeItem->isEditable())
@@ -457,11 +457,11 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
     {
       QString str = plotVariable;
       str.chop((str.lastIndexOf("der(")/4)+1);
-      variables = makeVariableParts(str.mid(str.lastIndexOf("der(") + 4));
+      variables = StringHandler::makeVariableParts(str.mid(str.lastIndexOf("der(") + 4));
     }
     else
     {
-      variables = makeVariableParts(plotVariable);
+      variables = StringHandler::makeVariableParts(plotVariable);
     }
     int count = 1;
     VariablesTreeItem *pParentVariablesTreeItem = 0;
@@ -537,12 +537,6 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   QModelIndex idx = variablesTreeItemIndex(pTopVariablesTreeItem);
   idx = mpVariablesTreeView->getVariablesWidget()->getVariableTreeProxyModel()->mapFromSource(idx);
   mpVariablesTreeView->expand(idx);
-}
-
-QStringList VariablesTreeModel::makeVariableParts(QString variable)
-{
-  QStringList variables = variable.split(QRegExp("\\.(?![^\\[\\]]*\\])"), QString::SkipEmptyParts);
-  return variables;
 }
 
 bool VariablesTreeModel::removeVariableTreeItem(QString variable)

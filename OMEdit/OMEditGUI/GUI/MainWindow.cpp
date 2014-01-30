@@ -129,20 +129,12 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   setCorner(Qt::TopRightCorner, Qt::RightDockWidgetArea);
   mpSimulationDockWidget->hide();*/
   // Create VariablesWidget dock
-  mpVariablesDockWidget = new QDockWidget(tr("Variables Browser"), this);
+  mpVariablesDockWidget = new QDockWidget(Helper::variablesBrowser, this);
   mpVariablesDockWidget->setObjectName("Variables");
   mpVariablesDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
   addDockWidget(Qt::RightDockWidgetArea, mpVariablesDockWidget);
   setCorner(Qt::TopRightCorner, Qt::RightDockWidgetArea);
   mpVariablesDockWidget->hide();
-  // create an object of TransformationsWidget
-  mpTransformationsWidget = new TransformationsWidget(this);
-  // Create TransformationsDockWidget dock
-  mpTransformationsDockWidget = new QDockWidget(tr("Transformations Browser"), this);
-  mpTransformationsDockWidget->setObjectName("Transformations");
-  mpTransformationsDockWidget->setAllowedAreas(Qt::TopDockWidgetArea);
-  mpTransformationsDockWidget->setWidget(mpTransformationsWidget);
-  addDockWidget(Qt::TopDockWidgetArea, mpTransformationsDockWidget);
   //Create Actions, Toolbar and Menus
   pSplashScreen->showMessage(tr("Creating Widgets"), Qt::AlignRight, Qt::white);
   setAcceptDrops(true);
@@ -311,16 +303,6 @@ VariablesWidget* MainWindow::getVariablesWidget()
 QDockWidget* MainWindow::getVariablesDockWidget()
 {
   return mpVariablesDockWidget;
-}
-
-TransformationsWidget* MainWindow::getTransformationsWidget()
-{
-  return mpTransformationsWidget;
-}
-
-QDockWidget* MainWindow::getTransformationsDockWidget()
-{
-  return mpTransformationsDockWidget;
 }
 
 SimulationDialog* MainWindow::getSimulationDialog()
@@ -601,6 +583,15 @@ void MainWindow::beforeClosingMainWindow()
   mpOMCProxy->stopServer();
   delete mpOMCProxy;
   delete mpSimulationDialog;
+  /* delete the TransformationsWidgets */
+  QHashIterator<QString, TransformationsWidget*> transformationsWidgets(mTransformationsWidgetHash);
+  while (transformationsWidgets.hasNext())
+  {
+    transformationsWidgets.next();
+    TransformationsWidget *pTransformationsWidget = transformationsWidgets.value();
+    delete pTransformationsWidget;
+  }
+  mTransformationsWidgetHash.clear();
   // save OMEdit widgets state
   QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
   settings.setValue("application/geometry", saveGeometry());
@@ -920,6 +911,21 @@ void MainWindow::createOMNotebookCodeCell(LibraryTreeNode *pLibraryTreeNode, QDo
   textCellElement.appendChild(outputElement);
 }
 
+TransformationsWidget *MainWindow::showTransformationsWidget(QString fileName)
+{
+  TransformationsWidget *pTransformationsWidget = mTransformationsWidgetHash.value(fileName, 0);
+  if (!pTransformationsWidget)
+  {
+    pTransformationsWidget = new TransformationsWidget(fileName, this);
+    mTransformationsWidgetHash.insert(fileName, pTransformationsWidget);
+  }
+  pTransformationsWidget->show();
+  pTransformationsWidget->raise();
+  pTransformationsWidget->activateWindow();
+  pTransformationsWidget->setWindowState(pTransformationsWidget->windowState() & ~Qt::WindowMinimized | Qt::WindowActive);
+  return pTransformationsWidget;
+}
+
 //! Opens the new model widget.
 void MainWindow::createNewModelicaClass()
 {
@@ -990,11 +996,11 @@ void MainWindow::showOpenResultFileDialog()
 void MainWindow::showOpenTransformationFileDialog()
 {
   QString fileName = StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
-                                                         NULL, Helper::xmlFileTypes, NULL);
+                                                    NULL, Helper::xmlFileTypes, NULL);
   if (fileName.isEmpty())
     return;
-  mpTransformationsWidget->showTransformations(fileName);
-  mpTransformationsDockWidget->show();
+
+  showTransformationsWidget(fileName);
 }
 
 void MainWindow::loadSystemLibrary()
@@ -1632,6 +1638,7 @@ void MainWindow::createActions()
   connect(mpOpenResultFileAction, SIGNAL(triggered()), SLOT(showOpenResultFileDialog()));
   // open transformations file action
   mpOpenTransformationFileAction = new QAction(tr("Open Transformations File"), this);
+  mpOpenTransformationFileAction->setShortcut(QKeySequence("Ctrl+t"));
   mpOpenTransformationFileAction->setStatusTip(tr("Opens the class transformations file"));
   connect(mpOpenTransformationFileAction, SIGNAL(triggered()), SLOT(showOpenTransformationFileDialog()));
   // save file action
@@ -1950,7 +1957,6 @@ void MainWindow::createMenus()
 //  pViewWindowsMenu->addAction(mpSimulationDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpVariablesDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpMessagesDockWidget->toggleViewAction());
-  pViewWindowsMenu->addAction(mpTransformationsDockWidget->toggleViewAction());
   pViewMenu->addAction(pViewWindowsMenu->menuAction());
   pViewMenu->addSeparator();
   pViewMenu->addAction(mpShowGridLinesAction);
@@ -2015,7 +2021,6 @@ void MainWindow::switchToWelcomePerspective()
   mpModelSwitcherToolButton->setEnabled(false);
   mpPlotWindowContainer->setVisible(false);
   mpVariablesDockWidget->hide();
-  mpTransformationsDockWidget->hide();
   mpPlotToolBar->setEnabled(false);
   //mpInteractiveSimualtionTabWidget->setVisible(false);
 }

@@ -161,7 +161,7 @@ OMOperationFlattening::OMOperationFlattening(QStringList ops)
 
 QString OMOperationFlattening::toString()
 {
-  return "original: " + original + " => flattened:" + flattened;
+  return "original: " + original + " => flattened: " + flattened;
 }
 
 OMOperationDummyDerivative::OMOperationDummyDerivative(QStringList ops)
@@ -308,9 +308,9 @@ MyHandler::MyHandler(QFile &file)
 
 OMEquation MyHandler::getOMEquation(int index)
 {
-  foreach (OMEquation eq, equations) {
-    if (eq.index == index)
-      return eq;
+  for (int i = 1 ; i < equations.size() ; i++) {
+    if (equations[i].index == index)
+      return equations[i];
   }
   return OMEquation();
 }
@@ -319,6 +319,7 @@ bool MyHandler::startDocument()
 {
   variables.clear();
   equations.clear();
+  /* use index from 1; add dummy element 0 */
   equations.append(OMEquation());
   currentKind = start;
   return true;

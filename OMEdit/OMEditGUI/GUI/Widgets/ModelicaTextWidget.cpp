@@ -128,7 +128,7 @@ bool isComment(const QString &text,
 
 //! Constructor
 ModelicaTextEdit::ModelicaTextEdit(ModelicaTextWidget *pParent)
-  : QPlainTextEdit(pParent), mLastValidText(""), mTextChanged(false)
+  : BaseEditor(pParent), mLastValidText(""), mTextChanged(false)
 {
   mpModelicaTextWidget = pParent;
   setTabStopWidth(Helper::tabWidth);
@@ -547,6 +547,163 @@ void ModelicaTextEdit::toggleCommentSelection()
     setTextCursor(cursor);
   }
   cursor.endEditBlock();
+}
+
+/*!
+  \class TSourceEditor
+  \brief An editor for Modelica Text used for Transformational Debugger.
+  */
+/*!
+  \param pTransformationsWidget - pointer to TransformationsWidget
+  */
+TSourceEditor::TSourceEditor(TransformationsWidget *pTransformationsWidget)
+  : BaseEditor(pTransformationsWidget)
+{
+  mpTransformationsWidget = pTransformationsWidget;
+  setTabStopWidth(Helper::tabWidth);
+  setObjectName("TSourceEditor");
+  document()->setDocumentMargin(2);
+  setLineWrapping();
+  OptionsDialog *pOptionsDialog = mpTransformationsWidget->getMainWindow()->getOptionsDialog();
+  connect(pOptionsDialog, SIGNAL(updateLineWrapping()), SLOT(setLineWrapping()));
+  connect(this->document(), SIGNAL(contentsChange(int,int,int)), SLOT(contentsHasChanged(int,int,int)));
+  // line numbers widget
+  mpLineNumberArea = new LineNumberArea(this);
+  connect(this, SIGNAL(blockCountChanged(int)), this, SLOT(updateLineNumberAreaWidth(int)));
+  connect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(updateLineNumberArea(QRect,int)));
+  connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(highlightCurrentLine()));
+  updateLineNumberAreaWidth(0);
+  highlightCurrentLine();
+}
+
+//! Reimplementation of resize event.
+//! Resets the size of LineNumberArea.
+void TSourceEditor::resizeEvent(QResizeEvent *pEvent)
+{
+  QPlainTextEdit::resizeEvent(pEvent);
+
+  QRect cr = contentsRect();
+  mpLineNumberArea->setGeometry(QRect(cr.left(), cr.top(), lineNumberAreaWidth(), cr.height()));
+}
+
+//! Activated whenever LineNumberArea Widget paint event is raised.
+//! Writes the line numbers for the visible blocks.
+void TSourceEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
+{
+  QPainter painter(mpLineNumberArea);
+  painter.fillRect(event->rect(), QColor(240, 240, 240));
+
+  QTextBlock block = firstVisibleBlock();
+  int blockNumber = block.blockNumber();
+  int top = (int) blockBoundingGeometry(block).translated(contentOffset()).top();
+  int bottom = top + (int) blockBoundingRect(block).height();
+
+  while (block.isValid() && top <= event->rect().bottom())
+  {
+    if (block.isVisible() && bottom >= event->rect().top())
+    {
+      QString number = QString::number(blockNumber + 1);
+      // make the current highlighted line number darker
+      if (blockNumber == textCursor().blockNumber())
+        painter.setPen(QColor(64, 64, 64));
+      else
+        painter.setPen(Qt::gray);
+      painter.setFont(document()->defaultFont());
+      QFontMetrics fontMetrics (document()->defaultFont());
+      painter.drawText(0, top, mpLineNumberArea->width() - 5, fontMetrics.height(), Qt::AlignRight, number);
+    }
+    block = block.next();
+    top = bottom;
+    bottom = top + (int) blockBoundingRect(block).height();
+    ++blockNumber;
+  }
+}
+
+//! Calculate appropriate width for LineNumberArea.
+//! @return int width of LineNumberArea.
+int TSourceEditor::lineNumberAreaWidth()
+{
+  int digits = 1;
+  int max = qMax(1, document()->blockCount());
+  while (max >= 10)
+  {
+    max /= 10;
+    ++digits;
+  }
+  int space = 20 + fontMetrics().width(QLatin1Char('9')) * digits;
+  return space;
+}
+
+/*!
+  Takes the cursor to the specific line.
+  \param lineNumber - the line number to go.
+  */
+void TSourceEditor::goToLineNumber(int lineNumber)
+{
+  const QTextBlock &block = document()->findBlockByNumber(lineNumber - 1); // -1 since text index start from 0
+  if (block.isValid())
+  {
+    QTextCursor cursor(block);
+    cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, 0);
+    setTextCursor(cursor);
+    centerCursor();
+  }
+}
+
+//! Updates the width of LineNumberArea.
+void TSourceEditor::updateLineNumberAreaWidth(int newBlockCount)
+{
+  Q_UNUSED(newBlockCount);
+  setViewportMargins(lineNumberAreaWidth(), 0, 0, 0);
+}
+
+//! Slot activated when ModelicaEditor cursorPositionChanged signal is raised.
+//! Hightlights the current line.
+void TSourceEditor::highlightCurrentLine()
+{
+  QList<QTextEdit::ExtraSelection> extraSelections;
+  QTextEdit::ExtraSelection selection;
+  QColor lineColor = QColor(232, 242, 254);
+  selection.format.setBackground(lineColor);
+  selection.format.setProperty(QTextFormat::FullWidthSelection, true);
+  selection.cursor = textCursor();
+  selection.cursor.clearSelection();
+  extraSelections.append(selection);
+  setExtraSelections(extraSelections);
+}
+
+//! Slot activated when ModelicaEditor updateRequest signal is raised.
+//! Scrolls the LineNumberArea Widget and also updates its width if required.
+void TSourceEditor::updateLineNumberArea(const QRect &rect, int dy)
+{
+  if (dy)
+    mpLineNumberArea->scroll(0, dy);
+  else
+    mpLineNumberArea->update(0, rect.y(), mpLineNumberArea->width(), rect.height());
+
+  if (rect.contains(viewport()->rect()))
+    updateLineNumberAreaWidth(0);
+}
+
+//! Slot activated when TSourceEditor's QTextDocument contentsChanged SIGNAL is raised.
+//! Sets the model as modified so that user knows that his current model is not saved.
+void TSourceEditor::contentsHasChanged(int position, int charsRemoved, int charsAdded)
+{
+  Q_UNUSED(position);
+  if (charsRemoved == 0 && charsAdded == 0)
+    return;
+
+  InfoBar *pInfoBar = mpTransformationsWidget->getTSourceEditorInfoBar();
+  pInfoBar->showMessage(tr("<b>Info: </b>Update the actual model in <b>Modeling</b> perspective and simulate again. This is only shown for debugging purpose. Your changes will not be saved."));
+}
+
+void TSourceEditor::setLineWrapping()
+{
+  OptionsDialog *pOptionsDialog = mpTransformationsWidget->getMainWindow()->getOptionsDialog();
+  if (pOptionsDialog->getModelicaTextEditorPage()->getLineWrappingCheckbox()->isChecked())
+    setLineWrapMode(QPlainTextEdit::WidgetWidth);
+  else
+    setLineWrapMode(QPlainTextEdit::NoWrap);
 }
 
 //! Activated whenever LineNumberArea Widget paint event is raised.

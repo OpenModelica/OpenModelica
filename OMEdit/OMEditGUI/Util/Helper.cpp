@@ -207,11 +207,11 @@ QString Helper::viewDocumentationTip;
 QString Helper::dontShowThisMessageAgain;
 QString Helper::clickAndDragToResize;
 QString Helper::variables;
+QString Helper::variablesBrowser;
 QString Helper::description;
 QString Helper::previous;
 QString Helper::next;
-QString Helper::variablesView;
-QString Helper::equationView;
+QString Helper::reload;
 QString Helper::index;
 QString Helper::equation;
 
@@ -335,11 +335,11 @@ void Helper::initHelperVariables()
   Helper::dontShowThisMessageAgain = tr("Don't show this message again");
   Helper::clickAndDragToResize = tr("Click and drag to resize");
   Helper::variables = tr("Variables");
+  Helper::variablesBrowser = tr("Variables Browser");
   Helper::description = tr("Description");
   Helper::previous = tr("Previous");
   Helper::next = tr("Next");
-  Helper::variablesView = tr("Variables View");
-  Helper::equationView = tr("Equation View");
+  Helper::reload = tr("Reload");
   Helper::index = tr("Index");
   Helper::equation = tr("Equation");
 }

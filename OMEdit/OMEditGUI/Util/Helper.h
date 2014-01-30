@@ -213,11 +213,11 @@ public:
   static QString dontShowThisMessageAgain;
   static QString clickAndDragToResize;
   static QString variables;
+  static QString variablesBrowser;
   static QString description;
   static QString previous;
   static QString next;
-  static QString variablesView;
-  static QString equationView;
+  static QString reload;
   static QString index;
   static QString equation;
 };

@@ -72,7 +72,15 @@ private:
   QString m_multiLineEnd;
 };
 
-class ModelicaTextEdit : public QPlainTextEdit
+class BaseEditor : public QPlainTextEdit
+{
+public:
+  BaseEditor(QWidget *pParent) : QPlainTextEdit(pParent) {}
+  virtual int lineNumberAreaWidth() {}
+  virtual void lineNumberAreaPaintEvent(QPaintEvent *event) {}
+};
+
+class ModelicaTextEdit : public BaseEditor
 {
   Q_OBJECT
 public:
@@ -106,6 +114,29 @@ public slots:
   void contentsHasChanged(int position, int charsRemoved, int charsAdded);
   void setLineWrapping();
   void toggleCommentSelection();
+};
+
+class TransformationsWidget;
+class TSourceEditor : public BaseEditor
+{
+  Q_OBJECT
+public:
+  TSourceEditor(TransformationsWidget *pTransformationsWidget);
+  void lineNumberAreaPaintEvent(QPaintEvent *event);
+  int lineNumberAreaWidth();
+  void goToLineNumber(int lineNumber);
+private:
+  TransformationsWidget *mpTransformationsWidget;
+  LineNumberArea *mpLineNumberArea;
+protected:
+  virtual void resizeEvent(QResizeEvent *pEvent);
+private slots:
+  void updateLineNumberAreaWidth(int newBlockCount);
+  void highlightCurrentLine();
+  void updateLineNumberArea(const QRect &rect, int dy);
+public slots:
+  void contentsHasChanged(int position, int charsRemoved, int charsAdded);
+  void setLineWrapping();
 };
 
 class ModelicaTextSettings;
@@ -146,22 +177,22 @@ public slots:
 class LineNumberArea : public QWidget
 {
 public:
-  LineNumberArea(ModelicaTextEdit *pModelicaEditor)
-    : QWidget(pModelicaEditor)
+  LineNumberArea(BaseEditor *pEditor)
+    : QWidget(pEditor)
   {
-    mpModelicaEditor = pModelicaEditor;
+    mpEditor = pEditor;
   }
   QSize sizeHint() const
   {
-    return QSize(mpModelicaEditor->lineNumberAreaWidth(), 0);
+    return QSize(mpEditor->lineNumberAreaWidth(), 0);
   }
 protected:
   virtual void paintEvent(QPaintEvent *event)
   {
-    mpModelicaEditor->lineNumberAreaPaintEvent(event);
+    mpEditor->lineNumberAreaPaintEvent(event);
   }
 private:
-  ModelicaTextEdit *mpModelicaEditor;
+  BaseEditor *mpEditor;
 };
 
 class GotoLineDialog : public QDialog

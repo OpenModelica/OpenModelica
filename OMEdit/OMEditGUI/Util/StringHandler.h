@@ -126,6 +126,7 @@ public:
   static qreal getNormalizedAngle(qreal angle);
   static QStringList splitStringWithSpaces(QString value);
   static void fillEncodingComboBox(QComboBox *pEncodingComboBox);
+  static QStringList makeVariableParts(QString variable);
 protected:
   static QString mLastOpenDir;
 };
