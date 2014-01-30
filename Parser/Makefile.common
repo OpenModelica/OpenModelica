@@ -16,7 +16,9 @@ all: install libomparse_rml.a
 install: libantlr3.a libomparse.a
 	cp libantlr3.a libomparse.a ../build/lib/omc/
 
-libantlr3.a: $(ANTLR)/src/*.c $(ANTLR)/include/*.h $(ANTLR)/*.h
+$(ANTLR)/antlr3config.h:
+	(cd $(ANTLR) && ./configure)
+libantlr3.a: $(ANTLR)/src/*.c $(ANTLR)/include/*.h $(ANTLR)/antlr3config.h
 	# build the library
 	$(CC) ${CFLAGS} ${CPPFLAGS} -c $(ANTLR)/src/*.c -I$(ANTLR)/include -I$(ANTLR)
 	rm -f $@
