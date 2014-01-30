@@ -44,8 +44,6 @@
 class MainWindow;
 class TransformationsWidget;
 class TVariablesTreeView;
-class VariablePage;
-class EquationPage;
 
 class TVariablesTreeItem
 {
@@ -139,6 +137,15 @@ private:
   TransformationsWidget *mpTransformationsWidget;
 };
 
+class EquationTreeWidget : public QTreeWidget
+{
+  Q_OBJECT
+public:
+  EquationTreeWidget(TransformationsWidget *pTransformationWidget);
+private:
+  TransformationsWidget *mpTransformationWidget;
+};
+
 class InfoBar;
 class TSourceEditor;
 class TransformationsWidget : public QWidget
@@ -182,10 +189,10 @@ private:
   TVariablesTreeView *mpTVariablesTreeView;
   TVariablesTreeModel *mpTVariablesTreeModel;
   TVariableTreeProxyModel *mpTVariableTreeProxyModel;
-  QTreeWidget *mpDefinedInEquationsTreeWidget;
-  QTreeWidget *mpUsedInEquationsTreeWidget;
+  EquationTreeWidget *mpDefinedInEquationsTreeWidget;
+  EquationTreeWidget *mpUsedInEquationsTreeWidget;
   QTreeWidget *mpVariableOperationsTreeWidget;
-  QTreeWidget *mpEquationsTreeWidget;
+  EquationTreeWidget *mpEquationsTreeWidget;
   QTreeWidget *mpDefinesVariableTreeWidget;
   QTreeWidget *mpDependsVariableTreeWidget;
   QTreeWidget *mpEquationOperationsTreeWidget;

@@ -1440,7 +1440,7 @@ void SimulationOutputWidget::openTransformationBrowser(QUrl url)
     if (pTreeWidgetItem)
     {
       pTransformationsWidget->getEquationsTreeWidget()->clearSelection();
-      pTreeWidgetItem->setSelected(true);
+      pTransformationsWidget->getEquationsTreeWidget()->setCurrentItem(pTreeWidgetItem);
     }
     pTransformationsWidget->fetchEquationData(equationIndex);
   } else {

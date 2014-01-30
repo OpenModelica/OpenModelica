@@ -410,6 +410,24 @@ TVariablesTreeView::TVariablesTreeView(TransformationsWidget *pTransformationsWi
   setExpandsOnDoubleClick(false);
 }
 
+EquationTreeWidget::EquationTreeWidget(TransformationsWidget *pTransformationWidget)
+  : QTreeWidget(pTransformationWidget), mpTransformationWidget(pTransformationWidget)
+{
+  setItemDelegate(new ItemDelegate(this));
+  setObjectName("EquationsTree");
+  setIndentation(Helper::treeIndentation);
+  setColumnCount(3);
+  setTextElideMode(Qt::ElideMiddle);
+  setSortingEnabled(true);
+  sortByColumn(0, Qt::AscendingOrder);
+  setColumnWidth(0, 40);
+  setColumnWidth(1, 60);
+  QStringList headerLabels;
+  headerLabels << Helper::index << Helper::type << Helper::equation;
+  setHeaderLabels(headerLabels);
+  connect(this, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), mpTransformationWidget, SLOT(fetchEquationData(QTreeWidgetItem*,int)));
+}
+
 TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWindow *pMainWindow)
   : mInfoXMLFullFileName(infoXMLFullFileName), mpMainWindow(pMainWindow)
 {
@@ -478,20 +496,7 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   /* Defined in tree widget */
   ElidedLabel *pDefinedInLabel = new ElidedLabel(tr("Defined In Equations"));
   pDefinedInLabel->setObjectName("LabelWithBorder");
-  mpDefinedInEquationsTreeWidget = new QTreeWidget;
-  mpDefinedInEquationsTreeWidget->setItemDelegate(new ItemDelegate(mpDefinedInEquationsTreeWidget));
-  mpDefinedInEquationsTreeWidget->setObjectName("DefinedInTree");
-  mpDefinedInEquationsTreeWidget->setIndentation(Helper::treeIndentation);
-  mpDefinedInEquationsTreeWidget->setColumnCount(3);
-  mpDefinedInEquationsTreeWidget->setTextElideMode(Qt::ElideMiddle);
-  mpDefinedInEquationsTreeWidget->setSortingEnabled(true);
-  mpDefinedInEquationsTreeWidget->sortByColumn(0, Qt::AscendingOrder);
-  mpDefinedInEquationsTreeWidget->setColumnWidth(0, 40);
-  mpDefinedInEquationsTreeWidget->setColumnWidth(1, 60);
-  QStringList headerLabels;
-  headerLabels << Helper::index << Helper::type << Helper::equation;
-  mpDefinedInEquationsTreeWidget->setHeaderLabels(headerLabels);
-  connect(mpDefinedInEquationsTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(fetchEquationData(QTreeWidgetItem*,int)));
+  mpDefinedInEquationsTreeWidget = new EquationTreeWidget(this);
   QGridLayout *pDefinedInGridLayout = new QGridLayout;
   pDefinedInGridLayout->setSpacing(1);
   pDefinedInGridLayout->setContentsMargins(0, 0, 0, 0);
@@ -502,20 +507,7 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   /* Used in tree widget  */
   ElidedLabel *pUsedInLabel = new ElidedLabel(tr("Used In Equations"));
   pUsedInLabel->setObjectName("LabelWithBorder");
-  mpUsedInEquationsTreeWidget = new QTreeWidget;
-  mpUsedInEquationsTreeWidget->setItemDelegate(new ItemDelegate(mpUsedInEquationsTreeWidget));
-  mpUsedInEquationsTreeWidget->setObjectName("UsedInTree");
-  mpUsedInEquationsTreeWidget->setIndentation(Helper::treeIndentation);
-  mpUsedInEquationsTreeWidget->setColumnCount(3);
-  mpUsedInEquationsTreeWidget->setTextElideMode(Qt::ElideMiddle);
-  mpUsedInEquationsTreeWidget->setSortingEnabled(true);
-  mpUsedInEquationsTreeWidget->sortByColumn(0, Qt::AscendingOrder);
-  mpUsedInEquationsTreeWidget->setColumnWidth(0, 40);
-  mpUsedInEquationsTreeWidget->setColumnWidth(1, 60);
-  headerLabels.clear();
-  headerLabels << Helper::index << Helper::type << Helper::equation;
-  mpUsedInEquationsTreeWidget->setHeaderLabels(headerLabels);
-  connect(mpUsedInEquationsTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(fetchEquationData(QTreeWidgetItem*,int)));
+  mpUsedInEquationsTreeWidget = new EquationTreeWidget(this);
   QGridLayout *pUsedInGridLayout = new QGridLayout;
   pUsedInGridLayout->setSpacing(1);
   pUsedInGridLayout->setContentsMargins(0, 0, 0, 0);
@@ -544,20 +536,7 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   ElidedLabel *pEquationsBrowserLabel = new ElidedLabel(tr("Equations Browser"));
   pEquationsBrowserLabel->setObjectName("LabelWithBorder");
   /* Equations tree widget */
-  mpEquationsTreeWidget = new QTreeWidget;
-  mpEquationsTreeWidget->setItemDelegate(new ItemDelegate(mpDefinedInEquationsTreeWidget));
-  mpEquationsTreeWidget->setObjectName("EquationsTree");
-  mpEquationsTreeWidget->setIndentation(Helper::treeIndentation);
-  mpEquationsTreeWidget->setColumnCount(3);
-  mpEquationsTreeWidget->setTextElideMode(Qt::ElideMiddle);
-  mpEquationsTreeWidget->setSortingEnabled(true);
-  mpEquationsTreeWidget->sortByColumn(0, Qt::AscendingOrder);
-  mpEquationsTreeWidget->setColumnWidth(0, 40);
-  mpEquationsTreeWidget->setColumnWidth(1, 60);
-  headerLabels.clear();
-  headerLabels << Helper::index << Helper::type << Helper::equation;
-  mpEquationsTreeWidget->setHeaderLabels(headerLabels);
-  connect(mpEquationsTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(fetchEquationData(QTreeWidgetItem*,int)));
+  mpEquationsTreeWidget = new EquationTreeWidget(this);
   QGridLayout *pEquationsGridLayout = new QGridLayout;
   pEquationsGridLayout->setSpacing(1);
   pEquationsGridLayout->setContentsMargins(0, 0, 0, 0);
@@ -576,7 +555,7 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   mpDefinesVariableTreeWidget->setTextElideMode(Qt::ElideMiddle);
   mpDefinesVariableTreeWidget->setSortingEnabled(true);
   mpDefinesVariableTreeWidget->sortByColumn(0, Qt::AscendingOrder);
-  headerLabels.clear();
+  QStringList headerLabels;
   headerLabels << tr("Variable");
   mpDefinesVariableTreeWidget->setHeaderLabels(headerLabels);
   QGridLayout *pDefinesGridLayout = new QGridLayout;
@@ -1068,5 +1047,12 @@ void TransformationsWidget::fetchEquationData(QTreeWidgetItem *pEquationTreeItem
   if (!pEquationTreeItem)
     return;
 
-  fetchEquationData(pEquationTreeItem->text(0).toInt());
+  int equationIndex = pEquationTreeItem->text(0).toInt();
+  QTreeWidgetItem *pTreeWidgetItem = findEquationTreeItem(equationIndex);
+  if (pTreeWidgetItem)
+  {
+    mpEquationsTreeWidget->clearSelection();
+    mpEquationsTreeWidget->setCurrentItem(pTreeWidgetItem);
+  }
+  fetchEquationData(equationIndex);
 }
