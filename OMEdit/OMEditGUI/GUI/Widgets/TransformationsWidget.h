@@ -150,6 +150,14 @@ public:
   MyHandler* getInfoXMLFileHandler() {return mpInfoXMLFileHandler;}
   QTreeWidget* getEquationsTreeWidget() {return mpEquationsTreeWidget;}
   InfoBar* getTSourceEditorInfoBar() {return mpTSourceEditorInfoBar;}
+  QSplitter* getVariablesNestedHorizontalSplitter() {return mpVariablesNestedHorizontalSplitter;}
+  QSplitter* getVariablesNestedVerticalSplitter() {return mpVariablesNestedVerticalSplitter;}
+  QSplitter* getVariablesHorizontalSplitter() {return mpVariablesHorizontalSplitter;}
+  QSplitter* getEquationsNestedHorizontalSplitter() {return mpEquationsNestedHorizontalSplitter;}
+  QSplitter* getEquationsNestedVerticalSplitter() {return mpEquationsNestedVerticalSplitter;}
+  QSplitter* getEquationsHorizontalSplitter() {return mpEquationsHorizontalSplitter;}
+  QSplitter* getTransformationsVerticalSplitter() {return mpTransformationsVerticalSplitter;}
+  QSplitter* getTransformationsHorizontalSplitter() {return mpTransformationsHorizontalSplitter;}
   bool eventFilter(QObject *pObject, QEvent *pEvent);
   void loadTransformations();
   void fetchDefinedInEquations(OMVariable &variable);
@@ -184,6 +192,14 @@ private:
   Label *mpTSourceEditorFileLabel;
   InfoBar *mpTSourceEditorInfoBar;
   TSourceEditor *mpTSourceEditor;
+  QSplitter *mpVariablesNestedHorizontalSplitter;
+  QSplitter *mpVariablesNestedVerticalSplitter;
+  QSplitter *mpVariablesHorizontalSplitter;
+  QSplitter *mpEquationsNestedHorizontalSplitter;
+  QSplitter *mpEquationsNestedVerticalSplitter;
+  QSplitter *mpEquationsHorizontalSplitter;
+  QSplitter *mpTransformationsVerticalSplitter;
+  QSplitter *mpTransformationsHorizontalSplitter;
 public slots:
   void reloadTransformations();
   void findVariables();

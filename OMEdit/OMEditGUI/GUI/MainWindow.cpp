@@ -585,8 +585,31 @@ void MainWindow::beforeClosingMainWindow()
   mpOMCProxy->stopServer();
   delete mpOMCProxy;
   delete mpSimulationDialog;
-  /* delete the TransformationsWidgets */
+  /* save the TransformationsWidget last window geometry and splitters state. */
+  QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
   QHashIterator<QString, TransformationsWidget*> transformationsWidgets(mTransformationsWidgetHash);
+  if (mTransformationsWidgetHash.size() > 0)
+  {
+    transformationsWidgets.toBack();
+    transformationsWidgets.previous();
+    TransformationsWidget *pTransformationsWidget = transformationsWidgets.value();
+    if (pTransformationsWidget)
+    {
+      settings.beginGroup("transformationalDebugger");
+      settings.setValue("geometry", pTransformationsWidget->saveGeometry());
+      settings.setValue("variablesNestedHorizontalSplitter", pTransformationsWidget->getVariablesNestedHorizontalSplitter()->saveState());
+      settings.setValue("variablesNestedVerticalSplitter", pTransformationsWidget->getVariablesNestedVerticalSplitter()->saveState());
+      settings.setValue("variablesHorizontalSplitter", pTransformationsWidget->getVariablesHorizontalSplitter()->saveState());
+      settings.setValue("equationsNestedHorizontalSplitter", pTransformationsWidget->getEquationsNestedHorizontalSplitter()->saveState());
+      settings.setValue("equationsNestedVerticalSplitter", pTransformationsWidget->getEquationsNestedVerticalSplitter()->saveState());
+      settings.setValue("equationsHorizontalSplitter", pTransformationsWidget->getEquationsHorizontalSplitter()->saveState());
+      settings.setValue("transformationsVerticalSplitter", pTransformationsWidget->getTransformationsVerticalSplitter()->saveState());
+      settings.setValue("transformationsHorizontalSplitter", pTransformationsWidget->getTransformationsHorizontalSplitter()->saveState());
+      settings.endGroup();
+    }
+  }
+  /* delete the TransformationsWidgets */
+  transformationsWidgets.toFront();
   while (transformationsWidgets.hasNext())
   {
     transformationsWidgets.next();
@@ -594,8 +617,7 @@ void MainWindow::beforeClosingMainWindow()
     delete pTransformationsWidget;
   }
   mTransformationsWidgetHash.clear();
-  // save OMEdit widgets state
-  QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
+  /* save OMEdit MainWindow geometry state */
   settings.setValue("application/geometry", saveGeometry());
   settings.setValue("application/windowState", saveState());
   // save last Open Directory location

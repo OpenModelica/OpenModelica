@@ -645,91 +645,91 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   QFrame *pTSourceEditorFrame = new QFrame;
   pTSourceEditorFrame->setLayout(pTSourceEditorVerticalLayout);
   /* variables nested horizontal splitter */
-  QSplitter *pVariablesNestedHorizontalSplitter = new QSplitter;
-  pVariablesNestedHorizontalSplitter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-  pVariablesNestedHorizontalSplitter->setChildrenCollapsible(false);
-  pVariablesNestedHorizontalSplitter->setHandleWidth(4);
-  pVariablesNestedHorizontalSplitter->setContentsMargins(0, 0, 0, 0);
-  pVariablesNestedHorizontalSplitter->addWidget(pDefinedInFrame);
-  pVariablesNestedHorizontalSplitter->addWidget(pUsedInFrame);
+  mpVariablesNestedHorizontalSplitter = new QSplitter;
+  mpVariablesNestedHorizontalSplitter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  mpVariablesNestedHorizontalSplitter->setChildrenCollapsible(false);
+  mpVariablesNestedHorizontalSplitter->setHandleWidth(4);
+  mpVariablesNestedHorizontalSplitter->setContentsMargins(0, 0, 0, 0);
+  mpVariablesNestedHorizontalSplitter->addWidget(pDefinedInFrame);
+  mpVariablesNestedHorizontalSplitter->addWidget(pUsedInFrame);
   /* variables vertical splitter */
-  QSplitter *pVariablesNestedVerticalSplitter = new QSplitter;
-  pVariablesNestedVerticalSplitter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-  pVariablesNestedVerticalSplitter->setOrientation(Qt::Vertical);
-  pVariablesNestedVerticalSplitter->setChildrenCollapsible(false);
-  pVariablesNestedVerticalSplitter->setHandleWidth(4);
-  pVariablesNestedVerticalSplitter->setContentsMargins(0, 0, 0, 0);
-  pVariablesNestedVerticalSplitter->addWidget(pVariablesNestedHorizontalSplitter);
-  pVariablesNestedVerticalSplitter->addWidget(pVariableOperationsFrame);
+  mpVariablesNestedVerticalSplitter = new QSplitter;
+  mpVariablesNestedVerticalSplitter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  mpVariablesNestedVerticalSplitter->setOrientation(Qt::Vertical);
+  mpVariablesNestedVerticalSplitter->setChildrenCollapsible(false);
+  mpVariablesNestedVerticalSplitter->setHandleWidth(4);
+  mpVariablesNestedVerticalSplitter->setContentsMargins(0, 0, 0, 0);
+  mpVariablesNestedVerticalSplitter->addWidget(mpVariablesNestedHorizontalSplitter);
+  mpVariablesNestedVerticalSplitter->addWidget(pVariableOperationsFrame);
   /* variables horizontal splitter */
-  QSplitter *pVariablesHorizontalSplitter = new QSplitter;
-  pVariablesHorizontalSplitter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-  pVariablesHorizontalSplitter->setChildrenCollapsible(false);
-  pVariablesHorizontalSplitter->setHandleWidth(4);
-  pVariablesHorizontalSplitter->setContentsMargins(0, 0, 0, 0);
-  pVariablesHorizontalSplitter->addWidget(pVariablesFrame);
-  pVariablesHorizontalSplitter->addWidget(pVariablesNestedVerticalSplitter);
+  mpVariablesHorizontalSplitter = new QSplitter;
+  mpVariablesHorizontalSplitter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  mpVariablesHorizontalSplitter->setChildrenCollapsible(false);
+  mpVariablesHorizontalSplitter->setHandleWidth(4);
+  mpVariablesHorizontalSplitter->setContentsMargins(0, 0, 0, 0);
+  mpVariablesHorizontalSplitter->addWidget(pVariablesFrame);
+  mpVariablesHorizontalSplitter->addWidget(mpVariablesNestedVerticalSplitter);
   Label *pVariablesHeadingLabel = new Label(Helper::variables);
   pVariablesHeadingLabel->setObjectName("LabelWithBorder");
   QVBoxLayout *pVariablesMainLayout = new QVBoxLayout;
   pVariablesMainLayout->setSpacing(1);
   pVariablesMainLayout->setContentsMargins(0, 0, 0, 0);
   pVariablesMainLayout->addWidget(pVariablesHeadingLabel);
-  pVariablesMainLayout->addWidget(pVariablesHorizontalSplitter);
+  pVariablesMainLayout->addWidget(mpVariablesHorizontalSplitter);
   QFrame *pVariablesMainFrame = new QFrame;
   pVariablesMainFrame->setLayout(pVariablesMainLayout);
   /* Equations nested horizontal splitter */
-  QSplitter *pEquationsNestedHorizontalSplitter = new QSplitter;
-  pEquationsNestedHorizontalSplitter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-  pEquationsNestedHorizontalSplitter->setChildrenCollapsible(false);
-  pEquationsNestedHorizontalSplitter->setHandleWidth(4);
-  pEquationsNestedHorizontalSplitter->setContentsMargins(0, 0, 0, 0);
-  pEquationsNestedHorizontalSplitter->addWidget(pDefinesFrame);
-  pEquationsNestedHorizontalSplitter->addWidget(pDependsFrame);
+  mpEquationsNestedHorizontalSplitter = new QSplitter;
+  mpEquationsNestedHorizontalSplitter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  mpEquationsNestedHorizontalSplitter->setChildrenCollapsible(false);
+  mpEquationsNestedHorizontalSplitter->setHandleWidth(4);
+  mpEquationsNestedHorizontalSplitter->setContentsMargins(0, 0, 0, 0);
+  mpEquationsNestedHorizontalSplitter->addWidget(pDefinesFrame);
+  mpEquationsNestedHorizontalSplitter->addWidget(pDependsFrame);
   /* Equations nested vertical splitter */
-  QSplitter *pEquationsNestedVerticalSplitter = new QSplitter;
-  pEquationsNestedVerticalSplitter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-  pEquationsNestedVerticalSplitter->setOrientation(Qt::Vertical);
-  pEquationsNestedVerticalSplitter->setChildrenCollapsible(false);
-  pEquationsNestedVerticalSplitter->setHandleWidth(4);
-  pEquationsNestedVerticalSplitter->setContentsMargins(0, 0, 0, 0);
-  pEquationsNestedVerticalSplitter->addWidget(pEquationsNestedHorizontalSplitter);
-  pEquationsNestedVerticalSplitter->addWidget(pEquationOperationsFrame);
+  mpEquationsNestedVerticalSplitter = new QSplitter;
+  mpEquationsNestedVerticalSplitter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  mpEquationsNestedVerticalSplitter->setOrientation(Qt::Vertical);
+  mpEquationsNestedVerticalSplitter->setChildrenCollapsible(false);
+  mpEquationsNestedVerticalSplitter->setHandleWidth(4);
+  mpEquationsNestedVerticalSplitter->setContentsMargins(0, 0, 0, 0);
+  mpEquationsNestedVerticalSplitter->addWidget(mpEquationsNestedHorizontalSplitter);
+  mpEquationsNestedVerticalSplitter->addWidget(pEquationOperationsFrame);
   /* equations horizontal splitter */
-  QSplitter *pEquationsHorizontalSplitter = new QSplitter;
-  pEquationsHorizontalSplitter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-  pEquationsHorizontalSplitter->setChildrenCollapsible(false);
-  pEquationsHorizontalSplitter->setHandleWidth(4);
-  pEquationsHorizontalSplitter->setContentsMargins(0, 0, 0, 0);
-  pEquationsHorizontalSplitter->addWidget(pEquationsFrame);
-  pEquationsHorizontalSplitter->addWidget(pEquationsNestedVerticalSplitter);
+  mpEquationsHorizontalSplitter = new QSplitter;
+  mpEquationsHorizontalSplitter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  mpEquationsHorizontalSplitter->setChildrenCollapsible(false);
+  mpEquationsHorizontalSplitter->setHandleWidth(4);
+  mpEquationsHorizontalSplitter->setContentsMargins(0, 0, 0, 0);
+  mpEquationsHorizontalSplitter->addWidget(pEquationsFrame);
+  mpEquationsHorizontalSplitter->addWidget(mpEquationsNestedVerticalSplitter);
   Label *pEquationsHeadingLabel = new Label(tr("Equations"));
   pEquationsHeadingLabel->setObjectName("LabelWithBorder");
   QVBoxLayout *pEquationsMainLayout = new QVBoxLayout;
   pEquationsMainLayout->setSpacing(1);
   pEquationsMainLayout->setContentsMargins(0, 0, 0, 0);
   pEquationsMainLayout->addWidget(pEquationsHeadingLabel);
-  pEquationsMainLayout->addWidget(pEquationsHorizontalSplitter);
+  pEquationsMainLayout->addWidget(mpEquationsHorizontalSplitter);
   QFrame *pEquationsMainFrame = new QFrame;
   pEquationsMainFrame->setLayout(pEquationsMainLayout);
   /* Transformations vertical splitter */
-  QSplitter *pTransformationsVerticalSplitter = new QSplitter;
-  pTransformationsVerticalSplitter->setObjectName("TransformationsVerticalSplitter");
-  pTransformationsVerticalSplitter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-  pTransformationsVerticalSplitter->setOrientation(Qt::Vertical);
-  pTransformationsVerticalSplitter->setChildrenCollapsible(false);
-  pTransformationsVerticalSplitter->setHandleWidth(4);
-  pTransformationsVerticalSplitter->setContentsMargins(0, 0, 0, 0);
-  pTransformationsVerticalSplitter->addWidget(pVariablesMainFrame);
-  pTransformationsVerticalSplitter->addWidget(pEquationsMainFrame);
+  mpTransformationsVerticalSplitter = new QSplitter;
+  mpTransformationsVerticalSplitter->setObjectName("TransformationsVerticalSplitter");
+  mpTransformationsVerticalSplitter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  mpTransformationsVerticalSplitter->setOrientation(Qt::Vertical);
+  mpTransformationsVerticalSplitter->setChildrenCollapsible(false);
+  mpTransformationsVerticalSplitter->setHandleWidth(4);
+  mpTransformationsVerticalSplitter->setContentsMargins(0, 0, 0, 0);
+  mpTransformationsVerticalSplitter->addWidget(pVariablesMainFrame);
+  mpTransformationsVerticalSplitter->addWidget(pEquationsMainFrame);
   /* Transformations horizontal splitter */
-  QSplitter *pTransformationsHorizontalSplitter = new QSplitter;
-  pTransformationsHorizontalSplitter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-  pTransformationsHorizontalSplitter->setChildrenCollapsible(false);
-  pTransformationsHorizontalSplitter->setHandleWidth(4);
-  pTransformationsHorizontalSplitter->setContentsMargins(0, 0, 0, 0);
-  pTransformationsHorizontalSplitter->addWidget(pTransformationsVerticalSplitter);
-  pTransformationsHorizontalSplitter->addWidget(pTSourceEditorFrame);
+  mpTransformationsHorizontalSplitter = new QSplitter;
+  mpTransformationsHorizontalSplitter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  mpTransformationsHorizontalSplitter->setChildrenCollapsible(false);
+  mpTransformationsHorizontalSplitter->setHandleWidth(4);
+  mpTransformationsHorizontalSplitter->setContentsMargins(0, 0, 0, 0);
+  mpTransformationsHorizontalSplitter->addWidget(mpTransformationsVerticalSplitter);
+  mpTransformationsHorizontalSplitter->addWidget(pTSourceEditorFrame);
   /* Load the transformations before setting the layout */
   loadTransformations();
   /* set the layout */
@@ -737,8 +737,24 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
   pMainLayout->setContentsMargins(0, 0, 0, 0);
   pMainLayout->addWidget(pStatusBar, 0, 0);
-  pMainLayout->addWidget(pTransformationsHorizontalSplitter, 1, 0);
+  pMainLayout->addWidget(mpTransformationsHorizontalSplitter, 1, 0);
   setLayout(pMainLayout);
+  /* restore the TransformationsWidget geometry and splitters state. */
+  QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
+  if (mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getPreserveUserCustomizations())
+  {
+    settings.beginGroup("transformationalDebugger");
+    restoreGeometry(settings.value("geometry").toByteArray());
+    mpVariablesNestedHorizontalSplitter->restoreState(settings.value("variablesNestedHorizontalSplitter").toByteArray());
+    mpVariablesNestedVerticalSplitter->restoreState(settings.value("variablesNestedVerticalSplitter").toByteArray());
+    mpVariablesHorizontalSplitter->restoreState(settings.value("variablesHorizontalSplitter").toByteArray());
+    mpEquationsNestedHorizontalSplitter->restoreState(settings.value("equationsNestedHorizontalSplitter").toByteArray());
+    mpEquationsNestedVerticalSplitter->restoreState(settings.value("equationsNestedVerticalSplitter").toByteArray());
+    mpEquationsHorizontalSplitter->restoreState(settings.value("equationsHorizontalSplitter").toByteArray());
+    mpTransformationsVerticalSplitter->restoreState(settings.value("transformationsVerticalSplitter").toByteArray());
+    mpTransformationsHorizontalSplitter->restoreState(settings.value("transformationsHorizontalSplitter").toByteArray());
+    settings.endGroup();
+  }
 }
 
 bool TransformationsWidget::eventFilter(QObject *pObject, QEvent *pEvent)
