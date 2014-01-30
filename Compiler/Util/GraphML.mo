@@ -58,6 +58,10 @@ public constant String COLOR_GRAY      = "C0C0C0";
 public constant String COLOR_PURPLE   = "993366";
 public constant String COLOR_ORANGE   = "FFCC00";
 public constant String COLOR_DARKGRAY      = "666666";
+public constant String COLOR_RED2      = "F0988E";
+public constant String COLOR_GREEN2      = "98B954";
+public constant String COLOR_ORANGE2      = "FFA851";
+
 
 public constant Real LINEWIDTH_STANDARD   = 2.0;
 public constant Real LINEWIDTH_BOLD   = 4.0;

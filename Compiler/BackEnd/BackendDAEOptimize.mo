@@ -7022,6 +7022,15 @@ algorithm
   eqLst := BackendEquation.equationList(eqs);
   varLst := BackendVariable.varList(vars);
   
+  // build the incidence matrix
+  numSimpEqs := listLength(eqLst);
+  numVars := listLength(varLst);
+  m := arrayCreate(numSimpEqs, {});
+  mT := arrayCreate(numVars, {});
+  (m,mT) := BackendDAEUtil.incidenceMatrixDispatch(vars,eqs,{},mT, 0, numSimpEqs, intLt(0, numSimpEqs), BackendDAE.ABSOLUTE(), NONE()); 
+  HpcOmEqSystems.dumpEquationSystemGraphML1(vars,eqs,m,"whole System");
+
+    
     //BackendDump.dumpEquationArray(eqs,"the complete DAE");
     //BackendDump.dumpVariables(vars,"the complete DAE");
      

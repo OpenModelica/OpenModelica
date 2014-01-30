@@ -1931,7 +1931,7 @@ algorithm
   varChars := List.map(varChars,HpcOmTaskGraph.prepareXML);
   varString := stringCharListString(varChars); 
   varNodeId := getVarNodeIdx(indx);
-  graphOut := GraphML.addNode(varNodeId,intString(indx),GraphML.COLOR_ORANGE,GraphML.ELLIPSE(),SOME(varString),{(nameAttrIdx,varString)},{},graphIn);
+  graphOut := GraphML.addNode(varNodeId,intString(indx),GraphML.COLOR_ORANGE2,GraphML.ELLIPSE(),SOME(varString),{(nameAttrIdx,varString)},{},graphIn);
 end addVarNodeToGraph;
 
 
@@ -1955,7 +1955,7 @@ algorithm
   eqChars := List.map(eqChars,HpcOmTaskGraph.prepareXML);
   eqString := stringCharListString(eqChars); 
   eqNodeId := getEqNodeIdx(indx);
-  graphOut := GraphML.addNode(eqNodeId,intString(indx),GraphML.COLOR_GREEN,GraphML.RECTANGLE(),SOME(eqString),{(nameAttrIdx,eqString)},{},graphIn);
+  graphOut := GraphML.addNode(eqNodeId,intString(indx),GraphML.COLOR_GREEN2,GraphML.RECTANGLE(),SOME(eqString),{(nameAttrIdx,eqString)},{},graphIn);
 end addEqNodeToGraph;
 
 //--------------------------------------------------//
@@ -2048,7 +2048,7 @@ algorithm
       then
         (systTmp,tornSysIdx);
   end matchcontinue;
-end resolveLinearSystem;
+end resolveLinearSystem; 
 //--------------------------------------------------//
 // 
 //-------------------------------------------------//
