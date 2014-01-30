@@ -2,26 +2,27 @@ Debian/Ubuntu Compile Cheat Sheet (or read on for the full guide)
 =================================================================
 
 Note: $ means run this command as *non-root*. If you must run the command as super-user (you don't), do it under sudo and hope omc did not detect it or your build might fail.
-$ sudo su -c "echo deb http://build.openmodelica.org/apt precise nightly >> /etc/apt/sources.list"
-$ sudo su -c "echo deb-src http://build.openmodelica.org/apt precise nightly >> /etc/apt/sources.list"
+$ echo deb http://build.openmodelica.org/apt precise nightly | sudo tee -a /etc/apt/sources.list
+$ echo deb-src http://build.openmodelica.org/apt precise nightly | sudo tee -a /etc/apt/sources.list
 $ sudo apt-get update
 $ sudo apt-get build-dep openmodelica
 $ svn co https://openmodelica.org/svn/OpenModelica/trunk OpenModelica
 $ cd OpenModelica
 $ autoconf
-$ ./configure --with-omniORB
-$ make # or make omc if you only want the omc core and not the qtclients
+$ ./configure --with-omniORB # and/or --without-rml depending on if you want to bootstrap omc
+$ make -j4 # or make -j4 omc if you only want the omc core and not the qtclients
 
 
 
 How to compile on Linux/BSD (all from source)
 ===================================================
 
-$ ./configure --prefix=/usr/local
+$ ./configure --prefix=/usr/local --without-rml
 $ make
 $ sudo make install
 
 But first you need to install dependencies:
+    (If you did not specify --without-rml, you will need RML)
     rml+mmc (http://www.ida.liu.se/~pelab/rml/)
         Just grab it from subversion:
         svn co https://openmodelica.org/svn/MetaModelica/trunk mmc
