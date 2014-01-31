@@ -187,6 +187,7 @@ AbsynDumpTpl.mo \
 CodegenAdevs.mo \
 CodegenC.mo \
 CodegenCpp.mo \
+CodegenCppHpcom.mo \
 CodegenCSharp.mo \
 CodegenFMU.mo \
 CodegenFMUCpp.mo \

@@ -645,6 +645,11 @@ template simulationFile(SimCode simCode, String guid)
       int res;
       DATA simulation_data;
       <%mainTop(mainBody,"https://trac.openmodelica.org/OpenModelica/newticket")%>
+      
+  	  <%if Flags.isSet(HPCOM) then "terminateHpcOmThreads();" %>
+  	  fflush(NULL);
+  	  EXIT(0);
+      
       return res;
     }
     <%\n%>
@@ -2030,7 +2035,11 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
     case SOME(hpcOmSchedule as LEVELSCHEDULESC(__)) then
       let odeEqs = hpcOmSchedule.eqsOfLevels |> eqs => functionXXX_system0_HPCOM_Level(derivativEquations,name,eqs,modelNamePrefixStr); separator="\n"
       <<
-      static void function<%name%>_system<%n%>(DATA *data)
+      void terminateHpcOmThreads()
+      {
+      }
+      
+      void function<%name%>_system<%n%>(DATA *data)
       {
         <%odeEqs%>
       }
@@ -2045,9 +2054,13 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
         case ("openmp") then
           let taskEqs = functionXXX_system0_HPCOM_Thread(derivativEquations,name,hpcOmSchedule.threadTasks, type, modelNamePrefixStr); separator="\n"
           <<
+          void terminateHpcOmThreads()
+          {
+          }
+          
           //using type: <%type%>
           static int initialized = 0;
-          static void function<%name%>_system<%n%>(DATA *data)
+          void function<%name%>_system<%n%>(DATA *data)
           {
             omp_set_dynamic(0);
             //create locks
@@ -2080,6 +2093,8 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
           let threadReleaseLocks = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_releaseLock(i0, "th_lock", type); separator="\n"
           
           <<
+          static int finished; //set to 1 if the hpcom-threads should be destroyed
+          
           <%threadDecl%>
           
           <%locks%>
@@ -2087,11 +2102,19 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
           <%threadLocks%>
           <%threadLocks1%>
           
+          void terminateHpcOmThreads()
+          {
+          	finished = 1;
+
+            //Start the threads one last time
+            <%threadReleaseLocks%>
+          }
+          
           <%threadFuncs%>
           
           //using type: <%type%>
           static int initialized = 0;
-          static void function<%name%>_system<%n%>(DATA *data)
+          void function<%name%>_system<%n%>(DATA *data)
           {
             if(!initialized)
             {
@@ -2131,6 +2154,8 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
           let threadReleaseLocks = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_releaseLock(i0, "th_lock", "pthreads"); separator="\n"
           
           <<
+          static int finished; //set to 1 if the hpcom-threads should be destroyed
+          
           <%threadDecl%>
           
           <%locks%>
@@ -2138,14 +2163,24 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
           <%threadLocks%>
           <%threadLocks1%>
           
+          void terminateHpcOmThreads()
+          {
+          	finished = 1;
+
+            //Start the threads one last time
+            <%threadReleaseLocks%>
+          }
+          
           <%threadFuncs%>
           
           //using type: <%type%>
           static int initialized = 0;
-          static void function<%name%>_system<%n%>(DATA *data)
+          void function<%name%>_system<%n%>(DATA *data)
           {
             if(!initialized)
             {
+                finished = 0;
+                
                 <%initlocks%>
                 <%threadLocksInit%>
                 <%threadLocksInit1%>
@@ -2175,7 +2210,7 @@ template functionXXX_system0_HPCOM_Level(list<SimEqSystem> derivativEquations, S
   //let odeEqs = "#pragma omp parallel sections\n{"
   let odeEqs = eqsOfLevel |> eq => equationNamesHPCOM_(eq,derivativEquations,contextSimulationNonDiscrete,modelNamePrefixStr); separator="\n"
   <<
-   #pragma omp parallel sections num_threads(<%getConfigInt(NUM_PROC)%>)
+  #pragma omp parallel sections num_threads(<%getConfigInt(NUM_PROC)%>)
   {
      <%odeEqs%>
   }
@@ -2323,11 +2358,15 @@ template functionXXX_system0_HPCOM_PThread_func(list<SimEqSystem> derivativEquat
   let assLock = function_HPCOM_assignLock(idx, "th_lock", "pthreads"); separator="\n"
   let relLock = function_HPCOM_releaseLock(idx, "th_lock1", "pthreads"); separator="\n"
   <<
-  static void function<%name%>_system<%n%>_thread_<%idx%>(DATA *data)
+  void function<%name%>_system<%n%>_thread_<%idx%>(DATA *data)
   { 
     while(1)
     {
       <%assLock%>
+      
+      if(finished)
+         return;
+      
       <%taskEqs%>
       <%relLock%>
     }
@@ -10525,7 +10564,9 @@ int main(int argc, char **argv)
   <%mainTop('<%name%>(threadData, lst);',url)%>
   }
 
+  <%if Flags.isSet(HPCOM) then "terminateHpcOmThreads();" %>
   fflush(NULL);
+  EXIT(0);
   return 0;
 }
 >>

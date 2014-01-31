@@ -930,7 +930,7 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data)
   }
 #endif
 
-  EXIT(retVal);
+  return retVal;
 }
 
 static void omc_assert_simulation(FILE_INFO info, const char *msg, ...)

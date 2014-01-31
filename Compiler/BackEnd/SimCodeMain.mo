@@ -65,6 +65,7 @@ protected import CodegenQSS;
 protected import CodegenAdevs;
 protected import CodegenCSharp;
 protected import CodegenCpp;
+protected import CodegenCppHpcom;
 protected import CodegenXML;
 protected import CodegenJava;
 protected import CodegenJS;
@@ -431,7 +432,7 @@ algorithm
     then ();
     
     case (_, _, "Cpp") equation
-      Tpl.tplNoret(CodegenCpp.translateModel, simCode);
+      callTargetTemplatesCPP(simCode);
     then ();
     
     case (_, _, "Adevs") equation
@@ -479,6 +480,22 @@ algorithm
     then fail();
   end match;
 end callTargetTemplates;
+
+protected function callTargetTemplatesCPP
+  input SimCode.SimCode iSimCode;
+algorithm
+  _ := matchcontinue(iSimCode)
+    case(_)
+      equation
+        true = Flags.isSet(Flags.HPCOM);
+        Tpl.tplNoret(CodegenCppHpcom.translateModel, iSimCode);
+      then ();
+    else
+      equation
+        Tpl.tplNoret(CodegenCpp.translateModel, iSimCode);
+      then ();
+   end matchcontinue;
+end callTargetTemplatesCPP;
 
 protected function callTargetTemplatesFMU
 "Generate target code by passing the SimCode data structure to templates."

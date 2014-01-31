@@ -56,6 +56,8 @@ protected import ComponentReference;
 protected import Debug;
 protected import Error;
 protected import Expression;
+protected import ExpressionDump;
+protected import ExpressionDumpTpl;
 protected import Flags;
 protected import GlobalScript;
 protected import HpcOmTaskGraph;
@@ -63,6 +65,7 @@ protected import List;
 protected import Matching;
 protected import SimCodeUtil;
 protected import System;
+protected import Tpl;
 protected import Util;
 
 public function createSimCode "function createSimCode
@@ -267,6 +270,8 @@ algorithm
       simCode = SimCode.SIMCODE(modelInfo, simCodeLiterals, simCodeRecordDecls, simCodeExternalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, 
                  parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, sampleLookup, whenClauses, 
                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT, SOME(taskScheduleSimCode));
+      
+      //createSimEqVarMapping(allEquations);
       
       print("HpcOm is still under construction.\n");
       then simCode;
@@ -760,6 +765,63 @@ algorithm
     then iNewList;
   end matchcontinue;
 end removeDummyStateFromMapping1;
+
+protected function createSimEqVarMapping
+  input list<SimCode.SimEqSystem> iEqSystems;
+algorithm
+  _ := List.map(iEqSystems, getVarsBySimEqSystem);
+end createSimEqVarMapping;
+
+protected function getVarsBySimEqSystem "function getVarsBySimEqSystem
+  author: marcusw
+  Function extract all variables of the given equation system."
+  input SimCode.SimEqSystem iEqSystem;
+  output list<DAE.ComponentRef> oVars;
+protected
+  list<DAE.ComponentRef> varList;
+  DAE.ComponentRef cref;
+  DAE.Exp exp;
+  Integer index;
+algorithm
+  oVars := match(iEqSystem)
+    case(SimCode.SES_SIMPLE_ASSIGN(cref=cref,exp=exp,index=index))
+      equation
+//        ExpressionDump.dumpExp(exp);
+//        print("end Expression\n");
+        ((_,varList)) = Expression.traverseExp(exp,createMemoryMapTraverse, {});
+        print("Var List for simEquation " +& intString(index) +& ":");
+        //print(stringDelimitList(List.map(varList, dumpCompRef), " , "));
+        print("\n");
+      then varList;
+    else then {};
+  end match;
+end getVarsBySimEqSystem;
+
+protected function createMemoryMapTraverse
+  input tuple<DAE.Exp,list<DAE.ComponentRef> > iExpVars;
+  output tuple<DAE.Exp,list<DAE.ComponentRef> > oExpVars;
+protected
+  list<DAE.ComponentRef> iVarList, oVarList;
+  DAE.Exp iExp;
+  DAE.ComponentRef componentRef;
+algorithm
+  oVarList := match(iExpVars)
+    case((iExp as DAE.CREF(componentRef=componentRef), iVarList))
+      equation
+        //ExpressionDump.dumpExp(iExp);
+        iVarList = componentRef :: iVarList;
+      then iExpVars;
+    else then iExpVars;
+  end match;
+end createMemoryMapTraverse;
+
+protected function dumpCompRef
+  input DAE.ComponentRef iCref;
+  output String oString;
+algorithm
+  oString := Tpl.tplString(ExpressionDumpTpl.dumpCref, iCref);
+end dumpCompRef;
+
 
 // testfunctions
 //------------------------------------------
