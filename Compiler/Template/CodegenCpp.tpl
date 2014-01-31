@@ -61,22 +61,22 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   *****************************************************************************/
   class <%lastIdentOfPath(modelInfo.name)%>Initialize: public ISystemInitialization, public <%lastIdentOfPath(modelInfo.name)%>
   {
-  	 public:
-		<%lastIdentOfPath(modelInfo.name)%>Initialize(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData);
-		~<%lastIdentOfPath(modelInfo.name)%>Initialize();
-		virtual bool initial();
-   		virtual void setInitial(bool);
-    	virtual void initialize();
-    	virtual  void initEquations();
-		void initializeStateVars();
-		void initializeDerVars();
-		void initializeAlgVars();
-		void initializeIntAlgVars();
-		void initializeBoolAlgVars();
-		void initializeAliasVars();
-		void initializeIntAliasVars();
-		void initializeBoolAliasVars();
-		void initializeParameterVars();
+     public:
+    <%lastIdentOfPath(modelInfo.name)%>Initialize(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData);
+    ~<%lastIdentOfPath(modelInfo.name)%>Initialize();
+    virtual bool initial();
+       virtual void setInitial(bool);
+      virtual void initialize();
+      virtual  void initEquations();
+    void initializeStateVars();
+    void initializeDerVars();
+    void initializeAlgVars();
+    void initializeIntAlgVars();
+    void initializeBoolAlgVars();
+    void initializeAliasVars();
+    void initializeIntAliasVars();
+    void initializeBoolAliasVars();
+    void initializeParameterVars();
   };
  >>
 end simulationInitHeaderFile;
@@ -115,11 +115,11 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    #include "OMCpp<%fileNamePrefix%>Initialize.h"
    <%lastIdentOfPath(modelInfo.name)%>Initialize::<%lastIdentOfPath(modelInfo.name)%>Initialize(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData) 
    : <%lastIdentOfPath(modelInfo.name)%>(globalSettings,nonlinsolverfactory,simData)
- 	{
- 	}
-	
-	
-	 <%lastIdentOfPath(modelInfo.name)%>Initialize::~<%lastIdentOfPath(modelInfo.name)%>Initialize()
+   {
+   }
+  
+  
+   <%lastIdentOfPath(modelInfo.name)%>Initialize::~<%lastIdentOfPath(modelInfo.name)%>Initialize()
     {
     
     }
@@ -1904,15 +1904,15 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
       _simTime = 0.0;
      _historyImpl->init();
     <%varDecls%>
-   	initializeStateVars();
-   	initializeDerVars();
-   	initializeAlgVars();
-	initializeIntAlgVars();
-	initializeBoolAlgVars();
-	initializeAliasVars();
-	initializeIntAliasVars();
-	initializeBoolAliasVars();
-	initializeParameterVars();
+     initializeStateVars();
+     initializeDerVars();
+     initializeAlgVars();
+  initializeIntAlgVars();
+  initializeBoolAlgVars();
+  initializeAliasVars();
+  initializeIntAliasVars();
+  initializeBoolAliasVars();
+  initializeParameterVars();
    
    <%initFunctions%>
      _event_handling.initialize(this,<%helpvarlength(simCode)%>);
@@ -1959,41 +1959,41 @@ case modelInfo as MODELINFO(vars=SIMVARS(__))  then
    <<
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeStateVars()
    {
-   		<%initValst(varDecls,vars.stateVars, simCode,contextOther)%>
+       <%initValst(varDecls,vars.stateVars, simCode,contextOther)%>
    }
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeDerVars()
    {
-   		<%initValst(varDecls,vars.derivativeVars, simCode,contextOther)%>
+       <%initValst(varDecls,vars.derivativeVars, simCode,contextOther)%>
     }
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeAlgVars()
    {
-  		<%initValst(varDecls,vars.algVars, simCode,contextOther)%>
+      <%initValst(varDecls,vars.algVars, simCode,contextOther)%>
    }
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeIntAlgVars()
    {
-  	 <%initValst(varDecls,vars.intAlgVars, simCode,contextOther)%>
+     <%initValst(varDecls,vars.intAlgVars, simCode,contextOther)%>
    }
     void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeBoolAlgVars()
    {
-   	  <%initValst(varDecls,vars.boolAlgVars, simCode,contextOther)%>
+       <%initValst(varDecls,vars.boolAlgVars, simCode,contextOther)%>
    }
     void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeAliasVars()
    {
-   		<%initValst(varDecls,vars.aliasVars, simCode,contextOther)%>
+       <%initValst(varDecls,vars.aliasVars, simCode,contextOther)%>
    }
-   	void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeIntAliasVars()
-  	{
-  		<%initValst(varDecls,vars.intAliasVars, simCode,contextOther)%>
-  	}
+     void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeIntAliasVars()
+    {
+      <%initValst(varDecls,vars.intAliasVars, simCode,contextOther)%>
+    }
     void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeBoolAliasVars()
-  	{
-  		<%initValst(varDecls,vars.boolAliasVars, simCode,contextOther)%>
-  	}
-  	
-  	void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeParameterVars()
-  	{
-  		<%initValst(varDecls,vars.paramVars, simCode,contextOther)%>
-  	}  
+    {
+      <%initValst(varDecls,vars.boolAliasVars, simCode,contextOther)%>
+    }
+    
+    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeParameterVars()
+    {
+      <%initValst(varDecls,vars.paramVars, simCode,contextOther)%>
+    }  
    >>
 end init2;
 
