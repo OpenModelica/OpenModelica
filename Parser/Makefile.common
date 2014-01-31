@@ -17,7 +17,7 @@ install: libantlr3.a libomparse.a
 	cp libantlr3.a libomparse.a ../build/lib/omc/
 
 $(ANTLR)/antlr3config.h: $(ANTLR)/antlr3config.h.in $(ANTLR)/configure
-	(cd $(ANTLR) && ./configure --enable-64bit CC="$(CC)")
+	(cd $(ANTLR) && ./configure --enable-64bit CC="$(CC)" LDFLAGS="" CFLAGS="" CPPFLAGS="")
 libantlr3.a: $(ANTLR)/src/*.c $(ANTLR)/include/*.h $(ANTLR)/antlr3config.h
 	# build the library
 	$(CC) ${CFLAGS} ${CPPFLAGS} -c $(ANTLR)/src/*.c -I$(ANTLR)/include -I$(ANTLR)
