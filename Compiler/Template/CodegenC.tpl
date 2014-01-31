@@ -646,9 +646,9 @@ template simulationFile(SimCode simCode, String guid)
       DATA simulation_data;
       <%mainTop(mainBody,"https://trac.openmodelica.org/OpenModelica/newticket")%>
       
-  	  <%if Flags.isSet(HPCOM) then "terminateHpcOmThreads();" %>
-  	  fflush(NULL);
-  	  EXIT(0);
+      <%if Flags.isSet(HPCOM) then "terminateHpcOmThreads();" %>
+      fflush(NULL);
+      EXIT(0);
       
       return res;
     }
@@ -2104,7 +2104,7 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
           
           void terminateHpcOmThreads()
           {
-          	finished = 1;
+            finished = 1;
 
             //Start the threads one last time
             <%threadReleaseLocks%>
@@ -2165,7 +2165,7 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
           
           void terminateHpcOmThreads()
           {
-          	finished = 1;
+            finished = 1;
 
             //Start the threads one last time
             <%threadReleaseLocks%>
