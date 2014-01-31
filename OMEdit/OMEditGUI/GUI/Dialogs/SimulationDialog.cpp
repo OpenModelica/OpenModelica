@@ -1230,6 +1230,7 @@ ProgressDialog::ProgressDialog(SimulationDialog *pParent)
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::simulation));
   // create heading label
   mpProgressLabel = new Label;
+  mpProgressLabel->setTextFormat(Qt::RichText);
   mpProgressLabel->setAlignment((Qt::AlignHCenter));
   mpCancelSimulationButton = new QPushButton(tr("Cancel Translation"));
   connect(mpCancelSimulationButton, SIGNAL(clicked()), pParent, SLOT(cancelSimulation()));
