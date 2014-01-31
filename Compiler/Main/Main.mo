@@ -982,6 +982,13 @@ algorithm
       then
         ();
 
+    // do not display anything if +d=disableWindowsPathCheckWarning
+    case (omHome)
+      equation
+        true = Flags.isSet(Flags.DISABLE_WINDOWS_PATH_CHECK_WARNING);
+      then
+        ();
+
     else
       equation
         print("We could not find any of:\n");
