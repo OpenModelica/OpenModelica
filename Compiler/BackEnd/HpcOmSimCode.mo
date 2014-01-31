@@ -223,6 +223,8 @@ algorithm
       //Assign levels and get critcal path
       //----------------------------------
       ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC),parallelSets) = HpcOmTaskGraph.longestPathMethod(taskGraphOde,taskGraphDataOde);
+      cpCosts = HpcOmTaskGraph.roundReal(cpCosts,2);
+      cpCostsWoC = HpcOmTaskGraph.roundReal(cpCostsWoC,2);
       criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
       ((graphOps,graphCosts)) = HpcOmTaskGraph.sumUpExecCosts(taskGraphDataOde);
       criticalPathInfo = criticalPathInfo +& " sum: (" +& realString(graphCosts) +& " ; " +& intString(graphOps) +& ")";
@@ -246,16 +248,13 @@ algorithm
       schedule = createSchedule(taskGraph1,taskGraphData1,sccSimEqMapping,filenamePrefix,numProc);
       (schedule,numProc) = repeatScheduleWithOtherNumProc(taskGraph1,taskGraphData1,sccSimEqMapping,filenamePrefix,cpCostsWoC,schedule,numProc,numFixed);
       criticalPathInfo = HpcOmScheduler.analyseScheduledTaskGraph(schedule,numProc,taskGraph1,taskGraphData1);
-            
       taskScheduleSimCode = HpcOmScheduler.convertScheduleToSimCodeSchedule(schedule);
       schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(schedule,arrayLength(taskGraph));      
       Debug.execStat("hpcom create schedule", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
-     
       fileName = ("taskGraph"+&filenamePrefix+&"ODE_schedule.graphml");  
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph1, taskGraphData1, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo);
       //HpcOmScheduler.printSchedule(schedule);
       Debug.execStat("hpcom dump schedule TaskGraph", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
-      
       SimCode.SIMCODE(modelInfo, simCodeLiterals, simCodeRecordDecls, simCodeExternalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, 
                  parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, sampleLookup, whenClauses, 
                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT, _) = simCode;
@@ -359,7 +358,7 @@ end repeatScheduleWithOtherNumProc1;
 
 
 protected function setNumProc "sets the number of processors. its upper limit is the number of processsors provided by the system.
-if no n-flag is set, a ideal number is chosen
+if no n-flag is set, a ideal number is suggested but the simulation fails.
 author: Waurich TUD 2013-11"
   input Integer numProcFlag;
   input Real cpCosts;
@@ -381,12 +380,13 @@ algorithm
         numProcSys = System.numProcessors();
         numProc = intMin(numProcSched,numProcSys);
         string1 = "Your system provides only "+&intString(numProcSys)+&" processors!\n";
-        string2 = "The model is simulated using "+&intString(numProcSched)+&" processors, because that might be a reasonable number of threads.\n";
+        string2 = intString(numProcSched)+&" processors might be a reasonable number of processors.\n";
         string1 = Util.if_(intGt(numProcSched,numProcSys),string1,string2);          
         isFixed =  Util.if_(intGt(numProcSched,numProcSys),true,false);  
+        print("Please set the number of processors you want to use!\n");
         print(string1);
       then
-        (numProc,isFixed);
+        fail();
     else
       equation
         numProcSys = System.numProcessors();

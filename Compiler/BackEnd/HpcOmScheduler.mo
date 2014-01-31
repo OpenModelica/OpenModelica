@@ -2340,6 +2340,9 @@ algorithm
         criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
         //predict speedup etc.
         (serTime,parTime,speedUp,speedUpMax) = predictExecutionTime(scheduleIn,SOME(cpCostsWoC),numProcIn,taskGraphIn,taskGraphMetaIn);
+        serTime = HpcOmTaskGraph.roundReal(serTime,2);
+        parTime = HpcOmTaskGraph.roundReal(parTime,2);
+        cpCostsWoC = HpcOmTaskGraph.roundReal(cpCostsWoC,2);
         Debug.fcall(Flags.HPCOM_DUMP,print,"the serialCosts: "+&realString(serTime)+&"\n");
         Debug.fcall(Flags.HPCOM_DUMP,print,"the parallelCosts: "+&realString(parTime)+&"\n");
         Debug.fcall(Flags.HPCOM_DUMP,print,"the cpCosts: "+&realString(cpCostsWoC)+&"\n");

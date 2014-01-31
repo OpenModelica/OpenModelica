@@ -5668,6 +5668,20 @@ algorithm
   oCostsOps := (tmpOps,tmpCosts);
 end sumUpExecCosts1;
 
+public function roundReal "rounds a real to the nth decimal
+author: Waurich TUD 2014-01"
+  input Real inReal;
+  input Integer nIn;
+  output Real outReal;
+protected
+  Integer int;
+  Real real;
+algorithm
+  real := realMul(inReal,realPow(10.0,intReal(nIn)));
+  real := realFloor(real);
+  outReal := realDiv(real,realPow(10.0,intReal(nIn)));
+end roundReal;
+
 // public function arrangeGraphInLevels "
 // author: Waurich TUD 2013-07"
 //   input TaskGraph graphIn;
