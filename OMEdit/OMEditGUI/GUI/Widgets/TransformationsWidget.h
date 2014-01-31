@@ -171,6 +171,7 @@ public:
   void fetchUsedInEquations(OMVariable &variable);
   void fetchOperations(OMVariable &variable);
   void fetchEquations();
+  void fetchNestedEquations(QTreeWidgetItem *pParentTreeWidgetItem, OMEquation &equation);
   QTreeWidgetItem* findEquationTreeItem(int equationIndex);
   void fetchEquationData(int equationIndex);
   void fetchDefines(OMEquation &equation);

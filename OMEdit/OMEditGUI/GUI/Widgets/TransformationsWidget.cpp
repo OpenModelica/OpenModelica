@@ -422,6 +422,7 @@ EquationTreeWidget::EquationTreeWidget(TransformationsWidget *pTransformationWid
   sortByColumn(0, Qt::AscendingOrder);
   setColumnWidth(0, 40);
   setColumnWidth(1, 60);
+  setExpandsOnDoubleClick(false);
   QStringList headerLabels;
   headerLabels << Helper::index << Helper::type << Helper::equation;
   setHeaderLabels(headerLabels);
@@ -844,6 +845,23 @@ void TransformationsWidget::fetchEquations()
     pEquationTreeItem->setToolTip(1, values[1]);
     pEquationTreeItem->setToolTip(2, values[2]);
     mpEquationsTreeWidget->addTopLevelItem(pEquationTreeItem);
+    fetchNestedEquations(pEquationTreeItem, equation);
+  }
+}
+
+void TransformationsWidget::fetchNestedEquations(QTreeWidgetItem *pParentTreeWidgetItem, OMEquation &equation)
+{
+  foreach (int equationIndex, equation.eqs)
+  {
+    OMEquation nestedEquation = mpInfoXMLFileHandler->getOMEquation(equationIndex);
+    QStringList values;
+    values << QString::number(nestedEquation.index) << OMEquationTypeToString(nestedEquation.kind) << nestedEquation.toString();
+    QTreeWidgetItem *pNestedEquationTreeItem = new IntegerTreeWidgetItem(values, mpEquationsTreeWidget);
+    pNestedEquationTreeItem->setToolTip(0, values[0]);
+    pNestedEquationTreeItem->setToolTip(1, values[1]);
+    pNestedEquationTreeItem->setToolTip(2, values[2]);
+    pParentTreeWidgetItem->addChild(pNestedEquationTreeItem);
+    fetchNestedEquations(pNestedEquationTreeItem, nestedEquation);
   }
 }
 
@@ -1048,11 +1066,16 @@ void TransformationsWidget::fetchEquationData(QTreeWidgetItem *pEquationTreeItem
     return;
 
   int equationIndex = pEquationTreeItem->text(0).toInt();
-  QTreeWidgetItem *pTreeWidgetItem = findEquationTreeItem(equationIndex);
-  if (pTreeWidgetItem)
+  /* if the sender is mpEquationsTreeWidget then there is no need to select the item. */
+  EquationTreeWidget *pSender = qobject_cast<EquationTreeWidget*>(sender());
+  if (pSender != mpEquationsTreeWidget)
   {
-    mpEquationsTreeWidget->clearSelection();
-    mpEquationsTreeWidget->setCurrentItem(pTreeWidgetItem);
+    QTreeWidgetItem *pTreeWidgetItem = findEquationTreeItem(equationIndex);
+    if (pTreeWidgetItem)
+    {
+      mpEquationsTreeWidget->clearSelection();
+      mpEquationsTreeWidget->setCurrentItem(pTreeWidgetItem);
+    }
   }
   fetchEquationData(equationIndex);
 }
