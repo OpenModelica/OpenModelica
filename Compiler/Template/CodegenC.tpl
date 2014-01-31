@@ -648,8 +648,7 @@ template simulationFile(SimCode simCode, String guid)
       
       <%if Flags.isSet(HPCOM) then "terminateHpcOmThreads();" %>
       fflush(NULL);
-      EXIT(0);
-      
+      EXIT(res);
       return res;
     }
     <%\n%>
