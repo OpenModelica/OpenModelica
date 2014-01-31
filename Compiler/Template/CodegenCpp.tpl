@@ -14,6 +14,9 @@ template translateModel(SimCode simCode) ::=
   let()= textFile(simulationFunctionsHeaderFile(simCode,modelInfo.functions,literals), 'OMCpp<%fileNamePrefix%>Functions.h')
   let()= textFile(simulationFunctionsFile(simCode, modelInfo.functions,literals,externalFunctionIncludes), 'OMCpp<%fileNamePrefix%>Functions.cpp')
   let()= textFile(simulationMakefile(target,simCode), '<%fileNamePrefix%>.makefile')
+  let()= textFile(simulationInitHeaderFile(simCode), 'OMCpp<%fileNamePrefix%>Initialize.h')
+  let()= textFile(simulationInitCppFile(simCode),'OMCpp<%fileNamePrefix%>Initialize.cpp')
+  let()= textFile(simulationFactoryFile(simCode),'OMCpp<%fileNamePrefix%>FactoryExport.cpp')
   let()= textFile(simulationMainRunScrip(simCode), '<%fileNamePrefix%><%simulationMainRunScripSuffix(simCode)%>')
   algloopfiles(listAppend(allEquations,initialEquations),simCode)
   // empty result of the top-level template .., only side effects
@@ -43,6 +46,92 @@ case SIMCODE(__) then
 end simulationHeaderFile;
 
 
+template simulationInitHeaderFile(SimCode simCode)
+ "Generates code for header file for simulation target."
+::=
+match simCode
+case SIMCODE(modelInfo=MODELINFO(__)) then
+  <<
+   #pragma once
+    #include "OMCpp<%fileNamePrefix%>.h"
+  /*****************************************************************************
+  *
+  * Simulation code to initialize the Modelica system
+  *
+  *****************************************************************************/
+  class <%lastIdentOfPath(modelInfo.name)%>Initialize: public ISystemInitialization, public <%lastIdentOfPath(modelInfo.name)%>
+  {
+  	 public:
+		<%lastIdentOfPath(modelInfo.name)%>Initialize(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData);
+		~<%lastIdentOfPath(modelInfo.name)%>Initialize();
+		virtual bool initial();
+   		virtual void setInitial(bool);
+    	virtual void initialize();
+    	virtual  void initEquations();
+		void initializeStateVars();
+		void initializeDerVars();
+		void initializeAlgVars();
+		void initializeIntAlgVars();
+		void initializeBoolAlgVars();
+		void initializeAliasVars();
+		void initializeIntAliasVars();
+		void initializeBoolAliasVars();
+		void initializeParameterVars();
+  };
+ >>
+end simulationInitHeaderFile;
+
+
+
+template simulationFactoryFile(SimCode simCode)
+ "Generates code for header file for simulation target."
+::=
+match simCode
+case SIMCODE(modelInfo=MODELINFO(__)) then
+  <<
+   #pragma once
+   #include "Modelica.h"
+   #include "OMCpp<%fileNamePrefix%>Initialize.h"
+
+
+
+  using boost::extensions::factory;
+   BOOST_EXTENSION_TYPE_MAP_FUNCTION {
+    types.get<std::map<std::string, factory<IMixedSystem,IGlobalSettings*,boost::shared_ptr<IAlgLoopSolverFactory>,boost::shared_ptr<ISimData> > > >()
+    ["<%lastIdentOfPath(modelInfo.name)%>"].set<<%lastIdentOfPath(modelInfo.name)%>Initialize>();
+    }
+ >>
+end simulationFactoryFile;
+
+
+
+template simulationInitCppFile(SimCode simCode)
+ "Generates code for main cpp file for simulation target."
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(__)) then
+  <<
+   #include "Modelica.h"
+   #include "OMCpp<%fileNamePrefix%>Initialize.h"
+   <%lastIdentOfPath(modelInfo.name)%>Initialize::<%lastIdentOfPath(modelInfo.name)%>Initialize(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData) 
+   : <%lastIdentOfPath(modelInfo.name)%>(globalSettings,nonlinsolverfactory,simData)
+ 	{
+ 	}
+	
+	
+	 <%lastIdentOfPath(modelInfo.name)%>Initialize::~<%lastIdentOfPath(modelInfo.name)%>Initialize()
+    {
+    
+    }
+  
+   
+   <%GetIntialStatus(simCode)%>
+   <%SetIntialStatus(simCode)%>
+    <%init(simCode)%>
+ >>
+end simulationInitCppFile;
+
+  
 
 
 
@@ -342,7 +431,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   CXX=cl
   EXEEXT=.exe
   DLLEXT=.dll
-  include <%makefileParams.omhome%>/include/omc/cpp/ModelicaConfic.inc
+  include <%makefileParams.omhome%>/include/omc/cpp/ModelicaConfig.inc
   # /Od - Optimization disabled
   # /EHa enable C++ EH (w/ SEH exceptions)
   # /fp:except - consider floating-point exceptions when generating code
@@ -368,6 +457,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
 
   FILEPREFIX=<%fileNamePrefix%>
   FUNCTIONFILE=OMCpp<%fileNamePrefix%>Functions.cpp
+  INITFILE=OMCpp<%fileNamePrefix%>Initialize.cpp
+  FACTORYFILE=OMCpp<%fileNamePrefix%>FactoryExport.cpp
   SYSTEMFILE=OMCpp<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
   MAINFILE = OMCpp<%fileNamePrefix%>Main.cpp
   MAINOBJ=OMCpp<%fileNamePrefix%>$(EXEEXT)
@@ -375,7 +466,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   GENERATEDFILES=$(MAINFILE) $(FUNCTIONFILE)  <%algloopcppfilenames(allEquations,simCode)%> 
  
   $(MODELICA_SYSTEM_LIB)$(DLLEXT): 
-  <%\t%>$(CXX)  /Fe$(SYSTEMOBJ) $(SYSTEMFILE) $(FUNCTIONFILE)   <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%> $(CFLAGS)     $(LDSYTEMFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%>
+  <%\t%>$(CXX)  /Fe$(SYSTEMOBJ) $(SYSTEMFILE) $(FUNCTIONFILE)   <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%> $(INITFILE) $(FACTORYFILE) $(CFLAGS)     $(LDSYTEMFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%>
    <%\t%>$(CXX) $(CPPFLAGS) /Fe$(MAINOBJ)  $(MAINFILE)   $(CFLAGS) $(LDMAINFLAGS)
   >>
 end match
@@ -407,13 +498,15 @@ LDMAINFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" <%simulationMainDLLib(simC
 CPPFLAGS = $(CFLAGS) -DOMC_BUILD -DBOOST_SYSTEM_NO_DEPRICATED
 SYSTEMFILE=OMCpp<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
 FUNCTIONFILE=OMCpp<%fileNamePrefix%>Functions.cpp
+INITFILE=OMCpp<%fileNamePrefix%>Initialize.cpp
+FACTORYFILE=OMCpp<%fileNamePrefix%>FactoryExport.cpp
 MAINFILE = OMCpp<%fileNamePrefix%>Main.cpp
 MAINOBJ=OMCpp<%fileNamePrefix%>$(EXEEXT)
 SYSTEMOBJ=OMCpp<%fileNamePrefix%>$(DLLEXT)
 
 
 
-CPPFILES=$(SYSTEMFILE) $(FUNCTIONFILE) <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%>
+CPPFILES=$(SYSTEMFILE) $(FUNCTIONFILE) $(INITFILE) $(FACTORYFILE) <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%>
 OFILES=$(CPPFILES:.cpp=.o)
 
 .PHONY: <%lastIdentOfPath(modelInfo.name)%> $(CPPFILES)
@@ -444,12 +537,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
 
 
-  using boost::extensions::factory;
-   BOOST_EXTENSION_TYPE_MAP_FUNCTION {
-    types.get<std::map<std::string, factory<IMixedSystem,IGlobalSettings*,boost::shared_ptr<IAlgLoopSolverFactory>,boost::shared_ptr<ISimData> > > >()
-    ["<%lastIdentOfPath(modelInfo.name)%>"].set<<%lastIdentOfPath(modelInfo.name)%>>();
-    }
-  
+ 
     
     <%lastIdentOfPath(modelInfo.name)%>::<%lastIdentOfPath(modelInfo.name)%>(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData) 
    :SystemDefaultImplementation(*globalSettings)
@@ -486,7 +574,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     {
     delete _historyImpl;
     }
-   <%init(simCode)%>
+  
   
    <%Update(simCode)%>
    <%writeoutput(simCode)%>
@@ -504,8 +592,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    
    <%isODE(simCode)%>
    <%DimZeroFunc(simCode)%>
-   <%GetIntialStatus(simCode)%>
-   <%SetIntialStatus(simCode)%>
+  
    
   
    <%getCondition(zeroCrossings,whenClauses,simCode)%>
@@ -1799,7 +1886,7 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(__))  then
    let () = System.tmpTickReset(0)
    let &varDecls = buffer "" /*BUFD*/
-   let initVariables = initvar(varDecls,modelInfo,simCode)
+  
    let initFunctions = functionInitial(startValueEquations,varDecls,simCode)
    let initZeroCrossings = functionOnlyZeroCrossing(zeroCrossings,varDecls,simCode)
    let initEventHandling = eventHandlingInit(simCode)
@@ -1810,14 +1897,23 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
    let initialequations  = functionInitialEquations(initialEquations,simCode)
    let initextvars = functionCallExternalObjectConstructors(extObjInfo,simCode)
   <<
-   void <%lastIdentOfPath(modelInfo.name)%>::initialize()
+   void <%lastIdentOfPath(modelInfo.name)%>Initialize::initialize()
    {
    
       <%generateAlgloopsolvers( listAppend(allEquations,initialEquations),simCode)%>
       _simTime = 0.0;
      _historyImpl->init();
     <%varDecls%>
-     <%initVariables%>
+   	initializeStateVars();
+   	initializeDerVars();
+   	initializeAlgVars();
+	initializeIntAlgVars();
+	initializeBoolAlgVars();
+	initializeAliasVars();
+	initializeIntAliasVars();
+	initializeBoolAliasVars();
+	initializeParameterVars();
+   
    <%initFunctions%>
      _event_handling.initialize(this,<%helpvarlength(simCode)%>);
     
@@ -1843,12 +1939,63 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
   
     }
   
-   void <%lastIdentOfPath(modelInfo.name)%>::initEquations()
+   void <%lastIdentOfPath(modelInfo.name)%>Initialize::initEquations()
    {
     <%initialequations%>
    }
+   <%init2(simCode,modelInfo)%>
     >>
 end init;
+
+
+
+template init2(SimCode simCode,ModelInfo modelInfo)
+::=
+match modelInfo
+case modelInfo as MODELINFO(vars=SIMVARS(__))  then
+
+   let () = System.tmpTickReset(0)
+   let &varDecls = buffer "" /*BUFD*/
+   <<
+   void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeStateVars()
+   {
+   		<%initValst(varDecls,vars.stateVars, simCode,contextOther)%>
+   }
+   void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeDerVars()
+   {
+   		<%initValst(varDecls,vars.derivativeVars, simCode,contextOther)%>
+    }
+   void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeAlgVars()
+   {
+  		<%initValst(varDecls,vars.algVars, simCode,contextOther)%>
+   }
+   void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeIntAlgVars()
+   {
+  	 <%initValst(varDecls,vars.intAlgVars, simCode,contextOther)%>
+   }
+    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeBoolAlgVars()
+   {
+   	  <%initValst(varDecls,vars.boolAlgVars, simCode,contextOther)%>
+   }
+    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeAliasVars()
+   {
+   		<%initValst(varDecls,vars.aliasVars, simCode,contextOther)%>
+   }
+   	void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeIntAliasVars()
+  	{
+  		<%initValst(varDecls,vars.intAliasVars, simCode,contextOther)%>
+  	}
+    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeBoolAliasVars()
+  	{
+  		<%initValst(varDecls,vars.boolAliasVars, simCode,contextOther)%>
+  	}
+  	
+  	void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeParameterVars()
+  	{
+  		<%initValst(varDecls,vars.paramVars, simCode,contextOther)%>
+  	}  
+   >>
+end init2;
 
 
 template functionCallExternalObjectConstructors(ExtObjInfo extObjInfo,SimCode simCode)
@@ -2413,7 +2560,7 @@ template generateClassDeclarationCode(SimCode simCode)
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
-  class <%lastIdentOfPath(modelInfo.name)%>: public IMixedSystem, public IContinuous, public IEvent,  public ITime, public ISystemProperties, public ISystemInitialization<%if Flags.isSet(Flags.WRITE_TO_BUFFER) then ', public IReduceDAE'%>, public SystemDefaultImplementation
+  class <%lastIdentOfPath(modelInfo.name)%>: public IMixedSystem, public IContinuous, public IEvent,  public ITime, public ISystemProperties <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then ', public IReduceDAE'%>, public SystemDefaultImplementation
   {
 
    <%generatefriendAlgloops(listAppend(allEquations,initialEquations),simCode)%>
@@ -2425,7 +2572,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
        <%generateMethodDeclarationCode(simCode)%>
      virtual  bool getCondition(unsigned int index);
-  private:
+  protected:
     //Methods:
     
      bool isConsistent();
@@ -2761,11 +2908,6 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       
     // System is able to provide the Jacobian symbolically
     virtual bool provideSymbolicJacobian();
-    virtual bool initial();
-    virtual void setInitial(bool);
-    /// (Re-) initialize the system of equations and bounded parameters
-    virtual void initialize();
-    virtual  void initEquations();
  // Returns the history object to query simulation results
    virtual IHistory* getHistory();
    virtual void stepCompleted(double time);
@@ -5107,7 +5249,7 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/,S
        let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/,simCode)
       <<
     
-      if(initial()) 
+      if(_initial) 
       {
         <%initialCall%>; 
       }
@@ -5130,7 +5272,7 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/,S
       let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/,simCode)
       let elseWhen = equationElseWhen(elseWhenEq,context,varDecls,simCode)
       <<
-      if(initial())
+      if(_initial)
       {
         <%initial_assign%>
       }
@@ -5738,6 +5880,7 @@ case CAST(__) then
     let from = expTypeFromExpShort(exp)
     let &preExp += 'cast_<%from%>_array_to_<%to%>(&<%expVar%>, &<%tvar%>);<%\n%>'
     '<%tvar%>'
+  case T_COMPLEX(complexClassType=rec as RECORD(__))   then '(*((<%underscorePath(rec.path)%>*)&<%expVar%>))'
   else
     '(<%expVar%>) /* could not cast, using the variable as it is */'
 end daeExpCast;
@@ -5780,9 +5923,9 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
 
     case ALGLOOP_CONTEXT(genInitialisation = false) 
 
-        then  '_system->initial()'
+        then  '_system->_initial'
     else
-          'initial()'
+          '_initial'
 
    case CALL(path=IDENT(name="DIVISION"),
             expLst={e1, e2}) then
@@ -6708,7 +6851,7 @@ template SetIntialStatus(SimCode simCode)
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
-   void <%lastIdentOfPath(modelInfo.name)%>::setInitial(bool status)
+   void <%lastIdentOfPath(modelInfo.name)%>Initialize::setInitial(bool status)
     {
       _initial = status;
    if(_initial)
@@ -6726,7 +6869,7 @@ template GetIntialStatus(SimCode simCode)
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
-   bool <%lastIdentOfPath(modelInfo.name)%>::initial()
+   bool <%lastIdentOfPath(modelInfo.name)%>Initialize::initial()
     {
       return _initial;
     }
@@ -7634,8 +7777,8 @@ template giveZeroFunc3(Integer index1, Exp relation, Text &varDecls /*BUFP*/,Tex
            else
                 f[<%index1%>]=(<%e1%> - EPSILON - <%e2%>);
          >>
-      else
-        error(sourceInfo(), ' UNKNOWN RELATION for <%index1%>')
+    else
+        error(sourceInfo(), 'Unknown relation: <%printExpStr(rel)%> for <%index1%>')
       end match
   case CALL(path=IDENT(name="sample"), expLst={_, start, interval}) then
     //error(sourceInfo(), ' sample not supported for <%index1%> ')
@@ -7910,7 +8053,7 @@ template genreinits(SimWhenClause whenClauses, Text &varDecls, Integer int,SimCo
       if reinits then
       <<
       //For whenclause index: <%int%>
-      if(initial())
+      if(_initial)
       {
         <%initial_assign%>
       }
