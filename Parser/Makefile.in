@@ -4,6 +4,9 @@ CFLAGS=@CFLAGS@ -Wall
 CPPFLAGS=@CPPFLAGS@ -I$(COMPILERHOME) $(RMLINC) -I. -I$(ANTLR) -I$(ANTLR)/include -I../3rdParty/gc-7.2/include $(BUILDINC)
 RMLHOME=@rmlhome@
 OMC=../build/bin/omc
+ifeq (x86_64,@target_cpu@)
+ANTLR64=--enable-64bit
+endif
 
 include Makefile.common
 

@@ -87,6 +87,7 @@ AC_SUBST(BOOTSTRAP_TARGET)
 FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following options:"
 
 AC_CANONICAL_HOST
+AC_CANONICAL_TARGET
 
 if test -z "$AR"; then
   AR=ar
