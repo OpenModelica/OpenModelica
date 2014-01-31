@@ -67,33 +67,25 @@ protected:
   void run() {}
 };
 
+/*!
+  \class Label
+  \brief Creates a QLabel with elidable text. The default elide mode is Qt::ElideMiddle.Allows text selection via mouse.
+  */
 class Label : public QLabel
 {
 public:
-  Label(QWidget *parent = 0, Qt::WindowFlags f = 0) : QLabel(parent, f) {init();}
-  Label(const QString &text, QWidget *parent = 0, Qt::WindowFlags f = 0) : QLabel(text, parent, f) {init();}
-private:
-  void init() {setTextInteractionFlags(Qt::TextSelectableByMouse);}
-};
-
-class ElidedLabel : public QFrame
-{
-  Q_OBJECT
-  Q_PROPERTY(QString text READ text WRITE setText)
-  Q_PROPERTY(bool isElided READ isElided)
-public:
-  ElidedLabel(const QString &text, Qt::TextElideMode elideMode = Qt::ElideMiddle, QWidget *parent = 0);
+  Label(QWidget *parent = 0, Qt::WindowFlags flags = 0);
+  Label(const QString &text, QWidget *parent = 0, Qt::WindowFlags flags = 0);
+  Qt::TextElideMode elideMode() const {return mElideMode;}
+  void setElideMode(Qt::TextElideMode elideMode) {mElideMode = elideMode;}
+  virtual QSize minimumSizeHint() const;
+  virtual QSize sizeHint() const;
   void setText(const QString &text);
-  const QString & text() const { return content; }
-  bool isElided() const { return elided; }
-protected:
-  void paintEvent(QPaintEvent *event);
-signals:
-  void elisionChanged(bool elided);
 private:
-  bool elided;
-  QString content;
   Qt::TextElideMode mElideMode;
+  QString mText;
+protected:
+  virtual void resizeEvent(QResizeEvent *event);
 };
 
 //! @class DoubleSpinBox

@@ -53,56 +53,51 @@ MainWindow* MdiArea::getMainWindow()
   return mpMainWindow;
 }
 
-ElidedLabel::ElidedLabel(const QString &text, Qt::TextElideMode elideMode, QWidget *parent)
-  : QFrame(parent), mElideMode(elideMode), elided(false), content(text)
+Label::Label(QWidget *parent, Qt::WindowFlags flags)
+  : QLabel(parent, flags), mElideMode(Qt::ElideMiddle)
 {
-  setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-  setMinimumHeight(18); /* set minimum height for single line. */
+  setTextInteractionFlags(Qt::TextSelectableByMouse);
 }
 
-void ElidedLabel::setText(const QString &newText)
+Label::Label(const QString &text, QWidget *parent, Qt::WindowFlags flags)
+  : QLabel(text, parent, flags), mElideMode(Qt::ElideMiddle), mText(text)
 {
-  content = newText;
-  update();
+  setTextInteractionFlags(Qt::TextSelectableByMouse);
+  setToolTip(text);
 }
 
-void ElidedLabel::paintEvent(QPaintEvent *event)
+QSize Label::minimumSizeHint() const
 {
-  QFrame::paintEvent(event);
-  QPainter painter(this);
-  QFontMetrics fontMetrics = painter.fontMetrics();
-  bool didElide = false;
-  int lineSpacing = fontMetrics.lineSpacing();
-  int y = 0;
-  QTextLayout textLayout(content, painter.font());
-  textLayout.beginLayout();
-  forever {
-    QTextLine line = textLayout.createLine();
-    if (!line.isValid())
-      break;
+  if (pixmap() != NULL || textFormat() == Qt::RichText)
+    return QLabel::minimumSizeHint();
+  const QFontMetrics &fm = fontMetrics();
+  QSize size(fm.width("..."), fm.height()+5);
+  return size;
+}
 
-    line.setLineWidth(width());
-    int nextLineY = y + lineSpacing;
-    if (height() >= nextLineY + lineSpacing)
-    {
-      line.draw(&painter, QPoint(0, y));
-      y = nextLineY;
-    }
-    else
-    {
-      QString lastLine = content.mid(line.textStart());
-      QString elidedLastLine = fontMetrics.elidedText(lastLine, mElideMode, width());
-      if (y == 0) y = height() / 6;
-      painter.drawText(QPoint(2, y + fontMetrics.ascent()), elidedLastLine);
-      line = textLayout.createLine();
-      didElide = line.isValid();
-      break;
-    }
-  }
-  textLayout.endLayout();
-  if (didElide != elided)
+QSize Label::sizeHint() const
+{
+  if (pixmap() != NULL || textFormat() == Qt::RichText)
+    return QLabel::sizeHint();
+  const QFontMetrics& fm = fontMetrics();
+  QSize size(fm.width(mText), fm.height()+5);
+  return size;
+}
+
+void Label::setText(const QString &text)
+{
+  mText = text;
+  setToolTip(text);
+  QLabel::setText(text);
+}
+
+void Label::resizeEvent(QResizeEvent *event)
+{
+  if (textFormat() != Qt::RichText)
   {
-    elided = didElide;
-    emit elisionChanged(didElide);
+    QFontMetrics fm(fontMetrics());
+    QString str = fm.elidedText(mText, mElideMode, event->size().width());
+    QLabel::setText(str);
   }
+  QLabel::resizeEvent(event);
 }

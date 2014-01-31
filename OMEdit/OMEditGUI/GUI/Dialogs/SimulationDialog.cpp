@@ -413,12 +413,7 @@ void SimulationDialog::initializeFields()
   {
     setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::interactiveSimulation)
                    .append(" - ").append(mpLibraryTreeNode->getNameStructure()));
-    QString headingStr = QString(Helper::interactiveSimulation).append(" - ").append(mpLibraryTreeNode->getNameStructure());
-    QFont font = mpSimulationHeading->font();
-    QFontMetrics fontMetrics = QFontMetrics(font);
-    int maxWidth = mpSimulationHeading->width();
-    QString elidedHeadingStr = fontMetrics.elidedText(headingStr, Qt::ElideMiddle, maxWidth);
-    mpSimulationHeading->setText(elidedHeadingStr);
+    mpSimulationHeading->setText(QString(Helper::interactiveSimulation).append(" - ").append(mpLibraryTreeNode->getNameStructure()));
     mpSimulationIntervalGroupBox->setDisabled(true);
     return;
   }
@@ -426,12 +421,7 @@ void SimulationDialog::initializeFields()
   {
     setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::simulation)
                    .append(" - ").append(mpLibraryTreeNode->getNameStructure()));
-    QString headingStr = QString(Helper::simulation).append(" - ").append(mpLibraryTreeNode->getNameStructure());
-    QFont font = mpSimulationHeading->font();
-    QFontMetrics fontMetrics = QFontMetrics(font);
-    int maxWidth = mpSimulationHeading->width();
-    QString elidedHeadingStr = fontMetrics.elidedText(headingStr, Qt::ElideMiddle, maxWidth);
-    mpSimulationHeading->setText(elidedHeadingStr);
+    mpSimulationHeading->setText(QString(Helper::simulation).append(" - ").append(mpLibraryTreeNode->getNameStructure()));
     mpSimulationIntervalGroupBox->setDisabled(false);
   }
   // if the class has experiment annotation then read it.
