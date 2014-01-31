@@ -805,11 +805,11 @@ protected
   DAE.Exp iExp;
   DAE.ComponentRef componentRef;
 algorithm
-  oVarList := match(iExpVars)
+  oExpVars := match(iExpVars)
     case((iExp as DAE.CREF(componentRef=componentRef), iVarList))
       equation
         //ExpressionDump.dumpExp(iExp);
-        iVarList = componentRef :: iVarList;
+        oVarList = componentRef :: iVarList;
       then iExpVars;
     else then iExpVars;
   end match;
