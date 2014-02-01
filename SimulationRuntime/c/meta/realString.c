@@ -211,6 +211,7 @@ modelica_string _old_realString(modelica_real r)
   int ix = snprintf(buffer, 32, "%.16g", r);
   /* If it looks like an integer, we need to append .0 so it looks like real */
   endptr = buffer;
+  if (*endptr == '-') endptr++;
   while (isdigit(*endptr)) endptr++;
   if (0 == *endptr) {
     *endptr++ = '.';
