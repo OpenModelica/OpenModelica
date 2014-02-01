@@ -54,13 +54,13 @@ MainWindow* MdiArea::getMainWindow()
 }
 
 Label::Label(QWidget *parent, Qt::WindowFlags flags)
-  : QLabel(parent, flags), mElideMode(Qt::ElideMiddle)
+  : QLabel(parent, flags), mElideMode(Qt::ElideNone)
 {
   setTextInteractionFlags(Qt::TextSelectableByMouse);
 }
 
 Label::Label(const QString &text, QWidget *parent, Qt::WindowFlags flags)
-  : QLabel(text, parent, flags), mElideMode(Qt::ElideMiddle), mText(text)
+  : QLabel(text, parent, flags), mElideMode(Qt::ElideNone), mText(text)
 {
   setTextInteractionFlags(Qt::TextSelectableByMouse);
   setToolTip(text);
@@ -68,7 +68,7 @@ Label::Label(const QString &text, QWidget *parent, Qt::WindowFlags flags)
 
 QSize Label::minimumSizeHint() const
 {
-  if (pixmap() != NULL || textFormat() == Qt::RichText)
+  if (pixmap() != NULL || mElideMode == Qt::ElideNone)
     return QLabel::minimumSizeHint();
   const QFontMetrics &fm = fontMetrics();
   QSize size(fm.width("..."), fm.height()+5);
@@ -77,7 +77,7 @@ QSize Label::minimumSizeHint() const
 
 QSize Label::sizeHint() const
 {
-  if (pixmap() != NULL || textFormat() == Qt::RichText)
+  if (pixmap() != NULL || mElideMode == Qt::ElideNone)
     return QLabel::sizeHint();
   const QFontMetrics& fm = fontMetrics();
   QSize size(fm.width(mText), fm.height()+5);
@@ -93,7 +93,7 @@ void Label::setText(const QString &text)
 
 void Label::resizeEvent(QResizeEvent *event)
 {
-  if (textFormat() != Qt::RichText)
+  if (mElideMode != Qt::ElideNone)
   {
     QFontMetrics fm(fontMetrics());
     QString str = fm.elidedText(mText, mElideMode, event->size().width());

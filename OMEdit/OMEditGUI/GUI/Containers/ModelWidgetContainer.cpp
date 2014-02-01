@@ -1907,6 +1907,7 @@ ModelWidget::ModelWidget(bool newClass, bool extendsClass, LibraryTreeNode *pLib
   mpModelicaTypeLabel = new Label(StringHandler::getModelicaClassType(pLibraryTreeNode->getType()));
   mpViewTypeLabel = new Label(StringHandler::getViewType(StringHandler::Diagram));
   mpModelFilePathLabel = new Label(pLibraryTreeNode->getFileName());
+  mpModelFilePathLabel->setElideMode(Qt::ElideMiddle);
   // documentation view tool button
   mpFileLockToolButton = new QToolButton;
   mpFileLockToolButton->setText(mpLibraryTreeNode->isReadOnly() ? tr("Make writable") : tr("File is writable"));

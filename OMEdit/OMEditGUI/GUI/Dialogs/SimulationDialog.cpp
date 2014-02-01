@@ -100,6 +100,7 @@ void SimulationDialog::setUpForm()
 {
   // simulation widget heading
   mpSimulationHeading = new Label;
+  mpSimulationHeading->setElideMode(Qt::ElideMiddle);
   mpSimulationHeading->setFont(QFont(Helper::systemFontInfo.family(), Helper::headingFontSize));
   // Horizontal separator
   mpHorizontalLine = new QFrame();

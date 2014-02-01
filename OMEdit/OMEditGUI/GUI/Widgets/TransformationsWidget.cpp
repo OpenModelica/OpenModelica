@@ -420,7 +420,7 @@ EquationTreeWidget::EquationTreeWidget(TransformationsWidget *pTransformationWid
   setTextElideMode(Qt::ElideMiddle);
   setSortingEnabled(true);
   sortByColumn(0, Qt::AscendingOrder);
-  setColumnWidth(0, 40);
+  setColumnWidth(0, 45);
   setColumnWidth(1, 60);
   setExpandsOnDoubleClick(false);
   QStringList headerLabels;
@@ -441,6 +441,7 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   connect(pReloadToolButton, SIGNAL(clicked()), SLOT(reloadTransformations()));
   /* info xml file path label */
   Label *pInfoXMLFilePathLabel = new Label(mInfoXMLFullFileName, this);
+  pInfoXMLFilePathLabel->setElideMode(Qt::ElideMiddle);
   /* create status bar */
   QStatusBar *pStatusBar = new QStatusBar;
   pStatusBar->setObjectName("ModelStatusBar");
@@ -606,6 +607,7 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   Label *pTSourceEditorBrowserLabel = new Label(tr("Source Browser"));
   pTSourceEditorBrowserLabel->setObjectName("LabelWithBorder");
   mpTSourceEditorFileLabel = new Label("");
+  mpTSourceEditorFileLabel->setElideMode(Qt::ElideMiddle);
   mpTSourceEditorFileLabel->hide();
   mpTSourceEditorInfoBar = new InfoBar(mpMainWindow);
   mpTSourceEditorInfoBar->hide();
