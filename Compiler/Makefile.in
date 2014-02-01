@@ -93,7 +93,7 @@ OpenModelicaBootstrappingHeader.h:
 	@test -f $@ || (echo OpenModelica has not been compiled and $@ is missing. Compilation will fail. ; false)
 	@echo OpenModelica has not been compiled yet. Using previously generated $@.
 else
-simcode: OpenModelicaBootstrappingHeader.h $(PROG)
+simcode: OpenModelicaBootstrappingHeader.h
 	$(MAKE) -C susan_codegen/
 	$(MAKE) -C Template/
 OpenModelicaBootstrappingHeader.h: FrontEnd/Absyn.mo Script/Interactive.mo FrontEnd/Values.mo Util/Error.mo Util/Util.mo Util/FMI.mo GenerateOMCHeader.mos Template/Unparsing.mo
