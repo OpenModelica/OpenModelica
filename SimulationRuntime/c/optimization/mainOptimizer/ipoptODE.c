@@ -151,6 +151,9 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
      }else{
          AddIpoptStrOption(nlp, "derivative_test", "none");
      }
+     if(ACTIVE_STREAM(LOG_IPOPT_FULL))
+    	 AddIpoptIntOption(nlp, "print_level", 7);
+
      /*AddIpoptStrOption(nlp, "derivative_test_print_all", "yes");
       * AddIpoptNumOption(nlp,"derivative_test_perturbation",1e-6);
      */
@@ -160,7 +163,7 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
 
     FreeIpoptProblem(nlp);
 
-    if(ACTIVE_STREAM(LOG_IPOPT))
+    if(ACTIVE_STREAM(LOG_IPOPT_FULL))
     {
       for(i =0; i<iData->nv;++i)
         if(iData->pFile[i])
@@ -212,7 +215,7 @@ int refreshSimData(double *x, double *u, double t, IPOPT_DATA_ *iData)
  **/
 int ipoptDebuge(IPOPT_DATA_ *iData, double *x)
 {
-  if(ACTIVE_STREAM(LOG_IPOPT))
+  if(ACTIVE_STREAM(LOG_IPOPT_FULL))
   {
     int i,j,k;
     double tmp;

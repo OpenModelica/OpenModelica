@@ -429,7 +429,7 @@ int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
   }
   iData->time[k] = iData->tf;
 
-  if(ACTIVE_STREAM(LOG_IPOPT))
+  if(ACTIVE_STREAM(LOG_IPOPT_FULL))
   {
     iData->pFile = (FILE**) calloc(iData->nv, sizeof(FILE*));
     for(i=0, j=0; i<iData->nv; i++, ++j)
@@ -579,11 +579,12 @@ static int local_jac_struct(IPOPT_DATA_ *iData, int * nng)
       if(J[ii][i]*J[ii][j])
         Hg[i][j] = 1;
     }
-
-  if(ACTIVE_STREAM(LOG_JAC))
+/*
+  if(ACTIVE_STREAM(LOG_IPOPT_JAC) && ACTIVE_STREAM(LOG_IPOPT_HESSE))
   {
     local_jac_struct_print(iData);
   }
+  */
   *nng = id;
   return 0;
 }
