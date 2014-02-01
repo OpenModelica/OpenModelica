@@ -86,8 +86,8 @@ const char *LOG_STREAM_DESC[LOG_MAX] = {
   "additional information during initialization",       /* LOG_INIT */
   "information from Ipopt",                             /* LOG_IPOPT */
   "more information from Ipopt",                        /* LOG_IPOPT_FULL*/
-  "check jacobian matrix with Ipopt",					/* LOG_IPOPT_JAC*/
-  "check hessian matrix with Ipopt",					/* LOG_IPOPT_HESSE*/
+  "check jacobian matrix with Ipopt",          /* LOG_IPOPT_JAC*/
+  "check hessian matrix with Ipopt",          /* LOG_IPOPT_HESSE*/
   "outputs the jacobian matrix used by dassl",          /* LOG_JAC */
   "logging for linear systems",                         /* LOG_LS */
   "verbose logging of linear systems",                  /* LOG_LS_V */

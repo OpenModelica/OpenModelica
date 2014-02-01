@@ -125,8 +125,8 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
     if(cflags){
       if(!strcmp(cflags,"BFGS"))
         AddIpoptStrOption(nlp, "hessian_approximation", "limited-memory");
-    	else if(!strcmp(cflags,"const"))
-			AddIpoptStrOption(nlp, "hessian_constant", "yes");
+      else if(!strcmp(cflags,"const"))
+      AddIpoptStrOption(nlp, "hessian_constant", "yes");
     }
 
 
@@ -152,7 +152,7 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
          AddIpoptStrOption(nlp, "derivative_test", "none");
      }
      if(ACTIVE_STREAM(LOG_IPOPT_FULL))
-    	 AddIpoptIntOption(nlp, "print_level", 7);
+       AddIpoptIntOption(nlp, "print_level", 7);
 
      /*AddIpoptStrOption(nlp, "derivative_test_print_all", "yes");
       * AddIpoptNumOption(nlp,"derivative_test_perturbation",1e-6);
