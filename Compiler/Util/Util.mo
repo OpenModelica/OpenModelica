@@ -4063,7 +4063,7 @@ algorithm
     case (true,_,_)
       equation
         newName = Debug.bcallret3("Windows_NT" ==& System.os(), System.stringReplace, name, "\\", "/", name);
-        (i,strs) = System.regex(newName, "^(.*/testsuite/)?(.*/build/)?(.*)$", 4, true, false);
+        (i,strs) = System.regex(newName, "^(.*/testsuite/)?(.*/lib/omlibrary/)?(.*/build/)?(.*)$", 5, true, false);
         friendly = listGet(strs,i);
       then friendly;
     

@@ -1000,6 +1000,17 @@ algorithm
   end matchcontinue;
 end setWindowsPaths;
 
+protected function setDefaultCC "Reads the enviornment variable CC to change the default CC"
+algorithm
+  _ := matchcontinue ()
+    case ()
+      equation
+        System.setCCompiler(System.readEnv("CC"));
+      then ();
+    else ();
+  end matchcontinue;
+end setDefaultCC;
+
 public function main
 "This is the main function that the MetaModelica Compiler (MMC) runtime system calls to
   start the translation."
@@ -1016,6 +1027,7 @@ algorithm
         System.realtimeTick(GlobalScript.RT_CLOCK_SIMULATE_TOTAL);
         args_1 = Flags.new(args);
         System.gettextInit(Util.if_(Config.getRunningTestsuite(),"C",Flags.getConfigString(Flags.LOCALE_FLAG)));
+        setDefaultCC();
         main2(args_1);
       then ();
     else
