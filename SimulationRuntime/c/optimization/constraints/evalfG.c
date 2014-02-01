@@ -53,15 +53,17 @@ int diff_functionODE_debug(double* v, double t, IPOPT_DATA_ *iData);
  **/
 Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
 {
+  IPOPT_DATA_ *iData;
   int i,j,k;
   double *dt;
-  IPOPT_DATA_ *iData;
   double *x0,*x1,*x2,*x3;
   double *dotx0,*dotx1, *dotx2, *dotx3;
   double *a1,*a2,*a3;
   double *scaldf;
   DATA *data;
+
   iData = (IPOPT_DATA_ *) useData;
+  if(iData->deg == 3){
   data = iData->data;
   dotx0 = iData->dotx0;
   dotx1 = iData->dotx1;
@@ -152,6 +154,29 @@ Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
       iData->data->callback->pathConstraints(data,&g[k],&iData->nc);
       k += iData->nc;
     }
+  }
+  }else{
+	  data = iData->data;
+	  dotx0 = iData->dotx0;
+	  dotx1 = iData->dotx1;
+
+	  for(i=0, k=0, x0=v; i<iData->nsi; ++i, x0=x1){
+		    x1 = x0 + iData->nv; /* 0 + 3 = 3;2*/
+		    x2 = x1 + iData->nv; /*3 + 3 = 6;5*/
+		    if(i){
+		      functionODE_(x1, iData->u1, iData->time[1], dotx1, iData);
+		      for(j=0; j<iData->nx; ++j)
+		        g[k++] = x0[j] + dt[i]*dotx1[j];
+		      iData->data->callback->pathConstraints(data,&g[k],&iData->nc);
+		      k += iData->nc;
+
+		    }else{
+		    	functionODE_(x0, x0 + iData->nx, iData->time[0], dotx0, iData);
+		    	for(j=0; j<iData->nx; ++j)
+		    		g[k++] = x0[j] + 0.5*dt[i]*(dotx0[j] + dotx1[j]);
+		    }
+
+	  }
   }
   return TRUE;
 }

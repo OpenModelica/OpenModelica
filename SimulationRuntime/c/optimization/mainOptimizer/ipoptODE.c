@@ -76,7 +76,7 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
   iData->matrixB = data->callback->initialAnalyticJacobianB((void*) iData->data);
   iData->matrixC = data->callback->initialAnalyticJacobianC((void*) iData->data);
   //iData->matrixD = data->callback->initialAnalyticJacobianD((void*) iData->data);
-
+  iData->deg = 3;
   loadDAEmodel(data, iData);
   iData->index_debug_iter=0;
   iData->degub_step =  10;

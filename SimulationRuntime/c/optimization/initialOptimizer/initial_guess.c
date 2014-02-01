@@ -40,6 +40,7 @@
 #include "../localFunction.h"
 #include "../ipoptODEstruct.h"
 #include "../simulation/solver/dassl.h"
+#include "../../simulation/options.h"
 
 #ifdef WITH_IPOPT
 
@@ -49,6 +50,29 @@
  **/
 int initial_guess_ipopt(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
 {
+  char *cflags;
+  cflags = (char*)omc_flagValue[FLAG_IPOPT_INIT];
+  if(cflags){
+	if(!strcmp(cflags,"const")){
+		  int i, id;
+		  for(i = 0, id=0; i<iData->NV;i++,++id)
+		  {
+		    if(id >=iData->nv)
+		      id = 0;
+
+		    if(id <iData->nx)
+		    {
+		      iData->v[i] = iData->data->modelData.realVarsData[id].attribute.start*iData->scalVar[id];
+		    }
+		    else if(id< iData->nv)
+		    {
+		      iData->v[i] = iData->data->modelData.realVarsData[iData->index_u+id -iData->nx].attribute.start*iData->scalVar[id];
+		    }
+		  }
+	return 0;
+	}
+  }
+  {
   double *u0, *u, *x, uu,tmp ,lhs, rhs;
   int i,j,k,ii,jj,id;
   int err;
@@ -142,7 +166,11 @@ int initial_guess_ipopt(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
   solverInfo->solverData = (void*)iData;
   sInfo->solverMethod = "optimization";
   data->simulationInfo.tolerance = tol;
+
+  //free(dasslData);
   return 0;
+  }
+  return -1;
 }
 
 #endif

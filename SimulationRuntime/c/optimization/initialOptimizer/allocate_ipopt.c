@@ -291,7 +291,6 @@ int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
   iData->nc = 0;
   iData->data->callback->pathConstraints(data,u0,&iData->nc);
 
-  iData->deg = 3;
   iData->nsi = data->simulationInfo.numSteps;
   iData->t0 = data->simulationInfo.startTime;
   iData->tf = data->simulationInfo.stopTime;
@@ -415,14 +414,17 @@ int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
   if(iData->deg == 3){
   for(i = 0,k=0,id=0; i<iData->nsi; ++i,id += iData->deg)
   {
-    if(i)
-    {
-      iData->time[++k] = iData->time[id] + iData->c1*iData->dt[i];
-      iData->time[++k] = iData->time[id] + iData->c2*iData->dt[i];
+    if(i){
+       if(iData->deg == 3){
+         iData->time[++k] = iData->time[id] + iData->c1*iData->dt[i];
+         iData->time[++k] = iData->time[id] + iData->c2*iData->dt[i];
+       }
       iData->time[++k] = (i+1)*iData->dt[i];
     }else{
-      iData->time[++k] = iData->time[id] + iData->e1*iData->dt[i];
-      iData->time[++k] = iData->time[id] + iData->e2*iData->dt[i];
+      if(iData->deg == 3){
+        iData->time[++k] = iData->time[id] + iData->e1*iData->dt[i];
+        iData->time[++k] = iData->time[id] + iData->e2*iData->dt[i];
+      }
       iData->time[++k] = (i+1)*iData->dt[i];
     }
   }
@@ -488,7 +490,7 @@ int move_grid(IPOPT_DATA_ *iData)
   for(i=0;i<iData->nsi; ++i)
   {
     iData->dt[i] = iData->dt_default;
-    t += iData->dt[i];
+    t = (i+1)*iData->dt[i];
   }
 
   iData->dt[iData->nsi-1] = iData->dt_default + (iData->tf - t );
