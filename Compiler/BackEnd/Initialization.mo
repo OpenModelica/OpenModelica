@@ -57,6 +57,7 @@ protected import ComponentReference;
 protected import Debug;
 protected import Error;
 protected import Expression;
+protected import ExpressionDump;
 protected import Flags;
 protected import HashSet;
 protected import HashTable;
@@ -1624,6 +1625,7 @@ algorithm
       DAE.Exp startExp, bindExp;
       BackendDAE.VarKind varKind;
       HashSet.HashSet hs;
+      String s, str;
 
     // state
     case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.STATE(index=_), varType=ty), (vars, fixvars, eqns, hs))) equation
@@ -1699,13 +1701,18 @@ algorithm
       vars = Debug.bcallret2(preUsed, BackendVariable.addVar, preVar, vars, vars);
     then ((var, (vars, fixvars, eqns, hs)));
 
-    // parameter without binding
+    // parameter without binding and fixed=true
     case((var as BackendDAE.VAR(varKind=BackendDAE.PARAM(), bindExp=NONE()), (vars, fixvars, eqns, hs))) equation
       true = BackendVariable.varFixed(var);
       startExp = BackendVariable.varStartValueType(var);
-      var = BackendVariable.setBindExp(var, SOME(startExp));
-
       var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
+      var = BackendVariable.setBindExp(var, SOME(startExp));
+      var = BackendVariable.setVarFixed(var, true);
+      
+      s = BackendDump.varString(var);
+      str = ExpressionDump.printExpStr(startExp);
+      Error.addMessage(Error.UNBOUND_PARAMETER_WITH_START_VALUE_WARNING, {s, str});
+
       vars = BackendVariable.addVar(var, vars);
     then ((var, (vars, fixvars, eqns, hs)));
 

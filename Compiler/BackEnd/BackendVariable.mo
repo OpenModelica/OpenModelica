@@ -175,7 +175,7 @@ algorithm
     case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_BOOL(fixed=SOME(DAE.BCONST(fixed)))))) then fixed;
     case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_ENUMERATION(fixed=SOME(DAE.BCONST(fixed)))))) then fixed;
     // params are by default fixed
-    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(),bindExp=SOME(_))) then true;
+    case (BackendDAE.VAR(varKind = BackendDAE.PARAM())) then true;
     case (BackendDAE.VAR(varKind = BackendDAE.CONST(),bindExp=SOME(_))) then true;
 /*  See Modelica Spec 3.2 page 88:
     For constants and parameters, the attribute fixed is by default true. For other variables
