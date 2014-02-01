@@ -66,11 +66,11 @@ Bool evalfDiffG(Index n, double * x, Bool new_x, Index m, Index njac, Index *iRo
   if(values == NULL)
   {
     /* jac_struc(iRow, iCol, iData->nx, iData->nv, iData->nsi); */
-	if(iData->deg ==3){
+  if(iData->deg ==3){
       jac_struc(iData, iRow, iCol);
-	}else{
+  }else{
 
-	}
+  }
 
    /*
     printf("\n m = %i , %i",m ,iData->NRes);
