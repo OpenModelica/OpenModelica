@@ -110,20 +110,23 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
 
     if(ACTIVE_STREAM(LOG_IPOPT)){
       AddIpoptIntOption(nlp, "print_level", 5);
-    } else if(ACTIVE_STREAM(LOG_STATS)){
+    }else if(ACTIVE_STREAM(LOG_STATS)){
       AddIpoptIntOption(nlp, "print_level", 3);
-    } else {
+    }else {
       AddIpoptIntOption(nlp, "print_level", 2);
     }
     AddIpoptIntOption(nlp, "file_print_level", 0);
 
     AddIpoptStrOption(nlp, "mu_strategy", "adaptive");
+    AddIpoptStrOption(nlp, "fixed_variable_treatment", "make_parameter");
 
 
     cflags = (char*)omc_flagValue[FLAG_IPOPT_HESSE];
     if(cflags){
       if(!strcmp(cflags,"BFGS"))
         AddIpoptStrOption(nlp, "hessian_approximation", "limited-memory");
+    	else if(!strcmp(cflags,"const"))
+			AddIpoptStrOption(nlp, "hessian_constant", "yes");
     }
 
 
@@ -135,12 +138,22 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
 
      AddIpoptStrOption(nlp,"nlp_scaling_method","gradient-based");
      AddIpoptNumOption(nlp,"mu_init",1e-6);
-     if(ACTIVE_STREAM(LOG_JAC)){
+
+     if(ACTIVE_STREAM(LOG_IPOPT_JAC) && ACTIVE_STREAM(LOG_IPOPT_HESSE)){
        AddIpoptIntOption(nlp, "print_level", 4);
        AddIpoptStrOption(nlp, "derivative_test", "second-order");
+     }else if(ACTIVE_STREAM(LOG_IPOPT_JAC)){
+         AddIpoptIntOption(nlp, "print_level", 4);
+         AddIpoptStrOption(nlp, "derivative_test", "first-order");
+     }else if(ACTIVE_STREAM(LOG_IPOPT_HESSE)){
+         AddIpoptIntOption(nlp, "print_level", 4);
+         AddIpoptStrOption(nlp, "derivative_test", "only-second-order");
+     }else{
+         AddIpoptStrOption(nlp, "derivative_test", "none");
      }
-     /*AddIpoptStrOption(nlp, "derivative_test_print_all", "yes");*/
-    /* AddIpoptNumOption(nlp,"derivative_test_perturbation",1e-6); */
+     /*AddIpoptStrOption(nlp, "derivative_test_print_all", "yes");
+      * AddIpoptNumOption(nlp,"derivative_test_perturbation",1e-6);
+     */
     AddIpoptIntOption(nlp, "max_iter", 5000);
 
     res = IpoptSolve(nlp, iData->v, NULL, &obj, iData->mult_g, iData->mult_x_L, iData->mult_x_U, (void*)iData);

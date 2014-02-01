@@ -53,6 +53,8 @@ const char *LOG_STREAM_NAME[LOG_MAX] = {
   "LOG_EVENTS_V",
   "LOG_INIT",
   "LOG_IPOPT",
+  "LOG_IPOPT_JAC",
+  "LOG_IPOPT_HESSE",
   "LOG_JAC",
   "LOG_LS",
   "LOG_LS_V",
@@ -82,6 +84,8 @@ const char *LOG_STREAM_DESC[LOG_MAX] = {
   "verbose logging of event system",                    /* LOG_EVENTS_V */
   "additional information during initialization",       /* LOG_INIT */
   "more information from Ipopt",                        /* LOG_IPOPT */
+  "check jacobian matrix with Ipopt",					/* LOG_IPOPT_JAC*/
+  "check hessian matrix with Ipopt",					/* LOG_IPOPT_HESSE*/
   "outputs the jacobian matrix used by dassl",          /* LOG_JAC */
   "logging for linear systems",                         /* LOG_LS */
   "verbose logging of linear systems",                  /* LOG_LS_V */

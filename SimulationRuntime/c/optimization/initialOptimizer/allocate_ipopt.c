@@ -457,11 +457,11 @@ int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
 
       if(j < iData->nx)
       {
-        fprintf(iData->pFile[j], "%s(%g),", iData->data->modelData.realVarsData[j].info.name, iData->time[k]);
+        fprintf(iData->pFile[j], "%s_%i,", iData->data->modelData.realVarsData[j].info.name, k);
       }
       else if(j < iData->nv)
       {
-        fprintf(iData->pFile[j], "%s(%g),", iData->data->modelData.realVarsData[iData->index_u + j-iData->nx].info.name, iData->time[k]);
+        fprintf(iData->pFile[j], "%s_%i,", iData->data->modelData.realVarsData[iData->index_u + j-iData->nx].info.name, k);
       }
     }
   }
