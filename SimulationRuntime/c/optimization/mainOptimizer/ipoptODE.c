@@ -122,8 +122,8 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
 
     cflags = (char*)omc_flagValue[FLAG_IPOPT_HESSE];
     if(cflags){
-    	if(!strcmp(cflags,"BFGS"))
-    		AddIpoptStrOption(nlp, "hessian_approximation", "limited-memory");
+      if(!strcmp(cflags,"BFGS"))
+        AddIpoptStrOption(nlp, "hessian_approximation", "limited-memory");
     }
 
 
