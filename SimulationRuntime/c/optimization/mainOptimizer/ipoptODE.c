@@ -118,7 +118,13 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
     AddIpoptIntOption(nlp, "file_print_level", 0);
 
     AddIpoptStrOption(nlp, "mu_strategy", "adaptive");
-    /*AddIpoptStrOption(nlp, "hessian_approximation", "limited-memory");*/
+
+
+    cflags = (char*)omc_flagValue[FLAG_IPOPT_HESSE];
+    if(cflags){
+    	if(!strcmp(cflags,"BFGS"))
+    		AddIpoptStrOption(nlp, "hessian_approximation", "limited-memory");
+    }
 
 
     cflags = (char*)omc_flagValue[FLAG_LS_IPOPT];
