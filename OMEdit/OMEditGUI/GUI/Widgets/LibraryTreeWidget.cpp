@@ -1051,7 +1051,7 @@ bool LibraryTreeWidget::saveLibraryTreeNodeHelper(LibraryTreeNode *pLibraryTreeN
   }
   mpMainWindow->getOMCProxy()->setSourceFile(pLibraryTreeNode->getNameStructure(), fileName);
   // save the model through OMC
-  if (mpMainWindow->getOMCProxy()->save(pLibraryTreeNode->getNameStructure()))
+  if (mpMainWindow->getOMCProxy()->save(pLibraryTreeNode->getNameStructure(), fileName))
   {
     pLibraryTreeNode->setIsSaved(true);
     pLibraryTreeNode->setFileName(fileName);
@@ -1087,7 +1087,7 @@ bool LibraryTreeWidget::saveLibraryTreeNodeOneFileHelper(LibraryTreeNode *pLibra
   if (!setSubModelsFileNameOneFileHelper(pLibraryTreeNode, fileName))
     return false;
   // save the model through OMC
-  if (mpMainWindow->getOMCProxy()->save(pLibraryTreeNode->getNameStructure()))
+  if (mpMainWindow->getOMCProxy()->save(pLibraryTreeNode->getNameStructure(), fileName))
   {
     pLibraryTreeNode->setIsSaved(true);
     pLibraryTreeNode->setFileName(fileName);
@@ -1182,7 +1182,7 @@ bool LibraryTreeWidget::saveLibraryTreeNodeFolderHelper(LibraryTreeNode *pLibrar
   }
   mpMainWindow->getOMCProxy()->setSourceFile(pLibraryTreeNode->getNameStructure(), fileName);
   // save the model through OMC
-  if (mpMainWindow->getOMCProxy()->save(pLibraryTreeNode->getNameStructure()))
+  if (mpMainWindow->getOMCProxy()->save(pLibraryTreeNode->getNameStructure(), fileName))
   {
     pLibraryTreeNode->setIsSaved(true);
     pLibraryTreeNode->setFileName(fileName);
@@ -1220,7 +1220,7 @@ bool LibraryTreeWidget::saveSubModelsFolderHelper(LibraryTreeNode *pLibraryTreeN
       mpMainWindow->getStatusBar()->showMessage(QString(tr("Saving")).append(" ").append(pChildLibraryTreeNode->getNameStructure()));
       QString fileName = QString(directory).append("/").append(pChildLibraryTreeNode->getName()).append(".mo");
       mpMainWindow->getOMCProxy()->setSourceFile(pChildLibraryTreeNode->getNameStructure(), fileName);
-      if (mpMainWindow->getOMCProxy()->save(pChildLibraryTreeNode->getNameStructure()))
+      if (mpMainWindow->getOMCProxy()->save(pChildLibraryTreeNode->getNameStructure(), fileName))
       {
         pChildLibraryTreeNode->setIsSaved(true);
         pChildLibraryTreeNode->setFileName(fileName);
@@ -1246,7 +1246,7 @@ bool LibraryTreeWidget::saveSubModelsFolderHelper(LibraryTreeNode *pLibraryTreeN
         mpMainWindow->getStatusBar()->showMessage(QString(tr("Saving")).append(" ").append(pChildLibraryTreeNode->getNameStructure()));
         QString fileName = QString(directory).append("/package.mo");
         mpMainWindow->getOMCProxy()->setSourceFile(pChildLibraryTreeNode->getNameStructure(), fileName);
-        if (mpMainWindow->getOMCProxy()->save(pChildLibraryTreeNode->getNameStructure()))
+        if (mpMainWindow->getOMCProxy()->save(pChildLibraryTreeNode->getNameStructure(), fileName))
         {
           pChildLibraryTreeNode->setIsSaved(true);
           pChildLibraryTreeNode->setFileName(fileName);

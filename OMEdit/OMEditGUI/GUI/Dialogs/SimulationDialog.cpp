@@ -444,6 +444,12 @@ void SimulationDialog::initializeFields()
   */
 void SimulationDialog::translateModel()
 {
+  /* save the model before translating */
+  if (!mpLibraryTreeNode->isSaved())
+  {
+    mpMainWindow->getLibraryTreeWidget()->saveLibraryTreeNode(mpLibraryTreeNode);
+  }
+  /* translate the model */
   if (mpMainWindow->getOMCProxy()->translateModel(mpLibraryTreeNode->getNameStructure(), mSimulationParameters))
   {
     mIsCancelled = false;

@@ -163,7 +163,7 @@ public:
   bool deleteClass(QString className);
   QString getSourceFile(QString className);
   bool setSourceFile(QString className, QString path);
-  bool save(QString className);
+  bool save(QString className, QString fileName);
   bool saveModifiedModel(QString modelText);
   QString list(QString className);
   QString instantiateModel(QString className);
