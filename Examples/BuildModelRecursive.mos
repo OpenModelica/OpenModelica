@@ -23,6 +23,7 @@ OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.T
 log:="BuildModelRecursive.html";
 ulimitOmc:="1200"; // 20 minutes to generate the C-code
 ulimitExe:="480";  // 8 minutes to initialize and run the simulation
+ulimitMemory:="16000000";  // ~16GB memory at most
 default_tolerance:=1e-6;
 reference_reltol:=3e-3;
 reference_reltolDiffMinMax:=3e-3;
@@ -249,7 +250,7 @@ str:=if simRes then testcase(timeDiff,referenceOK,if referenceOK then \"\" else 
 writeFile(statFile + \".verify\", str);getErrorString();
 ") for s in a);
 getErrorString();
-results := system_parallel({"ulimit -t "+ulimitOmc+" ; " + omc + " " + s + ".mos" for s in a});
+results := system_parallel({"ulimit -v "+ulimitMemory+" -t "+ulimitOmc+" ; " + omc + " " + s + ".mos" for s in a});
 getErrorString();
 
 system("rm -f " + log);
@@ -266,6 +267,7 @@ str:="<h1>Recursive BuildModel Test</h1>
 <p>Tested Library: "+libraryString+" "+libraryVersionRevision+"</p>
 <p>BuildModel time limit: "+ulimitOmc+"s</p>
 <p>Simulation time limit: "+ulimitExe+"s</p>
+<p>Memory limit: "+ulimitMemory+"kB</p>
 <p>Default tolerance: "+String(default_tolerance)+"</p>"
 + customCommandsStr +
 "<p>Links are provided if getErrorString() or the simulation generates output. <font style=\"background-color:#00FF00\">Green</font> means success. <font style=\"background-color:#FF0000\">Red</font> is bad and in general signifies a failure.</p>
