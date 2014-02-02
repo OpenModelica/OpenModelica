@@ -86,12 +86,12 @@ end csvFileToVariable;
 function testcase
   input Real time;
   input Boolean success;
-  input String errXMLLong;
+  input String errNoXMLLong;
   output String str;
 protected
   String errXML;
 algorithm
-  errXML := firstPart(errXMLLong,16*1024); // 16 kB log per test should be enough; increase if there is a good reason to do so
+  errXML := OpenModelica.Scripting.escapeXML(firstPart(errNoXMLLong,16*1024)); // 16 kB log per test should be enough; increase if there is a good reason to do so
   str:=\\\"<testcase name=\\\\\\\""+s+"\\\\\\\" time=\\\\\\\"\\\"+String(time)+\\\"\\\\\\\">\\\"+(
     if not success then \\\"<error type=\\\\\\\"Failure\\\\\\\" />\\\"
     else \\\"\\\"
@@ -238,13 +238,12 @@ str:=\"<tr><td>\" + (if err <> \"\" then \"<a href=\\\"\"+errFile+\"\\\">"+s+"</
   \"<td bgcolor=\\\"\"+(if res[1]<>\"\" then greenColor else \"#FF0000\")+\"\\\">\"+OpenModelica.Scripting.Internal.Time.readableTime(total)+\"</td>\" +
   sum(cell(d,greenColor=greenColor) for d in {frontend,backend,simcode,templates,build}) + \"</tr>\\n\";getErrorString();
 writeFile(statFile,str);getErrorString();
-errXML:=escapeXML(err);
 skip:=\"<testcase name=\\\""+s+"\\\"><skipped /></testcase>\";
-str:=testcase(frontend,backend <> -1.0,errXML);
+str:=testcase(frontend,backend <> -1.0,err);
 writeFile(statFile + \".flat\", str);getErrorString();
-str:=if backend <> -1.0 then testcase(total,buildRes,errXML) else skip;
+str:=if backend <> -1.0 then testcase(total,buildRes,err) else skip;
 writeFile(statFile + \".compile\", str);getErrorString();
-str:=if buildRes then testcase(timeSim,simRes,escapeXML(sim)) else skip;
+str:=if buildRes then testcase(timeSim,simRes,sim) else skip;
 writeFile(statFile + \".sim\", str);getErrorString();
 str:=if simRes then testcase(timeDiff,referenceOK,if referenceOK then \"\" else \"See the generated report for details\") else skip;
 writeFile(statFile + \".verify\", str);getErrorString();
