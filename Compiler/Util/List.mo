@@ -7132,22 +7132,12 @@ public function getMemberOnTrue
     input ElementType inElement;
     output Boolean outIsEqual;
   end CompFunc;
+protected
+  ElementType e;
+  list<ElementType> rest;
 algorithm
-  outElement := matchcontinue(inValue, inList, inCompFunc)
-    local
-      ElementType e;
-      list<ElementType> rest;
-
-    case (_, e :: _, _)
-      equation
-        true = inCompFunc(inValue, e);
-      then
-        e;
-
-    case (_, _ :: rest, _)
-      then getMemberOnTrue(inValue, rest, inCompFunc);
-
-  end matchcontinue;
+  e :: rest := inList;
+  outElement := Debug.bcallret3(not inCompFunc(inValue, e), getMemberOnTrue, inValue, rest, inCompFunc, e);
 end getMemberOnTrue;
 
 public function notMember
