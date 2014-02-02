@@ -8537,7 +8537,7 @@ algorithm
   case(DAE.CREF(componentRef=cref),_)
     equation
       // just a cref
-      sameCref = ComponentReference.crefEqualStringCompare(crefIn,cref);
+      sameCref = ComponentReference.crefEqualNoStringCompare(crefIn,cref);
         //print("its a cref \n"+&ComponentReference.printComponentRefStr(cref)+&"\n");
         //print("is it the same CREF: "+&boolString(sameCref)+&"\n");
     then

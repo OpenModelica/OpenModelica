@@ -876,10 +876,10 @@ public function crefEqual
   input DAE.ComponentRef inComponentRef2;
   output Boolean outBoolean;
 algorithm
-  outBoolean := crefEqualStringCompare(inComponentRef1,inComponentRef2);
+  outBoolean := crefEqualNoStringCompare(inComponentRef1,inComponentRef2);
 end crefEqual;
 
-public function crefEqualStringCompare
+public function crefEqualVerySlowStringCompareDoNotUse
 "Returns true if two component references are equal, 
   comparing strings in no other solution is found"
   input DAE.ComponentRef inComponentRef1;
@@ -935,7 +935,7 @@ algorithm
     case (DAE.CREF_QUAL(ident = n1,subscriptLst = idx1,componentRef = cr1),DAE.CREF_QUAL(ident = n2,subscriptLst = idx2,componentRef = cr2))
       equation
         true = stringEq(n1, n2);
-        true = crefEqualStringCompare(cr1, cr2);
+        true = crefEqualVerySlowStringCompareDoNotUse(cr1, cr2);
         true = Expression.subscriptEqual(idx1, idx2);
       then
         true;
@@ -981,7 +981,7 @@ algorithm
     // the crefs are not equal!
      case (_,_) then false;
   end matchcontinue;
-end crefEqualStringCompare;
+end crefEqualVerySlowStringCompareDoNotUse;
 
 public function crefEqualNoStringCompare
 "Returns true if two component references are equal!

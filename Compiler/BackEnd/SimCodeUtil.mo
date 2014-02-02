@@ -11714,7 +11714,7 @@ algorithm
   case((v as SimCode.SIMVAR(name, varKind, comment, unit, displayUnit, index, minValue, maxValue, initialValue, nominalValue, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement,isValueChangeable)), SimCode.SIMVAR(name=name1, index=index1, variable_index=SOME(variable_index1))::_)    
     equation
       Debug.fcall(Flags.FAILTRACE, BackendDump.debugStrCrefStrCrefStr, (" compare variable ", name, "with ", name1, "\n"));
-      true = ComponentReference.crefEqual(name, name1);
+      true = ComponentReference.crefEqualVerySlowStringCompareDoNotUse(name, name1);
     then 
       SimCode.SIMVAR(name, varKind, comment, unit, displayUnit, variable_index1, minValue, maxValue, initialValue, nominalValue, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, SOME(index1), numArrayElement,isValueChangeable);
   case( v, _::rest1)
