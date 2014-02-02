@@ -2615,6 +2615,11 @@ int SystemImpl__stat(const char *filename, double *size, double *mtime)
   return 1;
 }
 
+int SystemImpl__alarm(int seconds)
+{
+  return alarm(seconds);
+}
+
 #ifdef __cplusplus
 }
 #endif

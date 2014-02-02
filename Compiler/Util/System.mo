@@ -1089,4 +1089,12 @@ external "C" success=SystemImpl__stat(filename,st_size,st_mtime) annotation(Libr
 </html>"));
 end stat;
 
+public function alarm
+  input Integer seconds;
+  output Integer previousAlarm;
+external "C" previousAlarm=SystemImpl__alarm(seconds) annotation(Library = {"omcruntime"},Documentation(info="<html>
+<p>Like <a href=\"http://linux.die.net/man/2/alarm\">alarm(2)</a>.</p>
+</html>"));
+end alarm;
+
 end System;

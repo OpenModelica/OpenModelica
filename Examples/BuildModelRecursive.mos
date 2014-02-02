@@ -21,7 +21,7 @@ libraryVersion:="default";
 setCommandLineOptions({"+g=Modelica","+d=nogen"});
 OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
 log:="BuildModelRecursive.html";
-ulimitOmc:="900"; // 15 minutes to generate the C-code
+ulimitOmc:="600"; // 10 minutes to generate the C-code
 ulimitExe:="480"; // 8 minutes to initialize and run the simulation
 ulimitMemory:="16000000";  // ~16GB memory at most
 default_tolerance:=1e-6;
@@ -61,6 +61,7 @@ mkdir("files");
 min(writeFile(s + ".mos","
 \""+s+"\";
 echo(false);
+alarm("+String(ulimitOmc)+");
 loadString(\"
 function cell
   input Real time;
@@ -229,6 +230,8 @@ function change(el) {
     end if;
   end if;
 end if;
+
+alarm(0); // We built the model fine and verified results; let's assume the rest is fast and easy to deal with
 
 sim:=readFile(simFile);
 str:=\"<tr><td>\" + (if err <> \"\" then \"<a href=\\\"\"+errFile+\"\\\">"+s+"</a>\" else \""+s+"\") +

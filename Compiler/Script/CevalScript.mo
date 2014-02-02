@@ -2134,6 +2134,11 @@ algorithm
         System.GC_enable();
       then (cache,Values.BOOL(false),st);
 
+    case (cache,env,"alarm",{Values.INTEGER(i)},st,_)
+      equation
+        i = System.alarm(i);
+      then (cache,Values.INTEGER(i),st);
+
     case (cache,env,"reloadClass",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.STRING(encoding)},st as GlobalScript.SYMBOLTABLE(ast = p),_)
       equation
         Absyn.CLASS(info=Absyn.INFO(fileName=filename,buildTimes=Absyn.TIMESTAMP(lastEditTime=r2))) = Interactive.getPathedClassInProgram(classpath, p);

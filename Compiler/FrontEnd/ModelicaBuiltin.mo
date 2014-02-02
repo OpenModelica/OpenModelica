@@ -1407,6 +1407,14 @@ external "builtin" annotation(__OpenModelica_Impure=true,Documentation(info="<ht
 </html>"));
 end compareFilesAndMove;
 
+function alarm
+  input Integer seconds;
+  output Integer previousSeconds;
+external "builtin" annotation(__OpenModelica_Impure=true,Library = {"omcruntime"},Documentation(info="<html>
+<p>Like <a href=\"http://linux.die.net/man/2/alarm\">alarm(2)</a>.</p>
+</html>"));
+end alarm;
+
 function regex  "Sets the error buffer and returns -1 if the regex does not compile.
 
   The returned result is the same as POSIX regex():

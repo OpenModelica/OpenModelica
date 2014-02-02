@@ -1896,3 +1896,11 @@ RML_BEGIN_LABEL(System__stat)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+
+RML_BEGIN_LABEL(System__alarm)
+{
+  rmlA0 = mk_icon(SystemImpl__alarm(RML_UNTAGFIXNUM(rmlA0)));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
