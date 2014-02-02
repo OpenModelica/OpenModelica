@@ -66,6 +66,7 @@ protected import HashTable3;
 protected import HashTableCG;
 protected import List;
 protected import Matching;
+protected import DAEUtil;
 
 // =============================================================================
 // section for all public functions
@@ -1626,6 +1627,7 @@ algorithm
       BackendDAE.VarKind varKind;
       HashSet.HashSet hs;
       String s, str;
+      Absyn.Info info;
 
     // state
     case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.STATE(index=_), varType=ty), (vars, fixvars, eqns, hs))) equation
@@ -1709,9 +1711,10 @@ algorithm
       var = BackendVariable.setBindExp(var, SOME(startExp));
       var = BackendVariable.setVarFixed(var, true);
       
-      s = BackendDump.varString(var);
+      s = ComponentReference.printComponentRefStr(BackendVariable.varCref(var));
       str = ExpressionDump.printExpStr(startExp);
-      Error.addMessage(Error.UNBOUND_PARAMETER_WITH_START_VALUE_WARNING, {s, str});
+      info = DAEUtil.getElementSourceFileInfo(BackendVariable.getVarSource(var));
+      Error.addSourceMessage(Error.UNBOUND_PARAMETER_WITH_START_VALUE_WARNING, {s, str}, info);
 
       vars = BackendVariable.addVar(var, vars);
     then ((var, (vars, fixvars, eqns, hs)));
