@@ -7135,9 +7135,11 @@ public function getMemberOnTrue
 protected
   ElementType e;
   list<ElementType> rest;
+  Boolean b;
 algorithm
   e :: rest := inList;
-  outElement := Debug.bcallret3(not inCompFunc(inValue, e), getMemberOnTrue, inValue, rest, inCompFunc, e);
+  b := inCompFunc(inValue, e);
+  outElement := Debug.bcallret3(boolNot(b), getMemberOnTrue, inValue, rest, inCompFunc, e);
 end getMemberOnTrue;
 
 public function notMember
