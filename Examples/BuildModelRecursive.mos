@@ -158,7 +158,7 @@ timeDiff := -1.0;
 
 OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
 buildRes := res[1] <> \"\";
-simRes  := if not buildRes then false else 0 == system(\"ulimit -t " +ulimitExe+" -v "+ulimitMemory+" ; ./"+s+" > \"+simFile+\" 2>&1\");
+simRes  := if not buildRes then false else 0 == system(\"ulimit -t " +ulimitExe+" ; ./"+s+" > \"+simFile+\" 2>&1\");
 
 system(\"sed -i '300,$ d' '\" + simFile + \"'\"); // Only keep the top 300 lines
 timeSim := OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
@@ -250,7 +250,7 @@ str:=if simRes then testcase(timeDiff,referenceOK,if referenceOK then \"\" else 
 writeFile(statFile + \".verify\", str);getErrorString();
 ") for s in a);
 getErrorString();
-results := system_parallel({"ulimit -t "+ulimitOmc+" -v "+ulimitMemory+" ; " + omc + " " + s + ".mos" for s in a});
+results := system_parallel({"ulimit -t "+ulimitOmc+" ; " + omc + " " + s + ".mos" for s in a});
 getErrorString();
 
 system("rm -f " + log);
@@ -267,7 +267,6 @@ str:="<h1>Recursive BuildModel Test</h1>
 <p>Tested Library: "+libraryString+" "+libraryVersionRevision+"</p>
 <p>BuildModel time limit: "+ulimitOmc+"s</p>
 <p>Simulation time limit: "+ulimitExe+"s</p>
-<p>Memory limit: "+ulimitMemory+"kB</p>
 <p>Default tolerance: "+String(default_tolerance)+"</p>"
 + customCommandsStr +
 "<p>Links are provided if getErrorString() or the simulation generates output. <font style=\"background-color:#00FF00\">Green</font> means success. <font style=\"background-color:#FF0000\">Red</font> is bad and in general signifies a failure.</p>
