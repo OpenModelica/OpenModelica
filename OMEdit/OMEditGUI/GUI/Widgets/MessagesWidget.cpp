@@ -50,7 +50,6 @@ MessagesWidget::MessagesWidget(MainWindow *pMainWindow)
   : QWidget(pMainWindow, Qt::WindowTitleHint)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Messages")));
-  resize(600, 200);
   mpMainWindow = pMainWindow;
   // creates Messages tree widget
   mpMessagesTreeWidget = new MessagesTreeWidget(this);

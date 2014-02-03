@@ -577,7 +577,7 @@ void OptionsDialog::setUpDialog()
   // Create a layout
   QGridLayout *mainLayout = new QGridLayout;
   mainLayout->addLayout(horizontalLayout, 0, 0);
-  mainLayout->addWidget(mpButtonBox, 4, 0);
+  mainLayout->addWidget(mpButtonBox, 1, 0);
   setLayout(mainLayout);
 }
 
@@ -831,15 +831,15 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pParent)
   pDefaultViewButtonGroup->addButton(mpTextViewRadioButton);
   pDefaultViewButtonGroup->addButton(mpDocumentationViewRadioButton);
   // default view radio buttons layout
-  QHBoxLayout *pDefaultViewRadioButtonsLayout = new QHBoxLayout;
-  pDefaultViewRadioButtonsLayout->addWidget(mpIconViewRadioButton);
-  pDefaultViewRadioButtonsLayout->addWidget(mpDiagramViewRadioButton);
-  pDefaultViewRadioButtonsLayout->addWidget(mpTextViewRadioButton);
-  pDefaultViewRadioButtonsLayout->addWidget(mpDocumentationViewRadioButton);
+  QGridLayout *pDefaultViewRadioButtonsGridLayout = new QGridLayout;
+  pDefaultViewRadioButtonsGridLayout->addWidget(mpIconViewRadioButton, 0, 0);
+  pDefaultViewRadioButtonsGridLayout->addWidget(mpDiagramViewRadioButton, 0, 1);
+  pDefaultViewRadioButtonsGridLayout->addWidget(mpTextViewRadioButton, 1, 0);
+  pDefaultViewRadioButtonsGridLayout->addWidget(mpDocumentationViewRadioButton, 1, 1);
   // set the layout of default view group
   QGridLayout *pDefautlViewLayout = new QGridLayout;
   pDefautlViewLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pDefautlViewLayout->addLayout(pDefaultViewRadioButtonsLayout, 0, 0);
+  pDefautlViewLayout->addLayout(pDefaultViewRadioButtonsGridLayout, 0, 0);
   mpDefaultViewGroupBox->setLayout(pDefautlViewLayout);
   // Auto Save
   mpEnableAutoSaveGroupBox = new QGroupBox(tr("Enable Auto Save"));
@@ -1152,6 +1152,7 @@ LibrariesPage::LibrariesPage(OptionsDialog *pParent)
   mpUserLibrariesGroupBox->setLayout(pUserLibrariesLayout);
   // libraries note label
   mpLibrariesNoteLabel = new Label(tr("* The libraries changes will take effect after restart."));
+  mpLibrariesNoteLabel->setElideMode(Qt::ElideMiddle);
   // main layout
   QVBoxLayout *layout = new QVBoxLayout;
   layout->setContentsMargins(0, 0, 0, 0);
@@ -1667,9 +1668,6 @@ ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsDialog *pParent)
   // preview textbox
   mpPreviewLabel = new Label(tr("Preview:"));
   mpPreviewPlainTextBox = new QPlainTextEdit;
-  mpPreviewPlainTextBox->setReadOnly(false);
-  mpPreviewPlainTextBox->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-  mpPreviewPlainTextBox->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
   mpPreviewPlainTextBox->setTabStopWidth(Helper::tabWidth);
   mpPreviewPlainTextBox->setPlainText(getPreviewText());
   // highlight preview textbox
@@ -2328,7 +2326,7 @@ NotificationsPage::NotificationsPage(OptionsDialog *pParent)
   mpItemDroppedOnItselfCheckBox = new QCheckBox(tr("Show item dropped on itself message"));
   mpItemDroppedOnItselfCheckBox->setChecked(true);
   // create the replaceable if partial checkbox
-  mpReplaceableIfPartialCheckBox = new QCheckBox(tr("Show model is defined as partial and component will be added as replaceable message"));
+  mpReplaceableIfPartialCheckBox = new QCheckBox(tr("Show model is partial and component is added as replaceable message"));
   mpReplaceableIfPartialCheckBox->setChecked(true);
   // create the inner model name changed checkbox
   mpInnerModelNameChangedCheckBox = new QCheckBox(tr("Show component is declared as inner message"));
