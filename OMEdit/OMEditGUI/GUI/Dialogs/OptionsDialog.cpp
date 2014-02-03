@@ -1074,8 +1074,10 @@ LibrariesPage::LibrariesPage(OptionsDialog *pParent)
   mpSystemLibrariesGroupBox = new QGroupBox(tr("System Libraries"));
   // system libraries note
   mpSystemLibrariesNoteLabel = new Label(tr("* The system libraries are read from the MODELICAPATH and are always read-only."));
+  mpSystemLibrariesNoteLabel->setElideMode(Qt::ElideMiddle);
   // MODELICAPATH
   mpModelicaPathLabel = new Label(QString("MODELICAPATH = ").append(Helper::OpenModelicaLibrary));
+  mpModelicaPathLabel->setElideMode(Qt::ElideMiddle);
   // system libraries tree
   mpSystemLibrariesTree = new QTreeWidget;
   mpSystemLibrariesTree->setItemDelegate(new ItemDelegate(this));
