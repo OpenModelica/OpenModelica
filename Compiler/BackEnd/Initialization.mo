@@ -1635,6 +1635,10 @@ algorithm
       startValue = BackendVariable.varStartValueOption(var);
       preUsed = BaseHashSet.has(cr, hs);
 
+      startExp = BackendVariable.varStartValue(var);
+      eqn = BackendDAE.EQUATION(DAE.CREF(cr, ty), startExp, DAE.emptyElementSource, false);
+      eqns = Debug.bcallret2(isFixed, BackendEquation.equationAdd, eqn, eqns, eqns);
+
       var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
 
       derCR = ComponentReference.crefPrefixDer(cr);  // cr => $DER.cr
@@ -1654,8 +1658,7 @@ algorithm
       eqn = BackendDAE.EQUATION(DAE.CREF(cr, ty), DAE.CREF(preCR, ty), DAE.emptyElementSource, false);
 
       vars = BackendVariable.addVar(derVar, vars);
-      vars = Debug.bcallret2(not isFixed, BackendVariable.addVar, var, vars, vars);
-      fixvars = Debug.bcallret2(isFixed, BackendVariable.addVar, var, fixvars, fixvars);
+      vars = BackendVariable.addVar(var, vars);
       vars = Debug.bcallret2(preUsed, BackendVariable.addVar, preVar, vars, vars);
       eqns = Debug.bcallret2(preUsed, BackendEquation.equationAdd, eqn, eqns, eqns);
     then ((var, (vars, fixvars, eqns, hs)));
