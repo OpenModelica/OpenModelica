@@ -445,9 +445,13 @@ void SimulationDialog::initializeFields()
 void SimulationDialog::translateModel()
 {
   /* save the model before translating */
-  if (!mpLibraryTreeNode->isSaved())
+  if (mpMainWindow->getOptionsDialog()->getSimulationPage()->getSaveClassBeforeSimulationCheckBox()->isChecked())
   {
-    mpMainWindow->getLibraryTreeWidget()->saveLibraryTreeNode(mpLibraryTreeNode);
+    if (!mpLibraryTreeNode->isSaved())
+    {
+      if (!mpMainWindow->getLibraryTreeWidget()->saveLibraryTreeNode(mpLibraryTreeNode))
+        return;
+    }
   }
   /* translate the model */
   if (mpMainWindow->getOMCProxy()->translateModel(mpLibraryTreeNode->getNameStructure(), mSimulationParameters))

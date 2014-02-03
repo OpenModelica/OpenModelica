@@ -261,6 +261,8 @@ void OptionsDialog::readSimulationSettings()
   }
   if (mSettings.contains("simulation/OMCFlags"))
     mpSimulationPage->getOMCFlagsTextBox()->setText(mSettings.value("simulation/OMCFlags").toString());
+  if (mSettings.contains("simulation/saveClassBeforeSimulation"))
+    mpSimulationPage->getSaveClassBeforeSimulationCheckBox()->setChecked(mSettings.value("simulation/saveClassBeforeSimulation").toBool());
   if (mSettings.contains("transformationalDebugger/alwaysShowTransformationalDebugger"))
     mpSimulationPage->getAlwaysShowTransformationsCheckBox()->setChecked(mSettings.value("transformationalDebugger/alwaysShowTransformationalDebugger").toBool());
   if (mSettings.contains("transformationalDebugger/generateOperations"))
@@ -497,6 +499,7 @@ void OptionsDialog::saveSimulationSettings()
   mpMainWindow->getOMCProxy()->clearCommandLineOptions();
   if (mpMainWindow->getOMCProxy()->setCommandLineOptions(mpSimulationPage->getOMCFlagsTextBox()->text()))
     mSettings.setValue("simulation/OMCFlags", mpSimulationPage->getOMCFlagsTextBox()->text());
+  mSettings.setValue("simulation/saveClassBeforeSimulation", mpSimulationPage->getSaveClassBeforeSimulationCheckBox()->isChecked());
   mSettings.setValue("transformationalDebugger/alwaysShowTransformationalDebugger", mpSimulationPage->getAlwaysShowTransformationsCheckBox()->isChecked());
   mSettings.setValue("transformationalDebugger/generateOperations", mpSimulationPage->getGenerateOperationsCheckBox()->isChecked());
   mpMainWindow->getOMCProxy()->setCommandLineOptions("+d=infoXmlOperations");
@@ -2257,6 +2260,10 @@ SimulationPage::SimulationPage(OptionsDialog *pParent)
   mpOMCFlagsLabel = new Label(tr("OMC Flags"));
   mpOMCFlagsLabel->setToolTip(tr("Space separated list of flags e.g. +d=initialization +cheapmatchingAlgorithm=3"));
   mpOMCFlagsTextBox = new QLineEdit;
+  /* save class before simulation checkbox */
+  mpSaveClassBeforeSimulationCheckBox = new QCheckBox(tr("Save class before simulation"));
+  mpSaveClassBeforeSimulationCheckBox->setToolTip(tr("Disabling this will effect the debugger functionality."));
+  mpSaveClassBeforeSimulationCheckBox->setChecked(true);
   // set the layout of simulation group
   QGridLayout *pSimulationLayout = new QGridLayout;
   pSimulationLayout->setAlignment(Qt::AlignTop);
@@ -2266,6 +2273,7 @@ SimulationPage::SimulationPage(OptionsDialog *pParent)
   pSimulationLayout->addWidget(mpIndexReductionMethodComboBox, 1, 1);
   pSimulationLayout->addWidget(mpOMCFlagsLabel, 2, 0);
   pSimulationLayout->addWidget(mpOMCFlagsTextBox, 2, 1);
+  pSimulationLayout->addWidget(mpSaveClassBeforeSimulationCheckBox, 3, 0, 1, 2);
   mpSimulationGroupBox->setLayout(pSimulationLayout);
   /* Transformational Debugger */
   mpTransformationalDebuggerGroupBox = new QGroupBox(Helper::transformationalDebugger);

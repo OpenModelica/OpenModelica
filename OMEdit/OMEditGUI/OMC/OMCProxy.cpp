@@ -337,7 +337,6 @@ bool OMCProxy::startServer()
                << QString("+d=interactiveCorba")
                << QString("+corbaObjectReferenceFilePath=").append(corbaObjectReferenceFilePath.canonicalPath())
                << QString("+locale=").append(settingsLocale.name());
-    qDebug() << parameters;
     QProcess *omcProcess = new QProcess;
     connect(omcProcess, SIGNAL(finished(int)), omcProcess, SLOT(deleteLater()));
     QFile omcOutputFile;

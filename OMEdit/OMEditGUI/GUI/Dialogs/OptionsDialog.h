@@ -417,6 +417,7 @@ public:
   QComboBox* getMatchingAlgorithmComboBox();
   QComboBox* getIndexReductionMethodComboBox();
   QLineEdit* getOMCFlagsTextBox();
+  QCheckBox *getSaveClassBeforeSimulationCheckBox() {return mpSaveClassBeforeSimulationCheckBox;}
   QCheckBox* getAlwaysShowTransformationsCheckBox() {return mpAlwaysShowTransformationsCheckBox;}
   QCheckBox* getGenerateOperationsCheckBox() {return mpGenerateOperationsCheckBox;}
 private:
@@ -428,6 +429,7 @@ private:
   QComboBox *mpIndexReductionMethodComboBox;
   Label *mpOMCFlagsLabel;
   QLineEdit *mpOMCFlagsTextBox;
+  QCheckBox *mpSaveClassBeforeSimulationCheckBox;
   QGroupBox *mpTransformationalDebuggerGroupBox;
   QCheckBox *mpAlwaysShowTransformationsCheckBox;
   QCheckBox *mpGenerateOperationsCheckBox;
