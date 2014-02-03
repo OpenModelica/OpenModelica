@@ -61,7 +61,7 @@ mkdir("files");
 min(writeFile(s + ".mos","
 \""+s+"\";
 echo(false);
-alarm("+String(ulimitOmc)+");
+alarm("+ulimitOmc+");
 loadString(\"
 function cell
   input Real time;
