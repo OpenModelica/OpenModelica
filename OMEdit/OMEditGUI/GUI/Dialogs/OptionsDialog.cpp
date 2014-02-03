@@ -1080,7 +1080,7 @@ LibrariesPage::LibrariesPage(OptionsDialog *pParent)
   mpModelicaPathLabel->setElideMode(Qt::ElideMiddle);
   // system libraries tree
   mpSystemLibrariesTree = new QTreeWidget;
-  mpSystemLibrariesTree->setItemDelegate(new ItemDelegate(this));
+  mpSystemLibrariesTree->setItemDelegate(new ItemDelegate(mpSystemLibrariesTree));
   mpSystemLibrariesTree->setObjectName("SystemLibrariesTree");
   mpSystemLibrariesTree->setIndentation(0);
   mpSystemLibrariesTree->setColumnCount(2);
@@ -1120,7 +1120,7 @@ LibrariesPage::LibrariesPage(OptionsDialog *pParent)
   mpUserLibrariesGroupBox = new QGroupBox(tr("User Libraries"));
   // user libraries tree
   mpUserLibrariesTree = new QTreeWidget;
-  mpUserLibrariesTree->setItemDelegate(new ItemDelegate(this));
+  mpUserLibrariesTree->setItemDelegate(new ItemDelegate(mpUserLibrariesTree));
   mpUserLibrariesTree->setObjectName("UserLibrariesTree");
   mpUserLibrariesTree->setIndentation(0);
   mpUserLibrariesTree->setColumnCount(2);

@@ -1083,7 +1083,7 @@ SaveChangesDialog::SaveChangesDialog(MainWindow *pMainWindow)
   mpSaveChangesLabel = new Label(tr("Save changes to the following classes?"));
   mpUnsavedClassesListWidget = new QListWidget;
   mpUnsavedClassesListWidget->setObjectName("UnsavedClassesListWidget");
-  mpUnsavedClassesListWidget->setItemDelegate(new ItemDelegate(this));
+  mpUnsavedClassesListWidget->setItemDelegate(new ItemDelegate(mpUnsavedClassesListWidget));
   mpUnsavedClassesListWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
   // Create the buttons
   // create the Yes button

@@ -2731,7 +2731,7 @@ ModelWidgetContainer::ModelWidgetContainer(MainWindow *pParent)
   // create a Model Swicther Dialog
   mpModelSwitcherDialog = new QDialog(this, Qt::Popup);
   mpRecentModelsList = new QListWidget(this);
-  mpRecentModelsList->setItemDelegate(new ItemDelegate(this));
+  mpRecentModelsList->setItemDelegate(new ItemDelegate(mpRecentModelsList));
   mpRecentModelsList->setTextElideMode(Qt::ElideMiddle);
   mpRecentModelsList->setViewMode(QListView::ListMode);
   mpRecentModelsList->setMovement(QListView::Static);
