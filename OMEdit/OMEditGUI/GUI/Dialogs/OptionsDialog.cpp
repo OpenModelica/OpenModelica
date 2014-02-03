@@ -2648,8 +2648,8 @@ CurveStylePage::CurveStylePage(OptionsDialog *pParent)
   pCurveStyleLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pCurveStyleLayout->addWidget(mpCurvePatternLabel, 0, 0);
   pCurveStyleLayout->addWidget(mpCurvePatternComboBox, 0, 1);
-  pCurveStyleLayout->addWidget(mpCurveThicknessLabel, 2, 0);
-  pCurveStyleLayout->addWidget(mpCurveThicknessSpinBox, 2, 1);
+  pCurveStyleLayout->addWidget(mpCurveThicknessLabel, 1, 0);
+  pCurveStyleLayout->addWidget(mpCurveThicknessSpinBox, 1, 1);
   mpCurveStyleGroupBox->setLayout(pCurveStyleLayout);
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setAlignment(Qt::AlignTop);
