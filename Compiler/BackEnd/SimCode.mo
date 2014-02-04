@@ -196,8 +196,7 @@ uniontype VarInfo "Number of variables of various types in a Modelica model."
     Integer numNonLinearSystems;
     Integer numMixedSystems;
     Integer numStateSets;
-    Option <Integer> dimODE1stOrder;
-    Option <Integer> dimODE2ndOrder;
+  
   end VARINFO;
 end VarInfo;
 

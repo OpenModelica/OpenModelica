@@ -1547,7 +1547,7 @@ algorithm
       (dlow, stateSets, uniqueEqIndex, tempvars, numStateSets) = createStateSets(dlow, {}, uniqueEqIndex, tempvars);
       
       // create model info
-      modelInfo = createModelInfo(class_, dlow, functions, {}, numberOfInitialEquations, numberOfInitialAlgorithms, numStateSets, fileDir, ifcpp);
+      modelInfo = createModelInfo(class_, dlow, functions, {}, numberOfInitialEquations, numberOfInitialAlgorithms, numStateSets, fileDir);
       modelInfo = addTempVars(tempvars, modelInfo);
       
       // external objects
@@ -1685,7 +1685,6 @@ algorithm
       Integer numParams, numIntParams, numBoolParams, numOutVars, numInVars;
       Integer numInitialEquations, numInitialAlgorithms, numInitialResiduals, numExternalObjects, numStringAlgVars;
       Integer numStringParamVars, numStringAliasVars, numStateSets;
-      Option<Integer> dimODE1stOrder, dimODE2ndOrder;
       Integer numEqns;
       Integer numLinearSys, numNonLinearSys, numMixedLinearSys;
     case({}, _) then modelInfo;
@@ -1693,7 +1692,7 @@ algorithm
       equation
         SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEvents, numStateVars, numInlineVars, numAlgVars, numDiscreteReal, numIntAlgVars, numBoolAlgVars, numAlgAliasVars, numIntAliasVars, numBoolAliasVars, numParams, 
            numIntParams, numBoolParams, numOutVars, numInVars, numInitialEquations, numInitialAlgorithms, numInitialResiduals, numExternalObjects, numStringAlgVars, 
-           numStringParamVars, numStringAliasVars, numEqns, numLinearSys, numNonLinearSys, numMixedLinearSys, numStateSets, dimODE1stOrder, dimODE2ndOrder) = varInfo;
+           numStringParamVars, numStringAliasVars, numEqns, numLinearSys, numNonLinearSys, numMixedLinearSys, numStateSets) = varInfo;
         SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars, 
                stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars) = vars;
 
@@ -1707,7 +1706,7 @@ algorithm
 
         varInfo = SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEvents, numStateVars, numInlineVars, numAlgVars, numDiscreteReal, numIntAlgVars, numBoolAlgVars, numAlgAliasVars, numIntAliasVars, numBoolAliasVars, numParams, 
            numIntParams, numBoolParams, numOutVars, numInVars, numInitialEquations, numInitialAlgorithms, numInitialResiduals, numExternalObjects, numStringAlgVars, 
-           numStringParamVars, numStringAliasVars, numEqns, numLinearSys, numNonLinearSys, numMixedLinearSys, numStateSets, dimODE1stOrder, dimODE2ndOrder);
+           numStringParamVars, numStringAliasVars, numEqns, numLinearSys, numNonLinearSys, numMixedLinearSys, numStateSets);
         vars = SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars, 
                stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars);
       then
@@ -1852,15 +1851,15 @@ algorithm
     Integer numParams, numIntParams, numBoolParams, numOutVars, numInVars;
     Integer numInitialEquations, numInitialAlgorithms, numInitialResiduals, numExternalObjects, numStringAlgVars;
     Integer numStringParamVars, numStringAliasVars, numStateSets;
-    Option<Integer> dimODE1stOrder, dimODE2ndOrder;
+ 
     
     case(SimCode.MODELINFO(name, directory, varInfo, vars, functions, labels), _, _, _, _) equation
       SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEvents, numStateVars, numInlineVars, numAlgVars, numDiscreteReal, numIntAlgVars, numBoolAlgVars, numAlgAliasVars, numIntAliasVars, numBoolAliasVars, numParams, 
       numIntParams, numBoolParams, numOutVars, numInVars, numInitialEquations, numInitialAlgorithms, numInitialResiduals, numExternalObjects, numStringAlgVars, 
-      numStringParamVars, numStringAliasVars, _, _, _, _, numStateSets, dimODE1stOrder, dimODE2ndOrder) = varInfo;
+      numStringParamVars, numStringAliasVars, _, _, _, _, numStateSets) = varInfo;
       varInfo = SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEvents, numStateVars, numInlineVars, numAlgVars, numDiscreteReal, numIntAlgVars, numBoolAlgVars, numAlgAliasVars, numIntAliasVars, numBoolAliasVars, numParams, 
       numIntParams, numBoolParams, numOutVars, numInVars, numInitialEquations, numInitialAlgorithms, numInitialResiduals, numExternalObjects, numStringAlgVars, 
-      numStringParamVars, numStringAliasVars, numEqns, numLinearSys, numNonLinearSys, numMixedLinearSys, numStateSets, dimODE1stOrder, dimODE2ndOrder);
+      numStringParamVars, numStringAliasVars, numEqns, numLinearSys, numNonLinearSys, numMixedLinearSys, numStateSets);
     then SimCode.MODELINFO(name, directory, varInfo, vars, functions, labels);
   end match;
 end addNumEqnsandNumofSystems;
@@ -7468,11 +7467,10 @@ public function createModelInfo
   input Integer numInitialAlgorithms;
   input Integer numStateSets;
   input String fileDir;
-  input Boolean ifcpp;
   output SimCode.ModelInfo modelInfo;
 algorithm
   modelInfo :=
-  matchcontinue (class_, dlow, functions, labels, numInitialEquations, numInitialAlgorithms, numStateSets, fileDir, ifcpp)
+  matchcontinue (class_, dlow, functions, labels, numInitialEquations, numInitialAlgorithms, numStateSets, fileDir)
     local
       String directory;
       SimCode.VarInfo varInfo;
@@ -7505,55 +7503,8 @@ algorithm
       list<SimCode.SimVar> states1, states_lst, states_lst2, der_states_lst;
       list<SimCode.SimVar> states_2, derivatives_2;
     
-    case (_, _, _, _, _, _, _, _, true)
-      equation
-        // name = Absyn.pathStringNoQual(class_);
-        directory = System.trim(fileDir, "\"");
-        (vars as SimCode.SIMVARS(stateVars=stateVars, derivativeVars=derivativeVars, inlineVars=inlineVars, algVars=algVars, intAlgVars=intAlgVars, boolAlgVars=boolAlgVars, 
-                       inputVars=inputVars, outputVars=outputVars, aliasVars=aliasVars, intAliasVars=intAliasVars, boolAliasVars=boolAliasVars, 
-                       paramVars=paramVars, intParamVars=intParamVars, boolParamVars=boolParamVars, stringAlgVars=stringAlgVars, stringParamVars=stringParamVars, 
-                       stringAliasVars=stringAliasVars, extObjVars=extObjVars, constVars=constVars, intConstVars=intConstVars, boolConstVars=boolConstVars, 
-                       stringConstVars=stringConstVars, jacobianVars=jacobianVars))=createVars(dlow);
-        nx = listLength(stateVars);
-        numInlineVars = listLength(inlineVars);
-        ny = listLength(algVars);
-        ny_int = listLength(intAlgVars);
-        ny_bool = listLength(boolAlgVars);
-        numOutVars = listLength(outputVars);
-        numInVars = listLength(inputVars);
-        na = listLength(aliasVars);
-        na_int = listLength(intAliasVars);
-        na_bool = listLength(boolAliasVars);
-        np = listLength(paramVars);
-        np_int = listLength(intParamVars);
-        np_bool = listLength(boolParamVars);
-        ny_string = listLength(stringAlgVars);
-        np_string = listLength(stringParamVars);
-        na_string = listLength(stringAliasVars);
-        next = listLength(extObjVars);
-        (dim_1, dim_2)= dimensions(dlow);
-        Debug.fcall(Flags.FAILTRACE, print, "create varinfo \n");
-        varInfo = createVarInfo(dlow, nx, numInlineVars, ny, np, na, next, numOutVars, numInVars, numInitialEquations, numInitialAlgorithms, 
-                 ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string, dim_1, dim_2, numStateSets);
-         Debug.fcall(Flags.FAILTRACE, print, "create state index \n");
-         states1 = stateindex1(stateVars, dlow);
-          Debug.fcall(Flags.FAILTRACE, print, "set state index \n");
-         states_lst= setStatesVectorIndex(states1);
-         Debug.fcall(Flags.FAILTRACE, print, "gernerate der states  \n");
-         der_states_lst = generateDerStates(states_lst);
-         states_lst2 =listAppend(states_lst, der_states_lst);
-         Debug.fcall(Flags.FAILTRACE, print, "replace index in states \n");
-         states_2 = replaceindex1(stateVars, states_lst);
-         // Debug.fcall(Flags.FAILTRACE, print, " replace der varibales: \n " +&dumpVarinfoList(states_lst2));
-          Debug.fcall(Flags.FAILTRACE, print, "replace index in der states  \n");
-         derivatives_2=replaceindex1(derivativeVars, der_states_lst);
-         // Debug.fcall(Flags.FAILTRACE, print, "state varibales: \n " +&dumpVarinfoList(states_lst2));
-      then
-        SimCode.MODELINFO(class_, directory, varInfo, SimCode.SIMVARS(states_2, derivatives_2, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, 
-                  intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars), 
-                  functions, labels);
-    
-    case (_, _, _, _, _, _, _, _, false)
+
+    case (_, _, _, _, _, _, _, _)
       equation
         // name = Absyn.pathStringNoQual(class_);
         directory = System.trim(fileDir, "\"");
@@ -7581,7 +7532,7 @@ algorithm
         na_string = listLength(stringAliasVars);
         next = listLength(extObjVars);
         varInfo = createVarInfo(dlow, nx, numInlineVars, ny, np, na, next, numOutVars, numInVars, numInitialEquations, numInitialAlgorithms, 
-                 ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string, 0, 0, numStateSets);
+                 ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string, numStateSets);
       then
         SimCode.MODELINFO(class_, directory, varInfo, vars, functions, labels);
     
@@ -7615,8 +7566,6 @@ protected function createVarInfo
   input Integer ny_string;
   input Integer np_string;
   input Integer na_string;
-  input Integer dim_1;
-  input Integer dim_2;
   input Integer numStateSets;
   output SimCode.VarInfo varInfo;
 protected
@@ -7629,7 +7578,7 @@ algorithm
   numInitialResiduals := numInitialEquations+numInitialAlgorithms;
   nDiscreteReal := BackendDAEUtil.numberOfDiscreteVars(dlow);
   varInfo := SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEventFunctions, nx, numInlineVars, ny, nDiscreteReal, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, numOutVars, numInVars, 
-          numInitialEquations, numInitialAlgorithms, numInitialResiduals, next, ny_string, np_string, na_string, 0, 0, 0, 0, numStateSets, SOME(dim_1), SOME(dim_2));
+          numInitialEquations, numInitialAlgorithms, numInitialResiduals, next, ny_string, np_string, na_string, 0, 0, 0, 0, numStateSets);
 end createVarInfo;
 
 protected function createVars
@@ -11395,365 +11344,7 @@ algorithm (new_index) := matchcontinue(var, odered_vars)
 end matchcontinue;
 end stateindex;
 
-protected function stateindex1
 
- 
- input list<SimCode.SimVar> stateVars;
- input BackendDAE.BackendDAE dae_low;
- output list<SimCode.SimVar> stateVars1;
-algorithm (stateVars1):= matchcontinue(stateVars, dae_low)
-  local 
-     list<SimCode.SimVar> new_list;
-     SimCode.SimVar new_simvar;
-     SimCode.SimVar v;
-     list<SimCode.SimVar> rest;
-  case({}, _)
-     then 
-       {};
-  case((v as SimCode.SIMVAR(name=_))::rest, _)
-     equation
-      new_list= stateindex1(rest, dae_low);
-      new_simvar =stateindex2(v, dae_low);
-    
-     then
-      (new_simvar::new_list);
-   case (_, _)
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"stateindex1 failed"});
-      then
-        fail();
-end matchcontinue;
-end stateindex1;
-
-protected function stateindex2
- input SimCode.SimVar stateVars;
- input BackendDAE.BackendDAE dae_low;
- output SimCode.SimVar outSimVar;
-algorithm (outSimVar):= match(stateVars, dae_low)
-  local 
-    list<tuple<DAE.ComponentRef, Integer>> ordered_states;
-    Integer new_index;
-    DAE.ComponentRef name;
-    BackendDAE.VarKind varKind;
-    String comment, unit, displayUnit;
-    Integer index;
-    Option<DAE.Exp> minValue;
-    Option<DAE.Exp> maxValue;
-    Option<DAE.Exp> initialValue;
-    Option<DAE.Exp> nominalValue;
-    Boolean isFixed, isDiscrete, isValueChangeable;
-    DAE.Type type_;
-    // arrayCref is the name of the array if this variable is the first in that
-    // array
-    Option<DAE.ComponentRef> arrayCref;
-    SimCode.AliasVariable aliasvar;
-    DAE.ElementSource source;
-    SimCode.Causality causality;
-    Option<Integer> variable_index;
-    list<String> numArrayElement;
-    BackendDAE.EqSystems eqsystems;
-  case(SimCode.SIMVAR(name=name, varKind=varKind, comment=comment, unit=unit, displayUnit=displayUnit, index=index, minValue=minValue, maxValue=maxValue, initialValue=initialValue, nominalValue=nominalValue, isFixed=isFixed, type_=type_, isDiscrete=isDiscrete, arrayCref=arrayCref, aliasvar=aliasvar, source=source, causality=causality, variable_index=variable_index, numArrayElement=numArrayElement, isValueChangeable=isValueChangeable), BackendDAE.DAE(eqs=eqsystems))
-     equation
-      Debug.fcall(Flags.FAILTRACE, BackendDump.debugStrCrefStr, (" search index for state variable ", name, "\n"));
-      ordered_states=setVariableDerIndex(dae_low, eqsystems);
-      new_index=stateindex(name, ordered_states);
-           
-    then 
-     SimCode.SIMVAR(name, varKind, comment, unit, displayUnit, new_index, minValue, maxValue, initialValue, nominalValue, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement, isValueChangeable);
-end match;
-end stateindex2;
-
-
-protected function setStatesVectorIndex "
-sorts the states in the state vector correponding to the variable index (0, 1, 2) and
-sets the vectorindex attribute for each state variable in the states vector(z)
-e.g der(x)=y
-    der(y)=a
-    der(z)=a -> z={z, x, y}
-"
-input list<SimCode.SimVar> in_vars;
-output list<SimCode.SimVar> out_vars;
-algorithm out_vars := matchcontinue(in_vars)
-  local
-    list<SimCode.SimVar>  vars1, vars2, vars3, vars4, vars5;
-  case _
-    equation
-      (vars1, vars2, vars3) =  partitionStatesVector(in_vars);
-       vars4 = listAppend(vars1, vars2);
-       vars5 = listAppend(vars4, vars3);
-       vars5=setStatesVectorIndex2(vars5, 0);
-    then 
-       vars5;
-   case (_)
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"setStatesVectorIndex failed"});
-      then
-        fail();
-end matchcontinue;
-end setStatesVectorIndex;
-
-protected function setStatesVectorIndex2"
-Help function for setStatesVectorIndex
-iterates the states vector an increments the vector index of each variable
-"
-input list<SimCode.SimVar> in_vars;
-input Integer index;
-output list<SimCode.SimVar> out_vars;
-algorithm
-  out_vars := match(in_vars, index)
-    local
-      DAE.ComponentRef name;
-      BackendDAE.VarKind varKind;
-      String comment;
-      String unit;
-      String displayUnit;
-      Option<DAE.Exp> minValue;
-      Option<DAE.Exp> maxValue;
-      Option<DAE.Exp> initialValue;
-      Option<DAE.Exp> nominalValue;
-      Boolean isFixed;
-      DAE.Type type_;
-      Boolean isDiscrete, isValueChangeable;
-      // arrayCref is the name of the array if this variable is the first in that
-      // array
-      Option<DAE.ComponentRef> arrayCref;
-      SimCode.AliasVariable aliasvar;
-      DAE.ElementSource source;
-      SimCode.Causality causality;
-      Option<Integer> variable_index;
-      list<SimCode.SimVar> rest, indexed_vector;
-      list<String> numArrayElement;
-    case({}, _) then {};
-    case(SimCode.SIMVAR(name=name, varKind=varKind, comment=comment, unit=unit, displayUnit=displayUnit, minValue=minValue, maxValue=maxValue, initialValue=initialValue, nominalValue=nominalValue, isFixed=isFixed, type_=type_, isDiscrete=isDiscrete, arrayCref=arrayCref, aliasvar=aliasvar, source=source, causality=causality, variable_index=variable_index, numArrayElement=numArrayElement, isValueChangeable=isValueChangeable) :: rest, _)
-      equation
-        indexed_vector = setStatesVectorIndex2(rest, index+1);
-      then 
-        SimCode.SIMVAR(name, varKind, comment, unit, displayUnit, index, minValue, maxValue, initialValue, nominalValue, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, SOME(index), numArrayElement, isValueChangeable)::indexed_vector;
-  end match;
-end setStatesVectorIndex2;
-
-
-protected function partitionStatesVector "
-partitioning the input vector into 3 state vectors  including   variables with corresponding variable indexes 0, 1, 2  
-e.g  der(x) = y;
-     der(y)= a;
-     der(z) =a;
-     z=b -> output:  {z} {x} {y}
-"
-  input list<SimCode.SimVar> in_vars "list with unsorted state variables";
-  output list<SimCode.SimVar> oder_0;
-  output list<SimCode.SimVar> oder_1;
-  output list<SimCode.SimVar> oder_2;
-algorithm (oder_0, oder_1, oder_2):= match(in_vars)
-  local
-    list<SimCode.SimVar> rest, vars1, vars2, vars3;
-    SimCode.SimVar variable;
-    Integer vi;
-  case({}) then ({}, {}, {});
-  case((variable as SimCode.SIMVAR(index=vi))::rest)
-    equation
-      (vars1, vars2, vars3)    =    partitionStatesVector(rest);
-      (vars1, vars2, vars3)    =    addVariableToStateVector(vars1, vars2, vars3, variable, vi);
-    then 
-     (vars1, vars2, vars3);
- 
-end match;
-end partitionStatesVector;
-
-protected function addVariableToStateVector "
-Helper function for setVectorIndexes;
-"
-  input list<SimCode.SimVar> in_0;
-  input list<SimCode.SimVar> in_1;
-  input list<SimCode.SimVar> in_2;
-  input SimCode.SimVar variable;
-  input Integer variable_index;
-  output list<SimCode.SimVar>  out_0;
-  output list<SimCode.SimVar>  out_1;
-  output list<SimCode.SimVar>  out_2;
-algorithm (out_0, out_1, out_2) := matchcontinue(in_0, in_1, in_2, variable, variable_index)
-  case (_, _, _, _, 0) then (variable::in_0, in_1, in_2);
-  case (_, _, _, _, 1) then (in_0, variable::in_1, in_2);
-  case (_, _, _, _, 2) then (in_0, in_1, variable::in_2);
-  case(_, _, _, _, _) equation print(" failure in addVariableToStateVector  \n"); then fail();
-end matchcontinue;
-end addVariableToStateVector;
-
-protected function generateDerStates "
-generates for each state in the states vector a corresponding der state
-"
-  input list<SimCode.SimVar> in_varinfo_lst;
-  output list<SimCode.SimVar> out_varinfo_lst;
-algorithm out_varinfo_lst := matchcontinue(in_varinfo_lst)
-  local 
-    list<SimCode.SimVar> rest, dv_list;
-    SimCode.SimVar v;
-    SimCode.SimVar dv;
-  case({}) then {};
-  case( v::rest )
-    equation
-      dv = generateDerStates2(v);
-     // s= dumpVarInfo(dv);
-      // Debug.fcall(Flags.FAILTRACE, print, "Generate der state" +& s +& "\n" );
-      dv_list = generateDerStates(rest);
-     then
-       dv::dv_list;
-   case (_)
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"generateDerStates failed"});
-      then
-        fail();   
-  end matchcontinue;
-end generateDerStates;
-
-protected function generateDerStates2 "
-Helper function for varsToVarInfo2
-"
-   input SimCode.SimVar in_vf;
-   output SimCode.SimVar out_vf;
- 
-algorithm
-  out_vf := match(in_vf)
-    local 
-      DAE.ComponentRef name;
-      BackendDAE.VarKind varKind;
-      String comment;
-      String unit;
-      String displayUnit;
-      Option<DAE.Exp> minValue;
-      Option<DAE.Exp> maxValue;
-      Option<DAE.Exp> initialValue;
-      Option<DAE.Exp> nominalValue;
-      Boolean isFixed;
-      DAE.Type type_;
-      Boolean isDiscrete, isValueChangeable;
-      // arrayCref is the name of the array if this variable is the first in that
-      // array
-      Option<DAE.ComponentRef> arrayCref;
-      SimCode.AliasVariable aliasvar;
-      DAE.ElementSource source;
-      SimCode.Causality causality;
-      Option<Integer> variable_index;
-      DAE.ComponentRef cr_1;
-      String name_str, id_str;
-      list<String> numArrayElement;
-      Integer i;
-    /*case(SimCode.SIMVAR(name, varKind, comment, unit, displayUnit, 0, initialValue, nominalValue, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement)) 
-      equation
-        name_str = ComponentReference.printComponentRefStr(name);
-        id_str = stringAppendList({DAE.derivativeNamePrefix, "." , name_str});
-        cr_1 = ComponentReference.makeCrefIdent(id_str, DAE.T_REAL_DEFAULT, {});
-      then
-        SimCode.SIMVAR(cr_1, varKind, comment, unit, displayUnit, 0, initialValue, nominalValue, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement);
-    case(SimCode.SIMVAR(name, varKind, comment, unit, displayUnit, 1, initialValue, nominalValue, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement)) 
-      equation
-        name_str = ComponentReference.printComponentRefStr(name);
-        id_str = stringAppendList({DAE.derivativeNamePrefix, ".", name_str});
-        cr_1 = ComponentReference.makeCrefIdent(id_str, DAE.T_REAL_DEFAULT, {});
-      then
-        SimCode.SIMVAR(cr_1, varKind, comment, unit, displayUnit, 1, initialValue, nominalValue, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement);
-    
-    case(SimCode.SIMVAR(name, varKind, comment, unit, displayUnit, 2, initialValue, nominalValue, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement)) 
-      equation
-        name_str = ComponentReference.printComponentRefStr(name);
-        id_str = stringAppendList({DAE.derivativeNamePrefix, ".", name_str});
-        cr_1 = ComponentReference.makeCrefIdent(id_str, DAE.T_REAL_DEFAULT, {});
-      then
-        SimCode.SIMVAR(cr_1, varKind, comment, unit, displayUnit, 2, initialValue, nominalValue, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement);
-       */
-     case(SimCode.SIMVAR(name, varKind, comment, unit, displayUnit, i, minValue, maxValue, initialValue, nominalValue, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement, isValueChangeable)) 
-      equation
-        name_str = ComponentReference.printComponentRefStr(name);
-        id_str = stringAppendList({DAE.derivativeNamePrefix, ".", name_str});
-        cr_1 = ComponentReference.makeCrefIdent(id_str, DAE.T_REAL_DEFAULT, {});
-      then
-        SimCode.SIMVAR(cr_1, varKind, comment, unit, displayUnit, i, minValue, maxValue, initialValue, nominalValue, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement, isValueChangeable);
-    /*case (SimCode.SIMVAR(name, _, _, _, _, i, _, _, _, _, _, _, _, _, _, _, _))
-      equation
-        name_str = ComponentReference.printComponentRefStr(name);
-        id_str = intString(i);
-        Debug.fcall(Flags.FAILTRACE, print, "generateDerStates2 failed for " +& name_str +& "and index " +& id_str +& "\n" );
-        Error.addMessage(Error.INTERNAL_ERROR, {"generateDerStates2 failed " });
-      then
-        fail();
-        */   
-  end match;
-end generateDerStates2;
-
-
-protected function replaceindex 
-
-  input SimCode.SimVar var;
-  input list<SimCode.SimVar> statevarlist;
-  output SimCode.SimVar newvar;
-algorithm
-  newvar := matchcontinue(var, statevarlist)
-    local
-      list<SimCode.SimVar> rest1;
-      DAE.ComponentRef name, name1;
-      BackendDAE.VarKind varKind;
-      String comment;
-      String unit;
-      String displayUnit;
-      Integer index, index1;
-      Option<DAE.Exp> minValue;
-      Option<DAE.Exp> maxValue;
-      Option<DAE.Exp> initialValue;
-      Option<DAE.Exp> nominalValue;
-      Boolean isFixed;
-      DAE.Type type_;
-      Boolean isDiscrete, isValueChangeable;
-      Option<DAE.ComponentRef> arrayCref;
-      SimCode.AliasVariable aliasvar;
-      DAE.ElementSource source;
-      SimCode.Causality causality;
-      Option <Integer> variable_index;
-      Integer variable_index1;
-      SimCode.SimVar v, newvar1;
-      list<String> numArrayElement;
-  case((v as SimCode.SIMVAR(name, varKind, comment, unit, displayUnit, index, minValue, maxValue, initialValue, nominalValue, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement,isValueChangeable)), SimCode.SIMVAR(name=name1, index=index1, variable_index=SOME(variable_index1))::_)    
-    equation
-      Debug.fcall(Flags.FAILTRACE, BackendDump.debugStrCrefStrCrefStr, (" compare variable ", name, "with ", name1, "\n"));
-      true = ComponentReference.crefEqualVerySlowStringCompareDoNotUse(name, name1);
-    then 
-      SimCode.SIMVAR(name, varKind, comment, unit, displayUnit, variable_index1, minValue, maxValue, initialValue, nominalValue, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, SOME(index1), numArrayElement,isValueChangeable);
-  case( v, _::rest1)
-    equation
-       newvar1=replaceindex(v, rest1);
-    then newvar1;
-   else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Vector index for der variable was not found"});
-      then
-        fail();
-    
-end matchcontinue;
-end replaceindex;
-
-protected function replaceindex1 
-
- input list<SimCode.SimVar> Vars;
- input list<SimCode.SimVar> stateVars;
- output list<SimCode.SimVar> newVars;
-algorithm (newVars):= match(Vars, stateVars)
-  local 
-     list<SimCode.SimVar> new_list;
-     SimCode.SimVar new_simvar;
-     SimCode.SimVar v;
-     list<SimCode.SimVar> rest;
-  case({}, _)
-     then 
-       {};
-  case((v as SimCode.SIMVAR(name=_))::rest, _)
-     equation
-      new_list= replaceindex1(rest, stateVars);
-      new_simvar =replaceindex(v, stateVars);
-    
-     then
-      (new_simvar::new_list);
-end match;
-
-end replaceindex1;
 
 
 public function varName

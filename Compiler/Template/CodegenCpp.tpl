@@ -4288,7 +4288,7 @@ template numDerivativevars(ModelInfo modelInfo)
 match modelInfo
 case MODELINFO(varInfo=VARINFO(__)) then
 <<
-<%varInfo.dimODE1stOrder%>+<%varInfo.dimODE2ndOrder%>
+<%varInfo.numStateVars%>
 >>
 end numDerivativevars;
 
@@ -9196,15 +9196,16 @@ case MODELINFO(vars=SIMVARS(__)) then
   
   void <%lastIdentOfPath(name)%>::setString(const string* z)
   {
+  
+  }
+  
+  >>
   /*
   <%System.tmpTickReset(0)%>
   <%vars.stringAlgVars |> var => giveVariablesDefault(var, System.tmpTick()) ;separator="\n"%>
   <%vars.stringParamVars |> var => giveVariablesDefault(var, System.tmpTick()) ;separator="\n"%>
   <%vars.stringAliasVars |> var => giveVariablesDefault(var, System.tmpTick()) ;separator="\n"%>
   */
-  }
-  
-  >>
 end giveVariables;
 
 template giveVariablesState(SimVar simVar, Integer valueReference, String arrayName, Integer index)
@@ -9241,10 +9242,7 @@ match simVar
       <<
       <%variablename%> = z[<%valueReference%>]; <%description%>
       >>
-    else
-      <<
-      //<%variablename%> = z[<%valueReference%>]; <%description%>
-      >>
+   
   end match
 end setVariablesDefault;
 

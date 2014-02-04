@@ -398,9 +398,7 @@ package SimCode
       Integer numNonLinearSystems;
       Integer numMixedSystems;
       Integer numStateSets;
-      Option <Integer> dimODE1stOrder;
-      Option <Integer> dimODE2ndOrder;
-    end VARINFO;
+      end VARINFO;
   end VarInfo;
   
   uniontype SimVars
