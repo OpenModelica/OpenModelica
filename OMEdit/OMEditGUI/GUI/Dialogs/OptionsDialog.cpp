@@ -499,10 +499,13 @@ void OptionsDialog::saveSimulationSettings()
   mpMainWindow->getOMCProxy()->clearCommandLineOptions();
   if (mpMainWindow->getOMCProxy()->setCommandLineOptions(mpSimulationPage->getOMCFlagsTextBox()->text()))
     mSettings.setValue("simulation/OMCFlags", mpSimulationPage->getOMCFlagsTextBox()->text());
+  else
+    mpSimulationPage->getOMCFlagsTextBox()->setText(mSettings.value("simulation/OMCFlags").toString());
   mSettings.setValue("simulation/saveClassBeforeSimulation", mpSimulationPage->getSaveClassBeforeSimulationCheckBox()->isChecked());
   mSettings.setValue("transformationalDebugger/alwaysShowTransformationalDebugger", mpSimulationPage->getAlwaysShowTransformationsCheckBox()->isChecked());
   mSettings.setValue("transformationalDebugger/generateOperations", mpSimulationPage->getGenerateOperationsCheckBox()->isChecked());
-  mpMainWindow->getOMCProxy()->setCommandLineOptions("+d=infoXmlOperations");
+  if (mpSimulationPage->getGenerateOperationsCheckBox()->isChecked())
+    mpMainWindow->getOMCProxy()->setCommandLineOptions("+d=infoXmlOperations");
 }
 
 //! Saves the Notifications section settings to omedit.ini
