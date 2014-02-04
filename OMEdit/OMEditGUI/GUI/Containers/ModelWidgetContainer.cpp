@@ -490,8 +490,13 @@ void GraphicsView::deleteComponentObject(Component *pComponent)
   int i = 0;
   while(i != mConnectionsList.size())
   {
-    if((mConnectionsList[i]->getStartComponent()->getRootParentComponent()->getName() == pComponent->getName()) ||
-       (mConnectionsList[i]->getEndComponent()->getRootParentComponent()->getName() == pComponent->getName()))
+    QString startComponentName, endComponentName = "";
+    if (mConnectionsList[i]->getStartComponent())
+      startComponentName = mConnectionsList[i]->getStartComponent()->getRootParentComponent()->getName();
+    if (mConnectionsList[i]->getEndComponent())
+      endComponentName = mConnectionsList[i]->getEndComponent()->getRootParentComponent()->getName();
+
+    if (startComponentName == pComponent->getName() || endComponentName == pComponent->getName())
     {
       removeConnection(mConnectionsList[i]);
       i = 0;   //Restart iteration if map has changed
@@ -2359,7 +2364,6 @@ void ModelWidget::getModelConnections(QString className, bool inheritedCycle)
     // get start and end connectors
     Component *pStartConnectorComponent = 0;
     Component *pEndConnectorComponent = 0;
-    bool portFound = false;
     bool isExpandableConnector = false;
     if (pStartComponent)
     {
@@ -2389,7 +2393,6 @@ void ModelWidget::getModelConnections(QString className, bool inheritedCycle)
     {
       // if a component type is connector then we only get one item in endComponentList
       // check the endcomponentlist
-      portFound = false;
       isExpandableConnector = false;
       pMainWindow->getOMCProxy()->sendCommand("getClassRestriction(" + pEndComponent->getClassName() + ")");
       isExpandableConnector = pMainWindow->getOMCProxy()->getResult().toLower().contains("expandable connector");
