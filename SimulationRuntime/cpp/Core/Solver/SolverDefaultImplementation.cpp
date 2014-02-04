@@ -36,7 +36,7 @@ SolverDefaultImplementation::SolverDefaultImplementation(IMixedSystem* system, I
 , _zeroValLastSuccess      (NULL)
 , _events                        (NULL)
 
-, _outputCommand            (IMixedSystem::WRITEOUT)
+, _outputCommand            (IWriteOutput::WRITEOUT)
 
 {
    
@@ -80,6 +80,7 @@ void SolverDefaultImplementation::initialize()
     IContinuous* continous_system = dynamic_cast<IContinuous*>(_system);
     IEvent* event_system =  dynamic_cast<IEvent*>(_system);
     ITime* timeevent_system = dynamic_cast<ITime*>(_system);
+	IWriteOutput* writeoutput_system = dynamic_cast<IWriteOutput*>(_system);
     // Set current start time to the system
     timeevent_system->setTime(_tCurrent);
     
@@ -98,7 +99,7 @@ void SolverDefaultImplementation::initialize()
     //    // Write a line break into output stream
     //    *_outputStream << std::endl;
     //}
-   _system->writeOutput(IMixedSystem::HEAD_LINE);
+   writeoutput_system->writeOutput(IWriteOutput::HEAD_LINE);
 
     // Allocate array with values of zero functions
     if (_dimZeroFunc != event_system->getDimZeroFunc())
@@ -174,7 +175,7 @@ void SolverDefaultImplementation::setZeroState()
 
 void SolverDefaultImplementation::writeToFile(const int& stp, const double& t, const double& h)
 {
-
+   IWriteOutput* writeoutput_system = dynamic_cast<IWriteOutput*>(_system);
     //if (_outputStream && _settings->_globalSettings->_resultsOutput)
     //{
     //    // Reset curser within output stream to last valid position (before zero crossing)
@@ -199,9 +200,9 @@ void SolverDefaultImplementation::writeToFile(const int& stp, const double& t, c
     //    }
     //}
     
-    if(_outputCommand & IMixedSystem::WRITEOUT)
+    if(_outputCommand & IWriteOutput::WRITEOUT)
     {
-        _system->writeOutput(_outputCommand);
+        writeoutput_system->writeOutput(_outputCommand);
       
     }
 }

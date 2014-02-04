@@ -14,7 +14,7 @@
 * System class Modelica implements the Interface IMixedSystem
 *
 *****************************************************************************/
-typedef HistoryImpl<TextFileWriter,0,0,0> HistoryImplType;
+
 
 
 class Modelica: public IMixedSystem ,public IContinuous ,public IEvent ,public ISystemProperties, public SystemDefaultImplementation
@@ -91,9 +91,6 @@ class Modelica: public IMixedSystem ,public IContinuous ,public IEvent ,public I
 
 
 
-  //(Re-) initialize the system of equations
-   virtual void initialize(double ts,double te);
-
   //Resets all time events
    virtual void resetTimeEvents();
 
@@ -102,9 +99,6 @@ class Modelica: public IMixedSystem ,public IContinuous ,public IEvent ,public I
 
   
 
-
-  // Output routine (to be called by the solver after every successful integration step)
-   virtual void writeOutput(const OUTPUT command = UNDEF_OUTPUT);
 
   // Provide pattern for Jacobian
    virtual void getJacobianSparsityPattern(SparsityPattern pattern) ;
@@ -124,7 +118,7 @@ class Modelica: public IMixedSystem ,public IContinuous ,public IEvent ,public I
    virtual bool handleSystemEvents( bool* events);
   //Called to handle an event
    virtual void handleEvent(const bool* events);
-  virtual IHistory* getHistory();
+ 
   //Checks if a discrete variable has changed and triggers an event
    virtual bool checkForDiscreteEvents();
 
@@ -152,6 +146,6 @@ private:
   EventHandling _event_handling;
 
 
-  HistoryImplType* _historyImpl;
+
   SparseMatrix _jacobian;
 };

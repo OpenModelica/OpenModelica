@@ -110,6 +110,7 @@ typedef ublas::matrix<double, adaptor_t> shared_matrix_t;
 #include <System/IMixedSystem.h>
 #include <System/ISystemProperties.h>
 #include <System/ISystemInitialization.h>
+#include <System/IWriteOutput.h>
 #include <System/IContinuous.h>
 #include <System/ITime.h>
 #include <System/IEvent.h>

@@ -19,19 +19,14 @@ Modelica::Modelica(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSol
     // Initialize the state vector
     SystemDefaultImplementation::initialize();
     //Instantiate auxiliary object for event handling functionality
-    //vxworkstodo linker fehler: _event_handling.resetHelpVar =  boost::bind(&Modelica::resetHelpVar, this, _1);
-    _historyImpl = new HistoryImplType(*globalSettings);
+  
 } 
 
 Modelica::~Modelica()
 {
-delete _historyImpl;
-}
-
-void Modelica::initialize(double ts,double te)
-{
 
 }
+
 
 void Modelica::resetTimeEvents()
 {
@@ -43,11 +38,7 @@ bool Modelica::evaluate(const UPDATETYPE command)
   return false;
 }
 
-void Modelica::writeOutput(const OUTPUT command)
-{
 
-
-}
 
 // Release instance
 void Modelica::destroy()
@@ -161,12 +152,6 @@ void Modelica::setRHS(const double* f)
   SystemDefaultImplementation::setRHS(f);
 }
 
-
-// History
- IHistory*  Modelica::getHistory()
- {
-   return _historyImpl;
- }
 
 
 void Modelica::getZeroFunc(double* f)

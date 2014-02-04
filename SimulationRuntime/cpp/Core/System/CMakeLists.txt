@@ -31,6 +31,7 @@ install (FILES
         ${CMAKE_SOURCE_DIR}/Include/Core/System/ISystemProperties.h
         ${CMAKE_SOURCE_DIR}/Include/Core/System/ISystemInitialization.h
         ${CMAKE_SOURCE_DIR}/Include/Core/System/IStepEvent.h
+		${CMAKE_SOURCE_DIR}/Include/Core/System/IWriteOutput.h
       DESTINATION include/omc/cpp/Core/System)
 
 

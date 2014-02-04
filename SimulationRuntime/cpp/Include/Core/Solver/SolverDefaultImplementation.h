@@ -4,7 +4,7 @@
 #include <System/IContinuous.h>
 #include <System/IEvent.h>
 #include <System/ITime.h>
-//#include <System/IStepEvent.h>
+#include <System/IWriteOutput.h>
 #include <System/ISystemInitialization.h>
 #include <System/ISystemProperties.h>  
 #include <Solver/ISolver.h>        // Solver interface
@@ -113,7 +113,7 @@ public:
     ISolver::SOLVERSTATUS
         _solverStatus;          ///< Denotes the current status of the solver
 
-    IMixedSystem::OUTPUT  
+    IWriteOutput::OUTPUT  
         _outputCommand;          ///< Controls the output
     
    

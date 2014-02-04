@@ -16,6 +16,10 @@ template translateModel(SimCode simCode) ::=
   let()= textFile(simulationMakefile(target,simCode), '<%fileNamePrefix%>.makefile')
   let()= textFile(simulationInitHeaderFile(simCode), 'OMCpp<%fileNamePrefix%>Initialize.h')
   let()= textFile(simulationInitCppFile(simCode),'OMCpp<%fileNamePrefix%>Initialize.cpp')
+  let()= textFile(simulationExtensionHeaderFile(simCode),'OMCpp<%fileNamePrefix%>Extension.h')
+  let()= textFile(simulationExtensionCppFile(simCode),'OMCpp<%fileNamePrefix%>Extension.cpp')
+  let()= textFile(simulationWriteOutputHeaderFile(simCode),'OMCpp<%fileNamePrefix%>WriteOutput.h')
+  let()= textFile(simulationWriteOutputCppFile(simCode),'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
   let()= textFile(simulationFactoryFile(simCode),'OMCpp<%fileNamePrefix%>FactoryExport.cpp')
   let()= textFile(simulationMainRunScrip(simCode), '<%fileNamePrefix%><%simulationMainRunScripSuffix(simCode)%>')
   algloopfiles(listAppend(allEquations,initialEquations),simCode)
@@ -59,15 +63,15 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   * Simulation code to initialize the Modelica system
   *
   *****************************************************************************/
-  class <%lastIdentOfPath(modelInfo.name)%>Initialize: public ISystemInitialization, public <%lastIdentOfPath(modelInfo.name)%>
+  class <%lastIdentOfPath(modelInfo.name)%>Initialize: virtual public  <%lastIdentOfPath(modelInfo.name)%>
   {
      public:
     <%lastIdentOfPath(modelInfo.name)%>Initialize(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData);
     ~<%lastIdentOfPath(modelInfo.name)%>Initialize();
     virtual bool initial();
-       virtual void setInitial(bool);
-      virtual void initialize();
-      virtual  void initEquations();
+    virtual void setInitial(bool);
+    virtual void initialize();
+    virtual  void initEquations();
     void initializeStateVars();
     void initializeDerVars();
     void initializeAlgVars();
@@ -83,6 +87,95 @@ end simulationInitHeaderFile;
 
 
 
+template simulationWriteOutputHeaderFile(SimCode simCode)
+ "Generates code for header file for simulation target."
+::=
+match simCode
+case SIMCODE(modelInfo=MODELINFO(__)) then
+  <<
+   #pragma once
+    #include "OMCpp<%fileNamePrefix%>.h"
+    <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
+  <<
+  #include "ReduceDAE/Interfaces/IReduceDAE.h"
+  #include "DataExchange/Policies/BufferReaderWriter.h"
+  typedef HistoryImpl<BufferReaderWriter,<%numAlgvars(modelInfo)%>+<%numInOutvars(modelInfo)%>+<%numAliasvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>,<%numResidues(allEquations)%>> HistoryImplType;
+
+  >>
+  else
+  <<
+  #include "DataExchange/Policies/TextfileWriter.h"
+  typedef HistoryImpl<TextFileWriter,<%numAlgvars(modelInfo)%>+<%numInOutvars(modelInfo)%>+<%numAliasvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>,0> HistoryImplType;
+
+  >>%>
+  /*****************************************************************************
+  *
+  * Simulation code to write simulation file
+  *
+  *****************************************************************************/
+  class <%lastIdentOfPath(modelInfo.name)%>WriteOutput: virtual public  <%lastIdentOfPath(modelInfo.name)%>
+  {
+     public:
+    <%lastIdentOfPath(modelInfo.name)%>WriteOutput(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData);
+    ~<%lastIdentOfPath(modelInfo.name)%>WriteOutput();
+   	/// Output routine (to be called by the solver after every successful integration step)
+  	virtual void writeOutput(const IWriteOutput::OUTPUT command = IWriteOutput::UNDEF_OUTPUT);
+  	virtual IHistory* getHistory();
+  protected:
+  	void initialize();
+  private:
+  	   void writeAlgVarsResultNames(vector<string>& names);
+  	   void writeIntAlgVarsResultNames(vector<string>& names);
+  	   void writeBoolAlgVarsResultNames(vector<string>& names);
+  	   void writeIntputVarsResultNames(vector<string>& names);
+  	   void writeOutputVarsResultNames(vector<string>& names);
+  	   void writeAliasVarsResultNames(vector<string>& names);
+  	   void writeIntAliasVarsResultNames(vector<string>& names);
+  	   void writeBoolAliasVarsResultNames(vector<string>& names);
+  	   void writeStateVarsResultNames(vector<string>& names);
+  	   void writeDerivativeVarsResultNames(vector<string>& names);
+  	   
+  	   HistoryImplType* _historyImpl;
+  };
+ >>
+end simulationWriteOutputHeaderFile;
+
+
+template simulationExtensionHeaderFile(SimCode simCode)
+ "Generates code for header file for simulation target."
+::=
+match simCode
+case SIMCODE(modelInfo=MODELINFO(__)) then
+  <<
+   #pragma once
+  #include "OMCpp<%fileNamePrefix%>WriteOutput.h"
+  #include "OMCpp<%fileNamePrefix%>Initialize.h"
+  /*****************************************************************************
+  *
+  * Simulation code
+  *
+  *****************************************************************************/
+  class <%lastIdentOfPath(modelInfo.name)%>Extension: public ISystemInitialization,public IWriteOutput, public <%lastIdentOfPath(modelInfo.name)%>WriteOutput, public <%lastIdentOfPath(modelInfo.name)%>Initialize
+  {
+     public:
+    <%lastIdentOfPath(modelInfo.name)%>Extension(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData);
+    ~<%lastIdentOfPath(modelInfo.name)%>Extension();
+    ///Intialization mehtods from ISystemInitialization
+    virtual bool initial();
+    virtual void setInitial(bool);
+    virtual void initialize();
+    virtual  void initEquations();
+    ///Write simulation results mehtods from IWriteuutput
+    /// Output routine (to be called by the solver after every successful integration step)
+  	virtual void writeOutput(const IWriteOutput::OUTPUT command = IWriteOutput::UNDEF_OUTPUT);
+  	virtual IHistory* getHistory();
+    
+  };
+ >>
+end simulationExtensionHeaderFile;
+
+
+
 template simulationFactoryFile(SimCode simCode)
  "Generates code for header file for simulation target."
 ::=
@@ -91,14 +184,14 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   <<
    #pragma once
    #include "Modelica.h"
-   #include "OMCpp<%fileNamePrefix%>Initialize.h"
+   #include "OMCpp<%fileNamePrefix%>Extension.h"
 
 
 
   using boost::extensions::factory;
    BOOST_EXTENSION_TYPE_MAP_FUNCTION {
     types.get<std::map<std::string, factory<IMixedSystem,IGlobalSettings*,boost::shared_ptr<IAlgLoopSolverFactory>,boost::shared_ptr<ISimData> > > >()
-    ["<%lastIdentOfPath(modelInfo.name)%>"].set<<%lastIdentOfPath(modelInfo.name)%>Initialize>();
+    ["<%lastIdentOfPath(modelInfo.name)%>"].set<<%lastIdentOfPath(modelInfo.name)%>Extension>();
     }
  >>
 end simulationFactoryFile;
@@ -130,6 +223,110 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     <%init(simCode)%>
  >>
 end simulationInitCppFile;
+
+
+
+template simulationWriteOutputCppFile(SimCode simCode)
+ "Generates code for main cpp file for simulation target."
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(__)) then
+  <<
+   #include "Modelica.h"
+   #include "OMCpp<%fileNamePrefix%>WriteOutput.h"
+   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::<%lastIdentOfPath(modelInfo.name)%>WriteOutput(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData) 
+   : <%lastIdentOfPath(modelInfo.name)%>(globalSettings,nonlinsolverfactory,simData)
+   {
+    	_historyImpl = new HistoryImplType(*globalSettings);
+   }
+  
+  
+   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::~<%lastIdentOfPath(modelInfo.name)%>WriteOutput()
+    {
+   		 delete _historyImpl;
+    }
+    IHistory* <%lastIdentOfPath(modelInfo.name)%>WriteOutput::getHistory()
+	{
+   	return _historyImpl;
+	}
+	 void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::initialize()
+    {
+    	_historyImpl->init();
+      	 map<unsigned int,string> var_ouputs_idx;
+   		<%outputIndices(modelInfo)%>
+   		_historyImpl->setOutputs(var_ouputs_idx);
+   		_historyImpl->clear();
+    }
+     <%writeoutput(simCode)%>
+
+ >>
+end simulationWriteOutputCppFile;
+
+
+
+
+template simulationExtensionCppFile(SimCode simCode)
+ "Generates code for main cpp file for simulation target."
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(__)) then
+  <<
+   #include "Modelica.h"
+   #include "OMCpp<%fileNamePrefix%>Extension.h"
+   <%lastIdentOfPath(modelInfo.name)%>Extension::<%lastIdentOfPath(modelInfo.name)%>Extension(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData) 
+   : <%lastIdentOfPath(modelInfo.name)%>WriteOutput(globalSettings,nonlinsolverfactory,simData)
+   , <%lastIdentOfPath(modelInfo.name)%>Initialize(globalSettings,nonlinsolverfactory,simData)
+   , <%lastIdentOfPath(modelInfo.name)%>(globalSettings,nonlinsolverfactory,simData)
+   {
+   }
+   <%lastIdentOfPath(modelInfo.name)%>Extension::~<%lastIdentOfPath(modelInfo.name)%>Extension()
+    {
+    
+    }
+  
+  
+  
+    bool <%lastIdentOfPath(modelInfo.name)%>Extension::initial()
+    {
+      return <%lastIdentOfPath(modelInfo.name)%>Initialize::initial();
+    }
+    void <%lastIdentOfPath(modelInfo.name)%>Extension::setInitial(bool value)
+    {
+    	<%lastIdentOfPath(modelInfo.name)%>Initialize::setInitial(value);
+    }
+    
+    
+    void <%lastIdentOfPath(modelInfo.name)%>Extension::initialize()
+    {
+    	<%lastIdentOfPath(modelInfo.name)%>WriteOutput::initialize();
+    	<%lastIdentOfPath(modelInfo.name)%>Initialize::initialize();
+    	
+    }
+    
+    
+   
+    
+    void <%lastIdentOfPath(modelInfo.name)%>Extension::initEquations()
+    {
+    	<%lastIdentOfPath(modelInfo.name)%>Initialize::initEquations();
+    }
+    
+    
+    void <%lastIdentOfPath(modelInfo.name)%>Extension::writeOutput(const IWriteOutput::OUTPUT command )
+    {
+        <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeOutput(command);
+    }
+    
+     IHistory* <%lastIdentOfPath(modelInfo.name)%>Extension::getHistory( )
+    {
+      return    <%lastIdentOfPath(modelInfo.name)%>WriteOutput::getHistory();
+    }
+    
+   
+  
+  
+ >>
+end simulationExtensionCppFile;
 
   
 
@@ -459,6 +656,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   FUNCTIONFILE=OMCpp<%fileNamePrefix%>Functions.cpp
   INITFILE=OMCpp<%fileNamePrefix%>Initialize.cpp
   FACTORYFILE=OMCpp<%fileNamePrefix%>FactoryExport.cpp
+  EXTENSIONFILE=OMCpp<%fileNamePrefix%>Extension.cpp
+  WRITEOUTPUTFILE=OMCpp<%fileNamePrefix%>WriteOutput.cpp
   SYSTEMFILE=OMCpp<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
   MAINFILE = OMCpp<%fileNamePrefix%>Main.cpp
   MAINOBJ=OMCpp<%fileNamePrefix%>$(EXEEXT)
@@ -466,7 +665,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   GENERATEDFILES=$(MAINFILE) $(FUNCTIONFILE)  <%algloopcppfilenames(allEquations,simCode)%> 
  
   $(MODELICA_SYSTEM_LIB)$(DLLEXT): 
-  <%\t%>$(CXX)  /Fe$(SYSTEMOBJ) $(SYSTEMFILE) $(FUNCTIONFILE)   <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%> $(INITFILE) $(FACTORYFILE) $(CFLAGS)     $(LDSYTEMFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%>
+  <%\t%>$(CXX)  /Fe$(SYSTEMOBJ) $(SYSTEMFILE) $(FUNCTIONFILE)   <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%> $(INITFILE) $(FACTORYFILE)  $(EXTENSIONFILE) $(WRITEOUTPUTFILE) $(CFLAGS)     $(LDSYTEMFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%>
    <%\t%>$(CXX) $(CPPFLAGS) /Fe$(MAINOBJ)  $(MAINFILE)   $(CFLAGS) $(LDMAINFLAGS)
   >>
 end match
@@ -499,6 +698,8 @@ CPPFLAGS = $(CFLAGS) -DOMC_BUILD -DBOOST_SYSTEM_NO_DEPRICATED
 SYSTEMFILE=OMCpp<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
 FUNCTIONFILE=OMCpp<%fileNamePrefix%>Functions.cpp
 INITFILE=OMCpp<%fileNamePrefix%>Initialize.cpp
+EXTENSIONFILE=OMCpp<%fileNamePrefix%>Extension.cpp
+WRITEOUTPUTFILE=OMCpp<%fileNamePrefix%>WriteOutput.cpp
 FACTORYFILE=OMCpp<%fileNamePrefix%>FactoryExport.cpp
 MAINFILE = OMCpp<%fileNamePrefix%>Main.cpp
 MAINOBJ=OMCpp<%fileNamePrefix%>$(EXEEXT)
@@ -506,7 +707,7 @@ SYSTEMOBJ=OMCpp<%fileNamePrefix%>$(DLLEXT)
 
 
 
-CPPFILES=$(SYSTEMFILE) $(FUNCTIONFILE) $(INITFILE) $(FACTORYFILE) <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%>
+CPPFILES=$(SYSTEMFILE) $(FUNCTIONFILE) $(INITFILE) $(WRITEOUTPUTFILE) $(EXTENSIONFILE) $(FACTORYFILE) <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%>
 OFILES=$(CPPFILES:.cpp=.o)
 
 .PHONY: <%lastIdentOfPath(modelInfo.name)%> $(CPPFILES)
@@ -562,8 +763,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     SystemDefaultImplementation::initialize();
     //Instantiate auxiliary object for event handling functionality
     _event_handling.getCondition =  boost::bind(&<%lastIdentOfPath(modelInfo.name)%>::getCondition, this, _1);
-    _historyImpl = new HistoryImplType(*globalSettings);
-    <%arrayReindex(modelInfo)%>
+     <%arrayReindex(modelInfo)%>
     //Initialize array elements
     <%initializeArrayElements(simCode)%>
    
@@ -572,12 +772,12 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     }
     <%lastIdentOfPath(modelInfo.name)%>::~<%lastIdentOfPath(modelInfo.name)%>()
     {
-    delete _historyImpl;
+   
     }
   
   
    <%Update(simCode)%>
-   <%writeoutput(simCode)%>
+  
    <%DefaultImplementationCode(simCode)%>
    <%checkForDiscreteEvents(discreteModelVars,simCode)%>
    <%giveZeroFunc1(zeroCrossings,simCode)%>
@@ -1890,7 +2090,7 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
    let initFunctions = functionInitial(startValueEquations,varDecls,simCode)
    let initZeroCrossings = functionOnlyZeroCrossing(zeroCrossings,varDecls,simCode)
    let initEventHandling = eventHandlingInit(simCode)
-   let initOutputIndices = outputIndices(modelInfo)
+   
    /*let initBoundParameters = boundParameters(parameterEquations,varDecls,simCode)*/
    let initALgloopSolvers = initAlgloopsolvers(odeEquations,algebraicEquations,whenClauses,parameterEquations,simCode)
 
@@ -1902,7 +2102,7 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
    
       <%generateAlgloopsolvers( listAppend(allEquations,initialEquations),simCode)%>
       _simTime = 0.0;
-     _historyImpl->init();
+ 
     <%varDecls%>
      initializeStateVars();
      initializeDerVars();
@@ -1920,10 +2120,7 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
     
    
     <%initEventHandling%>
-      map<unsigned int,string> var_ouputs_idx;
-    <%initOutputIndices%>
-   _historyImpl->setOutputs(var_ouputs_idx);
-   _historyImpl->clear();
+     
    <%initextvars%>
     initEquations();
    
@@ -2404,14 +2601,26 @@ template writeoutput(SimCode simCode)
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
-   void <%lastIdentOfPath(modelInfo.name)%>::writeOutput(const OUTPUT command)
+   void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeOutput(const IWriteOutput::OUTPUT command)
    {
 
     //Write head line
-    if (command & HEAD_LINE)
+    if (command & IWriteOutput::HEAD_LINE)
     {
       vector<string> head;
-      head+= <%writeoutput1(modelInfo)%>
+      writeAlgVarsResultNames(head);
+  	  writeIntAlgVarsResultNames(head);
+  	  writeBoolAlgVarsResultNames(head);
+  	  writeIntputVarsResultNames(head);
+  	  writeOutputVarsResultNames(head);
+  	  writeAliasVarsResultNames(head);
+  	  writeIntAliasVarsResultNames(head);
+  	  writeBoolAliasVarsResultNames(head);
+  	  writeStateVarsResultNames(head);
+  	  writeDerivativeVarsResultNames(head);
+     
+     
+     
       _historyImpl->write(head);
     }
     //Write the current values
@@ -2436,6 +2645,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     }
      saveAll();
    }
+   <%writeoutput1(modelInfo)%>
   >>
   //<%writeAlgloopvars(odeEquations,algebraicEquations,whenClauses,parameterEquations,simCode)%>
 end writeoutput;
@@ -2513,19 +2723,7 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   #include "OMCpp<%fileNamePrefix%>Functions.h"
   #include "HistoryImpl.h"
   <%algloopfilesInclude(listAppend(allEquations,initialEquations),simCode)%>
-  <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
-  <<
-  #include "ReduceDAE/Interfaces/IReduceDAE.h"
-  #include "DataExchange/Policies/BufferReaderWriter.h"
-  typedef HistoryImpl<BufferReaderWriter,<%numAlgvars(modelInfo)%>+<%numInOutvars(modelInfo)%>+<%numAliasvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>,<%numResidues(allEquations)%>> HistoryImplType;
-
-  >>
-  else
-  <<
-  #include "DataExchange/Policies/TextfileWriter.h"
-  typedef HistoryImpl<TextFileWriter,<%numAlgvars(modelInfo)%>+<%numInOutvars(modelInfo)%>+<%numAliasvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>,0> HistoryImplType;
-
-  >>%>
+  
   /*****************************************************************************
   *
   * Simulation code for <%lastIdentOfPath(modelInfo.name)%> generated by the OpenModelica Compiler.
@@ -2587,7 +2785,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      <%MemberVariable(modelInfo)%>
      <%conditionvariable(zeroCrossings,simCode)%>
      Functions _functions;
-     HistoryImplType* _historyImpl;
+  
      SparseMatrix _jacobian;
      ublas::vector<double> _jac_y;
      ublas::vector<double> _jac_tmp;
@@ -2759,10 +2957,6 @@ bool <%lastIdentOfPath(modelInfo.name)%>::isAlgebraic()
 
 
 
-IHistory* <%lastIdentOfPath(modelInfo.name)%>::getHistory()
-{
-   return _historyImpl;
-}
 
 
 bool <%lastIdentOfPath(modelInfo.name)%>::provideSymbolicJacobian()
@@ -2869,8 +3063,6 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
     //Provide the right hand side (according to the index)
     virtual void getRHS(double* f);
-    //Output routine (to be called by the solver after every successful integration step)
-    virtual void writeOutput(const OUTPUT command = UNDEF_OUTPUT);
    
     //Provide Jacobian
     virtual void getJacobian(SparseMatrix& matrix);
@@ -2908,8 +3100,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       
     // System is able to provide the Jacobian symbolically
     virtual bool provideSymbolicJacobian();
- // Returns the history object to query simulation results
-   virtual IHistory* getHistory();
+
    virtual void stepCompleted(double time);
     <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
     <<
@@ -3870,40 +4061,79 @@ end dotPath;
 template writeoutput1(ModelInfo modelInfo)
 ::=
 match modelInfo
-case MODELINFO(vars=SIMVARS(__)) then
+case modelInfo as MODELINFO(vars=SIMVARS(__)) then
   <<
-      <%{(vars.algVars |> SIMVAR(__) =>
-        ' "<%crefStr(name)%>" '
-      ;separator=","),
-      (vars.intAlgVars |> SIMVAR(__) =>
-        ' "<%crefStr(name)%>" '
-      ;separator=","),
-      (vars.boolAlgVars |> SIMVAR(__) =>
-        ' "<%crefStr(name)%>" '
-      ;separator=","),
-      (vars.inputVars |> SIMVAR(__) =>
-        ' "<%crefStr(name)%>" '
-      ;separator=","),
-      (vars.outputVars |> SIMVAR(__) =>
-        ' "<%crefStr(name)%>" '
-      ;separator=","),
-      (vars.aliasVars |> SIMVAR(__) =>
-        ' "<%crefStr(name)%>" '
-      ;separator=","),
-      (vars.intAliasVars |> SIMVAR(__) =>
-        ' "<%crefStr(name)%>" '
-      ;separator=","),
-      (vars.boolAliasVars |> SIMVAR(__) =>
-        ' "<%crefStr(name)%>" '
-      ;separator=","),
-      (vars.stateVars |> SIMVAR(__) =>
-        ' "<%crefStr(name)%>" '
-      ;separator=","),
-      (vars.derivativeVars |> SIMVAR(__) =>
-        ' "<%crefStr(name)%>" '
-      ;separator=",")      
-      }
-    ;separator=","%>;
+       void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeAlgVarsResultNames(vector<string>& names)
+       {
+      	<% if vars.algVars then
+      	'names += <%(vars.algVars |> SIMVAR(__) =>
+        '"<%crefStr(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+      
+       }
+       void  <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeIntAlgVarsResultNames(vector<string>& names)
+        {
+         <% if vars.intAlgVars then
+         'names += <%(vars.intAlgVars |> SIMVAR(__) =>
+         	'"<%crefStr(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+        }
+        void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeBoolAlgVarsResultNames(vector<string>& names)
+        {
+        <% if vars.boolAlgVars then
+         'names +=<%(vars.boolAlgVars |> SIMVAR(__) =>  
+           '"<%crefStr(name)%>"'  ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+        }
+        
+        void  <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeIntputVarsResultNames(vector<string>& names)
+        {
+          <% if vars.inputVars then
+          'names += <%(vars.inputVars |> SIMVAR(__) =>
+           '"<%crefStr(name)%>"'  ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+        }
+        
+        void  <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeOutputVarsResultNames(vector<string>& names)
+        {
+          <% if vars.outputVars then
+          'names += <%(vars.outputVars |> SIMVAR(__) =>
+           '"<%crefStr(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+        }
+        
+        void  <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeAliasVarsResultNames(vector<string>& names)
+        {
+         <% if vars.aliasVars then
+         'names +=<%(vars.aliasVars |> SIMVAR(__) =>
+          '"<%crefStr(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += "  )%>;' %>
+        }
+        
+       void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeIntAliasVarsResultNames(vector<string>& names)
+        {
+        <% if vars.intAliasVars then
+           'names += <%(vars.intAliasVars |> SIMVAR(__) =>
+            '"<%crefStr(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+        }
+        
+        void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeBoolAliasVarsResultNames(vector<string>& names)
+        {
+        	<% if vars.boolAliasVars then
+      		'names += <%(vars.boolAliasVars |> SIMVAR(__) =>
+        		'"<%crefStr(name)%>"';separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+        }
+        
+        void  <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeStateVarsResultNames(vector<string>& names)
+        {
+        <% if vars.stateVars then
+          'names += <%(vars.stateVars |> SIMVAR(__) =>
+           '"<%crefStr(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+        }
+        
+        void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeDerivativeVarsResultNames(vector<string>& names)
+        {
+         <% if vars.derivativeVars then
+      		'names += <%(vars.derivativeVars |> SIMVAR(__) =>
+        	'"<%crefStr(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+        }
+              
+      
+      
   >>
 end writeoutput1;
 
@@ -4090,19 +4320,19 @@ case MODELINFO(vars=SIMVARS(__)) then
      const int boolAliasVarsStart = intAliasVarsStart  + <%numIntAliasvar(modelInfo)%>;
      const int stateVarsStart     = boolAliasVarsStart + <%numBoolAliasvar(modelInfo)%>;
      
-     <%vars.algVars         |> SIMVAR(__) hasindex i0 =>'v(algVarsStart+<%i0%>)=<%cref(name)%>;'%>
-     <%vars.intAlgVars      |> SIMVAR(__) hasindex i1 =>'v(intAlgVarsStart+<%i1%>)=<%cref(name)%>;'%>
-     <%vars.boolAlgVars     |> SIMVAR(__) hasindex i2 =>'v(boolAlgVarsStart+<%i2%>)=<%cref(name)%>;'%>
+     <%vars.algVars         |> SIMVAR(__) hasindex i0 =>'v(algVarsStart+<%i0%>)=<%cref(name)%>;';align=8 %>
+     <%vars.intAlgVars      |> SIMVAR(__) hasindex i1 =>'v(intAlgVarsStart+<%i1%>)=<%cref(name)%>;';align=8%>
+     <%vars.boolAlgVars     |> SIMVAR(__) hasindex i2 =>'v(boolAlgVarsStart+<%i2%>)=<%cref(name)%>;';align=8 %>
     
-     <%vars.inputVars       |> SIMVAR(__) hasindex i3 =>'v(inputVarsStart+<%i3%>)=<%cref(name)%>;'%>
-     <%vars.outputVars      |> SIMVAR(__) hasindex i4 =>'v(outputVarsStart+<%i4%>)=<%cref(name)%>;'%>
+     <%vars.inputVars       |> SIMVAR(__) hasindex i3 =>'v(inputVarsStart+<%i3%>)=<%cref(name)%>;';align=8 %>
+     <%vars.outputVars      |> SIMVAR(__) hasindex i4 =>'v(outputVarsStart+<%i4%>)=<%cref(name)%>;';align=8 %>
 
-     <%vars.aliasVars       |> SIMVAR(__) hasindex i5 =>'v(aliasVarsStart+<%i5%>)=<%getAliasVar(aliasvar, simCode,contextOther)%>;'%>
-     <%vars.intAliasVars    |> SIMVAR(__) hasindex i6 =>'v(intAliasVarsStart+<%i6%>)=<%getAliasVar(aliasvar, simCode,contextOther)%>;'%>
-     <%vars.boolAliasVars   |> SIMVAR(__) hasindex i7 =>'v(boolAliasVarsStart+<%i7%>)=<%getAliasVar(aliasvar, simCode,contextOther)%>;'%>
+     <%vars.aliasVars       |> SIMVAR(__) hasindex i5 =>'v(aliasVarsStart+<%i5%>)=<%getAliasVar(aliasvar, simCode,contextOther)%>;';align=8 %>
+     <%vars.intAliasVars    |> SIMVAR(__) hasindex i6 =>'v(intAliasVarsStart+<%i6%>)=<%getAliasVar(aliasvar, simCode,contextOther)%>;';align=8 %>
+     <%vars.boolAliasVars   |> SIMVAR(__) hasindex i7 =>'v(boolAliasVarsStart+<%i7%>)=<%getAliasVar(aliasvar, simCode,contextOther)%>;';align=8 %>
      
-     <%(vars.stateVars      |> SIMVAR(__) hasindex i8 =>'v(stateVarsStart+<%i8%>)=__z[<%index%>]; ')%>
-     <%(vars.derivativeVars |> SIMVAR(__) hasindex i9 =>'v2(<%i9%>)=__zDot[<%index%>]; ')%>
+     <%(vars.stateVars      |> SIMVAR(__) hasindex i8 =>'v(stateVarsStart+<%i8%>)=__z[<%index%>]; ';align=8 )%>
+     <%(vars.derivativeVars |> SIMVAR(__) hasindex i9 =>'v2(<%i9%>)=__zDot[<%index%>]; ';align=8 )%>
  >>
 end writeoutput2;
 

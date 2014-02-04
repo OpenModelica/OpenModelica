@@ -68,6 +68,10 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let()= textFile(simulationInitHeaderFile(simCode), 'OMCpp<%fileNamePrefix%>Initialize.h')
   let()= textFile(simulationInitCppFile(simCode),'OMCpp<%fileNamePrefix%>Initialize.cpp')
   let()= textFile(simulationFactoryFile(simCode),'OMCpp<%fileNamePrefix%>FactoryExport.cpp')
+  let()= textFile(simulationExtensionHeaderFile(simCode),'OMCpp<%fileNamePrefix%>Extension.h')
+  let()= textFile(simulationExtensionCppFile(simCode),'OMCpp<%fileNamePrefix%>Extension.cpp')
+  let()= textFile(simulationWriteOutputHeaderFile(simCode),'OMCpp<%fileNamePrefix%>WriteOutput.h')
+  let()= textFile(simulationWriteOutputCppFile(simCode),'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
   let()= textFile(fmudeffile(simCode), '<%name%>.def')
   let()= textFile(fmuMakefile(target,simCode), '<%fileNamePrefix%>_FMU.makefile')
   algloopfiles(listAppend(allEquations,initialEquations),simCode)
@@ -143,11 +147,11 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   let modelName = lastIdentOfPath(modelInfo.name)
   <<
   // define class name and unique id
-  #define MODEL_IDENTIFIER <%System.stringReplace(fileNamePrefix,".", "_")%>Initialize
+  #define MODEL_IDENTIFIER <%System.stringReplace(fileNamePrefix,".", "_")%>Extension
   #define MODEL_GUID "{<%guid%>}"
 
   #include "Modelica.h"
-  #include "OMCpp<%lastIdentOfPath(modelInfo.name)%>Initialize.h"
+  #include "OMCpp<%lastIdentOfPath(modelInfo.name)%>Extension.h"
   
   <%ModelDefineData(modelInfo)%>
   #define NUMBER_OF_EVENT_INDICATORS <%zerocrosslength(simCode)%>
@@ -464,13 +468,15 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   FUNCTIONFILE=OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.cpp
   INITFILE=OMCpp<%fileNamePrefix%>Initialize.cpp
   FACTORYFILE=OMCpp<%fileNamePrefix%>FactoryExport.cpp
+  EXTENSIONFILE=OMCpp<%fileNamePrefix%>Extension.cpp
+  WRITEOUTPUTFILE=OMCpp<%fileNamePrefix%>WriteOutput.cpp
   MAINFILE=OMCpp<%lastIdentOfPath(modelInfo.name)%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
   MAINFILEFMU=OMCpp<%lastIdentOfPath(modelInfo.name)%>FMU.cpp
   MAINOBJ=$(MODELICA_SYSTEM_LIB)
   GENERATEDFILES=$(MAINFILEFMU) $(MAINFILE) $(FUNCTIONFILE)  <%algloopcppfilenames(allEquations,simCode)%>
 
   $(MODELICA_SYSTEM_LIB)$(DLLEXT):
-  <%\t%>$(CXX) /Fe$(MODELICA_SYSTEM_LIB) $(MAINFILEFMU) $(MAINFILE) $(FUNCTIONFILE) $(INITFILE) $(FACTORYFILE) <%algloopcppfilenames(allEquations,simCode)%> $(CFLAGS) $(LDFLAGS)
+  <%\t%>$(CXX) /Fe$(MODELICA_SYSTEM_LIB) $(MAINFILEFMU) $(MAINFILE) $(FUNCTIONFILE) $(INITFILE) $(FACTORYFILE) $(EXTENSIONFILE) $(WRITEOUTPUTFILE) <%algloopcppfilenames(allEquations,simCode)%> $(CFLAGS) $(LDFLAGS)
   >>
 end match
 case "gcc" then
@@ -502,8 +508,10 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   SRC+= OMCpp<%fileNamePrefix%>Initialize.cpp
   SRC+= OMCpp<%fileNamePrefix%>FactoryExport.cpp
   SRC+= OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.cpp
+  SRC+= OMCpp<%fileNamePrefix%>Extension.cpp
+  SRC+= OMCpp<%fileNamePrefix%>WriteOutput.cpp
   SRC+= <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%>
-  
+
   LIBS= -lOMCppSystem_static -lOMCppDataExchange_static -lOMCppOMCFactory
   LIBS+= $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_SERIALIZATION_LIB)
   LIBS+= $(LINUX_LIB_DL)

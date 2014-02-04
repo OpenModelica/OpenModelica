@@ -99,12 +99,12 @@ void AlgLoopDefaultImplementation::initialize()
 
 
 /// Output routine (to be called by the solver after every successful integration step)
-void AlgLoopDefaultImplementation::writeOutput(const IMixedSystem::OUTPUT command )
+void AlgLoopDefaultImplementation::writeOutput(const OUTPUT command )
 {
     if (_outputStream)
     {
         // Write head line
-        if (command & IMixedSystem::HEAD_LINE)
+        if (command & HEAD_LINE)
         {
             for(int i=0; i<_dimAEq; ++i)
                 *_outputStream << "\tdoubleUnknowns[" << i << "]"; 
