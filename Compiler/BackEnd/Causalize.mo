@@ -276,7 +276,9 @@ algorithm
   var_str := BackendDump.dumpMarkedVars(isyst, vars);
   source := BackendEquation.markedEquationSource(isyst, listGet(unmatched1,1));
   info := DAEUtil.getElementSourceFileInfo(source);
-  Error.addSourceMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,var_str}, info);
+  
+  Debug.bcall3(BackendDAEUtil.isInitializationDAE(ishared), Error.addSourceMessage, Error.STRUCTURAL_SINGULAR_INITIAL_SYSTEM, {eqn_str,var_str}, info);
+  Debug.bcall3(not BackendDAEUtil.isInitializationDAE(ishared), Error.addSourceMessage, Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,var_str}, info);
 end singularSystemError;
 
 protected function getAssignedVars

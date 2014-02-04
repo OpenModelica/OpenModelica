@@ -53,7 +53,6 @@ public import BackendDAEFunc;
 public import DAE;
 public import Env;
 public import Util;
-public import HpcOmEqSystems;
 
 protected import Algorithm;
 protected import BackendDAECreate;
@@ -106,6 +105,16 @@ type SymbolicJacobians = BackendDAE.SymbolicJacobians;
 type EqSystems = BackendDAE.EqSystems;
 type WhenClause = BackendDAE.WhenClause;
 type ZeroCrossing = BackendDAE.ZeroCrossing;
+
+public function isInitializationDAE
+  input BackendDAE.Shared inShared;
+  output Boolean res;
+algorithm
+  res := match(inShared)
+   case (BackendDAE.SHARED(backendDAEType=BackendDAE.INITIALSYSTEM())) then true;
+    else then false;
+  end match;
+end isInitializationDAE;
 
 /*************************************************
  * checkBackendDAE and stuff
@@ -8152,7 +8161,7 @@ algorithm
     case (_,_,_,(_,mAmethodstr),(_,str1,_,_),_)
       equation
         str = "Transformation Module " +& mAmethodstr +& " index Reduction Method " +& str1 +& " failed!";
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
+        Debug.bcall2(not isInitializationDAE(ishared), Error.addMessage, Error.INTERNAL_ERROR, {str});
       then
         fail();
   end matchcontinue;

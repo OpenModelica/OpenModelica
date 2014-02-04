@@ -617,6 +617,8 @@ public constant Message OPERATOR_FUNCTION_NOT_EXPECTED = MESSAGE(228, TRANSLATIO
   Util.gettext("Only classes of type 'operator record' may contain elements of type 'operator function'; %s was found in a class that has restriction '%s'."));
 public constant Message OPERATOR_FUNCTION_EXPECTED = MESSAGE(229, TRANSLATION(), ERROR(),
   Util.gettext("'operator record' classes may only contain elements of type 'operator function'; %s has restriction '%s'."));
+public constant Message STRUCTURAL_SINGULAR_INITIAL_SYSTEM = MESSAGE(230, SYMBOLIC(), ERROR(),
+  Util.gettext("Initialization problem is structurally singular, error found sorting equations \n %s for variables \n %s"));
 
 public constant Message UNBOUND_PARAMETER_WITH_START_VALUE_WARNING = MESSAGE(499, TRANSLATION(), WARNING(),
   Util.gettext("Parameter %s has no value, and is fixed during initialization (fixed=true), using available start value (start=%s) as default value."));
