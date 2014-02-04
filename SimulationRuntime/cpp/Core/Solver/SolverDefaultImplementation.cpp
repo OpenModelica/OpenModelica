@@ -80,7 +80,7 @@ void SolverDefaultImplementation::initialize()
     IContinuous* continous_system = dynamic_cast<IContinuous*>(_system);
     IEvent* event_system =  dynamic_cast<IEvent*>(_system);
     ITime* timeevent_system = dynamic_cast<ITime*>(_system);
-	IWriteOutput* writeoutput_system = dynamic_cast<IWriteOutput*>(_system);
+  IWriteOutput* writeoutput_system = dynamic_cast<IWriteOutput*>(_system);
     // Set current start time to the system
     timeevent_system->setTime(_tCurrent);
     

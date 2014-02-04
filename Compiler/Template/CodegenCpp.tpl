@@ -118,24 +118,24 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
      public:
     <%lastIdentOfPath(modelInfo.name)%>WriteOutput(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData);
     ~<%lastIdentOfPath(modelInfo.name)%>WriteOutput();
-   	/// Output routine (to be called by the solver after every successful integration step)
-  	virtual void writeOutput(const IWriteOutput::OUTPUT command = IWriteOutput::UNDEF_OUTPUT);
-  	virtual IHistory* getHistory();
+     /// Output routine (to be called by the solver after every successful integration step)
+    virtual void writeOutput(const IWriteOutput::OUTPUT command = IWriteOutput::UNDEF_OUTPUT);
+    virtual IHistory* getHistory();
   protected:
-  	void initialize();
+    void initialize();
   private:
-  	   void writeAlgVarsResultNames(vector<string>& names);
-  	   void writeIntAlgVarsResultNames(vector<string>& names);
-  	   void writeBoolAlgVarsResultNames(vector<string>& names);
-  	   void writeIntputVarsResultNames(vector<string>& names);
-  	   void writeOutputVarsResultNames(vector<string>& names);
-  	   void writeAliasVarsResultNames(vector<string>& names);
-  	   void writeIntAliasVarsResultNames(vector<string>& names);
-  	   void writeBoolAliasVarsResultNames(vector<string>& names);
-  	   void writeStateVarsResultNames(vector<string>& names);
-  	   void writeDerivativeVarsResultNames(vector<string>& names);
-  	   
-  	   HistoryImplType* _historyImpl;
+       void writeAlgVarsResultNames(vector<string>& names);
+       void writeIntAlgVarsResultNames(vector<string>& names);
+       void writeBoolAlgVarsResultNames(vector<string>& names);
+       void writeIntputVarsResultNames(vector<string>& names);
+       void writeOutputVarsResultNames(vector<string>& names);
+       void writeAliasVarsResultNames(vector<string>& names);
+       void writeIntAliasVarsResultNames(vector<string>& names);
+       void writeBoolAliasVarsResultNames(vector<string>& names);
+       void writeStateVarsResultNames(vector<string>& names);
+       void writeDerivativeVarsResultNames(vector<string>& names);
+       
+       HistoryImplType* _historyImpl;
   };
  >>
 end simulationWriteOutputHeaderFile;
@@ -167,8 +167,8 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     virtual  void initEquations();
     ///Write simulation results mehtods from IWriteuutput
     /// Output routine (to be called by the solver after every successful integration step)
-  	virtual void writeOutput(const IWriteOutput::OUTPUT command = IWriteOutput::UNDEF_OUTPUT);
-  	virtual IHistory* getHistory();
+    virtual void writeOutput(const IWriteOutput::OUTPUT command = IWriteOutput::UNDEF_OUTPUT);
+    virtual IHistory* getHistory();
     
   };
  >>
@@ -237,25 +237,25 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <%lastIdentOfPath(modelInfo.name)%>WriteOutput::<%lastIdentOfPath(modelInfo.name)%>WriteOutput(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData) 
    : <%lastIdentOfPath(modelInfo.name)%>(globalSettings,nonlinsolverfactory,simData)
    {
-    	_historyImpl = new HistoryImplType(*globalSettings);
+      _historyImpl = new HistoryImplType(*globalSettings);
    }
   
   
    <%lastIdentOfPath(modelInfo.name)%>WriteOutput::~<%lastIdentOfPath(modelInfo.name)%>WriteOutput()
     {
-   		 delete _historyImpl;
+        delete _historyImpl;
     }
     IHistory* <%lastIdentOfPath(modelInfo.name)%>WriteOutput::getHistory()
-	{
-   	return _historyImpl;
-	}
-	 void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::initialize()
+  {
+     return _historyImpl;
+  }
+   void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::initialize()
     {
-    	_historyImpl->init();
-      	 map<unsigned int,string> var_ouputs_idx;
-   		<%outputIndices(modelInfo)%>
-   		_historyImpl->setOutputs(var_ouputs_idx);
-   		_historyImpl->clear();
+      _historyImpl->init();
+         map<unsigned int,string> var_ouputs_idx;
+       <%outputIndices(modelInfo)%>
+       _historyImpl->setOutputs(var_ouputs_idx);
+       _historyImpl->clear();
     }
      <%writeoutput(simCode)%>
 
@@ -292,15 +292,15 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     }
     void <%lastIdentOfPath(modelInfo.name)%>Extension::setInitial(bool value)
     {
-    	<%lastIdentOfPath(modelInfo.name)%>Initialize::setInitial(value);
+      <%lastIdentOfPath(modelInfo.name)%>Initialize::setInitial(value);
     }
     
     
     void <%lastIdentOfPath(modelInfo.name)%>Extension::initialize()
     {
-    	<%lastIdentOfPath(modelInfo.name)%>WriteOutput::initialize();
-    	<%lastIdentOfPath(modelInfo.name)%>Initialize::initialize();
-    	
+      <%lastIdentOfPath(modelInfo.name)%>WriteOutput::initialize();
+      <%lastIdentOfPath(modelInfo.name)%>Initialize::initialize();
+      
     }
     
     
@@ -308,7 +308,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     
     void <%lastIdentOfPath(modelInfo.name)%>Extension::initEquations()
     {
-    	<%lastIdentOfPath(modelInfo.name)%>Initialize::initEquations();
+      <%lastIdentOfPath(modelInfo.name)%>Initialize::initEquations();
     }
     
     
@@ -2609,15 +2609,15 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     {
       vector<string> head;
       writeAlgVarsResultNames(head);
-  	  writeIntAlgVarsResultNames(head);
-  	  writeBoolAlgVarsResultNames(head);
-  	  writeIntputVarsResultNames(head);
-  	  writeOutputVarsResultNames(head);
-  	  writeAliasVarsResultNames(head);
-  	  writeIntAliasVarsResultNames(head);
-  	  writeBoolAliasVarsResultNames(head);
-  	  writeStateVarsResultNames(head);
-  	  writeDerivativeVarsResultNames(head);
+      writeIntAlgVarsResultNames(head);
+      writeBoolAlgVarsResultNames(head);
+      writeIntputVarsResultNames(head);
+      writeOutputVarsResultNames(head);
+      writeAliasVarsResultNames(head);
+      writeIntAliasVarsResultNames(head);
+      writeBoolAliasVarsResultNames(head);
+      writeStateVarsResultNames(head);
+      writeDerivativeVarsResultNames(head);
      
      
      
@@ -4065,8 +4065,8 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
   <<
        void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeAlgVarsResultNames(vector<string>& names)
        {
-      	<% if vars.algVars then
-      	'names += <%(vars.algVars |> SIMVAR(__) =>
+        <% if vars.algVars then
+        'names += <%(vars.algVars |> SIMVAR(__) =>
         '"<%crefStr(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
       
        }
@@ -4074,7 +4074,7 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
         {
          <% if vars.intAlgVars then
          'names += <%(vars.intAlgVars |> SIMVAR(__) =>
-         	'"<%crefStr(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+           '"<%crefStr(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
         }
         void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeBoolAlgVarsResultNames(vector<string>& names)
         {
@@ -4113,9 +4113,9 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
         
         void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeBoolAliasVarsResultNames(vector<string>& names)
         {
-        	<% if vars.boolAliasVars then
-      		'names += <%(vars.boolAliasVars |> SIMVAR(__) =>
-        		'"<%crefStr(name)%>"';separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+          <% if vars.boolAliasVars then
+          'names += <%(vars.boolAliasVars |> SIMVAR(__) =>
+            '"<%crefStr(name)%>"';separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
         }
         
         void  <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeStateVarsResultNames(vector<string>& names)
@@ -4128,8 +4128,8 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
         void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeDerivativeVarsResultNames(vector<string>& names)
         {
          <% if vars.derivativeVars then
-      		'names += <%(vars.derivativeVars |> SIMVAR(__) =>
-        	'"<%crefStr(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+          'names += <%(vars.derivativeVars |> SIMVAR(__) =>
+          '"<%crefStr(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
         }
               
       
