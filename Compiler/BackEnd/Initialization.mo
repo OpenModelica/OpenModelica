@@ -1707,17 +1707,34 @@ algorithm
     then ((var, (vars, fixvars, eqns, hs)));
 
     // parameter without binding and fixed=true
-    case((var as BackendDAE.VAR(varKind=BackendDAE.PARAM(), bindExp=NONE()), (vars, fixvars, eqns, hs))) equation
+    case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.PARAM(), bindExp=NONE()), (vars, fixvars, eqns, hs))) equation
       true = BackendVariable.varFixed(var);
       startExp = BackendVariable.varStartValueType(var);
       var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
       var = BackendVariable.setBindExp(var, SOME(startExp));
       var = BackendVariable.setVarFixed(var, true);
       
-      s = ComponentReference.printComponentRefStr(BackendVariable.varCref(var));
+      s = ComponentReference.printComponentRefStr(cr);
       str = ExpressionDump.printExpStr(startExp);
       info = DAEUtil.getElementSourceFileInfo(BackendVariable.getVarSource(var));
       Error.addSourceMessage(Error.UNBOUND_PARAMETER_WITH_START_VALUE_WARNING, {s, str}, info);
+
+      vars = BackendVariable.addVar(var, vars);
+    then ((var, (vars, fixvars, eqns, hs)));
+    
+    // parameter with binding and fixed=false
+    case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.PARAM(), bindExp=SOME(bindExp), varType=ty), (vars, fixvars, eqns, hs))) equation
+      false = BackendVariable.varFixed(var);
+      var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
+      var = BackendVariable.setBindExp(var, NONE());
+      
+      s = ComponentReference.printComponentRefStr(cr);
+      str = ExpressionDump.printExpStr(bindExp);
+      info = DAEUtil.getElementSourceFileInfo(BackendVariable.getVarSource(var));
+      Error.addSourceMessage(Error.UNFIXED_PARAMETER_WITH_BINDING, {s, str}, info);
+      
+      eqn = BackendDAE.EQUATION(DAE.CREF(cr, ty), bindExp, DAE.emptyElementSource, false);
+      eqns = BackendEquation.equationAdd(eqn, eqns);
 
       vars = BackendVariable.addVar(var, vars);
     then ((var, (vars, fixvars, eqns, hs)));

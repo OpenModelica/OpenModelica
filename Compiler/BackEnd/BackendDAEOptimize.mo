@@ -2638,6 +2638,7 @@ public function collectInitialEquations "author: lochel
   This function collects all initial equations in the following order:
     - initial equations
     - implicit initial equations
+    - parameter binding with fixed=false
     - initial algorithms"
   input BackendDAE.BackendDAE inDAE;
   output list<BackendDAE.Equation> outEquations;
@@ -2648,11 +2649,12 @@ algorithm
     local
       BackendDAE.EqSystems eqs;
       BackendDAE.EquationArray initialEqs;
+      BackendDAE.Shared shared;
 
       Integer numberOfInitialEquations, numberOfInitialAlgorithms;
       list<BackendDAE.Equation> initialEqs_lst, initialEqs_lst1, initialEqs_lst2, initialEqs_lst3;
 
-    case (BackendDAE.DAE(eqs=eqs, shared=BackendDAE.SHARED(initialEqs=initialEqs))) equation
+    case (BackendDAE.DAE(eqs=eqs, shared=(shared as BackendDAE.SHARED(initialEqs=initialEqs)))) equation
       // [initial equations]
       // initial_equation
       initialEqs_lst = BackendEquation.equationList(initialEqs);
@@ -2664,6 +2666,9 @@ algorithm
       // [orderedVars] with fixed=true
       // 0 = v - start(v); fixed(v) = true
       initialEqs_lst2 = List.fold(eqs,generateImplicitInitialEquationsSystem,initialEqs_lst3);
+      // [knownVars] with fixed=false
+      // 0 = p - p.binding; fixed(p) = false
+      initialEqs_lst2 = generateImplicitInitialEquationsSystemForParameters(shared, initialEqs_lst2);
 
       // append and count
       initialEqs_lst = listAppend(initialEqs_lst1, initialEqs_lst2);
@@ -2692,6 +2697,19 @@ algorithm
   vars := BackendVariable.daeVars(system);
   outEqns := BackendVariable.traverseBackendDAEVars(vars, generateImplicitInitialEquations, inEqns);
 end generateImplicitInitialEquationsSystem;
+
+protected function generateImplicitInitialEquationsSystemForParameters "author: lochel
+  Helper for collectInitialEquations.
+  This function generates implicit initial equations for unfixed parameters."
+  input BackendDAE.Shared shared;
+  input list<BackendDAE.Equation> inEqns;
+  output list<BackendDAE.Equation> outEqns;
+protected
+  BackendDAE.Variables vars;
+algorithm
+  vars := BackendVariable.daeKnVars(shared);
+  outEqns := BackendVariable.traverseBackendDAEVars(vars, generateImplicitInitialEquationsForParameters, inEqns);
+end generateImplicitInitialEquationsSystemForParameters;
 
 protected function generateImplicitInitialEquations "author: lochel
   Helper for collectInitialEquations.
@@ -2728,6 +2746,35 @@ algorithm
     else then inTpl;
   end matchcontinue;
 end generateImplicitInitialEquations;
+
+protected function generateImplicitInitialEquationsForParameters "author: lochel
+  Helper for collectInitialEquations.
+  This function generates implicit initial equations for unfixed parameters."
+  input tuple<BackendDAE.Var,list<BackendDAE.Equation>> inTpl;
+  output tuple<BackendDAE.Var,list<BackendDAE.Equation>> outTpl;
+algorithm
+  outTpl := matchcontinue(inTpl)
+  local
+    BackendDAE.Var var;
+    BackendDAE.Equation eqn;
+    list<BackendDAE.Equation> eqns;
+    DAE.Exp e, e1, crefExp, bindExp;
+    DAE.ComponentRef cref;
+
+    case ((var as BackendDAE.VAR(varName=cref, varKind=BackendDAE.PARAM(), bindExp=SOME(bindExp)), eqns)) equation
+      false = BackendVariable.varFixed(var);
+
+      crefExp = DAE.CREF(cref, DAE.T_REAL_DEFAULT);
+
+      e = Expression.crefExp(cref);
+      e1 = DAE.BINARY(crefExp, DAE.SUB(DAE.T_REAL_DEFAULT), bindExp);
+
+      eqn = BackendDAE.RESIDUAL_EQUATION(e1, DAE.emptyElementSource,false);
+    then ((var,eqn::eqns));
+
+    else then inTpl;
+  end matchcontinue;
+end generateImplicitInitialEquationsForParameters;
 
 public function convertInitialResidualsIntoInitialEquations "author: lochel
   This function converts initial residuals into initial equations of the following form:
