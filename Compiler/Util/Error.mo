@@ -620,7 +620,7 @@ public constant Message OPERATOR_FUNCTION_EXPECTED = MESSAGE(229, TRANSLATION(),
 public constant Message STRUCTURAL_SINGULAR_INITIAL_SYSTEM = MESSAGE(230, SYMBOLIC(), ERROR(),
   Util.gettext("Initialization problem is structurally singular, error found sorting equations \n %s for variables \n %s"));
 public constant Message UNFIXED_PARAMETER_WITH_BINDING = MESSAGE(231, SYMBOLIC(), WARNING(),
-  Util.gettext("The parameter %s has fixed = false and a binding equation p = %s, which is probably redundant."));
+  Util.gettext("The parameter %s has fixed = false and a binding equation %s = %s, which is probably redundant."));
 
 public constant Message UNBOUND_PARAMETER_WITH_START_VALUE_WARNING = MESSAGE(499, TRANSLATION(), WARNING(),
   Util.gettext("Parameter %s has no value, and is fixed during initialization (fixed=true), using available start value (start=%s) as default value."));

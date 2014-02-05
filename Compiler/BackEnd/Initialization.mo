@@ -1731,7 +1731,7 @@ algorithm
       s = ComponentReference.printComponentRefStr(cr);
       str = ExpressionDump.printExpStr(bindExp);
       info = DAEUtil.getElementSourceFileInfo(BackendVariable.getVarSource(var));
-      Error.addSourceMessage(Error.UNFIXED_PARAMETER_WITH_BINDING, {s, str}, info);
+      Error.addSourceMessage(Error.UNFIXED_PARAMETER_WITH_BINDING, {s, s, str}, info);
       
       eqn = BackendDAE.EQUATION(DAE.CREF(cr, ty), bindExp, DAE.emptyElementSource, false);
       eqns = BackendEquation.equationAdd(eqn, eqns);
