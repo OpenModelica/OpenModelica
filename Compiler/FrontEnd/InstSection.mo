@@ -3174,6 +3174,7 @@ algorithm
         // print("\n");
         (cache,_,ih,sets,dae,graph) =
           connectComponents(cache, env, ih, sets, pre, c1_2, f1, ty1, vt1, c2_2, f2, ty2, vt2, ct1, io1, io2, graph, info);
+        sets = ConnectUtil.increaseConnectRefCount(c1_2, c2_2, sets);
       then
         (cache,env,ih,sets,dae,graph);
 

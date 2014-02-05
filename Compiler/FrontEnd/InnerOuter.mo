@@ -596,7 +596,6 @@ algorithm
        Connect.SetTrie sets;
        Integer sc;
        list<Connect.SetConnection> cl;
-       list<DAE.ComponentRef> cc;
        list<Connect.OuterConnect> oc;
        Env.Cache cache;
        Env.Env env;
@@ -608,7 +607,7 @@ algorithm
       then (inSets, inCGraph);
 
     // if it was not added, add it (search for both components)
-    case(cache,env,ih,_, Connect.SETS(sets, sc, cl, cc, oc),false,_,io1,_,_,io2,_,_, graph)
+    case(cache,env,ih,_, Connect.SETS(sets, sc, cl, oc),false,_,io1,_,_,io2,_,_, graph)
       equation
         (cache,DAE.ATTR(connectorType = ct, variability = vt1),t1,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
         (cache,DAE.ATTR(variability = vt2),t2,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
@@ -617,12 +616,12 @@ algorithm
         (cache,env,ih, Connect.SETS(sets = sets, setCount = sc, connections = cl),dae, graph) =
           InstSection.connectComponents(
             cache,env,ih,
-            Connect.SETS(sets, sc, cl, {}, {}),
+            Connect.SETS(sets, sc, cl, {}),
             pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,ct,io1,io2,
             graph,info);
         // TODO: take care of dae, can contain asserts from connections
       then
-        (Connect.SETS(sets, sc, cl, cc, oc), graph);
+        (Connect.SETS(sets, sc, cl, oc), graph);
 
     // This can fail, for innerouter, the inner part is not declared in env so instead the call to addOuterConnectIfEmptyNoEnv will succed.
     case(cache,env,ih,_,_,_,_,_,_,_,_,_,_,_)
@@ -670,7 +669,6 @@ algorithm
        Connect.SetTrie sets;
        Integer sc;
        list<Connect.SetConnection> cl;
-       list<DAE.ComponentRef> cc;
        list<Connect.OuterConnect> oc;
        Env.Cache cache;
        Env.Env env;
@@ -681,7 +679,7 @@ algorithm
     case(cache,env,ih,pre,_,true,_,_,_,_,_,_,_) then inSets;
 
     // if it was not added, add it (first component found: cr1)
-    case(cache,env,ih,pre, Connect.SETS(sets, sc, cl, cc, oc),false,_,io1,_,_,io2,_,_)
+    case(cache,env,ih,pre, Connect.SETS(sets, sc, cl, oc),false,_,io1,_,_,io2,_,_)
       equation
         (cache,DAE.ATTR(connectorType = ct,variability=vt1),t1,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
         pre = Prefix.NOPRE();
@@ -692,14 +690,14 @@ algorithm
         (cache,env,ih, Connect.SETS(sets = sets, setCount = sc, connections = cl),dae,_) =
         InstSection.connectComponents(
           cache,env,ih,
-          Connect.SETS(sets, sc, cl, {}, {}),
+          Connect.SETS(sets, sc, cl, {}),
           pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,ct,io1,io2,ConnectionGraph.EMPTY,info);
         // TODO: take care of dae, can contain asserts from connections
       then
-        Connect.SETS(sets, sc, cl, cc, oc);
+        Connect.SETS(sets, sc, cl, oc);
 
     // if it was not added, add it (first component found: cr2)
-    case(cache,env,ih,pre, Connect.SETS(sets, sc, cl, cc, oc),false,_,io1,_,_,io2,_,_)
+    case(cache,env,ih,pre, Connect.SETS(sets, sc, cl, oc),false,_,io1,_,_,io2,_,_)
       equation
         pre = Prefix.NOPRE();
         (cache,DAE.ATTR(connectorType = ct,variability=vt2),t2,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
@@ -710,12 +708,12 @@ algorithm
         (cache,env,ih, Connect.SETS(sets = sets, setCount = sc, connections = cl),dae,_) =
         InstSection.connectComponents(
           cache,env,ih,
-          Connect.SETS(sets, sc, cl, {}, {}),
+          Connect.SETS(sets, sc, cl, {}),
           pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,ct,
           io1,io2,ConnectionGraph.EMPTY,info);
         // TODO: take care of dae, can contain asserts from connections
       then
-        Connect.SETS(sets, sc, cl, cc, oc);
+        Connect.SETS(sets, sc, cl, oc);
 
     // fail
     else

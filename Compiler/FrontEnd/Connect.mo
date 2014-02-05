@@ -102,6 +102,7 @@ public uniontype SetTrieNode
     String name;
     DAE.ComponentRef cref;
     list<SetTrieNode> nodes;
+    Integer connectCount;
   end SET_TRIE_NODE;
 
   record SET_TRIE_LEAF
@@ -113,6 +114,7 @@ public uniontype SetTrieNode
     Option<ConnectorElement> outsideElement "The outside element.";
     Option<DAE.ComponentRef> flowAssociation "The name of the associated flow
       variable, if the leaf represents a stream variable.";
+    Integer connectCount "How many times this connector has been connected.";
   end SET_TRIE_LEAF;
 
   record SET_TRIE_DELETED
@@ -144,9 +146,6 @@ public uniontype Sets
     SetTrie sets;
     Integer setCount "How many sets the trie contains.";
     list<SetConnection> connections;
-    list<DAE.ComponentRef> connectionCrefs "A list of crefs in connect statements,
-      used to evaluate the cardinality operator. It is registered in env by
-      Inst.addConnectionSetToEnv.";
     list<OuterConnect> outerConnects "Connect statements to propagate upwards.";
   end SETS;
 end Sets;
@@ -166,7 +165,7 @@ public uniontype Set
   end SET_POINTER;
 end Set;
 
-public constant Sets emptySet = SETS(SET_TRIE_NODE("", DAE.WILD(), {}), 0, {}, {}, {});
+public constant Sets emptySet = SETS(SET_TRIE_NODE("", DAE.WILD(), {}, 0), 0, {}, {});
 
 end Connect;
 

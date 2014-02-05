@@ -1138,7 +1138,6 @@ algorithm
     case "sign" then cevalBuiltinSign;
     case "exp" then cevalBuiltinExp;
     case "noEvent" then cevalBuiltinNoevent;
-    case "cardinality" then cevalBuiltinCardinality;
     case "cat" then cevalBuiltinCat;
     case "identity" then cevalBuiltinIdentity;
     case "promote" then cevalBuiltinPromote;
@@ -1812,116 +1811,6 @@ algorithm
         (cache,v,st);
   end match;
 end cevalBuiltinNoevent;
-
-protected function cevalBuiltinCardinality "author: PA
-  Evaluates the cardinality operator. The cardinality of a connector
-  instance is its number of (inside and outside) connections, i.e.
-  number of occurences in connect equations."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<DAE.Exp> inExpExpLst;
-  input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inST;
-  input Absyn.Msg inMsg;
-  input Integer numIter;
-  output Env.Cache outCache;
-  output Values.Value outValue;
-  output Option<GlobalScript.SymbolTable> outST;
-protected
-  DAE.Exp exp;
-algorithm
-  outCache := inCache;
-  outST := inST;
-  {exp} := inExpExpLst;
-  outValue := cevalCardinality(exp, inEnv);
-  // print("ceval: env:" +& Env.printEnvPathStr(inEnv) +& "\n\t" +& "cardinality(" +& ExpressionDump.printExpStr(exp) +& ") -> " +& ValuesUtil.printValStr(outValue) +& "\n");
-end cevalBuiltinCardinality;
-
-protected function cevalCardinality "author: PA
-  counts the number of connect occurences of the
-  component ref in equations in current scope."
-  input DAE.Exp inExp;
-  input Env.Env inEnv;
-  output Values.Value outValue;
-algorithm
-  outValue := match(inExp, inEnv)
-    local
-      Env.Env env;
-      Integer res, dim;
-      DAE.ComponentRef cr;
-      list<DAE.Exp> expl;
-      list<Values.Value> vals;
-      Env.CSetsType clst;
-
-    case (DAE.CREF(componentRef = cr), env)
-      equation
-        env = Env.stripForLoopScope(env);
-        Env.FRAME(connectionSet = clst)::_ = env;
-        res = cevalCardinality2(cr, clst, env, 0);
-      then
-        Values.INTEGER(res);
-
-    case (DAE.ARRAY(array = expl), _)
-      equation
-        vals = List.map1(expl, cevalCardinality, inEnv);
-        dim = listLength(vals);
-      then
-        Values.ARRAY(vals, {dim});
-
-  end match;
-end cevalCardinality;
-
-protected function cevalCardinality2 
-  input DAE.ComponentRef inCref;
-  input Env.CSetsType inCSets;
-  input Env.Env inEnv;
-  input Integer inStartValue;
-  output Integer outValue;
-algorithm
-  outValue := match(inCref, inCSets, inEnv, inStartValue)
-    local
-      Env.Env env;
-      list<DAE.ComponentRef> cr_lst,cr_lst2,cr_totlst,crs;
-      Integer res;
-      DAE.ComponentRef cr;
-      DAE.ComponentRef prefix,currentPrefix;
-      Absyn.Ident currentPrefixIdent;
-      Env.CSetsType rest;
-
-    case (cr, {}, env, _) then inStartValue;
-
-    case (cr, (crs,prefix)::rest, env, _)
-      equation
-        // strip the subs from the cref!
-        cr = ComponentReference.crefStripSubs(cr);
-        
-        cr_lst = List.select1(crs, ComponentReference.crefContainedIn, cr);
-        currentPrefixIdent = ComponentReference.crefLastIdent(prefix);
-        currentPrefix = ComponentReference.makeCrefIdent(currentPrefixIdent,DAE.T_UNKNOWN_DEFAULT,{});
-         //  Select connect references that has cr as suffix and correct Prefix.
-        cr_lst = List.select1r(cr_lst, ComponentReference.crefPrefixOf, currentPrefix);
-
-        // Select connect references that are identifiers (inside connectors)
-        cr_lst2 = List.select(crs,ComponentReference.crefIsIdent);
-        cr_lst2 = List.select1(cr_lst2,ComponentReference.crefEqual,cr);
-
-        // adrpo: do not do union! 
-        // see bug: https://trac.openmodelica.org/OpenModelica/ticket/2062
-        cr_totlst = List.unionOnTrue(listAppend(cr_lst,cr_lst2),{},ComponentReference.crefEqual);
-        res = listLength(cr_totlst);
-        /*print("inFrame :");print(Env.printEnvPathStr(env));print("\n");
-        print("cardinality(");print(ComponentReference.printComponentRefStr(cr));print(")=");print(intString(res));
-        print("\nicrefs =");print(stringDelimitList(List.map(crs,ComponentReference.printComponentRefStr),","));
-        print("\ncrefs =");print(stringDelimitList(List.map(cr_totlst,ComponentReference.printComponentRefStr),","));
-        print("\n");
-         print("prefix =");print(ComponentReference.printComponentRefStr(prefix));print("\n");*/
-       //  print("env:");print(Env.printEnvStr(env));
-       res = cevalCardinality2(cr, rest, inEnv, res + inStartValue);
-      then
-       res;
-
-  end match;
-end cevalCardinality2;
 
 protected function cevalBuiltinCat "author: PA
   Evaluates the cat operator, for matrix concatenation."

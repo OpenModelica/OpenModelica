@@ -2402,7 +2402,7 @@ algorithm
         (compelts_1, eqs_1, initeqs_1, alg_1, initalg_1) = 
           InstUtil.extractConstantPlusDepsTpl(compelts_1, instSingleCref, {}, className, eqs_1, initeqs_1, alg_1, initalg_1);
 
-        (csets, env2, ih) = InstUtil.addConnectionCrefsFromEqs(csets, eqs_1, pre, env2, ih);
+        //(csets, env2, ih) = InstUtil.addConnectionCrefsFromEqs(csets, eqs_1, pre, env2, ih);
 
         //// Debug.fprintln(Flags.INST_TRACE, "Emods to InstUtil.addComponentsToEnv: " +& Mod.printModStr(emods));
 
