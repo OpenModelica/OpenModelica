@@ -1163,7 +1163,7 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
   if (mSkipBackground)
     return;
   // draw scene rectangle white background
-  painter->setPen(Qt::NoPen);
+  painter->setPen(Qt::darkGray);
   painter->setBrush(QBrush(Qt::white, Qt::SolidPattern));
   painter->drawRect(sceneRect());
   if (mpModelWidget->getModelWidgetContainer()->isShowGridLines())
@@ -1172,7 +1172,7 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
     painter->setPen(Qt::lightGray);
     /* Draw left half vertical lines */
     int horizontalGridStep = mpCoOrdinateSystem->getHorizontalGridStep();
-    qreal xAxisStep = rect.center().x();
+    qreal xAxisStep = 0;
     qreal yAxisStep = rect.y();
     xAxisStep -= horizontalGridStep;
     while (xAxisStep > rect.left())
@@ -1181,7 +1181,7 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
       xAxisStep -= horizontalGridStep;
     }
     /* Draw right half vertical lines */
-    xAxisStep = rect.center().x();
+    xAxisStep = 0;
     while (xAxisStep < rect.right())
     {
       painter->drawLine(QPointF(xAxisStep, yAxisStep), QPointF(xAxisStep, rect.bottom()));
@@ -1190,7 +1190,7 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
     /* Draw left half horizontal lines */
     int verticalGridStep = mpCoOrdinateSystem->getVerticalGridStep();
     xAxisStep = rect.x();
-    yAxisStep = rect.center().y();
+    yAxisStep = 0;
     yAxisStep += verticalGridStep;
     while (yAxisStep < rect.bottom())
     {
@@ -1198,7 +1198,7 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
       yAxisStep += verticalGridStep;
     }
     /* Draw right half horizontal lines */
-    yAxisStep = rect.center().y();
+    yAxisStep = 0;
     while (yAxisStep > rect.top())
     {
       painter->drawLine(QPointF(xAxisStep, yAxisStep), QPointF(rect.right(), yAxisStep));
@@ -1206,8 +1206,8 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
     }
     /* set the middle horizontal and vertical line gray */
     painter->setPen(Qt::darkGray);
-    painter->drawLine(QPointF(rect.left(), rect.center().y()), QPointF(rect.right(), rect.center().y()));
-    painter->drawLine(QPointF(rect.center().x(), rect.top()), QPointF(rect.center().x(), rect.bottom()));
+    painter->drawLine(QPointF(rect.left(), 0), QPointF(rect.right(), 0));
+    painter->drawLine(QPointF(0, rect.top()), QPointF(0, rect.bottom()));
   }
   else
   {

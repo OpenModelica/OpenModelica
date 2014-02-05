@@ -102,6 +102,15 @@ LineAnnotation::LineAnnotation(QString annotation, bool inheritedShape, Componen
   // set the end component
   setEndComponent(pEndComponent);
   parseShapeAnnotation(annotation);
+  /* make the points relative to origin */
+  QList<QPointF> points;
+  for (int i = 0 ; i < mPoints.size() ; i++)
+  {
+    QPointF point = mOrigin + mPoints[i];
+    points.append(point);
+  }
+  mPoints = points;
+  mOrigin = QPointF(0, 0);
   // set the graphics view
   mpGraphicsView->scene()->addItem(this);
 }

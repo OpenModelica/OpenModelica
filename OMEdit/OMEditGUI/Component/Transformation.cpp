@@ -364,18 +364,9 @@ bool Transformation::getFlipVertical()
 
 QTransform Transformation::getTransformationMatrixDiagram()
 {
-  QPoint extent1 = mExtent1Diagram.toPoint();
-  QPoint extent2 = mExtent2Diagram.toPoint();
-  if ((extent1.x() == -extent2.x()) and (extent1.y() == -extent2.y()))
-  {
-    mPositionXDiagram = mOriginDiagram.x();
-    mPositionYDiagram = mOriginDiagram.y();
-  }
-  else
-  {
-    mPositionXDiagram = (mExtent1Diagram.x() + mExtent2Diagram.x()) / 2;
-    mPositionYDiagram = (mExtent1Diagram.y() + mExtent2Diagram.y()) / 2;
-  }
+  mPositionXDiagram = mOriginDiagram.x() + ((mExtent1Diagram.x() + mExtent2Diagram.x()) / 2);
+  mPositionYDiagram = mOriginDiagram.y() + ((mExtent1Diagram.y() + mExtent2Diagram.y()) / 2);
+
   qreal tempwidth = fabs(mExtent1Diagram.x() - mExtent2Diagram.x());
   qreal tempHeight = fabs(mExtent1Diagram.y() - mExtent2Diagram.y());
   // get scale
@@ -410,18 +401,9 @@ QTransform Transformation::getTransformationMatrixDiagram()
 
 QTransform Transformation::getTransformationMatrixIcon()
 {
-  QPoint extent1 = mExtent1Icon.toPoint();
-  QPoint extent2 = mExtent2Icon.toPoint();
-  if ((extent1.x() == -extent2.x()) and (extent1.y() == -extent2.y()))
-  {
-    mPositionXIcon = mOriginIcon.x();
-    mPositionYIcon = mOriginIcon.y();
-  }
-  else
-  {
-    mPositionXIcon = (mExtent1Icon.x() + mExtent2Icon.x()) / 2;
-    mPositionYIcon = (mExtent1Icon.y() + mExtent2Icon.y()) / 2;
-  }
+  mPositionXIcon = mOriginIcon.x() + ((mExtent1Icon.x() + mExtent2Icon.x()) / 2);
+  mPositionYIcon = mOriginIcon.y() + ((mExtent1Icon.y() + mExtent2Icon.y()) / 2);
+
   qreal tempwidthIcon = fabs(mExtent1Icon.x() - mExtent2Icon.x());
   qreal tempHeightIcon = fabs(mExtent1Icon.y() - mExtent2Icon.y());
   // get scale
