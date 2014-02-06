@@ -36,7 +36,7 @@
 #include "division.h"
 #include "omc_error.h"
 
-modelica_real division_error_equation_time(modelica_real b, const char *msg, const int *indexes, modelica_real time, modelica_boolean noThrow, jmp_buf simjmpBuffer)
+modelica_real division_error_equation_time(modelica_real b, const char *msg, const int *indexes, modelica_real time, modelica_boolean noThrow)
 {
   if(noThrow){
     warningStreamPrintWithEquationIndexes(LOG_UTIL, 0, indexes, "solver will try to handle division by zero at time %.16g: %s", time, msg);
@@ -46,7 +46,7 @@ modelica_real division_error_equation_time(modelica_real b, const char *msg, con
   return b;
 }
 
-modelica_real division_error_time(modelica_real b, const char* division_str, modelica_real time, const char* file, long line, modelica_boolean noThrow, jmp_buf simJmpBuffer)
+modelica_real division_error_time(modelica_real b, const char* division_str, modelica_real time, const char* file, long line, modelica_boolean noThrow)
 {
   if(noThrow){
     warningStreamPrint(LOG_UTIL, 0,
@@ -58,7 +58,9 @@ modelica_real division_error_time(modelica_real b, const char* division_str, mod
       "division by zero in partial equation: %s\n"
       "at Time=%f\n"
       "[line] %ld | [file] %s", division_str, time, line, file);
-    longjmp(simJmpBuffer, 1);
+#ifndef __APPLE_CC__
+    throwStreamPrint("division by zero");
+#endif
   }
   return b;
 }
