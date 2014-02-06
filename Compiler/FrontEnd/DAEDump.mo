@@ -1520,6 +1520,7 @@ algorithm
 
     case DAE.RECORD_CONSTRUCTOR(path = fpath,type_=t)
       equation
+        false = Flags.isSet(Flags.DISABLE_RECORD_CONSTRUCTOR_OUTPUT);
         Print.printBuf("function ");
         fstr = Absyn.pathStringNoQual(fpath);
         Print.printBuf(fstr);
@@ -3784,6 +3785,7 @@ algorithm
 
     case (DAE.RECORD_CONSTRUCTOR(path = fpath,type_=tp), str)
       equation
+        false = Flags.isSet(Flags.DISABLE_RECORD_CONSTRUCTOR_OUTPUT);
         fstr = Absyn.pathStringNoQual(fpath);
         str = IOStream.append(str, "function ");
         str = IOStream.append(str, fstr);

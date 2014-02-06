@@ -377,6 +377,8 @@ constant DebugFlag RESOLVE_LOOPS = DEBUG_FLAG(105, "resolveLoops", false,
   Util.gettext("activates the resolveLoops module"));
 constant DebugFlag DISABLE_WINDOWS_PATH_CHECK_WARNING = DEBUG_FLAG(106, "disableWindowsPathCheckWarning", false,
   Util.gettext("Disables warnings on Windows if OPENMODELICAHOME/MinGW is missing"));
+constant DebugFlag DISABLE_RECORD_CONSTRUCTOR_OUTPUT = DEBUG_FLAG(107, "disableRecordConstructorOutput", false, 
+  Util.gettext("Disables output of record constructors in the flat code."));
   
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -488,7 +490,8 @@ constant list<DebugFlag> allDebugFlags = {
   INFO_XML_OPERATIONS,
   HPCOM_DUMP,
   RESOLVE_LOOPS,
-  DISABLE_WINDOWS_PATH_CHECK_WARNING
+  DISABLE_WINDOWS_PATH_CHECK_WARNING,
+  DISABLE_RECORD_CONSTRUCTOR_OUTPUT
 };
 
 // CONFIGURATION FLAGS

@@ -3983,16 +3983,11 @@ output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue(inExp)
     local
+      DAE.Exp array_exp;
       list<DAE.Exp> expl;
-      list<list<DAE.Exp>> mexpl;
 
-    case (DAE.CALL(expLst={DAE.ARRAY(array = expl)}))
-      then Expression.makeProductLst(expl);
-
-    case (DAE.CALL(expLst={DAE.MATRIX(matrix = mexpl)}))
-      equation
-        expl = List.flatten(mexpl);
-      then Expression.makeProductLst(expl);
+    case DAE.CALL(expLst = {array_exp})
+      then Expression.makeProductLst(Expression.arrayElements(array_exp));
 
     else inExp;
   end matchcontinue;
@@ -4644,6 +4639,7 @@ algorithm
         (cache, arrexp_1, DAE.PROP(ty, c), _) =
           elabExp(cache, env, arrexp, impl,NONE(), true, pre, info);
         true = Types.isArray(ty,{});
+        arrexp_1 = Expression.matrixToArray(arrexp_1);
         elt_ty = Types.arrayElementType(ty);
         tp = Types.simplifyType(elt_ty);
         false = Types.isString(tp);
@@ -11465,7 +11461,7 @@ algorithm
         expl1 = List.map2(expl1,applySubscript3,exp1,ety);
         exp2 = DAE.ARRAY(DAE.T_INTEGER_DEFAULT,false,expl1);
         (iLst, scalar) = extractDimensionOfChild(exp2);
-        ety = Expression.unliftArray(ety);
+        ety = Expression.arrayEltType(ety);
         exp2 = DAE.ARRAY(DAE.T_ARRAY(ety, iLst, DAE.emptyTypeSource), scalar, expl1);
       then exp2;
   end match;
