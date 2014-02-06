@@ -72,6 +72,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     virtual void setInitial(bool);
     virtual void initialize();
     virtual  void initEquations();
+   private:
     void initializeStateVars();
     void initializeDerVars();
     void initializeAlgVars();
@@ -3923,6 +3924,21 @@ template initconstValue(SimVar var,SimCode simCode) ::=
     %>'
 end initconstValue;
 
+template crefToCStrOrig(ComponentRef cr)
+ "Helper function to cref."
+::=
+  match cr
+  case CREF_IDENT(__) then '<%unquoteIdentifier(ident)%><%subscriptsToCStrOrig(subscriptLst)%>'
+  case CREF_QUAL(__) then '<%unquoteIdentifier(ident)%><%subscriptsToCStrOrig(subscriptLst)%>$P<%crefToCStrOrig(componentRef)%>'
+  case WILD(__) then ''
+  else "CREF_NOT_IDENT_OR_QUAL"
+end crefToCStrOrig;
+template subscriptsToCStrOrig(list<Subscript> subscripts)
+::=
+  if subscripts then
+    '$lB<%subscripts |> s => subscriptToCStr(s) ;separator="$c"%>$rB'
+end subscriptsToCStrOrig;
+
 template initconstValue2(Exp initialValue,SimCode simCode)
 ::=
   match initialValue
@@ -5437,32 +5453,40 @@ case eqn as SES_ARRAY_CALL_ASSIGN(__) then
     //let &preExp += 'cast_integer_array_to_real(&<%expPart%>, &<%tvar%>);<%\n%>'
     <<
     <%preExp%>
-    <%cref(eqn.componentRef)%>=<%expPart%>;/*test1*/
+    <%cref1(eqn.componentRef,simCode, context)%>=<%expPart%>;
     >>
   case "int" then
     let tvar = tempDecl("integer_array", &varDecls /*BUFD*/)
-    //let &preExp += 'cast_integer_array_to_real(&<%expPart%>, &<%tvar%>);<%\n%>'
     <<
-    <%preExp%>
-    <%cref(eqn.componentRef)%>=<%expPart%>;/*test2*/
+      <%preExp%>
+      <%cref1(eqn.componentRef,simCode, context)%>=<%expPart%>;
     >>
   case "double" then
-    <<
-    <%preExp%>
-    <%cref(eqn.componentRef)%>=<%expPart%>;/*test3*/
-    >>
+   <<
+        <%preExp%>
+       <%assignDerArray(context,expPart,eqn.componentRef,simCode)%>
+   >>
+ end equationArrayCallAssign;
+  /*<%cref1(eqn.componentRef,simCode, context)%>=<%expPart%>;*/
 
-end equationArrayCallAssign;
 
-template inlineArray(Context context, String arr, ComponentRef c)
+template assignDerArray(Context context, String arr, ComponentRef c,SimCode simCode)
 ::=
-  match context case INLINE_CONTEXT(__) then
-    match c
-      case CREF_QUAL(ident = "$DER") then
-        <<
-        inline_integrate_array(size_of_dimension_real_array(&<%arr%>,1),<%cref(c)%>);
-        >>
-end inlineArray;
+  cref2simvar(c, simCode) |> var as SIMVAR(__) =>
+   match varKind
+    case STATE(__)        then
+     <<
+        memcpy(&<%cref1(c,simCode, context)%>,<%arr%>.data(),<%arr%>.shape()[0]*sizeof(double));
+     >>
+    case STATE_DER(__)   then
+    <<
+      memcpy(&<%cref1(c,simCode, context)%>,<%arr%>.data(),<%arr%>.shape()[0]*sizeof(double));
+    >>
+    else
+    <<
+       <%cref1(c,simCode, context)%>=<%arr%>;
+    >>
+end assignDerArray;
 
 template equationWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/,SimCode simCode)
  "Generates a when equation."
@@ -5562,7 +5586,13 @@ match ty
     <%cref(left)%> = <%exp%>;
    >>
 end whenAssign;
+template inlineArray(Context context, String arr, ComponentRef c)
+::= match context case INLINE_CONTEXT(__) then match c
+case CREF_QUAL(ident = "$DER") then <<
 
+inline_integrate_array(size_of_dimension_real_array(&<%arr%>,1),<%cref(c)%>);
+>>
+end inlineArray;
 
 template equationElseWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/,SimCode simCode)
  "Generates a else when equation."
@@ -7022,7 +7052,7 @@ template representationCref2(ComponentRef inCref, SimVar var,SimCode simCode, Co
  /* cref2simvar(inCref, simCode) |> SIMVAR(__) =>'__zDot[<%index%>]'*/
 match var
 case(SIMVAR(index=i)) then
- '__zDot[<%i%>]'
+ <<__zDot[<%i%>]>>
 end representationCref2;
 
 template helpvarlength(SimCode simCode)

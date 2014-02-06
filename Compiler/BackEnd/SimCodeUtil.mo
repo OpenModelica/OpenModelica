@@ -7607,7 +7607,8 @@ algorithm
         /* Extract from external object list */
         ((varsOut, _, _)) = BackendVariable.traverseBackendDAEVars(extvars, extractVarsFromList, (varsOut, aliasVars, knvars));
         /* sort variables on index */
-        varsOut = sortSimvars(stringEqual(Config.simCodeTarget(), "Cpp"), varsOut);
+        varsOut = sortSimvars(varsOut);
+         varsOut = Util.if_(stringEqual(Config.simCodeTarget(), "Cpp"), extendIncompleteArray(varsOut), varsOut);
         /* Index of algebraic and parameters need 
          to fix due to separation of int Vars*/
         varsOut = fixIndex(varsOut);
@@ -7898,12 +7899,11 @@ algorithm
 end isAliasVar;
 
 protected function sortSimvars
-  input Boolean isCpp;
   input SimCode.SimVars unsortedSimvars;
   output SimCode.SimVars sortedSimvars;
 algorithm
   sortedSimvars :=
-  match (isCpp, unsortedSimvars)
+  match (unsortedSimvars)
     local
       list<SimCode.SimVar> stateVars;
       list<SimCode.SimVar> derivativeVars;
@@ -7930,7 +7930,7 @@ algorithm
       list<SimCode.SimVar> jacobianVars;
       HashSet.HashSet set;
     // runtime CPP, there it is not necesarry to sort the arrays because different memory management
-    case (true, SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars, 
+    /*case (true, SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars, 
       outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars, 
       stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars))
       equation 
@@ -7987,8 +7987,8 @@ algorithm
       then SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars, 
         outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars, 
         stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars);
-    // other runtimes
-    case (_, SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars, 
+    */// other runtimes
+    case (SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars, 
       outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars, 
       stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars))
       equation
@@ -8021,6 +8021,101 @@ algorithm
         stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars);
   end match;
 end sortSimvars;
+
+
+protected function extendIncompleteArray
+   input SimCode.SimVars unsortedSimvars;
+  output SimCode.SimVars sortedSimvars;
+algorithm
+  sortedSimvars :=
+  match (unsortedSimvars)
+    local
+      list<SimCode.SimVar> stateVars;
+      list<SimCode.SimVar> derivativeVars;
+      list<SimCode.SimVar> inlineVars;
+      list<SimCode.SimVar> algVars;
+      list<SimCode.SimVar> intAlgVars;
+      list<SimCode.SimVar> boolAlgVars;
+      list<SimCode.SimVar> inputVars;
+      list<SimCode.SimVar> outputVars;
+      list<SimCode.SimVar> aliasVars;
+      list<SimCode.SimVar> intAliasVars;
+      list<SimCode.SimVar> boolAliasVars;
+      list<SimCode.SimVar> paramVars;
+      list<SimCode.SimVar> intParamVars;
+      list<SimCode.SimVar> boolParamVars;
+      list<SimCode.SimVar> stringAlgVars;
+      list<SimCode.SimVar> stringParamVars;
+      list<SimCode.SimVar> stringAliasVars;
+      list<SimCode.SimVar> extObjVars;
+      list<SimCode.SimVar> constVars;
+      list<SimCode.SimVar> intConstVars;
+      list<SimCode.SimVar> boolConstVars;
+      list<SimCode.SimVar> stringConstVars;
+      list<SimCode.SimVar> jacobianVars;
+      HashSet.HashSet set;
+   
+    case (SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars, 
+      outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars, 
+      stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars))
+      equation 
+        // for runtime CPP also the incomplete arrays need one special element to generate the array 
+        // search all arrays with array information
+        set = HashSet.emptyHashSet();
+        set = List.fold(stateVars, collectArrayFirstVars, set);
+        set = List.fold(derivativeVars, collectArrayFirstVars, set);
+        set = List.fold(inlineVars, collectArrayFirstVars, set);
+        set = List.fold(algVars, collectArrayFirstVars, set);
+        set = List.fold(intAlgVars, collectArrayFirstVars, set);
+        set = List.fold(boolAlgVars, collectArrayFirstVars, set);
+        set = List.fold(inputVars, collectArrayFirstVars, set);
+        set = List.fold(outputVars, collectArrayFirstVars, set);
+        set = List.fold(aliasVars, collectArrayFirstVars, set);
+        set = List.fold(intAliasVars, collectArrayFirstVars, set);
+        set = List.fold(boolAliasVars, collectArrayFirstVars, set);
+        set = List.fold(paramVars, collectArrayFirstVars, set);
+        set = List.fold(intParamVars, collectArrayFirstVars, set);
+        set = List.fold(boolParamVars, collectArrayFirstVars, set);
+        set = List.fold(stringAlgVars, collectArrayFirstVars, set);
+        set = List.fold(stringParamVars, collectArrayFirstVars, set);
+        set = List.fold(stringAliasVars, collectArrayFirstVars, set);
+        set = List.fold(extObjVars, collectArrayFirstVars, set);
+        set = List.fold(constVars, collectArrayFirstVars, set);
+        set = List.fold(intConstVars, collectArrayFirstVars, set);
+        set = List.fold(boolConstVars, collectArrayFirstVars, set);
+        set = List.fold(stringConstVars, collectArrayFirstVars, set);
+        set = List.fold(jacobianVars, collectArrayFirstVars, set);
+        // add array information to incomplete arrays
+        (stateVars, set) = List.mapFold(stateVars, setArrayElementnoFirst, set);
+        (derivativeVars, set) = List.mapFold(derivativeVars, setArrayElementnoFirst, set);
+        (inlineVars, set) = List.mapFold(inlineVars, setArrayElementnoFirst, set);
+        (algVars, set) = List.mapFold(algVars, setArrayElementnoFirst, set);
+        (intAlgVars, set) = List.mapFold(intAlgVars, setArrayElementnoFirst, set);
+        (boolAlgVars, set) = List.mapFold(boolAlgVars, setArrayElementnoFirst, set);
+        (inputVars, set) = List.mapFold(inputVars, setArrayElementnoFirst, set);
+        (outputVars, set) = List.mapFold(outputVars, setArrayElementnoFirst, set);
+        (aliasVars, set) = List.mapFold(aliasVars, setArrayElementnoFirst, set);
+        (intAliasVars, set) = List.mapFold(intAliasVars, setArrayElementnoFirst, set);
+        (boolAliasVars, set) = List.mapFold(boolAliasVars, setArrayElementnoFirst, set);
+        (paramVars, set) = List.mapFold(paramVars, setArrayElementnoFirst, set);
+        (intParamVars, set) = List.mapFold(intParamVars, setArrayElementnoFirst, set);
+        (boolParamVars, set) = List.mapFold(boolParamVars, setArrayElementnoFirst, set);
+        (stringAlgVars, set) = List.mapFold(stringAlgVars, setArrayElementnoFirst, set);
+        (stringParamVars, set) = List.mapFold(stringParamVars, setArrayElementnoFirst, set);
+        (stringAliasVars, set) = List.mapFold(stringAliasVars, setArrayElementnoFirst, set);
+        (extObjVars, set) = List.mapFold(extObjVars, setArrayElementnoFirst, set);
+        (constVars, set) = List.mapFold(constVars, setArrayElementnoFirst, set);
+        (intConstVars, set) = List.mapFold(intConstVars, setArrayElementnoFirst, set);
+        (boolConstVars, set) = List.mapFold(boolConstVars, setArrayElementnoFirst, set);
+        (stringConstVars, set) = List.mapFold(stringConstVars, setArrayElementnoFirst, set);
+        (jacobianVars, set) = List.mapFold(jacobianVars, setArrayElementnoFirst, set);        
+      then SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars, 
+        outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars, 
+        stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars);
+   
+   end match;
+end extendIncompleteArray;
+
 
 protected function setArrayElementnoFirst
 "author: Frenkel TUD 2012-10"
