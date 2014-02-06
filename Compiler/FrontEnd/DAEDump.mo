@@ -1009,72 +1009,6 @@ algorithm
   end matchcontinue;
 end getStartOrigin;
 
-protected function dumpVar "
-  Dump Var."
-  input DAE.Element inElement;
-algorithm
-  _ := matchcontinue (inElement)
-    local
-      DAE.ComponentRef id;
-      DAE.VarKind kind;
-      DAE.VarDirection dir;
-      DAE.VarParallelism prl;
-      DAE.Type typ;
-      list<Absyn.Path> classlst,class_;
-      Option<DAE.VariableAttributes> dae_var_attr;
-      Option<SCode.Comment> comment;
-      DAE.Exp e;
-      DAE.ElementSource source "the element source";
-
-    // var with no binding
-    case DAE.VAR(componentRef = id,
-             kind = kind,
-             direction = dir,
-             parallelism = prl,
-             ty = typ,
-             binding = NONE(),
-             source = source,
-             variableAttributesOption = dae_var_attr,
-             absynCommentOption = comment)
-      equation
-        dumpKind(kind);
-        dumpDirection(dir);
-        dumpParallelism(prl);
-        Print.printBuf(Types.unparseType(typ));
-        Print.printBuf(" ");
-        ComponentReference.printComponentRef(id);
-        dumpCommentOption(comment);
-        dumpVariableAttributes(dae_var_attr);
-        Print.printBuf(";\n");
-      then
-        ();
-    // var with binding
-    case DAE.VAR(componentRef = id,
-             kind = kind,
-             direction = dir,
-             parallelism = prl,
-             ty = typ,
-             binding = SOME(e),
-             source = source,
-             variableAttributesOption = dae_var_attr,
-             absynCommentOption = comment)
-      equation
-        dumpKind(kind);
-        dumpDirection(dir);
-        dumpParallelism(prl);
-        Print.printBuf(Types.unparseType(typ));
-        Print.printBuf(" ");
-        ComponentReference.printComponentRef(id);
-        dumpVariableAttributes(dae_var_attr);
-        Print.printBuf(" = ");
-        ExpressionDump.printExp(e);
-        Print.printBuf(";\n");
-      then
-        ();
-    case (_) then ();
-  end matchcontinue;
-end dumpVar;
-
 protected function dumpVarVisibilityStr "Prints 'protected' to a string for protected variables"
   input DAE.VarVisibility prot;
   output String str;
@@ -1625,53 +1559,56 @@ algorithm
   end match;
 end dumpInlineTypeStr;
 
-protected function printRecordConstructorInputsStr "help function to dumpFunction. Prints the inputs of a record constructor"
+protected function printRecordConstructorInputsStr
+  "Helper function to dumpFunction. Prints the inputs of a record constructor."
   input DAE.Type itp;
   output String str;
 algorithm
-  str := matchcontinue(itp)
+  str := match(itp)
     local
-      list<Absyn.Path> lstPath;
-      DAE.EqualityConstraint ec;
-      DAE.Binding binding;
-      ClassInf.State cistate;
-      String name,s1,s2;
-      list<DAE.Var> varLst;
+      list<String> var_strl;
+      list<DAE.Var> vars;
       DAE.Type tp;
 
-    // handle empty
-    case(DAE.T_COMPLEX(varLst={})) then "";
-
-    // protected vars are not input!, see Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
-    case(DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,attributes = DAE.ATTR(visibility=SCode.PROTECTED()),ty=tp,binding=binding)::varLst,ec,lstPath))
+    case DAE.T_COMPLEX(varLst = vars)
       equation
-        s1 ="  protected "+&unparseType(tp)+&" "+&name+&printRecordConstructorBinding(binding)+&";\n";
-        s2 = printRecordConstructorInputsStr(DAE.T_COMPLEX(cistate,varLst,ec,lstPath));
-        str = s1 +&s2;
+        var_strl = List.map(vars, printRecordConstructorInputStr);
       then
-        str;
+        stringAppendList(var_strl);
 
-    // constants are not input! see Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
-    case(DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,attributes=DAE.ATTR(variability=SCode.CONST()),ty=tp,binding=binding)::varLst,ec,lstPath))
-      equation
-        s1 ="  constant "+&unparseType(tp)+&" "+&name+&printRecordConstructorBinding(binding)+&";\n";
-        s2 = printRecordConstructorInputsStr(DAE.T_COMPLEX(cistate,varLst,ec,lstPath));
-        str = s1 +& s2;
-      then
-        str;
+    case DAE.T_FUNCTION(funcResultType = tp) then printRecordConstructorInputsStr(tp);
 
-    case(DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,ty=tp,binding=binding)::varLst,ec,lstPath))
-      equation
-        s1 ="  input "+&unparseType(tp)+&" "+&name+&printRecordConstructorBinding(binding)+&";\n";
-        s2 = printRecordConstructorInputsStr(DAE.T_COMPLEX(cistate,varLst,ec,lstPath));
-        str = s1 +& s2;
-      then
-        str;
-
-    case(DAE.T_FUNCTION(funcResultType=tp)) then printRecordConstructorInputsStr(tp);
-
-  end matchcontinue;
+  end match;
 end printRecordConstructorInputsStr;
+
+protected function printRecordConstructorInputStr
+  input DAE.Var inVar;
+  output String outString;
+protected
+  String name, attr_str, binding_str, ty_str, ty_vars_str;
+  DAE.Attributes attr;
+  DAE.Type ty;
+  DAE.Binding binding;
+algorithm
+  DAE.TYPES_VAR(name = name, attributes = attr, ty = ty, binding = binding) := inVar;
+  attr_str := printRecordConstructorInputAttrStr(attr);
+  binding_str := printRecordConstructorBinding(binding);
+  (ty_str, ty_vars_str) := printTypeStr(ty);
+  outString := stringAppendList({"  ", attr_str, ty_str, " ", name, ty_vars_str, binding_str, ";\n"});
+end printRecordConstructorInputStr;
+
+protected function printRecordConstructorInputAttrStr
+  input DAE.Attributes inAttributes;
+  output String outString;
+algorithm
+  outString := match(inAttributes)
+    // protected vars are not input!, see Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
+    case DAE.ATTR(visibility = SCode.PROTECTED()) then "protected ";
+    // constants are not input! see Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
+    case DAE.ATTR(variability = SCode.CONST()) then "constant ";
+    else "input ";
+  end match;
+end printRecordConstructorInputAttrStr;
 
 protected function printRecordConstructorBinding "prints the binding of a record constructor input"
   input DAE.Binding binding;
@@ -3590,84 +3527,95 @@ algorithm
   end match;
 end dumpVarsStream;
 
-protected function dumpVarStream "Dump var to a stream."
+protected function printTypeStr
+  input DAE.Type inType;
+  output String outTypeStr;
+  output String outTypeAttrStr;
+protected
+  DAE.Type ty;
+  list<DAE.Var> ty_vars;
+algorithm
+  (ty, ty_vars) := Types.stripTypeVars(inType);
+  outTypeStr := unparseType(ty);
+  outTypeAttrStr := List.toString(ty_vars, Types.unparseVarAttr, "", "(", ", ", ")", false);
+end printTypeStr;
+
+protected function dumpVarBindingStr
+  input Option<DAE.Exp> inBinding;
+  output String outString;
+algorithm
+  outString := match(inBinding)
+    local
+      DAE.Exp exp;
+      String bind_str;
+
+    case SOME(exp)
+      equation
+        bind_str = ExpressionDump.printExpStr(exp);
+      then
+        " = " +& bind_str;
+
+    else "";
+  end match;
+end dumpVarBindingStr;
+        
+protected function dumpVarStream
+  "Dump var to a stream."
   input DAE.Element inElement;
   input Boolean printTypeDimension "use true here when printing components in functions as these are not vectorized! Otherwise, use false";
   input IOStream.IOStream inStream;
   output IOStream.IOStream outStream;
 algorithm
-  outStream := matchcontinue (inElement, printTypeDimension, inStream)
+  outStream := matchcontinue(inElement, printTypeDimension, inStream)
     local
-      String s1,s2,s3,s4,comment_str,s5,s6,s7,s3_subs,sFinal,sPrl;
+      String final_str, kind_str, dir_str, ty_str, ty_vars_str, dim_str, name_str;
+      String vis_str, par_str, cmt_str, attr_str, binding_str;
       DAE.ComponentRef id;
       DAE.VarKind kind;
       DAE.VarDirection dir;
       DAE.VarParallelism prl;
-      DAE.Type typ;
-      DAE.ElementSource source "the origin of the element";
-      Option<DAE.VariableAttributes> dae_var_attr;
-      Option<SCode.Comment> comment;
-      DAE.Exp e;
-      DAE.VarVisibility prot;
+      DAE.VarVisibility vis;
+      DAE.Type ty;
+      Option<DAE.VariableAttributes> attr;
+      Option<SCode.Comment> cmt;
+      Option<DAE.Exp> binding;
       DAE.InstDims dims;
       IOStream.IOStream str;
-    // no binding
+      list<DAE.Var> ty_vars;
+ 
     case (DAE.VAR(componentRef = id,
-             kind = kind,
-             direction = dir,
-             parallelism = prl,
-             protection=prot,
-             ty = typ,
-             dims = dims,
-             binding = NONE(),
-             source = source,
-             variableAttributesOption = dae_var_attr,
-             absynCommentOption = comment), _, str)
+                  kind = kind,
+                  direction = dir,
+                  parallelism = prl,
+                  protection = vis,
+                  ty = ty,
+                  dims = dims,
+                  binding = binding,
+                  variableAttributesOption = attr,
+                  absynCommentOption = cmt), _, str)
       equation
-        sFinal = Util.if_(DAEUtil.getFinalAttr(dae_var_attr),"final ", "");
-        s1 = dumpKindStr(kind);
-        s2 = dumpDirectionStr(dir);
-        s3 = unparseType(typ);
-        s3_subs = unparseDimensions(dims, printTypeDimension);
-        s4 = ComponentReference.printComponentRefStr(id);
-        s7 = dumpVarVisibilityStr(prot);
-        sPrl = dumpVarParallelismStr(prl);
-        comment_str = dumpCommentAnnotationStr(comment);
-        s5 = dumpVariableAttributesStr(dae_var_attr);
-        str = IOStream.appendList(str, {"  ",s7,sFinal,sPrl,s1,s2,s3,s3_subs," ",s4,s5,comment_str,";\n"});
+        final_str = Util.if_(DAEUtil.getFinalAttr(attr), "final ", "");
+        kind_str = dumpKindStr(kind);
+        dir_str = dumpDirectionStr(dir);
+        (ty_str, ty_vars_str) = printTypeStr(ty);
+        dim_str = unparseDimensions(dims, printTypeDimension);
+        name_str = ComponentReference.printComponentRefStr(id);
+        vis_str = dumpVarVisibilityStr(vis);
+        par_str = dumpVarParallelismStr(prl);
+        cmt_str = dumpCommentAnnotationStr(cmt);
+        attr_str = dumpVariableAttributesStr(attr);
+        binding_str = dumpVarBindingStr(binding);
+        str = IOStream.appendList(str, {"  ", vis_str, final_str, par_str,
+            kind_str, dir_str, ty_str, dim_str, " ", name_str, ty_vars_str,
+            attr_str, binding_str, cmt_str, ";\n"});
       then
         str;
-    // we have a binding
-    case (DAE.VAR(componentRef = id,
-             kind = kind,
-             direction = dir,
-             parallelism = prl,
-             protection=prot,
-             ty = typ,
-             dims = dims,
-             binding = SOME(e),
-             source = source,
-             variableAttributesOption = dae_var_attr,
-             absynCommentOption = comment), _, str)
-      equation
-        sFinal = Util.if_(DAEUtil.getFinalAttr(dae_var_attr),"final ", "");
-        s1 = dumpKindStr(kind);
-        s2 = dumpDirectionStr(dir);
-        s3 = unparseType(typ);
-        s3_subs = unparseDimensions(dims, printTypeDimension);
-        s4 = ComponentReference.printComponentRefStr(id);
-        s5 = ExpressionDump.printExpStr(e);
-        comment_str = dumpCommentAnnotationStr(comment);
-        s6 = dumpVariableAttributesStr(dae_var_attr);
-        sPrl = dumpVarParallelismStr(prl);
-        s7 = dumpVarVisibilityStr(prot);
-        str = IOStream.appendList(str, {"  ",s7,sFinal,sPrl,s1,s2,s3,s3_subs," ",s4,s6," = ",s5,comment_str,";\n"});
-      then
-        str;
-    case (_,_,str) then str;
+
+    else inStream;
+
   end matchcontinue;
 end dumpVarStream;
-
+        
 public function dumpAlgorithmStream
 "Dump algorithm to a stream"
   input DAE.Element inElement;

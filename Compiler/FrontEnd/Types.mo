@@ -2546,13 +2546,13 @@ algorithm
     case DAE.TYPES_VAR(name = n, binding = DAE.EQBOUND(exp=e))
       equation
         bindStr = ExpressionDump.printExpStr(e);
-        res = stringAppendList({n,"=",bindStr});
+        res = stringAppendList({n," = ",bindStr});
       then
         res;
     case DAE.TYPES_VAR(name = n, binding = DAE.VALBOUND(valBound=value))
       equation
         valStr = ValuesUtil.valString(value);
-        res = stringAppendList({n,"=",valStr});
+        res = stringAppendList({n," = ",valStr});
       then
         res;
     case(_) then "";
@@ -7764,5 +7764,43 @@ algorithm
     else false;
   end match;
 end dimNotFixed;
+
+public function stripTypeVars
+  "Strips the attribute variables from a type, and returns both the stripped
+   type and the attribute variables."
+  input DAE.Type inType;
+  output DAE.Type outType;
+  output list<DAE.Var> outVars;
+algorithm
+  (outType, outVars) := match(inType)
+    local
+      list<DAE.Var> vars, sub_vars;
+      DAE.TypeSource src;
+      DAE.Type ty;
+      DAE.Dimensions dims;
+      ClassInf.State state;
+      EqualityConstraint ec;
+
+    case DAE.T_INTEGER(vars, src) then (DAE.T_INTEGER({}, src), vars);
+    case DAE.T_REAL(vars, src)    then (DAE.T_REAL({}, src), vars);
+    case DAE.T_STRING(vars, src)  then (DAE.T_STRING({}, src), vars);
+    case DAE.T_BOOL(vars, src)    then (DAE.T_BOOL({}, src), vars);
+
+    case DAE.T_ARRAY(ty, dims, src)
+      equation
+        (ty, vars) = stripTypeVars(ty);
+      then
+        (DAE.T_ARRAY(ty, dims, src), vars);
+
+    case DAE.T_SUBTYPE_BASIC(state, sub_vars, ty, ec, src)
+      equation
+        (ty, vars) = stripTypeVars(ty);
+      then
+        (DAE.T_SUBTYPE_BASIC(state, sub_vars, ty, ec, src), vars);
+
+    else (inType, {});
+
+  end match;
+end stripTypeVars;
 
 end Types;
