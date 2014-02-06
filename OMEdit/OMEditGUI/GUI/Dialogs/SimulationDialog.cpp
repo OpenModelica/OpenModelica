@@ -554,7 +554,14 @@ void SimulationDialog::saveSimulationOptions()
   annotationString.append("annotate=experiment(");
   annotationString.append("StartTime=").append(mpStartTimeTextBox->text()).append(",");
   annotationString.append("StopTime=").append(mpStopTimeTextBox->text()).append(",");
-  annotationString.append("Tolerance=").append(mpToleranceTextBox->text());
+  annotationString.append("Tolerance=").append(mpToleranceTextBox->text()).append(",");
+  double interval, stopTime, startTime;
+  int numberOfIntervals;
+  stopTime = mpStopTimeTextBox->text().toDouble();
+  startTime = mpStartTimeTextBox->text().toDouble();
+  numberOfIntervals = mpNumberofIntervalsSpinBox->value();
+  interval = (stopTime - startTime) / numberOfIntervals;
+  annotationString.append("Interval=").append(QString::number(interval));
   annotationString.append(")");
   // send the simulations options annotation to OMC
   mpMainWindow->getOMCProxy()->addClassAnnotation(mpLibraryTreeNode->getNameStructure(), annotationString);
