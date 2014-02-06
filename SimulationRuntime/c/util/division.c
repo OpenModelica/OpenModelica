@@ -58,7 +58,7 @@ modelica_real division_error_time(modelica_real b, const char* division_str, mod
       "division by zero in partial equation: %s\n"
       "at Time=%f\n"
       "[line] %ld | [file] %s", division_str, time, line, file);
-		longjmp(simJmpBuffer, 1);
+    longjmp(simJmpBuffer, 1);
   }
   return b;
 }
