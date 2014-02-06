@@ -1163,7 +1163,7 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
   if (mSkipBackground)
     return;
   // draw scene rectangle white background
-  painter->setPen(Qt::darkGray);
+  painter->setPen(Qt::NoPen);
   painter->setBrush(QBrush(Qt::white, Qt::SolidPattern));
   painter->drawRect(sceneRect());
   if (mpModelWidget->getModelWidgetContainer()->isShowGridLines())
@@ -1209,12 +1209,9 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
     painter->drawLine(QPointF(rect.left(), 0), QPointF(rect.right(), 0));
     painter->drawLine(QPointF(0, rect.top()), QPointF(0, rect.bottom()));
   }
-  else
-  {
-    // draw scene rectangle
-    painter->setPen(Qt::darkGray);
-    painter->drawRect(sceneRect());
-  }
+  // draw scene rectangle
+  painter->setPen(Qt::darkGray);
+  painter->drawRect(sceneRect());
 }
 
 //! Defines what happens when clicking in a GraphicsView.
