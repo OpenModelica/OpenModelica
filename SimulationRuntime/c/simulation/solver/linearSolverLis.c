@@ -60,6 +60,9 @@ allocateLisData(int n_row, int n_col, int nz, void** voiddata)
   lis_vector_create(0, &(data->b));
   lis_vector_set_size(data->b, data->n_row, 0);
 
+  lis_vector_create(0, &(data->x));
+  lis_vector_set_size(data->b, data->n_row, 0);
+
   lis_solver_create(&(data->solver));
   lis_solver_set_option("-i fgmres ",data->solver);
 
@@ -111,10 +114,6 @@ solveLis(DATA *data, int sysNumber)
     lis_vector_set_value(LIS_INS_VALUE, i, systemData->b[i], sData->b);
   }
 
-  /* Create a new Vector for the solution */
-  lis_vector_destroy(sData->x);
-  lis_vector_duplicate(sData->A,&(sData->x));
-  
   /* solve */
   ret = lis_solve(sData->A,sData->b,sData->x,sData->solver);
 
