@@ -90,21 +90,6 @@ using namespace std;
 
 static int interactiveSimulation = 0; /* This variable signals if an simulation session is interactive or non-interactive (by default) */
 
-/* This variable is used to get the step size value during the simulation. */
-double stepSize = 0.0;
-
-double getSimulationStepSize()
-{
-  return stepSize;
-}
-
-void printSimulationStepSize(double in_stepSize, double time)
-{
-  fprintf(stderr, "in_stepSize=%f, time=%f\n", in_stepSize, time);
-}
-
-/* const char* version = "20110520_1120"; */
-
 #ifndef NO_INTERACTIVE_DEPENDENCY
   Socket sim_communication_port;
   static int sim_communication_port_open = 0;
@@ -799,8 +784,6 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
   data->simulationInfo.lsMethod = getlinearSolverMethod(argc, argv);
 
   read_input_xml(&(data->modelData), &(data->simulationInfo));
-  /* set the global stepsize variable */
-  stepSize = data->simulationInfo.stepSize;
 
   /* allocate memory for mixed system solvers */
   allocatemixedSystem(data);

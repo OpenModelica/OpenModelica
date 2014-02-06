@@ -6191,32 +6191,17 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
             expLst={e1, e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode)
-
-    'division(<%var1%>,<%var2%>,"<%var1%>/<%var2%> because <%var2%>  == 0")'
-
-  case CALL(path=IDENT(name="DIVISION"),
-            expLst={e1, e2, DAE.SCONST(string=string)}) then
-    let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
-    let var2 = daeExp(e2, context, &preExp, &varDecls,simCode)
-     let var3 = Util.escapeModelicaStringToCString(string)
+    let var3 = Util.escapeModelicaStringToCString(printExpStr(e2))
     'division(<%var1%>,<%var2%>,"<%var3%>")'
 
    case CALL(path=IDENT(name="sign"),
             expLst={e1}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
      'sgn(<%var1%>)'
-   case CALL(path=IDENT(name="DIVISION"))
-            then
-    let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")
-   // let typeStr = expTypeShort(attr.ty )
-   let typeStr ="double"
-    let retVar = tempDecl(typeStr, &varDecls /*BUFD*/)
-    let &preExp += '<%retVar%> = division(<%argStr%>);<%\n%>'
-    '<%retVar%>'
 
    case CALL(attr=CALL_ATTR(ty=ty as T_ARRAY(dims=dims)),
             path=IDENT(name="DIVISION_ARRAY_SCALAR"),
-            expLst={e1, e2, e3 as SHARED_LITERAL(__)}) then
+            expLst={e1, e2}) then
     let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "int"
                         case T_ARRAY(ty=T_ENUMERATION(__)) then "int"
                         else "double"
@@ -6224,9 +6209,9 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let var = tempDecl('multi_array<<%type%>,<%listLength(dims)%>>', &varDecls /*BUFD*/)
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode)
-    let var3 = daeExp(e3, context, &preExp, &varDecls,simCode)
+    let var3 = Util.escapeModelicaStringToCString(printExpStr(e2))
     let &preExp += 'assign_array(<%var%>,divide_array<<%type%>,<%listLength(dims)%>>(<%var1%>, <%var2%>));<%\n%>'
-    //let &preExp += 'division_alloc_<%type%>_scalar(&<%var1%>, <%var2%>, &<%var%>, <%var3%>);<%\n%>'
+    //let &preExp += 'division_alloc_<%type%>_scalar(&<%var1%>, <%var2%>, &<%var%>, "<%var3%>");<%\n%>'
     '<%var%>'
 
 

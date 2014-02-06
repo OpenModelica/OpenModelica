@@ -353,3 +353,13 @@ void throwStreamPrint(const char *format, ...)
   messageFunction(LOG_TYPE_DEBUG, LOG_ASSERT, 0, logBuffer, 0, NULL);
   longjmp(globalJmpbuf, 1);
 }
+
+void throwStreamPrintWithEquationIndexes(const int *indexes, const char *format, ...)
+{
+  char logBuffer[SIZE_LOG_BUFFER];
+  va_list args;
+  va_start(args, format);
+  vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
+  messageFunction(LOG_TYPE_DEBUG, LOG_ASSERT, 0, logBuffer, 0, indexes);
+  longjmp(globalJmpbuf, 1);
+}

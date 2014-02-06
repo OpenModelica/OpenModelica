@@ -1463,6 +1463,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> allEquations)
        <<
        void setLinearMatrixA<%index%>(void *inData, void *systemData)
        {
+         const int equationIndexes[2] = {1,<%index%>};
          DATA* data = (DATA*) inData;
          LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
          <%varDecls%>
@@ -1470,6 +1471,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> allEquations)
        }
        void setLinearVectorb<%index%>(void *inData, void *systemData)
        {
+         const int equationIndexes[2] = {1,<%index%>};
          DATA* data = (DATA*) inData;
          LINEAR_SYSTEM_DATA* linearSystemData = (LINEAR_SYSTEM_DATA*) systemData;
          <%varDecls2%>
@@ -1590,6 +1592,7 @@ template functionNonLinearResiduals(list<SimEqSystem> allEquations, String model
      void residualFunc<%index%>(void* dataIn, double* xloc, double* res, integer* iflag)
      {
        DATA* data = (DATA*) dataIn;
+       const int equationIndexes[2] = {1,<%index%>};
        <%varDecls%>
        #ifdef _OMC_MEASURE_TIME
        SIM_PROF_ADD_NCALL_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex,1);
@@ -1775,6 +1778,7 @@ template functionInitialResidual(list<SimEqSystem> residualEquations, String mod
   <%tmp%>
   int <%symbolName(modelNamePrefix,"initial_residual")%>(DATA *data, double *initialResiduals)
   {
+    const int *equationIndexes = NULL;
     int i = 0;
     <%varDecls%>
 
@@ -2591,6 +2595,7 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Op
    */
   int <%symbolName(modelNamePrefix,"functionODE_inline")%>(DATA* data, double stepSize)
   {
+    const int *equationIndexes = NULL;
     <%varDecls2%>
     data->simulationInfo.discreteCall = 0;
     begin_inline();
@@ -3418,6 +3423,7 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Tex
    */
   void <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>(DATA *data)
   {
+    const int equationIndexes[2] = {1,<%ix%>};
     <%&varD%>
     <%x%>
   }
@@ -8390,37 +8396,30 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     '<%var2%>'
   
   case CALL(path=IDENT(name="DIVISION"),
-            expLst={e1, e2, DAE.SCONST(string=string)}) then
+            expLst={e1, e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls)
     let var2 = daeExp(e2, context, &preExp, &varDecls)
-    let var3 = Util.escapeModelicaStringToCString(string)
-    'DIVISION(<%var1%>,<%var2%>,"<%var3%>")'
+    let var3 = Util.escapeModelicaStringToCString(printExpStr(e2))
+    (match context
+      case FUNCTION_CONTEXT(__) then
+        'DIVISION(<%var1%>,<%var2%>,"<%var3%>")'
+      else
+        'DIVISION_SIM(<%var1%>,<%var2%>,"<%var3%>",equationIndexes)'
+    )
 
   case CALL(attr=CALL_ATTR(ty=ty),
             path=IDENT(name="DIVISION_ARRAY_SCALAR"),
-            expLst={e1, e2, e3 as  DAE.SCONST(string=string)}) then
+            expLst={e1, e2}) then
     let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_array"
                         case T_ARRAY(ty=T_ENUMERATION(__)) then "integer_array"
                         else "real_array"
     let var = tempDecl(type, &varDecls)
     let var1 = daeExp(e1, context, &preExp, &varDecls)
     let var2 = daeExp(e2, context, &preExp, &varDecls)
-    let var3 = Util.escapeModelicaStringToCString(string)
-    let &preExp += 'division_alloc_<%type%>_scalar(&<%var1%>, <%var2%>, &<%var%>, <%var3%>);<%\n%>'
+    let var3 = Util.escapeModelicaStringToCString(printExpStr(e2))
+    let &preExp += 'division_alloc_<%type%>_scalar(&<%var1%>, <%var2%>, &<%var%>, "<%var3%>");<%\n%>'
     '<%var%>'
 
-  case CALL(attr=CALL_ATTR(ty=ty),
-            path=IDENT(name="DIVISION_ARRAY_SCALAR"),
-            expLst={e1, e2, e3 as SHARED_LITERAL(__)}) then
-    let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_array"
-                        case T_ARRAY(ty=T_ENUMERATION(__)) then "integer_array"
-                        else "real_array"
-    let var = tempDecl(type, &varDecls)
-    let var1 = daeExp(e1, context, &preExp, &varDecls)
-    let var2 = daeExp(e2, context, &preExp, &varDecls)
-    let var3 = daeExp(e3, context, &preExp, &varDecls)
-    let &preExp += 'division_alloc_<%type%>_scalar(&<%var1%>, <%var2%>, &<%var%>, <%var3%>);<%\n%>'
-    '<%var%>'
   case exp as CALL(attr=CALL_ATTR(ty=ty), path=IDENT(name="DIVISION_ARRAY_SCALAR")) then
     error(sourceInfo(),'Code generation does not support <%printExpStr(exp)%>')
 

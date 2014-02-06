@@ -157,6 +157,7 @@ extern void warningStreamPrintWithEquationIndexes(int stream, int indentNext, co
 extern void errorStreamPrint(int stream, int indentNext, const char *format, ...) __attribute__ ((format (printf, 3, 4)));
 extern void assertStreamPrint(int cond, const char *format, ...) __attribute__ ((format (printf, 2, 3)));
 extern void throwStreamPrint(const char *format, ...) __attribute__ ((format (printf, 1, 2), noreturn));
+extern void throwStreamPrintWithEquationIndexes(const int *indexes, const char *format, ...) __attribute__ ((format (printf, 2, 3), noreturn));
 
 #ifdef USE_DEBUG_OUTPUT
 void debugStreamPrint(int stream, int indentNext, const char *format, ...) __attribute__ ((format (printf, 3, 4)));

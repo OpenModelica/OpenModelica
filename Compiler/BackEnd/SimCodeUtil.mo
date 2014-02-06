@@ -9990,13 +9990,7 @@ algorithm
         false = Expression.isZero(e2);
       then ((e, source ));
     case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV(ty), exp2 = e2), source))
-      equation
-        se = generateDivExpErrorMsg(e, e2, source);
-      then ((DAE.CALL(Absyn.IDENT("DIVISION"), {e1, e2, DAE.SCONST(se)}, DAE.CALL_ATTR(ty, false, true, false, DAE.NO_INLINE(), DAE.NO_TAIL())), source ));
-        /*
-         case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_ARR(ty), exp2 = e2), dlowmode as (dlow, _)))
-         then ((e, dlowmode ));
-         */    
+      then ((DAE.CALL(Absyn.IDENT("DIVISION"), {e1, e2}, DAE.CALL_ATTR(ty, false, true, false, DAE.NO_INLINE(), DAE.NO_TAIL())), source ));
         
     case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_ARRAY_SCALAR(ty), exp2 = e2), source))
       equation
@@ -10004,9 +9998,7 @@ algorithm
         false = Expression.isZero(e2);
       then ((e, source ));
     case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_ARRAY_SCALAR(ty), exp2 = e2), source))
-      equation
-        se = generateDivExpErrorMsg(e, e2, source);
-      then ((DAE.CALL(Absyn.IDENT("DIVISION_ARRAY_SCALAR"), {e1, e2, DAE.SCONST(se)}, DAE.CALL_ATTR(ty, false, true, false, DAE.NO_INLINE(), DAE.NO_TAIL())), source ));
+      then ((DAE.CALL(Absyn.IDENT("DIVISION_ARRAY_SCALAR"), {e1, e2}, DAE.CALL_ATTR(ty, false, true, false, DAE.NO_INLINE(), DAE.NO_TAIL())), source ));
         
     case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_SCALAR_ARRAY(ty), exp2 = e2), source))
       equation
@@ -10014,30 +10006,10 @@ algorithm
         false = Expression.isZero(e2);
       then ((e, source ));
     case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_SCALAR_ARRAY(ty), exp2 = e2), source))
-      equation
-        se = generateDivExpErrorMsg(e, e2, source);
-      then ((DAE.CALL(Absyn.IDENT("DIVISION_SCALAR_ARRAY"), {e1, e2, DAE.SCONST(se)}, DAE.CALL_ATTR(ty, false, true, false, DAE.NO_INLINE(), DAE.NO_TAIL())), source));
+      then ((DAE.CALL(Absyn.IDENT("DIVISION_SCALAR_ARRAY"), {e1, e2}, DAE.CALL_ATTR(ty, false, true, false, DAE.NO_INLINE(), DAE.NO_TAIL())), source));
     case _ then (inExp);
   end matchcontinue;
 end traversingDivExpFinder;
-
-protected function generateDivExpErrorMsg "author: Frenkel TUD 2010-02. varOrigCref"
-  input DAE.Exp inExp;
-  input DAE.Exp inDivisor;
-  input DAE.ElementSource source;
-  output String outString;
-protected 
-  String se, se2, s, fileName;
-  Integer lns;
-algorithm
-  /* Come on... This is just silly. Why not store an Absyn.Info in the OP_DIVISION()? */
-  se := ExpressionDump.printExp2Str(inExp, "\"", SOME((BackendDump.componentRef_DIVISION_String, 0)), SOME(BackendDump.printCallFunction2StrDIVISION));
-  se2 := ExpressionDump.printExp2Str(inDivisor, "\"", SOME((BackendDump.componentRef_DIVISION_String, 0)), SOME(BackendDump.printCallFunction2StrDIVISION));
-  Absyn.INFO(fileName=fileName, lineNumberStart=lns) := DAEUtil.getElementSourceFileInfo(source);
-  fileName := Util.testsuiteFriendly(fileName);
-  s := intString(lns);
-  outString := stringAppendList({se, " because ", se2, " == 0: File: ", fileName, " Line: ", s});
-end generateDivExpErrorMsg;
 
 protected function addDivExpErrorMsgtosimJac "helper for addDivExpErrorMsgtoSimEqSystem."
   input tuple<Integer, Integer, SimCode.SimEqSystem> inJac;
