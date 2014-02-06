@@ -53,7 +53,7 @@ QLineEdit {
   border: 1px solid gray;
 }
 
-QPlainTextEdit#ModelicaTextEdit {
+QPlainTextEdit#BaseEditor {
   selection-background-color: #3399FF;
   selection-color: white;
 }

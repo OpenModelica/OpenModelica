@@ -45,34 +45,34 @@
   \brief Defines the single and multi line comments styles. The class implementation and logic is inspired from Qt Creator sources.
   */
 CommentDefinition::CommentDefinition() :
-    m_afterWhiteSpaces(false),
-    m_singleLine(QLatin1String("//")),
-    m_multiLineStart(QLatin1String("/*")),
-    m_multiLineEnd(QLatin1String("*/"))
+  m_afterWhiteSpaces(false),
+  m_singleLine(QLatin1String("//")),
+  m_multiLineStart(QLatin1String("/*")),
+  m_multiLineEnd(QLatin1String("*/"))
 {}
 
 CommentDefinition &CommentDefinition::setAfterWhiteSpaces(const bool afterWhiteSpaces)
 {
-    m_afterWhiteSpaces = afterWhiteSpaces;
-    return *this;
+  m_afterWhiteSpaces = afterWhiteSpaces;
+  return *this;
 }
 
 CommentDefinition &CommentDefinition::setSingleLine(const QString &singleLine)
 {
-    m_singleLine = singleLine;
-    return *this;
+  m_singleLine = singleLine;
+  return *this;
 }
 
 CommentDefinition &CommentDefinition::setMultiLineStart(const QString &multiLineStart)
 {
-    m_multiLineStart = multiLineStart;
-    return *this;
+  m_multiLineStart = multiLineStart;
+  return *this;
 }
 
 CommentDefinition &CommentDefinition::setMultiLineEnd(const QString &multiLineEnd)
 {
-    m_multiLineEnd = multiLineEnd;
-    return *this;
+  m_multiLineEnd = multiLineEnd;
+  return *this;
 }
 
 bool CommentDefinition::isAfterWhiteSpaces() const
@@ -95,9 +95,9 @@ bool CommentDefinition::hasMultiLineStyle() const
 
 void CommentDefinition::clearCommentStyles()
 {
-    m_singleLine.clear();
-    m_multiLineStart.clear();
-    m_multiLineEnd.clear();
+  m_singleLine.clear();
+  m_multiLineStart.clear();
+  m_multiLineEnd.clear();
 }
 
 namespace {
@@ -107,20 +107,144 @@ bool isComment(const QString &text,
                const CommentDefinition &definition,
                const QString & (CommentDefinition::* comment) () const)
 {
-    const QString &commentType = ((definition).*(comment))();
-    const int length = commentType.length();
+  const QString &commentType = ((definition).*(comment))();
+  const int length = commentType.length();
 
-    Q_ASSERT(text.length() - index >= length);
+  Q_ASSERT(text.length() - index >= length);
 
-    int i = 0;
-    while (i < length) {
-        if (text.at(index + i) != commentType.at(i))
-            return false;
-        ++i;
-    }
-    return true;
+  int i = 0;
+  while (i < length) {
+    if (text.at(index + i) != commentType.at(i))
+      return false;
+    ++i;
+  }
+  return true;
 }
 
+}
+
+BaseEditor::BaseEditor(QWidget *pParent)
+  : QPlainTextEdit(pParent)
+{
+  setTabStopWidth(Helper::tabWidth);
+  setObjectName("BaseEditor");
+  document()->setDocumentMargin(2);
+  // line numbers widget
+  mpLineNumberArea = new LineNumberArea(this);
+  connect(this, SIGNAL(blockCountChanged(int)), this, SLOT(updateLineNumberAreaWidth(int)));
+  connect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(updateLineNumberArea(QRect,int)));
+  connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(highlightCurrentLine()));
+  updateLineNumberAreaWidth(0);
+  highlightCurrentLine();
+}
+
+//! Calculate appropriate width for LineNumberArea.
+//! @return int width of LineNumberArea.
+int BaseEditor::lineNumberAreaWidth()
+{
+  int digits = 1;
+  int max = qMax(1, document()->blockCount());
+  while (max >= 10)
+  {
+    max /= 10;
+    ++digits;
+  }
+  int space = 20 + fontMetrics().width(QLatin1Char('9')) * digits;
+  return space;
+}
+
+//! Activated whenever LineNumberArea Widget paint event is raised.
+//! Writes the line numbers for the visible blocks.
+void BaseEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
+{
+  QPainter painter(mpLineNumberArea);
+  painter.fillRect(event->rect(), QColor(240, 240, 240));
+
+  QTextBlock block = firstVisibleBlock();
+  int blockNumber = block.blockNumber();
+  int top = (int) blockBoundingGeometry(block).translated(contentOffset()).top();
+  int bottom = top + (int) blockBoundingRect(block).height();
+
+  while (block.isValid() && top <= event->rect().bottom())
+  {
+    if (block.isVisible() && bottom >= event->rect().top())
+    {
+      QString number = QString::number(blockNumber + 1);
+      // make the current highlighted line number darker
+      if (blockNumber == textCursor().blockNumber())
+        painter.setPen(QColor(64, 64, 64));
+      else
+        painter.setPen(Qt::gray);
+      painter.setFont(document()->defaultFont());
+      QFontMetrics fontMetrics (document()->defaultFont());
+      painter.drawText(0, top, mpLineNumberArea->width() - 5, fontMetrics.height(), Qt::AlignRight, number);
+    }
+    block = block.next();
+    top = bottom;
+    bottom = top + (int) blockBoundingRect(block).height();
+    ++blockNumber;
+  }
+}
+
+/*!
+  Takes the cursor to the specific line.
+  \param lineNumber - the line number to go.
+  */
+void BaseEditor::goToLineNumber(int lineNumber)
+{
+  const QTextBlock &block = document()->findBlockByNumber(lineNumber - 1); // -1 since text index start from 0
+  if (block.isValid())
+  {
+    QTextCursor cursor(block);
+    cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, 0);
+    setTextCursor(cursor);
+    centerCursor();
+  }
+}
+
+//! Reimplementation of resize event.
+//! Resets the size of LineNumberArea.
+void BaseEditor::resizeEvent(QResizeEvent *pEvent)
+{
+  QPlainTextEdit::resizeEvent(pEvent);
+
+  QRect cr = contentsRect();
+  mpLineNumberArea->setGeometry(QRect(cr.left(), cr.top(), lineNumberAreaWidth(), cr.height()));
+}
+
+//! Updates the width of LineNumberArea.
+void BaseEditor::updateLineNumberAreaWidth(int newBlockCount)
+{
+  Q_UNUSED(newBlockCount);
+  setViewportMargins(lineNumberAreaWidth(), 0, 0, 0);
+}
+
+//! Slot activated when ModelicaEditor updateRequest signal is raised.
+//! Scrolls the LineNumberArea Widget and also updates its width if required.
+void BaseEditor::updateLineNumberArea(const QRect &rect, int dy)
+{
+  if (dy)
+    mpLineNumberArea->scroll(0, dy);
+  else
+    mpLineNumberArea->update(0, rect.y(), mpLineNumberArea->width(), rect.height());
+
+  if (rect.contains(viewport()->rect()))
+    updateLineNumberAreaWidth(0);
+}
+
+//! Slot activated when editor's cursorPositionChanged signal is raised.
+//! Hightlights the current line.
+void BaseEditor::highlightCurrentLine()
+{
+  QList<QTextEdit::ExtraSelection> extraSelections;
+  QTextEdit::ExtraSelection selection;
+  QColor lineColor = QColor(232, 242, 254);
+  selection.format.setBackground(lineColor);
+  selection.format.setProperty(QTextFormat::FullWidthSelection, true);
+  selection.cursor = textCursor();
+  selection.cursor.clearSelection();
+  extraSelections.append(selection);
+  setExtraSelections(extraSelections);
 }
 
 //! @class ModelicaEditor
@@ -131,25 +255,15 @@ ModelicaTextEdit::ModelicaTextEdit(ModelicaTextWidget *pParent)
   : BaseEditor(pParent), mLastValidText(""), mTextChanged(false)
 {
   mpModelicaTextWidget = pParent;
-  setTabStopWidth(Helper::tabWidth);
-  setObjectName("ModelicaTextEdit");
   setContextMenuPolicy(Qt::CustomContextMenu);
   connect(this, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
-  document()->setDocumentMargin(2);
   createActions();
   setLineWrapping();
   OptionsDialog *pOptionsDialog = mpModelicaTextWidget->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOptionsDialog();
   connect(pOptionsDialog, SIGNAL(updateLineWrapping()), SLOT(setLineWrapping()));
   connect(this, SIGNAL(focusOut()), mpModelicaTextWidget->getModelWidget(), SLOT(modelicaEditorTextChanged()));
   connect(this->document(), SIGNAL(contentsChange(int,int,int)), SLOT(contentsHasChanged(int,int,int)));
-  // line numbers widget
-  mpLineNumberArea = new LineNumberArea(this);
-  connect(this, SIGNAL(blockCountChanged(int)), this, SLOT(updateLineNumberAreaWidth(int)));
-  connect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(updateLineNumberArea(QRect,int)));
-  connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(highlightCurrentLine()));
   connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(updateCursorPosition()));
-  updateLineNumberAreaWidth(0);
-  highlightCurrentLine();
   updateCursorPosition();
 }
 
@@ -225,8 +339,8 @@ bool ModelicaTextEdit::validateModelicaText()
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - Error"));
       pMessageBox->setIcon(QMessageBox::Critical);
       pMessageBox->setText(GUIMessages::getMessage(GUIMessages::ERROR_IN_MODELICA_TEXT)
-                      .append(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGES_BROWSER))
-                      .append(GUIMessages::getMessage(GUIMessages::REVERT_PREVIOUS_OR_FIX_ERRORS_MANUALLY)));
+                           .append(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGES_BROWSER))
+                           .append(GUIMessages::getMessage(GUIMessages::REVERT_PREVIOUS_OR_FIX_ERRORS_MANUALLY)));
       pMessageBox->addButton(tr("Revert from previous"), QMessageBox::AcceptRole);
       pMessageBox->addButton(tr("Fix errors manually"), QMessageBox::RejectRole);
       int answer = pMessageBox->exec();
@@ -254,16 +368,6 @@ bool ModelicaTextEdit::validateModelicaText()
   return true;
 }
 
-//! Reimplementation of resize event.
-//! Resets the size of LineNumberArea.
-void ModelicaTextEdit::resizeEvent(QResizeEvent *pEvent)
-{
-  QPlainTextEdit::resizeEvent(pEvent);
-
-  QRect cr = contentsRect();
-  mpLineNumberArea->setGeometry(QRect(cr.left(), cr.top(), lineNumberAreaWidth(), cr.height()));
-}
-
 void ModelicaTextEdit::keyPressEvent(QKeyEvent *pEvent)
 {
   if (pEvent->modifiers().testFlag(Qt::ControlModifier) && pEvent->key() == Qt::Key_K)
@@ -279,59 +383,6 @@ void ModelicaTextEdit::keyPressEvent(QKeyEvent *pEvent)
   QPlainTextEdit::keyPressEvent(pEvent);
 }
 
-//! Calculate appropriate width for LineNumberArea.
-//! @return int width of LineNumberArea.
-int ModelicaTextEdit::lineNumberAreaWidth()
-{
-  int digits = 1;
-  int max = qMax(1, document()->blockCount());
-  while (max >= 10)
-  {
-    max /= 10;
-    ++digits;
-  }
-  int space = 20 + fontMetrics().width(QLatin1Char('9')) * digits;
-  return space;
-}
-
-/*!
-  Takes the cursor to the specific line.
-  \param lineNumber - the line number to go.
-  */
-void ModelicaTextEdit::goToLineNumber(int lineNumber)
-{
-  const QTextBlock &block = document()->findBlockByNumber(lineNumber - 1); // -1 since text index start from 0
-  if (block.isValid())
-  {
-    QTextCursor cursor(block);
-    cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, 0);
-    setTextCursor(cursor);
-    centerCursor();
-  }
-}
-
-//! Updates the width of LineNumberArea.
-void ModelicaTextEdit::updateLineNumberAreaWidth(int newBlockCount)
-{
-  Q_UNUSED(newBlockCount);
-  setViewportMargins(lineNumberAreaWidth(), 0, 0, 0);
-}
-
-//! Slot activated when ModelicaEditor cursorPositionChanged signal is raised.
-//! Hightlights the current line.
-void ModelicaTextEdit::highlightCurrentLine()
-{
-  QList<QTextEdit::ExtraSelection> extraSelections;
-  QTextEdit::ExtraSelection selection;
-  QColor lineColor = QColor(232, 242, 254);
-  selection.format.setBackground(lineColor);
-  selection.format.setProperty(QTextFormat::FullWidthSelection, true);
-  selection.cursor = textCursor();
-  selection.cursor.clearSelection();
-  extraSelections.append(selection);
-  setExtraSelections(extraSelections);
-}
-
 //! Slot activated when ModelicaEditor cursorPositionChanged signal is raised.
 //! Updates the cursorPostionLabel i.e Line: 12, Col:123.
 void ModelicaTextEdit::updateCursorPosition()
@@ -341,19 +392,6 @@ void ModelicaTextEdit::updateCursorPosition()
   const int column = textCursor().columnNumber();
   Label *pCursorPositionLabel = mpModelicaTextWidget->getModelWidget()->getCursorPositionLabel();
   pCursorPositionLabel->setText(QString("Line: %1, Col: %2").arg(line).arg(column));
-}
-
-//! Slot activated when ModelicaEditor updateRequest signal is raised.
-//! Scrolls the LineNumberArea Widget and also updates its width if required.
-void ModelicaTextEdit::updateLineNumberArea(const QRect &rect, int dy)
-{
-  if (dy)
-    mpLineNumberArea->scroll(0, dy);
-  else
-    mpLineNumberArea->update(0, rect.y(), mpLineNumberArea->width(), rect.height());
-
-  if (rect.contains(viewport()->rect()))
-    updateLineNumberAreaWidth(0);
 }
 
 void ModelicaTextEdit::showContextMenu(QPoint point)
@@ -560,129 +598,10 @@ TSourceEditor::TSourceEditor(TransformationsWidget *pTransformationsWidget)
   : BaseEditor(pTransformationsWidget)
 {
   mpTransformationsWidget = pTransformationsWidget;
-  setTabStopWidth(Helper::tabWidth);
-  setObjectName("TSourceEditor");
-  document()->setDocumentMargin(2);
   setLineWrapping();
   OptionsDialog *pOptionsDialog = mpTransformationsWidget->getMainWindow()->getOptionsDialog();
   connect(pOptionsDialog, SIGNAL(updateLineWrapping()), SLOT(setLineWrapping()));
   connect(this->document(), SIGNAL(contentsChange(int,int,int)), SLOT(contentsHasChanged(int,int,int)));
-  // line numbers widget
-  mpLineNumberArea = new LineNumberArea(this);
-  connect(this, SIGNAL(blockCountChanged(int)), this, SLOT(updateLineNumberAreaWidth(int)));
-  connect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(updateLineNumberArea(QRect,int)));
-  connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(highlightCurrentLine()));
-  updateLineNumberAreaWidth(0);
-  highlightCurrentLine();
-}
-
-//! Reimplementation of resize event.
-//! Resets the size of LineNumberArea.
-void TSourceEditor::resizeEvent(QResizeEvent *pEvent)
-{
-  QPlainTextEdit::resizeEvent(pEvent);
-
-  QRect cr = contentsRect();
-  mpLineNumberArea->setGeometry(QRect(cr.left(), cr.top(), lineNumberAreaWidth(), cr.height()));
-}
-
-//! Activated whenever LineNumberArea Widget paint event is raised.
-//! Writes the line numbers for the visible blocks.
-void TSourceEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
-{
-  QPainter painter(mpLineNumberArea);
-  painter.fillRect(event->rect(), QColor(240, 240, 240));
-
-  QTextBlock block = firstVisibleBlock();
-  int blockNumber = block.blockNumber();
-  int top = (int) blockBoundingGeometry(block).translated(contentOffset()).top();
-  int bottom = top + (int) blockBoundingRect(block).height();
-
-  while (block.isValid() && top <= event->rect().bottom())
-  {
-    if (block.isVisible() && bottom >= event->rect().top())
-    {
-      QString number = QString::number(blockNumber + 1);
-      // make the current highlighted line number darker
-      if (blockNumber == textCursor().blockNumber())
-        painter.setPen(QColor(64, 64, 64));
-      else
-        painter.setPen(Qt::gray);
-      painter.setFont(document()->defaultFont());
-      QFontMetrics fontMetrics (document()->defaultFont());
-      painter.drawText(0, top, mpLineNumberArea->width() - 5, fontMetrics.height(), Qt::AlignRight, number);
-    }
-    block = block.next();
-    top = bottom;
-    bottom = top + (int) blockBoundingRect(block).height();
-    ++blockNumber;
-  }
-}
-
-//! Calculate appropriate width for LineNumberArea.
-//! @return int width of LineNumberArea.
-int TSourceEditor::lineNumberAreaWidth()
-{
-  int digits = 1;
-  int max = qMax(1, document()->blockCount());
-  while (max >= 10)
-  {
-    max /= 10;
-    ++digits;
-  }
-  int space = 20 + fontMetrics().width(QLatin1Char('9')) * digits;
-  return space;
-}
-
-/*!
-  Takes the cursor to the specific line.
-  \param lineNumber - the line number to go.
-  */
-void TSourceEditor::goToLineNumber(int lineNumber)
-{
-  const QTextBlock &block = document()->findBlockByNumber(lineNumber - 1); // -1 since text index start from 0
-  if (block.isValid())
-  {
-    QTextCursor cursor(block);
-    cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, 0);
-    setTextCursor(cursor);
-    centerCursor();
-  }
-}
-
-//! Updates the width of LineNumberArea.
-void TSourceEditor::updateLineNumberAreaWidth(int newBlockCount)
-{
-  Q_UNUSED(newBlockCount);
-  setViewportMargins(lineNumberAreaWidth(), 0, 0, 0);
-}
-
-//! Slot activated when ModelicaEditor cursorPositionChanged signal is raised.
-//! Hightlights the current line.
-void TSourceEditor::highlightCurrentLine()
-{
-  QList<QTextEdit::ExtraSelection> extraSelections;
-  QTextEdit::ExtraSelection selection;
-  QColor lineColor = QColor(232, 242, 254);
-  selection.format.setBackground(lineColor);
-  selection.format.setProperty(QTextFormat::FullWidthSelection, true);
-  selection.cursor = textCursor();
-  selection.cursor.clearSelection();
-  extraSelections.append(selection);
-  setExtraSelections(extraSelections);
-}
-
-//! Slot activated when ModelicaEditor updateRequest signal is raised.
-//! Scrolls the LineNumberArea Widget and also updates its width if required.
-void TSourceEditor::updateLineNumberArea(const QRect &rect, int dy)
-{
-  if (dy)
-    mpLineNumberArea->scroll(0, dy);
-  else
-    mpLineNumberArea->update(0, rect.y(), mpLineNumberArea->width(), rect.height());
-
-  if (rect.contains(viewport()->rect()))
-    updateLineNumberAreaWidth(0);
 }
 
 //! Slot activated when TSourceEditor's QTextDocument contentsChanged SIGNAL is raised.
@@ -704,39 +623,6 @@ void TSourceEditor::setLineWrapping()
     setLineWrapMode(QPlainTextEdit::WidgetWidth);
   else
     setLineWrapMode(QPlainTextEdit::NoWrap);
-}
-
-//! Activated whenever LineNumberArea Widget paint event is raised.
-//! Writes the line numbers for the visible blocks.
-void ModelicaTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
-{
-  QPainter painter(mpLineNumberArea);
-  painter.fillRect(event->rect(), QColor(240, 240, 240));
-
-  QTextBlock block = firstVisibleBlock();
-  int blockNumber = block.blockNumber();
-  int top = (int) blockBoundingGeometry(block).translated(contentOffset()).top();
-  int bottom = top + (int) blockBoundingRect(block).height();
-
-  while (block.isValid() && top <= event->rect().bottom())
-  {
-    if (block.isVisible() && bottom >= event->rect().top())
-    {
-      QString number = QString::number(blockNumber + 1);
-      // make the current highlighted line number darker
-      if (blockNumber == textCursor().blockNumber())
-        painter.setPen(QColor(64, 64, 64));
-      else
-        painter.setPen(Qt::gray);
-      painter.setFont(document()->defaultFont());
-      QFontMetrics fontMetrics (document()->defaultFont());
-      painter.drawText(0, top, mpLineNumberArea->width() - 5, fontMetrics.height(), Qt::AlignRight, number);
-    }
-    block = block.next();
-    top = bottom;
-    bottom = top + (int) blockBoundingRect(block).height();
-    ++blockNumber;
-  }
 }
 
 //! Reimplementation of QPlainTextEdit::setPlainText method.
@@ -1205,13 +1091,13 @@ void FindReplaceDialog::saveFindTextToSettings(QString textToFind)
   {
     FindText findText = qvariant_cast<FindText>(text);
     if (findText.text.compare(textToFind) == 0)
-       texts.removeOne(text);
+      texts.removeOne(text);
   }
   FindText findText;
   findText.text = textToFind;
   texts.prepend(QVariant::fromValue(findText));
   while (texts.size() > MaxFindTexts)
-     texts.removeLast();
+    texts.removeLast();
 
   settings.setValue("findReplaceDialog/textsToFind", texts);
 }
@@ -1326,8 +1212,8 @@ void FindReplaceDialog::replaceAll()
   QString message;
   message.setNum(i);
   message += QString( " occurence(s) of the text '" ) + mpFindComboBox->currentText() +
-    QString( "' was replaced with the text '" ) + mpReplaceWithTextBox->text() + QString( "'." );
-    QMessageBox::information( this, "Replace All", message );
+      QString( "' was replaced with the text '" ) + mpReplaceWithTextBox->text() + QString( "'." );
+  QMessageBox::information( this, "Replace All", message );
 }
 
 void FindReplaceDialog::updateButtons()

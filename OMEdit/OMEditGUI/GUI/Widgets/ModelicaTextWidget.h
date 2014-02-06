@@ -74,10 +74,20 @@ private:
 
 class BaseEditor : public QPlainTextEdit
 {
+  Q_OBJECT
 public:
-  BaseEditor(QWidget *pParent) : QPlainTextEdit(pParent) {}
-  virtual int lineNumberAreaWidth() {}
-  virtual void lineNumberAreaPaintEvent(QPaintEvent *event) {}
+  BaseEditor(QWidget *pParent);
+  int lineNumberAreaWidth();
+  void lineNumberAreaPaintEvent(QPaintEvent *event);
+  void goToLineNumber(int lineNumber);
+private:
+  LineNumberArea *mpLineNumberArea;
+protected:
+  virtual void resizeEvent(QResizeEvent *pEvent);
+public slots:
+  void updateLineNumberAreaWidth(int newBlockCount);
+  void updateLineNumberArea(const QRect &rect, int dy);
+  void highlightCurrentLine();
 };
 
 class ModelicaTextEdit : public BaseEditor
@@ -89,25 +99,17 @@ public:
   void setLastValidText(QString validText);
   QStringList getClassNames(QString *errorString);
   bool validateModelicaText();
-  void lineNumberAreaPaintEvent(QPaintEvent *event);
-  int lineNumberAreaWidth();
-  void goToLineNumber(int lineNumber);
 private:
   ModelicaTextWidget *mpModelicaTextWidget;
   QString mLastValidText;
   bool mTextChanged;
-  LineNumberArea *mpLineNumberArea;
   QAction *mpToggleCommentSelectionAction;
 protected:
-  virtual void resizeEvent(QResizeEvent *pEvent);
   virtual void keyPressEvent(QKeyEvent *pEvent);
 signals:
   bool focusOut();
 private slots:
-  void updateLineNumberAreaWidth(int newBlockCount);
-  void highlightCurrentLine();
   void updateCursorPosition();
-  void updateLineNumberArea(const QRect &rect, int dy);
   void showContextMenu(QPoint point);
 public slots:
   void setPlainText(const QString &text);
@@ -122,18 +124,8 @@ class TSourceEditor : public BaseEditor
   Q_OBJECT
 public:
   TSourceEditor(TransformationsWidget *pTransformationsWidget);
-  void lineNumberAreaPaintEvent(QPaintEvent *event);
-  int lineNumberAreaWidth();
-  void goToLineNumber(int lineNumber);
 private:
   TransformationsWidget *mpTransformationsWidget;
-  LineNumberArea *mpLineNumberArea;
-protected:
-  virtual void resizeEvent(QResizeEvent *pEvent);
-private slots:
-  void updateLineNumberAreaWidth(int newBlockCount);
-  void highlightCurrentLine();
-  void updateLineNumberArea(const QRect &rect, int dy);
 public slots:
   void contentsHasChanged(int position, int charsRemoved, int charsAdded);
   void setLineWrapping();
