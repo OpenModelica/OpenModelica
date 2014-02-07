@@ -54,18 +54,18 @@ int initial_guess_ipopt(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
   cflags = (char*)omc_flagValue[FLAG_IPOPT_INIT];
   if(cflags){
   if(!strcmp(cflags,"const") || !strcmp(cflags,"CONST")){
-	int i, id;
-	for(i = 0, id=0; i<iData->NV;i++,++id){
-		if(id >=iData->nv)
-		  id = 0;
+  int i, id;
+  for(i = 0, id=0; i<iData->NV;i++,++id){
+    if(id >=iData->nv)
+      id = 0;
         if(id <iData->nx){
-		  iData->v[i] = iData->data->modelData.realVarsData[id].attribute.start*iData->scalVar[id];
-		}else if(id< iData->nv){
-		  iData->v[i] = iData->data->modelData.realVarsData[iData->index_u+id -iData->nx].attribute.start*iData->scalVar[id];
-		}
-	}
-	return 0;
-	}
+      iData->v[i] = iData->data->modelData.realVarsData[id].attribute.start*iData->scalVar[id];
+    }else if(id< iData->nv){
+      iData->v[i] = iData->data->modelData.realVarsData[iData->index_u+id -iData->nx].attribute.start*iData->scalVar[id];
+    }
+  }
+  return 0;
+  }
   }
   {
   double *u0, *u, *x, uu,tmp ,lhs, rhs;
