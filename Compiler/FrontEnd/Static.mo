@@ -10684,7 +10684,7 @@ algorithm
     // adrpo: report a warning if the binding came from a start value!
     case (cache,env,cr,attr as DAE.ATTR(variability = SCode.PARAM()),_,_,tt,bind as DAE.EQBOUND(source = DAE.BINDING_FROM_START_VALUE()),doVect,_,_,_,_)
       equation
-        true = Types.getFixedVarAttribute(tt);
+        true = Types.getFixedVarAttributeParameterOrConstant(tt);
         s = ComponentReference.printComponentRefStr(cr);
         pre_str = PrefixUtil.printPrefixStr2(inPrefix);
         s = pre_str +& s;
@@ -10940,7 +10940,7 @@ algorithm
     case (cache,env,cr,attr as DAE.ATTR(variability = SCode.PARAM()),_,NONE()/* not foriter*/,tt,DAE.UNBOUND(),
         doVect,InstTypes.SPLICEDEXPDATA(sexp,idTp),_,_,_)
       equation
-        false = Types.getFixedVarAttribute(tt);
+        false = Types.getFixedVarAttributeParameterOrConstant(tt);
         expTy = Types.simplifyType(tt);
         expIdTy = Types.simplifyType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
@@ -11925,7 +11925,7 @@ algorithm
       equation
         true = Types.isParameter(inConst);
         ty = Types.getPropType(prop);
-        false = Types.getFixedVarAttribute(ty);
+        false = Types.getFixedVarAttributeParameterOrConstant(ty);
       then
         (inCache, inSubscript);
 

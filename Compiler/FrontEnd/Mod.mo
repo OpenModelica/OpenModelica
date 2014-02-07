@@ -3392,5 +3392,19 @@ algorithm
   end match;
 end addEachToSubsIfNeeded;
 
+public function isEmptyMod
+"@author: adrpo
+ returns true if this is an empty modifier"
+  input DAE.Mod inMod;
+  output Boolean isEmpty;
+algorithm
+  isEmpty := match(inMod)
+    case (DAE.NOMOD()) then true;
+    // That's a NOMOD() if I ever saw one...
+    case (DAE.MOD(subModLst={},eqModOption=NONE())) then true; 
+    else false;
+  end match;
+end isEmptyMod;
+
 end Mod;
 

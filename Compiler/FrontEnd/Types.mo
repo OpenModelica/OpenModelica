@@ -2841,6 +2841,26 @@ algorithm
   vl_1 := getVars(vl, isOutputVar);
 end getOutputVars;
 
+public function getFixedVarAttributeParameterOrConstant 
+"Returns the value of the fixed attribute of a builtin type.
+ If there is no fixed in the tyep it returns true"
+  input DAE.Type tp;
+  output Boolean fix;
+algorithm
+  fix :=  matchcontinue(tp)
+    // there is a fixed!
+    case (_)
+      equation
+        fix = getFixedVarAttribute(tp);
+      then
+        fix;
+    
+    // there is no fixed!
+    case (_) then true;
+  
+  end matchcontinue;
+end getFixedVarAttributeParameterOrConstant;
+
 public function getFixedVarAttribute "Returns the value of the fixed attribute of a builtin type"
   input DAE.Type tp;
   output Boolean fixed;
