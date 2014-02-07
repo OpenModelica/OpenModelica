@@ -118,7 +118,7 @@ Bool goal_func_mayer(double* vn, double *obj_value, IPOPT_DATA_ *iData)
  **/
 Bool goal_func_lagrange(double* vn, double *obj_value, double t, IPOPT_DATA_ *iData)
 {  
-  refreshSimData(vn, vn + iData->nx, iData->tf, iData);
+  refreshSimData(vn, vn + iData->nx, t, iData);
   /*iData->data->callback->functionAlgebraics(iData->data);*/
   iData->data->callback->lagrange(iData->data, obj_value);
   
@@ -139,36 +139,27 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
   long double h;
   IPOPT_DATA_ *iData = (IPOPT_DATA_*) useData;
 
-  if(iData->lagrange)
-  {
+  if(iData->lagrange) {
     x = v;
     id = 0;
     
-    for(i=0, k=1; i<iData->nsi; ++i)
-    {
-      if(i>0)
-      {
-        for(k=0; k<iData->deg; ++k, x+=iData->nv)
-        {
-          refreshSimData(x,x+ iData->nx,iData->time[i*iData->deg+k],iData);
+    for(i=0; i<iData->nsi; ++i){
+      if(i){
+        for(k=0; k<iData->deg; ++k, x+=iData->nv){
+          refreshSimData(x,x+ iData->nx,iData->time[i*iData->deg+k+1],iData);
           /*iData->data->callback->functionAlgebraics(iData->data);*/
           diff_symColoredObject(iData, iData->gradF, iData->lagrange_index);
-          for(j = 0; j<iData->nv; ++j)
-          {
+          for(j = 0; j<iData->nv; ++j){
             gradF[id++] =  iData->dt[i]*iData->br[k]*iData->gradF[j]*iData->vnom[j];
             /* printf("\n gradF(%i) = %g, %s, %g", id-1, gradF[id-1], iData->data->modelData.realVarsData[j].info.name, x[j]*iData->vnom[j]); */
           }
         }
-      }
-      else
-      {
-        for(k=0; k<iData->deg+1; ++k, x+=iData->nv)
-        {
+      }else{
+        for(k=0; k<iData->deg+1; ++k, x+=iData->nv){
           refreshSimData(x,x+ iData->nx,iData->time[i*iData->deg+k],iData);
           /*iData->data->callback->functionAlgebraics(iData->data);*/
           diff_symColoredObject(iData, iData->gradF,iData->lagrange_index);
-          for(j=0; j<iData->nv; ++j)
-          {
+          for(j=0; j<iData->nv; ++j){
             gradF[id++] = iData->dt[i]*iData->bl[k]*iData->gradF[j]*iData->vnom[j];
             /* printf("\n gradF(%i) = %g, %s, %g", id-1, gradF[id-1], iData->data->modelData.realVarsData[j].info.name, x[j]*iData->vnom[j]); */
           }

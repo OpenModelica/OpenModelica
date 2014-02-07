@@ -125,7 +125,7 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
     if(cflags){
       if(!strcmp(cflags,"BFGS"))
         AddIpoptStrOption(nlp, "hessian_approximation", "limited-memory");
-      else if(!strcmp(cflags,"const"))
+      else if(!strcmp(cflags,"const") || !strcmp(cflags,"CONST"))
       AddIpoptStrOption(nlp, "hessian_constant", "yes");
     }
 
@@ -190,8 +190,7 @@ int refreshSimData(double *x, double *u, double t, IPOPT_DATA_ *iData)
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   MODEL_DATA      *mData = &(data->modelData);
   SIMULATION_INFO *sInfo = &(data->simulationInfo);
-  for(j = 0; j<iData->nx;++j)
-  {
+  for(j = 0; j<iData->nx;++j){
     sData->realVars[j] = x[j]*iData->vnom[j];
   }
 
@@ -215,8 +214,7 @@ int refreshSimData(double *x, double *u, double t, IPOPT_DATA_ *iData)
  **/
 int ipoptDebuge(IPOPT_DATA_ *iData, double *x)
 {
-  if(ACTIVE_STREAM(LOG_IPOPT_FULL))
-  {
+  if(ACTIVE_STREAM(LOG_IPOPT_FULL)){
     int i,j,k;
     double tmp;
     
@@ -225,14 +223,12 @@ int ipoptDebuge(IPOPT_DATA_ *iData, double *x)
 
     iData->index_debug_next += iData->degub_step;
 
-    for(j=0; j<iData->nv; ++j)
-    {
+    for(j=0; j<iData->nv; ++j){
       fprintf(iData->pFile[j], "\n");
       fprintf(iData->pFile[j], "%ld,", iData->index_debug_iter);
     }
 
-    for(i=0; i<iData->NV; ++i)
-    {
+    for(i=0; i<iData->NV; ++i){
       j = i % iData->nv;
       tmp = x[i]*iData->vnom[j];
       fprintf(iData->pFile[j], "%.16g,", tmp);
@@ -258,10 +254,8 @@ static int res2file(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
   SIMULATION_INFO *simInfo = &(data->simulationInfo);
   solverInfo->currentTime = iData->time[0];
   
-  while(solverInfo->currentTime < simInfo->stopTime)
-  {
-    for(i=0; i< iData->nx; ++i)
-    {
+  while(solverInfo->currentTime < simInfo->stopTime){
+    for(i=0; i< iData->nx; ++i){
       sData->realVars[i] = iData->v[k++]*iData->vnom[i];
     }
     

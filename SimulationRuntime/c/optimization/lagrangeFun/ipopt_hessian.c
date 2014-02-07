@@ -234,8 +234,7 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
   if(upCost)
     updateCost(v,t,iData,lagrange_yes,mayer_yes, iData->gradF0, iData->gradF00);
 
-  for(i = 0; i<iData->nv; ++i)
-  {
+  for(i = 0; i<iData->nv; ++i){
     v_save = (long double)v[i];
     h = (long double)DF_STEP(v_save, iData->vnom[i]); 
     v[i] += h;
@@ -246,11 +245,9 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
 
     v[i] = v_save;
 
-    for(j = i; j < iData->nv; ++j)
-    {
+    for(j = i; j < iData->nv; ++j){
       if(iData->Hg[i][j]){
-       for(l = 0; l< nJ; ++l)
-       {
+       for(l = 0; l< nJ; ++l){
         if(iData->knowedJ[l][j] + iData->knowedJ[l][i] >= 2)
           iData->H[l][i][j]  = (long double)lambda[l]*(iData->J[l][j] - iData->J0[l][j])/h;
         else
@@ -261,16 +258,14 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
     }
     h = obj_factor/h; 
     if(lagrange_yes){
-      for(j = i; j < iData->nv; ++j)
-      {
+      for(j = i; j < iData->nv; ++j){
        iData->oH[i][j]  = (long double) h* iData->vnom[j]*(iData->gradF[j] - iData->gradF0[j]);
        iData->oH[j][i]  = iData->oH[i][j] ; 
       }
     }
 
     if(mayer_yes){
-      for(j = i; j < iData->nv; ++j)
-      {
+      for(j = i; j < iData->nv; ++j){
        iData->mH[i][j]  = (long double) h* iData->vnom[j]*(iData->gradF_[j] - iData->gradF00[j]);
        iData->mH[j][i]  = iData->mH[i][j] ; 
       }
