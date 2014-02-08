@@ -5851,7 +5851,7 @@ algorithm
       GraphML.Graph graph;
       String text;
       Option<GraphML.EdgeLabel> label;
-    case ({},_,_,_,_,_,_) then (iN,iGraph);
+    case ({},_,_,_,_,_,_) then (id,iGraph);
     case (v::rest,_,_,_,_,_,_)
       equation
         c = varcomp[v];
