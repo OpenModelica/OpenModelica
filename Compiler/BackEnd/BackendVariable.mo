@@ -507,6 +507,19 @@ algorithm
    end match;
 end varHasConstantBindExp;
 
+public function varHasBindExp
+"Returns the true if a bindExp exists otherwise false."
+  input BackendDAE.Var v;
+  output Boolean  out;
+algorithm
+  out := match(v)
+    local DAE.Exp e;
+    case (BackendDAE.VAR(bindExp = SOME(e)))
+      then true;
+    else false;
+   end match;
+end varHasBindExp;
+
 public function varBindExpStartValue
 "author: Frenkel TUD 2010-12
   Returns the bindExp or the start value if no bind is there of a variable."

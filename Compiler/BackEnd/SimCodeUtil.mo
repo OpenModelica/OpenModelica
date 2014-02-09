@@ -9349,7 +9349,9 @@ algorithm
         // print("name: " +& ComponentReference.printComponentRefStr(cr) +& "indx: " +& intString(indx) +& "\n");
         // check if the variable has changeable value
         // parameter which are final = true or Evaluate Annotation are not
-        isValueChangeable = not BackendVariable.hasVarEvaluateAnnotationOrFinal(v) and BackendVariable.varHasConstantBindExp(v);
+        isValueChangeable = (not BackendVariable.hasVarEvaluateAnnotationOrFinal(v) 
+                            and BackendVariable.varHasConstantBindExp(v))
+                            or not BackendVariable.varHasBindExp(v);
       then
         SimCode.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */, 
         minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, caus, NONE(), numArrayElement, isValueChangeable);
