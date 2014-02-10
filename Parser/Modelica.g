@@ -995,13 +995,36 @@ equation_list_then returns [void* ast]
   | (e=equation SEMICOLON es=equation_list_then) { ast = mk_cons(e.ast,es); }
   ;
 
-
 equation_list returns [void* ast]
-@init { e.ast = 0; es = 0; } :
+@init {
+  int first = 0, last = 0;
+  e.ast = 0;
+  es = 0;
+  first = omc_first_comment;
+  last = LT(1)->getTokenIndex(LT(1));
+  omc_first_comment = last;
+} :
   {LA(1) != END_IDENT || LA(1) != END_IF || LA(1) != END_WHEN || LA(1) != END_FOR}? 
-    { ast = mk_nil(); }
+    {
+       ast = mk_nil();
+      for (;first<last;last--) {
+        pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,last-1);
+        if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
+          ast = mk_cons(Absyn__EQUATIONITEMCOMMENT(mk_scon((char*)tok->getText(tok)->chars)),ast);
+        }
+      }
+    }
   |
-  ( e=equation SEMICOLON es=equation_list ) { ast = mk_cons(e.ast,es); }
+  ( e=equation SEMICOLON es=equation_list ) {
+    ast = es;
+    ast = mk_cons(e.ast,ast);
+    for (;first<last;last--) {
+      pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,last-1);
+      if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
+        ast = mk_cons(Absyn__EQUATIONITEMCOMMENT(mk_scon((char*)tok->getText(tok)->chars)),ast);
+      }
+    }
+  }
   ;
 
 algorithm_list returns [void* ast]

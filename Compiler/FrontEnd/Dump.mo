@@ -117,7 +117,7 @@ algorithm
       equation
         s1 = unparseWithin(0, w);
         s2 = unparseClassList(0, cs);
-        str = stringAppendList({s1,s2,"\n"});
+        str = stringAppend(s1,s2);
       then
         str;
     case (_,_) then "unparsing failed\n";
@@ -130,22 +130,30 @@ public function unparseClassList
   input list<Absyn.Class> inAbsynClassLst;
   output String outString;
 algorithm
-  outString := match (inInteger,inAbsynClassLst)
+  outString := unparseClassListWork(inInteger,inAbsynClassLst,{});
+end unparseClassList;
+
+protected function unparseClassListWork
+"Prettyprints a list of classes"
+  input Integer inInteger;
+  input list<Absyn.Class> inAbsynClassLst;
+  input list<String> acc;
+  output String outString;
+algorithm
+  outString := match (inInteger,inAbsynClassLst,acc)
     local
-      String s1,s2,res;
+      String s1,s2;
       Integer i;
       Absyn.Class c;
       list<Absyn.Class> cs;
-    case (_,{}) then "";
-    case (i,(c :: cs))
+    case (_,{},_) then stringDelimitList(listReverse(acc),"\n");
+    case (i,(c :: cs),_)
       equation
         s1 = unparseClassStr(i, c, "", ("",""), "");
-        s2 = unparseClassList(i, cs);
-        res = stringAppendList({s1,";\n",s2});
-      then
-        res;
+        s2 = s1 +& ";";
+      then unparseClassListWork(i, cs, s2 :: acc);
   end match;
-end unparseClassList;
+end unparseClassListWork;
 
 public function unparseWithin
 "Prettyprints a within statement."
@@ -2668,7 +2676,7 @@ algorithm
         s2 = unparseEquationitemStrLst(i_1, eql, "\n");
         is = indentStr(i);
         s4 = unparseEqElsewhenStrLst(i_1, eqlelse);
-        str = stringAppendList({is,"when ",s1," then\n",is,s2,is,s4,"\n",is,"end when"});
+        str = stringAppendList({is,"when ",s1," then\n",s2,s4,is,"end when"});
       then
         str;
 

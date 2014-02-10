@@ -1456,6 +1456,8 @@ algorithm
       then
         (e_1 :: es_1);
 
+    case (Absyn.EQUATIONITEMCOMMENT(comment = _) :: es, _) then translateEEquations(es, inIsInitial);
+
   end match;
 end translateEEquations;
 
