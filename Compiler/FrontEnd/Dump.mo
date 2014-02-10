@@ -1384,30 +1384,18 @@ end unparseAnnotationOptionSemi;
 
 public function unparseAnnotation
 "Prettyprint an annotation."
-  input Absyn.Annotation inAbsynAnnotation;
-  input Integer inInteger;
+  input Absyn.Annotation inAnnotation;
+  input Integer inIndent;
   output String outString;
+protected
+  list<Absyn.ElementArg> mods;
+  String indent, mods_str, ann_str;
 algorithm
-  outString := matchcontinue (inAbsynAnnotation,inInteger)
-    local
-      String s1,s2,str,is;
-      list<Absyn.ElementArg> mod;
-      Integer i;
-    case (Absyn.ANNOTATION(mod),0)
-      equation
-        s1 = unparseClassModificationStr(Absyn.CLASSMOD(mod,Absyn.NOMOD()));
-        s2 = stringAppend(" annotation", s1);
-        str = s2;
-      then
-        str;
-    case (Absyn.ANNOTATION(mod),i)
-      equation
-        s1 = unparseClassModificationStr(Absyn.CLASSMOD(mod,Absyn.NOMOD()));
-        is = indentStr(i);
-        str = stringAppendList({is,"annotation",s1});
-      then
-        str;
-  end matchcontinue;
+  Absyn.ANNOTATION(elementArgs = mods) := inAnnotation;
+  ann_str := Util.if_(intEq(inIndent, 0), " annotation", "annotation");
+  mods_str := List.toString(mods, unparseElementArgStr, ann_str, "(", ", ", ")", true);
+  indent := indentStr(inIndent);
+  outString := stringAppend(indent, mods_str);
 end unparseAnnotation;
 
 public function unparseAnnotationOption
