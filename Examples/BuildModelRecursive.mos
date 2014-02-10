@@ -15,7 +15,7 @@ referenceFileNameDelimiter:=".";
 
 runScript("CustomCommands.mos");
 customCommandsStr := if regularFileExists("CustomCommands.mos") then ("Flags: <pre>" + escapeXML(readFile("CustomCommands.mos")) + "</pre>") else "";
-library:=$TypeName(Physiolibrary);
+library:=$TypeName(Modelica);
 libraryVersion:="default";
 
 setCommandLineOptions({"+g=Modelica","+d=nogen"});
