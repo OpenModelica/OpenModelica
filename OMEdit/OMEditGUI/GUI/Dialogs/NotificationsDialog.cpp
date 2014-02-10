@@ -308,15 +308,19 @@ void NotificationsDialog::saveReleaseInformationNotificationSettings()
 void NotificationsDialog::sendCrashReport()
 {
   QString OMCCommandsLogFilePath, OMCOutputFile, stackTraceFile;
-  OMCCommandsLogFilePath = QString(QDir::tempPath()).append("/OpenModelica/OMEdit/omeditcommands.log");
+  QString tmpPath = QDir::tempPath() + "/OpenModelica/OMEdit/";
+  tmpPath.remove("\"");
 #ifdef WIN32 // Win32
-  OMCOutputFile = QString(QDir::tempPath()).append("/OpenModelica/OMEdit/openmodelica.omc.output.").append(Helper::OMCServerName);
+  OMCCommandsLogFilePath = QString("%1omeditcommands.log").arg(tmpPath);
+  OMCOutputFile = QString("%1openmodelica.omc.output.%2").arg(tmpPath).arg(Helper::OMCServerName);
+  stackTraceFile = QString("%1openmodelica.stacktrace.%2").arg(tmpPath).arg(Helper::OMCServerName);
 #else // UNIX environment
   char *user = getenv("USER");
   if (!user) { user = "nobody"; }
-  OMCOutputFile = QString(QDir::tempPath()).append("/OpenModelica/OMEdit/openmodelica.").append(*(new QString(user))).append(".omc.output.").append(Helper::OMCServerName);
+  OMCCommandsLogFilePath = QString("%1omeditcommands.%2.log").arg(tmpPath).arg(QString(user));
+  OMCOutputFile = QString("%1openmodelica.%2.omc.output.%3").arg(tmpPath).arg(QString(user)).arg(Helper::OMCServerName);
+  stackTraceFile = QString("%1openmodelica.%2.stacktrace.%3").arg(tmpPath).arg(QString(user)).arg(Helper::OMCServerName);
 #endif
-  stackTraceFile = QString(QDir::tempPath()).append("/OpenModelica/OMEdit/openmodelica.stacktrace.").append(Helper::OMCServerName);
   QString body = QString("Please attach the following files alongwith your bug description in your crash report,\n\n")
       .append("1. " + OMCCommandsLogFilePath + "\n")
       .append("2. " + OMCOutputFile + "\n")
