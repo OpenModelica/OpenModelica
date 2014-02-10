@@ -3129,7 +3129,7 @@ algorithm
   BackendDAE.SHARED(constraints=constraints) := shared;
   eqns := {};
   v := BackendVariable.emptyVars();
-  (v,eqns) := BackendDAECreate.addOptimizationVarsEqns2(constraints,1,v,eqns);
+  (v,eqns) := BackendDAECreate.addOptimizationVarsEqns2(constraints,1,v,eqns,false);
   (linearModelMatrixes, funcs) := createLinearModelMatrixes(inBackendDAE, Config.acceptOptimicaGrammar(),v);
   shared := BackendDAEUtil.addBackendDAESharedJacobians(linearModelMatrixes, shared);
   functionTree := BackendDAEUtil.getFunctions(shared);

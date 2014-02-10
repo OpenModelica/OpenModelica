@@ -4758,7 +4758,7 @@ algorithm
         v = Util.if_(b, BackendVariable.addNewVar(dummyVar, v), v);
         e = Util.if_(b, listAppend(e, objectEqn), e);
         
-        (v,e) = addOptimizationVarsEqns2(inConstraint,1,v,e);
+        (v,e) = addOptimizationVarsEqns2(inConstraint,1,v,e,true);
     
     then (v, e);
     else then (inVars, inEqns);
@@ -4770,12 +4770,13 @@ protected function addOptimizationVarsEqns1
  input Integer inI;
  input BackendDAE.Variables inVars; 
  input list<BackendDAE.Equation> inEqns;
+ input Boolean b;
  output BackendDAE.Variables outVars;
  output list<BackendDAE.Equation>  outEqns;
 algorithm
- (outVars, outEqns) := match(constraintLst,inI,inVars,inEqns)
+ (outVars, outEqns) := match(constraintLst,inI,inVars,inEqns,b)
  local
-   list<DAE.Exp> conLst;
+   list<DAE.Exp> conLst,conLst2;
    DAE.Exp e;
    DAE.ComponentRef leftcref;
    BackendDAE.Var dummyVar;
@@ -4783,16 +4784,16 @@ algorithm
    BackendDAE.Variables v;
    list<BackendDAE.Equation> eqns;
    
-   case({},_,_,_) then (inVars,inEqns);
-   case(e::conLst,_,_,_) equation
+   case({},_,_,_,_) then (inVars,inEqns);
+   case(e::conLst,_,_,_,_) equation
     //print("con"+& intString(inI) +& " "+& ExpressionDump.printExpStr(e) +& "\n");
     leftcref = ComponentReference.makeCrefIdent("$TMP_con" +& intString(inI), DAE.T_REAL_DEFAULT, {});
     dummyVar = BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
-    conEqn = BackendEquation.generateResidualfromRealtion(leftcref, e, DAE.emptyElementSource);
-   
+    conEqn = Util.if_(b,BackendEquation.generateResidualfromRealtion(leftcref, e, DAE.emptyElementSource),{});
     v = BackendVariable.addNewVar(dummyVar, inVars);
     eqns = listAppend(conEqn, inEqns);
-    (v,eqns)= addOptimizationVarsEqns1(conLst, inI + 1, v,eqns);
+    conLst2 = Util.if_(b,listReverse(conLst),conLst);
+    (v,eqns)= addOptimizationVarsEqns1(listReverse(conLst), inI + 1, v,eqns,b);
    then (v,eqns);
    else then (inVars,inEqns);
    end match;
@@ -4803,16 +4804,17 @@ public function addOptimizationVarsEqns2
  input Integer inI;
  input BackendDAE.Variables inVars; 
  input list<BackendDAE.Equation> inEqns;
+ input Boolean b;
  output BackendDAE.Variables outVars;
  output list<BackendDAE.Equation>  outEqns;
 algorithm
-  (outVars, outEqns) := match(inConstraint,inI,inVars,inEqns)
+  (outVars, outEqns) := match(inConstraint,inI,inVars,inEqns,b)
   local
    list<BackendDAE.Equation> e;
    BackendDAE.Variables v; 
    list< .DAE.Exp> constraintLst;
-    case({DAE.CONSTRAINT_EXPS(constraintLst = constraintLst)},_,_,_) equation
-      (v,e) = addOptimizationVarsEqns1(constraintLst,inI,inVars,inEqns);
+    case({DAE.CONSTRAINT_EXPS(constraintLst = constraintLst)},_,_,_,_) equation
+      (v,e) = addOptimizationVarsEqns1(constraintLst,inI,inVars,inEqns,b);
       then (v,e);
   else then (inVars,inEqns);
   end match;

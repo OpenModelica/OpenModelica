@@ -10501,9 +10501,10 @@ template pathConstraint(Constraint cons)
     case CONSTRAINT_EXPS(__) then
       let &varDecls = buffer "" /*BUFD*/
       let &preExp = buffer "" /*BUFD*/
-      let constrain = (constraintLst |> constraint =>
-         daeExp(constraint, contextOptimization, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-          ;separator="\n")
+      //let constrain = (constraintLst |> constraint =>
+      //   daeExp(constraint, contextOptimization, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+      //    ;separator="\n")
+      let constrain = (constraintLst |> constraint  hasindex i0  => 'res[i++] = $P$TMP_con<%intAdd(i0,1)%>;'  ;separator="\n")
       let listConstraintsLength = listLength(constraintLst)  
       <<
         if(*N<=0){
@@ -10511,8 +10512,6 @@ template pathConstraint(Constraint cons)
          return 1;
         }else{
           int i = 0;
-          <%varDecls%>
-          <%preExp%>
           <%constrain%>
         }
       >>
