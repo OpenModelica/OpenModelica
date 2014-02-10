@@ -165,7 +165,7 @@ void SimulationDialog::setUpForm()
   // Output Interval
   mpNumberofIntervalLabel = new Label(tr("Number of Intervals:"));
   mpNumberofIntervalsSpinBox = new QSpinBox;
-  mpNumberofIntervalsSpinBox->setRange(1, std::numeric_limits<int>::max());
+  mpNumberofIntervalsSpinBox->setRange(0, std::numeric_limits<int>::max());
   mpNumberofIntervalsSpinBox->setSingleStep(100);
   mpNumberofIntervalsSpinBox->setValue(500);
   // Output Format
@@ -560,7 +560,7 @@ void SimulationDialog::saveSimulationOptions()
   stopTime = mpStopTimeTextBox->text().toDouble();
   startTime = mpStartTimeTextBox->text().toDouble();
   numberOfIntervals = mpNumberofIntervalsSpinBox->value();
-  interval = (stopTime - startTime) / numberOfIntervals;
+  interval = (numberOfIntervals == 0) ? 0 : (stopTime - startTime) / numberOfIntervals;
   annotationString.append("Interval=").append(QString::number(interval));
   annotationString.append(")");
   // send the simulations options annotation to OMC
