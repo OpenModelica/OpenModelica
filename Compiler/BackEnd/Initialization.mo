@@ -1722,9 +1722,29 @@ algorithm
       vars = BackendVariable.addVar(var, vars);
     then ((var, (vars, fixvars, eqns, hs)));
     
+    // parameter with binding and fixed=false
+    case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.PARAM(), bindExp=SOME(bindExp), varType=ty), (vars, fixvars, eqns, hs))) equation
+      failure(31 = Flags.getConfigEnum(Flags.LANGUAGE_STANDARD));
+      false = BackendVariable.varFixed(var);
+      var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
+      var = BackendVariable.setBindExp(var, NONE());
+      
+      s = ComponentReference.printComponentRefStr(cr);
+      str = ExpressionDump.printExpStr(bindExp);
+      info = DAEUtil.getElementSourceFileInfo(BackendVariable.getVarSource(var));
+      Error.addSourceMessage(Error.UNFIXED_PARAMETER_WITH_BINDING, {s, s, str}, info);
+      
+      eqn = BackendDAE.EQUATION(DAE.CREF(cr, ty), bindExp, DAE.emptyElementSource, false);
+      eqns = BackendEquation.equationAdd(eqn, eqns);
+
+      vars = BackendVariable.addVar(var, vars);
+    then ((var, (vars, fixvars, eqns, hs)));
+    
+    // *** MODELICA 3.1 COMPATIBLE ***
     // parameter with binding and fixed=false and no start value
     // use the binding as start value
     case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.PARAM(), bindExp=SOME(bindExp), varType=ty), (vars, fixvars, eqns, hs))) equation
+      31 = Flags.getConfigEnum(Flags.LANGUAGE_STANDARD);
       false = BackendVariable.varFixed(var);
       var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
       var = BackendVariable.setBindExp(var, NONE());
@@ -1734,17 +1754,16 @@ algorithm
       s = ComponentReference.printComponentRefStr(cr);
       str = ExpressionDump.printExpStr(bindExp);
       info = DAEUtil.getElementSourceFileInfo(BackendVariable.getVarSource(var));
-      Error.addSourceMessage(Error.UNFIXED_PARAMETER_WITH_BINDING, {s, s, str}, info);
-      
-      // eqn = BackendDAE.EQUATION(DAE.CREF(cr, ty), bindExp, DAE.emptyElementSource, false);
-      // eqns = BackendEquation.equationAdd(eqn, eqns);
+      Error.addSourceMessage(Error.UNFIXED_PARAMETER_WITH_BINDING_31, {s, s, str}, info);
 
       vars = BackendVariable.addVar(var, vars);
     then ((var, (vars, fixvars, eqns, hs)));
 
+    // *** MODELICA 3.1 COMPATIBLE ***
     // parameter with binding and fixed=false and a start value
     // ignore the binding and use the start value
     case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.PARAM(), bindExp=SOME(bindExp), varType=ty), (vars, fixvars, eqns, hs))) equation
+      31 = Flags.getConfigEnum(Flags.LANGUAGE_STANDARD);
       false = BackendVariable.varFixed(var);
       var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
       var = BackendVariable.setBindExp(var, NONE());
@@ -1754,10 +1773,7 @@ algorithm
       str = ExpressionDump.printExpStr(bindExp);
       sv = ExpressionDump.printExpStr(startExp);
       info = DAEUtil.getElementSourceFileInfo(BackendVariable.getVarSource(var));
-      Error.addSourceMessage(Error.UNFIXED_PARAMETER_WITH_BINDING_AND_START_VALUE, {s, sv, s, str}, info);
-      
-      // eqn = BackendDAE.EQUATION(DAE.CREF(cr, ty), bindExp, DAE.emptyElementSource, false);
-      // eqns = BackendEquation.equationAdd(eqn, eqns);
+      Error.addSourceMessage(Error.UNFIXED_PARAMETER_WITH_BINDING_AND_START_VALUE_31, {s, sv, s, str}, info);
 
       vars = BackendVariable.addVar(var, vars);
     then ((var, (vars, fixvars, eqns, hs)));
