@@ -1724,7 +1724,7 @@ algorithm
     
     // parameter with binding and fixed=false
     case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.PARAM(), bindExp=SOME(bindExp), varType=ty), (vars, fixvars, eqns, hs))) equation
-      failure(31 = Flags.getConfigEnum(Flags.LANGUAGE_STANDARD));
+      true = intGt(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 31);
       false = BackendVariable.varFixed(var);
       var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
       var = BackendVariable.setBindExp(var, NONE());
@@ -1744,7 +1744,7 @@ algorithm
     // parameter with binding and fixed=false and no start value
     // use the binding as start value
     case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.PARAM(), bindExp=SOME(bindExp), varType=ty), (vars, fixvars, eqns, hs))) equation
-      31 = Flags.getConfigEnum(Flags.LANGUAGE_STANDARD);
+      true = intLe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 31);
       false = BackendVariable.varFixed(var);
       var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
       var = BackendVariable.setBindExp(var, NONE());
@@ -1763,7 +1763,7 @@ algorithm
     // parameter with binding and fixed=false and a start value
     // ignore the binding and use the start value
     case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.PARAM(), bindExp=SOME(bindExp), varType=ty), (vars, fixvars, eqns, hs))) equation
-      31 = Flags.getConfigEnum(Flags.LANGUAGE_STANDARD);
+      true = intLe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 31);
       false = BackendVariable.varFixed(var);
       var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
       var = BackendVariable.setBindExp(var, NONE());
