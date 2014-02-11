@@ -3108,6 +3108,7 @@ algorithm
   shared := BackendDAEUtil.addBackendDAESharedJacobian(symJacA, sparsePattern, sparseColoring, shared);
   functionTree := BackendDAEUtil.getFunctions(shared);
   functionTree := DAEUtil.joinAvlTrees(functionTree, funcs);
+  shared := BackendDAEUtil.addFunctionTree(functionTree, shared);
   outBackendDAE := BackendDAE.DAE(eqs,shared);
   _ := System.realtimeTock(GlobalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
 end generateSymbolicJacobianPast;
