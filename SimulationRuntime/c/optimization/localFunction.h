@@ -77,7 +77,6 @@ int refreshSimData(double *x, double *u, double t, IPOPT_DATA_ *iData);
 
 /*allocate*/
 int loadDAEmodel(DATA* data, IPOPT_DATA_ *iData);
-int get_moidel_info(DATA *data, IPOPT_DATA_ *iData);
 int freeIpoptData(IPOPT_DATA_ *iData);
 
 /*initial guess*/

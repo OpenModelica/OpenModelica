@@ -64,33 +64,28 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
     int c,r,l,p;
     r = 0;
     c = 0;
-    for(i = 0; i<iData->nsi; ++i)
-    {
+    for(i = 0; i<iData->nsi; ++i){
 
-      if(i == 0)
-      {
+      if(i == 0){
         /*0*/
-        for(p = 0;p <iData->deg+1;++p)
-        {
-          for(j=0;j< iData->nv;++j)
-            for(l = 0; l< j+1; ++l)
-             {
+        for(p = 0;p <iData->deg+1;++p){
+          for(j=0;j< iData->nv;++j){
+            for(l = 0; l< j+1; ++l){
               iRow[k] = r + j;
               iCol[k++] = c + l;
              }
+          }
           r += iData->nv;
           c += iData->nv;
         }
-      }
-      else{
-        for(p = 1;p <iData->deg+1;++p)
-        {
-          for(j=0;j< iData->nv;++j)
-            for(l = 0; l< j+1; ++l)
-             {
+      }else{
+        for(p = 1;p <iData->deg+1;++p){
+          for(j=0;j< iData->nv;++j){
+            for(l = 0; l< j+1; ++l){
               iRow[k] = r + j;
               iCol[k++] = c + l;
              }
+          }
           r += iData->nv;
           c += iData->nv;
         }
@@ -100,9 +95,7 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
     for(i=0;i<nele_hess;++i)
       printf("\nH(%i,%i) = 1;", iRow[i]+1, iCol[i]+1);
       */
-  }
-  else
-  {
+  }else{
     double *x;
     double *ll;
     int ii;
@@ -116,11 +109,9 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
     c = 0;
     k = 0;
 
-    nJ = iData->nx + iData->nc;
-    for(ii = 0; ii <1; ++ii)
-    {
-      for(p = 0, x= v, ll = lambda;p <iData->deg+1;++p, x += iData->nv)
-      {
+    nJ = (int) iData->nJ;
+    for(ii = 0; ii <1; ++ii){
+      for(p = 0, x= v, ll = lambda;p <iData->deg+1;++p, x += iData->nv){
          mayer_yes = iData->mayer && ii+1 == iData->nsi && p == iData->deg;
 
          if(p){
@@ -143,8 +134,7 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
          }
 
         for(i=0;i< iData->nv;++i)
-          for(j = 0; j< i+1; ++j)
-          {
+          for(j = 0; j< i+1; ++j){
             sumLagrange(iData, &sum, ii, i, j,  p, mayer_yes);
             values[k++] =  sum;
           }
@@ -156,19 +146,17 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
 
     }
 
-    for(; ii <iData->nsi; ++ii)
-    {
-      for(p = 1;p <iData->deg +1;++p,x += iData->nv)
-      {
+    for(; ii <iData->nsi; ++ii){
+      for(p = 1;p <iData->deg +1;++p,x += iData->nv){
         mayer_yes = iData->mayer && ii+1 == iData->nsi && p == iData->deg;
         num_hessian(x, iData->time[ii*iData->deg + p], iData,ll,iData->lagrange,mayer_yes,obj_factor);
 
         for(i=0;i< iData->nv;++i)
-          for(j = 0; j< i+1; ++j)
-          {
+          for(j = 0; j< i+1; ++j){
             sumLagrange(iData, &sum, ii, i, j,  p,  mayer_yes);
             values[k++] = sum;
           }
+
         r += iData->nv;
         c += iData->nv;
         ll += nJ;
