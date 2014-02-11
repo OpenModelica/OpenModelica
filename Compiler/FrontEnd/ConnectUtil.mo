@@ -388,7 +388,7 @@ public function isExpandable
   input DAE.ComponentRef inName;
   output Boolean isExpandableConnector;
 algorithm
-  isExpandableConnector := matchcontinue(inName)
+  isExpandableConnector := match(inName)
     local
       DAE.Type ty;
       Boolean b;
@@ -403,13 +403,34 @@ algorithm
     case (DAE.CREF_QUAL(identType = ty, componentRef = cr))
       equation
         b = InstSection.isExpandableConnectorType(ty);
-        b = boolOr(b, isExpandable(cr));
+        b = diveIsExpandable(b, cr);
       then
         b;
-
+    
     else false;
-  end matchcontinue;
+  
+  end match;
 end isExpandable;
+
+protected function diveIsExpandable
+"@author: adrpo
+ if isExpandable is true don't dive in"
+  input Boolean inIsExpandable;
+  input DAE.ComponentRef inName;
+  output Boolean b;
+algorithm
+  b := match(inIsExpandable, inName)
+    
+    case (true, _) then true;
+    
+    case (false, _)
+      equation
+        b = isExpandable(inName); 
+      then
+        b;
+  
+  end match;
+end diveIsExpandable;
 
 protected function daeHasExpandableConnectors
 "Goes through a list of variables and returns their crefs"
@@ -1883,7 +1904,7 @@ algorithm
   outDae := match(inTopScope, inSets, inDae, inConnectionGraph, inModelNameQualified)
     local
       DAE.DAElist dae;
-      Boolean has_stream, has_expandable;
+      Boolean has_stream, has_expandable, has_cardinality;
       ConnectionGraph.DaeEdges broken, connected;
 
     case (true, _, _, _, _)
@@ -1903,8 +1924,9 @@ algorithm
 
         // adrpo: FIXME: maybe we should just remove them from the sets then send the updates sets further
         dae = List.fold2(sets, equationsDispatch, connected, broken, dae);
-        has_stream = System.getHasStreamConnectors() or System.getUsesCardinality();
-        dae = evaluateConnectionOperators(has_stream, inSets, set_array, dae);
+        has_stream = System.getHasStreamConnectors();
+        has_cardinality = System.getUsesCardinality();
+        dae = evaluateConnectionOperators(has_stream, has_cardinality, inSets, set_array, dae);
 
         // add the equality constraint equations to the dae.
         dae = ConnectionGraph.addBrokenEqualityConstraintEquations(dae, broken);
@@ -2987,24 +3009,26 @@ end makePositiveMaxCall;
 protected function evaluateConnectionOperators
   "Evaluates connection operators inStream, actualStream and cardinality in the
    given DAE."
-  input Boolean inHasConnectionOperators;
+  input Boolean inHasStream;
+  input Boolean inHasCardinality;
   input Sets inSets;
   input array<Set> inSetArray;
   input DAE.DAElist inDae;
   output DAE.DAElist outDae;
 algorithm
-  outDae := match(inHasConnectionOperators, inSets, inSetArray, inDae)
+  outDae := match(inHasStream, inHasCardinality, inSets, inSetArray, inDae)
     local
       DAE.DAElist dae;
 
     // Skip this phase if we have no connection operators.
-    case (false, _, _, _) then inDae;
+    case (false, false, _, _, _) then inDae;
 
-    case (true, _, _, _)
+    case (_, _, _, _, _)
       equation
         (dae, _, _) = DAEUtil.traverseDAE(inDae, DAE.emptyFuncTree,
-          evaluateConnectionOperators2, (inSets, inSetArray));
-        dae = simplifyDAEElements(dae);
+          evaluateConnectionOperators2, 
+          (inHasStream, inHasCardinality, inSets, inSetArray));
+        dae = simplifyDAEElements(inHasCardinality, dae);
       then
         dae;
 
@@ -3013,23 +3037,25 @@ end evaluateConnectionOperators;
 
 protected function evaluateConnectionOperators2
   "Helper function to evaluateConnectionOperators."
-  input tuple<DAE.Exp, tuple<Connect.Sets, array<Set>>> inTuple;
-  output tuple<DAE.Exp, tuple<Connect.Sets, array<Set>>> outTuple;
+  input tuple<DAE.Exp, tuple<Boolean, Boolean, Connect.Sets, array<Set>>> inTuple;
+  output tuple<DAE.Exp, tuple<Boolean, Boolean, Connect.Sets, array<Set>>> outTuple;
 algorithm
   outTuple := match(inTuple)
     local
       DAE.Exp e;
       Connect.Sets sets;
       array<Set> set_array;
-      Boolean changed;
+      Boolean changed, has_stream, has_cardinality;
 
-    case ((e, (sets, set_array)))
+    case ((e, (has_stream, has_cardinality, sets, set_array)))
       equation
-        ((e, (sets, set_array, changed))) =
-          Expression.traverseExp(e, evaluateConnectionOperatorsExp, (sets, set_array, false));
+        ((e, (_, _, sets, set_array, changed))) =
+          Expression.traverseExp(e, evaluateConnectionOperatorsExp, (has_stream, has_cardinality, sets, set_array, false));
+        // only apply simplify if the expression changed *AND* we have cardinality
+        changed = boolAnd(changed, has_cardinality);
         (e, _) = ExpressionSimplify.condsimplify(changed, e);
       then
-        ((e, (sets, set_array)));
+        ((e, (has_stream, has_cardinality, sets, set_array)));
   end match;
 end evaluateConnectionOperators2;
 
@@ -3037,54 +3063,47 @@ protected function evaluateConnectionOperatorsExp
   "Helper function to evaluateConnectionOperators2. Checks if the given
    expression is a call to inStream or actualStream, and if so calls the
    appropriate function in ConnectUtil to evaluate the call."
-  input tuple<DAE.Exp, tuple<Connect.Sets, array<Set>, Boolean>> inTuple;
-  output tuple<DAE.Exp, tuple<Connect.Sets, array<Set>, Boolean>> outTuple;
+  input tuple<DAE.Exp, tuple<Boolean, Boolean, Connect.Sets, array<Set>, Boolean>> inTuple;
+  output tuple<DAE.Exp, tuple<Boolean, Boolean, Connect.Sets, array<Set>, Boolean>> outTuple;
 algorithm
-  outTuple := matchcontinue(inTuple)
+  outTuple := match(inTuple)
     local
       DAE.ComponentRef cr;
       Connect.Sets sets;
       array<Set> set_arr;
       DAE.Exp e;
       DAE.Type ty;
-
-    // sometimes we get ASUB(inStream/actualStream, 1) so we should remove that
-    /*/ TODO! FIXME! make this work correctly without this workaround!
-    case ((DAE.ASUB(e, _), sets))
-      equation
-        DAE.CALL(path = Absyn.IDENT(s)) = e;
-        true = listMember(s, {"inStream", "actualStream"});
-        ((e, sets)) = evaluateConnectionOperatorsExp((e, sets));
-        print("Evaluated ASUB(" +& ExpressionDump.dumpExpStr(e, 0) +& ")\n");
-      then
-        ((e, sets));*/
+      Boolean has_stream, has_cardinality;
 
     case ((DAE.CALL(path = Absyn.IDENT("inStream"),
-                    expLst = {DAE.CREF(componentRef = cr, ty = ty)}), (sets, set_arr, _)))
+                    expLst = {DAE.CREF(componentRef = cr, ty = ty)}), 
+          (has_stream as true, has_cardinality as _, sets, set_arr, _)))
       equation
-        e = evaluateInStream(cr, (sets, set_arr));
+        e = evaluateInStream(cr, (has_stream, has_cardinality, sets, set_arr));
         //print("Evaluated inStream(" +& ExpressionDump.dumpExpStr(DAE.CREF(cr, ty), 0) +& ") ->\n" +& ExpressionDump.dumpExpStr(e, 0) +& "\n");
       then
-        ((e, (sets, set_arr, true)));
+        ((e, (has_stream, has_cardinality, sets, set_arr, true)));
 
     case ((DAE.CALL(path = Absyn.IDENT("actualStream"),
-                    expLst = {DAE.CREF(componentRef = cr, ty = ty)}), (sets, set_arr, _)))
+                    expLst = {DAE.CREF(componentRef = cr, ty = ty)}), 
+          (has_stream as true, has_cardinality as _, sets, set_arr, _)))
       equation
         e = evaluateActualStream(cr, sets, set_arr);
         //print("Evaluated actualStream(" +& ExpressionDump.dumpExpStr(DAE.CREF(cr, ty), 0) +& ") ->\n" +& ExpressionDump.dumpExpStr(e, 0) +& "\n");
       then
-        ((e, (sets, set_arr, true)));
+        ((e, (has_stream, has_cardinality, sets, set_arr, true)));
 
     case ((DAE.CALL(path = Absyn.IDENT("cardinality"),
-                    expLst = {DAE.CREF(componentRef = cr, ty = ty)}), (sets, set_arr, _)))
+                    expLst = {DAE.CREF(componentRef = cr, ty = ty)}), 
+          (has_stream as _, has_cardinality as true, sets, set_arr, _)))
       equation
         e = evaluateCardinality(cr, sets);
       then
-        ((e, (sets, set_arr, true)));
+        ((e, (has_stream, has_cardinality, sets, set_arr, true)));
 
     else inTuple;
 
-  end matchcontinue;
+  end match;
 end evaluateConnectionOperatorsExp;
 
 protected function mkArrayIfNeeded
@@ -3115,7 +3134,7 @@ public function evaluateInStream
   "This function evaluates the inStream operator for a component reference,
    given the connection sets."
   input DAE.ComponentRef inStreamCref;
-  input tuple<Sets, array<Set>> inSets;
+  input tuple<Boolean, Boolean, Sets, array<Set>> inSets;
   output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue(inStreamCref, inSets)
@@ -3123,7 +3142,7 @@ algorithm
       ConnectorElement e;
       Sets sets;
 
-    case (_, (sets, _))
+    case (_, (_, _, sets, _))
       equation
         e = findElement(inStreamCref, Connect.INSIDE(), Connect.STREAM(NONE()),
           DAE.emptyElementSource, sets);
@@ -3145,7 +3164,7 @@ protected function evaluateInStream2
   "Helper function to evaluateInStream."
   input DAE.ComponentRef inStreamCref;
   input ConnectorElement inElement;
-  input tuple<Sets, array<Set>> inSets;
+  input tuple<Boolean, Boolean, Sets, array<Set>> inSets;
   output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue(inStreamCref, inElement, inSets)
@@ -3164,7 +3183,7 @@ algorithm
 
     // Otherwise, fetch the set that the element belongs to and evaluate the
     // inStream call.
-    case (_, Connect.CONNECTOR_ELEMENT(set = set), (_, set_array))
+    case (_, Connect.CONNECTOR_ELEMENT(set = set), (_, _, _, set_array))
       equation
         Connect.SET(ty = Connect.STREAM(_), elements = sl) =
           setArrayGet(set_array, set);
@@ -3179,7 +3198,7 @@ protected function generateInStreamExp
   given a connection set."
   input DAE.ComponentRef inStreamCref;
   input list<ConnectorElement> inStreams;
-  input tuple<Connect.Sets, array<Set>> inSets;
+  input tuple<Boolean, Boolean, Connect.Sets, array<Set>> inSets;
   output DAE.Exp outExp;
 algorithm
   outExp := match(inStreamCref, inStreams, inSets)
@@ -3252,7 +3271,7 @@ algorithm
         ety = ComponentReference.crefLastType(flow_cr);
         flow_exp = Expression.crefExp(flow_cr);
         stream_exp = Expression.crefExp(inStreamCref);
-        instream_exp = evaluateInStream(inStreamCref, (inSets, inSetArray));
+        instream_exp = evaluateInStream(inStreamCref, (true, false, inSets, inSetArray));
         // actualStream(stream_var) = smooth(0, if flow_var > 0 then inStream(stream_var)
         //                                            else stream_var);
         e = DAE.CALL(Absyn.IDENT("smooth"), {
@@ -3278,14 +3297,26 @@ algorithm
 end evaluateCardinality;
     
 protected function simplifyDAEElements
+"run this only if we have cardinality"
+  input Boolean inHasCardinality;
   input DAE.DAElist inDAE;
   output DAE.DAElist outDAE;
-protected
-  list<DAE.Element> elems;
 algorithm
-  DAE.DAE(elementLst = elems) := inDAE;
-  elems := List.mapFlat(elems, simplifyDAEElement);
-  outDAE := DAE.DAE(elems);
+  outDAE := match(inHasCardinality, inDAE)
+    local
+      list<DAE.Element> elems;
+    
+    case (false, _) then inDAE;
+    
+    case (true, _)
+      equation 
+        DAE.DAE(elementLst = elems) = inDAE;
+        elems = List.mapFlat(elems, simplifyDAEElement);
+        outDAE = DAE.DAE(elems);
+      then
+        outDAE;
+  
+  end match;
 end simplifyDAEElements;
 
 protected function simplifyDAEElement
@@ -4043,7 +4074,7 @@ algorithm
         // print("(1)-(2)=(7):\n  " +& stringDelimitList(List.map(equVars, ComponentReference.printComponentRefStr), "\n  ") +& "\n");
         unnecessary = List.setDifferenceOnTrue(expandableVars, equVars, ComponentReference.crefEqualWithoutSubs);
         // print("REMOVE: (7)-(6):\n  " +& stringDelimitList(List.map(unnecessary, ComponentReference.printComponentRefStr), "\n  ") +& "\n");
-        dae = DAEUtil.removeVariables(inDAE, unnecessary);
+        dae = DAEUtil.removeVariables(dae, unnecessary);
       then
         (sets, dae);
   end matchcontinue;
