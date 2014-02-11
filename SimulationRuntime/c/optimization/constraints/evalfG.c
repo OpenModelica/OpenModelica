@@ -65,9 +65,9 @@ Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
 
   iData = (IPOPT_DATA_ *) useData;
   for(i=0, k=0, x0=v; i<1; ++i, x0=iData->x3){
-	iData->x1 = x0 + iData->nv; /* 0 + 3 = 3;2*/
-	iData->x2 = iData->x1 + iData->nv; /*3 + 3 = 6;5*/
-	iData->x3 = iData->x2 + iData->nv; /*6 + 3  = 9*/
+  iData->x1 = x0 + iData->nv; /* 0 + 3 = 3;2*/
+  iData->x2 = iData->x1 + iData->nv; /*3 + 3 = 6;5*/
+  iData->x3 = iData->x2 + iData->nv; /*6 + 3  = 9*/
 
     iData->u1 = iData->x1 + iData->nx; /*3 + 2 = 5*/
     iData->u2 = iData->x2 + iData->nx; /*6 + 2 = 8*/
@@ -91,9 +91,9 @@ Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
   }
 
   for(; i<iData->nsi; ++i, x0=iData->x3){
-	iData->x1 = x0 + iData->nv; /* 0 + 3 = 3;2*/
-	iData->x2 = iData->x1 + iData->nv; /*3 + 3 = 6;5*/
-	iData->x3 = iData->x2 + iData->nv; /*6 + 3  = 9*/
+  iData->x1 = x0 + iData->nv; /* 0 + 3 = 3;2*/
+  iData->x2 = iData->x1 + iData->nv; /*3 + 3 = 6;5*/
+  iData->x3 = iData->x2 + iData->nv; /*6 + 3  = 9*/
 
     iData->u1 = iData->x1 + iData->nx; /*3 + 2 = 5*/
     iData->u2 = iData->x2 + iData->nx; /*6 + 2 = 8*/

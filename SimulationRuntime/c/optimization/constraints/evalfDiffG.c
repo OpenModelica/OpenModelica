@@ -73,7 +73,7 @@ Bool evalfDiffG(Index n, double * x, Bool new_x, Index m, Index njac, Index *iRo
     */
 
   }else{
-	int i,j,k,l;
+  int i,j,k,l;
     long double tmp[3];
     int id;
     int nng = iData->nJ;
