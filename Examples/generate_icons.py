@@ -1095,7 +1095,7 @@ def exportIcon(modelicaClass, base_classes, includeInvisbleText):
 
     for base_class in base_classes:
         graphics = getGraphicsWithPortsForClass(base_class)
-        iconGraphics.append(graphics)
+        iconGraphics.insert(0,graphics)
     graphics = getGraphicsWithPortsForClass(modelicaClass)
     iconGraphics.append(graphics)
 
@@ -1106,7 +1106,7 @@ def exportIcon(modelicaClass, base_classes, includeInvisbleText):
     dwg = generateSvg(os.path.join(output_dir, classToFileName(modelicaClass) + ".svg"), iconGraphics, includeInvisbleText)
     return dwg
 
-
+# Note: The order of the base classes matters
 def getBaseClasses(modelica_class, base_classes):
     inheritance_cnt = ask_omc('getInheritanceCount', modelica_class)
 
