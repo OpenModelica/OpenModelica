@@ -260,6 +260,15 @@ int freeIpoptData(IPOPT_DATA_ *iData)
     }
   }
 
+  if(ACTIVE_STREAM(LOG_IPOPT_FULL))
+  {
+    for(i =0; i<iData->nv;++i)
+      if(iData->pFile[i])
+        fclose(iData->pFile[i]);
+    if(iData->pFile)
+      free(iData->pFile);
+  }
+
   free(iData);
   iData = NULL;
   return 0;

@@ -47,6 +47,7 @@
 #ifdef WITH_IPOPT
 
 static int res2file(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo);
+static int set_optimizer_flags(IPOPT_DATA_ *iData,IpoptProblem *nlp);
 
 /*!
  *  start main optimization step
@@ -60,9 +61,9 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
   int res;
   char *cflags;
   double tmp;
-
   IpoptProblem nlp = NULL;
-  IPOPT_DATA_ *iData = ((IPOPT_DATA_*)solverInfo->solverData);
+  IPOPT_DATA_*iData = ((IPOPT_DATA_*)solverInfo->solverData);
+
   iData->current_var = 0;
   iData->current_time = 0;
   iData->data = data;
@@ -75,8 +76,10 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
   iData->matrixA = data->callback->initialAnalyticJacobianA((void*) iData->data);
   iData->matrixB = data->callback->initialAnalyticJacobianB((void*) iData->data);
   iData->matrixC = data->callback->initialAnalyticJacobianC((void*) iData->data);
-  //iData->matrixD = data->callback->initialAnalyticJacobianD((void*) iData->data);
+  /*iData->matrixD = data->callback->initialAnalyticJacobianD((void*) iData->data);*/
+  /*ToDo*/
   iData->deg = 3;
+
   loadDAEmodel(data, iData);
   iData->index_debug_iter=0;
   iData->degub_step =  10;
@@ -92,85 +95,24 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
   initial_guess_ipopt(iData,solverInfo);
 
   if(ACTIVE_STREAM(LOG_IPOPT)){
-  for(i=0; i<iData->nx; i++)
-    printf("\nx[%i] = %s = %g | %g",i, iData->data->modelData.realVarsData[i].info.name,iData->v[i],iData->vnom[i]);
+    for(i=0; i<iData->nx; i++)
+      printf("\nx[%i] = %s = %g | %g",i, iData->data->modelData.realVarsData[i].info.name,iData->v[i],iData->vnom[i]);
     for(; i<iData->nv; ++i)
       printf("\nu[%i] = %s = %g| %g",i, iData->data->modelData.realVarsData[iData->index_u + i-iData->nx].info.name,iData->v[i],iData->vnom[i]);
   }
 
   ipoptDebuge(iData,iData->v);
 
-  if(flag == 5)
-  {
-     nlp = CreateIpoptProblem(iData->NV, iData->Vmin, iData->Vmax,
+  if(flag == 5){
+    nlp = CreateIpoptProblem(iData->NV, iData->Vmin, iData->Vmax,
          iData->NRes +iData->nc*iData->deg*iData->nsi, iData->gmin, iData->gmax, iData->njac, iData->nhess, 0, &evalfF,
                   &evalfG, &evalfDiffF, &evalfDiffG, &ipopt_h);
 
-    AddIpoptNumOption(nlp, "tol", iData->data->simulationInfo.tolerance);
-
-    if(ACTIVE_STREAM(LOG_IPOPT)){
-      AddIpoptIntOption(nlp, "print_level", 5);
-    }else if(ACTIVE_STREAM(LOG_STATS)){
-      AddIpoptIntOption(nlp, "print_level", 3);
-    }else {
-      AddIpoptIntOption(nlp, "print_level", 2);
-    }
-    AddIpoptIntOption(nlp, "file_print_level", 0);
-
-    AddIpoptStrOption(nlp, "mu_strategy", "adaptive");
-    AddIpoptStrOption(nlp, "fixed_variable_treatment", "make_parameter");
-
-
-    cflags = (char*)omc_flagValue[FLAG_IPOPT_HESSE];
-    if(cflags){
-      if(!strcmp(cflags,"BFGS"))
-        AddIpoptStrOption(nlp, "hessian_approximation", "limited-memory");
-      else if(!strcmp(cflags,"const") || !strcmp(cflags,"CONST"))
-      AddIpoptStrOption(nlp, "hessian_constant", "yes");
-    }
-
-
-    cflags = (char*)omc_flagValue[FLAG_LS_IPOPT];
-    if(cflags)
-      AddIpoptStrOption(nlp, "linear_solver", cflags);
-    else
-      AddIpoptStrOption(nlp, "linear_solver", "mumps");
-
-     AddIpoptStrOption(nlp,"nlp_scaling_method","gradient-based");
-     AddIpoptNumOption(nlp,"mu_init",1e-6);
-
-     if(ACTIVE_STREAM(LOG_IPOPT_JAC) && ACTIVE_STREAM(LOG_IPOPT_HESSE)){
-       AddIpoptIntOption(nlp, "print_level", 4);
-       AddIpoptStrOption(nlp, "derivative_test", "second-order");
-     }else if(ACTIVE_STREAM(LOG_IPOPT_JAC)){
-         AddIpoptIntOption(nlp, "print_level", 4);
-         AddIpoptStrOption(nlp, "derivative_test", "first-order");
-     }else if(ACTIVE_STREAM(LOG_IPOPT_HESSE)){
-         AddIpoptIntOption(nlp, "print_level", 4);
-         AddIpoptStrOption(nlp, "derivative_test", "only-second-order");
-     }else{
-         AddIpoptStrOption(nlp, "derivative_test", "none");
-     }
-     if(ACTIVE_STREAM(LOG_IPOPT_FULL))
-       AddIpoptIntOption(nlp, "print_level", 7);
-
-     /*AddIpoptStrOption(nlp, "derivative_test_print_all", "yes");
-      * AddIpoptNumOption(nlp,"derivative_test_perturbation",1e-6);
-     */
-    AddIpoptIntOption(nlp, "max_iter", 5000);
+    set_optimizer_flags(iData,&nlp);
 
     res = IpoptSolve(nlp, iData->v, NULL, &obj, iData->mult_g, iData->mult_x_L, iData->mult_x_U, (void*)iData);
 
     FreeIpoptProblem(nlp);
-
-    if(ACTIVE_STREAM(LOG_IPOPT_FULL))
-    {
-      for(i =0; i<iData->nv;++i)
-        if(iData->pFile[i])
-          fclose(iData->pFile[i]);
-      if(iData->pFile)
-        free(iData->pFile);
-    }
 
     iData->current_var = 0;
     res2file(iData,solverInfo);
@@ -197,6 +139,7 @@ int refreshSimData(double *x, double *u, double t, IPOPT_DATA_ *iData)
   for(i = 0, k = iData->index_u; i<iData->nu;++i,++j,++k){
     data->simulationInfo.inputVars[i] = u[i]*iData->vnom[j];
   }
+
   data->callback->input_function(data);
   sData->timeValue = t;
   /* updateContinuousSystem(iData->data); */
@@ -272,6 +215,69 @@ static int res2file(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
     sim_result.emit(&sim_result,data);
     data->simulationInfo.terminal = 0;
   }
+  return 0;
+}
+
+/*!
+ *  set optimizer options
+ *  author: Vitalij Ruge
+ **/
+static int set_optimizer_flags(IPOPT_DATA_ *iData,IpoptProblem *nlp)
+{
+  char *cflags;
+  AddIpoptNumOption(*nlp, "tol", iData->data->simulationInfo.tolerance);
+
+  if(ACTIVE_STREAM(LOG_IPOPT)){
+    AddIpoptIntOption(*nlp, "print_level", 5);
+  }else if(ACTIVE_STREAM(LOG_STATS)){
+    AddIpoptIntOption(*nlp, "print_level", 3);
+  }else {
+    AddIpoptIntOption(*nlp, "print_level", 2);
+  }
+  AddIpoptIntOption(*nlp, "file_print_level", 0);
+
+  AddIpoptStrOption(*nlp, "mu_strategy", "adaptive");
+  AddIpoptStrOption(*nlp, "fixed_variable_treatment", "make_parameter");
+
+  cflags = (char*)omc_flagValue[FLAG_IPOPT_HESSE];
+  if(cflags){
+    if(!strcmp(cflags,"BFGS"))
+      AddIpoptStrOption(*nlp, "hessian_approximation", "limited-memory");
+    else if(!strcmp(cflags,"const") || !strcmp(cflags,"CONST"))
+      AddIpoptStrOption(*nlp, "hessian_constant", "yes");
+    }
+
+  cflags = (char*)omc_flagValue[FLAG_LS_IPOPT];
+  if(cflags)
+    AddIpoptStrOption(*nlp, "linear_solver", cflags);
+  else
+    AddIpoptStrOption(*nlp, "linear_solver", "mumps");
+
+  AddIpoptStrOption(*nlp,"nlp_scaling_method","gradient-based");
+  AddIpoptNumOption(*nlp,"mu_init",1e-6);
+
+  if(ACTIVE_STREAM(LOG_IPOPT_JAC) && ACTIVE_STREAM(LOG_IPOPT_HESSE)){
+    AddIpoptIntOption(*nlp, "print_level", 4);
+    AddIpoptStrOption(*nlp, "derivative_test", "second-order");
+  }else if(ACTIVE_STREAM(LOG_IPOPT_JAC)){
+    AddIpoptIntOption(*nlp, "print_level", 4);
+    AddIpoptStrOption(*nlp, "derivative_test", "first-order");
+  }else if(ACTIVE_STREAM(LOG_IPOPT_HESSE)){
+    AddIpoptIntOption(*nlp, "print_level", 4);
+    AddIpoptStrOption(*nlp, "derivative_test", "only-second-order");
+  }else{
+    AddIpoptStrOption(*nlp, "derivative_test", "none");
+  }
+
+  if(ACTIVE_STREAM(LOG_IPOPT_FULL))
+    AddIpoptIntOption(*nlp, "print_level", 7);
+
+  /*AddIpoptStrOption(nlp, "derivative_test_print_all", "yes");
+   * AddIpoptNumOption(nlp,"derivative_test_perturbation",1e-6);
+  */
+
+  AddIpoptIntOption(*nlp, "max_iter", 5000);
+
   return 0;
 }
 
