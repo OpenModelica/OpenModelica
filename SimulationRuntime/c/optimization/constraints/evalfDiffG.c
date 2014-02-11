@@ -76,7 +76,7 @@ Bool evalfDiffG(Index n, double * x, Bool new_x, Index m, Index njac, Index *iRo
     printf("\n m = %i , %i",m ,iData->NRes);
     printf("\nk = %i , %i" ,k ,njac);
     for(i = 0; i< njac; ++i)
-      printf("\nJ(%i,%i) = 1; i= %i",iRow[i]+1, iCol[i]+1,i);
+      printf("\nJ(%i,%i) = 1; i= %i;",iRow[i]+1, iCol[i]+1,i);
 
     assert(0);
     */

@@ -46,7 +46,14 @@
 static int local_jac_struct(IPOPT_DATA_ *iData, int *nng);
 static int local_jac_struct_print(IPOPT_DATA_ *iData);
 static int check_nominal(IPOPT_DATA_ *iData, double min, double max, double nominal, short set, int i, double x0);
+static int optimizer_coeff_setings(IPOPT_DATA_ *iData);
+static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData);
+static int optimizer_time_setings(IPOPT_DATA_ *iData);
+static int optimizer_print_step(IPOPT_DATA_ *iData);
 
+
+/*initial*/
+static int move_grid(IPOPT_DATA_ *iData);
 
 /*!
  *  free
@@ -59,24 +66,19 @@ int destroyIpopt(SOLVER_INFO* solverInfo)
 }
 
 
-
-/*
- * allocate
- */
-
 /*!
  *  allocate
  *  author: Vitalij Ruge
  **/
 int allocateIpoptData(IPOPT_DATA_ *iData)
 {
-  int deg1, deg2, i, j;
-  int nJ = iData->nc + iData->nx;
+  int deg1, deg2;
+  long int i, j;
   int ng = iData->NRes+iData->nc*iData->deg*iData->nsi;
-  int nng;
   deg1 = iData->deg + 1;
   deg2 = deg1 + 1;
 
+  iData->nJ = iData->nc + iData->nx;
   iData->gmin = (double*)calloc(ng,sizeof(double));
   iData->gmax = (double*)calloc(ng,sizeof(double));
   iData->mult_g = (double*)malloc(ng*sizeof(double));
@@ -109,8 +111,8 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   iData->w = (double*)malloc((iData->nsi + 1)*(iData->nv)*sizeof(double));
   iData->time = (double*)malloc((iData->deg*iData->nsi +1) *sizeof(double));
 
-  iData->J = (double**) malloc(nJ * sizeof(double*));
-  for(i = 0; i < nJ; i++)
+  iData->J = (double**) malloc(iData->nJ * sizeof(double*));
+  for(i = 0; i < iData->nJ; i++)
     iData->J[i] = (double*) calloc(iData->nv, sizeof(double));
 
   iData->gradF = (double*) calloc(iData->nv, sizeof(double));
@@ -119,22 +121,22 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   iData->gradF00 = (double*) calloc(iData->nv, sizeof(double));
 
   iData->sv = (double*)malloc(iData->nv*sizeof(double));
-  iData->sh = (double*)malloc(nJ*sizeof(double));
+  iData->sh = (double*)malloc(iData->nJ*sizeof(double));
 
-  iData->J0 = (double**) malloc(nJ * sizeof(double*));
-  for(i = 0; i < nJ; i++)
+  iData->J0 = (double**) malloc(iData->nJ * sizeof(double*));
+  for(i = 0; i < iData->nJ; i++)
     iData->J0[i] = (double*) calloc(iData->nv, sizeof(double));
 
   iData->gradFomc = (double**) malloc((2) * sizeof(double*));
   for(i = 0; i < 2; i++)
     iData->gradFomc[i] = (double*) calloc(iData->nv, sizeof(double));
 
-  iData->numJ = (double**) malloc(nJ * sizeof(double*));
-  for(i = 0; i < nJ; i++)
+  iData->numJ = (double**) malloc(iData->nJ * sizeof(double*));
+  for(i = 0; i < iData->nJ; i++)
     iData->numJ[i] = (double*) calloc(iData->nv, sizeof(double));
 
-  iData->H = (long double***) malloc(nJ * sizeof(long double**));
-  for(i = 0; i < nJ; i++)
+  iData->H = (long double***) malloc(iData->nJ * sizeof(long double**));
+  for(i = 0; i < iData->nJ; i++)
   {
     iData->H[i] = (long double**) malloc(iData->nv* sizeof(long double*));
     for(j = 0; j < iData->nv; j++)
@@ -149,36 +151,23 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
     iData->mH[i] = (long double*) calloc(iData->nv, sizeof(long double));
 
   iData->nlocalJac = 0;
-  iData->knowedJ = (int**) malloc( nJ* sizeof(int*));
-  for(i = 0; i < nJ; i++)
+  iData->knowedJ = (int**) malloc( iData->nJ* sizeof(int*));
+  for(i = 0; i < iData->nJ; i++)
     iData->knowedJ[i] = (int*) calloc(iData->nv, sizeof(int));
 
   iData->Hg = (short**) malloc(iData->nv * sizeof(short*));
   for(i = 0; i < iData->nv; i++)
     iData->Hg[i] = (short*) calloc(iData->nv, sizeof(short));
 
+  iData->dt = (double*)malloc((iData->nsi) *sizeof(double));
 
-  nng = ng-iData->nc;
-  if((int)iData->nc > (int)0){
-    for(i = iData->nx; i<ng; i+=nJ)
-      for(j=0;j<(int)iData->nc;++j)
-      {
+  if(iData->nc > 0)
+    for(i = iData->nx; i<ng; i+=iData->nJ)
+      for(j=0;j<iData->nc;++j)
         iData->gmin[i+j] = -1e21;
-      }
-  }
 
-  /*
-  for(i = 0; i<ng;++i)
-    printf("gmin = %g \t gmax = %g\n",iData->gmin[i],iData->gmax[i]);
-  */
   return 0;
 }
-
-/*
- *
- * free
- *
- */
 
 /*!
  *  free
@@ -187,7 +176,7 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
 int freeIpoptData(IPOPT_DATA_ *iData)
 {
   int i,j;
-  int nJ = (int) iData->nx + iData->nv;
+  int nJ = (int) iData->nJ;
 
   for(i = 0; i < nJ; i++){
     free(iData->J[i]);
@@ -212,10 +201,11 @@ int freeIpoptData(IPOPT_DATA_ *iData)
   free(iData->mH);
   free(iData->Hg);
 
-  for(i = 0; i < nJ; i++)
-  {
+  for(i = 0; i < nJ; i++){
+
     for(j = 0;j<iData->nv; ++j)
       free(iData->H[i][j]);
+
     free(iData->H[i]);
   }
   free(iData->H);
@@ -260,14 +250,14 @@ int freeIpoptData(IPOPT_DATA_ *iData)
   free(iData->sh);
 
   for(i = 0; i<3;++i);{
-  if(iData->data->simulationInfo.analyticJacobians[i].seedVars){
-      free(iData->data->simulationInfo.analyticJacobians[i].seedVars);
-      free(iData->data->simulationInfo.analyticJacobians[i].resultVars);
-      free(iData->data->simulationInfo.analyticJacobians[i].tmpVars);
-      free(iData->data->simulationInfo.analyticJacobians[i].sparsePattern.leadindex);
-      free(iData->data->simulationInfo.analyticJacobians[i].sparsePattern.index);
-      free(iData->data->simulationInfo.analyticJacobians[i].sparsePattern.colorCols);
-  }
+    if(iData->data->simulationInfo.analyticJacobians[i].seedVars){
+        free(iData->data->simulationInfo.analyticJacobians[i].seedVars);
+        free(iData->data->simulationInfo.analyticJacobians[i].resultVars);
+        free(iData->data->simulationInfo.analyticJacobians[i].tmpVars);
+        free(iData->data->simulationInfo.analyticJacobians[i].sparsePattern.leadindex);
+        free(iData->data->simulationInfo.analyticJacobians[i].sparsePattern.index);
+       free(iData->data->simulationInfo.analyticJacobians[i].sparsePattern.colorCols);
+    }
   }
 
   free(iData);
@@ -281,22 +271,18 @@ int freeIpoptData(IPOPT_DATA_ *iData)
  **/
 int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
 {
-  int i,j,k,l,id;
-  double tmp;
-  double *u0;
-  char buffer[4096];
+  int id;
+  double *c;
 
   iData->nx = data->modelData.nStates;
   iData->nu = data->modelData.nInputVars;
   iData->nc = 0;
-  iData->data->callback->pathConstraints(data,u0,&iData->nc);
 
   iData->nsi = data->simulationInfo.numSteps;
   iData->t0 = data->simulationInfo.startTime;
   iData->tf = data->simulationInfo.stopTime;
 
-  move_grid(iData);
-
+  /***********************/
   iData->nX = iData->nx * iData->deg;
   iData->nU = iData->nu * iData->deg;
 
@@ -312,167 +298,29 @@ int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
 
   iData->endN = iData->NV - iData->nv;
 
+  /***********************/
+  iData->data->callback->pathConstraints(data,c,&iData->nc);
   allocateIpoptData(iData);
+  move_grid(iData);
+  optimizer_coeff_setings(iData);
+
+  /***********************/
   local_jac_struct(iData, &id);
   iData->njac = iData->deg*(iData->nlocalJac-iData->nx+iData->nsi*iData->nlocalJac+iData->deg*iData->nsi*iData->nx)-iData->deg*id;
   iData->nhess = 0.5*iData->nv*(iData->nv + 1)*(1+iData->deg*iData->nsi);
 
-  if(iData->deg == 3){
-   iData->c1 = 0.15505102572168219018027159252941086080340525193433;
-   iData->c2 = 0.64494897427831780981972840747058913919659474806567;
-   iData->c3 = 1.0;
-
-   iData->e1 = 0.27639320225002103035908263312687237645593816403885;
-   iData->e2 = 0.72360679774997896964091736687312762354406183596115;
-   iData->e3 = 1.0;
-
-   iData->a1[0] = 4.1393876913398137178367408896470696703591369767880;
-   iData->a1[1] = 3.2247448713915890490986420373529456959829737403284;
-   iData->a1[2] = 1.1678400846904054949240412722156950122337492313015;
-   iData->a1[3] = 0.25319726474218082618594241992157103785758599484179;
-
-   iData->a2[0] = 1.7393876913398137178367408896470696703591369767880;
-   iData->a2[1] = 3.5678400846904054949240412722156950122337492313015;
-   iData->a2[2] = 0.7752551286084109509013579626470543040170262596716;
-   iData->a2[3] = 1.0531972647421808261859424199215710378575859948418;
-
-   iData->a3[0] = 3.0;
-   iData->a3[1] = 5.5319726474218082618594241992157103785758599484179;
-   iData->a3[2] = 7.5319726474218082618594241992157103785758599484179;
-   iData->a3[3] = 5.0;
-
-   iData->d1[0] = 4.3013155617496424838955952368431696002490512113396;
-   iData->d1[1] = 3.6180339887498948482045868343656381177203091798058;
-   iData->d1[2] = 0.8541019662496845446137605030969143531609275394172;
-   iData->d1[3] = 0.17082039324993690892275210061938287063218550788345;
-   iData->d1[4] = 0.44721359549995793928183473374625524708812367192230;
-   iData->invd1_4 = 2.2360679774997896964091736687312762354406183596115;
-
-   iData->d2[0] = 3.3013155617496424838955952368431696002490512113396;
-   iData->d2[1] = 5.8541019662496845446137605030969143531609275394172;
-   iData->d2[2] = 1.3819660112501051517954131656343618822796908201942;
-   iData->d2[3] = 1.1708203932499369089227521006193828706321855078834;
-   iData->d2[4] = 0.44721359549995793928183473374625524708812367192230;
-
-   iData->d3[0] = 7.0;
-   iData->d3[1] = 11.180339887498948482045868343656381177203091798058;
-   iData->d3[2] = 11.180339887498948482045868343656381177203091798058;
-   iData->d3[3] = 7.0;
-   iData->d3[4] = 1.0;
-
-   iData->bl[0] = 0.083333333333333333333333333333333333333333333333333;
-   iData->bl[1] = 0.41666666666666666666666666666666666666666666666667;
-   iData->bl[2] = iData->bl[1];
-   iData->bl[3] = 1.0 - (iData->bl[0]+iData->bl[1]+iData->bl[2]);
-
-   iData->br[2] = 0.11111111111111111111111111111111111111111111111111;
-   iData->br[1] = 0.51248582618842161383881344651960809422127631890713;
-   iData->br[0] = 1.0 - (iData->br[1] + iData->br[2]);
-  }
-
+  /***********************/
   iData->x0 = iData->data->localData[1]->realVars;
+  optimizer_bounds_setings(data, iData);
+  optimizer_time_setings(iData);
 
-
-  for(i =0;i<iData->nx;++i)
-  {
-    check_nominal(iData, data->modelData.realVarsData[i].attribute.min, data->modelData.realVarsData[i].attribute.max, data->modelData.realVarsData[i].attribute.nominal, data->modelData.realVarsData[i].attribute.useNominal, i, fabs(iData->x0[i]));
-
-    iData->scalVar[i] = 1.0 / iData->vnom[i];
-    iData->scalf[i] = iData->scalVar[i];
-
-    iData->xmin[i] = data->modelData.realVarsData[i].attribute.min*iData->scalVar[i];
-    iData->xmax[i] = data->modelData.realVarsData[i].attribute.max*iData->scalVar[i];
-  }
-  iData->index_u = data->modelData.nVariablesReal - iData->nu;
-  id = iData->index_u;
-
-  for(i =0,j = iData->nx;i<iData->nu;++i,++j)
-  {
-    check_nominal(iData, data->modelData.realVarsData[id +i].attribute.min, data->modelData.realVarsData[id +i].attribute.max, data->modelData.realVarsData[id +i].attribute.nominal, data->modelData.realVarsData[id +i].attribute.useNominal, j, fabs(data->modelData.realVarsData[id+i].attribute.start));
-
-    iData->scalVar[j] = 1.0 / iData->vnom[j];
-    iData->umin[i] = data->modelData.realVarsData[id +i].attribute.min*iData->scalVar[j];
-    iData->umax[i] = data->modelData.realVarsData[id +i].attribute.max*iData->scalVar[j];
-  }
-
-  memcpy(iData->vmin, iData->xmin, sizeof(double)*iData->nx);
-  memcpy(iData->vmin + iData->nx, iData->umin, sizeof(double)*iData->nu);
-
-  memcpy(iData->vmax, iData->xmax, sizeof(double)*iData->nx);
-  memcpy(iData->vmax + iData->nx, iData->umax, sizeof(double)*iData->nu);
-
-
-  memcpy(iData->Vmin, iData->vmin, sizeof(double)*iData->nv);
-  memcpy(iData->Vmax, iData->vmax, sizeof(double)*iData->nv);
-  for(i = 0,id = iData->nv; i < iData->nsi*iData->deg;i++,id += iData->nv)
-  {
-    memcpy(iData->Vmin + id, iData->vmin, sizeof(double)*iData->nv);
-    memcpy(iData->Vmax + id, iData->vmax, sizeof(double)*iData->nv);
-  }
-
-  iData->time[0] = iData->t0;
-  if(iData->deg == 3){
-  for(i = 0,k=0,id=0; i<iData->nsi; ++i,id += iData->deg)
-  {
-    if(i){
-       if(iData->deg == 3){
-         iData->time[++k] = iData->time[id] + iData->c1*iData->dt[i];
-         iData->time[++k] = iData->time[id] + iData->c2*iData->dt[i];
-       }
-      iData->time[++k] = (i+1)*iData->dt[i];
-    }else{
-      if(iData->deg == 3){
-        iData->time[++k] = iData->time[id] + iData->e1*iData->dt[i];
-        iData->time[++k] = iData->time[id] + iData->e2*iData->dt[i];
-      }
-      iData->time[++k] = (i+1)*iData->dt[i];
-    }
-  }
-  }
-  iData->time[k] = iData->tf;
-
+  /***********************/
   if(ACTIVE_STREAM(LOG_IPOPT_FULL))
-  {
-    iData->pFile = (FILE**) calloc(iData->nv, sizeof(FILE*));
-    for(i=0, j=0; i<iData->nv; i++, ++j)
-    {
-      if(j <iData->nx)
-      {
-        sprintf(buffer, "./%s_ipoptPath_states.csv", iData->data->modelData.realVarsData[j].info.name);
-      }
-      else if(j< iData->nv)
-      {
-        sprintf(buffer, "./%s_ipoptPath_input.csv", iData->data->modelData.realVarsData[iData->index_u + j-iData->nx].info.name);
-      }
-      iData->pFile[j] = fopen(buffer, "wt");
-      fprintf(iData->pFile[j], "%s,", "iteration");
-    }
+    optimizer_print_step(iData);
 
+  if(ACTIVE_STREAM(LOG_IPOPT_JAC) && ACTIVE_STREAM(LOG_IPOPT_HESSE))
+    local_jac_struct_print(iData);
 
-    for(i=0 ,k=0,j =0; i<iData->NV; ++i,++j)
-    {
-      if(j >= iData->nv)
-      {
-        j = 0;
-        ++k;
-      }
-
-      if(j < iData->nx)
-      {
-        fprintf(iData->pFile[j], "%s_%i,", iData->data->modelData.realVarsData[j].info.name, k);
-      }
-      else if(j < iData->nv)
-      {
-        fprintf(iData->pFile[j], "%s_%i,", iData->data->modelData.realVarsData[iData->index_u + j-iData->nx].info.name, k);
-      }
-    }
-  }
-
-/*
-  printf("\nk = %i , NX = %i",(int)k,(int)(iData->deg*iData->nsi +1));
-  for(i = 0; i<(iData->deg*iData->nsi +1); ++i)
-    printf("\nt[%i] = %g", i, iData->time[i]);
-*/
   return 0;
 }
 
@@ -484,11 +332,10 @@ int move_grid(IPOPT_DATA_ *iData)
 {
   int i;
   double t;
-  iData->dt = (double*)malloc((iData->nsi) *sizeof(double));
+
   t = iData->t0;
   iData->dt_default = (iData->tf - iData->t0)/(iData->nsi);
-  for(i=0;i<iData->nsi; ++i)
-  {
+  for(i=0;i<iData->nsi; ++i){
     iData->dt[i] = iData->dt_default;
     t = (i+1)*iData->dt[i];
   }
@@ -502,7 +349,6 @@ int move_grid(IPOPT_DATA_ *iData)
 */
   return 0;
 }
-
 
 
 /*
@@ -527,27 +373,21 @@ static int local_jac_struct(IPOPT_DATA_ *iData, int * nng)
   cC =  (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols;
   lindex = (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex;
 
-  for(i = 1; i < data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors + 1; ++i)
-  {
-    for(ii = 0; ii<nx; ++ii)
-    {
-      if(cC[ii] == i)
-      {
+  for(i = 1; i < data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors + 1; ++i){
+    for(ii = 0; ii<nx; ++ii){
+      if(cC[ii] == i){
         data->simulationInfo.analyticJacobians[index].seedVars[ii] = 1.0;
       }
     }
 
-    for(ii = 0; ii < nx; ii++)
-    {
-      if(cC[ii] == i)
-      {
+    for(ii = 0; ii < nx; ii++){
+      if(cC[ii] == i){
         if(0 == ii)
           j = 0;
         else
           j = lindex[ii-1];
 
-        for(; j<lindex[ii]; ++j)
-        {
+        for(; j<lindex[ii]; ++j){
           l = data->simulationInfo.analyticJacobians[index].sparsePattern.index[j];
           J[l][ii] = 1;
           ++iData->nlocalJac;
@@ -556,18 +396,14 @@ static int local_jac_struct(IPOPT_DATA_ *iData, int * nng)
       }
     }
 
-    for(ii = 0; ii<nx; ++ii)
-    {
-      if(cC[ii] == i)
-      {
+    for(ii = 0; ii<nx; ++ii){
+      if(cC[ii] == i){
         data->simulationInfo.analyticJacobians[index].seedVars[ii] = 0.0;
       }
     }
   }
 
-
-  for(ii = 0; ii < iData->nx; ii++)
-  {
+  for(ii = 0; ii < iData->nx; ii++){
     if(J[ii][ii] == 0)
       ++iData->nlocalJac;
     J[ii][ii] = 1.0;
@@ -575,18 +411,11 @@ static int local_jac_struct(IPOPT_DATA_ *iData, int * nng)
 
 
   for(i = 0; i <iData->nv; ++i)
-  for(j = 0; j < iData->nv; ++j)
-    {
-    for(ii = 0; ii < nJ; ++ii)
-      if(J[ii][i]*J[ii][j])
-        Hg[i][j] = 1;
-    }
-/*
-  if(ACTIVE_STREAM(LOG_IPOPT_JAC) && ACTIVE_STREAM(LOG_IPOPT_HESSE))
-  {
-    local_jac_struct_print(iData);
-  }
-  */
+    for(j = 0; j < iData->nv; ++j)
+      for(ii = 0; ii < nJ; ++ii)
+        if(J[ii][i]*J[ii][j])
+          Hg[i][j] = 1;
+
   *nng = id;
   return 0;
 }
@@ -632,8 +461,7 @@ static int check_nominal(IPOPT_DATA_ *iData, double min, double max, double nomi
     amax = fabs(max);
     amin = fabs(min);
     iData->vnom[i] = fmax(amax,amin);
-    if(iData->vnom[i] > 1e12)
-      {
+    if(iData->vnom[i] > 1e12){
         double tmp = fmin(amax,amin);
         if(tmp<1e12){
           iData->vnom[i] = fmax(tmp,x0);
@@ -647,5 +475,173 @@ static int check_nominal(IPOPT_DATA_ *iData, double min, double max, double nomi
   return 0;
 }
 
+
+/*!
+ *  seting collocation coeff
+ *  author: Vitalij Ruge
+ **/
+static int optimizer_coeff_setings(IPOPT_DATA_ *iData)
+{
+	if(iData->deg == 3){
+	   iData->c1 = 0.15505102572168219018027159252941086080340525193433;
+	   iData->c2 = 0.64494897427831780981972840747058913919659474806567;
+	   iData->c3 = 1.0;
+
+	   iData->e1 = 0.27639320225002103035908263312687237645593816403885;
+	   iData->e2 = 0.72360679774997896964091736687312762354406183596115;
+	   iData->e3 = 1.0;
+
+	   iData->a1[0] = 4.1393876913398137178367408896470696703591369767880;
+	   iData->a1[1] = 3.2247448713915890490986420373529456959829737403284;
+	   iData->a1[2] = 1.1678400846904054949240412722156950122337492313015;
+	   iData->a1[3] = 0.25319726474218082618594241992157103785758599484179;
+
+	   iData->a2[0] = 1.7393876913398137178367408896470696703591369767880;
+	   iData->a2[1] = 3.5678400846904054949240412722156950122337492313015;
+	   iData->a2[2] = 0.7752551286084109509013579626470543040170262596716;
+	   iData->a2[3] = 1.0531972647421808261859424199215710378575859948418;
+
+	   iData->a3[0] = 3.0;
+	   iData->a3[1] = 5.5319726474218082618594241992157103785758599484179;
+	   iData->a3[2] = 7.5319726474218082618594241992157103785758599484179;
+	   iData->a3[3] = 5.0;
+
+	   iData->d1[0] = 4.3013155617496424838955952368431696002490512113396;
+	   iData->d1[1] = 3.6180339887498948482045868343656381177203091798058;
+	   iData->d1[2] = 0.8541019662496845446137605030969143531609275394172;
+	   iData->d1[3] = 0.17082039324993690892275210061938287063218550788345;
+	   iData->d1[4] = 0.44721359549995793928183473374625524708812367192230;
+	   iData->invd1_4 = 2.2360679774997896964091736687312762354406183596115;
+
+	   iData->d2[0] = 3.3013155617496424838955952368431696002490512113396;
+	   iData->d2[1] = 5.8541019662496845446137605030969143531609275394172;
+	   iData->d2[2] = 1.3819660112501051517954131656343618822796908201942;
+	   iData->d2[3] = 1.1708203932499369089227521006193828706321855078834;
+	   iData->d2[4] = 0.44721359549995793928183473374625524708812367192230;
+
+	   iData->d3[0] = 7.0;
+	   iData->d3[1] = 11.180339887498948482045868343656381177203091798058;
+	   iData->d3[2] = 11.180339887498948482045868343656381177203091798058;
+	   iData->d3[3] = 7.0;
+	   iData->d3[4] = 1.0;
+
+	   iData->bl[0] = 0.083333333333333333333333333333333333333333333333333;
+	   iData->bl[1] = 0.41666666666666666666666666666666666666666666666667;
+	   iData->bl[2] = iData->bl[1];
+	   iData->bl[3] = 1.0 - (iData->bl[0]+iData->bl[1]+iData->bl[2]);
+
+	   iData->br[2] = 0.11111111111111111111111111111111111111111111111111;
+	   iData->br[1] = 0.51248582618842161383881344651960809422127631890713;
+	   iData->br[0] = 1.0 - (iData->br[1] + iData->br[2]);
+	  }
+
+	return 0;
+}
+
+
+/*!
+ *  seting vars bounds
+ *  author: Vitalij Ruge
+ **/
+static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData)
+{
+  int i, j, id;
+  for(i =0;i<iData->nx;++i){
+	check_nominal(iData, data->modelData.realVarsData[i].attribute.min, data->modelData.realVarsData[i].attribute.max, data->modelData.realVarsData[i].attribute.nominal, data->modelData.realVarsData[i].attribute.useNominal, i, fabs(iData->x0[i]));
+	iData->scalVar[i] = 1.0 / iData->vnom[i];
+	iData->scalf[i] = iData->scalVar[i];
+
+	iData->xmin[i] = data->modelData.realVarsData[i].attribute.min*iData->scalVar[i];
+    iData->xmax[i] = data->modelData.realVarsData[i].attribute.max*iData->scalVar[i];
+  }
+
+  iData->index_u = data->modelData.nVariablesReal - iData->nu;
+  id = iData->index_u;
+
+  for(i =0,j = iData->nx;i<iData->nu;++i,++j){
+    check_nominal(iData, data->modelData.realVarsData[id +i].attribute.min, data->modelData.realVarsData[id +i].attribute.max, data->modelData.realVarsData[id +i].attribute.nominal, data->modelData.realVarsData[id +i].attribute.useNominal, j, fabs(data->modelData.realVarsData[id+i].attribute.start));
+    iData->scalVar[j] = 1.0 / iData->vnom[j];
+    iData->umin[i] = data->modelData.realVarsData[id +i].attribute.min*iData->scalVar[j];
+    iData->umax[i] = data->modelData.realVarsData[id +i].attribute.max*iData->scalVar[j];
+  }
+
+  memcpy(iData->vmin, iData->xmin, sizeof(double)*iData->nx);
+  memcpy(iData->vmin + iData->nx, iData->umin, sizeof(double)*iData->nu);
+
+  memcpy(iData->vmax, iData->xmax, sizeof(double)*iData->nx);
+  memcpy(iData->vmax + iData->nx, iData->umax, sizeof(double)*iData->nu);
+
+  memcpy(iData->Vmin, iData->vmin, sizeof(double)*iData->nv);
+  memcpy(iData->Vmax, iData->vmax, sizeof(double)*iData->nv);
+
+  for(i = 0,id = iData->nv; i < iData->nsi*iData->deg;i++, id += iData->nv){
+	memcpy(iData->Vmin + id, iData->vmin, sizeof(double)*iData->nv);
+    memcpy(iData->Vmax + id, iData->vmax, sizeof(double)*iData->nv);
+  }
+  return 0;
+}
+
+
+/*!
+ *  seting time vector
+ *  author: Vitalij Ruge
+ **/
+static int optimizer_time_setings(IPOPT_DATA_ *iData)
+{
+  int i,k,id;
+  iData->time[0] = iData->t0;
+  if(iData->deg == 3){
+    for(i = 0,k=0,id=0; i<iData->nsi; ++i,id += iData->deg){
+      if(i){
+        if(iData->deg == 3){
+	      iData->time[++k] = iData->time[id] + iData->c1*iData->dt[i];
+	      iData->time[++k] = iData->time[id] + iData->c2*iData->dt[i];
+	    }
+        iData->time[++k] = (i+1)*iData->dt[i];
+	  }else{
+	    if(iData->deg == 3){
+	      iData->time[++k] = iData->time[id] + iData->e1*iData->dt[i];
+	      iData->time[++k] = iData->time[id] + iData->e2*iData->dt[i];
+	    }
+	    iData->time[++k] = (i+1)*iData->dt[i];
+	  }
+	}
+  }
+  iData->time[k] = iData->tf;
+  return 0;
+}
+
+/*!
+ *  file for optimizer steps
+ *  author: Vitalij Ruge
+ **/
+static int optimizer_print_step(IPOPT_DATA_ *iData)
+{
+  char buffer[4096];
+  int i,j,k;
+  iData->pFile = (FILE**) calloc(iData->nv, sizeof(FILE*));
+  for(i=0, j=0; i<iData->nv; i++, ++j){
+    if(j <iData->nx)
+      sprintf(buffer, "./%s_ipoptPath_states.csv", iData->data->modelData.realVarsData[j].info.name);
+    else if(j< iData->nv)
+      sprintf(buffer, "./%s_ipoptPath_input.csv", iData->data->modelData.realVarsData[iData->index_u + j-iData->nx].info.name);
+
+    iData->pFile[j] = fopen(buffer, "wt");
+    fprintf(iData->pFile[j], "%s,", "iteration");
+  }
+
+
+  for(i=0 ,k=0,j =0; i<iData->NV; ++i,++j){
+    if(j >= iData->nv){
+      j = 0; ++k;
+    }
+
+    if(j < iData->nx)
+      fprintf(iData->pFile[j], "%s_%i,", iData->data->modelData.realVarsData[j].info.name, k);
+    else if(j < iData->nv)
+      fprintf(iData->pFile[j], "%s_%i,", iData->data->modelData.realVarsData[iData->index_u + j-iData->nx].info.name, k);
+  }
+  return 0;
+}
 
 #endif

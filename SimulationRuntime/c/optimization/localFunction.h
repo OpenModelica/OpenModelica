@@ -87,9 +87,6 @@ int initial_guess_ipopt(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo);
 /*DEBUGE*/
 int ipoptDebuge(IPOPT_DATA_ *iData, double *x);
 
-/*initial*/
-int move_grid(IPOPT_DATA_ *iData);
-
 #endif /*WITH_IPOPT*/
 
 /*ADOL-C*/

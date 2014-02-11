@@ -68,6 +68,7 @@ typedef struct IPOPT_DATA_
   long int NV;
   long int NRes;
   long int nc;
+  long int nJ;
   /* ODE */
   double * x0;
   double * xmin;
@@ -183,6 +184,8 @@ typedef struct IPOPT_DATA_
   double *time;
   short mayer;
   short lagrange;
+  double pmayer;
+  double plagrange;
   int mayer_index;
   int lagrange_index;
   DATA * data;
