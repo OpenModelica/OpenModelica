@@ -57,8 +57,8 @@ int initial_guess_ipopt(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
   cflags = (char*)omc_flagValue[FLAG_IPOPT_INIT];
 
   if(cflags){
-	  if(!initial_guess_ipopt_cflag(iData, cflags))
-		  return 0;
+    if(!initial_guess_ipopt_cflag(iData, cflags))
+      return 0;
   }
   initial_guess_ipopt_sim(iData, solverInfo);
 
@@ -74,18 +74,18 @@ static int initial_guess_ipopt_cflag(IPOPT_DATA_ *iData,char* cflags)
 {
   if(!strcmp(cflags,"const") || !strcmp(cflags,"CONST")){
     int i, id;
-	for(i = 0, id=0; i<iData->NV;i++,++id){
-	  if(id >=iData->nv)
-	    id = 0;
-	  if(id <iData->nx){
-	    iData->v[i] = iData->data->modelData.realVarsData[id].attribute.start*iData->scalVar[id];
-	  }else if(id< iData->nv){
-	    iData->v[i] = iData->data->modelData.realVarsData[iData->index_u+id -iData->nx].attribute.start*iData->scalVar[id];
-	  }
-	}
-	  return 0;
+  for(i = 0, id=0; i<iData->NV;i++,++id){
+    if(id >=iData->nv)
+      id = 0;
+    if(id <iData->nx){
+      iData->v[i] = iData->data->modelData.realVarsData[id].attribute.start*iData->scalVar[id];
+    }else if(id< iData->nv){
+      iData->v[i] = iData->data->modelData.realVarsData[iData->index_u+id -iData->nx].attribute.start*iData->scalVar[id];
+    }
+  }
+    return 0;
   }else if(!strcmp(cflags,"sim") || !strcmp(cflags,"SIM"))
-	  return 1;
+    return 1;
 
   infoStreamPrint(LOG_STDOUT, 1, "ipopt_hesse | not found", cflags);
   return 1;
@@ -127,48 +127,48 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
 
    for(ii=iData->nx,j=0; j < iData->nu; ++j, ++ii){
      u0[j] = data->modelData.realVarsData[iData->index_u+j].attribute.start;
-	 u0[j] = fmin(fmax(u0[j],iData->umin[j]),iData->umax[j]);
-	 u[j] = u0[j];
-	 v[ii] = u0[j]*iData->scalVar[j + iData->nx];
+   u0[j] = fmin(fmax(u0[j],iData->umin[j]),iData->umax[j]);
+   u[j] = u0[j];
+   v[ii] = u0[j]*iData->scalVar[j + iData->nx];
    }
 
    printGuess = (short)(ACTIVE_STREAM(LOG_INIT) && !ACTIVE_STREAM(LOG_SOLVER));
    if(printGuess){
      printf("\n****initial guess****");
-	 printf("\n #####done time[%i] = %f",0,iData->time[0]);
+   printf("\n #####done time[%i] = %f",0,iData->time[0]);
    }
 
    for(i=0, k=1, v=iData->v + iData->nv; i<iData->nsi; ++i){
      for(jj=0; jj<iData->deg; ++jj, ++k){
-	   solverInfo->currentStepSize = iData->time[k] - iData->time[k-1];
-	   iData->data->localData[1]->timeValue = iData->time[k];
+     solverInfo->currentStepSize = iData->time[k] - iData->time[k-1];
+     iData->data->localData[1]->timeValue = iData->time[k];
 
-	   dasrt_step(data, solverInfo);
+     dasrt_step(data, solverInfo);
 
-	   if(printGuess)
-	     printf("\n #####done time[%i] = %f",k,iData->time[k]);
+     if(printGuess)
+       printf("\n #####done time[%i] = %f",k,iData->time[k]);
 
-	   for(j=0; j< iData->nx; ++j)
-	     v[j] = sData->realVars[j] * iData->scalVar[j];
+     for(j=0; j< iData->nx; ++j)
+       v[j] = sData->realVars[j] * iData->scalVar[j];
 
-	   for(ii=iData->index_u; j< iData->nv; ++j, ++ii)
-	     v[j] = sData->realVars[ii] * iData->scalVar[j];
+     for(ii=iData->index_u; j< iData->nv; ++j, ++ii)
+       v[j] = sData->realVars[ii] * iData->scalVar[j];
 
-	   v += iData->nv;
-	   /* updateContinuousSystem(iData->data); */
-	   rotateRingBuffer(iData->data->simulationData, 1, (void**) iData->data->localData);
-	}
+     v += iData->nv;
+     /* updateContinuousSystem(iData->data); */
+     rotateRingBuffer(iData->data->simulationData, 1, (void**) iData->data->localData);
+  }
   }
 
   for(i = 0, id=0; i<iData->NV;i++,++id){
     if(id >=iData->nv)
-	  id = 0;
+    id = 0;
 
-	if(id <iData->nx){
-	  iData->v[i] =fmin(fmax(iData->vmin[id],iData->v[i]),iData->vmax[id]);
-	}else if(id< iData->nv){
-	  iData->v[i] = fmin(fmax(iData->vmin[id],iData->v[i]),iData->vmax[id]);
-	}
+  if(id <iData->nx){
+    iData->v[i] =fmin(fmax(iData->vmin[id],iData->v[i]),iData->vmax[id]);
+  }else if(id< iData->nv){
+    iData->v[i] = fmin(fmax(iData->vmin[id],iData->v[i]),iData->vmax[id]);
+  }
   }
 
   if(printGuess)
