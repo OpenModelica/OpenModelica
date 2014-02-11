@@ -43,7 +43,15 @@
 #include "../OptimizationFlags.h"
 #include "../localFunction.h"
 
+
+
 #ifdef WITH_IPOPT
+static int evalG11(Number *g, IPOPT_DATA_ *iData, double *x0, double *x1, double *x2, double *x3, int i);
+static int evalG12(Number *g, IPOPT_DATA_ *iData, double *x0, double *x1, double *x2, double *x3, int i);
+static int evalG13(Number *g, IPOPT_DATA_ *iData, double *x0, double *x1, double *x2, double *x3, int i);
+static int evalG21(Number *g, IPOPT_DATA_ *iData, double *x0, double *x1, double *x2, double *x3, int i);
+static int evalG22(Number *g, IPOPT_DATA_ *iData, double *x0, double *x1, double *x2, double *x3, int i);
+static int evalG23(Number *g, IPOPT_DATA_ *iData, double *x0, double *x1, double *x2, double *x3, int i);
 
 /*!
  *  eval s.t.
@@ -52,30 +60,11 @@
 Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
 {
   IPOPT_DATA_ *iData;
-  int i,j,k;
-  double *dt;
+  int i,k;
   double *x0,*x1,*x2,*x3;
-  double *dotx0,*dotx1, *dotx2, *dotx3;
-  double *a1,*a2,*a3;
-  double *scaldf;
-  DATA *data;
 
   iData = (IPOPT_DATA_ *) useData;
-  if(iData->deg == 3){
-  data = iData->data;
-  dotx0 = iData->dotx0;
-  dotx1 = iData->dotx1;
-  dotx2 = iData->dotx2;
-  dotx3 = iData->dotx3;
-  scaldf = iData->scalf;
-  a1 = iData->a1;
-  a2 = iData->a2;
-  a3 = iData->a3;
-  dt = iData->dt;
-  
-
-  for(i=0, k=0, x0=v; i<iData->nsi; ++i, x0=x3)
-  {
+  for(i=0, k=0, x0=v; i<1; ++i, x0=x3){
     x1 = x0 + iData->nv; /* 0 + 3 = 3;2*/
     x2 = x1 + iData->nv; /*3 + 3 = 6;5*/
     x3 = x2 + iData->nv; /*6 + 3  = 9*/
@@ -84,98 +73,48 @@ Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
     iData->u2 = x2 + iData->nx; /*6 + 2 = 8*/
     iData->u3 = x3 + iData->nx;
 
-    if(i)
-    {
-      /*1*/
-      functionODE_(x1, iData->u1, iData->time[i*iData->deg + 1], dotx1, iData);
-      for(j=0; j<iData->nx; ++j)
-      {
-        g[k++] = (a1[0]*x0[j] + a1[3]*x3[j] + scaldf[j]*dt[i]*dotx1[j]) - (a1[1]*x1[j] + a1[2]*x2[j]);
-      }
-      iData->data->callback->pathConstraints(data,&g[k],&iData->nc);
+    /*1*/
+    functionODE_(x0, x0 + iData->nx, iData->time[0], iData->dotx0, iData);
+    functionODE_(x1, iData->u1, iData->time[1], iData->dotx1, iData);
+    evalG21(g + k, iData, x0, x1, x2, x3, i);
+    k += iData->nJ;
 
-      /*2*/
-      k += iData->nc;
-      functionODE_(x2, iData->u2, iData->time[i*iData->deg + 2], dotx2, iData);
+    /*2*/
+    functionODE_(x2, iData->u2, iData->time[2], iData->dotx2, iData);
+    evalG22(g + k, iData, x0, x1, x2, x3, i);
+    k += iData->nJ;
 
-      for(j=0; j<iData->nx; ++j)
-      {
-        g[k++] = (a2[1]*x1[j] + scaldf[j]*dt[i]*dotx2[j]) - (a2[0]*x0[j] + a2[2]*x2[j] + a2[3]*x3[j]);
-      }
-      iData->data->callback->pathConstraints(data,&g[k],&iData->nc);
-
-      /*3*/
-      k += iData->nc;
-      functionODE_(x3, iData->u3, iData->time[i*iData->deg + 3], dotx3, iData);
-
-      for(j=0; j<iData->nx; ++j)
-      {
-        g[k++] = (a3[0]*x0[j] + a3[2]*x2[j] + scaldf[j]*dt[i]*dotx3[j]) - (a3[1]*x1[j] + a3[3]*x3[j]);
-      }
-      iData->data->callback->pathConstraints(data,&g[k],&iData->nc);
-      k += iData->nc;
-    }
-    else
-    {
-      double *d1, *d2, *d3;
-
-      functionODE_(x0, x0 + iData->nx, iData->time[0], dotx0, iData);
-
-      d1 = iData->d1;
-      d2 = iData->d2;
-      d3 = iData->d3;
-
-      functionODE_(x1, iData->u1, iData->time[1], dotx1, iData);
-      for(j=0; j<iData->nx; ++j)
-      {
-        g[k++] = (scaldf[j]*dt[i]*(dotx1[j] + d1[4]*dotx0[j]) + d1[0]*x0[j] + d1[3]*x3[j]) - (d1[1]*x1[j] + d1[2]*x2[j]);
-        //g[k-1] *= 10.0;
-      }
-      iData->data->callback->pathConstraints(data,&g[k],&iData->nc);
-      k += iData->nc;
-
-      functionODE_(x2, iData->u2, iData->time[2], dotx2, iData);
-      for(j=0; j<iData->nx; ++j)
-      {
-        g[k++] = (scaldf[j]*dt[i]*dotx2[j] + d2[1]*x1[j]) - (scaldf[j]*dt[i]*d2[4]*dotx0[j] + d2[0]*x0[j] + d2[2]*x2[j] + d2[3]*x3[j]);
-        //g[k-1] *= 10.0;
-      }
-      iData->data->callback->pathConstraints(data,&g[k],&iData->nc);
-      k += iData->nc;
-      
-      functionODE_(x3, iData->u3, iData->time[3], dotx3, iData);
-      for(j=0; j<iData->nx; ++j)
-      {
-        g[k++] = (scaldf[j]*dt[i]*(d3[4]*dotx0[j] + dotx3[j]) + d3[0]*x0[j] + d3[2]*x2[j]) - (d3[1]*x1[j] + d3[3]*x3[j]);
-        //g[k-1] *= 10.0;
-      }
-      iData->data->callback->pathConstraints(data,&g[k],&iData->nc);
-      k += iData->nc;
-    }
+    /*3*/
+    functionODE_(x3, iData->u3, iData->time[3], iData->dotx3, iData);
+    evalG23(g + k, iData, x0, x1, x2, x3, i);
+    k += iData->nJ;
   }
-  }else{
-    data = iData->data;
-    dotx0 = iData->dotx0;
-    dotx1 = iData->dotx1;
 
-    for(i=0, k=0, x0=v; i<iData->nsi; ++i, x0=x1){
-        x1 = x0 + iData->nv; /* 0 + 3 = 3;2*/
-        x2 = x1 + iData->nv; /*3 + 3 = 6;5*/
-        if(i){
-          functionODE_(x1, iData->u1, iData->time[1], dotx1, iData);
-          for(j=0; j<iData->nx; ++j)
-            g[k++] = x0[j] + dt[i]*dotx1[j];
-          iData->data->callback->pathConstraints(data,&g[k],&iData->nc);
-          k += iData->nc;
+  for(; i<iData->nsi; ++i, x0=x3){
+    x1 = x0 + iData->nv; /* 0 + 3 = 3;2*/
+    x2 = x1 + iData->nv; /*3 + 3 = 6;5*/
+    x3 = x2 + iData->nv; /*6 + 3  = 9*/
 
-        }else{
-          functionODE_(x0, x0 + iData->nx, iData->time[0], dotx0, iData);
-          for(j=0; j<iData->nx; ++j)
-            g[k++] = x0[j] + 0.5*dt[i]*(dotx0[j] + dotx1[j]);
-        }
+    iData->u1 = x1 + iData->nx; /*3 + 2 = 5*/
+    iData->u2 = x2 + iData->nx; /*6 + 2 = 8*/
+    iData->u3 = x3 + iData->nx;
 
-    }
+    /*1*/
+    functionODE_(x1, iData->u1, iData->time[i*iData->deg + 1], iData->dotx1, iData);
+    evalG11(g + k, iData, x0, x1, x2, x3, i);
+    k += iData->nJ;
+
+    /*2*/
+    functionODE_(x2, iData->u2, iData->time[i*iData->deg + 2], iData->dotx2, iData);
+    evalG12(g + k, iData, x0, x1, x2, x3, i);
+    k += iData->nJ;
+
+    /*3*/
+    functionODE_(x3, iData->u3, iData->time[i*iData->deg + 3], iData->dotx3, iData);
+    evalG13(g + k, iData, x0, x1, x2, x3, i);
+    k += iData->nJ;
   }
+
   return TRUE;
 }
 
@@ -290,5 +229,97 @@ int diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J)
 
   return 0;
 }
+
+/*!
+ *  helper evalfG
+ *  author: Vitalij Ruge
+ **/
+static int evalG11(Number *g, IPOPT_DATA_ *iData, double *x0, double *x1, double *x2, double *x3, int i)
+{
+  int j;
+  for(j=0; j<iData->nx; ++j)
+    g[j] = (iData->a1[0]*x0[j] + iData->a1[3]*x3[j] + iData->scalf[j]*iData->dt[i]*iData->dotx1[j]) - (iData->a1[1]*x1[j] + iData->a1[2]*x2[j]);
+
+  iData->data->callback->pathConstraints(iData->data,g + iData->nx,&iData->nc);
+  return 0;
+
+}
+
+/*!
+ *  helper evalfG
+ *  author: Vitalij Ruge
+ **/
+static int evalG12(Number *g, IPOPT_DATA_ *iData, double *x0, double *x1, double *x2, double *x3, int i)
+{
+  int j;
+  for(j=0; j<iData->nx; ++j)
+    g[j] = (iData->a2[1]*x1[j] + iData->scalf[j]*iData->dt[i]*iData->dotx2[j]) - (iData->a2[0]*x0[j] + iData->a2[2]*x2[j] + iData->a2[3]*x3[j]);
+
+  iData->data->callback->pathConstraints(iData->data,g + iData->nx,&iData->nc);
+  return 0;
+
+}
+
+/*!
+ *  helper evalfG
+ *  author: Vitalij Ruge
+ **/
+static int evalG13(Number *g, IPOPT_DATA_ *iData, double *x0, double *x1, double *x2, double *x3, int i)
+{
+  int j;
+  for(j=0; j<iData->nx; ++j)
+    g[j] = (iData->a3[0]*x0[j] + iData->a3[2]*x2[j] + iData->scalf[j]*iData->dt[i]*iData->dotx3[j]) - (iData->a3[1]*x1[j] + iData->a3[3]*x3[j]);
+
+  iData->data->callback->pathConstraints(iData->data,g + iData->nx,&iData->nc);
+  return 0;
+
+}
+
+/*!
+ *  helper evalfG
+ *  author: Vitalij Ruge
+ **/
+static int evalG21(Number *g, IPOPT_DATA_ *iData, double *x0, double *x1, double *x2, double *x3, int i)
+{
+  int j;
+  for(j=0; j<iData->nx; ++j)
+    g[j] = (iData->scalf[j]*iData->dt[i]*(iData->dotx1[j] + iData->d1[4]*iData->dotx0[j]) + iData->d1[0]*x0[j] + iData->d1[3]*x3[j]) - (iData->d1[1]*x1[j] + iData->d1[2]*x2[j]);
+
+  iData->data->callback->pathConstraints(iData->data,g + iData->nx,&iData->nc);
+  return 0;
+
+}
+
+/*!
+ *  helper evalfG
+ *  author: Vitalij Ruge
+ **/
+static int evalG22(Number *g, IPOPT_DATA_ *iData, double *x0, double *x1, double *x2, double *x3, int i)
+{
+  int j;
+  for(j=0; j<iData->nx; ++j)
+    g[j] = (iData->scalf[j]*iData->dt[i]*iData->dotx2[j] + iData->d2[1]*x1[j]) - (iData->scalf[j]*iData->dt[i]*iData->d2[4]*iData->dotx0[j] + iData->d2[0]*x0[j] + iData->d2[2]*x2[j] + iData->d2[3]*x3[j]);
+
+  iData->data->callback->pathConstraints(iData->data, g + iData->nx, &iData->nc);
+  return 0;
+
+}
+
+/*!
+ *  helper evalfG
+ *  author: Vitalij Ruge
+ **/
+static int evalG23(Number *g, IPOPT_DATA_ *iData, double *x0, double *x1, double *x2, double *x3, int i)
+{
+  int j;
+  for(j=0; j<iData->nx; ++j)
+    g[j] = (iData->scalf[j]*iData->dt[i]*(iData->d3[4]*iData->dotx0[j] + iData->dotx3[j]) + iData->d3[0]*x0[j] + iData->d3[2]*x2[j]) - (iData->d3[1]*x1[j] + iData->d3[3]*x3[j]);
+
+  iData->data->callback->pathConstraints(iData->data, g + iData->nx, &iData->nc);
+  return 0;
+
+}
+
+
 
 #endif
