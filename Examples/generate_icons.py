@@ -31,7 +31,6 @@ __maintainer__ = "https://openmodelica.org"
 import os
 import re
 import math
-import uuid
 import json
 import logging
 import sys
@@ -58,6 +57,7 @@ def classToFileName(cl):
 #   fileName
 #   imageSource
 
+element_id = 0
 regex_equal_key_value = re.compile("([^ =]+) *= *(\"[^\"]*\"|[^ ]*)")
 regex_points = re.compile("{([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}")
 
@@ -476,6 +476,7 @@ def getCoordinates(xy, graphics, minX, maxY, transformation, coordinateSystem):
 
 # get svg object from modelica graphics object
 def getSvgFromGraphics(dwg, graphics, minX, maxY, includeInvisibleText, transformation=None, coordinateSystem=None):
+    global element_id
     shape = None
     definitions = svgwrite.container.Defs()
     origin = None
@@ -521,7 +522,8 @@ def getSvgFromGraphics(dwg, graphics, minX, maxY, includeInvisibleText, transfor
 
             # markers
             if graphics['arrow'][0] != 'Arrow.None':
-                url_id_start = graphics['arrow'][0] + '_start' + str(uuid.uuid4())
+                url_id_start = graphics['arrow'][0] + '_start' + str(element_id)
+                element_id += 1
                 marker = svgwrite.container.Marker(insert=(10, 5), size=(4, 3), orient='auto', id=url_id_start, viewBox="0 0 10 10")
                 p = svgwrite.path.Path(d="M 10 0 L 0 5 L 10 10 z")
                 p.fill("rgb(" + ','.join([str(v) for v in graphics['color']]) + ")")
@@ -530,7 +532,8 @@ def getSvgFromGraphics(dwg, graphics, minX, maxY, includeInvisibleText, transfor
                 shape['marker-start'] = marker.get_funciri()
 
             if graphics['arrow'][1] != 'Arrow.None':
-                url_id_end = graphics['arrow'][1] + '_end' + str(uuid.uuid4())
+                url_id_end = graphics['arrow'][1] + '_end' + str(element_id)
+                element_id += 1
                 marker = svgwrite.container.Marker(insert=(0, 5), size=(4, 3), orient='auto', id=url_id_end, viewBox="0 0 10 10")
                 p = svgwrite.path.Path(d="M 0 0 L 10 5 L 0 10 z")
                 p.fill("rgb(" + ','.join([str(v) for v in graphics['color']]) + ")")
@@ -671,7 +674,8 @@ def getSvgFromGraphics(dwg, graphics, minX, maxY, includeInvisibleText, transfor
             if graphics['borderPattern'] == 'BorderPattern.None':
                 pass
             elif graphics['borderPattern'] == 'BorderPattern.Raised':
-                url_id = graphics['borderPattern'] + '_' + str(uuid.uuid4())
+                url_id = graphics['borderPattern'] + '_' + str(element_id)
+                element_id += 1
                 shape['filter'] = 'url(#' + url_id + ')'
 
                 filter = svgwrite.filters.Filter(id=url_id, filterUnits="objectBoundingBox", x="-0.1", y="-0.1", width="1.2", height="1.2")
@@ -724,7 +728,8 @@ def getSvgFromGraphics(dwg, graphics, minX, maxY, includeInvisibleText, transfor
         elif graphics['fillPattern'] == 'FillPattern.Solid':
             shape.fill("rgb(" + ','.join([str(v) for v in graphics['fillColor']]) + ")")
         elif graphics['fillPattern'] == 'FillPattern.Horizontal':
-            url_id = str(uuid.uuid4())
+            url_id = str(element_id)
+            element_id += 1
             shape.fill('url(#' + url_id + ')')
 
             pattern = svgwrite.pattern.Pattern(id=url_id, insert=(0, 0), size=(5, 5), patternUnits='userSpaceOnUse')
@@ -740,7 +745,8 @@ def getSvgFromGraphics(dwg, graphics, minX, maxY, includeInvisibleText, transfor
             definitions.add(pattern)
 
         elif graphics['fillPattern'] == 'FillPattern.Vertical':
-            url_id = str(uuid.uuid4())
+            url_id = str(element_id)
+            element_id += 1
             shape.fill('url(#' + url_id + ')')
 
             pattern = svgwrite.pattern.Pattern(id=url_id, insert=(0, 0), size=(5, 5), patternUnits='userSpaceOnUse')
@@ -756,7 +762,8 @@ def getSvgFromGraphics(dwg, graphics, minX, maxY, includeInvisibleText, transfor
             definitions.add(pattern)
 
         elif graphics['fillPattern'] == 'FillPattern.Cross':
-            url_id = str(uuid.uuid4())
+            url_id = str(element_id)
+            element_id += 1
             shape.fill('url(#' + url_id + ')')
 
             pattern = svgwrite.pattern.Pattern(id=url_id, insert=(0, 0), size=(5, 5), patternUnits='userSpaceOnUse')
@@ -776,7 +783,8 @@ def getSvgFromGraphics(dwg, graphics, minX, maxY, includeInvisibleText, transfor
             definitions.add(pattern)
 
         elif graphics['fillPattern'] == 'FillPattern.Forward':
-            url_id = str(uuid.uuid4())
+            url_id = str(element_id)
+            element_id += 1
             shape.fill('url(#' + url_id + ')')
 
             pattern = svgwrite.pattern.Pattern(id=url_id, insert=(0, 0), size=(7, 7), patternUnits='userSpaceOnUse')
@@ -800,7 +808,8 @@ def getSvgFromGraphics(dwg, graphics, minX, maxY, includeInvisibleText, transfor
             definitions.add(pattern)
 
         elif graphics['fillPattern'] == 'FillPattern.Backward':
-            url_id = str(uuid.uuid4())
+            url_id = str(element_id)
+            element_id += 1
             shape.fill('url(#' + url_id + ')')
 
             pattern = svgwrite.pattern.Pattern(id=url_id, insert=(0, 0), size=(7, 7), patternUnits='userSpaceOnUse')
@@ -825,7 +834,8 @@ def getSvgFromGraphics(dwg, graphics, minX, maxY, includeInvisibleText, transfor
 
         elif graphics['fillPattern'] == 'FillPattern.CrossDiag':
 
-            url_id = str(uuid.uuid4())
+            url_id = str(element_id)
+            element_id += 1
             shape.fill('url(#' + url_id + ')')
 
             pattern = svgwrite.pattern.Pattern(id=url_id, insert=(0, 0), size=(8, 8), patternUnits='userSpaceOnUse')
@@ -846,7 +856,8 @@ def getSvgFromGraphics(dwg, graphics, minX, maxY, includeInvisibleText, transfor
 
         elif graphics['fillPattern'] == 'FillPattern.HorizontalCylinder':
 
-            url_id = str(uuid.uuid4())
+            url_id = str(element_id)
+            element_id += 1
             shape.fill('url(#' + url_id + ')')
 
             lineColor = graphics['lineColor']
@@ -874,7 +885,8 @@ def getSvgFromGraphics(dwg, graphics, minX, maxY, includeInvisibleText, transfor
             definitions.add(gradient)
 
         elif graphics['fillPattern'] == 'FillPattern.VerticalCylinder':
-            url_id = str(uuid.uuid4())
+            url_id = str(element_id)
+            element_id += 1
             shape.fill('url(#' + url_id + ')')
 
             lineColor = graphics['lineColor']
@@ -902,7 +914,8 @@ def getSvgFromGraphics(dwg, graphics, minX, maxY, includeInvisibleText, transfor
             definitions.add(gradient)
         elif graphics['fillPattern'] == 'FillPattern.Sphere':
             if graphics['type'] == 'Ellipse':
-                url_id = str(uuid.uuid4())
+                url_id = str(element_id)
+                element_id += 1
 
                 shape.fill('url(#' + url_id + ')')
 
@@ -929,7 +942,8 @@ def getSvgFromGraphics(dwg, graphics, minX, maxY, includeInvisibleText, transfor
 
                 definitions.add(gradient)
             elif graphics['type'] == 'Rectangle':
-                url_id = str(uuid.uuid4())
+                url_id = str(element_id)
+                element_id += 1
 
                 shape.fill('url(#' + url_id + ')')
 
@@ -962,6 +976,8 @@ def getSvgFromGraphics(dwg, graphics, minX, maxY, includeInvisibleText, transfor
 
 # generate svgs from graphics objects
 def generateSvg(filename, iconGraphics, includeInvisibleText):
+    global element_id
+    element_id = 0
 
     width = 100
     height = 100

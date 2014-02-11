@@ -336,8 +336,10 @@ writeFile("FindFiles.sh","#!/bin/bash
 rm -f *.png *.pdf FindFiles.log
 touch FindFiles.log
 OMLIBRARY=\""+getInstallationDirectoryPath()+"/lib/omlibrary\"
+alias urldecode='python -c \"import sys, urllib as ul; print ul.unquote_plus(sys.argv[1])\"'
 for f in `sort -u tidy.links`; do
-  link=`echo $f | cut '-d!' -f2- | sed 's/%20/ /'`
+  link=`echo $f | cut '-d!' -f2-`
+  link=`urldecode $link`
   if test -f \"$OMLIBRARY/$link\"; then
     d=`dirname \"$link\"`
     mkdir -p \"$d\"
