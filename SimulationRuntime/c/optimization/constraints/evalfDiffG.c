@@ -105,7 +105,7 @@ Bool evalfDiffG(Index n, double * x, Bool new_x, Index m, Index njac, Index *iRo
 
     for(i = 0, id = iData->nv; i<1; ++i)
     {
-      diff_functionODE0(x, iData->t0 , iData);
+      diff_functionODE(x, iData->t0 , iData, iData->J0);
       for(l=0; l<iData->deg; ++l, id += iData->nv)
       {
         diff_functionODE(x+id , iData->time[i*iData->deg + l] , iData, iData->J);

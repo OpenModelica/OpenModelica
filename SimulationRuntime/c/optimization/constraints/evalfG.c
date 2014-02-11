@@ -45,8 +45,6 @@
 
 #ifdef WITH_IPOPT
 
-int diff_functionODE_debug(double* v, double t, IPOPT_DATA_ *iData);
-
 /*!
  *  eval s.t.
  *  author: Vitalij Ruge
@@ -233,16 +231,6 @@ int diff_functionODE(double* v, double t, IPOPT_DATA_ *iData, double **J)
   return 0;
 }
 
-/*!
- *  eval a part from the derivate of s.t.
- *  author: Vitalij Ruge
- **/
-int diff_functionODE0(double* v, double t, IPOPT_DATA_ *iData)
-{
-  diff_functionODE(v, t, iData, iData->J0);
-  return 0;
-}
-
 /*
  *  function calculates a symbolic colored jacobian matrix by
  *  author: Willi Braun
@@ -258,7 +246,6 @@ int diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J)
 
   x = v;
   u = x + iData->nx;
-
 
   nx = data->simulationInfo.analyticJacobians[index].sizeCols;
   cC =  (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols;
