@@ -247,7 +247,7 @@ static int set_optimizer_flags(IPOPT_DATA_ *iData,IpoptProblem *nlp)
       AddIpoptStrOption(*nlp, "hessian_approximation", "limited-memory");
     else if(!strcmp(cflags,"const") || !strcmp(cflags,"CONST"))
       AddIpoptStrOption(*nlp, "hessian_constant", "yes");
-    }
+  }
 
   cflags = (char*)omc_flagValue[FLAG_LS_IPOPT];
   if(cflags)
