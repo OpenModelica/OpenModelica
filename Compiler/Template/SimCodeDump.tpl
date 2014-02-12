@@ -66,6 +66,15 @@ template dumpSimCodeBase(SimCode code, Boolean withOperations)
   <start-equations size="<%listLength(startValueEquations)%>">
     <%dumpEqs(SimCodeUtil.sortEqSystems(startValueEquations),withOperations)%>
   </start-equations>
+  <nominal-equations size="<%listLength(nominalValueEquations)%>">
+    <%dumpEqs(SimCodeUtil.sortEqSystems(nominalValueEquations),withOperations)%>
+  </nominal-equations>
+  <min-equations size="<%listLength(minValueEquations)%>">
+    <%dumpEqs(SimCodeUtil.sortEqSystems(minValueEquations),withOperations)%>
+  </min-equations>
+  <max-equations size="<%listLength(maxValueEquations)%>">
+    <%dumpEqs(SimCodeUtil.sortEqSystems(maxValueEquations),withOperations)%>
+  </max-equations>
   <parameter-equations size="<%listLength(parameterEquations)%>">
     <%dumpEqs(SimCodeUtil.sortEqSystems(parameterEquations),withOperations)%>
   </parameter-equations>

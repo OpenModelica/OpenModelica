@@ -995,7 +995,7 @@ algorithm
       list<SimCode.RecordDeclaration> recordDecls;
       list<String> externalFunctionIncludes;
       list<list<SimCode.SimEqSystem>> algebraicEquations,odeEquations;
-      list<SimCode.SimEqSystem> allEquations,residualEquations,startValueEquations,parameterEquations,inlineEquations,removedEquations,algorithmAndEquationAsserts,jacobianEquations;
+      list<SimCode.SimEqSystem> allEquations,residualEquations,startValueEquations,nominalValueEquations,minValueEquations,maxValueEquations,parameterEquations,inlineEquations,removedEquations,algorithmAndEquationAsserts,jacobianEquations;
       list<SimCode.StateSet> stateSets;
       Boolean useSymbolicInitialization, useHomotopy;
       list<SimCode.SimEqSystem> initialEquations;
@@ -1016,7 +1016,7 @@ algorithm
       Option<HpcOmScheduler.ScheduleSimCode> hpcOmSchedule;
       
     case (SimCode.SIMCODE(modelInfo,literals,recordDecls,externalFunctionIncludes,allEquations,odeEquations,
-          algebraicEquations,residualEquations,useSymbolicInitialization,useHomotopy,initialEquations,startValueEquations,
+          algebraicEquations,residualEquations,useSymbolicInitialization,useHomotopy,initialEquations,startValueEquations,nominalValueEquations,minValueEquations,maxValueEquations,
           parameterEquations,inlineEquations,removedEquations,algorithmAndEquationAsserts,jacobianEquations,stateSets,constraints,classAttributes,zeroCrossings,relations,
           sampleLookup,whenClauses,discreteModelVars,extObjInfo,makefileParams,
           delayedExps,jacobianMatrixes,simulationSettingsOpt,fileNamePrefix,crefToSimVarHT,hpcOmSchedule),_)
@@ -1025,7 +1025,7 @@ algorithm
       eqs = List.map1(eqs,replaceZC,zc_exps);
     then SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes,
                          allEquations, {eqs}, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy,
-                         initialEquations, startValueEquations, parameterEquations, inlineEquations,
+                         initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations, parameterEquations, inlineEquations,
                          removedEquations, algorithmAndEquationAsserts, jacobianEquations, stateSets, constraints, classAttributes,
                          zeroCrossings, relations, sampleLookup,
                          whenClauses, discreteModelVars, extObjInfo,

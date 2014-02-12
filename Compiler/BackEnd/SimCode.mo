@@ -88,6 +88,9 @@ uniontype SimCode
     Boolean useHomotopy "true if homotopy(...) is used during initialization";
     list<SimEqSystem> initialEquations;
     list<SimEqSystem> startValueEquations;
+    list<SimEqSystem> nominalValueEquations;
+    list<SimEqSystem> minValueEquations;
+    list<SimEqSystem> maxValueEquations;
     list<SimEqSystem> parameterEquations;
     list<SimEqSystem> inlineEquations;
     list<SimEqSystem> removedEquations;

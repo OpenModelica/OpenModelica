@@ -189,7 +189,7 @@ algorithm
         makefileParams = SimCode.MAKEFILE_PARAMS("","","","","","","","","",includeDirs,libs,"","");
         delayexp = SimCode.DELAYED_EXPRESSIONS({},0);
         hashTable = SimCodeUtil.emptyHashTable();
-        rescmp = SimCode.SIMCODE(modelInfo,{},recordDecls,externalFunctionIncludes,{},{},{},allEquations,false,false,allInitEquations,{},{},{},{},{},{},{},{},{},{},{},BackendDAE.SAMPLE_LOOKUP(0,{}),{},{},extObjInfo,makefileParams,delayexp,{},NONE(),filenamePrefix,hashTable,NONE());
+        rescmp = SimCode.SIMCODE(modelInfo,{},recordDecls,externalFunctionIncludes,{},{},{},allEquations,false,false,allInitEquations,{},{},{},{},{},{},{},{},{},{},{},{},{},{},BackendDAE.SAMPLE_LOOKUP(0,{}),{},{},extObjInfo,makefileParams,delayexp,{},NONE(),filenamePrefix,hashTable,NONE());
       then
         rescmp;
     else
