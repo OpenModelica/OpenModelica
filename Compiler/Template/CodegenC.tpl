@@ -337,7 +337,7 @@ template simulationFile_bnd(SimCode simCode, String guid)
     /* Update Bound StartValues/Parameters */
     <%simulationFileHeader(simCode)%>
     
-    <%functionUpdateBoundStartValues(startValueEquations, modelNamePrefix(simCode))%>
+    <%functionUpdateBoundStartValues(startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations, modelNamePrefix(simCode))%>
 
     <%functionUpdateBoundParameters(parameterEquations, modelNamePrefix(simCode))%>
         
@@ -1661,12 +1661,21 @@ end functionInitialStateSets;
 //   - int functionInitialEquations(DATA *data)
 // =============================================================================
 
-template functionUpdateBoundStartValues(list<SimEqSystem> startValueEquations, String modelNamePrefix)
+template functionUpdateBoundStartValues(list<SimEqSystem> startValueEquations, list<SimEqSystem> nominalValueEquations, list<SimEqSystem> minValueEquations, list<SimEqSystem> maxValueEquations, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let &tmp = buffer ""
-  let eqPart = (startValueEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
+  let startEqPart = (startValueEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
+      equation_(eq, contextOther, &varDecls /*BUFD*/, &tmp, modelNamePrefix)
+    ;separator="\n")
+  let nominalEqPart = (nominalValueEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
+      equation_(eq, contextOther, &varDecls /*BUFD*/, &tmp, modelNamePrefix)
+    ;separator="\n")
+  let minEqPart = (minValueEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
+      equation_(eq, contextOther, &varDecls /*BUFD*/, &tmp, modelNamePrefix)
+    ;separator="\n")
+  let maxEqPart = (maxValueEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
       equation_(eq, contextOther, &varDecls /*BUFD*/, &tmp, modelNamePrefix)
     ;separator="\n")
 
@@ -1676,13 +1685,50 @@ template functionUpdateBoundStartValues(list<SimEqSystem> startValueEquations, S
   {
     <%varDecls%>
 
-    <%eqPart%>
-
+    /* min ******************************************************** */
+    <%minEqPart%>
+    
+    infoStreamPrint(LOG_INIT, 1, "updating min-values");
+    <%minValueEquations |> SES_SIMPLE_ASSIGN(__) =>
+      <<
+      $P$ATTRIBUTE<%cref(cref)%>.min = <%cref(cref)%>;
+        infoStreamPrint(LOG_INIT, 0, "%s(min=<%crefToPrintfArg(cref)%>)", <%cref(cref)%>__varInfo.name, (<%crefType(cref)%>) $P$ATTRIBUTE<%cref(cref)%>.min);
+      >>
+    ;separator="\n"%>
+    if (ACTIVE_STREAM(LOG_INIT)) messageClose(LOG_INIT);
+    
+    /* max ******************************************************** */
+    <%maxEqPart%>
+    
+    infoStreamPrint(LOG_INIT, 1, "updating max-values");
+    <%maxValueEquations |> SES_SIMPLE_ASSIGN(__) =>
+      <<
+      $P$ATTRIBUTE<%cref(cref)%>.max = <%cref(cref)%>;
+        infoStreamPrint(LOG_INIT, 0, "%s(max=<%crefToPrintfArg(cref)%>)", <%cref(cref)%>__varInfo.name, (<%crefType(cref)%>) $P$ATTRIBUTE<%cref(cref)%>.max);
+      >>
+    ;separator="\n"%>
+    if (ACTIVE_STREAM(LOG_INIT)) messageClose(LOG_INIT);
+    
+    /* nominal **************************************************** */
+    <%nominalEqPart%>
+    
+    infoStreamPrint(LOG_INIT, 1, "updating nominal-values");
+    <%nominalValueEquations |> SES_SIMPLE_ASSIGN(__) =>
+      <<
+      $P$ATTRIBUTE<%cref(cref)%>.nominal = <%cref(cref)%>;
+        infoStreamPrint(LOG_INIT, 0, "%s(nominal=<%crefToPrintfArg(cref)%>)", <%cref(cref)%>__varInfo.name, (<%crefType(cref)%>) $P$ATTRIBUTE<%cref(cref)%>.nominal);
+      >>
+    ;separator="\n"%>
+    if (ACTIVE_STREAM(LOG_INIT)) messageClose(LOG_INIT);
+    
+    /* start ****************************************************** */
+    <%startEqPart%>
+    
     infoStreamPrint(LOG_INIT, 1, "updating start-values");
     <%startValueEquations |> SES_SIMPLE_ASSIGN(__) =>
       <<
-      infoStreamPrint(LOG_INIT, 0, "%s(start=<%crefToPrintfArg(cref)%>)", <%cref(cref)%>__varInfo.name, (<%crefType(cref)%>) <%cref(cref)%>);
-        $P$ATTRIBUTE<%cref(cref)%>.start = <%cref(cref)%>;
+      $P$ATTRIBUTE<%cref(cref)%>.start = <%cref(cref)%>;
+        infoStreamPrint(LOG_INIT, 0, "%s(start=<%crefToPrintfArg(cref)%>)", <%cref(cref)%>__varInfo.name, (<%crefType(cref)%>)  $P$ATTRIBUTE<%cref(cref)%>.start);
       >>
     ;separator="\n"%>
     if (ACTIVE_STREAM(LOG_INIT)) messageClose(LOG_INIT);

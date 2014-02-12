@@ -827,6 +827,28 @@ algorithm nominal := match(inVariableAttributesOption)
   end match;
 end getNominalAttrFail;
 
+public function getMinAttrFail "
+  Return the min attribute. or fails"
+  input Option<DAE.VariableAttributes> inVariableAttributesOption;
+  output DAE.Exp nominal;
+algorithm nominal := match(inVariableAttributesOption)
+    local
+      DAE.Exp r;
+    case (SOME(DAE.VAR_ATTR_REAL(min = (SOME(r), _)))) then r;
+  end match;
+end getMinAttrFail;
+
+public function getMaxAttrFail "
+  Return the max attribute. or fails"
+  input Option<DAE.VariableAttributes> inVariableAttributesOption;
+  output DAE.Exp nominal;
+algorithm nominal := match(inVariableAttributesOption)
+    local
+      DAE.Exp r;
+    case (SOME(DAE.VAR_ATTR_REAL(min = (_, SOME(r))))) then r;
+  end match;
+end getMaxAttrFail;
+
 public function setVariableAttributes "sets the attributes of a DAE.Element that is VAR"
   input DAE.Element var;
   input Option<DAE.VariableAttributes> varOpt;
