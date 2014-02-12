@@ -416,42 +416,6 @@ algorithm
   sv := DAEUtil.getStartAttrFail(attr);
 end varStartValueFail;
 
-public function varNominalValueFail "author: lochel
-  Returns the DAE.NominalValue of a variable if there is one.
-  Otherwise fails."
-  input BackendDAE.Var v;
-  output DAE.Exp sv;
-protected
-  Option<DAE.VariableAttributes> attr;
-algorithm
-  BackendDAE.VAR(values = attr) := v;
-  sv := DAEUtil.getNominalAttrFail(attr);
-end varNominalValueFail;
-
-public function varMinValueFail "author: lochel
-  Returns the DAE.MinValue of a variable if there is one.
-  Otherwise fails."
-  input BackendDAE.Var v;
-  output DAE.Exp sv;
-protected
-  Option<DAE.VariableAttributes> attr;
-algorithm
-  BackendDAE.VAR(values = attr) := v;
-  sv := DAEUtil.getMinAttrFail(attr);
-end varMinValueFail;
-
-public function varMaxValueFail "author: lochel
-  Returns the DAE.MaxValue of a variable if there is one.
-  Otherwise fails."
-  input BackendDAE.Var v;
-  output DAE.Exp sv;
-protected
-  Option<DAE.VariableAttributes> attr;
-algorithm
-  BackendDAE.VAR(values = attr) := v;
-  sv := DAEUtil.getMaxAttrFail(attr);
-end varMaxValueFail;
-
 public function varStartValueType
 "author: Frenkel TUD 2012-11
   Returns the DAE.StartValue of a variable. If nothing is set the type specific one is used"
