@@ -52,6 +52,7 @@ protected import BackendDAEUtil;
 protected import BackendDAETransform;
 protected import BackendVariable;
 protected import BackendVarTransform;
+protected import BaseHashTable;
 protected import ComponentReference;
 protected import Debug;
 protected import Error;
@@ -60,6 +61,8 @@ protected import ExpressionDump;
 protected import ExpressionDumpTpl;
 protected import Flags;
 protected import GlobalScript;
+protected import GraphMLNew;
+protected import HashTableCrILst;
 protected import HpcOmTaskGraph;
 protected import List;
 protected import Matching;
@@ -167,12 +170,19 @@ algorithm
       
       Boolean taskGraphMetaValid, numFixed;
       String taskGraphMetaMessage, criticalPathInfo;
-      array<tuple<Integer,Integer>> schedulerInfo;
+      array<tuple<Integer,Integer,Real>> schedulerInfo;
       HpcOmScheduler.Schedule schedule;
       HpcOmScheduler.ScheduleSimCode taskScheduleSimCode;
       
-      Integer graphOps;
+      Integer graphOps, graphIdx;
       Real graphCosts;
+      GraphMLNew.GraphInfo graphInfo;
+      
+      HashTableCrILst.HashTable hashTable;
+      SimCode.SimVars simCodeVars;
+      list<list<Integer>> eqVarMapping;
+      list<SimCode.SimVar> stateVars, derivativeVars, algVars, paramVars;
+      array<Integer> sccNodeMapping,eqSccMapping;
       
     case (_, _, _, _, _, _, _, _, _, _, _, _) equation
       uniqueEqIndex = 1;
@@ -200,7 +210,7 @@ algorithm
       
       Debug.execStat("hpcom createTaskGraph", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);  
       fileName = ("taskGraph"+&filenamePrefix+&".graphml"); 
-      schedulerInfo = arrayCreate(arrayLength(taskGraph), (-1,-1));   
+      schedulerInfo = arrayCreate(arrayLength(taskGraph), (-1,-1,-1.0));   
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph, taskGraphData, fileName, "", {}, {}, sccSimEqMapping ,schedulerInfo);
       Debug.execStat("hpcom dump TaskGraph", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES); 
 
@@ -233,7 +243,7 @@ algorithm
       graphCosts = HpcOmTaskGraph.roundReal(graphCosts,2);
       criticalPathInfo = criticalPathInfo +& " sum: (" +& realString(graphCosts) +& " ; " +& intString(graphOps) +& ")";
       fileName = ("taskGraph"+&filenamePrefix+&"ODE.graphml");  
-      schedulerInfo = arrayCreate(arrayLength(taskGraphOde), (-1,-1));
+      schedulerInfo = arrayCreate(arrayLength(taskGraphOde), (-1,-1,-1.0));
       Debug.execStat("hpcom assign levels / get crit. path", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOde, taskGraphDataOde, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo);  
       Debug.execStat("hpcom dump ODE TaskGraph", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
@@ -256,6 +266,7 @@ algorithm
       schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(schedule,arrayLength(taskGraph));      
       Debug.execStat("hpcom create schedule", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
       fileName = ("taskGraph"+&filenamePrefix+&"ODE_schedule.graphml");  
+      
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph1, taskGraphData1, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo);
       //HpcOmScheduler.printSchedule(schedule);
       
@@ -271,7 +282,27 @@ algorithm
                  parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, sampleLookup, whenClauses, 
                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT, SOME(taskScheduleSimCode));
       
-      //createSimEqVarMapping(allEquations);
+      //Create var hash table
+      SimCode.MODELINFO(vars=simCodeVars) = modelInfo;
+      SimCode.SIMVARS(stateVars=stateVars, derivativeVars=derivativeVars, algVars=algVars, paramVars=paramVars) = simCodeVars;
+      hashTable = HashTableCrILst.emptyHashTableSized(BaseHashTable.biggerBucketSize);
+      hashTable = fillSimVarHashTable(stateVars,0,0,hashTable);
+      hashTable = fillSimVarHashTable(algVars,listLength(stateVars)*2,0,hashTable);
+      hashTable = fillSimVarHashTable(paramVars,listLength(stateVars)*2 + listLength(algVars),0,hashTable);
+      //hashTable = fillSimVarHashTable(derivativeVars,hashTable);
+      eqVarMapping = createSimEqVarMapping(allEquations, hashTable);
+      
+      //Append cache line nodes to graph
+      graphInfo = GraphMLNew.createGraphInfo();
+      (graphInfo, (_,graphIdx)) = GraphMLNew.addGraph("TasksGroupGraph", true, graphInfo);
+      (graphInfo, (_,_),(_,graphIdx)) = GraphMLNew.addGroupNode("TasksGroup", graphIdx, false, "TG", graphInfo);
+      
+      graphInfo = HpcOmTaskGraph.convertToGraphMLSccLevelSubgraph(taskGraph1, taskGraphData1, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo, graphIdx, graphInfo);
+      sccNodeMapping = HpcOmTaskGraph.getSccNodeMapping(arrayLength(sccSimEqMapping), taskGraphData1);
+      HpcOmTaskGraph.TASKGRAPHMETA(eqSccMapping=eqSccMapping) = taskGraphData1;
+      graphInfo = appendCacheLinesToGraph(listAppend(listAppend(listAppend(stateVars,derivativeVars),algVars), paramVars), 8, arrayLength(taskGraph1), eqVarMapping, sccNodeMapping, eqSccMapping, graphInfo);
+      fileName = ("taskGraph"+&filenamePrefix+&"ODE_schedule_CL.graphml"); 
+      GraphMLNew.dumpGraph(graphInfo, fileName);
       
       print("HpcOm is still under construction.\n");
       then simCode;
@@ -766,62 +797,234 @@ algorithm
   end matchcontinue;
 end removeDummyStateFromMapping1;
 
+
+// Section to analyze cache behaviour
+protected function fillSimVarHashTable
+  input list<SimCode.SimVar> iSimVars;
+  input Integer iOffset;
+  input Integer iType; //1 = real ; 2 = int
+  input HashTableCrILst.HashTable iHt;
+  output HashTableCrILst.HashTable oHt;
+algorithm
+  oHt := List.fold2(iSimVars, fillSimVarHashTableTraverse, iOffset, iType, iHt);
+end fillSimVarHashTable;
+
+protected function fillSimVarHashTableTraverse
+  input SimCode.SimVar iSimVar;
+  input Integer iOffset;
+  input Integer iType;
+  input HashTableCrILst.HashTable iHt;
+  output HashTableCrILst.HashTable oHt;
+protected
+  Integer index;
+  DAE.ComponentRef name;
+algorithm
+  SimCode.SIMVAR(name=name,index=index) := iSimVar;
+  //print("fillSimVarHashTableTraverse: " +& ComponentReference.debugPrintComponentRefTypeStr(name) +& " with index: " +& intString(index+ iOffset) +& "\n");
+  oHt := BaseHashTable.add((name,{index,iOffset,iType}),iHt);
+end fillSimVarHashTableTraverse;
+
 protected function createSimEqVarMapping
   input list<SimCode.SimEqSystem> iEqSystems;
+  input HashTableCrILst.HashTable iHt; //Mapping varName -> varIdx
+  output list<list<Integer>> oEqVarMapping; //Mapping eq -> list of varIdx
+protected
+
 algorithm
-  _ := List.map(iEqSystems, getVarsBySimEqSystem);
+  oEqVarMapping := List.map1(iEqSystems, getVarsBySimEqSystem, iHt);
 end createSimEqVarMapping;
 
 protected function getVarsBySimEqSystem "function getVarsBySimEqSystem
   author: marcusw
   Function extract all variables of the given equation system."
   input SimCode.SimEqSystem iEqSystem;
-  output list<DAE.ComponentRef> oVars;
+  input HashTableCrILst.HashTable iHt;
+  output list<Integer> oVars;
 protected
-  list<DAE.ComponentRef> varList;
+  list<Integer> varIdcList;
   DAE.ComponentRef cref;
   DAE.Exp exp;
-  Integer index;
+  Integer index, hTableIdx;
 algorithm
-  oVars := match(iEqSystem)
-    case(SimCode.SES_SIMPLE_ASSIGN(cref=cref,exp=exp,index=index))
+  oVars := match(iEqSystem, iHt)
+    case(SimCode.SES_SIMPLE_ASSIGN(cref=cref,exp=exp,index=index),_)
       equation
-//        ExpressionDump.dumpExp(exp);
-//        print("end Expression\n");
-        ((_,varList)) = Expression.traverseExp(exp,createMemoryMapTraverse, {});
-        print("Var List for simEquation " +& intString(index) +& ":");
-        //print(stringDelimitList(List.map(varList, dumpCompRef), " , "));
-        print("\n");
-      then varList;
-    else then {};
+        //ExpressionDump.dumpExp(exp);
+        //print("end Expression\n");
+        ((_,(_,varIdcList))) = Expression.traverseExp(exp,createMemoryMapTraverse, (iHt,{}));
+        //print("Var List for simEquation " +& intString(index) +& ":");
+        //print(stringDelimitList(List.map(varIdcList, intString), ","));
+        //print("\n");
+      then varIdcList;
+    else 
+      then {};
   end match;
 end getVarsBySimEqSystem;
 
 protected function createMemoryMapTraverse
-  input tuple<DAE.Exp,list<DAE.ComponentRef> > iExpVars;
-  output tuple<DAE.Exp,list<DAE.ComponentRef> > oExpVars;
+  input tuple<DAE.Exp,tuple<HashTableCrILst.HashTable, list<Integer>>> iExpVars;
+  output tuple<DAE.Exp,tuple<HashTableCrILst.HashTable, list<Integer>>> oExpVars;
 protected
-  list<DAE.ComponentRef> iVarList, oVarList;
+  list<Integer> iVarList, oVarList, varInfo;
+  Integer varIdx;
+  HashTableCrILst.HashTable iHashTable;
   DAE.Exp iExp;
   DAE.ComponentRef componentRef;
 algorithm
-  oExpVars := match(iExpVars)
-    case((iExp as DAE.CREF(componentRef=componentRef), iVarList))
+  oExpVars := matchcontinue(iExpVars)
+    case((iExp as DAE.CREF(componentRef=componentRef), (iHashTable,iVarList)))
       equation
         //ExpressionDump.dumpExp(iExp);
-        oVarList = componentRef :: iVarList;
+        //print("HpcOmSimCode.createMemoryMapTraverse: try to find componentRef\n");
+        varInfo = BaseHashTable.get(componentRef, iHashTable);
+        varIdx = List.first(varInfo) + List.second(varInfo);
+        //print("HpcOmSimCode.createMemoryMapTraverse: Found ref, Index: " +& intString(varIdx) +& "\n");
+        oVarList = varIdx :: iVarList;
+      then ((iExp,(iHashTable,oVarList)));
+    case((iExp as DAE.CREF(componentRef=componentRef), (iHashTable,iVarList))) 
+      equation
+        //print("HpcOmSimCode.createMemoryMapTraverse: Variable not found ( " +& ComponentReference.debugPrintComponentRefTypeStr(componentRef) +& ")\n");
       then iExpVars;
-    else then iExpVars;
-  end match;
+    else
+      then iExpVars;
+  end matchcontinue;
 end createMemoryMapTraverse;
 
-protected function dumpCompRef
-  input DAE.ComponentRef iCref;
-  output String oString;
+protected function appendCacheLinesToGraph "author: marcusw
+  This method will extend the given graph-info with a new subgraph containing all cache lines.
+  Dependencies between the tasks and the cache lines will be inserted as edges."
+  input list<SimCode.SimVar> iSimVars;
+  input Integer iNumVarsCL; //number of variables per cache line
+  input Integer iNumberOfNodes; //number of nodes in the task graph
+  input list<list<Integer>> iEqVarMapping;
+  input array<Integer> iSccNodeMapping; //a mapping from sccIdx (arrayIdx) to the graph node idx
+  input array<Integer> iEqSccMapping; //a mapping from eqIdx (arrayIdx) to the scc idx
+  input GraphMLNew.GraphInfo iGraphInfo;
+  output GraphMLNew.GraphInfo oGraphInfo;
+protected
+  Integer clGroupNodeIdx, graphCount;
+  GraphMLNew.GraphInfo tmpGraphInfo;
+  array<list<Integer>> knownEdges; //edges from task to variables
 algorithm
-  oString := Tpl.tplString(ExpressionDumpTpl.dumpCref, iCref);
-end dumpCompRef;
+  oGraphInfo := matchcontinue(iSimVars,iNumVarsCL,iNumberOfNodes,iEqVarMapping,iSccNodeMapping,iEqSccMapping,iGraphInfo)
+    case(_,_,_,_,_,_,GraphMLNew.GRAPHINFO(graphCount=graphCount))
+      equation
+        true = intLe(1, graphCount);
+			  knownEdges = arrayCreate(iNumberOfNodes,{});
+			  (tmpGraphInfo,(_,_),(_,clGroupNodeIdx)) = GraphMLNew.addGroupNode("CL_GoupNode", 1, false, "CL", iGraphInfo);
+			  ((_,_,_,tmpGraphInfo)) = List.fold1(iSimVars, appendCacheLineNodesToGraphTraverse, iNumVarsCL, (0,clGroupNodeIdx,clGroupNodeIdx,tmpGraphInfo));
+			  ((_,knownEdges,tmpGraphInfo)) = List.fold3(iEqVarMapping, appendCacheLineEdgesToGraphTraverse, iSccNodeMapping, iEqSccMapping, iNumVarsCL, (1,knownEdges,tmpGraphInfo));
+			then tmpGraphInfo;
+    case(_,_,_,_,_,_,GraphMLNew.GRAPHINFO(graphCount=graphCount))
+      equation
+        true = intEq(graphCount,0);
+      then iGraphInfo;
+    else
+      equation
+        print("HpcOmSimCode.appendCacheLinesToGraph failed!\n");
+      then fail();
+   end matchcontinue;
+end appendCacheLinesToGraph;
 
+protected function appendCacheLineNodesToGraphTraverse
+  input SimCode.SimVar iSimVar;
+  input Integer iNumVarsCL;
+  input tuple<Integer,Integer,Integer,GraphMLNew.GraphInfo> iGraphInfoIdx; //<varIdx,graphIdx,topGraphIdx,graphInfo>
+  output tuple<Integer,Integer,Integer,GraphMLNew.GraphInfo> oGraphInfoIdx;
+protected
+  Integer iVarIdx, iGraphIdx, iTopGraphIdx, cacheLineIdx;
+  GraphMLNew.GraphInfo iGraphInfo;
+  String nodeId, nodeLabelText;
+  GraphMLNew.NodeLabel nodeLabel;
+algorithm
+  oGraphInfoIdx := matchcontinue(iSimVar,iNumVarsCL,iGraphInfoIdx)
+    case(_,_,(iVarIdx, iGraphIdx, iTopGraphIdx, iGraphInfo))
+      equation
+        true = intEq(intMod(iVarIdx,iNumVarsCL),0); //var is first elem of CL
+        cacheLineIdx = intDiv(iVarIdx,iNumVarsCL);
+        (iGraphInfo, (_,_),(_,iGraphIdx)) = GraphMLNew.addGroupNode("CL_Meta_" +& intString(iVarIdx), iTopGraphIdx, true, "CL" +& intString(cacheLineIdx), iGraphInfo);
+        nodeId = "CL_Var" +& intString(iVarIdx+1);
+        nodeLabelText = intString(iVarIdx+1);
+        nodeLabel = GraphMLNew.NODELABEL_INTERNAL(nodeLabelText, NONE(), GraphMLNew.FONTPLAIN());
+        (iGraphInfo,_) = GraphMLNew.addNode(nodeId, GraphMLNew.COLOR_GREEN, {nodeLabel} , GraphMLNew.ELLIPSE(), NONE(), {}, iGraphIdx, iGraphInfo);
+      then 
+        ((iVarIdx+1, iGraphIdx, iTopGraphIdx, iGraphInfo));
+    case(_,_,(iVarIdx, iGraphIdx, iTopGraphIdx, iGraphInfo))
+      equation
+        nodeId = "CL_Var" +& intString(iVarIdx+1);
+        nodeLabelText = intString(iVarIdx+1);
+        nodeLabel = GraphMLNew.NODELABEL_INTERNAL(nodeLabelText, NONE(), GraphMLNew.FONTPLAIN());
+        (iGraphInfo,_) = GraphMLNew.addNode(nodeId, GraphMLNew.COLOR_GREEN, {nodeLabel}, GraphMLNew.ELLIPSE(), NONE(), {}, iGraphIdx, iGraphInfo);        
+      then 
+        ((iVarIdx+1, iGraphIdx, iTopGraphIdx, iGraphInfo)); 
+    else
+      equation
+        print("HpcOmSimCode.appendCacheLineNodesToGraphTraverse failed\n");
+      then fail();
+  end matchcontinue;
+end appendCacheLineNodesToGraphTraverse;
+
+protected function appendCacheLineEdgesToGraphTraverse
+  input list<Integer> iEqVars;
+  input array<Integer> iSccNodeMapping; //a mapping from sccIdx (arrayIdx) to the graph node idx
+  input array<Integer> iEqSccMapping; //a mapping from eqIdx (arrayIdx) to the scc idx
+  input Integer iNumVarsCL;
+  input tuple<Integer,array<list<Integer>>,GraphMLNew.GraphInfo> iGraphInfoIdx;
+  output tuple<Integer,array<list<Integer>>,GraphMLNew.GraphInfo> oGraphInfoIdx;
+protected
+  Integer eqIdx;
+  GraphMLNew.GraphInfo graphInfo;
+  array<list<Integer>> knownEdges;
+algorithm
+  (eqIdx,knownEdges,graphInfo) := iGraphInfoIdx;
+  graphInfo := List.fold4(iEqVars, appendCacheLineEdgeToGraph, eqIdx, iSccNodeMapping, iEqSccMapping, (knownEdges,iNumVarsCL), graphInfo);
+  oGraphInfoIdx := ((eqIdx+1,knownEdges,graphInfo));
+end appendCacheLineEdgesToGraphTraverse;
+
+protected function appendCacheLineEdgeToGraph
+  input Integer iVarIdx;
+  input Integer iEqIdx;
+  input array<Integer> iSccNodeMapping; //a mapping from sccIdx (arrayIdx) to the graph node idx
+  input array<Integer> iEqSccMapping; //a mapping from eqIdx (arrayIdx) to the scc idx
+  input tuple<array<list<Integer>>,Integer> iKnownEdgesNumCacheLines;
+  input GraphMLNew.GraphInfo iGraphInfo;
+  output GraphMLNew.GraphInfo oGraphInfo;
+protected
+  String edgeId, sourceId, targetId;
+  GraphMLNew.GraphInfo tmpGraphInfo;
+  Integer sccIdx, nodeIdx, clIdx, iNumVarsCL;
+  list<Integer> knownEdgesOfNode;
+  array<list<Integer>> knownEdges;
+algorithm
+  oGraphInfo := matchcontinue(iVarIdx,iEqIdx,iSccNodeMapping,iEqSccMapping,iKnownEdgesNumCacheLines,iGraphInfo)
+    case(_,_,_,_,(knownEdges,iNumVarsCL),_)
+      equation
+			  sccIdx = arrayGet(iEqSccMapping,iEqIdx);
+			  nodeIdx = arrayGet(iSccNodeMapping, sccIdx);
+			  true = intNe(nodeIdx,-1);
+			  clIdx = intDiv(iVarIdx,iNumVarsCL)*iNumVarsCL;
+			  knownEdgesOfNode = arrayGet(knownEdges,nodeIdx);
+			  false = List.exist1(knownEdgesOfNode, intEq, clIdx);
+			  knownEdges = arrayUpdate(knownEdges, nodeIdx, clIdx::knownEdgesOfNode);
+			  edgeId = "CL_Edge" +& intString(nodeIdx) +& intString(iVarIdx+1);
+			  sourceId = "Node" +& intString(nodeIdx);
+			  targetId = "CL_Meta_" +& intString(clIdx);
+			  //targetId = "CL_Var" +& intString(iVarIdx+1);
+			  (tmpGraphInfo,(_,_)) = GraphMLNew.addEdge(edgeId, targetId, sourceId, GraphMLNew.COLOR_GRAY, GraphMLNew.DASHED(), GraphMLNew.LINEWIDTH_STANDARD, true, {}, (GraphMLNew.ARROWNONE(),GraphMLNew.ARROWNONE()), {}, iGraphInfo);
+			then tmpGraphInfo;
+     case(_,_,_,_,(knownEdges,iNumVarsCL),_)
+      equation
+        sccIdx = arrayGet(iEqSccMapping,iEqIdx);
+        //print("HpcOmSimCode.appendCacheLineEdgeToGraph: No node for scc " +& intString(sccIdx) +& " found\n");
+      then iGraphInfo;
+     else
+      equation
+        //Valid if there is no state in the model and a dummy state was added
+        //print("HpcOmSimCode.appendCacheLineEdgeToGraph: Equation " +& intString(iEqIdx) +& " is not part of a scc.\n");
+        //print("HpcOmSimCode.appendCacheLineEdgeToGraph failed!\n");
+      then iGraphInfo;
+  end matchcontinue;
+end appendCacheLineEdgeToGraph;
 
 // testfunctions
 //------------------------------------------

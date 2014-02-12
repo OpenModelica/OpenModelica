@@ -36,6 +36,8 @@ encapsulated package GraphML
 
 
   RCS: $Id: GraphML 9566 2011-08-01 07:04:56Z perost $
+  
+  This package is now deprecated, use GraphMLNew instead.
 "
 
 protected import Util;
@@ -110,6 +112,10 @@ public uniontype Node
     list<tuple<Integer,String>> attValues; //values of custom attributes (see GRAPH definition). <attributeIndex,attributeValue>
     list<NodeLabel> addLabels; //additional labels
   end NODE;
+  record GROUPNODE
+    String id;
+    Graph internalGraph;
+  end GROUPNODE;
 end Node;
 
 public uniontype NodeLabel
@@ -235,6 +241,10 @@ algorithm
   GRAPH(gid,d,n,e,a,av) := inG;
   outG := GRAPH(gid,d,NODE(id,text,color,shapeType,optDesc,attValues,addLabels)::n,e,a,av);
 end addNode;
+
+public function addGroupNode
+
+end addGroupNode;
 
 public function addEdge
 " author: Frenkel TUD 2011-08

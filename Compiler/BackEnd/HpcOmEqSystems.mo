@@ -54,7 +54,7 @@ protected import ComponentReference;
 protected import Debug;
 protected import Expression;
 protected import Flags;
-protected import GraphML;
+protected import GraphMLNew;
 protected import HpcOmTaskGraph;
 protected import List;
 protected import Matching;
@@ -1764,7 +1764,8 @@ algorithm
       BackendDAE.Variables vars, orderedVars;
       BackendDAE.EquationArray eqs, orderedEqs;
       BackendDAE.EqSystem eqSysIn;
-      GraphML.Graph graph;
+      GraphMLNew.GraphInfo graphInfo;
+      Integer graphIdx;
       list<BackendDAE.Var> varLst;
       list<BackendDAE.Equation> eqLst;
       Integer nameAttIdx, typeAttIdx, numberOfEqs, numberOfVars, sysIdx;
@@ -1796,13 +1797,14 @@ algorithm
         BackendDump.dumpIncidenceMatrixT(mEqSysT);   
         varRange = List.intRange(numberOfVars);
         eqRange = List.intRange(numberOfEqs);
-        graph = GraphML.getGraph("TornSystemGraph", true);
-        (typeAttIdx,graph) = GraphML.addAttribute("", "type", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graph);
-        (nameAttIdx,graph) = GraphML.addAttribute("", "name", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graph);
-        graph = List.fold2(varRange,addVarNodeToGraph,vars,{nameAttIdx,typeAttIdx}, graph);
-        graph = List.fold2(eqRange,addEqNodeToGraph,eqs,{nameAttIdx,typeAttIdx}, graph);
-        graph = List.fold1(eqRange,addEdgeToGraph,mEqSys,graph);
-        GraphML.dumpGraph(graph,"TornSystemGraph"+&intString(sysIdx)+&".graphml");
+        graphInfo = GraphMLNew.createGraphInfo();
+        (graphInfo,(_,graphIdx)) = GraphMLNew.addGraph("TornSystemGraph", true, graphInfo);
+        (graphInfo,(_,typeAttIdx)) = GraphMLNew.addAttribute("", "type", GraphMLNew.TYPE_STRING(), GraphMLNew.TARGET_NODE(), graphInfo);
+        (graphInfo,(_,nameAttIdx)) = GraphMLNew.addAttribute("", "name", GraphMLNew.TYPE_STRING(), GraphMLNew.TARGET_NODE(), graphInfo);
+        ((graphInfo,_)) = List.fold2(varRange,addVarNodeToGraph,vars,{nameAttIdx,typeAttIdx}, (graphInfo,graphIdx));
+        ((graphInfo,_)) = List.fold2(eqRange,addEqNodeToGraph,eqs,{nameAttIdx,typeAttIdx}, (graphInfo,graphIdx));
+        graphInfo = List.fold1(eqRange,addEdgeToGraph,mEqSys,graphInfo);
+        GraphMLNew.dumpGraph(graphInfo,"TornSystemGraph"+&intString(sysIdx)+&".graphml");
       then
         ();
 case(_,BackendDAE.EQUATIONSYSTEM(eqns=allEqs,vars=allVars, jac=_, jacType=_))
@@ -1825,13 +1827,14 @@ case(_,BackendDAE.EQUATIONSYSTEM(eqns=allEqs,vars=allVars, jac=_, jacType=_))
         BackendDump.dumpIncidenceMatrix(mEqSys);       
         varRange = List.intRange(numberOfVars);
         eqRange = List.intRange(numberOfEqs);
-        graph = GraphML.getGraph("EqSystemGraph", true);
-        (typeAttIdx,graph) = GraphML.addAttribute("", "type", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graph);
-        (nameAttIdx,graph) = GraphML.addAttribute("", "name", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graph);
-        graph = List.fold2(varRange,addVarNodeToGraph,vars,{nameAttIdx,typeAttIdx}, graph);
-        graph = List.fold2(eqRange,addEqNodeToGraph,eqs,{nameAttIdx,typeAttIdx}, graph);
-        graph = List.fold1(eqRange,addEdgeToGraph,mEqSys,graph);
-        GraphML.dumpGraph(graph,"EqSystemGraph"+&intString(sysIdx)+&".graphml");
+        graphInfo = GraphMLNew.createGraphInfo();
+        (graphInfo,(_,graphIdx)) = GraphMLNew.addGraph("EqSystemGraph", true, graphInfo);
+        (graphInfo,(_,typeAttIdx)) = GraphMLNew.addAttribute("", "type", GraphMLNew.TYPE_STRING(), GraphMLNew.TARGET_NODE(), graphInfo);
+        (graphInfo,(_,nameAttIdx)) = GraphMLNew.addAttribute("", "name", GraphMLNew.TYPE_STRING(), GraphMLNew.TARGET_NODE(), graphInfo);
+        ((graphInfo,_)) = List.fold2(varRange,addVarNodeToGraph,vars,{nameAttIdx,typeAttIdx}, (graphInfo,graphIdx));
+        ((graphInfo,_)) = List.fold2(eqRange,addEqNodeToGraph,eqs,{nameAttIdx,typeAttIdx}, (graphInfo,graphIdx));
+        graphInfo = List.fold1(eqRange,addEdgeToGraph,mEqSys,graphInfo);
+        GraphMLNew.dumpGraph(graphInfo,"EqSystemGraph"+&intString(sysIdx)+&".graphml");
       then
         ();
   end match;
@@ -1847,19 +1850,21 @@ protected
   Integer nameAttIdx,typeAttIdx, numberOfVars,numberOfEqs;
   list<Integer> varRange,eqRange;
   BackendDAE.IncidenceMatrix m;
-  GraphML.Graph graph;
+  GraphMLNew.GraphInfo graphInfo;
+  Integer graphIdx;
 algorithm
   numberOfEqs := BackendDAEUtil.equationArraySize(eqsIn);
   numberOfVars := BackendVariable.varsSize(varsIn);
   varRange := List.intRange(numberOfVars);
   eqRange := List.intRange(numberOfEqs);
-  graph := GraphML.getGraph("EqSystemGraph", true);
-  (typeAttIdx,graph) := GraphML.addAttribute("", "type", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graph);
-  (nameAttIdx,graph) := GraphML.addAttribute("", "name", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graph);
-  graph := List.fold2(varRange,addVarNodeToGraph,varsIn,{nameAttIdx,typeAttIdx}, graph);
-  graph := List.fold2(eqRange,addEqNodeToGraph,eqsIn,{nameAttIdx,typeAttIdx}, graph);
-  graph := List.fold1(eqRange,addEdgeToGraph,mIn,graph);
-  GraphML.dumpGraph(graph,name+&".graphml");
+  graphInfo := GraphMLNew.createGraphInfo();
+  (graphInfo,(_,graphIdx)) := GraphMLNew.addGraph("EqSystemGraph", true, graphInfo);
+  (graphInfo,(_,typeAttIdx)) := GraphMLNew.addAttribute("", "type", GraphMLNew.TYPE_STRING(), GraphMLNew.TARGET_NODE(), graphInfo);
+  (graphInfo,(_,nameAttIdx)) := GraphMLNew.addAttribute("", "name", GraphMLNew.TYPE_STRING(), GraphMLNew.TARGET_NODE(), graphInfo);
+  ((graphInfo,_)) := List.fold2(varRange,addVarNodeToGraph,varsIn,{nameAttIdx,typeAttIdx}, (graphInfo,graphIdx));
+  ((graphInfo,_)) := List.fold2(eqRange,addEqNodeToGraph,eqsIn,{nameAttIdx,typeAttIdx}, (graphInfo,graphIdx));
+  graphInfo := List.fold1(eqRange,addEdgeToGraph,mIn,graphInfo);
+  GraphMLNew.dumpGraph(graphInfo,name+&".graphml");
 end dumpEquationSystemGraphML1;
 
 
@@ -1867,13 +1872,13 @@ protected function addEdgeToGraph "adds an edge to the graph by traversing the i
 author:Waurich TUD 2013-12"
   input Integer eqIdx;
   input BackendDAE.IncidenceMatrix m;
-  input GraphML.Graph graphIn;
-  output GraphML.Graph graphOut;
+  input GraphMLNew.GraphInfo graphInfoIn;
+  output GraphMLNew.GraphInfo graphInfoOut;
 protected
   list<Integer> varLst;
 algorithm
   varLst := arrayGet(m,eqIdx);
-  graphOut := List.fold1(varLst,addEdgeToGraph2,eqIdx,graphIn);
+  graphInfoOut := List.fold1(varLst,addEdgeToGraph2,eqIdx,graphInfoIn);
 end addEdgeToGraph;
 
 
@@ -1881,14 +1886,14 @@ protected function addEdgeToGraph2 "helper for addEdgeToGraph.
 author:Waurich TUD 2013-12"
   input Integer varIdx;
   input Integer eqIdx;
-  input GraphML.Graph graphIn;
-  output GraphML.Graph graphOut;
+  input GraphMLNew.GraphInfo graphInfoIn;
+  output GraphMLNew.GraphInfo graphInfoOut;
 protected
     String eqNodeId, varNodeId;
 algorithm
   eqNodeId := getEqNodeIdx(eqIdx);
   varNodeId := getVarNodeIdx(varIdx);
-  graphOut := GraphML.addEdge("Edge_"+&intString(varIdx)+&"_"+&intString(eqIdx),varNodeId,eqNodeId,GraphML.COLOR_BLACK,GraphML.LINE(),GraphML.LINEWIDTH_STANDARD,NONE(),(NONE(),NONE()),{}, graphIn);
+  (graphInfoOut,_) := GraphMLNew.addEdge("Edge_"+&intString(varIdx)+&"_"+&intString(eqIdx),varNodeId,eqNodeId,GraphMLNew.COLOR_BLACK,GraphMLNew.LINE(),GraphMLNew.LINEWIDTH_STANDARD,false,{},(GraphMLNew.ARROWNONE(),GraphMLNew.ARROWNONE()),{}, graphInfoIn);
 end addEdgeToGraph2;
 
 
@@ -1915,14 +1920,17 @@ author:Waurich TUD 2013-12"
   input Integer indx;
   input BackendDAE.Variables vars;
   input list<Integer> attributeIdcs;//<name,type>
-  input GraphML.Graph graphIn;
-  output GraphML.Graph graphOut;
+  input tuple<GraphMLNew.GraphInfo,Integer> graphInfoIn;
+  output tuple<GraphMLNew.GraphInfo,Integer> graphInfoOut;
 protected 
   BackendDAE.Var var;
-  Integer nameAttrIdx,typeAttIdx;
-  String varString, varNodeId;
+  Integer nameAttrIdx,typeAttIdx, graphIdx;
+  String varString, varNodeId, idxString;
   list<String> varChars;
+  GraphMLNew.GraphInfo graphInfo;
+  GraphMLNew.NodeLabel nodeLabel;
 algorithm
+  (graphInfo,graphIdx) := graphInfoIn;
   nameAttrIdx := listGet(attributeIdcs,1);
   typeAttIdx := listGet(attributeIdcs,2); // if its a tearingvar or residual or an other
   var := BackendVariable.getVarAt(vars,indx);
@@ -1931,7 +1939,10 @@ algorithm
   varChars := List.map(varChars,HpcOmTaskGraph.prepareXML);
   varString := stringCharListString(varChars); 
   varNodeId := getVarNodeIdx(indx);
-  graphOut := GraphML.addNode(varNodeId,intString(indx),GraphML.COLOR_ORANGE2,GraphML.ELLIPSE(),SOME(varString),{(nameAttrIdx,varString)},{},graphIn);
+  idxString := intString(indx);
+  nodeLabel := GraphMLNew.NODELABEL_INTERNAL(idxString,NONE(),GraphMLNew.FONTPLAIN());
+  (graphInfo,_) := GraphMLNew.addNode(varNodeId, GraphMLNew.COLOR_ORANGE2, {nodeLabel},GraphMLNew.ELLIPSE(),SOME(varString),{(nameAttrIdx,varString)},graphIdx,graphInfo);
+  graphInfoOut := (graphInfo,graphIdx);
 end addVarNodeToGraph;
 
 
@@ -1940,14 +1951,17 @@ author:Waurich TUD 2013-12"
   input Integer indx;
   input BackendDAE.EquationArray eqs;
   input list<Integer> attributeIdcs;//<name>
-  input GraphML.Graph graphIn;
-  output GraphML.Graph graphOut;
+  input tuple<GraphMLNew.GraphInfo,Integer> graphInfoIn;
+  output tuple<GraphMLNew.GraphInfo,Integer> graphInfoOut;
 protected 
   BackendDAE.Equation eq;
-  Integer nameAttrIdx;
-  String eqString, eqNodeId;
+  Integer nameAttrIdx, graphIdx;
+  String eqString, eqNodeId, idxString;
   list<String> eqChars;
+  GraphMLNew.GraphInfo graphInfo;
+  GraphMLNew.NodeLabel nodeLabel;
 algorithm
+  (graphInfo,graphIdx) := graphInfoIn;
   nameAttrIdx := listGet(attributeIdcs,1);
   {eq} := BackendEquation.getEqns({indx}, eqs);
   eqString := BackendDump.equationString(eq);
@@ -1955,7 +1969,10 @@ algorithm
   eqChars := List.map(eqChars,HpcOmTaskGraph.prepareXML);
   eqString := stringCharListString(eqChars); 
   eqNodeId := getEqNodeIdx(indx);
-  graphOut := GraphML.addNode(eqNodeId,intString(indx),GraphML.COLOR_GREEN2,GraphML.RECTANGLE(),SOME(eqString),{(nameAttrIdx,eqString)},{},graphIn);
+  idxString := intString(indx);
+  nodeLabel := GraphMLNew.NODELABEL_INTERNAL(idxString,NONE(),GraphMLNew.FONTPLAIN());
+  (graphInfo,_) := GraphMLNew.addNode(eqNodeId,GraphMLNew.COLOR_GREEN2,{nodeLabel},GraphMLNew.RECTANGLE(),SOME(eqString),{(nameAttrIdx,eqString)},graphIdx,graphInfo);
+  graphInfoOut := (graphInfo,graphIdx);
 end addEqNodeToGraph;
 
 //--------------------------------------------------//

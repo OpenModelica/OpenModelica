@@ -995,23 +995,24 @@ algorithm
   end match;
 end printTaskRefList;
 
-public function convertScheduleStrucToInfo
+public function convertScheduleStrucToInfo "author: marcusw
+  Convert the given schedule-information into an node-array of informations."
   input Schedule iSchedule;
   input Integer iTaskCount;
-  output array<tuple<Integer,Integer>> oScheduleInfo;
+  output array<tuple<Integer,Integer,Real>> oScheduleInfo; //array which contains <threadId,taskNumber,finishTime> for each node (index)
 protected
-  array<tuple<Integer,Integer>> tmpScheduleInfo;
+  array<tuple<Integer,Integer,Real>> tmpScheduleInfo;
   array<list<Task>> threadTasks;
 algorithm
   oScheduleInfo := match(iSchedule,iTaskCount)
     case(THREADSCHEDULE(threadTasks=threadTasks),_)
       equation
-        tmpScheduleInfo = arrayCreate(iTaskCount,(-1,-1));
+        tmpScheduleInfo = arrayCreate(iTaskCount,(-1,-1,-1.0));
         tmpScheduleInfo = Util.arrayFold(threadTasks,convertScheduleStrucToInfo0,tmpScheduleInfo);
       then tmpScheduleInfo;
     case(LEVELSCHEDULE(_),_)
       equation
-        tmpScheduleInfo = arrayCreate(iTaskCount,(-1,-1));
+        tmpScheduleInfo = arrayCreate(iTaskCount,(-1,-1,-1.0));
       then tmpScheduleInfo;
     else
       equation
@@ -1020,27 +1021,30 @@ algorithm
   end match;
 end convertScheduleStrucToInfo;
 
-protected function convertScheduleStrucToInfo0
+protected function convertScheduleStrucToInfo0 "author: marcusw
+  Convert the given task list into an node-array of informations."
   input list<Task> iTaskList;
-  input array<tuple<Integer,Integer>> iScheduleInfo;
-  output array<tuple<Integer,Integer>> oScheduleInfo;
+  input array<tuple<Integer,Integer,Real>> iScheduleInfo;
+  output array<tuple<Integer,Integer,Real>> oScheduleInfo;
 algorithm
   ((oScheduleInfo,_)) := List.fold(iTaskList, convertScheduleStrucToInfo1, (iScheduleInfo,1));
 end convertScheduleStrucToInfo0;
 
-protected function convertScheduleStrucToInfo1
+protected function convertScheduleStrucToInfo1 "author: marcusw
+  Convert the given task into a tuple of informations, if it is a CalcTask."
   input Task iTask;
-  input tuple<array<tuple<Integer,Integer>>,Integer> iScheduleInfo; //ScheduleInfo and task number
-  output tuple<array<tuple<Integer,Integer>>,Integer> oScheduleInfo;
+  input tuple<array<tuple<Integer,Integer,Real>>,Integer> iScheduleInfo; //ScheduleInfo and task number
+  output tuple<array<tuple<Integer,Integer,Real>>,Integer> oScheduleInfo;
 protected
   Integer taskIdx, taskNumber;
   Integer threadIdx;
-  array<tuple<Integer,Integer>> tmpScheduleInfo;
+  array<tuple<Integer,Integer,Real>> tmpScheduleInfo;
+  Real timeFinished;
 algorithm
   oScheduleInfo := match(iTask,iScheduleInfo)
-    case(CALCTASK(index=taskIdx,threadIdx=threadIdx),(tmpScheduleInfo,taskNumber))
+    case(CALCTASK(index=taskIdx,threadIdx=threadIdx,timeFinished=timeFinished),(tmpScheduleInfo,taskNumber))
       equation
-        tmpScheduleInfo = arrayUpdate(tmpScheduleInfo,taskIdx,(threadIdx,taskNumber));
+        tmpScheduleInfo = arrayUpdate(tmpScheduleInfo,taskIdx,(threadIdx,taskNumber,timeFinished));
       then ((tmpScheduleInfo,taskNumber+1));
     case (ASSIGNLOCKTASK(_),_) then iScheduleInfo;
     case (RELEASELOCKTASK(_),_) then iScheduleInfo;

@@ -198,6 +198,7 @@ CodegenUtil.mo \
 CodegenXML.mo \
 DAEDumpTpl.mo \
 ExpressionDumpTpl.mo \
+GraphMLDumpTpl.mo \
 GraphvizDump.mo \
 NFInstDumpTpl.mo \
 SCodeDumpTpl.mo \
@@ -234,6 +235,7 @@ HashTableStringToPath.mo \
 HashTableExpToExp.mo \
 HashTableExpToIndex.mo \
 GraphML.mo \
+GraphMLNew.mo \
 IOStream.mo \
 List.mo \
 Util.mo \
