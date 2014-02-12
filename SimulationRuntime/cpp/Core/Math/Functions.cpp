@@ -120,7 +120,7 @@ int pivot( double *A, int n_rows, int n_cols, int *rowInd, int *colInd )
     pivot = get_pivot_matrix_elt(A,row,row);
     /* internal error, pivot element should never be zero if maxsearch succeeded */
       if(pivot != 0)
-	    throw std::invalid_argument("pivot element is zero ");
+      throw std::invalid_argument("pivot element is zero ");
 
     /* perform one step of Gaussian Elimination */
     for(i=row+1;i<n_rows;i++)

@@ -8483,7 +8483,7 @@ template functionJac(list<SimEqSystem> jacEquations, list<SimVar> tmpVars, Strin
   <<
   void <%classname%>::calcJacobianColumn()
   {
-	<%varDecls%>
+  <%varDecls%>
     <%eqns_%>
 
   }
