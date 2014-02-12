@@ -2582,6 +2582,10 @@ package Patternm
     input Integer ix;
     output Integer ctor;
   end getValueCtor;
+  function sortPatternsByComplexity
+    input list<DAE.Pattern> inPatterns;
+    output list<tuple<DAE.Pattern,Integer>> outPatterns;
+  end sortPatternsByComplexity;
 end Patternm;
 
 package Error

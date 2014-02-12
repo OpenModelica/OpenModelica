@@ -9454,7 +9454,6 @@ algorithm
   end match;
 end removeEqualPrefix2;
 
-
 public function listIsLonger  "outputs true if the lst1 is longer than lst2"
   input list<ElementType> lst1;
   input list<ElementType> lst2;
@@ -9462,5 +9461,20 @@ public function listIsLonger  "outputs true if the lst1 is longer than lst2"
 algorithm
   isLonger := intGt(listLength(lst1),listLength(lst2));
 end listIsLonger;
+
+public function toListWithPositions
+  input list<ElementType> inList;
+  input Integer curPos;
+  input list<tuple<ElementType,Integer>> acc;
+  output list<tuple<ElementType,Integer>> outList;
+algorithm
+  outList := match (inList,curPos,acc)
+    local
+      ElementType el;
+      list<ElementType> rest;
+    case ({},_,_) then listReverse(acc);
+    case (el::rest,_,_) then toListWithPositions(rest,curPos+1,(el,curPos)::acc);
+  end match;
+end toListWithPositions;
 
 end List;

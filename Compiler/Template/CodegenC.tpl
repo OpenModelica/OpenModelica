@@ -9307,7 +9307,7 @@ template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, DAE.
   let &assignments = buffer ""
   let &preRes = buffer ""
   let &varFrees = buffer "" /*BUFF*/
-  let patternMatching = (c.patterns |> lhs hasindex i0 => patternMatch(lhs,'<%getTempDeclMatchInputName(inputs, prefix, startIndexInputs, i0)%>',onPatternFail,&varDeclsCaseInner,&assignments); empty)
+  let patternMatching = (sortPatternsByComplexity(c.patterns) |> (lhs,i0) => patternMatch(lhs,'<%getTempDeclMatchInputName(inputs, prefix, startIndexInputs, i0)%>',onPatternFail,&varDeclsCaseInner,&assignments); empty)
   let() = System.tmpTickSetIndex(startTmpTickIndex,1)
   let stmts = (c.body |> stmt => algStatement(stmt, context, &varDeclsCaseInner); separator="\n")
   let &preGuardCheck = buffer ""

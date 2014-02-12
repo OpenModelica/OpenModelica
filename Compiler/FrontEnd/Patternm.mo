@@ -2118,4 +2118,70 @@ algorithm
   ctor := ix+3;
 end getValueCtor;
 
+public function sortPatternsByComplexity
+  input list<DAE.Pattern> inPatterns;
+  output list<tuple<DAE.Pattern,Integer>> outPatterns;
+algorithm
+  outPatterns := List.toListWithPositions(inPatterns,0,{});
+  outPatterns := List.sort(outPatterns, sortPatternsByComplexityWork);
+end sortPatternsByComplexity;
+
+protected function sortPatternsByComplexityWork
+  input tuple<DAE.Pattern,Integer> tpl1;
+  input tuple<DAE.Pattern,Integer> tpl2;
+  output Boolean greater;
+protected
+  DAE.Pattern pat1,pat2;
+  Integer i1,i2,c1,c2;
+algorithm
+  (pat1,i1) := tpl1;
+  (pat2,i2) := tpl2;
+  ((_,c1)) := traversePattern((pat1,0),patternComplexity);
+  ((_,c2)) := traversePattern((pat2,0),patternComplexity);
+  // If both complexities are equal, keep the original ordering
+  // If c1 is 0, and c2 is not 0 we move the left pattern to the end.
+  // Else we move the cheaper pattern to the beginning
+  greater := Util.if_(c1 == c2, i1 > i2, Util.if_(c2 == 0, false, Util.if_(c1 == 0, true, c1 > c2)));
+end sortPatternsByComplexityWork;
+
+protected function patternComplexity
+  input tuple<DAE.Pattern,Integer> inTpl;
+  output tuple<DAE.Pattern,Integer> outTpl;
+algorithm
+  outTpl := match inTpl
+    local
+      DAE.Pattern p;
+      DAE.Exp exp;
+      Integer i;
+    case ((p as DAE.PAT_CONSTANT(exp=exp),i))
+      equation
+        ((_,i)) = Expression.traverseExp(exp,constantComplexity,i);
+      then ((p,i));
+    case ((p as DAE.PAT_CONS(head=_),i))
+      then ((p,i+5));
+    case ((p as DAE.PAT_CALL(knownSingleton=false),i))
+      then ((p,i+5));
+    case ((p as DAE.PAT_SOME(pat=_),i))
+      then ((p,i+5));
+    else inTpl;
+  end match;
+end patternComplexity;
+
+protected function constantComplexity
+  input tuple<DAE.Exp,Integer> inTpl;
+  output tuple<DAE.Exp,Integer> outTpl;
+algorithm
+  outTpl := match inTpl
+     local
+       DAE.Exp e;
+       String str;
+       Integer i;
+     case ((e as DAE.SCONST(str),i)) then ((e,i+5+stringLength(str)));
+     case ((e as DAE.ICONST(_),i)) then ((e,i+1));
+     case ((e as DAE.BCONST(_),i)) then ((e,i+1));
+     case ((e as DAE.RCONST(_),i)) then ((e,i+2));
+     case ((e,i)) then ((e,i+5)); // lists and such; add a little something in addition to its members....
+  end match;
+end constantComplexity;
+
 end Patternm;
