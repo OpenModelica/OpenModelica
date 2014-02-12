@@ -2776,10 +2776,10 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     
      bool isConsistent();
     
-     /*
+   
      void initialAnalyticJacobian();
      void calcJacobianColumn();
-     */
+    
      //Variables:
      EventHandling _event_handling;
 
@@ -8023,7 +8023,10 @@ template giveZeroFunc3(Integer index1, Exp relation, Text &varDecls /*BUFP*/,Tex
                 f[<%index1%>]=(<%e1%> - EPSILON - <%e2%>);
          >>
     else
-        error(sourceInfo(), 'Unknown relation: <%printExpStr(rel)%> for <%index1%>')
+       <<
+          f[<%index1%>]=-1; 
+         /*error(sourceInfo(), 'Unknown relation: <%printExpStr(rel)%> for <%index1%>')*/
+       >>
       end match
   case CALL(path=IDENT(name="sample"), expLst={_, start, interval}) then
     //error(sourceInfo(), ' sample not supported for <%index1%> ')
@@ -8423,21 +8426,6 @@ case "A" then
            }
            >>
          case _ then
-          /* wbraun: not used anywhere
-          let sp_size_index =  lengthListElements(sparsepattern)
-          let leadindex = ( sparsepattern |> (indexes) hasindex index0 =>
-            if index0 then
-            <<data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[<%index0%>] = data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[<%intSub(index0,1)%>] + <%listLength(indexes)%>;>>
-            else
-            <<data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[<%index0%>] = <%listLength(indexes)%>;>>
-            ;separator="\n")
-          let indexElems = ( flatten(sparsepattern) |> (indexes) hasindex index0 =>
-            <<data->simulationInfo.analyticJacobians[index].sparsePattern.index[<%index0%>] = <%indexes%>; >>
-            ;separator="\n")
-          let colorArray = ( colorList |> (indexes) hasindex index0 =>
-            <<data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[<%index0%>] = <%indexes%>; >>
-            ;separator="\n")
-          */
           let sp_size_index =  lengthListElements(splitTuple212List(sparsepattern))
           let indexColumn = (jacobianColumn |> (eqs,vars,indxColumn) => indxColumn;separator="\n")
           let tmpvarsSize = (jacobianColumn |> (_,vars,_) => listLength(vars);separator="\n")
@@ -8461,8 +8449,7 @@ end initialAnalyticJacobians;
 template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrixes, SimCode simCode)
  "Generates Matrixes for Linear Model."
 ::=
-/*
-  let initialjacMats = (JacobianMatrixes |> (mat, vars, name, (sparsepattern,(_,_)), colorList, _) hasindex index0 =>
+ let initialjacMats = (JacobianMatrixes |> (mat, vars, name, (sparsepattern,(_,_)), colorList, _) hasindex index0 =>
     initialAnalyticJacobians(index0, mat, vars, name, sparsepattern, colorList,simCode)
     ;separator="\n\n";empty)
  let jacMats = (JacobianMatrixes |> (mat, vars, name, (sparsepattern,(_,_)), colorList, maxColor) hasindex index0  =>
@@ -8472,15 +8459,7 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrixes, SimCod
 <%initialjacMats%>
 <%jacMats%>
 >>
-*/
-  match simCode
-  case SIMCODE(modelInfo = MODELINFO(__)) then
-  let classname =  lastIdentOfPath(modelInfo.name)
- <<
- void <%classname%>::getJacobian(SparseMatrix& matrix)
-     {
-     }
-  >>
+
 end functionAnalyticJacobians;
 
 
@@ -8504,7 +8483,7 @@ template functionJac(list<SimEqSystem> jacEquations, list<SimVar> tmpVars, Strin
   <<
   void <%classname%>::calcJacobianColumn()
   {
-
+	<%varDecls%>
     <%eqns_%>
 
   }
@@ -8559,7 +8538,7 @@ case _ then
 
       let jaccol = ( indexes |> i_index =>
          //' _jacobian(<%index0%>,<%intSub(cref(i_index),1)%>) = _jac_y(<%intSub(cref(i_index),1)%>);'
-        ' _jacobian(<%index0%>,<%cref(i_index)%><%matrixname%>$indexdiff) = _jac_y(<%cref(i_index)%><%matrixname%>$indexdiff);'
+        ' _jacobian(<%index0%>,<%crefWithoutIndexOperator(i_index)%><%matrixname%>$indexdiff) = _jac_y(<%crefWithoutIndexOperator(i_index)%><%matrixname%>$indexdiff);'
          ;separator="\n" )
       ' _jac_x(<%index0%>)=1;
 calcJacobianColumn();
@@ -8568,6 +8547,7 @@ _jac_x.clear();
       ;separator="\n")
 
   <<
+    /*test*/
     <%jacMats%>
     void <%classname%>::getJacobian(SparseMatrix& matrix)
      {
@@ -8580,7 +8560,7 @@ end generateMatrix;
 template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes)
  "Generates defines for jacobian vars."
 ::=
-  /*
+
   let analyticVars = (JacobianMatrixes |> (jacColumn, seedVars, name, (_,(diffVars,diffedVars)), _, _) hasindex index0 =>
     let varsDef = variableDefinitionsJacobians2(index0, jacColumn, seedVars, name)
     let sparseDef = defineSparseIndexes(diffVars, diffedVars, name)
@@ -8591,11 +8571,10 @@ template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes)
     ;separator="\n";empty)
 
   <<
-  /* Jacobian Variables */
-   <%analyticVars%> 
+    /* Jacobian Variables */
+    <%analyticVars%> 
   >>
-  */
-  ""
+  
 end variableDefinitionsJacobians;
 
 template variableDefinitionsJacobians2(Integer indexJacobian, list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String name)
@@ -8628,11 +8607,11 @@ case "jacobianVars" then
     match index
     case -1 then
       <<
-      #define <%cref(name)%> _jac_tmp(<%index0%>)
+      #define <%crefWithoutIndexOperator(name)%> _jac_tmp(<%index0%>)
       >>
     case _ then
       <<
-      #define <%cref(name)%> _jac_y(<%index%>)
+      #define <%crefWithoutIndexOperator(name)%> _jac_y(<%index%>)
       >>
     end match
   end match
@@ -8641,20 +8620,12 @@ case "jacobianVarsSeed" then
   case SIMVAR(aliasvar=NOALIAS()) then
   let tmp = System.tmpTick()
     <<
-    #define _<%jacobianVarsSeedDefine(name)%>$pDER<%matrixName%>$P<%jacobianVarsSeedDefine(name)%> _jac_x(<%index0%>)
+    #define <%crefWithoutIndexOperator(name)%>$pDER<%matrixName%><%crefWithoutIndexOperator(name)%> _jac_x(<%index0%>)
     >>
   end match
 end jacobianVarDefine;
 
-   template jacobianVarsSeedDefine(ComponentRef cr)
-::=
-  match cr
-  case CREF_IDENT(__) then '<%ident%>'
- case CREF_QUAL(__) then               '<%ident%><%subscriptsToCStrForArray(subscriptLst)%>$P<%crefToCStr1(componentRef)%>'
 
-  case WILD(__) then ' '
-  else "CREF_NOT_IDENT_OR_QUAL"
-end jacobianVarsSeedDefine;
 
 
 template defineSparseIndexes(list<SimVar> diffVars, list<SimVar> diffedVars, String matrixName) "template variableDefinitionsJacobians2
@@ -8663,12 +8634,12 @@ template defineSparseIndexes(list<SimVar> diffVars, list<SimVar> diffedVars, Str
 match matrixName
 case "A" then
   let diffVarsResult = (diffVars |> var as SIMVAR(name=name) hasindex index0 =>
-     '#define <%cref(name)%><%matrixName%>$indexdiff <%index0%>'
+     '#define <%crefWithoutIndexOperator(name)%><%matrixName%>$indexdiff <%index0%>'
     ;separator="\n")
    /* generate at least one print command to have the same index and avoid the strange side effect */
   <<
   /* <%matrixName%> sparse indexes */
-  /*<%diffVarsResult%>*/
+   <%diffVarsResult%>
   >>
   else " "
 end defineSparseIndexes;
@@ -9260,6 +9231,45 @@ match simVar
    
   end match
 end setVariablesDefault;
+
+
+
+template crefWithoutIndexOperator(ComponentRef cr)
+ "Generates C equivalent name for component reference."
+::=
+  match cr
+  case CREF_IDENT(ident = "xloc") then crefStr(cr)
+  case CREF_IDENT(ident = "time") then "time"
+  case WILD(__) then ''
+  else "$P" + crefToCStrfWithoutIndexOperator(cr)
+end crefWithoutIndexOperator;
+
+template crefToCStrfWithoutIndexOperator(ComponentRef cr)
+ "Helper function to cref."
+::=
+  match cr
+  case CREF_IDENT(__) then '<%unquoteIdentifier(ident)%><%subscriptsToCStrWithoutIndexOperator(subscriptLst)%>'
+  case CREF_QUAL(__) then '<%unquoteIdentifier(ident)%><%subscriptsToCStrWithoutIndexOperator(subscriptLst)%>$P<%crefToCStrWithoutIndexOperator(componentRef)%>'
+  case WILD(__) then ''
+  else "CREF_NOT_IDENT_OR_QUAL"
+end crefToCStrfWithoutIndexOperator;
+
+template subscriptsToCStrWithoutIndexOperator(list<Subscript> subscripts)
+::=
+  if subscripts then
+    '$lB<%subscripts |> s => subscriptToCStr(s) ;separator="$c"%>$rB'
+end subscriptsToCStrWithoutIndexOperator;
+
+
+template crefToCStrWithoutIndexOperator(ComponentRef cr)
+ "Helper function to cref."
+::=
+  match cr
+  case CREF_IDENT(__) then '<%unquoteIdentifier(ident)%><%subscriptsToCStrWithoutIndexOperator(subscriptLst)%>'
+  case CREF_QUAL(__) then '<%unquoteIdentifier(ident)%><%subscriptsToCStrWithoutIndexOperator(subscriptLst)%>$P<%crefToCStrWithoutIndexOperator(componentRef)%>'
+  case WILD(__) then ''
+  else "CREF_NOT_IDENT_OR_QUAL"
+end crefToCStrWithoutIndexOperator;
 
 
 end CodegenCpp;

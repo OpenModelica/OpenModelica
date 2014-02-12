@@ -236,7 +236,7 @@ inline bool in_range(T i,T start,T stop)
 
 
 
-
+int pivot( double *A, int n_rows, int n_cols, int *rowInd, int *colInd );
 
 
 //  (C) Copyright Gennadiy Rozental 2001-2002.
