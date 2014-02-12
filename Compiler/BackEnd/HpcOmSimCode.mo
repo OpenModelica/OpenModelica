@@ -910,11 +910,11 @@ algorithm
     case(_,_,_,_,_,_,GraphMLNew.GRAPHINFO(graphCount=graphCount))
       equation
         true = intLe(1, graphCount);
-			  knownEdges = arrayCreate(iNumberOfNodes,{});
-			  (tmpGraphInfo,(_,_),(_,clGroupNodeIdx)) = GraphMLNew.addGroupNode("CL_GoupNode", 1, false, "CL", iGraphInfo);
-			  ((_,_,_,tmpGraphInfo)) = List.fold1(iSimVars, appendCacheLineNodesToGraphTraverse, iNumVarsCL, (0,clGroupNodeIdx,clGroupNodeIdx,tmpGraphInfo));
-			  ((_,knownEdges,tmpGraphInfo)) = List.fold3(iEqVarMapping, appendCacheLineEdgesToGraphTraverse, iSccNodeMapping, iEqSccMapping, iNumVarsCL, (1,knownEdges,tmpGraphInfo));
-			then tmpGraphInfo;
+        knownEdges = arrayCreate(iNumberOfNodes,{});
+        (tmpGraphInfo,(_,_),(_,clGroupNodeIdx)) = GraphMLNew.addGroupNode("CL_GoupNode", 1, false, "CL", iGraphInfo);
+        ((_,_,_,tmpGraphInfo)) = List.fold1(iSimVars, appendCacheLineNodesToGraphTraverse, iNumVarsCL, (0,clGroupNodeIdx,clGroupNodeIdx,tmpGraphInfo));
+        ((_,knownEdges,tmpGraphInfo)) = List.fold3(iEqVarMapping, appendCacheLineEdgesToGraphTraverse, iSccNodeMapping, iEqSccMapping, iNumVarsCL, (1,knownEdges,tmpGraphInfo));
+      then tmpGraphInfo;
     case(_,_,_,_,_,_,GraphMLNew.GRAPHINFO(graphCount=graphCount))
       equation
         true = intEq(graphCount,0);
@@ -999,19 +999,19 @@ algorithm
   oGraphInfo := matchcontinue(iVarIdx,iEqIdx,iSccNodeMapping,iEqSccMapping,iKnownEdgesNumCacheLines,iGraphInfo)
     case(_,_,_,_,(knownEdges,iNumVarsCL),_)
       equation
-			  sccIdx = arrayGet(iEqSccMapping,iEqIdx);
-			  nodeIdx = arrayGet(iSccNodeMapping, sccIdx);
-			  true = intNe(nodeIdx,-1);
-			  clIdx = intDiv(iVarIdx,iNumVarsCL)*iNumVarsCL;
-			  knownEdgesOfNode = arrayGet(knownEdges,nodeIdx);
-			  false = List.exist1(knownEdgesOfNode, intEq, clIdx);
-			  knownEdges = arrayUpdate(knownEdges, nodeIdx, clIdx::knownEdgesOfNode);
-			  edgeId = "CL_Edge" +& intString(nodeIdx) +& intString(iVarIdx+1);
-			  sourceId = "Node" +& intString(nodeIdx);
-			  targetId = "CL_Meta_" +& intString(clIdx);
-			  //targetId = "CL_Var" +& intString(iVarIdx+1);
-			  (tmpGraphInfo,(_,_)) = GraphMLNew.addEdge(edgeId, targetId, sourceId, GraphMLNew.COLOR_GRAY, GraphMLNew.DASHED(), GraphMLNew.LINEWIDTH_STANDARD, true, {}, (GraphMLNew.ARROWNONE(),GraphMLNew.ARROWNONE()), {}, iGraphInfo);
-			then tmpGraphInfo;
+        sccIdx = arrayGet(iEqSccMapping,iEqIdx);
+        nodeIdx = arrayGet(iSccNodeMapping, sccIdx);
+        true = intNe(nodeIdx,-1);
+        clIdx = intDiv(iVarIdx,iNumVarsCL)*iNumVarsCL;
+        knownEdgesOfNode = arrayGet(knownEdges,nodeIdx);
+        false = List.exist1(knownEdgesOfNode, intEq, clIdx);
+        knownEdges = arrayUpdate(knownEdges, nodeIdx, clIdx::knownEdgesOfNode);
+        edgeId = "CL_Edge" +& intString(nodeIdx) +& intString(iVarIdx+1);
+        sourceId = "Node" +& intString(nodeIdx);
+        targetId = "CL_Meta_" +& intString(clIdx);
+        //targetId = "CL_Var" +& intString(iVarIdx+1);
+        (tmpGraphInfo,(_,_)) = GraphMLNew.addEdge(edgeId, targetId, sourceId, GraphMLNew.COLOR_GRAY, GraphMLNew.DASHED(), GraphMLNew.LINEWIDTH_STANDARD, true, {}, (GraphMLNew.ARROWNONE(),GraphMLNew.ARROWNONE()), {}, iGraphInfo);
+      then tmpGraphInfo;
      case(_,_,_,_,(knownEdges,iNumVarsCL),_)
       equation
         sccIdx = arrayGet(iEqSccMapping,iEqIdx);
