@@ -59,41 +59,41 @@ static inline int evalG23(Number *g, IPOPT_DATA_ *iData, double *x0, int i);
  **/
 Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
 {
-  IPOPT_DATA_ *iData;
-  int i,k;
-  double *x0;
+   IPOPT_DATA_ *iData;
+   int i,k;
+   double *x0;
 
-  iData = (IPOPT_DATA_ *) useData;
-  for(i=0, k=0, x0=v; i<1; ++i, x0=iData->x3){
-  iData->x1 = x0 + iData->nv; /* 0 + 3 = 3;2*/
-  iData->x2 = iData->x1 + iData->nv; /*3 + 3 = 6;5*/
-  iData->x3 = iData->x2 + iData->nv; /*6 + 3  = 9*/
+   iData = (IPOPT_DATA_ *) useData;
+   for(i=0, k=0, x0=v; i<1; ++i, x0=iData->x3){
+     iData->x1 = x0 + iData->nv; /* 0 + 3 = 3;2*/
+     iData->x2 = iData->x1 + iData->nv; /*3 + 3 = 6;5*/
+     iData->x3 = iData->x2 + iData->nv; /*6 + 3  = 9*/
 
-    iData->u1 = iData->x1 + iData->nx; /*3 + 2 = 5*/
-    iData->u2 = iData->x2 + iData->nx; /*6 + 2 = 8*/
-    iData->u3 = iData->x3 + iData->nx;
+     iData->u1 = iData->x1 + iData->nx; /*3 + 2 = 5*/
+     iData->u2 = iData->x2 + iData->nx; /*6 + 2 = 8*/
+     iData->u3 = iData->x3 + iData->nx;
 
-    /*1*/
-    functionODE_(x0, x0 + iData->nx, iData->time[0], iData->dotx0, iData);
-    functionODE_(iData->x1, iData->u1, iData->time[1], iData->dotx1, iData);
-    evalG21(g + k, iData, x0, i);
-    k += iData->nJ;
+     /*1*/
+     functionODE_(x0, x0 + iData->nx, iData->time[0], iData->dotx0, iData);
+     functionODE_(iData->x1, iData->u1, iData->time[1], iData->dotx1, iData);
+     evalG21(g + k, iData, x0, i);
+     k += iData->nJ;
 
-    /*2*/
-    functionODE_(iData->x2, iData->u2, iData->time[2], iData->dotx2, iData);
-    evalG22(g + k, iData, x0, i);
-    k += iData->nJ;
+     /*2*/
+     functionODE_(iData->x2, iData->u2, iData->time[2], iData->dotx2, iData);
+     evalG22(g + k, iData, x0, i);
+     k += iData->nJ;
 
-    /*3*/
-    functionODE_(iData->x3, iData->u3, iData->time[3], iData->dotx3, iData);
-    evalG23(g + k, iData, x0, i);
-    k += iData->nJ;
+     /*3*/
+     functionODE_(iData->x3, iData->u3, iData->time[3], iData->dotx3, iData);
+     evalG23(g + k, iData, x0, i);
+     k += iData->nJ;
   }
 
   for(; i<iData->nsi; ++i, x0=iData->x3){
-  iData->x1 = x0 + iData->nv; /* 0 + 3 = 3;2*/
-  iData->x2 = iData->x1 + iData->nv; /*3 + 3 = 6;5*/
-  iData->x3 = iData->x2 + iData->nv; /*6 + 3  = 9*/
+    iData->x1 = x0 + iData->nv; /* 0 + 3 = 3;2*/
+    iData->x2 = iData->x1 + iData->nv; /*3 + 3 = 6;5*/
+    iData->x3 = iData->x2 + iData->nv; /*6 + 3  = 9*/
 
     iData->u1 = iData->x1 + iData->nx; /*3 + 2 = 5*/
     iData->u2 = iData->x2 + iData->nx; /*6 + 2 = 8*/
