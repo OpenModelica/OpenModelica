@@ -87,7 +87,7 @@ static int initial_guess_ipopt_cflag(IPOPT_DATA_ *iData,char* cflags)
   }else if(!strcmp(cflags,"sim") || !strcmp(cflags,"SIM"))
     return 1;
 
-  infoStreamPrint(LOG_STDOUT, 1, "ipopt_hesse | not found", cflags);
+  warningStreamPrint(LOG_STDOUT, 1, "not support ipopt_init=%s", cflags);
   return 1;
 }
 
