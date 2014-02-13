@@ -253,17 +253,6 @@ static int set_optimizer_flags(IPOPT_DATA_ *iData, IpoptProblem *nlp)
       warningStreamPrint(LOG_STDOUT, 1, "not support ipopt_hesse=%s",cflags);
   }
 
-  iData->useNumJac = 0;
-  cflags = (char*)omc_flagValue[FLAG_IPOPT_JAC];
-  if(cflags){
-    if(!strcmp(cflags,"NUM"))
-      iData->useNumJac = 1;
-    else if(!strcmp(cflags,"SYM") || !strcmp(cflags,"sym"))
-      iData->useNumJac = 0;
-    else
-      warningStreamPrint(LOG_STDOUT, 1, "not support ipopt_hesse=%s",cflags);
-  }
-
   cflags = (char*)omc_flagValue[FLAG_LS_IPOPT];
   if(cflags)
     AddIpoptStrOption(*nlp, "linear_solver", cflags);

@@ -38,6 +38,7 @@
 
 #include "../ipoptODEstruct.h"
 #include "simulation_data.h"
+#include "../../simulation/options.h"
 
 #ifdef WITH_IPOPT
 
@@ -45,6 +46,7 @@
 
 static int local_jac_struct(IPOPT_DATA_ *iData, int *nng);
 static int local_jac_struct_print(IPOPT_DATA_ *iData);
+static int local_jac_struct_dense(IPOPT_DATA_ *iData, int * nng);
 static int check_nominal(IPOPT_DATA_ *iData, double min, double max, double nominal, short set, int i, double x0);
 static int optimizer_coeff_setings(IPOPT_DATA_ *iData);
 static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData);
@@ -317,7 +319,31 @@ int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
   optimizer_coeff_setings(iData);
 
   /***********************/
-  local_jac_struct(iData, &id);
+  char *cflags;
+
+  iData->useNumJac = 0;
+  cflags = (char*)omc_flagValue[FLAG_IPOPT_JAC];
+  if(cflags){
+    if(!strcmp(cflags,"NUM"))
+	  iData->useNumJac = 1;
+	else if(!strcmp(cflags,"SYM") || !strcmp(cflags,"sym"))
+	  iData->useNumJac = 0;
+	else if(!strcmp(cflags,"NUMDENSE") || !strcmp(cflags,"NUMDENSE"))
+	  iData->useNumJac = 2;
+	else
+	  warningStreamPrint(LOG_STDOUT, 1, "not support ipopt_hesse=%s",cflags);
+   }
+
+  printf("\nnumJ = %i",iData->useNumJac);
+  if(iData->useNumJac == 2){
+    local_jac_struct_dense(iData, &id);
+    printf("\nid = %i", id);
+  } else {
+	local_jac_struct(iData, &id);
+	printf("\nsid = %i", id);
+  }
+
+
   iData->njac = iData->deg*(iData->nlocalJac-iData->nx+iData->nsi*iData->nlocalJac+iData->deg*iData->nsi*iData->nx)-iData->deg*id;
   iData->nhess = 0.5*iData->nv*(iData->nv + 1)*(1+iData->deg*iData->nsi);
 
@@ -362,6 +388,37 @@ int move_grid(IPOPT_DATA_ *iData)
   return 0;
 }
 
+/*
+ *  function calculates a jacobian matrix struct
+ *  author: vitalij
+ */
+static int local_jac_struct_dense(IPOPT_DATA_ *iData, int * nng)
+{
+  int **J;
+  short **Hg;
+  int i,j,ii;
+  int nJ = (int)(iData->nJ);
+
+  J = iData->knowedJ;
+  Hg = iData->Hg;
+  //iData->useNumJac == 2
+
+  for(i = 0; i < iData->nJ; ++i)
+	  for(j = 0; j < iData->nv; ++j){
+        J[i][j] = 1.0;
+        ++iData->nlocalJac;
+       }
+
+
+  for(i = 0; i <iData->nv; ++i)
+    for(j = 0; j < iData->nv; ++j)
+      for(ii = 0; ii < nJ; ++ii)
+        if(J[ii][i]*J[ii][j])
+          Hg[i][j] = 1;
+
+  *nng = iData->nc * iData->nv;
+  return 0;
+}
 
 /*
  *  function calculates a jacobian matrix struct
@@ -375,7 +432,7 @@ static int local_jac_struct(IPOPT_DATA_ *iData, int * nng)
   short **Hg;
   int i,j,l,ii,nx, id;
   int *cC,*lindex;
-  int nJ = (int)(iData->nx+iData->nc);
+  int nJ = (int)(iData->nJ);
   id = 0;
 
   J = iData->knowedJ;
@@ -559,12 +616,12 @@ static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData)
 {
   int i, j, id;
   for(i =0;i<iData->nx;++i){
-  check_nominal(iData, data->modelData.realVarsData[i].attribute.min, data->modelData.realVarsData[i].attribute.max, data->modelData.realVarsData[i].attribute.nominal, data->modelData.realVarsData[i].attribute.useNominal, i, fabs(iData->x0[i]));
-  iData->scalVar[i] = 1.0 / iData->vnom[i];
-  iData->scalf[i] = iData->scalVar[i];
+    check_nominal(iData, data->modelData.realVarsData[i].attribute.min, data->modelData.realVarsData[i].attribute.max, data->modelData.realVarsData[i].attribute.nominal, data->modelData.realVarsData[i].attribute.useNominal, i, fabs(iData->x0[i]));
+    iData->scalVar[i] = 1.0 / iData->vnom[i];
+    iData->scalf[i] = iData->scalVar[i];
 
-  iData->xmin[i] = data->modelData.realVarsData[i].attribute.min*iData->scalVar[i];
-  iData->xmax[i] = data->modelData.realVarsData[i].attribute.max*iData->scalVar[i];
+    iData->xmin[i] = data->modelData.realVarsData[i].attribute.min*iData->scalVar[i];
+    iData->xmax[i] = data->modelData.realVarsData[i].attribute.max*iData->scalVar[i];
   }
 
   iData->index_u = data->modelData.nVariablesReal - iData->nu;
@@ -643,7 +700,7 @@ static int optimizer_print_step(IPOPT_DATA_ *iData)
   }
 
 
-  for(i=0 ,k=0,j =0; i<iData->NV; ++i,++j){
+  for(i = 0 ,k = 0,j = 0; i<iData->NV; ++i,++j){
     if(j >= iData->nv){
       j = 0; ++k;
     }

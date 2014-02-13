@@ -116,7 +116,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_INTERACTIVE */           "specify interactive simulation",
   /* FLAG_IOM */                   "value specifies the initialization optimization method",
   /* FLAG_IPOPT_HESSE */           "value specifies the hessematrix for Ipopt(OMC, BFGS, const)",
-  /* FLAG_IPOPT_JAC */             "value specifies the jacobian for Ipopt(SYM, NUM)",
+  /* FLAG_IPOPT_JAC */             "value specifies the jacobian for Ipopt(SYM, NUM, NUMDENSE)",
   /* FLAG_IPOPT_INIT */         "value specifies the initial guess for optimization (sim, const)",
   /* FLAG_L */                     "value specifies a time where the linearization of the model should be performed",
   /* FLAG_LOG_FORMAT */            "value specifies the log format of the executable. -logFormat=text (default) or -logFormat=xml",

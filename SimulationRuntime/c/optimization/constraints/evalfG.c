@@ -138,28 +138,27 @@ int functionODE_(double * x, double *u, double t, double * dotx, IPOPT_DATA_ *iD
  **/
 int diff_functionODE(double* v, double t, IPOPT_DATA_ *iData, double **J)
 {
-  double h;
-  int i, j, k;
-  double vsave;
-  double tmp;
+  int i, j;
   double *x, *u;
-  long double rcal;
-  int nJ = iData->nx + iData->nc;
+  int nJ = (int)iData->nJ;
   x = v;
   u = v + iData->nx;
+
   if(iData->useNumJac){
-  num_diff_symColoredODE(v,t,iData,J);
-  for(i = 0;i<iData->nv;++i)
+
+    num_diff_symColoredODE(v,t,iData,J);
+    for(i = 0;i<iData->nv;++i)
       for(j = 0; j <iData->nx; ++j)
         iData->numJ[j][i] *= iData->scalf[j];
+
   }else{
-  refreshSimData(x,u,t,iData);
+    refreshSimData(x,u,t,iData);
     diff_symColoredODE(v,t,iData,J);
     for(i = 0;i<iData->nv;++i){
-    for(j = 0; j <iData->nx; ++j)
-      J[j][i] *= iData->scalf[j]*iData->vnom[i];
-    for(; j <nJ; ++j)
-      J[j][i] *= iData->vnom[i];
+      for(j = 0; j <iData->nx; ++j)
+        J[j][i] *= iData->scalf[j]*iData->vnom[i];
+      for(; j <nJ; ++j)
+        J[j][i] *= iData->vnom[i];
     }
  }
 
@@ -202,7 +201,7 @@ int num_diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J)
   memcpy(iData->vsave, v, sizeof(double)*nx);
 
   for(ii = 0; ii<nx; ++ii){
-  iData->eps[ii] = DF_STEP(v[ii], iData->vnom[ii]);;
+  iData->eps[ii] = DF_STEP(v[ii], iData->vnom[ii]);
   }
 
   for(i = 1; i < data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors + 1; ++i){
