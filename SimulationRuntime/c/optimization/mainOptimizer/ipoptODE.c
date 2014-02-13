@@ -96,9 +96,9 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
 
   if(ACTIVE_STREAM(LOG_IPOPT)){
     for(i=0; i<iData->nx; ++i)
-      printf("\nx[%i] = %s = %g | %g",i, iData->data->modelData.realVarsData[i].info.name,iData->v[i],iData->vnom[i]);
+      printf("\nx[%i] = %s \t| start=%g \t nominal=%g \t min = %g \t max = %g",i, iData->data->modelData.realVarsData[i].info.name, iData->v[i], iData->vnom[i], iData->vmin[i], iData->vmax[i]);
     for(; i<iData->nv; ++i)
-      printf("\nu[%i] = %s = %g| %g",i, iData->data->modelData.realVarsData[iData->index_u + i-iData->nx].info.name,iData->v[i],iData->vnom[i]);
+      printf("\nu[%i] = %s \t| start=%g \t nominal=%g \t min = %g \t max = %g",i, iData->data->modelData.realVarsData[iData->index_u + i-iData->nx].info.name,iData->v[i],iData->vnom[i], iData->vmin[i], iData->vmax[i]);
     if(iData->nc > 0)
       printf("\nnumber of constraints %i",iData->nc);
   }
