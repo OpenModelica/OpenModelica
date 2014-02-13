@@ -3744,7 +3744,8 @@ algorithm
       list<DAE.Exp> exp_lst,exp_lst_1;
       DAE.ComponentRef cr1,cr2;
       Boolean b,b2;
-      Real r;
+      Real r, r1;
+      Integer i2;
       Option<DAE.Exp> oexp;
 
 
@@ -3996,6 +3997,15 @@ algorithm
         res = Expression.makeConstOne(ty);
         false = Expression.isZero(e2);
       then res;
+
+    case(_,DAE.DIV(ty= tp), e1, DAE.RCONST(real = r1),_,_)
+      equation
+        true = r1 <. 1e12 and r1 >. 1e-20; 
+        r = 1.0 /. r1;
+        r1 = 1e6 *. r;
+        1.0 = realMod(r1, 1.0);
+        e3 = DAE.BINARY(e1,DAE.MUL(tp),DAE.RCONST(r));
+     then e3;
 
     // -a / -b = a / b
     case (_,DAE.DIV(ty = ty),DAE.UNARY(operator = DAE.UMINUS(ty = ty1),exp = e1),DAE.UNARY(operator = DAE.UMINUS(ty = ty2),exp = e2),_,_)
@@ -5180,11 +5190,14 @@ algorithm
     local
       list<DAE.Exp> expl;
       Integer i;
+      DAE.Exp e;
+      
     // NOTE: It should be impossible for TSUB to use an index that becomes out of range, so match is correct here...
     case DAE.TSUB(exp = DAE.CAST(exp = DAE.TUPLE(PR = expl)), ix = i)
       then listGet(expl, i);
     case DAE.TSUB(exp = DAE.TUPLE(PR = expl), ix = i)
       then listGet(expl, i);
+    case DAE.TSUB(exp= e as (DAE.RCONST(_))) then e;
     else origExp;
   end match;
 end simplifyTSub;
