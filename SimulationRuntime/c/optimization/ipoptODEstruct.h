@@ -196,6 +196,10 @@ typedef struct IPOPT_DATA_
   int matrixC;
   int matrixD;
 
+  short useNumJac;
+  double *vsave;
+  double *eps;
+
   /*Debuger*/
   FILE **pFile;
   long index_debug_iter;

@@ -90,8 +90,8 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   iData->d1 = (double*)malloc(deg2*sizeof(double));
   iData->d2 = (double*)malloc(deg2*sizeof(double));
   iData->d3 = (double*)malloc(deg2*sizeof(double));
-  iData->lhs = (double*)malloc(iData->nx*sizeof(double));
-  iData->rhs = (double*)malloc(iData->nx*sizeof(double));
+  iData->lhs = (double*)malloc((int)iData->nJ*sizeof(double));
+  iData->rhs = (double*)malloc((int)iData->nJ*sizeof(double));
   iData->dotx0 = (double*)malloc(iData->nx*sizeof(double));
   iData->dotx1 = (double*)malloc(iData->nx*sizeof(double));
   iData->dotx2 = (double*)malloc(iData->nx*sizeof(double));
@@ -122,6 +122,9 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
 
   iData->sv = (double*)malloc(iData->nv*sizeof(double));
   iData->sh = (double*)malloc(iData->nJ*sizeof(double));
+
+  iData->vsave = (double*)malloc(iData->nv*sizeof(double));
+  iData->eps = (double*)malloc(iData->nv*sizeof(double));
 
   iData->J0 = (double**) malloc(iData->nJ * sizeof(double*));
   for(i = 0; i < iData->nJ; i++)

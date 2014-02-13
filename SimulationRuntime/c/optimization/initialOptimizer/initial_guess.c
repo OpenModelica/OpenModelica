@@ -157,7 +157,7 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
      v += iData->nv;
      /* updateContinuousSystem(iData->data); */
      rotateRingBuffer(iData->data->simulationData, 1, (void**) iData->data->localData);
-  }
+     }
   }
 
   for(i = 0, id=0; i<iData->NV;i++,++id){

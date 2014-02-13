@@ -52,6 +52,8 @@ static inline int evalG13(Number *g, IPOPT_DATA_ *iData, double *x0, int i);
 static inline int evalG21(Number *g, IPOPT_DATA_ *iData, double *x0, int i);
 static inline int evalG22(Number *g, IPOPT_DATA_ *iData, double *x0, int i);
 static inline int evalG23(Number *g, IPOPT_DATA_ *iData, double *x0, int i);
+static int diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J);
+static int num_diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J);
 
 /*!
  *  eval s.t.
@@ -145,15 +147,21 @@ int diff_functionODE(double* v, double t, IPOPT_DATA_ *iData, double **J)
   int nJ = iData->nx + iData->nc;
   x = v;
   u = v + iData->nx;
-
-  refreshSimData(x,u,t,iData);
-  diff_symColoredODE(v,t,iData,J);
-  for(i = 0;i<iData->nv;++i){
-    for(j = 0; j <iData->nx; ++j)
-      J[j][i] *= iData->scalf[j]*iData->vnom[i];
-    for(; j <nJ; ++j)
-      J[j][i] *= iData->vnom[i];
-  }
+  if(iData->useNumJac){
+	num_diff_symColoredODE(v,t,iData,J);
+	for(i = 0;i<iData->nv;++i)
+      for(j = 0; j <iData->nx; ++j)
+        iData->numJ[j][i] *= iData->scalf[j];
+  }else{
+	refreshSimData(x,u,t,iData);
+    diff_symColoredODE(v,t,iData,J);
+	  for(i = 0;i<iData->nv;++i){
+		for(j = 0; j <iData->nx; ++j)
+		  J[j][i] *= iData->scalf[j]*iData->vnom[i];
+		for(; j <nJ; ++j)
+		  J[j][i] *= iData->vnom[i];
+	  }
+ }
 
   /*
   #ifdef JAC_ADOLC
@@ -169,6 +177,76 @@ int diff_functionODE(double* v, double t, IPOPT_DATA_ *iData, double **J)
   
   return 0;
 }
+
+/*
+ *  function calculates a symbolic colored jacobian matrix by
+ *  author: Willi Braun
+ */
+int num_diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J)
+{
+  DATA * data = iData->data;
+  const int index = 2;
+  double*x,*u;
+  SIMULATION_DATA *sData = (SIMULATION_DATA*)iData->data->localData[0];
+  int i,j,l,ii,nx;
+  int *cC,*lindex;
+
+  x = v;
+  u = x + iData->nx;
+
+  nx = data->simulationInfo.analyticJacobians[index].sizeCols;
+  cC =  (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols;
+  lindex = (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex;
+
+  memcpy(iData->lhs, sData->realVars + iData->nx, sizeof(double)*iData->nx);
+  memcpy(iData->vsave, v, sizeof(double)*nx);
+
+  for(ii = 0; ii<nx; ++ii){
+	iData->eps[ii] = DF_STEP(v[ii], iData->vnom[ii]);;
+  }
+
+  for(i = 1; i < data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors + 1; ++i){
+
+    for(ii = 0; ii<nx; ++ii)
+      if(cC[ii] == i){
+    	v[ii] = iData->vsave[ii] + iData->eps[ii];
+    	//printf("\nlv[%i] = %g\t eps[%i] = %g",ii,v[ii], ii,iData->eps[ii]);
+      }
+
+    functionODE_(x, u, t, iData->lhs, iData);
+    if(iData->nc > 0)
+      iData->data->callback->pathConstraints(iData->data,iData->lhs + iData->nx,&iData->nc);
+
+    for(ii = 0; ii<nx; ++ii)
+      if(cC[ii] == i)
+      {
+    	v[ii] = iData->vsave[ii] - iData->eps[ii];
+    	//printf("\nrv[%i] = %g\t eps[%i] = %g",ii,v[ii], ii,iData->eps[ii]);
+      }
+
+    functionODE_(x, u, t, iData->rhs, iData);
+    if(iData->nc > 0)
+      iData->data->callback->pathConstraints(iData->data,iData->rhs + iData->nx,&iData->nc);
+
+    memcpy(v, iData->vsave, sizeof(double)*nx);
+
+    for(ii = 0; ii < nx; ii++){
+      if(cC[ii] == i){
+        if(ii == 0)  j = 0;
+        else j = lindex[ii-1];
+        
+        for(; j<lindex[ii]; ++j){
+          l = data->simulationInfo.analyticJacobians[index].sparsePattern.index[j];
+          J[l][ii] = (iData->lhs[l] - iData->rhs[l])/(2.0*iData->eps[ii]);
+        }
+      }
+    }
+  }
+
+
+  return 0;
+}
+
 
 /*
  *  function calculates a symbolic colored jacobian matrix by
@@ -203,7 +281,7 @@ int diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J)
       if(cC[ii] == i){
         if(ii == 0)  j = 0;
         else j = lindex[ii-1];
-        
+
         for(; j<lindex[ii]; ++j){
           l = data->simulationInfo.analyticJacobians[index].sparsePattern.index[j];
           J[l][ii] = data->simulationInfo.analyticJacobians[index].resultVars[l];
@@ -221,6 +299,7 @@ int diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J)
 
   return 0;
 }
+
 
 /*!
  *  helper evalfG

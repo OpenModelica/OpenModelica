@@ -226,7 +226,7 @@ static int res2file(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
  *  set optimizer options
  *  author: Vitalij Ruge
  **/
-static int set_optimizer_flags(IPOPT_DATA_ *iData,IpoptProblem *nlp)
+static int set_optimizer_flags(IPOPT_DATA_ *iData, IpoptProblem *nlp)
 {
   char *cflags;
   AddIpoptNumOption(*nlp, "tol", iData->data->simulationInfo.tolerance);
@@ -249,6 +249,17 @@ static int set_optimizer_flags(IPOPT_DATA_ *iData,IpoptProblem *nlp)
       AddIpoptStrOption(*nlp, "hessian_approximation", "limited-memory");
     else if(!strcmp(cflags,"const") || !strcmp(cflags,"CONST"))
       AddIpoptStrOption(*nlp, "hessian_constant", "yes");
+    else
+      warningStreamPrint(LOG_STDOUT, 1, "not support ipopt_hesse=%s",cflags);
+  }
+
+  iData->useNumJac = 0;
+  cflags = (char*)omc_flagValue[FLAG_IPOPT_JAC];
+  if(cflags){
+    if(!strcmp(cflags,"NUM"))
+      iData->useNumJac = 1;
+    else if(!strcmp(cflags,"SYM") || !strcmp(cflags,"sym"))
+      iData->useNumJac = 0;
     else
       warningStreamPrint(LOG_STDOUT, 1, "not support ipopt_hesse=%s",cflags);
   }

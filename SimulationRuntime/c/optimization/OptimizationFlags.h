@@ -40,5 +40,6 @@
 #define OPTIMIZATIONFLAGS_H_
 
 #define DF_STEP(x,s) ( (fmin(fmax(1e-4*fabs(s*x),1e-8),1e-1)))
+#define DF_STEP2(x,s) ( (fmin(fmax(1e-2*fabs(s*x),1e-3),1)))
 
 #endif /* OPTIMIZATIONFLAGS_H_ */
