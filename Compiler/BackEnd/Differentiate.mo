@@ -786,9 +786,11 @@ algorithm
       equation
         //se1 = ExpressionDump.printExpStr(e);
         //print("\nExp-TSUB\nDifferentiate exp: " +& se1);
+        //work-a-round, sicne otherwise AVM-model have issues with index reduction
+        failure(BackendDAE.DIFFERENTATION_TIME() = inDiffType);
         
         (res1, functionTree) = differentiateExp(e, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
-        
+
         res = DAE.TSUB(res1, i, tp); 
         (res,_) = ExpressionSimplify.simplify(res);
         
@@ -796,12 +798,14 @@ algorithm
         //print("\nresults to exp: " +& se1);
       then
         (res, functionTree);
-        
+       
     // differentiate tuple
     case (e as DAE.TUPLE(PR = expl), _, _, _, _)
       equation
         //se1 = ExpressionDump.printExpStr(e);
         //print("\nExp-TUPLE\nDifferentiate exp: " +& se1);
+        //work-a-round, sicne otherwise AVM-model have issues with index reduction
+        failure(BackendDAE.DIFFERENTATION_TIME() = inDiffType);
         
         (expl, functionTree) = List.map3Fold(expl, differentiateExp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         
