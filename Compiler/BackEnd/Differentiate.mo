@@ -790,9 +790,8 @@ algorithm
         failure(BackendDAE.DIFFERENTATION_TIME() = inDiffType);
         
         (res1, functionTree) = differentiateExp(e, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
-        
-        b = Expression.isConstValue(res1);
-        res = Util.if_(b, res1, DAE.TSUB(res1, i, tp)); 
+
+        res =  DAE.TSUB(res1, i, tp);
         (res,_) = ExpressionSimplify.simplify(res);
         
         //se1 = ExpressionDump.printExpStr(res);
