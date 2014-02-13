@@ -43,7 +43,6 @@ encapsulated package NFSCodeLookup
 public import Absyn;
 public import Error;
 public import NFInstPrefix;
-public import NFInstTypes;
 public import SCode;
 public import NFSCodeEnv;
 

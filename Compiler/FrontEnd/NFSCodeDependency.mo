@@ -49,7 +49,6 @@ public type Env = NFSCodeEnv.Env;
 protected import Debug;
 protected import Error;
 protected import Flags;
-protected import NFInstTypes;
 protected import List;
 protected import NFSCodeCheck;
 protected import NFSCodeFlattenRedeclare;

@@ -104,7 +104,6 @@ protected import InnerOuter;
 protected import Interactive;
 protected import List;
 protected import Lookup;
-protected import Mod;
 protected import Patternm;
 protected import Print;
 protected import System;

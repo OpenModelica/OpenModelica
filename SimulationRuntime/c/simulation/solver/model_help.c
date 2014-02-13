@@ -297,35 +297,50 @@ void printParameters(DATA *data, int stream)
 
   infoStreamPrint(stream, 1, "parameter values");
 
-  if (mData->nParametersReal) {
+  if (0 < mData->nParametersReal)
+  {
     infoStreamPrint(stream, 1, "real parameters");
-    for(i=0; i<mData->nParametersReal; ++i) {
-      infoStreamPrint(stream, 0, "%ld: %s = %g", i+1, mData->realParameterData[i].info.name, data->simulationInfo.realParameter[i]);
-    }
+    for(i=0; i<mData->nParametersReal; ++i)
+      infoStreamPrint(stream, 0, "[%ld] parameter Real %s(start=%g, fixed=%s) = %g", i+1,
+                                 mData->realParameterData[i].info.name,
+                                 mData->realParameterData[i].attribute.start,
+                                 mData->realParameterData[i].attribute.fixed ? "true" : "false",
+                                 data->simulationInfo.realParameter[i]);
     messageClose(stream);
   }
 
-  if (mData->nParametersInteger) {
+  if (0 < mData->nParametersInteger)
+  {
     infoStreamPrint(stream, 1, "integer parameters");
-    for(i=0; i<mData->nParametersInteger; ++i) {
-      infoStreamPrint(stream, 0, "%ld: %s = %ld", i+1, mData->integerParameterData[i].info.name, data->simulationInfo.integerParameter[i]);
-    }
+    for(i=0; i<mData->nParametersInteger; ++i)
+      infoStreamPrint(stream, 0, "[%ld] parameter Integer %s(start=%ld, fixed=%s) = %ld", i+1,
+                                 mData->integerParameterData[i].info.name,
+                                 mData->integerParameterData[i].attribute.start,
+                                 mData->integerParameterData[i].attribute.fixed ? "true" : "false",
+                                 data->simulationInfo.integerParameter[i]);
     messageClose(stream);
   }
 
-  if (mData->nParametersBoolean) {
+  if (0 < mData->nParametersBoolean)
+  {
     infoStreamPrint(stream, 1, "boolean parameters");
-    for(i=0; i<mData->nParametersBoolean; ++i) {
-      infoStreamPrint(stream, 0, "%ld: %s = %s", i+1, mData->booleanParameterData[i].info.name, data->simulationInfo.booleanParameter[i] ? "true" : "false");
-    }
+    for(i=0; i<mData->nParametersBoolean; ++i)
+      infoStreamPrint(stream, 0, "[%ld] parameter Boolean %s(start=%s, fixed=%s) = %s", i+1,
+                                 mData->booleanParameterData[i].info.name,
+                                 mData->booleanParameterData[i].attribute.start ? "true" : "false",
+                                 mData->booleanParameterData[i].attribute.fixed ? "true" : "false",
+                                 data->simulationInfo.booleanParameter[i] ? "true" : "false");
     messageClose(stream);
   }
 
-  if (mData->nParametersString) {
+  if (0 < mData->nParametersString)
+  {
     infoStreamPrint(stream, 1, "string parameters");
-    for(i=0; i<mData->nParametersString; ++i) {
-      infoStreamPrint(stream, 0, "%ld: %s = %s", i+1, mData->stringParameterData[i].info.name, data->simulationInfo.stringParameter[i]);
-    }
+    for(i=0; i<mData->nParametersString; ++i)
+      infoStreamPrint(stream, 0, "[%ld] parameter String %s(start=\"%s\") = \"%s\"", i+1, 
+                                 mData->stringParameterData[i].info.name,
+                                 mData->stringParameterData[i].attribute.start,
+                                 data->simulationInfo.stringParameter[i]);
     messageClose(stream);
   }
 

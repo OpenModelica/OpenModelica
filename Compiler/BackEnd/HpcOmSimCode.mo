@@ -45,30 +45,18 @@ public import HpcOmScheduler;
 public import SimCode;
 
 // protected imports
-protected import BackendDump;
-protected import BackendEquation;
-protected import BackendDAEEXT;
-protected import BackendDAEUtil;
-protected import BackendDAETransform;
-protected import BackendVariable;
-protected import BackendVarTransform;
 protected import BaseHashTable;
-protected import ComponentReference;
 protected import Debug;
 protected import Error;
 protected import Expression;
-protected import ExpressionDump;
-protected import ExpressionDumpTpl;
 protected import Flags;
 protected import GlobalScript;
 protected import GraphMLNew;
 protected import HashTableCrILst;
 protected import HpcOmTaskGraph;
 protected import List;
-protected import Matching;
 protected import SimCodeUtil;
 protected import System;
-protected import Tpl;
 protected import Util;
 
 public function createSimCode "function createSimCode

@@ -41,7 +41,6 @@ encapsulated package InstUtil
 
 public import Absyn;
 public import ClassInf;
-public import Connect;
 public import DAE;
 public import Env;
 public import GlobalScript;
@@ -83,7 +82,6 @@ protected import System;
 protected import ErrorExt;
 protected import InstExtends;
 protected import Graph;
-protected import ConnectUtil;
 protected import UnitAbsynBuilder;
 protected import UnitChecker;
 protected import NFSCodeFlatten;

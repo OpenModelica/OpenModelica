@@ -52,7 +52,6 @@ public import NFSCodeFlattenRedeclare;
 protected import Debug;
 protected import Error;
 protected import Flags;
-protected import NFInstUtil;
 protected import List;
 protected import NFSCodeCheck;
 protected import SCodeDump;

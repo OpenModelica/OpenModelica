@@ -229,76 +229,85 @@ void dumpInitialSolution(DATA *simData)
 
   const MODEL_DATA      *mData = &(simData->modelData);
   const SIMULATION_INFO *sInfo = &(simData->simulationInfo);
+  
+  if (ACTIVE_STREAM(LOG_INIT))
+    printParameters(simData, LOG_INIT);
 
   if (!ACTIVE_STREAM(LOG_SOTI)) return;
   infoStreamPrint(LOG_SOTI, 1, "### SOLUTION OF THE INITIALIZATION ###");
 
-  infoStreamPrint(LOG_SOTI, 1, "states variables");
-  for(i=0; i<mData->nStates; ++i)
+  if (0 < mData->nStates)
   {
-    infoStreamPrint(LOG_SOTI, 0, "[%ld] Real %s(start=%g, nominal=%g) = %g (pre: %g)", i+1,
-                                                                          mData->realVarsData[i].info.name,
-                                                                          mData->realVarsData[i].attribute.start,
-                                                                          mData->realVarsData[i].attribute.nominal,
-                                                                          simData->localData[0]->realVars[i],
-                                                                          sInfo->realVarsPre[i]);
+    infoStreamPrint(LOG_SOTI, 1, "states variables");
+    for(i=0; i<mData->nStates; ++i)
+      infoStreamPrint(LOG_SOTI, 0, "[%ld] Real %s(start=%g, nominal=%g) = %g (pre: %g)", i+1,
+                                   mData->realVarsData[i].info.name,
+                                   mData->realVarsData[i].attribute.start,
+                                   mData->realVarsData[i].attribute.nominal,
+                                   simData->localData[0]->realVars[i],
+                                   sInfo->realVarsPre[i]);
+    messageClose(LOG_SOTI);
   }
-  messageClose(LOG_SOTI);
 
-  infoStreamPrint(LOG_SOTI, 1, "derivatives variables");
-  for(i=mData->nStates; i<2*mData->nStates; ++i)
+  if (0 < mData->nStates)
   {
-    infoStreamPrint(LOG_SOTI, 0, "[%ld] Real %s = %g (pre: %g)", i+1,
-                                                    mData->realVarsData[i].info.name,
-                                                    simData->localData[0]->realVars[i],
-                                                    sInfo->realVarsPre[i]);
+    infoStreamPrint(LOG_SOTI, 1, "derivatives variables");
+    for(i=mData->nStates; i<2*mData->nStates; ++i)
+      infoStreamPrint(LOG_SOTI, 0, "[%ld] Real %s = %g (pre: %g)", i+1,
+                                   mData->realVarsData[i].info.name,
+                                   simData->localData[0]->realVars[i],
+                                   sInfo->realVarsPre[i]);
+    messageClose(LOG_SOTI);
   }
-  messageClose(LOG_SOTI);
 
-  infoStreamPrint(LOG_SOTI, 1, "other real variables");
-  for(i=2*mData->nStates; i<mData->nVariablesReal; ++i)
+  if (2*mData->nStates < mData->nVariablesReal)
   {
-    infoStreamPrint(LOG_SOTI, 0, "[%ld] Real %s(start=%g, nominal=%g) = %g (pre: %g)", i+1,
-                                                                          mData->realVarsData[i].info.name,
-                                                                          mData->realVarsData[i].attribute.start,
-                                                                          mData->realVarsData[i].attribute.nominal,
-                                                                          simData->localData[0]->realVars[i],
-                                                                          sInfo->realVarsPre[i]);
+    infoStreamPrint(LOG_SOTI, 1, "other real variables");
+    for(i=2*mData->nStates; i<mData->nVariablesReal; ++i)
+      infoStreamPrint(LOG_SOTI, 0, "[%ld] Real %s(start=%g, nominal=%g) = %g (pre: %g)", i+1,
+                                   mData->realVarsData[i].info.name,
+                                   mData->realVarsData[i].attribute.start,
+                                   mData->realVarsData[i].attribute.nominal,
+                                   simData->localData[0]->realVars[i],
+                                   sInfo->realVarsPre[i]);
+    messageClose(LOG_SOTI);
   }
-  messageClose(LOG_SOTI);
 
-  infoStreamPrint(LOG_SOTI, 1, "integer variables");
-  for(i=0; i<mData->nVariablesInteger; ++i)
+  if (0 < mData->nVariablesInteger)
   {
-    infoStreamPrint(LOG_SOTI, 0, "[%ld] Integer %s(start=%ld) = %ld (pre: %ld)", i+1,
-                                                                    mData->integerVarsData[i].info.name,
-                                                                    mData->integerVarsData[i].attribute.start,
-                                                                    simData->localData[0]->integerVars[i],
-                                                                    sInfo->integerVarsPre[i]);
+    infoStreamPrint(LOG_SOTI, 1, "integer variables");
+    for(i=0; i<mData->nVariablesInteger; ++i)
+      infoStreamPrint(LOG_SOTI, 0, "[%ld] Integer %s(start=%ld) = %ld (pre: %ld)", i+1,
+                                   mData->integerVarsData[i].info.name,
+                                   mData->integerVarsData[i].attribute.start,
+                                   simData->localData[0]->integerVars[i],
+                                   sInfo->integerVarsPre[i]);
+    messageClose(LOG_SOTI);
   }
-  messageClose(LOG_SOTI);
 
-  infoStreamPrint(LOG_SOTI, 1, "boolean variables");
-  for(i=0; i<mData->nVariablesBoolean; ++i)
+  if (0 < mData->nVariablesBoolean)
   {
-    infoStreamPrint(LOG_SOTI, 0, "[%ld] Boolean %s(start=%s) = %s (pre: %s)", i+1,
-                                                                 mData->booleanVarsData[i].info.name,
-                                                                 mData->booleanVarsData[i].attribute.start ? "true" : "false",
-                                                                 simData->localData[0]->booleanVars[i] ? "true" : "false",
-                                                                 sInfo->booleanVarsPre[i] ? "true" : "false");
+    infoStreamPrint(LOG_SOTI, 1, "boolean variables");
+    for(i=0; i<mData->nVariablesBoolean; ++i)
+      infoStreamPrint(LOG_SOTI, 0, "[%ld] Boolean %s(start=%s) = %s (pre: %s)", i+1,
+                                   mData->booleanVarsData[i].info.name,
+                                   mData->booleanVarsData[i].attribute.start ? "true" : "false",
+                                   simData->localData[0]->booleanVars[i] ? "true" : "false",
+                                   sInfo->booleanVarsPre[i] ? "true" : "false");
+    messageClose(LOG_SOTI);
   }
-  messageClose(LOG_SOTI);
 
-  infoStreamPrint(LOG_SOTI, 1, "string variables");
-  for(i=0; i<mData->nVariablesString; ++i)
+  if (0 < mData->nVariablesString)
   {
-    infoStreamPrint(LOG_SOTI, 0, "[%ld] String %s(start=%s) = %s (pre: %s)", i+1,
-                                                                mData->stringVarsData[i].info.name,
-                                                                mData->stringVarsData[i].attribute.start,
-                                                                simData->localData[0]->stringVars[i],
-                                                                sInfo->stringVarsPre[i]);
+    infoStreamPrint(LOG_SOTI, 1, "string variables");
+    for(i=0; i<mData->nVariablesString; ++i)
+      infoStreamPrint(LOG_SOTI, 0, "[%ld] String %s(start=\"%s\") = \"%s\" (pre: \"%s\")", i+1,
+                                   mData->stringVarsData[i].info.name,
+                                   mData->stringVarsData[i].attribute.start,
+                                   simData->localData[0]->stringVars[i],
+                                   sInfo->stringVarsPre[i]);
+    messageClose(LOG_SOTI);
   }
-  messageClose(LOG_SOTI);
 
   messageClose(LOG_SOTI);
 }

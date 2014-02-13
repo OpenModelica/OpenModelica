@@ -373,9 +373,6 @@ int initializeModel(DATA* data, const char* init_initMethod,
   /* adrpo: write the parameter data in the file once again after bound parameters and initialization! */
   sim_result.writeParameterData(&sim_result,data);
   infoStreamPrint(LOG_SOLVER, 0, "Wrote parameters to the file after initialization (for output formats that support this)");
-  if (ACTIVE_STREAM(LOG_DEBUG)) {
-    printParameters(data, LOG_DEBUG);
-  }
 
   /* Initialization complete */
   if (measure_time_flag) {
