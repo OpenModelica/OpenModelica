@@ -2704,15 +2704,17 @@ public function extendsFunctionTypeArgs
   Extends function argument list adding var for element list."
   input DAE.Type inType;
   input list<DAE.Element> inElementLst;
+  input list<Boolean> inBooltLst;  
   output DAE.Type outType;
 protected
   DAE.TypeSource tysrc;
-  list<DAE.FuncArg> fargs, newfargs;
+  list<DAE.FuncArg> fargs, fargs1, newfargs;
   DAE.Type rettype;
   DAE.FunctionAttributes functionAttributes;
 algorithm
   DAE.T_FUNCTION(fargs,rettype,functionAttributes,tysrc) := inType;
-  newfargs := List.map(inElementLst, makeElementFarg);
+  (fargs1, _) := List.splitOnBoolList(fargs, inBooltLst);
+  newfargs := List.threadMap(inElementLst, fargs1, makeElementFarg);
   newfargs := listAppend(fargs, newfargs);
   outType := DAE.T_FUNCTION(newfargs,rettype,functionAttributes,tysrc);
 end extendsFunctionTypeArgs;
@@ -3173,9 +3175,10 @@ end makeFarg;
 protected function makeElementFarg
   "Makes a function argument list from a variable."
   input DAE.Element inElement;
+  input DAE.FuncArg inFarg;
   output DAE.FuncArg farg;
 algorithm
-  farg := match (inElement)
+  farg := match (inElement, inFarg)
     local
       String name;
       DAE.VarKind varKind;
@@ -3185,10 +3188,9 @@ algorithm
       DAE.ComponentRef cref;
       DAE.VarParallelism parallelism;
     
-    case (DAE.VAR(componentRef=cref, kind = varKind, ty = ty, parallelism = parallelism, binding = binding))
+    case (DAE.VAR(componentRef=cref), (_, ty, c, parallelism, binding) )
       equation
         name = ComponentReference.crefLastIdent(cref);
-        c = varKindToConst(varKind);
     then
       ((name, ty, c, parallelism, binding));
   end match;

@@ -57,6 +57,7 @@ public import SimCode;
 
 // protected imports
 protected import CevalScript;
+protected import ComponentReference;
 protected import DAEDump;
 protected import DAEUtil;
 protected import Debug;
@@ -609,7 +610,7 @@ algorithm
         maxValue = NONE();
         nomVal = NONE();
         type_ = tp;
-        arrayCref = SimCodeUtil.getArrayCref(cr);
+        arrayCref = ComponentReference.getArrayCref(cr);
         numArrayElement = List.map(inst_dims, ExpressionDump.subscriptString);
         kind = daeKindtoBackendDAEKind(daekind);
       then

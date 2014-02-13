@@ -3204,8 +3204,8 @@ case _ then
         data->simulationInfo.analyticJacobians[index].sizeCols = <%index_%>;
         data->simulationInfo.analyticJacobians[index].sizeRows = <%indexColumn%>;
         data->simulationInfo.analyticJacobians[index].seedVars = (modelica_real*) calloc(<%index_%>,sizeof(modelica_real));
-        data->simulationInfo.analyticJacobians[index].resultVars = (modelica_real*) malloc(<%indexColumn%>*sizeof(modelica_real));
-        data->simulationInfo.analyticJacobians[index].tmpVars = (modelica_real*) malloc(<%tmpvarsSize%>*sizeof(modelica_real));
+        data->simulationInfo.analyticJacobians[index].resultVars = (modelica_real*) calloc(<%indexColumn%>,sizeof(modelica_real));
+        data->simulationInfo.analyticJacobians[index].tmpVars = (modelica_real*) calloc(<%tmpvarsSize%>,sizeof(modelica_real));
         data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex = (unsigned int*) malloc(<%sizeleadindex%>*sizeof(int));
         data->simulationInfo.analyticJacobians[index].sparsePattern.index = (unsigned int*) malloc(<%sp_size_index%>*sizeof(int));
         data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols = (unsigned int*) malloc(<%index_%>*sizeof(int));

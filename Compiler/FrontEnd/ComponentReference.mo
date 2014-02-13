@@ -1558,6 +1558,25 @@ algorithm
   end matchcontinue;
 end crefNameType;
 
+public function getArrayCref
+  input DAE.ComponentRef name;
+  output Option<DAE.ComponentRef> arrayCref;
+algorithm
+  arrayCref :=
+  matchcontinue (name)
+    local
+      DAE.ComponentRef arrayCrefInner;
+    case (_)
+      equation
+        true = crefIsFirstArrayElt(name);
+        arrayCrefInner = crefStripLastSubs(name);
+      then SOME(arrayCrefInner);
+    case (_)
+    then NONE();
+  end matchcontinue;
+end getArrayCref;
+
+
 /***************************************************/
 /* Change  */
 /***************************************************/

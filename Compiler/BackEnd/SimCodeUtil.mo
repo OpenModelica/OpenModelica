@@ -3363,7 +3363,7 @@ algorithm
         
     case(DAE.CREF(cr, ty)::rest, _)
       equation
-        arrayCref = getArrayCref(cr);
+        arrayCref = ComponentReference.getArrayCref(cr);
         inst_dims = getArraySubs(cr);
         numArrayElement = List.map(inst_dims, ExpressionDump.subscriptString);
         var = SimCode.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, arrayCref, SimCode.NOALIAS(), DAE.emptyElementSource, SimCode.NONECAUS(), NONE(), numArrayElement, false);
@@ -5330,6 +5330,11 @@ algorithm
         dummyVar = ("dummyVar" +& name);
         x = DAE.CREF_IDENT(dummyVar, DAE.T_REAL_DEFAULT, {});
         vars = BackendVariable.listVar1(diffedVars);
+
+        //sort variable for index
+        empty = BackendVariable.listVar(alldiffedVars);
+        (_, (_, alldiffedVars)) = traveseSimVars(simvars, findSimVarsinAllVar, (empty, {}));
+        alldiffedVars = listReverse(alldiffedVars);
         columnVars = creatallDiffedVars(alldiffedVars, x, vars, 0, (name, false), {});
         
         /*
@@ -5398,6 +5403,28 @@ protected function findSimVarsCompare
        case(_) then inTuple; 
        end matchcontinue; 
 end findSimVarsCompare; 
+
+
+protected function findSimVarsinAllVar
+   input tuple<SimCode.SimVar, tuple<BackendDAE.Variables, list<BackendDAE.Var>>> inTuple; 
+    output tuple<SimCode.SimVar, tuple<BackendDAE.Variables, list<BackendDAE.Var>>> outTuple; 
+   algorithm 
+       outTuple := matchcontinue(inTuple) 
+       local 
+         DAE.ComponentRef cref; 
+         list<BackendDAE.Var> resvars; 
+         BackendDAE.Variables vars;
+         BackendDAE.Var v;
+         SimCode.SimVar var; 
+       case((var as (SimCode.SIMVAR(name=cref)), (vars, resvars))) 
+         equation 
+           ({v},_) = BackendVariable.getVar(cref, vars); 
+           true = not List.isMemberOnTrue(v, resvars, BackendVariable.varEqual); 
+         then ((var, (vars, v::resvars))); 
+       case(_) then inTuple; 
+       end matchcontinue; 
+end findSimVarsinAllVar; 
+
 
 protected function compareSimVarName 
   input SimCode.SimVar var; 
@@ -8939,23 +8966,6 @@ algorithm
   end matchcontinue;
 end getAliasVar1;
 
-public function getArrayCref
-  input DAE.ComponentRef name;
-  output Option<DAE.ComponentRef> arrayCref;
-algorithm
-  arrayCref :=
-  matchcontinue (name)
-    local
-      DAE.ComponentRef arrayCrefInner;
-    case (_)
-      equation
-        true = ComponentReference.crefIsFirstArrayElt(name);
-        arrayCrefInner = ComponentReference.crefStripLastSubs(name);
-      then SOME(arrayCrefInner);
-    case (_)
-    then NONE();
-  end matchcontinue;
-end getArrayCref;
 
 public function getArraySubs
   input DAE.ComponentRef name;
@@ -9518,7 +9528,7 @@ algorithm
         isFixed = BackendVariable.varFixed(dlowVar);
         type_ = tp;
         isDiscrete = BackendVariable.isVarDiscrete(dlowVar);
-        arrayCref = getArrayCref(cr);
+        arrayCref = ComponentReference.getArrayCref(cr);
         aliasvar = getAliasVar(dlowVar, optAliasVars);
         caus = getCausality(dlowVar, vars);
         numArrayElement = List.map(inst_dims, ExpressionDump.subscriptString);
@@ -9550,7 +9560,7 @@ algorithm
         isFixed = BackendVariable.varFixed(dlowVar);
         type_ = tp;
         isDiscrete = BackendVariable.isVarDiscrete(dlowVar);
-        arrayCref = getArrayCref(cr);
+        arrayCref = ComponentReference.getArrayCref(cr);
         aliasvar = getAliasVar(dlowVar, optAliasVars);
         caus = getCausality(dlowVar, vars);
         numArrayElement = List.map(inst_dims, ExpressionDump.subscriptString);
@@ -9576,7 +9586,7 @@ algorithm
         isFixed = BackendVariable.varFixed(dlowVar);
         type_ = tp;
         isDiscrete = BackendVariable.isVarDiscrete(dlowVar);
-        arrayCref = getArrayCref(cr);
+        arrayCref = ComponentReference.getArrayCref(cr);
         aliasvar = getAliasVar(dlowVar, optAliasVars);
         caus = getCausality(dlowVar, vars);
         numArrayElement = List.map(inst_dims, ExpressionDump.subscriptString);
