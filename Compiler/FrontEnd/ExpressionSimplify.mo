@@ -4003,7 +4003,7 @@ algorithm
         true = r1 <. 1e12 and r1 >. 1e-20; 
         r = 1.0 /. r1;
         r1 = 1e6 *. r;
-        1.0 = realMod(r1, 1.0);
+        0.0 = realMod(r1, 1.0);
         e3 = DAE.BINARY(e1,DAE.MUL(tp),DAE.RCONST(r));
      then e3;
 
