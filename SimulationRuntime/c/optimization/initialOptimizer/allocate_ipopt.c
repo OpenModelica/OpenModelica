@@ -381,7 +381,7 @@ static int local_jac_struct_dense(IPOPT_DATA_ *iData, int * nng)
   //iData->useNumJac == 2
 
   for(i = 0; i < iData->nJ; ++i)
-	  for(j = 0; j < iData->nv; ++j){
+    for(j = 0; j < iData->nv; ++j){
         J[i][j] = 1.0;
         ++iData->nlocalJac;
        }
@@ -477,13 +477,13 @@ static int set_local_jac_struct(IPOPT_DATA_ *iData, int *nng)
    else if(!strcmp(cflags,"SYM") || !strcmp(cflags,"sym"))
      iData->useNumJac = 0;
    else if(!strcmp(cflags,"NUMDENSE") || !strcmp(cflags,"NUMDENSE"))
-	 iData->useNumJac = 2;
+   iData->useNumJac = 2;
    else
-	 warningStreamPrint(LOG_STDOUT, 1, "not support ipopt_hesse=%s",cflags);
-	}
+   warningStreamPrint(LOG_STDOUT, 1, "not support ipopt_hesse=%s",cflags);
+  }
 
   if(iData->useNumJac == 2){
-	local_jac_struct_dense(iData, nng);
+  local_jac_struct_dense(iData, nng);
   } else {
     local_jac_struct(iData, nng);
   }
