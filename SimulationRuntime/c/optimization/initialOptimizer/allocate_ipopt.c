@@ -44,6 +44,7 @@
 
 #include "../localFunction.h"
 
+static int set_local_jac_struct(IPOPT_DATA_ *iData, int *nng);
 static int local_jac_struct(IPOPT_DATA_ *iData, int *nng);
 static int local_jac_struct_print(IPOPT_DATA_ *iData);
 static int local_jac_struct_dense(IPOPT_DATA_ *iData, int * nng);
@@ -319,31 +320,7 @@ int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
   optimizer_coeff_setings(iData);
 
   /***********************/
-  char *cflags;
-
-  iData->useNumJac = 0;
-  cflags = (char*)omc_flagValue[FLAG_IPOPT_JAC];
-  if(cflags){
-    if(!strcmp(cflags,"NUM"))
-	  iData->useNumJac = 1;
-	else if(!strcmp(cflags,"SYM") || !strcmp(cflags,"sym"))
-	  iData->useNumJac = 0;
-	else if(!strcmp(cflags,"NUMDENSE") || !strcmp(cflags,"NUMDENSE"))
-	  iData->useNumJac = 2;
-	else
-	  warningStreamPrint(LOG_STDOUT, 1, "not support ipopt_hesse=%s",cflags);
-   }
-
-  printf("\nnumJ = %i",iData->useNumJac);
-  if(iData->useNumJac == 2){
-    local_jac_struct_dense(iData, &id);
-    printf("\nid = %i", id);
-  } else {
-	local_jac_struct(iData, &id);
-	printf("\nsid = %i", id);
-  }
-
-
+  set_local_jac_struct(iData,&id);
   iData->njac = iData->deg*(iData->nlocalJac-iData->nx+iData->nsi*iData->nlocalJac+iData->deg*iData->nsi*iData->nx)-iData->deg*id;
   iData->nhess = 0.5*iData->nv*(iData->nv + 1)*(1+iData->deg*iData->nsi);
 
@@ -486,6 +463,30 @@ static int local_jac_struct(IPOPT_DATA_ *iData, int * nng)
           Hg[i][j] = 1;
 
   *nng = id;
+  return 0;
+}
+
+static int set_local_jac_struct(IPOPT_DATA_ *iData, int *nng)
+{
+  char *cflags;
+  iData->useNumJac = 0;
+  cflags = (char*)omc_flagValue[FLAG_IPOPT_JAC];
+  if(cflags){
+    if(!strcmp(cflags,"NUM"))
+     iData->useNumJac = 1;
+   else if(!strcmp(cflags,"SYM") || !strcmp(cflags,"sym"))
+     iData->useNumJac = 0;
+   else if(!strcmp(cflags,"NUMDENSE") || !strcmp(cflags,"NUMDENSE"))
+	 iData->useNumJac = 2;
+   else
+	 warningStreamPrint(LOG_STDOUT, 1, "not support ipopt_hesse=%s",cflags);
+	}
+
+  if(iData->useNumJac == 2){
+	local_jac_struct_dense(iData, nng);
+  } else {
+    local_jac_struct(iData, nng);
+  }
   return 0;
 }
 
