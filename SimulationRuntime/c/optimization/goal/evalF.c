@@ -149,6 +149,7 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
       if(i){
         for(k=0; k<iData->deg; ++k, x+=iData->nv){
           refreshSimData(x,x+ iData->nx,iData->time[i*iData->deg+k+1],iData);
+          iData->cv = x;
           /*iData->data->callback->functionAlgebraics(iData->data);*/
           diff_symColoredObject(iData, iData->gradF, iData->lagrange_index);
           for(j = 0; j<iData->nv; ++j){
@@ -159,6 +160,7 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
       }else{
         for(k=0; k<iData->deg+1; ++k, x+=iData->nv){
           refreshSimData(x,x+ iData->nx,iData->time[i*iData->deg+k],iData);
+          iData->cv = x;
           /*iData->data->callback->functionAlgebraics(iData->data);*/
           diff_symColoredObject(iData, iData->gradF,iData->lagrange_index);
           for(j=0; j<iData->nv; ++j){
@@ -283,7 +285,7 @@ int num_diff_symColoredObject(IPOPT_DATA_ *iData, double *dF, int this_it)
   x = v;
   u = x + iData->nx;
 
-  nx = iData->nv;
+  nx = data->simulationInfo.analyticJacobians[index].sizeCols;
   cC =  (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols;
   lindex = (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex;
   memcpy(iData->vsave, v, sizeof(double)*iData->nv);
