@@ -260,7 +260,19 @@ static int set_optimizer_flags(IPOPT_DATA_ *iData, IpoptProblem *nlp)
     AddIpoptStrOption(*nlp, "linear_solver", "mumps");
 
   AddIpoptStrOption(*nlp,"nlp_scaling_method","gradient-based");
-  AddIpoptNumOption(*nlp,"mu_init",1e-6);
+  AddIpoptStrOption(*nlp,"linear_system_scaling","slack-based");
+  AddIpoptStrOption(*nlp,"dependency_detection_with_rhs","yes");
+
+  AddIpoptNumOption(*nlp,"bound_mult_init_val",1e-3);
+  AddIpoptNumOption(*nlp,"mu_init",1e-3);
+  AddIpoptNumOption(*nlp,"nu_init",1e-9);
+  //AddIpoptStrOption(*nlp,"bound_mult_init_method","constant");
+  //AddIpoptStrOption(*nlp,"print_options_documentation","yes");
+  AddIpoptStrOption(*nlp,"bound_mult_init_method","mu-based");
+  AddIpoptNumOption(*nlp,"eta_phi",1e-010);
+
+  //dependency_detection_with_rhs
+
 
   if(ACTIVE_STREAM(LOG_IPOPT_JAC) && ACTIVE_STREAM(LOG_IPOPT_HESSE)){
     AddIpoptIntOption(*nlp, "print_level", 4);

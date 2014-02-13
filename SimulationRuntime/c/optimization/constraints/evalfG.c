@@ -62,8 +62,10 @@ static int num_diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, doubl
 Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
 {
    IPOPT_DATA_ *iData;
+   //int i,k,j;
    int i,k;
    double *x0;
+   //double inf_p = 0;
 
    iData = (IPOPT_DATA_ *) useData;
    for(i=0, k=0, x0=v; i<1; ++i, x0=iData->x3){
@@ -79,16 +81,22 @@ Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
      functionODE_(x0, x0 + iData->nx, iData->time[0], iData->dotx0, iData);
      functionODE_(iData->x1, iData->u1, iData->time[1], iData->dotx1, iData);
      evalG21(g + k, iData, x0, i);
+     //for(j = 0; j<(int)iData->nJ; ++j)
+     //  inf_p = fmax(fabs(g[j]),inf_p);
      k += iData->nJ;
 
      /*2*/
      functionODE_(iData->x2, iData->u2, iData->time[2], iData->dotx2, iData);
      evalG22(g + k, iData, x0, i);
+     //for(j = 0; j<(int)iData->nJ; ++j)
+     //  inf_p = fmax(fabs(g[j]),inf_p);
      k += iData->nJ;
 
      /*3*/
      functionODE_(iData->x3, iData->u3, iData->time[3], iData->dotx3, iData);
      evalG23(g + k, iData, x0, i);
+     //for(j = 0; j<(int)iData->nJ; ++j)
+     //  inf_p = fmax(fabs(g[j]),inf_p);
      k += iData->nJ;
   }
 
@@ -104,19 +112,25 @@ Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
     /*1*/
     functionODE_(iData->x1, iData->u1, iData->time[i*iData->deg + 1], iData->dotx1, iData);
     evalG11(g + k, iData, x0, i);
+    //for(j = 0; j<(int)iData->nJ; ++j)
+    //  inf_p = fmax(fabs(g[j]),inf_p);
     k += iData->nJ;
 
     /*2*/
     functionODE_(iData->x2, iData->u2, iData->time[i*iData->deg + 2], iData->dotx2, iData);
     evalG12(g + k, iData, x0, i);
+    //for(j = 0; j<(int)iData->nJ; ++j)
+    //  inf_p = fmax(fabs(g[j]),inf_p);
     k += iData->nJ;
 
     /*3*/
     functionODE_(iData->x3, iData->u3, iData->time[i*iData->deg + 3], iData->dotx3, iData);
     evalG13(g + k, iData, x0, i);
+    //for(j = 0; j<(int)iData->nJ; ++j)
+    //  inf_p = fmax(fabs(g[j]),inf_p);
     k += iData->nJ;
   }
-
+ //printf("\ninf_p = %g\n",inf_p);
   return TRUE;
 }
 
