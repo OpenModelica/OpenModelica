@@ -10681,14 +10681,15 @@ algorithm
         (cache, DAE.CREF(cr,expTy), const, attr);
 
     // adrpo: report a warning if the binding came from a start value!
+    // lochel: I moved the waring to the back end for now
     case (cache,env,cr,attr as DAE.ATTR(variability = SCode.PARAM()),_,_,tt,bind as DAE.EQBOUND(source = DAE.BINDING_FROM_START_VALUE()),doVect,_,_,_,_)
       equation
         true = Types.getFixedVarAttributeParameterOrConstant(tt);
-        s = ComponentReference.printComponentRefStr(cr);
-        pre_str = PrefixUtil.printPrefixStr2(inPrefix);
-        s = pre_str +& s;
-        str = DAEUtil.printBindingExpStr(inBinding);
-        Error.addSourceMessage(Error.UNBOUND_PARAMETER_WITH_START_VALUE_WARNING, {s,str}, info); // Don't add source info here... Many models give multiple errors that are not filtered out
+        // s = ComponentReference.printComponentRefStr(cr);
+        // pre_str = PrefixUtil.printPrefixStr2(inPrefix);
+        // s = pre_str +& s;
+        // str = DAEUtil.printBindingExpStr(inBinding);
+        // Error.addSourceMessage(Error.UNBOUND_PARAMETER_WITH_START_VALUE_WARNING, {s,str}, info); // Don't add source info here... Many models give multiple errors that are not filtered out
         bind = DAEUtil.setBindingSource(bind, DAE.BINDING_FROM_DEFAULT_VALUE());
         (cache, e_1, const, attr) = elabCref2(cache,env,cr,attr,constSubs,forIteratorConstOpt,tt,bind,doVect,splicedExpData,inPrefix,evalCref,info);
       then

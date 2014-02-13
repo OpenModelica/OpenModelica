@@ -663,11 +663,12 @@ algorithm
         (cache,binding) = makeBinding(cache,inEnv,inAttributes,startValueModification,inType,inPrefix,componentName,inInfo);
         binding = DAEUtil.setBindingSource(binding, DAE.BINDING_FROM_START_VALUE());
         
-        s = componentName;
-        pre_str = PrefixUtil.printPrefixStr2(inPrefix);
-        s = pre_str +& s;
-        str = DAEUtil.printBindingExpStr(binding);
-        Error.addSourceMessage(Error.UNBOUND_PARAMETER_WITH_START_VALUE_WARNING, {s,str}, inInfo);
+        // lochel: I moved the waring to the back end for now
+        // s = componentName;
+        // pre_str = PrefixUtil.printPrefixStr2(inPrefix);
+        // s = pre_str +& s;
+        // str = DAEUtil.printBindingExpStr(binding);
+        // Error.addSourceMessage(Error.UNBOUND_PARAMETER_WITH_START_VALUE_WARNING, {s,str}, inInfo);
       then
         (cache,binding);
 

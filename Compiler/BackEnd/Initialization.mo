@@ -1714,11 +1714,10 @@ algorithm
       var = BackendVariable.setBindExp(var, SOME(startExp));
       var = BackendVariable.setVarFixed(var, true);
       
-      // this is already covered in the front end
-      // s = ComponentReference.printComponentRefStr(cr);
-      // str = ExpressionDump.printExpStr(startExp);
-      // info = DAEUtil.getElementSourceFileInfo(BackendVariable.getVarSource(var));
-      // Error.addSourceMessage(Error.UNBOUND_PARAMETER_WITH_START_VALUE_WARNING, {s, str}, info);
+      s = ComponentReference.printComponentRefStr(cr);
+      str = ExpressionDump.printExpStr(startExp);
+      info = DAEUtil.getElementSourceFileInfo(BackendVariable.getVarSource(var));
+      Error.addSourceMessage(Error.UNBOUND_PARAMETER_WITH_START_VALUE_WARNING, {s, str}, info);
 
       vars = BackendVariable.addVar(var, vars);
     then ((var, (vars, fixvars, eqns, hs)));
