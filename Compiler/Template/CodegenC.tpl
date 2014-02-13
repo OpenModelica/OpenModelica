@@ -329,12 +329,12 @@ template simulationFile_eqs(SimCode simCode, String guid)
 end simulationFile_eqs;
 
 template simulationFile_bnd(SimCode simCode, String guid)
-"Update Bound StartValues/Parameters"
+"update bound parameters and variable attributes (start, nominal, min, max)"
 ::=
   match simCode
     case simCode as SIMCODE(__) then
     <<
-    /* Update Bound StartValues/Parameters */
+    /* update bound parameters and variable attributes (start, nominal, min, max) */
     <%simulationFileHeader(simCode)%>
     
     <%functionUpdateBoundVariableAttributes(startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations, modelNamePrefix(simCode))%>
