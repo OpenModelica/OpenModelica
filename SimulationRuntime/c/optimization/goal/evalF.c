@@ -200,11 +200,11 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
  */
 int diff_symColoredObject(IPOPT_DATA_ *iData, double *dF, int this_it)
 {
-	if(iData->useNumJac==0)
-	  sym_diff_symColoredObject(iData,dF,this_it);
-	else
-	  num_diff_symColoredObject(iData,dF,this_it);
-	return 0;
+  if(iData->useNumJac==0)
+    sym_diff_symColoredObject(iData,dF,this_it);
+  else
+    num_diff_symColoredObject(iData,dF,this_it);
+  return 0;
 
 }
 
@@ -214,52 +214,52 @@ int diff_symColoredObject(IPOPT_DATA_ *iData, double *dF, int this_it)
  */
 int sym_diff_symColoredObject(IPOPT_DATA_ *iData, double *dF, int this_it)
 {
-	  DATA * data = iData->data;
-	  const int index = 3;
-	  int i,j,l,ii,nx;
-	  int *cC,*lindex;
+    DATA * data = iData->data;
+    const int index = 3;
+    int i,j,l,ii,nx;
+    int *cC,*lindex;
 
-	  /*ToDo*/
-	  nx = data->simulationInfo.analyticJacobians[index].sizeCols;
+    /*ToDo*/
+    nx = data->simulationInfo.analyticJacobians[index].sizeCols;
 
 
-	  cC =  (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols;
-	  lindex = (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex;
+    cC =  (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols;
+    lindex = (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex;
 
-	  for(i = 1; i < data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors + 1; ++i)
-	  {
-	    for(ii = 0; ii<nx; ++ii)
-	    {
-	      if(cC[ii] == i)
-	      {
-	        data->simulationInfo.analyticJacobians[index].seedVars[ii] = 1.0;
-	      }
-	    }
+    for(i = 1; i < data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors + 1; ++i)
+    {
+      for(ii = 0; ii<nx; ++ii)
+      {
+        if(cC[ii] == i)
+        {
+          data->simulationInfo.analyticJacobians[index].seedVars[ii] = 1.0;
+        }
+      }
 
-	    data->callback->functionJacC_column(data);
+      data->callback->functionJacC_column(data);
 
-	    for(ii = 0; ii < nx; ++ii)
-	    {
-	      if(cC[ii] == i)
-	      {
-	        if(ii == 0) j = 0;
-	        else j = lindex[ii-1];
+      for(ii = 0; ii < nx; ++ii)
+      {
+        if(cC[ii] == i)
+        {
+          if(ii == 0) j = 0;
+          else j = lindex[ii-1];
 
-	        for(; j<lindex[ii]; ++j)
-	        {
-	          l = data->simulationInfo.analyticJacobians[index].sparsePattern.index[j];
-	          iData->gradFomc[l][ii] = data->simulationInfo.analyticJacobians[index].resultVars[l];
-	        }
-	      }
-	    }
+          for(; j<lindex[ii]; ++j)
+          {
+            l = data->simulationInfo.analyticJacobians[index].sparsePattern.index[j];
+            iData->gradFomc[l][ii] = data->simulationInfo.analyticJacobians[index].resultVars[l];
+          }
+        }
+      }
 
-	    for(ii = 0; ii<nx; ++ii)
-	    {
-	      if(cC[ii] == i)
-	      {
-	        data->simulationInfo.analyticJacobians[index].seedVars[ii] = 0.0;
-	      }
-	    }
+      for(ii = 0; ii<nx; ++ii)
+      {
+        if(cC[ii] == i)
+        {
+          data->simulationInfo.analyticJacobians[index].seedVars[ii] = 0.0;
+        }
+      }
   }
   memcpy(dF, iData->gradFomc[this_it], sizeof(double)*iData->nv);
   return 0;
@@ -297,7 +297,7 @@ int num_diff_symColoredObject(IPOPT_DATA_ *iData, double *dF, int this_it)
   for(i = 1; i < data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors + 1; ++i){
     for(ii = 0; ii<nx; ++ii){
 
-	  v[ii] = iData->vsave[ii] + iData->eps[ii];
+    v[ii] = iData->vsave[ii] + iData->eps[ii];
 
       if((int)iData->mayer_index == (int)this_it)
         goal_func_mayer(v, &lhs, iData);
@@ -305,17 +305,17 @@ int num_diff_symColoredObject(IPOPT_DATA_ *iData, double *dF, int this_it)
         goal_func_lagrange(v, &lhs, t, iData);
 
 
-	  v[ii] = iData->vsave[ii] - iData->eps[ii];
-	      //printf("\nrv[%i] = %g\t eps[%i] = %g",ii,v[ii], ii,iData->eps[ii]);
+    v[ii] = iData->vsave[ii] - iData->eps[ii];
+        //printf("\nrv[%i] = %g\t eps[%i] = %g",ii,v[ii], ii,iData->eps[ii]);
 
       if( (int)iData->mayer_index == (int) this_it)
-    	  goal_func_mayer(v, &rhs, iData);
+        goal_func_mayer(v, &rhs, iData);
       else
-    	  goal_func_lagrange(v, &rhs, t, iData);
+        goal_func_lagrange(v, &rhs, t, iData);
 
-	  v[ii] = iData->vsave[ii];
-	  dF[ii] = (lhs - rhs)/(2.0*iData->eps[ii]);
-	  dF[ii] /= iData->vnom[ii];
+    v[ii] = iData->vsave[ii];
+    dF[ii] = (lhs - rhs)/(2.0*iData->eps[ii]);
+    dF[ii] /= iData->vnom[ii];
     }
   }
   return 0;
