@@ -337,7 +337,7 @@ template simulationFile_bnd(SimCode simCode, String guid)
     /* Update Bound StartValues/Parameters */
     <%simulationFileHeader(simCode)%>
     
-    <%functionUpdateBoundStartValues(startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations, modelNamePrefix(simCode))%>
+    <%functionUpdateBoundVariableAttributes(startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations, modelNamePrefix(simCode))%>
 
     <%functionUpdateBoundParameters(parameterEquations, modelNamePrefix(simCode))%>
         
@@ -544,7 +544,7 @@ template simulationFile(SimCode simCode, String guid)
     extern void <%symbolName(modelNamePrefixStr,"initializeStateSets")%>(STATE_SET_DATA* statesetData, DATA *data);
     extern int <%symbolName(modelNamePrefixStr,"functionAlgebraics")%>(DATA *data);
     extern int <%symbolName(modelNamePrefixStr,"function_storeDelayed")%>(DATA *data);
-    extern int <%symbolName(modelNamePrefixStr,"updateBoundStartValues")%>(DATA *data);
+    extern int <%symbolName(modelNamePrefixStr,"updateBoundVariableAttributes")%>(DATA *data);
     extern const char* <%symbolName(modelNamePrefixStr,"initialResidualDescription")%>(int);
     extern int <%symbolName(modelNamePrefixStr,"initial_residual")%>(DATA *data, double* initialResiduals);
     extern int <%symbolName(modelNamePrefixStr,"functionInitialEquations")%>(DATA *data);
@@ -586,7 +586,7 @@ template simulationFile(SimCode simCode, String guid)
        <%symbolName(modelNamePrefixStr,"output_function")%>,
        <%symbolName(modelNamePrefixStr,"function_storeDelayed")%>,
        <%symbolName(modelNamePrefixStr,"functionODE_inline")%>,
-       <%symbolName(modelNamePrefixStr,"updateBoundStartValues")%>,
+       <%symbolName(modelNamePrefixStr,"updateBoundVariableAttributes")%>,
        <%symbolName(modelNamePrefixStr,"initialResidualDescription")%>,
        <%symbolName(modelNamePrefixStr,"initial_residual")%>,
        <%if useSymbolicInitialization then '1' else '0'%> /* useSymbolicInitialization */,
@@ -1655,13 +1655,13 @@ end functionInitialStateSets;
 // section for initialization
 //
 // This section generates the followng c functions:
-//   - int updateBoundStartValues(DATA *data)
 //   - int updateBoundParameters(DATA *data)
+//   - int updateBoundVariableAttributes(DATA *data)
 //   - int initial_residual(DATA *data, double *initialResiduals)
 //   - int functionInitialEquations(DATA *data)
 // =============================================================================
 
-template functionUpdateBoundStartValues(list<SimEqSystem> startValueEquations, list<SimEqSystem> nominalValueEquations, list<SimEqSystem> minValueEquations, list<SimEqSystem> maxValueEquations, String modelNamePrefix)
+template functionUpdateBoundVariableAttributes(list<SimEqSystem> startValueEquations, list<SimEqSystem> nominalValueEquations, list<SimEqSystem> minValueEquations, list<SimEqSystem> maxValueEquations, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
@@ -1681,7 +1681,7 @@ template functionUpdateBoundStartValues(list<SimEqSystem> startValueEquations, l
 
   <<
   <%&tmp%>
-  int <%symbolName(modelNamePrefix,"updateBoundStartValues")%>(DATA *data)
+  int <%symbolName(modelNamePrefix,"updateBoundVariableAttributes")%>(DATA *data)
   {
     <%varDecls%>
 
@@ -1736,7 +1736,7 @@ template functionUpdateBoundStartValues(list<SimEqSystem> startValueEquations, l
     return 0;
   }
   >>
-end functionUpdateBoundStartValues;
+end functionUpdateBoundVariableAttributes;
 
 template functionUpdateBoundParameters(list<SimEqSystem> parameterEquations, String modelNamePrefix)
   "Generates function in simulation file."
@@ -1744,15 +1744,10 @@ template functionUpdateBoundParameters(list<SimEqSystem> parameterEquations, Str
   let () = System.tmpTickReset(0)
   let &varDecls = buffer "" /*BUFD*/
   let &tmp = buffer ""
-  /*TODO: make possible to call updateBoundParameters
-   *      discrete and continuous for current initialization.
-   *      currently it only possible to call it with discontinuities
-   */
   let body = (parameterEquations |> eq  =>
-      <<
-      <%equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &tmp, modelNamePrefix)%>
-      >>
+    '<%equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &tmp, modelNamePrefix)%>'
     ;separator="\n")
+    
   <<
   <%&tmp%>
   int <%symbolName(modelNamePrefix,"updateBoundParameters")%>(DATA *data)

@@ -118,15 +118,13 @@ int (*function_storeDelayed)(DATA *data);
 /*used in functionDAE_res function*/
 int (*functionODE_inline)(DATA *data, double stepsize);
 
-/*! \fn updateBoundStartValues
+/*! \fn updateBoundVariableAttributes
  *
- *  This function updates all bound start-values. This are all start-values
- *  which are not constant.
- *  obsolete: initial_function
+ *  This function updates all bound start, nominal, min, and max values.
  *
  *  \param [ref] [data]
  */
-int (*updateBoundStartValues)(DATA *data);
+int (*updateBoundVariableAttributes)(DATA *data);
 
 /*! \var initialResidualDescription
  *

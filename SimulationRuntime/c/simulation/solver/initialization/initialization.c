@@ -982,7 +982,7 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
 
   if(!(pInitFile && strcmp(pInitFile, ""))) {
     data->callback->updateBoundParameters(data);
-    data->callback->updateBoundStartValues(data);
+    data->callback->updateBoundVariableAttributes(data);
   }
 
   /* if there are user-specified options, use them! */
