@@ -144,7 +144,7 @@ int diff_functionODE(double* v, double t, IPOPT_DATA_ *iData, double **J)
   x = v;
   u = v + iData->nx;
 
-  if(iData->useNumJac){
+  if(iData->useNumJac>0){
 
     num_diff_symColoredODE(v,t,iData,J);
     for(i = 0;i<iData->nv;++i)
@@ -197,7 +197,6 @@ int num_diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J)
   cC =  (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols;
   lindex = (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex;
 
-  memcpy(iData->lhs, sData->realVars + iData->nx, sizeof(double)*iData->nx);
   memcpy(iData->vsave, v, sizeof(double)*nx);
 
   for(ii = 0; ii<nx; ++ii){
@@ -241,7 +240,6 @@ int num_diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J)
       }
     }
   }
-
 
   return 0;
 }

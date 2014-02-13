@@ -103,6 +103,7 @@ typedef struct IPOPT_DATA_
   double *sv;
   double *v;
   double *w;
+  double *cv;
   double *dotx0;
   double *dotx1;
   double *dotx2;
