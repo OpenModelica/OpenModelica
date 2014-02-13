@@ -561,7 +561,7 @@ static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData)
   iData->scalf[i] = iData->scalVar[i];
 
   iData->xmin[i] = data->modelData.realVarsData[i].attribute.min*iData->scalVar[i];
-    iData->xmax[i] = data->modelData.realVarsData[i].attribute.max*iData->scalVar[i];
+  iData->xmax[i] = data->modelData.realVarsData[i].attribute.max*iData->scalVar[i];
   }
 
   iData->index_u = data->modelData.nVariablesReal - iData->nu;

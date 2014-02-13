@@ -8205,19 +8205,6 @@ template daeExpRelationSim(Exp exp, Context context, Text &preExp /*BUFP*/,
 match exp
 case rel as RELATION(__) then
   match context
-  case OPTIMIZATION_CONTEXT(__) then
-      let e1 = daeExp(rel.exp1, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-      let e2 = daeExp(rel.exp2, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-      match rel.operator
-        case LESS(__) then
-          'res[i++] = (<%e1%> - <%e2%>) ;<%\n%>'
-        case LESSEQ(__) then
-          'res[i++] = (<%e1%> - <%e2%>) ;<%\n%>'
-        case GREATER(__) then
-          'res[i++] = (<%e2%> - <%e1%>) ;<%\n%>'
-        case GREATEREQ(__) then
-          'res[i++] = (<%e2%> - <%e1%>) ;<%\n%>'
-     end match
   case SIMULATION_CONTEXT(__) then
     match rel.optionExpisASUB
     case NONE() then
@@ -10473,14 +10460,15 @@ end endModelicaLine;
 template optimizationComponents( list<DAE.ClassAttributes> classAttributes ,SimCode simCode, String modelNamePrefixStr)
   "Generates C for Objective Functions."
 ::=
-    if acceptOptimicaGrammar() then 
-       (classAttributes |> classAttribute => optimizationComponents1(classAttribute,simCode, modelNamePrefixStr); separator="\n") 
-    else
-      <<
-      int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real* res){return -1;}
-      int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real* res){return -1;}
-      int <%symbolName(modelNamePrefixStr,"pathConstraints")%>(DATA* data, modelica_real* res, long int* N){return -1;}
-      >>   
+    match classAttributes
+    case{} then
+        <<
+        int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real* res){return -1;}
+        int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real* res){return -1;}
+        int <%symbolName(modelNamePrefixStr,"pathConstraints")%>(DATA* data, modelica_real* res, long int* N){return -1;}
+        >>  
+      else
+        (classAttributes |> classAttribute => optimizationComponents1(classAttribute,simCode, modelNamePrefixStr); separator="\n") 
 end optimizationComponents;
 
 template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode, String modelNamePrefixStr)
