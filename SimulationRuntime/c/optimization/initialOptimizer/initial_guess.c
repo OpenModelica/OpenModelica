@@ -114,7 +114,7 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
    tol = data->simulationInfo.tolerance;
    data->simulationInfo.tolerance = fmin(fmax(tol,1e-8),1e-3);
    infoStreamPrint(LOG_SOLVER, 0, "Initializing DASSL");
-   sInfo->solverMethod = "dasslColorSymJac";
+   sInfo->solverMethod = "dassl";
    solverInfo->solverMethod = S_DASSL;
    dasrt_initial(iData->data, solverInfo, dasslData);
    solverInfo->solverMethod = S_OPTIMIZATION;
