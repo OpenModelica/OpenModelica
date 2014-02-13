@@ -42,6 +42,7 @@ public import BackendDAE;
 public import BackendDAEFunc;
 public import DAE;
 public import Env;
+public import HashSet;
 public import Util;
 
 protected import BackendDAEEXT;
@@ -59,7 +60,6 @@ protected import Error;
 protected import Expression;
 protected import ExpressionDump;
 protected import Flags;
-protected import HashSet;
 protected import HashTable;
 protected import HashTable2;
 protected import HashTable3;
@@ -566,7 +566,7 @@ algorithm
   // BackendDump.debuglst((crefs,ComponentReference.printComponentRefStr,"\n","\n"));
 end collectPreVariables;
 
-protected function collectPreVariablesEquation "author: lochel"
+public function collectPreVariablesEquation "author: lochel"
   input tuple<DAE.Exp, HashSet.HashSet> inTpl;
   output tuple<DAE.Exp, HashSet.HashSet> outTpl;
 protected
@@ -578,7 +578,7 @@ algorithm
   outTpl := (e, hs);
 end collectPreVariablesEquation;
 
-protected function collectPreVariablesEqSystem "author: lochel"
+public function collectPreVariablesEqSystem "author: lochel"
   input BackendDAE.EqSystem inEqSystem;
   input HashSet.HashSet inHS;
   output HashSet.HashSet outHS;
