@@ -148,19 +148,19 @@ int diff_functionODE(double* v, double t, IPOPT_DATA_ *iData, double **J)
   x = v;
   u = v + iData->nx;
   if(iData->useNumJac){
-	num_diff_symColoredODE(v,t,iData,J);
-	for(i = 0;i<iData->nv;++i)
+  num_diff_symColoredODE(v,t,iData,J);
+  for(i = 0;i<iData->nv;++i)
       for(j = 0; j <iData->nx; ++j)
         iData->numJ[j][i] *= iData->scalf[j];
   }else{
-	refreshSimData(x,u,t,iData);
+  refreshSimData(x,u,t,iData);
     diff_symColoredODE(v,t,iData,J);
-	  for(i = 0;i<iData->nv;++i){
-		for(j = 0; j <iData->nx; ++j)
-		  J[j][i] *= iData->scalf[j]*iData->vnom[i];
-		for(; j <nJ; ++j)
-		  J[j][i] *= iData->vnom[i];
-	  }
+    for(i = 0;i<iData->nv;++i){
+    for(j = 0; j <iData->nx; ++j)
+      J[j][i] *= iData->scalf[j]*iData->vnom[i];
+    for(; j <nJ; ++j)
+      J[j][i] *= iData->vnom[i];
+    }
  }
 
   /*
@@ -202,15 +202,15 @@ int num_diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J)
   memcpy(iData->vsave, v, sizeof(double)*nx);
 
   for(ii = 0; ii<nx; ++ii){
-	iData->eps[ii] = DF_STEP(v[ii], iData->vnom[ii]);;
+  iData->eps[ii] = DF_STEP(v[ii], iData->vnom[ii]);;
   }
 
   for(i = 1; i < data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors + 1; ++i){
 
     for(ii = 0; ii<nx; ++ii)
       if(cC[ii] == i){
-    	v[ii] = iData->vsave[ii] + iData->eps[ii];
-    	//printf("\nlv[%i] = %g\t eps[%i] = %g",ii,v[ii], ii,iData->eps[ii]);
+      v[ii] = iData->vsave[ii] + iData->eps[ii];
+      //printf("\nlv[%i] = %g\t eps[%i] = %g",ii,v[ii], ii,iData->eps[ii]);
       }
 
     functionODE_(x, u, t, iData->lhs, iData);
@@ -220,8 +220,8 @@ int num_diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J)
     for(ii = 0; ii<nx; ++ii)
       if(cC[ii] == i)
       {
-    	v[ii] = iData->vsave[ii] - iData->eps[ii];
-    	//printf("\nrv[%i] = %g\t eps[%i] = %g",ii,v[ii], ii,iData->eps[ii]);
+      v[ii] = iData->vsave[ii] - iData->eps[ii];
+      //printf("\nrv[%i] = %g\t eps[%i] = %g",ii,v[ii], ii,iData->eps[ii]);
       }
 
     functionODE_(x, u, t, iData->rhs, iData);
