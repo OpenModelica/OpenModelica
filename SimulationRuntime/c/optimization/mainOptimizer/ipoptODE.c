@@ -148,8 +148,10 @@ int refreshSimData(double *x, double *u, double t, IPOPT_DATA_ *iData)
   sData->timeValue = t;
   /* updateContinuousSystem(iData->data); */
   data->simulationInfo.discreteCall=1;
-  data->callback->functionDAE(data);
-
+  if(data->modelData.nRelations > 0 || iData->nc > 0)
+    data->callback->functionDAE(data);
+  else
+  data->callback->functionODE(data);
   return 0;
 }
 

@@ -787,7 +787,6 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData.nNonLinearSystems = <%varInfo.numNonLinearSystems%>;
     data->modelData.nStateSets = <%varInfo.numStateSets%>;
     data->modelData.nInlineVars = <%varInfo.numInlineVars%>;
-    data->modelData.nOptimizeConstraints = <%varInfo.numOptimizeConstraints%>;
 
     data->modelData.nDelayExpressions = <%match delayed case DELAYED_EXPRESSIONS(__) then maxDelayedIndex%>;
 
@@ -918,11 +917,6 @@ template variableDefinitions(ModelInfo modelInfo, BackendDAE.SampleLookup sample
       <%vars.stringParamVars |> var =>
         globalDataParDefine(var, "stringParameter")
       ;separator="\n"%>
-      
-      /* Nonlinear Constraints For Optimization */
-      <%vars.realOptimizeConstraintsVars |> var =>
-        variableDefinitionsOptimizationsConstraints(var, "optConstraints", 0)
-      ;separator="\n"%>
 
       /* sample */
       <%match sampleLookup
@@ -1044,18 +1038,6 @@ template globalDataAliasVarArray(String _type, String _name, list<SimVar> items)
     >>
   end match
 end globalDataAliasVarArray;
-
-template variableDefinitionsOptimizationsConstraints(SimVar simVar, String arrayName, Integer offset) "template variableDefinitionsOptimizationsConstraints
-  Generates defines for optimization ."
-::=
-  match simVar
-  case SIMVAR(__) then
-  let tmp = System.tmpTick()
-    <<
-    #define <%cref(name)%> data->simulationInfo.<%arrayName%>[<%index%>]
-    >>
-  end match
-end variableDefinitionsOptimizationsConstraints;
 
 template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes, String modelNamePrefix) "template variableDefinitionsJacobians
   Generates defines for jacobian vars."
@@ -10506,7 +10488,8 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
          *res =  $P$TMP_lagrangeTerm;
          return 0;
         >>
-                 
+     
+      let constraints = match simCode case SIMCODE(modelInfo = MODELINFO(__)) then pathConstraints(constraints)              
         <<
             /* objectiveFunction */
 
@@ -10530,11 +10513,43 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
             /* constraints */
             int <%symbolName(modelNamePrefixStr,"pathConstraints")%>(DATA* data, modelica_real* res, long int* N)
             {
+              <%constraints%>
               return 0;
             }
         >>
     else error(sourceInfo(), 'Unknown Constraint List')
 end optimizationComponents1;
+
+template pathConstraints( list<DAE.Constraint> constraints)
+  "Generates C for Optimization."
+::=
+    (constraints |> constraint => pathConstraint(constraint); separator="\n")
+
+end pathConstraints;
+
+template pathConstraint(Constraint cons)
+"Generates C for List of Constraints."
+::=
+  match cons
+    case CONSTRAINT_EXPS(__) then
+      let &varDecls = buffer "" /*BUFD*/
+      let &preExp = buffer "" /*BUFD*/
+      //let constrain = (constraintLst |> constraint =>
+      //   daeExp(constraint, contextOptimization, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+      //    ;separator="\n")
+      let constrain = (constraintLst |> constraint  hasindex i0  => 'res[i++] = $P$TMP_con<%intAdd(i0,1)%>;'  ;separator="\n")
+      let listConstraintsLength = listLength(constraintLst)  
+      <<
+        if(*N<=0){
+         *N = <%listConstraintsLength%>;
+         return 1;
+        }else{
+          int i = 0;
+          <%constrain%>
+        }
+      >>
+    else error(sourceInfo(), 'Unknown Constraint List')
+end pathConstraint;
 
 template generateEntryPoint(Path entryPoint, String url)
 ::=

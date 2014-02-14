@@ -3320,8 +3320,7 @@ algorithm
         inputvarsarr = BackendVariable.listVar1(inputvars);
         paramvarsarr = BackendVariable.listVar1(paramvars);
         outputvarsarr = BackendVariable.listVar1(outputvars);
-        
-        //BackendDump.printVariables(conVars);
+        //BackendDump.printVariables(outputvarsarr);
         object = checkObjectIsSet(outputvarsarr,"$TMP_mayerTerm");
         object = BackendVariable.mergeVariables(object, checkObjectIsSet(outputvarsarr,"$TMP_lagrangeTerm"));
         //BackendDump.printVariables(object);

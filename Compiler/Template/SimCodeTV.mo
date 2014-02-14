@@ -401,7 +401,6 @@ package SimCode
       Integer numNonLinearSystems;
       Integer numMixedSystems;
       Integer numStateSets;
-      Integer numOptimizeConstraints;
       end VARINFO;
   end VarInfo;
   
@@ -430,7 +429,6 @@ package SimCode
       list<SimVar> boolConstVars;
       list<SimVar> stringConstVars;
       list<SimVar> jacobianVars;
-      list<SimVar> realOptimizeConstraintsVars;
     end SIMVARS;
   end SimVars;
   
@@ -739,7 +737,6 @@ package BackendDAE
     record EXTOBJ Absyn.Path fullClassName; end EXTOBJ;
     record JAC_VAR end JAC_VAR;
     record JAC_DIFF_VAR end JAC_DIFF_VAR;
-    record OPT_CONSTR end OPT_CONSTR;
   end VarKind;
 
   uniontype ZeroCrossing

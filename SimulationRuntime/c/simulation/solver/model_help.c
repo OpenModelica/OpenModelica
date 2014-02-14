@@ -854,10 +854,6 @@ void initializeDataStruc(DATA *data)
   data->modelData.modelDataXml.functionNames = NULL;
   data->modelData.modelDataXml.equationInfo = NULL;
 
-  /*optimization:  constraints */
-  data->simulationInfo.optConstraints =  (data->modelData.nOptimizeConstraints > 0) ? (modelica_real*) malloc(data->modelData.nOptimizeConstraints*sizeof(modelica_real)) : NULL;
-
-
   /* buffer for external objects */
   data->simulationInfo.extObjs = NULL;
   data->simulationInfo.extObjs = (void**) calloc(data->modelData.nExtObjs, sizeof(void*));
@@ -867,7 +863,7 @@ void initializeDataStruc(DATA *data)
   /* initial chattering info */
   data->simulationInfo.chatteringInfo.numEventLimit = 100;
   data->simulationInfo.chatteringInfo.lastSteps = (int*) calloc(data->simulationInfo.chatteringInfo.numEventLimit, sizeof(int));
-  data->simulationInfo.chatteringInfo.lastTimes = (modelica_real*) calloc(data->simulationInfo.chatteringInfo.numEventLimit, sizeof(double));
+  data->simulationInfo.chatteringInfo.lastTimes = (double*) calloc(data->simulationInfo.chatteringInfo.numEventLimit, sizeof(double));
   data->simulationInfo.chatteringInfo.currentIndex = 0;
   data->simulationInfo.chatteringInfo.lastStepsNumStateEvents = 0;
   data->simulationInfo.chatteringInfo.messageEmitted = 0;

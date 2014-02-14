@@ -419,7 +419,6 @@ typedef struct MODEL_DATA
   long nNonLinearSystems;
   long nStateSets;
   long nInlineVars;                    /* number of additional variables for the inline solverr */
-  long nOptimizeConstraints;
 
   long nAliasReal;
   long nAliasInteger;
@@ -488,8 +487,6 @@ typedef struct SIMULATION_INFO
 
   modelica_real* inputVars;
   modelica_real* outputVars;
-
-  modelica_real* optConstraints;
 
   ANALYTIC_JACOBIAN* analyticJacobians;
 

@@ -108,6 +108,8 @@ Bool evalfF(Index n, double * v, Bool new_x, Number *objValue, void * useData)
 Bool goal_func_mayer(double* vn, double *obj_value, IPOPT_DATA_ *iData)
 {  
   refreshSimData(vn, vn + iData->nx, iData->tf, iData);
+  if(iData->data->modelData.nRelations <1 && iData->nc < 1)
+    iData->data->callback->functionAlgebraics(iData->data);
   iData->data->callback->mayer(iData->data, obj_value);
   
   return TRUE;
@@ -120,6 +122,8 @@ Bool goal_func_mayer(double* vn, double *obj_value, IPOPT_DATA_ *iData)
 Bool goal_func_lagrange(double* vn, double *obj_value, double t, IPOPT_DATA_ *iData)
 {  
   refreshSimData(vn, vn + iData->nx, t, iData);
+  if(iData->data->modelData.nRelations <1)
+    iData->data->callback->functionAlgebraics(iData->data);
   iData->data->callback->lagrange(iData->data, obj_value);
   
   return TRUE;

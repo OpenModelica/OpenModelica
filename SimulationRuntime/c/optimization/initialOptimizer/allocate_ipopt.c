@@ -291,7 +291,7 @@ int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
 
   iData->nx = data->modelData.nStates;
   iData->nu = data->modelData.nInputVars;
-  iData->nc = data->modelData.nOptimizeConstraints;
+  iData->nc = 0;
 
   iData->nsi = data->simulationInfo.numSteps;
   iData->t0 = data->simulationInfo.startTime;
@@ -314,6 +314,7 @@ int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
   iData->endN = iData->NV - iData->nv;
 
   /***********************/
+  iData->data->callback->pathConstraints(data,c,&iData->nc);
   allocateIpoptData(iData);
   move_grid(iData);
   optimizer_coeff_setings(iData);
