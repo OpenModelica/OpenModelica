@@ -3367,11 +3367,6 @@ algorithm
   msgs := {strcompsStr,seqStr,sarrStr,salgStr,sceStr,sweStr,sieStr,eqsysStr,teqsysStr,meqsysStr};
   Error.addMessage(Error.BACKENDDAEINFO_STRONGCOMPONENT_STATISTICS, msgs);
 
-  Debug.bcall(intGt(teqsys,0),print,"torn linear Equationsystems:    " +& intString(listLength(te_l)) +& " {");
-  Debug.bcall(intGt(teqsys,0),debuglst,(te_l,intTplString,", ","}\n"));
-  Debug.bcall(intGt(teqsys,0),print,"torn nonlinear Equationsystems: " +& intString(listLength(te_nl)) +& " {");
-  Debug.bcall(intGt(teqsys,0),debuglst,(te_nl,intTplString,", ","}\n"));
-
   Debug.bcall(intGt(eqsys,0),dumpCompSystems,systemsTpl);
   Debug.bcall(intGt(meqsys,0),dumpCompMixed,mixedTpl);
   Debug.bcall(intGt(teqsys,0),dumpCompTorn,tornTpl);
