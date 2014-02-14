@@ -182,7 +182,7 @@ algorithm
         // generate all residual equations
         (daevars,_,allEquations,allInitEquations) = generateEquationscollectVars(elementLst,{},1,{},{});
         // generate variable definitions
-        simvars = SimCode.SIMVARS({},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{});
+        simvars = SimCode.SIMVARS({},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{});
         varinfo = SimCode.VARINFO(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
 
         modelInfo = SimCode.MODELINFO(inClassName,fileDir,varinfo,simvars,functions,{});

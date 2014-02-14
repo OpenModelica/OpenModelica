@@ -4779,7 +4779,7 @@ protected function addOptimizationVarsEqns1
 algorithm
  (outVars, outEqns) := match(constraintLst,inI,inVars,inEqns,b)
  local
-   list<DAE.Exp> conLst,conLst2;
+   list<DAE.Exp> conLst;
    DAE.Exp e;
    DAE.ComponentRef leftcref;
    BackendDAE.Var dummyVar;
@@ -4791,12 +4791,11 @@ algorithm
    case(e::conLst,_,_,_,_) equation
     //print("con"+& intString(inI) +& " "+& ExpressionDump.printExpStr(e) +& "\n");
     leftcref = ComponentReference.makeCrefIdent("$TMP_con" +& intString(inI), DAE.T_REAL_DEFAULT, {});
-    dummyVar = BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+    dummyVar = Util.if_(b,BackendDAE.VAR(leftcref, BackendDAE.OPT_CONSTR(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR()),BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR()));
     conEqn = Util.if_(b,BackendEquation.generateResidualfromRealtion(leftcref, e, DAE.emptyElementSource),{});
     v = BackendVariable.addNewVar(dummyVar, inVars);
     eqns = listAppend(conEqn, inEqns);
-    conLst2 = Util.if_(b,listReverse(conLst),conLst);
-    (v,eqns)= addOptimizationVarsEqns1(listReverse(conLst), inI + 1, v,eqns,b);
+    (v,eqns)= addOptimizationVarsEqns1(conLst, inI + 1, v,eqns,b);
    then (v,eqns);
    else then (inVars,inEqns);
    end match;

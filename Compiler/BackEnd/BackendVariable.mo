@@ -1131,6 +1131,7 @@ algorithm
     case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE())) then ();
     case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE())) then ();
     case (BackendDAE.VAR(varKind = BackendDAE.STATE_DER())) then ();
+    case (BackendDAE.VAR(varKind = BackendDAE.OPT_CONSTR())) then ();
   end match;
 end failIfNonState;
 
@@ -1230,6 +1231,7 @@ algorithm
     case ((BackendDAE.VAR(varKind=BackendDAE.STATE_DER()) :: _)) then true;
     case ((BackendDAE.VAR(varKind=BackendDAE.DUMMY_DER()) :: _)) then true;
     case ((BackendDAE.VAR(varKind=BackendDAE.DUMMY_STATE()) :: _)) then true;
+    case ((BackendDAE.VAR(varKind=BackendDAE.OPT_CONSTR()) :: _)) then true;
     case ((v :: vs)) then hasContinousVar(vs);
     case ({}) then false;
   end match;
@@ -1290,6 +1292,8 @@ algorithm
     else false;
   end match;
 end isVarStringAlg;
+
+
 
 public function isVarIntAlg
   input BackendDAE.Var var;
@@ -1627,6 +1631,17 @@ algorithm
     case (_) then false;
   end matchcontinue;
 end isRealParam;
+
+public function isRealOptimizeConstraintsVars
+"Return true if variable is a constraint(slack variable)"
+  input BackendDAE.Var inVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inVar)
+    case (BackendDAE.VAR(varKind = BackendDAE.OPT_CONSTR())) then true;
+    case (_) then false;
+  end match;
+end isRealOptimizeConstraintsVars;
 
 public function isNonRealParam
 "Return true if variable is NOT a parameter of real-type"

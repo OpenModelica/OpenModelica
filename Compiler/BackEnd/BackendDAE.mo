@@ -199,6 +199,7 @@ uniontype VarKind "variable kind"
   record EXTOBJ Absyn.Path fullClassName; end EXTOBJ;
   record JAC_VAR end JAC_VAR;
   record JAC_DIFF_VAR end JAC_DIFF_VAR;
+  record OPT_CONSTR end OPT_CONSTR;
 end VarKind;
 
 public
