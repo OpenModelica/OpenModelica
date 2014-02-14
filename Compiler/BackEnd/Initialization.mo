@@ -1663,7 +1663,7 @@ algorithm
       eqns = Debug.bcallret2(preUsed, BackendEquation.equationAdd, eqn, eqns, eqns);
     then ((var, (vars, fixvars, eqns, hs)));
 
-    // discrete
+    // discrete (preUsed=true)
     case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.DISCRETE(), varType=ty), (vars, fixvars, eqns, hs))) equation
       true = BaseHashSet.has(cr, hs);
       true = BackendVariable.varFixed(var);
@@ -1689,7 +1689,6 @@ algorithm
     // discrete
     case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.DISCRETE()), (vars, fixvars, eqns, hs))) equation
       preUsed = BaseHashSet.has(cr, hs);
-      isFixed = BackendVariable.varFixed(var);
       startValue = BackendVariable.varStartValueOption(var);
 
       var = BackendVariable.setVarFixed(var, false);
@@ -1794,13 +1793,16 @@ algorithm
     case((var as BackendDAE.VAR(varKind=BackendDAE.CONST()), (vars, fixvars, eqns, hs))) // equation
       // fixvars = BackendVariable.addVar(var, fixvars);
     then ((var, (vars, fixvars, eqns, hs)));
-
-    case((var as BackendDAE.VAR(varName=cr, bindExp=NONE(), varType=ty), (vars, fixvars, eqns, hs))) equation
-      isFixed = BackendVariable.varFixed(var);
+    
+    // VARIABLE (fixed=true)
+    // DUMMY_STATE
+    case((var as BackendDAE.VAR(varName=cr, varType=ty), (vars, fixvars, eqns, hs))) equation
+      true = BackendVariable.varFixed(var);
       isInput = BackendVariable.isVarOnTopLevelAndInput(var);
-      startValue = BackendVariable.varStartValueOption(var);
+      startValue_ = BackendVariable.varStartValue(var);
       preUsed = BaseHashSet.has(cr, hs);
-      b = isFixed or isInput;
+
+      var = BackendVariable.setVarFixed(var, false);
 
       preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
       preVar = BackendVariable.copyVarNewName(preCR, var);
@@ -1810,17 +1812,22 @@ algorithm
       preVar = BackendVariable.setVarFixed(preVar, true);
       preVar = BackendVariable.setVarStartValueOption(preVar, SOME(DAE.CREF(cr, ty)));
 
-      vars = Debug.bcallret2(not b, BackendVariable.addVar, var, vars, vars);
-      fixvars = Debug.bcallret2(b, BackendVariable.addVar, var, fixvars, fixvars);
+      eqn = BackendDAE.EQUATION(DAE.CREF(cr, ty), startValue_, DAE.emptyElementSource, false);
+
+      vars = Debug.bcallret2(not isInput, BackendVariable.addVar, var, vars, vars);
+      fixvars = Debug.bcallret2(isInput, BackendVariable.addVar, var, fixvars, fixvars);
       vars = Debug.bcallret2(preUsed, BackendVariable.addVar, preVar, vars, vars);
+      eqns = BackendEquation.equationAdd(eqn, eqns);
+      
+      // Error.addCompilerNotification("VARIABLE (fixed=true): " +& BackendDump.varString(var));
     then ((var, (vars, fixvars, eqns, hs)));
 
-    case((var as BackendDAE.VAR(varName=cr, bindExp=SOME(bindExp), varType=ty), (vars, fixvars, eqns, hs))) equation
+    // VARIABLE (fixed=false)
+    // DUMMY_STATE
+    case((var as BackendDAE.VAR(varName=cr, varType=ty), (vars, fixvars, eqns, hs))) equation
+      false = BackendVariable.varFixed(var);
       isInput = BackendVariable.isVarOnTopLevelAndInput(var);
-      isFixed = Expression.isConst(bindExp);
-      startValue = BackendVariable.varStartValueOption(var);
       preUsed = BaseHashSet.has(cr, hs);
-      b = isInput or isFixed;
 
       preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
       preVar = BackendVariable.copyVarNewName(preCR, var);
@@ -1830,9 +1837,11 @@ algorithm
       preVar = BackendVariable.setVarFixed(preVar, true);
       preVar = BackendVariable.setVarStartValueOption(preVar, SOME(DAE.CREF(cr, ty)));
 
-      vars = Debug.bcallret2(not b, BackendVariable.addVar, var, vars, vars);
-      fixvars = Debug.bcallret2(b, BackendVariable.addVar, var, fixvars, fixvars);
+      vars = Debug.bcallret2(not isInput, BackendVariable.addVar, var, vars, vars);
+      fixvars = Debug.bcallret2(isInput, BackendVariable.addVar, var, fixvars, fixvars);
       vars = Debug.bcallret2(preUsed, BackendVariable.addVar, preVar, vars, vars);
+      
+      // Error.addCompilerNotification("VARIABLE (fixed=false); " +& BackendDump.varString(var));
     then ((var, (vars, fixvars, eqns, hs)));
 
     case ((var, _)) equation
