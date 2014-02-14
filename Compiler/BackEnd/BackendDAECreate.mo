@@ -105,6 +105,7 @@ protected
   list<BackendDAE.ZeroCrossing> zero_crossings;
   DAE.FunctionTree functionTree;
   BackendDAE.SampleLookup sampleLookup;
+  String neqStr,nvarStr;
 algorithm
   System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   // reset dumped file sequence number
@@ -148,7 +149,9 @@ algorithm
                                                     BackendDAE.SIMULATION(),
                                                     symjacs,inExtraInfo));
   BackendDAEUtil.checkBackendDAEWithErrorMsg(outBackendDAE);
-  Debug.fcall(Flags.DUMP_BACKENDDAE_INFO, print, "No. of Equations: " +& intString(BackendDAEUtil.equationSize(eqnarr)) +& "\nNo. of Variables: " +& intString(BackendVariable.varsSize(vars_1)) +& "\n");
+  neqStr := intString(BackendDAEUtil.equationSize(eqnarr));
+  nvarStr := intString(BackendVariable.varsSize(vars_1));
+  Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.DUMP_BACKENDDAE_INFO),Error.BACKENDDAEINFO_LOWER,{neqStr,nvarStr},Absyn.dummyInfo);
   Debug.execStat("generate Backend Data Structure", GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
 end lower;
 

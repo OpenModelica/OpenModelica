@@ -625,6 +625,18 @@ public constant Message UNFIXED_PARAMETER_WITH_BINDING_31 = MESSAGE(232, SYMBOLI
   Util.gettext("The parameter %s has fixed = false and a binding equation %s = %s, which is probably redundant. The binding equation will be ignored, as it is expected for Modelica 3.1."));
 public constant Message UNFIXED_PARAMETER_WITH_BINDING_AND_START_VALUE_31 = MESSAGE(233, SYMBOLIC(), WARNING(),
   Util.gettext("The parameter %s has fixed = false, a start value, start = %s and a binding equation %s = %s, which is probably redundant. The binding equation will be ignored, as it is expected for Modelica 3.1."));
+public constant Message BACKENDDAEINFO_LOWER = MESSAGE(234, SYMBOLIC(), NOTIFICATION(),
+  Util.gettext("Model statistics after passing the front-end and creating the data structures used by the back-end:\n * Number of equations: %s\n * Number of variables: %s"));
+public constant Message BACKENDDAEINFO_STATISTICS = MESSAGE(235, SYMBOLIC(), NOTIFICATION(),
+  Util.gettext("Model statistics after passing the backend:\n * Number of independent subsystems: %s\n * Number of states: %s\n * Number of discrete variables: %s\n * Number of discrete states: %s\n * Top-level inputs: %s"));
+public constant Message BACKENDDAEINFO_MIXED = MESSAGE(236, SYMBOLIC(), NOTIFICATION(),
+  Util.gettext("Mixed equation statistics:\n * Mixed systems with single equation: %s\n * Mixed systems with array equation: %s\n * Mixed systems with algorithm: %s\n * Mixed systems with complex equation: %s\n * Mixed systems with constant Jacobian: %s\n * Mixed systems with time-varying Jacobian: %s\n * Mixed systems with non-linear Jacobian: %s\n * Mixed systems with analytic Jacobian: %s\n * Mixed systems with linear tearing system: %s\n * Mixed systems with nonlinear tearing system: %s"));
+public constant Message BACKENDDAEINFO_STRONGCOMPONENT_STATISTICS = MESSAGE(237, SYMBOLIC(), NOTIFICATION(),
+  Util.gettext("Strong component statistics (%s):\n * Single equations (assignments): %s\n * Array equations: %s\n * Algorithm blocks: %s\n * Record equations: %s\n * When equations: %s\n * If-equations: %s\n * Equation systems (linear and non-linear blocks): %s\n * Torn equation systems: %s\n * Mixed (continuous/discrete) equation systems: %s"));
+public constant Message BACKENDDAEINFO_SYSTEMS = MESSAGE(238, SYMBOLIC(), NOTIFICATION(),
+  Util.gettext("Equation system details:\n * Constant jacobian: %s\n * Time-varying jacobian (size,density): %s\n * Non-linear jacobian: %s\n * Without analytic jacobian: %s"));
+public constant Message BACKENDDAEINFO_TORN = MESSAGE(239, SYMBOLIC(), NOTIFICATION(),
+  Util.gettext("Torn system details:\n * Linear torn systems: %s\n * Non-linear torn systems: %s"));
 
 public constant Message UNBOUND_PARAMETER_WITH_START_VALUE_WARNING = MESSAGE(499, TRANSLATION(), WARNING(),
   Util.gettext("Parameter %s has no value, and is fixed during initialization (fixed=true), using available start value (start=%s) as default value."));

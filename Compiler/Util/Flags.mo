@@ -1983,4 +1983,12 @@ algorithm
     descriptionIndent), "\n") +& "\n";
 end printDebugFlag;
 
+public function debugFlagName
+  "Prints out name of a debug flag."
+  input DebugFlag inFlag;
+  output String name;
+algorithm
+  DEBUG_FLAG(name = name) := inFlag;
+end debugFlagName;
+
 end Flags;
