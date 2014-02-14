@@ -3998,14 +3998,15 @@ algorithm
         false = Expression.isZero(e2);
       then res;
 
-    case(_,DAE.DIV(ty= tp), e1, DAE.RCONST(real = r1),_,_)
+    // exp / r = exp * (1/r)
+    case(_, DAE.DIV(ty=tp), e1, DAE.RCONST(real=r1), _, _) 
       equation
-        true = r1 <. 1e12 and r1 >. 1e-20; 
+        true = r1 <. 1e6 and r1 >. 1e-20; 
         r = 1.0 /. r1;
         r1 = 1e6 *. r;
         0.0 = realMod(r1, 1.0);
         e3 = DAE.BINARY(e1,DAE.MUL(tp),DAE.RCONST(r));
-     then e3;
+      then e3;
 
     // -a / -b = a / b
     case (_,DAE.DIV(ty = ty),DAE.UNARY(operator = DAE.UMINUS(ty = ty1),exp = e1),DAE.UNARY(operator = DAE.UMINUS(ty = ty2),exp = e2),_,_)
