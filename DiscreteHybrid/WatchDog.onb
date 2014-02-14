@@ -40,6 +40,8 @@ p, li { white-space: pre-wrap; }
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
@@ -54,7 +56,7 @@ end EventGenerator;</Input>
       </GroupCell>
       <GraphCell style="Graph" closed="false">
         <Input>connector eventPort
-  discrete Boolean signal;
+  discrete Boolean signal(fixed=true);
 end eventPort;</Input>
         <Output>{eventPort}</Output>
       </GraphCell>
@@ -65,7 +67,7 @@ end eventPort;</Input>
 equation
   dOutput.signal = time > eventTime;
 end EventGenerator;</Input>
-        <Output>{EventGenerator}</Output>
+        <Output>{EventGenerator,eventPort}</Output>
       </GraphCell>
       <GroupCell closed="false">
         <TextCell style="Section">
@@ -96,8 +98,8 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/alash325/AppData/Local/Temp/OpenModelica/14.png" width="402" height="180" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
-          <Image name="file:///C:/Users/alash325/AppData/Local/Temp/OpenModelica/14.png">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</Image>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/RAIN1_~1/AppData/Local/Temp/OpenModelica/14.png" width="402" height="180" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          <Image name="file:///C:/Users/RAIN1_~1/AppData/Local/Temp/OpenModelica/14.png">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</Image>
         </TextCell>
         <TextCell style="">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -130,7 +132,7 @@ equation
   connect(turnOff.dOutput, watchdog.dOff);
   connect(deadlineEmitter.dOutput, watchdog.dDeadline);
 end WatchDogSystem1;</Input>
-          <Output>{WatchDogSystem1}</Output>
+          <Output>{WatchDogSystem1,EventGenerator,eventPort}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -143,6 +145,8 @@ p, li { white-space: pre-wrap; }
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
@@ -151,7 +155,7 @@ p, li { white-space: pre-wrap; }
   eventPort dOff;
   eventPort dDeadline;
   eventPort dAlarm;
-  discrete Boolean watchdogActive(start=false);  // Initially turned off
+  discrete Boolean watchdogActive(start=false,fixed=true);  // Initially turned off
 algorithm
   when change(dOn.signal) then                 // Event watchdog on
     watchdogActive := true;
@@ -166,7 +170,7 @@ algorithm
     dAlarm.signal := true;
   end when;
 end WatchDog1;</Input>
-          <Output>{WatchDog1}</Output>
+          <Output>{WatchDog1,WatchDogSystem1,EventGenerator,eventPort}</Output>
         </GraphCell>
       </GroupCell>
       <GroupCell closed="false">
@@ -183,8 +187,8 @@ p, li { white-space: pre-wrap; }
         <GraphCell style="Graph" closed="false">
           <Input>simulate( WatchDogSystem1, stopTime=2 ) </Input>
           <Output>record SimulationResult
-    messages = "",
-    simulationTime = 0.15839943804427087
+    resultFile = "WatchDogSystem1_res.mat",
+    messages = ""
 end SimulationResult;</Output>
         </GraphCell>
         <TextCell style="Output">
@@ -195,6 +199,8 @@ p, li { white-space: pre-wrap; }
 &lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
@@ -215,6 +221,8 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
       </GroupCell>
@@ -246,7 +254,7 @@ p, li { white-space: pre-wrap; }
    eventPort dDeadline;
    eventPort dAlarm;
 
-   Real internalTime1, internalTime2;
+   Real internalTime1(fixed=true), internalTime2(fixed=true);
 
 equation
    when change(dOn.signal)then
@@ -261,7 +269,7 @@ equation
      dAlarm.signal=true;
    end when;
 end WatchDog2;</Input>
-          <Output>{WatchDog2}</Output>
+          <Output>{WatchDog2,WatchDog1,WatchDogSystem1,EventGenerator,eventPort}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -271,6 +279,8 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
@@ -287,7 +297,7 @@ equation
     connect(turnOff.dOutput,watchdog.dOff);
     connect(deadlineEmitter.dOutput, watchdog.dDeadline);
 end WatchDogSystem2;</Input>
-          <Output>{WatchDogSystem2}</Output>
+          <Output>{WatchDogSystem2,WatchDog2,WatchDog1,WatchDogSystem1,EventGenerator,eventPort}</Output>
         </GraphCell>
       </GroupCell>
       <GroupCell closed="false">
@@ -304,8 +314,8 @@ p, li { white-space: pre-wrap; }
         <GraphCell style="Graph" closed="false">
           <Input>simulate( WatchDogSystem2, stopTime=4 ) </Input>
           <Output>record SimulationResult
-    messages = "",
-    simulationTime = 0.11738451549466072
+    resultFile = "WatchDogSystem2_res.mat",
+    messages = ""
 end SimulationResult;</Output>
         </GraphCell>
         <TextCell style="Output">
@@ -316,6 +326,8 @@ p, li { white-space: pre-wrap; }
 &lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
@@ -336,6 +348,8 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
       </GroupCell>

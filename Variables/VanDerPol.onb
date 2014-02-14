@@ -23,8 +23,8 @@ p, li { white-space: pre-wrap; }
     </TextCell>
     <GraphCell style="Graph" closed="false">
       <Input>model VanDerPol     "Van der Pol oscillator model"
-  Real x(start = 1);
-  Real y(start = 1);
+  Real x(start = 1,fixed=true);
+  Real y(start = 1,fixed=true);
   parameter Real lambda = 0.3;
 equation
   der(x) = y;
@@ -56,8 +56,8 @@ p, li { white-space: pre-wrap; }
       <GraphCell style="Graph" closed="false">
         <Input>simulate(VanDerPol, startTime=0, stopTime=25 )</Input>
         <Output>record SimulationResult
-    messages = "",
-    simulationTime = 0.18590361441366005
+    resultFile = "VanDerPol_res.mat",
+    messages = ""
 end SimulationResult;</Output>
       </GraphCell>
       <TextCell style="Text">
@@ -85,6 +85,8 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
       </TextCell>
     </GroupCell>

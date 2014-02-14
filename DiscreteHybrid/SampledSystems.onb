@@ -37,11 +37,11 @@ p, li { white-space: pre-wrap; }
           <Input>model SimplePeriodicSampler
   parameter Real T = 1        "Sample period";
   input Real u                "Input used at sample events";
-  discrete output Real y      "Output computed at sample events";
+  discrete output Real y(fixed=true)   "Output computed at sample events";
   replaceable function f = Modelica.Math.atan2;
   replaceable function h = Modelica.Math.atan2;
 protected
-  discrete Real x;          // discrete state variable
+  discrete Real x(fixed=true);          // discrete state variable
 equation
   when sample(0, T) then
     x = f(pre(x), u);        // state update expression
@@ -57,8 +57,8 @@ end SimplePeriodicSampler;</Input>
         <GraphCell style="Graph" closed="false">
           <Input>simulate(SimplePeriodicSampler, stopTime=100)</Input>
           <Output>record SimulationResult
-    messages = "",
-    simulationTime = 0.13907597730913102
+    resultFile = "SimplePeriodicSampler_res.mat",
+    messages = ""
 end SimulationResult;</Output>
         </GraphCell>
         <GraphCell style="Graph" closed="false">
@@ -106,7 +106,7 @@ equation
     x = h(pre(x), u);                  // output expression
     end when;
 end BaseSampler;</Input>
-          <Output>{BaseSampler}</Output>
+          <Output>{BaseSampler,ModelicaServices,Complex,Modelica,SimplePeriodicSampler}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -125,7 +125,7 @@ p, li { white-space: pre-wrap; }
 equation
   doSample = sample(0, T);
 end PeriodicSampler;</Input>
-          <Output>{PeriodicSampler}</Output>
+          <Output>{PeriodicSampler,BaseSampler,ModelicaServices,Complex,Modelica,SimplePeriodicSampler}</Output>
         </GraphCell>
         <GraphCell style="Graph" closed="false">
           <Input>loadModel(Modelica)</Input>
@@ -134,8 +134,8 @@ end PeriodicSampler;</Input>
         <GraphCell style="Graph" closed="false">
           <Input>simulate(SimplePeriodicSampler)</Input>
           <Output>record SimulationResult
-    messages = "",
-    simulationTime = 0.14479195576211762
+    resultFile = "SimplePeriodicSampler_res.mat",
+    messages = ""
 end SimulationResult;</Output>
         </GraphCell>
         <GraphCell style="Graph" closed="false">
@@ -179,21 +179,24 @@ equation
     periodTime = pre(periodTime) + log(pre(periodTime));
   end when;
 end APeriodicSampler;</Input>
-          <Output>{APeriodicSampler}</Output>
+          <Output>{APeriodicSampler,PeriodicSampler,BaseSampler,ModelicaServices,Complex,Modelica,SimplePeriodicSampler}</Output>
         </GraphCell>
         <GraphCell style="Graph" closed="false">
           <Input>simulate(APeriodicSampler)</Input>
           <Output>record SimulationResult
+    resultFile = "",
     messages = "Simulation failed for model: APeriodicSampler
-[&lt;interactive>:6:3-6:33:writable] Error: Model is structurally singular, error found sorting equations 5: $whenCondition1 = time > nextSampling;
-2: when $whenCondition1 then
+[&lt;interactive>:6:3-6:33:writable] Error: Model is structurally singular, error found sorting equations 
+ 1: doSample = time > nextSampling;
+5: when doSample then
   x := atan2(pre(x), u)
 end when;
-1: when $whenCondition1 then
+4: when doSample then
   x := atan2(pre(x), u)
 end when;
- for variables $whenCondition1(5), y(4), x(3), periodTime(1)
-Error: Internal error Transformation Module PFPlusExt index Reduction Method Pantelites failed!
+ for variables 
+ x(3), periodTime(1), doSample(4)
+Error: Internal error Transformation Module PFPlusExt index Reduction Method Pantelides failed!
 "
 end SimulationResult;</Output>
         </GraphCell>
@@ -233,7 +236,7 @@ equation
     y = c * pre(x) + d * u;
   end when;
 end DiscreteScalarStateSpace;</Input>
-          <Output>{DiscreteScalarStateSpace}</Output>
+          <Output>{DiscreteScalarStateSpace,APeriodicSampler,PeriodicSampler,BaseSampler,ModelicaServices,Complex,Modelica,SimplePeriodicSampler}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -267,7 +270,7 @@ p, li { white-space: pre-wrap; }
 equation
   doSample = sample(0, T);
 end DiscreteScalarStateSpace2;</Input>
-          <Output>{DiscreteScalarStateSpace2}</Output>
+          <Output>{DiscreteScalarStateSpace2,DiscreteScalarStateSpace,APeriodicSampler,PeriodicSampler,BaseSampler,ModelicaServices,Complex,Modelica,SimplePeriodicSampler}</Output>
         </GraphCell>
       </GroupCell>
       <GroupCell closed="false">
@@ -300,16 +303,16 @@ p, li { white-space: pre-wrap; }
   parameter Real D[p, m] = fill(4, p, m);
   parameter Real T = 1;
   input Real u[m];
-  discrete output Real y[p];
+  discrete output Real y[p] (fixed=true);
 protected
-  discrete Real x[n];// = fill(2, n);
+  discrete Real x[n] (fixed=true);// = fill(2, n);
 equation
   when sample(0, T) then
     x = A * pre(x) + B * u;
     y = C * pre(x) + D * u;
   end when;
 end DiscreteVectorStateSpace;</Input>
-          <Output>{DiscreteVectorStateSpace}</Output>
+          <Output>{DiscreteVectorStateSpace,DiscreteScalarStateSpace2,DiscreteScalarStateSpace,APeriodicSampler,PeriodicSampler,BaseSampler,ModelicaServices,Complex,Modelica,SimplePeriodicSampler}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -328,6 +331,8 @@ p, li { white-space: pre-wrap; }
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
@@ -336,7 +341,7 @@ p, li { white-space: pre-wrap; }
 equation
   dvss.u= fill(time,dvss.m);
 end DVSSTest;</Input>
-          <Output>{DVSSTest}</Output>
+          <Output>{DVSSTest,DiscreteVectorStateSpace,DiscreteScalarStateSpace2,DiscreteScalarStateSpace,APeriodicSampler,PeriodicSampler,BaseSampler,ModelicaServices,Complex,Modelica,SimplePeriodicSampler}</Output>
         </GraphCell>
         <GroupCell closed="false">
           <TextCell style="Subsection">
@@ -352,9 +357,13 @@ p, li { white-space: pre-wrap; }
           <GraphCell style="Graph" closed="false">
             <Input>simulate( DVSSTest, stopTime=200 ) </Input>
             <Output>record SimulationResult
-    messages = "",
-    simulationTime = 0.1746022260456655
-end SimulationResult;</Output>
+    resultFile = "DVSSTest_res.mat",
+    messages = ""
+end SimulationResult;
+OMC-ERROR: 
+"[&lt;interactive>:11:23-11:33:writable] Warning: Non-array modification 'true' for array component, possibly due to missing 'each'.
+[&lt;interactive>:9:30-9:40:writable] Warning: Non-array modification 'true' for array component, possibly due to missing 'each'.
+"</Output>
           </GraphCell>
           <TextCell style="Output">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -364,6 +373,8 @@ p, li { white-space: pre-wrap; }
 &lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
@@ -407,10 +418,10 @@ p, li { white-space: pre-wrap; }
         </TextCell>
         <GraphCell style="Graph" closed="false">
           <Input>model TwoRateSampler
-  discrete Real x,y;
+  discrete Real x(fixed=true),y(fixed=true);
   Boolean fastSample;
-  Boolean slowSample;
-  Integer cyCounter(start=0);          // Cyclic count 0,1,2,3,4, 0,1,2,3,4,...
+  Boolean slowSample(fixed=true);
+  Integer cyCounter(start=0,fixed=true);          // Cyclic count 0,1,2,3,4, 0,1,2,3,4,...
  equation
   fastSample = sample(0,1);          // Define the fast clock
   when fastSample then
@@ -443,8 +454,8 @@ p, li { white-space: pre-wrap; }
           <GraphCell style="Graph" closed="false">
             <Input>simulate( TwoRateSampler, stopTime=100 ) </Input>
             <Output>record SimulationResult
-    messages = "",
-    simulationTime = 0.16193255871333842
+    resultFile = "TwoRateSampler_res.mat",
+    messages = ""
 end SimulationResult;</Output>
           </GraphCell>
           <TextCell style="Output">
@@ -455,6 +466,8 @@ p, li { white-space: pre-wrap; }
 &lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
@@ -477,8 +490,8 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/alash325/AppData/Local/Temp/OpenModelica/2.png" width="288" height="214" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
-            <Image name="file:///C:/Users/alash325/AppData/Local/Temp/OpenModelica/2.png">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</Image>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/RAIN1_~1/AppData/Local/Temp/OpenModelica/12.png" width="288" height="214" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            <Image name="file:///C:/Users/RAIN1_~1/AppData/Local/Temp/OpenModelica/12.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAAEgAAAA1ggDAAAARuGvAgAAAANzQklUCAgI2+FP4AAAAwBQTFRFAAAAAH8AAAD/2dnZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAeTWsrgAAAAlwSFlzAAALEwAACxMBAJqcGAAABeRJREFUeJztnYmWoyAQRYn+/z/36bhEC6hXoCzKu2fOpCWFwE2BaZcZNxMV17oDvUNBAAoCUBCAggAUBKAgAAUBKAhAQQAKAiQIcs7/6f2kCPqFU9Axwq0Z4/5/du7gaQQsQz2kDTNoZVpZQtwe6k6eRiBtis3HH8cgcZFOr/V0eJgHDDTUPCgIQEEACgJQEICCABQEoCAABQEoCEBBAP4uBuApV4DlfNB6QoinXA98VtaQ/SwZMygccxTEDIoF8ZQriOEp11iIO7/yME8OUBCAggAUBKAgAAUBKAhAQQAKAkQE0dsGBQEoCDCsoM8PNW5cQf9/vn/pjCPoIzBWG0jQnjKGvPnxYkGZKSN4s6Bb9vImQfekjOBVgkrs9NGCiqSM4NmCKrTxLEE1UkbwMEH1m/RM9HVtuUHKCKSJw40KPfAR34Dr47zN3gQ1Rgra7pBqZaj9nBL4ItpmUPs5JQgs0k3vkOrByYnmh/nu5pSgvaDe5pSgB0FdQ0GA+oJ6X3QEDQSV23UJKAhAQYAagp616AiqCLpzZ7WhIAAFAYoIethXHZUygvIug3dJKUGvgYIAFASgIMA9gt502BLcJOh6R3rFu3DogsWAcQRlXjgcR9BMQQL/utjyd5qhcQRxikkyF+kXH9cFmYf5N/06qpMvaBAoCEBBAAoCUBCAggAUBKAgAAUBrILG+d1CYBZUuiO9QkEACgJQEICCABQEoCAABQGs56QpaN8MX9WgoHMBBW34D/UuL7Kcgs6bzKCNwEO9gWIKgsUUBIopCBRTUKB4zFOIgubPrPYOBQEoCEBBAAoCUBCAggAUBKAgAAUBKAhAQQAKAlAQgIIAFAS455HMF2O9cDgsFATQH8mcpun4nthETGnxIvxabUu8KU7PoGk+C5r1ncohznPKiGX4jFvLbwyOZSNwZdXNRkFeH/QheiMGPtGIp6TGJJmCRDEQJNtIFZQS7o84RdA0ScGVBCXlgNfnVEHaEGHtWR1LlGuC5tQhXqqtDvEBgiwpcciBa4K+ufs0QbITYIg4/GJt7dN4niBD/t3a2B2CvL2IVfnePodqV2ssjipI7iVjiJdq12ssTjlBoTlTTNDVxuIUFLR3PK/PVRuLU1hQ6hBbNRanV0FrNjxA0J63U40+75Mkp3YTQX7jJfvstVL40zA4GljQqSRKNUGmCXqXIGNjTQTFVhHTiFMF/RbIrMZaCIp2soQg1MeBBIXnDOpjU0GRo36qIOOMDNeGfRSNxWpr5Avy2sgbYk1BcskKCYo8YRgMQ40fg2Anp2W3xQUFeg47dWC7rPMrmIPEBLlYX6JvhAWJDzOxtngD15703XojV7bX0i9T6MXbnGJvaJtbqTF839xb03cb3tTecAchVzLI38ybJJm1rbtNrH3C6Rl1LB5TkOAuQdEjRBFBsW8HPQuSfYhVs33jQ4Jk9WhjaniPglJ9ytpJglB4SUHu+/Jd0KwjXv+X7VB4cIL+H1rWWsYR753Sw7fGlr6s/1BA7JaxDEHLl4rJbYdEoyCnhAdru6WxyRniFzN7p4CgfZTTNgZ5cP9hKI7PqSRBWniotltvVLILWsR0IsglC/p+G0sRtO7/mRnkQAaFF5W0DDIL2hrrSpCbliUX9eFwqP3OmcgiLRvbp9hsiD8M+L8xvEiv0csgLizS5z4bPxW56ZVYBdnjlcaMrSlYBV25rJssKOEeki4EXb0xIElQ4J4b1NoFQfjKmGlpqijou1FNkCGH6gg6zpniglJv8tIpICh0Y5q5thdumCT5tZsICnWynCDQWDNBSXeQ6oJwDmhzpltB8T6EOnkhHIw4VVDwiKxxhyBDDoja6mMTNwuCj0voeFc5XKBYF2Tp5G21QzmQUPu6oDlPUEJKoOea8BBlSkCf5/czBW3XhiyCEh9WMzyHp9W+vbFbMuhUfvFxx0IPS97VmB5vmmIjI0xsV2EpaCPtPNqAUBCAJgAUBKAgAAUBKAhAQQAKAlAQgIIAFASgIAAFASgIQEEACgL8Ad3FwVFWYVCpAAAAAElFTkSuQmCC</Image>
           </TextCell>
         </GroupCell>
       </GroupCell>

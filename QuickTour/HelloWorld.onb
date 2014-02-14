@@ -34,7 +34,7 @@ p, li { white-space: pre-wrap; }
       </TextCell>
       <GraphCell style="Graph" closed="false">
         <Input>class HelloWorld
-  Real x(start = 1);
+  Real x(start = 1,fixed=true);
   parameter Real a = 1;
 equation
   der(x) = - a * x;
@@ -56,8 +56,8 @@ p, li { white-space: pre-wrap; }
       <GraphCell style="Graph" closed="false">
         <Input>simulate( HelloWorld, startTime=0, stopTime=4 )</Input>
         <Output>record SimulationResult
-    messages = "",
-    simulationTime = 0.12573924960322216
+    resultFile = "HelloWorld_res.mat",
+    messages = ""
 end SimulationResult;</Output>
       </GraphCell>
       <TextCell style="Text">

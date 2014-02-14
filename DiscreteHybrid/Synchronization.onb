@@ -35,10 +35,10 @@ p, li { white-space: pre-wrap; }
         </TextCell>
         <GraphCell style="Graph" closed="false">
           <Input>model SynchCounters              // Two synchronized counters
-  Boolean slowPulses;
+  Boolean slowPulses(fixed=true);
   Boolean fastPulses;
-  Integer count;
-  Integer slowCount;
+  Integer count(fixed=true);
+  Integer slowCount(fixed=true);
 equation
   fastPulses = sample(0,1);
   when fastPulses then              // Count every second
@@ -54,8 +54,8 @@ end SynchCounters;</Input>
         <GraphCell style="Graph" closed="false">
           <Input>simulate(SynchCounters, stopTime=200)</Input>
           <Output>record SimulationResult
-    messages = "",
-    simulationTime = 0.22536411820281219
+    resultFile = "SynchCounters_res.mat",
+    messages = ""
 end SimulationResult;</Output>
         </GraphCell>
         <GraphCell style="Graph" closed="false">
@@ -80,7 +80,7 @@ p, li { white-space: pre-wrap; }
         </TextCell>
         <GraphCell style="Graph" closed="false">
           <Input>model DeadLock
-  Boolean b1, b2;
+  Boolean b1(fixed=true), b2(fixed=true);
 equation
   when pre(b1) then
     b2 = true;
@@ -89,7 +89,7 @@ equation
     b1 = true;
   end when;
 end DeadLock;</Input>
-          <Output>{DeadLock}</Output>
+          <Output>{DeadLock,SynchCounters}</Output>
         </GraphCell>
         <GroupCell closed="false">
           <TextCell style="Subsection">
@@ -105,8 +105,8 @@ p, li { white-space: pre-wrap; }
           <GraphCell style="Graph" closed="false">
             <Input>simulate( DeadLock ) </Input>
             <Output>record SimulationResult
-    messages = "",
-    simulationTime = 0.15647431439237988
+    resultFile = "DeadLock_res.mat",
+    messages = ""
 end SimulationResult;</Output>
           </GraphCell>
           <GraphCell style="Graph" closed="false">
@@ -125,6 +125,8 @@ p, li { white-space: pre-wrap; }
 &lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>

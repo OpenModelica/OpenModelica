@@ -48,9 +48,9 @@ p, li { white-space: pre-wrap; }
           <Input>class AccessDemo       "Illustration of access prefixes"
     parameter Real a = 2;
   public   Real x, z;
-     parameter Real y;
+     parameter Real y (fixed=true);
   protected
-    parameter Real w, u;
+    parameter Real w (fixed=true), u(fixed=true);
     Real u2;
   public   Real u3;
 equation
@@ -77,8 +77,8 @@ p, li { white-space: pre-wrap; }
         <GraphCell style="Graph" closed="false">
           <Input>simulate( AccessDemo )</Input>
           <Output>record SimulationResult
-    messages = "",
-    simulationTime = 0.15520344389789292
+    resultFile = "AccessDemo_res.mat",
+    messages = ""
 end SimulationResult;</Output>
         </GraphCell>
         <TextCell style="Output">
@@ -89,6 +89,8 @@ p, li { white-space: pre-wrap; }
 &lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
@@ -126,7 +128,7 @@ p, li { white-space: pre-wrap; }
   AccessDemo ad(a = 2, y = 7, w = 7); // Illegal, since AccessDemo is not inherited
 end A;
 </Input>
-          <Output>{A}</Output>
+          <Output>{A,AccessDemo}</Output>
         </GraphCell>
       </GroupCell>
       <GroupCell closed="false">
@@ -153,10 +155,8 @@ p, li { white-space: pre-wrap; }
         <GraphCell style="Graph" closed="false">
           <Input>simulate( A )</Input>
           <Output>record SimulationResult
-    messages = "Simulation failed for model: A
-Error: Attempt to modify protected element ad.w
-Error: Error occurred while flattening model A
-"
+    resultFile = "A_res.mat",
+    messages = ""
 end SimulationResult;</Output>
         </GraphCell>
         <TextCell style="">
@@ -200,7 +200,7 @@ equation
   u3 = q;          // Legal, since u3 is public
 end B;
 </Input>
-          <Output>{B}</Output>
+          <Output>{B,A,AccessDemo}</Output>
         </GraphCell>
       </GroupCell>
       <GroupCell closed="false">
@@ -217,8 +217,8 @@ p, li { white-space: pre-wrap; }
         <GraphCell style="Graph" closed="false">
           <Input>simulate( B )</Input>
           <Output>record SimulationResult
-    messages = "",
-    simulationTime = 0.1064816393330833
+    resultFile = "B_res.mat",
+    messages = ""
 end SimulationResult;</Output>
         </GraphCell>
         <TextCell style="Output">
@@ -229,6 +229,8 @@ p, li { white-space: pre-wrap; }
 &lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>

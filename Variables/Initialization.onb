@@ -55,9 +55,9 @@ p, li { white-space: pre-wrap; }
         </TextCell>
         <GraphCell style="Graph" closed="false">
           <Input>class MyPoints
-  Point point1(x(start = 1), y(start = 2), z(start = 3));
-  Point point2;
-  Point point3;
+  Point point1(x=1,y=2,z=3);
+  Point point2(x=1,y=2,z=3);
+  Point point3(x=1,y=2,z=3);
 end MyPoints;</Input>
           <Output>{MyPoints,Point}</Output>
         </GraphCell>
@@ -75,15 +75,15 @@ p, li { white-space: pre-wrap; }
           <GraphCell style="Graph" closed="false">
             <Input>instantiateModel(MyPoints)</Input>
             <Output>"class MyPoints
-  parameter Real point1.x(start = 1.0);
-  parameter Real point1.y(start = 2.0);
-  parameter Real point1.z(start = 3.0);
-  parameter Real point2.x;
-  parameter Real point2.y;
-  parameter Real point2.z;
-  parameter Real point3.x;
-  parameter Real point3.y;
-  parameter Real point3.z;
+  parameter Real point1.x = 1.0;
+  parameter Real point1.y = 2.0;
+  parameter Real point1.z = 3.0;
+  parameter Real point2.x = 1.0;
+  parameter Real point2.y = 2.0;
+  parameter Real point2.z = 3.0;
+  parameter Real point3.x = 1.0;
+  parameter Real point3.y = 2.0;
+  parameter Real point3.z = 3.0;
 end MyPoints;
 "</Output>
           </GraphCell>
@@ -105,10 +105,7 @@ p, li { white-space: pre-wrap; }
           <Output>record SimulationResult
     resultFile = "MyPoints_res.mat",
     messages = ""
-end SimulationResult;
-OMC-ERROR: 
-"Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
-"</Output>
+end SimulationResult;</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -121,9 +118,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Try to plot the constant parameter point1.x:&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <OMCPlot PlotType="0" XRangeMin="0" Title="" LogX="false" XRangeMax="0" Grid="true" LogY="false" CurveStyle="1" YRangeMin="0" LegendPosition="top" YRangeMax="0" YLabel="" XLabel="time" CurveWidth="1">
-            <Curve Title="point1.x" Visible="true" XData="AAAAAAAAAAA/8AAAAAAAAA==" YData="P/AAAAAAAAA/8AAAAAAAAA==" Color="4294901760"/>
-          </OMCPlot>
+          <OMCPlot PlotType="0" XRangeMin="0" Title="" LogX="false" XRangeMax="0" Grid="true" LogY="false" YRangeMin="0" YRangeMax="0" YLabel="" Legend="true" XLabel="time"/>
           <Input>plot(point1.x)   </Input>
           <Output>[done]</Output>
         </GraphCell>
@@ -165,6 +160,8 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">

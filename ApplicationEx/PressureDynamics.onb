@@ -44,8 +44,8 @@ p, li { white-space: pre-wrap; }
   parameter Integer           n = 30   "Number of sections";
   parameter SIunits.Length     dL = L/n   "Section length";
   parameter SIunits.Velocity   c = 1;
-  SIunits.Pressure[n]        p(start = initialPressure(n));
-  Real[n]                    dp(start = fill(0,n));
+  SIunits.Pressure[n]        p(start = initialPressure(n),fixed=true);
+  Real[n]                    dp(start = fill(0,n),fixed=true);
 equation
   p[1] = exp(-(-L/2)^2);
   p[n] = exp(-(L/2)^2);
@@ -54,7 +54,7 @@ equation
     der(dp[i]) = c^2 * (p[i+1] - 2 * p[i] + p[i-1]) / dL^2;
   end for;
 end WaveEquationSample;</Input>
-          <Output>{WaveEquationSample}</Output>
+          <Output>{WaveEquationSample,ModelicaServices,Complex,Modelica}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -100,7 +100,7 @@ algorithm
     p[i] := exp(-(-L/2 + (i - 1) / (n - 1) * L)^2);
   end for;
 end initialPressure;</Input>
-          <Output>{initialPressure}</Output>
+          <Output>{initialPressure,WaveEquationSample,ModelicaServices,Complex,Modelica}</Output>
         </GraphCell>
       </GroupCell>
       <GroupCell closed="false">
@@ -127,9 +127,13 @@ p, li { white-space: pre-wrap; }
         <GraphCell style="Graph" closed="false">
           <Input>simulate( WaveEquationSample, stopTime=10 )  </Input>
           <Output>record SimulationResult
-    messages = "",
-    simulationTime = 0.1626589597071101
-end SimulationResult;</Output>
+    resultFile = "WaveEquationSample_res.mat",
+    messages = ""
+end SimulationResult;
+OMC-ERROR: 
+"[&lt;interactive>:7:59-7:69:writable] Warning: Non-array modification 'true' for array component, possibly due to missing 'each'.
+[&lt;interactive>:8:51-8:61:writable] Warning: Non-array modification 'true' for array component, possibly due to missing 'each'.
+"</Output>
         </GraphCell>
         <TextCell style="Output">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -139,6 +143,8 @@ p, li { white-space: pre-wrap; }
 &lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
@@ -168,6 +174,8 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <TextCell style="">

@@ -49,8 +49,8 @@ p, li { white-space: pre-wrap; }
   constant Real g = 9.81;        // Gravitational acceleration
   parameter Real c = 0.9;        // Elasticity constant of ball
   parameter Real radius = 0.1;       // Radius of the ball
-  Real height(start = 1);        // height above ground of the ball center
-  Real velocity(start = 0);        // Velocity of the ball
+  Real height(start = 1,fixed=true); // height above ground of ball center
+  Real velocity(start = 0,fixed=true);         // Velocity of the ball
 equation
   der(height) = velocity;
   der(velocity) = -g;
@@ -71,6 +71,8 @@ p, li { white-space: pre-wrap; }
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <TextCell style="Text">
@@ -81,8 +83,8 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/alash325/AppData/Local/Temp/OpenModelica/1.png" width="307" height="176" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
-          <Image name="file:///C:/Users/alash325/AppData/Local/Temp/OpenModelica/1.png">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</Image>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/RAIN1_~1/AppData/Local/Temp/OpenModelica/2.png" width="307" height="176" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          <Image name="file:///C:/Users/RAIN1_~1/AppData/Local/Temp/OpenModelica/2.png">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</Image>
         </TextCell>
         <TextCell style="">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -120,8 +122,8 @@ p, li { white-space: pre-wrap; }
         <GraphCell style="Graph" closed="false">
           <Input>simulate( BouncingBall, stopTime=8 )</Input>
           <Output>record SimulationResult
-    messages = "",
-    simulationTime = 0.15829281231794873
+    resultFile = "BouncingBall_res.mat",
+    messages = ""
 end SimulationResult;</Output>
         </GraphCell>
         <TextCell style="Output">
@@ -132,6 +134,8 @@ p, li { white-space: pre-wrap; }
 &lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
@@ -153,6 +157,8 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
@@ -182,8 +188,9 @@ p, li { white-space: pre-wrap; }
         <GraphCell style="Graph" closed="false">
           <Input>simulate( BouncingBall, stopTime=20 )</Input>
           <Output>record SimulationResult
-    messages = "",
-    simulationTime = 0.19970582164447315
+    resultFile = "BouncingBall_res.mat",
+    messages = "stdout            | info    | Chattering detected around time 8.09896836874..8.13847997633 (100 state events in a row with a total time delta less than the step size 0.04). This can be a performance bottleneck. Use -lv LOG_EVENTS for more information. The zero-crossing was: height &lt;= radius
+"
 end SimulationResult;</Output>
         </GraphCell>
         <TextCell style="Output">
@@ -194,6 +201,8 @@ p, li { white-space: pre-wrap; }
 &lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
@@ -215,6 +224,8 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>

@@ -23,6 +23,8 @@ p, li { white-space: pre-wrap; }
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
       </TextCell>
       <TextCell style="Text">
@@ -33,8 +35,8 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/alash325/AppData/Local/Temp/OpenModelica/1.png" width="365" height="219" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
-        <Image name="file:///C:/Users/alash325/AppData/Local/Temp/OpenModelica/1.png">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</Image>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/RAIN1_~1/AppData/Local/Temp/OpenModelica/4.png" width="365" height="219" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        <Image name="file:///C:/Users/RAIN1_~1/AppData/Local/Temp/OpenModelica/4.png">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</Image>
       </TextCell>
       <TextCell style="">
         <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -103,9 +105,9 @@ p, li { white-space: pre-wrap; }
         <GraphCell style="Graph" closed="false">
           <Input>class Rocket
   parameter String name;
-  Real mass(start = 1038.358);
-  Real altitude(start = 59404);
-  Real velocity(start = -2003);
+  Real mass(start = 1038.358,fixed=true);
+  Real altitude(start = 59404,fixed=true);
+  Real velocity(start = -2003,fixed=true);
   Real acceleration;
   Real thrust;                    // Thrust force on the rocket
   Real gravity;                   // Gravity forcefield
@@ -115,8 +117,8 @@ equation
   der(mass)   = -massLossRate * abs(thrust);
   der(altitude) = velocity;
   der(velocity) = acceleration;
-end Rocket;  </Input>
-          <Output>{Rocket}</Output>
+end Rocket; </Input>
+          <Output>{Rocket,CelestialBody}</Output>
         </GraphCell>
       </GroupCell>
       <GroupCell closed="false">
@@ -156,7 +158,7 @@ equation
             else 0;
   apollo.gravity = moon.g*moon.mass/(apollo.altitude + moon.radius) ^2;
 end MoonLanding;  </Input>
-          <Output>{MoonLanding}</Output>
+          <Output>{MoonLanding,Rocket,CelestialBody}</Output>
         </GraphCell>
       </GroupCell>
       <GroupCell closed="false">
@@ -183,8 +185,8 @@ p, li { white-space: pre-wrap; }
         <GraphCell style="Graph" closed="false">
           <Input>simulate( MoonLanding, stopTime=230 )</Input>
           <Output>record SimulationResult
-    messages = "",
-    simulationTime = 0.23603596865666004
+    resultFile = "MoonLanding_res.mat",
+    messages = ""
 end SimulationResult;</Output>
         </GraphCell>
         <TextCell style="Output">
@@ -195,6 +197,8 @@ p, li { white-space: pre-wrap; }
 &lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
@@ -225,6 +229,8 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <TextCell style="Text">
@@ -262,6 +268,8 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <TextCell style="Text">
@@ -285,6 +293,8 @@ p, li { white-space: pre-wrap; }
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
@@ -302,6 +312,8 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <TextCell style="Text">
@@ -339,6 +351,8 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <TextCell style="Text">
@@ -359,6 +373,8 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
@@ -389,6 +405,8 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <TextCell style="Text">
