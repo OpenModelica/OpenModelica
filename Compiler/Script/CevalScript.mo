@@ -1455,9 +1455,8 @@ algorithm
     case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st,_)
       equation
         omhome = Settings.getInstallationDirectoryPath() "simulation fail for some other reason than OPENMODELICAHOME not being set." ;
-        errorStr = Error.printMessagesStr(false);
         str = Absyn.pathString(className);
-        res = stringAppendList({"Simulation failed for model: ", str, "\n", errorStr});
+        res = "Failed to build model: " +& str;
         simValue = createSimulationResultFailure(res, simOptionsAsString(vals));
       then
         (cache,simValue,st);
