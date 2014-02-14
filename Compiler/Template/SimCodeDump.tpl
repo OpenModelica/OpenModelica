@@ -209,7 +209,7 @@ template dumpEqs(list<SimEqSystem> eqs, Boolean withOperations)
     case e as SES_LINEAR(__) then
       <<
       <equation index="<%eqIndex(eq)%>">
-        <linear>
+        <linear size="<%listLength(e.vars)%>" nnz="<%listLength(simJac)%>">
           <%e.vars |> SIMVAR(name=cr) => '<defines name="<%crefStrNoUnderscore(cr)%>" />' ; separator = "\n" %>
           <row>
             <%beqs |> exp => '<cell><%printExpStrEscaped(exp)%></cell>' ; separator = "\n" %><%\n%>

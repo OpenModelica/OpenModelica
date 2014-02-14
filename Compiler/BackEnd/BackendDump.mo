@@ -3302,8 +3302,8 @@ public function dumpCompShort
   input BackendDAE.BackendDAE inDAE;
 protected
   Integer sys,inp,st,dvar,dst,seq,salg,sarr,sce,swe,sie,eqsys,meqsys,teqsys,strcomps;
-  list<Integer> e_jc,e_jt,e_jn,e_nj,m_se,m_salg,m_sarr,m_sec;
-  list<tuple<Integer,Integer>> me_jc,me_jt,me_jn,me_nj,me_lt,me_nt,te_l,te_nl;
+  list<Integer> e_jc,e_jn,e_nj,m_se,m_salg,m_sarr,m_sec;
+  list<tuple<Integer,Integer>> me_jc,e_jt,me_jt,me_jn,me_nj,me_lt,me_nt,te_l,te_nl;
   list<DAE.ComponentRef> states,discvars,discstates;
   HashSet.HashSet HS; 
   BackendDAE.EqSystems systs;
@@ -3340,8 +3340,9 @@ algorithm
   print("EQUATIONSYSTEMs: " +& intString(eqsys) +& "\n");
   Debug.bcall(intGt(eqsys,0),print,"Equationsystems with constant Jacobian:     " +& intString(listLength(e_jc)) +& " {");
   Debug.bcall(intGt(eqsys,0),debuglst,(e_jc,intString,", ","}\n"));
-  Debug.bcall(intGt(eqsys,0),print,"Equationsystems with time varying Jacobian: " +& intString(listLength(e_jt)) +& " {");
-  Debug.bcall(intGt(eqsys,0),debuglst,(e_jt,intString,", ","}\n"));
+  Debug.bcall(intGt(eqsys,0),print,"Equationsystems with time varying Jacobian (size,density): " +& intString(listLength(e_jt)) +& " {");
+
+  Debug.bcall(intGt(eqsys,0),debuglst,(e_jt,sizeNumNonZeroTplString,", ","}\n"));
   Debug.bcall(intGt(eqsys,0),print,"Equationsystems with nonlinear Jacobian:    " +& intString(listLength(e_jn)) +& " {");
   Debug.bcall(intGt(eqsys,0),debuglst,(e_jn,intString,", ","}\n"));
   Debug.bcall(intGt(eqsys,0),print,"Equationsystems without analytic Jacobian:  " +& intString(listLength(e_nj)) +& " {");
@@ -3380,6 +3381,19 @@ algorithm
   print("##########################################################\n");
 end dumpCompShort;
 
+protected function sizeNumNonZeroTplString
+  input tuple<Integer,Integer> inTpl;
+  output String str;
+protected
+  Integer sz,nnz;
+  Real density;
+algorithm
+  (sz,nnz) := inTpl;
+  density := realDiv(realMul(100.0,intReal(nnz)),realMul(intReal(sz),intReal(sz)));
+  str := System.snprintff("%.1f",20,density);
+  str := "(" +& intString(sz) +& "," +& str +& "%)";
+end sizeNumNonZeroTplString;
+
 protected function intTplString
   input tuple<Integer,Integer> inTpl;
   output String outStr;
@@ -3393,13 +3407,28 @@ end intTplString;
 protected function dumpCompShort1
   input BackendDAE.EqSystem inSyst;
   input BackendDAE.Shared inShared;
-  input tuple<Integer,Integer,Integer,list<DAE.ComponentRef>,Integer,list<DAE.ComponentRef>,Integer,Integer,Integer,Integer,Integer,Integer,tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>>,tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>>,tuple<list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>>> inTpl;
-  output tuple<Integer,Integer,Integer,list<DAE.ComponentRef>,Integer,list<DAE.ComponentRef>,Integer,Integer,Integer,Integer,Integer,Integer,tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>>,tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>>,tuple<list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>>> outTpl;
+  input tuple<Integer,Integer,Integer,list<DAE.ComponentRef>,Integer,list<DAE.ComponentRef>,Integer,Integer,Integer,Integer,Integer,Integer,tuple<list<Integer>,list<tuple<Integer,Integer>>,list<Integer>,list<Integer>>,tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>>,tuple<list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>>> inTpl;
+  output tuple<
+       Integer,
+       Integer,
+       Integer,
+       list<DAE.ComponentRef>,
+       Integer,
+       list<DAE.ComponentRef>,
+       Integer,
+       Integer,
+       Integer,
+       Integer,
+       Integer,
+       Integer,
+       tuple<list<Integer>,list<tuple<Integer,Integer>>,list<Integer>,list<Integer>>,
+       tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>>,
+       tuple<list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>>> outTpl;
 protected
   BackendDAE.Variables vars;
   BackendDAE.StrongComponents comps;
   Integer sys,inp,st,dvar,seq,salg,sarr,sce,swe,sie,inp1,st1,dvar1,seq1,salg1,sarr1,sce1,swe1,sie1;
-  tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>> eqsys,eqsys1;
+  tuple<list<Integer>,list<tuple<Integer,Integer>>,list<Integer>,list<Integer>> eqsys,eqsys1;
   tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>> meqsys,meqsys1;
   tuple<list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>> teqsys,teqsys1;
   list<DAE.ComponentRef> states,states1,discvars,discvars1;
@@ -3446,17 +3475,18 @@ end traversingisStateTopInputVarFinder;
 
 protected function dumpCompShort2
   input BackendDAE.StrongComponent inComp;
-  input tuple<Integer,Integer,Integer,Integer,Integer,Integer,tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>>,tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>>,tuple<list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>>> inTpl;
-  output tuple<Integer,Integer,Integer,Integer,Integer,Integer,tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>>,tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>>,tuple<list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>>> outTpl;
+  input tuple<Integer,Integer,Integer,Integer,Integer,Integer,tuple<list<Integer>,list<tuple<Integer,Integer>>,list<Integer>,list<Integer>>,tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>>,tuple<list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>>> inTpl;
+  output tuple<Integer,Integer,Integer,Integer,Integer,Integer,tuple<list<Integer>,list<tuple<Integer,Integer>>,list<Integer>,list<Integer>>,tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>>,tuple<list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>>> outTpl;
 algorithm
   outTpl := match (inComp,inTpl)
     local
-      Integer e,d;
+      Integer e,d,nnz;
       list<Integer> ilst,ilst1;
       Integer seq,salg,sarr,sce,swe,sie;
-      list<Integer> e_jc,e_jt,e_jn,e_nj,m_se,m_salg,m_sarr,m_sec;
-      list<tuple<Integer,Integer>> me_jc,me_jt,me_jn,me_nj,me_lt,me_nt,te_l,te_nl;
-      tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>> eqsys;
+      list<Integer> e_jc,e_jn,e_nj,m_se,m_salg,m_sarr,m_sec;
+      list<tuple<Integer,Integer>> e_jt,me_jc,me_jt,me_jn,me_nj,me_lt,me_nt,te_l,te_nl;
+      tuple<list<Integer>,list<tuple<Integer,Integer>>,list<Integer>,list<Integer>> eqsys;
+      list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
       tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>> meqsys;
       tuple<list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>> teqsys;
       list<tuple<Integer,list<Integer>>> eqnvartpllst;
@@ -3483,9 +3513,11 @@ algorithm
         e = listLength(ilst);
     then ((seq,salg,sarr,sce,swe,sie,(e::e_jc,e_jt,e_jn,e_nj),meqsys,teqsys));
     
-    case (BackendDAE.EQUATIONSYSTEM(eqns=ilst,jacType=BackendDAE.JAC_TIME_VARYING()),(seq,salg,sarr,sce,swe,sie,(e_jc,e_jt,e_jn,e_nj),meqsys,teqsys)) equation
-      e = listLength(ilst);
-    then ((seq,salg,sarr,sce,swe,sie,(e_jc,e::e_jt,e_jn,e_nj),meqsys,teqsys));
+    case (BackendDAE.EQUATIONSYSTEM(eqns=ilst,jac=SOME(jac),jacType=BackendDAE.JAC_TIME_VARYING()),(seq,salg,sarr,sce,swe,sie,(e_jc,e_jt,e_jn,e_nj),meqsys,teqsys))
+      equation
+        e = listLength(ilst);
+        nnz = listLength(jac);
+      then ((seq,salg,sarr,sce,swe,sie,(e_jc,(e,nnz)::e_jt,e_jn,e_nj),meqsys,teqsys));
     
     case (BackendDAE.EQUATIONSYSTEM(eqns=ilst,jacType=BackendDAE.JAC_NONLINEAR()),(seq,salg,sarr,sce,swe,sie,(e_jc,e_jt,e_jn,e_nj),meqsys,teqsys)) equation
       e = listLength(ilst);
