@@ -3343,9 +3343,9 @@ algorithm
   stStr := intString(st);
   dvarStr := intString(dvar);
   dstStr := intString(dst);
-  statesStr := Util.if_(Flags.isSet(Flags.DUMP_STATESELECTION_INFO)," (" +& stringDelimitList(List.map(states, ComponentReference.printComponentRefStr),",") +& ")","");
-  discvarsStr := Util.if_(Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO)," (" +& stringDelimitList(List.map(discvars, ComponentReference.printComponentRefStr),",") +& ")","");
-  discstatesStr := Util.if_(Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO)," (" +& stringDelimitList(List.map(discstates, ComponentReference.printComponentRefStr),",") +& ")","");
+  statesStr := Util.if_(Flags.isSet(Flags.DUMP_STATESELECTION_INFO)," (" +& stringDelimitList(List.map(states, ComponentReference.printComponentRefStr),",") +& ")"," ('+d=stateselection' for list of states)");
+  discvarsStr := Util.if_(Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO)," (" +& stringDelimitList(List.map(discvars, ComponentReference.printComponentRefStr),",") +& ")"," ('+d=discreteinfo' for list of discrete vars)");
+  discstatesStr := Util.if_(Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO)," (" +& stringDelimitList(List.map(discstates, ComponentReference.printComponentRefStr),",") +& ")"," ('+d=discreteinfo' for list of discrete states)");
   inpStr := intString(inp);
   stStr := stStr+&statesStr;
   dvarStr := dvarStr+&discvarsStr;
