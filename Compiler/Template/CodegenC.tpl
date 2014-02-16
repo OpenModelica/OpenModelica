@@ -196,13 +196,16 @@ template simulationFile_nls(SimCode simCode, String guid)
     <<
     /* Non Linear Systems */
     <%simulationFileHeader(simCode)%>
+    /* dummy REAL_ATTRIBUTE */
+    const REAL_ATTRIBUTE dummyREAL_ATTRIBUTE = omc_dummyRealAttribute;
     #include "<%simCode.fileNamePrefix%>_12jac.h"
     <%functionNonLinearResiduals(initialEquations,modelNamePrefixStr)%>
     <%functionNonLinearResiduals(inlineEquations,modelNamePrefixStr)%>
     <%functionNonLinearResiduals(parameterEquations,modelNamePrefixStr)%>
     <%functionNonLinearResiduals(allEquations,modelNamePrefixStr)%>
+    <%functionNonLinearResiduals(jacobianEquations,modelNamePrefixStr)%>
 
-    <%functionInitialNonLinearSystems(initialEquations, inlineEquations, parameterEquations, allEquations, modelNamePrefixStr)%>
+    <%functionInitialNonLinearSystems(initialEquations, inlineEquations, parameterEquations, allEquations, jacobianEquations, modelNamePrefixStr)%>
     
     <%\n%>
     >>
@@ -1092,7 +1095,7 @@ template variableDefinitionsJacobians2(Integer indexJacobian, list<JacobianColum
     jacobianVarDefine(var, "jacobianVarsSeed", indexJacobian, index0, name)
     ;separator="\n")
   let columnVarsResult = (jacobianColumn |> (_,vars,_) =>
-    (vars |> var hasindex index0 => jacobianVarDefine(var, "jacobianVars", indexJacobian, index0, name);separator=";\n")
+    (vars |> var hasindex index0 => jacobianVarDefine(var, "jacobianVars", indexJacobian, index0, name);separator="\n")
     ;separator="\n\n")
   /* generate at least one print command to have the same index and avoid the strange side effect */
   <<
@@ -1112,13 +1115,17 @@ template jacobianVarDefine(SimVar simVar, String array, Integer indexJac, Intege
       match index
       case -1 then
         <<
-        #define <%cref(name)%> data->simulationInfo.analyticJacobians[<%indexJac%>].tmpVars[<%index0%>]
+        #define _<%cref(name)%>(i) data->simulationInfo.analyticJacobians[<%indexJac%>].tmpVars[<%index0%>]
+        #define <%cref(name)%> _<%cref(name)%>(0)
         #define <%cref(name)%>__varInfo dummyVAR_INFO
+        #define $P$ATTRIBUTE<%cref(name)%> dummyREAL_ATTRIBUTE 
         >>
       case _ then
-        <<
-        #define <%cref(name)%> data->simulationInfo.analyticJacobians[<%indexJac%>].resultVars[<%index%>]
+        << 
+        #define _<%cref(name)%>(i) data->simulationInfo.analyticJacobians[<%indexJac%>].resultVars[<%index%>]
+        #define <%cref(name)%> _<%cref(name)%>(0)
         #define <%cref(name)%>__varInfo dummyVAR_INFO
+        #define $P$ATTRIBUTE<%cref(name)%> dummyREAL_ATTRIBUTE
         >>
       end match
     end match
@@ -1501,13 +1508,14 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> allEquations)
    ;separator="\n\n")
 end functionSetupLinearSystemsTemp;
 
-template functionInitialNonLinearSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> inlineEquations, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, String modelNamePrefix)
+template functionInitialNonLinearSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> inlineEquations, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, list<SimEqSystem> jacobianEquations, String modelNamePrefix)
   "Generates functions in simulation file."
 ::=
   let initbody = functionInitialNonLinearSystemsTemp(initialEquations,modelNamePrefix)
   let inlinebody = functionInitialNonLinearSystemsTemp(inlineEquations,modelNamePrefix)
   let parambody = functionInitialNonLinearSystemsTemp(parameterEquations,modelNamePrefix)
-  let body = functionInitialNonLinearSystemsTemp(allEquations,modelNamePrefix)
+  let equationbody = functionInitialNonLinearSystemsTemp(allEquations,modelNamePrefix)
+  let jacbody = functionInitialNonLinearSystemsTemp(jacobianEquations,modelNamePrefix)
   <<
   /* funtion initialize non-linear systems */
   void <%symbolName(modelNamePrefix,"initialNonLinearSystem")%>(NONLINEAR_SYSTEM_DATA* nonLinearSystemData)
@@ -1515,7 +1523,8 @@ template functionInitialNonLinearSystems(list<SimEqSystem> initialEquations, lis
     <%initbody%>
     <%inlinebody%>
     <%parambody%>
-    <%body%>
+    <%equationbody%>
+    <%jacbody%>
   }
   >>
 end functionInitialNonLinearSystems;
@@ -7007,6 +7016,9 @@ case LUNARY(operator=NOT(__),exp = e as CREF(__)) then
   <%lhsStr%> = !<%rhsStr%>;
   >>
 case ARRAY(array = {}) then
+  <<
+  >>
+case RCONST(__) then
   <<
   >>
 case ARRAY(ty=T_ARRAY(ty=ty,dims=dims),array=expl) then

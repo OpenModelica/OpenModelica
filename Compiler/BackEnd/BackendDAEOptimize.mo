@@ -3269,21 +3269,23 @@ algorithm
 
         // Differentiate the System w.r.t states for matrices A
         (linearModelMatrix, sparsePattern, sparseColoring, functionTree) = createJacobian(backendDAE2,states,statesarr,inputvarsarr,paramvarsarr,statesarr,varlst,"A");
+        backendDAE2 = BackendDAEUtil.addBackendDAEFunctionTree(functionTree, backendDAE2);
         linearModelMatrices = {(SOME(linearModelMatrix),sparsePattern,sparseColoring)};
         Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> generated system for matrix A time: " +& realString(clock()) +& "\n");
-
-
+        
         // Differentiate the System w.r.t inputs for matrices B
         (linearModelMatrix, sparsePattern, sparseColoring, funcs) = createJacobian(backendDAE2,inputvars2,statesarr,inputvarsarr,paramvarsarr,statesarr,varlst,"B");
         functionTree = DAEUtil.joinAvlTrees(functionTree, funcs);
+        backendDAE2 = BackendDAEUtil.addBackendDAEFunctionTree(functionTree, backendDAE2);
         linearModelMatrices = listAppend(linearModelMatrices,{(SOME(linearModelMatrix),sparsePattern,sparseColoring)});
         Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> generated system for matrix B time: " +& realString(clock()) +& "\n"); 
 
         // Differentiate the System w.r.t states for matrices C
         (linearModelMatrix, sparsePattern, sparseColoring, funcs) = createJacobian(backendDAE2,states,statesarr,inputvarsarr,paramvarsarr,outputvarsarr,varlst,"C");
+        functionTree = DAEUtil.joinAvlTrees(functionTree, funcs);
+        backendDAE2 = BackendDAEUtil.addBackendDAEFunctionTree(functionTree, backendDAE2);
         linearModelMatrices = listAppend(linearModelMatrices,{(SOME(linearModelMatrix),sparsePattern,sparseColoring)});
         Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> generated system for matrix C time: " +& realString(clock()) +& "\n");
-
 
         // Differentiate the System w.r.t inputs for matrices D
         (linearModelMatrix, sparsePattern, sparseColoring, funcs) = createJacobian(backendDAE2,inputvars2,statesarr,inputvarsarr,paramvarsarr,outputvarsarr,varlst,"D");
@@ -3330,17 +3332,21 @@ algorithm
 
         // Differentiate the System w.r.t states for matrices A
         (linearModelMatrix, sparsePattern, sparseColoring, functionTree) = createJacobian(backendDAE2,states,statesarr,inputvarsarr,paramvarsarr,statesarr,varlst,"A");
+        backendDAE2 = BackendDAEUtil.addBackendDAEFunctionTree(functionTree, backendDAE2);
         linearModelMatrices = {(SOME(linearModelMatrix),sparsePattern,sparseColoring)};
         Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> generated system for matrix A time: " +& realString(clock()) +& "\n");
 
         // Differentiate the System w.r.t states&inputs for matrices B
         (linearModelMatrix, sparsePattern, sparseColoring, funcs) = createJacobian(backendDAE2,states_inputs,statesarr,inputvarsarr,paramvarsarr,BackendVariable.mergeVariables(statesarr, conVars),varlst,"B");
         functionTree = DAEUtil.joinAvlTrees(functionTree, funcs);
+        backendDAE2 = BackendDAEUtil.addBackendDAEFunctionTree(functionTree, backendDAE2);
         linearModelMatrices = listAppend(linearModelMatrices,{(SOME(linearModelMatrix),sparsePattern,sparseColoring)});
         Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> generated system for matrix B time: " +& realString(clock()) +& "\n"); 
 
         // Differentiate the System w.r.t states for matrices C
         (linearModelMatrix, sparsePattern, sparseColoring, funcs) = createJacobian(backendDAE2,states_inputs,statesarr,inputvarsarr,paramvarsarr,object,varlst,"C");
+        functionTree = DAEUtil.joinAvlTrees(functionTree, funcs);
+        backendDAE2 = BackendDAEUtil.addBackendDAEFunctionTree(functionTree, backendDAE2);
         linearModelMatrices = listAppend(linearModelMatrices,{(SOME(linearModelMatrix),sparsePattern,sparseColoring)});
         Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> generated system for matrix C time: " +& realString(clock()) +& "\n");
 
@@ -3410,7 +3416,7 @@ algorithm
         // Differentiate the ODE system w.r.t states for jacobian
         (backendDAE as BackendDAE.DAE(shared=shared), funcs) = generateSymbolicJacobian(inBackendDAE, inDiffVars, inDifferentiatedVars, BackendVariable.listVar1(seedlst), inStateVars, inInputVars, inParameterVars, inName);
         Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> generated equations for Jacobian " +& inName +& " time: " +& realString(clock()) +& "\n");
-
+        Debug.execStat("analytical Jacobians -> generated jacobian equations", GlobalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
         
         knvars1 = BackendVariable.daeKnVars(shared);
         knvarsTmp = BackendVariable.varList(knvars1);
@@ -3430,6 +3436,7 @@ algorithm
 
         // generate sparse pattern
         (sparsepattern,colsColors) = generateSparsePattern(inBackendDAE, inDiffVars, diffedVars);
+        Debug.execStat("analytical Jacobians -> generated generateSparsePattern", GlobalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
      then
         ((backendDAE, inName, inDiffVars, diffedVars, inVars), sparsepattern, colsColors, funcs);
     else
