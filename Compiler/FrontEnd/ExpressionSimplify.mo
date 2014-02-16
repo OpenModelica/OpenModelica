@@ -3600,6 +3600,14 @@ algorithm
         e = DAE.BINARY(e1,DAE.SUB(tp),e2);
       then e;
 
+    // a + ((-b) op2 c) = a - (b op2 c)
+    case (DAE.ADD(ty = tp),e1,DAE.BINARY(DAE.UNARY(operator = DAE.UMINUS(ty = tp2),exp = e2), op2, e3))
+      equation 
+        true = Expression.operatorEqual(op2,DAE.DIV(tp)); 
+              //or  Expression.operatorEqual(op2,MUL.DIV(tp));
+         e = DAE.BINARY(e1, DAE.SUB(tp), DAE.BINARY(e2,op2,e3));
+      then e; 
+
     // Commutative
     // (-a)+b = b + (-a)
     //case (DAE.ADD(ty = tp),DAE.UNARY(operator = DAE.UMINUS(ty = tp2),exp = e1),e2)
