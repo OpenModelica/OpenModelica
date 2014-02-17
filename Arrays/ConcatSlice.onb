@@ -6,7 +6,7 @@
         <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
 &lt;tr>
 &lt;td style="border: none;">
@@ -16,7 +16,7 @@ p, li { white-space: pre-wrap; }
         <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
@@ -27,7 +27,7 @@ p, li { white-space: pre-wrap; }
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
@@ -37,7 +37,7 @@ p, li { white-space: pre-wrap; }
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
@@ -73,7 +73,7 @@ end AppendElement;</Input>
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
@@ -82,15 +82,15 @@ p, li { white-space: pre-wrap; }
           <GraphCell style="Graph" closed="false">
             <Input>simulate( AppendElement )    </Input>
             <Output>record SimulationResult
-    messages = "",
-    simulationTime = 0.2328211712403674
+    resultFile = "AppendElement_res.mat",
+    messages = ""
 end SimulationResult;</Output>
           </GraphCell>
           <TextCell style="Text">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
@@ -117,7 +117,7 @@ p, li { white-space: pre-wrap; }
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
@@ -127,7 +127,7 @@ p, li { white-space: pre-wrap; }
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
@@ -138,7 +138,7 @@ p, li { white-space: pre-wrap; }
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
@@ -154,7 +154,7 @@ p, li { white-space: pre-wrap; }
 equation
   Q[1:3, 1:3] = P;                // Upper left block
   Q[1:3, 4:6] = [Q[1:3, 1:2], -Q[1:3, {3}]];  // Upper right block
-  Q[4:6, 1:3] = [Q[1:2, 1:3], -Q[{3}, 1:3]];  // Lower left block
+  Q[4:6, 1:3] = [Q[1:2, 1:3]; -Q[{3}, 1:3]];  // Lower left block
   Q[4:6, 4:6] = P;                // Lower right block
 end BlockMatrix;</Input>
             <Output>{BlockMatrix}</Output>
@@ -162,11 +162,17 @@ end BlockMatrix;</Input>
           <GraphCell style="Graph" closed="false">
             <Input>simulate(BlockMatrix)</Input>
             <Output>record SimulationResult
-    messages = "Simulation failed for model: BlockMatrix
-[&lt;interactive>:10:3-10:44:writable] Error: Type mismatch in equation {{Q[4,1], Q[4,2], Q[4,3]}, {Q[5,1], Q[5,2], Q[5,3]}, {Q[6,1], Q[6,2], Q[6,3]}}=cat(2, {{Q[1,1], Q[1,2], Q[1,3]}, {Q[2,1], Q[2,2], Q[2,3]}}, -{{Q[3,1], Q[3,2], Q[3,3]}}) of type Real[3, 3]=Real[1, 6]
-Error: Error occurred while flattening model BlockMatrix
-"
-end SimulationResult;</Output>
+    resultFile = "",
+    messages = "Failed to build model: BlockMatrix"
+end SimulationResult;
+OMC-ERROR: 
+"[&lt;interactive>:10:3-10:44:writable] Error: Model is structurally singular, error found sorting equations 
+ 1: {{1.0, 2.0, 3.0}, {4.0, 5.0, 6.0}, {7.0, 8.0, 9.0}} = cat(1, {{1.0, 2.0, 3.0}, {4.0, 5.0, 6.0}}, -{{1.0, 2.0, 3.0}});
+2: {{1.0, 2.0, 3.0}, {4.0, 5.0, 6.0}, {7.0, 8.0, 9.0}} = cat(2, {{1.0, 2.0}, {4.0, 5.0}, {7.0, 8.0}}, -{{1.0}, {4.0}, {7.0}});
+ for variables 
+ Q[6,3](1), Q[6,2](2), Q[6,1](3), Q[5,3](4), Q[5,2](5), Q[5,1](6), Q[4,3](7), Q[4,2](8), Q[4,1](9), Q[3,6](10), Q[3,5](11), Q[3,4](12), Q[2,6](13), Q[2,5](14), Q[2,4](15), Q[1,6](16), Q[1,5](17), Q[1,4](18)
+Error: Internal error Transformation Module PFPlusExt index Reduction Method Pantelides failed!
+"</Output>
           </GraphCell>
         </GroupCell>
         <GroupCell closed="false">
@@ -174,7 +180,7 @@ end SimulationResult;</Output>
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
@@ -189,7 +195,7 @@ p, li { white-space: pre-wrap; }
 equation
   Q[1:3, 1:3] = P;                // Upper left block
   Q[1:3, 4:6] = [Q[1:3, 1:2], -Q[1:3, 3:3]];  // Upper right block
-  Q[4:6, 1:3] = [Q[1:2, 1:3], -Q[3:3, 1:3]];  // Lower left block
+  Q[4:6, 1:3] = [Q[1:2, 1:3]; -Q[3:3, 1:3]];  // Lower left block
   Q[4:6, 4:6] = P;                // Lower right block
 end BlockMatrix2;</Input>
             <Output>{BlockMatrix2}</Output>
@@ -197,11 +203,17 @@ end BlockMatrix2;</Input>
           <GraphCell style="Graph" closed="false">
             <Input>simulate(BlockMatrix2)</Input>
             <Output>record SimulationResult
-    messages = "Simulation failed for model: BlockMatrix2
-[&lt;interactive>:9:3-9:44:writable] Error: Type mismatch in equation {{Q[4,1], Q[4,2], Q[4,3]}, {Q[5,1], Q[5,2], Q[5,3]}, {Q[6,1], Q[6,2], Q[6,3]}}=cat(2, {{Q[1,1], Q[1,2], Q[1,3]}, {Q[2,1], Q[2,2], Q[2,3]}}, -{{Q[3,1], Q[3,2], Q[3,3]}}) of type Real[3, 3]=Real[1, 6]
-Error: Error occurred while flattening model BlockMatrix2
-"
-end SimulationResult;</Output>
+    resultFile = "",
+    messages = "Failed to build model: BlockMatrix2"
+end SimulationResult;
+OMC-ERROR: 
+"[&lt;interactive>:9:3-9:44:writable] Error: Model is structurally singular, error found sorting equations 
+ 1: {{1.0, 2.0, 3.0}, {4.0, 5.0, 6.0}, {7.0, 8.0, 9.0}} = cat(1, {{1.0, 2.0, 3.0}, {4.0, 5.0, 6.0}}, -{{1.0, 2.0, 3.0}});
+2: {{1.0, 2.0, 3.0}, {4.0, 5.0, 6.0}, {7.0, 8.0, 9.0}} = cat(2, {{1.0, 2.0}, {4.0, 5.0}, {7.0, 8.0}}, -{{1.0}, {4.0}, {7.0}});
+ for variables 
+ Q[6,3](1), Q[6,2](2), Q[6,1](3), Q[5,3](4), Q[5,2](5), Q[5,1](6), Q[4,3](7), Q[4,2](8), Q[4,1](9), Q[3,6](10), Q[3,5](11), Q[3,4](12), Q[2,6](13), Q[2,5](14), Q[2,4](15), Q[1,6](16), Q[1,5](17), Q[1,4](18)
+Error: Internal error Transformation Module PFPlusExt index Reduction Method Pantelides failed!
+"</Output>
           </GraphCell>
         </GroupCell>
         <GroupCell closed="false">
@@ -209,7 +221,7 @@ end SimulationResult;</Output>
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
@@ -245,7 +257,7 @@ end SimulationResult;</Output>
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
@@ -255,7 +267,7 @@ p, li { white-space: pre-wrap; }
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
@@ -296,7 +308,7 @@ end CyclicPerm;</Input>
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
@@ -316,7 +328,7 @@ end SimulationResult;</Output>
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">

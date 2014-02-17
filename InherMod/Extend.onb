@@ -6,7 +6,7 @@
         <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
 &lt;tr>
 &lt;td style="border: none;">
@@ -17,7 +17,7 @@ p, li { white-space: pre-wrap; }
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
@@ -27,7 +27,7 @@ p, li { white-space: pre-wrap; }
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
@@ -48,22 +48,26 @@ end LowPassFilter1;</Input>
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
           <Input>model LowPassFilter20C
   extends LowPassFilter1(ystart = 0, T = 20);
 end LowPassFilter20C;</Input>
-          <Output>{LowPassFilter20C,LowPassFilter1}</Output>
+          <Output>{LowPassFilter20C}</Output>
         </GraphCell>
       </GroupCell>
       <GroupCell closed="false">
@@ -71,7 +75,7 @@ end LowPassFilter20C;</Input>
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
@@ -88,19 +92,23 @@ end SimulationResult;</Output>
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
 &lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
-          <OMCPlot PlotType="0" XRangeMin="0" Title="Plot by OpenModelica" LogX="false" XRangeMax="0" Grid="true" LogY="false" YRangeMin="0" YRangeMax="0" YLabel="" Legend="true" XLabel="time">
+          <OMCPlot PlotType="0" XRangeMin="0" Title="Plot by OpenModelica" LogX="false" XRangeMax="0" Grid="true" LogY="false" CurveStyle="0" YRangeMin="0" LegendPosition="top" YRangeMax="0" YLabel="" XLabel="time" CurveWidth="0">
             <Curve Title="y" Visible="true" XData="AAAAAAAAAAA/pHrhR64Uez+0euFHrhR7P764UeuFHrg/xHrhR64Uez/JmZmZmZmaP864UeuFHrk/0euFHrhR7D/UeuFHrhR7P9cKPXCj1wo/2ZmZmZmZmT/cKPXCj1woP964UeuFHrc/4KPXCj1woz/h64UeuFHrP+MzMzMzMzM/5HrhR64Uez/lwo9cKPXDP+cKPXCj1ws/6FHrhR64Uz/pmZmZmZmbP+rhR64UeuM/7Cj1wo9cKz/tcKPXCj1zP+64UeuFHrs/8AAAAAAAAT/wo9cKPXClP/FHrhR64Uk/8euFHrhR7T/yj1wo9cKRP/MzMzMzMzU/89cKPXCj2T/0euFHrhR9P/UeuFHrhSE/9cKPXCj1xT/2ZmZmZmZpP/cKPXCj1w0/964UeuFHsT/4UeuFHrhVP/j1wo9cKPk/+ZmZmZmZnT/6PXCj1wpBP/rhR64UeuU/+4UeuFHriT/8KPXCj1wtP/zMzMzMzNE//XCj1wo9dT/+FHrhR64ZP/64UeuFHr0//1wo9cKPYUAAAAAAAAACQABR64UeuFRAAKPXCj1wpkAA9cKPXCj4QAFHrhR64UpAAZmZmZmZnEAB64UeuFHuQAI9cKPXCkBAAo9cKPXCkkAC4UeuFHrkQAMzMzMzMzZAA4UeuFHriEAD1wo9cKPaQAQo9cKPXCxABHrhR64UfkAEzMzMzMzQQAUeuFHrhSJABXCj1wo9dEAFwo9cKPXGQAYUeuFHrhhABmZmZmZmakAGuFHrhR68QAcKPXCj1w5AB1wo9cKPYEAHrhR64UeyQAgAAAAAAARACFHrhR64VkAIo9cKPXCoQAj1wo9cKPpACUeuFHrhTEAJmZmZmZmeQAnrhR64UfBACj1wo9cKQkAKj1wo9cKUQArhR64UeuZACzMzMzMzOEALhR64UeuKQAvXCj1wo9xADCj1wo9cLkAMeuFHrhSAQAzMzMzMzNJADR64UeuFJEANcKPXCj12QA3Cj1wo9chADhR64UeuGkAOZmZmZmZsQA64UeuFHr5ADwo9cKPXEEAPXCj1wo9iQA+uFHrhR7RAEAAAAAAAA0AQKPXCj1wsQBBR64UeuFVAEHrhR64UfkAQo9cKPXCnQBDMzMzMzNBAEPXCj1wo+UARHrhR64UiQBFHrhR64UtAEXCj1wo9dEARmZmZmZmdQBHCj1wo9cZAEeuFHrhR70ASFHrhR64YQBI9cKPXCkFAEmZmZmZmakASj1wo9cKTQBK4UeuFHrxAEuFHrhR65UATCj1wo9cOQBMzMzMzMzdAE1wo9cKPYEAThR64UeuJQBOuFHrhR7JAE9cKPXCj20AUAAAAAAAEQBQo9cKPXC1AFFHrhR64VkAUeuFHrhR/QBSj1wo9cKhAFMzMzMzM0UAU9cKPXCj6QBUeuFHrhSNAFUeuFHrhTEAVcKPXCj11QBWZmZmZmZ5AFcKPXCj1x0AV64UeuFHwQBYUeuFHrhlAFj1wo9cKQkAWZmZmZmZrQBaPXCj1wpRAFrhR64UevUAW4UeuFHrmQBcKPXCj1w9AFzMzMzMzOEAXXCj1wo9hQBeFHrhR64pAF64UeuFHs0AX1wo9cKPcQBgAAAAAAAVAGCj1wo9cLkAYUeuFHrhXQBh64UeuFIBAGKPXCj1wqUAYzMzMzMzSQBj1wo9cKPtAGR64UeuFJEAZR64UeuFNQBlwo9cKPXZAGZmZmZmZn0AZwo9cKPXIQBnrhR64UfFAGhR64UeuGkAaPXCj1wpDQBpmZmZmZmxAGo9cKPXClUAauFHrhR6+QBrhR64UeudAGwo9cKPXEEAbMzMzMzM5QBtcKPXCj2JAG4UeuFHri0AbrhR64Ue0QBvXCj1wo91AHAAAAAAABkAcKPXCj1wvQBxR64UeuFhAHHrhR64UgUAco9cKPXCqQBzMzMzMzNNAHPXCj1wo/EAdHrhR64UlQB1HrhR64U5AHXCj1wo9d0AdmZmZmZmgQB3Cj1wo9clAHeuFHrhR8kAeFHrhR64bQB49cKPXCkRAHmZmZmZmbUAej1wo9cKWQB64UeuFHr9AHuFHrhR66EAfCj1wo9cRQB8zMzMzMzpAH1wo9cKPY0AfhR64UeuMQB+uFHrhR7VAH9cKPXCj3kAgAAAAAAADQCAUeuFHrhdAICj1wo9cK0AgPXCj1wo/QCBR64UeuFNAIGZmZmZmZ0AgeuFHrhR7QCCPXCj1wo9AIKPXCj1wo0AguFHrhR63QCDMzMzMzMtAIOFHrhR630Ag9cKPXCjzQCEKPXCj1wdAIR64UeuFG0AhMzMzMzMvQCFHrhR64UNAIVwo9cKPV0AhcKPXCj1rQCGFHrhR639AIZmZmZmZk0AhrhR64UenQCHCj1wo9btAIdcKPXCjz0Ah64UeuFHjQCH///////dAIhR64UeuC0AiKPXCj1wfQCI9cKPXCjNAIlHrhR64R0AiZmZmZmZbQCJ64UeuFG9AIo9cKPXCg0Aio9cKPXCXQCK4UeuFHqtAIszMzMzMv0Ai4UeuFHrTQCL1wo9cKOdAIwo9cKPW+0AjHrhR64UPQCMzMzMzMyNAI0euFHrhN0AjXCj1wo9LQCNwo9cKPV9AI4UeuFHrc0AjmZmZmZmHQCOuFHrhR5tAI8KPXCj1r0Aj1wo9cKPDQCPrhR64UddAI///////60AkFHrhR63/QCQo9cKPXBNAJD1wo9cKJ0AkUeuFHrg7QCRmZmZmZk9AJHrhR64UY0Akj1wo9cJ3QCSj1wo9cItAJLhR64Uen0AkzMzMzMyzQCThR64UesdAJPXCj1wo20AlCj1wo9bvQCUeuFHrhQNAJTMzMzMzF0AlR64UeuErQCVcKPXCjz9AJXCj1wo9U0AlhR64UetnQCWZmZmZmXtAJa4UeuFHj0Alwo9cKPWjQCXXCj1wo7dAJeuFHrhRy0Al///////fQCYUeuFHrfNAJij1wo9cB0AmPXCj1wobQCZR64UeuC9AJmZmZmZmQ0AmeuFHrhRXQCaPXCj1wmtAJqPXCj1wf0AmuFHrhR6TQCbMzMzMzKdAJuFHrhR6u0Am9cKPXCjPQCcKPXCj1uNAJx64UeuE90AnMzMzMzMLQCdHrhR64R9AJ1wo9cKPM0AncKPXCj1HQCeFHrhR61tAJ5mZmZmZb0AnrhR64UeDQCfCj1wo9ZdAJ9cKPXCjq0An64UeuFG/QCf//////9NAKBR64Uet50AoKPXCj1v7QCg9cKPXCg9AKFHrhR64I0AoZmZmZmY3QCh64UeuFEtAKI9cKPXCX0Aoo9cKPXBzQCi4UeuFHodAKMzMzMzMm0Ao4UeuFHqvQCj1wo9cKMNAKQo9cKPW10ApHrhR64TrQCkzMzMzMv9AKUeuFHrhE0ApXCj1wo8nQClwo9cKPTtAKYUeuFHrT0ApmZmZmZljQCmuFHrhR3dAKcKPXCj1i0Ap1wo9cKOfQCnrhR64UbNAKf//////x0AqFHrhR63bQCoo9cKPW+9AKj1wo9cKA0AqUeuFHrgXQCpmZmZmZitAKnrhR64UP0Aqj1wo9cJTQCqj1wo9cGdAKrhR64Uee0AqzMzMzMyPQCrhR64UeqNAKvXCj1wot0ArCj1wo9bLQCseuFHrhN9AKzMzMzMy80ArR64UeuEHQCtcKPXCjxtAK3Cj1wo9L0ArhR64UetDQCuZmZmZmVdAK64UeuFHa0Arwo9cKPV/QCvXCj1wo5NAK+uFHrhRp0Ar//////+7QCwUeuFHrc9ALCj1wo9b40AsPXCj1wn3QCxR64UeuAtALGZmZmZmH0AseuFHrhQzQCyPXCj1wkdALKPXCj1wW0AsuFHrhR5vQCzMzMzMzINALOFHrhR6l0As9cKPXCirQC0KPXCj1r9ALR64UeuE00AtMzMzMzLnQC1HrhR64PtALVwo9cKPD0AtcKPXCj0jQC2FHrhR6zdALZmZmZmZS0AtrhR64UdfQC3Cj1wo9XNALdcKPXCjh0At64UeuFGbQC3//////69ALhR64Uetw0AuKPXCj1vXQC49cKPXCetALlHrhR63/0AuZmZmZmYTQC564UeuFCdALo9cKPXCO0Auo9cKPXBPQC64UeuFHmNALszMzMzMd0Au4UeuFHqLQC71wo9cKJ9ALwo9cKPWs0AvHrhR64THQC8zMzMzMttAL0euFHrg70AvXCj1wo8DQC9wo9cKPRdAL4UeuFHrK0AvmZmZmZk/QC+uFHrhR1NAL8KPXCj1Z0Av1wo9cKN7QC/rhR64UY9AL///////o0AwCj1wo9bcQDAUeuFHreZAMB64UeuE8EAwKPXCj1v6QDAzMzMzMwRAMD1wo9cKDkAwR64UeuEYQDBR64UeuCJAMFwo9cKPLEAwZmZmZmY2QDBwo9cKPUBAMHrhR64USkAwhR64UetUQDCPXCj1wl5AMJmZmZmZaEAwo9cKPXByQDCuFHrhR3xAMLhR64UehkAwwo9cKPWQQDDMzMzMzJpAMNcKPXCjpEAw4UeuFHquQDDrhR64UbhAMPXCj1wowkAw///////MQDEKPXCj1tZAMRR64Uet4EAxHrhR64TqQDEo9cKPW/RAMTMzMzMy/kAxPXCj1woIQDFHrhR64RJAMVHrhR64HEAxXCj1wo8mQDFmZmZmZjBAMXCj1wo9OkAxeuFHrhREQDGFHrhR605AMY9cKPXCWEAxmZmZmZliQDGj1wo9cGxAMa4UeuFHdkAxuFHrhR6AQDHCj1wo9YpAMczMzMzMlEAx1wo9cKOeQDHhR64UeqhAMeuFHrhRskAx9cKPXCi8QDH//////8ZAMgo9cKPW0EAyFHrhR63aQDIeuFHrhORAMij1wo9b7kAyMzMzMzL4QDI9cKPXCgJAMkeuFHrhDEAyUeuFHrgWQDJcKPXCjyBAMmZmZmZmKkAycKPXCj00QDJ64UeuFD5AMoUeuFHrSEAyj1wo9cJSQDKZmZmZmVxAMqPXCj1wZkAyrhR64UdwQDK4UeuFHnpAMsKPXCj1hEAyzMzMzMyOQDLXCj1wo5hAMuFHrhR6okAy64UeuFGsQDL1wo9cKLZAMv//////wEAzCj1wo9bKQDMUeuFHrdRAMx64UeuE3kAzKPXCj1voQDMzMzMzMvJAMz1wo9cJ/EAzR64UeuEGQDNR64UeuBBAM1wo9cKPGkAzZmZmZmYkQDNwo9cKPS5AM3rhR64UOEAzhR64UetCQDOPXCj1wkxAM5mZmZmZVkAzo9cKPXBgQDOuFHrhR2pAM7hR64UedEAzwo9cKPV+QDPMzMzMzIhAM9cKPXCjkkAz4UeuFHqcQDPrhR64UaZAM/XCj1wosEAz//////+6QDQAAAAAAABANAAAAAAAAA==" YData="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" Color="4294901760"/>
           </OMCPlot>
           <Input>plot( y)  </Input>
@@ -110,15 +118,19 @@ p, li { white-space: pre-wrap; }
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
       </GroupCell>
       <GroupCell closed="false">
@@ -126,7 +138,7 @@ p, li { white-space: pre-wrap; }
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
@@ -136,7 +148,7 @@ p, li { white-space: pre-wrap; }
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
@@ -156,28 +168,32 @@ end LowVoltage;</Input>
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
           <Input>class HighVoltage
   extends LowVoltage(Voltage(unit = "kV"));
 end HighVoltage;</Input>
-          <Output>{HighVoltage,LowVoltage}</Output>
+          <Output>{HighVoltage}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
@@ -187,7 +203,7 @@ p, li { white-space: pre-wrap; }
           <Input>class HighVoltageInst
   HighVoltage vhigh;
 end HighVoltageInst;</Input>
-          <Output>{HighVoltageInst,HighVoltage,LowVoltage}</Output>
+          <Output>{HighVoltageInst}</Output>
         </GraphCell>
       </GroupCell>
       <GroupCell closed="false">
@@ -195,7 +211,7 @@ end HighVoltageInst;</Input>
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
@@ -205,7 +221,7 @@ p, li { white-space: pre-wrap; }
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
@@ -222,28 +238,32 @@ end A;</Input>
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;">&lt;br />&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
         <GraphCell style="Graph" closed="false">
           <Input>class B
   extends A(b = 3);
 end B;</Input>
-          <Output>{B,A}</Output>
+          <Output>{B}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
@@ -254,13 +274,13 @@ p, li { white-space: pre-wrap; }
   parameter Real a;
   parameter Real b = 3;
 end Bexpanded;</Input>
-          <Output>{Bexpanded,B,A}</Output>
+          <Output>{Bexpanded}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
@@ -268,15 +288,15 @@ p, li { white-space: pre-wrap; }
         </TextCell>
         <GraphCell style="Graph" closed="false">
           <Input>class C
-  extends B(a = 1, A(b = 2));
+  extends B(a = 1, b = 2);
 end C;</Input>
-          <Output>{C,Bexpanded,B,A}</Output>
+          <Output>{C}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
@@ -284,17 +304,17 @@ p, li { white-space: pre-wrap; }
         </TextCell>
         <GraphCell style="Graph" closed="false">
           <Input>instantiateModel(C)</Input>
-          <Output>""
-OMC-ERROR: 
-"Error: In modifier (A(b = 2), class or component b), class or component A not found in &lt;C>.
-Error: Error occurred while flattening model C
+          <Output>"class C
+  parameter Real a = 1.0;
+  parameter Real b = 2.0;
+end C;
 "</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
@@ -305,7 +325,7 @@ p, li { white-space: pre-wrap; }
   parameter Real a = 1;
   parameter Real b = 2;
 end Cexpanded;</Input>
-          <Output>{Cexpanded,C,Bexpanded,B,A}</Output>
+          <Output>{Cexpanded}</Output>
         </GraphCell>
       </GroupCell>
       <GroupCell closed="false">
@@ -313,7 +333,7 @@ end Cexpanded;</Input>
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
@@ -323,7 +343,7 @@ p, li { white-space: pre-wrap; }
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
@@ -333,13 +353,13 @@ p, li { white-space: pre-wrap; }
           <Input>class C2
   B bcomp(b = 1, A(b = 2));
 end C2;</Input>
-          <Output>{C2,Cexpanded,C,Bexpanded,B,A}</Output>
+          <Output>{C2}</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
