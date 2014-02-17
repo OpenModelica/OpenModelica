@@ -1041,6 +1041,10 @@ algorithm
         (localCache,alg) = fromEquationToAlgAssignment(first,comment,info,localCache,localEnv,pre);
         (localCache,localAccList) = fromEquationsToAlgAssignments(rest,listAppend(alg,localAccList),localCache,localEnv,pre);
       then (localCache,localAccList);
+    case (Absyn.EQUATIONITEMCOMMENT(comment=_) :: rest,localAccList,localCache,localEnv,pre)
+      equation
+        (localCache,localAccList) = fromEquationsToAlgAssignments(rest,localAccList,localCache,localEnv,pre);
+      then (localCache,localAccList);
   end match;
 end fromEquationsToAlgAssignments;
 
