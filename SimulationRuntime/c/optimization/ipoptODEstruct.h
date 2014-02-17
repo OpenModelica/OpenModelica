@@ -81,6 +81,7 @@ typedef struct IPOPT_DATA_
   double * Vmax;
 
   double * vnom;
+  double *start_u;
 
   double *scalVar;
   double *scalRes;
@@ -190,7 +191,6 @@ typedef struct IPOPT_DATA_
   int mayer_index;
   int lagrange_index;
   DATA * data;
-  long int index_u;
 
   int matrixA;
   int matrixB;

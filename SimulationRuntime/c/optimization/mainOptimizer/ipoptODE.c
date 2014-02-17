@@ -121,7 +121,7 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
  **/
 int refreshSimData(double *x, double *u, double t, IPOPT_DATA_ *iData)
 {
-  int i,j,k;
+  int i,j;
   DATA* data = iData->data;
 
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
@@ -131,7 +131,7 @@ int refreshSimData(double *x, double *u, double t, IPOPT_DATA_ *iData)
     sData->realVars[j] = x[j]*iData->vnom[j];
   }
 
-  for(i = 0, k = iData->index_u; i<iData->nu;++i,++j,++k){
+  for(i = 0; i<iData->nu;++i,++j){
     data->simulationInfo.inputVars[i] = u[i]*iData->vnom[j];
   }
 

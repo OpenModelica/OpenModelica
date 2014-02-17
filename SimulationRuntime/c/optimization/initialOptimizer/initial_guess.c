@@ -80,7 +80,7 @@ static int initial_guess_ipopt_cflag(IPOPT_DATA_ *iData,char* cflags)
     if(id <iData->nx){
       iData->v[i] = iData->data->modelData.realVarsData[id].attribute.start*iData->scalVar[id];
     }else if(id< iData->nv){
-      iData->v[i] = iData->data->modelData.realVarsData[iData->index_u+id -iData->nx].attribute.start*iData->scalVar[id];
+      iData->v[i] = iData->start_u[id-iData->nx]*iData->scalVar[id];
     }
   }
     return 0;
@@ -97,7 +97,7 @@ static int initial_guess_ipopt_cflag(IPOPT_DATA_ *iData,char* cflags)
  **/
 static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
 {
-  double *u0, *u, *x, uu,tmp ,lhs, rhs;
+  double *u0, *x, uu,tmp ,lhs, rhs;
   int i,j,k,ii,jj,id;
   int err;
   double *v;
@@ -120,16 +120,13 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
    solverInfo->solverMethod = S_OPTIMIZATION;
    solverInfo->solverData = dasslData;
 
-   u0 = data->localData[1]->realVars + iData->index_u;
-   u = data->localData[0]->realVars + iData->index_u;
+   u0 = iData->start_u;
    x = data->localData[0]->realVars;
    v = iData->v;
 
    for(ii=iData->nx,j=0; j < iData->nu; ++j, ++ii){
-     u0[j] = data->modelData.realVarsData[iData->index_u+j].attribute.start;
-   u0[j] = fmin(fmax(u0[j],iData->umin[j]),iData->umax[j]);
-   u[j] = u0[j];
-   v[ii] = u0[j]*iData->scalVar[j + iData->nx];
+     u0[j] = fmin(fmax(u0[j],iData->umin[j]),iData->umax[j]);
+     v[ii] = u0[j]*iData->scalVar[j + iData->nx];
    }
 
    printGuess = (short)(ACTIVE_STREAM(LOG_INIT) && !ACTIVE_STREAM(LOG_SOLVER));
@@ -151,8 +148,8 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
      for(j=0; j< iData->nx; ++j)
        v[j] = sData->realVars[j] * iData->scalVar[j];
 
-     for(ii=iData->index_u; j< iData->nv; ++j, ++ii)
-       v[j] = sData->realVars[ii] * iData->scalVar[j];
+     for(; j< iData->nv; ++j)
+       v[j] = iData->start_u[j-iData->nx] * iData->scalVar[j];
 
      v += iData->nv;
      /* updateContinuousSystem(iData->data); */

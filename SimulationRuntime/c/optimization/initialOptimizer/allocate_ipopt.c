@@ -113,6 +113,7 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   iData->v = (double*)malloc(iData->NV*sizeof(double));
   iData->w = (double*)malloc((iData->nsi + 1)*(iData->nv)*sizeof(double));
   iData->time = (double*)malloc((iData->deg*iData->nsi +1) *sizeof(double));
+  iData->start_u = (double*)malloc(iData->nv*sizeof(double));
 
   iData->J = (double**) malloc(iData->nJ * sizeof(double*));
   for(i = 0; i < iData->nJ; i++)
@@ -254,6 +255,7 @@ int freeIpoptData(IPOPT_DATA_ *iData)
   free(iData->rhs);
   free(iData->sv);
   free(iData->sh);
+  free(iData->start_u);
 
   for(i = 0; i<3;++i);{
     if(iData->data->simulationInfo.analyticJacobians[i].seedVars){
@@ -614,10 +616,10 @@ static int optimizer_coeff_setings(IPOPT_DATA_ *iData)
  **/
 static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData)
 {
-  int i, j, id;
+  int i, j;
   modelica_boolean *tmp = (modelica_boolean*)malloc(iData->nv*sizeof(modelica_boolean));
-  double *start = (double*)malloc(iData->nv*sizeof(double));
   char **tmpname = (char**)malloc(iData->nv*sizeof(char*));
+  double *start = iData->start_u;
 
   for(i =0;i<iData->nx;++i){
     check_nominal(iData, data->modelData.realVarsData[i].attribute.min, data->modelData.realVarsData[i].attribute.max, data->modelData.realVarsData[i].attribute.nominal, data->modelData.realVarsData[i].attribute.useNominal, i, fabs(iData->x0[i]));
@@ -627,9 +629,6 @@ static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData)
     iData->xmin[i] = data->modelData.realVarsData[i].attribute.min*iData->scalVar[i];
     iData->xmax[i] = data->modelData.realVarsData[i].attribute.max*iData->scalVar[i];
   }
-
-  iData->index_u = data->modelData.nVariablesReal - iData->nu;
-  id = iData->index_u;
 
   iData->data->callback->pickUpBoundsForInputsInOptimization(data,iData->umin, iData->umax, &iData->vnom[iData->nx], tmp, tmpname, start);
 
@@ -647,6 +646,7 @@ static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData)
     iData->scalVar[j] = 1.0 / iData->vnom[j];
     iData->umin[i] *= iData->scalVar[j];
     iData->umax[i] *= iData->scalVar[j];
+    iData->start_u[i] = fmin(fmax(iData->start_u[i], iData->umin[i]), iData->umax[i]);
   }
 
 
@@ -659,14 +659,13 @@ static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData)
   memcpy(iData->Vmin, iData->vmin, sizeof(double)*iData->nv);
   memcpy(iData->Vmax, iData->vmax, sizeof(double)*iData->nv);
 
-  for(i = 0,id = iData->nv; i < iData->nsi*iData->deg;i++, id += iData->nv){
-  memcpy(iData->Vmin + id, iData->vmin, sizeof(double)*iData->nv);
-    memcpy(iData->Vmax + id, iData->vmax, sizeof(double)*iData->nv);
+  for(i = 0,j = iData->nv; i < iData->nsi*iData->deg;i++, j += iData->nv){
+  memcpy(iData->Vmin + j, iData->vmin, sizeof(double)*iData->nv);
+    memcpy(iData->Vmax + j, iData->vmax, sizeof(double)*iData->nv);
   }
 
   free(tmp);
   free(tmpname);
-  free(start);
   return 0;
 }
 
@@ -713,7 +712,7 @@ static int optimizer_print_step(IPOPT_DATA_ *iData)
     if(j <iData->nx)
       sprintf(buffer, "./%s_ipoptPath_states.csv", iData->data->modelData.realVarsData[j].info.name);
     else if(j< iData->nv)
-      sprintf(buffer, "./%s_ipoptPath_input.csv", iData->data->modelData.realVarsData[iData->index_u + j-iData->nx].info.name);
+      sprintf(buffer, "./%s_ipoptPath_input.csv", "u");
 
     iData->pFile[j] = fopen(buffer, "wt");
     fprintf(iData->pFile[j], "%s,", "iteration");
@@ -728,7 +727,7 @@ static int optimizer_print_step(IPOPT_DATA_ *iData)
     if(j < iData->nx)
       fprintf(iData->pFile[j], "%s_%i,", iData->data->modelData.realVarsData[j].info.name, k);
     else if(j < iData->nv)
-      fprintf(iData->pFile[j], "%s_%i,", iData->data->modelData.realVarsData[iData->index_u + j-iData->nx].info.name, k);
+      fprintf(iData->pFile[j], "%s_%i,", "u", k);
   }
   return 0;
 }
