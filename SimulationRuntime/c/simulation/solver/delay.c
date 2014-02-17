@@ -31,10 +31,10 @@
 /*! \file delay.c
  */
 
-#include "delay.h"
-#include "omc_error.h"
+#include "simulation/solver/delay.h"
+#include "util/omc_error.h"
 #include "simulation_data.h"
-#include "ringbuffer.h"
+#include "util/ringbuffer.h"
 #include "openmodelica.h"
 
 #include <stdio.h>

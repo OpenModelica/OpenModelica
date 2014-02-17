@@ -414,13 +414,13 @@ case SIMCODE(__) then
   #include "openmodelica.h"
   #include "openmodelica_func.h"
   #include "simulation_data.h"
-  #include "omc_error.h"
+  #include "util/omc_error.h"
   #include "<%fileNamePrefix%>_functions.h"
   #include "<%fileNamePrefix%>_literals.h"
   #include "fmiModelTypes.h"
   #include "fmiModelFunctions.h"
-  #include "initialization.h"
-  #include "events.h"
+  #include "simulation/solver/initialization/initialization.h"
+  #include "simulation/solver/events.h"
   #include "fmu_model_interface.h"
 
   #ifdef __cplusplus

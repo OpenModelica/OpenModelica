@@ -36,8 +36,8 @@
 #define _EVENTS_H_
 
 #include "simulation_data.h"
-#include "solver_main.h"
-#include "list.h"
+#include "simulation/solver/solver_main.h"
+#include "util/list.h"
 
 #ifdef __cplusplus
 extern "C" {

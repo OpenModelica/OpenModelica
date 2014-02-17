@@ -40,7 +40,7 @@
 
 #include "openmodelica.h"
 #include "simulation_data.h"
-#include "list.h"
+#include "util/list.h"
 
 typedef struct SOLVER_INFO
 {

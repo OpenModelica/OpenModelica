@@ -40,7 +40,9 @@ RUNTIMESIMSOLVER_HEADERS = ./simulation/solver/delay.h \
 ./simulation/solver/simulation_inline_solver.h \
 ./simulation/solver/stateset.h \
 ./simulation/solver/perform_simulation.c \
-./simulation/solver/dassl.h 
+./simulation/solver/dassl.h \
+./simulation/solver/events.h \
+./simulation/solver/solver_main.h 
 
 RUNTIMEMETA_HEADERS = ./meta/meta_modelica_builtin_boxptr.h \
 ./meta/meta_modelica_builtin.h \
@@ -77,14 +79,18 @@ RUNTIMEUTIL_HEADERS = ./util/ModelicaUtilities.h \
 ./util/string_array.h \
 ./util/utility.h \
 ./util/varinfo.h \
+./util/list.h 
 
-
-RUNTIME_HEADERS_FMU = \
+RUNTIMEINITIALIZATION_HEADERS = \
 ./simulation/solver/initialization/initialization.h \
-./simulation/solver/initialization/initialization_data.h \
-./simulation/solver/events.h \
-./simulation/solver/solver_main.h \
-./util/list.h \
+./simulation/solver/initialization/initialization_data.h 
+
+# RUNTIME_HEADERS_FMU = \
+# ./simulation/solver/initialization/initialization.h \
+# ./simulation/solver/initialization/initialization_data.h \
+# ./simulation/solver/events.h \
+# ./simulation/solver/solver_main.h \
+# ./util/list.h \
 
 .PHONY : clean all $(LIBF2C)
 
@@ -197,6 +203,7 @@ install: $(LIBSIMULATION) $(LIBRUNTIME) $(LIBFMIRUNTIME) simulation/libf2c/libf2
 	cp -p $(RUNTIMESIMULATION_HEADERS) $(builddir_inc)/simulation
 	cp -p $(RUNTIMESIMRESULTS_HEADERS) $(builddir_inc)/simulation/results
 	cp -p $(RUNTIMESIMSOLVER_HEADERS) $(builddir_inc)/simulation/solver
+	cp -p $(RUNTIMEINITIALIZATION_HEADERS) $(builddir_inc)/simulation/solver/initialization
 	cp -p $(RUNTIMEMETA_HEADERS) $(builddir_inc)/meta
 	cp -p $(RUNTIMEMETAGC_HEADERS) $(builddir_inc)/meta/gc
 	cp -p $(RUNTIMEUTIL_HEADERS) $(builddir_inc)/util

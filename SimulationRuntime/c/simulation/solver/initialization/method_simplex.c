@@ -33,7 +33,7 @@
 
 #include "method_newuoa.h"
 #include "simulation_data.h"
-#include "omc_error.h"
+#include "util/omc_error.h"
 #include "openmodelica.h"
 #include "openmodelica_func.h"
 #include "model_help.h"

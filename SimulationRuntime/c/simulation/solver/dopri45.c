@@ -28,7 +28,7 @@
  *
  */
 
-#include "simulation_runtime.h"
+#include "simulation/simulation_runtime.h"
 #include "dopri45.h"
 #include <stdlib.h>
 #include <math.h>

@@ -34,7 +34,7 @@
 #include "../../../../Compiler/runtime/config.h"
 #include "method_kinsol.h"
 #include "simulation_data.h"
-#include "omc_error.h"
+#include "util/omc_error.h"
 
 #ifdef WITH_SUNDIALS
   #include "openmodelica.h"

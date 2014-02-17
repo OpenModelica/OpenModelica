@@ -38,6 +38,7 @@ mkbuilddirs:
 	mkdir -p $(builddir_inc)/simulation
 	mkdir -p $(builddir_inc)/simulation/results
 	mkdir -p $(builddir_inc)/simulation/solver
+	mkdir -p $(builddir_inc)/simulation/solver/initialization
 	mkdir -p $(builddir_inc)/meta
 	mkdir -p $(builddir_inc)/meta/gc
 	mkdir -p $(builddir_inc)/util

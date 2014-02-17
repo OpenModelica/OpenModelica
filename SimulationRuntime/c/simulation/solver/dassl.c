@@ -35,14 +35,14 @@
 #include "openmodelica_func.h"
 #include "simulation_data.h"
 
-#include "omc_error.h"
-#include "memory_pool.h"
+#include "util/omc_error.h"
+#include "util/memory_pool.h"
 
-#include "simulation_runtime.h"
-#include "solver_main.h"
-#include "model_help.h"
+#include "simulation/simulation_runtime.h"
+#include "simulation/solver/solver_main.h"
+#include "simulation/solver/model_help.h"
 
-#include "dassl.h"
+#include "simulation/solver/dassl.h"
 #include "f2c.h"
 
 static const char *dasslMethodStr[DASSL_MAX] = {"unknown",

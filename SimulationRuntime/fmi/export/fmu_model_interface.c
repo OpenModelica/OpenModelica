@@ -29,14 +29,14 @@
  *
  */
 #include "simulation_data.h"
-#include "stateset.h"
-#include "model_help.h"
-#include "nonlinearSystem.h"
-#include "linearSystem.h"
-#include "mixedSystem.h"
-#include "delay.h"
-#include "simulation_info_xml.h"
-#include "simulation_input_xml.h"
+#include "simulation/solver/stateset.h"
+#include "simulation/solver/model_help.h"
+#include "simulation/solver/nonlinearSystem.h"
+#include "simulation/solver/linearSystem.h"
+#include "simulation/solver/mixedSystem.h"
+#include "simulation/solver/delay.h"
+#include "simulation/simulation_info_xml.h"
+#include "simulation/simulation_input_xml.h"
 
 // array of value references of states
 #if NUMBER_OF_STATES>0

@@ -28,16 +28,16 @@
  *
  */
 
-#include "events.h"
-#include "omc_error.h"
-#include "options.h"
+#include "simulation/solver/events.h"
+#include "util/omc_error.h"
+#include "simulation/options.h"
 #include "simulation_data.h"
-#include "simulation_result.h"
+#include "simulation/results/simulation_result.h"
 #include "openmodelica.h"         /* for modelica types */
 #include "openmodelica_func.h"    /* for modelica fucntion */
-#include "simulation_runtime.h"
-#include "solver_main.h"
-#include "model_help.h"
+#include "simulation/simulation_runtime.h"
+#include "simulation/solver/solver_main.h"
+#include "simulation/solver/model_help.h"
 
 #include <math.h>
 #include <stdio.h>

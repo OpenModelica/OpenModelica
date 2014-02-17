@@ -36,7 +36,7 @@
 #define _INITIALIZATION_DATA_H_
 
 #include "simulation_data.h"
-#include "omc_error.h"
+#include "util/omc_error.h"
 
 typedef struct INIT_DATA
 {
