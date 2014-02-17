@@ -259,7 +259,7 @@ public function writeChars
 
   output Text outText;
 algorithm
-  outText := matchcontinue (inText, inChars)
+  outText := match (inText, inChars)
     local
       Text txt;
       String c;
@@ -292,7 +292,7 @@ algorithm
         Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.writeChars failed.\n");
       then
         fail();
-  end matchcontinue;
+  end match;
 end writeChars;
 
 
@@ -303,7 +303,7 @@ public function writeLineOrStr
 
   output Text outText;
 algorithm
-  outText := matchcontinue (inText, inStr, inIsLine)
+  outText := match (inText, inStr, inIsLine)
     local
       Tokens toks;
       list<tuple<Tokens,BlockType>> blstack;
@@ -330,7 +330,7 @@ algorithm
             ), str, true)
       then
         MEM_TEXT(ST_LINE(str) :: toks, blstack);
-  end matchcontinue;
+  end match;
 end writeLineOrStr;
 
 
@@ -472,7 +472,7 @@ public function pushBlock
 
   output Text outText;
 algorithm
-  outText := matchcontinue (inText, inBlockType)
+  outText := match (inText, inBlockType)
     local
       Tokens toks;
       list<tuple<Tokens,BlockType>> blstack;
@@ -496,7 +496,7 @@ algorithm
       then
         fail();
 
-  end matchcontinue;
+  end match;
 end pushBlock;
 
 
@@ -504,7 +504,7 @@ public function popBlock
   input Text inText;
   output Text outText;
 algorithm
-  outText := matchcontinue (inText)
+  outText := match (inText)
     local
       Tokens toks, stacktoks;
       list<tuple<Tokens,BlockType>> blstack;
@@ -534,7 +534,7 @@ algorithm
         Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.popBlock failed - probably pushBlock and popBlock are not well balanced !\n");
       then
        fail();
-  end matchcontinue;
+  end match;
 end popBlock;
 
 
@@ -544,7 +544,7 @@ public function pushIter
 
   output Text outText;
 algorithm
-  outText := matchcontinue (inText, inIterOptions)
+  outText := match (inText, inIterOptions)
     local
       Tokens toks;
       list<tuple<Tokens,BlockType>> blstack;
@@ -568,7 +568,7 @@ algorithm
         Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.pushIter failed \n");
       then
         fail();
-  end matchcontinue;
+  end match;
 end pushIter;
 
 
@@ -576,7 +576,7 @@ public function popIter
   input Text inText;
   output Text outText;
 algorithm
-  outText := matchcontinue (inText)
+  outText := match (inText)
     local
       Tokens  stacktoks, itertoks;
       list<tuple<Tokens,BlockType>> blstack;
@@ -606,7 +606,7 @@ algorithm
         Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.popIter failed - probably pushIter and popIter are not well balanced or something was written between the last nextIter and popIter ?\n");
       then
        fail();
-  end matchcontinue;
+  end match;
 end popIter;
 
 
@@ -693,7 +693,7 @@ public function getIteri_i0
   input Text inText;
   output Integer outI0;
 algorithm
-  outI0 := matchcontinue (inText)
+  outI0 := match (inText)
     local
       Integer i0;
 
@@ -709,7 +709,7 @@ algorithm
         Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.getIter_i0 failed - getIter_i0 was called in a non-iteration context ? \n");
       then
         fail();
-  end matchcontinue;
+  end match;
 end getIteri_i0;
 
 
@@ -717,7 +717,7 @@ public function getIteri_i1
   input Text inText;
   output Integer outI1;
 algorithm
-  outI1 := matchcontinue (inText)
+  outI1 := match (inText)
     local
       Integer i0;
 
@@ -733,7 +733,7 @@ algorithm
         Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.getIter_i1 failed - getIter_i1 was called in a non-iteration context ? \n");
       then
         fail();
-  end matchcontinue;
+  end match;
 end getIteri_i1;
 
 
@@ -742,7 +742,7 @@ This function renders a (memory-)text to string."
   input Text inText;
   output String outString;
 algorithm
-  outString := matchcontinue (inText)
+  outString := match (inText)
     local
       Text txt;
       String str;
@@ -762,14 +762,14 @@ algorithm
         Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.textString failed.\n");
       then
         fail();
-  end matchcontinue;
+  end match;
 end textString;
 
 public function textStringBuf "function: textStringBuf:
 This function renders a (memory-)text to (Print.)string buffer."
   input Text inText;
 algorithm
-  _ := matchcontinue (inText)
+  _ := match (inText)
     local
       Tokens toks;
 
@@ -796,7 +796,7 @@ algorithm
         Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.textString failed.\n");
       then
         fail();
-  end matchcontinue;
+  end match;
 end textStringBuf;
 
 public function tokensString
@@ -1020,55 +1020,6 @@ algorithm
         fail();
   end matchcontinue;
 end stringListString;
-
-
-/* obsolete ... Print.printBufSpace()
-// have fun!
-// O(n.log n) ... could be done O(n) through listFill and stringCharListString (is this function O(n)?)... but not that funny:)
-// will be implemented in C with O(n) ...
-// how can we create a read-only reusable table of space strings up to a length e.g. 128 ?
-public function spaceStr
-  input Integer inWidth;
-  output String outString;
-algorithm
-  outString := matchcontinue inWidth
-    local
-      Integer w;
-    case 0  then ""; //also for bad user and to give a (better) chance to the C/MM compiler to optimize the cases
-    case 1  then " "; // will this be optimized by MM to a simple switch ?
-    case 2  then "  ";
-    case 3  then "   ";
-    case 4  then "    ";
-    case 5  then "     ";
-    case 6  then "      ";
-    case 7  then "       ";
-    case 8  then "        ";
-    case 9  then "         ";
-    case 10 then "          ";
-    case 11 then "           ";
-    case 12 then "            ";
-    case 13 then "             ";
-    case 14 then "              ";
-    case 15 then "               ";
-
-    //a bad user!
-    case w
-      equation
-        true = w < 0;
-      then "";
-
-    case w
-      then spaceStr(w/2 + intMod(w,2)) +& spaceStr(w/2);
-
-    //should not ever happen
-    case (_)
-      equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.spaceStr failed.\n");
-      then
-        fail();
-  end matchcontinue;
-end spaceStr;
-*/
 
 public function blockString
   input BlockType inBlockType;
