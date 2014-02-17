@@ -33,24 +33,19 @@
 #include "events.h"
 #include "dassl.h"
 
-#include "simulation_runtime.h"
-#include "simulation_result.h"
+#include "simulation/simulation_runtime.h"
+#include "simulation/results/simulation_result.h"
 #include "openmodelica_func.h"
 #include "linearSystem.h"
 #include "nonlinearSystem.h"
 #include "mixedSystem.h"
 
-#include "omc_error.h"
-#include "options.h"
+#include "util/omc_error.h"
+#include "simulation/options.h"
 #include <math.h>
 #include <string.h>
 #include <errno.h>
 #include <float.h>
-
-#if defined(_OPENMP) && !defined(HPCOM)
-  #include <omp.h>
-  #define OMC_OMP
-#endif
 
 
 
@@ -114,29 +109,15 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
 
   printAllVarsDebug(data, 0, LOG_DEBUG); /* ??? */
 
-#if defined(OMC_OMP)
-  omp_set_num_threads(4);
-#endif
-
-#if defined(OMC_OMP)
-#pragma omp parallel
-{
-#endif
   /***** Start main simulation loop *****/
   while(solverInfo->currentTime < simInfo->stopTime)
   {
     omc_alloc_interface.collect_a_little();
-#if defined(OMC_OMP)
-#pragma omp barrier
-#endif
+
     currectJumpState = ERROR_SIMULATION;
     /* try */
     if(!setjmp(simulationJmpbuf))
     {
-#if defined(OMC_OMP)
-#pragma omp master
-{
-#endif
       if(measure_time_flag)
       {
         for(i=0; i<data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks; i++)
@@ -179,19 +160,10 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
        */
       communicateStatus("Running", (solverInfo->currentTime-simInfo->startTime)/(simInfo->stopTime-simInfo->startTime));
       retValIntegrator = solver_main_step(data, solverInfo);  
-#if defined(OMC_OMP)
-} /* end pragma omp master */
-#pragma omp barrier
-#endif
 
       if (S_OPTIMIZATION == solverInfo->solverMethod) break;
 
       updateContinuousSystem(data);
-
-#if defined(OMC_OMP)
-#pragma omp master
-{
-#endif
 
       saveZeroCrossings(data);
       if (ACTIVE_STREAM(LOG_SOLVER)) messageClose(LOG_SOLVER);
@@ -364,13 +336,7 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
         break;
       }
     }
-#if defined(OMC_OMP)
-} /* end pragma master */
-#endif
   } /* end while solver */
-#if defined(OMC_OMP)
-} /* end pragma parallel */
-#endif
 
   if(fmt) fclose(fmt);
 

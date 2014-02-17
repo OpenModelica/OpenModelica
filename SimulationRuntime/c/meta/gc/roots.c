@@ -37,7 +37,7 @@
  *
  */
 
-#include "modelica.h"
+#include "util/modelica.h"
 
 /* create the roots structure */
 mmc_GC_roots_type roots_create(size_t default_roots_size, size_t default_roots_mark_size)

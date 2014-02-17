@@ -31,10 +31,10 @@
 /* Creates an implementation only if #define GEN_META_MODELICA_BUILTIN_BOXPTR is given.
  * Else, we only create a header.
  */
-#include "utility.h"
+#include "util/utility.h"
 #include "meta_modelica.h"
 #include "meta_modelica_real.h"
-#include "modelica_string.h"
+#include "util/modelica_string.h"
 
 #if !defined(META_MODELICA_BUILTIN_BOXPTR__H) || defined(GEN_META_MODELICA_BUILTIN_BOXPTR)
 #define META_MODELICA_BUILTIN_BOXPTR__H

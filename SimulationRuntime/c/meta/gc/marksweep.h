@@ -67,7 +67,7 @@ extern "C"
 {
 #endif
 
-#include "modelica.h"
+#include "util/modelica.h"
 
 struct mmc_GC_mas_state_type /* the structure of GC state */
 {

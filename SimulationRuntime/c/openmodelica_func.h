@@ -44,15 +44,15 @@ extern "C" {
 
 #include "simulation_data.h"
 
-#include "memory_pool.h"
-#include "index_spec.h"
-#include "boolean_array.h"
-#include "integer_array.h"
-#include "real_array.h"
-#include "string_array.h"
-#include "modelica_string.h"
-#include "division.h"
-#include "utility.h"
+#include "util/memory_pool.h"
+#include "util/index_spec.h"
+#include "util/boolean_array.h"
+#include "util/integer_array.h"
+#include "util/real_array.h"
+#include "util/string_array.h"
+#include "util/modelica_string.h"
+#include "util/division.h"
+#include "util/utility.h"
 
 struct OpenModelicaGeneratedFunctionCallbacks {
 int (*performSimulation)(DATA* data, void* solverInfo);

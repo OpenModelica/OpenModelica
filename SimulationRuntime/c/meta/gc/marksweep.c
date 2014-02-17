@@ -39,7 +39,7 @@
  *
  */
 
-#include "modelica.h"
+#include "util/modelica.h"
 #include "mmc_gc.h"
 
 #if defined(_MMC_GC_)

@@ -60,7 +60,7 @@
 extern "C" {
 #endif
 
-#include "modelica.h"
+#include "util/modelica.h"
 #include "common.h"
 #include "roots.h"
 #include "generational.h"

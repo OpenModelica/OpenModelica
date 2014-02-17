@@ -38,8 +38,8 @@
 #define SIMULATION_DATA_H
 
 #include "openmodelica.h"
-#include "ringbuffer.h"
-#include "omc_error.h"
+#include "util/ringbuffer.h"
+#include "util/omc_error.h"
 
 #if defined(__cplusplus)
 typedef void* f2c_integer_ptr;

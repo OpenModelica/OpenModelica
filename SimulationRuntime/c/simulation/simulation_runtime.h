@@ -41,15 +41,15 @@
 
 #include "simulation_data.h"
 
-#include "rtclock.h"
+#include "util/rtclock.h"
 #include <stdlib.h>
 #include <string.h>
 
 #ifdef __cplusplus
 #include <string>
 
-#include "linearize.h"
-#include "simulation_result.h"
+#include "linearization/linearize.h"
+#include "simulation/results/simulation_result.h"
 
 #ifndef NO_INTERACTIVE_DEPENDENCY
 #include "../../../interactive/socket.h"

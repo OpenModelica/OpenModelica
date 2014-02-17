@@ -32,7 +32,7 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
-#include "simulation_options.h"
+#include "util/simulation_options.h"
 
 #ifdef __cplusplus
   extern "C" {

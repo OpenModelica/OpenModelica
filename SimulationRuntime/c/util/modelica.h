@@ -79,27 +79,27 @@ extern "C" {
 
 #include "omc_inline.h"
 
-#include "modelica_string.h"
-#include "memory_pool.h"
-#include "index_spec.h"
+#include "util/modelica_string.h"
+#include "util/memory_pool.h"
+#include "util/index_spec.h"
 
-#include "string_array.h"
-#include "boolean_array.h"
+#include "util/string_array.h"
+#include "util/boolean_array.h"
 
-#include "real_array.h"
-#include "integer_array.h"
-#include "generic_array.h"
+#include "util/real_array.h"
+#include "util/integer_array.h"
+#include "util/generic_array.h"
 
-#include "utility.h"
-#include "division.h"
+#include "util/utility.h"
+#include "util/division.h"
 
 #include <assert.h>
-#include "read_write.h"
+#include "util/read_write.h"
 #include "simulation_data.h"
-#include "meta_modelica.h"
-#include "meta_modelica_builtin.h"
-#include "meta_modelica_real.h"
-#include "varinfo.h"
+#include "meta/meta_modelica.h"
+#include "meta/meta_modelica_builtin.h"
+#include "meta/meta_modelica_real.h"
+#include "util/varinfo.h"
 
 
 /* math functions (-lm)*/

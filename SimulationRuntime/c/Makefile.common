@@ -16,34 +16,46 @@ builddir = ../../build
 RUNTIME_HEADERS = $(LIBF2CHEADER) \
 ./omc_inline.h \
 ./math-support/blaswrap.h \
-./meta/gc/common.h \
-./meta/gc/mmc_gc.h \
-./meta/gc/generational.h \
-./meta/gc/marksweep.h \
-./meta/gc/roots.h \
-./meta/meta_modelica_builtin_boxptr.h \
-./meta/meta_modelica_builtin.h \
-./meta/meta_modelica.h \
-./meta/meta_modelica_real.h \
-./meta/meta_modelica_segv.h \
-./meta/meta_modelica_string_lit.h \
 ./openmodelica_func.h \
 ./openmodelica.h \
-./simulation_data.h \
-./simulation/modelinfo.h \
+./simulation_data.h 
+
+RUNTIMELINEAR_HEADERS = ./linearization/linearize.h 
+
+RUNTIMEOPTIMZ_HEADERS = ./optimization/interfaceOptimization.h 
+
+RUNTIMESIMULATION_HEADERS = ./simulation/modelinfo.h \
 ./simulation/options.h \
 ./simulation/simulation_info_xml.h \
 ./simulation/simulation_input_xml.h \
-./simulation/simulation_runtime.h \
-./simulation/solver/delay.h \
+./simulation/simulation_runtime.h 
+
+RUNTIMESIMRESULTS_HEADERS = ./simulation/results/simulation_result.h  
+
+RUNTIMESIMSOLVER_HEADERS = ./simulation/solver/delay.h \
 ./simulation/solver/mixedSystem.h \
 ./simulation/solver/linearSystem.h \
 ./simulation/solver/model_help.h \
 ./simulation/solver/nonlinearSystem.h \
 ./simulation/solver/simulation_inline_solver.h \
 ./simulation/solver/stateset.h \
-./simulation/results/simulation_result.h \
-./util/ModelicaUtilities.h \
+./simulation/solver/perform_simulation.c \
+./simulation/solver/dassl.h 
+
+RUNTIMEMETA_HEADERS = ./meta/meta_modelica_builtin_boxptr.h \
+./meta/meta_modelica_builtin.h \
+./meta/meta_modelica.h \
+./meta/meta_modelica_real.h \
+./meta/meta_modelica_segv.h \
+./meta/meta_modelica_string_lit.h 
+
+RUNTIMEMETAGC_HEADERS = ./meta/gc/common.h \
+./meta/gc/mmc_gc.h \
+./meta/gc/generational.h \
+./meta/gc/marksweep.h \
+./meta/gc/roots.h 
+
+RUNTIMEUTIL_HEADERS = ./util/ModelicaUtilities.h \
 ./util/base_array.h \
 ./util/boolean_array.h \
 ./util/division.h \
@@ -65,10 +77,6 @@ RUNTIME_HEADERS = $(LIBF2CHEADER) \
 ./util/string_array.h \
 ./util/utility.h \
 ./util/varinfo.h \
-./linearization/linearize.h \
-./simulation/solver/perform_simulation.c \
-./optimization/interfaceOptimization.h \
-./simulation/solver/dassl.h 
 
 
 RUNTIME_HEADERS_FMU = \
@@ -184,6 +192,14 @@ install: $(LIBSIMULATION) $(LIBRUNTIME) $(LIBFMIRUNTIME) simulation/libf2c/libf2
 	cp $(INTERACTIVECLIENT) $(builddir_bin)
 	# copy header files
 	cp -p $(RUNTIME_HEADERS) $(builddir_inc)
+	cp -p $(RUNTIMELINEAR_HEADERS) $(builddir_inc)/linearization
+	cp -p $(RUNTIMEOPTIMZ_HEADERS) $(builddir_inc)/optimization
+	cp -p $(RUNTIMESIMULATION_HEADERS) $(builddir_inc)/simulation
+	cp -p $(RUNTIMESIMRESULTS_HEADERS) $(builddir_inc)/simulation/results
+	cp -p $(RUNTIMESIMSOLVER_HEADERS) $(builddir_inc)/simulation/solver
+	cp -p $(RUNTIMEMETA_HEADERS) $(builddir_inc)/meta
+	cp -p $(RUNTIMEMETAGC_HEADERS) $(builddir_inc)/meta/gc
+	cp -p $(RUNTIMEUTIL_HEADERS) $(builddir_inc)/util
 	# copy fmi stuff
 	cp -p $(RUNTIME_HEADERS_FMU) ../fmi/export/*.h \
 	   ../fmi/export/fmu_model_interface.c \

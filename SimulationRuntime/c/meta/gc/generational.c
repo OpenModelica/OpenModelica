@@ -70,7 +70,7 @@
  * may refer to objects in the young region. The entire arrays present in the
  * trail are scanned for the pointers into younger region.
  */
-#include "modelica.h"
+#include "util/modelica.h"
 
 #include <stdio.h>
 #include <stdlib.h>

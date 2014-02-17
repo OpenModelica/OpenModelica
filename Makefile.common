@@ -33,6 +33,14 @@ mkbuilddirs:
 	mkdir -p $(builddir_lib)/python
 	mkdir -p $(builddir_lib)/python/omniORB
 	mkdir -p $(builddir_inc)
+	mkdir -p $(builddir_inc)/linearization
+	mkdir -p $(builddir_inc)/optimization
+	mkdir -p $(builddir_inc)/simulation
+	mkdir -p $(builddir_inc)/simulation/results
+	mkdir -p $(builddir_inc)/simulation/solver
+	mkdir -p $(builddir_inc)/meta
+	mkdir -p $(builddir_inc)/meta/gc
+	mkdir -p $(builddir_inc)/util
 	mkdir -p $(builddir_java)
 	mkdir -p $(builddir_share)/omc/scripts/PythonInterface/OMPython/OMParser
 	mkdir -p $(builddir_share)/omc/scripts/PythonInterface/PySimulator
