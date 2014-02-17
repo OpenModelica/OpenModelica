@@ -7393,6 +7393,13 @@ template algStmtNoretcall(DAE.Statement stmt, Context context, Text &varDecls /*
  "Generates a no return call algorithm statement."
 ::=
 match stmt
+case STMT_NORETCALL(exp=DAE.MATCHEXPRESSION(__)) then
+  let &preExp = buffer "" /*BUFD*/
+  let expPart = daeExpMatch2(exp,listExpLength1,"","",context,&preExp,&varDecls)
+  <<
+  <%preExp%>
+  <%expPart%>;
+  >>
 case STMT_NORETCALL(__) then
   let &preExp = buffer "" /*BUFD*/
   let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
@@ -9258,8 +9265,8 @@ template daeExpMatch(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varD
 match exp
 case exp as MATCHEXPRESSION(__) then
   let res = match et
-    case T_NORETCALL(__) then error(sourceInfo(), 'match expression not returning anything should be caught in a noretcall statement and not reach this code')
-    case T_TUPLE(tupleType={}) then '#error "match expression returning an empty tuple should be caught in a noretcall statement and not reach this code"'
+    case T_NORETCALL(__) then error(sourceInfo(), 'match expression not returning anything should be caught in a noretcall statement and not reach this code: <%printExpStr(exp)%>')
+    case T_TUPLE(tupleType={}) then error(sourceInfo(), 'match expression returning an empty tuple should be caught in a noretcall statement and not reach this code: <%printExpStr(exp)%>')
     else tempDeclZero(expTypeModelica(et), &varDecls)
   let startIndexOutputs = "ERROR_INDEX"
   daeExpMatch2(exp,listExpLength1,res,startIndexOutputs,context,&preExp,&varDecls)

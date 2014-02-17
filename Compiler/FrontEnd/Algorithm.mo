@@ -119,6 +119,9 @@ algorithm
       Absyn.Direction direction;
       Absyn.Info info;
 
+    case ((lhs as DAE.CREF(componentRef=DAE.WILD())), lhprop, rhs, rhprop, _, _, _)
+      then DAE.STMT_NORETCALL(rhs, source);
+
     // assign to parameter in algorithm okay if record
     case ((lhs as DAE.CREF(componentRef=cr)), lhprop, rhs, rhprop, _, SCode.NON_INITIAL(), _)
       equation

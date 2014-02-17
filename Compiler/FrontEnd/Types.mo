@@ -7825,4 +7825,16 @@ algorithm
   end match;
 end stripTypeVars;
 
+public function isEmptyOrNoRetcall
+  input DAE.Type ty;
+  output Boolean b;
+algorithm
+  b := match ty
+    case DAE.T_TUPLE(tupleType={}) then true;
+    case DAE.T_METATUPLE(types={}) then true;
+    case DAE.T_NORETCALL(source=_) then true;
+    else false;
+  end match;
+end isEmptyOrNoRetcall;
+
 end Types;
