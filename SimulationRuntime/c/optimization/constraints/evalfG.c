@@ -238,7 +238,7 @@ int num_diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J)
 
     functionODE_(x, u, t, iData->rhs, iData);
     if(iData->nc > 0)
-    	memcpy(iData->rhs + iData->nx, &iData->data->localData[0]->realVars[iData->data->modelData.nVariablesReal - iData->nc], sizeof(double)*iData->nc);
+      memcpy(iData->rhs + iData->nx, &iData->data->localData[0]->realVars[iData->data->modelData.nVariablesReal - iData->nc], sizeof(double)*iData->nc);
 
     memcpy(v, iData->vsave, sizeof(double)*nx);
 
