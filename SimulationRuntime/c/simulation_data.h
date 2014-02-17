@@ -368,7 +368,7 @@ typedef struct MODEL_DATA_XML
 
 typedef struct MODEL_DATA
 {
-  STATIC_REAL_DATA* realVarsData;     /* states + derived states + algs + discrete */
+  STATIC_REAL_DATA* realVarsData;     /* states + derived states + algs + constrainsOpt + discrete */
   STATIC_INTEGER_DATA* integerVarsData;
   STATIC_BOOLEAN_DATA* booleanVarsData;
   STATIC_STRING_DATA* stringVarsData;
@@ -489,8 +489,6 @@ typedef struct SIMULATION_INFO
 
   modelica_real* inputVars;
   modelica_real* outputVars;
-
-  modelica_real* optConstraints;
 
   ANALYTIC_JACOBIAN* analyticJacobians;
 

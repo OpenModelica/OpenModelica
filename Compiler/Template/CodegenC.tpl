@@ -755,7 +755,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     #endif
 
     data->modelData.nStates = <%varInfo.numStateVars%>;
-    data->modelData.nVariablesReal = 2*<%varInfo.numStateVars%>+<%varInfo.numAlgVars%>;
+    data->modelData.nVariablesReal = 2*<%varInfo.numStateVars%>+<%varInfo.numAlgVars%>+<%varInfo.numOptimizeConstraints%>;
     data->modelData.nDiscreteReal = <%varInfo.numDiscreteReal%>;
     data->modelData.nVariablesInteger = <%varInfo.numIntAlgVars%>;
     data->modelData.nVariablesBoolean = <%varInfo.numBoolAlgVars%>;
@@ -858,7 +858,7 @@ template variableDefinitions(ModelInfo modelInfo, BackendDAE.SampleLookup sample
   let () = System.tmpTickReset(1000)
 
   match modelInfo
-    case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars), vars=SIMVARS(__)) then
+    case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars, numAlgVars= numAlgVars), vars=SIMVARS(__)) then
       <<
       #define time data->localData[0]->timeValue
 
@@ -871,15 +871,20 @@ template variableDefinitions(ModelInfo modelInfo, BackendDAE.SampleLookup sample
       <%vars.derivativeVars |> var =>
         globalDataVarDefine(var, "realVars", numStateVars)
       ;separator="\n"%>
-
+      
+      /* Algebraic Vars */
+      <%vars.algVars |> var =>
+        globalDataVarDefine(var, "realVars", intMul(2, numStateVars) )
+      ;separator="\n"%>
+      
+      /* Nonlinear Constraints For Optimization */
+      <%vars.realOptimizeConstraintsVars |> var =>
+        globalDataVarDefine(var, "realVars", intAdd(intMul(2, numStateVars),numAlgVars))
+      ;separator="\n"%>
+      
       /* InlineSolver Vars */
       <%vars.inlineVars |> var =>
         globalDataVarDefine(var, "inlineVars", 0)
-      ;separator="\n"%>
-
-      /* Algebraic Vars */
-      <%vars.algVars |> var =>
-        globalDataVarDefine(var, "realVars", intMul(2, numStateVars))
       ;separator="\n"%>
 
       /* Algebraic Parameter */
@@ -920,11 +925,6 @@ template variableDefinitions(ModelInfo modelInfo, BackendDAE.SampleLookup sample
       /* Algebraic String Parameter */
       <%vars.stringParamVars |> var =>
         globalDataParDefine(var, "stringParameter")
-      ;separator="\n"%>
-      
-      /* Nonlinear Constraints For Optimization */
-      <%vars.realOptimizeConstraintsVars |> var =>
-        variableDefinitionsOptimizationsConstraints(var, "optConstraints", 0)
       ;separator="\n"%>
 
       /* sample */
@@ -4275,7 +4275,7 @@ case SIMCODE(modelInfo = MODELINFO(functions = functions, varInfo = vi as VARINF
     numberOfFunctions                   = "<%listLength(functions)%>"  cmt_numberOfFunctions                   = "NFUNC:    number of functions used by the simulation,         OMC"
 
     numberOfContinuousStates            = "<%vi.numStateVars%>"  cmt_numberOfContinuousStates            = "NX:       number of states,                                   FMI"
-    numberOfRealAlgebraicVariables      = "<%vi.numAlgVars%>"  cmt_numberOfRealAlgebraicVariables      = "NY:       number of real variables,                           OMC"
+    numberOfRealAlgebraicVariables      = "<%intAdd(vi.numAlgVars,vi.numOptimizeConstraints)%>"  cmt_numberOfRealAlgebraicVariables      = "NY:       number of real variables,                           OMC"
     numberOfRealAlgebraicAliasVariables = "<%vi.numAlgAliasVars%>"  cmt_numberOfRealAlgebraicAliasVariables = "NA:       number of alias variables,                          OMC"
     numberOfRealParameters              = "<%vi.numParams%>"  cmt_numberOfRealParameters              = "NP:       number of parameters,                               OMC"
 
@@ -10385,7 +10385,7 @@ template ModelVariables(ModelInfo modelInfo)
  "Generates code for ModelVariables file for FMU target."
 ::=
   match modelInfo
-    case MODELINFO(vars=SIMVARS(__)) then
+    case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numAlgVars= numAlgVars)) then
       <<
       <ModelVariables>
       <%System.tmpTickReset(1000)%>
@@ -10393,6 +10393,9 @@ template ModelVariables(ModelInfo modelInfo)
       <%vars.stateVars       |> var hasindex i0 => ScalarVariable(var,i0,"rSta") ;separator="\n";empty%>
       <%vars.derivativeVars  |> var hasindex i0 => ScalarVariable(var,i0,"rDer") ;separator="\n";empty%>
       <%vars.algVars         |> var hasindex i0 => ScalarVariable(var,i0,"rAlg") ;separator="\n";empty%>
+      <%vars.realOptimizeConstraintsVars 
+                             |> var hasindex i0 => ScalarVariable(var,intAdd(i0,numAlgVars),"rAlg") ;separator="\n";empty%>
+      
       <%vars.paramVars       |> var hasindex i0 => ScalarVariable(var,i0,"rPar") ;separator="\n";empty%>
       <%vars.aliasVars       |> var hasindex i0 => ScalarVariable(var,i0,"rAli") ;separator="\n";empty%>
 

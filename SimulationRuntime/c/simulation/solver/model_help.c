@@ -490,7 +490,6 @@ void setAllStartToVars(DATA *data)
   SIMULATION_DATA *sData = data->localData[0];
   MODEL_DATA      *mData = &(data->modelData);
   long i;
-
   debugStreamPrint(LOG_DEBUG, 1, "the start-attribute of all variables to their current values:");
   for(i=0; i<mData->nVariablesReal; ++i)
   {
@@ -854,10 +853,6 @@ void initializeDataStruc(DATA *data)
   data->modelData.modelDataXml.functionNames = NULL;
   data->modelData.modelDataXml.equationInfo = NULL;
 
-  /*optimization:  constraints */
-  data->simulationInfo.optConstraints =  (data->modelData.nOptimizeConstraints > 0) ? (modelica_real*) malloc(data->modelData.nOptimizeConstraints*sizeof(modelica_real)) : NULL;
-
-
   /* buffer for external objects */
   data->simulationInfo.extObjs = NULL;
   data->simulationInfo.extObjs = (void**) calloc(data->modelData.nExtObjs, sizeof(void*));
@@ -1021,10 +1016,6 @@ void deInitializeDataStruc(DATA *data)
   /* free chattering info */
   free(data->simulationInfo.chatteringInfo.lastSteps);
   free(data->simulationInfo.chatteringInfo.lastTimes);
-
-  /*free optimization: constraints */
-  if(data->simulationInfo.optConstraints)
-    free(data->simulationInfo.optConstraints);
 
   /* TODO: Make a free xml function */
   freeModelInfoXml(&data->modelData.modelDataXml);

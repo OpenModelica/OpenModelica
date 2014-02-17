@@ -8718,18 +8718,18 @@ algorithm
                             stringAlgVars, stringParamVars, extObjVars, constVars, intConstVars, boolConstVars,
                             stringConstVars, jacobianVars, realOptimizeConstraintsVars;
       Integer numStateVars,numInlineVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars;
-      Integer numBoolAliasVars,numParams,numIntParams,numBoolParams,numOutVars,numInVars,size;
+      Integer numBoolAliasVars,numParams,numIntParams,numBoolParams,numOutVars,numInVars,numOptimizeConstraints, size;
     case (SimCode.MODELINFO(varInfo = SimCode.VARINFO(numStateVars=numStateVars,numInlineVars=numInlineVars,numAlgVars=numAlgVars,
       numIntAlgVars=numIntAlgVars,numBoolAlgVars=numBoolAlgVars,numAlgAliasVars=numAlgAliasVars,numIntAliasVars=numIntAliasVars,
       numBoolAliasVars=numBoolAliasVars,numParams=numParams,numIntParams=numIntParams,numBoolParams=numBoolParams,
-      numOutVars=numOutVars,numInVars=numInVars),
+      numOutVars=numOutVars,numInVars=numInVars, numOptimizeConstraints= numOptimizeConstraints),
       vars = SimCode.SIMVARS(
       stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, 
       _/*inputVars*/, _/*outputVars*/, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars, 
       stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, realOptimizeConstraintsVars)))
       equation
         size = numStateVars+numInlineVars+numAlgVars+numIntAlgVars+numBoolAlgVars+numAlgAliasVars+numIntAliasVars+
-               numBoolAliasVars+numParams+numIntParams+numBoolParams+numOutVars+numInVars;
+               numBoolAliasVars+numParams+numIntParams+numBoolParams+numOutVars+numInVars + numOptimizeConstraints;
         size = intMax(size,1000);
         ht = emptyHashTableSized(size);
         ht = List.fold(stateVars, addSimVarToHashTable, ht);
