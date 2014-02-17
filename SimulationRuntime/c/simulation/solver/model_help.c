@@ -1022,6 +1022,10 @@ void deInitializeDataStruc(DATA *data)
   free(data->simulationInfo.chatteringInfo.lastSteps);
   free(data->simulationInfo.chatteringInfo.lastTimes);
 
+  /*free optimization: constraints */
+  if(data->simulationInfo.optConstraints)
+    free(data->simulationInfo.optConstraints);
+
   /* TODO: Make a free xml function */
   freeModelInfoXml(&data->modelData.modelDataXml);
 
