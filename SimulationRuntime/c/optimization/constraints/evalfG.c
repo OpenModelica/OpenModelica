@@ -67,6 +67,7 @@ Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
    double *x0;
    //double inf_p = 0;
 
+
    iData = (IPOPT_DATA_ *) useData;
    for(i=0, k=0, x0=v; i<1; ++i, x0=iData->x3){
      iData->x1 = x0 + iData->nv; /* 0 + 3 = 3;2*/

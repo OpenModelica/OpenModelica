@@ -48,7 +48,7 @@ static int set_local_jac_struct(IPOPT_DATA_ *iData, int *nng);
 static int local_jac_struct(IPOPT_DATA_ *iData, int *nng);
 static int local_jac_struct_print(IPOPT_DATA_ *iData);
 static int local_jac_struct_dense(IPOPT_DATA_ *iData, int * nng);
-static int check_nominal(IPOPT_DATA_ *iData, double min, double max, double nominal, short set, int i, double x0);
+static int check_nominal(IPOPT_DATA_ *iData, double min, double max, double nominal, modelica_boolean set, int i, double x0);
 static int optimizer_coeff_setings(IPOPT_DATA_ *iData);
 static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData);
 static int optimizer_time_setings(IPOPT_DATA_ *iData);
@@ -521,7 +521,7 @@ static int local_jac_struct_print(IPOPT_DATA_ *iData)
  *  heuristic for nominal value
  *  author: Vitalij Ruge
  **/
-static int check_nominal(IPOPT_DATA_ *iData, double min, double max, double nominal, short set, int i, double x0)
+static int check_nominal(IPOPT_DATA_ *iData, double min, double max, double nominal, modelica_boolean set, int i, double x0)
 {
   if(set){
     iData->vnom[i] = fmax(fabs(nominal),1e-16);
@@ -615,6 +615,10 @@ static int optimizer_coeff_setings(IPOPT_DATA_ *iData)
 static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData)
 {
   int i, j, id;
+  modelica_boolean *tmp = (modelica_boolean*)malloc(iData->nv*sizeof(modelica_boolean));
+  double *start = (double*)malloc(iData->nv*sizeof(double));
+  char **tmpname = (char**)malloc(iData->nv*sizeof(char*));
+
   for(i =0;i<iData->nx;++i){
     check_nominal(iData, data->modelData.realVarsData[i].attribute.min, data->modelData.realVarsData[i].attribute.max, data->modelData.realVarsData[i].attribute.nominal, data->modelData.realVarsData[i].attribute.useNominal, i, fabs(iData->x0[i]));
     iData->scalVar[i] = 1.0 / iData->vnom[i];
@@ -627,12 +631,24 @@ static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData)
   iData->index_u = data->modelData.nVariablesReal - iData->nu;
   id = iData->index_u;
 
-  for(i =0,j = iData->nx;i<iData->nu;++i,++j){
-    check_nominal(iData, data->modelData.realVarsData[id +i].attribute.min, data->modelData.realVarsData[id +i].attribute.max, data->modelData.realVarsData[id +i].attribute.nominal, data->modelData.realVarsData[id +i].attribute.useNominal, j, fabs(data->modelData.realVarsData[id+i].attribute.start));
-    iData->scalVar[j] = 1.0 / iData->vnom[j];
-    iData->umin[i] = data->modelData.realVarsData[id +i].attribute.min*iData->scalVar[j];
-    iData->umax[i] = data->modelData.realVarsData[id +i].attribute.max*iData->scalVar[j];
+  iData->data->callback->pickUpBoundsForInputsInOptimization(data,iData->umin, iData->umax, &iData->vnom[iData->nx], tmp, tmpname, start);
+
+  if(ACTIVE_STREAM(LOG_IPOPT)){
+    for(i=0; i<iData->nx; ++i)
+      printf("\nState[%i]:\t name = \"%s\" \t\t| start=%g \t nominal=%g \t min = %g \t max = %g",i, iData->data->modelData.realVarsData[i].info.name, iData->v[i], iData->vnom[i], data->modelData.realVarsData[i].attribute.min, data->modelData.realVarsData[i].attribute.max);
+    for(; i<iData->nv; ++i)
+      printf("\nInput[%i]:\t name = \"%s\" \t\t| start=%g \t nominal=%g \t min = %g \t max = %g",i, tmpname[i-iData->nx] ,start[i-iData->nx], iData->vnom[i], iData->umin[i-iData->nx], iData->umax[i-iData->nx]);
+    if(iData->nc > 0)
+      printf("\nnumber of constraints: %i",iData->nc);
   }
+
+  for(i =0,j = iData->nx;i<iData->nu;++i,++j){
+    check_nominal(iData, iData->umin[i], iData->umax[i], iData->vnom[j], tmp[i], j, fabs(start[i]));
+    iData->scalVar[j] = 1.0 / iData->vnom[j];
+    iData->umin[i] *= iData->scalVar[j];
+    iData->umax[i] *= iData->scalVar[j];
+  }
+
 
   memcpy(iData->vmin, iData->xmin, sizeof(double)*iData->nx);
   memcpy(iData->vmin + iData->nx, iData->umin, sizeof(double)*iData->nu);
@@ -647,6 +663,10 @@ static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData)
   memcpy(iData->Vmin + id, iData->vmin, sizeof(double)*iData->nv);
     memcpy(iData->Vmax + id, iData->vmax, sizeof(double)*iData->nv);
   }
+
+  free(tmp);
+  free(tmpname);
+  free(start);
   return 0;
 }
 

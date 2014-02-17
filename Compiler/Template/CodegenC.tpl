@@ -469,7 +469,7 @@ template simulationFile_opt_header(SimCode simCode, String guid)
     #endif
       int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real* res);
       int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real* res);
-      int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name);
+      int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start);
     #if defined(_MSC_VER)
     }
     #endif
@@ -572,7 +572,7 @@ template simulationFile(SimCode simCode, String guid)
     extern const char* <%symbolName(modelNamePrefixStr,"linear_model_frame")%>(void);
     extern int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real* res);
     extern int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real* res);
-    extern int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name); 
+    extern int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start); 
 
     struct OpenModelicaGeneratedFunctionCallbacks <%symbolName(modelNamePrefixStr,"callback")%> = {
        (int (*)(DATA *, void *)) <%symbolName(modelNamePrefixStr,"performSimulation")%>,
@@ -10500,7 +10500,7 @@ template optimizationComponents( list<DAE.ClassAttributes> classAttributes ,SimC
         <<
         int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real* res){return -1;}
         int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real* res){return -1;}
-        int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name){return -1;}
+        int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start){return -1;}
         >>  
       else
         (classAttributes |> classAttribute => optimizationComponents1(classAttribute,simCode, modelNamePrefixStr); separator="\n") 
@@ -10534,7 +10534,7 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
                    case MODELINFO(vars=SIMVARS(__)) then
                    <<
                      <%vars.inputVars |> SIMVAR(__) hasindex i0 =>
-                     'min[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.min;<%\n%>max[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.max;<%\n%>nominal[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.nominal;<%\n%>useNominal[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.useNominal;<%\n%>name[<%i0%>] = <%cref(name)%>__varInfo.name;'
+                     'min[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.min;<%\n%>max[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.max;<%\n%>nominal[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.nominal;<%\n%>useNominal[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.useNominal;<%\n%>name[<%i0%>] = <%cref(name)%>__varInfo.name;<%\n%>start[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.useNominal;'
                      ;separator="\n"%>
                    >>
         <<
@@ -10558,7 +10558,7 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
             }
 
             /* constraints */
-            int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name)
+            int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start)
             { 
               <%inputBounds%>
               return 0;

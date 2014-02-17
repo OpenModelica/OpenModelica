@@ -270,10 +270,11 @@ int (*lagrange)(DATA* data, modelica_real* res);
 
 /*
  * This function is used only for optimization purpose
- * and calculates the path constrains. In case it's not present
+ * and pick up the bounds of inputs. In case it's not present
  * a dummy function is added which return -1.
  */
-int (*pathConstraints)(DATA* data, modelica_real* res, long int* N);
+int (*pickUpBoundsForInputsInOptimization)(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start);
+
 
 };
 
