@@ -255,11 +255,11 @@ constant DebugFlag DEBUG_ALIAS = DEBUG_FLAG(44, "debugAlias", false,
 constant DebugFlag TEARING_DUMP = DEBUG_FLAG(45, "tearingdump", false,
   Util.gettext("Dumps tearing information."));
 constant DebugFlag JAC_DUMP = DEBUG_FLAG(46, "symjacdump", false,
-  Util.gettext("Dumps information about symbolic jacobians. Can be used only with postOptModules: generateSymbolicJacobian, generateSymbolicLinearization."));
+  Util.gettext("Dumps information about symbolic Jacobians. Can be used only with postOptModules: generateSymbolicJacobian, generateSymbolicLinearization."));
 constant DebugFlag JAC_DUMP2 = DEBUG_FLAG(47, "symjacdumpverbose", false,
-  Util.gettext("Dumps information in verbose mode about symbolic jacobians. Can be used only with postOptModules: generateSymbolicJacobian, generateSymbolicLinearization."));
+  Util.gettext("Dumps information in verbose mode about symbolic Jacobians. Can be used only with postOptModules: generateSymbolicJacobian, generateSymbolicLinearization."));
 constant DebugFlag JAC_DUMP_EQN = DEBUG_FLAG(48, "symjacdumpeqn", false,
-  Util.gettext("Dump for debug purpose of symbolic jacobians. (deactivated now)."));
+  Util.gettext("Dump for debug purpose of symbolic Jacobians. (deactivated now)."));
 constant DebugFlag JAC_WARNINGS = DEBUG_FLAG(49, "symjacwarnings", false,
   Util.gettext("Prints warnings regarding symoblic jacbians."));
 constant DebugFlag DUMP_SPARSE = DEBUG_FLAG(50, "dumpSparsePattern", false,
@@ -303,7 +303,7 @@ constant DebugFlag SCODE_INST = DEBUG_FLAG(68, "scodeInst", false,
 constant DebugFlag WRITE_TO_BUFFER = DEBUG_FLAG(69, "writeToBuffer", false,
   Util.gettext("Enables writing simulation results to buffer."));
 constant DebugFlag DUMP_BACKENDDAE_INFO = DEBUG_FLAG(70, "backenddaeinfo", false,
-  Util.gettext("Enables dumping of backend information about system (Number of equations before backend,...)."));
+  Util.gettext("Enables dumping of back-end information about system (Number of equations before back-end,...)."));
 constant DebugFlag GEN_DEBUG_SYMBOLS = DEBUG_FLAG(71, "gendebugsymbols", false,
   Util.gettext("Generate code with debugging symbols."));
 constant DebugFlag DUMP_STATESELECTION_INFO = DEBUG_FLAG(72, "stateselection", false,
@@ -344,7 +344,7 @@ constant DebugFlag SHOW_PROGRAM_CHANGES = DEBUG_FLAG(88, "showProgramChanges", f
 constant DebugFlag SHOW_EQUATION_SOURCE = DEBUG_FLAG(89, "showEquationSource", false,
   Util.gettext("Display the element source information in the dumped DAE for easier debugging."));
 constant DebugFlag NLS_ANALYTIC_JACOBIAN = DEBUG_FLAG(90, "NLSanalyticJacobian", false,
-  Util.gettext("Generates analytical jacobian for non-linear algebraic loops."));
+  Util.gettext("Generates analytical Jacobian for non-linear algebraic loops."));
 constant DebugFlag INLINE_SOLVER = DEBUG_FLAG(91, "inlineSolver", false,
   Util.gettext("Generates code for inline solver."));
 constant DebugFlag GEN_GRAPH = DEBUG_FLAG(92, "genGraph", false,
@@ -656,7 +656,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("relaxSystem",Util.notrans("DESCRIBE ME")),
     ("countOperations", Util.gettext("Count the mathematic operations of the system.")),
     ("dumpComponentsGraphStr", Util.notrans("DESCRIBE ME")),
-    ("generateSymbolicJacobian", Util.gettext("Generates symbolic jacobian.")),
+    ("generateSymbolicJacobian", Util.gettext("Generates symbolic Jacobian.")),
     ("generateSymbolicLinearization", Util.gettext("Generates symbolic Linearization Matrixes A,B,C,D for Linear Model:\n\t\t\\dot x = Ax + Bu\n\t\ty = Cx +Du")),
     ("collapseIndependentBlocks", Util.gettext("Collapses all equation systems back into one big system again (undo partitionIndependentBlocks).")),
     ("removeUnusedFunctions", Util.gettext("Removed all unused functions from functionTree.")),
@@ -802,7 +802,7 @@ constant ConfigFlag RUNNING_WSM_TESTSUITE = CONFIG_FLAG(46, "wsm-testsuite",
 
 constant ConfigFlag CORRECT_CREF_TYPES = CONFIG_FLAG(47, "correctCrefTypes",
   NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Set to true to set correct types in component references. Doesn't work for OpenModelica backend."));
+  Util.gettext("Set to true to set correct types in component references. Doesn't work for OpenModelica back-end."));
 
 constant ConfigFlag SCALARIZE_BINDINGS = CONFIG_FLAG(48, "scalarizeBindings",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
