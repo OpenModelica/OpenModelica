@@ -212,7 +212,7 @@ algorithm
   matchcontinue(inStatements, inProgram, inCommand, inSymbolTable)
     local
       GlobalScript.Statements stmts;
-      Absyn.Program prog, ast;
+      Absyn.Program prog, prog2, ast;
       String result;
       GlobalScript.SymbolTable st;
       list<GlobalScript.Variable> vars;
@@ -226,13 +226,13 @@ algorithm
     // Add a class or function to the interactive symbol table.
     case (NONE(), SOME(prog), _, GlobalScript.SYMBOLTABLE(ast = ast, lstVarVal = vars))
       equation
-        prog = Interactive.addScope(prog, vars);
-        prog = Interactive.updateProgram(prog, ast);
+        prog2 = Interactive.addScope(prog, vars);
+        prog2 = Interactive.updateProgram(prog2, ast);
         Debug.fprint(Flags.DUMP, "\n--------------- Parsed program ---------------\n");
-        Debug.fcall(Flags.DUMP_GRAPHVIZ, DumpGraphviz.dump, prog);
-        Debug.fcall(Flags.DUMP, Dump.dump, prog);
+        Debug.fcall(Flags.DUMP_GRAPHVIZ, DumpGraphviz.dump, prog2);
+        Debug.fcall(Flags.DUMP, Dump.dump, prog2);
         result = makeClassDefResult(prog) "Return vector of toplevel classnames.";
-        st = Interactive.setSymbolTableAST(inSymbolTable, prog);
+        st = Interactive.setSymbolTableAST(inSymbolTable, prog2);
       then (result, st);
 
     // A parser error occured in parseCommand, display the error message. This
