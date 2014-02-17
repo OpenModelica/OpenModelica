@@ -2643,6 +2643,7 @@ algorithm
   outSets := matchcontinue(inLhsCref, inRhsCref, inSets)
     local
       SetTrie sets;
+      list<DAE.ComponentRef> crefs;
 
     case (_, _, _)
       equation
@@ -2652,13 +2653,39 @@ algorithm
 
     case (_, _, Connect.SETS(sets = sets))
       equation
-        sets = setTrieUpdate(inLhsCref, 1, sets, increaseRefCount);
-        sets = setTrieUpdate(inRhsCref, 1, sets, increaseRefCount);
+        crefs = ComponentReference.expandCref(inLhsCref, false);
+        sets = increaseConnectRefCount2(crefs, sets);
+        crefs = ComponentReference.expandCref(inRhsCref, false);
+        sets = increaseConnectRefCount2(crefs, sets);
       then
         setSets(sets, inSets);
 
   end matchcontinue;
 end increaseConnectRefCount;
+
+public function increaseConnectRefCount2
+  input list<DAE.ComponentRef> inCref;
+  input SetTrie inSets;
+  output SetTrie outSets;
+protected
+  list<DAE.ComponentRef> crefs;
+algorithm
+  outSets := match(inCref, inSets)
+    local
+      DAE.ComponentRef cref;
+      list<DAE.ComponentRef> rest_crefs;
+      SetTrie sets;
+
+    case (cref :: rest_crefs, _)
+      equation
+        sets = setTrieUpdate(cref, 1, inSets, increaseRefCount);
+      then
+        increaseConnectRefCount2(rest_crefs, sets);
+
+    else inSets;
+
+  end match;
+end increaseConnectRefCount2;
 
 protected function increaseRefCount
   input Integer inAmount;
