@@ -617,9 +617,15 @@ element_modification_or_replaceable returns [void* ast]
     ;
 
 element_modification [void *each, void *final] returns [void* ast] 
-@init { $ast = NULL; mod = 0; cmt = 0; } :
-  path=name_path2 ( mod=modification )? cmt=string_comment
+@init { $ast = NULL; mod = 0; cmt = 0; br = 0;} :
+  path=name_path2 (br=LBRACK | ((mod=modification)? cmt=string_comment))
   {
+    if (br) {
+      ModelicaParser_lexerError = ANTLR3_TRUE;
+      c_add_source_message(NULL, 2, ErrorType_syntax, ErrorLevel_error, "Subscripting modifiers is not allowed. Apply the modification on the whole identifier using an array-expression or an each-modifier.",
+              NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition,
+              ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
+    }
     $ast = Absyn__MODIFICATION(final, each, path, mk_some_or_none(mod), mk_some_or_none(cmt), PARSER_INFO($start));
   }
   ;
