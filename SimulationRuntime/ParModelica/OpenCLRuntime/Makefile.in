@@ -16,7 +16,7 @@ transfer: libOMOCLRuntime.a
 	$(COPY) omc_ocl_memory_ops.h $(OPENMODELICA_INC)
 	$(COPY) libOMOCLRuntime.a $(OPENMODELICA_LIB)
 	$(COPY) ParModelicaBuiltin.mo $(OPENMODELICA_LIB)
-	$(COPY) OCLRuntimeUtil_new.cl $(TOP_BUILDDIR)/include/omc/
+	$(COPY) OCLRuntimeUtil_new.cl $(OPENMODELICA_INC)
 
 Makefile: Makefile.in
 	(cd ../../../ && ./config.status)

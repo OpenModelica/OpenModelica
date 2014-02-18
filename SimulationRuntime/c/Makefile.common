@@ -197,21 +197,21 @@ install: $(LIBSIMULATION) $(LIBRUNTIME) $(LIBFMIRUNTIME) simulation/libf2c/libf2
 	# copy interactive sample client
 	cp $(INTERACTIVECLIENT) $(builddir_bin)
 	# copy header files
-	cp -p $(RUNTIME_HEADERS) $(builddir_inc)
-	cp -p $(RUNTIMELINEAR_HEADERS) $(builddir_inc)/linearization
-	cp -p $(RUNTIMEOPTIMZ_HEADERS) $(builddir_inc)/optimization
-	cp -p $(RUNTIMESIMULATION_HEADERS) $(builddir_inc)/simulation
-	cp -p $(RUNTIMESIMRESULTS_HEADERS) $(builddir_inc)/simulation/results
-	cp -p $(RUNTIMESIMSOLVER_HEADERS) $(builddir_inc)/simulation/solver
-	cp -p $(RUNTIMEINITIALIZATION_HEADERS) $(builddir_inc)/simulation/solver/initialization
-	cp -p $(RUNTIMEMETA_HEADERS) $(builddir_inc)/meta
-	cp -p $(RUNTIMEMETAGC_HEADERS) $(builddir_inc)/meta/gc
-	cp -p $(RUNTIMEUTIL_HEADERS) $(builddir_inc)/util
+	cp -p $(RUNTIME_HEADERS) $(builddir_inc)/c/
+	cp -p $(RUNTIMELINEAR_HEADERS) $(builddir_inc)/c/linearization/
+	cp -p $(RUNTIMEOPTIMZ_HEADERS) $(builddir_inc)/c/optimization/
+	cp -p $(RUNTIMESIMULATION_HEADERS) $(builddir_inc)/c/simulation/
+	cp -p $(RUNTIMESIMRESULTS_HEADERS) $(builddir_inc)/c/simulation/results/
+	cp -p $(RUNTIMESIMSOLVER_HEADERS) $(builddir_inc)/c/simulation/solver/
+	cp -p $(RUNTIMEINITIALIZATION_HEADERS) $(builddir_inc)/c/simulation/solver/initialization/
+	cp -p $(RUNTIMEMETA_HEADERS) $(builddir_inc)/c/meta/
+	cp -p $(RUNTIMEMETAGC_HEADERS) $(builddir_inc)/c/meta/gc/
+	cp -p $(RUNTIMEUTIL_HEADERS) $(builddir_inc)/c/util/
 	# copy fmi stuff
 	cp -p $(RUNTIME_HEADERS_FMU) ../fmi/export/*.h \
 	   ../fmi/export/fmu_model_interface.c \
 	   ../fmi/import/fmuWrapper.h \
-	   ../fmi/import/xmlparser.h $(builddir_inc)
+	   ../fmi/import/xmlparser.h $(builddir_inc)/c
 	# copy java interface stuff
 	@$(MAKE) -C util/java_interface -f $(LIBMAKEFILE) && \
 	$(MAKE) -C util/java_interface -f $(LIBMAKEFILE) install || \

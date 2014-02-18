@@ -32,16 +32,16 @@ mkbuilddirs:
 	mkdir -p $(builddir_lib)/omc/emcc
 	mkdir -p $(builddir_lib)/python
 	mkdir -p $(builddir_lib)/python/omniORB
-	mkdir -p $(builddir_inc)
-	mkdir -p $(builddir_inc)/linearization
-	mkdir -p $(builddir_inc)/optimization
-	mkdir -p $(builddir_inc)/simulation
-	mkdir -p $(builddir_inc)/simulation/results
-	mkdir -p $(builddir_inc)/simulation/solver
-	mkdir -p $(builddir_inc)/simulation/solver/initialization
-	mkdir -p $(builddir_inc)/meta
-	mkdir -p $(builddir_inc)/meta/gc
-	mkdir -p $(builddir_inc)/util
+	mkdir -p $(builddir_inc)/c/
+	mkdir -p $(builddir_inc)/c/linearization/
+	mkdir -p $(builddir_inc)/c/optimization/
+	mkdir -p $(builddir_inc)/c/simulation/
+	mkdir -p $(builddir_inc)/c/simulation/results/
+	mkdir -p $(builddir_inc)/c/simulation/solver/
+	mkdir -p $(builddir_inc)/c/simulation/solver/initialization/
+	mkdir -p $(builddir_inc)/c/meta/
+	mkdir -p $(builddir_inc)/c/meta/gc/
+	mkdir -p $(builddir_inc)/c/util/
 	mkdir -p $(builddir_java)
 	mkdir -p $(builddir_share)/omc/scripts/PythonInterface/OMPython/OMParser
 	mkdir -p $(builddir_share)/omc/scripts/PythonInterface/PySimulator
@@ -96,18 +96,18 @@ libgc-dev: /usr/include/gc/leak_detector.h
 libgc-dev: /usr/include/gc/new_gc_alloc.h
 libgc-dev: /usr/include/gc/weakpointer.h
 
-boehm-gc: mkbuilddirs boehm-gc-lib build/include/omc/gc.h build/include/omc/gc_config_macros.h build/include/omc/gc_version.h build/include/omc/gc_pthread_redirects.h
+boehm-gc: mkbuilddirs boehm-gc-lib build/include/omc/c/gc.h build/include/omc/c/gc_config_macros.h build/include/omc/c/gc_version.h build/include/omc/c/gc_pthread_redirects.h
 build/lib/omc/libgc.a: 3rdParty/gc-7.2/.libs/libgc.a mkbuilddirs
 	cp -p $< $@
 3rdParty/gc-7.2/.libs/libgc.a: 3rdParty/gc-7.2/Makefile
 	$(MAKE) -C 3rdParty/gc-7.2/
-build/include/omc/gc.h: 3rdParty/gc-7.2/include/gc.h mkbuilddirs
+build/include/omc/c/gc.h: 3rdParty/gc-7.2/include/gc.h mkbuilddirs
 	cp -pPR $< $@
-build/include/omc/gc_config_macros.h: 3rdParty/gc-7.2/include/gc_config_macros.h mkbuilddirs
+build/include/omc/c/gc_config_macros.h: 3rdParty/gc-7.2/include/gc_config_macros.h mkbuilddirs
 	cp -pPR $< $@
-build/include/omc/gc_version.h: 3rdParty/gc-7.2/include/gc_version.h mkbuilddirs
+build/include/omc/c/gc_version.h: 3rdParty/gc-7.2/include/gc_version.h mkbuilddirs
 	cp -pPR $< $@
-build/include/omc/gc_pthread_redirects.h: 3rdParty/gc-7.2/include/gc_pthread_redirects.h mkbuilddirs
+build/include/omc/c/gc_pthread_redirects.h: 3rdParty/gc-7.2/include/gc_pthread_redirects.h mkbuilddirs
 	cp -pPR $< $@
 3rdParty/gc-7.2/Makefile: 3rdParty/gc-7.2/Makefile.in 3rdParty/gc-7.2/configure
 	(cd 3rdParty/gc-7.2 && ./configure "--host=$(host)" $(LIBGC_EXTRA_CONFIGURATION) --disable-gcj-support --disable-java-finalization --enable-large-config CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS) -DLARGE_CONFIG -DTHREAD_LOCAL_ALLOC")
@@ -121,7 +121,6 @@ build/lib/omc/libipopt.la: 3rdParty/Ipopt-3.11.6/Makefile
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libipopt.1.9.6.dylib 3rdParty/Ipopt-3.11.6/lib/libipopt.1.9.6.dylib
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libcoinmumps.1.4.11.dylib 3rdParty/Ipopt-3.11.6/lib/libcoinmumps.1.4.11.dylib
 	cp -pPR 3rdParty/Ipopt-3.11.6/lib/*.* build/lib/omc
-	cp -pPR 3rdParty/Ipopt-3.11.6/include/coin build/include/omc
 
 ipopt: build/lib/omc/libipopt.la
 
@@ -132,7 +131,7 @@ openblas: build/lib/omc/libopenblas_openmodelica.a
 
 fmi: interactive
 	$(MAKE) -C SimulationRuntime/fmi/import -f $(defaultMakefileTarget)
-	(cp -pPR SimulationRuntime/fmi/import/fmuWrapper.h SimulationRuntime/fmi/import/xmlparser.h $(builddir_inc))
+	(cp -pPR SimulationRuntime/fmi/import/fmuWrapper.h SimulationRuntime/fmi/import/xmlparser.h $(builddir_inc)/c/)
 	
 fmiclean: 
 	$(MAKE) -C SimulationRuntime/fmi/import/ -f $(defaultMakefileTarget) clean
