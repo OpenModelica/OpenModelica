@@ -230,6 +230,8 @@ private:
   // Help Menu
   QAction *mpUsersGuideAction;
   QAction *mpSystemDocumentationAction;
+  QAction *mpOpenModelicaScriptingAction;
+  QAction *mpModelicaDocumentationAction;
   QAction *mpAboutOMEditAction;
   // Toolbar Actions
   // Shapes Toolbar Actions
@@ -294,6 +296,8 @@ public slots:
   void openConfigurationOptions();
   void openUsersGuide();
   void openSystemDocumentation();
+  void openOpenModelicaScriptingDocumentation();
+  void openModelicaDocumentation();
   void openAboutOMEdit();
   void toggleShapesButton();
   void openRecentModelWidget();

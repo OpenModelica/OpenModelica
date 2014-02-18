@@ -1470,6 +1470,18 @@ void MainWindow::openSystemDocumentation()
   QDesktopServices::openUrl(systemDocumentationPath);
 }
 
+void MainWindow::openOpenModelicaScriptingDocumentation()
+{
+  QUrl openModelicaScriptingUrl (QUrl("https://build.openmodelica.org/Documentation/OpenModelica.Scripting.html"));
+  QDesktopServices::openUrl(openModelicaScriptingUrl);
+}
+
+void MainWindow::openModelicaDocumentation()
+{
+  QUrl modelicaDocumentationUrl (QUrl("https://build.openmodelica.org/Documentation/index.html"));
+  QDesktopServices::openUrl(modelicaDocumentationUrl);
+}
+
 void MainWindow::openAboutOMEdit()
 {
   mpAboutOMEditDialog->setGeometry(QRect(rect().center() - QPoint(262.2, 235), rect().center() + QPoint(262.2, 235)));
@@ -1820,6 +1832,14 @@ void MainWindow::createActions()
   mpSystemDocumentationAction = new QAction(tr("OpenModelica System Documentation"), this);
   mpSystemDocumentationAction->setStatusTip(tr("Opens the OpenModelica System Documentation"));
   connect(mpSystemDocumentationAction, SIGNAL(triggered()), SLOT(openSystemDocumentation()));
+  // OpenModelica Scripting documentation action
+  mpOpenModelicaScriptingAction = new QAction(tr("OpenModelica Scripting Documentation"), this);
+  mpOpenModelicaScriptingAction->setStatusTip(tr("Opens the OpenModelica Scripting Documentation"));
+  connect(mpOpenModelicaScriptingAction, SIGNAL(triggered()), SLOT(openOpenModelicaScriptingDocumentation()));
+  // Modelica documentation action
+  mpModelicaDocumentationAction = new QAction(tr("Modelica Documentation"), this);
+  mpModelicaDocumentationAction->setStatusTip(tr("Opens the Modelica Documentation"));
+  connect(mpModelicaDocumentationAction, SIGNAL(triggered()), SLOT(openModelicaDocumentation()));
   // about OMEdit action
   mpAboutOMEditAction = new QAction(tr("About OMEdit"), this);
   mpAboutOMEditAction->setStatusTip(tr("Information about OMEdit"));
@@ -2035,6 +2055,9 @@ void MainWindow::createMenus()
   // add actions to Help menu
   pHelpMenu->addAction(mpUsersGuideAction);
   pHelpMenu->addAction(mpSystemDocumentationAction);
+  pHelpMenu->addAction(mpOpenModelicaScriptingAction);
+  pHelpMenu->addAction(mpModelicaDocumentationAction);
+  pHelpMenu->addSeparator();
   pHelpMenu->addAction(mpAboutOMEditAction);
   // add Help menu to menu bar
   menuBar()->addAction(pHelpMenu->menuAction());
