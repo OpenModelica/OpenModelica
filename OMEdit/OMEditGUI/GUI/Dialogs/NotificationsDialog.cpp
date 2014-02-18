@@ -183,15 +183,17 @@ QString NotificationsDialog::getNotificationLabelString()
                 "It is highly recommended to delete the old OMEdit settings file. Click \"OK\" to delete.<br />"
                 "Contact us [OpenModelica@ida.liu.se] or Adeel Asghar [adeel.asghar@liu.se] with any comments, suggestions or problems.");
     case NotificationsDialog::CrashReport:
+#ifdef WIN32 // Win32
       tmpPath = QDir::tempPath() + "/OpenModelica/OMEdit/";
       tmpPath.remove("\"");
-#ifdef WIN32 // Win32
-       OMCCommandsLogFilePath = QString("%1omeditcommands.log").arg(tmpPath);
-       OMCOutputFile = QString("%1openmodelica.omc.output.%2").arg(tmpPath).arg(Helper::OMCServerName);
-       stackTraceFile = QString("%1openmodelica.stacktrace.%2").arg(tmpPath).arg(Helper::OMCServerName);
+      OMCCommandsLogFilePath = QString("%1omeditcommands.log").arg(tmpPath);
+      OMCOutputFile = QString("%1openmodelica.omc.output.%2").arg(tmpPath).arg(Helper::OMCServerName);
+      stackTraceFile = QString("%1openmodelica.stacktrace.%2").arg(tmpPath).arg(Helper::OMCServerName);
 #else // UNIX environment
       user = getenv("USER");
       if (!user) { user = "nobody"; }
+      tmpPath = QDir::tempPath() + "/OpenModelica_" + QString(user) + "/OMEdit/";
+      tmpPath.remove("\"");
       OMCCommandsLogFilePath = QString("%1omeditcommands.%2.log").arg(tmpPath).arg(QString(user));
       OMCOutputFile = QString("%1openmodelica.%2.omc.output.%3").arg(tmpPath).arg(QString(user)).arg(Helper::OMCServerName);
       stackTraceFile = QString("%1openmodelica.%2.stacktrace.%3").arg(tmpPath).arg(QString(user)).arg(Helper::OMCServerName);
@@ -307,16 +309,18 @@ void NotificationsDialog::saveReleaseInformationNotificationSettings()
   */
 void NotificationsDialog::sendCrashReport()
 {
-  QString OMCCommandsLogFilePath, OMCOutputFile, stackTraceFile;
-  QString tmpPath = QDir::tempPath() + "/OpenModelica/OMEdit/";
-  tmpPath.remove("\"");
+  QString OMCCommandsLogFilePath, OMCOutputFile, stackTraceFile, tmpPath;
 #ifdef WIN32 // Win32
+  tmpPath = QDir::tempPath() + "/OpenModelica/OMEdit/";
+  tmpPath.remove("\"");
   OMCCommandsLogFilePath = QString("%1omeditcommands.log").arg(tmpPath);
   OMCOutputFile = QString("%1openmodelica.omc.output.%2").arg(tmpPath).arg(Helper::OMCServerName);
   stackTraceFile = QString("%1openmodelica.stacktrace.%2").arg(tmpPath).arg(Helper::OMCServerName);
 #else // UNIX environment
   char *user = getenv("USER");
   if (!user) { user = "nobody"; }
+  tmpPath = QDir::tempPath() + "/OpenModelica_" + QString(user) + "/OMEdit/";
+  tmpPath.remove("\"");
   OMCCommandsLogFilePath = QString("%1omeditcommands.%2.log").arg(tmpPath).arg(QString(user));
   OMCOutputFile = QString("%1openmodelica.%2.omc.output.%3").arg(tmpPath).arg(QString(user)).arg(Helper::OMCServerName);
   stackTraceFile = QString("%1openmodelica.%2.stacktrace.%3").arg(tmpPath).arg(QString(user)).arg(Helper::OMCServerName);

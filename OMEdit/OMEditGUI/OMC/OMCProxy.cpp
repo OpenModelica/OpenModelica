@@ -286,7 +286,13 @@ void OMCProxy::removeCachedOMCCommand(QString className)
 bool OMCProxy::startServer()
 {
   /* create the tmp path */
+#ifdef WIN32
   QString tmpPath = QDir::tempPath() + "/OpenModelica/OMEdit/";
+#else // UNIX environment
+  char *user = getenv("USER");
+  if (!user) { user = "nobody"; }
+  QString tmpPath = QDir::tempPath() + "/OpenModelica_" + QString(user) + "/OMEdit/";
+#endif
   tmpPath.remove("\"");
   if (!QDir().exists(tmpPath))
     QDir().mkpath(tmpPath);
@@ -294,8 +300,6 @@ bool OMCProxy::startServer()
 #ifdef WIN32
   mCommandsLogFile.setFileName(QString("%1omeditcommands.log").arg(tmpPath));
 #else // UNIX environment
-  char *user = getenv("USER");
-  if (!user) { user = "nobody"; }
   mCommandsLogFile.setFileName(QString("%1omeditcommands.%3.log").arg(tmpPath).arg(QString(user)));
 #endif
   if (mCommandsLogFile.open(QIODevice::WriteOnly | QIODevice::Text))
