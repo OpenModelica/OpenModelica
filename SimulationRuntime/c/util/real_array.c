@@ -1111,7 +1111,7 @@ void div_alloc_real_array_scalar(const real_array_t * a,modelica_real b,real_arr
     div_real_array_scalar(a,b,dest);
 }
 
-void division_real_array_scalar(const real_array_t * a,modelica_real b,real_array_t* dest, const char* division_str)
+void division_real_array_scalar(threadData_t *threadData, const real_array_t * a,modelica_real b,real_array_t* dest, const char* division_str)
 {
     size_t nr_of_elements;
     size_t i;
@@ -1122,11 +1122,11 @@ void division_real_array_scalar(const real_array_t * a,modelica_real b,real_arra
     }
 }
 
-void division_alloc_real_array_scalar(const real_array_t * a,modelica_real b,real_array_t* dest, const char* division_str)
+void division_alloc_real_array_scalar(threadData_t *threadData,const real_array_t * a,modelica_real b,real_array_t* dest, const char* division_str)
 {
     clone_real_array_spec(a,dest);
     alloc_real_array_data(dest);
-    division_real_array_scalar(a,b,dest,division_str);
+    division_real_array_scalar(threadData,a,b,dest,division_str);
 }
 
 void div_scalar_real_array(modelica_real a, const real_array_t* b, real_array_t* dest)

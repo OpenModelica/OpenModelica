@@ -234,32 +234,32 @@ int linearize(DATA* data)
     double* matrixD = (double*)calloc(size_Outputs*size_Inputs,sizeof(double));
     string strA, strB, strC, strD, strX, strU, filename;
 
-    assertStreamPrint(0!=matrixA,"calloc failed");
-    assertStreamPrint(0!=matrixB,"calloc failed");
-    assertStreamPrint(0!=matrixC,"calloc failed");;
-    assertStreamPrint(0!=matrixD,"calloc failed");
+    assertStreamPrint(data->threadData,0!=matrixA,"calloc failed");
+    assertStreamPrint(data->threadData,0!=matrixB,"calloc failed");
+    assertStreamPrint(data->threadData,0!=matrixC,"calloc failed");;
+    assertStreamPrint(data->threadData,0!=matrixD,"calloc failed");
 
     /* Determine Matrix A */
     if(!data->callback->initialAnalyticJacobianA(data)){
-      assertStreamPrint(0==functionJacA(data, matrixA),"Error, can not get Matrix A ");
+      assertStreamPrint(data->threadData,0==functionJacA(data, matrixA),"Error, can not get Matrix A ");
     }
     strA = array2string(matrixA,size_A,size_A);
 
     /* Determine Matrix B */
     if(!data->callback->initialAnalyticJacobianB(data)){
-      assertStreamPrint(0==functionJacB(data, matrixB),"Error, can not get Matrix B ");
+      assertStreamPrint(data->threadData,0==functionJacB(data, matrixB),"Error, can not get Matrix B ");
     }
     strB = array2string(matrixB,size_A,size_Inputs);
 
     /* Determine Matrix C */
     if(!data->callback->initialAnalyticJacobianC(data)){
-      assertStreamPrint(0==functionJacC(data, matrixC),"Error, can not get Matrix C ");
+      assertStreamPrint(data->threadData,0==functionJacC(data, matrixC),"Error, can not get Matrix C ");
     }
     strC = array2string(matrixC,size_Outputs,size_A);
 
     /* Determine Matrix D */
     if(!data->callback->initialAnalyticJacobianD(data)){
-      assertStreamPrint(0==functionJacD(data, matrixD),"Error, can not get Matrix D ");
+      assertStreamPrint(data->threadData,0==functionJacD(data, matrixD),"Error, can not get Matrix D ");
     }
     strD = array2string(matrixD,size_Outputs,size_Inputs);
 
@@ -284,7 +284,7 @@ int linearize(DATA* data)
     filename = "linear_" + string(data->modelData.modelName) + ".mo";
 
     FILE *fout = fopen(filename.c_str(),"wb");
-    assertStreamPrint(0!=fout,"Cannot open File %s",filename.c_str());
+    assertStreamPrint(data->threadData,0!=fout,"Cannot open File %s",filename.c_str());
     fprintf(fout, data->callback->linear_model_frame(), strX.c_str(), strU.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str());
     if(ACTIVE_STREAM(LOG_STATS)) {
       infoStreamPrint(LOG_STATS, 0, data->callback->linear_model_frame(), strX.c_str(), strU.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str());

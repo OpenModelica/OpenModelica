@@ -221,7 +221,7 @@ void mat4_init(simulation_result *self,DATA *data)
     /* open file */
     matData->fp.open(self->filename, std::ofstream::binary|std::ofstream::trunc);
     if(!matData->fp) {
-      throwStreamPrint("Cannot open File %s for writing",self->filename);
+      throwStreamPrint(data->threadData, "Cannot open File %s for writing",self->filename);
     }
 
     /* write `AClass' matrix */
@@ -272,7 +272,7 @@ void mat4_init(simulation_result *self,DATA *data)
     free(doubleMatrix);
     free(intMatrix);
     rt_accumulate(SIM_TIMER_OUTPUT);
-    throwStreamPrint("Error while writing mat file %s",self->filename);
+    throwStreamPrint(data->threadData, "Error while writing mat file %s",self->filename);
   }
   free(names); names=NULL;
   rt_accumulate(SIM_TIMER_OUTPUT);
@@ -341,7 +341,7 @@ void mat4_emit(simulation_result *self,DATA *data)
       }
     }
   if (!matData->fp) {
-    throwStreamPrint("Error while writing file %s",self->filename);
+    throwStreamPrint(data->threadData, "Error while writing file %s",self->filename);
   }
   ++matData->ntimepoints;
   rt_accumulate(SIM_TIMER_OUTPUT);
@@ -380,7 +380,7 @@ long flattenStrBuf(int dims, const struct VAR_INFO** src, char* &dest, int& long
 
   /* allocate memory */
   dest = (char*) calloc(longest*nstrings+1, sizeof(char));
-  assertStreamPrint(0!=dest,"Cannot allocate memory");
+  assertStreamPrint(NULL, 0!=dest,"Cannot allocate memory");
   /* copy data */
   char *ptr = dest;
 /*  for(i=0;i<dims;i++) {
@@ -427,10 +427,10 @@ void writeMatVer4MatrixHeader(simulation_result *self,DATA *data,const char *nam
   /* write header to file */
   matData->fp.write((char*)&hdr, sizeof(MHeader_t));
   if(!matData->fp)
-    throwStreamPrint("Cannot write to file %s",self->filename);
+    throwStreamPrint(data->threadData, "Cannot write to file %s",self->filename);
   matData->fp.write(name, sizeof(char)*hdr.namelen);
   if(!matData->fp)
-    throwStreamPrint("Cannot write to file %s",self->filename);
+    throwStreamPrint(data->threadData, "Cannot write to file %s",self->filename);
 }
 
 void writeMatVer4Matrix(simulation_result *self,DATA *data,const char *name, int rows, int cols, const void *matrixData, unsigned int size)
@@ -441,7 +441,7 @@ void writeMatVer4Matrix(simulation_result *self,DATA *data,const char *name, int
   /* write data */
   matData->fp.write((const char*)matrixData, (size)*rows*cols);
   if(!matData->fp) {
-    throwStreamPrint("Cannot write to file %s",self->filename);
+    throwStreamPrint(data->threadData, "Cannot write to file %s",self->filename);
   }
 }
 
@@ -462,7 +462,7 @@ void generateDataInfo(simulation_result *self,DATA *data,int32_t* &dataInfo, int
   cols = 4;
 
   dataInfo = (int*) calloc(rows*cols,sizeof(int));
-  assertStreamPrint(0!=dataInfo,"Cannot alloc memory");
+  assertStreamPrint(data->threadData, 0!=dataInfo,"Cannot alloc memory");
   /* continuous and discrete variables, including time */
   for(size_t i = 0; i < (size_t)(matData->r_indx_map.size() + matData->i_indx_map.size() + matData->b_indx_map.size() + 1 /* add one more for timeValue*/ + self->cpuTime); ++i) {
       /* row 1 - which table */
@@ -625,7 +625,7 @@ void generateData_1(DATA *data, double* &data_1, int& rows, int& cols, double ts
 
   /* allocate data buffer */
   data_1 = (double*)calloc(rows*cols, sizeof(double));
-  assertStreamPrint(0!=data_1, "Malloc failed");
+  assertStreamPrint(data->threadData, 0!=data_1, "Malloc failed");
   data_1[0] = tstart;     /* start time */
   data_1[cols] = tstop;   /* stop time */
 

@@ -69,9 +69,6 @@ int solve_nonlinear_system(DATA *data, int sysNumber);
 int check_nonlinear_solutions(DATA *data, int printFailingSystems);
 double extraPolate(DATA *data, double old1, double old2);
 
-/* nonlinear JumpBuffer */
-extern jmp_buf nonlinearJmpbuf;
-
 #ifdef __cplusplus
 }
 #endif

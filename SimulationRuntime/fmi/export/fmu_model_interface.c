@@ -120,6 +120,8 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID,
   comp = (ModelInstance *)functions.allocateMemory(1, sizeof(ModelInstance));
   if (comp) {
     DATA* fmudata = (DATA *)functions.allocateMemory(1, sizeof(DATA));
+    threadData_t *threadData = (threadData_t *)functions.allocateMemory(1, sizeof(threadData));
+    fmudata->threadData = threadData;
     comp->fmuData = fmudata;
     if (!comp->fmuData) {
       functions.logger(NULL, instanceName, fmiError, "error",
@@ -168,7 +170,6 @@ void fmiFreeModelInstance(fmiComponent c) {
   if (!comp) return;
   if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
       "fmiFreeModelInstance");
-
   comp->functions.freeMemory(comp);
 }
 

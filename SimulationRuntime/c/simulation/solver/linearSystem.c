@@ -76,7 +76,7 @@ int allocatelinearSystem(DATA *data)
       allocateLisData(size, size, nnz, &linsys[i].solverData);
       break;
     default:
-      throwStreamPrint("unrecognized linear solver");
+      throwStreamPrint(data->threadData, "unrecognized linear solver");
     }
   }
   return 0;
@@ -108,7 +108,7 @@ int freelinearSystem(DATA *data)
       freeLisData(&linsys[i].solverData);
       break;
     default:
-      throwStreamPrint("unrecognized linear solver");
+      throwStreamPrint(data->threadData, "unrecognized linear solver");
     }
 
     free(linsys[i].solverData);
@@ -137,7 +137,7 @@ int solve_linear_system(DATA *data, int sysNumber)
     success = solveLis(data, sysNumber);
     break;
   default:
-    throwStreamPrint("unrecognized linear solver");
+    throwStreamPrint(data->threadData, "unrecognized linear solver");
   }
   linsys[sysNumber].solved = success;
 

@@ -53,14 +53,14 @@ struct RINGBUFFER
 RINGBUFFER *allocRingBuffer(int bufferSize, int itemSize)
 {
   RINGBUFFER *rb = (RINGBUFFER*)malloc(sizeof(RINGBUFFER));
-  assertStreamPrint(0 != rb, "out of memory");
+  assertStreamPrint(NULL, 0 != rb, "out of memory");
 
   rb->firstElement = 0;
   rb->nElements = 0;
   rb->bufferSize = bufferSize > 0 ? bufferSize : 1;
   rb->itemSize = itemSize;
   rb->buffer = calloc(rb->bufferSize, rb->itemSize);
-  assertStreamPrint(0 != rb->buffer, "out of memory");
+  assertStreamPrint(NULL, 0 != rb->buffer, "out of memory");
 
   return rb;
 }
@@ -73,9 +73,9 @@ void freeRingBuffer(RINGBUFFER *rb)
 
 void *getRingData(RINGBUFFER *rb, int i)
 {
-  assertStreamPrint(rb->nElements > 0, "empty RingBuffer");
-  assertStreamPrint(i < rb->nElements, "index [%d] out of range [%d:%d]", i, -rb->nElements+1, rb->nElements-1);
-  assertStreamPrint(-rb->nElements < i, "index [%d] out of range [%d:%d]", i, -rb->nElements+1, rb->nElements-1);
+  assertStreamPrint(NULL, rb->nElements > 0, "empty RingBuffer");
+  assertStreamPrint(NULL, i < rb->nElements, "index [%d] out of range [%d:%d]", i, -rb->nElements+1, rb->nElements-1);
+  assertStreamPrint(NULL, -rb->nElements < i, "index [%d] out of range [%d:%d]", i, -rb->nElements+1, rb->nElements-1);
   return ((char*)rb->buffer)+(((rb->firstElement+i)%rb->bufferSize)*rb->itemSize);
 }
 
@@ -84,7 +84,7 @@ void expandRingBuffer(RINGBUFFER *rb)
   int i;
 
   void *tmp = calloc(2*rb->bufferSize, rb->itemSize);
-  assertStreamPrint(0!=tmp, "out of memory");
+  assertStreamPrint(NULL, 0!=tmp, "out of memory");
 
   for(i=0; i<rb->nElements; i++) {
     memcpy(((char*)tmp)+(i*rb->itemSize), getRingData(rb, i), rb->itemSize);
@@ -107,9 +107,9 @@ void appendRingData(RINGBUFFER *rb, void *value)
 
 void dequeueNFirstRingDatas(RINGBUFFER *rb, int n)
 {
-  assertStreamPrint(rb->nElements > 0, "empty RingBuffer");
-  assertStreamPrint(n < rb->nElements, "index [%d] out of range [%d:%d]", n, 0, rb->nElements-1);
-  assertStreamPrint(0 <= n, "index [%d] out of range [%d:%d]", n, 0, rb->nElements-1);
+  assertStreamPrint(NULL, rb->nElements > 0, "empty RingBuffer");
+  assertStreamPrint(NULL, n < rb->nElements, "index [%d] out of range [%d:%d]", n, 0, rb->nElements-1);
+  assertStreamPrint(NULL, 0 <= n, "index [%d] out of range [%d:%d]", n, 0, rb->nElements-1);
 
   rb->firstElement = (rb->firstElement+n)%rb->bufferSize;
   rb->nElements -= n;
@@ -122,9 +122,9 @@ int ringBufferLength(RINGBUFFER *rb)
 
 void rotateRingBuffer(RINGBUFFER *rb, int n, void **lookup)
 {
-  assertStreamPrint(rb->nElements > 0, "empty RingBuffer");
-  assertStreamPrint(n < rb->nElements, "index [%d] out of range [%d:%d]", n, 0, rb->nElements-1);
-  assertStreamPrint(0 <= n, "index [%d] out of range [%d:%d]", n, 0, rb->nElements-1);
+  assertStreamPrint(NULL, rb->nElements > 0, "empty RingBuffer");
+  assertStreamPrint(NULL, n < rb->nElements, "index [%d] out of range [%d:%d]", n, 0, rb->nElements-1);
+  assertStreamPrint(NULL, 0 <= n, "index [%d] out of range [%d:%d]", n, 0, rb->nElements-1);
 
   rb->firstElement = (rb->firstElement+(n*(rb->bufferSize-1)))%rb->bufferSize;
 

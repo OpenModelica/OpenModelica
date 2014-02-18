@@ -32,11 +32,11 @@
 #include "ModelicaUtilities.h"
 #include "modelica_string.h"
 
-#define GC_REDIRECT_TO_LOCAL
 #include "gc.h"
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
 #include "omc_error.h"
 
 void ModelicaMessage(const char* string) {
@@ -58,13 +58,13 @@ void ModelicaFormatMessage(const char* string,...) {
 void ModelicaError(const char* string) {
   fputs(string, stderr);
   fflush(stderr);
-  omc_throw();
+  omc_throw(NULL);
 }
 
 extern void ModelicaVFormatError(const char*string, va_list args) {
   vfprintf(stderr, string, args);
   fflush(stderr);
-  omc_throw();
+  omc_throw(NULL);
 }
 
 void ModelicaFormatError(const char* string, ...) {

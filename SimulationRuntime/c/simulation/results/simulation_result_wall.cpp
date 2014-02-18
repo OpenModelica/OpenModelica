@@ -28,6 +28,8 @@
  *
  */
 
+/* The recon wall format is optimized for writing */
+
 #include "omc_error.h"
 #include "simulation_result_wall.h"
 #include "rtclock.h"
@@ -304,7 +306,7 @@ void recon_wall_init(simulation_result *self,DATA *data)
   try {
     storage->fp.open(self->filename, std::ofstream::binary|std::ofstream::trunc);
     if(!storage->fp) {
-      throwStreamPrint("Cannot open File %s for writing",self->filename);
+      throwStreamPrint(data->threadData, "Cannot open File %s for writing",self->filename);
     }
     /* Write ID */
     storage->fp.write(header, 14);
@@ -323,7 +325,7 @@ void recon_wall_init(simulation_result *self,DATA *data)
   catch(...)
   {
     storage->fp.close();
-    throwStreamPrint("Error while writing mat file %s",self->filename);
+    throwStreamPrint(data->threadData, "Error while writing mat file %s",self->filename);
   }
   rt_accumulate(SIM_TIMER_OUTPUT);
 }

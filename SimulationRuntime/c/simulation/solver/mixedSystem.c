@@ -65,7 +65,7 @@ int allocatemixedSystem(DATA *data)
       allocateMixedSearchData(size, &system[i].solverData);
       break;
     default:
-      throwStreamPrint("unrecognized mixed solver");
+      throwStreamPrint(data->threadData, "unrecognized mixed solver");
     }
   }
   return 0;
@@ -95,7 +95,7 @@ int freemixedSystem(DATA *data)
       freeMixedSearchData(&system[i].solverData);
       break;
     default:
-      throwStreamPrint("unrecognized mixed solver");
+      throwStreamPrint(data->threadData, "unrecognized mixed solver");
     }
 
     free(system[i].solverData);
@@ -123,7 +123,7 @@ int solve_mixed_system(DATA *data, int sysNumber)
     success = solveMixedSearch(data, sysNumber);
     break;
   default:
-    throwStreamPrint("unrecognized mixed solver");
+    throwStreamPrint(data->threadData, "unrecognized mixed solver");
   }
   system[sysNumber].solved = success;
 

@@ -44,6 +44,7 @@
 
 #include "simulation/solver/dassl.h"
 #include "f2c.h"
+#include "meta_modelica.h"
 
 static const char *dasslMethodStr[DASSL_MAX] = {"unknown",
                                                 "dassl",
@@ -141,7 +142,7 @@ dasrt_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData){
       }
       messageClose(LOG_SOLVER);
     }
-    throwStreamPrint("unrecognized dassl solver method %s", simInfo->solverMethod);
+    throwStreamPrint(simData->threadData,"unrecognized dassl solver method %s", simInfo->solverMethod);
   } else {
     infoStreamPrint(LOG_SOLVER, 0, "| solver | Use solver method: %s\t%s",dasslMethodStr[dasslData->dasslMethod],dasslMethodStrDescStr[dasslData->dasslMethod]);
   }
@@ -151,24 +152,24 @@ dasrt_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData){
   dasslData->lrw = 50 + ((maxOrder + 4) * simData->modelData.nStates)
               + (simData->modelData.nStates * simData->modelData.nStates)  + (3*simData->modelData.nZeroCrossings);
   dasslData->rwork = (double*) calloc(dasslData->lrw, sizeof(double));
-  assertStreamPrint(0 != dasslData->rwork,"out of memory");
+  assertStreamPrint(simData->threadData, 0 != dasslData->rwork,"out of memory");
   dasslData->iwork = (fortran_integer*)  calloc(dasslData->liw, sizeof(fortran_integer));
-  assertStreamPrint(0 != dasslData->iwork,"out of memory");
+  assertStreamPrint(simData->threadData, 0 != dasslData->iwork,"out of memory");
   dasslData->ng = (fortran_integer) simData->modelData.nZeroCrossings;
   dasslData->ngdummy = (fortran_integer) 0;
   dasslData->jroot = (fortran_integer*)  calloc(simData->modelData.nZeroCrossings, sizeof(fortran_integer));
   dasslData->rpar = (double**) malloc(2*sizeof(double*));
   dasslData->ipar = (fortran_integer*) malloc(sizeof(fortran_integer));
   dasslData->ipar[0] = ACTIVE_STREAM(LOG_JAC);
-  assertStreamPrint(0 != dasslData->ipar,"out of memory");
+  assertStreamPrint(simData->threadData, 0 != dasslData->ipar,"out of memory");
   dasslData->atol = (double*) malloc(simData->modelData.nStates*sizeof(double));
   dasslData->rtol = (double*) malloc(simData->modelData.nStates*sizeof(double));
   dasslData->info = (fortran_integer*) calloc(infoLength, sizeof(fortran_integer));
-  assertStreamPrint(0 != dasslData->info,"out of memory");
+  assertStreamPrint(simData->threadData, 0 != dasslData->info,"out of memory");
   dasslData->dasslStatistics = (unsigned int*) calloc(numStatistics, sizeof(unsigned int));
-  assertStreamPrint(0 != dasslData->dasslStatistics,"out of memory");
+  assertStreamPrint(simData->threadData, 0 != dasslData->dasslStatistics,"out of memory");
   dasslData->dasslStatisticsTmp = (unsigned int*) calloc(numStatistics, sizeof(unsigned int));
-  assertStreamPrint(0 != dasslData->dasslStatisticsTmp,"out of memory");
+  assertStreamPrint(simData->threadData, 0 != dasslData->dasslStatisticsTmp,"out of memory");
 
   dasslData->idid = 0;
 
@@ -256,7 +257,7 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
   modelica_real* stateDer = sDataOld->realVars + simData->modelData.nStates;
   dasslData->rpar[0] = (double*) (void*) simData;
   dasslData->rpar[1] = (double*) (void*) dasslData;
-  assertStreamPrint(0 != dasslData->rpar, "could not passed to DDASRT");
+  assertStreamPrint(simData->threadData, 0 != dasslData->rpar, "could not passed to DDASRT");
 
   /* If an event is triggered and processed restart dassl. */
   if(solverInfo->didEventStep)
@@ -373,7 +374,7 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
       warningStreamPrint(LOG_STDOUT, 0, "can't continue. time = %f", sData->timeValue);
       return retVal;
     } else if(dasslData->idid == 4) {
-      currectJumpState = ERROR_EVENTSEARCH;
+      simData->threadData->currentErrorStage = ERROR_EVENTSEARCH;
     }
 
   } while(dasslData->idid == 1 ||
@@ -473,20 +474,21 @@ int functionODE_residual(double *t, double *y, double *yd, double *delta,
                     fortran_integer *ires, double *rpar, fortran_integer *ipar)
 {
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
+  threadData_t *threadData = data->threadData;
 
   double timeBackup;
   long i;
   int saveJumpState;
+  int success = 0;
 
   timeBackup = data->localData[0]->timeValue;
   data->localData[0]->timeValue = *t;
 
-  saveJumpState = currectJumpState;
-  currectJumpState = ERROR_INTEGRATOR;
+  saveJumpState = data->threadData->currentErrorStage;
+  data->threadData->currentErrorStage = ERROR_INTEGRATOR;
 
   /* try */
-  if(!setjmp(integratorJmpbuf))
-  {
+  MMC_TRY_INTERNAL(simulationJumpBuffer)
     data->callback->functionODE(data);
 
     /* get the difference between the temp_xd(=localData->statesDerivatives)
@@ -494,11 +496,14 @@ int functionODE_residual(double *t, double *y, double *yd, double *delta,
     for(i=0; i < data->modelData.nStates; i++) {
       delta[i] = data->localData[0]->realVars[data->modelData.nStates + i] - yd[i];
     }
+    success = 1;
+  MMC_CATCH_INTERNAL(simulationJumpBuffer)
 
-  } else { /* catch */
+  if (!success) {
     *ires = -1;
   }
-  currectJumpState = saveJumpState;
+  
+  data->threadData->currentErrorStage = saveJumpState;
 
   data->localData[0]->timeValue = timeBackup;
 
@@ -513,8 +518,8 @@ int function_ZeroCrossingsDASSL(fortran_integer *neqm, double *t, double *y,
   double timeBackup;
   int saveJumpState;
 
-  saveJumpState = currectJumpState;
-  currectJumpState = ERROR_EVENTSEARCH;
+  saveJumpState = data->threadData->currentErrorStage;
+  data->threadData->currentErrorStage = ERROR_EVENTSEARCH;
 
   timeBackup = data->localData[0]->timeValue;
 
@@ -524,7 +529,7 @@ int function_ZeroCrossingsDASSL(fortran_integer *neqm, double *t, double *y,
 
   data->callback->function_ZeroCrossings(data, gout, t);
 
-  currectJumpState = saveJumpState;
+  data->threadData->currentErrorStage = saveJumpState;
   data->localData[0]->timeValue = timeBackup;
 
   return 0;
@@ -770,7 +775,7 @@ static int JacobianOwnNum(double *t, double *y, double *yprime, double *deltaD, 
 
   if(jacA_num(data, t, y, yprime, deltaD, pd, cj, h, wt, rpar, ipar))
   {
-    throwStreamPrint("Error, can not get Matrix A ");
+    throwStreamPrint(data->threadData, "Error, can not get Matrix A ");
     return 1;
   }
   j = 0;
@@ -871,7 +876,7 @@ static int JacobianOwnNumColored(double *t, double *y, double *yprime, double *d
 
   if(jacA_numColored(data, t, y, yprime, deltaD, pd, cj, h, wt, rpar, ipar))
   {
-    throwStreamPrint("Error, can not get Matrix A ");
+    throwStreamPrint(data->threadData, "Error, can not get Matrix A ");
     return 1;
   }
 

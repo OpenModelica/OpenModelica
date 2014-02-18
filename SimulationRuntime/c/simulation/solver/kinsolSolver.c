@@ -91,7 +91,7 @@
     /* allocate system data */
     nlsData->solverData = malloc(sizeof(NLS_KINSOL_DATA));
     kinsolData = (NLS_KINSOL_DATA*) nlsData->solverData;
-    assertStreamPrint(0 != kinsolData, "out of memory");
+    assertStreamPrint(data->threadData, 0 != kinsolData, "out of memory");
 
     kinsolData->fnormtol  = 1.e-12;     /* function tolerance */
     kinsolData->scsteptol = 1.e-12;     /* step tolerance */
@@ -187,16 +187,16 @@
     int error_code = -1;
 
     z = N_VNew_Serial(3*size);
-    assertStreamPrint(0 != z, "out of memory");
+    assertStreamPrint(data->threadData, 0 != z, "out of memory");
 
     sVars = N_VNew_Serial(3*size);
-    assertStreamPrint(0 != sVars, "out of memory");
+    assertStreamPrint(data->threadData, 0 != sVars, "out of memory");
 
     sEqns = N_VNew_Serial(3*size);
-    assertStreamPrint(0 != sEqns, "out of memory");
+    assertStreamPrint(data->threadData, 0 != sEqns, "out of memory");
 
     c = N_VNew_Serial(3*size);
-    assertStreamPrint(0 != c, "out of memory");
+    assertStreamPrint(data->threadData, 0 != c, "out of memory");
 
     /* initial guess */
     for(i=0; i<size; ++i)
@@ -225,7 +225,7 @@
     }
 
     kmem = KINCreate();
-    assertStreamPrint(0 != kmem, "out of memory");
+    assertStreamPrint(data->threadData, 0 != kmem, "out of memory");
 
     KINSetErrHandlerFn(kmem, nls_kinsol_errorHandler, kinsolData);
     KINSetUserData(kmem, kinsolData);

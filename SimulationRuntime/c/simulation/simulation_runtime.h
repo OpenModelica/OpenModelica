@@ -100,15 +100,6 @@ extern void printSimulationStepSize(double in_stepSize, double time);
 extern int _main_SimulationRuntime(int argc, char**argv, DATA *data);
 extern void communicateStatus(const char *phase, double completionPercent);
 
-/* simulation JumpBuffer */
-extern jmp_buf simulationJmpbuf;
-
-/* integrator JumpBuffer */
-extern jmp_buf integratorJmpbuf;
-
-/* indicates the current possible jump place */
-extern int currectJumpState;
-
 #ifdef __cplusplus
 }
 #endif

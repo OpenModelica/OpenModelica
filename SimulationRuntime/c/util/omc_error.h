@@ -33,6 +33,7 @@
 #ifndef OMC_ERROR_H
 #define OMC_ERROR_H
 
+#include "openmodelica.h"
 #include "omc_msvc.h"
 
 #include <setjmp.h>
@@ -53,30 +54,15 @@ typedef struct _FILE_INFO
 } FILE_INFO;
 
 extern void printInfo(FILE *stream, FILE_INFO info);
-extern void (*omc_assert)(FILE_INFO,const char*, ...);
+extern void (*omc_assert)(threadData_t*,FILE_INFO,const char*, ...);
 extern void (*omc_assert_warning)(FILE_INFO,const char*, ...);
 extern void (*omc_terminate)(FILE_INFO,const char*, ...);
-extern void (*omc_throw)();
+extern void (*omc_throw)(threadData_t*);
 void initDumpSystem();
-void omc_assert_function(FILE_INFO info, const char *msg, ...);
+void omc_assert_function(threadData_t*,FILE_INFO info, const char *msg, ...);
 void omc_assert_warning_function(FILE_INFO info, const char *msg, ...);
 void omc_terminate_function(FILE_INFO info, const char *msg, ...);
-void omc_throw_function();
-
-/* global JumpBuffer */
-extern jmp_buf globalJmpbuf;
-
-enum ERROR_HANDLE
-{
-  ERROR_UNKOWN = 0,
-  ERROR_SIMULATION,
-  ERROR_INTEGRATOR,
-  ERROR_NONLINEARSOLVER,
-  ERROR_EVENTSEARCH,
-  ERROR_OPTIMIZE,
-
-  ERROR_MAX
-};
+void omc_throw_function(threadData_t*);
 
 /* #define USE_DEBUG_OUTPUT */
 
@@ -155,9 +141,9 @@ extern void infoStreamPrintWithEquationIndexes(int stream, int indentNext, const
 extern void warningStreamPrint(int stream, int indentNext, const char *format, ...) __attribute__ ((format (printf, 3, 4)));
 extern void warningStreamPrintWithEquationIndexes(int stream, int indentNext, const int *indexes, const char *format, ...) __attribute__ ((format (printf, 4, 5)));
 extern void errorStreamPrint(int stream, int indentNext, const char *format, ...) __attribute__ ((format (printf, 3, 4)));
-extern void assertStreamPrint(int cond, const char *format, ...) __attribute__ ((format (printf, 2, 3)));
-extern void throwStreamPrint(const char *format, ...) __attribute__ ((format (printf, 1, 2), noreturn));
-extern void throwStreamPrintWithEquationIndexes(const int *indexes, const char *format, ...) __attribute__ ((format (printf, 2, 3), noreturn));
+extern void assertStreamPrint(threadData_t *threadData, int cond, const char *format, ...) __attribute__ ((format (printf, 3, 4)));
+extern void throwStreamPrint(threadData_t *threadData, const char *format, ...) __attribute__ ((format (printf, 2, 3), noreturn));
+extern void throwStreamPrintWithEquationIndexes(threadData_t *threadData, const int *indexes, const char *format, ...) __attribute__ ((format (printf, 3, 4), noreturn));
 
 #ifdef USE_DEBUG_OUTPUT
 void debugStreamPrint(int stream, int indentNext, const char *format, ...) __attribute__ ((format (printf, 3, 4)));

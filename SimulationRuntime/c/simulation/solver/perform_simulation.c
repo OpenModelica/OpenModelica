@@ -112,11 +112,12 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
   /***** Start main simulation loop *****/
   while(solverInfo->currentTime < simInfo->stopTime)
   {
+    int success = 0;
     omc_alloc_interface.collect_a_little();
 
-    currectJumpState = ERROR_SIMULATION;
+    threadData->currentErrorStage = ERROR_SIMULATION;
     /* try */
-    if(!setjmp(simulationJmpbuf))
+    MMC_TRY_INTERNAL(simulationJumpBuffer)
     {
       if(measure_time_flag)
       {
@@ -175,14 +176,14 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
       eventType = checkEvents(data, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo);
       if(eventType > 0) /* event */
       {
-        currectJumpState = ERROR_EVENTSEARCH;
+        threadData->currentErrorStage = ERROR_EVENTSEARCH;
         infoStreamPrint(LOG_EVENTS, 1, "%s event at time %.12g", eventType == 1 ? "time" : "state", solverInfo->currentTime);
         /* prevent emit if noEventEmit flag is used */
         if (!(omc_flag[FLAG_NOEVENTEMIT])) /* output left limit */
           sim_result.emit(&sim_result,data);
         handleEvents(data, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo);
         if (ACTIVE_STREAM(LOG_EVENTS)) messageClose(LOG_EVENTS);
-        currectJumpState = ERROR_SIMULATION;
+        threadData->currentErrorStage = ERROR_SIMULATION;
 
         solverInfo->didEventStep = 1;
         overwriteOldSimulationData(data);
@@ -315,9 +316,10 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
         }
         break;
       }
+      success = 1;
     }
-    else
-    { /* catch */
+    MMC_CATCH_INTERNAL(simulationJumpBuffer)
+    if (!success) { /* catch */
       if(!retry)
       {
         /* reduce step size by a half and try again */

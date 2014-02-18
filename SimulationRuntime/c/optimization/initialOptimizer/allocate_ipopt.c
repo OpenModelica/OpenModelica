@@ -257,7 +257,7 @@ int freeIpoptData(IPOPT_DATA_ *iData)
   free(iData->sh);
   free(iData->start_u);
 
-  for(i = 0; i<3;++i);{
+  for(i = 0; i<3;++i) {
     if(iData->data->simulationInfo.analyticJacobians[i].seedVars){
         free(iData->data->simulationInfo.analyticJacobians[i].seedVars);
         free(iData->data->simulationInfo.analyticJacobians[i].resultVars);
@@ -638,7 +638,7 @@ static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData)
     for(; i<iData->nv; ++i)
       printf("\nInput[%i]:\t name = \"%s\" \t\t| start=%g \t nominal=%g \t min = %g \t max = %g",i, tmpname[i-iData->nx] ,start[i-iData->nx], iData->vnom[i], iData->umin[i-iData->nx], iData->umax[i-iData->nx]);
     if(iData->nc > 0)
-      printf("\nnumber of constraints: %i",iData->nc);
+      printf("\nnumber of constraints: %ld", iData->nc);
   }
 
   for(i =0,j = iData->nx;i<iData->nu;++i,++j){

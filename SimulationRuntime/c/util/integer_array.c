@@ -1066,7 +1066,7 @@ void div_alloc_integer_array_scalar(const integer_array_t * a,modelica_integer b
     div_integer_array_scalar(a,b,dest);
 }
 
-void division_integer_array_scalar(const integer_array_t * a,modelica_integer b,integer_array_t* dest, const char* division_str)
+void division_integer_array_scalar(threadData_t *threadData, const integer_array_t * a,modelica_integer b,integer_array_t* dest, const char* division_str)
 {
     size_t nr_of_elements;
     size_t i;
@@ -1081,11 +1081,11 @@ void division_integer_array_scalar(const integer_array_t * a,modelica_integer b,
     }
 }
 
-void division_alloc_integer_array_scalar(const integer_array_t * a,modelica_integer b,integer_array_t* dest, const char* division_str)
+void division_alloc_integer_array_scalar(threadData_t *threadData,const integer_array_t * a,modelica_integer b,integer_array_t* dest, const char* division_str)
 {
     clone_integer_array_spec(a,dest);
     alloc_integer_array_data(dest);
-    division_integer_array_scalar(a,b,dest,division_str);
+    division_integer_array_scalar(threadData,a,b,dest,division_str);
 }
 
 void div_scalar_integer_array(modelica_integer a, const integer_array_t* b, integer_array_t* dest)

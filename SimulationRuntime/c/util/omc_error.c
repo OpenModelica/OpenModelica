@@ -35,9 +35,6 @@
 /* For MMC_THROW, so we can end this thing */
 #include "meta_modelica.h"
 
-/* Global JumpBuffer */
-jmp_buf globalJmpbuf;
-
 const int firstOMCErrorStream = 3;
 
 const char *LOG_STREAM_NAME[LOG_MAX] = {
@@ -139,7 +136,7 @@ void printInfo(FILE *stream, FILE_INFO info)
   fprintf(stream, "[%s:%d:%d-%d:%d:%s]", info.filename, info.lineStart, info.colStart, info.lineEnd, info.colEnd, info.readonly ? "readonly" : "writable");
 }
 
-void omc_assert_function(FILE_INFO info, const char *msg, ...)
+void omc_assert_function(threadData_t* threadData,FILE_INFO info, const char *msg, ...)
 {
   va_list ap;
   va_start(ap,msg);
@@ -149,7 +146,7 @@ void omc_assert_function(FILE_INFO info, const char *msg, ...)
   fputs("!\n", stderr);
   va_end(ap);
   fflush(NULL);
-  MMC_THROW();
+  MMC_THROW_INTERNAL();
 }
 
 void omc_assert_warning_function(FILE_INFO info, const char *msg, ...)
@@ -319,7 +316,7 @@ void errorStreamPrint(int stream, int indentNext, const char *format, ...)
   messageFunction(LOG_TYPE_ERROR, stream, indentNext, logBuffer, 0, NULL);
 }
 
-void assertStreamPrint(int cond, const char *format, ...)
+void assertStreamPrint(threadData_t *threadData, int cond, const char *format, ...)
 {
   if (!cond) {
     char logBuffer[SIZE_LOG_BUFFER];
@@ -327,6 +324,7 @@ void assertStreamPrint(int cond, const char *format, ...)
     va_start(args, format);
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
     messageFunction(LOG_TYPE_ASSERT, LOG_ASSERT, 0, logBuffer, 0, NULL);
+    longjmp((threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key))->globalJumpBuffer, 1);
   }
 }
 
@@ -339,27 +337,26 @@ void debugStreamPrint(int cond, int indentNext, const char *format, ...)
     va_start(args, format);
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
     messageFunction(LOG_TYPE_DEBUG, LOG_ASSERT, indentNext, logBuffer, 0, NULL);
-    longjmp(globalJmpbuf, 1);
   }
 }
 #endif
 
-void throwStreamPrint(const char *format, ...)
+void throwStreamPrint(threadData_t *threadData, const char *format, ...)
 {
   char logBuffer[SIZE_LOG_BUFFER];
   va_list args;
   va_start(args, format);
   vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
   messageFunction(LOG_TYPE_DEBUG, LOG_ASSERT, 0, logBuffer, 0, NULL);
-  longjmp(globalJmpbuf, 1);
+  longjmp((threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key))->globalJumpBuffer, 1);
 }
 
-void throwStreamPrintWithEquationIndexes(const int *indexes, const char *format, ...)
+void throwStreamPrintWithEquationIndexes(threadData_t *threadData, const int *indexes, const char *format, ...)
 {
   char logBuffer[SIZE_LOG_BUFFER];
   va_list args;
   va_start(args, format);
   vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
   messageFunction(LOG_TYPE_DEBUG, LOG_ASSERT, 0, logBuffer, 0, indexes);
-  longjmp(globalJmpbuf, 1);
+  longjmp((threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key))->globalJumpBuffer, 1);
 }

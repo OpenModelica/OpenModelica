@@ -115,12 +115,12 @@ static void NelderMeadOptimization(INIT_DATA* initData,
   }
 
   /* check Memory */
-  assertStreamPrint(0 != simplex, "out of memory");
-  assertStreamPrint(0 != fvalues, "out of memory");
-  assertStreamPrint(0 != xr, "out of memory");
-  assertStreamPrint(0 != xe, "out of memory");
-  assertStreamPrint(0 != xk, "out of memory");
-  assertStreamPrint(0 != xbar, "out of memory");
+  assertStreamPrint(NULL, 0 != simplex, "out of memory");
+  assertStreamPrint(NULL, 0 != fvalues, "out of memory");
+  assertStreamPrint(NULL, 0 != xr, "out of memory");
+  assertStreamPrint(NULL, 0 != xe, "out of memory");
+  assertStreamPrint(NULL, 0 != xk, "out of memory");
+  assertStreamPrint(NULL, 0 != xbar, "out of memory");
 
   /* initialize simplex */
   if(initData->nominal)
@@ -330,7 +330,7 @@ static void NelderMeadOptimization(INIT_DATA* initData,
       warningStreamPrint(LOG_INIT, 0, "fxr = %g", fxr);
       warningStreamPrint(LOG_INIT, 0, "fxk = %g", fxk);
 
-      throwStreamPrint("undefined error in NelderMeadOptimization");
+      throwStreamPrint(NULL, "undefined error in NelderMeadOptimization");
     }
   }while(1.0);
 

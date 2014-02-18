@@ -188,8 +188,8 @@ extern void div_real_array_scalar(const real_array_t * a,modelica_real b,real_ar
 extern void div_alloc_real_array_scalar(const real_array_t * a,modelica_real b,
                                  real_array_t* dest);
 
-extern void division_real_array_scalar(const real_array_t * a,modelica_real b,real_array_t* dest, const char* division_str);
-extern void division_alloc_real_array_scalar(const real_array_t * a,modelica_real b,
+extern void division_real_array_scalar(threadData_t*,const real_array_t * a,modelica_real b,real_array_t* dest, const char* division_str);
+extern void division_alloc_real_array_scalar(threadData_t*,const real_array_t * a,modelica_real b,
                                  real_array_t* dest, const char* division_str);
 extern void div_scalar_real_array(modelica_real a, const real_array_t* b, real_array_t* dest);
 extern void div_alloc_scalar_real_array(modelica_real a, const real_array_t* b, real_array_t* dest);

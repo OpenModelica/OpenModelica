@@ -178,7 +178,7 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
     mi->lastCT = ct.compare("sPar") ? mi->lastCT : &mi->sPar;
     mi->lastCT = ct.compare("sAli") ? mi->lastCT : &mi->sAli;
 
-    assertStreamPrint(NULL != mi->lastCT, "simulation_input_xml.cpp: error reading the xml file, found unknown class: %s  for variable: %s",ct.c_str(),(v["name"]).c_str());
+    assertStreamPrint(NULL, NULL != mi->lastCT, "simulation_input_xml.cpp: error reading the xml file, found unknown class: %s  for variable: %s",ct.c_str(),(v["name"]).c_str());
 
     /* add the ScalarVariable map to the correct map! */
     (*mi->lastCT)[mi->lastCI] = v;
@@ -234,7 +234,7 @@ void read_input_xml(MODEL_DATA* modelData,
     file = fopen(filename.c_str(), "r");
     if(!file)
     {
-      throwStreamPrint("simulation_input_xml.cpp: Error: can not read file %s as setup file to the generated simulation code.",filename.c_str());
+      throwStreamPrint(NULL, "simulation_input_xml.cpp: Error: can not read file %s as setup file to the generated simulation code.",filename.c_str());
     }
   }
   /* create the XML parser */
@@ -242,7 +242,7 @@ void read_input_xml(MODEL_DATA* modelData,
   if(!parser)
   {
     fclose(file);
-    throwStreamPrint("simulation_input_xml.cpp: Error: couldn't allocate memory for the XML parser!");
+    throwStreamPrint(NULL, "simulation_input_xml.cpp: Error: couldn't allocate memory for the XML parser!");
   }
   /* set our user data */
   XML_SetUserData(parser, &mi);
@@ -264,7 +264,7 @@ void read_input_xml(MODEL_DATA* modelData,
             XML_ErrorString(XML_GetErrorCode(parser)),
             XML_GetCurrentLineNumber(parser));
         XML_ParserFree(parser);
-        throwStreamPrint("see last warning");
+        throwStreamPrint(NULL, "see last warning");
       }
     }while(!done);
     fclose(file);
@@ -277,7 +277,7 @@ void read_input_xml(MODEL_DATA* modelData,
              XML_ErrorString(XML_GetErrorCode(parser)),
              XML_GetCurrentLineNumber(parser));
     XML_ParserFree(parser);
-    throwStreamPrint("see last warning");
+    throwStreamPrint(NULL, "see last warning");
   }
 
   /* now we should have all the data inside omc_ModelInput mi. */
@@ -298,7 +298,7 @@ void read_input_xml(MODEL_DATA* modelData,
         mi.md["guid"].c_str(),
         filename.c_str(),
         modelData->modelGUID);
-    throwStreamPrint("see last warning");
+    throwStreamPrint(NULL, "see last warning");
   }
 
   // deal with override
@@ -891,7 +891,7 @@ void read_input_xml(MODEL_DATA* modelData,
     else
     {
       std::string msg = "Real Alias variable " + aliasTmp + " not found.";
-      throwStreamPrint("%s", msg.c_str());
+      throwStreamPrint(NULL, "%s", msg.c_str());
     }
     debugStreamPrint(LOG_DEBUG, 0, "read for %s aliasID %d from %s from setup file",
                 modelData->realAlias[i].info.name,
@@ -959,7 +959,7 @@ void read_input_xml(MODEL_DATA* modelData,
     else
     {
       std::string msg = "Integer Alias variable " + aliasTmp + " not found.";
-      throwStreamPrint("%s", msg.c_str());
+      throwStreamPrint(NULL, "%s", msg.c_str());
     }
     debugStreamPrint(LOG_DEBUG, 0, "read for %s aliasID %d from %s from setup file",
                 modelData->integerAlias[i].info.name,
@@ -1027,7 +1027,7 @@ void read_input_xml(MODEL_DATA* modelData,
     else
     {
       std::string msg = "Boolean Alias variable " + aliasTmp + " not found.";
-      throwStreamPrint("%s", msg.c_str());
+      throwStreamPrint(NULL, "%s", msg.c_str());
     }
     debugStreamPrint(LOG_DEBUG, 0, "read for %s aliasID %d from %s from setup file",
                 modelData->booleanAlias[i].info.name,
@@ -1095,7 +1095,7 @@ void read_input_xml(MODEL_DATA* modelData,
     else
     {
       std::string msg = "String Alias variable " + aliasTmp + " not found.";
-      throwStreamPrint("%s", msg.c_str());
+      throwStreamPrint(NULL, "%s", msg.c_str());
     }
     debugStreamPrint(LOG_DEBUG, 0, "read for %s aliasID %d from %s from setup file",
                 modelData->stringAlias[i].info.name,
@@ -1183,7 +1183,7 @@ void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override,
   omc_CommandLineOverrides mOverrides;
   char* overrideStr = NULL;
   if((override != NULL) && (overrideFile != NULL)) {
-    throwStreamPrint("simulation_input_xml.cpp: usage error you cannot have both -override and -overrideFile active at the same time. see Model -? for more info!");
+    throwStreamPrint(NULL, "simulation_input_xml.cpp: usage error you cannot have both -override and -overrideFile active at the same time. see Model -? for more info!");
   }
 
   if(override != NULL) {
@@ -1197,7 +1197,7 @@ void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override,
 
     infile.open(overrideFile, ifstream::in);
     if(infile.is_open() == false) {
-      throwStreamPrint("simulation_input_xml.cpp: could not open the file given to -overrideFile=%s", overrideFile);
+      throwStreamPrint(NULL, "simulation_input_xml.cpp: could not open the file given to -overrideFile=%s", overrideFile);
     }
 
     std::string line;

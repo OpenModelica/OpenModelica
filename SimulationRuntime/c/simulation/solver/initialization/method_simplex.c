@@ -114,8 +114,8 @@ int simplex_initialization(INIT_DATA* initData)
 
   double *STEP = (double*)malloc(initData->nVars * sizeof(double));
   double *VAR = (double*)malloc(initData->nVars * sizeof(double));
-  assertStreamPrint(0 != STEP, "out of memory");
-  assertStreamPrint(0 != VAR, "out of memory");
+  assertStreamPrint(NULL, 0 != STEP, "out of memory");
+  assertStreamPrint(NULL, 0 != VAR, "out of memory");
 
   /* Start with stepping .5 in each direction. */
   for(ind = 0; ind<initData->nVars; ind++)

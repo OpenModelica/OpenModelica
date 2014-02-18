@@ -505,6 +505,7 @@ template simulationFile(SimCode simCode, String guid)
       <<
       <%symbolName(modelNamePrefixStr,"setupDataStruc")%>(&simulation_data);
       <%if boolOr(boolAnd(Flags.isSet(HPCOM), boolNot(stringEq(getConfigString(HPCOM_CODE),"pthreads_spin"))),stringEq(Config.simCodeTarget(),"JavaScript")) then 'mmc_init_nogc();omc_alloc_interface = omc_alloc_interface_pooled;<%\n%>' else "MMC_INIT();"%>omc_alloc_interface.init();
+      simulation_data.threadData = threadData;
       res = _main_SimulationRuntime(argc, argv, &simulation_data);
       >>
     <<
@@ -804,7 +805,7 @@ template functionInitializeDataStruc(ModelInfo modelInfo, String fileNamePrefix,
   <<
   void <%symbolName(modelNamePrefix,"setupDataStruc")%>(DATA *data)
   {
-    assertStreamPrint(0!=data, "Error while initialize Data");
+    assertStreamPrint(threadData,0!=data, "Error while initialize Data");
     data->callback = &<%symbolName(modelNamePrefix,"callback")%>;
     <%populateModelInfo(modelInfo, fileNamePrefix, guid, allEquations, symJacs, delayed)%>
   }
@@ -1289,7 +1290,7 @@ template functionInitSample(BackendDAE.SampleLookup sampleLookup, String modelNa
           data->modelData.samplesInfo[i].index = <%index%>;
           data->modelData.samplesInfo[i].start = <%e1%>;
           data->modelData.samplesInfo[i].interval = <%e2%>;
-          assertStreamPrint(data->modelData.samplesInfo[i].interval > 0.0, "sample-interval <= 0.0");
+          assertStreamPrint(threadData,data->modelData.samplesInfo[i].interval > 0.0, "sample-interval <= 0.0");
           i++;
           >>)%>
   }
@@ -4373,10 +4374,10 @@ template functionsFile(String filePrefix,
   #include "util/modelica.h"
   <% if mainFunction then
   <<
-  void (*omc_assert)(FILE_INFO info,const char *msg,...) = omc_assert_function;
+  void (*omc_assert)(threadData_t*,FILE_INFO info,const char *msg,...) = omc_assert_function;
   void (*omc_assert_warning)(FILE_INFO info,const char *msg,...) = omc_assert_warning_function;
   void (*omc_terminate)(FILE_INFO info,const char *msg,...) = omc_terminate_function;
-  void (*omc_throw)() = omc_throw_function;
+  void (*omc_throw)(threadData_t*) = omc_throw_function;
   >> %>
 
   <%match mainFunction case SOME(fn) then functionBody(fn,true)%>
@@ -7228,7 +7229,7 @@ case RANGE(__) then
   if(!<%stepVar%>)
   {
     FILE_INFO info = omc_dummyFileInfo;
-    omc_assert(info, "assertion range step != 0 failed");
+    omc_assert(threadData, info, "assertion range step != 0 failed");
   }
   else if(!(((<%stepVar%> > 0) && (<%startVar%> > <%stopVar%>)) || ((<%stepVar%> < 0) && (<%startVar%> < <%stopVar%>))))
   {
@@ -8486,7 +8487,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     let var1 = daeExp(e1, context, &preExp, &varDecls)
     let var2 = daeExp(e2, context, &preExp, &varDecls)
     let var3 = Util.escapeModelicaStringToCString(printExpStr(e2))
-    let &preExp += 'division_alloc_<%type%>_scalar(&<%var1%>, <%var2%>, &<%var%>, "<%var3%>");<%\n%>'
+    let &preExp += 'division_alloc_<%type%>_scalar(threadData,&<%var1%>, <%var2%>, &<%var%>, "<%var3%>");<%\n%>'
     '<%var%>'
 
   case exp as CALL(attr=CALL_ATTR(ty=ty), path=IDENT(name="DIVISION_ARRAY_SCALAR")) then
@@ -10154,7 +10155,7 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
       <%preExpMsg%>
       FILE_INFO info = {<%infoArgs(info)%>};
       if (<%levelVar%> == 1)
-        omc_assert(info, <%msgVar%>);
+        omc_assert(threadData, info, <%msgVar%>);
       else
         omc_assert_warning(info, <%msgVar%>);
       <%warningTriggered%> = 1;
@@ -10177,7 +10178,7 @@ template assertCommonVar(Text condVar, Text msgVar, Context context, Text &preEx
   {
       <%preExpMsg%>
       FILE_INFO info = {<%infoArgs(info)%>};
-      omc_assert(info, <%msgVar%>);
+      omc_assert(threadData, info, <%msgVar%>);
   }<%\n%>
   >>
 end assertCommonVar;
@@ -10577,10 +10578,10 @@ let name = ("omc_" + underscorePath(entryPoint))
 #include <stdio.h>
 extern void <%name%>(threadData_t*,modelica_metatype);
 
-void (*omc_assert)(FILE_INFO info,const char *msg,...) = omc_assert_function;
+void (*omc_assert)(threadData_t*,FILE_INFO info,const char *msg,...) = omc_assert_function;
 void (*omc_assert_warning)(FILE_INFO info,const char *msg,...) = omc_assert_warning_function;
 void (*omc_terminate)(FILE_INFO info,const char *msg,...) = omc_terminate_function;
-void (*omc_throw)() = omc_throw_function;
+void (*omc_throw)(threadData_t*) = omc_throw_function;
 
 #ifdef _OPENMP
 #include<omp.h>

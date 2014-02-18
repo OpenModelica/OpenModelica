@@ -69,7 +69,7 @@ static VAR_INFO* findVariable(const char *name)
     static VAR_INFO dummyInfo = omc_dummyVarInfo;
     return &dummyInfo;
   }
-  assertStreamPrint(0!=s, "Referenced '%s' that was not declared as <variable>", name);
+  assertStreamPrint(NULL, 0!=s, "Referenced '%s' that was not declared as <variable>", name);
   return &s->var_info;
 }
 
@@ -82,7 +82,7 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
 
   if(0==strcmp("defines", name))
   {
-    assertStreamPrint(((0==strcmp(attr[0], "name")) && attr[2] == NULL), "<defines> needs to have exactly one attribute: name");
+    assertStreamPrint(NULL, ((0==strcmp(attr[0], "name")) && attr[2] == NULL), "<defines> needs to have exactly one attribute: name");
     if(varsBuffer == 0 || maxVarsBuffer == 0)
     {
       maxVarsBuffer = 32;
@@ -126,7 +126,7 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
       }
       else
       {
-        throwStreamPrint("%s: Unknown attribute in <info>", xml->fileName);
+        throwStreamPrint(NULL, "%s: Unknown attribute in <info>", xml->fileName);
       }
       attr += 2;
     }
@@ -137,16 +137,16 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
     long ix;
     if(curIndex > xml->nEquations)
     {
-      throwStreamPrint("%s: Info XML %s contained more equations than expected (%ld)", __FILE__, xml->fileName, xml->nEquations);
+      throwStreamPrint(NULL, "%s: Info XML %s contained more equations than expected (%ld)", __FILE__, xml->fileName, xml->nEquations);
     }
     if(strcmp("index", attr[0]))
     {
-      throwStreamPrint("%s: Info XML %s contained equation without index", __FILE__, xml->fileName);
+      throwStreamPrint(NULL, "%s: Info XML %s contained equation without index", __FILE__, xml->fileName);
     }
     ix = strtol(attr[1], NULL, 10);
     if(curIndex != ix)
     {
-      throwStreamPrint("%s: Info XML %s got equation with index %ld, expected %ld", __FILE__, xml->fileName, ix, curIndex);
+      throwStreamPrint(NULL, "%s: Info XML %s got equation with index %ld, expected %ld", __FILE__, xml->fileName, ix, curIndex);
     }
     xml->equationInfo[curIndex].id = curIndex;
     xml->equationInfo[curIndex].profileBlockIndex = -1; /* TODO: Set when parsing other tags */
@@ -170,7 +170,7 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
       }
       attr+=2;
     }
-    assertStreamPrint(var_info.name && var_info.comment, "<var>-tag did not set name and comment");
+    assertStreamPrint(NULL, var_info.name && var_info.comment, "<var>-tag did not set name and comment");
     var_info.id = -1; /* ??? */
     var_info.info = file_info;
     return;
@@ -251,13 +251,13 @@ void modelInfoXmlInit(MODEL_DATA_XML* xml)
     if(!file)
     {
       const char *str = strerror(errno);
-      throwStreamPrint("Failed to open file %s: %s\n", xml->fileName, str);
+      throwStreamPrint(NULL, "Failed to open file %s: %s\n", xml->fileName, str);
     }
   }
   parser = XML_ParserCreate(NULL);
   if(!parser)
   {
-    throwStreamPrint("Failed to create expat object");
+    throwStreamPrint(NULL, "Failed to create expat object");
   }
   xml->functionNames = (FUNCTION_INFO*) calloc(xml->nFunctions, sizeof(FUNCTION_INFO));
   xml->equationInfo = (EQUATION_INFO*) calloc(1+xml->nEquations, sizeof(EQUATION_INFO));
@@ -280,7 +280,7 @@ void modelInfoXmlInit(MODEL_DATA_XML* xml)
         unsigned long line = XML_GetCurrentLineNumber(parser);
         fclose(file);
         XML_ParserFree(parser);
-        throwStreamPrint("%s: Error: failed to read the XML file %s: %s at line %lu", __FILE__, xml->fileName, err, line);
+        throwStreamPrint(NULL, "%s: Error: failed to read the XML file %s: %s at line %lu", __FILE__, xml->fileName, err, line);
       }
     } while(!done);
     fclose(file);
@@ -289,7 +289,7 @@ void modelInfoXmlInit(MODEL_DATA_XML* xml)
       const char *err = XML_ErrorString(XML_GetErrorCode(parser));
       unsigned long line = XML_GetCurrentLineNumber(parser);
       XML_ParserFree(parser);
-      throwStreamPrint("%s: Error: failed to read the XML data %s: %s at line %lu", __FILE__, xml->infoXMLData, err, line);
+      throwStreamPrint(NULL, "%s: Error: failed to read the XML data %s: %s at line %lu", __FILE__, xml->infoXMLData, err, line);
     }
   }
   assert(xml->nEquations == (long) userData[1]);
@@ -314,7 +314,7 @@ EQUATION_INFO modelInfoXmlGetEquationIndexByProfileBlock(MODEL_DATA_XML* xml, si
   }
   if(ix > xml->nProfileBlocks)
   {
-    throwStreamPrint("Requested equation with profiler index %ld, but we only have %ld such blocks", (long int)ix, xml->nProfileBlocks);
+    throwStreamPrint(NULL, "Requested equation with profiler index %ld, but we only have %ld such blocks", (long int)ix, xml->nProfileBlocks);
   }
   for(i=0; i<xml->nEquations; i++)
   {
@@ -323,7 +323,7 @@ EQUATION_INFO modelInfoXmlGetEquationIndexByProfileBlock(MODEL_DATA_XML* xml, si
       return xml->equationInfo[i];
     }
   }
-  throwStreamPrint("Requested equation with profiler index %ld, but could not find it!", (long int)ix);
+  throwStreamPrint(NULL, "Requested equation with profiler index %ld, but could not find it!", (long int)ix);
 }
 
 void freeModelInfoXml(MODEL_DATA_XML* xml)

@@ -64,7 +64,7 @@ int allocateMixedSearchData(int size, void** voiddata)
 {
   DATA_SEARCHMIXED_SOLVER* data = (DATA_SEARCHMIXED_SOLVER*) malloc(sizeof(DATA_SEARCHMIXED_SOLVER));
   *voiddata = (void*)data;
-  assertStreamPrint(0 != data, "allocationHybrdData() failed!");
+  assertStreamPrint(NULL, 0 != data, "allocationHybrdData() failed!");
 
   data->iterationVars = (modelica_boolean*) malloc(size*sizeof(modelica_boolean));
   data->iterationVars2 = (modelica_boolean*) malloc(size*sizeof(modelica_boolean));
@@ -72,7 +72,7 @@ int allocateMixedSearchData(int size, void** voiddata)
 
   data->stateofSearch = (modelica_boolean*) malloc(size*sizeof(modelica_boolean));
 
-  assertStreamPrint(0 != *voiddata, "allocateMixedSearchData() voiddata failed!");
+  assertStreamPrint(NULL, 0 != *voiddata, "allocateMixedSearchData() voiddata failed!");
   return 0;
 }
 

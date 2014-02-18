@@ -119,7 +119,7 @@
     void *kmem = NULL;
     int error_code = -1;
 
-    assertStreamPrint(initData->simData->modelData.nInitResiduals == initData->nVars, "The number of initial equations are not consistent with the number of unfixed variables. Select a different initialization.");
+    assertStreamPrint(NULL, initData->simData->modelData.nInitResiduals == initData->nVars, "The number of initial equations are not consistent with the number of unfixed variables. Select a different initialization.");
 
     do /* Try it first with KIN_NONE. If that fails, try it with KIN_LINESEARCH. */
     {
@@ -137,16 +137,16 @@
       infoStreamPrint(LOG_INIT, 0, "step tolerance     = %10.6g", scsteptol);
 
       z = N_VNew_Serial(3*initData->nVars);
-      assertStreamPrint(0 != z, "out of memory");
+      assertStreamPrint(NULL, 0 != z, "out of memory");
 
       sVars = N_VNew_Serial(3*initData->nVars);
-      assertStreamPrint(0 != sVars, "out of memory");
+      assertStreamPrint(NULL, 0 != sVars, "out of memory");
 
       sEqns = N_VNew_Serial(3*initData->nVars);
-      assertStreamPrint(0 != sEqns, "out of memory");
+      assertStreamPrint(NULL, 0 != sEqns, "out of memory");
 
       c = N_VNew_Serial(3*initData->nVars);
-      assertStreamPrint(0 != c, "out of memory");
+      assertStreamPrint(NULL, 0 != c, "out of memory");
 
       /* initial guess */
       for(i=0; i<initData->nVars; ++i)
@@ -175,7 +175,7 @@
       }
 
       kmem = KINCreate();
-      assertStreamPrint(0 != kmem, "out of memory");
+      assertStreamPrint(NULL, 0 != kmem, "out of memory");
 
       KINSetErrHandlerFn(kmem, kinsol_errorHandler, NULL);
       KINSetUserData(kmem, initData);

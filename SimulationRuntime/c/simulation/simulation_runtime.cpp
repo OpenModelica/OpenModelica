@@ -55,6 +55,7 @@
 #include "omc_error.h"
 #include "simulation_data.h"
 #include "openmodelica_func.h"
+#include "meta_modelica.h"
 
 #include "linearize.h"
 #include "options.h"
@@ -193,7 +194,7 @@ void setGlobalVerboseLevel(int argc, char**argv)
         for(i=firstOMCErrorStream; i<LOG_MAX; ++i)
           warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", LOG_STREAM_NAME[i], LOG_STREAM_DESC[i]);
         messageClose(LOG_STDOUT);
-        throwStreamPrint("unrecognized option -lv %s", flags->c_str());
+        throwStreamPrint(NULL,"unrecognized option -lv %s", flags->c_str());
       }
     }while(pos != string::npos);
   }
@@ -251,7 +252,7 @@ int getNonlinearSolverMethod(int argc, char**argv)
   for(i=1; i<NLS_MAX; ++i)
     warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", NLS_NAME[i], NLS_DESC[i]);
   messageClose(LOG_STDOUT);
-  throwStreamPrint("see last warning");
+  throwStreamPrint(NULL,"see last warning");
 
   return NLS_NONE;
 }
@@ -274,7 +275,7 @@ int getlinearSolverMethod(int argc, char**argv)
   warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", "lapack", "default method");
   warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", "lis", "Lis");
   messageClose(LOG_STDOUT);
-  throwStreamPrint("see last warning");
+  throwStreamPrint(NULL,"see last warning");
   return LS_NONE;
 }
 
@@ -660,7 +661,7 @@ int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
     for(i=1; i<S_MAX; ++i) {
       warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", SOLVER_METHOD_NAME[i], SOLVER_METHOD_DESC[i]);
     }
-    throwStreamPrint("see last warning");
+    throwStreamPrint(simData->threadData,"see last warning");
     retVal = 1;
   }
   else
@@ -871,10 +872,9 @@ void communicateStatus(const char *phase, double completionPercent /*0.0 to 1.0*
 int _main_SimulationRuntime(int argc, char**argv, DATA *data)
 {
   int retVal = -1;
-
-  if(!setjmp(globalJmpbuf))
-  {
-    if(initRuntimeAndSimulation(argc, argv, data)) //initRuntimeAndSimulation returns 1 if an error occurs
+  threadData_t *threadData = data->threadData;
+  MMC_TRY_INTERNAL(globalJumpBuffer)
+    if (initRuntimeAndSimulation(argc, argv, data)) //initRuntimeAndSimulation returns 1 if an error occurs
       return 1;
 
     /* sighandler_t oldhandler = different type on all platforms... */
@@ -900,11 +900,7 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data)
     data->callback->callExternalObjectDestructors(data);
     deInitializeDataStruc(data);
     fflush(NULL);
-  }
-  else
-  {
-    /* THROW was executed */
-  }
+  MMC_CATCH_INTERNAL(globalJumpBuffer)
 
 #ifndef NO_INTERACTIVE_DEPENDENCY
   if(sim_communication_port_open)
@@ -916,10 +912,10 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data)
   return retVal;
 }
 
-static void omc_assert_simulation(FILE_INFO info, const char *msg, ...)
+static void omc_assert_simulation(threadData_t *threadData, FILE_INFO info, const char *msg, ...)
 {
   va_list ap;
-  switch (currectJumpState)
+  switch (threadData->currentErrorStage)
   {
   case ERROR_SIMULATION:
     va_start(ap,msg);
@@ -928,7 +924,7 @@ static void omc_assert_simulation(FILE_INFO info, const char *msg, ...)
     fputs("\n",stderr);
     va_end(ap);
     fflush(NULL);
-    longjmp(simulationJmpbuf,1);
+    longjmp(*threadData->simulationJumpBuffer,1);
     break;
   case ERROR_NONLINEARSOLVER:
     if(ACTIVE_STREAM(LOG_NLS))
@@ -941,7 +937,7 @@ static void omc_assert_simulation(FILE_INFO info, const char *msg, ...)
       va_end(ap);
     }
 #ifndef OMC_EMCC
-    longjmp(nonlinearJmpbuf,1);
+    longjmp(*threadData->simulationJumpBuffer,1);
 #endif
     break;
   case ERROR_INTEGRATOR:
@@ -954,7 +950,7 @@ static void omc_assert_simulation(FILE_INFO info, const char *msg, ...)
       fflush(NULL);
       va_end(ap);
     }
-    longjmp(integratorJmpbuf,1);
+    longjmp(*threadData->simulationJumpBuffer,1);
     break;
   case ERROR_EVENTSEARCH:
   case ERROR_OPTIMIZE:
@@ -963,7 +959,7 @@ static void omc_assert_simulation(FILE_INFO info, const char *msg, ...)
      */
     break;
   default:
-    throwStreamPrint("Unhandled Assertion-Error");
+    throwStreamPrint(threadData,"Unhandled Assertion-Error");
   }
 }
 
@@ -988,24 +984,15 @@ static void omc_terminate_simulation(FILE_INFO info, const char *msg, ...)
   TermInfo = info;
 }
 
-static void omc_throw_simulation()
+static void omc_throw_simulation(threadData_t* threadData)
 {
   va_list ap;
   setTermMsg("Assertion triggered by external C function", ap);
   set_struct(FILE_INFO, TermInfo, omc_dummyFileInfo);
-  longjmp(globalJmpbuf, 1);
+  longjmp(*threadData->globalJumpBuffer, 1);
 }
 
-void (*omc_assert)(FILE_INFO info, const char *msg, ...) = omc_assert_simulation;
+void (*omc_assert)(threadData_t*,FILE_INFO info, const char *msg, ...) = omc_assert_simulation;
 void (*omc_assert_warning)(FILE_INFO info, const char *msg, ...) = omc_assert_warning_simulation;
 void (*omc_terminate)(FILE_INFO info, const char *msg, ...) = omc_terminate_simulation;
-void (*omc_throw)() = omc_throw_simulation;
-
-/* simulation JumpBuffer */
-jmp_buf simulationJmpbuf;
-
-/* integrator JumpBuffer */
-jmp_buf integratorJmpbuf;
-
-/* indicates the current possible jump place */
-int currectJumpState;
+void (*omc_throw)(threadData_t*) = omc_throw_simulation;

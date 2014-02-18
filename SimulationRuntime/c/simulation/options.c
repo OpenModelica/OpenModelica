@@ -52,9 +52,9 @@ int checkCommandLineArguments(int argc, char **argv)
   int i,j;
 
   /* This works not that well - but is probably better than no check */
-  assertStreamPrint(!strcmp(FLAG_NAME[FLAG_MAX], "FLAG_MAX"), "unbalanced command line flag structure: FLAG_NAME");
-  assertStreamPrint(!strcmp(FLAG_DESC[FLAG_MAX], "FLAG_MAX"), "unbalanced command line flag structure: FLAG_DESC");
-  assertStreamPrint(!strcmp(FLAG_DETAILED_DESC[FLAG_MAX], "FLAG_MAX"), "unbalanced command line flag structure: FLAG_DETAILED_DESC");
+  assertStreamPrint(NULL, !strcmp(FLAG_NAME[FLAG_MAX], "FLAG_MAX"), "unbalanced command line flag structure: FLAG_NAME");
+  assertStreamPrint(NULL, !strcmp(FLAG_DESC[FLAG_MAX], "FLAG_MAX"), "unbalanced command line flag structure: FLAG_DESC");
+  assertStreamPrint(NULL, !strcmp(FLAG_DETAILED_DESC[FLAG_MAX], "FLAG_MAX"), "unbalanced command line flag structure: FLAG_DETAILED_DESC");
 
   for(i=0; i<FLAG_MAX; ++i)
   {

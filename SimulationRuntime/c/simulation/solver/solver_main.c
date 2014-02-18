@@ -45,6 +45,7 @@
 #include "stateset.h"
 #include "radau.h"
 #include "model_help.h"
+#include "meta_modelica.h"
 
 #include "interfaceOptimization.h"
 #include "simulation_inline_solver.h"
@@ -331,6 +332,7 @@ int initializeModel(DATA* data, const char* init_initMethod,
   int retValue = 0;
 
   SIMULATION_INFO *simInfo = &(data->simulationInfo);
+  threadData_t *threadData = data->threadData;
 
   copyStartValuestoInitValues(data);
 
@@ -349,9 +351,11 @@ int initializeModel(DATA* data, const char* init_initMethod,
   setZCtol(simInfo->tolerance);
 
 
-  currectJumpState = ERROR_SIMULATION;
+  data->threadData->currentErrorStage = ERROR_SIMULATION;
   /* try */
-  if(!setjmp(simulationJmpbuf)) {
+  {
+    int success = 0;
+    MMC_TRY_INTERNAL(simulationJumpBuffer)
     if(initialization(data, init_initMethod, init_optiMethod, init_file, init_time, lambda_steps)) {
       warningStreamPrint(LOG_STDOUT, 0, "Error in initialization. Storing results and exiting.\nUse -lv=LOG_INIT -w for more information.");
       simInfo->stopTime = simInfo->startTime;
@@ -365,9 +369,12 @@ int initializeModel(DATA* data, const char* init_initMethod,
     storeRelations(data);
     updateHysteresis(data);
     saveZeroCrossings(data);
-  } else { /* catch */
-    retValue =  -1;
-    infoStreamPrint(LOG_STDOUT, 0, "model terminate | Simulation terminated by an assert at initialization");
+    success = 1;
+    MMC_CATCH_INTERNAL(simulationJumpBuffer)
+    if (!success) {
+      retValue =  -1;
+      infoStreamPrint(LOG_STDOUT, 0, "model terminate | Simulation terminated by an assertion at initialization");
+    }
   }
 
   /* adrpo: write the parameter data in the file once again after bound parameters and initialization! */
@@ -654,10 +661,10 @@ static int rungekutta_step(DATA* data, SOLVER_INFO* solverInfo)
 #ifdef WITH_IPOPT
 static int ipopt_step(DATA* data, SOLVER_INFO* solverInfo)
 {
-  int cJ = currectJumpState;
-  currectJumpState = ERROR_OPTIMIZE;
+  int cJ = data->threadData->currentErrorStage;
+  data->threadData->currentErrorStage = ERROR_OPTIMIZE;
   startIpopt(data, solverInfo,5);
-  currectJumpState = cJ;
+  data->threadData->currentErrorStage = cJ;
   return 0;
 }
 #endif

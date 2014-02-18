@@ -45,9 +45,6 @@
 #include "f2c.h"
 #include "simulation_runtime.h"
 
-/* nonlinear JumpBuffer */
-jmp_buf nonlinearJmpbuf;
-
 extern doublereal enorm_(integer *n, doublereal *x);
 
 
@@ -88,11 +85,11 @@ int allocateNonlinearSystem(DATA *data)
     size = nonlinsys[i].size;
 
     /* check if residual function pointer are valid */
-    assertStreamPrint(0 != nonlinsys[i].residualFunc, "residual function pointer is invalid" );
+    assertStreamPrint(data->threadData, 0 != nonlinsys[i].residualFunc, "residual function pointer is invalid" );
 
     /* check if analytical jacobian is created */
     if(nonlinsys[i].jacobianIndex != -1){
-      assertStreamPrint(0 != nonlinsys[i].analyticalJacobianColumn, "jacobian function pointer is invalid" );
+      assertStreamPrint(data->threadData, 0 != nonlinsys[i].analyticalJacobianColumn, "jacobian function pointer is invalid" );
       if(nonlinsys[i].initialAnalyticalJacobian(data))
       {
         nonlinsys[i].jacobianIndex = -1;
@@ -129,7 +126,7 @@ int allocateNonlinearSystem(DATA *data)
         allocateNewtonData(size, &nonlinsys[i].solverData);
         break;
       default:
-        throwStreamPrint("unrecognized nonlinear solver");
+        throwStreamPrint(data->threadData, "unrecognized nonlinear solver");
       }
     }
 
@@ -177,7 +174,7 @@ int freeNonlinearSystem(DATA *data)
         freeNewtonData(&nonlinsys[i].solverData);
         break;
       default:
-        throwStreamPrint("unrecognized nonlinear solver");
+        throwStreamPrint(data->threadData, "unrecognized nonlinear solver");
       }
     }
     free(nonlinsys[i].solverData);
@@ -220,10 +217,10 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
     switch(data->simulationInfo.nlsMethod)
     {
     case NLS_HYBRID:
-      saveJumpState = currectJumpState;
-      currectJumpState = ERROR_NONLINEARSOLVER;
+      saveJumpState = data->threadData->currentErrorStage;
+      data->threadData->currentErrorStage = ERROR_NONLINEARSOLVER;
       success = solveHybrd(data, sysNumber);
-      currectJumpState = saveJumpState;
+      data->threadData->currentErrorStage = saveJumpState;
       break;
     case NLS_KINSOL:
       success = nonlinearSolve_kinsol(data, sysNumber);
@@ -232,7 +229,7 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
       success = solveNewton(data, sysNumber);
       break;
     default:
-      throwStreamPrint("unrecognized nonlinear solver");
+      throwStreamPrint(data->threadData, "unrecognized nonlinear solver");
     }
   }
   nonlinsys[sysNumber].solved = success;

@@ -96,7 +96,7 @@ void updateDiscreteSystem(DATA *data)
 
     IterationNum++;
     if(IterationNum > IterationMax)
-      throwStreamPrint("ERROR: Too many event iterations. System is inconsistent. Simulation terminate.");
+      throwStreamPrint(data->threadData, "ERROR: Too many event iterations. System is inconsistent. Simulation terminate.");
 
     relationChanged = checkRelations(data);
     discreteChanged = data->callback->checkForDiscreteChanges(data);
@@ -751,7 +751,7 @@ void initializeDataStruc(DATA *data)
   data->simulationData = allocRingBuffer(SIZERINGBUFFER, sizeof(SIMULATION_DATA));
   if(!data->simulationData)
   {
-    throwStreamPrint("Your memory is not strong enough for our Ringbuffer!");
+    throwStreamPrint(data->threadData, "Your memory is not strong enough for our Ringbuffer!");
   }
 
   /* prepare RingBuffer */
@@ -761,13 +761,13 @@ void initializeDataStruc(DATA *data)
     tmpSimData.timeValue = 0;
     /* buffer for all variable values */
     tmpSimData.realVars = (modelica_real*)calloc(data->modelData.nVariablesReal, sizeof(modelica_real));
-    assertStreamPrint(0 != tmpSimData.realVars, "out of memory");
+    assertStreamPrint(data->threadData, 0 != tmpSimData.realVars, "out of memory");
     tmpSimData.integerVars = (modelica_integer*)calloc(data->modelData.nVariablesInteger, sizeof(modelica_integer));
-    assertStreamPrint(0 != tmpSimData.integerVars, "out of memory");
+    assertStreamPrint(data->threadData, 0 != tmpSimData.integerVars, "out of memory");
     tmpSimData.booleanVars = (modelica_boolean*)calloc(data->modelData.nVariablesBoolean, sizeof(modelica_boolean));
-    assertStreamPrint(0 != tmpSimData.booleanVars, "out of memory");
+    assertStreamPrint(data->threadData, 0 != tmpSimData.booleanVars, "out of memory");
     tmpSimData.stringVars = (modelica_string*)calloc(data->modelData.nVariablesString, sizeof(modelica_string));
-    assertStreamPrint(0 != tmpSimData.stringVars, "out of memory");
+    assertStreamPrint(data->threadData, 0 != tmpSimData.stringVars, "out of memory");
     appendRingData(data->simulationData, &tmpSimData);
   }
   data->localData = (SIMULATION_DATA**) calloc(SIZERINGBUFFER, sizeof(SIMULATION_DATA*));
@@ -857,7 +857,7 @@ void initializeDataStruc(DATA *data)
   data->simulationInfo.extObjs = NULL;
   data->simulationInfo.extObjs = (void**) calloc(data->modelData.nExtObjs, sizeof(void*));
 
-  assertStreamPrint(0 != data->simulationInfo.extObjs, "error allocating external objects");
+  assertStreamPrint(data->threadData, 0 != data->simulationInfo.extObjs, "error allocating external objects");
 
   /* initial chattering info */
   data->simulationInfo.chatteringInfo.numEventLimit = 100;
@@ -884,7 +884,7 @@ void initializeDataStruc(DATA *data)
 
   /* initial delay */
   data->simulationInfo.delayStructure = (RINGBUFFER**)malloc(data->modelData.nDelayExpressions * sizeof(RINGBUFFER*));
-  assertStreamPrint(0 != data->simulationInfo.delayStructure, "out of memory");
+  assertStreamPrint(data->threadData, 0 != data->simulationInfo.delayStructure, "out of memory");
 
   for(i=0; i<data->modelData.nDelayExpressions; i++)
     data->simulationInfo.delayStructure[i] = allocRingBuffer(1024, sizeof(TIME_AND_VALUE));
@@ -1173,7 +1173,7 @@ modelica_integer _event_div_integer(modelica_integer x1, modelica_integer x2, mo
     value1 = (modelica_integer)data->simulationInfo.mathEventsValuePre[index];
     value2 = (modelica_integer)data->simulationInfo.mathEventsValuePre[index+1];
   }
-  assertStreamPrint(value2 != 0, "event_div_integer failt at time %f because x2 is zero!", data->localData[0]->timeValue);
+  assertStreamPrint(data->threadData, value2 != 0, "event_div_integer failt at time %f because x2 is zero!", data->localData[0]->timeValue);
   return ldiv(value1, value2).quot;
 }
 

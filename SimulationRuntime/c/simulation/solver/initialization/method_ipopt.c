@@ -455,7 +455,7 @@
         &ipopt_jac_g,   /* Callback function for evaluating Jacobian of constraint functions */
         &ipopt_h);      /* Callback function for evaluating Hessian of Lagrangian function */
 
-    assertStreamPrint(0 != nlp, "creating of ipopt problem has failed");
+    assertStreamPrint(data->threadData, 0 != nlp, "creating of ipopt problem has failed");
 
     /* We can free the memory now - the values for the bounds have been
        copied internally in CreateIpoptProblem */
@@ -503,7 +503,7 @@
     dumpInitialization(data,initData);
 
     if(status != Solve_Succeeded && status != Solved_To_Acceptable_Level)
-      throwStreamPrint("ipopt failed. see last warning. use [-lv LOG_INIT] for more output.");
+      throwStreamPrint(data->threadData, "ipopt failed. see last warning. use [-lv LOG_INIT] for more output.");
 
     /* return (int)status; */
     return reportResidualValue(initData);

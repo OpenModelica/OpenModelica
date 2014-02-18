@@ -90,7 +90,7 @@ int allocateNewtonData(int size, void** voiddata)
   DATA_NEWTON* data = (DATA_NEWTON*) malloc(sizeof(DATA_NEWTON));
 
   *voiddata = (void*)data;
-  assertStreamPrint(0 != data, "allocationNewtonData() failed!");
+  assertStreamPrint(NULL, 0 != data, "allocationNewtonData() failed!");
 
   data->initialized = 0;
   data->resScaling = (double*) malloc(size*sizeof(double));
@@ -108,7 +108,7 @@ int allocateNewtonData(int size, void** voiddata)
   data->rwork = (double*) malloc((size)*sizeof(double));
   data->iwork = (integer*) malloc(size*sizeof(integer));
 
-  assertStreamPrint(0 != *voiddata, "allocationNewtonData() voiddata failed!");
+  assertStreamPrint(NULL, 0 != *voiddata, "allocationNewtonData() voiddata failed!");
   return 0;
 }
 

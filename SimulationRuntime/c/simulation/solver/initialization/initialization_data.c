@@ -52,7 +52,7 @@ INIT_DATA *initializeInitData(DATA *simData)
   INIT_DATA *initData = NULL;
 
   initData = (INIT_DATA*)malloc(sizeof(INIT_DATA));
-  assertStreamPrint(0 != initData, "out of memory");
+  assertStreamPrint(NULL, 0 != initData, "out of memory");
 
   initData->nVars = 0;
   initData->nStates = 0;
@@ -97,22 +97,22 @@ INIT_DATA *initializeInitData(DATA *simData)
   }
 
   initData->vars = (double*)calloc(initData->nVars, sizeof(double));
-  assertStreamPrint(0 != initData->vars, "out of memory");
+  assertStreamPrint(NULL, 0 != initData->vars, "out of memory");
 
   initData->start = (double*)calloc(initData->nVars, sizeof(double));
-  assertStreamPrint(0 != initData->start, "out of memory");
+  assertStreamPrint(NULL, 0 != initData->start, "out of memory");
 
   initData->min = (double*)calloc(initData->nVars, sizeof(double));
-  assertStreamPrint(0 != initData->min, "out of memory");
+  assertStreamPrint(NULL, 0 != initData->min, "out of memory");
 
   initData->max = (double*)calloc(initData->nVars, sizeof(double));
-  assertStreamPrint(0 != initData->max, "out of memory");
+  assertStreamPrint(NULL, 0 != initData->max, "out of memory");
 
   initData->nominal = (double*)calloc(initData->nVars, sizeof(double));
-  assertStreamPrint(0 != initData->nominal, "out of memory");
+  assertStreamPrint(NULL, 0 != initData->nominal, "out of memory");
 
   initData->name = (char**)calloc(initData->nVars, sizeof(char*));
-  assertStreamPrint(0 != initData->name, "out of memory");
+  assertStreamPrint(NULL, 0 != initData->name, "out of memory");
 
   /* setup initData */
   infoStreamPrint(LOG_INIT, 0, "initial problem:");
@@ -229,13 +229,13 @@ INIT_DATA *initializeInitData(DATA *simData)
   infoStreamPrint(LOG_INIT, 0, "number of start value residuals: %ld", initData->nStartValueResiduals);
 
   initData->initialResiduals = (double*)calloc(initData->nInitResiduals, sizeof(double));
-  assertStreamPrint(0 != initData->initialResiduals, "out of memory");
+  assertStreamPrint(NULL, 0 != initData->initialResiduals, "out of memory");
 
   initData->residualScalingCoefficients = (double*)malloc(initData->nInitResiduals * sizeof(double));
-  assertStreamPrint(0 != initData->residualScalingCoefficients, "out of memory");
+  assertStreamPrint(NULL, 0 != initData->residualScalingCoefficients, "out of memory");
 
   initData->startValueResidualScalingCoefficients = (double*)malloc(initData->nStartValueResiduals * sizeof(double));
-  assertStreamPrint(0 != initData->startValueResidualScalingCoefficients, "out of memory");
+  assertStreamPrint(NULL, 0 != initData->startValueResidualScalingCoefficients, "out of memory");
 
   for(i=0; i<initData->nInitResiduals; ++i) {
     initData->residualScalingCoefficients[i] = 1.0;
