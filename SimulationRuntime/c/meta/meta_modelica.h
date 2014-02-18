@@ -524,7 +524,7 @@ extern void *mmc_mk_box_no_assign(int slots, unsigned int ctor);
 extern modelica_boolean valueEq(modelica_metatype lhs,modelica_metatype rhs);
 
 extern modelica_integer valueHashMod(modelica_metatype p,modelica_integer mod);
-extern void* boxptr_valueHashMod(threadData_t *,void *p, void *mod);
+extern void* boxptr_valueHashMod(ERROR_HANDLE*,threadData_t *,void *p, void *mod);
 
 extern void mmc__unbox(modelica_metatype box, void* res);
 
@@ -534,8 +534,8 @@ extern void debug__print(void*prefix,void*any); /* For debugging */
 extern void initializeStringBuffer(void);
 extern char* anyString(void*any); /* For debugging in external functions */
 extern void* mmc_anyString(void*any); /* For debugging */
-modelica_metatype mmc_gdb_listGet(threadData_t* threadData, modelica_metatype lst, modelica_integer i); /* For debugging */
-modelica_metatype mmc_gdb_arrayGet(threadData_t* threadData, modelica_metatype arr, modelica_integer i); /* For debugging */
+modelica_metatype mmc_gdb_listGet(ERROR_HANDLE*,threadData_t* threadData, modelica_metatype lst, modelica_integer i); /* For debugging */
+modelica_metatype mmc_gdb_arrayGet(ERROR_HANDLE*,threadData_t* threadData, modelica_metatype arr, modelica_integer i); /* For debugging */
 extern void printAny(void*any); /* For debugging */
 extern void printTypeOfAny(void*any); /* For debugging */
 extern char* getTypeOfAny(void*any); /* For debugging */
@@ -576,7 +576,7 @@ extern void mmc_init();
 extern void mmc_init_nogc();
 #define MMC_INIT(X) pthread_once(&mmc_init_once,mmc_init)
 #define MMC_TRY_INTERNAL(X) { jmp_buf new_mmc_jumper, *old_jumper = threadData->X; threadData->X = &new_mmc_jumper; if (setjmp(new_mmc_jumper) == 0) {
-#define MMC_TRY() { threadData_t *threadData = pthread_getspecific(mmc_thread_data_key); MMC_TRY_INTERNAL(mmc_jumper)
+#define MMC_TRY() {ERROR_HANDLE dummyHandle; ERROR_HANDLE *omcErrorHandle = &dummyHandle; threadData_t *threadData = pthread_getspecific(mmc_thread_data_key); MMC_TRY_INTERNAL(mmc_jumper)
 
 #if !defined(_MSC_VER)
 #define MMC_CATCH_INTERNAL(X) } threadData->X = old_jumper;mmc_catch_dummy_fn();}
@@ -589,7 +589,7 @@ extern void mmc_init_nogc();
 #define MMC_THROW() {longjmp(*((threadData_t*)pthread_getspecific(mmc_thread_data_key))->mmc_jumper,1);}
 #define MMC_ELSE() } else {
 
-#define MMC_TRY_TOP() { threadData_t threadDataOnStack = {0}, *oldThreadData = (threadData_t*)pthread_getspecific(mmc_thread_data_key),*threadData = &threadDataOnStack; pthread_setspecific(mmc_thread_data_key,threadData); MMC_TRY_INTERNAL(mmc_jumper)
+#define MMC_TRY_TOP() {ERROR_HANDLE dummyHandle; ERROR_HANDLE *omcErrorHandle = &dummyHandle; threadData_t threadDataOnStack = {0}, *oldThreadData = (threadData_t*)pthread_getspecific(mmc_thread_data_key),*threadData = &threadDataOnStack; pthread_setspecific(mmc_thread_data_key,threadData); MMC_TRY_INTERNAL(mmc_jumper)
 #define MMC_CATCH_TOP(X) pthread_setspecific(mmc_thread_data_key,oldThreadData); } else {pthread_setspecific(mmc_thread_data_key,oldThreadData);X;}}}
 
 #if defined(__cplusplus)

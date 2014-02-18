@@ -32,7 +32,7 @@
 #include "memory_pool.h"
 #include "meta_modelica.h"
 
-void (*omc_assert)(FILE_INFO info,const char *msg,...) = omc_assert_function;
+void (*omc_assert)(ERROR_HANDLE* omcErrorHandle, FILE_INFO info,const char *msg,...) = omc_assert_function;
 void (*omc_terminate)(FILE_INFO info,const char *msg,...) = omc_terminate_function;
 void (*omc_throw)() = omc_throw_function;
 

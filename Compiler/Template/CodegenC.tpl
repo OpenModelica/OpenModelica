@@ -642,6 +642,10 @@ template simulationFile(SimCode simCode, String guid)
     #if defined(threadData)
     #undef threadData
     #endif
+    #if defined(omcErrorHandle)
+    #undef omcErrorHandle
+    #endif
+
     /* call the simulation runtime main from our main! */
     int main(int argc, char**argv)
     {
@@ -731,6 +735,8 @@ template simulationFileHeader(SimCode simCode)
     #endif
         
     #define threadData data->threadData
+    
+    #define omcErrorHandle &(data->simulationInfo.errorHandler)
     
     >>
   end match
@@ -1221,7 +1227,7 @@ template functionCallExternalObjectDestructors(ExtObjInfo extObjInfo, String mod
     {
       if(data->simulationInfo.extObjs)
       {
-        <%extObjInfo.vars |> var as SIMVAR(varKind=ext as EXTOBJ(__)) => 'omc_<%underscorePath(ext.fullClassName)%>_destructor(threadData,<%cref(var.name)%>);' ;separator="\n"%>
+        <%extObjInfo.vars |> var as SIMVAR(varKind=ext as EXTOBJ(__)) => 'omc_<%underscorePath(ext.fullClassName)%>_destructor(omcErrorHandle, threadData,<%cref(var.name)%>);' ;separator="\n"%>
         free(data->simulationInfo.extObjs);
         data->simulationInfo.extObjs = 0;
       }
@@ -1622,7 +1628,7 @@ template functionNonLinearResiduals(list<SimEqSystem> allEquations, String model
        const int equationIndexes[2] = {1,<%index%>};
        <%varDecls%>
        #ifdef _OMC_MEASURE_TIME
-       SIM_PROF_ADD_NCALL_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex,1);
+       SIM_PROF_ADD_NCALL_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>,(omcErrorHandle.globalJumpBuffer)).profileBlockIndex,1);
        #endif
        <%xlocs%>
        <%prebody%>
@@ -2029,7 +2035,7 @@ template functionWhenReinitStatementThen(Boolean initialCall, list<WhenOperator>
       let funName = '<%underscorePath(functionName)%>'
       <<
       <%preExp%>
-      omc_<%funName%>(threadData<%argStr%>);
+      omc_<%funName%>(omcErrorHandle, threadData<%argStr%>);
       >>
   ;separator="\n")
   <<
@@ -3710,7 +3716,7 @@ case SES_LINEAR(__) then
   <%
     <<
     #ifdef _OMC_MEASURE_TIME
-    SIM_PROF_TICK_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);<%\n%>
+    SIM_PROF_TICK_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>,(omcErrorHandle.globalJumpBuffer)).profileBlockIndex);<%\n%>
     #endif<%\n%>
     >>
   %>
@@ -3721,7 +3727,7 @@ case SES_LINEAR(__) then
   <%
     <<
     #ifdef _OMC_MEASURE_TIME
-    SIM_PROF_ACC_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);
+    SIM_PROF_ACC_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>,(omcErrorHandle.globalJumpBuffer)).profileBlockIndex);
     #endif<%\n%>
     >>
   %>
@@ -3738,14 +3744,14 @@ case eqn as SES_MIXED(__) then
   let numDiscVarsStr = listLength(discVars)
   <<
   #ifdef _OMC_MEASURE_TIME
-  SIM_PROF_TICK_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);
+  SIM_PROF_TICK_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>,(omcErrorHandle.globalJumpBuffer)).profileBlockIndex);
   #endif
   /* Continuous equation part in <%contEqs%> */
   <%discVars |> SIMVAR(__) hasindex i0 => 'data->simulationInfo.mixedSystemData[<%eqn.indexMixedSystem%>].iterationVarsPtr[<%i0%>] = (modelica_boolean*)&<%cref(name)%>;' ;separator="\n"%>;
   <%discVars |> SIMVAR(__) hasindex i0 => 'data->simulationInfo.mixedSystemData[<%eqn.indexMixedSystem%>].iterationPreVarsPtr[<%i0%>] = (modelica_boolean*)&$P$PRE<%cref(name)%>;' ;separator="\n"%>;
   solve_mixed_system(data, <%indexMixedSystem%>);
   #ifdef _OMC_MEASURE_TIME
-  SIM_PROF_ACC_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);
+  SIM_PROF_ACC_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>, (omcErrorHandle.globalJumpBuffer)).profileBlockIndex);
   #endif<%\n%>
   >>
 end equationMixed;
@@ -3764,8 +3770,8 @@ template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls /*BUF
       let nonlinindx = indexNonLinearSystem
       <<
       #ifdef _OMC_MEASURE_TIME
-      SIM_PROF_TICK_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);
-      SIM_PROF_ADD_NCALL_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex,-1);
+      SIM_PROF_TICK_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>,(omcErrorHandle.globalJumpBuffer)).profileBlockIndex);
+      SIM_PROF_ADD_NCALL_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>,(omcErrorHandle.globalJumpBuffer)).profileBlockIndex,-1);
       #endif<%\n%>
       /* extrapolate data */
       <%crefs |> name hasindex i0 =>
@@ -3783,7 +3789,7 @@ template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls /*BUF
       /* update inner equations */
       <%innerBody%>
       #ifdef _OMC_MEASURE_TIME
-      SIM_PROF_ACC_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);
+      SIM_PROF_ACC_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>,(omcErrorHandle.globalJumpBuffer)).profileBlockIndex);
       #endif<%\n%>
       >>
 end equationNonlinear;
@@ -4341,6 +4347,7 @@ template commonHeader(String filePrefix)
   <% if acceptMetaModelicaGrammar() then "#include \"meta/meta_modelica.h\"" %>
 
   #include "util/modelica.h"
+  #include "openmodelica.h"
   #include <stdio.h>
   #include <stdlib.h>
   #include <errno.h>
@@ -4373,7 +4380,7 @@ template functionsFile(String filePrefix,
   #include "util/modelica.h"
   <% if mainFunction then
   <<
-  void (*omc_assert)(FILE_INFO info,const char *msg,...) = omc_assert_function;
+  void (*omc_assert)(ERROR_HANDLE* omcErrorHandle, FILE_INFO info,const char *msg,...) = omc_assert_function;
   void (*omc_assert_warning)(FILE_INFO info,const char *msg,...) = omc_assert_warning_function;
   void (*omc_terminate)(FILE_INFO info,const char *msg,...) = omc_terminate_function;
   void (*omc_throw)() = omc_throw_function;
@@ -4677,7 +4684,7 @@ template functionHeader(Function fn, Boolean inFunc)
       let boxedHeader = if acceptMetaModelicaGrammar() then
         <<
         DLLExport
-        modelica_metatype boxptr_<%fname%>(threadData_t *<%funArgsBoxedStr%>);
+        modelica_metatype boxptr_<%fname%>(ERROR_HANDLE*, threadData_t *<%funArgsBoxedStr%>);
         >>
       <<
       typedef struct <%fname%>_rettype_s {
@@ -4685,7 +4692,7 @@ template functionHeader(Function fn, Boolean inFunc)
       } <%fname%>_rettype;
 
       DLLExport
-      <%fname%>_rettype omc_<%fname%>(threadData_t *threadData<%funArgsStr%>); /* record head */
+      <%fname%>_rettype omc_<%fname%>(ERROR_HANDLE *omcErrorHandle, threadData_t *threadData<%funArgsStr%>); /* record head */
 
       <%boxedHeader%>
       >>
@@ -4841,10 +4848,10 @@ template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> o
     %>
   } <%fname%>_rettype<%boxStr%>;
   <%inFnStr%>
-  <%if dynamicLoad then '' else 'DLLExport<%\n%><%fname%>_rettype<%boxStr%> <%boxPtrStr%>_<%fname%>(threadData_t *threadData<%fargsStr%>);'%>
+  <%if dynamicLoad then '' else 'DLLExport<%\n%><%fname%>_rettype<%boxStr%> <%boxPtrStr%>_<%fname%>(ERROR_HANDLE *omcErrorHandle, threadData_t *threadData<%fargsStr%>);'%>
   >> else <<
 
-  <%if dynamicLoad then '' else 'DLLExport<%\n%>void <%boxPtrStr%>_<%fname%>(threadData_t *threadData<%fargsStr%>);'%>
+  <%if dynamicLoad then '' else 'DLLExport<%\n%>void <%boxPtrStr%>_<%fname%>(ERROR_HANDLE *omcErrorHandle, threadData_t *threadData<%fargsStr%>);'%>
   >>
 end functionHeaderImpl;
 
@@ -4868,10 +4875,10 @@ template functionHeaderKernelFunctionInterface(String fname, list<Variable> farg
     %>
   } <%fname%>_rettype;
 
-  <%fname%>_rettype omc_<%fname%>(threadData_t *threadData, <%fargsStr%>);
+  <%fname%>_rettype omc_<%fname%>(ERROR_HANDLE *omcErrorHandle, threadData_t *threadData, <%fargsStr%>);
   >> else <<
 
-  void _<%fname%>(threadData_t *threadData, <%fargsStr%>);
+  void _<%fname%>(ERROR_HANDLE *omcErrorHandle, threadData_t *threadData, <%fargsStr%>);
   >>
 end functionHeaderKernelFunctionInterface;
 
@@ -5284,7 +5291,7 @@ case FUNCTION(__) then
   let boxedFn = if acceptMetaModelicaGrammar() then functionBodyBoxed(fn)
   <<
   DLLExport
-  <%retType%> omc_<%fname%>(threadData_t *threadData<%functionArguments |> var => ", " + funArgDefinition(var) %>)
+  <%retType%> omc_<%fname%>(ERROR_HANDLE *omcErrorHandle, threadData_t *threadData<%functionArguments |> var => ", " + funArgDefinition(var) %>)
   {
     /* functionBodyRegularFunction: arguments */
     <%funArgs%>
@@ -5319,7 +5326,7 @@ case FUNCTION(__) then
     <%functionArguments |> arg => readInVar(arg) ;separator="\n"%>
     MMC_INIT();
     MMC_TRY_TOP()
-    <%if outVars then "out = "%>omc_<%fname%>(threadData<%functionArguments |> var => (", " + funArgName(var) )%>);
+    <%if outVars then "out = "%>omc_<%fname%>(omcErrorHandle, threadData<%functionArguments |> var => (", " + funArgName(var) )%>);
     MMC_CATCH_TOP(return 1)
     <%if outVars then (outVars |> var hasindex i1 fromindex 1 => writeOutVar(var, i1) ;separator="\n";empty) else "write_noretcall(outVar);"%>
     fflush(NULL);
@@ -5507,7 +5514,7 @@ case KERNEL_FUNCTION(__) then
   <<
 
   /* Interface function to <%fname%> defined in parallelFunctions.cl file. */
-  <%retType%> omc_<%fname%>(threadData_t *threadData, <%functionArguments |> var => funArgDefinitionKernelFunctionInterface(var) ;separator=", "%>)
+  <%retType%> omc_<%fname%>(ERROR_HANDLE *omcErrorHandle, threadData_t *threadData, <%functionArguments |> var => funArgDefinitionKernelFunctionInterface(var) ;separator=", "%>)
   {
     <%funArgs%>
     <%varDecls%>
@@ -5603,7 +5610,7 @@ case efn as EXTERNAL_FUNCTION(__) then
   let &varDecls += addRootsTempArray()
   let boxedFn = if acceptMetaModelicaGrammar() then functionBodyBoxed(fn)
   let fnBody = <<
-  <%retType%> omc_<%fname%>(threadData_t *threadData<%funArgs |> arg => ', <%
+  <%retType%> omc_<%fname%>(ERROR_HANDLE *omcErrorHandle, threadData_t *threadData<%funArgs |> arg => ', <%
     match arg
     case VARIABLE(__) then '<%expTypeArrayIf(ty)%> <%contextCref(name,contextFunction)%>'
     case FUNCTION_PTR(__) then 'modelica_fnptr _<%name%>'%>'
@@ -5638,7 +5645,7 @@ case efn as EXTERNAL_FUNCTION(__) then
     <%funArgs |> arg as VARIABLE(__) => readInVar(arg) ;separator="\n"%>
     MMC_INIT();
     MMC_TRY_TOP()
-    <%if outVars then "out = "%>omc_<%fname%>(threadData<%funArgs |> VARIABLE(__) => (", " + contextCref(name,contextFunction) )%>);
+    <%if outVars then "out = "%>omc_<%fname%>(omcErrorHandle, threadData<%funArgs |> VARIABLE(__) => (", " + contextCref(name,contextFunction) )%>);
     MMC_CATCH_TOP(return 1)
     <%if outVars then (outVars |> var hasindex i1 fromindex 1 => writeOutVar(var, i1) ;separator="\n";empty) else "write_noretcall(outVar);"%>
     fflush(NULL);
@@ -5669,7 +5676,7 @@ case RECORD_CONSTRUCTOR(__) then
     )
   let boxedFn = if acceptMetaModelicaGrammar() then functionBodyBoxed(fn)
   <<
-  <%retType%> omc_<%fname%>(threadData_t *threadData<%funArgs |> VARIABLE(__) => ', <%expTypeArrayIf(ty)%> <%crefStr(name)%>'%>)
+  <%retType%> omc_<%fname%>(ERROR_HANDLE *omcErrorHandle, threadData_t *threadData<%funArgs |> VARIABLE(__) => ', <%expTypeArrayIf(ty)%> <%crefStr(name)%>'%>)
   {
     <%varDecls%>
     <%varInits%>
@@ -5757,12 +5764,12 @@ template functionBodyBoxedImpl(Absyn.Path name, list<Variable> funargs, list<Var
     '<%retVar%>.c<%i1%> = <%funArgBox(arg, ty, &varUnbox, &varDecls)%>;'
     ;separator="\n")
   <<
-  <%retTypeBoxed%> boxptr_<%fname%>(threadData_t *threadData<%funargs |> var => (", " + funArgBoxedDefinition(var))%>)
+  <%retTypeBoxed%> boxptr_<%fname%>(ERROR_HANDLE *omcErrorHandle, threadData_t *threadData<%funargs |> var => (", " + funArgBoxedDefinition(var))%>)
   {
     <%varDecls%>
     <%addRootsTempArray()%>
     <%varBox%>
-    <%if outvars then '<%funRetVar%> = '%>omc_<%fname%>(threadData<%args%>);
+    <%if outvars then '<%funRetVar%> = '%>omc_<%fname%>(omcErrorHandle, threadData<%args%>);
     <%varUnbox%>
     <%retStr%>
     return <%retVar%>;
@@ -5784,7 +5791,7 @@ case RECORD_CONSTRUCTOR(__) then
   ;separator=", ")
   let funArgCount = incrementInt(listLength(funArgs), 1)
   <<
-  modelica_metatype boxptr_<%fname%>(threadData_t *threadData<%funArgs |> var => (", " + funArgBoxedDefinition(var))%>)
+  modelica_metatype boxptr_<%fname%>(ERROR_HANDLE *omcErrorHandle, threadData_t *threadData<%funArgs |> var => (", " + funArgBoxedDefinition(var))%>)
   {
     return mmc_mk_box<%funArgCount%>(3, &<%fname%>__desc, <%funArgsStr%>);
   }
@@ -6146,15 +6153,15 @@ case var as FUNCTION_PTR(__) then
   let rettype = '<%name%>_rettype'
   match tys
     case {} then
-      let &varInit += 'omc_<%name%> = (void(*)(threadData_t *<%typelist%>)) <%name%>;<%\n%>'
-      'void(*omc_<%name%>)(threadData_t *<%typelist%>);<%\n%>'
+      let &varInit += 'omc_<%name%> = (void(*)(ERROR_HANDLE*, threadData_t *<%typelist%>)) <%name%>;<%\n%>'
+      'void(*omc_<%name%>)(ERROR_HANDLE*, threadData_t *<%typelist%>);<%\n%>'
     else
-      let &varInit += 'omc_<%name%> = (<%rettype%>(*)(threadData_t *<%typelist%>)) <%name%>;<%\n%>'
+      let &varInit += 'omc_<%name%> = (<%rettype%>(*)(ERROR_HANDLE*, threadData_t *<%typelist%>)) <%name%>;<%\n%>'
       <<
       typedef struct <%rettype%>_s {
         <% tys |> ty hasindex i1 fromindex 1 => 'modelica_<%mmcTypeShort(ty)%> c<%i1%>;' ; separator="\n" %>
       } <%rettype%>;
-      <%rettype%>(*omc_<%name%>)(threadData_t *<%typelist%>);<%\n%>
+      <%rettype%>(*omc_<%name%>)(ERROR_HANDLE*, threadData_t *<%typelist%>);<%\n%>
       >>
   end match
 end functionArg;
@@ -7228,7 +7235,7 @@ case RANGE(__) then
   if(!<%stepVar%>)
   {
     FILE_INFO info = omc_dummyFileInfo;
-    omc_assert(info, "assertion range step != 0 failed");
+    omc_assert(omcErrorHandle, info, "assertion range step != 0 failed");
   }
   else if(!(((<%stepVar%> > 0) && (<%startVar%> > <%stopVar%>)) || ((<%stepVar%> < 0) && (<%startVar%> < <%stopVar%>))))
   {
@@ -7824,7 +7831,7 @@ case T_COMPLEX(complexClassType = record_state, varLst = var_lst) then
   let record_type_name = underscorePath(ClassInf.getStateName(record_state))
   let ret_type = '<%record_type_name%>_rettype'
   let ret_var = tempDecl(ret_type, &varDecls)
-  let &preExp += '<%ret_var%> = omc_<%record_type_name%>(threadData<%vars%>);<%\n%>'
+  let &preExp += '<%ret_var%> = omc_<%record_type_name%>(omcErrorHandle, threadData<%vars%>);<%\n%>'
   '<%ret_var%>.c1'
 end daeExpRecordCrefRhs;
 
@@ -8471,9 +8478,9 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     let var3 = Util.escapeModelicaStringToCString(printExpStr(e2))
     (match context
       case FUNCTION_CONTEXT(__) then
-        'DIVISION(<%var1%>,<%var2%>,"<%var3%>")'
+        'DIVISION(<%var1%>,<%var2%>,"<%var3%>",omcErrorHandle)'
       else
-        'DIVISION_SIM(<%var1%>,<%var2%>,"<%var3%>",equationIndexes)'
+        'DIVISION_SIM(<%var1%>,<%var2%>,"<%var3%>",equationIndexes,omcErrorHandle)'
     )
 
   case CALL(attr=CALL_ATTR(ty=ty),
@@ -8486,7 +8493,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     let var1 = daeExp(e1, context, &preExp, &varDecls)
     let var2 = daeExp(e2, context, &preExp, &varDecls)
     let var3 = Util.escapeModelicaStringToCString(printExpStr(e2))
-    let &preExp += 'division_alloc_<%type%>_scalar(&<%var1%>, <%var2%>, &<%var%>, "<%var3%>");<%\n%>'
+    let &preExp += 'division_alloc_<%type%>_scalar(&<%var1%>, <%var2%>, &<%var%>, "<%var3%>", omcErrorHandle);<%\n%>'
     '<%var%>'
 
   case exp as CALL(attr=CALL_ATTR(ty=ty), path=IDENT(name="DIVISION_ARRAY_SCALAR")) then
@@ -8765,6 +8772,9 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
   case CALL(path=IDENT(name = "threadData")) then
     "threadData"
 
+  case CALL(path=IDENT(name = "omcErrorHandle")) then
+    "omcErrorHandle"
+
   case CALL(path=IDENT(name = "intBitNot"),expLst={e}) then
     let e1 = daeExp(e, context, &preExp, &varDecls)
     '(~<%e1%>)'
@@ -8799,7 +8809,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
   case exp as CALL(attr=attr as CALL_ATTR(__)) then
     let argStr = if boolOr(attr.builtin,isParallelFunctionContext(context))
                    then (expLst |> exp => '<%daeExp(exp, context, &preExp, &varDecls)%>' ;separator=", ")
-                 else ("threadData" + (expLst |> exp => (", " + daeExp(exp, context, &preExp, &varDecls))))
+                 else ("omcErrorHandle, threadData" + (expLst |> exp => (", " + daeExp(exp, context, &preExp, &varDecls))))
     let funName = '<%underscorePath(path)%>'
     let retType = if attr.builtin then (match attr.ty case T_NORETCALL(__) then ""
       else expTypeModelica(attr.ty))
@@ -10154,7 +10164,7 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
       <%preExpMsg%>
       FILE_INFO info = {<%infoArgs(info)%>};
       if (<%levelVar%> == 1)
-        omc_assert(info, <%msgVar%>);
+        omc_assert(omcErrorHandle, info, <%msgVar%>);
       else
         omc_assert_warning(info, <%msgVar%>);
       <%warningTriggered%> = 1;
@@ -10177,7 +10187,7 @@ template assertCommonVar(Text condVar, Text msgVar, Context context, Text &preEx
   {
       <%preExpMsg%>
       FILE_INFO info = {<%infoArgs(info)%>};
-      omc_assert(info, <%msgVar%>);
+      omc_assert(omcErrorHandle, info, <%msgVar%>);
   }<%\n%>
   >>
 end assertCommonVar;
@@ -10575,9 +10585,9 @@ let name = ("omc_" + underscorePath(entryPoint))
 
 #include <meta/meta_modelica.h>
 #include <stdio.h>
-extern void <%name%>(threadData_t*,modelica_metatype);
+extern void <%name%>(ERROR_HANDLE*,threadData_t*,modelica_metatype);
 
-void (*omc_assert)(FILE_INFO info,const char *msg,...) = omc_assert_function;
+void (*omc_assert)(ERROR_HANDLE*,FILE_INFO info,const char *msg,...) = omc_assert_function;
 void (*omc_assert_warning)(FILE_INFO info,const char *msg,...) = omc_assert_warning_function;
 void (*omc_terminate)(FILE_INFO info,const char *msg,...) = omc_terminate_function;
 void (*omc_throw)() = omc_throw_function;
@@ -10607,7 +10617,7 @@ int main(int argc, char **argv)
     lst = mmc_mk_cons(mmc_mk_scon(argv[i]), lst);
   }
 
-  <%mainTop('<%name%>(threadData, lst);',url)%>
+  <%mainTop('<%name%>(omcErrorHandle, threadData, lst);',url)%>
   }
 
   <%if Flags.isSet(HPCOM) then "terminateHpcOmThreads();" %>

@@ -79,6 +79,7 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
   long curIndex = (long) ((void**)userData)[1];
   /* long curProfileIndex = (long) ((void**)userData)[2]; */
   long curFunctionIndex = (long) ((void**)userData)[3];
+  jmp_buf* globalJmpBuffer = (jmp_buf*) ((void**)userData)[4];
 
   if(0==strcmp("defines", name))
   {
@@ -126,7 +127,7 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
       }
       else
       {
-        throwStreamPrint("%s: Unknown attribute in <info>", xml->fileName);
+        throwStreamPrint(globalJmpBuffer, "%s: Unknown attribute in <info>", xml->fileName);
       }
       attr += 2;
     }
@@ -137,16 +138,16 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
     long ix;
     if(curIndex > xml->nEquations)
     {
-      throwStreamPrint("%s: Info XML %s contained more equations than expected (%ld)", __FILE__, xml->fileName, xml->nEquations);
+      throwStreamPrint(globalJmpBuffer, "%s: Info XML %s contained more equations than expected (%ld)", __FILE__, xml->fileName, xml->nEquations);
     }
     if(strcmp("index", attr[0]))
     {
-      throwStreamPrint("%s: Info XML %s contained equation without index", __FILE__, xml->fileName);
+      throwStreamPrint(globalJmpBuffer, "%s: Info XML %s contained equation without index", __FILE__, xml->fileName);
     }
     ix = strtol(attr[1], NULL, 10);
     if(curIndex != ix)
     {
-      throwStreamPrint("%s: Info XML %s got equation with index %ld, expected %ld", __FILE__, xml->fileName, ix, curIndex);
+      throwStreamPrint(globalJmpBuffer, "%s: Info XML %s got equation with index %ld, expected %ld", __FILE__, xml->fileName, ix, curIndex);
     }
     xml->equationInfo[curIndex].id = curIndex;
     xml->equationInfo[curIndex].profileBlockIndex = -1; /* TODO: Set when parsing other tags */
@@ -190,6 +191,7 @@ static void XMLCALL endElement(void *userData, const char *name)
   long curIndex = (long) ((void**)userData)[1];
   long curProfileIndex = (long) ((void**)userData)[2];
   long curFunctionIndex = (long) ((void**)userData)[3];
+  jmp_buf* globalJmpBuffer = (jmp_buf*) ((void**)userData)[4];
 
   if(0 == strcmp("variable", name))
   {
@@ -231,33 +233,33 @@ static void XMLCALL endElement(void *userData, const char *name)
   }
 }
 
-FUNCTION_INFO modelInfoXmlGetFunction(MODEL_DATA_XML* xml, size_t ix)
+FUNCTION_INFO modelInfoXmlGetFunction(MODEL_DATA_XML* xml, size_t ix, jmp_buf* globalJmpBuffer)
 {
   if(xml->equationInfo == NULL)
   {
-    modelInfoXmlInit(xml);
+    modelInfoXmlInit(xml, globalJmpBuffer);
   }
   return xml->functionNames[ix];
 }
 
-void modelInfoXmlInit(MODEL_DATA_XML* xml)
+void modelInfoXmlInit(MODEL_DATA_XML* xml, jmp_buf* globalJmpBuffer)
 {
   FILE* file;
   XML_Parser parser = NULL;
-  void* userData[4] = {xml, (void*)1, (void*)0, (void*)0};
+  void* userData[5] = {xml, (void*)1, (void*)0, (void*)0, (void*) globalJmpBuffer};
   if(!xml->infoXMLData)
   {
     file = fopen(xml->fileName, "r");
     if(!file)
     {
       const char *str = strerror(errno);
-      throwStreamPrint("Failed to open file %s: %s\n", xml->fileName, str);
+      throwStreamPrint(globalJmpBuffer, "Failed to open file %s: %s\n", xml->fileName, str);
     }
   }
   parser = XML_ParserCreate(NULL);
   if(!parser)
   {
-    throwStreamPrint("Failed to create expat object");
+    throwStreamPrint(globalJmpBuffer, "Failed to create expat object");
   }
   xml->functionNames = (FUNCTION_INFO*) calloc(xml->nFunctions, sizeof(FUNCTION_INFO));
   xml->equationInfo = (EQUATION_INFO*) calloc(1+xml->nEquations, sizeof(EQUATION_INFO));
@@ -280,7 +282,7 @@ void modelInfoXmlInit(MODEL_DATA_XML* xml)
         unsigned long line = XML_GetCurrentLineNumber(parser);
         fclose(file);
         XML_ParserFree(parser);
-        throwStreamPrint("%s: Error: failed to read the XML file %s: %s at line %lu", __FILE__, xml->fileName, err, line);
+        throwStreamPrint(globalJmpBuffer, "%s: Error: failed to read the XML file %s: %s at line %lu", __FILE__, xml->fileName, err, line);
       }
     } while(!done);
     fclose(file);
@@ -289,32 +291,32 @@ void modelInfoXmlInit(MODEL_DATA_XML* xml)
       const char *err = XML_ErrorString(XML_GetErrorCode(parser));
       unsigned long line = XML_GetCurrentLineNumber(parser);
       XML_ParserFree(parser);
-      throwStreamPrint("%s: Error: failed to read the XML data %s: %s at line %lu", __FILE__, xml->infoXMLData, err, line);
+      throwStreamPrint(globalJmpBuffer, "%s: Error: failed to read the XML data %s: %s at line %lu", __FILE__, xml->infoXMLData, err, line);
     }
   }
   assert(xml->nEquations == (long) userData[1]);
   xml->nProfileBlocks = (long) userData[2];
   assert(xml->nFunctions == (long) userData[3]);
 }
-EQUATION_INFO modelInfoXmlGetEquation(MODEL_DATA_XML* xml, size_t ix)
+EQUATION_INFO modelInfoXmlGetEquation(MODEL_DATA_XML* xml, size_t ix, jmp_buf* globalJmpBuffer)
 {
   if(xml->equationInfo == NULL)
   {
-    modelInfoXmlInit(xml);
+    modelInfoXmlInit(xml, globalJmpBuffer);
   }
   return xml->equationInfo[ix];
 }
 
-EQUATION_INFO modelInfoXmlGetEquationIndexByProfileBlock(MODEL_DATA_XML* xml, size_t ix)
+EQUATION_INFO modelInfoXmlGetEquationIndexByProfileBlock(MODEL_DATA_XML* xml, size_t ix, jmp_buf* globalJmpBuffer)
 {
   int i;
   if(xml->equationInfo == NULL)
   {
-    modelInfoXmlInit(xml);
+    modelInfoXmlInit(xml, globalJmpBuffer);
   }
   if(ix > xml->nProfileBlocks)
   {
-    throwStreamPrint("Requested equation with profiler index %ld, but we only have %ld such blocks", (long int)ix, xml->nProfileBlocks);
+    throwStreamPrint(globalJmpBuffer, "Requested equation with profiler index %ld, but we only have %ld such blocks", (long int)ix, xml->nProfileBlocks);
   }
   for(i=0; i<xml->nEquations; i++)
   {
@@ -323,7 +325,7 @@ EQUATION_INFO modelInfoXmlGetEquationIndexByProfileBlock(MODEL_DATA_XML* xml, si
       return xml->equationInfo[i];
     }
   }
-  throwStreamPrint("Requested equation with profiler index %ld, but could not find it!", (long int)ix);
+  throwStreamPrint(globalJmpBuffer, "Requested equation with profiler index %ld, but could not find it!", (long int)ix);
 }
 
 void freeModelInfoXml(MODEL_DATA_XML* xml)

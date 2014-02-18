@@ -29,14 +29,10 @@
  *
  */
 
-#include "setjmp.h"
 #include <stdio.h>
 #include "omc_error.h"
 /* For MMC_THROW, so we can end this thing */
 #include "meta_modelica.h"
-
-/* Global JumpBuffer */
-jmp_buf globalJmpbuf;
 
 const int firstOMCErrorStream = 3;
 
@@ -139,7 +135,7 @@ void printInfo(FILE *stream, FILE_INFO info)
   fprintf(stream, "[%s:%d:%d-%d:%d:%s]", info.filename, info.lineStart, info.colStart, info.lineEnd, info.colEnd, info.readonly ? "readonly" : "writable");
 }
 
-void omc_assert_function(FILE_INFO info, const char *msg, ...)
+void omc_assert_function(ERROR_HANDLE *omcErroHandle, FILE_INFO info, const char *msg, ...)
 {
   va_list ap;
   va_start(ap,msg);
@@ -331,7 +327,7 @@ void assertStreamPrint(int cond, const char *format, ...)
 }
 
 #ifdef USE_DEBUG_OUTPUT
-void debugStreamPrint(int cond, int indentNext, const char *format, ...)
+void debugStreamPrint(jmp_buf* globalJmpBuffer, int cond, int indentNext, const char *format, ...)
 {
   if (!cond) {
     char logBuffer[SIZE_LOG_BUFFER];
@@ -339,27 +335,27 @@ void debugStreamPrint(int cond, int indentNext, const char *format, ...)
     va_start(args, format);
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
     messageFunction(LOG_TYPE_DEBUG, LOG_ASSERT, indentNext, logBuffer, 0, NULL);
-    longjmp(globalJmpbuf, 1);
+    longjmp(globalJmpBuffer, 1);
   }
 }
 #endif
 
-void throwStreamPrint(const char *format, ...)
+void throwStreamPrint(jmp_buf* globalJmpBuffer, const char *format, ...)
 {
   char logBuffer[SIZE_LOG_BUFFER];
   va_list args;
   va_start(args, format);
   vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
   messageFunction(LOG_TYPE_DEBUG, LOG_ASSERT, 0, logBuffer, 0, NULL);
-  longjmp(globalJmpbuf, 1);
+  longjmp(*globalJmpBuffer, 1);
 }
 
-void throwStreamPrintWithEquationIndexes(const int *indexes, const char *format, ...)
+void throwStreamPrintWithEquationIndexes(jmp_buf* globalJmpBuffer, const int *indexes, const char *format, ...)
 {
   char logBuffer[SIZE_LOG_BUFFER];
   va_list args;
   va_start(args, format);
   vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
   messageFunction(LOG_TYPE_DEBUG, LOG_ASSERT, 0, logBuffer, 0, indexes);
-  longjmp(globalJmpbuf, 1);
+  longjmp(*globalJmpBuffer, 1);
 }

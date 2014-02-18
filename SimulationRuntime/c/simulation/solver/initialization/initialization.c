@@ -364,7 +364,7 @@ static int initialize2(INIT_DATA *initData, int optiMethod, int useScaling, int 
     else if(optiMethod == IOM_IPOPT)
       retVal = ipopt_initialization(data, initData, 0);
     else
-      throwStreamPrint("unsupported option -iom");
+      throwStreamPrint(&(data->simulationInfo.errorHandler.globalJumpBuffer), "unsupported option -iom");
 
     /*storePreValues(data);*/                       /* save pre-values */
     overwriteOldSimulationData(data);           /* if there are non-linear equations */
@@ -853,7 +853,7 @@ static int importStartValues(DATA *data, const char *pInitFile, double initTime)
   pError = omc_new_matlab4_reader(pInitFile, &reader);
   if(pError)
   {
-    throwStreamPrint("unable to read input-file <%s> [%s]", pInitFile, pError);
+    throwStreamPrint(&(data->simulationInfo.errorHandler.globalJumpBuffer), "unable to read input-file <%s> [%s]", pInitFile, pError);
     return 1;
   } else {
     infoStreamPrint(LOG_INIT, 0, "import real variables");
@@ -1010,7 +1010,7 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
       for(i=1; i<IIM_MAX; ++i) {
         warningStreamPrint(LOG_STDOUT, 0, "| %-15s [%s]", INIT_METHOD_NAME[i], INIT_METHOD_DESC[i]);
       }
-      throwStreamPrint("see last warning");
+      throwStreamPrint(&(data->simulationInfo.errorHandler.globalJumpBuffer), "see last warning");
     }
   }
 
@@ -1029,7 +1029,7 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
       for(i=1; i<IOM_MAX; ++i) {
         warningStreamPrint(LOG_STDOUT, 0, "| %-15s [%s]", OPTI_METHOD_NAME[i], OPTI_METHOD_DESC[i]);
       }
-      throwStreamPrint("see last warning");
+      throwStreamPrint(&(data->simulationInfo.errorHandler.globalJumpBuffer), "see last warning");
     }
   }
 
@@ -1063,7 +1063,7 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   } else if(initMethod == IIM_SYMBOLIC) {
     retVal = symbolic_initialization(data, lambda_steps);
   } else {
-    throwStreamPrint("unsupported option -iim");
+    throwStreamPrint(&(data->simulationInfo.errorHandler.globalJumpBuffer), "unsupported option -iim");
   }
 
   /* check for unsolved (nonlinear|linear|mixed) systems

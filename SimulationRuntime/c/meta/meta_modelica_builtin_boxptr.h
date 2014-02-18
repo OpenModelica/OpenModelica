@@ -40,13 +40,13 @@
 #define META_MODELICA_BUILTIN_BOXPTR__H
 
 #ifdef GEN_META_MODELICA_BUILTIN_BOXPTR
-#define boxptr_unOp(name,box,unbox,op) void* name(threadData_t *threadData, void* a) {return (void*)box(op(unbox(a)));}
-#define boxptr_binOp(name,box,unbox,op) void* name(threadData_t *threadData, void* a, void* b) {return (void*)box((unbox(a)) op (unbox(b)));}
-#define boxptr_binFn(name,box,unbox,fn) void* name(threadData_t *threadData, void* a, void* b) {return (void*)box(fn((unbox(a)),(unbox(b))));}
+#define boxptr_unOp(name,box,unbox,op) void* name(ERROR_HANDLE *omcErrorHandle,threadData_t *threadData, void* a) {return (void*)box(op(unbox(a)));}
+#define boxptr_binOp(name,box,unbox,op) void* name(ERROR_HANDLE *omcErrorHandle,threadData_t *threadData, void* a, void* b) {return (void*)box((unbox(a)) op (unbox(b)));}
+#define boxptr_binFn(name,box,unbox,fn) void* name(ERROR_HANDLE *omcErrorHandle,threadData_t *threadData, void* a, void* b) {return (void*)box(fn((unbox(a)),(unbox(b))));}
 #else
-#define boxptr_unOp(name,box,unbox,op) void* name(threadData_t *, void*);
-#define boxptr_binOp(name,box,unbox,op) void* name(threadData_t *, void*,void*);
-#define boxptr_binFn(name,box,unbox,op) void* name(threadData_t *, void*,void*);
+#define boxptr_unOp(name,box,unbox,op) void* name(ERROR_HANDLE *omcErrorHandle,threadData_t *, void*);
+#define boxptr_binOp(name,box,unbox,op) void* name(ERROR_HANDLE *omcErrorHandle,threadData_t *, void*,void*);
+#define boxptr_binFn(name,box,unbox,op) void* name(ERROR_HANDLE *omcErrorHandle,threadData_t *, void*,void*);
 #endif
 
 /* Missing stuff: realMod,realPow,realMax,realMin,intMod,intMax,intMin */

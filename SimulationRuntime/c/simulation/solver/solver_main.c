@@ -349,9 +349,9 @@ int initializeModel(DATA* data, const char* init_initMethod,
   setZCtol(simInfo->tolerance);
 
 
-  currectJumpState = ERROR_SIMULATION;
+  simInfo->errorHandler.currentErrorStage = ERROR_SIMULATION;
   /* try */
-  if(!setjmp(simulationJmpbuf)) {
+  if(!setjmp(simInfo->errorHandler.simulationJumpBuffer)) {
     if(initialization(data, init_initMethod, init_optiMethod, init_file, init_time, lambda_steps)) {
       warningStreamPrint(LOG_STDOUT, 0, "Error in initialization. Storing results and exiting.\nUse -lv=LOG_INIT -w for more information.");
       simInfo->stopTime = simInfo->startTime;
@@ -654,10 +654,10 @@ static int rungekutta_step(DATA* data, SOLVER_INFO* solverInfo)
 #ifdef WITH_IPOPT
 static int ipopt_step(DATA* data, SOLVER_INFO* solverInfo)
 {
-  int cJ = currectJumpState;
-  currectJumpState = ERROR_OPTIMIZE;
+  int cJ = data->simulationInfo.errorHandler.currentErrorStage;
+  data->simulationInfo.errorHandler.currentErrorStage = ERROR_OPTIMIZE;
   startIpopt(data, solverInfo,5);
-  currectJumpState = cJ;
+  data->simulationInfo.errorHandler.currentErrorStage = cJ;
   return 0;
 }
 #endif

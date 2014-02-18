@@ -194,7 +194,7 @@ static void printVar(FILE *fout, int level, VAR_INFO* info) {
 static void printFunctions(FILE *fout, FILE *plt, const char *plotFormat, const char *modelFilePrefix, DATA *data) {
   int i;
   for(i=0; i<data->modelData.modelDataXml.nFunctions; i++) {
-    const struct FUNCTION_INFO func = modelInfoXmlGetFunction(&data->modelData.modelDataXml, i);
+    const struct FUNCTION_INFO func = modelInfoXmlGetFunction(&data->modelData.modelDataXml, i, &(data->simulationInfo.errorHandler.globalJumpBuffer));
     printPlotCommand(plt, plotFormat, func.name, modelFilePrefix, data->modelData.modelDataXml.nFunctions+data->modelData.modelDataXml.nProfileBlocks, i, func.id, "fun");
     rt_clear(i + SIM_TIMER_FIRST_FUNCTION);
     indent(fout,2);
@@ -212,7 +212,7 @@ static void printFunctions(FILE *fout, FILE *plt, const char *plotFormat, const 
 static void printProfileBlocks(FILE *fout, FILE *plt, const char *plotFormat, DATA *data) {
   int i;
   for(i = data->modelData.modelDataXml.nFunctions; i < data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks; i++) {
-    const struct EQUATION_INFO eq = modelInfoXmlGetEquationIndexByProfileBlock(&data->modelData.modelDataXml, i-data->modelData.modelDataXml.nFunctions);
+    const struct EQUATION_INFO eq = modelInfoXmlGetEquationIndexByProfileBlock(&data->modelData.modelDataXml, i-data->modelData.modelDataXml.nFunctions, &(data->simulationInfo.errorHandler.globalJumpBuffer));
     printPlotCommand(plt, plotFormat, eq.name, data->modelData.modelFilePrefix, data->modelData.modelDataXml.nFunctions+data->modelData.modelDataXml.nProfileBlocks, i, eq.id, "eq");
     rt_clear(i + SIM_TIMER_FIRST_FUNCTION);
     indent(fout,2);fprintf(fout, "<profileblock>\n");
@@ -224,16 +224,16 @@ static void printProfileBlocks(FILE *fout, FILE *plt, const char *plotFormat, DA
   }
 }
 
-static void printEquations(FILE *fout, int n, MODEL_DATA_XML *xml) {
+static void printEquations(FILE *fout, int n, MODEL_DATA_XML *xml, DATA *data) {
   int i,j;
   for(i=0; i<n; i++) {
-    indent(fout,2);fprintf(fout, "<equation id=\"eq%d\" name=\"", modelInfoXmlGetEquation(xml,i).id);printStrXML(fout,modelInfoXmlGetEquation(xml,i).name);fprintf(fout,"\">\n");
+    indent(fout,2);fprintf(fout, "<equation id=\"eq%d\" name=\"", modelInfoXmlGetEquation(xml,i, &(data->simulationInfo.errorHandler.globalJumpBuffer)).id);printStrXML(fout,modelInfoXmlGetEquation(xml,i, &(data->simulationInfo.errorHandler.globalJumpBuffer)).name);fprintf(fout,"\">\n");
     indent(fout,4);fprintf(fout, "<refs>\n");
-    for(j=0; j<modelInfoXmlGetEquation(xml,i).numVar; j++) {
+    for(j=0; j<modelInfoXmlGetEquation(xml,i, &(data->simulationInfo.errorHandler.globalJumpBuffer)).numVar; j++) {
       indent(fout,6);fprintf(fout, "<ref refid=\"var%d\" />\n", 0 /* modelInfoXmlGetEquation(xml,i).vars[j]->id */);
     }
     indent(fout,4);fprintf(fout, "</refs>\n");
-    indent(fout,4);fprintf(fout, "<calcinfo time=\"%f\" count=\"%lu\"/>\n", rt_accumulated(SIM_TIMER_FIRST_FUNCTION + xml->nFunctions + xml->nProfileBlocks + modelInfoXmlGetEquation(xml,i).id), rt_ncall(SIM_TIMER_FIRST_FUNCTION + xml->nFunctions + xml->nProfileBlocks + modelInfoXmlGetEquation(xml,i).id));
+    indent(fout,4);fprintf(fout, "<calcinfo time=\"%f\" count=\"%lu\"/>\n", rt_accumulated(SIM_TIMER_FIRST_FUNCTION + xml->nFunctions + xml->nProfileBlocks + modelInfoXmlGetEquation(xml,i, &(data->simulationInfo.errorHandler.globalJumpBuffer)).id), rt_ncall(SIM_TIMER_FIRST_FUNCTION + xml->nFunctions + xml->nProfileBlocks + modelInfoXmlGetEquation(xml,i, &(data->simulationInfo.errorHandler.globalJumpBuffer)).id));
     indent(fout,2);fprintf(fout, "</equation>\n");
   }
 }
@@ -253,19 +253,19 @@ static void printProfilingDataHeader(FILE *fout, DATA *data) {
   indent(fout, 4); fprintf(fout, "<double>time</double>\n");
   indent(fout, 4); fprintf(fout, "<double>cpu time</double>\n");
   for(i = 0; i < data->modelData.modelDataXml.nFunctions; i++) {
-    const char *name = modelInfoXmlGetFunction(&data->modelData.modelDataXml,i).name;
+    const char *name = modelInfoXmlGetFunction(&data->modelData.modelDataXml,i, &(data->simulationInfo.errorHandler.globalJumpBuffer)).name;
     indent(fout, 4); fprintf(fout, "<uint32>");printStrXML(fout,name);fprintf(fout, " (calls)</uint32>\n");
   }
   for(i = 0; i < data->modelData.modelDataXml.nProfileBlocks; i++) {
-    const char *name = modelInfoXmlGetEquationIndexByProfileBlock(&data->modelData.modelDataXml,i).name;
+    const char *name = modelInfoXmlGetEquationIndexByProfileBlock(&data->modelData.modelDataXml,i, &(data->simulationInfo.errorHandler.globalJumpBuffer)).name;
     indent(fout, 4); fprintf(fout, "<uint32>");printStrXML(fout,name);fprintf(fout, " (calls)</uint32>\n");
   }
   for(i = 0; i < data->modelData.modelDataXml.nFunctions; i++) {
-    const char *name = modelInfoXmlGetFunction(&data->modelData.modelDataXml,i).name;
+    const char *name = modelInfoXmlGetFunction(&data->modelData.modelDataXml,i, &(data->simulationInfo.errorHandler.globalJumpBuffer)).name;
     indent(fout, 4); fprintf(fout, "<double>");printStrXML(fout,name);fprintf(fout, " (cpu time)</double>\n");
   }
   for(i = 0; i < data->modelData.modelDataXml.nProfileBlocks; i++) {
-    const char *name = modelInfoXmlGetEquationIndexByProfileBlock(&data->modelData.modelDataXml,i).name;
+    const char *name = modelInfoXmlGetEquationIndexByProfileBlock(&data->modelData.modelDataXml,i, &(data->simulationInfo.errorHandler.globalJumpBuffer)).name;
     indent(fout, 4); fprintf(fout, "<double>");printStrXML(fout,name);fprintf(fout, " (cpu time)</double>\n");
   }
   indent(fout, 2); fprintf(fout, "</format>\n");
@@ -386,7 +386,7 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
   fprintf(fout, "</functions>\n");
 
   fprintf(fout, "<equations>\n");
-  printEquations(fout, data->modelData.modelDataXml.nEquations, &data->modelData.modelDataXml);
+  printEquations(fout, data->modelData.modelDataXml.nEquations, &data->modelData.modelDataXml, data);
   fprintf(fout, "</equations>\n");
 
   fprintf(fout, "<profileblocks>\n");

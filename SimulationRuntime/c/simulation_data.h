@@ -106,7 +106,9 @@ typedef struct CHATTERING_INFO
   int messageEmitted;
 } CHATTERING_INFO;
 
+
 typedef enum {ERROR_AT_TIME,NO_PROGRESS_START_POINT,NO_PROGRESS_FACTOR,IMPROPER_INPUT} equationSystemError;
+
 
 /* SPARSE_PATTERN
  *
@@ -119,11 +121,11 @@ typedef enum {ERROR_AT_TIME,NO_PROGRESS_START_POINT,NO_PROGRESS_FACTOR,IMPROPER_
  */
 typedef struct SPARSE_PATTERN
 {
-    unsigned int* leadindex;
-    unsigned int* index;
-    unsigned int sizeofIndex;
-    unsigned int* colorCols;
-    unsigned int maxColors;
+  unsigned int* leadindex;
+  unsigned int* index;
+  unsigned int sizeofIndex;
+  unsigned int* colorCols;
+  unsigned int maxColors;
 }SPARSE_PATTERN;
 
 /* ANALYTIC_JACOBIAN
@@ -140,14 +142,13 @@ typedef struct SPARSE_PATTERN
  */
 typedef struct ANALYTIC_JACOBIAN
 {
-    unsigned int sizeCols;
-    unsigned int sizeRows;
-    SPARSE_PATTERN sparsePattern;
-    modelica_real* seedVars;
-    modelica_real* tmpVars;
-    modelica_real* resultVars;
-    modelica_real* jacobian;
-
+  unsigned int sizeCols;
+  unsigned int sizeRows;
+  SPARSE_PATTERN sparsePattern;
+  modelica_real* seedVars;
+  modelica_real* tmpVars;
+  modelica_real* resultVars;
+  modelica_real* jacobian;
 }ANALYTIC_JACOBIAN;
 
 /* Alias data with various types*/
@@ -508,6 +509,8 @@ typedef struct SIMULATION_INFO
   const char *OPENMODELICAHOME;
   
   CHATTERING_INFO chatteringInfo;
+
+  ERROR_HANDLE errorHandler;
 } SIMULATION_INFO;
 
 /* collects all dynamic model data like the variabel-values */

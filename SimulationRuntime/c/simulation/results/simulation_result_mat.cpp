@@ -221,7 +221,7 @@ void mat4_init(simulation_result *self,DATA *data)
     /* open file */
     matData->fp.open(self->filename, std::ofstream::binary|std::ofstream::trunc);
     if(!matData->fp) {
-      throwStreamPrint("Cannot open File %s for writing",self->filename);
+      throwStreamPrint(&(data->simulationInfo.errorHandler.globalJumpBuffer), "Cannot open File %s for writing",self->filename);
     }
 
     /* write `AClass' matrix */
@@ -272,7 +272,7 @@ void mat4_init(simulation_result *self,DATA *data)
     free(doubleMatrix);
     free(intMatrix);
     rt_accumulate(SIM_TIMER_OUTPUT);
-    throwStreamPrint("Error while writing mat file %s",self->filename);
+    throwStreamPrint(&(data->simulationInfo.errorHandler.globalJumpBuffer), "Error while writing mat file %s",self->filename);
   }
   free(names); names=NULL;
   rt_accumulate(SIM_TIMER_OUTPUT);
@@ -341,7 +341,7 @@ void mat4_emit(simulation_result *self,DATA *data)
       }
     }
   if (!matData->fp) {
-    throwStreamPrint("Error while writing file %s",self->filename);
+    throwStreamPrint(&(data->simulationInfo.errorHandler.globalJumpBuffer), "Error while writing file %s",self->filename);
   }
   ++matData->ntimepoints;
   rt_accumulate(SIM_TIMER_OUTPUT);
@@ -427,10 +427,10 @@ void writeMatVer4MatrixHeader(simulation_result *self,DATA *data,const char *nam
   /* write header to file */
   matData->fp.write((char*)&hdr, sizeof(MHeader_t));
   if(!matData->fp)
-    throwStreamPrint("Cannot write to file %s",self->filename);
+    throwStreamPrint(&(data->simulationInfo.errorHandler.globalJumpBuffer), "Cannot write to file %s",self->filename);
   matData->fp.write(name, sizeof(char)*hdr.namelen);
   if(!matData->fp)
-    throwStreamPrint("Cannot write to file %s",self->filename);
+    throwStreamPrint(&(data->simulationInfo.errorHandler.globalJumpBuffer), "Cannot write to file %s",self->filename);
 }
 
 void writeMatVer4Matrix(simulation_result *self,DATA *data,const char *name, int rows, int cols, const void *matrixData, unsigned int size)
@@ -441,7 +441,7 @@ void writeMatVer4Matrix(simulation_result *self,DATA *data,const char *name, int
   /* write data */
   matData->fp.write((const char*)matrixData, (size)*rows*cols);
   if(!matData->fp) {
-    throwStreamPrint("Cannot write to file %s",self->filename);
+    throwStreamPrint(&(data->simulationInfo.errorHandler.globalJumpBuffer), "Cannot write to file %s",self->filename);
   }
 }
 

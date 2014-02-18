@@ -503,7 +503,7 @@
     dumpInitialization(data,initData);
 
     if(status != Solve_Succeeded && status != Solved_To_Acceptable_Level)
-      throwStreamPrint("ipopt failed. see last warning. use [-lv LOG_INIT] for more output.");
+      throwStreamPrint(&(data->simulationInfo.errorHandler.globalJumpBuffer), "ipopt failed. see last warning. use [-lv LOG_INIT] for more output.");
 
     /* return (int)status; */
     return reportResidualValue(initData);
@@ -521,7 +521,8 @@
    */
   int ipopt_initialization(INIT_DATA *initData, int useScaling)
   {
-    throwStreamPrint("no ipopt support activated");
+	DATA *data = initData->simData;
+    throwStreamPrint(&(data->simulationInfo.errorHandler.globalJumpBuffer), "no ipopt support activated");
     return 0;
   }
 #endif

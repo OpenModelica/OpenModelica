@@ -46,12 +46,12 @@
 #define snprintf _snprintf
 #endif
 
-modelica_metatype boxptr_realMin(threadData_t *threadData,modelica_metatype a,modelica_metatype b)
+modelica_metatype boxptr_realMin(ERROR_HANDLE *omcErrorHandle,threadData_t *threadData,modelica_metatype a,modelica_metatype b)
 {
   return mmc_mk_rcon(fmin(mmc_unbox_real(a),mmc_unbox_real(b)));
 }
 
-modelica_metatype boxptr_realMax(threadData_t *threadData,modelica_metatype a,modelica_metatype b)
+modelica_metatype boxptr_realMax(ERROR_HANDLE *omcErrorHandle,threadData_t *threadData,modelica_metatype a,modelica_metatype b)
 {
   return mmc_mk_rcon(fmax(mmc_unbox_real(a),mmc_unbox_real(b)));
 }

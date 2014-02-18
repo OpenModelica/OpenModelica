@@ -114,9 +114,9 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
   {
     omc_alloc_interface.collect_a_little();
 
-    currectJumpState = ERROR_SIMULATION;
+    simInfo->errorHandler.currentErrorStage = ERROR_SIMULATION;
     /* try */
-    if(!setjmp(simulationJmpbuf))
+    if(!setjmp(simInfo->errorHandler.simulationJumpBuffer))
     {
       if(measure_time_flag)
       {
@@ -175,14 +175,14 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
       eventType = checkEvents(data, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo);
       if(eventType > 0) /* event */
       {
-        currectJumpState = ERROR_EVENTSEARCH;
+    	simInfo->errorHandler.currentErrorStage = ERROR_EVENTSEARCH;
         infoStreamPrint(LOG_EVENTS, 1, "%s event at time %.12g", eventType == 1 ? "time" : "state", solverInfo->currentTime);
         /* prevent emit if noEventEmit flag is used */
         if (!(omc_flag[FLAG_NOEVENTEMIT])) /* output left limit */
           sim_result.emit(&sim_result,data);
         handleEvents(data, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo);
         if (ACTIVE_STREAM(LOG_EVENTS)) messageClose(LOG_EVENTS);
-        currectJumpState = ERROR_SIMULATION;
+        simInfo->errorHandler.currentErrorStage = ERROR_SIMULATION;
 
         solverInfo->didEventStep = 1;
         overwriteOldSimulationData(data);

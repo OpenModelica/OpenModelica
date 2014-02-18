@@ -233,6 +233,7 @@
 #else
   int kinsol_initialization(INIT_DATA *initData)
   {
-    throwStreamPrint("no sundials/kinsol support activated");
+	DATA *data = initData->simData;
+    throwStreamPrint(data->simulationInfo.errorHandler.globalJumpBuffer, "no sundials/kinsol support activated");
   }
 #endif

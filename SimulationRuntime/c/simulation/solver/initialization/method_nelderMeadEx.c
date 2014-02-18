@@ -96,6 +96,8 @@ static void NelderMeadOptimization(INIT_DATA* initData,
 
   FILE *pFile = NULL;
 
+  DATA *data = initData->simData;
+
   if(ACTIVE_STREAM(LOG_INIT) && (lambda < 1.0))
   {
     char buffer[4096];
@@ -330,7 +332,7 @@ static void NelderMeadOptimization(INIT_DATA* initData,
       warningStreamPrint(LOG_INIT, 0, "fxr = %g", fxr);
       warningStreamPrint(LOG_INIT, 0, "fxk = %g", fxk);
 
-      throwStreamPrint("undefined error in NelderMeadOptimization");
+      throwStreamPrint(&(data->simulationInfo.errorHandler.globalJumpBuffer), "undefined error in NelderMeadOptimization");
     }
   }while(1.0);
 

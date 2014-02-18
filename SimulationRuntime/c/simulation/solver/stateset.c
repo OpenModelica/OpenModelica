@@ -53,7 +53,7 @@ void initializeStateSetJacobians(DATA *data)
     set = &(data->simulationInfo.stateSetData[i]);
     if(set->initialAnalyticalJacobian(data))
     {
-      throwStreamPrint("can not initialze Jacobians for dynamic state selection");
+      throwStreamPrint(&(data->simulationInfo.errorHandler.globalJumpBuffer), "can not initialze Jacobians for dynamic state selection");
     }
   }
   initializeStateSetPivoting(data);
@@ -341,7 +341,7 @@ int stateSelection(DATA *data, char reportError, int switchStates)
         warningStreamPrint(LOG_DSS, 0, "%s", set->statescandidates[i]->name);
       messageClose(LOG_DSS);
 
-      throwStreamPrint("Error, singular Jacobian for dynamic state selection at time %f\nUse -lv LOG_DSS_JAC to get the Jacobian", data->localData[0]->timeValue);
+      throwStreamPrint(&(data->simulationInfo.errorHandler.globalJumpBuffer), "Error, singular Jacobian for dynamic state selection at time %f\nUse -lv LOG_DSS_JAC to get the Jacobian", data->localData[0]->timeValue);
     }
     /* if we have a new set throw event for reinitialization
        and set the A matrix for set.x=A*(states) */

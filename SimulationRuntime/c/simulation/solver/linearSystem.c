@@ -76,7 +76,7 @@ int allocatelinearSystem(DATA *data)
       allocateLisData(size, size, nnz, &linsys[i].solverData);
       break;
     default:
-      throwStreamPrint("unrecognized linear solver");
+      throwStreamPrint(&(data->simulationInfo.errorHandler.globalJumpBuffer), "unrecognized linear solver");
     }
   }
   return 0;
@@ -108,7 +108,7 @@ int freelinearSystem(DATA *data)
       freeLisData(&linsys[i].solverData);
       break;
     default:
-      throwStreamPrint("unrecognized linear solver");
+      throwStreamPrint(&(data->simulationInfo.errorHandler.globalJumpBuffer), "unrecognized linear solver");
     }
 
     free(linsys[i].solverData);
@@ -137,7 +137,7 @@ int solve_linear_system(DATA *data, int sysNumber)
     success = solveLis(data, sysNumber);
     break;
   default:
-    throwStreamPrint("unrecognized linear solver");
+    throwStreamPrint(&(data->simulationInfo.errorHandler.globalJumpBuffer), "unrecognized linear solver");
   }
   linsys[sysNumber].solved = success;
 
@@ -164,9 +164,9 @@ int check_linear_solutions(DATA *data, int printFailingSystems)
       retVal = 1;
       if(printFailingSystems && ACTIVE_WARNING_STREAM(LOG_LS))
       {
-        warningStreamPrint(LOG_LS, 1, "linear system fails: %s at t=%g", modelInfoXmlGetEquation(&data->modelData.modelDataXml, linsys->equationIndex).name, data->localData[0]->timeValue);
-        for(j=0; j<modelInfoXmlGetEquation(&data->modelData.modelDataXml, linsys->equationIndex).numVar; ++j)
-          warningStreamPrint(LOG_LS, 0, "[%d] %s", j+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml, linsys->equationIndex).vars[j]->name);
+        warningStreamPrint(LOG_LS, 1, "linear system fails: %s at t=%g", modelInfoXmlGetEquation(&data->modelData.modelDataXml, linsys->equationIndex, &(data->simulationInfo.errorHandler.globalJumpBuffer)).name, data->localData[0]->timeValue);
+        for(j=0; j<modelInfoXmlGetEquation(&data->modelData.modelDataXml, linsys->equationIndex, &(data->simulationInfo.errorHandler.globalJumpBuffer)).numVar; ++j)
+          warningStreamPrint(LOG_LS, 0, "[%d] %s", j+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml, linsys->equationIndex, &(data->simulationInfo.errorHandler.globalJumpBuffer)).vars[j]->name);
         messageClose(LOG_LS);
       }
     }

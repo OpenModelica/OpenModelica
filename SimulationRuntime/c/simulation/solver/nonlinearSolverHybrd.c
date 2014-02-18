@@ -391,7 +391,7 @@ static int wrapper_fvec_hybrj(integer* n, double* x, double* f, double* fjac, in
     break;
 
   default:
-    throwStreamPrint("Well, this is embarrasing. The non-linear solver should never call this case.%d", *iflag);
+    throwStreamPrint(&(((DATA*)data)->simulationInfo.errorHandler.globalJumpBuffer), "Well, this is embarrasing. The non-linear solver should never call this case.%d", *iflag);
     break;
   }
   
@@ -433,6 +433,8 @@ int solveHybrd(DATA *data, int sysNumber)
   int assertRetries = 0;
   int assertMessage = 0;
 
+  jmp_buf backupJmpbufer;
+
   modelica_boolean* relationsPreBackup;
   relationsPreBackup = (modelica_boolean*) malloc(data->modelData.nRelations*sizeof(modelica_boolean));
 
@@ -440,7 +442,7 @@ int solveHybrd(DATA *data, int sysNumber)
   if(ACTIVE_STREAM(LOG_NLS))
   {
     infoStreamPrint(LOG_NLS, 1, "start solving non-linear system >>%s<< at time %g",
-      modelInfoXmlGetEquation(&data->modelData.modelDataXml, eqSystemNumber).name,
+      modelInfoXmlGetEquation(&data->modelData.modelDataXml, eqSystemNumber, &(data->simulationInfo.errorHandler.globalJumpBuffer)).name,
       data->localData[0]->timeValue);
     for(i=0; i<solverData->n; i++)
     {
@@ -468,7 +470,8 @@ int solveHybrd(DATA *data, int sysNumber)
       solverData->useXScaling = 0;
 #ifndef OMC_EMCC
     /* try */
-    if(!setjmp(nonlinearJmpbuf))
+    memcpy(data->simulationInfo.errorHandler.simulationJumpBuffer, backupJmpbufer, sizeof(jmp_buf));
+    if(!setjmp(data->simulationInfo.errorHandler.simulationJumpBuffer))
     {
 #endif
       wrapper_fvec_hybrj(&solverData->n, solverData->x, solverData->fvec, solverData->fjac, &solverData->ldfjac, &iflag, data, sysNumber);
@@ -476,6 +479,7 @@ int solveHybrd(DATA *data, int sysNumber)
     } else { /* catch */
       warningStreamPrint(LOG_STDOUT, 0, "Non-Linear Solver try to handle a problem with a called assert.");
     }
+    memcpy(data->simulationInfo.errorHandler.simulationJumpBuffer, backupJmpbufer, sizeof(jmp_buf));
 #endif
     if(scaling) {
       solverData->useXScaling = 1;
@@ -519,7 +523,8 @@ int solveHybrd(DATA *data, int sysNumber)
 
     /* try */
 #ifndef OMC_EMCC
-    if(!setjmp(nonlinearJmpbuf))
+    memcpy(data->simulationInfo.errorHandler.simulationJumpBuffer, backupJmpbufer, sizeof(jmp_buf));
+    if(!setjmp(data->simulationInfo.errorHandler.simulationJumpBuffer))
     {
 #endif
       _omc_hybrj_(wrapper_fvec_hybrj, &solverData->n, solverData->x,
@@ -558,6 +563,7 @@ int solveHybrd(DATA *data, int sysNumber)
       xerror = 1;
       assertCalled = 1;
     }
+    memcpy(data->simulationInfo.errorHandler.simulationJumpBuffer, backupJmpbufer, sizeof(jmp_buf));
 #endif
 
     /* set residual function continuous */
@@ -577,7 +583,7 @@ int solveHybrd(DATA *data, int sysNumber)
 
     /* check for proper inputs */
     if(solverData->info == 0) {
-      printErrorEqSyst(IMPROPER_INPUT, modelInfoXmlGetEquation(&data->modelData.modelDataXml, eqSystemNumber),
+      printErrorEqSyst(IMPROPER_INPUT, modelInfoXmlGetEquation(&data->modelData.modelDataXml, eqSystemNumber, &(data->simulationInfo.errorHandler.globalJumpBuffer)),
           data->localData[0]->timeValue);
     }
 
@@ -1013,7 +1019,7 @@ int solveHybrd(DATA *data, int sysNumber)
 
       /* while the initialization it's ok to every time a solution */
       if(!data->simulationInfo.initial){
-        printErrorEqSyst(ERROR_AT_TIME, modelInfoXmlGetEquation(&data->modelData.modelDataXml, eqSystemNumber), data->localData[0]->timeValue);
+        printErrorEqSyst(ERROR_AT_TIME, modelInfoXmlGetEquation(&data->modelData.modelDataXml, eqSystemNumber, &(data->simulationInfo.errorHandler.globalJumpBuffer)), data->localData[0]->timeValue);
       }
       if (ACTIVE_STREAM(LOG_NLS)) {
         infoStreamPrint(LOG_NLS, 0, "### No Solution! ###\n after %d restarts", retries*retries2*retries3);

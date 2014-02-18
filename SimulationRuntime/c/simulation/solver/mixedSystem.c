@@ -65,7 +65,7 @@ int allocatemixedSystem(DATA *data)
       allocateMixedSearchData(size, &system[i].solverData);
       break;
     default:
-      throwStreamPrint("unrecognized mixed solver");
+      throwStreamPrint(&(data->simulationInfo.errorHandler.globalJumpBuffer), "unrecognized mixed solver");
     }
   }
   return 0;
@@ -95,7 +95,7 @@ int freemixedSystem(DATA *data)
       freeMixedSearchData(&system[i].solverData);
       break;
     default:
-      throwStreamPrint("unrecognized mixed solver");
+      throwStreamPrint(&(data->simulationInfo.errorHandler.globalJumpBuffer), "unrecognized mixed solver");
     }
 
     free(system[i].solverData);
@@ -123,7 +123,7 @@ int solve_mixed_system(DATA *data, int sysNumber)
     success = solveMixedSearch(data, sysNumber);
     break;
   default:
-    throwStreamPrint("unrecognized mixed solver");
+    throwStreamPrint(&(data->simulationInfo.errorHandler.globalJumpBuffer), "unrecognized mixed solver");
   }
   system[sysNumber].solved = success;
 
@@ -150,9 +150,9 @@ int check_mixed_solutions(DATA *data, int printFailingSystems)
       retVal = 1;
       if(printFailingSystems && ACTIVE_WARNING_STREAM(LOG_NLS))
       {
-        warningStreamPrint(LOG_NLS, 1, "mixed system fails: %s at t=%g", modelInfoXmlGetEquation(&data->modelData.modelDataXml, system->equationIndex).name, data->localData[0]->timeValue);
-        for(j=0; j<modelInfoXmlGetEquation(&data->modelData.modelDataXml, system->equationIndex).numVar; ++j)
-          warningStreamPrint(LOG_NLS, 0, "[%d] %s", j+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml, system->equationIndex).vars[j]->name);
+        warningStreamPrint(LOG_NLS, 1, "mixed system fails: %s at t=%g", modelInfoXmlGetEquation(&data->modelData.modelDataXml, system->equationIndex, &(data->simulationInfo.errorHandler.globalJumpBuffer)).name, data->localData[0]->timeValue);
+        for(j=0; j<modelInfoXmlGetEquation(&data->modelData.modelDataXml, system->equationIndex, &(data->simulationInfo.errorHandler.globalJumpBuffer)).numVar; ++j)
+          warningStreamPrint(LOG_NLS, 0, "[%d] %s", j+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml, system->equationIndex, &(data->simulationInfo.errorHandler.globalJumpBuffer)).vars[j]->name);
         messageClose(LOG_NLS);
       }
     }

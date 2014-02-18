@@ -203,9 +203,9 @@ extern void div_alloc_integer_array_scalar(const integer_array_t * a,modelica_in
                                            integer_array_t* dest);
 
 extern void division_integer_array_scalar(const integer_array_t * a,modelica_integer b,
-                                          integer_array_t* dest, const char* division_str);
+                                          integer_array_t* dest, const char* division_str, ERROR_HANDLE* errorHandle);
 extern void division_alloc_integer_array_scalar(const integer_array_t * a,modelica_integer b,
-                                                integer_array_t* dest, const char* division_str);
+                                                integer_array_t* dest, const char* division_str, ERROR_HANDLE* errorHandle);
 extern void div_scalar_integer_array(modelica_integer a, const integer_array_t* b, integer_array_t* dest);
 extern void div_alloc_scalar_integer_array(modelica_integer a, const integer_array_t* b, integer_array_t* dest);
 extern void pow_integer_array_scalar(const integer_array_t *a, modelica_integer b, integer_array_t* dest);

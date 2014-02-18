@@ -43,8 +43,8 @@ extern "C" {
 #endif
 
 extern modelica_string realString(modelica_real r);
-extern modelica_metatype boxptr_realMin(threadData_t*,modelica_metatype a,modelica_metatype b);
-extern modelica_metatype boxptr_realMax(threadData_t*,modelica_metatype a,modelica_metatype b);
+extern modelica_metatype boxptr_realMin(ERROR_HANDLE*,threadData_t*,modelica_metatype a,modelica_metatype b);
+extern modelica_metatype boxptr_realMax(ERROR_HANDLE*,threadData_t*,modelica_metatype a,modelica_metatype b);
 
 #if defined(__cplusplus)
 }
