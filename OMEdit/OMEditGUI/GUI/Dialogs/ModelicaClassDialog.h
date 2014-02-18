@@ -165,7 +165,7 @@ public slots:
 };
 
 class LibraryTreeNode;
-class InformationDialog : public QDialog
+class InformationDialog : public QWidget
 {
 private:
   MainWindow *mpMainWindow;
