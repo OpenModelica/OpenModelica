@@ -175,7 +175,7 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
       eventType = checkEvents(data, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo);
       if(eventType > 0) /* event */
       {
-    	simInfo->errorHandler.currentErrorStage = ERROR_EVENTSEARCH;
+      simInfo->errorHandler.currentErrorStage = ERROR_EVENTSEARCH;
         infoStreamPrint(LOG_EVENTS, 1, "%s event at time %.12g", eventType == 1 ? "time" : "state", solverInfo->currentTime);
         /* prevent emit if noEventEmit flag is used */
         if (!(omc_flag[FLAG_NOEVENTEMIT])) /* output left limit */

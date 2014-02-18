@@ -876,8 +876,8 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data)
 
   if(!setjmp(data->simulationInfo.errorHandler.globalJumpBuffer))
   {
-	/* set static globalJumpBuf */
-	memcpy(data->simulationInfo.errorHandler.globalJumpBuffer, globalJumpBuf, sizeof(jmp_buf));
+  /* set static globalJumpBuf */
+  memcpy(data->simulationInfo.errorHandler.globalJumpBuffer, globalJumpBuf, sizeof(jmp_buf));
 
     if(initRuntimeAndSimulation(argc, argv, data)) //initRuntimeAndSimulation returns 1 if an error occurs
       return 1;

@@ -373,7 +373,7 @@ int dasrt_step(DATA* data, SOLVER_INFO* solverInfo)
       warningStreamPrint(LOG_STDOUT, 0, "can't continue. time = %f", sData->timeValue);
       return retVal;
     } else if(dasslData->idid == 4) {
-    	data->simulationInfo.errorHandler.currentErrorStage = ERROR_EVENTSEARCH;
+      data->simulationInfo.errorHandler.currentErrorStage = ERROR_EVENTSEARCH;
     }
 
   } while(dasslData->idid == 1 ||

@@ -521,7 +521,7 @@
    */
   int ipopt_initialization(INIT_DATA *initData, int useScaling)
   {
-	DATA *data = initData->simData;
+  DATA *data = initData->simData;
     throwStreamPrint(&(data->simulationInfo.errorHandler.globalJumpBuffer), "no ipopt support activated");
     return 0;
   }
