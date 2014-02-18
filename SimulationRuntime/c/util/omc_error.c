@@ -146,7 +146,11 @@ void omc_assert_function(threadData_t* threadData,FILE_INFO info, const char *ms
   fputs("!\n", stderr);
   va_end(ap);
   fflush(NULL);
-  MMC_THROW_INTERNAL();
+  if (threadData) {
+    MMC_THROW_INTERNAL();
+  } else {
+    MMC_THROW();
+  }
 }
 
 void omc_assert_warning_function(FILE_INFO info, const char *msg, ...)
@@ -163,7 +167,11 @@ void omc_assert_warning_function(FILE_INFO info, const char *msg, ...)
 
 void omc_throw_function(threadData_t *threadData)
 {
-  MMC_THROW_INTERNAL();
+  if (threadData) {
+    MMC_THROW_INTERNAL();
+  } else {
+    MMC_THROW();
+  }
 }
 
 void omc_terminate_function(FILE_INFO info, const char *msg, ...)
