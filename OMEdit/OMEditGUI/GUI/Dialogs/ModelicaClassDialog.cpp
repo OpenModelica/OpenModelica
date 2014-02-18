@@ -876,7 +876,7 @@ void RenameClassDialog::renameClass()
   \param pParent - pointer to MainWindow
   */
 InformationDialog::InformationDialog(QString windowTitle, QString informationText, bool modelicaTextHighlighter, MainWindow *pMainWindow)
-  : QDialog(pMainWindow, Qt::WindowTitleHint | Qt::WindowMinMaxButtonsHint | Qt::WindowSystemMenuHint)
+  : QDialog(pMainWindow, Qt::WindowTitleHint | Qt::WindowSystemMenuHint | Qt::WindowMinMaxButtonsHint | Qt::WindowCloseButtonHint)
 {
   setAttribute(Qt::WA_DeleteOnClose);
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(windowTitle));
