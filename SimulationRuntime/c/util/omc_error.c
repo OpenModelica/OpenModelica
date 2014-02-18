@@ -161,9 +161,9 @@ void omc_assert_warning_function(FILE_INFO info, const char *msg, ...)
   fflush(NULL);
 }
 
-void omc_throw_function()
+void omc_throw_function(threadData_t *threadData)
 {
-  MMC_THROW();
+  MMC_THROW_INTERNAL();
 }
 
 void omc_terminate_function(FILE_INFO info, const char *msg, ...)
@@ -324,7 +324,8 @@ void assertStreamPrint(threadData_t *threadData, int cond, const char *format, .
     va_start(args, format);
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
     messageFunction(LOG_TYPE_ASSERT, LOG_ASSERT, 0, logBuffer, 0, NULL);
-    longjmp((threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key))->globalJumpBuffer, 1);
+    threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
+    longjmp(*threadData->globalJumpBuffer, 1);
   }
 }
 
@@ -348,7 +349,8 @@ void throwStreamPrint(threadData_t *threadData, const char *format, ...)
   va_start(args, format);
   vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
   messageFunction(LOG_TYPE_DEBUG, LOG_ASSERT, 0, logBuffer, 0, NULL);
-  longjmp((threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key))->globalJumpBuffer, 1);
+  threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
+  longjmp(*threadData->globalJumpBuffer, 1);
 }
 
 void throwStreamPrintWithEquationIndexes(threadData_t *threadData, const int *indexes, const char *format, ...)
@@ -358,5 +360,6 @@ void throwStreamPrintWithEquationIndexes(threadData_t *threadData, const int *in
   va_start(args, format);
   vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
   messageFunction(LOG_TYPE_DEBUG, LOG_ASSERT, 0, logBuffer, 0, indexes);
-  longjmp((threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key))->globalJumpBuffer, 1);
+  threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
+  longjmp(*threadData->globalJumpBuffer, 1);
 }
