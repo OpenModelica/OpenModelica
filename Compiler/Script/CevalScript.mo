@@ -5119,7 +5119,7 @@ algorithm
         dependencies = List.map1r(dependencies,stringAppend,"#include \"");
         SimCodeMain.translateFunctions(p, name, NONE(), d, {}, dependencies);
         str = Tpl.tplString(Unparsing.programExternalHeader, {cl});
-        System.writeFile(name +& "_records.c","#include <meta_modelica.h>\n" +& str);
+        System.writeFile(name +& "_records.c","#include <meta/meta_modelica.h>\n" +& str);
         cache = Util.if_(cleanCache, icache, cache);
       then (cache,env);
     else
