@@ -91,7 +91,7 @@ void plt_emit(simulation_result *self,DATA *data)
     /* cerr << "realloc simulationResultData to a size of " << maxPoints * dataSize * sizeof(double) << endl; */
     pltData->simulationResultData = (double*)realloc(pltData->simulationResultData, pltData->maxPoints * pltData->dataSize * sizeof(double));
     if(!pltData->simulationResultData) {
-      throwStreamPrint(&(data->simulationInfo.errorHandler.globalJumpBuffer), "Error allocating simulation result data of size %ld",pltData->maxPoints * pltData->dataSize);
+      throwStreamPrint("Error allocating simulation result data of size %ld",pltData->maxPoints * pltData->dataSize);
     }
     add_result(self,data,pltData->simulationResultData,&pltData->actualPoints);
   }
@@ -206,7 +206,7 @@ void plt_init(simulation_result *self,DATA *data)
   pltData->dataSize = calcDataSize(self,&(data->modelData));
   pltData->simulationResultData = (double*)malloc(self->numpoints * pltData->dataSize * sizeof(double));
   if(!pltData->simulationResultData) {
-    throwStreamPrint(&(data->simulationInfo.errorHandler.globalJumpBuffer), "Error allocating simulation result data of size %ld failed",self->numpoints * pltData->dataSize);
+    throwStreamPrint("Error allocating simulation result data of size %ld failed",self->numpoints * pltData->dataSize);
   }
   pltData->currentPos = 0;
   self->storage = pltData;
@@ -250,7 +250,7 @@ void plt_free(simulation_result *self,DATA *data)
   if(!f)
   {
     deallocResult(pltData);
-    throwStreamPrint(&(data->simulationInfo.errorHandler.globalJumpBuffer), "Error, couldn't create output file: [%s] because of %s", self->filename, strerror(errno));
+    throwStreamPrint("Error, couldn't create output file: [%s] because of %s", self->filename, strerror(errno));
   }
 
   /* Rather ugly numbers than unneccessary rounding.
@@ -347,7 +347,7 @@ void plt_free(simulation_result *self,DATA *data)
   deallocResult(pltData);
   if(fclose(f))
   {
-    throwStreamPrint(&(data->simulationInfo.errorHandler.globalJumpBuffer), "Error, couldn't write to output file %s\n", self->filename);
+    throwStreamPrint("Error, couldn't write to output file %s\n", self->filename);
   }
   free(self->storage);
   self->storage = NULL;

@@ -95,8 +95,6 @@ static int interactiveSimulation = 0; /* This variable signals if an simulation 
   static int sim_communication_port_open = 0;
 #endif
 
-static jmp_buf globalJumpBuf;   /* static jmp_buf for omc_throw_simulation to throw error from external functions e.g. ModelicaError(string) */
-
 int terminationTerminate = 0; /* Becomes non-zero when user terminates simulation. */
 FILE_INFO TermInfo;           /* message for termination. */
 
@@ -138,7 +136,7 @@ static void setTermMsg(const char *msg, va_list ap)
  *
  *  Valid flags: see LOG_STREAM_NAME in omc_error.c
  */
-void setGlobalVerboseLevel(int argc, char**argv, jmp_buf* globalJmpBuffer)
+void setGlobalVerboseLevel(int argc, char**argv)
 {
   const char *cflags = omc_flagValue[FLAG_LV];
   const string *flags = cflags ? new string(cflags) : NULL;
@@ -195,7 +193,7 @@ void setGlobalVerboseLevel(int argc, char**argv, jmp_buf* globalJmpBuffer)
         for(i=firstOMCErrorStream; i<LOG_MAX; ++i)
           warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", LOG_STREAM_NAME[i], LOG_STREAM_DESC[i]);
         messageClose(LOG_STDOUT);
-        throwStreamPrint(globalJmpBuffer, "unrecognized option -lv %s", flags->c_str());
+        throwStreamPrint("unrecognized option -lv %s", flags->c_str());
       }
     }while(pos != string::npos);
   }
@@ -236,7 +234,7 @@ void setGlobalVerboseLevel(int argc, char**argv, jmp_buf* globalJmpBuffer)
   delete flags;
 }
 
-int getNonlinearSolverMethod(int argc, char**argv, jmp_buf* globalJmpBuffer)
+int getNonlinearSolverMethod(int argc, char**argv)
 {
   int i;
   const char *cflags = omc_flagValue[FLAG_NLS];
@@ -253,12 +251,12 @@ int getNonlinearSolverMethod(int argc, char**argv, jmp_buf* globalJmpBuffer)
   for(i=1; i<NLS_MAX; ++i)
     warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", NLS_NAME[i], NLS_DESC[i]);
   messageClose(LOG_STDOUT);
-  throwStreamPrint(globalJmpBuffer, "see last warning");
+  throwStreamPrint("see last warning");
 
   return NLS_NONE;
 }
 
-int getlinearSolverMethod(int argc, char**argv, jmp_buf* globalJmpBuffer)
+int getlinearSolverMethod(int argc, char**argv)
 {
   const char *cflags = omc_flagValue[FLAG_LS];
   const string *method = cflags ? new string(cflags) : NULL;
@@ -276,7 +274,7 @@ int getlinearSolverMethod(int argc, char**argv, jmp_buf* globalJmpBuffer)
   warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", "lapack", "default method");
   warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", "lis", "Lis");
   messageClose(LOG_STDOUT);
-  throwStreamPrint(globalJmpBuffer, "see last warning");
+  throwStreamPrint("see last warning");
   return LS_NONE;
 }
 
@@ -466,7 +464,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
 
   if(measure_time_flag)
   {
-    modelInfoXmlInit(&data->modelData.modelDataXml, &(data->simulationInfo.errorHandler.globalJumpBuffer));
+    modelInfoXmlInit(&data->modelData.modelDataXml);
     //std::cerr << "ModelData with " << data->modelData.modelDataXml.nFunctions << " functions and " << data->modelData.modelDataXml.nEquations << " equations and " << data->modelData.modelDataXml.nProfileBlocks << " profileBlocks\n" << std::endl;
     rt_init(SIM_TIMER_FIRST_FUNCTION + data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nEquations + data->modelData.modelDataXml.nProfileBlocks + 4 /* sentinel */);
     rt_tick(SIM_TIMER_TOTAL);
@@ -633,7 +631,7 @@ int initializeResultData(DATA* simData, string result_file_cstr, int cpuTime)
  * "dassl" & "dassl2" calls the same DASSL Solver with synchronous event handling
  * "dopri5" calls an embedded DOPRI5(4)-solver with stepsize control
  */
-int callSolver(DATA* data, string result_file_cstr, string init_initMethod,
+int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
     string init_optiMethod, string init_file, double init_time, int lambda_steps, string outputVariablesAtEnd, int cpuTime)
 {
   int retVal = -1;
@@ -641,28 +639,28 @@ int callSolver(DATA* data, string result_file_cstr, string init_initMethod,
   long solverID = S_UNKNOWN;
   const char* outVars = (outputVariablesAtEnd.size() == 0) ? NULL : outputVariablesAtEnd.c_str();
 
-  if(initializeResultData(data, result_file_cstr, cpuTime))
+  if(initializeResultData(simData, result_file_cstr, cpuTime))
     return -1;
 
-  if(std::string("") == data->simulationInfo.solverMethod)
+  if(std::string("") == simData->simulationInfo.solverMethod)
     solverID = S_DASSL;
   else
   {
     for(i=1; i<S_MAX; ++i)
     {
-      if(std::string(SOLVER_METHOD_NAME[i]) == data->simulationInfo.solverMethod)
+      if(std::string(SOLVER_METHOD_NAME[i]) == simData->simulationInfo.solverMethod)
         solverID = i;
     }
   }
 
   if(S_UNKNOWN == solverID)
   {
-    warningStreamPrint(LOG_STDOUT, 0, "unrecognized option -s %s", data->simulationInfo.solverMethod);
+    warningStreamPrint(LOG_STDOUT, 0, "unrecognized option -s %s", simData->simulationInfo.solverMethod);
     warningStreamPrint(LOG_STDOUT, 0, "current options are:");
     for(i=1; i<S_MAX; ++i) {
       warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", SOLVER_METHOD_NAME[i], SOLVER_METHOD_DESC[i]);
     }
-    throwStreamPrint(&(data->simulationInfo.errorHandler.globalJumpBuffer), "see last warning");
+    throwStreamPrint("see last warning");
     retVal = 1;
   }
   else
@@ -672,16 +670,16 @@ int callSolver(DATA* data, string result_file_cstr, string init_initMethod,
 #ifdef _OMC_QSS_LIB
     if(S_QSS == solverID)
     {
-      retVal = qss_main(argc, argv, data->simulationInfo.startTime,
-                        data->simulationInfo.stopTime, data->simulationInfo.stepSize,
-                        data->simulationInfo.numSteps, data->simulationInfo.tolerance, 3);
+      retVal = qss_main(argc, argv, simData->simulationInfo.startTime,
+                        simData->simulationInfo.stopTime, simData->simulationInfo.stepSize,
+                        simData->simulationInfo.numSteps, simData->simulationInfo.tolerance, 3);
     }
     else /* standard solver interface */
 #endif
-      retVal = solver_main(data, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, lambda_steps, solverID, outVars);
+      retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, lambda_steps, solverID, outVars);
   }
 
-  sim_result.free(&sim_result, data);
+  sim_result.free(&sim_result, simData);
 
   return retVal;
 }
@@ -775,15 +773,15 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
     EXIT(0);
   }
 
-  setGlobalVerboseLevel(argc, argv, &(data->simulationInfo.errorHandler.globalJumpBuffer));
+  setGlobalVerboseLevel(argc, argv);
   initializeDataStruc(data);
   if(!data)
   {
     std::cerr << "Error: Could not initialize the global data structure file" << std::endl;
   }
 
-  data->simulationInfo.nlsMethod = getNonlinearSolverMethod(argc, argv,  &(data->simulationInfo.errorHandler.globalJumpBuffer));
-  data->simulationInfo.lsMethod = getlinearSolverMethod(argc, argv,  &(data->simulationInfo.errorHandler.globalJumpBuffer));
+  data->simulationInfo.nlsMethod = getNonlinearSolverMethod(argc, argv);
+  data->simulationInfo.lsMethod = getlinearSolverMethod(argc, argv);
 
   read_input_xml(&(data->modelData), &(data->simulationInfo));
 
@@ -874,11 +872,8 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data)
 {
   int retVal = -1;
 
-  if(!setjmp(data->simulationInfo.errorHandler.globalJumpBuffer))
+  if(!setjmp(globalJmpbuf))
   {
-  /* set static globalJumpBuf */
-  memcpy(data->simulationInfo.errorHandler.globalJumpBuffer, globalJumpBuf, sizeof(jmp_buf));
-
     if(initRuntimeAndSimulation(argc, argv, data)) //initRuntimeAndSimulation returns 1 if an error occurs
       return 1;
 
@@ -921,10 +916,10 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data)
   return retVal;
 }
 
-static void omc_assert_simulation(ERROR_HANDLE* omcErrorHandle, FILE_INFO info, const char *msg, ...)
+static void omc_assert_simulation(FILE_INFO info, const char *msg, ...)
 {
   va_list ap;
-  switch (omcErrorHandle->currentErrorStage)
+  switch (currectJumpState)
   {
   case ERROR_SIMULATION:
     va_start(ap,msg);
@@ -933,7 +928,7 @@ static void omc_assert_simulation(ERROR_HANDLE* omcErrorHandle, FILE_INFO info, 
     fputs("\n",stderr);
     va_end(ap);
     fflush(NULL);
-    longjmp(omcErrorHandle->simulationJumpBuffer,1);
+    longjmp(simulationJmpbuf,1);
     break;
   case ERROR_NONLINEARSOLVER:
     if(ACTIVE_STREAM(LOG_NLS))
@@ -946,7 +941,7 @@ static void omc_assert_simulation(ERROR_HANDLE* omcErrorHandle, FILE_INFO info, 
       va_end(ap);
     }
 #ifndef OMC_EMCC
-    longjmp(omcErrorHandle->simulationJumpBuffer,1);
+    longjmp(nonlinearJmpbuf,1);
 #endif
     break;
   case ERROR_INTEGRATOR:
@@ -959,7 +954,7 @@ static void omc_assert_simulation(ERROR_HANDLE* omcErrorHandle, FILE_INFO info, 
       fflush(NULL);
       va_end(ap);
     }
-    longjmp(omcErrorHandle->simulationJumpBuffer,1);
+    longjmp(integratorJmpbuf,1);
     break;
   case ERROR_EVENTSEARCH:
   case ERROR_OPTIMIZE:
@@ -968,7 +963,7 @@ static void omc_assert_simulation(ERROR_HANDLE* omcErrorHandle, FILE_INFO info, 
      */
     break;
   default:
-    throwStreamPrint(&(omcErrorHandle->globalJumpBuffer), "Unhandled Assertion-Error");
+    throwStreamPrint("Unhandled Assertion-Error");
   }
 }
 
@@ -998,10 +993,19 @@ static void omc_throw_simulation()
   va_list ap;
   setTermMsg("Assertion triggered by external C function", ap);
   set_struct(FILE_INFO, TermInfo, omc_dummyFileInfo);
-  longjmp(globalJumpBuf, 1);
+  longjmp(globalJmpbuf, 1);
 }
 
-void (*omc_assert)(ERROR_HANDLE* omcErrorHandle, FILE_INFO info, const char *msg, ...) = omc_assert_simulation;
+void (*omc_assert)(FILE_INFO info, const char *msg, ...) = omc_assert_simulation;
 void (*omc_assert_warning)(FILE_INFO info, const char *msg, ...) = omc_assert_warning_simulation;
 void (*omc_terminate)(FILE_INFO info, const char *msg, ...) = omc_terminate_simulation;
 void (*omc_throw)() = omc_throw_simulation;
+
+/* simulation JumpBuffer */
+jmp_buf simulationJmpbuf;
+
+/* integrator JumpBuffer */
+jmp_buf integratorJmpbuf;
+
+/* indicates the current possible jump place */
+int currectJumpState;

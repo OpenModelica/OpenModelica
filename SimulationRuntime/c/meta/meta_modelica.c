@@ -397,14 +397,14 @@ void* mmc_anyString(void* any)
   return mmc_mk_scon(anyStringBuf);
 }
 
-modelica_metatype mmc_gdb_listGet(ERROR_HANDLE* omcErrorHandle,threadData_t* threadData, modelica_metatype lst, modelica_integer i)
+modelica_metatype mmc_gdb_listGet(threadData_t* threadData, modelica_metatype lst, modelica_integer i)
 {
-  return boxptr_listGet(omcErrorHandle,threadData, lst, mmc_mk_icon(i));
+  return boxptr_listGet(threadData, lst, mmc_mk_icon(i));
 }
 
-modelica_metatype mmc_gdb_arrayGet(ERROR_HANDLE* omcErrorHandle,threadData_t* threadData, modelica_metatype arr, modelica_integer i)
+modelica_metatype mmc_gdb_arrayGet(threadData_t* threadData, modelica_metatype arr, modelica_integer i)
 {
-  return boxptr_arrayGet(omcErrorHandle,threadData, arr, mmc_mk_icon(i));
+  return boxptr_arrayGet(threadData, arr, mmc_mk_icon(i));
 }
 
 void printAny(void* any)
@@ -846,7 +846,7 @@ modelica_integer valueHashMod(void *p, modelica_integer mod)
   return res;
 }
 
-void* boxptr_valueHashMod(ERROR_HANDLE* omcErrorHandle,threadData_t *threadData,void *p, void *mod)
+void* boxptr_valueHashMod(threadData_t *threadData,void *p, void *mod)
 {
   return mmc_mk_icon(mmc_prim_hash(p,5381) % (unsigned long) mmc_unbox_integer(mod));
 }

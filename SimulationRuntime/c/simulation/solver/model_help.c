@@ -96,7 +96,7 @@ void updateDiscreteSystem(DATA *data)
 
     IterationNum++;
     if(IterationNum > IterationMax)
-      throwStreamPrint(&(data->simulationInfo.errorHandler.globalJumpBuffer), "ERROR: Too many event iterations. System is inconsistent. Simulation terminate.");
+      throwStreamPrint("ERROR: Too many event iterations. System is inconsistent. Simulation terminate.");
 
     relationChanged = checkRelations(data);
     discreteChanged = data->callback->checkForDiscreteChanges(data);
@@ -751,7 +751,7 @@ void initializeDataStruc(DATA *data)
   data->simulationData = allocRingBuffer(SIZERINGBUFFER, sizeof(SIMULATION_DATA));
   if(!data->simulationData)
   {
-    throwStreamPrint(&(data->simulationInfo.errorHandler.globalJumpBuffer), "Your memory is not strong enough for our Ringbuffer!");
+    throwStreamPrint("Your memory is not strong enough for our Ringbuffer!");
   }
 
   /* prepare RingBuffer */

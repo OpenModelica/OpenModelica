@@ -81,9 +81,9 @@
     NLS_KINSOL_DATA *kinsolData;
 
     if (useStream[LOG_NLS]) {
-      infoStreamPrint(LOG_NLS, 1, "allocate memory for %s", modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber, &(data->simulationInfo.errorHandler.globalJumpBuffer)).name);
+      infoStreamPrint(LOG_NLS, 1, "allocate memory for %s", modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber).name);
       for(i=0; i<size; ++i) {
-        infoStreamPrint(LOG_NLS, 0, "[%d] %s", i+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber, &(data->simulationInfo.errorHandler.globalJumpBuffer)).vars[i]->name);
+        infoStreamPrint(LOG_NLS, 0, "[%d] %s", i+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber).vars[i]->name);
       }
       messageClose(LOG_NLS);
     }
@@ -104,7 +104,7 @@
     return 0;
   }
 
-  int nls_kinsol_free(DATA* data, NONLINEAR_SYSTEM_DATA *nlsData)
+  int nls_kinsol_free(NONLINEAR_SYSTEM_DATA *nlsData)
   {
     NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA*) nlsData->solverData;
 
@@ -154,7 +154,7 @@
 
     if(ACTIVE_STREAM(LOG_NLS))
     {
-      warningStreamPrint(LOG_NLS, 1, "kinsol failed for %s", modelInfoXmlGetEquation(&kinsolData->data->modelData.modelDataXml,eqSystemNumber, &(kinsolData->data->simulationInfo.errorHandler.globalJumpBuffer)).name);
+      warningStreamPrint(LOG_NLS, 1, "kinsol failed for %s", modelInfoXmlGetEquation(&kinsolData->data->modelData.modelDataXml,eqSystemNumber).name);
 
       warningStreamPrint(LOG_NLS, 0, "[module] %s | [function] %s | [error_code] %d", module, function, error_code);
       warningStreamPrint(LOG_NLS, 0, "%s", msg);
@@ -252,11 +252,11 @@
     KINDlsGetNumFuncEvals(kmem, &nfeD);
 
     /* solution */
-    infoStreamPrint(LOG_NLS, 1, "solution for %s at t=%g", modelInfoXmlGetEquation(&kinsolData->data->modelData.modelDataXml,eqSystemNumber, &(data->simulationInfo.errorHandler.globalJumpBuffer)).name, kinsolData->data->localData[0]->timeValue);
+    infoStreamPrint(LOG_NLS, 1, "solution for %s at t=%g", modelInfoXmlGetEquation(&kinsolData->data->modelData.modelDataXml,eqSystemNumber).name, kinsolData->data->localData[0]->timeValue);
     for(i=0; i<size; ++i)
     {
       kinsolData->nlsData->nlsx[i] = NV_Ith_S(z, i);
-      infoStreamPrint(LOG_NLS, 0, "[%ld] %s = %g", i+1, modelInfoXmlGetEquation(&kinsolData->data->modelData.modelDataXml,eqSystemNumber, &(data->simulationInfo.errorHandler.globalJumpBuffer)).vars[i]->name,  kinsolData->nlsData->nlsx[i]);
+      infoStreamPrint(LOG_NLS, 0, "[%ld] %s = %g", i+1, modelInfoXmlGetEquation(&kinsolData->data->modelData.modelDataXml,eqSystemNumber).vars[i]->name,  kinsolData->nlsData->nlsx[i]);
     }
 
     infoStreamPrint(LOG_NLS, 0, "KINGetNumNonlinSolvIters = %5ld", nni);
@@ -303,19 +303,19 @@
 
   int nls_kinsol_allocate(DATA *data, NONLINEAR_SYSTEM_DATA *nlsData)
   {
-    throwStreamPrint(&(data->simulationInfo.errorHandler.globalJumpBuffer), "no sundials/kinsol support activated");
+    throwStreamPrint("no sundials/kinsol support activated");
     return 0;
   }
 
-  int nls_kinsol_free(DATA *data, NONLINEAR_SYSTEM_DATA *nlsData)
+  int nls_kinsol_free(NONLINEAR_SYSTEM_DATA *nlsData)
   {
-    throwStreamPrint(&(data->simulationInfo.errorHandler.globalJumpBuffer), "no sundials/kinsol support activated");
+    throwStreamPrint("no sundials/kinsol support activated");
     return 0;
   }
 
   int nonlinearSolve_kinsol(DATA *data, int sysNumber)
   {
-    throwStreamPrint(&(data->simulationInfo.errorHandler.globalJumpBuffer), "no sundials/kinsol support activated");
+    throwStreamPrint("no sundials/kinsol support activated");
     return 0;
   }
 

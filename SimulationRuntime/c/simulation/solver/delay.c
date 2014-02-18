@@ -122,7 +122,7 @@ double delayImpl(DATA* data, int exprNumber, double exprValue, double time, doub
 
   if(delayTime < 0.0)
   {
-    throwStreamPrint(&(data->simulationInfo.errorHandler.globalJumpBuffer), "Negative delay requested %g", delayTime);
+    throwStreamPrint("Negative delay requested %g", delayTime);
   }
 
   if(length == 0)

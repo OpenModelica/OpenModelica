@@ -33,9 +33,9 @@
 #ifndef OMC_ERROR_H
 #define OMC_ERROR_H
 
-#include "openmodelica.h"
 #include "omc_msvc.h"
 
+#include <setjmp.h>
 #include <stdio.h>
 
 #ifdef __cplusplus
@@ -53,16 +53,30 @@ typedef struct _FILE_INFO
 } FILE_INFO;
 
 extern void printInfo(FILE *stream, FILE_INFO info);
-extern void (*omc_assert)(ERROR_HANDLE*,FILE_INFO,const char*, ...);
+extern void (*omc_assert)(FILE_INFO,const char*, ...);
 extern void (*omc_assert_warning)(FILE_INFO,const char*, ...);
 extern void (*omc_terminate)(FILE_INFO,const char*, ...);
 extern void (*omc_throw)();
 void initDumpSystem();
-void omc_assert_function(ERROR_HANDLE *omcErrorHandle,FILE_INFO info, const char *msg, ...);
+void omc_assert_function(FILE_INFO info, const char *msg, ...);
 void omc_assert_warning_function(FILE_INFO info, const char *msg, ...);
 void omc_terminate_function(FILE_INFO info, const char *msg, ...);
 void omc_throw_function();
 
+/* global JumpBuffer */
+extern jmp_buf globalJmpbuf;
+
+enum ERROR_HANDLE
+{
+  ERROR_UNKOWN = 0,
+  ERROR_SIMULATION,
+  ERROR_INTEGRATOR,
+  ERROR_NONLINEARSOLVER,
+  ERROR_EVENTSEARCH,
+  ERROR_OPTIMIZE,
+
+  ERROR_MAX
+};
 
 /* #define USE_DEBUG_OUTPUT */
 
@@ -142,12 +156,12 @@ extern void warningStreamPrint(int stream, int indentNext, const char *format, .
 extern void warningStreamPrintWithEquationIndexes(int stream, int indentNext, const int *indexes, const char *format, ...) __attribute__ ((format (printf, 4, 5)));
 extern void errorStreamPrint(int stream, int indentNext, const char *format, ...) __attribute__ ((format (printf, 3, 4)));
 extern void assertStreamPrint(int cond, const char *format, ...) __attribute__ ((format (printf, 2, 3)));
-extern void throwStreamPrint(jmp_buf* globalJmpBuffer, const char *format, ...) __attribute__ ((format (printf, 2, 3), noreturn));
-extern void throwStreamPrintWithEquationIndexes(jmp_buf* globalJmpBuffer, const int *indexes, const char *format, ...) __attribute__ ((format (printf, 3, 4), noreturn));
+extern void throwStreamPrint(const char *format, ...) __attribute__ ((format (printf, 1, 2), noreturn));
+extern void throwStreamPrintWithEquationIndexes(const int *indexes, const char *format, ...) __attribute__ ((format (printf, 2, 3), noreturn));
 
 #ifdef USE_DEBUG_OUTPUT
-void debugStreamPrint(jmp_buf* globalJmpBuffer, int stream, int indentNext, const char *format, ...) __attribute__ ((format (printf, 4, 5)));
-void debugStreamPrintWithEquationIndexes(jmp_buf* globalJmpBuffer, int stream, int indentNext, const int *indexes, const char *format, ...) __attribute__ ((format (printf, 5, 6)));
+void debugStreamPrint(int stream, int indentNext, const char *format, ...) __attribute__ ((format (printf, 3, 4)));
+void debugStreamPrintWithEquationIndexes(int stream, int indentNext, const int *indexes, const char *format, ...) __attribute__ ((format (printf, 4, 5)));
 #else
 static OMC_INLINE void debugStreamPrint(int stream, int indentNext, const char *format, ...) __attribute__ ((format (printf, 3, 4)));
 static OMC_INLINE void debugStreamPrint(int stream, int indentNext, const char *format, ...) {/* Do nothing */}

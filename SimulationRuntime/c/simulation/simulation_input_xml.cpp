@@ -98,7 +98,7 @@ typedef struct omc_ModelInput
 // a map for overrides
 typedef std::map<std::string, std::string> omc_CommandLineOverrides;
 // function to handle command line settings override
-void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, SIMULATION_INFO* simulationInfo, const char* override, const char* overrideFile);
+void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override, const char* overrideFile);
 
 static double REAL_MIN = -std::numeric_limits<double>::max();
 static double REAL_MAX = std::numeric_limits<double>::max();
@@ -234,7 +234,7 @@ void read_input_xml(MODEL_DATA* modelData,
     file = fopen(filename.c_str(), "r");
     if(!file)
     {
-      throwStreamPrint(&(simulationInfo->errorHandler.globalJumpBuffer), "simulation_input_xml.cpp: Error: can not read file %s as setup file to the generated simulation code.",filename.c_str());
+      throwStreamPrint("simulation_input_xml.cpp: Error: can not read file %s as setup file to the generated simulation code.",filename.c_str());
     }
   }
   /* create the XML parser */
@@ -242,7 +242,7 @@ void read_input_xml(MODEL_DATA* modelData,
   if(!parser)
   {
     fclose(file);
-    throwStreamPrint(&(simulationInfo->errorHandler.globalJumpBuffer), "simulation_input_xml.cpp: Error: couldn't allocate memory for the XML parser!");
+    throwStreamPrint("simulation_input_xml.cpp: Error: couldn't allocate memory for the XML parser!");
   }
   /* set our user data */
   XML_SetUserData(parser, &mi);
@@ -264,7 +264,7 @@ void read_input_xml(MODEL_DATA* modelData,
             XML_ErrorString(XML_GetErrorCode(parser)),
             XML_GetCurrentLineNumber(parser));
         XML_ParserFree(parser);
-        throwStreamPrint(&(simulationInfo->errorHandler.globalJumpBuffer), "see last warning");
+        throwStreamPrint("see last warning");
       }
     }while(!done);
     fclose(file);
@@ -277,7 +277,7 @@ void read_input_xml(MODEL_DATA* modelData,
              XML_ErrorString(XML_GetErrorCode(parser)),
              XML_GetCurrentLineNumber(parser));
     XML_ParserFree(parser);
-    throwStreamPrint(&(simulationInfo->errorHandler.globalJumpBuffer), "see last warning");
+    throwStreamPrint("see last warning");
   }
 
   /* now we should have all the data inside omc_ModelInput mi. */
@@ -298,13 +298,13 @@ void read_input_xml(MODEL_DATA* modelData,
         mi.md["guid"].c_str(),
         filename.c_str(),
         modelData->modelGUID);
-    throwStreamPrint(&(simulationInfo->errorHandler.globalJumpBuffer), "see last warning");
+    throwStreamPrint("see last warning");
   }
 
   // deal with override
   const char* override = omc_flagValue[FLAG_OVERRIDE];
   const char* overrideFile = omc_flagValue[FLAG_OVERRIDE_FILE];
-  doOverride(mi, modelData, simulationInfo, override, overrideFile);
+  doOverride(mi, modelData, override, overrideFile);
 
   /* read all the DefaultExperiment values */
   infoStreamPrint(LOG_SOLVER, 1, "read all the DefaultExperiment values:");
@@ -891,7 +891,7 @@ void read_input_xml(MODEL_DATA* modelData,
     else
     {
       std::string msg = "Real Alias variable " + aliasTmp + " not found.";
-      throwStreamPrint(&(simulationInfo->errorHandler.globalJumpBuffer), "%s", msg.c_str());
+      throwStreamPrint("%s", msg.c_str());
     }
     debugStreamPrint(LOG_DEBUG, 0, "read for %s aliasID %d from %s from setup file",
                 modelData->realAlias[i].info.name,
@@ -959,7 +959,7 @@ void read_input_xml(MODEL_DATA* modelData,
     else
     {
       std::string msg = "Integer Alias variable " + aliasTmp + " not found.";
-      throwStreamPrint(&(simulationInfo->errorHandler.globalJumpBuffer), "%s", msg.c_str());
+      throwStreamPrint("%s", msg.c_str());
     }
     debugStreamPrint(LOG_DEBUG, 0, "read for %s aliasID %d from %s from setup file",
                 modelData->integerAlias[i].info.name,
@@ -1027,7 +1027,7 @@ void read_input_xml(MODEL_DATA* modelData,
     else
     {
       std::string msg = "Boolean Alias variable " + aliasTmp + " not found.";
-      throwStreamPrint(&(simulationInfo->errorHandler.globalJumpBuffer), "%s", msg.c_str());
+      throwStreamPrint("%s", msg.c_str());
     }
     debugStreamPrint(LOG_DEBUG, 0, "read for %s aliasID %d from %s from setup file",
                 modelData->booleanAlias[i].info.name,
@@ -1095,7 +1095,7 @@ void read_input_xml(MODEL_DATA* modelData,
     else
     {
       std::string msg = "String Alias variable " + aliasTmp + " not found.";
-      throwStreamPrint(&(simulationInfo->errorHandler.globalJumpBuffer), "%s", msg.c_str());
+      throwStreamPrint("%s", msg.c_str());
     }
     debugStreamPrint(LOG_DEBUG, 0, "read for %s aliasID %d from %s from setup file",
                 modelData->stringAlias[i].info.name,
@@ -1178,12 +1178,12 @@ inline void read_value(std::string s, int* res)
 }
 
 
-void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, SIMULATION_INFO* simulationInfo, const char* override, const char* overrideFile)
+void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override, const char* overrideFile)
 {
   omc_CommandLineOverrides mOverrides;
   char* overrideStr = NULL;
   if((override != NULL) && (overrideFile != NULL)) {
-    throwStreamPrint(&(simulationInfo->errorHandler.globalJumpBuffer), "simulation_input_xml.cpp: usage error you cannot have both -override and -overrideFile active at the same time. see Model -? for more info!");
+    throwStreamPrint("simulation_input_xml.cpp: usage error you cannot have both -override and -overrideFile active at the same time. see Model -? for more info!");
   }
 
   if(override != NULL) {
@@ -1197,7 +1197,7 @@ void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, SIMULATION_INFO* simu
 
     infile.open(overrideFile, ifstream::in);
     if(infile.is_open() == false) {
-      throwStreamPrint(&(simulationInfo->errorHandler.globalJumpBuffer), "simulation_input_xml.cpp: could not open the file given to -overrideFile=%s", overrideFile);
+      throwStreamPrint("simulation_input_xml.cpp: could not open the file given to -overrideFile=%s", overrideFile);
     }
 
     std::string line;

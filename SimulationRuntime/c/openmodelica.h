@@ -47,7 +47,6 @@ extern "C" {
 #include <limits.h>
 #include <assert.h>
 #include <float.h>
-#include <setjmp.h>
 
 /* adrpo: extreme windows crap! */
 #if defined(__MINGW32__) || defined(_MSC_VER)
@@ -252,43 +251,6 @@ typedef struct threadData_s {
   jmp_buf *mmc_thread_work_exit;
   void *localRoots[MAX_LOCAL_ROOTS];
 } threadData_t;
-
-
-/*
- * ERROR_STAGE defines different
- * stages where an assertion can be triggered.
- *
- */
-typedef enum
-{
-  ERROR_UNKOWN = 0,
-  ERROR_SIMULATION,
-  ERROR_INTEGRATOR,
-  ERROR_NONLINEARSOLVER,
-  ERROR_EVENTSEARCH,
-  ERROR_OPTIMIZE,
-
-  ERROR_MAX
-} ERROR_STAGE;
-
-/* ERROR_HANDLE
- *
- * Used to handle errors via setjmp and longjmp.
- *
- * simulationJumpBufer:
- *  Jump-buffer to handle simulation error
- *  like asserts or divisions by zero.
- *
- * currentJumpStage:
- *   define which simulation jump buffer
- *   is currently used.
- */
-typedef struct ERROR_HANDLE
-{
-  jmp_buf globalJumpBuffer;
-  jmp_buf simulationJumpBuffer;
-  int currentErrorStage;
-} ERROR_HANDLE;
 
 /* math functions (-lm)*/
 

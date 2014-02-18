@@ -142,7 +142,7 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID,
   setAllVarsToStart(comp->fmuData);
   setAllParamsToStart(comp->fmuData);
   read_input_xml(&(comp->fmuData->modelData), &(comp->fmuData->simulationInfo));
-  modelInfoXmlInit(&(comp->fmuData->modelData.modelDataXml), &(comp->fmuData->simulationInfo.errorHandler.globalJumpBuffer));
+  modelInfoXmlInit(&(comp->fmuData->modelData.modelDataXml));
 
   comp->instanceName = instanceName;
   comp->GUID = GUID;

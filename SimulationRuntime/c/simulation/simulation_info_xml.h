@@ -37,10 +37,10 @@
 extern "C" {
 #endif
 
-FUNCTION_INFO modelInfoXmlGetFunction(MODEL_DATA_XML*,size_t, jmp_buf* globalJmpBuffer);
-void modelInfoXmlInit(MODEL_DATA_XML*, jmp_buf* globalJmpBuffer);
-EQUATION_INFO modelInfoXmlGetEquation(MODEL_DATA_XML*,size_t, jmp_buf* globalJmpBuffer);
-EQUATION_INFO modelInfoXmlGetEquationIndexByProfileBlock(MODEL_DATA_XML*,size_t, jmp_buf* globalJmpBuffer);
+FUNCTION_INFO modelInfoXmlGetFunction(MODEL_DATA_XML*,size_t);
+void modelInfoXmlInit(MODEL_DATA_XML*);
+EQUATION_INFO modelInfoXmlGetEquation(MODEL_DATA_XML*,size_t);
+EQUATION_INFO modelInfoXmlGetEquationIndexByProfileBlock(MODEL_DATA_XML*,size_t);
 void freeModelInfoXml(MODEL_DATA_XML*);
 
 #ifdef __cplusplus

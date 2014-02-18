@@ -63,14 +63,14 @@ metamodelica_string intString(modelica_integer i)
   return res;
 }
 
-modelica_metatype boxptr_intMax(ERROR_HANDLE *omcErrorHandle,threadData_t *threadData,modelica_metatype a,modelica_metatype b)
+modelica_metatype boxptr_intMax(threadData_t *threadData,modelica_metatype a,modelica_metatype b)
 {
   /* We need to unbox because pointers may be unsigned */
   return mmc_unbox_integer(a) > mmc_unbox_integer(b) ? a : b;
 }
 
 
-modelica_metatype boxptr_intMin(ERROR_HANDLE *omcErrorHandle,threadData_t *threadData,modelica_metatype a,modelica_metatype b)
+modelica_metatype boxptr_intMin(threadData_t *threadData,modelica_metatype a,modelica_metatype b)
 {
   /* We need to unbox because pointers may be unsigned */
   return mmc_unbox_integer(a) < mmc_unbox_integer(b) ? a : b;
@@ -79,7 +79,7 @@ modelica_metatype boxptr_intMin(ERROR_HANDLE *omcErrorHandle,threadData_t *threa
 
 /* String Character Conversion */
 
-modelica_metatype boxptr_stringCharInt(ERROR_HANDLE *omcErrorHandle,threadData_t *threadData,metamodelica_string chr)
+modelica_metatype boxptr_stringCharInt(threadData_t *threadData,metamodelica_string chr)
 {
   unsigned char c;
   if (MMC_STRLEN(chr) != 1)
@@ -89,7 +89,7 @@ modelica_metatype boxptr_stringCharInt(ERROR_HANDLE *omcErrorHandle,threadData_t
   return mmc_mk_icon(c);
 }
 
-metamodelica_string boxptr_intStringChar(ERROR_HANDLE *omcErrorHandle,threadData_t *threadData,modelica_metatype iix)
+metamodelica_string boxptr_intStringChar(threadData_t *threadData,modelica_metatype iix)
 {
   modelica_integer ix = MMC_UNTAGFIXNUM(iix);
   char chr[2];
@@ -102,7 +102,7 @@ metamodelica_string boxptr_intStringChar(ERROR_HANDLE *omcErrorHandle,threadData
 
 /* String Operations */
 
-modelica_metatype boxptr_stringInt(ERROR_HANDLE *omcErrorHandle,threadData_t *threadData,metamodelica_string s)
+modelica_metatype boxptr_stringInt(threadData_t *threadData,metamodelica_string s)
 {
   long res;
   char *endptr,*str=MMC_STRINGDATA(s);
@@ -119,7 +119,7 @@ modelica_metatype boxptr_stringInt(ERROR_HANDLE *omcErrorHandle,threadData_t *th
   return mmc_mk_icon(res);
 }
 
-modelica_metatype boxptr_stringReal(ERROR_HANDLE *omcErrorHandle,threadData_t *threadData,metamodelica_string s)
+modelica_metatype boxptr_stringReal(threadData_t *threadData,metamodelica_string s)
 {
   double res;
   char *endptr,*str=MMC_STRINGDATA(s);
@@ -134,7 +134,7 @@ modelica_metatype boxptr_stringReal(ERROR_HANDLE *omcErrorHandle,threadData_t *t
   return mmc_mk_rcon(res);
 }
 
-modelica_metatype boxptr_stringEq(ERROR_HANDLE *omcErrorHandle,threadData_t *threadData,modelica_metatype a, modelica_metatype b)
+modelica_metatype boxptr_stringEq(threadData_t *threadData,modelica_metatype a, modelica_metatype b)
 {
   return mmc_mk_bcon(stringEqual(a,b));
 }
@@ -192,7 +192,7 @@ modelica_integer stringHashDjb2Mod(metamodelica_string_const s, modelica_integer
   return res;
 }
 
-modelica_metatype boxptr_stringHashDjb2Mod(ERROR_HANDLE *omcErrorHandle,threadData_t *threadData,modelica_metatype v,modelica_metatype mod)
+modelica_metatype boxptr_stringHashDjb2Mod(threadData_t *threadData,modelica_metatype v,modelica_metatype mod)
 {
   return mmc_mk_icon(stringHashDjb2Mod(v,mmc_unbox_integer(mod)));
 }
@@ -207,19 +207,19 @@ modelica_integer stringHashSdbm(metamodelica_string_const s)
 
 /******************** BOXED String HASH Functions ********************/
 /* adrpo: really bad hash :) */
-modelica_metatype boxptr_stringHash(ERROR_HANDLE *omcErrorHandle,threadData_t *threadData,modelica_metatype str)
+modelica_metatype boxptr_stringHash(threadData_t *threadData,modelica_metatype str)
 {
   return mmc_mk_icon(stringHash(str));
 }
 
 /* adrpo: see the comment above about djb2 hash */
-modelica_metatype boxptr_stringHashDjb2(ERROR_HANDLE *omcErrorHandle,threadData_t *threadData,modelica_metatype str)
+modelica_metatype boxptr_stringHashDjb2(threadData_t *threadData,modelica_metatype str)
 {
   return mmc_mk_icon(stringHashDjb2(str));
 }
 
 /* adrpo: see the comment above about sdbm hash */
-modelica_metatype boxptr_stringHashSdbm(ERROR_HANDLE *omcErrorHandle,threadData_t *threadData,modelica_metatype str)
+modelica_metatype boxptr_stringHashSdbm(threadData_t *threadData,modelica_metatype str)
 {
   return mmc_mk_icon(stringHashSdbm(str));
 }
@@ -288,7 +288,7 @@ metamodelica_string stringAppendList(modelica_metatype lst)
   return p;
 }
 
-metamodelica_string boxptr_stringDelimitList(ERROR_HANDLE *omcErrorHandle,threadData_t *threadData,modelica_metatype lst, metamodelica_string_const delimiter)
+metamodelica_string boxptr_stringDelimitList(threadData_t *threadData,modelica_metatype lst, metamodelica_string_const delimiter)
 {
   /* fprintf(stderr, "stringDelimitList(%s)\n", anyString(lst)); */
   modelica_integer lstLen = 0, len = 0, lenDelimiter = 0;
@@ -363,7 +363,7 @@ modelica_integer mmc_stringCompare(const void *str1, const void *str2)
   return 0;
 }
 
-modelica_metatype boxptr_stringGetStringChar(ERROR_HANDLE *omcErrorHandle,threadData_t *threadData,metamodelica_string str, modelica_metatype iix)
+modelica_metatype boxptr_stringGetStringChar(threadData_t *threadData,metamodelica_string str, modelica_metatype iix)
 {
   int ix = MMC_UNTAGFIXNUM(iix);
   char chr[2] = {'\0','\0'};
@@ -377,7 +377,7 @@ modelica_metatype boxptr_stringGetStringChar(ERROR_HANDLE *omcErrorHandle,thread
   return res;
 }
 
-modelica_metatype boxptr_stringUpdateStringChar(ERROR_HANDLE *omcErrorHandle,threadData_t *threadData,metamodelica_string str, metamodelica_string c, modelica_metatype iix)
+modelica_metatype boxptr_stringUpdateStringChar(threadData_t *threadData,metamodelica_string str, metamodelica_string c, modelica_metatype iix)
 {
   int ix = MMC_UNTAGFIXNUM(iix);
   int length = 0;
@@ -404,7 +404,7 @@ modelica_metatype boxptr_stringUpdateStringChar(ERROR_HANDLE *omcErrorHandle,thr
   return res;
 }
 
-metamodelica_string_const boxptr_stringAppend(ERROR_HANDLE *omcErrorHandle,threadData_t *threadData,metamodelica_string_const s1, metamodelica_string_const s2)
+metamodelica_string_const boxptr_stringAppend(threadData_t *threadData,metamodelica_string_const s1, metamodelica_string_const s2)
 {
   unsigned len1 = 0, len2 = 0, nbytes = 0, header = 0, nwords = 0;
   void *res = NULL;
@@ -434,7 +434,8 @@ metamodelica_string_const boxptr_stringAppend(ERROR_HANDLE *omcErrorHandle,threa
 
 modelica_metatype boxptr_listReverse(threadData_t *threadData,modelica_metatype lst)
 {
-  modelica_metatype res = NULL; 
+  modelica_metatype res = NULL;
+
   res = mmc_mk_nil();
   while (!MMC_NILTEST(lst))
   {
@@ -444,7 +445,7 @@ modelica_metatype boxptr_listReverse(threadData_t *threadData,modelica_metatype 
   return res;
 }
 
-modelica_metatype boxptr_listAppend(ERROR_HANDLE *omcErrorHandle,threadData_t *threadData,modelica_metatype lst1,modelica_metatype lst2)
+modelica_metatype boxptr_listAppend(threadData_t *threadData,modelica_metatype lst1,modelica_metatype lst2)
 {
   int length = 0, i = 0;
   struct mmc_cons_struct *res = NULL;
@@ -481,7 +482,7 @@ modelica_integer listLength(modelica_metatype lst)
   return res;
 }
 
-modelica_metatype boxptr_listMember(ERROR_HANDLE *omcErrorHandle,threadData_t *threadData,modelica_metatype obj, modelica_metatype lst)
+modelica_metatype boxptr_listMember(threadData_t *threadData,modelica_metatype obj, modelica_metatype lst)
 {
   while (!MMC_NILTEST(lst))
   {
@@ -493,7 +494,7 @@ modelica_metatype boxptr_listMember(ERROR_HANDLE *omcErrorHandle,threadData_t *t
   return mmc_mk_icon(0);
 }
 
-modelica_metatype boxptr_listGet(ERROR_HANDLE* omcErrorHandle,threadData_t *threadData,modelica_metatype lst, modelica_metatype ii)
+modelica_metatype boxptr_listGet(threadData_t *threadData,modelica_metatype lst, modelica_metatype ii)
 {
   int i = mmc_unbox_integer(ii);
   if (i < 1)
@@ -509,12 +510,12 @@ modelica_metatype boxptr_listGet(ERROR_HANDLE* omcErrorHandle,threadData_t *thre
   MMC_THROW_INTERNAL(); /* List was not long enough */
 }
 
-modelica_metatype boxptr_listNth(ERROR_HANDLE *omcErrorHandle,threadData_t *threadData,modelica_metatype lst, modelica_metatype i)
+modelica_metatype boxptr_listNth(threadData_t *threadData,modelica_metatype lst, modelica_metatype i)
 {
   return listGet(lst,mmc_unbox_integer(i)+1);
 }
 
-modelica_metatype boxptr_listDelete(ERROR_HANDLE *omcErrorHandle,threadData_t *threadData,modelica_metatype lst, modelica_metatype iix)
+modelica_metatype boxptr_listDelete(threadData_t *threadData,modelica_metatype lst, modelica_metatype iix)
 {
   int ix = mmc_unbox_integer(iix);
   modelica_metatype *tmpArr = NULL;
@@ -564,7 +565,7 @@ modelica_integer arrayLength(modelica_metatype arr)
   return MMC_HDRSLOTS(MMC_GETHDR(arr));
 }
 
-modelica_metatype boxptr_arrayGet(ERROR_HANDLE* omcErrorHandle,threadData_t *threadData,modelica_metatype arr, modelica_metatype i)
+modelica_metatype boxptr_arrayGet(threadData_t *threadData,modelica_metatype arr, modelica_metatype i)
 {
   int ix = mmc_unbox_integer(i);
   if (ix < 1)
@@ -584,7 +585,7 @@ modelica_metatype arrayCreate(modelica_integer nelts, modelica_metatype val)
   return arr;
 }
 
-modelica_metatype boxptr_arrayList(ERROR_HANDLE *omcErrorHandle,threadData_t *threadData,modelica_metatype arr)
+modelica_metatype boxptr_arrayList(threadData_t *threadData,modelica_metatype arr)
 {
   int nelts = MMC_HDRSLOTS(MMC_GETHDR(arr))-1;
   void **vecp = MMC_STRUCTDATA(arr);
@@ -595,7 +596,7 @@ modelica_metatype boxptr_arrayList(ERROR_HANDLE *omcErrorHandle,threadData_t *th
   return res;
 }
 
-modelica_metatype boxptr_listArray(ERROR_HANDLE *omcErrorHandle,threadData_t *threadData,modelica_metatype lst)
+modelica_metatype boxptr_listArray(threadData_t *threadData,modelica_metatype lst)
 {
   int nelts = listLength(lst);
   void* arr = (struct mmc_struct*)mmc_mk_box_no_assign(nelts, MMC_ARRAY_TAG);
@@ -608,7 +609,7 @@ modelica_metatype boxptr_listArray(ERROR_HANDLE *omcErrorHandle,threadData_t *th
   return arr;
 }
 
-modelica_metatype boxptr_arrayUpdate(ERROR_HANDLE *omcErrorHandle,threadData_t *threadData,modelica_metatype arr, modelica_metatype i, modelica_metatype val)
+modelica_metatype boxptr_arrayUpdate(threadData_t *threadData,modelica_metatype arr, modelica_metatype i, modelica_metatype val)
 {
   int ix = mmc_unbox_integer(i);
   int nelts = MMC_HDRSLOTS(MMC_GETHDR(arr));
@@ -639,7 +640,7 @@ modelica_metatype boxptr_arrayUpdate(ERROR_HANDLE *omcErrorHandle,threadData_t *
   return arr;
 }
 
-modelica_metatype boxptr_arrayCopy(ERROR_HANDLE *omcErrorHandle,threadData_t *threadData,modelica_metatype arr)
+modelica_metatype boxptr_arrayCopy(threadData_t *threadData,modelica_metatype arr)
 {
   int nelts = MMC_HDRSLOTS(MMC_GETHDR(arr));
   void* res = (struct mmc_struct*)mmc_mk_box_no_assign(nelts, MMC_ARRAY_TAG);
@@ -666,7 +667,7 @@ modelica_metatype arrayAdd(modelica_metatype arr, modelica_metatype val)
   return res;
 }
 
-modelica_metatype boxptr_arrayNth(ERROR_HANDLE *omcErrorHandle,threadData_t *threadData,modelica_metatype arr,modelica_metatype ix)
+modelica_metatype boxptr_arrayNth(threadData_t *threadData,modelica_metatype arr,modelica_metatype ix)
 {
   return arrayGet(arr, mmc_unbox_integer(ix)+1);
 }
@@ -678,7 +679,7 @@ modelica_integer tick(void)
   return curTick++;
 }
 
-void boxptr_print(ERROR_HANDLE* omcErrorHandle,threadData_t *threadData,modelica_metatype str)
+void boxptr_print(threadData_t *threadData,modelica_metatype str)
 {
   fprintf(stdout, "%s", MMC_STRINGDATA(str));
 }
@@ -695,7 +696,7 @@ modelica_real mmc_clock(void)
   return (clock()-start_t)/CLOCKS_PER_SEC;
 }
 
-void boxptr_equality(ERROR_HANDLE *omcErrorHandle,threadData_t *threadData,modelica_metatype in1, modelica_metatype in2)
+void boxptr_equality(threadData_t *threadData,modelica_metatype in1, modelica_metatype in2)
 {
   if (!valueEq(in1, in2)) {
     /* fprintf(stderr, "%s != %s\n", anyString(in1), anyString(in2)); */
@@ -703,7 +704,7 @@ void boxptr_equality(ERROR_HANDLE *omcErrorHandle,threadData_t *threadData,model
   }
 }
 
-modelica_metatype boxptr_getGlobalRoot(ERROR_HANDLE *omcErrorHandle,threadData_t *threadData, modelica_metatype i) {
+modelica_metatype boxptr_getGlobalRoot(threadData_t *threadData, modelica_metatype i) {
   int ix = mmc_unbox_integer(i);
   void *val = 0;
   if (ix < 0 || ix >= MMC_GC_GLOBAL_ROOTS_SIZE) {
@@ -719,7 +720,7 @@ modelica_metatype boxptr_getGlobalRoot(ERROR_HANDLE *omcErrorHandle,threadData_t
   return val;
 }
 
-void boxptr_setGlobalRoot(ERROR_HANDLE *omcErrorHandle,threadData_t *threadData, modelica_metatype i, modelica_metatype val) {
+void boxptr_setGlobalRoot(threadData_t *threadData, modelica_metatype i, modelica_metatype val) {
   int ix = mmc_unbox_integer(i);
   if (ix < 0 || ix >= MMC_GC_GLOBAL_ROOTS_SIZE) {
     MMC_THROW_INTERNAL();
@@ -730,16 +731,16 @@ void boxptr_setGlobalRoot(ERROR_HANDLE *omcErrorHandle,threadData_t *threadData,
   }
 }
 
-modelica_metatype boxptr_valueConstructor(ERROR_HANDLE *omcErrorHandle,threadData_t *threadData,modelica_metatype val) {
+modelica_metatype boxptr_valueConstructor(threadData_t *threadData,modelica_metatype val) {
   return mmc_mk_icon(valueConstructor(val));
 }
 
-modelica_metatype boxptr_listFirst(ERROR_HANDLE *omcErrorHandle,threadData_t *threadData,modelica_metatype lst)
+modelica_metatype boxptr_listFirst(threadData_t *threadData,modelica_metatype lst)
 {
   return MMC_CAR(lst);
 }
 
-modelica_metatype boxptr_listRest(ERROR_HANDLE *omcErrorHandle,threadData_t *threadData,modelica_metatype lst)
+modelica_metatype boxptr_listRest(threadData_t *threadData,modelica_metatype lst)
 {
   return MMC_CDR(lst);
 }

@@ -129,7 +129,7 @@ int allocateNonlinearSystem(DATA *data)
         allocateNewtonData(size, &nonlinsys[i].solverData);
         break;
       default:
-        throwStreamPrint(&(data->simulationInfo.errorHandler.globalJumpBuffer), "unrecognized nonlinear solver");
+        throwStreamPrint("unrecognized nonlinear solver");
       }
     }
 
@@ -171,13 +171,13 @@ int freeNonlinearSystem(DATA *data)
         freeHybrdData(&nonlinsys[i].solverData);
         break;
       case NLS_KINSOL:
-        nls_kinsol_free(data, &nonlinsys[i]);
+        nls_kinsol_free(&nonlinsys[i]);
         break;
       case NLS_NEWTON:
         freeNewtonData(&nonlinsys[i].solverData);
         break;
       default:
-        throwStreamPrint(&(data->simulationInfo.errorHandler.globalJumpBuffer), "unrecognized nonlinear solver");
+        throwStreamPrint("unrecognized nonlinear solver");
       }
     }
     free(nonlinsys[i].solverData);
@@ -211,8 +211,6 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
    */
 
   /* for now just use hybrd solver as before */
-  saveJumpState = data->simulationInfo.errorHandler.currentErrorStage;
-  data->simulationInfo.errorHandler.currentErrorStage = ERROR_NONLINEARSOLVER;
   if(nonlinsys[sysNumber].method == 1)
   {
     success = solveNewton(data, sysNumber);
@@ -222,7 +220,10 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
     switch(data->simulationInfo.nlsMethod)
     {
     case NLS_HYBRID:
+      saveJumpState = currectJumpState;
+      currectJumpState = ERROR_NONLINEARSOLVER;
       success = solveHybrd(data, sysNumber);
+      currectJumpState = saveJumpState;
       break;
     case NLS_KINSOL:
       success = nonlinearSolve_kinsol(data, sysNumber);
@@ -231,12 +232,11 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
       success = solveNewton(data, sysNumber);
       break;
     default:
-      throwStreamPrint(&(data->simulationInfo.errorHandler.globalJumpBuffer), "unrecognized nonlinear solver");
+      throwStreamPrint("unrecognized nonlinear solver");
     }
   }
   nonlinsys[sysNumber].solved = success;
 
-  data->simulationInfo.errorHandler.currentErrorStage = saveJumpState;
   /* enable to avoid division by zero */
   data->simulationInfo.noThrowDivZero = 0;
 
@@ -263,17 +263,17 @@ int check_nonlinear_solutions(DATA *data, int printFailingSystems)
     {
       int index = nonlinsys[i].equationIndex, indexes[2] = {1,index};
       if (!printFailingSystems) return 1;
-      warningStreamPrintWithEquationIndexes(LOG_NLS, 1, indexes, "nonlinear system fails: %s at t=%g", modelInfoXmlGetEquation(&data->modelData.modelDataXml, index, &(data->simulationInfo.errorHandler.globalJumpBuffer)).name, data->localData[0]->timeValue);
+      warningStreamPrintWithEquationIndexes(LOG_NLS, 1, indexes, "nonlinear system fails: %s at t=%g", modelInfoXmlGetEquation(&data->modelData.modelDataXml, index).name, data->localData[0]->timeValue);
       if(data->simulationInfo.initial)
       {
         warningStreamPrint(LOG_NLS, 1, "proper start-values for some of the following iteration variables might help");
-        for(j=0; j<modelInfoXmlGetEquation(&data->modelData.modelDataXml, (nonlinsys[i]).equationIndex, &(data->simulationInfo.errorHandler.globalJumpBuffer)).numVar; ++j) {
+        for(j=0; j<modelInfoXmlGetEquation(&data->modelData.modelDataXml, (nonlinsys[i]).equationIndex).numVar; ++j) {
           int done=0;
           long k;
           const MODEL_DATA *mData = &(data->modelData);
           for(k=0; k<mData->nVariablesReal && !done; ++k)
           {
-            if(!strcmp(mData->realVarsData[k].info.name, modelInfoXmlGetEquation(&data->modelData.modelDataXml, (nonlinsys[i]).equationIndex, &(data->simulationInfo.errorHandler.globalJumpBuffer)).vars[j]->name))
+            if(!strcmp(mData->realVarsData[k].info.name, modelInfoXmlGetEquation(&data->modelData.modelDataXml, (nonlinsys[i]).equationIndex).vars[j]->name))
             {
               done = 1;
               warningStreamPrint(LOG_NLS, 0, "[%ld] Real %s(start=%g, nominal=%g)", j+1,
@@ -283,13 +283,13 @@ int check_nonlinear_solutions(DATA *data, int printFailingSystems)
             }
           }
           if (!done) {
-            warningStreamPrint(LOG_NLS, 0, "[%ld] Real %s(start=?, nominal=?)", j+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml, (nonlinsys[i]).equationIndex, &(data->simulationInfo.errorHandler.globalJumpBuffer)).vars[j]->name);
+            warningStreamPrint(LOG_NLS, 0, "[%ld] Real %s(start=?, nominal=?)", j+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml, (nonlinsys[i]).equationIndex).vars[j]->name);
           }
         }
         if (ACTIVE_WARNING_STREAM(LOG_NLS)) messageClose(LOG_NLS);
       } else {
-        for(j=0; j<modelInfoXmlGetEquation(&data->modelData.modelDataXml, (nonlinsys[i]).equationIndex, &(data->simulationInfo.errorHandler.globalJumpBuffer)).numVar; ++j) {
-          warningStreamPrint(LOG_NLS, 0, "[%ld] Real %s", j+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml, (nonlinsys[i]).equationIndex, &(data->simulationInfo.errorHandler.globalJumpBuffer)).vars[j]->name);
+        for(j=0; j<modelInfoXmlGetEquation(&data->modelData.modelDataXml, (nonlinsys[i]).equationIndex).numVar; ++j) {
+          warningStreamPrint(LOG_NLS, 0, "[%ld] Real %s", j+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml, (nonlinsys[i]).equationIndex).vars[j]->name);
         }
       }
       if (ACTIVE_WARNING_STREAM(LOG_NLS)) messageClose(LOG_NLS);

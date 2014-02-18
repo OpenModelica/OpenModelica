@@ -1111,22 +1111,22 @@ void div_alloc_real_array_scalar(const real_array_t * a,modelica_real b,real_arr
     div_real_array_scalar(a,b,dest);
 }
 
-void division_real_array_scalar(const real_array_t * a,modelica_real b,real_array_t* dest, const char* division_str, ERROR_HANDLE* errorHandle)
+void division_real_array_scalar(const real_array_t * a,modelica_real b,real_array_t* dest, const char* division_str)
 {
     size_t nr_of_elements;
     size_t i;
     /* Assert that dest has correct size*/
     nr_of_elements = base_array_nr_of_elements(a);
     for(i=0; i < nr_of_elements; ++i) {
-        real_set(dest, i, DIVISIONNOTIME(real_get(a, i),b,division_str,errorHandle));
+        real_set(dest, i, DIVISIONNOTIME(real_get(a, i),b,division_str));
     }
 }
 
-void division_alloc_real_array_scalar(const real_array_t * a,modelica_real b,real_array_t* dest, const char* division_str, ERROR_HANDLE* errorHandle)
+void division_alloc_real_array_scalar(const real_array_t * a,modelica_real b,real_array_t* dest, const char* division_str)
 {
     clone_real_array_spec(a,dest);
     alloc_real_array_data(dest);
-    division_real_array_scalar(a,b,dest,division_str,errorHandle);
+    division_real_array_scalar(a,b,dest,division_str);
 }
 
 void div_scalar_real_array(modelica_real a, const real_array_t* b, real_array_t* dest)

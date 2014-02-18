@@ -1066,7 +1066,7 @@ void div_alloc_integer_array_scalar(const integer_array_t * a,modelica_integer b
     div_integer_array_scalar(a,b,dest);
 }
 
-void division_integer_array_scalar(const integer_array_t * a,modelica_integer b,integer_array_t* dest, const char* division_str, ERROR_HANDLE* errorHandle)
+void division_integer_array_scalar(const integer_array_t * a,modelica_integer b,integer_array_t* dest, const char* division_str)
 {
     size_t nr_of_elements;
     size_t i;
@@ -1077,15 +1077,15 @@ void division_integer_array_scalar(const integer_array_t * a,modelica_integer b,
     assert(nr_of_elements == base_array_nr_of_elements(dest));
 
     for(i=0; i < nr_of_elements; ++i) {
-        integer_set(dest, i, (modelica_integer)DIVISIONNOTIME(integer_get(a, i),b,division_str, errorHandle));
+        integer_set(dest, i, (modelica_integer)DIVISIONNOTIME(integer_get(a, i),b,division_str));
     }
 }
 
-void division_alloc_integer_array_scalar(const integer_array_t * a,modelica_integer b,integer_array_t* dest, const char* division_str, ERROR_HANDLE* errorHandle)
+void division_alloc_integer_array_scalar(const integer_array_t * a,modelica_integer b,integer_array_t* dest, const char* division_str)
 {
     clone_integer_array_spec(a,dest);
     alloc_integer_array_data(dest);
-    division_integer_array_scalar(a,b,dest,division_str,errorHandle);
+    division_integer_array_scalar(a,b,dest,division_str);
 }
 
 void div_scalar_integer_array(modelica_integer a, const integer_array_t* b, integer_array_t* dest)

@@ -58,13 +58,13 @@ void ModelicaFormatMessage(const char* string,...) {
 void ModelicaError(const char* string) {
   fputs(string, stderr);
   fflush(stderr);
-  omc_throw(NULL);
+  omc_throw();
 }
 
 extern void ModelicaVFormatError(const char*string, va_list args) {
   vfprintf(stderr, string, args);
   fflush(stderr);
-  omc_throw(NULL);
+  omc_throw();
 }
 
 void ModelicaFormatError(const char* string, ...) {
