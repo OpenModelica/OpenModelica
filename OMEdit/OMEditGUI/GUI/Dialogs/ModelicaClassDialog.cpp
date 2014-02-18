@@ -876,17 +876,17 @@ void RenameClassDialog::renameClass()
   \param pParent - pointer to MainWindow
   */
 InformationDialog::InformationDialog(QString windowTitle, QString informationText, bool modelicaTextHighlighter, MainWindow *pMainWindow)
-  : QDialog(pMainWindow, Qt::WindowTitleHint | Qt::WindowMaximizeButtonHint)
+  : QDialog(pMainWindow, Qt::WindowTitleHint | Qt::WindowMinMaxButtonsHint | Qt::WindowSystemMenuHint)
 {
   setAttribute(Qt::WA_DeleteOnClose);
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(windowTitle));
-  setModal(true);
+  mpMainWindow = pMainWindow;
   // instantiate the model
   QPlainTextEdit *pPlainTextEdit = new QPlainTextEdit(informationText);
   if (modelicaTextHighlighter)
   {
-    ModelicaTextHighlighter *pModelicaHighlighter = new ModelicaTextHighlighter(pMainWindow->getOptionsDialog()->getModelicaTextSettings(),
-                                                                                pMainWindow, pPlainTextEdit->document());
+    ModelicaTextHighlighter *pModelicaHighlighter = new ModelicaTextHighlighter(mpMainWindow->getOptionsDialog()->getModelicaTextSettings(),
+                                                                                mpMainWindow, pPlainTextEdit->document());
     Q_UNUSED(pModelicaHighlighter);
   }
   // Create the button
@@ -901,6 +901,23 @@ InformationDialog::InformationDialog(QString windowTitle, QString informationTex
   mainLayout->addLayout(buttonLayout);
   setLayout(mainLayout);
   pOkButton->setFocus();
+  /* restore the window geometry. */
+  if (mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getPreserveUserCustomizations())
+  {
+    QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
+    restoreGeometry(settings.value("InformationDialog/geometry").toByteArray());
+  }
+}
+
+void InformationDialog::closeEvent(QCloseEvent *event)
+{
+  /* save the window geometry. */
+  if (mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getPreserveUserCustomizations())
+  {
+    QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
+    settings.setValue("InformationDialog/geometry", saveGeometry());
+  }
+  event->accept();
 }
 
 /*!

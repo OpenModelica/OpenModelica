@@ -167,8 +167,11 @@ public slots:
 class LibraryTreeNode;
 class InformationDialog : public QDialog
 {
+private:
+  MainWindow *mpMainWindow;
 public:
   InformationDialog(QString windowTitle, QString informationText, bool modelicaTextHighlighter = false, MainWindow *pMainWindow = 0);
+  void closeEvent(QCloseEvent *event);
 };
 
 class GraphicsView;
