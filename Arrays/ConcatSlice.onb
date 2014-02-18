@@ -162,17 +162,9 @@ end BlockMatrix;</Input>
           <GraphCell style="Graph" closed="false">
             <Input>simulate(BlockMatrix)</Input>
             <Output>record SimulationResult
-    resultFile = "",
-    messages = "Failed to build model: BlockMatrix"
-end SimulationResult;
-OMC-ERROR: 
-"[&lt;interactive>:10:3-10:44:writable] Error: Model is structurally singular, error found sorting equations 
- 1: {{1.0, 2.0, 3.0}, {4.0, 5.0, 6.0}, {7.0, 8.0, 9.0}} = cat(1, {{1.0, 2.0, 3.0}, {4.0, 5.0, 6.0}}, -{{1.0, 2.0, 3.0}});
-2: {{1.0, 2.0, 3.0}, {4.0, 5.0, 6.0}, {7.0, 8.0, 9.0}} = cat(2, {{1.0, 2.0}, {4.0, 5.0}, {7.0, 8.0}}, -{{1.0}, {4.0}, {7.0}});
- for variables 
- Q[6,3](1), Q[6,2](2), Q[6,1](3), Q[5,3](4), Q[5,2](5), Q[5,1](6), Q[4,3](7), Q[4,2](8), Q[4,1](9), Q[3,6](10), Q[3,5](11), Q[3,4](12), Q[2,6](13), Q[2,5](14), Q[2,4](15), Q[1,6](16), Q[1,5](17), Q[1,4](18)
-Error: Internal error Transformation Module PFPlusExt index Reduction Method Pantelides failed!
-"</Output>
+    resultFile = "BlockMatrix_res.mat",
+    messages = ""
+end SimulationResult;</Output>
           </GraphCell>
         </GroupCell>
         <GroupCell closed="false">
@@ -203,17 +195,9 @@ end BlockMatrix2;</Input>
           <GraphCell style="Graph" closed="false">
             <Input>simulate(BlockMatrix2)</Input>
             <Output>record SimulationResult
-    resultFile = "",
-    messages = "Failed to build model: BlockMatrix2"
-end SimulationResult;
-OMC-ERROR: 
-"[&lt;interactive>:9:3-9:44:writable] Error: Model is structurally singular, error found sorting equations 
- 1: {{1.0, 2.0, 3.0}, {4.0, 5.0, 6.0}, {7.0, 8.0, 9.0}} = cat(1, {{1.0, 2.0, 3.0}, {4.0, 5.0, 6.0}}, -{{1.0, 2.0, 3.0}});
-2: {{1.0, 2.0, 3.0}, {4.0, 5.0, 6.0}, {7.0, 8.0, 9.0}} = cat(2, {{1.0, 2.0}, {4.0, 5.0}, {7.0, 8.0}}, -{{1.0}, {4.0}, {7.0}});
- for variables 
- Q[6,3](1), Q[6,2](2), Q[6,1](3), Q[5,3](4), Q[5,2](5), Q[5,1](6), Q[4,3](7), Q[4,2](8), Q[4,1](9), Q[3,6](10), Q[3,5](11), Q[3,4](12), Q[2,6](13), Q[2,5](14), Q[2,4](15), Q[1,6](16), Q[1,5](17), Q[1,4](18)
-Error: Internal error Transformation Module PFPlusExt index Reduction Method Pantelides failed!
-"</Output>
+    resultFile = "BlockMatrix2_res.mat",
+    messages = ""
+end SimulationResult;</Output>
           </GraphCell>
         </GroupCell>
         <GroupCell closed="false">
@@ -244,11 +228,13 @@ end BlockMatrix3;</Input>
           <GraphCell style="Graph" closed="false">
             <Input>simulate(BlockMatrix3)</Input>
             <Output>record SimulationResult
-    messages = "Simulation failed for model: BlockMatrix3
-[&lt;interactive>:9:3-9:42:writable] Error: Type mismatch in equation {{Q[4,1], Q[4,2], Q[4,3]}, {Q[5,1], Q[5,2], Q[5,3]}, {Q[6,1], Q[6,2], Q[6,3]}}=cat(2, {{Q[1,1], Q[1,2], Q[1,3]}, {Q[2,1], Q[2,2], Q[2,3]}}, promote(-Q[3,{1, 2, 3}], 1)) of type Real[3, 3]=Real[3, 4]
+    resultFile = "",
+    messages = "Failed to build model: BlockMatrix3"
+end SimulationResult;
+OMC-ERROR: 
+"[&lt;interactive>:9:3-9:42:writable] Error: Type mismatch in equation Q[{4, 5, 6},{1, 2, 3}]=cat(2, Q[{1, 2},{1, 2, 3}], promote(-Q[3,{1, 2, 3}], 1)) of type Real[3, 3]=Real[3, 4].
 Error: Error occurred while flattening model BlockMatrix3
-"
-end SimulationResult;</Output>
+"</Output>
           </GraphCell>
         </GroupCell>
       </GroupCell>
