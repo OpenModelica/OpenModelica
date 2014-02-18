@@ -306,6 +306,7 @@ clean: qtclean fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMi
 	(cd PythonInterface && $(MAKE) -f $(defaultMakefileTarget) clean)
 	if test -f 3rdParty/modelica3d/build/Makefile; then $(MAKE) -C 3rdParty/modelica3d/build clean; fi
 	$(MAKE) -C 3rdParty/OpenBLAS-0.2.8 clean
+	rm -rf testsuite/openmodelica/bootstrapping/build
 	if test -f 3rdParty/Ipopt-3.11.6/Makefile; then $(MAKE) -C 3rdParty/Ipopt-3.11.6 distclean || true; fi
 	(rm -rf 3rdParty/modelica3d/build)
 	(rm -rf SimulationRuntime/build_c)
