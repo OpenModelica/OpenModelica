@@ -519,9 +519,9 @@
    *
    *  \author lochel
    */
-  int ipopt_initialization(INIT_DATA *initData, int useScaling)
+  int ipopt_initialization(DATA *data,INIT_DATA *initData, int useScaling)
   {
-    throwStreamPrint("no ipopt support activated");
+    throwStreamPrint(data->threadData,"no ipopt support activated");
     return 0;
   }
 #endif
