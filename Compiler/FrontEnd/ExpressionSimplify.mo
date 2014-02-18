@@ -4542,6 +4542,8 @@ algorithm
       Real r_1,r;
       Boolean b1;
       DAE.CallAttributes attr;
+      list<DAE.Exp> expl;
+      list<list<DAE.Exp>> mat;
 
     // not true => false, not false => true
     case (_,DAE.NOT(DAE.T_BOOL(varLst = _)),e1)
@@ -4606,6 +4608,19 @@ algorithm
     // -semiLinear(-x,sb,sa) = semiLinear(x,sa,sb)
     case (_,DAE.UMINUS(ty = _),DAE.CALL(path=Absyn.IDENT("semiLinear"),expLst={DAE.UNARY(exp=e1),e2,e3},attr=attr))
       then DAE.CALL(Absyn.IDENT("semiLinear"),{e1,e3,e2},attr);
+
+    case (_, DAE.UMINUS_ARR(ty = _), DAE.ARRAY(ty1, b1, expl))
+      equation
+        expl = List.map(expl, Expression.negate);
+      then
+        DAE.ARRAY(ty1, b1, expl);
+
+    case (_, DAE.UMINUS_ARR(ty = _), DAE.MATRIX(ty1, i, mat))
+      equation
+        mat = List.mapList(mat, Expression.negate);
+      then
+        DAE.MATRIX(ty1, i, mat);
+
     else origExp;
   end matchcontinue;
 end simplifyUnary;

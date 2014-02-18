@@ -2773,6 +2773,8 @@ algorithm
       list<DAE.Exp> expl;
     case (DAE.ARRAY(array = expl))
       equation
+        expl = ExpressionSimplify.simplifyList(expl, {});
+        expl = List.map(expl, Expression.matrixToArray);
         res = elabMatrixCatTwo(expl);
       then
         res;
