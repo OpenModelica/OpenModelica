@@ -178,7 +178,7 @@ void Cvode::initialize()
       _idid = CVodeRootInit(_cvodeMem,_dimZeroFunc, CV_ZerofCallback);
 
      
-	 memset(_zeroSign,0,_dimZeroFunc*sizeof(int));
+   memset(_zeroSign,0,_dimZeroFunc*sizeof(int));
       _idid = CVodeSetRootDirection(_cvodeMem, _zeroSign);
       if(_idid < 0)
         throw std::invalid_argument(/*_idid,_tCurrent,*/"CVode::initialize()");
