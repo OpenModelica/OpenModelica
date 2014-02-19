@@ -176,7 +176,7 @@ static int sumLagrange(IPOPT_DATA_ *iData, double * erg,int ii, int i, int j, in
 {
   long double sum;
   int l;
-  int nJ = (p) ? iData->nx + iData->nc : iData->nx;
+  int nJ = (p) ? iData->nJ : iData->nx;
   sum = 0.0;
   for(l = 0; l<iData->nx; ++l)
     sum += iData->H[l][i][j];
