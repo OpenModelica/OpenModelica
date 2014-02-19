@@ -430,7 +430,7 @@ static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double*
 
   while(*info >= 0)
   {
-    debugStreamPrint(LOG_NLS_V, 0, "**** start Iteration: %d  *****", *maxfev-l);
+    debugStreamPrint(LOG_NLS_V, 0, "**** start Iteration: %d  *****", (int) *maxfev-l);
     /* calculate the function values */
     (*f)(n, x, fvec, &iflag, userdata,currentSys);
     (*nfev)++;
