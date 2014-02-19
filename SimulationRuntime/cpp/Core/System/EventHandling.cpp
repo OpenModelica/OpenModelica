@@ -21,10 +21,10 @@ EventHandling::~EventHandling(void)
 /**
 Inits the event variables
 */
-void EventHandling::initialize(IMixedSystem* system,int dim)
+void EventHandling::initialize(IEvent* system,int dim)
 {   
     _dimH=dim;
-    _system=system;
+    _event_system=system;
     if(_dimH > 0)
     {
         // Initialize help vars vector
@@ -131,27 +131,26 @@ Handles  all events occured a the same time. These are stored  the eventqueue
 
 bool EventHandling::IterateEventQueue(bool& state_vars_reinitialized)
 {
-    IContinuous*  countinous_system = dynamic_cast<IContinuous*>(_system);
-    IEvent* event_system= dynamic_cast<IEvent*>(_system);
-    IMixedSystem* mixed_system= dynamic_cast<IMixedSystem*>(_system);
+    IContinuous*  countinous_system = dynamic_cast<IContinuous*>(_event_system);
+    IMixedSystem* mixed_system= dynamic_cast<IMixedSystem*>(_event_system);
 
     //save discrete varibales
-    event_system->saveDiscreteVars(); // store values of discrete vars vor next check
+    _event_system->saveDiscreteVars(); // store values of discrete vars vor next check
   
-    unsigned int dim = event_system->getDimZeroFunc();
+    unsigned int dim = _event_system->getDimZeroFunc();
     bool* conditions0 = new bool[dim];
     bool* conditions1 = new bool[dim];
-    event_system->getConditions(conditions0);
+    _event_system->getConditions(conditions0);
     //Handle all events
 
     state_vars_reinitialized =     countinous_system->evaluate();  
 
   
     //check if discrete variables changed
-    bool drestart= event_system->checkForDiscreteEvents();
+    bool drestart= _event_system->checkForDiscreteEvents();
 
     
-    event_system->getConditions(conditions1);
+    _event_system->getConditions(conditions1);
     bool crestart = !std::equal (conditions1, conditions1+dim,conditions0);
     delete[] conditions0;
     delete [] conditions1;

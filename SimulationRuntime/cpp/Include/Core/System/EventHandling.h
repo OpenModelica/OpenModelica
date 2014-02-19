@@ -13,7 +13,7 @@ public:
     EventHandling();
     ~EventHandling(void);
     //Inits the event variables
-    void initialize(IMixedSystem* system,int dim);
+    void initialize(IEvent* system,int dim);
     //Returns the help vector 
     void getHelpVars(double* h);
     //sets the help vector
@@ -52,7 +52,7 @@ private:
     unordered_map<string,double> _pre_vars;
     //stores all eventes
     unordered_map<string,double> _pre_discrete_vars; // i guess this was used in a wrong way. it might be obsolete.
-    IMixedSystem* _system;
+    IEvent* _event_system;
     //Helpvarsvector for discrete variables
     double* _h;
     //Dimesion of Helpvarsvector

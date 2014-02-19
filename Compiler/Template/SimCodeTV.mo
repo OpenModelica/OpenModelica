@@ -222,6 +222,9 @@ package SimCode
     end SIMULATION_CONTEXT;
     record FUNCTION_CONTEXT
     end FUNCTION_CONTEXT;
+   record JACOBIAN_CONTEXT
+   end JACOBIAN_CONTEXT;
+ 
     record ALGLOOP_CONTEXT
        Boolean genInitialisation;
     end ALGLOOP_CONTEXT;
@@ -564,7 +567,8 @@ package SimCode
   constant Context contextInlineSolver;
   constant Context contextFunction;
   constant Context contextOther;
-  constant Context contextAlgloop;             
+  constant Context contextAlgloop;
+  constant Context contextJacobian;              
   constant Context contextAlgloopInitialisation;             
   constant Context contextParallelFunction;
   constant Context contextZeroCross;

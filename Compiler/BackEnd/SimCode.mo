@@ -548,6 +548,9 @@ uniontype Context
      Boolean genInitialisation;
   end ALGLOOP_CONTEXT;
   
+   record JACOBIAN_CONTEXT
+   end JACOBIAN_CONTEXT;
+ 
   record OTHER_CONTEXT
   end OTHER_CONTEXT;
   
@@ -568,6 +571,7 @@ public constant Context contextSimulationNonDiscrete  = SIMULATION_CONTEXT(false
 public constant Context contextSimulationDiscrete     = SIMULATION_CONTEXT(true);
 public constant Context contextInlineSolver           = INLINE_CONTEXT();
 public constant Context contextFunction               = FUNCTION_CONTEXT();
+public constant Context contextJacobian               = JACOBIAN_CONTEXT();
 public constant Context contextAlgloopInitialisation  = ALGLOOP_CONTEXT(true);
 public constant Context contextAlgloop                = ALGLOOP_CONTEXT(false);
 public constant Context contextOther                  = OTHER_CONTEXT();

@@ -70,6 +70,8 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let()= textFile(simulationFactoryFile(simCode),'OMCpp<%fileNamePrefix%>FactoryExport.cpp')
   let()= textFile(simulationExtensionHeaderFile(simCode),'OMCpp<%fileNamePrefix%>Extension.h')
   let()= textFile(simulationExtensionCppFile(simCode),'OMCpp<%fileNamePrefix%>Extension.cpp')
+  let()= textFile(simulationJacobianHeaderFile(simCode), 'OMCpp<%fileNamePrefix%>Jacobian.h')
+  let()= textFile(simulationJacobianCppFile(simCode),'OMCpp<%fileNamePrefix%>Jacobian.cpp')
   let()= textFile(simulationWriteOutputHeaderFile(simCode),'OMCpp<%fileNamePrefix%>WriteOutput.h')
   let()= textFile(simulationWriteOutputCppFile(simCode),'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
   let()= textFile(fmudeffile(simCode), '<%name%>.def')
@@ -469,6 +471,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   INITFILE=OMCpp<%fileNamePrefix%>Initialize.cpp
   FACTORYFILE=OMCpp<%fileNamePrefix%>FactoryExport.cpp
   EXTENSIONFILE=OMCpp<%fileNamePrefix%>Extension.cpp
+  JACOBIANFILE=OMCpp<%fileNamePrefix%>Jacobian.cpp
   WRITEOUTPUTFILE=OMCpp<%fileNamePrefix%>WriteOutput.cpp
   MAINFILE=OMCpp<%lastIdentOfPath(modelInfo.name)%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
   MAINFILEFMU=OMCpp<%lastIdentOfPath(modelInfo.name)%>FMU.cpp
@@ -476,7 +479,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   GENERATEDFILES=$(MAINFILEFMU) $(MAINFILE) $(FUNCTIONFILE)  <%algloopcppfilenames(allEquations,simCode)%>
 
   $(MODELICA_SYSTEM_LIB)$(DLLEXT):
-  <%\t%>$(CXX) /Fe$(MODELICA_SYSTEM_LIB) $(MAINFILEFMU) $(MAINFILE) $(FUNCTIONFILE) $(INITFILE) $(FACTORYFILE) $(EXTENSIONFILE) $(WRITEOUTPUTFILE) <%algloopcppfilenames(allEquations,simCode)%> $(CFLAGS) $(LDFLAGS)
+  <%\t%>$(CXX) /Fe$(MODELICA_SYSTEM_LIB) $(MAINFILEFMU) $(MAINFILE) $(FUNCTIONFILE) $(INITFILE) $(FACTORYFILE) $(JACOBIANFILE) $(EXTENSIONFILE) $(WRITEOUTPUTFILE) <%algloopcppfilenames(allEquations,simCode)%> $(CFLAGS) $(LDFLAGS)
   >>
 end match
 case "gcc" then
@@ -510,6 +513,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   SRC+= OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.cpp
   SRC+= OMCpp<%fileNamePrefix%>Extension.cpp
   SRC+= OMCpp<%fileNamePrefix%>WriteOutput.cpp
+  SRC+= OMCpp<%fileNamePrefix%>Jacobian.cpp
   SRC+= <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%>
 
   LIBS= -lOMCppSystem_static -lOMCppDataExchange_static -lOMCppOMCFactory

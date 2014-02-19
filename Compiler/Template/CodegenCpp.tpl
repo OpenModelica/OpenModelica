@@ -16,6 +16,8 @@ template translateModel(SimCode simCode) ::=
   let()= textFile(simulationMakefile(target,simCode), '<%fileNamePrefix%>.makefile')
   let()= textFile(simulationInitHeaderFile(simCode), 'OMCpp<%fileNamePrefix%>Initialize.h')
   let()= textFile(simulationInitCppFile(simCode),'OMCpp<%fileNamePrefix%>Initialize.cpp')
+  let()= textFile(simulationJacobianHeaderFile(simCode), 'OMCpp<%fileNamePrefix%>Jacobian.h')
+  let()= textFile(simulationJacobianCppFile(simCode),'OMCpp<%fileNamePrefix%>Jacobian.cpp')
   let()= textFile(simulationExtensionHeaderFile(simCode),'OMCpp<%fileNamePrefix%>Extension.h')
   let()= textFile(simulationExtensionCppFile(simCode),'OMCpp<%fileNamePrefix%>Extension.cpp')
   let()= textFile(simulationWriteOutputHeaderFile(simCode),'OMCpp<%fileNamePrefix%>WriteOutput.h')
@@ -88,6 +90,65 @@ end simulationInitHeaderFile;
 
 
 
+template simulationJacobianHeaderFile(SimCode simCode)
+ "Generates code for header file for simulation target."
+::=
+match simCode
+case SIMCODE(modelInfo=MODELINFO(__)) then
+  <<
+   #pragma once
+    #include "OMCpp<%fileNamePrefix%>.h"
+  /*****************************************************************************
+  *
+  * Simulation code to initialize the Modelica system
+  *
+  *****************************************************************************/
+  class <%lastIdentOfPath(modelInfo.name)%>Jacobian: virtual public  <%lastIdentOfPath(modelInfo.name)%>
+  {
+     public:
+    <%lastIdentOfPath(modelInfo.name)%>Jacobian(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData);
+    ~<%lastIdentOfPath(modelInfo.name)%>Jacobian();
+   protected:
+    <%
+    let jacobianfunctions = (jacobianMatrixes |> (_,_, name, _, _, _) hasindex index0 =>
+    <<
+     void initialAnalytic<%name%>Jacobian();
+     void calc<%name%>JacobianColumn();
+     void get<%name%>Jacobian(SparseMatrix& matrix);
+    >>
+    ;separator="\n";empty)
+   <<
+      <%jacobianfunctions%>
+   >>
+   %> 
+   private:
+    
+  
+    
+    <%
+    let jacobianvars = (jacobianMatrixes |> (_,_, name, _, _, _) hasindex index0 =>
+    <<
+     SparseMatrix _<%name%>jacobian;
+     ublas::vector<double> _<%name%>jac_y;
+     ublas::vector<double> _<%name%>jac_tmp;
+     ublas::vector<double> _<%name%>jac_x;
+    >>
+    ;separator="\n";empty)
+   <<
+     <%jacobianvars%>
+   >>
+   %> 
+   //workaround for jacobian variables
+   <%variableDefinitionsJacobians(jacobianMatrixes,simCode)%> 
+    
+  };
+ >>
+end simulationJacobianHeaderFile;
+
+
+
+
+
 template simulationWriteOutputHeaderFile(SimCode simCode)
  "Generates code for header file for simulation target."
 ::=
@@ -151,12 +212,13 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
    #pragma once
   #include "OMCpp<%fileNamePrefix%>WriteOutput.h"
   #include "OMCpp<%fileNamePrefix%>Initialize.h"
+   #include "OMCpp<%fileNamePrefix%>Jacobian.h"
   /*****************************************************************************
   *
   * Simulation code
   *
   *****************************************************************************/
-  class <%lastIdentOfPath(modelInfo.name)%>Extension: public ISystemInitialization,public IWriteOutput, public <%lastIdentOfPath(modelInfo.name)%>WriteOutput, public <%lastIdentOfPath(modelInfo.name)%>Initialize
+  class <%lastIdentOfPath(modelInfo.name)%>Extension: public ISystemInitialization, public IMixedSystem,public IWriteOutput, public <%lastIdentOfPath(modelInfo.name)%>WriteOutput, public <%lastIdentOfPath(modelInfo.name)%>Initialize, public <%lastIdentOfPath(modelInfo.name)%>Jacobian
   {
      public:
     <%lastIdentOfPath(modelInfo.name)%>Extension(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData);
@@ -170,7 +232,12 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     /// Output routine (to be called by the solver after every successful integration step)
     virtual void writeOutput(const IWriteOutput::OUTPUT command = IWriteOutput::UNDEF_OUTPUT);
     virtual IHistory* getHistory();
-    
+     /// Provide Jacobian
+    virtual void getJacobian(SparseMatrix& matrix);
+   /// Called to handle all  events occured at same time 
+    virtual bool handleSystemEvents(bool* events);
+    //Saves all variables before an event is handled, is needed for the pre, edge and change operator
+    virtual void saveAll();
   };
  >>
 end simulationExtensionHeaderFile;
@@ -225,7 +292,27 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
  >>
 end simulationInitCppFile;
 
-
+template simulationJacobianCppFile(SimCode simCode)
+ "Generates code for main cpp file for simulation target."
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(__)) then
+  <<
+   #include "Modelica.h"
+   #include "OMCpp<%fileNamePrefix%>Jacobian.h"
+   <%lastIdentOfPath(modelInfo.name)%>Jacobian::<%lastIdentOfPath(modelInfo.name)%>Jacobian(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData) 
+   : <%lastIdentOfPath(modelInfo.name)%>(globalSettings,nonlinsolverfactory,simData)
+   {
+   }
+  
+  
+   <%lastIdentOfPath(modelInfo.name)%>Jacobian::~<%lastIdentOfPath(modelInfo.name)%>Jacobian()
+    {
+    
+    }
+    <%functionAnalyticJacobians(jacobianMatrixes,simCode)%>
+ >>
+end simulationJacobianCppFile;
 
 template simulationWriteOutputCppFile(SimCode simCode)
  "Generates code for main cpp file for simulation target."
@@ -277,6 +364,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <%lastIdentOfPath(modelInfo.name)%>Extension::<%lastIdentOfPath(modelInfo.name)%>Extension(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData) 
    : <%lastIdentOfPath(modelInfo.name)%>WriteOutput(globalSettings,nonlinsolverfactory,simData)
    , <%lastIdentOfPath(modelInfo.name)%>Initialize(globalSettings,nonlinsolverfactory,simData)
+   , <%lastIdentOfPath(modelInfo.name)%>Jacobian(globalSettings,nonlinsolverfactory,simData)
    , <%lastIdentOfPath(modelInfo.name)%>(globalSettings,nonlinsolverfactory,simData)
    {
    }
@@ -304,6 +392,21 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       
     }
     
+  void <%lastIdentOfPath(modelInfo.name)%>Extension::getJacobian(SparseMatrix& matrix)
+  {
+       <%lastIdentOfPath(modelInfo.name)%>Jacobian::getAJacobian(matrix);
+      
+  }
+
+  bool <%lastIdentOfPath(modelInfo.name)%>Extension::handleSystemEvents(bool* events)
+  {
+      return <%lastIdentOfPath(modelInfo.name)%>::handleSystemEvents(events);
+  }
+  
+  void <%lastIdentOfPath(modelInfo.name)%>Extension::saveAll()
+  {
+      return <%lastIdentOfPath(modelInfo.name)%>::saveAll();
+  }
     
    
     
@@ -658,6 +761,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   INITFILE=OMCpp<%fileNamePrefix%>Initialize.cpp
   FACTORYFILE=OMCpp<%fileNamePrefix%>FactoryExport.cpp
   EXTENSIONFILE=OMCpp<%fileNamePrefix%>Extension.cpp
+  JACOBIANFILE=OMCpp<%fileNamePrefix%>Jacobian.cpp
   WRITEOUTPUTFILE=OMCpp<%fileNamePrefix%>WriteOutput.cpp
   SYSTEMFILE=OMCpp<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
   MAINFILE = OMCpp<%fileNamePrefix%>Main.cpp
@@ -666,7 +770,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   GENERATEDFILES=$(MAINFILE) $(FUNCTIONFILE)  <%algloopcppfilenames(allEquations,simCode)%> 
  
   $(MODELICA_SYSTEM_LIB)$(DLLEXT): 
-  <%\t%>$(CXX)  /Fe$(SYSTEMOBJ) $(SYSTEMFILE) $(FUNCTIONFILE)   <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%> $(INITFILE) $(FACTORYFILE)  $(EXTENSIONFILE) $(WRITEOUTPUTFILE) $(CFLAGS)     $(LDSYTEMFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%>
+  <%\t%>$(CXX)  /Fe$(SYSTEMOBJ) $(SYSTEMFILE) $(FUNCTIONFILE)   <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%> $(INITFILE) $(FACTORYFILE)  $(EXTENSIONFILE) $(WRITEOUTPUTFILE) $(JACOBIANFILE) $(CFLAGS)     $(LDSYTEMFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%>
    <%\t%>$(CXX) $(CPPFLAGS) /Fe$(MAINOBJ)  $(MAINFILE)   $(CFLAGS) $(LDMAINFLAGS)
   >>
 end match
@@ -701,6 +805,7 @@ FUNCTIONFILE=OMCpp<%fileNamePrefix%>Functions.cpp
 INITFILE=OMCpp<%fileNamePrefix%>Initialize.cpp
 EXTENSIONFILE=OMCpp<%fileNamePrefix%>Extension.cpp
 WRITEOUTPUTFILE=OMCpp<%fileNamePrefix%>WriteOutput.cpp
+JACOBIANFILE=OMCpp<%fileNamePrefix%>Jacobian.cpp
 FACTORYFILE=OMCpp<%fileNamePrefix%>FactoryExport.cpp
 MAINFILE = OMCpp<%fileNamePrefix%>Main.cpp
 MAINOBJ=OMCpp<%fileNamePrefix%>$(EXEEXT)
@@ -708,7 +813,7 @@ SYSTEMOBJ=OMCpp<%fileNamePrefix%>$(DLLEXT)
 
 
 
-CPPFILES=$(SYSTEMFILE) $(FUNCTIONFILE) $(INITFILE) $(WRITEOUTPUTFILE) $(EXTENSIONFILE) $(FACTORYFILE) <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%>
+CPPFILES=$(SYSTEMFILE) $(FUNCTIONFILE) $(INITFILE) $(WRITEOUTPUTFILE) $(EXTENSIONFILE) $(FACTORYFILE) $(JACOBIANFILE) <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%>
 OFILES=$(CPPFILES:.cpp=.o)
 
 .PHONY: <%lastIdentOfPath(modelInfo.name)%> $(CPPFILES)
@@ -801,8 +906,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <%saveall(modelInfo,simCode)%>
    <%savediscreteVars(modelInfo,simCode)%>
    <%LabeledDAE(modelInfo.labels,simCode)%>
-   <%functionAnalyticJacobians(jacobianMatrixes,simCode)%>
-   <%giveVariables(modelInfo)%>
+    <%giveVariables(modelInfo)%>
    >>
 end simulationCppFile;
 /* <%saveConditions(simCode)%>*/
@@ -2759,7 +2863,7 @@ template generateClassDeclarationCode(SimCode simCode)
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
-  class <%lastIdentOfPath(modelInfo.name)%>: public IMixedSystem, public IContinuous, public IEvent,  public ITime, public ISystemProperties <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then ', public IReduceDAE'%>, public SystemDefaultImplementation
+  class <%lastIdentOfPath(modelInfo.name)%>: public IContinuous, public IEvent,  public ITime, public ISystemProperties <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then ', public IReduceDAE'%>, public SystemDefaultImplementation
   {
 
    <%generatefriendAlgloops(listAppend(allEquations,initialEquations),simCode)%>
@@ -2775,10 +2879,12 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     //Methods:
     
      bool isConsistent();
+    //Called to handle all  events occured at same time
+    bool handleSystemEvents( bool* events);
+     //Saves all variables before an event is handled, is needed for the pre, edge and change operator
+    void saveAll();
+    void getJacobian(SparseMatrix& matrix);
     
-   
-     void initialAnalyticJacobian();
-     void calcJacobianColumn();
     
      //Variables:
      EventHandling _event_handling;
@@ -2787,16 +2893,11 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      <%conditionvariable(zeroCrossings,simCode)%>
      Functions _functions;
   
-     SparseMatrix _jacobian;
-     ublas::vector<double> _jac_y;
-     ublas::vector<double> _jac_tmp;
-     ublas::vector<double> _jac_x;
+  
      boost::shared_ptr<IAlgLoopSolverFactory>
         _algLoopSolverFactory;    ///< Factory that provides an appropriate solver
      <%generateAlgloopsolverVariables(listAppend(allEquations,initialEquations),simCode)%>
-     //workaround for jacobian variables
-
-     <%variableDefinitionsJacobians(jacobianMatrixes)%> 
+   
     boost::shared_ptr<ISimData> _simData;
 
    };
@@ -3065,8 +3166,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     //Provide the right hand side (according to the index)
     virtual void getRHS(double* f);
    
-    //Provide Jacobian
-    virtual void getJacobian(SparseMatrix& matrix);
+   
      //Provide number (dimension) of zero functions
     virtual int getDimZeroFunc();
     //Provides current values of root/zero functions
@@ -3075,15 +3175,13 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     virtual void getConditions(bool* c);
   
     
-     //Called to handle all  events occured at same time
-    virtual bool handleSystemEvents( bool* events);
+     
     //Called to handle an event
     virtual void handleEvent(const bool* events);
     //Checks if a discrete variable has changed and triggers an event
     virtual bool checkForDiscreteEvents();
     virtual bool isStepEvent();
-     //Saves all variables before an event is handled, is needed for the pre, edge and change operator
-    virtual void saveAll();
+    
     virtual void saveDiscreteVars();
     // M is regular
     virtual bool isODE();
@@ -3229,13 +3327,7 @@ case MODELINFO(vars=SIMVARS(__)) then
    <%vars.extObjVars |> var =>
     MemberVariableDefine("void*",var, "extObjVars")
   ;separator="\n"%>
-   /*<%vars.stateVars |> var =>
-    VariableAliasDefinition(var)
-  ;separator="\n"%>
-   <%vars.derivativeVars |> var =>
-    VariableAliasDefinition(var)
-  ;separator="\n"%>
-  */
+  
   >>
 end MemberVariable;
 
@@ -3504,10 +3596,8 @@ template MemberVariableDefine(String type,SimVar simVar, String arrayName)
 ::=
 match simVar
       
-     case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then
-      <<
-      //<%variableType(type_)%> <%cref(name)%> ;
-      >>  
+     case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then ''
+        
     case SIMVAR(numArrayElement={},arrayCref=NONE()) then
       <<
       <%type%> <%cref(name)%>; 
@@ -3531,17 +3621,15 @@ match simVar
       let varType = variableType(type_)
       match dims
         case "0" then  '<%varType%> <%varName%>;'
-        else '/* <%varType%> <%varName%>; */'
+        else ''
 end MemberVariableDefine;
 
 template MemberVariableDefineReference(String type,SimVar simVar, String arrayName,String pre)
 ::=
 match simVar
       
-       case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then
-      <<
-       //<%type%>& <%pre%><%cref(name)%>
-      >>
+       case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then ''
+     
       case SIMVAR(numArrayElement={}) then
       <<
       <%type%>& <%pre%><%cref(name)%>
@@ -3558,7 +3646,7 @@ match simVar
       let& dims = buffer "" /*BUFD*/
       let varName = arraycref2(name,dims)
       let varType = variableType(type_)
-      match dims case "0" then  '<%varType%>& <%pre%><%varName%>'
+      match dims case "0" then  ''
 end MemberVariableDefineReference;
 
 
@@ -3573,10 +3661,8 @@ match simVar
        <%variableType(type_)%> <%cref(name)%>;
        >>
     */
-      case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then
-      <<
-      //<%variableType(type_)%> <%cref(name)%> ;
-      >>
+      case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then ''
+      
       case SIMVAR(numArrayElement={},arrayCref=NONE()) then
       <<
       <%variableType(type_)%> <%cref(name)%>;
@@ -3601,7 +3687,7 @@ match simVar
       let varType = variableType(type_)
       match dims
         case "0" then  '<%varType%> <%varName%>;'
-        else '/* <%varType%> <%varName%>; */'
+        else ''
       end match
 
 
@@ -3670,7 +3756,7 @@ match simVar
       let& dims = buffer "" /*BUFD*/
       let varName = arraycref2(name,dims)
       let varType = variableType(type_)
-      match dims case "0" then  '<%varType%>& <%pre%><%varName%>'
+      match dims case "0" then  ''
 end MemberVariableDefineReference2;
 
 
@@ -7023,8 +7109,7 @@ end representationCrefDerVar;
 
 
 template representationCref1(ComponentRef inCref,SimVar var, SimCode simCode, Context context) ::=
-  /*cref2simvar(inCref, simCode) |> SIMVAR(__) =>*/
-    match var
+   match var
     case SIMVAR(index=i) then
     match i
    case -1 then
@@ -7034,10 +7119,13 @@ template representationCref1(ComponentRef inCref,SimVar var, SimCode simCode, Co
 end representationCref1;
 
 template representationCref2(ComponentRef inCref, SimVar var,SimCode simCode, Context context) ::=
- /* cref2simvar(inCref, simCode) |> SIMVAR(__) =>'__zDot[<%index%>]'*/
-match var
+ match var
 case(SIMVAR(index=i)) then
- <<__zDot[<%i%>]>>
+  match context
+         case JACOBIAN_CONTEXT() 
+                then   <<<%crefWithoutIndexOperator(inCref,simCode)%>>>
+        else
+             <<__zDot[<%i%>]>>
 end representationCref2;
 
 template helpvarlength(SimCode simCode)
@@ -8401,18 +8489,17 @@ end setVariables;
 
 
 
-template initialAnalyticJacobians(Integer indexJacobian, list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname, list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>> sparsepattern, list<list<DAE.ComponentRef>> colorList,SimCode simCode)
+template initialAnalyticJacobians(Integer indexJacobian, list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixName, list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>> sparsepattern, list<list<DAE.ComponentRef>> colorList,SimCode simCode)
  "Generates function that initialize the sparse-pattern for a jacobain matrix"
 ::=
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
   let classname =  lastIdentOfPath(modelInfo.name)
-match matrixname
-case "A" then
+
      match seedVars
         case {} then
          <<
-          void <%classname%>::initialAnalyticJacobian()
+          void <%classname%>Jacobian::initialAnalytic<%matrixName%>Jacobian()
           {
 
           }
@@ -8421,7 +8508,7 @@ case "A" then
          match colorList
           case {} then
            <<
-           void <%classname%>::initialAnalyticJacobian()
+           void <%classname%>Jacobian::initialAnalytic<%matrixName%>Jacobian()
            {
            }
            >>
@@ -8431,12 +8518,12 @@ case "A" then
           let tmpvarsSize = (jacobianColumn |> (_,vars,_) => listLength(vars);separator="\n")
           let index_ = listLength(seedVars)
           <<
-          void <%classname%>::initialAnalyticJacobian()
+          void <%classname%>Jacobian::initialAnalytic<%matrixName%>Jacobian()
           {
-             _jacobian = SparseMatrix(<%index_%>,<%indexColumn%>,<%sp_size_index%>);
-             _jac_y =  ublas::zero_vector<double>(<%index_%>);
-             _jac_tmp =  ublas::zero_vector<double>(<%tmpvarsSize%>);
-             _jac_x =  ublas::zero_vector<double>(<%index_%>);
+             _<%matrixName%>jacobian = SparseMatrix(<%index_%>,<%indexColumn%>,<%sp_size_index%>);
+             _<%matrixName%>jac_y =  ublas::zero_vector<double>(<%index_%>);
+             _<%matrixName%>jac_tmp =  ublas::zero_vector<double>(<%tmpvarsSize%>);
+             _<%matrixName%>jac_x =  ublas::zero_vector<double>(<%index_%>);
 
            }
            >>
@@ -8469,19 +8556,17 @@ end functionAnalyticJacobians;
 template functionJac(list<SimEqSystem> jacEquations, list<SimVar> tmpVars, String columnLength, String matrixName, Integer indexJacobian, SimCode simCode)
  "Generates function in simulation file."
 ::=
-  match matrixName
-  case "A" then
-   match simCode
+  match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
   let classname =  lastIdentOfPath(modelInfo.name)
 
   let &varDecls = buffer "" /*BUFD*/
   let &tmp = buffer ""
   let eqns_ = (jacEquations |> eq =>
-      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, /*&tmp*/ simCode)
+      equation_(eq, contextJacobian, &varDecls /*BUFD*/, /*&tmp*/ simCode)
       ;separator="\n")
   <<
-  void <%classname%>::calcJacobianColumn()
+  void <%classname%>Jacobian::calc<%matrixName%>JacobianColumn()
   {
   <%varDecls%>
     <%eqns_%>
@@ -8489,25 +8574,39 @@ template functionJac(list<SimEqSystem> jacEquations, list<SimVar> tmpVars, Strin
   }
   >>
   end match
-  end match
+
 end functionJac;
 
 
 template generateMatrix(Integer indexJacobian, list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname, list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>> sparsepattern, list<list<DAE.ComponentRef>>colorList, Integer maxColor, SimCode simCode)
  "Generates Matrixes for Linear Model."
 ::=
- match matrixname
-  case "A" then
+
    match simCode
-  case SIMCODE(modelInfo = MODELINFO(__)) then
-  let classname =  lastIdentOfPath(modelInfo.name)
+   case SIMCODE(modelInfo = MODELINFO(__)) then
+         generateJacobianMatrix(modelInfo,indexJacobian, jacobianColumn, seedVars, matrixname, sparsepattern, colorList, maxColor, simCode)
+   end match
+ 
+  
+end generateMatrix;
+
+
+
+
+
+template generateJacobianMatrix(ModelInfo modelInfo,Integer indexJacobian, list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixName, list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>> sparsepattern, list<list<DAE.ComponentRef>>colorList, Integer maxColor, SimCode simCode)
+ "Generates Matrixes for Linear Model."
+::=
+match modelInfo
+case MODELINFO(__) then
+let classname =  lastIdentOfPath(name)
 match jacobianColumn
 case {} then
 <<
-   void <%classname%>::calcJacobianColumn()
+   void <%classname%>Jacobian::calc<%matrixName%>JacobianColumn()
   {
   }
-  void <%classname%>::getJacobian(SparseMatrix& matrix)
+  void <%classname%>Jacobian::get<%matrixName%>Jacobian(SparseMatrix& matrix)
   {
 
   }
@@ -8516,10 +8615,10 @@ case _ then
   match colorList
   case {} then
   <<
-    void <%classname%>::calcJacobianColumn()
+    void <%classname%>Jacobian::calc<%matrixName%>JacobianColumn()
   {
   }
-    void <%classname%>::getJacobian(SparseMatrix& matrix)
+    void <%classname%>Jacobian::get<%matrixName%>Jacobian(SparseMatrix& matrix)
     {
 
     }
@@ -8527,43 +8626,48 @@ case _ then
   case _ then
 
   let jacMats = (jacobianColumn |> (eqs,vars,indxColumn) =>
-    functionJac(eqs, vars, indxColumn, matrixname, indexJacobian,simCode)
+    functionJac(eqs, vars, indxColumn, matrixName, indexJacobian,simCode)
     ;separator="\n")
  /* let indexColumn = (jacobianColumn |> (eqs,vars,indxColumn) =>
     indxColumn
     ;separator="\n")
   let index_ = listLength(seedVars)
   */
-    let jacvals = ( sparsepattern |> (_,indexes) hasindex index0 =>
+    let jacvals = ( sparsepattern |> (cref,indexes) hasindex index0 =>
 
-      let jaccol = ( indexes |> i_index =>
+    let jaccol = ( indexes |> i_index =>
          //' _jacobian(<%index0%>,<%intSub(cref(i_index),1)%>) = _jac_y(<%intSub(cref(i_index),1)%>);'
-        ' _jacobian(<%index0%>,<%crefWithoutIndexOperator(i_index)%><%matrixname%>$indexdiff) = _jac_y(<%crefWithoutIndexOperator(i_index)%><%matrixname%>$indexdiff);'
-         ;separator="\n" )
-      ' _jac_x(<%index0%>)=1;
-calcJacobianColumn();
-_jac_x.clear();
-<%jaccol%>'
+    ' _<%matrixName%>jacobian(<%index0%>,<%crefWithoutIndexOperator(cref,simCode)%>$pDER<%matrixName%>$indexdiff) = _<%matrixName%>jac_y(<%crefWithoutIndexOperator(cref,simCode)%>$pDER<%matrixName%>$indexdiff);'
+        ;separator="\n" )
+    ' _<%matrixName%>jac_x(<%index0%>)=1;
+	calc<%matrixName%>JacobianColumn();
+	_<%matrixName%>jac_x.clear();
+	<%jaccol%>'
       ;separator="\n")
 
   <<
-    /*test*/
     <%jacMats%>
-    void <%classname%>::getJacobian(SparseMatrix& matrix)
+    void <%classname%>Jacobian::get<%matrixName%>Jacobian(SparseMatrix& matrix)
      {
         <%jacvals%>
-        matrix=_jacobian;
+        matrix=_<%matrixName%>jacobian;
      }
   >>
-end generateMatrix;
+ 
 
-template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes)
+  
+  
+end generateJacobianMatrix;
+
+
+
+template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes,SimCode simCode)
  "Generates defines for jacobian vars."
 ::=
 
   let analyticVars = (JacobianMatrixes |> (jacColumn, seedVars, name, (_,(diffVars,diffedVars)), _, _) hasindex index0 =>
-    let varsDef = variableDefinitionsJacobians2(index0, jacColumn, seedVars, name)
-    let sparseDef = defineSparseIndexes(diffVars, diffedVars, name)
+    let varsDef = variableDefinitionsJacobians2(index0, jacColumn, seedVars, name,simCode)
+    let sparseDef = defineSparseIndexes(diffVars, diffedVars, name,simCode)
     <<
     <%varsDef%>
     <%sparseDef%>
@@ -8577,16 +8681,14 @@ template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes)
   
 end variableDefinitionsJacobians;
 
-template variableDefinitionsJacobians2(Integer indexJacobian, list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String name)
+template variableDefinitionsJacobians2(Integer indexJacobian, list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String name,SimCode simCode)
  "Generates Matrixes for Linear Model."
 ::=
-   match name
-   case "A" then
   let seedVarsResult = (seedVars |> var hasindex index0 =>
-    jacobianVarDefine(var, "jacobianVarsSeed", indexJacobian, index0,name)
+    jacobianVarDefine(var, "jacobianVarsSeed", indexJacobian, index0,name,simCode)
     ;separator="\n";empty)
   let columnVarsResult = (jacobianColumn |> (_,vars,_) =>
-      (vars |> var hasindex index0 => jacobianVarDefine(var, "jacobianVars", indexJacobian, index0,name)
+      (vars |> var hasindex index0 => jacobianVarDefine(var, "jacobianVars", indexJacobian, index0,name,simCode)
       ;separator="\n";empty)
     ;separator="\n\n")
 
@@ -8597,7 +8699,7 @@ template variableDefinitionsJacobians2(Integer indexJacobian, list<JacobianColum
 end variableDefinitionsJacobians2;
 
 
-template jacobianVarDefine(SimVar simVar, String array, Integer indexJac, Integer index0,String matrixName)
+template jacobianVarDefine(SimVar simVar, String array, Integer indexJac, Integer index0,String matrixName,SimCode simCode)
 ""
 ::=
 match array
@@ -8607,11 +8709,11 @@ case "jacobianVars" then
     match index
     case -1 then
       <<
-      #define <%crefWithoutIndexOperator(name)%> _jac_tmp(<%index0%>)
+      #define <%crefWithoutIndexOperator(name,simCode)%> _<%matrixName%>jac_tmp(<%index0%>)
       >>
     case _ then
       <<
-      #define <%crefWithoutIndexOperator(name)%> _jac_y(<%index%>)
+      #define <%crefWithoutIndexOperator(name,simCode)%> _<%matrixName%>jac_y(<%index%>)
       >>
     end match
   end match
@@ -8620,7 +8722,7 @@ case "jacobianVarsSeed" then
   case SIMVAR(aliasvar=NOALIAS()) then
   let tmp = System.tmpTick()
     <<
-    #define <%crefWithoutIndexOperator(name)%>$pDER<%matrixName%><%crefWithoutIndexOperator(name)%> _jac_x(<%index0%>)
+    #define <%crefWithoutIndexOperator(name,simCode)%>$pDER<%matrixName%>$P<%crefWithoutIndexOperator(name,simCode)%> _<%matrixName%>jac_x(<%index0%>)
     >>
   end match
 end jacobianVarDefine;
@@ -8628,20 +8730,22 @@ end jacobianVarDefine;
 
 
 
-template defineSparseIndexes(list<SimVar> diffVars, list<SimVar> diffedVars, String matrixName) "template variableDefinitionsJacobians2
+template defineSparseIndexes(list<SimVar> diffVars, list<SimVar> diffedVars, String matrixName,SimCode simCode) "template variableDefinitionsJacobians2
   Generates Matrixes for Linear Model."
 ::=
-match matrixName
-case "A" then
   let diffVarsResult = (diffVars |> var as SIMVAR(name=name) hasindex index0 =>
-     '#define <%crefWithoutIndexOperator(name)%><%matrixName%>$indexdiff <%index0%>'
+     '#define <%crefWithoutIndexOperator(name,simCode)%>$pDER<%matrixName%>$indexdiff <%index0%>'
+    ;separator="\n")
+    let diffedVarsResult = (diffedVars |> var as SIMVAR(name=name) hasindex index0 =>
+     '#define <%crefWithoutIndexOperator(name,simCode)%>$pDER<%matrixName%>$indexdiffed <%index0%>'
     ;separator="\n")
    /* generate at least one print command to have the same index and avoid the strange side effect */
   <<
   /* <%matrixName%> sparse indexes */
    <%diffVarsResult%>
+   <%diffedVarsResult%>
   >>
-  else " "
+
 end defineSparseIndexes;
 
 
@@ -9232,34 +9336,15 @@ match simVar
   end match
 end setVariablesDefault;
 
-
-
-template crefWithoutIndexOperator(ComponentRef cr)
+template crefWithoutIndexOperator(ComponentRef cr,SimCode simCode)
  "Generates C equivalent name for component reference."
 ::=
-  match cr
-  case CREF_IDENT(ident = "xloc") then crefStr(cr)
-  case CREF_IDENT(ident = "time") then "time"
-  case WILD(__) then ''
-  else "$P" + crefToCStrfWithoutIndexOperator(cr)
+ 	match cr
+ 	 case CREF_IDENT(ident = "xloc") then crefStr(cr)
+  	case CREF_IDENT(ident = "time") then "time"
+  	case WILD(__) then ''
+  	else crefToCStrWithoutIndexOperator(cr)
 end crefWithoutIndexOperator;
-
-template crefToCStrfWithoutIndexOperator(ComponentRef cr)
- "Helper function to cref."
-::=
-  match cr
-  case CREF_IDENT(__) then '<%unquoteIdentifier(ident)%><%subscriptsToCStrWithoutIndexOperator(subscriptLst)%>'
-  case CREF_QUAL(__) then '<%unquoteIdentifier(ident)%><%subscriptsToCStrWithoutIndexOperator(subscriptLst)%>$P<%crefToCStrWithoutIndexOperator(componentRef)%>'
-  case WILD(__) then ''
-  else "CREF_NOT_IDENT_OR_QUAL"
-end crefToCStrfWithoutIndexOperator;
-
-template subscriptsToCStrWithoutIndexOperator(list<Subscript> subscripts)
-::=
-  if subscripts then
-    '$lB<%subscripts |> s => subscriptToCStr(s) ;separator="$c"%>$rB'
-end subscriptsToCStrWithoutIndexOperator;
-
 
 template crefToCStrWithoutIndexOperator(ComponentRef cr)
  "Helper function to cref."
@@ -9270,6 +9355,25 @@ template crefToCStrWithoutIndexOperator(ComponentRef cr)
   case WILD(__) then ''
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefToCStrWithoutIndexOperator;
+
+template subscriptsToCStrWithoutIndexOperator(list<Subscript> subscripts)
+::=
+  if subscripts then
+    '$lB<%subscripts |> s => subscriptToCStrWithoutIndexOperator(s) ;separator="$c"%>$rB'
+end subscriptsToCStrWithoutIndexOperator;
+
+template subscriptToCStrWithoutIndexOperator(Subscript subscript)
+::=
+  match subscript
+  case SLICE(exp=ICONST(integer=i)) then i
+  case WHOLEDIM(__) then "WHOLEDIM"
+  case INDEX(__) then
+   match exp 
+    case ICONST(integer=i) then i
+    case ENUM_LITERAL(index=i) then i
+      end match
+  else "UNKNOWN_SUBSCRIPT"
+end subscriptToCStrWithoutIndexOperator;
 
 
 end CodegenCpp;
