@@ -140,10 +140,10 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
 
         for(i=0;i< iData->nv;++i)
           for(j = 0; j< i+1; ++j){
-        	 if(iData->Hg[i][j]){
+           if(iData->Hg[i][j]){
                sumLagrange(iData, &sum, ii, i, j,  p, mayer_yes);
                values[k++] =  sum;
-        	 }
+           }
           }
 
         r += iData->nv;
@@ -160,10 +160,10 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
 
         for(i=0;i< iData->nv;++i)
           for(j = 0; j< i+1; ++j){
-        	  if(iData->Hg[i][j]){
+            if(iData->Hg[i][j]){
                 sumLagrange(iData, &sum, ii, i, j,  p,  mayer_yes);
                 values[k++] = sum;
-        	  }
+            }
           }
 
         r += iData->nv;
