@@ -4012,7 +4012,7 @@ template simulationParModelicaKernelsFile(String filePrefix, list<Function> func
   let()= System.tmpTickResetIndex(0,20) /* parfor index */
 
   <<
-  #include "OCLRuntimeUtil_new.cl"
+  #include <ParModelica/explicit/openclrt/OCLRuntimeUtil.cl>
 
   // ParModelica Parallel Function headers.
   <%functionHeadersParModelica(filePrefix, functions)%>
@@ -4034,7 +4034,7 @@ template functionsParModelicaKernelsFile(String filePrefix, Option<Function> mai
   let()= System.tmpTickResetIndex(0,20) /* parfor index */
 
   <<
-  #include "OCLRuntimeUtil_new.cl"
+  #include <ParModelica/explicit/openclrt/OCLRuntimeUtil.cl>
 
   // ParModelica Parallel Function headers.
   <%functionHeadersParModelica(filePrefix, functions)%>
@@ -4349,7 +4349,7 @@ template commonHeader(String filePrefix)
   #include <errno.h>
   <%if acceptParModelicaGrammar() then
   <<
-  #include <omc_ocl_interface.h>
+  #include <ParModelica/explicit/openclrt/omc_ocl_interface.h>
   /* the OpenCL Kernels file name needed in libOMOCLRuntime.a */
   const char* omc_ocl_kernels_source = "<%filePrefix%>_kernels.cl";
   /* the OpenCL program. Made global to avoid repeated builds */

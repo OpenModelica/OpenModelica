@@ -1,6 +1,7 @@
-TOP_BUILDDIR = ../../../build/
+TOP_BUILDDIR = ../../../../build/
 
 OPENMODELICA_INC=$(TOP_BUILDDIR)/include/omc/c/
+PARMODELICAEXPOCL_INC=$(OPENMODELICA_INC)/ParModelica/explicit/openclrt/
 OPENMODELICA_LIB=$(TOP_BUILDDIR)/lib/omc/
 OPENMODELICA_BIN=$(TOP_BUILDDIR)/bin/
 

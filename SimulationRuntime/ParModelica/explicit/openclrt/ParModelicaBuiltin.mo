@@ -83,6 +83,10 @@ parallel function oclGlobalBarrier
   external "builtin";
 end oclGlobalBarrier;
 
+parallel function oclLocalBarrier
+  external "builtin";
+end oclLocalBarrier;
+
 function oclSetNumThreadsOnlyGlobal
   input Integer num_threads;
   external "builtin";

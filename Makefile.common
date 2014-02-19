@@ -138,11 +138,11 @@ fmiclean:
 
 opencl_rt: 
 ifeq ("$(OPENCL)","Yes")
-	$(MAKE) -C SimulationRuntime/ParModelica/OpenCLRuntime -f $(defaultMakefileTarget)
+	$(MAKE) -C SimulationRuntime/ParModelica/explicit/openclrt -f $(defaultMakefileTarget)
 endif
 
 opencl_rt_clean: 
-	$(MAKE) -C SimulationRuntime/ParModelica/OpenCLRuntime -f $(defaultMakefileTarget) clean
+	$(MAKE) -C SimulationRuntime/ParModelica/explicit/openclrt -f $(defaultMakefileTarget) clean
         
 breakprocess:
 	(cd testsuite/openmodelica/bootstrapping && time g++ BreakProcess.cpp -o BreakProcess -static-libgcc)

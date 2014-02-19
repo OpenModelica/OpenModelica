@@ -1,0 +1,25 @@
+CC=@CC@
+CXX=@CXX@
+
+CFLAGS=@CFLAGS@
+CPPFLAGS=@CPPFLAGS@ -I. -I"../../../c" -fPIC
+
+EXEEXT=
+DLLEXT=.so
+OPENLC_LIB= lOpenCL
+
+all: transfer
+
+transfer: libOMOCLRuntime.a    
+	mkdir -p $(PARMODELICAEXPOCL_INC)
+	$(COPY) omc_ocl_interface.h $(PARMODELICAEXPOCL_INC)
+	$(COPY) omc_ocl_common_header.h $(PARMODELICAEXPOCL_INC)
+	$(COPY) omc_ocl_memory_ops.h $(PARMODELICAEXPOCL_INC)
+	$(COPY) libOMOCLRuntime.a $(OPENMODELICA_LIB)
+	$(COPY) ParModelicaBuiltin.mo $(OPENMODELICA_LIB)
+	$(COPY) OCLRuntimeUtil.cl $(PARMODELICAEXPOCL_INC)
+
+Makefile: Makefile.in
+	(cd ../../../ && ./config.status)
+
+include Makefile.common
