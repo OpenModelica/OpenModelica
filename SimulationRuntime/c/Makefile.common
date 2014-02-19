@@ -18,7 +18,8 @@ RUNTIME_HEADERS = $(LIBF2CHEADER) \
 ./math-support/blaswrap.h \
 ./openmodelica_func.h \
 ./openmodelica.h \
-./simulation_data.h 
+./simulation_data.h \
+./ModelicaUtilities.h
 
 RUNTIMELINEAR_HEADERS = ./linearization/linearize.h 
 
@@ -57,7 +58,7 @@ RUNTIMEMETAGC_HEADERS = ./meta/gc/common.h \
 ./meta/gc/marksweep.h \
 ./meta/gc/roots.h 
 
-RUNTIMEUTIL_HEADERS = ./util/ModelicaUtilities.h \
+RUNTIMEUTIL_HEADERS = \
 ./util/base_array.h \
 ./util/boolean_array.h \
 ./util/division.h \
