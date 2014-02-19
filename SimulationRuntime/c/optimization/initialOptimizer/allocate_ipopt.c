@@ -634,7 +634,7 @@ static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData)
 
   if(ACTIVE_STREAM(LOG_IPOPT)){
     for(i=0; i<iData->nx; ++i)
-      printf("\nState[%i]:\t name = \"%s\" \t\t| start=%g \t nominal=%g \t min = %g \t max = %g",i, iData->data->modelData.realVarsData[i].info.name, iData->v[i], iData->vnom[i], data->modelData.realVarsData[i].attribute.min, data->modelData.realVarsData[i].attribute.max);
+      printf("\nState[%i]:\t name = \"%s\" \t\t| start=%g \t nominal=%g \t min = %g \t max = %g",i, iData->data->modelData.realVarsData[i].info.name, data->modelData.realVarsData[i].attribute.start, iData->vnom[i], data->modelData.realVarsData[i].attribute.min, data->modelData.realVarsData[i].attribute.max);
     for(; i<iData->nv; ++i)
       printf("\nInput[%i]:\t name = \"%s\" \t\t| start=%g \t nominal=%g \t min = %g \t max = %g",i, tmpname[i-iData->nx] ,start[i-iData->nx], iData->vnom[i], iData->umin[i-iData->nx], iData->umax[i-iData->nx]);
     if(iData->nc > 0)

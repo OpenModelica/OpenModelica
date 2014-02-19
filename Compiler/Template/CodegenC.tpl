@@ -1745,6 +1745,7 @@ template functionUpdateBoundVariableAttributes(list<SimEqSystem> startValueEquat
     <%nominalValueEquations |> SES_SIMPLE_ASSIGN(__) =>
       <<
       $P$ATTRIBUTE<%cref(cref)%>.nominal = <%cref(cref)%>;
+      $P$ATTRIBUTE<%cref(cref)%>.useNominal = ((modelica_boolean) 1);
         infoStreamPrint(LOG_INIT, 0, "%s(nominal=<%crefToPrintfArg(cref)%>)", <%cref(cref)%>__varInfo.name, (<%crefType(cref)%>) $P$ATTRIBUTE<%cref(cref)%>.nominal);
       >>
     ;separator="\n"%>
@@ -10536,7 +10537,7 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
                    case MODELINFO(vars=SIMVARS(__)) then
                    <<
                      <%vars.inputVars |> SIMVAR(__) hasindex i0 =>
-                     'min[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.min;<%\n%>max[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.max;<%\n%>nominal[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.nominal;<%\n%>useNominal[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.useNominal;<%\n%>name[<%i0%>] = <%cref(name)%>__varInfo.name;<%\n%>start[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.useNominal;'
+                     'min[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.min;<%\n%>max[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.max;<%\n%>nominal[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.nominal;<%\n%>useNominal[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.useNominal;<%\n%>name[<%i0%>] = <%cref(name)%>__varInfo.name;<%\n%>start[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.start;'
                      ;separator="\n"%>
                    >>
         <<
