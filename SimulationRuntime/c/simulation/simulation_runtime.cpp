@@ -915,6 +915,7 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data)
 static void omc_assert_simulation(threadData_t *threadData, FILE_INFO info, const char *msg, ...)
 {
   va_list ap;
+  threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
   switch (threadData->currentErrorStage)
   {
   case ERROR_SIMULATION:
@@ -989,6 +990,7 @@ static void omc_throw_simulation(threadData_t* threadData)
   va_list ap;
   setTermMsg("Assertion triggered by external C function", ap);
   set_struct(FILE_INFO, TermInfo, omc_dummyFileInfo);
+  threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
   longjmp(*threadData->globalJumpBuffer, 1);
 }
 
