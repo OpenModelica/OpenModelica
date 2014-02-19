@@ -309,7 +309,7 @@
 
   int nls_kinsol_free(NONLINEAR_SYSTEM_DATA *nlsData)
   {
-    throwStreamPrint(data->threadData,"no sundials/kinsol support activated");
+    throwStreamPrint(NULL,"no sundials/kinsol support activated");
     return 0;
   }
 
