@@ -928,7 +928,7 @@ testsuite/openmodelica/bootstrapping/LinkMain.makefile \
 SimulationRuntime/fmi/import/Makefile \
 SimulationRuntime/c/Makefile \
 SimulationRuntime/c/simulation/libf2c/makefile.u \
-SimulationRuntime/ParModelica/OpenCLRuntime/Makefile \
+SimulationRuntime/ParModelica/explicit/openclrt/Makefile \
 SimulationRuntime/interactive/Makefile \
 mosh/src/Makefile \
 "
