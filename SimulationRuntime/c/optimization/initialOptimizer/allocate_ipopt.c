@@ -44,15 +44,16 @@
 
 #include "../localFunction.h"
 
-static int set_local_jac_struct(IPOPT_DATA_ *iData, int *nng);
-static int local_jac_struct(IPOPT_DATA_ *iData, int *nng);
+static int set_local_jac_struct(IPOPT_DATA_ *iData, int *nng, int * nH);
+static int local_jac_struct(IPOPT_DATA_ *iData, int *nng, int * nH);
 static int local_jac_struct_print(IPOPT_DATA_ *iData);
-static int local_jac_struct_dense(IPOPT_DATA_ *iData, int * nng);
+static int local_jac_struct_dense(IPOPT_DATA_ *iData, int * nng, int * nH);
 static int check_nominal(IPOPT_DATA_ *iData, double min, double max, double nominal, modelica_boolean set, int i, double x0);
 static int optimizer_coeff_setings(IPOPT_DATA_ *iData);
 static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData);
 static int optimizer_time_setings(IPOPT_DATA_ *iData);
 static int optimizer_print_step(IPOPT_DATA_ *iData);
+static int local_diffObject_struct(IPOPT_DATA_ *iData);
 
 
 /*initial*/
@@ -138,6 +139,10 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   for(i = 0; i < 2; i++)
     iData->gradFomc[i] = (double*) calloc(iData->nv, sizeof(double));
 
+  iData->gradFs = (modelica_boolean**) malloc((2) * sizeof(modelica_boolean*));
+  for(i = 0; i < 2; i++)
+    iData->gradFs[i] = (modelica_boolean*) calloc(iData->nv, sizeof(modelica_boolean));
+
   iData->numJ = (double**) malloc(iData->nJ * sizeof(double*));
   for(i = 0; i < iData->nJ; i++)
     iData->numJ[i] = (double*) calloc(iData->nv, sizeof(double));
@@ -196,8 +201,10 @@ int freeIpoptData(IPOPT_DATA_ *iData)
   free(iData->numJ);
   free(iData->knowedJ);
 
-  for(i=0;i<2;++i)
+  for(i=0;i<2;++i){
     free(iData->gradFomc[i]);
+    free(iData->gradFs[i]);
+  }
 
   for(i = 0; i < iData->nv; i++){
     free(iData->oH[i]);
@@ -288,7 +295,7 @@ int freeIpoptData(IPOPT_DATA_ *iData)
  **/
 int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
 {
-  int id;
+  int id, nH;
   double *c;
 
   iData->nx = data->modelData.nStates;
@@ -321,9 +328,11 @@ int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
   optimizer_coeff_setings(iData);
 
   /***********************/
-  set_local_jac_struct(iData,&id);
+  local_diffObject_struct(iData);
+  set_local_jac_struct(iData, &id, &nH);
+
   iData->njac = iData->deg*(iData->nlocalJac-iData->nx+iData->nsi*iData->nlocalJac+iData->deg*iData->nsi*iData->nx)-iData->deg*id;
-  iData->nhess = 0.5*iData->nv*(iData->nv + 1)*(1+iData->deg*iData->nsi);
+  iData->nhess = nH*(1+iData->deg*iData->nsi);
 
   /***********************/
   iData->x0 = iData->data->localData[1]->realVars;
@@ -334,7 +343,7 @@ int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
   if(ACTIVE_STREAM(LOG_IPOPT_FULL))
     optimizer_print_step(iData);
 
-  if(ACTIVE_STREAM(LOG_IPOPT_JAC) && ACTIVE_STREAM(LOG_IPOPT_HESSE))
+  if(ACTIVE_STREAM(LOG_IPOPT_JAC) || ACTIVE_STREAM(LOG_IPOPT_HESSE))
     local_jac_struct_print(iData);
 
   return 0;
@@ -370,7 +379,7 @@ int move_grid(IPOPT_DATA_ *iData)
  *  function calculates a jacobian matrix struct
  *  author: vitalij
  */
-static int local_jac_struct_dense(IPOPT_DATA_ *iData, int * nng)
+static int local_jac_struct_dense(IPOPT_DATA_ *iData, int * nng, int * nH)
 {
   int **J;
   short **Hg;
@@ -395,6 +404,7 @@ static int local_jac_struct_dense(IPOPT_DATA_ *iData, int * nng)
           Hg[i][j] = 1;
 
   *nng = iData->nc * iData->nv;
+  *nH = 0.5*(iData->nv+1)*iData->nv;
   return 0;
 }
 
@@ -402,7 +412,7 @@ static int local_jac_struct_dense(IPOPT_DATA_ *iData, int * nng)
  *  function calculates a jacobian matrix struct
  *  author: Willi
  */
-static int local_jac_struct(IPOPT_DATA_ *iData, int * nng)
+static int local_jac_struct(IPOPT_DATA_ *iData, int * nng, int * nH)
 {
   DATA * data = iData->data;
   const int index = 2;
@@ -411,10 +421,15 @@ static int local_jac_struct(IPOPT_DATA_ *iData, int * nng)
   int i,j,l,ii,nx, id;
   int *cC,*lindex;
   int nJ = (int)(iData->nJ);
+  modelica_boolean ** dF;
+  double nnH;
+
   id = 0;
+  nnH = 0;
 
   J = iData->knowedJ;
   Hg = iData->Hg;
+  dF = iData->gradFs;
 
   nx = data->simulationInfo.analyticJacobians[index].sizeCols;
   cC =  (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols;
@@ -456,18 +471,30 @@ static int local_jac_struct(IPOPT_DATA_ *iData, int * nng)
     J[ii][ii] = 1.0;
   }
 
-
   for(i = 0; i <iData->nv; ++i)
     for(j = 0; j < iData->nv; ++j)
+    {
       for(ii = 0; ii < nJ; ++ii)
         if(J[ii][i]*J[ii][j])
           Hg[i][j] = 1;
 
+      for(ii = 0; ii < 2; ++ii)
+        if(dF[ii][i]*dF[ii][j])
+          Hg[i][j] = 1;
+    }
+
+  for(i = 0; i <iData->nv; ++i)
+    for(j = 0; j < i+1; ++j)
+    	++nnH;
+
+
   *nng = id;
+  *nH = (int)nnH;
+
   return 0;
 }
 
-static int set_local_jac_struct(IPOPT_DATA_ *iData, int *nng)
+static int set_local_jac_struct(IPOPT_DATA_ *iData, int *nng ,int *nH)
 {
   char *cflags;
   iData->useNumJac = 0;
@@ -484,9 +511,57 @@ static int set_local_jac_struct(IPOPT_DATA_ *iData, int *nng)
   }
 
   if(iData->useNumJac == 2){
-  local_jac_struct_dense(iData, nng);
-  } else {
-    local_jac_struct(iData, nng);
+    local_jac_struct_dense(iData, nng, nH);
+  }else {
+    local_jac_struct(iData, nng, nH);
+  }
+  return 0;
+}
+
+/*
+ *  function calculates struct of symbolic colored gradient "matrix"
+ *  author: vitalij
+ */
+static int local_diffObject_struct(IPOPT_DATA_ *iData)
+{
+    DATA * data = iData->data;
+    const int index = 3;
+    int i,j,l,ii,nx;
+    int *cC,*lindex;
+
+    /*ToDo*/
+    nx = data->simulationInfo.analyticJacobians[index].sizeCols;
+
+
+    cC =  (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols;
+    lindex = (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex;
+
+    for(i = 1; i < data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors + 1; ++i){
+      for(ii = 0; ii<nx; ++ii){
+        if(cC[ii] == i){
+          data->simulationInfo.analyticJacobians[index].seedVars[ii] = 1.0;
+        }
+      }
+
+      data->callback->functionJacC_column(data);
+
+      for(ii = 0; ii < nx; ++ii){
+        if(cC[ii] == i){
+          if(ii == 0) j = 0;
+          else j = lindex[ii-1];
+
+          for(; j<lindex[ii]; ++j){
+            l = data->simulationInfo.analyticJacobians[index].sparsePattern.index[j];
+            iData->gradFs[l][ii] = (modelica_boolean)1;
+          }
+        }
+      }
+
+      for(ii = 0; ii<nx; ++ii){
+        if(cC[ii] == i){
+          data->simulationInfo.analyticJacobians[index].seedVars[ii] = 0.0;
+        }
+      }
   }
   return 0;
 }
@@ -497,9 +572,11 @@ static int local_jac_struct_print(IPOPT_DATA_ *iData)
   int nJ = (int)(iData->nx+iData->nc);
   int **J;
   short **Hg;
+  modelica_boolean ** dF;
 
   J = iData->knowedJ;
   Hg = iData->Hg;
+  dF = iData->gradFs;
 
   printf("\n*****JAC******");
   for(ii = 0; ii < nJ; ++ii){
@@ -508,6 +585,15 @@ static int local_jac_struct_print(IPOPT_DATA_ *iData)
       printf("%i \t",J[ii][j]);
     printf("\n");
   }
+
+  printf("\n*****GRAD******");
+  for(ii = 0; ii < 2; ++ii){
+    printf("\n");
+    for(j =0;j<iData->nv;++j)
+      printf("%i \t",dF[ii][j]);
+    printf("\n");
+  }
+
   printf("\n*****HESSE******");
   for(ii = 0; ii < iData->nv; ++ii){
     printf("\n");
@@ -661,7 +747,7 @@ static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData)
 
       printf("\nInput[%i]:%s(start = %g, nominal = %g%s",i, tmpname[i-iData->nx] ,start[i-iData->nx], iData->vnom[i], buffer);
 
-      if (iData->umax[i-iData->nx]*iData->scalVar[i] < 1e20)
+      if (iData->umax[i-iData->nx] < 1e20)
         sprintf(buffer, ", max = %g", iData->umax[i-iData->nx]);
       else
         sprintf(buffer, ", max = +Inf");

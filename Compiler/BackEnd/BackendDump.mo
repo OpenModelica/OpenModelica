@@ -2447,6 +2447,7 @@ algorithm
     case BackendDAE.EXTOBJ(path)  then "EXTOBJ: " +& Absyn.pathString(path);
     case BackendDAE.JAC_VAR()     then "JACOBIAN_VAR";
     case BackendDAE.JAC_DIFF_VAR()then "JACOBIAN_DIFF_VAR";
+    case BackendDAE.OPT_CONSTR()  then "OPT_CONSTR";
   end match;
 end kindString;
 

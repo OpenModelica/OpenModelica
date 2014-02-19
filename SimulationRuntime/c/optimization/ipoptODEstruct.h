@@ -165,6 +165,7 @@ typedef struct IPOPT_DATA_
   double * gradF_;
   double * gradF0;
   double * gradF00;
+  modelica_boolean ** gradFs;
   int **knowedJ;
   double **numJ;
   long double ***H;

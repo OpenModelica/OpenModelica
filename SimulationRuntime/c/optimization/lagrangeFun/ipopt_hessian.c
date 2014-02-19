@@ -71,8 +71,10 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
         for(p = 0;p <iData->deg+1;++p){
           for(j=0;j< iData->nv;++j){
             for(l = 0; l< j+1; ++l){
-              iRow[k] = r + j;
-              iCol[k++] = c + l;
+              if(iData->Hg[j][l]){
+                iRow[k] = r + j;
+                iCol[k++] = c + l;
+              }
              }
           }
           r += iData->nv;
@@ -82,19 +84,22 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
         for(p = 1;p <iData->deg+1;++p){
           for(j=0;j< iData->nv;++j){
             for(l = 0; l< j+1; ++l){
-              iRow[k] = r + j;
-              iCol[k++] = c + l;
-             }
+              if(iData->Hg[j][l]){
+                iRow[k] = r + j;
+                iCol[k++] = c + l;
+              }
+            }
           }
           r += iData->nv;
           c += iData->nv;
         }
       }
     }
-       /*
+/*
     for(i=0;i<nele_hess;++i)
       printf("\nH(%i,%i) = 1;", iRow[i]+1, iCol[i]+1);
       */
+
   }else{
     double *x;
     double *ll;
@@ -135,8 +140,10 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
 
         for(i=0;i< iData->nv;++i)
           for(j = 0; j< i+1; ++j){
-            sumLagrange(iData, &sum, ii, i, j,  p, mayer_yes);
-            values[k++] =  sum;
+        	 if(iData->Hg[i][j]){
+               sumLagrange(iData, &sum, ii, i, j,  p, mayer_yes);
+               values[k++] =  sum;
+        	 }
           }
 
         r += iData->nv;
@@ -153,8 +160,10 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
 
         for(i=0;i< iData->nv;++i)
           for(j = 0; j< i+1; ++j){
-            sumLagrange(iData, &sum, ii, i, j,  p,  mayer_yes);
-            values[k++] = sum;
+        	  if(iData->Hg[i][j]){
+                sumLagrange(iData, &sum, ii, i, j,  p,  mayer_yes);
+                values[k++] = sum;
+        	  }
           }
 
         r += iData->nv;
