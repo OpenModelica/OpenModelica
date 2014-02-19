@@ -633,10 +633,42 @@ static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData)
   iData->data->callback->pickUpBoundsForInputsInOptimization(data,iData->umin, iData->umax, &iData->vnom[iData->nx], tmp, tmpname, start);
 
   if(ACTIVE_STREAM(LOG_IPOPT)){
-    for(i=0; i<iData->nx; ++i)
-      printf("\nState[%i]:\t name = \"%s\" \t\t| start=%g \t nominal=%g \t min = %g \t max = %g",i, iData->data->modelData.realVarsData[i].info.name, data->modelData.realVarsData[i].attribute.start, iData->vnom[i], data->modelData.realVarsData[i].attribute.min, data->modelData.realVarsData[i].attribute.max);
-    for(; i<iData->nv; ++i)
-      printf("\nInput[%i]:\t name = \"%s\" \t\t| start=%g \t nominal=%g \t min = %g \t max = %g",i, tmpname[i-iData->nx] ,start[i-iData->nx], iData->vnom[i], iData->umin[i-iData->nx], iData->umax[i-iData->nx]);
+	char buffer[200];
+    for(i=0; i<iData->nx; ++i){
+
+    	if (iData->xmin[i] > -1e20)
+    	  sprintf(buffer, ", min = %g", data->modelData.realVarsData[i].attribute.min);
+    	else
+    	  sprintf(buffer, ", min = -Inf");
+
+    	printf("\nState[%i]:%s(start = %g, nominal = %g%s",i, iData->data->modelData.realVarsData[i].info.name, data->modelData.realVarsData[i].attribute.start, iData->vnom[i], buffer);
+
+    	if (iData->xmax[i] < 1e20)
+    	  sprintf(buffer, ", max = %g", data->modelData.realVarsData[i].attribute.max);
+    	else
+    	  sprintf(buffer, ", max = +Inf");
+
+    	printf("%s",buffer);
+    	printf(", init = %g)",iData->data->localData[1]->realVars[i]);
+    }
+
+    for(; i<iData->nv; ++i){
+
+    	if ((double)iData->umin[i-iData->nx] > -1e20)
+    	  sprintf(buffer, ", min = %g", iData->umin[i-iData->nx]);
+    	else
+    	  sprintf(buffer, ", min = -Inf");
+
+    	printf("\nInput[%i]:%s(start = %g, nominal = %g%s",i, tmpname[i-iData->nx] ,start[i-iData->nx], iData->vnom[i], buffer);
+
+    	if (iData->umax[i-iData->nx]*iData->scalVar[i] < 1e20)
+    	  sprintf(buffer, ", max = %g", iData->umax[i-iData->nx]);
+    	else
+    	  sprintf(buffer, ", max = +Inf");
+
+    	printf("%s)",buffer);
+    }
+
     if(iData->nc > 0)
       printf("\nnumber of constraints: %ld", iData->nc);
   }
