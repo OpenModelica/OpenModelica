@@ -3486,13 +3486,13 @@ algorithm
           b = Flags.disableDebug(Flags.EXEC_STAT);
 
           backendDAE2 = BackendDAEUtil.getSolvedSystemforJacobians(backendDAE,
-                                                                   SOME({"removeSimpleEquationsFast"}),
+                                                                   SOME({"removeEqualFunctionCalls","removeSimpleEquations"}),
                                                                    NONE(),
                                                                    NONE(),
                                                                    SOME({"inlineArrayEqn",
                                                                          "constantLinearSystem",
                                                                          "removeSimpleEquations",
-                                                                         "collapseIndependentBlocks"}));
+                                                                         "tearingSystem"}));
           _ = Flags.set(Flags.EXEC_STAT, b);
           Debug.fcall(Flags.JAC_DUMP, BackendDump.bltdump, ("Symbolic Jacobian",backendDAE2));
         then backendDAE2;
