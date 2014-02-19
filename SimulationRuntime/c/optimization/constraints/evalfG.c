@@ -40,12 +40,12 @@
  */
 
 #include "../ipoptODEstruct.h"
-#include "../OptimizationFlags.h"
 #include "../localFunction.h"
 
 
 
 #ifdef WITH_IPOPT
+#define DF_STEP(x,s) ( (fmin(fmax(1e-4*fabs(s*x),1e-8),1e-1)))
 static inline int evalG11(Number *g, IPOPT_DATA_ *iData, double *x0, int i);
 static inline int evalG12(Number *g, IPOPT_DATA_ *iData, double *x0, int i);
 static inline int evalG13(Number *g, IPOPT_DATA_ *iData, double *x0, int i);
@@ -404,5 +404,5 @@ static inline int evalG23(Number *g, IPOPT_DATA_ *iData, double *x0, int i)
 }
 
 
-
+#undef DF_STEP
 #endif

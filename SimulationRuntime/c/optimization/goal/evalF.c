@@ -37,11 +37,10 @@
  */
 
 #include "../ipoptODEstruct.h"
-#include "../OptimizationFlags.h"
 #include "../localFunction.h"
 
 #ifdef WITH_IPOPT
-
+#define DF_STEP(x,s) ( (fmin(fmax(1e-4*fabs(s*x),1e-8),1e-1)))
 static int eval_diff_mayer(IPOPT_DATA_ *iData, double* gradF, double *v);
 static int eval_diff_lagrange1(IPOPT_DATA_ *iData, double *x, int *id_, double* gradF);
 static int eval_diff_lagrange2(IPOPT_DATA_ *iData, double *x, int *id_, double* gradF);
@@ -318,4 +317,6 @@ int num_diff_symColoredObject(IPOPT_DATA_ *iData, double *dF, int this_it)
   }
   return 0;
 }
+
+#undef DF_STEP
 #endif

@@ -39,7 +39,6 @@
 
 #include "../ipoptODEstruct.h"
 #include "../simulation/solver/solver_main.h"
-#include "../OptimizationFlags.h"
 #include "../localFunction.h"
 #include "../../simulation/results/simulation_result.h"
 #include "../../simulation/options.h"

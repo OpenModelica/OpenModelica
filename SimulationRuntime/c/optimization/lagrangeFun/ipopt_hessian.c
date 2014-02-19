@@ -37,10 +37,10 @@
  */
 
 #include"../ipoptODEstruct.h"
-#include "../OptimizationFlags.h"
 #include "../localFunction.h"
 
 #ifdef WITH_IPOPT
+#define DF_STEP(x,s) ( (fmin(fmax(1e-4*fabs(s*x),1e-8),1e-1)))
 
 static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, short lagrange_yes, short mayer_yes, double obj_factor);
 static int updateCost(double *v, double t, IPOPT_DATA_ *iData, short lagrange_yes, short mayer_yes,double *F1, double *F2);
@@ -104,15 +104,10 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
     double *x;
     double *ll;
     int ii;
-    int c,r,p,id,l;
-    double t;
+    int p,id,l;
     double sum;
-    long double mayer_term;
-    short mayer_yes;
+    modelica_boolean mayer_yes;
     int nJ;
-    r = 0;
-    c = 0;
-    k = 0;
 
     nJ = (int) iData->nJ;
     for(ii = 0; ii <1; ++ii){
@@ -146,9 +141,6 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
            }
           }
 
-        r += iData->nv;
-        c += iData->nv;
-
       }
 
     }
@@ -165,9 +157,6 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
                 values[k++] = sum;
             }
           }
-
-        r += iData->nv;
-        c += iData->nv;
         ll += nJ;
 
       }
@@ -189,9 +178,8 @@ static int sumLagrange(IPOPT_DATA_ *iData, double * erg,int ii, int i, int j, in
   int l;
   int nJ = (p) ? iData->nx + iData->nc : iData->nx;
   sum = 0.0;
-  if(iData->Hg[j][i])
-   for(l = 0; l<iData->nx; ++l)
-     sum += iData->H[l][i][j];
+  for(l = 0; l<iData->nx; ++l)
+    sum += iData->H[l][i][j];
 
   if(iData->lagrange){
     if(ii)
@@ -202,9 +190,8 @@ static int sumLagrange(IPOPT_DATA_ *iData, double * erg,int ii, int i, int j, in
 
   sum = iData->dt[ii]*sum;
 
-  if(iData->Hg[j][i])
-    for(l = iData->nx; l<nJ; ++l)
-      sum += iData->H[l][i][j];
+   for(l = iData->nx; l<nJ; ++l)
+     sum += iData->H[l][i][j];
 
   if(mayer_yes)
     sum += iData->mH[i][j];
@@ -290,5 +277,5 @@ static int updateCost(double *v, double t, IPOPT_DATA_ *iData, short lagrange_ye
   return 0;
 }
 
-
+#undef DF_STEP
 #endif
