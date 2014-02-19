@@ -8640,9 +8640,9 @@ case _ then
     ' _<%matrixName%>jacobian(<%index0%>,<%crefWithoutIndexOperator(cref,simCode)%>$pDER<%matrixName%>$indexdiff) = _<%matrixName%>jac_y(<%crefWithoutIndexOperator(cref,simCode)%>$pDER<%matrixName%>$indexdiff);'
         ;separator="\n" )
     ' _<%matrixName%>jac_x(<%index0%>)=1;
-	calc<%matrixName%>JacobianColumn();
-	_<%matrixName%>jac_x.clear();
-	<%jaccol%>'
+  calc<%matrixName%>JacobianColumn();
+  _<%matrixName%>jac_x.clear();
+  <%jaccol%>'
       ;separator="\n")
 
   <<
@@ -9339,11 +9339,11 @@ end setVariablesDefault;
 template crefWithoutIndexOperator(ComponentRef cr,SimCode simCode)
  "Generates C equivalent name for component reference."
 ::=
- 	match cr
- 	 case CREF_IDENT(ident = "xloc") then crefStr(cr)
-  	case CREF_IDENT(ident = "time") then "time"
-  	case WILD(__) then ''
-  	else crefToCStrWithoutIndexOperator(cr)
+   match cr
+    case CREF_IDENT(ident = "xloc") then crefStr(cr)
+    case CREF_IDENT(ident = "time") then "time"
+    case WILD(__) then ''
+    else crefToCStrWithoutIndexOperator(cr)
 end crefWithoutIndexOperator;
 
 template crefToCStrWithoutIndexOperator(ComponentRef cr)
