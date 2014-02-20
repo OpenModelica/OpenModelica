@@ -891,9 +891,9 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <%geConditions(simCode)%>
    <%isConsistent(simCode)%>
    <%generateStepCompleted(listAppend(allEquations,initialEquations),simCode)%>
-   <%generatehandleTimeEvent(sampleLookup,simCode)%>
+   <%generatehandleTimeEvent(timeEvents, simCode)%>
    <%generateDimTimeEvent(listAppend(allEquations,initialEquations),simCode)%>
-   <%generateTimeEvent(sampleLookup,simCode)%>
+   <%generateTimeEvent(timeEvents, simCode)%>
    
    
    <%isODE(simCode)%>
@@ -5097,7 +5097,7 @@ let store_delay_expr = functionStoreDelay(delayedExps,simCode)
 end generateStepCompleted;
 
 
-template generatehandleTimeEvent(BackendDAE.SampleLookup sampleLookup,SimCode simCode)
+template generatehandleTimeEvent(list<BackendDAE.TimeEvent> timeEvents, SimCode simCode)
 ::=
   
   match simCode
@@ -5106,18 +5106,15 @@ then
   <<
   void <%lastIdentOfPath(modelInfo.name)%>::handleTimeEvent(int* time_events)
   { 
-  for(int i = 0;i<_dimTimeEvent;i++)
-  {
-    
-    if(time_events[i]!=_time_event_counter[i])
-         _time_conditions[i] = true; 
-     else
-       _time_conditions[i] = false;
-
-    
-   }
-    memcpy(_time_event_counter,time_events,(int)_dimTimeEvent*sizeof(int));
-   }
+    for(int i=0; i<_dimTimeEvent; i++)
+    {
+      if(time_events[i] != _time_event_counter[i])
+        _time_conditions[i] = true; 
+      else
+        _time_conditions[i] = false;
+    }
+    memcpy(_time_event_counter, time_events, (int)_dimTimeEvent*sizeof(int));
+  }
   >>
 
 end generatehandleTimeEvent;
@@ -5137,31 +5134,29 @@ then
 end generateDimTimeEvent;
 
 
-template generateTimeEvent(BackendDAE.SampleLookup sampleLookup,SimCode simCode)
-::=
-  
+template generateTimeEvent(list<BackendDAE.TimeEvent> timeEvents, SimCode simCode)
+::= 
   match simCode
-case SIMCODE(modelInfo = MODELINFO(__))
-then
-  let &varDecls = buffer "" /*BUFD*/
-  <<
-  void <%lastIdentOfPath(modelInfo.name)%>::getTimeEvent(time_event_type& time_events)
-  {
-    <%match sampleLookup
-      case BackendDAE.SAMPLE_LOOKUP(__) then
-        (lookup |> (index, start, interval)  =>
-          let &preExp = buffer "" /*BUFD*/
-          let e1 = daeExp(start, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-          let e2 = daeExp(interval, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-          <<
-          <%preExp%>
-           time_events.push_back(std::make_pair(<%e1%>, <%e2%>));     
-         >>)%>
-      
-          
-   }
-  >>
-
+    case SIMCODE(modelInfo = MODELINFO(__))
+    then
+      let &varDecls = buffer "" /*BUFD*/
+      <<
+      void <%lastIdentOfPath(modelInfo.name)%>::getTimeEvent(time_event_type& time_events)
+      {
+        <%(timeEvents |> timeEvent  =>
+          match timeEvent
+            case SAMPLE_TIME_EVENT(__) then
+              let &preExp = buffer "" /*BUFD*/
+              let e1 = daeExp(startExp, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+              let e2 = daeExp(intervalExp, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+              <<
+              <%preExp%>
+              time_events.push_back(std::make_pair(<%e1%>, <%e2%>));     
+              >>
+            else ''
+          ;separator="\n\n")%>
+       }
+      >>
 end generateTimeEvent;
 
 

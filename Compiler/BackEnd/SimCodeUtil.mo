@@ -1481,7 +1481,7 @@ algorithm
       Option<BackendDAE.BackendDAE> inlineDAE;
       list<SimCode.StateSet> stateSets;
       array<Integer> systemIndexMap;
-      BackendDAE.SampleLookup sampleLookup;
+      list<BackendDAE.TimeEvent> timeEvents;
       list<tuple<Integer,Integer>> equationSccMapping, eqBackendSimCodeMapping;
       Integer highestSimEqIndex;
       
@@ -1519,7 +1519,7 @@ algorithm
                                                         classAttrs=classAttributes, 
                                                         functionTree=functionTree, 
                                                         symjacs=symJacs,
-                                                        eventInfo=BackendDAE.EVENT_INFO(sampleLookup=sampleLookup))) = dlow;
+                                                        eventInfo=BackendDAE.EVENT_INFO(timeEvents=timeEvents))) = dlow;
 
 
       // equation generation for euler, dassl2, rungekutta
@@ -1650,7 +1650,7 @@ algorithm
                                 classAttributes, 
                                 zeroCrossings, 
                                 relations, 
-                                sampleLookup, 
+                                timeEvents, 
                                 whenClauses, 
                                 discreteModelVars, 
                                 extObjInfo, 
@@ -4755,7 +4755,7 @@ algorithm
                               NONE(), NONE(), BackendDAE.NO_MATCHING(), {})}, 
                             BackendDAE.SHARED(knvars, emptyVars, emptyVars, 
                               emptyEqns, emptyEqns, {}, {}, 
-                              cache, {}, inFuncs, BackendDAE.EVENT_INFO(BackendDAE.SAMPLE_LOOKUP(0, {}), {}, {}, {}, {}, 0, 0), 
+                              cache, {}, inFuncs, BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0, 0), 
                               {}, BackendDAE.ALGEQSYSTEM(), {}, iextra));
 
         backendDAE = BackendDAEUtil.transformBackendDAE(backendDAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
@@ -5006,7 +5006,7 @@ algorithm
         backendDAE = BackendDAE.DAE({BackendDAE.EQSYSTEM(dependentVars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {})}, 
                                     BackendDAE.SHARED(knvars, emptyVars, emptyVars, 
                                                       emptyEqns, emptyEqns, {}, {}, 
-                                                      cache, {}, inFuncs, BackendDAE.EVENT_INFO(BackendDAE.SAMPLE_LOOKUP(0, {}), {}, {}, {}, {}, 0, 0), 
+                                                      cache, {}, inFuncs, BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0, 0), 
                                                       {}, BackendDAE.ALGEQSYSTEM(), {}, iei));
         
         backendDAE = BackendDAEUtil.transformBackendDAE(backendDAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
@@ -6340,7 +6340,6 @@ algorithm
       BackendDAE.Shared shared;
       Integer uniqueEqIndex;
       list<SimCode.SimVar> tempvars;
-      BackendDAE.SampleLookup sampleLookup;
 
     case ({}, _, _, _, _, _)
     then ({}, iuniqueEqIndex, itempvars);
@@ -6352,9 +6351,8 @@ algorithm
       eeqns = BackendEquation.emptyEqns();
       cache = Env.emptyCache();
       funcs = DAEUtil.avlTreeNew();
-      sampleLookup = BackendDAE.SAMPLE_LOOKUP(0, {});
       syst = BackendDAE.EQSYSTEM(vars1, eqns_1, NONE(), NONE(), BackendDAE.NO_MATCHING(), {});
-      shared = BackendDAE.SHARED(evars, evars, evars, eeqns, eeqns, {}, {}, cache, {}, funcs, BackendDAE.EVENT_INFO(sampleLookup, {}, {}, {}, {}, 0, 0), {}, BackendDAE.ARRAYSYSTEM(), {}, iextra);
+      shared = BackendDAE.SHARED(evars, evars, evars, eeqns, eeqns, {}, {}, cache, {}, funcs, BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0, 0), {}, BackendDAE.ARRAYSYSTEM(), {}, iextra);
       subsystem_dae = BackendDAE.DAE({syst}, shared);
       (BackendDAE.DAE({syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))}, shared)) = BackendDAEUtil.transformBackendDAE(subsystem_dae, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.ALLOW_UNDERCONSTRAINED())), NONE(), NONE());
       (equations_, _, uniqueEqIndex, tempvars) = createEquations(false, false, genDiscrete, false, syst, shared, comps, iuniqueEqIndex, itempvars);
@@ -6632,7 +6630,7 @@ algorithm
       funcs = DAEUtil.avlTreeNew();
       vars1 = BackendVariable.listVar1(vars);
       syst = BackendDAE.EQSYSTEM(vars1, eqns_1, NONE(), NONE(), BackendDAE.NO_MATCHING(), {});
-      shared = BackendDAE.SHARED(evars, evars, av, eeqns, eeqns, {}, {}, cache, {}, funcs, BackendDAE.EVENT_INFO(BackendDAE.SAMPLE_LOOKUP(0, {}), {}, {}, {}, {}, 0, 0), {}, BackendDAE.ARRAYSYSTEM(), {}, iextra);
+      shared = BackendDAE.SHARED(evars, evars, av, eeqns, eeqns, {}, {}, cache, {}, funcs, BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0, 0), {}, BackendDAE.ARRAYSYSTEM(), {}, iextra);
       subsystem_dae = BackendDAE.DAE({syst}, shared);
       (BackendDAE.DAE({syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))}, shared)) = BackendDAEUtil.transformBackendDAE(subsystem_dae, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.ALLOW_UNDERCONSTRAINED())), NONE(), NONE());
       (equations_, noDiscequations, uniqueEqIndex, tempvars) = createEquations(false, false, genDiscrete, false, syst, shared, comps, iuniqueEqIndex, itempvars);
@@ -6655,7 +6653,7 @@ algorithm
       funcs = DAEUtil.avlTreeNew();
       vars1 = BackendVariable.listVar1(vars);
       syst = BackendDAE.EQSYSTEM(vars1, eqns_1, NONE(), NONE(), BackendDAE.NO_MATCHING(), {});
-      shared = BackendDAE.SHARED(evars, evars, av, eeqns, eeqns, {}, {}, cache, {}, funcs, BackendDAE.EVENT_INFO(BackendDAE.SAMPLE_LOOKUP(0, {}), {}, {}, {}, {}, 0, 0), {}, BackendDAE.ARRAYSYSTEM(), {}, iextra);
+      shared = BackendDAE.SHARED(evars, evars, av, eeqns, eeqns, {}, {}, cache, {}, funcs, BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0, 0), {}, BackendDAE.ARRAYSYSTEM(), {}, iextra);
       subsystem_dae = BackendDAE.DAE({syst}, shared);
       (BackendDAE.DAE({syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))}, shared)) = BackendDAEUtil.transformBackendDAE(subsystem_dae, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.ALLOW_UNDERCONSTRAINED())), NONE(), NONE());
       (equations_, noDiscequations, uniqueEqIndex, tempvars) = createEquations(false, false, genDiscrete, false, syst, shared, comps, iuniqueEqIndex, itempvars);
@@ -7261,7 +7259,7 @@ algorithm
         kn = BackendVariable.listVar(lkn);
         funcs = DAEUtil.avlTreeNew();
         syst = BackendDAE.EQSYSTEM(v, pe, NONE(), NONE(), BackendDAE.NO_MATCHING(), {});
-        shared = BackendDAE.SHARED(kn, extobj, alisvars, emptyeqns, emptyeqns, constrs, clsAttrs, cache, env, funcs, BackendDAE.EVENT_INFO(BackendDAE.SAMPLE_LOOKUP(0, {}), {}, {}, {}, {}, 0, 0), extObjClasses, BackendDAE.PARAMETERSYSTEM(), {}, ei);
+        shared = BackendDAE.SHARED(kn, extobj, alisvars, emptyeqns, emptyeqns, constrs, clsAttrs, cache, env, funcs, BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0, 0), extObjClasses, BackendDAE.PARAMETERSYSTEM(), {}, ei);
         (syst, m, mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.NORMAL(), SOME(funcs));
         v1 = listArray(lv1);
         v2 = listArray(lv2);
@@ -12050,7 +12048,7 @@ algorithm
       list<SimCode.JacobianMatrix> jacobianMatrixes;
       list<String> labels;
       Option<SimCode.SimulationSettings> simulationSettingsOpt;
-      BackendDAE.SampleLookup sampleLookup;
+      list<BackendDAE.TimeEvent> timeEvents;
       String fileNamePrefix;
       SimCode.HashTableCrefToSimVar crefToSimVarHT;
       Absyn.Path name;
@@ -12067,7 +12065,7 @@ algorithm
       then inSimCode;
     
     case SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
-                 parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, sampleLookup, whenClauses, 
+                 parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses, 
                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT, hpcOmSchedule)
       equation
         SimCode.MODELINFO(name, directory, varInfo, vars, functions, labels) = modelInfo;
@@ -12084,7 +12082,7 @@ algorithm
         modelInfo = SimCode.MODELINFO(name, directory, varInfo, vars, functions, labels);
       then
         SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
-                  parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, sampleLookup, whenClauses, 
+                  parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses, 
                   discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT, hpcOmSchedule);
                   
     case _
@@ -12361,7 +12359,7 @@ algorithm
       list<DAE.Constraint> constraints;
       list<DAE.ClassAttributes> classAttributes;
       list<BackendDAE.ZeroCrossing> zeroCrossings, relations;
-      BackendDAE.SampleLookup sampleLookup;
+      list<BackendDAE.TimeEvent> timeEvents;
       list<SimCode.SimWhenClause> whenClauses;
       list<DAE.ComponentRef> discreteModelVars;
       SimCode.ExtObjInfo extObjInfo;
@@ -12380,7 +12378,7 @@ algorithm
                           useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                           parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, 
                           jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, 
-                          relations, sampleLookup, whenClauses, discreteModelVars, extObjInfo, makefileParams, 
+                          relations, timeEvents, whenClauses, discreteModelVars, extObjInfo, makefileParams, 
                           delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix,
                           crefToSimVarHT, hpcOmSchedule), _, a)
       equation
@@ -12408,7 +12406,7 @@ algorithm
                             useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                             parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, 
                             jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, 
-                            relations, sampleLookup, whenClauses, discreteModelVars, extObjInfo, makefileParams, 
+                            relations, timeEvents, whenClauses, discreteModelVars, extObjInfo, makefileParams, 
                             delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, 
                             crefToSimVarHT, hpcOmSchedule), a);
   end match;
@@ -12571,7 +12569,7 @@ algorithm
       list<DAE.Constraint> constraints;
       list<DAE.ClassAttributes> classAttributes;
       list<BackendDAE.ZeroCrossing> zeroCrossings, relations;
-      BackendDAE.SampleLookup sampleLookup;
+      list<BackendDAE.TimeEvent> timeEvents;
       list<SimCode.SimWhenClause> whenClauses;
       list<DAE.ComponentRef> discreteModelVars;
       SimCode.ExtObjInfo extObjInfo;
@@ -12589,14 +12587,14 @@ algorithm
                           useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                           parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, 
                           jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, 
-                          relations, sampleLookup, whenClauses, discreteModelVars, extObjInfo, makefileParams, 
+                          relations, timeEvents, whenClauses, discreteModelVars, extObjInfo, makefileParams, 
                           delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT, hpcOmSchedule), _)
       then SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, 
                            allEquations, odeEquations, algebraicEquations, residualEquations, 
                            useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                            parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts,
                            jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings,
-                           relations, sampleLookup, whenClauses, discreteModelVars, extObjInfo, makefileParams, 
+                           relations, timeEvents, whenClauses, discreteModelVars, extObjInfo, makefileParams, 
                            delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT, hpcOmSchedule);
   end match;
 end setSimCodeLiterals;

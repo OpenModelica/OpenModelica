@@ -1012,13 +1012,13 @@ algorithm
       SimCode.HashTableCrefToSimVar crefToSimVarHT;
       list<SimCode.JacobianMatrix> jacobianMatrixes;
       list<SimCode.SimEqSystem> eqs;
-      BackendDAE.SampleLookup sampleLookup;
+      list<BackendDAE.TimeEvent> timeEvents;
       Option<HpcOmScheduler.ScheduleSimCode> hpcOmSchedule;
       
     case (SimCode.SIMCODE(modelInfo,literals,recordDecls,externalFunctionIncludes,allEquations,odeEquations,
           algebraicEquations,residualEquations,useSymbolicInitialization,useHomotopy,initialEquations,startValueEquations,nominalValueEquations,minValueEquations,maxValueEquations,
           parameterEquations,inlineEquations,removedEquations,algorithmAndEquationAsserts,jacobianEquations,stateSets,constraints,classAttributes,zeroCrossings,relations,
-          sampleLookup,whenClauses,discreteModelVars,extObjInfo,makefileParams,
+          timeEvents,whenClauses,discreteModelVars,extObjInfo,makefileParams,
           delayedExps,jacobianMatrixes,simulationSettingsOpt,fileNamePrefix,crefToSimVarHT,hpcOmSchedule),_)
     equation
       {eqs} = odeEquations;
@@ -1027,10 +1027,8 @@ algorithm
                          allEquations, {eqs}, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy,
                          initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations, parameterEquations, inlineEquations,
                          removedEquations, algorithmAndEquationAsserts, jacobianEquations, stateSets, constraints, classAttributes,
-                         zeroCrossings, relations, sampleLookup,
-                         whenClauses, discreteModelVars, extObjInfo,
-                         makefileParams, delayedExps, jacobianMatrixes,
-                         simulationSettingsOpt, fileNamePrefix, crefToSimVarHT,hpcOmSchedule);
+                         zeroCrossings, relations, timeEvents, whenClauses, discreteModelVars, extObjInfo,
+                         makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT,hpcOmSchedule);
 
   end match;
 end replaceDiscontsInOde;

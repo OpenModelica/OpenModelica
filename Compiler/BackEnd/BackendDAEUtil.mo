@@ -1094,18 +1094,20 @@ end calculateVarSizes;
 
 public function numberOfZeroCrossings "author: lochel"
   input BackendDAE.BackendDAE inBackendDAE;
-  output Integer outNumZeroCrossings "number of zerocrossings" ;
-  output Integer outNumTimeEvents    "number of zerocrossings that are samples" ;
+  output Integer outNumZeroCrossings "number of ordinary zerocrossings" ;
+  output Integer outNumTimeEvents    "number of zerocrossings that are time events" ;
   output Integer outNumRelations;
   output Integer outNumMathEventFunctions;
 protected
+  list<BackendDAE.TimeEvent> timeEvents;
   list<ZeroCrossing> zeroCrossingLst;
 algorithm
-  BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(sampleLookup=BackendDAE.SAMPLE_LOOKUP(nSamples=outNumTimeEvents),
+  BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(timeEvents=timeEvents,
                                                                           zeroCrossingLst=zeroCrossingLst,
                                                                           relationsNumber=outNumRelations,
                                                                           numberMathEvents=outNumMathEventFunctions))) := inBackendDAE;
 
+  outNumTimeEvents := listLength(timeEvents);
   outNumZeroCrossings := listLength(zeroCrossingLst);
 end numberOfZeroCrossings;
 
@@ -2377,13 +2379,13 @@ algorithm
       ExternalObjectClasses eoc;
       BackendDAE.SymbolicJacobians symjacs;
       BackendDAEType btp;
-      BackendDAE.SampleLookup sampleLookup;
+      list<BackendDAE.TimeEvent> timeEvents;
       BackendDAE.ExtraInfo ei;
     
-    case (_,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO(sampleLookup,wclst,zc,smplLst,rellst,numberOfRelations,numberOfMathEventFunctions),eoc,btp,symjacs,ei))
+    case (_,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO(timeEvents,wclst,zc,smplLst,rellst,numberOfRelations,numberOfMathEventFunctions),eoc,btp,symjacs,ei))
       equation
         wclst1 = listAppend(wclst,inWcLst);
-      then BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO(sampleLookup,wclst1,zc,smplLst,rellst,numberOfRelations,numberOfMathEventFunctions),eoc,btp,symjacs,ei);
+      then BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO(timeEvents,wclst1,zc,smplLst,rellst,numberOfRelations,numberOfMathEventFunctions),eoc,btp,symjacs,ei);
   
   end match;
 end whenClauseAddDAE;

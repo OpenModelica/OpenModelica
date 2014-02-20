@@ -3365,11 +3365,11 @@ algorithm
       list<BackendDAE.Equation> eqnslst;
       list<BackendDAE.Var> varlst;
       Boolean b1;
-      BackendDAE.SampleLookup sampleLookup;
+      list<BackendDAE.TimeEvent> timeEvents;
       BackendDAE.ExtraInfo ei;
       
     case (false, _, _) then inDAE;
-    case (true, BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constraintsLst, clsAttrsLst, cache, env, funcTree, BackendDAE.EVENT_INFO(sampleLookup, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst, numberOfRealtions, numMathFunctions), eoc, btp, symjacs, ei)), _)
+    case (true, BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constraintsLst, clsAttrsLst, cache, env, funcTree, BackendDAE.EVENT_INFO(timeEvents, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst, numberOfRealtions, numMathFunctions), eoc, btp, symjacs, ei)), _)
       equation
         Debug.fcall(Flags.DUMP_REPL, BackendVarTransform.dumpReplacements, repl);
         Debug.fcall(Flags.DUMP_REPL, BackendVarTransform.dumpExtendReplacements, repl);
@@ -3389,7 +3389,7 @@ algorithm
         // remove asserts with condition=true from removed equations
         remeqns1 = BackendEquation.listEquation(List.select(BackendEquation.equationList(remeqns1), assertWithCondTrue));
       then
-        BackendDAE.DAE(systs1, BackendDAE.SHARED(knvars1, exobj, aliasVars, inieqns, remeqns1, constraintsLst, clsAttrsLst, cache, env, funcTree, BackendDAE.EVENT_INFO(sampleLookup, whenClauseLst1, zeroCrossingLst, sampleLst, relationsLst, numberOfRealtions, numMathFunctions), eoc, btp, symjacs, ei));
+        BackendDAE.DAE(systs1, BackendDAE.SHARED(knvars1, exobj, aliasVars, inieqns, remeqns1, constraintsLst, clsAttrsLst, cache, env, funcTree, BackendDAE.EVENT_INFO(timeEvents, whenClauseLst1, zeroCrossingLst, sampleLst, relationsLst, numberOfRealtions, numMathFunctions), eoc, btp, symjacs, ei));
   end match;
 end removeSimpleEquationsShared;
 

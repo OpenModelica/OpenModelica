@@ -1108,15 +1108,15 @@ protected function dumpEventInfo
 algorithm
   _ := match(inEventInfo, addMML)
     local
-      BackendDAE.SampleLookup sampleLookup;
+      list<BackendDAE.TimeEvent> timeEvents;
       list<BackendDAE.WhenClause> whenClauseLst;
       list<BackendDAE.ZeroCrossing> zc;
     
-    case (BackendDAE.EVENT_INFO(sampleLookup = sampleLookup, 
-                                whenClauseLst = whenClauseLst, 
-                                zeroCrossingLst = zc), _)
+    case (BackendDAE.EVENT_INFO(timeEvents=timeEvents, 
+                                whenClauseLst=whenClauseLst, 
+                                zeroCrossingLst=zc), _)
       equation
-        dumpSamples(sampleLookup, stringAppend(SAMPLES, LIST_), addMML);
+        dumpTimeEvents(timeEvents, stringAppend(SAMPLES, LIST_), addMML);
         dumpWhenClauses(whenClauseLst, stringAppend(WHEN_CLAUSES, LIST_), addMML);
         dumpZeroCrossing(zc, stringAppend(ZERO_CROSSING, LIST_), addMML);
       then
@@ -3874,7 +3874,7 @@ algorithm
   end match;
 end dumpWhenOperatorLst;
 
-public function dumpSamples "
+protected function dumpTimeEvents "
 This function prints the list of Samples
 elements in a XML format. It takes also as input
 a string in order to know what is the content of
@@ -3883,92 +3883,102 @@ the zero crossing list. The output is:
 ...
 </Samples>
 "
-  input BackendDAE.SampleLookup inSamples;
+  input list<BackendDAE.TimeEvent> inTimeEvents;
   input String inContent;
   input Boolean addMathMLCode;
 algorithm
   _:=
-  matchcontinue (inSamples,inContent,addMathMLCode)
+  matchcontinue (inTimeEvents,inContent,addMathMLCode)
     local
       Integer len;
       list<tuple<Integer, .DAE.Exp, .DAE.Exp>> samples;
       
     
-    case (BackendDAE.SAMPLE_LOOKUP(lookup = {}),_,_) then ();
+    case ({},_,_) then ();
     
-    case (BackendDAE.SAMPLE_LOOKUP(lookup = samples),_,_)
+    case (_,_,_)
       equation
-        len = listLength(samples);
+        len = listLength(inTimeEvents);
         len >= 1 = false;
       then();
     
-    case (BackendDAE.SAMPLE_LOOKUP(lookup = samples),_,_)
+    case (_,_,_)
       equation
-        len = listLength(samples);
+        len = listLength(inTimeEvents);
         len >= 1 = true;
         dumpStrOpenTagAttr(inContent, DIMENSION, intString(len));
-        dumpSampleLst(samples, addMathMLCode);
+        dumpSampleLst(inTimeEvents, addMathMLCode);
         dumpStrCloseTag(inContent);
       then ();
   
   end matchcontinue;
-end dumpSamples;
+end dumpTimeEvents;
 
 protected function dumpSampleLst "
-This function prints the content of a Samples list
-of elements, including the information regarding the origin
-of the zero crossing elements in XML format. The output is:
-<stringAppend(Samples,ELEMENT_)>
-  <index value = i>
-  <start string = exp>
-  <interval string = exp>
-</stringAppend(Samples,ELEMENT_)>
- "
-  input list<tuple<Integer, .DAE.Exp, .DAE.Exp>> inSamples;
+  This function prints the content of a Samples list
+  of elements, including the information regarding the origin
+  of the zero crossing elements in XML format. The output is:
+  <stringAppend(Samples,ELEMENT_)>
+    <index value = i>
+    <start string = exp>
+    <interval string = exp>
+  </stringAppend(Samples,ELEMENT_)>"
+  input list<BackendDAE.TimeEvent> inSamples;
   input Boolean addMathMLCode;
 algorithm
-  _:=
-  match (inSamples,addMathMLCode)
+  _ := match (inSamples, addMathMLCode)
     local
       DAE.Exp e1, e2;
       Integer i;
       Boolean addMMLCode;
-      list<tuple<Integer, .DAE.Exp, .DAE.Exp>> lst;
+      list<BackendDAE.TimeEvent> lst;
     
-    case ({},_) then ();
+    case ({}, _) then ();
     
-    case ((i, e1, e2) :: lst,addMMLCode)
+    case (BackendDAE.SIMPLE_TIME_EVENT()::lst, addMMLCode)
       equation
-        dumpStrOpenTag(stringAppend(SAMPLES,ELEMENT_));
+        /* TODO */
+        
+        dumpSampleLst(lst,addMMLCode);
+      then ();
+      
+    case (BackendDAE.COMPLEX_TIME_EVENT()::lst, addMMLCode)
+      equation
+        /* TODO */
+        
+        dumpSampleLst(lst, addMMLCode);
+      then ();
+    
+    case (BackendDAE.SAMPLE_TIME_EVENT(i, e1, e2)::lst, addMMLCode)
+      equation
+        dumpStrOpenTag(stringAppend(SAMPLES, ELEMENT_));
         
         dumpStrOpenTagAttr(INDEX, VALUE, intString(i));
-        dumpExp(e1,addMMLCode);
+        dumpExp(e1, addMMLCode);
         dumpStrCloseTag(INDEX);
         
         dumpStrOpenTagAttr(START, EXP_STRING, printExpStr(e1));
-        dumpExp(e1,addMMLCode);
+        dumpExp(e1, addMMLCode);
         dumpStrCloseTag(START);
         
         dumpStrOpenTagAttr(INTERVAL, EXP_STRING, printExpStr(e2));
-        dumpExp(e2,addMMLCode);
+        dumpExp(e2, addMMLCode);
         dumpStrCloseTag(INTERVAL);
         
-        dumpStrCloseTag(stringAppend(SAMPLES,ELEMENT_));
-        dumpSampleLst(lst,addMMLCode);
+        dumpStrCloseTag(stringAppend(SAMPLES, ELEMENT_));
+        dumpSampleLst(lst, addMMLCode);
       then ();
-  
   end match;
 end dumpSampleLst;
 
 public function dumpZeroCrossing "
-This function prints the list of ZeroCrossing
-elements in a XML format. It takes also as input
-a string in order to know what is the content of
-the zero crossing list. The output is:
-<zeroCrossings DIMENSION=...>
-...
-</zeroCrossings>
-"
+  This function prints the list of ZeroCrossing
+  elements in a XML format. It takes also as input
+  a string in order to know what is the content of
+  the zero crossing list. The output is:
+  <zeroCrossings DIMENSION=...>
+  ...
+  </zeroCrossings>"
   input list<BackendDAE.ZeroCrossing> zeroCross;
   input String inContent;
   input Boolean addMathMLCode;

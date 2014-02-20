@@ -413,11 +413,11 @@ end StateSet;
 public
 uniontype EventInfo
   record EVENT_INFO
-    SampleLookup sampleLookup          "stores all information regarding sample-calls" ;
+    list<TimeEvent> timeEvents         "stores all information regarding time events" ;
     list<WhenClause> whenClauseLst     "list of when clauses. The WhenEquation datatype refer to this list by position" ;
     list<ZeroCrossing> zeroCrossingLst "list of zero crossing coditions";
+    // TODO: sampleLst and relationsLst could be removed if cpp runtime is prepared to handle zero crossing conditions
     list<ZeroCrossing> sampleLst       "list of sample as before, used by cpp runtime";
-    // TODO: relationsLst could be removed if cpp runtime is prepared to handle zero-crossing conditions
     list<ZeroCrossing> relationsLst    "list of zero crossing function as before, used by cpp runtime";
     Integer relationsNumber            "stores the number of relation in all zero-crossings";
     Integer numberMathEvents           "stores the number of math function that trigger events e.g. floor, ceil, integer, ...";
@@ -477,12 +477,19 @@ uniontype ZeroCrossing
 end ZeroCrossing;
 
 public
-uniontype SampleLookup
-  record SAMPLE_LOOKUP
-    Integer nSamples "total number of different sample calls" ;
-    list<tuple<Integer, .DAE.Exp, .DAE.Exp>> lookup "sample arguments (index, start, interval)" ;
-  end SAMPLE_LOOKUP;
-end SampleLookup;
+uniontype TimeEvent
+  record SIMPLE_TIME_EVENT "e.g. time > 0.5"
+  end SIMPLE_TIME_EVENT;
+  
+  record COMPLEX_TIME_EVENT "e.g. sin(time) > 0.1"
+  end COMPLEX_TIME_EVENT;
+  
+  record SAMPLE_TIME_EVENT "e.g. sample(1, 1)"
+    Integer index "unique sample index" ;
+    .DAE.Exp startExp;
+    .DAE.Exp intervalExp;
+  end SAMPLE_TIME_EVENT;
+end TimeEvent;
 
 //
 // AdjacencyMatrixes
@@ -589,10 +596,10 @@ type SparseColoring = list<list< .DAE.ComponentRef>>;   // coloring
 public 
 uniontype DifferentiateInputData
   record DIFFINPUTDATA
-    Option<Variables> independenentVars;           // Independent variables
-    Option<Variables> dependenentVars;             // Dependent variables
-    Option<Variables> knownVars;                   // known variables (e.g. parameter, constants, ...)  
-    Option<Variables> allVars;                     // all variables
+    Option<Variables> independenentVars;          // Independent variables
+    Option<Variables> dependenentVars;            // Dependent variables
+    Option<Variables> knownVars;                  // known variables (e.g. parameter, constants, ...)  
+    Option<Variables> allVars;                    // all variables
     Option<list< Var>> controlVars;               // variables to save control vars of for algorithm  
     Option<list< .DAE.ComponentRef>> diffCrefs;   // all crefs to differentiate, needed for generic gradient
     Option<String> matrixName;                    // name to create tempory vars, needed for generic gradient

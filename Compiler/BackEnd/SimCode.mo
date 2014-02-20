@@ -102,7 +102,7 @@ uniontype SimCode
     list<DAE.ClassAttributes> classAttributes;
     list<BackendDAE.ZeroCrossing> zeroCrossings;
     list<BackendDAE.ZeroCrossing> relations;
-    BackendDAE.SampleLookup sampleLookup;
+    list<BackendDAE.TimeEvent> timeEvents;
     list<SimWhenClause> whenClauses;
     list<DAE.ComponentRef> discreteModelVars;
     ExtObjInfo extObjInfo;

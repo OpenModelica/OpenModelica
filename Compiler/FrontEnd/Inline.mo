@@ -598,33 +598,30 @@ protected function inlineEventInfo "inlines function calls in event info"
   input Functiontuple inElementList;
   output BackendDAE.EventInfo outEventInfo;
 algorithm
-  outEventInfo := matchcontinue(inEventInfo,inElementList)
+  outEventInfo := matchcontinue(inEventInfo, inElementList)
     local
       Functiontuple fns;
-      list<BackendDAE.WhenClause> wclst,wclst_1;
-      list<BackendDAE.ZeroCrossing> zclst,zclst_1,relations,samples;
-      Integer numberOfRelations,numberOfMathEvents;
+      list<BackendDAE.WhenClause> wclst, wclst_1;
+      list<BackendDAE.ZeroCrossing> zclst, zclst_1, relations, samples;
+      Integer numberOfRelations, numberOfMathEvents;
       BackendDAE.EventInfo ev;
-      Boolean b1,b2,b3;
-      BackendDAE.SampleLookup sampleLookup;
-    case(BackendDAE.EVENT_INFO(sampleLookup,wclst,zclst,samples,relations,numberOfRelations,numberOfMathEvents),fns)
-      equation
-        (wclst_1,b1) = inlineWhenClauses(wclst,fns,{},false);
-        (zclst_1,b2) = inlineZeroCrossings(zclst,fns,{},false);
-        (relations,b3) = inlineZeroCrossings(relations,fns,{},false);
-        ev = Util.if_(b1 or b2 or b3,BackendDAE.EVENT_INFO(sampleLookup,wclst_1,zclst_1,samples,relations,numberOfRelations,numberOfMathEvents),inEventInfo);
-      then
-        ev;
-    case(_,_)
-      equation
-        Debug.fprintln(Flags.FAILTRACE,"Inline.inlineEventInfo failed");
-      then
-        fail();
+      Boolean b1, b2, b3;
+      list<BackendDAE.TimeEvent> timeEvents;
+      
+    case(BackendDAE.EVENT_INFO(timeEvents, wclst, zclst, samples, relations, numberOfRelations, numberOfMathEvents), fns) equation
+      (wclst_1, b1) = inlineWhenClauses(wclst, fns, {}, false);
+      (zclst_1, b2) = inlineZeroCrossings(zclst, fns, {}, false);
+      (relations, b3) = inlineZeroCrossings(relations, fns, {}, false);
+      ev = Util.if_(b1 or b2 or b3, BackendDAE.EVENT_INFO(timeEvents, wclst_1, zclst_1, samples, relations, numberOfRelations, numberOfMathEvents), inEventInfo);
+    then ev;
+    
+    case(_, _) equation
+      Debug.fprintln(Flags.FAILTRACE, "Inline.inlineEventInfo failed");
+    then fail();
   end matchcontinue;
 end inlineEventInfo;
 
-protected function inlineZeroCrossings
-"inlines function calls in reinit statements"
+protected function inlineZeroCrossings "inlines function calls in zero crossings"
   input list<BackendDAE.ZeroCrossing> inStmts;
   input Functiontuple fns;
   input list<BackendDAE.ZeroCrossing> iAcc;
@@ -632,43 +629,41 @@ protected function inlineZeroCrossings
   output list<BackendDAE.ZeroCrossing> outStmts;
   output Boolean oInlined;
 algorithm
-  (outStmts,oInlined) := match (inStmts,fns,iAcc,iInlined)
+  (outStmts, oInlined) := match (inStmts, fns, iAcc, iInlined)
     local
       BackendDAE.ZeroCrossing zc;
-      list<BackendDAE.ZeroCrossing> rest,stmts;
+      list<BackendDAE.ZeroCrossing> rest, stmts;
       Boolean b;
 
-    case ({},_,_,_) then (listReverse(iAcc),iInlined);
-    case (zc::rest,_,_,_)
-      equation
-        (zc,b) = inlineZeroCrossing(zc,fns);
-        (stmts,b) = inlineZeroCrossings(rest,fns,zc::iAcc,b or iInlined);
-      then
-        (stmts,b);
+    case ({}, _, _, _)
+    then (listReverse(iAcc), iInlined);
+    
+    case (zc::rest, _, _, _) equation
+      (zc, b) = inlineZeroCrossing(zc, fns);
+      (stmts, b) = inlineZeroCrossings(rest, fns, zc::iAcc, b or iInlined);
+    then (stmts, b);
   end match;
 end inlineZeroCrossings;
 
-protected function inlineZeroCrossing
-"inlines function calls in a zero crossing"
+protected function inlineZeroCrossing "inlines function calls in a zero crossing"
   input BackendDAE.ZeroCrossing inZeroCrossing;
   input Functiontuple inElementList;
   output BackendDAE.ZeroCrossing outZeroCrossing;
   output Boolean oInlined;
 algorithm
-  (outZeroCrossing,oInlined) := matchcontinue(inZeroCrossing,inElementList)
+  (outZeroCrossing, oInlined) := matchcontinue(inZeroCrossing, inElementList)
     local
       Functiontuple fns;
-      DAE.Exp e,e_1;
-      list<Integer> ilst1,ilst2;
+      DAE.Exp e, e_1;
+      list<Integer> ilst1, ilst2;
       list<DAE.Statement> assrtLst;
-    case(BackendDAE.ZERO_CROSSING(e,ilst1,ilst2),fns)
-      equation
-        (e_1,_,true,assrtLst) = inlineExp(e,fns,DAE.emptyElementSource/*TODO: Propagate operation info*/);
-      then
-        (BackendDAE.ZERO_CROSSING(e_1,ilst1,ilst2),true);
-    case(_,_)
-      then
-        (inZeroCrossing,false);
+    
+    case(BackendDAE.ZERO_CROSSING(e, ilst1, ilst2), fns) equation
+      (e_1, _, true, assrtLst) = inlineExp(e, fns, DAE.emptyElementSource/*TODO: Propagate operation info*/);
+    then (BackendDAE.ZERO_CROSSING(e_1, ilst1, ilst2), true);
+    
+    case(_, _)
+    then (inZeroCrossing, false);
   end matchcontinue;
 end inlineZeroCrossing;
 

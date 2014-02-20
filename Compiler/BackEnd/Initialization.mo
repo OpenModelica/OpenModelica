@@ -154,7 +154,7 @@ algorithm
                                  cache,
                                  env,
                                  functionTree,
-                                 BackendDAE.EVENT_INFO(BackendDAE.SAMPLE_LOOKUP(0, {}), {}, {}, {}, {}, 0, 0),
+                                 BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0, 0),
                                  {},
                                  BackendDAE.INITIALSYSTEM(),
                                  {},

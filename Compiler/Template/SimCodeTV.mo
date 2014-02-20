@@ -149,7 +149,7 @@ package SimCode
       list<BackendDAE.ZeroCrossing> zeroCrossings;
       list<BackendDAE.ZeroCrossing> relations;
       list<list<SimVar>> zeroCrossingsNeedSave;
-      BackendDAE.SampleLookup sampleLookup;
+      list<BackendDAE.TimeEvent> timeEvents;
       list<SimWhenClause> whenClauses;
       list<DAE.ComponentRef> discreteModelVars;
       ExtObjInfo extObjInfo;
@@ -754,12 +754,19 @@ package BackendDAE
     end ZERO_CROSSING;
   end ZeroCrossing;
   
-  uniontype SampleLookup
-    record SAMPLE_LOOKUP
-      Integer nSamples                              "total number of different sample calls" ;
-      list<tuple<Integer, DAE.Exp, DAE.Exp>> lookup "sample arguments (index, start, interval)" ;
-    end SAMPLE_LOOKUP;
-  end SampleLookup;
+  uniontype TimeEvent
+    record SIMPLE_TIME_EVENT "e.g. time > 0.5"
+    end SIMPLE_TIME_EVENT;
+    
+    record COMPLEX_TIME_EVENT "e.g. sin(time) > 0"
+    end COMPLEX_TIME_EVENT;
+    
+    record SAMPLE_TIME_EVENT "e.g. sample(1, 1)"
+      Integer index "unique sample index" ;
+      DAE.Exp startExp;
+      DAE.Exp intervalExp;
+    end SAMPLE_TIME_EVENT;
+  end TimeEvent;
   
   uniontype WhenOperator "- Reinit Statement"
     record REINIT
