@@ -465,11 +465,6 @@ static int local_jac_struct(IPOPT_DATA_ *iData, int * nng, int * nH)
     }
   }
 
-  for(ii = 0; ii < iData->nx; ii++){
-    if(J[ii][ii] == 0)
-      ++iData->nlocalJac;
-    J[ii][ii] = 1.0;
-  }
 
   for(i = 0; i <iData->nv; ++i)
     for(j = 0; j < iData->nv; ++j)
@@ -487,6 +482,12 @@ static int local_jac_struct(IPOPT_DATA_ *iData, int * nng, int * nH)
     for(j = 0; j < i+1; ++j)
       if(Hg[i][j])
       ++nnH;
+
+  for(ii = 0; ii < iData->nx; ii++){
+    if(J[ii][ii] == 0)
+      ++iData->nlocalJac;
+    J[ii][ii] = 1.0;
+  }
 
 
   *nng = id;
