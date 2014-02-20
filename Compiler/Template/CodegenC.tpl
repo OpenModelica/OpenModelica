@@ -1867,24 +1867,41 @@ template functionInitialEquations(Boolean useSymbolicInitialization, list<SimEqS
 ::=
   let () = System.tmpTickReset(0)
   let &varDecls = buffer "" /*BUFD*/
-  let &tmp = buffer ""
-  let body = (initalEquations |> eq  =>
-      <<
-      <%equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &tmp, modelNamePrefix)%>
-      >>
-    ;separator="\n")
+    
+  let &eqfuncs = buffer ""
+  let &eqArray = buffer ""
+  let fncalls = if Flags.isSet(Flags.OPENMP) then 
+                (initalEquations |> eq hasindex i0 =>
+                    equation_arrayFormat(eq, "InitialEquations", contextSimulationDiscrete, i0, &varDecls /*BUFD*/, &eqArray, &eqfuncs, modelNamePrefix)
+                    ;separator="\n")
+              else
+                (initalEquations |> eq hasindex i0 =>
+                    equation_(eq, contextSimulationDiscrete, &varDecls /*BUFC*/, &eqfuncs, modelNamePrefix)
+                    ;separator="\n")
+  
+  let eqArrayDecl = if Flags.isSet(Flags.OPENMP) then 
+                <<
+                static void (*functionInitialEquations_systems[<%listLength(initalEquations)%>])(DATA *) = {
+                    <%eqArray%>
+                };
+                >>
+              else
+                "" 
 
   let errorMsg = if not useSymbolicInitialization then 'errorStreamPrint(LOG_INIT, 0, "The symbolic initialization was not generated.");'
 
   <<
-  <%&tmp%>
+  <%eqfuncs%>
+  
+  <%eqArrayDecl%>
+  
   int <%symbolName(modelNamePrefix,"functionInitialEquations")%>(DATA *data)
   {
     <%varDecls%>
 
     <%errorMsg%>
     data->simulationInfo.discreteCall = 1;
-    <%body%>
+    <%fncalls%>
     data->simulationInfo.discreteCall = 0;
 
     return 0;
@@ -2622,15 +2639,94 @@ template functionXXX_systems(list<list<SimEqSystem>> eqs, String name, Text &loo
     >>
 end functionXXX_systems;
 
+
+template equationNamesArrayFormat(SimEqSystem eq, Context context, String name, Integer arrayIndex, Text &arrayEqs, Text &forwardEqs, String modelNamePrefixStr)
+ "Generates an equation.
+  This template should not be used for a SES_RESIDUAL.
+  Residual equations are handled differently."
+::=
+match context
+case SIMULATION_CONTEXT(genDiscrete=true) then
+ match eq
+  case e as SES_ALGORITHM(statements={})
+  then ""
+  else
+  let ix = equationIndex(eq)
+  let &arrayEqs += '<%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>,<%\n%>'
+  let &forwardEqs += 'extern void <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(DATA* data);<%\n%>'
+  <<
+  #ifdef _OMC_MEASURE_TIME
+    SIM_PROF_TICK_EQEXT(<%ix%>);
+  #endif
+  // <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(data);
+  function<%name%>_systems[<%arrayIndex%>](data); 
+  #ifdef _OMC_MEASURE_TIME
+    SIM_PROF_ACC_EQEXT(<%ix%>);
+  #endif
+  >>
+else
+ match eq
+  case e as SES_ALGORITHM(statements={})
+  then ""
+  else
+  let ix = equationIndex(eq)
+  let &arrayEqs += '<%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>,<%\n%>'
+  let &forwardEqs += 'extern void <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(DATA* data);<%\n%>'
+  <<
+  #ifdef _OMC_MEASURE_TIME
+    SIM_PROF_TICK_EQEXT(<%ix%>);
+  #endif
+  // <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(data);
+  function<%name%>_systems[<%arrayIndex%>](data); 
+  #ifdef _OMC_MEASURE_TIME
+    SIM_PROF_ACC_EQEXT(<%ix%>);
+  #endif
+  >>
+end equationNamesArrayFormat;
+
+template functionXXX_systems_arrayFormat(list<list<SimEqSystem>> eqlstlst, String name, Text &fncalls, Text &varDecls, String modelNamePrefixStr)
+::=
+match eqlstlst
+  case ({}) then
+  <<
+  /* no <%name%> systems */
+  >> 
+  
+  case eqlstlst as ({eqlst}) then 
+    let nrfuncs = listLength(eqlst)  
+    let &arrayEqs = buffer ""
+    let &forwardEqs = buffer ""
+    let &fncalls += (eqlst |> eq hasindex i0 => equationNamesArrayFormat(eq,contextSimulationNonDiscrete,name,i0,arrayEqs,forwardEqs,modelNamePrefixStr); separator="\n")
+    <<
+    /* forwarded equations */
+    <%forwardEqs%>
+    
+    static void (*function<%name%>_systems[<%nrfuncs%>])(DATA *) = {
+      <%arrayEqs%>
+    };
+
+    >>
+
+  case eqlstlst as ({eqlst::_}) then 
+  <<
+  /* TODO more than ODE list in <%name%> systems */
+  >> 
+end functionXXX_systems_arrayFormat;
+
 template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Option<HpcOmScheduler.ScheduleSimCode> hpcOmSchedule, String modelNamePrefix)
  "Generates function in simulation file."
 ::=
   let () = System.tmpTickReset(0)
   let &varDecls2 = buffer "" /*BUFD*/
   let &varDecls = buffer ""
-  let &loop = buffer ""
-  let systems = if Flags.isSet(Flags.HPCOM) then (functionXXX_systems_HPCOM(derivativEquations, "ODE", &loop, &varDecls, hpcOmSchedule, modelNamePrefix)) else (functionXXX_systems(derivativEquations, "ODE", &loop, &varDecls, modelNamePrefix))
-  /* let systems = functionXXX_systems(derivativEquations, "ODE", &loop, &varDecls) */
+  let &fncalls = buffer ""
+  let systems = if Flags.isSet(Flags.HPCOM) then 
+                    (functionXXX_systems_HPCOM(derivativEquations, "ODE", &fncalls, &varDecls, hpcOmSchedule, modelNamePrefix)) 
+                else if Flags.isSet(Flags.OPENMP) then
+                    (functionXXX_systems_arrayFormat(derivativEquations, "ODE", &fncalls, &varDecls, modelNamePrefix))
+                else
+                    (functionXXX_systems(derivativEquations, "ODE", &fncalls, &varDecls, modelNamePrefix))
+  /* let systems = functionXXX_systems(derivativEquations, "ODE", &fncalls, &varDecls) */
   let &tmp = buffer ""
   let stateContPartInline = (derivativEquations |> eqs => (eqs |> eq =>
     equation_(eq, contextInlineSolver, &varDecls2 /*BUFC*/, &tmp, modelNamePrefix); separator="\n")
@@ -2649,7 +2745,7 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Op
     <%varDecls%>
 
     data->simulationInfo.discreteCall = 0;
-    <%loop%>
+    <%fncalls%>
   #ifdef _OMC_MEASURE_TIME
     rt_accumulate(SIM_TIMER_FUNCTION_ODE);
   #endif
@@ -2695,8 +2791,13 @@ template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations, String mo
   "Generates function in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
-  let &loop = buffer ""
-  let systems = functionXXX_systems(algebraicEquations, "Alg", &loop, &varDecls, modelNamePrefix)
+  let &fncalls = buffer ""  
+  let systems = if Flags.isSet(Flags.OPENMP) then
+                    (functionXXX_systems_arrayFormat(algebraicEquations, "Alg", &fncalls, &varDecls, modelNamePrefix))
+                else
+                    (functionXXX_systems(algebraicEquations, "Alg", &fncalls, &varDecls, modelNamePrefix))
+  
+  
   <<
   <%systems%>
   /* for continuous time variables */
@@ -2704,7 +2805,7 @@ template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations, String mo
   {
     <%varDecls%>
     data->simulationInfo.discreteCall = 0;
-    <%loop%>
+    <%fncalls%>
     return 0;
   }
   >>
@@ -2737,22 +2838,43 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause>
   This is a helper of template simulationFile."
 ::=
   let &varDecls = buffer "" /*BUFD*/
-  let &tmp = buffer ""
-  let eqs = (allEquationsPlusWhen |> eq =>
-    equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &tmp, modelNamePrefix)
-    ;separator="\n")
+  let &eqfuncs = buffer ""
+  let &eqArray = buffer ""
+  let fncalls = if Flags.isSet(Flags.OPENMP) then 
+                (allEquationsPlusWhen |> eq hasindex i0 =>
+                    equation_arrayFormat(eq, "DAE", contextSimulationDiscrete, i0, &varDecls /*BUFD*/, &eqArray, &eqfuncs, modelNamePrefix)
+                    ;separator="\n")
+              else
+                (allEquationsPlusWhen |> eq hasindex i0 =>
+                    equation_(eq, contextSimulationDiscrete, &varDecls /*BUFC*/, &eqfuncs, modelNamePrefix)
+                    ;separator="\n")
+                
   let reinit = (whenClauses |> when hasindex i0 =>
     genreinits(when, &varDecls,i0)
-    ;separator="\n";empty)
+    ;separator="\n";empty) 
+  
+  
+  let eqArrayDecl = if Flags.isSet(Flags.OPENMP) then 
+                <<
+                static void (*functionDAE_systems[<%listLength(allEquationsPlusWhen)%>])(DATA *) = {
+                    <%eqArray%>
+                };
+                >>
+              else
+                "" 
+  
 
   <<
-  <%&tmp%>
+  <%&eqfuncs%>
+  
+  <%eqArrayDecl%>
+  
   int <%symbolName(modelNamePrefix,"functionDAE")%>(DATA *data)
   {
     <%varDecls%>
     data->simulationInfo.needToIterate = 0;
     data->simulationInfo.discreteCall = 1;
-    <%eqs%>
+    <%fncalls%>
     <%reinit%>
 
     return 0;
@@ -3446,6 +3568,71 @@ template dumpEqs(list<SimEqSystem> eqs)
       unknown equation
       >>
 end dumpEqs;
+
+template equation_arrayFormat(SimEqSystem eq, String name, Context context, Integer arrayIndex, Text &varDecls /*BUFP*/, Text &eqArray, Text &eqfuncs, String modelNamePrefix)
+ "Generates an equation.
+  This template should not be used for a SES_RESIDUAL.
+  Residual equations are handled differently."
+::=
+  match context case INLINE_CONTEXT() then old_equation_(eq,context,&varDecls,modelNamePrefix) else
+  match eq
+  case e as SES_MIXED(__)
+  then equationMixed(e, context, &varDecls /*BUFD*/, &eqfuncs, modelNamePrefix)
+  case e as SES_ALGORITHM(statements={})
+  then ""
+  else
+  (
+  let ix = equationIndex(eq) /*System.tmpTickIndex(10)*/
+  let &tmp = buffer ""
+  let &varD = buffer ""
+  let &tempeqns = buffer ""
+  let disc = match context
+  case SIMULATION_CONTEXT(genDiscrete=true) then 1
+  else 0
+  let x = match eq
+  case e as SES_SIMPLE_ASSIGN(__)
+    then equationSimpleAssign(e, context, &varD /*BUFD*/)
+  case e as SES_ARRAY_CALL_ASSIGN(__)
+    then equationArrayCallAssign(e, context, &varD /*BUFD*/)
+  case e as SES_IFEQUATION(__)
+    then equationIfEquationAssign(e, context, &varD /*BUFD*/, &tempeqns/*EQNSBUF*/, modelNamePrefix)
+  case e as SES_ALGORITHM(__)
+    then equationAlgorithm(e, context, &varD /*BUFD*/)
+  case e as SES_LINEAR(__)
+    then equationLinear(e, context, &varD /*BUFD*/)
+  case e as SES_NONLINEAR(__) then
+    let &tempeqns += (e.eqs |> eq => 'void <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*);' ; separator = "\n")
+    equationNonlinear(e, context, &varD /*BUFD*/, modelNamePrefix)
+  case e as SES_WHEN(__)
+    then equationWhen(e, context, &varD /*BUFD*/)
+  case e as SES_RESIDUAL(__)
+    then "NOT IMPLEMENTED EQUATION SES_RESIDUAL"
+  case e as SES_MIXED(__)
+    then "NOT IMPLEMENTED EQUATION SES_MIXED"
+  else
+    "NOT IMPLEMENTED EQUATION equation_"
+    
+  let &eqArray += '<%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>, <%\n%>'
+  let &eqfuncs +=
+  <<
+
+  <%tempeqns%>
+  /*
+   <%dumpEqs(fill(eq,1))%>
+   */
+  void <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>(DATA *data)
+  {
+    const int equationIndexes[2] = {1,<%ix%>};
+    <%&varD%>
+    <%x%>
+  }
+  >>
+  <<
+  // <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>(data);
+  function<%name%>_systems[<%arrayIndex%>](data); 
+  >>
+  )
+end equation_arrayFormat;
 
 template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Text &eqs, String modelNamePrefix)
  "Generates an equation.
