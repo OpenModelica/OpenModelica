@@ -8506,6 +8506,20 @@ algorithm
   end match;
 end hasOneElement;
 
+public function hasSeveralElements
+"author:waurich
+ returns true if the list has more than one element, otherwise false"
+  input list<ElementType> inList;
+  output Boolean b;
+algorithm
+  b := match(inList)
+    local ElementType x;
+    case ({x}) then false;
+    case ({}) then false;
+    else then true;
+  end match;
+end hasSeveralElements;
+
 public function lengthListElements
   input list<list<Type_a>> inListList;
   output Integer outLength;
