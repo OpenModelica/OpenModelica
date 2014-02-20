@@ -559,7 +559,7 @@ algorithm
       Option<Boolean> isProtected,finalPrefix;
       list<DAE.Statement> assrtLst;
     case (NONE(),_,_) then (NONE(),isource,false);
-    case (SOME(DAE.VAR_ATTR_REAL(quantity=quantity,unit=unit,displayUnit=displayUnit,min=min,initial_ = SOME(r),
+    case (SOME(DAE.VAR_ATTR_REAL(quantity=quantity,unit=unit,displayUnit=displayUnit,min=min,start = SOME(r),
           fixed=fixed,nominal=nominal,stateSelectOption=stateSelectOption,uncertainOption=uncertainOption,
           distributionOption=distributionOption,equationBound=equationBound,isProtected=isProtected,finalPrefix=finalPrefix,
           startOrigin=so)),_,_)
@@ -567,18 +567,18 @@ algorithm
         (r,source,true,assrtLst) = inlineExp(r,fns,isource);
       then (SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,min,SOME(r),fixed,nominal,
           stateSelectOption,uncertainOption,distributionOption,equationBound,isProtected,finalPrefix,so)),source,true);
-    case (SOME(DAE.VAR_ATTR_INT(quantity=quantity,min=min,initial_ = SOME(r),
+    case (SOME(DAE.VAR_ATTR_INT(quantity=quantity,min=min,start = SOME(r),
           fixed=fixed,uncertainOption=uncertainOption,distributionOption=distributionOption,equationBound=equationBound,
           isProtected=isProtected,finalPrefix=finalPrefix,startOrigin=so)),_,_)
       equation
         (r,source,true,assrtLst) = inlineExp(r,fns,isource);
       then (SOME(DAE.VAR_ATTR_INT(quantity,min,SOME(r),fixed,uncertainOption,distributionOption,equationBound,isProtected,finalPrefix,so)),source,true);
-    case (SOME(DAE.VAR_ATTR_BOOL(quantity=quantity,initial_ = SOME(r),
+    case (SOME(DAE.VAR_ATTR_BOOL(quantity=quantity,start = SOME(r),
           fixed=fixed,equationBound=equationBound,isProtected=isProtected,finalPrefix=finalPrefix,startOrigin=so)),_,_)
       equation
         (r,source,true,assrtLst) = inlineExp(r,fns,isource);
       then (SOME(DAE.VAR_ATTR_BOOL(quantity,SOME(r),fixed,equationBound,isProtected,finalPrefix,so)),source,true);
-    case (SOME(DAE.VAR_ATTR_STRING(quantity=quantity,initial_ = SOME(r),
+    case (SOME(DAE.VAR_ATTR_STRING(quantity=quantity,start = SOME(r),
           equationBound=equationBound,isProtected=isProtected,finalPrefix=finalPrefix,startOrigin=so)),_,_)
       equation
         (r,source,true,assrtLst) = inlineExp(r,fns,isource);

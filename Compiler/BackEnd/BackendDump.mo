@@ -2492,9 +2492,9 @@ algorithm
        Option<DAE.Distribution> dist;
        Option<DAE.StateSelect> stateSelectOption;
     case NONE() then ();
-    case SOME(DAE.VAR_ATTR_REAL(min=(NONE(),NONE()),initial_=NONE(),fixed=NONE(),nominal=NONE(),stateSelectOption=NONE(),isProtected=NONE(),finalPrefix=NONE(),distributionOption=NONE()))
+    case SOME(DAE.VAR_ATTR_REAL(min=(NONE(),NONE()),start=NONE(),fixed=NONE(),nominal=NONE(),stateSelectOption=NONE(),isProtected=NONE(),finalPrefix=NONE(),distributionOption=NONE()))
      then ();
-    case SOME(DAE.VAR_ATTR_REAL(min=(min,max),initial_=start,fixed=fixed,nominal=nominal,stateSelectOption=stateSelectOption,isProtected=isProtected,finalPrefix=finalPrefix,distributionOption=dist))
+    case SOME(DAE.VAR_ATTR_REAL(min=(min,max),start=start,fixed=fixed,nominal=nominal,stateSelectOption=stateSelectOption,isProtected=isProtected,finalPrefix=finalPrefix,distributionOption=dist))
       equation
         dumpOptExpression(min,"min");
         dumpOptExpression(max,"max");
@@ -2506,9 +2506,9 @@ algorithm
         dumpOptBoolean(finalPrefix,"final");
         dumpOptDistribution(dist);
      then ();
-    case SOME(DAE.VAR_ATTR_INT(min=(NONE(),NONE()),initial_=NONE(),fixed=NONE(),isProtected=NONE(),finalPrefix=NONE(),distributionOption=NONE()))
+    case SOME(DAE.VAR_ATTR_INT(min=(NONE(),NONE()),start=NONE(),fixed=NONE(),isProtected=NONE(),finalPrefix=NONE(),distributionOption=NONE()))
      then ();
-    case SOME(DAE.VAR_ATTR_INT(min=(min,max),initial_=start,fixed=fixed,isProtected=isProtected,finalPrefix=finalPrefix,distributionOption=dist))
+    case SOME(DAE.VAR_ATTR_INT(min=(min,max),start=start,fixed=fixed,isProtected=isProtected,finalPrefix=finalPrefix,distributionOption=dist))
       equation
         dumpOptExpression(min,"min");
         dumpOptExpression(max,"max");
@@ -2518,18 +2518,18 @@ algorithm
         dumpOptBoolean(finalPrefix,"final");
         dumpOptDistribution(dist);
      then ();
-    case SOME(DAE.VAR_ATTR_BOOL(initial_=NONE(),fixed=NONE(),isProtected=NONE(),finalPrefix=NONE()))
+    case SOME(DAE.VAR_ATTR_BOOL(start=NONE(),fixed=NONE(),isProtected=NONE(),finalPrefix=NONE()))
       then ();
-    case SOME(DAE.VAR_ATTR_BOOL(initial_=start,fixed=fixed,isProtected=isProtected,finalPrefix=finalPrefix))
+    case SOME(DAE.VAR_ATTR_BOOL(start=start,fixed=fixed,isProtected=isProtected,finalPrefix=finalPrefix))
       equation
         dumpOptExpression(start,"start");
         dumpOptExpression(fixed,"fixed");
         dumpOptBoolean(isProtected,"protected");
         dumpOptBoolean(finalPrefix,"final");
      then ();
-    case SOME(DAE.VAR_ATTR_STRING(initial_=NONE(),isProtected=NONE(),finalPrefix=NONE()))
+    case SOME(DAE.VAR_ATTR_STRING(start=NONE(),isProtected=NONE(),finalPrefix=NONE()))
      then ();
-    case SOME(DAE.VAR_ATTR_STRING(initial_=start,isProtected=isProtected,finalPrefix=finalPrefix))
+    case SOME(DAE.VAR_ATTR_STRING(start=start,isProtected=isProtected,finalPrefix=finalPrefix))
       equation
         dumpOptExpression(start,"start");
         dumpOptBoolean(isProtected,"protected");
@@ -2638,30 +2638,30 @@ algorithm
        Option<DAE.Uncertainty> uncertainopt;
        String str;
     case NONE() then "";
-    case SOME(DAE.VAR_ATTR_REAL(min=(NONE(),NONE()),initial_=NONE(),fixed=NONE(),nominal=NONE(),stateSelectOption=NONE(),isProtected=NONE(),finalPrefix=NONE(),distributionOption=NONE(),uncertainOption=NONE()))
+    case SOME(DAE.VAR_ATTR_REAL(min=(NONE(),NONE()),start=NONE(),fixed=NONE(),nominal=NONE(),stateSelectOption=NONE(),isProtected=NONE(),finalPrefix=NONE(),distributionOption=NONE(),uncertainOption=NONE()))
      then "";
-    case SOME(DAE.VAR_ATTR_REAL(min=(min,max),initial_=start,fixed=fixed,nominal=nominal,stateSelectOption=stateSelectOption,isProtected=isProtected,finalPrefix=finalPrefix,distributionOption=dist,uncertainOption=uncertainopt))
+    case SOME(DAE.VAR_ATTR_REAL(min=(min,max),start=start,fixed=fixed,nominal=nominal,stateSelectOption=stateSelectOption,isProtected=isProtected,finalPrefix=finalPrefix,distributionOption=dist,uncertainOption=uncertainopt))
       equation
         str = optExpressionString(min,"min") +& optExpressionString(max,"max") +& optExpressionString(start,"start") +& optExpressionString(fixed,"fixed")
              +& optExpressionString(nominal,"nominal") +& optStateSelectionString(stateSelectOption) +& optBooleanString(isProtected,"protected")
              +& optBooleanString(finalPrefix,"final") +& optDistributionString(dist) +& optUncertainty(uncertainopt);
      then str;
-    case SOME(DAE.VAR_ATTR_INT(min=(NONE(),NONE()),initial_=NONE(),fixed=NONE(),isProtected=NONE(),finalPrefix=NONE(),distributionOption=NONE(),uncertainOption=NONE()))
+    case SOME(DAE.VAR_ATTR_INT(min=(NONE(),NONE()),start=NONE(),fixed=NONE(),isProtected=NONE(),finalPrefix=NONE(),distributionOption=NONE(),uncertainOption=NONE()))
      then "";
-    case SOME(DAE.VAR_ATTR_INT(min=(min,max),initial_=start,fixed=fixed,isProtected=isProtected,finalPrefix=finalPrefix,distributionOption=dist,uncertainOption=uncertainopt))
+    case SOME(DAE.VAR_ATTR_INT(min=(min,max),start=start,fixed=fixed,isProtected=isProtected,finalPrefix=finalPrefix,distributionOption=dist,uncertainOption=uncertainopt))
       equation
         str = optExpressionString(min,"min") +& optExpressionString(max,"max") +& optExpressionString(start,"start") +& optExpressionString(fixed,"fixed")
              +& optBooleanString(isProtected,"protected") +& optBooleanString(finalPrefix,"final") +& optUncertainty(uncertainopt);
      then str;
-    case SOME(DAE.VAR_ATTR_BOOL(initial_=NONE(),fixed=NONE(),isProtected=NONE(),finalPrefix=NONE()))
+    case SOME(DAE.VAR_ATTR_BOOL(start=NONE(),fixed=NONE(),isProtected=NONE(),finalPrefix=NONE()))
       then "";
-    case SOME(DAE.VAR_ATTR_BOOL(initial_=start,fixed=fixed,isProtected=isProtected,finalPrefix=finalPrefix))
+    case SOME(DAE.VAR_ATTR_BOOL(start=start,fixed=fixed,isProtected=isProtected,finalPrefix=finalPrefix))
       equation
         str = optExpressionString(start,"start") +& optExpressionString(fixed,"fixed") +& optBooleanString(isProtected,"protected") +& optBooleanString(finalPrefix,"final");
      then str;
-    case SOME(DAE.VAR_ATTR_STRING(initial_=NONE(),isProtected=NONE(),finalPrefix=NONE()))
+    case SOME(DAE.VAR_ATTR_STRING(start=NONE(),isProtected=NONE(),finalPrefix=NONE()))
      then "";
-    case SOME(DAE.VAR_ATTR_STRING(initial_=start,isProtected=isProtected,finalPrefix=finalPrefix))
+    case SOME(DAE.VAR_ATTR_STRING(start=start,isProtected=isProtected,finalPrefix=finalPrefix))
       equation
         str = optExpressionString(start,"start") +& optBooleanString(isProtected,"protected") +& optBooleanString(finalPrefix,"final");
      then str;

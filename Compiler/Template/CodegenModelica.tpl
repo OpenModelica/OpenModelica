@@ -20,12 +20,12 @@ template dumpBackendDAE(BackendDAE.BackendDAE backendDAE)
             case SOME(v) then
               match v
                 case VAR_ATTR_REAL(__) then
-                  let fixedStr = match fixed
-                    case SOME(e) then 'fixed=<%ExpressionDump.printExpStr(e)%>, '
+                  let startStr = match start
+                    case SOME(e) then 'start=<%ExpressionDump.printExpStr(e)%>, '
                     else ''
                   end match
-                  let startStr = match initial_
-                    case SOME(e) then 'start=<%ExpressionDump.printExpStr(e)%>, '
+                  let fixedStr = match fixed
+                    case SOME(e) then 'fixed=<%ExpressionDump.printExpStr(e)%>, '
                     else ''
                   end match
                   let nominalStr = match nominal
@@ -44,22 +44,22 @@ template dumpBackendDAE(BackendDAE.BackendDAE backendDAE)
                     '<%minStr%><%maxStr%>')
                   '<%startStr%><%fixedStr%><%nominalStr%><%miniMaxStr%>'
                 case VAR_ATTR_INT(__) then
-                  let fixedStr = match fixed
-                    case SOME(e) then 'fixed=<%ExpressionDump.printExpStr(e)%>, '
+                  let startStr = match start
+                    case SOME(e) then 'start=<%ExpressionDump.printExpStr(e)%>, '
                     else ''
                   end match
-                  let startStr = match initial_
-                    case SOME(e) then 'start=<%ExpressionDump.printExpStr(e)%>, '
+                  let fixedStr = match fixed
+                    case SOME(e) then 'fixed=<%ExpressionDump.printExpStr(e)%>, '
                     else ''
                   end match
                   '<%startStr%><%fixedStr%>'
                 case VAR_ATTR_BOOL(__) then
-                  let fixedStr = match fixed
-                    case SOME(e) then 'fixed=<%ExpressionDump.printExpStr(e)%>, '
+                  let startStr = match start
+                    case SOME(e) then 'start=<%ExpressionDump.printExpStr(e)%>, '
                     else ''
                   end match
-                  let startStr = match initial_
-                    case SOME(e) then 'start=<%ExpressionDump.printExpStr(e)%>, '
+                  let fixedStr = match fixed
+                    case SOME(e) then 'fixed=<%ExpressionDump.printExpStr(e)%>, '
                     else ''
                   end match
                   '<%startStr%><%fixedStr%>'

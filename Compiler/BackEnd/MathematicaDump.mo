@@ -846,13 +846,13 @@ algorithm
 out:=matchcontinue(inVariableAttributesOption)
    local
      Option<DAE.Exp> e;
-    case (SOME(DAE.VAR_ATTR_REAL(initial_=e)))
+    case (SOME(DAE.VAR_ATTR_REAL(start=e)))
       then e;
-    case (SOME(DAE.VAR_ATTR_INT(initial_=e)))
+    case (SOME(DAE.VAR_ATTR_INT(start=e)))
       then e;
-    case (SOME(DAE.VAR_ATTR_BOOL(initial_=e)))
+    case (SOME(DAE.VAR_ATTR_BOOL(start=e)))
       then e;
-    case (SOME(DAE.VAR_ATTR_STRING(initial_=e)))
+    case (SOME(DAE.VAR_ATTR_STRING(start=e)))
       then e;
     case (_)
       then NONE();

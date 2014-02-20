@@ -323,7 +323,7 @@ match variableAttributesOption
      let quantity_str = dumpQuantityAttribute(quantity)
      let unit_str = dumpUnitAttribute(unit)
      let displayunit_str =dumpDisplayUnitAttribute(displayUnit)
-     let start_str = dumpInitialAttribute(initial_)
+     let start_str = dumpInitialAttribute(start)
      let fixed_str = dumpFixedAttribute(fixed)
      let min_max_str = dumpMinMaxAttribute(min)
      let nominal_str = dumpNominalAttribute(nominal)
@@ -336,7 +336,7 @@ match variableAttributesOption
      >>
    case VAR_ATTR_INT(__) then
      let quantity_str = dumpQuantityAttribute(quantity)
-     let start_str = dumpInitialAttribute(initial_)
+     let start_str = dumpInitialAttribute(start)
      let fixed_str = dumpFixedAttribute(fixed)
      let min_max_str = dumpMinMaxAttribute(min)
      let attrs_str = {quantity_str, min_max_str, start_str, fixed_str} ;separator=", "
@@ -346,7 +346,7 @@ match variableAttributesOption
      >>
    case VAR_ATTR_BOOL(__)  then
      let quantity_str = dumpQuantityAttribute(quantity)
-     let start_str = dumpInitialAttribute(initial_)
+     let start_str = dumpInitialAttribute(start)
      let fixed_str = dumpFixedAttribute(fixed)
      let attrs_str = {quantity_str, start_str, fixed_str} ;separator=", "
      if attrs_str then
@@ -355,7 +355,7 @@ match variableAttributesOption
      >>
    case VAR_ATTR_STRING(__) then
      let quantity_str = dumpQuantityAttribute(quantity)
-     let start_str = dumpInitialAttribute(initial_)
+     let start_str = dumpInitialAttribute(start)
      let attrs_str = {quantity_str, start_str} ;separator=", "
      if attrs_str then
      <<
@@ -391,9 +391,9 @@ match displayUnit
   case SOME(exp) then 'displayUnit = <%dumpExp(exp)%>'
 end dumpDisplayUnitAttribute;
 
-template dumpInitialAttribute(Option<Exp> initial_)
+template dumpInitialAttribute(Option<Exp> start)
 ::=
-match initial_
+match start
   case SOME(exp) then 'start = <%dumpExp(exp)%>'
 end dumpInitialAttribute;
 

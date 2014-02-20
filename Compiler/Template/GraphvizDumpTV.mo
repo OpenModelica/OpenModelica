@@ -538,7 +538,7 @@ interface package GraphvizDumpTV
         Option<Exp> unit "unit";
         Option<Exp> displayUnit "displayUnit";
         tuple<Option<Exp>, Option<Exp>> min "min, max";
-        Option<Exp> initial_ "Initial value";
+        Option<Exp> start "start value";
         Option<Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables";
         Option<Exp> nominal "nominal";
         Option<StateSelect> stateSelectOption;
@@ -553,7 +553,7 @@ interface package GraphvizDumpTV
       record VAR_ATTR_INT
         Option<Exp> quantity "quantity";
         tuple<Option<Exp>, Option<Exp>> min "min, max";
-        Option<Exp> initial_ "Initial value";
+        Option<Exp> start "start value";
         Option<Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables";
         Option<Uncertainty> uncertainOption;
         Option<Distribution> distributionOption;
@@ -565,7 +565,7 @@ interface package GraphvizDumpTV
 
       record VAR_ATTR_BOOL
         Option<Exp> quantity "quantity";
-        Option<Exp> initial_ "Initial value";
+        Option<Exp> start "start value";
         Option<Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables";
         Option<Exp> equationBound;
         Option<Boolean> isProtected;
@@ -575,7 +575,7 @@ interface package GraphvizDumpTV
 
       record VAR_ATTR_STRING
         Option<Exp> quantity "quantity";
-        Option<Exp> initial_ "Initial value";
+        Option<Exp> start "start value";
         Option<Exp> equationBound;
         Option<Boolean> isProtected;
         Option<Boolean> finalPrefix;

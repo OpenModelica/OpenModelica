@@ -686,10 +686,10 @@ algorithm
   start := matchcontinue (inVariableAttributesOption,optExp)
     local
       DAE.Exp r;
-    case (SOME(DAE.VAR_ATTR_REAL(initial_ = SOME(r))),_) then r;
-    case (SOME(DAE.VAR_ATTR_INT(initial_ = SOME(r))),_) then r;
-    case (SOME(DAE.VAR_ATTR_BOOL(initial_ = SOME(r))),_) then r;
-    case (SOME(DAE.VAR_ATTR_STRING(initial_ = SOME(r))),_) then r;
+    case (SOME(DAE.VAR_ATTR_REAL(start = SOME(r))),_) then r;
+    case (SOME(DAE.VAR_ATTR_INT(start = SOME(r))),_) then r;
+    case (SOME(DAE.VAR_ATTR_BOOL(start = SOME(r))),_) then r;
+    case (SOME(DAE.VAR_ATTR_STRING(start = SOME(r))),_) then r;
     case (SOME(DAE.VAR_ATTR_ENUMERATION(start = SOME(r))),_) then r;
     else optExp;
   end matchcontinue;
@@ -776,10 +776,10 @@ algorithm
   start := matchcontinue (inVariableAttributesOption)
     local
       DAE.Exp r;
-    case (SOME(DAE.VAR_ATTR_REAL(initial_ = SOME(r)))) then r;
-    case (SOME(DAE.VAR_ATTR_INT(initial_ = SOME(r)))) then r;
-    case (SOME(DAE.VAR_ATTR_BOOL(initial_ = SOME(r)))) then r;
-    case (SOME(DAE.VAR_ATTR_STRING(initial_ = SOME(r)))) then r;
+    case (SOME(DAE.VAR_ATTR_REAL(start = SOME(r)))) then r;
+    case (SOME(DAE.VAR_ATTR_INT(start = SOME(r)))) then r;
+    case (SOME(DAE.VAR_ATTR_BOOL(start = SOME(r)))) then r;
+    case (SOME(DAE.VAR_ATTR_STRING(start = SOME(r)))) then r;
     case (SOME(DAE.VAR_ATTR_ENUMERATION(start = SOME(r)))) then r;
     case (_) then DAE.RCONST(0.0);
   end matchcontinue;
@@ -808,10 +808,10 @@ public function getStartAttrFail "
 algorithm start:= match (inVariableAttributesOption)
     local
       DAE.Exp r;
-    case (SOME(DAE.VAR_ATTR_REAL(initial_ = SOME(r)))) then r;
-    case (SOME(DAE.VAR_ATTR_INT(initial_ = SOME(r)))) then r;
-    case (SOME(DAE.VAR_ATTR_BOOL(initial_ = SOME(r)))) then r;
-    case (SOME(DAE.VAR_ATTR_STRING(initial_ = SOME(r)))) then r;
+    case (SOME(DAE.VAR_ATTR_REAL(start = SOME(r)))) then r;
+    case (SOME(DAE.VAR_ATTR_INT(start = SOME(r)))) then r;
+    case (SOME(DAE.VAR_ATTR_BOOL(start = SOME(r)))) then r;
+    case (SOME(DAE.VAR_ATTR_STRING(start = SOME(r)))) then r;
     case (SOME(DAE.VAR_ATTR_ENUMERATION(start = SOME(r)))) then r;
   end match;
 end getStartAttrFail;
@@ -1285,10 +1285,10 @@ algorithm
   matchcontinue (inVariableAttributesOption)
     local
       DAE.Exp r;
-    case (SOME(DAE.VAR_ATTR_REAL(initial_ = SOME(r)))) then true;
-    case (SOME(DAE.VAR_ATTR_INT(initial_ = SOME(r)))) then true;
-    case (SOME(DAE.VAR_ATTR_BOOL(initial_ = SOME(r)))) then true;
-    case (SOME(DAE.VAR_ATTR_STRING(initial_ = SOME(r)))) then true;
+    case (SOME(DAE.VAR_ATTR_REAL(start = SOME(r)))) then true;
+    case (SOME(DAE.VAR_ATTR_INT(start = SOME(r)))) then true;
+    case (SOME(DAE.VAR_ATTR_BOOL(start = SOME(r)))) then true;
+    case (SOME(DAE.VAR_ATTR_STRING(start = SOME(r)))) then true;
     case (_) then false;
   end matchcontinue;
 end hasStartAttr;
@@ -1305,12 +1305,12 @@ algorithm
       String s;
       DAE.Exp r;
     case (NONE()) then "";
-    case (SOME(DAE.VAR_ATTR_REAL(initial_ = SOME(r))))
+    case (SOME(DAE.VAR_ATTR_REAL(start = SOME(r))))
       equation
         s = ExpressionDump.printExpStr(r);
       then
         s;
-    case (SOME(DAE.VAR_ATTR_INT(initial_ = SOME(r))))
+    case (SOME(DAE.VAR_ATTR_INT(start = SOME(r))))
       equation
         s = ExpressionDump.printExpStr(r);
       then
@@ -4483,52 +4483,52 @@ Help function to traverseDAE
 algorithm
   (traversedDaeList,oextraArg) := match(attr,func,iextraArg)
     local
-      Option<DAE.Exp> quantity,unit,displayUnit,min,max,initial_,fixed,nominal,eb,so;
+      Option<DAE.Exp> quantity,unit,displayUnit,min,max,start,fixed,nominal,eb,so;
       Option<DAE.StateSelect> stateSelect;
       Option<DAE.Uncertainty> uncertainty;
       Option<DAE.Distribution> distribution;
       Option<Boolean> ip,fn;
       Type_a extraArg;
 
-    case(SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),initial_,fixed,nominal,stateSelect,uncertainty,distribution,eb,ip,fn,so)),_,extraArg)
+    case(SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),start,fixed,nominal,stateSelect,uncertainty,distribution,eb,ip,fn,so)),_,extraArg)
       equation
         (quantity,extraArg) = traverseDAEOptExp(quantity,func,extraArg);
         (unit,extraArg) = traverseDAEOptExp(unit,func,extraArg);
         (displayUnit,extraArg) = traverseDAEOptExp(displayUnit,func,extraArg);
         (min,extraArg) = traverseDAEOptExp(min,func,extraArg);
         (max,extraArg) = traverseDAEOptExp(max,func,extraArg);
-        (initial_,extraArg) = traverseDAEOptExp(initial_,func,extraArg);
+        (start,extraArg) = traverseDAEOptExp(start,func,extraArg);
         (fixed,extraArg) = traverseDAEOptExp(fixed,func,extraArg);
         (nominal,extraArg) = traverseDAEOptExp(nominal,func,extraArg);
-      then (SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),initial_,fixed,nominal,stateSelect,uncertainty,distribution,eb,ip,fn,so)),extraArg);
+      then (SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),start,fixed,nominal,stateSelect,uncertainty,distribution,eb,ip,fn,so)),extraArg);
 
-    case(SOME(DAE.VAR_ATTR_INT(quantity,(min,max),initial_,fixed,uncertainty,distribution,eb,ip,fn,so)),_,extraArg)
+    case(SOME(DAE.VAR_ATTR_INT(quantity,(min,max),start,fixed,uncertainty,distribution,eb,ip,fn,so)),_,extraArg)
       equation
         (quantity,extraArg) = traverseDAEOptExp(quantity,func,extraArg);
         (min,extraArg) = traverseDAEOptExp(min,func,extraArg);
         (max,extraArg) = traverseDAEOptExp(max,func,extraArg);
-        (initial_,extraArg) = traverseDAEOptExp(initial_,func,extraArg);
+        (start,extraArg) = traverseDAEOptExp(start,func,extraArg);
         (fixed,extraArg) = traverseDAEOptExp(fixed,func,extraArg);
-      then (SOME(DAE.VAR_ATTR_INT(quantity,(min,max),initial_,fixed,uncertainty,distribution,eb,ip,fn,so)),extraArg);
+      then (SOME(DAE.VAR_ATTR_INT(quantity,(min,max),start,fixed,uncertainty,distribution,eb,ip,fn,so)),extraArg);
 
-      case(SOME(DAE.VAR_ATTR_BOOL(quantity,initial_,fixed,eb,ip,fn,so)),_,extraArg)
+      case(SOME(DAE.VAR_ATTR_BOOL(quantity,start,fixed,eb,ip,fn,so)),_,extraArg)
         equation
           (quantity,extraArg) = traverseDAEOptExp(quantity,func,extraArg);
-          (initial_,extraArg) = traverseDAEOptExp(initial_,func,extraArg);
+          (start,extraArg) = traverseDAEOptExp(start,func,extraArg);
           (fixed,extraArg) = traverseDAEOptExp(fixed,func,extraArg);
-        then (SOME(DAE.VAR_ATTR_BOOL(quantity,initial_,fixed,eb,ip,fn,so)),extraArg);
+        then (SOME(DAE.VAR_ATTR_BOOL(quantity,start,fixed,eb,ip,fn,so)),extraArg);
 
-      case(SOME(DAE.VAR_ATTR_STRING(quantity,initial_,eb,ip,fn,so)),_,extraArg)
+      case(SOME(DAE.VAR_ATTR_STRING(quantity,start,eb,ip,fn,so)),_,extraArg)
         equation
           (quantity,extraArg) = traverseDAEOptExp(quantity,func,extraArg);
-          (initial_,extraArg) = traverseDAEOptExp(initial_,func,extraArg);
-        then (SOME(DAE.VAR_ATTR_STRING(quantity,initial_,eb,ip,fn,so)),extraArg);
+          (start,extraArg) = traverseDAEOptExp(start,func,extraArg);
+        then (SOME(DAE.VAR_ATTR_STRING(quantity,start,eb,ip,fn,so)),extraArg);
 
-      case(SOME(DAE.VAR_ATTR_ENUMERATION(quantity,(min,max),initial_,fixed,eb,ip,fn,so)),_,extraArg)
+      case(SOME(DAE.VAR_ATTR_ENUMERATION(quantity,(min,max),start,fixed,eb,ip,fn,so)),_,extraArg)
         equation
           (quantity,extraArg) = traverseDAEOptExp(quantity,func,extraArg);
-          (initial_,extraArg) = traverseDAEOptExp(initial_,func,extraArg);
-        then (SOME(DAE.VAR_ATTR_ENUMERATION(quantity,(min,max),initial_,fixed,eb,ip,fn,so)),extraArg);
+          (start,extraArg) = traverseDAEOptExp(start,func,extraArg);
+        then (SOME(DAE.VAR_ATTR_ENUMERATION(quantity,(min,max),start,fixed,eb,ip,fn,so)),extraArg);
 
       case (NONE(),_,extraArg) then (NONE(),extraArg);
   end match;
