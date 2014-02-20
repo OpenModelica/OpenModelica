@@ -6527,7 +6527,7 @@ algorithm
       equation
         tp = Expression.typeof(e1);
         
-				//check that solved vars are on lhs
+        //check that solved vars are on lhs
         ht = HashSet.emptyHashSet();
         ht = List.fold(crefs, BaseHashSet.add, ht);
         List.foldAllValue(expl, createSingleComplexEqnCode3, true, ht);
