@@ -233,6 +233,6 @@
 #else
   int kinsol_initialization(INIT_DATA *initData)
   {
-    throwStreamPrint("no sundials/kinsol support activated");
+    throwStreamPrint(NULL,"no sundials/kinsol support activated");
   }
 #endif
