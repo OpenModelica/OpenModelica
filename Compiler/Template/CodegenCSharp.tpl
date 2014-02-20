@@ -110,7 +110,7 @@ namespace Bodylight.Models<%modelNameSpace(modelInfo.name)%>
 
     <%functionOutput(modelInfo, simCode)%>
     
-    <%functionInitSample(timeEvents, simCode)%>
+    <%functionInitSample(sampleLookup, simCode)%>
     
     <%functionStoreDelayed(simCode)%>
 
@@ -754,7 +754,7 @@ public override void OutputFun()
 end functionOutput;
 
 
-template functionInitSample(list<BackendDAE.TimeEvent> timeEvents, SimCode simCode)
+template functionInitSample(BackendDAE.SampleLookup sampleLookup, SimCode simCode)
   "Generates function initSample() in simulation file."
 ::=
   /* Initializes the raw time events of the simulation using the now
@@ -765,19 +765,17 @@ template functionInitSample(list<BackendDAE.TimeEvent> timeEvents, SimCode simCo
     <% localRepresentationArrayDefines %>
     var SA = SampleHeap.Samples;
     
-    <%(timeEvents |> timeEvent  =>
-      match timeEvent
-        case SAMPLE_TIME_EVENT(__) then
+    <%match sampleLookup
+      case BackendDAE.SAMPLE_LOOKUP(__) then
+        (lookup |> (index, start, interval)  =>
           let &preExp = buffer "" /*BUFD*/
-          let startE = daeExp(startExp, contextOther, &preExp, simCode)
-          let intervalE = daeExp(intervalExp, contextOther, &preExp, simCode)
+          let startE = daeExp(start, contextOther, &preExp, simCode)
+          let intervalE = daeExp(interval, contextOther, &preExp, simCode)
           <<
           <%preExp%>
           /* $P$sample<%index%> */
           SA[i++] = new OneSample(<%intervalE%>, <%startE%>, <%intSub(index, 1)%>, false);
-          >>
-        else ''
-        )%>
+          >>)%>
   }
   >>
 end functionInitSample;
