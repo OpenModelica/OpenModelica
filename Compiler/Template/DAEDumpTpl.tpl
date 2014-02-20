@@ -7,7 +7,7 @@ import SCodeDumpTpl;
 /***************************************************************************************
  *     SECTION: MAIN TEMPLATE FUNCTION
  ***************************************************************************************/
-template dumpDAE(list<DAEDump.compWithSplitElements> fixedDaeList, DAEDump.functionList  funLists)
+template dumpDAE(list<DAEDump.compWithSplitElements> fixedDaeList, DAEDump.functionList funLists)
 ::=
  let comp_str =(fixedDaeList |> dae => dumpComp(dae) ;separator="\n")
  let fun_str = match funLists case FUNCTION_LIST(__) then dumpFunctions(funcs)

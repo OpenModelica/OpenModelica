@@ -1,6 +1,6 @@
 .PHONY : all
 
-all : AbsynDumpTpl.mo CodegenUtil.mo CodegenC.mo CodegenFMU.mo CodegenCSharp.mo CodegenQSS.mo CodegenCpp.mo CodegenCppHpcom.mo CodegenFMUCpp.mo DAEDumpTpl.mo ExpressionDumpTpl.mo GraphvizDump.mo GraphMLDumpTpl.mo NFInstDumpTpl.mo SimCodeDump.mo Unparsing.mo SCodeDumpTpl.mo CodegenAdevs.mo CodegenXML.mo CodegenJava.mo CodegenJS.mo
+all : AbsynDumpTpl.mo CodegenUtil.mo CodegenC.mo CodegenFMU.mo CodegenCSharp.mo CodegenQSS.mo CodegenCpp.mo CodegenCppHpcom.mo CodegenFMUCpp.mo CodegenModelica.mo DAEDumpTpl.mo ExpressionDumpTpl.mo GraphvizDump.mo GraphMLDumpTpl.mo NFInstDumpTpl.mo SimCodeDump.mo Unparsing.mo SCodeDumpTpl.mo CodegenAdevs.mo CodegenXML.mo CodegenJava.mo CodegenJS.mo
 
 AbsynDumpTpl.mo : AbsynDumpTpl.tpl AbsynDumpTV.mo
 	@echo " ** AbsynDumpTpl template compilation ** "
@@ -29,6 +29,11 @@ CodegenCSharp.mo : CodegenCSharp.tpl SimCodeTV.mo
 
 CodegenFMU.mo : CodegenFMU.tpl SimCodeTV.mo CodegenC.tpl CodegenUtil.tpl
 	@echo " ** CodegenFMU template compilation ** "
+	$(OMC) $< > $@.log || (cat $@.log && false)
+	@echo " "
+
+CodegenModelica.mo : CodegenModelica.tpl
+	@echo " ** CodegenModelica template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
 

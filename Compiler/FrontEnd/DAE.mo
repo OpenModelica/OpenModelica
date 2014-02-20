@@ -454,7 +454,6 @@ uniontype VariableAttributes
     Option<Boolean> finalPrefix;
     Option<Exp> startOrigin "where did start=X came from? NONE()|SOME(DAE.SCONST binding|type|undefined)";
   end VAR_ATTR_ENUMERATION;
-
 end VariableAttributes;
 
 public uniontype StateSelect

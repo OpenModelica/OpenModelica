@@ -40,6 +40,17 @@ interface package GraphvizDumpTV
     end intString;
   end builtin;
   
+  package ExpressionDump
+    function printExpStr
+      input DAE.Exp e;
+      output String s;
+    end printExpStr;
+    function printCrefsFromExpStr
+      input DAE.Exp e;
+      output String s;
+    end printCrefsFromExpStr;
+  end ExpressionDump;
+  
   package BackendDAE
     uniontype BackendDAE
       record DAE
@@ -178,7 +189,7 @@ interface package GraphvizDumpTV
         VarKind varKind "Kind of variable" ;
         DAE.VarDirection varDirection "input, output or bidirectional" ;
         DAE.VarParallelism varParallelism "parallelism of the variable. parglobal, parlocal or non-parallel";
-        Type varType "builtin type or enumeration" ;
+        DAE.Type varType "builtin type or enumeration" ;
         Option<DAE.Exp> bindExp "Binding expression e.g. for parameters" ;
         Option<Values.Value> bindValue "binding value for parameters" ;
         DAE.InstDims arryDim "array dimensions on nonexpanded var" ;
@@ -371,6 +382,217 @@ interface package GraphvizDumpTV
       end OPTIMICA_ATTR_INST_CREF;
       record WILD end WILD;
     end ComponentRef;
+    
+    uniontype Type "models the different front-end and back-end types"
+      record T_INTEGER
+        list<Var> varLst;
+        TypeSource source;
+      end T_INTEGER;
+
+      record T_REAL
+        list<Var> varLst;
+        TypeSource source;
+      end T_REAL;
+
+      record T_STRING
+        list<Var> varLst;
+        TypeSource source;
+      end T_STRING;
+
+      record T_BOOL
+        list<Var> varLst;
+        TypeSource source;
+      end T_BOOL;
+
+      record T_ENUMERATION "If the list of names is empty, this is the super-enumeration that is the super-class of all enumerations"
+        Option<Integer> index "the enumeration value index, SOME for element, NONE() for type" ;
+        Absyn.Path path "enumeration path" ;
+        list<String> names "names" ;
+        list<Var> literalVarLst;
+        list<Var> attributeLst;
+        TypeSource source;
+      end T_ENUMERATION;
+
+      record T_ARRAY
+        "an array can be represented in two equivalent ways:
+           1. T_ARRAY(non_array_type, {dim1, dim2, dim3}) =
+           2. T_ARRAY(T_ARRAY(T_ARRAY(non_array_type, {dim1}), {dim2}), {dim3})
+           In general Inst generates 1 and all the others generates 2"
+        Type ty "Type";
+        Dimensions dims "dims";
+        TypeSource source;
+      end T_ARRAY;
+
+      record T_NORETCALL "For functions not returning any values."
+        TypeSource source;
+      end T_NORETCALL;
+
+      record T_UNKNOWN "Used when type is not yet determined"
+        TypeSource source;
+      end T_UNKNOWN;
+
+      record T_COMPLEX
+        ClassInf.State complexClassType "The type of a class" ;
+        list<Var> varLst "The variables of a complex type" ;
+        EqualityConstraint equalityConstraint;
+        TypeSource source;
+      end T_COMPLEX;
+
+      record T_SUBTYPE_BASIC
+        ClassInf.State complexClassType "The type of a class" ;
+        list<Var> varLst "complexVarLst; The variables of a complex type! Should be empty, kept here to verify!";
+        Type complexType "complexType; A complex type can be a subtype of another (primitive) type (through extends)";
+        EqualityConstraint equalityConstraint;
+        TypeSource source;
+      end T_SUBTYPE_BASIC;
+
+      record T_FUNCTION
+        list<FuncArg> funcArg "funcArg" ;
+        Type funcResultType "Only single-result" ;
+        FunctionAttributes functionAttributes;
+        TypeSource source;
+      end T_FUNCTION;
+
+      record T_FUNCTION_REFERENCE_VAR "MetaModelica Function Reference that is a variable"
+        Type functionType "the type of the function";
+        TypeSource source;
+      end T_FUNCTION_REFERENCE_VAR;
+
+      record T_FUNCTION_REFERENCE_FUNC "MetaModelica Function Reference that is a direct reference to a function"
+        Boolean builtin;
+        Type functionType "type of the non-boxptr function";
+        TypeSource source;
+      end T_FUNCTION_REFERENCE_FUNC;
+
+      record T_TUPLE
+        list<Type> tupleType "For functions returning multiple values.";
+        TypeSource source;
+      end T_TUPLE;
+
+      record T_CODE
+        CodeType ty;
+        TypeSource source;
+      end T_CODE;
+
+      record T_ANYTYPE
+        Option<ClassInf.State> anyClassType "anyClassType - used for generic types. When class state present the type is assumed to be a complex type which has that restriction.";
+        TypeSource source;
+      end T_ANYTYPE;
+
+      // MetaModelica extensions
+      record T_METALIST "MetaModelica list type"
+        Type listType "listType";
+        TypeSource source;
+      end T_METALIST;
+
+      record T_METATUPLE "MetaModelica tuple type"
+        list<Type> types;
+        TypeSource source;
+      end T_METATUPLE;
+
+      record T_METAOPTION "MetaModelica option type"
+        Type optionType;
+        TypeSource source;
+      end T_METAOPTION;
+
+      record T_METAUNIONTYPE "MetaModelica Uniontype, added by simbj"
+        list<Absyn.Path> paths;
+        Boolean knownSingleton "The runtime system (dynload), does not know if the value is a singleton. But optimizations are safe if this is true.";
+        TypeSource source;
+      end T_METAUNIONTYPE;
+
+      record T_METARECORD "MetaModelica Record, used by Uniontypes. added by simbj"
+        Absyn.Path utPath "the path to its uniontype; this is what we match the type against";
+        // If the metarecord constructor was added to the FunctionTree, this would
+        // not be needed. They are used to create the datatype in the runtime...
+        Integer index; //The index in the uniontype
+        list<Var> fields;
+        Boolean knownSingleton "The runtime system (dynload), does not know if the value is a singleton. But optimizations are safe if this is true.";
+        TypeSource source;
+      end T_METARECORD;
+
+      record T_METAARRAY
+        Type ty;
+        TypeSource source;
+      end T_METAARRAY;
+
+      record T_METABOXED "Used for MetaModelica generic types"
+        Type ty;
+        TypeSource source;
+      end T_METABOXED;
+
+      record T_METAPOLYMORPHIC
+        String name;
+        TypeSource source;
+      end T_METAPOLYMORPHIC;
+
+      record T_METATYPE "this type contains all the meta types"
+        Type ty;
+        TypeSource source;
+      end T_METATYPE;
+    end Type;
+    
+    uniontype VariableAttributes
+      record VAR_ATTR_REAL
+        Option<Exp> quantity "quantity";
+        Option<Exp> unit "unit";
+        Option<Exp> displayUnit "displayUnit";
+        tuple<Option<Exp>, Option<Exp>> min "min, max";
+        Option<Exp> initial_ "Initial value";
+        Option<Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables";
+        Option<Exp> nominal "nominal";
+        Option<StateSelect> stateSelectOption;
+        Option<Uncertainty> uncertainOption;
+        Option<Distribution> distributionOption;
+        Option<Exp> equationBound;
+        Option<Boolean> isProtected;
+        Option<Boolean> finalPrefix;
+        Option<Exp> startOrigin "where did start=X came from? NONE()|SOME(DAE.SCONST binding|type|undefined)";
+      end VAR_ATTR_REAL;
+
+      record VAR_ATTR_INT
+        Option<Exp> quantity "quantity";
+        tuple<Option<Exp>, Option<Exp>> min "min, max";
+        Option<Exp> initial_ "Initial value";
+        Option<Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables";
+        Option<Uncertainty> uncertainOption;
+        Option<Distribution> distributionOption;
+        Option<Exp> equationBound;
+        Option<Boolean> isProtected; // ,eb,ip
+        Option<Boolean> finalPrefix;
+        Option<Exp> startOrigin "where did start=X came from? NONE()|SOME(DAE.SCONST binding|type|undefined)";
+      end VAR_ATTR_INT;
+
+      record VAR_ATTR_BOOL
+        Option<Exp> quantity "quantity";
+        Option<Exp> initial_ "Initial value";
+        Option<Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables";
+        Option<Exp> equationBound;
+        Option<Boolean> isProtected;
+        Option<Boolean> finalPrefix;
+        Option<Exp> startOrigin "where did start=X came from? NONE()|SOME(DAE.SCONST binding|type|undefined)";
+      end VAR_ATTR_BOOL;
+
+      record VAR_ATTR_STRING
+        Option<Exp> quantity "quantity";
+        Option<Exp> initial_ "Initial value";
+        Option<Exp> equationBound;
+        Option<Boolean> isProtected;
+        Option<Boolean> finalPrefix;
+        Option<Exp> startOrigin "where did start=X came from? NONE()|SOME(DAE.SCONST binding|type|undefined)";
+      end VAR_ATTR_STRING;
+
+      record VAR_ATTR_ENUMERATION
+        Option<Exp> quantity "quantity";
+        tuple<Option<Exp>, Option<Exp>> min "min, max";
+        Option<Exp> start "start";
+        Option<Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables";
+        Option<Exp> equationBound;
+        Option<Boolean> isProtected;
+        Option<Boolean> finalPrefix;
+        Option<Exp> startOrigin "where did start=X came from? NONE()|SOME(DAE.SCONST binding|type|undefined)";
+      end VAR_ATTR_ENUMERATION;
+    end VariableAttributes;
   end DAE;
   
   package Tpl

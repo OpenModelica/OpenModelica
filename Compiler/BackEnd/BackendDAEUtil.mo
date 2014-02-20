@@ -7976,6 +7976,7 @@ algorithm
   Debug.execStat("expandAlgorithmsbyInitStmts", GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   Debug.fcall2(Flags.DUMP_INDX_DAE, BackendDump.dumpBackendDAE, outSODE, "dumpindxdae");
   Debug.bcall2(Flags.isSet(Flags.DUMP_INDX_DAE) and Flags.isSet(Flags.ADDITIONAL_GRAPHVIZ_DUMP), BackendDump.graphvizBackendDAE, outSODE, "dumpindxdae");
+  Debug.fcall2(Flags.DUMP_TRANSFORMED_MODELICA_MODEL, BackendDump.dumpBackendDAEToModelica, outSODE, "dumpindxdae");
   Debug.bcall(Flags.isSet(Flags.DUMP_BACKENDDAE_INFO) or Flags.isSet(Flags.DUMP_STATESELECTION_INFO) or Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO), BackendDump.dumpCompShort, outSODE);
   Debug.fcall2(Flags.DUMP_EQNINORDER, BackendDump.dumpEqnsSolved, outSODE, "indxdae: eqns in order");
   
