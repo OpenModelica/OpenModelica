@@ -56,15 +56,15 @@ html:
   - name: stopTime
     type: number
     bs3caption: Stop time, sec
-    value: 0.1
+    value: <%s.stopTime%>
   - name: intervals
     type: number
     bs3caption: Output intervals
-    value: 500
+    value: <%s.numberOfIntervals%>
   - name: tolerance
     type: number
     bs3caption: Tolerance
-    value: 0.0001
+    value: <%s.tolerance%>
 ```
 
 ```js
