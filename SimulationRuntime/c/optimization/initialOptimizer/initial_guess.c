@@ -109,7 +109,7 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
   SIMULATION_INFO *sInfo = &(data->simulationInfo);
 
    if(!data->simulationInfo.external_input.active)
-	   externalInputallocate(data);
+     externalInputallocate(data);
 
    /* Initial DASSL solver */
    DASSL_DATA* dasslData = (DASSL_DATA*) malloc(sizeof(DASSL_DATA));
