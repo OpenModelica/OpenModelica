@@ -159,7 +159,7 @@ typedef struct EXTERNAL_INPUT
     modelica_boolean active;
     float** u;
     float* t;
-    modelica_real dt;
+    modelica_integer N;
     modelica_integer n;
     modelica_integer i;
 

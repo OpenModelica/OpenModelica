@@ -563,6 +563,12 @@ int solver_main(DATA* data, const char* init_initMethod,
   retVal = initializeSolverData(data, &solverInfo);
   omc_alloc_interface.collect_a_little();
   
+  /* set inputs from file */
+  if(data->simulationInfo.external_input.active){
+    externalInputUpdate(data);
+    data->callback->input_function_init(data);
+  }
+
   /* initialize all parts of the model */
   if(0 == retVal) {
     retVal = initializeModel(data, init_initMethod, init_optiMethod, init_file, init_time, lambda_steps);

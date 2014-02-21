@@ -52,7 +52,9 @@ int externalInputallocate(DATA* data)
   pFile = fopen("externalInput.csv","r");
   data->simulationInfo.external_input.active = (modelica_boolean) (pFile != NULL);
   n = 0;
+  m = 0;
   if(data->simulationInfo.external_input.active){
+
     while(1) {
         c = fgetc(pFile);
         if (c==EOF) break;
@@ -60,6 +62,7 @@ int externalInputallocate(DATA* data)
     }
     --n;
     data->simulationInfo.external_input.n = n;
+    data->simulationInfo.external_input.N = data->simulationInfo.external_input.n;
     rewind(pFile);
 
     do{
@@ -73,16 +76,19 @@ int externalInputallocate(DATA* data)
     data->simulationInfo.external_input.t = (modelica_real*)calloc(data->simulationInfo.external_input.n,sizeof(modelica_real));
 
     for(i = 0; i < data->simulationInfo.external_input.n; ++i){
-      fscanf(pFile, "%f", &data->simulationInfo.external_input.t[i]);
+      c = fscanf(pFile, "%f", &data->simulationInfo.external_input.t[i]);
       for(j = 0; j < m; ++j){
-        fscanf(pFile, "%f", &data->simulationInfo.external_input.u[i][j]);
+        c = fscanf(pFile, "%f", &data->simulationInfo.external_input.u[i][j]);
       }
+      if(c<0)
+    	  data->simulationInfo.external_input.n = i;
     }
-  printf("========================================================");
+
+  printf("\n========================================================");
     for(i = 0; i < data->simulationInfo.external_input.n; ++i){
-      printf("\nInput t=%f   ", data->simulationInfo.external_input.t[i]);
+      printf("\nInput t=%f   \t", data->simulationInfo.external_input.t[i]);
       for(j = 0; j < m; ++j){
-        printf("u[%d][%d]= %f ", i,j,data->simulationInfo.external_input.u[i][j]);
+        printf("u[%d][%d]= %f \t", i,j,data->simulationInfo.external_input.u[i][j]);
       }
     }
   printf("\n========================================================");
@@ -100,7 +106,7 @@ int externalInputFree(DATA* data)
     int j;
 
     free(data->simulationInfo.external_input.t);
-    for(j = 0; j < data->simulationInfo.external_input.n; ++j)
+    for(j = 0; j < data->simulationInfo.external_input.N; ++j)
       free(data->simulationInfo.external_input.u[j]);
     free(data->simulationInfo.external_input.u);
   }
@@ -113,6 +119,10 @@ int externalInputUpdate(DATA* data)
   double u1, u2;
   double t, t1, dt;
   int i;
+
+  if(!data->simulationInfo.external_input.active)
+    return -1;
+
   t = data->localData[0]->timeValue;
   while(t > data->simulationInfo.external_input.t[data->simulationInfo.external_input.i+1]
         && data->simulationInfo.external_input.i+1 < (data->simulationInfo.external_input.n-1)){

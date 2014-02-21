@@ -107,6 +107,7 @@ int (*functionDAE)(DATA *data);
 
 /* functions for input and output */
 int (*input_function)(DATA*);
+int (*input_function_init)(DATA*);
 int (*output_function)(DATA*);
 
 /* function for storing value histories of delayed expressions

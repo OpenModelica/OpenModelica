@@ -587,6 +587,7 @@ template simulationFile(SimCode simCode, String guid)
        <%symbolName(modelNamePrefixStr,"functionAlgebraics")%>,
        <%symbolName(modelNamePrefixStr,"functionDAE")%>,
        <%symbolName(modelNamePrefixStr,"input_function")%>,
+       <%symbolName(modelNamePrefixStr,"input_function_init")%>,
        <%symbolName(modelNamePrefixStr,"output_function")%>,
        <%symbolName(modelNamePrefixStr,"function_storeDelayed")%>,
        <%symbolName(modelNamePrefixStr,"functionODE_inline")%>,
@@ -1244,6 +1245,14 @@ template functionInput(ModelInfo modelInfo, String modelNamePrefix)
     {
       <%vars.inputVars |> SIMVAR(__) hasindex i0 =>
         '<%cref(name)%> = data->simulationInfo.inputVars[<%i0%>];'
+      ;separator="\n"%>
+      return 0;
+    }
+    
+    int <%symbolName(modelNamePrefix,"input_function_init")%>(DATA *data)
+    {
+      <%vars.inputVars |> SIMVAR(__) hasindex i0 =>
+        '$P$ATTRIBUTE<%cref(name)%>.start = data->simulationInfo.inputVars[<%i0%>];'
       ;separator="\n"%>
       return 0;
     }

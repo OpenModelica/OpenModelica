@@ -255,9 +255,9 @@ static int set_optimizer_flags(IPOPT_DATA_ *iData, IpoptProblem *nlp)
   AddIpoptNumOption(*nlp,"bound_mult_init_val",1e-3);
   AddIpoptNumOption(*nlp,"mu_init",1e-3);
   AddIpoptNumOption(*nlp,"nu_init",1e-9);
-  //AddIpoptStrOption(*nlp,"bound_mult_init_method","constant");
+  AddIpoptStrOption(*nlp,"bound_mult_init_method","constant");
   //AddIpoptStrOption(*nlp,"print_options_documentation","yes");
-  AddIpoptStrOption(*nlp,"bound_mult_init_method","mu-based");
+  //AddIpoptStrOption(*nlp,"bound_mult_init_method","mu-based");
   AddIpoptNumOption(*nlp,"eta_phi",1e-010);
 
   //dependency_detection_with_rhs
@@ -279,9 +279,10 @@ static int set_optimizer_flags(IPOPT_DATA_ *iData, IpoptProblem *nlp)
   if(ACTIVE_STREAM(LOG_IPOPT_FULL))
     AddIpoptIntOption(*nlp, "print_level", 7);
 
-  /*AddIpoptStrOption(nlp, "derivative_test_print_all", "yes");
+  /*
+   * AddIpoptStrOption(nlp, "derivative_test_print_all", "yes");
    * AddIpoptNumOption(nlp,"derivative_test_perturbation",1e-6);
-  */
+   */
 
   AddIpoptIntOption(*nlp, "max_iter", 5000);
 
