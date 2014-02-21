@@ -68,6 +68,7 @@ protected import AbsynDep;
 protected import BackendDump;
 protected import BackendDAECreate;
 protected import BackendDAEUtil;
+protected import BackendDAEOptimize;
 protected import BackendEquation;
 protected import BackendVariable;
 protected import BaseHashSet;
@@ -4444,40 +4445,25 @@ protected function dumpXMLDAEFrontEnd
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path inClassName;
-  input String rewriteRulesFile;
   input GlobalScript.SymbolTable inInteractiveSymbolTable;
   output Env.Cache outCache;
   output Env.Env outEnv; 
   output DAE.DAElist outDae;
 algorithm
-  (outCache, outEnv, outDae) := matchcontinue(inCache, inEnv, inClassName, rewriteRulesFile, inInteractiveSymbolTable)
+  (outCache, outEnv, outDae) := matchcontinue(inCache, inEnv, inClassName, inInteractiveSymbolTable)
     local
       Absyn.Program p;
       SCode.Program scode;
     
-    case (_, _, _, _, _) 
+    case (_, _, _, _) 
       equation
-        // set the rewrite rules flag
-        Flags.setConfigString(Flags.REWRITE_RULES_FILE, rewriteRulesFile);
-        // load the rewrite rules
-        RewriteRules.loadRules();
         GlobalScript.SYMBOLTABLE(ast = p) = inInteractiveSymbolTable;  
         scode = SCodeUtil.translateAbsyn2SCode(p);
         (outCache, outEnv, _, outDae) = Inst.instantiateClass(inCache, InnerOuter.emptyInstHierarchy, scode, inClassName);
         outDae = DAEUtil.transformationsBeforeBackend(outCache,outEnv,outDae);
-        // clear the rewrite rules after running the front-end
-        Flags.setConfigString(Flags.REWRITE_RULES_FILE, "");
-        RewriteRules.clearRules();
      then
        (outCache, outEnv, outDae);
        
-    case (_, _, _, _, _)
-      equation
-        // clear the rewrite rules if we fail!
-        Flags.setConfigString(Flags.REWRITE_RULES_FILE, "");
-        RewriteRules.clearRules();
-     then
-       fail();
   end matchcontinue;
 end dumpXMLDAEFrontEnd;
 
@@ -4493,7 +4479,7 @@ protected function dumpXMLDAE " author: fildo
   output String xml_filename;
 algorithm
   (outCache,outInteractiveSymbolTable3,xml_filename) :=
-  match (inCache,inEnv,vals,inInteractiveSymbolTable,inMsg)
+  matchcontinue (inCache,inEnv,vals,inInteractiveSymbolTable,inMsg)
     local
       String cname_str,filenameprefix,compileDir,rewriteRulesFile;
       list<Env.Frame> env;
@@ -4514,7 +4500,12 @@ algorithm
       equation
         Error.clearMessages() "Clear messages";
         
-        (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname, rewriteRulesFile, st);
+        // set the rewrite rules flag
+        Flags.setConfigString(Flags.REWRITE_RULES_FILE, rewriteRulesFile);
+        // load the rewrite rules
+        RewriteRules.loadRules();
+        
+        (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname, st);
         
         compileDir = System.pwd() +& System.pathDelimiter();
         cname_str = Absyn.pathString(classname);
@@ -4524,11 +4515,19 @@ algorithm
         dlow_1 = BackendDAEUtil.preOptimizeBackendDAE(dlow,NONE());
         dlow_1 = BackendDAECreate.findZeroCrossings(dlow_1);
         xml_filename = stringAppendList({filenameprefix,".xml"});
+        
+        // apply rewrite rules to the back-end
+        dlow_1 = applyRewriteRulesOnBackend(dlow_1);
+        
         Print.clearBuf();
         XMLDump.dumpBackendDAE(dlow_1,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,false);
         Print.writeBuf(xml_filename);
         Print.clearBuf();
         compileDir = Util.if_(Config.getRunningTestsuite(),"",compileDir);
+        
+        // clear the rewrite rules!
+        Flags.setConfigString(Flags.REWRITE_RULES_FILE, "");
+        RewriteRules.clearRules();
       then
         (cache,st,stringAppendList({compileDir,xml_filename}));
 
@@ -4539,8 +4538,13 @@ algorithm
       equation
         //asInSimulationCode==false => it's NOT necessary to do all the translation's steps before dumping with xml
         Error.clearMessages() "Clear messages";
+
+        // set the rewrite rules flag
+        Flags.setConfigString(Flags.REWRITE_RULES_FILE, rewriteRulesFile);
+        // load the rewrite rules
+        RewriteRules.loadRules();
         
-        (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname, rewriteRulesFile, st);
+        (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname, st);
         
         compileDir = System.pwd() +& System.pathDelimiter();
         cname_str = Absyn.pathString(classname);
@@ -4551,11 +4555,19 @@ algorithm
         dlow_1 = BackendDAEUtil.transformBackendDAE(dlow_1,NONE(),NONE(),NONE());
         dlow_1 = BackendDAECreate.findZeroCrossings(dlow_1);
         xml_filename = stringAppendList({filenameprefix,".xml"});
+        
+        // apply rewrite rules to the back-end
+        dlow_1 = applyRewriteRulesOnBackend(dlow_1);
+        
         Print.clearBuf();
         XMLDump.dumpBackendDAE(dlow_1,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,false);
         Print.writeBuf(xml_filename);
         Print.clearBuf();
         compileDir = Util.if_(Config.getRunningTestsuite(),"",compileDir);
+        
+        // clear the rewrite rules!
+        Flags.setConfigString(Flags.REWRITE_RULES_FILE, "");
+        RewriteRules.clearRules();
       then
         (cache,st,stringAppendList({compileDir,xml_filename}));
 
@@ -4567,7 +4579,12 @@ algorithm
         //asInSimulationCode==true => it's necessary to do all the translation's steps before dumping with xml
         Error.clearMessages() "Clear messages";
         
-        (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname, rewriteRulesFile, st);
+        // set the rewrite rules flag
+        Flags.setConfigString(Flags.REWRITE_RULES_FILE, rewriteRulesFile);
+        // load the rewrite rules
+        RewriteRules.loadRules();
+
+        (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname, st);
         
         compileDir = System.pwd() +& System.pathDelimiter();
         cname_str = Absyn.pathString(classname);
@@ -4576,11 +4593,19 @@ algorithm
         dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(filenameprefix));
         indexed_dlow = BackendDAEUtil.getSolvedSystem(dlow, NONE(), NONE(), NONE(), NONE());
         xml_filename = stringAppendList({filenameprefix,".xml"});
+        
+        // apply rewrite rules to the back-end
+        indexed_dlow = applyRewriteRulesOnBackend(indexed_dlow);
+        
         Print.clearBuf();
         XMLDump.dumpBackendDAE(indexed_dlow,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,false);
         Print.writeBuf(xml_filename);
         Print.clearBuf();
         compileDir = Util.if_(Config.getRunningTestsuite(),"",compileDir);
+        
+        // clear the rewrite rules!
+        Flags.setConfigString(Flags.REWRITE_RULES_FILE, "");
+        RewriteRules.clearRules();        
       then
         (cache,st,stringAppendList({compileDir,xml_filename}));
         
@@ -4592,7 +4617,12 @@ algorithm
         //asInSimulationCode==true => it's necessary to do all the translation's steps before dumping with xml
         Error.clearMessages() "Clear messages";
         
-        (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname, rewriteRulesFile, st);
+        // set the rewrite rules flag
+        Flags.setConfigString(Flags.REWRITE_RULES_FILE, rewriteRulesFile);
+        // load the rewrite rules
+        RewriteRules.loadRules();
+
+        (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname, st);
         
         compileDir = System.pwd() +& System.pathDelimiter();
         cname_str = Absyn.pathString(classname);
@@ -4601,16 +4631,75 @@ algorithm
         dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(filenameprefix));
         indexed_dlow = BackendDAEUtil.getSolvedSystem(dlow, NONE(), NONE(), NONE(), NONE());
         xml_filename = stringAppendList({filenameprefix,".xml"});
+        
+        // apply rewrite rules to the back-end
+        indexed_dlow = applyRewriteRulesOnBackend(indexed_dlow);
+        
         Print.clearBuf();
         XMLDump.dumpBackendDAE(indexed_dlow,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,true);
         Print.writeBuf(xml_filename);
         Print.clearBuf();
         compileDir = Util.if_(Config.getRunningTestsuite(),"",compileDir);
+        
+        // clear the rewrite rules!
+        Flags.setConfigString(Flags.REWRITE_RULES_FILE, "");
+        RewriteRules.clearRules();
       then
         (cache,st,stringAppendList({compileDir,xml_filename}));
   
-  end match;
+    else
+    equation
+        // clear the rewrite rules if we fail!
+        Flags.setConfigString(Flags.REWRITE_RULES_FILE, "");
+        RewriteRules.clearRules();
+    then fail();
+  
+  end matchcontinue;
 end dumpXMLDAE;
+
+protected function applyRewriteRulesOnBackend
+  input BackendDAE.BackendDAE inBackendDAE;
+  output BackendDAE.BackendDAE outBackendDAE;
+algorithm
+  outBackendDAE := matchcontinue(inBackendDAE)
+    local
+      list<BackendDAE.Var> vars,knvars,extvars,aliasvars;
+      BackendDAE.Variables vars_knownVars;
+      BackendDAE.Variables vars_externalObject;
+      BackendDAE.VariableArray varArr_externalObject;
+      BackendDAE.Variables vars_aliasVars;
+      BackendDAE.VariableArray varArr_aliasVars;
+      BackendDAE.ExternalObjectClasses extObjCls;
+      BackendDAE.EquationArray reqns,ieqns;
+      list<DAE.Constraint> constrs;
+      list<DAE.ClassAttributes> clsAttrs;
+      list<DAE.Function> functionsElems;
+      BackendDAE.BackendDAEType btp;
+      list<BackendDAE.EqSystem> systs;
+      BackendDAE.SymbolicJacobians symjacs;
+      DAE.FunctionTree funcs;
+      BackendDAE.EventInfo eventInfo;
+      BackendDAE.ExtraInfo extraInfo;
+      Env.Cache cache;
+      Env.Env env;
+
+    // no rewrites!
+    case _
+      equation
+        true = RewriteRules.noRewriteRulesBackEnd();
+      then 
+        inBackendDAE;
+
+    // some rewrites
+    case _
+      equation
+        false = RewriteRules.noRewriteRulesBackEnd();
+        outBackendDAE = BackendDAEOptimize.applyRewriteRulesBackend(inBackendDAE); 
+      then
+        outBackendDAE;
+  
+  end matchcontinue; 
+end applyRewriteRulesOnBackend;
 
 protected function getClassnamesInClassList
   input Absyn.Path inPath;

@@ -290,11 +290,12 @@ algorithm
   (outCache,outExp,outProperties,st) := matchcontinue(inCache,inEnv,inExp,inImplicit,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info)
     local
       Absyn.Exp expRewritten;
+    
     // we have some rewrite rules
     case (_, _, _, _, _, _, _, _)
       equation
-        false = RewriteRules.noRewriteRules();
-        expRewritten = RewriteRules.rewrite(inExp);
+        false = RewriteRules.noRewriteRulesFrontEnd();
+        (expRewritten, _) = RewriteRules.rewriteFrontEnd(inExp);
         (outCache,outExp,outProperties,st) = elabExp_dispatch(inCache,inEnv,expRewritten,inImplicit,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info);
       then
         (outCache,outExp,outProperties,st);
@@ -302,7 +303,7 @@ algorithm
     // we have no rewrite rules
     case (_, _, _, _, _, _, _, _)
       equation
-        true = RewriteRules.noRewriteRules();
+        true = RewriteRules.noRewriteRulesFrontEnd();
         (outCache,outExp,outProperties,st) = elabExp_dispatch(inCache,inEnv,inExp,inImplicit,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info);
       then
         (outCache,outExp,outProperties,st);

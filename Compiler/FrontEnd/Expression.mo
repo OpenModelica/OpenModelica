@@ -69,6 +69,7 @@ protected import Env;
 protected import Error;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
+protected import Dump;
 protected import Flags;
 protected import List;
 protected import Patternm;
@@ -269,6 +270,7 @@ algorithm
         expl_1 = List.map(expl, unelabExp);
       then
         Absyn.TUPLE(expl_1);
+    
     case(DAE.CAST(_,e1)) equation
       ae1 = unelabExp(e1);
     then ae1;
@@ -277,6 +279,11 @@ algorithm
     case(DAE.ASUB(_,_)) equation
       print("Internal Error, can not unelab ASUB\n");
     then fail();
+      
+    // TSUB(expression) => expression
+    case(DAE.TSUB(e1,_,_)) equation
+      ae1 = unelabExp(e1);
+    then ae1;
 
     case(DAE.SIZE(e1,SOME(e2))) equation
       ae1 = unelabExp(e1);
@@ -9685,5 +9692,228 @@ algorithm
 
   end match;
 end arrayElements;
+
+public function fromAbsynExp
+"@author: adrpo
+ transform Absyn.Exp into DAE.Exp, uknown types are used"
+  input Absyn.Exp inAExp;
+  output DAE.Exp outDExp;
+algorithm
+  outDExp := match(inAExp)
+    local
+      Integer i;
+      Real r;
+      Boolean b;
+      String s;
+      Absyn.Exp ae, ae1, ae2;
+      Absyn.Operator aop;
+      Absyn.ComponentRef acr;
+      list<Absyn.Exp> aexps;
+      list<list<Absyn.Exp>> aexpslst;
+      Absyn.FunctionArgs fargs;
+      Absyn.Path p;
+      Option<Absyn.Exp> aoe;
+      DAE.ComponentRef cr;
+      DAE.Exp e, e1, e2;
+      DAE.Operator op;
+      list<DAE.Exp> exps;
+      list<list<DAE.Exp>> expslst;
+      Option<DAE.Exp> oe;
+      
+    case (Absyn.INTEGER(i)) then DAE.ICONST(i);  
+    case (Absyn.REAL(r)) then DAE.RCONST(r);
+    case (Absyn.BOOL(b)) then DAE.BCONST(b);
+    case (Absyn.STRING(s)) then DAE.SCONST(s);
+    
+    case (Absyn.CREF(acr))
+      equation
+        cr = ComponentReference.toExpCref(acr);
+        e = makeCrefExp(cr, DAE.T_UNKNOWN_DEFAULT); 
+      then
+        e;
+    
+    case (Absyn.BINARY(ae1, aop, ae2))
+      equation
+        op = fromAbsynOperator(aop, DAE.T_UNKNOWN_DEFAULT);
+        e1 = fromAbsynExp(ae1);
+        e2 = fromAbsynExp(ae2);
+        e = DAE.BINARY(e1, op, e2);
+      then
+        e;
+
+    case (Absyn.UNARY(aop, ae))
+      equation
+        op = fromAbsynOperator(aop, DAE.T_UNKNOWN_DEFAULT);
+        e = fromAbsynExp(ae);
+        e = DAE.UNARY(op, e);
+      then
+        e;
+
+    case (Absyn.LBINARY(ae1, aop, ae2))
+      equation
+        op = fromAbsynOperator(aop, DAE.T_UNKNOWN_DEFAULT);
+        e1 = fromAbsynExp(ae1);
+        e2 = fromAbsynExp(ae2);
+        e = DAE.LBINARY(e1, op, e2);
+      then
+        e;
+
+    case (Absyn.LUNARY(aop, ae))
+      equation
+        op = fromAbsynOperator(aop, DAE.T_UNKNOWN_DEFAULT);
+        e = fromAbsynExp(ae);
+        e = DAE.LUNARY(op, e);
+      then
+        e;
+
+    case (Absyn.RELATION(ae1, aop, ae2))
+      equation
+        op = fromAbsynOperator(aop, DAE.T_UNKNOWN_DEFAULT);
+        e1 = fromAbsynExp(ae1);
+        e2 = fromAbsynExp(ae2);
+        e = DAE.RELATION(e1, op, e2, 0, NONE());
+      then
+        e;
+
+    case (ae as Absyn.IFEXP(ifExp = _))
+      equation
+        Absyn.IFEXP(ifExp = ae, trueBranch = ae1, elseBranch = ae2) = Absyn.canonIfExp(ae);
+        e = fromAbsynExp(ae);
+        e1 = fromAbsynExp(ae1);
+        e2 = fromAbsynExp(ae2);
+        e = DAE.IFEXP(e, e1, e2);
+      then
+        e;
+
+    case (Absyn.CALL(acr, fargs))
+      equation
+        exps = fargsToExps(fargs);
+        p = Absyn.crefToPath(acr);
+        e = DAE.CALL(p, exps, DAE.callAttrBuiltinOther);
+      then
+        e;
+
+    case (Absyn.PARTEVALFUNCTION(acr, fargs))
+      equation
+        exps = fargsToExps(fargs);
+        p = Absyn.crefToPath(acr);
+        e = DAE.PARTEVALFUNCTION(p, exps, DAE.T_UNKNOWN_DEFAULT);
+      then
+        e;
+  
+    case (Absyn.ARRAY(aexps))
+      equation
+        exps = List.map(aexps, fromAbsynExp);
+        e = DAE.ARRAY(DAE.T_UNKNOWN_DEFAULT, false, exps);
+      then
+        e;
+
+    case (Absyn.MATRIX(aexpslst))
+      equation
+        expslst = List.mapList(aexpslst, fromAbsynExp);
+        i = listLength(List.first(expslst));
+        e = DAE.MATRIX(DAE.T_UNKNOWN_DEFAULT, i, expslst);
+      then
+        e;
+
+    case (Absyn.RANGE(ae1, aoe, ae2))
+      equation
+        e1 = fromAbsynExp(ae1);
+        e2 = fromAbsynExp(ae2);
+        oe = fromAbsynExpOpt(aoe);
+        e = DAE.RANGE(DAE.T_UNKNOWN_DEFAULT, e1, oe, e2);
+      then
+        e;
+
+    case (Absyn.TUPLE(aexps))
+      equation
+        exps = List.map(aexps, fromAbsynExp);
+        e = DAE.TUPLE(exps);
+      then
+        e;
+
+    else
+    equation
+      print("Expression.fromAbsynExp: Unhandled expression: " +& Dump.printExpStr(inAExp) +& "\n"); 
+    then 
+      fail(); 
+        
+  end match;
+end fromAbsynExp;
+
+public function fargsToExps
+  input Absyn.FunctionArgs inFargs;
+  output list<DAE.Exp> outExps;
+algorithm
+  outExps := matchcontinue(inFargs)
+    local
+      list<DAE.Exp> exps;
+      list<Absyn.NamedArg> nargs;
+      list<Absyn.Exp> aexps;
+    
+    case (Absyn.FUNCTIONARGS(aexps, {}))
+      equation
+        exps = List.map(aexps, fromAbsynExp);
+      then
+        exps;
+        
+    case (Absyn.FUNCTIONARGS(aexps, nargs))
+      equation
+        print("Expression.fargsToExps: Named arguments are not handled!\n");
+      then
+        {};
+    
+  end matchcontinue;
+end fargsToExps;
+
+protected function fromAbsynExpOpt
+  input Option<Absyn.Exp> aoe;
+  output Option<DAE.Exp> oe;
+algorithm
+  oe := match(aoe)
+    local
+      Absyn.Exp ae;
+      DAE.Exp e;
+    
+    case (NONE()) then NONE();
+    
+    case (SOME(ae))
+      equation
+        e = fromAbsynExp(ae);
+      then
+        SOME(e);
+  
+  end match;
+end fromAbsynExpOpt;
+
+protected function fromAbsynOperator 
+"@author: adrpo"
+ input Absyn.Operator aop;
+ input DAE.Type ty;
+ output DAE.Operator op;
+algorithm
+  op := match(aop, ty)
+    case(Absyn.ADD(), _) then DAE.ADD(ty);
+    case(Absyn.SUB(), _) then DAE.SUB(ty);
+    case(Absyn.MUL(), _) then DAE.MUL(ty);
+    case(Absyn.DIV(), _) then DAE.DIV(ty);
+    case(Absyn.POW(), _) then DAE.POW(ty);
+    case(Absyn.UMINUS(), _) then DAE.UMINUS(ty);
+    case(Absyn.AND(), _) then DAE.AND(ty);
+    case(Absyn.OR(), _) then DAE.OR(ty);
+    case(Absyn.NOT(), _) then DAE.NOT(ty);
+    case(Absyn.LESS(), _) then DAE.LESS(ty);
+    case(Absyn.LESSEQ(), _) then DAE.LESSEQ(ty);
+    case(Absyn.GREATER(), _) then DAE.GREATER(ty);
+    case(Absyn.GREATEREQ(), _) then DAE.GREATEREQ(ty);
+    case(Absyn.EQUAL(), _) then DAE.EQUAL(ty);
+    case(Absyn.NEQUAL(), _) then DAE.NEQUAL(ty);
+    else
+    equation
+      print("Expression.fromAbsynOperator: Unhandled operator: " +& Dump.opSymbol(aop) +& "\n"); 
+    then 
+      fail();
+  end match;
+end fromAbsynOperator;
 
 end Expression;

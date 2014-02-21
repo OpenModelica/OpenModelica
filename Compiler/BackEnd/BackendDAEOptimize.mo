@@ -77,6 +77,7 @@ protected import HashTableExpToIndex;
 protected import HpcOmEqSystems;
 protected import HpcOmTaskGraph;
 protected import List;
+protected import RewriteRules;
 protected import SCode;
 protected import System;
 protected import Types;
@@ -8797,5 +8798,110 @@ algorithm
 end resolveLinearSystem;
 */
 
+
+// =============================================================================
+// replace expression with rewritten expression
+//
+// =============================================================================
+
+public function applyRewriteRulesBackend
+"@author: adrpo"
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  (outDAE, _) := BackendDAEUtil.mapEqSystemAndFold(inDAE, applyRewriteRulesBackend0, false);
+  outDAE := applyRewriteRulesBackendShared(outDAE);
+end applyRewriteRulesBackend;
+
+protected function applyRewriteRulesBackend0 
+"@author: adrpo"
+  input BackendDAE.EqSystem isyst;
+  input tuple<BackendDAE.Shared, Boolean> sharedChanged;
+  output BackendDAE.EqSystem osyst;
+  output tuple<BackendDAE.Shared, Boolean> osharedChanged;
+algorithm
+  (osyst, osharedChanged) := matchcontinue (isyst, sharedChanged)
+    local
+      BackendDAE.Variables orderedVars;
+      BackendDAE.EquationArray orderedEqs;
+      Option<BackendDAE.IncidenceMatrix> m;
+      Option<BackendDAE.IncidenceMatrixT> mT;
+      BackendDAE.Matching matching;
+      BackendDAE.Shared shared;
+      BackendDAE.StateSets stateSets;
+      Env.Cache cache;
+      Env.Env env;
+      
+    case (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets), (shared, _)) 
+      equation
+        _ = BackendDAEUtil.traverseBackendDAEExpsVarsWithUpdate(orderedVars, traverserapplyRewriteRulesBackend, false);
+        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs, traverserapplyRewriteRulesBackend, false);
+    then 
+      (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets), (shared, true));
+    
+    else then (isyst, sharedChanged);
+  end matchcontinue;
+end applyRewriteRulesBackend0;
+
+protected function traverserapplyRewriteRulesBackend 
+"@author: adrpo"
+  input tuple<DAE.Exp, Boolean> itpl;
+  output tuple<DAE.Exp, Boolean> outTpl;
+protected
+  DAE.Exp e;
+  Boolean extra;
+algorithm
+  (e,extra) := itpl;
+  outTpl := Expression.traverseExp(e,traverserExpapplyRewriteRulesBackend,extra);
+end traverserapplyRewriteRulesBackend;
+
+protected function traverserExpapplyRewriteRulesBackend 
+"@author: adrpo"
+  input tuple<DAE.Exp, Boolean> tpl;
+  output tuple<DAE.Exp, Boolean> outTpl;
+algorithm
+  outTpl := matchcontinue(tpl)
+    local
+      DAE.Exp e;
+      Env.Cache cache;
+      Env.Env env;
+      
+    // apply rewrite rule
+    case ((e, _)) equation
+      (e, true) = RewriteRules.rewriteBackEnd(e);
+    then 
+      ((e, true));
+        
+    else then tpl;
+  end matchcontinue;
+end traverserExpapplyRewriteRulesBackend;
+
+protected function applyRewriteRulesBackendShared 
+"@author: adrpo"
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+protected
+  BackendDAE.Variables knvars, exobj, aliasVars;
+  BackendDAE.EquationArray remeqns, inieqns;
+  list<DAE.Constraint> constrs;
+  list<DAE.ClassAttributes> clsAttrs;
+  Env.Cache cache;
+  Env.Env env;
+  DAE.FunctionTree funcTree;
+  BackendDAE.ExternalObjectClasses eoc;
+  BackendDAE.SymbolicJacobians symjacs;
+  BackendDAE.EventInfo eventInfo;
+  BackendDAE.BackendDAEType btp;
+  BackendDAE.EqSystems systs;
+  BackendDAE.ExtraInfo ei;
+algorithm
+  BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constrs, clsAttrs, cache, env, funcTree, eventInfo, eoc, btp, symjacs, ei)) := inDAE;
+  _ := BackendDAEUtil.traverseBackendDAEExpsVarsWithUpdate(knvars,traverserapplyRewriteRulesBackend, false);
+  _ := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(inieqns,traverserapplyRewriteRulesBackend, false);
+  _ := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(remeqns,traverserapplyRewriteRulesBackend, false);
+  // not sure if we should apply the rules on the event info!
+  // (ei,_) = traverseEventInfoExps(eventInfo,traverserapplyRewriteRulesBackend, false);
+  outDAE := BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constrs, clsAttrs, cache, env, funcTree, eventInfo, eoc, btp, symjacs, ei));
+end applyRewriteRulesBackendShared;
 
 end BackendDAEOptimize;
