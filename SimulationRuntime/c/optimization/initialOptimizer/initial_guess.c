@@ -108,6 +108,9 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   SIMULATION_INFO *sInfo = &(data->simulationInfo);
 
+   if(!data->simulationInfo.external_input.active)
+	   externalInputallocate(data);
+
    /* Initial DASSL solver */
    DASSL_DATA* dasslData = (DASSL_DATA*) malloc(sizeof(DASSL_DATA));
 
@@ -129,6 +132,12 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
      v[ii] = u0[j]*iData->scalVar[j + iData->nx];
    }
 
+   if(!data->simulationInfo.external_input.active)
+     for(i = 0; i<iData->nu;++i)
+       data->simulationInfo.inputVars[i] = u0[i];
+   else
+     externalInputUpdate(data);
+
    printGuess = (short)(ACTIVE_STREAM(LOG_INIT) && !ACTIVE_STREAM(LOG_SOLVER));
    if(printGuess){
      printf("\n****initial guess****");
@@ -139,7 +148,8 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
      for(jj=0; jj<iData->deg; ++jj, ++k){
      solverInfo->currentStepSize = iData->time[k] - iData->time[k-1];
      iData->data->localData[1]->timeValue = iData->time[k];
-
+     if(data->simulationInfo.external_input.active)
+       externalInputUpdate(data);
      dasrt_step(data, solverInfo);
 
      if(printGuess)
@@ -149,7 +159,7 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
        v[j] = sData->realVars[j] * iData->scalVar[j];
 
      for(; j< iData->nv; ++j)
-       v[j] = iData->start_u[j-iData->nx] * iData->scalVar[j];
+       v[j] = data->simulationInfo.inputVars[j-iData->nx] * iData->scalVar[j];
 
      v += iData->nv;
      /* updateContinuousSystem(iData->data); */
@@ -172,6 +182,8 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
     printf("\n*****initial guess done*****");
 
   dasrt_deinitial(solverInfo->solverData);
+  externalInputFree(data);
+  data->simulationInfo.external_input.active = 0;
 
   solverInfo->solverData = (void*)iData;
   sInfo->solverMethod = "optimization";

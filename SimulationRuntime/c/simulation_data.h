@@ -150,6 +150,22 @@ typedef struct ANALYTIC_JACOBIAN
 
 }ANALYTIC_JACOBIAN;
 
+/* EXTERNAL_INPUT
+ *
+ * extern input for dassl and optimization
+ *
+ */
+typedef struct EXTERNAL_INPUT 
+{
+    modelica_boolean active;
+    float** u;
+    float* t;
+    modelica_real dt;
+    modelica_integer n;
+    modelica_integer i;
+
+}EXTERNAL_INPUT;
+
 /* Alias data with various types*/
 typedef struct DATA_REAL_ALIAS
 {
@@ -489,6 +505,7 @@ typedef struct SIMULATION_INFO
 
   modelica_real* inputVars;
   modelica_real* outputVars;
+  EXTERNAL_INPUT external_input;
 
   ANALYTIC_JACOBIAN* analyticJacobians;
 

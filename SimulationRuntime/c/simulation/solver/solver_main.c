@@ -41,6 +41,7 @@
 #include "dassl.h"
 #include "delay.h"
 #include "events.h"
+#include "external_input.h"
 #include "varinfo.h"
 #include "stateset.h"
 #include "radau.h"
@@ -219,7 +220,7 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   }
 #endif
 
-
+  externalInputallocate(data);
   if(measure_time_flag)
   {
     rt_accumulate(SIM_TIMER_PREINIT);
@@ -304,7 +305,7 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   {
     /* free other solver memory */
   }
-
+  externalInputFree(data);
   /* free stateset data */
   freeStateSetData(data);
 

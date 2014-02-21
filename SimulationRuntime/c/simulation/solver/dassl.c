@@ -46,6 +46,8 @@
 #include "f2c.h"
 #include "meta_modelica.h"
 
+#include "external_input.h"
+
 static const char *dasslMethodStr[DASSL_MAX] = {"unknown",
                                                 "dassl",
                                                 "dasslwort",
@@ -306,6 +308,8 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
 
     /* read input vars */
     if(solverInfo->solverMethod != S_OPTIMIZATION) {
+      if(simData->simulationInfo.external_input.active)
+        externalInputUpdate(simData);
       simData->callback->input_function(simData);
     }
 
