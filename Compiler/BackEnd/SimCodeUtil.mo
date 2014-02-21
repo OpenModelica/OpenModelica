@@ -10420,10 +10420,11 @@ algorithm
 
     case (BackendDAE.VAR(varType = DAE.T_REAL(source = _), values = dae_var_attr)) equation
       e = DAEUtil.getNominalAttrFail(dae_var_attr);
-      true = Expression.isConstValue(e);
+      // lochel: #2597
+      // true = Expression.isConstValue(e);
     then SOME(e);
-      
-    case (_) equation
+
+    case (_)
     then NONE();
   end matchcontinue;
 end getNominalValue;

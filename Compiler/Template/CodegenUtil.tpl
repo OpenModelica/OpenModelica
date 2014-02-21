@@ -195,12 +195,23 @@ template ScalarVariableTypeFixedAttribute(Boolean isFixed)
   ' fixed="<%isFixed%>"'
 end ScalarVariableTypeFixedAttribute;
 
+template NominalString(DAE.Exp exp)
+::=
+  match exp
+    case ICONST(__) then ' nominal="<%initValXml(exp)%>"'
+    case RCONST(__) then ' nominal="<%initValXml(exp)%>"'
+    case SCONST(__) then ' nominal="<%initValXml(exp)%>"'
+    case BCONST(__) then ' nominal="<%initValXml(exp)%>"'
+    else ''
+end NominalString;
+
 template ScalarVariableTypeNominalAttribute(Option<DAE.Exp> nominalValue)
  "generates code for nominal attribute"
 ::=
   match nominalValue
-    case SOME(exp) then ' useNominal="true" nominal="<%initValXml(exp)%>"'
-    case NONE() then ' useNominal="false" nominal="1.0"'
+    case SOME(exp)
+    then ' useNominal="true"<%NominalString(exp)%>'
+    case NONE() then ' useNominal="false"'
 end ScalarVariableTypeNominalAttribute;
 
 template ScalarVariableTypeUnitAttribute(String unit)

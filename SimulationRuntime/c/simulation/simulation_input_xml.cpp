@@ -408,10 +408,10 @@ void read_input_xml(MODEL_DATA* modelData,
 
     /* read var attribute */
     read_value(mi.rSta[i]["useStart"], (modelica_boolean*)&(modelData->realVarsData[i].attribute.useStart));
-    read_value(mi.rSta[i]["start"], &(modelData->realVarsData[i].attribute.start), 0);
+    read_value(mi.rSta[i]["start"], &(modelData->realVarsData[i].attribute.start), 0.0);
     read_value(mi.rSta[i]["fixed"], (modelica_boolean*)&(modelData->realVarsData[i].attribute.fixed));
     read_value(mi.rSta[i]["useNominal"], (modelica_boolean*)&(modelData->realVarsData[i].attribute.useNominal));
-    read_value(mi.rSta[i]["nominal"], &(modelData->realVarsData[i].attribute.nominal), 1);
+    read_value(mi.rSta[i]["nominal"], &(modelData->realVarsData[i].attribute.nominal), 1.0);
     read_value(mi.rSta[i]["min"], &(modelData->realVarsData[i].attribute.min), REAL_MIN);
     read_value(mi.rSta[i]["max"], &(modelData->realVarsData[i].attribute.max), REAL_MAX);
 
@@ -458,7 +458,7 @@ void read_input_xml(MODEL_DATA* modelData,
     read_value(mi.rDer[i]["start"], &(modelData->realVarsData[modelData->nStates+i].attribute.start), 0);
     read_value(mi.rDer[i]["fixed"], (modelica_boolean*)&(modelData->realVarsData[modelData->nStates+i].attribute.fixed));
     read_value(mi.rDer[i]["useNominal"], (modelica_boolean*)&(modelData->realVarsData[modelData->nStates+i].attribute.useNominal));
-    read_value(mi.rDer[i]["nominal"], &(modelData->realVarsData[modelData->nStates+i].attribute.nominal), 1);
+    read_value(mi.rDer[i]["nominal"], &(modelData->realVarsData[modelData->nStates+i].attribute.nominal), 1.0);
     read_value(mi.rDer[i]["min"], &(modelData->realVarsData[modelData->nStates+i].attribute.min), REAL_MIN);
     read_value(mi.rDer[i]["max"], &(modelData->realVarsData[modelData->nStates+i].attribute.max), REAL_MAX);
 
@@ -507,7 +507,7 @@ void read_input_xml(MODEL_DATA* modelData,
     read_value(mi.rAlg[i]["start"], &(modelData->realVarsData[j].attribute.start), 0);
     read_value(mi.rAlg[i]["fixed"], (modelica_boolean*)&(modelData->realVarsData[j].attribute.fixed));
     read_value(mi.rAlg[i]["useNominal"], (modelica_boolean*)&(modelData->realVarsData[j].attribute.useNominal));
-    read_value(mi.rAlg[i]["nominal"], &(modelData->realVarsData[j].attribute.nominal), 0);
+    read_value(mi.rAlg[i]["nominal"], &(modelData->realVarsData[j].attribute.nominal), 1.0);
     read_value(mi.rAlg[i]["min"], &(modelData->realVarsData[j].attribute.min), REAL_MIN);
     read_value(mi.rAlg[i]["max"], &(modelData->realVarsData[j].attribute.max), REAL_MAX);
 
@@ -687,7 +687,7 @@ void read_input_xml(MODEL_DATA* modelData,
     read_value(mi.rPar[i]["start"], &(modelData->realParameterData[i].attribute.start), 0);
     read_value(mi.rPar[i]["fixed"], &(modelData->realParameterData[i].attribute.fixed));
     read_value(mi.rPar[i]["useNominal"], &(modelData->realParameterData[i].attribute.useNominal));
-    read_value(mi.rPar[i]["nominal"], &(modelData->realParameterData[i].attribute.nominal), 1);
+    read_value(mi.rPar[i]["nominal"], &(modelData->realParameterData[i].attribute.nominal), 1.0);
     read_value(mi.rPar[i]["min"], &(modelData->realParameterData[i].attribute.min), REAL_MIN);
     read_value(mi.rPar[i]["max"], &(modelData->realParameterData[i].attribute.max), REAL_MAX);
 

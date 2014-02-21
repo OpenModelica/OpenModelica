@@ -1748,7 +1748,6 @@ template functionUpdateBoundVariableAttributes(list<SimEqSystem> startValueEquat
     <%nominalValueEquations |> SES_SIMPLE_ASSIGN(__) =>
       <<
       $P$ATTRIBUTE<%cref(cref)%>.nominal = <%cref(cref)%>;
-      $P$ATTRIBUTE<%cref(cref)%>.useNominal = ((modelica_boolean) 1);
         infoStreamPrint(LOG_INIT, 0, "%s(nominal=<%crefToPrintfArg(cref)%>)", <%cref(cref)%>__varInfo.name, (<%crefType(cref)%>) $P$ATTRIBUTE<%cref(cref)%>.nominal);
       >>
     ;separator="\n"%>
