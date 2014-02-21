@@ -53,6 +53,8 @@ typedef struct _FILE_INFO
   int readonly;
 } FILE_INFO;
 
+#define omc_dummyFileInfo {"",-1,-1,-1,-1,1}
+
 extern void printInfo(FILE *stream, FILE_INFO info);
 extern void (*omc_assert)(threadData_t*,FILE_INFO,const char*, ...);
 extern void (*omc_assert_warning)(FILE_INFO,const char*, ...);

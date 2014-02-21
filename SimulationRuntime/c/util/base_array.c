@@ -33,6 +33,7 @@
 #include "base_array.h"
 #include "index_spec.h"
 #include "memory_pool.h"
+#include "omc_error.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -325,7 +326,10 @@ size_t calc_base_index_va(const base_array_t *source, int ndims, va_list ap)
     index = 0;
     for(i = 0; i < ndims; ++i) {
         int dim_i = va_arg(ap, _index_t) - 1;
-        assertStreamPrint(NULL, dim_i >= 0 && dim_i < source->dim_size[i], "Dimension %d has bounds 1..%d, got array subscript %d", i, source->dim_size[i], dim_i+1);
+        if (dim_i < 0 || dim_i >= source->dim_size[i]) {
+          FILE_INFO info = omc_dummyFileInfo;
+          omc_assert(NULL, info, "Dimension %d has bounds 1..%d, got array subscript %d", i+1, source->dim_size[i], dim_i+1);
+        }
         index = (index * source->dim_size[i]) + dim_i;
     }
 

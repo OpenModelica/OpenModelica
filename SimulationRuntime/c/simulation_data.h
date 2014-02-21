@@ -49,7 +49,6 @@ typedef void* f2c_integer_ptr;
 typedef integer* f2c_integer_ptr;
 #endif
 
-#define omc_dummyFileInfo {"",-1,-1,-1,-1,1}
 #define omc_dummyVarInfo {-1,"","",omc_dummyFileInfo}
 #define omc_dummyEquationInfo {-1,0,"",-1,NULL}
 #define omc_dummyFunctionInfo {-1,"",omc_dummyFileInfo}
