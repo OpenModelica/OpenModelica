@@ -7067,7 +7067,7 @@ protected
   list<list<Integer>> partitions, loops;
   BackendDAE.Variables vars,simpVars;
   BackendDAE.EquationArray eqs,simpEqs;
-  BackendDAE.IncidenceMatrix m,mT,m_cut, mT_cut;
+  BackendDAE.IncidenceMatrix m,mT,m_cut, mT_cut, m_after, mT_after;
   BackendDAE.Matching matching;
   BackendDAE.StateSets stateSets;
   list<DAE.ComponentRef> crefs;
@@ -7107,7 +7107,7 @@ algorithm
   //partition graph
   partitions := arrayList(partitionBipartiteGraph(m,mT));
   partitions := List.filterOnTrue(partitions,List.hasSeveralElements);
-    //print("the partitions: \n"+&stringDelimitList(List.map(partitions,HpcOmTaskGraph.intLstString),"\n")+&"\n");       
+   //print("the partitions: \n"+&stringDelimitList(List.map(partitions,HpcOmTaskGraph.intLstString),"\n")+&"\n");       
   
   // cut the deadends (vars and eqs outside of the loops)
   m_cut := arrayCopy(m);
@@ -7119,6 +7119,16 @@ algorithm
   eqLst := resolveLoops_resolvePartitions(partitions,m_cut,mT_cut,m,mT,eqMapping,varMapping,eqLst,varLst,nonLoopEqIdcs);      
   eqs := BackendEquation.listEquation(eqLst);
     //BackendDump.dumpEquationList(eqLst,"the complete DAE after resolving");  
+  
+  // get the graphML for the resolved System
+  simpEqLst := List.map1(eqMapping,List.getIndexFirst,eqLst);
+  simpEqs := BackendEquation.listEquation(simpEqLst);
+  numSimpEqs := listLength(simpEqLst);
+  numVars := listLength(simpVarLst);
+  m_after := arrayCreate(numSimpEqs, {});
+  mT_after := arrayCreate(numVars, {});
+  (m_after,mT_after) := BackendDAEUtil.incidenceMatrixDispatch(simpVars,simpEqs,{},mT, 0, numSimpEqs, intLt(0, numSimpEqs), BackendDAE.ABSOLUTE(), NONE()); 
+  HpcOmEqSystems.dumpEquationSystemGraphML1(simpVars,simpEqs,m_after,"rL_after");
   
   eqSysOut := BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets);
   sharedOut := sharedIn;
@@ -7239,6 +7249,7 @@ end resolveLoops_cutNodes;
 
 
 protected function sortPathsAsChain "sorts the paths, so that the endNode of the next Path is an endNode of one of all already sorted path.
+the contractedNodes represent the endNodes of the already sorted path
 author: Waurich TUD 2014-01"
   input list<list<Integer>> pathsIn;
   input list<Integer> contractedNodes;
@@ -7257,6 +7268,7 @@ algorithm
         sortedPaths;
     case(path::rest,_,{})
       equation
+        // the first node
         startNode = List.first(path);
         endNode = List.last(path);
         contrNodes = listAppend({startNode,endNode},contractedNodes);
@@ -7276,10 +7288,15 @@ algorithm
         sortedPaths = sortPathsAsChain(rest,contrNodes,sortedPaths);
       then
         sortedPaths;       
+    else
+      equation
+        print("sorting failed\n");
+        then
+          fail();
   end matchcontinue;
 end sortPathsAsChain;
 
-protected function endNodesInLst"checks if an endnode(first or last) of teh given path is member of the given list.
+protected function endNodesInLst"checks if an endnode(first or last) of the given path is member of the given list.
 author: Waurich TUD 2014-01"
   input list<Integer> path;
   input list<Integer> lstIn;
@@ -7294,7 +7311,6 @@ algorithm
   b2 := List.isMemberOnTrue(endNode,lstIn,intEq);
   inLst := b1 or b2;
 end endNodesInLst;
-
 
 protected function firstInListIsEqual"checks if the first element in a list is equal to the given value
 author:Waurich TUD 2014-01"
@@ -7341,34 +7357,44 @@ end connectPaths;
 protected function connect2PathsToLoops"connects 2 paths to a closed loop
 author:Waurich TUD 2014-01"
   input list<list<Integer>> pathsIn;
-  input list<list<Integer>> loopsIn;
+  input list<list<Integer>> loopsIn;  //empty input 
+  input list<list<Integer>> restPathsIn;  // empt input
   output list<list<Integer>> pathsOut;
+  output list<list<Integer>> restPathsOut;
 algorithm
-  pathsOut := matchcontinue(pathsIn,loopsIn)
+  (pathsOut,restPathsOut) := matchcontinue(pathsIn,loopsIn,restPathsIn)
     local
       Boolean closedALoop;
       Integer startNode, endNode;
       list<Integer> path;
-      list<list<Integer>> rest, endPaths, startPaths, loops;
-    case({path},_)
+      list<list<Integer>> rest, endPaths, startPaths, loops, restPaths;
+    case({},_,_)
       equation
+        then
+          ({},{});
+    case({path},_,_)
+      equation
+        // checks if the single path closes itself
         startNode = List.first(path);
         endNode = List.last(path);    
         closedALoop = intEq(startNode,endNode);
         loops = Util.if_(closedALoop,path::loopsIn,loopsIn);   
+        restPaths = Util.if_(closedALoop,restPathsIn,path::restPathsIn);
       then
-        loops;
-    case(path::rest,_)
+        (loops,restPaths);
+    case(path::rest,_,_)
       equation
+        // the loop closes itself
         startNode = List.first(path);
         endNode = List.last(path);     
         true = intEq(startNode,endNode);
         loops = path::loopsIn;
-        loops = connect2PathsToLoops(rest,loops);
+        (loops,restPaths) = connect2PathsToLoops(rest,loops,restPathsIn);
       then
-        loops;    
-    case(path::rest,_)
+        (loops,restPaths);    
+    case(path::rest,_,_)
       equation
+        // check if there is another path that closes the Loop. if not: put the path to the restPaths
         startNode = List.first(path);
         endNode = List.last(path);
         startPaths = List.filter1OnTrue(rest,firstInListIsEqual,startNode);
@@ -7378,10 +7404,11 @@ algorithm
         endPaths = listAppend(startPaths,endPaths);
         closedALoop = intGe(listLength(endPaths),1);
         loops = Debug.bcallret2(closedALoop,connectPaths,path,endPaths,{});
+        restPaths = Util.if_(closedALoop,restPathsIn,path::restPathsIn);
         loops = listAppend(loops,loopsIn);
-        loops = connect2PathsToLoops(rest,loops);
+        (loops,restPaths) = connect2PathsToLoops(rest,loops,restPaths);
       then
-        loops;
+        (loops,restPaths);
     else
       equation
         print("connect2PathsToLoops failed\n");
@@ -7488,17 +7515,17 @@ algorithm
       Boolean isNoSingleLoop;
       Integer replaceIdx,eqIdx,varIdx,parEqIdx,daeEqIdx; 
       list<Integer> varCrossLst, eqCrossLst, crossNodes, restNodes, adjCrossNodes, partition, partition2, replEqs, subLoop;
-      list<list<Integer>> paths, allPaths, simpleLoops, varEqsLst, crossEqLst, paths0, paths1, closedPaths;
+      list<list<Integer>> paths, allPaths, simpleLoops, varEqsLst, crossEqLst, paths0, paths1, closedPaths, loopConnectors, connectedPaths;
       BackendDAE.Equation resolvedEq, startEq;
       list<BackendDAE.Equation> eqLst;
     case(_,_,eqIdx::eqCrossLst,{},_,_)
       equation 
           //print("partition has only eqCrossNodes\n");
         // get the paths between the crossEqNodes and order them according to their length
-        paths = getPathTillNextCrossEq(eqCrossLstIn,mIn,mTIn,eqCrossLstIn,{},{});    
-        allPaths = List.sort(paths,List.listIsLonger);
+        allPaths = getPathTillNextCrossEq(eqCrossLstIn,mIn,mTIn,eqCrossLstIn,{},{});    
+        allPaths = List.sort(allPaths,List.listIsLonger);
           //print("all paths: \n"+&stringDelimitList(List.map(allPaths,HpcOmTaskGraph.intLstString)," / ")+&"\n");   
-        paths1 = List.fold1(paths,getReverseDoubles,paths,{});   // all paths with just one direction
+        paths1 = List.fold1(allPaths,getReverseDoubles,allPaths,{});   // all paths with just one direction
           //print("paths1: \n"+&stringDelimitList(List.map(paths1,HpcOmTaskGraph.intLstString)," / ")+&"\n");   
         paths0 = List.unique(paths1);  // only the paths between the eqs without concerning the vars in between
           //print("paths0: \n"+&stringDelimitList(List.map(paths0,HpcOmTaskGraph.intLstString)," / ")+&"\n");   
@@ -7512,12 +7539,21 @@ algorithm
           //print("the simpleLoop: \n"+&stringDelimitList(List.map(subLoop,intString)," / ")+&"\n");            
           //print("other paths: \n"+&stringDelimitList(List.map(paths,HpcOmTaskGraph.intLstString)," / ")+&"\n");   
           //print("paths0: \n"+&stringDelimitList(List.map(paths0,HpcOmTaskGraph.intLstString)," / ")+&"\n");
-        paths0 = List.sort(paths0,List.listIsLonger);  // solve the small loops first
-        paths0 = sortPathsAsChain(paths0,{},{});
+        //paths0 = List.sort(paths0,List.listIsLonger);  // solve the small loops first
+        
+        paths0 = List.sort(paths,List.listIsLonger);  // solve the small loops first
+        
+        //paths0 = sortPathsAsChain(paths0,{},{});
           //print("unconnected paths: \n"+&stringDelimitList(List.map(paths0,HpcOmTaskGraph.intLstString)," / ")+&"\n");
-        paths0 = connect2PathsToLoops(paths0,{});
-          //print("connected paths: "+&stringDelimitList(List.map(paths0,HpcOmTaskGraph.intLstString)," / ")+&"\n\n");     
-        paths0 = listAppend(simpleLoops,paths0);
+        (connectedPaths,loopConnectors) = connect2PathsToLoops(paths0,{},{});
+        loopConnectors = List.filter1OnTrue(loopConnectors,connectsLoops,simpleLoops);
+          //print("possible loopConnectors: "+&stringDelimitList(List.map(loopConnectors,HpcOmTaskGraph.intLstString)," / ")+&"\n\n");     
+          //print("connected paths: "+&stringDelimitList(List.map(connectedPaths,HpcOmTaskGraph.intLstString)," / ")+&"\n\n");   
+        simpleLoops = listAppend(simpleLoops,loopConnectors);
+        paths0 = listAppend(simpleLoops,connectedPaths);
+        
+        paths0 = sortPathsAsChain(paths0,{},{});
+        
         //print("all paths to be resolved: \n"+&stringDelimitList(List.map(paths0,HpcOmTaskGraph.intLstString)," / ")+&"\n");
       then
         paths0; 
@@ -7566,6 +7602,30 @@ algorithm
         fail();
   end match;
 end resolveLoops_findLoops2;
+
+
+protected function connectsLoops"checks if the given path connects 2 closed simple Loops
+author:Waurich TUD 2014-02"
+  input list<Integer> path;
+  input list<list<Integer>> allLoops;
+  output Boolean connected;
+protected
+  Boolean b1, b2;
+  Integer startNode, endNode;
+  list<list<Integer>> loops1, loops2;
+algorithm
+  startNode := List.first(path);
+  endNode := List.last(path);
+  // the startNode is connected to a loop
+  loops1 := List.filter1OnTrue(allLoops,firstInListIsEqual,startNode);
+  loops2 := List.filter1OnTrue(allLoops,lastInListIsEqual,startNode);
+  b1 := List.isNotEmpty(loops1) or List.isNotEmpty(loops2);
+  // the endNode is connected to a loop
+  loops1 := List.filter1OnTrue(allLoops,firstInListIsEqual,endNode);
+  loops2 := List.filter1OnTrue(allLoops,lastInListIsEqual,endNode);
+  b2 := List.isNotEmpty(loops1) or List.isNotEmpty(loops2);
+  connected := b1 and b2;
+end connectsLoops;
 
 
 protected function connectPathsToOneLoop "tries to connect various paths to one closed, simple loop
@@ -7652,11 +7712,11 @@ algorithm
         //print("crossEqs: "+&stringDelimitList(List.map(crossEqs,intString),",")+&"\n");
         //print("eqs: "+&stringDelimitList(List.map(eqs,intString),",")+&"\n");
         
-      // first try to replace a non cross node, otherweise an already replaced eq, or if none of them is available take a crossnode
+      // first try to replace a non cross node, otherwise an already replaced eq, or if none of them is available take a crossnode (THIS IS NOT YET CLEAR)
       pos = Debug.bcallret1(List.isNotEmpty(crossEqs),List.first,crossEqs,-1); 
-      pos = Debug.bcallret1(List.isNotEmpty(eqs),List.first,eqs,pos); // CHECK THIS
-      pos = Debug.bcallret1(List.isNotEmpty(replEqsIn),List.first,replEqsIn,pos); 
       //pos = Debug.bcallret1(List.isNotEmpty(eqs),List.first,eqs,pos); // CHECK THIS
+      pos = Debug.bcallret1(List.isNotEmpty(replEqsIn),List.first,replEqsIn,pos); 
+      pos = Debug.bcallret1(List.isNotEmpty(eqs),List.first,eqs,pos); // CHECK THIS
       
       
       eqs = List.deleteMember(loop1,pos);
