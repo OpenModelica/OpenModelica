@@ -6453,7 +6453,7 @@ algorithm
     local
       DAE.ComponentRef cr1, cr2;
       DAE.Exp e1, e2, e1_1, e2_1;
-      list<DAE.Exp> expl;
+      list<DAE.Exp> expl, expl1;
       DAE.Statement stms;
       DAE.Type tp;
       DAE.CallAttributes attr;
@@ -6467,6 +6467,7 @@ algorithm
       Integer uniqueEqIndex;
       list<DAE.Var> varLst;
       HashSet.HashSet ht;
+      list<Integer> positions;
       
     case (_, DAE.CAST(exp = e1), _, _, _, _)
       equation
@@ -6568,6 +6569,53 @@ algorithm
         uniqueEqIndex = iuniqueEqIndex + 1;
       then
         (eqSystlst, uniqueEqIndex, itempvars);
+
+    // Tuple(crefs) = Tuple(expl) 
+    case (_, e1 as DAE.TUPLE(expl), e2 as DAE.TUPLE(expl1), _, _, _)
+      equation
+        tp = Expression.typeof(e1);
+        //print("Tuple crefs Strings: "+& ComponentReference.printComponentRefListStr(crefs) +& "\n");
+        //check that all crefs are on lhs
+        ht = HashSet.emptyHashSet();
+        ht = List.fold(crefs, BaseHashSet.add, ht);
+        List.foldAllValue(expl, createSingleComplexEqnCode3, true, ht);
+
+        expLst = List.map(crefs, Expression.crefExp);
+        //print("ExpList : " +& ExpressionDump.printExpListStr(expLst) +& "\n");
+        positions = List.map1(expLst, List.position, expl);
+        //print("Positions : " +& stringDelimitList(List.map(positions, intString), ", ") +& "\n");
+        positions = List.map1(positions, intAdd, 1);
+        //print("Positions : " +& stringDelimitList(List.map(positions, intString), ", ") +& "\n");
+        expLst = List.map1r(positions, listGet, expl1);
+        //print("ExpList rhs : " +& ExpressionDump.printExpListStr(expLst) +& "\n");
+        expl = List.map1r(positions, listGet, expl);
+        //print("ExpList lhs : " +& ExpressionDump.printExpListStr(expl) +& "\n");
+                
+        exptl = List.threadTuple(expl, expLst);
+        (eqSystlst, uniqueEqIndex) = List.map1Fold(exptl, makeSES_SIMPLE_ASSIGN, source, iuniqueEqIndex);
+      then
+        (eqSystlst, uniqueEqIndex, itempvars);
+
+    // Tuple(expl) = Tuple(crefs) 
+    case (_, e1 as DAE.TUPLE(expl1), e2 as DAE.TUPLE(expl), _, _, _)
+      equation
+        tp = Expression.typeof(e1);
+        //check that all crefs are on rhs
+        ht = HashSet.emptyHashSet();
+        ht = List.fold(crefs, BaseHashSet.add, ht);
+        List.foldAllValue(expl, createSingleComplexEqnCode3, true, ht);
+        
+        expLst = List.map(crefs, Expression.crefExp);
+        positions = List.map1(expLst, List.position, expl);
+        positions = List.map1(positions, intAdd, 1);
+        expLst = List.map1r(positions, listGet, expl1);
+        expl = List.map1r(positions, listGet, expl);
+        
+        exptl = List.threadTuple(expl, expLst);
+        (eqSystlst, uniqueEqIndex) = List.map1Fold(exptl, makeSES_SIMPLE_ASSIGN, source, iuniqueEqIndex);
+      then
+        (eqSystlst, uniqueEqIndex, itempvars);
+
  
     // failure
     case (_, e1, e2, _, _, _)
