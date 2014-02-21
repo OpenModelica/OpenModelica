@@ -6382,6 +6382,7 @@ algorithm
       list<DAE.ComponentRef> crefs;
       list<SimCode.SimEqSystem> resEqs;
       list<SimCode.SimVar> tempvars;
+      String s, s1, s2, s3;
       
     case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source), _, _, _) equation
       crefs = List.map(inVars, BackendVariable.varCref);
@@ -6392,12 +6393,46 @@ algorithm
        
     case (BackendDAE.COMPLEX_EQUATION(source=_), _, _, _) equation
       crefs = List.map(inVars, BackendVariable.varCref);
+      
+      // check that all crefs are of Type Real
+      // otherwise we can't solve that with one Non-linear equation 
+      true = Util.boolAndList(List.map(List.map(crefs, ComponentReference.crefLastType), Types.isRealOrSubTypeReal));
+      
+      // wbraun: 
+      // TODO: Fix createNonlinearResidualEquations support cases where
+      //       solved variables are on rhs and also lhs. This is not
+      //       cosidered yet there. 
       (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations({inEquation}, iuniqueEqIndex, itempvars);
     then ({SimCode.SES_NONLINEAR(uniqueEqIndex, resEqs, crefs, 0, NONE(), false)}, uniqueEqIndex+1, tempvars);
-    
+
     // failure
-    else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"complex equations currently only supported on form v = functioncall(...)"});
+    case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=_), _, _, _) equation
+      crefs = List.map(inVars, BackendVariable.varCref);
+      
+      // check that all crefs are of Type Real
+      // otherwise we can't solve that with one Non-linear equation 
+      false = Util.boolAndList(List.map(List.map(crefs, ComponentReference.crefLastType), Types.isRealOrSubTypeReal));
+      
+      s1 = ExpressionDump.printExpStr(e1);
+      s2 = ExpressionDump.printExpStr(e2);
+      s3 = ComponentReference.printComponentRefListStr(crefs);
+      s = stringAppendList({"No support of solving not real variables with a non-linear solver. Equation:\n", s1, " = " , s2, " solve for ", s3 });
+      Error.addMessage(Error.INTERNAL_ERROR, {s});
+    then fail();
+
+    // failure
+    case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=_), _, _, _) equation
+      crefs = List.map(inVars, BackendVariable.varCref);
+      
+      // check that all crefs are of Type Real
+      // otherwise we can't solve that with one Non-linear equation 
+      true = Util.boolAndList(List.map(List.map(crefs, ComponentReference.crefLastType), Types.isRealOrSubTypeReal));
+      
+      s1 = ExpressionDump.printExpStr(e1);
+      s2 = ExpressionDump.printExpStr(e2);
+      s3 = ComponentReference.printComponentRefListStr(crefs);
+      s = stringAppendList({"complex equations currently only supported on form v = functioncall(...). Equation: ", s1, " = " , s2, " solve for ", s3 });
+      Error.addMessage(Error.INTERNAL_ERROR, {s});
     then fail();
   end matchcontinue;
 end createSingleComplexEqnCode;
@@ -6523,13 +6558,20 @@ algorithm
     case (_, e1 as DAE.TUPLE(expl), e2 as DAE.CALL(path=_), _, _, _)
       equation
         tp = Expression.typeof(e1);
+
+        //check that solved vars are on lhs
+        ht = HashSet.emptyHashSet();
+        ht = List.fold(crefs, BaseHashSet.add, ht);
+        List.foldAllValue(expl, createSingleComplexEqnCode3, true, ht);
+
         eqSystlst = {SimCode.SES_ALGORITHM(iuniqueEqIndex, {DAE.STMT_TUPLE_ASSIGN(tp, expl, e2, source)})};
         uniqueEqIndex = iuniqueEqIndex + 1;
       then
         (eqSystlst, uniqueEqIndex, itempvars);
  
-        // failure
+    // failure
     case (_, e1, e2, _, _, _)
+      equation
       /*
        equation
        s1 = ExpressionDump.printExpStr(e1);
