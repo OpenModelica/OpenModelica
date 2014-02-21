@@ -81,7 +81,7 @@ int externalInputallocate(DATA* data)
         c = fscanf(pFile, "%f", &data->simulationInfo.external_input.u[i][j]);
       }
       if(c<0)
-    	  data->simulationInfo.external_input.n = i;
+        data->simulationInfo.external_input.n = i;
     }
 
   printf("\n========================================================");
