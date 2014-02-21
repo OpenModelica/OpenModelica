@@ -53,6 +53,7 @@ protected type Ident = DAE.Ident "an identifier";
 protected type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
 protected type InstDims = list<list<DAE.Subscript>>;
 
+protected import Ceval;
 protected import ComponentReference;
 protected import Error;
 protected import Expression;
@@ -66,6 +67,7 @@ protected import DAEUtil;
 protected import PrefixUtil;
 protected import Types;
 protected import InstSection;
+protected import ValuesUtil;
 
 public constant DAE.Type stateSelectType =
           DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},
@@ -618,7 +620,7 @@ algorithm
   (outCache,outBinding) := matchcontinue (inCache,inEnv,inAttributes,inMod,inType,inPrefix,componentName,inInfo)
     local
       DAE.Type tp,e_tp;
-      DAE.Exp e_1,e;
+      DAE.Exp e_1,e,e_val_exp;
       Option<Values.Value> e_val;
       DAE.Const c;
       String e_tp_str,tp_str,e_str,e_str_1,str,s,pre_str;
@@ -630,6 +632,7 @@ algorithm
       Absyn.Path tpath;
       list<DAE.SubMod> sub_mods;
       Absyn.Info info;
+      Values.Value v;
 
     // A record might have bindings from the class, use those if there is no modifier!
     case (cache, _, _, DAE.NOMOD(), _, _, _, _)
@@ -693,18 +696,25 @@ algorithm
         (cache,DAE.VALBOUND(v, DAE.BINDING_FROM_DEFAULT_VALUE()));
     */
 
+    case (cache,_,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,SOME(v),prop,_,_))),tp,_,_,_) /* default */
+      equation
+        c = Types.propAllConst(prop);
+        false = Types.equivtypes(Types.getPropType(prop),tp);
+        e_val_exp = ValuesUtil.valueExp(v);
+        (e_1, _) = Types.matchProp(e, prop, DAE.PROP(tp, DAE.C_UNKNOWN()), false);
+        (e_1,_) = ExpressionSimplify.simplify(e_1);
+        (e_val_exp, _) = Types.matchProp(e_val_exp, prop, DAE.PROP(tp, DAE.C_UNKNOWN()), false);
+        (e_val_exp,_) = ExpressionSimplify.simplify(e_val_exp);
+        v = Ceval.cevalSimple(e_val_exp);
+        e_val = SOME(v);
+      then
+        (cache,DAE.EQBOUND(e_1,e_val,c,DAE.BINDING_FROM_DEFAULT_VALUE()));
+
     case (cache,_,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,e_val,prop,_,_))),tp,_,_,_) /* default */
       equation
         c = Types.propAllConst(prop);
         (e_1, _) = Types.matchProp(e, prop, DAE.PROP(tp, DAE.C_UNKNOWN()), false);
         (e_1,_) = ExpressionSimplify.simplify(e_1);
-      then
-        (cache,DAE.EQBOUND(e_1,e_val,c,DAE.BINDING_FROM_DEFAULT_VALUE()));
-
-    case (cache,_,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,e_val,prop,_,_))),tp,_,_,_)
-      equation
-        c = Types.propAllConst(prop);
-        (e_1, _) = Types.matchProp(e, prop, DAE.PROP(tp, DAE.C_UNKNOWN()), false);
       then
         (cache,DAE.EQBOUND(e_1,e_val,c,DAE.BINDING_FROM_DEFAULT_VALUE()));
 
