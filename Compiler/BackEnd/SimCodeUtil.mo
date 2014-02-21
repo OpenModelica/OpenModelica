@@ -3264,7 +3264,7 @@ algorithm
     case(_, _, DAE.CREF(cr, ty)::rest, _)
       equation
         slst = List.map(dims, intString);
-        var = SimCode.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", -1, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(name), SimCode.NOALIAS(), DAE.emptyElementSource, SimCode.NONECAUS(), NONE(), slst, false);
+        var = SimCode.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(name), SimCode.NOALIAS(), DAE.emptyElementSource, SimCode.NONECAUS(), NONE(), slst, false);
         tempvars = createTempVarsforCrefs(rest, {var}); 
       then
         listAppend(listReverse(tempvars), itempvars);
@@ -3308,7 +3308,7 @@ algorithm
         arrayCref = ComponentReference.getArrayCref(cr);
         inst_dims = getArraySubs(cr);
         numArrayElement = List.map(inst_dims, ExpressionDump.subscriptString);
-        var = SimCode.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", -1, NONE(), NONE(), NONE(), NONE(), false, ty, false, arrayCref, SimCode.NOALIAS(), DAE.emptyElementSource, SimCode.NONECAUS(), NONE(), numArrayElement, false);
+        var = SimCode.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, arrayCref, SimCode.NOALIAS(), DAE.emptyElementSource, SimCode.NONECAUS(), NONE(), numArrayElement, false);
       then
         createTempVarsforCrefs(rest, var::itempvars);
 
@@ -3340,7 +3340,7 @@ algorithm
     case(DAE.TYPES_VAR(name=name, ty=ty)::rest, _, _)
       equation
         cr = ComponentReference.crefPrependIdent(inCrefPrefix, name, {}, ty);
-        var = SimCode.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", -1, NONE(), NONE(), NONE(), NONE(), false, ty, false, NONE(), SimCode.NOALIAS(), DAE.emptyElementSource, SimCode.NONECAUS(), NONE(), {}, false);
+        var = SimCode.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, NONE(), SimCode.NOALIAS(), DAE.emptyElementSource, SimCode.NONECAUS(), NONE(), {}, false);
       then
         createTempVars(rest, inCrefPrefix, var::itempvars); 
   end match;
@@ -6417,9 +6417,8 @@ algorithm
   (equations_, ouniqueEqIndex, otempvars) := matchcontinue (crefs, inExp3, inExp4, iuniqueEqIndex, itempvars, source)
     local
       DAE.ComponentRef cr1, cr2;
-      list<DAE.ComponentRef> crefLst;
       DAE.Exp e1, e2, e1_1, e2_1;
-      list<DAE.Exp> expl, expl1;
+      list<DAE.Exp> expl;
       DAE.Statement stms;
       DAE.Type tp;
       DAE.CallAttributes attr;
@@ -6433,8 +6432,6 @@ algorithm
       Integer uniqueEqIndex;
       list<DAE.Var> varLst;
       HashSet.HashSet ht;
-      list<Integer> positions;
-      String s,s1,s2,s3;
       
     case (_, DAE.CAST(exp = e1), _, _, _, _)
       equation
@@ -6449,7 +6446,7 @@ algorithm
           createSingleComplexEqnCode2(crefs, inExp3, e1, iuniqueEqIndex, itempvars, source);
       then
         (equations_, ouniqueEqIndex, otempvars);
-
+      
     case (_, e1 as DAE.CREF(componentRef = cr2), e2, _, _, _)
       equation
         List.map1rAllValue(crefs, ComponentReference.crefPrefixOf, true, cr2);
@@ -6526,66 +6523,21 @@ algorithm
     case (_, e1 as DAE.TUPLE(expl), e2 as DAE.CALL(path=_), _, _, _)
       equation
         tp = Expression.typeof(e1);
-        
-        //check that solved vars are on lhs
-        ht = HashSet.emptyHashSet();
-        ht = List.fold(crefs, BaseHashSet.add, ht);
-        List.foldAllValue(expl, createSingleComplexEqnCode3, true, ht);
-        
         eqSystlst = {SimCode.SES_ALGORITHM(iuniqueEqIndex, {DAE.STMT_TUPLE_ASSIGN(tp, expl, e2, source)})};
         uniqueEqIndex = iuniqueEqIndex + 1;
       then
         (eqSystlst, uniqueEqIndex, itempvars);
-
-    /* Tuple(crefs) = Tuple(expl)  */ 
-    case (_, e1 as DAE.TUPLE(expl), e2 as DAE.TUPLE(expl1), _, _, _)
-      equation
-        tp = Expression.typeof(e1);
-        //check that all crefs are on lhs
-        ht = HashSet.emptyHashSet();
-        ht = List.fold(crefs, BaseHashSet.add, ht);
-        List.foldAllValue(expl, createSingleComplexEqnCode3, true, ht);
-
-        expLst = List.map(crefs, Expression.crefExp);
-        positions = List.map1(expLst, List.position, expl);
-        positions = List.map1(positions, intAdd, 1);
-        expLst = List.map1r(positions, listGet, expl1);
-        expl = List.map1r(positions, listGet, expl);
-                
-        exptl = List.threadTuple(expl, expLst);
-        (eqSystlst, uniqueEqIndex) = List.map1Fold(exptl, makeSES_SIMPLE_ASSIGN, source, iuniqueEqIndex);
-      then
-        (eqSystlst, uniqueEqIndex, itempvars);
-
-    /* Tuple(expl) = Tuple(crefs)  */ 
-    case (_, e1 as DAE.TUPLE(expl1), e2 as DAE.TUPLE(expl), _, _, _)
-      equation
-        tp = Expression.typeof(e1);
-        //check that all crefs are on lhs
-        ht = HashSet.emptyHashSet();
-        ht = List.fold(crefs, BaseHashSet.add, ht);
-        List.foldAllValue(expl, createSingleComplexEqnCode3, true, ht);
-        
-        expLst = List.map(crefs, Expression.crefExp);
-        positions = List.map1(expLst, List.position, expl);
-        positions = List.map1(positions, intAdd, 1);
-        expLst = List.map1r(positions, listGet, expl1);
-        expl = List.map1r(positions, listGet, expl);
-        
-        exptl = List.threadTuple(expl, expLst);
-        (eqSystlst, uniqueEqIndex) = List.map1Fold(exptl, makeSES_SIMPLE_ASSIGN, source, iuniqueEqIndex);
-      then
-        (eqSystlst, uniqueEqIndex, itempvars);
+ 
         // failure
     case (_, e1, e2, _, _, _)
+      /*
        equation
-       /*
        s1 = ExpressionDump.printExpStr(e1);
        s2 = ExpressionDump.printExpStr(e2);
-       s3 = ComponentReference.printComponentRefListStr(crefs); 
+       s3 = ComponentReference.crefStr(cr);
        s = stringAppendList({"./Compiler/BackEnd/SimCodeUtil.mo: function createSingleComplexEqnCode2 failed for: ", s1, " = " , s2, " solve for ", s3 });
        Error.addMessage(Error.INTERNAL_ERROR, {s});
-       */
+       */        
     then
       fail();
   end matchcontinue;
@@ -6607,8 +6559,6 @@ algorithm
         ht = BaseHashSet.delete(cr, iht);
       then
         (true, ht);
-    case (DAE.RCONST(_), _) then (true, iht);
-    case (DAE.CREF(componentRef=DAE.WILD()), _) then (true, iht);
     else
       (false, iht);
   end matchcontinue;  
