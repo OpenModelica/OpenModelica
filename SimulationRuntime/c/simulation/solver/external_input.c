@@ -78,16 +78,16 @@ int externalInputallocate(DATA* data)
         fscanf(pFile, "%f", &data->simulationInfo.external_input.u[i][j]);
       }
     }
-	printf("========================================================");
+  printf("========================================================");
     for(i = 0; i < data->simulationInfo.external_input.n; ++i){
       printf("\nInput t=%f   ", data->simulationInfo.external_input.t[i]);
       for(j = 0; j < m; ++j){
         printf("u[%d][%d]= %f ", i,j,data->simulationInfo.external_input.u[i][j]);
       }
     }
-	printf("\n========================================================");
-	
-	fclose(pFile);
+  printf("\n========================================================");
+  
+  fclose(pFile);
     data->simulationInfo.external_input.i = 0;
   }
 
