@@ -68,17 +68,26 @@ int externalInputallocate(DATA* data)
 
     m = data->modelData.nInputVars;
     data->simulationInfo.external_input.u = (modelica_real**)calloc(n,sizeof(modelica_real*));
-    for(i = 0; i<n; ++i)
+    for(i = 0; i<data->simulationInfo.external_input.n; ++i)
       data->simulationInfo.external_input.u[i] = (modelica_real*)calloc(m,sizeof(modelica_real));
-    data->simulationInfo.external_input.t = (modelica_real*)calloc(n,sizeof(modelica_real));
+    data->simulationInfo.external_input.t = (modelica_real*)calloc(data->simulationInfo.external_input.n,sizeof(modelica_real));
 
-    for(i = 0; i < n; ++i){
+    for(i = 0; i < data->simulationInfo.external_input.n; ++i){
       fscanf(pFile, "%f", &data->simulationInfo.external_input.t[i]);
       for(j = 0; j < m; ++j){
         fscanf(pFile, "%f", &data->simulationInfo.external_input.u[i][j]);
       }
     }
-    fclose(pFile);
+	printf("========================================================");
+    for(i = 0; i < data->simulationInfo.external_input.n; ++i){
+      printf("\nInput t=%f   ", data->simulationInfo.external_input.t[i]);
+      for(j = 0; j < m; ++j){
+        printf("u[%d][%d]= %f ", i,j,data->simulationInfo.external_input.u[i][j]);
+      }
+    }
+	printf("\n========================================================");
+	
+	fclose(pFile);
     data->simulationInfo.external_input.i = 0;
   }
 
@@ -101,20 +110,21 @@ int externalInputFree(DATA* data)
 
 int externalInputUpdate(DATA* data)
 {
-  double t;
+  double u1, u2;
+  double t, t1, dt;
   int i;
   t = data->localData[0]->timeValue;
   while(t > data->simulationInfo.external_input.t[data->simulationInfo.external_input.i+1]
-        && data->simulationInfo.external_input.i < (data->simulationInfo.external_input.n-2)){
+        && data->simulationInfo.external_input.i+1 < (data->simulationInfo.external_input.n-1)){
     ++data->simulationInfo.external_input.i;
   }
 
-  data->simulationInfo.external_input.dt = (data->simulationInfo.external_input.t[data->simulationInfo.external_input.i+1] - data->simulationInfo.external_input.t[data->simulationInfo.external_input.i]);
+  dt = (data->simulationInfo.external_input.t[data->simulationInfo.external_input.i+1] - data->simulationInfo.external_input.t[data->simulationInfo.external_input.i]);
+  t1 = data->simulationInfo.external_input.t[data->simulationInfo.external_input.i];
   for(i = 0; i < data->modelData.nInputVars; ++i){
-    data->simulationInfo.inputVars[i] =
-        data->simulationInfo.external_input.u[data->simulationInfo.external_input.i][i] +
-        data->simulationInfo.external_input.dt*(t -data->simulationInfo.external_input.t[data->simulationInfo.external_input.i])*
-        data->simulationInfo.external_input.u[data->simulationInfo.external_input.i+1][i];
+    u1 = data->simulationInfo.external_input.u[data->simulationInfo.external_input.i][i];
+    u2 = data->simulationInfo.external_input.u[data->simulationInfo.external_input.i+1][i];
+    data->simulationInfo.inputVars[i] = (u1*(dt+t1-t)+(t-t1)*u2)/dt;
   }
  return 0;
 }
