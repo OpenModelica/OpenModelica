@@ -6601,6 +6601,10 @@ algorithm
         ht = BaseHashSet.delete(cr, iht);
       then
         (true, ht);
+    case (DAE.RCONST(_), _) then (true, iht);
+    case (DAE.ICONST(_), _) then (true, iht);
+    case (DAE.BCONST(_), _) then (true, iht); 
+    case (DAE.CREF(componentRef=DAE.WILD()), _) then (true, iht);
     else
       (false, iht);
   end matchcontinue;  
