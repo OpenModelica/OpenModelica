@@ -7107,7 +7107,7 @@ algorithm
   //partition graph
   partitions := arrayList(partitionBipartiteGraph(m,mT));
   partitions := List.filterOnTrue(partitions,List.hasSeveralElements);
-   //print("the partitions: \n"+&stringDelimitList(List.map(partitions,HpcOmTaskGraph.intLstString),"\n")+&"\n");       
+    //print("the partitions: \n"+&stringDelimitList(List.map(partitions,HpcOmTaskGraph.intLstString),"\n")+&"\n");       
   
   // cut the deadends (vars and eqs outside of the loops)
   m_cut := arrayCopy(m);
@@ -7155,6 +7155,12 @@ algorithm
       list<list<Integer>> rest, loops;
       list<BackendDAE.Equation> eqLst;      
     case(partition::rest,_,_,_,_,_,_,_,_,_)
+      equation
+        (_,partition,_) = List.intersection1OnTrue(partition,nonLoopEqs,intEq);
+        true = List.isEmpty(partition);
+    then
+      daeEqs;
+    case(partition::rest,_,_,_,_,_,_,_,_,_)
       equation   
         // search the partitions for loops 
         (_,partition,_) = List.intersection1OnTrue(partition,nonLoopEqs,intEq);
@@ -7176,8 +7182,8 @@ algorithm
         eqLst; 
     case({},_,_,_,_,_,_,_,_,_)
       equation
-    then
-      daeEqs;
+      then
+        daeEqs;
   end matchcontinue;
 end resolveLoops_resolvePartitions;
 
@@ -7252,49 +7258,94 @@ protected function sortPathsAsChain "sorts the paths, so that the endNode of the
 the contractedNodes represent the endNodes of the already sorted path
 author: Waurich TUD 2014-01"
   input list<list<Integer>> pathsIn;
-  input list<Integer> contractedNodes;
-  input list<list<Integer>>sortedPathsIn;
+  output list<list<Integer>> pathsOut;
+algorithm
+  pathsOut := matchcontinue(pathsIn)
+    local
+      list<Integer> path;
+      list<list<Integer>> pathLst;
+    case({})
+      then
+       {};
+    case(_)
+      equation
+        pathLst = sortPathsAsChain1(pathsIn,0,0,{});
+      then
+        pathLst;
+    else
+      equation
+      then
+        pathsIn;   
+  end matchcontinue;   
+end sortPathsAsChain;
+
+
+protected function sortPathsAsChain1 "sorts the paths, so that the endNode of the next Path is an endNode of one of all already sorted path.
+the contractedNodes represent the endNodes of the already sorted path
+author: Waurich TUD 2014-01"
+  input list<list<Integer>> pathsIn;
+  input Integer firstNode;
+  input Integer lastNode;
+  input list<list<Integer>> sortedPathsIn;
   output list<list<Integer>> sortedPathsOut;
 algorithm
-  sortedPathsOut := matchcontinue(pathsIn,contractedNodes,sortedPathsIn)
+  sortedPathsOut := matchcontinue(pathsIn,firstNode,lastNode,sortedPathsIn)
     local
       Integer startNode,endNode;
-      list<Integer> path, contrNodes, startNodes, endNodes;
-      list<list<Integer>> rest, sortedPaths;
-    case({},_,_)
+      list<Integer> path;
+      list<list<Integer>> rest, paths1, paths2, sortedPaths;
+    case({},_,_,_)
       equation
-        sortedPaths = listReverse(sortedPathsIn);
       then
-        sortedPaths;
-    case(path::rest,_,{})
+        sortedPathsIn;
+    case(_,-1,-1,_)
+      equation
+      then
+        sortedPathsIn;
+    case(path::rest,_,_,{})
       equation
         // the first node
         startNode = List.first(path);
         endNode = List.last(path);
-        contrNodes = listAppend({startNode,endNode},contractedNodes);
-        sortedPaths = sortPathsAsChain(rest,contrNodes,{path});
+        sortedPaths = sortPathsAsChain1(rest,startNode,endNode,{path});
       then
         sortedPaths;
-    case(_,_,_)
+    case(_,_,_,_)
       equation
-        sortedPaths = List.filter1OnTrue(pathsIn,endNodesInLst,contractedNodes);
-        (sortedPaths,rest,_) = List.intersection1OnTrue(pathsIn,sortedPaths,intLstIsEqual);
-        startNodes = List.map(sortedPaths,List.first);
-        endNodes = List.map(sortedPaths,List.last);
-        contrNodes = listAppend(startNodes,endNodes);
-        contrNodes = List.unique(contrNodes);
-        contrNodes = listAppend(contrNodes,contractedNodes);
-        sortedPaths = listAppend(sortedPaths,sortedPathsIn);
-        sortedPaths = sortPathsAsChain(rest,contrNodes,sortedPaths);
+        // check if theres a path that continues the endNode
+        paths1 = List.filter1OnTrue(pathsIn, firstInListIsEqual, lastNode);
+        paths2 = List.filter1OnTrue(pathsIn, lastInListIsEqual, lastNode);
+        paths1 = listAppend(paths1,paths2);
+        true = List.isNotEmpty(paths1);
+        path = List.first(paths1);
+        endNode = Debug.bcallret1(List.isNotEmpty(paths1),List.last,path,-1);
+        endNode = Debug.bcallret1(List.isNotEmpty(paths2),List.first,path,-1);
+        rest = List.deleteMember(pathsIn,path);
+        sortedPaths = listAppend(sortedPathsIn,{path});
+        sortedPaths = sortPathsAsChain1(rest,firstNode,endNode,sortedPaths);
       then
         sortedPaths;       
+    case(_,_,_,_)
+      equation
+        // check if theres a path that continues the startNode
+        paths1 = List.filter1OnTrue(pathsIn, firstInListIsEqual, firstNode);
+        paths2 = List.filter1OnTrue(pathsIn, lastInListIsEqual, firstNode);
+        paths1 = listAppend(paths1,paths2);
+        true = List.isNotEmpty(paths1);
+        path = List.first(paths1);
+        startNode = Debug.bcallret1(List.isNotEmpty(paths1),List.last,path,-1);
+        startNode = Debug.bcallret1(List.isNotEmpty(paths2),List.first,path,-1);
+        rest = List.deleteMember(pathsIn,path);
+        sortedPaths = path::sortedPathsIn;
+        sortedPaths = sortPathsAsChain1(rest,startNode,lastNode,sortedPaths);
+      then
+        sortedPaths;     
     else
       equation
-        print("sorting failed\n");
         then
-          fail();
+          pathsIn;
   end matchcontinue;
-end sortPathsAsChain;
+end sortPathsAsChain1;
 
 protected function endNodesInLst"checks if an endnode(first or last) of the given path is member of the given list.
 author: Waurich TUD 2014-01"
@@ -7552,7 +7603,9 @@ algorithm
         simpleLoops = listAppend(simpleLoops,loopConnectors);
         paths0 = listAppend(simpleLoops,connectedPaths);
         
-        paths0 = sortPathsAsChain(paths0,{},{});
+        //print("all paths to be resolved before sorting: \n"+&stringDelimitList(List.map(paths0,HpcOmTaskGraph.intLstString)," / ")+&"\n");
+        
+        paths0 = sortPathsAsChain(paths0);
         
         //print("all paths to be resolved: \n"+&stringDelimitList(List.map(paths0,HpcOmTaskGraph.intLstString)," / ")+&"\n");
       then
@@ -7712,10 +7765,11 @@ algorithm
         //print("crossEqs: "+&stringDelimitList(List.map(crossEqs,intString),",")+&"\n");
         //print("eqs: "+&stringDelimitList(List.map(eqs,intString),",")+&"\n");
         
+      (replEqs,_,_) = List.intersection1OnTrue(replEqsIn,loop1,intEq);  // just consider the already replaced equations in this loop
       // first try to replace a non cross node, otherwise an already replaced eq, or if none of them is available take a crossnode (THIS IS NOT YET CLEAR)
       pos = Debug.bcallret1(List.isNotEmpty(crossEqs),List.first,crossEqs,-1); 
       //pos = Debug.bcallret1(List.isNotEmpty(eqs),List.first,eqs,pos); // CHECK THIS
-      pos = Debug.bcallret1(List.isNotEmpty(replEqsIn),List.first,replEqsIn,pos); 
+      pos = Debug.bcallret1(List.isNotEmpty(replEqs),List.first,replEqs,pos); 
       pos = Debug.bcallret1(List.isNotEmpty(eqs),List.first,eqs,pos); // CHECK THIS
       
       
