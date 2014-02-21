@@ -316,7 +316,7 @@ size_t calc_base_index(int ndims, const _index_t *idx_vec, const base_array_t *a
     return index;
 }
 
-/* One based index*/
+/* 0-based index*/
 size_t calc_base_index_va(const base_array_t *source, int ndims, va_list ap)
 {
     int i;
@@ -325,6 +325,7 @@ size_t calc_base_index_va(const base_array_t *source, int ndims, va_list ap)
     index = 0;
     for(i = 0; i < ndims; ++i) {
         int dim_i = va_arg(ap, _index_t) - 1;
+        assertStreamPrint(NULL, dim_i >= 0 && dim_i < source->dim_size[i], "Dimension %d has bounds 1..%d, got array subscript %d", i, source->dim_size[i], dim_i+1);
         index = (index * source->dim_size[i]) + dim_i;
     }
 
