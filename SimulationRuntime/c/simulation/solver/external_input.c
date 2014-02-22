@@ -83,12 +83,12 @@ int externalInputallocate(DATA* data)
       if(c<0)
         data->simulationInfo.external_input.n = i;
     }
-
+  printf("\nExternal Input");
   printf("\n========================================================");
     for(i = 0; i < data->simulationInfo.external_input.n; ++i){
-      printf("\nInput t=%f   \t", data->simulationInfo.external_input.t[i]);
+      printf("\nInput: t=%f   \t", data->simulationInfo.external_input.t[i]);
       for(j = 0; j < m; ++j){
-        printf("u[%d][%d]= %f \t", i,j,data->simulationInfo.external_input.u[i][j]);
+        printf("u%d(t)= %f \t",j+1,data->simulationInfo.external_input.u[i][j]);
       }
     }
   printf("\n========================================================\n");

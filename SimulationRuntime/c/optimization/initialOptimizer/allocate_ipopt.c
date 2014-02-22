@@ -580,23 +580,26 @@ static int local_jac_struct_print(IPOPT_DATA_ *iData)
   Hg = iData->Hg;
   dF = iData->gradFs;
 
-  printf("\n*****JAC******");
+  printf("\nJacabian Structure");
+  printf("\n========================================================");
   for(ii = 0; ii < nJ; ++ii){
     printf("\n");
     for(j =0;j<iData->nv;++j)
       printf("%i \t",J[ii][j]);
     printf("\n");
   }
-
-  printf("\n*****GRAD******");
+  printf("\n========================================================");
+  printf("\nGradient Structure");
+  printf("\n========================================================");
   for(ii = 0; ii < 2; ++ii){
     printf("\n");
     for(j =0;j<iData->nv;++j)
       printf("%i \t",dF[ii][j]);
     printf("\n");
   }
-
-  printf("\n*****HESSE******");
+  printf("\n========================================================");
+  printf("\nHessian Structure");
+  printf("\n========================================================");
   for(ii = 0; ii < iData->nv; ++ii){
     printf("\n");
     for(j =0;j<iData->nv;++j)
@@ -722,6 +725,8 @@ static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData)
 
   if(ACTIVE_STREAM(LOG_IPOPT)){
   char buffer[200];
+    printf("Optimizer Variables");
+    printf("\n========================================================");
     for(i=0; i<iData->nx; ++i){
 
       if (iData->xmin[i] > -1e20)
@@ -756,9 +761,10 @@ static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData)
 
       printf("%s)",buffer);
     }
-
+    printf("\n--------------------------------------------------------");
     if(iData->nc > 0)
       printf("\nnumber of constraints: %ld", iData->nc);
+    printf("\n========================================================\n");
   }
 
   for(i =0,j = iData->nx;i<iData->nu;++i,++j){
