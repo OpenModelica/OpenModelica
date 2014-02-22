@@ -124,15 +124,15 @@ template subscriptStr(Subscript subscript)
   else "UNKNOWN_SUBSCRIPT"
 end subscriptStr;
 
-template initValXml(Exp initialValue)
+template initValXml(Exp exp)
 ::=
-  match initialValue
+  match exp
   case ICONST(__) then integer
   case RCONST(__) then real
   case SCONST(__) then '<%Util.escapeModelicaStringToXmlString(string)%>'
   case BCONST(__) then if bool then "true" else "false"
   case ENUM_LITERAL(__) then '<%index%> /*ENUM:<%dotPath(name)%>*/'
-  else error(sourceInfo(), 'initial value of unknown type: <%printExpStr(initialValue)%>')
+  else error(sourceInfo(), 'initial value of unknown type: <%printExpStr(exp)%>')
 end initValXml;
 
 /*********************************************************************
@@ -161,32 +161,36 @@ template getAliasVar(AliasVariable aliasvar)
     else '"noAlias"'
 end getAliasVar;
 
-template ScalarVariableType(String unit, String displayUnit, Option<DAE.Exp> minValue, Option<DAE.Exp> maxValue, Option<DAE.Exp> initialValue, Option<DAE.Exp> nominalValue, Boolean isFixed, DAE.Type type_)
+template ScalarVariableType(String unit, String displayUnit, Option<DAE.Exp> minValue, Option<DAE.Exp> maxValue, Option<DAE.Exp> startValue, Option<DAE.Exp> nominalValue, Boolean isFixed, DAE.Type type_)
  "Generates code for ScalarVariable Type file for FMU target."
 ::=
   match type_
-    case T_INTEGER(__) then '<Integer <%ScalarVariableTypeStartAttribute(initialValue, type_)%><%ScalarVariableTypeFixedAttribute(isFixed)%><%ScalarVariableTypeIntegerMinAttribute(minValue)%><%ScalarVariableTypeIntegerMaxAttribute(maxValue)%><%ScalarVariableTypeUnitAttribute(unit)%><%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
-    case T_REAL(__) then '<Real <%ScalarVariableTypeStartAttribute(initialValue, type_)%><%ScalarVariableTypeFixedAttribute(isFixed)%><%ScalarVariableTypeNominalAttribute(nominalValue)%><%ScalarVariableTypeRealMinAttribute(minValue)%><%ScalarVariableTypeRealMaxAttribute(maxValue)%><%ScalarVariableTypeUnitAttribute(unit)%><%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
-    case T_BOOL(__) then '<Boolean <%ScalarVariableTypeStartAttribute(initialValue, type_)%><%ScalarVariableTypeFixedAttribute(isFixed)%><%ScalarVariableTypeUnitAttribute(unit)%><%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
-    case T_STRING(__) then '<String <%ScalarVariableTypeStartAttribute(initialValue, type_)%><%ScalarVariableTypeFixedAttribute(isFixed)%><%ScalarVariableTypeUnitAttribute(unit)%><%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
-    case T_ENUMERATION(__) then '<Integer <%ScalarVariableTypeStartAttribute(initialValue, type_)%><%ScalarVariableTypeFixedAttribute(isFixed)%><%ScalarVariableTypeUnitAttribute(unit)%><%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
+    case T_INTEGER(__) then '<Integer <%ScalarVariableTypeStartAttribute(startValue, type_)%><%ScalarVariableTypeFixedAttribute(isFixed)%><%ScalarVariableTypeIntegerMinAttribute(minValue)%><%ScalarVariableTypeIntegerMaxAttribute(maxValue)%><%ScalarVariableTypeUnitAttribute(unit)%><%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
+    case T_REAL(__) then '<Real <%ScalarVariableTypeStartAttribute(startValue, type_)%><%ScalarVariableTypeFixedAttribute(isFixed)%><%ScalarVariableTypeNominalAttribute(nominalValue)%><%ScalarVariableTypeRealMinAttribute(minValue)%><%ScalarVariableTypeRealMaxAttribute(maxValue)%><%ScalarVariableTypeUnitAttribute(unit)%><%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
+    case T_BOOL(__) then '<Boolean <%ScalarVariableTypeStartAttribute(startValue, type_)%><%ScalarVariableTypeFixedAttribute(isFixed)%><%ScalarVariableTypeUnitAttribute(unit)%><%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
+    case T_STRING(__) then '<String <%ScalarVariableTypeStartAttribute(startValue, type_)%><%ScalarVariableTypeFixedAttribute(isFixed)%><%ScalarVariableTypeUnitAttribute(unit)%><%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
+    case T_ENUMERATION(__) then '<Integer <%ScalarVariableTypeStartAttribute(startValue, type_)%><%ScalarVariableTypeFixedAttribute(isFixed)%><%ScalarVariableTypeUnitAttribute(unit)%><%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
     case T_COMPLEX(complexClassType = ci as ClassInf.EXTERNAL_OBJ(__)) then '<ExternalObject path="<%escapeModelicaStringToXmlString(dotPath(ci.path))%>" />'
     else error(sourceInfo(), 'ScalarVariableType: <%unparseType(type_)%>')
 end ScalarVariableType;
 
-template ScalarVariableTypeStartAttribute(Option<DAE.Exp> initialValue, DAE.Type type_)
+template StartString(DAE.Exp exp)
+::=
+  match exp
+    case ICONST(__) then ' start="<%initValXml(exp)%>"'
+    case RCONST(__) then ' start="<%initValXml(exp)%>"'
+    case SCONST(__) then ' start="<%initValXml(exp)%>"'
+    case BCONST(__) then ' start="<%initValXml(exp)%>"'
+    case ENUM_LITERAL(__) then ' start="<%initValXml(exp)%>"'
+    else ''
+end StartString;
+
+template ScalarVariableTypeStartAttribute(Option<DAE.Exp> startValue, DAE.Type type_)
  "generates code for start attribute"
 ::=
-  match initialValue
-    case SOME(exp) then 'useStart="true" start="<%initValXml(exp)%>"'
-    case NONE() then
-      match type_
-        case T_ENUMERATION(__)
-        case T_INTEGER(__) then 'useStart="false" start="0"'
-        case T_REAL(__) then 'useStart="false" start="0.0"'
-        case T_BOOL(__) then 'useStart="false" start="false"'
-        case T_STRING(__) then 'useStart="false" start=""'
-        else error(sourceInfo(), 'ScalarVariableTypeStartAttribute: <%unparseType(type_)%>')
+  match startValue
+    case SOME(exp) then 'useStart="true"<%StartString(exp)%>'
+    case NONE() then 'useStart="false"'
 end ScalarVariableTypeStartAttribute;
 
 template ScalarVariableTypeFixedAttribute(Boolean isFixed)
@@ -226,19 +230,41 @@ template ScalarVariableTypeDisplayUnitAttribute(String displayUnit)
   '<% if displayUnit then ' displayUnit="<%displayUnit%>"' %>'
 end ScalarVariableTypeDisplayUnitAttribute;
 
+template MinString(DAE.Exp exp)
+::=
+  match exp
+    case ICONST(__) then ' min="<%initValXml(exp)%>"'
+    case RCONST(__) then ' min="<%initValXml(exp)%>"'
+    case SCONST(__) then ' min="<%initValXml(exp)%>"'
+    case BCONST(__) then ' min="<%initValXml(exp)%>"'
+    case ENUM_LITERAL(__) then ' min="<%initValXml(exp)%>"'
+    else ''
+end MinString;
+
 template ScalarVariableTypeIntegerMinAttribute(Option<DAE.Exp> minValue)
  "generates code for min attribute"
 ::=
   match minValue
-    case SOME(exp) then ' min="<%initValXml(exp)%>"'
+    case SOME(exp) then '<%MinString(exp)%>'
     // case NONE() then ' min="-2147483648"'
 end ScalarVariableTypeIntegerMinAttribute;
+
+template MaxString(DAE.Exp exp)
+::=
+  match exp
+    case ICONST(__) then ' max="<%initValXml(exp)%>"'
+    case RCONST(__) then ' max="<%initValXml(exp)%>"'
+    case SCONST(__) then ' max="<%initValXml(exp)%>"'
+    case BCONST(__) then ' max="<%initValXml(exp)%>"'
+    case ENUM_LITERAL(__) then ' max="<%initValXml(exp)%>"'
+    else ''
+end MaxString;
 
 template ScalarVariableTypeIntegerMaxAttribute(Option<DAE.Exp> maxValue)
  "generates code for max attribute"
 ::=
   match maxValue
-    case SOME(exp) then ' max="<%initValXml(exp)%>"'
+    case SOME(exp) then '<%MaxString(exp)%>'
     // case NONE() then ' max="2147483647"'
 end ScalarVariableTypeIntegerMaxAttribute;
 
@@ -246,7 +272,7 @@ template ScalarVariableTypeRealMinAttribute(Option<DAE.Exp> minValue)
  "generates code for min attribute"
 ::=
   match minValue
-    case SOME(exp) then ' min="<%initValXml(exp)%>"'
+    case SOME(exp) then '<%MinString(exp)%>'
     // case NONE() then ' min="-1.7976931348623157E+308"'
 end ScalarVariableTypeRealMinAttribute;
 
@@ -254,7 +280,7 @@ template ScalarVariableTypeRealMaxAttribute(Option<DAE.Exp> maxValue)
  "generates code for max attribute"
 ::=
   match maxValue
-    case SOME(exp) then ' max="<%initValXml(exp)%>"'
+    case SOME(exp) then '<%MaxString(exp)%>'
     // case NONE() then ' max="1.7976931348623157E+308"'
 end ScalarVariableTypeRealMaxAttribute;
 

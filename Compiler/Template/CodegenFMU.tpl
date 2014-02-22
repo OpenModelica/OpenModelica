@@ -343,11 +343,22 @@ match type_
   else 'UNKOWN_TYPE'
 end ScalarVariableType;
 
+template StartString(DAE.Exp exp, Boolean isFixed)
+::=
+  match exp
+    case ICONST(__) then ' start="<%initValXml(exp)%>" fixed="<%isFixed%>"'
+    case RCONST(__) then ' start="<%initValXml(exp)%>" fixed="<%isFixed%>"'
+    case SCONST(__) then ' start="<%initValXml(exp)%>" fixed="<%isFixed%>"'
+    case BCONST(__) then ' start="<%initValXml(exp)%>" fixed="<%isFixed%>"'
+    case ENUM_LITERAL(__) then ' start="<%initValXml(exp)%>" fixed="<%isFixed%>"'
+    else ''
+end StartString;
+
 template ScalarVariableTypeCommonAttribute(Option<DAE.Exp> initialValue, Boolean isFixed)
  "Generates code for ScalarVariable Type file for FMU target."
 ::=
 match initialValue
-  case SOME(exp) then ' start="<%initVal(exp)%>" fixed="<%isFixed%>"'
+  case SOME(exp) then '<%StartString(exp, isFixed)%>'
 end ScalarVariableTypeCommonAttribute;
 
 template StringVariableTypeCommonAttribute(Option<DAE.Exp> initialValue, Boolean isFixed)
@@ -631,15 +642,18 @@ template initParams(SimVar var, String arrayName) ::=
       '<%str%> = comp->fmuData->simulationInfo.<%arrayName%>[<%index%>];'
 end initParams;
 
-
 template initValsDefault(SimVar var, String arrayName, Integer offset) ::=
   match var
     case SIMVAR(index=index, type_=type_) then
     let str = 'comp->fmuData->modelData.<%arrayName%>Data[<%intAdd(index,offset)%>].attribute.start'
     match initialValue
-      case SOME(v) then
+      case SOME(v as ICONST(__))
+      case SOME(v as RCONST(__))
+      case SOME(v as SCONST(__))
+      case SOME(v as BCONST(__))
+      case SOME(v as ENUM_LITERAL(__)) then
       '<%str%> = <%initVal(v)%>;'
-      case NONE() then
+      else
         match type_
           case T_INTEGER(__)
           case T_REAL(__)

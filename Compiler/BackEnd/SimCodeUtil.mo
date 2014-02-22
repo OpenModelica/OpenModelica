@@ -9502,9 +9502,9 @@ algorithm
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
         (unit, displayUnit) = extractVarUnit(dae_var_attr);
         (minValue, maxValue) = getMinMaxValues(dlowVar);
-        initVal = getInitialValue(dlowVar);
+        initVal = getStartValue(dlowVar);
         nomVal = getNominalValue(dlowVar);
-        checkInitVal(initVal, source);
+        // checkInitVal(initVal, source);
         isFixed = BackendVariable.varFixed(dlowVar);
         type_ = tp;
         isDiscrete = BackendVariable.isVarDiscrete(dlowVar);
@@ -9534,9 +9534,9 @@ algorithm
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
         (unit, displayUnit) = extractVarUnit(dae_var_attr);
         (minValue, maxValue) = getMinMaxValues(dlowVar);
-        initVal = getInitialValue(dlowVar);
+        initVal = getStartValue(dlowVar);
         nomVal = getNominalValue(dlowVar);
-        checkInitVal(initVal, source);
+        // checkInitVal(initVal, source);
         isFixed = BackendVariable.varFixed(dlowVar);
         type_ = tp;
         isDiscrete = BackendVariable.isVarDiscrete(dlowVar);
@@ -9560,9 +9560,9 @@ algorithm
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
         (unit, displayUnit) = extractVarUnit(dae_var_attr);
         (minValue, maxValue) = getMinMaxValues(dlowVar);
-        initVal = getInitialValue(dlowVar);
+        initVal = getStartValue(dlowVar);
         nomVal = getNominalValue(dlowVar);
-        checkInitVal(initVal, source);
+        // checkInitVal(initVal, source);
         isFixed = BackendVariable.varFixed(dlowVar);
         type_ = tp;
         isDiscrete = BackendVariable.isVarDiscrete(dlowVar);
@@ -9577,30 +9577,31 @@ algorithm
   end match;
 end dlowvarToSimvar;
 
-protected function checkInitVal
-  input Option<DAE.Exp> oexp;
-  input DAE.ElementSource source;
-algorithm
-  _ := match (oexp, source)
-    local
-      Absyn.Info info;
-      String str;
-      DAE.Exp exp;
-    case (NONE(), _) then ();
-    case (SOME(DAE.RCONST(_)), _) then ();
-    case (SOME(DAE.ICONST(_)), _) then ();
-    case (SOME(DAE.SCONST(_)), _) then ();
-    case (SOME(DAE.BCONST(_)), _) then ();
-    // adrpo, 2011-04-18 -> enumeration literal is OK also
-    case (SOME(DAE.ENUM_LITERAL(index = _)), _) then ();
-    case (SOME(DAE.CALL(attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.EXTERNAL_OBJ(path=_))))), _) then ();
-    case (SOME(exp), DAE.SOURCE(info=info))
-      equation
-        str = "Initial value of unknown type: " +& ExpressionDump.printExpStr(exp);
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, info);
-      then ();
-  end match;
-end checkInitVal;
+// lochel: This will now be checked in CodegenUtil.tpl (see #2597/#2601)
+// protected function checkInitVal
+//   input Option<DAE.Exp> oexp;
+//   input DAE.ElementSource source;
+// algorithm
+//   _ := match (oexp, source)
+//     local
+//       Absyn.Info info;
+//       String str;
+//       DAE.Exp exp;
+//     case (NONE(), _) then ();
+//     case (SOME(DAE.RCONST(_)), _) then ();
+//     case (SOME(DAE.ICONST(_)), _) then ();
+//     case (SOME(DAE.SCONST(_)), _) then ();
+//     case (SOME(DAE.BCONST(_)), _) then ();
+//     // adrpo, 2011-04-18 -> enumeration literal is OK also
+//     case (SOME(DAE.ENUM_LITERAL(index = _)), _) then ();
+//     case (SOME(DAE.CALL(attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.EXTERNAL_OBJ(path=_))))), _) then ();
+//     case (SOME(exp), DAE.SOURCE(info=info))
+//       equation
+//         str = "Initial value of unknown type: " +& ExpressionDump.printExpStr(exp);
+//         Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, info);
+//       then ();
+//   end match;
+// end checkInitVal;
 
 protected function getCausality
   input BackendDAE.Var dlowVar;
@@ -10367,7 +10368,7 @@ algorithm
   end matchcontinue;
 end extractVarUnit;
 
-protected function getMinMaxValues "extract min/max values from BackendDAE.Variable and check whether they are constant"
+protected function getMinMaxValues "extract min/max values from BackendDAE.Variable"
   input BackendDAE.Var inDAELowVar;
   output Option<DAE.Exp> outMinValue;
   output Option<DAE.Exp> outMaxValue;
@@ -10377,31 +10378,30 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       DAE.Exp minValue, maxValue;
 
-    case(BackendDAE.VAR(varType=DAE.T_REAL(source=_), values=dae_var_attr))
-      equation
-        (SOME(minValue), SOME(maxValue)) = DAEUtil.getMinMaxValues(dae_var_attr);
-        true = Expression.isConstValue(minValue);
-        true = Expression.isConstValue(maxValue);
-      then (SOME(minValue), SOME(maxValue));
+    case(BackendDAE.VAR(varType=DAE.T_REAL(source=_), values=dae_var_attr)) equation
+      (SOME(minValue), SOME(maxValue)) = DAEUtil.getMinMaxValues(dae_var_attr);
+      // lochel: #2597
+      // true = Expression.isConstValue(minValue);
+      // true = Expression.isConstValue(maxValue);
+    then (SOME(minValue), SOME(maxValue));
       
-    case(BackendDAE.VAR(varType=DAE.T_REAL(source=_), values=dae_var_attr))
-      equation
-        (SOME(minValue), NONE()) = DAEUtil.getMinMaxValues(dae_var_attr);
-        true = Expression.isConstValue(minValue);
-      then (SOME(minValue), NONE());
+    case(BackendDAE.VAR(varType=DAE.T_REAL(source=_), values=dae_var_attr)) equation
+      (SOME(minValue), NONE()) = DAEUtil.getMinMaxValues(dae_var_attr);
+      // lochel: #2597
+      // true = Expression.isConstValue(minValue);
+    then (SOME(minValue), NONE());
       
-    case(BackendDAE.VAR(varType=DAE.T_REAL(source=_), values=dae_var_attr))
-      equation
-        (NONE(), SOME(maxValue)) = DAEUtil.getMinMaxValues(dae_var_attr);
-        true = Expression.isConstValue(maxValue);
-      then (NONE(), SOME(maxValue));
+    case(BackendDAE.VAR(varType=DAE.T_REAL(source=_), values=dae_var_attr)) equation
+      (NONE(), SOME(maxValue)) = DAEUtil.getMinMaxValues(dae_var_attr);
+      // lochel: #2597
+      // true = Expression.isConstValue(maxValue);
+    then (NONE(), SOME(maxValue));
       
     else (NONE(), NONE());
   end matchcontinue;
 end getMinMaxValues;
 
-protected function getInitialValue "Extract initial value from BackendDAE.Variable, if it has any
-  (merged and modified generateInitData3 and generateInitData4)"
+protected function getStartValue "Extract initial value from BackendDAE.Variable, if it has any"
   input BackendDAE.Var daelowVar;
   output Option<DAE.Exp> initVal;
 algorithm
@@ -10410,98 +10410,100 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       Values.Value value;
       DAE.Exp e;
-    case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE(), bindValue = SOME(value)))
-      equation
-        e = ValuesUtil.valueExp(value);
-        true = Expression.isConstValue(e);
-      then
-        SOME(e);
-    case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE(), varType = DAE.T_STRING(source = _), values = dae_var_attr))
-      equation
-        e = DAEUtil.getStartAttrFail(dae_var_attr);
-        true = Expression.isConstValue(e);
-      then
-        SOME(e);
-    case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE(), values = dae_var_attr))
-      equation
-        e = DAEUtil.getStartAttrFail(dae_var_attr);
-        true = Expression.isConstValue(e);
-      then
-        SOME(e);
-    case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE(), bindValue = SOME(value)))
-      equation
-        e = ValuesUtil.valueExp(value);
-        true = Expression.isConstValue(e);
-      then
-        SOME(e);
-    case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE(), values = dae_var_attr))
-      equation
-        e = DAEUtil.getStartAttrFail(dae_var_attr);
-        true = Expression.isConstValue(e);
-      then
-        SOME(e);
-    case (BackendDAE.VAR(varKind = BackendDAE.STATE(index=_), values = dae_var_attr))
-      equation
-        e = DAEUtil.getStartAttrFail(dae_var_attr);
-        true = Expression.isConstValue(e);
-      then
-        SOME(e);
-    case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(), bindValue = SOME(value)))
-      equation
-        e = ValuesUtil.valueExp(value);
-        true = Expression.isConstValue(e);
-      then
-        SOME(e);
-    case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(), values = dae_var_attr))
-      equation
-        e = DAEUtil.getStartAttrFail(dae_var_attr);
-        true = Expression.isConstValue(e);
-      then
-        SOME(e);
-    case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(), bindValue = SOME(value)))
-      equation
-        e = ValuesUtil.valueExp(value);
-        true = Expression.isConstValue(e);
-      then
-        SOME(e);
-    case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(), values = dae_var_attr))
-      equation
-        e = DAEUtil.getStartAttrFail(dae_var_attr);
-        true = Expression.isConstValue(e);
-      then
-        SOME(e);
-    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), varType = DAE.T_STRING(source = _), bindValue = SOME(value)))
-      equation
-        e = ValuesUtil.valueExp(value);
-        true = Expression.isConstValue(e);
-      then
-        SOME(e);
-    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), bindValue = SOME(value)))
-      equation
-        e = ValuesUtil.valueExp(value);
-        true = Expression.isConstValue(e);
-      then
-        SOME(e);
-        /* String - Parameters without value binding. Investigate if it has start value */
-    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), varType = DAE.T_STRING(source = _), bindValue = NONE(), values = dae_var_attr))
-      equation
-        e = DAEUtil.getStartAttrFail(dae_var_attr);
-        true = Expression.isConstValue(e);
-      then
-        SOME(e);
-        /* Parameters without value binding. Investigate if it has start value */
-    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), bindValue = NONE(), values = dae_var_attr))
-      equation
-        e = DAEUtil.getStartAttrFail(dae_var_attr);
-        true = Expression.isConstValue(e);
-      then
-        SOME(e);
+      
+    case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE(), bindValue = SOME(value))) equation
+      e = ValuesUtil.valueExp(value);
+      // lochel: #2597
+      // true = Expression.isConstValue(e);
+    then SOME(e);
+    
+    case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE(), varType = DAE.T_STRING(source = _), values = dae_var_attr)) equation
+      e = DAEUtil.getStartAttrFail(dae_var_attr);
+      // lochel: #2597
+      // true = Expression.isConstValue(e);
+    then SOME(e);
+    
+    case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE(), values = dae_var_attr)) equation
+      e = DAEUtil.getStartAttrFail(dae_var_attr);
+      // lochel: #2597
+      // true = Expression.isConstValue(e);
+    then SOME(e);
+    
+    case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE(), bindValue = SOME(value))) equation
+      e = ValuesUtil.valueExp(value);
+      // lochel: #2597
+      // true = Expression.isConstValue(e);
+    then SOME(e);
+    
+    case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE(), values = dae_var_attr)) equation
+      e = DAEUtil.getStartAttrFail(dae_var_attr);
+      // lochel: #2597
+      // true = Expression.isConstValue(e);
+    then SOME(e);
+    
+    case (BackendDAE.VAR(varKind = BackendDAE.STATE(index=_), values = dae_var_attr)) equation
+      e = DAEUtil.getStartAttrFail(dae_var_attr);
+      // lochel: #2597
+      // true = Expression.isConstValue(e);
+    then SOME(e);
+    
+    case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(), bindValue = SOME(value))) equation
+      e = ValuesUtil.valueExp(value);
+      // lochel: #2597
+      // true = Expression.isConstValue(e);
+    then SOME(e);
+    
+    case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(), values = dae_var_attr)) equation
+      e = DAEUtil.getStartAttrFail(dae_var_attr);
+      // lochel: #2597
+      // true = Expression.isConstValue(e);
+    then SOME(e);
+    
+    case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(), bindValue = SOME(value))) equation
+      e = ValuesUtil.valueExp(value);
+      // lochel: #2597
+      // true = Expression.isConstValue(e);
+    then SOME(e);
+    
+    case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(), values = dae_var_attr)) equation
+      e = DAEUtil.getStartAttrFail(dae_var_attr);
+      // lochel: #2597
+      // true = Expression.isConstValue(e);
+    then SOME(e);
+    
+    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), varType = DAE.T_STRING(source = _), bindValue = SOME(value))) equation
+      e = ValuesUtil.valueExp(value);
+      // lochel: #2597
+      // true = Expression.isConstValue(e);
+    then SOME(e);
+    
+    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), bindValue = SOME(value))) equation
+      e = ValuesUtil.valueExp(value);
+      // lochel: #2597
+      // true = Expression.isConstValue(e);
+    then SOME(e);
+    
+    /* String - Parameters without value binding. Investigate if it has start value */
+    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), varType = DAE.T_STRING(source = _), bindValue = NONE(), values = dae_var_attr)) equation
+      e = DAEUtil.getStartAttrFail(dae_var_attr);
+      // lochel: #2597
+      // true = Expression.isConstValue(e);
+    then SOME(e);
+        
+    /* Parameters without value binding. Investigate if it has start value */
+    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), bindValue = NONE(), values = dae_var_attr)) equation
+      e = DAEUtil.getStartAttrFail(dae_var_attr);
+      // lochel: #2597
+      // true = Expression.isConstValue(e);
+    then SOME(e);
+    
     case (BackendDAE.VAR(varKind = BackendDAE.EXTOBJ(_), bindExp = SOME(e)))
-      then
-        SOME(e);
-    case (_) then NONE();
+    then SOME(e);
+    
+    case (_)
+    then NONE();
   end matchcontinue;
-end getInitialValue;
+end getStartValue;
 
 protected function getNominalValue "Extract nominal value from BackendDAE.Variable, if it has any"
   input BackendDAE.Var daelowVar;
