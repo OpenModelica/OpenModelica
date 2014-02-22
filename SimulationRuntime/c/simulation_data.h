@@ -157,8 +157,8 @@ typedef struct ANALYTIC_JACOBIAN
 typedef struct EXTERNAL_INPUT 
 {
     modelica_boolean active;
-    float** u;
-    float* t;
+    modelica_real** u;
+    modelica_real* t;
     modelica_integer N;
     modelica_integer n;
     modelica_integer i;

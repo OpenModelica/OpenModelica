@@ -76,9 +76,9 @@ int externalInputallocate(DATA* data)
     data->simulationInfo.external_input.t = (modelica_real*)calloc(data->simulationInfo.external_input.n,sizeof(modelica_real));
 
     for(i = 0; i < data->simulationInfo.external_input.n; ++i){
-      c = fscanf(pFile, "%f", &data->simulationInfo.external_input.t[i]);
+      c = fscanf(pFile, "%lf", &data->simulationInfo.external_input.t[i]);
       for(j = 0; j < m; ++j){
-        c = fscanf(pFile, "%f", &data->simulationInfo.external_input.u[i][j]);
+        c = fscanf(pFile, "%lf", &data->simulationInfo.external_input.u[i][j]);
       }
       if(c<0)
         data->simulationInfo.external_input.n = i;
