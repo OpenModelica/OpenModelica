@@ -74,13 +74,6 @@ case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   "" // Return empty result since result written to files directly
 end translateModel;
 
-template simulationInitFileCString(Text text)
-::=
-  <<
-  data->modelData.initXMLData = "<%Util.escapeModelicaStringToCString(text)%>";
-  >>
-end simulationInitFileCString;
-
 template fmuModelDescriptionFile(SimCode simCode, String guid)
  "Generates code for ModelDescription file for FMU target."
 ::=

@@ -7,8 +7,27 @@ import CodegenUtil.*;
 
 template markdownFile(SimCode simCode)
 ::=
-match simCode case SIMCODE(__) then textFile(markdownContents(simCode), '<%fileNamePrefix%>.md')
+match simCode case SIMCODE(__) then
+  let () = textFile(markdownContents(simCode), '<%fileNamePrefix%>.md')
+  let () = textFile(nodeJSDriver(simCode), '<%fileNamePrefix%>.node.js')
+  ""
 end markdownFile;
+
+template nodeJSDriver(SimCode simCode)
+::=
+match simCode
+case SIMCODE(simulationSettingsOpt = SOME(s as SIMULATION_SETTINGS(__)))
+then
+<<
+#!/usr/bin/env nodejs
+var mod = require('./<%fileNamePrefix%>.js');
+mod.callMain(process.argv.slice(2));
+var fs = require('fs');
+var fname = '<%fileNamePrefix%>_res.<%s.outputFormat%>';
+var content = mod.OpenModelica_readFile(fname);
+fs.writeFileSync(fname,content);
+>>
+end nodeJSDriver;
 
 template markdownContents(SimCode simCode)
 ::=
@@ -22,10 +41,6 @@ then
 
 ```yaml script=scriptloader
 - lib/tinytimer.js
-```
-
-```yaml script=dataloader
-xml: <%fileNamePrefix%>_init.xml
 ```
 
 <style media="screen" type="text/css">
@@ -71,20 +86,6 @@ html:
 if (typeof(isRunning) == "undefined") isRunning = false
 
 if (typeof(timer) != "undefined") {clearInterval(timer.interval); timer = null};
-$xml = $(xml)
-
-// Set the default simulation parameters
-defex = $xml.find("DefaultExperiment")
-defex.attr("stopTime", stopTime)
-defex.attr("stepSize", +stopTime / intervals)
-defex.attr("tolerance", tolerance)
-
-// Set some model parameters
-// Example:
-// $xml.find("ScalarVariable[name = 'LAC']").find("Real").attr("start", LAC)
-
-// Write out the initialization file
-xmlstring = new XMLSerializer().serializeToString(xml)
 
 $("#statustext").html('Simulation running')
 $("#statustimer").html("");
@@ -99,7 +100,7 @@ if (typeof(wworker) != "undefined" && isRunning) wworker.terminate()
 if (typeof(wworker) == "undefined" || isRunning) wworker = new Worker(basename + ".js")
 isRunning = true
 
-wworker.postMessage({basename: basename, xmlstring: xmlstring})
+wworker.postMessage({basename: basename, stopTime: stopTime, tolerance: tolerance, stepSize: +stopTime / intervals})
 wworker.addEventListener('error', function(event) {
 });
 

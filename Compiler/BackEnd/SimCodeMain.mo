@@ -452,7 +452,8 @@ algorithm
     then ();
 
     case (_, _, "JavaScript") equation
-      callTargetTemplates(simCode,inQSSrequiredData,"C");
+      Tpl.tplNoret(CodegenC.translateModel, simCode);
+      Tpl.tplNoret2(SimCodeDump.dumpSimCodeToC, simCode, false);
       Tpl.tplNoret(CodegenJS.markdownFile, simCode);
     then ();
 

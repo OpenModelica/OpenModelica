@@ -94,7 +94,7 @@ RUNTIMEINITIALIZATION_HEADERS = \
 # ./simulation/solver/solver_main.h \
 # ./util/list.h \
 
-.PHONY : clean all $(LIBF2C)
+.PHONY : clean all $(LIBF2C) emcc emcc-clean
 
 all : install
 

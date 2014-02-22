@@ -303,6 +303,13 @@ let() = Tpl.addTemplateError(errMessage)
 >>
 end errorMsg;
 
+template simulationInitFileCString(Text text)
+::=
+  <<
+  data->modelData.initXMLData = "<%Util.escapeModelicaStringToCString(text)%>";
+  >>
+end simulationInitFileCString;
+
 end CodegenUtil;
 
 // vim: filetype=susan sw=2 sts=2

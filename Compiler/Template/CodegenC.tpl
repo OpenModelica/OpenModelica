@@ -71,7 +71,10 @@ template translateModel(SimCode simCode)
 
     let()= textFile(recordsFile(fileNamePrefix, recordDecls), '<%fileNamePrefix%>_records.c')
 
-    let _ = if simulationSettingsOpt then //tests the Option<> for SOME()
+    let _ = if stringEq(Config.simCodeTarget(),"JavaScript") then
+              let()= textFile(simulationInitFileCString(simulationInitFile(simCode,guid)), '<%fileNamePrefix%>_init.c')
+               ""
+            else if simulationSettingsOpt then //tests the Option<> for SOME()
               let()= textFile(simulationInitFile(simCode,guid), '<%fileNamePrefix%>_init.xml')
               ""
             else
@@ -4400,7 +4403,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   DLLEXT=<%makefileParams.dllext%>
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
   CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then '<%s.cflags%> ' /* From the simulate() command */%>
-  CPPFLAGS=-I"<%makefileParams.omhome%>/include/omc/c" -I. <%makefileParams.includes ; separator=" "%> -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME
+  CPPFLAGS=-I"<%makefileParams.omhome%>/include/omc/c" -I. <%makefileParams.includes ; separator=" "%> <% if not stringEq(Config.simCodeTarget(),"JavaScript") then "-DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME"%>
   LDFLAGS=<%dirExtra%> <%
   if stringEq(Config.simCodeTarget(),"JavaScript") then <<-L'<%makefileParams.omhome%>/lib/omc/emcc' -lblas -llapack -lexpat -lSimulationRuntimeC -lf2c --llvm-lto 2 -s TOTAL_MEMORY=268435456 -s MAX_SETJMPS=2000 -s OUTLINING_LIMIT=20000 --pre-js <%makefileParams.omhome%>/lib/omc/emcc/pre.js>>
   else <<-L"<%makefileParams.omhome%>/lib/omc" -L"<%makefileParams.omhome%>/lib" -Wl,<% if stringEq(makefileParams.platform, "win32") then "--stack,0x2000000,"%>-rpath,"<%makefileParams.omhome%>/lib/omc" -Wl,-rpath,"<%makefileParams.omhome%>/lib" <%ParModelicaLibs%> <%makefileParams.ldflags%> <%makefileParams.runtimelibs%>>>
@@ -4420,7 +4423,9 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
 
   omc_main_target: $(MAINOBJ) <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_literals.h $(OFILES)
   <%\t%>$(CC) -I. -o <%fileNamePrefix%>$(EXEEXT) $(MAINOBJ) $(OFILES) $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS)
-
+  <% if stringEq(Config.simCodeTarget(),"JavaScript") then '<%\t%>rm -f <%fileNamePrefix%>'%>
+  <% if stringEq(Config.simCodeTarget(),"JavaScript") then '<%\t%>ln -s <%fileNamePrefix%>.node.js <%fileNamePrefix%>'%>
+  <% if stringEq(Config.simCodeTarget(),"JavaScript") then '<%\t%>chmod +x <%fileNamePrefix%>.node.js'%>
   clean:
   <%\t%>@rm -f <%fileNamePrefix%>_records.o $(MAINOBJ)
 
