@@ -91,7 +91,7 @@ int externalInputallocate(DATA* data)
         printf("u[%d][%d]= %f \t", i,j,data->simulationInfo.external_input.u[i][j]);
       }
     }
-  printf("\n========================================================");
+  printf("\n========================================================\n");
   
   fclose(pFile);
     data->simulationInfo.external_input.i = 0;
