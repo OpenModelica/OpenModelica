@@ -492,7 +492,9 @@ int functionODE_residual(double *t, double *y, double *yd, double *delta,
   data->threadData->currentErrorStage = ERROR_INTEGRATOR;
 
   /* try */
+#if !defined(OMC_EMCC)
   MMC_TRY_INTERNAL(simulationJumpBuffer)
+#endif
     data->callback->functionODE(data);
 
     /* get the difference between the temp_xd(=localData->statesDerivatives)
@@ -501,7 +503,9 @@ int functionODE_residual(double *t, double *y, double *yd, double *delta,
       delta[i] = data->localData[0]->realVars[data->modelData.nStates + i] - yd[i];
     }
     success = 1;
+#if !defined(OMC_EMCC)
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
+#endif
 
   if (!success) {
     *ires = -1;

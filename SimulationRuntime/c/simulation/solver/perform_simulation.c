@@ -117,7 +117,9 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
 
     threadData->currentErrorStage = ERROR_SIMULATION;
     /* try */
+#if !defined(OMC_EMCC)
     MMC_TRY_INTERNAL(simulationJumpBuffer)
+#endif
     {
       if(measure_time_flag)
       {
@@ -318,7 +320,9 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
       }
       success = 1;
     }
+#if !defined(OMC_EMCC)
     MMC_CATCH_INTERNAL(simulationJumpBuffer)
+#endif
     if (!success) { /* catch */
       if(!retry)
       {

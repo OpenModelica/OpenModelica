@@ -4403,7 +4403,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   DLLEXT=<%makefileParams.dllext%>
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
   CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then '<%s.cflags%> ' /* From the simulate() command */%>
-  CPPFLAGS=-I"<%makefileParams.omhome%>/include/omc/c" -I. <%makefileParams.includes ; separator=" "%> <% if not stringEq(Config.simCodeTarget(),"JavaScript") then "-DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME"%>
+  CPPFLAGS=-I"<%makefileParams.omhome%>/include/omc/c" -I. <%makefileParams.includes ; separator=" "%> <% if not stringEq(Config.simCodeTarget(),"JavaScript") then "-DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME" else "-DOMC_EMCC"%>
   LDFLAGS=<%dirExtra%> <%
   if stringEq(Config.simCodeTarget(),"JavaScript") then <<-L'<%makefileParams.omhome%>/lib/omc/emcc' -lblas -llapack -lexpat -lSimulationRuntimeC -lf2c --llvm-lto 2 -s TOTAL_MEMORY=268435456 -s MAX_SETJMPS=2000 -s OUTLINING_LIMIT=20000 --pre-js <%makefileParams.omhome%>/lib/omc/emcc/pre.js>>
   else <<-L"<%makefileParams.omhome%>/lib/omc" -L"<%makefileParams.omhome%>/lib" -Wl,<% if stringEq(makefileParams.platform, "win32") then "--stack,0x2000000,"%>-rpath,"<%makefileParams.omhome%>/lib/omc" -Wl,-rpath,"<%makefileParams.omhome%>/lib" <%ParModelicaLibs%> <%makefileParams.ldflags%> <%makefileParams.runtimelibs%>>>
