@@ -363,18 +363,11 @@ int initializeModel(DATA* data, const char* init_initMethod,
       retValue = -1;
     }
 
-    storePreValues(data);
-    storeOldValues(data);
-    data->callback->function_storeDelayed(data);
-    data->callback->function_updateRelations(data, 1);
-    storeRelations(data);
-    updateHysteresis(data);
-    saveZeroCrossings(data);
     success = 1;
     MMC_CATCH_INTERNAL(simulationJumpBuffer)
     if (!success) {
       retValue =  -1;
-      infoStreamPrint(LOG_STDOUT, 0, "model terminate | Simulation terminated by an assertion at initialization");
+      infoStreamPrint(LOG_ASSERT, 0, "simulation terminated by an assertion at initialization");
     }
   }
 

@@ -1081,7 +1081,7 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   infoStreamPrint(LOG_INIT, 0, "### END INITIALIZATION ###");
 
   data->simulationInfo.initial = 0;
-
+  
   /* initialization is done */
   initSample(data, data->simulationInfo.startTime, data->simulationInfo.stopTime);
 
@@ -1094,6 +1094,14 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   saveZeroCrossings(data);
   storePreValues(data);                 /* save pre-values */
   overwriteOldSimulationData(data);     /* if there are non-linear equations */
+  
+  storePreValues(data);
+  storeOldValues(data);
+  data->callback->function_storeDelayed(data);
+  data->callback->function_updateRelations(data, 1);
+  storeRelations(data);
+  updateHysteresis(data);
+  saveZeroCrossings(data);
 
   return retVal;
 }
