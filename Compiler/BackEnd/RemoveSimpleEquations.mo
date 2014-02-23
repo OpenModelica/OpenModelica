@@ -2613,7 +2613,7 @@ algorithm
   origin := BackendVariable.varStartOrigin(inVar);
   (fixedset, startvalues) := addStartValue(fixed, fixedset, BackendVariable.varCref(inVar), start, origin, negate, mark, simpleeqnsarr, startvalues);
   // nominal
-  (nominalset, nNominal) := addNominalAttribute(inVar, negate, nominalset, nNominal);
+  (nominalset, nNominal) := addNominalValue(inVar, negate, nominalset, nNominal);
   // minmax
   minmaxset := addMinMaxAttribute(inVar, negate, mark, simpleeqnsarr, minmaxset);
   oAttributes := (fixedset, startvalues, nominalset, nNominal, minmaxset);
@@ -2678,7 +2678,7 @@ algorithm
   end matchcontinue;
 end addStartValue;
 
-protected function addNominalAttribute "author: Frenkel TUD 2012-12"
+protected function addNominalValue "author: Frenkel TUD 2012-12"
   input BackendDAE.Var inVar;
   input Boolean negate;
   input Option<DAE.Exp> iNominal;
@@ -2686,9 +2686,10 @@ protected function addNominalAttribute "author: Frenkel TUD 2012-12"
   output Option<DAE.Exp> oNominal;
   output Integer oNNominals;
 algorithm
-  (oNominal, oNNominals):= matchcontinue(inVar, negate, iNominal, iNNominals)
+  (oNominal, oNNominals) := matchcontinue(inVar, negate, iNominal, iNNominals)
     local
       DAE.Exp nominal, nominalset;
+      
     case(_, _, SOME(nominalset), _)
       equation
         nominal = BackendVariable.varNominalValue(inVar);
@@ -2704,7 +2705,7 @@ algorithm
         (SOME(nominal), 1);
     else then (iNominal, iNNominals);
   end matchcontinue;
-end addNominalAttribute;
+end addNominalValue;
 
 protected function addMinMaxAttribute "author: Frenkel TUD 2012-12"
   input BackendDAE.Var inVar;
@@ -2931,46 +2932,42 @@ algorithm
       list<tuple<DAE.Exp, DAE.ComponentRef>> zerofreevalues;
       BackendDAE.Var v;
       BackendDAE.Variables knVars;
+      
     // default value
     case (_, _, (_, {}), _) then inVar;
+    
     // fixed true only one start value -> nothing changed
-    case (_, true, (_, {(start, _)}), _)
-      equation
-        v = BackendVariable.setVarFixed(inVar, true);
-      then
-        BackendVariable.setVarStartValueOption(v, start);
+    case (_, true, (_, {(start, _)}), _) equation
+      v = BackendVariable.setVarFixed(inVar, true);
+    then BackendVariable.setVarStartValueOption(v, start);
+    
     // fixed true several start values, this need some investigation
-    case (_, true, (_, (start, cr)::values), BackendDAE.SHARED(knownVars=knVars))
-      equation
-        v = BackendVariable.setVarFixed(inVar, true);
-        start1 = optExpReplaceCrefWithBindExp(start, knVars);
-        ((_, start, _)) = equalNonFreeStartValues(values, knVars, (start1, start, cr));
-      then
-        BackendVariable.setVarStartValueOption(v, start);
-    case (_, true, (_, values), BackendDAE.SHARED(knownVars=knVars))
-      equation
-        v = BackendVariable.setVarFixed(inVar, true);
-        // get all nonzero values
-        zerofreevalues = List.fold(values, getZeroFreeValues, {});
-      then
-        selectFreeValue1(zerofreevalues, {}, "fixed Alias set with several free start values\n", v);
+    case (_, true, (_, (start, cr)::values), BackendDAE.SHARED(knownVars=knVars)) equation
+      v = BackendVariable.setVarFixed(inVar, true);
+      start1 = optExpReplaceCrefWithBindExp(start, knVars);
+      ((_, start, _)) = equalNonFreeStartValues(values, knVars, (start1, start, cr));
+    then BackendVariable.setVarStartValueOption(v, start);
+    
+    case (_, true, (_, values), BackendDAE.SHARED(knownVars=knVars)) equation
+      v = BackendVariable.setVarFixed(inVar, true);
+      // get all nonzero values
+      zerofreevalues = List.fold(values, getZeroFreeValues, {});
+    then selectFreeValue1(zerofreevalues, {}, "fixed Alias set with several free start values\n", v);
+    
     // fixed false only one start value -> nothing changed
     case (_, false, (_, {(start, _)}), _)
-      then
-        BackendVariable.setVarStartValueOption(inVar, start);
+    then BackendVariable.setVarStartValueOption(inVar, start);
+    
     // fixed false several start value, this need some investigation
-    case (_, false, (_, (start, cr)::values), BackendDAE.SHARED(knownVars=knVars))
-      equation
-        start1 = optExpReplaceCrefWithBindExp(start, knVars);
-        ((_, start, _)) = equalFreeStartValues(values, knVars, (start1, start, cr));
-      then
-        BackendVariable.setVarStartValueOption(inVar, start);
-    case (_, false, (_, values), _)
-      equation
-        // get all nonzero values
-        zerofreevalues = List.fold(values, getZeroFreeValues, {});
-      then
-        selectFreeValue(zerofreevalues, inVar);
+    case (_, false, (_, (start, cr)::values), BackendDAE.SHARED(knownVars=knVars)) equation
+      start1 = optExpReplaceCrefWithBindExp(start, knVars);
+      ((_, start, _)) = equalFreeStartValues(values, knVars, (start1, start, cr));
+    then BackendVariable.setVarStartValueOption(inVar, start);
+    
+    case (_, false, (_, values), _) equation
+      // get all nonzero values
+      zerofreevalues = List.fold(values, getZeroFreeValues, {});
+    then selectFreeValue(zerofreevalues, inVar);
   end matchcontinue;
 end mergeStartFixedAttributes;
 
@@ -3233,12 +3230,17 @@ algorithm
     local
       Real r;
       DAE.Exp e;
+      String str;
+      DAE.ComponentRef varName;
+      
       
     case (NONE(), _, _) then inVar;
-    case (SOME(e), _, _) equation
+    case (SOME(e), _, BackendDAE.VAR(varName=varName)) equation
       r = intReal(n);
       e = Expression.expDiv(e, DAE.RCONST(r)); // Real is legal because only Reals have nominal attribute
       (e, _) = ExpressionSimplify.simplify(e);
+      str = "Alias set with different nominal values\n=> select value for " +& ComponentReference.printComponentRefStr(varName) +& "(nominal = " +& ExpressionDump.printExpStr(e) +& ")";
+      Error.addMessage(Error.COMPILER_WARNING, {str});
     then BackendVariable.setVarNominalValue(inVar, e);
   end match;
 end mergeNominalAttribute;
