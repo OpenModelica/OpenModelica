@@ -185,19 +185,34 @@ int ipoptDebuge(IPOPT_DATA_ *iData, double *x)
 static int res2file(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
 {
   int i,j,k =0;
+  char buffer[4096];
   DATA * data = iData->data;
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   SIMULATION_INFO *simInfo = &(data->simulationInfo);
+  FILE * pFile;
+
   solverInfo->currentTime = iData->time[0];
   
+  pFile = fopen("optimizeInput.csv", "wt");
+  fprintf(pFile, "%s", "time");
+  for(i=0; i< iData->nu; ++i){
+	  sprintf(buffer, "Input%i", i+1);
+	  fprintf(pFile, "%s", buffer);
+  }
+  fprintf(pFile, "%s", "\n");
+
+
   while(solverInfo->currentTime < simInfo->stopTime){
     for(i=0; i< iData->nx; ++i){
       sData->realVars[i] = iData->v[k++]*iData->vnom[i];
     }
     
+    fprintf(pFile, "%lf ",iData->time[iData->current_time]);
     for(i=0,j=iData->nx; i< iData->nu; ++i,++j){
       data->simulationInfo.inputVars[i] = iData->v[k++]*iData->vnom[j];
+      fprintf(pFile, "%lf ", data->simulationInfo.inputVars[i]);
     }
+    fprintf(pFile, "%s", "\n");
 
     solverInfo->currentTime = iData->time[iData->current_time++];
     sData->timeValue = solverInfo->currentTime;
@@ -208,6 +223,7 @@ static int res2file(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
     sim_result.emit(&sim_result,data);
     data->simulationInfo.terminal = 0;
   }
+  fclose(pFile);
   return 0;
 }
 
