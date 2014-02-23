@@ -51,7 +51,7 @@ const size_t SIZERINGBUFFER = 3;
 
 /*! \fn updateDiscreteSystem
  *
- *  Function to update the whole system with EventIteration.
+ *  Function to update the whole system with event iteration.
  *  Evaluate the functionDAE()
  *
  *  \param [ref] [data]

@@ -1090,18 +1090,10 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   overwriteOldSimulationData(data);     /* if there are non-linear equations */
   updateDiscreteSystem(data);           /* evaluate discrete variables */
 
-  /* valid system for the first time! */
-  saveZeroCrossings(data);
-  storePreValues(data);                 /* save pre-values */
-  overwriteOldSimulationData(data);     /* if there are non-linear equations */
-  
-  storePreValues(data);
-  storeOldValues(data);
   data->callback->function_storeDelayed(data);
   data->callback->function_updateRelations(data, 1);
-  storeRelations(data);
-  updateHysteresis(data);
   saveZeroCrossings(data);
 
+  /* valid system for the first time! */
   return retVal;
 }
