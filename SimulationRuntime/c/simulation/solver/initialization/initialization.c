@@ -1081,15 +1081,13 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   infoStreamPrint(LOG_INIT, 0, "### END INITIALIZATION ###");
 
   data->simulationInfo.initial = 0;
-  
   /* initialization is done */
-  initSample(data, data->simulationInfo.startTime, data->simulationInfo.stopTime);
-
-  /* TODO: remove following lines */
+  
   storePreValues(data);                 /* save pre-values */
-  updateDiscreteSystem(data);           /* evaluate discrete variables */
+  updateDiscreteSystem(data);           /* evaluate discrete variables (event iteration) */
   saveZeroCrossings(data);
 
+  initSample(data, data->simulationInfo.startTime, data->simulationInfo.stopTime);
   data->callback->function_storeDelayed(data);
   data->callback->function_updateRelations(data, 1);
 
