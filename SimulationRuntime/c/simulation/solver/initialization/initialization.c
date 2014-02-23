@@ -1087,12 +1087,11 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
 
   /* TODO: remove following lines */
   storePreValues(data);                 /* save pre-values */
-  overwriteOldSimulationData(data);     /* if there are non-linear equations */
   updateDiscreteSystem(data);           /* evaluate discrete variables */
+  saveZeroCrossings(data);
 
   data->callback->function_storeDelayed(data);
   data->callback->function_updateRelations(data, 1);
-  saveZeroCrossings(data);
 
   /* valid system for the first time! */
   return retVal;
