@@ -2953,7 +2953,7 @@ algorithm
         // get all nonzero values
         zerofreevalues = List.fold(values, getZeroFreeValues, {});
       then
-        selectFreeValue1(zerofreevalues, NONE(), "fixed Alias set with several free start values\n", v);
+        selectFreeValue1(zerofreevalues, {}, "fixed Alias set with several free start values\n", v);
     // fixed false only one start value -> nothing changed
     case (_, false, (_, {(start, _)}), _)
       then
@@ -3109,11 +3109,8 @@ protected function selectFreeValue "author: Frenkel TUD 2012-12"
   output BackendDAE.Var outVar;
 algorithm
   outVar := match(iZeroFreeValues, inVar)
-    local
     case ({}, _) then inVar;
-    case (_, _)
-      then
-        selectFreeValue1(iZeroFreeValues, NONE(), "Alias set with several free start values\n", inVar);
+    case (_, _) then selectFreeValue1(iZeroFreeValues, {}, "Alias set with several free start values\n", inVar);
   end match;
 end selectFreeValue;
 
@@ -3146,14 +3143,12 @@ algorithm
   end matchcontinue;
 end selectNonZeroExpression;
 
-protected function selectFreeValue1 
-"@author: Frenkel TUD 2012-12
- adrpo: the value is selected as follows:
- - if the exp is a cref with less depth
- - for the ones with the minimum depth equal, select one that is non-zero 
- "
+protected function selectFreeValue1 "author: Frenkel TUD 2012-12
+  adrpo: the value is selected as follows:
+  - if the exp is a cref with less depth
+  - for the ones with the minimum depth equal, select one that is non-zero"
   input list<tuple<DAE.Exp, DAE.ComponentRef>> iZeroFreeValues;
-  input Option<list<tuple<DAE.Exp, DAE.ComponentRef, Integer>>> iFavorit;
+  input list<tuple<DAE.Exp, DAE.ComponentRef, Integer>> iFavorit;
   input String iStr;
   input BackendDAE.Var inVar;
   output BackendDAE.Var outVar;
@@ -3165,56 +3160,42 @@ algorithm
       BackendDAE.Var v;
       list<tuple<DAE.Exp, DAE.ComponentRef>> zerofreevalues;
       Integer i, is;
-      Option<list<tuple<DAE.Exp, DAE.ComponentRef, Integer>>> favorit;
+      list<tuple<DAE.Exp, DAE.ComponentRef, Integer>> favorit;
       list<tuple<DAE.Exp, DAE.ComponentRef, Integer>> rest;
       String s;
     
-    case ({}, NONE(), _, _) then inVar;
-      
-    case ({}, SOME({}), _, _) then inVar;
+    case ({}, {}, _, _) then inVar;
     
     // end of list analyse what we got
-    case ({}, SOME(rest), _, _)
-      equation
-        ((e, cr, i)) = selectNonZeroExpression(rest);
-        s = iStr +& "         Selected value from " +& 
-            ComponentReference.printComponentRefStr(cr) +& 
-            "(start = " +& ExpressionDump.printExpStr(e) +& ")\n" +& 
-            "         because its component reference (or its binding component reference) is closer to the top level scope with depth: " +& 
-                    intString(i) +& ".\n" +&
-            "         If we have equal component reference depth for several components choose the one with non zero binding.";
-        Error.addMessage(Error.COMPILER_WARNING, {s});
-        v = BackendVariable.setVarStartValue(inVar, e);
-      then
-        v;
+    case ({}, rest, _, _) equation
+      ((e, cr, i)) = selectNonZeroExpression(rest);
+      s = iStr +& "=> select value from " +&  ComponentReference.printComponentRefStr(cr) +&  "(start = " +& ExpressionDump.printExpStr(e) +& ")\n" +& 
+          "   because its component reference (or its binding component reference) is closer to the top level scope with depth: " +& intString(i) +& ".\n" +&
+          "   If we have equal component reference depth for several components choose the one with non zero binding.";
+      Error.addMessage(Error.COMPILER_WARNING, {s});
+      v = BackendVariable.setVarStartValue(inVar, e);
+    then v;
     
     // none, push it in
-    case ((e, cr)::zerofreevalues, NONE(), _, _)
-      equation
-        s = iStr +& "         Candidate " +& ComponentReference.printComponentRefStr(cr) +& "(start = " +& ExpressionDump.printExpStr(e) +& ")\n";
-        i = selectMinDepth(ComponentReference.crefDepth(cr), e);
-      then
-        selectFreeValue1(zerofreevalues, SOME({(e, cr, i)}), s, inVar);
+    case ((e, cr)::zerofreevalues, {}, _, _) equation
+      s = iStr +& " * candidate: " +& ComponentReference.printComponentRefStr(cr) +& "(start = " +& ExpressionDump.printExpStr(e) +& ")\n";
+      i = selectMinDepth(ComponentReference.crefDepth(cr), e);
+    then selectFreeValue1(zerofreevalues, {(e, cr, i)}, s, inVar);
     
     // equal, put it in
-    case ((e, cr)::zerofreevalues, SOME((es, crs, is)::rest), _, _)
-      equation
-        s = iStr +& "         Candidate " +& ComponentReference.printComponentRefStr(cr) +& "(start = " +& ExpressionDump.printExpStr(e) +& ")\n";
-        i = selectMinDepth(ComponentReference.crefDepth(cr), e);
-        true = intEq(i, is);
-        favorit = SOME((e, cr, i)::(es, crs, is)::rest);
-      then
-        selectFreeValue1(zerofreevalues, favorit, s, inVar);
+    case ((e, cr)::zerofreevalues, (es, crs, is)::rest, _, _) equation
+      s = iStr +& " * candidate: " +& ComponentReference.printComponentRefStr(cr) +& "(start = " +& ExpressionDump.printExpStr(e) +& ")\n";
+      i = selectMinDepth(ComponentReference.crefDepth(cr), e);
+      true = intEq(i, is);
+      favorit = (e, cr, i)::(es, crs, is)::rest;
+    then selectFreeValue1(zerofreevalues, favorit, s, inVar);
     
     // less than, remove all from list, return just this one
-    case ((e, cr)::zerofreevalues, SOME((es, crs, is)::rest), _, _)
-      equation
-        s = iStr +& "         Candidate " +& ComponentReference.printComponentRefStr(cr) +& "(start = " +& ExpressionDump.printExpStr(e) +& ")\n";
-        i = selectMinDepth(ComponentReference.crefDepth(cr), e);
-        favorit = Util.if_(intLt(i, is), SOME({(e, cr, i)}), iFavorit);
-      then
-        selectFreeValue1(zerofreevalues, favorit, s, inVar);
-        
+    case ((e, cr)::zerofreevalues, (es, crs, is)::rest, _, _) equation
+      s = iStr +& " * candidate: " +& ComponentReference.printComponentRefStr(cr) +& "(start = " +& ExpressionDump.printExpStr(e) +& ")\n";
+      i = selectMinDepth(ComponentReference.crefDepth(cr), e);
+      favorit = Util.if_(intLt(i, is), {(e, cr, i)}, iFavorit);
+    then selectFreeValue1(zerofreevalues, favorit, s, inVar);
   end matchcontinue;
 end selectFreeValue1;
 
@@ -3248,19 +3229,17 @@ protected function mergeNominalAttribute "author: Frenkel TUD 2012-12"
   input BackendDAE.Var inVar;
   output BackendDAE.Var outVar;
 algorithm
-  outVar :=
-  match (nominal, n, inVar)
+  outVar := match (nominal, n, inVar)
     local
       Real r;
       DAE.Exp e;
-    case (SOME(e), _, _)
-      equation
-        r = intReal(n);
-        e = Expression.expDiv(e, DAE.RCONST(r)); // Real is legal because only Reals have nominal attribute
-        (e, _) = ExpressionSimplify.simplify(e);
-      then
-        BackendVariable.setVarNominalValue(inVar, e);
+      
     case (NONE(), _, _) then inVar;
+    case (SOME(e), _, _) equation
+      r = intReal(n);
+      e = Expression.expDiv(e, DAE.RCONST(r)); // Real is legal because only Reals have nominal attribute
+      (e, _) = ExpressionSimplify.simplify(e);
+    then BackendVariable.setVarNominalValue(inVar, e);
   end match;
 end mergeNominalAttribute;
 
