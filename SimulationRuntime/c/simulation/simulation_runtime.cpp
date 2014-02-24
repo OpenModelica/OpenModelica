@@ -89,12 +89,14 @@
 
 using namespace std;
 
-static int interactiveSimulation = 0; /* This variable signals if an simulation session is interactive or non-interactive (by default) */
-
 #ifndef NO_INTERACTIVE_DEPENDENCY
   Socket sim_communication_port;
   static int sim_communication_port_open = 0;
 #endif
+
+extern "C" {
+
+static int interactiveSimulation = 0; /* This variable signals if an simulation session is interactive or non-interactive (by default) */
 
 int terminationTerminate = 0; /* Becomes non-zero when user terminates simulation. */
 FILE_INFO TermInfo;           /* message for termination. */
@@ -320,10 +322,10 @@ void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilte
 {
 #ifndef _MSC_VER
   int cheap = resultFormatHasCheapAliasesAndParameters;
-  std::string varfilter(variableFilter);
   regex_t myregex;
   int flags = REG_EXTENDED;
   int rc;
+  std::string varfilter(variableFilter);
   string tmp = ("^(" + varfilter + ")$");
   const char *filter = tmp.c_str(); // C++ strings are horrible to work with...
   if (modelData->nStates > 0 && 0 == strcmp(modelData->realVarsData[0].info.name, "$dummy")) {
@@ -998,3 +1000,5 @@ void (*omc_assert)(threadData_t*,FILE_INFO info, const char *msg, ...) = omc_ass
 void (*omc_assert_warning)(FILE_INFO info, const char *msg, ...) = omc_assert_warning_simulation;
 void (*omc_terminate)(FILE_INFO info, const char *msg, ...) = omc_terminate_simulation;
 void (*omc_throw)(threadData_t*) = omc_throw_simulation;
+
+} // extern "C"

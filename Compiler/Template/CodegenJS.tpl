@@ -9,7 +9,7 @@ template markdownFile(SimCode simCode)
 ::=
 match simCode case SIMCODE(__) then
   let () = textFile(markdownContents(simCode), '<%fileNamePrefix%>.md')
-  let () = textFile(nodeJSDriver(simCode), '<%fileNamePrefix%>.node.js')
+  let () = textFile(nodeJSDriver(simCode), '<%fileNamePrefix%>_node.js')
   ""
 end markdownFile;
 

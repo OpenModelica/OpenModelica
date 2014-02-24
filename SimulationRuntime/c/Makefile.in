@@ -42,12 +42,21 @@ include Makefile.common
 Makefile: Makefile.in
 	cd $(top_builddir); ./config.status
 
-emcc: Makefile emcc/pre.js
+emcc: Makefile emcc/pre.js emcc/liblapack.so emcc/libblas.so emcc/libexpat.so emcc/libSimulationRuntimeC.so emcc/libf2c.so
 	cp /usr/include/expat*.h .
-	emmake $(MAKE) OBJ_EXT=.bc CC=emcc CXX=emcc CFLAGS=" $(CPPFLAGS) -Os -DOMC_EMCC -DNO_INTERACTIVE_DEPENDENCY -I./simulation/libf2c/" libSimulationRuntimeC.bc
+	cp emcc/pre.js emcc/*.so $(builddir_lib)/emcc/
+	@# emcc -Os --llvm-lto 2 -o $(builddir_lib)/emcc/libSimulationRuntimeC.js -s SIDE_MODULE=1 -s ASM_JS=1 -s TOTAL_MEMORY=536870912 -s OUTLINING_LIMIT=20000 libSimulationRuntimeC.bc simulation/libf2c/libf2c.bc emcc/liblapack.so emcc/libblas.so emcc/libexpat.so
+emcc/liblapack.so:
+	wget -O $@ https://github.com/tshort/openmodelica-javascript/blob/master/liblapack.so?raw=true || (rm -f $@ ; false)
+emcc/libblas.so:
+	wget  -O $@ https://github.com/tshort/openmodelica-javascript/blob/master/libblas.so?raw=true || (rm -f $@ ; false)
+emcc/libexpat.so:
+	wget  -O $@ https://github.com/tshort/openmodelica-javascript/blob/master/libexpat.so?raw=true || (rm -f $@ ; false)
+emcc/libf2c.so:
 	emmake $(MAKE) -C simulation/libf2c OBJ_EXT=.bc CC=emcc CXX=emcc CFLAGS="-Os" libf2c.bc
-	cp emcc/pre.js $(builddir_lib)/emcc/
-	cp libSimulationRuntimeC.bc $(builddir_lib)/emcc/libSimulationRuntimeC.so
-	cp simulation/libf2c/libf2c.bc $(builddir_lib)/emcc/libf2c.so
+	cp simulation/libf2c/libf2c.bc emcc/libf2c.so
+emcc/libSimulationRuntimeC.so:
+	emmake $(MAKE) OBJ_EXT=.bc CC=emcc CXX=emcc CFLAGS=" $(CPPFLAGS) -Os -DOMC_EMCC -DNO_INTERACTIVE_DEPENDENCY -I./simulation/libf2c/" libSimulationRuntimeC.bc
+	cp libSimulationRuntimeC.bc emcc/libSimulationRuntimeC.so
 emcc-clean: Makefile
 	$(MAKE) OBJ_EXT=.bc clean
