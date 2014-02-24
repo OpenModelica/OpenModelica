@@ -901,6 +901,12 @@ package System
     input String s2;
     output list<String> tokens;
   end strtok;
+
+  function covertTextFileToCLiteral
+    input String textFile;
+    input String outFile;
+    output Boolean success;
+  end covertTextFileToCLiteral;
 end System;
 
 

@@ -66,7 +66,8 @@ case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   
   let _ = generateSimulationFiles(simCode,guid,fileNamePrefix)
   
-  let()= textFile(simulationInitFileCString(simulationInitFile(simCode,guid)), '<%fileNamePrefix%>_init.c')
+  let()= textFile(simulationInitFile(simCode,guid), '<%fileNamePrefix%>_init.xml')
+  let x = covertTextFileToCLiteral('<%fileNamePrefix%>_init.xml','<%fileNamePrefix%>_init.c')
   let()= textFile(fmumodel_identifierFile(simCode,guid), '<%fileNamePrefix%>_FMU.c')
   let()= textFile(fmuModelDescriptionFile(simCode,guid), 'modelDescription.xml')
   let()= textFile(fmudeffile(simCode), '<%fileNamePrefix%>.def')

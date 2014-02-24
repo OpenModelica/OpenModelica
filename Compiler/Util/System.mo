@@ -1097,4 +1097,11 @@ external "C" previousAlarm=SystemImpl__alarm(seconds) annotation(Library = {"omc
 </html>"));
 end alarm;
 
+public function covertTextFileToCLiteral
+  input String textFile;
+  input String outFile;
+  output Boolean success;
+external "C" success=SystemImpl__covertTextFileToCLiteral(textFile,outFile);
+end covertTextFileToCLiteral;
+
 end System;

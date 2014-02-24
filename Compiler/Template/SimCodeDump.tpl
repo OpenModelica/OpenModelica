@@ -18,9 +18,8 @@ template dumpSimCodeToC(SimCode code, Boolean withOperations)
 ::=
   match code
   case sc as SIMCODE(modelInfo=mi as MODELINFO(vars=vars as SIMVARS(__))) then
-  let res =
-  'data->modelData.modelDataXml.infoXMLData = <% strtok(dumpSimCodeBase(code,withOperations),"\n") |> str => '"<%Util.escapeModelicaStringToCString(str)%>\n"' ; separator = "\n" %>;'
-  let() = textFile(res,'<%fileNamePrefix%>_info.c')
+  let _ = dumpSimCode(code,withOperations)
+  let _ = covertTextFileToCLiteral('<%fileNamePrefix%>_info.xml','<%fileNamePrefix%>_info.c')
   '<%fileNamePrefix%>_info'
 end dumpSimCodeToC;
 

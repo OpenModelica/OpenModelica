@@ -1904,3 +1904,10 @@ RML_BEGIN_LABEL(System__alarm)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(System__covertTextFileToCLiteral)
+{
+  rmlA0 = mk_icon(SystemImpl__covertTextFileToCLiteral(RML_STRINGDATA(rmlA0),RML_STRINGDATA(rmlA1)));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL

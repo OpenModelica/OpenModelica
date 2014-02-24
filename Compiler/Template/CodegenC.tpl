@@ -71,14 +71,10 @@ template translateModel(SimCode simCode)
 
     let()= textFile(recordsFile(fileNamePrefix, recordDecls), '<%fileNamePrefix%>_records.c')
 
-    let _ = if stringEq(Config.simCodeTarget(),"JavaScript") then
-              let()= textFile(simulationInitFileCString(simulationInitFile(simCode,guid)), '<%fileNamePrefix%>_init.c')
-               ""
-            else if simulationSettingsOpt then //tests the Option<> for SOME()
-              let()= textFile(simulationInitFile(simCode,guid), '<%fileNamePrefix%>_init.xml')
-              ""
-            else
-              "" //the else is automatically empty, too
+    let x = if simulationSettingsOpt then //tests the Option<> for SOME()
+              textFile(simulationInitFile(simCode,guid), '<%fileNamePrefix%>_init.xml')
+    let y = (if stringEq(Config.simCodeTarget(),"JavaScript") then
+              covertTextFileToCLiteral('<%fileNamePrefix%>_init.xml','<%fileNamePrefix%>_init.c'))
 
     let()= textFile(simulationHeaderFile(simCode,guid), '<%fileNamePrefix%>_model.h')
     // adpro: write the main .c file last! Make on windows doesn't seem to realize that
@@ -756,8 +752,12 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData.initXMLData = NULL;
     data->modelData.modelDataXml.infoXMLData = NULL;
     #else
+    data->modelData.initXMLData =
     #include "<%fileNamePrefix%>_init.c"
+    ;
+    data->modelData.modelDataXml.infoXMLData =
     #include "<%fileNamePrefix%>_info.c"
+    ;
     #endif
 
     data->modelData.nStates = <%varInfo.numStateVars%>;

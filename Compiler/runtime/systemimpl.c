@@ -2664,6 +2664,58 @@ int SystemImpl__alarm(int seconds)
   return alarm(seconds);
 }
 
+int SystemImpl__covertTextFileToCLiteral(const char *textFile, const char *outFile)
+{
+  FILE *fin;
+  FILE *fout;
+  int result = 0, n, i, j;
+  char buffer[512];
+  char obuffer[1024];
+  fin = fopen(textFile, "r");
+  if (!fin) {
+    goto done;
+  }
+  fout = fopen(outFile, "w");
+  if (!fout) {
+    goto done;
+  }
+  fputc('\"', fout);
+  do {
+    n = fread(buffer,1,128,fin);
+
+    j = 0;
+    for (i=0; i<n; i++) {
+      if (buffer[i] == '\n') {
+        obuffer[j++] = '\\';
+        obuffer[j++] = 'n';
+      } else if (buffer[i] == '\\') {
+        obuffer[j++] = '\\';
+        obuffer[j++] = '\\';
+      } else if (buffer[i] == '"') {
+        obuffer[j++] = '\\';
+        obuffer[j++] = '"';
+      } else {
+        obuffer[j++] = buffer[i];
+      }
+    }
+    if (j!=fwrite(obuffer,1,j,fout)) {
+      fprintf(stderr, "failed to write\n");
+      return 1;
+    }
+  } while (!feof(fin));
+  fputc('\"', fout);
+
+  result = 1;
+done:
+  if (fin) {
+    fclose(fin);
+  }
+  if (fout) {
+    fclose(fout);
+  }
+  return result;
+}
+
 #ifdef __cplusplus
 }
 #endif
