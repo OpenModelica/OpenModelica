@@ -718,7 +718,7 @@ template simulationFileHeader(SimCode simCode)
     #include "<%fileNamePrefix%>_model.h"
     #include "<%fileNamePrefix%>_literals.h"
 
-    <%if stringEq(getConfigString(HPCOM_CODE),"pthreads_spin") then "#include \"omc_spinlock.h\""%> 
+    <%if stringEq(getConfigString(HPCOM_CODE),"pthreads_spin") then "#include \"util/omc_spinlock.h\""%> 
 
     <%if Flags.isSet(HPCOM) then "#define HPCOM"%>
     
