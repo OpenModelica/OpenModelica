@@ -46,6 +46,8 @@ emcc: Makefile emcc/pre.js
 	cp /usr/include/expat*.h .
 	emmake $(MAKE) OBJ_EXT=.bc CC=emcc CXX=emcc CFLAGS=" $(CPPFLAGS) -Os -DOMC_EMCC -DNO_INTERACTIVE_DEPENDENCY -I./simulation/libf2c/" libSimulationRuntimeC.bc
 	emmake $(MAKE) -C simulation/libf2c OBJ_EXT=.bc CC=emcc CXX=emcc CFLAGS="-Os" libf2c.bc
-	cp emcc/pre.js libSimulationRuntimeC.bc simulation/libf2c/libf2c.bc $(builddir_lib)/emcc/
+	cp emcc/pre.js $(builddir_lib)/emcc/
+	cp libSimulationRuntimeC.bc $(builddir_lib)/emcc/libSimulationRuntimeC.so
+	cp simulation/libf2c/libf2c.bc $(builddir_lib)/emcc/libf2c.so
 emcc-clean: Makefile
 	$(MAKE) OBJ_EXT=.bc clean
