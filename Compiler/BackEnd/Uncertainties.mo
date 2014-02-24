@@ -96,7 +96,7 @@ algorithm
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn;
 
-      String outStringA,outStringB,outString;
+      String outStringA,outStringB,outString,description;
       list<Option<DAE.Distribution>> distributions;
 
     case (cache,env,_,(st as GlobalScript.SYMBOLTABLE(ast = p)),outputFile,_)
@@ -105,9 +105,9 @@ algorithm
         Print.clearBuf();
 
         (dae,cache,env) = flattenModel(className,p,cache);
-
+        description = DAEUtil.daeDescription(dae);
         //print("- Flatten ok\n");
-        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(outputFile));
+        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,outputFile));
         //(dlow_1,funcs1) = BackendDAEUtil.getSolvedSystem(dlow, funcs,SOME({"removeSimpleEquations","removeFinalParameters", "removeEqualFunctionCalls", "expandDerOperator"}), NONE(), NONE(),NONE());
         (dlow_1) = BackendDAEUtil.getSolvedSystem(dlow, SOME({"removeAllSimpleEquations","removeUnusedVariables","removeEqualFunctionCalls", "expandDerOperator"}), NONE(), NONE(),SOME({""}));
         //print("* Lowered Ok \n");

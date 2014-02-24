@@ -364,6 +364,7 @@ package SimCode
   uniontype ModelInfo
     record MODELINFO
       Absyn.Path name;
+      String description;
       String directory;
       VarInfo varInfo;
       SimVars vars;

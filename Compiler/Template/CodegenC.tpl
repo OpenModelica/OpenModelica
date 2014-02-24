@@ -4465,6 +4465,7 @@ case SIMCODE(modelInfo = MODELINFO(functions = functions, varInfo = vi as VARINF
 
     guid                                = "{<%guid%>}"
 
+    description                         = "<%Util.escapeModelicaStringToXmlString(modelInfo.description)%>"
     generationTool                      = "OpenModelica Compiler <%getVersionNr()%>"
     generationDateAndTime               = "<%xsdateTime(getCurrentDateTime())%>"
 

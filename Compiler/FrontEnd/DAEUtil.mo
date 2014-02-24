@@ -6675,4 +6675,14 @@ algorithm
   end matchcontinue;
 end collectAllExpandableCrefsInExp;
 
+public function daeDescription
+  input DAE.DAElist inDAE;
+  output String comment;
+algorithm
+  comment := match inDAE
+    case DAE.DAE(elementLst=DAE.COMP(comment=SOME(SCode.COMMENT(comment=SOME(comment))))::_) then comment;
+    else "";
+  end match;
+end daeDescription;
+
 end DAEUtil;

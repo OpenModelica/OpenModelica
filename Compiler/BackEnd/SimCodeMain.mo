@@ -220,6 +220,7 @@ algorithm
       Env.Cache cache;
       DAE.FunctionTree funcs;
       Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
+      String description;
     case (cache,env,_,st as GlobalScript.SYMBOLTABLE(ast=p),filenameprefix,_, _)
       equation
         /* calculate stuff that we need to create SimCode data structure */
@@ -231,7 +232,8 @@ algorithm
         System.realtimeTick(GlobalScript.RT_CLOCK_BACKEND);
         funcs = Env.getFunctionTree(cache);
         dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
-        dlow = BackendDAECreate.lower(dae, cache, env, BackendDAE.EXTRA_INFO(filenameprefix));
+        description = DAEUtil.daeDescription(dae);
+        dlow = BackendDAECreate.lower(dae, cache, env, BackendDAE.EXTRA_INFO(description,filenameprefix));
         dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,NONE(), NONE(), NONE(), NONE());
         Debug.fprintln(Flags.DYN_LOAD, "translateModel: Generating simulation code and functions.");
         timeBackend = System.realtimeTock(GlobalScript.RT_CLOCK_BACKEND);
@@ -282,7 +284,7 @@ algorithm
   (outCache,outValue,outInteractiveSymbolTable,outBackendDAE,outStringLst,outFileDir,resultValues):=
   matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy, inSimSettingsOpt)
     local
-      String filenameprefix,file_dir,resstr;
+      String filenameprefix,file_dir,resstr,description;
       DAE.DAElist dae;
       list<Env.Frame> env;
       BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow_1;
@@ -303,7 +305,8 @@ algorithm
         System.realtimeTick(GlobalScript.RT_CLOCK_BACKEND);
         funcs = Env.getFunctionTree(cache);
         dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
-        dlow = BackendDAECreate.lower(dae, cache, env, BackendDAE.EXTRA_INFO(filenameprefix));
+        description = DAEUtil.daeDescription(dae);
+        dlow = BackendDAECreate.lower(dae, cache, env, BackendDAE.EXTRA_INFO(description,filenameprefix));
         dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,NONE(), NONE(), NONE(), NONE());
         Debug.fprintln(Flags.DYN_LOAD, "translateModel: Generating simulation code and functions.");
         timeBackend = System.realtimeTock(GlobalScript.RT_CLOCK_BACKEND);
@@ -554,7 +557,7 @@ algorithm
   (outCache, outInteractiveSymbolTable, outBackendDAE, outStringLst, outFileDir, resultValues) :=
   matchcontinue (inCache, inEnv, className, inInteractiveSymbolTable, inFileNamePrefix, addDummy, inSimSettingsOpt, args)
     local
-      String filenameprefix, file_dir, resstr;
+      String filenameprefix, file_dir, resstr, description;
       DAE.DAElist dae;
       list<Env.Frame> env;
       BackendDAE.BackendDAE dlow, dlow_1, indexed_dlow_1;
@@ -573,7 +576,8 @@ algorithm
       
       System.realtimeTick(GlobalScript.RT_CLOCK_BACKEND);
       dae = DAEUtil.transformationsBeforeBackend(cache, env, dae);
-      dlow = BackendDAECreate.lower(dae, cache, env, BackendDAE.EXTRA_INFO(filenameprefix));
+      description = DAEUtil.daeDescription(dae);
+      dlow = BackendDAECreate.lower(dae, cache, env, BackendDAE.EXTRA_INFO(description,filenameprefix));
       dlow_1 = BackendDAEUtil.getSolvedSystem(dlow, NONE(), NONE(), NONE(), NONE());
       timeBackend = System.realtimeTock(GlobalScript.RT_CLOCK_BACKEND);
       

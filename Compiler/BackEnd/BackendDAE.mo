@@ -108,6 +108,7 @@ end Shared;
 
 uniontype ExtraInfo "extra information that we should send arround with the DAE"
   record EXTRA_INFO "extra information that we should send arround with the DAE"
+    String description "the model description string";
     String fileNamePrefix "the model name to be used in the dumps";
   end EXTRA_INFO;
 end ExtraInfo;

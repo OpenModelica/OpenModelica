@@ -900,7 +900,7 @@ algorithm
       list<Error.TotalMessage> messages;
       UnitAbsyn.Unit u1,u2;
       Real stoptime,starttime,tol,stepsize,interval;
-      String stoptime_str,stepsize_str,starttime_str,tol_str,num_intervalls_str;
+      String stoptime_str,stepsize_str,starttime_str,tol_str,num_intervalls_str,description;
     case (cache,env,"parseString",{Values.STRING(str1),Values.STRING(str2)},st,_)
       equation
         Absyn.PROGRAM(classes=classes,within_=within_) = Parser.parsestring(str1,str2);
@@ -1169,7 +1169,8 @@ algorithm
         dae  = DAEUtil.transformationsBeforeBackend(cache,env,dae);
         ic_1 = Interactive.addInstantiatedClass(ic, GlobalScript.INSTCLASS(path,dae,env));
         filenameprefix = Absyn.pathString(path);
-        daelow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(filenameprefix));
+        description = DAEUtil.daeDescription(dae);
+        daelow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
         (optdae as BackendDAE.DAE({syst},shared)) = BackendDAEUtil.preOptimizeBackendDAE(daelow,NONE());
         (syst,m,mt) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL(),NONE());
         vars = BackendVariable.daeVars(syst);
@@ -3313,7 +3314,7 @@ algorithm
       list<GlobalScript.CompiledCFunction> cf;
       Absyn.Msg msg;
       Env.Cache cache;
-      String flatModelicaStr;
+      String flatModelicaStr,description;
 
     case (cache,env,_,(st as GlobalScript.SYMBOLTABLE(ast = p,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg,_) /* mo file directory */
       equation
@@ -3321,10 +3322,11 @@ algorithm
         (cache,env,_,dae_1) =
         Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,p_1,className);
         dae  = DAEUtil.transformationsBeforeBackend(cache,env,dae_1);
+        description = DAEUtil.daeDescription(dae);
         ic_1 = Interactive.addInstantiatedClass(ic, GlobalScript.INSTCLASS(className,dae,env));
         a_cref = Absyn.pathToCref(className);
         file_dir = getFileDir(a_cref, p);
-        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(filenameprefix));
+        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
         dlow = BackendDAECreate.findZeroCrossings(dlow);
         flatModelicaStr = DAEDump.dumpStr(dae,Env.getFunctionTree(cache));
         flatModelicaStr = stringAppend("OldEqStr={'", flatModelicaStr);
@@ -4042,7 +4044,7 @@ algorithm
       DAE.FunctionTree funcs;
       GlobalScript.SymbolTable st;
       Boolean showFlatModelica;
-      String filenameprefix;
+      String filenameprefix,description;
 
     case(cache,_,{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(templateFile),Values.BOOL(showFlatModelica)},GlobalScript.SYMBOLTABLE(ast=p),_)
       equation
@@ -4057,7 +4059,8 @@ algorithm
         // sort all variable names in the distribution order
         // TODO FIXME
         filenameprefix = Absyn.pathString(className);
-        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(filenameprefix));
+        description = DAEUtil.daeDescription(dae);
+        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
         //print("lowered class\n");
         //print("calling generateOpenTurnsInterface\n");
         scriptFile = OpenTURNS.generateOpenTURNSInterface(cache,inEnv,dlow,funcs,className,p,dae,templateFile);
@@ -4480,7 +4483,7 @@ algorithm
   (outCache,outInteractiveSymbolTable3,xml_filename) :=
   matchcontinue (inCache,inEnv,vals,inInteractiveSymbolTable,inMsg)
     local
-      String cname_str,filenameprefix,compileDir,rewriteRulesFile;
+      String cname_str,filenameprefix,compileDir,rewriteRulesFile,description;
       list<Env.Frame> env;
       Absyn.Path classname;
       Absyn.Program p;
@@ -4505,12 +4508,13 @@ algorithm
         RewriteRules.loadRules();
         
         (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname, st);
+        description = DAEUtil.daeDescription(dae);
         
         compileDir = System.pwd() +& System.pathDelimiter();
         cname_str = Absyn.pathString(classname);
         filenameprefix = Util.if_(filenameprefix ==& "<default>", cname_str, filenameprefix);
         
-        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(filenameprefix)); //Verificare cosa fa
+        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix)); //Verificare cosa fa
         dlow_1 = BackendDAEUtil.preOptimizeBackendDAE(dlow,NONE());
         dlow_1 = BackendDAECreate.findZeroCrossings(dlow_1);
         xml_filename = stringAppendList({filenameprefix,".xml"});
@@ -4544,12 +4548,13 @@ algorithm
         RewriteRules.loadRules();
         
         (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname, st);
+        description = DAEUtil.daeDescription(dae);
         
         compileDir = System.pwd() +& System.pathDelimiter();
         cname_str = Absyn.pathString(classname);
         filenameprefix = Util.if_(filenameprefix ==& "<default>", cname_str, filenameprefix);
         
-        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(filenameprefix)); //Verificare cosa fa
+        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix)); //Verificare cosa fa
         dlow_1 = BackendDAEUtil.preOptimizeBackendDAE(dlow,NONE());
         dlow_1 = BackendDAEUtil.transformBackendDAE(dlow_1,NONE(),NONE(),NONE());
         dlow_1 = BackendDAECreate.findZeroCrossings(dlow_1);
@@ -4584,12 +4589,13 @@ algorithm
         RewriteRules.loadRules();
 
         (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname, st);
+        description = DAEUtil.daeDescription(dae);
         
         compileDir = System.pwd() +& System.pathDelimiter();
         cname_str = Absyn.pathString(classname);
         filenameprefix = Util.if_(filenameprefix ==& "<default>", cname_str, filenameprefix);
         
-        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(filenameprefix));
+        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
         indexed_dlow = BackendDAEUtil.getSolvedSystem(dlow, NONE(), NONE(), NONE(), NONE());
         xml_filename = stringAppendList({filenameprefix,".xml"});
         
@@ -4622,12 +4628,13 @@ algorithm
         RewriteRules.loadRules();
 
         (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname, st);
+        description = DAEUtil.daeDescription(dae);
         
         compileDir = System.pwd() +& System.pathDelimiter();
         cname_str = Absyn.pathString(classname);
         filenameprefix = Util.if_(filenameprefix ==& "<default>", cname_str, filenameprefix);
         
-        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(filenameprefix));
+        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
         indexed_dlow = BackendDAEUtil.getSolvedSystem(dlow, NONE(), NONE(), NONE(), NONE());
         xml_filename = stringAppendList({filenameprefix,".xml"});
         

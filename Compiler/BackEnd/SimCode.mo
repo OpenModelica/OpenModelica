@@ -144,6 +144,7 @@ end FunctionCode;
 uniontype ModelInfo "Container for metadata about a Modelica model."
   record MODELINFO
     Absyn.Path name;
+    String description;
     String directory;
     VarInfo varInfo;
     SimVars vars;

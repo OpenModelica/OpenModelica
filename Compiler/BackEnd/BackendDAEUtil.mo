@@ -8282,7 +8282,7 @@ algorithm
         false = Flags.isSet(Flags.DUMP_SCC_GRAPHML);
       then ();
     
-    case (_, BackendDAE.SHARED(info = BackendDAE.EXTRA_INFO(fileNamePrefix)))
+    case (_, BackendDAE.SHARED(info = BackendDAE.EXTRA_INFO(fileNamePrefix=fileNamePrefix)))
       equation
         seqNo = System.tmpTickIndex(Global.backendDAE_fileSequence);
         fileName = fileNamePrefix +& "_" +& intString(seqNo) +& "_Comps" +& intString(systemSize(isyst)) +& ".graphml";

@@ -19,7 +19,7 @@ match simCode
 case SIMCODE(simulationSettingsOpt = SOME(s as SIMULATION_SETTINGS(__)))
 then
 <<
-#!/usr/bin/env nodejs
+#!/usr/bin/nodejs --max-old-space-size=8192
 var mod = require('./<%fileNamePrefix%>.js');
 mod.callMain(process.argv.slice(2));
 var fs = require('fs');

@@ -177,6 +177,7 @@ algorithm
       list<SimCode.SimEqSystem> allEquations,allInitEquations;
       SimCode.DelayedExpression delayexp;
       SimCode.HashTableCrefToSimVar hashTable;
+      String description;
     case (DAE.DAE(elementLst=elementLst),_,_,_,_,_,_,_,_,_)
       equation
         // generate all residual equations
@@ -184,8 +185,9 @@ algorithm
         // generate variable definitions
         simvars = SimCode.SIMVARS({},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{});
         varinfo = SimCode.VARINFO(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
+        description = DAEUtil.daeDescription(dae);
 
-        modelInfo = SimCode.MODELINFO(inClassName,fileDir,varinfo,simvars,functions,{});
+        modelInfo = SimCode.MODELINFO(inClassName,description,fileDir,varinfo,simvars,functions,{});
         extObjInfo = SimCode.EXTOBJINFO({},{});
         makefileParams = SimCode.MAKEFILE_PARAMS("","","","","","","","","",includeDirs,libs,"","");
         delayexp = SimCode.DELAYED_EXPRESSIONS({},0);
