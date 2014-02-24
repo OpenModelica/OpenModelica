@@ -128,6 +128,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = SIMVARS(s
   modelName="<%modelName%>"
   modelIdentifier="<%modelIdentifier%>"
   guid="{<%guid%>}"
+  description="<%description%>"
   generationTool="<%generationTool%>"
   generationDateAndTime="<%generationDateAndTime%>"
   variableNamingConvention="<%variableNamingConvention%>"
