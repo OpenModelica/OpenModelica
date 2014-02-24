@@ -7174,7 +7174,7 @@ algorithm
         // check if its worth to resolve the loops
         loops = List.filter1OnTrue(loops,evaluateLoop,(m_uncut,mT_uncut,eqCrossLst));
         //print("the loops that will be resolved: \n"+&stringDelimitList(List.map(loops,HpcOmTaskGraph.intLstString),"\n")+&"\n");
-  
+
         // resolve the loops
         (eqLst,_) = resolveLoops_resolveAndReplace(loops,eqCrossLst,varCrossLst,mIn,mTIn,eqMapping,varMapping,daeEqs,daeVars,{});
         eqLst = resolveLoops_resolvePartitions(rest,mIn,mTIn,m_uncut,mT_uncut,eqMapping,varMapping,eqLst,daeVars,nonLoopEqs);
@@ -7186,6 +7186,7 @@ algorithm
         daeEqs;
   end matchcontinue;
 end resolveLoops_resolvePartitions;
+
 
 protected function arrayEntryLengthIs "gets the indexed entry of the array and compares the length with the given value,
 author:Waurich TUD 2014-01"
@@ -7483,9 +7484,13 @@ algorithm
   eqVars := List.map1(loopIn,Util.arrayGetIndexFirst,m);
   allVars := List.flatten(eqVars);
   loopVars := doubleEntriesInLst(allVars,{},{});
+  
   // check if its worth to resolve the loop. Therefore compare the amount of vars in and outside the loop
   (_,nonLoopVars,_) := List.intersection1OnTrue(allVars,loopVars,intEq);
-  nonLoopVars := List.filter1OnTrue(nonLoopVars, isOutsideLoop, (mT,eqCrossLst)); // do not consider vars between 2 crossNodes
+  
+  (eqCrossLst,_,_) := List.intersection1OnTrue(loopVars,eqCrossLst,intEq);
+  //nonLoopVars := List.filter1OnTrue(nonLoopVars, isOutsideLoop, (mT,eqCrossLst)); // do not consider vars between 2 crossNodes
+  
   numInLoop := listLength(loopVars);
   numOutLoop := listLength(nonLoopVars);
   resolve := intGe(numInLoop,numOutLoop);
@@ -7498,13 +7503,15 @@ author:Waurich TUD 2014-02"
   input tuple<BackendDAE.IncidenceMatrix,list<Integer>> tplIn;
   output Boolean isNonLooopNode;
 protected
+  Boolean isDeadEndNode;
   BackendDAE.IncidenceMatrix m;
   list<Integer> adjNodes, crossNodes;
 algorithm
   (m,crossNodes) := tplIn;
   adjNodes := arrayGet(m,node);
+  isDeadEndNode := intEq(listLength(adjNodes),1);
   (_,adjNodes,_) := List.intersection1OnTrue(adjNodes,crossNodes,intEq);
-  isNonLooopNode := List.isNotEmpty(adjNodes);
+  isNonLooopNode := isDeadEndNode or List.isNotEmpty(adjNodes);
 end isOutsideLoop;
 
 
@@ -7750,7 +7757,6 @@ algorithm
       list<BackendDAE.Equation> eqLst;
   case({},_,_,_,_,_,_,_,_,_)  
     equation
-        //print("done!\n");
       then
         (eqLstIn,replEqsIn);
   case(loop1::rest,crossEq::crossEqs,{},_,_,_,_,_,_,_)
@@ -7771,8 +7777,7 @@ algorithm
       //pos = Debug.bcallret1(List.isNotEmpty(eqs),List.first,eqs,pos); // CHECK THIS
       pos = Debug.bcallret1(List.isNotEmpty(replEqs),List.first,replEqs,pos); 
       pos = Debug.bcallret1(List.isNotEmpty(eqs),List.first,eqs,pos); // CHECK THIS
-      
-      
+
       eqs = List.deleteMember(loop1,pos);
         //print("contract eqs: "+&stringDelimitList(List.map(eqs,intString),",")+&" to eq "+&intString(pos)+&"\n");
       
@@ -7781,8 +7786,6 @@ algorithm
       vars = List.flatten(eqVars);
       loopVars = doubleEntriesInLst(vars,{},{});  // the vars in the loop
       (_,adjVars,_) = List.intersection1OnTrue(vars,loopVars,intEq); // the vars adjacent to the loop
-        //print("redirected vars: "+&stringDelimitList(List.map(adjVars,intString),",")+&"\n");
-        //print("disjoint vars: "+&stringDelimitList(List.map(loopVars,intString),",")+&"\n");
 
       // update incidenceMatrix
       List.map2_0(loopVars,Util.arrayUpdateIndexFirst,{},mTIn);  //delete the vars in the loop
@@ -7793,7 +7796,6 @@ algorithm
       _ = arrayUpdate(mIn,pos,adjVars);  // redirect the replaced equation to the vars outside of the loops
       
       // update remaining paths
-      //rest = List.map2(rest,replaceContractedNodes,pos,crossEqs2);
       rest = List.map2(rest,replaceContractedNodes,pos,eqs);
       rest = List.unique(rest);
         //print("the remaining paths: "+&stringDelimitList(List.map(rest,HpcOmTaskGraph.intLstString),"\n")+&"\n\n");
