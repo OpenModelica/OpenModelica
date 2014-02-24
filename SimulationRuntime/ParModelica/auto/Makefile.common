@@ -1,0 +1,33 @@
+TOP_BUILDDIR = ../../../build/
+
+OPENMODELICA_INC=$(TOP_BUILDDIR)/include/omc/c/
+PARMODELICAAUTO_INC=$(OPENMODELICA_INC)/ParModelica/auto/
+OPENMODELICA_LIB=$(TOP_BUILDDIR)/lib/omc/
+OPENMODELICA_BIN=$(TOP_BUILDDIR)/bin/
+
+# cp -u is a GNU extension. Do not rely on it.
+COPY=cp -rp
+AR_=ar -rcs
+
+SRCS = \
+om_pm_equation.cpp \
+pm_utility.cpp \
+om_pm_interface.cpp \
+om_pm_model.cpp \
+pm_win_timer.cpp
+# ParModelicaTaskGrapExt_rml.cpp
+# ParModelicaTaskGrapExt_omc.cpp \
+
+OBJS = $(SRCS:.cpp=.o)
+
+.PHONY : libom_pm_autort clean
+
+libom_pm_autort.a: $(OBJS)
+	@rm -f $@
+	$(AR_) $@ $(OBJS)
+    
+test: test_task_graph.cpp transfer
+	$(CXX) $(CPPFLAGS) -I. test_task_graph.cpp -o gen_graph$(EXEEXT) libom_pm_autort.a
+
+clean :
+	rm -f *.o *.a
