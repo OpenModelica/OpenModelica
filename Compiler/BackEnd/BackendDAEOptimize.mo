@@ -7158,8 +7158,9 @@ algorithm
       equation
         (_,partition,_) = List.intersection1OnTrue(partition,nonLoopEqs,intEq);
         true = List.isEmpty(partition);
+        eqLst = resolveLoops_resolvePartitions(rest,mIn,mTIn,m_uncut,mT_uncut,eqMapping,varMapping,daeEqs,daeVars,nonLoopEqs);
     then
-      daeEqs;
+      eqLst;
     case(partition::rest,_,_,_,_,_,_,_,_,_)
       equation   
         // search the partitions for loops 
