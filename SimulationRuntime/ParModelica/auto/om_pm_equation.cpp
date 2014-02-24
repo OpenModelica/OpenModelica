@@ -109,7 +109,7 @@ std::istream& operator>>(std::istream& is, Equation& eq) {
     while(var != ":") {
         eq.lhs.insert(var);
         iss >> var;
-    }	
+    }  
     while(iss >> var) {
         eq.rhs.insert(var);
     }
