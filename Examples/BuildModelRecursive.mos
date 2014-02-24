@@ -256,7 +256,7 @@ str:=if simRes then testcase(timeDiff,referenceOK,if referenceOK then \"\" else 
 writeFile(statFile + \".verify\", str);getErrorString();
 ") for s in a);
 getErrorString();
-results := system_parallel({"ulimit -t "+ulimitOmc+" ; " + omc +n=1 + " " + s + ".mos" for s in a});
+results := system_parallel({"ulimit -t "+ulimitOmc+" ; " + omc + " +n=1 " + s + ".mos" for s in a});
 getErrorString();
 
 system("rm -f " + log);
