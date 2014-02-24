@@ -275,7 +275,8 @@ str:="<h1>Recursive BuildModel Test</h1>
 <p>Simulation time limit: "+ulimitExe+"s</p>
 <p>Default tolerance: "+String(default_tolerance)+"</p>"
 + customCommandsStr +
-"<p>Links are provided if getErrorString() or the simulation generates output. <font style=\"background-color:#00FF00\">Green</font> means success. <font style=\"background-color:#FF0000\">Red</font> is bad and in general signifies a failure.</p>
+"<p>Links are provided if getErrorString() or the simulation generates output. The links are coded with <font style=\"#FF0000\">red</font> if there were errors, <font style=\"#FFCC66\">yellow</font> if there were warnings, and normal links if there are only notifications.</p>
+<p><font style=\"background-color:#00FF00\">Green</font> cells means success. <font style=\"background-color:#FF0000\">Red</font> is bad and in general signifies a failure.</p>
 ";
 writeFile(log,"<html>
 <head>
