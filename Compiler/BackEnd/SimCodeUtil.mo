@@ -5692,7 +5692,8 @@ protected
   String omhome, ccompiler, cxxcompiler, linker, exeext, dllext, cflags, ldflags, rtlibs, platform, fopenmp,compileDir;
 algorithm
   ccompiler   := Util.if_(stringEq(Config.simCodeTarget(),"JavaScript"),"emcc",
-                 System.getCCompiler());
+                 Util.if_(Flags.isSet(Flags.OPENMP) or Flags.isSet(Flags.HPCOM),System.getOMPCCompiler(),
+                 System.getCCompiler()));
   cxxcompiler := Util.if_(stringEq(Config.simCodeTarget(),"JavaScript"),"emcc",System.getCXXCompiler());
   linker := Util.if_(stringEq(Config.simCodeTarget(),"JavaScript"),"emcc",System.getLinker());
   exeext := Util.if_(stringEq(Config.simCodeTarget(),"JavaScript"),".js",System.getExeExt());
