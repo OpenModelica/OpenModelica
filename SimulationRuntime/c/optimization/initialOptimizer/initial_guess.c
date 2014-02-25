@@ -155,7 +155,7 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
    for(i=0, k=1, v=iData->v + iData->nv; i<iData->nsi; ++i){
      for(jj=0; jj<iData->deg; ++jj, ++k){
      solverInfo->currentStepSize = iData->time[k] - iData->time[k-1];
-     iData->data->localData[1]->timeValue = iData->time[k];
+     iData->data->localData[1]->timeValue = iData->time[k-1];
      if(data->simulationInfo.external_input.active)
        externalInputUpdate(data);
      dasrt_step(data, solverInfo);
@@ -203,14 +203,19 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
 static int pre_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
 {
    int k = 1,i,j;
+   double t;
    DATA * data = iData->data;
    
-   if(iData->time[k] > iData->startTimeOpt)
-    iData->time[k] = iData->startTimeOpt;
+   if(iData->time[0] > iData->startTimeOpt)
+    iData->time[0] = iData->startTimeOpt;
 
    while(iData->data->localData[0]->timeValue < iData->startTimeOpt){
-      solverInfo->currentStepSize = iData->time[k] - iData->time[k-1];
-     iData->data->localData[1]->timeValue = iData->time[k];
+     t = iData->time[k];
+     if(t > iData->startTimeOpt)
+       t = iData->startTimeOpt;
+     solverInfo->currentStepSize = t - iData->time[k-1];
+     iData->data->localData[1]->timeValue = iData->time[k-1];
+     iData->data->localData[0]->timeValue = t;
      externalInputUpdate(data);
      dasrt_step(data, solverInfo);
      data->simulationInfo.terminal = 1;
@@ -221,7 +226,7 @@ static int pre_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
     }
    if(iData->data->localData[0]->timeValue >  iData->startTimeOpt){
     solverInfo->currentStepSize = iData->startTimeOpt - iData->time[k-1];
-    iData->data->localData[1]->timeValue = iData->time[k];
+    iData->data->localData[1]->timeValue = iData->time[k-1];
     externalInputUpdate(data);
     dasrt_step(data, solverInfo);
     data->simulationInfo.terminal = 1;
