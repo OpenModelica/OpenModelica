@@ -154,12 +154,14 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
 
    for(i=0, k=1, v=iData->v + iData->nv; i<iData->nsi; ++i){
      for(jj=0; jj<iData->deg; ++jj, ++k){
-     solverInfo->currentStepSize = iData->time[k] - iData->time[k-1];
-     iData->data->localData[1]->timeValue = iData->time[k-1];
-     if(data->simulationInfo.external_input.active)
-       externalInputUpdate(data);
-     dasrt_step(data, solverInfo);
-
+     while(iData->data->localData[0]->timeValue <= iData->time[k]){
+      solverInfo->currentStepSize = iData->time[k] - iData->time[k-1];
+      if(data->simulationInfo.external_input.active)
+        externalInputUpdate(data);
+      err = dasrt_step(data, solverInfo);
+      if(err<0)
+	iData->time[k] *= 0.9;
+     }
      if(printGuess)
        printf("\n #####done time[%i] = %f", k, iData->time[k]);
 
@@ -210,14 +212,16 @@ static int pre_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
     iData->time[0] = iData->startTimeOpt;
 
    while(iData->data->localData[0]->timeValue < iData->startTimeOpt){
-     t = iData->time[k];
-     if(t > iData->startTimeOpt)
-       t = iData->startTimeOpt;
-     solverInfo->currentStepSize = t - iData->time[k-1];
-     iData->data->localData[1]->timeValue = iData->time[k-1];
-     iData->data->localData[0]->timeValue = t;
-     externalInputUpdate(data);
-     dasrt_step(data, solverInfo);
+     while(iData->data->localData[0]->timeValue <= iData->time[k]){
+      t = iData->time[k];
+      if(t > iData->startTimeOpt)
+        t = iData->startTimeOpt;
+      solverInfo->currentStepSize = t - iData->time[k-1];
+      iData->data->localData[1]->timeValue = iData->time[k-1];
+      iData->data->localData[0]->timeValue = t;
+      externalInputUpdate(data);
+      dasrt_step(data, solverInfo);
+     }
      data->simulationInfo.terminal = 1;
      sim_result.emit(&sim_result,data);
      data->simulationInfo.terminal = 0;
