@@ -108,7 +108,6 @@ protected import NFEnv;
 protected import NFInst;
 protected import NFSCodeEnv;
 protected import NFSCodeFlatten;
-protected import NFSCodeInstShortcut;
 protected import SCodeSimplify;
 protected import SimCodeMain;
 protected import System;
@@ -132,8 +131,6 @@ protected import OpenTURNS;
 protected import FMI;
 protected import FMIExt;
 protected import ErrorExt;
-protected import FGraphEnv;
-protected import FGraph;
 protected import UnitAbsynBuilder;
 protected import UnitParserExt;
 protected import RewriteRules;
@@ -3382,28 +3379,9 @@ algorithm
       NFSCodeEnv.Env senv;
       NFEnv.Env nfenv;
       DAE.FunctionTree funcs;
-      FGraphEnv.Env genv;
-      FGraph.Graph g;
-      FGraph.NodeId bm;
-
-    case (cache, _, _, GlobalScript.SYMBOLTABLE(p, aDep, fp, ic, iv, cf, lf), _, _)
-      equation
-        true = Flags.isSet(Flags.SCODE_INST_SHORTCUT);
-        scodeP = SCodeUtil.translateAbsyn2SCode(p);
-        // remove extends Modelica.Icons.*
-        scodeP = SCodeSimplify.simplifyProgram(scodeP);
-        (scodeP, senv) = NFSCodeFlatten.flattenClassInProgram(className, scodeP);
-        scodePNew = NFSCodeInstShortcut.translate(className, senv, scodeP);
-        // don't do the second dependency as it doesn't work in some cases!
-        // (scodePNew, senv) = NFSCodeFlatten.flattenClassInProgram(className, scodePNew);
-        (cache,env,_,dae) = Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,scodePNew,className);
-        ic_1 = Interactive.addInstantiatedClass(ic, GlobalScript.INSTCLASS(className,dae,env));
-      then
-        (cache,env,dae,GlobalScript.SYMBOLTABLE(p,aDep,fp,ic_1,iv,cf,lf));
 
     case (_, _, _, GlobalScript.SYMBOLTABLE(p, aDep, fp, ic, iv, cf, lf), _, _)
       equation
-        false = Flags.isSet(Flags.SCODE_INST_SHORTCUT);
         true = Flags.isSet(Flags.SCODE_INST);
         scodeP = SCodeUtil.translateAbsyn2SCode(p);
         // remove extends Modelica.Icons.*
@@ -3426,7 +3404,6 @@ algorithm
 
     case (cache,env,_,GlobalScript.SYMBOLTABLE(p,aDep,fp,ic,iv,cf,lf),_,_)
       equation
-        false = Flags.isSet(Flags.SCODE_INST_SHORTCUT);
         false = Flags.isSet(Flags.SCODE_INST);
         str = Absyn.pathString(className);
         (absynClass as Absyn.CLASS(restriction = restriction)) = Interactive.getPathedClassInProgram(className, p);
@@ -3461,17 +3438,7 @@ algorithm
         // adrpo: do not add it to the instantiated classes, it just consumes memory for nothing.
         ic_1 = ic;
         // ic_1 = Interactive.addInstantiatedClass(ic, GlobalScript.INSTCLASS(className,dae,env));
-        
-        /*(cache, genv) = Builtin.initialGraphEnv(cache);
-        (genv as FGraphEnv.ENV(graph = g, builtinMark = bm))= FGraphEnv.extendEnvWithProgram(scodeP, FNode.topNodeId, genv);
-        // start after the builtin mark!
-        FGraphDump.dumpGraph(g, "model.graphml", bm);
-        
-        //(scodeP, env, cache) = FFlatten.flattenClassInProgram(className, scodeP, cache);
-        //(cache,env,_,dae) = Inst.instantiateClass(cache,env,InnerOuter.emptyInstHierarchy,scodeP,className);
-        //ic_1 = Interactive.addInstantiatedClass(ic, GlobalScript.INSTCLASS(className,dae,env));
-        ic_1 = ic;
-        dae = DAE.emptyDae;*/
+      
       then (cache,env,dae,GlobalScript.SYMBOLTABLE(p,aDep,fp,ic_1,iv,cf,lf));
 
     case (cache,env,_,st as GlobalScript.SYMBOLTABLE(ast=p),_,_)

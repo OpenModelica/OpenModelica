@@ -330,17 +330,17 @@ constant DebugFlag LINEAR_TEARING = DEBUG_FLAG(81, "doLinearTearing", false,
 constant DebugFlag DUMP_INITIAL_SYSTEM = DEBUG_FLAG(82, "dumpinitialsystem", false,
   Util.gettext("Dumps the initial equation system."));
 constant DebugFlag SCODE_INST_SHORTCUT = DEBUG_FLAG(83, "scodeInstShortcut", false,
-  Util.gettext("Enables experimental SCode instantiation shortcut phase."));
+  Util.gettext("DEPRECATED! Enables experimental SCode instantiation shortcut phase."));
 constant DebugFlag SHOW_SCODE = DEBUG_FLAG(84, "showSCode", false,
-  Util.gettext("Shows the SCode result of +d=scodeInstShortcut."));
+  Util.gettext("DEPRECATED! Shows the SCode result of +d=scodeInstShortcut."));
 constant DebugFlag DUMP_CONST_REPL = DEBUG_FLAG(85, "dumpConstrepl", false,
   Util.gettext("Dump the found replacements for constants."));
 constant DebugFlag PEDANTIC = DEBUG_FLAG(86, "pedantic", false,
   Util.gettext("Switch into pedantic debug-mode, to get much more feedback."));
 constant DebugFlag SHOW_REDECLARE_ANALYSIS = DEBUG_FLAG(87, "showRedeclareAnalysis", false,
-  Util.gettext("Prints the result of the redeclare analysis (only works with +d=scodeInstShortcut)."));
+  Util.gettext("DEPRECATED! Prints the result of the redeclare analysis (only works with +d=scodeInstShortcut)."));
 constant DebugFlag SHOW_PROGRAM_CHANGES = DEBUG_FLAG(88, "showProgramChanges", false,
-  Util.gettext("Prints the replacements to be done on program to remove redeclares (only works with +d=scodeInstShortcut)."));
+  Util.gettext("DEPRECATED! Prints the replacements to be done on program to remove redeclares (only works with +d=scodeInstShortcut)."));
 constant DebugFlag SHOW_EQUATION_SOURCE = DEBUG_FLAG(89, "showEquationSource", false,
   Util.gettext("Display the element source information in the dumped DAE for easier debugging."));
 constant DebugFlag NLS_ANALYTIC_JACOBIAN = DEBUG_FLAG(90, "NLSanalyticJacobian", false,

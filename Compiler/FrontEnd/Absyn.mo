@@ -2643,26 +2643,6 @@ algorithm
         true = optArrayDimEqual(oad1,oad2);
       then true;
 
-    // if that didn't work try for different last ident due to +d=scodeInstShortcut
-    // first element is:  .Modelica.Fluid.Interfaces.FluidPort_a__OMC__70 port_a;
-    // second element is: .Modelica.Fluid.Interfaces.FluidPort_a__OMC__88 port_a;
-    case(TPATH(p1,oad1), TPATH(p2,oad2))
-      equation
-        true = Flags.isSet(Flags.SCODE_INST_SHORTCUT);
-        i1 = pathLastIdent(p1);
-        i2 = pathLastIdent(p2);
-        pos1 = System.stringFind(i1, "__OMC__");
-        true = intNe(pos1, -1);
-        pos2 = System.stringFind(i2, "__OMC__");
-        true = intNe(pos2, -1);
-        true = intEq(pos1, pos2);
-        0 = System.strncmp(i1, i2, pos1);
-        p1 = stripLast(p1);
-        p2 = stripLast(p2);
-        true = pathEqual(p1,p2);
-        true = optArrayDimEqual(oad1,oad2);
-      then true;
-
     case(TCOMPLEX(p1,lst1,oad1),TCOMPLEX(p2,lst2,oad2))
       equation
         true = pathEqual(p1,p2);

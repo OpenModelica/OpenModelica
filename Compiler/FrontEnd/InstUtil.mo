@@ -120,14 +120,6 @@ public function scodeFlatten
 algorithm
   outProgram := matchcontinue(inProgram, inPath)
 
-    // don't do dependency analysis on the program with
-    // +d=scodeInstShortcut as it doesn't work yet in ALL cases
-    case (_, _)
-      equation
-        true = Flags.isSet(Flags.SCODE_INST_SHORTCUT);
-      then
-        inProgram;
-
     case (_, Absyn.IDENT(""))
       equation
         outProgram = scodeFlattenProgram(inProgram);

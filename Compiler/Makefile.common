@@ -58,13 +58,6 @@ Expression.mo \
 ExpressionDump.mo \
 ExpressionSimplify.mo \
 ExpressionSimplifyTypes.mo \
-FGraph.mo \
-FGraphBuild.mo \
-FGraphEnv.mo \
-FGraphDump.mo \
-FNode.mo \
-FRef.mo \
-FResolve.mo \
 Graphviz.mo \
 Inline.mo \
 InnerOuter.mo \
@@ -103,8 +96,6 @@ NFInstUtil.mo \
 NFLookup.mo \
 NFMod.mo \
 NFRedeclare.mo \
-NFSCodeApplyRedeclare.mo \
-NFSCodeAnalyseRedeclare.mo \
 NFSCodeCheck.mo \
 NFSCodeDependency.mo \
 NFSCodeEnv.mo \
@@ -113,7 +104,6 @@ NFSCodeHashTable.mo \
 NFSCodeLookup.mo \
 NFSCodeFlattenImports.mo \
 NFSCodeFlattenRedeclare.mo \
-NFSCodeInstShortcut.mo \
 NFSCodeStatic.mo \
 NFSCodeFlatten.mo \
 NFSCodeMod.mo \

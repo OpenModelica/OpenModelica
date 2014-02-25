@@ -1781,14 +1781,11 @@ algorithm
         n = Absyn.elementSpecName(spec);
         {elem} = translateElementspec(cc, fp, Absyn.NOT_INNER_OUTER(),
           SOME(rk), SCode.PUBLIC(), spec, info);
-        (elem, opt_mod) = splitModInElement(elem);
         sfp = SCode.boolFinal(fp);
         sep = translateEach(ep);
         sub = SCode.NAMEMOD(n, SCode.REDECL(sfp, sep, elem));
         // first put the redeclare
         accum = sub :: accum;
-        // then the split modifiers
-        accum = List.consOption(opt_mod, accum);
       then
         translateArgs_tail(rest_args, accum);
 
@@ -1796,154 +1793,6 @@ algorithm
 
   end match;
 end translateArgs_tail;
-
-protected function splitModInElement
-  input SCode.Element inElement;
-  output SCode.Element outElement;
-  output Option<SCode.SubMod> outMod;
-algorithm
-  (outElement, outMod) := matchcontinue(inElement)
-    local
-      SCode.Ident name;
-      SCode.Prefixes prefs;
-      SCode.Attributes attr;
-      SCode.Encapsulated ep;
-      SCode.Partial pp;
-      SCode.Restriction res;
-      Absyn.Info info;
-      Absyn.TypeSpec ty;
-      SCode.Comment cmt;
-      Option<Absyn.Exp> cond;
-      SCode.Mod mod, redecl;
-      Option<SCode.SubMod> opt_mod;
-
-    case _
-      equation
-        false = Flags.isSet(Flags.SCODE_INST_SHORTCUT);
-      then
-        (inElement, NONE());
-
-    case SCode.COMPONENT(name, prefs, attr, ty, mod, cmt, cond, info)
-      equation
-        (redecl, opt_mod) = splitRedeclareMod(mod, name);
-      then
-        (SCode.COMPONENT(name, prefs, attr, ty, redecl, cmt, cond, info), opt_mod);
-
-    /*************************************************************************/
-    // TODO: Splitting class modifications doesn't work yet, since the new
-    //       instantiation doesn't handle class modifications yet. Enable this
-    //       when it does.
-    /*************************************************************************/
-    case SCode.CLASS(name, prefs, ep, pp, res, SCode.DERIVED(ty, mod, attr), cmt, info)
-      equation
-        true = Flags.isSet(Flags.SCODE_INST_SHORTCUT);
-        // do not split for functions and records!
-        true = boolNot(
-                 boolOr(
-                   SCode.isFunctionOrExtFunctionRestriction(res),
-                   SCode.isRecord(inElement)));
-        (redecl, opt_mod) = splitRedeclareMod(mod, name);
-      then
-        (SCode.CLASS(name, prefs, ep, pp, res,
-          SCode.DERIVED(ty, redecl, attr), cmt, info), opt_mod);
-
-    else (inElement, NONE());
-  end matchcontinue;
-end splitModInElement;
-
-protected function splitRedeclareMod
-  input SCode.Mod inMod;
-  input SCode.Ident inName;
-  output SCode.Mod outRedeclares;
-  output Option<SCode.SubMod> outMod;
-algorithm
-  (outRedeclares, outMod) := matchcontinue(inMod, inName)
-    local
-      SCode.Final fp;
-      SCode.Each ep;
-      list<SCode.SubMod> submods, redecl;
-      Option<tuple<Absyn.Exp, Boolean>> binding;
-      Option<SCode.SubMod> opt_mod;
-      Absyn.Info info;
-
-    case (SCode.MOD(fp, ep, submods, binding, info), _)
-      equation
-        (redecl, submods) = List.split1OnTrue(submods, isRedeclareOrConstant, inName);
-        opt_mod = makeSubMod(inName, submods, binding, fp, ep, info);
-      then
-        (SCode.MOD(fp, ep, redecl, binding, info), opt_mod);
-
-    else (inMod, NONE());
-
-  end matchcontinue;
-end splitRedeclareMod;
-
-public function isRedeclareOrConstant
-  input SCode.SubMod inSubMod;
-  input SCode.Ident inName;
-  output Boolean isOk;
-algorithm
-  isOk := matchcontinue(inSubMod, inName)
-    local
-      Absyn.Exp e;
-      SCode.Ident i;
-
-    // keep the redeclare as it is
-    case (_, _)
-      equation
-        true = SCode.isRedeclareSubMod(inSubMod);
-      then
-        true;
-
-    // keep the constant bindings
-    case (SCode.NAMEMOD(A = SCode.MOD(subModLst = {}, binding = SOME((e, _)))), _)
-      equation
-        // no crefs means constant binding!
-        {} = Absyn.getCrefFromExp(e, true, true);
-      then
-        true;
-
-    /*/ do not keep the non constant bindings
-    case (SCode.NAMEMOD(ident=i, A = SCode.MOD(subModLst = {}, binding = SOME((e, _)))), _)
-      equation
-        // no crefs means constant binding!
-        _::_ = Absyn.getCrefFromExp(e, true, true);
-        print("Ignoring class modifier: " +& inName +& "(" +& i +& " = " +& Dump.printExpStr(e) +& ")\n");
-      then
-        false;*/
-
-
-    // move the others to the class modification
-    else false;
-
-  end matchcontinue;
-end isRedeclareOrConstant;
-
-
-protected function makeSubMod
-  input SCode.Ident inName;
-  input list<SCode.SubMod> inSubMods;
-  input Option<tuple<Absyn.Exp, Boolean>> inBinding;
-  input SCode.Final inFinal;
-  input SCode.Each inEach;
-  input Absyn.Info inInfo;
-  output Option<SCode.SubMod> outMod;
-algorithm
-  outMod := matchcontinue(inName, inSubMods, inBinding, inFinal, inEach, inInfo)
-    local
-      SCode.SubMod mod;
-
-    case (_, _, _, _, _, _)
-      equation
-        true = List.isNotEmpty(inSubMods) or Util.isSome(inBinding);
-        mod = SCode.NAMEMOD(inName, SCode.MOD(inFinal, inEach, inSubMods,
-              inBinding, inInfo));
-      then
-        SOME(mod);
-
-    else NONE();
-  end matchcontinue;
-end makeSubMod;
 
 protected function translateSub
 "This function converts a Absyn.ComponentRef plus a list
