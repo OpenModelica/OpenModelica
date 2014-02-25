@@ -40,16 +40,29 @@ template translateModel(SimCode simCode) ::=
   // empty result of the top-level template .., only side effects
 end translateModel;
 
+template simulationHeaderFile(SimCode simCode)
+ "Generates code for header file for simulation target."
+::=
+match simCode
+case SIMCODE(__) then
+  <<
+   <%generateHeaderInlcudeString(simCode)%>
+   #include <omp.h>
+   <%generateClassDeclarationCode(simCode)%>
+
+   >>
+end simulationHeaderFile;
+
 template simulationCppFile(SimCode simCode)
  "Generates code for main cpp file for simulation target."
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
+  let hpcomConstructorExtension = getHpcomConstructorExtension(hpcOmSchedule)
+  let hpcomDestructorExtension = getHpcomDestructorExtension(hpcOmSchedule)
   <<
    #include "Modelica.h"
    #include "OMCpp<%fileNamePrefix%>.h"
-   #include <omp.h>
-
  
     
     <%lastIdentOfPath(modelInfo.name)%>::<%lastIdentOfPath(modelInfo.name)%>(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData) 
@@ -67,7 +80,6 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       <<
       _dimResidues=<%numResidues(allEquations)%>;
       >>
-
     %>
     //DAE's are not supported yet, Index reduction is enabled
     _dimAE = 0; // algebraic equations
@@ -79,12 +91,12 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     //Initialize array elements
     <%initializeArrayElements(simCode)%>
    
-   
+    <%hpcomConstructorExtension%>
 
     }
     <%lastIdentOfPath(modelInfo.name)%>::~<%lastIdentOfPath(modelInfo.name)%>()
     {
-   
+       <%hpcomDestructorExtension%>
     }
   
   
@@ -129,6 +141,108 @@ end Update;
 // END COPIED FUNCTIONS
 // --------------------
 
+// HEADER
+
+template generateClassDeclarationCode(SimCode simCode)
+ "Generates class declarations."
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(__)) then
+  let addHpcomFunctionHeaders = getAddHpcomFunctionHeaders(hpcOmSchedule)
+  let addHpcomVarHeaders = getAddHpcomVarHeaders(hpcOmSchedule)
+  << 
+  class <%lastIdentOfPath(modelInfo.name)%>: public IContinuous, public IEvent,  public ITime, public ISystemProperties <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then ', public IReduceDAE'%>, public SystemDefaultImplementation
+  {
+
+   <%generatefriendAlgloops(listAppend(allEquations,initialEquations),simCode)%>
+
+  public: 
+      <%lastIdentOfPath(modelInfo.name)%>(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactor,boost::shared_ptr<ISimData>); 
+
+      ~<%lastIdentOfPath(modelInfo.name)%>();
+
+       <%generateMethodDeclarationCode(simCode)%>
+     virtual  bool getCondition(unsigned int index);
+  protected:
+
+    //Methods:
+    
+    <%addHpcomFunctionHeaders%>
+    
+     bool isConsistent();
+    //Called to handle all  events occured at same time
+    bool handleSystemEvents( bool* events);
+     //Saves all variables before an event is handled, is needed for the pre, edge and change operator
+    void saveAll();
+    void getJacobian(SparseMatrix& matrix);
+    
+    
+     //Variables:
+     
+     <%addHpcomVarHeaders%>
+     
+     EventHandling _event_handling;
+
+     <%MemberVariable(modelInfo)%>
+     <%conditionvariable(zeroCrossings,simCode)%>
+     Functions _functions;
+  
+  
+     boost::shared_ptr<IAlgLoopSolverFactory>
+        _algLoopSolverFactory;    ///< Factory that provides an appropriate solver
+     <%generateAlgloopsolverVariables(listAppend(allEquations,initialEquations),simCode)%>
+   
+    boost::shared_ptr<ISimData> _simData;
+
+   };
+  >>
+end generateClassDeclarationCode;
+
+template getAddHpcomFunctionHeaders(Option<ScheduleSimCode> hpcOmScheduleOpt)
+::=
+  <<
+  
+  >>
+end getAddHpcomFunctionHeaders;
+
+template getAddHpcomVarHeaders(Option<ScheduleSimCode> hpcOmScheduleOpt)
+::=
+  match hpcOmScheduleOpt 
+    case SOME(hpcOmSchedule as THREADSCHEDULESC(__)) then
+        let type = getConfigString(HPCOM_CODE)
+        let locks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_createLock(idx, "lock", type); separator="\n"
+        <<
+        <%locks%>
+        >>
+end getAddHpcomVarHeaders;
+
+// CODE
+
+template getHpcomConstructorExtension(Option<ScheduleSimCode> hpcOmScheduleOpt)
+::=
+  match hpcOmScheduleOpt 
+    case SOME(hpcOmSchedule as THREADSCHEDULESC(__)) then
+        let type = getConfigString(HPCOM_CODE)
+        let initlocks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_initializeLock(idx, "lock", type); separator="\n"
+        let assignLocks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_assignLock(idx, "lock", type); separator="\n"
+        <<
+        <%initlocks%>
+        
+        <%assignLocks%>
+        >>
+end getHpcomConstructorExtension;
+
+template getHpcomDestructorExtension(Option<ScheduleSimCode> hpcOmScheduleOpt)
+::=
+  match hpcOmScheduleOpt 
+    case SOME(hpcOmSchedule as THREADSCHEDULESC(__)) then
+        let type = getConfigString(HPCOM_CODE)
+        let destroylocks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_destroyLock(idx, "lock", type); separator="\n"
+        <<
+        <%destroylocks%>
+        >>
+end getHpcomDestructorExtension;
+
 template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> whenClauses, SimCode simCode, Context context)
 ::=
   match simCode
@@ -167,33 +281,17 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, Absyn.Path name, list<S
    case SOME(hpcOmSchedule as THREADSCHEDULESC(__)) then
       let type = getConfigString(HPCOM_CODE)
       
-      let locks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_createLock(idx, "lock", type); separator="\n"
-      let initlocks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_initializeLock(idx, "lock", type); separator="\n"
-      let assignLocks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_assignLock(idx, "lock", type); separator="\n"
       match type 
         case ("openmp") then
           let taskEqs = functionXXX_system0_HPCOM_Thread(allEquationsPlusWhen,hpcOmSchedule.threadTasks, type, &varDecls, simCode); separator="\n"
           <<
           
           //using type: <%type%>
-          static int initialized = 0;
           bool <%lastIdentOfPath(name)%>::evaluate(const UPDATETYPE command)
           {
             bool state_var_reinitialized = false;
 
             omp_set_dynamic(0);
-            //create locks
-            <%locks%>
-            
-            if(!initialized)
-            {
-                <%initlocks%>
-                
-                //set locks
-                <%assignLocks%>
-                
-                initialized = 1;
-            }
             
             <%varDecls%>
             <%taskEqs%>
@@ -334,7 +432,7 @@ template function_HPCOM_createLock(String lockIdx, String prefix, String iType)
   match iType 
     case ("openmp") then
       <<
-      static omp_lock_t <%prefix%>_<%lockIdx%>;
+      omp_lock_t <%prefix%>_<%lockIdx%>;
       >>
     case ("pthreads") then
       <<
@@ -345,6 +443,23 @@ template function_HPCOM_createLock(String lockIdx, String prefix, String iType)
       static pthread_spinlock_t <%prefix%>_<%lockIdx%>;
       >>
 end function_HPCOM_createLock;
+
+template function_HPCOM_destroyLock(String lockIdx, String prefix, String iType)
+::=
+  match iType 
+    case ("openmp") then
+      <<
+      omp_destroy_lock(&<%prefix%>_<%lockIdx%>);
+      >>
+    case ("pthreads") then
+      <<
+      pthread_mutex_destroy(&<%prefix%>_<%lockIdx%>);
+      >>
+    case ("pthreads_spin") then
+      <<
+      pthread_spin_destroy(&<%prefix%>_<%lockIdx%>);
+      >>
+end function_HPCOM_destroyLock;
 
 template function_HPCOM_assignLock(String lockIdx, String prefix, String iType)
 ::=
