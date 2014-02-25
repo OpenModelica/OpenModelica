@@ -484,6 +484,78 @@ algorithm
   end match;
 end getMainGraph;
 
+public function getAttributeByNameAndTarget
+  input String iAttributeName;
+  input AttributeTarget iAttributeTarget;
+  input GraphInfo iGraphInfo;
+  output Option<tuple<Attribute,Integer>> oAttribute; //SOME(<%attIdx,attribute%>) if the attribute was found in graphInfo
+protected
+  list<Attribute> attributes;
+  Option<tuple<Attribute,Integer>> tmpRes;
+algorithm
+  oAttribute := match(iAttributeName,iAttributeTarget,iGraphInfo)
+    case(_,_,GRAPHINFO(attributes=attributes))
+      equation
+        tmpRes = getAttributeByNameAndTargetTail(attributes, iAttributeName, iAttributeTarget);
+      then tmpRes;
+    case(_,_,GRAPHINFO(attributes=attributes))
+      equation
+        tmpRes = getAttributeByNameAndTargetTail(attributes, iAttributeName, iAttributeTarget);
+      then tmpRes;
+   end match;
+end getAttributeByNameAndTarget;
+
+protected function getAttributeByNameAndTargetTail
+  input list<Attribute> iList;
+  input String iAttributeName;
+  input AttributeTarget iAttributeTarget;
+  output Option<tuple<Attribute,Integer>> oAttribute;
+protected
+  list<Attribute> rest;
+  Integer attIdx;
+  String name;
+  Attribute head;
+  AttributeTarget attTarget;
+   Option<tuple<Attribute,Integer>> tmpAttribute;
+algorithm
+  oAttribute := matchcontinue(iList,iAttributeName,iAttributeTarget)
+    case((head as ATTRIBUTE(attIdx=attIdx,name=name,attTarget=attTarget))::rest,_,_)
+      equation
+        true = stringEq(name, iAttributeName);
+        true = compareAttributeTargets(iAttributeTarget,attTarget);
+      then SOME((head,attIdx));
+    case(head::rest,_,_)
+      equation
+        tmpAttribute = getAttributeByNameAndTargetTail(rest,iAttributeName,iAttributeTarget);
+      then tmpAttribute;
+    else
+      then NONE();
+  end matchcontinue;
+end getAttributeByNameAndTargetTail;
+
+protected function compareAttributeTargets
+  input AttributeTarget iTarget1;
+  input AttributeTarget iTarget2;
+  output Boolean oEqual;
+protected
+  Integer tarInt1, tarInt2;
+algorithm
+  tarInt1 := compareAttributeTarget0(iTarget1);
+  tarInt2 := compareAttributeTarget0(iTarget2);
+  oEqual := intEq(tarInt1,tarInt2);
+end compareAttributeTargets;
+
+protected function compareAttributeTarget0
+  input AttributeTarget iTarget;
+  output Integer oCodec;
+algorithm
+  oCodec := match(iTarget)
+    case(TARGET_NODE()) then 0;
+    case(TARGET_EDGE()) then 1;
+    case(TARGET_GRAPH()) then 1;
+  end match;
+end compareAttributeTarget0;
+
 // -------------------------
 // Dump
 // -------------------------

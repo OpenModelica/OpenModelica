@@ -35,7 +35,8 @@
 
 #define DEFAULT_CC "gcc"
 #define DEFAULT_CXX "g++"
-#define DEFAULT_OMPCC "gcc -fopenmp"
+#define DEFAULT_OMP "-fopenmp"
+//#define DEFAULT_OMPCC "gcc -fopenmp"
 #define DEFAULT_MAKE "make"
 
 /* adrpo: add -loleaut32 as is used by ExternalMedia */

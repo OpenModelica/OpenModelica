@@ -5692,15 +5692,15 @@ protected
   String omhome, ccompiler, cxxcompiler, linker, exeext, dllext, cflags, ldflags, rtlibs, platform, fopenmp,compileDir;
 algorithm
   ccompiler   := Util.if_(stringEq(Config.simCodeTarget(),"JavaScript"),"emcc",
-                 Util.if_(Flags.isSet(Flags.OPENMP) or Flags.isSet(Flags.HPCOM),System.getOMPCCompiler(),
-                 System.getCCompiler()));
+                 System.getCCompiler());
   cxxcompiler := Util.if_(stringEq(Config.simCodeTarget(),"JavaScript"),"emcc",System.getCXXCompiler());
   linker := Util.if_(stringEq(Config.simCodeTarget(),"JavaScript"),"emcc",System.getLinker());
   exeext := Util.if_(stringEq(Config.simCodeTarget(),"JavaScript"),".js",System.getExeExt());
   dllext := System.getDllExt();
   omhome := Settings.getInstallationDirectoryPath();
   omhome := System.trim(omhome, "\""); // Remove any quotation marks from omhome.
-  cflags := System.getCFlags();
+  cflags := System.getCFlags() +& " " +& 
+            Util.if_(Flags.isSet(Flags.OPENMP) or Flags.isSet(Flags.HPCOM),System.getOMPFlag(), "");
   cflags := Util.if_(stringEq(Config.simCodeTarget(),"JavaScript"),"-Os -Wno-warn-absolute-paths",cflags);
   ldflags := System.getLDFlags();
   rtlibs := Util.if_(isFunction, System.getRTLibs(), System.getRTLibsSim());
@@ -10324,7 +10324,7 @@ algorithm
   end matchcontinue;
 end solve;
 
-protected function crefIsDerivative
+public function crefIsDerivative
   "Returns true if a component reference is a derivative, otherwise false."
   input DAE.ComponentRef cr;
   output Boolean isDer;

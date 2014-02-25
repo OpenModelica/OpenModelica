@@ -33,12 +33,66 @@ endif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 set (BOOST_INCLUDE ${Boost_INCLUDE_DIRS})
 set (BOOST_LIBS ${Boost_LIBRARY_DIRS})
 set (MODELICA_SYSTEM_LIB_EXT ${libModelicaSystemNameExt})
+
+
+
+#Fix to enable debugging for gcc
+#Problem: The ModelicaConfig.inc file contains something like "optimized;<lib>;debug;<lib>" if the debug or relwithdebinfo -flag is set. The gcc is not able to handle this after the linker-flag (-L).
+#Quick Fix: Pick the debug libraries out of the list if the debug or relwithdebinfo -flag is set.
+#Maybe someone with more cmake-experience can write a better solution for the issue.
+#mwalther
+
+list(GET Boost_SERIALIZATION_LIBRARY -1 Boost_SERIALIZATION_LIBRARY)
+list(GET Boost_FILESYSTEM_LIBRARY -1 Boost_FILESYSTEM_LIBRARY)
+list(GET Boost_SERIALIZATION_LIB -1 Boost_SERIALIZATION_LIB)
+list(GET Boost_SYSTEM_LIBRARY -1 Boost_SYSTEM_LIBRARY)
+list(GET Boost_PROGRAM_OPTIONS_LIBRARY -1 Boost_PROGRAM_OPTIONS_LIBRARY)
+
+IF(DEFINED ${CMAKE_BUILD_TYPE})
+	string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE)
+	set (Boost_LIBRARIES_NEW "")
+	set (SKIP_ENTRY FALSE)
+
+	MESSAGE(STATUS ${Boost_LIBRARIES}) 
+	IF(CMAKE_BUILD_TYPE MATCHES DEBUG)
+		foreach(f ${Boost_LIBRARIES})
+			IF(SKIP_ENTRY MATCHES FALSE)
+				IF(${f} MATCHES "optimized")
+					SET(${SKIP_ENTRY} TRUE)
+				ELSEIF(${f} MATCHES "debug")
+				
+				ELSE(${f} MATCHES "optimized")
+					LIST(APPEND Boost_LIBRARIES_NEW ${f})
+				ENDIF(${f} MATCHES "optimized")
+			ELSE(SKIP_ENTRY MATCHES FALSE)
+				SET(${SKIP_ENTRY} FALSE)
+			ENDIF(SKIP_ENTRY MATCHES FALSE)
+		endforeach(f ${Boost_LIBRARIES})
+	ELSEIF(CMAKE_BUILD_TYPE MATCHES RELWITHDEBINFO)
+		foreach(f ${Boost_LIBRARIES})
+			IF(SKIP_ENTRY MATCHES FALSE)
+				IF(${f} MATCHES "optimized")
+					SET(${SKIP_ENTRY} TRUE)
+				ELSEIF(${f} MATCHES "debug")
+				
+				ELSE(${f} MATCHES "optimized")
+					LIST(APPEND Boost_LIBRARIES_NEW ${f})
+				ENDIF(${f} MATCHES "optimized")
+			ELSE(SKIP_ENTRY MATCHES FALSE)
+				SET(${SKIP_ENTRY} FALSE)
+			ENDIF(SKIP_ENTRY MATCHES FALSE)
+		endforeach(f ${Boost_LIBRARIES})
+	ENDIF(CMAKE_BUILD_TYPE MATCHES DEBUG)
+
+	set (Boost_LIBRARIES ${Boost_LIBRARIES_NEW})
+ENDIF(DEFINED ${CMAKE_BUILD_TYPE})
+
+#end Fix
+
  configure_file (
   "ModelicaConfig.inc.in"
   "${PROJECT_BINARY_DIR}/ModelicaConfig.inc"
   )
-
-
 
 install (FILES
 
