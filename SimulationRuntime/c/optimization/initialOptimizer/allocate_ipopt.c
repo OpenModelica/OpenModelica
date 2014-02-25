@@ -325,8 +325,8 @@ int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
   /***********************/
   allocateIpoptData(iData);
   move_grid(iData);
+  //optimizer_time_setings(iData);
   optimizer_coeff_setings(iData);
-
   /***********************/
   local_diffObject_struct(iData);
   set_local_jac_struct(iData, &id, &nH);
@@ -720,9 +720,8 @@ static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData)
     iData->xmin[i] = data->modelData.realVarsData[i].attribute.min*iData->scalVar[i];
     iData->xmax[i] = data->modelData.realVarsData[i].attribute.max*iData->scalVar[i];
   }
-
-  iData->data->callback->pickUpBoundsForInputsInOptimization(data,iData->umin, iData->umax, &iData->vnom[iData->nx], tmp, tmpname, start);
-
+  iData->data->callback->pickUpBoundsForInputsInOptimization(data,iData->umin, iData->umax, &iData->vnom[iData->nx], tmp, tmpname, start, &iData->startTimeOpt);
+  iData->preSim = (iData->t0 < (iData->startTimeOpt));
   if(ACTIVE_STREAM(LOG_IPOPT)){
   char buffer[200];
     printf("Optimizer Variables");

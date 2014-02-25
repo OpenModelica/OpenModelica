@@ -274,7 +274,7 @@ int (*lagrange)(DATA* data, modelica_real* res);
  * and pick up the bounds of inputs. In case it's not present
  * a dummy function is added which return -1.
  */
-int (*pickUpBoundsForInputsInOptimization)(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start);
+int (*pickUpBoundsForInputsInOptimization)(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start, modelica_real * startTimeOpt);
 
 
 };

@@ -468,7 +468,7 @@ template simulationFile_opt_header(SimCode simCode, String guid)
     #endif
       int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real* res);
       int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real* res);
-      int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start);
+      int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start, modelica_real * startTimeOpt);
     #if defined(_MSC_VER)
     }
     #endif
@@ -572,7 +572,7 @@ template simulationFile(SimCode simCode, String guid)
     extern const char* <%symbolName(modelNamePrefixStr,"linear_model_frame")%>(void);
     extern int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real* res);
     extern int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real* res);
-    extern int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start); 
+    extern int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start, modelica_real * startTimeOpt); 
 
     struct OpenModelicaGeneratedFunctionCallbacks <%symbolName(modelNamePrefixStr,"callback")%> = {
        (int (*)(DATA *, void *)) <%symbolName(modelNamePrefixStr,"performSimulation")%>,
@@ -10707,7 +10707,7 @@ template optimizationComponents( list<DAE.ClassAttributes> classAttributes ,SimC
         <<
         int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real* res){return -1;}
         int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real* res){return -1;}
-        int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start){return -1;}
+        int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start, modelica_real * startTimeOpt){return -1;}
         >>  
       else
         (classAttributes |> classAttribute => optimizationComponents1(classAttribute,simCode, modelNamePrefixStr); separator="\n") 
@@ -10729,7 +10729,13 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
          *res =  $P$TMP_mayerTerm;
          return 0;
         >>
-
+      let startTimeOpt = match startTimeE
+	case SOME(exp) then
+         let startTimeOptExp = daeExp(exp, contextOther, &preExp, &varDecls)
+	 <<
+          *startTimeOpt = <%startTimeOptExp%>; 
+	 >>
+        
       let objectiveIntegrand = match objectiveIntegrandE case SOME(exp) then
         <<
          *res =  $P$TMP_lagrangeTerm;
@@ -10764,10 +10770,12 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
               return -1;
             }
 
-            /* constraints */
-            int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start)
+            /* opt vars  */
+            int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start, modelica_real* startTimeOpt)
             { 
-              <%inputBounds%>
+              <%inputBounds%> 
+              *startTimeOpt = data->simulationInfo.startTime - 1.0;
+              <%startTimeOpt%>
               return 0;
             }
         >>

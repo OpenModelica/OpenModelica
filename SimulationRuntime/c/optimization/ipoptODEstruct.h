@@ -91,6 +91,7 @@ typedef struct IPOPT_DATA_
   /*time*/
   double t0;
   double tf;
+  modelica_real startTimeOpt;
   /* double dt; */
   double t;
   double dt_min;
@@ -153,6 +154,7 @@ typedef struct IPOPT_DATA_
   long int njac;
   long int nhess;
   long int nsi;
+  long int nsi_old;
   long int np;
   int nlocalJac;
 
@@ -202,6 +204,7 @@ typedef struct IPOPT_DATA_
   double *vsave;
   double *eps;
 
+  modelica_boolean preSim;
   /*Debuger*/
   FILE **pFile;
   long index_debug_iter;

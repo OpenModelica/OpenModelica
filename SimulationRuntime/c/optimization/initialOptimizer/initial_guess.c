@@ -41,11 +41,14 @@
 #include "../ipoptODEstruct.h"
 #include "../simulation/solver/dassl.h"
 #include "../../simulation/options.h"
+#include "../../simulation/results/simulation_result.h"
 
 #ifdef WITH_IPOPT
 
 static int initial_guess_ipopt_cflag(IPOPT_DATA_ *iData,char* cflags);
 static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo);
+static int pre_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo);
+static int optimizer_time_setings_update(IPOPT_DATA_ *iData);
 
 /*!
  *  create initial guess
@@ -137,6 +140,11 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
        data->simulationInfo.inputVars[i] = u0[i];
    else
      externalInputUpdate(data);
+   if(iData->preSim){
+     printf("\npre simulation");
+     pre_ipopt_sim(iData, solverInfo);
+     printf("\npre simulation done!!!");
+   }
 
    printGuess = (short)(ACTIVE_STREAM(LOG_INIT) && !ACTIVE_STREAM(LOG_SOLVER));
    if(printGuess){
@@ -153,7 +161,7 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
      dasrt_step(data, solverInfo);
 
      if(printGuess)
-       printf("\n #####done time[%i] = %f",k,iData->time[k]);
+       printf("\n #####done time[%i] = %f", k, iData->time[k]);
 
      for(j=0; j< iData->nx; ++j)
        v[j] = sData->realVars[j] * iData->scalVar[j];
@@ -171,11 +179,11 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
     if(id >=iData->nv)
     id = 0;
 
-  if(id <iData->nx){
-    iData->v[i] =fmin(fmax(iData->vmin[id],iData->v[i]),iData->vmax[id]);
-  }else if(id< iData->nv){
-    iData->v[i] = fmin(fmax(iData->vmin[id],iData->v[i]),iData->vmax[id]);
-  }
+    if(id <iData->nx){
+     iData->v[i] =fmin(fmax(iData->vmin[id],iData->v[i]),iData->vmax[id]);
+    }else if(id< iData->nv){
+     iData->v[i] = fmin(fmax(iData->vmin[id],iData->v[i]),iData->vmax[id]);
+    }
   }
 
   if(printGuess)
@@ -191,5 +199,88 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
 
   return 0;
 }
+
+static int pre_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
+{
+   int k = 1,i,j;
+   DATA * data = iData->data;
+   
+   if(iData->time[k] > iData->startTimeOpt)
+    iData->time[k] = iData->startTimeOpt;
+
+   while(iData->data->localData[0]->timeValue < iData->startTimeOpt){
+      solverInfo->currentStepSize = iData->time[k] - iData->time[k-1];
+     iData->data->localData[1]->timeValue = iData->time[k];
+     externalInputUpdate(data);
+     dasrt_step(data, solverInfo);
+     data->simulationInfo.terminal = 1;
+     sim_result.emit(&sim_result,data);
+     data->simulationInfo.terminal = 0;
+     rotateRingBuffer(iData->data->simulationData, 1, (void**) iData->data->localData);
+     ++k; 
+    }
+   if(iData->data->localData[0]->timeValue >  iData->startTimeOpt){
+    solverInfo->currentStepSize = iData->startTimeOpt - iData->time[k-1];
+    iData->data->localData[1]->timeValue = iData->time[k];
+    externalInputUpdate(data);
+    dasrt_step(data, solverInfo);
+    data->simulationInfo.terminal = 1;
+    sim_result.emit(&sim_result,data);
+    data->simulationInfo.terminal = 0;
+    rotateRingBuffer(iData->data->simulationData, 1, (void**) iData->data->localData);
+  }
+  iData->t0 = iData->data->localData[0]->timeValue;
+  printf("time = %g | %g", iData->t0,iData->startTimeOpt );
+  /*ToDo*/
+  for(i=0; i< iData->nx; ++i)
+  {
+    iData->Vmin[i] = (*iData).Vmax[i] = iData->data->localData[1]->realVars[i]*iData->scalVar[i];
+    iData->v[i] = iData->Vmin[i];
+  }
+  for(j=0; i< iData->nv; ++i,++j){
+    iData->Vmin[i] = iData->Vmax[i] = data->simulationInfo.inputVars[j]*iData->scalVar[i];
+    iData->v[i] = iData->Vmin[i];
+  }
+
+  optimizer_time_setings_update(iData);
+  return 0;
+}
+
+static int optimizer_time_setings_update(IPOPT_DATA_ *iData)
+{
+  int i,k,id;
+  double t;
+
+  iData->time[0] = iData->t0;
+  t = iData->t0;
+  iData->dt_default = (iData->tf - iData->t0)/(iData->nsi);
+  for(i=0;i<iData->nsi; ++i){
+    iData->dt[i] = iData->dt_default;
+    t = iData->t0 + (i+1)*iData->dt_default;
+  }
+
+  iData->dt[iData->nsi-1] = iData->dt_default + (iData->tf - t );
+
+  if(iData->deg == 3){
+    for(i = 0,k=0,id=0; i<iData->nsi; ++i,id += iData->deg){
+      if(i){
+        if(iData->deg == 3){
+        iData->time[++k] = iData->time[id] + iData->c1*iData->dt[i];
+        iData->time[++k] = iData->time[id] + iData->c2*iData->dt[i];
+      }
+        iData->time[++k] = iData->time[0]+ (i+1)*iData->dt[i];
+    }else{
+      if(iData->deg == 3){
+        iData->time[++k] = iData->time[id] + iData->e1*iData->dt[i];
+        iData->time[++k] = iData->time[id] + iData->e2*iData->dt[i];
+      }
+      iData->time[++k] = iData->time[0]+ (i+1)*iData->dt[i];
+    }
+  }
+  }
+  iData->time[k] = iData->tf;
+  return 0;
+}
+
 
 #endif
