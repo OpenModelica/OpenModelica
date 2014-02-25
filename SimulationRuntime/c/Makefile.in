@@ -42,9 +42,9 @@ include Makefile.common
 Makefile: Makefile.in
 	cd $(top_builddir); ./config.status
 
-emcc: Makefile emcc/pre.js emcc/liblapack.so emcc/libblas.so emcc/libexpat.so emcc/libSimulationRuntimeC.so emcc/libf2c.so
+emcc: Makefile emcc/pre.js emcc/liblapack.so emcc/libblas.so emcc/libexpat.so emcc/libSimulationRuntimeC.so emcc/libf2c.so emcc/mdpad/mdpad.html
 	cp /usr/include/expat*.h .
-	cp emcc/pre.js emcc/*.so $(builddir_lib)/emcc/
+	cp -a emcc/pre.js emcc/*.so emcc/mdpad $(builddir_lib)/emcc/
 	@# emcc -Os --llvm-lto 2 -o $(builddir_lib)/emcc/libSimulationRuntimeC.js -s SIDE_MODULE=1 -s ASM_JS=1 -s TOTAL_MEMORY=536870912 -s OUTLINING_LIMIT=20000 libSimulationRuntimeC.bc simulation/libf2c/libf2c.bc emcc/liblapack.so emcc/libblas.so emcc/libexpat.so
 emcc/liblapack.so:
 	wget -O $@ https://github.com/tshort/openmodelica-javascript/blob/master/liblapack.so?raw=true || (rm -f $@ ; false)
@@ -58,5 +58,13 @@ emcc/libf2c.so:
 emcc/libSimulationRuntimeC.so:
 	emmake $(MAKE) OBJ_EXT=.bc CC=emcc CXX=emcc CFLAGS=" $(CPPFLAGS) -Os -DOMC_EMCC -DNO_INTERACTIVE_DEPENDENCY -I./simulation/libf2c/" libSimulationRuntimeC.bc
 	cp libSimulationRuntimeC.bc emcc/libSimulationRuntimeC.so
+mdpad.tar.gz:
+	wget -O mdpad.tar.gz https://github.com/sjoelund/mdpad/tarball/484fe6bfd592a0f549ce7269cab34fc793d0c1cb
+emcc/mdpad/mdpad.html: mdpad.tar.gz
+	tar xzf mdpad.tar.gz
+	rm -rf emcc/mdpad
+	mv sjoelund-mdpad-484fe6b emcc/mdpad
 emcc-clean: Makefile
 	$(MAKE) OBJ_EXT=.bc clean
+	rm -f emcc/*.so mdpad.tar.gz
+	rm -rf emcc/mdpad
