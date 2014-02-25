@@ -160,7 +160,7 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
         externalInputUpdate(data);
       err = dasrt_step(data, solverInfo);
       if(err<0)
-	iData->time[k] *= 0.9;
+  iData->time[k] *= 0.9;
      }
      if(printGuess)
        printf("\n #####done time[%i] = %f", k, iData->time[k]);
