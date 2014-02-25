@@ -2027,7 +2027,6 @@ algorithm
       array<DAE.FunctionTree> ef;
       StructuralParameters ht;
       Absyn.Path p;
-      Absyn.Program program;
       Option<Env> oenv;
 
     case (CACHE(oenv,ef,ht,p,_),_) then CACHE(oenv,ef,ht,p,program);
