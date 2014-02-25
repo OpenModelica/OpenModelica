@@ -10730,11 +10730,11 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
          return 0;
         >>
       let startTimeOpt = match startTimeE
-	case SOME(exp) then
+  case SOME(exp) then
          let startTimeOptExp = daeExp(exp, contextOther, &preExp, &varDecls)
-	 <<
+   <<
           *startTimeOpt = <%startTimeOptExp%>; 
-	 >>
+   >>
         
       let objectiveIntegrand = match objectiveIntegrandE case SOME(exp) then
         <<
