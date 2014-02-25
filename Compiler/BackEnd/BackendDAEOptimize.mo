@@ -7175,7 +7175,6 @@ algorithm
         // check if its worth to resolve the loops
         loops = List.filter1OnTrue(loops,evaluateLoop,(m_uncut,mT_uncut,eqCrossLst));
         //print("the loops that will be resolved: \n"+&stringDelimitList(List.map(loops,HpcOmTaskGraph.intLstString),"\n")+&"\n");
-
         // resolve the loops
         (eqLst,_) = resolveLoops_resolveAndReplace(loops,eqCrossLst,varCrossLst,mIn,mTIn,eqMapping,varMapping,daeEqs,daeVars,{});
         eqLst = resolveLoops_resolvePartitions(rest,mIn,mTIn,m_uncut,mT_uncut,eqMapping,varMapping,eqLst,daeVars,nonLoopEqs);
@@ -7485,10 +7484,11 @@ algorithm
   eqVars := List.map1(loopIn,Util.arrayGetIndexFirst,m);
   allVars := List.flatten(eqVars);
   loopVars := doubleEntriesInLst(allVars,{},{});
-  
+  //print("loop : "+&stringDelimitList(List.map(loopIn,intString),",")+&"\n");
+  //print("loopVars : "+&stringDelimitList(List.map(loopVars,intString),",")+&"\n");
   // check if its worth to resolve the loop. Therefore compare the amount of vars in and outside the loop
   (_,nonLoopVars,_) := List.intersection1OnTrue(allVars,loopVars,intEq);
-  
+  //print("nonLoopVars : "+&stringDelimitList(List.map(nonLoopVars,intString),",")+&"\n");
   (eqCrossLst,_,_) := List.intersection1OnTrue(loopVars,eqCrossLst,intEq);
   //nonLoopVars := List.filter1OnTrue(nonLoopVars, isOutsideLoop, (mT,eqCrossLst)); // do not consider vars between 2 crossNodes
   
@@ -7792,7 +7792,6 @@ algorithm
       List.map2_0(loopVars,Util.arrayUpdateIndexFirst,{},mTIn);  //delete the vars in the loop
       List.map2_0(adjVars,arrayGetDeleteInLst,loop1,mTIn);  // remove the loop eqs from the adjacent vars
       List.map2_0(adjVars,arrayGetAppendLst,{pos},mTIn);  // redirect the adjacent vars to the replaced eq
-      
       List.map2_0(loop1,Util.arrayUpdateIndexFirst,{},mIn);  //delete the eqs in the loop
       _ = arrayUpdate(mIn,pos,adjVars);  // redirect the replaced equation to the vars outside of the loops
       
@@ -7815,8 +7814,9 @@ algorithm
       // only varCrossNodes
       //print("only varCrossNodes\n");
       loop1 = List.unique(loop1);
+      //print("the loop: "+&stringDelimitList(List.map(loop1,intString),",")+&"\n");
       resolvedEq = resolveClosedLoop(loop1,mIn,mTIn,eqMapping,varMapping,eqLstIn,varLstIn);
-      
+      /*
       // update IncidenceMatrix
       eqVars = List.map1(loop1,Util.arrayGetIndexFirst,mIn);
       vars = List.flatten(eqVars);     
@@ -7824,13 +7824,72 @@ algorithm
       List.map2_0(vars,Util.arrayUpdateIndexFirst,{},mTIn);
       List.map2_0(crossVars,arrayGetDeleteInLst,loop1,mTIn);
       List.map2_0(loop1,Util.arrayUpdateIndexFirst,{},mIn);
-      
+
       // replace Equation
       pos = List.first(loop1);
+        print("replace equation "+&intString(pos)+&"\n");
+
+      eqs = List.deleteMember(loop1,pos);
+        print("contract eqs: "+&stringDelimitList(List.map(eqs,intString),",")+&" to eq "+&intString(pos)+&"\n");
+      
+      replEqs = pos::replEqsIn;
+      print("test1\n");
+      pos = listGet(eqMapping,pos);
+      print("test1\n");
+      eqLst = List.replaceAt(resolvedEq,pos-1,eqLstIn);
+      print("test1\n");
+     
+      
+      // update remaining paths
+      rest = List.map2(rest,replaceContractedNodes,pos,eqs);
+      rest = List.unique(rest);
+        print("the remaining paths: "+&stringDelimitList(List.map(rest,HpcOmTaskGraph.intLstString),"\n")+&"\n\n");
+      */
+            
+      // get the equation that will be replaced and the rest
+      (crossEqs,eqs,_) = List.intersection1OnTrue(loop1,eqCrossLstIn,intEq);  // replace a crossEq in the loop
+        
+      (replEqs,_,_) = List.intersection1OnTrue(replEqsIn,loop1,intEq);  // just consider the already replaced equations in this loop
+      // first try to replace a non cross node, otherwise an already replaced eq, or if none of them is available take a crossnode (THIS IS NOT YET CLEAR)
+      pos = Debug.bcallret1(List.isNotEmpty(crossEqs),List.first,crossEqs,-1); 
+      //pos = Debug.bcallret1(List.isNotEmpty(eqs),List.first,eqs,pos); // CHECK THIS
+      pos = Debug.bcallret1(List.isNotEmpty(replEqs),List.first,replEqs,pos); 
+      pos = Debug.bcallret1(List.isNotEmpty(eqs),List.first,eqs,pos); // CHECK THIS
+
+      eqs = List.deleteMember(loop1,pos);
+        //print("contract eqs: "+&stringDelimitList(List.map(eqs,intString),",")+&" to eq "+&intString(pos)+&"\n");
+      
+      // get the corresponding vars
+      eqVars = List.map1(loop1,Util.arrayGetIndexFirst,mIn);
+      vars = List.flatten(eqVars);
+      loopVars = doubleEntriesInLst(vars,{},{});  // the vars in the loop
+      (crossVars,loopVars,_) = List.intersection1OnTrue(loopVars,varCrossLstIn,intEq);  // some crossVars have to remain
+      //print("loopVars: "+&stringDelimitList(List.map(loopVars,intString),",")+&"\n");
+      
+      (_,adjVars,_) = List.intersection1OnTrue(vars,loopVars,intEq); // the vars adjacent to the loop
+      adjVars = listAppend(crossVars,adjVars);
+      adjVars = List.unique(adjVars);
+      //print("adjVars: "+&stringDelimitList(List.map(adjVars,intString),",")+&"\n");
+      
+      // update incidenceMatrix
+      List.map2_0(loopVars,Util.arrayUpdateIndexFirst,{},mTIn);  //delete the vars in the loop
+      List.map2_0(adjVars,arrayGetDeleteInLst,loop1,mTIn);  // remove the loop eqs from the adjacent vars
+      List.map2_0(adjVars,arrayGetAppendLst,{pos},mTIn);  // redirect the adjacent vars to the replaced eq
+      List.map2_0(loop1,Util.arrayUpdateIndexFirst,{},mIn);  //delete the eqs in the loop
+      _ = arrayUpdate(mIn,pos,adjVars);  // redirect the replaced equation to the vars outside of the loops
+      
+      // update remaining paths
+      rest = List.map2(rest,replaceContractedNodes,pos,eqs);
+      rest = List.unique(rest);
+        //print("the remaining paths: "+&stringDelimitList(List.map(rest,HpcOmTaskGraph.intLstString),"\n")+&"\n\n");
+        
+      // replace Equation
         //print("replace equation "+&intString(pos)+&"\n");
       replEqs = pos::replEqsIn;
       pos = listGet(eqMapping,pos);
       eqLst = List.replaceAt(resolvedEq,pos-1,eqLstIn);
+      
+      
       (eqLst,replEqs) = resolveLoops_resolveAndReplace(rest,eqCrossLstIn,varCrossLstIn,mIn,mTIn,eqMapping,varMapping,eqLst,varLstIn,replEqs);
     then
       (eqLst,replEqs);
@@ -8133,7 +8192,7 @@ algorithm
 end resolveClosedLoop2;
 
 
-protected function sortLoop "sorts the equations in a loop.
+protected function sortLoop "sorts the equations in a loop so that they are solved in a row.
 author:Waurich TUD 2014-01"
   input list<Integer> loopIn;
   input BackendDAE.IncidenceMatrix m;
