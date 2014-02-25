@@ -5700,7 +5700,7 @@ algorithm
   omhome := Settings.getInstallationDirectoryPath();
   omhome := System.trim(omhome, "\""); // Remove any quotation marks from omhome.
   cflags := System.getCFlags() +& " " +& 
-            Util.if_(Flags.isSet(Flags.OPENMP) or Flags.isSet(Flags.HPCOM),System.getOMPFlag(), "");
+            Util.if_(Flags.isSet(Flags.OPENMP) or Flags.isSet(Flags.HPCOM),"-fopenmp", "");
   cflags := Util.if_(stringEq(Config.simCodeTarget(),"JavaScript"),"-Os -Wno-warn-absolute-paths",cflags);
   ldflags := System.getLDFlags();
   rtlibs := Util.if_(isFunction, System.getRTLibs(), System.getRTLibsSim());

@@ -135,9 +135,9 @@ extern const char* System_getCXXCompiler()
   return GC_strdup(cxx);
 }
 
-extern const char* System_getOMPFlag()
+extern const char* System_getOMPCCompiler()
 {
-  return GC_strdup(omp);
+  return GC_strdup(omp_cc);
 }
 
 extern const char* System_getLinker()

@@ -384,11 +384,11 @@ RML_BEGIN_LABEL(System__getCXXCompiler)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__getOMPFlag)
+RML_BEGIN_LABEL(System__getOMPCCompiler)
 {
-  if (omp == NULL)
+  if (omp_cc == NULL)
     RML_TAILCALLK(rmlFC);
-  rmlA0 = (void*) mk_scon(omp);
+  rmlA0 = (void*) mk_scon(omp_cc);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
