@@ -3348,7 +3348,10 @@ public function runFrontEnd
   output DAE.DAElist dae;
   output GlobalScript.SymbolTable st;
 algorithm
-  (cache,env,dae,st) := runFrontEndWork(inCache,inEnv,className,inInteractiveSymbolTable,relaxedFrontEnd,Error.getNumErrorMessages());
+  // add program to the cache so it can be used to lookup modelica:// 
+  // URIs in external functions IncludeDirectory/LibraryDirectory
+  cache := Env.setProgramInCache(inCache, Interactive.getSymbolTableAST(inInteractiveSymbolTable));
+  (cache,env,dae,st) := runFrontEndWork(cache,inEnv,className,inInteractiveSymbolTable,relaxedFrontEnd,Error.getNumErrorMessages());
 end runFrontEnd;
 
 protected function runFrontEndWork
@@ -6884,7 +6887,8 @@ algorithm
 
         // we might actually have a function loaded here already!
         // we need to unload all functions to not get conflicts!
-        (cache,funcstr,fileName) = cevalGenerateFunction(cache, env, Absyn.PROGRAM({},Absyn.TOP(),Absyn.dummyTimeStamp), funcpath);
+        p = Env.getProgramFromCache(cache);
+        (cache,funcstr,fileName) = cevalGenerateFunction(cache, env, p, funcpath);
         // generate a uniquely named dll!
         Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: cevalCallFunction: about to execute " +& funcstr +& "\n");
         print_debug = Flags.isSet(Flags.DYN_LOAD);

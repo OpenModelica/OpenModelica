@@ -1133,6 +1133,7 @@ public constant TimeStamp dummyTimeStamp = TIMESTAMP(0.0,0.0);
 public constant ClassDef dummyParts = PARTS({},{},{},{},NONE());
 public constant Info dummyInfo = INFO("",false,0,0,0,0,dummyTimeStamp);
 public constant TimeStamp newTimeStamp = TIMESTAMP(0.0,1.0);
+public constant Program dummyProgram = PROGRAM({},TOP(),dummyTimeStamp);
 
 public function getNewTimeStamp
 "generate a new timestamp with edittime>buildtime."

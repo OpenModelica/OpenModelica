@@ -8447,7 +8447,8 @@ algorithm
       HashTable.HashTable ht;
       list<list<DAE.ComponentRef>> crs;
       Absyn.Path p;
-    case Env.CACHE(ie,f,(ht,crs),p) then Env.CACHE(ie,f,(ht,{}::crs),p);
+      Absyn.Program program;
+    case Env.CACHE(ie,f,(ht,crs),p,program) then Env.CACHE(ie,f,(ht,{}::crs),p,program);
     else cache;
   end match;
 end pushStructuralParameters;
@@ -8466,10 +8467,11 @@ algorithm
       list<DAE.ComponentRef> crs;
       list<list<DAE.ComponentRef>> crss;
       Absyn.Path p;
-    case (Env.CACHE(ie,f,(ht,crs::crss),p),_)
+      Absyn.Program program;
+    case (Env.CACHE(ie,f,(ht,crs::crss),p,program),_)
       equation
         ht = prefixAndAddCrefsToHt(cache,ht,pre,crs);
-      then Env.CACHE(ie,f,(ht,crss),p);
+      then Env.CACHE(ie,f,(ht,crss),p,program);
     case (Env.NO_CACHE(),_) then cache;
   end match;
 end popStructuralParameters;
