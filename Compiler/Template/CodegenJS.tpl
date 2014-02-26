@@ -30,7 +30,7 @@ mod.FS_createLazyFile("/", '<%fileNamePrefix%>_info.xml', '<%fileNamePrefix%>_in
 mod.callMain(process.argv.slice(2));
 
 var fname = '<%fileNamePrefix%>_res.<%s.outputFormat%>';
-var content = mod.OpenModelica_readFileBuffer(fname);
+var content = mod.OpenModelica_readFile(fname);
 fs.writeFileSync(fname,content);
 >>
 end nodeJSDriver;
