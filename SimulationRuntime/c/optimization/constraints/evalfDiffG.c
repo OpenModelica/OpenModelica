@@ -72,6 +72,35 @@ Bool evalfDiffG(Index n, double * x, Bool new_x, Index m, Index njac, Index *iRo
     assert(0);
     */
 
+#if 0
+    {
+	int i;
+    FILE *pFile;
+    char buffer[4096];
+    pFile = fopen("jac_struct.m", "wt");
+    if(pFile == NULL)
+      printf("\n\nError");
+    fprintf(pFile, "%s", "clear J\n");
+    fprintf(pFile, "%s", "%%%%%%%%%%%%%%%%%%%%%%\n");
+    fprintf(pFile, "%s", "nz = ");
+    fprintf(pFile, "%i", njac);
+    fprintf(pFile, "%s", "\nnumberVars = ");
+    fprintf(pFile, "%i", n);
+    fprintf(pFile, "%s", "\nnumberconstraints = ");
+    fprintf(pFile, "%i", m);
+    fprintf(pFile, "%s", "\nNumberOfIntervalls = ");
+    fprintf(pFile, "%i", iData->nsi);
+    fprintf(pFile, "%s", "\nH=[];\n");
+    fprintf(pFile, "%s", "%%%%%%%%%%%%%%%%%%%%%%\n");
+    for(i=0; i< njac; ++i){
+    	sprintf(buffer, "H(%i,%i) = 1;\n", iRow[i]+1, iCol[i]+1);
+    	fprintf(pFile,"%s", buffer);
+    }
+    fprintf(pFile, "%s", "%%%%%%%%%%%%%%%%%%%%%%\n");
+    fprintf(pFile, "%s", "spy(H)\n");
+    }
+#endif
+
   }else{
     int i,j,k,l,ii;
     long double tmp[3];

@@ -95,10 +95,33 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
         }
       }
     }
-/*
-    for(i=0;i<nele_hess;++i)
-      printf("\nH(%i,%i) = 1;", iRow[i]+1, iCol[i]+1);
-      */
+#if 0
+    {
+    FILE *pFile;
+    char buffer[4096];
+    pFile = fopen("hesse_struct.m", "wt");
+    if(pFile == NULL)
+      printf("\n\nError");
+    fprintf(pFile, "%s", "clear H\n");
+    fprintf(pFile, "%s", "%%%%%%%%%%%%%%%%%%%%%%\n");
+    fprintf(pFile, "%s", "nz = ");
+    fprintf(pFile, "%i", nele_hess);
+    fprintf(pFile, "%s", "\nnumberVars = ");
+    fprintf(pFile, "%i", n);
+    fprintf(pFile, "%s", "\nnumberconstraints = ");
+    fprintf(pFile, "%i", m);
+    fprintf(pFile, "%s", "\nNumberOfIntervalls = ");
+    fprintf(pFile, "%i", iData->nsi);
+    fprintf(pFile, "%s", "\nH=[];\n");
+    fprintf(pFile, "%s", "%%%%%%%%%%%%%%%%%%%%%%\n");
+    for(i=0; i< nele_hess; ++i){
+    	sprintf(buffer, "H(%i,%i) = 1;\n", iRow[i]+1, iCol[i]+1);
+    	fprintf(pFile,"%s", buffer);
+    }
+    fprintf(pFile, "%s", "%%%%%%%%%%%%%%%%%%%%%%\n");
+    fprintf(pFile, "%s", "spy(H)\n");
+    }
+#endif
 
   }else{
     double *x;

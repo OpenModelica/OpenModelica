@@ -333,7 +333,6 @@ int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
 
   iData->njac = iData->deg*(iData->nlocalJac-iData->nx+iData->nsi*iData->nlocalJac+iData->deg*iData->nsi*iData->nx)-iData->deg*id;
   iData->nhess = nH*(1+iData->deg*iData->nsi);
-
   /***********************/
   iData->x0 = iData->data->localData[1]->realVars;
   optimizer_bounds_setings(data, iData);
