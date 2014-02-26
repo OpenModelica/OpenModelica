@@ -74,7 +74,7 @@ Bool evalfDiffG(Index n, double * x, Bool new_x, Index m, Index njac, Index *iRo
 
 #if 0
     {
-	int i;
+  int i;
     FILE *pFile;
     char buffer[4096];
     pFile = fopen("jac_struct.m", "wt");
@@ -93,8 +93,8 @@ Bool evalfDiffG(Index n, double * x, Bool new_x, Index m, Index njac, Index *iRo
     fprintf(pFile, "%s", "\nH=[];\n");
     fprintf(pFile, "%s", "%%%%%%%%%%%%%%%%%%%%%%\n");
     for(i=0; i< njac; ++i){
-    	sprintf(buffer, "H(%i,%i) = 1;\n", iRow[i]+1, iCol[i]+1);
-    	fprintf(pFile,"%s", buffer);
+      sprintf(buffer, "H(%i,%i) = 1;\n", iRow[i]+1, iCol[i]+1);
+      fprintf(pFile,"%s", buffer);
     }
     fprintf(pFile, "%s", "%%%%%%%%%%%%%%%%%%%%%%\n");
     fprintf(pFile, "%s", "spy(H)\n");

@@ -115,8 +115,8 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
     fprintf(pFile, "%s", "\nH=[];\n");
     fprintf(pFile, "%s", "%%%%%%%%%%%%%%%%%%%%%%\n");
     for(i=0; i< nele_hess; ++i){
-    	sprintf(buffer, "H(%i,%i) = 1;\n", iRow[i]+1, iCol[i]+1);
-    	fprintf(pFile,"%s", buffer);
+      sprintf(buffer, "H(%i,%i) = 1;\n", iRow[i]+1, iCol[i]+1);
+      fprintf(pFile,"%s", buffer);
     }
     fprintf(pFile, "%s", "%%%%%%%%%%%%%%%%%%%%%%\n");
     fprintf(pFile, "%s", "spy(H)\n");
