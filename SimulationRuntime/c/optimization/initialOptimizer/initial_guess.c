@@ -104,6 +104,7 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
   int i,j,k,ii,jj,id;
   int err;
   double *v;
+  long double a;
   long double tol;
   short printGuess;
 
@@ -154,13 +155,16 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
 
    for(i=0, k=1, v=iData->v + iData->nv; i<iData->nsi; ++i){
      for(jj=0; jj<iData->deg; ++jj, ++k){
+     a = 1.0;
      while(iData->data->localData[0]->timeValue <= iData->time[k]){
-      solverInfo->currentStepSize = iData->time[k] - iData->time[k-1];
+      solverInfo->currentStepSize = a*(iData->time[k] - iData->time[k-1]);
       if(data->simulationInfo.external_input.active)
         externalInputUpdate(data);
       err = dasrt_step(data, solverInfo);
       if(err<0)
-  iData->time[k] *= 0.9;
+       a *= 0.5;
+      if(a < 1e-20)
+       break;
      }
      if(printGuess)
        printf("\n #####done time[%i] = %f", k, iData->time[k]);
