@@ -42,8 +42,9 @@ include Makefile.common
 Makefile: Makefile.in
 	cd $(top_builddir); ./config.status
 
-emcc: Makefile emcc/pre.js emcc/liblapack.so emcc/libblas.so emcc/libexpat.so emcc/libSimulationRuntimeC.so emcc/libf2c.so emcc/mdpad/mdpad.html
+expat.h:
 	cp /usr/include/expat*.h .
+emcc: Makefile emcc/pre.js emcc/liblapack.so emcc/libblas.so emcc/libexpat.so emcc/libSimulationRuntimeC.so emcc/libf2c.so emcc/mdpad/mdpad.html
 	cp -a emcc/pre.js emcc/*.so emcc/mdpad $(builddir_lib)/emcc/
 	@# emcc -Os --llvm-lto 2 -o $(builddir_lib)/emcc/libSimulationRuntimeC.js -s SIDE_MODULE=1 -s ASM_JS=1 -s TOTAL_MEMORY=536870912 -s OUTLINING_LIMIT=20000 libSimulationRuntimeC.bc simulation/libf2c/libf2c.bc emcc/liblapack.so emcc/libblas.so emcc/libexpat.so
 emcc/liblapack.so:
@@ -55,7 +56,7 @@ emcc/libexpat.so:
 emcc/libf2c.so:
 	emmake $(MAKE) -C simulation/libf2c OBJ_EXT=.bc CC=emcc CXX=emcc CFLAGS="-Os" libf2c.bc
 	cp simulation/libf2c/libf2c.bc emcc/libf2c.so
-emcc/libSimulationRuntimeC.so:
+emcc/libSimulationRuntimeC.so: expat.h
 	emmake $(MAKE) OBJ_EXT=.bc CC=emcc CXX=emcc CFLAGS=" $(CPPFLAGS) -Os -DOMC_EMCC -DNO_INTERACTIVE_DEPENDENCY -I./simulation/libf2c/" libSimulationRuntimeC.bc
 	cp libSimulationRuntimeC.bc emcc/libSimulationRuntimeC.so
 mdpad.tar.gz:
