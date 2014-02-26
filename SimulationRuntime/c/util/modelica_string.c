@@ -172,7 +172,7 @@ modelica_string_const cat_modelica_string(modelica_string_const s1, modelica_str
   return dest;
 }
 
-extern int omc__escapedStringLength(const char* str, int nl)
+extern int omc__escapedStringLength(const char* str, int nl, int *hasEscape)
 {
   int i=0;
   while(*str) {
@@ -182,9 +182,9 @@ extern int omc__escapedStringLength(const char* str, int nl)
       case '\a':
       case '\b':
       case '\f':
-      case '\v': i++; break;
-      case '\r': if(nl) {i++; if(str[1] == '\n') str++;} break;
-      case '\n': if(nl) {i++; if(str[1] == '\r') str++;} break;
+      case '\v': i++; *hasEscape=1; break;
+      case '\r': if(nl) {i++; *hasEscape=1; if(str[1] == '\n') str++;} break;
+      case '\n': if(nl) {i++; *hasEscape=1;} break;
       default: break;
     }
     i++;
@@ -199,11 +199,14 @@ extern int omc__escapedStringLength(const char* str, int nl)
 extern char* omc__escapedString(const char* str, int nl)
 {
   int len1,len2;
-  char *res;
+  char *res,*origstr = str;
   int i=0;
+  int hasEscape = 0;
   len1 = strlen(str);
-  len2 = omc__escapedStringLength(str,nl);
-  if(len1 == len2) return NULL;
+  len2 = omc__escapedStringLength(str,nl,&hasEscape);
+  if (!hasEscape) {
+    return NULL;
+  }
   res = (char*) malloc(len2+1);
   while(*str) {
     switch (*str) {
@@ -214,7 +217,7 @@ extern char* omc__escapedString(const char* str, int nl)
       case '\f': res[i++] = '\\'; res[i++] = 'f'; break;
       case '\v': res[i++] = '\\'; res[i++] = 'v'; break;
       case '\r': if(nl) {res[i++] = '\\'; res[i++] = 'n'; if(str[1] == '\n') str++;} else {res[i++] = *str;} break;
-      case '\n': if(nl) {res[i++] = '\\'; res[i++] = 'n'; if(str[1] == '\r') str++;} else {res[i++] = *str;} break;
+      case '\n': if(nl) {res[i++] = '\\'; res[i++] = 'n';} else {res[i++] = *str;} break;
       default: res[i++] = *str;
     }
     str++;

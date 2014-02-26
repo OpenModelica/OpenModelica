@@ -346,8 +346,15 @@ void FMIImpl__initializeFMI1Import(fmi1_import_t* fmi, void** fmiInfo, fmi_versi
   const char* guid = fmi1_import_get_GUID(fmi);
   /* Read the FMI description from FMU's modelDescription.xml file. */
   const char* description = fmi1_import_get_description(fmi);
-  description = ((description != NULL) && (omc__escapedStringLength(description,0) > strlen(description))) ? (const char*)omc__escapedString(description,0) : description;
-  description = (description != NULL) ? description : "";
+  if (description != NULL) {
+    int hasEscape = 0;
+    omc__escapedStringLength(description,0,&hasEscape);
+    if (hasEscape) {
+      description = (const char*)omc__escapedString(description,0);
+    }
+  } else {
+    description = "";
+  }
   /* Read the FMI generation tool from FMU's modelDescription.xml file. */
   const char* generationTool = fmi1_import_get_generation_tool(fmi);
   /* Read the FMI generation date and time from FMU's modelDescription.xml file. */
@@ -399,8 +406,15 @@ void FMIImpl__initializeFMI1Import(fmi1_import_t* fmi, void** fmiInfo, fmi_versi
     void* variable_name = mk_scon(name);
     free(name);
     const char* description = fmi1_import_get_variable_description(model_variable);
-    description = ((description != NULL) && (omc__escapedStringLength(description,0) > strlen(description))) ? (const char*)omc__escapedString(description,0) : description;
-    description = (description != NULL) ? description : "";
+    if (description != NULL) {
+      int hasEscape = 0;
+      omc__escapedStringLength(description,0,&hasEscape);
+      if (hasEscape) {
+        description = (const char*)omc__escapedString(description,0);
+      }
+    } else {
+      description = "";
+    }
     void* variable_description = mk_scon(description);
     const char* base_type = getFMI1ModelVariableBaseType(model_variable);
     void* variable_base_type = mk_scon(base_type);
@@ -482,9 +496,16 @@ void FMIImpl__initializeFMI2Import(fmi2_import_t* fmi, void** fmiInfo, fmi_versi
   const char* guid = fmi2_import_get_GUID(fmi);
   /* Read the FMI description from FMU's modelDescription.xml file. */
   const char* description = fmi2_import_get_description(fmi);
-  description = ((description != NULL) && (omc__escapedStringLength(description,0) > strlen(description))) ? (const char*)omc__escapedString(description,0) : description;
-  description = (description != NULL) ? description : "";
-  /* Read the FMI generation tool from FMU's modelDescription.xml file. */
+  if (description != NULL) {
+    int hasEscape = 0;
+    omc__escapedStringLength(description,0,&hasEscape);
+    if (hasEscape) {
+      description = (const char*)omc__escapedString(description,0);
+    }
+  } else {
+    description = "";
+  }
+/* Read the FMI generation tool from FMU's modelDescription.xml file. */
   const char* generationTool = fmi2_import_get_generation_tool(fmi);
   /* Read the FMI generation date and time from FMU's modelDescription.xml file. */
   const char* generationDateAndTime = fmi2_import_get_generation_date_and_time(fmi);
@@ -539,8 +560,15 @@ void FMIImpl__initializeFMI2Import(fmi2_import_t* fmi, void** fmiInfo, fmi_versi
     void* variable_name = mk_scon(name);
     free(name);
     const char* description = fmi2_import_get_variable_description(model_variable);
-    description = ((description != NULL) && (omc__escapedStringLength(description,0) > strlen(description))) ? (const char*)omc__escapedString(description,0) : description;
-    description = (description != NULL) ? description : "";
+    if (description != NULL) {
+      int hasEscape = 0;
+      omc__escapedStringLength(description,0,&hasEscape);
+      if (hasEscape) {
+        description = (const char*)omc__escapedString(description,0);
+      }
+    } else {
+      description = "";
+    }
     void* variable_description = mk_scon(description);
     const char* base_type = getFMI2ModelVariableBaseType(model_variable);
     void* variable_base_type = mk_scon(base_type);
