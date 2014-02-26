@@ -10652,6 +10652,7 @@ template ScalarVariableAttribute(SimVar simVar, Integer classIndex, String class
       causality = "<%caus%>" isValueChangeable = "<%isValueChangeable%>"
       alias = <%alias%>
       classIndex = "<%classIndex%>" classType = "<%classType%>"
+      isProtected = "<%isProtected%>"
       <%getInfoArgs(info)%>
       >>
 end ScalarVariableAttribute;

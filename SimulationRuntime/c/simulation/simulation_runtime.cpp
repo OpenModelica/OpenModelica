@@ -321,7 +321,6 @@ int startInteractiveSimulation(int argc, char**argv, void* data)
 void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilter, int resultFormatHasCheapAliasesAndParameters)
 {
 #ifndef _MSC_VER
-  int cheap = resultFormatHasCheapAliasesAndParameters;
   regex_t myregex;
   int flags = REG_EXTENDED;
   int rc;
@@ -332,6 +331,7 @@ void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilte
     modelData->realVarsData[0].filterOutput = 1;
     modelData->realVarsData[modelData->nStates].filterOutput = 1;
   }
+
   if(0 == strcmp(filter, ".*")) { // This matches all variables, so we don't need to do anything
     return;
   }
@@ -347,7 +347,7 @@ void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilte
   for(long i=0; i<modelData->nVariablesReal; i++) if(!modelData->realVarsData[i].filterOutput) {
     modelData->realVarsData[i].filterOutput = regexec(&myregex, modelData->realVarsData[i].info.name, 0, NULL, 0) != 0;
   }
-  for(long i=0; i<modelData->nAliasReal; i++) {
+  for(long i=0; i<modelData->nAliasReal; i++) if(!modelData->realAlias[i].filterOutput) {
     if(modelData->realAlias[i].aliasType == 0)  /* variable */ {
       modelData->realAlias[i].filterOutput = regexec(&myregex, modelData->realAlias[i].info.name, 0, NULL, 0) != 0;
       if (0 == modelData->realAlias[i].filterOutput) {
@@ -363,7 +363,7 @@ void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilte
   for (long i=0; i<modelData->nVariablesInteger; i++) if(!modelData->integerVarsData[i].filterOutput) {
     modelData->integerVarsData[i].filterOutput = regexec(&myregex, modelData->integerVarsData[i].info.name, 0, NULL, 0) != 0;
   }
-  for (long i=0; i<modelData->nAliasInteger; i++) {
+  for (long i=0; i<modelData->nAliasInteger; i++) if(!modelData->integerAlias[i].filterOutput) {
     if(modelData->integerAlias[i].aliasType == 0)  /* variable */ {
       modelData->integerAlias[i].filterOutput = regexec(&myregex, modelData->integerAlias[i].info.name, 0, NULL, 0) != 0;
       if (0 == modelData->integerAlias[i].filterOutput) {
@@ -379,7 +379,7 @@ void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilte
   for (long i=0; i<modelData->nVariablesBoolean; i++) if(!modelData->booleanVarsData[i].filterOutput) {
     modelData->booleanVarsData[i].filterOutput = regexec(&myregex, modelData->booleanVarsData[i].info.name, 0, NULL, 0) != 0;
   }
-  for (long i=0; i<modelData->nAliasBoolean; i++) {
+  for (long i=0; i<modelData->nAliasBoolean; i++) if(!modelData->booleanAlias[i].filterOutput) {
     if(modelData->booleanAlias[i].aliasType == 0)  /* variable */ {
       modelData->booleanAlias[i].filterOutput = regexec(&myregex, modelData->booleanAlias[i].info.name, 0, NULL, 0) != 0;
       if (0 == modelData->booleanAlias[i].filterOutput) {
@@ -395,7 +395,7 @@ void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilte
   for (long i=0; i<modelData->nVariablesString; i++) if(!modelData->stringVarsData[i].filterOutput) {
     modelData->stringVarsData[i].filterOutput = regexec(&myregex, modelData->stringVarsData[i].info.name, 0, NULL, 0) != 0;
   }
-  for (long i=0; i<modelData->nAliasString; i++) {
+  for (long i=0; i<modelData->nAliasString; i++) if(!modelData->stringAlias[i].filterOutput) {
     if(modelData->stringAlias[i].aliasType == 0)  /* variable */ {
       modelData->stringAlias[i].filterOutput = regexec(&myregex, modelData->stringAlias[i].info.name, 0, NULL, 0) != 0;
       if (0 == modelData->stringAlias[i].filterOutput) {

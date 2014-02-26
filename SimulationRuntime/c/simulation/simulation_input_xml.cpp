@@ -456,7 +456,10 @@ void read_input_xml(MODEL_DATA* modelData,
     omc_ScalarVariable &v = in[i]; \
     read_var_info(v, info); \
     read_var_attribute(v, attribute); \
-    if (info.name[0] == '$') { /* filter internal variables */ \
+    if (info.name[0] == '$') { \
+      out[j].filterOutput = 1; \
+    } else if (!omc_flag[FLAG_EMIT_PROTECTED] && 0 == v["isProtected"].compare("true")) { \
+      infoStreamPrint(LOG_DEBUG, 0, "filtering protected variable %s", info.name); \
       out[j].filterOutput = 1; \
     } \
     mapAlias[info.name] = j; /* create a mapping for Alias variable to get the correct index */ \

@@ -35,6 +35,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
 
   /* FLAG_CLOCK */                 "clock",
   /* FLAG_CPU */                   "cpu",
+  /* FLAG_EMIT_PROTECTED */                    "emit_protected",
   /* FLAG_F */                     "f",
   /* FLAG_HELP */                  "help",
   /* FLAG_IIF */                   "iif",
@@ -71,6 +72,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
 
   /* FLAG_CLOCK */                 "selects the type of clock to use -clock=RT, -clock=CYC or -clock=CPU",
   /* FLAG_CPU */                   "dumps the cpu-time into the results-file",
+  /* FLAG_EMIT_PROTECTED */                    "emits protected variables to the result-file",
   /* FLAG_F */                     "value specifies a new setup XML file to the generated simulation code",
   /* FLAG_HELP */                  "get detailed information that specifies the command-line flag",
   /* FLAG_IIF */                   "value specifies an external file for the initialization of the model",
@@ -107,6 +109,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
 
   /* FLAG_CLOCK */                 "selects the type of clock to use -clock=RT, -clock=CYC or -clock=CPU\n  RT=monotonic real-time clock, CPU=process-based CPU-time, CYC=cpu cycles measured with RDTSC",
   /* FLAG_CPU */                   "  - dumps the cpu-time into the result-file\n  - $cpuTime is the variable name inside the result-file",
+  /* FLAG_EMIT_PROTECTED */                    "emits protected variables to the result-file",
   /* FLAG_F */                     "value specifies a new setup XML file to the generated simulation code",
   /* FLAG_HELP */                  "get detailed information that specifies the command-line flag\n  e.g. -help=f prints detailed information for command-line flag f",
   /* FLAG_IIF */                   "value specifies an external file for the initialization of the model",
@@ -143,6 +146,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
 
   /* FLAG_CLOCK */                 FLAG_TYPE_OPTION,
   /* FLAG_CPU */                   FLAG_TYPE_FLAG,
+  /* FLAG_EMIT_PROTECTED */                    FLAG_TYPE_FLAG,
   /* FLAG_F */                     FLAG_TYPE_OPTION,
   /* FLAG_HELP */                  FLAG_TYPE_OPTION,
   /* FLAG_IIF */                   FLAG_TYPE_OPTION,
