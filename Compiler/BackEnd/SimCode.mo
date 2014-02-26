@@ -260,6 +260,7 @@ uniontype SimVar "Information about a variable in a Modelica model."
     Option<Integer> variable_index;
     list<String> numArrayElement;
     Boolean isValueChangeable;
+    Boolean isProtected;
   end SIMVAR;
 end SimVar;
 

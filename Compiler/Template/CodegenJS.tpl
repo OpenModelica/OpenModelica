@@ -20,11 +20,17 @@ case SIMCODE(simulationSettingsOpt = SOME(s as SIMULATION_SETTINGS(__)))
 then
 <<
 #!/usr/bin/nodejs --max-old-space-size=8192
-var mod = require('./<%fileNamePrefix%>.js');
-mod.callMain(process.argv.slice(2));
 var fs = require('fs');
+
+var initXML = fs.readFileSync('./<%fileNamePrefix%>_init.xml');
+
+var mod = require('./<%fileNamePrefix%>.js');
+mod.FS_createDataFile("/", '<%fileNamePrefix%>_init.xml', initXML, true, false);
+mod.FS_createLazyFile("/", '<%fileNamePrefix%>_info.xml', '<%fileNamePrefix%>_info.xml', true, false);
+mod.callMain(process.argv.slice(2));
+
 var fname = '<%fileNamePrefix%>_res.<%s.outputFormat%>';
-var content = mod.OpenModelica_readFile(fname);
+var content = mod.OpenModelica_readFileBuffer(fname);
 fs.writeFileSync(fname,content);
 >>
 end nodeJSDriver;
@@ -96,36 +102,33 @@ timer = $("#statustimer").data("tinyTimer")
 // Start the simulation!
 basename = "<%fileNamePrefix%>"
 
-if (typeof(wworker) != "undefined" && isRunning) wworker.terminate() 
-if (typeof(wworker) == "undefined" || isRunning) wworker = new Worker(basename + ".js")
-isRunning = true
-
-wworker.postMessage({basename: basename, stopTime: stopTime, tolerance: tolerance, stepSize: +stopTime / intervals})
-wworker.addEventListener('error', function(event) {
-});
-
-
-```
-
-
-
-```js
-// read the csv file with the simulation results
-
-wworker.addEventListener("message", function(e) {
+if (typeof(wworker) != "undefined" && isRunning) wworker.terminate();
+if (typeof(wworker) == "undefined" || isRunning) {
+  wworker = new Worker(basename + ".js");
+  isRunning = true
+  wworker.addEventListener('error', function(event) {
+  });
+  // read the csv file with the simulation results
+  wworker.addEventListener("message", function(e) {
+    var data = e.data;
+    if (data.preloaded) {
+      preloadComplete = true;
+      wworker.postMessage({basename: basename, stopTime: stopTime, tolerance: tolerance, stepSize: +stopTime / intervals});
+      return;
+    }
     $("#statustext").html(e.data.status)
     timer.stop();
     isRunning = false
     x = $.csv.toArrays(e.data.csv, {onParseValue: $.csv.hooks.castToScalar})
-    
+
     // `header` has the column names. The first is the time, and the rest
     // of the columns are the variables.
     header = x.slice(0,1)[0]
-    
+
     // Select graph variables with a select box based on the header values
     if (typeof(graphvar) == "undefined") graphvar = header[1];
     if (typeof(graphvarX) == "undefined") graphvarX = header[0];
-    
+
     var jsonform = {
       html: {
         type: "select",
@@ -146,8 +149,8 @@ wworker.addEventListener("message", function(e) {
         calculate_forms();
         $("#plotdiv").calculate();
     }
-    
-    
+
+
     $("#yaxisform").html("");
     $("#yaxisform").dform(jsonform);
     $("#yaxisform").change(updatefun);
@@ -155,9 +158,10 @@ wworker.addEventListener("message", function(e) {
     $("#xaxisform").dform(jsonformX);
     $("#xaxisform").change(updatefun);
     $("#plotdiv").calculate();
-    
-}, false);
 
+}, false);
+}
+wworker.postMessage({basename: basename, preload: true})
 ```
 
 </div>

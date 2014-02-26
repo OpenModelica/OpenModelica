@@ -460,6 +460,7 @@ package SimCode
       Option<Integer> variable_index;
       list<String> numArrayElement;
       Boolean isValueChangeable;
+      Boolean isProtected;
     end SIMVAR;
   end SimVar;
   

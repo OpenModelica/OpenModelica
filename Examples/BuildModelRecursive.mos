@@ -169,7 +169,7 @@ OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.T
 buildRes := res[1] <> \"\";
 simRes  := if not buildRes then false else 0 == system(\"ulimit -t " +ulimitExe+" ; ./"+s+" > \"+simFile+\" 2>&1\");
 if buildRes and javascript then
-  system(\"cp " + s + ".js " + s + ".md files/\");
+  system(\"cp " + s + ".js " + s + "_info.xml " + s + "_init.xml " + s + ".md files/\");
 end if;
 mdFile := if javascript then \""+s+".md\" else \"\";
 
