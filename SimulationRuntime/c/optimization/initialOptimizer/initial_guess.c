@@ -143,7 +143,7 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
      externalInputUpdate(data);
 
    if(iData->preSim){
-	 printf("\n========================================================");
+   printf("\n========================================================");
      printf("\nstart pre simulation");
      printf("\n--------------------------------------------------------");
      printf("\nfrom %g to %g", iData->t0, iData->startTimeOpt );
@@ -199,7 +199,7 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
   }
 
   if(printGuess){
-	  printf("\n--------------------------------------------------------");
+    printf("\n--------------------------------------------------------");
     printf("\nfinished: Initial Guess");
     printf("\n========================================================\n");
   }
@@ -226,7 +226,7 @@ static int pre_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
     iData->time[0] = iData->startTimeOpt;
 
    while(iData->data->localData[0]->timeValue < iData->startTimeOpt){
-	   a = 1.0;
+     a = 1.0;
      while(iData->data->localData[0]->timeValue < iData->time[k]){
       t = iData->time[k];
       if(t > iData->startTimeOpt)

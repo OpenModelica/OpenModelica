@@ -128,15 +128,15 @@ int externalInputUpdate(DATA* data)
   t2 = data->simulationInfo.external_input.t[data->simulationInfo.external_input.i+1];
 
   if(t == t1){
-	  for(i = 0; i < data->modelData.nInputVars; ++i){
-	    data->simulationInfo.inputVars[i] = data->simulationInfo.external_input.u[data->simulationInfo.external_input.i][i];
-	  }
-	  return 1;
+    for(i = 0; i < data->modelData.nInputVars; ++i){
+      data->simulationInfo.inputVars[i] = data->simulationInfo.external_input.u[data->simulationInfo.external_input.i][i];
+    }
+    return 1;
   }else if(t == t2){
-	  for(i = 0; i < data->modelData.nInputVars; ++i){
-	    data->simulationInfo.inputVars[i] = data->simulationInfo.external_input.u[data->simulationInfo.external_input.i][i+1];
-	  }
-	  return 1;
+    for(i = 0; i < data->modelData.nInputVars; ++i){
+      data->simulationInfo.inputVars[i] = data->simulationInfo.external_input.u[data->simulationInfo.external_input.i][i+1];
+    }
+    return 1;
   }
 
   while(i > 0 && t < t1){
@@ -150,15 +150,15 @@ int externalInputUpdate(DATA* data)
   }
 
   if(t == t1){
-	  for(i = 0; i < data->modelData.nInputVars; ++i){
-	    data->simulationInfo.inputVars[i] = data->simulationInfo.external_input.u[data->simulationInfo.external_input.i][i];
-	  }
-	  return 1;
+    for(i = 0; i < data->modelData.nInputVars; ++i){
+      data->simulationInfo.inputVars[i] = data->simulationInfo.external_input.u[data->simulationInfo.external_input.i][i];
+    }
+    return 1;
   }else if(t == t2){
-	  for(i = 0; i < data->modelData.nInputVars; ++i){
-	    data->simulationInfo.inputVars[i] = data->simulationInfo.external_input.u[data->simulationInfo.external_input.i][i+1];
-	  }
-	  return 1;
+    for(i = 0; i < data->modelData.nInputVars; ++i){
+      data->simulationInfo.inputVars[i] = data->simulationInfo.external_input.u[data->simulationInfo.external_input.i][i+1];
+    }
+    return 1;
   }
 
   dt = (data->simulationInfo.external_input.t[data->simulationInfo.external_input.i+1] - data->simulationInfo.external_input.t[data->simulationInfo.external_input.i]);
@@ -170,7 +170,7 @@ int externalInputUpdate(DATA* data)
       if(sign(u1) == sign(u2))
         data->simulationInfo.inputVars[i] = ((u1*(dt+t1) + t*u2) - (t*u1+t1*u2))/dt;
       else
-    	data->simulationInfo.inputVars[i] =  (u1*(dt+t1-t)+(t-t1)*u2)/dt;
+      data->simulationInfo.inputVars[i] =  (u1*(dt+t1-t)+(t-t1)*u2)/dt;
     }else{
       data->simulationInfo.inputVars[i] = u1;
     }
