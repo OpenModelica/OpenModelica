@@ -308,8 +308,7 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
 
     /* read input vars */
     if(solverInfo->solverMethod != S_OPTIMIZATION) {
-      if(simData->simulationInfo.external_input.active)
-        externalInputUpdate(simData);
+      externalInputUpdate(simData);
       simData->callback->input_function(simData);
     }
 
@@ -374,6 +373,11 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
       fflush(stderr);
       fflush(stdout);
       retVal = continue_DASRT(&dasslData->idid, &simData->simulationInfo.tolerance);
+      /* read input vars */
+      if(solverInfo->solverMethod != S_OPTIMIZATION) {
+        externalInputUpdate(simData);
+        simData->callback->input_function(simData);
+      }
       simData->callback->functionODE(simData);
       warningStreamPrint(LOG_STDOUT, 0, "can't continue. time = %f", sData->timeValue);
       return retVal;
@@ -495,7 +499,13 @@ int functionODE_residual(double *t, double *y, double *yd, double *delta,
 #if !defined(OMC_EMCC)
   MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
-    data->callback->functionODE(data);
+
+  /* read input vars */
+  externalInputUpdate(data);
+  data->callback->input_function(data);
+
+  /* eval input vars */
+  data->callback->functionODE(data);
 
     /* get the difference between the temp_xd(=localData->statesDerivatives)
        and xd(=statesDerivativesBackup) */
@@ -532,6 +542,10 @@ int function_ZeroCrossingsDASSL(fortran_integer *neqm, double *t, double *y,
   timeBackup = data->localData[0]->timeValue;
 
   data->localData[0]->timeValue = *t;
+  /* read input vars */
+  externalInputUpdate(data);
+  data->callback->input_function(data);
+  /* eval ode*/
   data->callback->functionODE(data);
   data->callback->functionAlgebraics(data);
 
@@ -665,6 +679,10 @@ static int JacobianSymbolicColored(double *t, double *y, double *yprime, double 
 
   data->localData[0]->timeValue = *t;
   data->localData[0]->realVars = y;
+  /* read input vars */
+  externalInputUpdate(data);
+  data->callback->input_function(data);
+  /* eval ode*/
   data->callback->functionODE(data);
   functionJacAColored(data, pd);
 
@@ -698,6 +716,10 @@ static int JacobianSymbolic(double *t, double *y, double *yprime, double *deltaD
 
   data->localData[0]->timeValue = *t;
   data->localData[0]->realVars = y;
+  /* read input vars */
+  externalInputUpdate(data);
+  data->callback->input_function(data);
+  /* eval ode*/
   data->callback->functionODE(data);
   functionJacASym(data, pd);
 

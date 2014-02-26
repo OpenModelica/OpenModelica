@@ -443,6 +443,9 @@ static int refreshModell(DATA* data, double* x, double time)
 
   memcpy(sData->realVars, x, sizeof(double)*data->modelData.nStates);
   sData->timeValue = time;
+  /* read input vars */
+  externalInputUpdate(data);
+  data->callback->input_function(data);
   data->callback->functionODE(data);
 
   return 0;

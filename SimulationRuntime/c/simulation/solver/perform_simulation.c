@@ -58,6 +58,7 @@
  */
 void updateContinuousSystem(DATA *data)
 {
+  externalInputUpdate(data);
   data->callback->input_function(data);
   data->callback->functionODE(data);
   data->callback->functionAlgebraics(data);

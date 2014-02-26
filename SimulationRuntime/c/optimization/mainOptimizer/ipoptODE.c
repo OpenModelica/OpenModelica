@@ -209,8 +209,8 @@ static int res2file(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
     
     fprintf(pFile, "%lf ",iData->time[iData->current_time]);
     for(i=0,j=iData->nx; i< iData->nu; ++i,++j){
-      data->simulationInfo.inputVars[i] = iData->v[k++]*iData->vnom[j];
-      fprintf(pFile, "%lf ", data->simulationInfo.inputVars[i]);
+      data->simulationInfo.inputVars[i] = iData->v[k]*iData->vnom[j];
+      fprintf(pFile, "%lf ", iData->v[k++]*iData->vnom[j]);
     }
     fprintf(pFile, "%s", "\n");
 
@@ -298,6 +298,7 @@ static int set_optimizer_flags(IPOPT_DATA_ *iData, IpoptProblem *nlp)
   /*
    * AddIpoptStrOption(nlp, "derivative_test_print_all", "yes");
    * AddIpoptNumOption(nlp,"derivative_test_perturbation",1e-6);
+   *
    */
 
   AddIpoptIntOption(*nlp, "max_iter", 5000);

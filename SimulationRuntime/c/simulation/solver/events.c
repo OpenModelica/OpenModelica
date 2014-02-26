@@ -428,6 +428,10 @@ double bisection(DATA* data, double* a, double* b, double* states_a, double* sta
     }
 
     /*calculates Values dependents on new states*/
+    /* read input vars */
+      externalInputUpdate(data);
+      data->callback->input_function(data);
+    /* eval ODE*/
     data->callback->functionODE(data);
     data->callback->functionAlgebraics(data);
 

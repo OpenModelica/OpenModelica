@@ -338,7 +338,12 @@ int initializeModel(DATA* data, const char* init_initMethod,
   copyStartValuestoInitValues(data);
 
   /* read input vars */
+  externalInputUpdate(data);
   data->callback->input_function(data);
+  /* update start values for inputs if input is set */
+  if(data->simulationInfo.external_input.active){
+    data->callback->input_function_init(data);
+  }
 
   data->localData[0]->timeValue = simInfo->startTime;
 
@@ -555,12 +560,6 @@ int solver_main(DATA* data, const char* init_initMethod,
   /* allocate SolverInfo memory */
   retVal = initializeSolverData(data, &solverInfo);
   omc_alloc_interface.collect_a_little();
-  
-  /* set inputs from file */
-  if(data->simulationInfo.external_input.active){
-    externalInputUpdate(data);
-    data->callback->input_function_init(data);
-  }
 
   /* initialize all parts of the model */
   if(0 == retVal) {

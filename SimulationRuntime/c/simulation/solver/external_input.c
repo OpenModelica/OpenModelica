@@ -117,24 +117,63 @@ int externalInputFree(DATA* data)
 int externalInputUpdate(DATA* data)
 {
   double u1, u2;
-  double t, t1, dt;
+  double t, t1, t2, dt;
   int i;
 
   if(!data->simulationInfo.external_input.active)
     return -1;
 
   t = data->localData[0]->timeValue;
+  t1 = data->simulationInfo.external_input.t[data->simulationInfo.external_input.i];
+  t2 = data->simulationInfo.external_input.t[data->simulationInfo.external_input.i+1];
+
+  if(t == t1){
+	  for(i = 0; i < data->modelData.nInputVars; ++i){
+	    data->simulationInfo.inputVars[i] = data->simulationInfo.external_input.u[data->simulationInfo.external_input.i][i];
+	  }
+	  return 1;
+  }else if(t == t2){
+	  for(i = 0; i < data->modelData.nInputVars; ++i){
+	    data->simulationInfo.inputVars[i] = data->simulationInfo.external_input.u[data->simulationInfo.external_input.i][i+1];
+	  }
+	  return 1;
+  }
+
+  while(i > 0 && t < t1){
+    --data->simulationInfo.external_input.i;
+    t1 = data->simulationInfo.external_input.t[data->simulationInfo.external_input.i];
+  }
+
   while(t > data->simulationInfo.external_input.t[data->simulationInfo.external_input.i+1]
         && data->simulationInfo.external_input.i+1 < (data->simulationInfo.external_input.n-1)){
     ++data->simulationInfo.external_input.i;
   }
 
+  if(t == t1){
+	  for(i = 0; i < data->modelData.nInputVars; ++i){
+	    data->simulationInfo.inputVars[i] = data->simulationInfo.external_input.u[data->simulationInfo.external_input.i][i];
+	  }
+	  return 1;
+  }else if(t == t2){
+	  for(i = 0; i < data->modelData.nInputVars; ++i){
+	    data->simulationInfo.inputVars[i] = data->simulationInfo.external_input.u[data->simulationInfo.external_input.i][i+1];
+	  }
+	  return 1;
+  }
+
   dt = (data->simulationInfo.external_input.t[data->simulationInfo.external_input.i+1] - data->simulationInfo.external_input.t[data->simulationInfo.external_input.i]);
-  t1 = data->simulationInfo.external_input.t[data->simulationInfo.external_input.i];
   for(i = 0; i < data->modelData.nInputVars; ++i){
     u1 = data->simulationInfo.external_input.u[data->simulationInfo.external_input.i][i];
     u2 = data->simulationInfo.external_input.u[data->simulationInfo.external_input.i+1][i];
-    data->simulationInfo.inputVars[i] = (u1*(dt+t1-t)+(t-t1)*u2)/dt;
+
+    if(u1 != u2){
+      if(sign(u1) == sign(u2))
+        data->simulationInfo.inputVars[i] = ((u1*(dt+t1) + t*u2) - (t*u1+t1*u2))/dt;
+      else
+    	data->simulationInfo.inputVars[i] =  (u1*(dt+t1-t)+(t-t1)*u2)/dt;
+    }else{
+      data->simulationInfo.inputVars[i] = u1;
+    }
   }
  return 0;
 }

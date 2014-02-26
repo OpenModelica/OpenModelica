@@ -141,16 +141,22 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
        data->simulationInfo.inputVars[i] = u0[i];
    else
      externalInputUpdate(data);
+
    if(iData->preSim){
-     printf("\npre simulation");
+	 printf("\n========================================================");
+     printf("\nstart pre simulation");
+     printf("\n--------------------------------------------------------");
+     printf("\nfrom %g to %g", iData->t0, iData->startTimeOpt );
      pre_ipopt_sim(iData, solverInfo);
-     printf("\npre simulation done!!!");
+     printf("\nfinished pre simulation");
+     printf("\n========================================================\n");
    }
 
    printGuess = (short)(ACTIVE_STREAM(LOG_INIT) && !ACTIVE_STREAM(LOG_SOLVER));
    if(printGuess){
-     printf("\n****initial guess****");
-   printf("\n #####done time[%i] = %f",0,iData->time[0]);
+     printf("\nInitial Guess");
+     printf("\n========================================================\n");
+   printf("\ndone: time[%i] = %g",0,iData->time[0]);
    }
 
    for(i=0, k=1, v=iData->v + iData->nv; i<iData->nsi; ++i){
@@ -158,16 +164,16 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
      a = 1.0;
      while(iData->data->localData[0]->timeValue <= iData->time[k]){
       solverInfo->currentStepSize = a*(iData->time[k] - iData->time[k-1]);
-      if(data->simulationInfo.external_input.active)
-        externalInputUpdate(data);
+      externalInputUpdate(data);
       err = dasrt_step(data, solverInfo);
       if(err<0)
        a *= 0.5;
-      if(a < 1e-20)
+      if((double)a < (double)1e-20)
        break;
      }
+
      if(printGuess)
-       printf("\n #####done time[%i] = %f", k, iData->time[k]);
+       printf("\ndone: time[%i] = %g", k, iData->time[k]);
 
      for(j=0; j< iData->nx; ++j)
        v[j] = sData->realVars[j] * iData->scalVar[j];
@@ -192,8 +198,11 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
     }
   }
 
-  if(printGuess)
-    printf("\n*****initial guess done*****");
+  if(printGuess){
+	  printf("\n--------------------------------------------------------");
+    printf("\nfinished: Initial Guess");
+    printf("\n========================================================\n");
+  }
 
   dasrt_deinitial(solverInfo->solverData);
   externalInputFree(data);
@@ -208,23 +217,28 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
 
 static int pre_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
 {
-   int k = 1,i,j;
+   int k = 1,i,j,err;
    double t;
+   long double a;
    DATA * data = iData->data;
    
    if(iData->time[0] > iData->startTimeOpt)
     iData->time[0] = iData->startTimeOpt;
 
    while(iData->data->localData[0]->timeValue < iData->startTimeOpt){
-     while(iData->data->localData[0]->timeValue <= iData->time[k]){
+	   a = 1.0;
+     while(iData->data->localData[0]->timeValue < iData->time[k]){
       t = iData->time[k];
       if(t > iData->startTimeOpt)
         t = iData->startTimeOpt;
-      solverInfo->currentStepSize = t - iData->time[k-1];
+      solverInfo->currentStepSize = a*(t - iData->time[k-1]);
       iData->data->localData[1]->timeValue = iData->time[k-1];
       iData->data->localData[0]->timeValue = t;
-      externalInputUpdate(data);
-      dasrt_step(data, solverInfo);
+      err = dasrt_step(data, solverInfo);
+      if(err<0)
+       a *= 0.5;
+      if((double)a < (double)1e-20)
+       break;
      }
      data->simulationInfo.terminal = 1;
      sim_result.emit(&sim_result,data);
@@ -232,18 +246,18 @@ static int pre_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
      rotateRingBuffer(iData->data->simulationData, 1, (void**) iData->data->localData);
      ++k; 
     }
+
    if(iData->data->localData[0]->timeValue >  iData->startTimeOpt){
     solverInfo->currentStepSize = iData->startTimeOpt - iData->time[k-1];
     iData->data->localData[1]->timeValue = iData->time[k-1];
-    externalInputUpdate(data);
     dasrt_step(data, solverInfo);
     data->simulationInfo.terminal = 1;
     sim_result.emit(&sim_result,data);
     data->simulationInfo.terminal = 0;
     rotateRingBuffer(iData->data->simulationData, 1, (void**) iData->data->localData);
   }
+
   iData->t0 = iData->data->localData[0]->timeValue;
-  printf("time = %g | %g", iData->t0,iData->startTimeOpt );
   /*ToDo*/
   for(i=0; i< iData->nx; ++i)
   {
@@ -278,18 +292,18 @@ static int optimizer_time_setings_update(IPOPT_DATA_ *iData)
     for(i = 0,k=0,id=0; i<iData->nsi; ++i,id += iData->deg){
       if(i){
         if(iData->deg == 3){
-        iData->time[++k] = iData->time[id] + iData->c1*iData->dt[i];
-        iData->time[++k] = iData->time[id] + iData->c2*iData->dt[i];
-      }
+          iData->time[++k] = iData->time[id] + iData->c1*iData->dt[i];
+          iData->time[++k] = iData->time[id] + iData->c2*iData->dt[i];
+        }
         iData->time[++k] = iData->time[0]+ (i+1)*iData->dt[i];
-    }else{
-      if(iData->deg == 3){
-        iData->time[++k] = iData->time[id] + iData->e1*iData->dt[i];
-        iData->time[++k] = iData->time[id] + iData->e2*iData->dt[i];
-      }
+      }else{
+        if(iData->deg == 3){
+          iData->time[++k] = iData->time[id] + iData->e1*iData->dt[i];
+          iData->time[++k] = iData->time[id] + iData->e2*iData->dt[i];
+        }
       iData->time[++k] = iData->time[0]+ (i+1)*iData->dt[i];
-    }
-  }
+     }
+   }
   }
   iData->time[k] = iData->tf;
   return 0;
