@@ -63,7 +63,7 @@ public function dumpGraph
 algorithm  
   _ := matchcontinue(inGraph, fileName, inNodeId)
     local
-      GraphML.Graph g;
+      GraphMLOld.Graph g;
       FGraph.AvlTree nodes;
       list<FNode.Node> nlist;
     
@@ -75,11 +75,11 @@ algorithm
     
     case (FGraph.G(nodes = nodes), _, _)
       equation
-        g = GraphML.getGraph("G", false);
+        g = GraphMLOld.getGraph("G", false);
         nlist = FGraph.getNodes(SOME(nodes), {});
         g = addNodes(g, nlist, inGraph, inNodeId);
         print("Dumping graph file: " +& fileName +& " ....\n");
-        GraphML.dumpGraph(g, fileName);
+        GraphMLOld.dumpGraph(g, fileName);
         print("Dumped\n");
       then
         ();
@@ -88,15 +88,15 @@ algorithm
 end dumpGraph;
 
 protected function addNodes
-  input GraphML.Graph gin;
+  input GraphMLOld.Graph gin;
   input list<Node> nodes;
   input Graph inGraph;
   input NodeId inNodeId "start with this node forward";
-  output GraphML.Graph gout;
+  output GraphMLOld.Graph gout;
 algorithm
   gout := matchcontinue(gin, nodes, inGraph, inNodeId)
     local 
-      GraphML.Graph g;
+      GraphMLOld.Graph g;
       list<Node> rest;
       Node n;
       NodeId id;
@@ -123,27 +123,27 @@ algorithm
 end addNodes;
 
 protected function addNode
-  input GraphML.Graph gin;
+  input GraphMLOld.Graph gin;
   input Node node;
   input Graph inGraph;
-  output  GraphML.Graph gout;
+  output  GraphMLOld.Graph gout;
 algorithm
   gout := matchcontinue(gin, node, inGraph)
     local 
-      GraphML.Graph g;
+      GraphMLOld.Graph g;
       FNode.AvlTree kids;
       NodeId id, pid;
       Name n;
       NodeData nd;
       String nds;
       String color;
-      GraphML.ShapeType shape;
+      GraphMLOld.ShapeType shape;
     
     case (g, FNode.N(id, pid, n, kids, nd), _)
       equation
         (color, shape, nds) = graphml(node);
-        g = GraphML.addNode("n" +& FGraph.keyToStr(id), nds +& ": " +& n, color,shape,NONE(), {}, {},g);
-        g = GraphML.addEdge("e" +& FGraph.keyToStr(id), "n" +& FGraph.keyToStr(id), "n" +& FGraph.keyToStr(pid), GraphML.COLOR_BLACK,GraphML.LINE(),GraphML.LINEWIDTH_STANDARD, NONE(),(NONE(),NONE()),{},g);
+        g = GraphMLOld.addNode("n" +& FGraph.keyToStr(id), nds +& ": " +& n, color,shape,NONE(), {}, {},g);
+        g = GraphMLOld.addEdge("e" +& FGraph.keyToStr(id), "n" +& FGraph.keyToStr(id), "n" +& FGraph.keyToStr(pid), GraphMLOld.COLOR_BLACK,GraphMLOld.LINE(),GraphMLOld.LINEWIDTH_STANDARD, NONE(),(NONE(),NONE()),{},g);
       then
         g;
           
@@ -153,7 +153,7 @@ end addNode;
 protected function graphml
   input Node node;
   output String color;
-  output GraphML.ShapeType shape;
+  output GraphMLOld.ShapeType shape;
   output String name;
 algorithm
   (color, shape, name) := matchcontinue(node)
@@ -169,41 +169,41 @@ algorithm
       equation
         true = SCode.isElementRedeclare(e); 
       then 
-        (GraphML.COLOR_YELLOW, GraphML.HEXAGON(), "RDCL");
+        (GraphMLOld.COLOR_YELLOW, GraphMLOld.HEXAGON(), "RDCL");
     
     // replaceable class
     case (FNode.N(id, pid, n, kids, nd as FNode.CL(e = e)))
       equation
         true = SCode.isElementReplaceable(e); 
       then 
-        (GraphML.COLOR_RED, GraphML.RECTANGLE(), "RPCL");
+        (GraphMLOld.COLOR_RED, GraphMLOld.RECTANGLE(), "RPCL");
     
     // redeclare component
     case (FNode.N(id, pid, n, kids, nd as FNode.CO(e = e)))
       equation
         true = SCode.isElementRedeclare(e); 
       then 
-        (GraphML.COLOR_YELLOW, GraphML.ELLIPSE(), "RDCO");
+        (GraphMLOld.COLOR_YELLOW, GraphMLOld.ELLIPSE(), "RDCO");
     
     // replaceable component
     case (FNode.N(id, pid, n, kids, nd as FNode.CO(e = e)))
       equation
         true = SCode.isElementReplaceable(e); 
       then 
-        (GraphML.COLOR_RED, GraphML.ELLIPSE(), "RPCO");
+        (GraphMLOld.COLOR_RED, GraphMLOld.ELLIPSE(), "RPCO");
     
     // class
-    case (FNode.N(id, pid, n, kids, nd as FNode.CL(e = _))) then (GraphML.COLOR_GRAY, GraphML.RECTANGLE(), "CL");
+    case (FNode.N(id, pid, n, kids, nd as FNode.CL(e = _))) then (GraphMLOld.COLOR_GRAY, GraphMLOld.RECTANGLE(), "CL");
     // component
-    case (FNode.N(id, pid, n, kids, nd as FNode.CO(e =_ ))) then (GraphML.COLOR_WHITE, GraphML.ELLIPSE(), "CO");
+    case (FNode.N(id, pid, n, kids, nd as FNode.CO(e =_ ))) then (GraphMLOld.COLOR_WHITE, GraphMLOld.ELLIPSE(), "CO");
     // extends
-    case (FNode.N(id, pid, n, kids, nd as FNode.EX(e = _))) then (GraphML.COLOR_GREEN, GraphML.ROUNDRECTANGLE(), "EX");
+    case (FNode.N(id, pid, n, kids, nd as FNode.EX(e = _))) then (GraphMLOld.COLOR_GREEN, GraphMLOld.ROUNDRECTANGLE(), "EX");
     // enum
-    case (FNode.N(id, pid, n, kids, nd as FNode.EN(_))) then (GraphML.COLOR_BLUE, GraphML.ELLIPSE(), "EN");
+    case (FNode.N(id, pid, n, kids, nd as FNode.EN(_))) then (GraphMLOld.COLOR_BLUE, GraphMLOld.ELLIPSE(), "EN");
     // import
-    case (FNode.N(id, pid, n, kids, nd as FNode.IM(e = _))) then (GraphML.COLOR_BLUE, GraphML.ELLIPSE(), "IM");
+    case (FNode.N(id, pid, n, kids, nd as FNode.IM(e = _))) then (GraphMLOld.COLOR_BLUE, GraphMLOld.ELLIPSE(), "IM");
     // all others
-    case (FNode.N(id, pid, n, kids, nd)) then (GraphML.COLOR_BLUE, GraphML.ELLIPSE(), FNode.nodeDataStr(nd));
+    case (FNode.N(id, pid, n, kids, nd)) then (GraphMLOld.COLOR_BLUE, GraphMLOld.ELLIPSE(), FNode.nodeDataStr(nd));
   end matchcontinue;
 end graphml;
 

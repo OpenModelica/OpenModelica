@@ -63,7 +63,7 @@ protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
-protected import GraphMLNew;
+protected import GraphML;
 protected import HashTable2;
 protected import HashTable3;
 protected import HashTableCG;
@@ -5171,7 +5171,7 @@ algorithm
       BackendDAE.EquationArray eqns;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
-      GraphMLNew.GraphInfo graphInfo;
+      GraphML.GraphInfo graphInfo;
       Integer graph;
       list<Integer> eqnsids;
       Integer neqns;
@@ -5187,23 +5187,23 @@ algorithm
         funcs = BackendDAEUtil.getFunctions(ishared);
         (_,m,mt) = BackendDAEUtil.getIncidenceMatrix(isyst,BackendDAE.NORMAL(),SOME(funcs));
         mapIncRowEqn = listArray(List.intRange(arrayLength(m)));
-        graphInfo = GraphMLNew.createGraphInfo();
-        (graphInfo,(_,graph)) = GraphMLNew.addGraph("G",false,graphInfo);
+        graphInfo = GraphML.createGraphInfo();
+        (graphInfo,(_,graph)) = GraphML.addGraph("G",false,graphInfo);
         ((_,_,(graphInfo,graph))) = BackendVariable.traverseBackendDAEVars(vars,addVarGraph,(numberMode,1,(graphInfo,graph)));
         neqns = BackendDAEUtil.equationArraySize(eqns);
         //neqns = BackendDAEUtil.equationSize(eqns);
         eqnsids = List.intRange(neqns);
         ((graphInfo,graph)) = List.fold3(eqnsids,addEqnGraph,eqns,mapIncRowEqn,numberMode,(graphInfo,graph));
         ((_,_,graphInfo)) = List.fold(eqnsids,addEdgesGraph,(1,m,graphInfo));
-        GraphMLNew.dumpGraph(graphInfo,filename);
+        GraphML.dumpGraph(graphInfo,filename);
      then
        ();
     case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt),matching=BackendDAE.NO_MATCHING()),_,NONE(),_,_)
       equation
         vars = BackendVariable.daeVars(isyst);
         eqns = BackendEquation.daeEqns(isyst);
-        graphInfo = GraphMLNew.createGraphInfo();
-        (graphInfo,(_,graph)) = GraphMLNew.addGraph("G",false,graphInfo);
+        graphInfo = GraphML.createGraphInfo();
+        (graphInfo,(_,graph)) = GraphML.addGraph("G",false,graphInfo);
         ((_,_,(graphInfo,graph))) = BackendVariable.traverseBackendDAEVars(vars,addVarGraph,(numberMode,1,(graphInfo,graph)));
         neqns = BackendDAEUtil.equationArraySize(eqns);
         //neqns = BackendDAEUtil.equationSize(eqns);
@@ -5211,7 +5211,7 @@ algorithm
         mapIncRowEqn = listArray(List.intRange(arrayLength(m)));
         ((graphInfo,graph)) = List.fold3(eqnsids,addEqnGraph,eqns,mapIncRowEqn,numberMode,(graphInfo,graph));
         ((_,_,graphInfo)) = List.fold(eqnsids,addEdgesGraph,(1,m,graphInfo));
-        GraphMLNew.dumpGraph(graphInfo,filename);
+        GraphML.dumpGraph(graphInfo,filename);
      then
        ();
     case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=vec1,ass2=vec2,comps={})),_,NONE(),_,_)
@@ -5223,8 +5223,8 @@ algorithm
         //mapIncRowEqn = listArray(List.intRange(arrayLength(m)));
         //(_,m,mt,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(isyst,BackendDAE.SOLVABLE(), SOME(funcs)));
         (syst,m,mt,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(isyst,BackendDAE.NORMAL(), SOME(funcs));
-        graphInfo = GraphMLNew.createGraphInfo();
-        (graphInfo,(_,graph)) = GraphMLNew.addGraph("G",false,graphInfo);
+        graphInfo = GraphML.createGraphInfo();
+        (graphInfo,(_,graph)) = GraphML.addGraph("G",false,graphInfo);
         ((_,_,_,(graphInfo,graph))) = BackendVariable.traverseBackendDAEVars(vars,addVarGraphMatch,(numberMode,1,vec1,(graphInfo,graph)));
         //neqns = BackendDAEUtil.equationArraySize(eqns);
         neqns = BackendDAEUtil.equationSize(eqns);
@@ -5233,7 +5233,7 @@ algorithm
         ((graphInfo,graph)) = List.fold3(eqnsids,addEqnGraphMatch,eqns,(vec2,mapIncRowEqn,eqnsflag),numberMode,(graphInfo,graph));
         //graph = List.fold3(eqnsids,addEqnGraphMatch,eqns,vec2,mapIncRowEqn,graph);
         ((_,_,_,_,graphInfo)) = List.fold(eqnsids,addDirectedEdgesGraph,(1,m,vec2,mapIncRowEqn,graphInfo));
-        GraphMLNew.dumpGraph(graphInfo,filename);
+        GraphML.dumpGraph(graphInfo,filename);
      then
        ();
     case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=vec1,ass2=vec2,comps={})),_,SOME(vec3),_,_)
@@ -5242,14 +5242,14 @@ algorithm
         eqns = BackendEquation.daeEqns(isyst);
         funcs = BackendDAEUtil.getFunctions(ishared);
         (_,m,mt,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(isyst,BackendDAE.NORMAL(), SOME(funcs));
-        graphInfo = GraphMLNew.createGraphInfo();
-        (graphInfo,(_,graph)) = GraphMLNew.addGraph("G",false,graphInfo);
+        graphInfo = GraphML.createGraphInfo();
+        (graphInfo,(_,graph)) = GraphML.addGraph("G",false,graphInfo);
         ((_,_,(graphInfo,graph))) = BackendVariable.traverseBackendDAEVars(vars,addVarGraph,(numberMode,1,(graphInfo,graph)));
         neqns = BackendDAEUtil.equationSize(eqns);
         eqnsids = List.intRange(neqns);
         ((graphInfo,graph)) = List.fold3(eqnsids,addEqnGraph,eqns,mapIncRowEqn,numberMode,(graphInfo,graph));
         ((_,_,_,_,graphInfo)) = List.fold(eqnsids,addDirectedNumEdgesGraph,(1,m,vec2,vec3,graphInfo));
-        GraphMLNew.dumpGraph(graphInfo,filename);
+        GraphML.dumpGraph(graphInfo,filename);
      then
        ();
     case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=vec1,ass2=vec2,comps=comps)),_,NONE(),_,_)
@@ -5258,15 +5258,15 @@ algorithm
         eqns = BackendEquation.daeEqns(isyst);
         funcs = BackendDAEUtil.getFunctions(ishared);
         (_,m,mt) = BackendDAEUtil.getIncidenceMatrix(isyst, BackendDAE.NORMAL(), SOME(funcs));
-        graphInfo = GraphMLNew.createGraphInfo();
-        (graphInfo,(_,graph)) = GraphMLNew.addGraph("G",false,graphInfo);
+        graphInfo = GraphML.createGraphInfo();
+        (graphInfo,(_,graph)) = GraphML.addGraph("G",false,graphInfo);
         // generate a node for each component and get the edges
         vec3 = arrayCreate(arrayLength(mt),-1);
         ((graphInfo,graph)) = addCompsGraph(comps,vars,vec3,1,(graphInfo,graph));
         // generate edges
         mapIncRowEqn = arrayCreate(arrayLength(mt),-1);
         graphInfo = addCompsEdgesGraph(comps,m,vec3,1,1,mapIncRowEqn,1,graphInfo);
-        GraphMLNew.dumpGraph(graphInfo,filename);
+        GraphML.dumpGraph(graphInfo,filename);
      then
        ();
   end match;
@@ -5274,15 +5274,15 @@ end dumpSystemGraphML;
 
 protected function addVarGraph
 "author: Frenkel TUD 2012-05"
- input tuple<BackendDAE.Var, tuple<Boolean,Integer,tuple<GraphMLNew.GraphInfo,Integer>>> inTpl;
- output tuple<BackendDAE.Var, tuple<Boolean,Integer,tuple<GraphMLNew.GraphInfo,Integer>>> outTpl;
+ input tuple<BackendDAE.Var, tuple<Boolean,Integer,tuple<GraphML.GraphInfo,Integer>>> inTpl;
+ output tuple<BackendDAE.Var, tuple<Boolean,Integer,tuple<GraphML.GraphInfo,Integer>>> outTpl;
 algorithm
   outTpl:=
   matchcontinue (inTpl)
     local
       BackendDAE.Var v;
-      GraphMLNew.GraphInfo graphInfo;
-      GraphMLNew.NodeLabel label;
+      GraphML.GraphInfo graphInfo;
+      GraphML.NodeLabel label;
       Integer graph;
       DAE.ComponentRef cr;
       Integer id;
@@ -5294,35 +5294,35 @@ algorithm
         //g = GraphML.addNode("v" +& intString(id),ComponentReference.printComponentRefStr(cr),GraphML.COLOR_BLUE,GraphML.ELLIPSE(),g);
         //g = GraphML.addNode("v" +& intString(id),intString(id),GraphML.COLOR_BLUE,GraphML.ELLIPSE(),g);
         labelText = intString(id);
-        label = GraphMLNew.NODELABEL_INTERNAL(labelText,NONE(),GraphMLNew.FONTPLAIN());
+        label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
         desc = ComponentReference.printComponentRefStr(cr);
-        (graphInfo,_) = GraphMLNew.addNode("v" +& intString(id),GraphMLNew.COLOR_BLUE, {label}, GraphMLNew.ELLIPSE(),SOME(desc),{}, graph, graphInfo);
+        (graphInfo,_) = GraphML.addNode("v" +& intString(id),GraphML.COLOR_BLUE, {label}, GraphML.ELLIPSE(),SOME(desc),{}, graph, graphInfo);
       then ((v,(true,id+1,(graphInfo,graph))));
     case ((v as BackendDAE.VAR(varName=cr),(false,id,(graphInfo,graph))))
       equation
         true = BackendVariable.isStateVar(v);
         labelText = intString(id) +& ": " +& ComponentReference.printComponentRefStr(cr);
-        label = GraphMLNew.NODELABEL_INTERNAL(labelText,NONE(),GraphMLNew.FONTPLAIN());
-        (graphInfo,_) = GraphMLNew.addNode("v" +& intString(id),GraphMLNew.COLOR_BLUE,{label},GraphMLNew.ELLIPSE(),NONE(),{}, graph, graphInfo);
+        label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
+        (graphInfo,_) = GraphML.addNode("v" +& intString(id),GraphML.COLOR_BLUE,{label},GraphML.ELLIPSE(),NONE(),{}, graph, graphInfo);
       then ((v,(false,id+1,(graphInfo,graph))));
     case ((v as BackendDAE.VAR(varName=cr),(true,id,(graphInfo,graph))))
       equation
         b = BackendVariable.isVarDiscrete(v);
-        color = Util.if_(b,GraphMLNew.COLOR_PURPLE,GraphMLNew.COLOR_RED);
+        color = Util.if_(b,GraphML.COLOR_PURPLE,GraphML.COLOR_RED);
         labelText = intString(id);
-        label = GraphMLNew.NODELABEL_INTERNAL(labelText,NONE(),GraphMLNew.FONTPLAIN());
+        label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
         desc = ComponentReference.printComponentRefStr(cr);
         //g = GraphML.addNode("v" +& intString(id),ComponentReference.printComponentRefStr(cr),GraphML.COLOR_RED,GraphML.ELLIPSE(),g);
         //g = GraphML.addNode("v" +& intString(id),intString(id),GraphML.COLOR_RED,GraphML.ELLIPSE(),g);
-        (graphInfo,_) = GraphMLNew.addNode("v" +& intString(id),color,{label},GraphMLNew.ELLIPSE(),SOME(desc),{}, graph, graphInfo);
+        (graphInfo,_) = GraphML.addNode("v" +& intString(id),color,{label},GraphML.ELLIPSE(),SOME(desc),{}, graph, graphInfo);
       then ((v,(true,id+1,(graphInfo,graph))));
     case ((v as BackendDAE.VAR(varName=cr),(false,id,(graphInfo,graph))))
       equation
         b = BackendVariable.isVarDiscrete(v);
-        color = Util.if_(b,GraphMLNew.COLOR_PURPLE,GraphMLNew.COLOR_RED);
+        color = Util.if_(b,GraphML.COLOR_PURPLE,GraphML.COLOR_RED);
         labelText = intString(id) +& ": " +& ComponentReference.printComponentRefStr(cr);
-        label = GraphMLNew.NODELABEL_INTERNAL(labelText,NONE(),GraphMLNew.FONTPLAIN());
-        (graphInfo,_) = GraphMLNew.addNode("v" +& intString(id),color, {label}, GraphMLNew.ELLIPSE(),NONE(),{},graph, graphInfo);
+        label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
+        (graphInfo,_) = GraphML.addNode("v" +& intString(id),color, {label}, GraphML.ELLIPSE(),NONE(),{},graph, graphInfo);
       then ((v,(false,id+1,(graphInfo,graph))));
     case _ then inTpl;
   end matchcontinue;
@@ -5330,15 +5330,15 @@ end addVarGraph;
 
 protected function addVarGraphMatch
 "author: Frenkel TUD 2012-05"
- input tuple<BackendDAE.Var, tuple<Boolean,Integer,array<Integer>,tuple<GraphMLNew.GraphInfo,Integer>>> inTpl;
- output tuple<BackendDAE.Var, tuple<Boolean,Integer,array<Integer>,tuple<GraphMLNew.GraphInfo,Integer>>> outTpl;
+ input tuple<BackendDAE.Var, tuple<Boolean,Integer,array<Integer>,tuple<GraphML.GraphInfo,Integer>>> inTpl;
+ output tuple<BackendDAE.Var, tuple<Boolean,Integer,array<Integer>,tuple<GraphML.GraphInfo,Integer>>> outTpl;
 algorithm
   outTpl:=
   matchcontinue (inTpl)
     local
       BackendDAE.Var v;
-      GraphMLNew.GraphInfo graphInfo;
-      GraphMLNew.NodeLabel label;
+      GraphML.GraphInfo graphInfo;
+      GraphML.NodeLabel label;
       Integer graph;
       DAE.ComponentRef cr;
       Integer id;
@@ -5348,38 +5348,38 @@ algorithm
     case ((v as BackendDAE.VAR(varName=cr),(false,id,vec1,(graphInfo,graph))))
       equation
         true = BackendVariable.isStateVar(v);
-        color = Util.if_(intGt(vec1[id],0),GraphMLNew.COLOR_BLUE,GraphMLNew.COLOR_YELLOW);
+        color = Util.if_(intGt(vec1[id],0),GraphML.COLOR_BLUE,GraphML.COLOR_YELLOW);
         labelText = intString(id) +& ": " +& ComponentReference.printComponentRefStr(cr);
-        label = GraphMLNew.NODELABEL_INTERNAL(labelText,NONE(),GraphMLNew.FONTPLAIN());
+        label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
         //g = GraphML.addNode("v" +& intString(id),ComponentReference.printComponentRefStr(cr),color,GraphML.ELLIPSE(),g);
         //g = GraphML.addNode("v" +& intString(id),intString(id),color,GraphML.ELLIPSE(),g);
-        (graphInfo,_) = GraphMLNew.addNode("v" +& intString(id),color, {label}, GraphMLNew.ELLIPSE(),NONE(),{},graph, graphInfo);
+        (graphInfo,_) = GraphML.addNode("v" +& intString(id),color, {label}, GraphML.ELLIPSE(),NONE(),{},graph, graphInfo);
       then ((v,(false,id+1,vec1,(graphInfo,graph))));
     case ((v as BackendDAE.VAR(varName=cr),(true,id,vec1,(graphInfo,graph))))
       equation
         true = BackendVariable.isStateVar(v);
-        color = Util.if_(intGt(vec1[id],0),GraphMLNew.COLOR_BLUE,GraphMLNew.COLOR_YELLOW);
+        color = Util.if_(intGt(vec1[id],0),GraphML.COLOR_BLUE,GraphML.COLOR_YELLOW);
         desc = ComponentReference.printComponentRefStr(cr);
         labelText = intString(id);
-        label = GraphMLNew.NODELABEL_INTERNAL(labelText,NONE(),GraphMLNew.FONTPLAIN());
-        (graphInfo,_) = GraphMLNew.addNode("v" +& intString(id),color, {label}, GraphMLNew.ELLIPSE(),SOME(desc),{},graph, graphInfo);
+        label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
+        (graphInfo,_) = GraphML.addNode("v" +& intString(id),color, {label}, GraphML.ELLIPSE(),SOME(desc),{},graph, graphInfo);
       then ((v,(true,id+1,vec1,(graphInfo,graph))));
     case ((v as BackendDAE.VAR(varName=cr),(false,id,vec1,(graphInfo,graph))))
       equation
-        color = Util.if_(intGt(vec1[id],0),GraphMLNew.COLOR_RED,GraphMLNew.COLOR_YELLOW);
+        color = Util.if_(intGt(vec1[id],0),GraphML.COLOR_RED,GraphML.COLOR_YELLOW);
         labelText = intString(id) +& ": " +& ComponentReference.printComponentRefStr(cr);
-        label = GraphMLNew.NODELABEL_INTERNAL(labelText,NONE(),GraphMLNew.FONTPLAIN());
+        label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
         //g = GraphML.addNode("v" +& intString(id),ComponentReference.printComponentRefStr(cr),color,GraphML.ELLIPSE(),g);
         //g = GraphML.addNode("v" +& intString(id),intString(id),color,GraphML.ELLIPSE(),g);
-        (graphInfo,_) = GraphMLNew.addNode("v" +& intString(id),color,{label},GraphMLNew.ELLIPSE(),NONE(),{},graph, graphInfo);
+        (graphInfo,_) = GraphML.addNode("v" +& intString(id),color,{label},GraphML.ELLIPSE(),NONE(),{},graph, graphInfo);
       then ((v,(false,id+1,vec1,(graphInfo,graph))));
     case ((v as BackendDAE.VAR(varName=cr),(true,id,vec1,(graphInfo,graph))))
       equation
-        color = Util.if_(intGt(vec1[id],0),GraphMLNew.COLOR_RED,GraphMLNew.COLOR_YELLOW);
+        color = Util.if_(intGt(vec1[id],0),GraphML.COLOR_RED,GraphML.COLOR_YELLOW);
         desc = ComponentReference.printComponentRefStr(cr);
         labelText = intString(id);
-        label = GraphMLNew.NODELABEL_INTERNAL(labelText,NONE(),GraphMLNew.FONTPLAIN());
-        (graphInfo,_) = GraphMLNew.addNode("v" +& intString(id),color,{label},GraphMLNew.ELLIPSE(),SOME(desc),{},graph, graphInfo);
+        label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
+        (graphInfo,_) = GraphML.addNode("v" +& intString(id),color,{label},GraphML.ELLIPSE(),SOME(desc),{},graph, graphInfo);
       then ((v,(true,id+1,vec1,(graphInfo,graph))));
     case _ then inTpl;
   end matchcontinue;
@@ -5390,14 +5390,14 @@ protected function addEqnGraph
   input BackendDAE.EquationArray eqns;
   input array<Integer> mapIncRowEqn;
   input Boolean numberMode;
-  input tuple<GraphMLNew.GraphInfo,Integer> inGraph;
-  output tuple<GraphMLNew.GraphInfo,Integer> outGraph;
+  input tuple<GraphML.GraphInfo,Integer> inGraph;
+  output tuple<GraphML.GraphInfo,Integer> outGraph;
 protected
   BackendDAE.Equation eqn;
   String str;
-  GraphMLNew.GraphInfo graphInfo;
+  GraphML.GraphInfo graphInfo;
   Integer graph;
-  GraphMLNew.NodeLabel label;
+  GraphML.NodeLabel label;
   String labelText;
 algorithm
   outGraph := match(inNode, eqns, mapIncRowEqn, numberMode, inGraph)
@@ -5408,8 +5408,8 @@ algorithm
         //str := intString(inNode);
         str = intString(inNode) +& ": " +& BackendDump.equationString(eqn);
         str = Util.xmlEscape(str);
-        label = GraphMLNew.NODELABEL_INTERNAL(str,NONE(),GraphMLNew.FONTPLAIN());
-        (graphInfo,_) = GraphMLNew.addNode("n" +& intString(inNode),GraphMLNew.COLOR_GREEN,{label},GraphMLNew.RECTANGLE(),NONE(),{},graph,graphInfo);
+        label = GraphML.NODELABEL_INTERNAL(str,NONE(),GraphML.FONTPLAIN());
+        (graphInfo,_) = GraphML.addNode("n" +& intString(inNode),GraphML.COLOR_GREEN,{label},GraphML.RECTANGLE(),NONE(),{},graph,graphInfo);
       then ((graphInfo,graph));
     case(_,_,_,true,(graphInfo,graph))
       equation
@@ -5419,19 +5419,19 @@ algorithm
         //str = intString(inNode) +& ": " +& BackendDump.equationString(eqn);
         str = Util.xmlEscape(str);
         labelText = intString(inNode);
-        label = GraphMLNew.NODELABEL_INTERNAL(labelText,NONE(),GraphMLNew.FONTPLAIN());
-        (graphInfo,_) = GraphMLNew.addNode("n" +& intString(inNode),GraphMLNew.COLOR_GREEN, {label},GraphMLNew.RECTANGLE(),SOME(str),{},graph,graphInfo);
+        label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
+        (graphInfo,_) = GraphML.addNode("n" +& intString(inNode),GraphML.COLOR_GREEN, {label},GraphML.RECTANGLE(),SOME(str),{},graph,graphInfo);
       then ((graphInfo,graph));
   end match;
 end addEqnGraph;
 
 protected function addEdgesGraph
   input Integer e;
-  input tuple<Integer,BackendDAE.IncidenceMatrix,GraphMLNew.GraphInfo> inTpl;
-  output tuple<Integer,BackendDAE.IncidenceMatrix,GraphMLNew.GraphInfo> outTpl;
+  input tuple<Integer,BackendDAE.IncidenceMatrix,GraphML.GraphInfo> inTpl;
+  output tuple<Integer,BackendDAE.IncidenceMatrix,GraphML.GraphInfo> outTpl;
 protected
   Integer id;
-  GraphMLNew.GraphInfo graph;
+  GraphML.GraphInfo graph;
   BackendDAE.IncidenceMatrix m;
   list<Integer> vars;
 algorithm
@@ -5449,8 +5449,8 @@ protected function addEqnGraphMatch
 //  input array<Integer> vec2;
 //  input array<Integer> mapIncRowEqn;
   input Boolean numberMode;
-  input tuple<GraphMLNew.GraphInfo,Integer> inGraph;
-  output tuple<GraphMLNew.GraphInfo,Integer> outGraph;
+  input tuple<GraphML.GraphInfo,Integer> inGraph;
+  output tuple<GraphML.GraphInfo,Integer> outGraph;
 algorithm
   outGraph := matchcontinue(inNode,eqns,atpl,numberMode,inGraph)
     local
@@ -5458,8 +5458,8 @@ algorithm
       String str,color;
       Integer e;
       Integer graph;
-      GraphMLNew.GraphInfo graphInfo;
-      GraphMLNew.NodeLabel label;
+      GraphML.GraphInfo graphInfo;
+      GraphML.NodeLabel label;
       array<Integer> vec2,mapIncRowEqn;
       array<Boolean> eqnsflag;
       String labelText;
@@ -5472,9 +5472,9 @@ algorithm
        str = intString(e) +& ": " +&  str;
        //str = intString(inNode);
        str = Util.xmlEscape(str);
-       color = Util.if_(intGt(vec2[inNode],0),GraphMLNew.COLOR_GREEN,GraphMLNew.COLOR_PURPLE);
-       label = GraphMLNew.NODELABEL_INTERNAL(str,NONE(),GraphMLNew.FONTPLAIN());
-       (graphInfo,_) = GraphMLNew.addNode("n" +& intString(e),color, {label}, GraphMLNew.RECTANGLE(),NONE(),{},graph,graphInfo);
+       color = Util.if_(intGt(vec2[inNode],0),GraphML.COLOR_GREEN,GraphML.COLOR_PURPLE);
+       label = GraphML.NODELABEL_INTERNAL(str,NONE(),GraphML.FONTPLAIN());
+       (graphInfo,_) = GraphML.addNode("n" +& intString(e),color, {label}, GraphML.RECTANGLE(),NONE(),{},graph,graphInfo);
      then ((graphInfo,graph));
     case(_,_,(vec2,mapIncRowEqn,eqnsflag),true,(graphInfo,graph))
       equation
@@ -5485,10 +5485,10 @@ algorithm
        //str = intString(e) +& ": " +&  str;
        //str = intString(inNode);
        str = Util.xmlEscape(str);
-       color = Util.if_(intGt(vec2[inNode],0),GraphMLNew.COLOR_GREEN,GraphMLNew.COLOR_PURPLE);
+       color = Util.if_(intGt(vec2[inNode],0),GraphML.COLOR_GREEN,GraphML.COLOR_PURPLE);
        labelText = intString(e);
-       label = GraphMLNew.NODELABEL_INTERNAL(labelText,NONE(),GraphMLNew.FONTPLAIN());
-       (graphInfo,_) = GraphMLNew.addNode("n" +& intString(e),color, {label}, GraphMLNew.RECTANGLE(),SOME(str),{},graph,graphInfo);
+       label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
+       (graphInfo,_) = GraphML.addNode("n" +& intString(e),color, {label}, GraphML.RECTANGLE(),SOME(str),{},graph,graphInfo);
      then ((graphInfo,graph));
     case(_,_,(vec2,mapIncRowEqn,eqnsflag),_,_)
       equation
@@ -5502,27 +5502,27 @@ end addEqnGraphMatch;
 protected function addEdgeGraph
   input Integer V;
   input Integer e;
-  input tuple<Integer,GraphMLNew.GraphInfo> inTpl;
-  output tuple<Integer,GraphMLNew.GraphInfo> outTpl;
+  input tuple<Integer,GraphML.GraphInfo> inTpl;
+  output tuple<Integer,GraphML.GraphInfo> outTpl;
 protected
   Integer id,v;
-  GraphMLNew.GraphInfo graph;
-  GraphMLNew.LineType ln;
+  GraphML.GraphInfo graph;
+  GraphML.LineType ln;
 algorithm
   (id,graph) := inTpl;
   v := intAbs(V);
-  ln := Util.if_(intGt(V,0),GraphMLNew.LINE(),GraphMLNew.DASHED());
-  (graph,_) := GraphMLNew.addEdge("e" +& intString(id),"n" +& intString(e),"v" +& intString(v),GraphMLNew.COLOR_BLACK,ln,GraphMLNew.LINEWIDTH_STANDARD, false, {},(GraphMLNew.ARROWNONE(),GraphMLNew.ARROWNONE()),{},graph);
+  ln := Util.if_(intGt(V,0),GraphML.LINE(),GraphML.DASHED());
+  (graph,_) := GraphML.addEdge("e" +& intString(id),"n" +& intString(e),"v" +& intString(v),GraphML.COLOR_BLACK,ln,GraphML.LINEWIDTH_STANDARD, false, {},(GraphML.ARROWNONE(),GraphML.ARROWNONE()),{},graph);
   outTpl := ((id+1,graph));
 end addEdgeGraph;
 
 protected function addDirectedEdgesGraph
   input Integer e;
-  input tuple<Integer,BackendDAE.IncidenceMatrix,array<Integer>,array<Integer>,GraphMLNew.GraphInfo> inTpl;
-  output tuple<Integer,BackendDAE.IncidenceMatrix,array<Integer>,array<Integer>,GraphMLNew.GraphInfo> outTpl;
+  input tuple<Integer,BackendDAE.IncidenceMatrix,array<Integer>,array<Integer>,GraphML.GraphInfo> inTpl;
+  output tuple<Integer,BackendDAE.IncidenceMatrix,array<Integer>,array<Integer>,GraphML.GraphInfo> outTpl;
 protected
   Integer id,v,n;
-  GraphMLNew.GraphInfo graph;
+  GraphML.GraphInfo graph;
   BackendDAE.IncidenceMatrix m;
   list<Integer> vars;
   array<Integer> vec2;
@@ -5539,30 +5539,30 @@ end addDirectedEdgesGraph;
 protected function addDirectedEdgeGraph
   input Integer v;
   input Integer e;
-  input tuple<Integer,Integer,GraphMLNew.GraphInfo> inTpl;
-  output tuple<Integer,Integer,GraphMLNew.GraphInfo> outTpl;
+  input tuple<Integer,Integer,GraphML.GraphInfo> inTpl;
+  output tuple<Integer,Integer,GraphML.GraphInfo> outTpl;
 protected
   Integer id,r,absv;
-  GraphMLNew.GraphInfo graph;
-  tuple<GraphMLNew.ArrowType,GraphMLNew.ArrowType> arrow;
-  GraphMLNew.LineType lt;
+  GraphML.GraphInfo graph;
+  tuple<GraphML.ArrowType,GraphML.ArrowType> arrow;
+  GraphML.LineType lt;
 algorithm
   (id,r,graph) := inTpl;
   absv := intAbs(v);
-  arrow := Util.if_(intEq(r,absv),(GraphMLNew.ARROWSTANDART(),GraphMLNew.ARROWNONE()),(GraphMLNew.ARROWNONE(),GraphMLNew.ARROWSTANDART()));
-  lt := Util.if_(intGt(v,0),GraphMLNew.LINE(),GraphMLNew.DASHED());
-  (graph,_) := GraphMLNew.addEdge("e" +& intString(id),"n" +& intString(e),"v" +& intString(absv),GraphMLNew.COLOR_BLACK,lt,GraphMLNew.LINEWIDTH_STANDARD, false, {},arrow,{},graph);
+  arrow := Util.if_(intEq(r,absv),(GraphML.ARROWSTANDART(),GraphML.ARROWNONE()),(GraphML.ARROWNONE(),GraphML.ARROWSTANDART()));
+  lt := Util.if_(intGt(v,0),GraphML.LINE(),GraphML.DASHED());
+  (graph,_) := GraphML.addEdge("e" +& intString(id),"n" +& intString(e),"v" +& intString(absv),GraphML.COLOR_BLACK,lt,GraphML.LINEWIDTH_STANDARD, false, {},arrow,{},graph);
   outTpl := ((id+1,r,graph));
 end addDirectedEdgeGraph;
 
 
 protected function addDirectedNumEdgesGraph
   input Integer e;
-  input tuple<Integer,BackendDAE.IncidenceMatrix,array<Integer>,array<Integer>,GraphMLNew.GraphInfo> inTpl;
-  output tuple<Integer,BackendDAE.IncidenceMatrix,array<Integer>,array<Integer>,GraphMLNew.GraphInfo> outTpl;
+  input tuple<Integer,BackendDAE.IncidenceMatrix,array<Integer>,array<Integer>,GraphML.GraphInfo> inTpl;
+  output tuple<Integer,BackendDAE.IncidenceMatrix,array<Integer>,array<Integer>,GraphML.GraphInfo> outTpl;
 protected
   Integer id,v;
-  GraphMLNew.GraphInfo graph;
+  GraphML.GraphInfo graph;
   BackendDAE.IncidenceMatrix m;
   list<Integer> vars;
   array<Integer> vec2,vec3,mapIncRowEqn;
@@ -5579,19 +5579,19 @@ end addDirectedNumEdgesGraph;
 protected function addDirectedNumEdgeGraph
   input Integer v;
   input Integer e;
-  input tuple<Integer,Integer,String,GraphMLNew.GraphInfo> inTpl;
-  output tuple<Integer,Integer,String,GraphMLNew.GraphInfo> outTpl;
+  input tuple<Integer,Integer,String,GraphML.GraphInfo> inTpl;
+  output tuple<Integer,Integer,String,GraphML.GraphInfo> outTpl;
 protected
   Integer id,r,n;
-  GraphMLNew.GraphInfo graph;
-  tuple<GraphMLNew.ArrowType,GraphMLNew.ArrowType> arrow;
+  GraphML.GraphInfo graph;
+  tuple<GraphML.ArrowType,GraphML.ArrowType> arrow;
   String text;
-  List<GraphMLNew.EdgeLabel> labels;
+  List<GraphML.EdgeLabel> labels;
 algorithm
   (id,r,text,graph) := inTpl;
-  arrow := Util.if_(intEq(r,v),(GraphMLNew.ARROWSTANDART(),GraphMLNew.ARROWNONE()),(GraphMLNew.ARROWNONE(),GraphMLNew.ARROWSTANDART()));
-  labels := Util.if_(intEq(r,v),{GraphMLNew.EDGELABEL(text,SOME("#0000FF"),GraphMLNew.FONTSIZE_STANDARD)},{});
-  (graph,_) := GraphMLNew.addEdge("e" +& intString(id),"n" +& intString(e),"v" +& intString(v),GraphMLNew.COLOR_BLACK,GraphMLNew.LINE(),GraphMLNew.LINEWIDTH_STANDARD,false,labels,arrow,{},graph);
+  arrow := Util.if_(intEq(r,v),(GraphML.ARROWSTANDART(),GraphML.ARROWNONE()),(GraphML.ARROWNONE(),GraphML.ARROWSTANDART()));
+  labels := Util.if_(intEq(r,v),{GraphML.EDGELABEL(text,SOME("#0000FF"),GraphML.FONTSIZE_STANDARD)},{});
+  (graph,_) := GraphML.addEdge("e" +& intString(id),"n" +& intString(e),"v" +& intString(v),GraphML.COLOR_BLACK,GraphML.LINE(),GraphML.LINEWIDTH_STANDARD,false,labels,arrow,{},graph);
   outTpl := ((id+1,r,text,graph));
 end addDirectedNumEdgeGraph;
 
@@ -5604,28 +5604,28 @@ public function dumpUnmatched
 protected
   BackendDAE.IncidenceMatrix m;
   list<Integer> states,vars;
-  GraphMLNew.GraphInfo graphInfo;
+  GraphML.GraphInfo graphInfo;
   Integer graph;
   Integer id;
   BackendDAE.Variables varsarray;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=varsarray,m=SOME(m)) := isyst;
   (states,vars) := statesandVarsInEqns(inEqnsLst,m,{},{});
-  graphInfo := GraphMLNew.createGraphInfo();
-  (graphInfo,(_,graph)) := GraphMLNew.addGraph("G",false,graphInfo);
+  graphInfo := GraphML.createGraphInfo();
+  (graphInfo,(_,graph)) := GraphML.addGraph("G",false,graphInfo);
   ((graphInfo,graph)) := List.fold1(inEqnsLst,addEqnNodes,ass2,(graphInfo,graph));
-  ((graphInfo,graph)) := List.fold1(states,addVarNodes,("s",varsarray,ass1,GraphMLNew.COLOR_RED,GraphMLNew.COLOR_DARKRED),(graphInfo,graph));
-  ((graphInfo,graph)) := List.fold1(vars,addVarNodes,("v",varsarray,ass1,GraphMLNew.COLOR_YELLOW,GraphMLNew.COLOR_GRAY),(graphInfo,graph));
+  ((graphInfo,graph)) := List.fold1(states,addVarNodes,("s",varsarray,ass1,GraphML.COLOR_RED,GraphML.COLOR_DARKRED),(graphInfo,graph));
+  ((graphInfo,graph)) := List.fold1(vars,addVarNodes,("v",varsarray,ass1,GraphML.COLOR_YELLOW,GraphML.COLOR_GRAY),(graphInfo,graph));
   ((graphInfo,_)) := List.fold2(inEqnsLst,addEdges,m,ass2,(graphInfo,1));
-  GraphMLNew.dumpGraph(graphInfo,fileName);
+  GraphML.dumpGraph(graphInfo,fileName);
 end dumpUnmatched;
 
 protected function addEdges
   input Integer e;
   input BackendDAE.IncidenceMatrix m;
   input array<Integer> ass2;
-  input tuple<GraphMLNew.GraphInfo,Integer> inGraph;
-  output tuple<GraphMLNew.GraphInfo,Integer> outGraph;
+  input tuple<GraphML.GraphInfo,Integer> inGraph;
+  output tuple<GraphML.GraphInfo,Integer> outGraph;
 protected
   list<Integer> eqnstates,eqnvars;
 algorithm
@@ -5639,48 +5639,48 @@ protected function addEdge
   input Integer v;
   input tuple<Integer,String,array<Integer>> inTpl;
   input BackendDAE.IncidenceMatrix m;
-  input tuple<GraphMLNew.GraphInfo,Integer> inGraph;
-  output tuple<GraphMLNew.GraphInfo,Integer> outGraph;
+  input tuple<GraphML.GraphInfo,Integer> inGraph;
+  output tuple<GraphML.GraphInfo,Integer> outGraph;
 protected
-  GraphMLNew.GraphInfo graph;
+  GraphML.GraphInfo graph;
   Integer id,e,evar;
   String prefix;
   array<Integer> ass2;
-  GraphMLNew.ArrowType arrow;
+  GraphML.ArrowType arrow;
 algorithm
   (e,prefix,ass2) := inTpl;
   (graph,id) := inGraph;
   evar :=ass2[e];
-  arrow := Util.if_(intGt(evar,0) and intEq(evar,v) ,GraphMLNew.ARROWSTANDART(),GraphMLNew.ARROWNONE());
-  (graph,_) := GraphMLNew.addEdge("e" +& intString(id),"n" +& intString(e),prefix +& intString(v),GraphMLNew.COLOR_BLACK,GraphMLNew.LINE(),GraphMLNew.LINEWIDTH_STANDARD, false, {},(GraphMLNew.ARROWNONE(),arrow),{},graph);
+  arrow := Util.if_(intGt(evar,0) and intEq(evar,v) ,GraphML.ARROWSTANDART(),GraphML.ARROWNONE());
+  (graph,_) := GraphML.addEdge("e" +& intString(id),"n" +& intString(e),prefix +& intString(v),GraphML.COLOR_BLACK,GraphML.LINE(),GraphML.LINEWIDTH_STANDARD, false, {},(GraphML.ARROWNONE(),arrow),{},graph);
   outGraph := (graph,id+1);
 end addEdge;
 
 protected function addEqnNodes
   input Integer inNode;
   input array<Integer> ass2;
-  input tuple<GraphMLNew.GraphInfo,Integer> inGraph;
-  output tuple<GraphMLNew.GraphInfo,Integer> outGraph;
+  input tuple<GraphML.GraphInfo,Integer> inGraph;
+  output tuple<GraphML.GraphInfo,Integer> outGraph;
 protected
   String color;
   Integer graph;
-  GraphMLNew.GraphInfo graphInfo;
-  GraphMLNew.NodeLabel label;
+  GraphML.GraphInfo graphInfo;
+  GraphML.NodeLabel label;
   String labelText;
 algorithm
   (graphInfo,graph) := inGraph;
-  color := Util.if_(intGt(ass2[inNode],0),GraphMLNew.COLOR_GREEN,GraphMLNew.COLOR_BLUE);
+  color := Util.if_(intGt(ass2[inNode],0),GraphML.COLOR_GREEN,GraphML.COLOR_BLUE);
   labelText := intString(inNode);
-  label := GraphMLNew.NODELABEL_INTERNAL(labelText,NONE(),GraphMLNew.FONTPLAIN());
-  (graphInfo,_) := GraphMLNew.addNode("n" +& intString(inNode),color,{label},GraphMLNew.RECTANGLE(),NONE(),{},graph,graphInfo);
+  label := GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
+  (graphInfo,_) := GraphML.addNode("n" +& intString(inNode),color,{label},GraphML.RECTANGLE(),NONE(),{},graph,graphInfo);
   outGraph := (graphInfo,graph);
 end addEqnNodes;
 
 protected function addVarNodes
   input Integer inNode;
   input tuple<String,BackendDAE.Variables,array<Integer>,String,String> inTpl;
-  input tuple<GraphMLNew.GraphInfo,Integer> inGraph;
-  output tuple<GraphMLNew.GraphInfo,Integer> outGraph;
+  input tuple<GraphML.GraphInfo,Integer> inGraph;
+  output tuple<GraphML.GraphInfo,Integer> outGraph;
 protected
   String prefix,color,color1,c;
   BackendDAE.Variables vars;
@@ -5688,8 +5688,8 @@ protected
   DAE.ComponentRef cr;
   array<Integer> ass1;
   Integer graph;
-  GraphMLNew.GraphInfo graphInfo;
-  GraphMLNew.NodeLabel label;
+  GraphML.GraphInfo graphInfo;
+  GraphML.NodeLabel label;
   String labelText;
 algorithm
   (graphInfo,graph) := inGraph;
@@ -5698,8 +5698,8 @@ algorithm
   cr := BackendVariable.varCref(var);
   c := Util.if_(intGt(ass1[inNode],0),color1,color);
   labelText := ComponentReference.printComponentRefStr(cr);
-  label := GraphMLNew.NODELABEL_INTERNAL(labelText,NONE(),GraphMLNew.FONTPLAIN());
-  (graphInfo,_) := GraphMLNew.addNode(prefix +& intString(inNode),c,{label},GraphMLNew.ELLIPSE(),NONE(),{},graph,graphInfo);
+  label := GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
+  (graphInfo,_) := GraphML.addNode(prefix +& intString(inNode),c,{label},GraphML.ELLIPSE(),NONE(),{},graph,graphInfo);
   outGraph := (graphInfo,graph);
 end addVarNodes;
 
@@ -5746,7 +5746,7 @@ algorithm
     local
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
-      GraphMLNew.GraphInfo graphInfo;
+      GraphML.GraphInfo graphInfo;
       Integer graph;
       list<Integer> eqnsids;
       Integer neqns;
@@ -5754,14 +5754,14 @@ algorithm
       equation
         vars = BackendVariable.daeVars(isyst);
         eqns = BackendEquation.daeEqns(isyst);
-        graphInfo = GraphMLNew.createGraphInfo();
-        (graphInfo,(_,graph)) = GraphMLNew.addGraph("G",false,graphInfo);
+        graphInfo = GraphML.createGraphInfo();
+        (graphInfo,(_,graph)) = GraphML.addGraph("G",false,graphInfo);
         ((_,_,(graphInfo,graph))) = BackendVariable.traverseBackendDAEVars(vars,addVarGraph,(false,1,(graphInfo,graph)));
         neqns = BackendDAEUtil.systemSize(isyst);
         eqnsids = List.intRange(neqns);
         ((graphInfo,graph)) = List.fold3(eqnsids,addEqnGraph,eqns,listArray(eqnsids),false,(graphInfo,graph));
         ((_,_,graphInfo)) = List.fold(eqnsids,addDirectedNumEdgesGraphEnhanced,(1,m,graphInfo));
-        GraphMLNew.dumpGraph(graphInfo,"");
+        GraphML.dumpGraph(graphInfo,"");
      then
        ();
   end match;
@@ -5769,11 +5769,11 @@ end dumpSystemGraphMLEnhanced;
 
 protected function addDirectedNumEdgesGraphEnhanced
   input Integer e;
-  input tuple<Integer,BackendDAE.AdjacencyMatrixEnhanced,GraphMLNew.GraphInfo> inTpl;
-  output tuple<Integer,BackendDAE.AdjacencyMatrixEnhanced,GraphMLNew.GraphInfo> outTpl;
+  input tuple<Integer,BackendDAE.AdjacencyMatrixEnhanced,GraphML.GraphInfo> inTpl;
+  output tuple<Integer,BackendDAE.AdjacencyMatrixEnhanced,GraphML.GraphInfo> outTpl;
 protected
   Integer id;
-  GraphMLNew.GraphInfo graph;
+  GraphML.GraphInfo graph;
   BackendDAE.AdjacencyMatrixEnhanced m;
   BackendDAE.AdjacencyMatrixElementEnhanced vars;
 algorithm
@@ -5785,22 +5785,22 @@ end addDirectedNumEdgesGraphEnhanced;
 protected function addDirectedNumEdgeGraphEnhanced
   input tuple<Integer,BackendDAE.Solvability> vs;
   input Integer e;
-  input tuple<Integer,GraphMLNew.GraphInfo> inTpl;
-  output tuple<Integer,GraphMLNew.GraphInfo> outTpl;
+  input tuple<Integer,GraphML.GraphInfo> inTpl;
+  output tuple<Integer,GraphML.GraphInfo> outTpl;
 algorithm
   outTpl := matchcontinue(vs,e,inTpl)
     local
       BackendDAE.Solvability s;
       Integer id,v;
-      GraphMLNew.GraphInfo graph;
+      GraphML.GraphInfo graph;
       String text;
-      GraphMLNew.EdgeLabel label;
+      GraphML.EdgeLabel label;
     case((v,s),_,(id,graph))
       equation
         true = intGt(v,0);
         text = intString(solvabilityWights(s));
-        label = GraphMLNew.EDGELABEL(text,SOME("#0000FF"), GraphMLNew.FONTSIZE_STANDARD);
-        (graph,_) = GraphMLNew.addEdge("e" +& intString(id),"n" +& intString(e),"v" +& intString(v),GraphMLNew.COLOR_BLACK,GraphMLNew.LINE(),GraphMLNew.LINEWIDTH_STANDARD,false,{label},(GraphMLNew.ARROWNONE(),GraphMLNew.ARROWNONE()),{},graph);
+        label = GraphML.EDGELABEL(text,SOME("#0000FF"), GraphML.FONTSIZE_STANDARD);
+        (graph,_) = GraphML.addEdge("e" +& intString(id),"n" +& intString(e),"v" +& intString(v),GraphML.COLOR_BLACK,GraphML.LINE(),GraphML.LINEWIDTH_STANDARD,false,{label},(GraphML.ARROWNONE(),GraphML.ARROWNONE()),{},graph);
       then
         ((id+1,graph));
     else then inTpl;
@@ -5814,8 +5814,8 @@ protected function addCompsGraph "author: Frenkel TUD 2013-02,
   input BackendDAE.Variables vars;
   input array<Integer> varcomp;
   input Integer iN;
-  input tuple<GraphMLNew.GraphInfo,Integer> iGraph;
-  output tuple<GraphMLNew.GraphInfo,Integer> oGraph;
+  input tuple<GraphML.GraphInfo,Integer> iGraph;
+  output tuple<GraphML.GraphInfo,Integer> oGraph;
 algorithm
   oGraph := match(iComps,vars,varcomp,iN,iGraph)
     local
@@ -5823,8 +5823,8 @@ algorithm
       BackendDAE.StrongComponent comp;
       list<Integer> vlst;
       Integer graph;
-      GraphMLNew.GraphInfo graphInfo;
-      GraphMLNew.NodeLabel label;
+      GraphML.GraphInfo graphInfo;
+      GraphML.NodeLabel label;
       array<Integer> varcomp1;
       String text;
       list<BackendDAE.Var> varlst;
@@ -5835,8 +5835,8 @@ algorithm
         varcomp1 = List.fold1r(vlst,arrayUpdate,iN,varcomp);
         varlst = List.map1r(vlst,BackendVariable.getVarAt,vars);
         text = intString(iN) +& ":" +& stringDelimitList(List.map(List.map(varlst,BackendVariable.varCref),ComponentReference.printComponentRefStr),"\n");
-        label = GraphMLNew.NODELABEL_INTERNAL(text,NONE(),GraphMLNew.FONTPLAIN());
-        (graphInfo,_) = GraphMLNew.addNode("n" +& intString(iN),GraphMLNew.COLOR_GREEN,{label},GraphMLNew.RECTANGLE(),NONE(),{},graph,graphInfo);
+        label = GraphML.NODELABEL_INTERNAL(text,NONE(),GraphML.FONTPLAIN());
+        (graphInfo,_) = GraphML.addNode("n" +& intString(iN),GraphML.COLOR_GREEN,{label},GraphML.RECTANGLE(),NONE(),{},graph,graphInfo);
       then
         addCompsGraph(rest,vars,varcomp1,iN+1,(graphInfo,graph));
   end match;
@@ -5851,8 +5851,8 @@ protected function addCompsEdgesGraph "author: Frenkel TUD 2013-02,
   input Integer id;
   input array<Integer> markarray;
   input Integer mark;
-  input GraphMLNew.GraphInfo iGraph;
-  output GraphMLNew.GraphInfo oGraph;
+  input GraphML.GraphInfo iGraph;
+  output GraphML.GraphInfo oGraph;
 algorithm
   oGraph := match(iComps,m,varcomp,iN,id,markarray,mark,iGraph)
     local
@@ -5860,7 +5860,7 @@ algorithm
       BackendDAE.StrongComponent comp;
       list<Integer> elst,vlst,usedvlst;
       Integer n;
-      GraphMLNew.GraphInfo graph;
+      GraphML.GraphInfo graph;
     case ({},_,_,_,_,_,_,_) then iGraph;
     case (comp::rest,_,_,_,_,_,_,_)
       equation
@@ -5908,24 +5908,24 @@ protected function addCompEdgesGraph "author: Frenkel TUD 2013-02,
   input Integer mark;
   input Integer iN;
   input Integer id;
-  input GraphMLNew.GraphInfo iGraph;
+  input GraphML.GraphInfo iGraph;
   output Integer oN;
-  output GraphMLNew.GraphInfo oGraph;
+  output GraphML.GraphInfo oGraph;
 algorithm
   (oN,oGraph) := matchcontinue(iVars,varcomp,markarray,mark,iN,id,iGraph)
     local
       list<Integer> rest;
       Integer v,n,c;
-      GraphMLNew.GraphInfo graph;
+      GraphML.GraphInfo graph;
       String text;
-      GraphMLNew.EdgeLabel label;
+      GraphML.EdgeLabel label;
     case ({},_,_,_,_,_,_) then (id,iGraph);
     case (v::rest,_,_,_,_,_,_)
       equation
         c = varcomp[v];
         false = intEq(markarray[c],mark);
         _ = arrayUpdate(markarray,c,mark);
-        (graph,_) = GraphMLNew.addEdge("e" +& intString(id),"n" +& intString(c),"n" +& intString(iN),GraphMLNew.COLOR_BLACK,GraphMLNew.LINE(),GraphMLNew.LINEWIDTH_STANDARD,false,{},(GraphMLNew.ARROWSTANDART(),GraphMLNew.ARROWNONE()),{},iGraph);
+        (graph,_) = GraphML.addEdge("e" +& intString(id),"n" +& intString(c),"n" +& intString(iN),GraphML.COLOR_BLACK,GraphML.LINE(),GraphML.LINEWIDTH_STANDARD,false,{},(GraphML.ARROWSTANDART(),GraphML.ARROWNONE()),{},iGraph);
         (n,graph) = addCompEdgesGraph(rest,varcomp,markarray,mark,iN,id+1,graph);
       then
         (n,graph);

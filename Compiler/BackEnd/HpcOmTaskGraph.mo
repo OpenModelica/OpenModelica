@@ -38,7 +38,7 @@ encapsulated package HpcOmTaskGraph
 "
 public import BackendDAE;
 public import DAE;
-public import GraphMLNew;
+public import GraphML;
 
 protected import BackendDAEOptimize;
 protected import BackendDAEUtil;
@@ -62,8 +62,8 @@ type TaskGraph = array<list<Integer>>;
 public uniontype TaskGraphMeta   // stores all the metadata for the TaskGraph
   record TASKGRAPHMETA
     array<list<Integer>> inComps; //all StrongComponents from the BLT that belong to the Nodes [nodeId = arrayIdx]
-    array<Integer> varSccMapping;  // maps each variable to a comp with compIdx
-    array<Integer> eqSccMapping;  // maps each equation to a comp with compIdx
+    array<tuple<Integer,Integer,Integer>> varNodeMapping;  // maps each variable to <nodeIdx, eqSystemIdx, offset>. The offset is the sum of the varNumber of all eqSystems with a minor index.
+    array<tuple<Integer,Integer,Integer>> eqNodeMapping;  // maps each equation to <nodeIdx, eqSystemIdx, offset>. The offset is the sum of the eqNumber of all eqSystems with a minor index.
     list<Integer> rootNodes;  // all Nodes without predecessor
     array<String> nodeNames; // the name of the nodes for the graphml generation
     array<String> nodeDescs;  // a description of the nodes for the graphml generation
@@ -93,9 +93,8 @@ protected
 algorithm
   //Iterate over each system
   BackendDAE.DAE(systs,shared) := inDAE;
-  (graph,graphData) := getEmptyTaskGraph(1);
-  ((graph,graphData)) := List.fold1(systs,createTaskGraph0,shared,(graph,graphData));  
-
+  (graph,graphData) := getEmptyTaskGraph(0,0,0);
+  ((graph,graphData,_)) := List.fold1(systs,createTaskGraph0,shared,(graph,graphData,1));  
   //printTaskGraph(graph);
   //printTaskGraphMeta(graphData);
   graphOut := graph;
@@ -168,12 +167,14 @@ end getSystemComponents1;
 protected function getEmptyTaskGraph "generates an empty TaskGraph and empty TaskGraphMeta for a graph with numComps nodes.
 author: Waurich TUD 2013-06"
   input Integer numComps;
+  input Integer numVars;
+  input Integer numEqs;
   output TaskGraph graph;
   output TaskGraphMeta graphData;
 protected
   array<list<Integer>> inComps; 
-  array<Integer> varSccMapping;  
-  array<Integer> eqSccMapping; 
+  array<tuple<Integer,Integer,Integer>> varNodeMapping;  
+  array<tuple<Integer,Integer,Integer>> eqNodeMapping; 
   list<Integer> rootNodes;  
   array<String> nodeNames; 
   array<String> nodeDescs;  
@@ -183,15 +184,15 @@ protected
 algorithm
   graph := arrayCreate(numComps,{});
   inComps := arrayCreate(numComps,{});  
-  varSccMapping := arrayCreate(1,0);   
-  eqSccMapping := arrayCreate(1,0);   
+  varNodeMapping := arrayCreate(numVars,(0,0,0));   
+  eqNodeMapping := arrayCreate(numEqs,(0,0,0));   
   rootNodes := {}; 
   nodeNames := arrayCreate(numComps,"");
   nodeDescs :=  arrayCreate(numComps,""); 
   exeCosts := arrayCreate(numComps,(-1,-1.0)); 
   commCosts :=  arrayCreate(numComps,{});
   nodeMark := arrayCreate(numComps,0); 
-  graphData := TASKGRAPHMETA(inComps,varSccMapping,eqSccMapping,rootNodes,nodeNames,nodeDescs,exeCosts,commCosts,nodeMark);
+  graphData := TASKGRAPHMETA(inComps,varNodeMapping,eqNodeMapping,rootNodes,nodeNames,nodeDescs,exeCosts,commCosts,nodeMark);
 end getEmptyTaskGraph;
 
 
@@ -199,14 +200,15 @@ protected function createTaskGraph0 "author: marcusw,waurich
   Creates a task graph out of the given system."
   input BackendDAE.EqSystem isyst; //The input system which should be analysed
   input BackendDAE.Shared ishared; //second argument of tuple is an extra argument
-  input tuple<TaskGraph,TaskGraphMeta> graphInfoIn;
-  output tuple<TaskGraph,TaskGraphMeta> grapInfoOut;
+  input tuple<TaskGraph,TaskGraphMeta,Integer> graphInfoIn; //<_,_,eqSysIdx>
+  output tuple<TaskGraph,TaskGraphMeta,Integer> grapInfoOut;
   //output BackendDAE.EqSystem osyst; //no change here -> this is always isyst
   //output tuple<BackendDAE.Shared,Boolean> oshared; //no change here -> this is always ishared
 algorithm
   grapInfoOut := matchcontinue(isyst,ishared,graphInfoIn)
     local
-      tuple<TaskGraph,TaskGraphMeta> tplOut;
+      Integer eqSysIdx;
+      tuple<TaskGraph,TaskGraphMeta,Integer> tplOut;
       BackendDAE.StrongComponents comps;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
@@ -222,10 +224,9 @@ algorithm
       array<list<Integer>> inComps;
       array<Integer> ass1;
       array<Integer> ass2;
-      array<Integer> eqSccMapping;
       array<tuple<Integer,Real>> exeCosts;
       array<Integer> nodeMark;
-      array<Integer> varSccMapping; //Map each variable to the scc which solves her
+      array<tuple<Integer,Integer,Integer>> varNodeMapping, eqNodeMapping; //Map each variable to the scc that solves her
       array<String> nodeNames;
       array<String> nodeDescs; 
       list<Integer> eventEqLst;
@@ -236,42 +237,48 @@ algorithm
       String fileNameOde;
       Integer numberOfVars;
       Integer numberOfEqs;
-    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps=comps), orderedVars=BackendDAE.VARIABLES(numberOfVars=numberOfVars), orderedEqs=BackendDAE.EQUATION_ARRAY(numberOfElement=numberOfEqs)),(shared as BackendDAE.SHARED(functionTree=sharedFuncs)),(graphIn,graphDataIn))
+    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps=comps), orderedVars=BackendDAE.VARIABLES(numberOfVars=numberOfVars), orderedEqs=BackendDAE.EQUATION_ARRAY(numberOfElement=numberOfEqs)),(shared as BackendDAE.SHARED(functionTree=sharedFuncs)),(graphIn,graphDataIn,eqSysIdx))
       equation
         //Create Taskgraph for the first EqSystem
-        TASKGRAPHMETA(varSccMapping=varSccMapping) = graphDataIn;
-        true = arrayGet(varSccMapping,1)== 0;
+        //TASKGRAPHMETA(varNodeMapping=varNodeMapping,eqNodeMapping=eqNodeMapping) = graphDataIn;
+        true = intEq(eqSysIdx,1);
         (_,incidenceMatrix,_) = BackendDAEUtil.getIncidenceMatrix(isyst, BackendDAE.NORMAL(), SOME(sharedFuncs));
-        (graphTmp,graphDataTmp) = getEmptyTaskGraph(listLength(comps));
-        TASKGRAPHMETA(inComps = inComps, rootNodes = rootNodes, nodeNames =nodeNames, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) = graphDataTmp;
-        (varSccMapping,eqSccMapping) = getVarSccMapping(comps, numberOfVars, numberOfEqs); 
+        //print("createTaskGraph0 with " +& intString(listLength(comps)) +& " components, " +& intString(arrayLength(ass1)) +& " variables and " +& intString(arrayLength(ass2)) +& " equations\n");
+        (graphTmp,graphDataTmp) = getEmptyTaskGraph(listLength(comps), arrayLength(ass1), arrayLength(ass2));
+        TASKGRAPHMETA(inComps = inComps, rootNodes = rootNodes, nodeNames =nodeNames, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark, varNodeMapping=varNodeMapping,eqNodeMapping=eqNodeMapping) = graphDataTmp;
+        //print("createTaskGraph0 try to get varNodeMapping\n");
+        (varNodeMapping,eqNodeMapping) = getvarNodeMapping(comps, eqSysIdx, 0, 0, varNodeMapping, eqNodeMapping);
+        //print("createTaskGraph0 varNodeMapping created\n");
         nodeDescs = getEquationStrings(comps,isyst);  //gets the description i.e. the whole equation, for every component
-        ((graphTmp,inComps,commCosts,nodeNames,rootNodes,nodeMark,_)) = List.fold2(comps,createTaskGraph1,(incidenceMatrix,isyst,shared,listLength(comps)),(varSccMapping,eqSccMapping,{}),(graphTmp,inComps,commCosts,nodeNames,rootNodes,nodeMark,1));
+        ((graphTmp,inComps,commCosts,nodeNames,rootNodes,nodeMark,_)) = List.fold2(comps,createTaskGraph1,(incidenceMatrix,isyst,shared,listLength(comps)),(varNodeMapping,eqNodeMapping,{}),(graphTmp,inComps,commCosts,nodeNames,rootNodes,nodeMark,1));
         // gather the metadata
-        graphDataTmp = TASKGRAPHMETA(inComps, varSccMapping, eqSccMapping, rootNodes, nodeNames, nodeDescs, exeCosts, commCosts, nodeMark);
-        tplOut = ((graphTmp,graphDataTmp));
+        graphDataTmp = TASKGRAPHMETA(inComps, varNodeMapping, eqNodeMapping, rootNodes, nodeNames, nodeDescs, exeCosts, commCosts, nodeMark);
+        tplOut = ((graphTmp,graphDataTmp,eqSysIdx+1));
       then
         tplOut;
-    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps=comps), orderedVars=BackendDAE.VARIABLES(numberOfVars=numberOfVars), orderedEqs=BackendDAE.EQUATION_ARRAY(numberOfElement=numberOfEqs)),(shared as BackendDAE.SHARED(functionTree=sharedFuncs)),(graphIn,graphDataIn))
+    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps=comps), orderedVars=BackendDAE.VARIABLES(numberOfVars=numberOfVars), orderedEqs=BackendDAE.EQUATION_ARRAY(numberOfElement=numberOfEqs)),(shared as BackendDAE.SHARED(functionTree=sharedFuncs)),(graphIn,graphDataIn,eqSysIdx))
       equation
         //append the remaining equationsystems to the taskgraph
-        TASKGRAPHMETA(varSccMapping=varSccMapping) = graphDataIn;
-        false = arrayGet(varSccMapping,1)== 0;
+        //TASKGRAPHMETA(varNodeMapping=varNodeMapping,eqNodeMapping=eqNodeMapping) = graphDataIn;
+        false = intEq(eqSysIdx,1);
         (_,incidenceMatrix,_) = BackendDAEUtil.getIncidenceMatrix(isyst, BackendDAE.NORMAL(), SOME(sharedFuncs));
-        (graphTmp,graphDataTmp) = getEmptyTaskGraph(listLength(comps));
-        TASKGRAPHMETA(inComps = inComps, rootNodes = rootNodes, nodeNames =nodeNames, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) = graphDataTmp;
-        (varSccMapping,eqSccMapping) = getVarSccMapping(comps, numberOfVars, numberOfEqs); 
+        //print("createTaskGraph0_case2 with " +& intString(listLength(comps)) +& " components, " +& intString(arrayLength(ass1)) +& " variables and " +& intString(arrayLength(ass2)) +& " equations\n");
+        (graphTmp,graphDataTmp) = getEmptyTaskGraph(listLength(comps), arrayLength(ass1), arrayLength(ass2));
+        TASKGRAPHMETA(inComps = inComps, rootNodes = rootNodes, nodeNames =nodeNames, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark, varNodeMapping=varNodeMapping,eqNodeMapping=eqNodeMapping) = graphDataTmp;
+        //print("createTaskGraph0 try to get varNodeMapping\n");
+        (varNodeMapping,eqNodeMapping) = getvarNodeMapping(comps, eqSysIdx, 0, 0, varNodeMapping, eqNodeMapping); 
+        //print("createTaskGraph0 varNodeMapping created\n");
         nodeDescs = getEquationStrings(comps,isyst);  //gets the description i.e. the whole equation, for every component
-        ((graphTmp,inComps,commCosts,nodeNames,rootNodes,nodeMark,_)) = List.fold2(comps,createTaskGraph1,(incidenceMatrix,isyst,shared,listLength(comps)),(varSccMapping,eqSccMapping,{}),(graphTmp,inComps,commCosts,nodeNames,rootNodes,nodeMark,1));
+        ((graphTmp,inComps,commCosts,nodeNames,rootNodes,nodeMark,_)) = List.fold2(comps,createTaskGraph1,(incidenceMatrix,isyst,shared,listLength(comps)),(varNodeMapping,eqNodeMapping,{}),(graphTmp,inComps,commCosts,nodeNames,rootNodes,nodeMark,1));
         // gather the metadata
-        graphDataTmp = TASKGRAPHMETA(inComps, varSccMapping, eqSccMapping, rootNodes, nodeNames, nodeDescs, exeCosts, commCosts, nodeMark);
+        graphDataTmp = TASKGRAPHMETA(inComps, varNodeMapping, eqNodeMapping, rootNodes, nodeNames, nodeDescs, exeCosts, commCosts, nodeMark);
         (graphTmp,graphDataTmp) = taskGraphAppend(graphIn,graphDataIn,graphTmp,graphDataTmp); 
-        tplOut = ((graphTmp,graphDataTmp));
+        tplOut = ((graphTmp,graphDataTmp,eqSysIdx+1));
       then
         tplOut;
     else
       equation
-      print("createTaskGraph00 failed \n");
+      print("createTaskGraph0 failed \n");
       then         
         fail();
   end matchcontinue;
@@ -292,28 +299,29 @@ protected
   Integer varOffset;
   array<list<tuple<Integer,Integer,Integer>>> commCosts1, commCosts2; 
   array<list<Integer>> inComps1, inComps2;
-  array<Integer> eqSccMapping1, eqSccMapping2;
+  array<tuple<Integer,Integer,Integer>> eqNodeMapping1, eqNodeMapping2;
   array<tuple<Integer,Real>> exeCosts1, exeCosts2;
   array<Integer> nodeMark1, nodeMark2;
-  array<Integer> varSccMapping1, varSccMapping2; //Map each variable to the scc which solves her
+  array<tuple<Integer,Integer,Integer>> varNodeMapping1, varNodeMapping2; //Map each variable to the scc which solves her
   array<String> nodeNames1, nodeNames2;
   array<String> nodeDescs1, nodeDescs2; 
   list<Integer> rootNodes1, rootNodes2;   
   TaskGraph graph2;
 algorithm
-  TASKGRAPHMETA(inComps = inComps1 ,varSccMapping=varSccMapping1, eqSccMapping=eqSccMapping1, rootNodes = rootNodes1, nodeNames =nodeNames1, nodeDescs= nodeDescs1, exeCosts = exeCosts1, commCosts=commCosts1, nodeMark=nodeMark1) := graphData1In;
-  TASKGRAPHMETA(inComps = inComps2 ,varSccMapping=varSccMapping2, eqSccMapping=eqSccMapping2, rootNodes = rootNodes2, nodeNames =nodeNames2, nodeDescs= nodeDescs2, exeCosts = exeCosts2, commCosts=commCosts2, nodeMark=nodeMark2) := graphData2In;
-  eqOffset := arrayLength(eqSccMapping1);
+  TASKGRAPHMETA(inComps = inComps1 ,varNodeMapping=varNodeMapping1, eqNodeMapping=eqNodeMapping1, rootNodes = rootNodes1, nodeNames =nodeNames1, nodeDescs= nodeDescs1, exeCosts = exeCosts1, commCosts=commCosts1, nodeMark=nodeMark1) := graphData1In;
+  TASKGRAPHMETA(inComps = inComps2 ,varNodeMapping=varNodeMapping2, eqNodeMapping=eqNodeMapping2, rootNodes = rootNodes2, nodeNames =nodeNames2, nodeDescs= nodeDescs2, exeCosts = exeCosts2, commCosts=commCosts2, nodeMark=nodeMark2) := graphData2In;
+  eqOffset := arrayLength(eqNodeMapping1);
   idxOffset := arrayLength(graph1In);
-  varOffset := arrayLength(varSccMapping1);
+  varOffset := arrayLength(varNodeMapping1);
+  eqOffset := arrayLength(eqNodeMapping1);
   graph2 := Util.arrayMap1(graph2In,updateTaskGraphSystem,idxOffset);
   graphOut := Util.arrayAppend(graph1In,graph2);
   inComps2 := Util.arrayMap1(inComps2,updateTaskGraphSystem,idxOffset);
   inComps2 := Util.arrayAppend(inComps1,inComps2);
-  varSccMapping2 := Util.arrayMap1(varSccMapping2,intAdd,idxOffset);
-  varSccMapping2 := Util.arrayAppend(varSccMapping1,varSccMapping2);
-  eqSccMapping2 := Util.arrayMap1(eqSccMapping2,intAdd,idxOffset);
-  eqSccMapping2 := Util.arrayAppend(eqSccMapping1,eqSccMapping2);
+  varNodeMapping2 := Util.arrayMap1(varNodeMapping2,modifyMapping,varOffset);
+  varNodeMapping2 := Util.arrayAppend(varNodeMapping1,varNodeMapping2);
+  eqNodeMapping2 := Util.arrayMap1(eqNodeMapping2,modifyMapping,eqOffset);
+  eqNodeMapping2 := Util.arrayAppend(eqNodeMapping1,eqNodeMapping2);
   rootNodes2 := List.map1(rootNodes2,intAdd,idxOffset);
   rootNodes2 := listAppend(rootNodes1,rootNodes2);
   nodeNames2 := Util.arrayMap1(nodeNames2,stringAppend," subsys");  //TODO: change this
@@ -323,9 +331,19 @@ algorithm
   commCosts2 := Util.arrayMap1(commCosts2,updateCommCosts,idxOffset);
   commCosts2 := Util.arrayAppend(commCosts1,commCosts2);
   nodeMark2 := Util.arrayAppend(nodeMark1,nodeMark2);
-  graphDataOut := TASKGRAPHMETA(inComps2,varSccMapping2,eqSccMapping2,rootNodes2,nodeNames2,nodeDescs2,exeCosts2,commCosts2,nodeMark2);  
+  graphDataOut := TASKGRAPHMETA(inComps2,varNodeMapping2,eqNodeMapping2,rootNodes2,nodeNames2,nodeDescs2,exeCosts2,commCosts2,nodeMark2);  
 end taskGraphAppend;
 
+protected function modifyMapping
+  input tuple<Integer,Integer,Integer> iMappingTuple;
+  input Integer iOffset;
+  output tuple<Integer,Integer,Integer> oMappingTuple;
+protected
+  Integer i1,i2,i3; //i1 = offset
+algorithm
+  (i1,i2,i3) := iMappingTuple;
+  oMappingTuple := (i1+iOffset,i2,iOffset);
+end modifyMapping;
 
 protected function updateCommCosts " updates the CommCosts to the enumerated indeces.
 author: Waurich TUD 2013-07"
@@ -363,7 +381,7 @@ protected function createTaskGraph1 "author: marcusw,waurich
   Appends the task-graph information for the given StrongComponent to the given graph."
   input BackendDAE.StrongComponent component;
   input tuple<BackendDAE.IncidenceMatrix,BackendDAE.EqSystem,BackendDAE.Shared,Integer> isystInfo; //<incidenceMatrix,isyst,ishared,numberOfComponents> in very compact form
-  input tuple<array<Integer>,array<Integer>,list<Integer>> varInfo;
+  input tuple<array<tuple<Integer,Integer,Integer>>,array<tuple<Integer,Integer,Integer>>,list<Integer>> varInfo; //<varNodeMapping,eqNodeMapping,eventVarLst
   input tuple<TaskGraph,array<list<Integer>>,array<list<tuple<Integer,Integer,Integer>>>,array<String>,list<Integer>,array<Integer>,Integer> graphInfoIn;
   //<taskGraph,inComps,commCosts,nodeNames,rootNodes,componentIndex>
   output tuple<TaskGraph,array<list<Integer>>,array<list<tuple<Integer,Integer,Integer>>>,array<String>,list<Integer>,array<Integer>,Integer> graphInfoOut;
@@ -374,8 +392,8 @@ protected
   TaskGraph graphIn;
   TaskGraph graphTmp;
   array<list<Integer>> inComps;
-  array<Integer>  varSccMapping;
-  array<Integer> eqSccMapping;
+  array<tuple<Integer,Integer,Integer>>  varNodeMapping;
+  array<tuple<Integer,Integer,Integer>> eqNodeMapping;
   list<Integer> rootNodes;
   array<String> nodeNames; 
   array<String> nodeDescs; 
@@ -389,16 +407,16 @@ protected
   String nodeName;
 algorithm
   (incidenceMatrix,isyst,ishared,numberOfComps) := isystInfo;
-  (varSccMapping,eqSccMapping,eventVarLst) := varInfo;
+  (varNodeMapping,eqNodeMapping,eventVarLst) := varInfo;
   (graphIn,inComps,commCosts,nodeNames,rootNodes,nodeMark,componentIndex) := graphInfoIn;
   inComps := arrayUpdate(inComps,componentIndex,{componentIndex});
   nodeName := BackendDump.strongComponentString(component);
   nodeNames := arrayUpdate(nodeNames,componentIndex,nodeName);
   _ := HpcOmBenchmark.benchSystem();
-  //nodeMark := arrayUpdate(nodeMark,componentIndex,getNodeMark(componentIndex,incidenceMatrix,varSccMapping,eqSccMapping));
+  //nodeMark := arrayUpdate(nodeMark,componentIndex,getNodeMark(componentIndex,incidenceMatrix,varNodeMapping,eqNodeMapping));
   unsolvedVars := getUnsolvedVarsBySCC(component,incidenceMatrix,eventVarLst);
   requiredSccs := arrayCreate(numberOfComps,0); //create a ref-counter for each component
-  requiredSccs := List.fold1(unsolvedVars,fillSccList,varSccMapping,requiredSccs); 
+  requiredSccs := List.fold1(unsolvedVars,fillSccList,varNodeMapping,requiredSccs); 
   ((_,requiredSccs_RefCount)) := Util.arrayFold(requiredSccs, convertRefArrayToList, (1,{}));
   commCosts := updateCommCostBySccRef(requiredSccs_RefCount, componentIndex, commCosts);
   (graphTmp,rootNodes) := fillAdjacencyList(graphIn,rootNodes,componentIndex,requiredSccs_RefCount,1);
@@ -517,29 +535,6 @@ algorithm
   end matchcontinue;
 end printReqScc;
 
-
-protected function getNodeMark "sets the nodeMark for an component given by compIdxIn.
-author: Waurich TUD 2013-07"
-  input Integer compIdxIn;
-  input BackendDAE.IncidenceMatrix incidenceMatrix;
-  input array<Integer> varSccMapping;
-  input array<Integer> eqSccMapping;
-  output Integer numberOut;
-protected 
-  list<list<Integer>> allVars;
-  list<Integer> allEqs;
-  list<Integer> allMatchedVars;
-  list<Integer> assignedVars;
-  list<Integer> neededVars;
-algorithm
-  allEqs := getMappingForComp(compIdxIn,eqSccMapping,1,{});
-  allVars := List.map1(allEqs,getVarsForEqs,incidenceMatrix);
-  allMatchedVars := getMappingForComp(compIdxIn,varSccMapping,1,{});
-  (_,neededVars,_) := List.intersection1OnTrue(List.unique(List.flatten(allVars)),allMatchedVars,intEq);
-  numberOut := listLength(neededVars);
-end getNodeMark;
-
-
 protected function getVarsForEqs " gets all variables of an equation
 author:Waurich TUD 2013-07"
   input Integer eqIn;
@@ -549,11 +544,10 @@ algorithm
   varLst := arrayGet(incidenceMatrix,eqIn);
 end getVarsForEqs;
 
-
-protected function getMappingForComp " gets the mapping info for a comp i.e. either alle eqs in a component for eqSccMapping or all solved vars in a component for varSccMapping.
+protected function getMappingForComp " gets the mapping info for a comp i.e. either alle eqs in a component for eqNodeMapping or all solved vars in a component for varNodeMapping.
 author:Waurich TUD 201307"
   input Integer compIdxIn;
-  input array<Integer> SccMapping;
+  input array<tuple<Integer,Integer,Integer>> SccMapping;
   input Integer mapIdx;
   input list<Integer> LstIn;
   output list<Integer> LstOut;
@@ -565,7 +559,7 @@ algorithm
     case(_,_,_,_)
       equation
         true = arrayLength(SccMapping) >= mapIdx;
-        entry = arrayGet(SccMapping,mapIdx);
+        ((entry,_,_)) = arrayGet(SccMapping,mapIdx);
         true = intEq(entry,compIdxIn);
         lstTmp = mapIdx::LstIn;
         lstTmp = getMappingForComp(compIdxIn,SccMapping,mapIdx+1,lstTmp);
@@ -574,7 +568,7 @@ algorithm
     case(_,_,_,_)
       equation
         true = arrayLength(SccMapping) >= mapIdx;
-        entry = arrayGet(SccMapping,mapIdx);
+        ((entry,_,_)) = arrayGet(SccMapping,mapIdx);
         false = intEq(entry,compIdxIn);
         lstTmp = getMappingForComp(compIdxIn,SccMapping,mapIdx+1,LstIn);
       then
@@ -586,49 +580,6 @@ algorithm
         LstIn;
   end matchcontinue;
 end getMappingForComp;
-
-
-//protected function fillCalcTimeArray "author: marcusw
-//  Fills the calculation-time-array."
-//  input Graph igraph;
-//  input array<Integer> calcTimes;
-//  
-//algorithm
-//  _ := match(igraph,calcTimes)
-//    local
-//      list<StrongConnectedComponent> components;
-//    case(GRAPH(components=components),_)
-//      equation 
-//        fillCalcTimeArrayTail(components,calcTimes);
-//      then ();
-//    else
-//      then fail();
-//  end match;
-//  
-//end fillCalcTimeArray;
-//
-//
-//protected function fillCalcTimeArrayTail 
-//  input list<StrongConnectedComponent> iComps;
-//  input array<Integer> calcTimes; //The calculation time of each component
-//  
-//algorithm
-//  _ := match(iComps,calcTimes)
-//    local
-//      Integer calcTime, compIdx;
-//      list<StrongConnectedComponent> rest;
-//      String description;
-//    case(STRONGCONNECTEDCOMPONENT(calcTime=calcTime,compIdx=compIdx,description=description)::rest,_)
-//      equation
-//        //print("fillCalcTimeArrayTail -- Idx:" +& compIdx +& " calcTime:" +& calcTime +& " desc:" +& description +& "\n");
-//        _ = arrayUpdate(calcTimes, compIdx, calcTime);
-//        fillCalcTimeArrayTail(rest,calcTimes);
-//      then ();
-//    else
-//      then ();
-//  end match;  
-//end fillCalcTimeArrayTail;
-
 
 protected function getEquationStrings " gets the equation and the variable its solved for for every StrongComponent. index = component. entry = description 
 author:Waurich TUD 2013-06"
@@ -853,7 +804,7 @@ algorithm
   end matchcontinue;  
 end getVarString;
    
-//TODO: Replace with CDATA
+//TODO: Replace with CDATA, Check if this can be removed
 public function prepareXML " map-function for deletion of forbidden chars from given string
 author:Waurich TUD 2013-06"
   input String iString;
@@ -889,7 +840,7 @@ end shortenVarString;
 protected function getEventNodes " gets the taskgraph nodes that are when-equations
 author:Waurich TUD 2013-06"
   input BackendDAE.BackendDAE systIn;
-  input array<Integer> eqSccMapping;
+  input array<tuple<Integer,Integer,Integer>> eqNodeMapping;
   output list<Integer> eventNodes;
 protected
   list<Integer> eqLst;
@@ -897,7 +848,7 @@ protected
 algorithm
   BackendDAE.DAE(eqs=systemsIn) := systIn;
   ((eqLst,_)) := List.fold(systemsIn, getEventNodeEqs,({},0));
-  eventNodes := matchWithAssignments(eqLst,eqSccMapping); 
+  eventNodes := matchWithAssignmentsTuple(eqLst,eqNodeMapping); 
 end getEventNodes;
 
 
@@ -982,7 +933,7 @@ algorithm
   end matchcontinue;
 end getMatchedVars;
   
-  
+//TODO: Can we remove this?
 protected function matchWithAssignments " matches entries of list1 with the assigned values of assign to obtain the values 
 author:Waurich TUD 2013-06" 
   input list<Integer> list1;
@@ -992,7 +943,6 @@ algorithm
   list2Out := matchWithAssignments1(list1,assign,{});
   list2Out := listReverse(list2Out);
 end matchWithAssignments;
-
 
 protected function matchWithAssignments1" implementation of matchWithAssigments.
 author:Waurich TUD 2013-06"
@@ -1020,6 +970,41 @@ algorithm
   end matchcontinue;
 end matchWithAssignments1;         
 
+protected function matchWithAssignmentsTuple " matches entries of list1 with the assigned values of assign to obtain the values 
+author:Waurich TUD 2013-06" 
+  input list<Integer> list1;
+  input array<tuple<Integer,Integer,Integer>> assign;
+  output list<Integer> list2Out;
+algorithm
+  list2Out := matchWithAssignmentsTuple1(list1,assign,{});
+  list2Out := listReverse(list2Out);
+end matchWithAssignmentsTuple;
+
+protected function matchWithAssignmentsTuple1" implementation of matchWithAssigments.
+author:Waurich TUD 2013-06"
+  input list<Integer> list1;
+  input array<tuple<Integer,Integer,Integer>> assign;
+  input list<Integer> list2In;
+  output list<Integer> list2Out;
+algorithm
+  list2Out := matchcontinue(list1, assign, list2In)
+    local
+      Integer head;
+      Integer entry2;
+      list<Integer> rest;
+      list<Integer> entries2;
+    case(head::rest,_,_)
+      equation
+        ((entry2,_,_)) = arrayGet(assign,head);
+        entries2 = matchWithAssignmentsTuple1(rest,assign,entry2::list2In);
+      then
+        entries2;
+    case({},_,_)
+      equation
+        then
+          list2In;
+  end matchcontinue;
+end matchWithAssignmentsTuple1; 
 
 protected function isWhenEquation " checks if the comp is of type SINGLEWHENEQUATION.
 author:Waurich TUD 2013-06"
@@ -1041,12 +1026,12 @@ end isWhenEquation;
 protected function fillSccList "author: marcusw
   This function appends the scc, which solves the given variable, to the requiredsccs-list."
   input tuple<Integer,Integer> variable;
-  input array<Integer> varSccMapping;
+  input array<tuple<Integer,Integer,Integer>> varNodeMapping;
   input array<Integer> iRequiredSccs;
   output array<Integer> oRequiredSccs;
 
 algorithm
-  oRequiredSccs := matchcontinue(variable,varSccMapping,iRequiredSccs)
+  oRequiredSccs := matchcontinue(variable,varNodeMapping,iRequiredSccs)
     local
       Integer varIdx,varState, sccIdx, oldCount;
       array<Integer> tmpRequiredSccs;
@@ -1054,7 +1039,7 @@ algorithm
       equation
         true = intEq(varState,1);
         tmpRequiredSccs = iRequiredSccs;
-        sccIdx = varSccMapping[varIdx];
+        ((sccIdx,_,_)) = arrayGet(varNodeMapping,varIdx);
         oldCount = iRequiredSccs[sccIdx];
         tmpRequiredSccs = arrayUpdate(tmpRequiredSccs,sccIdx,oldCount+1);
       then tmpRequiredSccs;
@@ -1371,27 +1356,6 @@ algorithm
   end match;
 end tuple3ToString;
 
-protected function checkIfEquationContainsVar "author: marcusw
-  Returns true if given variable is part of the given equation." 
-  input tuple<Integer,Integer> var;
-  input Integer eqnIdx;
-  input BackendDAE.IncidenceMatrix incidenceMatrix;
-  output Boolean contains;
-  
-algorithm
-  contains := match(var, eqnIdx, incidenceMatrix)
-    local
-      Integer varIdx,varState;
-      List<tuple<Integer,Integer>> eqnVars;
-    case((varIdx,varState),_,_)
-      equation
-        eqnVars = getVarsByEqn(eqnIdx, incidenceMatrix);
-      then
-        List.isMemberOnTrue(var,eqnVars,compareIntTuple2);
-  end match;
-end checkIfEquationContainsVar;
-
-
 protected function getVarsByEqn "author: marcusw
   Returns all variables of the given equation." 
   input Integer eqnIdx;
@@ -1450,19 +1414,19 @@ protected function getSCCByVar "author: marcusw
   input BackendDAE.StrongComponents components;
   input BackendDAE.IncidenceMatrix incidenceMatrix;
   input Integer sccIdx;
-  input array<Integer> varSccMapping;
+  input array<tuple<Integer,Integer,Integer>> varNodeMapping;
   output Option<Integer> componentIdx;
   
 algorithm
-  componentIdx := matchcontinue(varIdx, components, incidenceMatrix, sccIdx, varSccMapping)
+  componentIdx := matchcontinue(varIdx, components, incidenceMatrix, sccIdx, varNodeMapping)
     local
       Integer returnIdx, rawVarIdx, rawVarState;
     case((rawVarIdx,rawVarState),_,_,_,_)
       equation
         true = intGt(rawVarIdx,0);
         true = intEq(rawVarState,1);
-        true = intGt(varSccMapping[rawVarIdx],0);
-        returnIdx = varSccMapping[rawVarIdx];
+        ((returnIdx,_,_)) = arrayGet(varNodeMapping,rawVarIdx);
+        true = intGt(returnIdx,0);
       then
         SOME(returnIdx);
     else
@@ -1471,96 +1435,95 @@ algorithm
 end getSCCByVar;
 
 
-protected function getVarSccMapping "author: marcusw
+protected function getvarNodeMapping "author: marcusw
   Create a mapping between variables and strong-components. The returned array (one element for each variable) contains the 
   scc-index which solves the variable."
   input BackendDAE.StrongComponents components;
-  input Integer varCount;
-  input Integer eqCount;
-  output array<Integer> oVarSccMapping;
-  output array<Integer> oEqSccMapping;
-  
-protected
-  array<Integer> varSccMapping;
-  array<Integer> eqSccMapping;
-  
+  input Integer iEqSysIdx;
+  input Integer iVarIdxOffset;
+  input Integer iEqIdxOffset;
+  input array<tuple<Integer,Integer,Integer>> ivarNodeMapping;
+  input array<tuple<Integer,Integer,Integer>> ieqNodeMapping;
+  output array<tuple<Integer,Integer,Integer>> ovarNodeMapping;
+  output array<tuple<Integer,Integer,Integer>> oeqNodeMapping;
 algorithm
-  varSccMapping := arrayCreate(varCount,-1);
-  eqSccMapping := arrayCreate(eqCount,-1);
-  _ := List.fold2(components, getVarSccMapping0, varSccMapping, eqSccMapping, 1);
-  oVarSccMapping := varSccMapping;
-  oEqSccMapping := eqSccMapping;
-  
-end getVarSccMapping;
+  _ := List.fold4(components, getvarNodeMapping0, ivarNodeMapping, ieqNodeMapping, iEqSysIdx, (iVarIdxOffset,iEqIdxOffset), 1);
+  ovarNodeMapping := ivarNodeMapping;
+  oeqNodeMapping := ieqNodeMapping;
+end getvarNodeMapping;
 
 
-protected function getVarSccMapping0 "author: marcusw,waurich
+protected function getvarNodeMapping0 "author: marcusw,waurich
   Updates all array elements which are solved in the given component. The array-elements will be set to iSccIdx."
   input BackendDAE.StrongComponent component;
-  input array<Integer> varSccMapping;
-  input array<Integer> eqSccMapping;
+  input array<tuple<Integer,Integer,Integer>> varNodeMapping;
+  input array<tuple<Integer,Integer,Integer>> eqNodeMapping;
+  input Integer iEqSysIdx;
+  input tuple<Integer,Integer> iVarEqOffset; //a offset that should be added to the <varIdx,eqIdx>
   input Integer iSccIdx;
   output Integer oSccIdx;
   
 algorithm
-  oSccIdx := matchcontinue(component, varSccMapping, eqSccMapping, iSccIdx)
+  oSccIdx := matchcontinue(component, varNodeMapping, eqNodeMapping, iEqSysIdx, iVarEqOffset, iSccIdx)
     local
-      Integer compVarIdx;
+      Integer compVarIdx, iVarOffset, iEqOffset;
       Integer eq;
       List<Integer> compVarIdc;
       List<Integer> eqns;
       List<Integer> residuals;
       List<Integer> othereqs;
       List<Integer> othervars;
-      array<Integer> tmpVarSccMapping;
-      array<Integer> tmpEqSccMapping;
+      array<tuple<Integer,Integer,Integer>> tmpvarNodeMapping;
+      array<tuple<Integer,Integer,Integer>> tmpeqNodeMapping;
       list<tuple<Integer,list<Integer>>> tearEqVarTpl;
       BackendDAE.StrongComponent condSys;
       String helperStr;
-    case(BackendDAE.SINGLEEQUATION(var = compVarIdx, eqn = eq),_,_,_)
+    case(BackendDAE.SINGLEEQUATION(var = compVarIdx, eqn = eq),_,_,_,(iVarOffset,iEqOffset),_)
       equation
-        tmpVarSccMapping = arrayUpdate(varSccMapping,compVarIdx,iSccIdx);
-        tmpEqSccMapping = arrayUpdate(eqSccMapping,eq,iSccIdx);
+        //print("HpcOmTaskGraph.getvarNodeMapping0 for singleEquation varNodeMapping-length:" +& intString(arrayLength(varNodeMapping)) +& " varIdx: " +& intString(compVarIdx) +& " varOffset: " +& intString(iVarOffset) +& "\n");
+        //print("HpcOmTaskGraph.getvarNodeMapping0 for singleEquation eqNodeMapping-length:" +& intString(arrayLength(eqNodeMapping)) +& " eqIdx: " +& intString(eq) +& " eqOffset: " +& intString(iEqOffset) +& "\n");
+        tmpvarNodeMapping = arrayUpdate(varNodeMapping,compVarIdx + iVarOffset,(iSccIdx,iEqSysIdx,iVarOffset));
+        tmpeqNodeMapping = arrayUpdate(eqNodeMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
       then iSccIdx+1;
-    case(BackendDAE.EQUATIONSYSTEM(vars = compVarIdc, eqns=eqns),_,_,_)
+    case(BackendDAE.EQUATIONSYSTEM(vars = compVarIdc, eqns=eqns),_,_,_,(iVarOffset,iEqOffset),_)
       equation
-        tmpVarSccMapping = List.fold1(compVarIdc,updateMapping,iSccIdx,varSccMapping);
-        tmpEqSccMapping = List.fold1(eqns,updateMapping,iSccIdx,eqSccMapping);
+        tmpvarNodeMapping = List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varNodeMapping);
+        tmpeqNodeMapping = List.fold3(eqns,updateMappingTuple,iSccIdx,iEqSysIdx,iEqOffset,eqNodeMapping);
       then 
         iSccIdx+1;
-    case(BackendDAE.MIXEDEQUATIONSYSTEM(condSystem = condSys, disc_vars = compVarIdc, disc_eqns = eqns),_,_,_)
+    case(BackendDAE.MIXEDEQUATIONSYSTEM(condSystem = condSys, disc_vars = compVarIdc, disc_eqns = eqns),_,_,_,(iVarOffset,iEqOffset),_)
       equation
-        tmpVarSccMapping = List.fold1(compVarIdc,updateMapping,iSccIdx,varSccMapping);
-        tmpEqSccMapping = List.fold1(eqns,updateMapping,iSccIdx,eqSccMapping);
+        tmpvarNodeMapping = List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varNodeMapping);
+        tmpeqNodeMapping = List.fold3(eqns,updateMappingTuple,iSccIdx,iEqSysIdx,iEqOffset,eqNodeMapping);
         //gets the whole equationsystem (necessary for the adjacencyList)
-        _ = List.fold2({condSys}, getVarSccMapping0, tmpVarSccMapping,tmpEqSccMapping, iSccIdx);
+        _ = List.fold4({condSys}, getvarNodeMapping0, tmpvarNodeMapping,tmpeqNodeMapping, iEqSysIdx, iVarEqOffset, iSccIdx);
       then 
         iSccIdx+1;
-    case(BackendDAE.SINGLEWHENEQUATION(vars = compVarIdc,eqn = eq),_,_,_)
+    case(BackendDAE.SINGLEWHENEQUATION(vars = compVarIdc,eqn = eq),_,_,_,(iVarOffset,iEqOffset),_)
       equation
-        tmpVarSccMapping = List.fold1(compVarIdc,updateMapping,iSccIdx,varSccMapping);
-        tmpEqSccMapping = arrayUpdate(eqSccMapping,eq,iSccIdx);
+        tmpvarNodeMapping = List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varNodeMapping);
+        tmpeqNodeMapping = arrayUpdate(eqNodeMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
       then 
         iSccIdx+1;
-    case(BackendDAE.SINGLEARRAY(vars = compVarIdc, eqn = eq),_,_,_)
+    case(BackendDAE.SINGLEARRAY(vars = compVarIdc, eqn = eq),_,_,_,(iVarOffset,iEqOffset),_)
       equation
-        tmpVarSccMapping = List.fold1(compVarIdc,updateMapping,iSccIdx,varSccMapping);
-        tmpEqSccMapping = arrayUpdate(eqSccMapping,eq,iSccIdx);
+        tmpvarNodeMapping = List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varNodeMapping);
+        tmpeqNodeMapping = arrayUpdate(eqNodeMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
       then 
         iSccIdx+1;        
-    case(BackendDAE.SINGLEALGORITHM(vars = compVarIdc,eqn = eq),_,_,_)
+    case(BackendDAE.SINGLEALGORITHM(vars = compVarIdc,eqn = eq),_,_,_,(iVarOffset,iEqOffset),_)
       equation
-        tmpVarSccMapping = List.fold1(compVarIdc,updateMapping,iSccIdx,varSccMapping);
-        tmpEqSccMapping = arrayUpdate(eqSccMapping,eq,iSccIdx);
+        tmpvarNodeMapping = List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varNodeMapping);
+        tmpeqNodeMapping =arrayUpdate(eqNodeMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
         then 
           iSccIdx+1;
-    case(BackendDAE.SINGLECOMPLEXEQUATION(vars = compVarIdc, eqn = eq),_,_,_)
+    case(BackendDAE.SINGLECOMPLEXEQUATION(vars = compVarIdc, eqn = eq),_,_,_,(iVarOffset,iEqOffset),_)
       equation
-        tmpVarSccMapping = List.fold1(compVarIdc,updateMapping,iSccIdx,varSccMapping);
-        tmpEqSccMapping = arrayUpdate(eqSccMapping,eq,iSccIdx);
+        tmpvarNodeMapping = List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varNodeMapping);
+        tmpeqNodeMapping = arrayUpdate(eqNodeMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
         then 
           iSccIdx+1;
-    case(BackendDAE.TORNSYSTEM(tearingvars = compVarIdc,residualequations = residuals, otherEqnVarTpl = tearEqVarTpl),_,_,_)
+    case(BackendDAE.TORNSYSTEM(tearingvars = compVarIdc,residualequations = residuals, otherEqnVarTpl = tearEqVarTpl),_,_,_,(iVarOffset,iEqOffset),_)
       equation
       //print("test1\n");
       ((othereqs,othervars)) = List.fold(tearEqVarTpl,othersInTearComp,(({},{})));
@@ -1569,51 +1532,62 @@ algorithm
       //print("test3\n");
       eqns = listAppend(othereqs,residuals);
       //print("test4\n");
-      tmpVarSccMapping = List.fold1(compVarIdc,updateMapping,iSccIdx,varSccMapping);
+      tmpvarNodeMapping = List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varNodeMapping);
       //print("test5\n");
-      tmpEqSccMapping = List.fold1(eqns,updateMapping,iSccIdx,eqSccMapping);
+      tmpeqNodeMapping = List.fold3(eqns,updateMappingTuple,iSccIdx,iEqSysIdx,iEqOffset,eqNodeMapping);
       then 
         iSccIdx+1;   
-    case(BackendDAE.SINGLEIFEQUATION(vars = compVarIdc, eqn = eq),_,_,_)
+    case(BackendDAE.SINGLEIFEQUATION(vars = compVarIdc, eqn = eq),_,_,_,(iVarOffset,iEqOffset),_)
       equation
-        tmpVarSccMapping = List.fold1(compVarIdc,updateMapping,iSccIdx,varSccMapping);
-        tmpEqSccMapping = arrayUpdate(eqSccMapping,eq,iSccIdx);
+        tmpvarNodeMapping = List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varNodeMapping);
+        tmpeqNodeMapping = arrayUpdate(eqNodeMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
         then 
           iSccIdx+1;
     else
       equation
         helperStr = BackendDump.strongComponentString(component);
-        print("getVarSccMapping0 - Unsupported component-type:\n" +& helperStr +& "\n");
+        print("getvarNodeMapping0 - Unsupported component-type:\n" +& helperStr +& "\n");
       then fail();
   end matchcontinue;
-end getVarSccMapping0;
+end getvarNodeMapping0;
 
 public function getSccNodeMapping "author: marcusw
   Create a mapping between the strong components and the graph nodes"
   input Integer iNumberOfSccs;
   input TaskGraphMeta iTaskGraphMeta;
-  output array<Integer> oMapping; //each scc (arrayIdx) is mapped to exactly one scc (value)
+  output array<Integer> oMapping; //each scc (arrayIdx) is mapped to exactly one node (value)
 protected
   array<Integer> tmpMappingArray;
   array<list<Integer>> inComps;
+  array<Integer> nodeMark;
 algorithm
   tmpMappingArray := arrayCreate(iNumberOfSccs,-1);
-  TASKGRAPHMETA(inComps=inComps) := iTaskGraphMeta;
-  ((oMapping,_)) := Util.arrayFold(inComps, getSccNodeMapping0, (tmpMappingArray,1));
+  TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMark) := iTaskGraphMeta;
+  ((oMapping,_)) := Util.arrayFold1(inComps, getSccNodeMapping0, nodeMark, (tmpMappingArray,1));
 end getSccNodeMapping;
 
 protected function getSccNodeMapping0 "author: marcusw
   Set all array entries of the given scc-list to the node-idx"
   input list<Integer> iCompsOfNode;
+  input array<Integer> iNodeMark;
   input tuple<array<Integer>, Integer> iArrayNodeIdx;
   output tuple<array<Integer>, Integer> oArrayNodeIdx;
 protected
   Integer iNodeIdx;
+  Integer offset;
+  Integer nodeMark;
   array<Integer> iMappingArray;
 algorithm
-  (iMappingArray,iNodeIdx) := iArrayNodeIdx;
-  List.map2_0(iCompsOfNode, Util.arrayUpdateIndexFirst, iNodeIdx, iMappingArray);
-  oArrayNodeIdx := ((iMappingArray,iNodeIdx+1));
+  oArrayNodeIdx := matchcontinue(iCompsOfNode,iNodeMark,iArrayNodeIdx)
+    case(_,_,(iMappingArray,iNodeIdx))
+      equation
+        nodeMark = arrayGet(iNodeMark,iNodeIdx);
+        true = intNe(-1,nodeMark);
+        List.map2_0(iCompsOfNode, Util.arrayUpdateIndexFirst, iNodeIdx, iMappingArray);
+      then ((iMappingArray,iNodeIdx+1));
+    case(_,_,(iMappingArray,iNodeIdx))
+      then ((iMappingArray,iNodeIdx+1));
+  end matchcontinue;
 end getSccNodeMapping0;
   
 protected function othersInTearComp " gets the remaining algebraic vars and equations from the torn block.
@@ -1655,9 +1629,18 @@ protected function updateMapping
   output array<Integer> oMapping;
 algorithm
   oMapping := arrayUpdate(iMapping,varIdx,sccIdx);
-
 end updateMapping;
 
+protected function updateMappingTuple
+  input Integer varIdx;
+  input Integer sccIdx;
+  input Integer iEqSysIdx;
+  input Integer iVarOffset; //a offset that should be added to the varIdx
+  input array<tuple<Integer,Integer,Integer>> iMapping;
+  output array<tuple<Integer,Integer,Integer>> oMapping;
+algorithm
+  oMapping := arrayUpdate(iMapping,varIdx+iVarOffset,(sccIdx,iEqSysIdx,iVarOffset));
+end updateMappingTuple;
 
 
 //functions to get the ODEsystem graph and adjacencyList
@@ -1681,8 +1664,8 @@ protected
   list<Integer> whenChildren;
   list<Integer> cutNodes;
   list<Integer> cutNodeChildren;
-  array<Integer> varSccMapping;
-  array<Integer> eqSccMapping;
+  array<tuple<Integer, Integer, Integer>> varNodeMapping;
+  array<tuple<Integer, Integer, Integer>> eqNodeMapping;
   array<list<Integer>> inComps;
   String fileName;
   BackendDAE.Variables orderedVars;
@@ -1691,10 +1674,10 @@ protected
   TaskGraph graphTmp;
   TaskGraphMeta graphDataTmp;
 algorithm
-  TASKGRAPHMETA(varSccMapping=varSccMapping, eqSccMapping=eqSccMapping, inComps=inComps) := graphDataIn;
+  TASKGRAPHMETA(varNodeMapping=varNodeMapping, eqNodeMapping=eqNodeMapping, inComps=inComps) := graphDataIn;
   BackendDAE.DAE(systs,shared) := systIn;
-  ((stateNodes,_)) := List.fold2(systs,getAllStateNodes,varSccMapping,inComps,({},0));  
-  whenNodes := getEventNodes(systIn,eqSccMapping); 
+  ((stateNodes,_)) := List.fold2(systs,getAllStateNodes,varNodeMapping,inComps,({},0));  
+  whenNodes := getEventNodes(systIn,eqNodeMapping); 
   graphTmp := arrayCopy(graphIn);
   (graphTmp,cutNodes) := cutTaskGraph(graphTmp,stateNodes,whenNodes,{});
   cutNodeChildren := List.flatten(List.map1(listAppend(cutNodes,whenNodes),Util.arrayGetIndexFirst,graphIn)); // for computing new root-nodes when cutting out when-equations
@@ -1707,12 +1690,12 @@ end getOdeSystem;
 protected function getAllStateNodes "folding function for getOdeSystem to traverse the equationsystems in the BackendDAE.
 author: Waurich TUD 2013-07"
   input BackendDAE.EqSystem systIn;
-  input array<Integer> varSccMapping;
+  input array<tuple<Integer, Integer, Integer>> varNodeMapping;
   input array<list<Integer>> inComps;
   input tuple<list<Integer>,Integer> stateInfoIn;
   output tuple<list<Integer>,Integer> stateInfoOut;
 algorithm
-  stateInfoOut := matchcontinue(systIn,varSccMapping,inComps,stateInfoIn)
+  stateInfoOut := matchcontinue(systIn,varNodeMapping,inComps,stateInfoIn)
     local
       list<Integer> stateNodes;
       list<Integer> stateNodesIn;
@@ -1728,7 +1711,7 @@ algorithm
       stateVars = getStates(varLst,{},1);    
       true = List.isNotEmpty(stateVars);
       stateVars = List.map1(stateVars,intAdd,varOffset);
-      stateNodes = matchWithAssignments(stateVars,varSccMapping);
+      stateNodes = matchWithAssignmentsTuple(stateVars,varNodeMapping);
       stateNodes = List.map3(stateNodes,getCompInComps,1,inComps,arrayCreate(arrayLength(inComps),0));
       stateNodes = listAppend(stateNodesIn,stateNodes);     
       varOffsetNew = listLength(varLst)+varOffset;
@@ -1842,8 +1825,8 @@ author:Waurich TUD 2013-07"
   output TaskGraphMeta graphDataOut;
 protected
   array<list<Integer>> inComps;
-  array<Integer> varSccMapping;
-  array<Integer> eqSccMapping;
+  array<tuple<Integer, Integer, Integer>> varNodeMapping;
+  array<tuple<Integer, Integer, Integer>> eqNodeMapping;
   list<Integer> rootNodes;
   array<String> nodeNames;
   array<String> nodeDescs;
@@ -1852,17 +1835,17 @@ protected
   array<Integer>nodeMark;
   list<Integer> rangeLst;
 algorithm
-  TASKGRAPHMETA(inComps = inComps, varSccMapping=varSccMapping, eqSccMapping=eqSccMapping, rootNodes = rootNodes, nodeNames =nodeNames, nodeDescs=nodeDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) := graphDataIn;
+  TASKGRAPHMETA(inComps = inComps, varNodeMapping=varNodeMapping, eqNodeMapping=eqNodeMapping, rootNodes = rootNodes, nodeNames =nodeNames, nodeDescs=nodeDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) := graphDataIn;
   inComps := listArray(List.deletePositions(arrayList(inComps),List.map1(cutNodes,intSub,1)));
-  varSccMapping := removeContinuousEntries(varSccMapping,cutNodes);
-  eqSccMapping := removeContinuousEntries(eqSccMapping,cutNodes);
+  varNodeMapping := removeContinuousEntriesTuple(varNodeMapping,cutNodes);
+  eqNodeMapping := removeContinuousEntriesTuple(eqNodeMapping,cutNodes);
   //(_,rootNodes,_) := List.intersection1OnTrue(rootNodes,cutNodes,intEq); //TODO:  this has to be updated(When cutting out When-nodes new roots arise) DONE!
   rootNodes := listAppend(rootNodes,cutNodeChildren);
   rootNodes := arrayList(removeContinuousEntries(listArray(rootNodes),cutNodes));
   rootNodes := List.removeOnTrue(-1, intEq, rootNodes);
   rangeLst := List.intRange(arrayLength(nodeMark));
   nodeMark := List.fold1(rangeLst, markRemovedNodes,cutNodes,nodeMark);
-  graphDataOut :=TASKGRAPHMETA(inComps,varSccMapping,eqSccMapping,rootNodes,nodeNames,nodeDescs,exeCosts,commCosts,nodeMark);
+  graphDataOut :=TASKGRAPHMETA(inComps,varNodeMapping,eqNodeMapping,rootNodes,nodeNames,nodeDescs,exeCosts,commCosts,nodeMark);
 end getOdeSystemData; 
 
 
@@ -1985,7 +1968,6 @@ algorithm
   lstOut := arrayList(lstArrayTmp);
 end updateContinuousEntriesInList;
 
-
 protected function removeContinuousEntries " updates the entries.
 the entries in the array belong to a continuous series. (all numbers from 1 to max(array) belong to the array).
 the deleteEntries are removed from the array and the indices are adapted so that the new array consists againn of continuous series of numbers.
@@ -2004,6 +1986,23 @@ algorithm
   arrayOut := Util.arrayMap1(arrayTmp,removeContinuousEntries1,deleteEntries); 
 end removeContinuousEntries;
 
+protected function removeContinuousEntriesTuple " updates the entries.
+the entries in the array belong to a continuous series. (all numbers from 1 to max(array) belong to the array).
+the deleteEntries are removed from the array and the indices are adapted so that the new array consists againn of continuous series of numbers.
+e.g. removeContinuousEntries([4,6,2,3,1,7,5],{3,6}) = [3,-1,2,-1,1,5,4]; 
+REMARK : does not shorten the array, but sets deleted entries to -1 TODO: change this
+author: Waurich TUD 2013-07"
+  input array<tuple<Integer, Integer, Integer>> arrayIn;
+  input list<Integer> deleteEntriesIn;
+  output array<tuple<Integer, Integer, Integer>> arrayOut;
+protected
+  list<Integer> deleteEntries;
+  array<tuple<Integer, Integer, Integer>> arrayTmp;
+algorithm
+  arrayTmp := Util.arrayMap1(arrayIn,invalidateEntryTuple,deleteEntriesIn);
+  deleteEntries := List.sort(deleteEntriesIn,intLt);
+  arrayOut := Util.arrayMap1(arrayTmp,removeContinuousEntriesTuple1,deleteEntries); 
+end removeContinuousEntriesTuple;
 
 protected function invalidateEntry " map function that sets the entryOut -1 if entryIn is member of lstIn.
 author: Waurich TUD 2013-07"
@@ -2020,11 +2019,34 @@ algorithm
         entryIn;
     case(_,_)
       equation
-        true = List.isMemberOnTrue(entryIn,lstIn,intEq);
+        //true = List.isMemberOnTrue(entryIn,lstIn,intEq);
       then
         -1;
   end matchcontinue;
 end invalidateEntry;
+
+protected function invalidateEntryTuple " map function that sets the entryOut -1 if entryIn is member of lstIn.
+author: Waurich TUD 2013-07"
+  input tuple<Integer,Integer,Integer> entryTplIn;
+  input list<Integer> lstIn;
+  output tuple<Integer,Integer,Integer> entryTplOut;
+protected
+  Integer entryIn, eqSysIdx, entryOffset;
+algorithm
+  entryTplOut := matchcontinue(entryTplIn,lstIn)
+    local
+    case((entryIn,_,_),_)
+      equation
+        false = List.isMemberOnTrue(entryIn,lstIn,intEq);
+      then
+        entryTplIn;
+    case((_,eqSysIdx,entryOffset),_)
+      equation
+        //true = List.isMemberOnTrue(entryIn,lstIn,intEq);
+      then
+        ((-1,eqSysIdx,entryOffset));
+  end matchcontinue;
+end invalidateEntryTuple;
   
   
 protected function removeContinuousEntries1" map function for removeContinuousEntries to update the indices.
@@ -2032,6 +2054,8 @@ author:Waurich TUD 2013-07."
   input Integer entryIn;
   input list<Integer> deleteEntriesIn;
   output Integer entryOut;
+protected
+  Integer eqSysIdx, entryOffset;
 algorithm
   entryOut := matchcontinue(entryIn,deleteEntriesIn)
   local
@@ -2049,39 +2073,33 @@ algorithm
     then
       entryIn;
   end matchcontinue;
-end removeContinuousEntries1; 
+end removeContinuousEntries1;
 
- 
-//protected function getConditionVars "gets the vars that are necessary to compute the when-conditions
-//author: Waurich TUD 2013-06"
-//  input list<Integer> eventEqs;
-//  input list<Integer> eventVars;
-//  input BackendDAE.IncidenceMatrix mIn;
-//  input list<Integer> condVarsIn;
-//  input Integer Idx;
-//  output list<Integer> condVarsOut;
-//algorithm
-//  condVarsOut := matchcontinue(eventEqs,eventVars,mIn,condVarsIn,Idx)
-//    local
-//      Integer var;
-//      list<Integer> condVars;
-//      list<Integer> row;
-//    case(_,_,_,_,_)
-//      equation
-//        true = listLength(eventEqs) >= Idx;
-//        row = arrayGet(mIn,listGet(eventEqs,Idx));
-//        row = deleteMembersList(row,eventVars);
-//        condVars = listAppend(row,condVarsIn);
-//        condVars = getConditionVars(eventEqs,eventVars,mIn,condVars,Idx+1);
-//      then
-//        condVars;
-//    else
-//      equation
-//        condVars = List.unique(condVarsIn);
-//      then
-//        condVars;     
-//    end matchcontinue;
-//end getConditionVars;        
+protected function removeContinuousEntriesTuple1" map function for removeContinuousEntries to update the indices.
+author:Waurich TUD 2013-07."
+  input tuple<Integer,Integer,Integer> entryTplIn;
+  input list<Integer> deleteEntriesIn;
+  output tuple<Integer,Integer,Integer> entryTplOut;
+protected
+  Integer entryIn, eqSysIdx, entryOffset;
+algorithm
+  entryTplOut := matchcontinue(entryTplIn,deleteEntriesIn)
+  local
+    Integer offset;
+    Integer entry;
+  case((entryIn,eqSysIdx,entryOffset),_)
+    equation
+      entry = List.getMemberOnTrue(entryIn,deleteEntriesIn,intGe);
+      offset = listLength(deleteEntriesIn)-List.position(entry,deleteEntriesIn);
+      entry = entryIn-offset;
+    then
+      ((entry,eqSysIdx,entryOffset));
+  else
+    equation
+    then
+      entryTplIn;
+  end matchcontinue;
+end removeContinuousEntriesTuple1; 
 
 protected function deleteMembersList "deletes all members in list1 given by list2
 author:waurich TUD 2013-06"
@@ -2268,108 +2286,6 @@ algorithm
         noChildrenIn;
   end matchcontinue;
 end getLeaves;                 
- 
-
-//protected function getSCCByVar0
-//  input tuple<Integer,Integer> varIdx; //variable index and variable state
-//  input BackendDAE.StrongComponents components;
-//  input BackendDAE.IncidenceMatrix incidenceMatrix;
-//  input Integer sccIdx;
-//  input array<Integer> varSccMapping;
-//  output Option<Integer> componentIdx;
-//
-//algorithm
-//  componentIdx := matchcontinue(varIdx, components, incidenceMatrix, sccIdx, varSccMapping)
-//    local
-//      BackendDAE.StrongComponent head;
-//      BackendDAE.StrongComponents tail;
-//      Integer varRawIdx,varRawState;
-//      Boolean constTrue, contains;
-//      Integer compVarIdx, const1, listLen;
-//      list<tuple<Integer, list<Integer>>> tornCompEqns;
-//      list<Integer> compVarIdc;
-//    case((varRawIdx,varRawState),(head as BackendDAE.SINGLEEQUATION(var = compVarIdx))::tail,_,_,_)
-//      equation
-//        true = compareIntTuple2(varIdx, getVarTuple(compVarIdx));
-//        varSccMapping = arrayUpdate(varSccMapping,varRawIdx,sccIdx);
-//    then SOME(sccIdx);
-//    case(_,(head as BackendDAE.EQUATIONSYSTEM(vars = compVarIdc))::tail,_,_,_)
-//      equation
-//        print("getSCCByVar - Equationsystem not supported\n");
-//        //compVarIdc = List.removeOnTrue(varIdx, intNe, compVarIdc);
-//        //const1 = 1;
-//        //listLen = listLength(compVarIdc);
-//        //equality(const1 = listLen);
-//      then getSCCByVar(varIdx,tail,incidenceMatrix,sccIdx+1,varSccMapping);
-//    case(_,(head as BackendDAE.MIXEDEQUATIONSYSTEM(disc_vars = compVarIdc))::tail,_,_,_)
-//      equation
-//        print("getSCCByVar - Mixedequationsystem not supported\n");
-//      then getSCCByVar(varIdx,tail,incidenceMatrix,sccIdx+1,varSccMapping);
-//    case (_,(head as BackendDAE.SINGLEARRAY(vars=compVarIdc))::tail,_,_,_)
-//      equation
-//        print("getSCCByVar - SingleArray not supported\n");
-//      then getSCCByVar(varIdx,tail,incidenceMatrix,sccIdx+1,varSccMapping); 
-//    case (_,(head as BackendDAE.SINGLEALGORITHM(vars=compVarIdc))::tail,_,_,_)
-//      equation
-//        print("getSCCByVar - SingleAlgorithm not supported\n");
-//      then getSCCByVar(varIdx,tail,incidenceMatrix,sccIdx+1,varSccMapping);       
-//    case (_,(head as BackendDAE.TORNSYSTEM(tearingvars=compVarIdc, otherEqnVarTpl=tornCompEqns))::tail,_,_,_)
-//      equation
-//        //constTrue = true;
-//        //contains = checkIfTornCompContainsEqn(compVarIdc, tornCompEqns, varIdx);
-//        //equality(constTrue = contains);
-//        print("getSCCByVar - TornSystem not supported\n");
-//      then getSCCByVar(varIdx,tail,incidenceMatrix,sccIdx+1);
-//    case(_,_::tail,_,_,_)
-//      then getSCCByVar(varIdx,tail,incidenceMatrix,sccIdx+1);
-//    else NONE();
-//  end matchcontinue;
-//end getSCCByVar0;
-
-//protected function checkIfTornCompContainsEqn
-//  input list<Integer> tearingEqns;
-//  input list<tuple<Integer, list<Integer>>> otherEqnVarTpl;
-//  input Integer eqnIdx;
-//  output Boolean contains;
-//
-//algorithm
-//  contains := checkIfTornCompContainsEqn1(listLength(List.removeOnTrue(eqnIdx, intNe, tearingEqns)), checkIfTornCompContainsEqn0(otherEqnVarTpl,eqnIdx));
-//end checkIfTornCompContainsEqn;
-//
-//protected function checkIfTornCompContainsEqn0
-//  input list<tuple<Integer, list<Integer>>> otherEqnVarTpl;
-//  input Integer eqnIdx;
-//  output Boolean contains;
-//
-//protected
-//  Integer eqn;
-//  list<tuple<Integer, list<Integer>>> tail;
-//  
-//algorithm
-//  contains := matchcontinue(otherEqnVarTpl, eqnIdx)
-//    case((eqn,_)::tail,_) 
-//      equation
-//        equality(eqn = eqnIdx);
-//      then true;
-//    case(_::tail,_) then checkIfTornCompContainsEqn0(tail,eqnIdx);
-//    else then false;
-//  end matchcontinue;
-//end checkIfTornCompContainsEqn0;
-//
-//protected function checkIfTornCompContainsEqn1
-//  input Integer listLen;
-//  input Boolean partOfOtherEqn;
-//  output Boolean contains;
-//
-//algorithm
-//  contains := match(listLen, partOfOtherEqn)
-//    case(1,_)
-//      then true;
-//    case(_,_)
-//      then partOfOtherEqn;
-//  end match;  
-//end checkIfTornCompContainsEqn1; 
-
 
 //Methods to write blt-structure as xml-file
 //------------------------------------------
@@ -2385,10 +2301,10 @@ public function dumpAsGraphMLSccLevel "author: marcusw, waurich
   input array<list<Integer>> sccSimEqMapping; //maps each scc to simEqSystems
   input array<tuple<Integer,Integer,Real>> schedulerInfo; //maps each Task to <threadId, orderId, startCalcTime>
 protected
-  GraphMLNew.GraphInfo graphInfo;
+  GraphML.GraphInfo graphInfo;
 algorithm
   graphInfo := convertToGraphMLSccLevel(iGraph,iGraphData,criticalPathInfo,iCriticalPath,iCriticalPathWoC,sccSimEqMapping,schedulerInfo);
-  GraphMLNew.dumpGraph(graphInfo, fileName);
+  GraphML.dumpGraph(graphInfo, fileName);
 end dumpAsGraphMLSccLevel;
 
 public function convertToGraphMLSccLevel "author: marcusw, waurich
@@ -2400,13 +2316,13 @@ public function convertToGraphMLSccLevel "author: marcusw, waurich
   input list<tuple<Integer,Integer>> iCriticalPathWoC; //Critical path without communciation as list of edges
   input array<list<Integer>> sccSimEqMapping; //maps each scc to simEqSystems
   input array<tuple<Integer,Integer,Real>> schedulerInfo; //maps each Task to <threadId, orderId, startCalcTime>
-  output GraphMLNew.GraphInfo oGraphInfo;
+  output GraphML.GraphInfo oGraphInfo;
 protected
   Integer graphIdx;
-  GraphMLNew.GraphInfo graphInfo;
+  GraphML.GraphInfo graphInfo;
 algorithm
-  graphInfo := GraphMLNew.createGraphInfo();
-  (graphInfo, (_,graphIdx)) := GraphMLNew.addGraph("TaskGraph", true, graphInfo);
+  graphInfo := GraphML.createGraphInfo();
+  (graphInfo, (_,graphIdx)) := GraphML.addGraph("TaskGraph", true, graphInfo);
   oGraphInfo := convertToGraphMLSccLevelSubgraph(iGraph,iGraphData,criticalPathInfo,iCriticalPath,iCriticalPathWoC,sccSimEqMapping,schedulerInfo,graphIdx,graphInfo);
 end convertToGraphMLSccLevel;
 
@@ -2420,28 +2336,28 @@ public function convertToGraphMLSccLevelSubgraph "author: marcusw, waurich
   input array<list<Integer>> sccSimEqMapping; //maps each scc to simEqSystems
   input array<tuple<Integer,Integer,Real>> schedulerInfo; //maps each Task to <threadId, orderId, startCalcTime>
   input Integer iGraphIdx;
-  input GraphMLNew.GraphInfo iGraphInfo;
-  output GraphMLNew.GraphInfo oGraphInfo;
+  input GraphML.GraphInfo iGraphInfo;
+  output GraphML.GraphInfo oGraphInfo;
 protected
-  GraphMLNew.GraphInfo graphInfo;
+  GraphML.GraphInfo graphInfo;
   Integer nameAttIdx, calcTimeAttIdx, opCountAttIdx, yCoordAttIdx, taskIdAttIdx, commCostAttIdx, commVarsAttIdx, critPathAttIdx, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx;
   list<Integer> nodeIdc;
 algorithm
   oGraphInfo := match(iGraph, iGraphData, criticalPathInfo, iCriticalPath, iCriticalPathWoC, sccSimEqMapping, schedulerInfo, iGraphIdx, iGraphInfo)
     case(_,_,_,_,_,_,_,_,_)
       equation 
-        (graphInfo,(_,nameAttIdx)) = GraphMLNew.addAttribute("", "Name", GraphMLNew.TYPE_STRING(), GraphMLNew.TARGET_NODE(), iGraphInfo);
-        (graphInfo,(_,opCountAttIdx)) = GraphMLNew.addAttribute("-1", "Operations", GraphMLNew.TYPE_INTEGER(), GraphMLNew.TARGET_NODE(), graphInfo);
-        (graphInfo,(_,calcTimeAttIdx)) = GraphMLNew.addAttribute("-1", "CalcTime", GraphMLNew.TYPE_DOUBLE(), GraphMLNew.TARGET_NODE(), graphInfo);
-        (graphInfo,(_,taskIdAttIdx)) = GraphMLNew.addAttribute("", "TaskID", GraphMLNew.TYPE_STRING(), GraphMLNew.TARGET_NODE(), graphInfo);
-        (graphInfo,(_,yCoordAttIdx)) = GraphMLNew.addAttribute("17", "yCoord", GraphMLNew.TYPE_INTEGER(), GraphMLNew.TARGET_NODE(), graphInfo);
-        (graphInfo,(_,simCodeEqAttIdx)) = GraphMLNew.addAttribute("", "SimCodeEqs", GraphMLNew.TYPE_STRING(), GraphMLNew.TARGET_NODE(), graphInfo);
-        (graphInfo,(_,threadIdAttIdx)) = GraphMLNew.addAttribute("", "ThreadId", GraphMLNew.TYPE_STRING(), GraphMLNew.TARGET_NODE(), graphInfo);
-        (graphInfo,(_,taskNumberAttIdx)) = GraphMLNew.addAttribute("-1", "TaskNumber", GraphMLNew.TYPE_INTEGER(), GraphMLNew.TARGET_NODE(), graphInfo);
-        (graphInfo,(_,commCostAttIdx)) = GraphMLNew.addAttribute("-1", "CommCost", GraphMLNew.TYPE_INTEGER(), GraphMLNew.TARGET_EDGE(), graphInfo);
-        (graphInfo,(_,commVarsAttIdx)) = GraphMLNew.addAttribute("-1", "CommVars", GraphMLNew.TYPE_INTEGER(), GraphMLNew.TARGET_EDGE(), graphInfo);
-        (graphInfo,(_,critPathAttIdx)) = GraphMLNew.addAttribute("", "CriticalPath", GraphMLNew.TYPE_STRING(), GraphMLNew.TARGET_GRAPH(), graphInfo);
-        graphInfo = GraphMLNew.addGraphAttributeValue((critPathAttIdx, criticalPathInfo), iGraphIdx, graphInfo);
+        (graphInfo,(_,nameAttIdx)) = GraphML.addAttribute("", "Name", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), iGraphInfo);
+        (graphInfo,(_,opCountAttIdx)) = GraphML.addAttribute("-1", "Operations", GraphML.TYPE_INTEGER(), GraphML.TARGET_NODE(), graphInfo);
+        (graphInfo,(_,calcTimeAttIdx)) = GraphML.addAttribute("-1", "CalcTime", GraphML.TYPE_DOUBLE(), GraphML.TARGET_NODE(), graphInfo);
+        (graphInfo,(_,taskIdAttIdx)) = GraphML.addAttribute("", "TaskID", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graphInfo);
+        (graphInfo,(_,yCoordAttIdx)) = GraphML.addAttribute("17", "yCoord", GraphML.TYPE_INTEGER(), GraphML.TARGET_NODE(), graphInfo);
+        (graphInfo,(_,simCodeEqAttIdx)) = GraphML.addAttribute("", "SimCodeEqs", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graphInfo);
+        (graphInfo,(_,threadIdAttIdx)) = GraphML.addAttribute("", "ThreadId", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graphInfo);
+        (graphInfo,(_,taskNumberAttIdx)) = GraphML.addAttribute("-1", "TaskNumber", GraphML.TYPE_INTEGER(), GraphML.TARGET_NODE(), graphInfo);
+        (graphInfo,(_,commCostAttIdx)) = GraphML.addAttribute("-1", "CommCost", GraphML.TYPE_INTEGER(), GraphML.TARGET_EDGE(), graphInfo);
+        (graphInfo,(_,commVarsAttIdx)) = GraphML.addAttribute("-1", "CommVars", GraphML.TYPE_INTEGER(), GraphML.TARGET_EDGE(), graphInfo);
+        (graphInfo,(_,critPathAttIdx)) = GraphML.addAttribute("", "CriticalPath", GraphML.TYPE_STRING(), GraphML.TARGET_GRAPH(), graphInfo);
+        graphInfo = GraphML.addGraphAttributeValue((critPathAttIdx, criticalPathInfo), iGraphIdx, graphInfo);
         nodeIdc = List.intRange(arrayLength(iGraph));
         ((graphInfo,_)) = List.fold4(nodeIdc, addNodeToGraphML, (iGraph, iGraphData), (nameAttIdx,opCountAttIdx,calcTimeAttIdx,taskIdAttIdx,yCoordAttIdx,commCostAttIdx, commVarsAttIdx, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx), sccSimEqMapping, (iCriticalPath,iCriticalPathWoC,schedulerInfo), (graphInfo,iGraphIdx));
       then graphInfo;
@@ -2457,14 +2373,14 @@ protected function addNodeToGraphML "author: marcusw, waurich
   //Attribute index for <nameAttIdx,opCountAttIdx, calcTimeAttIdx, taskIdAttIdx, yCoordAttIdx, commCostAttIdx, commVarsAttIdx, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx>
   input array<list<Integer>> sccSimEqMapping;
   input tuple<list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,array<tuple<Integer,Integer,Real>>> iSchedulerInfoCritPath; //<criticalPath,criticalPathWoC,schedulerInfo>
-  input tuple<GraphMLNew.GraphInfo,Integer> iGraph;
-  output tuple<GraphMLNew.GraphInfo,Integer> oGraph; //<GraphInfo, GraphIdx>
+  input tuple<GraphML.GraphInfo,Integer> iGraph;
+  output tuple<GraphML.GraphInfo,Integer> oGraph; //<GraphInfo, GraphIdx>
 algorithm
   oGraph := matchcontinue(nodeIdx,tGraphDataTuple,attIdc,sccSimEqMapping,iSchedulerInfoCritPath,iGraph)
     local
       TaskGraph tGraphIn;
       TaskGraphMeta tGraphDataIn;
-      GraphMLNew.GraphInfo tmpGraph;
+      GraphML.GraphInfo tmpGraph;
       Integer graphIdx;
       Integer opCount, nameAttIdx, calcTimeAttIdx, opCountAttIdx, taskIdAttIdx, yCoordAttIdx, commCostAttIdx, commVarsAttIdx, yCoord, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx;
       Real calcTime, taskFinishTime, taskStartTime;
@@ -2473,8 +2389,7 @@ algorithm
       list<Integer> components;
       list<Integer> rootNodes;  
       list<Integer> simCodeEqs;
-      array<Integer> varSccMapping;  
-      array<Integer> eqSccMapping;  
+      array<tuple<Integer,Integer,Integer>>  eqNodeMapping;  
       array<tuple<Integer,Real>> exeCosts;  
       array<Integer> nodeMark; 
       array<list<Integer>> inComps; 
@@ -2489,14 +2404,14 @@ algorithm
       String simCodeEqString;
       String threadIdxString, taskNumberString;
       Integer schedulerThreadId, schedulerTaskNumber;
-      list<GraphMLNew.NodeLabel> nodeLabels;
+      list<GraphML.NodeLabel> nodeLabels;
       array<tuple<Integer,Integer,Real>> schedulerInfo;
       list<tuple<Integer,Integer>> criticalPath, criticalPathWoC;
     case(_,(tGraphIn,tGraphDataIn),_,_,(criticalPath,criticalPathWoC,schedulerInfo),(tmpGraph,graphIdx))
       equation
         false = nodeIdx == 0 or nodeIdx == -1;
         (nameAttIdx, opCountAttIdx, calcTimeAttIdx, taskIdAttIdx, yCoordAttIdx, commCostAttIdx, commVarsAttIdx, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx) = attIdc;
-        TASKGRAPHMETA(inComps = inComps, eqSccMapping=eqSccMapping, rootNodes = rootNodes, nodeNames =nodeNames ,nodeDescs=nodeDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) = tGraphDataIn;
+        TASKGRAPHMETA(inComps = inComps, eqNodeMapping=eqNodeMapping, rootNodes = rootNodes, nodeNames =nodeNames ,nodeDescs=nodeDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) = tGraphDataIn;
         components = arrayGet(inComps,nodeIdx);
         true = listLength(components)==1; 
         primalComp = listGet(components,1);
@@ -2524,12 +2439,12 @@ algorithm
         calcTimeString = System.snprintff("%.0f", 25, calcTime);
         taskFinishTimeString = System.snprintff("%.0f", 25, taskFinishTime);
         taskStartTimeString = System.snprintff("%.0f", 25, taskStartTime);
-        nodeLabels = {GraphMLNew.NODELABEL_INTERNAL(componentsString, NONE(), GraphMLNew.FONTPLAIN()), GraphMLNew.NODELABEL_CORNER(calcTimeString, SOME(GraphMLNew.COLOR_YELLOW), GraphMLNew.FONTBOLD(), "se"), GraphMLNew.NODELABEL_CORNER(taskStartTimeString, SOME(GraphMLNew.COLOR_CYAN), GraphMLNew.FONTBOLD(), "nw"), GraphMLNew.NODELABEL_CORNER(taskFinishTimeString, SOME(GraphMLNew.COLOR_PINK), GraphMLNew.FONTBOLD(), "sw")};
+        nodeLabels = {GraphML.NODELABEL_INTERNAL(componentsString, NONE(), GraphML.FONTPLAIN()), GraphML.NODELABEL_CORNER(calcTimeString, SOME(GraphML.COLOR_YELLOW), GraphML.FONTBOLD(), "se"), GraphML.NODELABEL_CORNER(taskStartTimeString, SOME(GraphML.COLOR_CYAN), GraphML.FONTBOLD(), "nw"), GraphML.NODELABEL_CORNER(taskFinishTimeString, SOME(GraphML.COLOR_PINK), GraphML.FONTBOLD(), "sw")};
         //print("Node " +& intString(nodeIdx) +& " has child nodes " +& stringDelimitList(List.map(childNodes,intString),", ") +& "\n");
-        (tmpGraph,(_,_)) = GraphMLNew.addNode("Node" +& intString(nodeIdx),
-                                              GraphMLNew.COLOR_ORANGE, 
+        (tmpGraph,(_,_)) = GraphML.addNode("Node" +& intString(nodeIdx),
+                                              GraphML.COLOR_ORANGE, 
                                               nodeLabels,
-                                              GraphMLNew.RECTANGLE(), 
+                                              GraphML.RECTANGLE(), 
                                               SOME(nodeDesc), 
                                               {((nameAttIdx,compText)),((calcTimeAttIdx,calcTimeString)),((opCountAttIdx, opCountString)),((taskIdAttIdx,componentsString)),((yCoordAttIdx,yCoordString)),((simCodeEqAttIdx,simCodeEqString)),((threadIdAttIdx,threadIdxString)),((taskNumberAttIdx,taskNumberString))}, 
                                               graphIdx, 
@@ -2542,7 +2457,7 @@ algorithm
         // for a node that consists of contracted nodes
         false = nodeIdx == 0 or nodeIdx == -1;
         (nameAttIdx, opCountAttIdx, calcTimeAttIdx, taskIdAttIdx, yCoordAttIdx, commCostAttIdx, commVarsAttIdx, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx) = attIdc;
-        TASKGRAPHMETA(inComps = inComps, eqSccMapping=eqSccMapping, rootNodes = rootNodes, nodeNames =nodeNames ,nodeDescs=nodeDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) = tGraphDataIn;
+        TASKGRAPHMETA(inComps = inComps, eqNodeMapping=eqNodeMapping, rootNodes = rootNodes, nodeNames =nodeNames ,nodeDescs=nodeDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) = tGraphDataIn;
         components = arrayGet(inComps,nodeIdx);
         false = listLength(components)==1;
         primalComp = List.last(components);
@@ -2566,12 +2481,12 @@ algorithm
         calcTimeString = System.snprintff("%.0f", 25, calcTime);
         taskFinishTimeString = System.snprintff("%.0f", 25, taskFinishTime);
         taskStartTimeString = System.snprintff("%.0f", 25, taskStartTime);
-        nodeLabels = {GraphMLNew.NODELABEL_INTERNAL(componentsString, NONE(), GraphMLNew.FONTPLAIN()), GraphMLNew.NODELABEL_CORNER(calcTimeString, SOME(GraphMLNew.COLOR_YELLOW), GraphMLNew.FONTBOLD(), "se"), GraphMLNew.NODELABEL_CORNER(taskStartTimeString, SOME(GraphMLNew.COLOR_CYAN), GraphMLNew.FONTBOLD(), "nw"), GraphMLNew.NODELABEL_CORNER(taskFinishTimeString, SOME(GraphMLNew.COLOR_PINK), GraphMLNew.FONTBOLD(), "sw")};
+        nodeLabels = {GraphML.NODELABEL_INTERNAL(componentsString, NONE(), GraphML.FONTPLAIN()), GraphML.NODELABEL_CORNER(calcTimeString, SOME(GraphML.COLOR_YELLOW), GraphML.FONTBOLD(), "se"), GraphML.NODELABEL_CORNER(taskStartTimeString, SOME(GraphML.COLOR_CYAN), GraphML.FONTBOLD(), "nw"), GraphML.NODELABEL_CORNER(taskFinishTimeString, SOME(GraphML.COLOR_PINK), GraphML.FONTBOLD(), "sw")};
         //print("Node " +& intString(nodeIdx) +& " has child nodes " +& stringDelimitList(List.map(childNodes,intString),", ") +& "\n");
-        (tmpGraph,(_,_)) = GraphMLNew.addNode("Node" +& intString(nodeIdx), 
-                                      GraphMLNew.COLOR_ORANGE,
+        (tmpGraph,(_,_)) = GraphML.addNode("Node" +& intString(nodeIdx), 
+                                      GraphML.COLOR_ORANGE,
                                       nodeLabels, 
-                                      GraphMLNew.RECTANGLE(), 
+                                      GraphML.RECTANGLE(), 
                                       SOME(nodeDesc), 
                                       {((nameAttIdx,compText)),((calcTimeAttIdx,calcTimeString)),((opCountAttIdx, opCountString)),((taskIdAttIdx,componentsString)), ((simCodeEqAttIdx,simCodeEqString)),((threadIdAttIdx,threadIdxString)),((taskNumberAttIdx,taskNumberString))},
                                       graphIdx, 
@@ -2624,8 +2539,8 @@ protected function addDepToGraph "author: marcusw
   input TaskGraphMeta tGraphDataIn;
   input tuple<Integer,Integer> iCommAttIdc; //<%(commCostAttIdx, commVarsAttIdx)%>
   input tuple<list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>> iCriticalPathEdges; //<%criticalPathEdges, criticalPathEdgesWoC%>
-  input GraphMLNew.GraphInfo iGraph;
-  output GraphMLNew.GraphInfo oGraph;
+  input GraphML.GraphInfo iGraph;
+  output GraphML.GraphInfo oGraph;
 protected
   array<list<tuple<Integer,Integer,Integer>>> commCosts;  
   Integer commCostAttIdx, commVarsAttIdx;
@@ -2634,7 +2549,7 @@ protected
   array<list<Integer>> inComps; 
   array<Integer> nodeMark;
   list<Integer> components;
-  GraphMLNew.GraphInfo tmpGraph;
+  GraphML.GraphInfo tmpGraph;
   list<tuple<Integer,Integer>> criticalPathEdges, criticalPathEdgesWoC;
   String edgeColor;
 algorithm
@@ -2646,15 +2561,15 @@ algorithm
         ((_,numOfCommVars,commCost)) = getCommCostBetweenNodes(parentIdx,childIdx,tGraphDataIn);
         numOfCommVarsString = intString(numOfCommVars);
         commCostString = intString(commCost);
-        edgeColor = Util.if_(List.exist1(criticalPathEdgesWoC, compareIntTuple2, (parentIdx, childIdx)), GraphMLNew.COLOR_GRAY, GraphMLNew.COLOR_BLACK);
-        (tmpGraph,(_,_)) = GraphMLNew.addEdge("Edge" +& intString(parentIdx) +& intString(childIdx), 
+        edgeColor = Util.if_(List.exist1(criticalPathEdgesWoC, compareIntTuple2, (parentIdx, childIdx)), GraphML.COLOR_GRAY, GraphML.COLOR_BLACK);
+        (tmpGraph,(_,_)) = GraphML.addEdge("Edge" +& intString(parentIdx) +& intString(childIdx), 
                                               "Node" +& intString(childIdx), "Node" +& intString(parentIdx), 
                                               edgeColor, 
-                                              GraphMLNew.LINE(), 
-                                              GraphMLNew.LINEWIDTH_BOLD,
+                                              GraphML.LINE(), 
+                                              GraphML.LINEWIDTH_BOLD,
                                               false,
-                                              {GraphMLNew.EDGELABEL(commCostString, SOME(edgeColor), GraphMLNew.FONTSIZE_STANDARD)}, 
-                                              (GraphMLNew.ARROWNONE(),GraphMLNew.ARROWSTANDART()), 
+                                              {GraphML.EDGELABEL(commCostString, SOME(edgeColor), GraphML.FONTSIZE_STANDARD)}, 
+                                              (GraphML.ARROWNONE(),GraphML.ARROWSTANDART()), 
                                               {(commCostAttIdx, commCostString),(commVarsAttIdx, numOfCommVarsString)}, 
                                               iGraph);
       then tmpGraph;
@@ -2664,16 +2579,16 @@ algorithm
         ((_,numOfCommVars,commCost)) = getCommCostBetweenNodes(parentIdx,childIdx,tGraphDataIn);
         numOfCommVarsString = intString(numOfCommVars);
         commCostString = intString(commCost);
-        edgeColor = Util.if_(List.exist1(criticalPathEdgesWoC, compareIntTuple2, (parentIdx, childIdx)), GraphMLNew.COLOR_GRAY, GraphMLNew.COLOR_BLACK);
-        (tmpGraph,(_,_)) = GraphMLNew.addEdge( "Edge" +& intString(parentIdx) +& intString(childIdx), 
+        edgeColor = Util.if_(List.exist1(criticalPathEdgesWoC, compareIntTuple2, (parentIdx, childIdx)), GraphML.COLOR_GRAY, GraphML.COLOR_BLACK);
+        (tmpGraph,(_,_)) = GraphML.addEdge( "Edge" +& intString(parentIdx) +& intString(childIdx), 
                                             "Node" +& intString(childIdx), 
                                             "Node" +& intString(parentIdx), 
                                             edgeColor, 
-                                            GraphMLNew.LINE(), 
-                                            GraphMLNew.LINEWIDTH_STANDARD, 
+                                            GraphML.LINE(), 
+                                            GraphML.LINEWIDTH_STANDARD, 
                                             false,
-                                            {GraphMLNew.EDGELABEL(commCostString, SOME(edgeColor), GraphMLNew.FONTSIZE_STANDARD)}, 
-                                            (GraphMLNew.ARROWNONE(),GraphMLNew.ARROWSTANDART()), 
+                                            {GraphML.EDGELABEL(commCostString, SOME(edgeColor), GraphML.FONTSIZE_STANDARD)}, 
+                                            (GraphML.ARROWNONE(),GraphML.ARROWSTANDART()), 
                                             {(commCostAttIdx, commCostString),(commVarsAttIdx, numOfCommVarsString)}, 
                                             iGraph);
       then tmpGraph;
@@ -2843,8 +2758,8 @@ author: Waurich TUD 2013-06"
   input TaskGraphMeta metaDataIn;
 protected
   array<list<Integer>> inComps;
-  array<Integer>  varSccMapping;
-  array<Integer> eqSccMapping;
+  array<tuple<Integer, Integer, Integer>>  varNodeMapping;
+  array<tuple<Integer,Integer,Integer>>  eqNodeMapping;
   list<Integer> rootNodes;
   array<String> nodeNames; 
   array<String> nodeDescs; 
@@ -2852,17 +2767,17 @@ protected
   array<list<tuple<Integer,Integer,Integer>>> commCosts;
   array<Integer> nodeMark;
 algorithm
-  TASKGRAPHMETA(inComps = inComps, varSccMapping = varSccMapping, eqSccMapping=eqSccMapping, rootNodes=rootNodes, nodeNames=nodeNames, nodeDescs=nodeDescs, exeCosts=exeCosts, commCosts=commCosts, nodeMark=nodeMark) := metaDataIn;
+  TASKGRAPHMETA(inComps = inComps, varNodeMapping = varNodeMapping, eqNodeMapping=eqNodeMapping, rootNodes=rootNodes, nodeNames=nodeNames, nodeDescs=nodeDescs, exeCosts=exeCosts, commCosts=commCosts, nodeMark=nodeMark) := metaDataIn;
   print("\n");
   print("--------------------------------\n");
   print("TASKGRAPH METADATA\n");
   print("--------------------------------\n");
   print(intString(arrayLength(inComps))+&" nodes include components:\n");
   printInComps(inComps,1);
-  print(intString(arrayLength(varSccMapping))+&" vars are solved in the nodes \n");
-  printVarSccMapping(varSccMapping,1);
-  print(intString(arrayLength(eqSccMapping))+&" equations are computed in the nodes \n");
-  printEqSccMapping(eqSccMapping,1);
+  print(intString(arrayLength(varNodeMapping))+&" vars are solved in the nodes \n");
+  printvarNodeMapping(varNodeMapping,1);
+  print(intString(arrayLength(eqNodeMapping))+&" equations are computed in the nodes \n");
+  printeqNodeMapping(eqNodeMapping,1);
   print("the names of the nodes \n");
   printNodeNames(nodeNames,1);
   print("the description of the node\n");
@@ -2876,7 +2791,7 @@ algorithm
   print("the nodeMark of the nodes\n");
   printNodeMark(nodeMark,1);
   print("\n");
-  end printTaskGraphMeta;
+end printTaskGraphMeta;
 
 
 protected function printInComps " prints the information about the assigned components to a taskgraph node.
@@ -2904,20 +2819,20 @@ algorithm
 end printInComps;  
 
 
-protected function printVarSccMapping " prints the information about how the vars are assigned to the graph nodes
+public function printvarNodeMapping " prints the information about how the vars are assigned to the graph nodes
 author: Waurich TUD 2013-07"
-  input array<Integer> varSccMapping;
+  input array<tuple<Integer, Integer, Integer>> varNodeMapping;
   input Integer varIdx;
 algorithm
-  _ := matchcontinue(varSccMapping,varIdx)
+  _ := matchcontinue(varNodeMapping,varIdx)
   local
-    Integer comp;
+    Integer comp, eqSysIdx, varOffset;
   case(_,_)
     equation
-      true = arrayLength(varSccMapping)>= varIdx;
-      comp = arrayGet(varSccMapping,varIdx);
-      print("variable "+&intString(varIdx)+&" is solved in component: "+&intString(comp)+&"\n");
-      printVarSccMapping(varSccMapping,varIdx+1);
+      true = arrayLength(varNodeMapping)>= varIdx;
+      ((comp,eqSysIdx,varOffset)) = arrayGet(varNodeMapping,varIdx);
+      print("variable "+&intString(varIdx-varOffset)+&" (offset: " +& intString(varOffset) +& ") of equation system " +& intString(eqSysIdx) +& " is solved in node: "+&intString(comp)+&"\n");
+      printvarNodeMapping(varNodeMapping,varIdx+1);
       then
         ();
   else
@@ -2926,22 +2841,22 @@ algorithm
       then
         ();
   end matchcontinue;
-end printVarSccMapping;  
+end printvarNodeMapping;  
   
-protected function printEqSccMapping " prints the information about which equations are assigned to the graph nodes
+public function printeqNodeMapping " prints the information about which equations are assigned to the graph nodes
 author: Waurich TUD 2013-07"
-  input array<Integer> eqSccMapping;
+  input array<tuple<Integer,Integer,Integer>> eqNodeMapping;
   input Integer eqIdx;
 algorithm
-  _ := matchcontinue(eqSccMapping,eqIdx)
+  _ := matchcontinue(eqNodeMapping,eqIdx)
   local
-    Integer comp;
+    Integer comp, eqSysIdx, eqOffset;
   case(_,_)
     equation
-      true = arrayLength(eqSccMapping)>= eqIdx;
-      comp = arrayGet(eqSccMapping,eqIdx);
-      print("equation "+&intString(eqIdx)+&" is computed in component: "+&intString(comp)+&"\n");
-      printEqSccMapping(eqSccMapping,eqIdx+1);
+      true = arrayLength(eqNodeMapping)>= eqIdx;
+      ((comp,eqSysIdx,eqOffset)) = arrayGet(eqNodeMapping,eqIdx);
+      print("equation "+&intString(eqIdx)+& " (offset: " +& intString(eqOffset) +& ") of equation system " +& intString(eqSysIdx) +& " is computed in node: "+&intString(comp)+&"\n");
+      printeqNodeMapping(eqNodeMapping,eqIdx+1);
       then
         ();
   else
@@ -2950,8 +2865,22 @@ algorithm
       then
         ();
   end matchcontinue;
-end printEqSccMapping;  
+end printeqNodeMapping;  
 
+public function printSccNodeMapping
+  input array<Integer> iSccNodeMapping;
+algorithm
+  _ := Util.arrayFold(iSccNodeMapping, printSccNodeMapping0, 1);
+end printSccNodeMapping;
+
+protected function printSccNodeMapping0
+  input Integer iNodeIdx;
+  input Integer iSccIdx;
+  output Integer oSccIdx;
+algorithm
+  print("Scc " +& intString(iSccIdx) +& " is solved in node " +& intString(iNodeIdx) +& "\n");
+  oSccIdx := iSccIdx + 1;
+end printSccNodeMapping0;
 
 protected function printNodeNames " prints the information about the node names of the taskgraph nodes
 author: Waurich TUD 2013-07"
@@ -3213,8 +3142,8 @@ author: Waurich TUD 2013-07"
   output Boolean oChanged;
 protected 
   array<list<Integer>> inComps; 
-  array<Integer> varSccMapping;  
-  array<Integer> eqSccMapping;  
+  array<tuple<Integer, Integer, Integer>> varNodeMapping;  
+  array<tuple<Integer,Integer,Integer>> eqNodeMapping;  
   list<Integer> rootNodes;  
   array<String> nodeNames; 
   array<String> nodeDescs;  
@@ -3229,7 +3158,7 @@ protected
   list<Integer> allTheNodes;
   String fileName;
 algorithm
-  TASKGRAPHMETA(inComps = inComps, varSccMapping=varSccMapping, eqSccMapping=eqSccMapping, rootNodes = rootNodes, nodeNames =nodeNames,nodeDescs=nodeDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) := graphDataIn;
+  TASKGRAPHMETA(inComps = inComps, varNodeMapping=varNodeMapping, eqNodeMapping=eqNodeMapping, rootNodes = rootNodes, nodeNames =nodeNames,nodeDescs=nodeDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) := graphDataIn;
   BackendDAE.DAE(eqs = systs) := daeIn;
   allTheNodes := List.intRange(arrayLength(graphIn));  // to traverse the node indeces
   oneChildren := findOneChildParents(allTheNodes,graphIn,{{}},0);  // paths of nodes with just one successor per node (extended: and endnodes with just one parent node)
@@ -3505,8 +3434,8 @@ author:Waurich TUD 2013-07"
   output TaskGraphMeta graphDataOut;
 protected 
   array<list<Integer>> inComps;
-  array<Integer> varSccMapping;
-  array<Integer> eqSccMapping;
+  array<tuple<Integer, Integer, Integer>> varNodeMapping;
+  array<tuple<Integer,Integer,Integer>> eqNodeMapping;
   list<Integer> rootNodes;
   array<String> nodeNames;
   array<String> nodeDescs;
@@ -3515,16 +3444,16 @@ protected
   array<Integer>nodeMark;
   list<list<Integer>> inCompsLst;
 algorithm
-  TASKGRAPHMETA(inComps = inComps, varSccMapping=varSccMapping, eqSccMapping=eqSccMapping, rootNodes = rootNodes, nodeNames =nodeNames, nodeDescs=nodeDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) := graphDataIn;
+  TASKGRAPHMETA(inComps = inComps, varNodeMapping=varNodeMapping, eqNodeMapping=eqNodeMapping, rootNodes = rootNodes, nodeNames =nodeNames, nodeDescs=nodeDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) := graphDataIn;
   inComps := updateInCompsForMerging(inComps,contractNodes);
-  eqSccMapping := eqSccMapping;
+  eqNodeMapping := eqNodeMapping;
   rootNodes := rootNodes;
   nodeNames := List.fold2(List.intRange(arrayLength(nodeNames)),updateNodeNamesForMerging,inComps,nodeMark,nodeNames);
   nodeDescs := nodeDescs;
   exeCosts := exeCosts;
   commCosts := commCosts;
   nodeMark := nodeMark;
-  graphDataOut := TASKGRAPHMETA(inComps,varSccMapping,eqSccMapping,rootNodes,nodeNames,nodeDescs,exeCosts,commCosts,nodeMark);
+  graphDataOut := TASKGRAPHMETA(inComps,varNodeMapping,eqNodeMapping,rootNodes,nodeNames,nodeDescs,exeCosts,commCosts,nodeMark);
 end getMergedSystemData;
 
 
@@ -3858,8 +3787,8 @@ author: Waurich TUD 2013-07"
   output TaskGraphMeta graphDataOut;
 protected
   array<list<Integer>> inComps, inComps1;
-  array<Integer> varSccMapping, varSccMapping1;
-  array<Integer> eqSccMapping, eqSccMapping1;
+  array<tuple<Integer, Integer, Integer>> varNodeMapping, varNodeMapping1;
+  array<tuple<Integer,Integer,Integer>>  eqNodeMapping, eqNodeMapping1;
   list<Integer> rootNodes, rootNodes1;
   array<String> nodeNames, nodeNames1;
   array<String> nodeDescs, nodeDescs1;
@@ -3867,17 +3796,17 @@ protected
   array<list<tuple<Integer,Integer,Integer>>> commCosts, commCosts1;
   array<Integer>nodeMark, nodeMark1;
 algorithm
-  TASKGRAPHMETA(inComps = inComps, varSccMapping=varSccMapping, eqSccMapping=eqSccMapping, rootNodes = rootNodes, nodeNames =nodeNames, nodeDescs=nodeDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) := graphDataIn;
+  TASKGRAPHMETA(inComps = inComps, varNodeMapping=varNodeMapping, eqNodeMapping=eqNodeMapping, rootNodes = rootNodes, nodeNames =nodeNames, nodeDescs=nodeDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) := graphDataIn;
   inComps1 := arrayCopy(inComps);  
-  varSccMapping1 := arrayCopy(varSccMapping);   
-  eqSccMapping1 := arrayCopy(eqSccMapping);   
+  varNodeMapping1 := arrayCopy(varNodeMapping);   
+  eqNodeMapping1 := arrayCopy(eqNodeMapping);   
   rootNodes1 := rootNodes; 
   nodeNames1 := arrayCopy(nodeNames);
   nodeDescs1 :=  arrayCopy(nodeDescs); 
   exeCosts1 := arrayCopy(exeCosts); 
   commCosts1 :=  arrayCopy(commCosts);
   nodeMark1 := arrayCopy(nodeMark);
-  graphDataOut := TASKGRAPHMETA(inComps1,varSccMapping1,eqSccMapping1,rootNodes1,nodeNames1,nodeDescs1,exeCosts1,commCosts1,nodeMark1);
+  graphDataOut := TASKGRAPHMETA(inComps1,varNodeMapping1,eqNodeMapping1,rootNodes1,nodeNames1,nodeDescs1,exeCosts1,commCosts1,nodeMark1);
 end copyTaskGraphMeta;
 
 //------------------------------------------
@@ -3887,7 +3816,7 @@ public function createCosts "author: marcusw
   Updates the given TaskGraphMeta-Structure with the calculated exec und communication costs."
   input BackendDAE.BackendDAE iDae;
   input String benchFileName; //The name of the xml-file
-  input array<Integer> simEqSccMapping; //Map each simEq to the scc
+  input array<Integer> simeqNodeMapping; //Map each simEq to the scc
   input TaskGraphMeta iTaskGraphMeta;
   output TaskGraphMeta oTaskGraphMeta;
 
@@ -3906,7 +3835,7 @@ protected
   array<list<tuple<Integer, Integer, Integer>>> commCosts;
 
 algorithm
-  oTaskGraphMeta := matchcontinue(iDae,benchFileName,simEqSccMapping,iTaskGraphMeta)
+  oTaskGraphMeta := matchcontinue(iDae,benchFileName,simeqNodeMapping,iTaskGraphMeta)
     case(BackendDAE.DAE(shared=shared),_,_,TASKGRAPHMETA(inComps=inComps, commCosts=commCosts))
       equation
         (comps,compMapping_withIdx) = getSystemComponents(iDae);
@@ -3916,7 +3845,7 @@ algorithm
         reqTimeOpSimCode = arrayCreate(listLength(reqTimeOpLstSimCode),(-1,-1.0));
         reqTimeOpSimCode = List.fold(reqTimeOpLstSimCode, createCosts1, reqTimeOpSimCode);
         reqTimeOp = arrayCreate(listLength(comps),-1.0);
-        reqTimeOp = convertSimEqToSccCosts(reqTimeOpSimCode, simEqSccMapping, reqTimeOp);
+        reqTimeOp = convertSimEqToSccCosts(reqTimeOpSimCode, simeqNodeMapping, reqTimeOp);
         commCosts = createCommCosts(commCosts,1,reqTimeCom);
         ((_,tmpTaskGraphMeta)) = Util.arrayFold4(inComps,createCosts0,(comps,shared),compMapping, reqTimeOp, reqTimeCom, (1,iTaskGraphMeta));
       then tmpTaskGraphMeta;
@@ -3938,8 +3867,8 @@ author: Waurich TUD 09-2013"
   output TaskGraphMeta taskGraphMetaOut;
 protected
   array<list<Integer>> inComps; 
-  array<Integer> varSccMapping;  
-  array<Integer> eqSccMapping; 
+  array<tuple<Integer, Integer, Integer>> varNodeMapping;  
+  array<tuple<Integer,Integer,Integer>>  eqNodeMapping; 
   list<Integer> rootNodes;  
   array<String> nodeNames; 
   array<String> nodeDescs;  
@@ -3955,13 +3884,13 @@ algorithm
   BackendDAE.DAE(eqs=eqSystems, shared=shared) := daeIn;
   compsLst := List.map(eqSystems,BackendDAEUtil.getStrongComponents);
   comNumLst := List.map(compsLst,listLength);
-  TASKGRAPHMETA(inComps=inComps,varSccMapping=varSccMapping,eqSccMapping=eqSccMapping,rootNodes=rootNodes,nodeNames = nodeNames,nodeDescs=nodeDescs,exeCosts=exeCosts, commCosts=commCosts,nodeMark=nodeMark) := taskGraphMetaIn;
+  TASKGRAPHMETA(inComps=inComps,varNodeMapping=varNodeMapping,eqNodeMapping=eqNodeMapping,rootNodes=rootNodes,nodeNames = nodeNames,nodeDescs=nodeDescs,exeCosts=exeCosts, commCosts=commCosts,nodeMark=nodeMark) := taskGraphMetaIn;
   // get the communication costs
   commCosts := getCommCostsOnly(commCosts);
   // estimate the executionCosts
   exeCostsLst := List.flatten(List.map3(List.intRange(listLength(compsLst)),estimateCosts0,compsLst,eqSystems,shared));
   exeCosts := listArray(exeCostsLst);
-  taskGraphMetaOut := TASKGRAPHMETA(inComps,varSccMapping,eqSccMapping,rootNodes,nodeNames,nodeDescs,exeCosts,commCosts,nodeMark); 
+  taskGraphMetaOut := TASKGRAPHMETA(inComps,varNodeMapping,eqNodeMapping,rootNodes,nodeNames,nodeDescs,exeCosts,commCosts,nodeMark); 
 end estimateCosts;
 
 
@@ -4121,17 +4050,17 @@ end convertNodeListToEdgeTuples0;
 
 protected function convertSimEqToSccCosts
   input array<tuple<Integer,Real>> iReqTimeOpSimCode;
-  input array<Integer> iSimEqSccMapping; //Map each simEq to the scc
+  input array<Integer> iSimeqNodeMapping; //Map each simEq to the scc
   input array<Real> iReqTimeOp;
   output array<Real> oReqTimeOp; //calcTime for each scc
   
 algorithm
-  ((_,oReqTimeOp)) := Util.arrayFold1(iReqTimeOpSimCode, convertSimEqToSccCosts1, iSimEqSccMapping, (0,iReqTimeOp));  
+  ((_,oReqTimeOp)) := Util.arrayFold1(iReqTimeOpSimCode, convertSimEqToSccCosts1, iSimeqNodeMapping, (0,iReqTimeOp));  
 end convertSimEqToSccCosts;
 
 protected function convertSimEqToSccCosts1
   input tuple<Integer,Real> iReqTimeOpSimCode;
-  input array<Integer> iSimEqSccMapping; //Map each simEq to the scc
+  input array<Integer> iSimeqNodeMapping; //Map each simEq to the scc
   input tuple<Integer,array<Real>> iReqTimeOp;
   output tuple<Integer,array<Real>> oReqTimeOp; //calcTime for each scc
   
@@ -4141,21 +4070,21 @@ protected
   array<Real> reqTime;
   
 algorithm
-  oReqTimeOp := matchcontinue(iReqTimeOpSimCode,iSimEqSccMapping,iReqTimeOp)
+  oReqTimeOp := matchcontinue(iReqTimeOpSimCode,iSimeqNodeMapping,iReqTimeOp)
     case(_,_,_)
       equation
         (simEqCalcCount, simEqCalcTime) = iReqTimeOpSimCode;
         (simEqIdx,reqTime) = iReqTimeOp;
         realSimEqCalcCount = intReal(simEqCalcCount);
         true = realNe(realSimEqCalcCount,0.0);
-        reqTime = convertSimEqToSccCosts2(reqTime, realDiv(simEqCalcTime,realSimEqCalcCount), simEqIdx, iSimEqSccMapping);
+        reqTime = convertSimEqToSccCosts2(reqTime, realDiv(simEqCalcTime,realSimEqCalcCount), simEqIdx, iSimeqNodeMapping);
       then ((simEqIdx+1,reqTime));
     else
       equation
         (simEqCalcCount, simEqCalcTime) = iReqTimeOpSimCode;
         (simEqIdx,reqTime) = iReqTimeOp;
         realSimEqCalcCount = intReal(simEqCalcCount);
-        reqTime = convertSimEqToSccCosts2(reqTime, 0.0, simEqIdx, iSimEqSccMapping); 
+        reqTime = convertSimEqToSccCosts2(reqTime, 0.0, simEqIdx, iSimeqNodeMapping); 
       then ((simEqIdx+1,reqTime));
   end matchcontinue;  
 end convertSimEqToSccCosts1;
@@ -4164,7 +4093,7 @@ protected function convertSimEqToSccCosts2
   input array<Real> iReqTime;
   input Real iSimEqCalcTime;
   input Integer iSimEqIdx;
-  input array<Integer> iSimEqSccMapping; //Map each simEq to the scc
+  input array<Integer> iSimeqNodeMapping; //Map each simEq to the scc
   output array<Real> oReqTime;
   
 protected
@@ -4172,11 +4101,11 @@ protected
   Integer sccIdx;
   
 algorithm
-  oReqTime := matchcontinue(iReqTime,iSimEqCalcTime, iSimEqIdx, iSimEqSccMapping)
+  oReqTime := matchcontinue(iReqTime,iSimEqCalcTime, iSimEqIdx, iSimeqNodeMapping)
     case(reqTime,_,_,_)
       equation
-        true = intGe(arrayLength(iSimEqSccMapping),iSimEqIdx);
-        sccIdx = arrayGet(iSimEqSccMapping, iSimEqIdx);
+        true = intGe(arrayLength(iSimeqNodeMapping),iSimEqIdx);
+        sccIdx = arrayGet(iSimeqNodeMapping, iSimEqIdx);
         true = intGt(sccIdx,0);
         reqTime = arrayUpdate(reqTime,sccIdx, iSimEqCalcTime);
         //print("convertSimEqToSccCosts2 sccIdx: " +& intString(sccIdx) +& " reqTime: " +& realString(iSimEqCalcTime) +& "\n");
@@ -4198,7 +4127,9 @@ protected function createCosts0 "author: marcusw
   output tuple<Integer,TaskGraphMeta> oTaskGraphMeta;
 
 protected
-  array<Integer> varSccMapping, eqSccMapping, nodeRefCount;
+  array<tuple<Integer, Integer, Integer>> varNodeMapping;
+  array<tuple<Integer,Integer,Integer>>  eqNodeMapping;
+  array<Integer> nodeRefCount;
   array<tuple<Integer,Real>> execCosts;
   BackendDAE.EqSystem comp;
   list<Integer> rootNodes;
@@ -4210,9 +4141,9 @@ protected
   
 algorithm
   (nodeNumber,taskGraphMeta) := iTaskGraphMeta;
-  TASKGRAPHMETA(inComps=inComps,varSccMapping=varSccMapping,eqSccMapping=eqSccMapping,nodeNames=nodeNames,nodeDescs=nodeDescs,rootNodes=rootNodes,exeCosts=execCosts,commCosts=commCosts,nodeMark=nodeRefCount) := taskGraphMeta;
+  TASKGRAPHMETA(inComps=inComps,varNodeMapping=varNodeMapping,eqNodeMapping=eqNodeMapping,nodeNames=nodeNames,nodeDescs=nodeDescs,rootNodes=rootNodes,exeCosts=execCosts,commCosts=commCosts,nodeMark=nodeRefCount) := taskGraphMeta;
   createExecCost(iNode, iComps_shared, reqTimeOp, execCosts, iCompMapping, nodeNumber);
-  oTaskGraphMeta := ((nodeNumber+1, TASKGRAPHMETA(inComps,varSccMapping,eqSccMapping,rootNodes,nodeNames,nodeDescs,execCosts,commCosts,nodeRefCount)));
+  oTaskGraphMeta := ((nodeNumber+1, TASKGRAPHMETA(inComps,varNodeMapping,eqNodeMapping,rootNodes,nodeNames,nodeDescs,execCosts,commCosts,nodeRefCount)));
 end createCosts0;
 
 function createCosts1
@@ -5413,7 +5344,7 @@ algorithm
 end getNodeCoords;
 
 
-protected function getYCoordForNode "fold function to compute the y-coordinate fpr the .graGraphMLNew.thor: Waurich TUD 2013-07"
+protected function getYCoordForNode "fold function to compute the y-coordinate for the graph.author: Waurich TUD 2013-07"
   input Integer compIdx;
   input list<list<Integer>> parallelSets;
   input array<tuple<Integer,Integer>> nodeCoordsIn;
@@ -5768,6 +5699,7 @@ algorithm
   oCostsOps := (tmpOps,tmpCosts);
 end sumUpExecCosts1;
 
+//TODO: Remove
 public function roundReal "rounds a real to the nth decimal
 author: Waurich TUD 2014-01"
   input Real inReal;
@@ -5782,135 +5714,4 @@ algorithm
   outReal := realDiv(real,realPow(10.0,intReal(nIn)));
 end roundReal;
 
-// public function arrangeGraphInLevels "
-// author: Waurich TUD 2013-07"
-//   input TaskGraph graphIn;
-//   input TaskGraphMeta graphDataIn;
-// protected
-//   list<list<Integer>> parallelSets;
-//   array<tuple<Integer,Integer>> nodeCoords;
-//   array<list<Integer>> inComps;
-//   array<Integer> varSccMapping;
-//   array<Integer> eqSccMapping;
-//   list<Integer> rootNodes;
-//   array<String> nodeNames;
-//   array<String> nodeDescs;
-//   array<tuple<Integer,Real>> exeCosts;
-//   array<list<tuple<Integer,Integer,Integer>>> commCosts;
-//   array<Integer>nodeMark;
-//   TaskGraphMeta graphData;
-// algorithm
-//   parallelSets := getParallelSets(graphIn,graphDataIn);
-//   print("parallelSets "+&stringDelimitList(List.map(parallelSets,intLstString)," ; ")+&"\n");
-//   nodeCoords := getNodeCoords(parallelSets,graphIn);
-//   TASKGRAPHMETA(inComps = inComps, varSccMapping=varSccMapping, eqSccMapping=eqSccMapping, rootNodes = rootNodes, nodeNames =nodeNames, nodeDescs=nodeDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) := graphDataIn;
-//   nodeMark := List.fold2(List.intRange(arrayLength(graphIn)),setLevelInNodeMark,inComps,nodeCoords,nodeMark);
-//   graphData := TASKGRAPHMETA(inComps,varSccMapping,eqSccMapping,rootNodes,nodeNames,nodeDescs,exeCosts,commCosts,nodeMark);
-// end arrangeGraphInLevels;
-
-
-// protected function getParallelSets  " scatters the nodes of the taskGraph into sets of nodes that can be computed in parallel.
-// author:Waurich TUD 2013-07"
-//   input TaskGraph graphIn;
-//   input TaskGraphMeta graphDataIn;
-//   output list<list<Integer>> parallelSetsOut;
-// protected 
-//   list<Integer> rootNodes;
-//   list<Integer> allChildren;
-// algorithm
-//   TASKGRAPHMETA(rootNodes = rootNodes) := graphDataIn;
-//   allChildren := List.flatten(arrayList(graphIn));
-//   //print("allChildren "+&stringDelimitList(List.map(List.sort(allChildren,intGt),intString),",")+&"\n");
-//   rootNodes := List.fold1(List.intRange(arrayLength(graphIn)),getRootNodes,allChildren,{});
-//   //print("rootNodes "+&stringDelimitList(List.map(rootNodes,intString),",")+&"\n");
-//   parallelSetsOut := getParallelSets1(graphIn,rootNodes,{rootNodes});
-//   print("the number of parallel sets "+&intString(listLength(parallelSetsOut))+&" and the number of components "+&intString(arrayLength(graphIn))+&"\n");
-// end getParallelSets;
-// 
-// 
-// protected function getParallelSets1  " implementation of getParallelSets
-// author:Waurich TUD 2013-07"
-//   input TaskGraph graphIn;
-//   input list<Integer> rootNodes;
-//   input list<list<Integer>> parallelSetsIn;
-//   output list<list<Integer>> parallelSetsOut;
-// algorithm
-//   parallelSetsOut := matchcontinue(graphIn,rootNodes,parallelSetsIn)
-//     local
-//       list<list<Integer>> parallelSetsTmp;
-//       list<list<Integer>> rootChildren;
-//       list<Integer> parallelSet;
-//     case(_,_,_)
-//       equation
-//         true = listLength(List.flatten(parallelSetsIn)) < arrayLength(graphIn);
-//         rootChildren = List.map1(rootNodes, Util.arrayGetIndexFirst, graphIn);
-//         //print("the rootchilds: "+&stringDelimitList(List.map(List.flatten(rootChildren),intString),",")+&"\n");
-//         rootChildren = List.map2(rootChildren,getAllChildNodes,List.flatten(parallelSetsIn),graphIn);
-//         parallelSet = List.flatten(rootChildren);
-//         parallelSet = List.unique(parallelSet);
-//         //print("the next parallel set: "+&stringDelimitList(List.map(parallelSet,intString),",")+&"\n");
-//         //true = listLength(parallelSet) == listLength(rootChildren);
-//         parallelSetsTmp = cons(parallelSet,parallelSetsIn);
-//         //print("the current parallel set: "+&stringDelimitList(List.map(List.flatten(parallelSetsTmp),intString),",")+&"\n");
-//         parallelSetsTmp = getParallelSets1(graphIn,parallelSet,parallelSetsTmp);
-//       then
-//         parallelSetsTmp;
-//     case(_,_,_)
-//       equation
-//          true = listLength(List.flatten(parallelSetsIn)) >= arrayLength(graphIn);
-//          then
-//            parallelSetsIn;
-//     else
-//       equation
-//         print("getParallelSets1 failed \n");
-//       then
-//         fail();
-//   end matchcontinue;        
-// end getParallelSets1;
-// 
-// 
-// protected function getAllChildNodes " map function to remove all nodes from a list that have predecessors.
-// author: Waurich TUD 2013-07"
-//   input list<Integer> childNodesIn;
-//   input list<Integer> collectedNodes;
-//   input TaskGraph graphIn;
-//   output list<Integer> childNodesOut;
-// protected
-//   list<Integer> childNodesTmp;
-// algorithm
-//   //print("check childNodesIn "+&stringDelimitList(List.map(childNodesIn,intString),",")+&"\n");
-//   childNodesTmp := List.map2(childNodesIn,isOrphan,collectedNodes,graphIn);
-//   //print("check childNodesTmp1 "+&stringDelimitList(List.map(childNodesTmp,intString),",")+&"\n");
-//   childNodesTmp := List.removeOnTrue(-1,intEq,childNodesTmp);
-//   //print("check childNodesTmp2 "+&stringDelimitList(List.map(childNodesIn,intString),",")+&"\n");
-//   childNodesOut := childNodesTmp;
-// end getAllChildNodes;
-// 
-// 
-// protected function isOrphan "checks if the childNode has no parentNodes. if not -1 is output otherwise the node is output.
-// author: Waurich TUD 2013-07"
-//   input Integer childNodeIn;
-//   input list<Integer> collectedNodes;
-//   input TaskGraph graphIn;
-//   output Integer childNodeOut;
-// algorithm
-//   childNodeOut := matchcontinue(childNodeIn,collectedNodes,graphIn)
-//     local
-//       list<Integer> parents;
-//   case(_,_,_)
-//     equation
-//       parents = getParentNodes(childNodeIn,graphIn);
-//       //print("for "+&intString(childNodeIn)+&" the parents "+&stringDelimitList(List.map(parents,intString),",")+&"\n");
-//       //print("collected Nodes "+&stringDelimitList(List.map(collectedNodes,intString),",")+&"\n");
-//       (_,parents,_) = List.intersection1OnTrue(parents,childNodeIn::collectedNodes,intEq);
-//       true = List.isEmpty(parents);
-//     then
-//       childNodeIn;
-//   else
-//     then
-//       -1;
-//   end matchcontinue;
-// end isOrphan;
-//      
-// 
 end HpcOmTaskGraph;

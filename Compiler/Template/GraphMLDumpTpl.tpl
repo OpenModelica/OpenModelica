@@ -7,13 +7,13 @@ package GraphMLDumpTpl
 import interface GraphMLDumpTplTV;
 import CodegenUtil.*;
 
-template dumpGraphInfo(GraphMLNew.GraphInfo graphInfo, String fileName)
+template dumpGraphInfo(GraphML.GraphInfo graphInfo, String fileName)
 ::=
   let()= textFile(dumpGraphInfoInternal(graphInfo), fileName)
   ""
 end dumpGraphInfo;
 
-template dumpGraphInfoInternal(GraphMLNew.GraphInfo graphInfo)
+template dumpGraphInfoInternal(GraphML.GraphInfo graphInfo)
 ::=
     match graphInfo
         case graphInfo as GRAPHINFOARR(__) then
@@ -36,7 +36,7 @@ template dumpGraphInfoInternal(GraphMLNew.GraphInfo graphInfo)
     end match
 end dumpGraphInfoInternal;
 
-template dumpGraph(GraphMLNew.Graph graph, array<GraphMLNew.Graph> allGraphs, array<GraphMLNew.Node> allNodes, String edgeDesc, String graphNodeKey)
+template dumpGraph(GraphML.Graph graph, array<GraphML.Graph> allGraphs, array<GraphML.Node> allNodes, String edgeDesc, String graphNodeKey)
 ::=
     match graph
         case GRAPH() then
@@ -53,7 +53,7 @@ template dumpGraph(GraphMLNew.Graph graph, array<GraphMLNew.Graph> allGraphs, ar
     end match
 end dumpGraph;
 
-template dumpNode(GraphMLNew.Node node, array<GraphMLNew.Graph> allGraphs, array<GraphMLNew.Node> allNodes, String graphNodeKey)
+template dumpNode(GraphML.Node node, array<GraphML.Graph> allGraphs, array<GraphML.Node> allNodes, String graphNodeKey)
 ::=
     match node
         case NODE() then
@@ -109,7 +109,7 @@ template dumpNode(GraphMLNew.Node node, array<GraphMLNew.Graph> allGraphs, array
     end match
 end dumpNode;
 
-template dumpEdge(GraphMLNew.Edge edge, String graphEdgeKey)
+template dumpEdge(GraphML.Edge edge, String graphEdgeKey)
 ::=
     match edge
         case EDGE() then
@@ -132,7 +132,7 @@ template dumpEdge(GraphMLNew.Edge edge, String graphEdgeKey)
     end match
 end dumpEdge;
 
-template dumpEdgeLabel(GraphMLNew.EdgeLabel edgeLabel)
+template dumpEdgeLabel(GraphML.EdgeLabel edgeLabel)
 ::=
     match edgeLabel
         case EDGELABEL() then
@@ -143,7 +143,7 @@ template dumpEdgeLabel(GraphMLNew.EdgeLabel edgeLabel)
     end match
 end dumpEdgeLabel;
 
-template dumpNodeLabel(GraphMLNew.NodeLabel nodeLabel)
+template dumpNodeLabel(GraphML.NodeLabel nodeLabel)
 ::=
     match nodeLabel
         case NODELABEL_INTERNAL() then
@@ -169,7 +169,7 @@ template dumpAttKey(tuple<Integer,String> key)
     end match
 end dumpAttKey;
 
-template dumpAttDef(GraphMLNew.Attribute attribute)
+template dumpAttDef(GraphML.Attribute attribute)
 ::=
     match attribute
         case ATTRIBUTE() then
@@ -181,7 +181,7 @@ template dumpAttDef(GraphMLNew.Attribute attribute)
     end match
 end dumpAttDef;
 
-template dumpAttType(GraphMLNew.AttributeType type)
+template dumpAttType(GraphML.AttributeType type)
 ::=
     match type
         case TYPE_STRING() then
@@ -203,7 +203,7 @@ template dumpAttType(GraphMLNew.AttributeType type)
     end match
 end dumpAttType;
 
-template dumpAttTarget(GraphMLNew.AttributeTarget target)
+template dumpAttTarget(GraphML.AttributeTarget target)
 ::=
     match target
         case TARGET_NODE() then
@@ -245,7 +245,7 @@ template dumpColorOpt(Option<String> colorOpt)
     end match
 end dumpColorOpt;
 
-template dumpFontStyle(GraphMLNew.FontStyle fontStyle)
+template dumpFontStyle(GraphML.FontStyle fontStyle)
 ::=
     match fontStyle
         case FONTPLAIN() then
@@ -267,7 +267,7 @@ template dumpFontStyle(GraphMLNew.FontStyle fontStyle)
     end match
 end dumpFontStyle;
 
-template dumpLineType(GraphMLNew.LineType lineType)
+template dumpLineType(GraphML.LineType lineType)
 ::=
     match lineType
         case LINE() then
@@ -285,7 +285,7 @@ template dumpLineType(GraphMLNew.LineType lineType)
     end match
 end dumpLineType;
 
-template dumpArrowType(GraphMLNew.ArrowType arrowType)
+template dumpArrowType(GraphML.ArrowType arrowType)
 ::=
     match arrowType
         case ARROWSTANDART() then
@@ -303,7 +303,7 @@ template dumpArrowType(GraphMLNew.ArrowType arrowType)
     end match
 end dumpArrowType;
 
-template dumpShapeType(GraphMLNew.ShapeType shape)
+template dumpShapeType(GraphML.ShapeType shape)
 ::=
     match shape
         case RECTANGLE() then

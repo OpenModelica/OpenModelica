@@ -226,7 +226,6 @@ HashTableStringToPath.mo \
 HashTableExpToExp.mo \
 HashTableExpToIndex.mo \
 GraphML.mo \
-GraphMLNew.mo \
 IOStream.mo \
 List.mo \
 Util.mo \

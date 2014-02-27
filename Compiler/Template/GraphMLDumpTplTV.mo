@@ -139,7 +139,7 @@ interface package GraphMLDumpTplTV
     end tuple22;
   end Util;
 
-  package GraphMLNew
+  package GraphML
     uniontype GraphInfo
       record GRAPHINFO
         list<Graph> graphs;
@@ -280,6 +280,6 @@ interface package GraphMLDumpTplTV
       record TARGET_GRAPH end TARGET_GRAPH;
     end AttributeTarget;
   
-  end GraphMLNew;
+  end GraphML;
 
 end GraphMLDumpTplTV;

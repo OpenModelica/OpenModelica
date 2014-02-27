@@ -30,24 +30,23 @@
  */
 
 encapsulated package GraphML
-" file:         GraphML
+" file:        GraphML
   package:     GraphML
-  description: GraphML contains functions to generate a gaphML file for yED
+  description: GraphML contains functions to generate a gaphML file for yED. The implementation is based on the GraphML-Package of Jens Frenkel.
 
 
-  RCS: $Id: GraphML 9566 2011-08-01 07:04:56Z perost $
-  
-  This package is now deprecated, use GraphMLNew instead.
+  RCS: $Id: GraphML 2014-02-04 mwalther $
 "
 
-protected import Util;
 protected import List;
-protected import System;
-protected import IOStream;
+protected import GraphMLDumpTpl;
+protected import Tpl;
 
-/*************************************************
- * types
- ************************************************/
+//TODO: Use HashTable for nodes to prevent duplicates
+
+// -------------------------
+// Constant types
+// -------------------------
 
 public constant String COLOR_BLACK      = "000000";
 public constant String COLOR_BLUE      = "0000FF";
@@ -63,6 +62,8 @@ public constant String COLOR_DARKGRAY      = "666666";
 public constant String COLOR_RED2      = "F0988E";
 public constant String COLOR_GREEN2      = "98B954";
 public constant String COLOR_ORANGE2      = "FFA851";
+public constant String COLOR_CYAN       = "46BED8";
+public constant String COLOR_PINK       = "CF8CB7";
 
 
 public constant Real LINEWIDTH_STANDARD   = 2.0;
@@ -71,6 +72,105 @@ public constant Real LINEWIDTH_BOLD   = 4.0;
 public constant Integer FONTSIZE_STANDARD   = 12;
 public constant Integer FONTSIZE_BIG   = 20;
 public constant Integer FONTSIZE_SMALL   = 8;
+
+// -------------------------
+// Data structures
+// -------------------------
+
+public uniontype GraphInfo
+  record GRAPHINFO
+    list<Graph> graphs;
+    Integer graphCount; //number of graphs in the graphs list
+    list<Node> nodes;
+    Integer nodeCount; //number of nodes in the nodes list
+    list<Edge> edges;
+    Integer edgeCount; //number of edges in the edge list
+    list<Attribute> attributes;
+    String graphNodeKey;
+    String graphEdgeKey;
+  end GRAPHINFO;
+  record GRAPHINFOARR //This structure is used by Susan
+    array<Graph> graphs;
+    array<Node> nodes;
+    list<Edge> edges;
+    list<Attribute> attributes;
+    String graphNodeKey;
+    String graphEdgeKey;
+  end GRAPHINFOARR;
+end GraphInfo;
+
+public uniontype Graph
+  record GRAPH
+    String id;
+    Boolean directed;
+    list<Integer> nodeIdc; //attention: reversed indices --> to get real idx for value i, calculate graph.nodeCount - i
+    list<tuple<Integer,String>> attValues; //values of custom attributes (see GRAPHINFO definition). <attributeIndex,attributeValue>
+  end GRAPH;
+end Graph;
+
+public uniontype Node
+  record NODE
+    String id;
+    String color;
+    list<NodeLabel> nodeLabels;
+    ShapeType shapeType;
+    Option<String> optDesc;
+    list<tuple<Integer,String>> attValues; //values of custom attributes (see GRAPH definition). <attributeIndex,attributeValue>
+  end NODE;
+  record GROUPNODE
+    String id;
+    Integer internalGraphIdx;
+    Boolean isFolded;
+    String header;
+  end GROUPNODE;
+end Node;
+
+public uniontype Edge
+  record EDGE
+    String id;
+    String target;
+    String source;
+    String color;
+    LineType lineType;
+    Real lineWidth;
+    Boolean smooth;
+    list<EdgeLabel> edgeLabels;
+    tuple<ArrowType,ArrowType> arrows;
+    list<tuple<Integer,String>> attValues; //values of custom attributes (see GRAPH definition). <attributeIndex,attributeValue>
+  end EDGE;
+end Edge;
+
+public uniontype Attribute
+  record ATTRIBUTE
+    Integer attIdx;
+    String defaultValue;
+    String name;
+    AttributeType attType;
+    AttributeTarget attTarget;
+  end ATTRIBUTE;
+end Attribute;
+
+public uniontype NodeLabel
+  record NODELABEL_INTERNAL
+    String text;
+    Option<String> backgroundColor;
+    FontStyle fontStyle;
+  end NODELABEL_INTERNAL;
+  record NODELABEL_CORNER
+    String text;
+    Option<String> backgroundColor;
+    FontStyle fontStyle;
+    String position; //for example "se" for south east
+  end NODELABEL_CORNER;
+end NodeLabel;
+
+public uniontype EdgeLabel
+  record EDGELABEL
+    String text;
+    Option<String> backgroundColor;
+    Integer fontSize;
+  end EDGELABEL;
+end EdgeLabel;
 
 public uniontype FontStyle
   record FONTPLAIN end FONTPLAIN;
@@ -100,69 +200,9 @@ end LineType;
 
 public uniontype ArrowType
   record ARROWSTANDART end ARROWSTANDART;
+  record ARROWNONE end ARROWNONE;
+  record ARROWCONCAVE end ARROWCONCAVE;
 end ArrowType;
-
-public uniontype Node
-  record NODE
-    String id;
-    String text;
-    String color;
-    ShapeType shapeType;
-    Option<String> optDesc;
-    list<tuple<Integer,String>> attValues; //values of custom attributes (see GRAPH definition). <attributeIndex,attributeValue>
-    list<NodeLabel> addLabels; //additional labels
-  end NODE;
-  record GROUPNODE
-    String id;
-    Graph internalGraph;
-  end GROUPNODE;
-end Node;
-
-public uniontype NodeLabel
-  record NODELABEL_INTERNAL
-    String text;
-    String backgroundColor;
-    FontStyle fontStyle;
-  end NODELABEL_INTERNAL;
-  record NODELABEL_CORNER
-    String text;
-    String backgroundColor;
-    FontStyle fontStyle;
-    String position; //for example "se" for south east
-  end NODELABEL_CORNER;
-end NodeLabel;
-
-public uniontype EdgeLabel
-  record EDGELABEL
-    String text;
-    String color;
-    Integer fontSize;
-  end EDGELABEL;
-end EdgeLabel;
-
-public uniontype Edge
-  record EDGE
-    String id;
-    String target;
-    String source;
-    String color;
-    LineType lineType;
-    Real lineWidth;
-    Option<EdgeLabel> label;
-    tuple<Option<ArrowType>,Option<ArrowType>> arrows;
-    list<tuple<Integer,String>> attValues; //values of custom attributes (see GRAPH definition). <attributeIndex,attributeValue>
-  end EDGE;
-end Edge;
-
-public uniontype Attribute
-  record ATTRIBUTE
-    Integer attIdx;
-    String defaultValue;
-    String name;
-    AttributeType attType;
-    AttributeTarget attTarget;
-  end ATTRIBUTE;
-end Attribute;
 
 public uniontype AttributeType
   record TYPE_STRING end TYPE_STRING;
@@ -177,512 +217,382 @@ public uniontype AttributeTarget
   record TARGET_GRAPH end TARGET_GRAPH;
 end AttributeTarget;
 
-public uniontype Graph
-  record GRAPH
-    String id;
-    Boolean directed;
-    list<Node> nodes;
-    list<Edge> edges;
-    list<Attribute> attributes;
-    list<tuple<Integer,String>> attValues; //values of custom attributes (see GRAPH definition). <attributeIndex,attributeValue>
-  end GRAPH;
-end Graph;
+// -------------------------
+// Logic
+// -------------------------
 
-/*************************************************
- * public
- ************************************************/
-
-public function getGraph
-" author: Frenkel TUD 2011-08
- get a empty graph"
-  input String id;
-  input Boolean directed;
-  output Graph g;
+public function createGraphInfo "author: marcusw
+  Creates a new and empty graphInfo."
+  output GraphInfo oGraphInfo;
 algorithm
-  g := GRAPH(id,directed,{},{},{},{});
-end getGraph;
+  oGraphInfo := GRAPHINFO({},0,{},0,{},0,{}, "gi1", "gi2");
+end createGraphInfo;
 
-public function addGraphAttributeValue
-  input tuple<Integer,String> iValue;
-  input Graph inG;
-  output Graph outG;
+public function addGraph "author: marcusw
+  Adds a new graph to the given graphInfo."
+  input String id; //graph id -> must be unique in the graphinfo!
+  input Boolean directed; //directed edges
+  input GraphInfo iGraphInfo;
+  output GraphInfo oGraphInfo;
+  output tuple<Graph,Integer> oGraph; //graph with graphIdx
 protected
-  String gid;
-  Boolean d;
-  list<Node> n;
-  list<Edge> e;
-  list<Attribute> a;
-  list<tuple<Integer,String>> av;
+  Graph tmpGraph;
+  list<Graph> graphs;
+  Integer graphCount; //number of graphs in the graphs list
+  list<Node> nodes;
+  Integer nodeCount; //number of nodes in the nodes list
+  list<Edge> edges;
+  Integer edgeCount; //number of edges in the edge list
+  list<Attribute> attributes;
+  String graphNodeKey;
+  String graphEdgeKey;
 algorithm
-  GRAPH(gid,d,n,e,a,av) := inG;
-  outG := GRAPH(gid,d,n,e,a,iValue::av);
-end addGraphAttributeValue; 
+  GRAPHINFO(graphs,graphCount,nodes,nodeCount,edges,edgeCount,attributes,graphNodeKey,graphEdgeKey) := iGraphInfo;
+  graphCount := graphCount + 1;
+  tmpGraph := GRAPH(id, directed, {}, {});
+  graphs := tmpGraph :: graphs;
+  oGraphInfo := GRAPHINFO(graphs,graphCount,nodes,nodeCount,edges,edgeCount,attributes,graphNodeKey,graphEdgeKey);
+  oGraph := (tmpGraph, graphCount);
+end addGraph;
 
-public function addNode
-" author: Frenkel TUD 2011-08
- add a node"
-  input String id;
-  input String text;
-  input String color;
+public function addNode "author: marcusw
+  Adds a new node to the given graph which is part of the given graphInfo."
+  input String id; //node id -> must be unique in the graphinfo!
+  input String backgroundColor;
+  input list<NodeLabel> nodeLabels; //a list of labels that should be displayed in or along the node
   input ShapeType shapeType;
   input Option<String> optDesc;
-  input list<tuple<Integer,String>> attValues;
-  input list<NodeLabel> addLabels; //additional labels
-  input Graph inG;
-  output Graph outG;
+  input list<tuple<Integer,String>> attValues; //a key-value list of additional values -> the keys have to be registered in the graphinfo-structure first
+  
+  input Integer iGraphIdx; //the parent-graph of the new node -> with this additional information, nested graphs are supported now
+  input GraphInfo iGraphInfo;
+  output GraphInfo oGraphInfo;
+  output tuple<Node,Integer> oNode; //node with nodeIdx
 protected
+  Node tmpNode;
+  //values of graphinfo
+  list<Graph> graphs;
+  Integer graphCount; //number of graphs in the graphs list
+  list<Node> nodes;
+  Integer nodeCount; //number of nodes in the nodes list
+  list<Edge> edges;
+  Integer edgeCount; //number of edges in the edge list
+  list<Attribute> attributes; 
+  String graphNodeKey;
+  String graphEdgeKey;
+  
+  //values of graph
+  Graph iGraph;
   String gid;
-  Boolean d;
-  list<Node> n;
-  list<Edge> e;
-  list<Attribute> a;
-  list<tuple<Integer,String>> av;
+  Boolean directed;
+  list<Integer> nodeIdc;
+  list<tuple<Integer,String>> gAttValues;
 algorithm
-  GRAPH(gid,d,n,e,a,av) := inG;
-  outG := GRAPH(gid,d,NODE(id,text,color,shapeType,optDesc,attValues,addLabels)::n,e,a,av);
+  GRAPHINFO(graphs,graphCount,nodes,nodeCount,edges,edgeCount,attributes,graphNodeKey,graphEdgeKey) := iGraphInfo;
+  iGraph := listGet(graphs,graphCount-iGraphIdx+1);
+  GRAPH(gid,directed,nodeIdc,gAttValues) := iGraph;
+  nodeCount := nodeCount + 1;
+  tmpNode := NODE(id, backgroundColor, nodeLabels, shapeType, optDesc, attValues);
+  nodes := tmpNode :: nodes;
+  nodeIdc := nodeCount :: nodeIdc;
+  iGraph := GRAPH(gid,directed,nodeIdc,gAttValues);
+  graphs := List.set(graphs,graphCount-iGraphIdx+1,iGraph);
+  oGraphInfo := GRAPHINFO(graphs,graphCount,nodes,nodeCount,edges,edgeCount,attributes,graphNodeKey,graphEdgeKey);
+  oNode := (tmpNode, nodeCount);
 end addNode;
 
-public function addGroupNode
-
+public function addGroupNode "author: marcusw
+  Adds a new group node to the given graphInfo. The created node contains a new graph which is returned as second output-argument."
+  input String id; //node id -> must be unique in the graphinfo!
+  input Integer iGraphIdx;
+  input Boolean isFolded; //true if the group-node should be folded by default
+  input String iHeader; //header text which should be displayed on top of the group
+  input GraphInfo iGraphInfo;
+  output GraphInfo oGraphInfo;
+  output tuple<Node,Integer> oNode; //node with nodeIdx
+  output tuple<Graph,Integer> oGraph; //subgraph with graphIdx
+protected
+  GraphInfo tmpGraphInfo;
+  Node tmpNode;
+  //values of graphinfo
+  list<Graph> graphs;
+  Integer graphCount; //number of graphs in the graphs list
+  list<Node> nodes;
+  Integer nodeCount; //number of nodes in the nodes list
+  list<Edge> edges;
+  Integer edgeCount; //number of edges in the edge list
+  list<Attribute> attributes; 
+  String graphNodeKey;
+  String graphEdgeKey;
+  
+  //values of graph
+  Graph iGraph, newGraph;
+  String gid;
+  Boolean directed;
+  Integer newGraphIdx;
+  list<Integer> nodeIdc;
+  list<tuple<Integer,String>> attValues; //values of custom attributes (see GRAPHINFO definition). <attributeIndex,attributeValue>
+algorithm
+  GRAPHINFO(graphs,graphCount,nodes,nodeCount,edges,edgeCount,attributes,graphNodeKey,graphEdgeKey) := iGraphInfo;
+  iGraph := listGet(graphs,graphCount-iGraphIdx+1);
+  GRAPH(gid,directed,nodeIdc,attValues) := iGraph;
+  //Add new sub graph
+  (tmpGraphInfo,(newGraph,newGraphIdx)) := addGraph("g" +& id, directed, iGraphInfo);
+  GRAPHINFO(graphs,graphCount,nodes,nodeCount,edges,edgeCount,attributes,graphNodeKey,graphEdgeKey) := tmpGraphInfo;
+  //Append node to graph
+  nodeCount := nodeCount + 1;
+  tmpNode := GROUPNODE(id, newGraphIdx,isFolded,iHeader);
+  nodes := tmpNode :: nodes;
+  nodeIdc := nodeCount :: nodeIdc;
+  
+  iGraph := GRAPH(gid,directed,nodeIdc,attValues);
+  graphs := List.set(graphs,graphCount-iGraphIdx+1,iGraph);
+  oGraphInfo := GRAPHINFO(graphs,graphCount,nodes,nodeCount,edges,edgeCount,attributes,graphNodeKey,graphEdgeKey);
+  oNode := (tmpNode, nodeCount);
+  oGraph := (newGraph,newGraphIdx);
 end addGroupNode;
 
-public function addEdge
-" author: Frenkel TUD 2011-08
- add a edge"
+public function addEdge "author: marcusw
+  Adds a new edge to the graphInfo-structure. Edges are always added to the top-level graph."
   input String id;
   input String target;
   input String source;
   input String color;
   input LineType lineType;
   input Real lineWidth;
-  input Option<EdgeLabel> label;
-  input tuple<Option<ArrowType>,Option<ArrowType>> arrows;
-  input List<tuple<Integer,String>> attValues;
-  input Graph inG;
-  output Graph outG;
+  input Boolean smooth;
+  input list<EdgeLabel> labels;
+  input tuple<ArrowType,ArrowType> arrows;
+  input list<tuple<Integer,String>> attValues;
+
+  input GraphInfo iGraphInfo;
+  output GraphInfo oGraphInfo;
+  output tuple<Edge,Integer> oEdge; //edge with edgeIdx
 protected
-  String gid;
-  Boolean d;
-  list<Node> n;
-  list<Edge> e;
-  list<Attribute> a;
-  list<tuple<Integer,String>> av;
+  Edge tmpEdge;
+  //values of graphinfo
+  list<Graph> graphs;
+  Integer graphCount; //number of graphs in the graphs list
+  list<Node> nodes;
+  Integer nodeCount; //number of nodes in the nodes list
+  list<Edge> edges;
+  Integer edgeCount; //number of edges in the edge list
+  list<Attribute> attributes; 
+  String graphNodeKey;
+  String graphEdgeKey;
+
 algorithm
-  GRAPH(gid,d,n,e,a,av) := inG;
-  outG := GRAPH(gid,d,n,EDGE(id,target,source,color,lineType,lineWidth,label,arrows,attValues)::e,a,av);
+  GRAPHINFO(graphs,graphCount,nodes,nodeCount,edges,edgeCount,attributes,graphNodeKey,graphEdgeKey) := iGraphInfo;
+  edgeCount := edgeCount + 1;
+  tmpEdge := EDGE(id, target, source, color, lineType, lineWidth, smooth, labels, arrows, attValues);
+  edges := tmpEdge :: edges;
+  oGraphInfo := GRAPHINFO(graphs,graphCount,nodes,nodeCount,edges,edgeCount,attributes,graphNodeKey,graphEdgeKey);
+  oEdge := (tmpEdge, edgeCount);
 end addEdge;
 
-public function addAttribute
+public function addAttribute "author: marcusw
+  Adds a new attribute to the given graphInfo. 
+  These attributes can be used by graphs, nodes and edges to display some additional informations."
   input String defaultValue;
   input String name;
   input AttributeType attType;
   input AttributeTarget attTarget;
-  input Graph inG;
-  output Integer oAttIdx;
-  output Graph outG;
+
+  input GraphInfo iGraphInfo;
+  output GraphInfo oGraphInfo;
+  output tuple<Attribute,Integer> oAttribute; //attribute with attributeIdx
 
 protected
-  String gid;
-  Boolean d;
-  list<Node> n;
-  list<Edge> e;
-  list<Attribute> a;
-  list<tuple<Integer,String>> av;
+  Attribute tmpAttribute;
   Integer attIdx;
-algorithm
-  GRAPH(gid,d,n,e,a,av) := inG;
-  attIdx := listLength(a)+1;
-  oAttIdx := attIdx;
-  outG := GRAPH(gid,d,n,e,ATTRIBUTE(attIdx,defaultValue,name,attType,attTarget)::a,av);
 
+  //values of graphinfo
+  list<Graph> graphs;
+  Integer graphCount; //number of graphs in the graphs list
+  list<Node> nodes;
+  Integer nodeCount; //number of nodes in the nodes list
+  list<Edge> edges;
+  Integer edgeCount; //number of edges in the edge list
+  list<Attribute> attributes; 
+  String graphNodeKey;
+  String graphEdgeKey;
+algorithm
+  GRAPHINFO(graphs,graphCount,nodes,nodeCount,edges,edgeCount,attributes,graphNodeKey,graphEdgeKey) := iGraphInfo;
+  attIdx := listLength(attributes)+1;
+  tmpAttribute := ATTRIBUTE(attIdx,defaultValue,name,attType,attTarget);
+  attributes := tmpAttribute :: attributes;
+  oGraphInfo := GRAPHINFO(graphs,graphCount,nodes,nodeCount,edges,edgeCount,attributes,graphNodeKey,graphEdgeKey);
+  oAttribute := (tmpAttribute,attIdx);
 end addAttribute;
 
-public function dumpGraph
-" author: Frenkel TUD 2011-08
- print the graph"
-  input Graph inGraph;
-  input String name;
+public function addGraphAttributeValue "author: marcusw
+  Adds a new value for a given attribute to the graph."
+  input tuple<Integer,String> iValue; //attributeIdx, attributeValue
+  input Integer iGraphIdx;
+  input GraphInfo iGraphInfo;
+  output GraphInfo oGraphInfo;
 protected
-  String str;
-  IOStream.IOStream is;
+  //values of graphinfo
+  list<Graph> graphs;
+  Integer graphCount; //number of graphs in the graphs list
+  list<Node> nodes;
+  Integer nodeCount; //number of nodes in the nodes list
+  list<Edge> edges;
+  Integer edgeCount; //number of edges in the edge list
+  list<Attribute> attributes; 
+  String graphNodeKey;
+  String graphEdgeKey;
+  //values of graph
+  Graph iGraph;
+  String gid;
+  Boolean directed;
+  Integer newGraphIdx;
+  list<Integer> nodeIdc;
+  list<tuple<Integer,String>> attValues; //values of custom attributes (see GRAPHINFO definition). <attributeIndex,attributeValue>
 algorithm
-  is := IOStream.create(name, IOStream.LIST());
-  is := dumpStart(is);
-  is := dumpGraph_Internal(inGraph,"  ",is);
-  is := dumpEnd(is);
-  str := IOStream.string(is);
-  System.writeFile(name,str);
+  GRAPHINFO(graphs,graphCount,nodes,nodeCount,edges,edgeCount,attributes,graphNodeKey,graphEdgeKey) := iGraphInfo;
+  iGraph := listGet(graphs,graphCount-iGraphIdx+1);
+  GRAPH(gid,directed,nodeIdc,attValues) := iGraph;
+
+  //Append attribute to graph
+  attValues := iValue :: attValues;
+  
+  iGraph := GRAPH(gid,directed,nodeIdc,attValues);  
+  graphs := List.set(graphs,graphCount-iGraphIdx+1,iGraph);
+  oGraphInfo := GRAPHINFO(graphs,graphCount,nodes,nodeCount,edges,edgeCount,attributes,graphNodeKey,graphEdgeKey);
+end addGraphAttributeValue; 
+
+// -------------------------
+// Helper
+// -------------------------
+public function getMainGraph "author: marcusw
+  This function will return the top-level graph (usually with index 1) if there is one in the graphInfo-structure. 
+  Otherwise it will return NONE()."
+  input GraphInfo iGraphInfo;
+  output Option<tuple<Integer,Graph>> oGraph;
+protected
+  list<Graph> graphs;
+  Graph firstGraph;
+algorithm
+  oGraph := match(iGraphInfo)
+    case(GRAPHINFO(graphCount=0))
+      then NONE();
+    case(GRAPHINFO(graphs=graphs))
+      equation
+        firstGraph = List.first(graphs);
+      then SOME((1,firstGraph));
+  end match;
+end getMainGraph;
+
+public function getAttributeByNameAndTarget
+  input String iAttributeName;
+  input AttributeTarget iAttributeTarget;
+  input GraphInfo iGraphInfo;
+  output Option<tuple<Attribute,Integer>> oAttribute; //SOME(<%attIdx,attribute%>) if the attribute was found in graphInfo
+protected
+  list<Attribute> attributes;
+  Option<tuple<Attribute,Integer>> tmpRes;
+algorithm
+  oAttribute := match(iAttributeName,iAttributeTarget,iGraphInfo)
+    case(_,_,GRAPHINFO(attributes=attributes))
+      equation
+        tmpRes = getAttributeByNameAndTargetTail(attributes, iAttributeName, iAttributeTarget);
+      then tmpRes;
+    case(_,_,GRAPHINFO(attributes=attributes))
+      equation
+        tmpRes = getAttributeByNameAndTargetTail(attributes, iAttributeName, iAttributeTarget);
+      then tmpRes;
+   end match;
+end getAttributeByNameAndTarget;
+
+protected function getAttributeByNameAndTargetTail
+  input list<Attribute> iList;
+  input String iAttributeName;
+  input AttributeTarget iAttributeTarget;
+  output Option<tuple<Attribute,Integer>> oAttribute;
+protected
+  list<Attribute> rest;
+  Integer attIdx;
+  String name;
+  Attribute head;
+  AttributeTarget attTarget;
+   Option<tuple<Attribute,Integer>> tmpAttribute;
+algorithm
+  oAttribute := matchcontinue(iList,iAttributeName,iAttributeTarget)
+    case((head as ATTRIBUTE(attIdx=attIdx,name=name,attTarget=attTarget))::rest,_,_)
+      equation
+        true = stringEq(name, iAttributeName);
+        true = compareAttributeTargets(iAttributeTarget,attTarget);
+      then SOME((head,attIdx));
+    case(head::rest,_,_)
+      equation
+        tmpAttribute = getAttributeByNameAndTargetTail(rest,iAttributeName,iAttributeTarget);
+      then tmpAttribute;
+    else
+      then NONE();
+  end matchcontinue;
+end getAttributeByNameAndTargetTail;
+
+protected function compareAttributeTargets
+  input AttributeTarget iTarget1;
+  input AttributeTarget iTarget2;
+  output Boolean oEqual;
+protected
+  Integer tarInt1, tarInt2;
+algorithm
+  tarInt1 := compareAttributeTarget0(iTarget1);
+  tarInt2 := compareAttributeTarget0(iTarget2);
+  oEqual := intEq(tarInt1,tarInt2);
+end compareAttributeTargets;
+
+protected function compareAttributeTarget0
+  input AttributeTarget iTarget;
+  output Integer oCodec;
+algorithm
+  oCodec := match(iTarget)
+    case(TARGET_NODE()) then 0;
+    case(TARGET_EDGE()) then 1;
+    case(TARGET_GRAPH()) then 1;
+  end match;
+end compareAttributeTarget0;
+
+// -------------------------
+// Dump
+// -------------------------
+
+public function dumpGraph "author: marcusw
+  Dumps the graph into a *.graphml-file."
+  input GraphInfo iGraphInfo;
+  input String iFileName;
+protected
+  GraphInfo iGraphInfoArr;
+algorithm
+  iGraphInfoArr := convertToGraphInfoArr(iGraphInfo);
+  Tpl.tplNoret2(GraphMLDumpTpl.dumpGraphInfo, iGraphInfoArr, iFileName);
 end dumpGraph;
 
-public function printGraph
-" author: Frenkel TUD 2011-08
- print the graph"
-  input Graph inGraph;
-  input String name;
-algorithm
+protected function convertToGraphInfoArr "author: marcusw
+  Converts the given GRAPHINFO-object into a GRAPHINFOARR-object."
+  input GraphInfo iGraphInfo;
+  output GraphInfo oGraphInfo;
 protected
-  String str;
-  IOStream.IOStream is;
+  //values of graphinfo
+  list<Graph> graphs;
+  array<Graph> graphsArr;
+  Integer graphCount; //number of graphs in the graphs list
+  list<Node> nodes;
+  array<Node> nodesArr;
+  Integer nodeCount; //number of nodes in the nodes list
+  list<Edge> edges;
+  Integer edgeCount; //number of edges in the edge list
+  list<Attribute> attributes;
+  String graphNodeKey;
+  String graphEdgeKey;
 algorithm
-  is := IOStream.create(name, IOStream.LIST());
-  is := dumpStart(is);
-  is := dumpGraph_Internal(inGraph,"  ",is);
-  is := dumpEnd(is);
-  IOStream.print(is, IOStream.stdOutput);
-end printGraph;
-
-/*************************************************
- * protected
- ************************************************/
-
-protected function dumpStart
-  input IOStream.IOStream is;
-  output IOStream.IOStream os;
-algorithm
-  os := IOStream.appendList(is, {
-   "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n",
-   "<graphml xmlns=\"http://graphml.graphdrawing.org/xmlns\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:y=\"http://www.yworks.com/xml/graphml\" xmlns:yed=\"http://www.yworks.com/xml/yed/3\" xsi:schemaLocation=\"http://graphml.graphdrawing.org/xmlns http://www.yworks.com/xml/schema/graphml/1.1/ygraphml.xsd\">\n",
-   "  <!--Created by yFiles for Java 2.8-->\n",
-   "  <key for=\"graphml\" id=\"d0\" yfiles.type=\"resources\"/>\n",
-   "  <key for=\"port\" id=\"d1\" yfiles.type=\"portgraphics\"/>\n",
-   "  <key for=\"port\" id=\"d2\" yfiles.type=\"portgeometry\"/>\n",
-   "  <key for=\"port\" id=\"d3\" yfiles.type=\"portuserdata\"/>\n",
-   "  <key attr.name=\"url\" attr.type=\"string\" for=\"node\" id=\"d4\"/>\n",
-   "  <key attr.name=\"description\" attr.type=\"string\" for=\"node\" id=\"d5\"/>\n",
-   "  <key for=\"node\" id=\"d6\" yfiles.type=\"nodegraphics\"/>\n",
-   "  <key attr.name=\"Beschreibung\" attr.type=\"string\" for=\"graph\" id=\"d7\"/>\n",
-   "  <key attr.name=\"url\" attr.type=\"string\" for=\"edge\" id=\"d8\"/>\n",
-   "  <key attr.name=\"description\" attr.type=\"string\" for=\"edge\" id=\"d9\"/>\n",
-   "  <key for=\"edge\" id=\"d10\" yfiles.type=\"edgegraphics\"/>\n"});
-end dumpStart;
-
-protected function dumpEnd
-  input IOStream.IOStream is;
-  output IOStream.IOStream os;
-algorithm
-  os := IOStream.appendList(is, {
-   "  <data key=\"d0\">\n",
-   "    <y:Resources/>\n",
-   "  </data>\n",
-   "</graphml>\n"});
-end dumpEnd;
-
-protected function appendString
-  input String inString;
-  output String outString;
-algorithm
-  outString := stringAppend(inString,"  ");
-end appendString;
-
-protected function dumpGraph_Internal
-  input Graph inGraph;
-  input String inStringDelemiter;
-  input IOStream.IOStream inIOs;
-  output IOStream.IOStream outIOs;
-algorithm
-  outIOs := match (inGraph,inStringDelemiter,inIOs)
-    local
-      String id,sd,t,s;
-      list<String> attributeStrings;
-      List<tuple<Integer,String>> graphAttributes;
-      Boolean directed;
-      list<Node> nodes;
-      list<Edge> edges;
-      list<Attribute> attributes;
-      IOStream.IOStream is;
-      
-     case(GRAPH(id=id,directed=directed,nodes=nodes,edges=edges,attributes=attributes,attValues=graphAttributes),_,is)
-       equation
-         sd = Util.if_(directed,"directed","undirected");
-         t = appendString(inStringDelemiter);
-         attributeStrings = List.map1(graphAttributes, createAttributeString, 15);
-         is = List.fold(attributes, dumpAttributeDefinition, is);
-         is = IOStream.appendList(is, {inStringDelemiter, "<graph edgedefault=\"", sd, "\" id=\"", id, "\">\n"});
-         is = IOStream.appendList(is, attributeStrings);
-         is = List.fold1(nodes, dumpNode, t, is);
-         is = List.fold1(edges, dumpEdge, t, is);
-         is = IOStream.appendList(is, {t, "<data key=\"d7\"/>\n"});
-         is = IOStream.appendList(is, {inStringDelemiter , "</graph>\n"});
-       then
-        is;
-   
-   end match;
-end dumpGraph_Internal;
-
-protected function dumpAttributeDefinition
-  input Attribute inAttribute;
-  input IOStream.IOStream iIos;
-  output IOStream.IOStream oIos;  
-  
-algorithm
-  oIos := match(inAttribute,iIos)
-    local 
-      Integer attIdx;
-      String name, defaultValue, typeString, targetString, idxString;
-      AttributeType attType;
-      AttributeTarget attTarget;
-      IOStream.IOStream tmpStream;
-    case(ATTRIBUTE(attIdx=attIdx,name=name,defaultValue=defaultValue,attType=attType,attTarget=attTarget), tmpStream)
-      equation
-        typeString = dumpAttributeType(attType);
-        targetString = dumpAttributeTarget(attTarget);
-        idxString = intString(attIdx + 15);
-        tmpStream = IOStream.appendList(tmpStream, {"  <key attr.name=\"", name, "\" attr.type=\"", 
-        typeString, "\" for=\"", targetString, "\" id=\"d", idxString, "\">\n",
-        "    <default>", defaultValue, "</default>\n", "  </key>\n"});
-    then tmpStream;
-  end match;
-end dumpAttributeDefinition;
-
-protected function dumpAttributeType
-  input AttributeType attType;
-  output String oString;
-  
-algorithm
-  oString := match(attType)
-    case(TYPE_STRING()) then "string";
-    case(TYPE_BOOLEAN()) then "boolean";
-    case(TYPE_INTEGER()) then "int";
-    case(TYPE_DOUBLE()) then "double";
-    else then fail();
-  end match;
-end dumpAttributeType;
-
-protected function dumpAttributeTarget
-  input AttributeTarget attTarget;
-  output String oString;
-  
-algorithm
-  oString := match(attTarget)
-    case(TARGET_EDGE()) then "edge";
-    case(TARGET_NODE()) then "node";
-    case(TARGET_GRAPH()) then "graph";
-    else then fail();
-  end match;
-end dumpAttributeTarget;
-
-protected function dumpNode
-  input Node inNode;
-  input String inString;
-  input IOStream.IOStream iAcc;
-  output IOStream.IOStream oAcc;
-algorithm
-  oAcc := match (inNode,inString,iAcc)
-    local
-      String id,t,text,st_str,color,s,desc;
-      list<String> attributeStrings, addLabelStrings;
-      list<tuple<Integer,String>> nodeAttributes;
-      list<NodeLabel> addLabels;
-      ShapeType st;
-      IOStream.IOStream is;
-     
-    case(NODE(id=id,text=text,color=color,shapeType=st,attValues=nodeAttributes,addLabels=addLabels), _, _)
-      equation
-        t = appendString(inString);
-        attributeStrings = List.map1(nodeAttributes, createAttributeString, 15);
-        addLabelStrings = List.map(addLabels, getNodeLabelString);
-        st_str = getShapeTypeString(st);
-        desc = getNodeDesc(inNode);
-        is = IOStream.appendList(iAcc, {inString, "<node id=\"", id, "\">\n"});
-        is = IOStream.appendList(is, attributeStrings);
-        is = IOStream.appendList(is, {
-          t, "<data key=\"d5\">", desc, "</data>\n",
-          t, "<data key=\"d6\">\n",
-          "        <y:ShapeNode>\n",
-          "          <y:Geometry height=\"30.0\" width=\"30.0\" x=\"17.0\" y=\"60.0\"/>\n",
-          "          <y:Fill color=\"#", color, "\" transparent=\"false\"/>\n",
-          "          <y:BorderStyle color=\"#000000\" type=\"line\" width=\"1.0\"/>\n",
-          "          <y:NodeLabel alignment=\"center\" autoSizePolicy=\"content\" fontFamily=\"Dialog\" fontSize=\"12\" fontStyle=\"plain\" hasBackgroundColor=\"false\" hasLineColor=\"false\" height=\"18.701171875\" modelName=\"internal\" modelPosition=\"c\" textColor=\"#000000\" visible=\"true\" width=\"228.806640625\" x=\"1\" y=\"1\">", text, "</y:NodeLabel>\n",
-          "          <y:Shape type=\"", st_str, "\"/>\n"});
-        is = IOStream.appendList(is, addLabelStrings);
-        is = IOStream.appendList(is, {
-          "        </y:ShapeNode>\n",
-          t, "</data>\n",
-          inString ,"</node>\n"});
-      then
-        is;
-  end match;
-end dumpNode;
-
-protected function createAttributeString
-  input tuple<Integer,String> iAttValue;
-  input Integer idOffset;
-  output String oString;
-  
-protected
-  Integer attIdx;
-  String attValue;
-  
-algorithm
-  (attIdx,attValue) := iAttValue;
-  attIdx := attIdx + idOffset;
-  oString := "      <data key=\"d" +& intString(attIdx) +& "\">" +& attValue +& "</data>\n";
-end createAttributeString;
-
-protected function getNodeDesc
-"Returns the description of the node. The string is empty if no value was assigned."
-  input Node node;
-  output String desc_out;
-
-algorithm
-  desc_out := match(node)
-    local
-      String desc;
-    case(NODE(optDesc=SOME(desc)))
-    then desc;
-    else
-    then "";
-  end match;
-end getNodeDesc;
-
-protected function getNodeLabelString
-  input NodeLabel iLabel;
-  output String oString;
-protected
-  String text;
-  String backgroundColor;
-  String fontStyleString;
-  String position;
-  FontStyle fontStyle;
-algorithm
-  oString := match(iLabel)
-    case(NODELABEL_INTERNAL(text=text, backgroundColor=backgroundColor, fontStyle=fontStyle))
-      equation
-        fontStyleString = getFontStyleString(fontStyle);
-      then stringAppendList({"        <y:NodeLabel alignment=\"center\" autoSizePolicy=\"content\" backgroundColor=\"#", backgroundColor, "\" fontFamily=\"Dialog\" fontSize=\"12\" fontStyle=\"", fontStyleString, "\" hasLineColor=\"false\" modelName=\"internal\" textColor=\"#000000\" visible=\"true\">", text, "</y:NodeLabel>"});
-    case(NODELABEL_CORNER(text=text, backgroundColor=backgroundColor, fontStyle=fontStyle, position=position))
-      equation
-        fontStyleString = getFontStyleString(fontStyle);
-      then stringAppendList({"        <y:NodeLabel alignment=\"center\" autoSizePolicy=\"content\" backgroundColor=\"#", backgroundColor, "\" fontFamily=\"Dialog\" fontSize=\"12\" fontStyle=\"", fontStyleString, "\" hasLineColor=\"false\" modelName=\"corners\" modelPosition=\"", position,"\" textColor=\"#000000\" visible=\"true\">", text, "</y:NodeLabel>"});
-    else
-      equation
-        print("GraphML.getNodeLabelString failed, unknown NodeLabel-Type!\n");
-      then fail();
-  end match;
-end getNodeLabelString;
-
-protected function getFontStyleString
-  input FontStyle iFontStyle;
-  output String oString;
-algorithm
-  oString := match(iFontStyle)
-    case(FONTPLAIN())
-      then "plain";
-    case(FONTBOLD())
-      then "bold";
-    case(FONTITALIC())
-      then "italic";
-    case(FONTBOLDITALIC())
-      then "bolditalic";
-    else
-      equation
-        print("GraphML.getFontStyleString failed, unknown FontStyle-Type!\n");
-      then fail();
-  end match;
-end getFontStyleString;
-
-protected function getShapeTypeString
-  input ShapeType st;
-  output String str;
-algorithm
-  str := match (st)
-    case RECTANGLE() then "rectangle";
-    case ROUNDRECTANGLE() then "roundrectangle";
-    case ELLIPSE() then "ellipse";
-    case PARALLELOGRAM() then "parallelogram";
-    case HEXAGON() then "hexagon";
-    case TRIANGLE() then "triangle";
-    case OCTAGON() then "octagon";
-    case DIAMOND() then "diamond";
-    case TRAPEZOID() then "trapezoid";
-    case TRAPEZOID2() then "trapezoid2";
-   end match;
-end getShapeTypeString;
-
-protected function dumpEdge
-  input Edge inEdge;
-  input String inString;
-  input IOStream.IOStream iAcc;
-  output IOStream.IOStream oAcc;
-algorithm
-  oAcc := match (inEdge,inString,iAcc)
-    local
-      String id,t,target,source,color,lt_str,sa_str,ta_str,sl_str,s,s_width;
-      List<String> attributeStrings;
-      LineType lt;
-      Option<ArrowType> sarrow,tarrow;
-      Option<EdgeLabel> label;
-      IOStream.IOStream is;
-      List<tuple<Integer,String>> edgeAttributes;
-      Real lineWidth;
-    
-    case(EDGE(id=id,target=target,source=source,color=color,lineType=lt,lineWidth=lineWidth,label=label,arrows=(sarrow,tarrow),attValues=edgeAttributes),_,_)
-      equation
-        t = appendString(inString);
-        attributeStrings = List.map1(edgeAttributes, createAttributeString, 15);
-        lt_str = getLineTypeString(lt);
-        sl_str = getEdgeLabelString(label);
-        sa_str = getArrowTypeString(sarrow);
-        ta_str = getArrowTypeString(tarrow);
-        s_width = realString(lineWidth);
-        
-        is = IOStream.appendList(iAcc, {inString, "<edge id=\"", id, "\" source=\"", source, "\" target=\"", target, "\">\n"});
-        is = IOStream.appendList(is, attributeStrings);
-        is = IOStream.appendList(is, {
-          t, "<data key=\"d8\"/>\n",
-          t, "<data key=\"d9\"><![CDATA[UMLuses]]></data>\n",
-          t, "<data key=\"d10\">\n",
-          "        <y:PolyLineEdge>\n",
-          "          <y:Path sx=\"0.0\" sy=\"0.0\" tx=\"0.0\" ty=\"0.0\"/>\n",
-          "          <y:LineStyle color=\"#", color, "\" type=\"", lt_str, "\" width=\"", s_width, "\"/>\n",
-          sl_str,
-          "          <y:Arrows source=\"", sa_str, "\" target=\"", ta_str, "\"/>\n",
-          "          <y:BendStyle smoothed=\"false\"/>\n",
-          "        </y:PolyLineEdge>\n",
-          t, "</data>\n",
-          inString, "</edge>\n"});
-      then
-        is;
-  
-  end match;
-end dumpEdge;
-
-protected function getEdgeLabelString
-  input Option<EdgeLabel> label;
-  output String outStr;
-algorithm
-  outStr := match(label)
-    local
-      String text,color,fontSizeString;
-      Integer fontSize;
-    case (NONE()) then "";
-    case (SOME(EDGELABEL(text=text,color=color,fontSize=fontSize)))
-      equation
-        fontSizeString = intString(fontSize);
-      then
-        stringAppendList({"          <y:EdgeLabel alignment=\"center\" distance=\"2.0\" fontFamily=\"Dialog\" fontSize=\"", fontSizeString, "\" fontStyle=\"plain\" hasBackgroundColor=\"false\" hasLineColor=\"false\" height=\"28.501953125\" modelName=\"six_pos\" modelPosition=\"tail\" preferredPlacement=\"anywhere\" ratio=\"0.5\" textColor=\"",color,"\" visible=\"true\" width=\"15.123046875\" x=\"47.36937571050203\" y=\"17.675232529529524\">",text,"</y:EdgeLabel>\n"});
-  end match;
-end getEdgeLabelString;
-
-protected function getArrowTypeString
-  input Option<ArrowType> inArrow;
-  output String outString;
-algorithm
-  outString := match(inArrow)
-    case NONE() then "none";
-    case SOME(ARROWSTANDART()) then "standard";
-  end match;
-end getArrowTypeString;
-
-protected function getLineTypeString
-  input LineType lt;
-  output String str;
-algorithm
-  str := match (lt)
-    case LINE() then "line";
-    case DASHED() then "dashed";
-    case DASHEDDOTTED() then "dashed_dotted";
-   end match;
-end getLineTypeString;
+  GRAPHINFO(graphs,graphCount,nodes,nodeCount,edges,edgeCount,attributes,graphNodeKey,graphEdgeKey) := iGraphInfo;
+  graphsArr := listArray(graphs);
+  nodesArr := listArray(nodes);
+  oGraphInfo := GRAPHINFOARR(graphsArr,nodesArr,edges,attributes,graphNodeKey,graphEdgeKey);
+end convertToGraphInfoArr;
 
 end GraphML;
