@@ -7083,62 +7083,62 @@ algorithm
         eqLst = BackendEquation.equationList(eqs);
         varLst = BackendVariable.varList(vars);
   
-			  // build the incidence matrix for the whole System
-			  numSimpEqs = listLength(eqLst);
-			  numVars = listLength(varLst);
-			  m = arrayCreate(numSimpEqs, {});
-			  mT = arrayCreate(numVars, {});
-			  (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(vars,eqs,{},mT, 0, numSimpEqs, intLt(0, numSimpEqs), BackendDAE.ABSOLUTE(), NONE()); 
-			  HpcOmEqSystems.dumpEquationSystemGraphML1(vars,eqs,m,"whole System");
-			    //BackendDump.dumpEquationArray(eqs,"the complete DAE");
-			     
-			  // get the linear equations and their vars
-			  simpEqLst = BackendEquation.traverseBackendDAEEqns(eqs, getSimpleEquations, {});
-			  eqMapping = List.map1(simpEqLst,List.position,eqLst);//index starts at zero
-			  eqMapping = List.map1(eqMapping,intAdd,1);
-			  simpEqs = BackendEquation.listEquation(simpEqLst);
-			  crefs = BackendEquation.getAllCrefFromEquations(simpEqs);
-			  (simpVarLst,varMapping) = BackendVariable.getVarLst(crefs,vars,{},{});
-			  simpVars = BackendVariable.listVar1(simpVarLst);  
-			  
-			  // build the incidence matrix for the linear equations
-			  numSimpEqs = listLength(simpEqLst);
-			  numVars = listLength(simpVarLst);
-			  m = arrayCreate(numSimpEqs, {});
-			  mT = arrayCreate(numVars, {});
-			  (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(simpVars,simpEqs,{},mT, 0, numSimpEqs, intLt(0, numSimpEqs), BackendDAE.ABSOLUTE(), NONE()); 
-			  HpcOmEqSystems.dumpEquationSystemGraphML1(simpVars,simpEqs,m,"rL_simpEqs");
-			
-			  //partition graph
-			  partitions = arrayList(partitionBipartiteGraph(m,mT));
-			  partitions = List.filterOnTrue(partitions,List.hasSeveralElements);
-			    //print("the partitions: \n"+&stringDelimitList(List.map(partitions,HpcOmTaskGraph.intLstString),"\n")+&"\n");       
-			  
-			  // cut the deadends (vars and eqs outside of the loops)
-			  m_cut = arrayCopy(m);
-			  mT_cut = arrayCopy(mT);
-			  (loopEqIdcs,loopVarIdcs,nonLoopEqIdcs,nonLoopVarIdcs) = resolveLoops_cutNodes(m_cut,mT_cut,eqMapping,varMapping,varLst,eqLst);
-			  HpcOmEqSystems.dumpEquationSystemGraphML1(simpVars,simpEqs,m_cut,"rL_loops");
-			     
-			  // handle the partitions separately, resolve the loops in the partitions, insert the resolved equation
-			  eqLst = resolveLoops_resolvePartitions(partitions,m_cut,mT_cut,m,mT,eqMapping,varMapping,eqLst,varLst,nonLoopEqIdcs);      
-			  eqs = BackendEquation.listEquation(eqLst);
-			    //BackendDump.dumpEquationList(eqLst,"the complete DAE after resolving");  
-			  
-			  // get the graphML for the resolved System
-			  simpEqLst = List.map1(eqMapping,List.getIndexFirst,eqLst);
-			  simpEqs = BackendEquation.listEquation(simpEqLst);
-			  numSimpEqs = listLength(simpEqLst);
-			  numVars = listLength(simpVarLst);
-			  m_after = arrayCreate(numSimpEqs, {});
-			  mT_after = arrayCreate(numVars, {});
-			  (m_after,mT_after) = BackendDAEUtil.incidenceMatrixDispatch(simpVars,simpEqs,{},mT, 0, numSimpEqs, intLt(0, numSimpEqs), BackendDAE.ABSOLUTE(), NONE()); 
-			  HpcOmEqSystems.dumpEquationSystemGraphML1(simpVars,simpEqs,m_after,"rL_after");
-			  
-			  eqSys = BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets);
-			  shared = sharedIn;
-			then
-			  (eqSys,shared);
+        // build the incidence matrix for the whole System
+        numSimpEqs = listLength(eqLst);
+        numVars = listLength(varLst);
+        m = arrayCreate(numSimpEqs, {});
+        mT = arrayCreate(numVars, {});
+        (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(vars,eqs,{},mT, 0, numSimpEqs, intLt(0, numSimpEqs), BackendDAE.ABSOLUTE(), NONE()); 
+        HpcOmEqSystems.dumpEquationSystemGraphML1(vars,eqs,m,"whole System");
+          //BackendDump.dumpEquationArray(eqs,"the complete DAE");
+           
+        // get the linear equations and their vars
+        simpEqLst = BackendEquation.traverseBackendDAEEqns(eqs, getSimpleEquations, {});
+        eqMapping = List.map1(simpEqLst,List.position,eqLst);//index starts at zero
+        eqMapping = List.map1(eqMapping,intAdd,1);
+        simpEqs = BackendEquation.listEquation(simpEqLst);
+        crefs = BackendEquation.getAllCrefFromEquations(simpEqs);
+        (simpVarLst,varMapping) = BackendVariable.getVarLst(crefs,vars,{},{});
+        simpVars = BackendVariable.listVar1(simpVarLst);  
+        
+        // build the incidence matrix for the linear equations
+        numSimpEqs = listLength(simpEqLst);
+        numVars = listLength(simpVarLst);
+        m = arrayCreate(numSimpEqs, {});
+        mT = arrayCreate(numVars, {});
+        (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(simpVars,simpEqs,{},mT, 0, numSimpEqs, intLt(0, numSimpEqs), BackendDAE.ABSOLUTE(), NONE()); 
+        HpcOmEqSystems.dumpEquationSystemGraphML1(simpVars,simpEqs,m,"rL_simpEqs");
+      
+        //partition graph
+        partitions = arrayList(partitionBipartiteGraph(m,mT));
+        partitions = List.filterOnTrue(partitions,List.hasSeveralElements);
+          //print("the partitions: \n"+&stringDelimitList(List.map(partitions,HpcOmTaskGraph.intLstString),"\n")+&"\n");       
+        
+        // cut the deadends (vars and eqs outside of the loops)
+        m_cut = arrayCopy(m);
+        mT_cut = arrayCopy(mT);
+        (loopEqIdcs,loopVarIdcs,nonLoopEqIdcs,nonLoopVarIdcs) = resolveLoops_cutNodes(m_cut,mT_cut,eqMapping,varMapping,varLst,eqLst);
+        HpcOmEqSystems.dumpEquationSystemGraphML1(simpVars,simpEqs,m_cut,"rL_loops");
+           
+        // handle the partitions separately, resolve the loops in the partitions, insert the resolved equation
+        eqLst = resolveLoops_resolvePartitions(partitions,m_cut,mT_cut,m,mT,eqMapping,varMapping,eqLst,varLst,nonLoopEqIdcs);      
+        eqs = BackendEquation.listEquation(eqLst);
+          //BackendDump.dumpEquationList(eqLst,"the complete DAE after resolving");  
+        
+        // get the graphML for the resolved System
+        simpEqLst = List.map1(eqMapping,List.getIndexFirst,eqLst);
+        simpEqs = BackendEquation.listEquation(simpEqLst);
+        numSimpEqs = listLength(simpEqLst);
+        numVars = listLength(simpVarLst);
+        m_after = arrayCreate(numSimpEqs, {});
+        mT_after = arrayCreate(numVars, {});
+        (m_after,mT_after) = BackendDAEUtil.incidenceMatrixDispatch(simpVars,simpEqs,{},mT, 0, numSimpEqs, intLt(0, numSimpEqs), BackendDAE.ABSOLUTE(), NONE()); 
+        HpcOmEqSystems.dumpEquationSystemGraphML1(simpVars,simpEqs,m_after,"rL_after");
+        
+        eqSys = BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets);
+        shared = sharedIn;
+      then
+        (eqSys,shared);
     else
       equation
       then
