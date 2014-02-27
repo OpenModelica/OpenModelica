@@ -1184,14 +1184,14 @@ algorithm
   oMappingIdxTpl := match(iVarOpt,iHt,iMappingIdxTpl)
     case(SOME(iVar),_,_)
       equation
-			  (tmpMapping,varIdx) = iMappingIdxTpl;
-			  BackendDAE.VAR(varName=varName) = iVar;
-			  scVarValues = BaseHashTable.get(varName,iHt);
-			  scVarIdx = List.first(scVarValues);
-			  scVarOffset = List.second(scVarValues);
-			  scVarIdx = scVarIdx + scVarOffset + 1;
-			  tmpMapping = arrayUpdate(tmpMapping,varIdx,scVarIdx);
-			then ((tmpMapping,varIdx+1));
+        (tmpMapping,varIdx) = iMappingIdxTpl;
+        BackendDAE.VAR(varName=varName) = iVar;
+        scVarValues = BaseHashTable.get(varName,iHt);
+        scVarIdx = List.first(scVarValues);
+        scVarOffset = List.second(scVarValues);
+        scVarIdx = scVarIdx + scVarOffset + 1;
+        tmpMapping = arrayUpdate(tmpMapping,varIdx,scVarIdx);
+      then ((tmpMapping,varIdx+1));
     else
       then iMappingIdxTpl;
   end match;
@@ -1364,11 +1364,11 @@ algorithm
   oTaskCLMapping := matchcontinue(iTaskIdx,iCLIdx,iTaskCLMapping)
     case(_,_,_)
       equation
-			  //print("transposeCacheLineTaskMapping1 TaskIdx: " +& intString(iTaskIdx) +& " CacheLineIdx: " +& intString(iCLIdx) +& "\n");
-			  oldValue = arrayGet(iTaskCLMapping,iTaskIdx);
-			  oldValue = iCLIdx :: oldValue;
-			  tmpCLTaskMapping = arrayUpdate(iTaskCLMapping,iTaskIdx,oldValue);
-			then tmpCLTaskMapping;
+        //print("transposeCacheLineTaskMapping1 TaskIdx: " +& intString(iTaskIdx) +& " CacheLineIdx: " +& intString(iCLIdx) +& "\n");
+        oldValue = arrayGet(iTaskCLMapping,iTaskIdx);
+        oldValue = iCLIdx :: oldValue;
+        tmpCLTaskMapping = arrayUpdate(iTaskCLMapping,iTaskIdx,oldValue);
+      then tmpCLTaskMapping;
     else then iTaskCLMapping;
   end matchcontinue;
 end transposeCacheLineTaskMapping1;
@@ -1569,11 +1569,11 @@ algorithm
   oNodeIdx := matchcontinue(iSchedulerInfo,iSchedulerInfoFull,iGraphData,iCLTaskMapping,iTaskCLMapping,iNodeIdx)
     case(_,_,_,_,_,_)
       equation
-			  print("evaluateCacheBehaviour0 for node " +& intString(iNodeIdx) +& "\n");
-			  taskCacheLines = arrayGet(iTaskCLMapping,iNodeIdx);
-			  //print("evaluateCacheBehaviour0 writing to cache lines: " +& stringDelimitList(List.map(taskCacheLines, intString), ",") +& "\n");
-			  List.map4_0(taskCacheLines, evaluateCacheBehaviour1, (iGraphData,iNodeIdx), iSchedulerInfoFull, iSchedulerInfo, iCLTaskMapping);
-			then iNodeIdx + 1;
+        print("evaluateCacheBehaviour0 for node " +& intString(iNodeIdx) +& "\n");
+        taskCacheLines = arrayGet(iTaskCLMapping,iNodeIdx);
+        //print("evaluateCacheBehaviour0 writing to cache lines: " +& stringDelimitList(List.map(taskCacheLines, intString), ",") +& "\n");
+        List.map4_0(taskCacheLines, evaluateCacheBehaviour1, (iGraphData,iNodeIdx), iSchedulerInfoFull, iSchedulerInfo, iCLTaskMapping);
+      then iNodeIdx + 1;
     else then iNodeIdx + 1;
   end matchcontinue;
 end evaluateCacheBehaviour0;
@@ -1592,15 +1592,15 @@ algorithm
   _ := matchcontinue(iCacheLineIdx,iGraphDataNodeIdxTpl,iSchedulerInfoFull,iSchedulerInfo,iCLTaskMapping)
     case(_,(iGraphData, iNodeIdx),_,_,_)
       equation
-			  //get threadIdx of task
-			  (threadIdx,_,_) = iSchedulerInfo;
-			  //find all tasks that are writing to the same cache line
-			  otherTasksCL = arrayGet(iCLTaskMapping,iCacheLineIdx);
-			  otherTasksCL = List.removeOnTrue(iNodeIdx, intEq, otherTasksCL);
-			  //filter out tasks that belong to the same thread
-			  otherTasksCL = List.fold3(otherTasksCL, evaluateCacheBehaviour1Filter, iGraphData, iSchedulerInfoFull, (iNodeIdx,threadIdx),  {});
-			  print("Conflicting tasks: " +& stringDelimitList(List.map(otherTasksCL, intString), ",") +& "\n");
-			then ();
+        //get threadIdx of task
+        (threadIdx,_,_) = iSchedulerInfo;
+        //find all tasks that are writing to the same cache line
+        otherTasksCL = arrayGet(iCLTaskMapping,iCacheLineIdx);
+        otherTasksCL = List.removeOnTrue(iNodeIdx, intEq, otherTasksCL);
+        //filter out tasks that belong to the same thread
+        otherTasksCL = List.fold3(otherTasksCL, evaluateCacheBehaviour1Filter, iGraphData, iSchedulerInfoFull, (iNodeIdx,threadIdx),  {});
+        print("Conflicting tasks: " +& stringDelimitList(List.map(otherTasksCL, intString), ",") +& "\n");
+      then ();
     else then ();
   end matchcontinue;
 end evaluateCacheBehaviour1;
