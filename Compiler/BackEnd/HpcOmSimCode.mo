@@ -1159,7 +1159,7 @@ protected
   array<Integer> tmpMapping;
   BackendDAE.Variables orderedVars;
   BackendDAE.VariableArray varArr;
-  array<option<BackendDAE.Var>> varOptArr;
+  array<Option<BackendDAE.Var>> varOptArr;
   Integer numberOfVars;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=orderedVars) := iEqSystem;
@@ -1170,7 +1170,7 @@ algorithm
 end getVarSCVarMapping;
 
 protected function getVarSCVarMapping0
-  input option<BackendDAE.Var> iVarOpt;
+  input Option<BackendDAE.Var> iVarOpt;
   input HashTableCrILst.HashTable iHt;
   input tuple<array<Integer>,Integer> iMappingIdxTpl;
   output tuple<array<Integer>,Integer> oMappingIdxTpl;
@@ -1250,7 +1250,7 @@ protected
   BackendDAE.Var var; 
   BackendDAE.Variables orderedVars;
   BackendDAE.VariableArray varArr;
-  array<option<BackendDAE.Var>> varOptArr;
+  array<Option<BackendDAE.Var>> varOptArr;
   array<list<Integer>> iMapping;
   list<Integer> scVarValues,tmpMapping;
 algorithm
