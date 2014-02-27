@@ -40,60 +40,58 @@
 
 
 
-
-#include <simulation_data.h>
-
 #include "pm_task_system.hpp"
 #include "pm_level_scheduler.hpp"
-#include "pm_win_timer.hpp"
+#include "pm_timer.hpp"
 
 #include "om_pm_equation.hpp"
 
+
+
+extern "C" void PM_Model_init(const char*, void*);
 
 
 namespace openmodelica {
 namespace parmodelica {
 
 
-
-
 class OMModel {
 
 public:
-    typedef void (*functionXXX_system)(DATA *);
+    typedef void (*om_function_system)(void *);
 
+private:    
     std::string model_name;
     bool intialized;
+    void* data;
     
-    DATA* data;
+public:    
+    OMModel();
     
-    PMTimer total_ini_time;
-    functionXXX_system* ini_system_funcs;
+    
+    om_function_system* ini_system_funcs;
     TaskSystem<Equation> INI_system;
     LevelScheduler<Equation> INI_scheduler;
     void system_execute_ini();
     
-    PMTimer total_dae_time;
-    functionXXX_system* dae_system_funcs;
+    om_function_system* dae_system_funcs;
     TaskSystem<Equation> DAE_system;  
     LevelScheduler<Equation> DAE_scheduler;
     void system_execute_dae();
     
-    PMTimer total_ode_time;
-    functionXXX_system* ode_system_funcs;
+    om_function_system* ode_system_funcs;
     TaskSystem<Equation> ODE_system;
     LevelScheduler<Equation> ODE_scheduler;
     void system_execute_ode();
     
     PMTimer total_alg_time;
     TaskSystem<Equation> ALG_system;
-    
-    OMModel();
-    
+        
     void initialize();
-    void system_execute(LevelScheduler<Equation>&, functionXXX_system*);
     
-    
+    // This needs explicit global scoping because of the extern "C" qualifier. 
+    friend void ::PM_Model_init(const char* , void* );
+
 };
 
 

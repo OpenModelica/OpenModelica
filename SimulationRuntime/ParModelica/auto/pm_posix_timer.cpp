@@ -1,6 +1,3 @@
-#pragma once
-#ifndef id5F620984_BA45_4016_B0EEF41D74ABE934
-#define id5F620984_BA45_4016_B0EEF41D74ABE934
 
 /*
  * This file is part of OpenModelica.
@@ -35,33 +32,35 @@
 
 
 /*
- Mahder.Gebremedhin@liu.se  2014-02-10
+ Mahder.Gebremedhin@liu.se  2014-02-25
 */
 
 
+#include "pm_timer.hpp"
 
-#include <windows.h>
+namespace openmodelica {
+namespace parmodelica {
 
-struct PMStopWatch {
-    LARGE_INTEGER start;
-    LARGE_INTEGER stop;
-};
+PMTimer::PMTimer(){
+    total_time = boost::chrono::seconds::zero();    
+}
 
-class PMTimer {
+void PMTimer::start_timer(){
+    started_at = boost::chrono::system_clock::now();
+}
 
-private:
-    PMStopWatch timer;
-    LARGE_INTEGER total_time;
-    LARGE_INTEGER frequency;
-    double LI_to_secs(LARGE_INTEGER &LI) ;
-public:
-    PMTimer();
-    void start_timer();
-    void stop_timer();
-    void reset_timer();
-    double get_elapsed_time();
-};
+void PMTimer::stop_timer(){
+    total_time += (boost::chrono::system_clock::now() - started_at);
+}
 
+void PMTimer::reset_timer(){
+    total_time = boost::chrono::seconds::zero();    
+}
 
+double PMTimer::get_elapsed_time(){
+    return boost::chrono::nanoseconds(total_time).count() / 1000000000.0;
+}
 
-#endif // header
+} // parmodelica
+} // openmodelica
+

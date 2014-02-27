@@ -47,33 +47,28 @@ using namespace openmodelica::parmodelica;
 
 OMModel pm_om_model;
 
-void PM_Model_init(const char* model_name, DATA* data) {
+void PM_Model_init(const char* model_name, void* data) {
+
     pm_om_model.model_name = model_name;
     pm_om_model.data = data;
     
     pm_om_model.initialize();
 }
 
-void PM_functionInitialEquations(int size, DATA* data, functionXXX_system* functionInitialEquations_systems) {
+void PM_functionInitialEquations(int size, void* data, om_function_system* functionInitialEquations_systems) {
 
     pm_om_model.ini_system_funcs = functionInitialEquations_systems;
-    
-    pm_om_model.total_ini_time.start_timer();
     pm_om_model.system_execute_ini();
-    pm_om_model.total_ini_time.stop_timer();
     
     // for(int i = 0; i < size; ++i)
         // functionInitialEquations_systems[i](data);
 }
 
 
-void PM_functionDAE(int size, DATA* data, functionXXX_system* functionDAE_systems) {
+void PM_functionDAE(int size, void* data, om_function_system* functionDAE_systems) {
     
     pm_om_model.dae_system_funcs = functionDAE_systems;
-    
-    pm_om_model.total_dae_time.start_timer();
     pm_om_model.system_execute_dae();
-    pm_om_model.total_dae_time.stop_timer();
     
     // for(int i = 0; i < size; ++i)
         // functionDAE_systems[i](data);
@@ -81,20 +76,17 @@ void PM_functionDAE(int size, DATA* data, functionXXX_system* functionDAE_system
 }
 
 
-void PM_functionODE(int size, DATA* data, functionXXX_system* functionODE_systems) {
+void PM_functionODE(int size, void* data, om_function_system* functionODE_systems) {
     
     pm_om_model.ode_system_funcs = functionODE_systems;
-    
-    pm_om_model.total_ode_time.start_timer();
     pm_om_model.system_execute_ode();
-    pm_om_model.total_ode_time.stop_timer();
     
     // for(int i = 0; i < size; ++i)
         // functionODE_systems[i](data);
     
 }
 
-void PM_functionAlg(int size, DATA* data, functionXXX_system* functionAlg_systems) {
+void PM_functionAlg(int size, void* data, om_function_system* functionAlg_systems) {
     
     pm_om_model.total_alg_time.start_timer();
 
@@ -106,9 +98,9 @@ void PM_functionAlg(int size, DATA* data, functionXXX_system* functionAlg_system
 }
 
 void dump_times() {
-    std::cout << "Total INI: " << pm_om_model.total_ini_time.get_elapsed_time() << std::endl;
-    std::cout << "Total DAE: " << pm_om_model.total_dae_time.get_elapsed_time() << std::endl;
-    std::cout << "Total ODE: " << pm_om_model.total_ode_time.get_elapsed_time() << std::endl;
+    std::cout << "Total INI: " << pm_om_model.INI_scheduler.execution_timer.get_elapsed_time() << std::endl;
+    std::cout << "Total DAE: " << pm_om_model.DAE_scheduler.execution_timer.get_elapsed_time() << std::endl;
+    std::cout << "Total ODE: " << pm_om_model.ODE_scheduler.execution_timer.get_elapsed_time() << std::endl;
     std::cout << "Total ALG: " << pm_om_model.total_alg_time.get_elapsed_time() << std::endl;
 }
 

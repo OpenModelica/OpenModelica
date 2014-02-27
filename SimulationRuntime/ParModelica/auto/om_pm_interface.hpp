@@ -41,23 +41,21 @@
 
 
 
-#include <simulation_data.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef void (*functionXXX_system)(DATA *);
+typedef void (*om_function_system)(void *);
 
-void PM_Model_init(const char* model_name, DATA* data);
+void PM_Model_init(const char* model_name, void* data);
 
-void PM_functionInitialEquations(int size, DATA* data, functionXXX_system*);
+void PM_functionInitialEquations(int size, void* data, om_function_system*);
 
-void PM_functionDAE(int size, DATA* data, functionXXX_system*);
+void PM_functionDAE(int size, void* data, om_function_system*);
 
-void PM_functionODE(int size, DATA* data, functionXXX_system*);
+void PM_functionODE(int size, void* data, om_function_system*);
 
-void PM_functionAlg(int size, DATA* data, functionXXX_system*);
+void PM_functionAlg(int size, void* data, om_function_system*);
 
 void dump_times();
 

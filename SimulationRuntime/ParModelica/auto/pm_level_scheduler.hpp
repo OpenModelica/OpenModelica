@@ -44,6 +44,7 @@
 #include <iostream>
 
 #include "pm_task_system.hpp"
+#include "pm_timer.hpp"
 
 
 namespace openmodelica {
@@ -77,17 +78,31 @@ struct Level {
     std::vector<NodeIdType> nodes;
 };
 
+template<typename TaskTypeT, typename FunctionArray>
+struct LevelExecutor {
+    typedef typename TaskSystem<TaskTypeT>::Graph GraphType;
+    typedef TaskQueue<TaskTypeT> TaskQueueType;
+    typedef std::vector<TaskQueueType> ProcessorQueuesType;
+private:    
+    GraphType& graph;
+    FunctionArray function_systems;
+    void* data;
+
+public:
+    LevelExecutor(GraphType& g, FunctionArray f, void* d) : graph(g), function_systems(f), data(d) {}
+    
+    void operator()(const TaskQueueType& task_queue) const {
+        for(unsigned i = 0; i < task_queue.nodes.size(); ++i) {
+            function_systems[graph[task_queue.nodes[i]].node_id](data);
+        }
+    }
+    
+};
+
 
 template<typename TaskTypeT>
 class LevelScheduler {
-        
-    std::vector< Level<TaskTypeT> > levels;
-    
-    int number_of_processors;
-    bool nodes_have_been_leveled;
-    
 public:
-
     typedef TaskTypeT TaskType;
     typedef typename TaskSystem<TaskTypeT>::Graph GraphType;
     typedef typename TaskSystem<TaskTypeT>::Node NodeIdType;
@@ -95,23 +110,35 @@ public:
     typedef std::vector<TaskQueueType> ProcessorQueuesType;
     typedef std::vector<ProcessorQueuesType> ProcessorQueuesAllLevelsType;
 
-    TaskSystem<TaskTypeT>& task_system;
-    ProcessorQueuesAllLevelsType processor_queue_levels;
-    double total_parallel_cost;
-    bool profiled;
+private:    
+    int number_of_processors;
+    bool nodes_have_been_leveled;
+    std::vector< Level<TaskTypeT> > levels;
     
-    
+public:
     LevelScheduler(TaskSystem<TaskTypeT>& task_system);
-
+    TaskSystem<TaskTypeT>& task_system;
+    
+    bool profiled;
+    double total_parallel_cost;
+    PMTimer execution_timer;
+    ProcessorQueuesAllLevelsType processor_queue_levels;
+    
     
     void get_node_levels();
     void print_node_levels(std::ostream& ostr = utility::test_log());
     
+    // void schedule();
     void schedule(int number_of_processors);
+    // void re_schedule();
     void re_schedule(int number_of_processors);
     void print_schedule(std::ostream& ostr = utility::test_log()) const;
     
-    void execute();
+    template<typename FunctionArray>
+    void execute_tasks(FunctionArray, void*);
+
+    template<typename FunctionArray>
+    void profile_execute(FunctionArray, void*);
     
     
 };

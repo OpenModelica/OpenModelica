@@ -9,25 +9,37 @@ OPENMODELICA_BIN=$(TOP_BUILDDIR)/bin/
 COPY=cp -rp
 AR_=ar -rcs
 
-SRCS = \
+SRCS = $(OS_SRCS) \
 om_pm_equation.cpp \
 pm_utility.cpp \
 om_pm_interface.cpp \
-om_pm_model.cpp \
-pm_win_timer.cpp
+om_pm_model.cpp 
 # ParModelicaTaskGrapExt_rml.cpp
 # ParModelicaTaskGrapExt_omc.cpp \
 
+HDRS = *.hpp *.inl
 OBJS = $(SRCS:.cpp=.o)
+DPFILE = Makefile.dependencies
 
-.PHONY : libom_pm_autort clean
+DPFLAGS = -MM
+
+.PHONY : clean
 
 libom_pm_autort.a: $(OBJS)
 	@rm -f $@
 	$(AR_) $@ $(OBJS)
+    
+.cpp.o: $(DPFILE)
+	$(CC) $(CPPFLAGS) -c $<    
     
 test: test_task_graph.cpp transfer
 	$(CXX) $(CPPFLAGS) -I. test_task_graph.cpp -o gen_graph$(EXEEXT) libom_pm_autort.a
 
 clean :
 	rm -f *.o *.a
+	touch $(DPFILE)
+    
+$(DPFILE) depend : $(HDRS) $(SRCS)
+	$(CC) $(DPFLAGS) $(CPPFLAGS) $(SRCS) > $(DPFILE)    
+    
+include $(DPFILE)

@@ -178,9 +178,13 @@ void load_node(TaskTypeT& current_node, pugi::xml_node& xml_equ) {
 template<typename TaskTypeT>
 void TaskSystem<TaskTypeT>::load_from_xml(const std::string& file_name, const std::string& eq_to_read) {
 
-
     pugi::xml_document doc;
-    pugi::xml_parse_result result = doc.load_file(file_name.c_str());
+    if(!doc.load_file(file_name.c_str())) {
+        std::cerr << "Error loading XML file '" << file_name << "'." << std::endl;
+        exit(1);
+    }
+    
+    
     pugi::xml_node xml_equs = doc.child("simcodedump").child(eq_to_read.c_str());
     
     long node_count = 0;

@@ -1,10 +1,13 @@
+#pragma once
+#ifndef id5F620984_BA45_4016_B0EEF41D74ABE934
+#define id5F620984_BA45_4016_B0EEF41D74ABE934
 
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, LinkÃ¶ping University,
+ * Copyright (c) 1998-CurrentYear, Linköping University,
  * Department of Computer and Information Science,
- * SE-58183 LinkÃ¶ping, Sweden.
+ * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
@@ -15,7 +18,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from LinkÃ¶ping University, either from the above address,
+ * from Linköping University, either from the above address,
  * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
  * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
@@ -35,44 +38,65 @@
  Mahder.Gebremedhin@liu.se  2014-02-10
 */
 
+#ifdef _WIN32 // OS
 
-#include "pm_timer.hpp"
+#include <windows.h>
+
+namespace openmodelica {
+namespace parmodelica {
+
+struct PMStopWatch {
+    LARGE_INTEGER start;
+    LARGE_INTEGER stop;
+};
+
+class PMTimer {
+
+private:
+    PMStopWatch timer;
+    LARGE_INTEGER total_time;
+    LARGE_INTEGER frequency;
+    double LI_to_secs(LARGE_INTEGER &LI) ;
+public:
+    PMTimer();
+    void start_timer();
+    void stop_timer();
+    void reset_timer();
+    double get_elapsed_time();
+};
+
+
+} // parmodelica
+} // openmodelica
+
+#else // if not _WIN32
+
+
+#define BOOST_CHRONO_HEADER_ONLY
+#include <boost/chrono.hpp>
 
 
 namespace openmodelica {
 namespace parmodelica {
 
+class PMTimer {
 
-double PMTimer::LI_to_secs(LARGE_INTEGER &LI) {
-    return ((double)LI.QuadPart /(double)frequency.QuadPart) ;
- }
- 
-PMTimer::PMTimer(){
-    timer.start.QuadPart=0;
-    timer.stop.QuadPart=0;
-    total_time.QuadPart = 0;    
-    QueryPerformanceFrequency(&frequency);
-}
-
-void PMTimer::start_timer(){
-    QueryPerformanceCounter(&timer.start) ;
-}
-
-void PMTimer::stop_timer(){
-    QueryPerformanceCounter(&timer.stop) ;
-    total_time.QuadPart += (timer.stop.QuadPart - timer.start.QuadPart);
-}
-
-void PMTimer::reset_timer(){
-    timer.start.QuadPart=0;
-    timer.stop.QuadPart=0;
-    total_time.QuadPart = 0;
-}
-
-double PMTimer::get_elapsed_time(){
-    return LI_to_secs(total_time) ;
-}
+private:
+    boost::chrono::system_clock::duration total_time;
+    boost::chrono::system_clock::time_point started_at;
+public:
+    PMTimer();
+    void start_timer();
+    void stop_timer();
+    void reset_timer();
+    double get_elapsed_time();
+};
 
 } // parmodelica
 } // openmodelica
 
+#endif // OS
+
+
+
+#endif // header

@@ -92,10 +92,8 @@ TaskSystem<TaskTypeT>::construct_graph() {
             if(found_dep) {
                 bool b;
                 boost::tie(edge,b) = boost::add_edge(j,i,graph);
-#ifdef DEBUG
                 if(!b)
                     utility::test_log("Error") << "Error adding Edge- " << graph[j].index << " --> " << graph[i].index << newl;
-#endif
                 ++neigh_count;
             }
         }

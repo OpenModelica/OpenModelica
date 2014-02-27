@@ -35,6 +35,9 @@
 */
 
 
+#include <algorithm>
+
+// #include <boost/thread.hpp>
 
 namespace openmodelica {
 namespace parmodelica {
@@ -112,6 +115,12 @@ void LevelScheduler<TaskTypeT>::print_node_levels(std::ostream& ostr) {
     ostr << "------------------------------------------------------------------------------------------" << newl;
 
 }
+
+
+// template<typename TaskTypeT>
+// void LevelScheduler<TaskTypeT>::schedule() {
+    // schedule(boost::thread::hardware_concurrency());
+// }
 
 
 template<typename TaskTypeT>
@@ -194,6 +203,11 @@ void LevelScheduler<TaskTypeT>::schedule(int number_of_processors) {
 }
 
 
+// template<typename TaskTypeT>
+// void LevelScheduler<TaskTypeT>::re_schedule() {
+    // re_schedule(boost::thread::hardware_concurrency());
+// }
+
 template<typename TaskTypeT>
 void LevelScheduler<TaskTypeT>::re_schedule(int number_of_processors) {
 
@@ -241,27 +255,93 @@ void LevelScheduler<TaskTypeT>::print_schedule(std::ostream& ostr) const {
 
 
 template<typename TaskTypeT>
-void LevelScheduler<TaskTypeT>::execute() {
+template<typename FunctionArray>
+void LevelScheduler<TaskTypeT>::execute_tasks(FunctionArray function_systems, void* data) {
 
     GraphType& graph = this->task_system.graph;
 
+    execution_timer.start_timer();
+    
+    LevelExecutor<TaskTypeT, FunctionArray> level_executor(graph, function_systems, data);
+    
+    
     typename ProcessorQueuesAllLevelsType::iterator pq_level_iter;
-    for(pq_level_iter = processor_queue_levels.begin() + 1; pq_level_iter != processor_queue_levels.end(); ++pq_level_iter) {
+    pq_level_iter = processor_queue_levels.begin() + 1;
+    for( ; pq_level_iter != processor_queue_levels.end(); ++pq_level_iter) {
         LevelScheduler<TaskTypeT>::ProcessorQueuesType& pqueues = *pq_level_iter;
-
+        // std::for_each(pqueues.begin(), pqueues.end(), level_executor);
         for(unsigned j = 0; j < pqueues.size(); ++j) {
             for(unsigned i = 0; i < pqueues[j].nodes.size(); ++i) {
-                std::cout << "(" << graph[pqueues[j].nodes[i]].index << ", " << graph[pqueues[j].nodes[i]].node_id << ")" << newl;
-                // functionInitialEquations_systems[graph[pqueues[j].nodes[i]].node_id](data);
+                function_systems[graph[pqueues[j].nodes[i]].node_id](data);
             }
         }
 
     }
 
+    execution_timer.stop_timer();
+
+}
+
+
+template<typename TaskTypeT>
+template<typename FunctionArray>
+void LevelScheduler<TaskTypeT>::profile_execute(FunctionArray function_systems, void* data) {
+
+    GraphType& system_graph = this->task_system.graph;
+    
+
+    
+    
+    std::cout << "system cost before = " << task_system.total_cost << std::endl;
+    std::cout << "Scheduler cost before = " << total_parallel_cost << std::endl;
+    std::cout << "Peak speedup before = " << task_system.total_cost/total_parallel_cost << std::endl;
+        
+        
+    task_system.total_cost = 0;
+    PMTimer cost_timer;
+    double curr_cost;
+    
+    execution_timer.start_timer();    
+    
+    typename ProcessorQueuesAllLevelsType::iterator pq_level_iter;
+    pq_level_iter = processor_queue_levels.begin() + 1;
+    for(; pq_level_iter != processor_queue_levels.end(); ++pq_level_iter) 
+    {
+        const LevelScheduler<TaskTypeT>::ProcessorQueuesType& pqueues = *pq_level_iter;
+        for(unsigned j = 0; j < pqueues.size(); ++j) 
+        {
+            for(unsigned i = 0; i < pqueues[j].nodes.size(); ++i) 
+            {
+                cost_timer.start_timer();
+                function_systems[system_graph[pqueues[j].nodes[i]].node_id](data);
+                cost_timer.stop_timer();
+                curr_cost = cost_timer.get_elapsed_time() * 10000;
+                cost_timer.reset_timer();
+                    
+                system_graph[pqueues[j].nodes[i]].cost = curr_cost;
+                task_system.total_cost += curr_cost;
+            }
+        }
+
+    }
+
+    re_schedule(4);
+    profiled = true;
+    
+    execution_timer.stop_timer();
+    
+    
+    
+    std::cout << "system cost after = " << task_system.total_cost << std::endl;
+    std::cout << "Scheduler cost after = " << total_parallel_cost << std::endl;
+    std::cout << "Peak speedup after = " << task_system.total_cost/total_parallel_cost << std::endl;
+    // print_schedule(std::cout);
+    std::cout << "-------------------------------------------------------------" << std::endl;
+
 }
 
 
 
 
-}
-}
+} // parmodelica
+} // openmodelica

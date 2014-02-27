@@ -58,7 +58,6 @@ void OMModel::initialize() {
     if(intialized)
         return;
 
-    std::replace(model_name.begin(), model_name.end(), '_', '.');
     std::string xml_file = model_name + "_info.xml";
     std::cout << "Loading " << xml_file << std::endl;
 
@@ -89,80 +88,100 @@ void OMModel::initialize() {
 }
 
 
-void OMModel::system_execute(LevelScheduler<Equation>& scheduler, functionXXX_system* functionxxx_systems) {
-
-    LevelScheduler<Equation>::GraphType& system_graph = scheduler.task_system.graph;
-    LevelScheduler<Equation>::ProcessorQueuesAllLevelsType::const_iterator pq_level_iter;
-    pq_level_iter = scheduler.processor_queue_levels.begin() + 1;
-
-    /*! Do profiling and reschedule*/
-    if(!scheduler.profiled) {
-    
-        std::cout << "system cost before = " << scheduler.task_system.total_cost << std::endl;
-        std::cout << "Scheduler cost before = " << scheduler.total_parallel_cost << std::endl;
-        std::cout << "Peak speedup before = " << scheduler.task_system.total_cost/scheduler.total_parallel_cost << std::endl;
-        
-        
-        scheduler.task_system.total_cost = 0;
-        PMTimer cost_timer;
-        double curr_cost;
-        for(; pq_level_iter != scheduler.processor_queue_levels.end(); ++pq_level_iter) {
-            const LevelScheduler<Equation>::ProcessorQueuesType& pqueues = *pq_level_iter;
-
-            for(unsigned j = 0; j < pqueues.size(); ++j) {
-                for(unsigned i = 0; i < pqueues[j].nodes.size(); ++i) {
-                    cost_timer.start_timer();
-                    functionxxx_systems[system_graph[pqueues[j].nodes[i]].node_id](data);
-                    cost_timer.stop_timer();
-                    curr_cost = cost_timer.get_elapsed_time() * 10000;
-                    cost_timer.reset_timer();
-                    
-                    system_graph[pqueues[j].nodes[i]].cost = curr_cost;
-                    scheduler.task_system.total_cost += curr_cost;
-                }
-            }
-
-        }
-
-        
-
-        scheduler.re_schedule(4);
-        scheduler.profiled = true;
-        std::cout << "system cost after = " << scheduler.task_system.total_cost << std::endl;
-        std::cout << "Scheduler cost after = " << scheduler.total_parallel_cost << std::endl;
-        std::cout << "Peak speedup after = " << scheduler.task_system.total_cost/scheduler.total_parallel_cost << std::endl;
-        // scheduler.print_schedule(std::cout);
-        std::cout << "-------------------------------------------------------------" << std::endl;
-    }
-
-    if(scheduler.profiled) {
-        for(; pq_level_iter != scheduler.processor_queue_levels.end(); ++pq_level_iter) {
-            const LevelScheduler<Equation>::ProcessorQueuesType& pqueues = *pq_level_iter;
-
-            for(unsigned j = 0; j < pqueues.size(); ++j) {
-                for(unsigned i = 0; i < pqueues[j].nodes.size(); ++i) {
-                    functionxxx_systems[system_graph[pqueues[j].nodes[i]].node_id](data);
-                }
-            }
-
-        }
-    }
-
-}
-
-
 void OMModel::system_execute_ini() {
-    system_execute(INI_scheduler, ini_system_funcs);
+    //system_execute(INI_scheduler, ini_system_funcs);
+    if(!INI_scheduler.profiled)
+        INI_scheduler.profile_execute(ini_system_funcs, data);
+    else
+        INI_scheduler.execute_tasks(ini_system_funcs, data);
 }
 
 
 void OMModel::system_execute_dae() {
-    system_execute(DAE_scheduler, dae_system_funcs);
+    //system_execute(DAE_scheduler, dae_system_funcs);
+
+    if(!DAE_scheduler.profiled)
+        DAE_scheduler.profile_execute(dae_system_funcs, data);
+    else
+        DAE_scheduler.execute_tasks(dae_system_funcs, data);
 }
 
 void OMModel::system_execute_ode() {
-    system_execute(ODE_scheduler, ode_system_funcs);
+    //system_execute(ODE_scheduler, ode_system_funcs);
+    
+    if(!ODE_scheduler.profiled)
+        ODE_scheduler.profile_execute(ode_system_funcs, data);
+    else
+        ODE_scheduler.execute_tasks(ode_system_funcs, data);
 }
+
+
+//void OMModel::system_execute(LevelScheduler<Equation>& scheduler, om_function_system* om_function_systems) {
+//
+//    LevelScheduler<Equation>::GraphType& system_graph = scheduler.task_system.graph;
+//    LevelScheduler<Equation>::ProcessorQueuesAllLevelsType::const_iterator pq_level_iter;
+//    pq_level_iter = scheduler.processor_queue_levels.begin() + 1;
+//
+//    /*! Do profiling and reschedule*/
+//    if(!scheduler.profiled) 
+//    {
+//    
+//        std::cout << "system cost before = " << scheduler.task_system.total_cost << std::endl;
+//        std::cout << "Scheduler cost before = " << scheduler.total_parallel_cost << std::endl;
+//        std::cout << "Peak speedup before = " << scheduler.task_system.total_cost/scheduler.total_parallel_cost << std::endl;
+//        
+//        
+//        scheduler.task_system.total_cost = 0;
+//        PMTimer cost_timer;
+//        double curr_cost;
+//        for(; pq_level_iter != scheduler.processor_queue_levels.end(); ++pq_level_iter) 
+//        {
+//            const LevelScheduler<Equation>::ProcessorQueuesType& pqueues = *pq_level_iter;
+//            for(unsigned j = 0; j < pqueues.size(); ++j) 
+//            {
+//                for(unsigned i = 0; i < pqueues[j].nodes.size(); ++i) 
+//                {
+//                    cost_timer.start_timer();
+//                    om_function_systems[system_graph[pqueues[j].nodes[i]].node_id](data);
+//                    cost_timer.stop_timer();
+//                    curr_cost = cost_timer.get_elapsed_time() * 10000;
+//                    cost_timer.reset_timer();
+//                    
+//                    system_graph[pqueues[j].nodes[i]].cost = curr_cost;
+//                    scheduler.task_system.total_cost += curr_cost;
+//                }
+//            }
+//
+//        }
+//
+//        
+//
+//        scheduler.re_schedule(4);
+//        scheduler.profiled = true;
+//        std::cout << "system cost after = " << scheduler.task_system.total_cost << std::endl;
+//        std::cout << "Scheduler cost after = " << scheduler.total_parallel_cost << std::endl;
+//        std::cout << "Peak speedup after = " << scheduler.task_system.total_cost/scheduler.total_parallel_cost << std::endl;
+//        // scheduler.print_schedule(std::cout);
+//        std::cout << "-------------------------------------------------------------" << std::endl;
+//    }
+//
+//    if(scheduler.profiled) 
+//    {
+//        for(; pq_level_iter != scheduler.processor_queue_levels.end(); ++pq_level_iter) 
+//        {
+//            const LevelScheduler<Equation>::ProcessorQueuesType& pqueues = *pq_level_iter;
+//            for(unsigned j = 0; j < pqueues.size(); ++j) 
+//            {
+//                for(unsigned i = 0; i < pqueues[j].nodes.size(); ++i) 
+//                {
+//                    om_function_systems[system_graph[pqueues[j].nodes[i]].node_id](data);
+//                }
+//            }
+//
+//        }
+//    }
+//
+//}
 
 
 
