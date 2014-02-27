@@ -7044,7 +7044,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.RESOLVE_LOOPS); 
         BackendDAE.DAE(eqs = eqSysts,shared = shared) = inDAE;
-        (eqSysts,shared) = List.mapFold(eqSysts,resolveLoops_main,shared);
+        (eqSysts,(shared,_)) = List.mapFold(eqSysts,resolveLoops_main,(shared,1));
         outDAE = BackendDAE.DAE(eqSysts,shared);
       then
         outDAE;
@@ -7058,13 +7058,13 @@ protected function resolveLoops_main  "collects the linear equations of the whol
 all variables and equations which do not belong to a loop will be removed. the loops will be analysed and resolved
 author: Waurich TUD 2014-01"
   input BackendDAE.EqSystem eqSysIn;
-  input BackendDAE.Shared sharedIn;
+  input tuple<BackendDAE.Shared,Integer> sharedTplIn;
   output BackendDAE.EqSystem eqSysOut;
-  output BackendDAE.Shared sharedOut;
+  output tuple<BackendDAE.Shared,Integer> sharedTplOut;
 algorithm
-  (eqSysOut,sharedOut) := matchcontinue(eqSysIn,sharedIn)
+  (eqSysOut,sharedTplOut) := matchcontinue(eqSysIn,sharedTplIn)
     local
-      Integer numSimpEqs, numVars, numSimpVars;
+      Integer numSimpEqs, numVars, numSimpVars, sysIdx;
       list<Integer> eqMapping, varMapping, nonLoopVarIdcs, nonLoopEqIdcs, loopEqIdcs, loopVarIdcs, eqCrossLst, varCrossLst;
       list<list<Integer>> partitions, loops;
       BackendDAE.Variables vars,simpVars;
@@ -7072,77 +7072,77 @@ algorithm
       BackendDAE.EqSystem eqSys;
       BackendDAE.IncidenceMatrix m,mT,m_cut, mT_cut, m_after, mT_after;
       BackendDAE.Matching matching;
-      BackendDAE.Shared shared;
+      BackendDAE.Shared shared, sharedIn;
       BackendDAE.StateSets stateSets;
       list<DAE.ComponentRef> crefs;
       list<BackendDAE.Equation> eqLst,simpEqLst,resolvedEqs;
       list<BackendDAE.Var> varLst,simpVarLst;
-    case(_,_)
+    case(_,(sharedIn,sysIdx))
       equation
         BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,m=_,mT=_,stateSets=stateSets) = eqSysIn;
         eqLst = BackendEquation.equationList(eqs);
         varLst = BackendVariable.varList(vars);
   
-        // build the incidence matrix for the whole System
-        numSimpEqs = listLength(eqLst);
-        numVars = listLength(varLst);
-        m = arrayCreate(numSimpEqs, {});
-        mT = arrayCreate(numVars, {});
-        (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(vars,eqs,{},mT, 0, numSimpEqs, intLt(0, numSimpEqs), BackendDAE.ABSOLUTE(), NONE()); 
-        HpcOmEqSystems.dumpEquationSystemGraphML1(vars,eqs,m,"whole System");
-          //BackendDump.dumpEquationArray(eqs,"the complete DAE");
-           
-        // get the linear equations and their vars
-        simpEqLst = BackendEquation.traverseBackendDAEEqns(eqs, getSimpleEquations, {});
-        eqMapping = List.map1(simpEqLst,List.position,eqLst);//index starts at zero
-        eqMapping = List.map1(eqMapping,intAdd,1);
-        simpEqs = BackendEquation.listEquation(simpEqLst);
-        crefs = BackendEquation.getAllCrefFromEquations(simpEqs);
-        (simpVarLst,varMapping) = BackendVariable.getVarLst(crefs,vars,{},{});
-        simpVars = BackendVariable.listVar1(simpVarLst);  
+			  // build the incidence matrix for the whole System
+			  numSimpEqs = listLength(eqLst);
+			  numVars = listLength(varLst);
+			  m = arrayCreate(numSimpEqs, {});
+			  mT = arrayCreate(numVars, {});
+			  (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(vars,eqs,{},mT, 0, numSimpEqs, intLt(0, numSimpEqs), BackendDAE.ABSOLUTE(), NONE()); 
+			  HpcOmEqSystems.dumpEquationSystemGraphML1(vars,eqs,m,"whole System_"+&intString(sysIdx));
+			    //BackendDump.dumpEquationArray(eqs,"the complete DAE");
+			     
+			  // get the linear equations and their vars
+			  simpEqLst = BackendEquation.traverseBackendDAEEqns(eqs, getSimpleEquations, {});
+			  eqMapping = List.map1(simpEqLst,List.position,eqLst);//index starts at zero
+			  eqMapping = List.map1(eqMapping,intAdd,1);
+			  simpEqs = BackendEquation.listEquation(simpEqLst);
+			  crefs = BackendEquation.getAllCrefFromEquations(simpEqs);
+			  (simpVarLst,varMapping) = BackendVariable.getVarLst(crefs,vars,{},{});
+			  simpVars = BackendVariable.listVar1(simpVarLst);  
+
+			  // build the incidence matrix for the linear equations
+			  numSimpEqs = listLength(simpEqLst);
+			  numVars = listLength(simpVarLst);
+			  m = arrayCreate(numSimpEqs, {});
+			  mT = arrayCreate(numVars, {});
+			  (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(simpVars,simpEqs,{},mT, 0, numSimpEqs, intLt(0, numSimpEqs), BackendDAE.ABSOLUTE(), NONE()); 
+			  HpcOmEqSystems.dumpEquationSystemGraphML1(simpVars,simpEqs,m,"rL_simpEqs_"+&intString(sysIdx));
         
-        // build the incidence matrix for the linear equations
-        numSimpEqs = listLength(simpEqLst);
-        numVars = listLength(simpVarLst);
-        m = arrayCreate(numSimpEqs, {});
-        mT = arrayCreate(numVars, {});
-        (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(simpVars,simpEqs,{},mT, 0, numSimpEqs, intLt(0, numSimpEqs), BackendDAE.ABSOLUTE(), NONE()); 
-        HpcOmEqSystems.dumpEquationSystemGraphML1(simpVars,simpEqs,m,"rL_simpEqs");
-      
-        //partition graph
-        partitions = arrayList(partitionBipartiteGraph(m,mT));
-        partitions = List.filterOnTrue(partitions,List.hasSeveralElements);
-          //print("the partitions: \n"+&stringDelimitList(List.map(partitions,HpcOmTaskGraph.intLstString),"\n")+&"\n");       
-        
-        // cut the deadends (vars and eqs outside of the loops)
-        m_cut = arrayCopy(m);
-        mT_cut = arrayCopy(mT);
-        (loopEqIdcs,loopVarIdcs,nonLoopEqIdcs,nonLoopVarIdcs) = resolveLoops_cutNodes(m_cut,mT_cut,eqMapping,varMapping,varLst,eqLst);
-        HpcOmEqSystems.dumpEquationSystemGraphML1(simpVars,simpEqs,m_cut,"rL_loops");
-           
-        // handle the partitions separately, resolve the loops in the partitions, insert the resolved equation
-        eqLst = resolveLoops_resolvePartitions(partitions,m_cut,mT_cut,m,mT,eqMapping,varMapping,eqLst,varLst,nonLoopEqIdcs);      
-        eqs = BackendEquation.listEquation(eqLst);
-          //BackendDump.dumpEquationList(eqLst,"the complete DAE after resolving");  
-        
-        // get the graphML for the resolved System
-        simpEqLst = List.map1(eqMapping,List.getIndexFirst,eqLst);
-        simpEqs = BackendEquation.listEquation(simpEqLst);
-        numSimpEqs = listLength(simpEqLst);
-        numVars = listLength(simpVarLst);
-        m_after = arrayCreate(numSimpEqs, {});
-        mT_after = arrayCreate(numVars, {});
-        (m_after,mT_after) = BackendDAEUtil.incidenceMatrixDispatch(simpVars,simpEqs,{},mT, 0, numSimpEqs, intLt(0, numSimpEqs), BackendDAE.ABSOLUTE(), NONE()); 
-        HpcOmEqSystems.dumpEquationSystemGraphML1(simpVars,simpEqs,m_after,"rL_after");
-        
-        eqSys = BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets);
-        shared = sharedIn;
-      then
-        (eqSys,shared);
+			  //partition graph
+			  partitions = arrayList(partitionBipartiteGraph(m,mT));
+			  partitions = List.filterOnTrue(partitions,List.hasSeveralElements);
+			    //print("the partitions for system "+&intString(sysIdx)+&" : \n"+&stringDelimitList(List.map(partitions,HpcOmTaskGraph.intLstString),"\n")+&"\n");       
+			  
+			  // cut the deadends (vars and eqs outside of the loops)
+			  m_cut = arrayCopy(m);
+			  mT_cut = arrayCopy(mT);
+			  (loopEqIdcs,loopVarIdcs,nonLoopEqIdcs,nonLoopVarIdcs) = resolveLoops_cutNodes(m_cut,mT_cut,eqMapping,varMapping,varLst,eqLst);
+			  HpcOmEqSystems.dumpEquationSystemGraphML1(simpVars,simpEqs,m_cut,"rL_loops_"+&intString(sysIdx));
+			     
+			  // handle the partitions separately, resolve the loops in the partitions, insert the resolved equation
+			  eqLst = resolveLoops_resolvePartitions(partitions,m_cut,mT_cut,m,mT,eqMapping,varMapping,eqLst,varLst,nonLoopEqIdcs);      
+			  eqs = BackendEquation.listEquation(eqLst);
+			    //BackendDump.dumpEquationList(eqLst,"the complete DAE after resolving");  
+			  
+			  // get the graphML for the resolved System
+			  simpEqLst = List.map1(eqMapping,List.getIndexFirst,eqLst);
+			  simpEqs = BackendEquation.listEquation(simpEqLst);
+			  numSimpEqs = listLength(simpEqLst);
+			  numVars = listLength(simpVarLst);
+			  m_after = arrayCreate(numSimpEqs, {});
+			  mT_after = arrayCreate(numVars, {});
+			  (m_after,mT_after) = BackendDAEUtil.incidenceMatrixDispatch(simpVars,simpEqs,{},mT, 0, numSimpEqs, intLt(0, numSimpEqs), BackendDAE.ABSOLUTE(), NONE()); 
+			  HpcOmEqSystems.dumpEquationSystemGraphML1(simpVars,simpEqs,m_after,"rL_after_"+&intString(sysIdx));
+			  
+			  eqSys = BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets);
+			then
+			  (eqSys,(sharedIn,sysIdx+1));
     else
       equation
+        (sharedIn,sysIdx) = sharedTplIn;
       then
-        (eqSysIn,sharedIn);
+        (eqSysIn,(sharedIn,sysIdx+1));
   end matchcontinue;
 end resolveLoops_main;
 
@@ -7865,7 +7865,6 @@ algorithm
       replEqs = pos::replEqsIn;
       pos = listGet(eqMapping,pos);
       eqLst = List.replaceAt(resolvedEq,pos-1,eqLstIn);
-      
       
       (eqLst,replEqs) = resolveLoops_resolveAndReplace(rest,eqCrossLstIn,varCrossLstIn,mIn,mTIn,eqMapping,varMapping,eqLst,varLstIn,replEqs);
     then
@@ -8671,7 +8670,6 @@ algorithm
           //print("check for the eqNode: "+&intString(node)+&" with the  neighbor eqNodes: "+&stringDelimitList(List.map(eqs,intString),",")+&"\n");
         //write the eq as marked in the array and check if this is a new equation
         (markNodes,hasChanged) = arrayUpdateAndCheckChange(node,currNumberIn,markNodesIn);
-        
         // get the next nodes
         nextEqs = listAppend(eqs,rest);
         nextEqs = List.unique(nextEqs);
@@ -8682,7 +8680,7 @@ algorithm
     
     case(_,_,{},_,_,_)
       equation
-        node = Util.arrayMemberNoOpt(markNodesIn,arrayLength(markNodesIn),0);
+        node = Util.arrayMemberNoOpt(markNodesIn,arrayLength(markNodesIn)+1,0);
           //print("skip to node: "+&intString(node)+&"\n");
         (markNodes,currNumber) = colorNodePartitions(m,mT,{node},alreadyChecked,markNodesIn,currNumberIn+1);
         then
