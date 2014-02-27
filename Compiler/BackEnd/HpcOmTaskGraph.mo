@@ -318,9 +318,11 @@ algorithm
   graphOut := Util.arrayAppend(graph1In,graph2);
   inComps2 := Util.arrayMap1(inComps2,updateTaskGraphSystem,idxOffset);
   inComps2 := Util.arrayAppend(inComps1,inComps2);
-  varNodeMapping2 := Util.arrayMap1(varNodeMapping2,modifyMapping,varOffset);
+  //varNodeMapping2 := Util.arrayMap1(varNodeMapping2,modifyMapping,varOffset);
+  varNodeMapping2 := Util.arrayMap1(varNodeMapping2,modifyMapping,idxOffset);
   varNodeMapping2 := Util.arrayAppend(varNodeMapping1,varNodeMapping2);
-  eqNodeMapping2 := Util.arrayMap1(eqNodeMapping2,modifyMapping,eqOffset);
+  //eqNodeMapping2 := Util.arrayMap1(eqNodeMapping2,modifyMapping,eqOffset);
+  eqNodeMapping2 := Util.arrayMap1(eqNodeMapping2,modifyMapping,idxOffset);
   eqNodeMapping2 := Util.arrayAppend(eqNodeMapping1,eqNodeMapping2);
   rootNodes2 := List.map1(rootNodes2,intAdd,idxOffset);
   rootNodes2 := listAppend(rootNodes1,rootNodes2);
@@ -1708,10 +1710,13 @@ algorithm
     equation
       BackendDAE.EQSYSTEM(orderedVars=orderedVars) = systIn;
       varLst = BackendVariable.varList(orderedVars);
-      stateVars = getStates(varLst,{},1);    
+      stateVars = getStates(varLst,{},1);  
+      //print("stateVars: " +& stringDelimitList(List.map(stateVars,intString),",") +& " varOffset: " +& intString(varOffset) +& "\n");  
+      //print("varNodeMapping: " +& stringDelimitList(arrayList(Util.arrayMap(varNodeMapping,tuple3ToString)),",") +& "\n");
       true = List.isNotEmpty(stateVars);
       stateVars = List.map1(stateVars,intAdd,varOffset);
       stateNodes = matchWithAssignmentsTuple(stateVars,varNodeMapping);
+      //print("stateNodes: " +& stringDelimitList(List.map(stateNodes,intString),",") +& "\n");
       stateNodes = List.map3(stateNodes,getCompInComps,1,inComps,arrayCreate(arrayLength(inComps),0));
       stateNodes = listAppend(stateNodesIn,stateNodes);     
       varOffsetNew = listLength(varLst)+varOffset;
@@ -1726,11 +1731,13 @@ algorithm
       varOffsetNew = listLength(varLst)+varOffset;      
       then
         ((stateNodesIn,varOffsetNew));
-    else
+  case(_,_,_,(stateNodesIn,varOffset))
     equation
-      print("getAllStateNodes failed!\n");
-      then
-        fail();
+      BackendDAE.EQSYSTEM(orderedVars=orderedVars) = systIn;
+      varLst = BackendVariable.varList(orderedVars);
+      stateVars = getStates(varLst,{},1);
+      print("getAllStateNodes failed! StateVars-Count: " +& intString(listLength(stateVars)) +& "\n");
+     then fail();
   end matchcontinue;
 end getAllStateNodes;
 
@@ -1912,7 +1919,7 @@ algorithm
         -1;
     else
       equation
-        print("getCompInComps failed!\n");
+        print("getCompInComps failed! CompIn idx: " +& intString(compIn) +& " | Component array-size: " +& intString(arrayLength(inComps)) +& "\n");
       then
         fail();
   end matchcontinue;             
@@ -3498,6 +3505,10 @@ algorithm
        true = unionNode == -1;
      then
        nodeNamesIn;
+     else
+      equation
+        print("updateNodeNamesForMerging failed!\n");
+      then fail();
    end matchcontinue;
 end updateNodeNamesForMerging;
       
