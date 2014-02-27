@@ -1126,14 +1126,17 @@ algorithm
 
     case (cache,env,"list",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(false),Values.BOOL(false),Values.ENUM_LITERAL(name=path)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       equation
+        (scodeP,st) = Interactive.symbolTableToSCode(st);
         name = Absyn.pathLastIdent(path);
         str = Debug.bcallret2(name ==& "Absyn", Dump.unparseStr, p, false, "");
+        str = Debug.bcallret2(name ==& "SCode", SCodeDump.programStr, scodeP, SCodeDump.defaultOptions, str);
         str = Debug.bcallret1(name ==& "Internal", System.anyStringCode, p, str);
       then
         (cache,Values.STRING(str),st);
 
     case (cache,env,"list",{Values.CODE(Absyn.C_TYPENAME(className)),Values.BOOL(b1),Values.BOOL(b2),Values.ENUM_LITERAL(name=path)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       equation
+        (scodeP,st) = Interactive.symbolTableToSCode(st);
         name = Absyn.pathLastIdent(path);
         absynClass = Interactive.getPathedClassInProgram(className, p);
         absynClass = Debug.bcallret1(b1,Absyn.getFunctionInterface,absynClass,absynClass);
@@ -1141,8 +1144,7 @@ algorithm
         p = Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.TIMESTAMP(0.0,0.0));
         str = Debug.bcallret2(name ==& "Absyn", Dump.unparseStr, p, false, "");
         str = Debug.bcallret1(name ==& "Internal", System.anyStringCode, p, str);
-        scodeP = Debug.bcallret1(name ==& "SCode", SCodeUtil.translateAbsyn2SCode, p, {});
-        str = Debug.bcallret1(name ==& "SCode", SCodeDump.programStr, scodeP, str);
+        str = Debug.bcallret2(name ==& "SCode", SCodeDump.programStr, scodeP, SCodeDump.defaultOptions, str);
       then
         (cache,Values.STRING(str),st);
 
@@ -2239,7 +2241,7 @@ algorithm
         (scodeP, st) = Interactive.symbolTableToSCode(st);
         (scodeP, _) = NFSCodeFlatten.flattenClassInProgram(classpath, scodeP);
         scodeP = SCode.removeBuiltinsFromTopScope(scodeP);
-        str = SCodeDump.programStr(scodeP);
+        str = SCodeDump.programStr(scodeP,SCodeDump.defaultOptions);
         System.writeFile(filename, str);
       then
         (cache, Values.BOOL(true), st);

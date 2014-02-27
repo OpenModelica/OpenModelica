@@ -42,46 +42,56 @@ public import Absyn;
 public import SCode;
 
 protected import Dump;
-protected import List;
-protected import Print;
 protected import SCodeDumpTpl;
 protected import Tpl;
-protected import Util;
+
+public constant SCodeDumpOptions defaultOptions = OPTIONS(false);
+
+public uniontype SCodeDumpOptions
+  record OPTIONS
+    Boolean stripAlgorithmSections;
+  end OPTIONS;
+end SCodeDumpOptions;
 
 public function programStr
   input SCode.Program inProgram;
+  input SCodeDumpOptions options;
   output String outString;
 algorithm
-  outString := Tpl.tplString(SCodeDumpTpl.dumpProgram, inProgram);
+  outString := Tpl.tplString2(SCodeDumpTpl.dumpProgram, inProgram, options);
 end programStr;
 
 public function classDefStr
   input SCode.ClassDef cd;
+  input SCodeDumpOptions options;
   output String outString;
 algorithm
-  outString := Tpl.tplString(SCodeDumpTpl.dumpClassDef, cd);
+  outString := Tpl.tplString2(SCodeDumpTpl.dumpClassDef, cd, options);
 end classDefStr;
 
 public function statementStr
   input SCode.Statement stmt;
+  input SCodeDumpOptions options;
   output String outString;
 algorithm
-  outString := Tpl.tplString(SCodeDumpTpl.dumpStatement, stmt);
+  outString := Tpl.tplString2(SCodeDumpTpl.dumpStatement, stmt, options);
 end statementStr;
 
 public function equationStr
   input SCode.EEquation inEEquation;
+  input SCodeDumpOptions options;
   output String outString;
 algorithm
-  outString := Tpl.tplString(SCodeDumpTpl.dumpEEquation, inEEquation);
+  outString := Tpl.tplString2(SCodeDumpTpl.dumpEEquation, inEEquation, options);
 end equationStr;
 
 public function printModStr
 "Prints SCode.Mod to a string."
   input SCode.Mod inMod;
+  input SCodeDumpOptions options;
   output String outString;
 algorithm
-  outString := Tpl.tplString(SCodeDumpTpl.dumpModifier, inMod);
+  outString := Tpl.tplString2(SCodeDumpTpl.dumpModifier, inMod, options);
 end printModStr;
 
 public function restrString
@@ -129,123 +139,15 @@ algorithm
   outString := Tpl.tplString(SCodeDumpTpl.dumpRestriction, inRestriction);
 end restrictionStringPP;
 
-public function printRestr
-"Prints SCode.Restriction to the Print buffer."
-  input SCode.Restriction restr;
-protected
-  String str;
-algorithm
-  str := restrString(restr);
-  Print.printBuf(str);
-end printRestr;
-
-protected function printFinal
-"Prints \"final\" to the Print buffer."
-  input Boolean inBoolean;
-algorithm
-  _ := matchcontinue (inBoolean)
-    case false then ();
-    case true
-      equation
-        Print.printBuf(" final ");
-      then
-        ();
-  end matchcontinue;
-end printFinal;
-
-public function printElementList
-"Print SCode.Element list to Print buffer."
-  input list<SCode.Element> inElementLst;
-algorithm
-  _ := matchcontinue (inElementLst)
-    local
-      SCode.Element x;
-      list<SCode.Element> xs;
-    case ({}) then ();
-    case ((x :: xs))
-      equation
-        printElement(x);
-        printElementList(xs);
-      then
-        ();
-  end matchcontinue;
-end printElementList;
-
-public function printElement
-"Print SCode.Element to Print buffer."
-  input SCode.Element elt;
-protected
-  String str;
-algorithm
-  str := printElementStr(elt);
-  Print.printBuf(str);
-end printElement;
-
-public function printElementStr
-"Print SCode.Element to a string."
-  input SCode.Element inElement;
-  output String outString;
-algorithm
-  outString :=  matchcontinue (inElement)
-    local
-      String str,str2,res,n,mod_str,s,vs,modStr,prefStr;
-      Absyn.Path path;
-      SCode.Mod mod;
-      SCode.Final finalPrefix;
-      SCode.Replaceable repl;
-      SCode.Visibility vis;
-      SCode.Redeclare red;
-      Absyn.InnerOuter io;
-      SCode.Variability var;
-      Absyn.TypeSpec tySpec;
-      Absyn.Import imp;
-      SCode.Prefixes pref;
-
-    case SCode.EXTENDS(baseClassPath = path,modifications = mod)
-      equation
-        str = Absyn.pathString(path);
-        modStr = printModStr(mod);
-        res = stringAppendList({"EXTENDS(",str,", modification=",modStr,")"});
-      then
-        res;
-    case SCode.COMPONENT(name = n,
-                   prefixes = pref as SCode.PREFIXES(
-                     innerOuter=io,
-                     finalPrefix = finalPrefix,
-                     replaceablePrefix = repl,
-                     visibility = vis,
-                     redeclarePrefix = red),
-                     attributes = SCode.ATTR(variability = var),typeSpec = tySpec,
-                   modifications = mod)
-      equation
-        mod_str = printModStr(mod);
-        s = Dump.unparseTypeSpec(tySpec);
-        vs = variabilityString(var);
-        str2 = innerouterString(io);
-        prefStr = prefixesStr(pref);
-        res = stringAppendList({"COMPONENT(",n, " in/out: ", str2, " mod: ",mod_str, " tp: ", s," var :",vs," prefixes: ",prefStr,")"});
-      then
-        res;
-    case _
-      equation
-        res = printClassStr(inElement);
-      then
-        res;
-    case (SCode.IMPORT(imp = imp))
-      equation
-         str = "IMPORT("+& Absyn.printImportString(imp) +& ");";
-      then str;
-  end matchcontinue;
-end printElementStr;
-
 protected constant String noEachStr = "";
 
 public function unparseElementStr
 "Print SCode.Element to a string."
   input SCode.Element inElement;
+  input SCodeDumpOptions options;
   output String outString;
 algorithm
-  outString := Tpl.tplString2(SCodeDumpTpl.dumpElement, inElement, noEachStr);
+  outString := Tpl.tplString3(SCodeDumpTpl.dumpElement, inElement, noEachStr, options);
 end unparseElementStr;
 
 public function shortElementStr
@@ -267,21 +169,21 @@ algorithm
     case SCode.EXTENDS(baseClassPath = path,modifications = mod)
       equation
         str = Absyn.pathString(path);
-        str = str +& printModStr(mod);
+        str = str +& printModStr(mod,defaultOptions);
         res = stringAppendList({"extends ",str,";"});
       then
         res;
 
     case SCode.COMPONENT(name = n)
       equation
-        res = unparseElementStr(inElement);
+        res = unparseElementStr(inElement,defaultOptions);
       then
         res;
 
     case SCode.CLASS(name = n, partialPrefix = pp, prefixes = SCode.PREFIXES(innerOuter = io, redeclarePrefix = rdp, replaceablePrefix = rpp),
                      classDef = SCode.DERIVED(typeSpec = _))
       equation
-        res = unparseElementStr(inElement);
+        res = unparseElementStr(inElement,defaultOptions);
       then
         res;
 
@@ -314,121 +216,6 @@ algorithm
       then str;
   end match;
 end shortElementStr;
-
-public function printClassStr "
-  prints a class to a string"
-  input SCode.Element inClass;
-  output String outString;
-algorithm
-  outString := match (inClass)
-    local
-      String s,res,id,re,strPartialPrefix,strEncapsulatedPrefix,prefStr;
-      SCode.Partial p;
-      SCode.Encapsulated en;
-      SCode.Restriction rest;
-      SCode.ClassDef def;
-      SCode.Visibility vis;
-      SCode.Redeclare red;
-      SCode.Final fin;
-      Absyn.InnerOuter io;
-      SCode.Replaceable rep;
-      SCode.Prefixes pref;
-
-    case (SCode.CLASS(name = id,prefixes = pref as SCode.PREFIXES(vis,red,fin,io,rep),partialPrefix = p,encapsulatedPrefix = en,restriction = rest,classDef = def))
-      equation
-        s = printClassdefStr(def);
-        re = restrString(rest);
-        strPartialPrefix = Util.if_(SCode.partialBool(p), "true", "false");
-        strEncapsulatedPrefix = Util.if_(SCode.encapsulatedBool(en), "true", "false");
-        prefStr = prefixesStr(pref);
-        res = stringAppendList({"CLASS(",id,", partial = ",strPartialPrefix, ", encapsulated = ", strEncapsulatedPrefix, ", prefixes: ",prefStr, ", ", re, ", ", s, ")\n"});
-      then
-        res;
-  end match;
-end printClassStr;
-
-public function printClassdefStr
-"prints the class definition to a string"
-  input SCode.ClassDef inClassDef;
-  output String outString;
-algorithm
-  outString := matchcontinue (inClassDef)
-    local
-      list<String> elts_str;
-      String s1,res,s2,s3,baseClassName;
-      list<SCode.Element> elts;
-      list<SCode.Equation> eqns,ieqns;
-      list<SCode.AlgorithmSection> alg,ial;
-      Option<SCode.ExternalDecl> ext;
-      Absyn.TypeSpec typeSpec;
-      SCode.Mod mod;
-      list<SCode.Enum> enumLst;
-      list<Absyn.Path> plst;
-      Absyn.Path path;
-      list<String> slst;
-
-    case (SCode.PARTS(elementLst = elts,
-                normalEquationLst = eqns,
-                initialEquationLst = ieqns,
-                normalAlgorithmLst = alg,
-                initialAlgorithmLst = ial,
-                externalDecl = ext))
-      equation
-        elts_str = List.map(elts, printElementStr);
-        s1 = stringDelimitList(elts_str, ",\n");
-        res = stringAppendList({"PARTS(\n",s1,",_,_,_,_,_)"});
-      then
-        res;
-    /* adrpo: handle also the case: model extends X end X; */
-    case (SCode.CLASS_EXTENDS(
-              baseClassName = baseClassName,
-              modifications = mod,
-              composition = SCode.PARTS(
-              elementLst = elts,
-              normalEquationLst = eqns,
-              initialEquationLst = ieqns,
-              normalAlgorithmLst = alg,
-              initialAlgorithmLst = ial,
-              externalDecl = ext)))
-      equation
-        elts_str = List.map(elts, printElementStr);
-        s1 = stringDelimitList(elts_str, ",\n");
-        res = stringAppendList({"CLASS_EXTENDS(", baseClassName, " PARTS(\n",s1,",_,_,_,_,_)"});
-      then
-        res;
-    case (SCode.DERIVED(typeSpec = typeSpec,modifications = mod))
-      equation
-        s2 = Dump.unparseTypeSpec(typeSpec);
-        s3 = printModStr(mod);
-        res = stringAppendList({"DERIVED(",s2,",",s3,")"});
-      then
-        res;
-    case (SCode.ENUMERATION(enumLst))
-      equation
-        s1 = stringDelimitList(List.map(enumLst, printEnumStr), ", ");
-        res = stringAppendList({"ENUMERATION(", s1, ")"});
-      then
-        res;
-    case (SCode.OVERLOAD(plst))
-      equation
-        s1 = stringDelimitList(List.map(plst, Absyn.pathString), ", ");
-        res = stringAppendList({"OVERLOAD(", s1, ")"});
-      then
-        res;
-    case (SCode.PDER(path, slst))
-      equation
-        s1 = Absyn.pathString(path);
-        s2 = stringDelimitList(slst, ", ");
-        res = stringAppendList({"PDER(", s1, ", ", s2, ")"});
-      then
-        res;
-    case (_)
-      equation
-        res = "SCode.printClassdefStr -> UNKNOWN_CLASS(CheckME)";
-      then
-        res;
-  end matchcontinue;
-end printClassdefStr;
 
 public function printEnumStr
   input SCode.Enum en;
@@ -495,11 +282,12 @@ end unparseVariability;
 public function equationStr2
 "Takes a SCode.Equation rather then SCode.EEquation as equationStr does."
   input SCode.Equation eqns;
+  input SCodeDumpOptions options;
   output String s;
 algorithm
-  s := matchcontinue(eqns)
+  s := matchcontinue(eqns,options)
     local SCode.EEquation e;
-    case(SCode.EQUATION(eEquation=e)) then equationStr(e);
+    case(SCode.EQUATION(eEquation=e),_) then equationStr(e,options);
   end matchcontinue;
 end equationStr2;
 
@@ -600,7 +388,7 @@ algorithm
         constrainingClass = path, modifier = mod))))
       equation
         path_str = Absyn.pathString(path);
-        mod_str = printModStr(mod);
+        mod_str = printModStr(mod,defaultOptions);
       then ("replaceable ", path_str +& "(" +& mod_str +& ")");
     case (SCode.REPLACEABLE(NONE())) then ("replaceable ", "");
     case (SCode.NOT_REPLACEABLE()) then ("", "");

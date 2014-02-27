@@ -265,7 +265,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- NFSCodeFlattenRedeclare.processRedeclare failed on " +&
-          SCodeDump.printElementStr(NFSCodeEnv.getRedeclarationElement(inRedeclare)) +&
+          SCodeDump.unparseElementStr(NFSCodeEnv.getRedeclarationElement(inRedeclare),SCodeDump.defaultOptions) +&
           " in " +& Absyn.pathString(NFSCodeEnv.getEnvPath(inEnv)));
       then
         fail();

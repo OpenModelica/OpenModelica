@@ -52,7 +52,7 @@ Unparsing.mo : Unparsing.tpl SimCodeTV.mo
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
 
-SimCodeDump.mo : SimCodeDump.tpl SimCodeTV.mo CodegenUtil.tpl
+SimCodeDump.mo : SimCodeDump.tpl SimCodeTV.mo CodegenUtil.tpl SCodeDumpTpl.tpl
 	@echo " ** SimCodeDump template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "

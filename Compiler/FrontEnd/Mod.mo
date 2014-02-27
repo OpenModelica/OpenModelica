@@ -332,7 +332,7 @@ algorithm
     // redeclare failure?
     case(cache,env,ih,pre,f,element,_,_)
       equation
-        print("Unhandled element redeclare (we keep it as it is!): " +& SCodeDump.unparseElementStr(element) +& "\n");
+        print("Unhandled element redeclare (we keep it as it is!): " +& SCodeDump.unparseElementStr(element,SCodeDump.defaultOptions) +& "\n");
       then
         ((element,DAE.NOMOD()));
   
@@ -725,7 +725,7 @@ algorithm
     case (mod,env,pre)
       equation
         print("- elab_untyped_mod ");
-        s = SCodeDump.printModStr(mod);
+        s = SCodeDump.printModStr(mod,SCodeDump.defaultOptions);
         print(s);
         print(" failed\n");
       then
@@ -2383,7 +2383,7 @@ algorithm
       equation
         elist_1 = List.map(elist, Util.tuple21);
         prefix =  SCodeDump.finalStr(finalPrefix) +& SCodeDump.eachStr(eachPrefix);
-        str_lst = List.map(elist_1, SCodeDump.unparseElementStr);
+        str_lst = List.map1(elist_1, SCodeDump.unparseElementStr, SCodeDump.defaultOptions);
         str = stringDelimitList(str_lst, ", ");
         res = stringAppendList({"(",prefix,str,")"});
       then
@@ -2442,7 +2442,7 @@ algorithm
 
     case(DAE.REDECL(tplSCodeElementModLst = tup),_)
       equation
-        str = stringDelimitList(List.map(List.map(tup,Util.tuple21),SCodeDump.unparseElementStr),", ");
+        str = stringDelimitList(List.map1(List.map(tup,Util.tuple21),SCodeDump.unparseElementStr,SCodeDump.defaultOptions),", ");
       then
         str;
 
@@ -2504,7 +2504,7 @@ algorithm
 
     case(DAE.NAMEMOD(id,(m as DAE.REDECL(fp, ep, elist))))
       equation
-        s1 = stringDelimitList(List.map(List.map(elist, Util.tuple21), SCodeDump.printElementStr), ", ");
+        s1 = stringDelimitList(List.map1(List.map(elist, Util.tuple21), SCodeDump.unparseElementStr, SCodeDump.defaultOptions), ", ");
         s2 = id +& "(redeclare " +&
              Util.if_(SCode.eachBool(ep),"each ","") +&
              Util.if_(SCode.finalBool(fp),"final ","") +& s1 +& ")";

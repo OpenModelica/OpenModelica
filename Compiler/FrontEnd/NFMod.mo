@@ -1008,7 +1008,7 @@ algorithm
       equation
         fstr = SCodeDump.finalStr(fp);
         estr = SCodeDump.eachStr(ep);
-        el_str = SCodeDump.unparseElementStr(el);
+        el_str = SCodeDump.unparseElementStr(el,SCodeDump.defaultOptions);
       then
         "REDECL(" +& fstr +& estr +& el_str +& ")";
 

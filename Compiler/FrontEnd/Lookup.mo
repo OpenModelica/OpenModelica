@@ -2047,7 +2047,7 @@ algorithm
 
     // fail
     case(cache,env,_,_) equation
-      Debug.traceln("buildRecordConstructorClass2 failed, cl:"+&SCodeDump.printClassStr(cl)+&"\n");
+      Debug.traceln("buildRecordConstructorClass2 failed, cl:"+&SCodeDump.unparseElementStr(cl,SCodeDump.defaultOptions)+&"\n");
     then fail();
       /* TODO: short class defs */
   end matchcontinue;
@@ -2219,7 +2219,7 @@ algorithm
     case ((comp,cmod)::_,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Lookup.buildRecordConstructorElts failed " +& SCodeDump.printElementStr(comp) +& " with mod: " +& Mod.printModStr(cmod) +& " and: " +& Mod.printModStr(mods));
+        Debug.traceln("- Lookup.buildRecordConstructorElts failed " +& SCodeDump.unparseElementStr(comp,SCodeDump.defaultOptions) +& " with mod: " +& Mod.printModStr(cmod) +& " and: " +& Mod.printModStr(mods));
       then fail();
   end matchcontinue;
 end buildRecordConstructorElts;

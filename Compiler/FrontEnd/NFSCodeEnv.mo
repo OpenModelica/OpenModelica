@@ -1357,9 +1357,9 @@ algorithm
       Item item;
 
     case VAR(var = el)
-      then SCodeDump.unparseElementStr(el);
+      then SCodeDump.unparseElementStr(el,SCodeDump.defaultOptions);
     case CLASS(cls = el)
-      then SCodeDump.unparseElementStr(el);
+      then SCodeDump.unparseElementStr(el,SCodeDump.defaultOptions);
     case ALIAS(name = name, path = SOME(path))
       equation
         alias_str = Absyn.pathString(path);
@@ -1922,9 +1922,9 @@ algorithm
   EXTENDS_TABLE(baseClasses = bcl, redeclaredElements = re, classExtendsInfo = cei) := inExtendsTable;
   outString := stringDelimitList(List.map(bcl, printExtendsStr), "\n") +&
     "\n\t\tRedeclare elements:\n\t\t\t" +&
-    stringDelimitList(List.map(re, SCodeDump.unparseElementStr), "\n\t\t\t") +&
+    stringDelimitList(List.map1(re, SCodeDump.unparseElementStr, SCodeDump.defaultOptions), "\n\t\t\t") +&
     "\n\t\tClass extends:\n\t\t\t" +&
-    Util.stringOption(Util.applyOption(cei, SCodeDump.unparseElementStr));
+    Util.stringOption(Util.applyOption1(cei, SCodeDump.unparseElementStr, SCodeDump.defaultOptions));
 end printExtendsTableStr;
 
 public function printExtendsStr
@@ -1951,7 +1951,7 @@ algorithm
       then "ALIAS(" +& Absyn.pathString(p) +& "." +& name +& ")";
     case (PROCESSED_MODIFIER(modifier = ALIAS(name = name)))
       then "ALIAS(" +& name +& ")";
-    case _ then SCodeDump.unparseElementStr(getRedeclarationElement(inRedeclare));
+    case _ then SCodeDump.unparseElementStr(getRedeclarationElement(inRedeclare),SCodeDump.defaultOptions);
   end matchcontinue;
 end printRedeclarationStr;
 

@@ -310,7 +310,7 @@ template dumpOperation(SymbolicOperation op, Info info)
     case FLATTEN(__) then
       <<
       <flattening>
-        <original><% Util.escapeModelicaStringToXmlString(dumpEEquation(scode)) %></original>
+        <original><% Util.escapeModelicaStringToXmlString(dumpEEquation(scode,SCodeDump.defaultOptions)) %></original>
         <% match dae case SOME(dae) then '<flattened><% Util.escapeModelicaStringToXmlString(dumpEquation(dae)) %></flattened>' %>
       </flattening>
       >>

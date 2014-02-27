@@ -2215,7 +2215,7 @@ algorithm
     case ((el as SCode.EXTENDS(baseClassPath = _))::rest, redecls)
       equation
         print("- SCodeUtil.addRedeclareAsElementsToExtends failed on:\nextends:\n\t" +& SCodeDump.shortElementStr(el) +&
-                 "\nredeclares:\n" +& stringDelimitList(List.map(redecls, SCodeDump.unparseElementStr), "\n") +& "\n");
+                 "\nredeclares:\n" +& stringDelimitList(List.map1(redecls, SCodeDump.unparseElementStr, SCodeDump.defaultOptions), "\n") +& "\n");
       then
         fail();
 
@@ -2271,8 +2271,8 @@ algorithm
     // failure
     case (_, _)
       equation
-        print("SCodeUtil.mergeSCodeMods failed on:\nouterMod: " +& SCodeDump.printModStr(inModOuter) +&
-               "\ninnerMod: " +& SCodeDump.printModStr(inModInner) +& "\n");
+        print("SCodeUtil.mergeSCodeMods failed on:\nouterMod: " +& SCodeDump.printModStr(inModOuter,SCodeDump.defaultOptions) +&
+               "\ninnerMod: " +& SCodeDump.printModStr(inModInner,SCodeDump.defaultOptions) +& "\n");
       then
         fail();
 
@@ -2320,7 +2320,7 @@ algorithm
     case (f, e, (el as SCode.CLASS(name = n, classDef = SCode.CLASS_EXTENDS(baseClassName = _)))::rest)
       equation
         // print an error here
-        print("- SCodeUtil.makeElementsIntoSubMods ignoring class-extends redeclare-as-element: " +& SCodeDump.unparseElementStr(el) +& "\n");
+        print("- SCodeUtil.makeElementsIntoSubMods ignoring class-extends redeclare-as-element: " +& SCodeDump.unparseElementStr(el,SCodeDump.defaultOptions) +& "\n");
         // recurse
         newSubMods = makeElementsIntoSubMods(f, e, rest);
       then
@@ -2346,7 +2346,7 @@ algorithm
     case (f, e, el::rest)
       equation
         // print an error here
-        print("- SCodeUtil.makeElementsIntoSubMods ignoring redeclare-as-element redeclaration: " +& SCodeDump.unparseElementStr(el) +& "\n");
+        print("- SCodeUtil.makeElementsIntoSubMods ignoring redeclare-as-element redeclaration: " +& SCodeDump.unparseElementStr(el,SCodeDump.defaultOptions) +& "\n");
         // recurse
         newSubMods = makeElementsIntoSubMods(f, e, rest);
       then

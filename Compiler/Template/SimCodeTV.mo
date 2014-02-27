@@ -2315,6 +2315,10 @@ end Initial;
 
 end SCode;
 
+package SCodeDump
+  constant SCodeDumpOptions defaultOptions;
+end SCodeDump;
+
 package Util
   
   uniontype DateTime

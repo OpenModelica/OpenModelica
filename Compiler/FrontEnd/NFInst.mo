@@ -3743,7 +3743,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        str = SCodeDump.equationStr(inEquation);
+        str = SCodeDump.equationStr(inEquation,SCodeDump.defaultOptions);
         Debug.traceln("Unknown or failed equation in NFInst.instEEquation: " +& str);
       then
         fail();
@@ -3866,7 +3866,7 @@ algorithm
 
     else
       equation
-        print("NFInst.instStatement failed: " +& SCodeDump.statementStr(statement) +& "\n");
+        print("NFInst.instStatement failed: " +& SCodeDump.statementStr(statement,SCodeDump.defaultOptions) +& "\n");
       then fail();
 
   end match;

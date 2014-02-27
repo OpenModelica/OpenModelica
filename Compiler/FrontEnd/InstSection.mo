@@ -137,7 +137,7 @@ algorithm
     case (_,_,_,_,_,_,_,SCode.EQUATION(eEquation = eqn),impl,_,graph)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        str= SCodeDump.equationStr(eqn);
+        str= SCodeDump.equationStr(eqn,SCodeDump.defaultOptions);
         Debug.fprint(Flags.FAILTRACE, "- instEquation failed eqn:");
         Debug.fprint(Flags.FAILTRACE, str);
         Debug.fprint(Flags.FAILTRACE, "\n");
@@ -191,7 +191,8 @@ algorithm
     // failure
     case(cache,env,ih,mods,pre,csets,ci_state,eq,impl,_,graph)
       equation
-        Debug.fprint(Flags.FAILTRACE,"Inst.instEEquation failed for "+&SCodeDump.equationStr(eq)+&"\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("Inst.instEEquation failed for " +& SCodeDump.equationStr(eq,SCodeDump.defaultOptions));
     then fail();
 
   end matchcontinue;
@@ -377,7 +378,7 @@ algorithm
     case (_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         true = errorCount == Error.getNumErrorMessages();
-        s = "\n" +& SCodeDump.equationStr(inEEquation);
+        s = "\n" +& SCodeDump.equationStr(inEEquation,SCodeDump.defaultOptions);
         Error.addSourceMessage(Error.EQUATION_GENERIC_FAILURE, {s}, SCode.equationFileInfo(inEEquation));
       then
         fail();
@@ -843,7 +844,7 @@ algorithm
     case (_,env,ih,_,_,_,_,eqn,_,impl,graph,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        s = SCodeDump.equationStr(eqn);
+        s = SCodeDump.equationStr(eqn,SCodeDump.defaultOptions);
         Debug.fprint(Flags.FAILTRACE, "- instEquationCommonWork failed for eqn: ");
         Debug.fprint(Flags.FAILTRACE, s +& " in scope:" +& Env.getEnvNameStr(env) +& "\n");
         //print("ENV: " +& Env.printEnvStr(env) +& "\n");
@@ -3013,7 +3014,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.fprintln(Flags.FAILTRACE, "InstSection.instIfTrueBranches failed on equations: " +&
-                       stringDelimitList(List.map(e, SCodeDump.equationStr), "\n"));
+                       stringDelimitList(List.map1(e, SCodeDump.equationStr, SCodeDump.defaultOptions), "\n"));
       then
         fail();
   end matchcontinue;

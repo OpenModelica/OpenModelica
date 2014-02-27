@@ -762,6 +762,15 @@ package SCode
   end Initial;
 end SCode;
 
+package SCodeDump
+  uniontype SCodeDumpOptions
+    record OPTIONS
+      Boolean stripAlgorithmSections;
+    end OPTIONS;
+  end SCodeDumpOptions;
+  constant SCodeDumpOptions defaultOptions;
+end SCodeDump;
+
 package Tpl
   function addTemplateError
     input String inErrMsg;

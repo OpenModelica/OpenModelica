@@ -6968,7 +6968,7 @@ algorithm
       equation
         // transform modifications into function arguments and prefix the UNQUALIFIED component
         // references with the function prefix, here world.
-        Debug.fprintln(Flags.STATIC, "Found modifications: " +& SCodeDump.printModStr(mod));
+        Debug.fprintln(Flags.STATIC, "Found modifications: " +& SCodeDump.printModStr(mod,SCodeDump.defaultOptions));
         /* modification elaboration doesn't work as World is not a package!
            anyhow we can deal with this in a different way, see below
         // build the prefix
@@ -6976,7 +6976,7 @@ algorithm
                                Prefix.CLASSPRE(SCode.VAR()));
         // elaborate the modification
         (cache, daeMod) = Mod.elabMod(cache, classEnv, prefix, mod, impl);
-        Debug.fprintln(Flags.STATIC, "Elaborated modifications: " +& Mod.printModStr(daeMod));
+        Debug.fprintln(Flags.STATIC, "Elaborated modifications: " +& Mod.printModStr(daeMod,SCodeDump.defaultOptions));
         */
         nArgs = SCodeUtil.translateSCodeModToNArgs(prefix, mod);
         Debug.fprintln(Flags.STATIC, "Translated mods to named arguments: " +&

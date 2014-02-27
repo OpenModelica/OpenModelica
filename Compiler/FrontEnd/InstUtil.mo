@@ -1271,7 +1271,7 @@ algorithm
     case ({}) then ();
     case (((el,mod) :: els))
       equation
-        s = SCodeDump.printElementStr(el);
+        s = SCodeDump.unparseElementStr(el,SCodeDump.defaultOptions);
         print(s);
         print(", ");
         print(Mod.printModStr(mod));
@@ -1637,7 +1637,7 @@ algorithm
     
     case (_)
       equation
-        print("Inst.getCrefFromMod: could not retrieve crefs from SCode.Mod: " +& SCodeDump.printModStr(inMod) +& "\n");
+        print("Inst.getCrefFromMod: could not retrieve crefs from SCode.Mod: " +& SCodeDump.printModStr(inMod,SCodeDump.defaultOptions) +& "\n");
       then
         fail();
   
@@ -3242,8 +3242,8 @@ algorithm
         // the classes are the same!
         true = SCode.elementEqual(c1, c2);
         // add a warning and let it continue!
-        s1 = SCodeDump.unparseElementStr(oldElt);
-        s2 = SCodeDump.unparseElementStr(newElt);
+        s1 = SCodeDump.unparseElementStr(oldElt,SCodeDump.defaultOptions);
+        s2 = SCodeDump.unparseElementStr(newElt,SCodeDump.defaultOptions);
         s = "Inherited elements are not identical: bug: https://trac.modelica.org/Modelica/ticket/627\n\tfirst:  " +&
             s1 +& "\n\tsecond: " +& s2 +& "\nContinue ....";
         Error.addMultiSourceMessage(Error.COMPILER_WARNING, {s}, {old_info, new_info});
@@ -3253,8 +3253,8 @@ algorithm
     case (cache, env, (oldElt as SCode.COMPONENT(info = old_info),oldMod),
                       (newElt as SCode.COMPONENT(info = new_info),newMod))
       equation
-        s1 = SCodeDump.unparseElementStr(oldElt);
-        s2 = SCodeDump.unparseElementStr(newElt);
+        s1 = SCodeDump.unparseElementStr(oldElt,SCodeDump.defaultOptions);
+        s2 = SCodeDump.unparseElementStr(newElt,SCodeDump.defaultOptions);
         Error.addMultiSourceMessage(Error.DUPLICATE_ELEMENTS_NOT_IDENTICAL,
           {s1, s2}, {old_info, new_info});
       then
@@ -3303,8 +3303,8 @@ algorithm
 
     case (oldCl,newCl)
       equation
-      s1 = SCodeDump.printClassStr(oldCl);
-      s2 = SCodeDump.printClassStr(newCl);
+      s1 = SCodeDump.unparseElementStr(oldCl,SCodeDump.defaultOptions);
+      s2 = SCodeDump.unparseElementStr(newCl,SCodeDump.defaultOptions);
       info1 = SCode.elementInfo(oldCl);
       info2 = SCode.elementInfo(newCl);
       Error.addMultiSourceMessage(Error.DUPLICATE_CLASSES_NOT_EQUIVALENT,
@@ -3832,7 +3832,7 @@ algorithm
     case (_, _, _, _, SCode.CLASS(name = id), _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        id = SCodeDump.printClassStr(inClass);
+        id = SCodeDump.unparseElementStr(inClass,SCodeDump.defaultOptions);
         Debug.traceln("Inst.getUsertypeDimensions failed: " +& id);
       then
         fail();
@@ -8121,7 +8121,7 @@ algorithm
 
     case ((e,m)::rest)
       equation
-        s1 = SCodeDump.unparseElementStr(e);
+        s1 = SCodeDump.unparseElementStr(e,SCodeDump.defaultOptions);
         s2 = Mod.printModStr(m);
         s3 = printElementAndModList(rest);
         s = "Element:\n" +& s1 +& "\nModifier: " +& s2 +& "\n" +& s3;

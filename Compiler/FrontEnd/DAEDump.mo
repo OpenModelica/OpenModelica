@@ -1075,7 +1075,7 @@ algorithm
     case (SOME(SCode.COMMENT(annotation_ = SOME(SCode.ANNOTATION(ann_mod)))), _, _)
       equation
         true = Config.showAnnotations();
-        ann = inPrefix +& "annotation" +& SCodeDump.printModStr(ann_mod) +& inSuffix;
+        ann = inPrefix +& "annotation" +& SCodeDump.printModStr(ann_mod,SCodeDump.defaultOptions) +& inSuffix;
       then
         ann;
 

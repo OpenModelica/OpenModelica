@@ -266,7 +266,7 @@ algorithm
           "className: " +&  className +& "\n\t" +&
           "env:       " +&  Env.printEnvPathStr(env) +& "\n\t" +&
           "mods:      " +&  Mod.printModStr(mod) +& "\n\t" +&
-          "elems:     " +&  stringDelimitList(List.map(rest, SCodeDump.printElementStr), ", ")
+          "elems:     " +&  stringDelimitList(List.map1(rest, SCodeDump.unparseElementStr, SCodeDump.defaultOptions), ", ")
           );
       then
         fail();
@@ -693,7 +693,7 @@ algorithm
 
     case (_,_,_,_,_,_,_,_,true,_)
       equation
-        str1 = SCodeDump.printElementStr(inClass);
+        str1 = SCodeDump.unparseElementStr(inClass,SCodeDump.defaultOptions);
         str2 = Env.printEnvPathStr(inEnv);
         strDepth = intString(Global.recursionDepthLimit);
         // print("instDerivedClassesWork recursion depth... " +& str1 +& " " +& str2 +& "\n");
@@ -827,7 +827,7 @@ algorithm
           "\nmod = " +& Mod.printModStr(inMod) +&
           "\ncmod = " +& Mod.printModStr(cmod) +&
           "\nbool = " +& Util.if_(b, "true", "false") +& "\n" +&
-          SCodeDump.printElementStr(comp)
+          SCodeDump.unparseElementStr(comp,SCodeDump.defaultOptions)
           );
       then
         fail();
@@ -964,7 +964,7 @@ algorithm
     case (_,env,(elt,mod,b)::elts,_)
       equation
         Debug.traceln("- InstExtends.fixLocalIdents failed for element:" +&
-        SCodeDump.unparseElementStr(elt) +& " mods: " +&
+        SCodeDump.unparseElementStr(elt,SCodeDump.defaultOptions) +& " mods: " +&
         Mod.printModStr(mod) +& " class extends:" +&
         Util.if_(b, "true", "false") +& " in env: " +& Env.printEnvPathStr(env)
         );
@@ -1014,7 +1014,7 @@ algorithm
     case (cache,env,SCode.COMPONENT(name, prefixes as SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_)),
                                     SCode.ATTR(ad, ct, prl, var, dir), typeSpec, modifications, comment, condition, info),ht)
       equation
-        //Debug.fprintln(Flags.DEBUG,"fix comp " +& SCodeDump.printElementStr(elt));
+        //Debug.fprintln(Flags.DEBUG,"fix comp " +& SCodeDump.unparseElementStr(elt,SCodeDump.defaultOptions));
         // lookup as it might have been redeclared!!!
         (_, _, elt as SCode.COMPONENT(name, prefixes, SCode.ATTR(ad, ct, prl, var, dir), typeSpec, modifications, comment, condition, info),
          _, _, _) = Lookup.lookupIdentLocal(cache, env, name);
@@ -1027,7 +1027,7 @@ algorithm
     // we failed above
     case (cache,env,SCode.COMPONENT(name, prefixes, SCode.ATTR(ad, ct, prl, var, dir), typeSpec, modifications, comment, condition, info),ht)
       equation
-        //Debug.fprintln(Flags.DEBUG,"fix comp " +& SCodeDump.printElementStr(elt));
+        //Debug.fprintln(Flags.DEBUG,"fix comp " +& SCodeDump.unparseElementStr(elt,SCodeDump.defaultOptions));
         (cache,modifications) = fixModifications(cache,env,modifications,ht);
         (cache,typeSpec) = fixTypeSpec(cache,env,typeSpec,ht);
         (cache,SOME(ad)) = fixArrayDim(cache, env, SOME(ad), ht);
@@ -1074,7 +1074,7 @@ algorithm
 
     case (cache,env,SCode.EXTENDS(extendsPath,vis,modifications,optAnnotation,info),ht)
       equation
-        //Debug.fprintln(Flags.DEBUG,"fix extends " +& SCodeDump.printElementStr(elt));
+        //Debug.fprintln(Flags.DEBUG,"fix extends " +& SCodeDump.unparseElementStr(elt,SCodeDump.defaultOptions));
         (cache,extendsPath) = fixPath(cache,env,extendsPath,ht);
         (cache,modifications) = fixModifications(cache,env,modifications,ht);
       then
@@ -1084,7 +1084,7 @@ algorithm
 
     case (cache,env,elt,ht)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "InstExtends.fixElement failed: " +& SCodeDump.printElementStr(elt));
+        Debug.fprintln(Flags.FAILTRACE, "InstExtends.fixElement failed: " +& SCodeDump.unparseElementStr(elt,SCodeDump.defaultOptions));
       then fail();
 
   end matchcontinue;
@@ -1156,7 +1156,7 @@ algorithm
 
     case (cache,env,cd,ht)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "InstExtends.fixClassDef failed: " +& SCodeDump.printClassdefStr(cd));
+        Debug.fprintln(Flags.FAILTRACE, "InstExtends.fixClassDef failed: " +& SCodeDump.classDefStr(cd,SCodeDump.defaultOptions));
       then
         fail();
 
@@ -1189,7 +1189,7 @@ algorithm
         (cache,SCode.EQUATION(eeq));
     case (cache,env,SCode.EQUATION(eeq),ht)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- Inst.fixEquation failed: " +& SCodeDump.equationStr(eeq));
+        Debug.fprintln(Flags.FAILTRACE, "- Inst.fixEquation failed: " +& SCodeDump.equationStr(eeq,SCodeDump.defaultOptions));
       then
         fail();
   end match;
@@ -1731,7 +1731,7 @@ algorithm
 
     case (cache,env,mod,ht)
       equation
-        Debug.fprintln(Flags.FAILTRACE,"InstExtends.fixModifications failed: " +& SCodeDump.printModStr(mod));
+        Debug.fprintln(Flags.FAILTRACE,"InstExtends.fixModifications failed: " +& SCodeDump.printModStr(mod,SCodeDump.defaultOptions));
       then
         fail();
 

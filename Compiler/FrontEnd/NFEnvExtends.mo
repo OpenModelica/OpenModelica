@@ -1345,7 +1345,7 @@ algorithm
     case (_, _)
       equation
         info = SCode.elementInfo(inClassExtends);
-        el_str = SCodeDump.printElementStr(inClassExtends);
+        el_str = SCodeDump.unparseElementStr(inClassExtends,SCodeDump.defaultOptions);
         env_str = NFSCodeEnv.getEnvName(inEnv);
         err_msg = "NFSCodeFlattenRedeclare.extendEnvWithClassExtends failed on unknown element " +&
           el_str +& " in " +& env_str;

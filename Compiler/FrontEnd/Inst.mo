@@ -3999,7 +3999,7 @@ algorithm
     case (_, env, _, _, _, _, _, (comp, mod), _, _, _, _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Inst.instElement failed: " +& SCodeDump.printElementStr(comp));
+        Debug.traceln("- Inst.instElement failed: " +& SCodeDump.unparseElementStr(comp,SCodeDump.defaultOptions));
         Debug.traceln("  Scope: " +& Env.printEnvPathStr(env));
       then
         fail();

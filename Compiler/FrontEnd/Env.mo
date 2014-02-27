@@ -730,7 +730,7 @@ algorithm
 
     case (_, e, classEnv)
       equation
-        print("- Env.updateFrameC failed on class: " +& SCodeDump.unparseElementStr(e) +& "\n");
+        print("- Env.updateFrameC failed on class: " +& SCodeDump.unparseElementStr(e,SCodeDump.defaultOptions) +& "\n");
       then
         fail();
 
@@ -1962,7 +1962,7 @@ algorithm
     case ((n,VAR(instantiated = (tv as DAE.TYPES_VAR(attributes = DAE.ATTR(variability = var),ty = tp,binding = bind)),var = elt,instStatus = i,env = (compframe :: _))))
       equation
         s = SCodeDump.variabilityString(var);
-        elt_str = SCodeDump.printElementStr(elt);
+        elt_str = SCodeDump.unparseElementStr(elt,SCodeDump.defaultOptions);
         tp_str = Types.unparseType(tp);
         var_str = Types.unparseVar(tv);
         frame_str = printFrameVarsStr(compframe);
@@ -1976,7 +1976,7 @@ algorithm
     case ((n,VAR(instantiated = (tv as DAE.TYPES_VAR(attributes = DAE.ATTR(variability = var),ty = tp)),var = elt,instStatus = i,env = {})))
       equation
         s = SCodeDump.variabilityString(var);
-        elt_str = SCodeDump.printElementStr(elt);
+        elt_str = SCodeDump.unparseElementStr(elt,SCodeDump.defaultOptions);
         tp_str = Types.unparseType(tp);
         var_str = Types.unparseVar(tv);
         res = stringAppendList(
@@ -2118,7 +2118,7 @@ protected function printElement
   output String str;
 algorithm
   str := match(el)
-    case (_) then "[el:" +& SCodeDump.unparseElementStr(el) +& "], ";
+    case (_) then "[el:" +& SCodeDump.unparseElementStr(el,SCodeDump.defaultOptions) +& "], ";
   end match;
 end printElement;
 

@@ -648,8 +648,8 @@ algorithm
 
     case (_,_,_,SCode.CLASS(name=id))
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- Inst.implicitFunctionTypeInstantiation failed " +& id +& "\nenv: " +& Env.getEnvNameStr(inEnv)
-        +& "\nelelement: " +& SCodeDump.unparseElementStr(inClass));
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- Inst.implicitFunctionTypeInstantiation failed " +& id +& "\nenv: " +& Env.getEnvNameStr(inEnv) +& "\nelelement: " +& SCodeDump.unparseElementStr(inClass,SCodeDump.defaultOptions));
       then fail();
   end matchcontinue;
 end implicitFunctionTypeInstantiation;
@@ -866,7 +866,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- Inst.instRecordConstructorElt failed.,elt:");
-        Debug.traceln(SCodeDump.printElementStr(elt));
+        Debug.traceln(SCodeDump.unparseElementStr(elt,SCodeDump.defaultOptions));
       then
         fail();
   end matchcontinue;

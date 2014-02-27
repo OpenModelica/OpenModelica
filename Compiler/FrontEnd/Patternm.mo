@@ -1986,7 +1986,7 @@ algorithm
       equation
         ld2 = SCodeUtil.translateEitemlist(ld, SCode.PROTECTED());
         (ld2 as _::_) = List.filterOnTrue(ld2, SCode.isNotComponent);
-        str = stringDelimitList(List.map(ld2, SCodeDump.unparseElementStr),", ");
+        str = stringDelimitList(List.map1(ld2, SCodeDump.unparseElementStr, SCodeDump.defaultOptions),", ");
         Error.addSourceMessage(Error.META_INVALID_LOCAL_ELEMENT,{str},info);
       then (cache,NONE());
 
@@ -2001,7 +2001,7 @@ algorithm
         ld3 = List.select1(ld2, SCode.isComponentWithDirection, Absyn.INPUT());
         ld4 = List.select1(ld2, SCode.isComponentWithDirection, Absyn.OUTPUT());
         (ld2 as _::_) = listAppend(ld3,ld4); // I don't care that this is slow; it's just for error message generation
-        str = stringDelimitList(List.map(ld2, SCodeDump.unparseElementStr),", ");
+        str = stringDelimitList(List.map1(ld2, SCodeDump.unparseElementStr, SCodeDump.defaultOptions),", ");
         Error.addSourceMessage(Error.META_INVALID_LOCAL_ELEMENT,{str},info);
       then (cache,NONE());
 

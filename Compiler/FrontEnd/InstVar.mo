@@ -415,7 +415,7 @@ algorithm
         (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
         Debug.fprintln(Flags.FAILTRACE, "- Inst.instVar failed while instatiating variable: " +&
           ComponentReference.printComponentRefStr(cref) +& " " +& Mod.prettyPrintMod(mod, 0) +&
-          "\nin scope: " +& Env.printEnvPathStr(env) +& " class:\n" +& SCodeDump.unparseElementStr(cl));
+          "\nin scope: " +& Env.printEnvPathStr(env) +& " class:\n" +& SCodeDump.unparseElementStr(cl,SCodeDump.defaultOptions));
       then
         fail();
     end matchcontinue;
