@@ -766,9 +766,17 @@ package SCodeDump
   uniontype SCodeDumpOptions
     record OPTIONS
       Boolean stripAlgorithmSections;
+      Boolean stripProtectedImports;
     end OPTIONS;
   end SCodeDumpOptions;
   constant SCodeDumpOptions defaultOptions;
+
+  function filterElements
+    input list<SCode.Element> element;
+    input SCodeDumpOptions options;
+    output list<SCode.Element> outElements;
+  end filterElements;
+
 end SCodeDump;
 
 package Tpl

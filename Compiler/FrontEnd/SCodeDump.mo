@@ -42,14 +42,18 @@ public import Absyn;
 public import SCode;
 
 protected import Dump;
+protected import List;
 protected import SCodeDumpTpl;
 protected import Tpl;
 
-public constant SCodeDumpOptions defaultOptions = OPTIONS(false);
+public constant SCodeDumpOptions defaultOptions = OPTIONS(false,false,false,false);
 
 public uniontype SCodeDumpOptions
   record OPTIONS
     Boolean stripAlgorithmSections;
+    Boolean stripProtectedImports;
+    Boolean stripProtectedClasses;
+    Boolean stripProtectedComponents;
   end OPTIONS;
 end SCodeDumpOptions;
 
@@ -437,5 +441,26 @@ algorithm
 
   end match;
 end prefixesStr;
+
+public function filterElements
+  input list<SCode.Element> elements;
+  input SCodeDumpOptions options;
+  output list<SCode.Element> outElements;
+algorithm
+  outElements := List.select1(elements,filterElement,options);
+end filterElements;
+
+protected function filterElement
+  input SCode.Element element;
+  input SCodeDumpOptions options;
+  output Boolean b;
+algorithm
+  b := match (element,options)
+    case (SCode.IMPORT(visibility=SCode.PROTECTED()),OPTIONS(stripProtectedImports=true)) then false;
+    case (SCode.CLASS(prefixes=SCode.PREFIXES(visibility=SCode.PROTECTED())),OPTIONS(stripProtectedClasses=true)) then false;
+    case (SCode.COMPONENT(prefixes=SCode.PREFIXES(visibility=SCode.PROTECTED())),OPTIONS(stripProtectedComponents=true)) then false;
+    else true;
+  end match;
+end filterElement;
 
 end SCodeDump;

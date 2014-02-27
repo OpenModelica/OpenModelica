@@ -108,7 +108,6 @@ protected import NFEnv;
 protected import NFInst;
 protected import NFSCodeEnv;
 protected import NFSCodeFlatten;
-protected import SCodeSimplify;
 protected import SimCodeMain;
 protected import System;
 protected import Static;
@@ -1130,6 +1129,7 @@ algorithm
         name = Absyn.pathLastIdent(path);
         str = Debug.bcallret2(name ==& "Absyn", Dump.unparseStr, p, false, "");
         str = Debug.bcallret2(name ==& "SCode", SCodeDump.programStr, scodeP, SCodeDump.defaultOptions, str);
+        str = Debug.bcallret2(name ==& "MetaModelicaInterface", SCodeDump.programStr, scodeP, SCodeDump.OPTIONS(true,true,true,true), str);
         str = Debug.bcallret1(name ==& "Internal", System.anyStringCode, p, str);
       then
         (cache,Values.STRING(str),st);
@@ -1144,7 +1144,9 @@ algorithm
         p = Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.TIMESTAMP(0.0,0.0));
         str = Debug.bcallret2(name ==& "Absyn", Dump.unparseStr, p, false, "");
         str = Debug.bcallret1(name ==& "Internal", System.anyStringCode, p, str);
-        str = Debug.bcallret2(name ==& "SCode", SCodeDump.programStr, scodeP, SCodeDump.defaultOptions, str);
+        cl = SCode.getElementWithPath(scodeP, className);
+        str = Debug.bcallret2(name ==& "SCode", SCodeDump.unparseElementStr, cl, SCodeDump.defaultOptions, str);
+        str = Debug.bcallret2(name ==& "MetaModelicaInterface", SCodeDump.unparseElementStr, cl, SCodeDump.OPTIONS(true,true,true,true), str);
       then
         (cache,Values.STRING(str),st);
 

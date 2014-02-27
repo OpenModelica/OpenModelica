@@ -1927,7 +1927,7 @@ algorithm
   outStr := stringReplace(outStr, "\"", "&quot;");
 end escapeXML;
 
-type ExportKind = enumeration(Absyn "Normal Absyn",SCode "Normal SCode",Internal "True unparsing of the Absyn");
+type ExportKind = enumeration(Absyn "Normal Absyn",SCode "Normal SCode",MetaModelicaInterface "A restricted MetaModelica package interface (protected parts are stripped)",Internal "True unparsing of the Absyn");
 
 function list "Lists the contents of the given class, or all loaded classes."
   input TypeName class_ := $TypeName(AllLoadedClasses);

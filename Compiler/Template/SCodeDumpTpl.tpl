@@ -8,7 +8,7 @@ template dumpProgram(list<SCode.Element> program, SCodeDumpOptions options)
 end dumpProgram;
 
 template dumpElements(list<SCode.Element> elements, Boolean indent, SCodeDumpOptions options)
-::= dumpElements2(elements, "", indent, true, true, options)
+::= dumpElements2(filterElements(elements,options), "", indent, true, true, options)
 end dumpElements;
 
 template dumpElements2(list<SCode.Element> elements, String prevSpacing,
@@ -146,15 +146,14 @@ end dumpClassHeader;
 
 template dumpClassDef(SCode.ClassDef classDef, SCodeDumpOptions options)
 ::=
-match options case options as OPTIONS(__) then
 match classDef
-  case PARTS(__) then
+  case p as PARTS(__) then
     let el_str = dumpElements(elementLst, true, options)
     let neq_str = dumpEquations(normalEquationLst, "equation", options)
     let ieq_str = dumpEquations(initialEquationLst, "initial equation", options)
-    let nal_str = if options.stripAlgorithmSections then "" else dumpAlgorithmSections(normalAlgorithmLst, "algorithm", options)
-    let ial_str = if options.stripAlgorithmSections then "" else dumpAlgorithmSections(initialAlgorithmLst, "initial algorithm", options)
-    let extdecl_str = if options.stripAlgorithmSections then "" else dumpExternalDeclOpt(externalDecl)
+    let nal_str = match options case OPTIONS(stripAlgorithmSections=false) then dumpAlgorithmSections(p.normalAlgorithmLst, "algorithm", options)
+    let ial_str = match options case OPTIONS(stripAlgorithmSections=false) then dumpAlgorithmSections(p.initialAlgorithmLst, "initial algorithm", options)
+    let extdecl_str = match options case OPTIONS(stripAlgorithmSections=false) then dumpExternalDeclOpt(p.externalDecl)
     let cdef_str =
       <<
       <%el_str%>
@@ -434,6 +433,9 @@ match statement
   case ALG_BREAK(__) then
     let cmt_str = dumpComment(comment, options)
     'break<%cmt_str%>;'
+  case ALG_FAILURE(stmts={stmt}) then
+    let cmt_str = dumpComment(comment, options)
+    'failure(<%dumpStatement(stmt,options)%>)<%cmt_str%>;'
   else errorMsg("SCodeDump.dumpStatement: Unknown statement.")
 end dumpStatement;
 

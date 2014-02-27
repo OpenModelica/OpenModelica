@@ -2375,7 +2375,7 @@ package List
   function flatten
     input list<list<ElementType>> inList;
     output list<ElementType> outList;
-    replaceable type ElementType subtypeof Any;    
+    replaceable type ElementType subtypeof Any;
   end flatten;
     
   function lengthListElements
