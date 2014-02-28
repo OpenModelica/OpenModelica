@@ -631,10 +631,11 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "encapsulateWhenConditions",  // must called after remove simple equations
     "tearingSystem", // must be the last one, otherwise the torn systems are lost when throw away the matching information
     "countOperations",
-    "removeUnusedFunctions",
     "inputDerivativesUsed",
     "detectJacobianSparsePattern",
-    // "generateSymbolicJacobian",
+    "generateSymbolicJacobian",
+    "generateSymbolicLinearization",
+    "removeUnusedFunctions",
     "removeConstants"
     // "partitionIndependentBlocks",
     // "addInitialStmtsToAlgorithms"
@@ -659,8 +660,8 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("relaxSystem",Util.notrans("DESCRIBE ME")),
     ("countOperations", Util.gettext("Count the mathematic operations of the system.")),
     ("dumpComponentsGraphStr", Util.notrans("DESCRIBE ME")),
-    ("generateSymbolicJacobian", Util.gettext("Generates symbolic Jacobian.")),
-    ("generateSymbolicLinearization", Util.gettext("Generates symbolic Linearization Matrixes A,B,C,D for Linear Model:\n\t\t\\dot x = Ax + Bu\n\t\ty = Cx +Du")),
+    ("generateSymbolicJacobian", Util.gettext("Generates symbolic jacobian matrix, where der(x) is differentiated w.r.t x. This matrix can be used to simulate with dasslColorSymJac.")),
+    ("generateSymbolicLinearization", Util.gettext("Generates symbolic linearization matrixes A,B,C,D for linear model:\n\t\t\\dot x = Ax + Bu\n\t\ty = Cx +Du")),
     ("collapseIndependentBlocks", Util.gettext("Collapses all equation systems back into one big system again (undo partitionIndependentBlocks).")),
     ("removeUnusedFunctions", Util.gettext("Removed all unused functions from functionTree.")),
     ("simplifyTimeIndepFuncCalls", Util.gettext("Simplifies time independent built in function calls like pre(param) -> param, der(param) -> 0.0, change(param) -> false, edge(param) -> false.")),
@@ -847,7 +848,16 @@ constant ConfigFlag REPLACE_HOMOTOPY = CONFIG_FLAG(54, "replaceHomotopy",
     ("simplified", Util.gettext("Replace homotopy(actual, simplified with simplified."))
     })),
     Util.gettext("Replaces homotopy(actual, simplified) with the actual expression or the simplified expression. Good for debugging models which use homotopy. The default is to not replace homotopy."));
+  
+constant ConfigFlag GENERATE_SYMBOLIC_JACOBIAN = CONFIG_FLAG(55, "generateSymbolicJacobian",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Generates symbolic jacobian matrix, where der(x) is differentiated w.r.t x. This matrix can be used to simulate with dasslColorSymJac."));
+
+constant ConfigFlag GENERATE_SYMBOLIC_LINEARIZATION = CONFIG_FLAG(56, "generateSymbolicLinearization",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Generates symbolic linearization matrixes A,B,C,D for linear model:\n\t\t\\dot x = Ax + Bu\n\t\ty = Cx +Du"));
     
+  
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
 // sorted by index (and thus have unique indices).
@@ -905,7 +915,9 @@ constant list<ConfigFlag> allConfigFlags = {
   TEARING_HEURISTIC,
   HPCOM_CODE,
   REWRITE_RULES_FILE,
-  REPLACE_HOMOTOPY
+  REPLACE_HOMOTOPY,
+  GENERATE_SYMBOLIC_JACOBIAN,
+  GENERATE_SYMBOLIC_LINEARIZATION
 };
 
 public function new

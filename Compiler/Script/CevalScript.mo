@@ -1515,15 +1515,9 @@ algorithm
       equation
 
         System.realtimeTick(GlobalScript.RT_CLOCK_SIMULATE_TOTAL);
-        // ensure that generateSymbolicLinearization has been activated.
-        //we need to ensure that linearization is done before
-        //we remove all unsued equations.
-        postOptModStringsOrg = Flags.getConfigStringList(Flags.POST_OPT_MODULES);
-        postOptModStrings = List.deleteMember(postOptModStringsOrg, "removeUnusedFunctions");
-        postOptModStrings = Util.if_(List.notMember("generateSymbolicLinearization",postOptModStrings),
-                                     listAppend(postOptModStrings,{"generateSymbolicLinearization", "removeUnusedFunctions"}),
-                                     postOptModStrings);
-        Flags.setConfigStringList(Flags.POST_OPT_MODULES, postOptModStrings);
+        
+        b = Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION);
+        Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, true);
 
         (cache,st,compileDir,executable,method_str,outputFormat_str,_,simflags,resultValues) = buildModel(cache,env,vals,st_1,msg);
         Values.REAL(linearizeTime) = getListNthShowError(vals,"try to get stop time",0,2);
@@ -1550,8 +1544,8 @@ algorithm
         newst = Interactive.addVarToSymboltable(
           DAE.CREF_IDENT("currentSimulationResult", DAE.T_STRING_DEFAULT, {}),
           Values.STRING(result_file), Env.emptyEnv, st);
-        //Reset PostOptModules flags
-        Flags.setConfigStringList(Flags.POST_OPT_MODULES, postOptModStringsOrg);
+        //reset config flag
+        Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, b);
       then
         (cache,simValue,newst);
         
@@ -1559,15 +1553,9 @@ algorithm
       equation
 
         System.realtimeTick(GlobalScript.RT_CLOCK_SIMULATE_TOTAL);
-        // ensure that generateSymbolicLinearization has been activated.
-        //we need to ensure that linearization is done before
-        //we remove all unsued equations.
-        postOptModStringsOrg = Flags.getConfigStringList(Flags.POST_OPT_MODULES);
-        postOptModStrings = List.deleteMember(postOptModStringsOrg, "removeUnusedFunctions");
-        postOptModStrings = Util.if_(List.notMember("generateSymbolicLinearization",postOptModStrings),
-                                     listAppend(postOptModStrings,{"generateSymbolicLinearization", "removeUnusedFunctions"}),
-                                     postOptModStrings);                         
-        Flags.setConfigStringList(Flags.POST_OPT_MODULES, postOptModStrings);
+        
+        b = Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION);
+        Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, true);
 
         (cache,st,compileDir,executable,method_str,outputFormat_str,_,simflags,resultValues) = buildModel(cache,env,vals,st_1,msg);
         cit = winCitation();
@@ -1588,7 +1576,8 @@ algorithm
         timeSimulation = System.realtimeTock(GlobalScript.RT_CLOCK_SIMULATE_SIMULATION);
         timeTotal = System.realtimeTock(GlobalScript.RT_CLOCK_SIMULATE_TOTAL);
         (cache,simValue,newst) = createSimulationResultFromcallModelExecutable(resI,timeTotal,timeSimulation,resultValues,cache,className,vals,st,result_file,logFile);
-        Flags.setConfigStringList(Flags.POST_OPT_MODULES, postOptModStringsOrg);
+        //reset config flag
+        Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, b);
       then
         (cache,simValue,newst);
 
