@@ -3128,28 +3128,28 @@ public function generateSymbolicLinearizationPast
 algorithm
   outBackendDAE := matchcontinue(inBackendDAE)
   local
-	  BackendDAE.EqSystems eqs;
-	  BackendDAE.Shared shared;
-	  BackendDAE.SymbolicJacobians linearModelMatrixes;
-	  DAE.FunctionTree funcs, functionTree;
-	  list< .DAE.Constraint> constraints;
-	  BackendDAE.Variables v;
-	  list<BackendDAE.Equation> eqns;
-  case(_) equation	  
-	  true = Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION);
-	  System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
-	  BackendDAE.DAE(eqs=eqs,shared=shared) = inBackendDAE;
-	  BackendDAE.SHARED(constraints=constraints) = shared;
-	  eqns = {};
-	  v = BackendVariable.emptyVars();
-	  (v,eqns) = BackendDAECreate.addOptimizationVarsEqns2(constraints,1,v,eqns,false);
-	  (linearModelMatrixes, funcs) = createLinearModelMatrixes(inBackendDAE, Config.acceptOptimicaGrammar(),v);
-	  shared = BackendDAEUtil.addBackendDAESharedJacobians(linearModelMatrixes, shared);
-	  functionTree = BackendDAEUtil.getFunctions(shared);
-	  functionTree = DAEUtil.joinAvlTrees(functionTree, funcs);
-	  shared = BackendDAEUtil.addFunctionTree(functionTree, shared);
-	  outBackendDAE = BackendDAE.DAE(eqs,shared);
-	  _  = System.realtimeTock(GlobalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
+    BackendDAE.EqSystems eqs;
+    BackendDAE.Shared shared;
+    BackendDAE.SymbolicJacobians linearModelMatrixes;
+    DAE.FunctionTree funcs, functionTree;
+    list< .DAE.Constraint> constraints;
+    BackendDAE.Variables v;
+    list<BackendDAE.Equation> eqns;
+  case(_) equation    
+    true = Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION);
+    System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
+    BackendDAE.DAE(eqs=eqs,shared=shared) = inBackendDAE;
+    BackendDAE.SHARED(constraints=constraints) = shared;
+    eqns = {};
+    v = BackendVariable.emptyVars();
+    (v,eqns) = BackendDAECreate.addOptimizationVarsEqns2(constraints,1,v,eqns,false);
+    (linearModelMatrixes, funcs) = createLinearModelMatrixes(inBackendDAE, Config.acceptOptimicaGrammar(),v);
+    shared = BackendDAEUtil.addBackendDAESharedJacobians(linearModelMatrixes, shared);
+    functionTree = BackendDAEUtil.getFunctions(shared);
+    functionTree = DAEUtil.joinAvlTrees(functionTree, funcs);
+    shared = BackendDAEUtil.addFunctionTree(functionTree, shared);
+    outBackendDAE = BackendDAE.DAE(eqs,shared);
+    _  = System.realtimeTock(GlobalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
   then outBackendDAE;
   
   else then inBackendDAE;
