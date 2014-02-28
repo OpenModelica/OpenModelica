@@ -541,7 +541,7 @@ constant ConfigFlag SHOW_ANNOTATIONS = CONFIG_FLAG(10, "showAnnotations",
 constant ConfigFlag NO_SIMPLIFY = CONFIG_FLAG(11, "noSimplify",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Do not simplify expressions if set."));
-protected constant Util.TranslatableContent removeSimpleEquationDesc = Util.gettext("Performs alias elimination and removes constant variables from the DAE, replacing all occurrences of the old variable reference with the new value (constants) or variable reference (alias elimination).");
+constant Util.TranslatableContent removeSimpleEquationDesc = Util.gettext("Performs alias elimination and removes constant variables from the DAE, replacing all occurrences of the old variable reference with the new value (constants) or variable reference (alias elimination).");
 
 public
 constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",

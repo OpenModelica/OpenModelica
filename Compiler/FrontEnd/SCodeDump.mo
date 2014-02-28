@@ -46,7 +46,7 @@ protected import List;
 protected import SCodeDumpTpl;
 protected import Tpl;
 
-public constant SCodeDumpOptions defaultOptions = OPTIONS(false,false,false,false);
+public constant SCodeDumpOptions defaultOptions = OPTIONS(false,false,false,false,true);
 
 public uniontype SCodeDumpOptions
   record OPTIONS
@@ -54,6 +54,7 @@ public uniontype SCodeDumpOptions
     Boolean stripProtectedImports;
     Boolean stripProtectedClasses;
     Boolean stripProtectedComponents;
+    Boolean stripMetaRecords "The automatically generated records that change scope from uniontype to the package";
   end OPTIONS;
 end SCodeDumpOptions;
 
@@ -459,6 +460,7 @@ algorithm
     case (SCode.IMPORT(visibility=SCode.PROTECTED()),OPTIONS(stripProtectedImports=true)) then false;
     case (SCode.CLASS(prefixes=SCode.PREFIXES(visibility=SCode.PROTECTED())),OPTIONS(stripProtectedClasses=true)) then false;
     case (SCode.COMPONENT(prefixes=SCode.PREFIXES(visibility=SCode.PROTECTED())),OPTIONS(stripProtectedComponents=true)) then false;
+    case (SCode.CLASS(restriction=SCode.R_METARECORD(index=_)),OPTIONS(stripMetaRecords=true)) then false;
     else true;
   end match;
 end filterElement;

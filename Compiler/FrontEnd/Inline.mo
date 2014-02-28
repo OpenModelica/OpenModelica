@@ -53,7 +53,7 @@ public import Util;
 public import Values;
 
 protected type Ident = String;
-protected type Functiontuple = tuple<Option<DAE.FunctionTree>,list<DAE.InlineType>>;
+public type Functiontuple = tuple<Option<DAE.FunctionTree>,list<DAE.InlineType>>;
 
 protected import ComponentReference;
 protected import Config;

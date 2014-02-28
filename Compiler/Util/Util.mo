@@ -3210,7 +3210,6 @@ public function arrayMemberNoOpt
   input Integer inFilledSize "the filled size of the array, it might be less than arrayLength";
   input Type_a inElement;
   output Integer index;
-protected
   replaceable type Type_a subtypeof Any;
 algorithm
   index := matchcontinue(inArr, inFilledSize, inElement)

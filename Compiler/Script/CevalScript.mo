@@ -890,7 +890,7 @@ algorithm
       Config.LanguageStandard oldLanguageStd;
       SCode.Element cl;
       list<SCode.Element> cls;
-      list<String> names, namesPublic, namesChanged, fileNames;
+      list<String> names, namesPublic, namesProtected, namesChanged, fileNames;
       HashSetString.HashSet hashSetString;
       list<Boolean> blst;
       list<Error.TotalMessage> messages;
@@ -1129,7 +1129,7 @@ algorithm
         name = Absyn.pathLastIdent(path);
         str = Debug.bcallret2(name ==& "Absyn", Dump.unparseStr, p, false, "");
         str = Debug.bcallret2(name ==& "SCode", SCodeDump.programStr, scodeP, SCodeDump.defaultOptions, str);
-        str = Debug.bcallret2(name ==& "MetaModelicaInterface", SCodeDump.programStr, scodeP, SCodeDump.OPTIONS(true,true,true,true), str);
+        str = Debug.bcallret2(name ==& "MetaModelicaInterface", SCodeDump.programStr, scodeP, SCodeDump.OPTIONS(true,false,true,true,true), str);
         str = Debug.bcallret1(name ==& "Internal", System.anyStringCode, p, str);
       then
         (cache,Values.STRING(str),st);
@@ -1146,7 +1146,7 @@ algorithm
         str = Debug.bcallret1(name ==& "Internal", System.anyStringCode, p, str);
         cl = SCode.getElementWithPath(scodeP, className);
         str = Debug.bcallret2(name ==& "SCode", SCodeDump.unparseElementStr, cl, SCodeDump.defaultOptions, str);
-        str = Debug.bcallret2(name ==& "MetaModelicaInterface", SCodeDump.unparseElementStr, cl, SCodeDump.OPTIONS(true,true,true,true), str);
+        str = Debug.bcallret2(name ==& "MetaModelicaInterface", SCodeDump.unparseElementStr, cl, SCodeDump.OPTIONS(true,false,true,true,true), str);
       then
         (cache,Values.STRING(str),st);
 
@@ -2009,9 +2009,21 @@ algorithm
     case (cache,env,"generateEntryPoint",_,st as GlobalScript.SYMBOLTABLE(ast = p),_)
       then (cache,Values.BOOL(false),st);
 
+    case (cache,env,"generateSeparateCodeDependenciesMakefile",{Values.STRING(filename)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
+      equation
+        (sp,st) = Interactive.symbolTableToSCode(st);
+        names = List.filterMap(sp,SCode.getElementName);
+        deps = Graph.buildGraph(names,buildDependencyGraphPublicImports,sp);
+        strs = List.map1(sp,writeModuleDepends,deps);
+        System.writeFile(filename,stringDelimitList(strs,"\n"));
+      then (cache,Values.BOOL(true),st);
+
+    case (cache,env,"generateSeparateCodeDependenciesMakefile",_,(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
+      then (cache,Values.BOOL(false),st);
+
     case (cache,env,"generateSeparateCodeDependencies",{Values.STRING(suffix)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       equation
-        sp = SCodeUtil.translateAbsyn2SCode(p);
+        (sp,st) = Interactive.symbolTableToSCode(st);
         names = List.filterMap(sp,SCode.getElementName);
         
         deps = Graph.buildGraph(names,buildDependencyGraph,sp);
@@ -7312,6 +7324,22 @@ algorithm
   end match;
 end buildDependencyGraph;
 
+protected function buildDependencyGraphPublicImports
+  input String name;
+  input SCode.Program sp;
+  output list<String> edges;
+algorithm
+  edges := match (name,sp)
+    local
+      list<SCode.Element> elts;
+    case (_,_)
+      equation
+        SCode.CLASS(classDef=SCode.PARTS(elementLst=elts)) = List.getMemberOnTrue(name, sp, SCode.isClassNamed);
+        elts = List.select(elts,SCode.elementIsPublicImport);
+      then List.map(elts, importDepenency);
+  end match;
+end buildDependencyGraphPublicImports;
+
 protected function buildTransitiveDependencyGraph
   input String name;
   input list<tuple<String,list<String>>> oldgraph;
@@ -7438,6 +7466,41 @@ algorithm
   end match;
 end containsPublicInterface2;
 
+protected function containsImport
+  input SCode.Element elt;
+  input SCode.Visibility visibility;
+  output Boolean b;
+algorithm
+  b := match (elt,visibility)
+    local
+      list<SCode.Element> elts;
+      String name;
+    case (SCode.CLASS(restriction=SCode.R_PACKAGE(), encapsulatedPrefix=SCode.ENCAPSULATED(), classDef=SCode.PARTS(elementLst=elts)),_)
+      then List.exist1(elts, containsImport2, visibility);
+    else
+      equation
+        name = SCode.elementName(elt);
+        name = "CevalScript.containsPublicInterface failed: " +& name;
+        Error.addMessage(Error.INTERNAL_ERROR, {name});
+      then fail();
+  end match;
+end containsImport;
+
+protected function containsImport2
+  "If the package contains a public type or constant, we depend on this package also through other modules"
+  input SCode.Element elt;
+  input SCode.Visibility visibility;
+  output Boolean b;
+algorithm
+  b := match (elt,visibility)
+    local
+      String name;
+    case (SCode.IMPORT(visibility=SCode.PUBLIC(),info=_),SCode.PUBLIC()) then true;
+    case (SCode.IMPORT(visibility=SCode.PROTECTED(),info=_),SCode.PROTECTED()) then true;
+    else false;
+  end match;
+end containsImport2;
+
 protected function printInterfaceString
   input SCode.Element elt;
 protected
@@ -7505,5 +7568,21 @@ algorithm
   newp := Interactive.updateProgram(newp, p);
   outST := Interactive.setSymbolTableAST(inST, newp);
 end reloadClass;
+
+protected function writeModuleDepends
+  input SCode.Element cl;
+  input list<tuple<String,list<String>>> deps;
+  output String str;
+protected
+  String name;
+  list<String> allDepends,protectedDepends;
+  list<SCode.Element> elts;
+algorithm
+  SCode.CLASS(name=name, classDef=SCode.PARTS(elementLst=elts)) := cl;
+  protectedDepends := List.map(List.select(elts,SCode.elementIsProtectedImport),importDepenency);
+  _::allDepends := Graph.allReachableNodes((name::protectedDepends,{}),deps,stringEq);
+  allDepends := List.map1(allDepends, stringAppend, ".interface.mo");
+  str := name +& ".c: " +& name +& ".mo " +& stringDelimitList(allDepends," ");
+end writeModuleDepends;
 
 end CevalScript;

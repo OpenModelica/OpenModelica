@@ -1054,6 +1054,14 @@ annotation(Documentation(info="<html><p>Under construction.</p>
 </html>"),preferredView="text");
 end generateSeparateCodeDependencies;
 
+function generateSeparateCodeDependenciesMakefile
+  input String stampSuffix := ".c" "Suffix to add to dependencies (often .c.stamp)";
+  output String [:] dependencies;
+external "builtin";
+annotation(Documentation(info="<html><p>Under construction.</p>
+</html>"),preferredView="text");
+end generateSeparateCodeDependenciesMakefile;
+
 function getLinker
   output String linker;
 external "builtin";

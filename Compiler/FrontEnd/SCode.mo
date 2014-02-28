@@ -3026,6 +3026,26 @@ algorithm
   end match;
 end elementIsClass;
 
+public function elementIsPublicImport
+  input Element el;
+  output Boolean b;
+algorithm
+  b := match el
+    case IMPORT(visibility=PUBLIC()) then true;
+    else false;
+  end match;
+end elementIsPublicImport;
+
+public function elementIsProtectedImport
+  input Element el;
+  output Boolean b;
+algorithm
+  b := match el
+    case IMPORT(visibility=PROTECTED()) then true;
+    else false;
+  end match;
+end elementIsProtectedImport;
+
 public function getElementClass
   input Element el;
   output Element cl;
