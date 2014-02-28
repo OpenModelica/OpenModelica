@@ -7613,27 +7613,23 @@ algorithm
         simpleLoops = List.unique(simpleLoops); 
           //print("all simpleLoop-paths: \n"+&stringDelimitList(List.map(simpleLoops,HpcOmTaskGraph.intLstString)," / ")+&"\n");  
         (_,paths,_) = List.intersection1OnTrue(paths1,simpleLoops,intLstIsEqual);
-        subLoop = connectPathsToOneLoop(simpleLoops,{});  // try to build a a closed loop from these paths
-        isNoSingleLoop = List.isEmpty(subLoop);
-        simpleLoops = Util.if_(isNoSingleLoop,simpleLoops,{subLoop});
-          //print("the simpleLoop: \n"+&stringDelimitList(List.map(subLoop,intString)," / ")+&"\n");            
-          //print("other paths: \n"+&stringDelimitList(List.map(paths,HpcOmTaskGraph.intLstString)," / ")+&"\n");   
-          //print("paths0: \n"+&stringDelimitList(List.map(paths0,HpcOmTaskGraph.intLstString)," / ")+&"\n");
-        //paths0 = List.sort(paths0,List.listIsLonger);  // solve the small loops first
         
         paths0 = List.sort(paths,List.listIsLonger);  // solve the small loops first
         
-        //paths0 = sortPathsAsChain(paths0,{},{});
           //print("unconnected paths: \n"+&stringDelimitList(List.map(paths0,HpcOmTaskGraph.intLstString)," / ")+&"\n");
         (connectedPaths,loopConnectors) = connect2PathsToLoops(paths0,{},{});
         loopConnectors = List.filter1OnTrue(loopConnectors,connectsLoops,simpleLoops);
           //print("possible loopConnectors: "+&stringDelimitList(List.map(loopConnectors,HpcOmTaskGraph.intLstString)," / ")+&"\n\n");     
           //print("connected paths: "+&stringDelimitList(List.map(connectedPaths,HpcOmTaskGraph.intLstString)," / ")+&"\n\n");   
         simpleLoops = listAppend(simpleLoops,loopConnectors);
+        
+        //print("all simpleLoop-paths: \n"+&stringDelimitList(List.map(simpleLoops,HpcOmTaskGraph.intLstString)," / ")+&"\n");  
+        subLoop = connectPathsToOneLoop(simpleLoops,{});  // try to build a a closed loop from these paths
+        isNoSingleLoop = List.isEmpty(subLoop);
+        simpleLoops = Util.if_(isNoSingleLoop,simpleLoops,{subLoop});
+          //print("the simpleLoop: \n"+&stringDelimitList(List.map(subLoop,intString)," / ")+&"\n");            
+          
         paths0 = listAppend(simpleLoops,connectedPaths);
-        
-        //print("all paths to be resolved before sorting: \n"+&stringDelimitList(List.map(paths0,HpcOmTaskGraph.intLstString)," / ")+&"\n");
-        
         paths0 = sortPathsAsChain(paths0);
         
         //print("all paths to be resolved: \n"+&stringDelimitList(List.map(paths0,HpcOmTaskGraph.intLstString)," / ")+&"\n");
@@ -7720,20 +7716,24 @@ algorithm
       Integer startNode, endNode, startNode1, endNode1;
       list<Integer> path, nextPath, restPath;
       list<list<Integer>> rest, nextPaths1, nextPaths2;
-    case({path},{})
+    case(_,startNode::path)
       equation
+        endNode = List.last(path);
+        true = intEq(startNode,endNode);
       then
         path;
-    case({path},_)
+    case(_,startNode::restPath)
       equation
-        startNode = List.first(path);
-        endNode = List.last(path);
-        startNode1 = List.first(loopIn);
-        endNode1 = List.last(loopIn);      
-        true = intEq(startNode,endNode1) or intEq(startNode,startNode1);
-        true = intEq(endNode,endNode1) or intEq(endNode,startNode1);
+        nextPaths1 = List.filter1OnTrue(allPathsIn, firstInListIsEqual, startNode);
+        nextPaths2 = List.filter1OnTrue(allPathsIn, lastInListIsEqual, startNode);
+        nextPaths1 = listAppend(nextPaths1,nextPaths2);
+        nextPath = List.first(nextPaths1);
+        rest = List.deleteMember(allPathsIn,nextPath);
+        nextPath = List.deleteMember(nextPath,startNode);
+        path = listAppend(nextPath,loopIn);
+        path = connectPathsToOneLoop(rest,path);
       then  
-        loopIn;
+        path;
     case(path::rest,{})
       equation
         startNode::restPath = path;
@@ -8132,8 +8132,8 @@ algorithm
   eqIdcs := doubleEntriesInLst(eqLst,{},{});
 end getEqNodesForVarLoop;
 
-
-protected function resolveClosedLoop"sums up all equations in a loop so that the variables shared by the equations disappear"
+protected function resolveClosedLoop"sums up all equations in a loop so that the variables shared by the equations disappear.
+author:Waurich TUD 2014-02"
   input list<Integer> loopIn;
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mT;
@@ -8152,12 +8152,10 @@ algorithm
   loop1 := sortLoop(restLoop,m,mT,{startEqIdx});
     //print("solve the loop: "+&stringDelimitList(List.map(loop1,intString),",")+&"\n");
   eq := listGet(daeEqsIn,startEqDaeIdx);
-    //print("start with equation no.: "+&intString(startEqDaeIdx)+&" which is: \n"+&BackendDump.equationString(eq)+&"\n");
   eqOut := resolveClosedLoop2(eq,loop1,m,mT,eqMapping,varMapping,daeEqsIn,daeVarsIn);
     //print("the resolved eq\n");
     //BackendDump.printEquationList({eqOut});
 end resolveClosedLoop;
-
 
 protected function resolveClosedLoop2"
 author:Waurich TUD 2013-12"
