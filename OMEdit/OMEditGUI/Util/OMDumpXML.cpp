@@ -52,8 +52,8 @@ QString OMOperation::toString()
 
 OMOperationSimplify::OMOperationSimplify(QStringList ops)
 {
-  before = ops[0];
-  after = ops[1];
+  before = ops.size() > 0 ? ops[0] : "";
+  after = ops.size() > 1 ? ops[1] : "";
 }
 
 QString OMOperationSimplify::toString()
@@ -61,11 +61,11 @@ QString OMOperationSimplify::toString()
   return "simplify: " + before + " => " + after;
 }
 
-OMOperationScalarize::OMOperationScalarize(int _index,QStringList ops)
+OMOperationScalarize::OMOperationScalarize(int _index, QStringList ops)
 {
   index = _index;
-  before = ops[0];
-  after = ops[1];
+  before = ops.size() > 0 ? ops[0] : "";
+  after = ops.size() > 1 ? ops[1] : "";
 }
 
 QString OMOperationScalarize::toString()
@@ -75,8 +75,8 @@ QString OMOperationScalarize::toString()
 
 OMOperationInline::OMOperationInline(QStringList ops)
 {
-  before = ops[0];
-  after = ops[1];
+  before = ops.size() > 0 ? ops[0] : "";
+  after = ops.size() > 1 ? ops[1] : "";
 }
 
 QString OMOperationInline::toString()
@@ -97,8 +97,8 @@ QString OMOperationSubstitution::toString()
 
 OMOperationSolved::OMOperationSolved(QStringList ops)
 {
-  lhs = ops[0];
-  rhs = ops[1];
+  lhs = ops.size() > 0 ? ops[0] : "";
+  rhs = ops.size() > 1 ? ops[1] : "";
 }
 
 QString OMOperationSolved::toString()
@@ -108,7 +108,7 @@ QString OMOperationSolved::toString()
 
 OMOperationLinearSolved::OMOperationLinearSolved(QStringList ops)
 {
-  text = ops[0];
+  text = ops.size() > 0 ? ops[0] : "";
 }
 
 QString OMOperationLinearSolved::toString()
@@ -118,10 +118,10 @@ QString OMOperationLinearSolved::toString()
 
 OMOperationSolve::OMOperationSolve(QStringList ops)
 {
-  lhs_old = ops[0];
-  rhs_old = ops[1];
-  lhs_new = ops[2];
-  rhs_new = ops[3];
+  lhs_old = ops.size() > 0 ? ops[0] : "";
+  rhs_old = ops.size() > 1 ? ops[1] : "";
+  lhs_new = ops.size() > 2 ? ops[2] : "";
+  rhs_new = ops.size() > 3 ? ops[3] : "";
 }
 
 QString OMOperationSolve::toString()
@@ -131,9 +131,9 @@ QString OMOperationSolve::toString()
 
 OMOperationDifferentiate::OMOperationDifferentiate(QStringList ops)
 {
-  exp = ops[0];
-  wrt = ops[1];
-  result = ops[2];
+  exp = ops.size() > 0 ? ops[0] : "";
+  wrt = ops.size() > 1 ? ops[1] : "";
+  result = ops.size() > 2 ? ops[2] : "";
 }
 
 QString OMOperationDifferentiate::toString()
@@ -143,9 +143,9 @@ QString OMOperationDifferentiate::toString()
 
 OMOperationResidual::OMOperationResidual(QStringList ops)
 {
-  lhs = ops[0];
-  rhs = ops[1];
-  result = ops[2];
+  lhs = ops.size() > 0 ? ops[0] : "";
+  rhs = ops.size() > 1 ? ops[1] : "";
+  result = ops.size() > 2 ? ops[2] : "";
 }
 
 QString OMOperationResidual::toString()
@@ -155,8 +155,8 @@ QString OMOperationResidual::toString()
 
 OMOperationFlattening::OMOperationFlattening(QStringList ops)
 {
-  original = ops[0];
-  flattened = ops[1];
+  original = ops.size() > 0 ? ops[0] : "";
+  flattened = ops.size() > 1 ? ops[1] : "";
 }
 
 QString OMOperationFlattening::toString()
@@ -394,7 +394,6 @@ bool MyHandler::startElement( const QString & namespaceURI, const QString & loca
       currentIndex = atts.value("index").toLong();
     }
   }
-
   return true;
 }
 
