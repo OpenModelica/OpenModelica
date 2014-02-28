@@ -1490,8 +1490,10 @@ algorithm
       equation
         (stmts1,true) = replaceStatementLst(stmts,repl,inFuncTypeExpExpToBooleanOption,{},false);
         alg = DAE.ALGORITHM_STMTS(stmts1);
+        // if all statements are removed, remove the whole algorithm
+        eqns = Util.if_(listLength(stmts1)>0, BackendDAE.ALGORITHM(size,alg,source,crefExpand)::inAcc, inAcc);
       then
-        (BackendDAE.ALGORITHM(size,alg,source,crefExpand)::inAcc,true);
+        (eqns,true);
     
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e,source = source,differentiated = diffed),repl,_,_,_)
       equation
