@@ -660,7 +660,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("relaxSystem",Util.notrans("DESCRIBE ME")),
     ("countOperations", Util.gettext("Count the mathematic operations of the system.")),
     ("dumpComponentsGraphStr", Util.notrans("DESCRIBE ME")),
-    ("generateSymbolicJacobian", Util.gettext("Generates symbolic jacobian matrix, where der(x) is differentiated w.r.t x. This matrix can be used to simulate with dasslColorSymJac.")),
+    ("generateSymbolicJacobian", Util.gettext("Generates symbolic jacobian matrix, where der(x) is differentiated w.r.t. x. This matrix can be used to simulate with dasslColorSymJac.")),
     ("generateSymbolicLinearization", Util.gettext("Generates symbolic linearization matrixes A,B,C,D for linear model:\n\t\t\\dot x = Ax + Bu\n\t\ty = Cx +Du")),
     ("collapseIndependentBlocks", Util.gettext("Collapses all equation systems back into one big system again (undo partitionIndependentBlocks).")),
     ("removeUnusedFunctions", Util.gettext("Removed all unused functions from functionTree.")),
@@ -851,7 +851,7 @@ constant ConfigFlag REPLACE_HOMOTOPY = CONFIG_FLAG(54, "replaceHomotopy",
   
 constant ConfigFlag GENERATE_SYMBOLIC_JACOBIAN = CONFIG_FLAG(55, "generateSymbolicJacobian",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Generates symbolic jacobian matrix, where der(x) is differentiated w.r.t x. This matrix can be used to simulate with dasslColorSymJac."));
+  Util.gettext("Generates symbolic jacobian matrix, where der(x) is differentiated w.r.t. x. This matrix can be used to simulate with dasslColorSymJac."));
 
 constant ConfigFlag GENERATE_SYMBOLIC_LINEARIZATION = CONFIG_FLAG(56, "generateSymbolicLinearization",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
