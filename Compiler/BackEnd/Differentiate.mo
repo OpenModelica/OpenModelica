@@ -899,6 +899,7 @@ algorithm
       equation
         (derivedLHS, functions) = differentiateExp(lhs, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         (derivedRHS, functions) = differentiateExp(rhs, inDiffwrtCref, inInputData, inDiffType, functions);
+        (derivedRHS,_) = ExpressionSimplify.simplify(derivedRHS);
         derivedStatements1 = {DAE.STMT_ASSIGN(type_, derivedLHS, derivedRHS, source), currStatement};
         derivedStatements1 = listAppend(derivedStatements1, inStmtsAccum);
         (derivedStatements2, functions) = differentiateStatements(restStatements, inDiffwrtCref, inInputData, inDiffType, derivedStatements1, functions);
@@ -908,6 +909,7 @@ algorithm
       equation
         (dexpLst,functions) = List.map3Fold(expLst, differentiateExp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         (derivedRHS, functions) = differentiateExp(rhs, inDiffwrtCref, inInputData, inDiffType, functions);
+        (derivedRHS,_) = ExpressionSimplify.simplify(derivedRHS);
         derivedStatements1 = {DAE.STMT_TUPLE_ASSIGN(type_, dexpLst, derivedRHS, source), currStatement};
         derivedStatements1 = listAppend(derivedStatements1, inStmtsAccum);
         (derivedStatements2, functions) = differentiateStatements(restStatements, inDiffwrtCref, inInputData, inDiffType, derivedStatements1, functions);
@@ -918,6 +920,7 @@ algorithm
         lhs = Expression.crefExp(cref);
         (derivedLHS, functions) = differentiateExp(lhs, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         (derivedRHS, functions) = differentiateExp(rhs, inDiffwrtCref, inInputData, inDiffType, functions);
+        (derivedRHS,_) = ExpressionSimplify.simplify(derivedRHS);
         cref = Expression.expCref(derivedLHS);
         derivedStatements1 = {DAE.STMT_ASSIGN_ARR(type_, cref, derivedRHS, source), currStatement};
         derivedStatements1 = listAppend(derivedStatements1, inStmtsAccum);
@@ -1218,8 +1221,8 @@ algorithm
     //
     // This part contains special rules for DIFFERENTAION_FUNCTION()
     //
-    // independenent variable cref without subscript
-    case ((e as DAE.CREF(componentRef = cr,ty=tp)), _, BackendDAE.DIFFINPUTDATA(independenentVars=SOME(timevars)), BackendDAE.DIFFERENTAION_FUNCTION(), _)
+    // dependenent variable cref without subscript
+    case ((e as DAE.CREF(componentRef = cr,ty=tp)), _, BackendDAE.DIFFINPUTDATA(dependenentVars=SOME(timevars)), BackendDAE.DIFFERENTAION_FUNCTION(), _)
       equation
         //se1 = ExpressionDump.printExpStr(e);
         //print("\nExp-Cref\n independent cref: " +& se1);
@@ -1233,8 +1236,8 @@ algorithm
       then
         (zero, inFunctionTree);
 
-    // independenent variable cref
-    case ((e as DAE.CREF(componentRef = cr,ty=tp)), _, BackendDAE.DIFFINPUTDATA(independenentVars=SOME(timevars)), BackendDAE.DIFFERENTAION_FUNCTION(), _)
+    // dependenent variable cref
+    case ((e as DAE.CREF(componentRef = cr,ty=tp)), _, BackendDAE.DIFFINPUTDATA(dependenentVars=SOME(timevars)), BackendDAE.DIFFERENTAION_FUNCTION(), _)
       equation
         //se1 = ExpressionDump.printExpStr(e);
         //print("\nExp-Cref\n independent cref: " +& se1);
@@ -1246,8 +1249,8 @@ algorithm
         //print("\nresults to exp: " +& se1);
       then
         (zero, inFunctionTree);
-      
-    // dependenent variable cref
+
+    // all other variable crefs are needed to differentiate 
     case ((e as DAE.CREF(componentRef = cr,ty=tp)), _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), BackendDAE.DIFFERENTAION_FUNCTION(), _)
       equation
         //se1 = ExpressionDump.printExpStr(e);
@@ -2095,14 +2098,15 @@ algorithm
         
         (inputVarsDer, functions, inputVarsNoDer, blst) = differentiateElementVars(inputVars, inDiffwrtCref, diffFuncData, BackendDAE.DIFFERENTAION_FUNCTION(), inFunctionTree, {}, {}, {});
         (outputVarsDer, functions, outputVarsNoDer, _) = differentiateElementVars(outputVars, inDiffwrtCref, diffFuncData, BackendDAE.DIFFERENTAION_FUNCTION(), functions, {}, {}, {});
-        //input Variables are independent
-        (inputData,_) = addElementVars2InDep(inputVars, functions, diffFuncData);
+
+        //add protected variables to dependent Vars
+        (inputData,_) = addElementVars2Dep(inputVarsNoDer, functions, diffFuncData);
+        (inputData,_) = addElementVars2Dep(outputVarsNoDer, functions, inputData);
+        
         (protectedVarsDer, functions, protectedVarsNoDer, _) = differentiateElementVars(protectedVars, inDiffwrtCref, inputData, BackendDAE.DIFFERENTAION_FUNCTION(), functions, {}, {}, {});
         
         //add protected variables to dependent Vars
-        (inputData,_) = addElementVars2InDep(inputVarsNoDer, functions, diffFuncData);
-        (inputData,_) = addElementVars2InDep(outputVarsNoDer, functions, inputData);
-        (inputData,_) = addElementVars2InDep(protectedVarsNoDer, functions, inputData);
+        (inputData,_) = addElementVars2Dep(protectedVarsNoDer, functions, inputData);
         
         // differentiate algorithm statemeants
         //print("Function diff: statemeants");
