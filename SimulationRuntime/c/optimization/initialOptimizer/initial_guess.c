@@ -49,6 +49,7 @@ static int initial_guess_ipopt_cflag(IPOPT_DATA_ *iData,char* cflags);
 static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo);
 static int pre_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo);
 static int optimizer_time_setings_update(IPOPT_DATA_ *iData);
+static int smallIntSolverStep(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo, double stime);
 
 /*!
  *  create initial guess
@@ -102,9 +103,7 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
 {
   double *u0, *x, uu,tmp ,lhs, rhs;
   int i,j,k,ii,jj,id;
-  int err;
   double *v;
-  long double a;
   long double tol;
   short printGuess;
 
@@ -161,16 +160,9 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
 
    for(i=0, k=1, v=iData->v + iData->nv; i<iData->nsi; ++i){
      for(jj=0; jj<iData->deg; ++jj, ++k){
-     a = 1.0;
-     while(iData->data->localData[0]->timeValue <= iData->time[k]){
-      solverInfo->currentStepSize = a*(iData->time[k] - iData->time[k-1]);
-      externalInputUpdate(data);
-      err = dasrt_step(data, solverInfo);
-      if(err<0)
-       a *= 0.5;
-      if((double)a < (double)1e-20)
-       break;
-     }
+     
+     smallIntSolverStep(iData, solverInfo, iData->time[k]);
+     iData->data->localData[0]->timeValue = solverInfo->currentTime = iData->time[k];
 
      if(printGuess)
        printf("\ndone: time[%i] = %g", k, iData->time[k]);
@@ -190,7 +182,6 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
   for(i = 0, id=0; i<iData->NV;i++,++id){
     if(id >=iData->nv)
     id = 0;
-
     if(id <iData->nx){
      iData->v[i] =fmin(fmax(iData->vmin[id],iData->v[i]),iData->vmax[id]);
     }else if(id< iData->nv){
@@ -219,44 +210,26 @@ static int pre_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
 {
    int k = 1,i,j,err;
    double t;
-   long double a;
    DATA * data = iData->data;
    
    if(iData->time[0] > iData->startTimeOpt)
     iData->time[0] = iData->startTimeOpt;
+   solverInfo->currentTime = iData->time[0];
 
    while(iData->data->localData[0]->timeValue < iData->startTimeOpt){
-     a = 1.0;
-     while(iData->data->localData[0]->timeValue < iData->time[k]){
-      t = iData->time[k];
-      if(t > iData->startTimeOpt)
-        t = iData->startTimeOpt;
-      solverInfo->currentStepSize = a*(t - iData->time[k-1]);
-      iData->data->localData[1]->timeValue = iData->time[k-1];
-      iData->data->localData[0]->timeValue = t;
-      err = dasrt_step(data, solverInfo);
-      if(err<0)
-       a *= 0.5;
-      if((double)a < (double)1e-20)
-       break;
-     }
+     t = iData->time[k];
+     if(t>iData->startTimeOpt){
+       t = iData->startTimeOpt;
+       solverInfo->currentTime = iData->data->localData[0]->timeValue;
+      }
+
+     smallIntSolverStep(iData, solverInfo, t);
      data->simulationInfo.terminal = 1;
      sim_result.emit(&sim_result,data);
      data->simulationInfo.terminal = 0;
      rotateRingBuffer(iData->data->simulationData, 1, (void**) iData->data->localData);
      ++k; 
     }
-
-   if(iData->data->localData[0]->timeValue >  iData->startTimeOpt){
-    solverInfo->currentStepSize = iData->startTimeOpt - iData->time[k-1];
-    iData->data->localData[1]->timeValue = iData->time[k-1];
-    dasrt_step(data, solverInfo);
-    data->simulationInfo.terminal = 1;
-    sim_result.emit(&sim_result,data);
-    data->simulationInfo.terminal = 0;
-    rotateRingBuffer(iData->data->simulationData, 1, (void**) iData->data->localData);
-  }
-
   iData->t0 = iData->data->localData[0]->timeValue;
   /*ToDo*/
   for(i=0; i< iData->nx; ++i)
@@ -308,6 +281,32 @@ static int optimizer_time_setings_update(IPOPT_DATA_ *iData)
   iData->time[k] = iData->tf;
   return 0;
 }
+
+static int smallIntSolverStep(IPOPT_DATA_ *iData, SOLVER_INFO* solverInfo, double tstop){
+  long double a;
+  int iter;
+  int err;
+
+  while(iData->data->localData[0]->timeValue < tstop){
+    a = 1.0;
+    iter = 0;
+    do{
+
+      solverInfo->currentStepSize = a*(tstop - iData->data->localData[0]->timeValue);
+      err = dasrt_step(iData->data, solverInfo);
+      a *= 0.5;
+      if(++iter >  10)
+        break;
+    }while(err < 0);
+
+    solverInfo->currentTime = iData->data->localData[0]->timeValue;
+
+    if(iData->data->localData[0]->timeValue < tstop)
+      rotateRingBuffer(iData->data->simulationData, 1, (void**) iData->data->localData);
+  }
+  return 0;
+}
+
 
 
 #endif

@@ -275,11 +275,12 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
   tout = solverInfo->currentTime + solverInfo->currentStepSize;
   /* Check that tout is not less than timeValue
    * else will dassl get in trouble. If that is the case we skip the current step. */
-  if(solverInfo->currentTime - tout >= -1e-13)
+  if( solverInfo->currentStepSize <= 1e-13)
   {
     infoStreamPrint(LOG_DDASRT, 0, "Desired step to small try next one");
     infoStreamPrint(LOG_DDASRT, 0, "Interpolate linear");
 
+    /*euler step*/
     for(i = 0; i < simData->modelData.nStates; i++)
     {
       sData->realVars[i] = sDataOld->realVars[i] + stateDer[i] * solverInfo->currentStepSize;
@@ -307,10 +308,8 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
     }
 
     /* read input vars */
-    if(solverInfo->solverMethod != S_OPTIMIZATION) {
-      externalInputUpdate(simData);
-      simData->callback->input_function(simData);
-    }
+    externalInputUpdate(simData);
+    simData->callback->input_function(simData);
 
     if(dasslData->dasslMethod ==  DASSL_SYMJAC) {
       DDASRT(functionODE_residual, &mData->nStates,
@@ -374,10 +373,8 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
       fflush(stdout);
       retVal = continue_DASRT(&dasslData->idid, &simData->simulationInfo.tolerance);
       /* read input vars */
-      if(solverInfo->solverMethod != S_OPTIMIZATION) {
-        externalInputUpdate(simData);
-        simData->callback->input_function(simData);
-      }
+      externalInputUpdate(simData);
+      simData->callback->input_function(simData);
       simData->callback->functionODE(simData);
       warningStreamPrint(LOG_STDOUT, 0, "can't continue. time = %f", sData->timeValue);
       return retVal;
