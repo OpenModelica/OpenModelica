@@ -1,0 +1,17 @@
+setCommandLineOptions({"+g=MetaModelica","+d=rml,-inlineFunctions"});
+if not loadFiles(files) /* TODO: Change to loadFiles */ then
+  print("Failed to load files:\n" + getErrorString());
+  exit(1);
+end if;
+mkdir("build/tmp");
+cd("build/tmp");
+status:=OpenModelica.Scripting.generateSeparateCode(mainClass);
+(numMessages,numErrors,numWarnings) := countMessages();
+if numMessages > 0 or not status then
+  status := false;
+  print(intString(numErrors+numWarnings) + " errors out of " + intString(numMessages) + " messages:\n" + getErrorString(warningsAsErrors=true));
+  exit(1);
+end if;
+files:={typeNameString(mainClass) + ext for ext in {".c",".h","_records.c",".deps"}};getErrorString();
+{compareFilesAndMove(file,"../" + file) for file in files};
+exit(0);

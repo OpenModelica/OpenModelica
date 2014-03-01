@@ -1,0 +1,67 @@
+# make Makefile.sources ~4.4s (1 time; only updated when the number of source files change)
+# make -j4 interfaces   ~5.3s (individual updates; parses the changed file and creates the interface, in parallel)
+# make Makefile.depends ~0.5s (after interfaces are generated, parse them all and generate the dependencies if any interface file changed)
+
+CC=@CC@
+CXX=@CXX@
+CFLAGS=@CFLAGS@
+export TOP_DIR=@abs_top_builddir@
+OMHOME=@abs_top_builddir@/build
+LDFLAGS=-L./ -lomparse -lomcruntime -L"$(OMHOME)/lib/omc" -lmodparomc -lOpenModelicaRuntimeC -lModelicaExternalC -lantlr3 $(CORBALIBS) $(FMILIB) @RT_LDFLAGS@ @LIBSOCKET@ @LIBLPSOLVE55@ @OMC_LIBS@ -lexpat
+FMILIB = -L$(TOP_DIR)/3rdParty/FMIL/install/lib -lfmilib
+CPPFLAGS=-I"$(OMHOME)/include/omc/c" @CPPFLAGS@
+CORBALIBS=@CORBALIBS@
+ULIMIT_CMD=true
+BOOTSTRAP_TARGET=@BOOTSTRAP_TARGET@
+export OMC=@OMC@
+
+default:
+	$(MAKE) Makefile.sources
+	$(MAKE) templates
+	$(MAKE) -f Makefile.internal interfaces
+	$(MAKE) -f Makefile.internal Makefile.depends
+	$(MAKE) -f Makefile.internal generate-files
+.PHONY: interfaces generate-files
+
+GEN_DIR=build/
+
+bootstrap-from-tarball:
+	rm -rf $(GEN_DIR)
+	tar xJf ../../../Compiler/boot/bootstrap-sources.tar.xz
+	$(MAKE) -f LinkMain.makefile make-separate-internal
+	rm -rf $(GEN_DIR)
+	$(MAKE) -f LinkMain.makefile bootstrap-from-compiled
+	rm -rf $(GEN_DIR)/*.stamp
+	$(MAKE) -f LinkMain.makefile bootstrap-from-compiled
+
+bootstrap-from-compiled: make-separate
+
+make-bootstrap-tarball:
+	rm -rf $(GEN_DIR)
+	( $(ULIMIT_CMD) ; $(OMC) BuildOMC.mos )
+	tar cJf ../../../Compiler/boot/bootstrap-sources.tar.xz $(GEN_DIR)
+
+templates:
+	$(MAKE) -C $(TOP_DIR)/Compiler/Template
+
+$(GEN_DIR)%.stamp.mo:
+	@mkdir -p build
+	@echo 'echo(false);inFile := "$<";outFile := "$@.tmp"; runScript("GenerateInterface.mos"); print(getErrorString()); print("Something went horribly wrong for $@\\n"); exit(1);' > "$@.mos"
+	$(OMC) $@.mos
+	@touch $@
+
+Makefile: Makefile.in
+	(cd ../../ && ./config.status)
+
+Makefile.sources LoadCompilerInterface.mos: LoadCompilerSources.mos MakeSources.mos $(OMC)
+	$(OMC) MakeSources.mos
+	mv Makefile.sources.tmp Makefile.sources
+	mv LoadCompilerInterface.mos.tmp LoadCompilerInterface.mos
+
+Makefile.depends: MakeDepends.mos LoadCompilerInterface.mos Makefile.sources $(ALL_INTERFACES:%.stamp.mo=%.interface.mo)
+	@rm -f $@
+	$(OMC) $<
+
+clean:
+	rm -rf $(GEN_DIR)
+	rm -f Makefile.sources LoadCompilerInterface.mos Makefile.depends
