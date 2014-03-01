@@ -572,10 +572,8 @@ int solver_main(DATA* data, const char* init_initMethod,
   {
 
     if(solverInfo.solverMethod != S_OPTIMIZATION)
-    {
       sim_result.emit(&sim_result,data);
-      overwriteOldSimulationData(data);
-    }
+    overwriteOldSimulationData(data);
 
     infoStreamPrint(LOG_SOLVER, 0, "Start numerical solver from %g to %g", simInfo->startTime, simInfo->stopTime);
     retVal = data->callback->performSimulation(data, &solverInfo);
