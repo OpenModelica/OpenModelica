@@ -160,9 +160,8 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
 
    for(i=0, k=1, v=iData->v + iData->nv; i<iData->nsi; ++i){
      for(jj=0; jj<iData->deg; ++jj, ++k){
-     
-     smallIntSolverStep(iData, solverInfo, iData->time[k]);
-     iData->data->localData[0]->timeValue = solverInfo->currentTime = iData->time[k];
+      smallIntSolverStep(iData, solverInfo, iData->time[k]);
+     //iData->data->localData[0]->timeValue = solverInfo->currentTime = iData->time[k];
 
      if(printGuess)
        printf("\ndone: time[%i] = %g", k, iData->time[k]);
@@ -287,22 +286,25 @@ static int smallIntSolverStep(IPOPT_DATA_ *iData, SOLVER_INFO* solverInfo, doubl
   int iter;
   int err;
 
-  while(iData->data->localData[0]->timeValue < tstop){
+  solverInfo->currentTime = iData->data->localData[1]->timeValue;
+  while(solverInfo->currentTime < tstop){
     a = 1.0;
     iter = 0;
     do{
 
-      solverInfo->currentStepSize = a*(tstop - iData->data->localData[0]->timeValue);
+      solverInfo->currentStepSize = a*(tstop - solverInfo->currentTime);
       err = dasrt_step(iData->data, solverInfo);
       a *= 0.5;
       if(++iter >  10)
         break;
     }while(err < 0);
 
-    solverInfo->currentTime = iData->data->localData[0]->timeValue;
-
-    if(iData->data->localData[0]->timeValue < tstop)
+    if(iData->data->localData[0]->timeValue < tstop){
       rotateRingBuffer(iData->data->simulationData, 1, (void**) iData->data->localData);
+      solverInfo->currentTime = iData->data->localData[0]->timeValue;
+    }else{
+      solverInfo->currentTime = tstop;
+    }
   }
   return 0;
 }
