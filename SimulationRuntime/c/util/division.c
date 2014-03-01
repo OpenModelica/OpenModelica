@@ -36,12 +36,12 @@
 #include "division.h"
 #include "omc_error.h"
 
-modelica_real division_error_equation_time(threadData_t *threadData, modelica_real b, const char *msg, const int *indexes, modelica_real time, modelica_boolean noThrow)
+modelica_real division_error_equation_time(threadData_t *threadData, modelica_real a, modelica_real b, const char *msg, const int *indexes, modelica_real time, modelica_boolean noThrow)
 {
   if(noThrow){
     warningStreamPrintWithEquationIndexes(LOG_UTIL, 0, indexes, "solver will try to handle division by zero at time %.16g: %s", time, msg);
   } else {
-    throwStreamPrintWithEquationIndexes(threadData, indexes, "division by zero at time %.16g, divisor: %s", time, msg);
+    throwStreamPrintWithEquationIndexes(threadData, indexes, "division by zero at time %.16g, (a=%.16g) / (b = %.16g), where divisor b expression is: %s", time, a, b, msg);
   }
   return b;
 }
