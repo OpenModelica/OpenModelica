@@ -103,6 +103,7 @@ protected import Types;
 protected import DAEDump;
 protected import ValuesUtil;
 protected import ClassInf;
+protected import System;        // for stringReplace
 
 
   protected constant String HEADER        = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
@@ -2015,7 +2016,7 @@ algorithm
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLTranspose);
         dumpStrOpenTag(MathMLVector);
-        dumpList(es,dumpExp3);
+        dumpList(es,dumpExp2);
         dumpStrCloseTag(MathMLVector);
         dumpStrCloseTag(MathMLApply);
       then ();
@@ -3005,6 +3006,22 @@ algorithm
   end match;
 end dumpSolvingInfo;
 
+public function transformModelicaIdentifierToXMLElementTag
+  input String modelicaIdentifier;
+  output String xmlElementTag;
+algorithm
+  // XML element names cannot handle $ in identifiers
+  // TODO! FIXME!, there are many other characters valid in Modelica
+  // function names and identifiers that aren't valid in XML element tags.
+  xmlElementTag := System.stringReplace(modelicaIdentifier, "$", "_dollar_");
+  
+  // TODO! FIXME!, we have issues with accented chars in comments
+  // that end up in the Model_init.xml file and makes it not well
+  // formed but the line below does not work if the xmlElementTag is
+  // already UTF-8. We should somehow detect the encoding.
+  // xmlElementTag := System.iconv(xmlElementTag, "", "UTF-8");
+
+end transformModelicaIdentifierToXMLElementTag;
 
 public function dumpStrCloseTag "
   Function necessary to print the end of an
@@ -3023,7 +3040,7 @@ algorithm
     then ();
   case (inString)
     equation
-      Print.printBuf("\n</");Print.printBuf(inString);Print.printBuf(">");
+      Print.printBuf("\n</");Print.printBuf(transformModelicaIdentifierToXMLElementTag(inString));Print.printBuf(">");
     then ();
   end matchcontinue;
 end dumpStrCloseTag;
@@ -3137,7 +3154,7 @@ algorithm
     then ();
   case (inString)
     equation
-      Print.printBuf("\n<");Print.printBuf(inString);Print.printBuf(">");
+      Print.printBuf("\n<");Print.printBuf(transformModelicaIdentifierToXMLElementTag(inString));Print.printBuf(">");
     then ();
   end matchcontinue;
 end dumpStrOpenTag;
@@ -3162,11 +3179,11 @@ algorithm
   case ("",_,_)  equation  Print.printBuf("");  then();
   case (_,"",_)  equation  Print.printBuf("");  then();
   case (_,_,"")  equation  Print.printBuf("");  then();
-  case (inString,"",_)  equation dumpStrOpenTag(inString);  then ();
-  case (inString,_,"")  equation dumpStrOpenTag(inString);  then ();
+  case (inString,"",_)  equation dumpStrOpenTag(transformModelicaIdentifierToXMLElementTag(inString));  then ();
+  case (inString,_,"")  equation dumpStrOpenTag(transformModelicaIdentifierToXMLElementTag(inString));  then ();
   case (inString,inAttribute,inAttributeContent)
     equation
-      Print.printBuf("\n<");Print.printBuf(inString);Print.printBuf(" ");Print.printBuf(Attribute);Print.printBuf("=\"");Print.printBuf(inAttributeContent);Print.printBuf("\">");
+      Print.printBuf("\n<");Print.printBuf(transformModelicaIdentifierToXMLElementTag(inString));Print.printBuf(" ");Print.printBuf(Attribute);Print.printBuf("=\"");Print.printBuf(inAttributeContent);Print.printBuf("\">");
     then();
   end matchcontinue;
 end dumpStrOpenTagAttr;
@@ -3191,11 +3208,11 @@ algorithm
   case ("",_,_)  equation  Print.printBuf("");  then();
   case (_,"",_)  equation  Print.printBuf("");  then();
   case (_,_,"")  equation  Print.printBuf("");  then();
-  case (inString,"",_)  equation dumpStrOpenTag(inString);  then ();
-  case (inString,_,"")  equation dumpStrOpenTag(inString);  then ();
+  case (inString,"",_)  equation dumpStrOpenTag(transformModelicaIdentifierToXMLElementTag(inString));  then ();
+  case (inString,_,"")  equation dumpStrOpenTag(transformModelicaIdentifierToXMLElementTag(inString));  then ();
   case (inString,inAttribute,inAttributeContent)
     equation
-      Print.printBuf("\n<");Print.printBuf(inString);Print.printBuf(" ");Print.printBuf(Attribute);Print.printBuf("=\"");Print.printBuf(inAttributeContent);Print.printBuf("\" />");
+      Print.printBuf("\n<");Print.printBuf(transformModelicaIdentifierToXMLElementTag(inString));Print.printBuf(" ");Print.printBuf(Attribute);Print.printBuf("=\"");Print.printBuf(inAttributeContent);Print.printBuf("\" />");
     then();
   end matchcontinue;
 end dumpStrTagAttrNoChild;
@@ -3241,7 +3258,9 @@ algorithm
     case("") then();
     case(ElementName)
       equation
-        Print.printBuf("\n<");Print.printBuf(ElementName);Print.printBuf("/>");
+         Print.printBuf("\n<");
+         Print.printBuf(transformModelicaIdentifierToXMLElementTag(ElementName));
+         Print.printBuf("/>");
       then();
   end matchcontinue;
 end dumpStrVoidTag;
