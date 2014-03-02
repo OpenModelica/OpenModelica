@@ -82,7 +82,7 @@ AC_SUBST(LDFLAGS_SOCKET)
 AC_SUBST(APP)
 AC_SUBST(OMC)
 AC_SUBST(OMCTARGET)
-AC_SUBST(BOOTSTRAP_TARGET)
+AC_SUBST(BOOTSTRAP_STATIC)
 
 FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following options:"
 
@@ -806,7 +806,7 @@ if test "Darwin" = `uname`; then
   OS_TARGET="osx"
   LIS_LDFLAGS="-Wl,-install_name,@rpath/liblis.dylib"
   AR_SH="sh -x ar.sh"
-  BOOTSTRAP_TARGET="main-static"
+  BOOTSTRAP_STATIC="static"
 elif test "$host" = "i586-pc-mingw32msvc"; then
   APP=".exe"
   EXE=".exe"
@@ -828,7 +828,7 @@ elif test "$host" = "i586-pc-mingw32msvc"; then
   AR_SH="$AR -ru"
   CPPFLAGS_F2C=" -DUSE_CLOCK"
   LDFLAGS_SOCKET=" -lwsock32"
-  BOOTSTRAP_TARGET="main-static"
+  BOOTSTRAP_STATIC="static"
 else
   APP=""
   EXE=""
@@ -850,7 +850,7 @@ else
   RPATH="-Wl,-z,origin -Wl,-rpath,'\$\$ORIGIN/../lib/omc'"
   OS_TARGET="linux"
   AR_SH="$AR -ru"
-  BOOTSTRAP_TARGET="main-shared"
+  BOOTSTRAP_STATIC=""
 fi
 
 AC_ARG_WITH(MODPAR, [  --with-MODPAR                    Compile with automatic parallelization, requires boost],
