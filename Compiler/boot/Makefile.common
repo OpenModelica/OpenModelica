@@ -8,8 +8,8 @@ all:
 endif
 
 generate-files-in-steps:
-	$(MAKE) Makefile.sources
 	$(MAKE) templates
+	$(MAKE) Makefile.sources
 	$(MAKE) interfaces
 	$(MAKE) Makefile.depends
 	$(MAKE) generate-files
@@ -68,7 +68,8 @@ interfaces: $(ALL_INTERFACES) $(ALL_FILES)
 	@touch $@
 %.interface.mo: %.stamp.mo
 	
-
+ifeq ($(wildcard $(OMC)),)
+else
 Makefile.sources: LoadCompilerSources.mos MakeSources.mos
 	$(OMC) MakeSources.mos
 	mv Makefile.sources.tmp Makefile.sources
@@ -79,6 +80,7 @@ LoadCompilerInterface.mos: Makefile.sources
 Makefile.depends: MakeDepends.mos LoadCompilerInterface.mos Makefile.sources $(ALL_INTERFACES:%.stamp.mo=%.interface.mo)
 	@rm -f $@
 	$(OMC) $<
+endif
 
 $(GEN_DIR)%.stamp:
 	@test ! -z "$^" || (echo Empty dependencies for $@ ; false)
