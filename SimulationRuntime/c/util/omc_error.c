@@ -53,6 +53,7 @@ const char *LOG_STREAM_NAME[LOG_MAX] = {
   "LOG_IPOPT_FULL",
   "LOG_IPOPT_JAC",
   "LOG_IPOPT_HESSE",
+  "LOG_IPOPT_ERROR",
   "LOG_JAC",
   "LOG_LS",
   "LOG_LS_V",
@@ -83,8 +84,9 @@ const char *LOG_STREAM_DESC[LOG_MAX] = {
   "additional information during initialization",       /* LOG_INIT */
   "information from Ipopt",                             /* LOG_IPOPT */
   "more information from Ipopt",                        /* LOG_IPOPT_FULL*/
-  "check jacobian matrix with Ipopt",          /* LOG_IPOPT_JAC*/
-  "check hessian matrix with Ipopt",          /* LOG_IPOPT_HESSE*/
+  "check jacobian matrix with Ipopt",                   /* LOG_IPOPT_JAC*/
+  "check hessian matrix with Ipopt",                    /* LOG_IPOPT_HESSE*/
+  "print max error in the optimization",                /* LOG_IPOPT_ERROR*/
   "outputs the jacobian matrix used by dassl",          /* LOG_JAC */
   "logging for linear systems",                         /* LOG_LS */
   "verbose logging of linear systems",                  /* LOG_LS_V */

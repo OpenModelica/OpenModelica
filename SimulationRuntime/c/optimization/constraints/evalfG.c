@@ -54,6 +54,7 @@ static inline int evalG22(Number *g, IPOPT_DATA_ *iData, double *x0, int i);
 static inline int evalG23(Number *g, IPOPT_DATA_ *iData, double *x0, int i);
 static int diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J);
 static int num_diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J);
+static int printMaxError(IPOPT_DATA_ *iData, double *g,double time, double * max_err , double * tt, double *xi);
 
 /*!
  *  eval s.t.
@@ -62,11 +63,11 @@ static int num_diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, doubl
 Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
 {
    IPOPT_DATA_ *iData;
-   //int i,k,j;
-   int i,k;
+   int i,k,j;
    double *x0;
-   //double inf_p = 0;
-
+   double max_err = -1;
+   double max_err_time = -1;
+   double max_err_xi = -1;
 
    iData = (IPOPT_DATA_ *) useData;
    for(i=0, k=0, x0=v; i<1; ++i, x0=iData->x3){
@@ -82,22 +83,23 @@ Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
      functionODE_(x0, x0 + iData->nx, iData->time[0], iData->dotx0, iData);
      functionODE_(iData->x1, iData->u1, iData->time[1], iData->dotx1, iData);
      evalG21(g + k, iData, x0, i);
-     //for(j = 0; j<(int)iData->nJ; ++j)
-     //  inf_p = fmax(fabs(g[j]),inf_p);
+     if(ACTIVE_STREAM(LOG_IPOPT_ERROR))
+       printMaxError(iData,g,iData->time[1],&max_err, &max_err_time, &max_err_xi);
+
      k += iData->nJ;
 
      /*2*/
      functionODE_(iData->x2, iData->u2, iData->time[2], iData->dotx2, iData);
      evalG22(g + k, iData, x0, i);
-     //for(j = 0; j<(int)iData->nJ; ++j)
-     //  inf_p = fmax(fabs(g[j]),inf_p);
+     if(ACTIVE_STREAM(LOG_IPOPT_ERROR))
+       printMaxError(iData,g,iData->time[1],&max_err, &max_err_time, &max_err_xi);
      k += iData->nJ;
 
      /*3*/
      functionODE_(iData->x3, iData->u3, iData->time[3], iData->dotx3, iData);
      evalG23(g + k, iData, x0, i);
-     //for(j = 0; j<(int)iData->nJ; ++j)
-     //  inf_p = fmax(fabs(g[j]),inf_p);
+     if(ACTIVE_STREAM(LOG_IPOPT_ERROR))
+       printMaxError(iData,g,iData->time[1],&max_err, &max_err_time, &max_err_xi);
      k += iData->nJ;
   }
 
@@ -113,25 +115,29 @@ Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
     /*1*/
     functionODE_(iData->x1, iData->u1, iData->time[i*iData->deg + 1], iData->dotx1, iData);
     evalG11(g + k, iData, x0, i);
-    //for(j = 0; j<(int)iData->nJ; ++j)
-    //  inf_p = fmax(fabs(g[j]),inf_p);
+    if(ACTIVE_STREAM(LOG_IPOPT_ERROR))
+      printMaxError(iData,g,iData->time[1],&max_err, &max_err_time, &max_err_xi);
     k += iData->nJ;
 
     /*2*/
     functionODE_(iData->x2, iData->u2, iData->time[i*iData->deg + 2], iData->dotx2, iData);
     evalG12(g + k, iData, x0, i);
-    //for(j = 0; j<(int)iData->nJ; ++j)
-    //  inf_p = fmax(fabs(g[j]),inf_p);
+    if(ACTIVE_STREAM(LOG_IPOPT))
+      printMaxError(iData,g,iData->time[1],&max_err, &max_err_time, &max_err_xi);
     k += iData->nJ;
 
     /*3*/
     functionODE_(iData->x3, iData->u3, iData->time[i*iData->deg + 3], iData->dotx3, iData);
     evalG13(g + k, iData, x0, i);
-    //for(j = 0; j<(int)iData->nJ; ++j)
-    //  inf_p = fmax(fabs(g[j]),inf_p);
+    if(ACTIVE_STREAM(LOG_IPOPT_ERROR))
+      printMaxError(iData,g,iData->time[1],&max_err, &max_err_time, &max_err_xi);
     k += iData->nJ;
   }
- //printf("\ninf_p = %g\n",inf_p);
+  if(ACTIVE_STREAM(LOG_IPOPT_ERROR)){
+    printf("\n\tmax_err = %g",max_err);
+    printf("\ttimepoint = %g",max_err_time);
+    printf("\tvariable = %i\n",(int)max_err_xi);
+  }
   return TRUE;
 }
 
@@ -401,6 +407,25 @@ static inline int evalG23(Number *g, IPOPT_DATA_ *iData, double *x0, int i)
   memcpy(g + iData->nx, &iData->data->localData[0]->realVars[iData->data->modelData.nVariablesReal - iData->nc], sizeof(double)*iData->nc);
   return 0;
 
+}
+
+static int printMaxError(IPOPT_DATA_ *iData, double *g,double t, double * max_err,double * tt, double *xi)
+{
+  double inf_p ;
+  double tmp;
+  int j;
+
+  inf_p = *max_err;
+
+  for(j = 0; j<(int)iData->nJ; ++j){
+    tmp = fabs(g[j]);
+    if(tmp > inf_p){
+      inf_p = tmp;
+      *tt = t;
+      *xi = j;
+    }
+  }
+  *max_err = inf_p;
 }
 
 
