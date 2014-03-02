@@ -100,6 +100,7 @@ $(GEN_DIR)omc$(EXE_EXT): $(GEN_DIR)libOpenModelicaCompiler$(SHREXT) $(GEN_DIR)_m
 	$(CC) $(GEN_DIR)_main.o $(RPATH) $(CFLAGS) $(CPPFLAGS) -o $@ $(LDFLAGS) -lOpenModelicaCompiler
 install: $(GEN_DIR)omc$(EXE_EXT)
 	cp -a $< $(OMHOME)/bin/
+	cp -a $(GEN_DIR)libOpenModelicaCompiler$(SHREXT) $(OMHOME)/lib/omc/
 
 else
 
@@ -107,6 +108,5 @@ $(GEN_DIR)omc$(EXE_EXT): $(ALL_OBJECTS) $(GEN_DIR)_main.o
 	$(CC) $(GEN_DIR)_main.o $(RPATH) $(CFLAGS) $(CPPFLAGS) -o $@ $(ALL_OBJECTS) $(LDFLAGS)
 install: $(GEN_DIR)omc$(EXE_EXT) $(GEN_DIR)libOpenModelicaCompiler$(SHREXT)
 	cp -a $(GEN_DIR)omc$(EXE_EXT) $(OMHOME)/bin/
-	cp -a $(GEN_DIR)libOpenModelicaCompiler$(SHREXT) $(OMHOME)/lib/omc/
 
 endif
