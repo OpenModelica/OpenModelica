@@ -300,8 +300,11 @@ static int set_optimizer_flags(IPOPT_DATA_ *iData, IpoptProblem *nlp)
    * AddIpoptNumOption(nlp,"derivative_test_perturbation",1e-6);
    *
    */
-
-  AddIpoptIntOption(*nlp, "max_iter", 5000);
+  cflags = (char*)omc_flagValue[FLAG_IPOPT_MAX_ITER];
+  if(cflags)
+    AddIpoptIntOption(*nlp, "max_iter", atoi(cflags));
+  else
+    AddIpoptIntOption(*nlp, "max_iter", 5000);
 
   return 0;
 }
