@@ -2,10 +2,18 @@ runScript("LoadCompilerSources.mos");
 mkdir("build");
 writeFile("Makefile.sources.tmp", "ALL_OBJECTS="+sum(typeNameString(cl) + ".o " for cl in getClassNames())+"
 ALL_SOURCES=" + sum(file + " " for file in files) + "
-ALL_INTERFACES=" + sum("build/" + typeNameString(cl) + ".stamp.mo " for cl in getClassNames()) + "
-" + sum("\nbuild/" + typeNameString(cl) + ".stamp.mo: " + getSourceFile(cl) for cl in getClassNames()) + "
-ALL_FILES=" + sum("build/" + typeNameString(cl) + ".mo " for cl in getClassNames()) + "
-" + sum("\nbuild/" + typeNameString(cl) + ".mo: " + getSourceFile(cl) + "\n\tln -sf $< $@\n" for cl in getClassNames()));
+ALL_INTERFACES=" + sum("$(GEN_DIR)" + typeNameString(cl) + ".stamp.mo " for cl in getClassNames()) + "
+" + sum("\n$(GEN_DIR)" + typeNameString(cl) + ".stamp.mo: " + getSourceFile(cl) for cl in getClassNames()) + "
+ALL_FILES=" + sum("$(GEN_DIR)" + typeNameString(cl) + ".mo " for cl in getClassNames()) + "
+" + sum("$(GEN_DIR)" + typeNameString(cl) + ".mo: " + getSourceFile(cl) + "\n\tln -sf $< $@\n" for cl in getClassNames())
++ sum("$(GEN_DIR)" + typeNameString(cl) + ".o: $(GEN_DIR)" + typeNameString(cl) + ".h\n" for cl in getClassNames())
+/* Add this if we need the additional dependencies on the included header files. If the interface changed we did already recompile this file, so... Probably not needed. Probably.
++ sum("
+ifeq ($(wildcard $(GEN_DIR)"+typeNameString(cl)+".deps),$(GEN_DIR)"+typeNameString(cl)+".deps)
+include $(GEN_DIR)"+typeNameString(cl)+".deps
+endif" for cl in getClassNames())
+*/
+);
 
 loadString("within Absyn; /* So it is not listed by getClassNames() */
 function delimit

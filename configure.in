@@ -931,6 +931,7 @@ SimulationRuntime/c/simulation/libf2c/makefile.u \
 SimulationRuntime/ParModelica/explicit/openclrt/Makefile \
 SimulationRuntime/interactive/Makefile \
 mosh/src/Makefile \
+Compiler/boot/Makefile \
 "
 
 AC_CONFIG_COMMANDS([config.unix.h.fix],[./configure-post.sh $ac_cs_config])

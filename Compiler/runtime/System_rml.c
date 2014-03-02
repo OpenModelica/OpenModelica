@@ -1911,3 +1911,10 @@ RML_BEGIN_LABEL(System__covertTextFileToCLiteral)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(System__isRML)
+{
+  rmlA0 = mk_icon(1);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL

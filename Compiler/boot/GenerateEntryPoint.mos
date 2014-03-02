@@ -1,0 +1,4 @@
+if generateEntryPoint("build/_main.c",Main.main) then
+  exit(0);
+end if;
+exit(1);

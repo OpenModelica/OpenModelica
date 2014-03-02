@@ -1055,8 +1055,10 @@ annotation(Documentation(info="<html><p>Under construction.</p>
 end generateSeparateCodeDependencies;
 
 function generateSeparateCodeDependenciesMakefile
-  input String stampSuffix := ".c" "Suffix to add to dependencies (often .c.stamp)";
-  output String [:] dependencies;
+  input String filename "The file to write the makefile to";
+  input String directory := "" "The relative path of the generated files";
+  input String suffix := ".c" "Often .stamp since we do not update all the files";
+  output Boolean success;
 external "builtin";
 annotation(Documentation(info="<html><p>Under construction.</p>
 </html>"),preferredView="text");

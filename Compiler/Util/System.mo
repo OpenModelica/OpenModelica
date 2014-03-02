@@ -1104,4 +1104,9 @@ public function covertTextFileToCLiteral
 external "C" success=SystemImpl__covertTextFileToCLiteral(textFile,outFile);
 end covertTextFileToCLiteral;
 
+public function isRML
+  output Boolean b;
+external "C" b=System_isRML() annotation(Library = {"omcruntime"});
+end isRML;
+
 end System;

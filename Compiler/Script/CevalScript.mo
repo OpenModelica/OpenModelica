@@ -896,7 +896,7 @@ algorithm
       list<Error.TotalMessage> messages;
       UnitAbsyn.Unit u1,u2;
       Real stoptime,starttime,tol,stepsize,interval;
-      String stoptime_str,stepsize_str,starttime_str,tol_str,num_intervalls_str,description;
+      String stoptime_str,stepsize_str,starttime_str,tol_str,num_intervalls_str,description,prefix;
     case (cache,env,"parseString",{Values.STRING(str1),Values.STRING(str2)},st,_)
       equation
         Absyn.PROGRAM(classes=classes,within_=within_) = Parser.parsestring(str1,str2);
@@ -2009,12 +2009,12 @@ algorithm
     case (cache,env,"generateEntryPoint",_,st as GlobalScript.SYMBOLTABLE(ast = p),_)
       then (cache,Values.BOOL(false),st);
 
-    case (cache,env,"generateSeparateCodeDependenciesMakefile",{Values.STRING(filename)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
+    case (cache,env,"generateSeparateCodeDependenciesMakefile",{Values.STRING(filename),Values.STRING(prefix),Values.STRING(suffix)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       equation
         (sp,st) = Interactive.symbolTableToSCode(st);
         names = List.filterMap(sp,SCode.getElementName);
         deps = Graph.buildGraph(names,buildDependencyGraphPublicImports,sp);
-        strs = List.map1(sp,writeModuleDepends,deps);
+        strs = List.map3(sp,writeModuleDepends,prefix,suffix,deps);
         System.writeFile(filename,stringDelimitList(strs,"\n"));
       then (cache,Values.BOOL(true),st);
 
@@ -2062,13 +2062,21 @@ algorithm
 
     case (cache,env,"generateSeparateCode",{v,Values.BOOL(b)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       equation
-        sp = SCodeUtil.translateAbsyn2SCode(p);
+        (sp,st) = Interactive.symbolTableToSCode(st);
         name = getTypeNameIdent(v);
         setGlobalRoot(Global.instOnlyForcedFunctions,SOME(true));
         cl = List.getMemberOnTrue(name, sp, SCode.isClassNamed);
         (cache,env) = generateFunctions(cache,env,p,{cl},b);
         setGlobalRoot(Global.instOnlyForcedFunctions,NONE());
       then (cache,Values.BOOL(true),st);
+
+    case (cache,env,"generateSeparateCode",{v,Values.BOOL(b)},st,_)
+      equation
+        (sp,st) = Interactive.symbolTableToSCode(st);
+        name = getTypeNameIdent(v);
+        failure(_ = List.getMemberOnTrue(name, sp, SCode.isClassNamed));
+        Error.addMessage(Error.LOOKUP_ERROR, {name,"<TOP>"});
+      then fail();
 
     case (cache,env,"generateSeparateCode",_,st,_)
       equation
@@ -2118,12 +2126,13 @@ algorithm
     case (cache,env,"loadFile",_,st,_)
       then (cache,Values.BOOL(false),st);
 
-    case (cache,env,"loadFiles",{Values.ARRAY(valueLst=vals),Values.STRING(encoding),Values.INTEGER(i)},
+    case (cache,env,"loadFiles",{Values.ARRAY(valueLst=vals as _::_::_),Values.STRING(encoding),Values.INTEGER(i)},
           (st as GlobalScript.SYMBOLTABLE(
             ast = p,depends=aDep,instClsLst = ic,
             lstVarVal = iv,compiledFunctions = cf,
             loadedFiles = lf)),_)
       equation
+        false = System.isRML() or Config.noProc()==1;
         strs = List.mapMap(vals,ValuesUtil.extractValueString,Util.testsuiteFriendlyPath);
         System.GC_disable();
         newps = System.launchParallelTasks(i, List.map1(strs,Util.makeTuple,encoding), loadFileThread);
@@ -2132,9 +2141,21 @@ algorithm
       then
         (Env.emptyCache(),Values.BOOL(true),GlobalScript.SYMBOLTABLE(newp,aDep,NONE(),ic,iv,cf,lf));
 
+    case (cache,env,"loadFiles",{Values.ARRAY(valueLst=vals),Values.STRING(encoding),Values.INTEGER(i)},
+          (st as GlobalScript.SYMBOLTABLE(
+            ast = p,depends=aDep,instClsLst = ic,
+            lstVarVal = iv,compiledFunctions = cf,
+            loadedFiles = lf)),_)
+      equation
+        strs = List.mapMap(vals,ValuesUtil.extractValueString,Util.testsuiteFriendlyPath);
+        newps = List.map(List.map1(strs,Util.makeTuple,encoding), loadFileThread);
+        newp = List.fold(newps, Interactive.updateProgram, p);
+      then
+        (Env.emptyCache(),Values.BOOL(true),GlobalScript.SYMBOLTABLE(newp,aDep,NONE(),ic,iv,cf,lf));
+
     case (cache,env,"loadFiles",_,st,_)
       equation
-        System.GC_enable();
+        // System.GC_enable();
       then (cache,Values.BOOL(false),st);
 
     case (cache,env,"alarm",{Values.INTEGER(i)},st,_)
@@ -5156,7 +5177,7 @@ protected function generateFunctions2
 algorithm
   (cache,env) := matchcontinue (icache,ienv,p,cl,name,elementLst,info,cleanCache)
     local
-      list<String> names,dependencies;
+      list<String> names,dependencies,strs;
       list<Absyn.Path> paths;
       DAE.FunctionTree funcs;
       list<DAE.Function> d;
@@ -5184,7 +5205,8 @@ algorithm
         dependencies = List.sort(dependencies,Util.strcmpBool);
         dependencies = List.map1(dependencies,stringAppend,".h");
         nameHeader = name +& ".h";
-        System.writeFile(name +& ".deps", name +& ".o: " +& name +& ".c" +& " " +& stringDelimitList(nameHeader::dependencies," "));
+        strs = List.map1r(nameHeader::dependencies, stringAppend, "$(GEN_DIR)");
+        System.writeFile(name +& ".deps", "$(GEN_DIR)" +& name +& ".o: $(GEN_DIR)" +& name +& ".c" +& " " +& stringDelimitList(strs," "));
         dependencies = List.map1(dependencies,stringAppend,"\"");
         dependencies = List.map1r(dependencies,stringAppend,"#include \"");
         SimCodeMain.translateFunctions(p, name, NONE(), d, {}, dependencies);
@@ -7571,6 +7593,8 @@ end reloadClass;
 
 protected function writeModuleDepends
   input SCode.Element cl;
+  input String prefix;
+  input String suffix;
   input list<tuple<String,list<String>>> deps;
   output String str;
 protected
@@ -7581,8 +7605,9 @@ algorithm
   SCode.CLASS(name=name, classDef=SCode.PARTS(elementLst=elts)) := cl;
   protectedDepends := List.map(List.select(elts,SCode.elementIsProtectedImport),importDepenency);
   _::allDepends := Graph.allReachableNodes((name::protectedDepends,{}),deps,stringEq);
+  allDepends := List.map1r(allDepends, stringAppend, prefix);
   allDepends := List.map1(allDepends, stringAppend, ".interface.mo");
-  str := name +& ".c: " +& name +& ".mo " +& stringDelimitList(allDepends," ");
+  str := prefix +& name +& suffix +& ": " +& prefix +& name +& ".mo " +& stringDelimitList(allDepends," ");
 end writeModuleDepends;
 
 end CevalScript;

@@ -809,6 +809,11 @@ void System_threadFail(threadData_t *threadData)
   longjmp(*threadData->mmc_thread_work_exit,1);
 }
 
+int System_isRML()
+{
+  return 0;
+}
+
 #ifdef __cplusplus
 }
 #endif

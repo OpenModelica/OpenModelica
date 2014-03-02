@@ -153,7 +153,7 @@ match classDef
     let ieq_str = dumpEquations(initialEquationLst, "initial equation", options)
     let nal_str = match options case OPTIONS(stripAlgorithmSections=false) then dumpAlgorithmSections(p.normalAlgorithmLst, "algorithm", options)
     let ial_str = match options case OPTIONS(stripAlgorithmSections=false) then dumpAlgorithmSections(p.initialAlgorithmLst, "initial algorithm", options)
-    let extdecl_str = match options case OPTIONS(stripAlgorithmSections=false) then dumpExternalDeclOpt(p.externalDecl)
+    let extdecl_str = dumpExternalDeclOpt(p.externalDecl)
     let cdef_str =
       <<
       <%el_str%>

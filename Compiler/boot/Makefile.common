@@ -1,0 +1,105 @@
+all:
+	$(MAKE) generate-files-in-steps
+	$(MAKE) compile-files
+
+generate-files-in-steps:
+	$(MAKE) Makefile.sources
+	$(MAKE) templates
+	$(MAKE) interfaces
+	$(MAKE) Makefile.depends
+	$(MAKE) generate-files
+
+.PHONY: interfaces generate-files
+
+GEN_DIR=build/
+
+bootstrap-from-tarball:
+	$(MAKE) clean
+	tar xJf bootstrap-sources.tar.xz
+	$(MAKE) install
+	$(MAKE) clean
+	$(MAKE) generate-files-in-steps
+	$(MAKE) install
+	$(MAKE) clean
+	$(MAKE) generate-files-in-steps
+	$(MAKE) install
+
+bootstrap-from-compiled: make-separate
+
+make-bootstrap-tarball:
+	rm -rf $(GEN_DIR)
+	$(MAKE) generate-files-in-steps
+	tar cJf bootstrap-sources.tar.xz $(GEN_DIR) Makefile.sources
+
+templates:
+	$(MAKE) -C $(TOP_DIR)/Compiler/Template
+
+clean:
+	rm -rf $(GEN_DIR)
+	rm -f Makefile.sources LoadCompilerInterface.mos Makefile.depends
+
+ifeq ($(wildcard Makefile.sources),Makefile.sources)
+include Makefile.sources
+endif
+
+ifeq ($(wildcard Makefile.depends),Makefile.depends)
+include Makefile.depends
+endif
+
+generate-files: $(ALL_FILES:%.mo=%.stamp)
+	@test ! -z "$^" || (echo "*** Empty dependencies for $@"; false)
+
+ALL_OBJECTS=$(ALL_FILES:%.mo=%.o) $(ALL_FILES:%.mo=%_records.o)
+
+compile-files: $(ALL_OBJECTS) $(GEN_DIR)_main.o
+	@test ! -z "$^" || (echo "*** Empty dependencies for $@"; false)
+
+interfaces: $(ALL_INTERFACES) $(ALL_FILES)
+
+%.stamp.mo:
+	@mkdir -p build
+	@echo 'echo(false);inFile := "$<";outFile := "$@.tmp"; runScript("GenerateInterface.mos"); print(getErrorString()); print("Something went horribly wrong for $@\\n"); exit(1);' > "$@.mos"
+	$(OMC) +n=1 $@.mos
+	@touch $@
+%.interface.mo: %.stamp.mo
+	
+
+Makefile.sources: LoadCompilerSources.mos MakeSources.mos
+	$(OMC) MakeSources.mos
+	mv Makefile.sources.tmp Makefile.sources
+	mv LoadCompilerInterface.mos.tmp LoadCompilerInterface.mos
+
+LoadCompilerInterface.mos: Makefile.sources
+
+Makefile.depends: MakeDepends.mos LoadCompilerInterface.mos Makefile.sources $(ALL_INTERFACES:%.stamp.mo=%.interface.mo)
+	@rm -f $@
+	$(OMC) $<
+
+$(GEN_DIR)%.stamp:
+	@test ! -z "$^" || (echo Empty dependencies for $@ ; false)
+	@echo 'echo(false);files:={"'`echo $^ | sed 's/ /","/g'`'"};mainClass:=$$TypeName('`basename $@ | sed "s/[.]stamp//"`');runScript("CompileFile.mos");print("Something went horribly wrong for '$@'\\n");exit(1);' > $@.mos
+	$(OMC) +n=1 $@.mos
+	@touch $@
+
+$(GEN_DIR)_main.c:
+	$(OMC) GenerateEntryPoint.mos
+
+$(GEN_DIR)libOpenModelicaCompiler$(SHREXT): $(ALL_OBJECTS)
+	$(CC) -shared $(RPATH) $(INSTALL_NAME)  -o $@ $^ $(LDFLAGS)
+
+ifeq ($(STATIC),)
+
+$(GEN_DIR)omc$(EXE_EXT): $(GEN_DIR)libOpenModelicaCompiler$(SHREXT) $(GEN_DIR)_main.o
+	$(CC) $(GEN_DIR)_main.o $(RPATH) $(CFLAGS) $(CPPFLAGS) -o $@ -L./ $(LDFLAGS) -lOpenModelicaCompiler
+install: $(GEN_DIR)omc$(EXE_EXT) $(GEN_DIR)libOpenModelicaCompiler$(SHREXT)
+	cp -a $(GEN_DIR)omc$(EXE_EXT) $(OMHOME)/bin/
+	cp -a $(GEN_DIR)libOpenModelicaCompiler$(SHREXT) $(OMHOME)/lib/omc/
+
+else
+
+$(GEN_DIR)omc$(EXE_EXT): $(ALL_OBJECTS) $(GEN_DIR)_main.o
+	$(CC) $(GEN_DIR)_main.o $(RPATH) $(CFLAGS) $(CPPFLAGS) -o $@ -L./ $(LDFLAGS) $(ALL_OBJECTS) -lOpenModelicaCompiler
+install: $(GEN_DIR)omc$(EXE_EXT)
+	cp -a $< $(OMHOME)/bin/
+
+endif
