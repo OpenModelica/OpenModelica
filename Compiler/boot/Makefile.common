@@ -1,6 +1,11 @@
+ifeq ($(wildcard $(OMC)),)
+all:
+	$(MAKE) bootstrap-from-tarball
+else
 all:
 	$(MAKE) generate-files-in-steps
-	$(MAKE) compile-files
+	$(MAKE) install
+endif
 
 generate-files-in-steps:
 	$(MAKE) Makefile.sources
@@ -46,7 +51,7 @@ ifeq ($(wildcard Makefile.depends),Makefile.depends)
 include Makefile.depends
 endif
 
-generate-files: $(ALL_FILES:%.mo=%.stamp)
+generate-files: $(ALL_FILES:%.mo=%.stamp) $(GEN_DIR)_main.c
 	@test ! -z "$^" || (echo "*** Empty dependencies for $@"; false)
 
 ALL_OBJECTS=$(ALL_FILES:%.mo=%.o) $(ALL_FILES:%.mo=%_records.o)
@@ -70,7 +75,7 @@ Makefile.sources: LoadCompilerSources.mos MakeSources.mos
 	mv LoadCompilerInterface.mos.tmp LoadCompilerInterface.mos
 
 LoadCompilerInterface.mos: Makefile.sources
-
+	@test -f $@ || (rm -f $< && $(MAKE) $<)
 Makefile.depends: MakeDepends.mos LoadCompilerInterface.mos Makefile.sources $(ALL_INTERFACES:%.stamp.mo=%.interface.mo)
 	@rm -f $@
 	$(OMC) $<
