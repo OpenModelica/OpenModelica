@@ -308,8 +308,10 @@ static int set_optimizer_flags(IPOPT_DATA_ *iData, IpoptProblem *nlp)
     strcpy(buffer,cflags);
 
     while(buffer[i] != '\0'){
-      if(buffer[i] == 'e')
+      if(buffer[i] == 'e'){
         index_e = i;
+        break;
+      }
       ++i;
     }
 
@@ -317,9 +319,9 @@ static int set_optimizer_flags(IPOPT_DATA_ *iData, IpoptProblem *nlp)
       AddIpoptIntOption(*nlp, "max_iter", (int) atoi(cflags));
       printf("\nmax_iter = %i",atoi(cflags));
     }else{
-      int max_iter = (int) (atoi(cflags)*pow(10.0, (double)atoi(cflags+index_e+1)));
-      AddIpoptIntOption(*nlp, "max_iter", max_iter);
-      printf("\nmax_iter = %i",max_iter);
+      long int max_iter =  (atoi(cflags)*pow(10.0, (double)atoi(cflags+index_e+1)));
+      AddIpoptIntOption(*nlp, "max_iter", (int)max_iter);
+      printf("\nmax_iter = (int) %i | (double) %g",(int)max_iter, atoi(cflags)*pow(10.0, (double)atoi(cflags+index_e+1)));
     }
 
   }else
