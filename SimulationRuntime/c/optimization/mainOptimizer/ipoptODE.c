@@ -301,9 +301,28 @@ static int set_optimizer_flags(IPOPT_DATA_ *iData, IpoptProblem *nlp)
    *
    */
   cflags = (char*)omc_flagValue[FLAG_IPOPT_MAX_ITER];
-  if(cflags)
-    AddIpoptIntOption(*nlp, "max_iter", atoi(cflags));
-  else
+  if(cflags){
+    char buffer[100];
+    char c;
+    int index_e = -1,i=0;
+    strcpy(buffer,cflags);
+
+    while(buffer[i] != '\0'){
+      if(buffer[i] == 'e')
+        index_e = i;
+      ++i;
+    }
+
+    if(index_e < 0){
+      AddIpoptIntOption(*nlp, "max_iter", (int) atoi(cflags));
+      printf("\nmax_iter = %i",atoi(cflags));
+    }else{
+      int max_iter = (int) (atoi(cflags)*pow(10.0, (double)atoi(cflags+index_e+1)));
+      AddIpoptIntOption(*nlp, "max_iter", max_iter);
+      printf("\nmax_iter = %i",max_iter);
+    }
+
+  }else
     AddIpoptIntOption(*nlp, "max_iter", 5000);
 
   return 0;
