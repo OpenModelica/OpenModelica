@@ -5532,6 +5532,34 @@ case FUNCTION(__) then
     fflush(NULL);
     return 0;
   }
+  #ifdef GENERATE_MAIN_EXECUTABLE
+  static int rml_execution_failed()
+  {
+    fflush(NULL);
+    fprintf(stderr, "Execution failed!\n");
+    fflush(NULL);
+    return 1;
+  }
+
+  int main(int argc, char **argv) {
+    MMC_INIT();
+    {
+    void *lst = mmc_mk_nil();
+    int i = 0;
+
+    for (i=argc-1; i>0; i--) {
+      lst = mmc_mk_cons(mmc_mk_scon(argv[i]), lst);
+    }
+
+    <%mainTop('omc_<%fname%>(threadData, lst);',"https://trac.openmodelica.org/OpenModelica/newticket")%>
+    }
+
+    <%if Flags.isSet(HPCOM) then "terminateHpcOmThreads();" %>
+    fflush(NULL);
+    EXIT(0);
+    return 0;
+  }
+  #endif
   >>
   %>
   <%boxedFn%>
