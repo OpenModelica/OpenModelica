@@ -7347,6 +7347,7 @@ algorithm
         rest = List.deleteMember(pathsIn,path);
         sortedPaths = listAppend(sortedPathsIn,{path});
         sortedPaths = sortPathsAsChain1(rest,firstNode,endNode,sortedPaths);
+        
       then
         sortedPaths;       
     case(_,_,_,_)
@@ -7523,7 +7524,7 @@ algorithm
   
   numInLoop := listLength(loopVars);
   numOutLoop := listLength(nonLoopVars);
-  resolve := intGe(numInLoop,numOutLoop);
+  resolve := intGe(numInLoop,numOutLoop-1);
 end evaluateLoop;
 
 
