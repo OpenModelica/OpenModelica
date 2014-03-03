@@ -110,11 +110,11 @@ libSimulationRuntimeC.a: $(ALL_OBJS)
 
 	ranlib $@
 
-libSimulationRuntimeC.so: $(ALL_OBJS) install-f2c
+libSimulationRuntimeC.so: $(ALL_OBJS) $(builddir_lib)/libf2c.a
 	@rm -f $@
 	$(CC) -shared -o $@ $(ALL_OBJS) $(LDFLAGS_SIM)
 
-libSimulationRuntimeC.dylib: $(ALL_OBJS) install-f2c
+libSimulationRuntimeC.dylib: $(ALL_OBJS) $(builddir_lib)/libf2c.a
 	@rm -f $@
 	$(CC) -shared -o $@ $(ALL_OBJS) $(LDFLAGS_SIM) -undefined dynamic_lookup -install_name '@rpath/$@'
 
@@ -141,11 +141,11 @@ libOpenModelicaFMIRuntimeC.a: $(FMIOBJSPATH)
 	$(AR) $@ $(FMILIB) $(FMIOBJSPATH)
 	ranlib $@
 
-libOpenModelicaFMIRuntimeC.so: $(FMIOBJSPATH) install-f2c
+libOpenModelicaFMIRuntimeC.so: $(FMIOBJSPATH) $(builddir_lib)/libf2c.a
 	@rm -f $@
 	$(CC) -shared -o $@ $(FMIOBJSPATH) $(LDFLAGS)
 
-libOpenModelicaFMIRuntimeC.dylib: $(FMIOBJSPATH) install-f2c
+libOpenModelicaFMIRuntimeC.dylib: $(FMIOBJSPATH) $(builddir_lib)/libf2c.a
 	@rm -f $@
 	$(CC) -shared -o $@ $(FMIOBJSPATH) $(LDFLAGS_SIM) -undefined dynamic_lookup -install_name '@rpath/$@'
 
@@ -180,17 +180,13 @@ $(SIMOBJSPATHC):%$(OBJ_EXT): %.c $(SIMHFILESPATH) $(COMMON_HEADERS)
 $(OPTIMIZATIONOBJSPATH):%$(OBJ_EXT): %.c $(OPTIMIZATIONHFILESPATH) $(COMMON_HEADERS)
 	$(CC) -c $(CFLAGS) -o $@ $<
 
-ifeq ($(LIBF2C),)
-simulation/libf2c/libf2c.a:
-else
 simulation/libf2c/libf2c.a:
 	$(MAKE) -C simulation/libf2c -f ${LIBMAKEFILE}
-endif
 
-install-f2c: simulation/libf2c/libf2c.a
-	test -z "$(LIBF2C)" || cp simulation/libf2c/libf2c.* $(builddir_lib)/
+$(builddir_lib)/libf2c.a: simulation/libf2c/libf2c.a
+	cp $< $@
 
-install: $(LIBSIMULATION) $(LIBRUNTIME) $(LIBFMIRUNTIME) simulation/libf2c/libf2c.a $(ALL_OBJS) install-f2c
+install: $(LIBSIMULATION) $(LIBRUNTIME) $(LIBFMIRUNTIME) simulation/libf2c/libf2c.a $(ALL_OBJS) $(builddir_lib)/libf2c.a
 	# copy libraries
 	cp -p $(LIBSIMULATION) $(LIBRUNTIME) $(LIBFMIRUNTIME) \
 	   ../interactive/libinteractive.a $(builddir_lib)
