@@ -721,7 +721,7 @@ static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData)
   }
   iData->data->callback->pickUpBoundsForInputsInOptimization(data,iData->umin, iData->umax, &iData->vnom[iData->nx], tmp, tmpname, start, &iData->startTimeOpt);
   iData->preSim = (iData->t0 < (iData->startTimeOpt));
-  if(ACTIVE_STREAM(LOG_IPOPT)){
+  if(ACTIVE_STREAM(LOG_IPOPT)|| ACTIVE_STREAM(LOG_IPOPT_ERROR)){
   char buffer[200];
     printf("Optimizer Variables");
     printf("\n========================================================");
