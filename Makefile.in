@@ -9,6 +9,7 @@ bindir = @bindir@
 libdir = @libdir@
 includedir = @includedir@
 datadir = @datadir@
+datarootdir = @datarootdir@
 docdir = @docdir@
 CMAKE = CC=$(CC) CXX=$(CXX) cmake
 CMAKE_TARGET = "Unix Makefiles"
