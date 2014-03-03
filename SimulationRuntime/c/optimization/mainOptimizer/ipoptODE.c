@@ -261,8 +261,6 @@ static int set_optimizer_flags(IPOPT_DATA_ *iData, IpoptProblem *nlp)
   cflags = (char*)omc_flagValue[FLAG_LS_IPOPT];
   if(cflags)
     AddIpoptStrOption(*nlp, "linear_solver", cflags);
-  else
-    AddIpoptStrOption(*nlp, "linear_solver", "mumps");
 
   AddIpoptStrOption(*nlp,"nlp_scaling_method","gradient-based");
   AddIpoptStrOption(*nlp,"linear_system_scaling","slack-based");
