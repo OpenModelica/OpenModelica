@@ -161,7 +161,7 @@ algorithm
       then (listReverse(iAcc),iRunMatching);
     // don't tear linear system as long as we do not handle them
     // as linear system while the runtime
-    case ((comp as BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=ojac,jacType=jacType))::comps,_,_,_,_,_)
+    case ((comp as BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=BackendDAE.FULL_JACOBIAN(ojac),jacType=jacType))::comps,_,_,_,_,_)
       equation
         equality(jacType = BackendDAE.JAC_TIME_VARYING());
            Debug.fcall(Flags.TEARING_DUMP, print, "\nCase linear in traverseComponents\nUse Flag '+d=tearingdumpV' for more details\n\n");
@@ -173,7 +173,7 @@ algorithm
       then
         (acc,b1);
     // tearing of non-linear systems
-    case ((comp as BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=ojac,jacType=jacType))::comps,_,_,_,_,_)
+    case ((comp as BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=BackendDAE.FULL_JACOBIAN(ojac),jacType=jacType))::comps,_,_,_,_,_)
       equation
         failure(equality(jacType = BackendDAE.JAC_TIME_VARYING()));
            Debug.fcall(Flags.TEARING_DUMP, print, "\nCase non-linear in traverseComponents\nUse Flag '+d=tearingdumpV' for more details\n\n");
@@ -1676,10 +1676,10 @@ algorithm
         eqnvartpllst = omcTearing4_1(othercomps,ass2,mapIncRowEqn,eindxarr,varindxarr,columark,mark,{});
         linear = getLinearfromJacType(jacType);
       then
-        (BackendDAE.TORNSYSTEM(ovars, ores, eqnvartpllst, linear),true);
+        (BackendDAE.TORNSYSTEM(ovars, ores, eqnvartpllst, linear,BackendDAE.EMPTY_JACOBIAN()),true);
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       then
-        (BackendDAE.TORNSYSTEM({}, {}, {}, false),false);
+        (BackendDAE.TORNSYSTEM({}, {}, {}, false, BackendDAE.EMPTY_JACOBIAN()),false);
   end matchcontinue;
 end omcTearing4;
 
@@ -1835,7 +1835,7 @@ algorithm
   // assign otherEqnVarTpl:
   otherEqnVarTpl := assignOtherEqnVarTpl(List.flatten(order),eindex,vindx,ass2,mapEqnIncRow,{});
   linear := getLinearfromJacType(jacType);
-  ocomp := BackendDAE.TORNSYSTEM(OutTVars,residual,otherEqnVarTpl,linear);
+  ocomp := BackendDAE.TORNSYSTEM(OutTVars,residual,otherEqnVarTpl,linear,BackendDAE.EMPTY_JACOBIAN());
   outRunMatching := true;
      Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nEND of tearingSystem1_1\n" +& BORDER +& "\n\n");
 end tearingSystem1_1;

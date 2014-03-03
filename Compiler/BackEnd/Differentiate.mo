@@ -281,7 +281,7 @@ algorithm
       funcs = BackendDAEUtil.getFunctions(ishared);
       knvars = BackendDAEUtil.getknvars(ishared);
       diffData = BackendDAE.DIFFINPUTDATA(NONE(), SOME(inVariables), SOME(knvars), NONE(), SOME({}), NONE(), NONE());
-      (dexp, funcs) = differentiateExp(inExp, inCref, diffData, BackendDAE.FULL_JACOBIAN(), funcs);
+      (dexp, funcs) = differentiateExp(inExp, inCref, diffData, BackendDAE.DIFF_FULL_JACOBIAN(), funcs);
       oshared = BackendDAEUtil.addFunctionTree(funcs, ishared);
       then (dexp, oshared);
     else
@@ -1151,7 +1151,7 @@ algorithm
         (zero, inFunctionTree);
 
     // D(y)/dx => 0
-    case (DAE.CREF(componentRef = cr, ty = tp), _, _, BackendDAE.FULL_JACOBIAN(), _)
+    case (DAE.CREF(componentRef = cr, ty = tp), _, _, BackendDAE.DIFF_FULL_JACOBIAN(), _)
       equation
         (zero,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
         
@@ -2065,7 +2065,7 @@ algorithm
       equation
         //s1 = ExpressionDump.printExpStr(e);
         //print("\nExp-CALL\n build-funcs force-inline: " +& s1);
-        failure(BackendDAE.FULL_JACOBIAN() = inDiffType);
+        failure(BackendDAE.DIFF_FULL_JACOBIAN() = inDiffType);
         failure(BackendDAE.GENERIC_GRADIENT() = inDiffType);
         (e,_,true) = Inline.forceInlineExp(e,(SOME(inFunctionTree),{DAE.NORM_INLINE(),DAE.NO_INLINE()}),DAE.emptyElementSource);
         e = Expression.addNoEventToRelations(e);
@@ -2079,7 +2079,7 @@ algorithm
         // TODO: FIXIT! expressionSolve and analyticJacobian don't 
         // return  new functionTree, so we can't differentiate functions then.
         failure(BackendDAE.SIMPLE_DIFFERENTAION() = inDiffType);
-        failure(BackendDAE.FULL_JACOBIAN() = inDiffType);
+        failure(BackendDAE.DIFF_FULL_JACOBIAN() = inDiffType);
         
         // get algorithm of the function
         SOME(func) = DAEUtil.avlTreeGet(inFunctionTree,path);

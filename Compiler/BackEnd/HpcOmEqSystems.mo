@@ -40,7 +40,6 @@ encapsulated package HpcOmEqSystems
 
 public import BackendDAE;
 public import DAE;
-public import SimCode;
 
 // protected imports
 protected import BackendDump;
@@ -58,7 +57,6 @@ protected import GraphML;
 protected import HpcOmTaskGraph;
 protected import List;
 protected import Matching;
-protected import SimCodeUtil;
 protected import Util;
 
 //--------------------------------------------------//
@@ -284,23 +282,23 @@ algorithm
    eqLst := BackendEquation.equationList(eqns);
    varLst := BackendVariable.varList(vars);
    tvars := List.map1r(tearingVars, BackendVariable.getVarAt, vars);
-   tvarsReplaced := List.map(tvars, SimCodeUtil.transformXToXd);
+   tvarsReplaced := List.map(tvars, BackendVariable.transformXToXd);
    tcrs := List.map(tvarsReplaced, BackendVariable.varCref);
       
    // get residual eqns
    reqns := BackendEquation.getEqns(residualEqs, eqns);
-   reqns := SimCodeUtil.replaceDerOpInEquationList(reqns);
+   reqns := BackendEquation.replaceDerOpInEquationList(reqns);
    
    // get the other equations and the other variables
    otherEqnsInts := List.map(otherEqsVarTpl, Util.tuple21);
    otherEqnsLst := BackendEquation.getEqns(otherEqnsInts, eqns);
    oeqns := BackendEquation.listEquation(otherEqnsLst);
-   otherEqnsLstReplaced := SimCodeUtil.replaceDerOpInEquationList(otherEqnsLst);   // for computing the new equations
+   otherEqnsLstReplaced := BackendEquation.replaceDerOpInEquationList(otherEqnsLst);   // for computing the new equations
    
    otherVarsIntsLst := List.map(otherEqsVarTpl, Util.tuple22);
    otherVarsInts := List.unionList(otherVarsIntsLst);
    ovarsLst := List.map1r(otherVarsInts, BackendVariable.getVarAt, vars);
-   ovarsLst := List.map(ovarsLst, SimCodeUtil.transformXToXd);  //try this
+   ovarsLst := List.map(ovarsLst, BackendVariable.transformXToXd);  //try this
    ovars := BackendVariable.listVar1(ovarsLst);
    ovcrs := List.map(ovarsLst, BackendVariable.varCref);
       
@@ -393,7 +391,7 @@ algorithm
       equation
         jac = buildLinearJacobian(jacValuesIn);
         //print("Jac:\n" +& BackendDump.dumpJacobianStr(jac) +& "\n");
-        comp = BackendDAE.EQUATIONSYSTEM(eqIdcsIn,varIdcsIn,jac,BackendDAE.JAC_TIME_VARYING());   
+        comp = BackendDAE.EQUATIONSYSTEM(eqIdcsIn,varIdcsIn,BackendDAE.FULL_JACOBIAN(jac),BackendDAE.JAC_TIME_VARYING());   
         //print("the eqs of the sys: "+&stringDelimitList(List.map(varIdcsIn,intString),"\n")+&"\n");
         //print("the vars of the sys: "+&stringDelimitList(List.map(eqIdcsIn,intString),"\n")+&"\n");
         //comp = BackendDAE.EQUATIONSYSTEM(eqIdcsIn,varIdcsIn,NONE(),BackendDAE.JAC_NO_ANALYTIC());   

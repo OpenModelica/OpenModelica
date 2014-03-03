@@ -2418,6 +2418,15 @@ algorithm
   BackendDAE.SHARED(knownVars=vars) := shared;
 end getknvars;
 
+public function getExtraInfo
+"function: getExtraInfo
+  This function returns extra info of a BackendDAE."
+  input BackendDAE.Shared shared;
+  output BackendDAE.ExtraInfo einfo;
+algorithm
+  BackendDAE.SHARED(info=einfo) := shared;
+end getExtraInfo;
+
 /************************************
   stuff that deals with extendArrExp
  ************************************/
@@ -8673,7 +8682,8 @@ algorithm
                         (BackendDAEOptimize.detectSparsePatternODE,"detectJacobianSparsePattern",false),
                         (BackendDAEOptimize.partitionIndependentBlocks, "partitionIndependentBlocks", true),
                         (Tearing.tearingSystem, "tearingSystem", false),
-                        (BackendDAEOptimize.addInitialStmtsToAlgorithms, "addInitialStmtsToAlgorithms", false)
+                        (BackendDAEOptimize.addInitialStmtsToAlgorithms, "addInitialStmtsToAlgorithms", false),
+                        (BackendDAEOptimize.calculateStrongComponentJacobians, "calculateStrongComponentJacobians", false)
                         //(BackendDAEOptimize.resolveLoopsInComps,"resolveLoops", false)
                         };
 

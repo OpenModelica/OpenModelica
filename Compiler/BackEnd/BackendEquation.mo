@@ -2820,4 +2820,75 @@ algorithm
   end match;
 end isDifferentiated;
 
+public function replaceDerOpInEquationList
+  "Replaces all der(cref) with $DER.cref in a list of equations."
+  input list<BackendDAE.Equation> inEqns;
+  output list<BackendDAE.Equation> outEqns;
+algorithm
+  outEqns := List.map(inEqns, replaceDerOpInEquation);
+end replaceDerOpInEquationList;
+
+protected function replaceDerOpInEquation
+  "Replaces all der(cref) with $DER.cref in an equation."
+  input BackendDAE.Equation inEqn;
+  output BackendDAE.Equation outEqn;
+algorithm
+  
+  outEqn := matchcontinue(inEqn)
+    local
+      DAE.Exp e1, e2;
+      DAE.ElementSource src;
+      DAE.ComponentRef cr;
+      list<Integer> dimSize;
+      Integer size;
+      DAE.Algorithm alg;
+      list<DAE.Statement> stmts, stmts1;
+      Boolean diffed;
+      DAE.Expand crefExpand;
+    
+    case (BackendDAE.EQUATION(exp = e1, scalar = e2, source = src, differentiated = diffed))
+      equation
+        e1 = Expression.replaceDerOpInExp(e1);
+        e2 = Expression.replaceDerOpInExp(e2);
+      then
+        BackendDAE.EQUATION(e1, e2, src, diffed);
+        
+    case (BackendDAE.ARRAY_EQUATION(dimSize=dimSize, left = e1, right = e2, source = src, differentiated = diffed))
+      equation
+        e1 = Expression.replaceDerOpInExp(e1);
+        e2 = Expression.replaceDerOpInExp(e2);
+      then
+        BackendDAE.ARRAY_EQUATION(dimSize, e1, e2, src, diffed);    
+        
+    case (BackendDAE.COMPLEX_EQUATION(size=size, left = e1, right = e2, source = src, differentiated = diffed))
+      equation
+        e1 = Expression.replaceDerOpInExp(e1);
+        e2 = Expression.replaceDerOpInExp(e2);
+      then
+        BackendDAE.COMPLEX_EQUATION(size, e1, e2, src, diffed);
+        
+    case (BackendDAE.RESIDUAL_EQUATION(exp = e1, source = src, differentiated = diffed))
+      equation
+        e1 = Expression.replaceDerOpInExp(e1);
+      then
+        BackendDAE.RESIDUAL_EQUATION(e1, src, diffed);
+        
+    case (BackendDAE.SOLVED_EQUATION(componentRef=cr, exp = e1, source = src, differentiated = diffed))
+      equation
+        e1 = Expression.replaceDerOpInExp(e1);
+      then
+        BackendDAE.SOLVED_EQUATION(cr, e1, src, diffed);
+        
+    case (BackendDAE.ALGORITHM(size=size, alg=alg as DAE.ALGORITHM_STMTS(statementLst = stmts), source=src, expand = crefExpand))
+      equation
+        (stmts1, _) = DAEUtil.traverseDAEEquationsStmts(stmts, Expression.replaceDerOpInExpTraverser, NONE());
+        alg = Util.if_(referenceEq(stmts, stmts1), alg, DAE.ALGORITHM_STMTS(stmts1));
+      then
+        BackendDAE.ALGORITHM(size, alg, src, crefExpand);
+        
+    case (_) then inEqn;
+        
+  end matchcontinue;
+end replaceDerOpInEquation;
+
 end BackendEquation;

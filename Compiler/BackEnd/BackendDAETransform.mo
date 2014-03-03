@@ -478,7 +478,7 @@ algorithm
         // if constant check for singular jacobian
         true = analyzeConstantJacobian(jacConstant,jac,arrayLength(mt),var_lst,eqn_lst,shared);
       then
-        BackendDAE.EQUATIONSYSTEM(comp,varindxs,jac,jac_tp);
+        BackendDAE.EQUATIONSYSTEM(comp,varindxs,BackendDAE.FULL_JACOBIAN(jac),jac_tp);
     
     case (comp,eqn_lst,var_varindx_lst,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared,ass1,ass2,_)
       equation

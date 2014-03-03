@@ -9916,4 +9916,64 @@ algorithm
   end match;
 end fromAbsynOperator;
 
+public function replaceDerOpInExp
+  "Replaces all der(cref) with $DER.cref in an expression."
+  input DAE.Exp inExp;
+  output DAE.Exp outExp;
+algorithm
+  ((outExp, _)) := traverseExp(inExp, replaceDerOpInExpTraverser, NONE());
+end replaceDerOpInExp;
+
+public function replaceDerOpInExpCond
+  "Replaces der(cref) with $DER.cref in an expression, where the cref to replace
+  is explicitly given."
+  input tuple<DAE.Exp, Option<DAE.ComponentRef>> inTpl;
+  output tuple<DAE.Exp, Option<DAE.ComponentRef>> outTpl;
+  protected
+  DAE.Exp e;
+  Option<DAE.ComponentRef> cr;
+algorithm
+  (e, cr) := inTpl;
+  outTpl := traverseExp(e, replaceDerOpInExpTraverser, cr);
+end replaceDerOpInExpCond;
+
+public function replaceDerOpInExpTraverser
+  "Used with Expression.traverseExp to traverse an expression an replace calls to
+  der(cref) with a component reference $DER.cref. If an optional component
+  reference is supplied, then only that component reference is replaced.
+  Otherwise all calls to der are replaced.
+  
+  This is done since some parts of the compiler can't handle der-calls, such as
+  Derive.differentiateExpression. Ideally these parts should be fixed so that they can
+  handle der-calls, but until that happens we just replace the der-calls with
+  crefs."
+  input tuple<DAE.Exp, Option<DAE.ComponentRef>> inExp;
+  output tuple<DAE.Exp, Option<DAE.ComponentRef>> outExp;
+algorithm
+  outExp := matchcontinue(inExp)
+    local
+      DAE.ComponentRef cr, der_cr;
+      DAE.Exp cref_exp;
+      DAE.ComponentRef cref;
+      
+    case ((DAE.CALL(path = Absyn.IDENT("der"), expLst = {DAE.CREF(componentRef = cr)}), 
+        SOME(cref)))
+      equation
+        der_cr = ComponentReference.crefPrefixDer(cr);
+        true = ComponentReference.crefEqualNoStringCompare(der_cr, cref);
+        cref_exp = crefExp(der_cr);
+      then
+        ((cref_exp, SOME(cref)));
+        
+    case ((DAE.CALL(path = Absyn.IDENT("der"), expLst = {DAE.CREF(componentRef = cr)}), 
+        NONE()))
+      equation
+        cr = ComponentReference.crefPrefixDer(cr);
+        cref_exp = crefExp(cr);
+      then
+        ((cref_exp, NONE()));
+    case (_) then inExp;
+  end matchcontinue;
+end replaceDerOpInExpTraverser;
+
 end Expression;

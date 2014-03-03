@@ -4774,4 +4774,49 @@ algorithm
   end match;
 end stateSelectToInteger;
 
+public function transformXToXd 
+"author: PA
+  this function transforms x variables (in the state vector)
+  to corresponding xd variable (in the derivatives vector)"
+  input BackendDAE.Var inVar;
+  output BackendDAE.Var outVar;
+algorithm
+  outVar := matchcontinue (inVar)
+    local
+      DAE.ComponentRef cr;
+      DAE.VarDirection dir;
+      DAE.VarParallelism prl;
+      BackendDAE.Type tp;
+      Option<DAE.Exp> exp;
+      Option<Values.Value> v;
+      list<DAE.Subscript> dim;
+      Option<DAE.VariableAttributes> attr;
+      Option<SCode.Comment> comment;
+      DAE.ConnectorType ct;
+      DAE.ElementSource source;
+      BackendDAE.Var backendVar;
+      
+    case (BackendDAE.VAR(varName = cr, 
+      varKind = BackendDAE.STATE(index=_), 
+      varDirection = dir, 
+      varParallelism = prl, 
+      varType = tp, 
+      bindExp = exp, 
+      bindValue = v, 
+      arryDim = dim, 
+      source = source, 
+      values = attr, 
+      comment = comment, 
+      connectorType = ct))
+      equation
+        cr = ComponentReference.crefPrefixDer(cr);
+      then
+        BackendDAE.VAR(cr, BackendDAE.STATE_DER(), dir, prl, tp, exp, v, dim, source, attr, comment, ct);
+        
+    case (backendVar)
+    then
+      backendVar;
+  end matchcontinue;
+end transformXToXd;
+
 end BackendVariable;

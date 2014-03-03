@@ -59,6 +59,10 @@ constant Integer rewriteRulesIndex = 18;
 // indexes in System.tick
 constant Integer backendDAE_fileSequence = 20;
 
+// indexes for jacobian name
+constant Integer backendDAE_jacobianSeq = 21;
+
+
 // Real-time clocks have nothing to do with the roots
 constant Integer RT_CLOCK_EXECSTAT_MAIN = 11 /* See GlobalScript.mo */;
 

@@ -345,7 +345,7 @@ uniontype StrongComponent
   record EQUATIONSYSTEM
     list<Integer> eqns;
     list<Integer> vars "be carefule with states, this are solved for der(x)";
-    Option<list<tuple<Integer, Integer, Equation>>> jac;
+    Jacobian jac;
     JacobianType jacType;
   end EQUATIONSYSTEM;
 
@@ -385,6 +385,7 @@ uniontype StrongComponent
     list<Integer> residualequations;
     list<tuple<Integer,list<Integer>>> otherEqnVarTpl "list of tuples of indexes for Equation and Variable solved in the equation, in the order they have to be solved";
     Boolean linear;
+    Jacobian jac;
   end TORNSYSTEM;
 end StrongComponent;
 
@@ -561,6 +562,7 @@ uniontype JacobianType
   record JAC_NONLINEAR "If jacobian contains variables that are solved for,
               means that a nonlinear system of equations needs to be
               solved" end JAC_NONLINEAR;
+  record JAC_GENERIC "GENERIC_JACOBIAN jacobian available" end JAC_GENERIC;
 
   record JAC_NO_ANALYTIC "No analytic jacobian available" end JAC_NO_ANALYTIC;
 end JacobianType;
@@ -573,6 +575,24 @@ public constant Integer SymbolicJacobianGIndex = 5;
 
 public constant String partialDerivativeNamePrefix = "$pDER";
 public constant String functionDerivativeNamePrefix = "$funDER";
+
+
+type FullJacobian = Option<list<tuple<Integer, Integer, Equation>>>;
+  
+public
+uniontype Jacobian
+  record FULL_JACOBIAN
+    FullJacobian jacobian;
+  end FULL_JACOBIAN;
+  
+  record GENERIC_JACOBIAN
+    SymbolicJacobian jacobian;
+    SparsePattern sparsePattern;
+    SparseColoring coloring;
+  end GENERIC_JACOBIAN;
+  
+  record EMPTY_JACOBIAN end EMPTY_JACOBIAN;
+end Jacobian;
 
 public
 type SymbolicJacobians = list<tuple<Option<SymbolicJacobian>, SparsePattern, SparseColoring>>;
@@ -624,8 +644,8 @@ uniontype DiffentiationType "Define the behavoir of differentation method for (e
                                   by differentiate arguments."
   end DIFFERENTAION_FUNCTION;
   
-  record FULL_JACOBIAN "Used to generate a full jacobian matrix"
-  end FULL_JACOBIAN;
+  record DIFF_FULL_JACOBIAN "Used to generate a full jacobian matrix"
+  end DIFF_FULL_JACOBIAN;
 
   record GENERIC_GRADIENT "Used to generate a generic gradient for generation the jacobian matrix while the runtime."
   end GENERIC_GRADIENT;

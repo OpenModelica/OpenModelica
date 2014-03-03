@@ -1554,9 +1554,9 @@ template functionInitialNonLinearSystemsTemp(list<SimEqSystem> allEquations, Str
      case eq as SES_NONLINEAR(__) then
      let size = listLength(crefs)
      let newtonStep = if linearTearing then '1' else '0'
-     let generatedJac = match jacobianMatrix case SOME(__) then '<%symbolName(modelPrefixName,"functionJacNLSJac")%><%eq.index%>_column' case NONE() then 'NULL'
-     let initialJac = match jacobianMatrix case SOME(__) then '<%symbolName(modelPrefixName,"initialAnalyticJacobianNLSJac")%><%eq.index%>' case NONE() then 'NULL'
-     let jacIndex = match jacobianMatrix case SOME(__) then '<%symbolName(modelPrefixName,"INDEX_JAC_NLSJac")%><%eq.index%>' case NONE() then '-1'
+     let generatedJac = match jacobianMatrix case SOME((_,_,name,_,_,_)) then '<%symbolName(modelPrefixName,"functionJac")%><%name%>_column' case NONE() then 'NULL'
+     let initialJac = match jacobianMatrix case SOME((_,_,name,_,_,_)) then '<%symbolName(modelPrefixName,"initialAnalyticJacobian")%><%name%>' case NONE() then 'NULL'
+     let jacIndex = match jacobianMatrix case SOME((_,_,name,_,_,_)) then '<%symbolName(modelPrefixName,"INDEX_JAC_")%><%name%>' case NONE() then '-1'
      let innerEqs = functionInitialNonLinearSystemsTemp(eqs, modelPrefixName)
      <<
      <%innerEqs%>

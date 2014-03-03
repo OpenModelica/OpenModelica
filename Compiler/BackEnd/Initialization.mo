@@ -180,7 +180,7 @@ algorithm
       (initdae, _) = BackendDAEUtil.mapEqSystemAndFold(initdae, solveInitialSystemEqSystem, dae);
       
       // transform and optimize DAE
-      pastOptModules = BackendDAEUtil.getPostOptModules(SOME({"constantLinearSystem", /* here we need a special case and remove only alias and constant (no variables of the system) variables "removeSimpleEquations", */ "tearingSystem"}));
+      pastOptModules = BackendDAEUtil.getPostOptModules(SOME({"constantLinearSystem", /* here we need a special case and remove only alias and constant (no variables of the system) variables "removeSimpleEquations", */ "tearingSystem","calculateStrongComponentJacobians"}));
       matchingAlgorithm = BackendDAEUtil.getMatchingAlgorithm(NONE());
       daeHandler = BackendDAEUtil.getIndexReductionMethod(NONE());
 
@@ -724,7 +724,16 @@ algorithm
       Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "Iteration variables with default zero start attribute in nonlinear equation system:\n" +& warnAboutVars2(varlst));
       _ = warnAboutIterationVariablesWithDefaultZeroStartAttribute2(rest, inVars);
     then true;
-    
+
+     case (BackendDAE.EQUATIONSYSTEM(vars=vlst, jacType=BackendDAE.JAC_GENERIC())::rest, _) equation
+      varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
+      varlst = filterVarsWithoutStartValue(varlst);
+      false = List.isEmpty(varlst);
+      
+      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "Iteration variables with default zero start attribute in equation system w/o analytic Jacobian:\n" +& warnAboutVars2(varlst));
+      _ = warnAboutIterationVariablesWithDefaultZeroStartAttribute2(rest, inVars);
+    then true;
+   
     case (BackendDAE.EQUATIONSYSTEM(vars=vlst, jacType=BackendDAE.JAC_NO_ANALYTIC())::rest, _) equation
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
       varlst = filterVarsWithoutStartValue(varlst);

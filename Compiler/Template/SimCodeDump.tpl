@@ -233,6 +233,7 @@ template dumpEqs(list<SimEqSystem> eqs, Boolean withOperations)
     case e as SES_NONLINEAR(__) then
       <<
       <%dumpEqs(SimCodeUtil.sortEqSystems(e.eqs),withOperations)%>
+      <%match e.jacobianMatrix case SOME(({(eqns,_,_)},_,_,_,_,_)) then dumpEqs(SimCodeUtil.sortEqSystems(eqns),withOperations) else ''%>
       <equation index="<%eqIndex(eq)%>">
         <nonlinear indexNonlinear="<%indexNonLinearSystem%>">
           <%e.crefs |> cr => '<defines name="<%crefStrNoUnderscore(cr)%>" />' ; separator = "\n" %>
