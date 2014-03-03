@@ -7514,14 +7514,12 @@ algorithm
   eqVars := List.map1(loopIn,Util.arrayGetIndexFirst,m);
   allVars := List.flatten(eqVars);
   loopVars := doubleEntriesInLst(allVars,{},{});
-  //print("loop : "+&stringDelimitList(List.map(loopIn,intString),",")+&"\n");
   //print("loopVars : "+&stringDelimitList(List.map(loopVars,intString),",")+&"\n");
+  
   // check if its worth to resolve the loop. Therefore compare the amount of vars in and outside the loop
   (_,nonLoopVars,_) := List.intersection1OnTrue(allVars,loopVars,intEq);
   //print("nonLoopVars : "+&stringDelimitList(List.map(nonLoopVars,intString),",")+&"\n");
-  (eqCrossLst,_,_) := List.intersection1OnTrue(loopVars,eqCrossLst,intEq);
-  //nonLoopVars := List.filter1OnTrue(nonLoopVars, isOutsideLoop, (mT,eqCrossLst)); // do not consider vars between 2 crossNodes
-  
+  (eqCrossLst,_,_) := List.intersection1OnTrue(loopVars,eqCrossLst,intEq); 
   numInLoop := listLength(loopVars);
   numOutLoop := listLength(nonLoopVars);
   resolve := intGe(numInLoop,numOutLoop-1);
@@ -7575,9 +7573,8 @@ algorithm
        eqCrossLst = List.fold2(partition,gatherCrossNodes,mIn,mTIn,{});
        varCrossLst = List.fold2(partitionVars,gatherCrossNodes,mTIn,mIn,{});
                 
-       // search the loops for the partition
+       // search the partitions for loops
        loops = resolveLoops_findLoops2(partition,partitionVars,eqCrossLst,varCrossLst,mIn,mTIn);
-         //print("found the loops "+&stringDelimitList(List.map(loops,HpcOmTaskGraph.intLstString),"\n")+&"\n"); 
        loops = listAppend(loops,loopsIn);
        eqCrossLst = listAppend(eqCrossLst,crossEqsIn);
        varCrossLst = listAppend(varCrossLst,crossVarsIn);
@@ -7613,29 +7610,21 @@ algorithm
         allPaths = List.sort(allPaths,List.listIsLonger);
           //print("all paths: \n"+&stringDelimitList(List.map(allPaths,HpcOmTaskGraph.intLstString)," / ")+&"\n");   
         paths1 = List.fold1(allPaths,getReverseDoubles,allPaths,{});   // all paths with just one direction
-          //print("paths1: \n"+&stringDelimitList(List.map(paths1,HpcOmTaskGraph.intLstString)," / ")+&"\n");   
         paths0 = List.unique(paths1);  // only the paths between the eqs without concerning the vars in between
-          //print("paths0: \n"+&stringDelimitList(List.map(paths0,HpcOmTaskGraph.intLstString)," / ")+&"\n");   
         simpleLoops = getDoubles(paths1,{});  // get 2 adjacent equations which form a simple loop i.e. they share 2 variables
         simpleLoops = List.unique(simpleLoops); 
           //print("all simpleLoop-paths: \n"+&stringDelimitList(List.map(simpleLoops,HpcOmTaskGraph.intLstString)," / ")+&"\n");  
         (_,paths,_) = List.intersection1OnTrue(paths1,simpleLoops,intLstIsEqual);
         
         paths0 = List.sort(paths,List.listIsLonger);  // solve the small loops first
-        
-          //print("unconnected paths: \n"+&stringDelimitList(List.map(paths0,HpcOmTaskGraph.intLstString)," / ")+&"\n");
         (connectedPaths,loopConnectors) = connect2PathsToLoops(paths0,{},{});
         loopConnectors = List.filter1OnTrue(loopConnectors,connectsLoops,simpleLoops);
-          //print("possible loopConnectors: "+&stringDelimitList(List.map(loopConnectors,HpcOmTaskGraph.intLstString)," / ")+&"\n\n");     
-          //print("connected paths: "+&stringDelimitList(List.map(connectedPaths,HpcOmTaskGraph.intLstString)," / ")+&"\n\n");   
         simpleLoops = listAppend(simpleLoops,loopConnectors);
         
         //print("all simpleLoop-paths: \n"+&stringDelimitList(List.map(simpleLoops,HpcOmTaskGraph.intLstString)," / ")+&"\n");  
         subLoop = connectPathsToOneLoop(simpleLoops,{});  // try to build a a closed loop from these paths
         isNoSingleLoop = List.isEmpty(subLoop);
-        simpleLoops = Util.if_(isNoSingleLoop,simpleLoops,{subLoop});
-          //print("the simpleLoop: \n"+&stringDelimitList(List.map(subLoop,intString)," / ")+&"\n");            
-          
+        simpleLoops = Util.if_(isNoSingleLoop,simpleLoops,{subLoop});          
         paths0 = listAppend(simpleLoops,connectedPaths);
         paths0 = sortPathsAsChain(paths0);
         
@@ -7654,11 +7643,8 @@ algorithm
         (paths0,paths1) =  List.extract1OnTrue(paths,listLengthIs,listLength(List.last(paths)));
           //print("the shortest paths: \n"+&stringDelimitList(List.map(paths0,HpcOmTaskGraph.intLstString)," / ")+&"\n");
         
-        //closedPaths = List.map1(paths0,closePathDirectly,paths1);
         paths1 = Util.if_(List.isEmpty(paths1),paths0,paths1);
         closedPaths = List.map1(paths1,closePathDirectly,paths0);
-        
-          //print("the closedPaths1: \n"+&stringDelimitList(List.map(closedPaths,HpcOmTaskGraph.intLstString),"\n")+&"\n"); 
         closedPaths = List.fold1(closedPaths,getReverseDoubles,closedPaths,{});   // all paths with just one direction
         closedPaths = List.map(closedPaths,List.unique);
         closedPaths = List.map1(closedPaths,getEqNodesForVarLoop,mTIn);// get the eqs for these varLoops
@@ -7676,7 +7662,7 @@ algorithm
          {subLoop};
     case(_,_,eqIdx::eqCrossLst,varIdx::varCrossLst,_,_)
       equation 
-        print("there are both varCrossNodes and eqNodes\n");   
+        //print("there are both varCrossNodes and eqNodes\n");   
       then
         {};
     else
@@ -7795,14 +7781,11 @@ algorithm
       resolvedEq = resolveClosedLoop(loop1,mIn,mTIn,eqMapping,varMapping,eqLstIn,varLstIn);
       
       // get the equation that will be replaced and the rest
-      (crossEqs,eqs,_) = List.intersection1OnTrue(loop1,eqCrossLstIn,intEq);  // replace a crossEq in the loop
-        //print("crossEqs: "+&stringDelimitList(List.map(crossEqs,intString),",")+&"\n");
-        //print("eqs: "+&stringDelimitList(List.map(eqs,intString),",")+&"\n");
-        
+      (crossEqs,eqs,_) = List.intersection1OnTrue(loop1,eqCrossLstIn,intEq);  // replace a crossEq in the loop       
       (replEqs,_,_) = List.intersection1OnTrue(replEqsIn,loop1,intEq);  // just consider the already replaced equations in this loop
+
       // first try to replace a non cross node, otherwise an already replaced eq, or if none of them is available take a crossnode (THIS IS NOT YET CLEAR)
       pos = Debug.bcallret1(List.isNotEmpty(crossEqs),List.first,crossEqs,-1); 
-      //pos = Debug.bcallret1(List.isNotEmpty(eqs),List.first,eqs,pos); // CHECK THIS
       pos = Debug.bcallret1(List.isNotEmpty(replEqs),List.first,replEqs,pos); 
       pos = Debug.bcallret1(List.isNotEmpty(eqs),List.first,eqs,pos); // CHECK THIS
 
@@ -7841,13 +7824,12 @@ algorithm
       // only varCrossNodes
         //print("only varCrossNodes\n");
       loop1 = List.unique(loop1);
-        //print("the loop: "+&stringDelimitList(List.map(loop1,intString),",")+&"\n");
       resolvedEq = resolveClosedLoop(loop1,mIn,mTIn,eqMapping,varMapping,eqLstIn,varLstIn);
 
       // get the equation that will be replaced and the rest
       (replEqs,_,eqs) = List.intersection1OnTrue(replEqsIn,loop1,intEq);  // just consider the already replaced equations in this loop
+      
       //priorize the not yet replaced equations
-        //print("priorize the eqs: "+&stringDelimitList(List.map(eqs,intString),",")+&"\n");
       eqs = priorizeEqsWithVarCrosses(eqs,mIn,varCrossLstIn);      
         //print("priorized eqs: "+&stringDelimitList(List.map(eqs,intString),",")+&"\n");
 
@@ -7868,7 +7850,6 @@ algorithm
       (_,adjVars,_) = List.intersection1OnTrue(vars,loopVars,intEq); // the vars adjacent to the loop
       adjVars = listAppend(crossVars,adjVars);
       adjVars = List.unique(adjVars);
-      //print("adjVars: "+&stringDelimitList(List.map(adjVars,intString),",")+&"\n");
       
       // update incidenceMatrix
       List.map2_0(loopVars,Util.arrayUpdateIndexFirst,{},mTIn);  //delete the vars in the loop
@@ -7897,6 +7878,7 @@ algorithm
       loop1 = List.unique(loop1);
         //print("single loop\n");
       resolvedEq = resolveClosedLoop(loop1,mIn,mTIn,eqMapping,varMapping,eqLstIn,varLstIn);
+      
       // update IncidenceMatrix
       (_,crossEqs,_) = List.intersection1OnTrue(loop1,replEqsIn,intEq);  // do not replace an already replaced Eq
       (pos::removeCrossEqs) = crossEqs;  // the equation that will be replaced = pos
@@ -7905,6 +7887,7 @@ algorithm
         //print("delete vars: "+&stringDelimitList(List.map(vars,intString),",")+&" in the eqs: "+&stringDelimitList(List.map(crossEqs,intString),",")+&"\n");
       List.map2_0(loop1,Util.arrayUpdateIndexFirst,{},mIn);  //delete the equations in the loop
       List.map2_0(vars,Util.arrayUpdateIndexFirst,{},mTIn);  //delete the vars from the loop
+      
       // replace Equation
         //print("replace equation "+&intString(pos)+&"\n");
       pos = listGet(eqMapping,pos);
@@ -8196,7 +8179,6 @@ algorithm
         eqIdx2 = List.first(restLoop);
         eqDaeIdx2 = listGet(eqMapping,eqIdx2);
         eq2 = listGet(daeEqsIn,eqDaeIdx2);
-          //print("resolve with eq: "+&intString(eqDaeIdx2)+&" which is:\n"+&BackendDump.equationString(eq2)+&"\n");
         
         // get the vars that are shared of the 2 equations
         adjVars1 = arrayGet(m,eqIdx1);
@@ -8208,16 +8190,12 @@ algorithm
         daeVarIdx = listGet(varMapping,varIdx);
         var = listGet(daeVarsIn,daeVarIdx);
         cref = BackendVariable.varCref(var);
-          //print("resolve for :\n");
-          //BackendDump.printVar(var);
         
         // check the algebraic signs
         isPosOnRhs1 = CRefIsPosOnRHS(cref,eqIn);
         isPosOnRhs2 = CRefIsPosOnRHS(cref,eq2);
         algSign = boolOr((not isPosOnRhs1) and isPosOnRhs2,(not isPosOnRhs2) and isPosOnRhs1); // XOR
         resolvedEq = sumUp2Equations(algSign,eqIn,eq2);
-          //print("the resolved eq\n");
-          //BackendDump.printEquationList({resolvedEq});
         resolvedEq = resolveClosedLoop2(resolvedEq,restLoop,m,mT,eqMapping,varMapping,daeEqsIn,daeVarsIn);
       then
         resolvedEq;
@@ -8383,23 +8361,17 @@ algorithm
       list<list<Integer>> paths, adjEqs, unfinPaths, restUnfinPaths;
     case(crossEq::restCrossNodes,_,_,_,{},_)
       equation
-          //print("check path and start at eqNode: "+&intString(crossEq)+&"\n");
         // check the next eqNode of the crossEq whether the paths is finished here or the path goes on to another crossEq
         adjVars = arrayGet(mIn,crossEq);
-          //print("the adj vars: "+&stringDelimitList(List.map(adjVars,intString),";")+&"\n");
         adjEqs = List.map1(adjVars,Util.arrayGetIndexFirst,mTIn);
         adjEqs = List.map1(adjEqs,List.deleteMember,crossEq);// REMARK: this works only if there are no varCrossNodes
         adjEqs = List.filterOnTrue(adjEqs,List.isNotEmpty);
       nextEqs = List.flatten(adjEqs);
-      //print("nextEqs: "+&stringDelimitList(List.map(nextEqs,intString),";")+&"\n");
-      //nextEqs = List.map(adjEqs,List.first);
         (endEqs,unfinEqs,_) = List.intersection1OnTrue(nextEqs,allEqCrossNodes,intEq);
         paths = List.map1(endEqs,cons1,{crossEq}); //TODO: replace this stupid cons1
         paths = listAppend(paths,eqPathsIn);
-          //print("the finished paths: "+&stringDelimitList(List.map(paths,HpcOmTaskGraph.intLstString),"\n")+&"\n");
         unfinPaths = List.map1(unfinEqs,cons1,{crossEq});
         unfinPaths = listAppend(unfinPaths,unfinPathsIn);
-          //print("the unfinished paths: "+&stringDelimitList(List.map(unfinPaths,HpcOmTaskGraph.intLstString),"\n")+&"\n");
         paths = getPathTillNextCrossEq(restCrossNodes,mIn,mTIn,allEqCrossNodes,unfinPaths,paths);
       then
         paths;
@@ -8407,34 +8379,22 @@ algorithm
       equation
         lastEq = List.first(pathStart);
         prevEq = List.second(pathStart);
-          //print("check the unfinished paths: "+&stringDelimitList(List.map(pathStart,intString),",")+&"\n");
-          //print("allEqCrossNodes: "+&stringDelimitList(List.map(allEqCrossNodes,intString),",")+&"\n");
         adjVars = arrayGet(mIn,lastEq);
-          //print("the adj vars: "+&stringDelimitList(List.map(adjVars,intString),";")+&"\n");
         adjEqs = List.map1(adjVars,Util.arrayGetIndexFirst,mTIn);
         adjEqs = List.map1(adjEqs,List.deleteMember,lastEq);// REMARK: this works only if there are no varCrossNodes
         adjEqs = List.filterOnTrue(adjEqs,List.isNotEmpty);
-        //print("adjEqs: "+&stringDelimitList(List.map(adjEqs,HpcOmTaskGraph.intLstString),"\n")+&"\n");
         nextEqs = List.map(adjEqs,List.first);
-          (nextEqs,_) = List.deleteMemberOnTrue(prevEq,nextEqs,intEq); //do not take the path back to the previous node
-          //print("nextEqs: "+&stringDelimitList(List.map(nextEqs,intString),",")+&"\n");
+        (nextEqs,_) = List.deleteMemberOnTrue(prevEq,nextEqs,intEq); //do not take the path back to the previous node
         (endEqs,unfinEqs,_) = List.intersection1OnTrue(nextEqs,allEqCrossNodes,intEq);
-          //(endEqs,_) = List.deleteMemberOnTrue(prevEq,endEqs,intEq); //do not take the path back to the previous node
-          //print("endEqs: "+&stringDelimitList(List.map(endEqs,intString),",")+&"\n");
-          //print("unfinEqs: "+&stringDelimitList(List.map(unfinEqs,intString),",")+&"\n");
         paths = List.map1(endEqs,cons1,pathStart); //TODO: replace this stupid cons1
         paths = listAppend(paths,eqPathsIn);
-          //print("the finished paths: "+&stringDelimitList(List.map(paths,HpcOmTaskGraph.intLstString),"\n")+&"\n");
         unfinPaths = List.map1(unfinEqs,cons1,pathStart);
         unfinPaths = listAppend(unfinPaths,restUnfinPaths);
-          //print("the unfinished paths: "+&stringDelimitList(List.map(unfinPaths,HpcOmTaskGraph.intLstString),"\n")+&"\n");
         paths = getPathTillNextCrossEq(checkEqCrossNodes,mIn,mTIn,allEqCrossNodes,unfinPaths,paths);
       then
         paths;
     case({},_,_,_,{},_)
       equation
-        //print("checked all crossEqNodes\n");
-        //print("the paths: "+&stringDelimitList(List.map(eqPathsIn,HpcOmTaskGraph.intLstString),"\n")+&"\n");
       then
         eqPathsIn;
     else
@@ -8467,11 +8427,7 @@ algorithm
   BackendDAE.EQUATION(exp=exp1,scalar=exp2) := eq1;
   BackendDAE.EQUATION(exp=exp3,scalar=exp4) := eq2;
   exp1 := sumUp2Expressions(sumUp,exp1,exp3);
-    //print("exp1\n");
-    //ExpressionDump.dumpExp(exp1);
   exp2 := sumUp2Expressions(sumUp,exp2,exp4);
-    //print("exp2\n");
-    //ExpressionDump.dumpExp(exp2);
   exp2 := sumUp2Expressions(false,exp2,exp1);
   (exp2,_) := ExpressionSimplify.simplify(exp2);
   exp1 := DAE.RCONST(0.0);
@@ -8509,14 +8465,8 @@ algorithm
       DAE.Exp e1,e2;
     case(_,BackendDAE.EQUATION(exp = e1,scalar = e2,source=_,differentiated=_))
       equation
-          //print("left hand side : ");
-          //ExpressionDump.dumpExp(e1);
         (exists1,sign1) = expIsCref(e1,crefIn);
-          //print("is it in the left side: "+&boolString(exists1)+&" with a sign "+&boolString(sign1)+&"\n");
-          //print("right hand side : ");
-          //ExpressionDump.dumpExp(e2);
         (exists2,sign2) = expIsCref(e2,crefIn);
-          //print("is it in the right side: "+&boolString(exists2)+&" with a sign "+&boolString(sign2)+&"\n");
         sign1 = Util.if_(exists1,not sign1,sign2);
      then
        sign1;
@@ -8547,15 +8497,11 @@ algorithm
     equation
       // just a cref
       sameCref = ComponentReference.crefEqualNoStringCompare(crefIn,cref);
-        //print("its a cref \n"+&ComponentReference.printComponentRefStr(cref)+&"\n");
-        //print("is it the same CREF: "+&boolString(sameCref)+&"\n");
     then
       (sameCref,true); 
   case(DAE.BINARY(exp1=exp1, operator = DAE.SUB(ty=_), exp2=exp2),_)
     equation
       //exp1-exp2
-        //print("its a binary with minus\n");
-        //ExpressionDump.dumpExp(expIn);
       (exists1,sign1) = expIsCref(exp1,crefIn); 
       (exists2,sign2) = expIsCref(exp2,crefIn);
       sign2 = boolNot(sign2);
@@ -8567,8 +8513,6 @@ algorithm
   case(DAE.BINARY(exp1=exp1, operator = DAE.ADD(ty=_), exp2=exp2),_)
     equation
       //exp1+exp2
-        //print("its a binary with plus\n");
-        //ExpressionDump.dumpExp(expIn);
       (exists1,sign1) = expIsCref(exp1,crefIn); 
       (exists2,sign2) = expIsCref(exp2,crefIn);
       exists = boolOr(exists1,exists2);
@@ -8579,8 +8523,6 @@ algorithm
   case(DAE.UNARY(operator=DAE.UMINUS(ty=_),exp=exp1),_)
     equation
       // -(exp)
-        //print("its a unary with minus\n");
-        //ExpressionDump.dumpExp(expIn);
       (exists,sign) = expIsCref(exp1,crefIn);
       sign = boolNot(sign);
     then
@@ -8588,7 +8530,6 @@ algorithm
   case(DAE.RCONST(real=_),_)
     equation
       // constant
-        //print("its a constant\n");
     then
       (false,false);
   else
@@ -8630,8 +8571,6 @@ algorithm
   markNodes := arrayCreate(arrayLength(m),0);
   List.map2_0(emptyRows,Util.arrayUpdateIndexFirst,-1,markNodes);
   (markNodes,numParts) := colorNodePartitions(m,mT,{startNode},emptyRows,markNodes,1);
-  //print("THE FINAL MARKED ARRAY:\n"+&stringDelimitList(List.map(arrayList(markNodes),intString),"\n")+&"\n"); 
-  //print("we have found "+&intString(numParts)+&" independent subgraphs.\n");
   partitions := arrayCreate(numParts,{});
   partitionsOut := List.fold1(fullRows,getPartitions,markNodes,partitions);
 end partitionBipartiteGraph;
@@ -8676,7 +8615,6 @@ algorithm
     case(_,_,{0},_,_,_)
       equation
         currNumber = currNumberIn-1;
-          //print("finished with "+&intString(currNumber)+&" partitions.\n");
         then
           (markNodesIn,currNumber);
     case(_,_,node::rest,_,_,_)
@@ -8687,13 +8625,12 @@ algorithm
         true = List.isNotEmpty(vars);
         eqs = List.fold1(vars,getArrayEntryAndAppend,mT,{});
         (_,eqs,_) = List.intersection1OnTrue(eqs,checked,intEq);  
-          //print("check for the eqNode: "+&intString(node)+&" with the  neighbor eqNodes: "+&stringDelimitList(List.map(eqs,intString),",")+&"\n");
+
         //write the eq as marked in the array and check if this is a new equation
         (markNodes,hasChanged) = arrayUpdateAndCheckChange(node,currNumberIn,markNodesIn);
         // get the next nodes
         nextEqs = listAppend(eqs,rest);
         nextEqs = List.unique(nextEqs);
-          //print("we havent seen the eqs: "+&stringDelimitList(List.map(nextEqs,intString),",")+&"\n");
         (markNodes,currNumber) = colorNodePartitions(m,mT,nextEqs,checked,markNodes,currNumberIn);
       then
         (markNodes,currNumber);     
@@ -8701,7 +8638,6 @@ algorithm
     case(_,_,{},_,_,_)
       equation
         node = Util.arrayMemberNoOpt(markNodesIn,arrayLength(markNodesIn)+1,0);
-          //print("skip to node: "+&intString(node)+&"\n");
         (markNodes,currNumber) = colorNodePartitions(m,mT,{node},alreadyChecked,markNodesIn,currNumberIn+1);
         then
           (markNodes,currNumber);
@@ -8723,14 +8659,12 @@ algorithm
       array<Integer> markNodes;
     case(_,_,_)
       equation
-        //print("CHECK eqNode: "+&intString(eq)+&"\n");
         entry = arrayGet(markNodesIn,eq);
         hasChanged = intEq(entry,0);
         isAnotherPartition = intNe(entry,currNumber);
         isAnotherPartition = boolAnd(boolNot(hasChanged),isAnotherPartition);
         Debug.bcall(isAnotherPartition,print,"in arrayUpdateAndGetNextEqs: "+&intString(eq)+&" cannot be assigned to a partition.check this"+&"\n");
         markNodes = arrayUpdate(markNodesIn,eq,currNumber);
-        //print("THE MARKED ARRAY:\n"+&stringDelimitList(List.map(arrayList(markNodes),intString),"\n")+&"\n");      
       then
         (markNodes,hasChanged);
   end matchcontinue;      
@@ -8781,18 +8715,6 @@ algorithm
   row := arrayGet(m,idx);
   num := listLength(row);
   isCross := intGt(num,2);
-  //Hier spielt die Musik: überprüfe ob ich das zeug brauche, wahrscheinlich muss ich die doch als crossndoes mitnehmen
-  /*
-  // but maybe the edges lead to the same nodes, than its maybe not a crossnode  
-  adjNodes := List.map1(row,Util.arrayGetIndexFirst,mT);
-  nextNodes := List.flatten(adjNodes);
-  nextNodes := List.unique(nextNodes);
-  nextNodes := List.deleteMember(nextNodes,idx);
-  num := listLength(nextNodes);
-  isNoCross := intLe(num,2);
-  //evaluate if its a crossnode or not
-  isCross := isCross and not isNoCross;
-  */
   lstOut := Util.if_(isCross,idx::lstIn,lstIn);
 end gatherCrossNodes;
  
@@ -8857,16 +8779,6 @@ algorithm
         ((_,b)) = isAddOrSubExp((exp2,b));
       then
         ((exp,b));
-    ///////////////////////////////////////////////    
-    /*case((DAE.BINARY(exp1=exp1,operator = DAE.MUL(ty=_),exp2=exp2),true))
-      equation
-        //x * y
-        (exp,b) = inTpl;
-        ((_,b)) = isAddOrSubExp((exp1,b));
-        ((_,b)) = isAddOrSubExp((exp2,b));
-      then
-        ((exp,b));
-    *///////////////////////////////////////////////
     else
       equation
         (exp,b) = inTpl;
