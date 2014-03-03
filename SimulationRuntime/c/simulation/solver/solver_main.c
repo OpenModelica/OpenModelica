@@ -604,6 +604,7 @@ static int euler_ex_step(DATA* data, SOLVER_INFO* solverInfo)
     sData->realVars[i] = sDataOld->realVars[i] + stateDer[i] * solverInfo->currentStepSize;
   }
   sData->timeValue = solverInfo->currentTime;
+
   return 0;
 }
 
@@ -634,6 +635,10 @@ static int rungekutta_step(DATA* data, SOLVER_INFO* solverInfo)
       sData->realVars[i] = sDataOld->realVars[i] + solverInfo->currentStepSize * rungekutta_c[j] * k[j - 1][i];
     }
     sData->timeValue = sDataOld->timeValue + rungekutta_c[j] * solverInfo->currentStepSize;
+    /* read input vars */
+    externalInputUpdate(data);
+    data->callback->input_function(data);
+    /* eval ode equations */
     data->callback->functionODE(data);
     for(i = 0; i < data->modelData.nStates; i++)
     {

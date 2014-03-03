@@ -42,7 +42,6 @@
 #include "simulation/solver/solver_main.h"
 #include "simulation/solver/model_help.h"
 
-
 int externalInputallocate(DATA* data)
 {
   FILE * pFile;
@@ -83,17 +82,20 @@ int externalInputallocate(DATA* data)
       if(c<0)
         data->simulationInfo.external_input.n = i;
     }
-  printf("\nExternal Input");
-  printf("\n========================================================");
-    for(i = 0; i < data->simulationInfo.external_input.n; ++i){
-      printf("\nInput: t=%f   \t", data->simulationInfo.external_input.t[i]);
-      for(j = 0; j < m; ++j){
-        printf("u%d(t)= %f \t",j+1,data->simulationInfo.external_input.u[i][j]);
+
+    if(ACTIVE_STREAM(LOG_SIMULATION)){
+      printf("\nExternal Input");
+      printf("\n========================================================");
+      for(i = 0; i < data->simulationInfo.external_input.n; ++i){
+        printf("\nInput: t=%f   \t", data->simulationInfo.external_input.t[i]);
+        for(j = 0; j < m; ++j){
+          printf("u%d(t)= %f \t",j+1,data->simulationInfo.external_input.u[i][j]);
+        }
       }
+      printf("\n========================================================\n");
     }
-  printf("\n========================================================\n");
   
-  fclose(pFile);
+    fclose(pFile);
     data->simulationInfo.external_input.i = 0;
   }
 
@@ -121,16 +123,18 @@ int externalInputUpdate(DATA* data)
   long double dt;
   int i;
 
-  if(!data->simulationInfo.external_input.active)
+  if(!data->simulationInfo.external_input.active){
     return -1;
+  }
 
   t = data->localData[0]->timeValue;
   t1 = data->simulationInfo.external_input.t[data->simulationInfo.external_input.i];
   t2 = data->simulationInfo.external_input.t[data->simulationInfo.external_input.i+1];
 
-  while(i > 0 && t < t1){
+  while(data->simulationInfo.external_input.i > 0 && t < t1){
     --data->simulationInfo.external_input.i;
     t1 = data->simulationInfo.external_input.t[data->simulationInfo.external_input.i];
+    t2 = data->simulationInfo.external_input.t[data->simulationInfo.external_input.i+1];
   }
 
   while(t > t2
@@ -147,7 +151,7 @@ int externalInputUpdate(DATA* data)
     return 1;
   }else if(t == t2){
     for(i = 0; i < data->modelData.nInputVars; ++i){
-      data->simulationInfo.inputVars[i] = data->simulationInfo.external_input.u[data->simulationInfo.external_input.i][i+1];
+      data->simulationInfo.inputVars[i] = data->simulationInfo.external_input.u[data->simulationInfo.external_input.i+1][i];
     }
     return 1;
   }

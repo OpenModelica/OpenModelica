@@ -372,32 +372,32 @@ void read_input_xml(MODEL_DATA* modelData,
   doOverride(mi, modelData, override, overrideFile);
 
   /* read all the DefaultExperiment values */
-  infoStreamPrint(LOG_SOLVER, 1, "read all the DefaultExperiment values:");
+  infoStreamPrint(LOG_SIMULATION, 1, "read all the DefaultExperiment values:");
 
   read_value(mi.de["startTime"], &(simulationInfo->startTime), 0);
-  infoStreamPrint(LOG_SOLVER, 0, "startTime = %g", simulationInfo->startTime);
+  infoStreamPrint(LOG_SIMULATION, 0, "startTime = %g", simulationInfo->startTime);
 
   read_value(mi.de["stopTime"], &(simulationInfo->stopTime), 1.0);
-  infoStreamPrint(LOG_SOLVER, 0, "stopTime = %g", simulationInfo->stopTime);
+  infoStreamPrint(LOG_SIMULATION, 0, "stopTime = %g", simulationInfo->stopTime);
 
   read_value(mi.de["stepSize"], &(simulationInfo->stepSize), (simulationInfo->stopTime - simulationInfo->startTime) / 500);
-  infoStreamPrint(LOG_SOLVER, 0, "stepSize = %g", simulationInfo->stepSize);
+  infoStreamPrint(LOG_SIMULATION, 0, "stepSize = %g", simulationInfo->stepSize);
 
   read_value(mi.de["tolerance"], &(simulationInfo->tolerance), 1e-5);
-  infoStreamPrint(LOG_SOLVER, 0, "tolerance = %g", simulationInfo->tolerance);
+  infoStreamPrint(LOG_SIMULATION, 0, "tolerance = %g", simulationInfo->tolerance);
 
   read_value(mi.de["solver"], &simulationInfo->solverMethod);
-  infoStreamPrint(LOG_SOLVER, 0, "solver method: %s", simulationInfo->solverMethod);
+  infoStreamPrint(LOG_SIMULATION, 0, "solver method: %s", simulationInfo->solverMethod);
 
   read_value(mi.de["outputFormat"], &(simulationInfo->outputFormat));
-  infoStreamPrint(LOG_SOLVER, 0, "output format: %s", simulationInfo->outputFormat);
+  infoStreamPrint(LOG_SIMULATION, 0, "output format: %s", simulationInfo->outputFormat);
 
   read_value(mi.de["variableFilter"], &(simulationInfo->variableFilter));
-  infoStreamPrint(LOG_SOLVER, 0, "variable filter: %s", simulationInfo->variableFilter);
+  infoStreamPrint(LOG_SIMULATION, 0, "variable filter: %s", simulationInfo->variableFilter);
 
   read_value(mi.md["OPENMODELICAHOME"], &simulationInfo->OPENMODELICAHOME);
-  infoStreamPrint(LOG_SOLVER, 0, "OPENMODELICAHOME: %s", simulationInfo->OPENMODELICAHOME);
-  if (ACTIVE_STREAM(LOG_SOLVER)) messageClose(LOG_SOLVER);
+  infoStreamPrint(LOG_SIMULATION, 0, "OPENMODELICAHOME: %s", simulationInfo->OPENMODELICAHOME);
+  if (ACTIVE_STREAM(LOG_SIMULATION)) messageClose(LOG_SIMULATION);
 
   modelica_integer nxchk, nychk, npchk;
   modelica_integer nyintchk, npintchk;

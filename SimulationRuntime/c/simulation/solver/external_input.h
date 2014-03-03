@@ -29,6 +29,11 @@
  */
 
 
+#ifndef _EXTERNAL_INPUT_H_
+#define _EXTERNAL_INPUT_H_
+
 int externalInputallocate(DATA* data);
 int externalInputFree(DATA* data);
 int externalInputUpdate(DATA* data);
+
+#endif
