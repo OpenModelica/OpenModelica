@@ -291,7 +291,9 @@ fmil-clean:
 gc-clean:
 	if test -f 3rdParty/gc-7.2/Makefile; then make -C 3rdParty/gc-7.2 clean; fi
 	rm -f 3rdParty/gc-7.2/Makefile
-clean: qtclean fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean
+bootstrap-clean:
+	$(MAKE) -C Compiler/boot clean
+clean: qtclean fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean bootstrap-clean
 	(cd SimulationRuntime/c && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd SimulationRuntime/interactive && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean)
@@ -300,7 +302,6 @@ clean: qtclean fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMi
 	(cd PythonInterface && $(MAKE) -f $(defaultMakefileTarget) clean)
 	if test -f 3rdParty/modelica3d/build/Makefile; then $(MAKE) -C 3rdParty/modelica3d/build clean; fi
 	$(MAKE) -C 3rdParty/OpenBLAS-0.2.8 clean
-	rm -rf testsuite/openmodelica/bootstrapping/build
 	if test -f 3rdParty/Ipopt-3.11.6/Makefile; then $(MAKE) -C 3rdParty/Ipopt-3.11.6 distclean || true; fi
 	(rm -rf 3rdParty/modelica3d/build)
 	(rm -rf SimulationRuntime/build_c)
