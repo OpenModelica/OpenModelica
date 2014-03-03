@@ -7365,9 +7365,15 @@ algorithm
       then
         sortedPaths;     
     else
-      equation
+      equation// TODO: this case just put another, unconnectable path to the front of the list.
+              //this path is currently only appendable through the startNode but it has to be also appendable throught the endNode.
+              //this might have no effect because in those partitions is either one long path or none.
+        path::rest = pathsIn;
+        sortedPaths = path::sortedPathsIn;
+        startNode = List.first(path);
+        sortedPaths = sortPathsAsChain1(rest,startNode,lastNode,sortedPaths);
         then
-          pathsIn;
+          sortedPaths;
   end matchcontinue;
 end sortPathsAsChain1;
 
