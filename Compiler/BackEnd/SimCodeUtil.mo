@@ -4010,10 +4010,10 @@ algorithm
 
      case(_, _, _, _, _, _,BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), BackendDAE.SHARED(knownVars=kv, functionTree=functree), _, _)
        equation
-	       // get tearing vars
-	       tvars = List.map1r(tearingVars, BackendVariable.getVarAt, vars);
-	       tvars = List.map(tvars, BackendVariable.transformXToXd);
-	         
+         // get tearing vars
+         tvars = List.map1r(tearingVars, BackendVariable.getVarAt, vars);
+         tvars = List.map(tvars, BackendVariable.transformXToXd);
+           
          // get residual eqns
          reqns = BackendEquation.getEqns(residualEqns, eqns);
          reqns = BackendEquation.replaceDerOpInEquationList(reqns);

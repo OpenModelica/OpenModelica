@@ -430,7 +430,7 @@ static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double*
 
   while(*info >= 0)
   {
-	  infoStreamPrint(LOG_NLS_V, 0, "**** start Iteration: %d  *****", (int) *maxfev-l);
+    infoStreamPrint(LOG_NLS_V, 0, "**** start Iteration: %d  *****", (int) *maxfev-l);
     /* calculate the function values */
     (*f)(n, x, fvec, &iflag, userdata,currentSys);
     (*nfev)++;
@@ -438,7 +438,7 @@ static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double*
     /*  Debug output */
     if(ACTIVE_STREAM(LOG_NLS_V))
       for(i=0; i<*n; i++)
-    	  infoStreamPrint(LOG_NLS_V, 0, "fvec[%d]: %e: ", i, fvec[i]);
+        infoStreamPrint(LOG_NLS_V, 0, "fvec[%d]: %e: ", i, fvec[i]);
 
     /* calculate jacobian */
     if(systemData->jacobianIndex != -1){
@@ -493,9 +493,9 @@ static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double*
 
     if(ACTIVE_STREAM(LOG_NLS_V))
     {
-    	infoStreamPrint(LOG_NLS_V, 0, "Solved J*x=b");
+      infoStreamPrint(LOG_NLS_V, 0, "Solved J*x=b");
       for(i=0; i<*n; i++)
-    	  infoStreamPrint(LOG_NLS_V, 0, "b[%d] = %e ", i, fvec[i]);
+        infoStreamPrint(LOG_NLS_V, 0, "b[%d] = %e ", i, fvec[i]);
     }
 
     if(lapackinfo > 0)
@@ -522,7 +522,7 @@ static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double*
 
     if(ACTIVE_STREAM(LOG_NLS_V))
       for(i=0; i<*n; i++)
-    	  infoStreamPrint(LOG_NLS_V, 0, "x[%d] = %e ", i, x[i]);
+        infoStreamPrint(LOG_NLS_V, 0, "x[%d] = %e ", i, x[i]);
 
     /* check if maximum iteration is reached */
     l--;
