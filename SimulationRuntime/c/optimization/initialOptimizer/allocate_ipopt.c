@@ -802,22 +802,16 @@ static int optimizer_time_setings(IPOPT_DATA_ *iData)
 {
   int i,k,id;
   iData->time[0] = iData->t0;
-  if(iData->deg == 3){
-    for(i = 0,k=0,id=0; i<iData->nsi; ++i,id += iData->deg){
-      if(i){
-        if(iData->deg == 3){
-        iData->time[++k] = iData->time[id] + iData->c1*iData->dt[i];
-        iData->time[++k] = iData->time[id] + iData->c2*iData->dt[i];
-      }
-        iData->time[++k] = (i+1)*iData->dt[i];
+  for(i = 0,k=0,id=0; i<iData->nsi; ++i,id += iData->deg){
+    if(i){
+      iData->time[++k] = iData->time[id] + iData->c1*iData->dt[i];
+      iData->time[++k] = iData->time[id] + iData->c2*iData->dt[i];
+      iData->time[++k] = iData->t0 + (i+1)*iData->dt[i];
     }else{
-      if(iData->deg == 3){
-        iData->time[++k] = iData->time[id] + iData->e1*iData->dt[i];
-        iData->time[++k] = iData->time[id] + iData->e2*iData->dt[i];
-      }
-      iData->time[++k] = (i+1)*iData->dt[i];
+      iData->time[++k] = iData->time[id] + iData->e1*iData->dt[i];
+      iData->time[++k] = iData->time[id] + iData->e2*iData->dt[i];
+      iData->time[++k] = iData->t0 + (i+1)*iData->dt[i];
     }
-  }
   }
   iData->time[k] = iData->tf;
   return 0;
