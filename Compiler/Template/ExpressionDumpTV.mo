@@ -1,13 +1,5 @@
 interface package ExpressionDumpTV
 
-package builtin
-  function intLt
-    input Integer x;
-    input Integer y;
-    output Boolean outResult;
-  end intLt;
-end builtin;
-
 package Tpl
   function addTemplateError
     input String inErrMsg;
@@ -757,11 +749,12 @@ package Dump
 end Dump;
 
 package Expression
-  function priority
-    input DAE.Exp inExp;
+  function shouldParenthesize
+    input DAE.Exp inOperand;
+    input DAE.Exp inOperator;
     input Boolean inLhs;
-    output Integer outPriority;
-  end priority;
+    output Boolean outShouldParenthesize;
+  end shouldParenthesize;
 end Expression;
 
 package System

@@ -9107,6 +9107,74 @@ algorithm
   newIndex := index + 1;
 end makeEnumLiteral;
 
+public function shouldParenthesize
+  "Determines whether an operand in an expression needs parentheses around it."
+  input DAE.Exp inOperand;
+  input DAE.Exp inOperator;
+  input Boolean inLhs;
+  output Boolean outShouldParenthesize;
+algorithm
+  outShouldParenthesize := match(inOperand, inOperator, inLhs)
+    local
+      Integer diff;
+
+    case (DAE.UNARY(operator = _), _, _) then true;
+
+    else
+      equation
+        diff = Util.intCompare(priority(inOperand, inLhs),
+                               priority(inOperator, inLhs));
+      then
+        shouldParenthesize2(diff, inOperand, inLhs);
+
+  end match;
+end shouldParenthesize;
+
+protected function shouldParenthesize2
+  input Integer inPrioDiff;
+  input DAE.Exp inOperand;
+  input Boolean inLhs;
+  output Boolean outShouldParenthesize;
+algorithm
+  outShouldParenthesize := match(inPrioDiff, inOperand, inLhs)
+    case (1, _, _) then true;
+    case (0, _, false) then not isAssociativeExp(inOperand);
+    else false;
+  end match;
+end shouldParenthesize2;
+
+protected function isAssociativeExp
+  "Determines whether the given expression represents an associative operation or not."
+  input DAE.Exp inExp;
+  output Boolean outIsAssociative;
+algorithm
+  outIsAssociative := match(inExp)
+    local
+      DAE.Operator op;
+
+    case DAE.BINARY(operator = op) then isAssociativeOp(op);
+    case DAE.LBINARY(operator = _) then true;
+    else false;
+
+  end match;
+end isAssociativeExp;
+
+protected function isAssociativeOp
+  "Determines whether the given operator is associative or not."
+  input DAE.Operator inOperator;
+  output Boolean outIsAssociative;
+algorithm
+  outIsAssociative := match(inOperator)
+    case DAE.ADD(ty = _) then true;
+    case DAE.MUL(ty = _) then true;
+    case DAE.ADD_ARR(ty = _) then true;
+    case DAE.MUL_ARR(ty = _) then true;
+    case DAE.MUL_ARRAY_SCALAR(ty = _) then true;
+    case DAE.ADD_ARRAY_SCALAR(ty = _) then true;
+    else false;
+  end match;
+end isAssociativeOp;
+
 public function priority
   "Returns an integer priority given an expression, which is used by
    ExpressionDumpTpl to add parentheses when dumping expressions. The inLhs

@@ -217,14 +217,10 @@ end dumpReductionIterator;
 template dumpOperand(DAE.Exp operand, DAE.Exp operation, Boolean lhs)
 ::=
   let op_str = dumpExp(operand, "\"")
-  match operand
-    case UNARY(__) then
-      '(<%op_str%>)'
-    else
-      if intLt(Expression.priority(operation, lhs), Expression.priority(operand, lhs)) then
-        '(<%op_str%>)'
-      else
-        op_str
+  if shouldParenthesize(operand, operation, lhs) then
+    '(<%op_str%>)'
+  else
+    op_str
 end dumpOperand;
 
 template dumpBinOp(DAE.Operator op)

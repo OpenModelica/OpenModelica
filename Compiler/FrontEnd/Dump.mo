@@ -4070,6 +4070,71 @@ algorithm
   printListDebug("print_row", es, printExp, ",");
 end printRow;
 
+public function shouldParenthesize
+  "Determines whether an operand in an expression needs parentheses around it."
+  input Absyn.Exp inOperand;
+  input Absyn.Exp inOperator;
+  input Boolean inLhs;
+  output Boolean outShouldParenthesize;
+algorithm
+  outShouldParenthesize := match(inOperand, inOperator, inLhs)
+    local
+      Integer diff;
+
+    case (Absyn.UNARY(op = _), _, _) then true;
+      
+    else
+      equation
+        diff = Util.intCompare(expPriority(inOperand, inLhs), 
+                               expPriority(inOperator, inLhs));
+      then
+        shouldParenthesize2(diff, inOperand, inLhs);
+
+  end match;
+end shouldParenthesize;
+
+protected function shouldParenthesize2
+  input Integer inPrioDiff;
+  input Absyn.Exp inOperand;
+  input Boolean inLhs;
+  output Boolean outShouldParenthesize;
+algorithm
+  outShouldParenthesize := match(inPrioDiff, inOperand, inLhs)
+    case (1, _, _) then true;
+    case (0, _, false) then not isAssociativeExp(inOperand);
+    else false;
+  end match;
+end shouldParenthesize2;
+
+protected function isAssociativeExp
+  "Determines whether the given expression represents an associative operation or not."
+  input Absyn.Exp inExp;
+  output Boolean outIsAssociative;
+algorithm
+  outIsAssociative := match(inExp)
+    local
+      Absyn.Operator op;
+
+    case Absyn.BINARY(op = op) then isAssociativeOp(op);
+    case Absyn.LBINARY(op = _) then true;
+    else false;
+  end match;
+end isAssociativeExp;
+
+protected function isAssociativeOp
+  "Determines whether the given operator is associative or not."
+  input Absyn.Operator inOperator;
+  output Boolean outIsAssociative;
+algorithm
+  outIsAssociative := match(inOperator)
+    case Absyn.ADD() then true;
+    case Absyn.MUL() then true;
+    case Absyn.ADD_EW() then true;
+    case Absyn.MUL_EW() then true;
+    else false;
+  end match;
+end isAssociativeOp;
+
 public function expPriority
   "Returns an integer priority given an expression, which is used by
    printOperatorStr to add parentheses around operands when dumping expressions.
@@ -4161,19 +4226,11 @@ algorithm
     local
       String op_str;
 
-    // Special case for unary operation on rhs, always print parentheses.
-    case (Absyn.UNARY(op = _), _, false)
-      equation
-        op_str = printExpStr(inOperand);
-        op_str = stringAppendList({"(", op_str, ")"});
-      then
-        op_str;
-
     // Print parentheses around an operand if the priority of the operation is
     // less than the priority of the operand.
     case (_, _, _)
       equation
-        true = intLt(expPriority(inOperation, inLhs), expPriority(inOperand, inLhs));
+        true = shouldParenthesize(inOperand, inOperation, inLhs);
         op_str = printExpStr(inOperand);
         op_str = stringAppendList({"(", op_str, ")"});
       then

@@ -1,13 +1,5 @@
 interface package AbsynDumpTV
 
-package builtin
-  function intLt
-    input Integer x;
-    input Integer y;
-    output Boolean outResult;
-  end intLt;
-end builtin;
-
 package Absyn
   type Ident = String;
 
@@ -309,11 +301,12 @@ package Absyn
 end Absyn;
 
 package Dump
-  function expPriority
-    input Absyn.Exp inExp;
+  function shouldParenthesize
+    input Absyn.Exp inOperand;
+    input Absyn.Exp inOperator;
     input Boolean inLhs;
-    output Integer outInteger;
-  end expPriority;
+    output Boolean outShouldParenthesize;
+  end shouldParenthesize;
 end Dump;
 
 package Tpl

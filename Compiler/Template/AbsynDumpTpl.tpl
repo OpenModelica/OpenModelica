@@ -131,7 +131,7 @@ end dumpExp;
 template dumpOperand(Absyn.Exp operand, Absyn.Exp operation, Boolean lhs)
 ::=
   let op_str = dumpExp(operand)
-  if intLt(expPriority(operation, lhs), expPriority(operand, lhs)) then
+  if shouldParenthesize(operand, operation, lhs) then
     '(<%op_str%>)'
   else
     op_str
