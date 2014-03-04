@@ -7091,6 +7091,139 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEExps;
 
+public function traverseBackendDAEExpsEqSystemJacobians "author: wbraun
+
+  This function goes through the all jacobians and stateSets and finds all the
+  expressions and performs the function on them in a list
+  an extra argument passed through the function.
+"
+  replaceable type Type_a subtypeof Any;
+  input BackendDAE.EqSystem syst;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  outTypeA :=
+  matchcontinue(syst, func, inTypeA)
+    local
+      BackendDAE.StrongComponents comps;
+      BackendDAE.StateSets stateSets;
+      Type_a arg;
+    case (BackendDAE.EQSYSTEM(stateSets = stateSets), _, _)
+      equation
+        comps = getStrongComponents(syst);
+        arg = traverseStrongComponentsJacobiansExp(comps, func, inTypeA);
+        arg = traverseStateSetsJacobiansExp(stateSets, func, arg);
+     then arg;
+    case (_, _, _) then inTypeA;
+  end matchcontinue;
+end traverseBackendDAEExpsEqSystemJacobians;
+
+public function traverseStrongComponentsJacobiansExp
+ "author: wbraun"
+  replaceable type Type_a subtypeof Any;
+  input BackendDAE.StrongComponents inComps;
+  input FuncExpType inFunc;
+  input Type_a inTypeA;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  outTypeA :=
+  matchcontinue(inComps, inFunc, inTypeA)
+    local
+      BackendDAE.StrongComponents rest;
+      BackendDAE.StrongComponent comp;
+      list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
+      BackendDAE.BackendDAE bdae;
+      Type_a arg;
+    case ({}, _, _) then inTypeA;
+    case (BackendDAE.EQUATIONSYSTEM(jac=BackendDAE.FULL_JACOBIAN(SOME(jac)))::rest, _, _)
+      equation
+        arg = traverseBackendDAEExpsJacobianEqn(jac, inFunc, inTypeA);
+      then
+        traverseStrongComponentsJacobiansExp(rest, inFunc, arg);
+    case (BackendDAE.EQUATIONSYSTEM(jac=BackendDAE.GENERIC_JACOBIAN(jacobian = (bdae,_,_,_,_)))::rest, _, _)
+      equation
+        arg = traverseBackendDAEExps(bdae, inFunc, inTypeA);
+      then
+        traverseStrongComponentsJacobiansExp(rest, inFunc, arg);
+    case (BackendDAE.TORNSYSTEM(jac=BackendDAE.GENERIC_JACOBIAN(jacobian = (bdae,_,_,_,_)))::rest, _, _)
+      equation
+        arg = traverseBackendDAEExps(bdae, inFunc, inTypeA);
+      then
+        traverseStrongComponentsJacobiansExp(rest, inFunc, arg);
+    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp)::rest, _, _)
+      equation
+         arg = traverseStrongComponentsJacobiansExp({comp}, inFunc, inTypeA);
+      then
+        traverseStrongComponentsJacobiansExp(rest, inFunc, arg);
+    case (_::rest, _, _) then
+        traverseStrongComponentsJacobiansExp(rest, inFunc, inTypeA);
+  end matchcontinue;
+end traverseStrongComponentsJacobiansExp;
+
+protected function traverseBackendDAEExpsJacobianEqn "author: wbraun
+  Helper for traverseBackendDAEExpsEqn."
+  replaceable type Type_a subtypeof Any;
+  input list<tuple<Integer, Integer, BackendDAE.Equation>> inJacEntry;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  outTypeA :=
+    matchcontinue (inJacEntry, func, inTypeA)
+     local
+      list<tuple<Integer, Integer, BackendDAE.Equation>> rest;
+      Integer i,j;
+      BackendDAE.Equation eqn;
+      Type_a typeA;
+    case ({}, _, _) then inTypeA;
+    case ((i,j,eqn)::rest, _, _)
+      equation
+       typeA = traverseBackendDAEExpsOptEqn(SOME(eqn),func,inTypeA);
+     then typeA;
+  end matchcontinue;
+end traverseBackendDAEExpsJacobianEqn;
+
+public function traverseStateSetsJacobiansExp
+ "author: wbraun"
+  replaceable type Type_a subtypeof Any;
+  input BackendDAE.StateSets inStateSets;
+  input FuncExpType inFunc;
+  input Type_a inTypeA;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  outTypeA :=
+  match(inStateSets, inFunc, inTypeA)
+    local
+      BackendDAE.StateSets rest;
+      BackendDAE.StateSet set;
+      BackendDAE.BackendDAE bdae;
+      Type_a arg;
+    case ({}, _, _) then inTypeA;
+    case (BackendDAE.STATESET(jacobian = BackendDAE.GENERIC_JACOBIAN(jacobian = (bdae,_,_,_,_)))::rest, _, _)
+      equation
+        arg = traverseBackendDAEExps(bdae, inFunc, inTypeA);
+      then
+        traverseStateSetsJacobiansExp(rest, inFunc, arg);
+  end match;
+end traverseStateSetsJacobiansExp;
+
 public function traverseBackendDAEExpsNoCopyWithUpdate "
   This function goes through the BackendDAE structure and finds all the
   expressions and performs the function on them in a list
@@ -8683,7 +8816,8 @@ algorithm
                         (BackendDAEOptimize.partitionIndependentBlocks, "partitionIndependentBlocks", true),
                         (Tearing.tearingSystem, "tearingSystem", false),
                         (BackendDAEOptimize.addInitialStmtsToAlgorithms, "addInitialStmtsToAlgorithms", false),
-                        (BackendDAEOptimize.calculateStrongComponentJacobians, "calculateStrongComponentJacobians", false)
+                        (BackendDAEOptimize.calculateStrongComponentJacobians, "calculateStrongComponentJacobians", false),
+                        (BackendDAEOptimize.calculateStateSetsJacobians, "calculateStateSetsJacobians", false)
                         //(BackendDAEOptimize.resolveLoopsInComps,"resolveLoops", false)
                         };
 

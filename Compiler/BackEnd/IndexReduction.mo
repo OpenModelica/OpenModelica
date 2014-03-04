@@ -1840,7 +1840,7 @@ algorithm
         stateCandidates = List.map1(stateCandidates,BackendVariable.setVarKind,BackendDAE.DUMMY_STATE());
         otherVars = List.map1(otherVars,BackendVariable.setVarKind,BackendDAE.DUMMY_STATE());
         // generate state set;
-        (setIndex,vars,eqns,stateSets) = generateStateSets(rest,iSetIndex+1,vars,eqns,BackendDAE.STATESET(rang,crset,crA,aVars,stateCandidates,otherVars,cEqnsLst,oEqnLst,crJ,varJ)::iStateSets);
+        (setIndex,vars,eqns,stateSets) = generateStateSets(rest,iSetIndex+1,vars,eqns,BackendDAE.STATESET(rang,crset,crA,aVars,stateCandidates,otherVars,cEqnsLst,oEqnLst,crJ,varJ,BackendDAE.EMPTY_JACOBIAN())::iStateSets);
       then
         (setIndex,vars,eqns,stateSets);
   end match;

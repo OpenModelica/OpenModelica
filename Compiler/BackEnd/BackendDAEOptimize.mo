@@ -56,6 +56,7 @@ protected import BackendDump;
 protected import BackendEquation;
 protected import BackendVarTransform;
 protected import BackendVariable;
+protected import BaseHashSet;
 protected import BaseHashTable;
 protected import Ceval;
 protected import CheckModel;
@@ -74,9 +75,11 @@ protected import Flags;
 protected import Global;
 protected import GlobalScript;
 protected import Graph;
+protected import HashSet;
 protected import HashTableExpToIndex;
 protected import HpcOmEqSystems;
 protected import HpcOmTaskGraph;
+protected import IndexReduction;
 protected import List;
 protected import RewriteRules;
 protected import SCode;
@@ -1647,6 +1650,7 @@ algorithm
       equation
         usedfuncs = copyRecordConstructorAndExternalObjConstructorDestructor(funcs);
         ((_,usedfuncs)) = List.fold1(eqs,BackendDAEUtil.traverseBackendDAEExpsEqSystem,checkUnusedFunctions,(funcs,usedfuncs));
+        ((_,usedfuncs)) = List.fold1(eqs,BackendDAEUtil.traverseBackendDAEExpsEqSystemJacobians,checkUnusedFunctions,(funcs,usedfuncs));
         ((_,usedfuncs)) = BackendDAEUtil.traverseBackendDAEExpsVars(knvars,checkUnusedFunctions,(funcs,usedfuncs));
         ((_,usedfuncs)) = BackendDAEUtil.traverseBackendDAEExpsVars(exobj,checkUnusedFunctions,(funcs,usedfuncs));
         ((_,usedfuncs)) = BackendDAEUtil.traverseBackendDAEExpsVars(aliasVars,checkUnusedFunctions,(funcs,usedfuncs));
@@ -4063,8 +4067,8 @@ algorithm
       list<list<Integer>> otherVarsIntsLst;
       list<Integer> otherEqnsInts, otherVarsInts;
       
-      list<BackendDAE.Var> iterationvars, ovarsLst;
-      BackendDAE.Variables diffVars, ovars;
+      list<BackendDAE.Var> iterationvars, ovarsLst, resVarsLst;
+      BackendDAE.Variables diffVars, ovars, resVars;
       list<BackendDAE.Equation> reqns, otherEqnsLst;
       BackendDAE.EquationArray eqns, oeqns;
       
@@ -4074,33 +4078,38 @@ algorithm
       
       case (comp as BackendDAE.TORNSYSTEM(tearingvars=iterationvarsInts, residualequations=residualequations, otherEqnVarTpl=otherEqnVarTpl, linear=b), _, _, _)
         equation
+          // get iteration vars
+          iterationvars = List.map1r(iterationvarsInts, BackendVariable.getVarAt, inVars);
+          iterationvars = List.map(iterationvars, BackendVariable.transformXToXd);
+          diffVars = BackendVariable.listVar1(iterationvars);
 
-         // get iteration vars
-         iterationvars = List.map1r(iterationvarsInts, BackendVariable.getVarAt, inVars);
-         iterationvars = List.map(iterationvars, BackendVariable.transformXToXd);
-         diffVars = BackendVariable.listVar1(iterationvars);
-         
-         // get residual eqns
-         reqns = BackendEquation.getEqns(residualequations, inEqns);
-         reqns = BackendEquation.replaceDerOpInEquationList(reqns);
-         eqns = BackendEquation.listEquation(reqns);
-         
-         // get other eqns
-         otherEqnsInts = List.map(otherEqnVarTpl, Util.tuple21);
-         otherEqnsLst = BackendEquation.getEqns(otherEqnsInts, inEqns);
-         oeqns = BackendEquation.listEquation(otherEqnsLst);
-         
-         // get other vars
-         otherVarsIntsLst = List.map(otherEqnVarTpl, Util.tuple22);
-         otherVarsInts = List.unionList(otherVarsIntsLst);
-         ovarsLst = List.map1r(otherVarsInts, BackendVariable.getVarAt, inVars);
-         ovars = BackendVariable.listVar1(ovarsLst);
-         
-         //generate jacobian name
-         name = "NLSJac" +& intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
-         
-         // generate generic jacobian backend dae
-         (jacobian, shared) = getSymbolicJacobian(diffVars, eqns, oeqns, ovars, inShared, inVars, name);
+          // get residual eqns
+          reqns = BackendEquation.getEqns(residualequations, inEqns);
+          reqns = BackendEquation.replaceDerOpInEquationList(reqns);
+          eqns = BackendEquation.listEquation(reqns);
+          // create  residual equations 
+          reqns = BackendEquation.traverseBackendDAEEqns(eqns, BackendDAEUtil.traverseEquationToScalarResidualForm, {});
+          reqns = listReverse(reqns);
+          (reqns, resVarsLst) = convertInitialResidualsIntoInitialEquations(reqns);
+          resVars = BackendVariable.listVar1(resVarsLst);
+          eqns = BackendEquation.listEquation(reqns);
+
+          // get other eqns
+          otherEqnsInts = List.map(otherEqnVarTpl, Util.tuple21);
+          otherEqnsLst = BackendEquation.getEqns(otherEqnsInts, inEqns);
+          oeqns = BackendEquation.listEquation(otherEqnsLst);
+
+          // get other vars
+          otherVarsIntsLst = List.map(otherEqnVarTpl, Util.tuple22);
+          otherVarsInts = List.unionList(otherVarsIntsLst);
+          ovarsLst = List.map1r(otherVarsInts, BackendVariable.getVarAt, inVars);
+          ovars = BackendVariable.listVar1(ovarsLst);
+
+          //generate jacobian name
+          name = "NLSJac" +& intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
+
+          // generate generic jacobian backend dae
+          (jacobian, shared) = getSymbolicJacobian(diffVars, eqns, resVars, oeqns, ovars, inShared, inVars, name);
 
       then (BackendDAE.TORNSYSTEM(iterationvarsInts, residualequations, otherEqnVarTpl, b, jacobian), shared);
 
@@ -4110,28 +4119,33 @@ algorithm
 
       case (comp as BackendDAE.EQUATIONSYSTEM(eqns=residualequations, vars=iterationvarsInts), _, _, _)
         equation
+					// get iteration vars
+					iterationvars = List.map1r(iterationvarsInts, BackendVariable.getVarAt, inVars);
+					iterationvars = List.map(iterationvars, BackendVariable.transformXToXd);
+					iterationvars = listReverse(iterationvars);
+					diffVars = BackendVariable.listVar1(iterationvars);
+					
+					// get residual eqns
+					reqns = BackendEquation.getEqns(residualequations, inEqns);
+					reqns = BackendEquation.replaceDerOpInEquationList(reqns);
+					eqns = BackendEquation.listEquation(reqns);
+          // create  residual equations 
+          reqns = BackendEquation.traverseBackendDAEEqns(eqns, BackendDAEUtil.traverseEquationToScalarResidualForm, {});
+          reqns = listReverse(reqns);
+          (reqns, resVarsLst) = convertInitialResidualsIntoInitialEquations(reqns);
+          resVars = BackendVariable.listVar1(resVarsLst);
+          eqns = BackendEquation.listEquation(reqns);
 
-         // get iteration vars
-         iterationvars = List.map1r(iterationvarsInts, BackendVariable.getVarAt, inVars);
-         iterationvars = List.map(iterationvars, BackendVariable.transformXToXd);
-         iterationvars = listReverse(iterationvars);
-         diffVars = BackendVariable.listVar1(iterationvars);
-         
-         // get residual eqns
-         reqns = BackendEquation.getEqns(residualequations, inEqns);
-         reqns = BackendEquation.replaceDerOpInEquationList(reqns);
-         eqns = BackendEquation.listEquation(reqns);
-         
-         // other eqns and vars are empty
-         oeqns = BackendEquation.listEquation({});
-         ovars =  BackendVariable.emptyVars();
-         
-         //generate jacobian name
-         name = "NLSJac" +& intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
-         
-         // generate generic jacobian backend dae
-         (jacobian, shared) = getSymbolicJacobian(diffVars, eqns, oeqns, ovars, inShared, inVars, name);
-
+					// other eqns and vars are empty
+					oeqns = BackendEquation.listEquation({});
+					ovars =  BackendVariable.emptyVars();
+					
+					//generate jacobian name
+					name = "NLSJac" +& intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
+					
+					// generate generic jacobian backend dae
+					(jacobian, shared) = getSymbolicJacobian(diffVars, eqns, resVars, oeqns, ovars, inShared, inVars, name);
+					
       then (BackendDAE.EQUATIONSYSTEM(residualequations, iterationvarsInts, jacobian, BackendDAE.JAC_GENERIC()), shared);
             
       case (comp, _, _, _) then (comp, inShared);
@@ -4145,6 +4159,7 @@ protected function getSymbolicJacobian
   non-linear systems and tearing systems."
   input BackendDAE.Variables inDiffVars;
   input BackendDAE.EquationArray inResEquations;
+  input BackendDAE.Variables inResVars;
   input BackendDAE.EquationArray inotherEquations;
   input BackendDAE.Variables inotherVars;
   input BackendDAE.Shared inShared;
@@ -4153,14 +4168,14 @@ protected function getSymbolicJacobian
   output BackendDAE.Jacobian outJacobian;
   output BackendDAE.Shared outShared;
 algorithm
-  (outJacobian, outShared) := matchcontinue(inDiffVars, inResEquations, inotherEquations, inotherVars, inShared, inAllVars, inName)
+  (outJacobian, outShared) := matchcontinue(inDiffVars, inResEquations, inResVars, inotherEquations, inotherVars, inShared, inAllVars, inName)
     local
       Env.Cache cache;
       BackendDAE.BackendDAE backendDAE, jacBackendDAE;
       
-      BackendDAE.Variables emptyVars, dependentVars, independentVars, knvars, allvars,  residualVars;
+      BackendDAE.Variables emptyVars, dependentVars, independentVars, knvars, allvars;
       BackendDAE.EquationArray emptyEqns, eqns;    
-      list<BackendDAE.Var> knvarLst, independentVarsLst, dependentVarsLst,  otherVarsLst, residualVarsLst;
+      list<BackendDAE.Var> knvarLst, independentVarsLst, dependentVarsLst,  otherVarsLst;
       list<BackendDAE.Equation> residual_eqnlst;
       list<DAE.ComponentRef> independentComRefs, dependentVarsComRefs,  otherVarsLstComRefs;
       
@@ -4177,7 +4192,7 @@ algorithm
       String errorMessage;
       
       DAE.FunctionTree funcs;
-    case(_, _, _, _, _, _, _)
+    case(_, _, _, _, _, _, _, _)
       equation
         knvars = BackendDAEUtil.getknvars(inShared);
         funcs = BackendDAEUtil.getFunctions(inShared);
@@ -4204,14 +4219,9 @@ algorithm
         Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++ known variables +++---\n");
         Debug.fcall(Flags.JAC_DUMP2, BackendDump.printVariables, knvars);
         
-        // create dependent variables and residual equations 
-        residual_eqnlst = BackendEquation.traverseBackendDAEEqns(inResEquations, BackendDAEUtil.traverseEquationToScalarResidualForm, {});
-        residual_eqnlst = listReverse(residual_eqnlst);
-        (residual_eqnlst, residualVarsLst) = convertInitialResidualsIntoInitialEquations(residual_eqnlst);
         // dependentVarsLst = listReverse(dependentVarsLst);
-        residualVars = BackendVariable.listVar1(residualVarsLst);
-        dependentVars = BackendVariable.addVars(residualVarsLst, inotherVars);
-        eqns = BackendEquation.addEquations(residual_eqnlst, inotherEquations);
+        dependentVars = BackendVariable.mergeVariables(inResVars, inotherVars);
+        eqns = BackendEquation.mergeEquationArray(inResEquations, inotherEquations);
         
         Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++ created backend system +++---\n");
         Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++ vars +++---\n");
@@ -4223,6 +4233,9 @@ algorithm
         // create known variables
         knvarLst = BackendEquation.equationsVars(eqns, knvars);
         knvars = BackendVariable.listVar1(knvarLst);
+
+        Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++ known variables +++---\n");
+        Debug.fcall(Flags.JAC_DUMP2, BackendDump.printVariables, knvars);
         
         // prepare vars and equations for BackendDAE
         emptyVars =  BackendVariable.emptyVars();
@@ -4247,14 +4260,14 @@ algorithm
           emptyVars, 
           emptyVars, 
           knvars, 
-          residualVars, 
+          inResVars, 
           dependentVarsLst, 
           inName);
         shared = BackendDAEUtil.addFunctionTree(funcs, inShared);
 
       then (BackendDAE.GENERIC_JACOBIAN(symJacBDAE, sparsePattern, sparseColoring), shared);
         
-    case(_, _, _, _, _, _, _)
+    case(_, _, _, _, _, _, _, _)
       equation
         true = Flags.isSet(Flags.JAC_DUMP);
         errorMessage = "./Compiler/BackEnd/BackendDAEOptimize.mo: function getSymbolicSimulationJacobian failed.";
@@ -4264,6 +4277,282 @@ algorithm
         else then (BackendDAE.EMPTY_JACOBIAN(), inShared);
   end matchcontinue;
 end getSymbolicJacobian;
+
+public function calculateStateSetsJacobians
+  "Calculates jacobains matrix with directional derivativ method 
+   for StateSets
+   author: wbraun"
+  input BackendDAE.BackendDAE dlow;
+  output BackendDAE.BackendDAE outDlow;
+algorithm
+  outDlow := BackendDAEUtil.mapEqSystem(dlow, calculateEqSystemStateSetsJacobians);
+end calculateStateSetsJacobians;
+
+protected function calculateEqSystemStateSetsJacobians
+  input BackendDAE.EqSystem inSyst;
+  input  BackendDAE.Shared inShared;
+  output BackendDAE.EqSystem outSyst;
+  output  BackendDAE.Shared outShared;
+algorithm
+  (outSyst,outShared) := matchcontinue (inSyst, inShared)
+    local
+      BackendDAE.EqSystem syst;
+      list<BackendDAE.EqSystem> systs;
+      BackendDAE.Shared shared;
+      array<Integer> ass1;
+      array<Integer> ass2;
+      BackendDAE.StrongComponents comps;
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqns;
+      Option<BackendDAE.IncidenceMatrix> m;
+      Option<BackendDAE.IncidenceMatrixT> mT;
+      BackendDAE.StateSets stateSets;
+      BackendDAE.Matching matching;
+      
+    case (syst as BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets), shared)
+      equation
+        comps = BackendDAEUtil.getStrongComponents(syst);
+        (stateSets, shared) = calculateStateSetsJacobian(stateSets, vars, eqns, comps, shared, {});
+      then (BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets), shared);
+  end matchcontinue;
+end calculateEqSystemStateSetsJacobians;
+
+protected function calculateStateSetsJacobian
+  input BackendDAE.StateSets inStateSets;
+  input BackendDAE.Variables inVars;
+  input BackendDAE.EquationArray inEqns;
+  input BackendDAE.StrongComponents inComps;
+  input  BackendDAE.Shared inShared;
+  input BackendDAE.StateSets inAccum;
+  output BackendDAE.StateSets outStateSets;
+  output  BackendDAE.Shared outShared;
+algorithm
+  (outStateSets, outShared) := matchcontinue (inStateSets, inVars, inEqns, inComps, inShared, inAccum)
+    local
+      BackendDAE.StateSets rest, result;
+      BackendDAE.StateSet stateSet;
+      BackendDAE.Shared shared;
+      
+    case ({}, _, _, _, _, _) then (listReverse(inAccum), inShared);
+    case (stateSet::rest, _, _, _, _, _)
+      equation
+        (stateSet, shared) = calculateStateSetJacobian(stateSet, inVars, inEqns, inComps, inShared);
+        (result, shared) = calculateStateSetsJacobian(rest, inVars, inEqns, inComps, shared, stateSet::inAccum);
+      then (result, shared);
+  end matchcontinue;
+end calculateStateSetsJacobian;
+
+protected function calculateStateSetJacobian
+  input BackendDAE.StateSet inStateSet;
+  input BackendDAE.Variables inVars;
+  input BackendDAE.EquationArray inEqns;
+  input BackendDAE.StrongComponents inComps;
+  input  BackendDAE.Shared inShared;
+  output BackendDAE.StateSet outStateSet;
+  output  BackendDAE.Shared outShared;
+algorithm
+  (outStateSet, outShared) := matchcontinue (inStateSet, inVars, inEqns, inComps, inShared)
+    local
+      BackendDAE.StateSet stateSet;
+      BackendDAE.Shared shared;
+      
+      Integer rang;
+      list<DAE.ComponentRef> state;
+      DAE.ComponentRef crA, crJ;
+      list<BackendDAE.Var> varA, varJ, statescandidates, ovars;
+      
+      list<DAE.ComponentRef> crstates;
+      array<Boolean> marked;
+      HashSet.HashSet hs;
+      
+      list<BackendDAE.Var> statevars, compvars;
+      BackendDAE.Variables diffVars, allvars, vars, oVars, resVars;
+      list<BackendDAE.Equation> eqns, compeqns, ceqns, oeqns;
+      BackendDAE.EquationArray cEqns, oEqns;
+      
+      BackendDAE.Jacobian jacobian;
+      
+      String name;
+      
+    case (stateSet as BackendDAE.STATESET(rang=rang, state=state, crA=crA, varA=varA, statescandidates=statescandidates,
+      ovars=ovars, eqns=eqns, oeqns=oeqns, crJ=crJ, varJ=varJ), _, _, _, _)
+      equation
+        // get state names
+        crstates = List.map(statescandidates, BackendVariable.varCref);
+        marked = arrayCreate(BackendVariable.varsSize(inVars), false);
+        // get Equations for Jac from the strong component
+        marked = List.fold1(crstates, markSetStates, inVars, marked);
+        (compeqns, compvars) = getStateSetCompVarEqns(inComps, marked, inEqns, inVars, {}, {});
+        // remove the state set equation
+        compeqns = List.select(compeqns, removeStateSetEqn);
+        // remove the state candidates to geht the other vars
+        hs = List.fold(crstates, BaseHashSet.add, HashSet.emptyHashSet());
+        compvars = List.select1(compvars, removeStateSetStates, hs);
+        // match the equations to get the residual equations
+        (ceqns, oeqns) = IndexReduction.splitEqnsinConstraintAndOther(compvars, compeqns, inShared);
+        // add vars for A
+        vars = BackendVariable.addVars(varA, inVars);
+        // change state vars to ders
+        compvars = List.map(compvars, BackendVariable.transformXToXd);
+        // replace der in equations
+        ceqns = BackendEquation.replaceDerOpInEquationList(ceqns);
+        oeqns = BackendEquation.replaceDerOpInEquationList(oeqns);
+        // convert ceqns to res[..] = lhs-rhs
+        ceqns = createResidualSetEquations(ceqns, crJ, 1, intGt(listLength(ceqns), 1), {});
+        
+        //add states to allVars
+        allvars = BackendVariable.copyVariables(inVars);
+        statevars = BackendVariable.getAllStateVarFromVariables(allvars);
+        statevars = List.map(statevars, BackendVariable.transformXToXd);
+        allvars = BackendVariable.addVars(statevars, allvars);
+        
+        // create arrays
+        resVars = BackendVariable.listVar1(varJ);
+        diffVars = BackendVariable.listVar1(statescandidates);
+        oVars =  BackendVariable.listVar1(compvars);
+        cEqns = BackendEquation.listEquation(ceqns);
+        oEqns = BackendEquation.listEquation(oeqns);
+        
+        //generate jacobian name
+        name = "StateSetJac" +& intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
+        
+        // generate generic jacobian backend dae
+        (jacobian, shared) = getSymbolicJacobian(diffVars, cEqns, resVars, oEqns, oVars, inShared, allvars, name);
+        
+      then (BackendDAE.STATESET(rang, state, crA, varA, statescandidates, ovars, eqns, oeqns, crJ, varJ, jacobian), shared);
+  end matchcontinue;
+end calculateStateSetJacobian;
+
+protected function markSetStates
+  input DAE.ComponentRef inCr;
+  input BackendDAE.Variables iVars;
+  input array<Boolean> iMark;
+  output array<Boolean> oMark;
+protected
+  Integer index;
+algorithm
+  (_, {index}) := BackendVariable.getVar(inCr, iVars);
+  oMark := arrayUpdate(iMark, index, true);
+end markSetStates;
+
+protected function removeStateSetStates
+  input BackendDAE.Var inVar;
+  input HashSet.HashSet hs;
+  output Boolean b;
+algorithm
+  b := not BaseHashSet.has(BackendVariable.varCref(inVar), hs);  
+end removeStateSetStates;
+
+protected function removeStateSetEqn
+  input BackendDAE.Equation inEqn;
+  output Boolean b;
+algorithm
+  b := match(inEqn)
+    case BackendDAE.ARRAY_EQUATION(source=DAE.SOURCE(info=Absyn.INFO(fileName="stateselection"))) then false;
+    case BackendDAE.EQUATION(source=DAE.SOURCE(info=Absyn.INFO(fileName="stateselection"))) then false;
+    else then true;
+  end match;
+end removeStateSetEqn;
+
+protected function foundMarked
+  input list<Integer> ilst;
+  input array<Boolean> marked;
+  output Boolean found;
+algorithm
+  found := match(ilst, marked)
+    local 
+      Boolean b;
+      Integer i;
+      list<Integer> rest;
+    case ({}, _) then false;
+    case (i::rest, _)
+      equation
+        b = marked[i];
+        b = Debug.bcallret2(not b, foundMarked, rest, marked, b);
+      then
+        b;
+  end match; 
+end foundMarked;
+
+protected function getStateSetCompVarEqns
+"author: Frenkel TUD 2013-01
+  Retrieves the equation and the variable for a state set"
+  input BackendDAE.StrongComponents inComp;
+  input array<Boolean> marked;
+  input BackendDAE.EquationArray inEquationArray;
+  input BackendDAE.Variables inVariables;
+  input list<BackendDAE.Equation> inEquations;
+  input list<BackendDAE.Var> inVars;
+  output list<BackendDAE.Equation> outEquations;
+  output list<BackendDAE.Var> outVars;
+algorithm
+  (outEquations, outVars):=
+  matchcontinue (inComp, marked, inEquationArray, inVariables, inEquations, inVars)
+    local
+      list<Integer> elst, vlst;
+      list<BackendDAE.Equation> eqnlst;
+      list<BackendDAE.Var> varlst;
+      BackendDAE.StrongComponent comp;
+      BackendDAE.StrongComponents rest;
+    case ({}, _, _, _, _, _) then (inEquations, inVars);
+    case (comp::rest, _, _, _, _, _)
+      equation
+        (elst, vlst) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
+        true = foundMarked(vlst, marked);
+        eqnlst = BackendEquation.getEqns(elst, inEquationArray);        
+        varlst = List.map1r(vlst, BackendVariable.getVarAt, inVariables);
+        eqnlst = listAppend(eqnlst, inEquations);
+        varlst = listAppend(varlst, inVars);
+        (eqnlst, varlst) = getStateSetCompVarEqns(rest, marked, inEquationArray, inVariables, eqnlst, varlst);
+      then
+        (eqnlst, varlst);        
+    case (_::rest, _, _, _, _, _)
+      equation 
+        (eqnlst, varlst) = getStateSetCompVarEqns(rest, marked, inEquationArray, inVariables, inEquations, inVars);
+      then
+        (eqnlst, varlst); 
+  end matchcontinue;
+end getStateSetCompVarEqns;
+
+protected function createResidualSetEquations
+  input list<BackendDAE.Equation> iEqs;
+  input DAE.ComponentRef crJ;
+  input Integer index;
+  input Boolean applySubs;
+  input list<BackendDAE.Equation> iAcc;
+  output list<BackendDAE.Equation> oEqs;
+algorithm
+  oEqs := match (iEqs, crJ, index, applySubs, iAcc)
+    local
+      DAE.ComponentRef crj;
+      DAE.Exp res, e1, e2, expJ;
+      list<BackendDAE.Equation> rest;
+      BackendDAE.Equation eqn;
+      DAE.ElementSource source;
+      String errorMessage;
+    case ({}, _, _, _, _) then listReverse(iAcc);
+    case (BackendDAE.EQUATION(exp = e1, scalar = e2, source=source) :: rest, _, _, _, _) 
+      equation
+        crj = Debug.bcallret2(applySubs, ComponentReference.subscriptCrefWithInt, crJ, index, crJ);
+        expJ = Expression.crefExp(crj);
+        res = Expression.expSub(e1, e2);
+        eqn = BackendDAE.EQUATION(expJ, res, source, false);
+      then 
+        createResidualSetEquations(rest, crJ, index+1, applySubs, eqn::iAcc);
+    case (BackendDAE.RESIDUAL_EQUATION(exp = e1, source = source) :: rest, _, _, _, _)
+      equation
+        expJ = Expression.crefExp(ComponentReference.subscriptCrefWithInt(crJ, index));
+        eqn = BackendDAE.EQUATION(expJ, e1, source, false);
+    then
+        createResidualSetEquations(rest, crJ, index+1, applySubs, eqn::iAcc);
+    case (eqn::_, _, _, _, _)
+      equation
+        errorMessage = "./Compiler/BackEnd/BackendDAEOptimize.mo: function createResidualSetEquations failed for equation: " +& BackendDump.equationString(eqn);
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {errorMessage}, BackendEquation.equationInfo(eqn));
+    then
+       fail();
+  end match;
+end createResidualSetEquations;
 
 
 // =============================================================================

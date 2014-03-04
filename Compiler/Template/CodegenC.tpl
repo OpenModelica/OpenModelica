@@ -1662,9 +1662,9 @@ template functionInitialStateSets(list<StateSet> stateSets, String modelNamePref
 ::=
      let body = (stateSets |> set hasindex i1 fromindex 0 => (match set
        case set as SES_STATESET(__) then
-       let generatedJac = '<%symbolName(modelNamePrefix,"functionJacStateSetJac")%><%set.index%>_column'
-       let initialJac = '<%symbolName(modelNamePrefix,"initialAnalyticJacobianStateSetJac")%><%set.index%>'
-       let jacIndex = '<%symbolName(modelNamePrefix,"INDEX_JAC_StateSetJac")%><%set.index%>'
+       let generatedJac = match jacobianMatrix case (_,_,name,_,_,_) then '<%symbolName(modelNamePrefix,"functionJac")%><%name%>_column'
+       let initialJac =  match jacobianMatrix case (_,_,name,_,_,_) then '<%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%name%>'
+       let jacIndex = match jacobianMatrix case (_,_,name,_,_,_) then '<%symbolName(modelNamePrefix,"INDEX_JAC_")%><%name%>'
        let statesvars = (states |> s hasindex i2 fromindex 0 => 'statesetData[<%i1%>].states[<%i2%>] = &<%cref(s)%>__varInfo;' ;separator="\n")
        let statescandidatesvars = (statescandidates |> cstate hasindex i2 fromindex 0 => 'statesetData[<%i1%>].statescandidates[<%i2%>] = &<%cref(cstate)%>__varInfo;' ;separator="\n")
        <<

@@ -82,7 +82,6 @@ protected import Flags;
 protected import GlobalScript;
 protected import HashSet;
 protected import HpcOmScheduler;
-protected import IndexReduction;
 protected import Initialization;
 protected import Inline;
 protected import InlineSolver;
@@ -1589,8 +1588,7 @@ algorithm
       
       SymbolicJacs = listAppend(SymbolicJacs, LinearMatrices);
       jacobianEquations = collectAllJacobianEquations(SymbolicJacs, {});
-      
-      
+
       SymbolicJacs = listAppend(SymbolicJacs, SymbolicJacsNLS);
       jacobianSimvars = collectAllJacobianVars(SymbolicJacs, {});
       modelInfo = addJacobianVars(jacobianSimvars, modelInfo);
@@ -4219,10 +4217,8 @@ public function createStateSets
 protected
   Boolean flag;
 algorithm
-  flag := Flags.set(Flags.NLS_ANALYTIC_JACOBIAN, true);
   (outDAE, (oEquations, ouniqueEqIndex, otempvars, numStateSets)) := 
     BackendDAEUtil.mapEqSystemAndFold(inDAE, createStateSetsSystem, (iEquations, iuniqueEqIndex, itempvars, 0));
-  _ := Flags.set(Flags.NLS_ANALYTIC_JACOBIAN, flag);
   // BackendDump.printBackendDAE(outDAE);
 end createStateSets;
 
@@ -4277,7 +4273,7 @@ protected function createStateSetsSets
   output Integer oNumStateSets;
 algorithm
   (oVars, oEquations, ouniqueEqIndex, otempvars, oNumStateSets) := 
-  match(iStateSets, iVars, iEqns, shared, comps, iEquations, iuniqueEqIndex, itempvars, iNumStateSets)
+  matchcontinue(iStateSets, iVars, iEqns, shared, comps, iEquations, iuniqueEqIndex, itempvars, iNumStateSets)
     local
       DAE.FunctionTree functree;
       BackendDAE.StateSets sets;
@@ -4295,416 +4291,42 @@ algorithm
       HashSet.HashSet hs;
       array<Boolean> marked;
       BackendDAE.ExtraInfo ei;
+      BackendDAE.Jacobian jacobian;
+      String errorMessage;
     
     case({}, _, _, _, _, _, _, _, _) then (iVars, iEquations, iuniqueEqIndex, itempvars, iNumStateSets);
 
-    case(BackendDAE.STATESET(rang=rang, state=crset, crA=crA, varA=aVars, statescandidates=statevars, ovars=dstatesvars, crJ=crJ, varJ=varJ)::sets, _, _, 
-         BackendDAE.SHARED(info = ei), _, _, _, _, _)
+    case(BackendDAE.STATESET(rang=rang, state=crset, crA=crA, varA=aVars, statescandidates=statevars, ovars=dstatesvars, crJ=crJ, varJ=varJ, jacobian=jacobian)::sets, _, _, 
+         _, _, _, _, _, _)
       equation
-        knVars = BackendVariable.daeKnVars(shared);
-        functree = BackendDAEUtil.getFunctions(shared);
         // get state names
         crstates = List.map(statevars, BackendVariable.varCref);
-        marked = arrayCreate(BackendVariable.varsSize(iVars), false);
-        // get Equations for Jac from the strong component
-        marked = List.fold1(crstates, markSetStates, iVars, marked);
-        (compeqns, compvars) = getStateSetCompVarEqns(comps, marked, iEqns, iVars, {}, {});
-        // remove the state set equation
-        compeqns = List.select(compeqns, removeStateSetEqn);
-        // remove the state candidates to geht the other vars
-        hs = List.fold(crstates, BaseHashSet.add, HashSet.emptyHashSet());
-        compvars = List.select1(compvars, removeStateSetStates, hs);
-        // match the equations to get the residual equations
-        (ceqns, oeqns) = IndexReduction.splitEqnsinConstraintAndOther(compvars, compeqns, shared);
+
         // add vars for A
         vars = BackendVariable.addVars(aVars, iVars);
-        // change state vars to ders
-        compvars = List.map(compvars, BackendVariable.transformXToXd);
-        // replace der in equations
-        ceqns = BackendEquation.replaceDerOpInEquationList(ceqns);
-        oeqns = BackendEquation.replaceDerOpInEquationList(oeqns);
-        // convert ceqns to res[..] = lhs-rhs
-        ceqns = createResidualSetEquations(ceqns, crJ, 1, intGt(listLength(ceqns), 1), {});
+
         // get first a element for varinfo
         crA = ComponentReference.subscriptCrefWithInt(crA, 1);
         crA = Debug.bcallret2(intGt(listLength(crset), 1), ComponentReference.subscriptCrefWithInt, crA, 1, crA);
+
         // number of states
         nCandidates = listLength(statevars);
 
         // create symbolic jacobian for simulation
-        // oeqnsarr = BackendEquation.listEquation(oeqns);
-        // eqnsarr = BackendEquation.listEquation(ceqns);
-        // diffVars = BackendVariable.listVar1(statevars);
-        // ovars = BackendVariable.listVar1(dstatesvars);
-        // (SOME(jacobianMatrix), uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(diffVars, knVars, eqnsarr, oeqnsarr, ovars, functree, vars, "StateSetJac", iuniqueEqIndex, itempvars, ei);
+        (SOME(jacobianMatrix), uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(jacobian, iuniqueEqIndex, itempvars);
 
-        // create symbolic jacobian for simulation
-        (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobianSet(statevars, knVars, varJ, ceqns, compvars, oeqns, vars, functree, iuniqueEqIndex, itempvars, ei);
         // next set  
         (vars, simequations, uniqueEqIndex, tempvars, numStateSets) = createStateSetsSets(sets, vars, iEqns, shared, comps, SimCode.SES_STATESET(iuniqueEqIndex, nCandidates, rang, crset, crstates, crA, jacobianMatrix)::iEquations, uniqueEqIndex, tempvars, iNumStateSets+1);
       then
         (vars, simequations, uniqueEqIndex, tempvars, numStateSets);
-/*
-    case(BackendDAE.STATESET(rang=rang, state=crset, crA=crA, varA=aVars, statescandidates=statevars, ovars=dstatesvars, eqns=ceqns, oeqns=oeqns, crJ=crJ, varJ=varJ)::sets, _, _, _, _, _, _, _, _)
-      equation
-        knVars = BackendVariable.daeKnVars(shared);
-        functree = BackendDAEUtil.getFunctions(shared);
-        // ToDo: get Equations for Jac from the strong component with crset equation
-        // add vars for A
-        vars = BackendVariable.addVars(aVars, iVars);
-        // replace der in equations
-        ceqns = BackendEquation.replaceDerOpInEquationList(ceqns);
-        oeqns = BackendEquation.replaceDerOpInEquationList(oeqns);
-        // convert ceqns to res[..] = lhs-rhs
-        ceqns = createResidualSetEquations(ceqns, crJ, 1, intGt(listLength(ceqns), 1), {});
-        // get state names
-        crstates = List.map(statevars, BackendVariable.varCref);
-        // get first a element for varinfo
-        crA = ComponentReference.subscriptCrefWithInt(crA, 1);
-        crA = Debug.bcallret2(intGt(listLength(crset), 1), ComponentReference.subscriptCrefWithInt, crA, 1, crA);
-        // number of states
-        nCandidates = listLength(statevars);
-
-        // create symbolic jacobian for simulation
-        // oeqnsarr = BackendEquation.listEquation(oeqns);
-        // eqnsarr = BackendEquation.listEquation(ceqns);
-        // diffVars = BackendVariable.listVar1(statevars);
-        // ovars = BackendVariable.listVar1(dstatesvars);
-        // (SOME(jacobianMatrix), uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(diffVars, knVars, eqnsarr, oeqnsarr, ovars, functree, vars, "StateSetJac", iuniqueEqIndex, itempvars);
-
-        // create symbolic jacobian for simulation
-        (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobianSet(statevars, knVars, varJ, ceqns, dstatesvars, oeqns, vars, functree, iuniqueEqIndex, itempvars);
-        // next set  
-        (vars, simequations, uniqueEqIndex, tempvars, numStateSets) = createStateSetsSets(sets, vars, iEqns, shared, comps, SimCode.SES_STATESET(iuniqueEqIndex, nCandidates, rang, crset, crstates, crA, jacobianMatrix)::iEquations, uniqueEqIndex, tempvars, iNumStateSets+1);
-      then
-        (vars, simequations, uniqueEqIndex, tempvars, numStateSets);
-*/  end match;
-end createStateSetsSets;
-
-protected function markSetStates
-  input DAE.ComponentRef inCr;
-  input BackendDAE.Variables iVars;
-  input array<Boolean> iMark;
-  output array<Boolean> oMark;
-protected
-  Integer index;
-algorithm
-  (_, {index}) := BackendVariable.getVar(inCr, iVars);
-  oMark := arrayUpdate(iMark, index, true);
-end markSetStates;
-
-protected function removeStateSetStates
-  input BackendDAE.Var inVar;
-  input HashSet.HashSet hs;
-  output Boolean b;
-algorithm
-  b := not BaseHashSet.has(BackendVariable.varCref(inVar), hs);  
-end removeStateSetStates;
-
-protected function removeStateSetEqn
-  input BackendDAE.Equation inEqn;
-  output Boolean b;
-algorithm
-  b := match(inEqn)
-    case BackendDAE.ARRAY_EQUATION(source=DAE.SOURCE(info=Absyn.INFO(fileName="stateselection"))) then false;
-    case BackendDAE.EQUATION(source=DAE.SOURCE(info=Absyn.INFO(fileName="stateselection"))) then false;
-    else then true;
-  end match;
-end removeStateSetEqn;
-
-protected function foundMarked
-  input list<Integer> ilst;
-  input array<Boolean> marked;
-  output Boolean found;
-algorithm
-  found := match(ilst, marked)
-    local 
-      Boolean b;
-      Integer i;
-      list<Integer> rest;
-    case ({}, _) then false;
-    case (i::rest, _)
-      equation
-        b = marked[i];
-        b = Debug.bcallret2(not b, foundMarked, rest, marked, b);
-      then
-        b;
-  end match; 
-end foundMarked;
-
-protected function getStateSetCompVarEqns
-"author: Frenkel TUD 2013-01
-  Retrieves the equation and the variable for a state set"
-  input BackendDAE.StrongComponents inComp;
-  input array<Boolean> marked;
-  input BackendDAE.EquationArray inEquationArray;
-  input BackendDAE.Variables inVariables;
-  input list<BackendDAE.Equation> inEquations;
-  input list<BackendDAE.Var> inVars;
-  output list<BackendDAE.Equation> outEquations;
-  output list<BackendDAE.Var> outVars;
-algorithm
-  (outEquations, outVars):=
-  matchcontinue (inComp, marked, inEquationArray, inVariables, inEquations, inVars)
-    local
-      list<Integer> elst, vlst;
-      list<BackendDAE.Equation> eqnlst;
-      list<BackendDAE.Var> varlst;
-      BackendDAE.StrongComponent comp;
-      BackendDAE.StrongComponents rest;
-    case ({}, _, _, _, _, _) then (inEquations, inVars);
-    case (comp::rest, _, _, _, _, _)
-      equation
-        (elst, vlst) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
-        true = foundMarked(vlst, marked);
-        eqnlst = BackendEquation.getEqns(elst, inEquationArray);        
-        varlst = List.map1r(vlst, BackendVariable.getVarAt, inVariables);
-        eqnlst = listAppend(eqnlst, inEquations);
-        varlst = listAppend(varlst, inVars);
-        (eqnlst, varlst) = getStateSetCompVarEqns(rest, marked, inEquationArray, inVariables, eqnlst, varlst);
-      then
-        (eqnlst, varlst);        
-    case (_::rest, _, _, _, _, _)
-      equation 
-        (eqnlst, varlst) = getStateSetCompVarEqns(rest, marked, inEquationArray, inVariables, inEquations, inVars);
-      then
-        (eqnlst, varlst); 
-  end matchcontinue;
-end getStateSetCompVarEqns;
-
-protected function createSymbolicSimulationJacobianSet
-"fuction createSymbolicSimulationJacobian
- function creates a symbolic jacobian column for 
- non-linear systems and tearing systems.  
- author: wbraun"
-  input list<BackendDAE.Var> inVars;
-  input BackendDAE.Variables inKnVars;
-  input list<BackendDAE.Var> inResVars;
-  input list<BackendDAE.Equation> inResEquations;
-  input list<BackendDAE.Var> inotherVars;
-  input list<BackendDAE.Equation> inotherEquations;
-  input BackendDAE.Variables iAllVars;
-  input DAE.FunctionTree inFuncs;
-  input Integer iuniqueEqIndex;
-  input list<SimCode.SimVar> itempvars;
-  input BackendDAE.ExtraInfo iextra;
-  output SimCode.JacobianMatrix res;
-  output Integer ouniqueEqIndex;
-  output list<SimCode.SimVar> otempvars;
-algorithm
-  (res, ouniqueEqIndex, otempvars) := matchcontinue(inVars, inKnVars, inResVars, inResEquations, inotherVars, inotherEquations, iAllVars, inFuncs, iuniqueEqIndex, itempvars, iextra)
-  local
-    Env.Cache cache;
-    BackendDAE.BackendDAE backendDAE, jacBackendDAE;
-
-    BackendDAE.Variables emptyVars, dependentVars, independentVars, knvars, allvars,  residualVars;
-    BackendDAE.EquationArray emptyEqns, eqns;    
-    list<BackendDAE.Var> knvarLst, independentVarsLst, dependentVarsLst,  otherVarsLst, residualVarsLst, statevars;
-    list<DAE.ComponentRef> independentComRefs, dependentVarsComRefs,  otherVarsLstComRefs;
-    
-    DAE.ComponentRef x;
-    BackendDAE.SymbolicJacobian symJacBDAE;
-    BackendDAE.SparseColoring sparseColoring;
-    list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> sparsepatternComRefs;
-    
-    BackendDAE.EqSystem syst;
-    BackendDAE.Shared shared;
-    BackendDAE.StrongComponents comps;
-    
-    list<SimCode.SimVar> tempvars;
-    String name, s, dummyVar;
-    Integer maxColor, uniqueEqIndex;
-
-    list<SimCode.SimEqSystem> columnEquations;
-    list<SimCode.SimVar> columnVars;
-    list<SimCode.SimVar> seedVars, indexVars;
-  
-    String errorMessage;
-    
-    DAE.FunctionTree funcs;
-    
-    case(_, _, _, _, _, _, _, _, _, _, _)
-      equation
-        Debug.fcall(Flags.JAC_DUMP2, print, "---+++ create analytical jacobian +++---");
-        Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++ independent variables +++---\n");
-        Debug.fcall(Flags.JAC_DUMP2, BackendDump.printVarList, inVars);
-        Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++ equation system +++---\n");
-        Debug.fcall(Flags.JAC_DUMP2, BackendDump.printEquationList, inResEquations);
-        
-        independentVarsLst = inVars;
-        independentComRefs = List.map(independentVarsLst, BackendVariable.varCref);
-
-        otherVarsLst = inotherVars;
-        otherVarsLstComRefs = List.map(otherVarsLst, BackendVariable.varCref);
-                
-        // all vars beside the inVars are inputs for the jacobian
-        allvars = BackendVariable.copyVariables(iAllVars);
-        statevars = BackendVariable.getAllStateVarFromVariables(allvars);
-        statevars = List.map(statevars, BackendVariable.transformXToXd);
-        allvars = BackendVariable.addVars(statevars, allvars);
-        allvars = BackendVariable.removeCrefs(independentComRefs, allvars);
-        allvars = BackendVariable.removeCrefs(otherVarsLstComRefs, allvars);
-
-        knvars = BackendVariable.copyVariables(inKnVars);
-        knvars = BackendVariable.removeCrefs(otherVarsLstComRefs, knvars);
-        knvars = BackendVariable.mergeVariables(knvars, allvars);
-
-        residualVarsLst = inResVars;
-
-        dependentVars = BackendVariable.listVar1(inotherVars);
-        dependentVars = BackendVariable.addVars(inResVars, dependentVars);
-        eqns = BackendEquation.listEquation(inotherEquations);
-        eqns = BackendEquation.addEquations(inResEquations, eqns);
-
-        Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++ created backend system +++---\n");
-        Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++ vars +++---\n");
-        Debug.fcall(Flags.JAC_DUMP2, BackendDump.printVariables, dependentVars);
-        
-        Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++ equations +++---\n");
-        Debug.fcall(Flags.JAC_DUMP2, BackendDump.printEquationArray, eqns);
-
-        // create known variables
-        knvarLst = BackendEquation.equationsVars(eqns, knvars);
-        knvars = BackendVariable.listVar1(knvarLst);
-
-        Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++ known variables +++---\n");
-        Debug.fcall(Flags.JAC_DUMP2, BackendDump.printVariables, knvars);
-        
-        // prepare vars and equations for BackendDAE
-        emptyVars =  BackendVariable.emptyVars();
-        emptyEqns = BackendEquation.listEquation({});
-        cache = Env.emptyCache();
-        backendDAE = BackendDAE.DAE({BackendDAE.EQSYSTEM(dependentVars, eqns, 
-                              NONE(), NONE(), BackendDAE.NO_MATCHING(), {})}, 
-                            BackendDAE.SHARED(knvars, emptyVars, emptyVars, 
-                              emptyEqns, emptyEqns, {}, {}, 
-                              cache, {}, inFuncs, BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0, 0), 
-                              {}, BackendDAE.ALGEQSYSTEM(), {}, iextra));
-
-        backendDAE = BackendDAEUtil.transformBackendDAE(backendDAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
-        BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = dependentVars, orderedEqs = eqns)}, BackendDAE.SHARED(knownVars = knvars)) = backendDAE;
-
-        // prepare creation of symbolic jacobian
-        // create dependent variables
-        dependentVarsLst = BackendVariable.varList(dependentVars);
-        dependentVarsComRefs = List.map(dependentVarsLst, BackendVariable.varCref);
-
-        (symJacBDAE as (jacBackendDAE, _, _, _, _), (sparsepatternComRefs, (independentComRefs, dependentVarsComRefs)), sparseColoring, funcs) =
-        BackendDAEOptimize.createJacobian(backendDAE, 
-                                          independentVarsLst, 
-                                          emptyVars, 
-                                          emptyVars, 
-                                          knvars, 
-                                          dependentVars, 
-                                          dependentVarsLst, 
-                                          "StateSetJac" +& intString(iuniqueEqIndex));
-
-        (BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))}, 
-                                    shared=shared), name, 
-                                    independentVarsLst, dependentVarsLst, _) = symJacBDAE;
-
-        // dump derived system
-        BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = dependentVars, orderedEqs = eqns)}, BackendDAE.SHARED(knownVars = knvars)) = jacBackendDAE;
-
-        Debug.fcall2(Flags.JAC_DUMP2, BackendDump.dumpEqSystem , syst, "---+++ derived system +++---");
-        Debug.fcall2(Flags.JAC_DUMP2, BackendDump.dumpVariables, dependentVars, "---+++ dependent variables +++---");
-
-        independentVars = BackendVariable.listVar1(independentVarsLst);
-        Debug.fcall2(Flags.JAC_DUMP2, BackendDump.dumpVariables, independentVars, "---+++ independent variables +++---");
-
-        // createSymbolicJacobianssSimCode
-        Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> creating SimCode equations for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
-        (columnEquations, _, uniqueEqIndex, tempvars) = createEquations(false, false, false, false, syst, shared, comps, iuniqueEqIndex, itempvars);
-        Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> created all SimCode equations for Matrix " +& name +&  " time: " +& realString(clock()) +& "\n");
-
-        // create SimCode.SimVars from jacobian vars
-        dummyVar = ("dummyVar" +& name);
-        x = DAE.CREF_IDENT(dummyVar, DAE.T_REAL_DEFAULT, {});
-        // independentVars = BackendVariable.listVar1(independentVarsLst);
-        residualVars = BackendVariable.listVar1(residualVarsLst);
-        columnVars = creatallDiffedVars(dependentVarsLst, x, residualVars, 0, (name, false), {});
-
-        Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++ diffed column variables +++---\n");
-        Debug.fcall(Flags.JAC_DUMP2, print, Tpl.tplString(SimCodeDump.dumpVarsShort, columnVars));
-
-        // all differentiated vars
-        // ((columnVarsKn, _)) =  BackendVariable.traverseBackendDAEVars(allvars, traversingdlowvarToSimvar, ({}, emptyVars));
-        // columnVars = listAppend(columnVars, columnVarsKn);
-        columnVars = listReverse(columnVars);
-
-        Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++ all column variables +++---\n");
-        Debug.fcall(Flags.JAC_DUMP2, print, Tpl.tplString(SimCodeDump.dumpVarsShort, columnVars));
-
-        Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> create all SimCode vars for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
-
-        ((seedVars, _)) =  BackendVariable.traverseBackendDAEVars(independentVars, traversingdlowvarToSimvar, ({}, emptyVars));
-        ((indexVars, _)) =  BackendVariable.traverseBackendDAEVars(residualVars, traversingdlowvarToSimvar, ({}, emptyVars));
-        seedVars = listReverse(seedVars);
-        indexVars = listReverse(indexVars);
-        Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++ seedVars variables +++---\n");
-        Debug.fcall(Flags.JAC_DUMP2, print, Tpl.tplString(SimCodeDump.dumpVarsShort, seedVars));
-        
-        Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++ indexVars variables +++---\n");
-        Debug.fcall(Flags.JAC_DUMP2, print, Tpl.tplString(SimCodeDump.dumpVarsShort, indexVars));
-        
-        // generate sparse pattern
-        ((sparsepatternComRefs, (_, _)), sparseColoring) = BackendDAEOptimize.generateSparsePattern(backendDAE, independentVarsLst, residualVarsLst);
-        maxColor = listLength(sparseColoring);        
-        s =  intString(listLength(residualVarsLst));
-
-        Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> transformed to SimCode for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
-
-        then (({(columnEquations, columnVars, s)}, seedVars, name, (sparsepatternComRefs, (seedVars, indexVars)), sparseColoring, maxColor), uniqueEqIndex, tempvars);
-    
     else
       equation
-        errorMessage = "./Compiler/BackEnd/SimCodeUtil.mo: function createSymbolicSimulationJacobianSet failed.";
+        errorMessage = "./Compiler/BackEnd/SimCodeUtil.mo: function createStateSetsSets failed.";
         Error.addMessage(Error.INTERNAL_ERROR, {errorMessage});
       then 
         fail();
-  
   end matchcontinue;
-end createSymbolicSimulationJacobianSet;
-
-protected function createResidualSetEquations
-  input list<BackendDAE.Equation> iEqs;
-  input DAE.ComponentRef crJ;
-  input Integer index;
-  input Boolean applySubs;
-  input list<BackendDAE.Equation> iAcc;
-  output list<BackendDAE.Equation> oEqs;
-algorithm
-  oEqs := match (iEqs, crJ, index, applySubs, iAcc)
-    local
-      DAE.ComponentRef crj;
-      DAE.Exp res, e1, e2, expJ;
-      list<BackendDAE.Equation> rest;
-      BackendDAE.Equation eqn;
-      DAE.ElementSource source;
-      String errorMessage;
-    case ({}, _, _, _, _) then listReverse(iAcc);
-    case (BackendDAE.EQUATION(exp = e1, scalar = e2, source=source) :: rest, _, _, _, _) 
-      equation
-        crj = Debug.bcallret2(applySubs, ComponentReference.subscriptCrefWithInt, crJ, index, crJ);
-        expJ = Expression.crefExp(crj);
-        res = Expression.expSub(e1, e2);
-        eqn = BackendDAE.EQUATION(expJ, res, source, false);
-      then 
-        createResidualSetEquations(rest, crJ, index+1, applySubs, eqn::iAcc);
-    case (BackendDAE.RESIDUAL_EQUATION(exp = e1, source = source) :: rest, _, _, _, _)
-      equation
-        expJ = Expression.crefExp(ComponentReference.subscriptCrefWithInt(crJ, index));
-        eqn = BackendDAE.EQUATION(expJ, e1, source, false);
-    then
-        createResidualSetEquations(rest, crJ, index+1, applySubs, eqn::iAcc);
-    case (eqn::_, _, _, _, _)
-      equation
-        errorMessage = "./Compiler/BackEnd/SimCodeUtil.mo: function createResidualSetEquations failed for equation: " +& BackendDump.equationString(eqn);
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {errorMessage}, BackendEquation.equationInfo(eqn));
-    then
-       fail();
-  end match;
-end createResidualSetEquations;
+end createStateSetsSets;
 
 protected function indexStateSets
 " function to collect jacobians for statesets"

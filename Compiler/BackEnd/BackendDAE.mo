@@ -405,6 +405,7 @@ uniontype StateSet
     list< Equation> oeqns;
     .DAE.ComponentRef crJ;
     list< Var> varJ;
+    Jacobian jacobian;
   end STATESET;
 end StateSet;
 
