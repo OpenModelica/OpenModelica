@@ -4119,16 +4119,16 @@ algorithm
 
       case (comp as BackendDAE.EQUATIONSYSTEM(eqns=residualequations, vars=iterationvarsInts), _, _, _)
         equation
-					// get iteration vars
-					iterationvars = List.map1r(iterationvarsInts, BackendVariable.getVarAt, inVars);
-					iterationvars = List.map(iterationvars, BackendVariable.transformXToXd);
-					iterationvars = listReverse(iterationvars);
-					diffVars = BackendVariable.listVar1(iterationvars);
-					
-					// get residual eqns
-					reqns = BackendEquation.getEqns(residualequations, inEqns);
-					reqns = BackendEquation.replaceDerOpInEquationList(reqns);
-					eqns = BackendEquation.listEquation(reqns);
+          // get iteration vars
+          iterationvars = List.map1r(iterationvarsInts, BackendVariable.getVarAt, inVars);
+          iterationvars = List.map(iterationvars, BackendVariable.transformXToXd);
+          iterationvars = listReverse(iterationvars);
+          diffVars = BackendVariable.listVar1(iterationvars);
+          
+          // get residual eqns
+          reqns = BackendEquation.getEqns(residualequations, inEqns);
+          reqns = BackendEquation.replaceDerOpInEquationList(reqns);
+          eqns = BackendEquation.listEquation(reqns);
           // create  residual equations 
           reqns = BackendEquation.traverseBackendDAEEqns(eqns, BackendDAEUtil.traverseEquationToScalarResidualForm, {});
           reqns = listReverse(reqns);
@@ -4136,16 +4136,16 @@ algorithm
           resVars = BackendVariable.listVar1(resVarsLst);
           eqns = BackendEquation.listEquation(reqns);
 
-					// other eqns and vars are empty
-					oeqns = BackendEquation.listEquation({});
-					ovars =  BackendVariable.emptyVars();
-					
-					//generate jacobian name
-					name = "NLSJac" +& intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
-					
-					// generate generic jacobian backend dae
-					(jacobian, shared) = getSymbolicJacobian(diffVars, eqns, resVars, oeqns, ovars, inShared, inVars, name);
-					
+          // other eqns and vars are empty
+          oeqns = BackendEquation.listEquation({});
+          ovars =  BackendVariable.emptyVars();
+          
+          //generate jacobian name
+          name = "NLSJac" +& intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
+          
+          // generate generic jacobian backend dae
+          (jacobian, shared) = getSymbolicJacobian(diffVars, eqns, resVars, oeqns, ovars, inShared, inVars, name);
+          
       then (BackendDAE.EQUATIONSYSTEM(residualequations, iterationvarsInts, jacobian, BackendDAE.JAC_GENERIC()), shared);
             
       case (comp, _, _, _) then (comp, inShared);
