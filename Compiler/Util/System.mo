@@ -163,7 +163,7 @@ public function substring
   input Integer stop;
   output String outString;
 
-  external "C" outString = System_substring(inString,start,stop) annotation(Library = "omcruntime");
+  external "builtin" annotation(Library = "omcruntime");
 end substring;
 
 public function setCCompiler

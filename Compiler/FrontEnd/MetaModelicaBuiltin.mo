@@ -564,6 +564,14 @@ function stringHashSdbm
 external "builtin";
 end stringHashSdbm;
 
+function substring
+  input String str;
+  input Integer start "start index, first character is 1";
+  input Integer stop "stop index, first character is 1";
+  output String out "Length is stop-start";
+external "builtin";
+end substring;
+
 function listAppend<A> "O(length(lst1)), O(1) if either list is empty"
   input List<A> lst1;
   input List<A> lst2;

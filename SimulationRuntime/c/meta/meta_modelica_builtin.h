@@ -78,6 +78,8 @@ extern modelica_integer stringHash(metamodelica_string_const);
 extern modelica_integer stringHashDjb2(metamodelica_string_const s);
 extern modelica_integer stringHashDjb2Mod(metamodelica_string_const s,modelica_integer mod);
 extern modelica_integer stringHashSdbm(metamodelica_string_const str);
+#define substring(X,Y,Z) boxptr_substring(threadData,X,mmc_mk_icon(Y),mmc_mk_icon(Z))
+extern metamodelica_string boxptr_substring(threadData_t *,metamodelica_string_const str, modelica_metatype start, modelica_metatype stop);
 
 #define System_stringHashDjb2Mod stringHashDjb2Mod
 #define boxptr_System_stringHashDjb2Mod boxptr_stringHashDjb2Mod

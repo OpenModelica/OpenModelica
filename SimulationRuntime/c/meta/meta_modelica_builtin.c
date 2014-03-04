@@ -224,6 +224,31 @@ modelica_metatype boxptr_stringHashSdbm(threadData_t *threadData,modelica_metaty
   return mmc_mk_icon(stringHashSdbm(str));
 }
 
+metamodelica_string boxptr_substring(threadData_t *threadData, metamodelica_string_const str, modelica_metatype boxstart, modelica_metatype boxstop)
+{
+  unsigned header = 0, nwords;
+  long start = MMC_UNTAGFIXNUM(boxstart) - 1;
+  long stop = MMC_UNTAGFIXNUM(boxstop) - 1;
+  long totalLen = MMC_STRLEN(str), len = stop-start+1;
+  struct mmc_string *res;
+  char *tmp;
+  modelica_metatype p;
+  /* Bad indexes */
+  if (start < 0 || start >= totalLen || stop < start || stop >= totalLen) {
+    MMC_THROW_INTERNAL();
+  }
+  header = MMC_STRINGHDR(len);
+  nwords = MMC_HDRSLOTS(header) + 1;
+  res = (struct mmc_string *) mmc_alloc_words(nwords);
+  res->header = header;
+  tmp = (char*) res->data;
+  memcpy(tmp, MMC_STRINGDATA(str) + start, len);
+  tmp[len] = '\0';
+  p = MMC_TAGPTR(res);
+  MMC_CHECK_STRING(p);
+  return p;
+}
+
 metamodelica_string stringListStringChar(metamodelica_string s)
 {
   const char *str = MMC_STRINGDATA(s);
