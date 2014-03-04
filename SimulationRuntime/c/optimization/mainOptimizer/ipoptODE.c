@@ -100,9 +100,9 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
          iData->NRes +iData->nc*iData->deg*iData->nsi, iData->gmin, iData->gmax, iData->njac, iData->nhess, 0, &evalfF,
                   &evalfG, &evalfDiffF, &evalfDiffG, &ipopt_h);
 
-    set_optimizer_flags(iData,&nlp);
-
-    res = IpoptSolve(nlp, iData->v, NULL, &obj, iData->mult_g, iData->mult_x_L, iData->mult_x_U, (void*)iData);
+    res = set_optimizer_flags(iData,&nlp);
+    if(res >= 0)
+      res = IpoptSolve(nlp, iData->v, NULL, &obj, iData->mult_g, iData->mult_x_L, iData->mult_x_U, (void*)iData);
     if(res < 0)
       warningStreamPrint(LOG_STDOUT, 0, "No optimal solution found!\nUse -lv=LOG_IPOPT for more information.");
 
@@ -234,6 +234,7 @@ static int res2file(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
 static int set_optimizer_flags(IPOPT_DATA_ *iData, IpoptProblem *nlp)
 {
   char *cflags;
+  int max_iter;
   AddIpoptNumOption(*nlp, "tol", iData->data->simulationInfo.tolerance);
 
   if(ACTIVE_STREAM(LOG_IPOPT)){
@@ -314,10 +315,15 @@ static int set_optimizer_flags(IPOPT_DATA_ *iData, IpoptProblem *nlp)
     }
 
     if(index_e < 0){
-      AddIpoptIntOption(*nlp, "max_iter", (int) atoi(cflags));
+      max_iter = atoi(cflags);
+      if(max_iter < 0)
+        return -1;
+      AddIpoptIntOption(*nlp, "max_iter", max_iter);
       printf("\nmax_iter = %i",atoi(cflags));
     }else{
-      long int max_iter =  (atoi(cflags)*pow(10.0, (double)atoi(cflags+index_e+1)));
+      max_iter =  (atoi(cflags)*pow(10.0, (double)atoi(cflags+index_e+1)));
+      if(max_iter < 0)
+        return -1;
       AddIpoptIntOption(*nlp, "max_iter", (int)max_iter);
       printf("\nmax_iter = (int) %i | (double) %g",(int)max_iter, atoi(cflags)*pow(10.0, (double)atoi(cflags+index_e+1)));
     }
