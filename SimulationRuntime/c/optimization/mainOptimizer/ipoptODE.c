@@ -196,7 +196,7 @@ static int res2file(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
   pFile = fopen("optimizeInput.csv", "wt");
   fprintf(pFile, "%s ", "time");
   for(i=0; i< iData->nu; ++i){
-    sprintf(buffer, "Input%i", i+1);
+    sprintf(buffer, "%s", iData->input_name[i]);
     fprintf(pFile, "%s ", buffer);
   }
   fprintf(pFile, "%s", "\n");

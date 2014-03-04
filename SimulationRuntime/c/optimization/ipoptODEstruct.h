@@ -205,6 +205,8 @@ typedef struct IPOPT_DATA_
   double *eps;
 
   modelica_boolean preSim;
+  char ** input_name;
+
   /*Debuger*/
   FILE **pFile;
   long index_debug_iter;

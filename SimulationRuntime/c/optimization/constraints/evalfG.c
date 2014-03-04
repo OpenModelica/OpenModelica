@@ -54,7 +54,7 @@ static inline int evalG22(Number *g, IPOPT_DATA_ *iData, double *x0, int i);
 static inline int evalG23(Number *g, IPOPT_DATA_ *iData, double *x0, int i);
 static int diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J);
 static int num_diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J);
-static int printMaxError(IPOPT_DATA_ *iData, double *g,double time, double * max_err , double * tt, double *xi);
+static int printMaxError(IPOPT_DATA_ *iData, double *g,double time, double * max_err , double * tt, int *xi);
 
 /*!
  *  eval s.t.
@@ -67,7 +67,7 @@ Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
    double *x0;
    double max_err = -1;
    double max_err_time = -1;
-   double max_err_xi = -1;
+   int max_err_xi = -1;
 
    iData = (IPOPT_DATA_ *) useData;
    for(i=0, k=0, x0=v; i<1; ++i, x0=iData->x3){
@@ -134,9 +134,11 @@ Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
     k += iData->nJ;
   }
   if(ACTIVE_STREAM(LOG_IPOPT_ERROR)){
-    printf("\n\tmax_err = %g",max_err);
-    printf("\ttimepoint = %g",max_err_time);
-    printf("\tvariable = %i\n",(int)max_err_xi);
+
+    if(max_err_xi < iData->nx)
+      printf("\nmax error for |%s(%g) - collocation_poly| = %g\n",iData->data->modelData.realVarsData[max_err_xi].info.name,max_err_time,max_err);
+    else
+      printf("\nmax error for |cosntrain[%i](%g)| = %g\n",iData->data->modelData.realVarsData[max_err_xi].info.name, max_err_time, max_err);
   }
   return TRUE;
 }
@@ -409,23 +411,27 @@ static inline int evalG23(Number *g, IPOPT_DATA_ *iData, double *x0, int i)
 
 }
 
-static int printMaxError(IPOPT_DATA_ *iData, double *g,double t, double * max_err,double * tt, double *xi)
+static int printMaxError(IPOPT_DATA_ *iData, double *g,double t, double * max_err, double * tt, int *xi)
 {
-  double inf_p ;
   double tmp;
   int j;
 
-  inf_p = *max_err;
-
-  for(j = 0; j<(int)iData->nJ; ++j){
+  for(j = 0; j<(int)iData->nx; ++j){
     tmp = fabs(g[j]);
-    if(tmp > inf_p){
-      inf_p = tmp;
+    if(tmp > *max_err){
+      *max_err = tmp;
       *tt = t;
       *xi = j;
     }
   }
-  *max_err = inf_p;
+
+  for(; j<(int)iData->nJ; ++j){
+    if(g[j]> *max_err){
+      *max_err = tmp;
+      *tt = t;
+      *xi = j;
+    }
+  }
 }
 
 

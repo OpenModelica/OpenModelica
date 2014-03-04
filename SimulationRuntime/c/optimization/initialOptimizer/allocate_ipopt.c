@@ -172,6 +172,7 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
     iData->Hg[i] = (short*) calloc(iData->nv, sizeof(short));
 
   iData->dt = (double*)malloc((iData->nsi) *sizeof(double));
+  iData->input_name = (char**)malloc(iData->nv*sizeof(char*));
 
   if(iData->nc > 0)
     for(i = iData->nx; i<ng; i+=iData->nJ)
@@ -284,6 +285,7 @@ int freeIpoptData(IPOPT_DATA_ *iData)
       free(iData->pFile);
   }
 
+  free(iData->input_name);
   free(iData);
   iData = NULL;
   return 0;
@@ -708,7 +710,8 @@ static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData)
 {
   int i, j;
   modelica_boolean *tmp = (modelica_boolean*)malloc(iData->nv*sizeof(modelica_boolean));
-  char **tmpname = (char**)malloc(iData->nv*sizeof(char*));
+  char **tmpname = iData->input_name;
+
   double *start = iData->start_u;
 
   for(i =0;i<iData->nx;++i){
@@ -789,7 +792,6 @@ static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData)
   }
 
   free(tmp);
-  free(tmpname);
   return 0;
 }
 
@@ -845,7 +847,7 @@ static int optimizer_print_step(IPOPT_DATA_ *iData)
     if(j < iData->nx)
       fprintf(iData->pFile[j], "%s_%i,", iData->data->modelData.realVarsData[j].info.name, k);
     else if(j < iData->nv)
-      fprintf(iData->pFile[j], "%s_%i,", "u", k);
+      fprintf(iData->pFile[j], "%s_%i,", "u", iData->input_name[j-iData->nx]);
   }
   return 0;
 }
