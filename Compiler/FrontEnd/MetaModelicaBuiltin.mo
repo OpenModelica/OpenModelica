@@ -958,3 +958,16 @@ function referenceDebugString<A>
 <p>Is only useful on good operating systems.</p>
 </html>"));
 end referenceDebugString;
+
+package MetaModelica
+package Dangerous "Functions that skip bounds checking"
+
+function arrayGetNoBoundsChecking<A> "O(1)"
+  input array<A> arr;
+  input Integer index;
+  output A value;
+external "builtin";
+end arrayGetNoBoundsChecking;
+
+end Dangerous;
+end MetaModelica;

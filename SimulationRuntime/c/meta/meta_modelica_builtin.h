@@ -124,6 +124,7 @@ extern modelica_integer arrayLength(modelica_metatype);
 #define arrayCopy(X) boxptr_arrayCopy(NULL,X)
 #define arrayGet(X,Y) boxptr_arrayGet(threadData,X,mmc_mk_icon(Y))
 extern modelica_metatype arrayCreate(modelica_integer, modelica_metatype);
+#define arrayGetNoBoundsChecking(arr,ix) (MMC_STRUCTDATA((arr))[(ix)-1])
 #define arrayUpdate(X,Y,Z) boxptr_arrayUpdate(threadData,X,mmc_mk_icon(Y),Z)
 extern modelica_metatype arrayAdd(modelica_metatype, modelica_metatype);
 
