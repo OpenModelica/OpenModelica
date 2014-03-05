@@ -490,6 +490,13 @@ function stringLength "O(1)"
 external "builtin";
 end stringLength;
 
+function stringGet "O(1)"
+  input String str;
+  input Integer index;
+  output Integer ch;
+external "builtin";
+end stringGet;
+
 function stringGetStringChar "O(1)"
   input String str;
   input Integer index;

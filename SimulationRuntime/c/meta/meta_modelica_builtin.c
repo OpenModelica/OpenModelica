@@ -391,15 +391,18 @@ modelica_integer mmc_stringCompare(const void *str1, const void *str2)
 modelica_metatype boxptr_stringGetStringChar(threadData_t *threadData,metamodelica_string str, modelica_metatype iix)
 {
   int ix = MMC_UNTAGFIXNUM(iix);
-  char chr[2] = {'\0','\0'};
-  void *res;
   MMC_CHECK_STRING(str);
   if (ix < 1 || ix > (long) MMC_STRLEN(str))
     MMC_THROW_INTERNAL();
-  chr[0] = MMC_STRINGDATA(str)[ix-1];
-  res = mmc_mk_scon(chr);
-  MMC_CHECK_STRING(res);
-  return res;
+  return mmc_strings_len1[MMC_STRINGDATA(str)[ix-1]];
+}
+
+modelica_metatype boxptr_stringGet(threadData_t *threadData,metamodelica_string str, modelica_metatype iix)
+{
+  int ix = MMC_UNTAGFIXNUM(iix);
+  if (ix < 1 || ix > (long) MMC_STRLEN(str))
+    MMC_THROW_INTERNAL();
+  return mmc_mk_icon(MMC_STRINGDATA(str)[ix-1]);
 }
 
 modelica_metatype boxptr_stringUpdateStringChar(threadData_t *threadData,metamodelica_string str, metamodelica_string c, modelica_metatype iix)
