@@ -988,10 +988,8 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   setAllParamsToStart(data);
   setAllVarsToStart(data);
 
-  if(!(pInitFile && strcmp(pInitFile, ""))) {
-    data->callback->updateBoundParameters(data);
-    data->callback->updateBoundVariableAttributes(data);
-  }
+  data->callback->updateBoundParameters(data);
+  data->callback->updateBoundVariableAttributes(data);
 
   /* if there are user-specified options, use them! */
   if(pInitMethod && strcmp(pInitMethod, "")) {
