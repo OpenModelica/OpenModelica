@@ -217,7 +217,9 @@ static int res2file(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
     solverInfo->currentTime = iData->time[iData->current_time++];
     sData->timeValue = solverInfo->currentTime;
 
-    updateDiscreteSystem(data);
+    /*updateDiscreteSystem(data);*/
+    data->callback->input_function(data);
+    data->callback->functionDAE(data);
 
     sim_result.emit(&sim_result,data);
   }
