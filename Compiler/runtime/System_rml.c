@@ -1918,3 +1918,86 @@ RML_BEGIN_LABEL(System__isRML)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(System__strtokIncludingDelimiters)
+{
+  char* str = RML_STRINGDATA(rmlA0);
+  rml_uint_t len = RML_HDRSTRLEN(RML_GETHDR(rmlA0));
+  char* cp = NULL;
+  char *d = RML_STRINGDATA(rmlA1);
+  rml_uint_t dlen = RML_HDRSTRLEN(RML_GETHDR(rmlA1));
+  void *lst = RML_TAGPTR(&rml_prim_nil);
+  void *slst = RML_TAGPTR(&rml_prim_nil);
+  char* s = str;
+  char* stmp;
+  rml_uint_t start = 0, end = 0;
+  /* len + 3 in pos signifies that there is no delimiter in the string */
+  rml_uint_t pos = len + 3;
+
+  /* fail if delimiter is bigger than string */
+  if (dlen > len)
+  {
+    RML_TAILCALLK(rmlFC);
+  }
+
+  /* add 0 to the list! */
+  lst = mk_cons(mk_icon(0), lst);
+
+  /* find the first delimiter */
+  while ((cp = strstr(s, d)) != NULL)
+  {
+    s = cp + dlen;
+    pos = (cp - str);
+    /* check if the position is already in the list */
+    /* in the list add only the end */
+    if (pos == RML_UNTAGFIXNUM(RML_CAR(lst)))
+    {
+      lst = mk_cons(mk_icon(pos+dlen), lst);
+    }
+    else /* not in the list, add both */
+    {
+      lst = mk_cons(mk_icon(pos), lst);
+      lst = mk_cons(mk_icon(pos+dlen), lst);
+    }
+  }
+  /* this means it was not found in the entire string */
+  if (pos == (len + 3))
+  {
+    /* return the empty list */
+    rmlA0 = slst;
+    RML_TAILCALLK(rmlSC);
+  }
+
+  /* add len to the list! */
+  if ((len) != RML_UNTAGFIXNUM(RML_CAR(lst)))
+  {
+    lst = mk_cons(mk_icon(len), lst);
+  }
+
+  /*
+   * BIG NOTE! the list of indexes is reversed, it starts closer to len!
+   */
+  /* now we walk the list and build the string list */
+  while( RML_GETHDR(lst) == RML_CONSHDR )
+  {
+    end = RML_UNTAGFIXNUM(RML_CAR(lst));
+    lst = RML_CDR(lst);
+    /* break if we reached the last in the list */
+    if (RML_GETHDR(lst) == RML_NILHDR)
+    {
+      break;
+    }
+    start = RML_UNTAGFIXNUM(RML_CAR(lst));
+    /* create stmp */
+    pos = end - start;
+    stmp = (char*)malloc((pos+1) * sizeof(char));
+    strncpy(stmp, str + start, pos);
+    stmp[pos] = '\0';
+    slst = mk_cons(mk_scon(stmp), slst);
+    free(stmp);
+  }
+  rmlA0 = slst;
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+

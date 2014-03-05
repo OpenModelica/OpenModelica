@@ -137,10 +137,10 @@ algorithm
     // a new-line is inside
     case (txt, str )
       then
-        writeChars(txt, stringListStringChar(str));
+        //writeChars(txt, stringListStringChar(str));
+        writeChars(txt, System.strtokIncludingDelimiters(str, "\n"));
   end matchcontinue;
 end writeStr;
-
 
 public function writeTok
   input Text inText;
@@ -175,7 +175,6 @@ algorithm
 
   end matchcontinue;
 end writeTok;
-
 
 public function writeText
   input Text inText;
@@ -215,44 +214,6 @@ algorithm
   end matchcontinue;
 end writeText;
 
-// can be optimized in C ... a tokenization function for "\n" is needed; strtok is insufficien
-// even any substring function is not there (or is somwhere ??)
-//-obsolete - writeStr will parse the string by default
-public function writeParseNL "parses inStr for new lines"
-  input Text inText;
-  input String inStr;
-
-  output Text outText;
-algorithm
-  outText := matchcontinue (inText, inStr)
-    local
-      Tokens toks, txttoks;
-      list<tuple<Tokens,BlockType>> blstack;
-      Text txt;
-      String str;
-      list<String> chars;
-
-    case (txt, str)
-      equation
-        -1 = System.stringFind(str, "\n");
-      then
-        writeStr(txt, str);
-
-    // a new-len is inside
-    case (txt, str )
-      then
-        writeChars(txt, stringListStringChar(str));
-
-    //should not ever happen
-    case (_ , _)
-      equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.writeParseNL failed.\n");
-      then
-        fail();
-  end matchcontinue;
-end writeParseNL;
-
-
 public function writeChars
   input Text inText;
   input list<String> inChars;
@@ -281,7 +242,7 @@ algorithm
     case (txt, c :: chars )
       equation
         (lschars, chars, isline) = takeLineOrString(chars);
-        txt = writeLineOrStr(txt, stringCharListString( c :: lschars), isline);
+        txt = writeLineOrStr(txt, stringAppendList(c :: lschars), isline);
         //Error txt = writeLineOrStr(txt, stringCharListString( str :: lschars), isline);
       then
         writeChars(txt, chars);

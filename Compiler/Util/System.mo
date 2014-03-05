@@ -157,6 +157,17 @@ public function strtok
   external "C" strings=System_strtok(string,token) annotation(Library = "omcruntime");
 end strtok;
 
+public function strtokIncludingDelimiters
+"as strtok but also includes *all* delimiters
+ split the string at delimiters into a list of strings including *all* delimiters
+ stringSplitInTokens(*a**b*, *) => {*, a, *, *, b, *}"
+  input String string;
+  input String token;
+  output list<String> strings;
+
+  external "C" strings=System_strtokIncludingDelimiters(string,token) annotation(Library = "omcruntime");
+end strtokIncludingDelimiters;
+
 public function substring
   input String inString;
   input Integer start;

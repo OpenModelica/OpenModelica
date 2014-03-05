@@ -814,6 +814,85 @@ int System_isRML()
   return 0;
 }
 
+extern void* System_strtokIncludingDelimiters(const char *str0, const char *delimit)
+{
+  char* str = (char*)str0;
+  mmc_uint_t len = strlen(str);
+  char* cp = NULL;
+  char *d = (char*)delimit;
+  mmc_uint_t dlen = strlen(d);
+  void *lst = mmc_mk_nil();
+  void *slst = mmc_mk_nil();
+  char* s = str;
+  char* stmp;
+  mmc_uint_t start = 0, end = 0;
+  /* len + 3 in pos signifies that there is no delimiter in the string */
+  mmc_uint_t pos = len + 3;
+
+  /* fail if delimiter is bigger than string */
+  if (dlen > len)
+  {
+     MMC_THROW();
+  }
+
+  /* add 0 to the list! */
+  lst = mmc_mk_cons(mmc_mk_icon(0), lst);
+
+  /* find the first delimiter */
+  while ((cp = strstr(s, d)) != NULL)
+  {
+    s = cp + dlen;
+    pos = (cp - str);
+    /* check if the position is already in the list */
+    /* in the list add only the end */
+    if (pos == MMC_UNTAGFIXNUM(MMC_CAR(lst)))
+    {
+      lst = mmc_mk_cons(mk_icon(pos+dlen), lst);
+    }
+    else /* not in the list, add both */
+    {
+      lst = mmc_mk_cons(mmc_mk_icon(pos), lst);
+      lst = mmc_mk_cons(mmc_mk_icon(pos+dlen), lst);
+    }
+  }
+  /* this means it was not found in the entire string */
+  if (pos == (len + 3))
+  {
+    /* return the empty list */
+    return slst;
+  }
+
+  /* add len to the list! */
+  if ((len) != MMC_UNTAGFIXNUM(MMC_CAR(lst)))
+  {
+    lst = mmc_mk_cons(mmc_mk_icon(len), lst);
+  }
+
+  /*
+   * BIG NOTE! the list of indexes is reversed, it starts closer to len!
+   */
+  /* now we walk the list and build the string list */
+  while( MMC_GETHDR(lst) == MMC_CONSHDR )
+  {
+    end = MMC_UNTAGFIXNUM(MMC_CAR(lst));
+    lst = MMC_CDR(lst);
+    /* break if we reached the last in the list */
+    if (MMC_GETHDR(lst) == MMC_NILHDR)
+    {
+      break;
+    }
+    start = MMC_UNTAGFIXNUM(MMC_CAR(lst));
+    /* create stmp */
+    pos = end - start;
+    stmp = (char*)malloc((pos+1) * sizeof(char));
+    strncpy(stmp, str + start, pos);
+    stmp[pos] = '\0';
+    slst = mk_cons(mk_scon(stmp), slst);
+    free(stmp);
+  }
+  return slst;
+}
+
 #ifdef __cplusplus
 }
 #endif
