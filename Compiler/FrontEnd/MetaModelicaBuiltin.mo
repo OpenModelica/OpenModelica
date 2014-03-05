@@ -969,5 +969,12 @@ function arrayGetNoBoundsChecking<A> "O(1)"
 external "builtin";
 end arrayGetNoBoundsChecking;
 
+function stringGetNoBoundsChecking "O(1)"
+  input String str;
+  input Integer index;
+  output Integer ch;
+external "builtin";
+end stringGetNoBoundsChecking;
+
 end Dangerous;
 end MetaModelica;

@@ -74,6 +74,7 @@ extern modelica_integer mmc_stringCompare(const void * str1,const void * str2);
 extern metamodelica_string boxptr_stringGetStringChar(threadData_t*,metamodelica_string str,modelica_metatype ix);
 #define stringGet(X,Y) mmc_unbox_integer(boxptr_stringGet(threadData,X,mmc_mk_icon(Y)))
 extern modelica_metatype boxptr_stringGet(threadData_t*,metamodelica_string str,modelica_metatype ix);
+#define stringGetNoBoundsChecking(str,ix) MMC_STRINGDATA((str))[(ix)-1]
 #define stringUpdateStringChar(X,Y,Z) boxptr_stringUpdateStringChar(threadData,X,Y,mmc_mk_icon(Z))
 extern metamodelica_string boxptr_stringUpdateStringChar(threadData_t *,metamodelica_string str, metamodelica_string c, modelica_metatype ix);
 extern modelica_integer stringHash(metamodelica_string_const);
