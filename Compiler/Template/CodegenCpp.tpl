@@ -626,31 +626,31 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   match stateSets
   case {} then
        <<
-	        void  <%classname%>StateSelection::getStates(double* z)
-	    {
-	       
-	    }
-	    void  <%classname%>StateSelection::setStates(const double* z)
-	      {
-	          
-	      }
-	        void  <%classname%>StateSelection::getStateCanditates(double* z)
-	        {
-	          
-	        }
-	         void  <%classname%>StateSelection::getAMatrix(multi_array<int,2> & A) 
-	      {
-	          
-	        
-	      }
-	      void  <%classname%>StateSelection::setAMatrix(multi_array<int,2>& A)
-	      {
-	        
-	      }
-	      void <%classname%>StateSelection::initialize()
-	      {
-	        
-	      }
+          void  <%classname%>StateSelection::getStates(double* z)
+      {
+         
+      }
+      void  <%classname%>StateSelection::setStates(const double* z)
+        {
+            
+        }
+          void  <%classname%>StateSelection::getStateCanditates(double* z)
+          {
+            
+          }
+           void  <%classname%>StateSelection::getAMatrix(multi_array<int,2> & A) 
+        {
+            
+          
+        }
+        void  <%classname%>StateSelection::setAMatrix(multi_array<int,2>& A)
+        {
+          
+        }
+        void <%classname%>StateSelection::initialize()
+        {
+          
+        }
       >>
  else
   let stateset = (stateSets |> set hasindex i1 fromindex 0 => (match set
@@ -660,31 +660,31 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
        let statescandidatesvarsset = (statescandidates |> cstate hasindex i2 fromindex 0 => 'z[<%i2%>]=<%cref1(cstate,simCode,contextOther)%>;' ;separator="\n")
       
        <<
-	     void  <%classname%>StateSelection::getStates(double* z)
-	    {
-	       <%statesvarsset%>
-	    }
-	    void  <%classname%>StateSelection::setStates(const double* z)
-	      {
-	          <%statesvarsget%>
-	      }
-	        void  <%classname%>StateSelection::getStateCanditates(double* z)
-	        {
-	          <%statescandidatesvarsset%>
-	        }
-	         void  <%classname%>StateSelection::getAMatrix(multi_array<int,2> & A) 
-	      {
-	          assign_array(A,<%arraycref(crA)%>);
-	        
-	      }
-	      void  <%classname%>StateSelection::setAMatrix(multi_array<int,2>& A)
-	      {
-	         assign_array(<%arraycref(crA)%>,A);
-	      }
-	      void <%classname%>StateSelection::initialize()
-	      {
-	        fill_array<int,2 >( <%arraycref(crA)%>,0);
-	      }
+       void  <%classname%>StateSelection::getStates(double* z)
+      {
+         <%statesvarsset%>
+      }
+      void  <%classname%>StateSelection::setStates(const double* z)
+        {
+            <%statesvarsget%>
+        }
+          void  <%classname%>StateSelection::getStateCanditates(double* z)
+          {
+            <%statescandidatesvarsset%>
+          }
+           void  <%classname%>StateSelection::getAMatrix(multi_array<int,2> & A) 
+        {
+            assign_array(A,<%arraycref(crA)%>);
+          
+        }
+        void  <%classname%>StateSelection::setAMatrix(multi_array<int,2>& A)
+        {
+           assign_array(<%arraycref(crA)%>,A);
+        }
+        void <%classname%>StateSelection::initialize()
+        {
+          fill_array<int,2 >( <%arraycref(crA)%>,0);
+        }
       >>
       
       
