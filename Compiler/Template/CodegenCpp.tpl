@@ -626,31 +626,31 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   match stateSets
   case {} then
        <<
-        void  <%classname%>StateSelection::getStates(double* z)
-    {
-       
-    }
-    void  <%classname%>StateSelection::setStates(const double* z)
-      {
-          
-      }
-        void  <%classname%>StateSelection::getStateCanditates(double* z)
-        {
-          
-        }
-         void  <%classname%>StateSelection::getAMatrix(multi_array<int,2> & A) 
-      {
-          
-        
-      }
-      void  <%classname%>StateSelection::setAMatrix(multi_array<int,2>& A)
-      {
-        
-      }
-      void <%classname%>StateSelection::initialize()
-      {
-        
-      }
+	        void  <%classname%>StateSelection::getStates(double* z)
+	    {
+	       
+	    }
+	    void  <%classname%>StateSelection::setStates(const double* z)
+	      {
+	          
+	      }
+	        void  <%classname%>StateSelection::getStateCanditates(double* z)
+	        {
+	          
+	        }
+	         void  <%classname%>StateSelection::getAMatrix(multi_array<int,2> & A) 
+	      {
+	          
+	        
+	      }
+	      void  <%classname%>StateSelection::setAMatrix(multi_array<int,2>& A)
+	      {
+	        
+	      }
+	      void <%classname%>StateSelection::initialize()
+	      {
+	        
+	      }
       >>
  else
   let stateset = (stateSets |> set hasindex i1 fromindex 0 => (match set
@@ -660,31 +660,31 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
        let statescandidatesvarsset = (statescandidates |> cstate hasindex i2 fromindex 0 => 'z[<%i2%>]=<%cref1(cstate,simCode,contextOther)%>;' ;separator="\n")
       
        <<
-        void  <%classname%>StateSelection::getStates(double* z)
-    {
-       <%statesvarsset%>
-    }
-    void  <%classname%>StateSelection::setStates(const double* z)
-      {
-          <%statesvarsget%>
-      }
-        void  <%classname%>StateSelection::getStateCanditates(double* z)
-        {
-          <%statescandidatesvarsset%>
-        }
-         void  <%classname%>StateSelection::getAMatrix(multi_array<int,2> & A) 
-      {
-          assign_array(A,<%arraycref(crA)%>);
-        
-      }
-      void  <%classname%>StateSelection::setAMatrix(multi_array<int,2>& A)
-      {
-         assign_array(<%arraycref(crA)%>,A);
-      }
-      void <%classname%>StateSelection::initialize()
-      {
-        fill_array<int,2 >( <%arraycref(crA)%>,0);
-      }
+	     void  <%classname%>StateSelection::getStates(double* z)
+	    {
+	       <%statesvarsset%>
+	    }
+	    void  <%classname%>StateSelection::setStates(const double* z)
+	      {
+	          <%statesvarsget%>
+	      }
+	        void  <%classname%>StateSelection::getStateCanditates(double* z)
+	        {
+	          <%statescandidatesvarsset%>
+	        }
+	         void  <%classname%>StateSelection::getAMatrix(multi_array<int,2> & A) 
+	      {
+	          assign_array(A,<%arraycref(crA)%>);
+	        
+	      }
+	      void  <%classname%>StateSelection::setAMatrix(multi_array<int,2>& A)
+	      {
+	         assign_array(<%arraycref(crA)%>,A);
+	      }
+	      void <%classname%>StateSelection::initialize()
+	      {
+	        fill_array<int,2 >( <%arraycref(crA)%>,0);
+	      }
       >>
       
       
@@ -730,7 +730,7 @@ let moLib =  makefileParams.compileDir
 let home = makefileParams.omhome
 <<
 #!/bin/sh
-exec ./OMCpp<%fileNamePrefix%>Main -s <%start%> -e <%end%> -f <%stepsize%> -v <%intervals%> -y <%tol%> -i <%solver%> -r <%simulationLibDir(simulationCodeTarget(),simCode)%> -m <%moLib%> -R <%simulationResults(getRunningTestsuite(),simCode)%> $*
+exec ./OMCpp<%fileNamePrefix%> -s <%start%> -e <%end%> -f <%stepsize%> -v <%intervals%> -y <%tol%> -i <%solver%> -r <%simulationLibDir(simulationCodeTarget(),simCode)%> -m <%moLib%> -R <%simulationResults(getRunningTestsuite(),simCode)%> $*
 >>
 end match)
 case  "win32"
@@ -5839,7 +5839,7 @@ case eqn as SES_ARRAY_CALL_ASSIGN(__) then
   case "double" then
    <<
         <%preExp%>
-       assignDerArray(context,expPart,eqn.componentRef,simCode)
+       <%assignDerArray(context,expPart,eqn.componentRef,simCode)%>
    >>
  end equationArrayCallAssign;
   /*<%cref1(eqn.componentRef,simCode, context)%>=<%expPart%>;*/
