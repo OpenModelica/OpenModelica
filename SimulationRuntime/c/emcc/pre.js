@@ -30,11 +30,15 @@ try { // Try to add an event listener like a webworker thread
     result.status = "Simulation failed"
     try {
       shouldRunNow = true;
-      var args = ['-override','outputFormat=csv,stopTime=' +  data.stopTime +',tolerance=' + data.tolerance + ',stepSize=' + data.stepSize];
+      var overrideLst = ['outputFormat=csv'];
+      var overrides = Object.getOwnPropertyNames(data.override);
+      for (var i=0; i<overrides.length; i++) {
+        overrideLst.push(overrides[i] + '=' + data.override[overrides[i]]);
+      }
+      var args = ['-override',overrideLst.join(',')];
       Module.callMain(args);
       result.csv = intArrayToString(FS.findObject(data.basename + "_res.csv").contents);
       result.status = "Simulation finished";
-
   } catch(e) {
   }
   self.postMessage(result);

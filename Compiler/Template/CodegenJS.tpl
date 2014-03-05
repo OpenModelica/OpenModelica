@@ -113,7 +113,7 @@ if (typeof(wworker) == "undefined" || isRunning) {
     var data = e.data;
     if (data.preloaded) {
       preloadComplete = true;
-      wworker.postMessage({basename: basename, stopTime: stopTime, tolerance: tolerance, stepSize: +stopTime / intervals});
+      wworker.postMessage({basename: basename, override: {stopTime: stopTime, tolerance: tolerance, stepSize: +stopTime / intervals}});
       return;
     }
     $("#statustext").html(e.data.status)
