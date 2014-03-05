@@ -243,7 +243,7 @@ void Cvode::solve(const SOLVERCALL action)
 
         // Solverstart
         CVodeCore();
-		 
+     
       }
 
       // Integration war nicht erfolgreich und wurde auch nicht vom User unterbrochen
@@ -426,7 +426,7 @@ int Cvode::calcFunction(const double& time, const double* y, double* f)
     _continuous_system->setContinuousStates(y);
     _continuous_system->evaluate(IContinuous::CONTINUOUS);
     _continuous_system->getRHS(f);
-	
+  
   }//workaround until exception can be catch from c- libraries
   catch(std::exception& ex)
   {

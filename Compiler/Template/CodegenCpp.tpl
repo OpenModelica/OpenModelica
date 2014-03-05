@@ -575,17 +575,17 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   case {} then
    <<
     int <%classname%>StateSelection::getDimStateSets() const
-		   	{
-		      return 0;
-		   	}
-		   	int <%classname%>StateSelection::getDimCanditates() const
-		   	{
-		        return 0;
-		   	}
-		   	int <%classname%>StateSelection::getDimDummyStates() const
-		   	{
-		    	 return 0;
-		   	}
+         {
+          return 0;
+         }
+         int <%classname%>StateSelection::getDimCanditates() const
+         {
+            return 0;
+         }
+         int <%classname%>StateSelection::getDimDummyStates() const
+         {
+           return 0;
+         }
    >>
   else
    let statesets = (stateSets |> set hasindex i1 fromindex 0 => (match set
@@ -595,18 +595,18 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
        <<
         
      
-		    int <%classname%>StateSelection::getDimStateSets() const
-		   	{
-		      return <%nStates%>;
-		   	}
-		   	int <%classname%>StateSelection::getDimCanditates() const
-		   	{
-		        return <%nCandidates%>;
-		   	}
-		   	int <%classname%>StateSelection::getDimDummyStates() const
-		   	{
-		    	 return <%nCandidates%>-<%nStates%>;
-		   	}
+        int <%classname%>StateSelection::getDimStateSets() const
+         {
+          return <%nStates%>;
+         }
+         int <%classname%>StateSelection::getDimCanditates() const
+         {
+            return <%nCandidates%>;
+         }
+         int <%classname%>StateSelection::getDimDummyStates() const
+         {
+           return <%nCandidates%>-<%nStates%>;
+         }
      >>
   )
    ;separator="\n\n")
@@ -627,30 +627,30 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   case {} then
        <<
         void  <%classname%>StateSelection::getStates(double* z)
-		{
-	 		
-		}
-		void  <%classname%>StateSelection::setStates(const double* z)
-    	{
-    			
-    	}
+    {
+       
+    }
+    void  <%classname%>StateSelection::setStates(const double* z)
+      {
+          
+      }
         void  <%classname%>StateSelection::getStateCanditates(double* z)
         {
-        	
+          
         }
          void  <%classname%>StateSelection::getAMatrix(multi_array<int,2> & A) 
-    	{
-    	    
+      {
+          
         
-    	}
-    	void  <%classname%>StateSelection::setAMatrix(multi_array<int,2>& A)
-    	{
-    	  
-    	}
-    	void <%classname%>StateSelection::initialize()
-    	{
-    	  
-    	}
+      }
+      void  <%classname%>StateSelection::setAMatrix(multi_array<int,2>& A)
+      {
+        
+      }
+      void <%classname%>StateSelection::initialize()
+      {
+        
+      }
       >>
  else
   let stateset = (stateSets |> set hasindex i1 fromindex 0 => (match set
@@ -661,30 +661,30 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
       
        <<
         void  <%classname%>StateSelection::getStates(double* z)
-		{
-	 		<%statesvarsset%>
-		}
-		void  <%classname%>StateSelection::setStates(const double* z)
-    	{
-    			<%statesvarsget%>
-    	}
+    {
+       <%statesvarsset%>
+    }
+    void  <%classname%>StateSelection::setStates(const double* z)
+      {
+          <%statesvarsget%>
+      }
         void  <%classname%>StateSelection::getStateCanditates(double* z)
         {
-        	<%statescandidatesvarsset%>
+          <%statescandidatesvarsset%>
         }
          void  <%classname%>StateSelection::getAMatrix(multi_array<int,2> & A) 
-    	{
-    	    assign_array(A,<%arraycref(crA)%>);
+      {
+          assign_array(A,<%arraycref(crA)%>);
         
-    	}
-    	void  <%classname%>StateSelection::setAMatrix(multi_array<int,2>& A)
-    	{
-    	   assign_array(<%arraycref(crA)%>,A);
-    	}
-    	void <%classname%>StateSelection::initialize()
-    	{
-    	  fill_array<int,2 >( <%arraycref(crA)%>,0);
-    	}
+      }
+      void  <%classname%>StateSelection::setAMatrix(multi_array<int,2>& A)
+      {
+         assign_array(<%arraycref(crA)%>,A);
+      }
+      void <%classname%>StateSelection::initialize()
+      {
+        fill_array<int,2 >( <%arraycref(crA)%>,0);
+      }
       >>
       
       
@@ -696,7 +696,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
    
   <<
      
-	
+  
     
     <%stateset%>
     
@@ -8923,9 +8923,9 @@ case _ then
  
     let jacvals = ( sparsepattern |> (cref,indexes) hasindex index0 =>
     let jaccol = ( indexes |> i_index =>
-    	  (match indexColumn case "1" then ' _<%matrixName%>jacobian(<%crefWithoutIndexOperator(cref,simCode)%>$pDER<%matrixName%>$indexdiff,0) = _<%matrixName%>jac_y(0);'
-    	     else ' _<%matrixName%>jacobian(<%index0%>,<%crefWithoutIndexOperator(cref,simCode)%>$pDER<%matrixName%>$indexdiff) = _<%matrixName%>jac_y(<%crefWithoutIndexOperator(cref,simCode)%>$pDER<%matrixName%>$indexdiff);'
-    	     )
+        (match indexColumn case "1" then ' _<%matrixName%>jacobian(<%crefWithoutIndexOperator(cref,simCode)%>$pDER<%matrixName%>$indexdiff,0) = _<%matrixName%>jac_y(0);'
+           else ' _<%matrixName%>jacobian(<%index0%>,<%crefWithoutIndexOperator(cref,simCode)%>$pDER<%matrixName%>$indexdiff) = _<%matrixName%>jac_y(<%crefWithoutIndexOperator(cref,simCode)%>$pDER<%matrixName%>$indexdiff);'
+           )
           ;separator="\n" )
      
         

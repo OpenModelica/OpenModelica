@@ -9,7 +9,7 @@ public:
     ~SystemStateSelection();
     
     bool stateSelection(int switchStates);
-	void initialize();
+  void initialize();
   private:
    
    void setAMatrix(int* newEnable);
@@ -21,8 +21,8 @@ public:
    int* _rowPivot;
    int* _colPivot;
     unsigned int  _dimStates;
-	unsigned int  _dimDummyStates;
-	unsigned int  _dimStateCanditates;
-	bool _initialized;
+  unsigned int  _dimDummyStates;
+  unsigned int  _dimStateCanditates;
+  bool _initialized;
 };
 

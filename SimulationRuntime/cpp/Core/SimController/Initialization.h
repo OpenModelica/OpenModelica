@@ -9,6 +9,6 @@ public:
 private:
 
       boost::shared_ptr<ISystemInitialization> _system;
-		boost::shared_ptr<ISolver>                  _solver;
+    boost::shared_ptr<ISolver>                  _solver;
 };
 

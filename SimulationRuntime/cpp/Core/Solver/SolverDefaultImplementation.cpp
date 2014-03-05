@@ -75,7 +75,7 @@ SolverDefaultImplementation::~SolverDefaultImplementation()
     {
         return _solverStatus;
     };
-	
+  
 bool SolverDefaultImplementation::stateSelection()
 {
    return _state_selection->stateSelection(1);

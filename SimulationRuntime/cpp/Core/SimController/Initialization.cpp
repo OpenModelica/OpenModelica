@@ -15,7 +15,7 @@ Initialization::~Initialization(void)
 void Initialization::initializeSystem()
 {
    
-	boost::shared_ptr<IContinuous> continous_system = boost::dynamic_pointer_cast<IContinuous>(_system);
+  boost::shared_ptr<IContinuous> continous_system = boost::dynamic_pointer_cast<IContinuous>(_system);
     boost::shared_ptr<IEvent> event_system =boost::dynamic_pointer_cast<IEvent>(_system);
       boost::shared_ptr<IMixedSystem> mixed_system = boost::dynamic_pointer_cast<IMixedSystem>(_system);
     int dim = event_system->getDimZeroFunc();
@@ -25,8 +25,8 @@ void Initialization::initializeSystem()
     _system->setInitial(true);
   //Initialization of continous equations and bounded parameters
     
-	_system->initialize();
-	_solver->stateSelection();
+  _system->initialize();
+  _solver->stateSelection();
     bool restart=true;
    int iter=0;
   bool cond_restart = true;

@@ -62,7 +62,7 @@ public:
 
      /// (Re-) initialize the solver
     virtual void initialize() = 0;
-	virtual bool stateSelection() = 0;
+  virtual bool stateSelection() = 0;
     /// Approximation of the numerical solution in a given time interval
     virtual void solve(const SOLVERCALL command = UNDEF_CALL) = 0;
 

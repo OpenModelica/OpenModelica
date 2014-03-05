@@ -59,7 +59,7 @@ public:
 
     /// Called by solver after every successfull integration step (calls writeOutput)
     void writeToFile(const int& stp, const double& t, const double& h);
-	virtual bool stateSelection();
+  virtual bool stateSelection();
 
 protected:
     // Member variables
@@ -121,8 +121,8 @@ protected:
 
 private:
    
-	
-	/// Definition of signum function
+  
+  /// Definition of signum function
     inline static int sgn (const double &c)
     {
         return (c < 0) ? -1 : ((c == 0) ? 0 : 1);

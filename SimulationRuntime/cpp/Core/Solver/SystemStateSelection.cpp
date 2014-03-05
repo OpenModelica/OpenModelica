@@ -14,7 +14,7 @@ SystemStateSelection::SystemStateSelection(IMixedSystem* system)
 {
   _state_selection = dynamic_cast<IStateSelection*>(system);
   if ( !_state_selection)
-	throw std::invalid_argument("No state selection system");
+  throw std::invalid_argument("No state selection system");
 }
 void SystemStateSelection::initialize()
 {
@@ -40,33 +40,33 @@ SystemStateSelection::~SystemStateSelection()
 
 bool SystemStateSelection::stateSelection(int switchStates)
 {
-	if(!_initialized)
-	  initialize();
-	int res=0;
+  if(!_initialized)
+    initialize();
+  int res=0;
   
     int* oldColPivot =  new int[_dimStateCanditates];
     int* oldRowPivot =   new int[_dimDummyStates];
     SparseMatrix stateset_matrix;
-	_system->getStateSetJacobian(stateset_matrix);
-	
-	/* call pivoting function to select the states */
+  _system->getStateSetJacobian(stateset_matrix);
+  
+  /* call pivoting function to select the states */
     memcpy(oldColPivot,_colPivot, _dimStateCanditates*sizeof(int));
     memcpy(oldRowPivot, _rowPivot, _dimDummyStates*sizeof(int));
-	
-	
-	/*workarround for c array*/
-	double* jac = new double[_dimDummyStates*_dimStateCanditates];
-	for(int i=0;i<_dimStateCanditates;i++)
-		for(int j= 0;j<_dimDummyStates;j++)
-			jac[i*_dimDummyStates+j]=stateset_matrix(i,j);
-	
-	
-	if((pivot(jac, _dimDummyStates, _dimStateCanditates, _rowPivot, _colPivot) != 0))
+  
+  
+  /*workarround for c array*/
+  double* jac = new double[_dimDummyStates*_dimStateCanditates];
+  for(int i=0;i<_dimStateCanditates;i++)
+    for(int j= 0;j<_dimDummyStates;j++)
+      jac[i*_dimDummyStates+j]=stateset_matrix(i,j);
+  
+  
+  if((pivot(jac, _dimDummyStates, _dimStateCanditates, _rowPivot, _colPivot) != 0))
     {
-		throw std::invalid_argument("Error, singular Jacobian for dynamic state selection at time");
-	}
-	
-	/* if we have a new set throw event for reinitialization
+    throw std::invalid_argument("Error, singular Jacobian for dynamic state selection at time");
+  }
+  
+  /* if we have a new set throw event for reinitialization
        and set the A matrix for set.x=A*(states) */
     res = comparePivot(oldColPivot, _colPivot, switchStates);
     if(!switchStates)
@@ -76,11 +76,11 @@ bool SystemStateSelection::stateSelection(int switchStates)
     }
    delete [] oldColPivot;
    delete [] oldRowPivot;
-	
+  
     if(res)
      return true;
-	else
-	  return false;
+  else
+    return false;
 }
 
 void SystemStateSelection::setAMatrix(int* newEnable)
