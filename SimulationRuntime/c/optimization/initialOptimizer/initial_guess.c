@@ -108,7 +108,6 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
   short printGuess;
 
   DATA* data = iData->data;
-  SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   SIMULATION_INFO *sInfo = &(data->simulationInfo);
 
   if(!data->simulationInfo.external_input.active)
@@ -161,20 +160,17 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
    for(i=0, k=1, v=iData->v + iData->nv; i<iData->nsi; ++i){
      for(jj=0; jj<iData->deg; ++jj, ++k){
       smallIntSolverStep(iData, solverInfo, iData->time[k]);
-     //iData->data->localData[0]->timeValue = solverInfo->currentTime = iData->time[k];
 
      if(printGuess)
-       printf("\ndone: time[%i] = %g", k, iData->time[k]);
+       printf("\ndone: time[%i] = %g\n", k, iData->time[k]);
 
-     for(j=0; j< iData->nx; ++j)
-       v[j] = sData->realVars[j] * iData->scalVar[j];
-
+     for(j=0; j< iData->nx; ++j){
+       v[j] = data->localData[0]->realVars[j] * iData->scalVar[j];
+     }
      for(; j< iData->nv; ++j)
        v[j] = data->simulationInfo.inputVars[j-iData->nx] * iData->scalVar[j];
 
      v += iData->nv;
-     /* updateContinuousSystem(iData->data); */
-     rotateRingBuffer(iData->data->simulationData, 1, (void**) iData->data->localData);
      }
   }
 
@@ -281,30 +277,31 @@ static int optimizer_time_setings_update(IPOPT_DATA_ *iData)
   return 0;
 }
 
+
 static int smallIntSolverStep(IPOPT_DATA_ *iData, SOLVER_INFO* solverInfo, double tstop){
   long double a;
   int iter;
-  int err;
+  int err, i;
 
-  solverInfo->currentTime = iData->data->localData[1]->timeValue;
+  solverInfo->currentTime = iData->data->localData[0]->timeValue;
   while(solverInfo->currentTime < tstop){
     a = 1.0;
     iter = 0;
+
+    rotateRingBuffer(iData->data->simulationData, 1, (void**) iData->data->localData);
     do{
 
       solverInfo->currentStepSize = a*(tstop - solverInfo->currentTime);
       err = dasrt_step(iData->data, solverInfo);
       a *= 0.5;
-      if(++iter >  10)
+      if(++iter >  10){
+        warningStreamPrint(LOG_STDOUT, 0, "Initial guess failure at time %.12g", solverInfo->currentTime);
         break;
+      }
     }while(err < 0);
 
-    if(iData->data->localData[0]->timeValue < tstop){
-      rotateRingBuffer(iData->data->simulationData, 1, (void**) iData->data->localData);
-      solverInfo->currentTime = iData->data->localData[0]->timeValue;
-    }else{
-      solverInfo->currentTime = tstop;
-    }
+    updateContinuousSystem(iData->data);
+
   }
   return 0;
 }
