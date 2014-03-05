@@ -156,7 +156,7 @@ protected:
     bool _initial;    
     SValuesMap _start_values;
     EventHandling _event_handling;
-   
+    
     typedef boost::circular_buffer<double> buffer_type;
     map<unsigned int,buffer_type> _delay_buffer;
     buffer_type _time_buffer;

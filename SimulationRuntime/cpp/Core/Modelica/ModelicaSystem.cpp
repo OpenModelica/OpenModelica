@@ -184,15 +184,17 @@ void Modelica::stepCompleted(double time)
      throw std::runtime_error("checkConditions is not yet implemented"); 
  }
 
-void Modelica::getJacobianSparsityPattern(SparsityPattern pattern)
-{
-  throw std::runtime_error("giveJacobianSparsityPattern is not yet implemented"); 
-}
+
 
 void Modelica::getJacobian(SparseMatrix& matrix)
 {
   throw std::runtime_error("giveJacobian is not yet implemented");  
 }
+void Modelica::getStateSetJacobian(SparseMatrix& matrix)
+{
+  throw std::runtime_error("giveStateJacobian is not yet implemented");  
+}
+
 
 bool Modelica::isODE()
 {

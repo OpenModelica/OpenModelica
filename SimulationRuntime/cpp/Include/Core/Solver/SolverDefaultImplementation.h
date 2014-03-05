@@ -9,7 +9,7 @@
 #include <System/ISystemProperties.h>  
 #include <Solver/ISolver.h>        // Solver interface
 #include <Solver/ISolverSettings.h>      // SolverSettings interface
-
+#include <Solver/SystemStateSelection.h>
 /// typedef to hand over (callback) functions to fortran routines
 typedef int (*U_fp)(...);
 
@@ -59,8 +59,9 @@ public:
 
     /// Called by solver after every successfull integration step (calls writeOutput)
     void writeToFile(const int& stp, const double& t, const double& h);
+	virtual bool stateSelection();
 
-
+protected:
     // Member variables
     //---------------------------------------------------------------
     IMixedSystem
@@ -69,7 +70,7 @@ public:
     ISolverSettings
         *_settings;                        ///< Settings for the solver
 
-
+    boost::shared_ptr<SystemStateSelection> _state_selection;
     double
         _tInit,                            ///< (initiale) Startzeit (wird nicht vom Solver verändert)
         _tCurrent,                        ///< current time (is changed by the solver)
@@ -119,7 +120,9 @@ public:
    
 
 private:
-    /// Definition of signum function
+   
+	
+	/// Definition of signum function
     inline static int sgn (const double &c)
     {
         return (c < 0) ? -1 : ((c == 0) ? 0 : 1);

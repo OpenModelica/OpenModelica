@@ -67,6 +67,7 @@ public:
 
 
   virtual const int reportErrorMessage(ostream& messageStream);
+  virtual bool stateSelection();
 private:
 
   // Solveraufruf

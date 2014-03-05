@@ -71,7 +71,7 @@ using boost::tuple;
 using boost::tie;
 using boost::get;
 using boost::make_tuple;
-
+using boost::multi_array;
 using std::max;
 using std::min;
 using std::string;
@@ -108,6 +108,7 @@ typedef ublas::matrix<double, adaptor_t> shared_matrix_t;
 #include <SimulationSettings/IGlobalSettings.h>
 #include <System/IAlgLoopSolverFactory.h>
 #include <System/IMixedSystem.h>
+#include <System/IStateSelection.h>
 #include <System/ISystemProperties.h>
 #include <System/ISystemInitialization.h>
 #include <System/IWriteOutput.h>

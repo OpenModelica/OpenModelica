@@ -60,9 +60,9 @@ public:
     /// Set the initial step size (needed for reinitialization after external zero search)
     virtual void setInitStepSize(const double& stepSize) = 0;
 
-  /// (Re-) initialize the solver
-  virtual void initialize() = 0;
-
+     /// (Re-) initialize the solver
+    virtual void initialize() = 0;
+	virtual bool stateSelection() = 0;
     /// Approximation of the numerical solution in a given time interval
     virtual void solve(const SOLVERCALL command = UNDEF_CALL) = 0;
 

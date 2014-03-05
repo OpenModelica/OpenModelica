@@ -100,12 +100,11 @@ class Modelica: public IMixedSystem ,public IContinuous ,public IEvent ,public I
   
 
 
-  // Provide pattern for Jacobian
-   virtual void getJacobianSparsityPattern(SparsityPattern pattern) ;
+ 
 
   // Provide Jacobian
    virtual void getJacobian(SparseMatrix& matrix);
-
+   virtual void getStateSetJacobian(SparseMatrix& matrix);
   // Provide number (dimension) of zero functions 
    virtual int getDimZeroFunc() ;
 

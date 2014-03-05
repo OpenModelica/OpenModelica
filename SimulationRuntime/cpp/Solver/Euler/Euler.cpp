@@ -52,7 +52,10 @@ Euler::~Euler()
         delete [] _f1;
 }
 
-
+bool Euler::stateSelection()
+ {
+   return SolverDefaultImplementation::stateSelection();
+ }
 void Euler::initialize()
 {
     // Kennzeichnung, dass assemble() (vor der Integration) aufgerufen wurde

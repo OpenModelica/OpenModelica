@@ -11,7 +11,7 @@ SimManager::SimManager(boost::shared_ptr<IMixedSystem> system,Configuration* con
   
       _solver = _config->createSelectedSolver(system.get());
   
-      _initialization = new Initialization(boost::dynamic_pointer_cast<ISystemInitialization>(_mixed_system));
+      _initialization = new Initialization(boost::dynamic_pointer_cast<ISystemInitialization>(_mixed_system),_solver);
   
 }
 SimManager::~SimManager()

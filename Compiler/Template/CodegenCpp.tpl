@@ -18,6 +18,8 @@ template translateModel(SimCode simCode) ::=
   let()= textFile(simulationInitCppFile(simCode),'OMCpp<%fileNamePrefix%>Initialize.cpp')
   let()= textFile(simulationJacobianHeaderFile(simCode), 'OMCpp<%fileNamePrefix%>Jacobian.h')
   let()= textFile(simulationJacobianCppFile(simCode),'OMCpp<%fileNamePrefix%>Jacobian.cpp')
+  let()= textFile(simulationStateSelectionCppFile(simCode), 'OMCpp<%fileNamePrefix%>StateSelection.cpp')
+  let()= textFile(simulationStateSelectionHeaderFile(simCode),'OMCpp<%fileNamePrefix%>StateSelection.h')
   let()= textFile(simulationExtensionHeaderFile(simCode),'OMCpp<%fileNamePrefix%>Extension.h')
   let()= textFile(simulationExtensionCppFile(simCode),'OMCpp<%fileNamePrefix%>Extension.cpp')
   let()= textFile(simulationWriteOutputHeaderFile(simCode),'OMCpp<%fileNamePrefix%>WriteOutput.h')
@@ -75,8 +77,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     virtual void initialize();
     virtual  void initEquations();
    private:
-    void initializeStateVars();
-    void initializeDerVars();
+   
     void initializeAlgVars();
     void initializeIntAlgVars();
     void initializeBoolAlgVars();
@@ -84,6 +85,8 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     void initializeIntAliasVars();
     void initializeBoolAliasVars();
     void initializeParameterVars();
+     void initializeStateVars();
+    void initializeDerVars();
   };
  >>
 end simulationInitHeaderFile;
@@ -146,6 +149,38 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
 end simulationJacobianHeaderFile;
 
 
+
+template simulationStateSelectionHeaderFile(SimCode simCode)
+ "Generates code for header file for simulation target."
+::=
+match simCode
+case SIMCODE(modelInfo=MODELINFO(__)) then
+  <<
+   #pragma once
+    #include "OMCpp<%fileNamePrefix%>.h"
+  /*****************************************************************************
+  *
+  * Simulation code to initialize the Modelica system
+  *
+  *****************************************************************************/
+  class <%lastIdentOfPath(modelInfo.name)%>StateSelection: virtual public  <%lastIdentOfPath(modelInfo.name)%>
+  {
+     public:
+    <%lastIdentOfPath(modelInfo.name)%>StateSelection(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData);
+    ~<%lastIdentOfPath(modelInfo.name)%>StateSelection();
+    int getDimStateSets() const;
+    int getDimCanditates() const ;
+    int getDimDummyStates() const ;
+    void getStates(double* z);
+    void setStates(const double* z);
+    void getStateCanditates(double* z);
+    void getAMatrix(multi_array<int,2> & A) ;
+    void setAMatrix(multi_array<int,2>& A);
+    protected:
+     void  initialize();
+  };
+ >>
+end simulationStateSelectionHeaderFile;
 
 
 
@@ -213,12 +248,13 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   #include "OMCpp<%fileNamePrefix%>WriteOutput.h"
   #include "OMCpp<%fileNamePrefix%>Initialize.h"
    #include "OMCpp<%fileNamePrefix%>Jacobian.h"
+   #include "OMCpp<%fileNamePrefix%>StateSelection.h"
   /*****************************************************************************
   *
   * Simulation code
   *
   *****************************************************************************/
-  class <%lastIdentOfPath(modelInfo.name)%>Extension: public ISystemInitialization, public IMixedSystem,public IWriteOutput, public <%lastIdentOfPath(modelInfo.name)%>WriteOutput, public <%lastIdentOfPath(modelInfo.name)%>Initialize, public <%lastIdentOfPath(modelInfo.name)%>Jacobian
+  class <%lastIdentOfPath(modelInfo.name)%>Extension: public ISystemInitialization, public IMixedSystem,public IWriteOutput, public IStateSelection, public <%lastIdentOfPath(modelInfo.name)%>WriteOutput, public <%lastIdentOfPath(modelInfo.name)%>Initialize, public <%lastIdentOfPath(modelInfo.name)%>Jacobian,public <%lastIdentOfPath(modelInfo.name)%>StateSelection
   {
      public:
     <%lastIdentOfPath(modelInfo.name)%>Extension(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData);
@@ -234,10 +270,22 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     virtual IHistory* getHistory();
      /// Provide Jacobian
     virtual void getJacobian(SparseMatrix& matrix);
+    virtual void getStateSetJacobian(SparseMatrix& matrix);
    /// Called to handle all  events occured at same time 
     virtual bool handleSystemEvents(bool* events);
     //Saves all variables before an event is handled, is needed for the pre, edge and change operator
     virtual void saveAll();
+    //StateSelction mehtods
+    virtual int getDimStateSets() const;
+    virtual int getDimCanditates() const ;
+    virtual int getDimDummyStates() const ;
+    virtual void getStates(double* z);
+    virtual void setStates(const double* z);
+    virtual void getStateCanditates(double* z);
+    virtual void getAMatrix(multi_array<int,2>& A);
+    virtual void setAMatrix(multi_array<int,2>& A);
+    
+    
   };
  >>
 end simulationExtensionHeaderFile;
@@ -314,6 +362,37 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
  >>
 end simulationJacobianCppFile;
 
+
+
+
+template simulationStateSelectionCppFile(SimCode simCode)
+ "Generates code for main cpp file for simulation target."
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(__)) then
+  <<
+   #include "Modelica.h"
+   #include "OMCpp<%fileNamePrefix%>StateSelection.h"
+   <%lastIdentOfPath(modelInfo.name)%>StateSelection::<%lastIdentOfPath(modelInfo.name)%>StateSelection(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData) 
+   : <%lastIdentOfPath(modelInfo.name)%>(globalSettings,nonlinsolverfactory,simData)
+   {
+   }
+  
+  
+   <%lastIdentOfPath(modelInfo.name)%>StateSelection::~<%lastIdentOfPath(modelInfo.name)%>StateSelection()
+    {
+    
+    }
+   <%functionDimStateSets(stateSets, simCode)%> 
+   <%functionStateSets(stateSets, simCode)%> 
+ >>
+end simulationStateSelectionCppFile;
+
+
+
+
+
+
 template simulationWriteOutputCppFile(SimCode simCode)
  "Generates code for main cpp file for simulation target."
 ::=
@@ -358,6 +437,13 @@ template simulationExtensionCppFile(SimCode simCode)
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
+  let initialStateSetJac = (stateSets |> set hasindex i1 fromindex 0 => (match set
+       case set as SES_STATESET(__) then
+            'initialAnalyticStateSetJac<%set.index%>Jacobian();') ;separator="\n\n")
+      
+   let getStateSetJac = (stateSets |> set hasindex i1 fromindex 0 => (match set
+       case set as SES_STATESET(__) then
+            'getStateSetJac<%set.index%>Jacobian(matrix);') ;separator="\n\n")
   <<
    #include "Modelica.h"
    #include "OMCpp<%fileNamePrefix%>Extension.h"
@@ -365,7 +451,9 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    : <%lastIdentOfPath(modelInfo.name)%>WriteOutput(globalSettings,nonlinsolverfactory,simData)
    , <%lastIdentOfPath(modelInfo.name)%>Initialize(globalSettings,nonlinsolverfactory,simData)
    , <%lastIdentOfPath(modelInfo.name)%>Jacobian(globalSettings,nonlinsolverfactory,simData)
+   , <%lastIdentOfPath(modelInfo.name)%>StateSelection(globalSettings,nonlinsolverfactory,simData)
    , <%lastIdentOfPath(modelInfo.name)%>(globalSettings,nonlinsolverfactory,simData)
+   
    {
    }
    <%lastIdentOfPath(modelInfo.name)%>Extension::~<%lastIdentOfPath(modelInfo.name)%>Extension()
@@ -389,15 +477,21 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     {
       <%lastIdentOfPath(modelInfo.name)%>WriteOutput::initialize();
       <%lastIdentOfPath(modelInfo.name)%>Initialize::initialize();
+       <%lastIdentOfPath(modelInfo.name)%>StateSelection::initialize();
+     <%initialStateSetJac%>
       
     }
     
   void <%lastIdentOfPath(modelInfo.name)%>Extension::getJacobian(SparseMatrix& matrix)
   {
-       <%lastIdentOfPath(modelInfo.name)%>Jacobian::getAJacobian(matrix);
+          getAJacobian(matrix);
       
   }
-
+  void <%lastIdentOfPath(modelInfo.name)%>Extension::getStateSetJacobian(SparseMatrix& matrix)
+  {
+      
+      <%getStateSetJac%>
+  }
   bool <%lastIdentOfPath(modelInfo.name)%>Extension::handleSystemEvents(bool* events)
   {
       return <%lastIdentOfPath(modelInfo.name)%>::handleSystemEvents(events);
@@ -426,13 +520,193 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       return    <%lastIdentOfPath(modelInfo.name)%>WriteOutput::getHistory();
     }
     
+   int <%lastIdentOfPath(modelInfo.name)%>Extension::getDimStateSets() const
+   {
+     return    <%lastIdentOfPath(modelInfo.name)%>StateSelection::getDimStateSets();
+   }
+   int <%lastIdentOfPath(modelInfo.name)%>Extension::getDimCanditates() const
+   {
+     return    <%lastIdentOfPath(modelInfo.name)%>StateSelection::getDimCanditates();
+   }
+   int <%lastIdentOfPath(modelInfo.name)%>Extension::getDimDummyStates() const
+   {
+     return    <%lastIdentOfPath(modelInfo.name)%>StateSelection::getDimDummyStates();
+   }
    
   
+   
+   void <%lastIdentOfPath(modelInfo.name)%>Extension::getStates(double* z) 
+   {
+      <%lastIdentOfPath(modelInfo.name)%>StateSelection::getStates(z);
+   }
+   
+   
+   void <%lastIdentOfPath(modelInfo.name)%>Extension::setStates(const double* z) 
+   {
+      <%lastIdentOfPath(modelInfo.name)%>StateSelection::setStates(z);
+   }
+   
+   void <%lastIdentOfPath(modelInfo.name)%>Extension::getStateCanditates(double* z) 
+   {
+      <%lastIdentOfPath(modelInfo.name)%>StateSelection::getStateCanditates(z);
+   }
+   
+   void <%lastIdentOfPath(modelInfo.name)%>Extension::getAMatrix(multi_array<int,2> & A) 
+   {
+      <%lastIdentOfPath(modelInfo.name)%>StateSelection::getAMatrix(A);
+   }
+  
+   void <%lastIdentOfPath(modelInfo.name)%>Extension::setAMatrix(multi_array<int,2> & A) 
+   {
+      <%lastIdentOfPath(modelInfo.name)%>StateSelection::setAMatrix(A);
+   }
   
  >>
 end simulationExtensionCppFile;
 
-  
+ 
+ template functionDimStateSets(list<StateSet> stateSets,SimCode simCode)
+  "Generates functions in simulation file to initialize the stateset data."
+::=
+match simCode
+case SIMCODE(modelInfo=MODELINFO(__)) then
+   let classname =  lastIdentOfPath(modelInfo.name)
+   match stateSets
+  case {} then
+   <<
+    int <%classname%>StateSelection::getDimStateSets() const
+		   	{
+		      return 0;
+		   	}
+		   	int <%classname%>StateSelection::getDimCanditates() const
+		   	{
+		        return 0;
+		   	}
+		   	int <%classname%>StateSelection::getDimDummyStates() const
+		   	{
+		    	 return 0;
+		   	}
+   >>
+  else
+   let statesets = (stateSets |> set hasindex i1 fromindex 0 => (match set
+       case set as SES_STATESET(__) then
+       let statesvars = (states |> s hasindex i2 fromindex 0 => '<%cref1(s,simCode,contextOther)%>' ;separator="\n")
+       let statescandidatesvars = (statescandidates |> cstate hasindex i2 fromindex 0 => '<%cref1(cstate,simCode,contextOther)%>' ;separator="\n")
+       <<
+        
+     
+		    int <%classname%>StateSelection::getDimStateSets() const
+		   	{
+		      return <%nStates%>;
+		   	}
+		   	int <%classname%>StateSelection::getDimCanditates() const
+		   	{
+		        return <%nCandidates%>;
+		   	}
+		   	int <%classname%>StateSelection::getDimDummyStates() const
+		   	{
+		    	 return <%nCandidates%>-<%nStates%>;
+		   	}
+     >>
+  )
+   ;separator="\n\n")
+   <<
+    <%statesets%>
+   >>
+ end functionDimStateSets;
+
+
+
+ template functionStateSets(list<StateSet> stateSets,SimCode simCode)
+  "Generates functions in simulation file to initialize the stateset data."
+::=
+match simCode
+case SIMCODE(modelInfo=MODELINFO(__)) then
+  let classname =  lastIdentOfPath(modelInfo.name)
+  match stateSets
+  case {} then
+       <<
+        void  <%classname%>StateSelection::getStates(double* z)
+		{
+	 		
+		}
+		void  <%classname%>StateSelection::setStates(const double* z)
+    	{
+    			
+    	}
+        void  <%classname%>StateSelection::getStateCanditates(double* z)
+        {
+        	
+        }
+         void  <%classname%>StateSelection::getAMatrix(multi_array<int,2> & A) 
+    	{
+    	    
+        
+    	}
+    	void  <%classname%>StateSelection::setAMatrix(multi_array<int,2>& A)
+    	{
+    	  
+    	}
+    	void <%classname%>StateSelection::initialize()
+    	{
+    	  
+    	}
+      >>
+ else
+  let stateset = (stateSets |> set hasindex i1 fromindex 0 => (match set
+       case set as SES_STATESET(__) then
+       let statesvarsset = (states |> s hasindex i2 fromindex 0 => 'z[<%i2%>]=<%cref1(s,simCode,contextOther)%>;' ;separator="\n")
+       let statesvarsget = (states |> s hasindex i2 fromindex 0 => '<%cref1(s,simCode,contextOther)%> = z[<%i2%>];' ;separator="\n")
+       let statescandidatesvarsset = (statescandidates |> cstate hasindex i2 fromindex 0 => 'z[<%i2%>]=<%cref1(cstate,simCode,contextOther)%>;' ;separator="\n")
+      
+       <<
+        void  <%classname%>StateSelection::getStates(double* z)
+		{
+	 		<%statesvarsset%>
+		}
+		void  <%classname%>StateSelection::setStates(const double* z)
+    	{
+    			<%statesvarsget%>
+    	}
+        void  <%classname%>StateSelection::getStateCanditates(double* z)
+        {
+        	<%statescandidatesvarsset%>
+        }
+         void  <%classname%>StateSelection::getAMatrix(multi_array<int,2> & A) 
+    	{
+    	    assign_array(A,<%arraycref(crA)%>);
+        
+    	}
+    	void  <%classname%>StateSelection::setAMatrix(multi_array<int,2>& A)
+    	{
+    	   assign_array(<%arraycref(crA)%>,A);
+    	}
+    	void <%classname%>StateSelection::initialize()
+    	{
+    	  fill_array<int,2 >( <%arraycref(crA)%>,0);
+    	}
+      >>
+      
+      
+   )
+   ;separator="\n\n")
+   
+   
+
+   
+  <<
+     
+	
+    
+    <%stateset%>
+    
+    
+   
+   
+   
+ >>
+end functionStateSets;
+
 
 
 
@@ -473,7 +747,7 @@ let moLib =  makefileParams.compileDir
 let home = makefileParams.omhome
 <<
 @echo off
-<%moLib%>/OMCpp<%fileNamePrefix%>.exe -s <%start%> -e <%end%> -f <%stepsize%> -v <%intervals%> -y <%tol%> -i <%solver%> -r <%simulationLibDir(simulationCodeTarget(),simCode)%> -m <%moLib%> -R <%simulationResults(getRunningTestsuite(),simCode)%>
+<%moLib%>/OMCpp<%fileNamePrefix%>Main.exe -s <%start%> -e <%end%> -f <%stepsize%> -v <%intervals%> -y <%tol%> -i <%solver%> -r <%simulationLibDir(simulationCodeTarget(),simCode)%> -m <%moLib%> -R <%simulationResults(getRunningTestsuite(),simCode)%>
 >>
 end match)
 end simulationMainRunScrip;
@@ -762,15 +1036,16 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   FACTORYFILE=OMCpp<%fileNamePrefix%>FactoryExport.cpp
   EXTENSIONFILE=OMCpp<%fileNamePrefix%>Extension.cpp
   JACOBIANFILE=OMCpp<%fileNamePrefix%>Jacobian.cpp
+  STATESELECTIONFILE=OMCpp<%fileNamePrefix%>StateSelection.cpp
   WRITEOUTPUTFILE=OMCpp<%fileNamePrefix%>WriteOutput.cpp
   SYSTEMFILE=OMCpp<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
   MAINFILE = OMCpp<%fileNamePrefix%>Main.cpp
-  MAINOBJ=OMCpp<%fileNamePrefix%>$(EXEEXT)
+  MAINOBJ=OMCpp<%fileNamePrefix%>Main$(EXEEXT)
   SYSTEMOBJ=OMCpp<%fileNamePrefix%>$(DLLEXT)
   GENERATEDFILES=$(MAINFILE) $(FUNCTIONFILE)  <%algloopcppfilenames(allEquations,simCode)%> 
  
   $(MODELICA_SYSTEM_LIB)$(DLLEXT): 
-  <%\t%>$(CXX)  /Fe$(SYSTEMOBJ) $(SYSTEMFILE) $(FUNCTIONFILE)   <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%> $(INITFILE) $(FACTORYFILE)  $(EXTENSIONFILE) $(WRITEOUTPUTFILE) $(JACOBIANFILE) $(CFLAGS)     $(LDSYTEMFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%>
+  <%\t%>$(CXX)  /Fe$(SYSTEMOBJ) $(SYSTEMFILE) $(FUNCTIONFILE)   <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%> $(INITFILE) $(FACTORYFILE)  $(EXTENSIONFILE) $(WRITEOUTPUTFILE) $(JACOBIANFILE) $(STATESELECTIONFILE) $(CFLAGS)     $(LDSYTEMFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%>
    <%\t%>$(CXX) $(CPPFLAGS) /Fe$(MAINOBJ)  $(MAINFILE)   $(CFLAGS) $(LDMAINFLAGS)
   >>
 end match
@@ -807,14 +1082,15 @@ INITFILE=OMCpp<%fileNamePrefix%>Initialize.cpp
 EXTENSIONFILE=OMCpp<%fileNamePrefix%>Extension.cpp
 WRITEOUTPUTFILE=OMCpp<%fileNamePrefix%>WriteOutput.cpp
 JACOBIANFILE=OMCpp<%fileNamePrefix%>Jacobian.cpp
+STATESELECTIONFILE=OMCpp<%fileNamePrefix%>StateSelection.cpp
 FACTORYFILE=OMCpp<%fileNamePrefix%>FactoryExport.cpp
 MAINFILE = OMCpp<%fileNamePrefix%>Main.cpp
-MAINOBJ=OMCpp<%fileNamePrefix%>$(EXEEXT)
+MAINOBJ=OMCpp<%fileNamePrefix%>Main$(EXEEXT)
 SYSTEMOBJ=OMCpp<%fileNamePrefix%>$(DLLEXT)
 
 
 
-CPPFILES=$(SYSTEMFILE) $(FUNCTIONFILE) $(INITFILE) $(WRITEOUTPUTFILE) $(EXTENSIONFILE) $(FACTORYFILE) $(JACOBIANFILE) <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%>
+CPPFILES=$(SYSTEMFILE) $(FUNCTIONFILE) $(INITFILE) $(WRITEOUTPUTFILE) $(EXTENSIONFILE) $(FACTORYFILE) $(JACOBIANFILE) $(STATESELECTIONFILE) <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%>
 OFILES=$(CPPFILES:.cpp=.o)
 
 .PHONY: <%lastIdentOfPath(modelInfo.name)%> $(CPPFILES)
@@ -988,6 +1264,9 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      let prebody = (eq.eqs |> eq2 as SES_SIMPLE_ASSIGN(__) =>
          equation_(eq2, contextAlgloop, &varDecls /*BUFD*/,simCode)
        ;separator="\n")
+      let extraresidual = (eq.eqs |> eq2 =>
+         functionExtraResidualsPreBody(eq2, &varDecls /*BUFD*/,contextAlgloop,simCode)
+      ;separator="\n")
      let body = (eq.eqs |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
          let &preExp = buffer "" /*BUFD*/
          let expPart = daeExp(eq2.exp, contextAlgloop,
@@ -1004,6 +1283,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      
 
            <%algs%>
+           <%extraresidual%>
            <%prebody%>
            <%body%>
       
@@ -1011,6 +1291,19 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   }
   >>
 end upateAlgloopNonLinear;
+
+
+template functionExtraResidualsPreBody(SimEqSystem eq, Text &varDecls /*BUFP*/, Context context, SimCode simCode)
+ "Generates an equation."
+::=
+  match eq
+  case e as SES_RESIDUAL(__)
+  then ""
+  else
+  equation_(eq, context, &varDecls /*BUFD*/, simCode)
+  end match
+end functionExtraResidualsPreBody;
+
 
 
 
@@ -2210,8 +2503,7 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
       _simTime = 0.0;
  
     <%varDecls%>
-     initializeStateVars();
-     initializeDerVars();
+    
      initializeAlgVars();
   initializeIntAlgVars();
   initializeBoolAlgVars();
@@ -2219,7 +2511,8 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
   initializeIntAliasVars();
   initializeBoolAliasVars();
   initializeParameterVars();
-   
+    initializeStateVars();
+     initializeDerVars();
    <%initFunctions%>
      _event_handling.initialize(this,<%helpvarlength(simCode)%>);
     
@@ -2228,7 +2521,7 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
     <%initEventHandling%>
      
    <%initextvars%>
-    initEquations();
+   initEquations();
    
       <%initALgloopSolvers%>
     for(int i=0;i<_dimZeroFunc;i++)
@@ -5546,7 +5839,7 @@ case eqn as SES_ARRAY_CALL_ASSIGN(__) then
   case "double" then
    <<
         <%preExp%>
-       <%assignDerArray(context,expPart,eqn.componentRef,simCode)%>
+       assignDerArray(context,expPart,eqn.componentRef,simCode)
    >>
  end equationArrayCallAssign;
   /*<%cref1(eqn.componentRef,simCode, context)%>=<%expPart%>;*/
@@ -5558,6 +5851,7 @@ template assignDerArray(Context context, String arr, ComponentRef c,SimCode simC
    match varKind
     case STATE(__)        then
      <<
+        /*<%cref(c)%>*/
         memcpy(&<%cref1(c,simCode, context)%>,<%arr%>.data(),<%arr%>.shape()[0]*sizeof(double));
      >>
     case STATE_DER(__)   then
@@ -5645,7 +5939,7 @@ match ty
       //let &preExp += 'cast_integer_array_to_real(&<%expPart%>, &<%tvar%>);<%\n%>'
       <<
       <%preExp%>
-      copy_integer_array_data_mem(&<%expPart%>, &<%cref(left)%>);<%inlineArray(context,tvar,left)%>/*test2*/
+      copy_integer_array_data_mem(&<%expPart%>, &<%cref(left)%>);<%inlineArray(context,tvar,left)%>
       >>
     case "real" then
       <<
@@ -7599,21 +7893,21 @@ case CREF(ty= t as DAE.T_ARRAY(__)) then
     assign_array(<%lhsStr%>,<%rhsStr%> );
     >>
   else
-    '<%lhsStr%> = <%rhsStr%>;'/*test4*/
+    '<%lhsStr%> = <%rhsStr%>;'
 case UNARY(exp = e as CREF(ty= t as DAE.T_ARRAY(__))) then
   let lhsStr = scalarLhsCref(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   match context
   case SIMULATION_CONTEXT(__) then
     <<
     usub_<%expTypeShort(t)%>_array(&<%rhsStr%>);<%\n%>
-    copy_<%expTypeShort(t)%>_array_data_mem(&<%rhsStr%>, &<%lhsStr%>);/*test1*/
+    copy_<%expTypeShort(t)%>_array_data_mem(&<%rhsStr%>, &<%lhsStr%>);
     >>
   else
     '<%lhsStr%> = -<%rhsStr%>;'
 case CREF(__) then
   let lhsStr = scalarLhsCref(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   <<
-  <%lhsStr%> = <%rhsStr%>/*testassign2*/;
+  <%lhsStr%> = <%rhsStr%>;
   >>
 case UNARY(exp = e as CREF(__)) then
   let lhsStr = scalarLhsCref(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
@@ -7622,7 +7916,7 @@ case UNARY(exp = e as CREF(__)) then
   >>
 case ARRAY(array = {}) then
   <<
-  /*testassign3*/
+  
   >>
 case ARRAY(ty=T_ARRAY(ty=ty,dims=dims),array=expl) then
   let typeShort = expTypeFromExpShort(exp)
@@ -8623,17 +8917,18 @@ case _ then
   let jacMats = (jacobianColumn |> (eqs,vars,indxColumn) =>
     functionJac(eqs, vars, indxColumn, matrixName, indexJacobian,simCode)
     ;separator="\n")
- /* let indexColumn = (jacobianColumn |> (eqs,vars,indxColumn) =>
+ let indexColumn = (jacobianColumn |> (eqs,vars,indxColumn) =>
     indxColumn
     ;separator="\n")
-  let index_ = listLength(seedVars)
-  */
+ 
     let jacvals = ( sparsepattern |> (cref,indexes) hasindex index0 =>
-
     let jaccol = ( indexes |> i_index =>
-         //' _jacobian(<%index0%>,<%intSub(cref(i_index),1)%>) = _jac_y(<%intSub(cref(i_index),1)%>);'
-    ' _<%matrixName%>jacobian(<%index0%>,<%crefWithoutIndexOperator(cref,simCode)%>$pDER<%matrixName%>$indexdiff) = _<%matrixName%>jac_y(<%crefWithoutIndexOperator(cref,simCode)%>$pDER<%matrixName%>$indexdiff);'
-        ;separator="\n" )
+    	  (match indexColumn case "1" then ' _<%matrixName%>jacobian(<%crefWithoutIndexOperator(cref,simCode)%>$pDER<%matrixName%>$indexdiff,0) = _<%matrixName%>jac_y(0);'
+    	     else ' _<%matrixName%>jacobian(<%index0%>,<%crefWithoutIndexOperator(cref,simCode)%>$pDER<%matrixName%>$indexdiff) = _<%matrixName%>jac_y(<%crefWithoutIndexOperator(cref,simCode)%>$pDER<%matrixName%>$indexdiff);'
+    	     )
+          ;separator="\n" )
+     
+        
     ' _<%matrixName%>jac_x(<%index0%>)=1;
   calc<%matrixName%>JacobianColumn();
   _<%matrixName%>jac_x.clear();
@@ -8641,6 +8936,7 @@ case _ then
       ;separator="\n")
 
   <<
+ 
     <%jacMats%>
     void <%classname%>Jacobian::get<%matrixName%>Jacobian(SparseMatrix& matrix)
      {

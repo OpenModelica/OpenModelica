@@ -53,7 +53,7 @@ public:
 
     /// Indicates whether a solver error occurred during integration, returns type of error and provides error message
     virtual const int reportErrorMessage(ostream& messageStream);
-
+    virtual bool stateSelection();
 private:
     /// (Explizites) Euler-Verfahren 1. Ordnung
     /*

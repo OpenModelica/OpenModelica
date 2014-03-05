@@ -206,7 +206,7 @@ void Cvode::solve(const SOLVERCALL action)
       initialize();
       writeToFile(0, _tCurrent, _h);
       _tLastWrite = 0;
-
+    
     }
 
     if(action & RECORDCALL)
@@ -243,7 +243,7 @@ void Cvode::solve(const SOLVERCALL action)
 
         // Solverstart
         CVodeCore();
-
+		 
       }
 
       // Integration war nicht erfolgreich und wurde auch nicht vom User unterbrochen
@@ -414,7 +414,10 @@ void Cvode::writeCVodeOutput(const double &time,const double &h,const int &stp)
 }
 
 
-
+bool Cvode::stateSelection()
+ {
+   return SolverDefaultImplementation::stateSelection();
+ }
 int Cvode::calcFunction(const double& time, const double* y, double* f)
 {
   try
@@ -423,6 +426,7 @@ int Cvode::calcFunction(const double& time, const double* y, double* f)
     _continuous_system->setContinuousStates(y);
     _continuous_system->evaluate(IContinuous::CONTINUOUS);
     _continuous_system->getRHS(f);
+	
   }//workaround until exception can be catch from c- libraries
   catch(std::exception& ex)
   {

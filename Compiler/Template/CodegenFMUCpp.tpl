@@ -74,6 +74,8 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let()= textFile(simulationJacobianCppFile(simCode),'OMCpp<%fileNamePrefix%>Jacobian.cpp')
   let()= textFile(simulationWriteOutputHeaderFile(simCode),'OMCpp<%fileNamePrefix%>WriteOutput.h')
   let()= textFile(simulationWriteOutputCppFile(simCode),'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
+  let()= textFile(simulationStateSelectionCppFile(simCode), 'OMCpp<%fileNamePrefix%>StateSelection.cpp')
+  let()= textFile(simulationStateSelectionHeaderFile(simCode),'OMCpp<%fileNamePrefix%>StateSelection.h')
   let()= textFile(fmudeffile(simCode), '<%name%>.def')
   let()= textFile(fmuMakefile(target,simCode), '<%fileNamePrefix%>_FMU.makefile')
   algloopfiles(listAppend(allEquations,initialEquations),simCode)
@@ -475,11 +477,12 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   WRITEOUTPUTFILE=OMCpp<%fileNamePrefix%>WriteOutput.cpp
   MAINFILE=OMCpp<%lastIdentOfPath(modelInfo.name)%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
   MAINFILEFMU=OMCpp<%lastIdentOfPath(modelInfo.name)%>FMU.cpp
+  STATESELECTIONFILE=OMCpp<%fileNamePrefix%>StateSelection.cpp
   MAINOBJ=$(MODELICA_SYSTEM_LIB)
   GENERATEDFILES=$(MAINFILEFMU) $(MAINFILE) $(FUNCTIONFILE)  <%algloopcppfilenames(allEquations,simCode)%>
 
   $(MODELICA_SYSTEM_LIB)$(DLLEXT):
-  <%\t%>$(CXX) /Fe$(MODELICA_SYSTEM_LIB) $(MAINFILEFMU) $(MAINFILE) $(FUNCTIONFILE) $(INITFILE) $(FACTORYFILE) $(JACOBIANFILE) $(EXTENSIONFILE) $(WRITEOUTPUTFILE) <%algloopcppfilenames(allEquations,simCode)%> $(CFLAGS) $(LDFLAGS)
+  <%\t%>$(CXX) /Fe$(MODELICA_SYSTEM_LIB) $(MAINFILEFMU) $(MAINFILE) $(FUNCTIONFILE) $(INITFILE) $(FACTORYFILE) $(JACOBIANFILE) $(EXTENSIONFILE) $(STATESELECTIONFILE) $(WRITEOUTPUTFILE) <%algloopcppfilenames(allEquations,simCode)%> $(CFLAGS) $(LDFLAGS)
   >>
 end match
 case "gcc" then
@@ -515,7 +518,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   SRC+= OMCpp<%fileNamePrefix%>WriteOutput.cpp
   SRC+= OMCpp<%fileNamePrefix%>Jacobian.cpp
   SRC+= <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%>
-
+  SRC+=  OMCpp<%fileNamePrefix%>StateSelection.cpp
   LIBS= -lOMCppSystem_static -lOMCppDataExchange_static -lOMCppOMCFactory
   LIBS+= $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_SERIALIZATION_LIB)
   LIBS+= $(LINUX_LIB_DL)

@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 2.6)
 
 project(${SystemName})
 # add the system default implementation library
-add_library(${SystemName} SHARED AlgLoopDefaultImplementation.cpp AlgLoopSolverFactory.cpp EventHandling.cpp SystemDefaultImplementation.cpp FactoryExport.cpp)
+add_library(${SystemName} SHARED AlgLoopDefaultImplementation.cpp AlgLoopSolverFactory.cpp EventHandling.cpp SystemDefaultImplementation.cpp  FactoryExport.cpp)
 target_link_libraries (${SystemName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} ${OMCFactoryName} )
 
 # add a static library with the system default implementation for generating c++ fmu targets
@@ -32,6 +32,7 @@ install (FILES
         ${CMAKE_SOURCE_DIR}/Include/Core/System/ISystemInitialization.h
         ${CMAKE_SOURCE_DIR}/Include/Core/System/IStepEvent.h
 		${CMAKE_SOURCE_DIR}/Include/Core/System/IWriteOutput.h
+		${CMAKE_SOURCE_DIR}/Include/Core/System/IStateSelection.h
       DESTINATION include/omc/cpp/Core/System)
 
 

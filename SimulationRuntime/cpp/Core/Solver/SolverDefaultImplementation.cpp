@@ -39,7 +39,7 @@ SolverDefaultImplementation::SolverDefaultImplementation(IMixedSystem* system, I
 , _outputCommand            (IWriteOutput::WRITEOUT)
 
 {
-   
+   _state_selection = boost::shared_ptr<SystemStateSelection>(new SystemStateSelection(system));
 }
 SolverDefaultImplementation::~SolverDefaultImplementation()
 {
@@ -75,6 +75,11 @@ SolverDefaultImplementation::~SolverDefaultImplementation()
     {
         return _solverStatus;
     };
+	
+bool SolverDefaultImplementation::stateSelection()
+{
+   return _state_selection->stateSelection(1);
+} 
 void SolverDefaultImplementation::initialize()
 {
     IContinuous* continous_system = dynamic_cast<IContinuous*>(_system);
