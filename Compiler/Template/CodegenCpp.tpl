@@ -440,11 +440,13 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   let classname = lastIdentOfPath(modelInfo.name)
   let initialStateSetJac = (stateSets |> set hasindex i1 fromindex 0 => (match set
        case set as SES_STATESET(__) then
-            'initialAnalyticStateSetJac<%set.index%>Jacobian();') ;separator="\n\n")
+              match jacobianMatrix case (_,_,name,_,_,_) then 
+            'initialAnalytic<%name%>Jacobian();') ;separator="\n\n")
       
    let getStateSetJac = (stateSets |> set hasindex i1 fromindex 0 => (match set
        case set as SES_STATESET(__) then
-            'getStateSetJac<%set.index%>Jacobian(matrix);') ;separator="\n\n")
+       		match jacobianMatrix case (_,_,name,_,_,_) then 
+            'get<%name%>Jacobian(matrix);') ;separator="\n\n")
   <<
    #include "Modelica.h"
    #include "OMCpp<%fileNamePrefix%>Extension.h"
