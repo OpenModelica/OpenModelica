@@ -445,7 +445,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       
    let getStateSetJac = (stateSets |> set hasindex i1 fromindex 0 => (match set
        case set as SES_STATESET(__) then
-       		match jacobianMatrix case (_,_,name,_,_,_) then 
+           match jacobianMatrix case (_,_,name,_,_,_) then 
             'get<%name%>Jacobian(matrix);') ;separator="\n\n")
   <<
    #include "Modelica.h"
