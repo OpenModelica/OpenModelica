@@ -1,6 +1,6 @@
 # listings-modelica
 
-This projects provides syntax highlighting definitions of the [Modelica language](https://modelica.org) for the LaTeX [listings package](http://www.ctan.org/tex-archive/macros/latex/contrib/listings/).
+This project provides syntax highlighting definitions of the [Modelica language](https://modelica.org) for the LaTeX [listings package](http://www.ctan.org/tex-archive/macros/latex/contrib/listings/).
 
 ## Usage
 
