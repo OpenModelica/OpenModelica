@@ -591,12 +591,6 @@ void *mmc_alloc_words(unsigned nwords)
 static mmc_GC_state_type x_mmc_GC_state;
 mmc_GC_state_type *mmc_GC_state = &x_mmc_GC_state;
 
-/* primary allocation routine for MetaModelica */
-void *mmc_alloc_words(unsigned nwords)
-{
-  return GC_MALLOC(nwords * sizeof(void*));
-}
-
 #else /* NO GC */
 
 static mmc_GC_state_type x_mmc_GC_state;

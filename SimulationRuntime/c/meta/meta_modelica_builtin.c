@@ -637,37 +637,6 @@ modelica_metatype boxptr_listArray(threadData_t *threadData,modelica_metatype ls
   return arr;
 }
 
-modelica_metatype boxptr_arrayUpdate(threadData_t *threadData,modelica_metatype arr, modelica_metatype i, modelica_metatype val)
-{
-  int ix = mmc_unbox_integer(i);
-  int nelts = MMC_HDRSLOTS(MMC_GETHDR(arr));
-  if (ix < 1 || ix > nelts)
-    MMC_THROW_INTERNAL();
-  MMC_STRUCTDATA(arr)[ix-1] = val;
-#if defined(_MMC_GC_)
-  /* save it in the array trail! */
-  if (!MMC_IS_IMMEDIATE(val))
-  {
-    mmc_uint_t idx;
-    /* also check here if the array is not already in the trail */
-    for (idx = mmc_GC_state->gen.array_trail_size; &mmc_GC_state->gen.array_trail[idx] >= mmc_GC_state->gen.ATP; idx--)
-    if (mmc_GC_state->gen.array_trail[idx] == val) /* if found, do not add again */
-    {
-      return arr;
-    }
-    /* add the address of the array into the roots to be
-    taken into consideration at the garbage collection time */
-    if( mmc_GC_state->gen.ATP == mmc_GC_state->gen.array_trail )
-    {
-      (void)fprintf(stderr, "Array Trail Overflow!\n");
-      mmc_exit(1);
-    }
-    *--mmc_GC_state->gen.ATP = arr;
-  }
-#endif
-  return arr;
-}
-
 modelica_metatype boxptr_arrayCopy(threadData_t *threadData,modelica_metatype arr)
 {
   int nelts = MMC_HDRSLOTS(MMC_GETHDR(arr));

@@ -46,7 +46,7 @@
 extern "C" {
 #endif
 
-#include "util/modelica.h"
+#include "openmodelica_types.h"
 #include "mmc_gc.h"
 
 /* the allocated from C region */

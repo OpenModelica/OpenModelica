@@ -9829,18 +9829,7 @@ end daeExpMetarecordcall;
 template daeExpMetaHelperBoxStart(Integer numVariables)
  "Helper to determine how mmc_mk_box should be called."
 ::=
-  match numVariables
-  case 0
-  case 1
-  case 2
-  case 3
-  case 4
-  case 5
-  case 6
-  case 7
-  case 8
-  case 9 then '<%numVariables%>('
-  else '(<%numVariables%>, '
+  if intGt(numVariables,20) then '(<%numVariables%>, ' else '<%numVariables%>('
 end daeExpMetaHelperBoxStart;
 
 template outDecl(String ty, Text &varDecls /*BUFP*/)

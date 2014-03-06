@@ -18,6 +18,7 @@ RUNTIME_HEADERS = $(LIBF2CHEADER) \
 ./math-support/blaswrap.h \
 ./openmodelica_func.h \
 ./openmodelica.h \
+./openmodelica_types.h \
 ./simulation_data.h \
 ./ModelicaUtilities.h
 
@@ -49,6 +50,7 @@ RUNTIMESIMSOLVER_HEADERS = ./simulation/solver/delay.h \
 RUNTIMEMETA_HEADERS = ./meta/meta_modelica_builtin_boxptr.h \
 ./meta/meta_modelica_builtin.h \
 ./meta/meta_modelica.h \
+./meta/meta_modelica_mk_box.h \
 ./meta/meta_modelica_real.h \
 ./meta/meta_modelica_segv.h \
 ./meta/meta_modelica_string_lit.h 
@@ -150,32 +152,32 @@ libOpenModelicaFMIRuntimeC.dylib: $(FMIOBJSPATH) $(builddir_lib)/libf2c.a
 	$(CC) -shared -o $@ $(FMIOBJSPATH) $(LDFLAGS_SIM) -undefined dynamic_lookup -install_name '@rpath/$@'
 
 $(METAOBJSPATH):%$(OBJ_EXT): %.c $(METAHFILESPATH) $(COMMON_HEADERS)
-	$(CC) -c $(CFLAGS) -o $@ $< -I$(METAPATH) -I$(UTILPATH)
+	$(CC) -c  -I$(METAPATH) -I$(UTILPATH) $(CFLAGS) -o $@ $<
 
 meta/meta_modelica_catch$(OBJ_EXT): meta/meta_modelica_catch.c
 	$(CC) -c $(CFLAGS) -o $@ $< -g
 
 $(UTILOBJSPATH):%$(OBJ_EXT): %.c $(UTILHFILESPATH) $(COMMON_HEADERS)
-	$(CC) -c $(CFLAGS) -o $@ $< -I$(UTILPATH) -I$(METAPATH)
+	$(CC) -c -I$(UTILPATH) -I$(METAPATH) $(CFLAGS) -o $@ $<
 
 $(MATHOBJSPATH):%$(OBJ_EXT): %.c $(MATHHFILESPATH) $(COMMON_HEADERS)
-	$(CC) -c $(CFLAGS) $(FPMATHFORTRAN) -o $@ $< -I$(MATHPATH) -I$(UTILPATH)
+	$(CC) -c -I$(MATHPATH) -I$(UTILPATH) $(CFLAGS) $(FPMATHFORTRAN) -o $@ $<
 
 $(SOLVEROBJSPATH):%$(OBJ_EXT): %.c $(SOLVERHFILESPATH) $(RESULTSHFILESPATH) $(INITIALIZATIONHFILESPATH) $(OPTIMIZATIONHFILESPATH) $(COMMON_HEADERS)
-	$(CC) -c $(CFLAGS) -o $@ $< -I$(SOLVERPATH) -I$(INITIALIZATIONPATH) -I$(OPTIMIZATIONPATH) -I$(RESULTSPATH) -I$(SIMPATH) -I$(MATHPATH) -I$(UTILPATH)
+	$(CC) -c -I$(SOLVERPATH) -I$(INITIALIZATIONPATH) -I$(OPTIMIZATIONPATH) -I$(RESULTSPATH) -I$(SIMPATH) -I$(MATHPATH) -I$(UTILPATH) $(CFLAGS) -o $@ $<
 
 $(INITIALIZATIONOBJSPATH):%$(OBJ_EXT): %.c $(SOLVERHFILESPATH) $(INITIALIZATIONHFILESPATH) $(COMMON_HEADERS)
-	$(CC) -c $(CFLAGS) -o $@ $< -I$(SOLVERPATH) -I$(INITIALIZATIONPATH) -I$(SIMPATH) -I$(MATHPATH) -I$(UTILPATH)
+	$(CC) -c -I$(SOLVERPATH) -I$(INITIALIZATIONPATH) -I$(SIMPATH) -I$(MATHPATH) -I$(UTILPATH) $(CFLAGS) -o $@ $<
 
 $(RESULTSOBJSPATH):%$(OBJ_EXT): %.cpp $(RESULTSFILESPATH) $(COMMON_HEADERS)
 	$(CC) -c $(CFLAGS) -o $@ $<
 
 $(SIMOBJSPATH):%$(OBJ_EXT): %.cpp linearization/linearize.cpp $(SIMHFILESPATH) $(COMMON_HEADERS)
-	$(CXX) -c $(CXXFLAGS) -o $@ $< -I$(SIMPATH) -I$(UTILPATH) -I$(MATHPATH) -I$(RESULTSPATH) -I$(SOLVERPATH) -I$(INITIALIZATIONPATH) -Ilinearization/
+	$(CXX) -c -I$(SIMPATH) -I$(UTILPATH) -I$(MATHPATH) -I$(RESULTSPATH) -I$(SOLVERPATH) -I$(INITIALIZATIONPATH) -Ilinearization/ $(CXXFLAGS) -o $@ $<
 
 $(SIMOBJSPATHC):%$(OBJ_EXT): %.c $(SIMHFILESPATH) $(COMMON_HEADERS)
 	@echo Deps: $(SIMHFILESPATH) $(COMMON_HEADERS)
-	$(CC) -c $(CFLAGS) -o $@ $< -I$(SIMPATH) -I$(UTILPATH) -I$(MATHPATH) -I$(RESULTSPATH) -I$(SOLVERPATH) -I$(INITIALIZATIONPATH) -Ilinearization/
+	$(CC) -c -I$(SIMPATH) -I$(UTILPATH) -I$(MATHPATH) -I$(RESULTSPATH) -I$(SOLVERPATH) -I$(INITIALIZATIONPATH) -Ilinearization/ $(CFLAGS) -o $@ $<
 
 $(OPTIMIZATIONOBJSPATH):%$(OBJ_EXT): %.c $(OPTIMIZATIONHFILESPATH) $(COMMON_HEADERS)
 	$(CC) -c $(CFLAGS) -o $@ $<

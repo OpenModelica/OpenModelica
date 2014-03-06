@@ -60,7 +60,6 @@
 extern "C" {
 #endif
 
-#include "util/modelica.h"
 #include "common.h"
 #include "roots.h"
 #include "generational.h"
@@ -84,10 +83,13 @@ extern mmc_GC_state_type* mmc_GC_state;
 
 /* checks if the pointer is in range */
 int is_in_range(modelica_metatype p, modelica_metatype start, size_t bytes);
-/* primary allocation routines for MetaModelica */
-void *mmc_alloc_words(unsigned nwords);
 
 #if defined(_MMC_GC_)
+
+#include "util/modelica.h"
+
+/* primary allocation routines for MetaModelica */
+void *mmc_alloc_words(unsigned nwords);
 
 DLLExport void mmc_GC_set_state(mmc_GC_state_type* state);
 /* initialization of MetaModelica GC */
@@ -132,10 +134,17 @@ int GC_pthread_join(pthread_t, void **);
 #define mmc_GC_collect(local_GC_state)
 
 /* Atomic pointers only work correctly if we use untagged pointers */
-#define mmc_alloc_words_atomic(nwords) GC_MALLOC_ATOMIC((nwords) * sizeof(void*))
+static inline void* mmc_alloc_words_atomic(unsigned int nwords) {
+  return GC_MALLOC_ATOMIC((nwords) * sizeof(void*));
+}
+static inline void* mmc_alloc_words(unsigned int nwords) {
+  return GC_MALLOC((nwords) * sizeof(void*));
+}
 
 #else /* NO_GC */
 
+/* primary allocation routines for MetaModelica */
+void *mmc_alloc_words(unsigned nwords);
 #define mmc_GC_init(settings)
 #define mmc_GC_init_default(void)
 #define mmc_GC_clear(void)

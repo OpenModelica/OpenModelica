@@ -42,18 +42,13 @@ extern "C" {
 #endif
 
 #include <pthread.h>
-
-#include "openmodelica.h"
-#include "gc/mmc_gc.h"
-#include "meta_modelica_string_lit.h"
-#include "meta_modelica_builtin.h"
-#include "meta_modelica_segv.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
 #include <errno.h>
-
+#include "gc/mmc_gc.h"
+#include "meta_modelica_string_lit.h"
 
 /*
  *
@@ -215,6 +210,41 @@ typedef int mmc_switch_type;
     } NAME = { MMC_STRINGHDR(LEN), VAL }
 #define MMC_REFSTRINGLIT(NAME) MMC_TAGPTR(&(NAME).header)
 
+/* Unboxing */
+#define mmc_unbox_boolean(X) MMC_UNTAGFIXNUM(X)
+#define mmc_unbox_integer(X) MMC_UNTAGFIXNUM(X)
+#define mmc_unbox_real(X) mmc_prim_get_real(X)
+#define mmc_unbox_string(X) MMC_STRINGDATA(X)
+#define mmc_unbox_array(X) (*((base_array_t*)X))
+
+#define mmc_mk_integer mmc_mk_icon
+#define mmc_mk_boolean mmc_mk_bcon
+#define mmc_mk_real mmc_mk_rcon
+
+void mmc_catch_dummy_fn();
+
+extern pthread_key_t mmc_thread_data_key;
+extern pthread_once_t mmc_init_once;
+extern void mmc_init();
+extern void mmc_init_nogc();
+#define MMC_INIT(X) pthread_once(&mmc_init_once,mmc_init)
+#define MMC_TRY_INTERNAL(X) { jmp_buf new_mmc_jumper, *old_jumper = threadData->X; threadData->X = &new_mmc_jumper; if (setjmp(new_mmc_jumper) == 0) {
+#define MMC_TRY() { threadData_t *threadData = pthread_getspecific(mmc_thread_data_key); MMC_TRY_INTERNAL(mmc_jumper)
+
+#if !defined(_MSC_VER)
+#define MMC_CATCH_INTERNAL(X) } threadData->X = old_jumper;mmc_catch_dummy_fn();}
+#else
+#define MMC_CATCH_INTERNAL(X) } threadData->X = old_jumper;}
+#endif
+#define MMC_CATCH() MMC_CATCH_INTERNAL(mmc_jumper)}
+
+#define MMC_THROW_INTERNAL() {longjmp(*threadData->mmc_jumper,1);}
+#define MMC_THROW() {longjmp(*((threadData_t*)pthread_getspecific(mmc_thread_data_key))->mmc_jumper,1);}
+#define MMC_ELSE() } else {
+
+#define MMC_TRY_TOP() { threadData_t threadDataOnStack = {0}, *oldThreadData = (threadData_t*)pthread_getspecific(mmc_thread_data_key),*threadData = &threadDataOnStack; pthread_setspecific(mmc_thread_data_key,threadData); MMC_TRY_INTERNAL(mmc_jumper)
+#define MMC_CATCH_TOP(X) pthread_setspecific(mmc_thread_data_key,oldThreadData); } else {pthread_setspecific(mmc_thread_data_key,oldThreadData);X;}}}
+
 /* adrpo: assume MMC_DBL_PAD always! */
 struct mmc_real_lit { /* there must be no padding between `header' and `data' */
     mmc_uint_t filler;
@@ -264,6 +294,7 @@ union mmc_double_as_words {
     double d;
     mmc_uint_t data[2];
 };
+
 static inline double mmc_prim_get_real(void *p)
 {
   union mmc_double_as_words u;
@@ -326,161 +357,8 @@ static inline void* mmc_mk_scon_len(unsigned int nbytes)
 
 char* mmc_mk_scon_len_ret_ptr(size_t nbytes);
 
-static inline void *mmc_mk_box0(unsigned int ctor)
-{
-    struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(1);
-    p->header = MMC_STRUCTHDR(0, ctor);
-#ifdef MMC_MK_DEBUG
-    fprintf(stderr, "BOX0 %u\n", ctor); fflush(NULL);
-#endif
-    return MMC_TAGPTR(p);
-}
-
-static inline void *mmc_mk_box1(unsigned int ctor, void *x0)
-{
-  struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(2);
-  p->header = MMC_STRUCTHDR(1, ctor);
-  p->data[0] = (void*) x0;
-#ifdef MMC_MK_DEBUG
-  fprintf(stderr, "BOX1 %u\n", ctor); fflush(NULL);
-#endif
-  return MMC_TAGPTR(p);
-}
-
-void printAny(void* any);
-
-static inline void *mmc_mk_box2(unsigned int ctor, void *x0, void *x1)
-{
-  struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(3);
-  void **data = p->data;
-  p->header = MMC_STRUCTHDR(2, ctor);
-  data[0] = (void*) x0;
-  data[1] = (void*) x1;
-#ifdef MMC_MK_DEBUG
-  fprintf(stderr, "BOX2 %u\n", ctor); fflush(NULL);
-  /* printAny(MMC_TAGPTR(p)); fprintf(stderr, "\n"); fflush(NULL); */
-#endif
-  return MMC_TAGPTR(p);
-}
-
-static inline void *mmc_mk_box3(unsigned int ctor, void *x0, void *x1, void *x2)
-{
-  struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(4);
-  void **data = p->data;
-  p->header = MMC_STRUCTHDR(3, ctor);
-  data[0] = (void*) x0;
-  data[1] = (void*) x1;
-  data[2] = (void*) x2;
-#ifdef MMC_MK_DEBUG
-  fprintf(stderr, "BOX3 %u\n", ctor); fflush(NULL);
-#endif
-  return MMC_TAGPTR(p);
-}
-
-static inline void *mmc_mk_box4(unsigned int ctor, void *x0, void *x1, void *x2, void *x3)
-{
-  struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(5);
-  void **data = p->data;
-  p->header = MMC_STRUCTHDR(4, ctor);
-  data[0] = (void*) x0;
-  data[1] = (void*) x1;
-  data[2] = (void*) x2;
-  data[3] = (void*) x3;
-#ifdef MMC_MK_DEBUG
-  fprintf(stderr, "BOX4 %u\n", ctor); fflush(NULL);
-#endif
-  return MMC_TAGPTR(p);
-}
-
-static inline void *mmc_mk_box5(unsigned int ctor, void *x0, void *x1, void *x2, void *x3, void *x4)
-{
-  struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(6);
-  void **data = p->data;
-  p->header = MMC_STRUCTHDR(5, ctor);
-  data[0] = (void*) x0;
-  data[1] = (void*) x1;
-  data[2] = (void*) x2;
-  data[3] = (void*) x3;
-  data[4] = (void*) x4;
-#ifdef MMC_MK_DEBUG
-  fprintf(stderr, "BOX5 %u\n", ctor); fflush(NULL);
-#endif
-  return MMC_TAGPTR(p);
-}
-
-static inline void *mmc_mk_box6(unsigned int ctor, void *x0, void *x1, void *x2, void *x3, void *x4, void *x5)
-{
-  struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(7);
-  void **data = p->data;
-  p->header = MMC_STRUCTHDR(6, ctor);
-  data[0] = (void*) x0;
-  data[1] = (void*) x1;
-  data[2] = (void*) x2;
-  data[3] = (void*) x3;
-  data[4] = (void*) x4;
-  data[5] = (void*) x5;
-#ifdef MMC_MK_DEBUG
-  fprintf(stderr, "BOX6 %u\n", ctor); fflush(NULL);
-#endif
-  return MMC_TAGPTR(p);
-}
-
-static inline void *mmc_mk_box7(unsigned int ctor, void *x0, void *x1, void *x2, void *x3, void *x4, void *x5, void *x6)
-{
-  struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(8);
-  void **data = p->data;
-  p->header = MMC_STRUCTHDR(7, ctor);
-  data[0] = (void*) x0;
-  data[1] = (void*) x1;
-  data[2] = (void*) x2;
-  data[3] = (void*) x3;
-  data[4] = (void*) x4;
-  data[5] = (void*) x5;
-  data[6] = (void*) x6;
-#ifdef MMC_MK_DEBUG
-  fprintf(stderr, "BOX7 %u\n", ctor); fflush(NULL);
-#endif
-  return MMC_TAGPTR(p);
-}
-
-static inline void *mmc_mk_box8(unsigned int ctor, void *x0, void *x1, void *x2, void *x3, void *x4, void *x5, void *x6, void *x7)
-{
-  struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(9);
-  void **data = p->data;
-  p->header = MMC_STRUCTHDR(8, ctor);
-  data[0] = (void*) x0;
-  data[1] = (void*) x1;
-  data[2] = (void*) x2;
-  data[3] = (void*) x3;
-  data[4] = (void*) x4;
-  data[5] = (void*) x5;
-  data[6] = (void*) x6;
-  data[7] = (void*) x7;
-#ifdef MMC_MK_DEBUG
-  fprintf(stderr, "BOX8 %u\n", ctor); fflush(NULL);
-#endif
-  return MMC_TAGPTR(p);
-}
-
-static inline void *mmc_mk_box9(unsigned int ctor, void *x0, void *x1, void *x2, void *x3, void *x4, void *x5, void *x6, void *x7, void *x8)
-{
-  struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(10);
-  void **data = p->data;
-  p->header = MMC_STRUCTHDR(9, ctor);
-  data[0] = (void*) x0;
-  data[1] = (void*) x1;
-  data[2] = (void*) x2;
-  data[3] = (void*) x3;
-  data[4] = (void*) x4;
-  data[5] = (void*) x5;
-  data[6] = (void*) x6;
-  data[7] = (void*) x7;
-  data[8] = (void*) x8;
-#ifdef MMC_MK_DEBUG
-  fprintf(stderr, "BOX9 %u\n", ctor); fflush(NULL);
-#endif
-  return MMC_TAGPTR(p);
-}
+/* Non-varargs versions */
+#include "meta_modelica_mk_box.h"
 
 static inline void *mmc_mk_box(int slots, unsigned int ctor, ...)
 {
@@ -557,40 +435,10 @@ struct record_description {
   const char** fieldNames;
 };
 
-/* Unboxing */
-#define mmc_mk_integer mmc_mk_icon
-#define mmc_mk_boolean mmc_mk_bcon
-#define mmc_mk_real mmc_mk_rcon
-
-#define mmc_unbox_boolean(X) MMC_UNTAGFIXNUM(X)
-#define mmc_unbox_integer(X) MMC_UNTAGFIXNUM(X)
-#define mmc_unbox_real(X) mmc_prim_get_real(X)
-#define mmc_unbox_string(X) MMC_STRINGDATA(X)
-#define mmc_unbox_array(X) (*((base_array_t*)X))
-
-void mmc_catch_dummy_fn();
-
-extern pthread_key_t mmc_thread_data_key;
-extern pthread_once_t mmc_init_once;
-extern void mmc_init();
-extern void mmc_init_nogc();
-#define MMC_INIT(X) pthread_once(&mmc_init_once,mmc_init)
-#define MMC_TRY_INTERNAL(X) { jmp_buf new_mmc_jumper, *old_jumper = threadData->X; threadData->X = &new_mmc_jumper; if (setjmp(new_mmc_jumper) == 0) {
-#define MMC_TRY() { threadData_t *threadData = pthread_getspecific(mmc_thread_data_key); MMC_TRY_INTERNAL(mmc_jumper)
-
-#if !defined(_MSC_VER)
-#define MMC_CATCH_INTERNAL(X) } threadData->X = old_jumper;mmc_catch_dummy_fn();}
-#else
-#define MMC_CATCH_INTERNAL(X) } threadData->X = old_jumper;}
-#endif
-#define MMC_CATCH() MMC_CATCH_INTERNAL(mmc_jumper)}
-
-#define MMC_THROW_INTERNAL() {longjmp(*threadData->mmc_jumper,1);}
-#define MMC_THROW() {longjmp(*((threadData_t*)pthread_getspecific(mmc_thread_data_key))->mmc_jumper,1);}
-#define MMC_ELSE() } else {
-
-#define MMC_TRY_TOP() { threadData_t threadDataOnStack = {0}, *oldThreadData = (threadData_t*)pthread_getspecific(mmc_thread_data_key),*threadData = &threadDataOnStack; pthread_setspecific(mmc_thread_data_key,threadData); MMC_TRY_INTERNAL(mmc_jumper)
-#define MMC_CATCH_TOP(X) pthread_setspecific(mmc_thread_data_key,oldThreadData); } else {pthread_setspecific(mmc_thread_data_key,oldThreadData);X;}}}
+#include "openmodelica.h"
+#include "meta_modelica_segv.h"
+#include "meta_modelica_builtin.h"
+#include "util/omc_error.h"
 
 #if defined(__cplusplus)
 }

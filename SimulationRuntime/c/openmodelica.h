@@ -63,14 +63,7 @@ extern "C" {
 #define DLLDirection DLLExport
 #endif
 
-typedef void* modelica_complex; /* currently only External objects are represented using modelica_complex.*/
-typedef void* modelica_metatype; /* MetaModelica extension, added by sjoelund */
-/* MetaModelica extension.
-We actually store function-pointers in lists, etc...
-So it needs to be void*. If we use a platform with different sizes of function-
-pointers, some changes need to be done to code generation */
-typedef void* modelica_fnptr;
-
+#include "openmodelica_types.h"
 #if defined(__MINGW32__) || defined(_MSC_VER)
  #define WIN32_LEAN_AND_MEAN
 #if !defined(NOMINMAX)
@@ -89,80 +82,6 @@ typedef void* modelica_fnptr;
 #endif
 
 #include "omc_inline.h"
-
-
-/* BEFORE: modelica_string.h */
-#ifdef __OPENMODELICA__METAMODELICA
-/* When MetaModelica grammar is enabled, all strings are boxed */
-typedef modelica_metatype modelica_string_t;
-typedef const modelica_metatype modelica_string_const;
-typedef modelica_string_t modelica_string;
-#else
-typedef char* modelica_string_t;
-typedef const char* modelica_string_const;
-typedef modelica_string_const modelica_string;
-#endif
-
-
-/* BEFORE: #include "memory_pool.h" */
-typedef double      m_real;
-typedef long        m_integer;
-typedef const char* m_string;
-typedef signed char m_boolean;
-typedef m_integer   _index_t;
-
-/* BEFORE: #include "index_spec.h" */
-/* This structure holds indexes when subscripting an array.
- * ndims - number of subscripts, E.g. A[1,{2,3},:] => ndims = 3
- * dim_size - dimension size of each subscript, Eg. A[1,{2,3},:,{3}] => dim_size={1,2,0,1}
- * spec_type - index type for each index, 'S' for scalar, 'A' for array, 'W' for whole dimension (:)
- *     Eg. A[1,{2,3},:,{3}] => spec_type = {'S','A','W','A'}.
- *     spec_type is required to be able to distinguish between {1} and 1 as an index.
- * index - pointer to all indices (except of type 'W'), eg A[1,{2,3},:,{3}] => index -> {1,2,3,3}
-*/
-struct index_spec_s
-{
-  _index_t ndims;  /* number of indices/subscripts */
-  _index_t* dim_size; /* size for each subscript */
-  char* index_type;  /* type of each subscript, any of 'S','A' or 'W' */
-  _index_t** index; /* all indices*/
-};
-typedef struct index_spec_s index_spec_t;
-
-
-/* BEFORE: #include "base_array.h" */
-struct base_array_s
-{
-  int ndims;
-  _index_t *dim_size;
-  void *data;
-};
-
-typedef struct base_array_s base_array_t;
-
-
-/* BEFORE: #include "string_array.h" */
-typedef base_array_t string_array_t;
-
-/* BEFORE: #include "boolean_array.h" */
-typedef signed char modelica_boolean;
-typedef base_array_t boolean_array_t;
-
-
-/* BEFORE: #include "real_array.h" */
-typedef double modelica_real;
-typedef base_array_t real_array_t;
-
-/* BEFORE: #include "integer_array.h" */
-typedef m_integer modelica_integer;
-typedef base_array_t integer_array_t;
-
-
-/* BEFORE: #include "modelica.h" */
-typedef real_array_t real_array;
-typedef integer_array_t integer_array;
-typedef boolean_array_t boolean_array;
-typedef string_array_t string_array;
 
 
 /* BEFORE: fortran_types */
@@ -225,59 +144,6 @@ struct type_desc_s {
     void* mmc;
   } data;
 };
-
-/* 
- * ERROR_STAGE defines different 
- * stages where an assertion can be triggered. 
- * 
- */ 
-typedef enum { 
-  ERROR_UNKOWN = 0, 
-  ERROR_SIMULATION, 
-  ERROR_INTEGRATOR, 
-  ERROR_NONLINEARSOLVER, 
-  ERROR_EVENTSEARCH, 
-  ERROR_OPTIMIZE, 
-  ERROR_MAX 
-} errorStage; 
-
-#include <setjmp.h>
-/* Thread-specific data passed around in most functions.
- * It is also possible to fetch it using pthread_getspecific (mostly for external functions that were not passed the pointer) */
-enum {
-  LOCAL_ROOT_USER_DEFINED_0,
-  LOCAL_ROOT_USER_DEFINED_1,
-  LOCAL_ROOT_USER_DEFINED_2,
-  LOCAL_ROOT_USER_DEFINED_3,
-  LOCAL_ROOT_USER_DEFINED_4,
-  LOCAL_ROOT_USER_DEFINED_5,
-  LOCAL_ROOT_USER_DEFINED_6,
-  LOCAL_ROOT_USER_DEFINED_7,
-  LOCAL_ROOT_USER_DEFINED_8,
-  LOCAL_ROOT_ERROR_MO,
-  LOCAL_ROOT_PRINT_MO,
-  LOCAL_ROOT_SYSTEM_MO,
-  MAX_LOCAL_ROOTS
-};
-#define MAX_LOCAL_ROOTS 16
-typedef struct threadData_s {
-  jmp_buf *mmc_jumper;
-  jmp_buf *mmc_stack_overflow_jumper;
-  jmp_buf *mmc_thread_work_exit;
-  void *localRoots[MAX_LOCAL_ROOTS];
-/*
- * simulationJumpBufer: 
- *  Jump-buffer to handle simulation error 
- *  like asserts or divisions by zero. 
- * 
- * currentJumpStage: 
- *   define which simulation jump buffer 
- *   is currently used. 
- */ 
-  jmp_buf *globalJumpBuffer; 
-  jmp_buf *simulationJumpBuffer; 
-  errorStage currentErrorStage; 
-} threadData_t;
 
 /* math functions (-lm)*/
 
