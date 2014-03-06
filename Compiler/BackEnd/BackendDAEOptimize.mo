@@ -64,6 +64,7 @@ protected import ClassInf;
 protected import Config;
 protected import ComponentReference;
 protected import DAEUtil;
+protected import DAEDump;
 protected import Debug;
 protected import Differentiate;
 protected import Expression;
@@ -9612,5 +9613,224 @@ algorithm
   // (ei,_) = traverseEventInfoExps(eventInfo,traverserapplyRewriteRulesBackend, false);
   outDAE := BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constrs, clsAttrs, cache, env, funcTree, eventInfo, eoc, btp, symjacs, ei));
 end applyRewriteRulesBackendShared;
+
+// =============================================================================
+// evaluate functions partially
+//
+// =============================================================================
+
+
+public function evalFunctions
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  outDAE := matchcontinue(inDAE)
+    local
+      BackendDAE.EqSystems eqSysts;
+      BackendDAE.Shared shared;
+    case(_)
+      equation
+        true = Flags.isSet(Flags.EVALUATE_CONST_FUNCTIONS);
+        BackendDAE.DAE(eqs = eqSysts,shared = shared) = inDAE;
+        (eqSysts,(shared,_)) = List.mapFold(eqSysts,evalFunctions_main,(shared,1));
+        outDAE = BackendDAE.DAE(eqSysts,shared);
+        print("evaluate the functions\n");
+      then
+        outDAE;
+    else
+      then
+        inDAE;   
+  end matchcontinue;   
+end evalFunctions;
+
+protected function evalFunctions_main
+  input BackendDAE.EqSystem eqSysIn;
+  input tuple<BackendDAE.Shared,Integer> tplIn;
+  output BackendDAE.EqSystem eqSysOut;
+  output tuple<BackendDAE.Shared,Integer> tplOut;
+protected
+  Integer sysIdx;
+  Option<BackendDAE.IncidenceMatrix> m;
+  Option<BackendDAE.IncidenceMatrixT> mT;
+  BackendDAE.Shared sharedIn;
+  BackendDAE.EquationArray eqs;
+  BackendDAE.Matching matching;
+  BackendDAE.Variables vars;
+  list<BackendDAE.Var> varLst;
+  list<BackendDAE.Equation> eqLst;
+  BackendDAE.StateSets stateSets;
+algorithm
+  (sharedIn,sysIdx) := tplIn;
+  BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,m=m,mT=mT,matching=matching,stateSets=stateSets) := eqSysIn;
+  eqLst := BackendEquation.equationList(eqs);
+  varLst := BackendVariable.varList(vars);
+  //BackendDump.dumpEquationArray(eqs, "before");
+  
+  //traverse the eqSystem for function calls
+  eqLst := List.map1(eqLst,evalFunctions_findFuncs,sharedIn);
+  eqs := BackendEquation.listEquation(eqLst);
+  //BackendDump.dumpEquationArray(eqs, "after");
+  
+  eqSysOut := BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching,stateSets);
+  tplOut := tplIn;
+end evalFunctions_main;
+
+protected function evalFunctions_findFuncs
+  input BackendDAE.Equation eqIn;
+  input BackendDAE.Shared sharedIn;
+  output BackendDAE.Equation eqOut;
+algorithm
+  eqOut := matchcontinue(eqIn,sharedIn)
+    local
+      Boolean b1,b2,diff;
+      BackendDAE.Equation eq;
+      DAE.Exp exp1,exp2;
+      DAE.ElementSource source;
+      DAE.FunctionTree funcs;
+    case(BackendDAE.EQUATION(exp=exp1, scalar=exp2,source=source,differentiated=diff),_)
+      equation
+        b1 = Expression.containFunctioncall(exp1);
+        b2 = Expression.containFunctioncall(exp2);
+        true = b1 or b2;
+        funcs = BackendDAEUtil.getFunctions(sharedIn);
+        exp1 = Debug.bcallret2(b1,evaluateConstantFunction,exp1,funcs,exp1);
+        exp2 = Debug.bcallret2(b2,evaluateConstantFunction,exp2,funcs,exp2);
+        eq = BackendDAE.EQUATION(exp1,exp2,source,diff);
+      then
+        eq;
+    else
+      equation
+      then
+        eqIn;
+  end matchcontinue;        
+end evalFunctions_findFuncs;
+
+protected function evaluateConstantFunction
+  input DAE.Exp expIn;
+  input DAE.FunctionTree funcs;
+  output DAE.Exp expOut;
+algorithm
+  expOut := matchcontinue(expIn,funcs)
+    local
+      Boolean funcIsConst;
+      list<Integer> constIdcs;
+      Absyn.Path path;
+      BackendVarTransform.VariableReplacements repl;
+      HashTable2.HashTable ht;
+      DAE.Exp exp;
+      DAE.Function func;
+      list<DAE.ComponentRef> inputCrefs, outputCrefs;
+      list<DAE.Element> elements, algs, cvars, allInputs, constInputs, allOutputs;
+      list<DAE.Exp> crefs, consts;
+      list<DAE.Statement> stmts;
+    case(DAE.CALL(path=path, expLst=crefs,attr=_),_)
+      equation
+        //print("BEFORE:\n");
+        //ExpressionDump.dumpExp(expIn);
+        
+        // get the elements of the function
+        SOME(func) = DAEUtil.avlTreeGet(funcs,path);
+        elements = DAEUtil.getFunctionElements(func);
+        allInputs = List.filter(elements,DAEUtil.isInputVar);
+        allOutputs = List.filter(elements,DAEUtil.isOutputVar);
+        algs = List.filter(elements,DAEUtil.isAlgorithm);
+        
+        // get constant function inputs
+        consts = List.filterOnTrue(crefs,Expression.isConst);
+        constIdcs = List.map1(consts,List.position,crefs);
+        constIdcs = List.map1(constIdcs,intAdd,1);        
+        constInputs = List.map1(constIdcs,List.getIndexFirst,allInputs);
+        inputCrefs = List.map(constInputs,DAEUtil.varCref);
+        outputCrefs = List.map(allOutputs,DAEUtil.varCref);    
+        /*
+        print("\nall const crefs\n");
+        print(ExpressionDump.printExpListStr(consts));
+        print("\nall constant inputs\n");
+        print(ComponentReference.printComponentRefListStr(inputCrefs));
+        print("\nall algs "+&intString(listLength(algs))+&"\n");
+        print(DAEDump.dumpElementsStr(algs));
+        */
+        
+        //build replacement rules
+        repl = BackendVarTransform.emptyReplacements();
+        repl = BackendVarTransform.addReplacements(repl,inputCrefs,consts,NONE());
+        //BackendVarTransform.dumpReplacements(repl);
+        
+        // go through all algorithms and replace the variables with constants if possible, update the ht with new constant variables
+        (algs,repl) = List.mapFold(algs,evaluateFunctions_updateAlgorithms,repl);
+        //print("\nall algs after "+&intString(listLength(algs))+&"\n");
+        //print(DAEDump.dumpElementsStr(algs));
+        //BackendVarTransform.dumpReplacements(repl);
+        
+        //check if the outputs became constant and build new algs
+        consts = List.map1(outputCrefs,BackendVarTransform.getReplacementCRefFirst,repl);
+        
+        exp = List.first(consts);
+        //print("AFTER:\n");
+        //ExpressionDump.dumpExp(exp);
+      then
+        exp;
+    else
+      equation
+        //print("the function is not constant\n");
+      then
+        expIn;
+  end matchcontinue;
+end evaluateConstantFunction;
+
+protected function evaluateFunctions_updateAlgorithms"gets the statements from an algorithm in order to traverse them.
+author:Waurich TUD 2014-03"
+  input DAE.Element algIn;
+  input BackendVarTransform.VariableReplacements replIn;
+  output DAE.Element algOut;
+  output BackendVarTransform.VariableReplacements replOut;
+protected
+  DAE.Algorithm alg;
+  DAE.ElementSource source;
+  list<DAE.Statement> stmts;
+algorithm
+  DAE.ALGORITHM(alg,source) := algIn;
+  stmts := DAEUtil.getStatement(algIn);
+  (stmts,replOut) := List.mapFold(stmts,evaluateFunctions_updateStatements,replIn);
+  alg := DAE.ALGORITHM_STMTS(stmts);
+  algOut := DAE.ALGORITHM(alg,source);
+end evaluateFunctions_updateAlgorithms;
+
+protected function evaluateFunctions_updateStatements"
+author:Waurich TUD 2014-03"
+  input DAE.Statement algIn;
+  input BackendVarTransform.VariableReplacements replIn;
+  output DAE.Statement algOut;
+  output BackendVarTransform.VariableReplacements replOut;
+algorithm
+  (algOut,replOut) := matchcontinue(algIn,replIn)
+    local
+      Boolean changed, isConst;
+      BackendVarTransform.VariableReplacements repl;
+      DAE.ComponentRef cref;
+      DAE.ElementSource source;
+      DAE.Exp exp1, exp2;
+      DAE.Statement alg;
+      DAE.Type typ;
+    case(alg as DAE.STMT_ASSIGN(type_=typ, exp1=exp1, exp=exp2, source=source),_)
+      equation
+        cref = Expression.expCref(exp1);
+        (exp2,changed) = BackendVarTransform.replaceExp(exp2,replIn,NONE());
+        (exp2,changed) = Debug.bcallret1_2(changed,ExpressionSimplify.simplify,exp2,exp2,changed);
+        (exp2,_) = ExpressionSimplify.simplify(exp2);
+        isConst = Expression.isConst(exp2);
+        repl = Debug.bcallret4(isConst,BackendVarTransform.addReplacement,replIn,cref,exp2,NONE(),replIn);
+        //print("isConst "+&boolString(isConst)+&"\n");
+        alg = Util.if_(isConst,DAE.STMT_ASSIGN(typ,exp1,exp2,source),alg);
+        //print("the alg: "+&DAEDump.ppStatementStr(alg)+&"\n");
+      then
+        (alg,repl);
+    else
+      equation
+        print("evaluateFunctions_updateStatements failed!\n");
+      then
+        fail();
+  end matchcontinue;
+end evaluateFunctions_updateStatements;
 
 end BackendDAEOptimize;

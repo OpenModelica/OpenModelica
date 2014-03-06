@@ -2703,7 +2703,7 @@ algorithm
   bodyStmts := List.mapFlat(List.filter(elements, isAlgorithm), getStatement);
 end getFunctionAlgorithmStmts;
 
-protected function getStatement
+public function getStatement
   input DAE.Element inElement;
   output list<DAE.Statement> outStatements;
 algorithm
@@ -5391,7 +5391,7 @@ algorithm
   end matchcontinue;
 end getOptionStr;
 
-protected function printAvlTreeStr "
+public function printAvlTreeStr "
   Prints the avl tree to a string"
   input DAE.AvlTree inAvlTree;
   output String outString;

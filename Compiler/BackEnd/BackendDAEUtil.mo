@@ -8764,7 +8764,8 @@ algorithm
                        (BackendDAEOptimize.simplifyIfEquations, "simplifyIfEquations", false),
                        (BackendDAEOptimize.replaceEdgeChange, "replaceEdgeChange", false),
                        (BackendDAEOptimize.residualForm, "residualForm", false),
-                       (BackendDAEOptimize.resolveLoops, "resolveLoops",false)
+                       (BackendDAEOptimize.resolveLoops, "resolveLoops",false),
+                       (BackendDAEOptimize.evalFunctions, "evalFunc",false)
                        };
   strPreOptModules := getPreOptModulesString();
   strPreOptModules := Util.getOptionOrDefault(ostrPreOptModules,strPreOptModules);

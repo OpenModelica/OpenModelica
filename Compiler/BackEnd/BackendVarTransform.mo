@@ -712,6 +712,28 @@ algorithm
   end match;
 end getReplacement;
 
+public function getReplacementCRefFirst "
+  Retrives a replacement variable given a set of replacement rules and a
+  source variable.
+"
+  input DAE.ComponentRef inComponentRef;
+  input VariableReplacements inVariableReplacements;
+  output DAE.Exp outComponentRef;
+algorithm
+  outComponentRef:=
+  match (inComponentRef,inVariableReplacements)
+    local
+      DAE.ComponentRef src;
+      DAE.Exp dst;
+      HashTable2.HashTable ht;
+    case (src,REPLACEMENTS(hashTable=ht))
+      equation
+        dst = BaseHashTable.get(src,ht);
+      then
+        dst;
+  end match;
+end getReplacementCRefFirst;
+
 public function getAllReplacements "
 Author BZ 2009-04
 Extract all crefs -> exp to two separate lists.

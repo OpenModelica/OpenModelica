@@ -380,6 +380,36 @@ algorithm
   end match;
 end bcallret1;
 
+public function bcallret1_2
+"Boolean controlled calling of given function (2nd arg).
+  The passed function gets 1 arguments.
+  The last two parameters are returned if the given flag is not set."
+  input Boolean flag;
+  input FuncA_BC func;
+  input Type_a arg1;
+  input Type_b default1;
+  input Type_c default2;
+  output Type_b res1;
+  output Type_c res2;
+  partial function FuncA_BC
+    input Type_a inTypeA;
+    output Type_b outTypeD;
+    output Type_c outTypeE;
+  end FuncA_BC;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  // Apparently cannot inline stuff with function pointers... annotation(__OpenModelica_EarlyInline = true);
+algorithm
+  (res1,res2) := match (flag,func,arg1,default1,default2)
+    case (true,_,_,_,_)
+      equation
+        (res1,res2) = func(arg1);
+      then (res1,res2);
+    else (default1,default2);
+  end match;
+end bcallret1_2;
+
 public function bcallret2
 "Boolean controlled calling of given function (2nd arg).
   The passed function gets 2 arguments.

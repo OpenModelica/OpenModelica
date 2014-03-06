@@ -379,6 +379,8 @@ constant DebugFlag DISABLE_RECORD_CONSTRUCTOR_OUTPUT = DEBUG_FLAG(106, "disableR
   Util.gettext("Disables output of record constructors in the flat code."));
 constant DebugFlag DUMP_TRANSFORMED_MODELICA_MODEL = DEBUG_FLAG(107, "dumpTransformedModelica", false,
   Util.gettext("dumps the back-end DAE to a Modelica-like model after all symbolic transformations are applied"));
+constant DebugFlag EVALUATE_CONST_FUNCTIONS = DEBUG_FLAG(108, "evalConstFuncs", false,
+  Util.gettext("evaluates functions complete and partially and checks for constant output"));
   
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -491,7 +493,8 @@ constant list<DebugFlag> allDebugFlags = {
   RESOLVE_LOOPS,
   DISABLE_WINDOWS_PATH_CHECK_WARNING,
   DISABLE_RECORD_CONSTRUCTOR_OUTPUT,
-  DUMP_TRANSFORMED_MODELICA_MODEL
+  DUMP_TRANSFORMED_MODELICA_MODEL,
+  EVALUATE_CONST_FUNCTIONS
 };
 
 // CONFIGURATION FLAGS
@@ -556,7 +559,8 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     "inlineArrayEqn",
     "removeSimpleEquations",
     // "addInitialStmtsToAlgorithms",
-    "resolveLoops"
+    "resolveLoops",
+    "evalFunc"
     }),
   SOME(STRING_DESC_OPTION({
     ("removeSimpleEquations", removeSimpleEquationDesc),
@@ -579,7 +583,8 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     ("replaceEdgeChange", Util.gettext("Replace edge(b) = b and not pre(b) and change(b) = v <> pre(v).")),
     ("residualForm", Util.gettext("Transforms simple equations x=y to zero-sum equations 0=y-x.")),
     ("addInitialStmtsToAlgorithms", Util.gettext("Expands all algorithms with initial statements for outputs.")),
-    ("resolveLoops", Util.gettext("resolves linear equations in loops"))
+    ("resolveLoops", Util.gettext("resolves linear equations in loops")),
+    ("evalFunc", Util.gettext("evaluates functions partially"))
     })),
   Util.gettext("Sets the pre optimization modules to use in the back end. See +help=optmodules for more info."));
 
