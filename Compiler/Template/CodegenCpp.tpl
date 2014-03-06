@@ -437,6 +437,7 @@ template simulationExtensionCppFile(SimCode simCode)
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
+  let classname = lastIdentOfPath(modelInfo.name)
   let initialStateSetJac = (stateSets |> set hasindex i1 fromindex 0 => (match set
        case set as SES_STATESET(__) then
             'initialAnalyticStateSetJac<%set.index%>Jacobian();') ;separator="\n\n")
@@ -727,7 +728,7 @@ let moLib =  makefileParams.compileDir
 let home = makefileParams.omhome
 <<
 #!/bin/sh
-exec ./OMCpp<%fileNamePrefix%> -s <%start%> -e <%end%> -f <%stepsize%> -v <%intervals%> -y <%tol%> -i <%solver%> -r <%simulationLibDir(simulationCodeTarget(),simCode)%> -m <%moLib%> -R <%simulationResults(getRunningTestsuite(),simCode)%> $*
+exec ./OMCpp<%fileNamePrefix%>Main -s <%start%> -e <%end%> -f <%stepsize%> -v <%intervals%> -y <%tol%> -i <%solver%> -r <%simulationLibDir(simulationCodeTarget(),simCode)%> -m <%moLib%> -R <%simulationResults(getRunningTestsuite(),simCode)%> $*
 >>
 end match)
 case  "win32"
