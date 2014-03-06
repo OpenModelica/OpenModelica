@@ -1478,6 +1478,17 @@ algorithm
       then
         res_str;
 
+    case (DAE.RECORD(path=fcn, exps=args,comp=nodes,ty=_),level)
+      equation
+        gen_str = genStringNTime("   |", level);
+        fs = Absyn.pathString(fcn);
+        new_level1 = level + 1;
+        argnodes = List.map1(args, dumpExpStr, new_level1);
+        argnodes_1 = stringAppendList(argnodes);
+        res_str = stringAppendList({gen_str,"RECORD ",fs,"\n",argnodes_1,""});
+      then
+        res_str;
+
     case (_,level)
       equation
         gen_str = genStringNTime("   |", level);
