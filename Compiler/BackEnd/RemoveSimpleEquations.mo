@@ -121,10 +121,10 @@ end SimpleContainer;
 protected type AccTuple = tuple<BackendDAE.Variables, BackendDAE.Shared, list<BackendDAE.Equation>, list<SimpleContainer>, Integer, array<list<Integer>>, Boolean>;
 
 protected type VarSetAttributes =
-  tuple<Boolean, tuple<Integer, list<tuple<Option<DAE.Exp>, DAE.ComponentRef>>>, list<tuple<DAE.Exp, DAE.ComponentRef>>, tuple<Option<DAE.Exp>, Option<DAE.Exp>>>
-  "fixed, list<startvalue, origin, cr>, nominal, (min, max)";
+  tuple<Boolean, tuple<Integer, list<tuple<Option<DAE.Exp>, DAE.ComponentRef>>>, Option<DAE.Exp>, Integer, tuple<Option<DAE.Exp>, Option<DAE.Exp>>>
+  "fixed, list<startvalue, origin, cr>, nominal, nNominals, min, max";
 
-protected constant VarSetAttributes EMPTYVARSETATTRIBUTES = (false, (-1, {}), {}, (NONE(), NONE()));
+protected constant VarSetAttributes EMPTYVARSETATTRIBUTES = (false, (-1, {}), NONE(), 0, (NONE(), NONE()));
 
 /*
  * fastAcausal
@@ -2599,12 +2599,12 @@ protected function addVarSetAttributes "author: Frenkel TUD 2012-12"
   output VarSetAttributes oAttributes "fixed, list<startvalue, origin, cr>, nominal, min, max";
 protected
   Boolean fixed, fixedset;
-  Option<DAE.Exp> start, origin;
-  list<tuple<DAE.Exp, DAE.ComponentRef>> nominalset;
+  Option<DAE.Exp> start, origin, nominalset;
   tuple<Option<DAE.Exp>, Option<DAE.Exp>> minmaxset;
+  Integer nNominal;
   tuple<Integer, list<tuple<Option<DAE.Exp>, DAE.ComponentRef>>> startvalues;
 algorithm
-  (fixedset, startvalues, nominalset, minmaxset) := iAttributes;
+  (fixedset, startvalues, nominalset, nNominal, minmaxset) := iAttributes;
   // get attributes
   // fixed
   fixed := BackendVariable.varFixed(inVar);
@@ -2613,10 +2613,10 @@ algorithm
   origin := BackendVariable.varStartOrigin(inVar);
   (fixedset, startvalues) := addStartValue(fixed, fixedset, BackendVariable.varCref(inVar), start, origin, negate, mark, simpleeqnsarr, startvalues);
   // nominal
-  (nominalset) := addNominalValue(inVar, nominalset);
+  (nominalset, nNominal) := addNominalValue(inVar, negate, nominalset, nNominal);
   // minmax
   minmaxset := addMinMaxAttribute(inVar, negate, mark, simpleeqnsarr, minmaxset);
-  oAttributes := (fixedset, startvalues, nominalset, minmaxset);
+  oAttributes := (fixedset, startvalues, nominalset, nNominal, minmaxset);
 end addVarSetAttributes;
 
 protected function addStartValue "author: Frenkel TUD 2012-12"
@@ -2680,21 +2680,30 @@ end addStartValue;
 
 protected function addNominalValue "author: Frenkel TUD 2012-12"
   input BackendDAE.Var inVar;
-  input list<tuple<DAE.Exp, DAE.ComponentRef>> iNominal;
-  output list<tuple<DAE.Exp, DAE.ComponentRef>> oNominal;
+  input Boolean negate;
+  input Option<DAE.Exp> iNominal;
+  input Integer iNNominals;
+  output Option<DAE.Exp> oNominal;
+  output Integer oNNominals;
 algorithm
-  (oNominal) := matchcontinue(inVar, iNominal)
+  (oNominal, oNNominals) := matchcontinue(inVar, negate, iNominal, iNNominals)
     local
       DAE.Exp nominal, nominalset;
-      DAE.ComponentRef cr;
-
-    case(_, _)
+      
+    case(_, _, SOME(nominalset), _)
       equation
         nominal = BackendVariable.varNominalValue(inVar);
-        cr = BackendVariable.varCref(inVar);
+        nominal = negateExpression(negate, nominal, nominal, " nominal_1 ");
+        nominalset = Expression.expAdd(nominal, nominalset);
       then
-        ((nominal, cr)::iNominal);
-    else then (iNominal);
+        (SOME(nominalset), iNNominals+1);
+    case(_, _, NONE(), _)
+      equation
+        nominal = BackendVariable.varNominalValue(inVar);
+        nominal = negateExpression(negate, nominal, nominal, " nominal_2 ");
+      then
+        (SOME(nominal), 1);
+    else then (iNominal, iNNominals);
   end matchcontinue;
 end addNominalValue;
 
@@ -2881,18 +2890,19 @@ algorithm
   oVars := matchcontinue(iAttributes, inVar, i, iVars, ishared)
     local
       Boolean fixedset, isdiscrete;
-      list<tuple<DAE.Exp, DAE.ComponentRef>> nominalset;
+      Option<DAE.Exp> nominalset;
       tuple<Option<DAE.Exp>, Option<DAE.Exp>> minmaxset;
+      Integer nNominal;
       tuple<Integer, list<tuple<Option<DAE.Exp>, DAE.ComponentRef>>> startvalues;
       BackendDAE.Var v;
       BackendDAE.Variables vars;
-    case((fixedset, startvalues, nominalset, minmaxset), _, _, _, _)
+    case((fixedset, startvalues, nominalset, nNominal, minmaxset), _, _, _, _)
       equation
         isdiscrete = BackendVariable.isVarDiscrete(inVar);
         // start and fixed
         v = Debug.bcallret4(not isdiscrete, mergeStartFixedAttributes, inVar, fixedset, startvalues, ishared, inVar);
         // nominal
-        v = mergeNominalAttribute(nominalset, v);
+        v = mergeNominalAttribute(nominalset, nNominal, v);
         // min max
         v = BackendVariable.setVarMinMax(v, minmaxset);
         // update vars
@@ -2942,7 +2952,7 @@ algorithm
       v = BackendVariable.setVarFixed(inVar, true);
       // get all nonzero values
       zerofreevalues = List.fold(values, getZeroFreeValues, {});
-    then selectFreeValue1(zerofreevalues, {}, "fixed Alias set with several free start values\n", "start", BackendVariable.setVarStartValue, v);
+    then selectFreeValue1(zerofreevalues, {}, "fixed Alias set with several free start values\n", v);
     
     // fixed false only one start value -> nothing changed
     case (_, false, (_, {(start, _)}), _)
@@ -3097,7 +3107,7 @@ protected function selectFreeValue "author: Frenkel TUD 2012-12"
 algorithm
   outVar := match(iZeroFreeValues, inVar)
     case ({}, _) then inVar;
-    case (_, _) then selectFreeValue1(iZeroFreeValues, {}, "Alias set with several free start values\n", "start", BackendVariable.setVarStartValue, inVar);
+    case (_, _) then selectFreeValue1(iZeroFreeValues, {}, "Alias set with several free start values\n", inVar);
   end match;
 end selectFreeValue;
 
@@ -3137,17 +3147,10 @@ protected function selectFreeValue1 "author: Frenkel TUD 2012-12
   input list<tuple<DAE.Exp, DAE.ComponentRef>> iZeroFreeValues;
   input list<tuple<DAE.Exp, DAE.ComponentRef, Integer>> iFavorit;
   input String iStr;
-  input String iAttributeName;
-  input FuncSetAttribute inFunc;
   input BackendDAE.Var inVar;
   output BackendDAE.Var outVar;
-  partial function FuncSetAttribute
-    input BackendDAE.Var iVar;
-    input DAE.Exp iExp;
-    output BackendDAE.Var oVar;
-end FuncSetAttribute;
 algorithm
-  outVar := matchcontinue(iZeroFreeValues, iFavorit, iStr, iAttributeName, inFunc, inVar)
+  outVar := matchcontinue(iZeroFreeValues, iFavorit, iStr, inVar)
     local
       DAE.Exp e, es;
       DAE.ComponentRef cr, crs;
@@ -3158,38 +3161,38 @@ algorithm
       list<tuple<DAE.Exp, DAE.ComponentRef, Integer>> rest;
       String s;
     
-    case ({}, {}, _, _, _, _) then inVar;
+    case ({}, {}, _, _) then inVar;
     
     // end of list analyse what we got
-    case ({}, rest, _, _, _, _) equation
+    case ({}, rest, _, _) equation
       ((e, cr, i)) = selectNonZeroExpression(rest);
-      s = iStr +& "=> select value from " +&  ComponentReference.printComponentRefStr(cr) +&  "(" +& iAttributeName +& " = " +& ExpressionDump.printExpStr(e) +& ")\n" +& 
+      s = iStr +& "=> select value from " +&  ComponentReference.printComponentRefStr(cr) +&  "(start = " +& ExpressionDump.printExpStr(e) +& ")\n" +& 
           "   because its component reference (or its binding component reference) is closer to the top level scope with depth: " +& intString(i) +& ".\n" +&
           "   If we have equal component reference depth for several components choose the one with non zero binding.";
       Error.addMessage(Error.COMPILER_WARNING, {s});
-      v = inFunc(inVar, e);
+      v = BackendVariable.setVarStartValue(inVar, e);
     then v;
     
     // none, push it in
-    case ((e, cr)::zerofreevalues, {}, _, _, _, _) equation
-      s = iStr +& " * candidate: " +& ComponentReference.printComponentRefStr(cr) +& "(" +& iAttributeName +& " = " +& ExpressionDump.printExpStr(e) +& ")\n";
+    case ((e, cr)::zerofreevalues, {}, _, _) equation
+      s = iStr +& " * candidate: " +& ComponentReference.printComponentRefStr(cr) +& "(start = " +& ExpressionDump.printExpStr(e) +& ")\n";
       i = selectMinDepth(ComponentReference.crefDepth(cr), e);
-    then selectFreeValue1(zerofreevalues, {(e, cr, i)}, s, iAttributeName, inFunc, inVar);
+    then selectFreeValue1(zerofreevalues, {(e, cr, i)}, s, inVar);
     
     // equal, put it in
-    case ((e, cr)::zerofreevalues, (es, crs, is)::rest, _, _, _, _) equation
-      s = iStr +& " * candidate: " +& ComponentReference.printComponentRefStr(cr) +& "(" +& iAttributeName +& " = " +& ExpressionDump.printExpStr(e) +& ")\n";
+    case ((e, cr)::zerofreevalues, (es, crs, is)::rest, _, _) equation
+      s = iStr +& " * candidate: " +& ComponentReference.printComponentRefStr(cr) +& "(start = " +& ExpressionDump.printExpStr(e) +& ")\n";
       i = selectMinDepth(ComponentReference.crefDepth(cr), e);
       true = intEq(i, is);
       favorit = (e, cr, i)::(es, crs, is)::rest;
-    then selectFreeValue1(zerofreevalues, favorit, s, iAttributeName, inFunc, inVar);
+    then selectFreeValue1(zerofreevalues, favorit, s, inVar);
     
     // less than, remove all from list, return just this one
-    case ((e, cr)::zerofreevalues, (es, crs, is)::rest, _, _, _, _) equation
-      s = iStr +& " * candidate: " +& ComponentReference.printComponentRefStr(cr) +& "(" +& iAttributeName +& " = " +& ExpressionDump.printExpStr(e) +& ")\n";
+    case ((e, cr)::zerofreevalues, (es, crs, is)::rest, _, _) equation
+      s = iStr +& " * candidate: " +& ComponentReference.printComponentRefStr(cr) +& "(start = " +& ExpressionDump.printExpStr(e) +& ")\n";
       i = selectMinDepth(ComponentReference.crefDepth(cr), e);
       favorit = Util.if_(intLt(i, is), {(e, cr, i)}, iFavorit);
-    then selectFreeValue1(zerofreevalues, favorit, s, iAttributeName, inFunc, inVar);
+    then selectFreeValue1(zerofreevalues, favorit, s, inVar);
   end matchcontinue;
 end selectFreeValue1;
 
@@ -3218,29 +3221,28 @@ algorithm
 end selectMinDepth;
 
 protected function mergeNominalAttribute "author: Frenkel TUD 2012-12"
-  input list<tuple<DAE.Exp, DAE.ComponentRef>> nominalList;
+  input Option<DAE.Exp> nominal;
+  input Integer n;
   input BackendDAE.Var inVar;
   output BackendDAE.Var outVar;
 algorithm
-  outVar := matchcontinue (nominalList, inVar)
+  outVar := match (nominal, n, inVar)
     local
+      Real r;
       DAE.Exp e;
-      list<DAE.Exp> allExp;
+      String str;
+      DAE.ComponentRef varName;
       
       
-    case ({}, _) then inVar;
-
-    //check if all expressions are equal take just one
-    case (_, _) 
-      equation
-        allExp = List.map(nominalList, Util.tuple21);
-        {e} = List.uniqueOnTrue(allExp, Expression.expEqual);
-      then BackendVariable.setVarNominalValue(inVar, e);
-      
-    case (_, _) 
-    then selectFreeValue1(nominalList, {}, "Alias set with different nominal values\n", "nominal", BackendVariable.setVarNominalValue, inVar);
-
-  end matchcontinue;
+    case (NONE(), _, _) then inVar;
+    case (SOME(e), _, BackendDAE.VAR(varName=varName)) equation
+      r = intReal(n);
+      e = Expression.expDiv(e, DAE.RCONST(r)); // Real is legal because only Reals have nominal attribute
+      (e, _) = ExpressionSimplify.simplify(e);
+      str = "Alias set with different nominal values\n=> select value for " +& ComponentReference.printComponentRefStr(varName) +& "(nominal = " +& ExpressionDump.printExpStr(e) +& ")";
+      Error.addMessage(Error.COMPILER_WARNING, {str});
+    then BackendVariable.setVarNominalValue(inVar, e);
+  end match;
 end mergeNominalAttribute;
 
 /*
