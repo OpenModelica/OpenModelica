@@ -374,7 +374,7 @@ constant DebugFlag HPCOM_DUMP = DEBUG_FLAG(103, "hpcomDump", false,
 constant DebugFlag RESOLVE_LOOPS = DEBUG_FLAG(104, "resolveLoops", false,
   Util.gettext("Activates the resolveLoops module."));
 constant DebugFlag DISABLE_WINDOWS_PATH_CHECK_WARNING = DEBUG_FLAG(105, "disableWindowsPathCheckWarning", false,
-  Util.gettext("Disables warnings on Windows if OPENMODELICAHOME/MinGW is missing"));
+  Util.gettext("Disables warnings on Windows if OPENMODELICAHOME/MinGW is missing."));
 constant DebugFlag DISABLE_RECORD_CONSTRUCTOR_OUTPUT = DEBUG_FLAG(106, "disableRecordConstructorOutput", false, 
   Util.gettext("Disables output of record constructors in the flat code."));
 constant DebugFlag DUMP_TRANSFORMED_MODELICA_MODEL = DEBUG_FLAG(107, "dumpTransformedModelica", false,
