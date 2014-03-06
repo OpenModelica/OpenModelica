@@ -362,25 +362,25 @@ constant DebugFlag TEARING_DUMPVERBOSE = DEBUG_FLAG(97, "tearingdumpV", false,
 constant DebugFlag DISABLE_SINGLE_FLOW_EQ = DEBUG_FLAG(98, "disableSingleFlowEq", false,
   Util.gettext("Disables the generation of single flow equations."));
 constant DebugFlag PARTLINTORNSYSTEM = DEBUG_FLAG(99, "partlintornsystem", false,
-  Util.gettext("disassembles linear torn systems to various singleEquations and a reduced tornSystem"));
+  Util.gettext("Disassembles linear torn systems to various singleEquations and a reduced tornSystem."));
 constant DebugFlag DUMP_DISCRETEVARS_INFO = DEBUG_FLAG(100, "discreteinfo", false,
   Util.gettext("Enables dumping of discrete variables. Extends +d=backenddaeinfo."));
 constant DebugFlag ADDITIONAL_GRAPHVIZ_DUMP = DEBUG_FLAG(101, "graphvizDump", false,
-  Util.gettext("activates additional graphviz dumps (as *.dot files). It can be used in addition to one of the following flags: {dumpdaelow|dumpinitialsystems|dumpindxdae}."));
+  Util.gettext("Activates additional graphviz dumps (as *.dot files). It can be used in addition to one of the following flags: {dumpdaelow|dumpinitialsystems|dumpindxdae}."));
 constant DebugFlag INFO_XML_OPERATIONS = DEBUG_FLAG(102, "infoXmlOperations", false,
   Util.gettext("Enables output of the operations in the _info.xml file when translating models."));
 constant DebugFlag HPCOM_DUMP = DEBUG_FLAG(103, "hpcomDump", false,
-  Util.gettext("dumps additional information on the parallel execution with hpcom"));
+  Util.gettext("Dumps additional information on the parallel execution with hpcom."));
 constant DebugFlag RESOLVE_LOOPS = DEBUG_FLAG(104, "resolveLoops", false,
-  Util.gettext("activates the resolveLoops module"));
+  Util.gettext("Activates the resolveLoops module."));
 constant DebugFlag DISABLE_WINDOWS_PATH_CHECK_WARNING = DEBUG_FLAG(105, "disableWindowsPathCheckWarning", false,
   Util.gettext("Disables warnings on Windows if OPENMODELICAHOME/MinGW is missing"));
 constant DebugFlag DISABLE_RECORD_CONSTRUCTOR_OUTPUT = DEBUG_FLAG(106, "disableRecordConstructorOutput", false, 
   Util.gettext("Disables output of record constructors in the flat code."));
 constant DebugFlag DUMP_TRANSFORMED_MODELICA_MODEL = DEBUG_FLAG(107, "dumpTransformedModelica", false,
-  Util.gettext("dumps the back-end DAE to a Modelica-like model after all symbolic transformations are applied"));
+  Util.gettext("Dumps the back-end DAE to a Modelica-like model after all symbolic transformations are applied."));
 constant DebugFlag EVALUATE_CONST_FUNCTIONS = DEBUG_FLAG(108, "evalConstFuncs", false,
-  Util.gettext("evaluates functions complete and partially and checks for constant output"));
+  Util.gettext("Evaluates functions complete and partially and checks for constant output."));
   
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
