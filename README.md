@@ -4,7 +4,8 @@ This projects provides syntax highlighting definitions of the [Modelica language
 
 ## Usage
 
-Copy or link the file `modelica-listings.cfg` into your LaTeX project and include it in your main project file.
+Copy or link the file `modelica-listings.cfg` into your LaTeX project and
+include it in your main project file.
 
 E.g.:
 
@@ -27,4 +28,4 @@ version 2005/12/01 or later.
 
 See [list of contributors](../../graphs/contributors).
 
-Contributions in form of [reported issues](../../issues) or [pull request](../../pulls) are always welcome.
+[Issues](../../issues) or [pull request](../../pulls) are always welcome.
