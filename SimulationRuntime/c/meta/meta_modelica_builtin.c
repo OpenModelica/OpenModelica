@@ -473,6 +473,19 @@ modelica_metatype boxptr_listReverse(threadData_t *threadData,modelica_metatype 
   return res;
 }
 
+modelica_metatype boxptr_listReverseInPlace(threadData_t *threadData,modelica_metatype lst)
+{
+  modelica_metatype prev = mmc_mk_nil();
+  while (!MMC_NILTEST(lst))
+  {
+    modelica_metatype oldcdr = MMC_CDR(lst);
+    MMC_CDR(lst) = prev;
+    prev = lst;
+    lst = oldcdr;
+  }
+  return prev;
+}
+
 modelica_metatype boxptr_listAppend(threadData_t *threadData,modelica_metatype lst1,modelica_metatype lst2)
 {
   int length = 0, i = 0;

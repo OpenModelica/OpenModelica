@@ -976,5 +976,11 @@ function stringGetNoBoundsChecking "O(1)"
 external "builtin";
 end stringGetNoBoundsChecking;
 
+function listReverseInPlace<A> "O(n). A destructive listReverse. May cause segmentation faults if the list contains *any* non-NIL element that was allocated in a constant data segment. Will cause all other points to the head or within this list to now point to another list. Do not use unless you are really certain the compiler cannot optimise any part of the list into a constant data segment."
+  input list<A> inList;
+  output list<A> outList;
+external "builtin";
+end listReverseInPlace;
+
 end Dangerous;
 end MetaModelica;

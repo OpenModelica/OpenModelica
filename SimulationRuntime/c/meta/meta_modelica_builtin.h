@@ -97,6 +97,7 @@ extern modelica_metatype boxptr_stringHashSdmb(threadData_t*,modelica_metatype s
 
 /* List Operations */
 #define listReverse(X) boxptr_listReverse(NULL,X)
+#define listReverseInPlace(X) boxptr_listReverseInPlace(NULL,X)
 #define listMember(X,Y) mmc_unbox_integer(boxptr_listMember(NULL,X,Y))
 #define listAppend(X,Y) boxptr_listAppend(NULL,X,Y)
 extern modelica_integer listLength(modelica_metatype);
@@ -113,6 +114,7 @@ extern modelica_metatype boxptr_listAppend(threadData_t*,modelica_metatype,model
 extern modelica_metatype boxptr_listFirst(threadData_t*,modelica_metatype);
 extern modelica_metatype boxptr_listRest(threadData_t*,modelica_metatype);
 extern modelica_metatype boxptr_listReverse(threadData_t*,modelica_metatype);
+extern modelica_metatype boxptr_listReverseInPlace(threadData_t*,modelica_metatype);
 extern modelica_metatype boxptr_listMember(threadData_t*,modelica_metatype, modelica_metatype);
 
 /* Option Operations */
