@@ -482,7 +482,7 @@ static int local_jac_struct(IPOPT_DATA_ *iData, int * nng, int * nH)
   for(i = 0; i <iData->nv; ++i)
     for(j = 0; j < i+1; ++j)
       if(Hg[i][j])
-      ++nnH;
+        ++nnH;
 
   for(ii = 0; ii < iData->nx; ii++){
     if(J[ii][ii] == 0)
@@ -581,13 +581,15 @@ static int local_jac_struct_print(IPOPT_DATA_ *iData)
   Hg = iData->Hg;
   dF = iData->gradFs;
 
-  printf("\nJacabian Structure");
+  printf("\nJacabian Structure %i x %i",nJ,iData->nv);
   printf("\n========================================================");
   for(ii = 0; ii < nJ; ++ii){
     printf("\n");
     for(j =0;j<iData->nv;++j)
-      printf("%i \t",J[ii][j]);
-    printf("\n");
+      if(J[ii][j])
+        printf("*\t");
+      else
+        printf("0\t");
   }
   printf("\n========================================================");
   printf("\nGradient Structure");
@@ -595,18 +597,23 @@ static int local_jac_struct_print(IPOPT_DATA_ *iData)
   for(ii = 0; ii < 2; ++ii){
     printf("\n");
     for(j =0;j<iData->nv;++j)
-      printf("%i \t",dF[ii][j]);
-    printf("\n");
+      if(dF[ii][j])
+        printf("*\t");
+      else
+        printf("0\t");
   }
   printf("\n========================================================");
-  printf("\nHessian Structure");
+  printf("\nHessian Structure %i x %i",iData->nv,iData->nv);
   printf("\n========================================================");
   for(ii = 0; ii < iData->nv; ++ii){
     printf("\n");
     for(j =0;j<iData->nv;++j)
-      printf("%i \t",Hg[ii][j]);
-    printf("\n");
+      if(Hg[ii][j])
+        printf("*\t");
+      else
+        printf("0\t");
   }
+  printf("\n========================================================");
 
 }
 
