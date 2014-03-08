@@ -103,7 +103,7 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
     res = set_optimizer_flags(iData,&nlp);
     if(res >= 0)
       res = IpoptSolve(nlp, iData->v, NULL, &obj, iData->mult_g, iData->mult_x_L, iData->mult_x_U, (void*)iData);
-    if(res < 0 && !ACTIVE_STREAM(LOG_IPOPT_FULL))
+    if(res < 0 && !ACTIVE_STREAM(LOG_IPOPT))
       warningStreamPrint(LOG_STDOUT, 0, "No optimal solution found!\nUse -lv=LOG_IPOPT for more information.");
 
     FreeIpoptProblem(nlp);
