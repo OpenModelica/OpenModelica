@@ -794,7 +794,7 @@ algorithm
     case {} then {};
     case (Absyn.ALGORITHMITEM(algorithm_ = alg, comment = comment, info = info) :: rest)
       equation
-        scomment = translateComment(comment);
+        (scomment,info) = translateCommentWithLineInfoChanges(comment,info);
         stmt = translateClassdefAlgorithmItem(alg,scomment,info);
         res = translateClassdefAlgorithmitems(rest);
       then
@@ -1220,7 +1220,7 @@ algorithm
         // PR. This adds the arraydimension that may be specified together with the type of the component.
         tot_dim = listAppend(d, ad);
         (repl_1, redecl) = translateRedeclarekeywords(repl);
-        cmt = translateComment(comment);
+        (cmt,info) = translateCommentWithLineInfoChanges(comment,info);
         sFin = SCode.boolFinal(finalPrefix);
         sRed = SCode.boolRedeclare(redecl);
         scc = translateConstrainClass(cc);
@@ -1414,7 +1414,7 @@ algorithm
     case ((Absyn.EQUATIONITEM(equation_ = e,comment = acom,info = info) :: es), _)
       equation
         // Debug.fprintln(Flags.TRANSLATE, "translating equation: " +& Dump.unparseEquationStr(0, e));
-        com = translateComment(acom);
+        (com,info) = translateCommentWithLineInfoChanges(acom,info);
         e_1 = translateEquation(e,com,info,inIsInitial);
         es_1 = translateEquations(es, inIsInitial);
       then
@@ -1450,7 +1450,7 @@ algorithm
     case ((Absyn.EQUATIONITEM(equation_ = e,comment = acom,info = info) :: es), _)
       equation
         // Debug.fprintln(Flags.TRANSLATE, "translating equation: " +& Dump.unparseEquationStr(0, e));
-        com = translateComment(acom);
+        (com,info) = translateCommentWithLineInfoChanges(acom,info);
         e_1 = translateEquation(e,com,info, inIsInitial);
         es_1 = translateEEquations(es, inIsInitial);
       then
@@ -1460,6 +1460,48 @@ algorithm
 
   end match;
 end translateEEquations;
+
+protected function translateCommentWithLineInfoChanges
+"turns an Absyn.Comment into an SCode.Comment"
+  input Option<Absyn.Comment> inComment;
+  input Absyn.Info inInfo;
+  output SCode.Comment outComment;
+  output Absyn.Info outInfo;
+algorithm
+  outComment := translateComment(inComment);
+  outInfo := getInfoAnnotationOrDefault(outComment, inInfo);
+end translateCommentWithLineInfoChanges;
+
+protected function getInfoAnnotationOrDefault "Replaces the file info if there is an annotation __OpenModelica_FileInfo=(\"fileName\",line). Should be improved."
+  input SCode.Comment comment;
+  input Absyn.Info default;
+  output Absyn.Info info;
+algorithm
+  info := match (comment,default)
+    local
+      list<SCode.SubMod> lst;
+    case (SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(modification=SCode.MOD(subModLst=lst)))),_)
+      then getInfoAnnotationOrDefault2(lst,default);
+    else default;
+  end match;
+end getInfoAnnotationOrDefault;
+
+protected function getInfoAnnotationOrDefault2
+  input list<SCode.SubMod> lst;
+  input Absyn.Info default;
+  output Absyn.Info info;
+algorithm
+  info := match (lst,default)
+    local
+      list<SCode.SubMod> rest;
+      String fileName;
+      Integer line;
+    case ({},_) then default;
+    case (SCode.NAMEMOD(ident="__OpenModelica_FileInfo",A=SCode.MOD(binding=SOME((Absyn.TUPLE({Absyn.STRING(fileName),Absyn.INTEGER(line)}),_))))::_,_)
+      then Absyn.INFO(fileName,false,line,0,line,0,Absyn.dummyTimeStamp);
+    case (_::rest,_) then getInfoAnnotationOrDefault2(rest,default);
+  end match;
+end getInfoAnnotationOrDefault2;
 
 protected function translateComment
 "turns an Absyn.Comment into an SCode.Comment"
