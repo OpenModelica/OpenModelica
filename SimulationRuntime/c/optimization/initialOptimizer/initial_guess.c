@@ -219,13 +219,11 @@ static int pre_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
       }
 
      smallIntSolverStep(iData, solverInfo, t);
-     data->simulationInfo.terminal = 1;
      sim_result.emit(&sim_result,data);
-     data->simulationInfo.terminal = 0;
-     rotateRingBuffer(iData->data->simulationData, 1, (void**) iData->data->localData);
      ++k; 
     }
   iData->t0 = iData->data->localData[0]->timeValue;
+
   /*ToDo*/
   for(i=0; i< iData->nx; ++i)
   {
@@ -236,8 +234,8 @@ static int pre_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
     iData->Vmin[i] = iData->Vmax[i] = data->simulationInfo.inputVars[j]*iData->scalVar[i];
     iData->v[i] = iData->Vmin[i];
   }
-
   optimizer_time_setings_update(iData);
+
   return 0;
 }
 
