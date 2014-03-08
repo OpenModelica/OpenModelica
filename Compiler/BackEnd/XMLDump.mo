@@ -2114,12 +2114,12 @@ algorithm
         dumpStrCloseTag(MathMLOperator);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (e as DAE.ASUB(exp = e1,sub = {e2}))
+    case (e as DAE.ASUB(exp = e1,sub = args))
       equation
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLSelector);
         dumpExp2(e1);
-        dumpExp2(e2);
+        dumpList(args,dumpExp2);
         dumpStrCloseTag(MathMLApply);
       then ();
     case (DAE.ENUM_LITERAL(name = fcn))
@@ -2150,7 +2150,7 @@ algorithm
       then ();
     case (_)
       equation
-        dumpComment("UNKNOWN EXPRESSION");
+        dumpComment("UNKNOWN EXPRESSION: " +& ExpressionDump.printExpStr(inExp));
       then ();
   end matchcontinue;
 end dumpExp2;
