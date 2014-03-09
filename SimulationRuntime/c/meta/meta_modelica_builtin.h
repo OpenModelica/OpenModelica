@@ -125,7 +125,15 @@ extern modelica_integer arrayLength(modelica_metatype);
 #define listArray(X) boxptr_listArray(NULL,X)
 #define arrayList(X) boxptr_arrayList(NULL,X)
 #define arrayCopy(X) boxptr_arrayCopy(NULL,X)
-#define arrayGet(X,Y) boxptr_arrayGet(threadData,X,mmc_mk_icon(Y))
+#define arrayGet(X,Y) inline_arrayGet(threadData,X,Y)
+static inline modelica_metatype inline_arrayGet(threadData_t *threadData,modelica_metatype arr,modelica_integer ix)
+{
+  if (ix < 1)
+    MMC_THROW_INTERNAL();
+  if((unsigned)ix-1 >= MMC_HDRSLOTS(MMC_GETHDR(arr)))
+    MMC_THROW_INTERNAL();
+  return MMC_STRUCTDATA(arr)[ix-1];
+}
 extern modelica_metatype arrayCreate(modelica_integer, modelica_metatype);
 #define arrayGetNoBoundsChecking(arr,ix) (MMC_STRUCTDATA((arr))[(ix)-1])
 #define arrayUpdate(X,Y,Z) boxptr_arrayUpdate(threadData,X,mmc_mk_icon(Y),Z)

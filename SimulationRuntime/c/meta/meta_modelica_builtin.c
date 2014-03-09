@@ -608,12 +608,7 @@ modelica_integer arrayLength(modelica_metatype arr)
 
 modelica_metatype boxptr_arrayGet(threadData_t *threadData,modelica_metatype arr, modelica_metatype i)
 {
-  int ix = mmc_unbox_integer(i);
-  if (ix < 1)
-    MMC_THROW_INTERNAL();
-  if((unsigned)ix-1 >= MMC_HDRSLOTS(MMC_GETHDR(arr)))
-    MMC_THROW_INTERNAL();
-  return MMC_STRUCTDATA(arr)[ix-1];
+  return inline_arrayGet(threadData,arr,mmc_unbox_integer(i));
 }
 
 modelica_metatype arrayCreate(modelica_integer nelts, modelica_metatype val)
