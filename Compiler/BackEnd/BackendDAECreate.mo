@@ -3350,10 +3350,10 @@ protected
   BackendDAE.EqSystems systs;
   BackendDAE.ExtraInfo ei;
 algorithm
-  BackendDAE.DAE(systs, (BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs,
+  BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs,
     cache, env, funcs, einfo as BackendDAE.EVENT_INFO(timeEvents=timeEvents, zeroCrossingLst=zero_crossings, relationsLst=relationsLst,
     sampleLst=sampleLst, whenClauseLst=whenclauses, relationsNumber=countRelations,
-    numberMathEvents=countMathFunctions), eoc, btp, symjacs, ei))) := inDAE;
+    numberMathEvents=countMathFunctions), eoc, btp, symjacs, ei)) := inDAE;
           
   vars := BackendVariable.listVar1(allvars);
   eqs_lst := BackendEquation.equationList(remeqns);
