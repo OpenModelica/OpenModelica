@@ -138,7 +138,7 @@ OMOperationDifferentiate::OMOperationDifferentiate(QStringList ops)
 
 QString OMOperationDifferentiate::toString()
 {
-  return "differentiate: d" + exp + "/d" + wrt + " = " + result;
+  return "differentiate: d/d" + wrt + " " + exp + " => " + result;
 }
 
 OMOperationResidual::OMOperationResidual(QStringList ops)
