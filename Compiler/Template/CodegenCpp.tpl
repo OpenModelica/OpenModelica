@@ -1282,9 +1282,9 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
         <%varDecls%>
      
 
-           <%algs%>
-           <%extraresidual%>
-           <%prebody%>
+         <%algs%>
+        <%extraresidual%>
+        <%prebody%>
            <%body%>
       
 
@@ -2551,44 +2551,70 @@ match modelInfo
 case modelInfo as MODELINFO(vars=SIMVARS(__))  then
 
    let () = System.tmpTickReset(0)
-   let &varDecls = buffer "" /*BUFD*/
+   let &varDecls1 = buffer "" /*BUFD*/
+   let &varDecls2 = buffer "" /*BUFD*/
+   let &varDecls3 = buffer "" /*BUFD*/
+   let &varDecls4 = buffer "" /*BUFD*/
+   let &varDecls5 = buffer "" /*BUFD*/
+   let &varDecls6 = buffer "" /*BUFD*/
+   let &varDecls7 = buffer "" /*BUFD*/
+   let &varDecls8 = buffer "" /*BUFD*/
+   let &varDecls9 = buffer "" /*BUFD*/
+   let init1  = initValst(varDecls1,vars.stateVars, simCode,contextOther)
+   let init2  = initValst(varDecls2,vars.derivativeVars, simCode,contextOther)
+   let init3  = initValst(varDecls3,vars.algVars, simCode,contextOther)
+   let init4  = initValst(varDecls4,vars.intAlgVars, simCode,contextOther)
+   let init5  =initValst(varDecls5,vars.boolAlgVars, simCode,contextOther)
+   let init6  =initValst(varDecls6,vars.aliasVars, simCode,contextOther)
+   let init7  =initValst(varDecls7,vars.intAliasVars, simCode,contextOther)
+   let init8  =initValst(varDecls8,vars.boolAliasVars, simCode,contextOther)
+   let init9  =initValst(varDecls9,vars.paramVars, simCode,contextOther)
    <<
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeStateVars()
    {
-       <%initValst(varDecls,vars.stateVars, simCode,contextOther)%>
+       <%varDecls1%>
+       <%init1%>
    }
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeDerVars()
    {
-       <%initValst(varDecls,vars.derivativeVars, simCode,contextOther)%>
+       <%varDecls2%>
+       <%init2%>
     }
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeAlgVars()
    {
-      <%initValst(varDecls,vars.algVars, simCode,contextOther)%>
+      <%varDecls3%>
+       <%init3%>
    }
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeIntAlgVars()
    {
-     <%initValst(varDecls,vars.intAlgVars, simCode,contextOther)%>
+     <%varDecls4%>
+       <%init4%>
    }
     void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeBoolAlgVars()
    {
-       <%initValst(varDecls,vars.boolAlgVars, simCode,contextOther)%>
+        <%varDecls5%>
+       <%init5%>
    }
     void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeAliasVars()
    {
-       <%initValst(varDecls,vars.aliasVars, simCode,contextOther)%>
+       <%varDecls6%>
+       <%init6%> 
    }
      void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeIntAliasVars()
     {
-      <%initValst(varDecls,vars.intAliasVars, simCode,contextOther)%>
+       <%varDecls7%>
+       <%init7%>
     }
     void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeBoolAliasVars()
     {
-      <%initValst(varDecls,vars.boolAliasVars, simCode,contextOther)%>
+      <%varDecls8%>
+       <%init8%>
     }
     
     void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeParameterVars()
     {
-      <%initValst(varDecls,vars.paramVars, simCode,contextOther)%>
+       <%varDecls9%>
+       <%init9%>
     }  
    >>
 end init2;
@@ -4991,7 +5017,7 @@ template contextArrayCref(ComponentRef cr, Context context)
 ::=
   match context
   case FUNCTION_CONTEXT(__) then arrayCrefStr(cr)
-  else arrayCrefCStr(cr)
+  else arrayCrefCStr(cr,context)
 end contextArrayCref;
 
 template arrayCrefStr(ComponentRef cr)
@@ -5098,8 +5124,13 @@ template dimension(Dimension d)
   else "INVALID_DIMENSION"
 end dimension;
 
-template arrayCrefCStr(ComponentRef cr)
-::= '_<%arrayCrefCStr2(cr)%>'
+template arrayCrefCStr(ComponentRef cr,Context context)
+::=
+match context
+case ALGLOOP_CONTEXT(__) 
+then << _system->_<%arrayCrefCStr2(cr)%> >>
+else
+'_<%arrayCrefCStr2(cr)%>'
 end arrayCrefCStr;
 
 template arrayCrefCStr2(ComponentRef cr)
@@ -7345,12 +7376,7 @@ case ecr as CREF(ty=T_ARRAY(ty=aty,dims=dims)) then
   else
     // For context simulation and other array variables must be boxed into a real_array
     // object since they are represented only in a double array.
-    //let tmpArr = tempDecl(expTypeArray(aty), &varDecls /*BUFD*/)
-    //let &preExp += '<%tmpArr%> = <%arrayCrefCStr(ecr.componentRef)%>;<%\n%>'
-    let tmpArr = '<%arrayCrefCStr(ecr.componentRef)%>'
-    //let dimsLenStr = listLength(dims)
-    //let type = expTypeShort(aty)
-    //let &preExp += '<%type%>_array_create(&<%tmpArr%>, ((modelica_<%type%>*)&(<%arrayCrefCStr(ecr.componentRef)%>)), <%dimsLenStr%>);<%\n%>'
+    let tmpArr = '<%arrayCrefCStr(ecr.componentRef,context)%>'
     tmpArr
 end daeExpCrefRhsArrayBox;
 
