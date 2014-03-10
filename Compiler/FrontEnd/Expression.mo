@@ -1565,6 +1565,29 @@ algorithm
   DAE.ARRAY(array=es) := e;
 end getArrayContents;
 
+public function getComplexContents "returns the list of expressions from a complex structure like array,record,call..."
+  input DAE.Exp e;
+  output list<DAE.Exp> es;
+algorithm
+  es := match(e)
+    local
+      list<DAE.Exp> expLst;
+    case(DAE.CALL(path=_,expLst=expLst,attr=_))
+      then
+        expLst;
+    case(DAE.RECORD(path=_,exps=expLst, comp=_,ty=_))
+      then
+        expLst;
+    case(DAE.ARRAY(ty=_,scalar=_,array=expLst))
+      then
+        expLst;
+    else
+    then
+      {};
+  end match;
+end getComplexContents;
+
+
 public function getArrayOrRangeContents "returns the list of expressions in the array"
   input DAE.Exp e;
   output list<DAE.Exp> es;
@@ -6574,7 +6597,11 @@ algorithm
     case (DAE.SIZE(exp=e,sz=NONE()),_) then isConstWork(e,true);
 
     case (DAE.SIZE(exp=e1,sz=SOME(e2)),_) then isConstWork(e1,isConstWork(e2,true));
-
+    
+    case (DAE.CALL(path=_,expLst=ae,attr=_),_) then isConstWorkList(ae,true);
+      
+    case (DAE.RECORD(path=_,exps=ae,ty=_),_) then isConstWorkList(ae,true);
+      
       /*TODO:Make this work for multiple iters, guard exps*/
     case (DAE.REDUCTION(expr=e1,iterators={DAE.REDUCTIONITER(exp=e2)}),_)
       then isConstWork(e1,isConstWork(e2,true));

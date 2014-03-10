@@ -48,6 +48,7 @@ public import ValuesUtil;
 public import HashTable;
 public import HashTable2;
 
+protected import HpcOmTaskGraph;
 protected import ConnectUtil;
 
 public function constStr "return the DAE.Const as a string. (VAR|PARAM|CONST)
@@ -1492,6 +1493,45 @@ algorithm
   end match;
 end isParamOrConstVarKind;
 
+public function getScalarsForComplexVar"gets the list<ComponentRef> for the scalar values of complex vars and multidimensional vars (at least real) .
+author: Waurich TUD 2014-03"
+  input DAE.Element inElem;
+  output list<DAE.ComponentRef> crefsOut;
+algorithm
+  crefsOut := match(inElem)
+    local
+      list<Integer> dim;
+      list<list<Integer>> ranges;
+      list<DAE.Subscript> dims;
+      list<list<DAE.Subscript>> subslst;
+      DAE.ComponentRef cref;
+      DAE.Type ty;
+      list<DAE.Var> varLst;
+      list<DAE.ComponentRef> crefs;
+      list<String> names;
+    case(DAE.VAR(componentRef = cref,ty=DAE.T_COMPLEX(varLst = varLst)))
+      equation
+        names = List.map(varLst,typeVarIdent);
+        crefs = List.map1(names,ComponentReference.appendStringCref,cref);
+      then
+        crefs;
+    case(DAE.VAR(componentRef=cref,ty=DAE.T_REAL(varLst=_, source=_), dims=dims ))
+      equation
+        dim = Expression.subscriptsInt(dims);
+        Debug.bcall1(intEq(listLength(dim),2),print,"failure in getScalarsForComplexVar:the array has multiple dimensions");
+        true = listLength(dim) == 1;
+        dim = List.intRange(List.first(dim));
+        ranges = List.map1(dim,List.fill,1);                
+        subslst = List.map(ranges,BackendDAEUtil.rangesToSubscript);
+        crefs = List.map1r(subslst,ComponentReference.subscriptCref,cref);
+      then
+        crefs;
+    else
+      then
+        {};      
+  end match;
+end getScalarsForComplexVar;
+
 public function isInnerVar "author: PA
 
   Succeeds if element is a variable with prefix inner.
@@ -1709,7 +1749,6 @@ algorithm
 end isFunctionRefVar;
 
 public function isAlgorithm "author: LS
-
   Succeeds if Element is an algorithm."
   input DAE.Element inElement;
 algorithm
@@ -1717,6 +1756,15 @@ algorithm
     case DAE.ALGORITHM(algorithm_ = _) then ();
   end match;
 end isAlgorithm;
+
+public function isComplexEquation "author: LS
+  Succeeds if Element is an complex equation."
+  input DAE.Element inElement;
+algorithm
+  _ := match (inElement)
+    case DAE.COMPLEX_EQUATION(lhs=_,rhs=_,source=_) then ();
+  end match;
+end isComplexEquation;
 
 public function isFunctionInlineFalse "author: PA
 
@@ -6247,6 +6295,13 @@ public function varName
 algorithm
   DAE.VAR(componentRef=DAE.CREF_IDENT(ident=name)) := var;
 end varName;
+
+public function typeVarIdent
+  input DAE.Var var;
+  output DAE.Ident name;
+algorithm
+  DAE.TYPES_VAR(name=name) := var;
+end typeVarIdent;
 
 public function bindingExp "
   help function to instBinding, returns the expression of a binding"

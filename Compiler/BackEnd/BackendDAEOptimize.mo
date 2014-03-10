@@ -9664,12 +9664,12 @@ algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,m=m,mT=mT,matching=matching,stateSets=stateSets) := eqSysIn;
   eqLst := BackendEquation.equationList(eqs);
   varLst := BackendVariable.varList(vars);
-  //BackendDump.dumpEquationArray(eqs, "before");
+  BackendDump.dumpEquationArray(eqs, "before");
   
   //traverse the eqSystem for function calls
   eqLst := List.map1(eqLst,evalFunctions_findFuncs,sharedIn);
   eqs := BackendEquation.listEquation(eqLst);
-  //BackendDump.dumpEquationArray(eqs, "after");
+  BackendDump.dumpEquationArray(eqs, "after");
   
   eqSysOut := BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching,stateSets);
   tplOut := tplIn;
@@ -9698,6 +9698,24 @@ algorithm
         eq = BackendDAE.EQUATION(exp1,exp2,source,diff);
       then
         eq;
+    case(BackendDAE.ARRAY_EQUATION(dimSize =_, left=exp1, right=exp2, source=source, differentiated=diff),_)
+      equation
+        print("this is an array equation. update evalFunctions_findFuncs");
+      then
+        eqIn;
+    case(BackendDAE.COMPLEX_EQUATION(size =_, left=exp1, right=exp2, source=source, differentiated=diff),_)
+      equation
+        print("this is a complex equation. update evalFunctions_findFuncs");
+        BackendDump.printEquation(eqIn);
+        b1 = Expression.containFunctioncall(exp1);
+        b2 = Expression.containFunctioncall(exp2);
+        true = b1 or b2;
+        funcs = BackendDAEUtil.getFunctions(sharedIn);
+        exp1 = Debug.bcallret2(b1,evaluateConstantFunction,exp1,funcs,exp1);
+        exp2 = Debug.bcallret2(b2,evaluateConstantFunction,exp2,funcs,exp2);
+        eq = BackendDAE.EQUATION(exp1,exp2,source,diff);
+      then
+        eqIn;
     else
       equation
       then
@@ -9713,61 +9731,71 @@ algorithm
   expOut := matchcontinue(expIn,funcs)
     local
       Boolean funcIsConst;
+      list<Boolean> bList;
       list<Integer> constIdcs;
       Absyn.Path path;
       BackendVarTransform.VariableReplacements repl;
       HashTable2.HashTable ht;
       DAE.Exp exp;
       DAE.Function func;
-      list<DAE.ComponentRef> inputCrefs, outputCrefs;
-      list<DAE.Element> elements, algs, cvars, allInputs, constInputs, allOutputs;
-      list<DAE.Exp> crefs, consts;
+      list<DAE.ComponentRef> inputCrefs, outputCrefs, allInputCrefs, constInputCrefs;
+      list<DAE.Element> elements, algs, cvars, allInputs, allOutputs, complex;
+      list<DAE.Exp> exps, complexExp, allInputExps, constInputExps;
+      list<list<DAE.Exp>> scalarExp;
       list<DAE.Statement> stmts;
-    case(DAE.CALL(path=path, expLst=crefs,attr=_),_)
+      list<list<DAE.ComponentRef>> scalarInputs, scalarOutputs;
+    case(DAE.CALL(path=path, expLst=exps,attr=_),_)
       equation
-        //print("BEFORE:\n");
-        //ExpressionDump.dumpExp(expIn);
+        print("BEFORE:\n");
+        ExpressionDump.dumpExp(expIn);
         
-        // get the elements of the function
+        // get the elements of the function and the crefs for them
         SOME(func) = DAEUtil.avlTreeGet(funcs,path);
         elements = DAEUtil.getFunctionElements(func);
         allInputs = List.filter(elements,DAEUtil.isInputVar);
         allOutputs = List.filter(elements,DAEUtil.isOutputVar);
         algs = List.filter(elements,DAEUtil.isAlgorithm);
         
-        // get constant function inputs
-        consts = List.filterOnTrue(crefs,Expression.isConst);
-        constIdcs = List.map1(consts,List.position,crefs);
-        constIdcs = List.map1(constIdcs,intAdd,1);        
-        constInputs = List.map1(constIdcs,List.getIndexFirst,allInputs);
-        inputCrefs = List.map(constInputs,DAEUtil.varCref);
-        outputCrefs = List.map(allOutputs,DAEUtil.varCref);    
-        /*
-        print("\nall const crefs\n");
-        print(ExpressionDump.printExpListStr(consts));
-        print("\nall constant inputs\n");
-        print(ComponentReference.printComponentRefListStr(inputCrefs));
+        inputCrefs = List.map(allInputs,DAEUtil.varCref);
+        scalarInputs = List.map(allInputs,DAEUtil.getScalarsForComplexVar);
+        allInputCrefs = listAppend(inputCrefs,List.flatten(scalarInputs));
+        outputCrefs = List.map(allOutputs,DAEUtil.varCref);   
+        scalarOutputs = List.map(allOutputs,DAEUtil.getScalarsForComplexVar);
+        //print("\nallInputCrefs\n"+&stringDelimitList(List.map(allInputCrefs,ComponentReference.printComponentRefStr),"\n")+&"\n");
+        
+          //complex = List.filter(elements,DAEUtil.isComplexEquation);        
+                
+        // get all input expresssions (complex and scalar)
+        scalarExp = List.map(exps,Expression.getComplexContents); 
+        allInputExps = listAppend(exps,List.flatten(scalarExp));
+             
+        // get the constant inputs
+        (constInputExps,constInputCrefs) = List.filterOnTrueSync(allInputExps,Expression.isConst,allInputCrefs);
+        
+        //print("\nallInputExps\n"+&stringDelimitList(List.map(allInputExps,ExpressionDump.printExpStr),"\n")+&"\n");
+        //print("\nconstInputExps\n"+&stringDelimitList(List.map(constInputExps,ExpressionDump.printExpStr),"\n")+&"\n");
+        //print("\naconstInputCrefs\n"+&stringDelimitList(List.map(constInputCrefs,ComponentReference.printComponentRefStr),"\n")+&"\n");
         print("\nall algs "+&intString(listLength(algs))+&"\n");
         print(DAEDump.dumpElementsStr(algs));
-        */
+        
         
         //build replacement rules
         repl = BackendVarTransform.emptyReplacements();
-        repl = BackendVarTransform.addReplacements(repl,inputCrefs,consts,NONE());
-        //BackendVarTransform.dumpReplacements(repl);
+        repl = BackendVarTransform.addReplacements(repl,constInputCrefs,constInputExps,NONE());
+        BackendVarTransform.dumpReplacements(repl);
         
         // go through all algorithms and replace the variables with constants if possible, update the ht with new constant variables
         (algs,repl) = List.mapFold(algs,evaluateFunctions_updateAlgorithms,repl);
-        //print("\nall algs after "+&intString(listLength(algs))+&"\n");
-        //print(DAEDump.dumpElementsStr(algs));
-        //BackendVarTransform.dumpReplacements(repl);
+        print("\nall algs after "+&intString(listLength(algs))+&"\n");
+        print(DAEDump.dumpElementsStr(algs));
+        BackendVarTransform.dumpReplacements(repl);
         
         //check if the outputs became constant and build new algs
-        consts = List.map1(outputCrefs,BackendVarTransform.getReplacementCRefFirst,repl);
+        complexExp = List.map1(outputCrefs,BackendVarTransform.getReplacementCRefFirst,repl);
         
-        exp = List.first(consts);
-        //print("AFTER:\n");
-        //ExpressionDump.dumpExp(exp);
+        exp = List.first(complexExp);
+        print("AFTER:\n");
+        ExpressionDump.dumpExp(exp);
       then
         exp;
     else
@@ -9812,19 +9840,38 @@ algorithm
       DAE.Exp exp1, exp2;
       DAE.Statement alg;
       DAE.Type typ;
+      list<DAE.Statement> stmts1, stmts2;
     case(alg as DAE.STMT_ASSIGN(type_=typ, exp1=exp1, exp=exp2, source=source),_)
       equation
+        print("the alg before: "+&DAEDump.ppStatementStr(alg)+&"\n");
         cref = Expression.expCref(exp1);
         (exp2,changed) = BackendVarTransform.replaceExp(exp2,replIn,NONE());
         (exp2,changed) = Debug.bcallret1_2(changed,ExpressionSimplify.simplify,exp2,exp2,changed);
         (exp2,_) = ExpressionSimplify.simplify(exp2);
         isConst = Expression.isConst(exp2);
         repl = Debug.bcallret4(isConst,BackendVarTransform.addReplacement,replIn,cref,exp2,NONE(),replIn);
-        //print("isConst "+&boolString(isConst)+&"\n");
+        print("isConst "+&boolString(isConst)+&"\n");
         alg = Util.if_(isConst,DAE.STMT_ASSIGN(typ,exp1,exp2,source),alg);
-        //print("the alg: "+&DAEDump.ppStatementStr(alg)+&"\n");
+        print("the alg after : "+&DAEDump.ppStatementStr(alg)+&"\n");
       then
         (alg,repl);
+    case(alg as DAE.STMT_ASSIGN_ARR(type_=typ, componentRef=cref, exp=exp1, source=source),_)
+      equation
+        print("STMT_ASSIGN_ARR");
+        print("the STMT_ASSIGN_ARR: "+&DAEDump.ppStatementStr(alg)+&"\n");
+      then
+        (alg,replIn);
+    case(alg as DAE.STMT_IF(exp=exp1, statementLst=stmts1, else_=DAE.ELSE(statementLst=stmts2), source=source),_)
+      equation
+        print("STMT_IF");
+        print("EXP:\n");
+        ExpressionDump.dumpExp(exp1);
+        (exp1,_) = ExpressionSimplify.simplify(exp1);
+        print("EXP _SIMPLIFIED:\n");
+        ExpressionDump.dumpExp(exp1);
+        print("the STMT_IF: "+&DAEDump.ppStatementStr(alg)+&"\n");
+      then
+        (alg,replIn);
     else
       equation
         print("evaluateFunctions_updateStatements failed!\n");
