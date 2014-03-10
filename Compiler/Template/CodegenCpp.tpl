@@ -2714,7 +2714,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   let modelname = lastIdentOfPath(modelInfo.name)
    let &varDecls = buffer ""
    let &preExp= buffer ""
-  let initalgvars = initAlgloopvars(preExp,varDecls,modelInfo,simCode)
+  
  
   match eq
   case SES_NONLINEAR(__) then
@@ -5127,7 +5127,7 @@ end dimension;
 template arrayCrefCStr(ComponentRef cr,Context context)
 ::=
 match context
-case ALGLOOP_CONTEXT(__) 
+case ALGLOOP_CONTEXT(genInitialisation = false) 
 then << _system->_<%arrayCrefCStr2(cr)%> >>
 else
 '_<%arrayCrefCStr2(cr)%>'
