@@ -48,7 +48,6 @@ public import ValuesUtil;
 public import HashTable;
 public import HashTable2;
 
-protected import HpcOmTaskGraph;
 protected import ConnectUtil;
 
 public function constStr "return the DAE.Const as a string. (VAR|PARAM|CONST)
