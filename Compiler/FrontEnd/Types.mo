@@ -4286,13 +4286,14 @@ algorithm
       list<DAE.Exp> elist_1,elist,inputs;
       DAE.Type at,t;
       Boolean sc, a;
-      Integer nmax;
+      Integer nmax, oi;
       DAE.Dimension dim1, dim2, dim11, dim22;
       DAE.Dimensions dims;
       Type ty1,ty2,t1,t2,t_1,t_2,ty0,ty;
       DAE.Exp begin_1,step_1,stop_1,begin,step,stop,e_1,e,exp;
       list<list<DAE.Exp>> ell_1,ell,elist_big;
       list<DAE.Type> tys_1,tys1,tys2;
+      String name;
       list<String> l;
       list<DAE.Var> v;
       Absyn.Path path,path1,path2;
@@ -4306,7 +4307,7 @@ algorithm
       list<DAE.Element> localDecls;
       DAE.TypeSource ts,ts1,ts2;
       list<DAE.Var> els1,els2;
-      Absyn.Path p1,p2;
+      Absyn.Path p1,p2,tp;
 
     // if we expect notTuple and we get Tuple do DAE.TSUB(e, 1)
     // we try subtype of the first tuple element with the other type!
@@ -4503,21 +4504,23 @@ algorithm
       then
         (DAE.TUPLE(elist_1),DAE.T_TUPLE(tys_1,ts2));
 
-    // Convert an integer literal to an enumeration
-    // This is widely used in Modelica.Electrical.Digital
-    /* Commented out for when someone complains...
+    // Implicit conversion from Integer literal to an enumeration
+    // This is not a valid Modelica conversion, but was widely used in the past,
+    // by, for instance, Modelica.Electrical.Digital.
+    // Enable with +intEnumConversion.
     case (exp as DAE.ICONST(oi),
-          DAE.T_INTEGER(varLst = _),
-          DAE.T_ENUMERATION(index=_, path=tp, names = l, source = ts2),
-          printFailtrace)
-      equation
-        // TODO! FIXME! check boundaries if the integer literal is not outside the enum range
+          DAE.T_INTEGER(source = _),
+          t2 as DAE.T_ENUMERATION(path = tp, names = l),
+          _)
+       equation
+        true = Config.intEnumConversion();
+        // It would be good to have the source location of exp here, so that we could pass it to typeConvertIntToEnumCheck.
+        true = typeConvertIntToEnumCheck(exp, t2); // Will warn or report error depending on whether oi is out of range.
         // select from enum list:
         name = listNth(l, oi-1); // listNth indexes from 0
         tp = Absyn.joinPaths(tp, Absyn.IDENT(name));
       then
         (DAE.ENUM_LITERAL(tp, oi),expected);
-    */
 
     // Implicit conversion from Integer to Real
     case (e,
@@ -7836,5 +7839,41 @@ algorithm
     else false;
   end match;
 end isEmptyOrNoRetcall;
+
+protected function typeConvertIntToEnumCheck "
+  Deal with the invalid conversions from Integer to enumeration.
+  If the Integer corresponds to the toInteger value of an enumeration constant,
+  just give a warning, otherwise report an error.
+  Returns false if an error was reported, otherwise true.
+"
+  input DAE.Exp exp;
+  input DAE.Type expected;
+  output Boolean conversionOK;
+algorithm
+  conversionOK := matchcontinue (exp, expected)
+    local
+      Integer oi;
+      Absyn.Path tp;
+      list<String> l;
+      String pathStr, intStr, enumConst;
+    case (DAE.ICONST(oi),
+          DAE.T_ENUMERATION(path = tp, names = l))
+      equation
+        true = (1 <= oi and oi <= listLength(l));
+        pathStr = Absyn.pathString(tp);
+        intStr = intString(oi);
+        enumConst = listNth(l, oi);
+        Error.addMessage(Error.INTEGER_ENUMERATION_CONVERSION_WARNING, {intStr, pathStr, enumConst});
+      then true;
+    case (DAE.ICONST(oi),
+          DAE.T_ENUMERATION(path = tp))
+      equation
+        pathStr = Absyn.pathString(tp);
+        intStr = intString(oi);
+        Error.addMessage(Error.INTEGER_ENUMERATION_OUT_OF_RANGE, {pathStr, intStr});
+      then false;
+  end matchcontinue;
+end typeConvertIntToEnumCheck;
+
 
 end Types;

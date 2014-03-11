@@ -865,8 +865,12 @@ constant ConfigFlag GENERATE_SYMBOLIC_JACOBIAN = CONFIG_FLAG(55, "generateSymbol
 constant ConfigFlag GENERATE_SYMBOLIC_LINEARIZATION = CONFIG_FLAG(56, "generateSymbolicLinearization",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Generates symbolic linearization matrixes A,B,C,D for linear model:\n\t\t\\dot x = Ax + Bu\n\t\ty = Cx +Du"));
-    
-  
+
+constant ConfigFlag INT_ENUM_CONVERSION = CONFIG_FLAG(57, "intEnumConversion",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Allow Integer to enumeration conversion."));
+
+
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
 // sorted by index (and thus have unique indices).
@@ -926,7 +930,8 @@ constant list<ConfigFlag> allConfigFlags = {
   REWRITE_RULES_FILE,
   REPLACE_HOMOTOPY,
   GENERATE_SYMBOLIC_JACOBIAN,
-  GENERATE_SYMBOLIC_LINEARIZATION
+  GENERATE_SYMBOLIC_LINEARIZATION,
+  INT_ENUM_CONVERSION
 };
 
 public function new

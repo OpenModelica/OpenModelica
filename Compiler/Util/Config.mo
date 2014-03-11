@@ -563,5 +563,11 @@ algorithm
   outScalarizeBindings := Flags.getConfigBool(Flags.SCALARIZE_BINDINGS);
 end scalarizeBindings;
 
-end Config;
+public function intEnumConversion
+  output Boolean outIntEnumConversion;
+algorithm
+  outIntEnumConversion := Flags.getConfigBool(Flags.INT_ENUM_CONVERSION);
+end intEnumConversion;
 
+
+end Config;

@@ -710,6 +710,10 @@ public constant Message NON_STANDARD_OPERATOR_CLASS_DIRECTORY = MESSAGE(539, TRA
   Util.gettext("classDirectory() is a non-standard operator that was replaced by Modelica.Utilities.Files.loadResource(uri) before it was added to the language specification."));
 public constant Message PACKAGE_DUPLICATE_CHILDREN = MESSAGE(540, TRANSLATION(), ERROR(),
   Util.gettext("The same class is defined in multiple files: %s."));
+public constant Message INTEGER_ENUMERATION_CONVERSION_WARNING = MESSAGE(541, TRANSLATION(), WARNING(),
+  Util.gettext("Integer (%s) to enumeration (%s) conversion is not valid Modelica, please use enumeration constant (%s) instead."));
+public constant Message INTEGER_ENUMERATION_OUT_OF_RANGE = MESSAGE(542, TRANSLATION(), ERROR(),
+  Util.gettext("The Integer to %s conversion failed, as the Integer value %s does not correspond to the toInteger value of any enumeration constant."));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));
