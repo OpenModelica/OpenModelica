@@ -849,6 +849,16 @@ static int importStartValues(DATA *data, const char *pInitFile, double initTime)
 
   infoStreamPrint(LOG_INIT, 0, "import start values\nfile: %s\ntime: %g", pInitFile, initTime);
 
+  char* resultFile = (char*)malloc((strlen(data->modelData.modelFilePrefix)+12) * sizeof(char));
+  sprintf(resultFile, "%s_res.mat", data->modelData.modelFilePrefix);
+  if(!strcmp(resultFile, pInitFile))
+  {
+    errorStreamPrint(LOG_INIT, 0, "It is not possible to import the current result file <%s> for the initialization.", pInitFile);
+    return 1;
+  }
+  free(resultFile);
+  resultFile = 0;
+  
   pError = omc_new_matlab4_reader(pInitFile, &reader);
   if(pError)
   {
@@ -981,7 +991,8 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
 
   /* import start values from extern mat-file */
   if(pInitFile && strcmp(pInitFile, "")) {
-    importStartValues(data, pInitFile, initTime);
+    if(importStartValues(data, pInitFile, initTime))
+      return 1;
   }
 
   /* set up all variables and parameters with their start-values */
