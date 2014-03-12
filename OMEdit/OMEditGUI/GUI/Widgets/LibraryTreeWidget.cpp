@@ -550,9 +550,13 @@ void LibraryTreeWidget::createActions()
   mpInstantiateModelAction->setStatusTip(Helper::instantiateModelTip);
   connect(mpInstantiateModelAction, SIGNAL(triggered()), SLOT(instantiateModel()));
   // check Model Action
-  mpCheckModelAction = new QAction(QIcon(":/Resources/icons/check.png"), Helper::checkModel, this);
+  mpCheckModelAction = new QAction(QIcon(":/Resources/icons/check.svg"), Helper::checkModel, this);
   mpCheckModelAction->setStatusTip(Helper::checkModelTip);
   connect(mpCheckModelAction, SIGNAL(triggered()), SLOT(checkModel()));
+  // check all Models Action
+  mpCheckAllModelsAction = new QAction(QIcon(":/Resources/icons/check-all.svg"), Helper::checkAllModels, this);
+  mpCheckAllModelsAction->setStatusTip(Helper::checkAllModelsTip);
+  connect(mpCheckAllModelsAction, SIGNAL(triggered()), SLOT(checkAllModels()));
   // simulate Action
   mpSimulateAction = new QAction(QIcon(":/Resources/icons/simulate.png"), Helper::simulate, this);
   mpSimulateAction->setStatusTip(Helper::simulateTip);
@@ -1319,6 +1323,7 @@ void LibraryTreeWidget::showContextMenu(QPoint point)
     menu.addSeparator();
     menu.addAction(mpInstantiateModelAction);
     menu.addAction(mpCheckModelAction);
+    menu.addAction(mpCheckAllModelsAction);
     menu.addAction(mpSimulateAction);
     menu.addAction(mpSimulationSetupAction);
     /* If item is OpenModelica or part of it or is search tree item then don't show the unload for it. */
@@ -1402,6 +1407,16 @@ void LibraryTreeWidget::checkModel()
   LibraryTreeNode *pLibraryTreeNode = dynamic_cast<LibraryTreeNode*>(selectedItemsList.at(0));
   if (pLibraryTreeNode)
     mpMainWindow->checkModel(pLibraryTreeNode);
+}
+
+void LibraryTreeWidget::checkAllModels()
+{
+  QList<QTreeWidgetItem*> selectedItemsList = selectedItems();
+  if (selectedItemsList.isEmpty())
+    return;
+  LibraryTreeNode *pLibraryTreeNode = dynamic_cast<LibraryTreeNode*>(selectedItemsList.at(0));
+  if (pLibraryTreeNode)
+    mpMainWindow->checkAllModels(pLibraryTreeNode);
 }
 
 void LibraryTreeWidget::unloadClass()

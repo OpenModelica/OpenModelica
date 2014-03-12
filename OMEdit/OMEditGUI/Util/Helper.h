@@ -129,6 +129,8 @@ public:
   static QString rename;
   static QString checkModel;
   static QString checkModelTip;
+  static QString checkAllModels;
+  static QString checkAllModelsTip;
   static QString instantiateModel;
   static QString instantiateModelTip;
   static QString exportFMU;

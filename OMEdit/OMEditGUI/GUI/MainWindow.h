@@ -122,6 +122,7 @@ public:
   QAction* getSimulationSetupAction();
   QAction* getInstantiateModelAction();
   QAction* getCheckModelAction();
+  QAction* getCheckAllModelsAction() {return mpCheckAllModelsAction;}
   QAction* getExportFMUAction();
   QAction* getExportXMLAction();
   QAction* getLineShapeAction();
@@ -148,6 +149,7 @@ public:
   void simulationSetup(LibraryTreeNode *pLibraryTreeNode);
   void instantiatesModel(LibraryTreeNode *pLibraryTreeNode);
   void checkModel(LibraryTreeNode *pLibraryTreeNode);
+  void checkAllModels(LibraryTreeNode *pLibraryTreeNode);
   void exportModelFMU(LibraryTreeNode *pLibraryTreeNode);
   void exportModelXML(LibraryTreeNode *pLibraryTreeNode);
   void exportModelToOMNotebook(LibraryTreeNode *pLibraryTreeNode);
@@ -215,6 +217,7 @@ private:
   // Simulation Menu
   QAction *mpInstantiateModelAction;
   QAction *mpCheckModelAction;
+  QAction *mpCheckAllModelsAction;
   QAction *mpSimulateModelAction;
   QAction *mpSimulationSetupAction;
   // FMI Menu
@@ -282,6 +285,7 @@ public slots:
   void zoomOut();
   void instantiatesModel();
   void checkModel();
+  void checkAllModels();
   void simulateModel();
   void openSimulationDialog();
   void openInteractiveSimulation();

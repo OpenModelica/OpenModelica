@@ -766,6 +766,39 @@ void MainWindow::checkModel(LibraryTreeNode *pLibraryTreeNode)
   mpStatusBar->clearMessage();
 }
 
+void MainWindow::checkAllModels(LibraryTreeNode *pLibraryTreeNode)
+{
+  /* if Modelica text is changed manually by user then validate it before saving. */
+  if (pLibraryTreeNode->getModelWidget())
+  {
+    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->getModelicaTextEdit()->validateModelicaText())
+      return;
+  }
+  // set the status message.
+  mpStatusBar->showMessage(QString(Helper::checkModel).append(" ").append(pLibraryTreeNode->getNameStructure()));
+  // show the progress bar
+  mpProgressBar->setRange(0, 0);
+  showProgressBar();
+  QString checkModelResult = mpOMCProxy->checkAllModelsRecursive(pLibraryTreeNode->getNameStructure());
+  if (checkModelResult.length())
+  {
+    QString windowTitle = QString(Helper::checkModel).append(" - ").append(pLibraryTreeNode->getName());
+    InformationDialog *pInformationDialog = new InformationDialog(windowTitle, checkModelResult, false, this);
+    pInformationDialog->show();
+  }
+  else
+  {
+    mpMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0,
+                                                         "Check of " + pLibraryTreeNode->getName() + " failed.",
+                                                         Helper::scriptingKind, Helper::notificationLevel, 0,
+                                                         mpMessagesWidget->getMessagesTreeWidget()));
+  }
+  // hide progress bar
+  hideProgressBar();
+  // clear the status bar message
+  mpStatusBar->clearMessage();
+}
+
 void MainWindow::exportModelFMU(LibraryTreeNode *pLibraryTreeNode)
 {
   /* if Modelica text is changed manually by user then validate it before saving. */
@@ -1217,6 +1250,23 @@ void MainWindow::checkModel()
     LibraryTreeNode *pLibraryTreeNode = pModelWidget->getLibraryTreeNode();
     if (pLibraryTreeNode)
       checkModel(pLibraryTreeNode);
+  }
+  else
+  {
+    mpMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+                                                    .arg(tr("checking")), Helper::scriptingKind, Helper::notificationLevel,
+                                                    0, mpMessagesWidget->getMessagesTreeWidget()));
+  }
+}
+
+void MainWindow::checkAllModels()
+{
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  if (pModelWidget)
+  {
+    LibraryTreeNode *pLibraryTreeNode = pModelWidget->getLibraryTreeNode();
+    if (pLibraryTreeNode)
+      checkAllModels(pLibraryTreeNode);
   }
   else
   {
@@ -1772,10 +1822,15 @@ void MainWindow::createActions()
   mpInstantiateModelAction->setEnabled(false);
   connect(mpInstantiateModelAction, SIGNAL(triggered()), SLOT(instantiatesModel()));
   // check model action
-  mpCheckModelAction = new QAction(QIcon(":/Resources/icons/check.png"), tr("Check Model"), this);
-  mpCheckModelAction->setStatusTip(tr("Check the modelica model"));
+  mpCheckModelAction = new QAction(QIcon(":/Resources/icons/check.svg"), Helper::checkModel, this);
+  mpCheckModelAction->setStatusTip(Helper::checkModelTip);
   mpCheckModelAction->setEnabled(false);
   connect(mpCheckModelAction, SIGNAL(triggered()), SLOT(checkModel()));
+  // check all models action
+  mpCheckAllModelsAction = new QAction(QIcon(":/Resources/icons/check-all.svg"), Helper::checkAllModels, this);
+  mpCheckAllModelsAction->setStatusTip(Helper::checkAllModelsTip);
+  mpCheckAllModelsAction->setEnabled(false);
+  connect(mpCheckAllModelsAction, SIGNAL(triggered()), SLOT(checkAllModels()));
   // simulate action
   mpSimulateModelAction = new QAction(QIcon(":/Resources/icons/simulate.png"), Helper::simulate, this);
   mpSimulateModelAction->setStatusTip(Helper::simulateTip);
@@ -2018,6 +2073,7 @@ void MainWindow::createMenus()
   // add actions to Simulation menu
   pSimulationMenu->addAction(mpInstantiateModelAction);
   pSimulationMenu->addAction(mpCheckModelAction);
+  pSimulationMenu->addAction(mpCheckAllModelsAction);
   pSimulationMenu->addAction(mpSimulateModelAction);
   pSimulationMenu->addAction(mpSimulationSetupAction);
   // add Simulation menu to menu bar
@@ -2166,6 +2222,7 @@ void MainWindow::createToolbars()
   // add actions to Simulation Toolbar
   mpSimulationToolBar->addAction(mpInstantiateModelAction);
   mpSimulationToolBar->addAction(mpCheckModelAction);
+  mpSimulationToolBar->addAction(mpCheckAllModelsAction);
   mpSimulationToolBar->addAction(mpSimulateModelAction);
   mpSimulationToolBar->addAction(mpSimulationSetupAction);
   // Model Swithcer Toolbar

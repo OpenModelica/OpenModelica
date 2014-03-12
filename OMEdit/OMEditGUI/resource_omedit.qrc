@@ -23,7 +23,8 @@
         <file>Resources/icons/tool.png</file>
         <file>Resources/icons/undo.png</file>
         <file>Resources/css/stylesheet.qss</file>
-        <file>Resources/icons/check.png</file>
+        <file>Resources/icons/check.svg</file>
+        <file>Resources/icons/check-all.svg</file>
         <file>Resources/icons/rename.png</file>
         <file>Resources/icons/zoomReset.png</file>
         <file>Resources/icons/zoomIn.png</file>

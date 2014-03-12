@@ -3030,6 +3030,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   getMainWindow()->getSimulationSetupAction()->setEnabled(enabled);
   getMainWindow()->getInstantiateModelAction()->setEnabled(enabled);
   getMainWindow()->getCheckModelAction()->setEnabled(enabled);
+  getMainWindow()->getCheckAllModelsAction()->setEnabled(enabled);
   getMainWindow()->getExportFMUAction()->setEnabled(enabled);
   getMainWindow()->getExportXMLAction()->setEnabled(enabled);
   getMainWindow()->getExportToOMNotebookAction()->setEnabled(enabled);

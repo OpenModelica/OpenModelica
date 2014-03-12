@@ -181,6 +181,7 @@ private:
   QAction *mpNewModelicaClassAction;
   QAction *mpInstantiateModelAction;
   QAction *mpCheckModelAction;
+  QAction *mpCheckAllModelsAction;
   QAction *mpSimulateAction;
   QAction *mpSimulationSetupAction;
   QAction *mpUnloadClassAction;
@@ -203,6 +204,7 @@ public slots:
   void simulationSetup();
   void instantiateModel();
   void checkModel();
+  void checkAllModels();
   void unloadClass();
   void refresh();
   void exportModelFMU();

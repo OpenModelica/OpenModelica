@@ -188,6 +188,7 @@ public:
   QStringList readSimulationResultVars(QString fileName);
   bool closeSimulationResultFile();
   QString checkModel(QString className);
+  QString checkAllModelsRecursive(QString className);
   bool isExperiment(QString className);
   QStringList getSimulationOptions(QString className, double defaultTolerance = 1e-4);
   bool translateModelFMU(QString className);

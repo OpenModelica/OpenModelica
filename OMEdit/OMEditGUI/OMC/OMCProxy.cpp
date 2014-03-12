@@ -2034,6 +2034,17 @@ QString OMCProxy::checkModel(QString className)
 }
 
 /*!
+  Checks all nested modelica classes. Checks model balance in terms of number of variables and equations.
+  \param className - the name of the class.
+  \return the model check result
+  */
+QString OMCProxy::checkAllModelsRecursive(QString className)
+{
+  sendCommand("checkAllModelsRecursive(" + className + ")", true, className);
+  return getResult();
+}
+
+/*!
   Instantiates the model.
   \param className - the name of the class.
   \return the instantiated model

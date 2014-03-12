@@ -123,6 +123,8 @@ QString Helper::information;
 QString Helper::rename;
 QString Helper::checkModel;
 QString Helper::checkModelTip;
+QString Helper::checkAllModels;
+QString Helper::checkAllModelsTip;
 QString Helper::instantiateModel;
 QString Helper::instantiateModelTip;
 QString Helper::exportFMU;
@@ -252,6 +254,8 @@ void Helper::initHelperVariables()
   Helper::rename = tr("rename");
   Helper::checkModel = tr("Check Model");
   Helper::checkModelTip = tr("Check the Modelica class");
+  Helper::checkAllModels = tr("Check All Models");
+  Helper::checkAllModelsTip = tr("Checks all nested modelica classes");
   Helper::instantiateModel = tr("Instantiate Model");
   Helper::instantiateModelTip = tr("Instantiate/Flatten the Modelica class");
   Helper::exportFMU = tr("Export FMU");
