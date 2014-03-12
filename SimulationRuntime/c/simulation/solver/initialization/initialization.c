@@ -843,13 +843,14 @@ static int importStartValues(DATA *data, const char *pInitFile, double initTime)
   double value;
   const char *pError = NULL;
   char* newVarname = NULL;
+  char* resultFile = NULL;
 
   MODEL_DATA *mData = &(data->modelData);
   long i;
 
   infoStreamPrint(LOG_INIT, 0, "import start values\nfile: %s\ntime: %g", pInitFile, initTime);
 
-  char* resultFile = (char*)malloc((strlen(data->modelData.modelFilePrefix)+12) * sizeof(char));
+  resultFile = (char*)malloc((strlen(data->modelData.modelFilePrefix)+12) * sizeof(char));
   sprintf(resultFile, "%s_res.mat", data->modelData.modelFilePrefix);
   if(!strcmp(resultFile, pInitFile))
   {
