@@ -236,46 +236,36 @@ void printAllVarsDebug(DATA *data, int ringSegment, int stream)
   MODEL_DATA      *mData = &(data->modelData);
   SIMULATION_INFO *sInfo = &(data->simulationInfo);
 
-  debugStreamPrint(stream, "Print values for buffer segment %d regarding point in time : %e", ringSegment, data->localData[ringSegment]->timeValue);
-  INDENT(stream);
+  debugStreamPrint(stream, 1, "Print values for buffer segment %d regarding point in time : %e", ringSegment, data->localData[ringSegment]->timeValue);
 
-  debugStreamPrint(stream, "states variables");
-  INDENT(stream);
+  debugStreamPrint(stream, 1, "states variables");
   for(i=0; i<mData->nStates; ++i)
-    debugStreamPrint(stream, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
-  RELEASE(stream);
+    debugStreamPrint(stream, 0, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
+  messageClose(stream);
 
-  debugStreamPrint(stream, "derivatives variables");
-  INDENT(stream);
+  debugStreamPrint(stream, 1, "derivatives variables");
   for(i=mData->nStates; i<2*mData->nStates; ++i)
-    debugStreamPrint(stream, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
-  RELEASE(stream);
+    debugStreamPrint(stream, 0, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
+  messageClose(stream);
 
-  debugStreamPrint(stream, "other real values");
-  INDENT(stream);
+  debugStreamPrint(stream, 1, "other real values");
   for(i=2*mData->nStates; i<mData->nVariablesReal; ++i)
-    debugStreamPrint(stream, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
-  RELEASE(stream);
+    debugStreamPrint(stream, 0, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
 
-  debugStreamPrint(stream, "integer variables");
-  INDENT(stream);
+  debugStreamPrint(stream, 1, "integer variables");
   for(i=0; i<mData->nVariablesInteger; ++i)
-    debugStreamPrint(stream, "%ld: %s = %ld (pre: %ld)", i+1, mData->integerVarsData[i].info.name, data->localData[ringSegment]->integerVars[i], sInfo->integerVarsPre[i]);
-  RELEASE(stream);
+    debugStreamPrint(stream, 0, "%ld: %s = %ld (pre: %ld)", i+1, mData->integerVarsData[i].info.name, data->localData[ringSegment]->integerVars[i], sInfo->integerVarsPre[i]);
 
-  debugStreamPrint(stream, "boolean variables");
-  INDENT(stream);
+  debugStreamPrint(stream, 1, "boolean variables");
   for(i=0; i<mData->nVariablesBoolean; ++i)
-    debugStreamPrint(stream, "%ld: %s = %s (pre: %s)", i+1, mData->booleanVarsData[i].info.name, data->localData[ringSegment]->booleanVars[i] ? "true" : "false", sInfo->booleanVarsPre[i] ? "true" : "false");
-  RELEASE(stream);
+    debugStreamPrint(stream, 0, "%ld: %s = %s (pre: %s)", i+1, mData->booleanVarsData[i].info.name, data->localData[ringSegment]->booleanVars[i] ? "true" : "false", sInfo->booleanVarsPre[i] ? "true" : "false");
 
-  debugStreamPrint(stream, "string variables");
-  INDENT(stream);
+  debugStreamPrint(stream, 1, "string variables");
   for(i=0; i<mData->nVariablesString; ++i)
-    debugStreamPrint(stream, "%ld: %s = %s (pre: %s)", i+1, mData->stringVarsData[i].info.name, data->localData[ringSegment]->stringVars[i], sInfo->stringVarsPre[i]);
-  RELEASE(stream);
-
-  RELEASE(stream);
+    debugStreamPrint(stream, 0, "%ld: %s = %s (pre: %s)", i+1, mData->stringVarsData[i].info.name, data->localData[ringSegment]->stringVars[i], sInfo->stringVarsPre[i]);
+  messageClose(stream);
+  
+  messageClose(stream);
 }
 #endif
 
@@ -359,13 +349,12 @@ void printRelationsDebug(DATA *data, int stream)
 {
   long i;
 
-  debugStreamPrint(stream, "status of relations");
-  INDENT(stream);
+  debugStreamPrint(stream, 1, "status of relations");
 
   for(i=0; i<data->modelData.nRelations; i++)
-    debugStreamPrint(stream, "[%ld] %s = %c | pre(%s) = %c", i, relationDescription[i], data->simulationInfo.relations[i] ? 'T' : 'F', relationDescription[i], data->simulationInfo.relationsPre[i] ? 'T' : 'F');
-
-  RELEASE(stream);
+    debugStreamPrint(stream, 0, "[%ld] %s = %c | pre(%s) = %c", i, data->callback->relationDescription[i], data->simulationInfo.relations[i] ? 'T' : 'F', data->callback->relationDescription[i], data->simulationInfo.relationsPre[i] ? 'T' : 'F');
+ 
+  messageClose(stream);
 }
 #endif
 
