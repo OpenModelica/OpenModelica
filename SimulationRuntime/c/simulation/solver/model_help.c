@@ -1020,7 +1020,7 @@ void deInitializeDataStruc(DATA *data)
  * Less is for case LESS and GREATEREQ
  * Greater is for case LESSEQ and GREATER
  */
-static double tolZC = 0;
+static double tolZC = 1e-10;
 
 void setZCtol(double relativeTol)
 {
