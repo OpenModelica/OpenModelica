@@ -352,7 +352,7 @@ void printRelationsDebug(DATA *data, int stream)
   debugStreamPrint(stream, 1, "status of relations");
 
   for(i=0; i<data->modelData.nRelations; i++)
-    debugStreamPrint(stream, 0, "[%ld] %s = %c | pre(%s) = %c", i, data->callback->relationDescription[i], data->simulationInfo.relations[i] ? 'T' : 'F', data->callback->relationDescription[i], data->simulationInfo.relationsPre[i] ? 'T' : 'F');
+    debugStreamPrint(stream, 0, "[%ld] %s = %c | pre(%s) = %c", i, data->callback->relationDescription(i), data->simulationInfo.relations[i] ? 'T' : 'F', data->callback->relationDescription(i), data->simulationInfo.relationsPre[i] ? 'T' : 'F');
  
   messageClose(stream);
 }
@@ -1020,7 +1020,7 @@ void deInitializeDataStruc(DATA *data)
  * Less is for case LESS and GREATEREQ
  * Greater is for case LESSEQ and GREATER
  */
-static double tolZC = 1e-10;
+static double tolZC = 0;
 
 void setZCtol(double relativeTol)
 {

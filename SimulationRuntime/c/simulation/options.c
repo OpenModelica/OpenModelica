@@ -68,7 +68,7 @@ int checkCommandLineArguments(int argc, char **argv)
     debugStreamPrint(LOG_STDOUT, 0, "%s", argv[i]);
   messageClose(LOG_STDOUT);
 
-  debugStreamPrint(LOG_STDOUT, "interpreted command line options");
+  debugStreamPrint(LOG_STDOUT, 0, "interpreted command line options");
 #endif
 
   for(i=1; i<argc; ++i)
