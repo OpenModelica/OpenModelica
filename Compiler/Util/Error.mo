@@ -713,7 +713,7 @@ public constant Message PACKAGE_DUPLICATE_CHILDREN = MESSAGE(540, TRANSLATION(),
 public constant Message INTEGER_ENUMERATION_CONVERSION_WARNING = MESSAGE(541, TRANSLATION(), WARNING(),
   Util.gettext("Integer (%s) to enumeration (%s) conversion is not valid Modelica, please use enumeration constant (%s) instead."));
 public constant Message INTEGER_ENUMERATION_OUT_OF_RANGE = MESSAGE(542, TRANSLATION(), ERROR(),
-  Util.gettext("The Integer to %s conversion failed, as the Integer value %s does not correspond to the toInteger value of any enumeration constant."));
+  Util.gettext("The Integer to %s conversion failed, as the Integer value %s does not correspond to the Integer value of any enumeration constant."));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));
