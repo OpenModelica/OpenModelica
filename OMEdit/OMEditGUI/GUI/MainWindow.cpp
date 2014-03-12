@@ -1743,6 +1743,10 @@ void MainWindow::createActions()
   mpSaveAllAction = new QAction(QIcon(":/Resources/icons/saveall.png"), tr("Save All"), this);
   mpSaveAllAction->setStatusTip(tr("Save All Files"));
   mpSaveAllAction->setEnabled(false);
+  // Dump Total Model action
+  mpSaveTotalModelAction = new QAction(tr("Save Total Model"), this);
+  mpSaveTotalModelAction->setStatusTip(tr("Dumps the total model to a file"));
+  mpSaveTotalModelAction->setEnabled(false);
   // recent files action
   for (int i = 0; i < MaxRecentFiles; ++i)
   {
@@ -1985,6 +1989,7 @@ void MainWindow::createMenus()
   pFileMenu->addAction(mpSaveAction);
   pFileMenu->addAction(mpSaveAsAction);
   //menuFile->addAction(saveAllAction);
+  pFileMenu->addAction(mpSaveTotalModelAction);
   pFileMenu->addSeparator();
   mpLibrariesMenu = new QMenu(menuBar());
   mpLibrariesMenu->setObjectName("LibrariesMenu");
@@ -2183,7 +2188,7 @@ void MainWindow::createToolbars()
   mpFileToolBar->addAction(mpOpenModelicaFileAction);
   mpFileToolBar->addAction(mpSaveAction);
   mpFileToolBar->addAction(mpSaveAsAction);
-  mpFileToolBar->addAction(mpSaveAllAction);
+  //mpFileToolBar->addAction(mpSaveAllAction);
   // Edit Toolbar
   mpEditToolBar = addToolBar(tr("Edit Toolbar"));
   mpEditToolBar->setObjectName("Edit Toolbar");

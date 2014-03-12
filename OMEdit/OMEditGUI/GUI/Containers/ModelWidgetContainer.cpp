@@ -2747,6 +2747,7 @@ ModelWidgetContainer::ModelWidgetContainer(MainWindow *pParent)
   // add actions
   connect(mpMainWindow->getSaveAction(), SIGNAL(triggered()), SLOT(saveModelWidget()));
   connect(mpMainWindow->getSaveAsAction(), SIGNAL(triggered()), SLOT(saveAsModelWidget()));
+  connect(mpMainWindow->getSaveTotalModelAction(), SIGNAL(triggered()), SLOT(saveTotalModelWidget()));
   connect(mpMainWindow->getPrintModelAction(), SIGNAL(triggered()), SLOT(printModel()));
 }
 
@@ -3022,6 +3023,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   getMainWindow()->getSaveAction()->setEnabled(enabled);
 //  getMainWindow()->getSaveAsAction()->setEnabled(enabled);
 //  getMainWindow()->getSaveAllAction()->setEnabled(enabled);
+  getMainWindow()->getSaveTotalModelAction()->setEnabled(enabled);
   getMainWindow()->getShowGridLinesAction()->setEnabled(enabled);
   getMainWindow()->getResetZoomAction()->setEnabled(enabled);
   getMainWindow()->getZoomInAction()->setEnabled(enabled);
@@ -3096,6 +3098,43 @@ void ModelWidgetContainer::saveAsModelWidget()
   SaveAsClassDialog *pSaveAsClassDialog = new SaveAsClassDialog(pModelWidget, mpMainWindow);
   pSaveAsClassDialog->exec();
   saveModelWidget();
+}
+
+void ModelWidgetContainer::saveTotalModelWidget()
+{
+  ModelWidget *pModelWidget = getCurrentModelWidget();
+  // if pModelWidget = 0
+  if (!pModelWidget)
+  {
+    QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
+                             GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN).arg(tr("saving")), Helper::ok);
+    return;
+  }
+  /* if Modelica text is changed manually by user then validate it before saving. */
+  if (!pModelWidget->getModelicaTextWidget()->getModelicaTextEdit()->validateModelicaText())
+    return;
+  if (pModelWidget->getModelicaTextWidget()->isVisible())
+    pModelWidget->getModelicaTextWidget()->getModelicaTextEdit()->setPlainText(mpMainWindow->getOMCProxy()->list(pModelWidget->getLibraryTreeNode()->getNameStructure()));
+  /* save total model */
+  LibraryTreeNode *pLibraryTreeNode = pModelWidget->getLibraryTreeNode();
+  mpMainWindow->getStatusBar()->showMessage(QString(tr("Saving")).append(" ").append(pLibraryTreeNode->getNameStructure()));
+  mpMainWindow->showProgressBar();
+  QString fileName;
+  QString name = pLibraryTreeNode->getName();
+  fileName = StringHandler::getSaveFileName(this, QString(Helper::applicationName).append(" - ").append(tr("Save Total Model")), NULL,
+                                            Helper::omFileTypes, NULL, "mo", &name);
+  if (fileName.isEmpty())   // if user press ESC
+    return;
+  /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
+  if (pLibraryTreeNode->getModelWidget())
+  {
+    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->getModelicaTextEdit()->validateModelicaText())
+      return;
+  }
+  // save the model through OMC
+  mpMainWindow->getOMCProxy()->saveTotalSCode(fileName, pLibraryTreeNode->getNameStructure());
+  mpMainWindow->getStatusBar()->clearMessage();
+  mpMainWindow->hideProgressBar();
 }
 
 void ModelWidgetContainer::printModel()

@@ -363,6 +363,7 @@ public slots:
   void currentModelWidgetChanged(QMdiSubWindow *pSubWindow);
   void saveModelWidget();
   void saveAsModelWidget();
+  void saveTotalModelWidget();
   void printModel();
 };
 

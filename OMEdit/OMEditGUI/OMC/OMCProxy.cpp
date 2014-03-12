@@ -1561,7 +1561,7 @@ QStringList OMCProxy::parseString(QString value)
   Creates a new class in OMC.
   \param type - the class type.
   \param className - the class name.
-  \return true on successs.
+  \return true on success.
   */
 bool OMCProxy::createClass(QString type, QString className, QString extendsClass)
 {
@@ -1580,7 +1580,7 @@ bool OMCProxy::createClass(QString type, QString className, QString extendsClass
   \param type - the class type.
   \param className - the class name.
   \param parentClassName - the parent class name.
-  \return true on successs.
+  \return true on success.
   */
 bool OMCProxy::createSubClass(QString type, QString className, QString parentClassName, QString extendsClass)
 {
@@ -1597,7 +1597,7 @@ bool OMCProxy::createSubClass(QString type, QString className, QString parentCla
 /*!
   Checks whether the class already exists in OMC or not.
   \param className - the name for the class to check.
-  \return true on successs.
+  \return true on success.
   */
 bool OMCProxy::existClass(QString className)
 {
@@ -1612,7 +1612,7 @@ bool OMCProxy::existClass(QString className)
   Renames a class.
   \param oldName - the class old name.
   \param newName - the class new name.
-  \return true on successs.
+  \return true on success.
   */
 bool OMCProxy::renameClass(QString oldName, QString newName)
 {
@@ -1626,7 +1626,7 @@ bool OMCProxy::renameClass(QString oldName, QString newName)
 /*!
   Deletes a class.
   \param className - the name of the class.
-  \return true on successs.
+  \return true on success.
   */
 bool OMCProxy::deleteClass(QString className)
 {
@@ -1656,7 +1656,7 @@ QString OMCProxy::getSourceFile(QString className)
   Sets a file name of a model.
   \param className - the name of the class.
   \param path - the full location
-  \return true on successs.
+  \return true on success.
   */
 bool OMCProxy::setSourceFile(QString className, QString path)
 {
@@ -1667,7 +1667,7 @@ bool OMCProxy::setSourceFile(QString className, QString path)
 /*!
   Saves a model.
   \param className - the name of the class.
-  \return true on successs.
+  \return true on success.
   */
 bool OMCProxy::save(QString className, QString fileName)
 {
@@ -1696,6 +1696,27 @@ bool OMCProxy::saveModifiedModel(QString modelText)
     return false;
   else
     return true;
+}
+
+/*!
+  Dumps the total model to a file.
+  \param fileName - the file to save in.
+  \param className - the name of the class.
+  \return true on success.
+  */
+bool OMCProxy::saveTotalSCode(QString fileName, QString className)
+{
+  sendCommand("saveTotalSCode(\"" + fileName + "\", " + className + ")");
+  bool result = StringHandler::unparseBool(getResult());
+  if (result)
+  {
+    return true;
+  }
+  else
+  {
+    printMessagesStringInternal();
+    return false;
+  }
 }
 
 /*!
