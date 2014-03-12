@@ -7842,7 +7842,7 @@ end isEmptyOrNoRetcall;
 
 protected function typeConvertIntToEnumCheck "
   Deal with the invalid conversions from Integer to enumeration.
-  If the Integer corresponds to the toInteger value of an enumeration constant,
+  If the Integer corresponds to the Integer(ENUM) value of some enumeration constant ENUM,
   just give a warning, otherwise report an error.
   Returns false if an error was reported, otherwise true.
 "
@@ -7855,22 +7855,32 @@ algorithm
       Integer oi;
       Absyn.Path tp;
       list<String> l;
-      String pathStr, intStr, enumConst;
+      String pathStr, intStr, enumConst, lengthStr;
     case (DAE.ICONST(oi),
           DAE.T_ENUMERATION(path = tp, names = l))
       equation
         true = (1 <= oi and oi <= listLength(l));
         pathStr = Absyn.pathString(tp);
         intStr = intString(oi);
-        enumConst = listNth(l, oi);
+        enumConst = listNth(l, oi - 1);
         Error.addMessage(Error.INTEGER_ENUMERATION_CONVERSION_WARNING, {intStr, pathStr, enumConst});
       then true;
+    case (DAE.ICONST(oi),
+          DAE.T_ENUMERATION(path = tp, names = l))
+      equation
+        pathStr = Absyn.pathString(tp);
+        false = stringEq(pathStr, "");
+        intStr = intString(oi);
+        lengthStr = intString(listLength(l));
+        Error.addMessage(Error.INTEGER_ENUMERATION_OUT_OF_RANGE, {pathStr, intStr, lengthStr});
+      then false;
     case (DAE.ICONST(oi),
           DAE.T_ENUMERATION(path = tp))
       equation
         pathStr = Absyn.pathString(tp);
+        true = stringEq(pathStr, "");
         intStr = intString(oi);
-        Error.addMessage(Error.INTEGER_ENUMERATION_OUT_OF_RANGE, {pathStr, intStr});
+        Error.addMessage(Error.INTEGER_TO_UNKNOWN_ENUMERATION, {intStr});
       then false;
   end matchcontinue;
 end typeConvertIntToEnumCheck;
