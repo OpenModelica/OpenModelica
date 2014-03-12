@@ -340,14 +340,25 @@ void assertStreamPrint(threadData_t *threadData, int cond, const char *format, .
 }
 
 #ifdef USE_DEBUG_OUTPUT
-void debugStreamPrint(int cond, int indentNext, const char *format, ...)
+void debugStreamPrint(int stream, int indentNext, const char *format, ...)
 {
-  if (!cond) {
+  if (!stream) {
     char logBuffer[SIZE_LOG_BUFFER];
     va_list args;
     va_start(args, format);
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
     messageFunction(LOG_TYPE_DEBUG, LOG_ASSERT, indentNext, logBuffer, 0, NULL);
+  }
+}
+
+void debugStreamPrintWithEquationIndexes(int stream, int indentNext, const int *indexes, const char *format, ...)
+{
+  if (ACTIVE_WARNING_STREAM(stream)) {
+    char logBuffer[SIZE_LOG_BUFFER];
+    va_list args;
+    va_start(args, format);
+    vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
+    messageFunction(LOG_TYPE_WARNING, stream, indentNext, logBuffer, 0, indexes);
   }
 }
 #endif
