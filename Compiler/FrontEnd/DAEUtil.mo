@@ -5045,6 +5045,14 @@ algorithm
   str := DAEDump.dumpFunctionStr(Util.getOption(v));
 end valueStr;
 
+protected function avlKeyCompare
+  input DAE.AvlKey key1;
+  input DAE.AvlKey key2;
+  output Integer c;
+algorithm
+  c := stringCompare(Absyn.pathStringNoQual(key1),Absyn.pathStringNoQual(key2));
+end avlKeyCompare;
+
 public function avlTreeNew "Return an empty tree"
   output DAE.AvlTree tree;
   annotation(__OpenModelica_EarlyInline = true);
@@ -5132,7 +5140,7 @@ algorithm
         /* Insert to right  */
     case (DAE.AVLTREENODE(value = SOME(DAE.AVLTREEVALUE(rkey,rval)),height=h,left = left,right = (right)),key,value)
       equation
-        true = stringCompare(Absyn.pathString(key),Absyn.pathString(rkey)) > 0;
+        true = avlKeyCompare(key,rkey) > 0;
         t = createEmptyAvlIfNone(right);
         t_1 = avlTreeAdd(t, key, value);
         bt = balance(DAE.AVLTREENODE(SOME(DAE.AVLTREEVALUE(rkey,rval)),h,left,SOME(t_1)));
@@ -5391,14 +5399,14 @@ algorithm
     // hash func Search to the right
     case (DAE.AVLTREENODE(value = SOME(DAE.AVLTREEVALUE(rkey,rval))),key)
       equation
-        0 = stringCompare(Absyn.pathStringNoQual(key),Absyn.pathStringNoQual(rkey));
+        0 = avlKeyCompare(key,rkey);
       then
         rval;
 
     // Search to the right
     case (DAE.AVLTREENODE(value = SOME(DAE.AVLTREEVALUE(rkey,rval)),right = SOME(right)),key)
       equation
-        1 = stringCompare(Absyn.pathStringNoQual(key),Absyn.pathStringNoQual(rkey));
+        1 = avlKeyCompare(key,rkey);
         res = avlTreeGet(right, key);
       then
         res;
@@ -5406,7 +5414,7 @@ algorithm
     // Search to the left
     case (DAE.AVLTREENODE(value = SOME(DAE.AVLTREEVALUE(rkey,rval)),left = SOME(left)),key)
       equation
-        -1 = stringCompare(Absyn.pathStringNoQual(key),Absyn.pathStringNoQual(rkey));
+        -1 = avlKeyCompare(key,rkey);
         res = avlTreeGet(left, key);
       then
         res;
