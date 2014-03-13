@@ -12,17 +12,18 @@ public:
   void initialize();
   private:
    
-   void setAMatrix(int* newEnable);
-   int comparePivot(int *oldPivot, int *newPivot,int switchStates);
+   void setAMatrix(int* newEnable,unsigned int index);
+   int comparePivot(int *oldPivot, int *newPivot,int switchStates,unsigned int index);
    
    
    IMixedSystem* _system;
    IStateSelection* _state_selection;
-   int* _rowPivot;
-   int* _colPivot;
-    unsigned int  _dimStates;
-  unsigned int  _dimDummyStates;
-  unsigned int  _dimStateCanditates;
+   std::vector<boost::shared_array<int> > _rowPivot;
+   std::vector<boost::shared_array<int> > _colPivot;
+   unsigned int _dimStateSets;
+   std::vector<unsigned int>  _dimStates;
+   std::vector<unsigned int>  _dimDummyStates;
+   std::vector<unsigned int>  _dimStateCanditates;
   bool _initialized;
 };
 

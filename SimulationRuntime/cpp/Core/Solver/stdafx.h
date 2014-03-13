@@ -31,6 +31,7 @@
 #include <boost/tuple/tuple.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
+#include <boost/shared_array.hpp> 
 //vxworks #include <boost/algorithm/string.hpp>
 #include <boost/circular_buffer.hpp>
 #include <boost/foreach.hpp>

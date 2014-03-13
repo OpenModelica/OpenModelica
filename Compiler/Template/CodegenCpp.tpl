@@ -169,13 +169,14 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     <%lastIdentOfPath(modelInfo.name)%>StateSelection(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData);
     ~<%lastIdentOfPath(modelInfo.name)%>StateSelection();
     int getDimStateSets() const;
-    int getDimCanditates() const ;
-    int getDimDummyStates() const ;
-    void getStates(double* z);
-    void setStates(const double* z);
-    void getStateCanditates(double* z);
-    void getAMatrix(multi_array<int,2> & A) ;
-    void setAMatrix(multi_array<int,2>& A);
+    int getDimStates(unsigned int index) const;
+    int getDimCanditates(unsigned int index) const ;
+    int getDimDummyStates(unsigned int index) const ;
+    void getStates(unsigned int index,double* z);
+    void setStates(unsigned int index,const double* z);
+    void getStateCanditates(unsigned int index,double* z);
+    void getAMatrix(unsigned int index,multi_array<int,2> & A) ;
+    void setAMatrix(unsigned int index,multi_array<int,2>& A);
     protected:
      void  initialize();
   };
@@ -270,20 +271,21 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     virtual IHistory* getHistory();
      /// Provide Jacobian
     virtual void getJacobian(SparseMatrix& matrix);
-    virtual void getStateSetJacobian(SparseMatrix& matrix);
+    virtual void getStateSetJacobian(unsigned int index,SparseMatrix& matrix);
    /// Called to handle all  events occured at same time 
     virtual bool handleSystemEvents(bool* events);
     //Saves all variables before an event is handled, is needed for the pre, edge and change operator
     virtual void saveAll();
     //StateSelction mehtods
-    virtual int getDimStateSets() const;
-    virtual int getDimCanditates() const ;
-    virtual int getDimDummyStates() const ;
-    virtual void getStates(double* z);
-    virtual void setStates(const double* z);
-    virtual void getStateCanditates(double* z);
-    virtual void getAMatrix(multi_array<int,2>& A);
-    virtual void setAMatrix(multi_array<int,2>& A);
+     virtual int getDimStateSets() const;
+    virtual int getDimStates(unsigned int index) const;
+    virtual int getDimCanditates(unsigned int index) const ;
+    virtual int getDimDummyStates(unsigned int index) const ;
+    virtual void getStates(unsigned int index,double* z);
+    virtual void setStates(unsigned int index,const double* z);
+    virtual void getStateCanditates(unsigned int index,double* z);
+    virtual void getAMatrix(unsigned int index,multi_array<int,2>& A);
+    virtual void setAMatrix(unsigned int index,multi_array<int,2>& A);
     
     
   };
@@ -443,10 +445,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
               match jacobianMatrix case (_,_,name,_,_,_) then 
             'initialAnalytic<%name%>Jacobian();') ;separator="\n\n")
       
-   let getStateSetJac = (stateSets |> set hasindex i1 fromindex 0 => (match set
-       case set as SES_STATESET(__) then
-           match jacobianMatrix case (_,_,name,_,_,_) then 
-            'get<%name%>Jacobian(matrix);') ;separator="\n\n")
+  
   <<
    #include "Modelica.h"
    #include "OMCpp<%fileNamePrefix%>Extension.h"
@@ -490,10 +489,26 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
           getAJacobian(matrix);
       
   }
-  void <%lastIdentOfPath(modelInfo.name)%>Extension::getStateSetJacobian(SparseMatrix& matrix)
+  void <%lastIdentOfPath(modelInfo.name)%>Extension::getStateSetJacobian(unsigned int index,SparseMatrix& matrix)
   {
       
-      <%getStateSetJac%>
+      switch (index)
+       { 
+       	<%(stateSets |> set hasindex i1 fromindex 0 => (match set
+       	case set as SES_STATESET(__) then
+       	match jacobianMatrix case (_,_,name,_,_,_) then 
+       	<<
+        	case <%i1%>:
+             get<%name%>Jacobian(matrix);
+             break;
+     	
+       >>
+  	   )
+       ;separator="\n")
+       %>
+       default:
+        throw std::invalid_argument("Not supported statset index");
+      }
   }
   bool <%lastIdentOfPath(modelInfo.name)%>Extension::handleSystemEvents(bool* events)
   {
@@ -522,46 +537,49 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     {
       return    <%lastIdentOfPath(modelInfo.name)%>WriteOutput::getHistory();
     }
-    
    int <%lastIdentOfPath(modelInfo.name)%>Extension::getDimStateSets() const
    {
      return    <%lastIdentOfPath(modelInfo.name)%>StateSelection::getDimStateSets();
    }
-   int <%lastIdentOfPath(modelInfo.name)%>Extension::getDimCanditates() const
+   int <%lastIdentOfPath(modelInfo.name)%>Extension::getDimStates(unsigned int index) const
    {
-     return    <%lastIdentOfPath(modelInfo.name)%>StateSelection::getDimCanditates();
+     return    <%lastIdentOfPath(modelInfo.name)%>StateSelection::getDimStates(index);
    }
-   int <%lastIdentOfPath(modelInfo.name)%>Extension::getDimDummyStates() const
+   int <%lastIdentOfPath(modelInfo.name)%>Extension::getDimCanditates(unsigned int index) const
    {
-     return    <%lastIdentOfPath(modelInfo.name)%>StateSelection::getDimDummyStates();
+     return    <%lastIdentOfPath(modelInfo.name)%>StateSelection::getDimCanditates(index);
+   }
+   int <%lastIdentOfPath(modelInfo.name)%>Extension::getDimDummyStates(unsigned int index) const
+   {
+     return    <%lastIdentOfPath(modelInfo.name)%>StateSelection::getDimDummyStates(index);
    }
    
   
    
-   void <%lastIdentOfPath(modelInfo.name)%>Extension::getStates(double* z) 
+   void <%lastIdentOfPath(modelInfo.name)%>Extension::getStates(unsigned int index,double* z) 
    {
-      <%lastIdentOfPath(modelInfo.name)%>StateSelection::getStates(z);
+      <%lastIdentOfPath(modelInfo.name)%>StateSelection::getStates(index,z);
    }
    
    
-   void <%lastIdentOfPath(modelInfo.name)%>Extension::setStates(const double* z) 
+   void <%lastIdentOfPath(modelInfo.name)%>Extension::setStates(unsigned int index,const double* z) 
    {
-      <%lastIdentOfPath(modelInfo.name)%>StateSelection::setStates(z);
+      <%lastIdentOfPath(modelInfo.name)%>StateSelection::setStates(index,z);
    }
    
-   void <%lastIdentOfPath(modelInfo.name)%>Extension::getStateCanditates(double* z) 
+   void <%lastIdentOfPath(modelInfo.name)%>Extension::getStateCanditates(unsigned int index,double* z) 
    {
-      <%lastIdentOfPath(modelInfo.name)%>StateSelection::getStateCanditates(z);
+      <%lastIdentOfPath(modelInfo.name)%>StateSelection::getStateCanditates(index,z);
    }
    
-   void <%lastIdentOfPath(modelInfo.name)%>Extension::getAMatrix(multi_array<int,2> & A) 
+   void <%lastIdentOfPath(modelInfo.name)%>Extension::getAMatrix(unsigned int index,multi_array<int,2> & A) 
    {
-      <%lastIdentOfPath(modelInfo.name)%>StateSelection::getAMatrix(A);
+      <%lastIdentOfPath(modelInfo.name)%>StateSelection::getAMatrix(index,A);
    }
   
-   void <%lastIdentOfPath(modelInfo.name)%>Extension::setAMatrix(multi_array<int,2> & A) 
+   void <%lastIdentOfPath(modelInfo.name)%>Extension::setAMatrix(unsigned int index,multi_array<int,2> & A) 
    {
-      <%lastIdentOfPath(modelInfo.name)%>StateSelection::setAMatrix(A);
+      <%lastIdentOfPath(modelInfo.name)%>StateSelection::setAMatrix(index,A);
    }
   
  >>
@@ -577,45 +595,88 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
    match stateSets
   case {} then
    <<
-    int <%classname%>StateSelection::getDimStateSets() const
-         {
-          return 0;
-         }
-         int <%classname%>StateSelection::getDimCanditates() const
-         {
-            return 0;
-         }
-         int <%classname%>StateSelection::getDimDummyStates() const
-         {
-           return 0;
-         }
+     int <%classname%>StateSelection::getDimStateSets() const
+     {
+        return 0;
+     }
+     int <%classname%>StateSelection::getDimStates(unsigned int index) const
+     {
+      return 0;
+     }
+     int <%classname%>StateSelection::getDimCanditates(unsigned int index) const
+     {
+        return 0;
+     }
+     int <%classname%>StateSelection::getDimDummyStates(unsigned int index) const
+     {
+       return 0;
+     }
    >>
   else
-   let statesets = (stateSets |> set hasindex i1 fromindex 0 => (match set
-       case set as SES_STATESET(__) then
-       let statesvars = (states |> s hasindex i2 fromindex 0 => '<%cref1(s,simCode,contextOther)%>' ;separator="\n")
-       let statescandidatesvars = (statescandidates |> cstate hasindex i2 fromindex 0 => '<%cref1(cstate,simCode,contextOther)%>' ;separator="\n")
-       <<
-        
-     
-        int <%classname%>StateSelection::getDimStateSets() const
-         {
-          return <%nStates%>;
-         }
-         int <%classname%>StateSelection::getDimCanditates() const
-         {
-            return <%nCandidates%>;
-         }
-         int <%classname%>StateSelection::getDimDummyStates() const
-         {
-           return <%nCandidates%>-<%nStates%>;
-         }
-     >>
-  )
-   ;separator="\n\n")
-   <<
-    <%statesets%>
-   >>
+  <<
+    int <%classname%>StateSelection::getDimStateSets() const
+    {
+      return <%listLength(stateSets)%>;
+    }
+    int <%classname%>StateSelection::getDimStates(unsigned int index) const
+    {
+       switch (index)
+       { 
+       	<%(stateSets |> set hasindex i1 fromindex 0 => (match set
+       	case set as SES_STATESET(__) then
+       	<<
+        	case <%i1%>:
+             return <%nStates%>;
+     	
+       >>
+  	   )
+       ;separator="\n")
+       %>
+       default:
+        throw std::invalid_argument("Not supported statset index");
+      }
+      
+    }
+    int <%classname%>StateSelection::getDimCanditates(unsigned int index) const
+    {
+       switch (index)
+       { 
+       	<%(stateSets |> set hasindex i1 fromindex 0 => (match set
+       	case set as SES_STATESET(__) then
+       	<<
+        	case <%i1%>:
+             return  <%nCandidates%>;
+     	
+       >>
+  	   )
+       ;separator="\n")
+       %>
+       default:
+        throw std::invalid_argument("Not supported statset index");
+      }
+      
+    }
+    int <%classname%>StateSelection::getDimDummyStates(unsigned int index) const
+    {
+    
+     switch (index)
+       { 
+       	<%(stateSets |> set hasindex i1 fromindex 0 => (match set
+       	case set as SES_STATESET(__) then
+       	<<
+        	case <%i1%>:
+             return <%nCandidates%>-<%nStates%>;
+     	
+       >>
+  	   )
+       ;separator="\n")
+       %>
+      default:
+        throw std::invalid_argument("Not supported statset index");
+      }
+      
+    }
+  >>
  end functionDimStateSets;
 
 
@@ -629,24 +690,25 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   match stateSets
   case {} then
      <<
-     void  <%classname%>StateSelection::getStates(double* z)
-     {
-     
-     }
-     void  <%classname%>StateSelection::setStates(const double* z)
-     {
-     
-     }
-     void  <%classname%>StateSelection::getStateCanditates(double* z)
-     {
-     
-     }
-     void  <%classname%>StateSelection::getAMatrix(multi_array<int,2> & A) 
+     void  <%classname%>StateSelection::getStates(unsigned int index,double* z)
      {
      
      
      }
-     void  <%classname%>StateSelection::setAMatrix(multi_array<int,2>& A)
+     void  <%classname%>StateSelection::setStates(unsigned int index,const double* z)
+     {
+     
+     }
+     void  <%classname%>StateSelection::getStateCanditates(unsigned int index,double* z)
+     {
+     
+     }
+     void  <%classname%>StateSelection::getAMatrix(unsigned int index,multi_array<int,2> & A) 
+     {
+     
+     
+     }
+     void  <%classname%>StateSelection::setAMatrix(unsigned int index,multi_array<int,2>& A)
      {
      
      }
@@ -663,30 +725,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
        let statescandidatesvarsset = (statescandidates |> cstate hasindex i2 fromindex 0 => 'z[<%i2%>]=<%cref1(cstate,simCode,contextOther)%>;' ;separator="\n")
       
        <<
-       void  <%classname%>StateSelection::getStates(double* z)
-       {
-         <%statesvarsset%>
-       }
-       void  <%classname%>StateSelection::setStates(const double* z)
-       {
-          <%statesvarsget%>
-       }
-       void  <%classname%>StateSelection::getStateCanditates(double* z)
-       {
-          <%statescandidatesvarsset%>
-       }
-       void  <%classname%>StateSelection::getAMatrix(multi_array<int,2> & A) 
-       {
-          assign_array(A,<%arraycref(crA)%>);
-       }
-       void  <%classname%>StateSelection::setAMatrix(multi_array<int,2>& A)
-       {
-          assign_array(<%arraycref(crA)%>,A);
-       }
-       void <%classname%>StateSelection::initialize()
-       {
-         fill_array<int,2 >( <%arraycref(crA)%>,0);
-       }
+       
        >>
    )
    ;separator="\n\n")
@@ -698,7 +737,116 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
      
   
     
-    <%stateset%>
+     void  <%classname%>StateSelection::getStates(unsigned int index,double* z)
+      {
+       switch (index)
+       { 
+       	<%(stateSets |> set hasindex i1 fromindex 0 => (match set
+       	case set as SES_STATESET(__) then
+       	<<
+       	  case <%i1%>:
+       	  	<%(states |> s hasindex i2 fromindex 0 => 'z[<%i2%>]=<%cref1(s,simCode,contextOther)%>;' ;separator="\n")%>
+       	  	break;
+        >>
+       )
+       ;separator="\n")
+       %>
+      	default:
+        	throw std::invalid_argument("Not supported statset index");
+       }
+      
+     }
+       
+       void  <%classname%>StateSelection::setStates(unsigned int index,const double* z)
+       {
+        switch (index)
+        { 
+       	 <%(stateSets |> set hasindex i1 fromindex 0 => (match set
+       	  case set as SES_STATESET(__) then
+       	 <<
+       	   case <%i1%>:
+       	  	<%(states |> s hasindex i2 fromindex 0 => '<%cref1(s,simCode,contextOther)%> = z[<%i2%>];' ;separator="\n")%>
+       	  	break;
+         >>
+        )
+        ;separator="\n")
+        %>
+      	default:
+        	throw std::invalid_argument("Not supported statset index");
+        }
+          
+       }
+       void  <%classname%>StateSelection::getStateCanditates(unsigned int index,double* z)
+       {
+       
+        switch (index)
+        { 
+       	 <%(stateSets |> set hasindex i1 fromindex 0 => (match set
+       	  case set as SES_STATESET(__) then
+       	 <<
+       	   case <%i1%>:
+       	  	<%(statescandidates |> cstate hasindex i2 fromindex 0 => 'z[<%i2%>]=<%cref1(cstate,simCode,contextOther)%>;' ;separator="\n")%>
+       	  	break;
+         >>
+        )
+        ;separator="\n")
+        %>
+      	default:
+        	throw std::invalid_argument("Not supported statset index");
+        }
+         
+       }
+       void  <%classname%>StateSelection::getAMatrix(unsigned int index,multi_array<int,2> & A) 
+       {
+         switch (index)
+         { 
+       		<%(stateSets |> set hasindex i1 fromindex 0 => (match set
+       		case set as SES_STATESET(__) then
+       		<<
+        	   case <%i1%>:
+             	assign_array(A,<%arraycref(crA)%>);
+             	break;
+     	
+       		>>
+  	   		)
+       	   ;separator="\n")
+          %>
+         default:
+         throw std::invalid_argument("Not supported statset index");
+      }
+         
+       }
+       void  <%classname%>StateSelection::setAMatrix(unsigned int index,multi_array<int,2>& A)
+       {
+       	 switch (index)
+         { 
+       		<%(stateSets |> set hasindex i1 fromindex 0 => (match set
+       		case set as SES_STATESET(__) then
+       		<<
+        	   case <%i1%>:
+             	assign_array(<%arraycref(crA)%>,A);
+             	break;
+     	
+       		>>
+  	   		)
+       	   ;separator="\n")
+          %>
+         default:
+         throw std::invalid_argument("Not supported statset index");
+        }
+      }
+       void <%classname%>StateSelection::initialize()
+       {
+       		<%(stateSets |> set hasindex i1 fromindex 0 => (match set
+       		case set as SES_STATESET(__) then
+       		<<
+        	   fill_array<int,2 >( <%arraycref(crA)%>,0);
+            >>
+  	   		)
+       	   ;separator="\n")
+          %>
+          
+       }
     
     
    

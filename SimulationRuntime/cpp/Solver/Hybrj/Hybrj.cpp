@@ -173,7 +173,9 @@ void Hybrj::solve(const IContinuous::UPDATETYPE command)
         long int dimRHS  = 1;          // Dimension of right hand side of linear system (=b)
         long int dimSys = _dimSys;
         long int irtrn  = 0;          // Retrun-flag of Fortran code
-        _algLoop->getSystemMatrix(_jac);
+        _algLoop->getReal(_x);
+        _algLoop->getRHS(_f);
+		_algLoop->getSystemMatrix(_jac);
         dgesv_(&dimSys,&dimRHS,_jac,&dimSys,_fHelp,_f,&dimSys,&irtrn);
         memcpy(_x,_f,_dimSys*sizeof(double));
         _algLoop->setReal(_x);

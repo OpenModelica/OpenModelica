@@ -27,7 +27,7 @@ public:
   virtual ~IMixedSystem()  {};
    /// Provide Jacobian
   virtual void getJacobian(SparseMatrix& matrix) = 0;
-   virtual void getStateSetJacobian(SparseMatrix& matrix) = 0;
+   virtual void getStateSetJacobian(unsigned int index,SparseMatrix& matrix) = 0;
    /// Called to handle all  events occured at same time 
   virtual bool handleSystemEvents(bool* events) = 0;
    //Saves all variables before an event is handled, is needed for the pre, edge and change operator
