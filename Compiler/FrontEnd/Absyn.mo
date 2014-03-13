@@ -2727,6 +2727,53 @@ algorithm
   outString := pathString2(makeNotFullyQualified(inPath), ".");
 end pathStringNoQual;
 
+public function pathCompare
+  input Path ip1;
+  input Path ip2;
+  output Integer o;
+algorithm
+  o := match (ip1,ip2)
+    local
+      Path p1,p2;
+      String i1,i2;
+    case (FULLYQUALIFIED(p1),FULLYQUALIFIED(p2)) then pathCompare(p1,p2);
+    case (FULLYQUALIFIED(_),_) then 1;
+    case (_,FULLYQUALIFIED(_)) then -1;
+    case (QUALIFIED(i1,p1),QUALIFIED(i2,p2))
+      equation
+        o = stringCompare(i1,i2);
+        o = Debug.bcallret2(o == 0, pathCompare, p1, p2, o);
+      then o;
+    case (QUALIFIED(name=_),_) then 1;
+    case (_,QUALIFIED(name=_)) then -1;
+    case (IDENT(i1),IDENT(i2))
+      then stringCompare(i1,i2);
+  end match;
+end pathCompare;
+
+public function pathCompareNoQual
+  input Path ip1;
+  input Path ip2;
+  output Integer o;
+algorithm
+  o := match (ip1,ip2)
+    local
+      Path p1,p2;
+      String i1,i2;
+    case (FULLYQUALIFIED(p1),p2) then pathCompareNoQual(p1,p2);
+    case (p1,FULLYQUALIFIED(p2)) then pathCompareNoQual(p1,p2);
+    case (QUALIFIED(i1,p1),QUALIFIED(i2,p2))
+      equation
+        o = stringCompare(i1,i2);
+        o = Debug.bcallret2(o == 0, pathCompare, p1, p2, o);
+      then o;
+    case (QUALIFIED(name=_),_) then 1;
+    case (_,QUALIFIED(name=_)) then -1;
+    case (IDENT(i1),IDENT(i2))
+      then stringCompare(i1,i2);
+  end match;
+end pathCompareNoQual;
+
 public function pathHashMod "Hashes a path."
   input Path path;
   input Integer mod;

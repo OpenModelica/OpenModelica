@@ -5050,7 +5050,8 @@ protected function avlKeyCompare
   input DAE.AvlKey key2;
   output Integer c;
 algorithm
-  c := stringCompare(Absyn.pathStringNoQual(key1),Absyn.pathStringNoQual(key2));
+  c := Absyn.pathCompareNoQual(key1,key2);
+  // c := stringCompare(Absyn.pathStringNoQual(key1),Absyn.pathStringNoQual(key2));
 end avlKeyCompare;
 
 public function avlTreeNew "Return an empty tree"
