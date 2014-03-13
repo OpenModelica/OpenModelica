@@ -494,16 +494,16 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       
       switch (index)
        { 
-       	<%(stateSets |> set hasindex i1 fromindex 0 => (match set
-       	case set as SES_STATESET(__) then
-       	match jacobianMatrix case (_,_,name,_,_,_) then 
-       	<<
-        	case <%i1%>:
+         <%(stateSets |> set hasindex i1 fromindex 0 => (match set
+         case set as SES_STATESET(__) then
+         match jacobianMatrix case (_,_,name,_,_,_) then 
+         <<
+          case <%i1%>:
              get<%name%>Jacobian(matrix);
              break;
-     	
+       
        >>
-  	   )
+       )
        ;separator="\n")
        %>
        default:
@@ -622,14 +622,14 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     {
        switch (index)
        { 
-       	<%(stateSets |> set hasindex i1 fromindex 0 => (match set
-       	case set as SES_STATESET(__) then
-       	<<
-        	case <%i1%>:
+         <%(stateSets |> set hasindex i1 fromindex 0 => (match set
+         case set as SES_STATESET(__) then
+         <<
+          case <%i1%>:
              return <%nStates%>;
-     	
+       
        >>
-  	   )
+       )
        ;separator="\n")
        %>
        default:
@@ -641,14 +641,14 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     {
        switch (index)
        { 
-       	<%(stateSets |> set hasindex i1 fromindex 0 => (match set
-       	case set as SES_STATESET(__) then
-       	<<
-        	case <%i1%>:
+         <%(stateSets |> set hasindex i1 fromindex 0 => (match set
+         case set as SES_STATESET(__) then
+         <<
+          case <%i1%>:
              return  <%nCandidates%>;
-     	
+       
        >>
-  	   )
+       )
        ;separator="\n")
        %>
        default:
@@ -661,14 +661,14 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     
      switch (index)
        { 
-       	<%(stateSets |> set hasindex i1 fromindex 0 => (match set
-       	case set as SES_STATESET(__) then
-       	<<
-        	case <%i1%>:
+         <%(stateSets |> set hasindex i1 fromindex 0 => (match set
+         case set as SES_STATESET(__) then
+         <<
+          case <%i1%>:
              return <%nCandidates%>-<%nStates%>;
-     	
+       
        >>
-  	   )
+       )
        ;separator="\n")
        %>
       default:
@@ -741,18 +741,18 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
       {
        switch (index)
        { 
-       	<%(stateSets |> set hasindex i1 fromindex 0 => (match set
-       	case set as SES_STATESET(__) then
-       	<<
-       	  case <%i1%>:
-       	  	<%(states |> s hasindex i2 fromindex 0 => 'z[<%i2%>]=<%cref1(s,simCode,contextOther)%>;' ;separator="\n")%>
-       	  	break;
+         <%(stateSets |> set hasindex i1 fromindex 0 => (match set
+         case set as SES_STATESET(__) then
+         <<
+           case <%i1%>:
+             <%(states |> s hasindex i2 fromindex 0 => 'z[<%i2%>]=<%cref1(s,simCode,contextOther)%>;' ;separator="\n")%>
+             break;
         >>
        )
        ;separator="\n")
        %>
-      	default:
-        	throw std::invalid_argument("Not supported statset index");
+        default:
+          throw std::invalid_argument("Not supported statset index");
        }
       
      }
@@ -761,18 +761,18 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
        {
         switch (index)
         { 
-       	 <%(stateSets |> set hasindex i1 fromindex 0 => (match set
-       	  case set as SES_STATESET(__) then
-       	 <<
-       	   case <%i1%>:
-       	  	<%(states |> s hasindex i2 fromindex 0 => '<%cref1(s,simCode,contextOther)%> = z[<%i2%>];' ;separator="\n")%>
-       	  	break;
+          <%(stateSets |> set hasindex i1 fromindex 0 => (match set
+           case set as SES_STATESET(__) then
+          <<
+            case <%i1%>:
+             <%(states |> s hasindex i2 fromindex 0 => '<%cref1(s,simCode,contextOther)%> = z[<%i2%>];' ;separator="\n")%>
+             break;
          >>
         )
         ;separator="\n")
         %>
-      	default:
-        	throw std::invalid_argument("Not supported statset index");
+        default:
+          throw std::invalid_argument("Not supported statset index");
         }
           
        }
@@ -781,18 +781,18 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
        
         switch (index)
         { 
-       	 <%(stateSets |> set hasindex i1 fromindex 0 => (match set
-       	  case set as SES_STATESET(__) then
-       	 <<
-       	   case <%i1%>:
-       	  	<%(statescandidates |> cstate hasindex i2 fromindex 0 => 'z[<%i2%>]=<%cref1(cstate,simCode,contextOther)%>;' ;separator="\n")%>
-       	  	break;
+          <%(stateSets |> set hasindex i1 fromindex 0 => (match set
+           case set as SES_STATESET(__) then
+          <<
+            case <%i1%>:
+             <%(statescandidates |> cstate hasindex i2 fromindex 0 => 'z[<%i2%>]=<%cref1(cstate,simCode,contextOther)%>;' ;separator="\n")%>
+             break;
          >>
         )
         ;separator="\n")
         %>
-      	default:
-        	throw std::invalid_argument("Not supported statset index");
+        default:
+          throw std::invalid_argument("Not supported statset index");
         }
          
        }
@@ -800,16 +800,16 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
        {
          switch (index)
          { 
-       		<%(stateSets |> set hasindex i1 fromindex 0 => (match set
-       		case set as SES_STATESET(__) then
-       		<<
-        	   case <%i1%>:
-             	assign_array(A,<%arraycref(crA)%>);
-             	break;
-     	
-       		>>
-  	   		)
-       	   ;separator="\n")
+           <%(stateSets |> set hasindex i1 fromindex 0 => (match set
+           case set as SES_STATESET(__) then
+           <<
+             case <%i1%>:
+               assign_array(A,<%arraycref(crA)%>);
+               break;
+       
+           >>
+           )
+            ;separator="\n")
           %>
          default:
          throw std::invalid_argument("Not supported statset index");
@@ -818,18 +818,18 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
        }
        void  <%classname%>StateSelection::setAMatrix(unsigned int index,multi_array<int,2>& A)
        {
-       	 switch (index)
+          switch (index)
          { 
-       		<%(stateSets |> set hasindex i1 fromindex 0 => (match set
-       		case set as SES_STATESET(__) then
-       		<<
-        	   case <%i1%>:
-             	assign_array(<%arraycref(crA)%>,A);
-             	break;
-     	
-       		>>
-  	   		)
-       	   ;separator="\n")
+           <%(stateSets |> set hasindex i1 fromindex 0 => (match set
+           case set as SES_STATESET(__) then
+           <<
+             case <%i1%>:
+               assign_array(<%arraycref(crA)%>,A);
+               break;
+       
+           >>
+           )
+            ;separator="\n")
           %>
          default:
          throw std::invalid_argument("Not supported statset index");
@@ -837,13 +837,13 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
       }
        void <%classname%>StateSelection::initialize()
        {
-       		<%(stateSets |> set hasindex i1 fromindex 0 => (match set
-       		case set as SES_STATESET(__) then
-       		<<
-        	   fill_array<int,2 >( <%arraycref(crA)%>,0);
+           <%(stateSets |> set hasindex i1 fromindex 0 => (match set
+           case set as SES_STATESET(__) then
+           <<
+             fill_array<int,2 >( <%arraycref(crA)%>,0);
             >>
-  	   		)
-       	   ;separator="\n")
+           )
+            ;separator="\n")
           %>
           
        }
