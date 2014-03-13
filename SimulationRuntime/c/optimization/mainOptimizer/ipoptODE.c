@@ -263,8 +263,8 @@ static int set_optimizer_flags(IPOPT_DATA_ *iData, IpoptProblem *nlp)
   if(cflags)
     AddIpoptStrOption(*nlp, "linear_solver", cflags);
 
-  AddIpoptStrOption(*nlp,"nlp_scaling_method","gradient-based");
-  AddIpoptStrOption(*nlp,"linear_system_scaling","slack-based");
+  //AddIpoptStrOption(*nlp,"nlp_scaling_method","gradient-based");
+  //AddIpoptStrOption(*nlp,"linear_system_scaling","slack-based");
   AddIpoptStrOption(*nlp,"dependency_detection_with_rhs","yes");
 
   AddIpoptNumOption(*nlp,"bound_mult_init_val",1e-3);
