@@ -349,7 +349,12 @@ void OptionsDialog::readCurveStyleSettings()
 void OptionsDialog::saveGeneralSettings()
 {
   // save Language option
-  mSettings.setValue("language", mpGeneralSettingsPage->getLanguageComboBox()->itemData(mpGeneralSettingsPage->getLanguageComboBox()->currentIndex()).toLocale().name());
+  QString language;
+  if (mpGeneralSettingsPage->getLanguageComboBox()->currentIndex() == 0)
+    language = QLocale::system().name();
+  else
+    language = mpGeneralSettingsPage->getLanguageComboBox()->itemData(mpGeneralSettingsPage->getLanguageComboBox()->currentIndex()).toLocale().name();
+  mSettings.setValue("language", language);
   // save working directory
   mpMainWindow->getOMCProxy()->changeDirectory(mpGeneralSettingsPage->getWorkingDirectory());
   mSettings.setValue("workingDirectory", mpMainWindow->getOMCProxy()->changeDirectory());
