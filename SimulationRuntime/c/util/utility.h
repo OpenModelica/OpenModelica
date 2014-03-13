@@ -36,6 +36,22 @@
 #include "openmodelica.h"
 #include <math.h>
 
+static inline int in_range_boolean(modelica_integer b,
+         modelica_integer start,
+         modelica_integer stop)
+{
+  if(start <= stop) {
+      if((b >= start) && (b <= stop)) {
+          return 1;
+      }
+  } else {
+      if((b >= stop) && (b <= start)) {
+          return 1;
+      }
+  }
+  return 0;
+}
+
 static inline int in_range_integer(modelica_integer i,
          modelica_integer start,
          modelica_integer stop)

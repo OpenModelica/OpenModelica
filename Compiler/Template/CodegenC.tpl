@@ -4671,7 +4671,7 @@ template contextCref(ComponentRef cr, Context context)
       let rec_name = underscorePath(ClassInf.getStateName(record_state))
       let recPtr = tempDecl(rec_name + "*", &varDecls)
       let dimsLenStr = listLength(crefSubs(cr))   
-      let dimsValuesStr = (crefSubs(cr) |> INDEX(__) => daeExp(exp, context, &preExp, &varDecls) ; separator=", ")
+      let dimsValuesStr = (crefSubs(cr) |> INDEX(__) => daeDimensionExp(exp, context, &preExp, &varDecls) ; separator=", ")
       <<
       ((<%rec_name%>*)(generic_array_element_addr(&_<%ident%>, sizeof(<%rec_name%>), <%dimsLenStr%>, <%dimsValuesStr%>)))-><%contextCref(componentRef, context)%>
       >>
@@ -7455,8 +7455,7 @@ case RANGE(__) then
   let startValue = daeExp(start, context, &preExp, &varDecls)
   let stepValue = match step case SOME(eo) then
       daeExp(eo, context, &preExp, &varDecls)
-    else
-      "(1)"
+    else "1"
   let stopValue = daeExp(stop, context, &preExp, &varDecls)
   <<
   <%preExp%>
@@ -7805,7 +7804,7 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
   case e as ICONST(__)          then '(modelica_integer) <%integer%>' /* Yes, we need to cast int to long on 64-bit arch... */
   case e as RCONST(__)          then real
   case e as SCONST(__)          then daeExpSconst(string, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-  case e as BCONST(__)          then if bool then "(1)" else "(0)"
+  case e as BCONST(__)          then if bool then "1" else "0"
   case e as ENUM_LITERAL(__)    then index
   case e as CREF(__)            then daeExpCrefRhs(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case e as BINARY(__)          then daeExpBinary(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
@@ -7935,7 +7934,7 @@ template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp /*BUFP*/,
               match context
               case FUNCTION_CONTEXT(__) then
                 let dimsValuesStr = (crefSubs(cr) |> INDEX(__) =>
-                  daeExp(exp, context, &preExp, &varDecls)
+                  daeDimensionExp(exp, context, &preExp, &varDecls)
                   ;separator=", ")
                 match ty
                   case (T_ARRAY(ty = T_COMPLEX(complexClassType = record_state))) then
@@ -7950,7 +7949,7 @@ template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp /*BUFP*/,
                   >>
                   else 
                   <<
-                   (*<%arrayType%>_element_addr(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
+                  (*<%arrayType%>_element_addr(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
                   >>
               case PARALLEL_FUNCTION_CONTEXT(__) then
                 let dimsValuesStr = (crefSubs(cr) |> INDEX(__) =>
@@ -8128,7 +8127,7 @@ template daeExpCrefLhs2(Exp ecr, Context context, Text &afterExp /*BUFP*/,
           let arrayType = expTypeArray(ty)
           let dimsLenStr = listLength(crefSubs(cr))
           let dimsValuesStr = (crefSubs(cr) |> INDEX(__) =>
-              daeExp(exp, context, &afterExp /*BUFC*/, &varDecls /*BUFD*/)
+              daeDimensionExp(exp, context, &afterExp /*BUFC*/, &varDecls /*BUFD*/)
             ;separator=", ")
           match arrayType
             case "metatype_array" then
@@ -8139,9 +8138,13 @@ template daeExpCrefLhs2(Exp ecr, Context context, Text &afterExp /*BUFP*/,
                   <<
                   (*<%arrayType%>_element_addr_c99_<%dimsLenStr%>(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
                   >>
-              else
+              case FUNCTION_CONTEXT(__) then
                   <<
                   (*<%arrayType%>_element_addr(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
+                  >>
+              else
+                  <<
+                  _<%arrName%>(<%dimsValuesStr%>)
                   >>
 
         else
@@ -9693,7 +9696,7 @@ template arrayScalarRhs(Type ty, list<Exp> subs, String arrName, Context context
   let arrayType = expTypeArray(ty)
   let dimsLenStr = listLength(subs)
   let dimsValuesStr = (subs |> exp =>
-      daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+      daeDimensionExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
 
     ;separator=", ")
   match arrayType
@@ -10851,6 +10854,17 @@ int main(int argc, char **argv)
 }
 >>
 end generateEntryPoint;
+
+/* Dimensions need to return expressions that are different than for normal expressions.
+ * The reason is that dimensions use 1-based indexing, but Boolean indexes start at 0
+ */
+template daeDimensionExp(Exp exp, Context context, Text &preExp, Text &varDecls)
+::=
+  let res = daeExp(exp,context,&preExp,&varDecls)
+  match expTypeFromExpModelica(exp)
+  case "modelica_boolean" then '(<%res%>+1)'
+  else '/* <%expTypeFromExpModelica(exp)%> */ <%res%>'
+end daeDimensionExp;
 
 end CodegenC;
 
