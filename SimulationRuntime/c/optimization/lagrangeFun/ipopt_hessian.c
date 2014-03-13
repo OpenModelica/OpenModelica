@@ -204,7 +204,7 @@ static int sumLagrange(IPOPT_DATA_ *iData, double * erg,int ii, int i, int j, in
   for(l = 0; l<iData->nx; ++l)
     sum += iData->H[l][i][j];
 
-  if(iData->lagrange){
+  if(iData->lagrange && iData->gradFomc[iData->lagrange_index][i]* iData->gradFomc[iData->lagrange_index][j]){
     if(ii)
       sum += iData->br[p-1]*iData->oH[i][j];
     else
@@ -216,7 +216,7 @@ static int sumLagrange(IPOPT_DATA_ *iData, double * erg,int ii, int i, int j, in
    for(l = iData->nx; l<nJ; ++l)
      sum += iData->H[l][i][j];
 
-  if(mayer_yes)
+  if(mayer_yes && iData->gradFomc[iData->mayer_index][i]* iData->gradFomc[iData->mayer_index][j])
     sum += iData->mH[i][j];
 
   *erg = (double) sum;
@@ -255,7 +255,7 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
     for(j = i; j < iData->nv; ++j){
       if(iData->Hg[i][j]){
        for(l = 0; l< nJ; ++l){
-        if(iData->knowedJ[l][j] + iData->knowedJ[l][i] >= 2)
+        if(iData->knowedJ[l][j] + iData->knowedJ[l][i] >= 2 && lambda[l] != 0.0)
           iData->H[l][i][j]  = (long double)lambda[l]*(iData->J[l][j] - iData->J0[l][j])/h;
         else
           iData->H[l][i][j] = (long double) 0.0;
@@ -266,14 +266,20 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
     h = obj_factor/h; 
     if(lagrange_yes){
       for(j = i; j < iData->nv; ++j){
-       iData->oH[i][j]  = (long double) h* iData->vnom[j]*(iData->gradF[j] - iData->gradF0[j]);
+       if(iData->gradFomc[iData->lagrange_index][i]* iData->gradFomc[iData->lagrange_index][j])
+         iData->oH[i][j]  = (long double) h* iData->vnom[j]*(iData->gradF[j] - iData->gradF0[j]);
+       else
+         iData->oH[i][j] = 0.0;
        iData->oH[j][i]  = iData->oH[i][j] ; 
       }
     }
 
     if(mayer_yes){
       for(j = i; j < iData->nv; ++j){
-       iData->mH[i][j]  = (long double) h* iData->vnom[j]*(iData->gradF_[j] - iData->gradF00[j]);
+       if(iData->gradFomc[iData->mayer_index][i]* iData->gradFomc[iData->mayer_index][j])
+         iData->mH[i][j]  = (long double) h* iData->vnom[j]*(iData->gradF_[j] - iData->gradF00[j]);
+       else
+         iData->mH[i][j] = 0.0;
        iData->mH[j][i]  = iData->mH[i][j] ; 
       }
     }
