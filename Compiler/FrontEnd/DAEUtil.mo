@@ -5384,42 +5384,46 @@ algorithm
   end match;
 end differenceInHeight;
 
-public function avlTreeGet "  Get a value from the binary tree given a key.
-"
+public function avlTreeGet
+  "Get a value from the binary tree given a key."
   input DAE.AvlTree inAvlTree;
   input DAE.AvlKey inKey;
   output DAE.AvlValue outValue;
 algorithm
-  outValue := matchcontinue (inAvlTree,inKey)
+  outValue := match (inAvlTree,inKey)
     local
       DAE.AvlKey rkey,key;
-      DAE.AvlValue rval,res;
+    case (DAE.AVLTREENODE(value = SOME(DAE.AVLTREEVALUE(key=rkey))),key)
+      then avlTreeGet2(inAvlTree,avlKeyCompare(key,rkey),key);
+  end match;
+end avlTreeGet;
+
+protected function avlTreeGet2
+  "Get a value from the binary tree given a key."
+  input DAE.AvlTree inAvlTree;
+  input Integer keyComp "0=get value from current node, 1=search right subtree, -1=search left subtree";
+  input DAE.AvlKey inKey;
+  output DAE.AvlValue outValue;
+algorithm
+  outValue := match (inAvlTree,keyComp,inKey)
+    local
+      DAE.AvlKey key;
+      DAE.AvlValue rval;
       DAE.AvlTree left,right;
 
     // hash func Search to the right
-    case (DAE.AVLTREENODE(value = SOME(DAE.AVLTREEVALUE(rkey,rval))),key)
-      equation
-        0 = avlKeyCompare(key,rkey);
-      then
-        rval;
+    case (DAE.AVLTREENODE(value = SOME(DAE.AVLTREEVALUE(value=rval))),0,key)
+      then rval;
 
-    // Search to the right
-    case (DAE.AVLTREENODE(value = SOME(DAE.AVLTREEVALUE(rkey,rval)),right = SOME(right)),key)
-      equation
-        1 = avlKeyCompare(key,rkey);
-        res = avlTreeGet(right, key);
-      then
-        res;
+    // search to the right
+    case (DAE.AVLTREENODE(right = SOME(right)),1,key)
+      then avlTreeGet(right, key);
 
-    // Search to the left
-    case (DAE.AVLTREENODE(value = SOME(DAE.AVLTREEVALUE(rkey,rval)),left = SOME(left)),key)
-      equation
-        -1 = avlKeyCompare(key,rkey);
-        res = avlTreeGet(left, key);
-      then
-        res;
-  end matchcontinue;
-end avlTreeGet;
+    // search to the left
+    case (DAE.AVLTREENODE(left = SOME(left)),-1,key)
+      then avlTreeGet(left, key);
+  end match;
+end avlTreeGet2;
 
 protected function getOptionStr "Retrieve the string from a string option.
   If NONE() return empty string."
