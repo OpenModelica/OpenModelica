@@ -225,7 +225,9 @@ int main(int argc, char *argv[])
   QApplication a(argc, argv);
   QTextCodec::setCodecForTr(QTextCodec::codecForName(Helper::utf8.toLatin1().data()));
   QTextCodec::setCodecForCStrings(QTextCodec::codecForName(Helper::utf8.toLatin1().data()));
+#ifndef WIN32
   QTextCodec::setCodecForLocale(QTextCodec::codecForName(Helper::utf8.toLatin1().data()));
+#endif
   a.setAttribute(Qt::AA_DontShowIconsInMenus, false);
   // Localization
   //*a.severin/ add localization
