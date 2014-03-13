@@ -7991,12 +7991,13 @@ template threadDimSubList(list<Dimension> dims, list<Subscript> subs, Context co
       case _::dimrest
       then
         let estr = daeExp(sub.exp, context, &preExp, &varDecls)
+        /* subtract one for indexing a C-array*/ 
         '((<%estr%>)<%
           dimrest |> dim =>
           match dim
-          case DIM_INTEGER(__) then '*<%integer%>'
+          case DIM_INTEGER(__) then '*<%integer%>-1'
           case DIM_BOOLEAN(__) then '*2'
-          case DIM_ENUM(__) then '*<%size%>'
+          case DIM_ENUM(__) then '*<%size%>-1'
           else error(sourceInfo(),"Non-constant dimension in simulation context")
         %>)<%match subrest case {} then "" else '+<%threadDimSubList(dimrest,subrest,context,&preExp,&varDecls)%>'%>'
       else error(sourceInfo(),"Less subscripts that dimensions in indexing cref? That's odd!")
@@ -9254,7 +9255,6 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp /*BUFP*/,
   // Modelica Array
   else
   match inExp
-
   case ASUB(exp=ASUB(__)) then
     error(sourceInfo(),'Nested array subscripting *should* have been handled by the routine creating the asub, but for some reason it was not: <%printExpStr(exp)%>')
 
