@@ -7961,8 +7961,9 @@ template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp /*BUFP*/,
               else
                 match crefLastType(cr)
                 case et as T_ARRAY(__) then
+                /* subtract one for indexing a C-array*/ 
                 <<
-                (&<%arrName%>)[<%threadDimSubList(et.dims,crefSubs(cr),context,&preExp,&varDecls)%>]
+                (&<%arrName%>)[<%threadDimSubList(et.dims,crefSubs(cr),context,&preExp,&varDecls)%> - 1]
                 >>
                 else error(sourceInfo(),'Indexing non-array <%printExpStr(ecr)%>')
         else
@@ -7990,13 +7991,12 @@ template threadDimSubList(list<Dimension> dims, list<Subscript> subs, Context co
       case _::dimrest
       then
         let estr = daeExp(sub.exp, context, &preExp, &varDecls)
-        /* subtract one for indexing a C-array*/ 
         '((<%estr%>)<%
           dimrest |> dim =>
           match dim
-          case DIM_INTEGER(__) then '*<%integer%>-1'
+          case DIM_INTEGER(__) then '*<%integer%>'
           case DIM_BOOLEAN(__) then '*2'
-          case DIM_ENUM(__) then '*<%size%>-1'
+          case DIM_ENUM(__) then '*<%size%>'
           else error(sourceInfo(),"Non-constant dimension in simulation context")
         %>)<%match subrest case {} then "" else '+<%threadDimSubList(dimrest,subrest,context,&preExp,&varDecls)%>'%>'
       else error(sourceInfo(),"Less subscripts that dimensions in indexing cref? That's odd!")
