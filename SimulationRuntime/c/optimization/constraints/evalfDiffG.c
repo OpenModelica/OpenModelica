@@ -475,21 +475,15 @@ static int jac_struc(IPOPT_DATA_ *iData, int *iRow, int *iCol)
   } /* end i*/
 
   /*********************************************/
+  /*********************************************/
+  /*********************************************/
+
   for(; i<nsi; ++i){
     /*1*/
     for(j=0; j<nx; ++j){
       /*0*/
-      if(i > 0){
-         iRow[k] = r + j;
-         iCol[k++] = c - nv + j;
-      }else{
-        for(l=0; l<nv; ++l){
-          if(iData->knowedJ[j][l]){
-            iRow[k] = j;
-            iCol[k++] = l;
-          }
-        }
-      }
+      iRow[k] = r + j;
+      iCol[k++] = c - nv + j;
 
       /*1*/
       for(l=0; l<nv; ++l){
@@ -523,17 +517,8 @@ static int jac_struc(IPOPT_DATA_ *iData, int *iRow, int *iCol)
 
     for(j=0; j<nx; ++j){
       /*0*/
-      if(i){
-        iRow[k] = r + j;
-        iCol[k++] = c - 2*nv + j;
-      }else{
-        for(l=0; l<nv; ++l){
-          if(iData->knowedJ[j][l]){
-            iRow[k] = r + j;
-            iCol[k++] = l;
-          }
-        }
-      }
+      iRow[k] = r + j;
+      iCol[k++] = c - 2*nv + j;
 
       /*1*/
       iRow[k] = iRow[k-1];
@@ -567,17 +552,8 @@ static int jac_struc(IPOPT_DATA_ *iData, int *iRow, int *iCol)
 
     for(j=0; j<nx; ++j){
       /*0*/
-      if(i){
-        iRow[k] = r + j;
-        iCol[k++] = c - 3*nv + j;
-      }else{
-        for(l=0; l<nv; ++l){
-          if(iData->knowedJ[j][l]){
-            iRow[k] = r + j;
-            iCol[k++] = l;
-          }
-        }
-      }
+      iRow[k] = r + j;
+      iCol[k++] = c - 3*nv + j;
 
       /*1*/
       iRow[k] = iRow[k-1];
