@@ -3,7 +3,7 @@ QMAKE_CXX = @CXX@
 QMAKE_LINK = @CXX@
 
 LIBS += -lqwt@with_qwt_suffix@ -lgc
-INCLUDEPATH += @with_qwt@
+INCLUDEPATH += @with_qwt@ ../../3rdParty/gc-7.2/include
 
 QMAKE_CFLAGS = @CFLAGS@ @CPPFLAGS@
 QMAKE_CXXFLAGS = @CFLAGS@ @CPPFLAGS@
