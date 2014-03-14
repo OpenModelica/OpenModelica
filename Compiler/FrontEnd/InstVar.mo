@@ -1138,6 +1138,84 @@ protected function instArray
   output DAE.Type outType;
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
+  checkDimensionGreaterThanZero(inDimension,inPrefix,inIdent,info);
+  (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph) := instArray2(inCache, inEnv, inIH, inStore, inState, inMod, inPrefix, inIdent, inTplSCodeClassSCodeAttributes, inPrefixes, inInteger, inDimension, inDimensionLst, inIntegerLst, inInstDims, inBoolean, inComment, info, inGraph, inSets);
+end instArray;
+
+protected function checkDimensionGreaterThanZero
+  input DAE.Dimension inDim;
+  input Prefix.Prefix inPrefix;
+  input String inIdent;
+  input Absyn.Info info;
+algorithm
+  _ := match (inDim,inPrefix,inIdent,info)
+    local
+      Integer i;
+      Boolean b;
+      String str1,str2;
+    case (DAE.DIM_INTEGER(i),_,_,_)
+      equation
+        checkDimensionGreaterThanZero2(i < 0,inDim,inPrefix,inIdent,info);
+      then ();
+    else ();
+  end match;
+end checkDimensionGreaterThanZero;
+
+protected function checkDimensionGreaterThanZero2
+  input Boolean isError;
+  input DAE.Dimension inDim;
+  input Prefix.Prefix inPrefix;
+  input String inIdent;
+  input Absyn.Info info;
+algorithm
+  _ := match (isError,inDim,inPrefix,inIdent,info)
+    local
+      Integer i;
+      Boolean b;
+      String str1,str2;
+    case (true,_,_,_,_)
+      equation
+        str1 = ExpressionDump.dimensionString(inDim);
+        str2 = ComponentReference.printComponentRefStr(PrefixUtil.prefixCrefNoContext(inPrefix,DAE.CREF_IDENT(inIdent,DAE.T_REAL_DEFAULT,{})));
+        Error.addSourceMessage(Error.NEGATIVE_DIMENSION_INDEX, {str1,str2}, info);
+      then fail();
+    else ();
+  end match;
+end checkDimensionGreaterThanZero2;
+
+protected function instArray2
+"When an array is instantiated by instVar, this function is used
+  to go through all the array elements and instantiate each array
+  element separately."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input InnerOuter.InstHierarchy inIH;
+  input UnitAbsyn.InstStore inStore;
+  input ClassInf.State inState;
+  input DAE.Mod inMod;
+  input Prefix.Prefix inPrefix;
+  input String inIdent;
+  input tuple<SCode.Element, SCode.Attributes> inTplSCodeClassSCodeAttributes;
+  input SCode.Prefixes inPrefixes;
+  input Integer inInteger;
+  input DAE.Dimension inDimension;
+  input DAE.Dimensions inDimensionLst;
+  input list<DAE.Subscript> inIntegerLst;
+  input list<list<DAE.Subscript>>inInstDims;
+  input Boolean inBoolean;
+  input SCode.Comment inComment;
+  input Absyn.Info info;
+  input ConnectionGraph.ConnectionGraph inGraph;
+  input Connect.Sets inSets;
+  output Env.Cache outCache;
+  output Env.Env outEnv;
+  output InnerOuter.InstHierarchy outIH;
+  output UnitAbsyn.InstStore outStore;
+  output DAE.DAElist outDae;
+  output Connect.Sets outSets;
+  output DAE.Type outType;
+  output ConnectionGraph.ConnectionGraph outGraph;
+algorithm
   (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph) :=
   matchcontinue (inCache,inEnv,inIH,inStore,inState,inMod,inPrefix,inIdent,inTplSCodeClassSCodeAttributes,inPrefixes,inInteger,inDimension,inDimensionLst,inIntegerLst,inInstDims,inBoolean,inComment,info,inGraph,inSets)
     local
@@ -1231,7 +1309,7 @@ algorithm
     case
       (cache,env,ih,store,ci_state,mod,pre,n,(cl,attr),pf,i,DAE.DIM_INTEGER(integer = stop),dims,idxs,inst_dims,impl,comment,_,graph,csets)
       equation
-        (i > stop) = true;
+        true = (i > stop);
       then
         (cache,env,ih,store,DAE.emptyDae,csets,DAE.T_UNKNOWN_DEFAULT,graph);
 
@@ -1260,7 +1338,7 @@ algorithm
            pf,dims, (s :: idxs), {} /* inst_dims */, impl, comment,info,graph, inSets);
         i_1 = i + 1;
         (cache,_,ih,store,dae2,csets,_,graph) =
-          instArray(cache,env,ih,store, ci_state, mod, pre, n, (cl,attr), pf,
+          instArray2(cache,env,ih,store, ci_state, mod, pre, n, (cl,attr), pf,
           i_1, DAE.DIM_INTEGER(stop), dims, idxs, {} /* inst_dims */, impl, comment,info,graph, csets);
         daeLst = DAEUtil.joinDaeLst({dae1, dae2});
       then
@@ -1274,7 +1352,7 @@ algorithm
            instVar2(cache,env,ih, store,ci_state, mod_1, pre, n, cl, attr, pf,dims, (s :: idxs), inst_dims, impl, comment,info,graph, csets);
         i_1 = i + 1;
         (cache,_,ih,store,dae2,csets,_,graph) =
-          instArray(cache,env,ih,store, ci_state, mod, pre, n, (cl,attr), pf, i_1, DAE.DIM_INTEGER(stop), dims, idxs, inst_dims, impl, comment,info,graph, csets);
+          instArray2(cache,env,ih,store, ci_state, mod, pre, n, (cl,attr), pf, i_1, DAE.DIM_INTEGER(stop), dims, idxs, inst_dims, impl, comment,info,graph, csets);
         daeLst = DAEUtil.joinDaes(dae1, dae2);
       then
         (cache,env_1,ih,store,daeLst,csets,ty,graph);
@@ -1293,7 +1371,7 @@ algorithm
           attr, pf, dims, (s :: idxs), inst_dims, impl, comment, info, graph, csets);
         i_1 = i + 1;
         (cache, _, ih, store, dae2, csets, _, graph) =
-          instArray(cache, env, ih, store, ci_state, mod, pre, n, (cl,
+          instArray2(cache, env, ih, store, ci_state, mod, pre, n, (cl,
           attr), pf, i_1, DAE.DIM_ENUM(enum_type, l, enum_size), dims, idxs,
           inst_dims, impl, comment, info, graph, csets);
         daeLst = DAEUtil.joinDaes(dae1, dae2);
@@ -1337,6 +1415,6 @@ algorithm
       then
         fail();
   end matchcontinue;
-end instArray;
+end instArray2;
 
 end InstVar;

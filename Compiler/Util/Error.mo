@@ -639,6 +639,8 @@ public constant Message BACKENDDAEINFO_TORN = MESSAGE(239, SYMBOLIC(), NOTIFICAT
   Util.gettext("Torn system details:\n * Linear torn systems: %s\n * Non-linear torn systems: %s"));
 public constant Message BACKEND_DAE_TO_MODELICA = MESSAGE(240, SYMBOLIC(), NOTIFICATION(),
   Util.gettext("The following Modelica-like model represents the back-end DAE for the '%s' stage:\n%s"));
+public constant Message NEGATIVE_DIMENSION_INDEX = MESSAGE(241, TRANSLATION(), ERROR(),
+  Util.gettext("Negative dimension index (%s) for component %s."));
 
 public constant Message UNBOUND_PARAMETER_WITH_START_VALUE_WARNING = MESSAGE(499, TRANSLATION(), WARNING(),
   Util.gettext("Parameter %s has no value, and is fixed during initialization (fixed=true), using available start value (start=%s) as default value."));
