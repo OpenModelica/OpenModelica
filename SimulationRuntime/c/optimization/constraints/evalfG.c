@@ -92,14 +92,14 @@ Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
      functionODE_(iData->x2, iData->u2, iData->time[2], iData->dotx2, iData);
      evalG22(g + k, iData, x0, i);
      if(ACTIVE_STREAM(LOG_IPOPT_ERROR))
-       printMaxError(iData,g,iData->time[1],&max_err, &max_err_time, &max_err_xi);
+       printMaxError(iData,g,iData->time[2],&max_err, &max_err_time, &max_err_xi);
      k += iData->nJ;
 
      /*3*/
      functionODE_(iData->x3, iData->u3, iData->time[3], iData->dotx3, iData);
      evalG23(g + k, iData, x0, i);
      if(ACTIVE_STREAM(LOG_IPOPT_ERROR))
-       printMaxError(iData,g,iData->time[1],&max_err, &max_err_time, &max_err_xi);
+       printMaxError(iData,g,iData->time[3],&max_err, &max_err_time, &max_err_xi);
      k += iData->nJ;
   }
 
@@ -116,21 +116,21 @@ Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
     functionODE_(iData->x1, iData->u1, iData->time[i*iData->deg + 1], iData->dotx1, iData);
     evalG11(g + k, iData, x0, i);
     if(ACTIVE_STREAM(LOG_IPOPT_ERROR))
-      printMaxError(iData,g,iData->time[1],&max_err, &max_err_time, &max_err_xi);
+      printMaxError(iData,g,iData->time[i*iData->deg + 1],&max_err, &max_err_time, &max_err_xi);
     k += iData->nJ;
 
     /*2*/
     functionODE_(iData->x2, iData->u2, iData->time[i*iData->deg + 2], iData->dotx2, iData);
     evalG12(g + k, iData, x0, i);
     if(ACTIVE_STREAM(LOG_IPOPT))
-      printMaxError(iData,g,iData->time[1],&max_err, &max_err_time, &max_err_xi);
+      printMaxError(iData,g,iData->time[i*iData->deg + 2],&max_err, &max_err_time, &max_err_xi);
     k += iData->nJ;
 
     /*3*/
     functionODE_(iData->x3, iData->u3, iData->time[i*iData->deg + 3], iData->dotx3, iData);
     evalG13(g + k, iData, x0, i);
     if(ACTIVE_STREAM(LOG_IPOPT_ERROR))
-      printMaxError(iData,g,iData->time[1],&max_err, &max_err_time, &max_err_xi);
+      printMaxError(iData,g,iData->time[i*iData->deg + 3],&max_err, &max_err_time, &max_err_xi);
     k += iData->nJ;
   }
   if(ACTIVE_STREAM(LOG_IPOPT_ERROR)){
@@ -138,7 +138,7 @@ Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
     if(max_err_xi < iData->nx)
       printf("\nmax error for |%s(%g) - collocation_poly| = %g\n",iData->data->modelData.realVarsData[max_err_xi].info.name,max_err_time,max_err);
     else
-      printf("\nmax error for |cosntrain[%i](%g)| = %g\n",iData->data->modelData.realVarsData[max_err_xi].info.name, max_err_time, max_err);
+      printf("\nmax error for |cosntrain[%i](%g)| = %g\n", (int)max_err_xi-(int)iData->nx, max_err_time, max_err);
   }
   return TRUE;
 }
@@ -418,7 +418,8 @@ static int printMaxError(IPOPT_DATA_ *iData, double *g,double t, double * max_er
 
   for(j = 0; j<(int)iData->nx; ++j){
     tmp = fabs(g[j]);
-    if(tmp > *max_err){
+    //printf("\n time %g vs. %g | %g vs. %g",t,*tt,tmp,*max_err);
+    if((double) tmp > (double)*max_err){
       *max_err = tmp;
       *tt = t;
       *xi = j;
@@ -426,7 +427,7 @@ static int printMaxError(IPOPT_DATA_ *iData, double *g,double t, double * max_er
   }
 
   for(; j<(int)iData->nJ; ++j){
-    if(g[j]> *max_err){
+    if((double)g[j]> (double)*max_err){
       *max_err = tmp;
       *tt = t;
       *xi = j;
