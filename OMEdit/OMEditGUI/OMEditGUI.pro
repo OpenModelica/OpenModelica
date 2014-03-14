@@ -141,7 +141,9 @@ win32 {
         -L../../OMPlot/bin \
         -lOMPlot \
         -L$$(OMDEV)/lib/qwt-6.1.0-mingw/lib \
-        -lqwtd
+        -lqwtd \
+        -L../../3rdParty/gc-7.2/.libs \
+        -lgc
 } else {
 # In order to get the stack trace in Windows we must add -g flag. Qt automatically adds the -O2 flag for optimization.
 # We should also unset the QMAKE_LFLAGS_RELEASE define because it is defined as QMAKE_LFLAGS_RELEASE = -Wl,-s in qmake.conf file for MinGW
@@ -155,6 +157,8 @@ win32 {
         -lOMPlot \
         -L$$(OMDEV)/lib/qwt-6.1.0-mingw/lib \
         -lqwt \
+        -L../../3rdParty/gc-7.2/.libs \
+        -lgc \
         # required for backtrace
         -L$$(OMDEV)/tools/mingw/bin \
         -lintl-8 \
