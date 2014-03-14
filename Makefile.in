@@ -85,9 +85,9 @@ omnotebook: mkbuilddirs omplot
 	$(MAKE) -C OMNotebook/OMNotebookGUI -f Makefile.unix 
 omshell: mkbuilddirs
 	$(MAKE) -C OMShell/OMShellGUI -f Makefile.unix
-omplot: mkbuilddirs
+omplot: mkbuilddirs boehm-gc-lib
 	$(MAKE) -C OMPlot/OMPlotGUI -f Makefile.unix
-omedit: mkbuilddirs omplot
+omedit: mkbuilddirs omplot boehm-gc-lib
 	$(MAKE) -C OMEdit/OMEditGUI -f Makefile.unix
 ifeq (@with_paradiseo@,)
 omoptim:
