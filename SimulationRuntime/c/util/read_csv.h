@@ -39,6 +39,10 @@ struct csv_data {
   int numsteps;
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int read_csv_dataset_size(const char* filename);
 
 char** read_csv_variables(FILE *fin, int *length);
@@ -46,5 +50,9 @@ char** read_csv_variables(FILE *fin, int *length);
 struct csv_data* read_csv(const char *filename);
 double* read_csv_dataset(struct csv_data *data, const char *var);
 void omc_free_csv_reader(struct csv_data *data);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif
