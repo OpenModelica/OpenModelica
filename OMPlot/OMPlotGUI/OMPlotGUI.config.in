@@ -2,7 +2,7 @@ QMAKE_CC  = @CC@
 QMAKE_CXX = @CXX@
 QMAKE_LINK = @CXX@
 
-LIBS += -lqwt@with_qwt_suffix@
+LIBS += -lqwt@with_qwt_suffix@ -lgc
 INCLUDEPATH += @with_qwt@
 
 QMAKE_CFLAGS = @CFLAGS@ @CPPFLAGS@
