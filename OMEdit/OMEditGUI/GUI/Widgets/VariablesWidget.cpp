@@ -37,7 +37,6 @@
 
 #include "VariablesWidget.h"
 #include "../../SimulationRuntime/c/util/read_matlab4.h"
-#include "../../SimulationRuntime/c/util/read_csv.h"
 
 using namespace OMPlot;
 
