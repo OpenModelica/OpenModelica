@@ -1007,7 +1007,20 @@ void ShapeAnnotation::setFileName(QString fileName, Component *pComponent)
   mOriginalFileName = fileName;
   QUrl fileUrl(mOriginalFileName);
   QFileInfo fileInfo(mOriginalFileName);
-  QFileInfo classFileInfo(pGraphicsView->getModelWidget()->getLibraryTreeNode()->getFileName());
+  QString classFileName = "";
+  /* if the bitmap is part of a component then read the component filename. */
+  if (pComponent)
+  {
+    QStringList classInformation = pOMCProxy->getClassInformation(pComponent->getClassName());
+    if (classInformation.size() > 2)
+      classFileName = classInformation.at(2);
+  }
+  /* if bitmap is part of a icon/diagram of a class then read the class filename. */
+  else
+  {
+    classFileName = pGraphicsView->getModelWidget()->getLibraryTreeNode()->getFileName();
+  }
+  QFileInfo classFileInfo(classFileName);
   /* if its a modelica:// link then make it absolute path */
   if (fileUrl.scheme().toLower().compare("modelica") == 0)
   {
