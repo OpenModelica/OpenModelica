@@ -14,6 +14,8 @@ QMAKE_LFLAGS += -enable-auto-import
 
 SOURCES += main.cpp \
     ../../SimulationRuntime/c/util/read_matlab4.c \
+    ../../SimulationRuntime/c/util/libcsv.c \
+    ../../SimulationRuntime/c/util/read_csv.c \
     Plot.cpp \
     PlotZoomer.cpp \
     Legend.cpp \
@@ -26,6 +28,8 @@ SOURCES += main.cpp \
     PlotMainWindow.cpp
 
 HEADERS  += ../../SimulationRuntime/c/util/read_matlab4.h \
+    ../../SimulationRuntime/c/util/libcsv.h \
+    ../../SimulationRuntime/c/util/read_csv.h \
     Plot.h \
     PlotZoomer.h \
     Legend.h \
@@ -39,12 +43,15 @@ HEADERS  += ../../SimulationRuntime/c/util/read_matlab4.h \
 
 win32 {
 CONFIG(debug, debug|release){
-LIBS += -L$$(OMDEV)/lib/qwt-6.1.0-mingw/lib -lqwtd
+LIBS += -L$$(OMDEV)/lib/qwt-6.1.0-mingw/lib -lqwtd \
+    -L../../3rdParty/gc-7.2/.libs -lgc
 }
 else {
-LIBS += -L$$(OMDEV)/lib/qwt-6.1.0-mingw/lib -lqwt
+LIBS += -L$$(OMDEV)/lib/qwt-6.1.0-mingw/lib -lqwt \
+    -L../../3rdParty/gc-7.2/.libs -lgc
 }
-INCLUDEPATH += $$(OMDEV)/lib/qwt-6.1.0-mingw/include
+INCLUDEPATH += $$(OMDEV)/lib/qwt-6.1.0-mingw/include \
+    ../../3rdParty/gc-7.2/include
 } else {
   include(OMPlotGUI.config)
 }

@@ -295,65 +295,46 @@ void PlotWindow::plot()
   //PLOT CSV
   else if (mFile.fileName().endsWith("csv"))
   {
-    // open the file
-    mFile.open(QIODevice::ReadOnly);
-    mpTextStream = new QTextStream(&mFile);
-    currentLine = mpTextStream->readLine();
-    currentLine.remove(QChar('"'));
-    QStringList allVariablesInFile = currentLine.split(",");
-    allVariablesInFile.removeLast();
-
+    /* open the file */
     QStringList variablesPlotted;
-    QVector<int> variablesToPlotIndex;
-    for (int j = 0; j < allVariablesInFile.length(); j++)
+    struct csv_data *csvReader;
+    csvReader = read_csv(mFile.fileName().toStdString().c_str());
+    if (csvReader == NULL)
+      throw PlotException(tr("Failed to open simulation result file %1").arg(mFile.fileName()));
+
+    //Read in timevector
+    double *timeVals = read_csv_dataset(csvReader, "time");
+    if (timeVals == NULL)
+      throw NoVariableException("Variable doesnt exist: time");
+    // read in all values
+    for (int i = 0; i < csvReader->numvars; i++)
     {
-      if ((mVariablesList.contains(allVariablesInFile[j])) or (getPlotType() == PlotWindow::PLOTALL))
+      if (mVariablesList.contains(csvReader->variables[i]) or getPlotType() == PlotWindow::PLOTALL)
       {
-        variablesToPlotIndex.push_back(j);
-        variablesPlotted.append(allVariablesInFile[j]);
+        variablesPlotted.append(csvReader->variables[i]);
+        double *vals = read_csv_dataset(csvReader, csvReader->variables[i]);
+        if (vals == NULL)
+          throw NoVariableException(tr("Variable doesnt exist: %1").arg(csvReader->variables[i]).toStdString().c_str());
+        PlotCurve *pPlotCurve = new PlotCurve(mpPlot);
+        pPlotCurve = new PlotCurve(mpPlot);
+        pPlotCurve->setFileName(QFileInfo(mFile).fileName());
+        mpPlot->addPlotCurve(pPlotCurve);
+        pPlotCurve->setTitle(csvReader->variables[i]);
+        for (int i = 0 ; i < csvReader->numsteps ; i++)
+        {
+          pPlotCurve->addXAxisValue(timeVals[i]);
+          pPlotCurve->addYAxisValue(vals[i]);
+        }
+        pPlotCurve->setData(timeVals, vals, csvReader->numsteps);
+        pPlotCurve->attach(mpPlot);
+        mpPlot->replot();
       }
     }
-
-    // create plot curves
-    PlotCurve *pPlotCurve[variablesToPlotIndex.size()];
-    for(int i = 0; i < variablesToPlotIndex.size(); i++)
-    {
-      pPlotCurve[i] = new PlotCurve(mpPlot);
-      pPlotCurve[i]->setFileName(QFileInfo(mFile).fileName());
-      mpPlot->addPlotCurve(pPlotCurve[i]);
-      pPlotCurve[i]->setTitle(variablesPlotted.at(i));
-    }
-
-    //Assign Values
-    while(!mpTextStream->atEnd())
-    {
-      currentLine = mpTextStream->readLine();
-      QStringList values = currentLine.split(",");
-      values.removeLast();
-
-      for(int i = 0; i < variablesToPlotIndex.size(); i++)
-      {
-        QString valuesString = values[0];
-        pPlotCurve[i]->addXAxisValue(valuesString.toDouble());
-        QString valuesString2 = values[variablesToPlotIndex[i]];
-        pPlotCurve[i]->addYAxisValue(valuesString2.toDouble());
-      }
-    }
-
-    // plot the curves
-    for(int i = 0; i < variablesToPlotIndex.size(); i++)
-    {
-      pPlotCurve[i]->setData(pPlotCurve[i]->getXAxisVector(), pPlotCurve[i]->getYAxisVector(),
-                             pPlotCurve[i]->getSize());
-      pPlotCurve[i]->attach(mpPlot);
-      mpPlot->replot();
-    }
-
     // if plottype is PLOT then check which requested variables are not found in the file
     if (getPlotType() == PlotWindow::PLOT)
       checkForErrors(mVariablesList, variablesPlotted);
     // close the file
-    mFile.close();
+    omc_free_csv_reader(csvReader);
   }
   //PLOT MAT
   else if(mFile.fileName().endsWith("mat"))
