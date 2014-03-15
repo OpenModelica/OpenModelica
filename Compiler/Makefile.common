@@ -153,6 +153,7 @@ HpcOmSimCode.mo \
 HpcOmTaskGraph.mo \
 IndexReduction.mo \
 Initialization.mo \
+InlineArrayEquations.mo \
 InlineSolver.mo \
 Matching.mo \
 MathematicaDump.mo \

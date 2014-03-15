@@ -69,7 +69,6 @@ encapsulated package Absyn
 protected import Debug;
 protected import Dump;
 protected import System;
-protected import Flags;
 
 public
 type Ident = String "An identifier, for example a variable name" ;

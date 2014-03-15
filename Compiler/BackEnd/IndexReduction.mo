@@ -46,7 +46,6 @@ protected import Absyn;
 protected import BackendDAEEXT;
 protected import BackendDump;
 protected import BackendEquation;
-protected import BackendDAEOptimize;
 protected import BackendDAETransform;
 protected import BackendDAEUtil;
 protected import BackendVariable;
@@ -69,6 +68,7 @@ protected import HashTable3;
 protected import HashTableCG;
 protected import HashTableCrIntToExp;
 protected import Inline;
+protected import InlineArrayEquations;
 protected import List;
 protected import Matching;
 protected import SCode;
@@ -2004,7 +2004,7 @@ algorithm
         funcs = BackendDAEUtil.getFunctions(ishared);
         (eqnslst,_) = BackendEquation.traverseBackendDAEExpsEqnList(eqnslst, forceInlinEqn,funcs);
         // try to make scalar
-        (eqnslst,_) = BackendDAEOptimize.getScalarArrayEqns(eqnslst,{},false);
+        (eqnslst,_) = InlineArrayEquations.getScalarArrayEqns(eqnslst);
         // convert x:STATE(n) if n>1 to DER.DER....x
         (hov,ht) = List.map1Fold(iHov,getLevelStates,level,HashTableCrIntToExp.emptyHashTable());
         (eqnslst,_) = BackendEquation.traverseBackendDAEExpsEqnList(eqnslst, replaceDummyDerivatives, ht);
@@ -4411,7 +4411,7 @@ protected
   list<Integer> unassigned,assigned;
 algorithm
   vars := BackendVariable.listVar1(inVarLst);
-  (eqnslst,_) := BackendDAEOptimize.getScalarArrayEqns(inEqnsLst,{},false);
+  (eqnslst,_) := InlineArrayEquations.getScalarArrayEqns(inEqnsLst);
   eqns := BackendEquation.listEquation(eqnslst);
   syst := BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),{});
   (me,_,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst, shared);

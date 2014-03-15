@@ -82,6 +82,7 @@ protected import Flags;
 protected import Global;
 protected import GlobalScript;
 protected import IndexReduction;
+protected import InlineArrayEquations;
 protected import Initialization;
 protected import Inline;
 protected import List;
@@ -2431,10 +2432,8 @@ end getExtraInfo;
   stuff that deals with extendArrExp
  ************************************/
 
-public function extendArrExp "
-Author: Frenkel TUD 2010-07
-alternative name: vectorizeExp
-"
+public function extendArrExp "author: Frenkel TUD 2010-07
+  alternative name: vectorizeExp"
   input tuple<DAE.Exp,tuple<Option<DAE.FunctionTree>,Boolean>> itpl;
   output tuple<DAE.Exp,tuple<Option<DAE.FunctionTree>,Boolean>> otpl;
 algorithm
@@ -2447,8 +2446,7 @@ algorithm
   end matchcontinue;
 end extendArrExp;
 
-protected function traversingextendArrExp "
-Author: Frenkel TUD 2010-07.
+protected function traversingextendArrExp "author: Frenkel TUD 2010-07.
   This function extend all array and record componentrefs to there
   elements. This is necessary for BLT and substitution of simple
   equations."
@@ -2871,29 +2869,28 @@ algorithm outExp := matchcontinue(inExp)
 end matchcontinue;
 end traversingcollateArrExp;
 
-public function dimensionsToRange
-  "Converts a list of dimensions to a list of integer ranges."
+protected function dimensionsToRange
+  "Converts a list of dimensions to a list of subscript lists."
   input list<DAE.Dimension> idims;
   output list<list<DAE.Subscript>> outRangelist;
 algorithm
   outRangelist := matchcontinue(idims)
-  local
-    Integer i;
-    list<list<DAE.Subscript>> rangelist;
-    list<Integer> range;
-    list<DAE.Subscript> subs;
-    DAE.Dimension d;
-    list<DAE.Dimension> dims;
+    local
+      Integer i;
+      list<list<DAE.Subscript>> rangelist;
+      list<Integer> range;
+      list<DAE.Subscript> subs;
+      DAE.Dimension d;
+      list<DAE.Dimension> dims;
 
     case({}) then {};
-    case(DAE.DIM_UNKNOWN()::dims)
-      equation
-        rangelist = dimensionsToRange(dims);
-      then {}::rangelist;
+    
+    case(DAE.DIM_UNKNOWN()::dims) equation
+      rangelist = dimensionsToRange(dims);
+    then {}::rangelist;
+    
     case(d::dims) equation
-      i = Expression.dimensionSize(d);
-      range = List.intRange(i);
-      subs = rangesToSubscript(range);
+      subs = ComponentReference.expandDimension(d);
       rangelist = dimensionsToRange(dims);
     then subs::rangelist;
   end matchcontinue;
@@ -8746,7 +8743,7 @@ protected
 algorithm
   allPreOptModules := {(RemoveSimpleEquations.fastAcausal, "removeSimpleEquations", false),
                        (RemoveSimpleEquations.allAcausal, "removeAllSimpleEquations", false),
-                       (BackendDAEOptimize.inlineArrayEqn, "inlineArrayEqn", false),
+                       (InlineArrayEquations.inlineArrayEqn, "inlineArrayEqn", false),
                        (EvaluateParameter.evaluateFinalParameters, "evaluateFinalParameters", false),
                        (EvaluateParameter.evaluateEvaluateParameters, "evaluateEvaluateParameters", false),
                        (EvaluateParameter.evaluateFinalEvaluateParameters, "evaluateFinalEvaluateParameters", false),
@@ -8797,7 +8794,7 @@ algorithm
                         (EvaluateParameter.evaluateReplaceFinalParameters, "evaluateReplaceFinalParameters", false),
                         (EvaluateParameter.evaluateReplaceEvaluateParameters, "evaluateReplaceEvaluateParameters", false),
                         (EvaluateParameter.evaluateReplaceFinalEvaluateParameters, "evaluateReplaceFinalEvaluateParameters", false),
-                        (BackendDAEOptimize.inlineArrayEqn,"inlineArrayEqn",false),
+                        (InlineArrayEquations.inlineArrayEqn,"inlineArrayEqn",false),
                         (BackendDAEOptimize.removeUnusedParameter,"removeUnusedParameter",false),
                         (BackendDAEOptimize.removeUnusedVariables,"removeUnusedVariables",false),
                         (BackendDAEOptimize.constantLinearSystem,"constantLinearSystem",false),

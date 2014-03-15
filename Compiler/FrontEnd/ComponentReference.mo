@@ -2705,7 +2705,7 @@ algorithm
   end match;
 end getRangeContents;
 
-protected function expandDimension
+public function expandDimension
   "Generates a list of subscripts given an array dimension."
   input DAE.Dimension inDimension;
   output list<DAE.Subscript> outSubscript;
@@ -2718,19 +2718,17 @@ algorithm
       list<DAE.Exp> enum_expl;
 
     // An integer dimension, generate a list of integer subscripts.
-    case DAE.DIM_INTEGER(integer = dim_int)
-      then List.generateReverse(dim_int, makeIntegerSubscript);
+    case DAE.DIM_INTEGER(integer=dim_int)
+    then List.generateReverse(dim_int, makeIntegerSubscript);
 
     // An enumeration dimension, construct all enumeration literals and make
     // subscript out of them.
-    case DAE.DIM_ENUM(enumTypeName = enum_ty, literals = enum_lits)
-      equation
-        enum_expl = Expression.makeEnumLiterals(enum_ty, enum_lits);
-      then
-        List.map(enum_expl, Expression.makeIndexSubscript);
+    case DAE.DIM_ENUM(enumTypeName=enum_ty, literals=enum_lits) equation
+      enum_expl = Expression.makeEnumLiterals(enum_ty, enum_lits);
+    then List.map(enum_expl, Expression.makeIndexSubscript);
 
-    case DAE.DIM_BOOLEAN() then DAE.INDEX(DAE.BCONST(false))::DAE.INDEX(DAE.BCONST(true))::{};
-
+    case DAE.DIM_BOOLEAN()
+    then DAE.INDEX(DAE.BCONST(false))::DAE.INDEX(DAE.BCONST(true))::{};
   end match;
 end expandDimension;
 
