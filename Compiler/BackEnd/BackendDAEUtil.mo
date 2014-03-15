@@ -89,6 +89,7 @@ protected import List;
 protected import Matching;
 protected import OnRelaxation;
 protected import RemoveSimpleEquations;
+protected import ResolveLoops;
 protected import SCode;
 protected import System;
 protected import Tearing;
@@ -8761,7 +8762,7 @@ algorithm
                        (BackendDAEOptimize.simplifyIfEquations, "simplifyIfEquations", false),
                        (BackendDAEOptimize.replaceEdgeChange, "replaceEdgeChange", false),
                        (BackendDAEOptimize.residualForm, "residualForm", false),
-                       (BackendDAEOptimize.resolveLoops, "resolveLoops",false),
+                       (ResolveLoops.resolveLoops, "resolveLoops",false),
                        (BackendDAEOptimize.evalFunctions, "evalFunc",false)
                        };
   strPreOptModules := getPreOptModulesString();

@@ -162,6 +162,7 @@ OpenTURNS.mo \
 PartFn.mo \
 RemoveSimpleEquations.mo \
 ResidualCmp.mo \
+ResolveLoops.mo \
 SimCode.mo \
 SimCodeMain.mo \
 SimCodeUtil.mo \
