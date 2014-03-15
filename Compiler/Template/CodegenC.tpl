@@ -5485,7 +5485,7 @@ case FUNCTION(__) then
       varOutput(var, retVar, i1, &varDecls, &outVarInits, &outVarCopy, &outVarAssign)
       ;separator="\n"; empty /* increase the counter! */
     )
-
+  let freeConstructedExternalObjects = (variableDeclarations |> var as VARIABLE(ty=T_COMPLEX(complexClassType=EXTERNAL_OBJ(path=path_ext))) => 'omc_<%underscorePath(path_ext)%>_destructor(threadData,<%contextCref(var.name,contextFunction)%>);'; separator = "\n")
   /* Needs to be done last as it messes with the tmp ticks :) */
   let &varDecls += addRootsTempArray()
 
@@ -5513,6 +5513,7 @@ case FUNCTION(__) then
     /* GC: pop the mark! */
     <%if acceptParModelicaGrammar() then
     '/* Free GPU/OpenCL CPU memory */<%\n%><%varFrees%>'%>
+    <%freeConstructedExternalObjects%>
     /* functionBodyRegularFunction: return the outs */
     return <%if outVars then ' <%retVar%>' %>;
   }

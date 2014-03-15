@@ -8520,7 +8520,7 @@ algorithm
       
     case (path, _, ht, _)
       equation
-        _ = BaseHashTable.get(Absyn.pathStringNoQual(path), ht);
+        _ = BaseHashTable.get(pathstr, ht);
       then ht;
         
     case (path, _, ht, _)
@@ -8532,6 +8532,7 @@ algorithm
         (_, (_, varfuncs)) = DAEUtil.traverseDAE2(Util.if_(Config.acceptMetaModelicaGrammar(), els, {}), Expression.traverseSubexpressionsHelper, (DAEUtil.collectValueblockFunctionRefVars, varfuncs));
         (_, (_, (calledfuncs, _))) = DAEUtil.traverseDAE2(els, Expression.traverseSubexpressionsHelper, (matchNonBuiltinCallsAndFnRefPaths, ({}, varfuncs)));
         ht = BaseHashTable.add((pathstr, path), ht);
+        ht = addDestructor(funcelem, ht);
         ht = getCalledFunctionsInFunctions(calledfuncs, ht, funcs);
       then ht;
         
@@ -8544,6 +8545,38 @@ algorithm
         fail();
   end matchcontinue;
 end getCalledFunctionsInFunction2;
+
+protected function addDestructor
+  input DAE.Function func;
+  input HashTableStringToPath.HashTable inHt;
+  output HashTableStringToPath.HashTable outHt;
+algorithm
+  outHt := match (func,inHt)
+    local
+      Absyn.Path path;
+      String pathstr;
+    case (DAE.FUNCTION(type_=DAE.T_FUNCTION(funcResultType=DAE.T_COMPLEX(complexClassType=ClassInf.EXTERNAL_OBJ(path=path)))),_)
+      equation
+        path = Absyn.joinPaths(path,Absyn.IDENT("destructor"));
+      then addDestructor2(path,Absyn.pathStringNoQual(path),inHt);
+    else inHt;
+  end match;
+end addDestructor;
+
+protected function addDestructor2
+  input Absyn.Path path;
+  input String pathstr;
+  input HashTableStringToPath.HashTable inHt;
+  output HashTableStringToPath.HashTable outHt;
+algorithm
+  outHt := matchcontinue (path,pathstr,inHt)
+    case (_,_,_)
+      equation
+        _ = BaseHashTable.get(pathstr, inHt);
+      then inHt;
+    else BaseHashTable.add((pathstr, path), inHt);
+  end matchcontinue;
+end addDestructor2;
 
 // =============================================================================
 // section for something with paths
