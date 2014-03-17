@@ -294,13 +294,13 @@ void Cvode::CVodeCore()
       _cv_rt = 2;
     }*/
     
-	bool state_selection = stateSelection();
-	bool restart =false;
-	if(state_selection)
-	{
-		restart=true;
-	  _continuous_system->evaluate(IContinuous::CONTINUOUS);
-	}
+  bool state_selection = stateSelection();
+  bool restart =false;
+  if(state_selection)
+  {
+    restart=true;
+    _continuous_system->evaluate(IContinuous::CONTINUOUS);
+  }
     _zeroFound = false;
 
     // Check, ob Schritt erfolgreich
@@ -354,7 +354,7 @@ void Cvode::CVodeCore()
     _continuous_system->getContinuousStates(_z);
     if(_zeroFound || restart)
     {
-		restart=false;
+    restart=false;
       //Zustände nach der Ereignisbehandlung aufnehmen      
       if (_cvodesettings->getEventOutput())
         writeToFile(0, _tCurrent, _h);
@@ -367,7 +367,7 @@ void Cvode::CVodeCore()
       if(_tCurrent == _tEnd)
         _cv_rt = CV_TSTOP_RETURN;
     }
-	
+  
     // ZÃ¤hler fÃ¼r die Anzahl der ausgegebenen Schritte erhÃ¶hen
     ++ _outStps;
     _tLastSuccess = _tCurrent;
@@ -434,7 +434,7 @@ int Cvode::calcFunction(const double& time, const double* y, double* f)
     _continuous_system->setContinuousStates(y);
     _continuous_system->evaluate(IContinuous::CONTINUOUS);
     _continuous_system->getRHS(f);
-	
+  
   
   }//workaround until exception can be catch from c- libraries
   catch(std::exception& ex)
