@@ -91,8 +91,10 @@ SET(SIMSTER_BUILD OFF)
 SET(Boost_USE_STATIC_LIBS OFF)
 SET(Boost_USE_MULTITHREADED ON)
 SET(Boost_USE_STATIC_RUNTIME OFF)
-find_package(Boost COMPONENTS filesystem  system serialization program_options thread REQUIRED)
-find_package(Threads REQUIRED)
+
+find_package(Boost COMPONENTS thread)
+find_package(Threads)
+find_package(Boost COMPONENTS filesystem  system serialization program_options REQUIRED)
 
 # Lapack and Blas
 find_package( BLAS )
