@@ -1,6 +1,13 @@
 cmake_minimum_required (VERSION 2.6)
 
 project(CppSolverInterface)
+#add_definitions(-DANALYZATION_MODE)
+#SET(ANALYZATION_MODE true)
+
+IF(ANALYZATION_MODE)
+	message(STATUS "Using analyzation mode")
+ENDIF(ANALYZATION_MODE)
+
 # on windows  boost,blas,lapack  and sundial solvers from omdev is used else the installed versions are used
 IF( WIN32 )
 SET(ENV{BOOST_ROOT} $ENV{OMDEV}"/lib/3rdParty/boost-1_49/")
@@ -84,7 +91,9 @@ SET(SIMSTER_BUILD OFF)
 SET(Boost_USE_STATIC_LIBS OFF)
 SET(Boost_USE_MULTITHREADED ON)
 SET(Boost_USE_STATIC_RUNTIME OFF)
-find_package(Boost 1.45.0 COMPONENTS filesystem  system serialization program_options REQUIRED)
+find_package(Boost COMPONENTS filesystem  system serialization program_options thread REQUIRED)
+find_package(Threads REQUIRED)
+
 # Lapack and Blas
 find_package( BLAS )
 find_package( LAPACK  )
