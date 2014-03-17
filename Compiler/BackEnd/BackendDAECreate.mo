@@ -3294,7 +3294,7 @@ algorithm
     case (DAE.BINARY(exp1 = e1, operator=DAE.ADD(DAE.T_INTEGER(varLst = _)), exp2 = e2), knv)
       equation
         i1 = expInt(e1, knv);
-        i2 = expInt(e1, knv);
+        i2 = expInt(e2, knv);
         i = i1 + i2;
       then i;
     case (DAE.BINARY(exp1 = e1, operator=DAE.SUB(DAE.T_INTEGER(varLst = _)), exp2 = e2), knv)
@@ -4166,7 +4166,7 @@ algorithm
         eres = Util.if_((itmp>0), e_1, e);
         zeroCrossings = listAppend(zeroCrossings, zcLstNew);
         zeroCrossings = mergeZeroCrossings(zeroCrossings);
-        Debug.fcall(Flags.RELIDX, print, "blub collectZCAlgsFor result zc : "  +& ExpressionDump.printExpStr(eres)+& " index:"  +& intString(numRelations) +& "\n");
+        Debug.fcall(Flags.RELIDX, print, "collectZCAlgsFor result zc : "  +& ExpressionDump.printExpStr(eres)+& " index:"  +& intString(numRelations) +& "\n");
       then ((eres, true, (iterator, inExpLst, range, (zeroCrossings, zc_lst, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))));
     // All other functions generate zerocrossing.
     case (((e as DAE.RELATION(exp1 = e1, operator = op, exp2 = e2)), (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))))
