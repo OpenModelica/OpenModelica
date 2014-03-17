@@ -47,8 +47,8 @@ class BitmapAnnotation : public ShapeAnnotation
 {
   Q_OBJECT
 public:
-  BitmapAnnotation(QString annotation, Component *pParent);
-  BitmapAnnotation(QString annotation, bool inheritedShape, GraphicsView *pGraphicsView);
+  BitmapAnnotation(QString classFileName, QString annotation, Component *pParent);
+  BitmapAnnotation(QString classFileName, QString annotation, bool inheritedShape, GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation);
   QRectF boundingRect() const;
   QPainterPath shape() const;

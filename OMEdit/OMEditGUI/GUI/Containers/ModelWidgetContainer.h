@@ -300,7 +300,7 @@ public:
   void updateParentModelsText(QString className);
   void getModelComponents(QString className, bool inheritedCycle = false);
   void getModelIconDiagramShapes(QString className, bool inheritedCycle = false);
-  void getModelIconDiagramShapes(QString annotationString, StringHandler::ViewType viewType, bool inheritedCycle = false);
+  void getModelIconDiagramShapes(QString className, QString annotationString, StringHandler::ViewType viewType, bool inheritedCycle = false);
   void getModelConnections(QString className, bool inheritedCycle = false);
   Component* getConnectorComponent(Component *pConnectorComponent, QString connectorName);
   void refresh();

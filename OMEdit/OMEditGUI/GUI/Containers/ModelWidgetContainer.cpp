@@ -775,7 +775,7 @@ void GraphicsView::createBitmapShape(QPointF point)
   if (!isCreatingBitmapShape())
   {
     setIsCreatingBitmapShape(true);
-    mpBitmapShapeAnnotation = new BitmapAnnotation("", false, this);
+    mpBitmapShapeAnnotation = new BitmapAnnotation(mpModelWidget->getLibraryTreeNode()->getFileName(), "", false, this);
     mpBitmapShapeAnnotation->replaceExtent(0, point);
     mpBitmapShapeAnnotation->replaceExtent(1, point);
   }
@@ -2206,12 +2206,12 @@ void ModelWidget::getModelIconDiagramShapes(QString className, bool inheritedCyc
   }
   OMCProxy *pOMCProxy = mpModelWidgetContainer->getMainWindow()->getOMCProxy();
   QString iconAnnotationString = pOMCProxy->getIconAnnotation(className);
-  getModelIconDiagramShapes(iconAnnotationString, StringHandler::Icon, inheritedCycle);
+  getModelIconDiagramShapes(className, iconAnnotationString, StringHandler::Icon, inheritedCycle);
   QString diagramAnnotationString = pOMCProxy->getDiagramAnnotation(className);
-  getModelIconDiagramShapes(diagramAnnotationString, StringHandler::Diagram, inheritedCycle);
+  getModelIconDiagramShapes(className, diagramAnnotationString, StringHandler::Diagram, inheritedCycle);
 }
 
-void ModelWidget::getModelIconDiagramShapes(QString annotationString, StringHandler::ViewType viewType, bool inheritedCycle)
+void ModelWidget::getModelIconDiagramShapes(QString className, QString annotationString, StringHandler::ViewType viewType, bool inheritedCycle)
 {
   annotationString = StringHandler::removeFirstLastCurlBrackets(annotationString);
   if (annotationString.isEmpty())
@@ -2308,9 +2308,15 @@ void ModelWidget::getModelIconDiagramShapes(QString annotationString, StringHand
     }
     else if (shape.startsWith("Bitmap"))
     {
+      /* get the class file path */
+      QString classFileName;
+      QStringList classInformation = mpModelWidgetContainer->getMainWindow()->getOMCProxy()->getClassInformation(className);
+      if (classInformation.size() > 2)
+        classFileName = classInformation.at(2);
+      /* create the bitmap shape */
       shape = shape.mid(QString("Bitmap").length());
       shape = StringHandler::removeFirstLastBrackets(shape);
-      BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(shape, inheritedCycle, pGraphicsView);
+      BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(classFileName, shape, inheritedCycle, pGraphicsView);
       pBitmapAnnotation->initializeTransformation();
       pBitmapAnnotation->drawCornerItems();
       pBitmapAnnotation->setCornerItemsPassive();

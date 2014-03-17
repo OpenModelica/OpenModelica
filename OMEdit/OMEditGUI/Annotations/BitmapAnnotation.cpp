@@ -37,9 +37,10 @@
 
 #include "BitmapAnnotation.h"
 
-BitmapAnnotation::BitmapAnnotation(QString annotation, Component *pParent)
+BitmapAnnotation::BitmapAnnotation(QString classFileName, QString annotation, Component *pParent)
   : ShapeAnnotation(pParent), mpComponent(pParent)
 {
+  mClassFileName = classFileName;
   // set the default values
   GraphicItem::setDefaults();
   ShapeAnnotation::setDefaults();
@@ -48,11 +49,12 @@ BitmapAnnotation::BitmapAnnotation(QString annotation, Component *pParent)
   setRotation(mRotation);
 }
 
-BitmapAnnotation::BitmapAnnotation(QString annotation, bool inheritedShape, GraphicsView *pGraphicsView)
+BitmapAnnotation::BitmapAnnotation(QString classFileName, QString annotation, bool inheritedShape, GraphicsView *pGraphicsView)
   : ShapeAnnotation(inheritedShape, pGraphicsView, 0)
 {
   setFlag(QGraphicsItem::ItemIsSelectable);
   mpComponent = 0;
+  mClassFileName = classFileName;
   // set the default values
   GraphicItem::setDefaults();
   ShapeAnnotation::setDefaults();
@@ -149,7 +151,7 @@ QString BitmapAnnotation::getShapeAnnotation()
 
 void BitmapAnnotation::duplicate()
 {
-  BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation("", false, mpGraphicsView);
+  BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(mClassFileName, "", false, mpGraphicsView);
   QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(),
                    mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
   pBitmapAnnotation->setOrigin(mOrigin + gridStep);

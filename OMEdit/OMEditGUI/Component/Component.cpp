@@ -327,14 +327,16 @@ void Component::parseAnnotationString(QString annotation)
     }
     else if (shape.startsWith("Bitmap"))
     {
-      //! @note No Bitmaps for library icons.
-      if (!isLibraryComponent())
-      {
-        shape = shape.mid(QString("Bitmap").length());
-        shape = StringHandler::removeFirstLastBrackets(shape);
-        BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(shape, this);
-        mpShapesList.append(pBitmapAnnotation);
-      }
+      /* get the class file path */
+      QString classFileName;
+      QStringList classInformation = mpOMCProxy->getClassInformation(mClassName);
+      if (classInformation.size() > 2)
+        classFileName = classInformation.at(2);
+      /* create the bitmap shape */
+      shape = shape.mid(QString("Bitmap").length());
+      shape = StringHandler::removeFirstLastBrackets(shape);
+      BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(classFileName, shape, this);
+      mpShapesList.append(pBitmapAnnotation);
     }
   }
 }

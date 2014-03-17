@@ -215,6 +215,7 @@ protected:
   StringHandler::TextAlignment mHorizontalAlignment;
   QString mOriginalFileName;
   QString mFileName;
+  QString mClassFileName; /* Used to find the bitmap relative locations. */
   QString mImageSource;
   QImage mImage;
   QList<CornerItem*> mCornerItemsList;
