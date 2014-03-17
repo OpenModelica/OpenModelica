@@ -329,59 +329,55 @@ constant DebugFlag LINEAR_TEARING = DEBUG_FLAG(81, "doLinearTearing", false,
   Util.gettext("Enables tearing of linear systems, but for now they aren't handled efficent in the runtime."));
 constant DebugFlag DUMP_INITIAL_SYSTEM = DEBUG_FLAG(82, "dumpinitialsystem", false,
   Util.gettext("Dumps the initial equation system."));
-constant DebugFlag SCODE_INST_SHORTCUT = DEBUG_FLAG(83, "scodeInstShortcut", false,
-  Util.gettext("DEPRECATED! Enables experimental SCode instantiation shortcut phase."));
-constant DebugFlag SHOW_SCODE = DEBUG_FLAG(84, "showSCode", false,
-  Util.gettext("DEPRECATED! Shows the SCode result of +d=scodeInstShortcut."));
-constant DebugFlag DUMP_CONST_REPL = DEBUG_FLAG(85, "dumpConstrepl", false,
+constant DebugFlag GRAPH_INST = DEBUG_FLAG(83, "graphInst", false,
+  Util.gettext("Do graph based instantation."));
+constant DebugFlag GRAPH_INST_RUN_DEP = DEBUG_FLAG(84, "graphInstRunDep", false,
+  Util.gettext("Run scode dependency analysis. Use with +d=graphInst"));
+constant DebugFlag GRAPH_INST_GEN_GRAPH = DEBUG_FLAG(85, "graphInstGenGraph", false,
+  Util.gettext("Dumps a graph of the program. Use with +d=graphInst"));
+constant DebugFlag DUMP_CONST_REPL = DEBUG_FLAG(86, "dumpConstrepl", false,
   Util.gettext("Dump the found replacements for constants."));
-constant DebugFlag PEDANTIC = DEBUG_FLAG(86, "pedantic", false,
+constant DebugFlag PEDANTIC = DEBUG_FLAG(87, "pedantic", false,
   Util.gettext("Switch into pedantic debug-mode, to get much more feedback."));
-constant DebugFlag SHOW_REDECLARE_ANALYSIS = DEBUG_FLAG(87, "showRedeclareAnalysis", false,
-  Util.gettext("DEPRECATED! Prints the result of the redeclare analysis (only works with +d=scodeInstShortcut)."));
-constant DebugFlag SHOW_PROGRAM_CHANGES = DEBUG_FLAG(88, "showProgramChanges", false,
-  Util.gettext("DEPRECATED! Prints the replacements to be done on program to remove redeclares (only works with +d=scodeInstShortcut)."));
-constant DebugFlag SHOW_EQUATION_SOURCE = DEBUG_FLAG(89, "showEquationSource", false,
+constant DebugFlag SHOW_EQUATION_SOURCE = DEBUG_FLAG(88, "showEquationSource", false,
   Util.gettext("Display the element source information in the dumped DAE for easier debugging."));
-constant DebugFlag NLS_ANALYTIC_JACOBIAN = DEBUG_FLAG(90, "NLSanalyticJacobian", false,
+constant DebugFlag NLS_ANALYTIC_JACOBIAN = DEBUG_FLAG(89, "NLSanalyticJacobian", false,
   Util.gettext("Generates analytical Jacobian for non-linear algebraic loops."));
-constant DebugFlag INLINE_SOLVER = DEBUG_FLAG(91, "inlineSolver", false,
+constant DebugFlag INLINE_SOLVER = DEBUG_FLAG(90, "inlineSolver", false,
   Util.gettext("Generates code for inline solver."));
-constant DebugFlag GEN_GRAPH = DEBUG_FLAG(92, "genGraph", false,
-  Util.gettext("Dumps a graph of the program."));
-constant DebugFlag HPCOM = DEBUG_FLAG(93, "hpcom", false,
+constant DebugFlag HPCOM = DEBUG_FLAG(91, "hpcom", false,
   Util.gettext("Enables parallel calculation based on task-graphs."));
-constant DebugFlag INITIALIZATION = DEBUG_FLAG(94, "initialization", false,
+constant DebugFlag INITIALIZATION = DEBUG_FLAG(92, "initialization", false,
   Util.gettext("Shows additional information from the initialization process."));
-constant DebugFlag INLINE_FUNCTIONS = DEBUG_FLAG(95, "inlineFunctions", true,
+constant DebugFlag INLINE_FUNCTIONS = DEBUG_FLAG(93, "inlineFunctions", true,
   Util.gettext("Controls if function inlining should be performed."));
-constant DebugFlag DUMP_SCC_GRAPHML = DEBUG_FLAG(96, "dumpSCCGraphML", false,
+constant DebugFlag DUMP_SCC_GRAPHML = DEBUG_FLAG(94, "dumpSCCGraphML", false,
   Util.gettext("Dumps graphml files with the strongly connected components."));
-constant DebugFlag TEARING_DUMPVERBOSE = DEBUG_FLAG(97, "tearingdumpV", false,
+constant DebugFlag TEARING_DUMPVERBOSE = DEBUG_FLAG(95, "tearingdumpV", false,
   Util.gettext("Dumps verbose tearing information."));
-constant DebugFlag DISABLE_SINGLE_FLOW_EQ = DEBUG_FLAG(98, "disableSingleFlowEq", false,
+constant DebugFlag DISABLE_SINGLE_FLOW_EQ = DEBUG_FLAG(96, "disableSingleFlowEq", false,
   Util.gettext("Disables the generation of single flow equations."));
-constant DebugFlag PARTLINTORNSYSTEM = DEBUG_FLAG(99, "partlintornsystem", false,
+constant DebugFlag PARTLINTORNSYSTEM = DEBUG_FLAG(97, "partlintornsystem", false,
   Util.gettext("Disassembles linear torn systems to various singleEquations and a reduced tornSystem."));
-constant DebugFlag DUMP_DISCRETEVARS_INFO = DEBUG_FLAG(100, "discreteinfo", false,
+constant DebugFlag DUMP_DISCRETEVARS_INFO = DEBUG_FLAG(98, "discreteinfo", false,
   Util.gettext("Enables dumping of discrete variables. Extends +d=backenddaeinfo."));
-constant DebugFlag ADDITIONAL_GRAPHVIZ_DUMP = DEBUG_FLAG(101, "graphvizDump", false,
+constant DebugFlag ADDITIONAL_GRAPHVIZ_DUMP = DEBUG_FLAG(99, "graphvizDump", false,
   Util.gettext("Activates additional graphviz dumps (as *.dot files). It can be used in addition to one of the following flags: {dumpdaelow|dumpinitialsystems|dumpindxdae}."));
-constant DebugFlag INFO_XML_OPERATIONS = DEBUG_FLAG(102, "infoXmlOperations", false,
+constant DebugFlag INFO_XML_OPERATIONS = DEBUG_FLAG(100, "infoXmlOperations", false,
   Util.gettext("Enables output of the operations in the _info.xml file when translating models."));
-constant DebugFlag HPCOM_DUMP = DEBUG_FLAG(103, "hpcomDump", false,
+constant DebugFlag HPCOM_DUMP = DEBUG_FLAG(101, "hpcomDump", false,
   Util.gettext("Dumps additional information on the parallel execution with hpcom."));
-constant DebugFlag RESOLVE_LOOPS = DEBUG_FLAG(104, "resolveLoops", false,
+constant DebugFlag RESOLVE_LOOPS = DEBUG_FLAG(102, "resolveLoops", false,
   Util.gettext("Activates the resolveLoops module."));
-constant DebugFlag DISABLE_WINDOWS_PATH_CHECK_WARNING = DEBUG_FLAG(105, "disableWindowsPathCheckWarning", false,
+constant DebugFlag DISABLE_WINDOWS_PATH_CHECK_WARNING = DEBUG_FLAG(103, "disableWindowsPathCheckWarning", false,
   Util.gettext("Disables warnings on Windows if OPENMODELICAHOME/MinGW is missing."));
-constant DebugFlag DISABLE_RECORD_CONSTRUCTOR_OUTPUT = DEBUG_FLAG(106, "disableRecordConstructorOutput", false, 
+constant DebugFlag DISABLE_RECORD_CONSTRUCTOR_OUTPUT = DEBUG_FLAG(104, "disableRecordConstructorOutput", false, 
   Util.gettext("Disables output of record constructors in the flat code."));
-constant DebugFlag DUMP_TRANSFORMED_MODELICA_MODEL = DEBUG_FLAG(107, "dumpTransformedModelica", false,
+constant DebugFlag DUMP_TRANSFORMED_MODELICA_MODEL = DEBUG_FLAG(105, "dumpTransformedModelica", false,
   Util.gettext("Dumps the back-end DAE to a Modelica-like model after all symbolic transformations are applied."));
-constant DebugFlag EVALUATE_CONST_FUNCTIONS = DEBUG_FLAG(108, "evalConstFuncs", false,
+constant DebugFlag EVALUATE_CONST_FUNCTIONS = DEBUG_FLAG(106, "evalConstFuncs", false,
   Util.gettext("Evaluates functions complete and partially and checks for constant output."));
-constant DebugFlag HPCOM_ANALYZATION_MODE = DEBUG_FLAG(109, "hpcomAnalyzationMode", false,
+constant DebugFlag HPCOM_ANALYZATION_MODE = DEBUG_FLAG(107, "hpcomAnalyzationMode", false,
   Util.gettext("Creates statically linked c++ - code for analyzation (requires statically build cpp-runtime)"));  
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -470,16 +466,14 @@ constant list<DebugFlag> allDebugFlags = {
   MIXED_TEARING,
   LINEAR_TEARING,
   DUMP_INITIAL_SYSTEM,
-  SCODE_INST_SHORTCUT,
-  SHOW_SCODE,
+  GRAPH_INST,
+  GRAPH_INST_RUN_DEP,
+  GRAPH_INST_GEN_GRAPH,
   DUMP_CONST_REPL,
   PEDANTIC,
-  SHOW_REDECLARE_ANALYSIS,
-  SHOW_PROGRAM_CHANGES,
   SHOW_EQUATION_SOURCE,
   NLS_ANALYTIC_JACOBIAN,
   INLINE_SOLVER,
-  GEN_GRAPH,
   HPCOM,
   INITIALIZATION,
   INLINE_FUNCTIONS,
