@@ -138,11 +138,13 @@ double
     _CV_y,                  ///< Temp      - State in Cvode Format
       _CV_yWrite;                ///< Temp      - Vector for dense out
   bool _cvode_initialized;
+ 
 
    ISystemProperties* _properties; 
    IContinuous* _continuous_system;
    IEvent* _event_system;
    IMixedSystem* _mixed_system;
    ITime* _time_system;
+  
 };
 

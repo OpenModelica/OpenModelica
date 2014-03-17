@@ -18,6 +18,7 @@ Cvode::Cvode(IMixedSystem* system, ISolverSettings* settings)
   ,_cvode_initialized(false)
   ,_tLastEvent(0.0)
   ,_event_n(0)
+  
 {
   _data = ((void*)this);
 }
@@ -49,8 +50,7 @@ void Cvode::initialize()
   _time_system =  dynamic_cast<ITime*>(_system);
   // Kennzeichnung, dass initialize()() (vor der Integration) aufgerufen wurde
   _idid = 5000;
-
-   _tLastEvent=0.0;
+    _tLastEvent=0.0;
    _event_n=0;
   SolverDefaultImplementation::initialize();
   _dimSys    = _continuous_system->getDimContinuousStates();
@@ -294,6 +294,13 @@ void Cvode::CVodeCore()
       _cv_rt = 2;
     }*/
     
+	bool state_selection = stateSelection();
+	bool restart =false;
+	if(state_selection)
+	{
+		restart=true;
+	  _continuous_system->evaluate(IContinuous::CONTINUOUS);
+	}
     _zeroFound = false;
 
     // Check, ob Schritt erfolgreich
@@ -304,7 +311,7 @@ void Cvode::CVodeCore()
     }
     
     // A root is found
-    if(_cv_rt == CV_ROOT_RETURN)
+    if((_cv_rt == CV_ROOT_RETURN)  )
     {
       _zeroFound = true;
       if((abs(_tLastEvent - _tCurrent)<1e-3) &&   _event_n==0)
@@ -324,7 +331,7 @@ void Cvode::CVodeCore()
       }
       else
       {
-            throw std::runtime_error("Number of events exceeded  in time interval " + boost::lexical_cast<string>(abs(_tLastEvent - _tCurrent)));
+            throw std::runtime_error("Number of events exceeded  in time interval " + boost::lexical_cast<string>(abs(_tLastEvent - _tCurrent))+ "at time " +  boost::lexical_cast<string>(_tCurrent) );
       }
       _time_system->setTime(_tCurrent);
       _continuous_system->setContinuousStates(NV_DATA_S(_CV_y));
@@ -345,8 +352,9 @@ void Cvode::CVodeCore()
     
     // Zustand aus dem System holen
     _continuous_system->getContinuousStates(_z);
-    if(_zeroFound)
+    if(_zeroFound || restart)
     {
+		restart=false;
       //Zustände nach der Ereignisbehandlung aufnehmen      
       if (_cvodesettings->getEventOutput())
         writeToFile(0, _tCurrent, _h);
@@ -359,7 +367,7 @@ void Cvode::CVodeCore()
       if(_tCurrent == _tEnd)
         _cv_rt = CV_TSTOP_RETURN;
     }
-
+	
     // ZÃ¤hler fÃ¼r die Anzahl der ausgegebenen Schritte erhÃ¶hen
     ++ _outStps;
     _tLastSuccess = _tCurrent;
@@ -426,6 +434,7 @@ int Cvode::calcFunction(const double& time, const double* y, double* f)
     _continuous_system->setContinuousStates(y);
     _continuous_system->evaluate(IContinuous::CONTINUOUS);
     _continuous_system->getRHS(f);
+	
   
   }//workaround until exception can be catch from c- libraries
   catch(std::exception& ex)

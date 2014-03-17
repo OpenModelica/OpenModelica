@@ -77,6 +77,7 @@ typedef ublas::matrix<double, adaptor_t> shared_matrix_t;
 #include <System/IEvent.h>
 #include <System/IAlgLoop.h>
 #include <System/ICoupledSystem.h>
+#include <System/ISystemInitialization.h>
 #include <Solver/INonLinSolverSettings.h>
 #include <Solver/IAlgLoopSolver.h>
 #include <System/IAlgLoopSolverFactory.h>
