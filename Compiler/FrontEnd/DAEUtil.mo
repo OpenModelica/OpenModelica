@@ -1497,7 +1497,7 @@ author: Waurich TUD 2014-03"
   input DAE.Element inElem;
   output list<DAE.ComponentRef> crefsOut;
 algorithm
-  crefsOut := match(inElem)
+  crefsOut := matchcontinue(inElem)
     local
       list<Integer> dim;
       list<list<Integer>> ranges;
@@ -1526,9 +1526,10 @@ algorithm
       then
         crefs;
     else
+      equation
       then
         {};      
-  end match;
+  end matchcontinue;
 end getScalarsForComplexVar;
 
 public function isInnerVar "author: PA
