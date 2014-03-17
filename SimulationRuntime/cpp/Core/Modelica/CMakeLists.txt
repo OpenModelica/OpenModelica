@@ -2,12 +2,7 @@ cmake_minimum_required (VERSION 2.6)
 
 project(${ModelicaName})
 
-IF(ANALYZATION_MODE)
-	add_library(${ModelicaName} STATIC ModelicaSystem.cpp )
-	include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR})
-ELSE(ANALYZATION_MODE)
-	add_library(${ModelicaName} SHARED ModelicaSystem.cpp )
-ENDIF(ANALYZATION_MODE)
+add_library(${ModelicaName} SHARED ModelicaSystem.cpp )
 
 target_link_libraries (${ModelicaName}  ${SystemName} ${ModelicaExternalCName}  ${MathName})
 
@@ -51,15 +46,14 @@ list(GET Boost_SERIALIZATION_LIBRARY -1 Boost_SERIALIZATION_LIBRARY)
 list(GET Boost_FILESYSTEM_LIBRARY -1 Boost_FILESYSTEM_LIBRARY)
 list(GET Boost_SERIALIZATION_LIB -1 Boost_SERIALIZATION_LIB)
 list(GET Boost_SYSTEM_LIBRARY -1 Boost_SYSTEM_LIBRARY)
-list(GET Boost_THREAD_LIBRARY -1 Boost_THREAD_LIBRARY)
 list(GET Boost_PROGRAM_OPTIONS_LIBRARY -1 Boost_PROGRAM_OPTIONS_LIBRARY)
 
-
-IF(DEFINED CMAKE_BUILD_TYPE)
+IF(DEFINED ${CMAKE_BUILD_TYPE})
 	string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE)
 	set (Boost_LIBRARIES_NEW "")
 	set (SKIP_ENTRY FALSE)
 
+	MESSAGE(STATUS ${Boost_LIBRARIES}) 
 	IF(CMAKE_BUILD_TYPE MATCHES DEBUG)
 		foreach(f ${Boost_LIBRARIES})
 			IF(SKIP_ENTRY MATCHES FALSE)
@@ -91,17 +85,8 @@ IF(DEFINED CMAKE_BUILD_TYPE)
 	ENDIF(CMAKE_BUILD_TYPE MATCHES DEBUG)
 
 	set (Boost_LIBRARIES ${Boost_LIBRARIES_NEW})
-ENDIF(DEFINED CMAKE_BUILD_TYPE)
+ENDIF(DEFINED ${CMAKE_BUILD_TYPE})
 
-SET(SUNDIALS_LIBS_ "")
-foreach(lib ${SUNDIALS_LIBS})
-	set(SUNDIALS_LIBS_ "${SUNDIALS_LIBS_} ${lib}")
-endforeach(lib ${SUNDIALS_LIBS})
-
-SET(LAPACK_LIBRARIES_ "")
-foreach(lib ${LAPACK_LIBRARIES})
-	set(LAPACK_LIBRARIES_ "${LAPACK_LIBRARIES_} ${lib}")
-endforeach(lib ${LAPACK_LIBRARIES})
 #end Fix
 
  configure_file (
