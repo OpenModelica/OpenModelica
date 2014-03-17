@@ -4036,6 +4036,23 @@ algorithm
   end match;
 end concatArrayType;
 
+public function replaceExpTpl
+  "Help function to e.g. detectImplicitDiscreteAlgsStatemensFor"
+  input tuple<DAE.Exp, tuple<DAE.Exp, DAE.Exp>> tpl;
+  output tuple<DAE.Exp, tuple<DAE.Exp, DAE.Exp>> outTpl;
+algorithm
+  outTpl := matchcontinue(tpl)
+    local
+      DAE.Exp e, e1, s, t;
+      
+    case((e, (s, t))) equation
+      ((e1, _)) = replaceExp(e, s, t);
+    then ((e1, (s, t)));
+    
+    else tpl;
+  end matchcontinue;
+end replaceExpTpl;
+
 public function replaceExp
 "Helper function to replaceExpList."
   input DAE.Exp inExp;

@@ -119,6 +119,7 @@ if true then /* Suppress output */
     "../BackEnd/DumpHTML.mo",
     "../BackEnd/EvaluateParameter.mo",
     "../BackEnd/ExpressionSolve.mo",
+    "../BackEnd/FindZeroCrossings.mo",
     "../BackEnd/HashTableCrSimVars.mo",
     "../BackEnd/HpcOmBenchmark.mo", 
     "../BackEnd/HpcOmBenchmarkExt.mo", 

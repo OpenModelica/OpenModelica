@@ -55,7 +55,6 @@ public import Env;
 public import Util;
 
 protected import Algorithm;
-protected import BackendDAECreate;
 protected import BackendDAEOptimize;
 protected import BackendDAETransform;
 protected import BackendDump;
@@ -78,6 +77,7 @@ protected import EvaluateParameter;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
+protected import FindZeroCrossings;
 protected import Flags;
 protected import Global;
 protected import GlobalScript;
@@ -8106,7 +8106,7 @@ algorithm
 
   // post-optimization phase
   (optsode, Util.SUCCESS()) := postOptimizeDAE(sode, postOptModules, matchingAlgorithm, daeHandler);
-  sode1 := BackendDAECreate.findZeroCrossings(optsode);
+  sode1 := FindZeroCrossings.findZeroCrossings(optsode);
   Debug.execStat("findZeroCrossings", GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   _ := traverseBackendDAEExpsNoCopyWithUpdate(sode1, ExpressionSimplify.simplifyTraverseHelper, 0) "simplify all expressions";
   outSODE := calculateValues(sode1);

@@ -88,6 +88,7 @@ protected import Dump;
 protected import DynLoad;
 protected import Expression;
 protected import ExpressionDump;
+protected import FindZeroCrossings;
 protected import Flags;
 protected import Global;
 protected import Graph;
@@ -3356,7 +3357,7 @@ algorithm
         a_cref = Absyn.pathToCref(className);
         file_dir = getFileDir(a_cref, p);
         dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
-        dlow = BackendDAECreate.findZeroCrossings(dlow);
+        dlow = FindZeroCrossings.findZeroCrossings(dlow);
         flatModelicaStr = DAEDump.dumpStr(dae,Env.getFunctionTree(cache));
         flatModelicaStr = stringAppend("OldEqStr={'", flatModelicaStr);
         flatModelicaStr = System.stringReplace(flatModelicaStr, "\n", "%##%");
@@ -4518,7 +4519,7 @@ algorithm
         
         dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix)); //Verificare cosa fa
         dlow_1 = BackendDAEUtil.preOptimizeBackendDAE(dlow,NONE());
-        dlow_1 = BackendDAECreate.findZeroCrossings(dlow_1);
+        dlow_1 = FindZeroCrossings.findZeroCrossings(dlow_1);
         xml_filename = stringAppendList({filenameprefix,".xml"});
         
         // apply rewrite rules to the back-end
@@ -4559,7 +4560,7 @@ algorithm
         dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix)); //Verificare cosa fa
         dlow_1 = BackendDAEUtil.preOptimizeBackendDAE(dlow,NONE());
         dlow_1 = BackendDAEUtil.transformBackendDAE(dlow_1,NONE(),NONE(),NONE());
-        dlow_1 = BackendDAECreate.findZeroCrossings(dlow_1);
+        dlow_1 = FindZeroCrossings.findZeroCrossings(dlow_1);
         xml_filename = stringAppendList({filenameprefix,".xml"});
         
         // apply rewrite rules to the back-end
