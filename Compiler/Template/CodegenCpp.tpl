@@ -203,6 +203,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   else
   <<
   #include "DataExchange/Policies/TextfileWriter.h"
+  #include "System/IWriteOutput.h"
   typedef HistoryImpl<TextFileWriter,<%numAlgvars(modelInfo)%>+<%numInOutvars(modelInfo)%>+<%numAliasvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>,0> HistoryImplType;
 
   >>%>
@@ -3593,7 +3594,7 @@ void  <%modelname%>Algloop<%index%>::setReal(const double* vars)
 
 
 /// Set stream for output
-void  <%modelname%>Algloop<%index%>::setOutput(ostream* outputStream)
+void  <%modelname%>Algloop<%index%>::setOutput(std::ostream* outputStream)
 {
     AlgLoopDefaultImplementation::setOutput(outputStream);
 };
@@ -3732,7 +3733,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     virtual bool isLinear();
     virtual bool isConsistent();
     /// Set stream for output
-    virtual void setOutput(ostream* outputStream)     ;
+    virtual void setOutput(std::ostream* outputStream)     ;
 
 >>
 //void writeOutput(HistoryImplType::value_type_v& v ,vector<string>& head ,const IMixedSystem::OUTPUT command  = IMixedSystem::UNDEF_OUTPUT);

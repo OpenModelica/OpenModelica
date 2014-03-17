@@ -381,7 +381,8 @@ constant DebugFlag DUMP_TRANSFORMED_MODELICA_MODEL = DEBUG_FLAG(107, "dumpTransf
   Util.gettext("Dumps the back-end DAE to a Modelica-like model after all symbolic transformations are applied."));
 constant DebugFlag EVALUATE_CONST_FUNCTIONS = DEBUG_FLAG(108, "evalConstFuncs", false,
   Util.gettext("Evaluates functions complete and partially and checks for constant output."));
-  
+constant DebugFlag HPCOM_ANALYZATION_MODE = DEBUG_FLAG(109, "hpcomAnalyzationMode", false,
+  Util.gettext("Creates statically linked c++ - code for analyzation (requires statically build cpp-runtime)"));  
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
 // initialization so that all flags are sorted by index (and thus have unique
@@ -494,7 +495,8 @@ constant list<DebugFlag> allDebugFlags = {
   DISABLE_WINDOWS_PATH_CHECK_WARNING,
   DISABLE_RECORD_CONSTRUCTOR_OUTPUT,
   DUMP_TRANSFORMED_MODELICA_MODEL,
-  EVALUATE_CONST_FUNCTIONS
+  EVALUATE_CONST_FUNCTIONS,
+  HPCOM_ANALYZATION_MODE
 };
 
 // CONFIGURATION FLAGS
