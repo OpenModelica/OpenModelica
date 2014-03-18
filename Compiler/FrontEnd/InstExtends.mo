@@ -1428,7 +1428,7 @@ algorithm
 
     case (cache,env,stmt,ht)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- Inst.fixStatement failed: " +& Dump.unparseAlgorithmStr(4,SCode.statementToAlgorithmItem(stmt)));
+        Debug.fprintln(Flags.FAILTRACE, "- Inst.fixStatement failed: " +& Dump.unparseAlgorithmStr(SCode.statementToAlgorithmItem(stmt)));
       then fail();
   end matchcontinue;
 end fixStatement;

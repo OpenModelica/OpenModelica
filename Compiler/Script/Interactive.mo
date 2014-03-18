@@ -510,11 +510,9 @@ algorithm
       list<Values.Value> vallst;
       list<Absyn.AlgorithmItem> algItems;
       GlobalScript.SymbolTable st1,st2,st3,st4,st5;
-      String str;
     case (_, val::vallst, algItems, st1)
     equation
       st2 = appendVarToSymboltable(iter, val, Types.typeOfValue(val), st1);
-      str = Dump.unparseAlgorithmStrLst(2, algItems, "\n");
       st3 = evaluateAlgStmtLst(algItems, st2);
       st4 = deleteVarFromSymboltable(iter, st3);
       st5 = evaluateForStmt(iter, vallst, algItems, st4);
@@ -8248,8 +8246,8 @@ algorithm
                                   Absyn.CREF_IDENT("", {}))) +& "\"";
         strFuncName  = "\"" +& Util.getOptionOrDefault(funcName, "") +& "\"";
         strArguments = "\"" +& Dump.printExpLstStr(args) +& "\"";
-        strAnn1 = "\"" +& Dump.unparseAnnotationOption(0, ann1) +& "\"";
-        strAnn2 = "\"" +& Dump.unparseAnnotationOption(0, ann2) +& "\"";
+        strAnn1 = "\"" +& Dump.unparseAnnotationOption(ann1) +& "\"";
+        strAnn2 = "\"" +& Dump.unparseAnnotationOption(ann2) +& "\"";
         str = stringAppendList({"{", strLanguage, ",", strOutput, ",", strFuncName, ",", strArguments, ",", strAnn1, ",", strAnn2, "}"});
       then
         str;
@@ -14101,10 +14099,7 @@ algorithm
           _)
       equation
         // print(Dump.unparseStr(graphicProgram, false));
-        // print("Annotation(Icon) 1: " +& Dump.unparseMod1Str(mod) +& "\n");
         (stripmod,{Absyn.MODIFICATION(modification = SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=graphicexp))))}) = stripGraphicsAndInteractionModification(mod);
-
-        // print("Annotation(Icon) 1: " +& Dump.unparseMod1Str(stripmod) +& "\n");
 
         mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
 
@@ -14138,11 +14133,8 @@ algorithm
           _)
       equation
         // print(Dump.unparseStr(p, false));
-        // print("Annotation(Icon): " +& Dump.unparseMod1Str(mod) +& "\n");
         (stripmod,gxmods) = stripGraphicsAndInteractionModification(mod);
         mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
-
-        // print("Annotation(Icon) 2: " +& Dump.unparseMod1Str(stripmod) +& "\n");
 
         (cache, env, graphicProgram) = buildEnvForGraphicProgram(inFullProgram, inModelPath, mod, "Icon");
 
@@ -14164,11 +14156,8 @@ algorithm
           _)
       equation
         // print(Dump.unparseStr(p, false));
-        // print("Annotation(Diagram): " +& Dump.unparseMod1Str(mod) +& "\n");
         (stripmod,{Absyn.MODIFICATION(modification=SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=graphicexp))))}) = stripGraphicsAndInteractionModification(mod);
         mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
-
-        // print("Annotation(Diagram) 1: " +& Dump.unparseMod1Str(stripmod) +& "\n");
 
         (cache, env, graphicProgram) = buildEnvForGraphicProgram(inFullProgram, inModelPath, mod, "Diagram");
 
@@ -14197,12 +14186,9 @@ algorithm
           _)
       equation
         // print(Dump.unparseStr(p, false));
-        // print("Annotation(Icon): " +& Dump.unparseMod1Str(mod) +& "\n");
         (stripmod,gxmods) = stripGraphicsAndInteractionModification(mod);
         mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,Absyn.NOMOD())),
         SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
-
-        // print("Annotation(Diagram) 2: " +& Dump.unparseMod1Str(stripmod) +& "\n");
 
         (cache, env, graphicProgram) = buildEnvForGraphicProgram(inFullProgram, inModelPath, mod, "Diagram");
 
@@ -14224,11 +14210,8 @@ algorithm
           _)
       equation
         // print(Dump.unparseStr(p, false));
-        // print("Annotation(" +& anncname +& "): " +& Dump.unparseMod1Str(mod) +& "\n");
         (stripmod,gxmods) = stripGraphicsAndInteractionModification(mod);
         mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
-
-        // print("ANY Annotation(" +& anncname +& ") : " +& Dump.unparseMod1Str(mod) +& "\n");
 
         (cache, env, graphicProgram) = buildEnvForGraphicProgram(inFullProgram, inModelPath, mod, anncname);
 
@@ -14247,7 +14230,7 @@ algorithm
     // if we fail, just return the annotation as it is
     case (_, _, _, _)
       equation
-        str = Dump.unparseAnnotation(inAnnotation,0) +& " ";
+        str = Dump.unparseAnnotation(inAnnotation) +& " ";
       then
         str;
 
@@ -14256,7 +14239,7 @@ algorithm
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.fprintln(Flags.FAILTRACE,
           "- Interactive.getAnnotationString failed on annotation: " +&
-          Dump.unparseAnnotation(inAnnotation,0));
+          Dump.unparseAnnotation(inAnnotation));
       then
         fail();
   end matchcontinue;
@@ -15585,7 +15568,7 @@ algorithm
     case (_,Absyn.WITHIN(path=Absyn.QUALIFIED(name="OpenModelica")),p) then p;
     case ((c1 as Absyn.CLASS(name = name)),w,p)
       equation
-        s1 = Dump.unparseWithin(0, w);
+        s1 = Dump.unparseWithin(w);
         /* adeas31 2012-01-25: false indicates that the classnamesrecursive doesn't look into protected sections */
         (_,paths) = getClassNamesRecursive(NONE(), p, false, {});
         s2 = stringAppendList(List.map1r(List.map(paths,Absyn.pathString),stringAppend,"\n  "));
@@ -18841,7 +18824,7 @@ algorithm
 
     case (GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IALG(algItem = alg)}))
       equation
-        str = Dump.unparseAlgorithmStr(0, alg);
+        str = Dump.unparseAlgorithmStr(alg);
       then
         str;
 
@@ -18853,7 +18836,7 @@ algorithm
 
     case (GlobalScript.ISTMTS(interactiveStmtLst = (GlobalScript.IALG(algItem = alg) :: l),semicolon = sc))
       equation
-        str = Dump.unparseAlgorithmStr(0, alg);
+        str = Dump.unparseAlgorithmStr(alg);
         str = str +& "; " +& printIstmtStr(GlobalScript.ISTMTS(l,sc));
       then
         str;

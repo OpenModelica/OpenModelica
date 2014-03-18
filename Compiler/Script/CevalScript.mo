@@ -5575,7 +5575,7 @@ algorithm
       list<Absyn.AlgorithmItem> algs;
   case (Absyn.ALGORITHMS(contents = algs))
       equation
-        str = Dump.unparseAlgorithmStrLst(0, algs, "\n");
+        str = Dump.unparseAlgorithmStrLst(algs, "\n");
       then
         str;
   end match;
@@ -5652,7 +5652,7 @@ algorithm
       list<Absyn.AlgorithmItem> algs;
   case (Absyn.INITIALALGORITHMS(contents = algs))
       equation
-        str = Dump.unparseAlgorithmStrLst(0, algs, "\n");
+        str = Dump.unparseAlgorithmStrLst(algs, "\n");
       then
         str;
   end match;
@@ -5807,7 +5807,7 @@ algorithm
       Integer newn,n;
     case ((Absyn.ALGORITHMITEM(algorithm_ = alg, comment = cmt, info = inf) :: xs), 1)
       equation
-        str = Dump.unparseAlgorithmStr(0, Absyn.ALGORITHMITEM(alg, cmt, inf));
+        str = Dump.unparseAlgorithmStr(Absyn.ALGORITHMITEM(alg, cmt, inf));
       then
         str;
     case ((_ :: xs),n)
@@ -5997,7 +5997,7 @@ algorithm
       list<Absyn.EquationItem> eqs;
   case (Absyn.EQUATIONS(contents = eqs))
       equation
-        str = Dump.unparseEquationitemStrLst(0, eqs, "\n");
+        str = Dump.unparseEquationItemStrLst(eqs, "\n");
       then
         str;
   end match;
@@ -6074,7 +6074,7 @@ algorithm
       list<Absyn.EquationItem> eqs;
   case (Absyn.INITIALEQUATIONS(contents = eqs))
       equation
-        str = Dump.unparseEquationitemStrLst(0, eqs, "\n");
+        str = Dump.unparseEquationItemStrLst(eqs, "\n");
       then
         str;
   end match;
@@ -6227,7 +6227,7 @@ algorithm
       Integer newn,n;
     case ((Absyn.EQUATIONITEM(equation_ = eq) :: xs), 1)
       equation
-        str = Dump.unparseEquationStr(0, eq);
+        str = Dump.unparseEquationStr(eq);
         str = stringAppend(str, ";");
         str = System.trim(str, " ");
       then
@@ -6381,7 +6381,7 @@ algorithm
     case (Absyn.CLASS(body = Absyn.PARTS(ann = anns)),n)
       equation
         ann = listGet(anns,n);
-        str = Dump.unparseAnnotation(ann, 0);
+        str = Dump.unparseAnnotation(ann);
         str = stringAppend(str, ";");
         str = System.trim(str, " ");
       then
@@ -6390,7 +6390,7 @@ algorithm
     case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(ann = anns)),n)
       equation
         ann = listGet(anns,n);
-        str = Dump.unparseAnnotation(ann,0);
+        str = Dump.unparseAnnotation(ann);
         str = stringAppend(str, ";");
         str = System.trim(str, " ");
       then
@@ -6893,7 +6893,7 @@ algorithm
         ts = Absyn.setTimeStampBuild(ts, buildTime);
         w = Interactive.buildWithin(funcpath);
 
-        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: Updating build time for function path: " +& Absyn.pathString(funcpath) +& " within: " +& Dump.unparseWithin(0, w) +& "\n");
+        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: Updating build time for function path: " +& Absyn.pathString(funcpath) +& " within: " +& Dump.unparseWithin(w) +& "\n");
 
         p = Interactive.updateProgram(Absyn.PROGRAM({Absyn.CLASS(name,ppref,fpref,epref,Absyn.R_FUNCTION(funcRest),body,info)},w,ts), p);
         f = Absyn.getFileNameFromInfo(info);

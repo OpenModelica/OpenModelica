@@ -1928,7 +1928,7 @@ algorithm
       equation
         // only report errors for when in for loops
         // true = containsWhenStatements(sl);
-        str = Dump.unparseAlgorithmStr(0,
+        str = Dump.unparseAlgorithmStr(
                SCode.statementToAlgorithmItem(SCode.ALG_FOR(iterator, range, sl,SCode.noComment,info)));
         Error.addSourceMessage(Error.UNROLL_LOOP_CONTAINING_WHEN, {str}, info);
         Debug.fprintln(Flags.FAILTRACE, "- InstSection.unrollForLoop failed on: " +& str);
@@ -2747,7 +2747,7 @@ algorithm
     case (cache,env,ih,pre,_,alg,_,_,impl,_,_)
       equation
         true = numErrorMessages == Error.getNumErrorMessages();
-        str = Dump.unparseAlgorithmStr(1,SCode.statementToAlgorithmItem(alg));
+        str = Dump.unparseAlgorithmStr(SCode.statementToAlgorithmItem(alg));
         Error.addSourceMessage(Error.STATEMENT_GENERIC_FAILURE,{str},SCode.getStatementInfo(alg));
       then
         fail();
@@ -4993,7 +4993,7 @@ algorithm
       equation
         true = numError == Error.getNumErrorMessages();
         failure((_,_,_,_) = Static.elabExp(cache,env,value,impl,NONE(),true,pre,info));
-        str = Dump.unparseAlgorithmStr(0,SCode.statementToAlgorithmItem(alg));
+        str = Dump.unparseAlgorithmStr(SCode.statementToAlgorithmItem(alg));
         Error.addSourceMessage(Error.ASSIGN_RHS_ELABORATION,{str},info);
       then fail();
   end matchcontinue;

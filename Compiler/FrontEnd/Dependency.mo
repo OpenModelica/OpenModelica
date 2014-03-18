@@ -1232,7 +1232,7 @@ algorithm
   case(elit::_,_)
     equation
       print("createLocalVariableStruct2 failed: ");
-      print(Dump.unparseElementitemStr(0,elit));
+      print(Dump.unparseElementItemStr(elit));
       print("\n");
     then fail();
   end matchcontinue;
