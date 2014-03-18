@@ -46,9 +46,9 @@ encapsulated package Dump
 
 // public imports
 public import Absyn;
-public import AbsynDumpTpl;
 
 // protected imports
+protected import AbsynDumpTpl;
 protected import Config;
 protected import Error;
 protected import List;
