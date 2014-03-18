@@ -187,7 +187,7 @@ CMinpack:
 	test -d 3rdParty/CMinpack/install || $(MAKE) -C 3rdParty/CMinpack/build install
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libcminpack.1.3.2.dylib 3rdParty/CMinpack/install/lib/libcminpack.1.3.2.dylib 
 	# copy dll/so to lib/omc/ folders
-	(cp -af 3rdParty/CMinpack/install/lib*/$(LIBCMINPACK)*$(SHREXT)* $(builddir_lib)/omc/)
+	(cp -af 3rdParty/CMinpack/install/lib*/$(LIBCMINPACK)*$(SHREXT)* $(builddir_bin))
 	#TODO: Only copy required headers, add them in omc/fmi subfolder, and do not copy c/txt-files
 	#cp -rp 3rdParty/CMinpack/install/include/* $(builddir_inc)
 
