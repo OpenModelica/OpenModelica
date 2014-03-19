@@ -793,24 +793,25 @@ void changeStdStreamBuffer(void) {
 char* getRecordElement(modelica_metatype arr, modelica_integer i) {
   /* get the element from the record array */
   void* name = (void*)mmc_gdb_arrayGet(0, arr, i);
+  char *displayName = NULL, *type = NULL, *value = NULL, *formatString = NULL;
 
   /* get the name of the element */
   getRecordElementName(arr, i - 2);
-  char* displayName = malloc(strlen(anyStringBuf) + 1);
+  displayName = malloc(strlen(anyStringBuf) + 1);
   strcpy(displayName, anyStringBuf);
 
   /* get the type of the element */
   getTypeOfAny(name);
-  char* type = malloc(strlen(anyStringBuf) + 1);
+  type = malloc(strlen(anyStringBuf) + 1);
   strcpy(type, anyStringBuf);
 
   /* get the value of the element */
   anyString(name);
-  char* value = malloc(strlen(anyStringBuf) + 1);
+  value = malloc(strlen(anyStringBuf) + 1);
   strcpy(value, anyStringBuf);
 
   /* format the anyStringBuf as array to return it */
-  char* formatString = "^done,omc_recordelement={name=\"%ld\",displayName=\"%s\",type=\"%s\",value=\"%s\"}";
+  formatString = "^done,omc_recordelement={name=\"%ld\",displayName=\"%s\",type=\"%s\",value=\"%s\"}";
   checkAnyStringBufSize(0, strlen(name) + strlen(displayName) + strlen(type) + strlen(value) + strlen(formatString));
   sprintf(anyStringBuf, formatString, (long (*) (long, long, long))name, displayName, type, value);
 
