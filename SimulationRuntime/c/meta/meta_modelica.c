@@ -786,6 +786,42 @@ void changeStdStreamBuffer(void) {
   setbuf(stderr, NULL);
 }
 
+/*
+ * Used by OMEdit for debugging.
+ * Returns the Record element as an array e.g ^done,omc_recordelement={name, displayName, type, value}
+ */
+char* getRecordElement(modelica_metatype arr, modelica_integer i) {
+  /* get the element from the record array */
+  void* name = (void*)mmc_gdb_arrayGet(0, arr, i);
+
+  /* get the name of the element */
+  getRecordElementName(arr, i - 2);
+  char* displayName = malloc(strlen(anyStringBuf) + 1);
+  strcpy(displayName, anyStringBuf);
+
+  /* get the type of the element */
+  getTypeOfAny(name);
+  char* type = malloc(strlen(anyStringBuf) + 1);
+  strcpy(type, anyStringBuf);
+
+  /* get the value of the element */
+  anyString(name);
+  char* value = malloc(strlen(anyStringBuf) + 1);
+  strcpy(value, anyStringBuf);
+
+  /* format the anyStringBuf as array to return it */
+  char* formatString = "^done,omc_recordelement={name=\"%ld\",displayName=\"%s\",type=\"%s\",value=\"%s\"}";
+  checkAnyStringBufSize(0, strlen(name) + strlen(displayName) + strlen(type) + strlen(value) + strlen(formatString));
+  sprintf(anyStringBuf, formatString, (long (*) (long, long, long))name, displayName, type, value);
+
+  /* free the memory */
+  free(displayName);
+  free(type);
+  free(value);
+
+  return anyStringBuf;
+}
+
 static inline unsigned long djb2_hash_iter(const unsigned char *str /* data; not null-terminated */, int len, unsigned long hash /* start at 5381 */)
 {
   int i;

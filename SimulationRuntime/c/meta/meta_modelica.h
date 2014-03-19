@@ -422,6 +422,9 @@ extern char* getRecordElementName(void*any, int element); /* For debugging */
 extern int isOptionNone(void*any); /* For debugging */
 extern void changeStdStreamBuffer(void); /* For debugging */
 
+/* Debugging functions used by OMEdit */
+extern char* getRecordElement(modelica_metatype arr, modelica_integer i);
+
 /*
  * Generated (Meta)Records should access a static, constant value of
  * the record_description structure. This means the additional cost
