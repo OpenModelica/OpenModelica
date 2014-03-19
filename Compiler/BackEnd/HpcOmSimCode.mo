@@ -869,36 +869,36 @@ algorithm
     case(_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         true = Flags.isSet(Flags.HPCOM_ANALYZATION_MODE);
-			  //Create var hash table
-			  SimCode.MODELINFO(vars=simCodeVars) = iModelInfo;
-			  SimCode.SIMVARS(stateVars=stateVars, derivativeVars=derivativeVars, algVars=algVars, paramVars=paramVars) = simCodeVars;
-			  hashTable = HashTableCrILst.emptyHashTableSized(BaseHashTable.biggerBucketSize);
-			  hashTable = fillSimVarHashTable(stateVars,0,0,hashTable);
-			  //hashTable = fillSimVarHashTable(derivativeVars,listLength(stateVars),0,hashTable);
-			  hashTable = fillSimVarHashTable(algVars,listLength(stateVars)*2,0,hashTable);
-			  //hashTable = fillSimVarHashTable(paramVars,listLength(stateVars)*2 + listLength(algVars),0,hashTable);
-			
-			  //Create CacheMap
-			  scVarTaskMapping = getScVarTaskMapping(iTaskGraphMeta,iEqSystems,listLength(stateVars)*2+listLength(algVars),hashTable);
-			  (cacheMap,scVarCLMapping,numCL) = createCacheMapOptimized(stateVars,derivativeVars,algVars,paramVars,scVarTaskMapping,64,iAllComponents,iSchedule);
-			
-			  //Create required mappings
-			  sccNodeMapping = HpcOmTaskGraph.getSccNodeMapping(arrayLength(iSccSimEqMapping), iTaskGraphMeta);
+        //Create var hash table
+        SimCode.MODELINFO(vars=simCodeVars) = iModelInfo;
+        SimCode.SIMVARS(stateVars=stateVars, derivativeVars=derivativeVars, algVars=algVars, paramVars=paramVars) = simCodeVars;
+        hashTable = HashTableCrILst.emptyHashTableSized(BaseHashTable.biggerBucketSize);
+        hashTable = fillSimVarHashTable(stateVars,0,0,hashTable);
+        //hashTable = fillSimVarHashTable(derivativeVars,listLength(stateVars),0,hashTable);
+        hashTable = fillSimVarHashTable(algVars,listLength(stateVars)*2,0,hashTable);
+        //hashTable = fillSimVarHashTable(paramVars,listLength(stateVars)*2 + listLength(algVars),0,hashTable);
+      
+        //Create CacheMap
+        scVarTaskMapping = getScVarTaskMapping(iTaskGraphMeta,iEqSystems,listLength(stateVars)*2+listLength(algVars),hashTable);
+        (cacheMap,scVarCLMapping,numCL) = createCacheMapOptimized(stateVars,derivativeVars,algVars,paramVars,scVarTaskMapping,64,iAllComponents,iSchedule);
+      
+        //Create required mappings
+        sccNodeMapping = HpcOmTaskGraph.getSccNodeMapping(arrayLength(iSccSimEqMapping), iTaskGraphMeta);
         eqSimCodeVarMapping = getEqSCVarMapping(iEqSystems,hashTable);
       
         (clTaskMapping,scVarTaskMapping) = getCacheLineTaskMapping(iTaskGraphMeta,iEqSystems,hashTable,numCL,scVarCLMapping);
 
-	      //Append cache line nodes to graph
-	      graphInfo = GraphML.createGraphInfo();
-	      (graphInfo, (_,graphIdx)) = GraphML.addGraph("TasksGroupGraph", true, graphInfo);
-	      (graphInfo, (_,_),(_,graphIdx)) = GraphML.addGroupNode("TasksGroup", graphIdx, false, "TG", graphInfo);
-	      graphInfo = HpcOmTaskGraph.convertToGraphMLSccLevelSubgraph(iTaskGraph, iTaskGraphMeta, iCriticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(iCriticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(iCriticalPathsWoC)), iSccSimEqMapping, iSchedulerInfo, graphIdx, graphInfo);
-	      HpcOmTaskGraph.TASKGRAPHMETA(eqNodeMapping=eqNodeMapping,varNodeMapping=varNodeMapping) = iTaskGraphMeta;
-	      SOME((_,threadAttIdx)) = GraphML.getAttributeByNameAndTarget("ThreadId", GraphML.TARGET_NODE(), graphInfo);
-	      (_,incidenceMatrix,_) = BackendDAEUtil.getIncidenceMatrix(List.first(iEqSystems), BackendDAE.ABSOLUTE(), NONE());
-	      graphInfo = appendCacheLinesToGraph(cacheMap, arrayLength(iTaskGraph), eqSimCodeVarMapping, iEqSystems, hashTable, eqNodeMapping, scVarTaskMapping, iSchedulerInfo, threadAttIdx, graphInfo);
-	      fileName = ("taskGraph"+&iFileNamePrefix+&"ODE_schedule_CL.graphml"); 
-	      GraphML.dumpGraph(graphInfo, fileName);
+        //Append cache line nodes to graph
+        graphInfo = GraphML.createGraphInfo();
+        (graphInfo, (_,graphIdx)) = GraphML.addGraph("TasksGroupGraph", true, graphInfo);
+        (graphInfo, (_,_),(_,graphIdx)) = GraphML.addGroupNode("TasksGroup", graphIdx, false, "TG", graphInfo);
+        graphInfo = HpcOmTaskGraph.convertToGraphMLSccLevelSubgraph(iTaskGraph, iTaskGraphMeta, iCriticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(iCriticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(iCriticalPathsWoC)), iSccSimEqMapping, iSchedulerInfo, graphIdx, graphInfo);
+        HpcOmTaskGraph.TASKGRAPHMETA(eqNodeMapping=eqNodeMapping,varNodeMapping=varNodeMapping) = iTaskGraphMeta;
+        SOME((_,threadAttIdx)) = GraphML.getAttributeByNameAndTarget("ThreadId", GraphML.TARGET_NODE(), graphInfo);
+        (_,incidenceMatrix,_) = BackendDAEUtil.getIncidenceMatrix(List.first(iEqSystems), BackendDAE.ABSOLUTE(), NONE());
+        graphInfo = appendCacheLinesToGraph(cacheMap, arrayLength(iTaskGraph), eqSimCodeVarMapping, iEqSystems, hashTable, eqNodeMapping, scVarTaskMapping, iSchedulerInfo, threadAttIdx, graphInfo);
+        fileName = ("taskGraph"+&iFileNamePrefix+&"ODE_schedule_CL.graphml"); 
+        GraphML.dumpGraph(graphInfo, fileName);
       then ();
     else then ();
   end matchcontinue;
