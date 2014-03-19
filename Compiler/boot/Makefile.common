@@ -10,9 +10,9 @@ endif
 generate-files-in-steps:
 	$(MAKE) -s templates
 	$(MAKE) Makefile.sources
-	$(MAKE) interfaces
-	$(MAKE) Makefile.depends
-	$(MAKE) generate-files
+	$(MAKE) interfaces INCLUDESOURCES=1
+	$(MAKE) Makefile.depends INCLUDESOURCES=1
+	$(MAKE) generate-files INCLUDESOURCES=1 INCLUDEDEPENDS=1
 
 .PHONY: interfaces generate-files
 
@@ -43,11 +43,11 @@ clean:
 	rm -rf $(GEN_DIR)
 	rm -f Makefile.sources LoadCompilerInterface.mos Makefile.depends
 
-ifeq ($(wildcard Makefile.sources),Makefile.sources)
+ifeq ($(INCLUDESOURCES),1)
 include Makefile.sources
 endif
 
-ifeq ($(wildcard Makefile.depends),Makefile.depends)
+ifeq ($(INCLUDEDEPENDS),1)
 include Makefile.depends
 endif
 
