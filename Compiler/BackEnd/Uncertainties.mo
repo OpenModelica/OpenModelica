@@ -16,7 +16,6 @@ protected import SCode;
 protected import Flags;
 protected import Error;
 protected import System;
-protected import Dependency;
 protected import SCodeUtil;
 protected import Inst;
 protected import InnerOuter;
@@ -622,8 +621,7 @@ algorithm
   case(_,_,_)
     equation
       System.realtimeTick(GlobalScript.RT_CLOCK_UNCERTAINTIES);
-      ptot = Dependency.getTotalProgram(className,p);
-      p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
+      p_1 = SCodeUtil.translateAbsyn2SCode(p);
       (cache,env,_,dae) = Inst.instantiateClass(icache,InnerOuter.emptyInstHierarchy,p_1,className);
       timeFrontend = System.realtimeTock(GlobalScript.RT_CLOCK_UNCERTAINTIES);
       System.realtimeTick(GlobalScript.RT_CLOCK_BACKEND);

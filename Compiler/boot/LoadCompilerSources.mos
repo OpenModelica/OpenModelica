@@ -4,7 +4,6 @@
 if true then /* Suppress output */
   setCommandLineOptions("+g=MetaModelica");
   files := {
-    "../FrontEnd/AbsynDep.mo",
     "../FrontEnd/Absyn.mo",
     "../FrontEnd/Algorithm.mo",
     "../FrontEnd/Builtin.mo",
@@ -21,7 +20,6 @@ if true then /* Suppress output */
     "../FrontEnd/DAEDump.mo",
     "../FrontEnd/DAE.mo",
     "../FrontEnd/DAEUtil.mo",
-    "../FrontEnd/Dependency.mo",
     "../FrontEnd/DumpGraphviz.mo",
     "../FrontEnd/Dump.mo",
     "../FrontEnd/Env.mo",

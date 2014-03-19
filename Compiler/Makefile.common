@@ -34,7 +34,6 @@ RMLC_INCLUDE_ALL_DIRS = -I$(FRONTEND_DIR),-I$(BACKEND_DIR),-I$(TEMPLATE_DIR),-I$
 
 FRONTEND = \
 Absyn.mo \
-AbsynDep.mo \
 Algorithm.mo \
 Builtin.mo \
 Ceval.mo \
@@ -50,7 +49,6 @@ Constants.mo \
 DAE.mo \
 DAEDump.mo \
 DAEUtil.mo \
-Dependency.mo \
 Dump.mo \
 DumpGraphviz.mo \
 Env.mo \

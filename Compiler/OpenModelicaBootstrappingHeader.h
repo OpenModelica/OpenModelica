@@ -992,7 +992,7 @@ extern struct record_description GlobalScript_LoadedFile_FILE__desc;
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef GlobalScript_SymbolTable_SYMBOLTABLE__desc_added
 #define GlobalScript_SymbolTable_SYMBOLTABLE__desc_added
-ADD_METARECORD_DEFINITIONS const char* GlobalScript_SymbolTable_SYMBOLTABLE__desc__fields[7] = {"ast","depends","explodedAst","instClsLst","lstVarVal","compiledFunctions","loadedFiles"};
+ADD_METARECORD_DEFINITIONS const char* GlobalScript_SymbolTable_SYMBOLTABLE__desc__fields[6] = {"ast","explodedAst","instClsLst","lstVarVal","compiledFunctions","loadedFiles"};
 ADD_METARECORD_DEFINITIONS struct record_description GlobalScript_SymbolTable_SYMBOLTABLE__desc = {
   "GlobalScript_SymbolTable_SYMBOLTABLE",
   "GlobalScript.SymbolTable.SYMBOLTABLE",
@@ -1002,8 +1002,8 @@ ADD_METARECORD_DEFINITIONS struct record_description GlobalScript_SymbolTable_SY
 #else /* Only use the file as a header */
 extern struct record_description GlobalScript_SymbolTable_SYMBOLTABLE__desc;
 #endif
-#define GlobalScript__SYMBOLTABLE_3dBOX7 3
-#define GlobalScript__SYMBOLTABLE(ast,depends,explodedAst,instClsLst,lstVarVal,compiledFunctions,loadedFiles) (mmc_mk_box8(3,&GlobalScript_SymbolTable_SYMBOLTABLE__desc,ast,depends,explodedAst,instClsLst,lstVarVal,compiledFunctions,loadedFiles))
+#define GlobalScript__SYMBOLTABLE_3dBOX6 3
+#define GlobalScript__SYMBOLTABLE(ast,explodedAst,instClsLst,lstVarVal,compiledFunctions,loadedFiles) (mmc_mk_box7(3,&GlobalScript_SymbolTable_SYMBOLTABLE__desc,ast,explodedAst,instClsLst,lstVarVal,compiledFunctions,loadedFiles))
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef GlobalScript_Component_COMPONENTITEM__desc_added
 #define GlobalScript_Component_COMPONENTITEM__desc_added

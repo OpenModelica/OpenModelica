@@ -42,7 +42,6 @@ encapsulated package Main
   (The Win32 implementation only implements CORBA)"
 
 protected import Absyn;
-protected import AbsynDep;
 protected import BackendDAE;
 protected import BackendDAECreate;
 protected import BackendDAEUtil;
@@ -442,7 +441,6 @@ algorithm
      list<GlobalScript.Variable> iv;
      list<GlobalScript.CompiledCFunction> cf;
      list<GlobalScript.LoadedFile> lf;
-     AbsynDep.Depends aDep;
      GlobalScript.SymbolTable st, newst;
      Absyn.Path path;
 
@@ -450,24 +448,24 @@ algorithm
    case ({}, st) then st;
 
    // A .mo-file.
-   case (f :: rest, st as GlobalScript.SYMBOLTABLE(p, aDep, _, ic, iv, cf, lf))
+   case (f :: rest, st as GlobalScript.SYMBOLTABLE(p, _, ic, iv, cf, lf))
      equation
        isModelicaFile(f);
        pnew = Parser.parse(f,"UTF-8");
        pnew = Interactive.updateProgram(pnew, p);
-       newst = GlobalScript.SYMBOLTABLE(pnew, aDep, NONE(), ic, iv, cf, lf);
+       newst = GlobalScript.SYMBOLTABLE(pnew, NONE(), ic, iv, cf, lf);
        newst = loadLibs(rest, newst);
      then
       newst;
 
    // some libs present
-   case (lib::rest, st as GlobalScript.SYMBOLTABLE(p,aDep,_,ic,iv,cf,lf))
+   case (lib::rest, st as GlobalScript.SYMBOLTABLE(p,_,ic,iv,cf,lf))
      equation
        path = parsePathFromString(lib);
        mp = Settings.getModelicaPath(Config.getRunningTestsuite());
        pnew = ClassLoader.loadClass(path, {"default"}, mp, NONE());
        pnew = Interactive.updateProgram(pnew, p);
-       newst = GlobalScript.SYMBOLTABLE(pnew,aDep,NONE(),ic,iv,cf,lf);
+       newst = GlobalScript.SYMBOLTABLE(pnew,NONE(),ic,iv,cf,lf);
        newst = loadLibs(rest, newst); // load the remaining
      then
        newst;

@@ -58,13 +58,11 @@ public import Env;
 public import Error;
 public import GlobalScript;
 public import Interactive;
-public import Dependency;
 public import Values;
 public import SimCode;
 public import UnitAbsyn;
 
 // protected imports
-protected import AbsynDep;
 protected import BackendDump;
 protected import BackendDAECreate;
 protected import BackendDAEUtil;
@@ -872,7 +870,6 @@ algorithm
       Boolean have_corba, bval, anyCode, b, b1, b2, externalWindow, grid, logX, logY,  gcc_res, omcfound, rm_res, touch_res, uname_res,  ifcpp, ifmsvc,sort, builtin, showProtected, inputConnectors, outputConnectors;
       Env.Cache cache;
       list<GlobalScript.LoadedFile> lf;
-      AbsynDep.Depends aDep;
       Absyn.ComponentRef  crefCName;
       list<tuple<String,Values.Value>> resultValues;
       list<Real> realVals;
@@ -1028,8 +1025,7 @@ algorithm
     /* Does not exist in the env...
     case (cache,env,"lookupClass",{Values.CODE(Absyn.C_TYPENAME(path))},(st as GlobalScript.SYMBOLTABLE(ast = p)),msg)
       equation
-        ptot = Dependency.getTotalProgram(path,p);
-        scodeP = SCodeUtil.translateAbsyn2SCode(ptot);
+        scodeP = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env) = Inst.makeEnvFromProgram(cache, scodeP, Absyn.IDENT(""));
         (cache,c,env) = Lookup.lookupClass(cache,env, path, true);
         SOME(p1) = Env.getEnvPath(env);
@@ -1075,7 +1071,6 @@ algorithm
     case (cache,env,"clearProgram",{},GlobalScript.SYMBOLTABLE(lstVarVal=iv),_)
       equation
         newst = GlobalScript.SYMBOLTABLE(Absyn.PROGRAM({},Absyn.TOP(),Absyn.dummyTimeStamp),
-                 GlobalScript.emptyDepends,
                  NONE(),
                  {},
                  iv,
@@ -1086,24 +1081,23 @@ algorithm
     case (cache,env,"clearVariables",{},
         (st as GlobalScript.SYMBOLTABLE(
           ast = p,
-          depends = aDep,
           explodedAst = fp,
           instClsLst = ic,
           compiledFunctions = cf,
           loadedFiles = lf)),_)
       equation
-        newst = GlobalScript.SYMBOLTABLE(p,aDep,fp,ic,{},cf,lf);
+        newst = GlobalScript.SYMBOLTABLE(p,fp,ic,{},cf,lf);
       then
         (cache,Values.BOOL(true),newst);
 
     // Note: This is not the environment caches, passed here as cache, but instead the cached instantiated classes.
     case (cache,env,"clearCache",{},
         (st as GlobalScript.SYMBOLTABLE(
-          ast = p,depends=aDep,explodedAst = fp,instClsLst = ic,
+          ast = p,explodedAst = fp,instClsLst = ic,
           lstVarVal = iv,compiledFunctions = cf,
           loadedFiles = lf)),_)
       equation
-        newst = GlobalScript.SYMBOLTABLE(p,aDep,fp,{},iv,cf,lf);
+        newst = GlobalScript.SYMBOLTABLE(p,fp,{},iv,cf,lf);
       then
         (cache,Values.BOOL(true),newst);
 
@@ -1161,12 +1155,11 @@ algorithm
 
     case (cache,env,"jacobian",{Values.CODE(Absyn.C_TYPENAME(path))},
           (st as GlobalScript.SYMBOLTABLE(
-            ast = p,depends=aDep,explodedAst = fp,instClsLst = ic,
+            ast = p,explodedAst = fp,instClsLst = ic,
             lstVarVal = iv,compiledFunctions = cf,
             loadedFiles = lf)),_)
       equation
-        ptot = Dependency.getTotalProgram(path,p);
-        scodeP = SCodeUtil.translateAbsyn2SCode(ptot);
+        scodeP = SCodeUtil.translateAbsyn2SCode(p);
         (cache, env, _, dae) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, scodeP, path);
         dae  = DAEUtil.transformationsBeforeBackend(cache,env,dae);
         ic_1 = Interactive.addInstantiatedClass(ic, GlobalScript.INSTCLASS(path,dae,env));
@@ -1180,7 +1173,7 @@ algorithm
         (jac, _) = BackendDAEUtil.calculateJacobian(vars, eqnarr, m, false,shared);
         res = BackendDump.dumpJacobianStr(jac);
       then
-        (cache,Values.STRING(res),GlobalScript.SYMBOLTABLE(p,aDep,fp,ic_1,iv,cf,lf));
+        (cache,Values.STRING(res),GlobalScript.SYMBOLTABLE(p,fp,ic_1,iv,cf,lf));
 
     case (cache,env,"translateModel",vals as {Values.CODE(Absyn.C_TYPENAME(className)),_,_,_,_,_,Values.STRING(filenameprefix),_,_,_,_,_,_},st,_)
       equation
@@ -2086,7 +2079,7 @@ algorithm
 
     case (cache,env,"loadModel",{Values.CODE(Absyn.C_TYPENAME(path)),Values.ARRAY(valueLst=cvars),Values.BOOL(b),Values.STRING(str)},
           (st as GlobalScript.SYMBOLTABLE(
-            ast = p,depends=aDep,instClsLst = ic,
+            ast = p,instClsLst = ic,
             lstVarVal = iv,compiledFunctions = cf,
             loadedFiles = lf)),_) /* add path to symboltable for compiled functions
             GlobalScript.SYMBOLTABLE(p,sp,ic,iv,(path,t)::cf),
@@ -2101,7 +2094,7 @@ algorithm
         (p,b) = loadModel({(path,strings)},mp,p,true,b);
         Debug.bcall1(b1,Config.setLanguageStandard,oldLanguageStd);
         _ = Print.getString();
-        newst = GlobalScript.SYMBOLTABLE(p,aDep,NONE(),{},iv,cf,lf);
+        newst = GlobalScript.SYMBOLTABLE(p,NONE(),{},iv,cf,lf);
       then
         (Env.emptyCache(),Values.BOOL(b),newst);
 
@@ -2114,7 +2107,7 @@ algorithm
 
     case (cache,env,"loadFile",{Values.STRING(name),Values.STRING(encoding)},
           (st as GlobalScript.SYMBOLTABLE(
-            ast = p,depends=aDep,instClsLst = ic,
+            ast = p,instClsLst = ic,
             lstVarVal = iv,compiledFunctions = cf,
             loadedFiles = lf)),_)
       equation
@@ -2122,14 +2115,14 @@ algorithm
         newp = ClassLoader.loadFile(name,encoding);
         newp = Interactive.updateProgram(newp, p);
       then
-        (Env.emptyCache(),Values.BOOL(true),GlobalScript.SYMBOLTABLE(newp,aDep,NONE(),ic,iv,cf,lf));
+        (Env.emptyCache(),Values.BOOL(true),GlobalScript.SYMBOLTABLE(newp,NONE(),ic,iv,cf,lf));
 
     case (cache,env,"loadFile",_,st,_)
       then (cache,Values.BOOL(false),st);
 
     case (cache,env,"loadFiles",{Values.ARRAY(valueLst=vals as _::_::_),Values.STRING(encoding),Values.INTEGER(i)},
           (st as GlobalScript.SYMBOLTABLE(
-            ast = p,depends=aDep,instClsLst = ic,
+            ast = p,instClsLst = ic,
             lstVarVal = iv,compiledFunctions = cf,
             loadedFiles = lf)),_)
       equation
@@ -2140,11 +2133,11 @@ algorithm
         System.GC_enable();
         newp = List.fold(newps, Interactive.updateProgram, p);
       then
-        (Env.emptyCache(),Values.BOOL(true),GlobalScript.SYMBOLTABLE(newp,aDep,NONE(),ic,iv,cf,lf));
+        (Env.emptyCache(),Values.BOOL(true),GlobalScript.SYMBOLTABLE(newp,NONE(),ic,iv,cf,lf));
 
     case (cache,env,"loadFiles",{Values.ARRAY(valueLst=vals),Values.STRING(encoding),Values.INTEGER(i)},
           (st as GlobalScript.SYMBOLTABLE(
-            ast = p,depends=aDep,instClsLst = ic,
+            ast = p,instClsLst = ic,
             lstVarVal = iv,compiledFunctions = cf,
             loadedFiles = lf)),_)
       equation
@@ -2152,7 +2145,7 @@ algorithm
         newps = List.map(List.map1(strs,Util.makeTuple,encoding), loadFileThread);
         newp = List.fold(newps, Interactive.updateProgram, p);
       then
-        (Env.emptyCache(),Values.BOOL(true),GlobalScript.SYMBOLTABLE(newp,aDep,NONE(),ic,iv,cf,lf));
+        (Env.emptyCache(),Values.BOOL(true),GlobalScript.SYMBOLTABLE(newp,NONE(),ic,iv,cf,lf));
 
     case (cache,env,"loadFiles",_,st,_)
       equation
@@ -2184,7 +2177,7 @@ algorithm
 
     case (cache,env,"loadString",{Values.STRING(str),Values.STRING(name),Values.STRING(encoding)},
           (st as GlobalScript.SYMBOLTABLE(
-            ast = p,depends=aDep,instClsLst = ic,
+            ast = p,instClsLst = ic,
             lstVarVal = iv,compiledFunctions = cf,
             loadedFiles = lf)),_)
       equation
@@ -2192,7 +2185,7 @@ algorithm
         newp = Parser.parsestring(str,name);
         newp = Interactive.updateProgram(newp, p);
       then
-        (Env.emptyCache(),Values.BOOL(true),GlobalScript.SYMBOLTABLE(newp,aDep,NONE(),ic,iv,cf,lf));
+        (Env.emptyCache(),Values.BOOL(true),GlobalScript.SYMBOLTABLE(newp,NONE(),ic,iv,cf,lf));
 
     case (cache,env,"loadString",_,st,_)
     then (cache,Values.BOOL(false),st);
@@ -2207,9 +2200,10 @@ algorithm
 
     case (cache,env,"saveTotalModel",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(classpath))},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       equation
-        absynClass = Interactive.getPathedClassInProgram(classpath, p);
-        ptot = Dependency.getTotalProgram(classpath,p);
-        str = Dump.unparseStr(ptot,true);
+        (scodeP, st) = Interactive.symbolTableToSCode(st);
+        (scodeP, _) = NFSCodeFlatten.flattenClassInProgram(classpath, scodeP);
+        scodeP = SCode.removeBuiltinsFromTopScope(scodeP);
+        str = SCodeDump.programStr(scodeP,SCodeDump.defaultOptions);
         System.writeFile(filename, str);
       then
         (cache,Values.BOOL(true),st);
@@ -2280,24 +2274,24 @@ algorithm
       then
         (cache,ValuesUtil.makeArray({Values.STRING(str1),Values.STRING(str2)}),st);
 
-    case (cache,env,"addClassAnnotation",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.CODE(Absyn.C_EXPRESSION(aexp))},GlobalScript.SYMBOLTABLE(p,aDep,_,ic,iv,cf,lf),_)
+    case (cache,env,"addClassAnnotation",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.CODE(Absyn.C_EXPRESSION(aexp))},GlobalScript.SYMBOLTABLE(p,_,ic,iv,cf,lf),_)
       equation
         p = Interactive.addClassAnnotation(Absyn.pathToCref(classpath), Absyn.NAMEDARG("annotate",aexp)::{}, p);
       then
-        (cache,Values.BOOL(true),GlobalScript.SYMBOLTABLE(p,aDep,NONE(),ic,iv,cf,lf));
+        (cache,Values.BOOL(true),GlobalScript.SYMBOLTABLE(p,NONE(),ic,iv,cf,lf));
 
     case (cache,env,"addClassAnnotation",_,st as GlobalScript.SYMBOLTABLE(ast=p),_)
       then
         (cache,Values.BOOL(false),st);
 
-    case (cache,env,"setDocumentationAnnotation",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.STRING(str1),Values.STRING(str2)},GlobalScript.SYMBOLTABLE(p,aDep,_,ic,iv,cf,lf),_)
+    case (cache,env,"setDocumentationAnnotation",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.STRING(str1),Values.STRING(str2)},GlobalScript.SYMBOLTABLE(p,_,ic,iv,cf,lf),_)
       equation
         nargs = List.consOnTrue(not stringEq(str1,""), Absyn.NAMEDARG("info",Absyn.STRING(str1)), {});
         nargs = List.consOnTrue(not stringEq(str2,""), Absyn.NAMEDARG("revisions",Absyn.STRING(str2)), nargs);
         aexp = Absyn.CALL(Absyn.CREF_IDENT("Documentation",{}),Absyn.FUNCTIONARGS({},nargs));
         p = Interactive.addClassAnnotation(Absyn.pathToCref(classpath), Absyn.NAMEDARG("annotate",aexp)::{}, p);
       then
-        (cache,Values.BOOL(true),GlobalScript.SYMBOLTABLE(p,aDep,NONE(),ic,iv,cf,lf));
+        (cache,Values.BOOL(true),GlobalScript.SYMBOLTABLE(p,NONE(),ic,iv,cf,lf));
 
     case (cache,env,"setDocumentationAnnotation",_,st as GlobalScript.SYMBOLTABLE(ast=p),_)
       then
@@ -3411,12 +3405,11 @@ algorithm
       list<GlobalScript.Variable> iv;
       list<GlobalScript.CompiledCFunction> cf;
       list<GlobalScript.LoadedFile> lf;
-      AbsynDep.Depends aDep;
       NFSCodeEnv.Env senv;
       NFEnv.Env nfenv;
       DAE.FunctionTree funcs;
 
-    case (_, _, _, GlobalScript.SYMBOLTABLE(p, aDep, fp, ic, iv, cf, lf), _, _)
+    case (_, _, _, GlobalScript.SYMBOLTABLE(p, fp, ic, iv, cf, lf), _, _)
       equation
         true = Flags.isSet(Flags.SCODE_INST);
         scodeP = SCodeUtil.translateAbsyn2SCode(p);
@@ -3434,11 +3427,11 @@ algorithm
         env = Env.emptyEnv;
         ic_1 = Interactive.addInstantiatedClass(ic,
           GlobalScript.INSTCLASS(className, dae, env));
-        st = GlobalScript.SYMBOLTABLE(p, aDep, fp, ic_1, iv, cf, lf);
+        st = GlobalScript.SYMBOLTABLE(p, fp, ic_1, iv, cf, lf);
       then
         (cache, env, dae, st);
 
-    case (cache,env,_,GlobalScript.SYMBOLTABLE(p,aDep,fp,ic,iv,cf,lf),_,_)
+    case (cache,env,_,GlobalScript.SYMBOLTABLE(p,fp,ic,iv,cf,lf),_,_)
       equation
         false = Flags.isSet(Flags.SCODE_INST);
         str = Absyn.pathString(className);
@@ -3448,15 +3441,13 @@ algorithm
           Error.INST_INVALID_RESTRICTION,{str,re},Absyn.dummyInfo);
         (p,true) = loadModel(Interactive.getUsesAnnotationOrDefault(Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.dummyTimeStamp)),Settings.getModelicaPath(Config.getRunningTestsuite()),p,false,true);
 
-        ptot = Dependency.getTotalProgram(className,p);
-
         //System.stopTimer();
         //print("\nExists+Dependency: " +& realString(System.getTimerIntervalTime()));
 
         //System.startTimer();
         //print("\nAbsyn->SCode");
 
-        scodeP = SCodeUtil.translateAbsyn2SCode(ptot);
+        scodeP = SCodeUtil.translateAbsyn2SCode(p);
 
         // TODO: Why not simply get the whole thing from the cached SCode? It's faster, just need to stop doing the silly Dependency stuff.
 
@@ -3475,7 +3466,7 @@ algorithm
         ic_1 = ic;
         // ic_1 = Interactive.addInstantiatedClass(ic, GlobalScript.INSTCLASS(className,dae,env));
       
-      then (cache,env,dae,GlobalScript.SYMBOLTABLE(p,aDep,fp,ic_1,iv,cf,lf));
+      then (cache,env,dae,GlobalScript.SYMBOLTABLE(p,fp,ic_1,iv,cf,lf));
 
     case (cache,env,_,st as GlobalScript.SYMBOLTABLE(ast=p),_,_)
       equation
@@ -3672,14 +3663,13 @@ algorithm
       Env.Cache cache;
       list<GlobalScript.LoadedFile> lf;
       Absyn.TimeStamp ts;
-      AbsynDep.Depends aDep;
       String errorMsg,retStr,s1;
       Absyn.Class cls, refactoredClass;
       Absyn.Within within_;
       Absyn.Program p1;
       Boolean strEmpty;
 
-    case (cache,env,_,(st as GlobalScript.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=ts),aDep,_,ic,iv,cf,lf)),msg)
+    case (cache,env,_,(st as GlobalScript.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=ts),_,ic,iv,cf,lf)),msg)
       equation
         cls = Interactive.getPathedClassInProgram(className, p);
         refactoredClass = Refactor.refactorGraphicalAnnotation(p, cls);
@@ -3688,7 +3678,7 @@ algorithm
         s1 = Absyn.pathString(className);
         retStr=stringAppendList({"Translation of ",s1," successful.\n"});
       then
-        (cache,Values.STRING(retStr),GlobalScript.SYMBOLTABLE(p1,aDep,NONE(),ic,iv,cf,lf));
+        (cache,Values.STRING(retStr),GlobalScript.SYMBOLTABLE(p1,NONE(),ic,iv,cf,lf));
 
     case (cache,_,_,st,_)
       equation
@@ -6757,7 +6747,6 @@ algorithm
       Integer libHandle, funcHandle;
       String fNew,fOld;
       Real buildTime, edit, build;
-      AbsynDep.Depends aDep;
       Option<list<SCode.Element>> a;
       list<GlobalScript.InstantiatedClass> b;
       list<GlobalScript.Variable> c;
@@ -6810,7 +6799,7 @@ algorithm
 
     // see if function is in CF list and the build time is less than the edit time
     case (cache,env,(e as DAE.CALL(path = funcpath, expLst = expl, attr = DAE.CALL_ATTR(builtin = false))),vallst,_,// (impl as true)
-      (st as SOME(GlobalScript.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)),_,_,_,_,cflist,_))),msg, _)
+      (st as SOME(GlobalScript.SYMBOLTABLE(ast=p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)),compiledFunctions=cflist))),msg, _)
       equation
         true = bIsCompleteFunction;
         true = Flags.isSet(Flags.GEN);
@@ -6833,7 +6822,7 @@ algorithm
 
     // see if function is in CF list and the build time is less than the edit time
     case (cache,env,(e as DAE.CALL(path = funcpath, expLst = expl, attr = DAE.CALL_ATTR(builtin = false))),vallst,_,// impl as true
-      (st as SOME(GlobalScript.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)),_,_,_,_,cflist,_))), msg, _)
+      (st as SOME(GlobalScript.SYMBOLTABLE(ast=p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)),compiledFunctions=cflist))), msg, _)
       equation
         true = bIsCompleteFunction;
         true = Flags.isSet(Flags.GEN);
@@ -6859,7 +6848,7 @@ algorithm
 
     // not in CF list, we have a symbol table, generate function and update symtab
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,attr = DAE.CALL_ATTR(builtin = false))),vallst,_,
-          SOME(syt as GlobalScript.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=ts),aDep,a,b,c,cf,lf)), msg, _) // yeha! we have a symboltable!
+          SOME(syt as GlobalScript.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=ts),a,b,c,cf,lf)), msg, _) // yeha! we have a symboltable!
       equation
         true = bIsCompleteFunction;
         true = Flags.isSet(Flags.GEN);
@@ -6899,7 +6888,7 @@ algorithm
         f = Absyn.getFileNameFromInfo(info);
 
         syt = GlobalScript.SYMBOLTABLE(
-                p, aDep, a, b, c,
+                p, a, b, c,
                 GlobalScript.CFunction(funcpath,DAE.T_UNKNOWN({funcpath}),funcHandle,buildTime,f)::newCF,
                 lf);
 

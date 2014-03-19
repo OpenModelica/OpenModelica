@@ -38,7 +38,6 @@ encapsulated package GlobalScript
 "
 
 public import Absyn;
-public import AbsynDep;
 public import DAE;
 public import Env;
 public import Global;
@@ -156,7 +155,6 @@ public
 uniontype SymbolTable "- Interactive Symbol Table"
   record SYMBOLTABLE
     Absyn.Program ast "ast ; The ast" ;
-    AbsynDep.Depends depends "the dependency information";
     Option<SCode.Program> explodedAst "the explodedAst is invalidated every time the program is updated";
     list<InstantiatedClass> instClsLst "List of instantiated classes" ;
     list<Variable> lstVarVal "List of variables with values" ;
@@ -210,11 +208,8 @@ uniontype ComponentReplacementRules
 
 end ComponentReplacementRules;
 
-public constant AbsynDep.Depends emptyDepends = AbsynDep.DEPENDS(AbsynDep.AVLTREENODE(NONE(),0,NONE(),NONE()),AbsynDep.AVLTREENODE(NONE(),0,NONE(),NONE()));
-
 public constant SymbolTable emptySymboltable =
      SYMBOLTABLE(Absyn.PROGRAM({},Absyn.TOP(),Absyn.dummyTimeStamp),
-                 emptyDepends,
                  NONE(),
                  {},
                  {},

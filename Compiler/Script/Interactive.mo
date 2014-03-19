@@ -48,7 +48,6 @@ encapsulated package Interactive
 
 //public imports
 public import Absyn;
-public import AbsynDep;
 public import ConnectionGraph;
 public import DAE;
 public import Env;
@@ -71,7 +70,6 @@ protected import Connect;
 protected import Constants;
 protected import DAEUtil;
 protected import Debug;
-protected import Dependency;
 protected import Dump;
 protected import Error;
 protected import ErrorExt;
@@ -205,11 +203,11 @@ algorithm
       Absyn.Program ast;
       Option<SCode.Program> explodedAst;
 
-    case ((mosfile,GlobalScript.SYMBOLTABLE(ast,_,explodedAst,_,_,_,_)))
+    case ((mosfile,GlobalScript.SYMBOLTABLE(ast=ast,explodedAst=explodedAst)))
       equation
         setGlobalRoot(Global.instOnlyForcedFunctions,  NONE()); // thread-local root that has to be set!
         statements = Parser.parseexp(mosfile);
-        _ = evaluateToStdOut(statements,GlobalScript.SYMBOLTABLE(ast,GlobalScript.emptyDepends,explodedAst,{},{},{},{}),true);
+        _ = evaluateToStdOut(statements,GlobalScript.SYMBOLTABLE(ast,explodedAst,{},{},{},{}),true);
         print(Error.printMessagesStr(false));
       then true;
     else
@@ -1237,7 +1235,6 @@ algorithm
       list<Absyn.NamedArg> nargs;
       Boolean b1,b2,b,dref1,dref2,finalPrefix,flowPrefix,streamPrefix,repl,protected_,addFunctions;
       list<GlobalScript.LoadedFile> lf;
-      AbsynDep.Depends aDep;
       GlobalScript.Statements istmts;
       Absyn.Path modelpath;
       list<String> libs;
@@ -1929,7 +1926,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p, depends = aDep, loadedFiles = lf))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p, loadedFiles = lf))
       equation
         matchApiFunction(istmts, "renameClass");
         {Absyn.CREF(componentRef = old_cname), Absyn.CREF(componentRef = new_cname)} =
@@ -1939,9 +1936,9 @@ algorithm
         (res,p_1) = renameClass(p, old_cname, new_cname);
         s_1 = SCodeUtil.translateAbsyn2SCode(p_1);
       then
-        (res,GlobalScript.SYMBOLTABLE(p_1,aDep,SOME(s_1),{},{},{},lf));
+        (res,GlobalScript.SYMBOLTABLE(p_1,SOME(s_1),{},{},{},lf));
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p, depends = aDep, loadedFiles = lf))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p, loadedFiles = lf))
       equation
         matchApiFunction(istmts, "renameComponent");
         {Absyn.CREF(componentRef = cname),
@@ -1949,9 +1946,9 @@ algorithm
          Absyn.CREF(componentRef = to_ident)} = getApiFunctionArgs(istmts);
         (res_str,p_1) = renameComponent(p, cname, from_ident, to_ident);
       then
-        (res_str,GlobalScript.SYMBOLTABLE(p_1,aDep,NONE(),{},{},{},lf));
+        (res_str,GlobalScript.SYMBOLTABLE(p_1,NONE(),{},{},{},lf));
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p, depends = aDep, loadedFiles = lf))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p, loadedFiles = lf))
       equation
         matchApiFunction(istmts, "renameComponentInClass");
         {Absyn.CREF(componentRef = cname),
@@ -1959,7 +1956,7 @@ algorithm
          Absyn.CREF(componentRef = to_ident)} = getApiFunctionArgs(istmts);
         (res_str,p_1) = renameComponentOnlyInClass(p, cname, from_ident, to_ident);
       then
-        (res_str,GlobalScript.SYMBOLTABLE(p_1,aDep,NONE(),{},{},{},lf));
+        (res_str,GlobalScript.SYMBOLTABLE(p_1,NONE(),{},{},{},lf));
 
     case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p)) // adrpo added 2005-11-03
       equation
@@ -3946,17 +3943,6 @@ algorithm
         SCode.Program p_1;
         list<Env.Frame> env;
 
-    /*
-    // if we have a top level class, a modification into it doesn't affect any other!
-    case (p, path as Absyn.IDENT(_))
-      equation
-        p = Dependency.getTotalProgramFromPath(path, p);
-        p_1 = SCodeUtil.translateAbsyn2SCode(p);
-        (_,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
-        ((_,_,(comps,_,_))) = traverseClasses(p, NONE(), extractAllComponentsVisitor,(GlobalScript.COMPONENTS({},0),p,env), true) "traverse protected";
-      then
-        comps;
-    */
     // if we have a qualified class, a modification into it can affect any other
     case (_, _)
       equation
@@ -3993,7 +3979,7 @@ algorithm
       equation
         false = isReadOnly(file_info);
         path_1 = Absyn.joinPaths(pa, Absyn.IDENT(id));
-        cenv = Dependency.getClassEnvNoElaboration(p, path_1, env);
+        cenv = getClassEnvNoElaboration(p, path_1, env);
         (_,pa_1) = Inst.makeFullyQualified(Env.emptyCache(), cenv, path_1);
         comps_1 = extractComponentsFromClass(class_, pa_1, comps, cenv);
       then
@@ -4003,7 +3989,7 @@ algorithm
         false = isReadOnly(file_info);
         path_1 = Absyn.IDENT(id);
 
-        cenv = Dependency.getClassEnvNoElaboration(p, path_1, env);
+        cenv = getClassEnvNoElaboration(p, path_1, env);
         (_,pa_1) = Inst.makeFullyQualified(Env.emptyCache(),cenv, path_1);
         comps_1 = extractComponentsFromClass(class_, pa_1, comps, cenv);
       then
@@ -7190,7 +7176,7 @@ algorithm
     case (((class_ as Absyn.CLASS(name = id,partialPrefix = a,finalPrefix = b,encapsulatedPrefix = c,restriction = d,body = e,info = file_info)),SOME(pa),(old_class_path,new_class_path,p,path_str_lst,env)))
       equation
         path_1 = Absyn.joinPaths(pa, Absyn.IDENT(id));
-        cenv = Dependency.getClassEnvNoElaboration(p, path_1, env) "get_class_env(p,path\') => cenv &" ;
+        cenv = getClassEnvNoElaboration(p, path_1, env) "get_class_env(p,path\') => cenv &" ;
         (class_1,changed) = renameClassInClass(class_, old_class_path, new_class_path, cenv);
         path_str_1 = Absyn.pathString(path_1);
         path_str = Util.if_(changed, path_str_1, "");
@@ -7202,7 +7188,7 @@ algorithm
     case (((class_ as Absyn.CLASS(name = id,partialPrefix = a,finalPrefix = b,encapsulatedPrefix = c,restriction = d,body = e,info = file_info)),NONE(),(old_class_path,new_class_path,p,path_str_lst,env)))
       equation
         path_1 = Absyn.IDENT(id);
-        cenv = Dependency.getClassEnvNoElaboration(p, path_1, env) "get_class_env(p,path\') => cenv &" ;
+        cenv = getClassEnvNoElaboration(p, path_1, env) "get_class_env(p,path\') => cenv &" ;
         (class_1,changed) = renameClassInClass(class_, old_class_path, new_class_path, cenv);
         path_str_1 = Absyn.pathString(path_1);
         path_str = Util.if_(changed, path_str_1, "");
@@ -17709,7 +17695,6 @@ algorithm
       list<GlobalScript.Variable> iv;
       list<GlobalScript.LoadedFile> lf, newLF;
       list<GlobalScript.CompiledCFunction> cf;
-      AbsynDep.Depends aDep;
 
     // See that the file exists
     case (file, _, s as GlobalScript.SYMBOLTABLE(ast = _))
@@ -17717,11 +17702,11 @@ algorithm
         false = System.regularFileExists(file);
       then ({},s);
     // check if we have the stuff in the loadedFiles!
-    case (file, _, s as GlobalScript.SYMBOLTABLE(pAst,aDep,_,ic,iv,cf,lf))
+    case (file, _, s as GlobalScript.SYMBOLTABLE(pAst,_,ic,iv,cf,lf))
       equation
         (topNamesStr,newLF,newP) = checkLoadedFiles(file, encoding, lf, pAst, true);
       then
-        (topNamesStr, GlobalScript.SYMBOLTABLE(newP,aDep,NONE(),ic,iv,cf,lf));
+        (topNamesStr, GlobalScript.SYMBOLTABLE(newP,NONE(),ic,iv,cf,lf));
   end matchcontinue;
 end loadFileInteractiveQualified;
 
@@ -18158,19 +18143,18 @@ algorithm
       list<GlobalScript.Variable> iv;
       list<GlobalScript.LoadedFile> lf, newLF;
       list<GlobalScript.CompiledCFunction> cf;
-      AbsynDep.Depends aDep;
     // See that the file exists
     case (file, _, s as GlobalScript.SYMBOLTABLE(ast = _))
       equation
         false = System.regularFileExists(file);
       then ({},s);
     // check if we have the stuff in the loadedFiles!
-    case (file, _, s as GlobalScript.SYMBOLTABLE(pAst,aDep,_,ic,iv,cf,lf))
+    case (file, _, s as GlobalScript.SYMBOLTABLE(pAst,_,ic,iv,cf,lf))
       equation
         (topNamesStr,newLF,newP) = checkLoadedFiles(file, encoding, lf, pAst, false);
       then
         /* shouldn't newLF be used here? no; we only parse the files; not loading them */
-        (topNamesStr, GlobalScript.SYMBOLTABLE(newP,aDep,NONE(),ic,iv,cf,lf));
+        (topNamesStr, GlobalScript.SYMBOLTABLE(newP,NONE(),ic,iv,cf,lf));
   end matchcontinue;
 end parseFile;
 
@@ -18630,14 +18614,13 @@ public function setSymbolTableAST
 algorithm
   outSymTab := match(inSymTab, inAST)
     local
-      AbsynDep.Depends d;
       list<GlobalScript.InstantiatedClass> i;
       list<GlobalScript.Variable> v;
       list<GlobalScript.CompiledCFunction> c;
       list<GlobalScript.LoadedFile> l;
-    case (GlobalScript.SYMBOLTABLE(depends = d, instClsLst = i,
+    case (GlobalScript.SYMBOLTABLE(instClsLst = i,
                       lstVarVal = v, compiledFunctions = c, loadedFiles = l), _)
-      then GlobalScript.SYMBOLTABLE(inAST, d, NONE(), i, v, c, l);
+      then GlobalScript.SYMBOLTABLE(inAST, NONE(), i, v, c, l);
   end match;
 end setSymbolTableAST;
 
@@ -18656,14 +18639,13 @@ protected function setSymbolTableVars
   output GlobalScript.SymbolTable outSymbolTable;
 protected
   Absyn.Program ast;
-  AbsynDep.Depends dep;
   Option<SCode.Program> exp_ast;
   list<GlobalScript.InstantiatedClass> cls;
   list<GlobalScript.CompiledCFunction> comp_funcs;
   list<GlobalScript.LoadedFile> files;
 algorithm
-  GlobalScript.SYMBOLTABLE(ast, dep, exp_ast, cls, _, comp_funcs, files) := inSymbolTable;
-  outSymbolTable := GlobalScript.SYMBOLTABLE(ast, dep, exp_ast, cls, inVars, comp_funcs, files); 
+  GlobalScript.SYMBOLTABLE(ast, exp_ast, cls, _, comp_funcs, files) := inSymbolTable;
+  outSymbolTable := GlobalScript.SYMBOLTABLE(ast, exp_ast, cls, inVars, comp_funcs, files); 
 end setSymbolTableVars;
 
 public function getFunctionsInProgram
@@ -18720,17 +18702,16 @@ algorithm
   (program,outSt) := match st
     local
       Absyn.Program ast;
-      AbsynDep.Depends depends;
       list<GlobalScript.InstantiatedClass> instClsLst;
       list<GlobalScript.Variable> lstVarVal;
       list<GlobalScript.CompiledCFunction> compiledFunctions;
       list<GlobalScript.LoadedFile> loadedFiles;
 
     case GlobalScript.SYMBOLTABLE(explodedAst=SOME(program)) then (program,st);
-    case GlobalScript.SYMBOLTABLE(ast,depends,_,instClsLst,lstVarVal,compiledFunctions,loadedFiles)
+    case GlobalScript.SYMBOLTABLE(ast,_,instClsLst,lstVarVal,compiledFunctions,loadedFiles)
       equation
         program = SCodeUtil.translateAbsyn2SCode(ast);
-      then (program,GlobalScript.SYMBOLTABLE(ast,depends,SOME(program),instClsLst,lstVarVal,compiledFunctions,loadedFiles));
+      then (program,GlobalScript.SYMBOLTABLE(ast,SOME(program),instClsLst,lstVarVal,compiledFunctions,loadedFiles));
   end match;
 end symbolTableToSCode;
 
@@ -18850,5 +18831,60 @@ algorithm
     else "unknown";
   end matchcontinue;
 end printIstmtStr;
+
+protected function getClassEnvNoElaboration " Retrieves the environment of the class, including the frame of the class
+   itself by partially instantiating it.
+
+   If partial instantiation fails, a full instantiation is performed.
+
+   This can happen e.g. for
+   model A
+   model Resistor
+    Pin p,n;
+    constant Integer n_conn = cardinality(p);
+    equation connect(p,n);
+   end A;
+
+   where partial instantiation fails since cardinality(p) can not be determined."
+  input Absyn.Program p;
+  input Absyn.Path p_class;
+  input Env.Env env;
+  output Env.Env env_2;
+protected
+  SCode.Element cl;
+  String id;
+  SCode.Encapsulated encflag;
+  SCode.Restriction restr;
+  list<Env.Frame> env_1,env2;
+  ClassInf.State ci_state;
+  Real t1,t2;
+  Env.Cache cache;
+algorithm
+  env_2 := matchcontinue(p,p_class,env)
+    // First try partial instantiation
+    case(_,_,_)
+      equation
+        (cache,(cl as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(Env.emptyCache(),env, p_class, false);
+        env2 = Env.openScope(env_1, encflag, SOME(id), Env.restrictionToScopeType(restr));
+        ci_state = ClassInf.start(restr, Env.getEnvName(env2));
+        (cache,env_2,_,_,_) = Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy,
+          DAE.NOMOD(), Prefix.NOPRE(), ci_state, cl, SCode.PUBLIC(), {}, 0);
+      then
+        env_2;
+
+    case(_,_,_)
+      equation
+        (cache,(cl as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(Env.emptyCache(),env, p_class, false);
+        env2 = Env.openScope(env_1, encflag, SOME(id), Env.restrictionToScopeType(restr));
+        ci_state = ClassInf.start(restr, Env.getEnvName(env2));
+        (cache,env_2,_,_,_,_,_,_,_,_,_,_) = Inst.instClassIn(cache,env2, InnerOuter.emptyInstHierarchy,
+          UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(),
+          ci_state, cl, SCode.PUBLIC(), {},false, InstTypes.INNER_CALL(),
+          ConnectionGraph.EMPTY, Connect.emptySet, NONE());
+    then
+      env_2;
+  end matchcontinue;
+
+end getClassEnvNoElaboration;
 
 end Interactive;
