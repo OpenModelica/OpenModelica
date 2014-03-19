@@ -987,7 +987,7 @@ algorithm
 end createCacheMapLevelOptimized0;
 
 protected function createCacheMapLevelOptimized1
-  input Task iTask;
+  input HpcOmScheduler.Task iTask;
   input tuple<CacheMap,Integer,list<Integer>> iInfo; //<CacheMap,numNewCL, availableCL>
   output tuple<CacheMap,Integer,list<Integer>> oInfo;  
 end createCacheMapLevelOptimized1;
