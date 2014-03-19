@@ -788,12 +788,12 @@ void changeStdStreamBuffer(void) {
 
 /*
  * Used by OMEdit for debugging.
- * Returns the Record element as an array e.g ^done,omc_recordelement={name, displayName, type, value}
+ * Returns the Record element as an array e.g ^done,omc_recordelement={name, displayName, type}
  */
 char* getRecordElement(modelica_metatype arr, modelica_integer i) {
   /* get the element from the record array */
   void* name = (void*)mmc_gdb_arrayGet(0, arr, i);
-  char *displayName = NULL, *type = NULL, *value = NULL, *formatString = NULL;
+  char *displayName = NULL, *type = NULL, *formatString = NULL;
 
   /* get the name of the element */
   getRecordElementName(arr, i - 2);
@@ -805,20 +805,14 @@ char* getRecordElement(modelica_metatype arr, modelica_integer i) {
   type = malloc(strlen(anyStringBuf) + 1);
   strcpy(type, anyStringBuf);
 
-  /* get the value of the element */
-  anyString(name);
-  value = malloc(strlen(anyStringBuf) + 1);
-  strcpy(value, anyStringBuf);
-
   /* format the anyStringBuf as array to return it */
-  formatString = "^done,omc_recordelement={name=\"%ld\",displayName=\"%s\",type=\"%s\",value=\"%s\"}";
-  checkAnyStringBufSize(0, strlen(name) + strlen(displayName) + strlen(type) + strlen(value) + strlen(formatString));
-  sprintf(anyStringBuf, formatString, (long (*) (long, long, long))name, displayName, type, value);
+  formatString = "^done,omc_recordelement={name=\"%ld\",displayName=\"%s\",type=\"%s\"}";
+  checkAnyStringBufSize(0, strlen(name) + strlen(displayName) + strlen(type) + strlen(formatString));
+  sprintf(anyStringBuf, formatString, (long (*) (long, long, long))name, displayName, type);
 
   /* free the memory */
   free(displayName);
   free(type);
-  free(value);
 
   return anyStringBuf;
 }
