@@ -55,6 +55,10 @@ public uniontype Task
     Integer threadIdx;
     list<Integer> eqIdc;
   end CALCTASK;
+  record CALCTASK_LEVEL
+    list<Integer> eqIdc;
+    Integer nodeIdx; //index of the graph-node
+  end CALCTASK_LEVEL;
   record ASSIGNLOCKTASK //Task which assignes a lock
     String lockId;
   end ASSIGNLOCKTASK;
@@ -67,24 +71,30 @@ end Task;
 
 public uniontype Schedule   // stores all scheduling-informations
   record LEVELSCHEDULE
-    list<list<Integer>> eqsOfLevels; //List of tasks assigned to the thread <%idx%>
+    list<list<Task>> tasksOfLevels; //List of tasks solved in the same level in parallel
   end LEVELSCHEDULE;
   record THREADSCHEDULE
     array<list<Task>> threadTasks; //List of tasks assigned to the thread <%idx%>
     list<String> lockIdc;
   end THREADSCHEDULE;
+  record TASKDEPSCHEDULE
+    list<tuple<Task,list<Integer>>> tasks; //topological sorted tasks with <taskIdx, parentTaskIdc>
+  end TASKDEPSCHEDULE;
   record EMPTYSCHEDULE  // a dummy schedule. used if there is no ODE-system
   end EMPTYSCHEDULE;
 end Schedule;
 
 public uniontype ScheduleSimCode //Schedule-structure for sim code
   record LEVELSCHEDULESC
-    list<list<Integer>> eqsOfLevels;
+    list<list<Task>> tasksOfLevels;
   end LEVELSCHEDULESC;
   record THREADSCHEDULESC
     list<list<Task>> threadTasks;
     list<String> lockIdc;
   end THREADSCHEDULESC;
+  record TASKDEPSCHEDULESC
+    list<tuple<Task,list<Integer>>> tasks; //topological sorted tasks with <taskIdx, parentTaskIdc>
+  end TASKDEPSCHEDULESC;
 end ScheduleSimCode;
 
 public type TaskAssignment = array<Integer>; //the information which node <idx> is assigned to which processor <value>
@@ -917,7 +927,7 @@ algorithm
   end match;
 end compareTaskWithThreadIdx;
 
-protected function printSchedule1
+protected function printThreadSchedule
   input list<Task> iTaskList;
   input Integer iThreadIdx;
   output Integer oThreadIdx;
@@ -926,7 +936,20 @@ algorithm
   print("--------------\n");
   printTaskList(iTaskList);
   oThreadIdx := iThreadIdx+1;
-end printSchedule1;
+end printThreadSchedule;
+
+protected function printTaskDepSchedule
+  input tuple<Task,list<Integer>> iTaskInfo;
+protected
+  Task iTask;
+  list<Integer> iDependencies;
+algorithm
+  (iTask,iDependencies) := iTaskInfo;
+  print("Task: \n");
+  print(dumpTask(iTask) +& "\n");
+  print("-> Parents: " +& stringDelimitList(List.map(iDependencies,intString),",") +& "\n");
+  print("---------------------\n");
+end printTaskDepSchedule;
  
 protected function printTaskList
   input list<Task> iTaskList;
@@ -960,6 +983,8 @@ algorithm
   oString := match(iTask)
     case(CALCTASK(weighting=weighting,timeFinished=timeFinished, index=index, eqIdc=eqIdc))
       then ("Calculation task with index " +& intString(index) +& " including the equations: "+&stringDelimitList(List.map(eqIdc,intString),", ")+& " is finished at  " +& realString(timeFinished) +& "\n");
+    case(CALCTASK_LEVEL(eqIdc=eqIdc))
+      then ("Calculation task including the equations: "+&stringDelimitList(List.map(eqIdc,intString),", ")+&"\n");
     case(ASSIGNLOCKTASK(lockId=lockId))
       then ("Assign lock task with id " +& lockId +& "\n");
     case(RELEASELOCKTASK(lockId=lockId))
@@ -1011,6 +1036,10 @@ algorithm
         tmpScheduleInfo = Util.arrayFold(threadTasks,convertScheduleStrucToInfo0,tmpScheduleInfo);
       then tmpScheduleInfo;
     case(LEVELSCHEDULE(_),_)
+      equation
+        tmpScheduleInfo = arrayCreate(iTaskCount,(-1,-1,-1.0));
+      then tmpScheduleInfo;
+    case(TASKDEPSCHEDULE(_),_)
       equation
         tmpScheduleInfo = arrayCreate(iTaskCount,(-1,-1,-1.0));
       then tmpScheduleInfo;
@@ -1068,18 +1097,18 @@ public function createLevelSchedule "function createLevelSchedule
 protected
   array<list<Integer>> inComps;
   array<Integer> nodeMark;
-  list<tuple<Integer,list<Integer>>> tmpSimEqLevelMapping; //maps the level-index to the equations
-  list<list<Integer>> flatSimEqLevelMapping;
+  list<tuple<Integer,list<Task>>> tmpTaskLevelMapping; //maps the level-index to the tasks
+  list<list<Task>> flatTaskLevelMapping;
 algorithm
   oSchedule := match(iMeta,iSccSimEqMapping)
     case(HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMark),_)
       equation
-        tmpSimEqLevelMapping = createLevelSchedule0(1,inComps,iSccSimEqMapping,nodeMark,{});
+        tmpTaskLevelMapping = createLevelSchedule0(1,inComps,iSccSimEqMapping,nodeMark,{});
         //sorting
-        tmpSimEqLevelMapping = List.sort(tmpSimEqLevelMapping, sortLevelInfo);
+        tmpTaskLevelMapping = List.sort(tmpTaskLevelMapping, sortLevelInfo);
         //flattening
-        flatSimEqLevelMapping = List.map(tmpSimEqLevelMapping, Util.tuple22);
-      then LEVELSCHEDULE(flatSimEqLevelMapping);
+        flatTaskLevelMapping = List.map(tmpTaskLevelMapping, Util.tuple22);
+      then LEVELSCHEDULE(flatTaskLevelMapping);
     else 
       equation
         print("CreateLevelSchedule failed.");
@@ -1094,18 +1123,18 @@ protected function createLevelSchedule0 "function createLevelSchedule0
   input array<list<Integer>> iComps;
   input array<list<Integer>> iSccSimEqMapping;
   input array<Integer> iNodeMarks;
-  input list<tuple<Integer,list<Integer>>> iSimEqLevelMapping;
-  output list<tuple<Integer,list<Integer>>> oSimEqLevelMapping;
+  input list<tuple<Integer,list<Task>>> iTaskLevelMapping;
+  output list<tuple<Integer,list<Task>>> oTaskLevelMapping;
   
 protected
   list<Integer> sccSimEqMapping, nodeComps;
   Integer nodeMark;
   Integer mapListIndex;
   Integer firstNodeComp;
-  list<Integer> eqList;
-  list<tuple<Integer,list<Integer>>> tmpSimEqLevelMapping;
+  list<Task> taskList;
+  list<tuple<Integer,list<Task>>> tmpTaskLevelMapping;
 algorithm
-  oSimEqLevelMapping := matchcontinue(iNodeIdx,iComps,iSccSimEqMapping,iNodeMarks,iSimEqLevelMapping)
+  oTaskLevelMapping := matchcontinue(iNodeIdx,iComps,iSccSimEqMapping,iNodeMarks,iTaskLevelMapping)
     case(_,_,_,_,_)
       equation
         true = intGe(arrayLength(iComps),iNodeIdx);
@@ -1117,17 +1146,17 @@ algorithm
         nodeMark = arrayGet(iNodeMarks,firstNodeComp);
         //print("createParInformation0 with nodeIdx " +& intString(iNodeIdx) +& " representing component " +& intString(firstNodeComp) +& " and nodeMark " +& intString(nodeMark) +& "\n");
         true = intGe(nodeMark,0);
-        (tmpSimEqLevelMapping,eqList,mapListIndex) = getLevelListByLevel(nodeMark,1,iSimEqLevelMapping,iSimEqLevelMapping);
-        eqList = List.fold1(nodeComps, createLevelSchedule1, iSccSimEqMapping, eqList);
-        tmpSimEqLevelMapping = List.replaceAt((nodeMark, eqList),mapListIndex-1,tmpSimEqLevelMapping);
-      then createLevelSchedule0(iNodeIdx+1,iComps,iSccSimEqMapping,iNodeMarks,tmpSimEqLevelMapping);
+        (tmpTaskLevelMapping,taskList,mapListIndex) = getLevelListByLevel(nodeMark,1,iTaskLevelMapping,iTaskLevelMapping);
+        taskList = List.fold2(nodeComps, createLevelSchedule1, iSccSimEqMapping, iNodeIdx, taskList);
+        tmpTaskLevelMapping = List.replaceAt((nodeMark, taskList),mapListIndex-1,tmpTaskLevelMapping);
+      then createLevelSchedule0(iNodeIdx+1,iComps,iSccSimEqMapping,iNodeMarks,tmpTaskLevelMapping);
     case(_,_,_,_,_)
       equation
         true = intGe(arrayLength(iComps),iNodeIdx);
         nodeComps = arrayGet(iComps,iNodeIdx);
         true = intEq(listLength(nodeComps), 1);
         true = intGe(arrayLength(iSccSimEqMapping), iNodeIdx); 
-      then createLevelSchedule0(iNodeIdx+1,iComps,iSccSimEqMapping,iNodeMarks,iSimEqLevelMapping);
+      then createLevelSchedule0(iNodeIdx+1,iComps,iSccSimEqMapping,iNodeMarks,iTaskLevelMapping);
     case(_,_,_,_,_)
       equation
         true = intGe(arrayLength(iComps),iNodeIdx);
@@ -1137,7 +1166,7 @@ algorithm
         print("createLevelSchedule0: contracted nodes are currently not supported\n");
       then fail();
     else 
-      then iSimEqLevelMapping;
+      then iTaskLevelMapping;
   end matchcontinue;
 end createLevelSchedule0;
 
@@ -1146,17 +1175,19 @@ protected function createLevelSchedule1 "function createLevelSchedule1
   Helper function of createLevelSchedule. This method will grab the simEqIndex of the given component and extend the iList."
   input Integer iCompIdx;
   input array<list<Integer>> iSccSimEqMapping;
-  input list<Integer> iList;
-  output list<Integer> oList;
+  input Integer iNodeIdx;
+  input list<Task> iList;
+  output list<Task> oList;
   
 protected 
   list<Integer> simEqIdc;
   Integer lastSimEqIdx;
-  
+  Task tmpTask;
 algorithm
   simEqIdc := arrayGet(iSccSimEqMapping,iCompIdx);
   lastSimEqIdx := List.last(simEqIdc);
-  oList := lastSimEqIdx::iList;
+  tmpTask := CALCTASK_LEVEL({lastSimEqIdx},iNodeIdx);
+  oList := tmpTask::iList;
 end createLevelSchedule1;
 
 protected function getLevelListByLevel "function getLevelListByLevel
@@ -1164,43 +1195,43 @@ protected function getLevelListByLevel "function getLevelListByLevel
   Returns the level list of the searched index. If no level with the given index was found, a new list is appended to the mapping."
   input Integer iLevel;
   input Integer iCurrentListIndex;
-  input list<tuple<Integer,list<Integer>>> restList;
-  input list<tuple<Integer,list<Integer>>> iSimEqLevelMapping; //list<<levelIndex,levelList>>
-  output list<tuple<Integer,list<Integer>>> oSimEqLevelMapping;
-  output list<Integer> oEqList;
+  input list<tuple<Integer,list<Task>>> restList;
+  input list<tuple<Integer,list<Task>>> iTaskLevelMapping; //list<<levelIndex,levelList>>
+  output list<tuple<Integer,list<Task>>> oTaskLevelMapping;
+  output list<Task> oTaskList;
   output Integer oMapListIndex; 
   
 protected
   Integer curLevel, headIdx;
-  list<Integer> curLevelEqs, headList;
-  list<tuple<Integer,list<Integer>>> rest;
-  tuple<Integer,list<Integer>> newElem;
+  list<Task> headList;
+  list<tuple<Integer,list<Task>>> rest;
+  tuple<Integer,list<Task>> newElem;
   
-  list<tuple<Integer,list<Integer>>> tmpSimEqLevelMapping;
-  list<Integer> tmpEqList;
+  list<tuple<Integer,list<Task>>> tmpTaskLevelMapping;
+  list<Task> tmpTaskList;
   Integer tmpMapListIndex;
 algorithm
-  (oSimEqLevelMapping,oEqList,oMapListIndex) := matchcontinue(iLevel,iCurrentListIndex,restList,iSimEqLevelMapping)
+  (oTaskLevelMapping,oTaskList,oMapListIndex) := matchcontinue(iLevel,iCurrentListIndex,restList,iTaskLevelMapping)
     case(_,_,(headIdx,headList)::rest,_)
       equation
         true = intEq(headIdx,iLevel);
-      then (iSimEqLevelMapping,headList,iCurrentListIndex);
+      then (iTaskLevelMapping,headList,iCurrentListIndex);
     case(_,_,(headIdx,headList)::rest,_)
       equation 
-         (tmpSimEqLevelMapping,tmpEqList,tmpMapListIndex) = getLevelListByLevel(iLevel,iCurrentListIndex+1,rest,iSimEqLevelMapping);
-      then (tmpSimEqLevelMapping,tmpEqList,tmpMapListIndex);
+         (tmpTaskLevelMapping,tmpTaskList,tmpMapListIndex) = getLevelListByLevel(iLevel,iCurrentListIndex+1,rest,iTaskLevelMapping);
+      then (tmpTaskLevelMapping,tmpTaskList,tmpMapListIndex);
     else
       equation
         newElem = (iLevel,{});
-      then (newElem::iSimEqLevelMapping,{},1);
+      then (newElem::iTaskLevelMapping,{},1);
    end matchcontinue;
 end getLevelListByLevel;
 
 protected function sortLevelInfo "function sortLevelInfo
   author: marcusw
   Use this function to sort a level list. The result is true if index1 > index2."
-  input tuple<Integer,list<Integer>> iTuple1; //<index1,_>
-  input tuple<Integer,list<Integer>> iTuple2; //<index2,_>
+  input tuple<Integer,list<Task>> iTuple1; //<index1,_>
+  input tuple<Integer,list<Task>> iTuple2; //<index2,_>
   output Boolean oResult;
 protected
   Integer index1,index2;
@@ -1213,31 +1244,106 @@ end sortLevelInfo;
 protected function printLevelSchedule "function printLevelSchedule
   author: marcusw
   Helper function to print one level."
-  input list<Integer> iLevelInfo;
+  input list<Task> iLevelInfo;
   input Integer iLevel;
   output Integer oLevel;
   
 algorithm
   print("Level " +& intString(iLevel) +& ":\n");
-  _ := List.fold(iLevelInfo,printLevelSchedule1,1);
+  printTaskList(iLevelInfo);
   oLevel := iLevel + 1;
 end printLevelSchedule;
 
-protected function printLevelSchedule1 "function printLevelSchedule1
+//---------------------------
+// Task dependency Scheduling
+//---------------------------
+public function createTaskDepSchedule "function createTaskDepSchedule
   author: marcusw
-  Helper function of printLevelSchedule to print one equation."
-  input Integer iEquation;
-  input Integer iLevel;
-  output Integer oLevel;
-  
+  Creates a dynamic scheduling for OpenMP 4.0 task dependencies or Intel TBB graphs."
+  input HpcOmTaskGraph.TaskGraph iTaskGraph;
+  input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+  input array<list<Integer>> iSccSimEqMapping; //Maps each scc to a list of simEqs
+  output Schedule oSchedule;
+protected
+  Schedule tmpSchedule;
+  array<list<Integer>> inComps;
+  array<Integer> nodeMark;
+  HpcOmTaskGraph.TaskGraph taskGraphT;
+  list<tuple<Task,Integer,list<Integer>>> nodeLevelMap; //<task, levelIdx, parentTaskIdc>
+  list<tuple<Task,list<Integer>>> filteredNodeLevelMap;
 algorithm
-  print("\t Equation " +& intString(iEquation) +& "\n");
-  oLevel := iLevel + 1;
-end printLevelSchedule1;
+  oSchedule := matchcontinue(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping)
+    case(_,HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMark),_)
+      equation
+        taskGraphT = HpcOmTaskGraph.transposeTaskGraph(iTaskGraph);
+        ((_,nodeLevelMap)) = Util.arrayFold3(taskGraphT, createNodeLevelMapping, nodeMark, inComps, iSccSimEqMapping, (1,{}));
+        nodeLevelMap = List.sort(nodeLevelMap, sortNodeLevelMapping);
+        filteredNodeLevelMap = List.map(nodeLevelMap, filterNodeLevelMapping);
+        tmpSchedule = TASKDEPSCHEDULE(filteredNodeLevelMap);
+      then tmpSchedule;
+    else
+      equation
+        print("HpcOmScheduler.createTaskDepSchedule failed.\n");
+      then fail();
+  end matchcontinue; 
+end createTaskDepSchedule;
 
-//--------------------
+protected function createNodeLevelMapping
+  input list<Integer> iNodeDependenciesT; //dependencies of node
+  input array<Integer> nodeMarks;
+  input array<list<Integer>> inComps;
+  input array<list<Integer>> iSccSimEqMapping;
+  input tuple<Integer,list<tuple<Task,Integer,list<Integer>>>> iNodeInfo; //<taskIdx, list<task, levelIdx, parentTaskIdc>>
+  output tuple<Integer,list<tuple<Task,Integer,list<Integer>>>> oNodeInfo;
+protected
+  Task task;
+  Integer nodeIdx;
+  Integer nodeMark;
+  list<Integer> components;
+  list<Integer> simEqIdc;
+  list<tuple<Task,Integer,list<Integer>>> nodeLevelMap;
+algorithm
+  (nodeIdx,nodeLevelMap) := iNodeInfo;
+  //print("createNodeLevelMapping NodeIdx: " +& intString(nodeIdx) +& "\n");
+  components := arrayGet(inComps,nodeIdx);
+  nodeMark := arrayGet(nodeMarks,List.last(components));
+  //print("-> Components: " +& stringDelimitList(List.map(components,intString),", ") +& "\n");
+  //print("-> NodeMark: " +& intString(nodeMark) +& "\n");
+  //print("ISccSimEqMapping-Length: " +& intString(arrayLength(iSccSimEqMapping)) +& "\n");
+  simEqIdc := List.map(List.map1(components,getSccSimEqMappingByIndex,iSccSimEqMapping), List.last);
+  task := CALCTASK(-1,nodeIdx,-1.0,-1.0,-1,simEqIdc);
+  nodeLevelMap := (task,nodeMark,iNodeDependenciesT)::nodeLevelMap;
+  oNodeInfo := ((nodeIdx+1,nodeLevelMap));
+end createNodeLevelMapping;
+
+protected function sortNodeLevelMapping
+  input tuple<Task,Integer,list<Integer>> iElem1;
+  input tuple<Task,Integer,list<Integer>> iElem2;
+  output Boolean oResult;
+protected
+  Integer elemLvl1, elemLvl2;
+  Integer task1Idx;
+algorithm
+  (CALCTASK(index=task1Idx),elemLvl1,_) := iElem1;
+  (_,elemLvl2,_) := iElem2;
+  //print("sortNodeLevelMapping: TaskIdx: " +& intString(task1Idx) +& " level: " +& intString(elemLvl1) +& "\n");
+  oResult := intGe(elemLvl1,elemLvl2);
+end sortNodeLevelMapping;
+
+protected function filterNodeLevelMapping
+  input tuple<Task,Integer,list<Integer>> iElem;
+  output tuple<Task,list<Integer>> oElem;  
+protected
+  Task task;
+  list<Integer> childTasks;
+algorithm
+  (task,_,childTasks) := iElem;
+  oElem := ((task,childTasks)); 
+end filterNodeLevelMapping;
+
+//----------------------
 // External-C Scheduling
-//--------------------
+//----------------------
 public function createExtCSchedule "function createExtSchedule
   author: marcusw
   Creates a scheduling by passing the arguments to metis."
@@ -1527,9 +1633,9 @@ algorithm
     local
       array<list<Task>> threadTasks;
       list<String> lockIdc;
-      list<list<Integer>> eqsOfLevels;
+      list<list<Task>> tasksOfLevels;
       Schedule schedule;
-    case(LEVELSCHEDULE(eqsOfLevels=eqsOfLevels),_,_)
+    case(LEVELSCHEDULE(tasksOfLevels=tasksOfLevels),_,_)
       then
         scheduleIn;
     case(THREADSCHEDULE(threadTasks=threadTasks,lockIdc=lockIdc),_,_)
@@ -2268,21 +2374,26 @@ public function convertScheduleToSimCodeSchedule
   input Schedule iSchedule;
   output ScheduleSimCode oSchedule;
 protected
-  list<list<Integer>> eqsOfLevels;
+  list<list<Task>> tasksOfLevels;
   array<list<Task>> threadTasks;
   list<list<Task>> tmpThreadTasks;
   list<String> lockIdc;
+  list<tuple<Task, list<Integer>>> tasks;
   ScheduleSimCode tmpSchedule;
 algorithm
   oSchedule := match(iSchedule)
-    case(LEVELSCHEDULE(eqsOfLevels=eqsOfLevels))
+    case(LEVELSCHEDULE(tasksOfLevels=tasksOfLevels))
       equation
-        tmpSchedule = LEVELSCHEDULESC(eqsOfLevels);
+        tmpSchedule = LEVELSCHEDULESC(tasksOfLevels);
       then tmpSchedule;
     case(THREADSCHEDULE(threadTasks=threadTasks, lockIdc=lockIdc)) 
       equation
         tmpThreadTasks = arrayList(threadTasks);
         tmpSchedule = THREADSCHEDULESC(tmpThreadTasks,lockIdc);
+      then tmpSchedule;
+    case(TASKDEPSCHEDULE(tasks=tasks))
+      equation
+        tmpSchedule = TASKDEPSCHEDULESC(tasks);
       then tmpSchedule;
     else
       equation
@@ -2295,16 +2406,21 @@ public function printSchedule
   input Schedule iSchedule;
 protected
   array<list<Task>> threadTasks;
-  list<list<Integer>> eqsOfLevels;
+  list<list<Task>> tasksOfLevels;
+  list<tuple<Task, list<Integer>>> taskDepTasks;
 algorithm
   _ := match(iSchedule)
     case(THREADSCHEDULE(threadTasks=threadTasks))
       equation
-        _ = Util.arrayFold(threadTasks, printSchedule1, 1);
+        _ = Util.arrayFold(threadTasks, printThreadSchedule, 1);
       then ();
-    case(LEVELSCHEDULE(eqsOfLevels=eqsOfLevels))
+    case(LEVELSCHEDULE(tasksOfLevels=tasksOfLevels))
       equation
-        _ = List.fold(eqsOfLevels,printLevelSchedule,1);
+        _ = List.fold(tasksOfLevels,printLevelSchedule,1);
+      then ();
+    case(TASKDEPSCHEDULE(tasks=taskDepTasks))
+      equation
+        List.map_0(taskDepTasks,printTaskDepSchedule);
       then ();
     else then fail();
   end match;
@@ -2322,13 +2438,13 @@ algorithm
   criticalPathInfoOut := match(scheduleIn,numProcIn,taskGraphIn,taskGraphMetaIn)
     local
       list<String> lockIdc;
-      list<list<Integer>> levels;
+      list<list<Task>> levels;
       list<list<Integer>> parallelSets;
       list<list<Integer>> criticalPaths, criticalPathsWoC;
       array<list<Task>> threadTasks;
       Real cpCosts, cpCostsWoC, serTime, parTime, speedUp, speedUpMax;
       String criticalPathInfo;
-    case(LEVELSCHEDULE(eqsOfLevels=levels),_,_,_)
+    case(LEVELSCHEDULE(tasksOfLevels=levels),_,_,_)
       equation
         //get the criticalPath
         ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC),parallelSets) = HpcOmTaskGraph.longestPathMethod(taskGraphIn,taskGraphMetaIn);
@@ -2353,7 +2469,7 @@ algorithm
         printPredictedExeTimeInfo(serTime,parTime,speedUp,speedUpMax,numProcIn);
       then
         criticalPathInfo;
-    case(EMPTYSCHEDULE(),_,_,_)
+    else
       equation
       then
         "";
@@ -2473,7 +2589,7 @@ algorithm
       array<Task> checkedTasks, lastTasks;
       array<list<Task>> threadTasks, threadTasksNew;
       list<String> lockIdc;
-      list<list<Integer>> eqsOfLevels;
+      list<list<Task>> tasksOfLevels;
       Task task;
       Schedule schedule; 
     case(THREADSCHEDULE(threadTasks=threadTasks,lockIdc=lockIdc),_,_,_)
@@ -2487,7 +2603,7 @@ algorithm
         schedule = THREADSCHEDULE(threadTasksNew,lockIdc);
       then
         (schedule,finTime);
-    case(LEVELSCHEDULE(eqsOfLevels),_,_,_)
+    case(LEVELSCHEDULE(tasksOfLevels),_,_,_)
       equation
         schedule = scheduleIn;
         finTime = 0.0;

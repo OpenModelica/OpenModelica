@@ -362,10 +362,11 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, Absyn.Path name, list<S
   let reinit = (whenClauses |> when hasindex i0 =>
          genreinits(when, &varDecls,i0,simCode,context)
     ;separator="\n";empty)
+  let type = getConfigString(HPCOM_CODE)
     
   match hpcOmScheduleOpt 
     case SOME(hpcOmSchedule as LEVELSCHEDULESC(__)) then
-      let odeEqs = hpcOmSchedule.eqsOfLevels |> eqs => functionXXX_system0_HPCOM_Level(allEquationsPlusWhen, eqs, &varDecls, simCode); separator="\n"
+      let odeEqs = hpcOmSchedule.tasksOfLevels |> tasks => functionXXX_system0_HPCOM_Level(allEquationsPlusWhen, tasks, type, &varDecls, simCode); separator="\n"
       <<
           bool <%lastIdentOfPath(name)%>::evaluate(const UPDATETYPE command)
           {
@@ -378,7 +379,6 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, Absyn.Path name, list<S
           }
       >>
    case SOME(hpcOmSchedule as THREADSCHEDULESC(__)) then
-      let type = getConfigString(HPCOM_CODE)
       
       match type 
         case ("openmp") then
@@ -418,11 +418,27 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, Absyn.Path name, list<S
             return state_var_reinitialized;
           }
           >>
+    case SOME(hpcOmSchedule as TASKDEPSCHEDULESC(__)) then
+        let taskEqs = functionXXX_system0_HPCOM_TaskDep(hpcOmSchedule.tasks, allEquationsPlusWhen, type, &varDecls, simCode); separator="\n"
+        <<
+        //using type: <%type%>
+        bool <%lastIdentOfPath(name)%>::evaluate(const UPDATETYPE command)
+        {
+          bool state_var_reinitialized = false;
+          omp_set_dynamic(1);
+            
+          <%&varDecls%>
+          <%taskEqs%>
+          <%reinit%>
+           
+          return state_var_reinitialized;
+        }
+        >>
 end update2;
 
-template functionXXX_system0_HPCOM_Level(list<SimEqSystem> allEquationsPlusWhen, list<Integer> eqsOfLevel, Text &varDecls, SimCode simCode)
+template functionXXX_system0_HPCOM_Level(list<SimEqSystem> allEquationsPlusWhen, list<Task> tasksOfLevel, String iType, Text &varDecls, SimCode simCode)
 ::=
-  let odeEqs = eqsOfLevel |> eq => equationNamesHPCOMLevel_(eq,allEquationsPlusWhen,contextSimulationNonDiscrete, &varDecls, simCode); separator="\n"
+  let odeEqs = tasksOfLevel |> task => function_HPCOM_Task(allEquationsPlusWhen,task,iType, &varDecls, simCode); separator="\n"
   <<
   if (omp_get_dynamic())
     omp_set_dynamic(0);
@@ -432,6 +448,37 @@ template functionXXX_system0_HPCOM_Level(list<SimEqSystem> allEquationsPlusWhen,
   }
   >>
 end functionXXX_system0_HPCOM_Level;
+
+template functionXXX_system0_HPCOM_TaskDep(list<tuple<Task,list<Integer>>> tasks, list<SimEqSystem> allEquationsPlusWhen, String iType, Text &varDecls, SimCode simCode)
+::=
+  let odeEqs = tasks |> t => functionXXX_system0_HPCOM_TaskDep0(t,allEquationsPlusWhen, iType, &varDecls, simCode); separator="\n"
+  <<
+  
+  int t[0];
+  #pragma omp parallel
+  {
+    #pragma omp master
+    {
+        <%odeEqs%>
+    }
+  }
+  >>
+end functionXXX_system0_HPCOM_TaskDep;
+
+template functionXXX_system0_HPCOM_TaskDep0(tuple<Task,list<Integer>> taskIn, list<SimEqSystem> allEquationsPlusWhen, String iType, Text &varDecls, SimCode simCode)
+::=
+  match taskIn 
+    case ((task as CALCTASK(__),parents)) then
+        let taskEqs = function_HPCOM_Task(allEquationsPlusWhen,task,iType,&varDecls,simCode); separator="\n"
+        let parentDependencies = parents |> p => 't[<%p%>]'; separator = ","
+        let depIn = if intGt(listLength(parents),0) then 'depend(in:<%parentDependencies%>)' else ""
+        <<
+        #pragma omp task <%depIn%> depend(out:t[<%task.index%>])
+        {
+            <%taskEqs%>
+        }
+        >>
+end functionXXX_system0_HPCOM_TaskDep0;
 
 template functionXXX_system0_HPCOM_Thread(list<SimEqSystem> allEquationsPlusWhen, list<list<Task>> threadTasks, String iType, Text &varDecls, SimCode simCode)
 ::=
@@ -507,6 +554,11 @@ template function_HPCOM_Task(list<SimEqSystem> allEquationsPlusWhen, Task iTask,
       // Task <%task.index%>
       <%odeEqs%>
       // End Task <%task.index%>
+      >>
+    case (task as CALCTASK_LEVEL(__)) then
+      let odeEqs = task.eqIdc |> eq => equationNamesHPCOM_(eq,allEquationsPlusWhen,contextSimulationNonDiscrete,&varDecls, simCode); separator="\n"
+      <<
+      <%odeEqs%>
       >>
     case (task as ASSIGNLOCKTASK(__)) then
       let assLck = function_HPCOM_assignLock(task.lockId, "lock", iType); separator="\n"

@@ -168,21 +168,9 @@ algorithm
       array<tuple<Integer,Integer,Real>> schedulerInfo;
       HpcOmScheduler.Schedule schedule;
       HpcOmScheduler.ScheduleSimCode taskScheduleSimCode;
-      
-      Integer graphOps, graphIdx;
-      Real graphCosts;
-      GraphML.GraphInfo graphInfo;
-      
-      Integer numScVars, numCL, threadAttIdx;
-      HashTableCrILst.HashTable hashTable;
-      SimCode.SimVars simCodeVars;
-      array<list<Integer>> clTaskMapping;
-      list<SimCode.SimVar> stateVars, derivativeVars, algVars, paramVars, scVars;
-      array<Integer> sccNodeMapping, scVarCLMapping, scVarTaskMapping;
       array<tuple<Integer,Integer,Integer>> eqNodeMapping, varNodeMapping;
-      
-      CacheMap cacheMap;
-      array<array<list<Integer>>> eqSimCodeVarMapping; //eqSystem -> eqIdx -> varIdx
+      Real graphCosts;
+      Integer graphOps;
     case (BackendDAE.DAE(eqs=eqs), _, _, _, _, _, _, _, _, _, _, _) equation
       uniqueEqIndex = 1;
     
@@ -255,7 +243,7 @@ algorithm
       //-------------
       taskGraphData1 = taskGraphDataOde;
       taskGraph1 = taskGraphOde;
-      //(taskGraph1,taskGraphData1) = applyFiltersToGraph(taskGraphOde,taskGraphDataOde,inBackendDAE,true); //TODO: Rename this to applyGRS or someting like that
+      (taskGraph1,taskGraphData1) = applyFiltersToGraph(taskGraphOde,taskGraphDataOde,inBackendDAE,true); //TODO: Rename this to applyGRS or someting like that
       Debug.execStat("hpcom GRS", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
       //Debug.fcall(Flags.HPCOM_DUMP,HpcOmTaskGraph.printTaskGraph,taskGraph1);
       //Debug.fcall(Flags.HPCOM_DUMP,HpcOmTaskGraph.printTaskGraphMeta,taskGraphData1);
@@ -268,7 +256,7 @@ algorithm
       (schedule,numProc) = repeatScheduleWithOtherNumProc(taskGraph1,taskGraphData1,sccSimEqMapping,filenamePrefix,cpCostsWoC,schedule,numProc,numFixed);
       criticalPathInfo = HpcOmScheduler.analyseScheduledTaskGraph(schedule,numProc,taskGraph1,taskGraphData1);
       taskScheduleSimCode = HpcOmScheduler.convertScheduleToSimCodeSchedule(schedule);
-      schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(schedule,arrayLength(taskGraph));      
+      schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(schedule,arrayLength(taskGraph));
       Debug.execStat("hpcom create schedule", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
       fileName = ("taskGraph"+&filenamePrefix+&"ODE_schedule.graphml");  
       
@@ -288,41 +276,7 @@ algorithm
                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT, SOME(taskScheduleSimCode));
       
       
-      //SECTION FOR CACHE LINE ANALYZATION     
-      //Create var hash table
-      SimCode.MODELINFO(vars=simCodeVars) = modelInfo;
-      SimCode.SIMVARS(stateVars=stateVars, derivativeVars=derivativeVars, algVars=algVars, paramVars=paramVars) = simCodeVars;
-      hashTable = HashTableCrILst.emptyHashTableSized(BaseHashTable.biggerBucketSize);
-      hashTable = fillSimVarHashTable(stateVars,0,0,hashTable);
-      //hashTable = fillSimVarHashTable(derivativeVars,listLength(stateVars),0,hashTable);
-      hashTable = fillSimVarHashTable(algVars,listLength(stateVars)*2,0,hashTable);
-      //hashTable = fillSimVarHashTable(paramVars,listLength(stateVars)*2 + listLength(algVars),0,hashTable);
-
-      //Create CacheMap
-      scVarTaskMapping = getScVarTaskMapping(taskGraphData1,eqs,listLength(stateVars)*2+listLength(algVars),hashTable);
-      (cacheMap,scVarCLMapping,numCL) = createCacheMapDefault(stateVars,derivativeVars,algVars,64);
-
-      //Create required mappings
-      sccNodeMapping = HpcOmTaskGraph.getSccNodeMapping(arrayLength(sccSimEqMapping), taskGraphData1);
-      eqSimCodeVarMapping = getEqSCVarMapping(eqs,hashTable);
-      
-      (clTaskMapping,scVarTaskMapping) = getCacheLineTaskMapping(taskGraphData1,eqs,hashTable,numCL,scVarCLMapping);
-
-
-      //Append cache line nodes to graph
-      graphInfo = GraphML.createGraphInfo();
-      (graphInfo, (_,graphIdx)) = GraphML.addGraph("TasksGroupGraph", true, graphInfo);
-      (graphInfo, (_,_),(_,graphIdx)) = GraphML.addGroupNode("TasksGroup", graphIdx, false, "TG", graphInfo);
-      graphInfo = HpcOmTaskGraph.convertToGraphMLSccLevelSubgraph(taskGraph1, taskGraphData1, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo, graphIdx, graphInfo);
-      HpcOmTaskGraph.TASKGRAPHMETA(eqNodeMapping=eqNodeMapping,varNodeMapping=varNodeMapping) = taskGraphData1;
-      SOME((_,threadAttIdx)) = GraphML.getAttributeByNameAndTarget("ThreadId", GraphML.TARGET_NODE(), graphInfo);
-      (_,incidenceMatrix,_) = BackendDAEUtil.getIncidenceMatrix(List.first(eqs), BackendDAE.ABSOLUTE(), NONE());
-      graphInfo = appendCacheLinesToGraph(cacheMap, arrayLength(taskGraph1), eqSimCodeVarMapping, eqs, hashTable, eqNodeMapping, scVarTaskMapping, schedulerInfo, threadAttIdx, graphInfo);
-      fileName = ("taskGraph"+&filenamePrefix+&"ODE_schedule_CL.graphml"); 
-      GraphML.dumpGraph(graphInfo, fileName);
-
-
-
+      analyzeCacheBehaviour(modelInfo, taskGraph1, taskGraphData1, eqs, filenamePrefix, schedulerInfo, schedule, sccSimEqMapping, criticalPaths, criticalPathsWoC, criticalPathInfo, allComps);
       //evaluateCacheBehaviour(schedulerInfo,taskGraphData1,clTaskMapping, transposeCacheLineTaskMapping(clTaskMapping, arrayLength(taskGraph1)));
       
       
@@ -560,6 +514,12 @@ algorithm
         true = stringEq(flagValue, "mcp");
         print("Using Modified Critical Path Scheduler\n");
       then HpcOmScheduler.createMCPschedule(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping);
+    case(_,_,_,_,_)
+      equation
+        flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
+        true = stringEq(flagValue, "taskdep");
+        print("Using OpenMP task dependencies\n");
+      then HpcOmScheduler.createTaskDepSchedule(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
     case(_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
@@ -838,11 +798,20 @@ end removeDummyStateFromMapping1;
 // - eqIdx -> list<SCVarIdx> (getEqSCVarMapping)
 
 protected uniontype CacheMap
+  //CacheMap that stores variables of same type in the same array (different arrays for bool, float and int vars)
   record CACHEMAP
     Integer cacheLineSize; //cache line size in bytes
     list<SimCode.SimVar> cacheVariables; //all variables that are stored in the cache
-    list<CacheLineMap> cacheLines;
+    list<CacheLineMap> cacheLinesFloat;
+    //list<CacheLineMap> cacheLinesBool;
+    //list<CacheLineMap> cacheLinesInt;
   end CACHEMAP;
+  //CacheMap that stores variables of different types in the same array
+  record UNIFORM_CACHEMAP
+    Integer cacheLineSize; //cache line size in bytes
+    list<SimCode.SimVar> cacheVariables; //all variables that are stored in the cache
+    list<CacheLineMap> cacheLines;
+  end UNIFORM_CACHEMAP;
 end CacheMap;
 
 protected uniontype CacheLineMap
@@ -854,10 +823,10 @@ end CacheLineMap;
 
 protected uniontype CacheLineEntry
   record CACHELINEENTRY
-    Integer start;
+    Integer start; //starting with 0
     Integer dataType; //1 = float, 2 = int
     Integer size;
-    Integer scVarIdx;
+    Integer scVarIdx; //see CacheMap.cacheVariables
   end CACHELINEENTRY;
 end CacheLineEntry;
 
@@ -868,39 +837,216 @@ protected uniontype MemoryMap
   end MEMORYMAP_ARRAY;
 end MemoryMap;
 
-protected function createCacheMapOptimized "author: marcusw
-  Create the optimized cache map for the given schedule."
+protected function analyzeCacheBehaviour
+  input SimCode.ModelInfo iModelInfo;
+  input HpcOmTaskGraph.TaskGraph iTaskGraph;
+  input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+  input BackendDAE.EqSystems iEqSystems;
+  input String iFileNamePrefix;
+  input array<tuple<Integer,Integer,Real>> iSchedulerInfo;
+  input HpcOmScheduler.Schedule iSchedule;
+  input array<list<Integer>> iSccSimEqMapping; //Maps each scc to a list of simEqs
+  input list<list<Integer>> iCriticalPaths;
+  input list<list<Integer>> iCriticalPathsWoC;
+  input String iCriticalPathInfo;
+  input BackendDAE.StrongComponents iAllComponents;
+protected
+  SimCode.SimVars simCodeVars;
+  list<SimCode.SimVar> stateVars, derivativeVars, algVars, paramVars;
+  HashTableCrILst.HashTable hashTable;
+  Integer numScVars, numCL, threadAttIdx;
+  array<list<Integer>> clTaskMapping;
+  array<Integer> scVarCLMapping, scVarTaskMapping, sccNodeMapping;
+  CacheMap cacheMap;
+  Integer graphIdx;
+  GraphML.GraphInfo graphInfo;
+  String fileName;
+  array<array<list<Integer>>> eqSimCodeVarMapping; //eqSystem -> eqIdx -> varIdx
+  array<tuple<Integer,Integer,Integer>> eqNodeMapping, varNodeMapping;
+  BackendDAE.IncidenceMatrix incidenceMatrix;
+algorithm
+  _ := matchcontinue(iModelInfo, iTaskGraph, iTaskGraphMeta, iEqSystems, iFileNamePrefix, iSchedulerInfo, iSchedule, iSccSimEqMapping, iCriticalPaths, iCriticalPathsWoC, iCriticalPathInfo, iAllComponents)
+    case(_,_,_,_,_,_,_,_,_,_,_,_)
+      equation
+        true = Flags.isSet(Flags.HPCOM_ANALYZATION_MODE);
+			  //Create var hash table
+			  SimCode.MODELINFO(vars=simCodeVars) = iModelInfo;
+			  SimCode.SIMVARS(stateVars=stateVars, derivativeVars=derivativeVars, algVars=algVars, paramVars=paramVars) = simCodeVars;
+			  hashTable = HashTableCrILst.emptyHashTableSized(BaseHashTable.biggerBucketSize);
+			  hashTable = fillSimVarHashTable(stateVars,0,0,hashTable);
+			  //hashTable = fillSimVarHashTable(derivativeVars,listLength(stateVars),0,hashTable);
+			  hashTable = fillSimVarHashTable(algVars,listLength(stateVars)*2,0,hashTable);
+			  //hashTable = fillSimVarHashTable(paramVars,listLength(stateVars)*2 + listLength(algVars),0,hashTable);
+			
+			  //Create CacheMap
+			  scVarTaskMapping = getScVarTaskMapping(iTaskGraphMeta,iEqSystems,listLength(stateVars)*2+listLength(algVars),hashTable);
+			  (cacheMap,scVarCLMapping,numCL) = createCacheMapOptimized(stateVars,derivativeVars,algVars,paramVars,scVarTaskMapping,64,iAllComponents,iSchedule);
+			
+			  //Create required mappings
+			  sccNodeMapping = HpcOmTaskGraph.getSccNodeMapping(arrayLength(iSccSimEqMapping), iTaskGraphMeta);
+        eqSimCodeVarMapping = getEqSCVarMapping(iEqSystems,hashTable);
+      
+        (clTaskMapping,scVarTaskMapping) = getCacheLineTaskMapping(iTaskGraphMeta,iEqSystems,hashTable,numCL,scVarCLMapping);
+
+	      //Append cache line nodes to graph
+	      graphInfo = GraphML.createGraphInfo();
+	      (graphInfo, (_,graphIdx)) = GraphML.addGraph("TasksGroupGraph", true, graphInfo);
+	      (graphInfo, (_,_),(_,graphIdx)) = GraphML.addGroupNode("TasksGroup", graphIdx, false, "TG", graphInfo);
+	      graphInfo = HpcOmTaskGraph.convertToGraphMLSccLevelSubgraph(iTaskGraph, iTaskGraphMeta, iCriticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(iCriticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(iCriticalPathsWoC)), iSccSimEqMapping, iSchedulerInfo, graphIdx, graphInfo);
+	      HpcOmTaskGraph.TASKGRAPHMETA(eqNodeMapping=eqNodeMapping,varNodeMapping=varNodeMapping) = iTaskGraphMeta;
+	      SOME((_,threadAttIdx)) = GraphML.getAttributeByNameAndTarget("ThreadId", GraphML.TARGET_NODE(), graphInfo);
+	      (_,incidenceMatrix,_) = BackendDAEUtil.getIncidenceMatrix(List.first(iEqSystems), BackendDAE.ABSOLUTE(), NONE());
+	      graphInfo = appendCacheLinesToGraph(cacheMap, arrayLength(iTaskGraph), eqSimCodeVarMapping, iEqSystems, hashTable, eqNodeMapping, scVarTaskMapping, iSchedulerInfo, threadAttIdx, graphInfo);
+	      fileName = ("taskGraph"+&iFileNamePrefix+&"ODE_schedule_CL.graphml"); 
+	      GraphML.dumpGraph(graphInfo, fileName);
+      then ();
+    else then ();
+  end matchcontinue;
+end analyzeCacheBehaviour;
+
+protected function createCacheMapOptimized
   input list<SimCode.SimVar> iStateVars; //float
   input list<SimCode.SimVar> iDerivativeVars; //float
   input list<SimCode.SimVar> iAlgVars; //float
+  input list<SimCode.SimVar> iParamVars; //float
   input array<Integer> iScVarTaskMapping;
   input Integer iCacheLineSize;
-  input Integer iNumThreads;
-  input array<tuple<Integer,Integer,Real>> iSchedulerInfo; //<threadId,taskNumber,finishTime> for node (array-index)
+  input BackendDAE.StrongComponents iAllComponents;
+  input HpcOmScheduler.Schedule iSchedule;
   output CacheMap oCacheMap;
   output array<Integer> oScVarCLMapping; //mapping for each scVar -> CLIdx
   output Integer oNumCL;
 protected
-  array<list<CacheLineMap>> threadCacheLines; //cache lines of the threads (arrayIdx)
+  CacheMap cacheMap;
+  array<Integer> scVarCLMapping;
+  Integer numCL;
+  list<list<HpcOmScheduler.Task>> tasksOfLevels;
 algorithm
-  oCacheMap := CACHEMAP(0,{},{});
-  oScVarCLMapping := arrayCreate(1,-1);
-  oNumCL := -1;
+  (oCacheMap,oScVarCLMapping,oNumCL) := match(iStateVars,iDerivativeVars,iAlgVars,iParamVars,iScVarTaskMapping,iCacheLineSize,iAllComponents,iSchedule)
+    case(_,_,_,_,_,_,_,HpcOmScheduler.LEVELSCHEDULE(tasksOfLevels=tasksOfLevels))
+      equation
+        (cacheMap,scVarCLMapping,numCL) = createCacheMapLevelOptimized(iStateVars,iDerivativeVars,iAlgVars,iParamVars,iScVarTaskMapping,iCacheLineSize,iAllComponents,tasksOfLevels);
+      then (cacheMap,scVarCLMapping,numCL);
+    else
+      equation
+        print("No optimized cache map for the selected scheduler avaiable\n");
+        (cacheMap,scVarCLMapping,numCL) = createCacheMapDefault(iStateVars,iDerivativeVars,iAlgVars,iCacheLineSize);
+      then (cacheMap,scVarCLMapping,numCL);
+   end match;
 end createCacheMapOptimized;
 
-protected function createCacheMapOptimized0
-  input Integer iTaskIdx;
-  input tuple<Integer,CacheMap> iScVarIdxCacheMap; //<scVarIdx, cacheMap>
-  output tuple<Integer,CacheMap> oScVarIdxCacheMap;
+protected function createCacheMapLevelOptimized "author: marcusw
+  Create the optimized cache map for the given level-schedule."
+  input list<SimCode.SimVar> iStateVars; //float
+  input list<SimCode.SimVar> iDerivativeVars; //float
+  input list<SimCode.SimVar> iAlgVars; //float
+  input list<SimCode.SimVar> iParamVars; //float
+  input array<Integer> iScVarTaskMapping;
+  input Integer iCacheLineSize;
+  input BackendDAE.StrongComponents iAllComponents;
+  input list<list<HpcOmScheduler.Task>> iTasksOfLevels; //Schedule
+  output CacheMap oCacheMap;
+  output array<Integer> oScVarCLMapping; //mapping for each scVar -> CLIdx
+  output Integer oNumCL;
 protected
-  Integer iScVarIdx;
-  CacheMap iCacheMap;
+  CacheMap cacheMap;
+  Integer numCL;
+  array<Integer> scVarCLMapping;
+  array<list<CacheLineMap>> threadCacheLines; //cache lines of the threads (arrayIdx)
 algorithm
-  (iScVarIdx,iCacheMap) := iScVarIdxCacheMap;
-  oScVarIdxCacheMap := iScVarIdxCacheMap;
-end createCacheMapOptimized0;
+  cacheMap := CACHEMAP(iCacheLineSize,{},{});
+  scVarCLMapping := arrayCreate(1,-1);
+  numCL := 0;
+  //Iterate over levels
+  
+  (oCacheMap,oNumCL,_) := appendParamsToCacheMap(cacheMap, numCL, iParamVars,0);
+  oScVarCLMapping := scVarCLMapping;
+end createCacheMapLevelOptimized;
 
+protected function createCacheMapLevelOptimized0
+  input list<HpcOmScheduler.Task> iLevelTasks;
+  input array<list<Integer>> iNodeSimCodeVarMapping;
+  input tuple<list<Integer>,CacheMap,Integer> iInfo; //<cacheLinesUsedByPreviousLayer,CacheMap,numCL>
+  output tuple<list<Integer>,CacheMap,Integer> oInfo;
+protected
+  Integer createdCL, numCL; //number of CL created for this level
+  list<Integer> allCL;
+  list<Integer> availableCL, availableCLold, writtenCL; //all cacheLines that can be used for writing
+  list<Integer> cacheLinesPrevLevel; //all cache lines written in previous level
+  CacheMap cacheMap;
+algorithm
+  (cacheLinesPrevLevel, cacheMap, numCL) := iInfo;
+  allCL := List.intRange(numCL);
+  //availableCLold := List.setDifferenceIntN(allCL,cacheLinesPrevLevel,numCL,intEq);
+  //((cacheMap,createdCL,availableCL)) := List.fold(iLevelTasks, createCacheMapLevelOptimized1, (cacheMap,0,availableCLold));
+  //append the used cachelines to the writtenCL-list
+  //writtenCL := List.setDifferenceIntN(availableCLold,availableCL,numCL,intEq);
+  //writtenCL := List.append(writtenCL, List.intRange2(numCL+1, numCL+createCL));
+  //oInfo := (writtenCL,cacheMap,cacheMap+createdCL);
+  oInfo := iInfo;
+end createCacheMapLevelOptimized0;
 
+protected function createCacheMapLevelOptimized1
+  input Task iTask;
+  input tuple<CacheMap,Integer,list<Integer>> iInfo; //<CacheMap,numNewCL, availableCL>
+  output tuple<CacheMap,Integer,list<Integer>> oInfo;  
+end createCacheMapLevelOptimized1;
+
+protected function appendParamsToCacheMap
+  input CacheMap iCacheMap;
+  input Integer iNumCL;
+  input list<SimCode.SimVar> iParamVars; //float
+  input Integer iNumBytesUsedLastCL;
+  output CacheMap oCacheMap;
+  output Integer oNumCL;
+  output Integer oNumBytesUsedLastCL;
+protected
+  
+algorithm
+  ((oCacheMap,oNumCL,oNumBytesUsedLastCL)) := List.fold(iParamVars, appendFloatVarToCacheMap, (iCacheMap,iNumCL,iNumBytesUsedLastCL));
+end appendParamsToCacheMap;
+
+protected function appendFloatVarToCacheMap
+  input SimCode.SimVar iFloatVar;
+  input tuple<CacheMap,Integer,Integer> iCacheInfo;
+  output tuple<CacheMap,Integer,Integer> oCacheInfo; //<cacheMap,numCL,numBytesUsedLastCL>
+protected
+  Integer cacheLineSize, numCL, numBytesUsedLastCL;
+  list<SimCode.SimVar> cacheVariables;
+  list<CacheLineMap> tail;
+  CacheLineMap head;
+  Integer cacheLineIdx, cacheVarIdx, newCacheLineIdx;
+  list<CacheLineEntry> cacheLineEntries;
+  CacheLineEntry newEntry;
+  CacheMap newCacheMap;
+algorithm
+  oCacheInfo := matchcontinue(iFloatVar,iCacheInfo)
+    case(_,(CACHEMAP(cacheLineSize=cacheLineSize,cacheVariables=cacheVariables,cacheLinesFloat=(head as CACHELINEMAP(idx=cacheLineIdx,entries=cacheLineEntries))::tail),numCL,numBytesUsedLastCL))
+      //case1: CacheMap has at least one entry and there is enough space available to add the variable to the first cacheline
+      equation
+        true = intGt(cacheLineSize,numBytesUsedLastCL+8);
+        cacheVariables = iFloatVar::cacheVariables;
+        cacheVarIdx = listLength(cacheVariables);
+        newEntry = CACHELINEENTRY(numBytesUsedLastCL,1,8,cacheVarIdx);
+        cacheLineEntries = newEntry::cacheLineEntries;
+        head = CACHELINEMAP(cacheLineIdx,cacheLineEntries);
+        newCacheMap = CACHEMAP(cacheLineSize,cacheVariables,head::tail);
+      then ((newCacheMap,numCL,numBytesUsedLastCL+8));
+    case(_,(CACHEMAP(cacheLineSize=cacheLineSize,cacheVariables=cacheVariables,cacheLinesFloat=tail),numCL,numBytesUsedLastCL))
+      equation
+        cacheVariables = iFloatVar::cacheVariables;
+        cacheVarIdx = listLength(cacheVariables);
+        newEntry = CACHELINEENTRY(numBytesUsedLastCL,1,8,cacheVarIdx);
+        newCacheLineIdx = listLength(tail)+1;
+        head = CACHELINEMAP(newCacheLineIdx,{newEntry});
+        newCacheMap = CACHEMAP(cacheLineSize,cacheVariables,head::tail);
+      then ((newCacheMap,numCL,8));
+    else
+      equation
+        print("appendFloatVarToCacheMap failed\n");
+      then fail();
+  end matchcontinue;
+end appendFloatVarToCacheMap;
 
 
 
@@ -997,12 +1143,12 @@ protected function printCacheMap
   input CacheMap iCacheMap;
 protected
   Integer cacheLineSize;
-  list<CacheLineMap> cacheLines;
+  list<CacheLineMap> cacheLinesFloat;
   list<SimCode.SimVar> cacheVariables;
 algorithm
   print("\n\nCacheMap\n---------------\n");
-  CACHEMAP(cacheLineSize=cacheLineSize, cacheVariables=cacheVariables, cacheLines=cacheLines) := iCacheMap;
-  List.map1_0(cacheLines, printCacheLineMap, cacheVariables);
+  CACHEMAP(cacheLineSize=cacheLineSize, cacheVariables=cacheVariables, cacheLinesFloat=cacheLinesFloat) := iCacheMap;
+  List.map1_0(cacheLinesFloat, printCacheLineMap, cacheVariables);
 end printCacheMap;
 
 protected function printCacheLineMap
@@ -1658,15 +1804,15 @@ protected
   GraphML.GraphInfo tmpGraphInfo;
   array<list<Integer>> knownEdges; //edges from task to variables    
   list<SimCode.SimVar> cacheVariables;
-  list<CacheLineMap> cacheLines;
+  list<CacheLineMap> cacheLinesFloat;
 algorithm
   oGraphInfo := matchcontinue(iCacheMap,iNumberOfNodes,iEqSimCodeVarMapping,iEqSystems,iVarNameSCVarIdxMapping,ieqNodeMapping,iScVarTaskMapping,iSchedulerInfo,iAttributeIdc,iGraphInfo)
-    case(CACHEMAP(cacheVariables=cacheVariables,cacheLines=cacheLines),_,_,_,_,_,_,_,_,GraphML.GRAPHINFO(graphCount=graphCount))
+    case(CACHEMAP(cacheVariables=cacheVariables,cacheLinesFloat=cacheLinesFloat),_,_,_,_,_,_,_,_,GraphML.GRAPHINFO(graphCount=graphCount))
       equation
         true = intLe(1, graphCount);
         knownEdges = arrayCreate(iNumberOfNodes,{});
         (tmpGraphInfo,(_,_),(_,clGroupNodeIdx)) = GraphML.addGroupNode("CL_GoupNode", 1, false, "CL", iGraphInfo);
-        tmpGraphInfo = List.fold4(cacheLines, appendCacheLineMapToGraph, cacheVariables, iSchedulerInfo, (clGroupNodeIdx,iAttributeIdc), iScVarTaskMapping, tmpGraphInfo);
+        tmpGraphInfo = List.fold4(cacheLinesFloat, appendCacheLineMapToGraph, cacheVariables, iSchedulerInfo, (clGroupNodeIdx,iAttributeIdc), iScVarTaskMapping, tmpGraphInfo);
         ((_,knownEdges,tmpGraphInfo)) = Util.arrayFold1(arrayGet(iEqSimCodeVarMapping,1), appendCacheLineEdgesToGraphTraverse, ieqNodeMapping, (1,knownEdges,tmpGraphInfo));
       then tmpGraphInfo;
     case(_,_,_,_,_,_,_,_,_,GraphML.GRAPHINFO(graphCount=graphCount))

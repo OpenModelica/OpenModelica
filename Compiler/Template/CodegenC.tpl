@@ -2136,9 +2136,10 @@ end functionXXX_systems_HPCOM;
 
 template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String name, Integer n, Option<ScheduleSimCode> hpcOmScheduleOpt, String modelNamePrefixStr)
 ::=
+  let type = getConfigString(HPCOM_CODE)
   match hpcOmScheduleOpt 
     case SOME(hpcOmSchedule as LEVELSCHEDULESC(__)) then
-      let odeEqs = hpcOmSchedule.eqsOfLevels |> eqs => functionXXX_system0_HPCOM_Level(derivativEquations,name,eqs,modelNamePrefixStr); separator="\n"
+      let odeEqs = hpcOmSchedule.tasksOfLevels |> tasks => functionXXX_system0_HPCOM_Level(derivativEquations,name,tasks,type,modelNamePrefixStr); separator="\n"
       <<
       void terminateHpcOmThreads()
       {
@@ -2150,8 +2151,6 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
       }
       >>
    case SOME(hpcOmSchedule as THREADSCHEDULESC(__)) then
-      let type = getConfigString(HPCOM_CODE)
-      
       let locks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_createLock(idx, "lock", type); separator="\n"
       let initlocks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_initializeLock(idx, "lock", type); separator="\n"
       let assignLocks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_assignLock(idx, "lock", type); separator="\n"
@@ -2310,10 +2309,9 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
    
 end functionXXX_system_HPCOM;
 
-template functionXXX_system0_HPCOM_Level(list<SimEqSystem> derivativEquations, String name, list<Integer> eqsOfLevel, String modelNamePrefixStr)
+template functionXXX_system0_HPCOM_Level(list<SimEqSystem> derivativEquations, String name, list<Task> tasksOfLevel, String iType, String modelNamePrefixStr)
 ::=
-  //let odeEqs = "#pragma omp parallel sections\n{"
-  let odeEqs = eqsOfLevel |> eq => equationNamesHPCOM_(eq,derivativEquations,contextSimulationNonDiscrete,modelNamePrefixStr); separator="\n"
+  let odeEqs = tasksOfLevel |> task => function_HPCOM_Task(derivativEquations,name,task,iType,modelNamePrefixStr); separator="\n"
   <<
   if (omp_get_dynamic())
     omp_set_dynamic(0);
@@ -2378,6 +2376,11 @@ template function_HPCOM_Task(list<SimEqSystem> derivativEquations, String name, 
       // Task <%task.index%>
       <%odeEqs%>
       // End Task <%task.index%>
+      >>
+    case (task as CALCTASK_LEVEL(__)) then
+      let odeEqs = task.eqIdc |> eq => equationNamesHPCOM_Thread_(eq,derivativEquations,contextSimulationNonDiscrete,modelNamePrefixStr); separator="\n"
+      <<
+      <%odeEqs%>
       >>
     case (task as ASSIGNLOCKTASK(__)) then
       let assLck = function_HPCOM_assignLock(task.lockId, "lock", iType); separator="\n"

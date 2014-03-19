@@ -2993,6 +2993,9 @@ package HpcOmScheduler
       Integer threadIdx;
       list<Integer> eqIdc;
     end CALCTASK;
+	  record CALCTASK_LEVEL
+	    list<Integer> eqIdc;
+	  end CALCTASK_LEVEL;
     record ASSIGNLOCKTASK //Task which assignes a lock
       String lockId;
     end ASSIGNLOCKTASK;
@@ -3005,12 +3008,15 @@ package HpcOmScheduler
   
   uniontype ScheduleSimCode
     record LEVELSCHEDULESC
-      list<list<Integer>> eqsOfLevels;
+      list<list<Task>> tasksOfLevels;
     end LEVELSCHEDULESC;
     record THREADSCHEDULESC
       list<list<Task>> threadTasks;
       list<String> lockIdc;
     end THREADSCHEDULESC;
+	  record TASKDEPSCHEDULESC
+	    list<tuple<Task,list<Integer>>> tasks;
+	  end TASKDEPSCHEDULESC;
   end ScheduleSimCode;
 end HpcOmScheduler;
 

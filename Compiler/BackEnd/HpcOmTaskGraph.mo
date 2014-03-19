@@ -69,7 +69,7 @@ public uniontype TaskGraphMeta   // stores all the metadata for the TaskGraph
     array<String> nodeDescs;  // a description of the nodes for the graphml generation
     array<tuple<Integer,Real>> exeCosts;  // the execution cost for the nodes <numberOfOperations, requiredCycles
     array<list<tuple<Integer,Integer,Integer>>> commCosts;  // the communication cost tuple(_,numberOfVars,requiredCycles) for an edge from array[parentNode] to tuple(childNode,_) 
-    array<Integer> nodeMark;  // put some additional stuff in here -> this is currently not a nodeMark, its a componentMark
+    array<Integer> nodeMark;  // used for level informations -> this is currently not a nodeMark, its a componentMark
   end TASKGRAPHMETA;
 end TaskGraphMeta; //TODO: Remove rootNodes from structure
   
@@ -2428,7 +2428,7 @@ algorithm
         ((_,calcTime)) = arrayGet(exeCosts,primalComp);
         ((opCount,calcTime)) = arrayGet(exeCosts,primalComp);
         calcTimeString = realString(calcTime);
-        yCoord = arrayGet(nodeMark,primalComp);
+        yCoord = arrayGet(nodeMark,primalComp)*80;
         calcTimeString = realString(calcTime);
         opCountString = intString(opCount);
         yCoordString = intString(yCoord);
@@ -5367,10 +5367,11 @@ protected
   Integer levelInterval;
   tuple<Integer,Integer> coords;
 algorithm
-  levelInterval := 80;
+  //levelInterval := 80;
   parallelSetIdx := getParallelSetForComp(compIdx,1,parallelSets);
   ((xCoord,yCoord)) := arrayGet(nodeCoordsIn,compIdx);
-  coords := ((xCoord,parallelSetIdx*levelInterval));
+  //coords := ((xCoord,parallelSetIdx*levelInterval));
+  coords := ((xCoord,parallelSetIdx));
   nodeCoordsOut := arrayUpdate(nodeCoordsIn,compIdx,coords);
 end getYCoordForNode;
 
