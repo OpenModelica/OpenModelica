@@ -4,7 +4,7 @@ all:
 else
 all:
 	$(MAKE) --no-print-directory generate-files-in-steps
-	$(MAKE) --no-print-directory install
+	$(MAKE) --no-print-directory install INCLUDESOURCES=1
 endif
 
 generate-files-in-steps:
@@ -21,13 +21,13 @@ GEN_DIR=build/
 bootstrap-from-tarball:
 	$(MAKE) clean
 	tar xJf bootstrap-sources.tar.xz
-	$(MAKE) install
+	$(MAKE) install INCLUDESOURCES=1
 	$(MAKE) clean
 	$(MAKE) generate-files-in-steps
-	$(MAKE) install
+	$(MAKE) install INCLUDESOURCES=1
 	$(MAKE) clean
 	$(MAKE) generate-files-in-steps
-	$(MAKE) install
+	$(MAKE) install INCLUDESOURCES=1
 
 bootstrap-from-compiled: make-separate
 
@@ -92,6 +92,7 @@ $(GEN_DIR)_main.c:
 	$(OMC) GenerateEntryPoint.mos
 
 $(GEN_DIR)libOpenModelicaCompiler$(SHREXT): $(ALL_OBJECTS) $(OMHOME)/lib/omc/libomcruntime.a $(OMHOME)/lib/omc/libomparse.a
+	@test ! -z "`echo $(ALL_OBJECTS)`" || (echo Empty dependencies for $@ ; false)
 	$(CC) -shared $(RPATH) $(INSTALL_NAME)  -o $@ $^ $(LDFLAGS)
 
 ifeq ($(STATIC),)
@@ -105,6 +106,7 @@ install: $(GEN_DIR)omc$(EXE_EXT) $(GEN_DIR)libOpenModelicaCompiler$(SHREXT)
 else
 
 $(GEN_DIR)omc$(EXE_EXT): $(ALL_OBJECTS) $(GEN_DIR)_main.o $(OMHOME)/lib/omc/libomcruntime.a $(OMHOME)/lib/omc/libomparse.a
+	@test ! -z "`echo $(ALL_OBJECTS)`" || (echo Empty dependencies for $@ ; false)
 	$(CC) $(GEN_DIR)_main.o $(RPATH) $(CFLAGS) $(CPPFLAGS) -o $@ $(ALL_OBJECTS) $(LDFLAGS)
 install: $(GEN_DIR)omc$(EXE_EXT)
 	cp -a $(GEN_DIR)omc$(EXE_EXT) $(OMHOME)/bin/
