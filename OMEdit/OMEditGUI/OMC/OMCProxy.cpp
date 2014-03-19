@@ -300,7 +300,7 @@ bool OMCProxy::startServer()
 #ifdef WIN32
   mCommandsLogFile.setFileName(QString("%1omeditcommands.log").arg(tmpPath));
 #else // UNIX environment
-  mCommandsLogFile.setFileName(QString("%1omeditcommands.%3.log").arg(tmpPath).arg(QString(user)));
+  mCommandsLogFile.setFileName(QString("%1omeditcommands.%2.log").arg(tmpPath).arg(QString(user)));
 #endif
   if (mCommandsLogFile.open(QIODevice::WriteOnly | QIODevice::Text))
   {
