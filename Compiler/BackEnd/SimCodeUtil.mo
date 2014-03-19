@@ -1210,13 +1210,13 @@ protected function replaceLiteralArrayExp
 algorithm
   outTpl := matchcontinue inTpl
     local
-      DAE.Exp exp;
+      DAE.Exp exp,exp2;
       tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> tpl;
     case ((exp as DAE.ARRAY(array=_), _))
       equation
         isLiteralArrayExp(exp);
-        ((exp, tpl)) = replaceLiteralExp2(inTpl);
-      then ((exp, false, tpl));
+        ((exp2, tpl)) = replaceLiteralExp2(inTpl);
+      then ((exp2, false, tpl));
     case ((exp as DAE.ARRAY(array=_), tpl))
       equation
         failure(isLiteralArrayExp(exp));
@@ -1224,8 +1224,8 @@ algorithm
     case ((exp as DAE.MATRIX(matrix=_), _))
       equation
         isLiteralArrayExp(exp);
-        ((exp, tpl)) = replaceLiteralExp2(inTpl);
-      then ((exp, false, tpl));
+        ((exp2, tpl)) = replaceLiteralExp2(inTpl);
+      then ((exp2, false, tpl));
     case ((exp as DAE.MATRIX(matrix=_), tpl))
       equation
         failure(isLiteralArrayExp(exp));

@@ -161,7 +161,7 @@ protected function simplifyElements
 algorithm
   outElements := matchcontinue(inElements)
     local
-      SCode.Element el;
+      SCode.Element el,el2;
       list<SCode.Element> rest, els;
       Absyn.Path bcp;
 
@@ -186,10 +186,10 @@ algorithm
     // handle classes
     case ((el as SCode.CLASS(name = _))::rest)
       equation
-        el = simplifyClass(el);
+        el2 = simplifyClass(el);
         els = simplifyElements(rest);
       then
-        el::els;
+        el2::els;
 
     // handle rest
     case (el::rest)

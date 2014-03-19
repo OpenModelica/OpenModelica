@@ -959,7 +959,7 @@ algorithm
         e = Expression.crefExp(dcr);
       then
         ((e,false,vars));
-     case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {e as DAE.CREF(componentRef = cr),DAE.ICONST(index)},attr=attr),vars))
+     case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr),DAE.ICONST(index)},attr=attr),vars))
       equation
         true = intEq(index,2);
         ({BackendDAE.VAR(varKind=BackendDAE.STATE(derName=SOME(dcr)))},_) = BackendVariable.getVar(cr,vars);
@@ -1264,16 +1264,16 @@ algorithm
       BackendDAE.Variables vars;
       DAE.ComponentRef cr;
       list<BackendDAE.Var> vlst;
-      DAE.Exp e;
+      DAE.Exp e,e2;
       BackendVarTransform.VariableReplacements repl;
 
     case((e as DAE.CREF(componentRef=cr), (vars,_,repl)))
       equation
         (vlst as _::_,_) = BackendVariable.getVar(cr,vars);
         ((repl,true)) = List.fold(vlst,replaceFinalVarsGetExp,(repl,false));
-        (e,true) = BackendVarTransform.replaceExp(e,repl,NONE());
+        (e2,true) = BackendVarTransform.replaceExp(e,repl,NONE());
       then
-        ((e, (vars,true,repl) ));
+        ((e2, (vars,true,repl) ));
     case _ then inExp;
   end matchcontinue;
 end replaceFinalVarsExp;
@@ -1638,15 +1638,15 @@ algorithm
   outTuple := matchcontinue(inTuple)
     local
       BackendDAE.StateOrder so;
-      DAE.Exp e,e1;
+      DAE.Exp e;
       DAE.ComponentRef cr,dcr;
     // replace it
-    case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst={e1 as DAE.CREF(componentRef = cr)}),so))
+    case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef = cr)}),so))
       equation
         dcr = getStateOrder(cr,so);
-        e1 = Expression.crefExp(dcr);
+        e = Expression.crefExp(dcr);
       then
-        ((e1,so));
+        ((e,so));
     else then inTuple;
   end matchcontinue;
 end replaceDerStatesStatesExp;

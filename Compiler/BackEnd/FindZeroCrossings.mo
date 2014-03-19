@@ -787,7 +787,7 @@ algorithm
   outTplExpExpTplExpExpLstVariables:=
   matchcontinue (inTplExpExpTplExpExpLstVariables)
     local
-      DAE.Exp e, e1, e2, e_1, e_2, eres, iterator, range;
+      DAE.Exp e, e1, e2, e_1, e_2, eres, iterator, range, range2;
       list<DAE.Exp> inExpLst, explst;
       BackendDAE.Variables vars, knvars;
       list<BackendDAE.ZeroCrossing> zeroCrossings, zc_lst, zcLstNew, relations, samples;
@@ -832,7 +832,7 @@ algorithm
       equation
         Debug.fcall(Flags.RELIDX, print, "continues LUNARY: " +& intString(numRelations) +& "\n");
         true = Expression.expContains(e, iterator);
-        ((e1, (iterator, inExpLst, range, (_, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)))) = Expression.traverseExpTopDown(e1, collectZCAlgsFor, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)));
+        ((e1, (iterator, inExpLst, range2, (_, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)))) = Expression.traverseExpTopDown(e1, collectZCAlgsFor, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)));
         e_1 = DAE.LUNARY(op, e1);
         (explst, itmp) = replaceIteratorwithStaticValues(e_1, iterator, inExpLst, numRelations);
         zc_lst = makeZeroCrossings(explst, {alg_indx}, {});
@@ -842,7 +842,7 @@ algorithm
         zeroCrossings = Util.if_(itmp>0, zc_lst, zeroCrossings);
         Debug.fcall(Flags.RELIDX, BackendDump.debugExpStr, (e_1, "\n"));
       then
-        ((e_1, false, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))));
+        ((e_1, false, (iterator, inExpLst, range2, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))));
     // coditions that are zerocrossings.
     case (((e as DAE.LUNARY(exp = e1, operator = op)), (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))))
       equation
@@ -1023,7 +1023,7 @@ algorithm
         zc_lst = listAppend(zeroCrossings, {z_c});
       then
         ((e_1, zc_lst, index+1));
-    case ((e_1 as DAE.CALL(path=_, expLst={_, _})), _, _, z_c)
+    case (DAE.CALL(path=_, expLst={_, _}), _, _, z_c)
       equation
         newzero = List.select1(zeroCrossings, sameZeroCrossing, z_c);
         BackendDAE.ZERO_CROSSING(e_1, _, _)=List.first(newzero);
@@ -1036,13 +1036,13 @@ algorithm
         zc_lst = listAppend(zeroCrossings, {z_c});
       then
         ((e_1, zc_lst, index+2));
-    case ((e_1 as DAE.CALL(path=_, expLst={_, _, _})), _, _, z_c)
+    case (DAE.CALL(path=_, expLst={_, _, _}), _, _, z_c)
       equation
         newzero = List.select1(zeroCrossings, sameZeroCrossing, z_c);
         BackendDAE.ZERO_CROSSING(e_1, _, _)=List.first(newzero);
       then
         ((e_1, zeroCrossings, index));
-    case (_, _, _, _)
+    else
       equation
         str = " failure in zerocrossingindex for: "  +& ExpressionDump.printExpStr(exp);
         Error.addMessage(Error.INTERNAL_ERROR, {str});

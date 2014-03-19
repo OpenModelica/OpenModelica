@@ -784,7 +784,7 @@ algorithm
     case ((comp as SCode.IMPORT(imp = _), _, b), _ , _)
       then ((comp, DAE.NOMOD(), b), inMod);
 
-    case ((comp as SCode.CLASS(name = id, prefixes = SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_))), _, b), _, _)
+    case ((SCode.CLASS(name = id, prefixes = SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_))), _, b), _, _)
       equation
         DAE.REDECL(_, _, (comp, cmod)::_) = Mod.lookupCompModification(inMod, id);
         mod_rest = inMod; //mod_rest = Mod.removeMod(inMod, id);

@@ -5197,16 +5197,16 @@ algorithm
   tpl2 := matchcontinue(tpl1)
     local
       BackendDAE.Variables knvars;
-      DAE.Exp e,cond,expThen,expElse;
+      DAE.Exp e1,e2,cond,expThen,expElse;
       Boolean b,b1;
-    case ((e as DAE.IFEXP(expCond=cond, expThen=expThen, expElse=expElse),(knvars,b)))
+    case ((e1 as DAE.IFEXP(expCond=cond, expThen=expThen, expElse=expElse),(knvars,b)))
       equation
         ((cond,(_,b1))) = Expression.traverseExp(cond, simplifyevaluatedParamter, (knvars,false));
-        e = Util.if_(b1,DAE.IFEXP(cond,expThen,expElse),e);
-        (e,_) = ExpressionSimplify.condsimplify(b1,e);
+        e2 = Util.if_(b1,DAE.IFEXP(cond,expThen,expElse),e1);
+        (e2,_) = ExpressionSimplify.condsimplify(b1,e2);
       then
-        ((e,(knvars,b or b1)));
-    case _ then tpl1;
+        ((e2,(knvars,b or b1)));
+    else tpl1;
   end matchcontinue;
 end simplifyIfExpevaluatedParamter;
 
@@ -7321,13 +7321,13 @@ algorithm
     // case for arrays
     case((e1 as DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(componentRef=cr, ty = DAE.T_ARRAY(dims=_))}), (vars, shared as BackendDAE.SHARED(functionTree=funcs), b)))
       equation
-        ((e1, (_, true))) = BackendDAEUtil.extendArrExp((e1, (SOME(funcs), false)));
-      then Expression.traverseExp(e1, expandDerExp, (vars, shared, b));
+        ((e2, (_, true))) = BackendDAEUtil.extendArrExp((e1, (SOME(funcs), false)));
+      then Expression.traverseExp(e2, expandDerExp, (vars, shared, b));
     // case for records
     case((e1 as DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(componentRef=cr, ty = DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))}), (vars, shared as BackendDAE.SHARED(functionTree=funcs), b)))
       equation
-        ((e1, (_, true))) = BackendDAEUtil.extendArrExp((e1, (SOME(funcs), false)));
-      then Expression.traverseExp(e1, expandDerExp, (vars, shared, b));
+        ((e2, (_, true))) = BackendDAEUtil.extendArrExp((e1, (SOME(funcs), false)));
+      then Expression.traverseExp(e2, expandDerExp, (vars, shared, b));
     case((e1 as DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(componentRef=cr)}), (vars, shared, _)))
       equation
         ({v}, _) = BackendVariable.getVar(cr, vars);
@@ -7911,20 +7911,20 @@ algorithm
       DAE.Statement alg;
       DAE.Type typ;
       list<DAE.Statement> stmts1, stmts2;
-    case(alg as DAE.STMT_ASSIGN(type_=typ, exp1=exp1, exp=exp2, source=source),(funcTree,replIn))
+    case (DAE.STMT_ASSIGN(type_=typ, exp1=exp1, exp=exp2, source=source),(funcTree,replIn))
       equation
-          //print("the STMT_ASSIGN before: "+&DAEDump.ppStatementStr(alg));
+        //print("the STMT_ASSIGN before: "+&DAEDump.ppStatementStr(alg));
         cref = Expression.expCref(exp1);
         (exp2,changed) = BackendVarTransform.replaceExp(exp2,replIn,NONE());
         (exp2,changed) = Debug.bcallret1_2(changed,ExpressionSimplify.simplify,exp2,exp2,changed);
         (exp2,_) = ExpressionSimplify.simplify(exp2);
         isCon = Expression.isConst(exp2);
         repl = Debug.bcallret4(isCon,BackendVarTransform.addReplacement,replIn,cref,exp2,NONE(),replIn);
-        alg = Util.if_(isCon,DAE.STMT_ASSIGN(typ,exp1,exp2,source),alg);
-          //print("the STMT_ASSIGN after : "+&DAEDump.ppStatementStr(alg)+&"\n");
+        alg = Util.if_(isCon,DAE.STMT_ASSIGN(typ,exp1,exp2,source),algIn);
+        //print("the STMT_ASSIGN after : "+&DAEDump.ppStatementStr(alg)+&"\n");
       then
         (alg,(funcTree,repl));
-    case(alg as DAE.STMT_ASSIGN_ARR(type_=typ, componentRef=cref, exp=exp1, source=source),(funcTree,replIn))
+    case (alg as DAE.STMT_ASSIGN_ARR(type_=typ, componentRef=cref, exp=exp1, source=source),(funcTree,replIn))
       equation
           //print("STMT_ASSIGN_ARR");
           //print("the STMT_ASSIGN_ARR: "+&DAEDump.ppStatementStr(alg)+&"\n");

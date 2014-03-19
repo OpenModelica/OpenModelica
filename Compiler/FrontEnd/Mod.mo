@@ -1713,7 +1713,7 @@ protected function doMerge "This function merges two modifications into one.
 algorithm
   outMod := match (inModOuter,inModInner,inEnv3,inPrefix4)
     local
-      DAE.Mod m,m1_1,m2_1,m_2,mod,mods,mm1,mm2,mm3,cm,icm,emod1,emod2,emod;
+      DAE.Mod m,m1_1,m2_1,m_2,mod,mods,mm1,mm2,mm3,mm4,cm,icm,emod1,emod2,emod;
       SCode.Visibility vis;
       SCode.Final finalPrefix,f,f1,f2;
       SCode.Replaceable r;
@@ -1857,16 +1857,16 @@ algorithm
                   {((elementOne as SCode.CLASS(name = id1)),mm3)})),
                   env,pre)
       equation
-        mm1 = merge(mm1,mm3,env,pre);
+        mm4 = merge(mm1,mm3,env,pre);
       then
-        DAE.REDECL(finalPrefix,each1,{(elementOne,mm1)});
+        DAE.REDECL(finalPrefix,each1,{(elementOne,mm4)});
 
     case (mm2 as DAE.REDECL(finalPrefix = finalPrefix,eachPrefix = each1, tplSCodeElementModLst = (els as {((elementOne as SCode.CLASS(name = id1)),mm3)})),
           mm1 as DAE.MOD(subModLst = subs),env,pre)
       equation
-        mm1 = merge(mm3,mm1,env,pre);
+        mm4 = merge(mm3,mm1,env,pre);
       then
-        DAE.REDECL(finalPrefix,each1,{(elementOne,mm1)});
+        DAE.REDECL(finalPrefix,each1,{(elementOne,mm4)});
 
   end match;
 end doMerge;

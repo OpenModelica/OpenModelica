@@ -826,12 +826,13 @@ algorithm
 
        (cache,e1_1,prop1,st_1) = elabExp(cache,env, e1, impl, st,doVect,pre,info);
        (cache,e2_1,DAE.PROP(DAE.T_METALIST(listType = t2),c2),st_1) = elabExp(cache,env, e2, impl, st,doVect,pre,info);
-       t1 = Types.getPropType(prop1);
+       t1 = Types.getUniontypeIfMetarecordReplaceAllSubtypes(Types.getPropType(prop1));
+       t2 = Types.getUniontypeIfMetarecordReplaceAllSubtypes(t2);
        c1 = Types.propAllConst(prop1);
-       t = Types.superType(Types.boxIfUnboxedType(t1),Types.boxIfUnboxedType(t2));
+       t = Types.getUniontypeIfMetarecord(Types.superType(Types.boxIfUnboxedType(t1),Types.boxIfUnboxedType(t2)));
 
        (e1_1,_) = Types.matchType(e1_1, t1, t, true);
-       (e2_1,_) = Types.matchType(e2_1, DAE.T_METALIST(t2, DAE.emptyTypeSource), DAE.T_METALIST(t, DAE.emptyTypeSource), true);
+       (e2_1,_) = Types.matchType(e2_1, DAE.T_METALIST(t, DAE.emptyTypeSource), DAE.T_METALIST(t2, DAE.emptyTypeSource), true);
 
        exp = DAE.CONS(e1_1,e2_1);
        c = Types.constAnd(c1,c2);
@@ -2596,6 +2597,8 @@ algorithm
       String e_str,str,elt_str,t1_str,t2_str,sp;
       list<String> strs;
       list<DAE.Properties> props;
+      Boolean knownSingleton;
+      Absyn.Path p;
 
     case ({}, {}, _, _)
       then ({}, DAE.PROP(DAE.T_REAL_DEFAULT, DAE.C_CONST()));
@@ -2605,6 +2608,8 @@ algorithm
     case (e_1::es_1,DAE.PROP(t1,c1)::props,_,_)
       equation
         (es_1,DAE.PROP(t2,c2)) = elabArray2(es_1,props,pre,info);
+        t1 = Types.getUniontypeIfMetarecord(t1);
+        t2 = Types.getUniontypeIfMetarecord(t2);
         true = Types.equivtypes(t1, t2);
         c = Types.constAnd(c1, c2);
       then
@@ -2613,6 +2618,8 @@ algorithm
     case (e_1::es_1,DAE.PROP(t1,c1)::props,_,_)
       equation
         (es_1,DAE.PROP(t2,c2)) = elabArray2(es_1,props,pre,info);
+        t1 = Types.getUniontypeIfMetarecord(t1);
+        t2 = Types.getUniontypeIfMetarecord(t2);
         (e_1,t2) = Types.matchType(e_1, t1, t2, false);
         c = Types.constAnd(c1, c2);
       then
@@ -2621,6 +2628,7 @@ algorithm
     case (e_1::es_1,DAE.PROP(t1,c1)::props,_,_)
       equation
         (es_1,DAE.PROP(t2,c2)) = elabArray2(es_1,props,pre,info);
+        t1 = Types.getUniontypeIfMetarecord(t1);
         false = Types.equivtypes(t1, t2);
         sp = PrefixUtil.printPrefixStr3(pre);
         e_str = ExpressionDump.printExpStr(e_1);
@@ -2733,12 +2741,12 @@ algorithm
 
     case (cache,env,{el_1},{prop as DAE.PROP(t1,_)},impl,st,havereal,nmax,doVect,pre,_) /* implicit inst. have real nmax dim1 dim2 */
       equation
-        (el_2,(prop as DAE.PROP(t1_1,_))) = promoteExp(el_1, prop, nmax);
+        (el_2,(prop1 as DAE.PROP(t1_1,_))) = promoteExp(el_1, prop, nmax);
         (_,t1_dim1_1 :: (t1_dim2_1 :: _)) = Types.flattenArrayTypeOpt(t1_1);
         at = Types.simplifyType(t1_1);
         at = Expression.liftArrayLeft(at, DAE.DIM_INTEGER(1));
       then
-        (cache,DAE.ARRAY(at,false,{el_2}),prop,t1_dim1_1,t1_dim2_1);
+        (cache,DAE.ARRAY(at,false,{el_2}),prop1,t1_dim1_1,t1_dim2_1);
     case (cache,env,(el_1 :: els),(prop1 as DAE.PROP(t1,_))::props,impl,st,havereal,nmax,doVect,pre,_)
       equation
         (el_2,(prop1_1 as DAE.PROP(t1_1,_))) = promoteExp(el_1, prop1, nmax);
@@ -7023,8 +7031,7 @@ algorithm
 
     // handle derived component functions i.e. gravityAcceleration = gravityAccelerationTypes
     case(cache, env,
-         sc as SCode.CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, classDef as
-         SCode.DERIVED(typeSpec as Absyn.TPATH(extendsPath, arrayDim), modifications, attributes),comment,info),
+         sc as SCode.CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, SCode.DERIVED(typeSpec as Absyn.TPATH(extendsPath, arrayDim), modifications, attributes),comment,info),
          classEnv, cn)
       equation
         // enableTrace();
@@ -7857,7 +7864,7 @@ algorithm
         (cache,args_1,newslots,constlist,_) = elabInputArgs(cache,env, args, nargs, slots, true ,impl, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), {}, st, pre, info);
         const = List.fold(constlist, Types.constAnd, DAE.C_CONST());
         tyconst = elabConsts(t, const);
-        t = DAE.T_METAUNIONTYPE({},knownSingleton,{utPath});
+//      t = DAE.T_METAUNIONTYPE({},knownSingleton,{utPath});
         prop = getProperties(t, tyconst);
         true = List.fold(newslots, slotAnd, true);
         args_2 = expListFromSlots(newslots);
@@ -8483,10 +8490,10 @@ algorithm
       String name;
       DAE.Type tty;
     
-    case (_,tty as DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(isBuiltin=DAE.FUNCTION_BUILTIN(SOME(name)))), _)
+    case (_,DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(isBuiltin=DAE.FUNCTION_BUILTIN(SOME(name)))), _)
       equation
         fn = Absyn.IDENT(name);
-        tty = Types.setTypeSource(tty,Types.mkTypeSource(SOME(fn)));
+        tty = Types.setTypeSource(inType,Types.mkTypeSource(SOME(fn)));
       then (fn,tty);
 
     case (_,DAE.T_FUNCTION(funcArg = _, source = {fn}), _)
@@ -8551,7 +8558,7 @@ algorithm
       DAE.TypeSource ts;
 
     // We found a match.
-    case (cache,env,args,nargs,(t as DAE.T_FUNCTION(funcArg=params, funcResultType=restype, functionAttributes=functionAttributes, source=ts))::trest,_,impl,_,_,pre,_)
+    case (cache,env,args,nargs,DAE.T_FUNCTION(funcArg=params, funcResultType=restype, functionAttributes=functionAttributes, source=ts)::trest,_,impl,_,_,pre,_)
       equation
         slots = makeEmptySlots(params);
         (cache,args_1,newslots,clist,polymorphicBindings) = elabInputArgs(cache, env, args, nargs, slots, checkTypes, impl, isExternalObject,{},st,pre,info);
@@ -10697,8 +10704,8 @@ algorithm
         // s = pre_str +& s;
         // str = DAEUtil.printBindingExpStr(inBinding);
         // Error.addSourceMessage(Error.UNBOUND_PARAMETER_WITH_START_VALUE_WARNING, {s,str}, info); // Don't add source info here... Many models give multiple errors that are not filtered out
-        bind = DAEUtil.setBindingSource(bind, DAE.BINDING_FROM_DEFAULT_VALUE());
-        (cache, e_1, const, attr) = elabCref2(cache,env,cr,attr,constSubs,forIteratorConstOpt,tt,bind,doVect,splicedExpData,inPrefix,evalCref,info);
+        binding_1 = DAEUtil.setBindingSource(bind, DAE.BINDING_FROM_DEFAULT_VALUE());
+        (cache, e_1, const, attr) = elabCref2(cache,env,cr,attr,constSubs,forIteratorConstOpt,tt,binding_1,doVect,splicedExpData,inPrefix,evalCref,info);
       then
         (cache,e_1,const,attr);
 
@@ -11175,9 +11182,7 @@ algorithm
       Boolean scalar;
     // a component reference
     case(exp1 as DAE.CREF(_,_),exp2,_)
-      equation
-        exp1 = mergeQualWithRest2(exp2,exp1);
-      then exp1;
+      then mergeQualWithRest2(exp2,exp1);
     // an array
     case(exp1 as DAE.ARRAY(_, _, expl1),exp2,ety)
       equation
@@ -11212,8 +11217,7 @@ algorithm
     case(exp1 as DAE.CREF(cref, ety),exp2 as DAE.CREF(DAE.CREF_IDENT(id,ty2, ssl),_))
       equation
         cref_2 = ComponentReference.makeCrefQual(id,ty2, ssl,cref);
-        exp1 = Expression.makeCrefExp(cref_2,ety);
-      then exp1;
+      then Expression.makeCrefExp(cref_2,ety);
     // an array
     case(exp1 as DAE.ARRAY(_, _, expl1), exp2 as DAE.CREF(DAE.CREF_IDENT(id,_, ssl),ety))
       equation
@@ -11221,8 +11225,7 @@ algorithm
         exp1 = DAE.ARRAY(DAE.T_INTEGER_DEFAULT,false,expl1);
         (iLst, scalar) = extractDimensionOfChild(exp1);
         ety = Expression.arrayEltType(ety);
-        exp1 = DAE.ARRAY(DAE.T_ARRAY(ety, iLst, DAE.emptyTypeSource), scalar, expl1);
-      then exp1;
+      then DAE.ARRAY(DAE.T_ARRAY(ety, iLst, DAE.emptyTypeSource), scalar, expl1);
   end match;
 end mergeQualWithRest2;
 
@@ -11294,7 +11297,7 @@ algorithm
       then
         exp2;
     // special case for zero dimension...
-    case( ((sub1 as DAE.SLICE( exp2 as DAE.ARRAY(_,_,(expl1 as DAE.ICONST(0)::{})) )):: subs1),id,ety) // {1,2,3}
+    case( ((sub1 as DAE.SLICE( DAE.ARRAY(_,_,(expl1 as DAE.ICONST(0)::{})) )):: subs1),id,ety) // {1,2,3}
       equation
         exp2 = flattenSubscript2(subs1,id,ety);
         expl2 = List.map3(expl1,applySubscript,exp2,id,ety);
@@ -11303,7 +11306,7 @@ algorithm
       then
         exp3;
     // normal case;
-    case( ((sub1 as DAE.SLICE( exp2 as DAE.ARRAY(_,_,expl1) )):: subs1),id,ety) // {1,2,3}
+    case( ((sub1 as DAE.SLICE( DAE.ARRAY(_,_,expl1) )):: subs1),id,ety) // {1,2,3}
       equation
         exp2 = flattenSubscript2(subs1,id,ety);
         expl2 = List.map3(expl1,applySubscript,exp2,id,ety);
@@ -11375,28 +11378,24 @@ algorithm
     case(exp1 as DAE.ICONST(integer=0),exp2 as DAE.ARRAY(DAE.T_ARRAY(ty =_, dims = arrDim) ,_,_),id ,ety)
       equation
         ety = Expression.arrayEltType(ety);
-        exp1 = DAE.ARRAY(DAE.T_ARRAY(ety, DAE.DIM_INTEGER(0)::arrDim, DAE.emptyTypeSource),true,{});
-      then exp1;
+      then DAE.ARRAY(DAE.T_ARRAY(ety, DAE.DIM_INTEGER(0)::arrDim, DAE.emptyTypeSource),true,{});
 
     case(exp1 as DAE.ICONST(integer=0),_,_ ,ety)
       equation
         ety = Expression.arrayEltType(ety);
-        exp1 = DAE.ARRAY(DAE.T_ARRAY(ety,{DAE.DIM_INTEGER(0)}, DAE.emptyTypeSource),true,{});
-      then exp1;
+      then DAE.ARRAY(DAE.T_ARRAY(ety,{DAE.DIM_INTEGER(0)}, DAE.emptyTypeSource),true,{});
 
     case(exp1,DAE.ARRAY(_,_,{}),id ,ety)
       equation
         true = Expression.isValidSubscript(exp1);
         crty = Expression.unliftArray(ety) "only subscripting one dimension, unlifting once ";
         cref_ = ComponentReference.makeCrefIdent(id,ety,{DAE.INDEX(exp1)});
-        exp1 = Expression.makeCrefExp(cref_,crty);
-      then exp1;
+      then Expression.makeCrefExp(cref_,crty);
 
     case(exp1, exp2, id ,ety)
       equation
         true = Expression.isValidSubscript(exp1);
-        exp1 = applySubscript2(exp1, exp2,ety);
-      then exp1;
+      then applySubscript2(exp1, exp2,ety);
   end matchcontinue;
 end applySubscript;
 
@@ -11419,14 +11418,14 @@ algorithm
       Boolean scalar;
       DAE.ComponentRef cref_;
 
-    case(exp1, exp2 as DAE.CREF(DAE.CREF_IDENT(id,ty2,subs),_ ),ety )
+    case(exp1, DAE.CREF(DAE.CREF_IDENT(id,ty2,subs),_ ),ety )
       equation
         crty = Expression.unliftArrayTypeWithSubs(DAE.INDEX(exp1)::subs,ty2);
         cref_ = ComponentReference.makeCrefIdent(id,ty2,(DAE.INDEX(exp1)::subs));
         exp2 = Expression.makeCrefExp(cref_,crty);
       then exp2;
 
-    case(exp1, exp2 as DAE.ARRAY(_,_,expl1),ety )
+    case(exp1, DAE.ARRAY(_,_,expl1),ety )
       equation
         expl1 = List.map2(expl1,applySubscript3,exp1,ety);
         exp2 = DAE.ARRAY(DAE.T_INTEGER_DEFAULT,false,expl1);
@@ -11456,14 +11455,14 @@ algorithm
       Boolean scalar;
       DAE.ComponentRef cref_;
 
-    case(exp2 as DAE.CREF(DAE.CREF_IDENT(id,ty2,subs),_), exp1, ety )
+    case(DAE.CREF(DAE.CREF_IDENT(id,ty2,subs),_), exp1, ety )
       equation
         crty = Expression.unliftArrayTypeWithSubs(DAE.INDEX(exp1)::subs,ty2);
         cref_ = ComponentReference.makeCrefIdent(id,ty2,(DAE.INDEX(exp1)::subs));
         exp2 = Expression.makeCrefExp(cref_,crty);
       then exp2;
 
-    case( exp2 as DAE.ARRAY(_,_,expl1), exp1, ety)
+    case(DAE.ARRAY(_,_,expl1), exp1, ety)
       equation
         expl1 = List.map2(expl1,applySubscript3,exp1,ety);
         exp2 = DAE.ARRAY(DAE.T_INTEGER_DEFAULT,false,expl1);

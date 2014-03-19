@@ -198,40 +198,40 @@ algorithm
 
     case (cache,_,Absyn.INTEGER(i),_,_,_)
       equation
-        et = validPatternType(DAE.T_INTEGER_DEFAULT,ty,inLhs,info);
+        et = validPatternType(ty,DAE.T_INTEGER_DEFAULT,inLhs,info);
       then (cache,DAE.PAT_CONSTANT(et,DAE.ICONST(i)));
 
     case (cache,_,Absyn.REAL(r),_,_,_)
       equation
-        et = validPatternType(DAE.T_REAL_DEFAULT,ty,inLhs,info);
+        et = validPatternType(ty,DAE.T_REAL_DEFAULT,inLhs,info);
       then (cache,DAE.PAT_CONSTANT(et,DAE.RCONST(r)));
 
     case (cache,_,Absyn.UNARY(Absyn.UMINUS(),Absyn.INTEGER(i)),_,_,_)
       equation
-        et = validPatternType(DAE.T_INTEGER_DEFAULT,ty,inLhs,info);
+        et = validPatternType(ty,DAE.T_INTEGER_DEFAULT,inLhs,info);
         i = -i;
       then (cache,DAE.PAT_CONSTANT(et,DAE.ICONST(i)));
 
     case (cache,_,Absyn.UNARY(Absyn.UMINUS(),Absyn.REAL(r)),_,_,_)
       equation
-        et = validPatternType(DAE.T_REAL_DEFAULT,ty,inLhs,info);
+        et = validPatternType(ty,DAE.T_REAL_DEFAULT,inLhs,info);
         r = realNeg(r);
       then (cache,DAE.PAT_CONSTANT(et,DAE.RCONST(r)));
 
     case (cache,_,Absyn.STRING(s),_,_,_)
       equation
-        et = validPatternType(DAE.T_STRING_DEFAULT,ty,inLhs,info);
+        et = validPatternType(ty,DAE.T_STRING_DEFAULT,inLhs,info);
         s = System.unescapedString(s);
       then (cache,DAE.PAT_CONSTANT(et,DAE.SCONST(s)));
 
     case (cache,_,Absyn.BOOL(b),_,_,_)
       equation
-        et = validPatternType(DAE.T_BOOL_DEFAULT,ty,inLhs,info);
+        et = validPatternType(ty,DAE.T_BOOL_DEFAULT,inLhs,info);
       then (cache,DAE.PAT_CONSTANT(et,DAE.BCONST(b)));
 
     case (cache,_,Absyn.ARRAY({}),_,_,_)
       equation
-        et = validPatternType(DAE.T_METALIST_DEFAULT,ty,inLhs,info);
+        et = validPatternType(ty,DAE.T_METALIST_DEFAULT,inLhs,info);
       then (cache,DAE.PAT_CONSTANT(et,DAE.LIST({})));
 
     case (cache,_,Absyn.ARRAY(exps as _::_),_,_,_)
@@ -242,7 +242,7 @@ algorithm
 
     case (cache,_,Absyn.CALL(Absyn.CREF_IDENT("NONE",{}),Absyn.FUNCTIONARGS({},{})),_,_,_)
       equation
-        _ = validPatternType(DAE.T_NONE_DEFAULT,ty,inLhs,info);
+        _ = validPatternType(ty,DAE.T_NONE_DEFAULT,inLhs,info);
       then (cache,DAE.PAT_CONSTANT(NONE(),DAE.META_OPTION(NONE())));
 
     case (cache,_,Absyn.CALL(Absyn.CREF_IDENT("SOME",{}),Absyn.FUNCTIONARGS({exp},{})),DAE.T_METAOPTION(optionType = ty2),_,_)
@@ -273,7 +273,12 @@ algorithm
         (cache,pattern) = elabPatternCall(cache,env,Absyn.crefToPath(fcr),fargs,utPath,info,lhs);
       then (cache,pattern);
 
-    case (cache,_,lhs as Absyn.CALL(fcr,fargs),DAE.T_METAUNIONTYPE(paths=_, source = {utPath}),_,_)
+    case (cache,_,lhs as Absyn.CALL(fcr,fargs),DAE.T_METAUNIONTYPE(source = {utPath}),_,_)
+      equation
+        (cache,pattern) = elabPatternCall(cache,env,Absyn.crefToPath(fcr),fargs,utPath,info,lhs);
+      then (cache,pattern);
+
+    case (cache,_,lhs as Absyn.CALL(fcr,fargs),DAE.T_METARECORD(utPath = utPath),_,_)
       equation
         (cache,pattern) = elabPatternCall(cache,env,Absyn.crefToPath(fcr),fargs,utPath,info,lhs);
       then (cache,pattern);
@@ -283,7 +288,7 @@ algorithm
         (cache,DAE.TYPES_VAR(ty = ty1, attributes = attr),_,_,_,_) = Lookup.lookupIdent(cache,env,id);
         lhs = Absyn.CREF(Absyn.CREF_IDENT(id, {}));
         Static.checkAssignmentToInput(lhs, attr, env, false, info);
-        et = validPatternType(ty1,ty2,inLhs,info);
+        et = validPatternType(ty2,ty1,inLhs,info);
         (cache,pattern) = elabPattern(cache,env,exp,ty2,info);
         pattern = Util.if_(Types.isFunctionType(ty2), DAE.PAT_AS_FUNC_PTR(id,pattern), DAE.PAT_AS(id,et,pattern));
       then (cache,pattern);
@@ -292,7 +297,7 @@ algorithm
       equation
         (cache,DAE.TYPES_VAR(ty = ty1, attributes = attr),_,_,_,_) = Lookup.lookupIdent(cache,env,id);
         Static.checkAssignmentToInput(inLhs, attr, env, false, info);
-        et = validPatternType(ty1,ty2,inLhs,info);
+        et = validPatternType(ty2,ty1,inLhs,info);
         pattern = Util.if_(Types.isFunctionType(ty2), DAE.PAT_AS_FUNC_PTR(id,DAE.PAT_WILD()), DAE.PAT_AS(id,et,DAE.PAT_WILD()));
       then (cache,pattern);
 
@@ -402,7 +407,7 @@ algorithm
         funcArgs = listAppend(funcArgs,funcArgsNamedFixed);
         Util.SUCCESS() = checkInvalidPatternNamedArgs(invalidArgs,fieldNameList,Util.SUCCESS(),info);
         (cache,patterns) = elabPatternTuple(cache,env,funcArgs,fieldTypeList,info,lhs);
-      then (cache,DAE.PAT_CALL(fqPath,index,patterns,knownSingleton));
+      then (cache,DAE.PAT_CALL(fqPath,index,patterns,fieldVarList,knownSingleton));
 
     case (cache,_,_,Absyn.FUNCTIONARGS(funcArgs,namedArgList),utPath2,_,_)
       equation
@@ -448,13 +453,14 @@ algorithm
       String str;
       list<String> strs;
     case (_,_,{},0,_) then ();
+/* Language extension to not have to bind everything...
     case (_,_,strs,0,_)
       equation
         str = stringDelimitList(strs,",");
         str = Absyn.pathString(path) +& " missing pattern for fields: " +& str;
         Error.addSourceMessage(Error.META_INVALID_PATTERN,{str},info);
       then fail();
-    else then ();
+*/
     /*
     case (path,_,_,_,info)
       equation
@@ -462,6 +468,7 @@ algorithm
         Error.addSourceMessage(Error.META_INVALID_PATTERN,{str},info);
       then fail();
     */
+    else ();
   end match;
 end checkMissingArgs;
 
@@ -494,11 +501,11 @@ algorithm
       DAE.Exp crefExp;
       DAE.Type ty1, ty2;
 
-    case (ty1,DAE.T_METABOXED(ty = ty2),_,_)
+    case (DAE.T_METABOXED(ty = ty1),ty2,_,_)
       equation
         cr = ComponentReference.makeCrefIdent("#DUMMY#",DAE.T_UNKNOWN_DEFAULT,{});
         crefExp = Expression.crefExp(cr);
-        (_,ty1) = Types.matchType(crefExp,ty2,ty1,true);
+        (_,ty1) = Types.matchType(crefExp,ty1,ty2,true);
         et = Types.simplifyType(ty1);
       then SOME(et);
 
@@ -506,7 +513,7 @@ algorithm
       equation
         cr = ComponentReference.makeCrefIdent("#DUMMY#",DAE.T_UNKNOWN_DEFAULT,{});
         crefExp = Expression.crefExp(cr);
-        (_,_) = Types.matchType(crefExp,ty2,ty1,true);
+        (_,et) = Types.matchType(crefExp,ty1,ty2,true);
       then NONE();
 
     case (ty1,ty2,_,_)
@@ -976,10 +983,10 @@ algorithm
       list<DAE.MatchCase> cases;
       DAE.Pattern pat;
       list<DAE.Subscript> subs;
-    case ((exp as DAE.CREF(componentRef=DAE.CREF_IDENT(ident=name,subscriptLst=subs)),ht))
+      DAE.ComponentRef cr;
+    case ((exp as DAE.CREF(componentRef=cr),ht))
       equation
-        ht = addLocalCrefSubs(subs,ht);
-        ht = BaseHashTable.add((name,Absyn.IDENT("")), ht);
+        ht = addLocalCrefHelper(cr,ht);
       then ((exp,ht));
     case ((exp as DAE.CALL(path=Absyn.IDENT(name), attr=DAE.CALL_ATTR(builtin=false)),ht))
       equation
@@ -996,6 +1003,30 @@ algorithm
     else inTpl;
   end match;
 end addLocalCref;
+
+protected function addLocalCrefHelper
+  input DAE.ComponentRef cr;
+  input HashTableStringToPath.HashTable iht;
+  output HashTableStringToPath.HashTable ht;
+algorithm
+  ht := match (cr,iht)
+    local
+      String name;
+      list<DAE.Subscript> subs;
+      DAE.ComponentRef cr2;
+    case (DAE.CREF_IDENT(ident=name,subscriptLst=subs),ht)
+      equation
+        ht = addLocalCrefSubs(subs,ht);
+        ht = BaseHashTable.add((name,Absyn.IDENT("")), ht);
+      then ht;
+    case (DAE.CREF_QUAL(ident=name,subscriptLst=subs,componentRef=cr2),ht)
+      equation
+        ht = addLocalCrefSubs(subs,ht);
+        ht = BaseHashTable.add((name,Absyn.IDENT("")), ht);
+      then addLocalCrefHelper(cr2,ht);
+    else iht;
+  end match;
+end addLocalCrefHelper;
 
 protected function addLocalCrefSubs
   "Cref subscripts may also contain crefs"
@@ -1054,7 +1085,7 @@ algorithm
     local
       Absyn.Path name;
       A a;
-      DAE.Pattern pat;
+      DAE.Pattern pat,pat2;
       list<tuple<DAE.Pattern, String, DAE.Type>> namedPatterns;
       list<DAE.Pattern> patterns;
     case ((DAE.PAT_CALL_NAMED(name, namedPatterns),a))
@@ -1064,12 +1095,12 @@ algorithm
       then ((pat,a));
     case ((pat as DAE.PAT_CALL_TUPLE(patterns),a))
       equation
-        pat = Util.if_(allPatternsWild(patterns), DAE.PAT_WILD(), pat);
-      then ((pat,a));
+        pat2 = Util.if_(allPatternsWild(patterns), DAE.PAT_WILD(), pat);
+      then ((pat2,a));
     case ((pat as DAE.PAT_META_TUPLE(patterns),a))
       equation
-        pat = Util.if_(allPatternsWild(patterns), DAE.PAT_WILD(), pat);
-      then ((pat,a));
+        pat2 = Util.if_(allPatternsWild(patterns), DAE.PAT_WILD(), pat);
+      then ((pat2,a));
     else itpl;
   end match;
 end simplifyPattern;
@@ -1146,6 +1177,7 @@ algorithm
       Integer index;
       list<tuple<DAE.Pattern,String,DAE.Type>> namedpats;
       Boolean knownSingleton;
+      list<DAE.Var> fieldVars;
     case ((DAE.PAT_AS(id,ty,pat2),a),_)
       equation
         ((pat2,a)) = traversePattern((pat2,a),func);
@@ -1158,10 +1190,10 @@ algorithm
         pat = DAE.PAT_AS_FUNC_PTR(id,pat2);
         outTpl = func((pat,a));
       then outTpl;
-    case ((DAE.PAT_CALL(name,index,pats,knownSingleton),a),_)
+    case ((DAE.PAT_CALL(name,index,pats,fieldVars,knownSingleton),a),_)
       equation
         (pats,a) = traversePatternList(pats, func, a);
-        pat = DAE.PAT_CALL(name,index,pats,knownSingleton);
+        pat = DAE.PAT_CALL(name,index,pats,fieldVars,knownSingleton);
         outTpl = func((pat,a));
       then outTpl;
     case ((DAE.PAT_CALL_NAMED(name,namedpats),a),_)
@@ -1531,13 +1563,13 @@ algorithm
     case (DAE.PAT_CALL_TUPLE(ps1),DAE.PAT_CALL_TUPLE(ps2))
       then patternListsDoNotOverlap(ps1,ps2);
 
-    case (DAE.PAT_CALL(name1,ix1,{},_),DAE.PAT_CALL(name2,ix2,{},_))
+    case (DAE.PAT_CALL(name1,ix1,{},_,_),DAE.PAT_CALL(name2,ix2,{},_,_))
       equation
         res = ix1 == ix2;
         res = Debug.bcallret2(res, Absyn.pathEqual, name1, name2, res);
       then not res;
 
-    case (DAE.PAT_CALL(name1,ix1,ps1,_),DAE.PAT_CALL(name2,ix2,ps2,_))
+    case (DAE.PAT_CALL(name1,ix1,ps1,_,_),DAE.PAT_CALL(name2,ix2,ps2,_,_))
       equation
         res = ix1 == ix2;
         res = Debug.bcallret2(res, Absyn.pathEqual, name1, name2, res);
@@ -1572,9 +1604,10 @@ protected function elabMatchCases
   output Option<GlobalScript.SymbolTable> outSt;
 protected
   list<DAE.Exp> resExps;
-  list<DAE.Type> resTypes;
+  list<DAE.Type> resTypes,tysFixed;
 algorithm
-  (outCache,elabCases,resExps,resTypes,outSt) := elabMatchCases2(cache,env,cases,tys,impl,st,performVectorization,pre,{},{},{});
+  tysFixed := List.map(tys, Types.getUniontypeIfMetarecordReplaceAllSubtypes);
+  (outCache,elabCases,resExps,resTypes,outSt) := elabMatchCases2(cache,env,cases,tysFixed,impl,st,performVectorization,pre,{},{},{});
   (elabCases,resType) := fixCaseReturnTypes(elabCases,resExps,resTypes,info);
 end elabMatchCases;
 
@@ -1660,6 +1693,7 @@ algorithm
         patterns = MetaUtil.extractListFromTuple(pattern, 0);
         patterns = Util.if_(listLength(tys)==1, {pattern}, patterns);
         (cache,elabPatterns) = elabPatternTuple(cache, env, patterns, tys, patternInfo, pattern);
+        (elabPatterns,env) = traversePatternList(elabPatterns,addEnvKnownAsBindings,env);
         (cache,eqAlgs) = Static.fromEquationsToAlgAssignments(eq1,{},cache,env,pre);
         algs = SCodeUtil.translateClassdefAlgorithmitems(eqAlgs);
         (cache,body) = InstSection.instStatements(cache, env, InnerOuter.emptyInstHierarchy, pre, ClassInf.FUNCTION(Absyn.IDENT("match"), false), algs, DAEUtil.addElementSourceFileInfo(DAE.emptyElementSource,patternInfo), SCode.NON_INITIAL(), true, InstTypes.neverUnroll, {});
@@ -1823,16 +1857,29 @@ algorithm
       String str;
       list<DAE.MatchCase> cases;
       list<DAE.Exp> exps;
-      list<DAE.Type> tys;
+      list<DAE.Type> tys,tysboxed;
 
     case (cases,{},{},_) then (cases,DAE.T_NORETCALL_DEFAULT);
 
+    case (cases,exps,tys,_)
+      equation
+        ty = List.reduce(List.map(tys, Types.boxIfUnboxedType), Types.superType);
+        ty = Types.superType(ty, ty);
+        ty = Types.unboxedType(ty);
+        ty = Types.makeRegularTupleFromMetaTupleOnTrue(Types.allTuple(tys),ty);
+        ty = Types.getUniontypeIfMetarecordReplaceAllSubtypes(ty);
+        (exps,_) = Types.matchTypes(exps, tys, ty, true);
+        cases = fixCaseReturnTypes2(cases,exps,info);
+      then (cases,ty);
+
+    // 2 different cases, one boxed and one unboxed to handle everything
     case (cases,exps,tys,_)
       equation
         ty = List.reduce(tys, Types.superType);
         ty = Types.superType(ty, ty);
         ty = Types.unboxedType(ty);
         ty = Types.makeRegularTupleFromMetaTupleOnTrue(Types.allTuple(tys),ty);
+        ty = Types.getUniontypeIfMetarecordReplaceAllSubtypes(ty);
         (exps,_) = Types.matchTypes(exps, tys, ty, true);
         cases = fixCaseReturnTypes2(cases,exps,info);
       then (cases,ty);
@@ -2183,5 +2230,31 @@ algorithm
      case ((e,i)) then ((e,i+5)); // lists and such; add a little something in addition to its members....
   end match;
 end constantComplexity;
+
+protected function addEnvKnownAsBindings
+  input tuple<DAE.Pattern,Env.Env> inTpl;
+  output tuple<DAE.Pattern,Env.Env> outTpl;
+algorithm
+  outTpl := match inTpl
+    local
+      Absyn.Path name,path;
+      String id,scope;
+      DAE.Type ty;
+      Env.Env env,env2;
+      DAE.Pattern pat;
+      list<DAE.Var> fields;
+      Integer index;
+      Boolean knownSingleton;
+    case ((pat as DAE.PAT_AS(id=id,pat=DAE.PAT_CALL(index=index,fields=fields,knownSingleton=knownSingleton,name=name)),env))
+      equation
+         scope = "$" +& id +& "as$";
+         env2 = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(scope),NONE());
+         path = Absyn.stripLast(name);
+         ty = DAE.T_METARECORD(path,index,fields,knownSingleton,{name});
+         env2 = Env.extendFrameV(env2, DAE.TYPES_VAR(id,DAE.dummyAttrVar,ty,DAE.UNBOUND(),NONE()), SCode.COMPONENT(id,SCode.defaultPrefixes,SCode.defaultVarAttr,Absyn.TPATH(name,NONE()),SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo), DAE.NOMOD(), Env.VAR_DAE(), env);
+      then ((pat,env2));
+    else inTpl;
+  end match;
+end addEnvKnownAsBindings;
 
 end Patternm;

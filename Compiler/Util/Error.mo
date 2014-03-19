@@ -758,7 +758,7 @@ public constant Message META_INVALID_COMPLEX_TYPE = MESSAGE(5020, TRANSLATION(),
 public constant Message META_CONSTRUCTOR_NOT_PART_OF_UNIONTYPE = MESSAGE(5021, TRANSLATION(), ERROR(),
   Util.gettext("In pattern %s: %s is not part of uniontype %s"));
 public constant Message META_TYPE_MISMATCH_PATTERN = MESSAGE(5022, TRANSLATION(), ERROR(),
-  Util.gettext("Type mismatch in pattern %s\nactual type:\n  %s\nexpected type:\n  %s"));
+  Util.gettext("Type mismatch in pattern %s\nexpression type:\n  %s\npattern type:\n  %s"));
 public constant Message META_CONSTRUCTOR_NOT_RECORD = MESSAGE(5023, TRANSLATION(), ERROR(),
   Util.gettext("Call pattern is not a record constructor %s"));
 public constant Message META_MATCHEXP_RESULT_TYPES = MESSAGE(5024, TRANSLATION(), ERROR(),

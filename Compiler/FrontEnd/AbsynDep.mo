@@ -241,12 +241,12 @@ algorithm
       outUses = getUsesTransitive2Lst(depends,v,outUses);
     then outUses;
 
-    case(depends as DEPENDS(treeUses,_),cl as Absyn.QUALIFIED(_,_),uses) equation
+    case(depends as DEPENDS(treeUses,_),Absyn.QUALIFIED(_,_),uses) equation
       // get the classes used by cl. If no one uses this should anyway succed, hence using avlTreeGetOrEmpty
-      v = avlTreeGetOrEmpty(treeUses,cl);
-      outUses = avlAddUses(uses,{cl});
+      v = avlTreeGetOrEmpty(treeUses,inCl);
+      outUses = avlAddUses(uses,{inCl});
       outUses = getUsesTransitive2Lst(depends,v,outUses);
-      cl = Absyn.stripLast(cl);
+      cl = Absyn.stripLast(inCl);
       outUses = getUsesTransitive2(depends,cl,outUses);
     then outUses;
 

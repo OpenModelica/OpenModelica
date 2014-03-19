@@ -154,7 +154,7 @@ algorithm
       Absyn.Path name;
       SymbolTable st;
 
-    case (NFInstTypes.ELEMENT(comp as NFInstTypes.UNTYPED_COMPONENT(name = name), cls),
+    case (NFInstTypes.ELEMENT(NFInstTypes.UNTYPED_COMPONENT(name = name), cls),
         _, _, _, st)
       equation
         comp = NFInstSymbolTable.lookupName(name, st);
@@ -384,7 +384,7 @@ algorithm
   match(inDimension, inComponentName, inContext, inSymbolTable, inFunctionTable, inDimensions, inIndex)
     local
       SymbolTable st;
-      DAE.Dimension dim;
+      DAE.Dimension inDim,dim;
       DAE.Exp dim_exp;
       Integer  dim_count;
       Dimension typed_dim;
@@ -396,9 +396,9 @@ algorithm
       then
         fail();
 
-    case (NFInstTypes.UNTYPED_DIMENSION(dimension = dim as DAE.DIM_EXP(exp = dim_exp)), _, _, st, _, _, _)
+    case (NFInstTypes.UNTYPED_DIMENSION(dimension = inDim as DAE.DIM_EXP(exp = dim_exp)), _, _, st, _, _, _)
       equation
-        _ = arrayUpdate(inDimensions, inIndex, NFInstTypes.UNTYPED_DIMENSION(dim, true));
+        _ = arrayUpdate(inDimensions, inIndex, NFInstTypes.UNTYPED_DIMENSION(inDim, true));
         (dim_exp, _, _, st) = typeExp(dim_exp, EVAL_CONST_PARAM(), inContext, st, inFunctionTable);
         (dim_exp, _) = ExpressionSimplify.simplify(dim_exp);
         dim = NFInstUtil.makeDimension(dim_exp);
@@ -407,9 +407,9 @@ algorithm
       then
         (dim, st);
 
-    case (NFInstTypes.UNTYPED_DIMENSION(dimension = dim as DAE.DIM_UNKNOWN()), _, CONTEXT_MODEL(), st, _, _, _)
+    case (NFInstTypes.UNTYPED_DIMENSION(dimension = inDim as DAE.DIM_UNKNOWN()), _, CONTEXT_MODEL(), st, _, _, _)
       equation
-        _ = arrayUpdate(inDimensions, inIndex, NFInstTypes.UNTYPED_DIMENSION(dim, true));
+        _ = arrayUpdate(inDimensions, inIndex, NFInstTypes.UNTYPED_DIMENSION(inDim, true));
         comp = NFInstSymbolTable.lookupName(inComponentName, st);
         (comp, st) = typeComponentBinding(comp, NONE(), NONE(), inContext, st, inFunctionTable);
         dim_count = arrayLength(inDimensions);
@@ -880,9 +880,9 @@ algorithm
         (e2 as DAE.ICONST(dim_int), _, _, st) = typeExp(e2, EVAL_CONST_PARAM(), c, st, ft);
         comp = NFInstSymbolTable.lookupCref(cref, st);
         (dim, st) = typeComponentDim(comp, dim_int, c, st, ft);
-        e1 = dimensionExp(dim, e1, e2, c);
+        e3 = dimensionExp(dim, e1, e2, c);
       then
-        (e1, DAE.T_INTEGER_DEFAULT, DAE.C_CONST(), st);
+        (e3, DAE.T_INTEGER_DEFAULT, DAE.C_CONST(), st);
 
     case (DAE.RANGE(start = e1, step = oe, stop = e2), ep, c, st, ft)
       equation

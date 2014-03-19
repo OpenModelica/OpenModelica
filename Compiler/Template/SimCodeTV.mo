@@ -2833,6 +2833,11 @@ package Types
     input DAE.Type inType;
     output Boolean outRes;
   end dimensionsKnown;
+  function findVarIndex
+    input String id;
+    input list<DAE.Var> vars;
+    output Integer index;
+  end findVarIndex;
 end Types;
 
 package FMI

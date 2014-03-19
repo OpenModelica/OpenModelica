@@ -5594,7 +5594,7 @@ algorithm
       BackendDAE.Var v;
       DAE.Exp e;
 
-    case((e as DAE.CREF(componentRef=cr),vars))
+    case ((DAE.CREF(componentRef=cr),vars))
       equation
         (v::_,_) = BackendVariable.getVar(cr,vars);
         e = BackendVariable.varBindExp(v);
@@ -5602,7 +5602,7 @@ algorithm
       then
         ((e, vars ));
 
-    case _ then inExp;
+    else inExp;
 
   end matchcontinue;
 end replaceVartraverser;
@@ -6909,7 +6909,7 @@ protected function getEqnsysRhsExp1
 algorithm
   outTplExpBoolTypeA := match(inTplExpTypeA)
     local
-      DAE.Exp cond,t,f,e, e1, e2, zero;
+      DAE.Exp cond,t,f,e, e1, e2, zero,exp;
       DAE.Type tp;
       BackendVarTransform.VariableReplacements repl;
       BackendDAE.Variables vars;
@@ -6943,10 +6943,10 @@ algorithm
         (zero, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
         e1 = Expression.expMul(cond,t);
         e2 = Expression.expMul(cond,f);
-        e = DAE.IFEXP(DAE.RELATION(cond, DAE.GREATEREQ(tp), zero, -1, NONE()), e1, e2); 
-        ((e, (_, _, _, b))) = Expression.traverseExpTopDown(e, getEqnsysRhsExp1, (repl, vars, funcs, b));
+        exp = DAE.IFEXP(DAE.RELATION(cond, DAE.GREATEREQ(tp), zero, -1, NONE()), e1, e2); 
+        ((exp, (_, _, _, b))) = Expression.traverseExpTopDown(exp, getEqnsysRhsExp1, (repl, vars, funcs, b));
       then
-        ((e,false,(repl,vars,funcs,b)));
+        ((exp,false,(repl,vars,funcs,b)));
     case ((e as DAE.CALL(expLst=expLst),(repl,vars,funcs,b)))
       equation
         // check if vars not in expList

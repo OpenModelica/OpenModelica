@@ -984,26 +984,6 @@ algorithm
       InstTypes.SplicedExpData splicedExpData;
       Option<DAE.Const> cnstForRange;
 
-    /*
-    case (cache,env,cref)
-      equation
-        true = Flags.isSet(Flags.LOOKUP);
-        Debug.traceln("lookupVar: " +&
-          ComponentReference.printComponentRefStr(cref) +&
-          " in env: " +&
-          Env.printEnvPathStr(env) +& "\n");
-      then
-        fail();
-    */
-    
-    /*/ strip fully qualified crefs
-    case (cache,env,cref)
-      equation
-        cref = Env.daeCrefStripEnvIfFullyQualifedInEnv(cref, env);
-        (cache,attr,ty,binding,cnstForRange,splicedExpData,classEnv,componentEnv,name) = lookupVar(cache, env, cref);
-      then
-        (cache,attr,ty,binding,cnstForRange,splicedExpData,classEnv,componentEnv,name);*/
-    
     // try the old lookupVarInternal
     case (cache,env,cref)
       equation
@@ -1121,13 +1101,12 @@ This is indicated by the name of the frame."
   input Env.Frame f;
   output Boolean b;
 algorithm
-  b := matchcontinue(f)
-    local String name;
-    case(Env.FRAME(name=SOME(name))) equation
-      true = listMember(name, Env.implicitScopeNames);
-    then true;
-    case(_) then false;
-  end matchcontinue;
+  b := match f
+    local
+      Option<String> oname;
+    case (Env.FRAME(name=oname)) then Env.isImplicitScope(oname);
+    else false;
+  end match;
 end frameIsImplAddedScope;
 
 public function lookupVarInPackages "This function is called when a lookup of a variable with qualified names
@@ -2137,7 +2116,7 @@ algorithm
       SCode.COMPONENT(
         id,
         SCode.PREFIXES(vis, redecl, f, io, repl),
-        SCode.ATTR(d,ct,prl,var as SCode.CONST(),dir),tp,mod as SCode.NOMOD(),comment,cond,info)), cmod) :: rest),_,_)
+        SCode.ATTR(d,ct,prl,SCode.CONST(),dir),tp,mod as SCode.NOMOD(),comment,cond,info)), cmod) :: rest),_,_)
       equation
         (_,mod_1) = Mod.elabMod(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, true, info);
         mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
@@ -2717,7 +2696,7 @@ algorithm
         (cache,attr,ty_1,bind,cnstForRange,InstTypes.SPLICEDEXPDATA(SOME(splicedExp),ty),componentEnv,name);
 
     // Qualified variables looked up through component environment with a spliced exp
-    case (cache,ht,xCref as (DAE.CREF_QUAL(ident = id,subscriptLst = ss,componentRef = ids)))
+    case (cache,ht,DAE.CREF_QUAL(ident = id,subscriptLst = ss,componentRef = ids))
       equation
         (cache,DAE.TYPES_VAR(_,DAE.ATTR(variability = vt2),ty2,bind,cnstForRange),_,_,_,componentEnv) = lookupVar2(cache, ht, id);
         // outer variables are not local!
@@ -2725,6 +2704,7 @@ algorithm
         // false = Absyn.isOuter(io);
         //
         (cache,DAE.ATTR(ct,prl,vt,di,io,vis),ty,binding,cnstForRange,InstTypes.SPLICEDEXPDATA(texp,idTp),_,componentEnv,name) = lookupVar(cache, componentEnv, ids);
+        ty = Debug.bcallret1(Types.isBoxedType(ty2), Types.boxIfUnboxedType, ty, ty) "The internal types in a metarecord are lookup up in a clean environment, so we have to box them";
         (tCref::ltCref) = elabComponentRecursive((texp));
         ty1 = checkSubscripts(ty2, ss);
         ty = sliceDimensionType(ty1,ty);

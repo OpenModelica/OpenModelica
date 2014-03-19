@@ -2437,19 +2437,16 @@ algorithm
   outValue:=
   match (inLst, inValue,lastValue)
     local
-      Integer n_1,n;
+      Integer n;
       Values.Value res,preRes;
       list<Values.Value> vlst,vlst2;
-      case({},_, preRes) then preRes;
-
-    case (((res as Values.INTEGER(integer=n))::vlst2),Values.ARRAY(valueLst = vlst),preRes)
+    
+    case({},_, preRes) then preRes;
+    case (((Values.INTEGER(integer=n))::vlst2),Values.ARRAY(valueLst = vlst),preRes)
       equation
-        n_1 = n - 1;
-        res = listNth(vlst, n_1);
+        res = listGet(vlst, n);
         res = nthnthArrayelt(vlst2,res,res);
-      then
-        res;
-    case(_,_,_) then fail();
+      then res;
   end match;
 end nthnthArrayelt;
 

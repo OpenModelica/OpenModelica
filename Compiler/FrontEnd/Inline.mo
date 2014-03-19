@@ -2053,7 +2053,7 @@ algorithm
       then
         ((e,(argmap,checkcr,false)));
         /* TODO: Use the inlineType of the function reference! */
-    case((e as DAE.CALL(path,expLst,DAE.CALL_ATTR(DAE.T_METATYPE(ty = _),tuple_,false,isImpure,_,tc)),(argmap,checkcr,true)))
+    case((DAE.CALL(path,expLst,DAE.CALL_ATTR(DAE.T_METATYPE(ty = _),tuple_,false,isImpure,_,tc)),(argmap,checkcr,true)))
       equation
         cref = ComponentReference.pathToCref(path);
         (e as DAE.CREF(componentRef=cref,ty=ty)) = getExpFromArgMap(argmap,cref);

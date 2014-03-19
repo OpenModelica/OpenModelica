@@ -166,14 +166,14 @@ public function replaceBindsFrontEnd
 algorithm
   outTplExpBinds := match(inTplExpBinds)
     local 
-      Absyn.Exp e;
+      Absyn.Exp e1,e2;
       Binds bnds;
     
-    case ((e as Absyn.CREF(_), bnds))
+    case ((e1 as Absyn.CREF(_), bnds))
       equation
-        e = replaceBindFrontEnd(e, bnds);
+        e2 = replaceBindFrontEnd(e1, bnds);
       then
-        ((e, bnds));
+        ((e2, bnds));
     
     // leave as it is
     else inTplExpBinds; 
@@ -632,14 +632,14 @@ public function replaceBindsBackEnd
 algorithm
   outTplExpBinds := match(inTplExpBinds)
     local 
-      DAE.Exp e;
+      DAE.Exp e1,e2;
       Binds bnds;
     
-    case ((e as DAE.CREF(_, _), bnds))
+    case ((e1 as DAE.CREF(_, _), bnds))
       equation
-        e = replaceBindBackEnd(e, bnds);
+        e2 = replaceBindBackEnd(e1, bnds);
       then
-        ((e, bnds));
+        ((e2, bnds));
     
     // leave as it is
     else inTplExpBinds;

@@ -544,15 +544,15 @@ algorithm
       SCode.Restriction res;
       Absyn.Info info;
       SCode.Element element;
-      SCode.ClassDef cdef;
+      SCode.ClassDef cdef,cdef2;
       SCode.Comment cmt;
 
     case (SCode.CLASS(name, prefixes, ep, pp, res,
           cdef as SCode.DERIVED(typeSpec = _), cmt, info), _)
       equation
-        cdef = flattenDerivedClassDef(cdef, inEnv, info);
+        cdef2 = flattenDerivedClassDef(cdef, inEnv, info);
       then
-        SCode.CLASS(name, prefixes, ep, pp, res, cdef, cmt, info);
+        SCode.CLASS(name, prefixes, ep, pp, res, cdef2, cmt, info);
 
     case (SCode.CLASS(classDef = SCode.ENUMERATION(enumLst = _)), _)
       then

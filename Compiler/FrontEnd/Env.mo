@@ -610,9 +610,9 @@ algorithm
       SCode.ClassDef cdef;
       Extra extra;
 
-    case (env as FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs, c as SCode.CLASS(name = n))
+    case (env as FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs, SCode.CLASS(name = n))
       equation
-        c = SCodeUtil.expandEnumerationClass(c);
+        c = SCodeUtil.expandEnumerationClass(inClass);
         cdef = SCode.getClassDef(c);
         ct = getItemType(cdef,NONE());
         clsAndVars = avlTreeAdd(clsAndVars,n,CLASS(c,env,ct));
@@ -659,9 +659,9 @@ algorithm
       Ident n;
       Extra extra;
 
-    case (env as FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs, c as SCode.CLASS(name = n), _)
+    case (env as FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs, SCode.CLASS(name = n), _)
       equation
-        c = SCodeUtil.expandEnumerationClass(c);
+        c = SCodeUtil.expandEnumerationClass(inClass);
         clsAndVars = avlTreeAdd(clsAndVars,n,CLASS(c,env,inItemType));
       then
         FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs;
@@ -1690,23 +1690,24 @@ public function getEnvPathNoImplicitScope "This function returns all partially i
 algorithm
   outAbsynPathOption := matchcontinue (inEnv)
     local
+      Option<String> oid;
       Ident id;
       Absyn.Path path,path_1;
       Env rest;
-    case ((FRAME(name = SOME(id)) :: rest))
+    case ((FRAME(name = oid) :: rest))
       equation
-        true = listMember(id,implicitScopeNames);
+        true = isImplicitScope(oid);
       then getEnvPathNoImplicitScope(rest);
-    case ((FRAME(name = SOME(id)) :: rest))
+    case ((FRAME(name = oid as SOME(id)) :: rest))
       equation
-        false = listMember(id,implicitScopeNames);
+        false = isImplicitScope(oid);
         SOME(path) = getEnvPathNoImplicitScope(rest);
         path_1 = Absyn.joinPaths(path, Absyn.IDENT(id));
       then
         SOME(path_1);
-    case (FRAME(name = SOME(id))::rest)
+    case (FRAME(name = oid as SOME(id))::rest)
       equation
-        false = listMember(id,implicitScopeNames);
+        false = isImplicitScope(oid);
         NONE() = getEnvPathNoImplicitScope(rest);
       then SOME(Absyn.IDENT(id));
     case (_) then NONE();
@@ -3593,9 +3594,11 @@ public function isImplicitScope
   output Boolean isImplicit;
 algorithm
   isImplicit := match(inIdent)
-    local Ident id;
+    local
+      Ident id;
     case (NONE()) then false;
-    case (SOME(id)) then listMember(id,implicitScopeNames);
+    case (SOME(id))
+      then stringGet(id,1) == 36; // "$"
   end match;
 end isImplicitScope;
 

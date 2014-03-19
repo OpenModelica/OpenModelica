@@ -1905,17 +1905,17 @@ algorithm
         makeCrefIdent(name,identType,subs);
         
     // case where there is not existant Expression.DAE.SLICE() as subscript
-    case( child as DAE.CREF_IDENT(identType  = t2, subscriptLst = subs),_)
+    case (DAE.CREF_IDENT(identType  = t2, subscriptLst = subs),_)
       equation
         true = (listLength(Expression.arrayTypeDimensions(t2)) >= (listLength(subs)+1));
-        child = subscriptCref(child,newSub);
+        child = subscriptCref(inCr,newSub);
       then
         child;
         
-    case( child as DAE.CREF_IDENT(identType  = t2, subscriptLst = subs),_)
+    case (DAE.CREF_IDENT(identType  = t2, subscriptLst = subs),_)
       equation
         false = (listLength(Expression.arrayTypeDimensions(t2)) >= (listLength(subs)+listLength(newSub)));
-        child = subscriptCref(child,newSub);
+        child = subscriptCref(inCr,newSub);
         Debug.fprintln(Flags.FAILTRACE, "WARNING - Expression.replaceCref_SliceSub setting subscript last, not containing dimension");
       then
         child;

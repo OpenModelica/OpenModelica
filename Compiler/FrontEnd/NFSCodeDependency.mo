@@ -1922,15 +1922,12 @@ algorithm
     // Try to collect the first class in the list.
     case (_, _, (cls as SCode.CLASS(name = name)) :: rest_prog, _, env)
       equation
-        cls_el = cls;
-        (cls_el, env) = collectUsedClass(cls_el, inEnv, clsAndVars,
+        (cls_el as SCode.CLASS(name = _), env) = collectUsedClass(cls, inEnv, clsAndVars,
           inClassName, env, Absyn.IDENT(name));
-        SCode.CLASS(name = _) = cls_el;
-        cls = cls_el;
         (rest_prog, env) =
           collectUsedProgram2(clsAndVars, inEnv, rest_prog, inClassName, env);
       then
-        (cls :: rest_prog, env);
+        (cls_el :: rest_prog, env);
 
     // Could not collect the class (i.e. it's not used), continue with the rest.
     case (_, _, _ :: rest_prog, _, env)

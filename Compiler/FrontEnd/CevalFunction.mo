@@ -1946,7 +1946,7 @@ end appendDimensions2;
 
 protected function assignVariable
   "This function assigns a variable in the environment a new value."
-  input DAE.ComponentRef inVariableCref;
+  input DAE.ComponentRef inCref;
   input Values.Value inNewValue;
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -1956,7 +1956,7 @@ protected function assignVariable
   output SymbolTable outST;
 algorithm
   (outCache, outEnv, outST) :=
-  matchcontinue(inVariableCref, inNewValue, inCache, inEnv, inST)
+  matchcontinue(inCref, inNewValue, inCache, inEnv, inST)
     local
       DAE.ComponentRef cr, cr_rest;
       Env.Cache cache;
@@ -1995,9 +1995,9 @@ algorithm
 
     // If we get a vector we first get the old value and update the relevant
     // part of it, and then update the variables value.
-    case (cr as DAE.CREF_IDENT(subscriptLst = subs), _, _, _, st)
+    case (DAE.CREF_IDENT(subscriptLst = subs), _, _, _, st)
       equation
-        cr = ComponentReference.crefStripSubs(cr);
+        cr = ComponentReference.crefStripSubs(inCref);
         (ty, val) = getVariableTypeAndValue(cr, inEnv);
         (cache, val, st) = assignVector(inNewValue, val, subs, inCache, inEnv, st);
         env = updateVariableBinding(cr, inEnv, ty, val);

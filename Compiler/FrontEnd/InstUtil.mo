@@ -2849,7 +2849,7 @@ algorithm
       String name, nInner, nDerivedInner;
       list<SCode.SubMod> rest, subs;
       Option<tuple<Absyn.Exp, Boolean>> b;
-      SCode.Mod m;
+      SCode.Mod m,m2;
       SCode.SubMod sm;
       Absyn.Info info;
 
@@ -2874,10 +2874,10 @@ algorithm
     case (_, SCode.MOD(f, e, SCode.NAMEMOD(name, m as SCode.REDECL(finalPrefix = _))::rest, b, info))
       equation
         // lookup the class mod in the outer
-        m = chainRedeclares(inModOuter, m);
+        m2 = chainRedeclares(inModOuter, m);
         SCode.MOD(subModLst = subs) = chainRedeclares(inModOuter, SCode.MOD(f, e, rest, b, info));
       then
-        SCode.MOD(f, e, SCode.NAMEMOD(name, m)::subs, b, info);
+        SCode.MOD(f, e, SCode.NAMEMOD(name, m2)::subs, b, info);
     
     // something else, move along!
     case (_, SCode.MOD(f, e, sm::rest, b, info))

@@ -1594,7 +1594,7 @@ protected function setTrieUpdateNode
 algorithm
   outNodes := matchcontinue(inId, wholeCref, inCref, inArg, inNodes, inUpdateFunc)
     local
-      SetTrieNode node;
+      SetTrieNode node,node2;
       list<SetTrieNode> rest_nodes;
       String id;
 
@@ -1607,9 +1607,9 @@ algorithm
     case (_, _, _, _, (node as Connect.SET_TRIE_NODE(name = id)) :: rest_nodes, _)
       equation
         true = stringEqual(inId, id);
-        node = setTrieUpdate(inCref, inArg, node, inUpdateFunc);
+        node2 = setTrieUpdate(inCref, inArg, node, inUpdateFunc);
       then
-        node :: rest_nodes;
+        node2 :: rest_nodes;
 
     case (_, _, _, _, node :: rest_nodes, _)
       equation

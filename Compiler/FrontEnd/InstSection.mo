@@ -1350,9 +1350,9 @@ algorithm
     // Assignment to a single component with a function returning multiple
     // values.
     case (e1, p1 as DAE.PROP(type_ = _),
-          e2, p2 as DAE.PROP_TUPLE(type_ = _), _, initial_, impl)
+          e2, DAE.PROP_TUPLE(type_ = _), _, initial_, impl)
       equation
-        p2 = Types.propTupleFirstProp(p2);
+        p2 = Types.propTupleFirstProp(inProperties4);
         DAE.PROP(constFlag = c) = p2;
         (e1, DAE.PROP(type_ = t_1)) = Types.matchProp(e1, p1, p2, false);
         (e1,_) = ExpressionSimplify.simplify(e1);

@@ -3,12 +3,12 @@ all:
 	$(MAKE) bootstrap-from-tarball
 else
 all:
-	$(MAKE) generate-files-in-steps
-	$(MAKE) install
+	$(MAKE) --no-print-directory generate-files-in-steps
+	$(MAKE) --no-print-directory install
 endif
 
 generate-files-in-steps:
-	$(MAKE) templates
+	$(MAKE) -s templates
 	$(MAKE) Makefile.sources
 	$(MAKE) interfaces
 	$(MAKE) Makefile.depends
@@ -37,7 +37,7 @@ make-bootstrap-tarball:
 	tar cJf bootstrap-sources.tar.xz $(GEN_DIR) Makefile.sources
 
 templates:
-	$(MAKE) -C $(TOP_DIR)/Compiler/Template
+	$(MAKE) --no-print-directory -C $(TOP_DIR)/Compiler/Template
 
 clean:
 	rm -rf $(GEN_DIR)

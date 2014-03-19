@@ -1527,13 +1527,14 @@ algorithm
         true = subtype2(t1,t2,requireRecordNamesEqual);
       then true;
 
-    case(DAE.T_METARECORD(utPath=p1),DAE.T_METARECORD(utPath=p2),_)
+    case(DAE.T_METARECORD(source={p1}),DAE.T_METARECORD(source={p2}),_)
       then Absyn.pathEqual(p1,p2);
 
-    case (DAE.T_METAUNIONTYPE(paths = _, source = {p1}),DAE.T_METARECORD(utPath=p2),_)
+    case (DAE.T_METAUNIONTYPE(source = {p1}),DAE.T_METARECORD(utPath=p2),_)
       then Absyn.pathEqual(p1,p2);
 
-    case (DAE.T_METARECORD(utPath=p1),DAE.T_METAUNIONTYPE(paths = _, source = {p2}),_)
+    // If the record is the only one in the uniontype, of course their types match
+    case (DAE.T_METARECORD(knownSingleton=true,utPath = p1),DAE.T_METAUNIONTYPE(source={p2}),_)
       then Absyn.pathEqual(p1,p2);
 
     // <uniontype> = <uniontype>
@@ -2154,13 +2155,14 @@ algorithm
         res;
 
      // MetaModelica uniontype
-    case (DAE.T_METAUNIONTYPE(paths=_, source = {p}))
+    case (DAE.T_METAUNIONTYPE(source = {p}))
       equation
         res = Absyn.pathStringNoQual(p);
       then
         res;
 
     // MetaModelica uniontype (but we know which record in the UT it is)
+/*
     case (DAE.T_METARECORD(utPath=_, fields = vs, source = {p}))
       equation
         str = Absyn.pathStringNoQual(p);
@@ -2168,6 +2170,9 @@ algorithm
         vstr = stringAppendList(vars);
         res = stringAppendList({"metarecord ",str,"\n",vstr,"end ", str, ";"});
       then res;
+*/
+    case (DAE.T_METARECORD(fields = vs, source = {p}))
+      then Absyn.pathStringNoQual(p);
 
     // MetaModelica boxed type
     case (DAE.T_METABOXED(ty = ty))
@@ -3790,8 +3795,7 @@ algorithm
     case (t as DAE.T_ARRAY(source = _))
       equation
         (_,dims) = flattenArrayTypeOpt(t);
-        t = arrayElementType(t);
-        t_1 = simplifyType(t);
+        t_1 = simplifyType(arrayElementType(t));
       then
         DAE.T_ARRAY(t_1,dims,DAE.emptyTypeSource);
 
@@ -4322,25 +4326,19 @@ algorithm
         (e, ty);
 
     // try dims as list T_ARRAY(a::b::c)
-    case (e,
-          ty1 as DAE.T_ARRAY(dims = _::_::_),
-          ty2,
-          _)
+    case (e,DAE.T_ARRAY(dims = _::_::_),ty2,_)
       equation
-         ty1 = unflattenArrayType(ty1);
+         ty1 = unflattenArrayType(actual);
          ty2 = unflattenArrayType(ty2);
          (e, ty) = typeConvert(e, ty1, ty2, printFailtrace);
       then
         (e, ty);
 
     // try dims as list T_ARRAY(a::b::c)
-    case (e,
-          ty1,
-          ty2 as DAE.T_ARRAY(dims = _::_::_),
-          _)
+    case (e,ty1,DAE.T_ARRAY(dims = _::_::_),_)
       equation
          ty1 = unflattenArrayType(ty1);
-         ty2 = unflattenArrayType(ty2);
+         ty2 = unflattenArrayType(expected);
          (e, ty) = typeConvert(e, ty1, ty2, printFailtrace);
       then
         (e, ty);
@@ -5020,11 +5018,11 @@ algorithm
       then
         DAE.PROP(t1,c);
     // enums
-    case (DAE.PROP(type_ = tt as DAE.T_ENUMERATION(literalVarLst = v),constFlag = c1),
+    case (DAE.PROP(type_ = t as DAE.T_ENUMERATION(literalVarLst = v),constFlag = c1),
           DAE.PROP(type_ = DAE.T_ENUMERATION(index = _, source = ts2),constFlag = c2), false)
       equation
         c = constAnd(c1, c2) "Have enum and both Enum" ;
-        tt = setTypeSource(tt,ts2);
+        tt = setTypeSource(t,ts2);
       then
         DAE.PROP(tt,c);
     // reals
@@ -5655,6 +5653,11 @@ algorithm
         true = Absyn.pathEqual(path1,path2);
       then t1;
 
+    case (DAE.T_METARECORD(knownSingleton=false,utPath = path1), DAE.T_METARECORD(knownSingleton=false,utPath=path2))
+      equation
+        true = Absyn.pathEqual(path1,path2);
+      then DAE.T_METAUNIONTYPE({},false,{path1});
+
     case (DAE.T_INTEGER(source = _),DAE.T_REAL(source = _))
       then DAE.T_REAL_DEFAULT;
 
@@ -5713,7 +5716,7 @@ algorithm
         _::_ = getAllInnerTypesOfType(expected, isPolymorphic);
         (exp,actual) = matchType(exp,actual,DAE.T_METABOXED(DAE.T_UNKNOWN_DEFAULT,DAE.emptyTypeSource),printFailtrace);
         // print("match type: " +& ExpressionDump.printExpStr(exp) +& " of " +& unparseType(actual) +& " with " +& unparseType(expected) +& " (boxed)\n");
-        polymorphicBindings = subtypePolymorphic(actual,expected,envPath,polymorphicBindings);
+        polymorphicBindings = subtypePolymorphic(getUniontypeIfMetarecordReplaceAllSubtypes(actual),getUniontypeIfMetarecordReplaceAllSubtypes(expected),envPath,polymorphicBindings);
         // print("match type: " +& ExpressionDump.printExpStr(exp) +& " of " +& unparseType(actual) +& " with " +& unparseType(expected) +& " and bindings " +& polymorphicBindingsStr(polymorphicBindings) +& " (OK)\n");
       then
         (exp,actual,polymorphicBindings);
@@ -5739,7 +5742,7 @@ algorithm
       Type e_type,expected_type,e_type_1;
     case (e,e_type,expected_type,_)
       equation
-        true = subtype(e_type, expected_type);
+        true = subtype(expected_type,e_type);
         /* TODO: Don't return ANY as type here; use the most restrictive... Else we get issues... */
       then
         (e,e_type);
@@ -5772,17 +5775,18 @@ algorithm
       list<DAE.Type> otys,tys;
       DAE.Exp e;
       list<DAE.Exp> exps;
-
+      String str;
     case ({},{},_,_) then ({},{});
     case (e::exps,ty::tys,_,_)
       equation
-        (e,ty) = matchType(e,ty,expected,printFailtrace);
+        (e,ty) = matchType(e,getUniontypeIfMetarecordReplaceAllSubtypes(ty),getUniontypeIfMetarecordReplaceAllSubtypes(expected),printFailtrace);
         (exps,otys) = matchTypes(exps,tys,expected,printFailtrace);
       then
         (e::exps,ty::otys);
     case (e::_,ty::_,_,true)
       equation
-        print("- Types.matchTypes failed for " +& ExpressionDump.printExpStr(e) +& " from " +& unparseType(ty) +& " to " +& unparseType(expected) +& "\n");
+        str = "- Types.matchTypes failed for " +& ExpressionDump.printExpStr(e) +& " from " +& unparseType(ty) +& " to " +& unparseType(expected) +& "\n";
+        Error.addMessage(Error.INTERNAL_ERROR,{str});
       then fail();
   end matchcontinue;
 end matchTypes;
@@ -7885,5 +7889,58 @@ algorithm
   end matchcontinue;
 end typeConvertIntToEnumCheck;
 
+public function findVarIndex
+  input String id;
+  input list<DAE.Var> vars;
+  output Integer index;
+algorithm
+  index := List.positionOnTrue(id,vars,selectVar);
+end findVarIndex;
+
+protected function selectVar
+  input String id;
+  input DAE.Var var;
+  output Boolean b;
+algorithm
+  b := match (id,var)
+    local
+      String id1;
+    case (_,DAE.TYPES_VAR(name=id1)) then stringEq(id,id1);
+    else false;
+  end match;
+end selectVar;
+
+public function getUniontypeIfMetarecord
+  input DAE.Type inTy;
+  output DAE.Type ty;
+algorithm
+  ty := match inTy
+    local
+      Boolean b;
+      Absyn.Path p;
+    case DAE.T_METARECORD(utPath=p,knownSingleton=b) then DAE.T_METAUNIONTYPE({},b,{p});
+    else inTy;
+  end match;
+end getUniontypeIfMetarecord;
+
+public function getUniontypeIfMetarecordReplaceAllSubtypes
+  input DAE.Type inTy;
+  output DAE.Type ty;
+algorithm
+  ((ty,_)) := traverseType((inTy,1),getUniontypeIfMetarecordTraverse);
+end getUniontypeIfMetarecordReplaceAllSubtypes;
+
+protected function getUniontypeIfMetarecordTraverse
+  input tuple<DAE.Type,Integer> inTpl;
+  output tuple<DAE.Type,Integer> outTpl;
+algorithm
+  outTpl := match inTpl
+    local
+      Boolean b;
+      Absyn.Path p;
+    case ((DAE.T_METARECORD(utPath=p,knownSingleton=b),_)) then ((DAE.T_METAUNIONTYPE({},b,{p}),1));
+    else inTpl;
+  end match;
+end getUniontypeIfMetarecordTraverse;
 
 end Types;

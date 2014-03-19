@@ -468,7 +468,7 @@ algorithm
       DAE.Mod mod;
       Prefix.Prefix pre;
       String n,id;
-      SCode.Element cl;
+      SCode.Element cl,cl2;
       SCode.Attributes attr;
       list<DAE.Subscript> idxs;
       InstDims inst_dims;
@@ -489,14 +489,14 @@ algorithm
     // e.g. Point p => Real p[3]; These must be handled separately since even if they do not
     // appear to be an array, they can. Therefore we need to collect
     // the full dimensionality and call instVar2
-    case (cache,env,ih,store,ci_state,mod,pre,n,(cl as SCode.CLASS(name = id)),attr as SCode.ATTR(variability = vt),pf,dims,idxs,inst_dims,impl,comment,_,graph,csets)
+    case (cache,env,ih,store,ci_state,mod,pre,n,SCode.CLASS(name = id),attr as SCode.ATTR(variability = vt),pf,dims,idxs,inst_dims,impl,comment,_,graph,csets)
       equation
         // Collect dimensions
         p1 = Absyn.IDENT(n);
         p1 = PrefixUtil.prefixPath(p1,pre);
         str = Absyn.pathString(p1);
         Error.updateCurrentComponent(str,info);
-        (cache, dims as (_ :: _),cl,type_mods) = InstUtil.getUsertypeDimensions(cache, env, ih, pre, cl, inst_dims, impl);
+        (cache, dims as (_ :: _),cl,type_mods) = InstUtil.getUsertypeDimensions(cache, env, ih, pre, inClass, inst_dims, impl);
 
         //type_mods = Mod.addEachIfNeeded(type_mods, dims);
         //mod = Mod.addEachIfNeeded(mod, inDimensionLst);
@@ -646,7 +646,7 @@ algorithm
       SCode.Comment comment;
       Option<DAE.VariableAttributes> dae_var_attr;
       DAE.Subscript dime;
-      DAE.Dimension dim;
+      DAE.Dimension dim,dim2;
       Env.Cache cache;
       SCode.Visibility vis;
       ConnectionGraph.ConnectionGraph graph;
@@ -824,11 +824,11 @@ algorithm
         // Try to deduce the dimension from the modifier.
         (dime as DAE.INDEX(DAE.ICONST(integer = deduced_dim))) =
           InstUtil.instWholeDimFromMod(dim, mod, n, info);
-        dim = DAE.DIM_INTEGER(deduced_dim);
+        dim2 = DAE.DIM_INTEGER(deduced_dim);
         inst_dims_1 = List.appendLastList(inst_dims, {dime});
         (cache,compenv,ih,store,dae,csets,ty,graph) =
-          instArray(cache,env,ih,store, ci_state, mod, pre, n, (cl,attr), pf, 1, dim, dims, idxs, inst_dims_1, impl, comment,info,graph, csets);
-        ty_1 = InstUtil.liftNonBasicTypes(ty,dim); // Do not lift types extending basic type, they are already array types.
+          instArray(cache,env,ih,store, ci_state, mod, pre, n, (cl,attr), pf, 1, dim2, dims, idxs, inst_dims_1, impl, comment,info,graph, csets);
+        ty_1 = InstUtil.liftNonBasicTypes(ty,dim2); // Do not lift types extending basic type, they are already array types.
       then
         (cache,compenv,ih,store,dae,csets,ty_1,graph);
 
@@ -841,11 +841,11 @@ algorithm
         // Try to deduce the dimension from the modifier.
         dime = InstUtil.instWholeDimFromMod(dim, mod, n, info);
         dime2 = InstUtil.makeNonExpSubscript(dime);
-        dim = Expression.subscriptDimension(dime);
+        dim2 = Expression.subscriptDimension(dime);
         inst_dims_1 = List.appendLastList(inst_dims, {dime2});
         (cache,compenv,ih,store,dae,csets,ty,graph) =
           instVar2(cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,dime2::idxs,inst_dims_1,impl,comment,info,graph,csets);
-        ty_1 = InstUtil.liftNonBasicTypes(ty,dim); // Do not lift types extending basic type, they are already array types.
+        ty_1 = InstUtil.liftNonBasicTypes(ty,dim2); // Do not lift types extending basic type, they are already array types.
       then
         (cache,compenv,ih,store,dae,csets,ty_1,graph);
 

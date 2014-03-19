@@ -1421,7 +1421,7 @@ algorithm
   matchcontinue (inExp,inVariableReplacements,inFuncTypeExpExpToBooleanOption)
     local
       DAE.ComponentRef cr;
-      DAE.Exp e,e1_1,e2_1,e1,e2,e3_1,e3;
+      DAE.Exp e,e_1,e1_1,e2_1,e1,e2,e3_1,e3;
       DAE.Type t,tp,ety;
       VariableReplacements repl;
       Option<FuncTypeExp_ExpToBoolean> cond;
@@ -1496,9 +1496,9 @@ algorithm
     case (DAE.CALL(path = path as Absyn.IDENT("pre"),expLst = {e as DAE.CREF(componentRef = _)},attr=attr),repl,cond)
       equation
         true = replaceExpCond(cond, e);
-        (DAE.UNARY(DAE.UMINUS(ety),e),true) = replaceExp(e, repl, cond);
+        (DAE.UNARY(DAE.UMINUS(ety),e_1),true) = replaceExp(e, repl, cond);
       then
-        (DAE.UNARY(DAE.UMINUS(ety),DAE.CALL(path,{e},attr)),true);
+        (DAE.UNARY(DAE.UMINUS(ety),DAE.CALL(path,{e_1},attr)),true);
     case ((e as DAE.CALL(path = path,expLst = expl,attr=attr)),repl,cond)
       equation
         true = replaceExpCond(cond, e);

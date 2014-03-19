@@ -6044,7 +6044,16 @@ end funArgUnbox;
 template unboxVariable(String varName, Type varType, Text &preExp, Text &varDecls)
 ::=
 match varType
-case T_STRING(__) case T_METATYPE(__) case T_METABOXED(__) then varName
+case T_STRING(__)
+case T_METATYPE(__)
+case T_METARECORD(__)
+case T_METAUNIONTYPE(__)
+case T_METALIST(__)
+case T_METAARRAY(__)
+case T_METAPOLYMORPHIC(__)
+case T_METAOPTION(__)
+case T_METATUPLE(__)
+case T_METABOXED(__) then varName
 case T_COMPLEX(complexClassType = RECORD(__)) then
   unboxRecord(varName, varType, &preExp, &varDecls)
 else
@@ -7901,6 +7910,9 @@ template daeExpCrefRhs(Exp exp, Context context, Text &preExp /*BUFP*/,
     '((modelica_fnptr)boxptr_<%crefFunctionName(cr)%>)'
   case CREF(componentRef = cr, ty = T_FUNCTION_REFERENCE_VAR(__)) then
     '((modelica_fnptr) omc_<%crefStr(cr)%>)'
+  case CREF(componentRef = cr as CREF_QUAL(subscriptLst={}, identType = T_METATYPE(ty=ty as T_METARECORD(__)), componentRef=cri as CREF_IDENT(__))) then
+    let offset = intAdd(findVarIndex(cri.ident,ty.fields),2)
+    '(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_<%cr.ident%>), <%offset%>)))'
   else daeExpCrefRhs2(exp, context, &preExp, &varDecls)
 end daeExpCrefRhs;
 
@@ -7979,7 +7991,6 @@ template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp /*BUFP*/,
           let spec1 = daeExpCrefRhsIndexSpec(crefSubs(cr), context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
           let &preExp += 'index_alloc_<%arrayType%>(&<%arrName%>, &<%spec1%>, &<%tmp%>);<%\n%>'
           tmp
-
   case ecr then
     error(sourceInfo(),'daeExpCrefRhs2: UNHANDLED EXPRESSION: <%ExpressionDump.printExpStr(ecr)%>')
 end daeExpCrefRhs2;
@@ -9633,7 +9644,6 @@ template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, DAE.
     case SOME(e) then '<%res%> = <%daeExp(e,context,&preRes,&varDeclsCaseInner)%>;<%\n%>')
   let _ = (elementVars(c.localDecls) |> var => varInit(var, "", 0, &varDeclsCaseInner, &preExpCaseInner, &varFrees /*BUFF*/))
   <<<%match ty case MATCH(switch=SOME((n,_,ea))) then switchIndex(listNth(c.patterns,n),ea) else 'case <%i0%>'%>: {
-
     <%varDeclsCaseInner%>
     <%preExpCaseInner%>
     <%patternMatching%>
@@ -10031,15 +10041,21 @@ end mmcVarType;
 template mmcTypeShort(DAE.Type type)
 ::=
   match type
-  case T_INTEGER(__)                     then "integer"
+  case T_INTEGER(__)                 then "integer"
   case T_REAL(__)                    then "real"
   case T_STRING(__)                  then "string"
   case T_BOOL(__)                    then "integer"
   case T_ENUMERATION(__)             then "integer"
   case T_ARRAY(__)                   then "array"
-  case T_METATYPE(__) case T_METABOXED(__)                then "metatype"
+  case T_METAUNIONTYPE(__)
+  case T_METATYPE(__)
+  case T_METALIST(__)
+  case T_METAARRAY(__)
+  case T_METAPOLYMORPHIC(__)
+  case T_METAOPTION(__)
+  case T_METATUPLE(__)
+  case T_METABOXED(__)               then "metatype"
   case T_FUNCTION_REFERENCE_VAR(__)  then "fnptr"
-
 
   case T_COMPLEX(__)                 then 'mmcTypeShort:ERROR T_COMPLEX'
   else error(sourceInfo(), 'mmcTypeShort:ERROR <%unparseType(type)%>')
@@ -10332,7 +10348,7 @@ template patternMatch(Pattern pat, Text rhs, Text onPatternFail, Text &varDecls,
     >>
   case p as PAT_AS(ty = SOME(et)) then
     let &unboxBuf = buffer ""
-    let &assignments += '_<%p.id%> = <%unboxVariable(rhs, et, &unboxBuf, &varDecls)%>;<%\n%>'
+    let &assignments += '_<%p.id%> = <%unboxVariable(rhs, et, &unboxBuf, &varDecls)%>  /* pattern as ty=<%unparseType(et)%> */;<%\n%>'
     <<<%&unboxBuf%>
     <%patternMatch(p.pat,rhs,onPatternFail,&varDecls,&assignments)%>
     >>

@@ -401,15 +401,15 @@ algorithm
       SCode.FunctionRestriction funcRest;
 
     // normal functions
-    case (cache,env,ih,mod,pre,(c as SCode.CLASS(classDef=cd,partialPrefix = partialPrefix, name = n,restriction = SCode.R_FUNCTION(funcRest),info = info,cmt=cmt)),inst_dims,_)
+    case (cache,env,ih,mod,pre,SCode.CLASS(classDef=cd,partialPrefix = partialPrefix, name = n,restriction = SCode.R_FUNCTION(funcRest),info = info,cmt=cmt),inst_dims,_)
       equation
         false = SCode.isExternalFunctionRestriction(funcRest);
         isImpure = SCode.isImpureFunctionRestriction(funcRest);
 
         // if we're not MetaModelica set it to non-partial
         c = Util.if_(Config.acceptMetaModelicaGrammar(),
-                     c,
-                     SCode.setClassPartialPrefix(SCode.NOT_PARTIAL(), c));
+                     inClass,
+                     SCode.setClassPartialPrefix(SCode.NOT_PARTIAL(), inClass));
 
         (cache,cenv,ih,_,DAE.DAE(daeElts),_,ty,st,_,_) =
           Inst.instClass(cache, env, ih, UnitAbsynBuilder.emptyInstStore(), mod, pre,

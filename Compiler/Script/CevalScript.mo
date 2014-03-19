@@ -6655,8 +6655,8 @@ algorithm
       Absyn.Path path;
     case (Values.CODE(Absyn.C_TYPENAME(path as Absyn.IDENT(_) /* We only want to lookup idents in the symboltable; also speeds up e.g. simulate(Modelica.A.B.C) so we do not instantiate all classes */)),_)
       equation
-        (_,_,_,DAE.VALBOUND(valBound=Values.CODE(A=Absyn.C_TYPENAME(path=path))),_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(), env, ComponentReference.pathToCref(path));
-      then Values.CODE(Absyn.C_TYPENAME(path));
+        (_,_,_,DAE.VALBOUND(valBound=res as Values.CODE(A=Absyn.C_TYPENAME(path=_))),_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(), env, ComponentReference.pathToCref(path));
+      then res;
     else val;
   end matchcontinue;
 end evalCodeTypeName;

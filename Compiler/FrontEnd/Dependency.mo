@@ -200,14 +200,14 @@ protected function getTotalProgramDep2 "help function to getTotalProgramDep"
       dep = getTotalProgramDepLst(dep,v,p,env);
      then dep;
      case(dep, Absyn.IDENT(_),p,_) then dep;
-     case(dep as AbsynDep.DEPENDS(classUses,_),className  as Absyn.QUALIFIED(_,_),p,_) equation
-       v = AbsynDep.avlTreeGet(classUses,className);
+     case(dep as AbsynDep.DEPENDS(classUses,_),Absyn.QUALIFIED(_,_),p,_) equation
+       v = AbsynDep.avlTreeGet(classUses,iclassName);
        dep = getTotalProgramDepLst(dep,v,p,env);
-       className = Absyn.stripLast(className);
+       className = Absyn.stripLast(iclassName);
        dep = getTotalProgramDep(dep,className,p,env);
      then dep;
-     case(dep as AbsynDep.DEPENDS(classUses,_),className  as Absyn.QUALIFIED(_,_),p,_) equation
-       className = Absyn.stripLast(className);
+     case(dep as AbsynDep.DEPENDS(classUses,_),Absyn.QUALIFIED(_,_),p,_) equation
+       className = Absyn.stripLast(iclassName);
        dep = getTotalProgramDep(dep,className,p,env);
      then dep;
    end matchcontinue;

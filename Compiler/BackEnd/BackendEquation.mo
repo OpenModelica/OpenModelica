@@ -2593,7 +2593,7 @@ public function derivativeEquation
 algorithm
   (cr,dcr,e,de,negate) := match (eqn)
       local
-        DAE.Exp ne;
+        DAE.Exp ne,ne2;
       // a = der(b);
       case (BackendDAE.EQUATION(exp=e as DAE.CREF(componentRef = dcr),scalar=de as  DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})))
         then (cr,dcr,e,de,false);
@@ -2640,24 +2640,24 @@ algorithm
       case (BackendDAE.EQUATION(exp=e as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = dcr)),scalar=de as  DAE.UNARY(DAE.UMINUS(_),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}))))
         equation
           ne = Expression.negate(e);
-          de = Expression.negate(de);
-        then (cr,dcr,ne,de,false);
+          ne2 = Expression.negate(de);
+        then (cr,dcr,ne,ne2,false);
       case (BackendDAE.EQUATION(exp=e as DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(componentRef = dcr)),scalar=de as  DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}))))
         equation
           ne = Expression.negate(e);
-          de = Expression.negate(de);
-        then (cr,dcr,ne,de,false);
+          ne2 = Expression.negate(de);
+        then (cr,dcr,ne,ne2,false);
       // -der(a) = -b;
       case (BackendDAE.EQUATION(exp=de as  DAE.UNARY(DAE.UMINUS(_),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})),scalar=e as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = dcr))))
         equation
           ne = Expression.negate(e);
-          de = Expression.negate(de);
-        then (cr,dcr,ne,de,false);
+          ne2 = Expression.negate(de);
+        then (cr,dcr,ne,ne2,false);
       case (BackendDAE.EQUATION(exp=de as  DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})),scalar=e as DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(componentRef = dcr))))
         equation
           ne = Expression.negate(e);
-          de = Expression.negate(de);
-        then (cr,dcr,ne,de,false);
+          ne2 = Expression.negate(de);
+        then (cr,dcr,ne,ne2,false);
   end match;
 end derivativeEquation;
 

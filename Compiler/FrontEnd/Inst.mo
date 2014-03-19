@@ -636,11 +636,11 @@ algorithm
 
     // adrpo: ONLY when running checkModel we should be able to instantiate partial classes
     case (cache,env,ih,store,mod,pre,
-          (c as SCode.CLASS(name=n, partialPrefix = SCode.PARTIAL(), info = info)),
+          SCode.CLASS(name=n, partialPrefix = SCode.PARTIAL(), info = info),
           inst_dims,impl,callscope,graph,_)
       equation
         true = Flags.getConfigBool(Flags.CHECK_MODEL);
-        c = SCode.setClassPartialPrefix(SCode.NOT_PARTIAL(), c);
+        c = SCode.setClassPartialPrefix(SCode.NOT_PARTIAL(), inClass);
         // add a warning
         Error.addSourceMessage(Error.INST_PARTIAL_CLASS_CHECK_MODEL_WARNING, {n}, info);
         // call normal instantiation
@@ -864,13 +864,12 @@ algorithm
         (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph);
 
     // if the class is inner or innerouter we need to instantiate the inner!
-    case (_,_,_,_,_,_,_,c as SCode.CLASS(name = n, prefixes = SCode.PREFIXES(innerOuter = io)),_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,SCode.CLASS(name = n, prefixes = SCode.PREFIXES(innerOuter = io)),_,_,_,_,_,_,_)
       equation
         true = boolOr(Absyn.isInnerOuter(io), Absyn.isOnlyOuter(io));
 
         // lookup in IH
-        InnerOuter.INST_INNER(
-           innerElement = SOME(c)) =
+        InnerOuter.INST_INNER(innerElement = SOME(c)) =
           InnerOuter.lookupInnerVar(inCache, inEnv, inIH, inPrefix, n, io);
 
         (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph) =
@@ -3681,7 +3680,7 @@ algorithm
       SCode.Comment comment;
       Prefix.Prefix pre;
       SCode.Attributes attr;
-      SCode.Element cls, comp;
+      SCode.Element cls, comp, comp2;
       SCode.Final final_prefix;
       SCode.ConnectorType ct;
       SCode.Mod m;
@@ -3728,7 +3727,7 @@ algorithm
     // modifications and add the variable to the current frame in the
     // environment. Then instantiate the class with an extended prefix.
     case (cache, env, ih, store, mods, pre, ci_state,
-        ((comp as SCode.COMPONENT(
+        ((SCode.COMPONENT(
           name = name,
           prefixes = prefixes as SCode.PREFIXES(
             visibility = vis,
@@ -3829,7 +3828,7 @@ algorithm
         // Debug.fprintln(Flags.INST_TRACE, "INST ELEMENT: name: " +& name +& " mod: " +& Mod.printModStr(mod));
 
         // Apply redeclaration modifier to component
-        (cache, env2, ih, comp as SCode.COMPONENT(name,
+        (cache, env2, ih, SCode.COMPONENT(name,
           prefixes as SCode.PREFIXES(innerOuter = io),
           attr as SCode.ATTR(arrayDims = ad, variability = vt, direction = dir),
           Absyn.TPATH(t, _), m, comment, cond, _), mod_1)
@@ -4467,7 +4466,7 @@ algorithm
     //    (cache,env,ih,csets,updatedComps);
 
     // if we have a redeclare for a component
-    case (cache,env,ih,_,mods as
+    case (cache,env,ih,_,
         DAE.REDECL(_, _, {
          (compNew as SCode.COMPONENT(
              name = name,
@@ -4531,8 +4530,7 @@ algorithm
         true = stringEq(name, id);
         // fetch the original class!
         (cl, _) = Lookup.lookupClassLocal(env, name);
-        compNew = SCode.mergeWithOriginal(compNew, cl);
-        env = Env.updateFrameC(env, compNew, env);
+        env = Env.updateFrameC(env, SCode.mergeWithOriginal(compNew, cl), env);
         updatedComps = getUpdatedCompsHashTable(inUpdatedComps);
         updatedComps = BaseHashTable.add((cref,0),updatedComps);
       then

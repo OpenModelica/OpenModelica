@@ -847,8 +847,7 @@ algorithm
       equation
         DAE.DIM_UNKNOWN() = listGet(dims,n);
         exps = List.map1(exps,addCast,tp);
-        e = Expression.makeBuiltinCall("cat",e::exps,tp);
-      then e;
+      then Expression.makeBuiltinCall("cat",e::exps,tp);
 
     // expression already has a specified cast type.
     case(_,e,_)

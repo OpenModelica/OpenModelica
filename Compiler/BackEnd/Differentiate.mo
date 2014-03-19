@@ -1103,7 +1103,7 @@ algorithm
         (res, outFunctionTree);
 
    // case for array without expanding the array
-   case ((e as DAE.CREF(componentRef = cr,ty=tp as DAE.T_ARRAY(dims=_))), _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), BackendDAE.DIFFERENTAION_FUNCTION(), _)
+   case (DAE.CREF(componentRef = cr,ty=tp as DAE.T_ARRAY(dims=_)), _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), BackendDAE.DIFFERENTAION_FUNCTION(), _)
       equation
         //se1 = ExpressionDump.printExpStr(e);
         //print("\nExp-Cref\n simple cref: " +& se1);
@@ -2060,13 +2060,13 @@ algorithm
         fail();
         
     // try to inline
-    case (e as DAE.CALL(path = path,expLst = expl,attr=DAE.CALL_ATTR(tuple_=b,builtin=false,isImpure=isImpure,ty=ty,tailCall=tc)), _, _, _, _)
+    case (DAE.CALL(path = path,expLst = expl,attr=DAE.CALL_ATTR(tuple_=b,builtin=false,isImpure=isImpure,ty=ty,tailCall=tc)), _, _, _, _)
       equation
         //s1 = ExpressionDump.printExpStr(e);
         //print("\nExp-CALL\n build-funcs force-inline: " +& s1);
         failure(BackendDAE.DIFF_FULL_JACOBIAN() = inDiffType);
         failure(BackendDAE.GENERIC_GRADIENT() = inDiffType);
-        (e,_,true) = Inline.forceInlineExp(e,(SOME(inFunctionTree),{DAE.NORM_INLINE(),DAE.NO_INLINE()}),DAE.emptyElementSource);
+        (e,_,true) = Inline.forceInlineExp(inExp,(SOME(inFunctionTree),{DAE.NORM_INLINE(),DAE.NO_INLINE()}),DAE.emptyElementSource);
         e = Expression.addNoEventToRelations(e);
         (e, functions) = differentiateExp(e, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
       then
@@ -2311,7 +2311,7 @@ algorithm
   local
     BackendDAE.Variables timevars;
     list<DAE.Element> rest, vars, newVars, elementsNoDer;
-    DAE.Element var;
+    DAE.Element var1,var;
     DAE.ComponentRef cref, dcref;
     list<DAE.ComponentRef> crefLst;
     DAE.Exp e;
@@ -2352,13 +2352,13 @@ algorithm
         (vars, functions, elementsNoDer, blst) = differentiateElementVars(rest, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, inElementsDer, vars, blst);
       then (vars, functions, elementsNoDer, blst);
 
-    case((var as DAE.VAR(componentRef = cref, ty=tp, binding=SOME(binding)))::rest, _, _, _, _, _, _, _)
+    case((var1 as DAE.VAR(componentRef = cref, ty=tp, binding=SOME(binding)))::rest, _, _, _, _, _, _, _)
       equation
         true = Types.isRealOrSubTypeReal(tp);
         e = Expression.crefExp(cref);
         (e, functions) = differentiateCrefs(e, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         dcref = Expression.expCref(e);
-        var = DAEUtil.replaceCrefInVar(dcref, var);
+        var = DAEUtil.replaceCrefInVar(dcref, var1);
         (dbinding, functions) = differentiateExp(binding, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         var = DAEUtil.replaceBindungInVar(dbinding, var);
         vars = listAppend(inElementsDer, {var});
@@ -2366,13 +2366,13 @@ algorithm
         (vars, functions, elementsNoDer, blst) = differentiateElementVars(rest, inDiffwrtCref, inInputData, inDiffType, functions, vars, inElementsNoDer, blst);
       then (vars, functions, elementsNoDer, blst);
     
-    case((var as DAE.VAR(componentRef = cref, ty=tp))::rest, _, _, _, _, _, _, _)
+    case((var1 as DAE.VAR(componentRef = cref, ty=tp))::rest, _, _, _, _, _, _, _)
       equation
         true = Types.isRealOrSubTypeReal(tp);
         e = Expression.crefExp(cref);
         (e, functions) = differentiateCrefs(e, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         dcref = Expression.expCref(e);
-        var = DAEUtil.replaceCrefInVar(dcref, var);
+        var = DAEUtil.replaceCrefInVar(dcref, var1);
         vars = listAppend(inElementsDer, {var});
         blst = listAppend(inBooleanLst, {true});
         (vars, functions, elementsNoDer, blst) = differentiateElementVars(rest, inDiffwrtCref, inInputData, inDiffType, functions, vars, inElementsNoDer, blst);

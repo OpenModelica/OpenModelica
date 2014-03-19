@@ -1493,6 +1493,7 @@ public uniontype Pattern "Patterns deconstruct expressions"
     Absyn.Path name;
     Integer index;
     list<Pattern> patterns;
+    list<Var> fields; // Needed to be able to bind a variable to the fields
     Boolean knownSingleton "The runtime system (dynload), does not know if the value is a singleton. But optimizations are safe if this is true.";
   end PAT_CALL;
   record PAT_CALL_NAMED "RECORD(pat1,...,patn); all patterns are named"

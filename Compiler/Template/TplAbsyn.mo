@@ -5679,19 +5679,19 @@ algorithm
         typesEqualList(otaLst, otbLst, tyVars, setTyVars, astDefs);
 
     //concrete named type with PathIdent that is not a type variable
-    case ( ty as NAMED_TYPE(name = PATH_IDENT(_,_)), tyConcrete, _, setTyVars, astDefs )
+    case ( NAMED_TYPE(name = PATH_IDENT(_,_)), tyConcrete, _, setTyVars, astDefs )
       equation
-        ty = deAliasedType(ty, astDefs);
+        ty = deAliasedType(inType, astDefs);
         tyConcrete = deAliasedType(tyConcrete, astDefs);
         typesEqualConcrete(ty, tyConcrete, astDefs);
       then
         setTyVars;
 
     //concrete named type with Ident that is not a type variable
-    case ( ty as NAMED_TYPE(name = IDENT(tid)), tyConcrete, tyVars, setTyVars, astDefs )
+    case ( NAMED_TYPE(name = IDENT(tid)), tyConcrete, tyVars, setTyVars, astDefs )
       equation
         false = listMember(tid, tyVars);
-        ty = deAliasedType(ty, astDefs);
+        ty = deAliasedType(inType, astDefs);
         tyConcrete = deAliasedType(tyConcrete, astDefs);
         typesEqualConcrete(ty, tyConcrete, astDefs);
       then
