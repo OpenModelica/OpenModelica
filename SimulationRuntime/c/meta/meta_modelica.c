@@ -817,6 +817,31 @@ char* getRecordElement(modelica_metatype arr, modelica_integer i) {
   return anyStringBuf;
 }
 
+/*
+ * Used by OMEdit for debugging.
+ * Returns the List Item as an array e.g ^done,omc_listitem={name, displayName, type}
+ */
+char* getListItem(modelica_metatype lst, modelica_integer i) {
+  /* get the item from the list */
+  void* name = (void*)mmc_gdb_listGet(0, lst, i);
+  char *displayName = NULL, *type = NULL, *formatString = NULL;
+
+  /* get the type of the element */
+  getTypeOfAny(name);
+  type = malloc(strlen(anyStringBuf) + 1);
+  strcpy(type, anyStringBuf);
+
+  /* format the anyStringBuf as array to return it */
+  formatString = "^done,omc_listitem={name=\"%ld\",displayName=\"[%d]\",type=\"%s\"}";
+  checkAnyStringBufSize(0, strlen(name) + strlen(type) + strlen(formatString));
+  sprintf(anyStringBuf, formatString, (long (*) (long, long, long))name, i, type);
+
+  /* free the memory */
+  free(type);
+
+  return anyStringBuf;
+}
+
 static inline unsigned long djb2_hash_iter(const unsigned char *str /* data; not null-terminated */, int len, unsigned long hash /* start at 5381 */)
 {
   int i;
