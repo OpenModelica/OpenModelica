@@ -12,9 +12,13 @@ match program
   case PROGRAM(classes = {}) then ""
   case PROGRAM(__) then
     let within_str = dumpWithin(within_)
-    let cls_str = (classes |> cls => dumpClass(cls, "", "", "", "") ;separator=";\n\n")
+    let cls_str = (classes |> cls => dumpClass(cls) ;separator=";\n\n")
     '<%within_str%><%cls_str%>;'
 end dump;
+
+template dumpClass(Absyn.Class cls)
+::= dumpClassElement(cls, "", "", "" , "")
+end dumpClass;
 
 template dumpWithin(Absyn.Within within)
 ::=
@@ -38,7 +42,7 @@ match cls
     '<%pref_str%><%res_str%>'
 end dumpClassHeader;
     
-template dumpClass(Absyn.Class cls, String final_str, 
+template dumpClassElement(Absyn.Class cls, String final_str, 
     String redecl_str, String repl_str, String io_str)
 ::=
 match cls
@@ -46,7 +50,7 @@ match cls
     let header_str = dumpClassHeader(cls, final_str, redecl_str, repl_str, io_str)
     let body_str = dumpClassDef(body, name)
     '<%header_str%><%body_str%>'
-end dumpClass;
+end dumpClassElement;
 
 template dumpClassDef(Absyn.ClassDef cdef, String cls_name)
 ::=
@@ -384,7 +388,7 @@ template dumpElementSpec(Absyn.ElementSpec elem, String final, String redecl,
     String repl, String io)
 ::=
 match elem
-  case CLASSDEF(__) then dumpClass(class_, final, redecl, repl, io)
+  case CLASSDEF(__) then dumpClassElement(class_, final, redecl, repl, io)
   case EXTENDS(__) then
     let bc_str = dumpPath(path)
     let args_str = (elementArg |> earg => dumpElementArg(earg) ;separator=", ")
