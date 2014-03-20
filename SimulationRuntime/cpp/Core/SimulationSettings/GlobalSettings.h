@@ -1,6 +1,9 @@
 #pragma once
 
+#include <boost/archive/xml_oarchive.hpp>
+#include <boost/archive/xml_iarchive.hpp>
 
+#include <fstream>
 
 class  GlobalSettings : public IGlobalSettings
 {

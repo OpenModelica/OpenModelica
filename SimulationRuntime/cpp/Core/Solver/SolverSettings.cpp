@@ -12,7 +12,8 @@ SolverSettings::SolverSettings( IGlobalSettings* globalSettings)
   , _endTimeTol  (1e-7)
   ,_dRtol(1e-6)
   ,_dAtol(1e-6)
-
+  ,_denseOutput(false)
+  ,_eventOutput(false)
 {
     _globalSettings = globalSettings ;
 }

@@ -1,7 +1,7 @@
 #pragma once
 
-class IAlgLoopSolver;
-class IAlgLoop;
+#include <System/IAlgLoop.h>
+#include <Solver/IAlgLoopSolver.h>
 
 /*****************************************************************************/
 /**

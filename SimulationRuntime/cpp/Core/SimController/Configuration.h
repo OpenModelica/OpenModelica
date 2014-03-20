@@ -1,6 +1,10 @@
 #pragma once
 #include <Policies/FactoryPolicy.h>
 
+#ifdef ANALYZATION_MODE
+#include <SimulationSettings/ISimControllerSettings.h>
+#endif
+
 class Configuration :  public ConfigurationPolicy
 {
 public:

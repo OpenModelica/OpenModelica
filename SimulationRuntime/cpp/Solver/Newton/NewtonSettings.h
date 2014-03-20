@@ -6,6 +6,8 @@ class NewtonSettings :public INonLinSolverSettings
 {
 public:
     NewtonSettings();
+
+    virtual ~NewtonSettings();
         /*max. Anzahl an Newtonititerationen pro Schritt (default: 25)*/
     virtual long int    getNewtMax();
     virtual void        setNewtMax(long int);

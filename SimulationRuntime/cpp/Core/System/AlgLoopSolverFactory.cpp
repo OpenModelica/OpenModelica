@@ -2,13 +2,19 @@
 #include "stdafx.h"
 #include <System/AlgLoopSolverFactory.h>
 
-
-
+#ifdef ANALYZATION_MODE
+AlgLoopSolverFactory::AlgLoopSolverFactory(IGlobalSettings* global_settings,PATH library_path,PATH modelicasystem_path)
+     :StaticNonLinSolverOMCFactory<OMCFactory>(library_path,modelicasystem_path,library_path)
+     ,_global_settings(global_settings)
+{
+}
+#else
 AlgLoopSolverFactory::AlgLoopSolverFactory(IGlobalSettings* global_settings,PATH library_path,PATH modelicasystem_path)
      :NonLinSolverPolicy(library_path,modelicasystem_path,library_path)
      ,_global_settings(global_settings)
 {
 }
+#endif
 
 AlgLoopSolverFactory::~AlgLoopSolverFactory()
 {

@@ -1,3 +1,7 @@
+#pragma once
+
+#include <ObjectFactory.h>
+#include <Solver/ISolver.h>
 
 /*
 Policy class to create solver settings object
@@ -18,12 +22,14 @@ public:
     {
                
     }
-    ~SolverSettingsOMCFactory()
+    
+	virtual ~SolverSettingsOMCFactory()
     {
        delete _solver_type_map;
         ObjectFactory<CreationPolicy>::_factory->UnloadAllLibs();
     }    
-    boost::shared_ptr<ISolverSettings> createSolverSettings(string solvername,boost::shared_ptr<IGlobalSettings> globalSettings)
+    
+	virtual boost::shared_ptr<ISolverSettings> createSolverSettings(string solvername,boost::shared_ptr<IGlobalSettings> globalSettings)
     {
 
         string solver_settings_key;
@@ -50,7 +56,7 @@ public:
         else if((solvername.compare("cvode")==0)||(solvername.compare("dassl")==0))
         {
             solvername = "cvode"; //workound for dassl, using cvode instead
-      PATH cvode_path = ObjectFactory<CreationPolicy>::_library_path;
+			PATH cvode_path = ObjectFactory<CreationPolicy>::_library_path;
             PATH cvode_name(CVODE_LIB);
             cvode_path/=cvode_name;
             LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(cvode_path.string(),*_solver_type_map);
@@ -58,8 +64,7 @@ public:
             {
                 throw std::runtime_error("Failed loading CVode solver library!");
             }
-            
-      solver_settings_key.assign("extension_export_cvode");
+            solver_settings_key.assign("extension_export_cvode");
         }
         else
             throw std::invalid_argument("Selected Solver is not available");

@@ -7,23 +7,25 @@
 #define LOADER_ERROR_FUNC_NOT_FOUND         ( -4 )
 typedef int LOADERRESULT;
 
+#include <map>
 #include <SimController/ISimController.h>
 class OMCFactory
 {
     public:
-    OMCFactory();
+		OMCFactory();
         OMCFactory(PATH library_path, PATH modelicasystem_path);
+        virtual ~OMCFactory();
         void UnloadAllLibs(void);
         LOADERRESULT LoadLibrary(string libName,type_map& current_map);
         LOADERRESULT UnloadLibrary(shared_library lib);
 
-       std::pair<boost::shared_ptr<ISimController>,SimSettings> createSimulation(int argc,  const char* argv[]);
+        virtual std::pair<boost::shared_ptr<ISimController>,SimSettings> createSimulation(int argc,  const char* argv[]);
 
-    private:
+    protected:
 
         SimSettings ReadSimulationParameter(int argc, const char* argv[]); 
         boost::shared_ptr<ISimController> _simController;
-        map<string,shared_library> _modules;
+        std::map<string,shared_library> _modules;
         PATH _library_path;
         PATH _modelicasystem_path;
 };

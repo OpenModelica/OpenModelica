@@ -17,6 +17,10 @@ Encapsulation of general solver settings.
 /*****************************************************************************
 Copyright (c) 2008, OSMC
 *****************************************************************************/
+#if defined(ANALYZATION_MODE)
+#undef BOOST_EXTENSION_SOLVERSETTINGS_DECL
+#define BOOST_EXTENSION_SOLVERSETTINGS_DECL
+#endif
 class BOOST_EXTENSION_SOLVERSETTINGS_DECL SolverSettings : public ISolverSettings
 {
 public:

@@ -1,12 +1,10 @@
 #pragma once
 
-
-
-
-
 /**
 Klasse zur Kapselung der Parameter (Einstellungen) für den SimManagerSettings.
 */
+
+#include <Math/Constants.h>
 
 class ISimControllerSettings
 {

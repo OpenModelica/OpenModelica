@@ -1,5 +1,10 @@
 #pragma once
 
+#ifdef ANALYZATION_MODE
+#include <sstream>
+#include <vector>
+#endif
+
 // Output
 #include <fstream>
 using std::ios;
@@ -29,14 +34,14 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_2> > value_type_dv
     if(_output_stream.is_open())
      _output_stream.close();
   }
-  void  init(string output_path,string file_name)
+  void  init(std::string output_path,std::string file_name)
   {
       _file_name = file_name;
       _output_path = output_path;
       if(_output_stream.is_open())
           _output_stream.close();
-       stringstream res_output_path;
-       res_output_path <<   output_path  <<file_name;
+      std::stringstream res_output_path;
+      res_output_path <<   output_path  <<file_name;
       _output_stream.open(res_output_path.str().c_str(), ios::out);
   
   }
@@ -57,22 +62,27 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_2> > value_type_dv
         //not supported for file output
 
     }
-    void read(ublas::matrix<double>& R,vector<unsigned int>& indices)
+    void read(ublas::matrix<double>& R,std::vector<unsigned int>& indices)
     {
         //not supported for file output
 
   }
 
 
-  void write(const vector<string>& s_list)
+  void write(const std::vector<std::string>& s_list)
   {
-    string s;
+    std::string s;
     _output_stream<<"\"time\""<<SEPERATOR;
-    BOOST_FOREACH(s, s_list)
-    {
-      _output_stream<<"\""<<s<<"\""<<SEPERATOR;
 
-    }
+    for(std::vector<std::string>::const_iterator it = s_list.begin(); it != s_list.end(); ++it)
+    	_output_stream<<"\""<<(*it)<<"\""<<SEPERATOR;
+
+//    BOOST_FOREACH(s, s_list)
+//    {
+//      _output_stream<<"\""<<s<<"\""<<SEPERATOR;
+//
+//    }
+
     _output_stream<<std::endl;
 
   }
@@ -86,18 +96,26 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_2> > value_type_dv
   {
     _output_stream<<time<<SEPERATOR;
     double v,v2;
-    BOOST_FOREACH(v, v_list)
-    {
-      _output_stream<<v<<SEPERATOR;
-    }
-    BOOST_FOREACH(v2, v2_list)
-    {
-      _output_stream<<v2<<SEPERATOR;
-    }
+
+    for(typename value_type_v::const_iterator it = v_list.begin(); it != v_list.end(); ++it)
+    	_output_stream<<(*it)<<SEPERATOR;
+
+    for(typename value_type_dv::const_iterator it = v2_list.begin(); it != v2_list.end(); ++it)
+    	_output_stream<<(*it)<<SEPERATOR;
+
+//    BOOST_FOREACH(v, v_list)
+//    {
+//      _output_stream<<v<<SEPERATOR;
+//    }
+//    BOOST_FOREACH(v2, v2_list)
+//    {
+//      _output_stream<<v2<<SEPERATOR;
+//    }
+
     _output_stream<<std::endl;
   }
 
-  void getTime(vector<double>& time)
+  void getTime(std::vector<double>& time)
   {
 
     //not supported for file output
@@ -117,7 +135,7 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_2> > value_type_dv
 protected:
   std::fstream _output_stream;
   unsigned int    _curser_position;       ///< Controls current Curser-Position
-  string _output_path;
-  string _file_name;
+  std::string _output_path;
+  std::string _file_name;
 
 };

@@ -1,5 +1,9 @@
 #pragma once
 
+#include <ObjectFactory.h>
+#include <Solver/ISolver.h>
+#include <SimulationSettings/ISettingsFactory.h>
+
 /*
 Policy class to create solver object
 */
@@ -13,41 +17,20 @@ public:
     {
          _solver_type_map = new type_map();
          _settings_type_map = new type_map();
-        PATH settingsfactory_path = ObjectFactory<CreationPolicy>::_library_path;
-        PATH settingsfactory_name(SETTINGSFACTORY_LIB);
-        settingsfactory_path/=settingsfactory_name;
-         
-        LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(settingsfactory_path.string(),*_settings_type_map);
-        
-        if (result != LOADER_SUCCESS)
-        {
-            
-            throw std::runtime_error("Failed loading SimulationSettings library!");
-        }
-        
-        PATH solver_path = ObjectFactory<CreationPolicy>::_library_path;
-        PATH solver_name(SOLVER_LIB);
-        solver_path/=solver_name;
-        
-        result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(solver_path.string(),*_solver_type_map);
-    
-        if (result != LOADER_SUCCESS)
-        {
-            throw std::runtime_error("Failed loading Solver default implementation library!");
-        }
-
+#ifndef ANALYZATION_MODE
+         initializeLibraries(library_path,modelicasystem_path,config_path);
+#endif
     }
-    
-    ~SolverOMCFactory()
+
+    virtual ~SolverOMCFactory()
     {
       delete _solver_type_map;
       delete _settings_type_map;
         ObjectFactory<CreationPolicy>::_factory->UnloadAllLibs();
     }
 
-    boost::shared_ptr<ISettingsFactory> createSettingsFactory()
+    virtual boost::shared_ptr<ISettingsFactory> createSettingsFactory()
     {
-        
           std::map<std::string, factory<ISettingsFactory,PATH,PATH,PATH> >::iterator iter;
           std::map<std::string, factory<ISettingsFactory,PATH,PATH,PATH> >& factories(_settings_type_map->get());
           iter = factories.find("SettingsFactory");
@@ -56,10 +39,11 @@ public:
                 throw std::invalid_argument("No such settings library");
             }
          boost::shared_ptr<ISettingsFactory>  settings_factory = boost::shared_ptr<ISettingsFactory>(iter->second.create(ObjectFactory<CreationPolicy>::_library_path,ObjectFactory<CreationPolicy>::_modelicasystem_path,ObjectFactory<CreationPolicy>::_config_path));
+
          return settings_factory;
     }
 
-    boost::shared_ptr<ISolver> createSolver(IMixedSystem* system, string solvername, boost::shared_ptr<ISolverSettings> solver_settings)
+    virtual boost::shared_ptr<ISolver> createSolver(IMixedSystem* system, string solvername, boost::shared_ptr<ISolverSettings> solver_settings)
     {
         
         if(solvername.compare("euler")==0)
@@ -84,7 +68,7 @@ public:
         else if((solvername.compare("cvode")==0)||(solvername.compare("dassl")==0))
         {
             solvername = "cvode"; //workound for dassl, using cvode instead
-      PATH cvode_path = ObjectFactory<CreationPolicy>::_library_path;
+			PATH cvode_path = ObjectFactory<CreationPolicy>::_library_path;
             PATH cvode_name(CVODE_LIB);
             cvode_path/=cvode_name;
             LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(cvode_path.string(),*_solver_type_map);
@@ -105,11 +89,37 @@ public:
                 throw std::invalid_argument("No such Solver " + solver_key);
         }
         
-        boost::shared_ptr<ISolver> solver = boost::shared_ptr<ISolver>(iter->second.create(system,solver_settings.get()));   ;
+        boost::shared_ptr<ISolver> solver = boost::shared_ptr<ISolver>(iter->second.create(system,solver_settings.get()));
        
         return solver;
     }
- private:
+protected:
+    virtual void initializeLibraries(PATH library_path,PATH modelicasystem_path,PATH config_path)
+    {
+        PATH settingsfactory_path = ObjectFactory<CreationPolicy>::_library_path;
+        PATH settingsfactory_name(SETTINGSFACTORY_LIB);
+        settingsfactory_path/=settingsfactory_name;
+
+        LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(settingsfactory_path.string(),*_settings_type_map);
+
+        if (result != LOADER_SUCCESS)
+        {
+
+            throw std::runtime_error("Failed loading SimulationSettings library!");
+        }
+
+        PATH solver_path = ObjectFactory<CreationPolicy>::_library_path;
+        PATH solver_name(SOLVER_LIB);
+        solver_path/=solver_name;
+
+        result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(solver_path.string(),*_solver_type_map);
+
+        if (result != LOADER_SUCCESS)
+        {
+            throw std::runtime_error("Failed loading Solver default implementation library!");
+        }
+    }
+
     type_map* _solver_type_map;
-     type_map* _settings_type_map;
+    type_map* _settings_type_map;
 };

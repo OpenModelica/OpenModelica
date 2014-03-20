@@ -355,7 +355,7 @@ void Cvode::CVodeCore()
     if(_zeroFound || restart)
     {
     restart=false;
-      //Zustände nach der Ereignisbehandlung aufnehmen      
+      //Zustände nach der Ereignisbehandlung aufnehmen
       if (_cvodesettings->getEventOutput())
         writeToFile(0, _tCurrent, _h);
       
@@ -546,7 +546,7 @@ void Cvode::writeSimulationInfo()
   //  << "Solver-Status:                            " << _idid << "\n\n";
 }
 
-int Cvode::check_flag(void *flagvalue, char *funcname, int opt)
+int Cvode::check_flag(void *flagvalue, const char *funcname, int opt)
 {
   int *errflag;
 

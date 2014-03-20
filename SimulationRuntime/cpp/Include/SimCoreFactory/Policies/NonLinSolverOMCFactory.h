@@ -1,5 +1,7 @@
 #pragma once
 
+#include <ObjectFactory.h>
+
 /*
 Policy class to create nonlin solver object
 */
@@ -20,7 +22,7 @@ public:
         ObjectFactory<CreationPolicy>::_factory->UnloadAllLibs();
     }
 
-   boost::shared_ptr<INonLinSolverSettings> createNonLinSolverSettings(string nonlin_solver)
+   virtual boost::shared_ptr<INonLinSolverSettings> createNonLinSolverSettings(string nonlin_solver)
    {
        string nonlin_solver_key;
       
@@ -80,7 +82,7 @@ public:
 
    }
 
-   boost::shared_ptr<IAlgLoopSolver> createNonLinSolver(IAlgLoop* algLoop, string solver_name, boost::shared_ptr<INonLinSolverSettings>  solver_settings)
+   virtual boost::shared_ptr<IAlgLoopSolver> createNonLinSolver(IAlgLoop* algLoop, string solver_name, boost::shared_ptr<INonLinSolverSettings>  solver_settings)
    {
        if(_last_selected_solver.compare(solver_name)==0)
        {
@@ -99,6 +101,6 @@ public:
    }
 protected:
      string _last_selected_solver;
- private:
+private:
     type_map _non_linsolver_type_map;
 };

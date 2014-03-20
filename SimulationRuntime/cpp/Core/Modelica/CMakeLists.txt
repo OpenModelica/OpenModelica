@@ -109,9 +109,15 @@ endforeach(lib ${LAPACK_LIBRARIES})
   "${PROJECT_BINARY_DIR}/ModelicaConfig.inc"
   )
 
+configure_file (
+ "ModelicaLibraryConfig.inc.in"
+ "${PROJECT_BINARY_DIR}/ModelicaLibraryConfig.inc"
+ )
+ 
+  
 install (FILES
-
 				${PROJECT_BINARY_DIR}/ModelicaConfig.inc
+				${PROJECT_BINARY_DIR}/ModelicaLibraryConfig.inc
 				DESTINATION include/omc/cpp)
 
 

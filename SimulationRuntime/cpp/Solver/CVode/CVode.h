@@ -4,9 +4,9 @@
 #include "FactoryExport.h"
 
 #include <Solver/SolverDefaultImplementation.h>
-#include <cvodes.h>
-#include <nvector_serial.h>
-#include <cvodes_dense.h>
+#include <cvodes/cvodes.h>
+#include <nvector/nvector_serial.h>
+#include <cvodes/cvodes_dense.h>
 
 
 
@@ -66,7 +66,7 @@ public:
   virtual void writeSimulationInfo();
 
 
-  virtual const int reportErrorMessage(ostream& messageStream);
+  virtual const int reportErrorMessage(std::ostream& messageStream);
   virtual bool stateSelection();
 private:
 
@@ -80,7 +80,7 @@ private:
   static int CV_fCallback(double t, N_Vector y, N_Vector ydot, void *user_data);
 
   // Checks error flags of SUNDIALS
-  int check_flag(void *flagvalue, char *funcname, int opt);
+  int check_flag(void *flagvalue, const char *funcname, int opt);
 
   // Nulltellenfunktion
   void giveZeroVal(const double &t,const double *y,double *zeroValue);

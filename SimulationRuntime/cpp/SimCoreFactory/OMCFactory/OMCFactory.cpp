@@ -16,6 +16,10 @@ OMCFactory::OMCFactory()
 {
 }
 
+OMCFactory::~OMCFactory()
+{
+}
+
 void OMCFactory::UnloadAllLibs(void)
 {
     map<string,shared_library>::iterator iter;
@@ -133,7 +137,6 @@ std::pair<boost::shared_ptr<ISimController>,SimSettings> OMCFactory::createSimul
      }
      boost::shared_ptr<ISimController>  simcontroller = boost::shared_ptr<ISimController>(iter->second.create(_library_path,_modelicasystem_path));
      return std::make_pair(simcontroller,settings);
-     
 }
 
 LOADERRESULT OMCFactory::LoadLibrary(string libName,type_map& current_map)

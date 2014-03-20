@@ -2,8 +2,13 @@ cmake_minimum_required (VERSION 2.6)
 
 project(${SimulationSettings})
 # add the solver default implementation library
-add_library(${SimulationSettings} SHARED GlobalSettings.cpp Factory.cpp FactoryExport.cpp )
-target_link_libraries( ${SimulationSettings} ${OMCFactoryName}  ${Boost_LIBRARIES})
+IF(ANALYZATION_MODE)
+	include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR})
+	add_library(${SimulationSettings} STATIC GlobalSettings.cpp Factory.cpp FactoryExport.cpp )
+ELSE(ANALYZATION_MODE)
+	add_library(${SimulationSettings} SHARED GlobalSettings.cpp Factory.cpp FactoryExport.cpp )
+ENDIF(ANALYZATION_MODE)
+target_link_libraries( ${SimulationSettings} ${OMCFactoryName} ${Boost_LIBRARIES})
 
 
 install (TARGETS ${SimulationSettings} DESTINATION lib/omc/${LIBINSTALLEXT})

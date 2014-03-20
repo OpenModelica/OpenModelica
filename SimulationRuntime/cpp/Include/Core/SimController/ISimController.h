@@ -1,7 +1,13 @@
 #pragma once
-#include  "ISimData.h"
+#include <SimController/ISimData.h>
 #include <System/IMixedSystem.h>
+#include <System/IAlgLoopSolverFactory.h>
+#include <SimulationSettings/IGlobalSettings.h>
+#include <boost/weak_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 
+#include <string.h>
+using std::string;
 
 struct SimSettings
 {
@@ -23,9 +29,10 @@ class ISimController
 
 public:
     /// Enumeration to control the time integration
+    virtual ~ISimController(){ };
 
-    virtual ~ISimController()    {};
-  virtual std::pair<boost::weak_ptr<IMixedSystem>,boost::weak_ptr<ISimData> > LoadSystem(string modelLib,string modelKey)=0;
+	virtual std::pair<boost::weak_ptr<IMixedSystem>,boost::weak_ptr<ISimData> > LoadSystem(boost::shared_ptr<ISimData> (*createSimDataCallback)(), boost::shared_ptr<IMixedSystem> (*createSystemCallback)(IGlobalSettings*, boost::shared_ptr<IAlgLoopSolverFactory>, boost::shared_ptr<ISimData>), string modelKey)=0;
+	virtual std::pair<boost::weak_ptr<IMixedSystem>,boost::weak_ptr<ISimData> > LoadSystem(string modelLib,string modelKey)=0;
     virtual std::pair<boost::weak_ptr<IMixedSystem>,boost::weak_ptr<ISimData> > LoadModelicaSystem(PATH modelica_path,string modelKey) =0;
    
   /*

@@ -12,6 +12,9 @@ Encapsulation of global simulation settings.
 /*****************************************************************************
 Copyright (c) 2008, OSMC
 *****************************************************************************/
+#include <string.h>
+using std::string;
+
 class IGlobalSettings
 {
   enum {CSV, MAT};

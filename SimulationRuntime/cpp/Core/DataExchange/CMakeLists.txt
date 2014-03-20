@@ -5,6 +5,10 @@ project(${DataExchangeName})
 add_library(${DataExchangeName} SHARED SimData.cpp FactoryExport.cpp )
 target_link_libraries (${DataExchangeName} ${Boost_LIBRARIES}  )
 
+IF(ANALYZATION_MODE)
+	include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR})
+ENDIF(ANALYZATION_MODE)
+
 add_library(${DataExchangeName}_static STATIC SimData.cpp  )
 target_link_libraries (${DataExchangeName}_static ${Boost_LIBRARIES})
 if (UNIX)

@@ -1,11 +1,9 @@
 #pragma once
 
+#include <iostream>
+#include <vector>
 
-
-
-
-
-
+#include <System/IAlgLoop.h>
 
 /*****************************************************************************/
 /**
@@ -20,10 +18,10 @@ Services for the implementation of an algebraic loop in open modelica.
 Copyright (c) 2008, OSMC
 *****************************************************************************/
 
-    /// Enumeration to control the output
-    enum OUTPUT
-    {
-        UNDEF_OUTPUT    =    0x00000000,
+/// Enumeration to control the output
+enum OUTPUT
+{
+    UNDEF_OUTPUT    =    0x00000000,
 
     WRITEOUT      =  0x00000001,      ///< vxworks! Store current position of curser and write out current results
     RESET      =  0x00000002,      ///< Reset curser position
@@ -68,7 +66,7 @@ public:
 
 
     /// Set stream for output
-    void setOutput(ostream* outputStream) ;
+    void setOutput(std::ostream* outputStream) ;
 
 
     // Member variables
@@ -94,6 +92,6 @@ protected:
 
     IAlgLoop::CONSTRTYPE
         _constraintType;                ///< Typ der Bindungsgleichungen (analog, digital, binär)
-    ostream
+    std::ostream
         *_outputStream;                ///< Output stream for results
 };

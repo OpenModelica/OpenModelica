@@ -10,6 +10,12 @@ NewtonSettings::NewtonSettings()
 , dDelta                    (0.9)
 {
 };
+
+NewtonSettings::~NewtonSettings()
+{
+
+}
+
 /*max. Anzahl an Newtonititerationen pro Schritt (default: 25)*/
 long int     NewtonSettings::getNewtMax()
 {

@@ -1,10 +1,15 @@
 #pragma once
 
+#ifdef ANALYZATION_MODE
+#include <SimulationSettings/ISettingsFactory.h>
+#include <Policies/StaticSolverSettingsOMCFactory.h>
+class  SettingsFactory : public ISettingsFactory
+                       , public StaticSolverSettingsOMCFactory<OMCFactory>
+#else
 #include <Policies/FactoryPolicy.h>
-
-
 class  SettingsFactory : public ISettingsFactory
                        , public SolverSettingsPolicy
+#endif
 {
 public:
    SettingsFactory(PATH libraries_path,PATH config_path,PATH modelicasystem_path);

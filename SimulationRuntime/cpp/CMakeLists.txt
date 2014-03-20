@@ -94,7 +94,7 @@ SET(Boost_USE_STATIC_RUNTIME OFF)
 
 find_package(Boost COMPONENTS thread)
 find_package(Threads)
-find_package(Boost COMPONENTS filesystem  system serialization program_options REQUIRED)
+find_package(Boost COMPONENTS filesystem system serialization program_options REQUIRED)
 
 # Lapack and Blas
 find_package( BLAS )

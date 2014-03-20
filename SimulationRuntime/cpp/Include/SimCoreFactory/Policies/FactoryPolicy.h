@@ -1,23 +1,4 @@
-#pragma once
-
-   template<class T>
-  struct ObjectFactory 
-    {
-        ObjectFactory(PATH library_path,PATH modelicasystem_path,PATH config_path)
-            :_library_path(library_path)
-            ,_modelicasystem_path(modelicasystem_path)
-            ,_config_path(config_path)
-        {
-              _factory = boost::shared_ptr<T>(new T(library_path,modelicasystem_path));
-        }
-        
-    protected:
-            boost::shared_ptr<T>  _factory;
-            PATH _library_path;
-            PATH _modelicasystem_path;
-            PATH _config_path;
-    };
-    
+#include <ObjectFactory.h>
 
 #if defined(__vxworks)
 
@@ -45,9 +26,9 @@
     typedef SolverFactory<GenericFactory> ConfigurationPolicy;
     typedef NonLinSolverFactory<GenericFactory> NonLinSolverPolicy;
     typedef SolverSettingsFactory<GenericFactory> SolverSettingsPolicy;
-#elif defined(OMC_BUILD)
+#elif defined(OMC_BUILD) && !defined(ANALYZATION_MODE)
    /*Policy include*/
-  
+
     #include <Policies/SolverOMCFactory.h>
     #include <Policies/SolverSettingsOMCFactory.h>
     #include <Policies/SystemOMCFactory.h>
@@ -57,7 +38,20 @@
     typedef SolverOMCFactory<OMCFactory> ConfigurationPolicy;
     typedef NonLinSolverOMCFactory<OMCFactory> NonLinSolverPolicy;
     typedef SolverSettingsOMCFactory<OMCFactory> SolverSettingsPolicy;
-   
-#else
-    #error "operating system not supported"
+#elif defined(OMC_BUILD) && defined(ANALYZATION_MODE)
+    class OMCFactory;
+
+   /*Policy include*/
+
+    #include <Policies/StaticSolverOMCFactory.h>
+    #include <Policies/StaticSolverSettingsOMCFactory.h>
+    #include <Policies/StaticSystemOMCFactory.h>
+    #include <Policies/StaticNonLinSolverOMCFactory.h>
+    /*Policy defines*/
+    typedef StaticSystemOMCFactory<OMCFactory> SimControllerPolicy;
+    typedef StaticSolverOMCFactory<OMCFactory> ConfigurationPolicy;
+    typedef StaticNonLinSolverOMCFactory<OMCFactory> NonLinSolverPolicy;
+    typedef StaticSolverSettingsOMCFactory<OMCFactory> SolverSettingsPolicy;
+//#else
+//    #error "operating system not supported"
 #endif

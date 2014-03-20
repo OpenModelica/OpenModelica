@@ -28,6 +28,10 @@ Provision of member variables used by all solvers.
 /*****************************************************************************
 Copyright (c) 2008, OSMC
 *****************************************************************************/
+#if defined(ANALYZATION_MODE)
+#undef BOOST_EXTENSION_SOLVER_DECL
+#define BOOST_EXTENSION_SOLVER_DECL
+#endif
 class BOOST_EXTENSION_SOLVER_DECL SolverDefaultImplementation
 {
 public:
@@ -35,7 +39,7 @@ public:
 
 
     SolverDefaultImplementation(IMixedSystem* system, ISolverSettings* settings);
-    ~SolverDefaultImplementation();
+    virtual ~SolverDefaultImplementation();
 
 
     /// Set start time for numerical solution
@@ -117,17 +121,10 @@ protected:
     IWriteOutput::OUTPUT  
         _outputCommand;          ///< Controls the output
     
-   
-
 private:
-   
-  
-  /// Definition of signum function
+    /// Definition of signum function
     inline static int sgn (const double &c)
     {
         return (c < 0) ? -1 : ((c == 0) ? 0 : 1);
     }
-
-
-
 };

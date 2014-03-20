@@ -1,4 +1,5 @@
 #pragma once
+
 /*
 Policy class to create a OMC-,  Modelica- system or AlgLoopSolver
 */
@@ -11,43 +12,19 @@ public:
         :ObjectFactory<CreationPolicy>(library_path,modelicasystem_path,config_path)
     {
         _use_modelica_compiler = false;
-        
-        
-        
-        
         _system_type_map = new type_map();
-        PATH systemfactory_path = ObjectFactory<CreationPolicy>::_library_path;
-        PATH system_name(SYSTEM_LIB);
-        systemfactory_path/=system_name;
-        
-        LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(systemfactory_path.string(),*_system_type_map);
-        if (result != LOADER_SUCCESS)
-        {
-            std::stringstream tmp;
-            tmp << "Failed loading System library!" << std::endl << systemfactory_path.string();
-            throw std::runtime_error(tmp.str());
-        }
-        
-        PATH dataexchange_path = ObjectFactory<CreationPolicy>::_library_path;
-        PATH dataexchange_name(DATAEXCHANGE_LIB);
-        dataexchange_path/=dataexchange_name;
-        
-        result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(dataexchange_path.string(),*_system_type_map);
-        if (result != LOADER_SUCCESS)
-        {
-            throw std::runtime_error("Failed loading Dataexchange library!");
-        }
-        
-
+#ifndef ANALYZATION_MODE
+        initializeLibraries(library_path, modelicasystem_path, config_path);
+#endif
     }
 
-    ~SystemOMCFactory()
+    virtual ~SystemOMCFactory()
     {
         delete _system_type_map;
         ObjectFactory<CreationPolicy>::_factory->UnloadAllLibs();
     }
 
-    boost::shared_ptr<IAlgLoopSolverFactory> createAlgLoopSolverFactory(IGlobalSettings* globalSettings)
+    virtual boost::shared_ptr<IAlgLoopSolverFactory> createAlgLoopSolverFactory(IGlobalSettings* globalSettings)
     {
         std::map<std::string, factory<IAlgLoopSolverFactory,IGlobalSettings*,PATH,PATH> >::iterator iter;
         std::map<std::string, factory<IAlgLoopSolverFactory,IGlobalSettings*,PATH,PATH> >& algloopsolver_factory(_system_type_map->get());
@@ -57,10 +34,18 @@ public:
             throw std::invalid_argument("No AlgLoopSolverFactory  found");
         }
         boost::shared_ptr<IAlgLoopSolverFactory>  algloopsolverfactory = boost::shared_ptr<IAlgLoopSolverFactory>(iter->second.create(globalSettings,ObjectFactory<CreationPolicy>::_library_path,ObjectFactory<CreationPolicy>::_modelicasystem_path));
+
         return algloopsolverfactory;
     }
 
-     std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> >  createSystem(string modelLib,string modelKey,IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory)
+    virtual std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > createSystem(boost::shared_ptr<ISimData> (*createSimDataCallback)(), boost::shared_ptr<IMixedSystem> (*createSystemCallback)(IGlobalSettings*, boost::shared_ptr<IAlgLoopSolverFactory>, boost::shared_ptr<ISimData>), IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory)
+	{
+    	boost::shared_ptr<ISimData> simData = createSimDataCallback();
+    	boost::shared_ptr<IMixedSystem> system = createSystemCallback(globalSettings, algloopsolverfactory, simData);
+    	return std::make_pair(system,simData);
+	}
+
+    std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> >  createSystem(string modelLib,string modelKey,IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory)
     {
        PATH modelica_path = ObjectFactory<CreationPolicy>::_modelicasystem_path;
         PATH modelica_name(modelLib);
@@ -98,10 +83,34 @@ public:
     {
         throw std::runtime_error("Modelica is not supported");
     }
-protected:
-    bool _use_modelica_compiler;    
-private:
-    type_map* _system_type_map;
 
+protected:
+    virtual void initializeLibraries(PATH library_path,PATH modelicasystem_path,PATH config_path)
+    {
+        PATH systemfactory_path = ObjectFactory<CreationPolicy>::_library_path;
+        PATH system_name(SYSTEM_LIB);
+        systemfactory_path/=system_name;
+
+        LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(systemfactory_path.string(),*_system_type_map);
+        if (result != LOADER_SUCCESS)
+        {
+            std::stringstream tmp;
+            tmp << "Failed loading System library!" << std::endl << systemfactory_path.string();
+            throw std::runtime_error(tmp.str());
+        }
+
+        PATH dataexchange_path = ObjectFactory<CreationPolicy>::_library_path;
+        PATH dataexchange_name(DATAEXCHANGE_LIB);
+        dataexchange_path/=dataexchange_name;
+
+        result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(dataexchange_path.string(),*_system_type_map);
+        if (result != LOADER_SUCCESS)
+        {
+            throw std::runtime_error("Failed loading Dataexchange library!");
+        }
+    }
+
+    bool _use_modelica_compiler;    
+    type_map* _system_type_map;
 
 }; 

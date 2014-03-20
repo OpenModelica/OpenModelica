@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef ANALYZATION_MODE
+#include <System/ISystemInitialization.h>
+#endif
+
 class Initialization
 {
 public:
