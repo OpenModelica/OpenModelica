@@ -39,11 +39,11 @@ public:
     }
 
     virtual std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > createSystem(boost::shared_ptr<ISimData> (*createSimDataCallback)(), boost::shared_ptr<IMixedSystem> (*createSystemCallback)(IGlobalSettings*, boost::shared_ptr<IAlgLoopSolverFactory>, boost::shared_ptr<ISimData>), IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory)
-	{
-    	boost::shared_ptr<ISimData> simData = createSimDataCallback();
-    	boost::shared_ptr<IMixedSystem> system = createSystemCallback(globalSettings, algloopsolverfactory, simData);
-    	return std::make_pair(system,simData);
-	}
+  {
+      boost::shared_ptr<ISimData> simData = createSimDataCallback();
+      boost::shared_ptr<IMixedSystem> system = createSystemCallback(globalSettings, algloopsolverfactory, simData);
+      return std::make_pair(system,simData);
+  }
 
     std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> >  createSystem(string modelLib,string modelKey,IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory)
     {

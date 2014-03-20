@@ -15,22 +15,22 @@ public:
         :NonLinSolverOMCFactory<CreationPolicy>(library_path,modelicasystem_path,config_path)
     {
     }
-	
+  
     virtual ~StaticNonLinSolverOMCFactory()
     {
     }
 
    virtual boost::shared_ptr<INonLinSolverSettings> createNonLinSolverSettings(string nonlin_solver)
    {
-		string nonlin_solver_key;
+    string nonlin_solver_key;
       
-		if(nonlin_solver.compare("newton")==0)
-		{
-			boost::shared_ptr<INonLinSolverSettings> settings = boost::shared_ptr<INonLinSolverSettings>(new NewtonSettings());
-			return settings;
-		}
+    if(nonlin_solver.compare("newton")==0)
+    {
+      boost::shared_ptr<INonLinSolverSettings> settings = boost::shared_ptr<INonLinSolverSettings>(new NewtonSettings());
+      return settings;
+    }
         else
-			return NonLinSolverOMCFactory<CreationPolicy>::createNonLinSolverSettings(nonlin_solver);
+      return NonLinSolverOMCFactory<CreationPolicy>::createNonLinSolverSettings(nonlin_solver);
    }
 
    virtual boost::shared_ptr<IAlgLoopSolver> createNonLinSolver(IAlgLoop* algLoop, string solver_name, boost::shared_ptr<INonLinSolverSettings>  solver_settings)

@@ -15,7 +15,7 @@ StaticOMCFactory::~StaticOMCFactory()
 
 std::pair<boost::shared_ptr<ISimController>,SimSettings> StaticOMCFactory::createSimulation(int argc, const char* argv[])
 {
-	SimSettings settings = ReadSimulationParameter(argc,argv);
+  SimSettings settings = ReadSimulationParameter(argc,argv);
     boost::shared_ptr<ISimController>  simcontroller = boost::shared_ptr<ISimController>(new SimController(_library_path,_modelicasystem_path));
     return std::make_pair(simcontroller,settings);
 }

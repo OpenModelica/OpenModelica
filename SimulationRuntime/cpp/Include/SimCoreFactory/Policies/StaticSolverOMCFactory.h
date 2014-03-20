@@ -27,8 +27,8 @@ public:
 
     virtual boost::shared_ptr<ISettingsFactory> createSettingsFactory()
     {
-    	SettingsFactory *setFac = new SettingsFactory(ObjectFactory<CreationPolicy>::_library_path,ObjectFactory<CreationPolicy>::_modelicasystem_path,ObjectFactory<CreationPolicy>::_config_path);
-    	boost::shared_ptr<ISettingsFactory>  settings_factory = boost::shared_ptr<ISettingsFactory>(setFac);
+      SettingsFactory *setFac = new SettingsFactory(ObjectFactory<CreationPolicy>::_library_path,ObjectFactory<CreationPolicy>::_modelicasystem_path,ObjectFactory<CreationPolicy>::_config_path);
+      boost::shared_ptr<ISettingsFactory>  settings_factory = boost::shared_ptr<ISettingsFactory>(setFac);
         return settings_factory;
     }
 
@@ -36,8 +36,8 @@ public:
     {
         if((solvername.compare("cvode")==0)||(solvername.compare("dassl")==0))
         {
-        	Cvode *cvode = new Cvode(system,solver_settings.get());
-        	return boost::shared_ptr<ISolver>(cvode);
+          Cvode *cvode = new Cvode(system,solver_settings.get());
+          return boost::shared_ptr<ISolver>(cvode);
         }
         else
             throw std::invalid_argument("Selected Solver is not available");
@@ -46,7 +46,7 @@ public:
     }
 protected:
     virtual void initializeLibraries(PATH library_path,PATH modelicasystem_path,PATH config_pat)
-	{
+  {
 
-	}
+  }
 };

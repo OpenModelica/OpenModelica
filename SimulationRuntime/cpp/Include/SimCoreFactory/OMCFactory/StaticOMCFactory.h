@@ -7,7 +7,7 @@
 class StaticOMCFactory : public OMCFactory
 {
     public:
-		StaticOMCFactory();
+    StaticOMCFactory();
         StaticOMCFactory(PATH library_path, PATH modelicasystem_path);
 
         virtual ~StaticOMCFactory();

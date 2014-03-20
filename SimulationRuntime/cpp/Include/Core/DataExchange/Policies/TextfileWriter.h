@@ -75,7 +75,7 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_2> > value_type_dv
     _output_stream<<"\"time\""<<SEPERATOR;
 
     for(std::vector<std::string>::const_iterator it = s_list.begin(); it != s_list.end(); ++it)
-    	_output_stream<<"\""<<(*it)<<"\""<<SEPERATOR;
+      _output_stream<<"\""<<(*it)<<"\""<<SEPERATOR;
 
 //    BOOST_FOREACH(s, s_list)
 //    {
@@ -98,10 +98,10 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_2> > value_type_dv
     double v,v2;
 
     for(typename value_type_v::const_iterator it = v_list.begin(); it != v_list.end(); ++it)
-    	_output_stream<<(*it)<<SEPERATOR;
+      _output_stream<<(*it)<<SEPERATOR;
 
     for(typename value_type_dv::const_iterator it = v2_list.begin(); it != v2_list.end(); ++it)
-    	_output_stream<<(*it)<<SEPERATOR;
+      _output_stream<<(*it)<<SEPERATOR;
 
 //    BOOST_FOREACH(v, v_list)
 //    {

@@ -18,17 +18,17 @@ SimController::~SimController()
 
 std::pair<boost::weak_ptr<IMixedSystem>,boost::weak_ptr<ISimData> > SimController::LoadSystem(boost::shared_ptr<ISimData> (*createSimDataCallback)(), boost::shared_ptr<IMixedSystem> (*createSystemCallback)(IGlobalSettings*, boost::shared_ptr<IAlgLoopSolverFactory>, boost::shared_ptr<ISimData>), string modelKey)
 {
-	  //if the model is already loaded
-	  std::map<string, std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> >  > ::iterator iter = _systems.find(modelKey);
-	  if(iter!=_systems.end())
-	  {
-	    //destroy system
-	    _systems.erase(iter);
-	  }
-	  //create system
-	  std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> >  system  = createSystem(createSimDataCallback,createSystemCallback,_config->getGlobalSettings(),_algloopsolverfactory);
-	  _systems[modelKey]=system;
-	  return system;
+    //if the model is already loaded
+    std::map<string, std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> >  > ::iterator iter = _systems.find(modelKey);
+    if(iter!=_systems.end())
+    {
+      //destroy system
+      _systems.erase(iter);
+    }
+    //create system
+    std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> >  system  = createSystem(createSimDataCallback,createSystemCallback,_config->getGlobalSettings(),_algloopsolverfactory);
+    _systems[modelKey]=system;
+    return system;
 }
 
 std::pair<boost::weak_ptr<IMixedSystem>,boost::weak_ptr<ISimData> > SimController::LoadSystem(string modelLib,string modelKey)

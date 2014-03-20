@@ -12,7 +12,7 @@ typedef int LOADERRESULT;
 class OMCFactory
 {
     public:
-		OMCFactory();
+    OMCFactory();
         OMCFactory(PATH library_path, PATH modelicasystem_path);
         virtual ~OMCFactory();
         void UnloadAllLibs(void);

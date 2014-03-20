@@ -21,13 +21,13 @@ public:
     virtual ~StaticSolverSettingsOMCFactory()
     {
     }    
-	
+  
     virtual boost::shared_ptr<ISolverSettings> createSolverSettings(string solvername,boost::shared_ptr<IGlobalSettings> globalSettings)
     {
         if((solvername.compare("cvode")==0)||(solvername.compare("dassl")==0))
         {
-        	boost::shared_ptr<ISolverSettings> _solver_settings = boost::shared_ptr<ISolverSettings>(new SolverSettings(globalSettings.get()));
-        	return _solver_settings;
+          boost::shared_ptr<ISolverSettings> _solver_settings = boost::shared_ptr<ISolverSettings>(new SolverSettings(globalSettings.get()));
+          return _solver_settings;
         }
         else
             throw std::invalid_argument("Selected Solver is not available");

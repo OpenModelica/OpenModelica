@@ -27,8 +27,8 @@ public:
     virtual boost::shared_ptr<IAlgLoopSolver> createAlgLoopSolver(IAlgLoop* algLoop);
 
 private:
-	//std::vector<boost::shared_ptr<IKinsolSettings> > _algsolversettings;
-	std::vector<boost::shared_ptr<INonLinSolverSettings> > _algsolversettings;
-	std::vector<boost::shared_ptr<IAlgLoopSolver> > _algsolvers;
-	IGlobalSettings*  _global_settings;
+  //std::vector<boost::shared_ptr<IKinsolSettings> > _algsolversettings;
+  std::vector<boost::shared_ptr<INonLinSolverSettings> > _algsolversettings;
+  std::vector<boost::shared_ptr<IAlgLoopSolver> > _algsolvers;
+  IGlobalSettings*  _global_settings;
 };
