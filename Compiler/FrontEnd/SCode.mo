@@ -602,6 +602,8 @@ public constant Prefixes defaultPrefixes =
 
 public constant Attributes defaultVarAttr =
   ATTR({}, POTENTIAL(), NON_PARALLEL(), VAR(), Absyn.BIDIR());
+public constant Attributes defaultParamAttr =
+  ATTR({}, POTENTIAL(), NON_PARALLEL(), PARAM(), Absyn.BIDIR());
 public constant Attributes defaultConstAttr =
   ATTR({}, POTENTIAL(), NON_PARALLEL(), CONST(), Absyn.BIDIR());
 

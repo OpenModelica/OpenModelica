@@ -290,7 +290,7 @@ algorithm
         Static.checkAssignmentToInput(lhs, attr, env, false, info);
         et = validPatternType(ty2,ty1,inLhs,info);
         (cache,pattern) = elabPattern(cache,env,exp,ty2,info);
-        pattern = Util.if_(Types.isFunctionType(ty2), DAE.PAT_AS_FUNC_PTR(id,pattern), DAE.PAT_AS(id,et,pattern));
+        pattern = Util.if_(Types.isFunctionType(ty2), DAE.PAT_AS_FUNC_PTR(id,pattern), DAE.PAT_AS(id,et,attr,pattern));
       then (cache,pattern);
 
     case (cache,_,Absyn.CREF(Absyn.CREF_IDENT(id,{})),ty2,_,_)
@@ -298,7 +298,7 @@ algorithm
         (cache,DAE.TYPES_VAR(ty = ty1, attributes = attr),_,_,_,_) = Lookup.lookupIdent(cache,env,id);
         Static.checkAssignmentToInput(inLhs, attr, env, false, info);
         et = validPatternType(ty2,ty1,inLhs,info);
-        pattern = Util.if_(Types.isFunctionType(ty2), DAE.PAT_AS_FUNC_PTR(id,DAE.PAT_WILD()), DAE.PAT_AS(id,et,DAE.PAT_WILD()));
+        pattern = Util.if_(Types.isFunctionType(ty2), DAE.PAT_AS_FUNC_PTR(id,DAE.PAT_WILD()), DAE.PAT_AS(id,et,attr,DAE.PAT_WILD()));
       then (cache,pattern);
 
     case (cache,_,Absyn.AS(id,exp),ty2,_,_)
@@ -645,31 +645,34 @@ algorithm
       Env.Cache cache;
       Env.Env env;
       Integer hashSize;
+      list<list<String>> inputAliases,inputAliasesAndCrefs;
 
     case (cache,env,Absyn.MATCHEXP(matchTy=matchTy,inputExp=inExp,localDecls=decls,cases=cases),_,st,_,pre,_,_)
       equation
         // First do inputs
         inExps = MetaUtil.extractListFromTuple(inExp, 0);
+        (inExps,inputAliases,inputAliasesAndCrefs) = List.map_3(inExps,getInputAsBinding);
         (cache,elabExps,elabProps,st) = Static.elabExpList(cache,env,inExps,impl,st,performVectorization,pre,info);
         // Then add locals
         (cache,SOME((env,DAE.DAE(matchDecls)))) = addLocalDecls(cache,env,decls,Env.matchScopeName,impl,info);
         tys = List.map(elabProps, Types.getPropType);
-        (cache,elabCases,resType,st) = elabMatchCases(cache,env,cases,tys,impl,st,performVectorization,pre,info);
+        env = addAliasesToEnv(env, tys, inputAliases, info);
+        (cache,elabCases,resType,st) = elabMatchCases(cache,env,cases,tys,inputAliasesAndCrefs,impl,st,performVectorization,pre,info);
         prop = DAE.PROP(resType,DAE.C_VAR());
         et = Types.simplifyType(resType);
-        (elabExps,elabCases) = filterUnusedPatterns(elabExps,elabCases) "filterUnusedPatterns() First time to speed up the other optimizations.";
+        (elabExps,inputAliases,elabCases) = filterUnusedPatterns(elabExps,inputAliases,elabCases) "filterUnusedPatterns() First time to speed up the other optimizations.";
         elabCases = caseDeadCodeEliminiation(matchTy, elabCases, {}, {}, false);
         // Do DCE before converting mc to m
         matchTy = optimizeContinueToMatch(matchTy,elabCases,info);
         elabCases = optimizeContinueJumps(matchTy, elabCases);
         // hashSize = Util.nextPowerOf2(listLength(matchDecls)) + 1; // faster, but unstable in RML
         hashSize = Util.nextPrime(listLength(matchDecls));
-        ht = getUsedLocalCrefs(Flags.isSet(Flags.PATTERNM_SKIP_FILTER_UNUSED_AS_BINDINGS),DAE.MATCHEXPRESSION(DAE.MATCHCONTINUE(),elabExps,matchDecls,elabCases,et),hashSize);
+        ht = getUsedLocalCrefs(Flags.isSet(Flags.PATTERNM_SKIP_FILTER_UNUSED_AS_BINDINGS),DAE.MATCHEXPRESSION(DAE.MATCHCONTINUE(),elabExps,inputAliases,matchDecls,elabCases,et),hashSize);
         (matchDecls,ht) = filterUnusedDecls(matchDecls,ht,{},HashTableStringToPath.emptyHashTableSized(hashSize));
         elabCases = filterUnusedAsBindings(elabCases,ht);
-        (elabExps,elabCases) = filterUnusedPatterns(elabExps,elabCases) "filterUnusedPatterns() Then again to filter out the last parts.";
+        (elabExps,inputAliases,elabCases) = filterUnusedPatterns(elabExps,inputAliases,elabCases) "filterUnusedPatterns() again to filter out the last parts.";
         elabMatchTy = optimizeMatchToSwitch(matchTy,elabCases,info);
-        exp = DAE.MATCHEXPRESSION(elabMatchTy,elabExps,matchDecls,elabCases,et);
+        exp = DAE.MATCHEXPRESSION(elabMatchTy,elabExps,inputAliases,matchDecls,elabCases,et);
       then (cache,exp,prop,st);
     else
       equation
@@ -847,57 +850,64 @@ end findMinMod;
 protected function filterUnusedPatterns
   "case (1,_,_) then ...; case (2,_,_) then ...; =>"
   input list<DAE.Exp> inputs "We can only remove inputs that are free from side-effects";
+  input list<list<String>> inAliases;
   input list<DAE.MatchCase> inCases;
   output list<DAE.Exp> outInputs;
+  output list<list<String>> outAliases;
   output list<DAE.MatchCase> outCases;
 algorithm
-  (outInputs,outCases) := matchcontinue (inputs,inCases)
+  (outInputs,outAliases,outCases) := matchcontinue (inputs,inAliases,inCases)
     local
       list<list<DAE.Pattern>> patternMatrix;
       list<DAE.MatchCase> cases;
 
-    case (_,cases)
+    case (_,_,cases)
       equation
         patternMatrix = List.transposeList(List.map(cases,getCasePatterns));
-        (true,outInputs,patternMatrix) = filterUnusedPatterns2(inputs,patternMatrix,false,{},{});
+        (true,outInputs,outAliases,patternMatrix) = filterUnusedPatterns2(inputs,inAliases,patternMatrix,false,{},{},{});
         patternMatrix = List.transposeList(patternMatrix);
         cases = List.threadMap(cases,patternMatrix,setCasePatterns);
-      then (outInputs,cases);
-    else (inputs,inCases);
+      then (outInputs,outAliases,cases);
+    else (inputs,inAliases,inCases);
   end matchcontinue;
 end filterUnusedPatterns;
 
 protected function filterUnusedPatterns2
   "case (1,_,_) then ...; case (2,_,_) then ...; =>"
   input list<DAE.Exp> inInputs "We can only remove inputs that are free from side-effects";
+  input list<list<String>> inAliases;
   input list<list<DAE.Pattern>> inPatternMatrix;
   input Boolean change "Only rebuild the cases if something changed";
   input list<DAE.Exp> inputsAcc;
+  input list<list<String>> aliasesAcc;
   input list<list<DAE.Pattern>> patternMatrixAcc;
   output Boolean outChange;
   output list<DAE.Exp> outInputs;
+  output list<list<String>> outAliases;
   output list<list<DAE.Pattern>> outPatternMatrix;
 algorithm
-  (outChange,outInputs,outPatternMatrix) := matchcontinue (inInputs,inPatternMatrix,change,inputsAcc,patternMatrixAcc)
+  (outChange,outInputs,outAliases,outPatternMatrix) := matchcontinue (inInputs,inAliases,inPatternMatrix,change,inputsAcc,aliasesAcc,patternMatrixAcc)
     local
       DAE.Exp e;
       list<DAE.Pattern> pats;
       list<DAE.Exp> inputs;
       list<list<DAE.Pattern>> patternMatrix;
+      list<String> alias;
+      list<list<String>> aliases;
 
-    case ({},{},true,_,_)
-      then (true,listReverse(inputsAcc),listReverse(patternMatrixAcc));
-    case (e::inputs,pats::patternMatrix,_,_,_)
+    case ({},{},{},true,_,_,_)
+      then (true,listReverse(inputsAcc),listReverse(aliasesAcc),listReverse(patternMatrixAcc));
+    case (e::inputs,_::aliases,pats::patternMatrix,_,_,_,_)
       equation
         ((_,true)) = Expression.traverseExp(e,Expression.hasNoSideEffects,true);
         true = allPatternsWild(pats);
-        (outChange,outInputs,outPatternMatrix) = filterUnusedPatterns2(inputs,patternMatrix,true,inputsAcc,patternMatrixAcc);
-      then (outChange,outInputs,outPatternMatrix);
-    case (e::inputs,pats::patternMatrix,_,_,_)
+        (outChange,outInputs,outAliases,outPatternMatrix) = filterUnusedPatterns2(inputs,aliases,patternMatrix,true,inputsAcc,aliasesAcc,patternMatrixAcc);
+      then (outChange,outInputs,outAliases,outPatternMatrix);
+    case (e::inputs,alias::aliases,pats::patternMatrix,_,_,_,_)
       equation
-        (outChange,outInputs,outPatternMatrix) = filterUnusedPatterns2(inputs,patternMatrix,change,e::inputsAcc,pats::patternMatrixAcc);
-      then (outChange,outInputs,outPatternMatrix);
-    else (false,{},{});
+        (outChange,outInputs,outAliases,outPatternMatrix) = filterUnusedPatterns2(inputs,aliases,patternMatrix,change,e::inputsAcc,alias::aliasesAcc,pats::patternMatrixAcc);
+      then (outChange,outInputs,outAliases,outPatternMatrix);
+    else (false,{},{},{});
   end matchcontinue;
 end filterUnusedPatterns2;
 
@@ -1178,10 +1188,11 @@ algorithm
       list<tuple<DAE.Pattern,String,DAE.Type>> namedpats;
       Boolean knownSingleton;
       list<DAE.Var> fieldVars;
-    case ((DAE.PAT_AS(id,ty,pat2),a),_)
+      DAE.Attributes attr;
+    case ((DAE.PAT_AS(id,ty,attr,pat2),a),_)
       equation
         ((pat2,a)) = traversePattern((pat2,a),func);
-        pat = DAE.PAT_AS(id,ty,pat2);
+        pat = DAE.PAT_AS(id,ty,attr,pat2);
         outTpl = func((pat,a));
       then outTpl;
     case ((DAE.PAT_AS_FUNC_PTR(id,pat2),a),_)
@@ -1593,6 +1604,7 @@ protected function elabMatchCases
   input Env.Env env;
   input list<Absyn.Case> cases;
   input list<DAE.Type> tys;
+  input list<list<String>> inputAliases;
   input Boolean impl;
   input Option<GlobalScript.SymbolTable> st;
   input Boolean performVectorization;
@@ -1607,7 +1619,7 @@ protected
   list<DAE.Type> resTypes,tysFixed;
 algorithm
   tysFixed := List.map(tys, Types.getUniontypeIfMetarecordReplaceAllSubtypes);
-  (outCache,elabCases,resExps,resTypes,outSt) := elabMatchCases2(cache,env,cases,tysFixed,impl,st,performVectorization,pre,{},{},{});
+  (outCache,elabCases,resExps,resTypes,outSt) := elabMatchCases2(cache,env,cases,tysFixed,inputAliases,impl,st,performVectorization,pre,{},{},{});
   (elabCases,resType) := fixCaseReturnTypes(elabCases,resExps,resTypes,info);
 end elabMatchCases;
 
@@ -1616,6 +1628,7 @@ protected function elabMatchCases2
   input Env.Env inEnv;
   input list<Absyn.Case> cases;
   input list<DAE.Type> tys;
+  input list<list<String>> inputAliases;
   input Boolean impl;
   input Option<GlobalScript.SymbolTable> inSt;
   input Boolean performVectorization;
@@ -1630,7 +1643,7 @@ protected function elabMatchCases2
   output Option<GlobalScript.SymbolTable> outSt;
 algorithm
   (outCache,elabCases,resExps,resTypes,outSt) :=
-  match (inCache,inEnv,cases,tys,impl,inSt,performVectorization,pre,inAccCases,inAccExps,inAccTypes)
+  match (inCache,inEnv,cases,tys,inputAliases,impl,inSt,performVectorization,pre,inAccCases,inAccExps,inAccTypes)
     local
       Absyn.Case case_;
       list<Absyn.Case> rest;
@@ -1643,11 +1656,11 @@ algorithm
       list<DAE.Exp> accExps;
       list<DAE.Type> accTypes;
 
-    case (cache,env,{},_,_,st,_,_,_,accExps,accTypes) then (cache,listReverse(inAccCases),listReverse(accExps),listReverse(accTypes),st);
-    case (cache,env,case_::rest,_,_,st,_,_,_,accExps,accTypes)
+    case (cache,env,{},_,_,_,st,_,_,_,accExps,accTypes) then (cache,listReverse(inAccCases),listReverse(accExps),listReverse(accTypes),st);
+    case (cache,env,case_::rest,_,_,_,st,_,_,_,accExps,accTypes)
       equation
-        (cache,elabCase,optExp,optType,st) = elabMatchCase(cache,env,case_,tys,impl,st,performVectorization,pre);
-        (cache,elabCases,accExps,accTypes,st) = elabMatchCases2(cache,env,rest,tys,impl,st,performVectorization,pre,elabCase::inAccCases,List.consOption(optExp,accExps),List.consOption(optType,accTypes));
+        (cache,elabCase,optExp,optType,st) = elabMatchCase(cache,env,case_,tys,inputAliases,impl,st,performVectorization,pre);
+        (cache,elabCases,accExps,accTypes,st) = elabMatchCases2(cache,env,rest,tys,inputAliases,impl,st,performVectorization,pre,elabCase::inAccCases,List.consOption(optExp,accExps),List.consOption(optType,accTypes));
       then (cache,elabCases,accExps,accTypes,st);
   end match;
 end elabMatchCases2;
@@ -1657,6 +1670,7 @@ protected function elabMatchCase
   input Env.Env inEnv;
   input Absyn.Case acase;
   input list<DAE.Type> tys;
+  input list<list<String>> inputAliases;
   input Boolean impl;
   input Option<GlobalScript.SymbolTable> inSt;
   input Boolean performVectorization;
@@ -1668,7 +1682,7 @@ protected function elabMatchCase
   output Option<GlobalScript.SymbolTable> outSt;
 algorithm
   (outCache,elabCase,resExp,resType,outSt) :=
-  match (inCache,inEnv,acase,tys,impl,inSt,performVectorization,pre)
+  match (inCache,inEnv,acase,tys,inputAliases,impl,inSt,performVectorization,pre)
     local
       Absyn.Exp result,pattern;
       list<Absyn.Exp> patterns;
@@ -1687,13 +1701,13 @@ algorithm
       Env.Env env;
       Option<GlobalScript.SymbolTable> st;
 
-    case (cache,env,Absyn.CASE(pattern=pattern,patternGuard=patternGuard,patternInfo=patternInfo,localDecls=decls,equations=eq1,result=result,resultInfo=resultInfo,info=info),_,_,st,_,_)
+    case (cache,env,Absyn.CASE(pattern=pattern,patternGuard=patternGuard,patternInfo=patternInfo,localDecls=decls,equations=eq1,result=result,resultInfo=resultInfo,info=info),_,_,_,st,_,_)
       equation
         (cache,SOME((env,DAE.DAE(caseDecls)))) = addLocalDecls(cache,env,decls,Env.caseScopeName,impl,info);
         patterns = MetaUtil.extractListFromTuple(pattern, 0);
         patterns = Util.if_(listLength(tys)==1, {pattern}, patterns);
         (cache,elabPatterns) = elabPatternTuple(cache, env, patterns, tys, patternInfo, pattern);
-        (elabPatterns,env) = traversePatternList(elabPatterns,addEnvKnownAsBindings,env);
+        (_,env) = traversePatternList(List.threadMap(elabPatterns,inputAliases,addPatternAliases),addEnvKnownAsBindings,env);
         (cache,eqAlgs) = Static.fromEquationsToAlgAssignments(eq1,{},cache,env,pre);
         algs = SCodeUtil.translateClassdefAlgorithmitems(eqAlgs);
         (cache,body) = InstSection.instStatements(cache, env, InnerOuter.emptyInstHierarchy, pre, ClassInf.FUNCTION(Absyn.IDENT("match"), false), algs, DAEUtil.addElementSourceFileInfo(DAE.emptyElementSource,patternInfo), SCode.NON_INITIAL(), true, InstTypes.neverUnroll, {});
@@ -1702,13 +1716,13 @@ algorithm
       then (cache,DAE.CASE(elabPatterns, dPatternGuard, caseDecls, body, elabResult, resultInfo, 0, info),elabResult,resType,st);
 
       // ELSE is the same as CASE, but without pattern
-    case (cache,env,Absyn.ELSE(localDecls=decls,equations=eq1,result=result,resultInfo=resultInfo,info=info),_,_,st,_,_)
+    case (cache,env,Absyn.ELSE(localDecls=decls,equations=eq1,result=result,resultInfo=resultInfo,info=info),_,_,_,st,_,_)
       equation
         // Needs to be same length as any other pattern for the simplification algorithms, etc to work properly
         len = listLength(tys);
         patterns = List.fill(Absyn.CREF(Absyn.WILD()),listLength(tys));
         pattern = Util.if_(len == 1, Absyn.CREF(Absyn.WILD()), Absyn.TUPLE(patterns));
-        (cache,elabCase,elabResult,resType,st) = elabMatchCase(cache,env,Absyn.CASE(pattern,NONE(),info,decls,eq1,result,resultInfo,NONE(),info),tys,impl,st,performVectorization,pre);
+        (cache,elabCase,elabResult,resType,st) = elabMatchCase(cache, env, Absyn.CASE(pattern,NONE(),info,decls,eq1,result,resultInfo,NONE(),info), tys, inputAliases, impl, st, performVectorization, pre);
       then (cache,elabCase,elabResult,resType,st);
 
   end match;
@@ -2240,21 +2254,116 @@ algorithm
       Absyn.Path name,path;
       String id,scope;
       DAE.Type ty;
-      Env.Env env,env2;
+      Env.Env env;
       DAE.Pattern pat;
       list<DAE.Var> fields;
       Integer index;
       Boolean knownSingleton;
-    case ((pat as DAE.PAT_AS(id=id,pat=DAE.PAT_CALL(index=index,fields=fields,knownSingleton=knownSingleton,name=name)),env))
-      equation
-         scope = "$" +& id +& "as$";
-         env2 = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(scope),NONE());
-         path = Absyn.stripLast(name);
-         ty = DAE.T_METARECORD(path,index,fields,knownSingleton,{name});
-         env2 = Env.extendFrameV(env2, DAE.TYPES_VAR(id,DAE.dummyAttrVar,ty,DAE.UNBOUND(),NONE()), SCode.COMPONENT(id,SCode.defaultPrefixes,SCode.defaultVarAttr,Absyn.TPATH(name,NONE()),SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo), DAE.NOMOD(), Env.VAR_DAE(), env);
-      then ((pat,env2));
+    case ((DAE.PAT_AS(pat=pat),_))
+      then addEnvKnownAsBindings2(inTpl,findFirstNonAsPattern(pat));
     else inTpl;
   end match;
 end addEnvKnownAsBindings;
+
+protected function addEnvKnownAsBindings2
+  input tuple<DAE.Pattern,Env.Env> inTpl;
+  input DAE.Pattern firstPattern;
+  output tuple<DAE.Pattern,Env.Env> outTpl;
+algorithm
+  outTpl := match (inTpl,firstPattern)
+    local
+      Absyn.Path name,path;
+      String id,scope;
+      DAE.Type ty;
+      Env.Env env;
+      DAE.Pattern pat;
+      list<DAE.Var> fields;
+      Integer index;
+      Boolean knownSingleton;
+      DAE.Attributes attr;
+    case ((pat as DAE.PAT_AS(id=id,attr=attr),env),DAE.PAT_CALL(index=index,fields=fields,knownSingleton=knownSingleton,name=name))
+      equation
+         path = Absyn.stripLast(name);
+         ty = DAE.T_METARECORD(path,index,fields,knownSingleton,{name});
+         env = Env.extendFrameV(env, DAE.TYPES_VAR(id,attr,ty,DAE.UNBOUND(),NONE()), SCode.COMPONENT(id,SCode.defaultPrefixes,SCode.defaultVarAttr,Absyn.TPATH(name,NONE()),SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo), DAE.NOMOD(), Env.VAR_DAE(), env);
+      then ((pat,env));
+    else inTpl;
+  end match;
+end addEnvKnownAsBindings2;
+
+protected function findFirstNonAsPattern
+  input DAE.Pattern inPattern;
+  output DAE.Pattern outPattern;
+algorithm
+  outPattern := match inPattern
+    case DAE.PAT_AS(pat=outPattern) then findFirstNonAsPattern(outPattern);
+    else inPattern;
+  end match;
+end findFirstNonAsPattern;
+
+protected function getInputAsBinding
+  input Absyn.Exp inExp;
+  output Absyn.Exp exp;
+  output list<String> aliases;
+  output list<String> aliasesAndCrefs;
+algorithm
+  (exp,aliases,aliasesAndCrefs) := match inExp
+    local
+      String id;
+    case Absyn.CREF(componentRef=Absyn.CREF_IDENT(id,{})) then (inExp,{},{id});
+    case Absyn.AS(id,exp)
+      equation
+        (exp,aliases,aliasesAndCrefs) = getInputAsBinding(exp);
+      then (exp,id::aliases,id::aliasesAndCrefs);
+    else (inExp,{},{});
+  end match;
+annotation(Documentation(info="<html>
+<p>Checks an input expression to the match-expression for alias candidates.</p>
+<p>If the input is a cref, it is a candidate for a metarecord to bind with dot-notation.</p>
+<p>If the input is an as-binding (cref as exp), cref is used as an alias, and we keep recursing to find aliases.
+The as-binding is then removed, using only the exp-part as the actual input to the match-expression</p>
+<p>Note: An as-binding is again overridden by an as-binding in the case pattern.</p>
+</html>"));
+end getInputAsBinding;
+
+protected function addPatternAliases
+  input DAE.Pattern inPattern;
+  input list<String> inAliases;
+  output DAE.Pattern pat;
+algorithm
+  pat := match (inPattern,inAliases)
+    local
+      String alias;
+      list<String> aliases;
+    case (_,alias::aliases) then addPatternAliases(DAE.PAT_AS(alias,NONE(),DAE.dummyAttrInput,inPattern), aliases);
+    else inPattern;
+  end match;
+end addPatternAliases;
+
+protected function addAliasesToEnv
+  input Env.Env inEnv;
+  input list<DAE.Type> inTypes;
+  input list<list<String>> inAliases;
+  input Absyn.Info info;
+  output Env.Env outEnv;
+algorithm
+  outEnv := match (inEnv,inTypes,inAliases,info)
+    local
+      list<DAE.Type> tys;
+      list<list<String>> aliases;
+      list<String> rest;
+      String id;
+      Env.Env env;
+      DAE.Type ty;
+      DAE.Attributes attr;
+    case (_,{},{},_) then inEnv;
+    case (_,_::tys,{}::aliases,_) then addAliasesToEnv(inEnv,tys,aliases,info);
+    case (env,ty::_,(id::rest)::aliases,_)
+      equation
+        attr = DAE.dummyAttrInput;
+        env = Env.extendFrameV(env, DAE.TYPES_VAR(id,attr,ty,DAE.UNBOUND(),NONE()), SCode.COMPONENT(id,SCode.defaultPrefixes,SCode.defaultVarAttr,Absyn.TPATH(Absyn.IDENT("$dummy"),NONE()),SCode.NOMOD(),SCode.noComment,NONE(),info), DAE.NOMOD(), Env.VAR_DAE(), env);
+      then addAliasesToEnv(env,inTypes,rest::aliases,info);
+  end match;
+end addAliasesToEnv;
 
 end Patternm;

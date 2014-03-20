@@ -4204,6 +4204,7 @@ algorithm
       DAE.ReductionInfo reductionInfo;
       DAE.ReductionIterators riters,riters_1;
       DAE.ComponentRef cr,cr_1;
+      list<list<String>> aliases;
 
     case ((e as DAE.EMPTY(scope = _)),rel,ext_arg)
       equation
@@ -4484,12 +4485,12 @@ algorithm
         ((e,ext_arg_2));
     // ---------------------
 
-    case (DAE.MATCHEXPRESSION(matchTy,expl,localDecls,cases,tp),rel,ext_arg)
+    case (DAE.MATCHEXPRESSION(matchTy,expl,aliases,localDecls,cases,tp),rel,ext_arg)
       equation
         // Don't traverse the local declarations; we don't store bindings there (yet)
         ((expl_1,ext_arg_1)) = traverseExpList(expl, rel, ext_arg);
         (cases_1,ext_arg_2) = Patternm.traverseCases(cases,rel,ext_arg_1);
-        e = Util.if_(referenceEq(expl,expl_1) and referenceEq(cases,cases_1),inExp,DAE.MATCHEXPRESSION(matchTy,expl_1,localDecls,cases_1,tp));
+        e = Util.if_(referenceEq(expl,expl_1) and referenceEq(cases,cases_1),inExp,DAE.MATCHEXPRESSION(matchTy,expl_1,aliases,localDecls,cases_1,tp));
         ((e,ext_arg_3)) = rel((e,ext_arg_2));
       then
         ((e,ext_arg_3));
@@ -4647,6 +4648,7 @@ algorithm
       DAE.ReductionInfo reductionInfo;
       DAE.ReductionIterators riters,riters_1;
       DAE.ComponentRef cr,cr_1;
+      list<list<String>> aliases;
 
     case (DAE.EMPTY(scope = _),rel,ext_arg)
       equation
@@ -4910,12 +4912,12 @@ algorithm
         ((e,ext_arg_2));
     // ---------------------
 
-    case (DAE.MATCHEXPRESSION(matchTy,expl,localDecls,cases,tp),rel,ext_arg)
+    case (DAE.MATCHEXPRESSION(matchTy,expl,aliases,localDecls,cases,tp),rel,ext_arg)
       equation
         // Don't traverse the local declarations; we don't store bindings there (yet)
         ((expl_1,ext_arg_1)) = traverseExpWithoutRelationsList(expl, rel, ext_arg);
         (cases_1,ext_arg_2) = Patternm.traverseCases(cases,rel,ext_arg_1);
-        e = Util.if_(referenceEq(expl,expl_1) and referenceEq(cases,cases_1),inExp,DAE.MATCHEXPRESSION(matchTy,expl_1,localDecls,cases_1,tp));
+        e = Util.if_(referenceEq(expl,expl_1) and referenceEq(cases,cases_1),inExp,DAE.MATCHEXPRESSION(matchTy,expl_1,aliases,localDecls,cases_1,tp));
         ((e,ext_arg_3)) = rel((e,ext_arg_2));
       then
         ((e,ext_arg_3));
@@ -5068,6 +5070,7 @@ algorithm
       DAE.MatchType matchType;
       list<DAE.MatchCase> cases;
       ComponentRef cr,cr_1;
+      list<list<String>> aliases;
 
     case (DAE.ICONST(_),rel,ext_arg) then ((inExp,ext_arg));
     case (DAE.RCONST(_),rel,ext_arg) then ((inExp,ext_arg));
@@ -5244,12 +5247,12 @@ algorithm
         ((oe1,ext_arg)) = traverseExpOptTopDown(oe1, rel, ext_arg);
       then ((DAE.META_OPTION(oe1),ext_arg));
 
-    case (DAE.MATCHEXPRESSION(matchType,expl,localDecls,cases,et),rel,ext_arg)
+    case (DAE.MATCHEXPRESSION(matchType,expl,aliases,localDecls,cases,et),rel,ext_arg)
       equation
         ((expl,ext_arg)) = traverseExpListTopDown(expl,rel,ext_arg);
         // TODO: Traverse cases
       then
-        ((DAE.MATCHEXPRESSION(matchType,expl,localDecls,cases,et),ext_arg));
+        ((DAE.MATCHEXPRESSION(matchType,expl,aliases,localDecls,cases,et),ext_arg));
 
     case (DAE.METARECORDCALL(fn,expl,fieldNames,i),rel,ext_arg)
       equation
@@ -5881,6 +5884,7 @@ algorithm
       DAE.ReductionInfo reductionInfo;
       DAE.ReductionIterators riters;
       DAE.CallAttributes attr;
+      list<list<String>> aliases;
 
     case (DAE.ICONST(integer = _), _) then (inExp, inTuple);
     case (DAE.RCONST(real = _), _) then (inExp, inTuple);
@@ -6048,14 +6052,14 @@ algorithm
       then
         (DAE.METARECORDCALL(path, expl, strl, index), tup);
 
-    case (DAE.MATCHEXPRESSION(matchType = match_ty, inputs = expl,
+    case (DAE.MATCHEXPRESSION(matchType = match_ty, inputs = expl, aliases=aliases,
         localDecls = match_decls, cases = match_cases, et = ty), tup)
       equation
         (expl, tup) = traverseExpListBidir(expl, tup);
         /* TODO: Implement traverseMatchCase! */
         //(cases, tup) = List.mapFold(cases, traverseMatchCase, tup);
       then
-        (DAE.MATCHEXPRESSION(match_ty, expl, match_decls, match_cases, ty), tup);
+        (DAE.MATCHEXPRESSION(match_ty, expl, aliases, match_decls, match_cases, ty), tup);
 
     case (DAE.BOX(exp = e1), tup)
       equation

@@ -760,6 +760,7 @@ public
 constant Attributes dummyAttrVar   = ATTR(SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(),   Absyn.BIDIR(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC());
 constant Attributes dummyAttrParam = ATTR(SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.PARAM(), Absyn.BIDIR(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC());
 constant Attributes dummyAttrConst = ATTR(SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC());
+constant Attributes dummyAttrInput = ATTR(SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.PARAM(), Absyn.INPUT(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC());
 
 public uniontype BindingSource "where this binding came from: either default binding or start value"
   record BINDING_FROM_DEFAULT_VALUE "the binding came from the default value" end BINDING_FROM_DEFAULT_VALUE;
@@ -1366,6 +1367,7 @@ uniontype Exp "Expressions
   record MATCHEXPRESSION
     MatchType matchType;
     list<Exp> inputs;
+    list<list<String>> aliases "input aliases (input as-bindings)";
     list<Element> localDecls;
     list<MatchCase> cases;
     Type et;
@@ -1473,6 +1475,7 @@ public uniontype Pattern "Patterns deconstruct expressions"
   record PAT_AS "id as pat"
     String id;
     Option<Type> ty "so we can unbox if needed";
+    Attributes attr "so we know if the ident is parameter or assignable";
     Pattern pat;
   end PAT_AS;
   record PAT_AS_FUNC_PTR "id as pat"

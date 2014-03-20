@@ -8407,6 +8407,7 @@ algorithm
       list<DAE.Element> localDecls;
       DAE.MatchType matchType;
       list<DAE.MatchCase> cases;
+      list<list<String>> aliases;
     case (path1,DAE.CALL(path=path2,expLst=es,attr=DAE.CALL_ATTR(tp,b1,b2,b3,i,DAE.NO_TAIL())),_,_)
       equation
         true = Absyn.pathEqual(path1,path2);
@@ -8419,10 +8420,10 @@ algorithm
         (e3,b2) = optimizeStatementTail3(path,e3,vars,source);
         true = b1 or b2;
       then (DAE.IFEXP(e1,e2,e3),true);
-    case (_,DAE.MATCHEXPRESSION(matchType as DAE.MATCH(_) /*TODO:matchcontinue*/,inputs,localDecls,cases,et),_,_)
+    case (_,DAE.MATCHEXPRESSION(matchType as DAE.MATCH(_) /*TODO:matchcontinue*/,inputs,aliases,localDecls,cases,et),_,_)
       equation
         cases = optimizeStatementTailMatchCases(path,cases,false,{},vars,source);
-      then (DAE.MATCHEXPRESSION(matchType,inputs,localDecls,cases,et),true);
+      then (DAE.MATCHEXPRESSION(matchType,inputs,aliases,localDecls,cases,et),true);
     else (rhs,false);
   end matchcontinue;
 end optimizeStatementTail3;

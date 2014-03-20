@@ -1128,6 +1128,7 @@ package DAE
     record MATCHEXPRESSION
       DAE.MatchType matchType;
       list<Exp> inputs;
+      list<list<String>> aliases;
       list<Element> localDecls;
       list<MatchCase> cases;
       Type et;

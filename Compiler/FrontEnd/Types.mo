@@ -4312,6 +4312,7 @@ algorithm
       DAE.TypeSource ts,ts1,ts2;
       list<DAE.Var> els1,els2;
       Absyn.Path p1,p2,tp;
+      list<list<String>> aliases;
 
     // if we expect notTuple and we get Tuple do DAE.TSUB(e, 1)
     // we try subtype of the first tuple element with the other type!
@@ -4567,7 +4568,7 @@ algorithm
       then
         (DAE.META_TUPLE(elist_1),DAE.T_METATUPLE(tys_1,ts2));
 
-    case (DAE.MATCHEXPRESSION(matchTy,inputs,localDecls,cases,et),_,_,_)
+    case (DAE.MATCHEXPRESSION(matchTy,inputs,aliases,localDecls,cases,et),_,_,_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         elist = Patternm.resultExps(cases);
@@ -4575,7 +4576,7 @@ algorithm
         cases=Patternm.fixCaseReturnTypes2(cases,elist_1,Absyn.dummyInfo);
         et=simplifyType(expected);
       then
-        (DAE.MATCHEXPRESSION(matchTy,inputs,localDecls,cases,et),expected);
+        (DAE.MATCHEXPRESSION(matchTy,inputs,aliases,localDecls,cases,et),expected);
 
     case (DAE.META_TUPLE(elist),DAE.T_METATUPLE(types = tys1),DAE.T_METATUPLE(tys2,ts2),_)
       equation

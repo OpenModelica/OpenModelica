@@ -9545,10 +9545,11 @@ case exp as MATCHEXPRESSION(__) then
   let &expInput = buffer ""
   // get the current index of tmpMeta and reserve N=listLength(inputs) values in it!
   let startIndexInputs = '<%System.tmpTickIndexReserve(1, listLength(inputs))%>'
-  let ignore3 = (inputs |> exp hasindex i0 =>
+  let ignore3 = (List.threadTuple(inputs,aliases) |> (exp,alias) hasindex i0 =>
     let typ = '<%expTypeFromExpModelica(exp)%>'
-    let decl = tempDeclMatchInput(typ, prefix, startIndexInputs, i0, &varDeclsInput /*BUFD*/)
+    let decl = tempDeclMatchInput(typ, prefix, startIndexInputs, i0, &varDeclsInput)
     let &expInput += '<%decl%> = <%daeExp(exp, context, &preExpInput, &varDeclsInput)%>;<%\n%>'
+    let &expInput += alias |> a => let &varDeclsInput += '<%typ%> _<%a%>;' '_<%a%> = <%decl%>;' ; separator="\n"
     ""; empty)
   let ix = match exp.matchType
     case MATCH(switch=SOME((switchIndex,ty as T_STRING(__),div))) then
