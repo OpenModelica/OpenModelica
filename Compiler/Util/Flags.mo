@@ -826,15 +826,19 @@ constant ConfigFlag HPCOM_SCHEDULER = CONFIG_FLAG(50, "hpcomScheduler",
   Util.gettext("Sets the scheduler for task graph scheduling (list | level | levelr | ext | mcp | taskdep). Default: list."));
   
 constant ConfigFlag TEARING_HEURISTIC = CONFIG_FLAG(51, "tearingHeuristic",
-  NONE(), EXTERNAL(), STRING_FLAG("cellier"),
+  NONE(), EXTERNAL(), STRING_FLAG("MC1"),
   SOME(STRING_DESC_OPTION({
-    ("cellier", Util.gettext("Original cellier with consideration of impossible assignments.")),
-    ("cellier2", Util.gettext("Modified cellier, new last step 'count impossible assignments'.")),
-    ("cellier3", Util.gettext("Modified cellier, drop first step.")),
-    ("cellier4", Util.gettext("Modified cellier, drop first step, new step 'count impossible assignments'.")),
-    ("cellier5", Util.gettext("Modified cellier2, step 'count impossible assignments' before last step.")),
-    ("cellier6", Util.gettext("Modified cellier4, step 'count impossible assignments' before last step.")),
-  ("cellier7", Util.gettext("Modified cellier4, Two rounds, choose better potentials-set."))})),
+    ("MC1", Util.gettext("Original cellier with consideration of impossible assignments and discrete Vars.")),
+	("MC2", Util.gettext("Modified cellier, drop first step.")),
+    ("MC11", Util.gettext("Modified MC1, new last step 'count impossible assignments'.")),
+    ("MC21", Util.gettext("Modified MC2, , new last step 'count impossible assignments'.")),
+    ("MC12", Util.gettext("Modified MC1, step 'count impossible assignments' before last step.")),
+    ("MC22", Util.gettext("Modified MC2, step 'count impossible assignments' before last step.")),
+	("MC13", Util.gettext("Modified MC1, build sum of impossible assignment and causalizable equations, choose var with biggest sum.")),
+	("MC23", Util.gettext("Modified MC2, build sum of impossible assignment and causalizable equations, choose var with biggest sum.")),
+    ("MC231", Util.gettext("Modified MC23, Two rounds, choose better potentials-set.")),
+	("MC3", Util.gettext("Modified cellier, build sum of impossible assignment and causalizable equations for all vars, choose var with biggest sum.")),
+	("MC4", Util.gettext("Modified cellier, use all heuristics, choose var that occurs most in potential sets"))})),
     Util.gettext("Sets the tearing heuristic to use for Cellier-tearing."));
 
 constant ConfigFlag HPCOM_CODE = CONFIG_FLAG(52, "hpcomCode",
