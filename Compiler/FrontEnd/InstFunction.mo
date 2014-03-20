@@ -410,7 +410,6 @@ algorithm
         c = Util.if_(Config.acceptMetaModelicaGrammar(),
                      inClass,
                      SCode.setClassPartialPrefix(SCode.NOT_PARTIAL(), inClass));
-
         (cache,cenv,ih,_,DAE.DAE(daeElts),_,ty,st,_,_) =
           Inst.instClass(cache, env, ih, UnitAbsynBuilder.emptyInstStore(), mod, pre,
             c, inst_dims, true, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
@@ -607,16 +606,28 @@ algorithm
       SCode.Comment cmt;
       list<Absyn.Path> paths;
 
+    // For external functions, include everything essential
+    case (cache,env,ih,SCode.CLASS(name = id,prefixes = prefixes,
+                                   encapsulatedPrefix = e,partialPrefix = p,restriction = r as SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(_)),
+                                   classDef = SCode.PARTS(elementLst = elts,externalDecl=extDecl),cmt=cmt, info = info))
+      equation
+        // stripped_class = SCode.CLASS(id,prefixes,e,p,r,SCode.PARTS(elts,{},{},{},{},{},{},extDecl),cmt,info);
+        (cache,env_1,ih,funs) = implicitFunctionInstantiation2(cache, env, ih, DAE.NOMOD(), Prefix.NOPRE(), inClass, {}, true);
+        // Only external functions are valid without an algorithm section... 
+        cache = Env.addDaeExtFunction(cache, funs);
+      then
+        (cache,env_1,ih);
+
     // The function type can be determined without the body. Annotations need to be preserved though.
     case (cache,env,ih,SCode.CLASS(name = id,prefixes = prefixes,
                                    encapsulatedPrefix = e,partialPrefix = p,restriction = r,
                                    classDef = SCode.PARTS(elementLst = elts,externalDecl=extDecl),cmt=cmt, info = info))
       equation
-        stripped_elts = List.map(elts,InstUtil.stripFuncOutputsMod);
-        stripped_class = SCode.CLASS(id,prefixes,e,p,r,SCode.PARTS(elts,{},{},{},{},{},{},extDecl),cmt,info);
+        elts = List.select(elts,isElementImportForFunctions);
+        stripped_class = SCode.CLASS(id,prefixes,e,p,SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(false)),SCode.PARTS(elts,{},{},{},{},{},{},NONE()),cmt,info);
         (cache,env_1,ih,funs) = implicitFunctionInstantiation2(cache, env, ih, DAE.NOMOD(), Prefix.NOPRE(), stripped_class, {}, true);
         // Only external functions are valid without an algorithm section... 
-        cache = Env.addDaeExtFunction(cache, funs);
+        // cache = Env.addDaeExtFunction(cache, funs);
       then
         (cache,env_1,ih);
 
@@ -768,7 +779,6 @@ algorithm
         daeextdecl = DAE.EXTERNALDECL(fname,fargs,rettype,lang,ann);
       then
         (cache,ih,daeextdecl);
-    
     case (_,env,ih,_,_,_,_,_)
       equation
         Debug.fprintln(Flags.FAILTRACE, "#-- Inst.instExtDecl failed");
@@ -988,5 +998,17 @@ algorithm
 
   end matchcontinue;
 end addRecordConstructorFunction;
+
+protected function isElementImportForFunctions
+  input SCode.Element elt;
+  output Boolean b;
+algorithm
+  b := match elt
+    case SCode.COMPONENT(prefixes=SCode.PREFIXES(visibility=SCode.PROTECTED()),
+                         attributes=SCode.ATTR(direction=Absyn.BIDIR(),variability=SCode.VAR()))
+      then false;
+    else true;
+  end match;
+end isElementImportForFunctions;
 
 end InstFunction;

@@ -3955,6 +3955,13 @@ algorithm
   end match;
 end makeElementProtected;
 
+public function isElementPublic
+  input Element inElement;
+  output Boolean outIsPublic;
+algorithm
+  outIsPublic := visibilityBool(prefixesVisibility(elementPrefixes(inElement)));
+end isElementPublic;
+
 public function isElementProtected
   input Element inElement;
   output Boolean outIsProtected;
