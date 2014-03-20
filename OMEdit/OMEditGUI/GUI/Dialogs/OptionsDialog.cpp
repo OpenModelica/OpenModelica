@@ -417,9 +417,14 @@ void OptionsDialog::saveGeneralSettings()
   }
   mSettings.setValue("welcomePage/view", mpGeneralSettingsPage->getWelcomePageView());
   if (mpGeneralSettingsPage->getShowLatestNewsCheckBox()->isChecked())
+  {
     mpMainWindow->getWelcomePageWidget()->getLatestNewsFrame()->show();
+    mpMainWindow->getWelcomePageWidget()->addLatestNewsListItems();
+  }
   else
+  {
     mpMainWindow->getWelcomePageWidget()->getLatestNewsFrame()->hide();
+  }
   mSettings.setValue("welcomePage/showLatestNews", mpGeneralSettingsPage->getShowLatestNewsCheckBox()->isChecked());
 }
 

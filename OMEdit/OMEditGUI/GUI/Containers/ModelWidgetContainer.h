@@ -268,8 +268,9 @@ private:
   QFrame *mpBottomFrame;
   QPushButton *mpCreateModelButton;
   QPushButton *mpOpenModelButton;
-private slots:
+public slots:
   void addLatestNewsListItems();
+private slots:
   void readLatestNewsXML(QNetworkReply *pNetworkReply);
   void openRecentFileItem(QListWidgetItem *pItem);
   void openLatestNewsItem(QListWidgetItem *pItem);

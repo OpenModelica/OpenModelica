@@ -1810,9 +1810,13 @@ QSplitter* WelcomePageWidget::getSplitter()
 void WelcomePageWidget::addLatestNewsListItems()
 {
   mpLatestNewsListWidget->clear();
-  QUrl newsUrl("https://openmodelica.org/index.php?option=com_content&view=category&id=1&format=feed&amp;type=rss");
-  QNetworkReply *pNetworkReply = mpLatestNewsNetworkAccessManager->get(QNetworkRequest(newsUrl));
-  pNetworkReply->ignoreSslErrors();
+  /* if show latest news settings is not set then don't fetch the latest news items. */
+  if (mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getShowLatestNewsCheckBox()->isChecked())
+  {
+    QUrl newsUrl("https://openmodelica.org/index.php?option=com_content&view=category&id=1&format=feed&amp;type=rss");
+    QNetworkReply *pNetworkReply = mpLatestNewsNetworkAccessManager->get(QNetworkRequest(newsUrl));
+    pNetworkReply->ignoreSslErrors();
+  }
 }
 
 void WelcomePageWidget::readLatestNewsXML(QNetworkReply *pNetworkReply)
