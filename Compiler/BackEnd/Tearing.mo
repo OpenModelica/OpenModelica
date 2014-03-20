@@ -1381,7 +1381,7 @@ algorithm
         true = solvable(s);
       then
         solvableLst(rest);
-	case ((r,s)::rest)
+  case ((r,s)::rest)
       equation
         false = solvable(s);
       then
@@ -1857,20 +1857,20 @@ algorithm
   local
     Integer indx;
     list<Integer> newLst;
-	Boolean b;   
+  Boolean b;   
   case(_,indx)
    equation
      true = intLe(indx, listLength(rowIn));
-	 b = intLe(listGet(rowIn,indx),0);
+   b = intLe(listGet(rowIn,indx),0);
      indx = Util.if_(b,indx-1,indx);
-	 newLst = Debug.bcallret2(b,listDelete,rowIn,indx,rowIn);
-	then
-	  deleteNegativeEntries(newLst,indx+1);
+   newLst = Debug.bcallret2(b,listDelete,rowIn,indx,rowIn);
+  then
+    deleteNegativeEntries(newLst,indx+1);
   case(_,_)
    equation
      true = intGt(index,listLength(rowIn));
-	then
-	  rowIn; 
+  then
+    rowIn; 
  end matchcontinue;
 end deleteNegativeEntries;
 
@@ -2025,12 +2025,12 @@ algorithm
         potentials = Debug.bcallret6(stringEqual(heuristic,"MC12"),potentialsCellier5,m,mt,me,meT,(ass1In,ass2In,discreteVars),(mapEqnIncRow,mapIncRowEqn),potentials);
         potentials = Debug.bcallret6(stringEqual(heuristic,"MC22"),potentialsCellier6,m,mt,me,meT,(ass1In,ass2In,discreteVars),(mapEqnIncRow,mapIncRowEqn),potentials);
         potentials = Debug.bcallret6(stringEqual(heuristic,"MC13"),potentialsCellier7,m,mt,me,meT,(ass1In,ass2In,discreteVars),(mapEqnIncRow,mapIncRowEqn),potentials);
-		potentials = Debug.bcallret6(stringEqual(heuristic,"MC23"),potentialsCellier8,m,mt,me,meT,(ass1In,ass2In,discreteVars),(mapEqnIncRow,mapIncRowEqn),potentials);
-		potentials = Debug.bcallret6(stringEqual(heuristic,"MC231"),potentialsCellier9,m,mt,me,meT,(ass1In,ass2In,discreteVars),(mapEqnIncRow,mapIncRowEqn),potentials);
-		potentials = Debug.bcallret6(stringEqual(heuristic,"MC3"),potentialsCellier10,m,mt,me,meT,(ass1In,ass2In,discreteVars),(mapEqnIncRow,mapIncRowEqn),potentials);
-		potentials = Debug.bcallret6(stringEqual(heuristic,"MC4"),potentialsCellier11,m,mt,me,meT,(ass1In,ass2In,discreteVars),(mapEqnIncRow,mapIncRowEqn),potentials);
+    potentials = Debug.bcallret6(stringEqual(heuristic,"MC23"),potentialsCellier8,m,mt,me,meT,(ass1In,ass2In,discreteVars),(mapEqnIncRow,mapIncRowEqn),potentials);
+    potentials = Debug.bcallret6(stringEqual(heuristic,"MC231"),potentialsCellier9,m,mt,me,meT,(ass1In,ass2In,discreteVars),(mapEqnIncRow,mapIncRowEqn),potentials);
+    potentials = Debug.bcallret6(stringEqual(heuristic,"MC3"),potentialsCellier10,m,mt,me,meT,(ass1In,ass2In,discreteVars),(mapEqnIncRow,mapIncRowEqn),potentials);
+    potentials = Debug.bcallret6(stringEqual(heuristic,"MC4"),potentialsCellier11,m,mt,me,meT,(ass1In,ass2In,discreteVars),(mapEqnIncRow,mapIncRowEqn),potentials);
         true = intGe(listLength(potentials),1);
-		   Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nEND of potentialsCellier\n" +& BORDER +& "\n\n");
+       Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nEND of potentialsCellier\n" +& BORDER +& "\n\n");
       then 
         listGet(potentials,1);
     case(_,_,_,_,_,_,_,_,_,3)
@@ -2115,15 +2115,15 @@ algorithm
    (mapEqnIncRow,mapIncRowEqn) := mapInfo;
    (ass1In,ass2In,discreteVars) := assIn;
     // modified Cellier heuristic [MC2]
-	// 0. Consider only non-discrete Vars
-	varlst := List.intRange(arrayLength(mt));
-	(_,selectedcols0,_) := List.intersection1OnTrue(varlst,discreteVars,intEq);
-	mtsel := Util.arraySelect(mt,selectedcols0);
+  // 0. Consider only non-discrete Vars
+  varlst := List.intRange(arrayLength(mt));
+  (_,selectedcols0,_) := List.intersection1OnTrue(varlst,discreteVars,intEq);
+  mtsel := Util.arraySelect(mt,selectedcols0);
     // 1. choose rows (vars) with most nonzero entries and write the indexes in a list
     ((edges,_,selectedcols1)) := Util.arrayFold(mtsel,findMostEntries2,(0,1,{}));
     selectedcols1 := List.unique(selectedcols1);
-	// convert indexes from mtsel to indexes from mt
-	selectedcols1 := selectFromList(selectedcols0,selectedcols1);
+  // convert indexes from mtsel to indexes from mt
+  selectedcols1 := selectFromList(selectedcols0,selectedcols1);
        Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"1st: "+& stringDelimitList(List.map(selectedcols1,intString),",")+&"\n(Non-discrete variables with most occurrence in equations (" +& intString(edges) +&" times))\n\n");
     // 2. select the rows(eqs) from m which could be causalized by knowing one more Var
     ((_,assEq)) := List.fold(ass2In,getUnassigned,(1,{}));
@@ -2163,9 +2163,9 @@ algorithm
       ((_,selectedcolsLst)) := Util.arrayFold(m,findMostEntries,(0,{}));
       selectedcols1 := List.unique(List.flatten(selectedcolsLst));
          Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"1st: " +& stringDelimitList(List.map(selectedcols1,intString),",") +& "\n");
-	  // Without discrete:
+    // Without discrete:
       (_,selectedcols1,_) := List.intersection1OnTrue(selectedcols1,discreteVars,intEq);
-         Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Without Discrete: " +& stringDelimitList(List.map(selectedcols1,intString),",") +& "\n(Variables in the equation(s) with most Variables)\n\n");	  
+         Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Without Discrete: " +& stringDelimitList(List.map(selectedcols1,intString),",") +& "\n(Variables in the equation(s) with most Variables)\n\n");    
       // 2. gather these columns in a new array (reduced mt)
       mtsel := Util.arraySelect(mt,selectedcols1);
       // 3. choose rows (vars) with most nonzero entries and write the indexes in a list
@@ -2211,15 +2211,15 @@ algorithm
    (mapEqnIncRow,mapIncRowEqn) := mapInfo;
    (ass1In,ass2In,discreteVars) := assIn;
     // modified Cellier heuristic [MC21]
-	// 0. Consider only non-discrete Vars
-	varlst := List.intRange(arrayLength(mt));
-	(_,selectedcols0,_) := List.intersection1OnTrue(varlst,discreteVars,intEq);
-	mtsel := Util.arraySelect(mt,selectedcols0);
+  // 0. Consider only non-discrete Vars
+  varlst := List.intRange(arrayLength(mt));
+  (_,selectedcols0,_) := List.intersection1OnTrue(varlst,discreteVars,intEq);
+  mtsel := Util.arraySelect(mt,selectedcols0);
     // 1. choose rows (vars) with most nonzero entries and write the indexes in a list
     ((edges,_,selectedcols1)) := Util.arrayFold(mtsel,findMostEntries2,(0,1,{}));
     selectedcols1 := List.unique(selectedcols1);
-	// convert indexes from mtsel to indexes from mt
-	selectedcols1 := selectFromList(selectedcols0,selectedcols1);
+  // convert indexes from mtsel to indexes from mt
+  selectedcols1 := selectFromList(selectedcols0,selectedcols1);
        Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"1st: "+& stringDelimitList(List.map(selectedcols1,intString),",")+&"\n(Non-discrete variables with most occurrence in equations (" +& intString(edges) +&" times))\n\n");
     // 2. select the rows(eqs) from m which could be causalized by knowing one more Var
     ((_,assEq)) := List.fold(ass2In,getUnassigned,(1,{}));
@@ -2262,9 +2262,9 @@ algorithm
       ((_,selectedcolsLst)) := Util.arrayFold(m,findMostEntries,(0,{}));
       selectedcols1 := List.unique(List.flatten(selectedcolsLst));
          Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"1st: " +& stringDelimitList(List.map(selectedcols1,intString),",") +& "\n");
-	  // Without discrete:
+    // Without discrete:
       (_,selectedcols1,_) := List.intersection1OnTrue(selectedcols1,discreteVars,intEq);
-         Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Without Discrete: " +& stringDelimitList(List.map(selectedcols1,intString),",") +& "\n(Variables in the equation(s) with most Variables)\n\n");	  
+         Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Without Discrete: " +& stringDelimitList(List.map(selectedcols1,intString),",") +& "\n(Variables in the equation(s) with most Variables)\n\n");    
       // 2. gather these columns in a new array (reduced mt)
       mtsel := Util.arraySelect(mt,selectedcols1);
       // 3. choose rows (vars) with most nonzero entries and write the indexes in a list
@@ -2273,15 +2273,15 @@ algorithm
       // 4. convert indexes from mtsel to indexes from mt
       selectedcols1 := selectFromList(selectedcols1,selectedcols2);
          Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"2nd: "+& stringDelimitList(List.map(selectedcols1,intString),",")+&"\n(Variables from (1st) with most occurrence in equations (" +& intString(edges) +&" times))\n\n");
-	  // 5. choose vars with the most impossible assignments
+    // 5. choose vars with the most impossible assignments
       (selectedcols1,_,_) := countImpossibleAss(selectedcols1,ass2In,met,{},{},0);
-         Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n3rd: "+& stringDelimitList(List.map(selectedcols1,intString),",")+&"\n(Variables from (2nd) with most incident impossible assignments)\n\n");	 
+         Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n3rd: "+& stringDelimitList(List.map(selectedcols1,intString),",")+&"\n(Variables from (2nd) with most incident impossible assignments)\n\n");   
       // 6. select the rows(eqs) from m which could be causalized by knowing one more Var
       ((_,assEq)) := List.fold(ass2In,getUnassigned,(1,{}));
       (assEq_multi,assEq_single) := traverseEqnsforAssignable(assEq,m,mapEqnIncRow,mapIncRowEqn,1,{},{});
       selectedrows := listAppend(assEq_multi,assEq_single);
          Debug.fcall(Flags.TEARING_DUMPVERBOSE, print, stringDelimitList(List.map(selectedrows,intString),",")+&"\n(Equations which could be causalized by knowing one more Var)\n\n");
-	  // 7. determine which possible Vars causalize most equations considering impossible assignments and write them into potentials
+    // 7. determine which possible Vars causalize most equations considering impossible assignments and write them into potentials
       msel2t := Util.arraySelect(mt,selectedcols1);
       ((_,_,_,_,potentials,_,_,_)) := Util.arrayFold(msel2t,selectCausalVars,(me,ass1In,selectedrows,selectedcols1,{},0,1,{}));
       // 8. convert indexes from msel2t to indexes from mt
@@ -2311,24 +2311,24 @@ algorithm
    (ass1In,ass2In,discreteVars) := assIn;
     // modified Cellier heuristic [MC22]
     // 0. Consider only non-discrete Vars
-	varlst := List.intRange(arrayLength(mt));
-	(_,selectedcols0,_) := List.intersection1OnTrue(varlst,discreteVars,intEq);
-	mtsel := Util.arraySelect(mt,selectedcols0);
+  varlst := List.intRange(arrayLength(mt));
+  (_,selectedcols0,_) := List.intersection1OnTrue(varlst,discreteVars,intEq);
+  mtsel := Util.arraySelect(mt,selectedcols0);
     // 1. choose rows (vars) with most nonzero entries and write the indexes in a list
     ((edges,_,selectedcols1)) := Util.arrayFold(mtsel,findMostEntries2,(0,1,{}));
     selectedcols1 := List.unique(selectedcols1);
-	// convert indexes from mtsel to indexes from mt
-	selectedcols1 := selectFromList(selectedcols0,selectedcols1);
+  // convert indexes from mtsel to indexes from mt
+  selectedcols1 := selectFromList(selectedcols0,selectedcols1);
        Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"1st: "+& stringDelimitList(List.map(selectedcols1,intString),",")+&"\n(Non-discrete variables with most occurrence in equations (" +& intString(edges) +&" times))\n\n");
     // 2. choose vars with the most impossible assignments
     (selectedcols1,_,_) := countImpossibleAss(selectedcols1,ass2In,met,{},{},0);
        Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n2nd: "+& stringDelimitList(List.map(selectedcols1,intString),",")+&"\n(Variables from (1st) with most incident impossible assignments)\n\n");
-	// 3. select the rows(eqs) from m which could be causalized by knowing one more Var
+  // 3. select the rows(eqs) from m which could be causalized by knowing one more Var
     ((_,assEq)) := List.fold(ass2In,getUnassigned,(1,{}));
     (assEq_multi,assEq_single) := traverseEqnsforAssignable(assEq,m,mapEqnIncRow,mapIncRowEqn,1,{},{});
     selectedrows := listAppend(assEq_multi,assEq_single);
        Debug.fcall(Flags.TEARING_DUMPVERBOSE, print, stringDelimitList(List.map(selectedrows,intString),",")+&"\n(Equations which could be causalized by knowing one more Var)\n\n");
-	// 4. determine which possible Vars causalize most equations considering impossible assignments and write them into potentials
+  // 4. determine which possible Vars causalize most equations considering impossible assignments and write them into potentials
     msel2t := Util.arraySelect(mt,selectedcols1);
     ((_,_,_,_,potentials,_,_,_)) := Util.arrayFold(msel2t,selectCausalVars,(me,ass1In,selectedrows,selectedcols1,{},0,1,{}));
     // 5. convert indexes from msel2t to indexes from mt
@@ -2361,9 +2361,9 @@ algorithm
       ((_,selectedcolsLst)) := Util.arrayFold(m,findMostEntries,(0,{}));
       selectedcols1 := List.unique(List.flatten(selectedcolsLst));
          Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"1st: " +& stringDelimitList(List.map(selectedcols1,intString),",") +& "\n");
-	  // Without discrete:
+    // Without discrete:
       (_,selectedcols1,_) := List.intersection1OnTrue(selectedcols1,discreteVars,intEq);
-         Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Without Discrete: " +& stringDelimitList(List.map(selectedcols1,intString),",") +& "\n(Variables in the equation(s) with most Variables)\n\n");	  
+         Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Without Discrete: " +& stringDelimitList(List.map(selectedcols1,intString),",") +& "\n(Variables in the equation(s) with most Variables)\n\n");    
       // 2. gather these columns in a new array (reduced mt)
       mtsel := Util.arraySelect(mt,selectedcols1);
       // 3. choose rows (vars) with most nonzero entries and write the indexes in a list
@@ -2380,17 +2380,17 @@ algorithm
       // 6. determine for each variable the number of equations it could causalize considering impossible assignments and save them in counts1
       msel2t := Util.arraySelect(mt,selectedcols1);
       ((_,_,_,_,_,_,_,counts1)) := Util.arrayFold(msel2t,selectCausalVars,(me,ass1In,selectedrows,selectedcols1,{},0,1,{}));
-	  counts1 := listReverse(counts1);
-	  // 8. determine for each variable the number of impossible assignments and save them in counts2
+    counts1 := listReverse(counts1);
+    // 8. determine for each variable the number of impossible assignments and save them in counts2
       (_,counts2,_) := countImpossibleAss(selectedcols1,ass2In,met,{},{},0);
-	  counts2 := listReverse(counts2);
-	  // 9. Calculate the sum of number of impossible assignments and causalizable equations for each variable and save them in points
+    counts2 := listReverse(counts2);
+    // 9. Calculate the sum of number of impossible assignments and causalizable equations for each variable and save them in points
       points := List.threadMap(counts1,counts2,intAdd);
-	     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nPoints: "+& stringDelimitList(List.map(points,intString),",")+&"\n(Sum of impossible assignments and causalizable equations)\n");
-	  // 10. Choose vars with most points as potentials and convert indexes
-	  potentials := maxListInt(points);
+       Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nPoints: "+& stringDelimitList(List.map(points,intString),",")+&"\n(Sum of impossible assignments and causalizable equations)\n");
+    // 10. Choose vars with most points as potentials and convert indexes
+    potentials := maxListInt(points);
       potentials := selectFromList(selectedcols1,potentials);
-		 Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n3rd: "+& stringDelimitList(List.map(potentials,intString),",")+&"\n(Variables from (2nd) with most points - potentials)\n\n");
+     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n3rd: "+& stringDelimitList(List.map(potentials,intString),",")+&"\n(Variables from (2nd) with most points - potentials)\n\n");
 end potentialsCellier7;
 
 
@@ -2415,16 +2415,16 @@ algorithm
       (ass1In,ass2In,discreteVars) := assIn;
       // Cellier heuristic [MC23]
       // 0. Consider only non-discrete Vars
-	  varlst := List.intRange(arrayLength(mt));
-	  (_,selectedcols0,_) := List.intersection1OnTrue(varlst,discreteVars,intEq);
-	  mtsel := Util.arraySelect(mt,selectedcols0);
+    varlst := List.intRange(arrayLength(mt));
+    (_,selectedcols0,_) := List.intersection1OnTrue(varlst,discreteVars,intEq);
+    mtsel := Util.arraySelect(mt,selectedcols0);
       // 1. choose rows (vars) with most nonzero entries and write the indexes in a list
       ((edges,_,selectedcols1)) := Util.arrayFold(mtsel,findMostEntries2,(0,1,{}));
       selectedcols1 := List.unique(selectedcols1);
-	  // 2. convert indexes from mtsel to indexes from mt
-	  selectedcols1 := selectFromList(selectedcols0,selectedcols1);
+    // 2. convert indexes from mtsel to indexes from mt
+    selectedcols1 := selectFromList(selectedcols0,selectedcols1);
          Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"1st: "+& stringDelimitList(List.map(selectedcols1,intString),",")+&"\n(Non-discrete variables with most occurrence in equations (" +& intString(edges) +&" times))\n\n");
-	  // 3. select the rows(eqs) from m which could be causalized by knowing one more Var
+    // 3. select the rows(eqs) from m which could be causalized by knowing one more Var
       ((_,assEq)) := List.fold(ass2In,getUnassigned,(1,{}));
       (assEq_multi,assEq_single) := traverseEqnsforAssignable(assEq,m,mapEqnIncRow,mapIncRowEqn,1,{},{});
       selectedrows := listAppend(assEq_multi,assEq_single);
@@ -2432,17 +2432,17 @@ algorithm
       // 4. determine for each variable the number of equations it could causalize considering impossible assignments and save them in counts1
       msel2t := Util.arraySelect(mt,selectedcols1);
       ((_,_,_,_,_,_,_,counts1)) := Util.arrayFold(msel2t,selectCausalVars,(me,ass1In,selectedrows,selectedcols1,{},0,1,{}));
-	  counts1 := listReverse(counts1);
-	  // 5. determine for each variable the number of impossible assignments and save them in counts2
+    counts1 := listReverse(counts1);
+    // 5. determine for each variable the number of impossible assignments and save them in counts2
       (_,counts2,_) := countImpossibleAss(selectedcols1,ass2In,met,{},{},0);
-	  counts2 := listReverse(counts2);
-	  // 6. Calculate the sum of number of impossible assignments and causalizable equations for each variable and save them in points
+    counts2 := listReverse(counts2);
+    // 6. Calculate the sum of number of impossible assignments and causalizable equations for each variable and save them in points
       points := List.threadMap(counts1,counts2,intAdd);
-	     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nPoints: "+& stringDelimitList(List.map(points,intString),",")+&"\n(Sum of impossible assignments and causalizable equations)\n");
-	  // 7. Choose vars with most points as potentials and convert indexes
-	  potentials := maxListInt(points);
+       Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nPoints: "+& stringDelimitList(List.map(points,intString),",")+&"\n(Sum of impossible assignments and causalizable equations)\n");
+    // 7. Choose vars with most points as potentials and convert indexes
+    potentials := maxListInt(points);
       potentials := selectFromList(selectedcols1,potentials);
-		 Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n2nd: "+& stringDelimitList(List.map(potentials,intString),",")+&"\n(Variables from (1st) with most points - potentials)\n\n");
+     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n2nd: "+& stringDelimitList(List.map(potentials,intString),",")+&"\n(Variables from (1st) with most points - potentials)\n\n");
 end potentialsCellier8;
 
 
@@ -2469,16 +2469,16 @@ algorithm
     // modified Cellier heuristic [MC231]
        Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Start round 1:\n==============\n\n");
     // 0. Consider only non-discrete Vars
-	varlst := List.intRange(arrayLength(mt));
-	(_,selectedcols0,_) := List.intersection1OnTrue(varlst,discreteVars,intEq);
-	mtsel := Util.arraySelect(mt,selectedcols0);
+  varlst := List.intRange(arrayLength(mt));
+  (_,selectedcols0,_) := List.intersection1OnTrue(varlst,discreteVars,intEq);
+  mtsel := Util.arraySelect(mt,selectedcols0);
     // 1. choose rows (vars) with most nonzero entries and write the indexes in a list
     ((edges,_,selectedcols1)) := Util.arrayFold(mtsel,findMostEntries2,(0,1,{}));
     selectedcols1 := List.unique(selectedcols1);
-	// 2. convert indexes from mtsel to indexes from mt
-	selectedcols1 := selectFromList(selectedcols0,selectedcols1);
+  // 2. convert indexes from mtsel to indexes from mt
+  selectedcols1 := selectFromList(selectedcols0,selectedcols1);
        Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"1st: "+& stringDelimitList(List.map(selectedcols1,intString),",")+&"\n(Non-discrete variables with most occurrence in equations (" +& intString(edges) +&" times))\n\n");
-	// 3. select the rows(eqs) from m which could be causalized by knowing one more Var
+  // 3. select the rows(eqs) from m which could be causalized by knowing one more Var
     ((_,assEq)) := List.fold(ass2In,getUnassigned,(1,{}));
     (assEq_multi,assEq_single) := traverseEqnsforAssignable(assEq,m,mapEqnIncRow,mapIncRowEqn,1,{},{});
     selectedrows := listAppend(assEq_multi,assEq_single);
@@ -2486,18 +2486,18 @@ algorithm
     // 4. determine for each variable the number of equations it could causalize considering impossible assignments and save them in counts1
     msel2t := Util.arraySelect(mt,selectedcols1);
     ((_,_,_,_,_,_,_,counts1)) := Util.arrayFold(msel2t,selectCausalVars,(me,ass1In,selectedrows,selectedcols1,{},0,1,{}));
-	counts1 := listReverse(counts1);
-	// 5. determine for each variable the number of impossible assignments and save them in counts2
+  counts1 := listReverse(counts1);
+  // 5. determine for each variable the number of impossible assignments and save them in counts2
     (_,counts2,_) := countImpossibleAss(selectedcols1,ass2In,met,{},{},0);
-	counts2 := listReverse(counts2);
-	// 6. Calculate the sum of number of impossible assignments and causalizable equations for each variable and save them in points1
+  counts2 := listReverse(counts2);
+  // 6. Calculate the sum of number of impossible assignments and causalizable equations for each variable and save them in points1
     points1 := List.threadMap(counts1,counts2,intAdd);
-	   Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nPoints: "+& stringDelimitList(List.map(points1,intString),",")+&"\n(Sum of impossible assignments and causalizable equations)\n");
-	// 7. Choose vars with most points as potentials and convert indexes
-	potentials1 := maxListInt(points1);
-	potpoints1 := listGet(points1,listGet(potentials1,1));
+     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nPoints: "+& stringDelimitList(List.map(points1,intString),",")+&"\n(Sum of impossible assignments and causalizable equations)\n");
+  // 7. Choose vars with most points as potentials and convert indexes
+  potentials1 := maxListInt(points1);
+  potpoints1 := listGet(points1,listGet(potentials1,1));
     potentials1 := selectFromList(selectedcols1,potentials1);
-		 Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n2nd: "+& stringDelimitList(List.map(potentials1,intString),",")+&"\n(Variables from (1st) with most points (" +& intString(potpoints1) +& " points) - potentials1)\n\n");
+     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n2nd: "+& stringDelimitList(List.map(potentials1,intString),",")+&"\n(Variables from (1st) with most points (" +& intString(potpoints1) +& " points) - potentials1)\n\n");
     // 8. choose non-discrete vars with edges-1 edges and write the indexes in a list
     ((_,_,selectedcols1)) := Util.arrayFold(mtsel,findNEntries,(edges-1,1,{}));
     selectedcols1 := List.unique(selectedcols1);
@@ -2507,19 +2507,19 @@ algorithm
     // 10. determine for each variable the number of equations it could causalize considering impossible assignments and save them in counts1
     msel2t := Util.arraySelect(mt,selectedcols1);
     ((_,_,_,_,_,_,_,counts1)) := Util.arrayFold(msel2t,selectCausalVars,(me,ass1In,selectedrows,selectedcols1,{},0,1,{}));
-	counts1 := listReverse(counts1);
+  counts1 := listReverse(counts1);
     // 11. determine for each variable the number of impossible assignments and save them in counts2
     (_,counts2,_) := countImpossibleAss(selectedcols1,ass2In,met,{},{},0);
     counts2 := listReverse(counts2);
     // 12. Calculate the sum of number of impossible assignments and causalizable equations for each variable and save them in points2
     points2 := List.threadMap(counts1,counts2,intAdd);
-	points2 := Util.if_(listLength(points2)==0,{0},points2);
+  points2 := Util.if_(listLength(points2)==0,{0},points2);
        Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nPoints: "+& stringDelimitList(List.map(points2,intString),",")+&"\n(Sum of impossible assignments and causalizable equations)\n");
     // 13. Choose vars with most points as potentials and convert indexes
     potentials2 := maxListInt(points2);
-	potpoints2 := listGet(points2,listGet(potentials2,1));
+  potpoints2 := listGet(points2,listGet(potentials2,1));
     potentials2 := selectFromList(selectedcols1,potentials2);
-   	   Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n2nd: "+& stringDelimitList(List.map(potentials2,intString),",")+&"\n(Variables from (1st) with most points (" +& intString(potpoints2) +& " points) - potentials2)\n\n");
+        Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n2nd: "+& stringDelimitList(List.map(potentials2,intString),",")+&"\n(Variables from (1st) with most points (" +& intString(potpoints2) +& " points) - potentials2)\n\n");
     // 14. choose potentials-set with most points
     b := intGe(potpoints1,potpoints2);
     potentials := Util.if_(b,potentials1,potentials2);
@@ -2548,36 +2548,36 @@ algorithm
       (ass1In,ass2In,discreteVars) := assIn;
       // Cellier heuristic [MC3]
       // 0. Consider only non-discrete Vars
-	  varlst := List.intRange(arrayLength(mt));
-	  ((_,_,selectedcols0)) := Util.arrayFold(mt,findNEntries,(0,1,{}));
-	  (_,selectedcols0,_) := List.intersection1OnTrue(varlst,selectedcols0,intEq);
-	  (_,selectedcols0,_) := List.intersection1OnTrue(selectedcols0,discreteVars,intEq);
-	     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"1st: "+& stringDelimitList(List.map(selectedcols0,intString),",")+&"\n(All non-discrete left variables)\n\n");
-	  // 1. select the rows(eqs) from m which could be causalized by knowing one more Var
+    varlst := List.intRange(arrayLength(mt));
+    ((_,_,selectedcols0)) := Util.arrayFold(mt,findNEntries,(0,1,{}));
+    (_,selectedcols0,_) := List.intersection1OnTrue(varlst,selectedcols0,intEq);
+    (_,selectedcols0,_) := List.intersection1OnTrue(selectedcols0,discreteVars,intEq);
+       Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"1st: "+& stringDelimitList(List.map(selectedcols0,intString),",")+&"\n(All non-discrete left variables)\n\n");
+    // 1. select the rows(eqs) from m which could be causalized by knowing one more Var
       ((_,assEq)) := List.fold(ass2In,getUnassigned,(1,{}));
       (assEq_multi,assEq_single) := traverseEqnsforAssignable(assEq,m,mapEqnIncRow,mapIncRowEqn,1,{},{});
       selectedrows := listAppend(assEq_multi,assEq_single);
          Debug.fcall(Flags.TEARING_DUMPVERBOSE, print, stringDelimitList(List.map(selectedrows,intString),",")+&"\n(Equations which could be causalized by knowing one more Var)\n\n");
-	  // 2. determine for each variable the number of equations it could causalize considering impossible assignments and save them in counts1
+    // 2. determine for each variable the number of equations it could causalize considering impossible assignments and save them in counts1
       mtsel := Util.arraySelect(mt,selectedcols0);
       ((_,_,_,_,_,_,_,counts1)) := Util.arrayFold(mtsel,selectCausalVars,(me,ass1In,selectedrows,selectedcols0,{},0,1,{}));
-	  counts1 := listReverse(counts1);
-	  // 3. determine for each variable the number of impossible assignments and save them in counts2
+    counts1 := listReverse(counts1);
+    // 3. determine for each variable the number of impossible assignments and save them in counts2
       (_,counts2,_) := countImpossibleAss(selectedcols0,ass2In,met,{},{},0);
-	  counts2 := listReverse(counts2);
-	  // 4. Calculate the sum of number of impossible assignments and causalizable equations for each variable and save them in points
+    counts2 := listReverse(counts2);
+    // 4. Calculate the sum of number of impossible assignments and causalizable equations for each variable and save them in points
       points := List.threadMap(counts1,counts2,intAdd);
-	     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nPoints: "+& stringDelimitList(List.map(points,intString),",")+&"\n(Sum of impossible assignments and causalizable equations)\n");
-	  // 5. Choose vars with most points and save them in selectedcols1
-	  selectedcols1 := maxListInt(points);
+       Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nPoints: "+& stringDelimitList(List.map(points,intString),",")+&"\n(Sum of impossible assignments and causalizable equations)\n");
+    // 5. Choose vars with most points and save them in selectedcols1
+    selectedcols1 := maxListInt(points);
       selectedcols1 := selectFromList(selectedcols0,selectedcols1);
-		 Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n2nd: "+& stringDelimitList(List.map(selectedcols1,intString),",")+&"\n(Variables from (1st) with most points)\n\n");
-	  // 6. Choose vars with most occurrence in equations as potentials
+     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n2nd: "+& stringDelimitList(List.map(selectedcols1,intString),",")+&"\n(Variables from (1st) with most points)\n\n");
+    // 6. Choose vars with most occurrence in equations as potentials
       mtsel := Util.arraySelect(mt,selectedcols1);
       ((edges,_,potentials)) := Util.arrayFold(mtsel,findMostEntries2,(0,1,{}));
       potentials := List.unique(potentials);
-	  // 7. convert indexes from mtsel to indexes from mt
-	  potentials := selectFromList(selectedcols1,potentials);
+    // 7. convert indexes from mtsel to indexes from mt
+    potentials := selectFromList(selectedcols1,potentials);
          Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"3rd: "+& stringDelimitList(List.map(potentials,intString),",")+&"\n(Variables from (2nd) with most occurrence in equations (" +& intString(edges) +&" times) - potentials)\n\n");
 end potentialsCellier10;
 
@@ -2600,49 +2600,49 @@ algorithm
       (mapEqnIncRow,mapIncRowEqn) := mapInfo;
       (ass1In,ass2In,discreteVars) := assIn;
       // Cellier heuristic [MC4]
-	  // 1. Use heuristics MC1, MC2, MC11, MC21, MC12, MC22, MC13, MC23, MC231, MC3 to determine their potential sets
-	     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Heuristic uses all modified Cellier-Heuristics\n\nHeuristic [MC1]\n"+& BORDER +&"\n");
-	  potentials1 := potentialsCellier(m,mt,me,met,assIn,mapInfo);
-	     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n\nHeuristic [MC2]\n"+& BORDER +&"\n");
-	  potentials2 := potentialsCellier2(m,mt,me,met,assIn,mapInfo);
-	     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n\nHeuristic [MC11]\n"+& BORDER +&"\n");
-	  potentials3 := potentialsCellier3(m,mt,me,met,assIn,mapInfo);
-	     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n\nHeuristic [MC21]\n"+& BORDER +&"\n");
-	  potentials4 := potentialsCellier4(m,mt,me,met,assIn,mapInfo);
-	     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n\nHeuristic [MC12]\n"+& BORDER +&"\n");
-	  potentials5 := potentialsCellier5(m,mt,me,met,assIn,mapInfo);
-	     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n\nHeuristic [MC22]\n"+& BORDER +&"\n");
-	  potentials6 := potentialsCellier6(m,mt,me,met,assIn,mapInfo);
-	     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n\nHeuristic [MC13]\n"+& BORDER +&"\n");
-	  potentials7 := potentialsCellier7(m,mt,me,met,assIn,mapInfo);
-	     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n\nHeuristic [MC23]\n"+& BORDER +&"\n");
-	  potentials8 := potentialsCellier8(m,mt,me,met,assIn,mapInfo);
-	     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n\nHeuristic [MC231]\n"+& BORDER +&"\n");
-	  potentials9 := potentialsCellier9(m,mt,me,met,assIn,mapInfo);
-	     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n\nHeuristic [MC3]\n"+& BORDER +&"\n");
-	  potentials10 := potentialsCellier10(m,mt,me,met,assIn,mapInfo);
-	     Debug.fcall(Flags.TEARING_DUMP, print, BORDER +& "\n\nSynopsis:\n=========\n[MC1]: " +& stringDelimitList(List.map(potentials1,intString),",")+&"\n");
-		 Debug.fcall(Flags.TEARING_DUMP, print,"[MC2]: " +& stringDelimitList(List.map(potentials2,intString),",")+&"\n");
-		 Debug.fcall(Flags.TEARING_DUMP, print,"[MC11]: " +& stringDelimitList(List.map(potentials3,intString),",")+&"\n");
-		 Debug.fcall(Flags.TEARING_DUMP, print,"[MC21]: " +& stringDelimitList(List.map(potentials4,intString),",")+&"\n");
-		 Debug.fcall(Flags.TEARING_DUMP, print,"[MC12]: " +& stringDelimitList(List.map(potentials5,intString),",")+&"\n");
-		 Debug.fcall(Flags.TEARING_DUMP, print,"[MC22]: " +& stringDelimitList(List.map(potentials6,intString),",")+&"\n");
-		 Debug.fcall(Flags.TEARING_DUMP, print,"[MC13]: " +& stringDelimitList(List.map(potentials7,intString),",")+&"\n");
-		 Debug.fcall(Flags.TEARING_DUMP, print,"[MC23]: " +& stringDelimitList(List.map(potentials8,intString),",")+&"\n");
-		 Debug.fcall(Flags.TEARING_DUMP, print,"[MC231]: " +& stringDelimitList(List.map(potentials9,intString),",")+&"\n");
-		 Debug.fcall(Flags.TEARING_DUMP, print,"[MC3]: " +& stringDelimitList(List.map(potentials10,intString),",")+&"\n\n");
-	  // 2. Collect all variables from different potential-sets in one list
-	  selectedvars := listAppend(listAppend(listAppend(listAppend(listAppend(listAppend(listAppend(listAppend(listAppend(potentials1,potentials2),potentials3),potentials4),potentials5),potentials6),potentials7),potentials8),potentials9),potentials10);
-	     Debug.fcall(Flags.TEARING_DUMP, print, "1st: "+& stringDelimitList(List.map(selectedvars,intString),",")+&"\n(All potentials)\n\n");
+    // 1. Use heuristics MC1, MC2, MC11, MC21, MC12, MC22, MC13, MC23, MC231, MC3 to determine their potential sets
+       Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Heuristic uses all modified Cellier-Heuristics\n\nHeuristic [MC1]\n"+& BORDER +&"\n");
+    potentials1 := potentialsCellier(m,mt,me,met,assIn,mapInfo);
+       Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n\nHeuristic [MC2]\n"+& BORDER +&"\n");
+    potentials2 := potentialsCellier2(m,mt,me,met,assIn,mapInfo);
+       Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n\nHeuristic [MC11]\n"+& BORDER +&"\n");
+    potentials3 := potentialsCellier3(m,mt,me,met,assIn,mapInfo);
+       Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n\nHeuristic [MC21]\n"+& BORDER +&"\n");
+    potentials4 := potentialsCellier4(m,mt,me,met,assIn,mapInfo);
+       Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n\nHeuristic [MC12]\n"+& BORDER +&"\n");
+    potentials5 := potentialsCellier5(m,mt,me,met,assIn,mapInfo);
+       Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n\nHeuristic [MC22]\n"+& BORDER +&"\n");
+    potentials6 := potentialsCellier6(m,mt,me,met,assIn,mapInfo);
+       Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n\nHeuristic [MC13]\n"+& BORDER +&"\n");
+    potentials7 := potentialsCellier7(m,mt,me,met,assIn,mapInfo);
+       Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n\nHeuristic [MC23]\n"+& BORDER +&"\n");
+    potentials8 := potentialsCellier8(m,mt,me,met,assIn,mapInfo);
+       Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n\nHeuristic [MC231]\n"+& BORDER +&"\n");
+    potentials9 := potentialsCellier9(m,mt,me,met,assIn,mapInfo);
+       Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n\nHeuristic [MC3]\n"+& BORDER +&"\n");
+    potentials10 := potentialsCellier10(m,mt,me,met,assIn,mapInfo);
+       Debug.fcall(Flags.TEARING_DUMP, print, BORDER +& "\n\nSynopsis:\n=========\n[MC1]: " +& stringDelimitList(List.map(potentials1,intString),",")+&"\n");
+     Debug.fcall(Flags.TEARING_DUMP, print,"[MC2]: " +& stringDelimitList(List.map(potentials2,intString),",")+&"\n");
+     Debug.fcall(Flags.TEARING_DUMP, print,"[MC11]: " +& stringDelimitList(List.map(potentials3,intString),",")+&"\n");
+     Debug.fcall(Flags.TEARING_DUMP, print,"[MC21]: " +& stringDelimitList(List.map(potentials4,intString),",")+&"\n");
+     Debug.fcall(Flags.TEARING_DUMP, print,"[MC12]: " +& stringDelimitList(List.map(potentials5,intString),",")+&"\n");
+     Debug.fcall(Flags.TEARING_DUMP, print,"[MC22]: " +& stringDelimitList(List.map(potentials6,intString),",")+&"\n");
+     Debug.fcall(Flags.TEARING_DUMP, print,"[MC13]: " +& stringDelimitList(List.map(potentials7,intString),",")+&"\n");
+     Debug.fcall(Flags.TEARING_DUMP, print,"[MC23]: " +& stringDelimitList(List.map(potentials8,intString),",")+&"\n");
+     Debug.fcall(Flags.TEARING_DUMP, print,"[MC231]: " +& stringDelimitList(List.map(potentials9,intString),",")+&"\n");
+     Debug.fcall(Flags.TEARING_DUMP, print,"[MC3]: " +& stringDelimitList(List.map(potentials10,intString),",")+&"\n\n");
+    // 2. Collect all variables from different potential-sets in one list
+    selectedvars := listAppend(listAppend(listAppend(listAppend(listAppend(listAppend(listAppend(listAppend(listAppend(potentials1,potentials2),potentials3),potentials4),potentials5),potentials6),potentials7),potentials8),potentials9),potentials10);
+       Debug.fcall(Flags.TEARING_DUMP, print, "1st: "+& stringDelimitList(List.map(selectedvars,intString),",")+&"\n(All potentials)\n\n");
       // 3. determine potentials with most occurrence in potential sets
-	  (count,selectedvars,_) := countMultiples(arrayCreate(1,selectedvars));
-	     Debug.fcall(Flags.TEARING_DUMP, print, "2nd: "+& stringDelimitList(List.map(selectedvars,intString),",")+&"\n(Variables from (1st) occurring in most potential-sets (" +& stringDelimitList(List.map(count,intString),",") +& " sets))\n\n");
+    (count,selectedvars,_) := countMultiples(arrayCreate(1,selectedvars));
+       Debug.fcall(Flags.TEARING_DUMP, print, "2nd: "+& stringDelimitList(List.map(selectedvars,intString),",")+&"\n(Variables from (1st) occurring in most potential-sets (" +& stringDelimitList(List.map(count,intString),",") +& " sets))\n\n");
       // 4. Choose vars with most occurrence in equations as potentials
       mtsel := Util.arraySelect(mt,selectedvars);
       ((edges,_,potentials)) := Util.arrayFold(mtsel,findMostEntries2,(0,1,{}));
       potentials := List.unique(potentials);
-	  // 7. convert indexes from mtsel to indexes from mt
-	  potentials := selectFromList(selectedvars,potentials);
+    // 7. convert indexes from mtsel to indexes from mt
+    potentials := selectFromList(selectedvars,potentials);
          Debug.fcall(Flags.TEARING_DUMP, print,"3rd: "+& stringDelimitList(List.map(potentials,intString),",")+&"\n(Variables from (2nd) with most occurrence in equations (" +& intString(edges) +&" times) - potentials)\n\n\n");
 end potentialsCellier11;
 
