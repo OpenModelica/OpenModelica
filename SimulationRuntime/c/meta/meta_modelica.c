@@ -793,10 +793,11 @@ void changeStdStreamBuffer(void) {
 char* getRecordElement(modelica_metatype arr, modelica_integer i) {
   /* get the element from the record array */
   void* name = (void*)mmc_gdb_arrayGet(0, arr, i);
-  char nameStr[40];
+  char nameStr[40], *displayName = NULL, *type = NULL, *formatString = NULL;
+
+  /* print the pointer as long to a buffer to get the string length */
   sprintf(nameStr, "%ld", (long)name);
 
-  char *displayName = NULL, *type = NULL, *formatString = NULL;
   /* get the name of the element */
   getRecordElementName(arr, i - 2);
   displayName = malloc(strlen(anyStringBuf) + 1);
