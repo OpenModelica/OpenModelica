@@ -276,7 +276,7 @@ algorithm
       Absyn.AlgorithmItem algitem;
       Boolean outres;
       Absyn.Exp exp;
-      Boolean partialInst, gen, evalfunc;
+      Boolean partialInst, gen, evalfunc, keepArrays;
 
     // evaluate graphical API
     case ((stmts as GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IEXP(exp = Absyn.CALL(function_ = _))})),st)
@@ -286,7 +286,9 @@ algorithm
         System.setPartialInstantiation(true);
         gen = Flags.set(Flags.GEN, false);
         evalfunc = Flags.set(Flags.EVAL_FUNC, false);
-        (str,newst) = evaluateGraphicalApi(stmts, st, partialInst, gen, evalfunc);
+        keepArrays = Flags.getConfigBool(Flags.KEEP_ARRAYS);
+        Flags.setConfigBool(Flags.KEEP_ARRAYS, false);
+        (str,newst) = evaluateGraphicalApi(stmts, st, partialInst, gen, evalfunc, keepArrays);
         str_1 = stringAppend(str, "\n");
       then
         (str_1,newst);
@@ -1187,27 +1189,30 @@ protected function evaluateGraphicalApi
   input Boolean isPartialInst;
   input Boolean flagGen;
   input Boolean flagEvalFunc;
+  input Boolean flagKeepArrays;
   output String outString;
   output GlobalScript.SymbolTable outSymbolTable;
 algorithm
-  (outString,outSymbolTable) := matchcontinue (inStatements,inSymbolTable,isPartialInst,flagGen,flagEvalFunc)
+  (outString,outSymbolTable) := matchcontinue (inStatements,inSymbolTable,isPartialInst,flagGen,flagEvalFunc,flagKeepArrays)
 
-    case (_, _, _, _, _)
+    case (_, _, _, _, _, _)
       equation
         (outString,outSymbolTable) = evaluateGraphicalApi_dispatch(inStatements,inSymbolTable);
         // reset the flags!
         System.setPartialInstantiation(isPartialInst);
         _ = Flags.set(Flags.GEN, flagGen);
         _ = Flags.set(Flags.EVAL_FUNC, flagEvalFunc);
+        Flags.setConfigBool(Flags.KEEP_ARRAYS, flagKeepArrays);
       then
         (outString,outSymbolTable);
 
-    case (_, _, _, _, _)
+    case (_, _, _, _, _, _)
       equation
         // reset the flags!
         System.setPartialInstantiation(isPartialInst);
         _ = Flags.set(Flags.GEN, flagGen);
         _ = Flags.set(Flags.EVAL_FUNC, flagEvalFunc);
+        Flags.setConfigBool(Flags.KEEP_ARRAYS, flagKeepArrays);
       then
         fail();
 
