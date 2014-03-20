@@ -112,6 +112,23 @@ algorithm
   outString := Tpl.tplString(AbsynDumpTpl.dump, inProgram);
 end unparseStr;
 
+public function unparseClassList 
+  "Prettyprints a list of classes" 
+  input list<Absyn.Class> inClasses; 
+  output String outString; 
+algorithm 
+  outString := Tpl.tplString(AbsynDumpTpl.dump,
+    Absyn.PROGRAM(inClasses, Absyn.TOP(), Absyn.TIMESTAMP(0.0, 0.0)));
+end unparseClassList; 
+
+public function unparseClassStr 
+	"Prettyprints a Class."
+  input Absyn.Class inClass; 
+  output String outString; 
+algorithm 
+  outString := Tpl.tplString(AbsynDumpTpl.dumpClass, inClass);
+end unparseClassStr;
+
 public function unparseWithin
   "Prettyprints a within statement."
   input Absyn.Within inWithin;
