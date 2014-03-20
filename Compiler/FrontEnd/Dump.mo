@@ -122,7 +122,7 @@ algorithm
 end unparseClassList; 
 
 public function unparseClassStr 
-	"Prettyprints a Class."
+  "Prettyprints a Class."
   input Absyn.Class inClass; 
   output String outString; 
 algorithm 
