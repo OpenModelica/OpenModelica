@@ -1147,19 +1147,6 @@ algorithm
   end match;
 end sameZeroCrossing;
 
-protected function differentZeroCrossing "
-  Return true if the realation expressions differ.
-"
-  input BackendDAE.ZeroCrossing zc1;
-  input BackendDAE.ZeroCrossing zc2;
-  output Boolean res_1;
-protected
-  Boolean res;
-algorithm
-  res := sameZeroCrossing(zc1, zc2);
-  res_1 := boolNot(res);
-end differentZeroCrossing;
-
 protected function traverseStmtsExps "Handles the traversing of list<DAE.Statement>.
   Works with the help of Expression.traverseExpTopDown to find
   ZeroCrossings in algorithm statements
