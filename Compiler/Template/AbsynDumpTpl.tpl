@@ -212,7 +212,7 @@ match class_part
         let fn_str = match funcName case SOME(fn) then fn
         let lang_str = match lang case SOME(l) then '"<%l%>" '
         let output_str = match output_ case SOME(o) then '<%dumpCref(o)%> = '
-        let args_str = if args then '(<%(args |> arg => dumpExp(arg) ;separator=", ")%>)'
+        let args_str = if args then '(<%(args |> arg => dumpExp(arg) ;separator=", ")%>)' else (if fn_str then "()")
         let ann2_str = dumpAnnotationOpt(annotation_)
         <<
 
