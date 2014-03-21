@@ -5191,9 +5191,7 @@ algorithm
     case (cache,env,_,_,_,_,_,_)
       equation
         cache = Util.if_(cleanCache, Env.emptyCache(), cache);
-        names = List.map(List.filterOnTrue(List.map(List.filterOnTrue(elementLst, SCode.elementIsClass), SCode.getElementClass), SCode.isFunction), SCode.className);
-        paths = List.map1r(names,Absyn.makeQualifiedPathFromStrings,name);
-        // print("paths to generate:" +& stringDelimitList(List.map(paths,Absyn.pathString),",") +& "\n");
+        paths = List.fold1(elementLst, findFunctionsToCompile, Absyn.FULLYQUALIFIED(Absyn.IDENT(name)), {});
         cache = instantiateDaeFunctions(cache, env, paths);
         funcs = Env.getFunctionTree(cache);
         d = List.map1(paths, DAEUtil.getNamedFunction, funcs);
@@ -7605,5 +7603,29 @@ algorithm
   allDepends := List.map1(allDepends, stringAppend, ".interface.mo");
   str := prefix +& name +& suffix +& ": " +& prefix +& name +& ".mo " +& stringDelimitList(allDepends," ");
 end writeModuleDepends;
+
+protected function findFunctionsToCompile
+  input SCode.Element elt;
+  input Absyn.Path pathPrefix;
+  input list<Absyn.Path> acc;
+  output list<Absyn.Path> paths;
+algorithm
+  paths := match (elt,pathPrefix,acc)
+    local
+      Absyn.Path p;
+      String name;
+      list<SCode.Element> elts;
+    case (SCode.CLASS(name=name, partialPrefix=SCode.NOT_PARTIAL(), restriction=SCode.R_FUNCTION(_), classDef=SCode.PARTS(elementLst=elts)),_,_)
+      equation
+         p = Absyn.joinPaths(pathPrefix,Absyn.IDENT(name));
+         paths = List.fold1(elts,findFunctionsToCompile,Absyn.joinPaths(pathPrefix,Absyn.IDENT(name)),acc);
+      then p::paths;
+    case (SCode.CLASS(name=name, partialPrefix=SCode.NOT_PARTIAL(), restriction=SCode.R_PACKAGE(), classDef=SCode.PARTS(elementLst=elts)),_,_)
+      equation
+         paths = List.fold1(elts,findFunctionsToCompile,Absyn.joinPaths(pathPrefix,Absyn.IDENT(name)),acc);
+      then paths;
+    else acc;
+  end match;
+end findFunctionsToCompile;
 
 end CevalScript;

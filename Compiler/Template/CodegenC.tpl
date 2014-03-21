@@ -6055,6 +6055,7 @@ end funArgUnbox;
 template unboxVariable(String varName, Type varType, Text &preExp, Text &varDecls)
 ::=
 match varType
+case T_COMPLEX(complexClassType = EXTERNAL_OBJ(__))
 case T_STRING(__)
 case T_METATYPE(__)
 case T_METARECORD(__)
@@ -10069,7 +10070,7 @@ template mmcTypeShort(DAE.Type type)
   case T_METABOXED(__)               then "metatype"
   case T_FUNCTION_REFERENCE_VAR(__)  then "fnptr"
 
-  case T_COMPLEX(__)                 then 'mmcTypeShort:ERROR T_COMPLEX'
+  case T_COMPLEX(__)                 then "metatype"
   else error(sourceInfo(), 'mmcTypeShort:ERROR <%unparseType(type)%>')
 end mmcTypeShort;
 

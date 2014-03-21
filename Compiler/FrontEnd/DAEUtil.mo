@@ -2616,10 +2616,11 @@ algorithm
     case (_,_) then Util.getOption(avlTreeGet(functions, path));
     case (_,_)
       equation
+        true = Flags.isSet(Flags.FAILTRACE);
         msg = stringDelimitList(List.mapMap(getFunctionList(functions), functionName, Absyn.pathString), "\n  ");
-        msg = "DAEUtil.getNamedFunction failed: " +& Absyn.pathString(path) +& "\nThe following functions were part of the cache:\n  ";
+        msg = "DAEUtil.getNamedFunction failed: " +& Absyn.pathString(path) +& "\nThe following functions were part of the cache:\n  " +& msg;
         // Error.addMessage(Error.INTERNAL_ERROR,{msg});
-        Debug.fprintln(Flags.FAILTRACE, msg);
+        Debug.traceln(msg);
       then
         fail();
   end matchcontinue;
@@ -5984,13 +5985,14 @@ public function addDaeFunction "add functions present in the element list to the
   input DAE.FunctionTree itree;
   output DAE.FunctionTree outTree;
 algorithm
-  outTree := matchcontinue(ifuncs,itree)
+  outTree := match (ifuncs,itree)
     local
       DAE.Function func, fOld;
       list<DAE.Function> funcs;
       DAE.FunctionTree tree;
 
     case ({},tree) then tree;
+/*
     case (func::funcs,tree)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
@@ -6003,13 +6005,14 @@ algorithm
           "\nold:\n" +& DAEDump.dumpFunctionStr(fOld) +& "\n");
       then 
         fail();
+*/
     case (func::funcs,tree)
       equation
         // print("Add to cache: " +& Absyn.pathString(functionName(func)) +& "\n");
         tree = avlTreeAdd(tree,functionName(func),SOME(func));
       then addDaeFunction(funcs,tree);
 
-  end matchcontinue;
+  end match;
 end addDaeFunction;
 
 public function addFunctionDefinition 
