@@ -30,6 +30,8 @@ template translateModel(SimCode simCode) ::=
   let()= textFile(simulationInitCppFile(simCode),'OMCpp<%fileNamePrefix%>Initialize.cpp')
   let()= textFile(simulationJacobianHeaderFile(simCode), 'OMCpp<%fileNamePrefix%>Jacobian.h')
   let()= textFile(simulationJacobianCppFile(simCode),'OMCpp<%fileNamePrefix%>Jacobian.cpp')
+  let()= textFile(simulationStateSelectionCppFile(simCode), 'OMCpp<%fileNamePrefix%>StateSelection.cpp')
+  let()= textFile(simulationStateSelectionHeaderFile(simCode),'OMCpp<%fileNamePrefix%>StateSelection.h')
   let()= textFile(simulationExtensionHeaderFile(simCode),'OMCpp<%fileNamePrefix%>Extension.h')
   let()= textFile(simulationExtensionCppFile(simCode),'OMCpp<%fileNamePrefix%>Extension.cpp')
   let()= textFile(simulationWriteOutputHeaderFile(simCode),'OMCpp<%fileNamePrefix%>WriteOutput.h')
@@ -438,7 +440,7 @@ end update2;
 
 template functionXXX_system0_HPCOM_Level(list<SimEqSystem> allEquationsPlusWhen, list<Task> tasksOfLevel, String iType, Text &varDecls, SimCode simCode)
 ::=
-  let odeEqs = tasksOfLevel |> task => function_HPCOM_Task(allEquationsPlusWhen,task,iType, &varDecls, simCode); separator="\n"
+  let odeEqs = tasksOfLevel |> task => functionXXX_system0_HPCOM_Level0(allEquationsPlusWhen,task,iType, &varDecls, simCode); separator="\n"
   <<
   if (omp_get_dynamic())
     omp_set_dynamic(0);
@@ -448,6 +450,16 @@ template functionXXX_system0_HPCOM_Level(list<SimEqSystem> allEquationsPlusWhen,
   }
   >>
 end functionXXX_system0_HPCOM_Level;
+
+template functionXXX_system0_HPCOM_Level0(list<SimEqSystem> allEquationsPlusWhen, Task iTask, String iType, Text &varDecls, SimCode simCode)
+::=
+<<
+#pragma omp section
+{
+    <%function_HPCOM_Task(allEquationsPlusWhen,iTask,iType, &varDecls, simCode)%>
+}
+>>
+end functionXXX_system0_HPCOM_Level0;
 
 template functionXXX_system0_HPCOM_TaskDep(list<tuple<Task,list<Integer>>> tasks, list<SimEqSystem> allEquationsPlusWhen, String iType, Text &varDecls, SimCode simCode)
 ::=

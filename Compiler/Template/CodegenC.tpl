@@ -2311,7 +2311,7 @@ end functionXXX_system_HPCOM;
 
 template functionXXX_system0_HPCOM_Level(list<SimEqSystem> derivativEquations, String name, list<Task> tasksOfLevel, String iType, String modelNamePrefixStr)
 ::=
-  let odeEqs = tasksOfLevel |> task => function_HPCOM_Task(derivativEquations,name,task,iType,modelNamePrefixStr); separator="\n"
+  let odeEqs = tasksOfLevel |> task => functionXXX_system0_HPCOM_Level0(derivativEquations,name,task,iType,modelNamePrefixStr); separator="\n"
   <<
   if (omp_get_dynamic())
     omp_set_dynamic(0);
@@ -2321,6 +2321,16 @@ template functionXXX_system0_HPCOM_Level(list<SimEqSystem> derivativEquations, S
   }
   >>
 end functionXXX_system0_HPCOM_Level;
+
+template functionXXX_system0_HPCOM_Level0(list<SimEqSystem> derivativEquations, String name, Task iTask, String iType, String modelNamePrefixStr)
+::=
+  <<
+  #pragma omp section
+  {
+    <%function_HPCOM_Task(derivativEquations,name,iTask,iType,modelNamePrefixStr)%>
+  }
+  >>
+end functionXXX_system0_HPCOM_Level0;
 
 template functionXXX_system0_HPCOM_Thread(list<SimEqSystem> derivativEquations, String name, list<list<Task>> threadTasks, String iType, String modelNamePrefixStr)
 ::=
@@ -2552,54 +2562,10 @@ else
   //  SIM_PROF_ACC_EQEXT(<%ix%>);
   //#endif
   //>>
-end equationNamesHPCOM_Thread_;
-
-template equationNamesHPCOM_(Integer idx, list<SimEqSystem> derivativEquations, Context context, String modelNamePrefixStr)
- "Generates an equation.
-  This template should not be used for a SES_RESIDUAL.
-  Residual equations are handled differently."
-::=
-match context
-case SIMULATION_CONTEXT(genDiscrete=true) then
- match getSimCodeEqByIndex(derivativEquations, idx)
-  case e as SES_ALGORITHM(statements={})
-  then ""
-  else
-  let ix = equationIndex(getSimCodeEqByIndex(derivativEquations, idx))
-  <<
-  #pragma omp section
-  {
-      #ifdef _OMC_MEASURE_TIME
-        SIM_PROF_TICK_EQEXT(<%ix%>);
-      #endif
-      <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(data);
-      #ifdef _OMC_MEASURE_TIME
-        SIM_PROF_ACC_EQEXT(<%ix%>);
-      #endif
-  }
-  >>
-else
- match getSimCodeEqByIndex(derivativEquations, idx)
-  case e as SES_ALGORITHM(statements={})
-  then ""
-  else
-  let ix = equationIndex(getSimCodeEqByIndex(derivativEquations, idx))
-  <<
-  #pragma omp section
-  {
-      #ifdef _OMC_MEASURE_TIME
-        SIM_PROF_TICK_EQEXT(<%ix%>);
-      #endif
-      <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(data);
-      #ifdef _OMC_MEASURE_TIME
-        SIM_PROF_ACC_EQEXT(<%ix%>);
-      #endif
-  }
-  >>
-end equationNamesHPCOM_;
+end equationNamesHPCOM_Thread_; 
 
 //----------------------------------
-// End: Modified functions for HpcOm
+// End: Modified functions for HpcOm 
 //----------------------------------
 
 template functionXXX_system(list<SimEqSystem> derivativEquations, String name, Integer n, String modelNamePrefixStr)
