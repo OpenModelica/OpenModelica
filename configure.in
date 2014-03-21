@@ -852,7 +852,7 @@ else
   RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $LD_LAPACK -lm -rdynamic"
   RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC $LD_LAPACK -lm -lgc -lpthread -rdynamic"
   LINK="cp -frl"
-  RPATH="-Wl,-z,origin -Wl,-rpath,'\$\$ORIGIN/../lib/omc'"
+  RPATH="-Wl,-z,origin -Wl,-rpath,'\$\$ORIGIN/../lib/omc' -Wl,-rpath,'\$\$ORIGIN'"
   OS_TARGET="linux"
   AR_SH="$AR -ru"
   BOOTSTRAP_STATIC=""
