@@ -2138,6 +2138,19 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
 ::=
   let type = getConfigString(HPCOM_CODE)
   match hpcOmScheduleOpt 
+    case SOME(hpcOmSchedule as TASKDEPSCHEDULESC(__)) then
+      let taskEqs = functionXXX_system0_HPCOM_TaskDep(hpcOmSchedule.tasks, derivativEquations, type, name, modelNamePrefixStr); separator="\n"
+      <<
+      void terminateHpcOmThreads()
+      {
+      }
+      
+      //using type: <%type%>
+      void function<%name%>_system<%n%>(DATA *data)
+      {
+        <%taskEqs%>
+      }
+      >>
     case SOME(hpcOmSchedule as LEVELSCHEDULESC(__)) then
       let odeEqs = hpcOmSchedule.tasksOfLevels |> tasks => functionXXX_system0_HPCOM_Level(derivativEquations,name,tasks,type,modelNamePrefixStr); separator="\n"
       <<
@@ -2145,6 +2158,7 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
       {
       }
       
+      //using type: <%type%>
       void function<%name%>_system<%n%>(DATA *data)
       {
         <%odeEqs%>
@@ -2331,6 +2345,37 @@ template functionXXX_system0_HPCOM_Level0(list<SimEqSystem> derivativEquations, 
   }
   >>
 end functionXXX_system0_HPCOM_Level0;
+
+template functionXXX_system0_HPCOM_TaskDep(list<tuple<Task,list<Integer>>> tasks, list<SimEqSystem> derivativEquations, String iType, String name, String modelNamePrefixStr)
+::=
+  let odeEqs = tasks |> t => functionXXX_system0_HPCOM_TaskDep0(t,derivativEquations, iType, name, modelNamePrefixStr); separator="\n"
+  <<
+  
+  int t[0];
+  #pragma omp parallel
+  {
+    #pragma omp master
+    {
+        <%odeEqs%>
+    }
+  }
+  >>
+end functionXXX_system0_HPCOM_TaskDep;
+
+template functionXXX_system0_HPCOM_TaskDep0(tuple<Task,list<Integer>> taskIn, list<SimEqSystem> derivativEquations, String iType, String name, String modelNamePrefixStr)
+::=
+  match taskIn 
+    case ((task as CALCTASK(__),parents)) then
+        let taskEqs = function_HPCOM_Task(derivativEquations, name, task, iType, modelNamePrefixStr); separator="\n"
+        let parentDependencies = parents |> p => 't[<%p%>]'; separator = ","
+        let depIn = if intGt(listLength(parents),0) then 'depend(in:<%parentDependencies%>)' else ""
+        <<
+        #pragma omp task <%depIn%> depend(out:t[<%task.index%>])
+        {
+            <%taskEqs%>
+        }
+        >>
+end functionXXX_system0_HPCOM_TaskDep0;
 
 template functionXXX_system0_HPCOM_Thread(list<SimEqSystem> derivativEquations, String name, list<list<Task>> threadTasks, String iType, String modelNamePrefixStr)
 ::=
