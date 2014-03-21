@@ -41,7 +41,7 @@ modelica_real division_error_equation_time(threadData_t *threadData, modelica_re
   if(noThrow){
     warningStreamPrintWithEquationIndexes(LOG_UTIL, 0, indexes, "solver will try to handle division by zero at time %.16g: %s", time, msg);
   } else {
-    throwStreamPrintWithEquationIndexes(threadData, indexes, "division by zero at time %.16g, (a=%.16g) / (b = %.16g), where divisor b expression is: %s", time, a, b, msg);
+    throwStreamPrintWithEquationIndexes(threadData, indexes, "division by zero at time %.16g, (a=%.16g) / (b=%.16g), where divisor b expression is: %s", time, a, b, msg);
   }
   return b;
 }
