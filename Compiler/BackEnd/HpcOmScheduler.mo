@@ -1311,6 +1311,7 @@ algorithm
   //print("-> NodeMark: " +& intString(nodeMark) +& "\n");
   //print("ISccSimEqMapping-Length: " +& intString(arrayLength(iSccSimEqMapping)) +& "\n");
   simEqIdc := List.map(List.map1(components,getSccSimEqMappingByIndex,iSccSimEqMapping), List.last);
+  simEqIdc := listReverse(simEqIdc);
   task := CALCTASK(-1,nodeIdx,-1.0,-1.0,-1,simEqIdc);
   nodeLevelMap := (task,nodeMark,iNodeDependenciesT)::nodeLevelMap;
   oNodeInfo := ((nodeIdx+1,nodeLevelMap));
