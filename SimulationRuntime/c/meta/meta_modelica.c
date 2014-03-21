@@ -827,10 +827,11 @@ char* getRecordElement(modelica_metatype arr, modelica_integer i) {
 char* getListItem(modelica_metatype lst, modelica_integer i) {
   /* get the item from the list */
   void* name = (void*)mmc_gdb_listGet(0, lst, i);
-  char nameStr[40];
+  char nameStr[40], *displayName = NULL, *ty = NULL, *formatString = NULL;
+
+  /* print the pointer as long to a buffer to get the string length */
   sprintf(nameStr, "%ld", (long)name);
 
-  char *displayName = NULL, *ty = NULL, *formatString = NULL;
   /* get the type of the element */
   getTypeOfAny(name);
   ty = malloc(strlen(anyStringBuf) + 1);
