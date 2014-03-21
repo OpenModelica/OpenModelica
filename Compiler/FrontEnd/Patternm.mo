@@ -2285,7 +2285,7 @@ algorithm
       equation
          path = Absyn.stripLast(name);
          ty = DAE.T_METARECORD(path,index,fields,knownSingleton,{name});
-         env = Env.extendFrameV(env, DAE.TYPES_VAR(id,attr,ty,DAE.UNBOUND(),NONE()), SCode.COMPONENT(id,SCode.defaultPrefixes,SCode.defaultVarAttr,Absyn.TPATH(name,NONE()),SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo), DAE.NOMOD(), Env.VAR_DAE(), env);
+         env = Env.extendFrameV(env, DAE.TYPES_VAR(id,attr,ty,DAE.UNBOUND(),NONE()), SCode.COMPONENT(id,SCode.defaultPrefixes,SCode.defaultVarAttr,Absyn.TPATH(name,NONE()),SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo), DAE.NOMOD(), Env.VAR_DAE(), Env.emptyEnv);
       then ((pat,env));
     else inTpl;
   end match;
@@ -2361,7 +2361,7 @@ algorithm
     case (env,ty::_,(id::rest)::aliases,_)
       equation
         attr = DAE.dummyAttrInput;
-        env = Env.extendFrameV(env, DAE.TYPES_VAR(id,attr,ty,DAE.UNBOUND(),NONE()), SCode.COMPONENT(id,SCode.defaultPrefixes,SCode.defaultVarAttr,Absyn.TPATH(Absyn.IDENT("$dummy"),NONE()),SCode.NOMOD(),SCode.noComment,NONE(),info), DAE.NOMOD(), Env.VAR_DAE(), env);
+        env = Env.extendFrameV(env, DAE.TYPES_VAR(id,attr,ty,DAE.UNBOUND(),NONE()), SCode.COMPONENT(id,SCode.defaultPrefixes,SCode.defaultVarAttr,Absyn.TPATH(Absyn.IDENT("$dummy"),NONE()),SCode.NOMOD(),SCode.noComment,NONE(),info), DAE.NOMOD(), Env.VAR_DAE(), Env.emptyEnv);
       then addAliasesToEnv(env,inTypes,rest::aliases,info);
   end match;
 end addAliasesToEnv;

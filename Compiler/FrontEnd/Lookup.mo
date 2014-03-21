@@ -2658,7 +2658,7 @@ algorithm
   (outCache,outAttributes,outType,outBinding,constOfForIteratorRange,splicedExpData,outComponentEnv,name) :=
   matchcontinue (inCache,inBinTree,inComponentRef)
     local
-      String id;
+      String id,id2;
       SCode.ConnectorType ct;
       SCode.Parallelism prl;
       SCode.Variability vt,vt2;
@@ -2681,6 +2681,7 @@ algorithm
       Option<DAE.Const> cnstForRange;
       SCode.Visibility vis;
       DAE.Attributes attr;
+      list<DAE.Var> fields;
 
     // Simple identifier
     case (cache,ht,ids as DAE.CREF_IDENT(ident = id,subscriptLst = ss) )
@@ -2726,6 +2727,16 @@ algorithm
         vt = SCode.variabilityOr(vt,vt2);
       then
         (cache,DAE.ATTR(ct,prl,vt,di,io,vis),ty,binding,cnstForRange,InstTypes.SPLICEDEXPDATA(NONE(),idTp),componentEnv,name);
+
+    // Qualified componentname without spliced Expression.
+    case (cache,ht,xCref as (DAE.CREF_QUAL(ident = id,subscriptLst = {},componentRef = DAE.CREF_IDENT(ident=id2,subscriptLst={}))))
+      equation
+        true = Config.acceptMetaModelicaGrammar();
+        (cache,DAE.TYPES_VAR(ty=DAE.T_METARECORD(fields=fields)),_,_,_,componentEnv) = lookupVar2(cache,ht, id);
+        DAE.TYPES_VAR(name,attr,ty,binding,cnstForRange) = listGet(fields,Types.findVarIndex(id2,fields)+1);
+      then
+        (cache,attr,ty,binding,cnstForRange,InstTypes.SPLICEDEXPDATA(NONE(),ty),componentEnv,name);
+
   end matchcontinue;
 end lookupVarF;
 
