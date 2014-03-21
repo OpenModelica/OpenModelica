@@ -1,4 +1,6 @@
-all : release qtclients @OMSHELL_TERMINAL@
+all :
+	$(MAKE) boehm-gc-lib
+	$(MAKE) release qtclients @OMSHELL_TERMINAL@
 
 autoconfGeneratedFiles = @GENERATED_AUTOCONF_FILES@
 
