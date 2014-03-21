@@ -121,7 +121,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   class <%lastIdentOfPath(modelInfo.name)%>Jacobian: virtual public  <%lastIdentOfPath(modelInfo.name)%>
   {
   
-  	
+    
     <% (jacobianMatrixes |> (mat, _,_, _, _, _) hasindex index0 =>
        (mat |> (eqs,_,_) =>  generatefriendAlgloops(eqs,simCode) ;separator="\n")
      ;separator="")
@@ -878,57 +878,57 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
          
       
        void  <%classname%>StateSelection::getAMatrix(unsigned int index,multi_array<int,2> & A) 
-   	   {
-     	 <%match getAMatrix2 case "" then '' else
-     	 <<
-     	  switch (index)
+        {
+        <%match getAMatrix2 case "" then '' else
+        <<
+         switch (index)
           { 
             <%getAMatrix2%>
-     	    default:
-     		   throw std::invalid_argument("Not supported statset index");
-  		  }
-  		 >>
-  		 %>
+           default:
+            throw std::invalid_argument("Not supported statset index");
+        }
+       >>
+       %>
        }
        void  <%classname%>StateSelection::getAMatrix(unsigned int index,multi_array<int,1> & A) 
-   	   {
-    	 <%match getAMatrix1 case "" then '' else
-     	 <<
-    	  switch (index)
-    	  { 
+        {
+       <%match getAMatrix1 case "" then '' else
+        <<
+        switch (index)
+        { 
            <%getAMatrix1%>
             default:
-     		   throw std::invalid_argument("Not supported statset index");
-  		   }
-  		 >>
-  		 %>
+            throw std::invalid_argument("Not supported statset index");
+         }
+       >>
+       %>
        }
        
        void  <%classname%>StateSelection::setAMatrix(unsigned int index,multi_array<int,2> & A) 
-   	   {
-     	 <%match setAMatrix2 case "" then '' else
-     	 <<
-     	  switch (index)
+        {
+        <%match setAMatrix2 case "" then '' else
+        <<
+         switch (index)
           { 
             <%setAMatrix2%>
-     	    default:
-     		   throw std::invalid_argument("Not supported statset index");
-  		  }
-  		 >>
-  		 %>
+           default:
+            throw std::invalid_argument("Not supported statset index");
+        }
+       >>
+       %>
        }
        void  <%classname%>StateSelection::setAMatrix(unsigned int index,multi_array<int,1> & A) 
-   	   {
-    	 <%match setAMatrix1 case "" then '' else
-     	 <<
-    	  switch (index)
-    	  { 
+        {
+       <%match setAMatrix1 case "" then '' else
+        <<
+        switch (index)
+        { 
            <%setAMatrix1%>
             default:
-     		   throw std::invalid_argument("Not supported statset index");
-  		   }
-  		 >>
-  		 %>
+            throw std::invalid_argument("Not supported statset index");
+         }
+       >>
+       %>
        }
     
     
