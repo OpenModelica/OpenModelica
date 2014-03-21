@@ -827,20 +827,23 @@ char* getRecordElement(modelica_metatype arr, modelica_integer i) {
 char* getListItem(modelica_metatype lst, modelica_integer i) {
   /* get the item from the list */
   void* name = (void*)mmc_gdb_listGet(0, lst, i);
-  char nameStr[40], *displayName = NULL, *ty = NULL, *formatString = NULL;
+  char nameStr[40], displayName[40], *ty = NULL, *formatString = NULL;
 
   /* print the pointer as long to a buffer to get the string length */
   sprintf(nameStr, "%ld", (long)name);
 
-  /* get the type of the element */
+  /* get the name of the item */
+  sprintf(displayName, "%d", (int)i);
+
+  /* get the type of the item */
   getTypeOfAny(name);
   ty = malloc(strlen(anyStringBuf) + 1);
   strcpy(ty, anyStringBuf);
 
   /* format the anyStringBuf as array to return it */
-  formatString = "^done,omc_listitem={name=\"%ld\",displayName=\"[%d]\",type=\"%s\"}";
-  checkAnyStringBufSize(0, strlen(nameStr) + strlen(ty) + strlen(formatString) + 1);
-  sprintf(anyStringBuf, formatString, (long)name, i, ty);
+  formatString = "^done,omc_listitem={name=\"%ld\",displayName=\"[%s]\",type=\"%s\"}";
+  checkAnyStringBufSize(0, strlen(nameStr) + strlen(displayName) + strlen(ty) + strlen(formatString) + 1);
+  sprintf(anyStringBuf, formatString, (long)name, displayName, ty);
 
   /* free the memory */
   free(ty);
