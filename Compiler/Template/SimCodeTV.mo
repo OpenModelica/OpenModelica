@@ -227,6 +227,7 @@ package SimCode
  
     record ALGLOOP_CONTEXT
        Boolean genInitialisation;
+        Boolean genJacobian;
     end ALGLOOP_CONTEXT;
     record OTHER_CONTEXT
     end OTHER_CONTEXT;
@@ -569,6 +570,7 @@ package SimCode
   constant Context contextInlineSolver;
   constant Context contextFunction;
   constant Context contextOther;
+  constant Context contextAlgloopJacobian;
   constant Context contextAlgloop;
   constant Context contextJacobian;              
   constant Context contextAlgloopInitialisation;             

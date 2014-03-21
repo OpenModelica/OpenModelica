@@ -159,7 +159,7 @@ void Hybrj::initialize()
 
 }
 
-void Hybrj::solve(const IContinuous::UPDATETYPE command)
+void Hybrj::solve()
 {
     // If initialize() was not called yet
     if (_firstCall)

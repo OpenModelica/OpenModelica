@@ -116,7 +116,7 @@ void Kinsol::initialize()
   
 }
 
-void Kinsol::solve(const IContinuous::UPDATETYPE command)
+void Kinsol::solve()
 {
   long int
     dimRHS  = 1,          // Dimension of right hand side of linear system (=b)

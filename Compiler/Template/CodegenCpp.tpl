@@ -26,7 +26,11 @@ template translateModel(SimCode simCode) ::=
   let()= textFile(simulationWriteOutputCppFile(simCode),'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
   let()= textFile(simulationFactoryFile(simCode),'OMCpp<%fileNamePrefix%>FactoryExport.cpp')
   let()= textFile(simulationMainRunScrip(simCode), '<%fileNamePrefix%><%simulationMainRunScripSuffix(simCode)%>')
-  algloopfiles(listAppend(allEquations,initialEquations),simCode)
+  let jac =  (jacobianMatrixes |> (mat, _,_, _, _, _) hasindex index0 =>
+          (mat |> (eqs,_,_) =>  algloopfiles(eqs,simCode,contextAlgloopJacobian) ;separator="")
+         ;separator="")
+  let algs = algloopfiles(listAppend(allEquations,initialEquations),simCode,contextAlgloop)
+ ""
   // empty result of the top-level template .., only side effects
 end translateModel;
 
@@ -101,6 +105,14 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   <<
    #pragma once
     #include "OMCpp<%fileNamePrefix%>.h"
+    
+    
+   
+    
+    <% (jacobianMatrixes |> (mat, _,_, _, _, _) hasindex index0 =>
+       (mat |> (eqs,_,_) =>  algloopfilesInclude(eqs,simCode) ;separator="\n")
+     ;separator="")
+    %>
   /*****************************************************************************
   *
   * Simulation code to initialize the Modelica system
@@ -108,10 +120,17 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   *****************************************************************************/
   class <%lastIdentOfPath(modelInfo.name)%>Jacobian: virtual public  <%lastIdentOfPath(modelInfo.name)%>
   {
+  
+  	
+    <% (jacobianMatrixes |> (mat, _,_, _, _, _) hasindex index0 =>
+       (mat |> (eqs,_,_) =>  generatefriendAlgloops(eqs,simCode) ;separator="\n")
+     ;separator="")
+    %>
      public:
     <%lastIdentOfPath(modelInfo.name)%>Jacobian(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData);
     ~<%lastIdentOfPath(modelInfo.name)%>Jacobian();
    protected:
+    void initialize();
     <%
     let jacobianfunctions = (jacobianMatrixes |> (_,_, name, _, _, _) hasindex index0 =>
     <<
@@ -143,6 +162,14 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
    %> 
    //workaround for jacobian variables
    <%variableDefinitionsJacobians(jacobianMatrixes,simCode)%> 
+   
+    boost::shared_ptr<IAlgLoopSolverFactory>
+        _algLoopSolverFactory;    ///< Factory that provides an appropriate solver
+    
+    <% (jacobianMatrixes |> (mat, _,_, _, _, _) hasindex index0 =>
+       (mat |> (eqs,_,_) =>  generateAlgloopsolverVariables(eqs,simCode) ;separator="\n")
+     ;separator="")
+    %>
     
   };
  >>
@@ -177,6 +204,8 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     void getStateCanditates(unsigned int index,double* z);
     void getAMatrix(unsigned int index,multi_array<int,2> & A) ;
     void setAMatrix(unsigned int index,multi_array<int,2>& A);
+     void getAMatrix(unsigned int index,multi_array<int,1> & A) ;
+    void setAMatrix(unsigned int index,multi_array<int,1>& A);
     protected:
      void  initialize();
   };
@@ -287,6 +316,8 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     virtual void getStateCanditates(unsigned int index,double* z);
     virtual void getAMatrix(unsigned int index,multi_array<int,2>& A);
     virtual void setAMatrix(unsigned int index,multi_array<int,2>& A);
+    virtual void getAMatrix(unsigned int index,multi_array<int,1>& A);
+    virtual void setAMatrix(unsigned int index,multi_array<int,1>& A);
     
     
   };
@@ -441,10 +472,7 @@ template simulationExtensionCppFile(SimCode simCode)
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   let classname = lastIdentOfPath(modelInfo.name)
-  let initialStateSetJac = (stateSets |> set hasindex i1 fromindex 0 => (match set
-       case set as SES_STATESET(__) then
-              match jacobianMatrix case (_,_,name,_,_,_) then 
-            'initialAnalytic<%name%>Jacobian();') ;separator="\n\n")
+ 
       
   
   <<
@@ -480,8 +508,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     {
       <%lastIdentOfPath(modelInfo.name)%>WriteOutput::initialize();
       <%lastIdentOfPath(modelInfo.name)%>Initialize::initialize();
-       <%lastIdentOfPath(modelInfo.name)%>StateSelection::initialize();
-     <%initialStateSetJac%>
+      <%lastIdentOfPath(modelInfo.name)%>Jacobian::initialize();
+    
       
     }
     
@@ -579,6 +607,15 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    }
   
    void <%lastIdentOfPath(modelInfo.name)%>Extension::setAMatrix(unsigned int index,multi_array<int,2> & A) 
+   {
+      <%lastIdentOfPath(modelInfo.name)%>StateSelection::setAMatrix(index,A);
+   }
+   void <%lastIdentOfPath(modelInfo.name)%>Extension::getAMatrix(unsigned int index,multi_array<int,1> & A) 
+   {
+      <%lastIdentOfPath(modelInfo.name)%>StateSelection::getAMatrix(index,A);
+   }
+  
+   void <%lastIdentOfPath(modelInfo.name)%>Extension::setAMatrix(unsigned int index,multi_array<int,1> & A) 
    {
       <%lastIdentOfPath(modelInfo.name)%>StateSelection::setAMatrix(index,A);
    }
@@ -687,6 +724,52 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
 ::=
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__)) then
+  let getAMatrix1 = (stateSets |> set hasindex i1 fromindex 0 => (match set
+           case set as SES_STATESET(__) then
+           let arrayname1 = arraycref(crA)
+           match nStates  case 1 then
+             'case <%i1%>:
+               assign_array(A,<%arrayname1%>);
+               break;
+            '
+            else ""
+         ) ;separator="\n")
+  
+  let getAMatrix2 = (stateSets |> set hasindex i1 fromindex 0 => (match set
+           case set as SES_STATESET(__) then
+           let arrayname1 = arraycref(crA)
+           match nStates  case 1 then "" else
+             'case <%i1%>:
+               assign_array(A,<%arrayname1%>);
+               break;
+            '
+            
+         ) ;separator="\n")       
+   
+   let setAMatrix1 = (stateSets |> set hasindex i1 fromindex 0 => (match set
+           case set as SES_STATESET(__) then
+           let arrayname1 = arraycref(crA)
+           match nStates  case 1 then
+             'case <%i1%>:
+               assign_array(<%arrayname1%>,A);
+               break;
+            '
+            else ""
+         ) ;separator="\n")
+  
+  let setAMatrix2 = (stateSets |> set hasindex i1 fromindex 0 => (match set
+           case set as SES_STATESET(__) then
+           let arrayname1 = arraycref(crA)
+           match nStates  case 1 then "" else
+             'case <%i1%>:
+               assign_array(<%arrayname1%>,A);
+               break;
+            '
+            
+         ) ;separator="\n")       
+   
+ 
+  
   let classname =  lastIdentOfPath(modelInfo.name)
   match stateSets
   case {} then
@@ -709,7 +792,16 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
      
      
      }
+      void  <%classname%>StateSelection::getAMatrix(unsigned int index,multi_array<int,1> & A) 
+     {
+     
+     
+     }
      void  <%classname%>StateSelection::setAMatrix(unsigned int index,multi_array<int,2>& A)
+     {
+     
+     }
+      void  <%classname%>StateSelection::setAMatrix(unsigned int index,multi_array<int,1>& A)
      {
      
      }
@@ -719,21 +811,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
      }
      >>
  else
-  let stateset = (stateSets |> set hasindex i1 fromindex 0 => (match set
-       case set as SES_STATESET(__) then
-       let statesvarsset = (states |> s hasindex i2 fromindex 0 => 'z[<%i2%>]=<%cref1(s,simCode,contextOther)%>;' ;separator="\n")
-       let statesvarsget = (states |> s hasindex i2 fromindex 0 => '<%cref1(s,simCode,contextOther)%> = z[<%i2%>];' ;separator="\n")
-       let statescandidatesvarsset = (statescandidates |> cstate hasindex i2 fromindex 0 => 'z[<%i2%>]=<%cref1(cstate,simCode,contextOther)%>;' ;separator="\n")
-      
-       <<
-       
-       >>
-   )
-   ;separator="\n\n")
-   
-   
-
-   
+  
   <<
      
   
@@ -796,57 +874,61 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
           throw std::invalid_argument("Not supported statset index");
         }
          
-       }
-       void  <%classname%>StateSelection::getAMatrix(unsigned int index,multi_array<int,2> & A) 
-       {
-         switch (index)
-         { 
-           <%(stateSets |> set hasindex i1 fromindex 0 => (match set
-           case set as SES_STATESET(__) then
-           <<
-             case <%i1%>:
-               assign_array(A,<%arraycref(crA)%>);
-               break;
-       
-           >>
-           )
-            ;separator="\n")
-          %>
-         default:
-         throw std::invalid_argument("Not supported statset index");
-      }
+       } 
          
+      
+       void  <%classname%>StateSelection::getAMatrix(unsigned int index,multi_array<int,2> & A) 
+   	   {
+     	 <%match getAMatrix2 case "" then '' else
+     	 <<
+     	  switch (index)
+          { 
+            <%getAMatrix2%>
+     	    default:
+     		   throw std::invalid_argument("Not supported statset index");
+  		  }
+  		 >>
+  		 %>
        }
-       void  <%classname%>StateSelection::setAMatrix(unsigned int index,multi_array<int,2>& A)
-       {
-          switch (index)
-         { 
-           <%(stateSets |> set hasindex i1 fromindex 0 => (match set
-           case set as SES_STATESET(__) then
-           <<
-             case <%i1%>:
-               assign_array(<%arraycref(crA)%>,A);
-               break;
+       void  <%classname%>StateSelection::getAMatrix(unsigned int index,multi_array<int,1> & A) 
+   	   {
+    	 <%match getAMatrix1 case "" then '' else
+     	 <<
+    	  switch (index)
+    	  { 
+           <%getAMatrix1%>
+            default:
+     		   throw std::invalid_argument("Not supported statset index");
+  		   }
+  		 >>
+  		 %>
+       }
        
-           >>
-           )
-            ;separator="\n")
-          %>
-         default:
-         throw std::invalid_argument("Not supported statset index");
-        }
-      }
-       void <%classname%>StateSelection::initialize()
-       {
-           <%(stateSets |> set hasindex i1 fromindex 0 => (match set
-           case set as SES_STATESET(__) then
-           <<
-             fill_array<int,2 >( <%arraycref(crA)%>,0);
-            >>
-           )
-            ;separator="\n")
-          %>
-          
+       void  <%classname%>StateSelection::setAMatrix(unsigned int index,multi_array<int,2> & A) 
+   	   {
+     	 <%match setAMatrix2 case "" then '' else
+     	 <<
+     	  switch (index)
+          { 
+            <%setAMatrix2%>
+     	    default:
+     		   throw std::invalid_argument("Not supported statset index");
+  		  }
+  		 >>
+  		 %>
+       }
+       void  <%classname%>StateSelection::setAMatrix(unsigned int index,multi_array<int,1> & A) 
+   	   {
+    	 <%match setAMatrix1 case "" then '' else
+     	 <<
+    	  switch (index)
+    	  { 
+           <%setAMatrix1%>
+            default:
+     		   throw std::invalid_argument("Not supported statset index");
+  		   }
+  		 >>
+  		 %>
        }
     
     
@@ -856,7 +938,15 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
  >>
 end functionStateSets;
 
-
+template crefType(ComponentRef cr) "template crefType
+  Like cref but with cast if type is integer."
+::=
+  match cr
+  case CREF_IDENT(__) then '<%expTypeFlag(identType,6)%>'
+  case CREF_QUAL(__)  then '<%crefType(componentRef)%>'
+  else "crefType:ERROR"
+  end match
+end crefType;
 
 
 template simulationMainRunScrip(SimCode simCode)
@@ -1001,14 +1091,14 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
 end simulationMainFile;
 
 
-template algloopHeaderFile(SimCode simCode,SimEqSystem eq)
+template algloopHeaderFile(SimCode simCode,SimEqSystem eq, Context context)
  "Generates code for header file for simulation target."
 ::=
 match simCode
 case SIMCODE(__) then
   <<
-   <%generateAlgloopHeaderInlcudeString(simCode)%>
-   <%generateAlgloopClassDeclarationCode(simCode,eq)%>
+   <%generateAlgloopHeaderInlcudeString(simCode,context)%>
+   <%generateAlgloopClassDeclarationCode(simCode,eq,context)%>
 
    >>
 end algloopHeaderFile;
@@ -1194,7 +1284,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   GENERATEDFILES=$(MAINFILE) $(FUNCTIONFILE)  <%algloopcppfilenames(allEquations,simCode)%> 
  
   $(MODELICA_SYSTEM_LIB)$(DLLEXT): 
-  <%\t%>$(CXX)  /Fe$(SYSTEMOBJ) $(SYSTEMFILE) $(FUNCTIONFILE)   <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%> $(INITFILE) $(FACTORYFILE)  $(EXTENSIONFILE) $(WRITEOUTPUTFILE) $(JACOBIANFILE) $(STATESELECTIONFILE) $(CFLAGS)     $(LDSYTEMFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%>
+  <%\t%>$(CXX)  /Fe$(SYSTEMOBJ) $(SYSTEMFILE) $(FUNCTIONFILE)  <%(jacobianMatrixes |> (mat, _,_, _, _, _) hasindex index0 => (mat |> (eqs,_,_) =>  algloopcppfilenames(eqs,simCode) ;separator="") ;separator="")%>  <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%> $(INITFILE) $(FACTORYFILE)  $(EXTENSIONFILE) $(WRITEOUTPUTFILE) $(JACOBIANFILE) $(STATESELECTIONFILE) $(CFLAGS)     $(LDSYTEMFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%>
    <%\t%>$(CXX) $(CPPFLAGS) /Fe$(MAINOBJ)  $(MAINFILE)   $(CFLAGS) $(LDMAINFLAGS)
   >>
 end match
@@ -1239,7 +1329,7 @@ SYSTEMOBJ=OMCpp<%fileNamePrefix%>$(DLLEXT)
 
 
 
-CPPFILES=$(SYSTEMFILE) $(FUNCTIONFILE) $(INITFILE) $(WRITEOUTPUTFILE) $(EXTENSIONFILE) $(FACTORYFILE) $(JACOBIANFILE) $(STATESELECTIONFILE) <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%>
+CPPFILES=$(SYSTEMFILE) $(FUNCTIONFILE) $(INITFILE) $(WRITEOUTPUTFILE) $(EXTENSIONFILE) $(FACTORYFILE) $(JACOBIANFILE) $(STATESELECTIONFILE)  <%(jacobianMatrixes |> (mat, _,_, _, _, _) hasindex index0 => (mat |> (eqs,_,_) =>  algloopcppfilenames(eqs,simCode) ;separator="") ;separator="")%> <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%>
 OFILES=$(CPPFILES:.cpp=.o)
 
 .PHONY: <%lastIdentOfPath(modelInfo.name)%> $(CPPFILES)
@@ -1341,31 +1431,34 @@ end simulationCppFile;
     /* */
   /* <%modelname%>Algloop<%index%>::<%modelname%>Algloop<%index%>(<%constructorParams%> double* z,double* zDot,EventHandling& event_handling )
   ,<%iniAlgloopParamas%>*/
-template algloopCppFile(SimCode simCode,SimEqSystem eq)
+  
+  
+template algloopCppFile(SimCode simCode,SimEqSystem eq, Context context)
  "Generates code for main cpp file for algloop system ."
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   let modelname =  lastIdentOfPath(modelInfo.name)
-  let modelfilename =  fileNamePrefix
+  let filename = fileNamePrefix
+  let modelfilename =  match context case  ALGLOOP_CONTEXT(genInitialisation=false,genJacobian=true)  then '<%filename%>Jacobian' else '<%filename%>' 
    let &varDecls = buffer ""
    let &arrayInit = buffer ""
    let constructorParams = ConstructorParamAlgloop(modelInfo)
    let iniAlgloopParamas = InitAlgloopParams(modelInfo,arrayInit)
-
+   let systemname = match context case ALGLOOP_CONTEXT(genInitialisation=false,genJacobian=true)  then '<%modelname%>Jacobian' else '<%modelname%>'
 match eq
     case SES_LINEAR(__)
     case SES_NONLINEAR(__) then
 
   <<
    #include "Modelica.h"
-   #include "OMCpp<%modelfilename%>Algloop<%index%>.h"
+   #include "OMCpp<%filename%>Algloop<%index%>.h"
    #include "OMCpp<%modelfilename%>.h"
    <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then '#include "Math/ArrayOperations.h"'%>
 
 
 
-    <%modelname%>Algloop<%index%>::<%modelname%>Algloop<%index%>(<%modelname%>* system, double* z,double* zDot,bool* conditions, EventHandling& event_handling )
+    <%modelname%>Algloop<%index%>::<%modelname%>Algloop<%index%>(<%systemname%>* system, double* z,double* zDot,bool* conditions, EventHandling& event_handling )
    :AlgLoopDefaultImplementation()
    ,_system(system)
    ,__z(z)
@@ -1386,17 +1479,17 @@ match eq
     }
    <%algloopRHSCode(simCode,eq)%>
    <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then algloopResiduals(simCode,eq)%>
-   <%initAlgloop(simCode,eq)%>
-   <%upateAlgloopNonLinear(simCode,eq)%>
-   <%upateAlgloopLinear(simCode,eq)%>
-   <%AlgloopDefaultImplementationCode(simCode,eq)%>
+   <%initAlgloop(simCode,eq,context)%>
+   <%upateAlgloopNonLinear(simCode,eq,context)%>
+   <%upateAlgloopLinear(simCode,eq,context)%>
+   <%AlgloopDefaultImplementationCode(simCode,eq,context)%>
    <%getAMatrixCode(simCode,eq)%>
    <%isLinearCode(simCode,eq)%>
     >>
 end algloopCppFile;
 
 
-template upateAlgloopNonLinear( SimCode simCode,SimEqSystem eqn)
+template upateAlgloopNonLinear( SimCode simCode,SimEqSystem eqn,Context context)
   "Generates functions in simulation file."
 ::=
 match simCode
@@ -1408,17 +1501,17 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      case eq as SES_NONLINEAR(__) then
      let &varDecls = buffer "" /*BUFD*/
      let algs = (eq.eqs |> eq2 as SES_ALGORITHM(__) =>
-         equation_(eq2, contextAlgloop, &varDecls /*BUFD*/,simCode)
+         equation_(eq2, context, &varDecls /*BUFD*/,simCode)
        ;separator="\n")
      let prebody = (eq.eqs |> eq2 as SES_SIMPLE_ASSIGN(__) =>
-         equation_(eq2, contextAlgloop, &varDecls /*BUFD*/,simCode)
+         equation_(eq2, context, &varDecls /*BUFD*/,simCode)
        ;separator="\n")
       let extraresidual = (eq.eqs |> eq2 =>
-         functionExtraResidualsPreBody(eq2, &varDecls /*BUFD*/,contextAlgloop,simCode)
+         functionExtraResidualsPreBody(eq2, &varDecls /*BUFD*/,context,simCode)
       ;separator="\n")
      let body = (eq.eqs |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
          let &preExp = buffer "" /*BUFD*/
-         let expPart = daeExp(eq2.exp, contextAlgloop,
+         let expPart = daeExp(eq2.exp, context,
                             &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
          '<%preExp%>__xd[<%i0%>] = <%expPart%>;'
 
@@ -1457,7 +1550,7 @@ end functionExtraResidualsPreBody;
 
 
 
-template upateAlgloopLinear( SimCode simCode,SimEqSystem eqn)
+template upateAlgloopLinear( SimCode simCode,SimEqSystem eqn,Context context)
  "Generates functions in simulation file."
 ::=
 match simCode
@@ -1477,7 +1570,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
  let Amatrix=
     (simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
-      let expPart = daeExp(eq.exp, contextAlgloop, &preExp /*BUFC*/,  &varDecls /*BUFD*/,simCode)
+      let expPart = daeExp(eq.exp, context, &preExp /*BUFC*/,  &varDecls /*BUFD*/,simCode)
       '<%preExp%>__A[<%row%>][<%col%>]=<%expPart%>;'
   ;separator="\n")
 
@@ -1485,7 +1578,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
  let bvector =  (beqs |> exp hasindex i0 =>
 
-     let expPart = daeExp(exp, contextAlgloop, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+     let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
      '<%preExp%>__b[<%i0%>]=<%expPart%>;'
   ;separator="\n")
 
@@ -2640,7 +2733,7 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
    let initEventHandling = eventHandlingInit(simCode)
    
    /*let initBoundParameters = boundParameters(parameterEquations,varDecls,simCode)*/
-   let initALgloopSolvers = initAlgloopsolvers(odeEquations,algebraicEquations,whenClauses,parameterEquations,simCode)
+   let initALgloopSolvers = initAlgloopsolvers(odeEquations,simCode)
 
    let initialequations  = functionInitialEquations(initialEquations,simCode)
    let initextvars = functionCallExternalObjectConstructors(extObjInfo,simCode)
@@ -2820,14 +2913,14 @@ template functionInitialEquations(list<SimEqSystem> initalEquations, SimCode sim
   >>
 end functionInitialEquations;
 
-template initAlgloop(SimCode simCode,SimEqSystem eq)
+template initAlgloop(SimCode simCode,SimEqSystem eq,Context context)
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   let modelname = lastIdentOfPath(modelInfo.name)
   let &varDecls = buffer ""
   let &preExp = buffer ""
-  let initalgvars = initAlgloopvars(preExp,varDecls,modelInfo,simCode)
+  let initalgvars = initAlgloopvars(preExp,varDecls,modelInfo,simCode,context)
   
   match eq
   case SES_NONLINEAR(__) then
@@ -2835,7 +2928,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   void <%modelname%>Algloop<%index%>::initialize()
   {
 
-         <%initAlgloopEquation(eq,varDecls,simCode)%>
+         <%initAlgloopEquation(eq,varDecls,simCode,context)%>
        AlgLoopDefaultImplementation::initialize();
 
     // Update the equations once before start of simulation
@@ -2847,7 +2940,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      void <%modelname%>Algloop<%index%>::initialize()
      {
 
-         <%initAlgloopEquation(eq,varDecls,simCode)%>
+         <%initAlgloopEquation(eq,varDecls,simCode,context)%>
         // Update the equations once before start of simulation
         evaluate(IContinuous::ALL);
      }
@@ -2891,7 +2984,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   let modelname = lastIdentOfPath(modelInfo.name)
   let &varDecls = buffer ""
   let &preExp = buffer ""
-  let initalgvars = initAlgloopvars(preExp,varDecls,modelInfo,simCode)
+ 
 
   match eq
   case SES_NONLINEAR(__)
@@ -2960,7 +3053,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   let modelname = lastIdentOfPath(modelInfo.name)
    let &varDecls = buffer ""
    let &preExp = buffer ""
-  let initalgvars = initAlgloopvars(preExp,varDecls,modelInfo,simCode)
+ 
  
   match eq
   case SES_NONLINEAR(__) then
@@ -2981,7 +3074,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 end isLinearCode;
 
 
-template initAlgloopEquation(SimEqSystem eq, Text &varDecls /*BUFP*/,SimCode simCode)
+template initAlgloopEquation(SimEqSystem eq, Text &varDecls /*BUFP*/,SimCode simCode,Context context)
  "Generates a non linear equation system."
 ::=
 match eq
@@ -2990,7 +3083,7 @@ case SES_NONLINEAR(__) then
   <<
 
    <%crefs |> name hasindex i0 =>
-    let namestr = cref1(name,simCode,contextAlgloop)
+    let namestr = cref1(name,simCode,context)
     <<
     __xd[<%i0%>] = <%namestr%>;
      >>
@@ -3001,13 +3094,13 @@ case SES_NONLINEAR(__) then
      let &preExp = buffer "" /*BUFD*/
  let Amatrix=
     (simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
-      let expPart = daeExp(eq.exp, contextAlgloop, &preExp /*BUFC*/,  &varDecls /*BUFD*/,simCode)
+      let expPart = daeExp(eq.exp, context, &preExp /*BUFC*/,  &varDecls /*BUFD*/,simCode)
       '<%preExp%>__A[<%row%>][<%col%>]=<%expPart%>;'
   ;separator="\n")
 
  let bvector =  (beqs |> exp hasindex i0 =>
 
-     let expPart = daeExp(exp, contextAlgloop, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+     let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
      '<%preExp%>__b[<%i0%>]=<%expPart%>;'
   ;separator="\n")
 
@@ -3024,7 +3117,7 @@ end initAlgloopEquation;
 
 
 
-template giveAlgloopvars(SimEqSystem eq,SimCode simCode)
+template giveAlgloopvars(SimEqSystem eq,SimCode simCode,Context context)
  "Generates a non linear equation system."
 ::=
 match eq
@@ -3033,7 +3126,7 @@ case SES_NONLINEAR(__) then
   <<
 
    <%crefs |> name hasindex i0 =>
-     let namestr = cref1(name,simCode,contextAlgloop)
+     let namestr = cref1(name,simCode,context)
      <<
        vars[<%i0%>] = <%namestr%>;
      >>
@@ -3042,7 +3135,7 @@ case SES_NONLINEAR(__) then
   >>
  case SES_LINEAR(__) then
    <<
-      <%vars |> SIMVAR(__) hasindex i0 => 'vars[<%i0%>] =<%cref1(name,simCode,contextAlgloop)%>;' ;separator="\n"%><%inlineVars(contextSimulationNonDiscrete,vars)%>
+      <%vars |> SIMVAR(__) hasindex i0 => 'vars[<%i0%>] =<%cref1(name,simCode,context)%>;' ;separator="\n"%><%inlineVars(contextSimulationNonDiscrete,vars)%>
    >>
 
 end giveAlgloopvars;
@@ -3050,11 +3143,11 @@ end giveAlgloopvars;
 
 
 
-template writeAlgloopvars(list<list<SimEqSystem>> continousEquations,list<SimEqSystem> discreteEquations,list<SimWhenClause> whenClauses,list<SimEqSystem> parameterEquations,SimCode simCode)
+template writeAlgloopvars(list<list<SimEqSystem>> continousEquations,list<SimEqSystem> discreteEquations,list<SimWhenClause> whenClauses,list<SimEqSystem> parameterEquations,SimCode simCode,Context context)
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let algloopsolver = (continousEquations |> eqs => (eqs |> eq =>
-      writeAlgloopvars2(eq, contextOther, &varDecls /*BUFC*/,simCode))
+      writeAlgloopvars2(eq, context, &varDecls /*BUFC*/,simCode))
     ;separator=" ")
 
   <<
@@ -3089,7 +3182,7 @@ template writeAlgloopvars2(SimEqSystem eq, Context context, Text &varDecls, SimC
    double algloopvars<%algloopid%>[<%size%>];
    _algLoop<%index%>->getReal(algloopvars<%algloopid%>,NULL,NULL);
 
-    <%vars |> SIMVAR(__) hasindex i0 => '<%cref1(name,simCode,contextAlgloop)%> = algloopvars<%algloopid%>[<%i0%>];' ;separator="\n"%>
+    <%vars |> SIMVAR(__) hasindex i0 => '<%cref1(name,simCode,context)%> = algloopvars<%algloopid%>[<%i0%>];' ;separator="\n"%>
 
 
    >>
@@ -3099,7 +3192,7 @@ template writeAlgloopvars2(SimEqSystem eq, Context context, Text &varDecls, SimC
 
 
 
-template setAlgloopvars(SimEqSystem eq,SimCode simCode)
+template setAlgloopvars(SimEqSystem eq,SimCode simCode,Context context)
  "Generates a non linear equation system."
 ::=
 match eq
@@ -3108,7 +3201,7 @@ case SES_NONLINEAR(__) then
   <<
 
    <%crefs |> name hasindex i0 =>
-    let namestr = cref1(name,simCode,contextAlgloop)
+    let namestr = cref1(name,simCode,context)
     <<
     <%namestr%>  = vars[<%i0%>];
     >>
@@ -3117,7 +3210,7 @@ case SES_NONLINEAR(__) then
   case SES_LINEAR(__) then
   <<
 
-   <%vars |> SIMVAR(__) hasindex i0 => '<%cref1(name,simCode,contextAlgloop)%>=vars[<%i0%>];' ;separator="\n"%><%inlineVars(contextSimulationNonDiscrete,vars)%>
+   <%vars |> SIMVAR(__) hasindex i0 => '<%cref1(name,simCode,context)%>=vars[<%i0%>];' ;separator="\n"%><%inlineVars(contextSimulationNonDiscrete,vars)%>
 
   >>
 end setAlgloopvars;
@@ -3309,11 +3402,13 @@ end generateHeaderInlcudeString;
 
 
 
-template generateAlgloopHeaderInlcudeString(SimCode simCode)
+template generateAlgloopHeaderInlcudeString(SimCode simCode,Context context)
  "Generates header part of simulation file."
 ::=
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
+   let modelname = lastIdentOfPath(modelInfo.name)
+  let systemname = match context case  ALGLOOP_CONTEXT(genInitialisation=false,genJacobian=true) then '<%modelname%>Jacobian' else '<%modelname%>'
   <<
   #pragma once
   #define BOOST_EXTENSION_ALGLOOPDEFAULTIMPL_DECL BOOST_EXTENSION_EXPORT_DECL
@@ -3322,7 +3417,7 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   #include "System/AlgLoopDefaultImplementation.h"
   #include "System/EventHandling.h"
   #include "OMCpp<%fileNamePrefix%>Functions.h"
-  class <%lastIdentOfPath(modelInfo.name)%>;
+  class <%systemname%>;
   >>
 end generateAlgloopHeaderInlcudeString;
 
@@ -3380,12 +3475,14 @@ end generateClassDeclarationCode;
                                       );
                                       */
 
-template generateAlgloopClassDeclarationCode(SimCode simCode,SimEqSystem eq)
+template generateAlgloopClassDeclarationCode(SimCode simCode,SimEqSystem eq,Context context)
  "Generates class declarations."
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   let modelname = lastIdentOfPath(modelInfo.name)
+  
+  let systemname = match context case  ALGLOOP_CONTEXT(genInitialisation=false,genJacobian=true)  then '<%modelname%>Jacobian' else '<%modelname%>'
   let algvars = MemberVariableAlgloop(modelInfo)
   let constructorParams = ConstructorParamAlgloop(modelInfo)
   match eq
@@ -3395,7 +3492,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   class <%modelname%>Algloop<%index%>: public IAlgLoop, public AlgLoopDefaultImplementation
   {
   public:
-      <%modelname%>Algloop<%index%>(    <%modelname%>* system
+      <%modelname%>Algloop<%index%>( <%systemname%>* system
                                         ,double* z,double* zDot, bool* conditions
                                        ,EventHandling& event_handling
                                       );
@@ -3417,7 +3514,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
     EventHandling& _event_handling;
 
-     <%modelname%>* _system;
+     <%systemname%>* _system;
    };
   >>
 end generateAlgloopClassDeclarationCode;
@@ -3543,7 +3640,7 @@ void <%lastIdentOfPath(modelInfo.name)%>::handleEvent(const bool* events)
 end DefaultImplementationCode;
 
 
-template AlgloopDefaultImplementationCode(SimCode simCode,SimEqSystem eq)
+template AlgloopDefaultImplementationCode(SimCode simCode,SimEqSystem eq,Context context)
 
 ::=
 match simCode
@@ -3577,7 +3674,7 @@ void  <%modelname%>Algloop<%index%>::getReal(double* vars)
 
     AlgLoopDefaultImplementation::getReal(vars);
     //workaroud until names of algloop vars are replaced in simcode
-    <%giveAlgloopvars(eq,simCode)%>
+    <%giveAlgloopvars(eq,simCode,context)%>
 };
 
 /// Set variables with given index to the system
@@ -3586,7 +3683,7 @@ void  <%modelname%>Algloop<%index%>::setReal(const double* vars)
 
     //workaround until names of algloop vars are replaced in simcode  
 
-    <%setAlgloopvars(eq,simCode)%>
+    <%setAlgloopvars(eq,simCode,context)%>
     AlgLoopDefaultImplementation::setReal(vars);
 };
 
@@ -4289,6 +4386,19 @@ template cref(ComponentRef cr)
   else "_"+crefToCStr(cr)
 end cref;
 
+template varToString(ComponentRef cr,Context context )
+ "Generates C equivalent name for component reference."
+::=
+ match context
+    case JACOBIAN_CONTEXT() 
+              then   <<<%crefWithoutIndexOperator(cr)%>>>
+ else
+  match cr
+   case CREF_IDENT(ident = "time") then "_simTime"
+   case WILD(__) then ''
+   else "_"+crefToCStr(cr)
+end varToString;
+
 template localcref(ComponentRef cr)
  "Generates C equivalent name for component reference."
 ::=
@@ -4297,6 +4407,7 @@ template localcref(ComponentRef cr)
   case WILD(__) then ''
   else crefToCStr(cr)
 end localcref;
+
 
 template cref2(ComponentRef cr)
  "Generates C equivalent name for component reference."
@@ -4997,15 +5108,15 @@ case MODELINFO(vars=SIMVARS(__)) then
  >>
 end initvarExtVar;
 
-template initAlgloopvars( Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/,ModelInfo modelInfo,SimCode simCode)
+template initAlgloopvars( Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/,ModelInfo modelInfo,SimCode simCode,Context context)
 ::=
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
   let &varDecls = buffer "" /*BUFD*/
   
- let algvars =initValst(varDecls,vars.algVars, simCode,contextAlgloop)
- let intvars = initValst(varDecls,vars.intAlgVars, simCode,contextAlgloop)
- let boolvars = initValst(varDecls,vars.boolAlgVars, simCode,contextAlgloop)
+ let algvars =initValst(varDecls,vars.algVars, simCode,context)
+ let intvars = initValst(varDecls,vars.intAlgVars, simCode,context)
+ let boolvars = initValst(varDecls,vars.boolAlgVars, simCode,context)
  <<
   <%varDecls%>
   
@@ -5277,7 +5388,7 @@ template arrayCrefCStr(ComponentRef cr,Context context)
 ::=
 match context
 case ALGLOOP_CONTEXT(genInitialisation = false) 
-then << _system->_<%arrayCrefCStr2(cr)%> >>
+then << _system->_<%arrayCrefCStr2(cr)%>/*testalg2*/ >>
 else
 '_<%arrayCrefCStr2(cr)%>'
 end arrayCrefCStr;
@@ -5469,7 +5580,7 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
                 IContinuous::UPDATETYPE calltype = _callType;
                _callType = IContinuous::DISCRETE;
                  _algLoop<%index%>->setReal(algloop<%index%>Vars );
-                _algLoopSolver<%index%>->solve(command);
+                _algLoopSolver<%index%>->solve();
                _callType = calltype;   
              }
              catch(std::exception &ex)
@@ -5799,7 +5910,7 @@ template generateAlgloopsolverVariables2(SimEqSystem eq, Context context, Text &
  end generateAlgloopsolverVariables2;
 
 
-template initAlgloopsolvers(list<list<SimEqSystem>> continousEquations,list<list<SimEqSystem>> discreteEquations,list<SimWhenClause> whenClauses,list<SimEqSystem> parameterEquations,SimCode simCode)
+template initAlgloopsolvers(list<list<SimEqSystem>> continousEquations,SimCode simCode)
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let algloopsolver = (continousEquations |> eqs => (eqs |> eq =>
@@ -5810,6 +5921,19 @@ template initAlgloopsolvers(list<list<SimEqSystem>> continousEquations,list<list
   <%algloopsolver%>
   >>
 end initAlgloopsolvers;
+
+
+template initAlgloopsolver(list<SimEqSystem> equations,SimCode simCode)
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  let algloopsolver = (equations |> eq => 
+      initAlgloopsolvers2(eq, contextOther, &varDecls /*BUFC*/,simCode)
+    ;separator="\n")
+
+  <<
+  <%algloopsolver%>
+  >>
+end initAlgloopsolver;
 
 
 template initAlgloopsolvers2(SimEqSystem eq, Context context, Text &varDecls, SimCode simCode)
@@ -5887,12 +6011,15 @@ template algloopfiles(list<list<SimEqSystem>> continousEquations,list<SimEqSyste
 end algloopfiles;
 */
 
+
+
+
 // use allEquations instead of odeEquations, because only allEquations are labeled for reduction algorithms
-template algloopfiles(list<SimEqSystem> allEquations, SimCode simCode)
+template algloopfiles(list<SimEqSystem> allEquations, SimCode simCode,Context context)
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let algloopsolver = (allEquations |> eqs =>
-      algloopfiles2(eqs, contextOther, &varDecls /*BUFC*/,simCode)
+      algloopfiles2(eqs, context, &varDecls /*BUFC*/,simCode)
     ;separator="\n")
 
   <<
@@ -5915,16 +6042,16 @@ template algloopfiles2(SimEqSystem eq, Context context, Text &varDecls, SimCode 
   let num = index
       match simCode
           case SIMCODE(modelInfo = MODELINFO(__)) then
-              let()= textFile(algloopHeaderFile(simCode,eq), 'OMCpp<%fileNamePrefix%>Algloop<%num%>.h')
-              let()= textFile(algloopCppFile(simCode,eq), 'OMCpp<%fileNamePrefix%>Algloop<%num%>.cpp')
+              let()= textFile(algloopHeaderFile(simCode,eq,context), 'OMCpp<%fileNamePrefix%>Algloop<%num%>.h')
+              let()= textFile(algloopCppFile(simCode,eq,context), 'OMCpp<%fileNamePrefix%>Algloop<%num%>.cpp')
             " "
         end match
   case e as SES_MIXED(cont = eq_sys)
     then
        match simCode
           case SIMCODE(modelInfo = MODELINFO(__)) then
-              let()= textFile(algloopHeaderFile(simCode, eq_sys), 'OMCpp<%fileNamePrefix%>Algloop<%algloopfilesindex(eq_sys)%>.h')
-              let()= textFile(algloopCppFile(simCode, eq_sys), 'OMCpp<%fileNamePrefix%>Algloop<%algloopfilesindex(eq_sys)%>.cpp')
+              let()= textFile(algloopHeaderFile(simCode, eq_sys,context), 'OMCpp<%fileNamePrefix%>Algloop<%algloopfilesindex(eq_sys)%>.h')
+              let()= textFile(algloopCppFile(simCode, eq_sys,context), 'OMCpp<%fileNamePrefix%>Algloop<%algloopfilesindex(eq_sys)%>.cpp')
             " "
         end match
   else
@@ -7555,17 +7682,21 @@ template representationCref(ComponentRef inCref, SimCode simCode, Context contex
          <<<%localcref(inCref)%> >>
     else  
         match context
-            case ALGLOOP_CONTEXT(genInitialisation = false) 
-                then  <<_system-><%cref(inCref)%>>>
+            case ALGLOOP_CONTEXT(genInitialisation = false, genJacobian=false) 
+                then  <<_system-><%cref(inCref)%>/*testalg31*/>>
+            case ALGLOOP_CONTEXT(genInitialisation = false, genJacobian=true) 
+                then  <<_system-><%crefWithoutIndexOperator(inCref)%>/*testalg41*/>>
         else
-            <<<%cref(inCref)%>>>
+            <<<%varToString(inCref,context)%>>>
   else  
     match context
     case ALGLOOP_CONTEXT(genInitialisation = false) 
-        then  <<_system-><%cref(inCref)%>>>
+        then  <<_system-><%cref(inCref)%>/*testalg*/>>
     else
         <<<%cref(inCref)%>>>
 end representationCref;
+
+
 
 template representationCrefDerVar(ComponentRef inCref, SimCode simCode, Context context) ::=
   cref2simvar(inCref, simCode) |> SIMVAR(__) =>'__zDot[<%index%>]'
@@ -7578,7 +7709,7 @@ template representationCref1(ComponentRef inCref,SimVar var, SimCode simCode, Co
     case SIMVAR(index=i) then
     match i
    case -1 then
-   << <%cref2(inCref)%> >>
+   << <%cref2(inCref)%>>>
    case _  then
    << __z[<%i%>] >>
 end representationCref1;
@@ -7588,7 +7719,7 @@ template representationCref2(ComponentRef inCref, SimVar var,SimCode simCode, Co
 case(SIMVAR(index=i)) then
   match context
          case JACOBIAN_CONTEXT() 
-                then   <<<%crefWithoutIndexOperator(inCref,simCode)%>>>
+                then   <<<%crefWithoutIndexOperator(inCref)%>>>
         else
              <<__zDot[<%i%>]>>
 end representationCref2;
@@ -9000,15 +9131,39 @@ end initialAnalyticJacobians;
 template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrixes, SimCode simCode)
  "Generates Matrixes for Linear Model."
 ::=
- let initialjacMats = (JacobianMatrixes |> (mat, vars, name, (sparsepattern,(_,_)), colorList, _) hasindex index0 =>
+  match simCode
+  case SIMCODE(modelInfo = MODELINFO(__)) then
+  let classname =  lastIdentOfPath(modelInfo.name)
+  let initialjacMats = (JacobianMatrixes |> (mat, vars, name, (sparsepattern,(_,_)), colorList, _) hasindex index0 =>
     initialAnalyticJacobians(index0, mat, vars, name, sparsepattern, colorList,simCode)
     ;separator="\n\n";empty)
  let jacMats = (JacobianMatrixes |> (mat, vars, name, (sparsepattern,(_,_)), colorList, maxColor) hasindex index0  =>
     generateMatrix(index0, mat, vars, name, sparsepattern, colorList, maxColor,simCode)
     ;separator="\n\n";empty)
+ let initialStateSetJac = (stateSets |> set hasindex i1 fromindex 0 => (match set
+       case set as SES_STATESET(__) then
+              match jacobianMatrix case (_,_,name,_,_,_) then 
+            'initialAnalytic<%name%>Jacobian();') ;separator="\n\n")
+            
+         
 <<
 <%initialjacMats%>
 <%jacMats%>
+void <%classname%>Jacobian::initialize()
+{
+   
+   
+   <% (jacobianMatrixes |> (mat, _,_, _, _, _) hasindex index0 =>
+       (mat |> (eqs,_,_) =>  generateAlgloopsolvers(eqs,simCode) ;separator="")
+     ;separator="")
+    %>
+     <% (jacobianMatrixes |> (mat, _,_, _, _, _) hasindex index0 =>
+       (mat |> (eqs,_,_) =>  initAlgloopsolver(eqs,simCode) ;separator="")
+     ;separator="")
+    %>
+     <%initialStateSetJac%>
+}
+
 >>
 
 end functionAnalyticJacobians;
@@ -9061,9 +9216,10 @@ end generateMatrix;
 template generateJacobianMatrix(ModelInfo modelInfo,Integer indexJacobian, list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixName, list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>> sparsepattern, list<list<DAE.ComponentRef>>colorList, Integer maxColor, SimCode simCode)
  "Generates Matrixes for Linear Model."
 ::=
-match modelInfo
-case MODELINFO(__) then
-let classname =  lastIdentOfPath(name)
+match simCode
+case SIMCODE(modelInfo = MODELINFO(__)) then
+
+let classname =  lastIdentOfPath(modelInfo.name)
 match jacobianColumn
 case {} then
 <<
@@ -9098,8 +9254,8 @@ case _ then
  
     let jacvals = ( sparsepattern |> (cref,indexes) hasindex index0 =>
     let jaccol = ( indexes |> i_index =>
-        (match indexColumn case "1" then ' _<%matrixName%>jacobian(<%crefWithoutIndexOperator(cref,simCode)%>$pDER<%matrixName%>$indexdiff,0) = _<%matrixName%>jac_y(0);'
-           else ' _<%matrixName%>jacobian(<%index0%>,<%crefWithoutIndexOperator(cref,simCode)%>$pDER<%matrixName%>$indexdiff) = _<%matrixName%>jac_y(<%crefWithoutIndexOperator(cref,simCode)%>$pDER<%matrixName%>$indexdiff);'
+        (match indexColumn case "1" then ' _<%matrixName%>jacobian(<%crefWithoutIndexOperator(cref)%>$pDER<%matrixName%>$indexdiff,0) = _<%matrixName%>jac_y(0);'
+           else ' _<%matrixName%>jacobian(<%index0%>,<%crefWithoutIndexOperator(cref)%>$pDER<%matrixName%>$indexdiff) = _<%matrixName%>jac_y(<%crefWithoutIndexOperator(cref)%>$pDER<%matrixName%>$indexdiff);'
            )
           ;separator="\n" )
      
@@ -9110,8 +9266,11 @@ case _ then
   <%jaccol%>'
       ;separator="\n")
 
+  
   <<
- 
+    
+   
+    
     <%jacMats%>
     void <%classname%>Jacobian::get<%matrixName%>Jacobian(SparseMatrix& matrix)
      {
@@ -9175,11 +9334,11 @@ case "jacobianVars" then
     match index
     case -1 then
       <<
-      #define <%crefWithoutIndexOperator(name,simCode)%> _<%matrixName%>jac_tmp(<%index0%>)
+      #define <%crefWithoutIndexOperator(name)%> _<%matrixName%>jac_tmp(<%index0%>)
       >>
     case _ then
       <<
-      #define <%crefWithoutIndexOperator(name,simCode)%> _<%matrixName%>jac_y(<%index%>)
+      #define <%crefWithoutIndexOperator(name)%> _<%matrixName%>jac_y(<%index%>)
       >>
     end match
   end match
@@ -9188,7 +9347,7 @@ case "jacobianVarsSeed" then
   case SIMVAR(aliasvar=NOALIAS()) then
   let tmp = System.tmpTick()
     <<
-    #define <%crefWithoutIndexOperator(name,simCode)%>$pDER<%matrixName%>$P<%crefWithoutIndexOperator(name,simCode)%> _<%matrixName%>jac_x(<%index0%>)
+    #define <%crefWithoutIndexOperator(name)%>$pDER<%matrixName%>$P<%crefWithoutIndexOperator(name)%> _<%matrixName%>jac_x(<%index0%>)
     >>
   end match
 end jacobianVarDefine;
@@ -9200,10 +9359,10 @@ template defineSparseIndexes(list<SimVar> diffVars, list<SimVar> diffedVars, Str
   Generates Matrixes for Linear Model."
 ::=
   let diffVarsResult = (diffVars |> var as SIMVAR(name=name) hasindex index0 =>
-     '#define <%crefWithoutIndexOperator(name,simCode)%>$pDER<%matrixName%>$indexdiff <%index0%>'
+     '#define <%crefWithoutIndexOperator(name)%>$pDER<%matrixName%>$indexdiff <%index0%>'
     ;separator="\n")
     let diffedVarsResult = (diffedVars |> var as SIMVAR(name=name) hasindex index0 =>
-     '#define <%crefWithoutIndexOperator(name,simCode)%>$pDER<%matrixName%>$indexdiffed <%index0%>'
+     '#define <%crefWithoutIndexOperator(name)%>$pDER<%matrixName%>$indexdiffed <%index0%>'
     ;separator="\n")
    /* generate at least one print command to have the same index and avoid the strange side effect */
   <<
@@ -9802,7 +9961,7 @@ match simVar
   end match
 end setVariablesDefault;
 
-template crefWithoutIndexOperator(ComponentRef cr,SimCode simCode)
+template crefWithoutIndexOperator(ComponentRef cr)
  "Generates C equivalent name for component reference."
 ::=
    match cr

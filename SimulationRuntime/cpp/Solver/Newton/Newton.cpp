@@ -77,7 +77,7 @@ void Newton::initialize()
     
 }
 
-void Newton::solve(const IContinuous::UPDATETYPE command)
+void Newton::solve()
 {
     long int
         dimRHS    = 1,                    // Dimension of right hand side of linear system (=b)

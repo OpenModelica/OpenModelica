@@ -34,7 +34,7 @@ public:
     virtual void initialize() = 0;
 
     /// Solution of a (non-)linear system of equations
-    virtual void solve(const IContinuous::UPDATETYPE command = IContinuous::UNDEF_UPDATE) = 0;
+    virtual void solve() = 0;
 
     /// Returns the status of iteration
     virtual ITERATIONSTATUS getIterationStatus() = 0;

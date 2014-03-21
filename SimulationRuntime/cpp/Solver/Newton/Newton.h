@@ -52,7 +52,7 @@ public:
     virtual void initialize();
 
     /// Solution of a (non-)linear system of equations
-    virtual void solve(const IContinuous::UPDATETYPE command = IContinuous::UNDEF_UPDATE);
+    virtual void solve();
 
     /// Returns the status of iteration
     virtual ITERATIONSTATUS getIterationStatus();
