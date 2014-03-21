@@ -793,7 +793,7 @@ void changeStdStreamBuffer(void) {
 char* getRecordElement(modelica_metatype arr, modelica_integer i) {
   /* get the element from the record array */
   void* name = (void*)mmc_gdb_arrayGet(0, arr, i);
-  char nameStr[40], *displayName = NULL, *type = NULL, *formatString = NULL;
+  char nameStr[40], *displayName = NULL, *ty = NULL, *formatString = NULL;
 
   /* print the pointer as long to a buffer to get the string length */
   sprintf(nameStr, "%ld", (long)name);
@@ -805,17 +805,17 @@ char* getRecordElement(modelica_metatype arr, modelica_integer i) {
 
   /* get the type of the element */
   getTypeOfAny(name);
-  type = malloc(strlen(anyStringBuf) + 1);
-  strcpy(type, anyStringBuf);
+  ty = malloc(strlen(anyStringBuf) + 1);
+  strcpy(ty, anyStringBuf);
 
   /* format the anyStringBuf as array to return it */
   formatString = "^done,omc_recordelement={name=\"%ld\",displayName=\"%s\",type=\"%s\"}";
-  checkAnyStringBufSize(0, strlen(nameStr) + strlen(displayName) + strlen(type) + strlen(formatString) + 1);
-  sprintf(anyStringBuf, formatString, (long)name, displayName, type);
+  checkAnyStringBufSize(0, strlen(nameStr) + strlen(displayName) + strlen(ty) + strlen(formatString) + 1);
+  sprintf(anyStringBuf, formatString, (long)name, displayName, ty);
 
   /* free the memory */
   free(displayName);
-  free(type);
+  free(ty);
 
   return anyStringBuf;
 }
@@ -830,19 +830,19 @@ char* getListItem(modelica_metatype lst, modelica_integer i) {
   char nameStr[40];
   sprintf(nameStr, "%ld", (long)name);
 
-  char *displayName = NULL, *type = NULL, *formatString = NULL;
+  char *displayName = NULL, *ty = NULL, *formatString = NULL;
   /* get the type of the element */
   getTypeOfAny(name);
-  type = malloc(strlen(anyStringBuf) + 1);
-  strcpy(type, anyStringBuf);
+  ty = malloc(strlen(anyStringBuf) + 1);
+  strcpy(ty, anyStringBuf);
 
   /* format the anyStringBuf as array to return it */
   formatString = "^done,omc_listitem={name=\"%ld\",displayName=\"[%d]\",type=\"%s\"}";
-  checkAnyStringBufSize(0, strlen(nameStr) + strlen(type) + strlen(formatString) + 1);
-  sprintf(anyStringBuf, formatString, (long)name, i, type);
+  checkAnyStringBufSize(0, strlen(nameStr) + strlen(ty) + strlen(formatString) + 1);
+  sprintf(anyStringBuf, formatString, (long)name, i, ty);
 
   /* free the memory */
-  free(type);
+  free(ty);
 
   return anyStringBuf;
 }
