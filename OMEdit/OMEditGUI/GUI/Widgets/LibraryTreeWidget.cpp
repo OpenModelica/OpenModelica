@@ -38,17 +38,11 @@
 #include "LibraryTreeWidget.h"
 #include "VariablesWidget.h"
 
-ItemDelegate::ItemDelegate(QObject *pParent)
-  : QItemDelegate(pParent)
-{
-  mDrawRichText = false;
-  mpParent = pParent;
-}
-
-ItemDelegate::ItemDelegate(bool drawRichText, QObject *pParent)
+ItemDelegate::ItemDelegate(QObject *pParent, bool drawRichText, bool drawGrid)
   : QItemDelegate(pParent)
 {
   mDrawRichText = drawRichText;
+  mDrawGrid = drawGrid;
   mpParent = pParent;
 }
 
@@ -112,6 +106,27 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
   */
   /*drawHover(painter, opt, index);*/
   drawCheck(painter, opt, checkRect, checkState);
+  /* if draw grid flag is set */
+  if (mDrawGrid)
+  {
+    QPen pen;
+    if (!mGridColor.isValid())
+    {
+      int gridHint = qApp->style()->styleHint(QStyle::SH_Table_GridLineColor, &option);
+      const QColor gridColor = static_cast<QRgb>(gridHint);
+      pen.setColor(gridColor);
+    }
+    else
+    {
+      pen.setColor(mGridColor);
+    }
+    painter->save();
+    painter->setPen(pen);
+    painter->drawLine(option.rect.topRight(), option.rect.bottomRight());
+    painter->drawLine(option.rect.bottomLeft(), option.rect.bottomRight());
+    painter->restore();
+  }
+  /* if rich text flag is set */
   if (mDrawRichText)
   {
     QTextDocument doc;

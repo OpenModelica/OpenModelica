@@ -258,7 +258,7 @@ MessagesTreeWidget::MessagesTreeWidget(MessagesWidget *pMessagesWidget)
 {
   mpMessagesWidget = pMessagesWidget;
   // set tree settings
-  setItemDelegate(new ItemDelegate(true, this));
+  setItemDelegate(new ItemDelegate(this, true));
   setTextElideMode(Qt::ElideMiddle);
   setSelectionMode(QAbstractItemView::ExtendedSelection);
   setObjectName("MessagesTree");

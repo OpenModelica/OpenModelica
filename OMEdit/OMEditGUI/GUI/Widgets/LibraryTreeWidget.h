@@ -53,10 +53,13 @@ class ItemDelegate : public QItemDelegate
   Q_OBJECT
 private:
   bool mDrawRichText;
+  bool mDrawGrid;
+  QColor mGridColor;
   QObject *mpParent;
 public:
-  ItemDelegate(QObject *pParent = 0);
-  ItemDelegate(bool drawRichText, QObject *pParent = 0);
+  ItemDelegate(QObject *pParent = 0, bool drawRichText = false, bool drawGrid = false);
+  QColor getGridColor() {return mGridColor;}
+  void setGridColor(QColor color) {mGridColor = color;}
   virtual void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
   void drawHover(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
   virtual QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
