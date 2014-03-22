@@ -641,6 +641,8 @@ public constant Message BACKEND_DAE_TO_MODELICA = MESSAGE(240, SYMBOLIC(), NOTIF
   Util.gettext("The following Modelica-like model represents the back-end DAE for the '%s' stage:\n%s"));
 public constant Message NEGATIVE_DIMENSION_INDEX = MESSAGE(241, TRANSLATION(), ERROR(),
   Util.gettext("Negative dimension index (%s) for component %s."));
+public constant Message GENERATE_SEPARATE_CODE_DEPENDENCIES_FAILED = MESSAGE(242, SCRIPTING(), ERROR(),
+  Util.gettext("Failed to get dependencies for package %s. Perhaps there is an import to a non-existing package."));
 
 public constant Message UNBOUND_PARAMETER_WITH_START_VALUE_WARNING = MESSAGE(499, TRANSLATION(), WARNING(),
   Util.gettext("Parameter %s has no value, and is fixed during initialization (fixed=true), using available start value (start=%s) as default value."));

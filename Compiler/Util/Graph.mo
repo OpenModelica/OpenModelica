@@ -63,8 +63,7 @@ public function buildGraph
     output list<NodeType> outEdges;
   end EdgeFunc;
 algorithm
-  outGraph := List.threadTuple(inNodes,
-    List.map1(inNodes, inEdgeFunc, inEdgeArg));
+  outGraph := List.threadTuple(inNodes, List.map1(inNodes, inEdgeFunc, inEdgeArg));
 end buildGraph;
 
 public function emptyGraph
@@ -554,7 +553,26 @@ public function allReachableNodes
   input tuple<list<NodeType>,list<NodeType>>  intmpstorage;//(M,L)
   input list<tuple<NodeType, list<NodeType>>> inGraph;
   input EqualFunc inEqualFunc;
-  output list<NodeType> reachableNodes;
+  output list<NodeType> reachableNodes "Is NONE() on error to prevent recursion";
+
+  partial function EqualFunc
+    "Given two nodes, returns true if they are equal, otherwise false."
+    input NodeType inNode1;
+    input NodeType inNode2;
+    output Boolean isEqual;
+  end EqualFunc;
+
+algorithm
+  SOME(reachableNodes) := allReachableNodesWork(intmpstorage,inGraph,inEqualFunc);
+end allReachableNodes;
+
+protected function allReachableNodesWork
+"This function searches for a starting node in M
+ all reachable nodes. Call with start node in M: allReachableNodes((start,{}),graph,eqFn)."
+  input tuple<list<NodeType>,list<NodeType>>  intmpstorage;//(M,L)
+  input list<tuple<NodeType, list<NodeType>>> inGraph;
+  input EqualFunc inEqualFunc;
+  output Option<list<NodeType>> reachableNodes "Is NONE() on error to prevent recursion";
 
   partial function EqualFunc
     "Given two nodes, returns true if they are equal, otherwise false."
@@ -570,11 +588,15 @@ algorithm
       NodeType node;
       list<NodeType> edges,M,L;
       list<tuple<NodeType, list<NodeType>>> restGraph;
-    case (({},L),_,_) then listReverse(L);
+    case (({},L),_,_)
+      equation
+        L = listReverse(L);
+      then SOME(L);
+
     case ((node::M,L),_,_)
       equation
         _ = List.getMemberOnTrue(node,L,inEqualFunc);
-      then allReachableNodes((M,L),inGraph,inEqualFunc);
+      then allReachableNodesWork((M,L),inGraph,inEqualFunc);
 
     case ((node::M,L),_,_)
       equation
@@ -585,23 +607,13 @@ algorithm
         //print(" List size 3 " +& intString(listLength(edges)) +& "\n");
         M = listAppend(edges,M);
         //print("Start new round! \n");
-        reachableNodes = allReachableNodes((M,L),inGraph,inEqualFunc);
-      then reachableNodes;
-    /* The node does not exist: So was it a graph to begin with?
-    case ((node::M,L),_,_)
-      equation
-        L = node::L;
-        failure(((_,edges)) = findNodeInGraph(node,inGraph,inEqualFunc));
-        reachableNodes = allReachableNodes((M,L),inGraph,inEqualFunc);
-      then reachableNodes;
-    */
+      then allReachableNodesWork((M,L),inGraph,inEqualFunc);
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Graph.allReachableNode failed."});
-      then fail();
+      then NONE();
   end matchcontinue;
-end allReachableNodes;
-
+end allReachableNodesWork;
 
 public function partialDistance2color
 "A greedy partial distance-2 coloring algorithm.
