@@ -4155,4 +4155,20 @@ algorithm
   v := v + 1;
 end nextPowerOf2;
 
+public function endsWith
+  input String str;
+  input String suffix;
+  output Boolean b;
+algorithm
+  b := match (str,suffix)
+    local
+      String strSuffix;
+    case ("",_) then false;
+    case (_,_)
+      equation
+        strSuffix = System.substring(str, if_(stringLength(str) > stringLength(suffix)+1, stringLength(str) - stringLength(suffix) + 1, 1), stringLength(str));
+      then stringEq(strSuffix,suffix);
+  end match;
+end endsWith;
+
 end Util;

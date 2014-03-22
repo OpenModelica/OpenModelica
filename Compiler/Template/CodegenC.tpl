@@ -7665,7 +7665,7 @@ case STMT_NORETCALL(__) then
   let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   <<
   <%preExp%>
-  <%expPart%>;
+  <% if endsWith(expPart,".c1") then "" else '<%expPart%>;' %>
   >>
 end algStmtNoretcall;
 

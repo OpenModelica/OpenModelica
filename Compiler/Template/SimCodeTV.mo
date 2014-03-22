@@ -2365,6 +2365,13 @@ package Util
     input String in;
     output String out;
   end testsuiteFriendly;
+
+  function endsWith
+    input String str;
+    input String suffix;
+    output Boolean b;
+  end endsWith;
+
 end Util;
 
 package List
