@@ -5194,7 +5194,7 @@ algorithm
         paths = List.fold1(elementLst, findFunctionsToCompile, Absyn.FULLYQUALIFIED(Absyn.IDENT(name)), {});
         cache = instantiateDaeFunctions(cache, env, paths);
         funcs = Env.getFunctionTree(cache);
-        d = List.map1(paths, DAEUtil.getNamedFunction, funcs);
+        d = List.map2(paths, DAEUtil.getNamedFunctionWithError, funcs, info);
         (_,(_,dependencies)) = DAEUtil.traverseDAEFunctions(d,Expression.traverseSubexpressionsHelper,(matchQualifiedCalls,{}),{});
         // print(name +& " has dependencies: " +& stringDelimitList(dependencies,",") +& "\n");
         dependencies = List.sort(dependencies,Util.strcmpBool);
@@ -5227,16 +5227,10 @@ algorithm
       list<String> acc;
       String name;
       DAE.ComponentRef cr;
-    case ((e as DAE.CALL(path = Absyn.FULLYQUALIFIED(Absyn.QUALIFIED(name,Absyn.IDENT(_))), attr = DAE.CALL_ATTR(builtin = false)),acc))
+    case ((e as DAE.CALL(path = Absyn.FULLYQUALIFIED(Absyn.QUALIFIED(name=name)), attr = DAE.CALL_ATTR(builtin = false)),acc))
       equation
         acc = List.consOnTrue(not listMember(name,acc),name,acc);
       then ((e,acc));
-        /*
-    case ((e as DAE.METARECORDCALL(path = Absyn.QUALIFIED(name,Absyn.QUALIFIED(path=Absyn.IDENT(_)))),acc))
-      equation
-        acc = List.consOnTrue(not listMember(name,acc),name,acc);
-      then ((e,acc));
-      */
     case ((e as DAE.CREF(componentRef=cr,ty=DAE.T_FUNCTION_REFERENCE_FUNC(builtin=false)),acc))
       equation
         Absyn.QUALIFIED(name,Absyn.IDENT(_)) = ComponentReference.crefToPath(cr);
@@ -7620,7 +7614,7 @@ algorithm
          p = Absyn.joinPaths(pathPrefix,Absyn.IDENT(name));
          paths = List.fold1(elts,findFunctionsToCompile,Absyn.joinPaths(pathPrefix,Absyn.IDENT(name)),acc);
       then p::paths;
-    case (SCode.CLASS(name=name, partialPrefix=SCode.NOT_PARTIAL(), restriction=SCode.R_PACKAGE(), classDef=SCode.PARTS(elementLst=elts)),_,_)
+    case (SCode.CLASS(name=name, partialPrefix=SCode.NOT_PARTIAL(), classDef=SCode.PARTS(elementLst=elts)),_,_)
       equation
          paths = List.fold1(elts,findFunctionsToCompile,Absyn.joinPaths(pathPrefix,Absyn.IDENT(name)),acc);
       then paths;

@@ -7959,7 +7959,7 @@ algorithm
     case(cache,env,name,true,_,_,_,_,_) then (cache,Util.SUCCESS());
 
     // External object functions skipped
-    case(cache,env,name,_,_,_,_,_,_)
+    case(cache,env,name,_,_,_,_,_,NORMAL_FUNCTION_INST())
       equation
         (_,true) = isExternalObjectFunction(cache,env,name);
       then (cache,Util.SUCCESS());

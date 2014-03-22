@@ -2626,6 +2626,26 @@ algorithm
   end matchcontinue;
 end getNamedFunction;
 
+public function getNamedFunctionWithError "Return the FUNCTION with the given name. Fails if not found."
+  input Absyn.Path path;
+  input DAE.FunctionTree functions;
+  input Absyn.Info info;
+  output DAE.Function outElement;
+algorithm
+  outElement := matchcontinue (path,functions,info)
+    local
+      String msg;
+
+    case (_,_,_) then Util.getOption(avlTreeGet(functions, path));
+    else
+      equation
+        msg = stringDelimitList(List.mapMap(getFunctionList(functions), functionName, Absyn.pathString), "\n  ");
+        msg = "DAEUtil.getNamedFunction failed: " +& Absyn.pathString(path) +& "\nThe following functions were part of the cache:\n  " +& msg;
+        Error.addSourceMessage(Error.INTERNAL_ERROR,{msg},info);
+      then fail();
+  end matchcontinue;
+end getNamedFunctionWithError;
+
 public function getNamedFunctionFromList "Is slow; PartFn.mo should be rewritten using the FunctionTree"
   input Absyn.Path ipath;
   input list<DAE.Function> ifns;

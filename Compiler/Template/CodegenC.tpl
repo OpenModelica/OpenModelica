@@ -6117,7 +6117,7 @@ template mmcConstructorType(Type type)
   case T_REAL(__)
   case T_ENUMERATION(__)
   case T_ARRAY(__)
-  case T_COMPLEX(__) then 'modelica_metatype'
+  case T_COMPLEX(complexClassType = RECORD(__)) then 'modelica_metatype'
 end mmcConstructorType;
 
 template mmcConstructor(Type type, String varName, Text &preExp, Text &varDecls)
