@@ -21,6 +21,7 @@ host = @host@
 FC = @FC@
 
 defaultMakefileTarget = Makefile
+MAKEFILE_BOOT = LinkMain.makefile
 QMAKE=@QMAKE@
 APP=@APP@
 
