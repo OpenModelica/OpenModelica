@@ -6,7 +6,7 @@ CORBALIBS = @CORBALIBS@
 CORBAINC = @CORBA_QMAKE_INCLUDES@
 USE_CORBA = @QT_USE_CORBA@
 
-PLOTLIBS = -lqwt@with_qwt_suffix@ -L../../OMPlot/bin/ -lOMPlot -L../../build/lib/omc -lgc
+PLOTLIBS = -lqwt@with_qwt_suffix@ -L../../OMPlot/bin/ -lOMPlot -L../../build/lib/omc -lgc @RPATH_QMAKE@
 PLOTINC = @with_qwt@ ../../OMPlot/OMPlotGUI
 
 QMAKE_CFLAGS = @CFLAGS@ @CPPFLAGS@
