@@ -201,7 +201,7 @@ constant DebugFlag INSTANCE = DEBUG_FLAG(17, "instance", false,
 constant DebugFlag CACHE = DEBUG_FLAG(18, "Cache", true,
   Util.gettext("Turns off the instantiation cache."));
 constant DebugFlag RML = DEBUG_FLAG(19, "rml", false,
-  Util.gettext("Turns on extra RML checks."));
+  Util.gettext("Converts Modelica-style arrays to lists."));
 constant DebugFlag TAIL = DEBUG_FLAG(20, "tail", false,
   Util.gettext("Prints out a notification if tail recursion optimization has been applied."));
 constant DebugFlag LOOKUP = DEBUG_FLAG(21, "lookup", false,
@@ -378,7 +378,9 @@ constant DebugFlag DUMP_TRANSFORMED_MODELICA_MODEL = DEBUG_FLAG(105, "dumpTransf
 constant DebugFlag EVALUATE_CONST_FUNCTIONS = DEBUG_FLAG(106, "evalConstFuncs", false,
   Util.gettext("Evaluates functions complete and partially and checks for constant output."));
 constant DebugFlag HPCOM_ANALYZATION_MODE = DEBUG_FLAG(107, "hpcomAnalyzationMode", false,
-  Util.gettext("Creates statically linked c++ - code for analyzation (requires statically build cpp-runtime)"));  
+  Util.gettext("Creates statically linked c++ - code for analyzation (requires statically build cpp-runtime)"));
+constant DebugFlag STRICT_RML = DEBUG_FLAG(108, "strictRml", false,
+  Util.gettext("Turns on extra RML checks."));
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
 // initialization so that all flags are sorted by index (and thus have unique
@@ -490,7 +492,8 @@ constant list<DebugFlag> allDebugFlags = {
   DISABLE_RECORD_CONSTRUCTOR_OUTPUT,
   DUMP_TRANSFORMED_MODELICA_MODEL,
   EVALUATE_CONST_FUNCTIONS,
-  HPCOM_ANALYZATION_MODE
+  HPCOM_ANALYZATION_MODE,
+  STRICT_RML
 };
 
 // CONFIGURATION FLAGS

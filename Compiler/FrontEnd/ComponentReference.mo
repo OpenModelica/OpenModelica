@@ -601,6 +601,20 @@ algorithm
   end match;
 end printComponentRefStr;
 
+public function printComponentRefStrFixDollarDer
+  "Like printComponentRefStr but also fixes the special dollar-sign variables"
+  input DAE.ComponentRef inComponentRef;
+  output String outString;
+algorithm
+  outString := match (inComponentRef)
+    local
+      DAE.ComponentRef cr;
+    case (DAE.CREF_QUAL(ident = "$DER",subscriptLst = {},componentRef=cr))
+      then "der(" +& printComponentRefStr(cr) +& ")";
+    else printComponentRefStr(inComponentRef);
+  end match;
+end printComponentRefStrFixDollarDer;
+
 public function printComponentRef2Str
 "Helper function to printComponentRefStr."
   input DAE.Ident inIdent;

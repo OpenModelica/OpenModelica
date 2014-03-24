@@ -1,4 +1,4 @@
-setCommandLineOptions({"+g=MetaModelica","+d=rml,-inlineFunctions"});
+setCommandLineOptions({"+g=MetaModelica","+d=rml"});
 if not loadFiles(files) /* TODO: Change to loadFiles */ then
   print("Failed to load files:\n" + getErrorString());
   exit(1);
