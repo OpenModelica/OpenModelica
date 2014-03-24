@@ -2402,6 +2402,7 @@ algorithm
 
     case ((e as DAE.BINARY(exp1 = e1,operator = DAE.DIV(ty = tp),exp2 = e2)))
       equation
+        false = Expression.isZero(e2);
         e1_lst = Expression.factors(e1);
         e2_lst = Expression.factors(e2);
         e2_lst_1 = List.map(e2_lst, Expression.inverseFactors);

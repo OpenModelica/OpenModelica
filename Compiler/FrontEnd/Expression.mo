@@ -2625,22 +2625,28 @@ algorithm
       Type tp2,tp;
       DAE.Exp e1,e2,e;
       DAE.Operator op;
+    /*e1^e2 =>e1^(-e2)*/
     case (DAE.BINARY(exp1 = e1,operator = DAE.POW(ty = tp),exp2 = e2))
       equation
         tp2 = typeof(e2);
       then
         DAE.BINARY(e1,DAE.POW(tp),DAE.UNARY(DAE.UMINUS(tp2),e2));
+    /*e1 / e2 = e2/ e1*/
     case (DAE.BINARY(exp1 = e1,operator = op as DAE.DIV(ty = _),exp2 = e2))
+      equation
+       false = isZero(e1);
       then
         DAE.BINARY(e2,op,e1);
     case e
       equation
         DAE.T_REAL(varLst = _) = typeof(e);
+        false = isZero(e);
       then
         DAE.BINARY(DAE.RCONST(1.0),DAE.DIV(DAE.T_REAL_DEFAULT),e);
     case e
       equation
         DAE.T_INTEGER(varLst = _) = typeof(e);
+        false = isZero(e);
       then
         DAE.BINARY(DAE.ICONST(1),DAE.DIV(DAE.T_INTEGER_DEFAULT),e);
   end matchcontinue;
