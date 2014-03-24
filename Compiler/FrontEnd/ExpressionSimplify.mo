@@ -3968,7 +3968,7 @@ algorithm
       then Expression.makeConstZero(ty);
 
     // a + a  = 2*a
-    case (_,DAE.SUB(ty = ty),e1,e2,_,_)
+    case (_,DAE.ADD(ty = ty),e1,e2,_,_)
       equation
         true = Expression.expEqual(e1,e2);
         e = DAE.RCONST(2.0);
