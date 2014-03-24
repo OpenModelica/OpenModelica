@@ -2272,7 +2272,7 @@ SimulationPage::SimulationPage(OptionsDialog *pParent)
   // OMC Flags
   mpOMCFlagsLabel = new Label(tr("OMC Flags"));
   mpOMCFlagsLabel->setToolTip(tr("Space separated list of flags e.g. +d=initialization +cheapmatchingAlgorithm=3"));
-  mpOMCFlagsTextBox = new QLineEdit;
+  mpOMCFlagsTextBox = new QLineEdit("+d=initialization");
   /* save class before simulation checkbox */
   mpSaveClassBeforeSimulationCheckBox = new QCheckBox(tr("Save class before simulation"));
   mpSaveClassBeforeSimulationCheckBox->setToolTip(tr("Disabling this will effect the debugger functionality."));
