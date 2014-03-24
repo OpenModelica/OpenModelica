@@ -430,8 +430,9 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   {
     MessagesWidget *pMessagesWidget = mpVariablesTreeView->getVariablesWidget()->getMainWindow()->getMessagesWidget();
     pMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0,
-                                                        GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName()),
-                                                        Helper::scriptingKind, Helper::errorLevel, 0, pMessagesWidget->getMessagesTreeWidget()));
+                                                        GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
+                                                        .arg(""),Helper::scriptingKind, Helper::errorLevel, 0,
+                                                        pMessagesWidget->getMessagesTreeWidget()));
   }
   /* open the .mat file */
   ModelicaMatReader matReader;
@@ -1234,8 +1235,9 @@ void VariablesWidget::reSimulate()
     {
       MessagesWidget *pMessagesWidget = mpVariablesTreeView->getVariablesWidget()->getMainWindow()->getMessagesWidget();
       pMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0,
-                                                          GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName()),
-                                                          Helper::scriptingKind, Helper::errorLevel, 0, pMessagesWidget->getMessagesTreeWidget()));
+                                                          GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
+                                                          .arg(""), Helper::scriptingKind, Helper::errorLevel, 0,
+                                                          pMessagesWidget->getMessagesTreeWidget()));
     }
     mpMainWindow->getSimulationDialog()->runSimulationExecutable(simulationOptions);
   }
