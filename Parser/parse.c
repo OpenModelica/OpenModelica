@@ -152,8 +152,6 @@ static void* noRecoverFromMismatchedToken(pANTLR3_BASE_RECOGNIZER recognizer, AN
 static void handleLexerError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 * tokenNames)
 {
   pANTLR3_LEXER lexer = (pANTLR3_LEXER)(recognizer->super);
-  pANTLR3_EXCEPTION ex = lexer->rec->state->exception;
-  pANTLR3_STRING ftext;
   int isEOF = lexer->input->istream->_LA(lexer->input->istream, 1) == -1;
   char* chars[] = {
     isEOF ? strdup("<EOF>") : strdup((const char*)(lexer->input->substr(lexer->input, lexer->getCharIndex(lexer), lexer->getCharIndex(lexer)+10)->chars)),
@@ -182,18 +180,13 @@ static void handleLexerError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 *
 static void handleParseError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 * tokenNames)
 {
   pANTLR3_PARSER      parser;
-  pANTLR3_INT_STREAM  is;
   pANTLR3_STRING      ttext;
   pANTLR3_EXCEPTION      ex;
   pANTLR3_COMMON_TOKEN   preToken,nextToken;
-  pANTLR3_BASE_TREE      theBaseTree;
-  pANTLR3_COMMON_TREE    theCommonTree;
   pANTLR3_TOKEN_STREAM tokenStream;
-  ANTLR3_UINT32 ttype;
   int type;
-  const char *error_type = "TRANSLATION";
   const char *token_text[3] = {0,0,0};
-  int p_offset, n_offset, error_id = 0, p_line, n_line;
+  int p_offset, n_offset, p_line, n_line;
   recognizer->state->error = ANTLR3_TRUE;
   recognizer->state->failed = ANTLR3_TRUE;
 
@@ -360,8 +353,6 @@ static void* parseStream(pANTLR3_INPUT_STREAM input, int langStd, int runningTes
 static void* parseString(const char* data, const char* interactiveFilename, int flags, int langStd, int runningTestsuite)
 {
   bool debug         = false; //check_debug_flag("parsedebug");
-  bool parsedump     = false; //check_debug_flag("parsedump");
-  bool parseonly     = false; //check_debug_flag("parseonly");
   time_t current_time = time(NULL);
 
   pANTLR3_UINT8               fName;
@@ -398,8 +389,6 @@ static void* parseString(const char* data, const char* interactiveFilename, int 
 static void* parseFile(const char* fileName, const char* infoName, int flags, const char *encoding, int langStd, int runningTestsuite)
 {
   bool debug         = false; //check_debug_flag("parsedebug");
-  bool parsedump     = false; //check_debug_flag("parsedump");
-  bool parseonly     = false; //check_debug_flag("parseonly");
 
   pANTLR3_UINT8               fName;
   pANTLR3_INPUT_STREAM        input;

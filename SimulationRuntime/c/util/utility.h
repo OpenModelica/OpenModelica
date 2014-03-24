@@ -115,6 +115,16 @@ static inline modelica_integer modelica_integer_max(modelica_integer x,modelica_
   return (x > y) ? x : y;
 }
 
+static inline modelica_real modelica_real_min(modelica_real x,modelica_real y)
+{
+  return (x < y) ? x : y;
+}
+
+static inline modelica_real modelica_real_max(modelica_real x,modelica_real y)
+{
+  return (x > y) ? x : y;
+}
+
 
 #define reduction_sum(X,Y) ((X)+(Y))
 #define reduction_product(X,Y) ((X)*(Y))

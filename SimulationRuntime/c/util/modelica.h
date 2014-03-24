@@ -98,7 +98,6 @@ extern "C" {
 #include "simulation_data.h"
 #include "meta/meta_modelica.h"
 #include "meta/meta_modelica_builtin.h"
-#include "meta/meta_modelica_real.h"
 #include "util/varinfo.h"
 
 

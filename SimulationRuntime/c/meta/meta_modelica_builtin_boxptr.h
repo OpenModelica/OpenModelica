@@ -33,23 +33,34 @@
  */
 #include "util/utility.h"
 #include "meta_modelica.h"
-#include "meta_modelica_real.h"
 #include "util/modelica_string.h"
+
+#if !defined(META_MODELICA_BUILTIN_BOXPTR__H)
+typedef struct builtin_rettypeboxed {
+  void *c1;
+} builtin_rettypeboxed;
+#endif
 
 #if !defined(META_MODELICA_BUILTIN_BOXPTR__H) || defined(GEN_META_MODELICA_BUILTIN_BOXPTR)
 #define META_MODELICA_BUILTIN_BOXPTR__H
 
 #ifdef GEN_META_MODELICA_BUILTIN_BOXPTR
-#define boxptr_unOp(name,box,unbox,op) void* name(threadData_t *threadData, void* a) {return (void*)box(op(unbox(a)));}
-#define boxptr_binOp(name,box,unbox,op) void* name(threadData_t *threadData, void* a, void* b) {return (void*)box((unbox(a)) op (unbox(b)));}
-#define boxptr_binFn(name,box,unbox,fn) void* name(threadData_t *threadData, void* a, void* b) {return (void*)box(fn((unbox(a)),(unbox(b))));}
+#define boxptr_unOp(name,box,unbox,op) builtin_rettypeboxed name(threadData_t *threadData, void* a) {builtin_rettypeboxed res; res.c1 = (void*)box(op(unbox(a))); return res;}
+#define boxptr_unOpThreadData(name,box,unbox,op) builtin_rettypeboxed name(threadData_t *threadData, void* a) {builtin_rettypeboxed res; res.c1 = (void*)box(op(threadData,unbox(a))); return res;}
+#define boxptr_binOp(name,box,unbox,op) builtin_rettypeboxed name(threadData_t *threadData, void* a, void* b) {builtin_rettypeboxed res; res.c1 = (void*)box((unbox(a)) op (unbox(b))); return res;}
+#define boxptr_binFn(name,box,unbox,fn) builtin_rettypeboxed name(threadData_t *threadData, void* a, void* b) {builtin_rettypeboxed res; res.c1 = (void*)box(fn((unbox(a)),(unbox(b)))); return res;}
+#define boxptr_fn2ArgsThreadData(name,box,unbox1,unbox2,fn) builtin_rettypeboxed name(threadData_t *threadData, void* a, void* b) {builtin_rettypeboxed res; res.c1 = (void*)box(fn(threadData,(unbox1(a)),(unbox2(b)))); return res;}
+#define boxptr_wrapper2Args(boxptr,name) builtin_rettypeboxed boxptr(threadData_t *threadData, void* a, void* b) {builtin_rettypeboxed res; res.c1 = name(a,b); return res;}
+#define boxptr_wrapper1Arg(boxptr,name) builtin_rettypeboxed boxptr(threadData_t *threadData, void* a) {builtin_rettypeboxed res; res.c1 = name(a); return res;}
 #else
-#define boxptr_unOp(name,box,unbox,op) void* name(threadData_t *, void*);
-#define boxptr_binOp(name,box,unbox,op) void* name(threadData_t *, void*,void*);
-#define boxptr_binFn(name,box,unbox,op) void* name(threadData_t *, void*,void*);
+#define boxptr_unOp(name,box,unbox,op) builtin_rettypeboxed name(threadData_t *, void*);
+#define boxptr_unOpThreadData(name,box,unbox,op) builtin_rettypeboxed name(threadData_t *, void*);
+#define boxptr_binOp(name,box,unbox,op) builtin_rettypeboxed name(threadData_t *, void*,void*);
+#define boxptr_binFn(name,box,unbox,op) builtin_rettypeboxed name(threadData_t *, void*,void*);
+#define boxptr_fn2ArgsThreadData(name,box,unbox1,unbox2,fn) builtin_rettypeboxed name(threadData_t *, void*,void*);
+#define boxptr_wrapper2Args(boxptr,name) builtin_rettypeboxed boxptr(threadData_t *, void*,void*);
+#define boxptr_wrapper1Arg(boxptr,name) builtin_rettypeboxed boxptr(threadData_t *, void*);
 #endif
-
-/* Missing stuff: realMod,realPow,realMax,realMin,intMod,intMax,intMin */
 
 boxptr_unOp(boxptr_boolNot,mmc_mk_bcon,mmc_unbox_boolean,!)
 boxptr_binOp(boxptr_boolAnd,mmc_mk_bcon,mmc_unbox_boolean,&&)
@@ -62,6 +73,8 @@ boxptr_binOp(boxptr_intDiv,mmc_mk_icon,mmc_unbox_integer,/)
 boxptr_binFn(boxptr_intMod,mmc_mk_icon,mmc_unbox_integer,modelica_mod_integer)
 boxptr_unOp(boxptr_intAbs,mmc_mk_icon,mmc_unbox_integer,labs)
 boxptr_unOp(boxptr_intNeg,mmc_mk_icon,mmc_unbox_integer,-)
+boxptr_binFn(boxptr_intMin,mmc_mk_icon,mmc_unbox_integer,modelica_integer_min)
+boxptr_binFn(boxptr_intMax,mmc_mk_icon,mmc_unbox_integer,modelica_integer_max)
 boxptr_binOp(boxptr_intLt,mmc_mk_bcon,mmc_unbox_integer,<)
 boxptr_binOp(boxptr_intLe,mmc_mk_bcon,mmc_unbox_integer,<=)
 boxptr_binOp(boxptr_intEq,mmc_mk_bcon,mmc_unbox_integer,==)
@@ -77,6 +90,8 @@ boxptr_binOp(boxptr_realMul,mmc_mk_rcon,mmc_unbox_real,*)
 boxptr_binOp(boxptr_realDiv,mmc_mk_rcon,mmc_unbox_real,/)
 boxptr_binFn(boxptr_realMod,mmc_mk_rcon,mmc_unbox_real,modelica_mod_real)
 boxptr_binFn(boxptr_realPow,mmc_mk_rcon,mmc_unbox_real,pow)
+boxptr_binFn(boxptr_realMin,mmc_mk_rcon,mmc_unbox_real,modelica_real_min)
+boxptr_binFn(boxptr_realMax,mmc_mk_rcon,mmc_unbox_real,modelica_real_max)
 boxptr_unOp(boxptr_realAbs,mmc_mk_rcon,mmc_unbox_real,fabs)
 boxptr_unOp(boxptr_realNeg,mmc_mk_rcon,mmc_unbox_real,-)
 boxptr_binOp(boxptr_realLt,mmc_mk_bcon,mmc_unbox_real,<)
@@ -94,8 +109,39 @@ boxptr_binFn(boxptr_valueEq,mmc_mk_bcon,(void*),valueEq)
 
 boxptr_unOp(boxptr_listLength,mmc_mk_icon,(void*),listLength)
 
+boxptr_unOp(boxptr_stringLength,mmc_mk_icon,(void*),stringLength)
+boxptr_unOpThreadData(boxptr_stringInt,mmc_mk_icon,(void*),nobox_stringInt)
+boxptr_unOpThreadData(boxptr_stringReal,mmc_mk_rcon,(void*),nobox_stringReal)
+boxptr_unOpThreadData(boxptr_stringCharInt,mmc_mk_icon,(void*),nobox_stringCharInt)
+boxptr_unOpThreadData(boxptr_intStringChar,(void*),mmc_unbox_integer,nobox_intStringChar)
+boxptr_binFn(boxptr_stringEq,mmc_mk_bcon,(void*),stringEqual)
+boxptr_binFn(boxptr_stringEqual,mmc_mk_bcon,(void*),stringEqual)
+boxptr_unOp(boxptr_stringHash,mmc_mk_icon,(void*),stringHash)
+boxptr_unOp(boxptr_stringHashDjb2,mmc_mk_icon,(void*),stringHashDjb2)
+boxptr_unOp(boxptr_stringHashSdbm,mmc_mk_icon,(void*),stringHashSdbm)
+boxptr_wrapper2Args(boxptr_stringDelimitList,stringDelimitList)
+boxptr_fn2ArgsThreadData(boxptr_stringGet,mmc_mk_icon,(void*),mmc_unbox_integer,nobox_stringGet)
+boxptr_wrapper2Args(boxptr_stringAppend,stringAppend)
+boxptr_wrapper1Arg(boxptr_listReverse,listReverse)
+boxptr_wrapper1Arg(boxptr_listReverseInPlace,listReverseInPlace)
+boxptr_wrapper2Args(boxptr_listAppend,listAppend)
+boxptr_binFn(boxptr_listMember,mmc_mk_bcon,(void*),listMember)
+boxptr_fn2ArgsThreadData(boxptr_arrayGet,(void*),(void*),mmc_unbox_integer,nobox_arrayGet)
+boxptr_wrapper1Arg(boxptr_arrayList,arrayList)
+boxptr_wrapper1Arg(boxptr_listArray,listArray)
+boxptr_wrapper1Arg(boxptr_arrayCopy,arrayCopy)
+boxptr_wrapper2Args(boxptr_arrayAdd,arrayAdd)
+boxptr_unOpThreadData(boxptr_getGlobalRoot,(void*),mmc_unbox_integer,nobox_getGlobalRoot)
+boxptr_unOp(boxptr_valueConstructor,mmc_mk_icon,(void*),valueConstructor)
+boxptr_wrapper1Arg(boxptr_listFirst,MMC_CAR)
+boxptr_wrapper1Arg(boxptr_listRest,MMC_CDR)
+
 #undef boxptr_unOp
+#undef boxptr_unOpThreadData
 #undef boxptr_binOp
 #undef boxptr_binFn
+#undef boxptr_wrapper1Arg
+#undef boxptr_wrapper2Args
+#undef boxptr_fn2ArgsThreadData
 
 #endif

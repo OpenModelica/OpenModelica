@@ -36,8 +36,14 @@ extern "C" {
 #define ADD_METARECORD_DEFINITIONS static
 #include "OpenModelicaBootstrappingHeader.h"
 
-int omc_Absyn_isDerCref(void*,void*);
-#define call_looks_like_der_cr(X) omc_Absyn_isDerCref(NULL,X)
+typedef struct {
+  modelica_integer c1;
+} omc_Absyn_isDerCref_rettype;
+omc_Absyn_isDerCref_rettype omc_Absyn_isDerCref(threadData_t*,void*);
+/* static inline */ int call_looks_like_der_cr(void* exp)
+{
+  return omc_Absyn_isDerCref(NULL,exp).c1;
+}
 
 #include "ModelicaParser.c"
 

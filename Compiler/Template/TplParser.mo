@@ -124,30 +124,31 @@ public function charsTillEndOfLine
   input Integer inAccCount;
   output Integer outCharsTillEnd;
 algorithm
-  (outCharsTillEnd) :=
-  matchcontinue (inChars, inAccCount)
+  (outCharsTillEnd) := charsTillEndOfLine2(1,inChars,inAccCount-1); // -1 because we will count the first one an extra time...
+end charsTillEndOfLine;
+
+public function charsTillEndOfLine2
+  input Integer head;
+  input list<String> rest;
+  input Integer accCount;
+  output Integer outCharsTillEnd;
+algorithm
+  (outCharsTillEnd) := match (head, rest, accCount)
     local
       list<String> chars;
-      Integer accCount, i;
       String c;
-    case (c :: chars, accCount)
-      equation
-        i = stringCharInt(c);
-        true = (i == 10) or (i == 13); // \n or \r
+    case (10,_,_) then accCount; // \n
+    case (13,_,_) then accCount; // \r
+    case (9,c::chars,_)
+      then charsTillEndOfLine2(stringCharInt(c),chars,accCount+4); // \t counts as 4 spaces
+    case (_,c::chars,_)
+      then charsTillEndOfLine2(stringCharInt(c),chars,accCount+1);
+
+    case (_,{},_)
       then accCount;
 
-    //special treatment of tabs ... Eclipse is counting them with 4 by default
-    case ("\t" :: chars, accCount)
-      then charsTillEndOfLine(chars, accCount + TabSpaces);
-
-    case (c :: chars, accCount)
-      then charsTillEndOfLine(chars, accCount + 1);
-
-    case ({}, accCount)
-      then accCount;
-
-  end matchcontinue;
-end charsTillEndOfLine;
+  end match;
+end charsTillEndOfLine2;
 
 
 public function makeStartLineInfo

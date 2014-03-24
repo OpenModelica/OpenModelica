@@ -716,7 +716,7 @@ typedef void* voidp;
 /* Work in progress: Threading support in OMC */
 typedef struct thread_data {
   pthread_mutex_t mutex;
-  void* (*fn)(void*,void*);
+  builtin_rettypeboxed (*fn)(threadData_t*,modelica_metatype);
   int fail;
   int current;
   int len;
@@ -737,7 +737,7 @@ static void* System_launchParallelTasksThread(void *in)
     if (data->fail || data->current > data->len) break;
     MMC_TRY_TOP()
     threadData->mmc_thread_work_exit = threadData->mmc_jumper;
-    data->status[n] = data->fn(threadData,data->commands[n]);
+    data->status[n] = data->fn(threadData,data->commands[n]).c1;
     fail = 0;
     MMC_CATCH_TOP()
     if (fail) {

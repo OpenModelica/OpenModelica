@@ -82,6 +82,8 @@ protected import SimCodeUtil;
 protected import System;
 protected import Util;
 
+// protected import SerializeModelInfo; // TODO: Add me once we have switched to bootstrapped omc
+
 
 public function createSimulationSettings
   input Real startTime;
@@ -451,6 +453,7 @@ algorithm
     
     case (_, _, "C") equation
       Tpl.tplNoret2(SimCodeDump.dumpSimCode, simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
+//    SerializeModelInfo.serialize(simCode); // TODO: Add this once we switch to the bootstrapped compiler
       Tpl.tplNoret(CodegenC.translateModel, simCode);
     then ();
 

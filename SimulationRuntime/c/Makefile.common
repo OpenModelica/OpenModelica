@@ -51,7 +51,6 @@ RUNTIMEMETA_HEADERS = ./meta/meta_modelica_builtin_boxptr.h \
 ./meta/meta_modelica_builtin.h \
 ./meta/meta_modelica.h \
 ./meta/meta_modelica_mk_box.h \
-./meta/meta_modelica_real.h \
 ./meta/meta_modelica_segv.h \
 ./meta/meta_modelica_string_lit.h 
 
