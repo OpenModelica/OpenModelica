@@ -1195,7 +1195,11 @@ int SystemImpl__loadLibrary(const char *str, int printDebug)
   mmc_GC_function_set_gc_state mmc_GC_set_state_lib_function = NULL;
   const char* ctokens[2];
   snprintf(libname, MAXPATHLEN, "./%s" CONFIG_DLL_EXT, str);
+#if defined(RTLD_DEEPBIND)
+  h = dlopen(libname, RTLD_LOCAL | RTLD_NOW | RTLD_DEEPBIND);
+#else
   h = dlopen(libname, RTLD_LOCAL | RTLD_NOW);
+#endif
   if (h == NULL) {
     ctokens[0] = dlerror();
     ctokens[1] = libname;
