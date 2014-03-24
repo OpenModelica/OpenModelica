@@ -1156,21 +1156,20 @@ algorithm
   end matchcontinue;
 end removeEqualFunctionCall;
 
-public function replaceExp
-"author: Frenkel TUD"
-  input tuple<DAE.Exp,tuple<list<DAE.SymbolicOperation>,tuple<DAE.Exp,DAE.Exp,Integer>>> inTpl;
-  output tuple<DAE.Exp,tuple<list<DAE.SymbolicOperation>,tuple<DAE.Exp,DAE.Exp,Integer>>> outTpl;
+protected function replaceExp "author: Frenkel TUD"
+  input tuple<DAE.Exp, tuple<list<DAE.SymbolicOperation>, tuple<DAE.Exp, DAE.Exp, Integer>>> inTpl;
+  output tuple<DAE.Exp, tuple<list<DAE.SymbolicOperation>, tuple<DAE.Exp, DAE.Exp, Integer>>> outTpl;
 protected
-  DAE.Exp e,e1,se,te;
-  Integer i,j;
+  DAE.Exp e, e1, se, te;
+  Integer i, j;
   list<DAE.SymbolicOperation> ops;
 algorithm
-  (e,(ops,(se,te,i))) := inTpl;
-  // BackendDump.debugStrExpStrExpStr(("Repalce ",se," with ",te,"\n"));
-  ((e1,j)) := Expression.replaceExp(e,se,te);
-  ops := Util.if_(j>0, DAE.SUBSTITUTION({e1},e)::ops, ops);
-  // BackendDump.debugStrExpStrExpStr(("Old ",e," new ",e1,"\n"));
-  outTpl := ((e1,(ops,(se,te,i+j))));
+  (e, (ops, (se, te, i))) := inTpl;
+  // BackendDump.debugStrExpStrExpStr(("Repalce ", se, " with ", te, "\n"));
+  ((e1, j)) := Expression.replaceExp(e, se, te);
+  ops := Util.if_(j>0, DAE.SUBSTITUTION({e1}, e)::ops, ops);
+  // BackendDump.debugStrExpStrExpStr(("Old ", e, " new ", e1, "\n"));
+  outTpl := ((e1, (ops, (se, te, i+j))));
 end replaceExp;
 
 // =============================================================================
