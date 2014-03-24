@@ -430,6 +430,7 @@ extern void changeStdStreamBuffer(void); /* For debugging */
 /* Debugging functions used by OMEdit */
 extern char* getRecordElement(modelica_metatype arr, modelica_integer i);
 extern char* getListItem(modelica_metatype lst, modelica_integer i);
+extern char* getOptionItem(modelica_metatype arr, modelica_integer i);
 
 /*
  * Generated (Meta)Records should access a static, constant value of
