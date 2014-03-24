@@ -578,6 +578,7 @@ package SimCode
   constant Context contextZeroCross;
   constant Context contextOptimization;
   constant list<DAE.Exp> listExpLength1;
+  constant list<Variable> boxedRecordOutVars;
 
 end SimCode;
 

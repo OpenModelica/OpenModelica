@@ -71,6 +71,7 @@ type JacobianMatrix = tuple<list<JacobianColumn>,                         // col
 
 
 public constant list<DAE.Exp> listExpLength1 = {DAE.ICONST(0)} "For CodegenC.tpl";
+public constant list<Variable> boxedRecordOutVars = VARIABLE(DAE.CREF_IDENT("",DAE.T_COMPLEX_DEFAULT_RECORD,{}),DAE.T_COMPLEX_DEFAULT_RECORD,NONE(),{},DAE.NON_PARALLEL())::{} "For CodegenC.tpl";
 
 uniontype SimCode
   "Root data structure containing information required for templates to

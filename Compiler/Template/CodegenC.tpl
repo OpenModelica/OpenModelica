@@ -4894,13 +4894,6 @@ template functionHeader(Function fn, Boolean inFunc)
     case RECORD_CONSTRUCTOR(__) then
       let fname = underscorePath(name)
       let funArgsStr = (funArgs |> var as VARIABLE(__) => ', <%varType(var)%> <%crefStr(name)%>')
-      let funArgsBoxedStr = if acceptMetaModelicaGrammar() then
-          (funArgs |> var => (", " + funArgBoxedDefinition(var)))
-      let boxedHeader = if acceptMetaModelicaGrammar() then
-        <<
-        DLLExport
-        modelica_metatype boxptr_<%fname%>(threadData_t *<%funArgsBoxedStr%>);
-        >>
       <<
       typedef struct <%fname%>_rettype_s {
         <%fname%> c1;
@@ -4909,7 +4902,7 @@ template functionHeader(Function fn, Boolean inFunc)
       DLLExport
       <%fname%>_rettype omc_<%fname%>(threadData_t *threadData<%funArgsStr%>); /* record head */
 
-      <%boxedHeader%>
+      <%functionHeaderBoxed(fname, funArgs, boxedRecordOutVars, false, false)%>
       >>
 end functionHeader;
 
@@ -6027,6 +6020,7 @@ match fn
 case RECORD_CONSTRUCTOR(__) then
   let() = System.tmpTickReset(1)
   let fname = underscorePath(name)
+  let retType = '<%fname%>_rettypeboxed'
   let funArgsStr = (funArgs |> var =>
      match var
      case VARIABLE(__) then contextCref(name,contextFunction)
@@ -6035,9 +6029,11 @@ case RECORD_CONSTRUCTOR(__) then
   ;separator=", ")
   let funArgCount = incrementInt(listLength(funArgs), 1)
   <<
-  modelica_metatype boxptr_<%fname%>(threadData_t *threadData<%funArgs |> var => (", " + funArgBoxedDefinition(var))%>)
+  <%retType%> boxptr_<%fname%>(threadData_t *threadData<%funArgs |> var => (", " + funArgBoxedDefinition(var))%>)
   {
-    return mmc_mk_box<%funArgCount%>(3, &<%fname%>__desc, <%funArgsStr%>);
+    <%retType%> result;
+    result.c1 = mmc_mk_box<%funArgCount%>(3, &<%fname%>__desc, <%funArgsStr%>);
+    return result;
   }
   >>
 end boxRecordConstructor;
