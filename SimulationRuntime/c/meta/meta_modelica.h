@@ -125,6 +125,7 @@ typedef int mmc_switch_type;
 #endif
 
 #define RML_STYLE_TAGPTR
+
 #ifdef RML_STYLE_TAGPTR
 
 /* RML-style tagged pointers */
@@ -350,7 +351,11 @@ static inline void* mmc_mk_scon_len(unsigned int nbytes)
     unsigned int nwords = MMC_HDRSLOTS(header) + 1;
     struct mmc_string *p;
     void *res;
+#if defined(RML_STYLE_TAGPTR)
     p = (struct mmc_string *) mmc_alloc_words(nwords);
+#else
+    p = (struct mmc_string *) mmc_alloc_words_atomic(nwords);
+#endif
     p->header = header;
     res = MMC_TAGPTR(p);
     return res;

@@ -239,7 +239,11 @@ metamodelica_string boxptr_substring(threadData_t *threadData, metamodelica_stri
   }
   header = MMC_STRINGHDR(len);
   nwords = MMC_HDRSLOTS(header) + 1;
+#if defined(RML_STYLE_TAGPTR)
   res = (struct mmc_string *) mmc_alloc_words(nwords);
+#else
+  res = (struct mmc_string *) mmc_alloc_words_atomic(nwords);
+#endif
   res->header = header;
   tmp = (char*) res->data;
   memcpy(tmp, MMC_STRINGDATA(str) + start, len);
@@ -291,7 +295,11 @@ metamodelica_string stringAppendList(modelica_metatype lst)
 
   header = MMC_STRINGHDR(nbytes);
   nwords = MMC_HDRSLOTS(header) + 1;
+#if defined(RML_STYLE_TAGPTR)
   res = (struct mmc_string *) mmc_alloc_words(nwords);
+#else
+  res = (struct mmc_string *) mmc_alloc_words_atomic(nwords);
+#endif
   res->header = header;
   tmp = (char*) res->data;
   nbytes = 0;
@@ -343,7 +351,11 @@ metamodelica_string boxptr_stringDelimitList(threadData_t *threadData,modelica_m
 
   header = MMC_STRINGHDR(nbytes);
   nwords = MMC_HDRSLOTS(header) + 1;
+#if defined(RML_STYLE_TAGPTR)
   res = (struct mmc_string *) mmc_alloc_words(nwords);
+#else
+  res = (struct mmc_string *) mmc_alloc_words_atomic(nwords);
+#endif
   res->header = header;
   tmp = (char*) res->data;
   nbytes = 0;
@@ -423,7 +435,11 @@ modelica_metatype boxptr_stringUpdateStringChar(threadData_t *threadData,metamod
   length = MMC_STRLEN(str);
   if (ix > length)
     MMC_THROW_INTERNAL();
+#if defined(RML_STYLE_TAGPTR)
   p = (struct mmc_string *) mmc_alloc_words(nwords);
+#else
+  p = (struct mmc_string *) mmc_alloc_words_atomic(nwords);
+#endif
   p->header = header;
   memcpy(p->data, MMC_STRINGDATA(str), length);
   p->data[ix-1] = MMC_STRINGDATA(c)[0];
@@ -446,7 +462,11 @@ metamodelica_string_const boxptr_stringAppend(threadData_t *threadData,metamodel
   nbytes = len1+len2;
   header = MMC_STRINGHDR(nbytes);
   nwords = MMC_HDRSLOTS(header) + 1;
+#if defined(RML_STYLE_TAGPTR)
   p = (struct mmc_string *) mmc_alloc_words(nwords);
+#else
+  p = (struct mmc_string *) mmc_alloc_words_atomic(nwords);
+#endif
   /* fprintf(stderr, "at address %p\n", MMC_TAGPTR(p)); fflush(NULL); */
   p->header = header;
 
