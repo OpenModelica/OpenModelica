@@ -202,9 +202,9 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     void getStates(unsigned int index,double* z);
     void setStates(unsigned int index,const double* z);
     void getStateCanditates(unsigned int index,double* z);
-    void getAMatrix(unsigned int index,multi_array<int,2> & A) ;
+    bool getAMatrix(unsigned int index,multi_array<int,2> & A) ;
     void setAMatrix(unsigned int index,multi_array<int,2>& A);
-     void getAMatrix(unsigned int index,multi_array<int,1> & A) ;
+     bool getAMatrix(unsigned int index,multi_array<int,1> & A) ;
     void setAMatrix(unsigned int index,multi_array<int,1>& A);
     protected:
      void  initialize();
@@ -314,9 +314,9 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     virtual void getStates(unsigned int index,double* z);
     virtual void setStates(unsigned int index,const double* z);
     virtual void getStateCanditates(unsigned int index,double* z);
-    virtual void getAMatrix(unsigned int index,multi_array<int,2>& A);
+    virtual bool getAMatrix(unsigned int index,multi_array<int,2>& A);
     virtual void setAMatrix(unsigned int index,multi_array<int,2>& A);
-    virtual void getAMatrix(unsigned int index,multi_array<int,1>& A);
+    virtual bool getAMatrix(unsigned int index,multi_array<int,1>& A);
     virtual void setAMatrix(unsigned int index,multi_array<int,1>& A);
     
     
@@ -601,18 +601,18 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       <%lastIdentOfPath(modelInfo.name)%>StateSelection::getStateCanditates(index,z);
    }
    
-   void <%lastIdentOfPath(modelInfo.name)%>Extension::getAMatrix(unsigned int index,multi_array<int,2> & A) 
+   bool <%lastIdentOfPath(modelInfo.name)%>Extension::getAMatrix(unsigned int index,multi_array<int,2> & A) 
    {
-      <%lastIdentOfPath(modelInfo.name)%>StateSelection::getAMatrix(index,A);
+      return <%lastIdentOfPath(modelInfo.name)%>StateSelection::getAMatrix(index,A);
    }
   
    void <%lastIdentOfPath(modelInfo.name)%>Extension::setAMatrix(unsigned int index,multi_array<int,2> & A) 
    {
       <%lastIdentOfPath(modelInfo.name)%>StateSelection::setAMatrix(index,A);
    }
-   void <%lastIdentOfPath(modelInfo.name)%>Extension::getAMatrix(unsigned int index,multi_array<int,1> & A) 
+   bool <%lastIdentOfPath(modelInfo.name)%>Extension::getAMatrix(unsigned int index,multi_array<int,1> & A) 
    {
-      <%lastIdentOfPath(modelInfo.name)%>StateSelection::getAMatrix(index,A);
+      return <%lastIdentOfPath(modelInfo.name)%>StateSelection::getAMatrix(index,A);
    }
   
    void <%lastIdentOfPath(modelInfo.name)%>Extension::setAMatrix(unsigned int index,multi_array<int,1> & A) 
@@ -730,7 +730,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
            match nStates  case 1 then
              'case <%i1%>:
                assign_array(A,<%arrayname1%>);
-               break;
+               return true;
             '
             else ""
          ) ;separator="\n")
@@ -741,7 +741,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
            match nStates  case 1 then "" else
              'case <%i1%>:
                assign_array(A,<%arrayname1%>);
-               break;
+              return true;
             '
             
          ) ;separator="\n")       
@@ -787,15 +787,15 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
      {
      
      }
-     void  <%classname%>StateSelection::getAMatrix(unsigned int index,multi_array<int,2> & A) 
+     bool  <%classname%>StateSelection::getAMatrix(unsigned int index,multi_array<int,2> & A) 
      {
      
-     
+        return false;
      }
-      void  <%classname%>StateSelection::getAMatrix(unsigned int index,multi_array<int,1> & A) 
+      bool  <%classname%>StateSelection::getAMatrix(unsigned int index,multi_array<int,1> & A) 
      {
      
-     
+       return false;
      }
      void  <%classname%>StateSelection::setAMatrix(unsigned int index,multi_array<int,2>& A)
      {
@@ -876,30 +876,30 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
          
        } 
          
-      
-       void  <%classname%>StateSelection::getAMatrix(unsigned int index,multi_array<int,2> & A) 
-        {
-        <%match getAMatrix2 case "" then '' else
-        <<
-         switch (index)
+     
+       bool  <%classname%>StateSelection::getAMatrix(unsigned int index,multi_array<int,2> & A) 
+   	   {
+     	 <%match getAMatrix2 case "" then 'return false;' else
+     	 <<
+     	  switch (index)
           { 
             <%getAMatrix2%>
            default:
             throw std::invalid_argument("Not supported statset index");
-        }
+          }
        >>
        %>
        }
-       void  <%classname%>StateSelection::getAMatrix(unsigned int index,multi_array<int,1> & A) 
-        {
-       <%match getAMatrix1 case "" then '' else
-        <<
-        switch (index)
-        { 
+       bool  <%classname%>StateSelection::getAMatrix(unsigned int index,multi_array<int,1> & A) 
+   	   {
+    	 <%match getAMatrix1 case "" then 'return false;' else
+     	 <<
+    	  switch (index)
+    	  { 
            <%getAMatrix1%>
             default:
             throw std::invalid_argument("Not supported statset index");
-         }
+          }
        >>
        %>
        }
