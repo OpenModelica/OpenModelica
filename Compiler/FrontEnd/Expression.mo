@@ -3563,7 +3563,7 @@ algorithm
       then
         res;
     // e1/e*e2 for e = 0 => fail
-    case ({DAE.BINARY(exp1 = e1,operator = DAE.DIV(ty = tp),exp2 = e),e2})
+    case (DAE.BINARY(exp1 = e1,operator = DAE.DIV(ty = tp),exp2 = e)::es)
       equation
         true = isZero(e);
       then
