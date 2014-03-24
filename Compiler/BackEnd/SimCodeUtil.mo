@@ -1593,7 +1593,7 @@ algorithm
       jacobianSimvars = collectAllJacobianVars(SymbolicJacs, {});
       modelInfo = addJacobianVars(jacobianSimvars, modelInfo);
       
-       // map index also odeEquations and algebraicEquations         
+      // map index also odeEquations and algebraicEquations         
       systemIndexMap = List.fold(allEquations, getSystemIndexMap, arrayCreate(uniqueEqIndex, -1));
       odeEquations = List.mapList1_1(odeEquations, setSystemIndexMap, systemIndexMap);
       algebraicEquations = List.mapList1_1(algebraicEquations, setSystemIndexMap, systemIndexMap);
@@ -2090,7 +2090,7 @@ end countandIndexAlgebraicLoopsSymJacColumn;
 // 
 // =============================================================================
 
-public function createEquationsForSystems "Some kind of comments would be very helpful!"
+protected function createEquationsForSystems "Some kind of comments would be very helpful!"
   input BackendDAE.EqSystems inSysts;
   input BackendDAE.Shared shared;
   input Integer iuniqueEqIndex;
@@ -2119,15 +2119,16 @@ algorithm
       list<list<SimCode.SimEqSystem>> odeEquations, algebraicEquations;
       list<SimCode.SimEqSystem> allEquations;
       Integer uniqueEqIndex;
-      array<Integer> ass1, ass2, stateeqnsmark;
+      array<Integer> ass1, stateeqnsmark;
       BackendDAE.Variables vars;
       list<SimCode.SimVar> tempvars;
       DAE.FunctionTree funcs;
       list<tuple<Integer,Integer>> eqSccMapping, tmpEqBackendSimCodeMapping;
-    case ({}, _, _, odeEquations, algebraicEquations, allEquations, _, _, _, _)
-    then (iuniqueEqIndex, odeEquations, algebraicEquations, allEquations, itempvars, ieqSccMapping, ieqBackendSimCodeMapping);
+      
+    case ({}, _, _, _, _, _, _, _, _, _)
+    then (iuniqueEqIndex, inOdeEquations, inAlgebraicEquations, inAllEquations, itempvars, ieqSccMapping, ieqBackendSimCodeMapping);
     
-    case ((syst as BackendDAE.EQSYSTEM(orderedVars=vars, matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps=comps)))::systs, _, _, odeEquations, algebraicEquations, allEquations, _, _, _, _)
+    case ((syst as BackendDAE.EQSYSTEM(orderedVars=vars, matching=BackendDAE.MATCHING(ass1=ass1, comps=comps)))::systs, _, _, _, _, _, _, _, _, _)
       equation
         funcs = BackendDAEUtil.getFunctions(shared);
         (syst, _, _) = BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.ABSOLUTE(), SOME(funcs));
@@ -2135,9 +2136,9 @@ algorithm
         stateeqnsmark = BackendDAEUtil.markStateEquations(syst, stateeqnsmark, ass1);
         (odeEquations1, algebraicEquations1, allEquations1, uniqueEqIndex, tempvars, eqSccMapping, tmpEqBackendSimCodeMapping) =
           createEquationsForSystem1(stateeqnsmark, syst, shared, comps, iuniqueEqIndex, itempvars, isccOffset, ieqSccMapping, ieqBackendSimCodeMapping);
-        odeEquations = List.consOnTrue(not List.isEmpty(odeEquations1),odeEquations1,odeEquations);
-        algebraicEquations = List.consOnTrue(not List.isEmpty(algebraicEquations1),algebraicEquations1,algebraicEquations);
-        allEquations = listAppend(allEquations, allEquations1);
+        odeEquations = List.consOnTrue(not List.isEmpty(odeEquations1),odeEquations1,inOdeEquations);
+        algebraicEquations = List.consOnTrue(not List.isEmpty(algebraicEquations1),algebraicEquations1, inAlgebraicEquations);
+        allEquations = listAppend(inAllEquations, allEquations1);
         (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, tempvars, eqSccMapping, tmpEqBackendSimCodeMapping) =
           createEquationsForSystems(systs, shared, uniqueEqIndex, odeEquations, algebraicEquations, allEquations, tempvars, listLength(comps) + isccOffset, eqSccMapping, tmpEqBackendSimCodeMapping);
      then (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, tempvars, eqSccMapping, tmpEqBackendSimCodeMapping);
