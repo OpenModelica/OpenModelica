@@ -3658,6 +3658,23 @@ algorithm
     //  then
     //    e;
 
+    // (e * e1) * e => e1*e^2
+    case (DAE.MUL(ty = _),DAE.BINARY(e2,DAE.MUL(ty),e3),e1)
+      equation
+        true = Expression.expEqual(e2,e1);
+        e = DAE.BINARY(e1,DAE.POW(ty),DAE.RCONST(2.0) );
+      then
+        DAE.BINARY(e3,DAE.MUL(ty),e);
+
+    // e * (e1 * e) => e1*e^2
+    case (DAE.MUL(ty = _),e1,DAE.BINARY(e2,DAE.MUL(ty),e3))
+      equation
+        true = Expression.expEqual(e1,e3);
+        e = DAE.BINARY(e1,DAE.POW(ty),DAE.RCONST(2.0) );
+      then
+        DAE.BINARY(e2,DAE.MUL(ty),e);
+
+
     // r1 * (r2 * e) => (r1*r2)*e
     case (DAE.MUL(ty = _),DAE.RCONST(real = r1),DAE.BINARY(DAE.RCONST(real = r2),DAE.MUL(DAE.T_REAL(varLst = _)),e2))
       equation
