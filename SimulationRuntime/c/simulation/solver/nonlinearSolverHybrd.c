@@ -699,18 +699,18 @@ int solveHybrd(DATA *data, int sysNumber)
       nfunc_evals += solverData->nfev;
       if(ACTIVE_STREAM(LOG_NLS))
       {
-		/* output solution */
-		infoStreamPrint(LOG_NLS, 1, "solution for %s at t=%g", modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber).name, data->localData[0]->timeValue);
-		for(i=0; i<solverData->n; ++i)
-		{
-		  infoStreamPrint(LOG_NLS, 0, "[%ld] %s = %g", i+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber).vars[i]->name,  solverData->x[i]);
-		}
+    /* output solution */
+    infoStreamPrint(LOG_NLS, 1, "solution for %s at t=%g", modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber).name, data->localData[0]->timeValue);
+    for(i=0; i<solverData->n; ++i)
+    {
+      infoStreamPrint(LOG_NLS, 0, "[%ld] %s = %g", i+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber).vars[i]->name,  solverData->x[i]);
+    }
         messageClose(LOG_NLS);
       }else if (ACTIVE_STREAM(LOG_NLS_V)){
-    	infoStreamPrint(LOG_NLS_V, 1, "system solved");
-    	infoStreamPrint(LOG_NLS_V, 0, "%d retries\n%d restarts", retries, retries2+retries3);
-    	messageClose(LOG_NLS_V);
-    	printStatus(data, solverData, eqSystemNumber, &nfunc_evals, &xerror, &xerror_scaled, LOG_NLS_V);
+      infoStreamPrint(LOG_NLS_V, 1, "system solved");
+      infoStreamPrint(LOG_NLS_V, 0, "%d retries\n%d restarts", retries, retries2+retries3);
+      messageClose(LOG_NLS_V);
+      printStatus(data, solverData, eqSystemNumber, &nfunc_evals, &xerror, &xerror_scaled, LOG_NLS_V);
       }
       scaling = solverData->useXScaling;
       if(scaling)
