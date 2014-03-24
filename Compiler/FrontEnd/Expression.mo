@@ -3562,6 +3562,19 @@ algorithm
         res = makeProductLst(es);
       then
         res;
+    // e1/e*e2 for e = 0 => fail
+    case ({DAE.BINARY(exp1 = e1,operator = DAE.DIV(ty = tp),exp2 = e),e2})
+      equation
+        true = isZero(e);
+      then
+        fail();
+        
+    // e2*e1/e for e = 0 => fail 
+    case ({e2,DAE.BINARY(exp1 = e1,operator = DAE.DIV(ty = tp),exp2 = e)})
+      equation
+        true = isZero(e);
+      then
+        fail();
      case ((e :: es)) /* to prevent infinite recursion, disregard constant 0. */
       equation
         true = isZero(e);
