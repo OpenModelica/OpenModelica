@@ -878,10 +878,10 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
          
      
        bool  <%classname%>StateSelection::getAMatrix(unsigned int index,multi_array<int,2> & A) 
-   	   {
-     	 <%match getAMatrix2 case "" then 'return false;' else
-     	 <<
-     	  switch (index)
+        {
+        <%match getAMatrix2 case "" then 'return false;' else
+        <<
+         switch (index)
           { 
             <%getAMatrix2%>
            default:
@@ -891,11 +891,11 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
        %>
        }
        bool  <%classname%>StateSelection::getAMatrix(unsigned int index,multi_array<int,1> & A) 
-   	   {
-    	 <%match getAMatrix1 case "" then 'return false;' else
-     	 <<
-    	  switch (index)
-    	  { 
+        {
+       <%match getAMatrix1 case "" then 'return false;' else
+        <<
+        switch (index)
+        { 
            <%getAMatrix1%>
             default:
             throw std::invalid_argument("Not supported statset index");
