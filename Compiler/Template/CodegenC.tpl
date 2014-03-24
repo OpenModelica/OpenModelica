@@ -3981,6 +3981,7 @@ template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls /*BUF
        ;separator="\n")
       let nonlinindx = indexNonLinearSystem
       <<
+      int retValue;
       #ifdef _OMC_MEASURE_TIME
       SIM_PROF_TICK_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);
       SIM_PROF_ADD_NCALL_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex,-1);
@@ -3994,7 +3995,12 @@ template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls /*BUF
         data->simulationInfo.nonlinearSystemData[<%indexNonLinearSystem%>].nlsxExtrapolation[<%i0%>] = extraPolate(data, _<%namestr%>(1) /*old*/, _<%namestr%>(2) /*old2*/);
         >>
       ;separator="\n"%>
-      solve_nonlinear_system(data, <%indexNonLinearSystem%>);
+      retValue = solve_nonlinear_system(data, <%indexNonLinearSystem%>);
+      /* check if solution process was sucessful */
+      if (retValue > 0){
+        FILE_INFO info = omc_dummyFileInfo;
+        omc_assert(threadData, info, "Solving non-linear system failed.\nFor more information please use -lv LOG_NLS.");
+      }
       /* write solution */
       <%crefs |> name hasindex i0 => '<%cref(name)%> = data->simulationInfo.nonlinearSystemData[<%indexNonLinearSystem%>].nlsx[<%i0%>];' ;separator="\n"%>
       <%inlineCrefs(context,crefs)%>

@@ -237,7 +237,7 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
   /* enable to avoid division by zero */
   data->simulationInfo.noThrowDivZero = 0;
 
-  return 0;
+  return check_nonlinear_solution(data, 1, sysNumber);
 }
 
 /*! \fn check_nonlinear_solutions
@@ -247,51 +247,72 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
  *
  *  \param [in]  [data]
  *  \param [in]  [printFailingSystems]
+ *  \param [out] [returnValue] It returns >0 if fail otherwise 0.
  *
  *  \author wbraun
  */
 int check_nonlinear_solutions(DATA *data, int printFailingSystems)
 {
   NONLINEAR_SYSTEM_DATA* nonlinsys = data->simulationInfo.nonlinearSystemData;
-  long i, j;
+  long i;
+  int retVal = 0;
 
   for(i=0; i<data->modelData.nNonLinearSystems; ++i) {
-    if(nonlinsys[i].solved == 0)
+    retVal = retVal  + check_nonlinear_solution(data, printFailingSystems, i);
+  }
+
+  return retVal;
+}
+
+/*! \fn check_nonlinear_solution
+ *
+ *   This function check whether one non-linear system
+ *   is to solve. If one is failed it returns 1 otherwise 0.
+ *
+ *  \param [in]  [data]
+ *  \param [in]  [printFailingSystems]
+ *  \param [in]  [sysNumber] index of corresponding non-linear System
+ *  \param [out] [returnValue] It returns 1 if fail otherwise 0.
+ *
+ *  \author wbraun
+ */
+int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
+{
+  NONLINEAR_SYSTEM_DATA* nonlinsys = data->simulationInfo.nonlinearSystemData;
+  long j;
+  int i = sysNumber;
+
+  if(nonlinsys[i].solved == 0)
+  {
+    int index = nonlinsys[i].equationIndex, indexes[2] = {1,index};
+    if (!printFailingSystems) return 1;
+    warningStreamPrintWithEquationIndexes(LOG_NLS, 1, indexes, "nonlinear system fails: %s at t=%g", modelInfoXmlGetEquation(&data->modelData.modelDataXml, index).name, data->localData[0]->timeValue);
+    if(data->simulationInfo.initial)
     {
-      int index = nonlinsys[i].equationIndex, indexes[2] = {1,index};
-      if (!printFailingSystems) return 1;
-      warningStreamPrintWithEquationIndexes(LOG_NLS, 1, indexes, "nonlinear system fails: %s at t=%g", modelInfoXmlGetEquation(&data->modelData.modelDataXml, index).name, data->localData[0]->timeValue);
-      if(data->simulationInfo.initial)
-      {
-        warningStreamPrint(LOG_NLS, 1, "proper start-values for some of the following iteration variables might help");
-        for(j=0; j<modelInfoXmlGetEquation(&data->modelData.modelDataXml, (nonlinsys[i]).equationIndex).numVar; ++j) {
-          int done=0;
-          long k;
-          const MODEL_DATA *mData = &(data->modelData);
-          for(k=0; k<mData->nVariablesReal && !done; ++k)
-          {
-            if(!strcmp(mData->realVarsData[k].info.name, modelInfoXmlGetEquation(&data->modelData.modelDataXml, (nonlinsys[i]).equationIndex).vars[j]->name))
-            {
-              done = 1;
-              warningStreamPrint(LOG_NLS, 0, "[%ld] Real %s(start=%g, nominal=%g)", j+1,
-                                                                       mData->realVarsData[k].info.name,
-                                                                       mData->realVarsData[k].attribute.start,
-                                                                       mData->realVarsData[k].attribute.nominal);
-            }
-          }
-          if (!done) {
-            warningStreamPrint(LOG_NLS, 0, "[%ld] Real %s(start=?, nominal=?)", j+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml, (nonlinsys[i]).equationIndex).vars[j]->name);
-          }
-        }
-        if (ACTIVE_WARNING_STREAM(LOG_NLS)) messageClose(LOG_NLS);
-      } else {
-        for(j=0; j<modelInfoXmlGetEquation(&data->modelData.modelDataXml, (nonlinsys[i]).equationIndex).numVar; ++j) {
-          warningStreamPrint(LOG_NLS, 0, "[%ld] Real %s", j+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml, (nonlinsys[i]).equationIndex).vars[j]->name);
-        }
-      }
-      if (ACTIVE_WARNING_STREAM(LOG_NLS)) messageClose(LOG_NLS);
-      return 1;
+      warningStreamPrint(LOG_NLS, 1, "proper start-values for some of the following iteration variables might help");
     }
+	for(j=0; j<modelInfoXmlGetEquation(&data->modelData.modelDataXml, (nonlinsys[i]).equationIndex).numVar; ++j) {
+		int done=0;
+		long k;
+		const MODEL_DATA *mData = &(data->modelData);
+		for(k=0; k<mData->nVariablesReal && !done; ++k)
+		{
+		  if(!strcmp(mData->realVarsData[k].info.name, modelInfoXmlGetEquation(&data->modelData.modelDataXml, (nonlinsys[i]).equationIndex).vars[j]->name))
+		  {
+			done = 1;
+			warningStreamPrint(LOG_NLS, 0, "[%ld] Real %s(start=%g, nominal=%g)", j+1,
+																	 mData->realVarsData[k].info.name,
+																	 mData->realVarsData[k].attribute.start,
+																	 mData->realVarsData[k].attribute.nominal);
+		  }
+		}
+		if (!done)
+		{
+		  warningStreamPrint(LOG_NLS, 0, "[%ld] Real %s(start=?, nominal=?)", j+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml, (nonlinsys[i]).equationIndex).vars[j]->name);
+		}
+	}
+    if (ACTIVE_WARNING_STREAM(LOG_NLS)) messageClose(LOG_NLS);
+    return 1;
   }
 
   return 0;
