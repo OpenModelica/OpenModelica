@@ -745,6 +745,13 @@ algorithm
   end match;
 end printAnnotation;
 
+public function unparseElementArgStr "Prettyprints an Absyn.ElementArg"
+  input Absyn.ElementArg inElementArg;
+  output String outString;
+algorithm
+  outString := Tpl.tplString(AbsynDumpTpl.dumpElementArg,inElementArg);
+end unparseElementArgStr;
+
 public function unparseElementItemStr
   "Prettyprints and ElementItem."
   input Absyn.ElementItem inElementItem;
