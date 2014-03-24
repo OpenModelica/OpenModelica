@@ -3970,6 +3970,7 @@ algorithm
     // a + a  = 2*a
     case (_,DAE.ADD(ty = ty),e1,e2,_,_)
       equation
+        true = Types.isRealOrSubTypeReal(ty);
         true = Expression.expEqual(e1,e2);
         e = DAE.RCONST(2.0);
       then DAE.BINARY(e,DAE.MUL(ty),e1);
