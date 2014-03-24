@@ -4,7 +4,6 @@ SET(META_SRC 	meta_modelica_builtin.c
 				realString.c
 				meta_modelica_catch.c
 				meta_modelica.c
-				meta_modelica_real.c
 				meta_modelica_segv.c
 				gc/mmc_gc.c
 				gc/common.c
