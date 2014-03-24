@@ -431,6 +431,7 @@ extern void changeStdStreamBuffer(void); /* For debugging */
 extern char* getRecordElement(modelica_metatype arr, modelica_integer i);
 extern char* getListItem(modelica_metatype lst, modelica_integer i);
 extern char* getOptionItem(modelica_metatype arr, modelica_integer i);
+extern char* getTupleElement(modelica_metatype arr, modelica_integer i);
 
 /*
  * Generated (Meta)Records should access a static, constant value of

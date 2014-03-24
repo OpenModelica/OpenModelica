@@ -886,6 +886,37 @@ char* getOptionItem(modelica_metatype arr, modelica_integer i) {
   return anyStringBuf;
 }
 
+/*
+ * Used by OMEdit for debugging.
+ * Returns the Tuple element as an array e.g ^done,omc_tupleelement={name, displayName, type}
+ */
+char* getTupleElement(modelica_metatype arr, modelica_integer i) {
+  /* get the element from the record array */
+  void* name = (void*)mmc_gdb_arrayGet(0, arr, i);
+  char nameStr[40], displayName[40], *ty = NULL, *formatString = NULL;
+
+  /* print the pointer as long to a buffer to get the string length */
+  sprintf(nameStr, "%ld", (long)name);
+
+  /* get the name of the element */
+  sprintf(displayName, "%d", (int)i);
+
+  /* get the type of the element */
+  getTypeOfAny(name);
+  ty = malloc(strlen(anyStringBuf) + 1);
+  strcpy(ty, anyStringBuf);
+
+  /* format the anyStringBuf as array to return it */
+  formatString = "^done,omc_tupleelement={name=\"%ld\",displayName=\"[%s]\",type=\"%s\"}";
+  checkAnyStringBufSize(0, strlen(nameStr) + strlen(displayName) + strlen(ty) + strlen(formatString) + 1);
+  sprintf(anyStringBuf, formatString, (long)name, displayName, ty);
+
+  /* free the memory */
+  free(ty);
+
+  return anyStringBuf;
+}
+
 static inline unsigned long djb2_hash_iter(const unsigned char *str /* data; not null-terminated */, int len, unsigned long hash /* start at 5381 */)
 {
   int i;
