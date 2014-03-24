@@ -14,7 +14,6 @@ SET(META_SRC 	meta_modelica_builtin.c
 SET(META_HFILES rml_compatibility.h
                 meta_modelica_builtin.h
 				meta_modelica_builtin_boxptr.h
-				meta_modelica_real.h
 				meta_modelica_segv.h
 				meta_modelica_string_lit.h
 				meta_modelica.h
