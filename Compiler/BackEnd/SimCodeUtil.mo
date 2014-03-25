@@ -8154,7 +8154,7 @@ algorithm
   end match;
 end varIndexComparer;
 
-protected function createCrefToSimVarHT
+public function createCrefToSimVarHT
   input SimCode.ModelInfo modelInfo;
   output SimCode.HashTableCrefToSimVar outHT;
 algorithm
