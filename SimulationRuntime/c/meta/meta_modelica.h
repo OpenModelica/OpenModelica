@@ -425,7 +425,8 @@ typedef enum metaType
   record_metaType = 0,
   list_metaType,
   option_metaType,
-  tuple_metaType
+  tuple_metaType,
+  array_metaType
 } metaType;
 
 extern char* getMetaTypeElement(modelica_metatype arr, modelica_integer i, metaType mt);

@@ -796,6 +796,7 @@ char* getMetaTypeElement(modelica_metatype arr, modelica_integer i, metaType mt)
     case record_metaType:
     case option_metaType:
     case tuple_metaType:
+    case array_metaType:
       name = (void*)mmc_gdb_arrayGet(0, arr, i);
       break;
     case list_metaType:
