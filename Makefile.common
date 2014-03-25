@@ -293,7 +293,7 @@ gc-clean:
 	rm -f 3rdParty/gc-7.2/Makefile
 bootstrap-clean:
 	$(MAKE) -C Compiler/boot clean -f $(defaultMakefileTarget)
-clean: qtclean fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean bootstrap-clean
+clean: qtclean fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean bootstrap-clean msgpack-clean
 	(cd SimulationRuntime/c && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd SimulationRuntime/interactive && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean)
@@ -381,3 +381,7 @@ else
 msgpack: build/lib/libmsgpackc.a
 endif
 endif
+
+msgpack-clean:
+	test ! -f 3rdParty/msgpack-0.5.8/Makefile || $(MAKE) -C 3rdParty/msgpack-0.5.8 distclean || true
+	rm -f 3rdParty/msgpack-0.5.8/Makefile
