@@ -1402,15 +1402,6 @@ algorithm
       then
         (cache,ValuesUtil.makeArray({Values.STRING(executable),Values.STRING(initfilename)}),st);
 
-    case (_,_,"residualCMP",_,_,_)
-      equation
-        str = Config.simCodeTarget();
-        Config.setsimCodeTarget("ResidualCMP");
-        (cache,simValue,newst) = cevalInteractiveFunctions2(inCache,inEnv,"simulate",inVals,inSt,msg);
-        Config.setsimCodeTarget(str);
-      then
-        (cache,simValue,newst);
-
     // adrpo: see if the model exists before simulation!
     case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st as GlobalScript.SYMBOLTABLE(ast = p),_)
       equation
