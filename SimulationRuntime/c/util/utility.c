@@ -59,28 +59,26 @@ extern int OpenModelica_regexImpl(const char* str, const char* re, const int max
   int nmatch=0,i,rc,res;
   int flags = (extended ? REG_EXTENDED : 0) | (sensitive ? REG_ICASE : 0) | (maxn ? 0 : REG_NOSUB);
 #if !defined(_MSC_VER)
+  if (maxn < 1) {
+    return 0;
+  }
   regmatch_t matches[maxn];
 #else
   /* Stupid compiler */
   regmatch_t *matches;
+  if (maxn < 1) {
+    return 0;
+  }
   matches = (regmatch_t*)malloc(maxn*sizeof(regmatch_t));
   assert(matches != NULL);
 #endif
   memset(&myregex, 1, sizeof(regex_t));
   rc = regcomp(&myregex, re, flags);
-  if (rc && maxn == 0) {
-#if defined(_MSC_VER)
-    free(matches);
-#endif
-    return 0;
-  }
   if (rc) {
     char err_buf[2048] = {0};
     int len = 0;
     len += snprintf(err_buf+len,2040-len,"Failed to compile regular expression: %s with error: ", re);
-    len += regerror(rc, &myregex, err_buf+len, 2048-len);
-    len += snprintf(err_buf+len,2040-len,".");
-    len += snprintf(err_buf+len,2040-len,".");
+    regerror(rc, &myregex, err_buf+len, 2048-len);
     regfree(&myregex);
     if (maxn) {
       outMatches[0] = mystrdup(err_buf);
