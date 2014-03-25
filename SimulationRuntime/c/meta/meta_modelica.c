@@ -784,20 +784,33 @@ void changeStdStreamBuffer(void) {
 
 /*
  * Used by OMEdit for debugging.
- * Returns the Record element as an array e.g ^done,omc_recordelement={name, displayName, type}
+ * Returns the metatype element as an array e.g ^done,omc_element={name, displayName, type}
  */
-char* getRecordElement(modelica_metatype arr, modelica_integer i) {
-  /* get the element from the record array */
-  void* name = (void*)mmc_gdb_arrayGet(0, arr, i);
-  char nameStr[40], *displayName = NULL, *ty = NULL, *formatString = NULL;
+char* getMetaTypeElement(modelica_metatype arr, modelica_integer i, metaType mt) {
+  void *name;
+  char *displayName = NULL, *ty = NULL, *formatString = NULL, *formattedString = NULL;
+  int n, n1;
 
-  /* print the pointer as long to a buffer to get the string length */
-  sprintf(nameStr, "%ld", (long)name);
+  /* get the pointer to the element from the array/list */
+  switch (mt) {
+    case record_metaType:
+    case option_metaType:
+    case tuple_metaType:
+      name = (void*)mmc_gdb_arrayGet(0, arr, i);
+      break;
+    case list_metaType:
+      name = (void*)mmc_gdb_listGet(0, arr, i);
+      break;
+    default:    /* should never be reached */
+      return "Unknown meta type";
+  }
 
   /* get the name of the element */
-  getRecordElementName(arr, i - 2);
-  displayName = malloc(strlen(anyStringBuf) + 1);
-  strcpy(displayName, anyStringBuf);
+  if (mt == record_metaType) {
+    getRecordElementName(arr, i - 2);
+    displayName = malloc(strlen(anyStringBuf) + 1);
+    strcpy(displayName, anyStringBuf);
+  }
 
   /* get the type of the element */
   getTypeOfAny(name);
@@ -805,105 +818,23 @@ char* getRecordElement(modelica_metatype arr, modelica_integer i) {
   strcpy(ty, anyStringBuf);
 
   /* format the anyStringBuf as array to return it */
-  formatString = "^done,omc_recordelement={name=\"%ld\",displayName=\"%s\",type=\"%s\"}";
-  checkAnyStringBufSize(0, strlen(nameStr) + strlen(displayName) + strlen(ty) + strlen(formatString) + 1);
-  sprintf(anyStringBuf, formatString, (long)name, displayName, ty);
+  if (mt == record_metaType) {
+    formatString = "^done,omc_element={name=\"%ld\",displayName=\"%s\",type=\"%s\"}";
+    asprintf(&formattedString, formatString, (long)name, displayName, ty);
+  } else {
+    formatString = "^done,omc_element={name=\"%ld\",displayName=\"[%d]\",type=\"%s\"}";
+    asprintf(&formattedString, formatString, (long)name, (int)i, ty);
+  }
+  n1 = strlen(formattedString) + 1;
+  n = snprintf(anyStringBuf, n1, "%s", formattedString);
+  if (n > n1) {
+    checkAnyStringBufSize(0, n1);
+    snprintf(anyStringBuf, n1, "%s", formattedString);
+  }
 
   /* free the memory */
-  free(displayName);
-  free(ty);
-
-  return anyStringBuf;
-}
-
-/*
- * Used by OMEdit for debugging.
- * Returns the List Item as an array e.g ^done,omc_listitem={name, displayName, type}
- */
-char* getListItem(modelica_metatype lst, modelica_integer i) {
-  /* get the item from the list */
-  void* name = (void*)mmc_gdb_listGet(0, lst, i);
-  char nameStr[40], displayName[40], *ty = NULL, *formatString = NULL;
-
-  /* print the pointer as long to a buffer to get the string length */
-  sprintf(nameStr, "%ld", (long)name);
-
-  /* get the name of the item */
-  sprintf(displayName, "%d", (int)i);
-
-  /* get the type of the item */
-  getTypeOfAny(name);
-  ty = malloc(strlen(anyStringBuf) + 1);
-  strcpy(ty, anyStringBuf);
-
-  /* format the anyStringBuf as array to return it */
-  formatString = "^done,omc_listitem={name=\"%ld\",displayName=\"[%s]\",type=\"%s\"}";
-  checkAnyStringBufSize(0, strlen(nameStr) + strlen(displayName) + strlen(ty) + strlen(formatString) + 1);
-  sprintf(anyStringBuf, formatString, (long)name, displayName, ty);
-
-  /* free the memory */
-  free(ty);
-
-  return anyStringBuf;
-}
-
-/*
- * Used by OMEdit for debugging.
- * Returns the Option item as an array e.g ^done,omc_optionitem={name, displayName, type}
- */
-char* getOptionItem(modelica_metatype arr, modelica_integer i) {
-  /* get the option item from the array */
-  void* name = (void*)mmc_gdb_arrayGet(0, arr, i);
-  char nameStr[40], displayName[40], *ty = NULL, *formatString = NULL;
-
-  /* print the pointer as long to a buffer to get the string length */
-  sprintf(nameStr, "%ld", (long)name);
-
-  /* get the name of the item */
-  sprintf(displayName, "%d", (int)i);
-
-  /* get the type of the element */
-  getTypeOfAny(name);
-  ty = malloc(strlen(anyStringBuf) + 1);
-  strcpy(ty, anyStringBuf);
-
-  /* format the anyStringBuf as array to return it */
-  formatString = "^done,omc_optionitem={name=\"%ld\",displayName=\"[%s]\",type=\"%s\"}";
-  checkAnyStringBufSize(0, strlen(nameStr) + strlen(displayName) + strlen(ty) + strlen(formatString) + 1);
-  sprintf(anyStringBuf, formatString, (long)name, displayName, ty);
-
-  /* free the memory */
-  free(ty);
-
-  return anyStringBuf;
-}
-
-/*
- * Used by OMEdit for debugging.
- * Returns the Tuple element as an array e.g ^done,omc_tupleelement={name, displayName, type}
- */
-char* getTupleElement(modelica_metatype arr, modelica_integer i) {
-  /* get the element from the record array */
-  void* name = (void*)mmc_gdb_arrayGet(0, arr, i);
-  char nameStr[40], displayName[40], *ty = NULL, *formatString = NULL;
-
-  /* print the pointer as long to a buffer to get the string length */
-  sprintf(nameStr, "%ld", (long)name);
-
-  /* get the name of the element */
-  sprintf(displayName, "%d", (int)i);
-
-  /* get the type of the element */
-  getTypeOfAny(name);
-  ty = malloc(strlen(anyStringBuf) + 1);
-  strcpy(ty, anyStringBuf);
-
-  /* format the anyStringBuf as array to return it */
-  formatString = "^done,omc_tupleelement={name=\"%ld\",displayName=\"[%s]\",type=\"%s\"}";
-  checkAnyStringBufSize(0, strlen(nameStr) + strlen(displayName) + strlen(ty) + strlen(formatString) + 1);
-  sprintf(anyStringBuf, formatString, (long)name, displayName, ty);
-
-  /* free the memory */
+  free(formattedString);
+  if (mt == record_metaType) free(displayName);
   free(ty);
 
   return anyStringBuf;
