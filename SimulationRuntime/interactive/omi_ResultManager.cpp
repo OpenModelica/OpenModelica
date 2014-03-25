@@ -394,7 +394,7 @@ SimStepData* getResultDataForTime(double stepSize, double timeStep) {
       return temp;
     }
   } else {
-    SimStepData nullSSD; //this SimStepData element represents a null element in the SSD Array
+    static SimStepData nullSSD; //this SimStepData element represents a null element in the SSD Array
     nullSSD.forTimeStep = -1; //if the forTimeStep is -1 the element is null
     /*double *statesTMP1 = new double[1];
     double *statesDerivativesTMP1 = new double[1];
