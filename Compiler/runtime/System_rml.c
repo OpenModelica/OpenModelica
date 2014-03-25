@@ -842,8 +842,8 @@ RML_BEGIN_LABEL(System__isSameFile)
   fn2_2 = _replace(canonName2,"//","/");
   //printf("Replaced form f1:%s, \nf2:%s\n",fn1_2,fn2_2);
   same = strcmp(fn1_2,fn2_2) == 0;
-  free(fn1_2);
-  free(fn2_2);
+  GC_free(fn1_2);
+  GC_free(fn2_2);
   if(same){
     RML_TAILCALLK(rmlSC);
   }

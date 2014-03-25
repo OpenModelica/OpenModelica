@@ -1858,7 +1858,8 @@ public function stringReplaceChar "Takes a string and two chars and replaces the
   input String inString3;
   output String outString;
 algorithm
-  outString:=
+  outString := System.stringReplace(inString1, inString2, inString3);
+  /* 
   matchcontinue (inString1,inString2,inString3)
     local
       list<String> strList,resList;
@@ -1877,6 +1878,7 @@ algorithm
       then
         fail();
   end matchcontinue;
+  */
 end stringReplaceChar;
 
 protected function stringReplaceChar2

@@ -27,13 +27,18 @@ void FindAndReplace( std::string& tInput, std::string tFind, std::string tReplac
 extern "C" {
 
 #include <string.h>
+#include "meta_modelica.h"
 
   char* _replace(const char* source_str, const char* search_str, const char* replace_str)
   {
     string str(source_str);
+    size_t len;
     FindAndReplace(str,string(search_str),string(replace_str));
 
-    char* res = strdup(str.c_str());
+    len = strlen(str.c_str());
+    char* res = (char *)GC_malloc_atomic_ignore_off_page(len + 1);
+    strcpy(res, str.c_str());
+    res[len] = '\0';
     return res;
   }
 

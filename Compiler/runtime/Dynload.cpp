@@ -314,7 +314,7 @@ static void *name_to_path(const char *name)
     if (need_replace) {
       tmp = _replace(name, "__", "_");
       ident = mk_scon(tmp);
-      free(tmp);
+      GC_free(tmp);
     } else {
       /* memcpy(&tmp, &name, sizeof(char *)); */ /* don't try this at home */
       ident = mk_scon((char*)name);
@@ -322,17 +322,17 @@ static void *name_to_path(const char *name)
     return Absyn__IDENT(ident);
   } else {
     size_t len = pos - name;
-    tmp = (char*) malloc(len + 1);
+    tmp = (char*)GC_malloc_atomic(len + 1);
     memcpy(tmp, name, len);
     tmp[len] = '\0';
     if (need_replace) {
       char *tmp2 = _replace(tmp, "__", "_");
       ident = mk_scon(tmp2);
-      free(tmp2);
+      GC_free(tmp2);
     } else {
       ident = mk_scon(tmp);
     }
-    free(tmp);
+    GC_free(tmp);
     return Absyn__QUALIFIED(ident, name_to_path(pos + 1));
   }
 }

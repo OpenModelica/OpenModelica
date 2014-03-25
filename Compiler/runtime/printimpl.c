@@ -34,6 +34,7 @@
 
 #include "errorext.h"
 #include "systemimpl.h"
+#include "meta_modelica.h"
 
 /* this is defined in systemimplmisc.h/cpp */
 extern char* _replace(const char* source_str, const char* search_str, const char* replace_str);
@@ -449,7 +450,7 @@ static int PrintImpl__writeBufConvertLines(threadData_t *threadData,const char *
                "#endif\n",
 #if defined(__MINGW32__) || defined(_MSC_VER)
                strtmp);
-  free(strtmp);
+  GC_free(strtmp);
 #else
                filename);
 #endif
@@ -472,7 +473,7 @@ static int PrintImpl__writeBufConvertLines(threadData_t *threadData,const char *
     } else if (0==regexec(&re_end, str, 3, matches, 0)) {
       if (modelicaFileName) { /* There is sometimes #endModlicaLine without a matching #modelicaLine */
 #if defined(__MINGW32__) || defined(_MSC_VER)
-        free(modelicaFileName);
+        GC_free(modelicaFileName);
 #endif
         modelicaFileName = NULL;
         fprintf(file,"#line %ld OMC_FILE\n", nlines++);
@@ -489,7 +490,7 @@ static int PrintImpl__writeBufConvertLines(threadData_t *threadData,const char *
   } while (1);
 #if defined(__MINGW32__) || defined(_MSC_VER)
   if (modelicaFileName) {
-    free(modelicaFileName);
+    GC_free(modelicaFileName);
   }
 #endif
   /* We do destructive updates on the print buffer; hide our tracks */

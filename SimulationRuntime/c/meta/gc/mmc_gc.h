@@ -41,9 +41,11 @@
 #ifndef META_MODELICA_GC_H_
 #define META_MODELICA_GC_H_
 
-#if !defined(_MSC_VER)  /* no gc on MSVC! */
-#define _MMC_USE_BOEHM_GC_
+#if defined(_MSC_VER)
+#include "omc_inline.h"
 #endif
+
+#define _MMC_USE_BOEHM_GC_
 
 #if defined(__cplusplus)
 extern "C" {
