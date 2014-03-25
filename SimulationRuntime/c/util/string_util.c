@@ -36,10 +36,10 @@ om_scan_oct(const char *start, size_t len, size_t *retlen)
     register unsigned long retval = 0;
 
     while (len-- && *s >= '0' && *s <= '7') {
-	retval <<= 3;
-	retval |= *s++ - '0';
+  retval <<= 3;
+  retval |= *s++ - '0';
     }
-    *retlen = (int)(s - start);	/* less than len */
+    *retlen = (int)(s - start);  /* less than len */
     return retval;
 }
 
@@ -52,11 +52,11 @@ om_scan_hex(const char *start, size_t len, size_t *retlen)
     const char *tmp;
 
     while (len-- && *s && (tmp = strchr(hexdigit, *s))) {
-	retval <<= 4;
-	retval |= (tmp - hexdigit) & 15;
-	s++;
+  retval <<= 4;
+  retval |= (tmp - hexdigit) & 15;
+  s++;
     }
-    *retlen = (int)(s - start);	/* less than len */
+    *retlen = (int)(s - start);  /* less than len */
     return retval;
 }
 
@@ -222,13 +222,13 @@ om_strdup(const char *str)
  ***************************************************************/
 
 /* Please send bug reports to David M. Gay (dmg at acm dot org,
- * with " at " changed at "@" and " dot " changed to ".").	*/
+ * with " at " changed at "@" and " dot " changed to ".").  */
 
 /* On a machine with IEEE extended-precision registers, it is
  * necessary to specify double-precision (53-bit) rounding precision
  * before invoking strtod or dtoa.  If the machine uses (the equivalent
  * of) Intel 80x87 arithmetic, the call
- *	_control87(PC_53, MCW_PC);
+ *  _control87(PC_53, MCW_PC);
  * does this with many compilers.  Whether this or another call is
  * appropriate depends on the compiler; for this to work, it may be
  * necessary to #include "float.h" or another system-dependent header
@@ -247,124 +247,124 @@ om_strdup(const char *str)
  *
  * Modifications:
  *
- *	1. We only require IEEE, IBM, or VAX double-precision
- *		arithmetic (not IEEE double-extended).
- *	2. We get by with floating-point arithmetic in a case that
- *		Clinger missed -- when we're computing d * 10^n
- *		for a small integer d and the integer n is not too
- *		much larger than 22 (the maximum integer k for which
- *		we can represent 10^k exactly), we may be able to
- *		compute (d*10^k) * 10^(e-k) with just one roundoff.
- *	3. Rather than a bit-at-a-time adjustment of the binary
- *		result in the hard case, we use floating-point
- *		arithmetic to determine the adjustment to within
- *		one bit; only in really hard cases do we need to
- *		compute a second residual.
- *	4. Because of 3., we don't need a large table of powers of 10
- *		for ten-to-e (just some small tables, e.g. of 10^k
- *		for 0 <= k <= 22).
+ *  1. We only require IEEE, IBM, or VAX double-precision
+ *    arithmetic (not IEEE double-extended).
+ *  2. We get by with floating-point arithmetic in a case that
+ *    Clinger missed -- when we're computing d * 10^n
+ *    for a small integer d and the integer n is not too
+ *    much larger than 22 (the maximum integer k for which
+ *    we can represent 10^k exactly), we may be able to
+ *    compute (d*10^k) * 10^(e-k) with just one roundoff.
+ *  3. Rather than a bit-at-a-time adjustment of the binary
+ *    result in the hard case, we use floating-point
+ *    arithmetic to determine the adjustment to within
+ *    one bit; only in really hard cases do we need to
+ *    compute a second residual.
+ *  4. Because of 3., we don't need a large table of powers of 10
+ *    for ten-to-e (just some small tables, e.g. of 10^k
+ *    for 0 <= k <= 22).
  */
 
 /*
  * #define IEEE_LITTLE_ENDIAN for IEEE-arithmetic machines where the least
- *	significant byte has the lowest address.
+ *  significant byte has the lowest address.
  * #define IEEE_BIG_ENDIAN for IEEE-arithmetic machines where the most
- *	significant byte has the lowest address.
+ *  significant byte has the lowest address.
  * #define Long int on machines with 32-bit ints and 64-bit longs.
  * #define IBM for IBM mainframe-style floating-point arithmetic.
  * #define VAX for VAX-style floating-point arithmetic (D_floating).
  * #define No_leftright to omit left-right logic in fast floating-point
- *	computation of dtoa.
+ *  computation of dtoa.
  * #define Honor_FLT_ROUNDS if FLT_ROUNDS can assume the values 2 or 3
- *	and strtod and dtoa should round accordingly.
+ *  and strtod and dtoa should round accordingly.
  * #define Check_FLT_ROUNDS if FLT_ROUNDS can assume the values 2 or 3
- *	and Honor_FLT_ROUNDS is not #defined.
+ *  and Honor_FLT_ROUNDS is not #defined.
  * #define RND_PRODQUOT to use rnd_prod and rnd_quot (assembly routines
- *	that use extended-precision instructions to compute rounded
- *	products and quotients) with IBM.
+ *  that use extended-precision instructions to compute rounded
+ *  products and quotients) with IBM.
  * #define ROUND_BIASED for IEEE-format with biased rounding.
  * #define Inaccurate_Divide for IEEE-format with correctly rounded
- *	products but inaccurate quotients, e.g., for Intel i860.
+ *  products but inaccurate quotients, e.g., for Intel i860.
  * #define NO_LONG_LONG on machines that do not have a "long long"
- *	integer type (of >= 64 bits).  On such machines, you can
- *	#define Just_16 to store 16 bits per 32-bit Long when doing
- *	high-precision integer arithmetic.  Whether this speeds things
- *	up or slows things down depends on the machine and the number
- *	being converted.  If long long is available and the name is
- *	something other than "long long", #define Llong to be the name,
- *	and if "unsigned Llong" does not work as an unsigned version of
- *	Llong, #define #ULLong to be the corresponding unsigned type.
+ *  integer type (of >= 64 bits).  On such machines, you can
+ *  #define Just_16 to store 16 bits per 32-bit Long when doing
+ *  high-precision integer arithmetic.  Whether this speeds things
+ *  up or slows things down depends on the machine and the number
+ *  being converted.  If long long is available and the name is
+ *  something other than "long long", #define Llong to be the name,
+ *  and if "unsigned Llong" does not work as an unsigned version of
+ *  Llong, #define #ULLong to be the corresponding unsigned type.
  * #define KR_headers for old-style C function headers.
  * #define Bad_float_h if your system lacks a float.h or if it does not
- *	define some or all of DBL_DIG, DBL_MAX_10_EXP, DBL_MAX_EXP,
- *	FLT_RADIX, FLT_ROUNDS, and DBL_MAX.
+ *  define some or all of DBL_DIG, DBL_MAX_10_EXP, DBL_MAX_EXP,
+ *  FLT_RADIX, FLT_ROUNDS, and DBL_MAX.
  * #define MALLOC your_malloc, where your_malloc(n) acts like malloc(n)
- *	if memory is available and otherwise does something you deem
- *	appropriate.  If MALLOC is undefined, malloc will be invoked
- *	directly -- and assumed always to succeed.
+ *  if memory is available and otherwise does something you deem
+ *  appropriate.  If MALLOC is undefined, malloc will be invoked
+ *  directly -- and assumed always to succeed.
  * #define Omit_Private_Memory to omit logic (added Jan. 1998) for making
- *	memory allocations from a private pool of memory when possible.
- *	When used, the private pool is PRIVATE_MEM bytes long:  2304 bytes,
- *	unless #defined to be a different length.  This default length
- *	suffices to get rid of MALLOC calls except for unusual cases,
- *	such as decimal-to-binary conversion of a very long string of
- *	digits.  The longest string dtoa can return is about 751 bytes
- *	long.  For conversions by strtod of strings of 800 digits and
- *	all dtoa conversions in single-threaded executions with 8-byte
- *	pointers, PRIVATE_MEM >= 7400 appears to suffice; with 4-byte
- *	pointers, PRIVATE_MEM >= 7112 appears adequate.
+ *  memory allocations from a private pool of memory when possible.
+ *  When used, the private pool is PRIVATE_MEM bytes long:  2304 bytes,
+ *  unless #defined to be a different length.  This default length
+ *  suffices to get rid of MALLOC calls except for unusual cases,
+ *  such as decimal-to-binary conversion of a very long string of
+ *  digits.  The longest string dtoa can return is about 751 bytes
+ *  long.  For conversions by strtod of strings of 800 digits and
+ *  all dtoa conversions in single-threaded executions with 8-byte
+ *  pointers, PRIVATE_MEM >= 7400 appears to suffice; with 4-byte
+ *  pointers, PRIVATE_MEM >= 7112 appears adequate.
  * #define INFNAN_CHECK on IEEE systems to cause strtod to check for
- *	Infinity and NaN (case insensitively).  On some systems (e.g.,
- *	some HP systems), it may be necessary to #define NAN_WORD0
- *	appropriately -- to the most significant word of a quiet NaN.
- *	(On HP Series 700/800 machines, -DNAN_WORD0=0x7ff40000 works.)
- *	When INFNAN_CHECK is #defined and No_Hex_NaN is not #defined,
- *	strtod also accepts (case insensitively) strings of the form
- *	NaN(x), where x is a string of hexadecimal digits and spaces;
- *	if there is only one string of hexadecimal digits, it is taken
- *	for the 52 fraction bits of the resulting NaN; if there are two
- *	or more strings of hex digits, the first is for the high 20 bits,
- *	the second and subsequent for the low 32 bits, with intervening
- *	white space ignored; but if this results in none of the 52
- *	fraction bits being on (an IEEE Infinity symbol), then NAN_WORD0
- *	and NAN_WORD1 are used instead.
+ *  Infinity and NaN (case insensitively).  On some systems (e.g.,
+ *  some HP systems), it may be necessary to #define NAN_WORD0
+ *  appropriately -- to the most significant word of a quiet NaN.
+ *  (On HP Series 700/800 machines, -DNAN_WORD0=0x7ff40000 works.)
+ *  When INFNAN_CHECK is #defined and No_Hex_NaN is not #defined,
+ *  strtod also accepts (case insensitively) strings of the form
+ *  NaN(x), where x is a string of hexadecimal digits and spaces;
+ *  if there is only one string of hexadecimal digits, it is taken
+ *  for the 52 fraction bits of the resulting NaN; if there are two
+ *  or more strings of hex digits, the first is for the high 20 bits,
+ *  the second and subsequent for the low 32 bits, with intervening
+ *  white space ignored; but if this results in none of the 52
+ *  fraction bits being on (an IEEE Infinity symbol), then NAN_WORD0
+ *  and NAN_WORD1 are used instead.
  * #define MULTIPLE_THREADS if the system offers preemptively scheduled
- *	multiple threads.  In this case, you must provide (or suitably
- *	#define) two locks, acquired by ACQUIRE_DTOA_LOCK(n) and freed
- *	by FREE_DTOA_LOCK(n) for n = 0 or 1.  (The second lock, accessed
- *	in pow5mult, ensures lazy evaluation of only one copy of high
- *	powers of 5; omitting this lock would introduce a small
- *	probability of wasting memory, but would otherwise be harmless.)
- *	You must also invoke freedtoa(s) to free the value s returned by
- *	dtoa.  You may do so whether or not MULTIPLE_THREADS is #defined.
+ *  multiple threads.  In this case, you must provide (or suitably
+ *  #define) two locks, acquired by ACQUIRE_DTOA_LOCK(n) and freed
+ *  by FREE_DTOA_LOCK(n) for n = 0 or 1.  (The second lock, accessed
+ *  in pow5mult, ensures lazy evaluation of only one copy of high
+ *  powers of 5; omitting this lock would introduce a small
+ *  probability of wasting memory, but would otherwise be harmless.)
+ *  You must also invoke freedtoa(s) to free the value s returned by
+ *  dtoa.  You may do so whether or not MULTIPLE_THREADS is #defined.
  * #define NO_IEEE_Scale to disable new (Feb. 1997) logic in strtod that
- *	avoids underflows on inputs whose result does not underflow.
- *	If you #define NO_IEEE_Scale on a machine that uses IEEE-format
- *	floating-point numbers and flushes underflows to zero rather
- *	than implementing gradual underflow, then you must also #define
- *	Sudden_Underflow.
+ *  avoids underflows on inputs whose result does not underflow.
+ *  If you #define NO_IEEE_Scale on a machine that uses IEEE-format
+ *  floating-point numbers and flushes underflows to zero rather
+ *  than implementing gradual underflow, then you must also #define
+ *  Sudden_Underflow.
  * #define YES_ALIAS to permit aliasing certain double values with
- *	arrays of ULongs.  This leads to slightly better code with
- *	some compilers and was always used prior to 19990916, but it
- *	is not strictly legal and can cause trouble with aggressively
- *	optimizing compilers (e.g., gcc 2.95.1 under -O2).
+ *  arrays of ULongs.  This leads to slightly better code with
+ *  some compilers and was always used prior to 19990916, but it
+ *  is not strictly legal and can cause trouble with aggressively
+ *  optimizing compilers (e.g., gcc 2.95.1 under -O2).
  * #define USE_LOCALE to use the current locale's decimal_point value.
  * #define SET_INEXACT if IEEE arithmetic is being used and extra
- *	computation should be done to set the inexact flag when the
- *	result is inexact and avoid setting inexact when the result
- *	is exact.  In this case, dtoa.c must be compiled in
- *	an environment, perhaps provided by #include "dtoa.c" in a
- *	suitable wrapper, that defines two functions,
- *		int get_inexact(void);
- *		void clear_inexact(void);
- *	such that get_inexact() returns a nonzero value if the
- *	inexact bit is already set, and clear_inexact() sets the
- *	inexact bit to 0.  When SET_INEXACT is #defined, strtod
- *	also does extra computations to set the underflow and overflow
- *	flags when appropriate (i.e., when the result is tiny and
- *	inexact or when it is a numeric value rounded to +-infinity).
+ *  computation should be done to set the inexact flag when the
+ *  result is inexact and avoid setting inexact when the result
+ *  is exact.  In this case, dtoa.c must be compiled in
+ *  an environment, perhaps provided by #include "dtoa.c" in a
+ *  suitable wrapper, that defines two functions,
+ *    int get_inexact(void);
+ *    void clear_inexact(void);
+ *  such that get_inexact() returns a nonzero value if the
+ *  inexact bit is already set, and clear_inexact() sets the
+ *  inexact bit to 0.  When SET_INEXACT is #defined, strtod
+ *  also does extra computations to set the underflow and overflow
+ *  flags when appropriate (i.e., when the result is tiny and
+ *  inexact or when it is a numeric value rounded to +-infinity).
  * #define NO_ERRNO if strtod should not assign errno = ERANGE when
- *	the result overflows to +-Infinity or underflows to 0.
+ *  the result overflows to +-Infinity or underflows to 0.
  */
 
 #ifdef WORDS_BIGENDIAN
@@ -556,7 +556,7 @@ typedef U double_u;
 #define Int_max 14
 #ifndef NO_IEEE_Scale
 #define Avoid_Underflow
-#ifdef Flush_Denorm	/* debugging option */
+#ifdef Flush_Denorm  /* debugging option */
 #undef Sudden_Underflow
 #endif
 #endif
@@ -595,7 +595,7 @@ typedef U double_u;
 #define Bias 65
 #define Exp_1  0x41000000
 #define Exp_11 0x41000000
-#define Ebits 8	/* exponent has 7 bits, but 8 is the right value in b2d */
+#define Ebits 8  /* exponent has 7 bits, but 8 is the right value in b2d */
 #define Frac_mask  0xffffff
 #define Frac_mask1 0xffffff
 #define Bletch 4
@@ -670,7 +670,7 @@ extern double rnd_prod(double, double), rnd_quot(double, double);
  * slower.  Hence the default is now to store 32 bits per Long.
  */
 #endif
-#else	/* long long available */
+#else  /* long long available */
 #ifndef Llong
 #define Llong long long
 #endif
@@ -682,11 +682,11 @@ extern double rnd_prod(double, double), rnd_quot(double, double);
 #define MULTIPLE_THREADS 1
 
 #ifndef MULTIPLE_THREADS
-#define ACQUIRE_DTOA_LOCK(n)	/*nothing*/
-#define FREE_DTOA_LOCK(n)	/*nothing*/
+#define ACQUIRE_DTOA_LOCK(n)  /*nothing*/
+#define FREE_DTOA_LOCK(n)  /*nothing*/
 #else
-#define ACQUIRE_DTOA_LOCK(n)	/*unused right now*/
-#define FREE_DTOA_LOCK(n)	/*unused right now*/
+#define ACQUIRE_DTOA_LOCK(n)  /*unused right now*/
+#define FREE_DTOA_LOCK(n)  /*unused right now*/
 #endif
 
 #define Kmax 15
@@ -1689,74 +1689,74 @@ om_strtod(const char *s00, char **se)
         }
 break2:
     if (*s == '0') {
-	if (s[1] == 'x' || s[1] == 'X') {
-	    static const char hexdigit[] = "0123456789abcdef0123456789ABCDEF";
-	    s0 = ++s;
-	    adj = 0;
-	    aadj = 1.0;
-	    nd0 = -4;
+  if (s[1] == 'x' || s[1] == 'X') {
+      static const char hexdigit[] = "0123456789abcdef0123456789ABCDEF";
+      s0 = ++s;
+      adj = 0;
+      aadj = 1.0;
+      nd0 = -4;
 
-	    if (!*++s || !(s1 = strchr(hexdigit, *s))) goto ret0;
-	    if (*s == '0') {
-		while (*++s == '0');
-		s1 = strchr(hexdigit, *s);
-	    }
-	    if (s1 != NULL) {
-		do {
-		    adj += aadj * ((s1 - hexdigit) & 15);
-		    nd0 += 4;
-		    aadj /= 16;
-		} while (*++s && (s1 = strchr(hexdigit, *s)));
-	    }
+      if (!*++s || !(s1 = strchr(hexdigit, *s))) goto ret0;
+      if (*s == '0') {
+    while (*++s == '0');
+    s1 = strchr(hexdigit, *s);
+      }
+      if (s1 != NULL) {
+    do {
+        adj += aadj * ((s1 - hexdigit) & 15);
+        nd0 += 4;
+        aadj /= 16;
+    } while (*++s && (s1 = strchr(hexdigit, *s)));
+      }
 
-	    if (*s == '.') {
-		dsign = 1;
-		if (!*++s || !(s1 = strchr(hexdigit, *s))) goto ret0;
-		if (nd0 < 0) {
-		    while (*s == '0') {
-			s++;
-			nd0 -= 4;
-		    }
-		}
-		for (; *s && (s1 = strchr(hexdigit, *s)); ++s) {
-		    adj += aadj * ((s1 - hexdigit) & 15);
-		    if ((aadj /= 16) == 0.0) {
-			while (strchr(hexdigit, *++s));
-			break;
-		    }
-		}
-	    }
-	    else {
-		dsign = 0;
-	    }
+      if (*s == '.') {
+    dsign = 1;
+    if (!*++s || !(s1 = strchr(hexdigit, *s))) goto ret0;
+    if (nd0 < 0) {
+        while (*s == '0') {
+      s++;
+      nd0 -= 4;
+        }
+    }
+    for (; *s && (s1 = strchr(hexdigit, *s)); ++s) {
+        adj += aadj * ((s1 - hexdigit) & 15);
+        if ((aadj /= 16) == 0.0) {
+      while (strchr(hexdigit, *++s));
+      break;
+        }
+    }
+      }
+      else {
+    dsign = 0;
+      }
 
-	    if (*s == 'P' || *s == 'p') {
-		dsign = 0x2C - *++s; /* +: 2B, -: 2D */
-		if (abs(dsign) == 1) s++;
-		else dsign = 1;
+      if (*s == 'P' || *s == 'p') {
+    dsign = 0x2C - *++s; /* +: 2B, -: 2D */
+    if (abs(dsign) == 1) s++;
+    else dsign = 1;
 
-		nd = 0;
-		c = *s;
-		if (c < '0' || '9' < c) goto ret0;
-		do {
-		    nd *= 10;
-		    nd += c;
-		    nd -= '0';
-		    c = *++s;
-		    /* Float("0x0."+("0"*267)+"1fp2095") */
-		    if (nd + dsign * nd0 > 2095) {
-			while ('0' <= c && c <= '9') c = *++s;
-			break;
-		    }
-		} while ('0' <= c && c <= '9');
-		nd0 += nd * dsign;
-	    }
-	    else {
-		if (dsign) goto ret0;
-	    }
-	    dval(rv) = ldexp(adj, nd0);
-	    goto ret;
-	}
+    nd = 0;
+    c = *s;
+    if (c < '0' || '9' < c) goto ret0;
+    do {
+        nd *= 10;
+        nd += c;
+        nd -= '0';
+        c = *++s;
+        /* Float("0x0."+("0"*267)+"1fp2095") */
+        if (nd + dsign * nd0 > 2095) {
+      while ('0' <= c && c <= '9') c = *++s;
+      break;
+        }
+    } while ('0' <= c && c <= '9');
+    nd0 += nd * dsign;
+      }
+      else {
+    if (dsign) goto ret0;
+      }
+      dval(rv) = ldexp(adj, nd0);
+      goto ret;
+  }
         nz0 = 1;
         while (*++s == '0') ;
         if (!*s)
@@ -2948,7 +2948,7 @@ om_dtoa(double d_, int mode, int ndigits, int *decpt, int *sign, char **rve)
 
         i = bbits + be + (Bias + (P-1) - 1);
         x = i > 32  ? word0(d) << (64 - i) | word1(d) >> (i - 32)
-	    : word1(d) << (32 - i);
+      : word1(d) << (32 - i);
         dval(d2) = x;
         word0(d2) -= 31*Exp_msk1; /* adjust exponent */
         i -= (Bias + (P-1) - 1) + 1;
@@ -3469,12 +3469,12 @@ om_each_words(const char *str, void (*func)(const char*, int, void*), void *arg)
 
     if (!str) return;
     for (; *str; str = end) {
-	while (ISSPACE(*str) || *str == ',') str++;
-	if (!*str) break;
-	end = str;
-	while (*end && !ISSPACE(*end) && *end != ',') end++;
-	len = (int)(end - str);	/* assume no string exceeds INT_MAX */
-	(*func)(str, len, arg);
+  while (ISSPACE(*str) || *str == ',') str++;
+  if (!*str) break;
+  end = str;
+  while (*end && !ISSPACE(*end) && *end != ',') end++;
+  len = (int)(end - str);  /* assume no string exceeds INT_MAX */
+  (*func)(str, len, arg);
     }
 }
 
@@ -3504,10 +3504,10 @@ om_each_words(const char *str, void (*func)(const char*, int, void*), void *arg)
  * SUCH DAMAGE.
  */
 
-#define	DBL_MANH_SIZE	20
-#define	DBL_MANL_SIZE	32
-#define	DBL_ADJ	(DBL_MAX_EXP - 2)
-#define	SIGFIGS	((DBL_MANT_DIG + 3) / 4 + 1)
+#define  DBL_MANH_SIZE  20
+#define  DBL_MANL_SIZE  32
+#define  DBL_ADJ  (DBL_MAX_EXP - 2)
+#define  SIGFIGS  ((DBL_MANT_DIG + 3) / 4 + 1)
 #define dexp_get(u) ((int)(word0(u) >> Exp_shift) & ~Exp_msk1)
 #define dexp_set(u,v) (word0(u) = (((int)(word0(u)) & ~Exp_mask) | ((v) << Exp_shift)))
 #define dmanh_get(u) ((uint32_t)(word0(u) & Frac_mask))
@@ -3535,87 +3535,87 @@ om_each_words(const char *str, void (*func)(const char*, int, void*), void *arg)
  * the leading digit a 1. This ensures that the exponent printed is the
  * actual base-2 exponent, i.e., ilogb(d).
  *
- * Inputs:	d, xdigs, ndigits
- * Outputs:	decpt, sign, rve
+ * Inputs:  d, xdigs, ndigits
+ * Outputs:  decpt, sign, rve
  */
 char *
 om_hdtoa(double d, const char *xdigs, int ndigits, int *decpt, int *sign,
     char **rve)
 {
-	U u;
-	char *s, *s0;
-	int bufsize;
-	uint32_t manh, manl;
+  U u;
+  char *s, *s0;
+  int bufsize;
+  uint32_t manh, manl;
 
-	u.d = d;
-	if (word0(u) & Sign_bit) {
-	    /* set sign for everything, including 0's and NaNs */
-	    *sign = 1;
-	    word0(u) &= ~Sign_bit;  /* clear sign bit */
-	}
-	else
-	    *sign = 0;
+  u.d = d;
+  if (word0(u) & Sign_bit) {
+      /* set sign for everything, including 0's and NaNs */
+      *sign = 1;
+      word0(u) &= ~Sign_bit;  /* clear sign bit */
+  }
+  else
+      *sign = 0;
 
-	if (isinf(d)) { /* FP_INFINITE */
-	    *decpt = INT_MAX;
-	    return rv_strdup(INFSTR, rve);
-	}
-	else if (isnan(d)) { /* FP_NAN */
-	    *decpt = INT_MAX;
-	    return rv_strdup(NANSTR, rve);
-	}
-	else if (d == 0.0) { /* FP_ZERO */
-	    *decpt = 1;
-	    return rv_strdup(ZEROSTR, rve);
-	}
-	else if (dexp_get(u)) { /* FP_NORMAL */
-	    *decpt = dexp_get(u) - DBL_ADJ;
-	}
-	else { /* FP_SUBNORMAL */
-	    u.d *= 5.363123171977039e+154 /* 0x1p514 */;
-	    *decpt = dexp_get(u) - (514 + DBL_ADJ);
-	}
+  if (isinf(d)) { /* FP_INFINITE */
+      *decpt = INT_MAX;
+      return rv_strdup(INFSTR, rve);
+  }
+  else if (isnan(d)) { /* FP_NAN */
+      *decpt = INT_MAX;
+      return rv_strdup(NANSTR, rve);
+  }
+  else if (d == 0.0) { /* FP_ZERO */
+      *decpt = 1;
+      return rv_strdup(ZEROSTR, rve);
+  }
+  else if (dexp_get(u)) { /* FP_NORMAL */
+      *decpt = dexp_get(u) - DBL_ADJ;
+  }
+  else { /* FP_SUBNORMAL */
+      u.d *= 5.363123171977039e+154 /* 0x1p514 */;
+      *decpt = dexp_get(u) - (514 + DBL_ADJ);
+  }
 
-	if (ndigits == 0)		/* dtoa() compatibility */
-		ndigits = 1;
+  if (ndigits == 0)    /* dtoa() compatibility */
+    ndigits = 1;
 
-	/*
-	 * If ndigits < 0, we are expected to auto-size, so we allocate
-	 * enough space for all the digits.
-	 */
-	bufsize = (ndigits > 0) ? ndigits : SIGFIGS;
-	s0 = rv_alloc(bufsize+1);
+  /*
+   * If ndigits < 0, we are expected to auto-size, so we allocate
+   * enough space for all the digits.
+   */
+  bufsize = (ndigits > 0) ? ndigits : SIGFIGS;
+  s0 = rv_alloc(bufsize+1);
 
-	/* Round to the desired number of digits. */
-	if (SIGFIGS > ndigits && ndigits > 0) {
-		float redux = 1.0f;
-		int offset = 4 * ndigits + DBL_MAX_EXP - 4 - DBL_MANT_DIG;
-		dexp_set(u, offset);
-		u.d += redux;
-		u.d -= redux;
-		*decpt += dexp_get(u) - offset;
-	}
+  /* Round to the desired number of digits. */
+  if (SIGFIGS > ndigits && ndigits > 0) {
+    float redux = 1.0f;
+    int offset = 4 * ndigits + DBL_MAX_EXP - 4 - DBL_MANT_DIG;
+    dexp_set(u, offset);
+    u.d += redux;
+    u.d -= redux;
+    *decpt += dexp_get(u) - offset;
+  }
 
-	manh = dmanh_get(u);
-	manl = dmanl_get(u);
-	*s0 = '1';
-	for (s = s0 + 1; s < s0 + bufsize; s++) {
-		*s = xdigs[(manh >> (DBL_MANH_SIZE - 4)) & 0xf];
-		manh = (manh << 4) | (manl >> (DBL_MANL_SIZE - 4));
-		manl <<= 4;
-	}
+  manh = dmanh_get(u);
+  manl = dmanl_get(u);
+  *s0 = '1';
+  for (s = s0 + 1; s < s0 + bufsize; s++) {
+    *s = xdigs[(manh >> (DBL_MANH_SIZE - 4)) & 0xf];
+    manh = (manh << 4) | (manl >> (DBL_MANL_SIZE - 4));
+    manl <<= 4;
+  }
 
-	/* If ndigits < 0, we are expected to auto-size the precision. */
-	if (ndigits < 0) {
-		for (ndigits = SIGFIGS; s0[ndigits - 1] == '0'; ndigits--)
-			;
-	}
+  /* If ndigits < 0, we are expected to auto-size the precision. */
+  if (ndigits < 0) {
+    for (ndigits = SIGFIGS; s0[ndigits - 1] == '0'; ndigits--)
+      ;
+  }
 
-	s = s0 + ndigits;
-	*s = '\0';
-	if (rve != NULL)
-		*rve = s;
-	return (s0);
+  s = s0 + ndigits;
+  *s = '\0';
+  if (rve != NULL)
+    *rve = s;
+  return (s0);
 }
 
 #ifdef __cplusplus
