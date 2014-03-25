@@ -1599,7 +1599,7 @@ algorithm
       list<DAE.Subscript> arrayCrefSubs;
     
     case (_) equation
-      arrayCrefSubs = ComponentReference.crefSubs(name);
+      arrayCrefSubs = crefSubs(name);
     then arrayCrefSubs;
     
     else
