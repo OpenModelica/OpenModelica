@@ -999,6 +999,13 @@ algorithm
     case (DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={e1})}))
        then DAE.BINARY(e1,DAE.POW(DAE.T_REAL_DEFAULT),DAE.RCONST(0.25));
 
+   // sqrt(c*e) => c1*sqrt(e)
+    case DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={DAE.BINARY(e1 as DAE.RCONST(r1),DAE.MUL(tp),e2)})
+      equation
+        e = Expression.makeBuiltinCall("sqrt",{e1},DAE.T_REAL_DEFAULT);
+        e3 =  Expression.makeBuiltinCall("sqrt",{e2},DAE.T_REAL_DEFAULT);
+      then DAE.BINARY(e,DAE.MUL(tp),e3);
+
    // exp(-log(x)) = 1/x
    case (DAE.CALL(path=Absyn.IDENT("exp"),expLst={DAE.UNARY(DAE.UMINUS(ty = _), exp = DAE.CALL(path=Absyn.IDENT("log"),expLst={e1}))}))
       then Expression.makeDiv(DAE.RCONST(1.0), e1);
