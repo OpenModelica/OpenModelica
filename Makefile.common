@@ -363,9 +363,9 @@ build/lib/libmsgpackc.so.2.0.0: 3rdParty/msgpack-0.5.8/Makefile
 	$(MAKE) -C 3rdParty/msgpack-0.5.8
 	cp -a 3rdParty/msgpack-0.5.8/src/.libs/libmsgpackc.so* build/lib/omc/
 
-build/lib/libmsgpackc.2.0.0.dylib: 3rdParty/msgpack-0.5.8/Makefile
+build/lib/libmsgpackc.2.dylib: 3rdParty/msgpack-0.5.8/Makefile
 	$(MAKE) -C 3rdParty/msgpack-0.5.8
-	install_name_tool -id @rpath/libmsgpackc.2.0.0.dylib 3rdParty/msgpack-0.5.8/src/.libs/libmsgpackc.2.0.0.dylib
+	install_name_tool -id @rpath/libmsgpackc.2.dylib 3rdParty/msgpack-0.5.8/src/.libs/libmsgpackc.2.dylib
 	cp -a 3rdParty/msgpack-0.5.8/src/.libs/libmsgpackc.dylib* build/lib/omc/
 
 build/lib/libmsgpackc.a: 3rdParty/msgpack-0.5.8/Makefile
@@ -376,7 +376,7 @@ ifeq ($(SHREXT),.so)
 msgpack: build/lib/libmsgpackc.so.2.0.0
 else
 ifeq ($(SHREXT),.dylib)
-msgpack: build/lib/libmsgpackc.2.0.0.dylib
+msgpack: build/lib/libmsgpackc.2.dylib
 else
 msgpack: build/lib/libmsgpackc.a
 endif
