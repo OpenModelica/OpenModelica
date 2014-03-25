@@ -69,7 +69,7 @@ protected import List;
 protected import PartFn;
 protected import SCode;
 protected import SimCodeUtil;
-
+protected import HashTableCrSimVars;
 
 /************ public functions ***************************/
 
@@ -191,7 +191,7 @@ algorithm
         extObjInfo = SimCode.EXTOBJINFO({},{});
         makefileParams = SimCode.MAKEFILE_PARAMS("","","","","","","","","",includeDirs,libs,"","");
         delayexp = SimCode.DELAYED_EXPRESSIONS({},0);
-        hashTable = SimCodeUtil.emptyHashTable();
+        hashTable = HashTableCrSimVars.emptyHashTable();
         rescmp = SimCode.SIMCODE(modelInfo,{},recordDecls,externalFunctionIncludes,{},{},{},allEquations,false,false,allInitEquations,{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},extObjInfo,makefileParams,delayexp,{},NONE(),filenamePrefix,hashTable,NONE());
       then
         rescmp;
