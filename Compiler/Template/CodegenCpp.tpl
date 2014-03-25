@@ -163,8 +163,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
    //workaround for jacobian variables
    <%variableDefinitionsJacobians(jacobianMatrixes,simCode)%> 
    
-    boost::shared_ptr<IAlgLoopSolverFactory>
-        _algLoopSolverFactory;    ///< Factory that provides an appropriate solver
+  
     
     <% (jacobianMatrixes |> (mat, _,_, _, _, _) hasindex index0 =>
        (mat |> (eqs,_,_) =>  generateAlgloopsolverVariables(eqs,simCode) ;separator="\n")
@@ -479,11 +478,12 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    #include "Modelica.h"
    #include "OMCpp<%fileNamePrefix%>Extension.h"
    <%lastIdentOfPath(modelInfo.name)%>Extension::<%lastIdentOfPath(modelInfo.name)%>Extension(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData) 
-   : <%lastIdentOfPath(modelInfo.name)%>WriteOutput(globalSettings,nonlinsolverfactory,simData)
+   : <%lastIdentOfPath(modelInfo.name)%>(globalSettings,nonlinsolverfactory,simData)
+   , <%lastIdentOfPath(modelInfo.name)%>WriteOutput(globalSettings,nonlinsolverfactory,simData)
    , <%lastIdentOfPath(modelInfo.name)%>Initialize(globalSettings,nonlinsolverfactory,simData)
    , <%lastIdentOfPath(modelInfo.name)%>Jacobian(globalSettings,nonlinsolverfactory,simData)
    , <%lastIdentOfPath(modelInfo.name)%>StateSelection(globalSettings,nonlinsolverfactory,simData)
-   , <%lastIdentOfPath(modelInfo.name)%>(globalSettings,nonlinsolverfactory,simData)
+   
    
    {
    }
@@ -7691,7 +7691,7 @@ template representationCref(ComponentRef inCref, SimCode simCode, Context contex
   else  
     match context
     case ALGLOOP_CONTEXT(genInitialisation = false) 
-        then  <<_system-><%cref(inCref)%>/*testalg*/>>
+        then  <<_system-><%cref(inCref)%> >>
     else
         <<<%cref(inCref)%>>>
 end representationCref;
@@ -9152,7 +9152,7 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrixes, SimCod
 void <%classname%>Jacobian::initialize()
 {
    
-   
+    <%initialStateSetJac%>
    <% (jacobianMatrixes |> (mat, _,_, _, _, _) hasindex index0 =>
        (mat |> (eqs,_,_) =>  generateAlgloopsolvers(eqs,simCode) ;separator="")
      ;separator="")
@@ -9161,7 +9161,7 @@ void <%classname%>Jacobian::initialize()
        (mat |> (eqs,_,_) =>  initAlgloopsolver(eqs,simCode) ;separator="")
      ;separator="")
     %>
-     <%initialStateSetJac%>
+    
 }
 
 >>
@@ -9253,9 +9253,9 @@ case _ then
     ;separator="\n")
  
     let jacvals = ( sparsepattern |> (cref,indexes) hasindex index0 =>
-    let jaccol = ( indexes |> i_index =>
+    let jaccol = ( indexes |> i_index hasindex index1 =>
         (match indexColumn case "1" then ' _<%matrixName%>jacobian(<%crefWithoutIndexOperator(cref)%>$pDER<%matrixName%>$indexdiff,0) = _<%matrixName%>jac_y(0);'
-           else ' _<%matrixName%>jacobian(<%index0%>,<%crefWithoutIndexOperator(cref)%>$pDER<%matrixName%>$indexdiff) = _<%matrixName%>jac_y(<%crefWithoutIndexOperator(cref)%>$pDER<%matrixName%>$indexdiff);'
+           else ' _<%matrixName%>jacobian(<%crefWithoutIndexOperator(cref)%>$pDER<%matrixName%>$indexdiff,<%crefWithoutIndexOperator(i_index)%>$pDER<%matrixName%>$indexdiffed) = _<%matrixName%>jac_y(<%crefWithoutIndexOperator(i_index)%>$pDER<%matrixName%>$indexdiffed);'
            )
           ;separator="\n" )
      
@@ -9279,9 +9279,11 @@ case _ then
      }
   >>
  
-
-  
-  
+/*
+  (match indexColumn case "1" then ' _<%matrixName%>jacobian(<%crefWithoutIndexOperator(cref)%>$pDER<%matrixName%>$indexdiff,0) = _<%matrixName%>jac_y(0); //1 <%cref(cref)%>'
+           else ' _<%matrixName%>jacobian(<%index0%>,<%crefWithoutIndexOperator(cref)%>$pDER<%matrixName%>$indexdiff) = _<%matrixName%>jac_y(<%crefWithoutIndexOperator(cref)%>$pDER<%matrixName%>$indexdiff);//2 <%cref(cref)%>'
+         
+*/  
 end generateJacobianMatrix;
 
 
