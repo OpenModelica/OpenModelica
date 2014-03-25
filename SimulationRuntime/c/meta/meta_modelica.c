@@ -53,11 +53,7 @@ void* mmc_mk_rcon(double d)
 */
 void* mmc_mk_rcon(double d)
 {
-#if defined(RML_STYLE_TAGPTR)
-    struct mmc_real *p = (struct mmc_real*)mmc_alloc_words(MMC_SIZE_DBL/MMC_SIZE_INT + 1);
-#else
     struct mmc_real *p = (struct mmc_real*)mmc_alloc_words_atomic(MMC_SIZE_DBL/MMC_SIZE_INT + 1);
-#endif
     mmc_prim_set_real(p, d);
     p->header = MMC_REALHDR;
 #ifdef MMC_MK_DEBUG
@@ -69,7 +65,7 @@ void* mmc_mk_rcon(double d)
 void *mmc_mk_box_arr(int slots, unsigned int ctor, void** args)
 {
     int i;
-    struct mmc_struct *p = (struct mmc_struct*)mmc_alloc_words(slots + 1);
+    struct mmc_struct *p = (struct mmc_struct*)mmc_alloc_words_ignore_offpage(slots + 1);
     p->header = MMC_STRUCTHDR(slots, ctor);
     for (i=0; i<slots; i++) {
       p->data[i] = (void*) args[i];
@@ -82,7 +78,7 @@ void *mmc_mk_box_arr(int slots, unsigned int ctor, void** args)
 
 void *mmc_mk_box_no_assign(int slots, unsigned int ctor)
 {
-    struct mmc_struct *p = (struct mmc_struct*)mmc_alloc_words(slots+1);
+    struct mmc_struct *p = (struct mmc_struct*)mmc_alloc_words_ignore_offpage(slots+1);
     p->header = MMC_STRUCTHDR(slots, ctor);
 #ifdef MMC_MK_DEBUG
     fprintf(stderr, "STRUCT NO ASSIGN slots%d ctor %u\n", slots, ctor); fflush(NULL);
@@ -96,11 +92,7 @@ char* mmc_mk_scon_len_ret_ptr(size_t nbytes)
     unsigned int nwords = MMC_HDRSLOTS(header) + 1;
     struct mmc_string *p;
     void *res;
-#if defined(RML_STYLE_TAGPTR)
-    p = (struct mmc_string *) mmc_alloc_words(nwords);
-#else
-    p = (struct mmc_string *) mmc_alloc_words_atomic(nwords);
-#endif
+    p = (struct mmc_string *)mmc_alloc_words_atomic(nwords);
     p->header = header;
     res = MMC_TAGPTR(p);
     return MMC_STRINGDATA(res);
@@ -994,5 +986,5 @@ void mmc_init_nogc()
 void mmc_init(int withgc)
 {
   mmc_init_nogc();
-  mmc_GC_init(mmc_GC_settings_default);
+  mmc_GC_init();
 }

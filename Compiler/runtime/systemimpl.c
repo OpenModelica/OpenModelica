@@ -2567,6 +2567,10 @@ int SystemImpl__fileIsNewerThan(const char *file1, const char *file2)
 void SystemImpl__initGarbageCollector(void)
 {
   GC_init();
+  GC_register_displacement(0);
+#ifdef RML_STYLE_TAGPTR
+  GC_register_displacement(3);
+#endif
 }
 
 int SystemImpl__fileContentsEqual(const char *file1, const char *file2)

@@ -139,28 +139,6 @@ static inline builtin_rettypeboxed boxptr_arrayUpdate(threadData_t *threadData,m
   if (ix < 1 || ix > nelts)
     MMC_THROW_INTERNAL();
   MMC_STRUCTDATA(arr)[ix-1] = val;
-#if defined(_MMC_GC_)
-  /* save it in the array trail! */
-  if (!MMC_IS_IMMEDIATE(val))
-  {
-    mmc_uint_t idx;
-    /* also check here if the array is not already in the trail */
-    for (idx = mmc_GC_state->gen.array_trail_size; &mmc_GC_state->gen.array_trail[idx] >= mmc_GC_state->gen.ATP; idx--)
-    if (mmc_GC_state->gen.array_trail[idx] == val) /* if found, do not add again */
-    {
-      res.c1 = arr;
-      return res;
-    }
-    /* add the address of the array into the roots to be
-    taken into consideration at the garbage collection time */
-    if( mmc_GC_state->gen.ATP == mmc_GC_state->gen.array_trail )
-    {
-      (void)fprintf(stderr, "Array Trail Overflow!\n");
-      mmc_exit(1);
-    }
-    *--mmc_GC_state->gen.ATP = arr;
-  }
-#endif
   res.c1 = arr;
   return res;
 }

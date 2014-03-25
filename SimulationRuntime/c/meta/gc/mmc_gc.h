@@ -32,13 +32,7 @@
 /*
  * Adrian Pop [Adrian.Pop@liu.se]
  * This file defines the MetaModelica garbage collector (GC) interface
- *  We have two collectors:
- *  - generational
- *  - mark-and-sweep
- *  and we can switch between them at runtime when needed.
- *  We start with the generational and if there is not enough
- *  memory to allocate a new older generation we switch to a
- *  mark-and-sweep collector.
+ * We use Boehm GC mark-and-sweep collector.
  *
  * RCS: $Id: mmc_gc.h 8047 2011-03-01 10:19:49Z perost $
  *
@@ -46,11 +40,6 @@
 
 #ifndef META_MODELICA_GC_H_
 #define META_MODELICA_GC_H_
-
-/* uncomment this to use the MetaModelica Garbage collector */
-/* #define _MMC_GC_ 1 */
-
-/* uncomment this to use the BOEHM Garbage collector */
 
 #if !defined(_MSC_VER)  /* no gc on MSVC! */
 #define _MMC_USE_BOEHM_GC_
@@ -60,19 +49,14 @@
 extern "C" {
 #endif
 
-#include "common.h"
-#include "roots.h"
-#include "generational.h"
-#include "marksweep.h"
+#include "openmodelica_types.h"
+
+/* global roots size */
+#define MMC_GC_GLOBAL_ROOTS_SIZE 1024
 
 struct mmc_GC_state_type /* the structure of GC state */
 {
-  mmc_GC_settings_type    settings; /* defaults settings */
-  mmc_GC_roots_type       roots; /* the current roots */
-  mmc_GC_gen_state_type   gen; /* the generational state */
-  mmc_GC_mas_state_type   mas; /* the mark-and-swep state */
   modelica_metatype       global_roots[MMC_GC_GLOBAL_ROOTS_SIZE]; /* the global roots ! */
-  mmc_GC_stats_type       stats; /* the statistics */
 };
 typedef struct mmc_GC_state_type mmc_GC_state_type;
 extern mmc_GC_state_type* mmc_GC_state;
@@ -80,45 +64,6 @@ extern mmc_GC_state_type* mmc_GC_state;
 /* tag the free reqion as a free object with 250 ctor*/
 #define MMC_FREE_OBJECT_CTOR           200
 #define MMC_TAG_AS_FREE_OBJECT(p, sz)  (((struct mmc_header*)p)->header = MMC_STRUCTHDR(sz, MMC_FREE_OBJECT_CTOR))
-
-/* checks if the pointer is in range */
-int is_in_range(modelica_metatype p, modelica_metatype start, size_t bytes);
-
-#if defined(_MMC_GC_)
-
-#include "util/modelica.h"
-
-/* primary allocation routines for MetaModelica */
-void *mmc_alloc_words(unsigned nwords);
-
-DLLExport void mmc_GC_set_state(mmc_GC_state_type* state);
-/* initialization of MetaModelica GC */
-int mmc_GC_init(mmc_GC_settings_type settings);
-/* initialization with defaults */
-int mmc_GC_init_default(void);
-/* clear of MetaModelica GC */
-int mmc_GC_clear(void);
-/* do garbage collection */
-int mmc_GC_collect(mmc_GC_local_state_type local_GC_state);
-
-
-static inline void mmc_GC_add_roots(modelica_metatype* p, int n, mmc_GC_local_state_type local_GC_state, const char* name)
-{
-  if (mmc_GC_state->roots.current + 1 <  mmc_GC_state->roots.limit)
-  {
-    if (p)
-    {
-    mmc_GC_state->roots.start[mmc_GC_state->roots.current].start = p;
-    mmc_GC_state->roots.start[mmc_GC_state->roots.current++].count = n;
-    }
-  }
-  else
-  {
-    mmc_GC_add_roots_fallback(p, n, local_GC_state, name);
-  }
-}
-
-#else
 
 #if defined(_MMC_USE_BOEHM_GC_) /* use the BOEHM Garbage collector */
 
@@ -128,31 +73,51 @@ static inline void mmc_GC_add_roots(modelica_metatype* p, int n, mmc_GC_local_st
 int GC_pthread_create(pthread_t *,const pthread_attr_t *,void *(*)(void *), void *);
 int GC_pthread_join(pthread_t, void **);
 
-#define mmc_GC_init(settings) GC_INIT()
-#define mmc_GC_init_default(void) GC_INIT()
+static inline void  mmc_GC_init(void)
+{
+  GC_init();
+  GC_register_displacement(0);
+#ifdef RML_STYLE_TAGPTR
+  GC_register_displacement(3);
+#endif
+}
+
+static inline void mmc_GC_init_default(void)
+{
+  mmc_GC_init();
+}
+
 #define mmc_GC_clear(void)
 #define mmc_GC_collect(local_GC_state)
 
-/* Atomic pointers only work correctly if we use untagged pointers */
 static inline void* mmc_alloc_words_atomic(unsigned int nwords) {
   return GC_MALLOC_ATOMIC((nwords) * sizeof(void*));
 }
+
 static inline void* mmc_alloc_words(unsigned int nwords) {
   return GC_MALLOC((nwords) * sizeof(void*));
+}
+
+/* for arrays only */
+static inline void* mmc_alloc_words_atomic_ignore_offpage(unsigned int nwords) {
+  return GC_MALLOC_ATOMIC_IGNORE_OFF_PAGE((nwords) * sizeof(void*));
+}
+
+/* for arrays only */
+static inline void* mmc_alloc_words_ignore_offpage(unsigned int nwords) {
+  return GC_MALLOC_IGNORE_OFF_PAGE((nwords) * sizeof(void*));
 }
 
 #else /* NO_GC */
 
 /* primary allocation routines for MetaModelica */
 void *mmc_alloc_words(unsigned nwords);
-#define mmc_GC_init(settings)
+#define mmc_GC_init(void)
 #define mmc_GC_init_default(void)
 #define mmc_GC_clear(void)
 #define mmc_GC_collect(local_GC_state)
 
 #endif
-#endif /* defined(_MMC_GC_) */
-
 
 #if defined(__cplusplus)
 }

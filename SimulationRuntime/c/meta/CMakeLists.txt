@@ -5,11 +5,7 @@ SET(META_SRC 	meta_modelica_builtin.c
 				meta_modelica_catch.c
 				meta_modelica.c
 				meta_modelica_segv.c
-				gc/mmc_gc.c
-				gc/common.c
-				gc/roots.c
-				gc/generational.c
-				gc/marksweep.c)
+				gc/mmc_gc.c)
 
 SET(META_HFILES rml_compatibility.h
                 meta_modelica_builtin.h
@@ -17,11 +13,7 @@ SET(META_HFILES rml_compatibility.h
 				meta_modelica_segv.h
 				meta_modelica_string_lit.h
 				meta_modelica.h
-				gc/mmc_gc.h
-				gc/common.h
-				gc/generational.h
-				gc/marksweep.h
-				gc/roots.h)
+				gc/mmc_gc.h)
 
 
 # Library meta

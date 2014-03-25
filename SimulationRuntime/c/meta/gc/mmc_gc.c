@@ -33,15 +33,13 @@
 /*
  * Adrian Pop [Adrian.Pop@liu.se]
  * This file defines the MetaModelica garbage collector (GC) interface
- *  We have two collectors:
- *  - generational
- *  - mark-and-sweep
- *  and we can switch between them at runtime when needed.
- *  We start with the generational and if there is not enough
- *  memory to allocate a new older generation we switch to a
- *  mark-and-sweep collector.
+ * We use Boehm GC mark-and-sweep collector.
  *
  * RCS: $Id: gc.c 8047 2011-03-01 10:19:49Z perost $
  *
  */
 
+#include "mmc_gc.h"
+
+static mmc_GC_state_type x_mmc_GC_state;
+mmc_GC_state_type *mmc_GC_state = &x_mmc_GC_state;

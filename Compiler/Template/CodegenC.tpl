@@ -5535,7 +5535,7 @@ case FUNCTION(__) then
   DLLExport
   int in_<%fname%>(type_description * inArgs, type_description * outVar)
   {
-    <% if acceptMetaModelicaGrammar() then "if (!mmc_GC_state) mmc_GC_init(mmc_GC_settings_default);" %>
+    <% if acceptMetaModelicaGrammar() then "if (!mmc_GC_state) mmc_GC_init();" %>
     <%functionArguments |> var => '<%funArgDefinition(var)%>;' ;separator="\n"%>
     <%if outVars then '<%retType%> out;'%>
     <%functionArguments |> arg => readInVar(arg) ;separator="\n"%>
@@ -5882,7 +5882,7 @@ case efn as EXTERNAL_FUNCTION(__) then
   DLLExport
   int in_<%fname%>(type_description * inArgs, type_description * outVar)
   {
-    <% if acceptMetaModelicaGrammar() then "if (!mmc_GC_state) mmc_GC_init(mmc_GC_settings_default);" %>
+    <% if acceptMetaModelicaGrammar() then "if (!mmc_GC_state) mmc_GC_init();" %>
     <%funArgs |> VARIABLE(__) => '<%expTypeArrayIf(ty)%> <%contextCref(name,contextFunction)%>;' ;separator="\n"%>
     <%if outVars then '<%retType%> out;'%>
     <%funArgs |> arg as VARIABLE(__) => readInVar(arg) ;separator="\n"%>

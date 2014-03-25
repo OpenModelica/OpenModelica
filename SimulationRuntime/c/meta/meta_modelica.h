@@ -330,11 +330,7 @@ static inline void* mmc_mk_scon(const char *s)
       unsigned char c = *s;
       return mmc_strings_len1[(unsigned int)c];
     }
-#if defined(RML_STYLE_TAGPTR)
-    p = (struct mmc_string *) mmc_alloc_words(nwords);
-#else
     p = (struct mmc_string *) mmc_alloc_words_atomic(nwords);
-#endif
     p->header = header;
     memcpy(p->data, s, nbytes+1);  /* including terminating '\0' */
     res = MMC_TAGPTR(p);
@@ -351,11 +347,7 @@ static inline void* mmc_mk_scon_len(unsigned int nbytes)
     unsigned int nwords = MMC_HDRSLOTS(header) + 1;
     struct mmc_string *p;
     void *res;
-#if defined(RML_STYLE_TAGPTR)
-    p = (struct mmc_string *) mmc_alloc_words(nwords);
-#else
     p = (struct mmc_string *) mmc_alloc_words_atomic(nwords);
-#endif
     p->header = header;
     res = MMC_TAGPTR(p);
     return res;

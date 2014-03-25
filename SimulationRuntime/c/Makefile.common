@@ -54,11 +54,7 @@ RUNTIMEMETA_HEADERS = ./meta/meta_modelica_builtin_boxptr.h \
 ./meta/meta_modelica_segv.h \
 ./meta/meta_modelica_string_lit.h 
 
-RUNTIMEMETAGC_HEADERS = ./meta/gc/common.h \
-./meta/gc/mmc_gc.h \
-./meta/gc/generational.h \
-./meta/gc/marksweep.h \
-./meta/gc/roots.h 
+RUNTIMEMETAGC_HEADERS = ./meta/gc/mmc_gc.h 
 
 RUNTIMEUTIL_HEADERS = \
 ./util/base_array.h \
