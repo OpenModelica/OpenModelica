@@ -420,11 +420,6 @@ extern int isOptionNone(void*any); /* For debugging */
 extern void changeStdStreamBuffer(void); /* For debugging */
 
 /* Debugging functions used by OMEdit */
-extern char* getRecordElement(modelica_metatype arr, modelica_integer i);
-extern char* getListItem(modelica_metatype lst, modelica_integer i);
-extern char* getOptionItem(modelica_metatype arr, modelica_integer i);
-extern char* getTupleElement(modelica_metatype arr, modelica_integer i);
-
 typedef enum metaType
 {
   record_metaType = 0,
