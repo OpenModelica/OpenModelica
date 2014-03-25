@@ -357,7 +357,7 @@ install: install-dirs install-python
 
 
 3rdParty/msgpack-0.5.8/Makefile:
-	cd 3rdParty/msgpack-0.5.8 && ./configure "--host=$(host)" CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS) "
+	cd 3rdParty/msgpack-0.5.8 && ./configure "--host=$(host)" CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS) $(MSGPACK_CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS) "
 
 build/lib/libmsgpackc.so.2.0.0: 3rdParty/msgpack-0.5.8/Makefile
 	$(MAKE) -C 3rdParty/msgpack-0.5.8
