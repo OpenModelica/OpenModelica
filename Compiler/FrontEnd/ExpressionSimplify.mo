@@ -1002,6 +1002,7 @@ algorithm
    // sqrt(c*e) => c1*sqrt(e)
     case DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={DAE.BINARY(e1 as DAE.RCONST(r1),DAE.MUL(tp),e2)})
       equation
+        true = r1 >=. 0.0;
         e = Expression.makeBuiltinCall("sqrt",{e1},DAE.T_REAL_DEFAULT);
         e3 =  Expression.makeBuiltinCall("sqrt",{e2},DAE.T_REAL_DEFAULT);
       then DAE.BINARY(e,DAE.MUL(tp),e3);
@@ -3886,7 +3887,15 @@ algorithm
         Expression.operatorEqual(op2,DAE.MUL(ty)); 
         res = DAE.BINARY(e1, op2, e2);
       then Expression.makeBuiltinCall("abs",{res},ty);
-
+/*
+    // e1 / exp(e2) => e1*exp(-e2)
+    case(_,DAE.DIV(ty),e1,DAE.CALL(path=Absyn.IDENT("exp"),expLst={e2}),_,_)
+      equation
+        e = DAE.UNARY(DAE.UMINUS(ty),e2);
+        e3 = Expression.makeBuiltinCall("exp",{e},ty);
+        res = DAE.BINARY(e,DAE.MUL(ty),e3);
+      then res;
+*/
     // exp(e1) * exp(e2) => exp(e1 + e2)
     case(_,DAE.MUL(ty),DAE.CALL(path=Absyn.IDENT("exp"),expLst={e1}),DAE.CALL(path=Absyn.IDENT("exp"),expLst={e2}),_,_)
       equation
