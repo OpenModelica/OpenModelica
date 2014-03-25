@@ -1576,20 +1576,36 @@ public function getArrayCref
   input DAE.ComponentRef name;
   output Option<DAE.ComponentRef> arrayCref;
 algorithm
-  arrayCref :=
-  matchcontinue (name)
+  arrayCref := matchcontinue(name)
     local
       DAE.ComponentRef arrayCrefInner;
-    case (_)
-      equation
-        true = crefIsFirstArrayElt(name);
-        arrayCrefInner = crefStripLastSubs(name);
-      then SOME(arrayCrefInner);
-    case (_)
+      
+    case (_) equation
+      true = crefIsFirstArrayElt(name);
+      arrayCrefInner = crefStripLastSubs(name);
+    then SOME(arrayCrefInner);
+    
+    else
     then NONE();
   end matchcontinue;
 end getArrayCref;
 
+public function getArraySubs
+  input DAE.ComponentRef name;
+  output list<DAE.Subscript> arraySubs;
+algorithm
+  arraySubs := matchcontinue(name)
+    local
+      list<DAE.Subscript> arrayCrefSubs;
+    
+    case (_) equation
+      arrayCrefSubs = ComponentReference.crefSubs(name);
+    then arrayCrefSubs;
+    
+    else
+    then {};
+  end matchcontinue;
+end getArraySubs;
 
 /***************************************************/
 /* Change  */

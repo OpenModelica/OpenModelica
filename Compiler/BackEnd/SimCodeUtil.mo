@@ -78,6 +78,7 @@ protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import ExpressionSolve;
+protected import FindZeroCrossings;
 protected import Flags;
 protected import GlobalScript;
 protected import HashSet;
@@ -1559,8 +1560,8 @@ algorithm
       
       // created event suff e.g. zeroCrossings, samples, ...
       whenClauses = createSimWhenClauses(dlow);
-      zeroCrossings = Util.if_(ifcpp, getRelations(dlow), getZeroCrossings(dlow));
-      relations = getRelations(dlow);
+      zeroCrossings = Util.if_(ifcpp, FindZeroCrossings.getRelations(dlow), FindZeroCrossings.getZeroCrossings(dlow));
+      relations = FindZeroCrossings.getRelations(dlow);
       sampleZC = getSamples(dlow);
       zeroCrossings = Util.if_(ifcpp, listAppend(zeroCrossings, sampleZC), zeroCrossings);
       zeroCrossings = updateZeroCrossEqnIndex(zeroCrossings, eqBackendSimCodeMapping, BackendDAEUtil.daeSize(dlow));
@@ -2963,7 +2964,7 @@ end solveAlgorithmInverse;
 // 
 // =============================================================================
 
-public function createSimWhenClauses
+protected function createSimWhenClauses
   input BackendDAE.BackendDAE inBackendDAE;
   output list<SimCode.SimWhenClause> outSimWhenClause;
 algorithm
@@ -3062,21 +3063,7 @@ end whenClauseToSimWhenClause;
 // 
 // =============================================================================
 
-public function getZeroCrossings
-  input BackendDAE.BackendDAE inBackendDAE;
-  output list<BackendDAE.ZeroCrossing> outZeroCrossingList;
-algorithm
-  BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(zeroCrossingLst=outZeroCrossingList))) := inBackendDAE;
-end getZeroCrossings;
-
-public function getRelations
-  input BackendDAE.BackendDAE inBackendDAE;
-  output list<BackendDAE.ZeroCrossing> outZeroCrossingList;
-algorithm
-  BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(relationsLst=outZeroCrossingList))) := inBackendDAE;
-end getRelations;
-
-public function getSamples
+protected function getSamples
   input BackendDAE.BackendDAE inBackendDAE;
   output list<BackendDAE.ZeroCrossing> outZeroCrossingList;
 algorithm
@@ -3309,7 +3296,7 @@ algorithm
     case(DAE.CREF(cr, ty)::rest, _)
       equation
         arrayCref = ComponentReference.getArrayCref(cr);
-        inst_dims = getArraySubs(cr);
+        inst_dims = ComponentReference.getArraySubs(cr);
         numArrayElement = List.map(inst_dims, ExpressionDump.subscriptString);
         var = SimCode.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, arrayCref, SimCode.NOALIAS(), DAE.emptyElementSource, SimCode.NONECAUS(), NONE(), numArrayElement, false, true);
       then
@@ -4850,7 +4837,7 @@ algorithm
   end matchcontinue;
 end createInitSymbolicJacobianssSimCode;
 
-public function createInitialMatrices "author: lochel
+protected function createInitialMatrices "author: lochel
   This function generates matrices for initialization."
   input BackendDAE.BackendDAE inDAE;
   input Integer inIniqueEqIndex;
@@ -5277,7 +5264,7 @@ algorithm
   end match;
 end elaborateRecordDeclarationsForMetarecords;
 
-public function createExtObjInfo
+protected function createExtObjInfo
   input BackendDAE.Shared shared;
   output SimCode.ExtObjInfo extObjInfo;
 protected
@@ -6287,7 +6274,7 @@ algorithm
   end matchcontinue;
 end createSingleArrayEqnCode2;
 
-public function createInlineSolverEqns "author: lochel
+protected function createInlineSolverEqns "author: lochel
   This function generates equations needed for inline integration."
   input Option<BackendDAE.BackendDAE> inInlineDAE;
   input Integer inUniqueEqIndex;
@@ -6333,7 +6320,7 @@ algorithm
   end matchcontinue;
 end createInlineSolverEqns;
 
-public function createInitialResiduals "author: lochel
+protected function createInitialResiduals "author: lochel
   This function generates all initial_residuals."
   input BackendDAE.BackendDAE inDAE;
   input Option<BackendDAE.BackendDAE> inInitDAE;
@@ -8315,24 +8302,6 @@ algorithm
   end matchcontinue;
 end getAliasVar1;
 
-
-public function getArraySubs
-  input DAE.ComponentRef name;
-  output list<DAE.Subscript> arraySubs;
-algorithm
-  (arraySubs) :=
-  matchcontinue (name)
-    local
-      list<DAE.Subscript> arrayCrefSubs;
-    case (_)
-      equation
-        arrayCrefSubs = ComponentReference.crefSubs(name);
-      then arrayCrefSubs;
-    case (_)
-    then {};
-  end matchcontinue;
-end getArraySubs;
-
 protected function unparseCommentOptionNoAnnotationNoQuote
   input Option<SCode.Comment> absynComment;
   output String commentStr;
@@ -8819,7 +8788,7 @@ algorithm
   end match;
 end typesVar;
 
-public function dlowvarToSimvar
+protected function dlowvarToSimvar
   input BackendDAE.Var dlowVar;
   input Option<BackendDAE.Variables> optAliasVars;
   input BackendDAE.Variables inVars;
@@ -8991,7 +8960,7 @@ algorithm
   ((_, outTpl)) := traversingdlowvarToSimvar((v, inTpl));
 end traversingdlowvarToSimvarFold;
 
-public function traversingdlowvarToSimvar "author: Frenkel TUD 2010-11"
+protected function traversingdlowvarToSimvar "author: Frenkel TUD 2010-11"
   input tuple<BackendDAE.Var, tuple<list<SimCode.SimVar>, BackendDAE.Variables>> inTpl;
   output tuple<BackendDAE.Var, tuple<list<SimCode.SimVar>, BackendDAE.Variables>> outTpl;
 algorithm
@@ -9685,7 +9654,7 @@ algorithm
   end matchcontinue;
 end solve;
 
-public function crefIsDerivative
+protected function crefIsDerivative
   "Returns true if a component reference is a derivative, otherwise false."
   input DAE.ComponentRef cr;
   output Boolean isDer;
@@ -9947,7 +9916,7 @@ end keyEqual;
  end nullHashTable;
  */
 
-public function emptyHashTable "
+protected function emptyHashTable "
   author: PA
   Returns an empty HashTable.
   Using the bucketsize 100 and array size 10."
@@ -9962,7 +9931,7 @@ algorithm
   hashTable := SimCode.HASHTABLE(arr, SimCode.VALUE_ARRAY(0, 100, emptyarr), 1000, 0);
 end emptyHashTable;
 
-public function emptyHashTableSized "
+protected function emptyHashTableSized "
   author: PA
   Returns an empty HashTable.
   Using the bucketsize 100 and array size 10."
@@ -11729,7 +11698,7 @@ algorithm
   prio := (i, eqs);
 end calcPriority;
 
-public function traveseSimVars
+protected function traveseSimVars
   input SimCode.SimVars inSimVars;
   input Func func;
   input tpl iTpl;

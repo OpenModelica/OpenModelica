@@ -59,6 +59,25 @@ protected import List;
 protected import Util;
 
 // =============================================================================
+// section for some public util functions
+//
+// =============================================================================
+
+public function getZeroCrossings
+  input BackendDAE.BackendDAE inBackendDAE;
+  output list<BackendDAE.ZeroCrossing> outZeroCrossingList;
+algorithm
+  BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(zeroCrossingLst=outZeroCrossingList))) := inBackendDAE;
+end getZeroCrossings;
+
+public function getRelations
+  input BackendDAE.BackendDAE inBackendDAE;
+  output list<BackendDAE.ZeroCrossing> outZeroCrossingList;
+algorithm
+  BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(relationsLst=outZeroCrossingList))) := inBackendDAE;
+end getRelations;
+
+// =============================================================================
 // section for zero crossings
 //
 // This section contains all the functions to find zero crossings inside
