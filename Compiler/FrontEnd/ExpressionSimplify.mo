@@ -3611,22 +3611,10 @@ algorithm
     // a + ((-b) op2 c) = a - (b op2 c)
     case (DAE.ADD(ty = tp),e1,DAE.BINARY(DAE.UNARY(operator = DAE.UMINUS(ty = tp2),exp = e2), op2, e3))
       equation 
-        true = Expression.operatorEqual(op2,DAE.DIV(tp));
-               //or  Expression.operatorEqual(op2,DAE.MUL(tp));
+        true = Expression.operatorEqual(op2,DAE.DIV(tp)); 
+              //or  Expression.operatorEqual(op2,MUL.DIV(tp));
          e = DAE.BINARY(e1, DAE.SUB(tp), DAE.BINARY(e2,op2,e3));
-      then e;
-
-    // a + (r op2 c) => a - (r1 op2 c)
-    // for r < 0 with r = -r1
-    case (DAE.ADD(ty = tp),e1,DAE.BINARY(e2 as DAE.RCONST(r1), op2, e3))
-      equation
-        true = r1 <=. 0.0;
-        true = Expression.operatorEqual(op2,DAE.DIV(tp))
-               or  Expression.operatorEqual(op2,DAE.DIV(tp));
-         r2 = realNeg(r1);
-         e = DAE.BINARY(e1, DAE.SUB(tp), DAE.BINARY(DAE.RCONST(r2),op2,e3));
-      then e;
-
+      then e; 
 
     // Commutative
     // (-a)+b = b + (-a)
@@ -3899,6 +3887,7 @@ algorithm
         Expression.operatorEqual(op2,DAE.MUL(ty)); 
         res = DAE.BINARY(e1, op2, e2);
       then Expression.makeBuiltinCall("abs",{res},ty);
+/*
     // e1 / exp(e2) => e1*exp(-e2)
     case(_,DAE.DIV(ty),e1,DAE.CALL(path=Absyn.IDENT("exp"),expLst={e2}),_,_)
       equation
@@ -3906,6 +3895,7 @@ algorithm
         e3 = Expression.makeBuiltinCall("exp",{e},ty);
         res = DAE.BINARY(e,DAE.MUL(ty),e3);
       then res;
+*/
     // exp(e1) * exp(e2) => exp(e1 + e2)
     case(_,DAE.MUL(ty),DAE.CALL(path=Absyn.IDENT("exp"),expLst={e1}),DAE.CALL(path=Absyn.IDENT("exp"),expLst={e2}),_,_)
       equation
@@ -4021,22 +4011,6 @@ algorithm
     // a-(-b) = a+b
     case (_,DAE.SUB(ty = ty),e1,DAE.UNARY(operator = DAE.UMINUS(ty = ty2),exp = e2),_,_)
       then DAE.BINARY(e1,DAE.ADD(ty),e2);
-
-    // a-(-b op2 c) = a + b op2 c
-    case (_,DAE.SUB(ty),e1,DAE.BINARY(DAE.UNARY(DAE.UMINUS(ty2), e2),op2,e3),_,_)
-      equation
-        true = Expression.operatorEqual(op2,DAE.DIV(ty)) or
-               Expression.operatorEqual(op2,DAE.MUL(ty));
-        res = DAE.BINARY(e1, DAE.ADD(ty), DAE.BINARY(e2,op2,e3));
-      then res;
-
-    // b op2 -(-a) = b op2 c + a
-    case (_,DAE.SUB(ty),DAE.BINARY(e2,op2,e3),DAE.UNARY(DAE.UMINUS(ty2), e1),_,_)
-      equation
-        true = Expression.operatorEqual(op2,DAE.DIV(ty)) or
-               Expression.operatorEqual(op2,DAE.MUL(ty));
-        res = DAE.BINARY(DAE.BINARY(e2,op2,e3), DAE.ADD(ty),e1);
-      then res;
 
     // 0 / x = 0
     case (_,DAE.DIV(ty = ty),e1,e2,true,false)
