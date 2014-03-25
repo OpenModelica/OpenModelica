@@ -47,6 +47,7 @@ import MetaModelica_Lexer; /* Makes all tokens defined, imported in OptiMo_Lexer
   
   #include "ModelicaParserCommon.h"
   #include "runtime/errorext.h"
+  #include "util/string_util.h"
   
   #define ModelicaParserException 100
   #define ModelicaLexerException  200
@@ -1229,7 +1230,7 @@ primary returns [void* ast]
       if (errno || *endptr != 0) {
         double d = 0;
         errno = 0;
-        d = strtod(chars,&endptr);
+        d = om_strtod(chars,&endptr);
         modelicaParserAssert(*endptr == 0 && errno==0, "Number is too large to represent as a long or double on this machine", primary, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1);
         c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, "\%s-bit signed integers! Transforming: \%s into a real",
           args, 2, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
