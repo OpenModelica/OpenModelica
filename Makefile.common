@@ -61,7 +61,7 @@ install-python:
 install-openturns: mkbuilddirs
 	(time cp SimulationRuntime/OpenTurns/* $(builddir_share)/omc/scripts/OpenTurns/)
 
-interactive: .testvariables mkbuilddirs boehm-gc fmil msl-external-libs lis $(IPOPT_TARGET)
+interactive: .testvariables mkbuilddirs boehm-gc fmil msl-external-libs lis $(IPOPT_TARGET) msgpack
 	$(MAKE) -C SimulationRuntime/interactive -f $(defaultMakefileTarget)
 	# Depends on libinteractive.a
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget)
@@ -110,7 +110,7 @@ build/lib/omc/libipopt.la: 3rdParty/Ipopt-3.11.6/Makefile
 	$(MAKE) -C 3rdParty/Ipopt-3.11.6 install
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libipopt.1.9.6.dylib 3rdParty/Ipopt-3.11.6/lib/libipopt.1.9.6.dylib
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libcoinmumps.1.4.11.dylib 3rdParty/Ipopt-3.11.6/lib/libcoinmumps.1.4.11.dylib
-	cp -pPR 3rdParty/Ipopt-3.11.6/lib/*.* build/lib/omc
+	cp -a 3rdParty/Ipopt-3.11.6/lib/*.* build/lib/omc
 
 ipopt: build/lib/omc/libipopt.la
 
@@ -354,3 +354,30 @@ install: install-dirs install-python
 	cp -p ${builddir_java}/* ${INSTALL_JAVADIR}
 	# Translations
 	cp -rp ${builddir_locale}/* ${INSTALL_LOCALEDIR}/
+
+
+3rdParty/msgpack-0.5.8/Makefile:
+	cd 3rdParty/msgpack-0.5.8 && ./configure "--host=$(host)" CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS) "
+
+build/lib/libmsgpackc.so.2.0.0: 3rdParty/msgpack-0.5.8/Makefile
+	$(MAKE) -C 3rdParty/msgpack-0.5.8
+	cp -a 3rdParty/msgpack-0.5.8/src/.libs/libmsgpackc.so* build/lib/omc/
+
+build/lib/libmsgpackc.2.0.0.dylib: 3rdParty/msgpack-0.5.8/Makefile
+	$(MAKE) -C 3rdParty/msgpack-0.5.8
+	install_name_tool -id @rpath/libmsgpackc.2.0.0.dylib 3rdParty/msgpack-0.5.8/src/.libs/libmsgpackc.2.0.0.dylib
+	cp -a 3rdParty/msgpack-0.5.8/src/.libs/libmsgpackc.dylib* build/lib/omc/
+
+build/lib/libmsgpackc.a: 3rdParty/msgpack-0.5.8/Makefile
+	$(MAKE) -C 3rdParty/msgpack-0.5.8
+	cp -a 3rdParty/msgpack-0.5.8/src/.libs/libmsgpackc.a build/lib/omc/
+
+ifeq ($(SHREXT),.so)
+msgpack: build/lib/libmsgpackc.so.2.0.0
+else
+ifeq ($(SHREXT),.dylib)
+msgpack: build/lib/libmsgpackc.2.0.0.dylib
+else
+msgpack: build/lib/libmsgpackc.a
+endif
+endif
