@@ -280,6 +280,7 @@ void infoStreamPrintWithEquationIndexes(int stream, int indentNext, const int *i
     va_list args;
     va_start(args, format);
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
+    va_end(args);
     messageFunction(LOG_TYPE_INFO, stream, indentNext, logBuffer, 0, indexes);
   }
 }
@@ -291,6 +292,7 @@ void infoStreamPrint(int stream, int indentNext, const char *format, ...)
     va_list args;
     va_start(args, format);
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
+    va_end(args);
     messageFunction(LOG_TYPE_INFO, stream, indentNext, logBuffer, 0, NULL);
   }
 }
@@ -302,6 +304,7 @@ void warningStreamPrintWithEquationIndexes(int stream, int indentNext, const int
     va_list args;
     va_start(args, format);
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
+    va_end(args);
     messageFunction(LOG_TYPE_WARNING, stream, indentNext, logBuffer, 0, indexes);
   }
 }
@@ -313,6 +316,7 @@ void warningStreamPrint(int stream, int indentNext, const char *format, ...)
     va_list args;
     va_start(args, format);
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
+    va_end(args);
     messageFunction(LOG_TYPE_WARNING, stream, indentNext, logBuffer, 0, NULL);
   }
 }
@@ -323,20 +327,8 @@ void errorStreamPrint(int stream, int indentNext, const char *format, ...)
   va_list args;
   va_start(args, format);
   vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
+  va_end(args);
   messageFunction(LOG_TYPE_ERROR, stream, indentNext, logBuffer, 0, NULL);
-}
-
-void assertStreamPrint(threadData_t *threadData, int cond, const char *format, ...)
-{
-  if (!cond) {
-    char logBuffer[SIZE_LOG_BUFFER];
-    va_list args;
-    va_start(args, format);
-    vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
-    messageFunction(LOG_TYPE_ASSERT, LOG_ASSERT, 0, logBuffer, 0, NULL);
-    threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
-    longjmp(*threadData->globalJumpBuffer, 1);
-  }
 }
 
 #ifdef USE_DEBUG_OUTPUT
@@ -347,6 +339,7 @@ void debugStreamPrint(int stream, int indentNext, const char *format, ...)
     va_list args;
     va_start(args, format);
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
+    va_end(args);
     messageFunction(LOG_TYPE_DEBUG, LOG_ASSERT, indentNext, logBuffer, 0, NULL);
   }
 }
@@ -358,20 +351,27 @@ void debugStreamPrintWithEquationIndexes(int stream, int indentNext, const int *
     va_list args;
     va_start(args, format);
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
+    va_end(args);
     messageFunction(LOG_TYPE_WARNING, stream, indentNext, logBuffer, 0, indexes);
   }
 }
 #endif
 
-void throwStreamPrint(threadData_t *threadData, const char *format, ...)
+void va_throwStreamPrint(threadData_t *threadData, const char *format, va_list args)
 {
   char logBuffer[SIZE_LOG_BUFFER];
-  va_list args;
-  va_start(args, format);
   vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
   messageFunction(LOG_TYPE_DEBUG, LOG_ASSERT, 0, logBuffer, 0, NULL);
   threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
   longjmp(*threadData->globalJumpBuffer, 1);
+}
+
+void throwStreamPrint(threadData_t *threadData, const char *format, ...)
+{
+  va_list args;
+  va_start(args, format);
+  va_throwStreamPrint(threadData, format, args);
+  va_end(args);
 }
 
 void throwStreamPrintWithEquationIndexes(threadData_t *threadData, const int *indexes, const char *format, ...)
@@ -380,6 +380,7 @@ void throwStreamPrintWithEquationIndexes(threadData_t *threadData, const int *in
   va_list args;
   va_start(args, format);
   vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
+  va_end(args);
   messageFunction(LOG_TYPE_DEBUG, LOG_ASSERT, 0, logBuffer, 0, indexes);
   threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
   longjmp(*threadData->globalJumpBuffer, 1);

@@ -480,6 +480,9 @@ int omc_matlab4_read_all_vals(ModelicaMatReader *reader)
   int done = reader->readAll;
   int i,j;
   double *tmp;
+  if (reader->nvar == 0 || reader->nrows == 0) {
+    return 1;
+  }
   for (i=0; i<2*reader->nvar; i++) {
     if (reader->vars[i] == 0) done = 0;
   }

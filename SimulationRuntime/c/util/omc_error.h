@@ -144,9 +144,22 @@ extern void infoStreamPrintWithEquationIndexes(int stream, int indentNext, const
 extern void warningStreamPrint(int stream, int indentNext, const char *format, ...) __attribute__ ((format (printf, 3, 4)));
 extern void warningStreamPrintWithEquationIndexes(int stream, int indentNext, const int *indexes, const char *format, ...) __attribute__ ((format (printf, 4, 5)));
 extern void errorStreamPrint(int stream, int indentNext, const char *format, ...) __attribute__ ((format (printf, 3, 4)));
-extern void assertStreamPrint(threadData_t *threadData, int cond, const char *format, ...) __attribute__ ((format (printf, 3, 4)));
+extern void va_throwStreamPrint(threadData_t *threadData, const char *format, va_list ap) __attribute__ ((noreturn));
 extern void throwStreamPrint(threadData_t *threadData, const char *format, ...) __attribute__ ((format (printf, 2, 3), noreturn));
 extern void throwStreamPrintWithEquationIndexes(threadData_t *threadData, const int *indexes, const char *format, ...) __attribute__ ((format (printf, 3, 4), noreturn));
+#ifdef HAVE_VA_MACROS
+#define assertStreamPrint(threadData, cond, ...) (cond) ? (void) 0 : throwStreamPrint((threadData), __VA_ARGS__)
+#else
+static void OMC_INLINE assertStreamPrint(threadData_t *threadData, int cond, const char *format, ...) __attribute__ ((format (printf, 3, 4)));
+static void OMC_INLINE assertStreamPrint(threadData_t *threadData, int cond, const char *format, ...)
+{
+  if (cond) return;
+  va_list args;
+  va_start(args, format);
+  va_throwStreamPrint(threadData,format,args);
+  va_end(args);
+}
+#endif
 
 #ifdef USE_DEBUG_OUTPUT
 void debugStreamPrint(int stream, int indentNext, const char *format, ...) __attribute__ ((format (printf, 3, 4)));

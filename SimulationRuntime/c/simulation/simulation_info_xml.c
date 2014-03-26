@@ -199,7 +199,7 @@ static void XMLCALL endElement(void *userData, const char *name)
   if(0 == strcmp("equation", name))
   {
     int i;
-    xml->equationInfo[curIndex].vars = malloc(sizeof(VAR_INFO)*xml->equationInfo[curIndex].numVar);
+    xml->equationInfo[curIndex].vars = (VAR_INFO*) malloc(sizeof(VAR_INFO)*xml->equationInfo[curIndex].numVar);
     for(i=0; i<xml->equationInfo[curIndex].numVar; i++)
     {
       VAR_INFO *var = (VAR_INFO*) malloc(sizeof(VAR_INFO));
@@ -242,7 +242,7 @@ FUNCTION_INFO modelInfoXmlGetFunction(MODEL_DATA_XML* xml, size_t ix)
 
 void modelInfoXmlInit(MODEL_DATA_XML* xml)
 {
-  FILE* file;
+  FILE* file = NULL;
   XML_Parser parser = NULL;
   void* userData[4] = {xml, (void*)1, (void*)0, (void*)0};
   if(!xml->infoXMLData)

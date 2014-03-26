@@ -583,14 +583,14 @@ static long PrintImpl__saveAndClearBuf(threadData_t *threadData)
     }
   }
   if (! savedCurSize) {
-    savedCurSize = (long*)calloc(MAXSAVEDBUFFERS,sizeof(long*));
+    savedCurSize = (long*)calloc(MAXSAVEDBUFFERS,sizeof(long));
     if (!savedCurSize) {
       fprintf(stderr, "Internal error allocating savedCurSize in Print.saveAndClearBuf\n");
       return -1;
     }
   }
   if (! savedNfilled) {
-    savedNfilled = (long*)calloc(MAXSAVEDBUFFERS,sizeof(long*));
+    savedNfilled = (long*)calloc(MAXSAVEDBUFFERS,sizeof(long));
     if (!savedNfilled) {
       fprintf(stderr, "Internal error allocating savedNfilled in Print.saveAndClearBuf\n");
       return -1;

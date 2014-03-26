@@ -62,6 +62,7 @@ protected import Flags;
 protected import List;
 protected import SCodeDump;
 protected import Types;
+protected import Util;
 
 public function algorithmEmpty "Returns true if algorithm is empty, i.e. no statements"
   input DAE.Algorithm alg;
@@ -92,6 +93,52 @@ algorithm
     case(_) then true;
   end matchcontinue;
 end isNotAssertStatement;
+
+public function makeAssignmentNoTypeCheck
+"Used to optimize assignments to NORETCALL if applicable"
+  input DAE.Type ty;
+  input DAE.Exp lhs;
+  input DAE.Exp rhs;
+  input DAE.ElementSource source;
+  output DAE.Statement outStatement;
+algorithm
+  outStatement := match (ty,lhs,rhs,source)
+    case (_,DAE.CREF(componentRef=DAE.WILD()),_,DAE.SOURCE())
+      then DAE.STMT_NORETCALL(rhs, source);
+    case (_,DAE.PATTERN(pattern=DAE.PAT_WILD()),_,_)
+      then DAE.STMT_NORETCALL(rhs, source);
+    else DAE.STMT_ASSIGN(ty, lhs, rhs, source);
+  end match;
+end makeAssignmentNoTypeCheck;
+
+public function makeArrayAssignmentNoTypeCheck
+"Used to optimize assignments to NORETCALL if applicable"
+  input DAE.Type ty;
+  input DAE.ComponentRef lhs;
+  input DAE.Exp rhs;
+  input DAE.ElementSource source;
+  output DAE.Statement outStatement;
+algorithm
+  outStatement := match (ty,lhs,rhs,source)
+    case (_,DAE.WILD(),_,DAE.SOURCE())
+      then DAE.STMT_NORETCALL(rhs, source);
+    else DAE.STMT_ASSIGN_ARR(ty, lhs, rhs, source);
+  end match;
+end makeArrayAssignmentNoTypeCheck;
+
+public function makeTupleAssignmentNoTypeCheck
+"Used to optimize assignments to NORETCALL if applicable"
+  input DAE.Type ty;
+  input list<DAE.Exp> lhs;
+  input DAE.Exp rhs;
+  input DAE.ElementSource source;
+  output DAE.Statement outStatement;
+protected
+  Boolean b;
+algorithm
+  b := List.fold(List.map(lhs, Expression.isWild), boolAnd, true);
+  outStatement := Util.if_(b, DAE.STMT_NORETCALL(rhs, source), DAE.STMT_TUPLE_ASSIGN(ty,lhs,rhs,source));
+end makeTupleAssignmentNoTypeCheck;
 
 public function makeAssignment
 "This function creates an `DAE.STMT_ASSIGN\' construct, and checks that the

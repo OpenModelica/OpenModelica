@@ -385,11 +385,11 @@ void rt_init(int numTimers) {
   max_tp = calloc(numTimers, sizeof(rtclock_t));
   total_tp = calloc(numTimers, sizeof(rtclock_t));
   tick_tp = calloc(numTimers, sizeof(rtclock_t));
-  rt_clock_ncall = calloc(numTimers, sizeof(long));
-  rt_clock_ncall_total = calloc(numTimers, sizeof(long));
-  rt_clock_ncall_min = malloc(numTimers * sizeof(long));
-  rt_clock_ncall_max = calloc(numTimers, sizeof(long));
-  memset(rt_clock_ncall_min, 0xFF, numTimers * sizeof(long));
+  rt_clock_ncall = calloc(numTimers, sizeof(unsigned long));
+  rt_clock_ncall_total = calloc(numTimers, sizeof(unsigned long));
+  rt_clock_ncall_min = malloc(numTimers * sizeof(unsigned long));
+  rt_clock_ncall_max = calloc(numTimers, sizeof(unsigned long));
+  memset(rt_clock_ncall_min, 0xFF, numTimers * sizeof(unsigned long));
   assert(acc_tp != 0);
   assert(max_tp != 0);
   assert(total_tp != 0);

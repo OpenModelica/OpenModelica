@@ -825,7 +825,7 @@ void initializeDataStruc(DATA *data)
   data->callback->initialMixedSystem(data->simulationInfo.mixedSystemData);
 
   /* buffer for linear systems */
-  data->simulationInfo.linearSystemData = (LINEAR_SYSTEM_DATA*) malloc(data->modelData.nLinearSystems*sizeof(NONLINEAR_SYSTEM_DATA));
+  data->simulationInfo.linearSystemData = (LINEAR_SYSTEM_DATA*) malloc(data->modelData.nLinearSystems*sizeof(LINEAR_SYSTEM_DATA));
   data->callback->initialLinearSystem(data->simulationInfo.linearSystemData);
 
   /* buffer for non-linear systems */
@@ -875,8 +875,9 @@ void initializeDataStruc(DATA *data)
   data->simulationInfo.delayStructure = (RINGBUFFER**)malloc(data->modelData.nDelayExpressions * sizeof(RINGBUFFER*));
   assertStreamPrint(data->threadData, 0 != data->simulationInfo.delayStructure, "out of memory");
 
-  for(i=0; i<data->modelData.nDelayExpressions; i++)
+  for(i=0; i<data->modelData.nDelayExpressions; i++) {
     data->simulationInfo.delayStructure[i] = allocRingBuffer(1024, sizeof(TIME_AND_VALUE));
+  }
 }
 
 /*! \fn deInitializeDataStruc

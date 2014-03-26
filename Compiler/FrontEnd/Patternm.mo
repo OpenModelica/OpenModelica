@@ -54,6 +54,7 @@ public import Prefix;
 public import Types;
 public import UnitAbsyn;
 
+protected import Algorithm;
 protected import BaseHashTable;
 protected import ComponentReference;
 protected import Connect;
@@ -1099,8 +1100,7 @@ algorithm
 end checkDefUse;
 
 protected function checkDefUsePattern
-"Use with traverseExp to collect all CREF's that could be references to local
-variables."
+"Replace unused assignments with wildcards"
   input tuple<DAE.Pattern,tuple<AvlTreeString.AvlTree,AvlTreeString.AvlTree,Absyn.Info>> inTpl;
   output tuple<DAE.Pattern,tuple<AvlTreeString.AvlTree,AvlTreeString.AvlTree,Absyn.Info>> outTpl;
 algorithm
@@ -1126,7 +1126,7 @@ algorithm
         failure(_ = AvlTreeString.avlTreeGet(useTree,name));
         Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.META_UNUSED_AS_BINDING,{name},info);
       then ((pat,extra));
-    else inTpl;
+    else simplifyPattern(inTpl);
   end matchcontinue;
 end checkDefUsePattern;
 
@@ -2602,19 +2602,22 @@ algorithm
       equation
         ((_,useTree)) = Expression.traverseExp(exp, useLocalCref, inUseTree);
         ((lhs,_)) = Expression.traverseExp(lhs, checkDefUse, (localsTree,useTree,info));
-      then (DAE.STMT_ASSIGN(ty,lhs,exp,source),useTree);
+        outStatement = Algorithm.makeAssignmentNoTypeCheck(ty,lhs,exp,source);
+      then (outStatement,useTree);
 
     case (DAE.STMT_TUPLE_ASSIGN(type_=ty,expExpLst=exps,exp=exp,source=source as DAE.SOURCE(info=info)),_,_)
       equation
         ((_,useTree)) = Expression.traverseExp(exp, useLocalCref, inUseTree);
         ((DAE.TUPLE(exps),_)) = Expression.traverseExp(DAE.TUPLE(exps), checkDefUse, (localsTree,useTree,info));
-      then (DAE.STMT_TUPLE_ASSIGN(ty,exps,exp,source),useTree);
+        outStatement = Algorithm.makeTupleAssignmentNoTypeCheck(ty,exps,exp,source);
+      then (outStatement,useTree);
 
     case (DAE.STMT_ASSIGN_ARR(type_=ty,componentRef=cr,exp=exp,source=source as DAE.SOURCE(info=info)),_,_)
       equation
         ((_,useTree)) = Expression.traverseExp(exp, useLocalCref, inUseTree);
         ((DAE.CREF(componentRef=cr),_)) = Expression.traverseExp(DAE.CREF(cr,DAE.T_REAL_DEFAULT), checkDefUse, (localsTree,useTree,info));
-      then (DAE.STMT_ASSIGN_ARR(ty,cr,exp,source),useTree);
+        outStatement = Algorithm.makeArrayAssignmentNoTypeCheck(ty,cr,exp,source);
+      then (outStatement,useTree);
 
     case (DAE.STMT_IF(exp=exp,statementLst=body,else_=else_,source=source),_,_)
       equation

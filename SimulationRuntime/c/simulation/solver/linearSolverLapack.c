@@ -62,7 +62,7 @@ int allocateLapackData(int size, void** voiddata)
 {
   DATA_LAPACK* data = (DATA_LAPACK*) malloc(sizeof(DATA_LAPACK));
 
-  data->ipiv = (integer*) malloc(size*sizeof(modelica_integer));
+  data->ipiv = (integer*) malloc(size*sizeof(integer));
   assertStreamPrint(NULL, 0 != data->ipiv, "Could not allocate data for linear solver lapack.");
   data->nrhs = 1;
   data->info = 0;
