@@ -122,8 +122,14 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
     if((element_length = mat_element_length(hdr.type)) == -1) return "Could not determine size of matrix elements";
     name = (char*) malloc(hdr.namelen);
     nr = fread(name,hdr.namelen,1,reader->file);
-    if(nr != 1) return "Corrupt header (2)";
-    if(name[hdr.namelen-1]) return "Corrupt header (3)";
+    if(nr != 1) {
+      free(name);
+      return "Corrupt header (2)";
+    }
+    if(name[hdr.namelen-1]) {
+      free(name);
+      return "Corrupt header (3)";
+    }
     /* fprintf(stderr, "  Name of matrix: %s\n", name); */
     matrix_length = hdr.mrows*hdr.ncols*(1+hdr.imagf)*element_length;
     if(0 != strcmp(name,matrixNames[i])) return "Matrix name mismatch";
@@ -521,22 +527,24 @@ double omc_matlab4_read_single_val(double *res, ModelicaMatReader *reader, int v
     *res = reader->vars[ix][timeIndex];
     return 0;
   }
-  if(reader->doublePrecision==1)
-  {
+  if(reader->doublePrecision==1) {
     fseek(reader->file,reader->var_offset + sizeof(double)*(timeIndex*reader->nvar + absVarIndex-1), SEEK_SET);
-    if(1 != fread(res, sizeof(double), 1, reader->file))
+    if(1 != fread(res, sizeof(double), 1, reader->file)) {
+      *res = 0;
       return 1;
-  }
-  else
-  {
+    }
+  } else {
     float tmpres;
     fseek(reader->file,reader->var_offset + sizeof(float)*(timeIndex*reader->nvar + absVarIndex-1), SEEK_SET);
-    if(1 != fread(&tmpres, sizeof(float), 1, reader->file))
+    if(1 != fread(&tmpres, sizeof(float), 1, reader->file)) {
+      *res = 0;
       return 1;
+    }
     *res = tmpres;
   }
-  if(varIndex < 0)
+  if(varIndex < 0) {
     *res = -(*res);
+  }
   return 0;
 }
 

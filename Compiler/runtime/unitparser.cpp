@@ -627,7 +627,7 @@ Unit UnitParser::solveMIP(Unit unit, bool innerCall) {
   }
 
   delete[] row;
-  delete colno;
+  delete[] colno;
   return retVal;
 #else
   return unit;
