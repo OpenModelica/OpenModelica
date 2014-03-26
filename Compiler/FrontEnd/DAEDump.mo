@@ -3666,13 +3666,12 @@ public function ppStatementStream
   output IOStream.IOStream outStream;
 protected
   String tmp;
+  Integer hnd;
 algorithm
-  tmp := Print.getString();
-  Print.clearBuf();
+  hnd := Print.saveAndClearBuf();
   ppStatement(alg);
   outStream := IOStream.append(inStream, Print.getString());
-  Print.clearBuf();
-  Print.printBuf(tmp);
+  Print.restoreBuf(hnd);
 end ppStatementStream;
 
 public function dumpFunctionStr "Dump function to a string."
@@ -3681,18 +3680,17 @@ public function dumpFunctionStr "Dump function to a string."
 algorithm
   outString := matchcontinue (inElement)
     local
-      String s1,s2;
+      String s;
+      Integer hnd;
 
     case _
       equation
-        s1 = Print.getString();
-        Print.clearBuf();
+        hnd = Print.saveAndClearBuf();
         dumpFunction(inElement);
-        s2 = Print.getString();
-        Print.clearBuf();
-        Print.printBuf(s1);
+        s = Print.getString();
+        Print.restoreBuf(hnd);
       then
-        s2;
+        s;
 
     case _ then "";
   end matchcontinue;
@@ -3705,18 +3703,17 @@ protected function dumpExtObjClassStr
 algorithm
   outString := matchcontinue (inElement)
     local
-      String s1, s2;
+      String s;
+      Integer hnd;
 
     case DAE.EXTOBJECTCLASS(path = _)
       equation
-        s1 = Print.getString();
-        Print.clearBuf();
+        hnd = Print.saveAndClearBuf();
         dumpExtObjectClass(inElement);
-        s2 = Print.getString();
-        Print.clearBuf();
-        Print.printBuf(s1);
+        s = Print.getString();
+        Print.restoreBuf(hnd);
       then
-        s2;
+        s;
 
     case _ then "";
   end matchcontinue;
