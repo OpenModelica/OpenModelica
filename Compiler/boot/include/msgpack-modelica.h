@@ -216,7 +216,7 @@ static void* msgpack_modelica_new_stream(const char *filename)
 #if HAVE_OPEN_MEMSTREAM
     st->fout = open_memstream(&st->str,&st->size);
 #else
-    ModelicaFormatError("String streams are not implemented for this platform");
+    ModelicaError("String streams are not implemented for this platform");
 #endif
   } else {
     st->fout = fopen(filename, "wb");
@@ -238,6 +238,7 @@ static inline void msgpack_modelica_free_stream(void *ptr)
 
 static char* msgpack_modelica_stream_get(void *ptr)
 {
+#if HAVE_OPEN_MEMSTREAM
   char *res;
   s_stream *st = (s_stream *) ptr;
   if (!st->isStringBuffer) {
@@ -254,6 +255,9 @@ static char* msgpack_modelica_stream_get(void *ptr)
   st->size = 0;
   st->fout = open_memstream(&st->str,&st->size);
   return res;
+#else
+  ModelicaError("String streams are not implemented for this platform");
+#endif
 }
 
 static inline void msgpack_modelica_stream_append(void *ptr, const char *str)
