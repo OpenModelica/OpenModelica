@@ -216,7 +216,7 @@ static void* msgpack_modelica_new_stream(const char *filename)
 #if HAVE_OPEN_MEMSTREAM
     st->fout = open_memstream(&st->str,&st->size);
 #else
-    MessageFormatError("String streams are not implemented for this platform");
+    ModelicaFormatError("String streams are not implemented for this platform");
 #endif
   } else {
     st->fout = fopen(filename, "wb");
