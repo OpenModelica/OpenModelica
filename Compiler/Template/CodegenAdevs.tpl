@@ -745,6 +745,16 @@ template makeInit(SimCode simCode)
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
+   let varDecls=""
+   let init1 = initValst(varDecls,vars.paramVars)
+   let init2 = initValst(varDecls,vars.intParamVars)
+   let init3 = initValst(varDecls,vars.boolParamVars)
+   let init4 = initValst(varDecls,vars.stateVars)
+   let init5 = initValst(varDecls,vars.algVars)
+   let init6 = initValst(varDecls,vars.intAlgVars)
+   let init7 = initValst(varDecls,vars.boolAlgVars)
+   let init8 = initValst(varDecls,vars.derivativeVars)
+   let init9 = makeInitialEqns(varDecls,startValueEquations)
    <<
    void <%lastIdentOfPath(modelInfo.name)%>::clear_event_flags()
    {
@@ -760,19 +770,20 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
        timeValue = q[numVars()-1] = 0.0;
        clear_event_flags();
        // Get initial values as given in the model
-       <%initVals(vars.stateVars)%>
-       <%initVals(vars.derivativeVars)%>
-       <%initVals(vars.algVars)%>
-       <%initVals(vars.intAlgVars)%>
-       <%initVals(vars.boolAlgVars)%>
-       <%initVals(vars.paramVars)%>
-       <%initVals(vars.intParamVars)%>
-       <%initVals(vars.boolParamVars)%>
+	   <%varDecls%>
        <%initStateSets(stateSets)%>
+       <%init1%>
+       <%init2%>
+       <%init3%>
+       <%init4%>
+       <%init5%>
+       <%init6%>
+       <%init7%>
+       <%init8%>
        // Save these to the old values so that pre() and edge() work
        save_vars();
        // Calculate any equations that provide initial values
-       <%makeInitialEqns(startValueEquations)%>
+       <%init9%>
        bound_params();
        // Solve for any remaining unknowns
        solve_for_initial_unknowns();
@@ -787,14 +798,12 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
    >>
 end makeInit;
 
-template makeInitialEqns(list<SimEqSystem> startValueEquations)
+template makeInitialEqns(Text& varDecls, list<SimEqSystem> startValueEquations)
 ::=
-  let &varDecls = buffer "" /*BUFD*/
   let eqPart = (startValueEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
       equation_(eq, contextOther, &varDecls /*BUFD*/)
     ;separator="\n")
   <<
-  <%varDecls%>
   <%eqPart%>
   >>
 end makeInitialEqns;
@@ -818,17 +827,6 @@ template selectInitialFreeVars(list<SimVar> varsLst) ::=
   <%res%>
   >>
 end selectInitialFreeVars;
-
-template initVals(list<SimVar> varsLst) ::=
-  varsLst |> SIMVAR(__) =>
-  <<
-  <%cref(name)%>=<%match initialValue
-    case SOME(v) then initVal(v)
-      else "0.0"
-    %>;
-    >>
-  ;separator="\n"
-end initVals;
 
 template makeBoundParams(SimCode simCode)
 ::=
@@ -1588,16 +1586,40 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseW
   >>
 end equationElseWhen;
 
-template initVal(Exp initialValue)
+template initValst(Text &varDecls /*BUFP*/,list<SimVar> varsLst) ::=
+  varsLst |> sv as SIMVAR(__) =>
+      let &preExp = buffer "" /*BUFD*/
+    match initialValue
+      case SOME(v) then
+      match daeExp(v, contextOther, &preExp, &varDecls)
+      case vStr as "0"
+      case vStr as "0.0"
+      case vStr as "(0)" then
+       '<%preExp%>
+        <%cref(sv.name)%>=<%vStr%>;//<%cref(sv.name)%>'
+      case vStr as "" then
+       '<%preExp%>
+       <%cref(sv.name)%>=0;//<%cref(sv.name)%>'
+      case vStr then
+       '<%preExp%>
+       <%cref(sv.name)%>=<%vStr%>;//<%cref(sv.name)%>'
+        end match
+      else
+        '<%preExp%>
+        <%cref(sv.name)%>=<%startValue(sv.type_)%>;'
+  ;separator="\n"
+end initValst;
+
+template startValue(DAE.Type ty)
 ::=
-  match initialValue
-  case ICONST(__) then integer
-  case RCONST(__) then real
-  case SCONST(__) then '<%Util.escapeModelicaStringToCString(string)%>'
-  case BCONST(__) then if bool then "true" else "false"
-  case ENUM_LITERAL(__) then '<%index%> /*ENUM:<%dotPath(name)%>*/'
-  else error(sourceInfo(), 'initial value of unknown type: <%printExpStr(initialValue)%>')
-end initVal;
+  match ty
+  case ty as T_INTEGER(__) then '0'
+  case ty as T_REAL(__) then '0.0'
+  case ty as T_BOOL(__) then 'false'
+  case ty as T_STRING(__) then 'empty'
+  case ty as T_ENUMERATION(__) then '0'
+  else ""
+end startValue;
 
 template jacobianColumnEqn(list<SimEqSystem> eqnSys, list<SimVar> eqnVars, String matrixName, Integer numRows, Integer numCols) "Note: Jacobian in the parser is transposed"
 ::=
