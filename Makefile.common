@@ -138,10 +138,10 @@ breakprocess:
 	(cd testsuite/openmodelica/bootstrapping && time g++ BreakProcess.cpp -o BreakProcess -static-libgcc)
 	(cd testsuite/openmodelica/bootstrapping && cp BreakProcess.exe ../../../$(builddir_bin)/)
 
-runtimeCPP: CMinpack
+runtimeCPP: msl-external-libs CMinpack
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget)
 
-runtimeCPPinstall: CMinpack
+runtimeCPPinstall: msl-external-libs CMinpack
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) install
 	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppCVode.dylib build/lib/omc/cpp/libOMCppCVode.dylib
 	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppDataExchange.dylib build/lib/omc/cpp/libOMCppDataExchange.dylib
