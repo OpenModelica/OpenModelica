@@ -234,7 +234,7 @@ INIT_DATA *initializeInitData(DATA *simData)
   initData->residualScalingCoefficients = (double*)malloc(initData->nInitResiduals * sizeof(double));
   assertStreamPrint(NULL, 0 != initData->residualScalingCoefficients, "out of memory");
 
-  initData->startValueResidualScalingCoefficients = (double*)malloc(int_max(1,initData->nStartValueResiduals) * sizeof(double));
+  initData->startValueResidualScalingCoefficients = (double*)malloc(modelica_integer_max(1,initData->nStartValueResiduals) * sizeof(double));
   assertStreamPrint(NULL, 0 != initData->startValueResidualScalingCoefficients, "out of memory");
 
   for(i=0; i<initData->nInitResiduals; ++i) {
