@@ -1779,14 +1779,13 @@ public function stringDelimitListAndSeparate "author: PA
   input String sep2;
   input Integer n;
   output String res;
-protected String tmpBuf;
+protected 
+  Integer handle;
 algorithm
-  tmpBuf := Print.getString();
-  Print.clearBuf();
+  handle := Print.saveAndClearBuf();
   stringDelimitListAndSeparate2(str, sep1, sep2, n, 0);
   res := Print.getString();
-  Print.clearBuf();
-  Print.printBuf(tmpBuf);
+  Print.restoreBuf(handle);
 end stringDelimitListAndSeparate;
 
 protected function stringDelimitListAndSeparate2 "author: PA

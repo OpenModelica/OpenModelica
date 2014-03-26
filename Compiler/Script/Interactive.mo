@@ -15815,29 +15815,31 @@ algorithm
       list<Absyn.ClassPart> parts;
       String name,str,s1;
       Absyn.TimeStamp ts;
+      Integer handle;
+    
     case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)),name)
       equation
         publst = getPublicList(parts);
         c1 = getClassFromElementitemlist(publst, name);
       then
         c1;
+    
     case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)),name)
       equation
         publst = getPublicList(parts);
         c1 = getClassFromElementitemlist(publst, name);
       then
         c1;
+    
     case (c as Absyn.CLASS(info = Absyn.INFO(buildTimes = ts)),name)
       equation
-        str = Print.getString();
-        Print.clearBuf();
+        handle = Print.saveAndClearBuf();
         Print.printBuf("Interactive.getInnerClass failed, c:");
         Dump.dump(Absyn.PROGRAM({c},Absyn.TOP(), ts));
         Print.printBuf("name :");
         Print.printBuf(name);
         s1 = Print.getString();
-        Print.clearBuf() "print s1 &" ;
-        Print.printBuf(str);
+        Print.restoreBuf(handle);
       then
         fail();
   end matchcontinue;
@@ -17725,23 +17727,23 @@ protected function getDefinitions
   output String res "An easily parsed string containing all definitions";
 algorithm
   res := match (ast,addFunctions)
-  local
-    list<Absyn.Class> classes;
-    String old;
-    list<String> toPrint;
+    local
+      list<Absyn.Class> classes;
+      list<String> toPrint;
+      Integer handle;
+    
     case (_,_)
       equation
         Absyn.PROGRAM(classes = classes) = MetaUtil.createMetaClassesInProgram(ast);
-        old = Print.getString();
-        Print.clearBuf();
+        handle = Print.saveAndClearBuf();
         Print.printBuf("\"(\n");
         toPrint = getDefinitions2(classes,addFunctions);
         List.map_0(toPrint, printWithNewline);
         Print.printBuf("\n)\"");
         res = Print.getString();
-        Print.clearBuf();
-        Print.printBuf(old);
+        Print.restoreBuf(handle);
       then res;
+  
   end match;
 end getDefinitions;
 
