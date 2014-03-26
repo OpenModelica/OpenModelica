@@ -154,8 +154,8 @@ extern void throwStreamPrintWithEquationIndexes(threadData_t *threadData, const 
 static void OMC_INLINE assertStreamPrint(threadData_t *threadData, int cond, const char *format, ...) __attribute__ ((format (printf, 3, 4)));
 static void OMC_INLINE assertStreamPrint(threadData_t *threadData, int cond, const char *format, ...)
 {
-  if (cond) return;
   va_list args;
+  if (cond) return;
   va_start(args, format);
   va_throwStreamPrint(threadData,format,args);
   va_end(args);
