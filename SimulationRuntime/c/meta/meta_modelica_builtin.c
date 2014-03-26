@@ -461,7 +461,7 @@ modelica_metatype listAppend(modelica_metatype lst1,modelica_metatype lst2)
   length = listLength(lst1);
   if (length == 0) /* We need to check for empty lst1 */
     return lst2;
-  res = (struct mmc_cons_struct*)mmc_alloc_words_ignore_offpage( length * 3 /*(sizeof(struct mmc_cons_struct)/sizeof(void*))*/ ); /* Do one single big alloc. It's cheaper */
+  res = (struct mmc_cons_struct*)mmc_alloc_words( length * 3 /*(sizeof(struct mmc_cons_struct)/sizeof(void*))*/ ); /* Do one single big alloc. It's cheaper */
   for (i=0; i<length-1; i++) { /* Write all except the last element... */
     struct mmc_cons_struct *p = res+i;
     p->header = MMC_STRUCTHDR(2, MMC_CONS_CTOR);

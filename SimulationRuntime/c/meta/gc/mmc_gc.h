@@ -82,6 +82,7 @@ static inline void  mmc_GC_init(void)
 #ifdef RML_STYLE_TAGPTR
   GC_register_displacement(3);
 #endif
+  GC_set_force_unmap_on_gcollect(1);
 }
 
 static inline void mmc_GC_init_default(void)
@@ -101,12 +102,12 @@ static inline void* mmc_alloc_words(unsigned int nwords) {
 }
 
 /* for arrays only */
-static inline void* mmc_alloc_words_atomic_ignore_offpage(unsigned int nwords) {
+static inline void* mmc_alloc_words_atomic_ignore_off_page(unsigned int nwords) {
   return GC_MALLOC_ATOMIC_IGNORE_OFF_PAGE((nwords) * sizeof(void*));
 }
 
 /* for arrays only */
-static inline void* mmc_alloc_words_ignore_offpage(unsigned int nwords) {
+static inline void* mmc_alloc_words_ignore_off_page(unsigned int nwords) {
   return GC_MALLOC_IGNORE_OFF_PAGE((nwords) * sizeof(void*));
 }
 

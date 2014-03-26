@@ -65,7 +65,7 @@ void* mmc_mk_rcon(double d)
 void *mmc_mk_box_arr(int slots, unsigned int ctor, void** args)
 {
     int i;
-    struct mmc_struct *p = (struct mmc_struct*)mmc_alloc_words_ignore_offpage(slots + 1);
+    struct mmc_struct *p = (struct mmc_struct*)mmc_alloc_words(slots + 1);
     p->header = MMC_STRUCTHDR(slots, ctor);
     for (i=0; i<slots; i++) {
       p->data[i] = (void*) args[i];
@@ -78,7 +78,7 @@ void *mmc_mk_box_arr(int slots, unsigned int ctor, void** args)
 
 void *mmc_mk_box_no_assign(int slots, unsigned int ctor)
 {
-    struct mmc_struct *p = (struct mmc_struct*)mmc_alloc_words_ignore_offpage(slots+1);
+    struct mmc_struct *p = (struct mmc_struct*)mmc_alloc_words(slots+1);
     p->header = MMC_STRUCTHDR(slots, ctor);
 #ifdef MMC_MK_DEBUG
     fprintf(stderr, "STRUCT NO ASSIGN slots%d ctor %u\n", slots, ctor); fflush(NULL);

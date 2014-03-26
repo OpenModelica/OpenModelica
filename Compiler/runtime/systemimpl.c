@@ -2571,6 +2571,7 @@ void SystemImpl__initGarbageCollector(void)
 #ifdef RML_STYLE_TAGPTR
   GC_register_displacement(3);
 #endif
+  GC_set_force_unmap_on_gcollect(1);
 }
 
 int SystemImpl__fileContentsEqual(const char *file1, const char *file2)

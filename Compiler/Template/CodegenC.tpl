@@ -5523,7 +5523,6 @@ case FUNCTION(__) then
     <%outVarCopy%>
     /* functionBodyRegularFunction: out var assign */
     <%outVarAssign%>
-    /* GC: pop the mark! */
     <%if acceptParModelicaGrammar() then
     '/* Free GPU/OpenCL CPU memory */<%\n%><%varFrees%>'%>
     <%freeConstructedExternalObjects%>

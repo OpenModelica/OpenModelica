@@ -25,9 +25,16 @@
 
 #define ISDIGIT(x) isdigit(x)
 #define ISSPACE(x) isspace(x)
+
+#ifdef _LP64 /* 64 bit */
 #define SIZEOF_LONG 8
 typedef uint64_t ULong;
 typedef int64_t Long;
+#else /* 32 bit */
+#define SIZEOF_LONG 4
+typedef uint32_t ULong;
+typedef int32_t Long;
+#endif
 
 unsigned long
 om_scan_oct(const char *start, size_t len, size_t *retlen)
