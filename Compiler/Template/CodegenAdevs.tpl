@@ -770,7 +770,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
        timeValue = q[numVars()-1] = 0.0;
        clear_event_flags();
        // Get initial values as given in the model
-	   <%varDecls%>
+     <%varDecls%>
        <%initStateSets(stateSets)%>
        <%init1%>
        <%init2%>
