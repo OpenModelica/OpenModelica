@@ -359,29 +359,30 @@ install: install-dirs install-python
 3rdParty/msgpack-0.5.8/Makefile:
 	cd 3rdParty/msgpack-0.5.8 && ./configure "--host=$(host)" CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS) $(MSGPACK_CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS) "
 
-build/lib/libmsgpackc.so.2.0.0: 3rdParty/msgpack-0.5.8/Makefile
+build/lib/omc/libmsgpackc.so.2.0.0: 3rdParty/msgpack-0.5.8/Makefile
 	$(MAKE) -C 3rdParty/msgpack-0.5.8
 	cp -a 3rdParty/msgpack-0.5.8/src/.libs/libmsgpackc.so* build/lib/omc/
 
-build/lib/libmsgpackc.2.dylib: 3rdParty/msgpack-0.5.8/Makefile
+build/lib/omc/libmsgpackc.2.dylib: 3rdParty/msgpack-0.5.8/Makefile
 	$(MAKE) -C 3rdParty/msgpack-0.5.8
 	install_name_tool -id @rpath/libmsgpackc.2.dylib 3rdParty/msgpack-0.5.8/src/.libs/libmsgpackc.2.dylib
 	cp -a 3rdParty/msgpack-0.5.8/src/.libs/libmsgpackc.dylib* build/lib/omc/
+	cp -a 3rdParty/msgpack-0.5.8/src/msgpack.h 3rdParty/msgpack-0.5.8/src/msgpack/ $(builddir_inc)/c
 
-build/lib/libmsgpackc.a: 3rdParty/msgpack-0.5.8/Makefile
+build/lib/omc/libmsgpackc.a: 3rdParty/msgpack-0.5.8/Makefile
 	$(MAKE) -C 3rdParty/msgpack-0.5.8
 	cp -a 3rdParty/msgpack-0.5.8/src/.libs/libmsgpackc.a build/lib/omc/
+	cp -a 3rdParty/msgpack-0.5.8/src/msgpack.h 3rdParty/msgpack-0.5.8/src/msgpack/ $(builddir_inc)/c
 
 ifeq ($(SHREXT),.so)
-msgpack: build/lib/libmsgpackc.so.2.0.0
+msgpack: build/lib/omc/libmsgpackc.so.2.0.0
 else
 ifeq ($(SHREXT),.dylib)
-msgpack: build/lib/libmsgpackc.2.dylib
+msgpack: build/lib/omc/libmsgpackc.2.dylib
 else
-msgpack: build/lib/libmsgpackc.a
+msgpack: build/lib/omc/libmsgpackc.a
 endif
 endif
-
 msgpack-clean:
 	test ! -f 3rdParty/msgpack-0.5.8/Makefile || $(MAKE) -C 3rdParty/msgpack-0.5.8 distclean || true
 	rm -f 3rdParty/msgpack-0.5.8/Makefile
