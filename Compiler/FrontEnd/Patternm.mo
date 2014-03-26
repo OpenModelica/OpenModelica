@@ -1910,10 +1910,10 @@ algorithm
         localsTree = AvlTreeString.joinAvlTrees(matchExpLocalTree, caseLocalTree);
         useTree = AvlTreeString.avlTreeNew();
         // Start building the def-use chain bottom-up
-        (_,useTree) = Expression.traverseExp(DAE.META_OPTION(elabResult), useLocalCref, useTree);
+        ((_,useTree)) = Expression.traverseExp(DAE.META_OPTION(elabResult), useLocalCref, useTree);
         (body,useTree) = List.map1Fold(listReverse(body),statementFindDeadStore,localsTree,useTree);
         body = listReverse(body);
-        (_,useTree) = Expression.traverseExp(DAE.META_OPTION(dPatternGuard), useLocalCref, useTree);
+        ((_,useTree)) = Expression.traverseExp(DAE.META_OPTION(dPatternGuard), useLocalCref, useTree);
         (elabPatterns,_) = traversePatternList(elabPatterns, checkDefUsePattern, (localsTree,useTree,patternInfo));
         elabCase = DAE.CASE(elabPatterns, dPatternGuard, caseDecls, body, elabResult, resultInfo, 0, info);
       then (cache,elabCase,elabResult,resType,st);
@@ -2220,7 +2220,10 @@ algorithm
       AvlTreeString.AvlTree declsTree;
       list<String> names;
 
-    case (cache,env,{},_,_,_) then (cache,SOME((env,DAE.emptyDae,AvlTreeString.avlTreeNew())));
+    case (cache,env,{},_,_,_)
+      equation
+        declsTree = AvlTreeString.avlTreeNew();
+      then (cache,SOME((env,DAE.emptyDae,declsTree)));
     case (cache,env,ld,_,_,_)
       equation
         env2 = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(scopeName),NONE());
@@ -2597,63 +2600,66 @@ algorithm
       DAE.ElementSource source;
     case (DAE.STMT_ASSIGN(type_=ty,exp1=lhs,exp=exp,source=source as DAE.SOURCE(info=info)),_,_)
       equation
-        (_,useTree) = Expression.traverseExp(exp, useLocalCref, inUseTree);
-        (lhs,_) = Expression.traverseExp(lhs, checkDefUse, (localsTree,useTree,info));
+        ((_,useTree)) = Expression.traverseExp(exp, useLocalCref, inUseTree);
+        ((lhs,_)) = Expression.traverseExp(lhs, checkDefUse, (localsTree,useTree,info));
       then (DAE.STMT_ASSIGN(ty,lhs,exp,source),useTree);
 
     case (DAE.STMT_TUPLE_ASSIGN(type_=ty,expExpLst=exps,exp=exp,source=source as DAE.SOURCE(info=info)),_,_)
       equation
-        (_,useTree) = Expression.traverseExp(exp, useLocalCref, inUseTree);
-        (DAE.TUPLE(exps),_) = Expression.traverseExp(DAE.TUPLE(exps), checkDefUse, (localsTree,useTree,info));
+        ((_,useTree)) = Expression.traverseExp(exp, useLocalCref, inUseTree);
+        ((DAE.TUPLE(exps),_)) = Expression.traverseExp(DAE.TUPLE(exps), checkDefUse, (localsTree,useTree,info));
       then (DAE.STMT_TUPLE_ASSIGN(ty,exps,exp,source),useTree);
 
     case (DAE.STMT_ASSIGN_ARR(type_=ty,componentRef=cr,exp=exp,source=source as DAE.SOURCE(info=info)),_,_)
       equation
-        (_,useTree) = Expression.traverseExp(exp, useLocalCref, inUseTree);
-        (DAE.CREF(componentRef=cr),_) = Expression.traverseExp(DAE.CREF(cr,DAE.T_REAL_DEFAULT), checkDefUse, (localsTree,useTree,info));
+        ((_,useTree)) = Expression.traverseExp(exp, useLocalCref, inUseTree);
+        ((DAE.CREF(componentRef=cr),_)) = Expression.traverseExp(DAE.CREF(cr,DAE.T_REAL_DEFAULT), checkDefUse, (localsTree,useTree,info));
       then (DAE.STMT_ASSIGN_ARR(ty,cr,exp,source),useTree);
 
     case (DAE.STMT_IF(exp=exp,statementLst=body,else_=else_,source=source),_,_)
       equation
         (else_,elseTree) = elseFindDeadStore(else_, localsTree, inUseTree);
         (body,useTree) = List.map1Fold(listReverse(body),statementFindDeadStore,localsTree,inUseTree);
-        (_,useTree) = Expression.traverseExp(exp, useLocalCref, useTree);
+        ((_,useTree)) = Expression.traverseExp(exp, useLocalCref, useTree);
         useTree = AvlTreeString.joinAvlTrees(useTree,elseTree);
-      then (DAE.STMT_IF(exp,listReverse(body),else_,source),useTree);
+        body = listReverse(body);
+      then (DAE.STMT_IF(exp,body,else_,source),useTree);
 
     case (DAE.STMT_FOR(ty,b,id,index,exp,body,source),_,_)
       equation
         (body,useTree) = List.map1Fold(listReverse(body),statementFindDeadStore,localsTree,inUseTree);
-        (_,useTree) = Expression.traverseExp(exp, useLocalCref, useTree);
+        ((_,useTree)) = Expression.traverseExp(exp, useLocalCref, useTree);
         // TODO: We should remove ident from the use-tree in case of shadowing... But our avlTree cannot delete
         useTree = AvlTreeString.joinAvlTrees(useTree,inUseTree);
-      then (DAE.STMT_FOR(ty,b,id,index,exp,listReverse(body),source),useTree);
+        body = listReverse(body);
+      then (DAE.STMT_FOR(ty,b,id,index,exp,body,source),useTree);
 
     case (DAE.STMT_WHILE(exp=exp,statementLst=body,source=source),_,_)
       equation
         (body,useTree) = List.map1Fold(listReverse(body),statementFindDeadStore,localsTree,inUseTree);
-        (_,useTree) = Expression.traverseExp(exp, useLocalCref, useTree);
+        ((_,useTree)) = Expression.traverseExp(exp, useLocalCref, useTree);
         // The loop might not be entered just like if. The following should not remove all previous uses:
         // while false loop
         //   return;
         // end while;
         useTree = AvlTreeString.joinAvlTrees(useTree,inUseTree);
-      then (DAE.STMT_WHILE(exp,listReverse(body),source),useTree);
+        body = listReverse(body);
+      then (DAE.STMT_WHILE(exp,body,source),useTree);
 
     // No PARFOR in MetaModelica
     case (DAE.STMT_PARFOR(source=_),_,_) then fail();
 
     case (DAE.STMT_ASSERT(cond=cond,msg=msg,level=level),_,_)
       equation
-        (_,useTree) = Expression.traverseExp(cond, useLocalCref, inUseTree);
-        (_,useTree) = Expression.traverseExp(msg, useLocalCref, useTree);
-        (_,useTree) = Expression.traverseExp(level, useLocalCref, useTree);
+        ((_,useTree)) = Expression.traverseExp(cond, useLocalCref, inUseTree);
+        ((_,useTree)) = Expression.traverseExp(msg, useLocalCref, useTree);
+        ((_,useTree)) = Expression.traverseExp(level, useLocalCref, useTree);
       then (inStatement,useTree);
 
     // Reset the tree; we do not execute anything after this
     case (DAE.STMT_TERMINATE(msg=exp),_,_)
       equation
-        (_,useTree) = Expression.traverseExp(exp, useLocalCref, AvlTreeString.avlTreeNew());
+        ((_,useTree)) = Expression.traverseExp(exp, useLocalCref, AvlTreeString.avlTreeNew());
       then (inStatement,useTree);
 
     // No when or reinit in functions
@@ -2666,7 +2672,7 @@ algorithm
 
     case (DAE.STMT_NORETCALL(exp=exp),_,_)
       equation
-        (_,useTree) = Expression.traverseExp(exp, useLocalCref, inUseTree);
+        ((_,useTree)) = Expression.traverseExp(exp, useLocalCref, inUseTree);
       then (inStatement,useTree);
 
     case (DAE.STMT_BREAK(source=_),_,_) then (inStatement,inUseTree);
@@ -2674,7 +2680,8 @@ algorithm
     case (DAE.STMT_FAILURE(body=body,source=source),_,_)
       equation
         (body,useTree) = List.map1Fold(listReverse(body),statementFindDeadStore,localsTree,inUseTree);
-      then (DAE.STMT_FAILURE(listReverse(body),source),useTree);
+        body = listReverse(body);
+      then (DAE.STMT_FAILURE(body,source),useTree);
   end match;
 end statementFindDeadStore;
 
@@ -2695,14 +2702,18 @@ algorithm
     case (DAE.ELSEIF(exp,body,else_),_,_)
       equation
         (body,useTree) = List.map1Fold(listReverse(body),statementFindDeadStore,localsTree,inUseTree);
-        (_,useTree) = Expression.traverseExp(exp, useLocalCref, useTree);
+        ((_,useTree)) = Expression.traverseExp(exp, useLocalCref, useTree);
         (else_,elseTree) = elseFindDeadStore(else_, localsTree, inUseTree);
         useTree = AvlTreeString.joinAvlTrees(useTree,elseTree);
-      then (DAE.ELSEIF(exp,listReverse(body),else_),useTree);
+        body = listReverse(body);
+        else_ = DAE.ELSEIF(exp,body,else_);
+      then (else_,useTree);
     case (DAE.ELSE(body),_,_)
       equation
         (body,useTree) = List.map1Fold(listReverse(body),statementFindDeadStore,localsTree,inUseTree);
-      then (DAE.ELSE(listReverse(body)),useTree);
+        body = listReverse(body);
+        else_ = DAE.ELSE(body);
+      then (else_,useTree);
   end match;
 end elseFindDeadStore;
 
