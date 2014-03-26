@@ -2170,7 +2170,7 @@ extern char* SystemImpl__iconv(const char * str, const char *from, const char *t
     if (printError) c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("iconv(to=%s) failed because the character set output null bytes in the middle of the string."),&to,1);
     return (char*) "";
   }
-  return GC_strdup(buf);
+  return buf;
 }
 
 #include <tinymt64.h>

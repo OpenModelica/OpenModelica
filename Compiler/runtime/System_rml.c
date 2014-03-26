@@ -239,7 +239,7 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__dirname)
 {
   const char *str = RML_STRINGDATA(rmlA0);
-  rmlA0 = mk_scon(dirname(GC_strdup(str)));
+  rmlA0 = mk_scon(dirname(str));
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

@@ -127,32 +127,32 @@ extern const char* System_getRTLibsSim()
 
 extern const char* System_getCCompiler()
 {
-  return GC_strdup(cc);
+  return cc;
 }
 
 extern const char* System_getCXXCompiler()
 {
-  return GC_strdup(cxx);
+  return cxx;
 }
 
 extern const char* System_getOMPCCompiler()
 {
-  return GC_strdup(omp_cc);
+  return omp_cc;
 }
 
 extern const char* System_getLinker()
 {
-  return GC_strdup(linker);
+  return linker;
 }
 
 extern const char* System_getLDFlags()
 {
-  return GC_strdup(ldflags);
+  return ldflags;
 }
 
 extern const char* System_getCFlags()
 {
-  return GC_strdup(cflags);
+  return cflags;
 }
 
 extern const char* System_getExeExt()
@@ -205,7 +205,6 @@ extern const char* System_dirname(const char* str)
 #else
   res = dirname(cpy);
 #endif
-  res = GC_strdup(res);
   return res;
 }
 
