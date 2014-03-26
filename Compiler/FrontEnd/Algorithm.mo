@@ -103,7 +103,7 @@ public function makeAssignmentNoTypeCheck
   output DAE.Statement outStatement;
 algorithm
   outStatement := match (ty,lhs,rhs,source)
-    case (_,DAE.CREF(componentRef=DAE.WILD()),_,DAE.SOURCE())
+    case (_,DAE.CREF(componentRef=DAE.WILD()),_,_)
       then DAE.STMT_NORETCALL(rhs, source);
     case (_,DAE.PATTERN(pattern=DAE.PAT_WILD()),_,_)
       then DAE.STMT_NORETCALL(rhs, source);
@@ -120,7 +120,7 @@ public function makeArrayAssignmentNoTypeCheck
   output DAE.Statement outStatement;
 algorithm
   outStatement := match (ty,lhs,rhs,source)
-    case (_,DAE.WILD(),_,DAE.SOURCE())
+    case (_,DAE.WILD(),_,_)
       then DAE.STMT_NORETCALL(rhs, source);
     else DAE.STMT_ASSIGN_ARR(ty, lhs, rhs, source);
   end match;
