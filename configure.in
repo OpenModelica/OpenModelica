@@ -84,6 +84,8 @@ AC_SUBST(APP)
 AC_SUBST(OMC)
 AC_SUBST(OMCTARGET)
 AC_SUBST(BOOTSTRAP_STATIC)
+AC_SUBST(GCC_CC)
+AC_SUBST(GCC_CXX)
 
 FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following options:"
 
@@ -789,6 +791,14 @@ if test -n "$QMAKE"; then
     OMOPTIM_CC=$CC
     OMOPTIM_CXX=$CXX
   fi
+fi
+
+if test -f /usr/bin/gcc -a -f /usr/bin/g++; then
+  GCC_CC=gcc
+  GCC_CXX=g++
+else
+  GCC_CC=$CC
+  GCC_CXX=$CXX
 fi
 
 if test "Darwin" = `uname`; then
