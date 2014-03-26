@@ -77,7 +77,7 @@ extern const char* Print_getString(threadData_t *threadData)
   if (res == NULL)
     MMC_THROW();
   // fprintf(stderr, "Print_getString: %s##\n", res);fflush(NULL);
-  return GC_strdup(res);
+  return res;
 }
 
 extern const char* Print_getErrorString(threadData_t *threadData)
@@ -85,7 +85,7 @@ extern const char* Print_getErrorString(threadData_t *threadData)
   const char* res = PrintImpl__getErrorString(threadData);
   if (res == NULL)
     MMC_THROW();
-  return GC_strdup(res);
+  return res;
 }
 
 extern void Print_clearErrorBuf(threadData_t *threadData)
