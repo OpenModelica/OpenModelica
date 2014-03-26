@@ -366,7 +366,7 @@ build/lib/omc/libmsgpackc.so.2.0.0: 3rdParty/msgpack-0.5.8/Makefile
 build/lib/omc/libmsgpackc.2.dylib: 3rdParty/msgpack-0.5.8/Makefile
 	$(MAKE) -C 3rdParty/msgpack-0.5.8
 	install_name_tool -id @rpath/libmsgpackc.2.dylib 3rdParty/msgpack-0.5.8/src/.libs/libmsgpackc.2.dylib
-	cp -a 3rdParty/msgpack-0.5.8/src/.libs/libmsgpackc.dylib* build/lib/omc/
+	cp -a 3rdParty/msgpack-0.5.8/src/.libs/libmsgpackc*dylib build/lib/omc/
 	cp -a 3rdParty/msgpack-0.5.8/src/msgpack.h 3rdParty/msgpack-0.5.8/src/msgpack/ $(builddir_inc)/c
 
 build/lib/omc/libmsgpackc.a: 3rdParty/msgpack-0.5.8/Makefile
