@@ -376,16 +376,6 @@ package Absyn
     record ALG_RETURN end ALG_RETURN;
     record ALG_BREAK end ALG_BREAK;
 
-    record ALG_TRY
-      list<AlgorithmItem> tryBody;
-    end ALG_TRY;
-
-    record ALG_CATCH
-      list<AlgorithmItem> catchBody;
-    end ALG_CATCH;
-
-    record ALG_THROW end ALG_THROW;
-
     record ALG_FAILURE
       list<AlgorithmItem> equ;
     end ALG_FAILURE;

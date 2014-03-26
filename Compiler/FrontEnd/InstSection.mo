@@ -2714,35 +2714,6 @@ algorithm
       then
         (cache,{stmt});
 
-    // try
-    case (cache,env,ih,pre,_,SCode.ALG_TRY(tryBody = sl, comment = comment, info = info),source,_,impl,_,_)
-      equation
-        true = Config.acceptMetaModelicaGrammar();
-        (cache,sl_1) = instStatements(cache, env, ih, pre, ci_state, sl, source, initial_, impl, unrollForLoops, {});
-        source = DAEUtil.addElementSourceFileInfo(source, info);
-        stmt = DAE.STMT_TRY(sl_1,source);
-      then
-        (cache,{stmt});
-
-    // catch
-    case (cache,env,ih,pre,_,SCode.ALG_CATCH(catchBody = sl, comment = comment, info = info),source,_,impl,_,_)
-      equation
-        true = Config.acceptMetaModelicaGrammar();
-        (cache,sl_1) = instStatements(cache, env, ih, pre, ci_state, sl, source, initial_, impl, unrollForLoops, {});
-        source = DAEUtil.addElementSourceFileInfo(source, info);
-        stmt = DAE.STMT_CATCH(sl_1,source);
-      then
-        (cache,{stmt});
-
-    // throw
-    case (cache,env,ih,pre,_,SCode.ALG_THROW(comment = comment, info = info),source,_,impl,_,_)
-      equation
-        true = Config.acceptMetaModelicaGrammar();
-        source = DAEUtil.addElementSourceFileInfo(source, info);
-        stmt = DAE.STMT_THROW(source);
-      then
-        (cache,{stmt});
-
     // error handling
     case (cache,env,ih,pre,_,alg,_,_,impl,_,_)
       equation
@@ -2844,14 +2815,6 @@ algorithm
 
     // search deeper inside for
     case (SCode.ALG_WHILE(whileBody = lst)::rest)
-      equation
-         b1 = containsWhenStatements(lst);
-         b2 = containsWhenStatements(rest);
-         b  = boolOr(b1, b2);
-      then b;
-
-    // search deeper inside catch
-    case (SCode.ALG_CATCH(catchBody = lst)::rest)
       equation
          b1 = containsWhenStatements(lst);
          b2 = containsWhenStatements(rest);

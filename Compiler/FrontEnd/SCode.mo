@@ -406,23 +406,6 @@ public uniontype Statement "The Statement type describes one algorithm statement
   end ALG_BREAK;
 
   // Part of MetaModelica extension. KS
-  record ALG_TRY
-    list<Statement> tryBody;
-    Comment comment;
-    Absyn.Info info;
-  end ALG_TRY;
-
-  record ALG_CATCH
-    list<Statement> catchBody;
-    Comment comment;
-    Absyn.Info info;
-  end ALG_CATCH;
-
-  record ALG_THROW
-    Comment comment;
-    Absyn.Info info;
-  end ALG_THROW;
-
   record ALG_FAILURE
     list<Statement> stmts;
     Comment comment;
@@ -2113,19 +2096,6 @@ algorithm
     case ALG_BREAK(_,info)
     then Absyn.ALGORITHMITEM(Absyn.ALG_BREAK(),NONE(),info);
 
-    case ALG_TRY(body,_,info)
-      equation
-        algs1 = List.map(body,statementToAlgorithmItem);
-      then Absyn.ALGORITHMITEM(Absyn.ALG_TRY(algs1),NONE(),info);
-
-    case ALG_CATCH(body,_,info)
-      equation
-        algs1 = List.map(body,statementToAlgorithmItem);
-      then Absyn.ALGORITHMITEM(Absyn.ALG_CATCH(algs1),NONE(),info);
-
-    case ALG_THROW(_,info)
-    then Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),NONE(),info);
-
     case ALG_FAILURE(body,_,info)
       equation
         algs1 = List.map(body,statementToAlgorithmItem);
@@ -2207,14 +2177,6 @@ algorithm
         then lst;
       case (id,ALG_NORETCALL(exp = e_1))
         then Absyn.findIteratorInExp(id,e_1);
-      case (id,ALG_TRY(tryBody = algLst_1))
-        equation
-          lst=findIteratorInStatements(id,algLst_1);
-        then lst;
-      case (id,ALG_CATCH(catchBody = algLst_1))
-        equation
-          lst=findIteratorInStatements(id,algLst_1);
-        then lst;
       case (_,_) then {};
   end matchcontinue;
 end findIteratorInStatement;
@@ -2848,18 +2810,6 @@ algorithm
       then
         (ALG_WHEN_A(branches, comment, info), tup);
 
-    case (ALG_TRY(stmts1, comment, info), tup)
-      equation
-        (stmts1, tup) = traverseStatementsList(stmts1, tup);
-      then
-        (ALG_TRY(stmts1, comment, info), tup);
-
-    case (ALG_CATCH(stmts1, comment, info), tup)
-      equation
-        (stmts1, tup) = traverseStatementsList(stmts1, tup);
-      then
-        (ALG_CATCH(stmts1, comment, info), tup);
-
     case (ALG_FAILURE(stmts1, comment, info), tup)
       equation
         (stmts1, tup) = traverseStatementsList(stmts1, tup);
@@ -3134,9 +3084,6 @@ algorithm
     case ALG_NORETCALL(info = info) then info;
     case ALG_RETURN(info = info) then info;
     case ALG_BREAK(info = info) then info;
-    case ALG_TRY(info = info) then info;
-    case ALG_CATCH(info = info) then info;
-    case ALG_THROW(info = info) then info;
     case ALG_FAILURE(info = info) then info;
   end match;
 end getStatementInfo;

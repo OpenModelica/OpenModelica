@@ -567,17 +567,6 @@ uniontype Algorithm "The Algorithm type describes one algorithm statement in an
   end ALG_BREAK;
 
   // Part of MetaModelica extension. KS
-  record ALG_TRY
-    list<AlgorithmItem> tryBody;
-  end ALG_TRY;
-
-  record ALG_CATCH
-    list<AlgorithmItem> catchBody;
-  end ALG_CATCH;
-
-  record ALG_THROW
-  end ALG_THROW;
-
   record ALG_FAILURE
     list<AlgorithmItem> equ;
   end ALG_FAILURE;
@@ -1374,18 +1363,6 @@ algorithm
         ((ALG_WHEN_A(e_1,_,_),arg_1)) = rel((alg,arg2_1));
       then
         ((ALG_WHEN_A(e_1,ailst_1,eaitlst_1),arg_1));
-    case(alg as ALG_TRY(ailst),rel,arg)
-      equation
-        ((ailst_1,arg1_1)) = traverseAlgorithmItemList(ailst,rel,arg);
-        ((ALG_TRY(_),arg_1)) = rel((alg,arg1_1));
-      then
-        ((ALG_TRY(ailst_1),arg_1));
-    case(alg as ALG_CATCH(ailst),rel,arg)
-      equation
-        ((ailst_1,arg1_1)) = traverseAlgorithmItemList(ailst,rel,arg);
-        ((ALG_CATCH(_),arg_1)) = rel((alg,arg1_1));
-      then
-        ((ALG_CATCH(ailst_1),arg_1));
     case(alg,rel,arg)
       equation
         ((alg_1,arg_1)) = rel((alg,arg));

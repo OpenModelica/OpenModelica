@@ -40,6 +40,7 @@ encapsulated package Patternm
   matchcontinue expression."
 
 public import Absyn;
+public import AvlTreeString;
 public import ClassInf;
 public import ConnectionGraph;
 public import DAE;
@@ -646,6 +647,7 @@ algorithm
       Env.Env env;
       Integer hashSize;
       list<list<String>> inputAliases,inputAliasesAndCrefs;
+      AvlTreeString.AvlTree declsTree;
 
     case (cache,env,Absyn.MATCHEXP(matchTy=matchTy,inputExp=inExp,localDecls=decls,cases=cases),_,st,_,pre,_,_)
       equation
@@ -654,10 +656,10 @@ algorithm
         (inExps,inputAliases,inputAliasesAndCrefs) = List.map_3(inExps,getInputAsBinding);
         (cache,elabExps,elabProps,st) = Static.elabExpList(cache,env,inExps,impl,st,performVectorization,pre,info);
         // Then add locals
-        (cache,SOME((env,DAE.DAE(matchDecls)))) = addLocalDecls(cache,env,decls,Env.matchScopeName,impl,info);
+        (cache,SOME((env,DAE.DAE(matchDecls),declsTree))) = addLocalDecls(cache,env,decls,Env.matchScopeName,impl,info);
         tys = List.map(elabProps, Types.getPropType);
         env = addAliasesToEnv(env, tys, inputAliases, info);
-        (cache,elabCases,resType,st) = elabMatchCases(cache,env,cases,tys,inputAliasesAndCrefs,impl,st,performVectorization,pre,info);
+        (cache,elabCases,resType,st) = elabMatchCases(cache,env,cases,tys,inputAliasesAndCrefs,declsTree,impl,st,performVectorization,pre,info);
         prop = DAE.PROP(resType,DAE.C_VAR());
         et = Types.simplifyType(resType);
         (elabExps,inputAliases,elabCases) = filterUnusedPatterns(elabExps,inputAliases,elabCases) "filterUnusedPatterns() First time to speed up the other optimizations.";
@@ -669,7 +671,6 @@ algorithm
         hashSize = Util.nextPrime(listLength(matchDecls));
         ht = getUsedLocalCrefs(Flags.isSet(Flags.PATTERNM_SKIP_FILTER_UNUSED_AS_BINDINGS),DAE.MATCHEXPRESSION(DAE.MATCHCONTINUE(),elabExps,inputAliases,matchDecls,elabCases,et),hashSize);
         (matchDecls,ht) = filterUnusedDecls(matchDecls,ht,{},HashTableStringToPath.emptyHashTableSized(hashSize));
-        elabCases = filterUnusedAsBindings(elabCases,ht);
         (elabExps,inputAliases,elabCases) = filterUnusedPatterns(elabExps,inputAliases,elabCases) "filterUnusedPatterns() again to filter out the last parts.";
         elabMatchTy = optimizeMatchToSwitch(matchTy,elabCases,info);
         exp = DAE.MATCHEXPRESSION(elabMatchTy,elabExps,inputAliases,matchDecls,elabCases,et);
@@ -1064,6 +1065,195 @@ algorithm
     else iht;
   end match;
 end addLocalCrefSubs;
+
+protected function checkDefUse
+"Use with traverseExp to collect all CREF's that could be references to local
+variables."
+  input tuple<DAE.Exp,tuple<AvlTreeString.AvlTree,AvlTreeString.AvlTree,Absyn.Info>> inTpl;
+  output tuple<DAE.Exp,tuple<AvlTreeString.AvlTree,AvlTreeString.AvlTree,Absyn.Info>> outTpl;
+algorithm
+  outTpl := matchcontinue inTpl
+    local
+      DAE.Exp exp;
+      AvlTreeString.AvlTree localsTree,useTree;
+      String name;
+      DAE.Pattern pat;
+      DAE.ComponentRef cr;
+      Absyn.Info info;
+      DAE.Type ty;
+      tuple<AvlTreeString.AvlTree,AvlTreeString.AvlTree,Absyn.Info> extra;
+    case ((exp as DAE.CREF(componentRef=cr,ty=ty),extra as (localsTree,useTree,info)))
+      equation
+        name = ComponentReference.crefFirstIdent(cr);
+        // TODO: Can skip matchcontinue and failure if there was an AvlTree.exists(key)
+        _ = AvlTreeString.avlTreeGet(localsTree,name);
+        failure(_ = AvlTreeString.avlTreeGet(useTree,name));
+        Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.META_UNUSED_AS_BINDING,{name},info);
+      then ((DAE.CREF(DAE.WILD(),ty),extra));
+    case ((DAE.PATTERN(pattern=pat),extra))
+      equation
+        ((pat,extra)) = traversePattern((pat,extra), checkDefUsePattern);
+      then ((DAE.PATTERN(pat),extra));
+    else inTpl;
+  end matchcontinue;
+end checkDefUse;
+
+protected function checkDefUsePattern
+"Use with traverseExp to collect all CREF's that could be references to local
+variables."
+  input tuple<DAE.Pattern,tuple<AvlTreeString.AvlTree,AvlTreeString.AvlTree,Absyn.Info>> inTpl;
+  output tuple<DAE.Pattern,tuple<AvlTreeString.AvlTree,AvlTreeString.AvlTree,Absyn.Info>> outTpl;
+algorithm
+  outTpl := matchcontinue inTpl
+    local
+      AvlTreeString.AvlTree localsTree,useTree;
+      String name;
+      DAE.Pattern pat;
+      Absyn.Info info;
+      DAE.Type ty;
+      tuple<AvlTreeString.AvlTree,AvlTreeString.AvlTree,Absyn.Info> extra;
+    case ((DAE.PAT_AS(id=name,pat=pat),extra as (localsTree,useTree,info)))
+      equation
+        // TODO: Can skip matchcontinue and failure if there was an AvlTree.exists(key)
+        _ = AvlTreeString.avlTreeGet(localsTree,name);
+        failure(_ = AvlTreeString.avlTreeGet(useTree,name));
+        Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.META_UNUSED_AS_BINDING,{name},info);
+      then ((pat,extra));
+    case ((DAE.PAT_AS_FUNC_PTR(id=name,pat=pat),extra as (localsTree,useTree,info)))
+      equation
+        // TODO: Can skip matchcontinue and failure if there was an AvlTree.exists(key)
+        _ = AvlTreeString.avlTreeGet(localsTree,name);
+        failure(_ = AvlTreeString.avlTreeGet(useTree,name));
+        Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.META_UNUSED_AS_BINDING,{name},info);
+      then ((pat,extra));
+    else inTpl;
+  end matchcontinue;
+end checkDefUsePattern;
+
+protected function useLocalCref
+"Use with traverseExp to collect all CREF's that could be references to local
+variables."
+  input tuple<DAE.Exp,AvlTreeString.AvlTree> inTpl;
+  output tuple<DAE.Exp,AvlTreeString.AvlTree> outTpl;
+algorithm
+  outTpl := match inTpl
+    local
+      DAE.Exp exp;
+      AvlTreeString.AvlTree tree;
+      String name;
+      list<DAE.MatchCase> cases;
+      DAE.Pattern pat;
+      list<DAE.Subscript> subs;
+      DAE.ComponentRef cr;
+    case ((exp as DAE.CREF(componentRef=cr),tree))
+      equation
+        tree = useLocalCrefHelper(cr,tree);
+      then ((exp,tree));
+    case ((exp as DAE.CALL(path=Absyn.IDENT(name), attr=DAE.CALL_ATTR(builtin=false)),tree))
+      equation
+        tree = AvlTreeString.avlTreeAdd(tree, name, 1);
+      then ((exp,tree));
+    case ((exp as DAE.PATTERN(pattern=pat),tree))
+      equation
+        ((_,tree)) = traversePattern((pat,tree), usePatternAsBindings);
+      then ((exp,tree));
+    case ((exp as DAE.MATCHEXPRESSION(cases=cases),tree))
+      equation
+        tree = useCasesLocalCref(cases,tree);
+      then ((exp,tree));
+    else inTpl;
+  end match;
+end useLocalCref;
+
+protected function useLocalCrefHelper
+  input DAE.ComponentRef cr;
+  input AvlTreeString.AvlTree inTree;
+  output AvlTreeString.AvlTree tree;
+algorithm
+  tree := match (cr,inTree)
+    local
+      String name;
+      list<DAE.Subscript> subs;
+      DAE.ComponentRef cr2;
+    case (DAE.CREF_IDENT(ident=name,subscriptLst=subs), _)
+      equation
+        tree = useLocalCrefSubs(subs,inTree);
+      then AvlTreeString.avlTreeAdd(tree, name, 1);
+    case (DAE.CREF_QUAL(ident=name,subscriptLst=subs,componentRef=cr2),_)
+      equation
+        tree = useLocalCrefSubs(subs,inTree);
+        tree = AvlTreeString.avlTreeAdd(tree, name, 1);
+      then useLocalCrefHelper(cr2,tree);
+    else inTree;
+  end match;
+end useLocalCrefHelper;
+
+protected function useLocalCrefSubs
+  "Cref subscripts may also contain crefs"
+  input list<DAE.Subscript> isubs;
+  input AvlTreeString.AvlTree inTree;
+  output AvlTreeString.AvlTree tree;
+algorithm
+  tree := match (isubs,inTree)
+    local
+      DAE.Exp exp;
+      list<DAE.Subscript> subs;
+
+    case ({},_) then inTree;
+    case (DAE.SLICE(exp)::subs,_)
+      equation
+        ((_,tree)) = Expression.traverseExp(exp, useLocalCref, inTree);
+        tree = useLocalCrefSubs(subs,tree);
+      then tree;
+    case (DAE.INDEX(exp)::subs,_)
+      equation
+        ((_,tree)) = Expression.traverseExp(exp, useLocalCref, inTree);
+        tree = useLocalCrefSubs(subs,tree);
+      then tree;
+    else inTree;
+  end match;
+end useLocalCrefSubs;
+
+protected function usePatternAsBindings
+  "Traverse patterns and as-bindings as variable references in the hashtable"
+  input tuple<DAE.Pattern,AvlTreeString.AvlTree> inTpl;
+  output tuple<DAE.Pattern,AvlTreeString.AvlTree> outTpl;
+algorithm
+  outTpl := matchcontinue inTpl
+    local
+      AvlTreeString.AvlTree tree;
+      DAE.Pattern pat;
+      String id;
+    case ((pat as DAE.PAT_AS(id=id),tree))
+      equation
+        tree = AvlTreeString.avlTreeAdd(tree, id, 1);
+      then ((pat,tree));
+    case ((pat as DAE.PAT_AS_FUNC_PTR(id=id),tree))
+      equation
+        tree = AvlTreeString.avlTreeAdd(tree, id, 1);
+      then ((pat,tree));
+    else inTpl;
+  end matchcontinue;
+end usePatternAsBindings;
+
+protected function useCasesLocalCref
+  input list<DAE.MatchCase> icases;
+  input AvlTreeString.AvlTree inTree;
+  output AvlTreeString.AvlTree tree;
+algorithm
+  tree := match (icases,inTree)
+    local
+      list<DAE.Pattern> pats;
+      list<DAE.MatchCase> cases;
+
+    case ({},_) then inTree;
+    case (DAE.CASE(patterns=pats)::cases,_)
+      equation
+        (_,tree) = traversePatternList(pats, usePatternAsBindings, inTree);
+        tree = useCasesLocalCref(cases,tree);
+      then tree;
+  end match;
+end useCasesLocalCref;
 
 protected function addCasesLocalCref
   input list<DAE.MatchCase> icases;
@@ -1605,6 +1795,7 @@ protected function elabMatchCases
   input list<Absyn.Case> cases;
   input list<DAE.Type> tys;
   input list<list<String>> inputAliases;
+  input AvlTreeString.AvlTree matchExpLocalTree;
   input Boolean impl;
   input Option<GlobalScript.SymbolTable> st;
   input Boolean performVectorization;
@@ -1619,7 +1810,7 @@ protected
   list<DAE.Type> resTypes,tysFixed;
 algorithm
   tysFixed := List.map(tys, Types.getUniontypeIfMetarecordReplaceAllSubtypes);
-  (outCache,elabCases,resExps,resTypes,outSt) := elabMatchCases2(cache,env,cases,tysFixed,inputAliases,impl,st,performVectorization,pre,{},{},{});
+  (outCache,elabCases,resExps,resTypes,outSt) := elabMatchCases2(cache,env,cases,tysFixed,inputAliases,matchExpLocalTree,impl,st,performVectorization,pre,{},{},{});
   (elabCases,resType) := fixCaseReturnTypes(elabCases,resExps,resTypes,info);
 end elabMatchCases;
 
@@ -1629,6 +1820,7 @@ protected function elabMatchCases2
   input list<Absyn.Case> cases;
   input list<DAE.Type> tys;
   input list<list<String>> inputAliases;
+  input AvlTreeString.AvlTree matchExpLocalTree;
   input Boolean impl;
   input Option<GlobalScript.SymbolTable> inSt;
   input Boolean performVectorization;
@@ -1643,7 +1835,7 @@ protected function elabMatchCases2
   output Option<GlobalScript.SymbolTable> outSt;
 algorithm
   (outCache,elabCases,resExps,resTypes,outSt) :=
-  match (inCache,inEnv,cases,tys,inputAliases,impl,inSt,performVectorization,pre,inAccCases,inAccExps,inAccTypes)
+  match (inCache,inEnv,cases,tys,inputAliases,matchExpLocalTree,impl,inSt,performVectorization,pre,inAccCases,inAccExps,inAccTypes)
     local
       Absyn.Case case_;
       list<Absyn.Case> rest;
@@ -1656,11 +1848,11 @@ algorithm
       list<DAE.Exp> accExps;
       list<DAE.Type> accTypes;
 
-    case (cache,env,{},_,_,_,st,_,_,_,accExps,accTypes) then (cache,listReverse(inAccCases),listReverse(accExps),listReverse(accTypes),st);
-    case (cache,env,case_::rest,_,_,_,st,_,_,_,accExps,accTypes)
+    case (cache,env,{},_,_,_,_,st,_,_,_,accExps,accTypes) then (cache,listReverse(inAccCases),listReverse(accExps),listReverse(accTypes),st);
+    case (cache,env,case_::rest,_,_,_,_,st,_,_,_,accExps,accTypes)
       equation
-        (cache,elabCase,optExp,optType,st) = elabMatchCase(cache,env,case_,tys,inputAliases,impl,st,performVectorization,pre);
-        (cache,elabCases,accExps,accTypes,st) = elabMatchCases2(cache,env,rest,tys,inputAliases,impl,st,performVectorization,pre,elabCase::inAccCases,List.consOption(optExp,accExps),List.consOption(optType,accTypes));
+        (cache,elabCase,optExp,optType,st) = elabMatchCase(cache,env,case_,tys,inputAliases,matchExpLocalTree,impl,st,performVectorization,pre);
+        (cache,elabCases,accExps,accTypes,st) = elabMatchCases2(cache,env,rest,tys,inputAliases,matchExpLocalTree,impl,st,performVectorization,pre,elabCase::inAccCases,List.consOption(optExp,accExps),List.consOption(optType,accTypes));
       then (cache,elabCases,accExps,accTypes,st);
   end match;
 end elabMatchCases2;
@@ -1671,6 +1863,7 @@ protected function elabMatchCase
   input Absyn.Case acase;
   input list<DAE.Type> tys;
   input list<list<String>> inputAliases;
+  input AvlTreeString.AvlTree matchExpLocalTree;
   input Boolean impl;
   input Option<GlobalScript.SymbolTable> inSt;
   input Boolean performVectorization;
@@ -1682,7 +1875,7 @@ protected function elabMatchCase
   output Option<GlobalScript.SymbolTable> outSt;
 algorithm
   (outCache,elabCase,resExp,resType,outSt) :=
-  match (inCache,inEnv,acase,tys,inputAliases,impl,inSt,performVectorization,pre)
+  match (inCache,inEnv,acase,tys,inputAliases,matchExpLocalTree,impl,inSt,performVectorization,pre)
     local
       Absyn.Exp result,pattern;
       list<Absyn.Exp> patterns;
@@ -1700,10 +1893,11 @@ algorithm
       Env.Cache cache;
       Env.Env env;
       Option<GlobalScript.SymbolTable> st;
+      AvlTreeString.AvlTree caseLocalTree,localsTree,useTree;
 
-    case (cache,env,Absyn.CASE(pattern=pattern,patternGuard=patternGuard,patternInfo=patternInfo,localDecls=decls,equations=eq1,result=result,resultInfo=resultInfo,info=info),_,_,_,st,_,_)
+    case (cache,env,Absyn.CASE(pattern=pattern,patternGuard=patternGuard,patternInfo=patternInfo,localDecls=decls,equations=eq1,result=result,resultInfo=resultInfo,info=info),_,_,_,_,st,_,_)
       equation
-        (cache,SOME((env,DAE.DAE(caseDecls)))) = addLocalDecls(cache,env,decls,Env.caseScopeName,impl,info);
+        (cache,SOME((env,DAE.DAE(caseDecls),caseLocalTree))) = addLocalDecls(cache,env,decls,Env.caseScopeName,impl,info);
         patterns = MetaUtil.extractListFromTuple(pattern, 0);
         patterns = Util.if_(listLength(tys)==1, {pattern}, patterns);
         (cache,elabPatterns) = elabPatternTuple(cache, env, patterns, tys, patternInfo, pattern);
@@ -1713,16 +1907,25 @@ algorithm
         (cache,body) = InstSection.instStatements(cache, env, InnerOuter.emptyInstHierarchy, pre, ClassInf.FUNCTION(Absyn.IDENT("match"), false), algs, DAEUtil.addElementSourceFileInfo(DAE.emptyElementSource,patternInfo), SCode.NON_INITIAL(), true, InstTypes.neverUnroll, {});
         (cache,body,elabResult,resultInfo,resType,st) = elabResultExp(cache,env,body,result,impl,st,performVectorization,pre,resultInfo);
         (cache,dPatternGuard,st) = elabPatternGuard(cache,env,patternGuard,impl,st,performVectorization,pre,patternInfo);
-      then (cache,DAE.CASE(elabPatterns, dPatternGuard, caseDecls, body, elabResult, resultInfo, 0, info),elabResult,resType,st);
+        localsTree = AvlTreeString.joinAvlTrees(matchExpLocalTree, caseLocalTree);
+        useTree = AvlTreeString.avlTreeNew();
+        // Start building the def-use chain bottom-up
+        (_,useTree) = Expression.traverseExp(DAE.META_OPTION(elabResult), useLocalCref, useTree);
+        (body,useTree) = List.map1Fold(listReverse(body),statementFindDeadStore,localsTree,useTree);
+        body = listReverse(body);
+        (_,useTree) = Expression.traverseExp(DAE.META_OPTION(dPatternGuard), useLocalCref, useTree);
+        (elabPatterns,_) = traversePatternList(elabPatterns, checkDefUsePattern, (localsTree,useTree,patternInfo));
+        elabCase = DAE.CASE(elabPatterns, dPatternGuard, caseDecls, body, elabResult, resultInfo, 0, info);
+      then (cache,elabCase,elabResult,resType,st);
 
       // ELSE is the same as CASE, but without pattern
-    case (cache,env,Absyn.ELSE(localDecls=decls,equations=eq1,result=result,resultInfo=resultInfo,info=info),_,_,_,st,_,_)
+    case (cache,env,Absyn.ELSE(localDecls=decls,equations=eq1,result=result,resultInfo=resultInfo,info=info),_,_,_,_,st,_,_)
       equation
         // Needs to be same length as any other pattern for the simplification algorithms, etc to work properly
         len = listLength(tys);
         patterns = List.fill(Absyn.CREF(Absyn.WILD()),listLength(tys));
         pattern = Util.if_(len == 1, Absyn.CREF(Absyn.WILD()), Absyn.TUPLE(patterns));
-        (cache,elabCase,elabResult,resType,st) = elabMatchCase(cache, env, Absyn.CASE(pattern,NONE(),info,decls,eq1,result,resultInfo,NONE(),info), tys, inputAliases, impl, st, performVectorization, pre);
+        (cache,elabCase,elabResult,resType,st) = elabMatchCase(cache, env, Absyn.CASE(pattern,NONE(),info,decls,eq1,result,resultInfo,NONE(),info), tys, inputAliases, matchExpLocalTree, impl, st, performVectorization, pre);
       then (cache,elabCase,elabResult,resType,st);
 
   end match;
@@ -2000,9 +2203,9 @@ protected function addLocalDecls
   input Boolean impl;
   input Absyn.Info info;
   output Env.Cache outCache;
-  output Option<tuple<Env.Env,DAE.DAElist>> tpl;
+  output Option<tuple<Env.Env,DAE.DAElist,AvlTreeString.AvlTree>> res;
 algorithm
-  (outCache,tpl) := matchcontinue (inCache,inEnv,els,scopeName,impl,info)
+  (outCache,res) := matchcontinue (inCache,inEnv,els,scopeName,impl,info)
     local
       list<Absyn.ElementItem> ld;
       list<SCode.Element> ld2,ld3,ld4;
@@ -2014,9 +2217,10 @@ algorithm
       Env.Cache cache;
       Env.Env env;
       Boolean b;
-      Option<tuple<Env.Env,DAE.DAElist>> res;
+      AvlTreeString.AvlTree declsTree;
+      list<String> names;
 
-    case (cache,env,{},_,_,_) then (cache,SOME((env,DAE.emptyDae)));
+    case (cache,env,{},_,_,_) then (cache,SOME((env,DAE.emptyDae,AvlTreeString.avlTreeNew())));
     case (cache,env,ld,_,_,_)
       equation
         env2 = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(scopeName),NONE());
@@ -2040,7 +2244,11 @@ algorithm
           cache,env2, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
           DAE.NOMOD(), Prefix.NOPRE(), dummyFunc, ld_mod, {},
           impl, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet, true);
-        res = Util.if_(b,NONE(),SOME((env2,dae1)));
+
+        names = List.map(ld2, SCode.elementName);
+        declsTree = List.fold1(names, AvlTreeString.avlTreeAddFold, 0, AvlTreeString.avlTreeNew());
+
+        res = Util.if_(b,NONE(),SOME((env2,dae1,declsTree)));
       then (cache,res);
 
     case (cache,env,ld,_,_,_)
@@ -2365,5 +2573,137 @@ algorithm
       then addAliasesToEnv(env,inTypes,rest::aliases,info);
   end match;
 end addAliasesToEnv;
+
+protected function statementFindDeadStore
+  input DAE.Statement inStatement;
+  input AvlTreeString.AvlTree localsTree;
+  input AvlTreeString.AvlTree inUseTree;
+  output DAE.Statement outStatement;
+  output AvlTreeString.AvlTree useTree;
+algorithm
+  (outStatement,useTree) := match (inStatement,localsTree,inUseTree)
+    local
+      AvlTreeString.AvlTree elseTree;
+      list<DAE.Statement> body;
+      DAE.ComponentRef cr;
+      DAE.Exp exp,lhs,cond,msg,level;
+      list<DAE.Exp> exps;
+      DAE.Else else_;
+      DAE.Type ty;
+      Absyn.Info info;
+      Boolean b;
+      String id;
+      Integer index;
+      DAE.ElementSource source;
+    case (DAE.STMT_ASSIGN(type_=ty,exp1=lhs,exp=exp,source=source as DAE.SOURCE(info=info)),_,_)
+      equation
+        (_,useTree) = Expression.traverseExp(exp, useLocalCref, inUseTree);
+        (lhs,_) = Expression.traverseExp(lhs, checkDefUse, (localsTree,useTree,info));
+      then (DAE.STMT_ASSIGN(ty,lhs,exp,source),useTree);
+
+    case (DAE.STMT_TUPLE_ASSIGN(type_=ty,expExpLst=exps,exp=exp,source=source as DAE.SOURCE(info=info)),_,_)
+      equation
+        (_,useTree) = Expression.traverseExp(exp, useLocalCref, inUseTree);
+        (DAE.TUPLE(exps),_) = Expression.traverseExp(DAE.TUPLE(exps), checkDefUse, (localsTree,useTree,info));
+      then (DAE.STMT_TUPLE_ASSIGN(ty,exps,exp,source),useTree);
+
+    case (DAE.STMT_ASSIGN_ARR(type_=ty,componentRef=cr,exp=exp,source=source as DAE.SOURCE(info=info)),_,_)
+      equation
+        (_,useTree) = Expression.traverseExp(exp, useLocalCref, inUseTree);
+        (DAE.CREF(componentRef=cr),_) = Expression.traverseExp(DAE.CREF(cr,DAE.T_REAL_DEFAULT), checkDefUse, (localsTree,useTree,info));
+      then (DAE.STMT_ASSIGN_ARR(ty,cr,exp,source),useTree);
+
+    case (DAE.STMT_IF(exp=exp,statementLst=body,else_=else_,source=source),_,_)
+      equation
+        (else_,elseTree) = elseFindDeadStore(else_, localsTree, inUseTree);
+        (body,useTree) = List.map1Fold(listReverse(body),statementFindDeadStore,localsTree,inUseTree);
+        (_,useTree) = Expression.traverseExp(exp, useLocalCref, useTree);
+        useTree = AvlTreeString.joinAvlTrees(useTree,elseTree);
+      then (DAE.STMT_IF(exp,listReverse(body),else_,source),useTree);
+
+    case (DAE.STMT_FOR(ty,b,id,index,exp,body,source),_,_)
+      equation
+        (body,useTree) = List.map1Fold(listReverse(body),statementFindDeadStore,localsTree,inUseTree);
+        (_,useTree) = Expression.traverseExp(exp, useLocalCref, useTree);
+        // TODO: We should remove ident from the use-tree in case of shadowing... But our avlTree cannot delete
+        useTree = AvlTreeString.joinAvlTrees(useTree,inUseTree);
+      then (DAE.STMT_FOR(ty,b,id,index,exp,listReverse(body),source),useTree);
+
+    case (DAE.STMT_WHILE(exp=exp,statementLst=body,source=source),_,_)
+      equation
+        (body,useTree) = List.map1Fold(listReverse(body),statementFindDeadStore,localsTree,inUseTree);
+        (_,useTree) = Expression.traverseExp(exp, useLocalCref, useTree);
+        // The loop might not be entered just like if. The following should not remove all previous uses:
+        // while false loop
+        //   return;
+        // end while;
+        useTree = AvlTreeString.joinAvlTrees(useTree,inUseTree);
+      then (DAE.STMT_WHILE(exp,listReverse(body),source),useTree);
+
+    // No PARFOR in MetaModelica
+    case (DAE.STMT_PARFOR(source=_),_,_) then fail();
+
+    case (DAE.STMT_ASSERT(cond=cond,msg=msg,level=level),_,_)
+      equation
+        (_,useTree) = Expression.traverseExp(cond, useLocalCref, inUseTree);
+        (_,useTree) = Expression.traverseExp(msg, useLocalCref, useTree);
+        (_,useTree) = Expression.traverseExp(level, useLocalCref, useTree);
+      then (inStatement,useTree);
+
+    // Reset the tree; we do not execute anything after this
+    case (DAE.STMT_TERMINATE(msg=exp),_,_)
+      equation
+        (_,useTree) = Expression.traverseExp(exp, useLocalCref, AvlTreeString.avlTreeNew());
+      then (inStatement,useTree);
+
+    // No when or reinit in functions
+    case (DAE.STMT_WHEN(source=_),_,_) then fail();
+    case (DAE.STMT_REINIT(source=_),_,_) then fail();
+
+    // There is no use after this one, so we can reset the tree
+    case (DAE.STMT_NORETCALL(exp=DAE.CALL(path=Absyn.IDENT("fail"))),_,_) then (inStatement,AvlTreeString.avlTreeNew());
+    case (DAE.STMT_RETURN(source=_),_,_) then (inStatement,AvlTreeString.avlTreeNew());
+
+    case (DAE.STMT_NORETCALL(exp=exp),_,_)
+      equation
+        (_,useTree) = Expression.traverseExp(exp, useLocalCref, inUseTree);
+      then (inStatement,useTree);
+
+    case (DAE.STMT_BREAK(source=_),_,_) then (inStatement,inUseTree);
+    case (DAE.STMT_ARRAY_INIT(source=_),_,_) then (inStatement,inUseTree);
+    case (DAE.STMT_FAILURE(body=body,source=source),_,_)
+      equation
+        (body,useTree) = List.map1Fold(listReverse(body),statementFindDeadStore,localsTree,inUseTree);
+      then (DAE.STMT_FAILURE(listReverse(body),source),useTree);
+  end match;
+end statementFindDeadStore;
+
+protected function elseFindDeadStore
+  input DAE.Else inElse;
+  input AvlTreeString.AvlTree localsTree;
+  input AvlTreeString.AvlTree inUseTree;
+  output DAE.Else outElse;
+  output AvlTreeString.AvlTree useTree;
+algorithm
+  (outElse,useTree) := match (inElse,localsTree,inUseTree)
+    local
+      DAE.Exp exp;
+      list<DAE.Statement> body;
+      DAE.Else else_;
+      AvlTreeString.AvlTree elseTree;
+    case (DAE.NOELSE(),_,_) then (inElse,inUseTree);
+    case (DAE.ELSEIF(exp,body,else_),_,_)
+      equation
+        (body,useTree) = List.map1Fold(listReverse(body),statementFindDeadStore,localsTree,inUseTree);
+        (_,useTree) = Expression.traverseExp(exp, useLocalCref, useTree);
+        (else_,elseTree) = elseFindDeadStore(else_, localsTree, inUseTree);
+        useTree = AvlTreeString.joinAvlTrees(useTree,elseTree);
+      then (DAE.ELSEIF(exp,listReverse(body),else_),useTree);
+    case (DAE.ELSE(body),_,_)
+      equation
+        (body,useTree) = List.map1Fold(listReverse(body),statementFindDeadStore,localsTree,inUseTree);
+      then (DAE.ELSE(listReverse(body)),useTree);
+  end match;
+end elseFindDeadStore;
 
 end Patternm;

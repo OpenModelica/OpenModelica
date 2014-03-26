@@ -655,21 +655,6 @@ match alg
     '<%name_str%>(<%args_str%>)'
   case ALG_RETURN(__) then "return"
   case ALG_BREAK(__) then "break"
-  case ALG_TRY(__) then
-    let body_str = dumpAlgorithmItems(tryBody)
-    <<
-    try
-      <%body_str%>
-    end try
-    >>
-  case ALG_CATCH(__) then
-    let body_str = dumpAlgorithmItems(catchBody)
-    <<
-    catch
-      <%body_str%>
-    end catch
-    >>
-  case ALG_THROW(__) then "throw"
   case ALG_FAILURE(__) then
     let arg_str = if equ then dumpAlgorithmItems(equ) else "..."
     'failure(<%arg_str%>)'

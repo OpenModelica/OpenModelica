@@ -196,13 +196,8 @@ public function elabModForBasicType "
   output Env.Cache outCache;
   output DAE.Mod outMod;
 algorithm
-  (outCache,outMod) := match (inCache,inEnv,inIH,inPrefix,inMod,inBoolean,info)
-    case (_,_,_,_,_,_,_)
-      equation
-        checkIfModsAreBasicTypeMods(inMod);
-        (outCache,outMod) = elabMod(inCache,inEnv,inIH,inPrefix,inMod,inBoolean,info);
-      then (outCache,outMod);
-  end match;
+  checkIfModsAreBasicTypeMods(inMod);
+  (outCache,outMod) := elabMod(inCache,inEnv,inIH,inPrefix,inMod,inBoolean,info);
 end elabModForBasicType;
 
 protected function checkIfModsAreBasicTypeMods "

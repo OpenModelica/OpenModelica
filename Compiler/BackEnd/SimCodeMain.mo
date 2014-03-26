@@ -83,7 +83,7 @@ protected import System;
 protected import Util;
 
 // protected import SerializeModelInfo; // TODO: Add me once we have switched to bootstrapped omc
-
+// protected import MessagePack; // TODO: Add me once we have switched to bootstrapped omc
 
 public function createSimulationSettings
   input Real startTime;
@@ -452,8 +452,15 @@ algorithm
     then ();
     
     case (_, _, "C") equation
+//      System.realtimeTick(GlobalScript.RT_PROFILER0);
       Tpl.tplNoret2(SimCodeDump.dumpSimCode, simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
-//    SerializeModelInfo.serialize(simCode); // TODO: Add this once we switch to the bootstrapped compiler
+//      print("SimCode -> info.xml: " + realString(System.realtimeTock(GlobalScript.RT_PROFILER0)*1000) + "ms\n");
+//      System.realtimeTick(GlobalScript.RT_PROFILER0);
+//      SerializeModelInfo.serialize(simCode); // TODO: Add this once we switch to the bootstrapped compiler
+//      print("SimCode -> info.msgpack: " + realString(System.realtimeTock(GlobalScript.RT_PROFILER0)*1000) + "ms\n");
+//      System.realtimeTick(GlobalScript.RT_PROFILER0);
+//      MessagePack.Utilities.deserializeFileToFile(fileName, fileName + ".ascii");
+//      print("info.msgpack -> info.msgpack.ascii: " + realString(System.realtimeTock(GlobalScript.RT_PROFILER0)*1000) + "ms\n");
       Tpl.tplNoret(CodegenC.translateModel, simCode);
     then ();
 

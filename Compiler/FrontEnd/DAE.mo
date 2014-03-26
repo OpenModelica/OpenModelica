@@ -696,20 +696,6 @@ uniontype Statement "There are four kinds of statements:
     ElementSource source "the origin of the component/equation/algorithm" ;
   end STMT_FAILURE;
 
-  record STMT_TRY
-    list<Statement> tryBody;
-    ElementSource source "the origin of the component/equation/algorithm" ;
-  end STMT_TRY;
-
-  record STMT_CATCH
-    list<Statement> catchBody;
-    ElementSource source "the origin of the component/equation/algorithm" ;
-  end STMT_CATCH;
-
-  record STMT_THROW
-    ElementSource source "the origin of the component/equation/algorithm" ;
-  end STMT_THROW;
-
   //-----
 
 end Statement;

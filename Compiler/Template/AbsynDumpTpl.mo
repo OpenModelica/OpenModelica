@@ -4043,8 +4043,6 @@ algorithm
     local
       Tpl.Text txt;
       list<Absyn.AlgorithmItem> i_equ;
-      list<Absyn.AlgorithmItem> i_catchBody;
-      list<Absyn.AlgorithmItem> i_tryBody;
       Absyn.FunctionArgs i_functionArgs;
       Absyn.ComponentRef i_functionCall;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> i_elseWhenAlgorithmBranch;
@@ -4177,36 +4175,6 @@ algorithm
            Absyn.ALG_BREAK() )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("break"));
-      then txt;
-
-    case ( txt,
-           Absyn.ALG_TRY(tryBody = i_tryBody) )
-      equation
-        l_body__str = dumpAlgorithmItems(Tpl.emptyTxt, i_tryBody);
-        txt = Tpl.writeTok(txt, Tpl.ST_LINE("try\n"));
-        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
-        txt = Tpl.writeText(txt, l_body__str);
-        txt = Tpl.softNewLine(txt);
-        txt = Tpl.popBlock(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("end try"));
-      then txt;
-
-    case ( txt,
-           Absyn.ALG_CATCH(catchBody = i_catchBody) )
-      equation
-        l_body__str = dumpAlgorithmItems(Tpl.emptyTxt, i_catchBody);
-        txt = Tpl.writeTok(txt, Tpl.ST_LINE("catch\n"));
-        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
-        txt = Tpl.writeText(txt, l_body__str);
-        txt = Tpl.softNewLine(txt);
-        txt = Tpl.popBlock(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("end catch"));
-      then txt;
-
-    case ( txt,
-           Absyn.ALG_THROW() )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("throw"));
       then txt;
 
     case ( txt,

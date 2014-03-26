@@ -1119,20 +1119,20 @@ algorithm
     case (Absyn.EQ_EQUALS(left,Absyn.BOOL(true)),_,_,localCache,_,_)
       equation
         failure(Absyn.CREF(_) = left); // If lhs is a CREF, it should be an assignment
-        algItem1 = Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),comment,info);
+        algItem1 = Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(Absyn.CREF_IDENT("fail",{}),Absyn.FUNCTIONARGS({},{})),comment,info);
         algItem2 = Absyn.ALGORITHMITEM(Absyn.ALG_IF(Absyn.LUNARY(Absyn.NOT(),left),{algItem1},{},{}),comment,info);
       then (localCache,{algItem2});
 
     case (Absyn.EQ_EQUALS(left,Absyn.BOOL(false)),_,_,localCache,_,_)
       equation
         failure(Absyn.CREF(_) = left); // If lhs is a CREF, it should be an assignment
-        algItem1 = Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),comment,info);
+        algItem1 = Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(Absyn.CREF_IDENT("fail",{}),Absyn.FUNCTIONARGS({},{})),comment,info);
         algItem2 = Absyn.ALGORITHMITEM(Absyn.ALG_IF(left,{algItem1},{},{}),comment,info);
       then (localCache,{algItem2});
 
     case (Absyn.EQ_NORETCALL(Absyn.CREF_IDENT("fail",_),_),_,_,localCache,_,_)
       equation
-        algItem = Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),comment,info);
+        algItem = Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(Absyn.CREF_IDENT("fail",{}),Absyn.FUNCTIONARGS({},{})),comment,info);
       then (localCache,{algItem});
 
     case (Absyn.EQ_NORETCALL(cref,fargs),_,_,localCache,_,_)

@@ -9392,9 +9392,6 @@ template algStatement(DAE.Statement stmt, Context context, Text &varDecls,SimCod
   case s as STMT_WHEN(__)           then algStmtWhen(s, context, &varDecls ,simCode)
   case s as STMT_BREAK(__)          then 'break;<%\n%>'
   case s as STMT_FAILURE(__)        then "STMT FAILURE"
-  case s as STMT_TRY(__)            then "STMT TRY"
-  case s as STMT_CATCH(__)          then "STMT CATCH"
-  case s as STMT_THROW(__)          then "STMT THROW"
   case s as STMT_RETURN(__)         then "break;/*Todo stmt return*/"
   case s as STMT_NORETCALL(__)      then algStmtNoretcall(s, context, &varDecls /*BUFD*/,simCode)
   case s as STMT_REINIT(__)         then algStmtReinit(s, context, &varDecls /*BUFD*/,simCode)

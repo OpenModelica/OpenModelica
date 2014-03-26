@@ -11303,28 +11303,6 @@ algorithm
       then 
         files;
     
-    case (DAE.STMT_TRY(source = source, tryBody = stmts)::rest, files)
-      equation
-        files = getFilesFromDAEElementSource(source, files);
-        files = getFilesFromStatements(stmts, files);
-        files = getFilesFromStatements(rest, files);
-      then 
-        files;
-        
-    case (DAE.STMT_CATCH(source = source, catchBody = stmts)::rest, files)
-      equation
-        files = getFilesFromDAEElementSource(source, files);
-        files = getFilesFromStatements(stmts, files);
-        files = getFilesFromStatements(rest, files);
-      then 
-        files;
-        
-    case (DAE.STMT_THROW(source = source)::rest, files)
-      equation
-        files = getFilesFromDAEElementSource(source, files);
-        files = getFilesFromStatements(rest, files);
-      then 
-        files;
   end match;
 end getFilesFromStatements;
 

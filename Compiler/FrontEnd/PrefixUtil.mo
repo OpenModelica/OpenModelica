@@ -1144,26 +1144,6 @@ algorithm
         localAccList = listAppend(localAccList,List.create(elem));
         (localCache,elems) = prefixStatements(localCache,localEnv,ih,rest,localAccList,pre);
       then (localCache,elems);
-    case (localCache,localEnv,ih,DAE.STMT_TRY(b,source) :: rest,localAccList,pre)
-      equation
-        (localCache,b) = prefixStatements(localCache,localEnv,ih,b,{},pre);
-        elem = DAE.STMT_TRY(b,source);
-        localAccList = listAppend(localAccList,List.create(elem));
-        (localCache,elems) = prefixStatements(localCache,localEnv,ih,rest,localAccList,pre);
-      then (localCache,elems);
-    case (localCache,localEnv,ih,DAE.STMT_CATCH(b,source) :: rest,localAccList,pre)
-      equation
-        (localCache,b) = prefixStatements(localCache,localEnv,ih,b,{},pre);
-        elem = DAE.STMT_CATCH(b,source);
-        localAccList = listAppend(localAccList,List.create(elem));
-        (localCache,elems) = prefixStatements(localCache,localEnv,ih,rest,localAccList,pre);
-      then (localCache,elems);
-    case (localCache,localEnv,ih,DAE.STMT_THROW(source) :: rest,localAccList,pre)
-        equation
-          elem = DAE.STMT_THROW(source);
-          localAccList = listAppend(localAccList,List.create(elem));
-          (localCache,elems) = prefixStatements(localCache,localEnv,ih,rest,localAccList,pre);
-        then (localCache,elems);
     case (localCache,localEnv,ih,DAE.STMT_RETURN(source) :: rest,localAccList,pre)
         equation
           elem = DAE.STMT_RETURN(source);

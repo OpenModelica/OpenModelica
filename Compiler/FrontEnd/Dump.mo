@@ -4142,22 +4142,6 @@ algorithm
       equation
         Print.printBuf("record Absyn.ALG_BREAK end Absyn.ALG_BREAK;");
       then ();
-    case Absyn.ALG_TRY(tryBody)
-      equation
-        Print.printBuf("record Absyn.ALG_TRY tryBody = ");
-        printListAsCorbaString(tryBody, printAlgorithmItemAsCorbaString, ",");
-        Print.printBuf(" end Absyn.ALG_TRY;");
-      then ();
-    case Absyn.ALG_CATCH(catchBody)
-      equation
-        Print.printBuf("record Absyn.ALG_CATCH catchBody = ");
-        printListAsCorbaString(catchBody, printAlgorithmItemAsCorbaString, ",");
-        Print.printBuf(" end Absyn.ALG_CATCH;");
-      then ();
-    case Absyn.ALG_THROW()
-      equation
-        Print.printBuf("record Absyn.ALG_THROW end Absyn.ALG_THROW;");
-      then ();
     case Absyn.ALG_FAILURE(body)
       equation
         Print.printBuf("record Absyn.ALG_FAILURE body = ");

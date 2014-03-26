@@ -608,18 +608,6 @@ algorithm
         (cdr_1,dae) = elabStmts(cdr,dae);
       then
         (DAE.STMT_FAILURE(stmts_1,source) :: cdr_1,dae);
-    case(DAE.STMT_TRY(stmts,source) :: cdr,dae)
-      equation
-        (stmts_1,dae) = elabStmts(stmts,dae);
-        (cdr_1,dae) = elabStmts(cdr,dae);
-      then
-        (DAE.STMT_TRY(stmts_1,source) :: cdr_1,dae);
-    case(DAE.STMT_CATCH(stmts,source) :: cdr,dae)
-      equation
-        (stmts_1,dae) = elabStmts(stmts,dae);
-        (cdr_1,dae) = elabStmts(cdr,dae);
-      then
-        (DAE.STMT_CATCH(stmts_1,source) :: cdr_1,dae);
     case(stmt :: cdr,dae)
       equation
         (cdr_1,dae) = elabStmts(cdr,dae);
@@ -1342,18 +1330,6 @@ algorithm
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
         DAE.STMT_FAILURE(stmts_1,source) :: cdr_1;
-    case(DAE.STMT_TRY(stmts,source) :: cdr,dae,p,inputs,current)
-      equation
-        stmts_1 = fixCallsAlg(stmts,dae,p,inputs,current);
-        cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
-      then
-        DAE.STMT_TRY(stmts_1,source) :: cdr_1;
-    case(DAE.STMT_CATCH(stmts,source) :: cdr,dae,p,inputs,current)
-      equation
-        stmts_1 = fixCallsAlg(stmts,dae,p,inputs,current);
-        cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
-      then
-        DAE.STMT_CATCH(stmts_1,source) :: cdr_1;
     case(stmt :: cdr,dae,p,inputs,current)
       equation
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);

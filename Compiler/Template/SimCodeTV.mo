@@ -1439,17 +1439,6 @@ package DAE
       list<Statement> body;
       ElementSource source;
     end STMT_FAILURE;
-    record STMT_TRY
-      list<Statement> tryBody;
-      ElementSource source;
-    end STMT_TRY;
-    record STMT_CATCH
-      list<Statement> catchBody;
-      ElementSource source;
-    end STMT_CATCH;
-    record STMT_THROW
-      ElementSource source;
-    end STMT_THROW;
     record STMT_NORETCALL
       Exp exp;
       ElementSource source;

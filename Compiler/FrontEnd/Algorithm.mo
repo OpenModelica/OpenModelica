@@ -802,9 +802,6 @@ algorithm
     case DAE.STMT_RETURN(source=source) then source;
     case DAE.STMT_BREAK(source=source) then source;
     case DAE.STMT_FAILURE(source=source) then source;
-    case DAE.STMT_TRY(source=source) then source;
-    case DAE.STMT_CATCH(source=source) then source;
-    case DAE.STMT_THROW(source=source) then source;
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Algorithm.getStatementSource"});

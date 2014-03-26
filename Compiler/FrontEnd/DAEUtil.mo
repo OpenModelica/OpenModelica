@@ -4235,26 +4235,10 @@ algorithm
         x = Util.if_(referenceEq(stmts,stmts2),inStmt,DAE.STMT_FAILURE(stmts2,source));
       then (x::{},extraArg);
 
-    case (DAE.STMT_TRY(tryBody=stmts, source = source),_,_,extraArg)
-      equation
-        (stmts2, extraArg) = traverseDAEEquationsStmtsList(stmts,func,opt,extraArg);
-        x = Util.if_(referenceEq(stmts,stmts2),inStmt,DAE.STMT_TRY(stmts2,source));
-      then (x::{},extraArg);
-
-    case (DAE.STMT_CATCH(catchBody=stmts, source = source),_,_,extraArg)
-      equation
-        (stmts2, extraArg) = traverseDAEEquationsStmtsList(stmts,func,opt,extraArg);
-        x = Util.if_(referenceEq(stmts,stmts2),inStmt,DAE.STMT_CATCH(stmts2,source));
-      then (x::{},extraArg);
-
-    case (x as DAE.STMT_THROW(source = source),_,_,extraArg)
-      then (x::{},extraArg);
-
     case (x,_,_,extraArg)
       equation
         str = DAEDump.ppStatementStr(x);
         str = "DAEUtil.traverseDAEEquationsStmts not implemented correctly: " +& str;
-print(str);
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end matchcontinue;
@@ -4446,23 +4430,6 @@ algorithm
         (stmts2, extraArg) = traverseDAEStmts(stmts,func,extraArg);
         (xs_1, extraArg) = traverseDAEStmts(xs, func, extraArg);
       then (DAE.STMT_FAILURE(stmts2,source)::xs_1,extraArg);
-
-    case (((x as DAE.STMT_TRY(tryBody=stmts, source = source))::xs),_,extraArg)
-      equation
-        (stmts2, extraArg) = traverseDAEStmts(stmts,func,extraArg);
-        (xs_1, extraArg) = traverseDAEStmts(xs, func, extraArg);
-      then (DAE.STMT_TRY(stmts2,source)::xs_1,extraArg);
-
-    case (((x as DAE.STMT_CATCH(catchBody=stmts, source = source))::xs),_,extraArg)
-      equation
-        (stmts2, extraArg) = traverseDAEStmts(stmts,func,extraArg);
-        (xs_1, extraArg) = traverseDAEStmts(xs, func, extraArg);
-      then (DAE.STMT_CATCH(stmts2,source)::xs_1,extraArg);
-
-    case (((x as DAE.STMT_THROW(source = source))::xs),_,extraArg)
-      equation
-        (xs_1, extraArg) = traverseDAEStmts(xs, func, extraArg);
-      then (x::xs_1,extraArg);
 
     case ((x::xs),_,extraArg)
       equation
@@ -6612,9 +6579,6 @@ algorithm
     case DAE.STMT_BREAK(source = source) then source;
     case DAE.STMT_ARRAY_INIT(source = source) then source;
     case DAE.STMT_FAILURE(source = source) then source;
-    case DAE.STMT_TRY(source = source) then source;
-    case DAE.STMT_CATCH(source = source) then source;
-    case DAE.STMT_THROW(source = source) then source;
 
   end match;
 end getStatementSource;

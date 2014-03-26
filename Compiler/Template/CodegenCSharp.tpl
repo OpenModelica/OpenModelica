@@ -1808,9 +1808,6 @@ template algStatement(DAE.Statement stmt, Context context, SimCode simCode) ::=
   case STMT_WHEN(__)           then algStmtWhen(stmt, context, simCode)
   case STMT_BREAK(__)          then 'break; //break stmt<%\n%>'
   case STMT_FAILURE(__)        then "STMT_FAILURE_NI"
-  case STMT_TRY(__)            then "STMT_TRY_NI"
-  case STMT_CATCH(__)          then "STMT_CATCH_NI"
-  case STMT_THROW(__)          then "STMT_THROW_NI"
   case STMT_RETURN(__)         then "STMT_RETURN_NI"
   case STMT_NORETCALL(__)      then "STMT_NORETCALL_NI"
   case STMT_REINIT(__)         then "STMT_REINIT_NI"

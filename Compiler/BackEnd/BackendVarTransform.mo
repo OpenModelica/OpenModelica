@@ -2050,20 +2050,6 @@ algorithm
       then
         ( es_1,b);
 
-    case ((DAE.STMT_TRY(tryBody=statementLst,source=source)::es),repl,_,_,_)
-      equation
-        (statementLst_1,true) = replaceStatementLst(statementLst, repl,inFuncTypeExpExpToBooleanOption,{},false);
-        (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption, DAE.STMT_TRY(statementLst_1,source)::inAcc,true);
-      then
-        (es_1,b);
-
-    case ((DAE.STMT_CATCH(catchBody=statementLst,source=source)::es),repl,_,_,_)
-      equation
-        (statementLst_1,true) = replaceStatementLst(statementLst, repl,inFuncTypeExpExpToBooleanOption,{},false);
-        (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,DAE.STMT_CATCH(statementLst_1,source)::inAcc,true);
-      then
-        (es_1,b);
-
     case ((statement::es),repl,_,_,_)
       equation
         (es_1,b1) = replaceStatementLst(es,repl,inFuncTypeExpExpToBooleanOption,statement::inAcc,inBAcc);

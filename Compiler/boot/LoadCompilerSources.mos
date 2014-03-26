@@ -4,8 +4,8 @@
 if true then /* Suppress output */
   setCommandLineOptions("+g=MetaModelica");
   files := {
-    // "../Util/MessagePack.mo", // TODO: Add once we bootstrapped omc
-    // "../BackEnd/SerializeModelInfo.mo", // TODO: Add once we bootstrapped omc
+    "../Util/MessagePack.mo", // TODO: Add once we bootstrapped omc
+    "../BackEnd/SerializeModelInfo.mo", // TODO: Add once we bootstrapped omc
     "../FrontEnd/Absyn.mo",
     "../FrontEnd/Algorithm.mo",
     "../FrontEnd/Builtin.mo",
@@ -193,6 +193,7 @@ if true then /* Suppress output */
 
   // "Util";
   //  "../Util/AvlTree.mo",
+    "../Util/AvlTreeString.mo",
     "../Util/BaseHashTable.mo",
     "../Util/BaseHashSet.mo",
     "../Util/Config.mo",

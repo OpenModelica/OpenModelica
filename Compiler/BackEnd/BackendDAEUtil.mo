@@ -4496,22 +4496,6 @@ algorithm
       then
         traverseStmts(xs, func, extraArg);
 
-    case (((x as DAE.STMT_TRY(tryBody=stmts))::xs),_,extraArg)
-      equation
-        extraArg = traverseStmts(stmts,func,extraArg);
-      then
-        traverseStmts(xs, func, extraArg);
-
-    case (((x as DAE.STMT_CATCH(catchBody=stmts))::xs),_,extraArg)
-      equation
-        extraArg = traverseStmts(stmts,func,extraArg);
-      then
-        traverseStmts(xs, func, extraArg);
-
-    case (((x as DAE.STMT_THROW(source = _))::xs),_,extraArg)
-      then
-        traverseStmts(xs, func, extraArg);
-
     case ((x::xs),_,extraArg)
       equation
         str = DAEDump.ppStatementStr(x);

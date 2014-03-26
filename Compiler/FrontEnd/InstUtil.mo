@@ -8745,15 +8745,6 @@ algorithm
       equation
         ((_,b,unbound)) = List.fold1(stmts, checkFunctionDefUseStmt, inLoop, (false,false,unbound));
       then ((b,b,unbound));
-    case (DAE.STMT_TRY(tryBody=stmts),_,(_,_,unbound))
-      equation
-        ((_,_,unbound)) = List.fold1(stmts, checkFunctionDefUseStmt, inLoop, (false,false,unbound));
-      then ((false,false,unbound));
-    case (DAE.STMT_CATCH(catchBody=stmts),_,(_,_,unbound))
-      equation
-        ((_,_,unbound)) = List.fold1(stmts, checkFunctionDefUseStmt, inLoop, (false,false,unbound));
-      then ((false,false,unbound));
-    case (DAE.STMT_THROW(source=_),_,_) then inUnbound;
 
     // STMT_WHEN not in functions
     // STMT_REINIT not in functions

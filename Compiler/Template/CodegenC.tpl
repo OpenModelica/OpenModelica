@@ -6935,9 +6935,6 @@ template algStatement(DAE.Statement stmt, Context context, Text &varDecls /*BUFP
   case s as STMT_WHEN(__)           then algStmtWhen(s, context, &varDecls /*BUFD*/)
   case s as STMT_BREAK(__)          then 'break;<%\n%>'
   case s as STMT_FAILURE(__)        then algStmtFailure(s, context, &varDecls /*BUFD*/)
-  case s as STMT_TRY(__)            then algStmtTry(s, context, &varDecls /*BUFD*/)
-  case s as STMT_CATCH(__)          then algStmtCatch(s, context, &varDecls /*BUFD*/)
-  case s as STMT_THROW(__)          then 'MMC_THROW_INTERNAL();<%\n%>'
   case s as STMT_RETURN(__)         then 'goto _return;<%\n%>'
   case s as STMT_NORETCALL(__)      then algStmtNoretcall(s, context, &varDecls /*BUFD*/)
   case s as STMT_REINIT(__)         then algStmtReinit(s, context, &varDecls /*BUFD*/)
@@ -7613,42 +7610,6 @@ case STMT_FAILURE(__) then
   if (<%tmp%>) MMC_THROW_INTERNAL(); /* end failure */
   >>
 end algStmtFailure;
-
-
-template algStmtTry(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
- "Generates a try algorithm statement."
-::=
-match stmt
-case STMT_TRY(__) then
-  let body = (tryBody |> stmt =>
-      algStatement(stmt, context, &varDecls /*BUFD*/)
-    ;separator="\n")
-  <<
-  #error "Using STMT_TRY: This is deprecated, and should be matched with catch anyway."
-  try {
-    <%body%>
-  }
-  >>
-end algStmtTry;
-
-
-template algStmtCatch(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
- "Generates a catch algorithm statement."
-::=
-match stmt
-case STMT_CATCH(__) then
-  let body = (catchBody |> stmt =>
-      algStatement(stmt, context, &varDecls /*BUFD*/)
-    ;separator="\n")
-  <<
-  #error "Using STMT_CATCH: This is deprecated, and should be matched with catch anyway."
-  catch(int i)
-  {
-    <%body%>
-  }
-  >>
-end algStmtCatch;
-
 
 template algStmtNoretcall(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
  "Generates a no return call algorithm statement."

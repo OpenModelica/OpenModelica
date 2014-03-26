@@ -890,19 +890,6 @@ algorithm
     case (Absyn.ALG_BREAK(),_,_)
     then SCode.ALG_BREAK(comment,info);
 
-    case (Absyn.ALG_TRY(body),_,_)
-      equation
-        stmts = translateClassdefAlgorithmitems(body);
-      then SCode.ALG_TRY(stmts,comment,info);
-
-    case (Absyn.ALG_CATCH(body),_,_)
-      equation
-        stmts = translateClassdefAlgorithmitems(body);
-      then SCode.ALG_CATCH(stmts,comment,info);
-
-    case (Absyn.ALG_THROW(),_,_)
-    then SCode.ALG_THROW(comment,info);
-
     case (Absyn.ALG_FAILURE(body),_,_)
       equation
         stmts = translateClassdefAlgorithmitems(body);

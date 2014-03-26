@@ -7,7 +7,7 @@ CXX=@CXX@
 CFLAGS=@CFLAGS@
 TOP_DIR=@abs_top_builddir@
 OMHOME=@abs_top_builddir@/build
-LDFLAGS=-L.  -L$(GEN_DIR) -L"$(OMHOME)/lib/omc" -lomparse -lomcruntime -lmodparomc -lOpenModelicaRuntimeC -lModelicaExternalC -lantlr3 $(CORBALIBS) $(FMILIB) @RT_LDFLAGS@ @LIBSOCKET@ @LIBLPSOLVE55@ @OMC_LIBS@ -lexpat
+LDFLAGS=-L.  -L$(GEN_DIR) -L"$(OMHOME)/lib/omc" -lomparse -lomcruntime -lmodparomc -lOpenModelicaRuntimeC -lModelicaExternalC -lantlr3 -lmsgpackc $(CORBALIBS) $(FMILIB) @RT_LDFLAGS@ @LIBSOCKET@ @LIBLPSOLVE55@ @OMC_LIBS@ -lexpat
 FMILIB = -L$(TOP_DIR)/3rdParty/FMIL/install/lib -lfmilib
 CPPFLAGS=-I"$(OMHOME)/include/omc/c" @CPPFLAGS@ -DADD_METARECORD_DEFINITIONS=
 CORBALIBS=@CORBALIBS@

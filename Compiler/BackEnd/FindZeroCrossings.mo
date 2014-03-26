@@ -1319,23 +1319,6 @@ algorithm
         ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
       then ((DAE.STMT_FAILURE(stmts2, source)::xs_1, extraArg));
 
-    case (((x as DAE.STMT_TRY(tryBody=stmts, source = source))::xs), _, extraArg, _)
-      equation
-        ((stmts2, extraArg)) = traverseStmtsExps(stmts, func, extraArg, knvars);
-        ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
-      then ((DAE.STMT_TRY(stmts2, source)::xs_1, extraArg));
-
-    case (((x as DAE.STMT_CATCH(catchBody=stmts, source = source))::xs), _, extraArg, _)
-      equation
-        ((stmts2, extraArg)) = traverseStmtsExps(stmts, func, extraArg, knvars);
-        ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
-      then ((DAE.STMT_CATCH(stmts2, source)::xs_1, extraArg));
-
-    case (((x as DAE.STMT_THROW(source = source))::xs), _, extraArg, _)
-      equation
-        ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
-      then ((x::xs_1, extraArg));
-
     case ((x::xs), _, extraArg, _)
       equation
         str = DAEDump.ppStatementStr(x);

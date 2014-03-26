@@ -1812,24 +1812,6 @@ algorithm
       then
         ();
 
-    case (DAE.STMT_TRY(tryBody = stmts),i)
-      equation
-        indent(i);
-        Print.printBuf("try\n");
-        ppStmtList(stmts, i+2);
-        Print.printBuf("end try;\n");
-      then
-        ();
-
-    case (DAE.STMT_CATCH(catchBody = stmts),i)
-      equation
-        indent(i);
-        Print.printBuf("catch\n");
-        ppStmtList(stmts, i+2);
-        Print.printBuf("end catch;\n");
-      then
-        ();
-
     case (DAE.STMT_ARRAY_INIT(name = name, ty = ty),i)
       equation
         indent(i);
@@ -2063,27 +2045,6 @@ algorithm
       equation
         s1 = indentStr(i);
         str = stringAppendList({s1,"arrayInit(\n",s2,s1,");\n"});
-      then str;
-
-    case (DAE.STMT_TRY(tryBody=stmts),i)
-      equation
-        s1 = indentStr(i);
-        s2 = ppStmtListStr(stmts, i+2);
-        str = stringAppendList({s1,"try(\n",s2,s1,");\n"});
-      then str;
-
-    case (DAE.STMT_CATCH(catchBody=stmts),i)
-      equation
-        s1 = indentStr(i);
-        s2 = ppStmtListStr(stmts, i+2);
-        str = stringAppendList({s1,"catch(\n",s2,s1,");\n"});
-      then str;
-
-    case (DAE.STMT_THROW(source=source),i)
-      equation
-        s1 = indentStr(i);
-        s2 = getSourceInformationStr(source);
-        str = stringAppendList({s1,"throw(\n",s2,s1,");\n"});
       then str;
 
     case (_,i)

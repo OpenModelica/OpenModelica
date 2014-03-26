@@ -1207,16 +1207,6 @@ algorithm
         (stmts_1,true) = inlineStatements(stmts,fns,{},false);
       then
         (DAE.STMT_FAILURE(stmts_1,source),true);
-    case(DAE.STMT_TRY(stmts,source),fns)
-      equation
-        (stmts_1,true) = inlineStatements(stmts,fns,{},false);
-      then
-        (DAE.STMT_TRY(stmts_1,source),true);
-    case(DAE.STMT_CATCH(stmts,source),fns)
-      equation
-        (stmts_1,true) = inlineStatements(stmts,fns,{},false);
-      then
-        (DAE.STMT_CATCH(stmts_1,source),true);
     case(stmt,_) then (stmt,false);
   end matchcontinue;
 end inlineStatement;

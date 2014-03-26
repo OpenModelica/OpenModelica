@@ -501,23 +501,6 @@ algorithm
         ht = List.fold1(stmts, statementOutputs, inCrefExpansion, iht);
       then ht;
     
-    case(DAE.STMT_TRY(tryBody = stmts), _, _)
-      equation
-        ht = List.fold1(stmts, statementOutputs, inCrefExpansion, iht);
-      then ht;
-    
-    case(DAE.STMT_CATCH(catchBody = stmts), _, _)
-      equation
-        ht = List.fold1(stmts, statementOutputs, inCrefExpansion, iht);
-      then ht;
-    
-    case(DAE.STMT_CATCH(catchBody = stmts), _, _)
-      equation
-        ht = List.fold1(stmts, statementOutputs, inCrefExpansion, iht);
-      then ht;
-    
-    case(DAE.STMT_THROW(source=_), _, _) then iht;
-    
     else equation
       str = DAEDump.ppStatementStr(inStatement);
       Debug.fprintln(Flags.FAILTRACE, "- CheckModel.statementOutputs failed for " +& str +& "\n");
