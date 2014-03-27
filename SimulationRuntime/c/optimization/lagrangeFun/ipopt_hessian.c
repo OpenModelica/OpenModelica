@@ -56,20 +56,22 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
 
   int i,j,k;
   IPOPT_DATA_ *iData;
-
+  OPTIMIZER_DIM_VARS* dim;
   iData = (IPOPT_DATA_ *) useData;
+  dim = &iData->dim;
+
   k = 0;
   if(values == NULL)
   {
     int c,r,l,p;
     r = 0;
     c = 0;
-    for(i = 0; i<iData->nsi; ++i){
+    for(i = 0; i<dim->nsi; ++i){
 
       if(i == 0){
         /*0*/
-        for(p = 0;p <iData->deg+1;++p){
-          for(j=0;j< iData->nv;++j){
+        for(p = 0;p < dim->deg+1;++p){
+          for(j=0;j< dim->nv;++j){
             for(l = 0; l< j+1; ++l){
               if(iData->Hg[j][l]){
                 iRow[k] = r + j;
@@ -77,12 +79,12 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
               }
              }
           }
-          r += iData->nv;
-          c += iData->nv;
+          r += dim->nv;
+          c += dim->nv;
         }
       }else{
-        for(p = 1;p <iData->deg+1;++p){
-          for(j=0;j< iData->nv;++j){
+        for(p = 1;p < dim->deg+1;++p){
+          for(j=0;j< dim->nv;++j){
             for(l = 0; l< j+1; ++l){
               if(iData->Hg[j][l]){
                 iRow[k] = r + j;
@@ -90,8 +92,8 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
               }
             }
           }
-          r += iData->nv;
-          c += iData->nv;
+          r += dim->nv;
+          c += dim->nv;
         }
       }
     }
@@ -111,7 +113,7 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
     fprintf(pFile, "%s", "\nnumberconstraints = ");
     fprintf(pFile, "%i", m);
     fprintf(pFile, "%s", "\nNumberOfIntervalls = ");
-    fprintf(pFile, "%i", iData->nsi);
+    fprintf(pFile, "%i", dim->nsi);
     fprintf(pFile, "%s", "\nH=[];\n");
     fprintf(pFile, "%s", "%%%%%%%%%%%%%%%%%%%%%%\n");
     for(i=0; i< nele_hess; ++i){
@@ -131,17 +133,18 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
     double sum;
     modelica_boolean mayer_yes;
     int nJ;
+    int tmp_index;
 
-    nJ = (int) iData->nJ;
+    nJ = (int) dim->nJ;
     for(ii = 0; ii <1; ++ii){
-      for(p = 0, x= v, ll = lambda;p <iData->deg+1;++p, x += iData->nv){
-         mayer_yes = iData->mayer && ii+1 == iData->nsi && p == iData->deg;
+      for(p = 0, x= v, ll = lambda;p < dim->deg+1;++p, x += dim->nv){
+         mayer_yes = iData->mayer && ii+1 == dim->nsi && p == dim->deg;
 
          if(p){
            num_hessian(x, iData->time[p], iData, ll,iData->lagrange,mayer_yes,obj_factor);
            ll += nJ;
          }else{
-           for(i = 0; i< iData->nx; ++i){
+           for(i = 0; i< dim->nx; ++i){
              if(ll[i] != ll[i + nJ]){
                if(iData->invd1_4*ll[i+2*nJ] != ll[i + nJ])
                  iData->sh[i] = iData->d1[4]*(ll[i] + (iData->invd1_4*ll[i+2*nJ] - ll[i + nJ]));
@@ -156,7 +159,7 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
            num_hessian(x, iData->time[p], iData, iData->sh ,iData->lagrange,mayer_yes,obj_factor);
          }
 
-        for(i=0;i< iData->nv;++i)
+        for(i=0;i< dim->nv;++i)
           for(j = 0; j< i+1; ++j){
            if(iData->Hg[i][j]){
                sumLagrange(iData, &sum, ii, i, j,  p, mayer_yes);
@@ -168,12 +171,13 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
 
     }
 
-    for(; ii <iData->nsi; ++ii){
-      for(p = 1;p <iData->deg +1;++p,x += iData->nv){
-        mayer_yes = iData->mayer && ii+1 == iData->nsi && p == iData->deg;
-        num_hessian(x, iData->time[ii*iData->deg + p], iData,ll,iData->lagrange,mayer_yes,obj_factor);
+    for(; ii <dim->nsi; ++ii){
+      tmp_index = ii*dim->deg;
+      for(p = 1;p < dim->deg +1;++p,x += dim->nv){
+        mayer_yes = iData->mayer && ii+1 == dim->nsi && p == dim->deg;
+        num_hessian(x, iData->time[tmp_index + p], iData,ll,iData->lagrange,mayer_yes,obj_factor);
 
-        for(i=0;i< iData->nv;++i)
+        for(i=0;i< dim->nv;++i)
           for(j = 0; j< i+1; ++j){
             if(iData->Hg[i][j]){
                 sumLagrange(iData, &sum, ii, i, j,  p,  mayer_yes);
@@ -198,10 +202,11 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
 static int sumLagrange(IPOPT_DATA_ *iData, double * erg,int ii, int i, int j, int p, short mayer_yes)
 {
   long double sum;
+  OPTIMIZER_DIM_VARS *dim = &iData->dim;
   int l;
-  int nJ = (p) ? iData->nJ : iData->nx;
+  int nJ = (p) ? dim->nJ : dim->nx;
   sum = 0.0;
-  for(l = 0; l<iData->nx; ++l)
+  for(l = 0; l<dim->nx; ++l)
     sum += iData->H[l][i][j];
 
   if(iData->lagrange && iData->gradFomc[iData->lagrange_index][i]* iData->gradFomc[iData->lagrange_index][j]){
@@ -213,7 +218,7 @@ static int sumLagrange(IPOPT_DATA_ *iData, double * erg,int ii, int i, int j, in
 
   sum = iData->dt[ii]*sum;
 
-   for(l = iData->nx; l<nJ; ++l)
+   for(l = dim->nx; l<nJ; ++l)
      sum += iData->H[l][i][j];
 
   if(mayer_yes && iData->gradFomc[iData->mayer_index][i]* iData->gradFomc[iData->mayer_index][j])
@@ -233,7 +238,8 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
   long double h;
   int i, j, l;
   short upCost;
-  int nJ = (t>iData->t0) ? iData->nx + iData->nc : iData->nx;
+  OPTIMIZER_DIM_VARS *dim = &iData->dim;
+  int nJ = (t>iData->t0) ? dim->nx + dim->nc : dim->nx;
 
   diff_functionODE(v, t , iData, iData->J0);
   upCost = (lagrange_yes || mayer_yes) && (obj_factor!=0);   
@@ -241,7 +247,7 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
   if(upCost)
     updateCost(v,t,iData,lagrange_yes,mayer_yes, iData->gradF0, iData->gradF00);
 
-  for(i = 0; i<iData->nv; ++i){
+  for(i = 0; i<dim->nv; ++i){
     v_save = (long double)v[i];
     h = (long double)DF_STEP(v_save, iData->vnom[i]); 
     v[i] += h;
@@ -252,7 +258,7 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
 
     v[i] = v_save;
 
-    for(j = i; j < iData->nv; ++j){
+    for(j = i; j < dim->nv; ++j){
       if(iData->Hg[i][j]){
        for(l = 0; l< nJ; ++l){
         if(iData->knowedJ[l][j] + iData->knowedJ[l][i] >= 2 && lambda[l] != 0.0)
@@ -265,7 +271,7 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
     }
     h = obj_factor/h; 
     if(lagrange_yes){
-      for(j = i; j < iData->nv; ++j){
+      for(j = i; j < dim->nv; ++j){
        if(iData->gradFomc[iData->lagrange_index][i]* iData->gradFomc[iData->lagrange_index][j])
          iData->oH[i][j]  = (long double) h* iData->vnom[j]*(iData->gradF[j] - iData->gradF0[j]);
        else
@@ -275,7 +281,7 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
     }
 
     if(mayer_yes){
-      for(j = i; j < iData->nv; ++j){
+      for(j = i; j < dim->nv; ++j){
        if(iData->gradFomc[iData->mayer_index][i]* iData->gradFomc[iData->mayer_index][j])
          iData->mH[i][j]  = (long double) h* iData->vnom[j]*(iData->gradF_[j] - iData->gradF00[j]);
        else

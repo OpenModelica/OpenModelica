@@ -52,23 +52,44 @@
 #include <math.h>
 #include <float.h>
 
+typedef struct OPTIMIZER_DIM_VARS{
 
+  int nx;
+  int nu;
+  int nv;
+  int nX;
+  int nU;
+  int nV;
+  int nRes;
+  int NX;
+  int NU;
+  int NV;
+  int NRes;
+  int nc;
+  int nJ;
+
+  int njac;
+  int nhess;
+  int nsi;
+  int np;
+  int nlocalJac;
+
+  int deg;
+
+  int nH;
+
+}OPTIMIZER_DIM_VARS;
+
+typedef struct OPTIMIZER_MBASE{
+
+  double bl[10];
+  double br[10];
+
+}OPTIMIZER_MBASE;
 typedef struct IPOPT_DATA_
 {
   /*#*/
-  long int nx; /*Point*/
-  long int nu;
-  long int nv;
-  long int nX; /*horizon*/
-  long int nU;
-  long int nV;
-  long int nRes;
-  long int NX; /*all*/
-  long int NU;
-  long int NV;
-  long int NRes;
-  long int nc;
-  long int nJ;
+  OPTIMIZER_DIM_VARS dim;
   /* ODE */
   double * x0;
   double * xmin;
@@ -81,7 +102,7 @@ typedef struct IPOPT_DATA_
   double * Vmax;
 
   double * vnom;
-  double *start_u;
+  double * start_u;
 
   double *scalVar;
   double *scalRes;
@@ -146,17 +167,8 @@ typedef struct IPOPT_DATA_
   double bl[4];
   double br[3];
 
-  int deg;
-
   double *gmin;
   double *gmax;
-
-  long int njac;
-  long int nhess;
-  long int nsi;
-  long int nsi_old;
-  long int np;
-  int nlocalJac;
 
   long int endN;
   double **J0;

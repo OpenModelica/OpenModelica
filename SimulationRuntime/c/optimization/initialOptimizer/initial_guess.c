@@ -78,13 +78,13 @@ static int initial_guess_ipopt_cflag(IPOPT_DATA_ *iData,char* cflags)
 {
   if(!strcmp(cflags,"const") || !strcmp(cflags,"CONST")){
     int i, id;
-  for(i = 0, id=0; i<iData->NV;i++,++id){
-    if(id >=iData->nv)
+  for(i = 0, id=0; i<iData->dim.NV;i++,++id){
+    if(id >=iData->dim.nv)
       id = 0;
-    if(id <iData->nx){
+    if(id <iData->dim.nx){
       iData->v[i] = iData->data->modelData.realVarsData[id].attribute.start*iData->scalVar[id];
-    }else if(id< iData->nv){
-      iData->v[i] = iData->start_u[id-iData->nx]*iData->scalVar[id];
+    }else if(id< iData->dim.nv){
+      iData->v[i] = iData->start_u[id-iData->dim.nx]*iData->scalVar[id];
     }
   }
     return 0;
@@ -109,6 +109,7 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
 
   DATA* data = iData->data;
   SIMULATION_INFO *sInfo = &(data->simulationInfo);
+  OPTIMIZER_DIM_VARS* dim = &iData->dim;
 
   if(!data->simulationInfo.external_input.active)
      externalInputallocate(data);
@@ -129,13 +130,13 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
    /*x = data->localData[0]->realVars;*/
    v = iData->v;
 
-   for(ii=iData->nx,j=0; j < iData->nu; ++j, ++ii){
+   for(ii=dim->nx,j=0; j < dim->nu; ++j, ++ii){
      u0[j] = fmin(fmax(u0[j],iData->umin[j]),iData->umax[j]);
-     v[ii] = u0[j]*iData->scalVar[j + iData->nx];
+     v[ii] = u0[j]*iData->scalVar[j + dim->nx];
    }
 
    if(!data->simulationInfo.external_input.active)
-     for(i = 0; i<iData->nu;++i)
+     for(i = 0; i<dim->nu;++i)
        data->simulationInfo.inputVars[i] = u0[i];
    else
      externalInputUpdate(data);
@@ -157,29 +158,29 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
    printf("\ndone: time[%i] = %g",0,iData->time[0]);
    }
 
-   for(i=0, k=1, v=iData->v + iData->nv; i<iData->nsi; ++i){
-     for(jj=0; jj<iData->deg; ++jj, ++k){
+   for(i=0, k=1, v=iData->v + dim->nv; i<dim->nsi; ++i){
+     for(jj=0; jj<dim->deg; ++jj, ++k){
       smallIntSolverStep(iData, solverInfo, iData->time[k]);
 
      if(printGuess)
        printf("\ndone: time[%i] = %g\n", k, iData->time[k]);
 
-     for(j=0; j< iData->nx; ++j){
+     for(j=0; j< dim->nx; ++j){
        v[j] = data->localData[0]->realVars[j] * iData->scalVar[j];
      }
-     for(; j< iData->nv; ++j)
-       v[j] = data->simulationInfo.inputVars[j-iData->nx] * iData->scalVar[j];
+     for(; j< dim->nv; ++j)
+       v[j] = data->simulationInfo.inputVars[j-dim->nx] * iData->scalVar[j];
 
-     v += iData->nv;
+     v += dim->nv;
      }
   }
 
-  for(i = 0, id=0; i<iData->NV;i++,++id){
-    if(id >=iData->nv)
+  for(i = 0, id=0; i<dim->NV;i++,++id){
+    if(id >=dim->nv)
     id = 0;
-    if(id <iData->nx){
+    if(id <dim->nx){
      iData->v[i] =fmin(fmax(iData->vmin[id],iData->v[i]),iData->vmax[id]);
-    }else if(id< iData->nv){
+    }else if(id< dim->nv){
      iData->v[i] = fmin(fmax(iData->vmin[id],iData->v[i]),iData->vmax[id]);
     }
   }
@@ -225,12 +226,12 @@ static int pre_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
   iData->t0 = iData->data->localData[0]->timeValue;
 
   /*ToDo*/
-  for(i=0; i< iData->nx; ++i)
+  for(i=0; i< iData->dim.nx; ++i)
   {
     iData->Vmin[i] = (*iData).Vmax[i] = iData->data->localData[1]->realVars[i]*iData->scalVar[i];
     iData->v[i] = iData->Vmin[i];
   }
-  for(j=0; i< iData->nv; ++i,++j){
+  for(j=0; i< iData->dim.nv; ++i,++j){
     iData->Vmin[i] = iData->Vmax[i] = data->simulationInfo.inputVars[j]*iData->scalVar[i];
     iData->v[i] = iData->Vmin[i];
   }
@@ -244,26 +245,25 @@ static int optimizer_time_setings_update(IPOPT_DATA_ *iData)
   int i,k,id;
   double t;
 
-  assert(iData->nsi > 0);
+  assert(iData->dim.nsi > 0);
 
   iData->time[0] = iData->t0;
-  t = iData->t0;
-  iData->dt_default = (iData->tf - iData->t0)/(iData->nsi);
+  iData->dt_default = (iData->tf - iData->t0)/(iData->dim.nsi);
 
-  t = iData->nsi*iData->dt_default;
+  t = iData->dim.nsi*iData->dt_default;
 
-  for(i=0;i<iData->nsi; ++i)
+  for(i=0;i<iData->dim.nsi; ++i)
     iData->dt[i] = iData->dt_default;
 
-  iData->dt[iData->nsi-1] = iData->dt_default + (iData->tf - t);
+  iData->dt[iData->dim.nsi-1] = iData->dt_default + (iData->tf - t);
 
-  for(i = 0, k=0, id=0; i<iData->nsi; ++i,id += iData->deg){
+  for(i = 0, k=0, id=0; i<1; ++i,id += iData->dim.deg){
       iData->time[++k] = iData->time[id] + iData->e1*iData->dt[i];
       iData->time[++k] = iData->time[id] + iData->e2*iData->dt[i];
       iData->time[++k] = iData->time[0]+ (i+1)*iData->dt[i];
   }
 
-  for(; i<iData->nsi; ++i,id += iData->deg){
+  for(; i<iData->dim.nsi; ++i,id += iData->dim.deg){
       iData->time[++k] = iData->time[id] + iData->c1*iData->dt[i];
       iData->time[++k] = iData->time[id] + iData->c2*iData->dt[i];
       iData->time[++k] = iData->time[0]+ (i+1)*iData->dt[i];

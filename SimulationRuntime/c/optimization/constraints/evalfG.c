@@ -68,77 +68,83 @@ Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
    double max_err = -1;
    double max_err_time = -1;
    int max_err_xi = -1;
+   int tmp_index;
+   OPTIMIZER_DIM_VARS* dim;
 
    iData = (IPOPT_DATA_ *) useData;
+   dim = &iData->dim;
    for(i=0, k=0, x0=v; i<1; ++i, x0=iData->x3){
-     iData->x1 = x0 + iData->nv; /* 0 + 3 = 3;2*/
-     iData->x2 = iData->x1 + iData->nv; /*3 + 3 = 6;5*/
-     iData->x3 = iData->x2 + iData->nv; /*6 + 3  = 9*/
 
-     iData->u1 = iData->x1 + iData->nx; /*3 + 2 = 5*/
-     iData->u2 = iData->x2 + iData->nx; /*6 + 2 = 8*/
-     iData->u3 = iData->x3 + iData->nx;
+     iData->x1 = x0 + dim->nv; /* 0 + 3 = 3;2*/
+     iData->x2 = iData->x1 + dim->nv; /*3 + 3 = 6;5*/
+     iData->x3 = iData->x2 + dim->nv; /*6 + 3  = 9*/
+
+     iData->u1 = iData->x1 + dim->nx; /*3 + 2 = 5*/
+     iData->u2 = iData->x2 + dim->nx; /*6 + 2 = 8*/
+     iData->u3 = iData->x3 + dim->nx;
 
      /*1*/
-     functionODE_(x0, x0 + iData->nx, iData->time[0], iData->dotx0, iData);
+     functionODE_(x0, x0 + dim->nx, iData->time[0], iData->dotx0, iData);
      functionODE_(iData->x1, iData->u1, iData->time[1], iData->dotx1, iData);
      evalG21(g + k, iData, x0, i);
      if(ACTIVE_STREAM(LOG_IPOPT_ERROR))
        printMaxError(iData,g,iData->time[1],&max_err, &max_err_time, &max_err_xi);
 
-     k += iData->nJ;
+     k += dim->nJ;
 
      /*2*/
      functionODE_(iData->x2, iData->u2, iData->time[2], iData->dotx2, iData);
      evalG22(g + k, iData, x0, i);
      if(ACTIVE_STREAM(LOG_IPOPT_ERROR))
        printMaxError(iData,g,iData->time[2],&max_err, &max_err_time, &max_err_xi);
-     k += iData->nJ;
+     k += dim->nJ;
 
      /*3*/
      functionODE_(iData->x3, iData->u3, iData->time[3], iData->dotx3, iData);
      evalG23(g + k, iData, x0, i);
      if(ACTIVE_STREAM(LOG_IPOPT_ERROR))
        printMaxError(iData,g,iData->time[3],&max_err, &max_err_time, &max_err_xi);
-     k += iData->nJ;
+     k += dim->nJ;
   }
 
-  for(; i<iData->nsi; ++i, x0=iData->x3){
-    iData->x1 = x0 + iData->nv; /* 0 + 3 = 3;2*/
-    iData->x2 = iData->x1 + iData->nv; /*3 + 3 = 6;5*/
-    iData->x3 = iData->x2 + iData->nv; /*6 + 3  = 9*/
+  for(; i<dim->nsi; ++i, x0=iData->x3){
+    iData->x1 = x0 + dim->nv; /* 0 + 3 = 3;2*/
+    iData->x2 = iData->x1 + dim->nv; /*3 + 3 = 6;5*/
+    iData->x3 = iData->x2 + dim->nv; /*6 + 3  = 9*/
 
-    iData->u1 = iData->x1 + iData->nx; /*3 + 2 = 5*/
-    iData->u2 = iData->x2 + iData->nx; /*6 + 2 = 8*/
-    iData->u3 = iData->x3 + iData->nx;
+    iData->u1 = iData->x1 + dim->nx; /*3 + 2 = 5*/
+    iData->u2 = iData->x2 + dim->nx; /*6 + 2 = 8*/
+    iData->u3 = iData->x3 + dim->nx;
+
+    tmp_index = i*dim->deg;
 
     /*1*/
-    functionODE_(iData->x1, iData->u1, iData->time[i*iData->deg + 1], iData->dotx1, iData);
+    functionODE_(iData->x1, iData->u1, iData->time[tmp_index + 1], iData->dotx1, iData);
     evalG11(g + k, iData, x0, i);
     if(ACTIVE_STREAM(LOG_IPOPT_ERROR))
-      printMaxError(iData,g,iData->time[i*iData->deg + 1],&max_err, &max_err_time, &max_err_xi);
-    k += iData->nJ;
+      printMaxError(iData,g,iData->time[tmp_index + 1],&max_err, &max_err_time, &max_err_xi);
+    k += dim->nJ;
 
     /*2*/
-    functionODE_(iData->x2, iData->u2, iData->time[i*iData->deg + 2], iData->dotx2, iData);
+    functionODE_(iData->x2, iData->u2, iData->time[tmp_index + 2], iData->dotx2, iData);
     evalG12(g + k, iData, x0, i);
     if(ACTIVE_STREAM(LOG_IPOPT))
-      printMaxError(iData,g,iData->time[i*iData->deg + 2],&max_err, &max_err_time, &max_err_xi);
-    k += iData->nJ;
+      printMaxError(iData,g,iData->time[tmp_index + 2],&max_err, &max_err_time, &max_err_xi);
+    k += dim->nJ;
 
     /*3*/
-    functionODE_(iData->x3, iData->u3, iData->time[i*iData->deg + 3], iData->dotx3, iData);
+    functionODE_(iData->x3, iData->u3, iData->time[tmp_index + 3], iData->dotx3, iData);
     evalG13(g + k, iData, x0, i);
     if(ACTIVE_STREAM(LOG_IPOPT_ERROR))
-      printMaxError(iData,g,iData->time[i*iData->deg + 3],&max_err, &max_err_time, &max_err_xi);
-    k += iData->nJ;
+      printMaxError(iData,g,iData->time[tmp_index + 3],&max_err, &max_err_time, &max_err_xi);
+    k += dim->nJ;
   }
   if(ACTIVE_STREAM(LOG_IPOPT_ERROR)){
 
-    if(max_err_xi < iData->nx)
+    if(max_err_xi < dim->nx)
       printf("\nmax error for |%s(%g) - collocation_poly| = %g\n",iData->data->modelData.realVarsData[max_err_xi].info.name,max_err_time,max_err);
     else
-      printf("\nmax error for |cosntrain[%i](%g)| = %g\n", (int)max_err_xi-(int)iData->nx, max_err_time, max_err);
+      printf("\nmax error for |cosntrain[%i](%g)| = %g\n", (int)max_err_xi-(int)dim->nx, max_err_time, max_err);
   }
   return TRUE;
 }
@@ -151,7 +157,7 @@ int functionODE_(double * x, double *u, double t, double * dotx, IPOPT_DATA_ *iD
 {
   SIMULATION_DATA *sData = (SIMULATION_DATA*)iData->data->localData[0];
   refreshSimData(x, u,  t, iData);
-  memcpy(dotx, sData->realVars + iData->nx, sizeof(double)*iData->nx);
+  memcpy(dotx, sData->realVars + iData->dim.nx, sizeof(double)*iData->dim.nx);
   return 0;
 }
 
@@ -163,28 +169,20 @@ int diff_functionODE(double* v, double t, IPOPT_DATA_ *iData, double **J)
 {
   int i, j;
 
-  int nJ = (int)iData->nJ;
+  int nJ = (int)iData->dim.nJ;
 
-
-  if(iData->useNumJac>0){
-    num_diff_symColoredODE(v,t,iData,J);
-    for(i = 0;i<iData->nv;++i)
-      for(j = 0; j <iData->nx; ++j)
-        iData->numJ[j][i] *= iData->scalf[j];
-  }else{
     double *x, *u;
     x = v;
-    u = v + iData->nx;
+    u = v + iData->dim.nx;
 
     refreshSimData(x,u,t,iData);
     diff_symColoredODE(v,t,iData,J);
-    for(i = 0;i<iData->nv;++i){
-      for(j = 0; j <iData->nx; ++j)
+    for(i = 0;i<iData->dim.nv;++i){
+      for(j = 0; j <iData->dim.nx; ++j)
         J[j][i] *= iData->scalf[j]*iData->vnom[i];
       for(; j <nJ; ++j)
         J[j][i] *= iData->vnom[i];
     }
- }
 
   /*
   #ifdef JAC_ADOLC
@@ -205,85 +203,13 @@ int diff_functionODE(double* v, double t, IPOPT_DATA_ *iData, double **J)
  *  function calculates a symbolic colored jacobian matrix by
  *  author: Willi Braun
  */
-int num_diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J)
-{
-  DATA * data = iData->data;
-  const int index = 2;
-  double*x,*u;
-  /*SIMULATION_DATA *sData = (SIMULATION_DATA*)iData->data->localData[0];*/
-  int i,j,l,ii,nx;
-  int *cC,*lindex;
-
-  x = v;
-  u = x + iData->nx;
-
-  nx = data->simulationInfo.analyticJacobians[index].sizeCols;
-  cC =  (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols;
-  lindex = (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex;
-
-  memcpy(iData->vsave, v, sizeof(double)*nx);
-
-  for(ii = 0; ii<nx; ++ii){
-  iData->eps[ii] = DF_STEP(v[ii], iData->vnom[ii]);
-  }
-
-  for(i = 1; i < data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors + 1; ++i){
-
-    for(ii = 0; ii<nx; ++ii)
-      if(cC[ii] == i){
-      v[ii] = iData->vsave[ii] + iData->eps[ii];
-      //printf("\nlv[%i] = %g\t eps[%i] = %g",ii,v[ii], ii,iData->eps[ii]);
-      }
-
-    functionODE_(x, u, t, iData->lhs, iData);
-    if(iData->nc > 0)
-      memcpy(iData->lhs + iData->nx, &iData->data->localData[0]->realVars[iData->data->modelData.nVariablesReal - iData->nc], sizeof(double)*iData->nc);
-
-    for(ii = 0; ii<nx; ++ii)
-      if(cC[ii] == i)
-      {
-      v[ii] = iData->vsave[ii] - iData->eps[ii];
-      //printf("\nrv[%i] = %g\t eps[%i] = %g",ii,v[ii], ii,iData->eps[ii]);
-      }
-
-    functionODE_(x, u, t, iData->rhs, iData);
-    if(iData->nc > 0)
-      memcpy(iData->rhs + iData->nx, &iData->data->localData[0]->realVars[iData->data->modelData.nVariablesReal - iData->nc], sizeof(double)*iData->nc);
-
-    memcpy(v, iData->vsave, sizeof(double)*nx);
-
-    for(ii = 0; ii < nx; ii++){
-      if(cC[ii] == i){
-        if(ii == 0)  j = 0;
-        else j = lindex[ii-1];
-        
-        for(; j<lindex[ii]; ++j){
-          l = data->simulationInfo.analyticJacobians[index].sparsePattern.index[j];
-          J[l][ii] = (iData->lhs[l] - iData->rhs[l])/(2.0*iData->eps[ii]);
-        }
-      }
-    }
-  }
-
-  return 0;
-}
-
-
-/*
- *  function calculates a symbolic colored jacobian matrix by
- *  author: Willi Braun
- */
 int diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J)
 {
   DATA * data = iData->data;
   const int index = 2;
- /* double*x,*u;*/
 
   int i,j,l,ii,nx;
   int *cC,*lindex;
-
-  /*x = v;*/
-  /*u = x + iData->nx;*/
 
   nx = data->simulationInfo.analyticJacobians[index].sizeCols;
   cC =  (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols;
@@ -329,10 +255,10 @@ int diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J)
 static inline int evalG11(Number *g, IPOPT_DATA_ *iData, double *x0, int i)
 {
   int j;
-  for(j=0; j<iData->nx; ++j)
+  for(j=0; j<iData->dim.nx; ++j)
     g[j] = (iData->a1[0]*x0[j] + iData->a1[3]*iData->x3[j] + iData->scalf[j]*iData->dt[i]*iData->dotx1[j]) - (iData->a1[1]*iData->x1[j] + iData->a1[2]*iData->x2[j]);
 
-  memcpy(g + iData->nx, &iData->data->localData[0]->realVars[iData->data->modelData.nVariablesReal - iData->nc], sizeof(double)*iData->nc);
+  memcpy(g + iData->dim.nx, &iData->data->localData[0]->realVars[iData->data->modelData.nVariablesReal - iData->dim.nc], sizeof(double)*iData->dim.nc);
   return 0;
 
 }
@@ -344,10 +270,10 @@ static inline int evalG11(Number *g, IPOPT_DATA_ *iData, double *x0, int i)
 static inline int evalG12(Number *g, IPOPT_DATA_ *iData, double *x0, int i)
 {
   int j;
-  for(j=0; j<iData->nx; ++j)
+  for(j=0; j<iData->dim.nx; ++j)
     g[j] = (iData->a2[1]*iData->x1[j] + iData->scalf[j]*iData->dt[i]*iData->dotx2[j]) - (iData->a2[0]*x0[j] + iData->a2[2]*iData->x2[j] + iData->a2[3]*iData->x3[j]);
 
-  memcpy(g + iData->nx, &iData->data->localData[0]->realVars[iData->data->modelData.nVariablesReal - iData->nc], sizeof(double)*iData->nc);
+  memcpy(g + iData->dim.nx, &iData->data->localData[0]->realVars[iData->data->modelData.nVariablesReal - iData->dim.nc], sizeof(double)*iData->dim.nc);
   return 0;
 
 }
@@ -359,10 +285,10 @@ static inline int evalG12(Number *g, IPOPT_DATA_ *iData, double *x0, int i)
 static inline int evalG13(Number *g, IPOPT_DATA_ *iData, double *x0, int i)
 {
   int j;
-  for(j=0; j<iData->nx; ++j)
+  for(j=0; j<iData->dim.nx; ++j)
     g[j] = (iData->a3[0]*x0[j] + iData->a3[2]*iData->x2[j] + iData->scalf[j]*iData->dt[i]*iData->dotx3[j]) - (iData->a3[1]*iData->x1[j] + iData->a3[3]*iData->x3[j]);
 
-  memcpy(g + iData->nx, &iData->data->localData[0]->realVars[iData->data->modelData.nVariablesReal - iData->nc], sizeof(double)*iData->nc);
+  memcpy(g + iData->dim.nx, &iData->data->localData[0]->realVars[iData->data->modelData.nVariablesReal - iData->dim.nc], sizeof(double)*iData->dim.nc);
   return 0;
 
 }
@@ -374,10 +300,10 @@ static inline int evalG13(Number *g, IPOPT_DATA_ *iData, double *x0, int i)
 static inline int evalG21(Number *g, IPOPT_DATA_ *iData, double *x0, int i)
 {
   int j;
-  for(j=0; j<iData->nx; ++j)
+  for(j=0; j<iData->dim.nx; ++j)
     g[j] = (iData->scalf[j]*iData->dt[i]*(iData->dotx1[j] + iData->d1[4]*iData->dotx0[j]) + iData->d1[0]*x0[j] + iData->d1[3]*iData->x3[j]) - (iData->d1[1]*iData->x1[j] + iData->d1[2]*iData->x2[j]);
 
-  memcpy(g + iData->nx, &iData->data->localData[0]->realVars[iData->data->modelData.nVariablesReal - iData->nc], sizeof(double)*iData->nc);
+  memcpy(g + iData->dim.nx, &iData->data->localData[0]->realVars[iData->data->modelData.nVariablesReal - iData->dim.nc], sizeof(double)*iData->dim.nc);
   return 0;
 
 }
@@ -389,10 +315,10 @@ static inline int evalG21(Number *g, IPOPT_DATA_ *iData, double *x0, int i)
 static inline int evalG22(Number *g, IPOPT_DATA_ *iData, double *x0, int i)
 {
   int j;
-  for(j=0; j<iData->nx; ++j)
+  for(j=0; j<iData->dim.nx; ++j)
     g[j] = (iData->scalf[j]*iData->dt[i]*iData->dotx2[j] + iData->d2[1]*iData->x1[j]) - (iData->scalf[j]*iData->dt[i]*iData->d2[4]*iData->dotx0[j] + iData->d2[0]*x0[j] + iData->d2[2]*iData->x2[j] + iData->d2[3]*iData->x3[j]);
 
-  memcpy(g + iData->nx, &iData->data->localData[0]->realVars[iData->data->modelData.nVariablesReal - iData->nc], sizeof(double)*iData->nc);
+  memcpy(g + iData->dim.nx, &iData->data->localData[0]->realVars[iData->data->modelData.nVariablesReal - iData->dim.nc], sizeof(double)*iData->dim.nc);
   return 0;
 
 }
@@ -404,10 +330,10 @@ static inline int evalG22(Number *g, IPOPT_DATA_ *iData, double *x0, int i)
 static inline int evalG23(Number *g, IPOPT_DATA_ *iData, double *x0, int i)
 {
   int j;
-  for(j=0; j<iData->nx; ++j)
+  for(j=0; j<iData->dim.nx; ++j)
     g[j] = (iData->scalf[j]*iData->dt[i]*(iData->d3[4]*iData->dotx0[j] + iData->dotx3[j]) + iData->d3[0]*x0[j] + iData->d3[2]*iData->x2[j]) - (iData->d3[1]*iData->x1[j] + iData->d3[3]*iData->x3[j]);
 
-  memcpy(g + iData->nx, &iData->data->localData[0]->realVars[iData->data->modelData.nVariablesReal - iData->nc], sizeof(double)*iData->nc);
+  memcpy(g + iData->dim.nx, &iData->data->localData[0]->realVars[iData->data->modelData.nVariablesReal - iData->dim.nc], sizeof(double)*iData->dim.nc);
   return 0;
 
 }
@@ -417,7 +343,7 @@ static int printMaxError(IPOPT_DATA_ *iData, double *g,double t, double * max_er
   double tmp;
   int j;
 
-  for(j = 0; j<(int)iData->nx; ++j){
+  for(j = 0; j<(int)iData->dim.nx; ++j){
     tmp = fabs(g[j]);
     //printf("\n time %g vs. %g | %g vs. %g",t,*tt,tmp,*max_err);
     if((double) tmp > (double)*max_err){
@@ -427,7 +353,7 @@ static int printMaxError(IPOPT_DATA_ *iData, double *g,double t, double * max_er
     }
   }
 
-  for(; j<(int)iData->nJ; ++j){
+  for(; j<(int)iData->dim.nJ; ++j){
     if((double)g[j]> (double)*max_err){
       *max_err = g[j];
       *tt = t;

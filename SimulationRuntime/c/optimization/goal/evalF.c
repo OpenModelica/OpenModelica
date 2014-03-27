@@ -46,7 +46,6 @@ static int eval_diff_lagrange1(IPOPT_DATA_ *iData, double *x, int *id_, double* 
 static int eval_diff_lagrange2(IPOPT_DATA_ *iData, double *x, int *id_, double* gradF);
 
 int sym_diff_symColoredObject(IPOPT_DATA_ *iData, double *dF, int this_it);
-int num_diff_symColoredObject(IPOPT_DATA_ *iData, double *dF, int this_it);
 
 /*!
  *  eval object function
@@ -73,7 +72,7 @@ Bool evalfF(Index n, double * v, Bool new_x, Number *objValue, void * useData)
     for(i=0, k=0, x=v; i<1; ++i)
     {
       erg = 0.0;
-      for(j=0; j<iData->deg+1; ++j, x+=iData->nv, ++k)
+      for(j=0; j<iData->dim.deg+1; ++j, x+=iData->dim.nv, ++k)
       {
         goal_func_lagrange(x, &tmp,iData->time[k], iData);
         erg += iData->bl[j]*tmp;
@@ -81,10 +80,10 @@ Bool evalfF(Index n, double * v, Bool new_x, Number *objValue, void * useData)
       erg_+= erg*iData->dt[i];
     }
 
-    for(; i<iData->nsi; ++i)
+    for(; i<iData->dim.nsi; ++i)
     {
       erg = 0.0;
-      for(j=0; j<iData->deg; ++j, x+=iData->nv, ++k)
+      for(j=0; j<iData->dim.deg; ++j, x+=iData->dim.nv, ++k)
       {
         goal_func_lagrange(x, &tmp, iData->time[k], iData);
         erg += iData->br[j]*tmp;
@@ -106,7 +105,7 @@ Bool evalfF(Index n, double * v, Bool new_x, Number *objValue, void * useData)
  **/
 Bool goal_func_mayer(double* vn, double *obj_value, IPOPT_DATA_ *iData)
 {  
-  refreshSimData(vn, vn + iData->nx, iData->tf, iData);
+  refreshSimData(vn, vn + iData->dim.nx, iData->tf, iData);
   iData->data->callback->mayer(iData->data, obj_value);
   
   return TRUE;
@@ -118,7 +117,7 @@ Bool goal_func_mayer(double* vn, double *obj_value, IPOPT_DATA_ *iData)
  **/
 Bool goal_func_lagrange(double* vn, double *obj_value, double t, IPOPT_DATA_ *iData)
 {  
-  refreshSimData(vn, vn + iData->nx, t, iData);
+  refreshSimData(vn, vn + iData->dim.nx, t, iData);
   iData->data->callback->lagrange(iData->data, obj_value);
   
   return TRUE;
@@ -142,25 +141,25 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
     x = v;
     id = 0;
     
-    for(i=0; i<iData->nsi; ++i){
+    for(i=0; i<iData->dim.nsi; ++i){
       if(i){
-        for(k=0; k<iData->deg; ++k, x+=iData->nv){
-          refreshSimData(x,x+ iData->nx,iData->time[i*iData->deg+k+1],iData);
+        for(k=0; k<iData->dim.deg; ++k, x+=iData->dim.nv){
+          refreshSimData(x,x+ iData->dim.nx,iData->time[i*iData->dim.deg+k+1],iData);
           iData->cv = x;
           /*iData->data->callback->functionAlgebraics(iData->data);*/
           diff_symColoredObject(iData, iData->gradF, iData->lagrange_index);
-          for(j = 0; j<iData->nv; ++j){
+          for(j = 0; j<iData->dim.nv; ++j){
             gradF[id++] =  iData->dt[i]*iData->br[k]*iData->gradF[j]*iData->vnom[j];
             /* printf("\n gradF(%i) = %g, %s, %g", id-1, gradF[id-1], iData->data->modelData.realVarsData[j].info.name, x[j]*iData->vnom[j]); */
           }
         }
       }else{
-        for(k=0; k<iData->deg+1; ++k, x+=iData->nv){
-          refreshSimData(x,x+ iData->nx,iData->time[i*iData->deg+k],iData);
+        for(k=0; k<iData->dim.deg+1; ++k, x+=iData->dim.nv){
+          refreshSimData(x,x+ iData->dim.nx,iData->time[i*iData->dim.deg+k],iData);
           iData->cv = x;
           /*iData->data->callback->functionAlgebraics(iData->data);*/
           diff_symColoredObject(iData, iData->gradF,iData->lagrange_index);
-          for(j=0; j<iData->nv; ++j){
+          for(j=0; j<iData->dim.nv; ++j){
             gradF[id++] = iData->dt[i]*iData->bl[k]*iData->gradF[j]*iData->vnom[j];
             /* printf("\n gradF(%i) = %g, %s, %g", id-1, gradF[id-1], iData->data->modelData.realVarsData[j].info.name, x[j]*iData->vnom[j]); */
           }
@@ -174,11 +173,11 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
   if(iData->mayer){
     x = v + iData->endN;
 
-    refreshSimData(x, x +iData->nx, iData->tf, iData);
+    refreshSimData(x, x +iData->dim.nx, iData->tf, iData);
     iData->cv = x;
     /*iData->data->callback->functionAlgebraics(iData->data);*/
     diff_symColoredObject(iData, iData->gradF, iData->mayer_index);
-    for(j=0; j<iData->nv; ++j)
+    for(j=0; j<iData->dim.nv; ++j)
     {
       if(iData->lagrange){
         gradF[iData->endN + j] +=  iData->gradF[j]*iData->vnom[j];
@@ -256,65 +255,8 @@ int sym_diff_symColoredObject(IPOPT_DATA_ *iData, double *dF, int this_it)
         }
       }
   }
-  memcpy(dF, iData->gradFomc[this_it], sizeof(double)*iData->nv);
+  memcpy(dF, iData->gradFomc[this_it], sizeof(double)*iData->dim.nv);
   return 0;
 }
 
-/*
- *  function calculates a num colored gradient "matrix"
- *  author: vitalij
- */
-int num_diff_symColoredObject(IPOPT_DATA_ *iData, double *dF, int this_it)
-{
-  DATA * data = iData->data;
-  const int index = 2;
-  /*double*x,*u*/;
-  SIMULATION_DATA *sData = (SIMULATION_DATA*)iData->data->localData[0];
-  int i,j,l,ii,nx,k;
-  /*int *cC,*lindex;*/
-  double lhs, rhs;
-  double *v;
-  double t = (double)sData->timeValue;
-
-  v = iData->cv;
-  /*x = v;*/
-  /*u = x + iData->nx;*/
-
-  nx = data->simulationInfo.analyticJacobians[index].sizeCols;
-  /*cC =  (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols;
-  lindex = (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex;*/
-  memcpy(iData->vsave, v, sizeof(double)*iData->nv);
-
-  for(ii = 0; ii<nx; ++ii){
-    iData->eps[ii] = DF_STEP(v[ii], iData->vnom[ii]);
-  }
-
-  for(i = 1; i < data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors + 1; ++i){
-    for(ii = 0; ii<nx; ++ii){
-
-    v[ii] = iData->vsave[ii] + iData->eps[ii];
-
-      if((int)iData->mayer_index == (int)this_it)
-        goal_func_mayer(v, &lhs, iData);
-      else
-        goal_func_lagrange(v, &lhs, t, iData);
-
-
-    v[ii] = iData->vsave[ii] - iData->eps[ii];
-        //printf("\nrv[%i] = %g\t eps[%i] = %g",ii,v[ii], ii,iData->eps[ii]);
-
-      if( (int)iData->mayer_index == (int) this_it)
-        goal_func_mayer(v, &rhs, iData);
-      else
-        goal_func_lagrange(v, &rhs, t, iData);
-
-    v[ii] = iData->vsave[ii];
-    dF[ii] = (lhs - rhs)/(2.0*iData->eps[ii]);
-    dF[ii] /= iData->vnom[ii];
-    }
-  }
-  return 0;
-}
-
-#undef DF_STEP
 #endif

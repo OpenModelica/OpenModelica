@@ -77,17 +77,15 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
   iData->matrixC = data->callback->initialAnalyticJacobianC((void*) iData->data);
   /*iData->matrixD = data->callback->initialAnalyticJacobianD((void*) iData->data);*/
   /*ToDo*/
-  iData->deg = 3;
-
   loadDAEmodel(data, iData);
   iData->index_debug_iter=0;
   iData->degub_step =  10;
   iData->index_debug_next=0;
 
   /*ToDo*/
-  for(i=0; i<(*iData).nx; i++)
+  for(i=0; i<iData->dim.nx; i++)
   {
-    iData->Vmin[i] = (*iData).Vmax[i] = (*iData).x0[i]*iData->scalVar[i];
+    iData->Vmin[i] = iData->Vmax[i] = iData->x0[i]*iData->scalVar[i];
     iData->v[i] = iData->Vmin[i];
   }
 
@@ -96,11 +94,15 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
   ipoptDebuge(iData,iData->v);
 
   if(flag == 5){
-    nlp = CreateIpoptProblem(iData->NV, iData->Vmin, iData->Vmax,
-         iData->NRes +iData->nc*iData->deg*iData->nsi, iData->gmin, iData->gmax, iData->njac, iData->nhess, 0, &evalfF,
+    int tmp_dim = iData->dim.NRes +iData->dim.nc*iData->dim.deg*iData->dim.nsi;
+
+    nlp = CreateIpoptProblem(iData->dim.NV, iData->Vmin, iData->Vmax,
+        tmp_dim, iData->gmin, iData->gmax, iData->dim.njac, iData->dim.nhess, 0, &evalfF,
                   &evalfG, &evalfDiffF, &evalfDiffG, &ipopt_h);
 
+    AddIpoptNumOption(nlp, "tol", 1e-8);
     res = set_optimizer_flags(iData,&nlp);
+
     if(res >= 0)
       res = IpoptSolve(nlp, iData->v, NULL, &obj, iData->mult_g, iData->mult_x_L, iData->mult_x_U, (void*)iData);
     if(res < 0 && !ACTIVE_STREAM(LOG_IPOPT))
@@ -126,11 +128,11 @@ int refreshSimData(double *x, double *u, double t, IPOPT_DATA_ *iData)
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   /*MODEL_DATA      *mData = &(data->modelData);
   SIMULATION_INFO *sInfo = &(data->simulationInfo);*/
-  for(j = 0; j<iData->nx;++j){
+  for(j = 0; j<iData->dim.nx;++j){
     sData->realVars[j] = x[j]*iData->vnom[j];
   }
 
-  for(i = 0; i<iData->nu;++i,++j){
+  for(i = 0; i<iData->dim.nu;++i,++j){
     data->simulationInfo.inputVars[i] = u[i]*iData->vnom[j];
   }
 
@@ -159,18 +161,18 @@ int ipoptDebuge(IPOPT_DATA_ *iData, double *x)
 
     iData->index_debug_next += iData->degub_step;
 
-    for(j=0; j<iData->nv; ++j){
+    for(j=0; j<iData->dim.nv; ++j){
       fprintf(iData->pFile[j], "\n");
       fprintf(iData->pFile[j], "%ld,", iData->index_debug_iter);
     }
 
-    for(i=0; i<iData->NV; ++i){
-      j = i % iData->nv;
+    for(i=0; i<iData->dim.NV; ++i){
+      j = i % iData->dim.nv;
       tmp = x[i]*iData->vnom[j];
       fprintf(iData->pFile[j], "%.16g,", tmp);
     }
 
-    for(j=0; j<iData->nv; ++j)
+    for(j=0; j<iData->dim.nv; ++j)
       fprintf(iData->pFile[j], "\n");
   }
 
@@ -195,7 +197,7 @@ static int res2file(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
   
   pFile = fopen("optimizeInput.csv", "wt");
   fprintf(pFile, "%s ", "time");
-  for(i=0; i< iData->nu; ++i){
+  for(i=0; i< iData->dim.nu; ++i){
     sprintf(buffer, "%s", iData->input_name[i]);
     fprintf(pFile, "%s ", buffer);
   }
@@ -203,12 +205,12 @@ static int res2file(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
 
 
   while(solverInfo->currentTime < simInfo->stopTime){
-    for(i=0; i< iData->nx; ++i){
+    for(i=0; i< iData->dim.nx; ++i){
       sData->realVars[i] = iData->v[k++]*iData->vnom[i];
     }
     
     fprintf(pFile, "%lf ",iData->time[iData->current_time]);
-    for(i=0,j=iData->nx; i< iData->nu; ++i,++j){
+    for(i=0,j=iData->dim.nx; i< iData->dim.nu; ++i,++j){
       data->simulationInfo.inputVars[i] = iData->v[k]*iData->vnom[j];
       fprintf(pFile, "%lf ", iData->v[k++]*iData->vnom[j]);
     }
@@ -235,6 +237,7 @@ static int set_optimizer_flags(IPOPT_DATA_ *iData, IpoptProblem *nlp)
 {
   char *cflags;
   int max_iter;
+
   AddIpoptNumOption(*nlp, "tol", iData->data->simulationInfo.tolerance);
 
   if(ACTIVE_STREAM(LOG_IPOPT)){

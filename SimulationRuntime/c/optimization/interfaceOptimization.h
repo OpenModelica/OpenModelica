@@ -34,6 +34,7 @@
  * FH-Bielefeld
  * Developer: Vitalij Ruge
  * Contact: vitalij.ruge@fh-bielefeld.de
+ *
  */
 
 #ifndef INTERFACEOPTIMIZATION_H_

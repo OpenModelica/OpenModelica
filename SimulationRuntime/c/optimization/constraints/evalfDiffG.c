@@ -105,8 +105,9 @@ Bool evalfDiffG(Index n, double * x, Bool new_x, Index m, Index njac, Index *iRo
     int i,j,k,l,ii;
     long double tmp[3];
     int id;
-    int nng = iData->nJ;
-
+    int tmp_index;
+    OPTIMIZER_DIM_VARS* dim = &iData->dim;
+    int nng = dim->nJ;
     ipoptDebuge(iData,x);
 
     tmp[0] = iData->dt[0]*iData->d1[4];
@@ -115,46 +116,48 @@ Bool evalfDiffG(Index n, double * x, Bool new_x, Index m, Index njac, Index *iRo
 
     diff_functionODE(x, iData->t0 , iData, iData->J0);
 
-    for(i = 0, id = iData->nv, k = 0; i<1; ++i){
-      for(l=0; l<iData->deg; ++l, id += iData->nv){
-        diff_functionODE(x+id , iData->time[i*iData->deg + l] , iData, iData->J);
-        for(j=0; j<iData->nx; ++j){
+    for(i = 0, id = dim->nv, k = 0; i<1; ++i){
+      tmp_index = i*dim->deg;
+      for(l=0; l<dim->deg; ++l, id += dim->nv){
+        diff_functionODE(x+id , iData->time[tmp_index + l] , iData, iData->J);
+        for(j=0; j<dim->nx; ++j){
           switch(l){
           case 0:
-            lobattoJac1(iData->d1, iData->J[j], iData->J0[j], iData->dt[i], values, iData->nv, &k, j, tmp[0], iData);
+            lobattoJac1(iData->d1, iData->J[j], iData->J0[j], iData->dt[i], values, dim->nv, &k, j, tmp[0], iData);
             break;
           case 1:
-            lobattoJac2(iData->d2, iData->J[j], iData->J0[j], iData->dt[i], values, iData->nv, &k, j, tmp[1], iData);
+            lobattoJac2(iData->d2, iData->J[j], iData->J0[j], iData->dt[i], values, dim->nv, &k, j, tmp[1], iData);
             break;
           case 2:
-            lobattoJac3(iData->d3, iData->J[j], iData->J0[j], iData->dt[i], values, iData->nv, &k, j, tmp[2], iData);
+            lobattoJac3(iData->d3, iData->J[j], iData->J0[j], iData->dt[i], values, dim->nv, &k, j, tmp[2], iData);
             break;
           }
         }
         for(;j<nng; ++j){
-          conJac(iData->J[j], values, iData->nv, &k, j, iData);
+          conJac(iData->J[j], values, dim->nv, &k, j, iData);
         }
       }
     }
 
-    for(; i<iData->nsi; ++i){
-      for(l=0; l<iData->deg; ++l, id += iData->nv){
-        diff_functionODE(x+id, iData->time[i*iData->deg + l], iData, iData->J);
-        for(j=0; j<iData->nx; ++j){
+    for(; i<dim->nsi; ++i){
+      tmp_index = i*iData->dim.deg;
+      for(l=0; l<dim->deg; ++l, id += dim->nv){
+        diff_functionODE(x+id, iData->time[tmp_index + l], iData, iData->J);
+        for(j=0; j<dim->nx; ++j){
           switch(l){
           case 0:
-            radauJac1(iData->a1, iData->J[j], iData->dt[i], values, iData->nv, &k, j, iData);
+            radauJac1(iData->a1, iData->J[j], iData->dt[i], values, dim->nv, &k, j, iData);
             break;
           case 1:
-            radauJac2(iData->a2, iData->J[j], iData->dt[i], values, iData->nv, &k, j, iData);
+            radauJac2(iData->a2, iData->J[j], iData->dt[i], values, dim->nv, &k, j, iData);
             break;
           case 2:
-            radauJac3(iData->a3, iData->J[j], iData->dt[i], values, iData->nv, &k, j, iData);
+            radauJac3(iData->a3, iData->J[j], iData->dt[i], values, dim->nv, &k, j, iData);
             break;
           }
         }
         for(;j<nng; ++j)
-          conJac(iData->J[j], values, iData->nv, &k, j, iData);
+          conJac(iData->J[j], values, dim->nv, &k, j, iData);
       }
     }
      /*assert(k == njac);*/
@@ -340,10 +343,10 @@ static int jac_struc(IPOPT_DATA_ *iData, int *iRow, int *iCol)
   int nr, nc, r, c, nv, nsi, nx, nJ, mv, ir, ic;
   int i, j, k=0, l;
 
-  nv = (int) iData->nv;
-  nx = (int) iData->nx;
-  nsi = (int) iData->nsi;
-  nJ = (int) iData->nJ;
+  nv  = iData->dim.nv;
+  nx  = iData->dim.nx;
+  nsi = iData->dim.nsi;
+  nJ  = iData->dim.nJ;
 
   /*=====================================================================================*/
   /*=====================================================================================*/
