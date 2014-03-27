@@ -480,40 +480,41 @@ int omc_matlab4_read_all_vals(ModelicaMatReader *reader)
   int done = reader->readAll;
   int i,j;
   double *tmp;
-  if (reader->nvar == 0 || reader->nrows == 0) {
+  int nrows = reader->nrows, nvar = reader->nvar;
+  if (nvar == 0 || nrows == 0) {
     return 1;
   }
-  for (i=0; i<2*reader->nvar; i++) {
+  for (i=0; i<2*nvar; i++) {
     if (reader->vars[i] == 0) done = 0;
   }
   if (done) {
     reader->readAll = 1;
     return 0;
   }
-  tmp = (double*) malloc(2*reader->nvar*reader->nrows*sizeof(double));
+  tmp = (double*) malloc(2*nvar*nrows*sizeof(double));
   if (!tmp) {
     return 1;
   }
   fseek(reader->file, reader->var_offset, SEEK_SET);
-  if (reader->nvar*reader->nrows != fread(tmp, reader->doublePrecision==1 ? sizeof(double) : sizeof(float), reader->nvar*reader->nrows, reader->file)) {
+  if (nvar*reader->nrows != fread(tmp, reader->doublePrecision==1 ? sizeof(double) : sizeof(float), nvar*nrows, reader->file)) {
     free(tmp);
     return 1;
   }
   if(reader->doublePrecision != 1) {
-    for (i=reader->nvar*reader->nrows-1; i>=0; i--) {
+    for (i=nvar*nrows-1; i>=0; i--) {
       tmp[i] = ((float*)tmp)[i];
     }
   }
-  matrix_transpose(tmp,reader->nvar,reader->nrows);
+  matrix_transpose(tmp,nvar,nrows);
   /* Negative aliases */
-  for (i=0; i<reader->nrows*reader->nvar; i++) {
-    tmp[reader->nrows*reader->nvar + i] = -tmp[i];
+  for (i=0; i<nrows*nvar; i++) {
+    tmp[nrows*nvar + i] = -tmp[i];
   }
   /* Setup all the pointers */
-  for (i=0; i<2*reader->nvar; i++) {
+  for (i=0; i<2*nvar; i++) {
     if (!reader->vars[i]) {
-      reader->vars[i] = (double*) malloc(reader->nrows*sizeof(double));
-      memcpy(reader->vars[i], tmp + i*reader->nrows, reader->nrows*sizeof(double));
+      reader->vars[i] = (double*) malloc(nrows*sizeof(double));
+      memcpy(reader->vars[i], tmp + i*nrows, nrows*sizeof(double));
     }
   }
   free(tmp);
