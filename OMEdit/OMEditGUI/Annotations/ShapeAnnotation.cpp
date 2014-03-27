@@ -997,7 +997,7 @@ void ShapeAnnotation::setFileName(QString fileName, Component *pComponent)
   {
     pOMCProxy = pComponent->getOMCProxy();
   }
-  else if (mpGraphicsView)
+  else
   {
      pOMCProxy = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
   }

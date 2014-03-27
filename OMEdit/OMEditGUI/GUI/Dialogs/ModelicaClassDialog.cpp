@@ -939,7 +939,6 @@ GraphicsViewProperties::GraphicsViewProperties(GraphicsView *pGraphicsView)
   // create extent points group box
   mpExtentGroupBox = new QGroupBox(Helper::extent);
   mpLeftLabel = new Label(QString(Helper::left).append(":"));
-  OptionsDialog *pOptionsDialog = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOptionsDialog();
   mpLeftSpinBox = new DoubleSpinBox;
   mpLeftSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
   mpLeftSpinBox->setValue(mpGraphicsView->getCoOrdinateSystem()->getExtent().at(0).x());

@@ -436,6 +436,7 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   }
   /* open the .mat file */
   ModelicaMatReader matReader;
+  matReader.file = 0;
   matReader.fileName = "";
   const char *msg[] = {""};
   if (fileName.endsWith(".mat"))

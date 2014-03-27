@@ -948,7 +948,7 @@ void LibraryTreeWidget::unloadClassHelper(LibraryTreeNode *pLibraryTreeNode)
 
 bool LibraryTreeWidget::saveLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode)
 {
-  bool result;
+  bool result = false;
   mpMainWindow->showProgressBar();
   if (pLibraryTreeNode->getParentName().isEmpty() && pLibraryTreeNode->childCount() == 0)
   {
