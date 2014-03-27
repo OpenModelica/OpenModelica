@@ -200,8 +200,6 @@ int diff_symColoredObject(IPOPT_DATA_ *iData, double *dF, int this_it)
 {
   if(iData->useNumJac==0)
     sym_diff_symColoredObject(iData,dF,this_it);
-  else
-    num_diff_symColoredObject(iData,dF,this_it);
   return 0;
 
 }
