@@ -165,7 +165,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   public: 
       <%lastIdentOfPath(modelInfo.name)%>(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactor,boost::shared_ptr<ISimData>); 
 
-      ~<%lastIdentOfPath(modelInfo.name)%>();
+      virtual ~<%lastIdentOfPath(modelInfo.name)%>();
 
        <%generateMethodDeclarationCode(simCode)%>
      virtual  bool getCondition(unsigned int index);
@@ -206,9 +206,16 @@ end generateClassDeclarationCode;
 
 template getAddHpcomFunctionHeaders(Option<ScheduleSimCode> hpcOmScheduleOpt)
 ::=
-  match hpcOmScheduleOpt 
+  let type = getConfigString(HPCOM_CODE)
+  match hpcOmScheduleOpt
+    case SOME(hpcOmSchedule as LEVELSCHEDULESC(__)) then
+        match type 
+            case ("openmp") then
+                <<
+                void evaluateThreadFunc0();
+                >>
+            else ""
     case SOME(hpcOmSchedule as THREADSCHEDULESC(__)) then
-        let type = getConfigString(HPCOM_CODE)
         let locks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_createLock(idx, "lock", type); separator="\n"
         
         match type 
@@ -224,9 +231,20 @@ end getAddHpcomFunctionHeaders;
 
 template getAddHpcomVarHeaders(Option<ScheduleSimCode> hpcOmScheduleOpt)
 ::=
+  let type = getConfigString(HPCOM_CODE)
   match hpcOmScheduleOpt 
+    case SOME(hpcOmSchedule as LEVELSCHEDULESC(__)) then
+        match type 
+            case ("openmp") then
+                <<
+                    <%generateThreadHeaderDecl(0, "pthreads")%>
+                    <%function_HPCOM_createLock("startEvaluateLock","","pthreads")%>
+                    <%function_HPCOM_createLock("finishedEvaluateLock","","pthreads")%>
+                    bool finished;
+                    UPDATETYPE command;
+                >>
+            else ""  
     case SOME(hpcOmSchedule as THREADSCHEDULESC(__)) then
-        let type = getConfigString(HPCOM_CODE)
         let locks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_createLock(idx, "lock", type); separator="\n"
         let threadDecl = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => generateThreadHeaderDecl(i0, type); separator="\n"
         match type 
@@ -256,6 +274,8 @@ template generateHpcomSpecificIncludes(SimCode simCode)
         case ("openmp") then
         <<
         #include <omp.h>
+        #include <boost/thread/mutex.hpp>
+        #include <boost/thread.hpp>
         >>
         case ("pthreads_spin") then
         <<
@@ -293,18 +313,31 @@ end generateThreadFunctionHeaderDecl;
 
 template getHpcomConstructorExtension(Option<ScheduleSimCode> hpcOmScheduleOpt, String modelNamePrefixStr)
 ::=
-  match hpcOmScheduleOpt 
-    case SOME(hpcOmSchedule as THREADSCHEDULESC(__)) then
-        let type = getConfigString(HPCOM_CODE)
-        let initlocks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_initializeLock(idx, "lock", type); separator="\n"
-        let assignLocks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_assignLock(idx, "lock", type); separator="\n"
-        let threadFuncs = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => generateThread(i0, type, modelNamePrefixStr); separator="\n"
+  let type = getConfigString(HPCOM_CODE)
+  match hpcOmScheduleOpt
+    case SOME(hpcOmSchedule as LEVELSCHEDULESC(__)) then
         match type 
             case ("openmp") then
                 <<
-                    <%threadFuncs%>
-                    <%initlocks%>
-                    <%assignLocks%>
+                command = IContinuous::UNDEF_UPDATE;
+                finished = false;
+                
+                <%function_HPCOM_initializeLock("startEvaluateLock","","pthreads")%>
+                <%function_HPCOM_initializeLock("finishedEvaluateLock","","pthreads")%>
+                <%function_HPCOM_assignLock("startEvaluateLock","","pthreads")%>
+                <%function_HPCOM_assignLock("finishedEvaluateLock","","pthreads")%>
+                >>
+            else ""       
+    case SOME(hpcOmSchedule as THREADSCHEDULESC(__)) then
+        let initlocks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_initializeLock(idx, "lock", type); separator="\n"
+        let assignLocks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_assignLock(idx, "lock", type); separator="\n"
+        let threadFuncs = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => generateThread(i0, type, modelNamePrefixStr,"evaluateThreadFunc"); separator="\n"
+        match type 
+            case ("openmp") then
+                <<
+                <%threadFuncs%>
+                <%initlocks%>
+                <%assignLocks%>
                 >>
             else
                 let threadLocksInit = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_initializeLock(i0, "th_lock", type); separator="\n"
@@ -329,9 +362,21 @@ end getHpcomConstructorExtension;
 
 template getHpcomDestructorExtension(Option<ScheduleSimCode> hpcOmScheduleOpt)
 ::=
-  match hpcOmScheduleOpt 
+  let type = getConfigString(HPCOM_CODE)
+  match hpcOmScheduleOpt
+    case SOME(hpcOmSchedule as LEVELSCHEDULESC(__)) then
+        match type 
+            case ("openmp") then
+                <<
+                finished = true;
+                <%function_HPCOM_releaseLock("startEvaluateLock","","pthreads")%>
+                <%function_HPCOM_assignLock("finishedEvaluateLock","","pthreads")%>
+                    
+                <%function_HPCOM_destroyLock("startEvaluateLock","","pthreads")%>
+                <%function_HPCOM_destroyLock("finishedEvaluateLock","","pthreads")%>
+                >>
+            else "" 
     case SOME(hpcOmSchedule as THREADSCHEDULESC(__)) then
-        let type = getConfigString(HPCOM_CODE)
         let destroylocks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_destroyLock(idx, "lock", type); separator="\n"
         let destroyThreads = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_destroyThread(i0, type); separator="\n"
         match type 
@@ -373,17 +418,54 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, Absyn.Path name, list<S
   match hpcOmScheduleOpt 
     case SOME(hpcOmSchedule as LEVELSCHEDULESC(__)) then
       let odeEqs = hpcOmSchedule.tasksOfLevels |> tasks => functionXXX_system0_HPCOM_Level(allEquationsPlusWhen, tasks, type, &varDecls, simCode); separator="\n"
-      <<
+          <<
+          static bool state_var_reinitialized = false;
+          static bool firstRun = true;
+          void <%lastIdentOfPath(name)%>::evaluateThreadFunc0()
+          {
+            //if (omp_get_dynamic())
+            //    omp_set_dynamic(0);
+                
+            <%varDecls%>
+            
+            #pragma omp parallel num_threads(<%intSub(getConfigInt(NUM_PROC),1)%>)
+            {
+                while(!finished)
+                {
+                    #pragma omp master
+                    {
+                        <%function_HPCOM_assignLock("startEvaluateLock","","pthreads")%>
+                    }
+                    #pragma omp barrier 
+                    if(finished)
+                        <%function_HPCOM_releaseLock("finishedEvaluateLock","","pthreads")%> 
+                    
+                    <%odeEqs%>
+                    <%reinit%>
+                    #pragma omp barrier
+                    #pragma omp master
+                    {
+                        <%function_HPCOM_releaseLock("finishedEvaluateLock","","pthreads")%>
+                    }        
+                }
+            }
+          }
+          
           bool <%lastIdentOfPath(name)%>::evaluate(const UPDATETYPE command)
           {
+            if(firstRun)
+            {
+                firstRun = false;
+                <%generateThread(0, "pthreads", modelNamePrefixStr, "evaluateThreadFunc")%>
+            }
+                
             bool state_var_reinitialized = false;
-            <%varDecls%>
-            <%odeEqs%>
-            <%reinit%>
-           
+            this->command = command;
+            <%function_HPCOM_releaseLock("startEvaluateLock","","pthreads")%>
+            <%function_HPCOM_assignLock("finishedEvaluateLock","","pthreads")%>
             return state_var_reinitialized;
           }
-      >>
+          >>
    case SOME(hpcOmSchedule as THREADSCHEDULESC(__)) then
       
       match type 
@@ -400,7 +482,7 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, Absyn.Path name, list<S
             <%&varDecls%>
             <%taskEqs%>
             <%reinit%>
-           
+            
             return state_var_reinitialized;
           }
           >>
@@ -446,11 +528,9 @@ template functionXXX_system0_HPCOM_Level(list<SimEqSystem> allEquationsPlusWhen,
 ::=
   let odeEqs = tasksOfLevel |> task => functionXXX_system0_HPCOM_Level0(allEquationsPlusWhen,task,iType, &varDecls, simCode); separator="\n"
   <<
-  if (omp_get_dynamic())
-    omp_set_dynamic(0);
-  #pragma omp parallel sections num_threads(<%getConfigInt(NUM_PROC)%>)
-  {
-     <%odeEqs%>
+  #pragma omp sections
+  { 
+    <%odeEqs%>
   }
   >>
 end functionXXX_system0_HPCOM_Level;
@@ -639,7 +719,7 @@ template function_HPCOM_destroyThread(String threadIdx, String iType)
       >>  
 end function_HPCOM_destroyThread;
 
-template generateThread(Integer threadIdx, String iType, String modelNamePrefixStr)
+template generateThread(Integer threadIdx, String iType, String modelNamePrefixStr, String funcName)
 ::=
   match iType 
     case ("openmp") then
@@ -647,7 +727,7 @@ template generateThread(Integer threadIdx, String iType, String modelNamePrefixS
       >>
     else
       <<
-      evaluateThread<%threadIdx%> = new boost::thread(boost::bind(&<%modelNamePrefixStr%>::evaluateThreadFunc<%threadIdx%>, this));
+      evaluateThread<%threadIdx%> = new boost::thread(boost::bind(&<%modelNamePrefixStr%>::funcName<%threadIdx%>, this));
       >>  
 end generateThread;
 
