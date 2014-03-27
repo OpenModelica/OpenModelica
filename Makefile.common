@@ -138,6 +138,14 @@ breakprocess:
 	(cd testsuite/openmodelica/bootstrapping && time g++ BreakProcess.cpp -o BreakProcess -static-libgcc)
 	(cd testsuite/openmodelica/bootstrapping && cp BreakProcess.exe ../../../$(builddir_bin)/)
 
+all-runtimeCPPinstall:
+	$(MAKE) msl-external-libs
+	$(MAKE) all runtimeCPPinstall
+
+omc-and-runtimeCPPinstall:
+	$(MAKE) msl-external-libs
+	$(MAKE) omc runtimeCPPinstall
+
 runtimeCPP: msl-external-libs CMinpack
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget)
 
