@@ -202,10 +202,12 @@ void fmi1SetString_OMC(void* in_fmi1, int numberOfValueReferences, double* strin
     FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1;
     fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, stringValuesReferences);
     fmi1_import_set_string(FMI1ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_string_t*)stringValues);
+    free(valuesReferences_int);
   } else if (fmiType == 2) {
     FMI1CoSimulation* FMI1CS = (FMI1CoSimulation*)in_fmi1;
     fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, stringValuesReferences);
     fmi1_import_set_string(FMI1CS->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_string_t*)stringValues);
+    free(valuesReferences_int);
   }
 }
 

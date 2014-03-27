@@ -78,7 +78,7 @@ extern int OpenModelica_regexImpl(const char* str, const char* re, const int max
     char err_buf[2048] = {0};
     int len = 0;
     len += snprintf(err_buf+len,2040-len,"Failed to compile regular expression: %s with error: ", re);
-    len += regerror(rc, &myregex, err_buf+len, 2048-len);
+    regerror(rc, &myregex, err_buf+len, 2048-len);
     regfree(&myregex);
     if (maxn) {
       outMatches[0] = mystrdup(err_buf);

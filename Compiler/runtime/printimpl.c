@@ -215,7 +215,6 @@ static int print_error_buf_impl(threadData_t *threadData,const char *str)
 
 static void PrintImpl__setBufSize(threadData_t *threadData,long newSize)
 {
-  print_members* members = getMembers(threadData);
   if (newSize > 0) {
     printf(" setting init_size to: %ld\n",newSize);
     increase_buffer_fixed(threadData,newSize);
@@ -406,7 +405,6 @@ static int PrintImpl__writeBufConvertLines(threadData_t *threadData,const char *
 
   /* First, compile the regular expressions */
   if (regcomp(&re_begin, re_str[0], REG_EXTENDED) || regcomp(&re_end, re_str[1], 0)) {
-    const char *c_tokens[1]={filename};
     c_add_message(NULL,21, /* WRITING_FILE_ERROR */
       ErrorType_scripting,
       ErrorLevel_error,

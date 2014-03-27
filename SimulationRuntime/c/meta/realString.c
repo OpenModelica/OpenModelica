@@ -51,7 +51,7 @@ modelica_string _old_realString(modelica_real r)
    * Add safety margin in case some C runtime is trigger happy. */
   char buffer[32];
   char* endptr;
-  int ix = snprintf(buffer, 32, "%.16g", r);
+  snprintf(buffer, 32, "%.16g", r);
   /* If it looks like an integer, we need to append .0 so it looks like real */
   endptr = buffer;
   if (*endptr == '-') endptr++;
