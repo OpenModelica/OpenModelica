@@ -105,7 +105,6 @@ int main(int argc, char* argv[])
   char * omhome=check_omhome();
   const char* dateStr = __DATE__; // "Mmm dd yyyy", so dateStr+7 = "yyyy"
 
-  corba_comm = flagSet("corba",argc,argv);
   const string *scriptname = getFlagValue("f",argc,argv);
   if ((noserv=flagSet("noserv",argc,argv))&&!scriptname){
     cout << "Skip starting server, assumed to be running" << endl;
@@ -315,13 +314,13 @@ void doSocketCommunication(const string * scriptname)
       int nbytes = write(sock,line,strlen(line)+1);
       if (nbytes == 0) {
         cout << "Error writing to server" << endl;
-        done = true;
+        free(line);
         break;
       }
       int recvbytes = read(sock,buf,40000);
       if (recvbytes == 0) {
         cout << "Received 0 bytes, exiting" << endl;
-        done = true;
+        free(line);
         break;
       }
       cout << buf;
