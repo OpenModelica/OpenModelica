@@ -151,7 +151,6 @@ int allocateKinOde(DATA* data, SOLVER_INFO* solverInfo, int flag, int N)
 static int allocateNlpOde(KINODE *kinOde)
 {
   NLPODE * nlp = (NLPODE*) kinOde->nlp;
-  SOLVER_INFO* solverInfo = kinOde->solverInfo;
   nlp->nStates = kinOde->data->modelData.nStates;
 
   switch(kinOde->flag)
@@ -218,9 +217,9 @@ static int boundsVars(KINODE *kinOde)
 
 static int radau5Coeff(KINODE *kinOde)
 {
-  int i, N;
+  int i;
+  const int N = 3;
   NLPODE * nlp = (NLPODE*) kinOde->nlp;
-  N = kinOde->N;
 
   nlp->c = (long double**) malloc(N * sizeof(long double*));
   for(i = 0; i < N; i++)
@@ -251,9 +250,9 @@ static int radau5Coeff(KINODE *kinOde)
 
 static int radau3Coeff(KINODE *kinOde)
 {
-  int i, N;
+  int i;
+  const int N = 2;
   NLPODE * nlp = (NLPODE*) kinOde->nlp;
-  N = kinOde->N;
 
   nlp->c = (long double**) malloc(N * sizeof(long double*));
   for(i = 0; i < N; i++)
@@ -298,12 +297,13 @@ static int lobatto4Coeff(KINODE *kinOde)
 
 static int lobatto6Coeff(KINODE *kinOde)
 {
-  int i, N;
+  int i;
+  const int N = 3;
   NLPODE * nlp = (NLPODE*) kinOde->nlp;
-  N = kinOde->N;
+
 
   nlp->c = (long double**) malloc(N * sizeof(long double*));
-  for(i = 0; i < N; i++)
+  for(i = 0; i < N; ++i)
     nlp->c[i] = (long double*) malloc((N+2)* sizeof(long double));
 
   nlp->a = (double*) malloc(N * sizeof(double));
@@ -395,7 +395,7 @@ static int freeKinsol(void * kOde)
 
 static int initKinsol(KINODE *kinOde)
 {
-  int i,j,k, m, n;
+  int i,j,k, n;
   double *scal_eq, *scal_var, *x, *f2;
   long double tmp, h, hf, hf_min;
   DATA *data;
@@ -413,8 +413,6 @@ static int initKinsol(KINODE *kinOde)
   nlp->x0 = data->localData[1]->realVars;
   nlp->f0 = data->localData[1]->realVars + n;
   nlp->t0 = data->localData[1]->timeValue;
-
-  m = kinOde->N*n;
 
   scal_var = NV_DATA_S(kData->sVars);
   scal_eq = NV_DATA_S(kData->sEqns);
