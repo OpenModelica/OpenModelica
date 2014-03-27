@@ -17,7 +17,9 @@ $ make -j4 # or make -j4 omc if you only want the omc core and not the qtclients
 How to compile on Linux/BSD (all from source)
 ===================================================
 
-$ ./configure --prefix=/usr/local --without-rml
+$ autoconf
+# Skip some pieces of software to ease installation and only compile the base omc executable
+$ ./configure --prefix=/usr/local --without-rml --without-omc --disable-modelica3d
 $ make
 $ sudo make install
 
