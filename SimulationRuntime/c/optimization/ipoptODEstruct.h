@@ -75,21 +75,39 @@ typedef struct OPTIMIZER_DIM_VARS{
   int nlocalJac;
 
   int deg;
-
   int nH;
 
 }OPTIMIZER_DIM_VARS;
 
 typedef struct OPTIMIZER_MBASE{
 
-  double bl[10];
-  double br[10];
+  long double bl[10];
+  long double br[10];
+
+  long double c1;
+  long double c2;
+  long double c3;
+
+  long double *a1;
+  long double *a2;
+  long double *a3;
+
+  long double *d1;
+  long double *d2;
+  long double *d3;
+  long double invd1_4;
+
+  long double e1;
+  long double e2;
+  long double e3;
 
 }OPTIMIZER_MBASE;
+
 typedef struct IPOPT_DATA_
 {
   /*#*/
   OPTIMIZER_DIM_VARS dim;
+  OPTIMIZER_MBASE mbase;
   /* ODE */
   double * x0;
   double * xmin;
@@ -139,33 +157,6 @@ typedef struct IPOPT_DATA_
   double *u1;
   double *u2;
   double *u3;
-
-  double c1;
-  double c2;
-  double c3;
-
-  double *a1;
-  double *a2;
-  double *a3;
-
-  double **a1_;
-  double **a2_;
-  double **a3_;
-
-  double *d1;
-  double *d2;
-  double *d3;
-  double invd1_4;
-  double **d1_;
-  double **d2_;
-  double **d3_;
-
-  double e1;
-  double e2;
-  double e3;
-
-  double bl[4];
-  double br[3];
 
   double *gmin;
   double *gmax;

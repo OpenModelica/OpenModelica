@@ -244,6 +244,7 @@ static int optimizer_time_setings_update(IPOPT_DATA_ *iData)
 {
   int i,k,id;
   double t;
+  OPTIMIZER_MBASE *mbase = &iData->mbase;
 
   assert(iData->dim.nsi > 0);
 
@@ -258,14 +259,14 @@ static int optimizer_time_setings_update(IPOPT_DATA_ *iData)
   iData->dt[iData->dim.nsi-1] = iData->dt_default + (iData->tf - t);
 
   for(i = 0, k=0, id=0; i<1; ++i,id += iData->dim.deg){
-      iData->time[++k] = iData->time[id] + iData->e1*iData->dt[i];
-      iData->time[++k] = iData->time[id] + iData->e2*iData->dt[i];
+      iData->time[++k] = iData->time[id] + mbase->e1*iData->dt[i];
+      iData->time[++k] = iData->time[id] + mbase->e2*iData->dt[i];
       iData->time[++k] = iData->time[0]+ (i+1)*iData->dt[i];
   }
 
   for(; i<iData->dim.nsi; ++i,id += iData->dim.deg){
-      iData->time[++k] = iData->time[id] + iData->c1*iData->dt[i];
-      iData->time[++k] = iData->time[id] + iData->c2*iData->dt[i];
+      iData->time[++k] = iData->time[id] + mbase->c1*iData->dt[i];
+      iData->time[++k] = iData->time[id] + mbase->c2*iData->dt[i];
       iData->time[++k] = iData->time[0]+ (i+1)*iData->dt[i];
   }
 

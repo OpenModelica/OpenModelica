@@ -56,6 +56,7 @@ Bool evalfF(Index n, double * v, Bool new_x, Number *objValue, void * useData)
   IPOPT_DATA_ *iData = (IPOPT_DATA_*) useData;
   double mayer = 0.0;
   double lagrange = 0.0;
+  OPTIMIZER_MBASE *mbase = &iData->mbase;
 
   if(iData->mayer){
     goal_func_mayer(v + iData->endN, &mayer,iData);
@@ -75,7 +76,7 @@ Bool evalfF(Index n, double * v, Bool new_x, Number *objValue, void * useData)
       for(j=0; j<iData->dim.deg+1; ++j, x+=iData->dim.nv, ++k)
       {
         goal_func_lagrange(x, &tmp,iData->time[k], iData);
-        erg += iData->bl[j]*tmp;
+        erg += mbase->bl[j]*tmp;
       }
       erg_+= erg*iData->dt[i];
     }
@@ -86,7 +87,7 @@ Bool evalfF(Index n, double * v, Bool new_x, Number *objValue, void * useData)
       for(j=0; j<iData->dim.deg; ++j, x+=iData->dim.nv, ++k)
       {
         goal_func_lagrange(x, &tmp, iData->time[k], iData);
-        erg += iData->br[j]*tmp;
+        erg += mbase->br[j]*tmp;
       }
 
       erg_ += erg*iData->dt[i];
@@ -136,6 +137,7 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
   double *x;
   long double h;
   IPOPT_DATA_ *iData = (IPOPT_DATA_*) useData;
+  OPTIMIZER_MBASE *mbase = &iData->mbase;
 
   if(iData->lagrange) {
     x = v;
@@ -149,7 +151,7 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
           /*iData->data->callback->functionAlgebraics(iData->data);*/
           diff_symColoredObject(iData, iData->gradF, iData->lagrange_index);
           for(j = 0; j<iData->dim.nv; ++j){
-            gradF[id++] =  iData->dt[i]*iData->br[k]*iData->gradF[j]*iData->vnom[j];
+            gradF[id++] =  iData->dt[i]*mbase->br[k]*iData->gradF[j]*iData->vnom[j];
             /* printf("\n gradF(%i) = %g, %s, %g", id-1, gradF[id-1], iData->data->modelData.realVarsData[j].info.name, x[j]*iData->vnom[j]); */
           }
         }
@@ -160,7 +162,7 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
           /*iData->data->callback->functionAlgebraics(iData->data);*/
           diff_symColoredObject(iData, iData->gradF,iData->lagrange_index);
           for(j=0; j<iData->dim.nv; ++j){
-            gradF[id++] = iData->dt[i]*iData->bl[k]*iData->gradF[j]*iData->vnom[j];
+            gradF[id++] = iData->dt[i]*mbase->bl[k]*iData->gradF[j]*iData->vnom[j];
             /* printf("\n gradF(%i) = %g, %s, %g", id-1, gradF[id-1], iData->data->modelData.realVarsData[j].info.name, x[j]*iData->vnom[j]); */
           }
         }

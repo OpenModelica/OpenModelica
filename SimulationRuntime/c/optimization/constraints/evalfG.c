@@ -256,7 +256,7 @@ static inline int evalG11(Number *g, IPOPT_DATA_ *iData, double *x0, int i)
 {
   int j;
   for(j=0; j<iData->dim.nx; ++j)
-    g[j] = (iData->a1[0]*x0[j] + iData->a1[3]*iData->x3[j] + iData->scalf[j]*iData->dt[i]*iData->dotx1[j]) - (iData->a1[1]*iData->x1[j] + iData->a1[2]*iData->x2[j]);
+    g[j] = (iData->mbase.a1[0]*x0[j] + iData->mbase.a1[3]*iData->x3[j] + iData->scalf[j]*iData->dt[i]*iData->dotx1[j]) - (iData->mbase.a1[1]*iData->x1[j] + iData->mbase.a1[2]*iData->x2[j]);
 
   memcpy(g + iData->dim.nx, &iData->data->localData[0]->realVars[iData->data->modelData.nVariablesReal - iData->dim.nc], sizeof(double)*iData->dim.nc);
   return 0;
@@ -271,7 +271,7 @@ static inline int evalG12(Number *g, IPOPT_DATA_ *iData, double *x0, int i)
 {
   int j;
   for(j=0; j<iData->dim.nx; ++j)
-    g[j] = (iData->a2[1]*iData->x1[j] + iData->scalf[j]*iData->dt[i]*iData->dotx2[j]) - (iData->a2[0]*x0[j] + iData->a2[2]*iData->x2[j] + iData->a2[3]*iData->x3[j]);
+    g[j] = (iData->mbase.a2[1]*iData->x1[j] + iData->scalf[j]*iData->dt[i]*iData->dotx2[j]) - (iData->mbase.a2[0]*x0[j] + iData->mbase.a2[2]*iData->x2[j] + iData->mbase.a2[3]*iData->x3[j]);
 
   memcpy(g + iData->dim.nx, &iData->data->localData[0]->realVars[iData->data->modelData.nVariablesReal - iData->dim.nc], sizeof(double)*iData->dim.nc);
   return 0;
@@ -286,7 +286,7 @@ static inline int evalG13(Number *g, IPOPT_DATA_ *iData, double *x0, int i)
 {
   int j;
   for(j=0; j<iData->dim.nx; ++j)
-    g[j] = (iData->a3[0]*x0[j] + iData->a3[2]*iData->x2[j] + iData->scalf[j]*iData->dt[i]*iData->dotx3[j]) - (iData->a3[1]*iData->x1[j] + iData->a3[3]*iData->x3[j]);
+    g[j] = (iData->mbase.a3[0]*x0[j] + iData->mbase.a3[2]*iData->x2[j] + iData->scalf[j]*iData->dt[i]*iData->dotx3[j]) - (iData->mbase.a3[1]*iData->x1[j] + iData->mbase.a3[3]*iData->x3[j]);
 
   memcpy(g + iData->dim.nx, &iData->data->localData[0]->realVars[iData->data->modelData.nVariablesReal - iData->dim.nc], sizeof(double)*iData->dim.nc);
   return 0;
@@ -301,7 +301,7 @@ static inline int evalG21(Number *g, IPOPT_DATA_ *iData, double *x0, int i)
 {
   int j;
   for(j=0; j<iData->dim.nx; ++j)
-    g[j] = (iData->scalf[j]*iData->dt[i]*(iData->dotx1[j] + iData->d1[4]*iData->dotx0[j]) + iData->d1[0]*x0[j] + iData->d1[3]*iData->x3[j]) - (iData->d1[1]*iData->x1[j] + iData->d1[2]*iData->x2[j]);
+    g[j] = (iData->scalf[j]*iData->dt[i]*(iData->dotx1[j] + iData->mbase.d1[4]*iData->dotx0[j]) + iData->mbase.d1[0]*x0[j] + iData->mbase.d1[3]*iData->x3[j]) - (iData->mbase.d1[1]*iData->x1[j] + iData->mbase.d1[2]*iData->x2[j]);
 
   memcpy(g + iData->dim.nx, &iData->data->localData[0]->realVars[iData->data->modelData.nVariablesReal - iData->dim.nc], sizeof(double)*iData->dim.nc);
   return 0;
@@ -316,7 +316,7 @@ static inline int evalG22(Number *g, IPOPT_DATA_ *iData, double *x0, int i)
 {
   int j;
   for(j=0; j<iData->dim.nx; ++j)
-    g[j] = (iData->scalf[j]*iData->dt[i]*iData->dotx2[j] + iData->d2[1]*iData->x1[j]) - (iData->scalf[j]*iData->dt[i]*iData->d2[4]*iData->dotx0[j] + iData->d2[0]*x0[j] + iData->d2[2]*iData->x2[j] + iData->d2[3]*iData->x3[j]);
+    g[j] = (iData->scalf[j]*iData->dt[i]*iData->dotx2[j] + iData->mbase.d2[1]*iData->x1[j]) - (iData->scalf[j]*iData->dt[i]*iData->mbase.d2[4]*iData->dotx0[j] + iData->mbase.d2[0]*x0[j] + iData->mbase.d2[2]*iData->x2[j] + iData->mbase.d2[3]*iData->x3[j]);
 
   memcpy(g + iData->dim.nx, &iData->data->localData[0]->realVars[iData->data->modelData.nVariablesReal - iData->dim.nc], sizeof(double)*iData->dim.nc);
   return 0;
@@ -331,7 +331,7 @@ static inline int evalG23(Number *g, IPOPT_DATA_ *iData, double *x0, int i)
 {
   int j;
   for(j=0; j<iData->dim.nx; ++j)
-    g[j] = (iData->scalf[j]*iData->dt[i]*(iData->d3[4]*iData->dotx0[j] + iData->dotx3[j]) + iData->d3[0]*x0[j] + iData->d3[2]*iData->x2[j]) - (iData->d3[1]*iData->x1[j] + iData->d3[3]*iData->x3[j]);
+    g[j] = (iData->scalf[j]*iData->dt[i]*(iData->mbase.d3[4]*iData->dotx0[j] + iData->dotx3[j]) + iData->mbase.d3[0]*x0[j] + iData->mbase.d3[2]*iData->x2[j]) - (iData->mbase.d3[1]*iData->x1[j] + iData->mbase.d3[3]*iData->x3[j]);
 
   memcpy(g + iData->dim.nx, &iData->data->localData[0]->realVars[iData->data->modelData.nVariablesReal - iData->dim.nc], sizeof(double)*iData->dim.nc);
   return 0;

@@ -134,6 +134,7 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
     modelica_boolean mayer_yes;
     int nJ;
     int tmp_index;
+    OPTIMIZER_MBASE *mbase = &iData->mbase;
 
     nJ = (int) dim->nJ;
     for(ii = 0; ii <1; ++ii){
@@ -146,10 +147,10 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
          }else{
            for(i = 0; i< dim->nx; ++i){
              if(ll[i] != ll[i + nJ]){
-               if(iData->invd1_4*ll[i+2*nJ] != ll[i + nJ])
-                 iData->sh[i] = iData->d1[4]*(ll[i] + (iData->invd1_4*ll[i+2*nJ] - ll[i + nJ]));
+               if(mbase->invd1_4*ll[i+2*nJ] != ll[i + nJ])
+                 iData->sh[i] = mbase->d1[4]*(ll[i] + (mbase->invd1_4*ll[i+2*nJ] - ll[i + nJ]));
                else
-                 iData->sh[i] = iData->d1[4]*ll[i];
+                 iData->sh[i] = mbase->d1[4]*ll[i];
              }else{
                iData->sh[i] = ll[i+2*nJ];
              }
@@ -203,6 +204,7 @@ static int sumLagrange(IPOPT_DATA_ *iData, double * erg,int ii, int i, int j, in
 {
   long double sum;
   OPTIMIZER_DIM_VARS *dim = &iData->dim;
+  OPTIMIZER_MBASE *mbase = &iData->mbase;
   int l;
   int nJ = (p) ? dim->nJ : dim->nx;
   sum = 0.0;
@@ -211,9 +213,9 @@ static int sumLagrange(IPOPT_DATA_ *iData, double * erg,int ii, int i, int j, in
 
   if(iData->lagrange && iData->gradFomc[iData->lagrange_index][i]* iData->gradFomc[iData->lagrange_index][j]){
     if(ii)
-      sum += iData->br[p-1]*iData->oH[i][j];
+      sum += mbase->br[p-1]*iData->oH[i][j];
     else
-      sum += iData->bl[p]*iData->oH[i][j];
+      sum += mbase->bl[p]*iData->oH[i][j];
   }
 
   sum = iData->dt[ii]*sum;

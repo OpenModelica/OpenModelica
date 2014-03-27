@@ -67,6 +67,8 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   long int i, j;
   int ng;
   OPTIMIZER_DIM_VARS* dim = &iData->dim;
+  OPTIMIZER_MBASE *mbase = &iData->mbase;
+
   ng = dim->NRes+dim->nc*dim->deg*dim->nsi;
   deg1 = dim->deg + 1;
   deg2 = deg1 + 1;
@@ -77,12 +79,12 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   iData->mult_g = (double*)malloc(ng*sizeof(double));
   iData->mult_x_L = (double*)malloc(dim->NV*sizeof(double));
   iData->mult_x_U = (double*)malloc(dim->NV*sizeof(double));
-  iData->a1 = (double*)malloc(deg1*sizeof(double));
-  iData->a2 = (double*)malloc(deg1*sizeof(double));
-  iData->a3 = (double*)malloc(deg1*sizeof(double));
-  iData->d1 = (double*)malloc(deg2*sizeof(double));
-  iData->d2 = (double*)malloc(deg2*sizeof(double));
-  iData->d3 = (double*)malloc(deg2*sizeof(double));
+  mbase->a1 = (long double*)malloc(deg1*sizeof(long double));
+  mbase->a2 = (long double*)malloc(deg1*sizeof(long double));
+  mbase->a3 = (long double*)malloc(deg1*sizeof(long double));
+  mbase->d1 = (long double*)malloc(deg2*sizeof(long double));
+  mbase->d2 = (long double*)malloc(deg2*sizeof(long double));
+  mbase->d3 = (long double*)malloc(deg2*sizeof(long double));
   iData->lhs = (double*)malloc((int)dim->nJ*sizeof(double));
   iData->rhs = (double*)malloc((int)dim->nJ*sizeof(double));
   iData->dotx0 = (double*)malloc(dim->nx*sizeof(double));
@@ -178,8 +180,10 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
 static int freeIpoptData(IPOPT_DATA_ *iData)
 {
   int i,j;
+  OPTIMIZER_DIM_VARS* dim = &iData->dim;
+  OPTIMIZER_MBASE *mbase = &iData->mbase;
 
-  for(i = 0; i < iData->dim.nJ; i++){
+  for(i = 0; i < dim->nJ; i++){
     free(iData->J[i]);
     free(iData->J0[i]);
     free(iData->numJ[i]);
@@ -195,7 +199,7 @@ static int freeIpoptData(IPOPT_DATA_ *iData)
     free(iData->gradFs[i]);
   }
 
-  for(i = 0; i < iData->dim.nv; i++){
+  for(i = 0; i < dim->nv; i++){
     free(iData->oH[i]);
     free(iData->mH[i]);
     free(iData->Hg[i]);
@@ -204,9 +208,9 @@ static int freeIpoptData(IPOPT_DATA_ *iData)
   free(iData->mH);
   free(iData->Hg);
 
-  for(i = 0; i < iData->dim.nJ; i++){
+  for(i = 0; i < dim->nJ; i++){
 
-    for(j = 0;j<iData->dim.nv; ++j)
+    for(j = 0;j<dim->nv; ++j)
       free(iData->H[i][j]);
 
     free(iData->H[i]);
@@ -222,12 +226,12 @@ static int freeIpoptData(IPOPT_DATA_ *iData)
   free(iData->mult_g);
   free(iData->mult_x_L);
   free(iData->mult_x_U);
-  free(iData->a1);
-  free(iData->a2);
-  free(iData->a3);
-  free(iData->d1);
-  free(iData->d2);
-  free(iData->d3);
+  free(mbase->a1);
+  free(mbase->a2);
+  free(mbase->a3);
+  free(mbase->d1);
+  free(mbase->d2);
+  free(mbase->d3);
   free(iData->dotx0);
   free(iData->dotx1);
   free(iData->dotx2);
@@ -266,7 +270,7 @@ static int freeIpoptData(IPOPT_DATA_ *iData)
 
   if(ACTIVE_STREAM(LOG_IPOPT_FULL))
   {
-    for(i =0; i<iData->dim.nv;++i)
+    for(i =0; i<dim->nv;++i)
       if(iData->pFile[i])
         fclose(iData->pFile[i]);
     if(iData->pFile)

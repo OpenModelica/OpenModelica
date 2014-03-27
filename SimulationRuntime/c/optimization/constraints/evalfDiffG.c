@@ -42,12 +42,12 @@
 #ifdef WITH_IPOPT
 
 /* static  int jac_struc(Index *iRow, Index *iCol, long int nx, long int nv, int nsi); */
-static  int radauJac1(double *a, double *J, double dt, double * values, int nv, int *k, int j,IPOPT_DATA_ *iData);
-static  int lobattoJac1(double *a, double *J, double *J0, double dt, double * values, int nv, int *k, int j, long double tmp,IPOPT_DATA_ *iData);
-static  int radauJac2(double *a, double *J, double dt, double * values, int nv, int *k, int j,IPOPT_DATA_ *iData);
-static  int lobattoJac2(double *a, double *J, double *J0, double dt, double * values, int nv, int *k, int j, long double tmp,IPOPT_DATA_ *iData);
-static  int radauJac3(double *a, double *J, double dt, double * values, int nv, int *k, int j,IPOPT_DATA_ *iData);
-static  int lobattoJac3(double *a, double *J, double *J0, double dt, double * values, int nv, int *k, int j, long double tmp,IPOPT_DATA_ *iData);
+static  int radauJac1(long double *a, double *J, double dt, double * values, int nv, int *k, int j,IPOPT_DATA_ *iData);
+static  int lobattoJac1(long double *a, double *J, double *J0, double dt, double * values, int nv, int *k, int j, long double tmp,IPOPT_DATA_ *iData);
+static  int radauJac2(long double *a, double *J, double dt, double * values, int nv, int *k, int j,IPOPT_DATA_ *iData);
+static  int lobattoJac2(long double *a, double *J, double *J0, double dt, double * values, int nv, int *k, int j, long double tmp,IPOPT_DATA_ *iData);
+static  int radauJac3(long double *a, double *J, double dt, double * values, int nv, int *k, int j,IPOPT_DATA_ *iData);
+static  int lobattoJac3(long double *a, double *J, double *J0, double dt, double * values, int nv, int *k, int j, long double tmp,IPOPT_DATA_ *iData);
 static int jac_struc(IPOPT_DATA_ *iData,int *iRow, int *iCol);
 static int conJac(double *J, double * values, int nv, int *k, int j,IPOPT_DATA_ *iData);
 
@@ -108,11 +108,13 @@ Bool evalfDiffG(Index n, double * x, Bool new_x, Index m, Index njac, Index *iRo
     int tmp_index;
     OPTIMIZER_DIM_VARS* dim = &iData->dim;
     int nng = dim->nJ;
+    OPTIMIZER_MBASE *mbase = &iData->mbase;
+
     ipoptDebuge(iData,x);
 
-    tmp[0] = iData->dt[0]*iData->d1[4];
-    tmp[1] = iData->dt[0]*iData->d2[4];
-    tmp[2] = iData->dt[0]*iData->d3[4];
+    tmp[0] = iData->dt[0]*mbase->d1[4];
+    tmp[1] = iData->dt[0]*mbase->d2[4];
+    tmp[2] = iData->dt[0]*mbase->d3[4];
 
     diff_functionODE(x, iData->t0 , iData, iData->J0);
 
@@ -123,13 +125,13 @@ Bool evalfDiffG(Index n, double * x, Bool new_x, Index m, Index njac, Index *iRo
         for(j=0; j<dim->nx; ++j){
           switch(l){
           case 0:
-            lobattoJac1(iData->d1, iData->J[j], iData->J0[j], iData->dt[i], values, dim->nv, &k, j, tmp[0], iData);
+            lobattoJac1(mbase->d1, iData->J[j], iData->J0[j], iData->dt[i], values, dim->nv, &k, j, tmp[0], iData);
             break;
           case 1:
-            lobattoJac2(iData->d2, iData->J[j], iData->J0[j], iData->dt[i], values, dim->nv, &k, j, tmp[1], iData);
+            lobattoJac2(mbase->d2, iData->J[j], iData->J0[j], iData->dt[i], values, dim->nv, &k, j, tmp[1], iData);
             break;
           case 2:
-            lobattoJac3(iData->d3, iData->J[j], iData->J0[j], iData->dt[i], values, dim->nv, &k, j, tmp[2], iData);
+            lobattoJac3(mbase->d3, iData->J[j], iData->J0[j], iData->dt[i], values, dim->nv, &k, j, tmp[2], iData);
             break;
           }
         }
@@ -146,13 +148,13 @@ Bool evalfDiffG(Index n, double * x, Bool new_x, Index m, Index njac, Index *iRo
         for(j=0; j<dim->nx; ++j){
           switch(l){
           case 0:
-            radauJac1(iData->a1, iData->J[j], iData->dt[i], values, dim->nv, &k, j, iData);
+            radauJac1(mbase->a1, iData->J[j], iData->dt[i], values, dim->nv, &k, j, iData);
             break;
           case 1:
-            radauJac2(iData->a2, iData->J[j], iData->dt[i], values, dim->nv, &k, j, iData);
+            radauJac2(mbase->a2, iData->J[j], iData->dt[i], values, dim->nv, &k, j, iData);
             break;
           case 2:
-            radauJac3(iData->a3, iData->J[j], iData->dt[i], values, dim->nv, &k, j, iData);
+            radauJac3(mbase->a3, iData->J[j], iData->dt[i], values, dim->nv, &k, j, iData);
             break;
           }
         }
@@ -171,7 +173,7 @@ Bool evalfDiffG(Index n, double * x, Bool new_x, Index m, Index njac, Index *iRo
  *  special jacobian struct
  *  author: Vitalij Ruge
  **/
-static  int radauJac1(double *a, double *J, double dt, double * values, int nv, int *k, int j,IPOPT_DATA_ *iData)
+static  int radauJac1(long double *a, double *J, double dt, double * values, int nv, int *k, int j,IPOPT_DATA_ *iData)
 {
   int l;
   values[(*k)++] = a[0];
@@ -194,7 +196,7 @@ static  int radauJac1(double *a, double *J, double dt, double * values, int nv, 
  *  special jacobian struct
  *  author: Vitalij Ruge
  **/
-static  int lobattoJac1(double *a, double *J, double *J0, double dt, double * values, int nv, int *k, int j, long double tmp,IPOPT_DATA_ *iData)
+static  int lobattoJac1(long double *a, double *J, double *J0, double dt, double * values, int nv, int *k, int j, long double tmp,IPOPT_DATA_ *iData)
 {
   int l;
   /*0*/
@@ -224,7 +226,7 @@ static  int lobattoJac1(double *a, double *J, double *J0, double dt, double * va
  *  special jacobian struct
  *  author: Vitalij Ruge
  **/
-static  int radauJac2(double *a, double *J, double dt, double * values, int nv, int *k, int j,IPOPT_DATA_ *iData)
+static  int radauJac2(long double *a, double *J, double dt, double * values, int nv, int *k, int j,IPOPT_DATA_ *iData)
 {
   int l;
   /*0*/
@@ -249,7 +251,7 @@ static  int radauJac2(double *a, double *J, double dt, double * values, int nv, 
  *  special jacobian struct
  *  author: Vitalij Ruge
  **/
-static  int lobattoJac2(double *a, double *J, double *J0, double dt, double * values, int nv, int *k, int j, long double tmp,IPOPT_DATA_ *iData)
+static  int lobattoJac2(long double *a, double *J, double *J0, double dt, double * values, int nv, int *k, int j, long double tmp,IPOPT_DATA_ *iData)
 {
   int l;
   /*0*/
@@ -278,7 +280,7 @@ static  int lobattoJac2(double *a, double *J, double *J0, double dt, double * va
  *  special jacobian struct
  *  author: Vitalij Ruge
  **/
-static  int radauJac3(double *a, double *J, double dt, double * values, int nv, int *k, int j,IPOPT_DATA_ *iData)
+static  int radauJac3(long double *a, double *J, double dt, double * values, int nv, int *k, int j,IPOPT_DATA_ *iData)
 {
   int l;
   /*0*/
@@ -300,7 +302,7 @@ static  int radauJac3(double *a, double *J, double dt, double * values, int nv, 
  *  special jacobian struct
  *  author: Vitalij Ruge
  **/
-static  int lobattoJac3(double *a, double *J, double *J0, double dt, double * values, int nv, int *k, int j, long double tmp,IPOPT_DATA_ *iData)
+static  int lobattoJac3(long double *a, double *J, double *J0, double dt, double * values, int nv, int *k, int j, long double tmp,IPOPT_DATA_ *iData)
 {
   int l;
   /*0*/
