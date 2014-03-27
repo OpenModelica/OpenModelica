@@ -12229,6 +12229,8 @@ algorithm
       equation
         (e1,_) = Types.matchType(e1, t1, DAE.T_BOOL_DEFAULT, true);
         (t2_1,t3_1) = Types.ifExpMakeDimsUnknown(t2,t3);
+        t2_1 = Types.getUniontypeIfMetarecordReplaceAllSubtypes(t2_1);
+        t3_1 = Types.getUniontypeIfMetarecordReplaceAllSubtypes(t3_1);
         (e2_1,t2_1) = Types.matchType(e2, t2_1, t3_1, true);
         c = constIfexp(e1, c1, c2, c3) "then-part type converted to match else-part" ;
         (cache,exp,ty) = cevalIfexpIfConstant(cache,env, e1, e2_1, e3, c1, t2, t3, t2_1, impl, st, inInfo);
@@ -12239,6 +12241,8 @@ algorithm
       equation
         (e1,_) = Types.matchType(e1, t1, DAE.T_BOOL_DEFAULT, true);
         (t2_1,t3_1) = Types.ifExpMakeDimsUnknown(t2,t3);
+        t2 = Types.getUniontypeIfMetarecordReplaceAllSubtypes(t2);
+        t3 = Types.getUniontypeIfMetarecordReplaceAllSubtypes(t3);
         (e3_1,t3_1) = Types.matchType(e3, t3, t2, true);
         c = constIfexp(e1, c1, c2, c3) "else-part type converted to match then-part" ;
         (cache,exp,ty) = cevalIfexpIfConstant(cache,env, e1, e2, e3_1, c1, t2, t3, t3_1, impl, st, inInfo);
