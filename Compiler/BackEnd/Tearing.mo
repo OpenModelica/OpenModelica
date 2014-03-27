@@ -53,61 +53,58 @@ protected import BackendEquation;
 protected import BackendVariable;
 protected import Config;
 protected import Debug;
+protected import Error;
 protected import Flags;
 protected import List;
 protected import Matching;
 protected import Util;
 
 // =============================================================================
-// type definitions
+// section for type definitions
 //
-//
+// 
 // =============================================================================
-protected constant String BORDER    = "****************************************************";
 
-partial function tearingMethodFunction
-"interface for all tearing methods"
-  input BackendDAE.EqSystem isyst;
-  input BackendDAE.Shared ishared;
-  input list<Integer> eindex;
-  input list<Integer> vindx;
-  input Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> ojac;
-  input BackendDAE.JacobianType jacType;
-  output BackendDAE.StrongComponent ocomp;
-  output Boolean outRunMatching;
-end tearingMethodFunction;
+protected constant String BORDER    = "****************************************";
 
+uniontype TearingMethod
+  record OMC_TEARING end OMC_TEARING;
+  record CELLIER_TEARING end CELLIER_TEARING;
+  record CARPANZANO_TEARING end CARPANZANO_TEARING;
+end TearingMethod;
 
 // =============================================================================
-// public
+// section for all public functions
 //
 // main function to divide to the selected tearing method
-//
 // =============================================================================
 
-public function tearingSystem "  author: Frenkel TUD 2012-05"
+public function tearingSystem "author: Frenkel TUD 2012-05"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
   outDAE := matchcontinue(inDAE)
     local
-        String methodString;
-        tearingMethodFunction method;
-      // if noTearing selected, do nothing.
-      case(_)
-        equation
-          methodString = Config.getTearingMethod();
-          true = stringEqual(methodString,"noTearing");
-        then
-          inDAE;
-      // get method function and traveres systems
-      case(_)
-        equation
-            //   Debug.fcall2(Flags.TEARING_DUMPVERBOSE, BackendDump.dumpBackendDAE, inDAE,"DAE");
-          method = getTearingMethod();
-          (outDAE,_) = BackendDAEUtil.mapEqSystemAndFold(inDAE,tearingSystemWork,method);
-        then
-          outDAE;
+      String methodString;
+      TearingMethod method;
+      
+    // if noTearing is selected, do nothing.
+    case(_) equation
+      methodString = Config.getTearingMethod();
+      true = stringEqual(methodString, "noTearing");
+    then inDAE;
+    
+    // get method function and traveres systems
+    case(_) equation
+      //Debug.fcall2(Flags.TEARING_DUMPVERBOSE, BackendDump.dumpBackendDAE, inDAE, "DAE");
+      methodString = Config.getTearingMethod();
+      method = getTearingMethod(methodString);
+      (outDAE, _) = BackendDAEUtil.mapEqSystemAndFold(inDAE, tearingSystemWork, method);
+    then outDAE;
+    
+    else equation
+      Error.addInternalError("./Compiler/BackEnd/Tearing.mo: function tearingSystem failed");
+    then fail();
   end matchcontinue;
 end tearingSystem;
 
@@ -117,138 +114,147 @@ end tearingSystem;
 //
 // =============================================================================
 
-protected function tearingSystemWork "  author: Frenkel TUD 2012-05"
+protected function getTearingMethod
+  input String inTearingMethod;
+  output TearingMethod outTearingMethod;
+algorithm
+  outTearingMethod := matchcontinue(inTearingMethod)
+    case (_) equation
+      true = stringEqual(inTearingMethod, "omcTearing");
+    then OMC_TEARING();
+    
+    case (_) equation
+      true = stringEqual(inTearingMethod, "cellier");
+    then CELLIER_TEARING();
+	
+	case (_) equation
+      true = stringEqual(inTearingMethod, "carpanzano2");
+    then CARPANZANO_TEARING();
+    
+    else equation
+      Error.addInternalError("./Compiler/BackEnd/Tearing.mo: function getTearingMethod failed");
+    then fail();
+  end matchcontinue;
+end getTearingMethod;
+
+protected function callTearingMethod
+  input TearingMethod inTearingMethod;
   input BackendDAE.EqSystem isyst;
-  input tuple<BackendDAE.Shared,tearingMethodFunction> sharedChanged;
+  input BackendDAE.Shared ishared;
+  input list<Integer> eindex;
+  input list<Integer> vindx;
+  input Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> ojac;
+  input BackendDAE.JacobianType jacType;
+  output BackendDAE.StrongComponent ocomp;
+  output Boolean outRunMatching;
+algorithm
+  (ocomp, outRunMatching) := match(inTearingMethod, isyst, ishared, eindex, vindx, ojac, jacType)
+    case(OMC_TEARING(), _, _, _, _, _, _) 
+	 equation
+       	(ocomp,outRunMatching)=omcTearing(isyst, ishared, eindex, vindx, ojac, jacType);
+      then (ocomp,outRunMatching);
+    
+    case(CELLIER_TEARING(), _, _, _, _, _, _) 
+	 equation
+	    (ocomp,outRunMatching)=tearingSystem1_1(isyst, ishared, eindex, vindx, ojac, jacType);
+      then (ocomp,outRunMatching);
+	
+	//case(CARPANZANO_TEARING(), _, _, _, _, _, _) 
+	// equation
+	//    (ocomp,outRunMatching)=tearingSystem1_1(isyst, ishared, eindex, vindx, ojac, jacType);
+    //  then (ocomp,outRunMatching);
+	  
+  end match;
+end callTearingMethod;
+
+protected function tearingSystemWork "author: Frenkel TUD 2012-05"
+  input BackendDAE.EqSystem isyst;
+  input tuple<BackendDAE.Shared, TearingMethod> sharedChanged;
   output BackendDAE.EqSystem osyst;
-  output tuple<BackendDAE.Shared,tearingMethodFunction> osharedChanged;
+  output tuple<BackendDAE.Shared, TearingMethod> osharedChanged;
 protected
   BackendDAE.StrongComponents comps;
-  tearingMethodFunction method;
+  TearingMethod method;
   Boolean b;
   BackendDAE.Shared shared;
-  array<Integer> ass1,ass2;
+  array<Integer> ass1, ass2;
 algorithm
   BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps=comps)):=isyst;
   (shared, method) := sharedChanged;
-     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n" +& BORDER +& "\nBEGINNING of traverseComponents\n\n");
-  (comps,b) := traverseComponents(comps,isyst,shared,method,{},false);
-     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nEND of traverseComponents\n" +& BORDER +& "\n\n");
+  Debug.fcall(Flags.TEARING_DUMPVERBOSE, print, "\n" +& BORDER +& "\nBEGINNING of traverseComponents\n\n");
+  (comps, b) := traverseComponents(comps, isyst, shared, method, {}, false);
+  Debug.fcall(Flags.TEARING_DUMPVERBOSE, print, "\nEND of traverseComponents\n" +& BORDER +& "\n\n");
   osyst := Debug.bcallret2(b, BackendDAEUtil.setEqSystemMatching, isyst, BackendDAE.MATCHING(ass1, ass2, comps), isyst);
   osharedChanged := sharedChanged;
 end tearingSystemWork;
 
-protected function traverseComponents "  author: Frenkel TUD 2012-05"
+protected function traverseComponents "author: Frenkel TUD 2012-05"
   input BackendDAE.StrongComponents inComps;
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
-  input tearingMethodFunction method;
+  input TearingMethod inMethod;
   input BackendDAE.StrongComponents iAcc;
   input Boolean iRunMatching;
   output BackendDAE.StrongComponents oComps;
   output Boolean outRunMatching;
 algorithm
-  (oComps,outRunMatching):=
-  matchcontinue (inComps,isyst,ishared,method,iAcc,iRunMatching)
+  (oComps, outRunMatching) := matchcontinue (inComps, isyst, ishared, inMethod, iAcc, iRunMatching)
     local
-      list<Integer> eindex,vindx;
-      Boolean b,b1;
-      BackendDAE.StrongComponents comps,acc;
-      BackendDAE.StrongComponent comp,comp1;
+      list<Integer> eindex, vindx;
+      Boolean b, b1;
+      BackendDAE.StrongComponents comps, acc;
+      BackendDAE.StrongComponent comp, comp1;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> ojac;
       BackendDAE.JacobianType jacType;
-    case ({},_,_,_,_,_)
-      then (listReverse(iAcc),iRunMatching);
+      
+    case ({}, _, _, _, _, _)
+    then (listReverse(iAcc), iRunMatching);
+    
     // don't tear linear system as long as we do not handle them
     // as linear system while the runtime
-    case ((comp as BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=BackendDAE.FULL_JACOBIAN(ojac),jacType=jacType))::comps,_,_,_,_,_)
-      equation
-        equality(jacType = BackendDAE.JAC_TIME_VARYING());
-           Debug.fcall(Flags.TEARING_DUMP, print, "\nCase linear in traverseComponents\nUse Flag '+d=tearingdumpV' for more details\n\n");
-        true = Flags.isSet(Flags.LINEAR_TEARING);
-           Debug.fcall(Flags.TEARING_DUMP, print, "Flag 'doLinearTearing' is set\n\n");
-           Debug.fcall(Flags.TEARING_DUMPVERBOSE, print, "Jacobian:\n" +& BackendDump.dumpJacobianStr(ojac) +& "\n\n");
-        (comp1,true) = method(isyst,ishared,eindex,vindx,ojac,jacType);
-        (acc,b1) = traverseComponents(comps,isyst,ishared,method,comp1::iAcc,true);
-      then
-        (acc,b1);
+    case ((comp as BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType))::comps, _, _, _, _, _) equation
+      equality(jacType = BackendDAE.JAC_TIME_VARYING());
+      Debug.fcall(Flags.TEARING_DUMP, print, "\nCase linear in traverseComponents\nUse Flag '+d=tearingdumpV' for more details\n\n");
+      true = Flags.isSet(Flags.LINEAR_TEARING);
+      Debug.fcall(Flags.TEARING_DUMP, print, "Flag 'doLinearTearing' is set\n\n");
+      Debug.fcall(Flags.TEARING_DUMPVERBOSE, print, "Jacobian:\n" +& BackendDump.dumpJacobianStr(ojac) +& "\n\n");
+      (comp1, true) = callTearingMethod(inMethod, isyst, ishared, eindex, vindx, ojac, jacType);
+      (acc, b1) = traverseComponents(comps, isyst, ishared, inMethod, comp1::iAcc, true);
+    then (acc, b1);
+        
     // tearing of non-linear systems
-    case ((comp as BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=BackendDAE.FULL_JACOBIAN(ojac),jacType=jacType))::comps,_,_,_,_,_)
-      equation
-        failure(equality(jacType = BackendDAE.JAC_TIME_VARYING()));
-           Debug.fcall(Flags.TEARING_DUMP, print, "\nCase non-linear in traverseComponents\nUse Flag '+d=tearingdumpV' for more details\n\n");
-           Debug.fcall(Flags.TEARING_DUMPVERBOSE, print, "Jacobian:\n" +& BackendDump.dumpJacobianStr(ojac) +& "\n\n");
-        (comp1,true) = method(isyst,ishared,eindex,vindx,ojac,jacType);
-        (acc,b1) = traverseComponents(comps,isyst,ishared,method,comp1::iAcc,true);
-      then
-        (acc,b1);
+    case ((comp as BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType))::comps, _, _, _, _, _) equation
+      failure(equality(jacType = BackendDAE.JAC_TIME_VARYING()));
+      Debug.fcall(Flags.TEARING_DUMP, print, "\nCase non-linear in traverseComponents\nUse Flag '+d=tearingdumpV' for more details\n\n");
+      Debug.fcall(Flags.TEARING_DUMPVERBOSE, print, "Jacobian:\n" +& BackendDump.dumpJacobianStr(ojac) +& "\n\n");
+      (comp1, true) = callTearingMethod(inMethod, isyst, ishared, eindex, vindx, ojac, jacType);
+      (acc, b1) = traverseComponents(comps, isyst, ishared, inMethod, comp1::iAcc, true);
+    then (acc, b1);
+        
     // only continues part of a mixed system
-    case ((comp as BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1,disc_eqns=eindex,disc_vars=vindx))::comps,_,_,_,_,_)
-      equation
-           Debug.fcall(Flags.TEARING_DUMP, print, "\nCase mixed in traverseComponents\nUse '+d=tearingdumpV' for more details\n\n");
-        false = Flags.isSet(Flags.MIXED_TEARING);
-           Debug.fcall(Flags.TEARING_DUMP, print, "Flag 'MixedTearing' is not set\n(disabled by user)\n\n");
-        (comp1::{},true) = traverseComponents({comp1},isyst,ishared,method,{},false);
-        (acc,b1) = traverseComponents(comps,isyst,ishared,method,BackendDAE.MIXEDEQUATIONSYSTEM(comp1,eindex,vindx)::iAcc,true);
-      then
-        (acc,b1);
+    case ((comp as BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1, disc_eqns=eindex, disc_vars=vindx))::comps, _, _, _, _, _) equation
+      Debug.fcall(Flags.TEARING_DUMP, print, "\nCase mixed in traverseComponents\nUse '+d=tearingdumpV' for more details\n\n");
+      false = Flags.isSet(Flags.MIXED_TEARING);
+      Debug.fcall(Flags.TEARING_DUMP, print, "Flag 'MixedTearing' is not set\n(disabled by user)\n\n");
+      (comp1::{}, true) = traverseComponents({comp1}, isyst, ishared, inMethod, {}, false);
+      (acc, b1) = traverseComponents(comps, isyst, ishared, inMethod, BackendDAE.MIXEDEQUATIONSYSTEM(comp1, eindex, vindx)::iAcc, true);
+    then (acc, b1);
+    
     // mixed and continues part
-    case ((comp as BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1,disc_eqns=eindex,disc_vars=vindx))::comps,_,_,_,_,_)
-      equation
-        true = Flags.isSet(Flags.MIXED_TEARING);
-           Debug.fcall(Flags.TEARING_DUMP, print, "Flag 'MixedTearing' is set\n(enabled by default)\n\n");
-        (eindex,vindx) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
-        (comp1,true) = method(isyst,ishared,eindex,vindx,NONE(),BackendDAE.JAC_NO_ANALYTIC());
-        (acc,b1) = traverseComponents(comps,isyst,ishared,method,comp1::iAcc,true);
-      then
-        (acc,b1);
+    case ((comp as BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1, disc_eqns=eindex, disc_vars=vindx))::comps, _, _, _, _, _) equation
+      true = Flags.isSet(Flags.MIXED_TEARING);
+      Debug.fcall(Flags.TEARING_DUMP, print, "Flag 'MixedTearing' is set\n(enabled by default)\n\n");
+      (eindex, vindx) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
+      (comp1, true) = callTearingMethod(inMethod, isyst, ishared, eindex, vindx, NONE(), BackendDAE.JAC_NO_ANALYTIC());
+      (acc, b1) = traverseComponents(comps, isyst, ishared, inMethod, comp1::iAcc, true);
+    then (acc, b1);
+        
     // no component for tearing
-    case (comp::comps,_,_,_,_,_)
-      equation
-        (acc,b) = traverseComponents(comps,isyst,ishared,method,comp::iAcc,iRunMatching);
-      then
-        (acc,b);
+    case (comp::comps, _, _, _, _, _) equation
+      (acc, b) = traverseComponents(comps, isyst, ishared, inMethod, comp::iAcc, iRunMatching);
+    then (acc, b);
   end matchcontinue;
 end traverseComponents;
-
-protected function getTearingMethod
-" function: getTearingMethod"
-  output tearingMethodFunction methodFunction;
-protected
-  list<tuple<tearingMethodFunction,String>> allMethods;
-  String method;
-algorithm
-  allMethods := {(omcTearing,"omcTearing"),
-                 (tearingSystem1_1, "cellier"),
-                 (tearingSystem1_1, "cellier2")  
-  };
-  method := Config.getTearingMethod();
-  methodFunction := selectTearingMethods(allMethods,method);
-end getTearingMethod;
-
-protected function selectTearingMethods
-  input list<tuple<tearingMethodFunction,String>> allMethods;
-  input String method;
-  output tearingMethodFunction methodFunction;
-algorithm
-  methodFunction:=
-  matchcontinue (allMethods,method)
-    local
-      tearingMethodFunction func;
-      String name;
-      list<tuple<tearingMethodFunction,String>> rest;
-    case ((func,name)::rest,_)
-      equation
-        true = stringEqual(name,method);
-      then
-        func;
-    case ((func,name)::rest,_)
-      equation
-        false = stringEqual(name,method);
-      then
-        selectTearingMethods(rest,method);
-  end matchcontinue;
-end selectTearingMethods;
 
 // =============================================================================
 //
@@ -4194,7 +4200,6 @@ algorithm
 end countEntries;
 
 
-/*
 protected function TearingSystemCarpanzano " selects Tearing Set and assigns Vars
   author:Waurich TUD 2012-11"
   input Boolean inCausal;
@@ -4222,7 +4227,7 @@ algorithm
   case(false,_,_,_,_,_,_,_,_,_)
     equation
       // select tearing Var
-      tvar = selectTearingVar(meIn,meTIn,mIn,mtIn,{},3);
+      tvar = selectTearingVar(meIn,meTIn,mIn,mtIn,{},{},{},arrayCreate(1,{}),arrayCreate(1,0),3);
       print("tearingVar "+&intString(tvar)+&"\n");
       tvars = tvar::tvarsIn;
       // remove tearing var from incidence matrix and transpose inc matrix, as well as from enhanced
@@ -4233,7 +4238,7 @@ algorithm
       print("meT after tearingvar \n\n");
       BackendDump.dumpAdjacencyMatrixTEnhanced(met);
       // assign vars to eqs until complete or partially causalisation(and restart algorithm)
-      (ass1,ass2,m,mt,order,causal) = Tarjan(m,mt,ass1In,ass2In,tvars,{},orderIn,{},true);
+      (ass1,ass2,m,mt,order,causal) = Tarjan(m,mt,meIn,meTIn,ass1In,ass2In,tvars,orderIn,arrayCreate(1,{}),arrayCreate(1,0),true);
       print("ass1 "+&stringDelimitList(List.map(ass1,intString),",")+&"\n");
       print("ass2 "+&stringDelimitList(List.map(ass2,intString),",")+&"\n");
       print("order "+&stringDelimitList(List.map(List.flatten(order),intString),",")+&"\n");
@@ -4245,7 +4250,6 @@ algorithm
     then tvars;
   end matchcontinue;
 end TearingSystemCarpanzano;
-*/
 
 protected function potentialsCarpanzano
 "selects potential tearing variables in accordance to one of the 3 proposed variants
