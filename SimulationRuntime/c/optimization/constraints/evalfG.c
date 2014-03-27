@@ -277,12 +277,12 @@ int diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J)
 {
   DATA * data = iData->data;
   const int index = 2;
-  double*x,*u;
+ /* double*x,*u;*/
 
   int i,j,l,ii,nx;
   int *cC,*lindex;
 
-  x = v;
+  /*x = v;*/
   /*u = x + iData->nx;*/
 
   nx = data->simulationInfo.analyticJacobians[index].sizeCols;
@@ -417,7 +417,6 @@ static int printMaxError(IPOPT_DATA_ *iData, double *g,double t, double * max_er
   double tmp;
   int j;
 
-  tmp = -1;
   for(j = 0; j<(int)iData->nx; ++j){
     tmp = fabs(g[j]);
     //printf("\n time %g vs. %g | %g vs. %g",t,*tt,tmp,*max_err);

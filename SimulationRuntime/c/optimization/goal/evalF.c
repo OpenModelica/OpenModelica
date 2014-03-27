@@ -268,7 +268,7 @@ int num_diff_symColoredObject(IPOPT_DATA_ *iData, double *dF, int this_it)
 {
   DATA * data = iData->data;
   const int index = 2;
-  double*x/*,*u*/;
+  /*double*x,*u*/;
   SIMULATION_DATA *sData = (SIMULATION_DATA*)iData->data->localData[0];
   int i,j,l,ii,nx,k;
   /*int *cC,*lindex;*/
@@ -277,7 +277,7 @@ int num_diff_symColoredObject(IPOPT_DATA_ *iData, double *dF, int this_it)
   double t = (double)sData->timeValue;
 
   v = iData->cv;
-  x = v;
+  /*x = v;*/
   /*u = x + iData->nx;*/
 
   nx = data->simulationInfo.analyticJacobians[index].sizeCols;
