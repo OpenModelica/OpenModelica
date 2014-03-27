@@ -126,8 +126,8 @@ algorithm
     case (_) equation
       true = stringEqual(inTearingMethod, "cellier");
     then CELLIER_TEARING();
-	
-	case (_) equation
+  
+  case (_) equation
       true = stringEqual(inTearingMethod, "carpanzano2");
     then CARPANZANO_TEARING();
     
@@ -150,20 +150,20 @@ protected function callTearingMethod
 algorithm
   (ocomp, outRunMatching) := match(inTearingMethod, isyst, ishared, eindex, vindx, ojac, jacType)
     case(OMC_TEARING(), _, _, _, _, _, _) 
-	 equation
-       	(ocomp,outRunMatching)=omcTearing(isyst, ishared, eindex, vindx, ojac, jacType);
+   equation
+         (ocomp,outRunMatching)=omcTearing(isyst, ishared, eindex, vindx, ojac, jacType);
       then (ocomp,outRunMatching);
     
     case(CELLIER_TEARING(), _, _, _, _, _, _) 
-	 equation
-	    (ocomp,outRunMatching)=tearingSystem1_1(isyst, ishared, eindex, vindx, ojac, jacType);
+   equation
+      (ocomp,outRunMatching)=tearingSystem1_1(isyst, ishared, eindex, vindx, ojac, jacType);
       then (ocomp,outRunMatching);
-	
-	//case(CARPANZANO_TEARING(), _, _, _, _, _, _) 
-	// equation
-	//    (ocomp,outRunMatching)=tearingSystem1_1(isyst, ishared, eindex, vindx, ojac, jacType);
+  
+  //case(CARPANZANO_TEARING(), _, _, _, _, _, _) 
+  // equation
+  //    (ocomp,outRunMatching)=tearingSystem1_1(isyst, ishared, eindex, vindx, ojac, jacType);
     //  then (ocomp,outRunMatching);
-	  
+    
   end match;
 end callTearingMethod;
 
