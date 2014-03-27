@@ -101,7 +101,7 @@ static int initial_guess_ipopt_cflag(IPOPT_DATA_ *iData,char* cflags)
  **/
 static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
 {
-  double *u0, *x, uu,tmp ,lhs, rhs;
+  double *u0, /*x,*/ uu,tmp ,lhs, rhs;
   int i,j,k,ii,jj,id;
   double *v;
   long double tol;
@@ -126,7 +126,7 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
    solverInfo->solverData = dasslData;
 
    u0 = iData->start_u;
-   x = data->localData[0]->realVars;
+   /*x = data->localData[0]->realVars;*/
    v = iData->v;
 
    for(ii=iData->nx,j=0; j < iData->nu; ++j, ++ii){
@@ -244,33 +244,31 @@ static int optimizer_time_setings_update(IPOPT_DATA_ *iData)
   int i,k,id;
   double t;
 
+  assert(iData->nsi > 0);
+
   iData->time[0] = iData->t0;
   t = iData->t0;
   iData->dt_default = (iData->tf - iData->t0)/(iData->nsi);
-  for(i=0;i<iData->nsi; ++i){
+
+  t = iData->nsi*iData->dt_default;
+
+  for(i=0;i<iData->nsi; ++i)
     iData->dt[i] = iData->dt_default;
-    t = iData->t0 + (i+1)*iData->dt_default;
-  }
 
-  iData->dt[iData->nsi-1] = iData->dt_default + (iData->tf - t );
+  iData->dt[iData->nsi-1] = iData->dt_default + (iData->tf - t);
 
-  if(iData->deg == 3){
-    for(i = 0,k=0,id=0; i<iData->nsi; ++i,id += iData->deg){
-      if(i){
-        if(iData->deg == 3){
-          iData->time[++k] = iData->time[id] + iData->c1*iData->dt[i];
-          iData->time[++k] = iData->time[id] + iData->c2*iData->dt[i];
-        }
-        iData->time[++k] = iData->time[0]+ (i+1)*iData->dt[i];
-      }else{
-        if(iData->deg == 3){
-          iData->time[++k] = iData->time[id] + iData->e1*iData->dt[i];
-          iData->time[++k] = iData->time[id] + iData->e2*iData->dt[i];
-        }
+  for(i = 0, k=0, id=0; i<iData->nsi; ++i,id += iData->deg){
+      iData->time[++k] = iData->time[id] + iData->e1*iData->dt[i];
+      iData->time[++k] = iData->time[id] + iData->e2*iData->dt[i];
       iData->time[++k] = iData->time[0]+ (i+1)*iData->dt[i];
-     }
-   }
   }
+
+  for(; i<iData->nsi; ++i,id += iData->deg){
+      iData->time[++k] = iData->time[id] + iData->c1*iData->dt[i];
+      iData->time[++k] = iData->time[id] + iData->c2*iData->dt[i];
+      iData->time[++k] = iData->time[0]+ (i+1)*iData->dt[i];
+  }
+
   iData->time[k] = iData->tf;
   return 0;
 }

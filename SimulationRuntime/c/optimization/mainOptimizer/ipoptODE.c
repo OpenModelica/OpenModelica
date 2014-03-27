@@ -124,8 +124,8 @@ int refreshSimData(double *x, double *u, double t, IPOPT_DATA_ *iData)
   DATA* data = iData->data;
 
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
-  MODEL_DATA      *mData = &(data->modelData);
-  SIMULATION_INFO *sInfo = &(data->simulationInfo);
+  /*MODEL_DATA      *mData = &(data->modelData);
+  SIMULATION_INFO *sInfo = &(data->simulationInfo);*/
   for(j = 0; j<iData->nx;++j){
     sData->realVars[j] = x[j]*iData->vnom[j];
   }

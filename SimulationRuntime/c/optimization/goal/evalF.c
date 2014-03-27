@@ -216,9 +216,7 @@ int sym_diff_symColoredObject(IPOPT_DATA_ *iData, double *dF, int this_it)
     int i,j,l,ii,nx;
     int *cC,*lindex;
 
-    /*ToDo*/
     nx = data->simulationInfo.analyticJacobians[index].sizeCols;
-
 
     cC =  (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols;
     lindex = (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex;
@@ -270,21 +268,21 @@ int num_diff_symColoredObject(IPOPT_DATA_ *iData, double *dF, int this_it)
 {
   DATA * data = iData->data;
   const int index = 2;
-  double*x,*u;
+  double*x/*,*u*/;
   SIMULATION_DATA *sData = (SIMULATION_DATA*)iData->data->localData[0];
   int i,j,l,ii,nx,k;
-  int *cC,*lindex;
+  /*int *cC,*lindex;*/
   double lhs, rhs;
   double *v;
   double t = (double)sData->timeValue;
 
   v = iData->cv;
   x = v;
-  u = x + iData->nx;
+  /*u = x + iData->nx;*/
 
   nx = data->simulationInfo.analyticJacobians[index].sizeCols;
-  cC =  (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols;
-  lindex = (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex;
+  /*cC =  (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols;
+  lindex = (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex;*/
   memcpy(iData->vsave, v, sizeof(double)*iData->nv);
 
   for(ii = 0; ii<nx; ++ii){

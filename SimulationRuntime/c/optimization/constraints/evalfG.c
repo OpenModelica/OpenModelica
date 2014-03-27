@@ -162,19 +162,20 @@ int functionODE_(double * x, double *u, double t, double * dotx, IPOPT_DATA_ *iD
 int diff_functionODE(double* v, double t, IPOPT_DATA_ *iData, double **J)
 {
   int i, j;
-  double *x, *u;
+
   int nJ = (int)iData->nJ;
-  x = v;
-  u = v + iData->nx;
+
 
   if(iData->useNumJac>0){
-
     num_diff_symColoredODE(v,t,iData,J);
     for(i = 0;i<iData->nv;++i)
       for(j = 0; j <iData->nx; ++j)
         iData->numJ[j][i] *= iData->scalf[j];
-
   }else{
+    double *x, *u;
+    x = v;
+    u = v + iData->nx;
+
     refreshSimData(x,u,t,iData);
     diff_symColoredODE(v,t,iData,J);
     for(i = 0;i<iData->nv;++i){
@@ -209,7 +210,7 @@ int num_diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J)
   DATA * data = iData->data;
   const int index = 2;
   double*x,*u;
-  SIMULATION_DATA *sData = (SIMULATION_DATA*)iData->data->localData[0];
+  /*SIMULATION_DATA *sData = (SIMULATION_DATA*)iData->data->localData[0];*/
   int i,j,l,ii,nx;
   int *cC,*lindex;
 
@@ -282,7 +283,7 @@ int diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J)
   int *cC,*lindex;
 
   x = v;
-  u = x + iData->nx;
+  /*u = x + iData->nx;*/
 
   nx = data->simulationInfo.analyticJacobians[index].sizeCols;
   cC =  (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols;
@@ -416,6 +417,7 @@ static int printMaxError(IPOPT_DATA_ *iData, double *g,double t, double * max_er
   double tmp;
   int j;
 
+  tmp = -1;
   for(j = 0; j<(int)iData->nx; ++j){
     tmp = fabs(g[j]);
     //printf("\n time %g vs. %g | %g vs. %g",t,*tt,tmp,*max_err);
@@ -428,7 +430,7 @@ static int printMaxError(IPOPT_DATA_ *iData, double *g,double t, double * max_er
 
   for(; j<(int)iData->nJ; ++j){
     if((double)g[j]> (double)*max_err){
-      *max_err = tmp;
+      *max_err = g[j];
       *tt = t;
       *xi = j;
     }
