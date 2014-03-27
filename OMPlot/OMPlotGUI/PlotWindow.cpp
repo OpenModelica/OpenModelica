@@ -239,7 +239,7 @@ void PlotWindow::plot()
     mFile.open(QIODevice::ReadOnly);
     mpTextStream = new QTextStream(&mFile);
     // read the interval size from the file
-    int intervalSize;
+    int intervalSize = 0;
     while (!mpTextStream->atEnd())
     {
       currentLine = mpTextStream->readLine();
@@ -316,7 +316,6 @@ void PlotWindow::plot()
         if (vals == NULL)
           throw NoVariableException(tr("Variable doesnt exist: %1").arg(csvReader->variables[i]).toStdString().c_str());
         PlotCurve *pPlotCurve = new PlotCurve(mpPlot);
-        pPlotCurve = new PlotCurve(mpPlot);
         pPlotCurve->setFileName(QFileInfo(mFile).fileName());
         mpPlot->addPlotCurve(pPlotCurve);
         pPlotCurve->setTitle(csvReader->variables[i]);
@@ -381,7 +380,8 @@ void PlotWindow::plot()
             pPlotCurve->addXAxisValue(timeVals[i]);
           for (int i = 0 ; i < reader.nrows ; i++)
             pPlotCurve->addYAxisValue(vals[i]);
-          pPlotCurve->setData(timeVals, vals, reader.nrows);
+          free(vals);
+          pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), reader.nrows);
           pPlotCurve->attach(mpPlot);
           mpPlot->replot();
         }
@@ -403,6 +403,7 @@ void PlotWindow::plot()
         }
       }
     }
+    free(timeVals);
     // if plottype is PLOT then check which requested variables are not found in the file
     if (getPlotType() == PlotWindow::PLOT)
       checkForErrors(mVariablesList, variablesPlotted);
@@ -563,7 +564,7 @@ void PlotWindow::plotParametric()
 
     //Read the .mat file
     if(0 != (msg = omc_new_matlab4_reader(mFile.fileName().toStdString().c_str(), &reader)))
-      return;
+      throw PlotException(msg);
 
     PlotCurve *pPlotCurve = new PlotCurve(mpPlot);
     pPlotCurve->setFileName(QFileInfo(mFile).fileName());
@@ -573,10 +574,6 @@ void PlotWindow::plotParametric()
     //Read in timevector
     double startTime = omc_matlab4_startTime(&reader);
     double stopTime =  omc_matlab4_stopTime(&reader);
-    if (reader.nvar < 1)
-      throw NoVariableException("Variable doesnt exist: time");
-    double *timeVals = (double*) malloc(reader.nrows*sizeof(double));
-    memcpy(timeVals, omc_matlab4_read_vals(&reader,1), reader.nrows*sizeof(double));
     //Fill variable x with data
     var = omc_matlab4_find_var(&reader, xVariable.toStdString().c_str());
     if(!var)
@@ -588,6 +585,7 @@ void PlotWindow::plotParametric()
       memcpy(xVals, omc_matlab4_read_vals(&reader,var->index), reader.nrows*sizeof(double));
       for (int i = 0 ; i < reader.nrows ; i++)
         pPlotCurve->addXAxisValue(xVals[i]);
+      free(xVals);
     }
     // if variable is a parameter then
     else
@@ -611,6 +609,7 @@ void PlotWindow::plotParametric()
       memcpy(yVals, omc_matlab4_read_vals(&reader,var->index), reader.nrows*sizeof(double));
       for (int i = 0 ; i < reader.nrows ; i++)
         pPlotCurve->addYAxisValue(yVals[i]);
+      free(yVals);
     }
     // if variable is a parameter then
     else
