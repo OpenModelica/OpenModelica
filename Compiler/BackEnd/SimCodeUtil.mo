@@ -3099,6 +3099,23 @@ algorithm
       Absyn.Path path, rpath;
       String ident, s, s1, s2;
       list<SimCode.SimVar> tempvars;
+    
+    /* casts */
+    case (DAE.CAST(_, e1), e2, _, _, _)
+      equation
+        (equations_, ouniqueEqIndex, otempvars) =
+          createNonlinearResidualEquationsComplex(e1, e2, source, iuniqueEqIndex, itempvars);
+      then
+        (equations_, ouniqueEqIndex, otempvars);
+    
+    /* casts */
+    case (e1, DAE.CAST(_, e2), _, _, _)
+      equation
+        (equations_, ouniqueEqIndex, otempvars) =
+          createNonlinearResidualEquationsComplex(e1, e2, source, iuniqueEqIndex, itempvars);
+      then
+        (equations_, ouniqueEqIndex, otempvars);
+    
     /* a = f() */ 
     case (e1 as DAE.CREF(componentRef = cr), e2, _, _, _)
       equation
