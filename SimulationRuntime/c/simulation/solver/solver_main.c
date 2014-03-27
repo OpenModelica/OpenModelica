@@ -138,7 +138,6 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   int i;
 
   SIMULATION_INFO *simInfo = &(data->simulationInfo);
-  SIMULATION_DATA *sData = data->localData[0];
 
   /* initial solverInfo */
   solverInfo->currentTime = simInfo->startTime;
@@ -153,6 +152,7 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   if(solverInfo->solverMethod == 2)
   {
     /* Allocate RK work arrays */
+
     RK4_DATA* rungeData = (RK4_DATA*) malloc(sizeof(RK4_DATA));
     rungeData->work_states_ndims = rungekutta_s;
     rungeData->work_states = (double**) malloc((rungeData->work_states_ndims + 1) * sizeof(double*));
@@ -178,6 +178,7 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
 #ifdef WITH_IPOPT
   else if(solverInfo->solverMethod == 5)
   {
+    infoStreamPrint(LOG_SOLVER, 0, "Initializing optimizer");
     solverInfo->solverData = malloc(1*sizeof(IPOPT_DATA_));
   }
 #endif
@@ -185,36 +186,42 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   else if(solverInfo->solverMethod == 6)
   {
     /* Allocate Radau5 IIA work arrays */
+    infoStreamPrint(LOG_SOLVER, 0, "Initializing Radau IIA of order 5");
     solverInfo->solverData = calloc(1, sizeof(KINODE));
     allocateKinOde(data, solverInfo, 6, 3);
   }
   else if(solverInfo->solverMethod == 7)
   {
     /* Allocate Radau3 IIA work arrays */
+    infoStreamPrint(LOG_SOLVER, 0, "Initializing Radau IIA of order 3");
     solverInfo->solverData = calloc(1, sizeof(KINODE));
     allocateKinOde(data, solverInfo, 7, 2);
   }
   else if(solverInfo->solverMethod == 8)
   {
     /* Allocate Radau1 IIA work arrays */
+    infoStreamPrint(LOG_SOLVER, 0, "Initializing Radau IIA of order 1 (implicit euler) ");
     solverInfo->solverData = calloc(1, sizeof(KINODE));
     allocateKinOde(data, solverInfo, 8, 1);
   }
   else if(solverInfo->solverMethod == 9)
   {
     /* Allocate Lobatto2 IIIA work arrays */
+    infoStreamPrint(LOG_SOLVER, 0, "Initializing Lobatto IIIA of order 6");
     solverInfo->solverData = calloc(1, sizeof(KINODE));
     allocateKinOde(data, solverInfo, 9, 1);
   }
   else if(solverInfo->solverMethod == 10)
   {
     /* Allocate Lobatto4 IIIA work arrays */
+    infoStreamPrint(LOG_SOLVER, 0, "Initializing Lobatto IIIA of order 4");
     solverInfo->solverData = calloc(1, sizeof(KINODE));
     allocateKinOde(data, solverInfo, 10, 2);
   }
   else if(solverInfo->solverMethod == 11)
   {
     /* Allocate Lobatto6 IIIA work arrays */
+    infoStreamPrint(LOG_SOLVER, 0, "Initializing Lobatto IIIA of order 2 (trapeze rule)");
     solverInfo->solverData = calloc(1, sizeof(KINODE));
     allocateKinOde(data, solverInfo, 11, 3);
   }
