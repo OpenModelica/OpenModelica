@@ -91,10 +91,12 @@ void fmi1SetReal_OMC(void* in_fmi1, int numberOfValueReferences, double* realVal
     FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1;
     fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, realValuesReferences);
     fmi1_import_set_real(FMI1ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_real_t*)realValues);
+    free(valuesReferences_int);
   } else if (fmiType == 2) {
     FMI1CoSimulation* FMI1CS = (FMI1CoSimulation*)in_fmi1;
     fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, realValuesReferences);
     fmi1_import_set_real(FMI1CS->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_real_t*)realValues);
+    free(valuesReferences_int);
   }
 }
 
@@ -128,10 +130,12 @@ void fmi1SetInteger_OMC(void* in_fmi1, int numberOfValueReferences, double* inte
     FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1;
     fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, integerValuesReferences);
     fmi1_import_set_integer(FMI1ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_integer_t*)integerValues);
+    free(valuesReferences_int);
   } else if (fmiType == 2) {
     FMI1CoSimulation* FMI1CS = (FMI1CoSimulation*)in_fmi1;
     fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, integerValuesReferences);
     fmi1_import_set_integer(FMI1CS->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_integer_t*)integerValues);
+    free(valuesReferences_int);
   }
 }
 
@@ -165,10 +169,12 @@ void fmi1SetBoolean_OMC(void* in_fmi1, int numberOfValueReferences, double* bool
     FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1;
     fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, booleanValuesReferences);
     fmi1_import_set_boolean(FMI1ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_boolean_t*)booleanValues);
+    free(valuesReferences_int);
   } else if (fmiType == 2) {
     FMI1CoSimulation* FMI1CS = (FMI1CoSimulation*)in_fmi1;
     fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, booleanValuesReferences);
     fmi1_import_set_boolean(FMI1CS->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_boolean_t*)booleanValues);
+    free(valuesReferences_int);
   }
 }
 

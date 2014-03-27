@@ -88,6 +88,7 @@ void fmi2SetReal_OMC(void* in_fmi2, int numberOfValueReferences, double* realVal
     FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
     fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, realValuesReferences);
     fmi2_import_set_real(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_real_t*)realValues);
+    free(valuesReferences_int);
   } else if (fmiType == 2) {
 
   }
@@ -120,6 +121,7 @@ void fmi2SetInteger_OMC(void* in_fmi2, int numberOfValueReferences, double* inte
     FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
     fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, integerValuesReferences);
     fmi2_import_set_integer(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_integer_t*)integerValues);
+    free(valuesReferences_int);
   } else if (fmiType == 2) {
 
   }
@@ -152,6 +154,7 @@ void fmi2SetBoolean_OMC(void* in_fmi2, int numberOfValueReferences, double* bool
     FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
     fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, booleanValuesReferences);
     fmi2_import_set_boolean(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_boolean_t*)booleanValues);
+    free(valuesReferences_int);
   } else if (fmiType == 2) {
 
   }
@@ -184,6 +187,7 @@ void fmi2SetString_OMC(void* in_fmi2, int numberOfValueReferences, double* strin
     FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
     fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, stringValuesReferences);
     fmi2_import_set_string(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_string_t*)stringValues);
+    free(valuesReferences_int);
   } else if (fmiType == 2) {
 
   }

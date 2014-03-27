@@ -426,7 +426,6 @@ void FMIImpl__initializeFMI1Import(fmi1_import_t* fmi, void** fmiInfo, fmi_versi
     void* variable_start_value = getFMI1ModelVariableStartValue(model_variable, hasStartValue);
     void* variable_is_fixed = mk_bcon(fmi1_import_get_variable_is_fixed(model_variable));
     void* variable_value_reference = mk_rcon((double)model_variables_value_reference_list[i]);
-    void* variable_placement_annotation = mk_scon("");
     void* variable_x1_placement = mk_icon(0);
     void* variable_x2_placement = mk_icon(0);
     void* variable_y1_placement = mk_icon(0);
@@ -580,7 +579,6 @@ void FMIImpl__initializeFMI2Import(fmi2_import_t* fmi, void** fmiInfo, fmi_versi
     void* variable_start_value = getFMI2ModelVariableStartValue(model_variable, hasStartValue);
     void* variable_is_fixed = mk_bcon(0);
     void* variable_value_reference = mk_rcon((double)model_variables_value_reference_list[i]);
-    void* variable_placement_annotation = mk_scon("");
     void* variable_x1_placement = mk_icon(0);
     void* variable_x2_placement = mk_icon(0);
     void* variable_y1_placement = mk_icon(0);
