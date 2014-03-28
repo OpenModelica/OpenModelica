@@ -142,7 +142,7 @@ all-runtimeCPPinstall:
 	$(MAKE) msl-external-libs
 	$(MAKE) all runtimeCPPinstall
 
-omc-and-runtimeCPPinstall:
+omc-and-runtimeCPPinstall: mkbuilddirs
 	$(MAKE) msl-external-libs
 	$(MAKE) omc runtimeCPPinstall
 
