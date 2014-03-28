@@ -76,10 +76,11 @@ public import Util;
 protected
 uniontype Slot
   record SLOT
-    DAE.FuncArg an "An argument to a function" ;
-    Boolean slotFilled "True if the slot has been filled, i.e. argument has been given a value" ;
-    Option<DAE.Exp> expExpOption;
-    DAE.Dimensions typesArrayDimLst;
+    DAE.FuncArg defaultArg "The slots default argument.";
+    Boolean slotFilled "True if the slot has been filled, otherwise false.";
+    Option<DAE.Exp> arg "The argument for the slot given by the function call.";
+    DAE.Dimensions dims "The dimensions of the slot.";
+    Integer idx "The index of the slot, 1 = first slot etc.";
   end SLOT;
 end Slot;
 
@@ -5736,12 +5737,12 @@ algorithm
       equation
         (cache,exp,DAE.PROP(tp,c),_) = elabExp(cache,env, e, impl,NONE(),true,pre,info);
         // Create argument slots for String function.
-        slots = {SLOT(("x",tp,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,NONE(),{}),
-                 SLOT(("minimumLength",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.ICONST(0)),{}),
-                 SLOT(("leftJustified",DAE.T_BOOL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.BCONST(true)),{})};
+        slots = {SLOT(("x",tp,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,NONE(),{},1),
+                 SLOT(("minimumLength",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.ICONST(0)),{},2),
+                 SLOT(("leftJustified",DAE.T_BOOL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.BCONST(true)),{},3)};
         // Only String(Real) has the significantDigits option.
         slots = Util.if_(Types.isRealOrSubTypeReal(tp),
-          listAppend(slots, {SLOT(("significantDigits",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.ICONST(6)),{})}),
+          listAppend(slots, {SLOT(("significantDigits",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.ICONST(6)),{},4)}),
           slots);
         (cache,args_1,newslots,constlist,_) = elabInputArgs(cache,env, args, nargs, slots, true/*checkTypes*/ ,impl, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), {}, NONE(), pre, info);
         c = List.fold(constlist, Types.constAnd, DAE.C_CONST());
@@ -5754,16 +5755,16 @@ algorithm
       equation
         (cache,exp,DAE.PROP(tp,c),_) = elabExp(cache,env, e, impl,NONE(),true,pre,info);
 
-        slots = {SLOT(("x",tp,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,NONE(),{})};
+        slots = {SLOT(("x",tp,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,NONE(),{},1)};
 
         slots = Util.if_(Types.isRealOrSubTypeReal(tp),
-          listAppend(slots, {SLOT(("format",DAE.T_STRING_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.SCONST("f")),{})}),
+          listAppend(slots, {SLOT(("format",DAE.T_STRING_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.SCONST("f")),{},2)}),
           slots);
         slots = Util.if_(Types.isIntegerOrSubTypeInteger(tp),
-          listAppend(slots, {SLOT(("format",DAE.T_STRING_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.SCONST("d")),{})}),
+          listAppend(slots, {SLOT(("format",DAE.T_STRING_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.SCONST("d")),{},2)}),
           slots);
         slots = Util.if_(Types.isString(tp),
-          listAppend(slots, {SLOT(("format",DAE.T_STRING_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.SCONST("s")),{})}),
+          listAppend(slots, {SLOT(("format",DAE.T_STRING_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.SCONST("s")),{},2)}),
           slots);
         (cache,args_1,newslots,constlist,_) = elabInputArgs(cache, env, args, nargs, slots, true /*checkTypes*/, impl, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), {}, NONE(), pre, info);
         c = List.fold(constlist, Types.constAnd, DAE.C_CONST());
@@ -7182,7 +7183,7 @@ algorithm
     case ({}, i) then i;
 
     // only interested in filled slots that have a optional expression
-    case (SLOT(an = (id, _, _, _, _), slotFilled = true, expExpOption = SOME(e))::rest, i)
+    case (SLOT(defaultArg = (id, _, _, _, _), slotFilled = true, arg = SOME(e))::rest, i)
       equation
         o = VarTransform.addReplacement(i, ComponentReference.makeCrefIdent(id, DAE.T_UNKNOWN_DEFAULT, {}), e);
         o = createInputVariableReplacements(rest, o);
@@ -7280,7 +7281,7 @@ algorithm
         (cache,newslots2,constDefaultArgs,_) = fillGraphicsDefaultSlots(cache, newslots, cl, env_2, impl, {}, pre, info);
         constlist = listAppend(constInputArgs, constDefaultArgs);
         const = List.fold(constlist, Types.constAnd, DAE.C_CONST());
-        args_2 = expListFromSlots(newslots2);
+        args_2 = slotListArgs(newslots2);
 
         tp = complexTypeFromSlots(newslots2,ClassInf.UNKNOWN(Absyn.IDENT("")));
         //tyconst = elabConsts(outtype, const);
@@ -7356,7 +7357,7 @@ algorithm
         slots = makeEmptySlots(fargs);
         (cache,args_1,newslots,constInputArgs,_) = elabInputArgs(cache,env, args, nargs, slots, true  ,impl, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(),  {},st,pre,info);
 
-        newslots2 = List.map1(newslots,fillDefaultSlot,info);
+        (args_2, newslots2) = addDefaultArgs(newslots, info);
         vect_dims = slotsVectorizable(newslots2);
 
         constlist = constInputArgs;
@@ -7365,7 +7366,6 @@ algorithm
         tyconst = elabConsts(outtype, const);
         prop = getProperties(outtype, tyconst);
 
-        args_2 = expListFromSlots(newslots2);
         callExp = DAE.CALL(path,args_2,DAE.CALL_ATTR(outtype,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
 
         (call_exp,prop_1) = vectorizeCall(callExp, vect_dims, newslots2, prop, info);
@@ -7600,7 +7600,7 @@ algorithm
   tp := Types.simplifyType(restype);
   // adrpo: 2011-09-30 NOTE THAT THIS WILL NOT ADD DEFAULT ARGS
   //                   FROM extends (THE BASE CLASS)
-  (cache,args_2,slots2) := addDefaultArgs(cache,inEnv,args_1,fn_1,slots,impl,pre,info);
+  (args_2, slots2) := addDefaultArgs(slots, info);
   // DO NOT CHECK IF ALL SLOTS ARE FILLED!
   true := List.fold(slots2, slotAnd, true);
   callExp := DAE.CALL(fn_1,args_2,DAE.CALL_ATTR(tp,tuple_,builtin,isImpure,inlineType,DAE.NO_TAIL()));
@@ -7867,7 +7867,7 @@ algorithm
 //      t = DAE.T_METAUNIONTYPE({},knownSingleton,{utPath});
         prop = getProperties(t, tyconst);
         true = List.fold(newslots, slotAnd, true);
-        args_2 = expListFromSlots(newslots);
+        args_2 = slotListArgs(newslots);
       then
         (cache,SOME((DAE.METARECORDCALL(fqPath,args_2,fieldNames,index),prop)));
 
@@ -8045,47 +8045,141 @@ algorithm
   end matchcontinue;
 end instantiateImplicitRecordConstructors;
 
-protected function addDefaultArgs "adds default values (from slots) to argument list of function call.
-This is needed because when generating C-code all arguments must be present in the function call.
-
-If in future C++ code is generated instead, this is not required, since C++ allows default values for arguments.
-Not true: Mutable default values still need to be constructed. C++ only helps
-if we also enforce all input args immutable."
-  input Env.Cache inCache;
-  input Env.Env env;
-  input list<DAE.Exp> inArgs;
-  input Absyn.Path fn;
-  input list<Slot> slots;
-  input Boolean impl;
-  input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
-  output Env.Cache outCache;
+protected function addDefaultArgs
+  "Adds default values to a list of function slots."
+  input list<Slot> inSlots;
+  input Absyn.Info inInfo;
   output list<DAE.Exp> outArgs;
   output list<Slot> outSlots;
+protected
+  list<tuple<Slot, Integer>> slots;
+  array<tuple<Slot, Integer>> slot_arr;
 algorithm
-  (outCache,outArgs,outSlots) := match(inCache,env,inArgs,fn,slots,impl,inPrefix,info)
-    local Env.Cache cache;
-      list<DAE.Exp> args_2;
-      list<Slot> slots2;
-      Prefix.Prefix pre;
+  slots := List.map1(inSlots, Util.makeTuple, 0);
+  slot_arr := listArray(slots);
+  (outArgs, outSlots) := List.map2_2(inSlots, fillDefaultSlot, slot_arr, inInfo);
+end addDefaultArgs;
+    
+protected function fillDefaultSlot
+  "Fills a function slot with it's default value if it hasn't already been filled."
+  input Slot inSlot;
+  input array<tuple<Slot, Integer>> inSlotArray;
+  input Absyn.Info inInfo;
+  output DAE.Exp outArg;
+  output Slot outSlot;
+algorithm
+  (outArg, outSlot) := match(inSlot, inSlotArray, inInfo)
+    local
+      DAE.Dimensions dims;
+      DAE.Exp arg;
+      String id;
+      Integer idx;
+      tuple<Slot, Integer> aslot;
+      Slot slot;
 
-    // If we find a class
-    case(cache,_,_,_,_,_,pre,_)
+    // Slot already filled by function argument.
+    case (SLOT(slotFilled = true, arg = SOME(arg)), _, _) then (arg, inSlot);
+
+    // Slot not filled by function argument, but has default value.
+    case (SLOT(slotFilled = false, defaultArg = (_, _, _, _, SOME(_)), idx = idx), _, _)
       equation
-        // We need the class to fill default slots
-        // (cache,cl,env_2) = Lookup.lookupClass(cache,env,fn,false);
-        slots2 = List.map1(slots,fillDefaultSlot,info);
-        // Update argument list to include default values.
-        args_2 = expListFromSlots(slots2);
+        aslot = arrayGet(inSlotArray, idx);
+        (arg, slot) = fillDefaultSlot2(aslot, inSlotArray, inInfo);
       then
-        (cache,args_2,slots2);
+        (arg, slot);
 
-      // If no class found. builtin, with no defaults. NOTE: if builtin class with defaults exist
-      // both its type -and- its class must be added to Builtin.mo
-    // case(cache,env,inArgs,fn,slots,impl,_,_) then (cache,inArgs,slots);
+    // Slot not filled, and has no default value => error.
+    case (SLOT(defaultArg = (id, _, _, _, _)), _, _)
+      equation
+        Error.addSourceMessage(Error.UNFILLED_SLOT, {id}, inInfo);
+      then
+        fail();
 
   end match;
-end addDefaultArgs;
+end fillDefaultSlot; 
+        
+protected function fillDefaultSlot2
+  input tuple<Slot, Integer> inSlot;
+  input array<tuple<Slot, Integer>> inSlotArray;
+  input Absyn.Info inInfo;
+  output DAE.Exp outArg;
+  output Slot outSlot;
+algorithm
+  (outArg, outSlot) := match(inSlot, inSlotArray, inInfo)
+    local
+      Slot slot;
+      DAE.Exp exp;
+      String id;
+      DAE.FuncArg da;
+      DAE.Dimensions dims;
+      Integer idx;
+      list<tuple<Slot, Integer>> slots;
+      list<String> cyclic_slots;
+
+    case ((slot as SLOT(arg = SOME(exp)), 2), _, _) then (exp, slot);
+
+    case ((SLOT(defaultArg = (id, _, _, _, _)), 1), _, _)
+      equation
+        Error.addSourceMessage(Error.CYCLIC_DEFAULT_VALUE,
+          {id}, inInfo);
+      then
+        fail();
+
+    case ((slot as SLOT(defaultArg = da as (_, _, _, _, SOME(exp)), dims = dims, idx = idx), 0), _, _)
+      equation
+        _ = arrayUpdate(inSlotArray, idx, (slot, 1));
+        exp = evaluateSlotExp(exp, inSlotArray, inInfo);
+        slot = SLOT(da, true, SOME(exp), dims, idx);
+        _ = arrayUpdate(inSlotArray, idx, (slot, 2));
+      then
+        (exp, slot);
+
+  end match;
+end fillDefaultSlot2;
+
+protected function evaluateSlotExp
+  input DAE.Exp inExp;
+  input array<tuple<Slot, Integer>> inSlotArray;
+  input Absyn.Info inInfo;
+  output DAE.Exp outExp;
+algorithm
+  ((outExp, _)) := Expression.traverseExp(inExp, evaluateSlotExp_traverser,
+    (inSlotArray, inInfo));
+end evaluateSlotExp;
+
+protected function evaluateSlotExp_traverser
+  input tuple<DAE.Exp, tuple<array<tuple<Slot, Integer>>, Absyn.Info>> inTuple;
+  output tuple<DAE.Exp, tuple<array<tuple<Slot, Integer>>, Absyn.Info>> outTuple;
+algorithm
+  outTuple := match(inTuple)
+    local
+      String id;
+      array<tuple<Slot, Integer>> slots;
+      Slot slot;
+      DAE.Exp exp;
+      Absyn.Info info;
+
+    case ((DAE.CREF(componentRef = DAE.CREF_IDENT(ident = id)), (slots, info)))
+      equation
+        ((slot, _), _) = Util.arrayGetMemberOnTrue(id, slots, isSlotNamed);
+        (exp, _) = fillDefaultSlot(slot, slots, info);
+      then
+        ((exp, (slots, info)));
+
+    else inTuple;
+  end match;
+end evaluateSlotExp_traverser;
+
+protected function isSlotNamed
+  input String inName;
+  input tuple<Slot, Integer> inSlot;
+  output Boolean outIsNamed;
+protected
+  String id;
+algorithm
+  (SLOT(defaultArg = (id, _, _, _, _)), _) := inSlot;
+  outIsNamed := stringEq(id, inName);
+end isSlotNamed;
 
 protected function determineConstSpecialFunc "For the special functions constructor and destructor,
 in external object,
@@ -8264,7 +8358,7 @@ algorithm
       equation
         Error.addSourceMessage(Error.INTERNAL_ERROR,{"Static.vectorizeCallUnknownDimension could not find any slot to vectorize"},info);
       then fail();
-    case (e::es,SLOT(typesArrayDimLst={})::slots,acc,_,_)
+    case (e::es,SLOT(dims={})::slots,acc,_,_)
       equation
         (oes,ofound) = vectorizeCallUnknownDimension(es,slots,e::acc,found,info);
       then (oes,ofound);
@@ -8457,14 +8551,14 @@ algorithm
     case ({},{},_) then {};
 
     // scalar argument
-    case ((e :: es),(SLOT(typesArrayDimLst = {}) :: ss),dim_indx)
+    case ((e :: es),(SLOT(dims = {}) :: ss),dim_indx)
       equation
         res = vectorizeCallScalar3(es, ss, dim_indx);
       then
         (e :: res);
 
     // foreach argument
-    case ((e :: es),(SLOT(typesArrayDimLst = (_ :: _)) :: ss),dim_indx)
+    case ((e :: es),(SLOT(dims = (_ :: _)) :: ss),dim_indx)
       equation
         res = vectorizeCallScalar3(es, ss, dim_indx);
         asub_exp = DAE.ICONST(dim_indx);
@@ -8747,7 +8841,7 @@ protected function isSlotUsed
 protected
   String slot_name;
 algorithm
-  SLOT(an = (slot_name, _, _, _, _)) := inSlot;
+  SLOT(defaultArg = (slot_name, _, _, _, _)) := inSlot;
   outIsUsed := List.isMemberOnTrue(slot_name, inUsedNames, stringEq);
 end isSlotUsed;
 
@@ -8768,7 +8862,7 @@ algorithm
 
     // If the argument expression already has known dimensions, no need to
     // constant evaluate it.
-    case (SLOT(an = (name, _, _, _, _), expExpOption = SOME(exp)), _, _)
+    case (SLOT(defaultArg = (name, _, _, _, _), arg = SOME(exp)), _, _)
       equation
         false = Expression.expHasCref(exp,ComponentReference.makeCrefIdent(name,DAE.T_UNKNOWN_DEFAULT,{}));
         ty = Expression.typeof(exp);
@@ -8779,7 +8873,7 @@ algorithm
         DAE.TYPES_VAR(name, DAE.dummyAttrParam, ty, binding, NONE());
 
     // Otherwise, try to constant evaluate the expression.
-    case (SLOT(an = (name, _, _, _, _), expExpOption = SOME(exp)), _, _)
+    case (SLOT(defaultArg = (name, _, _, _, _), arg = SOME(exp)), _, _)
       equation
         // Constant evaluate the bound expression.
         (_, val, _) = Ceval.ceval(inCache, inEnv, exp, false, NONE(), Absyn.NO_MSG(), 0);
@@ -8791,7 +8885,7 @@ algorithm
       then
         DAE.TYPES_VAR(name, DAE.dummyAttrParam, ty, binding, NONE());
 
-    case (SLOT(an = (name, ty, _, _, _)), _, _)
+    case (SLOT(defaultArg = (name, ty, _, _, _)), _, _)
       then DAE.TYPES_VAR(name, DAE.dummyAttrParam, ty, DAE.UNBOUND(), NONE());
 
   end matchcontinue;
@@ -8854,7 +8948,7 @@ algorithm
     
     // If we have an array constant-evaluate the dimensions and make sure
     // They add up
-    case(SLOT(_, _, SOME(DAE.ARRAY(ty = sty)), vdims), _, _, _, _)
+    case(SLOT(arg = SOME(DAE.ARRAY(ty = sty)), dims = vdims), _, _, _, _)
       equation
         (ident, pty, c, p, oexp) = inParam;
         // evaluate the dimesions
@@ -8870,7 +8964,7 @@ algorithm
       then
         outParam;
     
-    case(SLOT(_, _, SOME(DAE.MATRIX(ty = sty)), vdims), _, _, _, _)
+    case(SLOT(arg = SOME(DAE.MATRIX(ty = sty)), dims = vdims), _, _, _, _)
       equation
         (ident, pty, c, p, oexp) = inParam;
         // evaluate the dimesions
@@ -8887,8 +8981,8 @@ algorithm
        
     case(_, _, _, _, _)
       equation
-        failure(SLOT(_, _, SOME(DAE.ARRAY(ty = sty)), _) = inSlot);
-        failure(SLOT(_, _, SOME(DAE.MATRIX(ty = sty)), _) = inSlot);
+        failure(SLOT(arg = SOME(DAE.ARRAY(ty = sty))) = inSlot);
+        failure(SLOT(arg = SOME(DAE.MATRIX(ty = sty))) = inSlot);
         (ident, pty, c, p, oexp) = inParam;
         pty = evaluateFuncArgTypeDims(pty, inEnv, inCache);
         outParam = (ident, pty, c, p, oexp);
@@ -8981,12 +9075,12 @@ algorithm
       DAE.Dimensions ad;
       list<Slot> rest;
     case ({}) then {};
-    case ((SLOT(typesArrayDimLst = (ad as (_ :: _))) :: rest))
+    case ((SLOT(dims = (ad as (_ :: _))) :: rest))
       equation
         sameSlotsVectorizable(rest, ad);
       then
         ad;
-    case ((SLOT(typesArrayDimLst = {}) :: rest))
+    case ((SLOT(dims = {}) :: rest))
       equation
         ad = slotsVectorizable(rest);
       then
@@ -9014,13 +9108,13 @@ algorithm
       DAE.Dimensions slot_ad,ad;
       list<Slot> rest;
     case ({},_) then ();
-    case ((SLOT(typesArrayDimLst = (slot_ad as (_ :: _))) :: rest),ad) /* arraydim must match */
+    case ((SLOT(dims = (slot_ad as (_ :: _))) :: rest),ad) /* arraydim must match */
       equation
         sameArraydimLst(ad, slot_ad);
         sameSlotsVectorizable(rest, ad);
       then
         ();
-    case ((SLOT(typesArrayDimLst = {}) :: rest),ad) /* empty arradim matches too */
+    case ((SLOT(dims = {}) :: rest),ad) /* empty arradim matches too */
       equation
         sameSlotsVectorizable(rest, ad);
       then
@@ -9379,7 +9473,7 @@ algorithm
           elabInputArgs(cache, env, {}, narg, slots_1, checkTypes, impl, isExternalObject, polymorphicBindings,st,pre,info)
           "recursive call fills named arguments" ;
         clist = listAppend(clist1, clist2);
-        explst = expListFromSlots(newslots);
+        explst = slotListArgs(newslots);
       then
         (cache,explst,newslots,clist,polymorphicBindings);
 
@@ -9389,7 +9483,7 @@ algorithm
         farg = funcArgsFromSlots(slots);
         (cache,newslots,clist,polymorphicBindings) =
           elabNamedInputArgs(cache, env, narg, farg, slots, checkTypes, impl, isExternalObject, polymorphicBindings,st,pre,info);
-        newexp = expListFromSlots(newslots);
+        newexp = slotListArgs(newslots);
       then
         (cache,newexp,newslots,clist,polymorphicBindings);
 
@@ -9406,25 +9500,22 @@ algorithm
 end elabInputArgs;
 
 protected function makeEmptySlots
-"Helper function to elabInputArgs.
-  Creates the slots to be filled with arguments. Intially they are empty."
-  input list<DAE.FuncArg> inTypesFuncArgLst;
-  output list<Slot> outSlotLst;
+  "Creates a list of empty slots given a list of function parameters."
+  input list<DAE.FuncArg> inArgs;
+  output list<Slot> outSlots;
 algorithm
-  outSlotLst:=
-  match (inTypesFuncArgLst)
-    local
-      list<Slot> ss;
-      DAE.FuncArg fa;
-      list<DAE.FuncArg> fs;
-    case ({}) then {};
-    case (fa :: fs)
-      equation
-        ss = makeEmptySlots(fs);
-      then
-        (SLOT(fa,false,NONE(),{}) :: ss);
-  end match;
+  (outSlots, _) := List.mapFold(inArgs, makeEmptySlot, 1);
 end makeEmptySlots;
+
+protected function makeEmptySlot
+  input DAE.FuncArg inArg;
+  input Integer inIndex;
+  output Slot outSlot;
+  output Integer outIndex;
+algorithm
+  outSlot := SLOT(inArg, false, NONE(), {}, inIndex);
+  outIndex := inIndex + 1;
+end makeEmptySlot;
 
 protected function funcArgsFromSlots
   "Converts a list of Slot to a list of FuncArg."
@@ -9438,7 +9529,7 @@ protected function funcArgFromSlot
   input Slot inSlot;
   output DAE.FuncArg outFuncArg;
 algorithm
-  SLOT(an = outFuncArg) := inSlot;
+  SLOT(defaultArg = outFuncArg) := inSlot;
 end funcArgFromSlot;
 
 protected function complexTypeFromSlots
@@ -9467,7 +9558,7 @@ algorithm
       then
         DAE.T_COMPLEX(complexClassType, {}, NONE(), DAE.emptyTypeSource);
 
-    case(SLOT(an = (id,ty,_,_,_))::slots,_)
+    case(SLOT(defaultArg = (id,ty,_,_,_))::slots,_)
       equation
         etp = Types.simplifyType(ty);
         DAE.T_COMPLEX(ci,vLst,ec,ts) = complexTypeFromSlots(slots,complexClassType);
@@ -9478,60 +9569,21 @@ algorithm
   end match;
 end complexTypeFromSlots;
 
-protected function expListFromSlots
-"Convers slots to expressions "
-  input list<Slot> inSlotLst;
-  output list<DAE.Exp> outExpExpLst;
+protected function slotListArgs
+  "Gets the argument expressions from a list of slots."
+  input list<Slot> inSlots;
+  output list<DAE.Exp> outArgs;
 algorithm
-  outExpExpLst:=
-  match (inSlotLst)
-    local
-      list<DAE.Exp> lst;
-      DAE.Exp e;
-      list<Slot> xs;
-    case {} then {};
-    case ((SLOT(expExpOption = SOME(e)) :: xs))
-      equation
-        lst = expListFromSlots(xs);
-      then
-        (e :: lst);
-    case ((SLOT(expExpOption = NONE()) :: xs))
-      equation
-        lst = expListFromSlots(xs);
-      then
-        lst;
-  end match;
-end expListFromSlots;
+  outArgs := List.filterMap(inSlots, slotArg);
+end slotListArgs;
 
-protected function fillDefaultSlot
-  "This function takes a slot list and a class definition of a function
-  and fills  default values into slots which have not been filled."
-  input Slot slot;
-  input Absyn.Info info;
-  output Slot outSlot;
+protected function slotArg
+  "Gets the argument from a slot."
+  input Slot inSlot;
+  output DAE.Exp outArg;
 algorithm
-  outSlot := matchcontinue (slot,info)
-    local
-      Option<DAE.Exp> e;
-      DAE.Dimensions ds;
-      DAE.Exp exp_1;
-      DAE.Type tp;
-      DAE.Const c2;
-      DAE.VarParallelism prl;
-      String id;
-
-    case (SLOT(slotFilled = true,expExpOption = e as SOME(_)),_) then slot;
-
-    case (SLOT(an = (id,tp,c2,prl,e as SOME(exp_1)),slotFilled = false,expExpOption = NONE(),typesArrayDimLst = ds),_)
-      then
-        SLOT((id,tp,c2,prl,e),true,SOME(exp_1),ds);
-
-    case (SLOT(an = (id,_,_,_,_)),_)
-      equation
-        Error.addSourceMessage(Error.UNFILLED_SLOT, {id}, info);
-      then fail();
-  end matchcontinue;
-end fillDefaultSlot;
+  SLOT(arg = SOME(outArg)) := inSlot;
+end slotArg;
 
 protected function fillGraphicsDefaultSlots
   "This function takes a slot list and a class definition of a function
@@ -9571,14 +9623,15 @@ algorithm
       Env.Cache cache;
       Prefix.Prefix pre;
       InstTypes.PolymorphicBindings polymorphicBindings;
+      Integer idx;
 
-    case (cache,(SLOT(an = fa,slotFilled = true,expExpOption = e as SOME(_),typesArrayDimLst = ds) :: xs),class_,env,impl,polymorphicBindings,pre,_)
+    case (cache,(SLOT(fa, true, e as SOME(_), ds, idx) :: xs),class_,env,impl,polymorphicBindings,pre,_)
       equation
         (cache, res, constLst, polymorphicBindings) = fillGraphicsDefaultSlots(cache, xs, class_, env, impl, polymorphicBindings, pre, info);
       then
-        (cache, SLOT(fa,true,e,ds) :: res, constLst, polymorphicBindings);
+        (cache, SLOT(fa,true,e,ds,idx) :: res, constLst, polymorphicBindings);
 
-    case (cache,(SLOT(an = (id,tp,c2,pr,e),slotFilled = false,expExpOption = NONE(),typesArrayDimLst = ds) :: xs),class_,env,impl,polymorphicBindings,pre,_)
+    case (cache,(SLOT((id,tp,c2,pr,e), false, NONE(), ds, idx) :: xs),class_,env,impl,polymorphicBindings,pre,_)
       equation
         (cache,res,constLst,polymorphicBindings) = fillGraphicsDefaultSlots(cache, xs, class_, env, impl, polymorphicBindings, pre, info);
 
@@ -9589,13 +9642,13 @@ algorithm
         (exp_1,_,polymorphicBindings) = Types.matchTypePolymorphic(exp,t,tp,Env.getEnvPathNoImplicitScope(env),polymorphicBindings,false);
         true = Types.constEqualOrHigher(c1,c2);
       then
-        (cache, SLOT((id,tp,c2,pr,e),true,SOME(exp_1),ds) :: res, c1::constLst, polymorphicBindings);
+        (cache, SLOT((id,tp,c2,pr,e),true,SOME(exp_1),ds,idx) :: res, c1::constLst, polymorphicBindings);
 
-    case (cache,(SLOT(an = fa,slotFilled = false,expExpOption = e,typesArrayDimLst = ds) :: xs),class_,env,impl,polymorphicBindings,pre,_)
+    case (cache,(SLOT(fa, false, e, ds, idx) :: xs),class_,env,impl,polymorphicBindings,pre,_)
       equation
         (cache, res, constLst, polymorphicBindings) = fillGraphicsDefaultSlots(cache, xs, class_, env, impl, polymorphicBindings, pre, info);
       then
-        (cache,SLOT(fa,false,e,ds) :: res, constLst, polymorphicBindings);
+        (cache,SLOT(fa,false,e,ds,idx) :: res, constLst, polymorphicBindings);
 
 
     case (cache,{},_,_,_,_,_,_) then (cache,{},{},{});
@@ -9617,7 +9670,7 @@ algorithm
       Option<DAE.Exp> exp;
       DAE.Dimensions ds;
       list<Slot> xs;
-    case ((SLOT(an = farg,slotFilled = filled,expExpOption = exp,typesArrayDimLst = ds) :: xs))
+    case ((SLOT(defaultArg = farg,slotFilled = filled,arg = exp,dims = ds) :: xs))
       equation
         farg_str = Types.printFargStr(farg);
         filledStr = Util.if_(filled, "filled", "not filled");
@@ -10001,16 +10054,17 @@ algorithm
       DAE.Const c1,c2;
       DAE.VarParallelism prl;
       Option<DAE.Exp> oe;
+      Integer idx;
 
-    case ((fa1,b,c1,_,_),exp,ds,(SLOT(an = (fa2,_,c2,prl,oe),slotFilled = false) :: xs),_,pre,_)
+    case ((fa1,b,c1,_,_),exp,ds,(SLOT(defaultArg = (fa2,_,c2,prl,oe),slotFilled = false,idx = idx) :: xs),_,pre,_)
       equation
         true = stringEq(fa1, fa2);
         true = Types.constEqualOrHigher(c1,c2);
       then
-        (SLOT((fa2,b,c2,prl,oe),true,SOME(exp),ds) :: xs);
+        (SLOT((fa2,b,c2,prl,oe),true,SOME(exp),ds,idx) :: xs);
 
     // fail if variability is wrong
-    case (farg1 as (fa1,_,c1,_,_),exp,ds,(SLOT(an = farg2 as (fa2,b,c2,prl,_),slotFilled = false) :: xs),_,pre,_)
+    case (farg1 as (fa1,_,c1,_,_),exp,_,(SLOT(defaultArg = (fa2,_,c2,_,_),slotFilled = false) :: xs),_,pre,_)
       equation
         true = stringEq(fa1, fa2);
         false = Types.constEqualOrHigher(c1,c2);
@@ -10021,7 +10075,7 @@ algorithm
         fail();
 
     // fail if slot already filled
-    case ((fa1,_,_,_,_),exp,ds,(SLOT(an = (fa2,b,_,_,_),slotFilled = true) :: xs), _,pre,_)
+    case ((fa1,_,_,_,_),exp,_,(SLOT(defaultArg = (fa2,b,_,_,_),slotFilled = true) :: xs), _,pre,_)
       equation
         true = stringEq(fa1, fa2);
         ps = PrefixUtil.printPrefixStr3(pre);
@@ -10030,7 +10084,7 @@ algorithm
         fail();
 
     // no equal, try next
-    case ((farg as (fa1,_,_,_,_)),exp,ds,((s1 as SLOT(an = (fa2,_,_,_,_))) :: xs),_,pre,_)
+    case ((farg as (fa1,_,_,_,_)),exp,ds,((s1 as SLOT(defaultArg = (fa2,_,_,_,_))) :: xs),_,pre,_)
       equation
         false = stringEq(fa1, fa2);
         newslots = fillSlot(farg, exp, ds, xs,checkTypes,pre,info);

@@ -3638,6 +3638,52 @@ algorithm
   end matchcontinue;
 end arrayMemberEqualityFuncLoop;
 
+public function arrayGetMemberOnTrue
+  input ValueType inValue;
+  input array<ElementType> inArray;
+  input CompFunc inCompFunc;
+  output ElementType outElement;
+  output Integer outIndex;
+
+  partial function CompFunc
+    input ValueType inValue;
+    input ElementType inElement;
+    output Boolean outIsEqual;
+  end CompFunc;
+
+  replaceable type ValueType subtypeof Any;
+  replaceable type ElementType subtypeof Any;
+algorithm
+  ((outElement, outIndex)) :=
+    arrayGetMemberOnTrue2(inValue, inArray, inCompFunc, 1);
+end arrayGetMemberOnTrue;
+
+protected function arrayGetMemberOnTrue2
+  input ValueType inValue;
+  input array<ElementType> inArray;
+  input CompFunc inCompFunc;
+  input Integer inIndex;
+  output tuple<ElementType, Integer> outTuple;
+
+  partial function CompFunc
+    input ValueType inValue;
+    input ElementType inElement;
+    output Boolean outIsEqual;
+  end CompFunc;
+
+  replaceable type ValueType subtypeof Any;
+  replaceable type ElementType subtypeof Any;
+protected
+  ElementType e;
+  Boolean b;
+algorithm
+  true := inIndex <= arrayLength(inArray);
+  e := arrayGet(inArray, inIndex);
+  b := inCompFunc(inValue, e);
+  outTuple := Debug.bcallret4(boolNot(b), arrayGetMemberOnTrue2, 
+    inValue, inArray, inCompFunc, inIndex + 1, (e, inIndex));
+end arrayGetMemberOnTrue2;
+   
 public function boolInt
   "Returns 1 if the given boolean is true, otherwise 0."
   input Boolean inBoolean;
