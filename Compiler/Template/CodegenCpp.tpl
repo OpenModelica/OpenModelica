@@ -5006,8 +5006,8 @@ case MODELINFO(vars=SIMVARS(__)) then
      <%vars.intAlgVars      |> SIMVAR(__) hasindex i1 =>'v(intAlgVarsStart+<%i1%>)=<%cref(name)%>;';align=8%>
      <%vars.boolAlgVars     |> SIMVAR(__) hasindex i2 =>'v(boolAlgVarsStart+<%i2%>)=<%cref(name)%>;';align=8 %>
     
-     <%vars.inputVars       |> SIMVAR(__) hasindex i3 =>'v(inputVarsStart+<%i3%>)=<%cref(name)%>;';align=8 %>
-     <%vars.outputVars      |> SIMVAR(__) hasindex i4 =>'v(outputVarsStart+<%i4%>)=<%cref(name)%>;';align=8 %>
+     <%vars.inputVars       |> SIMVAR(__) hasindex i3 =>'v(inputVarsStart+<%i3%>)=<%cref1(name,simCode,contextOther)%>;';align=8 %>
+     <%vars.outputVars      |> SIMVAR(__) hasindex i4 =>'v(outputVarsStart+<%i4%>)=<%cref1(name,simCode,contextOther)%>;';align=8 %>
 
      <%vars.aliasVars       |> SIMVAR(__) hasindex i5 =>'v(aliasVarsStart+<%i5%>)=<%getAliasVar(aliasvar, simCode,contextOther)%>;';align=8 %>
      <%vars.intAliasVars    |> SIMVAR(__) hasindex i6 =>'v(intAliasVarsStart+<%i6%>)=<%getAliasVar(aliasvar, simCode,contextOther)%>;';align=8 %>
@@ -5388,7 +5388,7 @@ template arrayCrefCStr(ComponentRef cr,Context context)
 ::=
 match context
 case ALGLOOP_CONTEXT(genInitialisation = false) 
-then << _system->_<%arrayCrefCStr2(cr)%>/*testalg2*/ >>
+then << _system->_<%arrayCrefCStr2(cr)%> >>
 else
 '_<%arrayCrefCStr2(cr)%>'
 end arrayCrefCStr;
@@ -6379,7 +6379,7 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
   case e as RCONST(__)          then real
   case e as BCONST(__)          then if bool then "true" else "false"
   case e as ENUM_LITERAL(__)    then index
-  case e as CREF(__)            then daeExpCrefRhs(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+  case e as CREF(__)            then daeExpCrefRhs(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode) 
   case e as CAST(__)            then daeExpCast(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   case e as CONS(__)            then "Cons not supported yet"
   case e as SCONST(__)          then daeExpSconst(string, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
@@ -6692,20 +6692,7 @@ end daeExpArray;
 
 
 
-//template daeExpAsub(Exp exp, Context context, Text &preExp /*BUFP*/,
-//                    Text &varDecls /*BUFP*/,SimCode simCode)
-// "Generates code for an asub expression."
-//::=
-// match exp
-//   case ASUB(exp=ecr as CREF(__), sub=subs) then
-//    let arrName = daeExpCrefRhs(buildCrefExpFromAsub(ecr, subs), context,
-//                              &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-//    match context case FUNCTION_CONTEXT(__)  then
-//      arrName
-//    else
-//      arrayScalarRhs(exp, subs, arrName, context, &preExp, &varDecls,simCode)
 
-//end daeExpAsub;
 
 
 template daeExpAsub(Exp inExp, Context context, Text &preExp /*BUFP*/,
@@ -7064,13 +7051,6 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     '<%retVar%>'
     case CALL(path=IDENT(name="smooth"),
             expLst={e1,e2},attr=attr as CALL_ATTR(__)) then
-    /*let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")
-
-    let retType = expTypeShort(attr.ty)
-    let retVar = tempDecl(retType, &varDecls /*BUFD*/)
-    let &preExp += '<%retVar%> = smooth(<%argStr%>);<%\n%>'
-    '<%retVar%>'
-    */
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode)
     '<%var2%>'
@@ -7288,18 +7268,6 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let &preExp += match context case FUNCTION_CONTEXT(__) then'<%if retVar then '<%retVar%> = '%><%funName%>(<%argStr%>);<%\n%>'
     else '<%if retVar then '<%retVar%> = '%>(_functions.<%funName%>(<%argStr%>));<%\n%>'
      '<%retVar%>'
-
-
-    /*match exp
-      // no return calls
-      case CALL(attr=CALL_ATTR(ty=T_NORETCALL(__))) then '/* NORETCALL */'
-      // non tuple calls (single return value)
-      case CALL(attr=CALL_ATTR(tuple_=false)) then
-       if attr.builtin then '<%retVar%>' else  match ty case T_COMPLEX(__) then'(<%retVar%>)' else 'get<0>(<%retVar%>)'
-      // tuple calls (multiple return values)
-      case CALL(attr=CALL_ATTR(tuple_=true)) then
-        '<%retVar%>'
-     */
 
 end daeExpCall;
 
@@ -7577,8 +7545,8 @@ template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp /*BUFP*/,
  "Generates code for a component reference."
 ::=
   match ecr
-  case ecr as CREF(componentRef=cr, ty=ty) then
-      let box = daeExpCrefRhsArrayBox(ecr, context, &preExp, &varDecls,simCode)
+  case component as CREF(componentRef=cr, ty=ty) then
+    let box = daeExpCrefRhsArrayBox(cr,ty, context, &preExp, &varDecls,simCode)
     if box then
       box
     else if crefIsScalar(cr, context) then
@@ -7641,20 +7609,56 @@ template daeExpCrefRhsIndexSpec(list<Subscript> subs, Context context,
   tmp
 end daeExpCrefRhsIndexSpec;
 
-template daeExpCrefRhsArrayBox(Exp ecr, Context context, Text &preExp /*BUFP*/,
+
+
+
+
+template daeExpCrefRhsArrayBox(ComponentRef cr,DAE.Type ty, Context context, Text &preExp /*BUFP*/,
                                Text &varDecls /*BUFP*/,SimCode simCode)
  "Helper to daeExpCrefRhs."
 ::=
-match ecr
-case ecr as CREF(ty=T_ARRAY(ty=aty,dims=dims)) then
-  match context
-  case FUNCTION_CONTEXT(__) then ''
-  else
-    // For context simulation and other array variables must be boxed into a real_array
-    // object since they are represented only in a double array.
-    let tmpArr = '<%arrayCrefCStr(ecr.componentRef,context)%>'
-    tmpArr
+ cref2simvar(cr, simCode) |> var as SIMVAR(index=i) =>
+    match varKind
+        case STATE(__)     then
+              let statvar = '__z[<%i%>]'
+              let tmpArr = '<%daeExpCrefRhsArrayBox2(statvar,ty,context,preExp,varDecls,simCode)%>'
+              tmpArr
+        case STATE_DER(__)      then
+              let statvar = '__zDot[<%i%>]'
+              let tmpArr = '<%daeExpCrefRhsArrayBox2(statvar,ty,context,preExp,varDecls,simCode)%>'
+              tmpArr
+        else
+            match context
+              case FUNCTION_CONTEXT(__) then ''
+            else
+            match ty
+            case t as T_ARRAY(ty=aty,dims=dims)        then 
+            let tmpArr ='<%arrayCrefCStr(cr,context)%>'
+            tmpArr
+            else ''
+   
 end daeExpCrefRhsArrayBox;
+
+
+template daeExpCrefRhsArrayBox2(Text var,DAE.Type type, Context context, Text &preExp /*BUFP*/,
+                               Text &varDecls /*BUFP*/,SimCode simCode) ::=
+ match type
+  case t as T_ARRAY(ty=aty,dims=dims)        then 
+    let arraytype = 'multi_array<<%expTypeShort(t)%>,<%listLength(dims)%>>'
+    let &tmpdecl = buffer "" /*BUFD*/
+    let arrayVar = tempDecl(arraytype, &tmpdecl /*BUFD*/)
+    let boostExtents = '<%arraytype%><%arrayVar%>(<%boostExtents(t)%>);'
+    let size = (dims |> dim => dimension(dim) ;separator="+")
+    let arrayassign =  '<%arrayVar%>.assign(&<%var%>,&<%var%>+(<%size%>));<%\n%>'
+    let &preExp += '
+          //tmp array
+          <%boostExtents%>
+          <%arrayVar%>.reindex(1);
+          <%arrayassign%>'
+    arrayVar
+  else
+    var
+end daeExpCrefRhsArrayBox2;
 
 template cref1(ComponentRef cr, SimCode simCode, Context context) ::=
   match cr
@@ -7683,9 +7687,9 @@ template representationCref(ComponentRef inCref, SimCode simCode, Context contex
     else  
         match context
             case ALGLOOP_CONTEXT(genInitialisation = false, genJacobian=false) 
-                then  <<_system-><%cref(inCref)%>/*testalg31*/>>
+                then  <<_system-><%cref(inCref)%>>>
             case ALGLOOP_CONTEXT(genInitialisation = false, genJacobian=true) 
-                then  <<_system-><%crefWithoutIndexOperator(inCref)%>/*testalg41*/>>
+                then  <<_system-><%crefWithoutIndexOperator(inCref)%>>>
         else
             <<<%varToString(inCref,context)%>>>
   else  
