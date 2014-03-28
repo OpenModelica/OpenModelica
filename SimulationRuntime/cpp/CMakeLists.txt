@@ -1,12 +1,14 @@
 cmake_minimum_required (VERSION 2.6)
 
 project(CppSolverInterface)
-#add_definitions(-DANALYZATION_MODE)
-#SET(ANALYZATION_MODE true)
 
-IF(ANALYZATION_MODE)
+option(ANALYZATIONMODE "ANALYZATIONMODE" OFF)
+
+IF(ANALYZATIONMODE)
 	message(STATUS "Using analyzation mode")
-ENDIF(ANALYZATION_MODE)
+ELSE(ANALYZATIONMODE)
+	message(STATUS "Analyzation mode disabled")
+ENDIF(ANALYZATIONMODE)
 
 # on windows  boost,blas,lapack  and sundial solvers from omdev is used else the installed versions are used
 IF( WIN32 )
