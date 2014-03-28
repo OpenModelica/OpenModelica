@@ -16,6 +16,6 @@ public:
   virtual void getStateCanditates(unsigned int index,double* z) = 0;
   virtual bool getAMatrix(unsigned int index,boost::multi_array<int,2> & A) =0 ;
   virtual void setAMatrix(unsigned int index,boost::multi_array<int,2>& A)=0;
-   virtual bool getAMatrix(unsigned int index,multi_array<int,1> & A) =0 ;
-  virtual void setAMatrix(unsigned int index,multi_array<int,1>& A)=0;
+  virtual bool getAMatrix(unsigned int index,boost::multi_array<int,1> & A) =0 ;
+  virtual void setAMatrix(unsigned int index,boost::multi_array<int,1>& A)=0;
 };
