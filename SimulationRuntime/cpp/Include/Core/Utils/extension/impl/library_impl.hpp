@@ -14,6 +14,7 @@
 #ifndef BOOST_EXTENSION_LIBRARY_IMPL_HPP
 #define BOOST_EXTENSION_LIBRARY_IMPL_HPP
 
+#include <iostream>
 
 
 #include <cstring>

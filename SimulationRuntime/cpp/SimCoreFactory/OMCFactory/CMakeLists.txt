@@ -8,7 +8,12 @@ IF(ANALYZATION_MODE)
 	add_library(${OMCFactoryName} STATIC OMCFactory.cpp StaticOMCFactory.cpp)
 	#LINK_DIRECTORIES(${CMAKE_SOURCE_DIR}/../../../../build/lib/omc/${LIBINSTALLEXT})
 	include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR})
-	target_link_libraries( ${OMCFactoryName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} ${NewtonName} ${CVodeName} ${SimControllerName})
+	
+	if (UNIX)
+		target_link_libraries( ${OMCFactoryName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} ${NewtonName} ${CVodeName} ${SimControllerName} ${CMAKE_DL_LIBS})
+	else (UNIX)
+		target_link_libraries( ${OMCFactoryName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} ${NewtonName} ${CVodeName} ${SimControllerName})
+	endif(UNIX)
 ELSE(ANALYZATION_MODE)
 	# add the system default implementation library
 	add_library(${OMCFactoryName} STATIC OMCFactory.cpp)

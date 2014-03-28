@@ -2,7 +2,7 @@
 
 #include <Policies/SystemOMCFactory.h>
 #include <System/AlgLoopSolverFactory.h>
-#include <SimController/iSimData.h>
+#include <SimController/ISimData.h>
 
 /*
 Policy class to create a OMC-,  Modelica- system or AlgLoopSolver
