@@ -2,13 +2,14 @@ cmake_minimum_required (VERSION 2.6)
 
 project(CppSolverInterface)
 
-option(ANALYZATIONMODE "ANALYZATIONMODE" OFF)
+option(ANALYZATION_MODE "ANALYZATION_MODE" OFF)
 
-IF(ANALYZATIONMODE)
+IF(ANALYZATION_MODE)
 	message(STATUS "Using analyzation mode")
-ELSE(ANALYZATIONMODE)
+	add_definitions(-DANALYZATION_MODE)
+ELSE(ANALYZATION_MODE)
 	message(STATUS "Analyzation mode disabled")
-ENDIF(ANALYZATIONMODE)
+ENDIF(ANALYZATION_MODE)
 
 # on windows  boost,blas,lapack  and sundial solvers from omdev is used else the installed versions are used
 IF( WIN32 )
@@ -285,9 +286,9 @@ configure_file (
 
 
 if(INSTALL_OMDEV_LIBS)
- # if(USE_SUNDIALS)
- #   install (FILES "${SUNDIALS_NVECSERIAL_LIB}"  "${SUNDIALS_IDAS_LIB}" "${SUNDIALS_IDA_LIB}" "${SUNDIALS_CVODES_LIB}" DESTINATION bin)
-#  endif()
+  #if(USE_SUNDIALS)
+  #  install (FILES "${SUNDIALS_NVECSERIAL_LIB}"  "${SUNDIALS_IDAS_LIB}" "${SUNDIALS_IDA_LIB}" "${SUNDIALS_CVODES_LIB}" DESTINATION bin)
+  #endif(USE_SUNDIALS)
 
   if(USE_MICO)
     install (FILES "${MICO_LIBRARY}"   DESTINATION bin)
