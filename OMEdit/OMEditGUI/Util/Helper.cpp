@@ -435,7 +435,11 @@ QString GUIMessages::getMessage(int type)
     case WRONG_MODIFIER:
       return tr("The Modifier '%1' format is invalid. The correct format is 'phi(start=1)'");
     case SET_INFO_XML_FLAG:
-      return tr("The operations were not generated. You must set the +d=infoXmlOperations flag. Enable it via Tools->Options->Simulation->OMC Flags and simulate again.");
+      return tr("The operations were not generated. You must set the +d=infoXmlOperations flag. Enable it via %1 and simulate again.");
+    case SET_INFO_XML_FLAG_MSG:
+      return tr("Tools->Options->Simulation->OMC Flags");
+    case SET_INFO_XML_FLAG_MSG_MAC:
+      return tr("OMEdit->Preferences->Simulation->OMC Flags");
     default:
       return "";
   }

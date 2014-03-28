@@ -271,7 +271,9 @@ public:
     XML_GENERATED,
     DELETE_CLASS_MSG,
     WRONG_MODIFIER,
-    SET_INFO_XML_FLAG
+    SET_INFO_XML_FLAG,
+    SET_INFO_XML_FLAG_MSG,
+    SET_INFO_XML_FLAG_MSG_MAC
   };
 
   static QString getMessage(int type);

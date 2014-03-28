@@ -825,7 +825,12 @@ void TransformationsWidget::fetchOperations(OMVariable &variable)
   }
   else
   {
-    QString message = GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG);
+    QString message;
+#ifdef Q_OS_MAC
+    message = GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG).arg(GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG_MSG_MAC));
+#else
+    message = GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG).arg(GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG_MSG));
+#endif
     QStringList values;
     values << message;
     QString toolTip = message;
@@ -957,7 +962,12 @@ void TransformationsWidget::fetchOperations(OMEquation &equation)
   }
   else
   {
-    QString message = GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG);
+    QString message;
+#ifdef Q_OS_MAC
+    message = GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG).arg(GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG_MSG_MAC));
+#else
+    message = GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG).arg(GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG_MSG));
+#endif
     QStringList values;
     values << message;
     QString toolTip = message;
