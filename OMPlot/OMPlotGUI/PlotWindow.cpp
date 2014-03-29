@@ -340,7 +340,7 @@ void PlotWindow::plot()
   {
     ModelicaMatReader reader;
     ModelicaMatVariable_t *var;
-    const char *msg = new char[20];
+    const char *msg = "";
     QStringList variablesPlotted;
 
     //Read in mat file
@@ -560,7 +560,7 @@ void PlotWindow::plotParametric()
     //Declare variables
     ModelicaMatReader reader;
     ModelicaMatVariable_t *var;
-    const char *msg = new char[20];
+    const char *msg = "";
 
     //Read the .mat file
     if(0 != (msg = omc_new_matlab4_reader(mFile.fileName().toStdString().c_str(), &reader)))
