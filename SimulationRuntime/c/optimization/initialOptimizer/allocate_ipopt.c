@@ -46,7 +46,7 @@
 
 static int set_local_jac_struct(IPOPT_DATA_ *iData, int *nng);
 static int local_jac_struct(IPOPT_DATA_ *iData, int *nng);
-static int local_jac_struct_print(IPOPT_DATA_ *iData);
+static void local_jac_struct_print(IPOPT_DATA_ *iData);
 static int check_nominal(IPOPT_DATA_ *iData, double min, double max, double nominal, modelica_boolean set, int i, double x0);
 static int optimizer_coeff_setings(IPOPT_DATA_ *iData);
 static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData);
@@ -291,7 +291,7 @@ static int local_diffObject_struct(IPOPT_DATA_ *iData)
   return 0;
 }
 
-static int local_jac_struct_print(IPOPT_DATA_ *iData)
+static void local_jac_struct_print(IPOPT_DATA_ *iData)
 {
   int ii,j;
   int **J;
