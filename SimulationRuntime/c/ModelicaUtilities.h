@@ -3,7 +3,11 @@
 
 #include <stddef.h>
 #include <stdarg.h>
-#include "util/omc_msvc.h" /* for __attribute__() */
+
+#ifndef __GNUC__
+#define __attribute__(x)
+#endif
+
 /*
  * Utility functions for external functions.
  * The functionality is defined in the Modelica 2.x and 3.x specifications.
