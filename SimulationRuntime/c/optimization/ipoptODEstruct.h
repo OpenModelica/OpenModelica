@@ -158,6 +158,8 @@ typedef struct OPTIMIZER_SCALING{
   long double *scalf;
   long double ** scaldt;
 
+  long double scald;
+
 }OPTIMIZER_SCALING;
 
 

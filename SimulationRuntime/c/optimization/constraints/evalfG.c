@@ -182,12 +182,6 @@ int diff_functionODE(double* v, double t, IPOPT_DATA_ *iData, double **J)
 
     refreshSimData(x,u,t,iData);
     diff_symColoredODE(v,t,iData,J);
-    for(i = 0;i<iData->dim.nv;++i){
-      for(j = 0; j <iData->dim.nx; ++j)
-        J[j][i] *= iData->scaling.scalf[j]*iData->scaling.vnom[i];
-      for(; j <nJ; ++j)
-        J[j][i] *= iData->scaling.vnom[i];
-    }
 
   /*
   #ifdef JAC_ADOLC
@@ -223,7 +217,7 @@ int diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J)
   for(i = 1; i < data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors + 1; ++i){
     for(ii = 0; ii<nx; ++ii){
       if(cC[ii] == i){
-        data->simulationInfo.analyticJacobians[index].seedVars[ii] = 1.0;
+        data->simulationInfo.analyticJacobians[index].seedVars[ii] = iData->scaling.vnom[ii];
       }
     }
 
@@ -236,7 +230,10 @@ int diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J)
 
         for(; j<lindex[ii]; ++j){
           l = data->simulationInfo.analyticJacobians[index].sparsePattern.index[j];
-          J[l][ii] = data->simulationInfo.analyticJacobians[index].resultVars[l];
+          if(l < iData->dim.nx)
+            J[l][ii] = data->simulationInfo.analyticJacobians[index].resultVars[l]*iData->scaling.scalf[l];
+          else
+            J[l][ii] = data->simulationInfo.analyticJacobians[index].resultVars[l];
         }
       }
     }

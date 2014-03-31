@@ -149,8 +149,9 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
         iData->cv = x;
         /*iData->data->callback->functionAlgebraics(iData->data);*/
         diff_symColoredObject(iData, iData->gradF,iData->lagrange_index);
+        iData->scaling.scald = iData->dtime.dt[i]*mbase->b[0][k];
         for(j=0; j<iData->dim.nv; ++j)
-          gradF[id++] = iData->dtime.dt[i]*mbase->b[0][k]*iData->gradF[j]*iData->scaling.vnom[j];
+          gradF[id++] = iData->scaling.scald*iData->gradF[j];
       }
     }
 
@@ -160,8 +161,9 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
         iData->cv = x;
         /*iData->data->callback->functionAlgebraics(iData->data);*/
         diff_symColoredObject(iData, iData->gradF, iData->lagrange_index);
+        iData->scaling.scald = iData->dtime.dt[i]*mbase->b[1][k];
         for(j = 0; j<iData->dim.nv; ++j)
-          gradF[id++] =  iData->dtime.dt[i]*mbase->b[1][k]*iData->gradF[j]*iData->scaling.vnom[j];
+          gradF[id++] = iData->scaling.scald*iData->gradF[j];
       }
     }
 
@@ -180,9 +182,9 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
     for(j=0; j<iData->dim.nv; ++j)
     {
       if(iData->sopt.lagrange){
-        gradF[iData->endN + j] +=  iData->gradF[j]*iData->scaling.vnom[j];
+        gradF[iData->endN + j] += iData->gradF[j];
       } else {
-        gradF[iData->endN + j] = iData->gradF[j]*iData->scaling.vnom[j];
+        gradF[iData->endN + j] = iData->gradF[j];
       }
     }
   }
@@ -224,7 +226,7 @@ int sym_diff_symColoredObject(IPOPT_DATA_ *iData, double *dF, int this_it)
       {
         if(cC[ii] == i)
         {
-          data->simulationInfo.analyticJacobians[index].seedVars[ii] = 1.0;
+          data->simulationInfo.analyticJacobians[index].seedVars[ii] = iData->scaling.vnom[ii];
         }
       }
 
