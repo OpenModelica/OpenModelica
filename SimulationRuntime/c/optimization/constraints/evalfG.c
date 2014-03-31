@@ -52,7 +52,7 @@ static inline void evalG13(Number *g, IPOPT_DATA_ *iData, int i);
 static inline void evalG21(Number *g, IPOPT_DATA_ *iData, int i);
 static inline void evalG22(Number *g, IPOPT_DATA_ *iData, int i);
 static inline void evalG23(Number *g, IPOPT_DATA_ *iData, int i);
-static int diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J);
+static int diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, long double **J);
 static int num_diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J);
 static void printMaxError(IPOPT_DATA_ *iData, double *g,double time, double * max_err , double * tt, int *xi);
 
@@ -170,7 +170,7 @@ int functionODE_(double * x, double *u, double t, double * dotx, IPOPT_DATA_ *iD
  *  eval a part from the derivate of s.t.
  *  author: Vitalij Ruge
  **/
-int diff_functionODE(double* v, double t, IPOPT_DATA_ *iData, double **J)
+int diff_functionODE(double* v, double t, IPOPT_DATA_ *iData, long double **J)
 {
   int i, j;
 
@@ -202,7 +202,7 @@ int diff_functionODE(double* v, double t, IPOPT_DATA_ *iData, double **J)
  *  function calculates a symbolic colored jacobian matrix by
  *  author: Willi Braun
  */
-int diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J)
+int diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, long double **J)
 {
   DATA * data = iData->data;
   const int index = 2;

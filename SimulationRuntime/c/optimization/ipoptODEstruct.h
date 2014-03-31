@@ -163,6 +163,22 @@ typedef struct OPTIMIZER_SCALING{
 }OPTIMIZER_SCALING;
 
 
+typedef struct OPTIMIZER_DF{
+
+  long double **J0;
+  long double **J;
+
+  long double ** gradFomc;
+
+  long double * gradF[4];
+
+  long double ***H;
+  long double **oH;
+  long double **mH;
+
+}OPTIMIZER_DF;
+
+
 typedef struct IPOPT_DATA_
 {
   /*#*/
@@ -179,6 +195,8 @@ typedef struct IPOPT_DATA_
   OPTIMIZER_BOUNDS bounds;
   OPTIMIZER_SCALING scaling;
 
+  OPTIMIZER_DF df;
+
   /* ODE */
   double * x0;
 
@@ -194,18 +212,6 @@ typedef struct IPOPT_DATA_
   double *cv;
 
   int endN;
-  double **J0;
-  double **J;
-  double ** gradFomc;
-  double * gradF;
-  double * gradMF;
-  double * gradF_;
-  double * gradF0;
-  double * gradF00;
-
-  long double ***H;
-  long double **oH;
-  long double **mH;
 
   int * iRow;
   int * iCol;

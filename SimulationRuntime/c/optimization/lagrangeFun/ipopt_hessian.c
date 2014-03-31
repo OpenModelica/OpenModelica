@@ -43,7 +43,7 @@
 #define DF_STEP(x,s) ( (fmin(fmax(1e-4*fabs(s*x),1e-8),1e0)))
 
 static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, modelica_boolean lagrange_yes, modelica_boolean mayer_yes, double obj_factor);
-static int updateCost(double *v, double t, IPOPT_DATA_ *iData, modelica_boolean lagrange_yes, modelica_boolean mayer_yes,double *F1, double *F2);
+static int updateCost(double *v, double t, IPOPT_DATA_ *iData, modelica_boolean lagrange_yes, modelica_boolean mayer_yes,long double *F1, long double *F2);
 static int sumLagrange(IPOPT_DATA_ *iData, double * erg,int ii, int i, int j, int p, modelica_boolean mayer_yes);
 
 /*!
@@ -209,22 +209,24 @@ static int sumLagrange(IPOPT_DATA_ *iData, double * erg,int ii, int i, int j, in
   int nJ = (p) ? dim->nJ : dim->nx;
   sum = 0.0;
   for(l = 0; l<dim->nx; ++l)
-    sum += iData->H[l][i][j];
+    sum += iData->df.H[l][i][j];
 
-  if(iData->sopt.lagrange && iData->gradFomc[iData->lagrange_index][i]* iData->gradFomc[iData->lagrange_index][j]){
+  if(iData->sopt.lagrange &&
+      iData->sopt.gradFs[iData->lagrange_index][i]*iData->sopt.gradFs[iData->lagrange_index][j])
+  {
     if(ii)
-      sum += mbase->b[1][p-1]*iData->oH[i][j];
+      sum += mbase->b[1][p-1]*iData->df.oH[i][j];
     else
-      sum += mbase->b[0][p]*iData->oH[i][j];
+      sum += mbase->b[0][p]*iData->df.oH[i][j];
   }
 
   sum = iData->dtime.dt[ii]*sum;
 
    for(l = dim->nx; l<nJ; ++l)
-     sum += iData->H[l][i][j];
+     sum += iData->df.H[l][i][j];
 
-  if(mayer_yes && iData->gradFomc[iData->mayer_index][i]* iData->gradFomc[iData->mayer_index][j])
-    sum += iData->mH[i][j];
+  if(mayer_yes && iData->sopt.gradFs[iData->mayer_index][i]*iData->sopt.gradFs[iData->mayer_index][j])
+    sum += iData->df.mH[i][j];
 
   *erg = (double) sum;
   return 0;
@@ -243,20 +245,20 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
   OPTIMIZER_DIM_VARS *dim = &iData->dim;
   int nJ = (t>(double)iData->dtime.t0) ? dim->nx + dim->nc : dim->nx;
 
-  diff_functionODE(v, t , iData, iData->J0);
+  diff_functionODE(v, t , iData, iData->df.J0);
   upCost = (lagrange_yes || mayer_yes) && (obj_factor!=0);   
 
   if(upCost)
-    updateCost(v,t,iData,lagrange_yes,mayer_yes, iData->gradF0, iData->gradF00);
+    updateCost(v,t,iData,lagrange_yes,mayer_yes, iData->df.gradF[2], iData->df.gradF[3]);
 
   for(i = 0; i<dim->nv; ++i){
     v_save = (long double)v[i];
     h = (long double)DF_STEP(v_save, iData->scaling.vnom[i]);
     v[i] += h;
-    diff_functionODE(v, t , iData, iData->J);
+    diff_functionODE(v, t , iData, iData->df.J);
 
     if(upCost)
-      updateCost(v,t,iData,lagrange_yes,mayer_yes, iData->gradF, iData->gradF_);
+      updateCost(v,t,iData,lagrange_yes,mayer_yes, iData->df.gradF[0], iData->df.gradF[1]);
 
     v[i] = v_save;
 
@@ -264,31 +266,31 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
       if(iData->sopt.Hg[i][j]){
        for(l = 0; l< nJ; ++l){
         if(iData->sopt.knowedJ[l][j] + iData->sopt.knowedJ[l][i] >= 2 && lambda[l] != 0.0)
-          iData->H[l][i][j]  = (long double)lambda[l]*(iData->J[l][j] - iData->J0[l][j])/h;
+          iData->df.H[l][i][j]  = (long double)lambda[l]*(iData->df.J[l][j] - iData->df.J0[l][j])/h;
         else
-          iData->H[l][i][j] = (long double) 0.0;
-        iData->H[l][j][i] = iData->H[l][i][j];
+          iData->df.H[l][i][j] = (long double) 0.0;
+        iData->df.H[l][j][i] = iData->df.H[l][i][j];
        }
       }
     }
     h = obj_factor/h; 
     if(lagrange_yes){
       for(j = i; j < dim->nv; ++j){
-       if(iData->gradFomc[iData->lagrange_index][i]* iData->gradFomc[iData->lagrange_index][j])
-         iData->oH[i][j]  = (long double) h* iData->scaling.vnom[j]*(iData->gradF[j] - iData->gradF0[j]);
+       if(iData->sopt.gradFs[iData->lagrange_index][i]*iData->sopt.gradFs[iData->lagrange_index][j])
+         iData->df.oH[i][j]  = (long double) h* iData->scaling.vnom[j]*(iData->df.gradF[0][j] - iData->df.gradF[2][j]);
        else
-         iData->oH[i][j] = 0.0;
-       iData->oH[j][i]  = iData->oH[i][j] ; 
+         iData->df.oH[i][j] = 0.0;
+       iData->df.oH[j][i]  = iData->df.oH[i][j] ;
       }
     }
 
     if(mayer_yes){
       for(j = i; j < dim->nv; ++j){
-       if(iData->gradFomc[iData->mayer_index][i]* iData->gradFomc[iData->mayer_index][j])
-         iData->mH[i][j]  = (long double) h* iData->scaling.vnom[j]*(iData->gradF_[j] - iData->gradF00[j]);
+       if(iData->sopt.gradFs[iData->mayer_index][i]*iData->sopt.gradFs[iData->mayer_index][j])
+         iData->df.mH[i][j]  = (long double) h* iData->scaling.vnom[j]*(iData->df.gradF[1][j] - iData->df.gradF[3][j]);
        else
-         iData->mH[i][j] = 0.0;
-       iData->mH[j][i]  = iData->mH[i][j] ; 
+         iData->df.mH[i][j] = 0.0;
+       iData->df.mH[j][i]  = iData->df.mH[i][j] ;
       }
     }
 
@@ -302,7 +304,7 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
  *  function update goal function 
  *  author: vitalij
  */
-static int updateCost(double *v, double t, IPOPT_DATA_ *iData, modelica_boolean lagrange_yes, modelica_boolean mayer_yes, double *F1, double *F2)
+static int updateCost(double *v, double t, IPOPT_DATA_ *iData, modelica_boolean lagrange_yes, modelica_boolean mayer_yes, long double *F1, long double *F2)
 {
   /*iData->data->callback->functionAlgebraics(iData->data);*/
   if(lagrange_yes)

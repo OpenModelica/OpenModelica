@@ -40,12 +40,8 @@
 #include "../localFunction.h"
 
 #ifdef WITH_IPOPT
-#define DF_STEP(x,s) ( (fmin(fmax(1e-4*fabs(s*x),1e-8),1e-1)))
-static int eval_diff_mayer(IPOPT_DATA_ *iData, double* gradF, double *v);
-static int eval_diff_lagrange1(IPOPT_DATA_ *iData, double *x, int *id_, double* gradF);
-static int eval_diff_lagrange2(IPOPT_DATA_ *iData, double *x, int *id_, double* gradF);
 
-int sym_diff_symColoredObject(IPOPT_DATA_ *iData, double *dF, int this_it);
+static int sym_diff_symColoredObject(IPOPT_DATA_ *iData, long double *dF, int this_it);
 
 /*!
  *  eval object function
@@ -148,10 +144,10 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
         refreshSimData(x,x+ iData->dim.nx,iData->dtime.time[i*iData->dim.deg+k],iData);
         iData->cv = x;
         /*iData->data->callback->functionAlgebraics(iData->data);*/
-        diff_symColoredObject(iData, iData->gradF,iData->lagrange_index);
+        diff_symColoredObject(iData, iData->df.gradF[0], iData->lagrange_index);
         iData->scaling.scald = iData->dtime.dt[i]*mbase->b[0][k];
         for(j=0; j<iData->dim.nv; ++j)
-          gradF[id++] = iData->scaling.scald*iData->gradF[j];
+          gradF[id++] = iData->scaling.scald*iData->df.gradF[0][j];
       }
     }
 
@@ -160,10 +156,10 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
         refreshSimData(x,x+ iData->dim.nx,iData->dtime.time[i*iData->dim.deg+k+1],iData);
         iData->cv = x;
         /*iData->data->callback->functionAlgebraics(iData->data);*/
-        diff_symColoredObject(iData, iData->gradF, iData->lagrange_index);
+        diff_symColoredObject(iData, iData->df.gradF[0], iData->lagrange_index);
         iData->scaling.scald = iData->dtime.dt[i]*mbase->b[1][k];
         for(j = 0; j<iData->dim.nv; ++j)
-          gradF[id++] = iData->scaling.scald*iData->gradF[j];
+          gradF[id++] = iData->scaling.scald*iData->df.gradF[0][j];
       }
     }
 
@@ -178,13 +174,13 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
     refreshSimData(x, x +iData->dim.nx, iData->dtime.tf, iData);
     iData->cv = x;
     /*iData->data->callback->functionAlgebraics(iData->data);*/
-    diff_symColoredObject(iData, iData->gradF, iData->mayer_index);
+    diff_symColoredObject(iData, iData->df.gradF[0], iData->mayer_index);
     for(j=0; j<iData->dim.nv; ++j)
     {
       if(iData->sopt.lagrange){
-        gradF[iData->endN + j] += iData->gradF[j];
+        gradF[iData->endN + j] += iData->df.gradF[0][j];
       } else {
-        gradF[iData->endN + j] = iData->gradF[j];
+        gradF[iData->endN + j] = iData->df.gradF[0][j];
       }
     }
   }
@@ -196,7 +192,7 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
  *  function calculates a symbolic/num colored gradient "matrix"
  *  author: vitalij
  */
-int diff_symColoredObject(IPOPT_DATA_ *iData, double *dF, int this_it)
+int diff_symColoredObject(IPOPT_DATA_ *iData, long double *dF, int this_it)
 {
   if(iData->sopt.useNumJac==0)
     sym_diff_symColoredObject(iData,dF,this_it);
@@ -208,7 +204,7 @@ int diff_symColoredObject(IPOPT_DATA_ *iData, double *dF, int this_it)
  *  function calculates a symbolic colored gradient "matrix"
  *  author: vitalij
  */
-int sym_diff_symColoredObject(IPOPT_DATA_ *iData, double *dF, int this_it)
+int sym_diff_symColoredObject(IPOPT_DATA_ *iData, long double *dF, int this_it)
 {
     DATA * data = iData->data;
     const int index = 3;
@@ -242,7 +238,7 @@ int sym_diff_symColoredObject(IPOPT_DATA_ *iData, double *dF, int this_it)
           for(; j<lindex[ii]; ++j)
           {
             l = data->simulationInfo.analyticJacobians[index].sparsePattern.index[j];
-            iData->gradFomc[l][ii] = data->simulationInfo.analyticJacobians[index].resultVars[l];
+            iData->df.gradFomc[l][ii] = data->simulationInfo.analyticJacobians[index].resultVars[l];
           }
         }
       }
@@ -255,7 +251,7 @@ int sym_diff_symColoredObject(IPOPT_DATA_ *iData, double *dF, int this_it)
         }
       }
   }
-  memcpy(dF, iData->gradFomc[this_it], sizeof(double)*iData->dim.nv);
+  memcpy(dF, iData->df.gradFomc[this_it], sizeof(long double)*iData->dim.nv);
   return 0;
 }
 

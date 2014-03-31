@@ -70,6 +70,7 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   OPTIMIZER_MBASE *mbase = &iData->mbase;
   OPTIMIZER_STUCTURE *sopt = &iData->sopt;
   OPTIMIZER_BOUNDS *bounds = &iData->bounds;
+  OPTIMIZER_DF *df = &iData->df;
 
   ng = dim->NRes+dim->nc*dim->deg*dim->nsi;
   deg1 = dim->deg + 1;
@@ -103,48 +104,47 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   iData->dtime.time = (long double*)malloc((dim->deg*dim->nsi +1) *sizeof(long double));
   iData->start_u = (double*)malloc(dim->nv*sizeof(double));
 
-  iData->J = (double**) malloc(dim->nJ * sizeof(double*));
+  df->J = (long double**) malloc(dim->nJ * sizeof(long double*));
   for(i = 0; i < dim->nJ; i++)
-    iData->J[i] = (double*) calloc(dim->nv, sizeof(double));
+    df->J[i] = (long double*) calloc(dim->nv, sizeof(long double));
 
-  iData->gradF = (double*) calloc(dim->nv, sizeof(double));
-  iData->gradF_ = (double*) calloc(dim->nv, sizeof(double));
-  iData->gradF0 = (double*) calloc(dim->nv, sizeof(double));
-  iData->gradF00 = (double*) calloc(dim->nv, sizeof(double));
+  for(i = 0; i< 4 ; ++i)
+    df->gradF[i] = (long double*) calloc(dim->nv, sizeof(long double));
 
   iData->sv = (double*)malloc(dim->nv*sizeof(double));
   iData->sh = (double*)malloc(dim->nJ*sizeof(double));
 
-  iData->J0 = (double**) malloc(dim->nJ * sizeof(double*));
+  df->J0 = (long double**) malloc(dim->nJ * sizeof(long double*));
   for(i = 0; i < dim->nJ; i++)
-    iData->J0[i] = (double*) calloc(dim->nv, sizeof(double));
+    df->J0[i] = (long double*) calloc(dim->nv, sizeof(long double));
 
   iData->scaling.scaldt = (long double**) malloc(dim->nx * sizeof(long double*));
   for(i = 0; i < dim->nx; i++)
     iData->scaling.scaldt[i] = (long double*) calloc(dim->nsi, sizeof(long double));
 
-  iData->gradFomc = (double**) malloc((2) * sizeof(double*));
+  df->gradFomc = (long double**) malloc((2) * sizeof(long double*));
   for(i = 0; i < 2; i++)
-    iData->gradFomc[i] = (double*) calloc(dim->nv, sizeof(double));
+    df->gradFomc[i] = (long double*) calloc(dim->nv, sizeof(long double));
 
   sopt->gradFs = (modelica_boolean**) malloc((2) * sizeof(modelica_boolean*));
   for(i = 0; i < 2; i++)
     sopt->gradFs[i] = (modelica_boolean*) calloc(dim->nv, sizeof(modelica_boolean));
 
-  iData->H = (long double***) malloc(dim->nJ * sizeof(long double**));
+  df->H = (long double***) malloc(dim->nJ * sizeof(long double**));
   for(i = 0; i < dim->nJ; i++)
   {
-    iData->H[i] = (long double**) malloc(dim->nv* sizeof(long double*));
+    df->H[i] = (long double**) malloc(dim->nv* sizeof(long double*));
     for(j = 0; j < dim->nv; j++)
-      iData->H[i][j] = (long double*) malloc(dim->nv* sizeof(long double));
+      df->H[i][j] = (long double*) malloc(dim->nv* sizeof(long double));
   }
-  iData->oH = (long double**) malloc(dim->nv * sizeof(long double*));
-  for(i = 0; i < dim->nv; i++)
-    iData->oH[i] = (long double*) calloc(dim->nv, sizeof(long double));
 
-  iData->mH = (long double**) malloc(dim->nv * sizeof(long double*));
+  df->oH = (long double**) malloc(dim->nv * sizeof(long double*));
   for(i = 0; i < dim->nv; i++)
-    iData->mH[i] = (long double*) calloc(dim->nv, sizeof(long double));
+    df->oH[i] = (long double*) calloc(dim->nv, sizeof(long double));
+
+  df->mH = (long double**) malloc(dim->nv * sizeof(long double*));
+  for(i = 0; i < dim->nv; i++)
+    df->mH[i] = (long double*) calloc(dim->nv, sizeof(long double));
 
   dim->nlocalJac = 0;
 
@@ -179,28 +179,30 @@ static int freeIpoptData(IPOPT_DATA_ *iData)
   OPTIMIZER_TIME *dtime = &iData->dtime;
   OPTIMIZER_STUCTURE *sopt = &iData->sopt;
   OPTIMIZER_BOUNDS *bounds = &iData->bounds;
-
+  OPTIMIZER_DF *df = &iData->df;
   for(i = 0; i < dim->nJ; i++){
-    free(iData->J[i]);
-    free(iData->J0[i]);
+    free(df->J[i]);
+    free(df->J0[i]);
     free(sopt->knowedJ[i]);
   }
-  free(iData->J0);
-  free(iData->J);
+  free(df->J0);
+  free(df->J);
   free(sopt->knowedJ);
 
   for(i=0;i<2;++i){
-    free(iData->gradFomc[i]);
+    free(df->gradFomc[i]);
     free(sopt->gradFs[i]);
   }
+  free(df->gradFomc);
+  free(sopt->gradFs);
 
   for(i = 0; i < dim->nv; i++){
-    free(iData->oH[i]);
-    free(iData->mH[i]);
+    free(df->oH[i]);
+    free(df->mH[i]);
     free(sopt->Hg[i]);
   }
-  free(iData->oH);
-  free(iData->mH);
+  free(df->oH);
+  free(df->mH);
   free(sopt->Hg);
 
   for(i = 0; i < dim->nx; i++)
@@ -210,16 +212,15 @@ static int freeIpoptData(IPOPT_DATA_ *iData)
   for(i = 0; i < dim->nJ; i++){
 
     for(j = 0;j<dim->nv; ++j)
-      free(iData->H[i][j]);
+      free(df->H[i][j]);
 
-    free(iData->H[i]);
+    free(df->H[i]);
   }
-  free(iData->H);
+  free(df->H);
 
-  free(iData->gradF);
-  free(iData->gradF_);
-  free(iData->gradF0);
-  free(iData->gradF00);
+  for(i = 0; i< 4 ; ++i)
+    free(df->gradF[i]);
+
   free(bounds->gmin);
   free(bounds->gmax);
   free(iData->mult_g);

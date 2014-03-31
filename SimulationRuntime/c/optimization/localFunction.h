@@ -68,8 +68,8 @@ Bool ipopt_h(int n, double *x, Bool new_x, double obj_factor, int m, double *lam
 
 
 /*sym JAC*/
-int diff_functionODE(double *v, double t, IPOPT_DATA_ *iData, double **J);
-int diff_symColoredObject(IPOPT_DATA_ *iData, double *gradF, int this_it);
+int diff_functionODE(double *v, double t, IPOPT_DATA_ *iData, long double **J);
+int diff_symColoredObject(IPOPT_DATA_ *iData, long double *gradF, int this_it);
 
 /*model*/
 int functionODE_(double * x, double *u, double t, double * dotx, IPOPT_DATA_ *iData);
