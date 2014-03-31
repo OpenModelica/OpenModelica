@@ -76,7 +76,7 @@ Bool evalfF(Index n, double * v, Bool new_x, Number *objValue, void * useData)
       for(j=0; j<iData->dim.deg+1; ++j, x+=iData->dim.nv, ++k)
       {
         goal_func_lagrange(x, &tmp,iData->time[k], iData);
-        erg += mbase->bl[j]*tmp;
+        erg += mbase->b[0][j]*tmp;
       }
       erg_+= erg*iData->dt[i];
     }
@@ -87,7 +87,7 @@ Bool evalfF(Index n, double * v, Bool new_x, Number *objValue, void * useData)
       for(j=0; j<iData->dim.deg; ++j, x+=iData->dim.nv, ++k)
       {
         goal_func_lagrange(x, &tmp, iData->time[k], iData);
-        erg += mbase->br[j]*tmp;
+        erg += mbase->b[1][j]*tmp;
       }
 
       erg_ += erg*iData->dt[i];
@@ -143,32 +143,30 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
     x = v;
     id = 0;
     
-    for(i=0; i<iData->dim.nsi; ++i){
-      if(i){
-        for(k=0; k<iData->dim.deg; ++k, x+=iData->dim.nv){
-          refreshSimData(x,x+ iData->dim.nx,iData->time[i*iData->dim.deg+k+1],iData);
-          iData->cv = x;
-          /*iData->data->callback->functionAlgebraics(iData->data);*/
-          diff_symColoredObject(iData, iData->gradF, iData->lagrange_index);
-          for(j = 0; j<iData->dim.nv; ++j){
-            gradF[id++] =  iData->dt[i]*mbase->br[k]*iData->gradF[j]*iData->vnom[j];
-            /* printf("\n gradF(%i) = %g, %s, %g", id-1, gradF[id-1], iData->data->modelData.realVarsData[j].info.name, x[j]*iData->vnom[j]); */
-          }
-        }
-      }else{
-        for(k=0; k<iData->dim.deg+1; ++k, x+=iData->dim.nv){
-          refreshSimData(x,x+ iData->dim.nx,iData->time[i*iData->dim.deg+k],iData);
-          iData->cv = x;
-          /*iData->data->callback->functionAlgebraics(iData->data);*/
-          diff_symColoredObject(iData, iData->gradF,iData->lagrange_index);
-          for(j=0; j<iData->dim.nv; ++j){
-            gradF[id++] = iData->dt[i]*mbase->bl[k]*iData->gradF[j]*iData->vnom[j];
-            /* printf("\n gradF(%i) = %g, %s, %g", id-1, gradF[id-1], iData->data->modelData.realVarsData[j].info.name, x[j]*iData->vnom[j]); */
-          }
-        }
+    for(i=0; i<1; ++i){
+      for(k=0; k<iData->dim.deg+1; ++k, x+=iData->dim.nv){
+        refreshSimData(x,x+ iData->dim.nx,iData->time[i*iData->dim.deg+k],iData);
+        iData->cv = x;
+        /*iData->data->callback->functionAlgebraics(iData->data);*/
+        diff_symColoredObject(iData, iData->gradF,iData->lagrange_index);
+        for(j=0; j<iData->dim.nv; ++j)
+          gradF[id++] = iData->dt[i]*mbase->b[0][k]*iData->gradF[j]*iData->vnom[j];
       }
     }
+
+    for(; i<iData->dim.nsi; ++i){
+      for(k=0; k<iData->dim.deg; ++k, x+=iData->dim.nv){
+        refreshSimData(x,x+ iData->dim.nx,iData->time[i*iData->dim.deg+k+1],iData);
+        iData->cv = x;
+        /*iData->data->callback->functionAlgebraics(iData->data);*/
+        diff_symColoredObject(iData, iData->gradF, iData->lagrange_index);
+        for(j = 0; j<iData->dim.nv; ++j)
+          gradF[id++] =  iData->dt[i]*mbase->b[1][k]*iData->gradF[j]*iData->vnom[j];
+      }
+    }
+
   } else {
+    /*ToDo */
     for(i=0; i<iData->endN; ++i)
       gradF[i] = 0.0;
   }

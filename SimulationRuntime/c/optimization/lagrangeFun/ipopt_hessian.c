@@ -40,7 +40,7 @@
 #include "../localFunction.h"
 
 #ifdef WITH_IPOPT
-#define DF_STEP(x,s) ( (fmin(fmax(1e-4*fabs(s*x),1e-8),1e-3)))
+#define DF_STEP(x,s) ( (fmin(fmax(1e-4*fabs(s*x),1e-8),1e0)))
 
 static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, short lagrange_yes, short mayer_yes, double obj_factor);
 static int updateCost(double *v, double t, IPOPT_DATA_ *iData, short lagrange_yes, short mayer_yes,double *F1, double *F2);
@@ -213,9 +213,9 @@ static int sumLagrange(IPOPT_DATA_ *iData, double * erg,int ii, int i, int j, in
 
   if(iData->lagrange && iData->gradFomc[iData->lagrange_index][i]* iData->gradFomc[iData->lagrange_index][j]){
     if(ii)
-      sum += mbase->br[p-1]*iData->oH[i][j];
+      sum += mbase->b[1][p-1]*iData->oH[i][j];
     else
-      sum += mbase->bl[p]*iData->oH[i][j];
+      sum += mbase->b[0][p]*iData->oH[i][j];
   }
 
   sum = iData->dt[ii]*sum;

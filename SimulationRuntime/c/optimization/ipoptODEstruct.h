@@ -81,8 +81,7 @@ typedef struct OPTIMIZER_DIM_VARS{
 
 typedef struct OPTIMIZER_MBASE{
 
-  long double bl[10];
-  long double br[10];
+  long double b[3][10];
 
   long double c1;
   long double c2;
