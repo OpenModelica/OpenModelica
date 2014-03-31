@@ -2776,12 +2776,11 @@ algorithm
       String iter;
       Option<Absyn.Exp> range;
 
-    case (ALG_IF(e, stmts1, branches, stmts2, comment, info), (traverser, arg))
+    case (ALG_IF(e, stmts1, branches, stmts2, comment, info), tup)
       equation
-        (stmts1, tup) = traverseStatementsList(stmts1, (traverser, arg));
-        (branches, tup) = List.mapFold(branches,
-          traverseBranchStatements, tup);
-        (stmts2, tup) = traverseStatementsList(stmts2, (traverser, arg));
+        (stmts1, tup) = traverseStatementsList(stmts1, tup);
+        (branches, tup) = List.mapFold(branches, traverseBranchStatements, tup);
+        (stmts2, tup) = traverseStatementsList(stmts2, tup);
       then
         (ALG_IF(e, stmts1, branches, stmts2, comment, info), tup);
 
@@ -2797,16 +2796,15 @@ algorithm
       then
         (ALG_PARFOR(iter, range, stmts1, comment, info), tup);
 
-    case (ALG_WHILE(e, stmts1, comment, info), (traverser, arg))
+    case (ALG_WHILE(e, stmts1, comment, info), tup)
       equation
-        (stmts1, tup) = traverseStatementsList(stmts1, (traverser, arg));
+        (stmts1, tup) = traverseStatementsList(stmts1, tup);
       then
         (ALG_WHILE(e, stmts1, comment, info), tup);
 
     case (ALG_WHEN_A(branches, comment, info), tup)
       equation
-        (branches, tup) = List.mapFold(branches,
-          traverseBranchStatements, tup);
+        (branches, tup) = List.mapFold(branches, traverseBranchStatements, tup);
       then
         (ALG_WHEN_A(branches, comment, info), tup);
 
