@@ -1184,7 +1184,7 @@ RML_BEGIN_LABEL(System__getPackageFileNames)
     char* fileName = RML_STRINGDATA(rmlA1);
     struct dirent *dp;
     int mallocSize = PATH_MAX,current=0;
-    char * retString = (char*)malloc(mallocSize*sizeof(char*));
+    char * retString = (char*)malloc(mallocSize*sizeof(char));
     // enter existing path to directory below
     DIR *dir = opendir(dir_path);
     while ((dp=readdir(dir)) != NULL) {

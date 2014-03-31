@@ -228,13 +228,12 @@ static int str_contain_char(const char* chars, const char chr)
 static int filterString(char* buf,char* bufRes)
 {
   int i,bufPointer = 0,slen,isNumeric=0,numericEncounter=0;
-  char preChar,cc;
+  char preChar;
   char filterChars[] = "0123456789.\0";
   char numeric[] = "0123456789\0";
   slen = strlen(buf);
   preChar = '\0';
   for(i=0;i<slen;++i) {
-    cc = buf[i];
     if((str_contain_char(filterChars,buf[i]))) {
       if(buf[i]=='.') {
         if(str_contain_char(numeric,preChar) || (( i < slen+1) && str_contain_char(numeric,buf[i+1])) ) {
@@ -1384,8 +1383,7 @@ static void free_library(modelica_ptr_t lib, modelica_integer printDebug)
 static void free_function(modelica_ptr_t func)
 {
   /* noop */
-  modelica_ptr_t lib = NULL;
-  lib = lookup_ptr(func->data.func.lib);
+  lookup_ptr(func->data.func.lib);
   /* fprintf(stderr, "FUNCTION FREE LIB index[%d]/count[%d]/handle[%ul].\n", (lib-ptr_vector),((modelica_ptr_t)(lib-ptr_vector))->cnt, lib->data.lib); fflush(stderr); */
 }
 
@@ -2676,7 +2674,7 @@ int SystemImpl__alarm(int seconds)
 int SystemImpl__covertTextFileToCLiteral(const char *textFile, const char *outFile)
 {
   FILE *fin;
-  FILE *fout;
+  FILE *fout = NULL;
   int result = 0, n, i, j;
   char buffer[512];
   char obuffer[1024];

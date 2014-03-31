@@ -672,8 +672,7 @@ extern void System_getLoadModelPath(const char *className, void *prios, void *mp
 {
   *name = NULL;
   if (SystemImpl__getLoadModelPath(className,prios,mps,dir,name,isDir)) MMC_THROW();
-  char *res = strcpy(ModelicaAllocateString(strlen(*name)),*name);
-  *name = res;
+  assert(name != NULL);
 }
 
 extern const char* System_getMakeCommand()
@@ -765,7 +764,9 @@ extern void* System_launchParallelTasks(threadData_t *threadData, int numThreads
   void *result = mmc_mk_nil();
   pthread_t th[numThreads];
   thread_data data;
-  if (numThreads == 1 || len == 1) {
+  if (len == 0) {
+    return mmc_mk_nil();
+  } else if (numThreads == 1 || len == 1) {
     return System_launchParallelTasksSerial(threadData,dataLst,fn);
   }
   pthread_mutex_init(&data.mutex,NULL);
@@ -777,6 +778,7 @@ extern void* System_launchParallelTasks(threadData_t *threadData, int numThreads
   data.fail = 0;
   for (i=0; i<len; i++, dataLst = MMC_CDR(dataLst)) {
     commands[i] = MMC_CAR(dataLst);
+    status[i] = 0; /* just in case */
   }
   numThreads = min(numThreads,len);
   for (i=0; i<numThreads; i++) {
