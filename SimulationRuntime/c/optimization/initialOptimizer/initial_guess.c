@@ -244,7 +244,7 @@ static int pre_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
 
 static int optimizer_time_setings_update(IPOPT_DATA_ *iData)
 {
-  int i,k,id;
+  int i,k,id,j;
   double t;
   OPTIMIZER_MBASE *mbase = &iData->mbase;
 
@@ -253,24 +253,24 @@ static int optimizer_time_setings_update(IPOPT_DATA_ *iData)
   iData->time[0] = iData->t0;
   iData->dt_default = (iData->tf - iData->t0)/(iData->dim.nsi);
 
-  t = iData->dim.nsi*iData->dt_default;
+  t = iData->t0;
 
-  for(i=0;i<iData->dim.nsi; ++i)
+  for(i=0;i<iData->dim.nsi; ++i){
     iData->dt[i] = iData->dt_default;
+    t += iData->dt[i];
+  }
 
   iData->dt[iData->dim.nsi-1] = iData->dt_default + (iData->tf - t);
 
-  for(i = 0, k=0, id=0; i<1; ++i,id += iData->dim.deg){
-      iData->time[++k] = iData->time[id] + mbase->e1*iData->dt[i];
-      iData->time[++k] = iData->time[id] + mbase->e2*iData->dt[i];
-      iData->time[++k] = iData->time[0]+ (i+1)*iData->dt[i];
-  }
+  for(i = 0, k=0, id=0; i<1; ++i,id += iData->dim.deg)
+      for(j =0; j<iData->dim.deg; ++j)
+        iData->time[++k] = iData->time[id] + mbase->c[0][j]*iData->dt[i];
 
-  for(; i<iData->dim.nsi; ++i,id += iData->dim.deg){
-      iData->time[++k] = iData->time[id] + mbase->c1*iData->dt[i];
-      iData->time[++k] = iData->time[id] + mbase->c2*iData->dt[i];
-      iData->time[++k] = iData->time[0]+ (i+1)*iData->dt[i];
-  }
+
+  for(; i<iData->dim.nsi; ++i,id += iData->dim.deg)
+    for(j =0; j<iData->dim.deg; ++j)
+      iData->time[++k] = iData->time[id] + mbase->c[1][j]*iData->dt[i];
+
 
   iData->time[k] = iData->tf;
   return 0;

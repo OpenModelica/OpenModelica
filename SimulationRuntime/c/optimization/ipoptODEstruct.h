@@ -83,9 +83,7 @@ typedef struct OPTIMIZER_MBASE{
 
   long double b[3][10];
 
-  long double c1;
-  long double c2;
-  long double c3;
+  long double c[3][5];
 
   long double *a1;
   long double *a2;
@@ -96,9 +94,7 @@ typedef struct OPTIMIZER_MBASE{
   long double *d3;
   long double invd1_4;
 
-  long double e1;
-  long double e2;
-  long double e3;
+
 
 }OPTIMIZER_MBASE;
 

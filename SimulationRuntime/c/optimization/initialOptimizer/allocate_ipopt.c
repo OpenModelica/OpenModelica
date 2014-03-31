@@ -132,10 +132,11 @@ int move_grid(IPOPT_DATA_ *iData)
   iData->dt_default = (iData->tf - iData->t0)/(dim->nsi);
   assert(dim->nsi>0);
 
-  t = dim->nsi*iData->dt_default;
+  t = iData->t0;
 
   for(i=0;i<dim->nsi; ++i){
     iData->dt[i] = iData->dt_default;
+    t += iData->dt[i];
   }
   assert(dim->nsi>0);
   iData->dt[dim->nsi-1] = iData->dt_default + (iData->tf - t);
@@ -389,13 +390,14 @@ static int check_nominal(IPOPT_DATA_ *iData, double min, double max, double nomi
 static int optimizer_coeff_setings(IPOPT_DATA_ *iData)
 {
   OPTIMIZER_MBASE *mbase = &iData->mbase;
-  mbase->c1 = 0.15505102572168219018027159252941086080340525193433;
-  mbase->c2 = 0.64494897427831780981972840747058913919659474806567;
-  mbase->c3 = 1.0;
 
-  mbase->e1 = 0.27639320225002103035908263312687237645593816403885;
-  mbase->e2 = 0.72360679774997896964091736687312762354406183596115;
-  mbase->e3 = 1.0;
+  mbase->c[0][0] = 0.27639320225002103035908263312687237645593816403885;
+  mbase->c[0][1] = 0.72360679774997896964091736687312762354406183596115;
+  mbase->c[0][2] = 1.0;
+
+  mbase->c[1][0] = 0.15505102572168219018027159252941086080340525193433;
+  mbase->c[1][1] = 0.64494897427831780981972840747058913919659474806567;
+  mbase->c[1][2] = 1.0;
 
   mbase->a1[0] = 4.1393876913398137178367408896470696703591369767880;
   mbase->a1[1] = 3.2247448713915890490986420373529456959829737403284;
@@ -544,19 +546,20 @@ static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData)
  **/
 static int optimizer_time_setings(IPOPT_DATA_ *iData)
 {
-  int i,k,id;
+  int i,k,id,j;
   OPTIMIZER_MBASE *mbase = &iData->mbase;
   iData->time[0] = iData->t0;
-  for(i = 0,k=0,id=0; i<1; ++i,id += iData->dim.deg){
-    iData->time[++k] = iData->time[id] + mbase->e1*iData->dt[i];
-    iData->time[++k] = iData->time[id] + mbase->e2*iData->dt[i];
-    iData->time[++k] = iData->t0 + (i+1)*iData->dt[i];
-  }
-  for(; i<iData->dim.nsi; ++i,id += iData->dim.deg){
-    iData->time[++k] = iData->time[id] + mbase->c1*iData->dt[i];
-    iData->time[++k] = iData->time[id] + mbase->c2*iData->dt[i];
-    iData->time[++k] = iData->t0 + (i+1)*iData->dt[i];
-  }
+
+  for(i = 0,k=0,id=0; i<1; ++i,id += iData->dim.deg)
+    for(j = 0; j < iData->dim.deg; ++j)
+      iData->time[++k] = iData->time[id] + mbase->c[0][j]*iData->dt[i];
+
+
+  for(; i<iData->dim.nsi; ++i,id += iData->dim.deg)
+      for(j = 0; j < iData->dim.deg; ++j)
+        iData->time[++k] = iData->time[id] + mbase->c[1][j]*iData->dt[i];
+
+
   iData->time[k] = iData->tf;
   return 0;
 }
