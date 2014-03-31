@@ -1597,23 +1597,6 @@ algorithm
       then
         (cache,Values.BOOL(b),st);
 
-    case (cache,env,"importFMUOld",{Values.STRING(filename),Values.STRING(workdir)},st,_)
-      equation
-        // get OPENMODELICAHOME
-        omhome = Settings.getInstallationDirectoryPath();
-        // create the path till fmigenerator
-        str = omhome +& "/bin/fmigenerator";
-        workdir = Util.if_(System.directoryExists(workdir), workdir, System.pwd());
-        // create the list of arguments for fmigenerator
-        call = str +& " " +& "--fmufile=\"" +& filename +& "\" --outputdir=\"" +& workdir +& "\"";
-        0 = System.systemCall(call,"");
-      then
-        (cache,Values.BOOL(true),st);
-
-    case (cache,env,"importFMUOld",_,st,_)
-      then
-        (cache,Values.BOOL(false),st);
-
     case (cache,env,"importFMU",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel),Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(inputConnectors), Values.BOOL(outputConnectors)},st,_)
       equation
         Error.clearMessages() "Clear messages";

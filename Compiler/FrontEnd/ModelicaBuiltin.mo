@@ -2096,16 +2096,6 @@ external "builtin";
 annotation(preferredView="text");
 end reopenStandardStream;
 
-function importFMUOld "Imports the Functional Mockup Unit
-  Example command:
-  importFMUOld(\"A.fmu\");"
-  input String filename "the fmu file name";
-  input String workdir := "<default>" "The output directory for imported FMU files. <default> will put the files to current working directory.";
-  output Boolean success "Returns true on success";
-external "builtin";
-annotation(preferredView="text");
-end importFMUOld;
-
 /* Under Development */
 function importFMU "Imports the Functional Mockup Unit
   Example command:
@@ -2401,8 +2391,8 @@ end visualize;
 function plotParametric "Launches a plotParametric window using OMPlot. Returns true on success.
 
   Example command sequences:
-  simulate(A);plotParametric2(x,y);
-  simulate(A);plotParametric2(x,y, externalWindow=true);
+  simulate(A);plotParametric(x,y);
+  simulate(A);plotParametric(x,y, externalWindow=true);
   "
   input VariableName xVariable;
   input VariableName yVariable;
