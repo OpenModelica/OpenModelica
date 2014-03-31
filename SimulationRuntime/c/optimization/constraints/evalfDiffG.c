@@ -181,7 +181,7 @@ static  int radauJac1(long double *a, double *J, double dt, double * values, int
   values[(*k)++] = a[0];
   /*1*/
   for(l=0; l<nv; ++l){
-    if(iData->knowedJ[j][l]){
+    if(iData->sopt.knowedJ[j][l]){
       values[(*k)++] = (j == l) ? dt*J[l]-a[1] : dt*J[l];
     }
   }
@@ -205,13 +205,13 @@ static  int lobattoJac1(long double *a, double *J, double *J0, double dt, double
   for(l = 0; l< nv; ++l){
     if(j == l) {
       values[(*k)++] = tmp*J0[l] + a[0];
-    } else if(iData->knowedJ[j][l] == 1) {
+    } else if(iData->sopt.knowedJ[j][l]) {
       values[(*k)++] = tmp*J0[l];
     }
   }
   /*1*/
   for(l = 0; l< nv; ++l){
-    if(iData->knowedJ[j][l]){
+    if(iData->sopt.knowedJ[j][l]){
       values[(*k)++] = ((j == l)? dt*J[l] - a[1] : dt*J[l]);
     }
   }
@@ -239,7 +239,7 @@ static  int radauJac2(long double *a, double *J, double dt, double * values, int
 
   /*2*/
   for(l = 0; l< nv; ++l){
-    if(iData->knowedJ[j][l]){
+    if(iData->sopt.knowedJ[j][l]){
       values[(*k)++] = ((j == l)? dt*J[l] - a[2] : dt*J[l]);
     }
   }
@@ -260,7 +260,7 @@ static  int lobattoJac2(long double *a, double *J, double *J0, double dt, double
   for(l = 0; l< nv; ++l){
     if( j==l){
       values[(*k)++] = -(tmp*J0[l] + a[0]);
-    } else if(iData->knowedJ[j][l]) {
+    } else if(iData->sopt.knowedJ[j][l]) {
       values[(*k)++] = -tmp*J0[l];
     }
   }
@@ -269,7 +269,7 @@ static  int lobattoJac2(long double *a, double *J, double *J0, double dt, double
 
   /*2*/
   for(l = 0; l< nv; ++l){
-    if(iData->knowedJ[j][l]){
+    if(iData->sopt.knowedJ[j][l]){
       values[(*k)++] = ((j == l)? dt*J[l]-a[2] : dt*J[l]);
     }
   }
@@ -293,7 +293,7 @@ static  int radauJac3(long double *a, double *J, double dt, double * values, int
   values[(*k)++] = a[2];
   /*3*/
   for(l = 0; l< nv; ++l){
-    if(iData->knowedJ[j][l]){
+    if(iData->sopt.knowedJ[j][l]){
       values[(*k)++] = ((j == l)? dt*J[l] - a[3] : dt*J[l]);
     }
   }
@@ -311,7 +311,7 @@ static  int lobattoJac3(long double *a, double *J, double *J0, double dt, double
   for(l=0; l<nv; ++l){
     if(j==l){
       values[(*k)++] = tmp*J0[l] + a[0];
-    }else if(iData->knowedJ[j][l]) {
+    }else if(iData->sopt.knowedJ[j][l]) {
       values[(*k)++] = tmp*J0[l];
     }
   }
@@ -321,7 +321,7 @@ static  int lobattoJac3(long double *a, double *J, double *J0, double dt, double
   values[(*k)++] = a[2];
   /*3*/
   for(l=0; l<nv; ++l){
-    if(iData->knowedJ[j][l]){
+    if(iData->sopt.knowedJ[j][l]){
       values[(*k)++] = ((j == l)? dt*J[l] - a[3] : dt*J[l]);
     }
   }
@@ -332,7 +332,7 @@ static int conJac(double *J, double *values, int nv, int *k, int j,IPOPT_DATA_ *
 {
   int l;
   for(l=0; l<nv; ++l)
-    if(iData->knowedJ[j][l])
+    if(iData->sopt.knowedJ[j][l])
       values[(*k)++] = J[l];
 
   return 0;
@@ -361,14 +361,14 @@ static int jac_struc(IPOPT_DATA_ *iData, int *iRow, int *iCol)
       /* 0 */
       ir = r + j;
       for(l=0; l < nv; ++l){
-        if(iData->knowedJ[j][l]){
+        if(iData->sopt.knowedJ[j][l]){
           iRow[k] = ir;
           iCol[k++] = l;
         }
       }
       /* 1 */
       for(l = 0; l <nv; ++l){
-        if(iData->knowedJ[j][l]){
+        if(iData->sopt.knowedJ[j][l]){
           iRow[k] = ir;
           iCol[k++] = c + l;
         }
@@ -387,7 +387,7 @@ static int jac_struc(IPOPT_DATA_ *iData, int *iRow, int *iCol)
     for(;j<nJ; ++j){
       /*1*/
       for(l=0; l<nv; ++l){
-        if(iData->knowedJ[j][l]){
+        if(iData->sopt.knowedJ[j][l]){
           iRow[k] = r + j;
           iCol[k++] = c + l;
         }
@@ -402,7 +402,7 @@ static int jac_struc(IPOPT_DATA_ *iData, int *iRow, int *iCol)
       ir = r + j;
       /*0*/
       for(l=0; l<nv; ++l){
-        if(iData->knowedJ[j][l]){
+        if(iData->sopt.knowedJ[j][l]){
           iRow[k] = ir;
           iCol[k++] = l;
         }
@@ -415,7 +415,7 @@ static int jac_struc(IPOPT_DATA_ *iData, int *iRow, int *iCol)
 
       /*2*/
       for(l=0; l<nv; ++l){
-        if(iData->knowedJ[j][l]){
+        if(iData->sopt.knowedJ[j][l]){
           iRow[k] = ir;
           iCol[k++] = c + l;
         }
@@ -429,7 +429,7 @@ static int jac_struc(IPOPT_DATA_ *iData, int *iRow, int *iCol)
     for(;j<nJ; ++j){
     /*2*/
       for(l=0; l<nv; ++l){
-        if(iData->knowedJ[j][l]){
+        if(iData->sopt.knowedJ[j][l]){
           iRow[k] = r + j;
           iCol[k++] = c + l;
         }
@@ -444,7 +444,7 @@ static int jac_struc(IPOPT_DATA_ *iData, int *iRow, int *iCol)
       ir = r + j;
       /*0*/
       for(l=0; l<nv; ++l){
-        if(iData->knowedJ[j][l]){
+        if(iData->sopt.knowedJ[j][l]){
           iRow[k] = ir;
           iCol[k++] = l;
         }
@@ -461,7 +461,7 @@ static int jac_struc(IPOPT_DATA_ *iData, int *iRow, int *iCol)
 
       /*3*/
       for(l=0; l<nv; ++l){
-        if(iData->knowedJ[j][l]){
+        if(iData->sopt.knowedJ[j][l]){
           iRow[k] = ir;
           iCol[k++] = c + l;
         }
@@ -471,7 +471,7 @@ static int jac_struc(IPOPT_DATA_ *iData, int *iRow, int *iCol)
     for(;j<nJ; ++j){
         /*3*/
         for(l=0; l<nv; ++l){
-          if(iData->knowedJ[j][l]){
+          if(iData->sopt.knowedJ[j][l]){
             iRow[k] = r + j;
             iCol[k++] = c + l;
           }
@@ -494,7 +494,7 @@ static int jac_struc(IPOPT_DATA_ *iData, int *iRow, int *iCol)
 
       /*1*/
       for(l=0; l<nv; ++l){
-        if(iData->knowedJ[j][l]){
+        if(iData->sopt.knowedJ[j][l]){
           iRow[k] = r + j;
           iCol[k++] = c + l;
         }
@@ -511,7 +511,7 @@ static int jac_struc(IPOPT_DATA_ *iData, int *iRow, int *iCol)
     for(;j<nJ; ++j){
         /*1*/
         for(l=0; l<nv; ++l){
-          if(iData->knowedJ[j][l]){
+          if(iData->sopt.knowedJ[j][l]){
             iRow[k] = r + j;
             iCol[k++] = c + l;
           }
@@ -533,7 +533,7 @@ static int jac_struc(IPOPT_DATA_ *iData, int *iRow, int *iCol)
 
       /*2*/
       for(l=0; l<nv; ++l){
-        if(iData->knowedJ[j][l]){
+        if(iData->sopt.knowedJ[j][l]){
           iRow[k] = iRow[k-1];
           iCol[k++] = c + l;
         }
@@ -546,7 +546,7 @@ static int jac_struc(IPOPT_DATA_ *iData, int *iRow, int *iCol)
     for(;j<nJ; ++j){
         /*2*/
         for(l=0; l<nv; ++l){
-          if(iData->knowedJ[j][l]){
+          if(iData->sopt.knowedJ[j][l]){
             iRow[k] = r + j;
             iCol[k++] = c + l;
           }
@@ -572,7 +572,7 @@ static int jac_struc(IPOPT_DATA_ *iData, int *iRow, int *iCol)
 
       /*3*/
       for(l=0; l<nv; ++l){
-        if(iData->knowedJ[j][l]){
+        if(iData->sopt.knowedJ[j][l]){
           iRow[k] = r + j;
           iCol[k++] = c + l;
         }
@@ -582,7 +582,7 @@ static int jac_struc(IPOPT_DATA_ *iData, int *iRow, int *iCol)
     for(;j<nJ; ++j){
         /*3*/
         for(l=0; l<nv; ++l){
-          if(iData->knowedJ[j][l]){
+          if(iData->sopt.knowedJ[j][l]){
             iRow[k] = r + j;
             iCol[k++] = c + l;
           }

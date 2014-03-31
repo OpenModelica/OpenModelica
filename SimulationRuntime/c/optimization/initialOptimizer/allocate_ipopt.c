@@ -151,21 +151,25 @@ int move_grid(IPOPT_DATA_ *iData)
  */
 static int local_jac_struct(IPOPT_DATA_ *iData, int * nng)
 {
-  DATA * data = iData->data;
   const int index = 2;
-  int **J;
-  short **Hg;
+
+  DATA * data = iData->data;
+  OPTIMIZER_DIM_VARS* dim = &iData->dim;
+
+  modelica_boolean **J;
+  modelica_boolean **Hg;
+  modelica_boolean ** dF;
+
   int i,j,l,ii,nx, id;
   int *cC,*lindex;
-  modelica_boolean ** dF;
-  OPTIMIZER_DIM_VARS* dim = &iData->dim;
   int nJ = dim->nJ;
+
   id = 0;
   dim->nH = 0;
 
-  J = iData->knowedJ;
-  Hg = iData->Hg;
-  dF = iData->gradFs;
+  J = iData->sopt.knowedJ;
+  Hg = iData->sopt.Hg;
+  dF = iData->sopt.gradFs;
 
   nx = data->simulationInfo.analyticJacobians[index].sizeCols;
   cC =  (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols;
@@ -283,7 +287,7 @@ static int local_diffObject_struct(IPOPT_DATA_ *iData)
 
           for(; j<lindex[ii]; ++j){
             l = data->simulationInfo.analyticJacobians[index].sparsePattern.index[j];
-            iData->gradFs[l][ii] = (modelica_boolean)1;
+            iData->sopt.gradFs[l][ii] = (modelica_boolean)1;
           }
         }
       }
@@ -300,15 +304,15 @@ static int local_diffObject_struct(IPOPT_DATA_ *iData)
 static void local_jac_struct_print(IPOPT_DATA_ *iData)
 {
   int ii,j;
-  int **J;
-  short **Hg;
+  modelica_boolean **J;
+  modelica_boolean **Hg;
   modelica_boolean ** dF;
   OPTIMIZER_DIM_VARS* dim = &iData->dim;
   int nJ = dim->nJ;
 
-  J = iData->knowedJ;
-  Hg = iData->Hg;
-  dF = iData->gradFs;
+  J = iData->sopt.knowedJ;
+  Hg = iData->sopt.Hg;
+  dF = iData->sopt.gradFs;
 
   printf("\nJacabian Structure %i x %i",nJ,dim->nv);
   printf("\n========================================================");
@@ -323,7 +327,7 @@ static void local_jac_struct_print(IPOPT_DATA_ *iData)
   printf("\n========================================================");
   printf("\nGradient Structure");
   printf("\n========================================================");
-  if(iData->lagrange){
+  if(iData->sopt.lagrange){
     printf("\n");
     for(j =0;j<dim->nv;++j)
       if(dF[iData->lagrange_index][j])
@@ -332,7 +336,7 @@ static void local_jac_struct_print(IPOPT_DATA_ *iData)
         printf("0 ");
   }
 
-  if(iData->mayer){
+  if(iData->sopt.mayer){
     printf("\n");
     for(j =0;j<dim->nv;++j)
       if(dF[iData->mayer_index][j])
@@ -460,6 +464,7 @@ static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData)
   char **tmpname = iData->input_name;
 
   double *start = iData->start_u;
+  double ttmp;
 
   for(i =0; i<dim->nx; ++i){
     check_nominal(iData, data->modelData.realVarsData[i].attribute.min, data->modelData.realVarsData[i].attribute.max, data->modelData.realVarsData[i].attribute.nominal, data->modelData.realVarsData[i].attribute.useNominal, i, fabs(iData->x0[i]));
@@ -469,8 +474,14 @@ static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData)
     iData->xmin[i] = data->modelData.realVarsData[i].attribute.min*iData->scalVar[i];
     iData->xmax[i] = data->modelData.realVarsData[i].attribute.max*iData->scalVar[i];
   }
-  iData->data->callback->pickUpBoundsForInputsInOptimization(data,iData->umin, iData->umax, &iData->vnom[dim->nx], tmp, tmpname, start, &iData->dtime.startTimeOpt);
-  iData->preSim = ((double)iData->dtime.t0 < ((double)iData->dtime.startTimeOpt));
+
+  iData->data->callback->pickUpBoundsForInputsInOptimization(data,
+      iData->umin, iData->umax, &iData->vnom[dim->nx], tmp, tmpname, start,
+      &ttmp);
+  iData->dtime.startTimeOpt = ttmp;
+
+  iData->sopt.preSim = (iData->dtime.t0 < iData->dtime.startTimeOpt) ? 1 : 0;
+
   if(ACTIVE_STREAM(LOG_IPOPT)|| ACTIVE_STREAM(LOG_IPOPT_ERROR)){
   char buffer[200];
     printf("Optimizer Variables");

@@ -68,6 +68,7 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   int ng;
   OPTIMIZER_DIM_VARS* dim = &iData->dim;
   OPTIMIZER_MBASE *mbase = &iData->mbase;
+  OPTIMIZER_STUCTURE *sopt = &iData->sopt;
 
   ng = dim->NRes+dim->nc*dim->deg*dim->nsi;
   deg1 = dim->deg + 1;
@@ -124,9 +125,9 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   for(i = 0; i < 2; i++)
     iData->gradFomc[i] = (double*) calloc(dim->nv, sizeof(double));
 
-  iData->gradFs = (modelica_boolean**) malloc((2) * sizeof(modelica_boolean*));
+  sopt->gradFs = (modelica_boolean**) malloc((2) * sizeof(modelica_boolean*));
   for(i = 0; i < 2; i++)
-    iData->gradFs[i] = (modelica_boolean*) calloc(dim->nv, sizeof(modelica_boolean));
+    sopt->gradFs[i] = (modelica_boolean*) calloc(dim->nv, sizeof(modelica_boolean));
 
   iData->numJ = (double**) malloc(dim->nJ * sizeof(double*));
   for(i = 0; i < dim->nJ; i++)
@@ -148,13 +149,14 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
     iData->mH[i] = (long double*) calloc(dim->nv, sizeof(long double));
 
   dim->nlocalJac = 0;
-  iData->knowedJ = (int**) malloc(dim->nJ* sizeof(int*));
-  for(i = 0; i < dim->nJ; i++)
-    iData->knowedJ[i] = (int*) calloc(dim->nv, sizeof(int));
 
-  iData->Hg = (short**) malloc(dim->nv * sizeof(short*));
+  sopt->knowedJ = (modelica_boolean**) malloc(dim->nJ* sizeof(modelica_boolean*));
+  for(i = 0; i < dim->nJ; i++)
+    sopt->knowedJ[i] = (modelica_boolean*) calloc(dim->nv, sizeof(modelica_boolean));
+
+  sopt->Hg = (modelica_boolean**) malloc(dim->nv * sizeof(modelica_boolean*));
   for(i = 0; i < dim->nv; i++)
-    iData->Hg[i] = (short*) calloc(dim->nv, sizeof(short));
+    sopt->Hg[i] = (modelica_boolean*) calloc(dim->nv, sizeof(modelica_boolean));
 
   iData->dtime.dt = (long double*)malloc((dim->nsi) *sizeof(long double));
   iData->input_name = (char**)malloc(dim->nv*sizeof(char*));
@@ -177,31 +179,32 @@ static int freeIpoptData(IPOPT_DATA_ *iData)
   OPTIMIZER_DIM_VARS* dim = &iData->dim;
   OPTIMIZER_MBASE *mbase = &iData->mbase;
   OPTIMIZER_TIME *dtime = &iData->dtime;
+  OPTIMIZER_STUCTURE *sopt = &iData->sopt;
 
   for(i = 0; i < dim->nJ; i++){
     free(iData->J[i]);
     free(iData->J0[i]);
     free(iData->numJ[i]);
-    free(iData->knowedJ[i]);
+    free(sopt->knowedJ[i]);
   }
   free(iData->J0);
   free(iData->J);
   free(iData->numJ);
-  free(iData->knowedJ);
+  free(sopt->knowedJ);
 
   for(i=0;i<2;++i){
     free(iData->gradFomc[i]);
-    free(iData->gradFs[i]);
+    free(sopt->gradFs[i]);
   }
 
   for(i = 0; i < dim->nv; i++){
     free(iData->oH[i]);
     free(iData->mH[i]);
-    free(iData->Hg[i]);
+    free(sopt->Hg[i]);
   }
   free(iData->oH);
   free(iData->mH);
-  free(iData->Hg);
+  free(sopt->Hg);
 
   for(i = 0; i < dim->nJ; i++){
 

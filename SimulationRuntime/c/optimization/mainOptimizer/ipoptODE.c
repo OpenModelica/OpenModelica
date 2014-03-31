@@ -66,16 +66,18 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
   iData->current_var = 0;
   iData->current_time = 0;
   iData->data = data;
-  iData->mayer = (short) (iData->data->callback->mayer(data, &obj) >= 0);
-  iData->lagrange = (short) (iData->data->callback->lagrange(data, &obj) >= 0);
+
+  iData->sopt.mayer = (modelica_boolean) (iData->data->callback->mayer(data, &obj) >= 0);
+  iData->sopt.lagrange = (modelica_boolean) (iData->data->callback->lagrange(data, &obj) >= 0);
 
   iData->mayer_index = 0;
-  iData->lagrange_index = (iData->mayer)? 1 : 0;
+  iData->lagrange_index = (iData->sopt.mayer)? 1 : 0;
 
-  iData->matrixA = data->callback->initialAnalyticJacobianA((void*) iData->data);
-  iData->matrixB = data->callback->initialAnalyticJacobianB((void*) iData->data);
-  iData->matrixC = data->callback->initialAnalyticJacobianC((void*) iData->data);
+  iData->sopt.matrixA = (modelica_boolean)data->callback->initialAnalyticJacobianA((void*) iData->data);
+  iData->sopt.matrixB = (modelica_boolean)data->callback->initialAnalyticJacobianB((void*) iData->data);
+  iData->sopt.matrixC = (modelica_boolean)data->callback->initialAnalyticJacobianC((void*) iData->data);
   /*iData->matrixD = data->callback->initialAnalyticJacobianD((void*) iData->data);*/
+
   /*ToDo*/
   loadDAEmodel(data, iData);
   iData->index_debug_iter=0;

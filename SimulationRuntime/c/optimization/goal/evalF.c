@@ -58,11 +58,11 @@ Bool evalfF(Index n, double * v, Bool new_x, Number *objValue, void * useData)
   double lagrange = 0.0;
   OPTIMIZER_MBASE *mbase = &iData->mbase;
 
-  if(iData->mayer){
+  if(iData->sopt.mayer){
     goal_func_mayer(v + iData->endN, &mayer,iData);
   }
 
-  if(iData->lagrange){
+  if(iData->sopt.lagrange){
     double *x;
     double tmp;
     int i,k,j;
@@ -139,7 +139,7 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
   IPOPT_DATA_ *iData = (IPOPT_DATA_*) useData;
   OPTIMIZER_MBASE *mbase = &iData->mbase;
 
-  if(iData->lagrange) {
+  if(iData->sopt.lagrange) {
     x = v;
     id = 0;
     
@@ -170,7 +170,7 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
     for(i=0; i<iData->endN; ++i)
       gradF[i] = 0.0;
   }
-  if(iData->mayer){
+  if(iData->sopt.mayer){
     x = v + iData->endN;
 
     refreshSimData(x, x +iData->dim.nx, iData->dtime.tf, iData);
@@ -179,7 +179,7 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
     diff_symColoredObject(iData, iData->gradF, iData->mayer_index);
     for(j=0; j<iData->dim.nv; ++j)
     {
-      if(iData->lagrange){
+      if(iData->sopt.lagrange){
         gradF[iData->endN + j] +=  iData->gradF[j]*iData->vnom[j];
       } else {
         gradF[iData->endN + j] = iData->gradF[j]*iData->vnom[j];

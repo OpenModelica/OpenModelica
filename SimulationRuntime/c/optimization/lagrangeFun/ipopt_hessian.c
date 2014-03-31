@@ -42,9 +42,9 @@
 #ifdef WITH_IPOPT
 #define DF_STEP(x,s) ( (fmin(fmax(1e-4*fabs(s*x),1e-8),1e0)))
 
-static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, short lagrange_yes, short mayer_yes, double obj_factor);
-static int updateCost(double *v, double t, IPOPT_DATA_ *iData, short lagrange_yes, short mayer_yes,double *F1, double *F2);
-static int sumLagrange(IPOPT_DATA_ *iData, double * erg,int ii, int i, int j, int p, short mayer_yes);
+static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, modelica_boolean lagrange_yes, modelica_boolean mayer_yes, double obj_factor);
+static int updateCost(double *v, double t, IPOPT_DATA_ *iData, modelica_boolean lagrange_yes, modelica_boolean mayer_yes,double *F1, double *F2);
+static int sumLagrange(IPOPT_DATA_ *iData, double * erg,int ii, int i, int j, int p, modelica_boolean mayer_yes);
 
 /*!
  *  calc hessian
@@ -73,7 +73,7 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
         for(p = 0;p < dim->deg+1;++p){
           for(j=0;j< dim->nv;++j){
             for(l = 0; l< j+1; ++l){
-              if(iData->Hg[j][l]){
+              if(iData->sopt.Hg[j][l]){
                 iRow[k] = r + j;
                 iCol[k++] = c + l;
               }
@@ -86,7 +86,7 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
         for(p = 1;p < dim->deg+1;++p){
           for(j=0;j< dim->nv;++j){
             for(l = 0; l< j+1; ++l){
-              if(iData->Hg[j][l]){
+              if(iData->sopt.Hg[j][l]){
                 iRow[k] = r + j;
                 iCol[k++] = c + l;
               }
@@ -139,10 +139,10 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
     nJ = (int) dim->nJ;
     for(ii = 0; ii <1; ++ii){
       for(p = 0, x= v, ll = lambda;p < dim->deg+1;++p, x += dim->nv){
-         mayer_yes = iData->mayer && ii+1 == dim->nsi && p == dim->deg;
+         mayer_yes = iData->sopt.mayer && ii+1 == dim->nsi && p == dim->deg;
 
          if(p){
-           num_hessian(x, iData->dtime.time[p], iData, ll,iData->lagrange,mayer_yes,obj_factor);
+           num_hessian(x, iData->dtime.time[p], iData, ll,iData->sopt.lagrange,mayer_yes,obj_factor);
            ll += nJ;
          }else{
            for(i = 0; i< dim->nx; ++i){
@@ -157,12 +157,12 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
            }
            //for(; i< nJ; ++i)
             // iData->sh[i] = 0;
-           num_hessian(x, iData->dtime.time[p], iData, iData->sh ,iData->lagrange,mayer_yes,obj_factor);
+           num_hessian(x, iData->dtime.time[p], iData, iData->sh, iData->sopt.lagrange, mayer_yes, obj_factor);
          }
 
         for(i=0;i< dim->nv;++i)
           for(j = 0; j< i+1; ++j){
-           if(iData->Hg[i][j]){
+           if(iData->sopt.Hg[i][j]){
                sumLagrange(iData, &sum, ii, i, j,  p, mayer_yes);
                values[k++] =  sum;
            }
@@ -175,13 +175,13 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
     for(; ii <dim->nsi; ++ii){
       tmp_index = ii*dim->deg;
       for(p = 1;p < dim->deg +1;++p,x += dim->nv){
-        mayer_yes = iData->mayer && ii+1 == dim->nsi && p == dim->deg;
-        num_hessian(x, iData->dtime.time[tmp_index + p], iData,ll,iData->lagrange,mayer_yes,obj_factor);
+        mayer_yes = iData->sopt.mayer && ii+1 == dim->nsi && p == dim->deg;
+        num_hessian(x, iData->dtime.time[tmp_index + p], iData,ll, iData->sopt.lagrange, mayer_yes,obj_factor);
 
         for(i=0;i< dim->nv;++i)
           for(j = 0; j< i+1; ++j){
-            if(iData->Hg[i][j]){
-                sumLagrange(iData, &sum, ii, i, j,  p,  mayer_yes);
+            if(iData->sopt.Hg[i][j]){
+                sumLagrange(iData, &sum, ii, i, j, p, mayer_yes);
                 values[k++] = sum;
             }
           }
@@ -200,7 +200,7 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
  *  lamda^\top \cdot H + sigma*((?)dd_lagrange + (?)dd_mayer)
  *  autor: Vitalij Ruge
  **/
-static int sumLagrange(IPOPT_DATA_ *iData, double * erg,int ii, int i, int j, int p, short mayer_yes)
+static int sumLagrange(IPOPT_DATA_ *iData, double * erg,int ii, int i, int j, int p, modelica_boolean mayer_yes)
 {
   long double sum;
   OPTIMIZER_DIM_VARS *dim = &iData->dim;
@@ -211,7 +211,7 @@ static int sumLagrange(IPOPT_DATA_ *iData, double * erg,int ii, int i, int j, in
   for(l = 0; l<dim->nx; ++l)
     sum += iData->H[l][i][j];
 
-  if(iData->lagrange && iData->gradFomc[iData->lagrange_index][i]* iData->gradFomc[iData->lagrange_index][j]){
+  if(iData->sopt.lagrange && iData->gradFomc[iData->lagrange_index][i]* iData->gradFomc[iData->lagrange_index][j]){
     if(ii)
       sum += mbase->b[1][p-1]*iData->oH[i][j];
     else
@@ -234,7 +234,7 @@ static int sumLagrange(IPOPT_DATA_ *iData, double * erg,int ii, int i, int j, in
  *  cal numerical hessian
  *  autor: Vitalij Ruge
  **/
-static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, short lagrange_yes, short mayer_yes, double obj_factor)
+static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, modelica_boolean lagrange_yes, modelica_boolean mayer_yes, double obj_factor)
 {
   long double v_save;
   long double h;
@@ -261,9 +261,9 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
     v[i] = v_save;
 
     for(j = i; j < dim->nv; ++j){
-      if(iData->Hg[i][j]){
+      if(iData->sopt.Hg[i][j]){
        for(l = 0; l< nJ; ++l){
-        if(iData->knowedJ[l][j] + iData->knowedJ[l][i] >= 2 && lambda[l] != 0.0)
+        if(iData->sopt.knowedJ[l][j] + iData->sopt.knowedJ[l][i] >= 2 && lambda[l] != 0.0)
           iData->H[l][i][j]  = (long double)lambda[l]*(iData->J[l][j] - iData->J0[l][j])/h;
         else
           iData->H[l][i][j] = (long double) 0.0;
@@ -302,7 +302,7 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
  *  function update goal function 
  *  author: vitalij
  */
-static int updateCost(double *v, double t, IPOPT_DATA_ *iData, short lagrange_yes, short mayer_yes, double *F1, double *F2)
+static int updateCost(double *v, double t, IPOPT_DATA_ *iData, modelica_boolean lagrange_yes, modelica_boolean mayer_yes, double *F1, double *F2)
 {
   /*iData->data->callback->functionAlgebraics(iData->data);*/
   if(lagrange_yes)

@@ -103,6 +103,31 @@ typedef struct OPTIMIZER_TIME{
 
 }OPTIMIZER_TIME;
 
+typedef struct OPTIMIZER_STUCTURE{
+
+  modelica_boolean matrixA;
+  modelica_boolean matrixB;
+  modelica_boolean matrixC;
+  modelica_boolean matrixD;
+
+  modelica_boolean ** gradFs;
+
+  modelica_boolean **knowedJ;
+
+  modelica_boolean **Hg;
+  modelica_boolean **Hl;
+  modelica_boolean **HH;
+
+  modelica_boolean mayer;
+  modelica_boolean lagrange;
+
+  modelica_boolean preSim;
+
+
+}OPTIMIZER_STUCTURE;
+
+
+
 typedef struct IPOPT_DATA_
 {
   /*#*/
@@ -113,6 +138,8 @@ typedef struct IPOPT_DATA_
 
   /*time*/
   OPTIMIZER_TIME dtime;
+
+  OPTIMIZER_STUCTURE sopt;
 
   /* ODE */
   double * x0;
@@ -165,15 +192,13 @@ typedef struct IPOPT_DATA_
   double * gradF_;
   double * gradF0;
   double * gradF00;
-  modelica_boolean ** gradFs;
-  int **knowedJ;
+
+
   double **numJ;
   long double ***H;
   long double **oH;
   long double **mH;
-  short **Hg;
-  short **Hl;
-  short **HH;
+
 
   int * iRow;
   int * iCol;
@@ -184,24 +209,16 @@ typedef struct IPOPT_DATA_
 
   long int current_var;
   long int current_time;
-  short mayer;
-  short lagrange;
   double pmayer;
   double plagrange;
   int mayer_index;
   int lagrange_index;
   DATA * data;
 
-  int matrixA;
-  int matrixB;
-  int matrixC;
-  int matrixD;
-
   short useNumJac;
   double *vsave;
   double *eps;
 
-  modelica_boolean preSim;
   char ** input_name;
 
   /*Debuger*/
