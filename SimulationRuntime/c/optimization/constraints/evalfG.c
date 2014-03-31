@@ -358,8 +358,7 @@ static inline void evalG23(Number *g, IPOPT_DATA_ *iData, int i)
         (mbase->d[2][1]*mbase->x[1][j] + mbase->d[2][3]*mbase->x[3][j]);
 
   memcpy(g + iData->dim.nx, &iData->data->localData[0]->realVars[iData->data->modelData.nVariablesReal - iData->dim.nc], sizeof(double)*iData->dim.nc);
-  return 0;
-
+  // return 0;
 }
 
 static void printMaxError(IPOPT_DATA_ *iData, double *g,double t, double * max_err, double * tt, int *xi)
