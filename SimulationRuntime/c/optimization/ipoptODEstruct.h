@@ -90,6 +90,11 @@ typedef struct OPTIMIZER_MBASE{
 
   long double invd1_4;
 
+  double *dotx[5];
+
+  double *x[5];
+  double *u[5];
+
 }OPTIMIZER_MBASE;
 
 typedef struct OPTIMIZER_TIME{
@@ -169,18 +174,6 @@ typedef struct IPOPT_DATA_
   double *v;
   double *w;
   double *cv;
-  double *dotx0;
-  double *dotx1;
-  double *dotx2;
-  double *dotx3;
-
-  double *x1;
-  double *x2;
-  double *x3;
-
-  double *u1;
-  double *u2;
-  double *u3;
 
   double *gmin;
   double *gmax;
