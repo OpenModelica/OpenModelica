@@ -8185,7 +8185,7 @@ author:Waurich TUD 2014-03"
   input DAE.Statement stmt;
   output DAE.Element alg;
 algorithm
-  alg := DAE.ALGORITHM(DAE.ALGORITHM_STMTS({stmt}),DAE.emptyElementSource());
+  alg := DAE.ALGORITHM(DAE.ALGORITHM_STMTS({stmt}),DAE.emptyElementSource);
 end stmt2Alg;
 
 protected function statementRHSIsNotConst"checks whether the rhs of a statement is constant.
