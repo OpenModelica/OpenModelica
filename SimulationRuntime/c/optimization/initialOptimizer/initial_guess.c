@@ -84,9 +84,9 @@ static int initial_guess_ipopt_cflag(IPOPT_DATA_ *iData,char* cflags)
     if(id >=iData->dim.nv)
       id = 0;
     if(id <iData->dim.nx){
-      iData->v[i] = iData->data->modelData.realVarsData[id].attribute.start*iData->scalVar[id];
+      iData->v[i] = iData->data->modelData.realVarsData[id].attribute.start*iData->scaling.scalVar[id];
     }else if(id< iData->dim.nv){
-      iData->v[i] = iData->start_u[id-iData->dim.nx]*iData->scalVar[id];
+      iData->v[i] = iData->start_u[id-iData->dim.nx]*iData->scaling.scalVar[id];
     }
   }
     return 0;
@@ -134,7 +134,7 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
 
    for(ii=dim->nx,j=0; j < dim->nu; ++j, ++ii){
      u0[j] = fmin(fmax(u0[j],iData->bounds.umin[j]),iData->bounds.umax[j]);
-     v[ii] = u0[j]*iData->scalVar[j + dim->nx];
+     v[ii] = u0[j]*iData->scaling.scalVar[j + dim->nx];
    }
 
    if(!data->simulationInfo.external_input.active)
@@ -168,10 +168,10 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
        printf("\ndone: time[%i] = %g\n", k, (double)iData->dtime.time[k]);
 
      for(j=0; j< dim->nx; ++j){
-       v[j] = data->localData[0]->realVars[j] * iData->scalVar[j];
+       v[j] = data->localData[0]->realVars[j] * iData->scaling.scalVar[j];
      }
      for(; j< dim->nv; ++j)
-       v[j] = data->simulationInfo.inputVars[j-dim->nx] * iData->scalVar[j];
+       v[j] = data->simulationInfo.inputVars[j-dim->nx] * iData->scaling.scalVar[j];
 
      v += dim->nv;
      }
@@ -230,11 +230,11 @@ static int pre_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
   /*ToDo*/
   for(i=0; i< iData->dim.nx; ++i)
   {
-    iData->bounds.Vmin[i] = iData->bounds.Vmax[i] = iData->data->localData[1]->realVars[i]*iData->scalVar[i];
+    iData->bounds.Vmin[i] = iData->bounds.Vmax[i] = iData->data->localData[1]->realVars[i]*iData->scaling.scalVar[i];
     iData->v[i] = iData->bounds.Vmin[i];
   }
   for(j=0; i< iData->dim.nv; ++i,++j){
-    iData->bounds.Vmin[i] = iData->bounds.Vmax[i] = data->simulationInfo.inputVars[j]*iData->scalVar[i];
+    iData->bounds.Vmin[i] = iData->bounds.Vmax[i] = data->simulationInfo.inputVars[j]*iData->scaling.scalVar[i];
     iData->v[i] = iData->bounds.Vmin[i];
   }
   optimizer_time_setings_update(iData);

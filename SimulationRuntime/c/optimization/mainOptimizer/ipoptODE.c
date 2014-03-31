@@ -87,7 +87,7 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
   /*ToDo*/
   for(i=0; i<iData->dim.nx; i++)
   {
-    iData->bounds.Vmin[i] = iData->bounds.Vmax[i] = iData->x0[i]*iData->scalVar[i];
+    iData->bounds.Vmin[i] = iData->bounds.Vmax[i] = iData->x0[i]*iData->scaling.scalVar[i];
     iData->v[i] = iData->bounds.Vmin[i];
   }
 
@@ -131,11 +131,11 @@ int refreshSimData(double *x, double *u, long double t, IPOPT_DATA_ *iData)
   /*MODEL_DATA      *mData = &(data->modelData);
   SIMULATION_INFO *sInfo = &(data->simulationInfo);*/
   for(j = 0; j<iData->dim.nx;++j){
-    sData->realVars[j] = x[j]*iData->vnom[j];
+    sData->realVars[j] = x[j]*iData->scaling.vnom[j];
   }
 
   for(i = 0; i<iData->dim.nu;++i,++j){
-    data->simulationInfo.inputVars[i] = u[i]*iData->vnom[j];
+    data->simulationInfo.inputVars[i] = u[i]*iData->scaling.vnom[j];
   }
 
   data->callback->input_function(data);
@@ -170,7 +170,7 @@ int ipoptDebuge(IPOPT_DATA_ *iData, double *x)
 
     for(i=0; i<iData->dim.NV; ++i){
       j = i % iData->dim.nv;
-      tmp = x[i]*iData->vnom[j];
+      tmp = x[i]*iData->scaling.vnom[j];
       fprintf(iData->pFile[j], "%.16g,", tmp);
     }
 
@@ -208,13 +208,13 @@ static int res2file(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
 
   while(solverInfo->currentTime < simInfo->stopTime){
     for(i=0; i< iData->dim.nx; ++i){
-      sData->realVars[i] = iData->v[k++]*iData->vnom[i];
+      sData->realVars[i] = iData->v[k++]*iData->scaling.vnom[i];
     }
     
     fprintf(pFile, "%lf ",(double)iData->dtime.time[iData->current_time]);
     for(i=0,j=iData->dim.nx; i< iData->dim.nu; ++i,++j){
-      data->simulationInfo.inputVars[i] = iData->v[k]*iData->vnom[j];
-      fprintf(pFile, "%lf ", iData->v[k++]*iData->vnom[j]);
+      data->simulationInfo.inputVars[i] = iData->v[k]*iData->scaling.vnom[j];
+      fprintf(pFile, "%lf ", (double)iData->v[k++]*iData->scaling.vnom[j]);
     }
     fprintf(pFile, "%s", "\n");
 

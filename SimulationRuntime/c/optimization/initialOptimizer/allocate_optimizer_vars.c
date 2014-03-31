@@ -93,9 +93,9 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   bounds->umax = (double*)malloc(dim->nu*sizeof(double));
   bounds->vmin = (double*)malloc(dim->nv*sizeof(double));
   bounds->vmax = (double*)malloc(dim->nv*sizeof(double));
-  iData->vnom = (double*)malloc(dim->nv*sizeof(double));
-  iData->scalVar = (double*)malloc(dim->nv*sizeof(double));
-  iData->scalf = (double*)malloc(dim->nx*sizeof(double));
+  iData->scaling.vnom = (double*)malloc(dim->nv*sizeof(double));
+  iData->scaling.scalVar = (long double*)malloc(dim->nv*sizeof(long double));
+  iData->scaling.scalf = (long double*)malloc(dim->nx*sizeof(long double));
   bounds->Vmin = (double*)malloc(dim->NV*sizeof(double));
   bounds->Vmax = (double*)malloc(dim->NV*sizeof(double));
   iData->v = (double*)malloc(dim->NV*sizeof(double));
@@ -118,6 +118,10 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   iData->J0 = (double**) malloc(dim->nJ * sizeof(double*));
   for(i = 0; i < dim->nJ; i++)
     iData->J0[i] = (double*) calloc(dim->nv, sizeof(double));
+
+  iData->scaling.scaldt = (long double**) malloc(dim->nx * sizeof(long double*));
+  for(i = 0; i < dim->nx; i++)
+    iData->scaling.scaldt[i] = (long double*) calloc(dim->nsi, sizeof(long double));
 
   iData->gradFomc = (double**) malloc((2) * sizeof(double*));
   for(i = 0; i < 2; i++)
@@ -199,6 +203,10 @@ static int freeIpoptData(IPOPT_DATA_ *iData)
   free(iData->mH);
   free(sopt->Hg);
 
+  for(i = 0; i < dim->nx; i++)
+    iData->scaling.scaldt[i];
+  free(iData->scaling.scaldt);
+
   for(i = 0; i < dim->nJ; i++){
 
     for(j = 0;j<dim->nv; ++j)
@@ -228,9 +236,9 @@ static int freeIpoptData(IPOPT_DATA_ *iData)
   free(bounds->umax);
   free(bounds->vmin);
   free(bounds->vmax);
-  free(iData->vnom);
-  free(iData->scalVar);
-  free(iData->scalf);
+  free(iData->scaling.vnom);
+  free(iData->scaling.scalVar);
+  free(iData->scaling.scalf);
   free(bounds->Vmin);
   free(bounds->Vmax);
   free(iData->v);

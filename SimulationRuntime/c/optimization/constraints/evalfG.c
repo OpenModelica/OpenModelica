@@ -184,9 +184,9 @@ int diff_functionODE(double* v, double t, IPOPT_DATA_ *iData, double **J)
     diff_symColoredODE(v,t,iData,J);
     for(i = 0;i<iData->dim.nv;++i){
       for(j = 0; j <iData->dim.nx; ++j)
-        J[j][i] *= iData->scalf[j]*iData->vnom[i];
+        J[j][i] *= iData->scaling.scalf[j]*iData->scaling.vnom[i];
       for(; j <nJ; ++j)
-        J[j][i] *= iData->vnom[i];
+        J[j][i] *= iData->scaling.vnom[i];
     }
 
   /*
@@ -263,7 +263,7 @@ static inline void evalG11(Number *g, IPOPT_DATA_ *iData, int i)
   OPTIMIZER_MBASE *mbase = & iData->mbase;
 
   for(j=0; j<iData->dim.nx; ++j)
-    g[j] = (mbase->a[0][0]*mbase->x[0][j] + mbase->a[0][3]*mbase->x[3][j] + iData->scalf[j]*iData->dtime.dt[i]*mbase->dotx[1][j]) -
+    g[j] = (mbase->a[0][0]*mbase->x[0][j] + mbase->a[0][3]*mbase->x[3][j] + iData->scaling.scaldt[j][i]*mbase->dotx[1][j]) -
             (mbase->a[0][1]*mbase->x[1][j] + mbase->a[0][2]*mbase->x[2][j]);
 
   memcpy(g + iData->dim.nx, &iData->data->localData[0]->realVars[iData->data->modelData.nVariablesReal - iData->dim.nc], sizeof(double)*iData->dim.nc);
@@ -281,7 +281,7 @@ static inline void evalG12(Number *g, IPOPT_DATA_ *iData, int i)
 
   for(j=0; j<iData->dim.nx; ++j)
     g[j] = (mbase->a[1][1]*mbase->x[1][j] +
-        iData->scalf[j]*iData->dtime.dt[i]*mbase->dotx[2][j])
+        iData->scaling.scaldt[j][i]*mbase->dotx[2][j])
         - (mbase->a[1][0]*mbase->x[0][j] + mbase->a[1][2]*mbase->x[2][j] +
             mbase->a[1][3]*mbase->x[3][j]);
 
@@ -301,7 +301,7 @@ static inline void evalG13(Number *g, IPOPT_DATA_ *iData, int i)
   for(j=0; j<iData->dim.nx; ++j)
     g[j] = (mbase->a[2][0]*mbase->x[0][j] +
             mbase->a[2][2]*mbase->x[2][j] +
-            iData->scalf[j]*iData->dtime.dt[i]*mbase->dotx[3][j]) -
+            iData->scaling.scaldt[j][i]*mbase->dotx[3][j]) -
             (mbase->a[2][1]*mbase->x[1][j] + mbase->a[2][3]*mbase->x[3][j]);
 
   memcpy(g + iData->dim.nx, &iData->data->localData[0]->realVars[iData->data->modelData.nVariablesReal - iData->dim.nc], sizeof(double)*iData->dim.nc);
@@ -317,7 +317,7 @@ static inline void evalG21(Number *g, IPOPT_DATA_ *iData, int i)
   OPTIMIZER_MBASE *mbase = &iData->mbase;
 
   for(j=0; j<iData->dim.nx; ++j)
-    g[j] = (iData->scalf[j]*iData->dtime.dt[i]*(mbase->dotx[1][j] + mbase->d[0][4]*mbase->dotx[0][j])
+    g[j] = (iData->scaling.scaldt[j][i]*(mbase->dotx[1][j] + mbase->d[0][4]*mbase->dotx[0][j])
             + mbase->d[0][0]*mbase->x[0][j] + mbase->d[0][3]*mbase->x[3][j])
             - (mbase->d[0][1]*mbase->x[1][j] + mbase->d[0][2]*mbase->x[2][j]);
 
@@ -334,8 +334,8 @@ static inline void evalG22(Number *g, IPOPT_DATA_ *iData, int i)
   int j;
   OPTIMIZER_MBASE *mbase = &iData->mbase;
   for(j=0; j<iData->dim.nx; ++j)
-    g[j] = (iData->scalf[j]*iData->dtime.dt[i]*mbase->dotx[2][j] + mbase->d[1][1]*mbase->x[1][j])
-          - (iData->scalf[j]*iData->dtime.dt[i]*mbase->d[1][4]*mbase->dotx[0][j] + mbase->d[1][0]*mbase->x[0][j] +
+    g[j] = (iData->scaling.scaldt[j][i]*mbase->dotx[2][j] + mbase->d[1][1]*mbase->x[1][j])
+          - (iData->scaling.scaldt[j][i]*mbase->d[1][4]*mbase->dotx[0][j] + mbase->d[1][0]*mbase->x[0][j] +
               mbase->d[1][2]*mbase->x[2][j]
           + mbase->d[1][3]*mbase->x[3][j]);
 
@@ -353,7 +353,7 @@ static inline void evalG23(Number *g, IPOPT_DATA_ *iData, int i)
   OPTIMIZER_MBASE *mbase = &iData->mbase;
 
   for(j=0; j<iData->dim.nx; ++j)
-    g[j] = (iData->scalf[j]*iData->dtime.dt[i]*(mbase->d[2][4]*mbase->dotx[0][j] + mbase->dotx[3][j])
+    g[j] = (iData->scaling.scaldt[j][i]*(mbase->d[2][4]*mbase->dotx[0][j] + mbase->dotx[3][j])
         + mbase->d[2][0]*mbase->x[0][j] + mbase->d[2][2]*mbase->x[2][j]) -
         (mbase->d[2][1]*mbase->x[1][j] + mbase->d[2][3]*mbase->x[3][j]);
 

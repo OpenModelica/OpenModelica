@@ -149,6 +149,17 @@ typedef struct OPTIMIZER_BOUNDS{
 
 }OPTIMIZER_BOUNDS;
 
+typedef struct OPTIMIZER_SCALING{
+
+  double * vnom;
+  long double *scalVar;
+  long double *scalRes;
+  long double *scalJac;
+  long double *scalf;
+  long double ** scaldt;
+
+}OPTIMIZER_SCALING;
+
 
 typedef struct IPOPT_DATA_
 {
@@ -164,17 +175,13 @@ typedef struct IPOPT_DATA_
   OPTIMIZER_STUCTURE sopt;
 
   OPTIMIZER_BOUNDS bounds;
+  OPTIMIZER_SCALING scaling;
 
   /* ODE */
   double * x0;
 
-  double * vnom;
-  double * start_u;
 
-  double *scalVar;
-  double *scalRes;
-  double *scalJac;
-  double *scalf;
+  double * start_u;
 
   double *lhs;
   double *rhs;
