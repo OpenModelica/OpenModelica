@@ -38,6 +38,7 @@
 #include "simulation/simulation_runtime.h"
 #include "simulation/solver/solver_main.h"
 #include "simulation/solver/model_help.h"
+#include "external_input.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -130,7 +131,7 @@ int checkForStateEvent(DATA* data, LIST *eventList)
 
   for(i=0; i<data->modelData.nZeroCrossings; i++)
   {
-    const int *eq_indexes;
+    int *eq_indexes;
     const char *exp_str = data->callback->zeroCrossingDescription(i,&eq_indexes);
     debugStreamPrintWithEquationIndexes(LOG_EVENTS, 1, eq_indexes, "%s", exp_str);
 
@@ -221,7 +222,7 @@ void handleEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* so
     if (useStream[LOG_EVENTS]) {
       for(it = listFirstNode(eventLst); it; it = listNextNode(it)) {
         long ix = *((long*) listNodeData(it));
-        const int *eq_indexes;
+        int *eq_indexes;
         const char *exp_str = data->callback->zeroCrossingDescription(ix,&eq_indexes);
         infoStreamPrintWithEquationIndexes(LOG_EVENTS, 0, eq_indexes, "[%ld] %s", ix, exp_str);
       }
@@ -238,7 +239,7 @@ void handleEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* so
       double t0 = data->simulationInfo.chatteringInfo.lastTimes[(currentIndex+1) % numEventLimit];
       if (time - t0 < data->simulationInfo.stepSize) {
         long ix = *((long*) listNodeData(listFirstNode(eventLst)));
-        const int *eq_indexes;
+        int *eq_indexes;
         const char *exp_str = data->callback->zeroCrossingDescription(ix,&eq_indexes);
         infoStreamPrintWithEquationIndexes(LOG_STDOUT, 0, eq_indexes, "Chattering detected around time %.12g..%.12g (%d state events in a row with a total time delta less than the step size %.12g). This can be a performance bottleneck. Use -lv LOG_EVENTS for more information. The zero-crossing was: %s", t0, time, numEventLimit, data->simulationInfo.stepSize, exp_str);
         data->simulationInfo.chatteringInfo.messageEmitted = 1;

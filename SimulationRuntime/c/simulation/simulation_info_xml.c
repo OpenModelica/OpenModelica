@@ -199,7 +199,7 @@ static void XMLCALL endElement(void *userData, const char *name)
   if(0 == strcmp("equation", name))
   {
     int i;
-    xml->equationInfo[curIndex].vars = (VAR_INFO*) malloc(sizeof(VAR_INFO)*xml->equationInfo[curIndex].numVar);
+    xml->equationInfo[curIndex].vars = (VAR_INFO**) malloc(sizeof(VAR_INFO)*xml->equationInfo[curIndex].numVar);
     for(i=0; i<xml->equationInfo[curIndex].numVar; i++)
     {
       VAR_INFO *var = (VAR_INFO*) malloc(sizeof(VAR_INFO));

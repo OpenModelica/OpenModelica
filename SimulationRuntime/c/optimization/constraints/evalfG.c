@@ -54,7 +54,7 @@ static inline int evalG22(Number *g, IPOPT_DATA_ *iData, double *x0, int i);
 static inline int evalG23(Number *g, IPOPT_DATA_ *iData, double *x0, int i);
 static int diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J);
 static int num_diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J);
-static int printMaxError(IPOPT_DATA_ *iData, double *g,double time, double * max_err , double * tt, int *xi);
+static void printMaxError(IPOPT_DATA_ *iData, double *g,double time, double * max_err , double * tt, int *xi);
 
 /*!
  *  eval s.t.
@@ -338,7 +338,7 @@ static inline int evalG23(Number *g, IPOPT_DATA_ *iData, double *x0, int i)
 
 }
 
-static int printMaxError(IPOPT_DATA_ *iData, double *g,double t, double * max_err, double * tt, int *xi)
+static void printMaxError(IPOPT_DATA_ *iData, double *g,double t, double * max_err, double * tt, int *xi)
 {
   double tmp;
   int j;

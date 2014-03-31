@@ -28,11 +28,15 @@
  *
  */
 
+#if defined(__CLANG__) || defined(__GNUC__)
+#define _GNU_SOURCE /* asprintf */
+#endif
+
 #include "openmodelica.h"
 #include "meta_modelica.h"
 #include "meta_modelica_builtin.h"
-#include <limits.h>
 #include <stdio.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 

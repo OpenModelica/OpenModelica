@@ -43,6 +43,9 @@
 #ifdef WITH_IPOPT
 
 #include "../localFunction.h"
+#include "../../simulation/solver/external_input.h"
+
+int allocateIpoptData(IPOPT_DATA_ *iData);
 
 static int set_local_jac_struct(IPOPT_DATA_ *iData, int *nng);
 static int local_jac_struct(IPOPT_DATA_ *iData, int *nng);
@@ -585,7 +588,7 @@ static int optimizer_print_step(IPOPT_DATA_ *iData)
     if(j < iData->dim.nx)
       fprintf(iData->pFile[j], "%s_%i,", iData->data->modelData.realVarsData[j].info.name, k);
     else if(j < iData->dim.nv)
-      fprintf(iData->pFile[j], "%s_%i,", "u", iData->input_name[j-iData->dim.nx]);
+      fprintf(iData->pFile[j], "%s_%s,", "u", iData->input_name[j-iData->dim.nx]);
   }
   return 0;
 }

@@ -61,7 +61,7 @@ void ModelicaError(const char* string) {
   omc_throw(NULL);
 }
 
-extern void ModelicaVFormatError(const char*string, va_list args) {
+void ModelicaVFormatError(const char*string, va_list args) {
   vfprintf(stderr, string, args);
   fflush(stderr);
   omc_throw(NULL);

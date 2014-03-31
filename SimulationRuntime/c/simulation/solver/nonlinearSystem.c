@@ -46,7 +46,7 @@
 #include "simulation_runtime.h"
 
 extern doublereal enorm_(integer *n, doublereal *x);
-
+int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber);
 
 const char *NLS_NAME[NLS_MAX+1] = {
   "NLS_UNKNOWN",

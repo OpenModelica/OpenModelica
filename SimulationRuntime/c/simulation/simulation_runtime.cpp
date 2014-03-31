@@ -914,6 +914,9 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data)
   return retVal;
 }
 
+static void omc_assert_simulation(threadData_t *threadData, FILE_INFO info, const char *msg, ...) __attribute__ ((noreturn));
+static void omc_throw_simulation(threadData_t* threadData) __attribute__ ((noreturn));
+
 static void omc_assert_simulation(threadData_t *threadData, FILE_INFO info, const char *msg, ...)
 {
   va_list ap;
@@ -960,7 +963,6 @@ static void omc_assert_simulation(threadData_t *threadData, FILE_INFO info, cons
     /* Ignore asserts for event search, since to find events we need to
      * step over in regions, which may trigger asserts.
      */
-    break;
   default:
     throwStreamPrint(threadData,"Unhandled Assertion-Error");
   }
@@ -996,9 +998,9 @@ static void omc_throw_simulation(threadData_t* threadData)
   longjmp(*threadData->globalJumpBuffer, 1);
 }
 
-void (*omc_assert)(threadData_t*,FILE_INFO info, const char *msg, ...) = omc_assert_simulation;
+void (*omc_assert)(threadData_t*,FILE_INFO info, const char *msg, ...) __attribute__ ((noreturn)) = omc_assert_simulation;
 void (*omc_assert_warning)(FILE_INFO info, const char *msg, ...) = omc_assert_warning_simulation;
 void (*omc_terminate)(FILE_INFO info, const char *msg, ...) = omc_terminate_simulation;
-void (*omc_throw)(threadData_t*) = omc_throw_simulation;
+void (*omc_throw)(threadData_t*) __attribute__ ((noreturn)) = omc_throw_simulation;
 
 } // extern "C"

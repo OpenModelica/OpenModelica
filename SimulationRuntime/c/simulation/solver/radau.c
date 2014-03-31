@@ -42,6 +42,7 @@
 #include <string.h>
 
 #include "radau.h"
+#include "external_input.h"
 #ifdef WITH_SUNDIALS
 
 #include <kinsol/kinsol.h>
