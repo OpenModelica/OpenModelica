@@ -119,13 +119,6 @@ build/lib/omc/libopenblas_openmodelica.a:
 	$(MAKE) -C 3rdParty/OpenBLAS-0.2.8 PREFIX=${abs_top_builddir}/build OPENBLAS_LIBRARY_DIR=${abs_top_builddir}/build/lib/omc OPENBLAS_INCLUDE_DIR=${abs_top_builddir}/3rdParty/build/install-includes/ NO_LAPACKE=1 LIBNAMESUFFIX=openmodelica install
 openblas: build/lib/omc/libopenblas_openmodelica.a
 
-fmi: interactive
-	$(MAKE) -C SimulationRuntime/fmi/import -f $(defaultMakefileTarget)
-	(cp -pPR SimulationRuntime/fmi/import/fmuWrapper.h SimulationRuntime/fmi/import/xmlparser.h $(builddir_inc)/c/)
-	
-fmiclean: 
-	$(MAKE) -C SimulationRuntime/fmi/import/ -f $(defaultMakefileTarget) clean
-
 opencl_rt: 
 ifeq ("$(OPENCL)","Yes")
 	$(MAKE) -C SimulationRuntime/ParModelica/explicit/openclrt -f $(defaultMakefileTarget)
