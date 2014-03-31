@@ -143,11 +143,11 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
    else
      externalInputUpdate(data);
 
-   if(iData->preSim){
-   printf("\n========================================================");
+   if(0/*iData->preSim*/){
+     printf("\n========================================================");
      printf("\nstart pre simulation");
      printf("\n--------------------------------------------------------");
-     printf("\nfrom %g to %g", iData->t0, iData->startTimeOpt );
+     printf("\nfrom %g to %g", (double)iData->dtime.t0, (double)iData->dtime.startTimeOpt );
      pre_ipopt_sim(iData, solverInfo);
      printf("\nfinished pre simulation");
      printf("\n========================================================\n");
@@ -157,15 +157,15 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
    if(printGuess){
      printf("\nInitial Guess");
      printf("\n========================================================\n");
-   printf("\ndone: time[%i] = %g",0,iData->time[0]);
+     printf("\ndone: time[%i] = %g",0,(double)iData->dtime.time[0]);
    }
 
    for(i=0, k=1, v=iData->v + dim->nv; i<dim->nsi; ++i){
      for(jj=0; jj<dim->deg; ++jj, ++k){
-      smallIntSolverStep(iData, solverInfo, iData->time[k]);
+      smallIntSolverStep(iData, solverInfo, (double)iData->dtime.time[k]);
 
      if(printGuess)
-       printf("\ndone: time[%i] = %g\n", k, iData->time[k]);
+       printf("\ndone: time[%i] = %g\n", k, (double)iData->dtime.time[k]);
 
      for(j=0; j< dim->nx; ++j){
        v[j] = data->localData[0]->realVars[j] * iData->scalVar[j];
@@ -210,14 +210,14 @@ static int pre_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
    double t;
    DATA * data = iData->data;
    
-   if(iData->time[0] > iData->startTimeOpt)
-    iData->time[0] = iData->startTimeOpt;
-   solverInfo->currentTime = iData->time[0];
+   if(iData->dtime.time[0] > iData->dtime.startTimeOpt)
+    iData->dtime.time[0] = iData->dtime.startTimeOpt;
+   solverInfo->currentTime = iData->dtime.time[0];
 
-   while(iData->data->localData[0]->timeValue < iData->startTimeOpt){
-     t = iData->time[k];
-     if(t>iData->startTimeOpt){
-       t = iData->startTimeOpt;
+   while(iData->data->localData[0]->timeValue < iData->dtime.startTimeOpt){
+     t = iData->dtime.time[k];
+     if(t>iData->dtime.startTimeOpt){
+       t = iData->dtime.startTimeOpt;
        solverInfo->currentTime = iData->data->localData[0]->timeValue;
       }
 
@@ -225,7 +225,7 @@ static int pre_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
      sim_result.emit(&sim_result,data);
      ++k; 
     }
-  iData->t0 = iData->data->localData[0]->timeValue;
+  iData->dtime.t0 = iData->data->localData[0]->timeValue;
 
   /*ToDo*/
   for(i=0; i< iData->dim.nx; ++i)
@@ -245,34 +245,35 @@ static int pre_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
 static int optimizer_time_setings_update(IPOPT_DATA_ *iData)
 {
   int i,k,id,j;
-  double t;
+  long double t;
   OPTIMIZER_MBASE *mbase = &iData->mbase;
+  OPTIMIZER_TIME *dtime = &iData->dtime;
 
   assert(iData->dim.nsi > 0);
 
-  iData->time[0] = iData->t0;
-  iData->dt_default = (iData->tf - iData->t0)/(iData->dim.nsi);
+  dtime->time[0] = dtime->t0;
+  dtime->dt[0] = (dtime->tf - dtime->t0)/(iData->dim.nsi);
 
-  t = iData->t0;
+  t = dtime->t0 + dtime->dt[0];
 
-  for(i=0;i<iData->dim.nsi; ++i){
-    iData->dt[i] = iData->dt_default;
-    t += iData->dt[i];
+  for(i=1;i<iData->dim.nsi; ++i){
+    dtime->dt[i] = dtime->dt[i-1];
+    t += dtime->dt[i];
   }
 
-  iData->dt[iData->dim.nsi-1] = iData->dt_default + (iData->tf - t);
+  dtime->dt[iData->dim.nsi-1] = dtime->dt[0] + (dtime->tf - t);
 
   for(i = 0, k=0, id=0; i<1; ++i,id += iData->dim.deg)
       for(j =0; j<iData->dim.deg; ++j)
-        iData->time[++k] = iData->time[id] + mbase->c[0][j]*iData->dt[i];
+        dtime->time[++k] = dtime->time[id] + mbase->c[0][j]*dtime->dt[i];
 
 
   for(; i<iData->dim.nsi; ++i,id += iData->dim.deg)
     for(j =0; j<iData->dim.deg; ++j)
-      iData->time[++k] = iData->time[id] + mbase->c[1][j]*iData->dt[i];
+      dtime->time[++k] = dtime->time[id] + mbase->c[1][j]*dtime->dt[i];
 
 
-  iData->time[k] = iData->tf;
+  dtime->time[k] = dtime->tf;
   return 0;
 }
 

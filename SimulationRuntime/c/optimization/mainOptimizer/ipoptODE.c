@@ -120,7 +120,7 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
  *  eval model DAE
  *  author: Vitalij Ruge
  **/
-int refreshSimData(double *x, double *u, double t, IPOPT_DATA_ *iData)
+int refreshSimData(double *x, double *u, long double t, IPOPT_DATA_ *iData)
 {
   int i,j;
   DATA* data = iData->data;
@@ -137,7 +137,7 @@ int refreshSimData(double *x, double *u, double t, IPOPT_DATA_ *iData)
   }
 
   data->callback->input_function(data);
-  sData->timeValue = t;
+  sData->timeValue = (double) t;
   /* updateContinuousSystem(iData->data); */
   data->simulationInfo.discreteCall=1;
   data->callback->functionDAE(data);
@@ -193,7 +193,7 @@ static int res2file(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
   SIMULATION_INFO *simInfo = &(data->simulationInfo);
   FILE * pFile;
 
-  solverInfo->currentTime = iData->time[0];
+  solverInfo->currentTime = iData->dtime.time[0];
   
   pFile = fopen("optimizeInput.csv", "wt");
   fprintf(pFile, "%s ", "time");
@@ -209,14 +209,14 @@ static int res2file(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
       sData->realVars[i] = iData->v[k++]*iData->vnom[i];
     }
     
-    fprintf(pFile, "%lf ",iData->time[iData->current_time]);
+    fprintf(pFile, "%lf ",(double)iData->dtime.time[iData->current_time]);
     for(i=0,j=iData->dim.nx; i< iData->dim.nu; ++i,++j){
       data->simulationInfo.inputVars[i] = iData->v[k]*iData->vnom[j];
       fprintf(pFile, "%lf ", iData->v[k++]*iData->vnom[j]);
     }
     fprintf(pFile, "%s", "\n");
 
-    solverInfo->currentTime = iData->time[iData->current_time++];
+    solverInfo->currentTime = iData->dtime.time[iData->current_time++];
     sData->timeValue = solverInfo->currentTime;
 
     /*updateDiscreteSystem(data);*/

@@ -75,10 +75,10 @@ Bool evalfF(Index n, double * v, Bool new_x, Number *objValue, void * useData)
       erg = 0.0;
       for(j=0; j<iData->dim.deg+1; ++j, x+=iData->dim.nv, ++k)
       {
-        goal_func_lagrange(x, &tmp,iData->time[k], iData);
+        goal_func_lagrange(x, &tmp,iData->dtime.time[k], iData);
         erg += mbase->b[0][j]*tmp;
       }
-      erg_+= erg*iData->dt[i];
+      erg_+= erg*iData->dtime.dt[i];
     }
 
     for(; i<iData->dim.nsi; ++i)
@@ -86,11 +86,11 @@ Bool evalfF(Index n, double * v, Bool new_x, Number *objValue, void * useData)
       erg = 0.0;
       for(j=0; j<iData->dim.deg; ++j, x+=iData->dim.nv, ++k)
       {
-        goal_func_lagrange(x, &tmp, iData->time[k], iData);
+        goal_func_lagrange(x, &tmp, iData->dtime.time[k], iData);
         erg += mbase->b[1][j]*tmp;
       }
 
-      erg_ += erg*iData->dt[i];
+      erg_ += erg*iData->dtime.dt[i];
     }
 
     lagrange = (double) erg_;
@@ -106,7 +106,7 @@ Bool evalfF(Index n, double * v, Bool new_x, Number *objValue, void * useData)
  **/
 Bool goal_func_mayer(double* vn, double *obj_value, IPOPT_DATA_ *iData)
 {  
-  refreshSimData(vn, vn + iData->dim.nx, iData->tf, iData);
+  refreshSimData(vn, vn + iData->dim.nx, iData->dtime.tf, iData);
   iData->data->callback->mayer(iData->data, obj_value);
   
   return TRUE;
@@ -145,23 +145,23 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
     
     for(i=0; i<1; ++i){
       for(k=0; k<iData->dim.deg+1; ++k, x+=iData->dim.nv){
-        refreshSimData(x,x+ iData->dim.nx,iData->time[i*iData->dim.deg+k],iData);
+        refreshSimData(x,x+ iData->dim.nx,iData->dtime.time[i*iData->dim.deg+k],iData);
         iData->cv = x;
         /*iData->data->callback->functionAlgebraics(iData->data);*/
         diff_symColoredObject(iData, iData->gradF,iData->lagrange_index);
         for(j=0; j<iData->dim.nv; ++j)
-          gradF[id++] = iData->dt[i]*mbase->b[0][k]*iData->gradF[j]*iData->vnom[j];
+          gradF[id++] = iData->dtime.dt[i]*mbase->b[0][k]*iData->gradF[j]*iData->vnom[j];
       }
     }
 
     for(; i<iData->dim.nsi; ++i){
       for(k=0; k<iData->dim.deg; ++k, x+=iData->dim.nv){
-        refreshSimData(x,x+ iData->dim.nx,iData->time[i*iData->dim.deg+k+1],iData);
+        refreshSimData(x,x+ iData->dim.nx,iData->dtime.time[i*iData->dim.deg+k+1],iData);
         iData->cv = x;
         /*iData->data->callback->functionAlgebraics(iData->data);*/
         diff_symColoredObject(iData, iData->gradF, iData->lagrange_index);
         for(j = 0; j<iData->dim.nv; ++j)
-          gradF[id++] =  iData->dt[i]*mbase->b[1][k]*iData->gradF[j]*iData->vnom[j];
+          gradF[id++] =  iData->dtime.dt[i]*mbase->b[1][k]*iData->gradF[j]*iData->vnom[j];
       }
     }
 
@@ -173,7 +173,7 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
   if(iData->mayer){
     x = v + iData->endN;
 
-    refreshSimData(x, x +iData->dim.nx, iData->tf, iData);
+    refreshSimData(x, x +iData->dim.nx, iData->dtime.tf, iData);
     iData->cv = x;
     /*iData->data->callback->functionAlgebraics(iData->data);*/
     diff_symColoredObject(iData, iData->gradF, iData->mayer_index);

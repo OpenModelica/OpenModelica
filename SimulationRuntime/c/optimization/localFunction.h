@@ -73,7 +73,7 @@ int diff_symColoredObject(IPOPT_DATA_ *iData, double *gradF, int this_it);
 
 /*model*/
 int functionODE_(double * x, double *u, double t, double * dotx, IPOPT_DATA_ *iData);
-int refreshSimData(double *x, double *u, double t, IPOPT_DATA_ *iData);
+int refreshSimData(double *x, double *u, long double t, IPOPT_DATA_ *iData);
 
 /*allocate*/
 int loadDAEmodel(DATA* data, IPOPT_DATA_ *iData);

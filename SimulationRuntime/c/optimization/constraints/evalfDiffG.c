@@ -109,30 +109,31 @@ Bool evalfDiffG(Index n, double * x, Bool new_x, Index m, Index njac, Index *iRo
     OPTIMIZER_DIM_VARS* dim = &iData->dim;
     int nng = dim->nJ;
     OPTIMIZER_MBASE *mbase = &iData->mbase;
+    OPTIMIZER_TIME *dtime = &iData->dtime;
 
     ipoptDebuge(iData,x);
 
     /*ToDo */
-    tmp[0] = iData->dt[0]*mbase->d[0][4];
-    tmp[1] = iData->dt[0]*mbase->d[1][4];
-    tmp[2] = iData->dt[0]*mbase->d[2][4];
+    tmp[0] = dtime->dt[0]*mbase->d[0][4];
+    tmp[1] = dtime->dt[0]*mbase->d[1][4];
+    tmp[2] = dtime->dt[0]*mbase->d[2][4];
 
-    diff_functionODE(x, iData->t0 , iData, iData->J0);
+    diff_functionODE(x, dtime->t0 , iData, iData->J0);
 
     for(i = 0, id = dim->nv, k = 0; i<1; ++i){
       tmp_index = i*dim->deg;
       for(l=0; l<dim->deg; ++l, id += dim->nv){
-        diff_functionODE(x+id , iData->time[tmp_index + l] , iData, iData->J);
+        diff_functionODE(x+id , dtime->time[tmp_index + l] , iData, iData->J);
         for(j=0; j<dim->nx; ++j){
           switch(l){
           case 0:
-            lobattoJac1(mbase->d[l], iData->J[j], iData->J0[j], iData->dt[i], values, dim->nv, &k, j, tmp[l], iData);
+            lobattoJac1(mbase->d[l], iData->J[j], iData->J0[j], dtime->dt[i], values, dim->nv, &k, j, tmp[l], iData);
             break;
           case 1:
-            lobattoJac2(mbase->d[l], iData->J[j], iData->J0[j], iData->dt[i], values, dim->nv, &k, j, tmp[l], iData);
+            lobattoJac2(mbase->d[l], iData->J[j], iData->J0[j], dtime->dt[i], values, dim->nv, &k, j, tmp[l], iData);
             break;
           case 2:
-            lobattoJac3(mbase->d[l], iData->J[j], iData->J0[j], iData->dt[i], values, dim->nv, &k, j, tmp[l], iData);
+            lobattoJac3(mbase->d[l], iData->J[j], iData->J0[j], dtime->dt[i], values, dim->nv, &k, j, tmp[l], iData);
             break;
           }
         }
@@ -145,17 +146,17 @@ Bool evalfDiffG(Index n, double * x, Bool new_x, Index m, Index njac, Index *iRo
     for(; i<dim->nsi; ++i){
       tmp_index = i*iData->dim.deg;
       for(l=0; l<dim->deg; ++l, id += dim->nv){
-        diff_functionODE(x+id, iData->time[tmp_index + l], iData, iData->J);
+        diff_functionODE(x+id, dtime->time[tmp_index + l], iData, iData->J);
         for(j=0; j<dim->nx; ++j){
           switch(l){
           case 0:
-            radauJac1(mbase->a[l], iData->J[j], iData->dt[i], values, dim->nv, &k, j, iData);
+            radauJac1(mbase->a[l], iData->J[j], dtime->dt[i], values, dim->nv, &k, j, iData);
             break;
           case 1:
-            radauJac2(mbase->a[l], iData->J[j], iData->dt[i], values, dim->nv, &k, j, iData);
+            radauJac2(mbase->a[l], iData->J[j], dtime->dt[i], values, dim->nv, &k, j, iData);
             break;
           case 2:
-            radauJac3(mbase->a[l], iData->J[j], iData->dt[i], values, dim->nv, &k, j, iData);
+            radauJac3(mbase->a[l], iData->J[j], dtime->dt[i], values, dim->nv, &k, j, iData);
             break;
           }
         }

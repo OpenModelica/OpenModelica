@@ -75,8 +75,8 @@ int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
   dim->nc = data->modelData.nOptimizeConstraints;
 
   dim->nsi = data->simulationInfo.numSteps;
-  iData->t0 = data->simulationInfo.startTime;
-  iData->tf = data->simulationInfo.stopTime;
+  iData->dtime.t0 = (long double)data->simulationInfo.startTime;
+  iData->dtime.tf = (long double)data->simulationInfo.stopTime;
 
   /***********************/
   dim->nX = dim->nx * dim->deg;
@@ -126,20 +126,22 @@ int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
 int move_grid(IPOPT_DATA_ *iData)
 {
   int i;
-  double t;
+  long double t;
+  OPTIMIZER_TIME *dtime = &iData->dtime;
 
   OPTIMIZER_DIM_VARS* dim = &iData->dim;
-  iData->dt_default = (iData->tf - iData->t0)/(dim->nsi);
+  dtime->dt[0] = (dtime->tf - dtime->t0)/(dim->nsi);
+
   assert(dim->nsi>0);
 
-  t = iData->t0;
+  t = dtime->t0 + dtime->dt[0];
 
-  for(i=0;i<dim->nsi; ++i){
-    iData->dt[i] = iData->dt_default;
-    t += iData->dt[i];
+  for(i=1;i<dim->nsi; ++i){
+    dtime->dt[i] = dtime->dt[i-1];
+    t += dtime->dt[i];
   }
   assert(dim->nsi>0);
-  iData->dt[dim->nsi-1] = iData->dt_default + (iData->tf - t);
+  dtime->dt[dim->nsi-1] = (dtime->tf - t) + dtime->dt[0] ;
   return 0;
 }
 
@@ -467,8 +469,8 @@ static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData)
     iData->xmin[i] = data->modelData.realVarsData[i].attribute.min*iData->scalVar[i];
     iData->xmax[i] = data->modelData.realVarsData[i].attribute.max*iData->scalVar[i];
   }
-  iData->data->callback->pickUpBoundsForInputsInOptimization(data,iData->umin, iData->umax, &iData->vnom[dim->nx], tmp, tmpname, start, &iData->startTimeOpt);
-  iData->preSim = (iData->t0 < (iData->startTimeOpt));
+  iData->data->callback->pickUpBoundsForInputsInOptimization(data,iData->umin, iData->umax, &iData->vnom[dim->nx], tmp, tmpname, start, &iData->dtime.startTimeOpt);
+  iData->preSim = ((double)iData->dtime.t0 < ((double)iData->dtime.startTimeOpt));
   if(ACTIVE_STREAM(LOG_IPOPT)|| ACTIVE_STREAM(LOG_IPOPT_ERROR)){
   char buffer[200];
     printf("Optimizer Variables");
@@ -548,19 +550,21 @@ static int optimizer_time_setings(IPOPT_DATA_ *iData)
 {
   int i,k,id,j;
   OPTIMIZER_MBASE *mbase = &iData->mbase;
-  iData->time[0] = iData->t0;
+  OPTIMIZER_TIME *dtime = &iData->dtime;
+
+  dtime->time[0] = dtime->t0;
 
   for(i = 0,k=0,id=0; i<1; ++i,id += iData->dim.deg)
     for(j = 0; j < iData->dim.deg; ++j)
-      iData->time[++k] = iData->time[id] + mbase->c[0][j]*iData->dt[i];
+      dtime->time[++k] = dtime->time[id] + mbase->c[0][j]*dtime->dt[i];
 
 
   for(; i<iData->dim.nsi; ++i,id += iData->dim.deg)
       for(j = 0; j < iData->dim.deg; ++j)
-        iData->time[++k] = iData->time[id] + mbase->c[1][j]*iData->dt[i];
+        dtime->time[++k] = dtime->time[id] + mbase->c[1][j]*dtime->dt[i];
 
 
-  iData->time[k] = iData->tf;
+  dtime->time[k] = dtime->tf;
   return 0;
 }
 

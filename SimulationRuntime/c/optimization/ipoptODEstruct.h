@@ -92,11 +92,28 @@ typedef struct OPTIMIZER_MBASE{
 
 }OPTIMIZER_MBASE;
 
+typedef struct OPTIMIZER_TIME{
+
+  long double t0;
+  long double tf;
+  long double *dt;
+  long double *time;
+
+  long double startTimeOpt;
+
+}OPTIMIZER_TIME;
+
 typedef struct IPOPT_DATA_
 {
   /*#*/
   OPTIMIZER_DIM_VARS dim;
+
+  /*coeff*/
   OPTIMIZER_MBASE mbase;
+
+  /*time*/
+  OPTIMIZER_TIME dtime;
+
   /* ODE */
   double * x0;
   double * xmin;
@@ -115,17 +132,6 @@ typedef struct IPOPT_DATA_
   double *scalRes;
   double *scalJac;
   double *scalf;
-
-  /*time*/
-  double t0;
-  double tf;
-  modelica_real startTimeOpt;
-  /* double dt; */
-  double t;
-  double dt_min;
-  double dt_max;
-  double dt_default;
-  double *dt;
 
   double *lhs;
   double *rhs;
@@ -178,7 +184,6 @@ typedef struct IPOPT_DATA_
 
   long int current_var;
   long int current_time;
-  double *time;
   short mayer;
   short lagrange;
   double pmayer;

@@ -142,7 +142,7 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
          mayer_yes = iData->mayer && ii+1 == dim->nsi && p == dim->deg;
 
          if(p){
-           num_hessian(x, iData->time[p], iData, ll,iData->lagrange,mayer_yes,obj_factor);
+           num_hessian(x, iData->dtime.time[p], iData, ll,iData->lagrange,mayer_yes,obj_factor);
            ll += nJ;
          }else{
            for(i = 0; i< dim->nx; ++i){
@@ -157,7 +157,7 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
            }
            //for(; i< nJ; ++i)
             // iData->sh[i] = 0;
-           num_hessian(x, iData->time[p], iData, iData->sh ,iData->lagrange,mayer_yes,obj_factor);
+           num_hessian(x, iData->dtime.time[p], iData, iData->sh ,iData->lagrange,mayer_yes,obj_factor);
          }
 
         for(i=0;i< dim->nv;++i)
@@ -176,7 +176,7 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
       tmp_index = ii*dim->deg;
       for(p = 1;p < dim->deg +1;++p,x += dim->nv){
         mayer_yes = iData->mayer && ii+1 == dim->nsi && p == dim->deg;
-        num_hessian(x, iData->time[tmp_index + p], iData,ll,iData->lagrange,mayer_yes,obj_factor);
+        num_hessian(x, iData->dtime.time[tmp_index + p], iData,ll,iData->lagrange,mayer_yes,obj_factor);
 
         for(i=0;i< dim->nv;++i)
           for(j = 0; j< i+1; ++j){
@@ -218,7 +218,7 @@ static int sumLagrange(IPOPT_DATA_ *iData, double * erg,int ii, int i, int j, in
       sum += mbase->b[0][p]*iData->oH[i][j];
   }
 
-  sum = iData->dt[ii]*sum;
+  sum = iData->dtime.dt[ii]*sum;
 
    for(l = dim->nx; l<nJ; ++l)
      sum += iData->H[l][i][j];
@@ -241,7 +241,7 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
   int i, j, l;
   short upCost;
   OPTIMIZER_DIM_VARS *dim = &iData->dim;
-  int nJ = (t>iData->t0) ? dim->nx + dim->nc : dim->nx;
+  int nJ = (t>(double)iData->dtime.t0) ? dim->nx + dim->nc : dim->nx;
 
   diff_functionODE(v, t , iData, iData->J0);
   upCost = (lagrange_yes || mayer_yes) && (obj_factor!=0);   

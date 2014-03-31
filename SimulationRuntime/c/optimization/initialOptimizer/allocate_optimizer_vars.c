@@ -98,7 +98,7 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   iData->Vmax = (double*)malloc(dim->NV*sizeof(double));
   iData->v = (double*)malloc(dim->NV*sizeof(double));
   iData->w = (double*)malloc((dim->nsi + 1)*(dim->nv)*sizeof(double));
-  iData->time = (double*)malloc((dim->deg*dim->nsi +1) *sizeof(double));
+  iData->dtime.time = (long double*)malloc((dim->deg*dim->nsi +1) *sizeof(long double));
   iData->start_u = (double*)malloc(dim->nv*sizeof(double));
 
   iData->J = (double**) malloc(dim->nJ * sizeof(double*));
@@ -156,7 +156,7 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   for(i = 0; i < dim->nv; i++)
     iData->Hg[i] = (short*) calloc(dim->nv, sizeof(short));
 
-  iData->dt = (double*)malloc((dim->nsi) *sizeof(double));
+  iData->dtime.dt = (long double*)malloc((dim->nsi) *sizeof(long double));
   iData->input_name = (char**)malloc(dim->nv*sizeof(char*));
 
   if(dim->nc > 0)
@@ -176,6 +176,7 @@ static int freeIpoptData(IPOPT_DATA_ *iData)
   int i,j;
   OPTIMIZER_DIM_VARS* dim = &iData->dim;
   OPTIMIZER_MBASE *mbase = &iData->mbase;
+  OPTIMIZER_TIME *dtime = &iData->dtime;
 
   for(i = 0; i < dim->nJ; i++){
     free(iData->J[i]);
@@ -236,9 +237,9 @@ static int freeIpoptData(IPOPT_DATA_ *iData)
   free(iData->Vmin);
   free(iData->Vmax);
   free(iData->v);
-  free(iData->time);
+  free(dtime->time);
   free(iData->w);
-  free(iData->dt);
+  free(dtime->dt);
   free(iData->lhs);
   free(iData->rhs);
   free(iData->sv);

@@ -70,9 +70,14 @@ Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
    int max_err_xi = -1;
    int tmp_index;
    OPTIMIZER_DIM_VARS* dim;
+   OPTIMIZER_TIME *dtime;
+
 
    iData = (IPOPT_DATA_ *) useData;
    dim = &iData->dim;
+   dtime = &iData->dtime;
+
+
    for(i=0, k=0, x0=v; i<1; ++i, x0=iData->x3){
 
      iData->x1 = x0 + dim->nv; /* 0 + 3 = 3;2*/
@@ -84,26 +89,26 @@ Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
      iData->u3 = iData->x3 + dim->nx;
 
      /*1*/
-     functionODE_(x0, x0 + dim->nx, iData->time[0], iData->dotx0, iData);
-     functionODE_(iData->x1, iData->u1, iData->time[1], iData->dotx1, iData);
+     functionODE_(x0, x0 + dim->nx, dtime->time[0], iData->dotx0, iData);
+     functionODE_(iData->x1, iData->u1, dtime->time[1], iData->dotx1, iData);
      evalG21(g + k, iData, x0, i);
      if(ACTIVE_STREAM(LOG_IPOPT_ERROR))
-       printMaxError(iData,g,iData->time[1],&max_err, &max_err_time, &max_err_xi);
+       printMaxError(iData,g,dtime->time[1],&max_err, &max_err_time, &max_err_xi);
 
      k += dim->nJ;
 
      /*2*/
-     functionODE_(iData->x2, iData->u2, iData->time[2], iData->dotx2, iData);
+     functionODE_(iData->x2, iData->u2, dtime->time[2], iData->dotx2, iData);
      evalG22(g + k, iData, x0, i);
      if(ACTIVE_STREAM(LOG_IPOPT_ERROR))
-       printMaxError(iData,g,iData->time[2],&max_err, &max_err_time, &max_err_xi);
+       printMaxError(iData,g,dtime->time[2],&max_err, &max_err_time, &max_err_xi);
      k += dim->nJ;
 
      /*3*/
-     functionODE_(iData->x3, iData->u3, iData->time[3], iData->dotx3, iData);
+     functionODE_(iData->x3, iData->u3, dtime->time[3], iData->dotx3, iData);
      evalG23(g + k, iData, x0, i);
      if(ACTIVE_STREAM(LOG_IPOPT_ERROR))
-       printMaxError(iData,g,iData->time[3],&max_err, &max_err_time, &max_err_xi);
+       printMaxError(iData,g,dtime->time[3],&max_err, &max_err_time, &max_err_xi);
      k += dim->nJ;
   }
 
@@ -119,24 +124,24 @@ Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
     tmp_index = i*dim->deg;
 
     /*1*/
-    functionODE_(iData->x1, iData->u1, iData->time[tmp_index + 1], iData->dotx1, iData);
+    functionODE_(iData->x1, iData->u1, dtime->time[tmp_index + 1], iData->dotx1, iData);
     evalG11(g + k, iData, x0, i);
     if(ACTIVE_STREAM(LOG_IPOPT_ERROR))
-      printMaxError(iData,g,iData->time[tmp_index + 1],&max_err, &max_err_time, &max_err_xi);
+      printMaxError(iData,g,dtime->time[tmp_index + 1],&max_err, &max_err_time, &max_err_xi);
     k += dim->nJ;
 
     /*2*/
-    functionODE_(iData->x2, iData->u2, iData->time[tmp_index + 2], iData->dotx2, iData);
+    functionODE_(iData->x2, iData->u2, dtime->time[tmp_index + 2], iData->dotx2, iData);
     evalG12(g + k, iData, x0, i);
     if(ACTIVE_STREAM(LOG_IPOPT))
-      printMaxError(iData,g,iData->time[tmp_index + 2],&max_err, &max_err_time, &max_err_xi);
+      printMaxError(iData,g,dtime->time[tmp_index + 2],&max_err, &max_err_time, &max_err_xi);
     k += dim->nJ;
 
     /*3*/
-    functionODE_(iData->x3, iData->u3, iData->time[tmp_index + 3], iData->dotx3, iData);
+    functionODE_(iData->x3, iData->u3, dtime->time[tmp_index + 3], iData->dotx3, iData);
     evalG13(g + k, iData, x0, i);
     if(ACTIVE_STREAM(LOG_IPOPT_ERROR))
-      printMaxError(iData,g,iData->time[tmp_index + 3],&max_err, &max_err_time, &max_err_xi);
+      printMaxError(iData,g,dtime->time[tmp_index + 3],&max_err, &max_err_time, &max_err_xi);
     k += dim->nJ;
   }
   if(ACTIVE_STREAM(LOG_IPOPT_ERROR)){
@@ -256,7 +261,7 @@ static inline int evalG11(Number *g, IPOPT_DATA_ *iData, double *x0, int i)
 {
   int j;
   for(j=0; j<iData->dim.nx; ++j)
-    g[j] = (iData->mbase.a[0][0]*x0[j] + iData->mbase.a[0][3]*iData->x3[j] + iData->scalf[j]*iData->dt[i]*iData->dotx1[j]) - (iData->mbase.a[0][1]*iData->x1[j] + iData->mbase.a[0][2]*iData->x2[j]);
+    g[j] = (iData->mbase.a[0][0]*x0[j] + iData->mbase.a[0][3]*iData->x3[j] + iData->scalf[j]*iData->dtime.dt[i]*iData->dotx1[j]) - (iData->mbase.a[0][1]*iData->x1[j] + iData->mbase.a[0][2]*iData->x2[j]);
 
   memcpy(g + iData->dim.nx, &iData->data->localData[0]->realVars[iData->data->modelData.nVariablesReal - iData->dim.nc], sizeof(double)*iData->dim.nc);
   return 0;
@@ -271,7 +276,7 @@ static inline int evalG12(Number *g, IPOPT_DATA_ *iData, double *x0, int i)
 {
   int j;
   for(j=0; j<iData->dim.nx; ++j)
-    g[j] = (iData->mbase.a[1][1]*iData->x1[j] + iData->scalf[j]*iData->dt[i]*iData->dotx2[j]) - (iData->mbase.a[1][0]*x0[j] + iData->mbase.a[1][2]*iData->x2[j] + iData->mbase.a[1][3]*iData->x3[j]);
+    g[j] = (iData->mbase.a[1][1]*iData->x1[j] + iData->scalf[j]*iData->dtime.dt[i]*iData->dotx2[j]) - (iData->mbase.a[1][0]*x0[j] + iData->mbase.a[1][2]*iData->x2[j] + iData->mbase.a[1][3]*iData->x3[j]);
 
   memcpy(g + iData->dim.nx, &iData->data->localData[0]->realVars[iData->data->modelData.nVariablesReal - iData->dim.nc], sizeof(double)*iData->dim.nc);
   return 0;
@@ -286,7 +291,7 @@ static inline int evalG13(Number *g, IPOPT_DATA_ *iData, double *x0, int i)
 {
   int j;
   for(j=0; j<iData->dim.nx; ++j)
-    g[j] = (iData->mbase.a[2][0]*x0[j] + iData->mbase.a[2][2]*iData->x2[j] + iData->scalf[j]*iData->dt[i]*iData->dotx3[j]) - (iData->mbase.a[2][1]*iData->x1[j] + iData->mbase.a[2][3]*iData->x3[j]);
+    g[j] = (iData->mbase.a[2][0]*x0[j] + iData->mbase.a[2][2]*iData->x2[j] + iData->scalf[j]*iData->dtime.dt[i]*iData->dotx3[j]) - (iData->mbase.a[2][1]*iData->x1[j] + iData->mbase.a[2][3]*iData->x3[j]);
 
   memcpy(g + iData->dim.nx, &iData->data->localData[0]->realVars[iData->data->modelData.nVariablesReal - iData->dim.nc], sizeof(double)*iData->dim.nc);
   return 0;
@@ -301,7 +306,7 @@ static inline int evalG21(Number *g, IPOPT_DATA_ *iData, double *x0, int i)
 {
   int j;
   for(j=0; j<iData->dim.nx; ++j)
-    g[j] = (iData->scalf[j]*iData->dt[i]*(iData->dotx1[j] + iData->mbase.d[0][4]*iData->dotx0[j]) + iData->mbase.d[0][0]*x0[j] + iData->mbase.d[0][3]*iData->x3[j]) - (iData->mbase.d[0][1]*iData->x1[j] + iData->mbase.d[0][2]*iData->x2[j]);
+    g[j] = (iData->scalf[j]*iData->dtime.dt[i]*(iData->dotx1[j] + iData->mbase.d[0][4]*iData->dotx0[j]) + iData->mbase.d[0][0]*x0[j] + iData->mbase.d[0][3]*iData->x3[j]) - (iData->mbase.d[0][1]*iData->x1[j] + iData->mbase.d[0][2]*iData->x2[j]);
 
   memcpy(g + iData->dim.nx, &iData->data->localData[0]->realVars[iData->data->modelData.nVariablesReal - iData->dim.nc], sizeof(double)*iData->dim.nc);
   return 0;
@@ -316,7 +321,7 @@ static inline int evalG22(Number *g, IPOPT_DATA_ *iData, double *x0, int i)
 {
   int j;
   for(j=0; j<iData->dim.nx; ++j)
-    g[j] = (iData->scalf[j]*iData->dt[i]*iData->dotx2[j] + iData->mbase.d[1][1]*iData->x1[j]) - (iData->scalf[j]*iData->dt[i]*iData->mbase.d[1][4]*iData->dotx0[j] + iData->mbase.d[1][0]*x0[j] + iData->mbase.d[1][2]*iData->x2[j] + iData->mbase.d[1][3]*iData->x3[j]);
+    g[j] = (iData->scalf[j]*iData->dtime.dt[i]*iData->dotx2[j] + iData->mbase.d[1][1]*iData->x1[j]) - (iData->scalf[j]*iData->dtime.dt[i]*iData->mbase.d[1][4]*iData->dotx0[j] + iData->mbase.d[1][0]*x0[j] + iData->mbase.d[1][2]*iData->x2[j] + iData->mbase.d[1][3]*iData->x3[j]);
 
   memcpy(g + iData->dim.nx, &iData->data->localData[0]->realVars[iData->data->modelData.nVariablesReal - iData->dim.nc], sizeof(double)*iData->dim.nc);
   return 0;
@@ -331,7 +336,7 @@ static inline int evalG23(Number *g, IPOPT_DATA_ *iData, double *x0, int i)
 {
   int j;
   for(j=0; j<iData->dim.nx; ++j)
-    g[j] = (iData->scalf[j]*iData->dt[i]*(iData->mbase.d[2][4]*iData->dotx0[j] + iData->dotx3[j]) + iData->mbase.d[2][0]*x0[j] + iData->mbase.d[2][2]*iData->x2[j]) - (iData->mbase.d[2][1]*iData->x1[j] + iData->mbase.d[2][3]*iData->x3[j]);
+    g[j] = (iData->scalf[j]*iData->dtime.dt[i]*(iData->mbase.d[2][4]*iData->dotx0[j] + iData->dotx3[j]) + iData->mbase.d[2][0]*x0[j] + iData->mbase.d[2][2]*iData->x2[j]) - (iData->mbase.d[2][1]*iData->x1[j] + iData->mbase.d[2][3]*iData->x3[j]);
 
   memcpy(g + iData->dim.nx, &iData->data->localData[0]->realVars[iData->data->modelData.nVariablesReal - iData->dim.nc], sizeof(double)*iData->dim.nc);
   return 0;
