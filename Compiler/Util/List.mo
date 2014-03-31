@@ -7670,6 +7670,45 @@ algorithm
   outList := listReverse(filterOnTrue_tail(inList, inFilterFunc, {}));
 end filterOnTrue;
 
+public function filter1OnTrueSync
+  "like filterOnTrue but performs the same filtering synchronously on a second list.
+  Takes 2 list of values and a filter function and an extra argument over the values of the first list and returns a
+   sub list of values for both lists for which the matching function returns true for the first list.
+     Example:
+       filter({1, 2, 3, 4, 5}, isEven) => {2, 4}"
+  input list<ElementType1> inList;
+  input FilterFunc inFilterFunc;
+  input ArgType1 inArg1;
+  input list<ElementType2> inSyncList;
+  output list<ElementType1> outList_a;
+  output list<ElementType2> outList_b;
+
+  partial function FilterFunc
+    input ElementType1 inElement;
+    input ArgType1 inArg1;
+    output Boolean outResult;
+  end FilterFunc;
+algorithm
+  (outList_a,outList_b) := matchcontinue(inList,inFilterFunc,inArg1,inSyncList)
+    local
+      list<ElementType1> lst1;
+      list<ElementType2> lst2;
+    case(_,_,_,_)
+      equation
+        true = intEq(listLength(inList),listLength(inSyncList));
+        (lst1,lst2) = filter1OnTrueSync_tail(inList, inFilterFunc, inArg1, inSyncList, {}, {});
+        lst1 = listReverse(lst1);
+        lst2 = listReverse(lst2);
+      then
+        (lst1,lst2);
+    else
+      equation
+        print("filterOnTrueSync failed");
+      then
+        fail();
+  end matchcontinue;
+end filter1OnTrueSync;
+
 public function filterOnTrueSync
   "like filterOnTrue but performs the same filtering synchronously on a second list.
   Takes 2 list of values and a filter function over the values of the first list and returns a
@@ -7706,7 +7745,6 @@ algorithm
         fail();
   end matchcontinue;
 end filterOnTrueSync;
-
 
 public function filterOnTrueReverse
   "Takes a list of values and a filter function over the values and returns a
@@ -7799,6 +7837,50 @@ algorithm
 
   end matchcontinue;
 end filterOnTrueSync_tail;
+
+protected function filter1OnTrueSync_tail
+  "Tail recursive implementation of filter."
+  input list<ElementType1> inList;
+  input FilterFunc inFilterFunc;
+  input ArgType1 inArg1;
+  input list<ElementType2> inSyncLst;
+  input list<ElementType1> inAccumList;
+  input list<ElementType2> inAccumSyncList;
+  output list<ElementType1> outList;
+  output list<ElementType2> outSyncList;
+
+  partial function FilterFunc
+    input ElementType1 inElement;
+    input ArgType1 inArg1;
+    output Boolean outResult;
+  end FilterFunc;
+algorithm
+  (outList,outSyncList) := matchcontinue(inList, inFilterFunc, inArg1, inSyncLst, inAccumList, inAccumSyncList)
+    local
+      ElementType1 e;
+      ElementType2 f;
+      list<ElementType1> rest,lst1;
+      list<ElementType2> restf,lst2;
+    case ({}, _, _, _, _, _) then (inAccumList, inAccumSyncList);
+
+    // Add to front if the condition works.
+    case (e :: rest, _, _, f :: restf, _, _)
+      equation
+        true = inFilterFunc(e,inArg1);
+        (lst1,lst2) = filter1OnTrueSync_tail(rest, inFilterFunc, inArg1, restf, e :: inAccumList, f :: inAccumSyncList);
+      then
+        (lst1,lst2);
+
+    // Filter out and move along.
+    case (e :: rest, _, _, f :: restf, _, _)
+      equation
+      (lst1,lst2) = filter1OnTrueSync_tail(rest, inFilterFunc, inArg1, restf, inAccumList, inAccumSyncList);
+     then
+      (lst1,lst2);
+
+  end matchcontinue;
+end filter1OnTrueSync_tail;
+
 
 public function filter1
   "Takes a list of values, a filter function over the values and an extra
