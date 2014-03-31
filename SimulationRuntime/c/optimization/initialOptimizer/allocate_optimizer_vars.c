@@ -79,12 +79,6 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   iData->mult_g = (double*)malloc(ng*sizeof(double));
   iData->mult_x_L = (double*)malloc(dim->NV*sizeof(double));
   iData->mult_x_U = (double*)malloc(dim->NV*sizeof(double));
-  mbase->a1 = (long double*)malloc(deg1*sizeof(long double));
-  mbase->a2 = (long double*)malloc(deg1*sizeof(long double));
-  mbase->a3 = (long double*)malloc(deg1*sizeof(long double));
-  mbase->d1 = (long double*)malloc(deg2*sizeof(long double));
-  mbase->d2 = (long double*)malloc(deg2*sizeof(long double));
-  mbase->d3 = (long double*)malloc(deg2*sizeof(long double));
   iData->lhs = (double*)malloc((int)dim->nJ*sizeof(double));
   iData->rhs = (double*)malloc((int)dim->nJ*sizeof(double));
   iData->dotx0 = (double*)malloc(dim->nx*sizeof(double));
@@ -226,12 +220,6 @@ static int freeIpoptData(IPOPT_DATA_ *iData)
   free(iData->mult_g);
   free(iData->mult_x_L);
   free(iData->mult_x_U);
-  free(mbase->a1);
-  free(mbase->a2);
-  free(mbase->a3);
-  free(mbase->d1);
-  free(mbase->d2);
-  free(mbase->d3);
   free(iData->dotx0);
   free(iData->dotx1);
   free(iData->dotx2);

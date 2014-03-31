@@ -112,9 +112,10 @@ Bool evalfDiffG(Index n, double * x, Bool new_x, Index m, Index njac, Index *iRo
 
     ipoptDebuge(iData,x);
 
-    tmp[0] = iData->dt[0]*mbase->d1[4];
-    tmp[1] = iData->dt[0]*mbase->d2[4];
-    tmp[2] = iData->dt[0]*mbase->d3[4];
+    /*ToDo */
+    tmp[0] = iData->dt[0]*mbase->d[0][4];
+    tmp[1] = iData->dt[0]*mbase->d[1][4];
+    tmp[2] = iData->dt[0]*mbase->d[2][4];
 
     diff_functionODE(x, iData->t0 , iData, iData->J0);
 
@@ -125,13 +126,13 @@ Bool evalfDiffG(Index n, double * x, Bool new_x, Index m, Index njac, Index *iRo
         for(j=0; j<dim->nx; ++j){
           switch(l){
           case 0:
-            lobattoJac1(mbase->d1, iData->J[j], iData->J0[j], iData->dt[i], values, dim->nv, &k, j, tmp[0], iData);
+            lobattoJac1(mbase->d[l], iData->J[j], iData->J0[j], iData->dt[i], values, dim->nv, &k, j, tmp[l], iData);
             break;
           case 1:
-            lobattoJac2(mbase->d2, iData->J[j], iData->J0[j], iData->dt[i], values, dim->nv, &k, j, tmp[1], iData);
+            lobattoJac2(mbase->d[l], iData->J[j], iData->J0[j], iData->dt[i], values, dim->nv, &k, j, tmp[l], iData);
             break;
           case 2:
-            lobattoJac3(mbase->d3, iData->J[j], iData->J0[j], iData->dt[i], values, dim->nv, &k, j, tmp[2], iData);
+            lobattoJac3(mbase->d[l], iData->J[j], iData->J0[j], iData->dt[i], values, dim->nv, &k, j, tmp[l], iData);
             break;
           }
         }
@@ -148,13 +149,13 @@ Bool evalfDiffG(Index n, double * x, Bool new_x, Index m, Index njac, Index *iRo
         for(j=0; j<dim->nx; ++j){
           switch(l){
           case 0:
-            radauJac1(mbase->a1, iData->J[j], iData->dt[i], values, dim->nv, &k, j, iData);
+            radauJac1(mbase->a[l], iData->J[j], iData->dt[i], values, dim->nv, &k, j, iData);
             break;
           case 1:
-            radauJac2(mbase->a2, iData->J[j], iData->dt[i], values, dim->nv, &k, j, iData);
+            radauJac2(mbase->a[l], iData->J[j], iData->dt[i], values, dim->nv, &k, j, iData);
             break;
           case 2:
-            radauJac3(mbase->a3, iData->J[j], iData->dt[i], values, dim->nv, &k, j, iData);
+            radauJac3(mbase->a[l], iData->J[j], iData->dt[i], values, dim->nv, &k, j, iData);
             break;
           }
         }

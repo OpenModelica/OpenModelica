@@ -81,20 +81,14 @@ typedef struct OPTIMIZER_DIM_VARS{
 
 typedef struct OPTIMIZER_MBASE{
 
-  long double b[3][10];
+  long double b[3][5];
 
   long double c[3][5];
 
-  long double *a1;
-  long double *a2;
-  long double *a3;
+  long double a[5][5];
+  long double d[5][5];
 
-  long double *d1;
-  long double *d2;
-  long double *d3;
   long double invd1_4;
-
-
 
 }OPTIMIZER_MBASE;
 

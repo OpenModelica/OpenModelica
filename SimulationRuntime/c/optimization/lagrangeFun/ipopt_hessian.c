@@ -148,9 +148,9 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
            for(i = 0; i< dim->nx; ++i){
              if(ll[i] != ll[i + nJ]){
                if(mbase->invd1_4*ll[i+2*nJ] != ll[i + nJ])
-                 iData->sh[i] = mbase->d1[4]*(ll[i] + (mbase->invd1_4*ll[i+2*nJ] - ll[i + nJ]));
+                 iData->sh[i] = mbase->d[0][4]*(ll[i] + (mbase->invd1_4*ll[i+2*nJ] - ll[i + nJ]));
                else
-                 iData->sh[i] = mbase->d1[4]*ll[i];
+                 iData->sh[i] = mbase->d[0][4]*ll[i];
              }else{
                iData->sh[i] = ll[i+2*nJ];
              }
