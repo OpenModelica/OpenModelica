@@ -346,7 +346,7 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver/initialization)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/util)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/fmi/export)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmi1)
 
   # OMDEV PATH
   IF(NOT OMDEV)
@@ -380,9 +380,9 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
   # target fuer OM_OUTPUT
   ADD_CUSTOM_TARGET(${model}codegen ALL DEPENDS ${OMC_OUTPUT})
 
-  SET(OMC_FMU_CODE ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmu_model_interface.h
-                   ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmiModelFunctions.h
-				   ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmiModelTypes.h)
+  SET(OMC_FMU_CODE ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmi1/fmu_model_interface.h
+                   ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmi1/fmiModelFunctions.h
+				   ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmi1/fmiModelTypes.h)
 
   ADD_LIBRARY(${model} SHARED ${OMC_OUTPUT} ${CSRC} ${OMC_FMU_CODE})
   TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver f2c meta ModelicaExternalC libexpat initialization lapack_win32_MT)
@@ -465,9 +465,9 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
   # target fuer OM_OUTPUT
   ADD_CUSTOM_TARGET(${model}codegen ALL DEPENDS ${OMC_OUTPUT})
 
-  SET(OMC_FMU_CODE ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmu_model_interface.h
-                   ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmiModelFunctions.h
-				   ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmiModelTypes.h)
+  SET(OMC_FMU_CODE ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmi1/fmu_model_interface.h
+                   ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmi1/fmiModelFunctions.h
+				   ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmi1/fmiModelTypes.h)
 
   ADD_DEFINITIONS(/TP ${FMU_MODELNAME}.c)
   set_source_files_properties(${OMC_OUTPUT} PROPERTIES LANGUAGE CXX)
