@@ -69,14 +69,15 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   OPTIMIZER_DIM_VARS* dim = &iData->dim;
   OPTIMIZER_MBASE *mbase = &iData->mbase;
   OPTIMIZER_STUCTURE *sopt = &iData->sopt;
+  OPTIMIZER_BOUNDS *bounds = &iData->bounds;
 
   ng = dim->NRes+dim->nc*dim->deg*dim->nsi;
   deg1 = dim->deg + 1;
   deg2 = deg1 + 1;
 
   dim->nJ = dim->nc + dim->nx;
-  iData->gmin = (double*)calloc(ng,sizeof(double));
-  iData->gmax = (double*)calloc(ng,sizeof(double));
+  bounds->gmin = (double*)calloc(ng,sizeof(double));
+  bounds->gmax = (double*)calloc(ng,sizeof(double));
   iData->mult_g = (double*)malloc(ng*sizeof(double));
   iData->mult_x_L = (double*)malloc(dim->NV*sizeof(double));
   iData->mult_x_U = (double*)malloc(dim->NV*sizeof(double));
@@ -86,17 +87,17 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   for(i =0; i< dim->deg + 1; ++i)
     mbase->dotx[i] = (double*)malloc(dim->nx*sizeof(double));
 
-  iData->xmin = (double*)malloc(dim->nx*sizeof(double));
-  iData->xmax = (double*)malloc(dim->nx*sizeof(double));
-  iData->umin = (double*)malloc(dim->nu*sizeof(double));
-  iData->umax = (double*)malloc(dim->nu*sizeof(double));
-  iData->vmin = (double*)malloc(dim->nv*sizeof(double));
-  iData->vmax = (double*)malloc(dim->nv*sizeof(double));
+  bounds->xmin = (double*)malloc(dim->nx*sizeof(double));
+  bounds->xmax = (double*)malloc(dim->nx*sizeof(double));
+  bounds->umin = (double*)malloc(dim->nu*sizeof(double));
+  bounds->umax = (double*)malloc(dim->nu*sizeof(double));
+  bounds->vmin = (double*)malloc(dim->nv*sizeof(double));
+  bounds->vmax = (double*)malloc(dim->nv*sizeof(double));
   iData->vnom = (double*)malloc(dim->nv*sizeof(double));
   iData->scalVar = (double*)malloc(dim->nv*sizeof(double));
   iData->scalf = (double*)malloc(dim->nx*sizeof(double));
-  iData->Vmin = (double*)malloc(dim->NV*sizeof(double));
-  iData->Vmax = (double*)malloc(dim->NV*sizeof(double));
+  bounds->Vmin = (double*)malloc(dim->NV*sizeof(double));
+  bounds->Vmax = (double*)malloc(dim->NV*sizeof(double));
   iData->v = (double*)malloc(dim->NV*sizeof(double));
   iData->w = (double*)malloc((dim->nsi + 1)*(dim->nv)*sizeof(double));
   iData->dtime.time = (long double*)malloc((dim->deg*dim->nsi +1) *sizeof(long double));
@@ -160,7 +161,7 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   if(dim->nc > 0)
     for(i = dim->nx; i<ng; i+=dim->nJ)
       for(j=0;j<dim->nc;++j)
-        iData->gmin[i+j] = -1e21;
+        bounds->gmin[i+j] = -1e21;
 
   return 0;
 }
@@ -176,6 +177,7 @@ static int freeIpoptData(IPOPT_DATA_ *iData)
   OPTIMIZER_MBASE *mbase = &iData->mbase;
   OPTIMIZER_TIME *dtime = &iData->dtime;
   OPTIMIZER_STUCTURE *sopt = &iData->sopt;
+  OPTIMIZER_BOUNDS *bounds = &iData->bounds;
 
   for(i = 0; i < dim->nJ; i++){
     free(iData->J[i]);
@@ -213,8 +215,8 @@ static int freeIpoptData(IPOPT_DATA_ *iData)
   free(iData->gradF_);
   free(iData->gradF0);
   free(iData->gradF00);
-  free(iData->gmin);
-  free(iData->gmax);
+  free(bounds->gmin);
+  free(bounds->gmax);
   free(iData->mult_g);
   free(iData->mult_x_L);
   free(iData->mult_x_U);
@@ -223,17 +225,17 @@ static int freeIpoptData(IPOPT_DATA_ *iData)
     free(mbase->dotx[i]);
 
 
-  free(iData->xmin);
-  free(iData->xmax);
-  free(iData->umin);
-  free(iData->umax);
-  free(iData->vmin);
-  free(iData->vmax);
+  free(bounds->xmin);
+  free(bounds->xmax);
+  free(bounds->umin);
+  free(bounds->umax);
+  free(bounds->vmin);
+  free(bounds->vmax);
   free(iData->vnom);
   free(iData->scalVar);
   free(iData->scalf);
-  free(iData->Vmin);
-  free(iData->Vmax);
+  free(bounds->Vmin);
+  free(bounds->Vmax);
   free(iData->v);
   free(dtime->time);
   free(iData->w);

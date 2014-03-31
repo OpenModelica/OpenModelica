@@ -90,10 +90,10 @@ typedef struct OPTIMIZER_MBASE{
 
   long double invd1_4;
 
-  double *dotx[5];
+  double *dotx[7];
 
-  double *x[5];
-  double *u[5];
+  double *x[7];
+  double *u[7];
 
 }OPTIMIZER_MBASE;
 
@@ -130,9 +130,24 @@ typedef struct OPTIMIZER_STUCTURE{
 
   modelica_boolean preSim;
 
-
 }OPTIMIZER_STUCTURE;
 
+
+typedef struct OPTIMIZER_BOUNDS{
+
+  double * xmin;
+  double * xmax;
+  double * umin;
+  double * umax;
+  double * vmin;
+  double * vmax;
+  double * Vmin;
+  double * Vmax;
+
+  double *gmin;
+  double *gmax;
+
+}OPTIMIZER_BOUNDS;
 
 
 typedef struct IPOPT_DATA_
@@ -148,16 +163,10 @@ typedef struct IPOPT_DATA_
 
   OPTIMIZER_STUCTURE sopt;
 
+  OPTIMIZER_BOUNDS bounds;
+
   /* ODE */
   double * x0;
-  double * xmin;
-  double * xmax;
-  double * umin;
-  double * umax;
-  double * vmin;
-  double * vmax;
-  double * Vmin;
-  double * Vmax;
 
   double * vnom;
   double * start_u;
@@ -175,10 +184,7 @@ typedef struct IPOPT_DATA_
   double *w;
   double *cv;
 
-  double *gmin;
-  double *gmax;
-
-  long int endN;
+  int endN;
   double **J0;
   double **J;
   double ** gradFomc;
@@ -199,12 +205,12 @@ typedef struct IPOPT_DATA_
   double *mult_x_L;
   double *mult_x_U;
 
-  long int current_var;
-  long int current_time;
+  int current_var;
+  int current_time;
   double pmayer;
   double plagrange;
-  int mayer_index;
-  int lagrange_index;
+  short mayer_index;
+  short lagrange_index;
   DATA * data;
 
   double *vsave;

@@ -87,8 +87,8 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
   /*ToDo*/
   for(i=0; i<iData->dim.nx; i++)
   {
-    iData->Vmin[i] = iData->Vmax[i] = iData->x0[i]*iData->scalVar[i];
-    iData->v[i] = iData->Vmin[i];
+    iData->bounds.Vmin[i] = iData->bounds.Vmax[i] = iData->x0[i]*iData->scalVar[i];
+    iData->v[i] = iData->bounds.Vmin[i];
   }
 
   initial_guess_ipopt(iData,solverInfo);
@@ -98,8 +98,8 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
   if(flag == 5){
     int tmp_dim = iData->dim.NRes +iData->dim.nc*iData->dim.deg*iData->dim.nsi;
 
-    nlp = CreateIpoptProblem(iData->dim.NV, iData->Vmin, iData->Vmax,
-        tmp_dim, iData->gmin, iData->gmax, iData->dim.njac, iData->dim.nhess, 0, &evalfF,
+    nlp = CreateIpoptProblem(iData->dim.NV, iData->bounds.Vmin, iData->bounds.Vmax,
+        tmp_dim, iData->bounds.gmin, iData->bounds.gmax, iData->dim.njac, iData->dim.nhess, 0, &evalfF,
                   &evalfG, &evalfDiffF, &evalfDiffG, &ipopt_h);
 
     AddIpoptNumOption(nlp, "tol", 1e-8);

@@ -133,7 +133,7 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
    v = iData->v;
 
    for(ii=dim->nx,j=0; j < dim->nu; ++j, ++ii){
-     u0[j] = fmin(fmax(u0[j],iData->umin[j]),iData->umax[j]);
+     u0[j] = fmin(fmax(u0[j],iData->bounds.umin[j]),iData->bounds.umax[j]);
      v[ii] = u0[j]*iData->scalVar[j + dim->nx];
    }
 
@@ -181,9 +181,9 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
     if(id >=dim->nv)
     id = 0;
     if(id <dim->nx){
-     iData->v[i] =fmin(fmax(iData->vmin[id],iData->v[i]),iData->vmax[id]);
+     iData->v[i] =fmin(fmax(iData->bounds.vmin[id],iData->v[i]),iData->bounds.vmax[id]);
     }else if(id< dim->nv){
-     iData->v[i] = fmin(fmax(iData->vmin[id],iData->v[i]),iData->vmax[id]);
+     iData->v[i] = fmin(fmax(iData->bounds.vmin[id],iData->v[i]),iData->bounds.vmax[id]);
     }
   }
 
@@ -230,12 +230,12 @@ static int pre_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
   /*ToDo*/
   for(i=0; i< iData->dim.nx; ++i)
   {
-    iData->Vmin[i] = (*iData).Vmax[i] = iData->data->localData[1]->realVars[i]*iData->scalVar[i];
-    iData->v[i] = iData->Vmin[i];
+    iData->bounds.Vmin[i] = iData->bounds.Vmax[i] = iData->data->localData[1]->realVars[i]*iData->scalVar[i];
+    iData->v[i] = iData->bounds.Vmin[i];
   }
   for(j=0; i< iData->dim.nv; ++i,++j){
-    iData->Vmin[i] = iData->Vmax[i] = data->simulationInfo.inputVars[j]*iData->scalVar[i];
-    iData->v[i] = iData->Vmin[i];
+    iData->bounds.Vmin[i] = iData->bounds.Vmax[i] = data->simulationInfo.inputVars[j]*iData->scalVar[i];
+    iData->v[i] = iData->bounds.Vmin[i];
   }
   optimizer_time_setings_update(iData);
 

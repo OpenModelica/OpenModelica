@@ -471,12 +471,12 @@ static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData)
     iData->scalVar[i] = 1.0 / iData->vnom[i];
     iData->scalf[i] = iData->scalVar[i];
 
-    iData->xmin[i] = data->modelData.realVarsData[i].attribute.min*iData->scalVar[i];
-    iData->xmax[i] = data->modelData.realVarsData[i].attribute.max*iData->scalVar[i];
+    iData->bounds.xmin[i] = data->modelData.realVarsData[i].attribute.min*iData->scalVar[i];
+    iData->bounds.xmax[i] = data->modelData.realVarsData[i].attribute.max*iData->scalVar[i];
   }
 
   iData->data->callback->pickUpBoundsForInputsInOptimization(data,
-      iData->umin, iData->umax, &iData->vnom[dim->nx], tmp, tmpname, start,
+      iData->bounds.umin, iData->bounds.umax, &iData->vnom[dim->nx], tmp, tmpname, start,
       &ttmp);
   iData->dtime.startTimeOpt = ttmp;
 
@@ -488,14 +488,14 @@ static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData)
     printf("\n========================================================");
     for(i=0; i<dim->nx; ++i){
 
-      if (iData->xmin[i] > -1e20)
+      if (iData->bounds.xmin[i] > -1e20)
         sprintf(buffer, ", min = %g", data->modelData.realVarsData[i].attribute.min);
       else
         sprintf(buffer, ", min = -Inf");
 
       printf("\nState[%i]:%s(start = %g, nominal = %g%s",i, iData->data->modelData.realVarsData[i].info.name, data->modelData.realVarsData[i].attribute.start, iData->vnom[i], buffer);
 
-      if (iData->xmax[i] < 1e20)
+      if (iData->bounds.xmax[i] < 1e20)
         sprintf(buffer, ", max = %g", data->modelData.realVarsData[i].attribute.max);
       else
         sprintf(buffer, ", max = +Inf");
@@ -506,15 +506,15 @@ static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData)
 
     for(; i<dim->nv; ++i){
       k = i-dim->nx;
-      if ((double)iData->umin[k] > -1e20)
-        sprintf(buffer, ", min = %g", iData->umin[k]);
+      if (iData->bounds.umin[k] > -1e20)
+        sprintf(buffer, ", min = %g", iData->bounds.umin[k]);
       else
         sprintf(buffer, ", min = -Inf");
 
       printf("\nInput[%i]:%s(start = %g, nominal = %g%s",i, tmpname[k] ,start[k], iData->vnom[i], buffer);
 
-      if (iData->umax[k] < 1e20)
-        sprintf(buffer, ", max = %g", iData->umax[k]);
+      if (iData->bounds.umax[k] < 1e20)
+        sprintf(buffer, ", max = %g", iData->bounds.umax[k]);
       else
         sprintf(buffer, ", max = +Inf");
 
@@ -527,25 +527,25 @@ static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData)
   }
 
   for(i =0,j = dim->nx;i<dim->nu;++i,++j){
-    check_nominal(iData, iData->umin[i], iData->umax[i], iData->vnom[j], tmp[i], j, fabs(start[i]));
+    check_nominal(iData, iData->bounds.umin[i], iData->bounds.umax[i], iData->vnom[j], tmp[i], j, fabs(start[i]));
     iData->scalVar[j] = 1.0 / iData->vnom[j];
-    iData->umin[i] *= iData->scalVar[j];
-    iData->umax[i] *= iData->scalVar[j];
-    iData->start_u[i] = fmin(fmax(iData->start_u[i], iData->umin[i]), iData->umax[i]);
+    iData->bounds.umin[i] *= iData->scalVar[j];
+    iData->bounds.umax[i] *= iData->scalVar[j];
+    iData->start_u[i] = fmin(fmax(iData->start_u[i], iData->bounds.umin[i]), iData->bounds.umax[i]);
   }
 
-  memcpy(iData->vmin, iData->xmin, sizeof(double)*dim->nx);
-  memcpy(iData->vmin + dim->nx, iData->umin, sizeof(double)*dim->nu);
+  memcpy(iData->bounds.vmin, iData->bounds.xmin, sizeof(double)*dim->nx);
+  memcpy(iData->bounds.vmin + dim->nx, iData->bounds.umin, sizeof(double)*dim->nu);
 
-  memcpy(iData->vmax, iData->xmax, sizeof(double)*dim->nx);
-  memcpy(iData->vmax + dim->nx, iData->umax, sizeof(double)*dim->nu);
+  memcpy(iData->bounds.vmax, iData->bounds.xmax, sizeof(double)*dim->nx);
+  memcpy(iData->bounds.vmax + dim->nx, iData->bounds.umax, sizeof(double)*dim->nu);
 
-  memcpy(iData->Vmin, iData->vmin, sizeof(double)*dim->nv);
-  memcpy(iData->Vmax, iData->vmax, sizeof(double)*dim->nv);
+  memcpy(iData->bounds.Vmin, iData->bounds.vmin, sizeof(double)*dim->nv);
+  memcpy(iData->bounds.Vmax, iData->bounds.vmax, sizeof(double)*dim->nv);
 
   for(i = 0,j = dim->nv; i < dim->nsi*dim->deg;i++, j += dim->nv){
-  memcpy(iData->Vmin + j, iData->vmin, sizeof(double)*dim->nv);
-    memcpy(iData->Vmax + j, iData->vmax, sizeof(double)*dim->nv);
+  memcpy(iData->bounds.Vmin + j, iData->bounds.vmin, sizeof(double)*dim->nv);
+    memcpy(iData->bounds.Vmax + j, iData->bounds.vmax, sizeof(double)*dim->nv);
   }
 
   free(tmp);
