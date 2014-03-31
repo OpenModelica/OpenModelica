@@ -3502,6 +3502,24 @@ algorithm
   outTypeAttrStr := List.toString(ty_vars, Types.unparseVarAttr, "", "(", ", ", ")", false);
 end printTypeStr;
 
+public function dumpCallAttr
+"dumps the DAE.CallAttributes"
+  input DAE.CallAttributes ca;
+protected
+  Boolean tpl,bi,impure;
+  DAE.InlineType iType;
+  DAE.Type ty;
+  DAE.TailCall tailCall;
+  String s1,s2;
+algorithm
+  DAE.CALL_ATTR(ty=ty,tuple_=tpl,builtin=bi,isImpure=impure,inlineType=iType,tailCall=tailCall) := ca;
+  print("Call attributes: \n----------------------\n");
+  (s1,s2) := printTypeStr(ty);
+  print("DAE-type: "+&s1+&"\n");
+  print("DAE-type attributes :"+&s2+&"\n");
+  print("tuple_: "+&boolString(tpl)+&" builtin: "+&boolString(bi)+&" impure: "+&boolString(impure)+&"\n\n");
+end dumpCallAttr;
+
 protected function dumpVarBindingStr
   input Option<DAE.Exp> inBinding;
   output String outString;

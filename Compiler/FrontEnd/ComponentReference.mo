@@ -1793,6 +1793,31 @@ algorithm
   end match;
 end joinCrefs;
 
+public function joinCrefsR
+"like joinCrefs but with last part as first argument."
+  input DAE.ComponentRef inComponentRef2 " last part of the new componentref";
+  input DAE.ComponentRef inComponentRef1 " first part of the new componentref";
+  output DAE.ComponentRef outComponentRef;
+algorithm
+  outComponentRef := match (inComponentRef2,inComponentRef1)
+    local
+      DAE.Ident id;
+      list<DAE.Subscript> sub;
+      DAE.ComponentRef cr2,cr_1,cr;
+      DAE.Type t2;
+    
+    case (cr2,DAE.CREF_IDENT(ident = id, identType = t2, subscriptLst = sub)) 
+      then 
+        makeCrefQual(id,t2,sub,cr2);
+    
+    case (cr2,DAE.CREF_QUAL(ident = id, identType = t2, subscriptLst = sub,componentRef = cr))
+      equation
+        cr_1 = joinCrefs(cr, cr2);
+      then
+        makeCrefQual(id,t2,sub,cr_1);
+  end match;
+end joinCrefsR;
+
 public function subscriptCref
 "The subscriptCref function adds a subscript to the ComponentRef
   For instance a.b with subscript 10 becomes a.b[10] and c.d[1,2]

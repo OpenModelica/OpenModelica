@@ -1492,46 +1492,6 @@ algorithm
   end match;
 end isParamOrConstVarKind;
 
-public function getScalarsForComplexVar"gets the list<ComponentRef> for the scalar values of complex vars and multidimensional vars (at least real) .
-author: Waurich TUD 2014-03"
-  input DAE.Element inElem;
-  output list<DAE.ComponentRef> crefsOut;
-algorithm
-  crefsOut := matchcontinue(inElem)
-    local
-      list<Integer> dim;
-      list<list<Integer>> ranges;
-      list<DAE.Subscript> dims;
-      list<list<DAE.Subscript>> subslst;
-      DAE.ComponentRef cref;
-      DAE.Type ty;
-      list<DAE.Var> varLst;
-      list<DAE.ComponentRef> crefs;
-      list<String> names;
-    case(DAE.VAR(componentRef = cref,ty=DAE.T_COMPLEX(varLst = varLst)))
-      equation
-        names = List.map(varLst,typeVarIdent);
-        crefs = List.map1(names,ComponentReference.appendStringCref,cref);
-      then
-        crefs;
-    case(DAE.VAR(componentRef=cref,ty=DAE.T_REAL(varLst=_, source=_), dims=dims ))
-      equation
-        dim = Expression.subscriptsInt(dims);
-        Debug.bcall1(intEq(listLength(dim),2),print,"failure in getScalarsForComplexVar:the array has multiple dimensions");
-        true = listLength(dim) == 1;
-        dim = List.intRange(List.first(dim));
-        ranges = List.map1(dim,List.fill,1);                
-        subslst = List.map(ranges,BackendDAEUtil.rangesToSubscript);
-        crefs = List.map1r(subslst,ComponentReference.subscriptCref,cref);
-      then
-        crefs;
-    else
-      equation
-      then
-        {};      
-  end matchcontinue;
-end getScalarsForComplexVar;
-
 public function isInnerVar "author: PA
 
   Succeeds if element is a variable with prefix inner.
@@ -2790,6 +2750,24 @@ algorithm
         fail();
   end matchcontinue;
 end getStatement;
+
+public function getTupleSize "gets the size of a DAE.TUPLE"
+  input DAE.Exp inExp;
+  output Integer size;
+algorithm
+  size := match(inExp)
+    local
+      list<DAE.Exp> exps;
+    case(DAE.TUPLE(exps))
+      equation
+        size = listLength(exps);
+        then
+          size;
+    else
+      then 
+        0;
+  end match;
+end getTupleSize;
 
 protected function crefToExp "
   Makes an expression from a ComponentRef.
@@ -6306,6 +6284,13 @@ algorithm
   DAE.TYPES_VAR(name=name) := var;
 end typeVarIdent;
 
+public function VarType
+  input DAE.Var var;
+  output DAE.Type type_;
+algorithm
+  DAE.TYPES_VAR(ty=type_) := var;
+end VarType;
+
 public function bindingExp "
   help function to instBinding, returns the expression of a binding"
   input DAE.Binding bind;
@@ -6739,5 +6724,31 @@ algorithm
     else "";
   end match;
 end daeDescription;
+
+public function replaceCallAttrType  "replaces the type in the geiven DAE.CALL_ATTR"
+  input DAE.CallAttributes caIn;
+  input DAE.Type typeIn;
+  output DAE.CallAttributes caOut;
+algorithm
+  caOut := match(caIn,typeIn)
+    local
+      Boolean tpl,bi,impure;
+      DAE.CallAttributes ca;
+      DAE.InlineType iType;
+      DAE.Type ty;
+      DAE.TailCall tailCall;
+    case(DAE.CALL_ATTR(ty=ty,tuple_=tpl,builtin=bi,isImpure=impure,inlineType=iType,tailCall=tailCall),DAE.T_TUPLE(_,_))
+      equation
+        ca = DAE.CALL_ATTR(typeIn,true,bi,impure,iType,tailCall);
+      then
+        ca;
+    else
+      equation
+        DAE.CALL_ATTR(ty=ty,tuple_=tpl,builtin=bi,isImpure=impure,inlineType=iType,tailCall=tailCall) = caIn;
+        ca = DAE.CALL_ATTR(typeIn,tpl,bi,impure,iType,tailCall);
+      then
+        ca;
+  end match;
+end replaceCallAttrType;
 
 end DAEUtil;
