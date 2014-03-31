@@ -110,7 +110,7 @@ build/lib/omc/libipopt.la: 3rdParty/Ipopt-3.11.6/Makefile
 	$(MAKE) -C 3rdParty/Ipopt-3.11.6 install
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libipopt.1.9.6.dylib 3rdParty/Ipopt-3.11.6/lib/libipopt.1.9.6.dylib
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libcoinmumps.1.4.11.dylib 3rdParty/Ipopt-3.11.6/lib/libcoinmumps.1.4.11.dylib
-	cp -a 3rdParty/Ipopt-3.11.6/lib/*.* build/lib/omc
+	cp -a 3rdParty/Ipopt-3.11.6/lib*/*.* build/lib/omc
 
 ipopt: build/lib/omc/libipopt.la
 
