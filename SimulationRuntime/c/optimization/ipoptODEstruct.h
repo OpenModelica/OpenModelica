@@ -213,9 +213,6 @@ typedef struct IPOPT_DATA_
   short lagrange_index;
   DATA * data;
 
-  double *vsave;
-  double *eps;
-
   char ** input_name;
 
   /*Debuger*/

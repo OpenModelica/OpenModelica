@@ -115,9 +115,6 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   iData->sv = (double*)malloc(dim->nv*sizeof(double));
   iData->sh = (double*)malloc(dim->nJ*sizeof(double));
 
-  iData->vsave = (double*)malloc(dim->nv*sizeof(double));
-  iData->eps = (double*)malloc(dim->nv*sizeof(double));
-
   iData->J0 = (double**) malloc(dim->nJ * sizeof(double*));
   for(i = 0; i < dim->nJ; i++)
     iData->J0[i] = (double*) calloc(dim->nv, sizeof(double));
