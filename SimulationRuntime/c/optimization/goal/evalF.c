@@ -196,7 +196,7 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
  */
 int diff_symColoredObject(IPOPT_DATA_ *iData, double *dF, int this_it)
 {
-  if(iData->useNumJac==0)
+  if(iData->sopt.useNumJac==0)
     sym_diff_symColoredObject(iData,dF,this_it);
   return 0;
 

@@ -129,10 +129,6 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   for(i = 0; i < 2; i++)
     sopt->gradFs[i] = (modelica_boolean*) calloc(dim->nv, sizeof(modelica_boolean));
 
-  iData->numJ = (double**) malloc(dim->nJ * sizeof(double*));
-  for(i = 0; i < dim->nJ; i++)
-    iData->numJ[i] = (double*) calloc(dim->nv, sizeof(double));
-
   iData->H = (long double***) malloc(dim->nJ * sizeof(long double**));
   for(i = 0; i < dim->nJ; i++)
   {
@@ -184,12 +180,10 @@ static int freeIpoptData(IPOPT_DATA_ *iData)
   for(i = 0; i < dim->nJ; i++){
     free(iData->J[i]);
     free(iData->J0[i]);
-    free(iData->numJ[i]);
     free(sopt->knowedJ[i]);
   }
   free(iData->J0);
   free(iData->J);
-  free(iData->numJ);
   free(sopt->knowedJ);
 
   for(i=0;i<2;++i){

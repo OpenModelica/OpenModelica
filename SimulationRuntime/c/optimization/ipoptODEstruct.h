@@ -121,6 +121,8 @@ typedef struct OPTIMIZER_STUCTURE{
   modelica_boolean mayer;
   modelica_boolean lagrange;
 
+  modelica_boolean useNumJac;
+
   modelica_boolean preSim;
 
 
@@ -193,12 +195,9 @@ typedef struct IPOPT_DATA_
   double * gradF0;
   double * gradF00;
 
-
-  double **numJ;
   long double ***H;
   long double **oH;
   long double **mH;
-
 
   int * iRow;
   int * iCol;
@@ -215,7 +214,6 @@ typedef struct IPOPT_DATA_
   int lagrange_index;
   DATA * data;
 
-  short useNumJac;
   double *vsave;
   double *eps;
 

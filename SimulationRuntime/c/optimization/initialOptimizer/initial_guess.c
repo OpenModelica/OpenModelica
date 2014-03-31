@@ -143,7 +143,7 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
    else
      externalInputUpdate(data);
 
-   if(0/*iData->preSim*/){
+   if(iData->sopt.preSim){
      printf("\n========================================================");
      printf("\nstart pre simulation");
      printf("\n--------------------------------------------------------");

@@ -236,20 +236,20 @@ static int local_jac_struct(IPOPT_DATA_ *iData, int * nng)
 static int set_local_jac_struct(IPOPT_DATA_ *iData, int *nng)
 {
   char *cflags;
-  iData->useNumJac = 0;
+  iData->sopt.useNumJac = 0;
 
   cflags = (char*)omc_flagValue[FLAG_IPOPT_JAC];
 
   if(cflags){
    if(!strcmp(cflags,"SYM") || !strcmp(cflags,"sym"))
-     iData->useNumJac = 0;
+     iData->sopt.useNumJac = 0;
    else{
      warningStreamPrint(LOG_STDOUT, 1, "not support ipopt_hesse=%s",cflags);
-     iData->useNumJac = 0;
+     iData->sopt.useNumJac = 0;
    }
   }
 
-  if(iData->useNumJac == 0)
+  if(iData->sopt.useNumJac == 0)
     local_jac_struct(iData, nng);
 
   return 0;
