@@ -82,8 +82,6 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   iData->mult_g = (double*)malloc(ng*sizeof(double));
   iData->mult_x_L = (double*)malloc(dim->NV*sizeof(double));
   iData->mult_x_U = (double*)malloc(dim->NV*sizeof(double));
-  iData->lhs = (double*)malloc((int)dim->nJ*sizeof(double));
-  iData->rhs = (double*)malloc((int)dim->nJ*sizeof(double));
 
   for(i =0; i< dim->deg + 1; ++i)
     mbase->dotx[i] = (double*)malloc(dim->nx*sizeof(double));
@@ -246,8 +244,6 @@ static int freeIpoptData(IPOPT_DATA_ *iData)
   free(dtime->time);
   free(iData->w);
   free(dtime->dt);
-  free(iData->lhs);
-  free(iData->rhs);
   free(iData->sv);
   free(iData->sh);
   free(iData->start_u);

@@ -199,12 +199,8 @@ typedef struct IPOPT_DATA_
 
   /* ODE */
   double * x0;
-
-
   double * start_u;
 
-  double *lhs;
-  double *rhs;
   double *sh;
   double *sv;
   double *v;
@@ -213,19 +209,16 @@ typedef struct IPOPT_DATA_
 
   int endN;
 
-  int * iRow;
-  int * iCol;
-
   double *mult_g;
   double *mult_x_L;
   double *mult_x_U;
 
   int current_var;
   int current_time;
-  double pmayer;
-  double plagrange;
+
   short mayer_index;
   short lagrange_index;
+
   DATA * data;
 
   char ** input_name;
