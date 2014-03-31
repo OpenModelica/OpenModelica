@@ -203,15 +203,15 @@ install: $(LIBSIMULATION) $(LIBRUNTIME) $(LIBFMIRUNTIME) simulation/libf2c/libf2
 	cp -p $(RUNTIMEMETAGC_HEADERS) $(builddir_inc)/c/meta/gc/
 	cp -p $(RUNTIMEUTIL_HEADERS) $(builddir_inc)/c/util/
 	# copy fmi stuff
-	cp -p $(RUNTIME_HEADERS_FMU) ../fmi/export/*.h \
-	   ../fmi/export/fmu_model_interface.c $(builddir_inc)/c
+	cp -p $(RUNTIME_HEADERS_FMU) ../fmi/export/fmi1/*.h \
+	   ../fmi/export/fmi1/fmu_model_interface.c $(builddir_inc)/c
 	# copy java interface stuff
 	@$(MAKE) -C util/java_interface -f $(LIBMAKEFILE) && \
 	$(MAKE) -C util/java_interface -f $(LIBMAKEFILE) install || \
 	$(MAKE) -C util/java_interface -f $(LIBMAKEFILE) install-nomodelica
 
 clean:
-	rm -f $(ALL_PATHS_CLEAN_OBJS) fmi/*.o *.a optimization/*/*.o
+	rm -f $(ALL_PATHS_CLEAN_OBJS) fmi/export/fmi1/*.o *.a optimization/*/*.o
 	$(MAKE) -C simulation/libf2c -f ${LIBMAKEFILE} clean
 	(! test -f $(EXTERNALCBUILDDIR)/Makefile) || make -C $(EXTERNALCBUILDDIR) clean
 	(! test -f $(EXTERNALCBUILDDIR)/Makefile) || make -C $(EXTERNALCBUILDDIR) distclean
