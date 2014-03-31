@@ -380,7 +380,7 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
   # target fuer OM_OUTPUT
   ADD_CUSTOM_TARGET(${model}codegen ALL DEPENDS ${OMC_OUTPUT})
 
-  SET(OMC_FMU_CODE ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmi1/fmu_model_interface.h
+  SET(OMC_FMU_CODE ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmi1/fmu1_model_interface.h
                    ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmi1/fmiModelFunctions.h
 				   ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmi1/fmiModelTypes.h)
 
@@ -465,7 +465,7 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
   # target fuer OM_OUTPUT
   ADD_CUSTOM_TARGET(${model}codegen ALL DEPENDS ${OMC_OUTPUT})
 
-  SET(OMC_FMU_CODE ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmi1/fmu_model_interface.h
+  SET(OMC_FMU_CODE ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmi1/fmu1_model_interface.h
                    ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmi1/fmiModelFunctions.h
 				   ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmi1/fmiModelTypes.h)
 

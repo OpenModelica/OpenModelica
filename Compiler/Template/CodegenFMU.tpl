@@ -427,7 +427,7 @@ case SIMCODE(__) then
   #include "fmiModelFunctions.h"
   #include "simulation/solver/initialization/initialization.h"
   #include "simulation/solver/events.h"
-  #include "fmu_model_interface.h"
+  #include "fmu1_model_interface.h"
 
   #ifdef __cplusplus
   extern "C" {
@@ -448,8 +448,8 @@ case SIMCODE(__) then
   <%ModelDefineData(modelInfo)%>
 
   // implementation of the Model Exchange functions
-  #define fmu_model_interface_setupDataStruc <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>
-  #include "fmu_model_interface.c"
+  #define fmu1_model_interface_setupDataStruc <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>
+  #include "fmu1_model_interface.c"
 
   <%setDefaultStartValues(modelInfo)%>
   <%setStartValues(modelInfo)%>

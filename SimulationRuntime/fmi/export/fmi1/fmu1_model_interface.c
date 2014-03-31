@@ -136,7 +136,7 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID,
   if (comp->loggingOn) comp->functions.logger(NULL, instanceName, fmiOK, "log",
       "fmiInstantiateModel: GUID=%s", GUID);
   /* intialize modelData */
-  fmu_model_interface_setupDataStruc(comp->fmuData);
+  fmu1_model_interface_setupDataStruc(comp->fmuData);
   initializeDataStruc(comp->fmuData);
 
   /* setup model data with default start data */
