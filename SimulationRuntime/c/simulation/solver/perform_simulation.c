@@ -41,6 +41,7 @@
 #include "mixedSystem.h"
 
 #include "util/omc_error.h"
+#include "simulation/solver/external_input.h"
 #include "simulation/options.h"
 #include <math.h>
 #include <string.h>
