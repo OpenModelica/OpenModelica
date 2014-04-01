@@ -1902,6 +1902,7 @@ case FUNCTION(outVars= vars as _::_) then
 
       typedef <%fname%>Type <%fname%>RetType;
       >>
+
 end functionHeaderRegularFunction1;
 
 template tupplearrayassign(Variable var,Integer index)
@@ -2019,6 +2020,11 @@ end daeExpSharedLiteral;
 template functionHeaderRegularFunction2(Function fn,SimCode simCode)
 ::=
 match fn
+case FUNCTION(outVars={}) then
+  let fname = underscorePath(name)
+  <<
+        void <%fname%>(<%functionArguments |> var => funArgDefinition(var,simCode) ;separator=", "%>);
+  >>
 case FUNCTION(outVars=_) then
   let fname = underscorePath(name)
   <<
@@ -2039,6 +2045,8 @@ end functionHeaderRegularFunction2;
 template functionHeaderRegularFunction3(Function fn,SimCode simCode)
 ::=
 match fn
+case FUNCTION(outVars={}) then ""
+ 
 case FUNCTION(outVars=_) then
   let fname = underscorePath(name)
   <<
@@ -7005,6 +7013,14 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let retVar = tempDecl(retType, &varDecls /*BUFD*/)
     let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
     if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
+    case CALL(path=IDENT(name="log10"),
+            expLst={e1},attr=attr as CALL_ATTR(__)) then
+    let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")
+    let funName = '<%underscorePath(path)%>'
+    let retType = 'double'
+    let retVar = tempDecl(retType, &varDecls /*BUFD*/)
+    let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
+    if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
    case CALL(path=IDENT(name="acos"),
             expLst={e1},attr=attr as CALL_ATTR(__)) then
     let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")
@@ -7091,6 +7107,13 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let tvar = tempDecl(expTypeFromExpModelica(array), &varDecls /*BUFD*/)
     let &preExp += '<%tvar%> = min_max<<%arr_tp_str%>,1>(<%expVar%>).second;<%\n%>'
     '<%tvar%>'
+  case CALL(path=IDENT(name="sum"), expLst={array}) then
+    let &tmpVar = buffer "" /*BUFD*/
+    let expVar = daeExp(array, context, &preExp /*BUFC*/, &tmpVar /*BUFD*/,simCode)
+    let arr_tp_str = '<%expTypeFromExpArray(array)%>'
+    let tvar = tempDecl(expTypeFromExpModelica(array), &varDecls /*BUFD*/)
+    let &preExp += '<%tvar%> = sum_array<<%arr_tp_str%>,1>(<%expVar%>);<%\n%>'
+    '<%tvar%>'
 
   case CALL(path=IDENT(name="min"), expLst={array}) then
     let &tmpVar = buffer "" /*BUFD*/
@@ -7117,13 +7140,24 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
   case CALL(path=IDENT(name="$_start"), expLst={arg}) then
     daeExpCallStart(arg, context, preExp, varDecls,simCode)
 
-  case CALL(path=IDENT(name="cat"), expLst=dim::arrays, attr=attr as CALL_ATTR(__)) then
+  case CALL(path=IDENT(name="cat"), expLst=dim::a0::arrays, attr=attr as CALL_ATTR(__)) then
     let dim_exp = daeExp(dim, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-    let arrays_exp = (arrays |> array =>
-      daeExp(array, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode) ;separator=", &")
+     let tmp_type_str = match typeof(a0)
+      case ty as T_ARRAY(dims=dims) then
+        'multi_array<<%expTypeShort(ty)%>,<%listLength(dims)%>>'
+        else
+        'array error'
     let ty_str = '<%expTypeArray(attr.ty)%>'
-    let tvar = tempDecl(ty_str, &varDecls /*BUFD*/)
-    let &preExp += 'cat_alloc_<%ty_str%>(<%dim_exp%>, &<%tvar%>, <%listLength(arrays)%>, &<%arrays_exp%>);<%\n%>'
+    let tvar = tempDecl(tmp_type_str, &varDecls /*BUFD*/)
+    let a0str = daeExp(a0, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+    let arrays_exp = (arrays |> array =>
+    '<%tvar%>_list.push_back(<%daeExp(array, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>);' ;separator="\n")
+    let &preExp += 
+    'std::vector<<%tmp_type_str%> > <%tvar%>_list; 
+     <%tvar%>_list.push_back(<%a0str%>);
+     <%arrays_exp%>
+     cat_array(<%dim_exp%>,<%tvar%>, <%tvar%>_list );
+    '
     '<%tvar%>'
 
   case CALL(path=IDENT(name="promote"), expLst={A, n}) then
