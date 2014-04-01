@@ -478,7 +478,7 @@ static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData)
 
   for(i =0; i<dim->nx; ++i)
     for(j = 0; j<dim->nsi; ++j)
-      iData->scaling.scaldt[i][j] = iData->scaling.scalf[i]*iData->dtime.dt[i];
+      iData->scaling.scaldt[i][j] = iData->scaling.scalf[i]*iData->dtime.dt[j];
 
   iData->data->callback->pickUpBoundsForInputsInOptimization(data,
       iData->bounds.umin, iData->bounds.umax, &iData->scaling.vnom[dim->nx], tmp, tmpname, start,
