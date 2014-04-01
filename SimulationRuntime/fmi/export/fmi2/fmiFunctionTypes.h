@@ -39,7 +39,7 @@
    - Nov. 14, 2011: First public Version
 
 
-   Copyright © 2011 MODELISAR consortium,
+   Copyright Â© 2011 MODELISAR consortium,
                2012-2013 Modelica Association Project "FMI"
                All rights reserved.
    This file is licensed by the copyright holders under the BSD 2-Clause License
