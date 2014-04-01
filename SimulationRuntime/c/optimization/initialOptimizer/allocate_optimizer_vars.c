@@ -75,6 +75,7 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   ng = dim->NRes+dim->nc*dim->deg*dim->nsi;
   deg1 = dim->deg + 1;
   deg2 = deg1 + 1;
+  dim->nt = dim->nsi*dim->deg + 1;
 
   dim->nJ = dim->nc + dim->nx;
   bounds->gmin = (double*)calloc(ng,sizeof(double));
@@ -98,11 +99,11 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   bounds->Vmin = (double*)malloc(dim->NV*sizeof(double));
   bounds->Vmax = (double*)malloc(dim->NV*sizeof(double));
   iData->v = (double*)malloc(dim->NV*sizeof(double));
-  iData->dtime.time = (long double*)malloc((dim->deg*dim->nsi +1) *sizeof(long double));
+  iData->dtime.time = (long double*)malloc(dim->nt *sizeof(long double));
   iData->start_u = (double*)malloc(dim->nv*sizeof(double));
 
-  df->J = (long double***) malloc((dim->nsi*dim->deg + 1) * sizeof(long double**));
-  for(j = 0; j < (dim->nsi*dim->deg + 1); ++j){
+  df->J = (long double***) malloc(dim->nt * sizeof(long double**));
+  for(j = 0; j < dim->nt; ++j){
     df->J[j] = (long double**) malloc(dim->nJ * sizeof(long double*));
     for(i = 0; i < dim->nJ; i++)
       df->J[j][i] = (long double*) calloc(dim->nv, sizeof(long double));
@@ -118,7 +119,7 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   for(i = 0; i< 4 ; ++i)
     df->gradFh[i] = (long double*) calloc(dim->nv, sizeof(long double));
 
-  df->dLagrange = (long double**) malloc((dim->nsi*dim->deg + 1)*sizeof(long double*));
+  df->dLagrange = (long double**) malloc(dim->nt*sizeof(long double*));
   for(j = 0; j < (dim->nsi*dim->deg + 1); ++j)
     df->dLagrange[j] = (long double*) calloc(dim->nv, sizeof(long double));
 

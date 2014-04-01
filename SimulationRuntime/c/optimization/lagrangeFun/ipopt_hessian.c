@@ -162,12 +162,11 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
 
         for(i=0;i< dim->nv;++i)
           for(j = 0; j< i+1; ++j){
-           if(iData->sopt.Hg[i][j]){
-               sumLagrange(iData, &sum, ii, i, j,  p, mayer_yes);
-               values[k++] =  sum;
-           }
+            if(iData->sopt.Hg[i][j]){
+              sumLagrange(iData, &sum, ii, i, j,  p, mayer_yes);
+              values[k++] =  sum;
+            }
           }
-
       }
 
     }

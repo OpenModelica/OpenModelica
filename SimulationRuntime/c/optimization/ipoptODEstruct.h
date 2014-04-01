@@ -67,6 +67,7 @@ typedef struct OPTIMIZER_DIM_VARS{
   int NRes;
   int nc;
   int nJ;
+  int nt;
 
   int njac;
   int nhess;
@@ -180,7 +181,6 @@ typedef struct OPTIMIZER_DF{
   long double **mH;
 
 }OPTIMIZER_DF;
-
 
 typedef struct IPOPT_DATA_
 {
