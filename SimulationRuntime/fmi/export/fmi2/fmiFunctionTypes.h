@@ -125,7 +125,7 @@ typedef struct {
 } fmiCallbackFunctions;
 
 typedef struct {
-	 fmiBoolean newDiscreteStatesNeeded;
+   fmiBoolean newDiscreteStatesNeeded;
    fmiBoolean terminateSimulation;
    fmiBoolean nominalsOfContinuousStatesChanged;
    fmiBoolean valuesOfContinuousStatesChanged;
