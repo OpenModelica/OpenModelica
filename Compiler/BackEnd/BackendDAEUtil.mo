@@ -73,6 +73,7 @@ protected import DAEUtil;
 protected import Debug;
 protected import Differentiate;
 protected import Error;
+protected import EvaluateFunctions;
 protected import EvaluateParameter;
 protected import Expression;
 protected import ExpressionDump;
@@ -8747,7 +8748,7 @@ algorithm
                        (BackendDAEOptimize.replaceEdgeChange, "replaceEdgeChange", false),
                        (BackendDAEOptimize.residualForm, "residualForm", false),
                        (ResolveLoops.resolveLoops, "resolveLoops",false),
-                       (BackendDAEOptimize.evalFunctions, "evalFunc",false)
+                       (EvaluateFunctions.evalFunctions, "evalFunc",false)
                        };
   strPreOptModules := getPreOptModulesString();
   strPreOptModules := Util.getOptionOrDefault(ostrPreOptModules,strPreOptModules);

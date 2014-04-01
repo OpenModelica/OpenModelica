@@ -117,6 +117,7 @@ if true then /* Suppress output */
     "../BackEnd/DAEQuery.mo",
     "../BackEnd/Differentiate.mo",
     "../BackEnd/DumpHTML.mo",
+	"../BackEnd/EvaluateFunctions.mo",
     "../BackEnd/EvaluateParameter.mo",
     "../BackEnd/ExpressionSolve.mo",
     "../BackEnd/FindZeroCrossings.mo",

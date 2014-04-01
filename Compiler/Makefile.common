@@ -141,6 +141,7 @@ Causalize.mo \
 DAEQuery.mo \
 Differentiate.mo \
 DumpHTML.mo \
+EvaluateFunctions.mo \
 EvaluateParameter.mo \
 ExpressionSolve.mo \
 FindZeroCrossings.mo \
