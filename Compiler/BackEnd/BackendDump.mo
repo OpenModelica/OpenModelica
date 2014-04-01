@@ -289,7 +289,7 @@ algorithm
   dumpConstraintList(constraints, "Constraints");
 end printShared;
 
-protected function printBackendDAEType "This is a helper for printShared."
+public function printBackendDAEType "This is a helper for printShared."
   input BackendDAE.BackendDAEType btp;
 algorithm
   _ := match(btp)
