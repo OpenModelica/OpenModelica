@@ -8385,6 +8385,27 @@ algorithm
   end match;
 end isRecordType;
 
+public function isNotComplex "returns true if the exp is 1-dimensional"
+  input DAE.Exp e;
+  output Boolean b;
+algorithm
+  b := match(e)
+    local
+    case(DAE.CALL(path=_,expLst=_,attr=_))
+      then
+        false;
+    case(DAE.RECORD(path=_,exps=_, comp=_,ty=_))
+      then
+        false;
+    case(DAE.ARRAY(ty=_,scalar=_,array=_))
+      then
+        false;
+    else
+    then
+      true;
+  end match;
+end isNotComplex;
+
 public function isRealType
  "Return true if the type is Real."
   input DAE.Type inType;
