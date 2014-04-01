@@ -388,20 +388,20 @@ void cat_array (int k,boost::multi_array< T, NumDims >& a, std::vector<boost::mu
     ex.assign( shape, shape+x[0].num_dimensions() );
     ex[k-1] = new_k_dim_size;   
     if(ex.size()<k)
-		throw std::invalid_argument("Error resizing concatenate array");
-	a.resize( ex );
+    throw std::invalid_argument("Error resizing concatenate array");
+  a.resize( ex );
     
-	/* concatenation along k-th dimension */
+  /* concatenation along k-th dimension */
     T* a_data = a.data();
     int j = 0;
     for(int i = 0; i < n_super; i++) 
-	{
+  {
         for(int c = 0; c < n; c++) 
-		{
+    {
             int n_sub_k = n_sub * x[c].shape()[k-1];
             T* x_data = x[c].data();
-			for(int r = 0; r < n_sub_k; r++) 
-			{
+      for(int r = 0; r < n_sub_k; r++) 
+      {
                 a_data[j] =       x_data[r + (i * n_sub_k)];
                 j++;
             }
