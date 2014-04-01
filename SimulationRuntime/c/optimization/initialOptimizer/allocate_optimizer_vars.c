@@ -101,19 +101,25 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   iData->dtime.time = (long double*)malloc((dim->deg*dim->nsi +1) *sizeof(long double));
   iData->start_u = (double*)malloc(dim->nv*sizeof(double));
 
-  df->J = (long double**) malloc(dim->nJ * sizeof(long double*));
-  for(i = 0; i < dim->nJ; i++)
-    df->J[i] = (long double*) calloc(dim->nv, sizeof(long double));
+  df->J = (long double***) malloc((dim->nsi*dim->deg + 1) * sizeof(long double**));
+  for(j = 0; j < (dim->nsi*dim->deg + 1); ++j){
+    df->J[j] = (long double**) malloc(dim->nJ * sizeof(long double*));
+    for(i = 0; i < dim->nJ; i++)
+      df->J[j][i] = (long double*) calloc(dim->nv, sizeof(long double));
+  }
+
+  df->Jh = (long double***) malloc(2 * sizeof(long double**));
+  for(j = 0; j < 2; ++j){
+    df->Jh[j] = (long double**) malloc(dim->nJ * sizeof(long double*));
+    for(i = 0; i < dim->nJ; i++)
+      df->Jh[j][i] = (long double*) calloc(dim->nv, sizeof(long double));
+  }
 
   for(i = 0; i< 4 ; ++i)
     df->gradF[i] = (long double*) calloc(dim->nv, sizeof(long double));
 
   iData->sv = (double*)malloc(dim->nv*sizeof(double));
   iData->sh = (double*)malloc(dim->nJ*sizeof(double));
-
-  df->J0 = (long double**) malloc(dim->nJ * sizeof(long double*));
-  for(i = 0; i < dim->nJ; i++)
-    df->J0[i] = (long double*) calloc(dim->nv, sizeof(long double));
 
   iData->scaling.scaldt = (long double**) malloc(dim->nx * sizeof(long double*));
   for(i = 0; i < dim->nx; i++)
@@ -178,11 +184,21 @@ static int freeIpoptData(IPOPT_DATA_ *iData)
   OPTIMIZER_BOUNDS *bounds = &iData->bounds;
   OPTIMIZER_DF *df = &iData->df;
   for(i = 0; i < dim->nJ; i++){
-    free(df->J[i]);
-    free(df->J0[i]);
     free(sopt->knowedJ[i]);
   }
-  free(df->J0);
+
+  for(j = 0; j < (dim->nsi*dim->deg + 1); ++j){
+    for(i = 0; i < dim->nJ; i++)
+      free(df->J[j][i]);
+    free(df->J[j]);
+  }
+
+  for(j = 0; j < 2; ++j){
+    for(i = 0; i < dim->nJ; i++)
+      free(df->Jh[j][i]);
+    free(df->Jh[j]);
+  }
+
   free(df->J);
   free(sopt->knowedJ);
 

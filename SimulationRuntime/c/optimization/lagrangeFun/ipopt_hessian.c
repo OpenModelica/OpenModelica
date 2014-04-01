@@ -251,7 +251,7 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
   OPTIMIZER_DIM_VARS *dim = &iData->dim;
   int nJ = (t>(double)iData->dtime.t0) ? dim->nx + dim->nc : dim->nx;
 
-  diff_functionODE(v, t , iData, iData->df.J0);
+  diff_functionODE(v, t , iData, iData->df.Jh[0]);
   upCost = (lagrange_yes || mayer_yes) && (obj_factor!=0);   
 
   if(upCost)
@@ -261,7 +261,7 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
     v_save = (long double)v[i];
     h = (long double)DF_STEP(v_save, iData->scaling.vnom[i]);
     v[i] += h;
-    diff_functionODE(v, t , iData, iData->df.J);
+    diff_functionODE(v, t , iData, iData->df.Jh[1]);
 
     if(upCost)
       updateCost(v,t,iData,lagrange_yes,mayer_yes, iData->df.gradF[0], iData->df.gradF[1]);
@@ -272,7 +272,7 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
       if(iData->sopt.Hg[i][j]){
        for(l = 0; l< nJ; ++l){
         if(iData->sopt.knowedJ[l][j] + iData->sopt.knowedJ[l][i] >= 2 && lambda[l] != 0.0)
-          iData->df.H[l][i][j]  = (long double)(iData->df.J[l][j] - iData->df.J0[l][j])*lambda[l]/h;
+          iData->df.H[l][i][j]  = (long double)(iData->df.Jh[1][l][j] - iData->df.Jh[0][l][j])*lambda[l]/h;
         else
           iData->df.H[l][i][j] = (long double) 0.0;
         iData->df.H[l][j][i] = iData->df.H[l][i][j];

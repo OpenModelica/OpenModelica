@@ -167,9 +167,8 @@ typedef struct OPTIMIZER_SCALING{
 
 typedef struct OPTIMIZER_DF{
 
-  long double **J0;
-  long double **J;
-
+  long double ***J;
+  long double ***Jh;
   long double ** gradFomc;
 
   long double * gradF[4];
