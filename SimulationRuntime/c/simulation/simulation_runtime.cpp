@@ -923,6 +923,8 @@ static void omc_assert_simulation(threadData_t *threadData, FILE_INFO info, cons
   threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
   switch (threadData->currentErrorStage)
   {
+  case ERROR_EVENTSEARCH:
+  case ERROR_OPTIMIZE:
   case ERROR_SIMULATION:
     va_start(ap,msg);
     fputs("Error: ",stderr);
@@ -958,11 +960,6 @@ static void omc_assert_simulation(threadData_t *threadData, FILE_INFO info, cons
     }
     longjmp(*threadData->simulationJumpBuffer,1);
     break;
-  case ERROR_EVENTSEARCH:
-  case ERROR_OPTIMIZE:
-    /* Ignore asserts for event search, since to find events we need to
-     * step over in regions, which may trigger asserts.
-     */
   default:
     throwStreamPrint(threadData,"Unhandled Assertion-Error");
   }
