@@ -255,7 +255,7 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
   upCost = (lagrange_yes || mayer_yes) && (obj_factor!=0);   
 
   if(upCost)
-    updateCost(v,t,iData,lagrange_yes,mayer_yes, iData->df.gradF[2], iData->df.gradF[3]);
+    updateCost(v,t,iData,lagrange_yes,mayer_yes, iData->df.gradFh[2], iData->df.gradFh[3]);
 
   for(i = 0; i<dim->nv; ++i){
     v_save = (long double)v[i];
@@ -264,7 +264,7 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
     diff_functionODE(v, t , iData, iData->df.Jh[1]);
 
     if(upCost)
-      updateCost(v,t,iData,lagrange_yes,mayer_yes, iData->df.gradF[0], iData->df.gradF[1]);
+      updateCost(v,t,iData,lagrange_yes,mayer_yes, iData->df.gradFh[0], iData->df.gradFh[1]);
 
     v[i] = v_save;
 
@@ -283,7 +283,7 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
     if(lagrange_yes){
       for(j = i; j < dim->nv; ++j){
        if(iData->sopt.gradFs[iData->lagrange_index][i]*iData->sopt.gradFs[iData->lagrange_index][j] && obj_factor!=0)
-         iData->df.oH[i][j]  = (long double) (iData->df.gradF[0][j] - iData->df.gradF[2][j])*h*iData->scaling.vnom[j];
+         iData->df.oH[i][j]  = (long double) (iData->df.gradFh[0][j] - iData->df.gradFh[2][j])*h*iData->scaling.vnom[j];
        else
          iData->df.oH[i][j] = 0.0;
        iData->df.oH[j][i]  = iData->df.oH[i][j] ;
@@ -293,7 +293,7 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
     if(mayer_yes){
       for(j = i; j < dim->nv; ++j){
        if(iData->sopt.gradFs[iData->mayer_index][i]*iData->sopt.gradFs[iData->mayer_index][j] && obj_factor!=0)
-         iData->df.mH[i][j]  = (long double) (iData->df.gradF[1][j] - iData->df.gradF[3][j])*h* iData->scaling.vnom[j];
+         iData->df.mH[i][j]  = (long double) (iData->df.gradFh[1][j] - iData->df.gradFh[3][j])*h* iData->scaling.vnom[j];
        else
          iData->df.mH[i][j] = 0.0;
        iData->df.mH[j][i]  = iData->df.mH[i][j] ;

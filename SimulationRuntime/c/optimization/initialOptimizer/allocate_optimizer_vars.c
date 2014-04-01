@@ -116,7 +116,14 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   }
 
   for(i = 0; i< 4 ; ++i)
-    df->gradF[i] = (long double*) calloc(dim->nv, sizeof(long double));
+    df->gradFh[i] = (long double*) calloc(dim->nv, sizeof(long double));
+
+  df->dLagrange = (long double**) malloc((dim->nsi*dim->deg + 1)*sizeof(long double*));
+  for(j = 0; j < (dim->nsi*dim->deg + 1); ++j)
+    df->dLagrange[j] = (long double*) calloc(dim->nv, sizeof(long double));
+
+  df->dMayer = (long double*) calloc(dim->nv, sizeof(long double));
+
 
   iData->sv = (double*)malloc(dim->nv*sizeof(double));
   iData->sh = (double*)malloc(dim->nJ*sizeof(double));
@@ -232,7 +239,12 @@ static int freeIpoptData(IPOPT_DATA_ *iData)
   free(df->H);
 
   for(i = 0; i< 4 ; ++i)
-    free(df->gradF[i]);
+    free(df->gradFh[i]);
+
+  for(j = 0; j < (dim->nsi*dim->deg + 1); ++j)
+    free(df->dLagrange[j]);
+  free(df->dLagrange);
+  free(df->dMayer);
 
   free(bounds->gmin);
   free(bounds->gmax);

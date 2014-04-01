@@ -171,7 +171,9 @@ typedef struct OPTIMIZER_DF{
   long double ***Jh;
   long double ** gradFomc;
 
-  long double * gradF[4];
+  long double * gradFh[4];
+  long double ** dLagrange;
+  long double * dMayer;
 
   long double ***H;
   long double **oH;

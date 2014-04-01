@@ -144,10 +144,10 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
         refreshSimData(x,x+ iData->dim.nx,iData->dtime.time[i*iData->dim.deg+k],iData);
         iData->cv = x;
         /*iData->data->callback->functionAlgebraics(iData->data);*/
-        diff_symColoredObject(iData, iData->df.gradF[0], iData->lagrange_index);
+        diff_symColoredObject(iData, iData->df.dLagrange[i], iData->lagrange_index);
         iData->scaling.scald = iData->dtime.dt[i]*mbase->b[0][k];
         for(j=0; j<iData->dim.nv; ++j)
-          gradF[id++] = iData->scaling.scald*iData->df.gradF[0][j];
+          gradF[id++] = iData->scaling.scald*iData->df.dLagrange[i][j];
       }
     }
 
@@ -156,10 +156,10 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
         refreshSimData(x,x+ iData->dim.nx,iData->dtime.time[i*iData->dim.deg+k+1],iData);
         iData->cv = x;
         /*iData->data->callback->functionAlgebraics(iData->data);*/
-        diff_symColoredObject(iData, iData->df.gradF[0], iData->lagrange_index);
+        diff_symColoredObject(iData, iData->df.dLagrange[i], iData->lagrange_index);
         iData->scaling.scald = iData->dtime.dt[i]*mbase->b[1][k];
         for(j = 0; j<iData->dim.nv; ++j)
-          gradF[id++] = iData->scaling.scald*iData->df.gradF[0][j];
+          gradF[id++] = iData->scaling.scald*iData->df.dLagrange[i][j];
       }
     }
 
@@ -174,13 +174,13 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
     refreshSimData(x, x +iData->dim.nx, iData->dtime.tf, iData);
     iData->cv = x;
     /*iData->data->callback->functionAlgebraics(iData->data);*/
-    diff_symColoredObject(iData, iData->df.gradF[0], iData->mayer_index);
+    diff_symColoredObject(iData, iData->df.dMayer, iData->mayer_index);
     for(j=0; j<iData->dim.nv; ++j)
     {
       if(iData->sopt.lagrange){
-        gradF[iData->dim.endN + j] += iData->df.gradF[0][j];
+        gradF[iData->dim.endN + j] += iData->df.dMayer[j];
       } else {
-        gradF[iData->dim.endN + j] = iData->df.gradF[0][j];
+        gradF[iData->dim.endN + j] = iData->df.dMayer[j];
       }
     }
   }else if(!iData->sopt.lagrange){
