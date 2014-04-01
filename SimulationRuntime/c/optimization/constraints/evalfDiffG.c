@@ -51,6 +51,7 @@ static  int lobattoJac3(long double *a, long double *J, long double *J0, long do
 static int jac_struc(IPOPT_DATA_ *iData,int *iRow, int *iCol);
 static int conJac(long double *J, double * values, int nv, int *k, int j,IPOPT_DATA_ *iData);
 
+static int diff_functionODE(double *v, int k, IPOPT_DATA_ *iData, long double **J);
 
 /*!
  *  eval derivation of s.t.
@@ -598,6 +599,74 @@ static int jac_struc(IPOPT_DATA_ *iData, int *iRow, int *iCol)
     printf("\n\n%i = %i",iData->njac,k);
     assert(0);
     */
+
+
+  return 0;
+}
+
+/*!
+ *  eval a part from the derivate of s.t.
+ *  author: Vitalij Ruge
+ **/
+static int diff_functionODE(double* v, int k, IPOPT_DATA_ *iData, long double **J)
+{
+  int i, j;
+  double *x, *u;
+  x = v;
+  u = v + iData->dim.nx;
+
+  refreshSimData(x,u,k,iData);
+  diff_symColoredODE(v,k,iData,J);
+
+  return 0;
+}
+
+/*
+ *  function calculates a symbolic colored jacobian matrix by
+ *  author: Willi Braun
+ */
+int diff_symColoredODE(double *v, int k, IPOPT_DATA_ *iData, long double **J)
+{
+  DATA * data = iData->data;
+  const int index = 2;
+
+  int i,j,l,ii,nx;
+  int *cC,*lindex;
+
+  nx = data->simulationInfo.analyticJacobians[index].sizeCols;
+  cC =  (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols;
+  lindex = (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex;
+
+  for(i = 1; i < data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors + 1; ++i){
+    for(ii = 0; ii<nx; ++ii){
+      if(cC[ii] == i){
+        data->simulationInfo.analyticJacobians[index].seedVars[ii] = iData->scaling.vnom[ii];
+      }
+    }
+
+    data->callback->functionJacB_column(data);
+
+    for(ii = 0; ii < nx; ii++){
+      if(cC[ii] == i){
+        if(ii == 0)  j = 0;
+        else j = lindex[ii-1];
+
+        for(; j<lindex[ii]; ++j){
+          l = data->simulationInfo.analyticJacobians[index].sparsePattern.index[j];
+          if(l < iData->dim.nx)
+            J[l][ii] = data->simulationInfo.analyticJacobians[index].resultVars[l]*iData->scaling.scalf[l];
+          else
+            J[l][ii] = data->simulationInfo.analyticJacobians[index].resultVars[l];
+        }
+      }
+    }
+
+    for(ii = 0; ii<nx; ++ii){
+      if(cC[ii] == i){
+        data->simulationInfo.analyticJacobians[index].seedVars[ii] = 0.0;
+      }
+    }
+  }
 
 
   return 0;

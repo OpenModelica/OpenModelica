@@ -45,6 +45,7 @@
 static int num_hessian(double *v, int k, IPOPT_DATA_ *iData, double *lambda, modelica_boolean lagrange_yes, modelica_boolean mayer_yes, double obj_factor);
 static int updateCost(double *v, int k, IPOPT_DATA_ *iData, modelica_boolean lagrange_yes, modelica_boolean mayer_yes,long double *F1, long double *F2);
 static int sumLagrange(IPOPT_DATA_ *iData, double * erg,int ii, int i, int j, int p, modelica_boolean mayer_yes);
+static int diff_functionODE_con(double *v, int k, IPOPT_DATA_ *iData, long double **J);
 
 /*!
  *  calc hessian
@@ -250,7 +251,7 @@ static int num_hessian(double *v, int k, IPOPT_DATA_ *iData, double *lambda, mod
   OPTIMIZER_DIM_VARS *dim = &iData->dim;
   int nJ = (k>0) ? dim->nJ : dim->nx;
 
-  diff_functionODE(v, k , iData, iData->df.Jh[0]);
+  diff_functionODE_con(v, k , iData, iData->df.Jh[0]);
   upCost = (lagrange_yes || mayer_yes) && (obj_factor!=0);   
 
   if(upCost)
@@ -260,7 +261,7 @@ static int num_hessian(double *v, int k, IPOPT_DATA_ *iData, double *lambda, mod
     v_save = (long double)v[i];
     h = (long double)DF_STEP(v_save, iData->scaling.vnom[i]);
     v[i] += h;
-    diff_functionODE(v, k , iData, iData->df.Jh[1]);
+    diff_functionODE_con(v, k , iData, iData->df.Jh[1]);
 
     if(upCost)
       updateCost(v,k,iData,lagrange_yes,mayer_yes, iData->df.gradFh[0], iData->df.gradFh[1]);
@@ -318,6 +319,46 @@ static int updateCost(double *v, int k, IPOPT_DATA_ *iData, modelica_boolean lag
   if(mayer_yes)
     diff_symColoredObject(iData, F2, iData->mayer_index);
   
+  return 0;
+}
+
+/*!
+ *  eval a part from the derivate of s.t.
+ *  author: Vitalij Ruge
+ **/
+static int diff_functionODE_con(double* v, int k, IPOPT_DATA_ *iData, long double **J)
+{
+  int i, j;
+  double *x, *u;
+  x = v;
+  u = v + iData->dim.nx;
+
+  {
+    DATA* data = iData->data;
+    SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
+    OPTIMIZER_EVALF *evalf = &iData->evalf;
+    long double t = iData->dtime.time[k];
+
+    memcpy(data->localData[0]->realVars, evalf->v[k], sizeof(double)*iData->dim.nReal);
+    memcpy(data->localData[1]->realVars, evalf->v[k], sizeof(double)*iData->dim.nReal);
+    memcpy(data->localData[2]->realVars, evalf->v[k], sizeof(double)*iData->dim.nReal);
+
+    for(j = 0; j<iData->dim.nx;++j){
+      sData->realVars[j] = x[j]*iData->scaling.vnom[j];
+    }
+
+    for(i = 0; i<iData->dim.nu;++i,++j){
+      data->simulationInfo.inputVars[i] = u[i]*iData->scaling.vnom[j];
+    }
+
+    data->callback->input_function(data);
+    sData->timeValue = (double) t;
+
+    data->callback->functionODE(data);
+    data->callback->functionAlgebraics(data);
+  }
+  diff_symColoredODE(v,k,iData,J);
+
   return 0;
 }
 

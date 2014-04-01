@@ -52,8 +52,6 @@ static inline void evalG13(Number *g, IPOPT_DATA_ *iData, int i);
 static inline void evalG21(Number *g, IPOPT_DATA_ *iData, int i);
 static inline void evalG22(Number *g, IPOPT_DATA_ *iData, int i);
 static inline void evalG23(Number *g, IPOPT_DATA_ *iData, int i);
-static int diff_symColoredODE(double *v, int k, IPOPT_DATA_ *iData, long double **J);
-static int num_diff_symColoredODE(double *v, int k, IPOPT_DATA_ *iData, double **J);
 static void printMaxError(IPOPT_DATA_ *iData, double *g,double time, double * max_err , double * tt, int *xi);
 
 /*!
@@ -163,86 +161,6 @@ int functionODE_(double * x, double *u, int k, double * dotx, IPOPT_DATA_ *iData
   SIMULATION_DATA *sData = (SIMULATION_DATA*)iData->data->localData[0];
   refreshSimData(x, u, k, iData);
   memcpy(dotx, sData->realVars + iData->dim.nx, sizeof(double)*iData->dim.nx);
-  return 0;
-}
-
-/*!
- *  eval a part from the derivate of s.t.
- *  author: Vitalij Ruge
- **/
-int diff_functionODE(double* v, int k, IPOPT_DATA_ *iData, long double **J)
-{
-  int i, j;
-  double *x, *u;
-  x = v;
-  u = v + iData->dim.nx;
-
-  refreshSimData(x,u,k,iData);
-  diff_symColoredODE(v,k,iData,J);
-
-  /*
-  #ifdef JAC_ADOLC
-  for(j = 0; j<iData->nv;++j)
-    iData->sv[j] = v[j]*iData->vnom[j];
-
-  jacobian(0, iData->nx, iData->nv, iData->sv, iData->J);
-  for(i = 0;i<iData->nv;++i)
-    for(j = 0; j <iData->nx; ++j)
-      J[j][i] *= iData->scalf[j]*iData->vnom[i];
-  #endif
-  */
-
-  return 0;
-}
-
-/*
- *  function calculates a symbolic colored jacobian matrix by
- *  author: Willi Braun
- */
-int diff_symColoredODE(double *v, int k, IPOPT_DATA_ *iData, long double **J)
-{
-  DATA * data = iData->data;
-  const int index = 2;
-
-  int i,j,l,ii,nx;
-  int *cC,*lindex;
-
-  nx = data->simulationInfo.analyticJacobians[index].sizeCols;
-  cC =  (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols;
-  lindex = (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex;
-
-  for(i = 1; i < data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors + 1; ++i){
-    for(ii = 0; ii<nx; ++ii){
-      if(cC[ii] == i){
-        data->simulationInfo.analyticJacobians[index].seedVars[ii] = iData->scaling.vnom[ii];
-      }
-    }
-
-    data->callback->functionJacB_column(data);
-
-    for(ii = 0; ii < nx; ii++){
-      if(cC[ii] == i){
-        if(ii == 0)  j = 0;
-        else j = lindex[ii-1];
-
-        for(; j<lindex[ii]; ++j){
-          l = data->simulationInfo.analyticJacobians[index].sparsePattern.index[j];
-          if(l < iData->dim.nx)
-            J[l][ii] = data->simulationInfo.analyticJacobians[index].resultVars[l]*iData->scaling.scalf[l];
-          else
-            J[l][ii] = data->simulationInfo.analyticJacobians[index].resultVars[l];
-        }
-      }
-    }
-
-    for(ii = 0; ii<nx; ++ii){
-      if(cC[ii] == i){
-        data->simulationInfo.analyticJacobians[index].seedVars[ii] = 0.0;
-      }
-    }
-  }
-
-
   return 0;
 }
 
