@@ -71,6 +71,8 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   OPTIMIZER_STUCTURE *sopt = &iData->sopt;
   OPTIMIZER_BOUNDS *bounds = &iData->bounds;
   OPTIMIZER_DF *df = &iData->df;
+  OPTIMIZER_EVALF *evalf = &iData->evalf;
+
 
   ng = dim->NRes+dim->nc*dim->deg*dim->nsi;
   deg1 = dim->deg + 1;
@@ -170,6 +172,13 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   iData->dtime.dt = (long double*)malloc((dim->nsi) *sizeof(long double));
   iData->input_name = (char**)malloc(dim->nv*sizeof(char*));
 
+  evalf->g = (double*)malloc((dim->NRes) *sizeof(double));
+  evalf->f = (double*)malloc((dim->NV) *sizeof(double));
+  evalf->v = (double**)malloc((dim->nt) *sizeof(double*));
+
+  for(i =0; i< dim->nt; ++i)
+    evalf->v[i] = (double*)malloc((dim->nReal) *sizeof(double));
+
   if(dim->nc > 0)
     for(i = dim->nx; i<ng; i+=dim->nJ)
       for(j=0;j<dim->nc;++j)
@@ -191,6 +200,8 @@ static int freeIpoptData(IPOPT_DATA_ *iData)
   OPTIMIZER_STUCTURE *sopt = &iData->sopt;
   OPTIMIZER_BOUNDS *bounds = &iData->bounds;
   OPTIMIZER_DF *df = &iData->df;
+  OPTIMIZER_EVALF *evalf = &iData->evalf;
+
   for(i = 0; i < dim->nJ; i++){
     free(sopt->knowedJ[i]);
   }
@@ -296,6 +307,13 @@ static int freeIpoptData(IPOPT_DATA_ *iData)
   }
 
   free(iData->input_name);
+  free(evalf->g);
+  free(evalf->f);
+  for(i =0; i< dim->nt; ++i)
+    free(evalf->v[i]);
+  free(evalf->v);
+
+
   free(iData);
   iData = NULL;
   return 0;

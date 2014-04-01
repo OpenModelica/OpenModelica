@@ -80,6 +80,8 @@ typedef struct OPTIMIZER_DIM_VARS{
 
   int endN;
 
+  int nReal;
+
 }OPTIMIZER_DIM_VARS;
 
 typedef struct OPTIMIZER_MBASE{
@@ -182,6 +184,15 @@ typedef struct OPTIMIZER_DF{
 
 }OPTIMIZER_DF;
 
+typedef struct OPTIMIZER_EVALF{
+
+  double *g;
+  double *f;
+  double **v;
+
+}OPTIMIZER_EVALF;
+
+
 typedef struct IPOPT_DATA_
 {
   /*#*/
@@ -199,6 +210,8 @@ typedef struct IPOPT_DATA_
   OPTIMIZER_SCALING scaling;
 
   OPTIMIZER_DF df;
+
+  OPTIMIZER_EVALF evalf;
 
   /* helper */
   double * x0;

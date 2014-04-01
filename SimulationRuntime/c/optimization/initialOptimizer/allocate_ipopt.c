@@ -73,6 +73,7 @@ int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
   dim->nx = data->modelData.nStates;
   dim->nu = data->modelData.nInputVars;
   dim->nc = data->modelData.nOptimizeConstraints;
+  dim->nReal = data->modelData.nVariablesReal;
 
   dim->nsi = data->simulationInfo.numSteps;
   iData->dtime.t0 = (long double)data->simulationInfo.startTime;
@@ -92,6 +93,7 @@ int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
   dim->nRes = dim->nx*dim->deg;
   dim->NRes = dim->nRes * dim->nsi;
   dim->endN = dim->NV - dim->nv;
+
 
   /***********************/
   allocateIpoptData(iData);
