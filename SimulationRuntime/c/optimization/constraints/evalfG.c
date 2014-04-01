@@ -173,15 +173,12 @@ int functionODE_(double * x, double *u, double t, double * dotx, IPOPT_DATA_ *iD
 int diff_functionODE(double* v, double t, IPOPT_DATA_ *iData, long double **J)
 {
   int i, j;
+  double *x, *u;
+  x = v;
+  u = v + iData->dim.nx;
 
-  int nJ = (int)iData->dim.nJ;
-
-    double *x, *u;
-    x = v;
-    u = v + iData->dim.nx;
-
-    refreshSimData(x,u,t,iData);
-    diff_symColoredODE(v,t,iData,J);
+  refreshSimData(x,u,t,iData);
+  diff_symColoredODE(v,t,iData,J);
 
   /*
   #ifdef JAC_ADOLC

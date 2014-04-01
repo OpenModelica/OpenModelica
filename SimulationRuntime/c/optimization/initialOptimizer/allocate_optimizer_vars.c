@@ -63,7 +63,7 @@ int destroyIpopt(SOLVER_INFO* solverInfo)
  **/
 int allocateIpoptData(IPOPT_DATA_ *iData)
 {
-  int deg1, deg2;
+  int deg1;
   long int i, j;
   int ng;
   OPTIMIZER_DIM_VARS* dim = &iData->dim;
@@ -76,7 +76,6 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
 
   ng = dim->NRes+dim->nc*dim->deg*dim->nsi;
   deg1 = dim->deg + 1;
-  deg2 = deg1 + 1;
   dim->nt = dim->nsi*dim->deg + 1;
 
   dim->nJ = dim->nc + dim->nx;
