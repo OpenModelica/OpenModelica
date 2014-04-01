@@ -122,12 +122,19 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
  *  eval model DAE
  *  author: Vitalij Ruge
  **/
-int refreshSimData(double *x, double *u, long double t, IPOPT_DATA_ *iData)
+int refreshSimData(double *x, double *u, int k, IPOPT_DATA_ *iData)
 {
   int i,j;
   DATA* data = iData->data;
-
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
+  OPTIMIZER_EVALF *evalf = &iData->evalf;
+  long double t = iData->dtime.time[k];
+
+  memcpy(data->localData[0]->realVars, evalf->v[k], sizeof(double)*iData->dim.nReal);
+  memcpy(data->localData[1]->realVars, evalf->v[k], sizeof(double)*iData->dim.nReal);
+  memcpy(data->localData[2]->realVars, evalf->v[k], sizeof(double)*iData->dim.nReal);
+
+
   /*MODEL_DATA      *mData = &(data->modelData);
   SIMULATION_INFO *sInfo = &(data->simulationInfo);*/
   for(j = 0; j<iData->dim.nx;++j){
@@ -140,9 +147,13 @@ int refreshSimData(double *x, double *u, long double t, IPOPT_DATA_ *iData)
 
   data->callback->input_function(data);
   sData->timeValue = (double) t;
-  /* updateContinuousSystem(iData->data); */
+  /* updateContinuousSystem(iData->data);
   data->simulationInfo.discreteCall=1;
+  updateDiscreteSystem(data);
+  data->callback->functionDAE(data);*/
+
   data->callback->functionDAE(data);
+  memcpy(evalf->v[k], data->localData[0]->realVars, sizeof(double)*iData->dim.nReal);
 
   return 0;
 }

@@ -53,7 +53,7 @@ extern "C"
 Bool evalfF(Index n, double * x, Bool new_x, Number *objValue, void * useData);
 Bool evalfDiffF(Index n, double * x, Bool new_x, Number *gradF, void * useData);
 Bool goal_func_mayer(double* vn, double *obj_value, IPOPT_DATA_ *iData);
-Bool goal_func_lagrange(double* vn, double *obj_value, double t, IPOPT_DATA_ *iData);
+Bool goal_func_lagrange(double* vn, double *obj_value, int k, IPOPT_DATA_ *iData);
 
 Bool evalfG(Index n, double * x, Bool new_x, int m, Number *g, void * useData);
 Bool evalfDiffG(Index n, double * x, Bool new_x,
@@ -68,12 +68,12 @@ Bool ipopt_h(int n, double *x, Bool new_x, double obj_factor, int m, double *lam
 
 
 /*sym JAC*/
-int diff_functionODE(double *v, double t, IPOPT_DATA_ *iData, long double **J);
 int diff_symColoredObject(IPOPT_DATA_ *iData, long double *gradF, int this_it);
+int diff_functionODE(double *v, int k, IPOPT_DATA_ *iData, long double **J);
 
 /*model*/
-int functionODE_(double * x, double *u, double t, double * dotx, IPOPT_DATA_ *iData);
-int refreshSimData(double *x, double *u, long double t, IPOPT_DATA_ *iData);
+int functionODE_(double * x, double *u, int k, double * dotx, IPOPT_DATA_ *iData);
+int refreshSimData(double *x, double *u, int k, IPOPT_DATA_ *iData);
 
 /*allocate*/
 int loadDAEmodel(DATA* data, IPOPT_DATA_ *iData);

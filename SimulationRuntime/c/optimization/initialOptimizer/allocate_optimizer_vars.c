@@ -74,7 +74,6 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
 
 
   ng = dim->NRes+dim->nc*dim->deg*dim->nsi;
-  dim->nt = dim->nsi*dim->deg + 1;
 
   dim->nJ = dim->nc + dim->nx;
   bounds->gmin = (double*)calloc(ng,sizeof(double));
@@ -171,9 +170,9 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
 
   evalf->g = (double*)malloc((dim->NRes) *sizeof(double));
   evalf->f = (double*)malloc((dim->NV) *sizeof(double));
-  evalf->v = (double**)malloc((dim->nt) *sizeof(double*));
+  evalf->v = (double**)malloc((dim->nt+1) *sizeof(double*));
 
-  for(i =0; i< dim->nt; ++i)
+  for(i =0; i< dim->nt+1; ++i)
     evalf->v[i] = (double*)malloc((dim->nReal) *sizeof(double));
 
   if(dim->nc > 0)
@@ -306,7 +305,7 @@ static int freeIpoptData(IPOPT_DATA_ *iData)
   free(iData->input_name);
   free(evalf->g);
   free(evalf->f);
-  for(i =0; i< dim->nt; ++i)
+  for(i =0; i< dim->nt + 1; ++i)
     free(evalf->v[i]);
   free(evalf->v);
 

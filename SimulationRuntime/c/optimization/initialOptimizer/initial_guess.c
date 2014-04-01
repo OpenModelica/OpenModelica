@@ -112,6 +112,7 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
   DATA* data = iData->data;
   SIMULATION_INFO *sInfo = &(data->simulationInfo);
   OPTIMIZER_DIM_VARS* dim = &iData->dim;
+  OPTIMIZER_EVALF *evalf = &iData->evalf;
 
   if(!data->simulationInfo.external_input.active)
      externalInputallocate(data);
@@ -143,6 +144,7 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
    else
      externalInputUpdate(data);
 
+   memcpy(evalf->v[0], data->localData[0]->realVars, sizeof(double)*iData->dim.nReal);
    if(iData->sopt.preSim){
      printf("\n========================================================");
      printf("\nstart pre simulation");
@@ -164,16 +166,18 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
      for(jj=0; jj<dim->deg; ++jj, ++k){
       smallIntSolverStep(iData, solverInfo, (double)iData->dtime.time[k]);
 
-     if(printGuess)
-       printf("\ndone: time[%i] = %g\n", k, (double)iData->dtime.time[k]);
+       if(printGuess)
+         printf("\ndone: time[%i] = %g\n", k, (double)iData->dtime.time[k]);
 
-     for(j=0; j< dim->nx; ++j){
-       v[j] = data->localData[0]->realVars[j] * iData->scaling.scalVar[j];
-     }
-     for(; j< dim->nv; ++j)
-       v[j] = data->simulationInfo.inputVars[j-dim->nx] * iData->scaling.scalVar[j];
+       for(j=0; j< dim->nx; ++j){
+         v[j] = data->localData[0]->realVars[j] * iData->scaling.scalVar[j];
+       }
+       for(; j< dim->nv; ++j)
+         v[j] = data->simulationInfo.inputVars[j-dim->nx] * iData->scaling.scalVar[j];
 
-     v += dim->nv;
+       memcpy(evalf->v[k], data->localData[0]->realVars, sizeof(double)*iData->dim.nReal);
+
+       v += dim->nv;
      }
   }
 

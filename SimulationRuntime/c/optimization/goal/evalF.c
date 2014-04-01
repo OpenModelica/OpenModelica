@@ -71,7 +71,7 @@ Bool evalfF(Index n, double * v, Bool new_x, Number *objValue, void * useData)
       erg = 0.0;
       for(j=0; j<iData->dim.deg+1; ++j, x+=iData->dim.nv, ++k)
       {
-        goal_func_lagrange(x, &tmp,iData->dtime.time[k], iData);
+        goal_func_lagrange(x, &tmp,k, iData);
         erg += mbase->b[0][j]*tmp;
       }
       erg_+= erg*iData->dtime.dt[i];
@@ -82,7 +82,7 @@ Bool evalfF(Index n, double * v, Bool new_x, Number *objValue, void * useData)
       erg = 0.0;
       for(j=0; j<iData->dim.deg; ++j, x+=iData->dim.nv, ++k)
       {
-        goal_func_lagrange(x, &tmp, iData->dtime.time[k], iData);
+        goal_func_lagrange(x, &tmp, k, iData);
         erg += mbase->b[1][j]*tmp;
       }
 
@@ -102,7 +102,7 @@ Bool evalfF(Index n, double * v, Bool new_x, Number *objValue, void * useData)
  **/
 Bool goal_func_mayer(double* vn, double *obj_value, IPOPT_DATA_ *iData)
 {  
-  refreshSimData(vn, vn + iData->dim.nx, iData->dtime.tf, iData);
+  refreshSimData(vn, vn + iData->dim.nx, iData->dim.nt-1, iData);
   iData->data->callback->mayer(iData->data, obj_value);
   
   return TRUE;
@@ -112,9 +112,9 @@ Bool goal_func_mayer(double* vn, double *obj_value, IPOPT_DATA_ *iData)
  *  eval lagrange term
  *  author: Vitalij Ruge
  **/
-Bool goal_func_lagrange(double* vn, double *obj_value, double t, IPOPT_DATA_ *iData)
+Bool goal_func_lagrange(double* vn, double *obj_value, int k, IPOPT_DATA_ *iData)
 {  
-  refreshSimData(vn, vn + iData->dim.nx, t, iData);
+  refreshSimData(vn, vn + iData->dim.nx, k, iData);
   iData->data->callback->lagrange(iData->data, obj_value);
   
   return TRUE;
@@ -127,6 +127,7 @@ Bool goal_func_lagrange(double* vn, double *obj_value, double t, IPOPT_DATA_ *iD
 Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
 {
   int i,j,k,id;
+  int tmpk;
   double obj0,tmp;
   long double tmp2;
   double vsave;
@@ -141,7 +142,8 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
     
     for(i=0; i<1; ++i){
       for(k=0; k<iData->dim.deg+1; ++k, x+=iData->dim.nv){
-        refreshSimData(x,x+ iData->dim.nx,iData->dtime.time[i*iData->dim.deg+k],iData);
+        tmpk = i*iData->dim.deg+k;
+        refreshSimData(x,x+ iData->dim.nx, tmpk, iData);
         iData->cv = x;
         /*iData->data->callback->functionAlgebraics(iData->data);*/
         diff_symColoredObject(iData, iData->df.dLagrange[i], iData->lagrange_index);
@@ -153,7 +155,8 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
 
     for(; i<iData->dim.nsi; ++i){
       for(k=0; k<iData->dim.deg; ++k, x+=iData->dim.nv){
-        refreshSimData(x,x+ iData->dim.nx,iData->dtime.time[i*iData->dim.deg+k+1],iData);
+        tmpk = i*iData->dim.deg+k +1 ;
+        refreshSimData(x,x+ iData->dim.nx,tmpk, iData);
         iData->cv = x;
         /*iData->data->callback->functionAlgebraics(iData->data);*/
         diff_symColoredObject(iData, iData->df.dLagrange[i], iData->lagrange_index);
@@ -170,8 +173,7 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
   }
   if(iData->sopt.mayer){
     x = v + iData->dim.endN;
-
-    refreshSimData(x, x +iData->dim.nx, iData->dtime.tf, iData);
+    refreshSimData(x, x +iData->dim.nx, iData->dim.nt-1, iData);
     iData->cv = x;
     /*iData->data->callback->functionAlgebraics(iData->data);*/
     diff_symColoredObject(iData, iData->df.dMayer, iData->mayer_index);

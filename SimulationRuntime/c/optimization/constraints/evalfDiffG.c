@@ -119,12 +119,12 @@ Bool evalfDiffG(Index n, double * x, Bool new_x, Index m, Index njac, Index *iRo
     tmp[1] = dtime->dt[0]*mbase->d[1][4];
     tmp[2] = dtime->dt[0]*mbase->d[2][4];
 
-    diff_functionODE(x, dtime->t0 , iData, df->J[0]);
+    diff_functionODE(x, 0 , iData, df->J[0]);
 
     for(i = 0, id = dim->nv, k = 0; i<1; ++i){
       tmp_index = i*dim->deg;
       for(l=0; l<dim->deg; ++l, id += dim->nv){
-        diff_functionODE(x+id , dtime->time[tmp_index + l] , iData, iData->df.J[i+1]);
+        diff_functionODE(x+id , tmp_index + l , iData, iData->df.J[i+1]);
         for(j=0; j<dim->nx; ++j){
           switch(l){
           case 0:
@@ -147,7 +147,7 @@ Bool evalfDiffG(Index n, double * x, Bool new_x, Index m, Index njac, Index *iRo
     for(; i<dim->nsi; ++i){
       tmp_index = i*iData->dim.deg;
       for(l=0; l<dim->deg; ++l, id += dim->nv){
-        diff_functionODE(x+id, dtime->time[tmp_index + l], iData, df->J[i+1]);
+        diff_functionODE(x+id, tmp_index + l, iData, df->J[i+1]);
         for(j=0; j<dim->nx; ++j){
           switch(l){
           case 0:
@@ -602,5 +602,6 @@ static int jac_struc(IPOPT_DATA_ *iData, int *iRow, int *iCol)
 
   return 0;
 }
+
 
 #endif

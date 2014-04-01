@@ -52,8 +52,8 @@ static inline void evalG13(Number *g, IPOPT_DATA_ *iData, int i);
 static inline void evalG21(Number *g, IPOPT_DATA_ *iData, int i);
 static inline void evalG22(Number *g, IPOPT_DATA_ *iData, int i);
 static inline void evalG23(Number *g, IPOPT_DATA_ *iData, int i);
-static int diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, long double **J);
-static int num_diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J);
+static int diff_symColoredODE(double *v, int k, IPOPT_DATA_ *iData, long double **J);
+static int num_diff_symColoredODE(double *v, int k, IPOPT_DATA_ *iData, double **J);
 static void printMaxError(IPOPT_DATA_ *iData, double *g,double time, double * max_err , double * tt, int *xi);
 
 /*!
@@ -90,7 +90,7 @@ Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
        mbase->u[j] = mbase->x[j] + dim->nx;
 
      for(j = 0; j <2; ++j)
-       functionODE_(mbase->x[j], mbase->u[j], dtime->time[j], mbase->dotx[j], iData);
+       functionODE_(mbase->x[j], mbase->u[j], j, mbase->dotx[j], iData);
 
      /*1*/
      evalG21(g + k, iData, i);
@@ -99,14 +99,14 @@ Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
      k += dim->nJ;
 
      /*2*/
-     functionODE_(mbase->x[2], mbase->u[2], dtime->time[2], mbase->dotx[2], iData);
+     functionODE_(mbase->x[2], mbase->u[2], 2, mbase->dotx[2], iData);
      evalG22(g + k, iData, i);
      if(ACTIVE_STREAM(LOG_IPOPT_ERROR))
        printMaxError(iData,g,dtime->time[2],&max_err, &max_err_time, &max_err_xi);
      k += dim->nJ;
 
      /*3*/
-     functionODE_(mbase->x[3], mbase->u[3], dtime->time[3], mbase->dotx[3], iData);
+     functionODE_(mbase->x[3], mbase->u[3], 3, mbase->dotx[3], iData);
      evalG23(g + k, iData, i);
      if(ACTIVE_STREAM(LOG_IPOPT_ERROR))
        printMaxError(iData,g,dtime->time[3],&max_err, &max_err_time, &max_err_xi);
@@ -124,21 +124,21 @@ Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
       mbase->u[j] = mbase->x[j] + dim->nx;
 
     /*1*/
-    functionODE_(mbase->x[1], mbase->u[1], dtime->time[tmp_index + 1], mbase->dotx[1], iData);
+    functionODE_(mbase->x[1], mbase->u[1], tmp_index + 1, mbase->dotx[1], iData);
     evalG11(g + k, iData, i);
     if(ACTIVE_STREAM(LOG_IPOPT_ERROR))
-      printMaxError(iData,g,dtime->time[tmp_index + 1],&max_err, &max_err_time, &max_err_xi);
+      printMaxError(iData,g, dtime->time[tmp_index + 1],&max_err, &max_err_time, &max_err_xi);
     k += dim->nJ;
 
     /*2*/
-    functionODE_(mbase->x[2], mbase->u[2], dtime->time[tmp_index + 2], mbase->dotx[2], iData);
+    functionODE_(mbase->x[2], mbase->u[2], tmp_index + 2, mbase->dotx[2], iData);
     evalG12(g + k, iData, i);
     if(ACTIVE_STREAM(LOG_IPOPT))
       printMaxError(iData,g,dtime->time[tmp_index + 2],&max_err, &max_err_time, &max_err_xi);
     k += dim->nJ;
 
     /*3*/
-    functionODE_(mbase->x[3], mbase->u[3], dtime->time[tmp_index + 3], mbase->dotx[3], iData);
+    functionODE_(mbase->x[3], mbase->u[3], tmp_index + 3, mbase->dotx[3], iData);
     evalG13(g + k, iData, i);
     if(ACTIVE_STREAM(LOG_IPOPT_ERROR))
       printMaxError(iData,g,dtime->time[tmp_index + 3],&max_err, &max_err_time, &max_err_xi);
@@ -158,10 +158,10 @@ Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
  *  eval modell ODE
  *  author: Vitalij Ruge
  **/
-int functionODE_(double * x, double *u, double t, double * dotx, IPOPT_DATA_ *iData)
+int functionODE_(double * x, double *u, int k, double * dotx, IPOPT_DATA_ *iData)
 {
   SIMULATION_DATA *sData = (SIMULATION_DATA*)iData->data->localData[0];
-  refreshSimData(x, u,  t, iData);
+  refreshSimData(x, u, k, iData);
   memcpy(dotx, sData->realVars + iData->dim.nx, sizeof(double)*iData->dim.nx);
   return 0;
 }
@@ -170,15 +170,15 @@ int functionODE_(double * x, double *u, double t, double * dotx, IPOPT_DATA_ *iD
  *  eval a part from the derivate of s.t.
  *  author: Vitalij Ruge
  **/
-int diff_functionODE(double* v, double t, IPOPT_DATA_ *iData, long double **J)
+int diff_functionODE(double* v, int k, IPOPT_DATA_ *iData, long double **J)
 {
   int i, j;
   double *x, *u;
   x = v;
   u = v + iData->dim.nx;
 
-  refreshSimData(x,u,t,iData);
-  diff_symColoredODE(v,t,iData,J);
+  refreshSimData(x,u,k,iData);
+  diff_symColoredODE(v,k,iData,J);
 
   /*
   #ifdef JAC_ADOLC
@@ -191,7 +191,7 @@ int diff_functionODE(double* v, double t, IPOPT_DATA_ *iData, long double **J)
       J[j][i] *= iData->scalf[j]*iData->vnom[i];
   #endif
   */
-  
+
   return 0;
 }
 
@@ -199,7 +199,7 @@ int diff_functionODE(double* v, double t, IPOPT_DATA_ *iData, long double **J)
  *  function calculates a symbolic colored jacobian matrix by
  *  author: Willi Braun
  */
-int diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, long double **J)
+int diff_symColoredODE(double *v, int k, IPOPT_DATA_ *iData, long double **J)
 {
   DATA * data = iData->data;
   const int index = 2;
@@ -360,17 +360,17 @@ static void printMaxError(IPOPT_DATA_ *iData, double *g,double t, double * max_e
   double tmp;
   int j;
 
-  for(j = 0; j<(int)iData->dim.nx; ++j){
+  for(j = 0; j<iData->dim.nx; ++j){
     tmp = fabs(g[j]);
-    if((double) tmp > (double)*max_err){
+    if(tmp > *max_err){
       *max_err = tmp;
       *tt = t;
       *xi = j;
     }
   }
 
-  for(; j<(int)iData->dim.nJ; ++j){
-    if((double)g[j]> (double)*max_err){
+  for(; j<iData->dim.nJ; ++j){
+    if(g[j]> *max_err){
       *max_err = g[j];
       *tt = t;
       *xi = j;
