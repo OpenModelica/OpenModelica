@@ -131,7 +131,7 @@ template initValXml(Exp exp)
   case RCONST(__) then real
   case SCONST(__) then '<%Util.escapeModelicaStringToXmlString(string)%>'
   case BCONST(__) then if bool then "true" else "false"
-  case ENUM_LITERAL(__) then '<%index%> /*ENUM:<%dotPath(name)%>*/'
+  case ENUM_LITERAL(__) then '<%index%>'
   else error(sourceInfo(), 'initial value of unknown type: <%printExpStr(exp)%>')
 end initValXml;
 
