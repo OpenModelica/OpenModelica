@@ -98,7 +98,6 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   bounds->Vmin = (double*)malloc(dim->NV*sizeof(double));
   bounds->Vmax = (double*)malloc(dim->NV*sizeof(double));
   iData->v = (double*)malloc(dim->NV*sizeof(double));
-  iData->w = (double*)malloc((dim->nsi + 1)*(dim->nv)*sizeof(double));
   iData->dtime.time = (long double*)malloc((dim->deg*dim->nsi +1) *sizeof(long double));
   iData->start_u = (double*)malloc(dim->nv*sizeof(double));
 
@@ -242,7 +241,6 @@ static int freeIpoptData(IPOPT_DATA_ *iData)
   free(bounds->Vmax);
   free(iData->v);
   free(dtime->time);
-  free(iData->w);
   free(dtime->dt);
   free(iData->sv);
   free(iData->sh);
@@ -255,7 +253,7 @@ static int freeIpoptData(IPOPT_DATA_ *iData)
         free(iData->data->simulationInfo.analyticJacobians[i].tmpVars);
         free(iData->data->simulationInfo.analyticJacobians[i].sparsePattern.leadindex);
         free(iData->data->simulationInfo.analyticJacobians[i].sparsePattern.index);
-       free(iData->data->simulationInfo.analyticJacobians[i].sparsePattern.colorCols);
+        free(iData->data->simulationInfo.analyticJacobians[i].sparsePattern.colorCols);
     }
   }
 

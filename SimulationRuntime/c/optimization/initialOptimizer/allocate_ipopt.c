@@ -91,7 +91,7 @@ int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
 
   dim->nRes = dim->nx*dim->deg;
   dim->NRes = dim->nRes * dim->nsi;
-  iData->endN = dim->NV - dim->nv;
+  dim->endN = dim->NV - dim->nv;
 
   /***********************/
   allocateIpoptData(iData);

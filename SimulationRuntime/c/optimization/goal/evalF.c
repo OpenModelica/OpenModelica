@@ -55,7 +55,7 @@ Bool evalfF(Index n, double * v, Bool new_x, Number *objValue, void * useData)
   OPTIMIZER_MBASE *mbase = &iData->mbase;
 
   if(iData->sopt.mayer){
-    goal_func_mayer(v + iData->endN, &mayer,iData);
+    goal_func_mayer(v + iData->dim.endN, &mayer,iData);
   }
 
   if(iData->sopt.lagrange){
@@ -165,11 +165,11 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
 
   } else {
     /*ToDo */
-    for(i=0; i<iData->endN; ++i)
+    for(i=0; i<iData->dim.endN; ++i)
       gradF[i] = 0.0;
   }
   if(iData->sopt.mayer){
-    x = v + iData->endN;
+    x = v + iData->dim.endN;
 
     refreshSimData(x, x +iData->dim.nx, iData->dtime.tf, iData);
     iData->cv = x;
@@ -178,11 +178,15 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
     for(j=0; j<iData->dim.nv; ++j)
     {
       if(iData->sopt.lagrange){
-        gradF[iData->endN + j] += iData->df.gradF[0][j];
+        gradF[iData->dim.endN + j] += iData->df.gradF[0][j];
       } else {
-        gradF[iData->endN + j] = iData->df.gradF[0][j];
+        gradF[iData->dim.endN + j] = iData->df.gradF[0][j];
       }
     }
+  }else if(!iData->sopt.lagrange){
+    /*ToDo */
+    for(j=0; j<iData->dim.nv; ++j)
+      gradF[iData->dim.endN + j] = 0.0;
   }
   return TRUE;
 }

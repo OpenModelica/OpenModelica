@@ -77,6 +77,8 @@ typedef struct OPTIMIZER_DIM_VARS{
   int deg;
   int nH;
 
+  int endN;
+
 }OPTIMIZER_DIM_VARS;
 
 typedef struct OPTIMIZER_MBASE{
@@ -197,17 +199,14 @@ typedef struct IPOPT_DATA_
 
   OPTIMIZER_DF df;
 
-  /* ODE */
+  /* helper */
   double * x0;
   double * start_u;
 
   double *sh;
   double *sv;
   double *v;
-  double *w;
   double *cv;
-
-  int endN;
 
   double *mult_g;
   double *mult_x_L;
