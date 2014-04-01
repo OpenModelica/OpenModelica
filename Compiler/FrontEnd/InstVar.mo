@@ -1041,7 +1041,7 @@ protected function instScalar2
 algorithm
   outDae := match(inCref, inType, inVariability, inMod, inDae, inClassDae, inSource, inImpl)
     local
-      DAE.DAElist dae;
+      DAE.DAElist dae, cls_dae;
 
     // Constant with binding.
     case (_, _, SCode.CONST(), DAE.MOD(eqModOption = SOME(DAE.TYPED(modifierAsExp = _))),
@@ -1096,14 +1096,68 @@ algorithm
     // All other scalars.
     else
       equation
-        dae = InstBinding.instModEquation(inCref, inType, inMod, inSource, inImpl);
-        dae = Util.if_(Types.isComplexType(inType), dae, DAE.emptyDae);
+        dae = Debug.bcallret5(Types.isComplexType(inType),
+          InstBinding.instModEquation, inCref, inType, inMod, inSource, inImpl,
+          DAE.emptyDae);
+        cls_dae = stripRecordDefaultBindingsFromDAE(inClassDae, inType, dae);
         dae = DAEUtil.joinDaes(dae, inDae);
-        dae = DAEUtil.joinDaes(inClassDae, dae);
+        dae = DAEUtil.joinDaes(cls_dae, dae);
       then
         dae;
   end match;
 end instScalar2;
+
+protected function stripRecordDefaultBindingsFromDAE
+  "This function removes bindings from record members for which a binding
+   equation has already been generated. This is done because the record members
+   otherwise get a binding from the default argument of the record too."
+  input DAE.DAElist inClassDAE;
+  input DAE.Type inType;
+  input DAE.DAElist inEqDAE;
+  output DAE.DAElist outClassDAE;
+algorithm
+  outClassDAE := match(inClassDAE, inType, inEqDAE)
+    local
+      list<DAE.Element> els, eqs;
+      
+    // Check if the component is of record type, and if any equations have been
+    // generated for the component's binding.
+    case (DAE.DAE(elementLst = els), 
+          DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = _)),
+          DAE.DAE(elementLst = eqs as _ :: _))
+      equation
+        // This assumes that the equations are ordered the same as the variables.
+        (els, _) = List.mapFold(els, stripRecordDefaultBindingsFromElement, eqs);
+      then
+        DAE.DAE(els);
+
+    else inClassDAE;
+  end match;
+end stripRecordDefaultBindingsFromDAE;
+
+protected function stripRecordDefaultBindingsFromElement
+  input DAE.Element inVar;
+  input list<DAE.Element> inEqs;
+  output DAE.Element outVar;
+  output list<DAE.Element> outEqs;
+algorithm
+  (outVar, outEqs) := matchcontinue(inVar, inEqs)
+    local
+      DAE.ComponentRef var_cr, eq_cr;
+      list<DAE.Element> rest_eqs;
+      
+    case (DAE.VAR(componentRef = var_cr),
+          DAE.EQUATION(exp = DAE.CREF(componentRef = eq_cr)) :: rest_eqs)
+      equation
+        true = ComponentReference.crefEqual(var_cr, eq_cr);
+        // The first equation assigns the variable. Remove the variable's
+        // binding and discard the equation.
+      then
+        (DAEUtil.setElementVarBinding(inVar, NONE()), rest_eqs);
+
+    else (inVar, inEqs);
+  end matchcontinue;
+end stripRecordDefaultBindingsFromElement;
 
 protected function instArray
 "When an array is instantiated by instVar, this function is used

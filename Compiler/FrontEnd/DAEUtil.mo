@@ -1069,11 +1069,9 @@ algorithm
       DAE.Type tp;
       DAE.InstDims dim;
       DAE.ConnectorType ct;
-      DAE.VarVisibility prot;
       Option<DAE.Exp> bind;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
-      Absyn.Path newtype;
       Absyn.InnerOuter io;
       DAE.ElementSource source "the element origin";
 
@@ -1081,7 +1079,6 @@ algorithm
                kind = kind,
                direction = dir,
                parallelism = prl,
-               protection = prot,
                ty = tp,
                binding = bind,
                dims = dim,
@@ -1106,7 +1103,6 @@ algorithm
     local
       DAE.ComponentRef cr;
       DAE.VarKind kind;
-      DAE.VarDirection dir;
       DAE.VarParallelism prl;
       DAE.Type tp;
       DAE.InstDims dim;
@@ -1115,13 +1111,11 @@ algorithm
       Option<DAE.Exp> bind;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
-      Absyn.Path newtype;
       Absyn.InnerOuter io;
       DAE.ElementSource source "the element origin";
 
     case (DAE.VAR(componentRef = cr,
                kind = kind,
-               direction = dir,
                parallelism = prl,
                protection = prot,
                ty = tp,
@@ -1137,6 +1131,34 @@ algorithm
     else elt;
   end match;
 end setElementVarDirection;
+
+public function setElementVarBinding
+  "Sets the binding of a VAR DAE.Element."
+  input DAE.Element inElement;
+  input Option<DAE.Exp> inBinding;
+  output DAE.Element outElement;
+algorithm
+  outElement := match(inElement, inBinding)
+    local
+      DAE.ComponentRef cr;
+      DAE.VarKind vk;
+      DAE.VarDirection vd;
+      DAE.VarParallelism vp;
+      DAE.VarVisibility vv;
+      DAE.Type ty;
+      DAE.InstDims dims;
+      DAE.ConnectorType ct;
+      DAE.ElementSource src;
+      Option<DAE.VariableAttributes> va;
+      Option<SCode.Comment> cmt;
+      Absyn.InnerOuter io;
+
+    case (DAE.VAR(cr, vk, vd, vp, vv, ty, _, dims, ct, src, va, cmt, io),_)
+      then DAE.VAR(cr, vk, vd, vp, vv, ty, inBinding, dims, ct, src, va, cmt, io);
+
+    else inElement;
+  end match;
+end setElementVarBinding;
 
 public function setProtectedAttr "
   sets the start attribute. If NONE(), assumes Real attributes."
