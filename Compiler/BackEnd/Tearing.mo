@@ -66,6 +66,7 @@ protected import Util;
 // =============================================================================
 
 protected constant String BORDER    = "****************************************";
+protected constant String UNDERLINE = "========================================";
 
 uniontype TearingMethod
   record OMC_TEARING end OMC_TEARING;
@@ -87,8 +88,8 @@ algorithm
     local
       String methodString;
       TearingMethod method;
-    BackendDAE.BackendDAEType DAEtype;
-    BackendDAE.Shared shared;
+      BackendDAE.BackendDAEType DAEtype;
+      BackendDAE.Shared shared;
       
     // if noTearing is selected, do nothing.
     case(_) equation
@@ -101,10 +102,12 @@ algorithm
       //Debug.fcall2(Flags.TEARING_DUMPVERBOSE, BackendDump.dumpBackendDAE, inDAE, "DAE");
       methodString = Config.getTearingMethod();
       method = getTearingMethod(methodString);
-    BackendDAE.DAE(_,shared) = inDAE;
-    BackendDAE.SHARED(_,_,_,_,_,_,_,_,_,_,_,_,DAEtype,_,_) = shared;
-       Debug.fcall(Flags.TEARING_DUMP, print, "\n\n\n\n=======================================================================================================\nCalling Tearing for ");Debug.fcall(Flags.TEARING_DUMP, BackendDump.printBackendDAEType,DAEtype);Debug.fcall(Flags.TEARING_DUMP, print, "!\n=======================================================================================================\n");
-    (outDAE, _) = BackendDAEUtil.mapEqSystemAndFold(inDAE, tearingSystemWork, method);
+      BackendDAE.DAE(shared=shared) = inDAE;
+      BackendDAE.SHARED(backendDAEType=DAEtype) = shared;
+      Debug.fcall(Flags.TEARING_DUMP, print, "\n\n\n\n" +& UNDERLINE +& "\nCalling Tearing for ");
+      Debug.fcall(Flags.TEARING_DUMP, BackendDump.printBackendDAEType, DAEtype);
+      Debug.fcall(Flags.TEARING_DUMP, print, "!\n" +& UNDERLINE +& "\n");
+      (outDAE, _) = BackendDAEUtil.mapEqSystemAndFold(inDAE, tearingSystemWork, method);
     then outDAE;
     
     else equation
