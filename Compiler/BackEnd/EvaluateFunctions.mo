@@ -140,7 +140,7 @@ algorithm
       DAE.Exp exp1,exp2,lhsExp,rhsExp;
       DAE.ElementSource source;
       DAE.FunctionTree funcs;
-      list<BackendDAE.Equation> addEqs;
+      list<BackendDAE.Equation> addEqs, addEqs1, addEqs2;
       list<DAE.Exp> lhs;
     case(BackendDAE.EQUATION(exp=exp1, scalar=exp2,source=source,differentiated=diff),_)
       equation
@@ -149,8 +149,10 @@ algorithm
         true = b1 or b2;
         (shared,addEqs,idx) = tplIn;
         funcs = BackendDAEUtil.getFunctions(shared);
-        ((rhsExp,lhsExp,addEqs,funcs)) = Debug.bcallret4(b1,evaluateConstantFunction,exp1,exp2,funcs,idx,(exp2,exp1,addEqs,funcs));
-        ((rhsExp,lhsExp,addEqs,funcs)) = Debug.bcallret4(b2,evaluateConstantFunction,exp2,exp1,funcs,idx,(rhsExp,lhsExp,addEqs,funcs));
+        ((rhsExp,lhsExp,addEqs1,funcs)) = Debug.bcallret4(b1,evaluateConstantFunction,exp1,exp2,funcs,idx,(exp2,exp1,{},funcs));
+        ((rhsExp,lhsExp,addEqs2,funcs)) = Debug.bcallret4(b2,evaluateConstantFunction,exp2,exp1,funcs,idx,(rhsExp,lhsExp,{},funcs));
+        addEqs = listAppend(addEqs1,addEqs);
+        addEqs = listAppend(addEqs2,addEqs);
         eq = BackendDAE.EQUATION(lhsExp,rhsExp,source,diff);
       then
         (eq,(shared,addEqs,idx+1));
@@ -165,9 +167,11 @@ algorithm
         b2 = Expression.containFunctioncall(exp2);
         true = b1 or b2;
         (shared,addEqs,idx) = tplIn;
-        funcs = BackendDAEUtil.getFunctions(shared);
-        ((rhsExp,lhsExp,addEqs,funcs)) = Debug.bcallret4(b1,evaluateConstantFunction,exp1,exp2,funcs,idx,(exp2,exp1,addEqs,funcs));
-        ((rhsExp,lhsExp,addEqs,funcs)) = Debug.bcallret4(b2,evaluateConstantFunction,exp2,exp1,funcs,idx,(rhsExp,lhsExp,addEqs,funcs));
+        funcs = BackendDAEUtil.getFunctions(shared);        
+        ((rhsExp,lhsExp,addEqs1,funcs)) = Debug.bcallret4(b1,evaluateConstantFunction,exp1,exp2,funcs,idx,(exp2,exp1,{},funcs));       
+        ((rhsExp,lhsExp,addEqs2,funcs)) = Debug.bcallret4(b2,evaluateConstantFunction,exp2,exp1,funcs,idx,(rhsExp,lhsExp,{},funcs));
+        addEqs = listAppend(addEqs1,addEqs);
+        addEqs = listAppend(addEqs2,addEqs);
         shared = BackendDAEUtil.addFunctionTree(funcs,shared);  
         size = DAEUtil.getTupleSize(lhsExp);
         eq = Util.if_(intEq(size,0),BackendDAE.EQUATION(lhsExp,rhsExp,source,diff),BackendDAE.COMPLEX_EQUATION(size,lhsExp,rhsExp,source,diff));
