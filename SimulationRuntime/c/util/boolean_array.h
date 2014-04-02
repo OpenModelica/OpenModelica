@@ -35,16 +35,34 @@
 #include "openmodelica.h"
 #include "base_array.h"
 #include "index_spec.h"
+#include "omc_msvc.h"
 #include <stdarg.h>
 
-/* Indexing 1 dimensions */
-extern modelica_boolean boolean_get(const boolean_array_t *a, size_t i);
-/* Indexing 2 dimensions */
-extern modelica_boolean boolean_get_2D(const boolean_array_t *a, size_t i, size_t j);
-/* Indexing 3 dimensions */
-extern modelica_boolean boolean_get_3D(const boolean_array_t *a, size_t i, size_t j, size_t k);
-/* Indexing 4 dimensions */
-extern modelica_boolean boolean_get_4D(const boolean_array_t *a, size_t i, size_t j, size_t k, size_t l);
+static OMC_INLINE modelica_boolean boolean_get(const boolean_array_t a, size_t i)
+{
+    return ((modelica_boolean *) a.data)[i];
+}
+
+static OMC_INLINE modelica_boolean boolean_get_2D(const boolean_array_t a, size_t i, size_t j)
+{
+    modelica_boolean value = boolean_get(a, (i * a.dim_size[1]) + j);
+    return value;
+}
+
+static OMC_INLINE modelica_boolean boolean_get_3D(const boolean_array_t a, size_t i, size_t j, size_t k)
+{
+    modelica_boolean value = boolean_get(a, (i * a.dim_size[1] * a.dim_size[2])
+                                          + (j * a.dim_size[2]) + k);
+    return value;
+}
+
+static OMC_INLINE modelica_boolean boolean_get_4D(const boolean_array_t a, size_t i, size_t j, size_t k, size_t l)
+{
+    modelica_boolean value = boolean_get(a, (i * a.dim_size[1] * a.dim_size[2] * a.dim_size[3])
+                                          + (j * a.dim_size[2] * a.dim_size[3])
+                                          + (k * a.dim_size[3]) + l);
+    return value;
+}
 
 /* Setting the fields of a boolean_array */
 extern void boolean_array_create(boolean_array_t *dest, modelica_boolean *data, int ndims, ...);
@@ -69,13 +87,13 @@ static inline void clone_boolean_array_spec(const boolean_array_t* src,
 { clone_base_array_spec(src, dst); }
 
 /* Copy boolean data*/
-extern void copy_boolean_array_data(const boolean_array_t* source, boolean_array_t* dest);
+extern void copy_boolean_array_data(const boolean_array_t source, boolean_array_t* dest);
 
 /* Copy boolean data given memory ptr*/
-extern void copy_boolean_array_data_mem(const boolean_array_t* source, modelica_boolean* dest);
+extern void copy_boolean_array_data_mem(const boolean_array_t source, modelica_boolean* dest);
 
 /* Copy boolean array*/
-extern void copy_boolean_array(const boolean_array_t* source, boolean_array_t* dest);
+extern void copy_boolean_array(const boolean_array_t source, boolean_array_t* dest);
 
 /* 'and' two boolean arrays*/
 void and_boolean_array(const boolean_array_t *source1, const boolean_array_t *source2, boolean_array_t *dest);
@@ -160,8 +178,6 @@ extern void promote_alloc_boolean_array(const boolean_array_t* a, int n,
 
 static inline int ndims_boolean_array(const boolean_array_t* a)
 { return ndims_base_array(a); }
-static inline int size_of_dimension_boolean_array(boolean_array_t *a, int i)
-{ return size_of_dimension_base_array(a, i); }
 static inline modelica_boolean *data_of_boolean_array(const boolean_array_t*a)
 { return (modelica_boolean *) a->data; }
 

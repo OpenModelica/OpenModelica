@@ -169,11 +169,9 @@ modelica_integer stringHashDjb2Mod(metamodelica_string_const s, modelica_integer
   return res;
 }
 
-builtin_rettypeboxed boxptr_stringHashDjb2Mod(threadData_t *threadData,modelica_metatype v,modelica_metatype mod)
+modelica_metatype boxptr_stringHashDjb2Mod(threadData_t *threadData,modelica_metatype v,modelica_metatype mod)
 {
-  builtin_rettypeboxed res;
-  res.c1 = mmc_mk_icon(stringHashDjb2Mod(v,mmc_unbox_integer(mod)));
-  return res;
+  return mmc_mk_icon(stringHashDjb2Mod(v,mmc_unbox_integer(mod)));
 }
 
 /* adrpo: see the comment above about sdbm hash */
@@ -184,9 +182,8 @@ modelica_integer stringHashSdbm(metamodelica_string_const s)
   return res;
 }
 
-builtin_rettypeboxed boxptr_substring(threadData_t *threadData, metamodelica_string_const str, modelica_metatype boxstart, modelica_metatype boxstop)
+modelica_metatype boxptr_substring(threadData_t *threadData, metamodelica_string_const str, modelica_metatype boxstart, modelica_metatype boxstop)
 {
-  builtin_rettypeboxed result;
   unsigned header = 0, nwords;
   long start = MMC_UNTAGFIXNUM(boxstart) - 1;
   long stop = MMC_UNTAGFIXNUM(boxstop) - 1;
@@ -207,8 +204,7 @@ builtin_rettypeboxed boxptr_substring(threadData_t *threadData, metamodelica_str
   tmp[len] = '\0';
   p = MMC_TAGPTR(res);
   MMC_CHECK_STRING(p);
-  result.c1 = p;
-  return result;
+  return p;
 }
 
 metamodelica_string stringListStringChar(metamodelica_string s)
@@ -350,15 +346,14 @@ modelica_integer mmc_stringCompare(const void *str1, const void *str2)
   return 0;
 }
 
-builtin_rettypeboxed boxptr_stringGetStringChar(threadData_t *threadData,metamodelica_string str, modelica_metatype iix)
+modelica_metatype boxptr_stringGetStringChar(threadData_t *threadData,metamodelica_string str, modelica_metatype iix)
 {
-  builtin_rettypeboxed res;
+  modelica_metatype res;
   int ix = MMC_UNTAGFIXNUM(iix);
   MMC_CHECK_STRING(str);
   if (ix < 1 || ix > (long) MMC_STRLEN(str))
     MMC_THROW_INTERNAL();
-  res.c1 = mmc_strings_len1[MMC_STRINGDATA(str)[ix-1]];
-  return res;
+  return mmc_strings_len1[MMC_STRINGDATA(str)[ix-1]];
 }
 
 modelica_integer nobox_stringGet(threadData_t *threadData,metamodelica_string str, modelica_integer ix)
@@ -368,9 +363,8 @@ modelica_integer nobox_stringGet(threadData_t *threadData,metamodelica_string st
   return MMC_STRINGDATA(str)[ix-1];
 }
 
-builtin_rettypeboxed boxptr_stringUpdateStringChar(threadData_t *threadData,metamodelica_string str, metamodelica_string c, modelica_metatype iix)
+modelica_metatype boxptr_stringUpdateStringChar(threadData_t *threadData,metamodelica_string str, metamodelica_string c, modelica_metatype iix)
 {
-  builtin_rettypeboxed result;
   int ix = MMC_UNTAGFIXNUM(iix);
   int length = 0;
   unsigned header = MMC_GETHDR(str);
@@ -393,8 +387,7 @@ builtin_rettypeboxed boxptr_stringUpdateStringChar(threadData_t *threadData,meta
   p->data[ix-1] = MMC_STRINGDATA(c)[0];
   res = MMC_TAGPTR(p);
   MMC_CHECK_STRING(res);
-  result.c1 = res;
-  return result;
+  return res;
 }
 
 metamodelica_string_const stringAppend(metamodelica_string_const s1, metamodelica_string_const s2)
@@ -500,17 +493,16 @@ modelica_boolean listMember(modelica_metatype obj, modelica_metatype lst)
   return 0;
 }
 
-builtin_rettypeboxed boxptr_listGet(threadData_t *threadData,modelica_metatype lst, modelica_metatype ii)
+modelica_metatype boxptr_listGet(threadData_t *threadData,modelica_metatype lst, modelica_metatype ii)
 {
-  builtin_rettypeboxed res;
+  modelica_metatype res;
   int i = mmc_unbox_integer(ii);
   if (i < 1)
     MMC_THROW_INTERNAL();
   while (!MMC_NILTEST(lst))
   {
     if (i == 1) {
-      res.c1 = MMC_CAR(lst);
-      return res;
+      return MMC_CAR(lst);
     }
     lst = MMC_CDR(lst);
     i--;
@@ -518,15 +510,14 @@ builtin_rettypeboxed boxptr_listGet(threadData_t *threadData,modelica_metatype l
   MMC_THROW_INTERNAL(); /* List was not long enough */
 }
 
-builtin_rettypeboxed boxptr_listNth(threadData_t *threadData,modelica_metatype lst, modelica_metatype i)
+modelica_metatype boxptr_listNth(threadData_t *threadData,modelica_metatype lst, modelica_metatype i)
 {
   return boxptr_listGet(threadData,lst,mmc_mk_icon(mmc_unbox_integer(i)+1));
 }
 
-builtin_rettypeboxed boxptr_listDelete(threadData_t *threadData,modelica_metatype lst, modelica_metatype iix)
+modelica_metatype boxptr_listDelete(threadData_t *threadData,modelica_metatype lst, modelica_metatype iix)
 {
   /* TODO: If we assume the index exists we can do this in a much better way */
-  builtin_rettypeboxed res;
   int ix = mmc_unbox_integer(iix);
   modelica_metatype *tmpArr = NULL;
   int i = 0;
@@ -538,8 +529,7 @@ builtin_rettypeboxed boxptr_listDelete(threadData_t *threadData,modelica_metatyp
     if (listEmpty(lst)) {
       MMC_THROW_INTERNAL();
     }
-    res.c1 = MMC_CDR(lst);
-    return res;
+    return MMC_CDR(lst);
   }
   tmpArr = (modelica_metatype *) GC_malloc(sizeof(modelica_metatype)*(ix)); /* We know the size of the first part of the list (+1 for the element to delete) */
   if (tmpArr == NULL) {
@@ -567,8 +557,7 @@ builtin_rettypeboxed boxptr_listDelete(threadData_t *threadData,modelica_metatyp
   }
   GC_free(tmpArr);
 
-  res.c1 = lst;
-  return res;
+  return lst;
 }
 
 /* Array Operations */
@@ -585,7 +574,7 @@ modelica_metatype arrayCreate(modelica_integer nelts, modelica_metatype val)
 
 modelica_metatype arrayList(modelica_metatype arr)
 {
-  builtin_rettypeboxed result;
+  modelica_metatype result;
   int nelts = MMC_HDRSLOTS(MMC_GETHDR(arr))-1;
   void **vecp = MMC_STRUCTDATA(arr);
   void *res = mmc_mk_nil();
@@ -635,11 +624,9 @@ modelica_metatype arrayAdd(modelica_metatype arr, modelica_metatype val)
   return res;
 }
 
-builtin_rettypeboxed boxptr_arrayNth(threadData_t *threadData,modelica_metatype arr,modelica_metatype ix)
+modelica_metatype boxptr_arrayNth(threadData_t *threadData,modelica_metatype arr,modelica_metatype ix)
 {
-  builtin_rettypeboxed res;
-  res.c1 = arrayGet(arr, mmc_unbox_integer(ix)+1);
-  return res;
+  return arrayGet(arr, mmc_unbox_integer(ix)+1);
 }
 
 /* Misc Operations */

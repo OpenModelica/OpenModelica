@@ -108,16 +108,16 @@ void copy_string_array_data(const string_array_t *source, string_array_t *dest)
     }
 }
 
-void copy_string_array_data_mem(const string_array_t *source, modelica_string_t *dest)
+void copy_string_array_data_mem(const string_array_t source, modelica_string_t *dest)
 {
     size_t i, nr_of_elements;
 
-    assert(base_array_ok(source));
+    assert(base_array_ok(&source));
 
-    nr_of_elements = base_array_nr_of_elements(source);
+    nr_of_elements = base_array_nr_of_elements(&source);
 
     for(i = 0; i < nr_of_elements; ++i) {
-        dest[i] = string_get(source, i);
+        dest[i] = string_get(&source, i);
     }
 }
 

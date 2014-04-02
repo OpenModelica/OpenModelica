@@ -580,12 +580,15 @@ public function elaborateFunctions
 protected
   list<SimCode.Function> fns;
   list<String> outRecordTypes;
+  HashTableStringToPath.HashTable ht;
 algorithm
   (extraRecordDecls, outRecordTypes) := elaborateRecordDeclarationsForMetarecords(literals, {}, {});
   (functions, outRecordTypes, extraRecordDecls, outIncludes, includeDirs, libs) := elaborateFunctions2(program, daeElements, {}, outRecordTypes, extraRecordDecls, includes, {}, {});
   extraRecordDecls := List.unique(extraRecordDecls);
   (extraRecordDecls, _) := elaborateRecordDeclarationsFromTypes(metarecordTypes, extraRecordDecls, outRecordTypes);
   extraRecordDecls := List.sort(extraRecordDecls, orderRecordDecls);
+  ht := HashTableStringToPath.emptyHashTableSized(BaseHashTable.lowBucketSize);
+  (extraRecordDecls,_) := List.mapFold(extraRecordDecls, aliasRecordDeclarations, ht);
 end elaborateFunctions;
 
 protected function elaborateFunctions2
@@ -3124,7 +3127,7 @@ algorithm
         // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         (tp as DAE.T_COMPLEX(varLst=varLst, complexClassType=ClassInf.RECORD(path)))  = Expression.typeof(e1);
         // tmp
-        ident = System.stringReplace(Absyn.pathString(path), ".", "_");
+        ident = Absyn.pathStringReplaceDot(path, "_");
         crtmp = ComponentReference.makeCrefIdent("$TMP_" +& ident +& intString(iuniqueEqIndex), tp, {});
         tempvars = createTempVars(varLst, crtmp, itempvars);
         // 0 = a - tmp        
@@ -3146,7 +3149,7 @@ algorithm
         // ((e2_1, (_, _))) = BackendDAEUtil.extendArrExp((e2, (NONE(), false)));
         (tp as DAE.T_COMPLEX(varLst=varLst, complexClassType=ClassInf.RECORD(path)))  = Expression.typeof(e2);
         // tmp
-        ident = System.stringReplace(Absyn.pathString(path), ".", "_");
+        ident = Absyn.pathStringReplaceDot(path, "_");
         crtmp = ComponentReference.makeCrefIdent("$TMP_" +& ident +& intString(iuniqueEqIndex), tp, {});
         tempvars = createTempVars(varLst, crtmp, itempvars);
         // 0 = a - tmp        
@@ -3167,7 +3170,7 @@ algorithm
         ((e2_1, (_, _))) = BackendDAEUtil.extendArrExp((e2, (NONE(), false)));
         // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         // tmp = f() 
-        ident = System.stringReplace(Absyn.pathString(path), ".", "_");
+        ident = Absyn.pathStringReplaceDot(path, "_");
         cr = ComponentReference.makeCrefIdent("$TMP_" +& ident +& intString(iuniqueEqIndex), tp, {});
         e1_1 = Expression.crefExp(cr);
         stms = DAE.STMT_ASSIGN(tp, e1_1, e2_1, source);
@@ -3188,7 +3191,7 @@ algorithm
         ((e1_1, (_, _))) = BackendDAEUtil.extendArrExp((e2, (NONE(), false)));
         // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         // tmp = f() 
-        ident = System.stringReplace(Absyn.pathString(path), ".", "_");
+        ident = Absyn.pathStringReplaceDot(path, "_");
         cr = ComponentReference.makeCrefIdent("$TMP_" +& ident +& intString(iuniqueEqIndex), tp, {});
         e2_1 = Expression.crefExp(cr);
         stms = DAE.STMT_ASSIGN(tp, e2_1, e1_1, source);
@@ -3208,7 +3211,7 @@ algorithm
         // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         // tmp = f()
         tp = Expression.typeof(e1); 
-        ident = System.stringReplace(Absyn.pathString(path), ".", "_");
+        ident = Absyn.pathStringReplaceDot(path, "_");
         cr = ComponentReference.makeCrefIdent("$TMP_" +& ident +& intString(iuniqueEqIndex), tp, {});
         crexplst = List.map1(expl, Expression.generateCrefsExpFromExp, cr);
         stms = DAE.STMT_TUPLE_ASSIGN(tp, crexplst, e2, source);
@@ -5181,7 +5184,7 @@ algorithm
         vars = List.map(varlst, typesVarNoBinding);
         rt_1 = sname :: rt;
         (accRecDecls, rt_2) = elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1);
-        recDecl = SimCode.RECORD_DECL_FULL(sname, name, vars);
+        recDecl = SimCode.RECORD_DECL_FULL(sname, NONE(), name, vars);
         accRecDecls = List.appendElt(recDecl, accRecDecls);
       then (accRecDecls, rt_2);
         
@@ -5202,7 +5205,7 @@ algorithm
     then (accRecDecls, rt);
         
     case (_, accRecDecls, rt) then
-      (SimCode.RECORD_DECL_FULL("#an odd record#", Absyn.IDENT("?noname?"), {}) :: accRecDecls , rt);
+      (SimCode.RECORD_DECL_FULL("#an odd record#", NONE(), Absyn.IDENT("?noname?"), {}) :: accRecDecls , rt);
   end matchcontinue;
 end elaborateRecordDeclarationsForRecord;
 
@@ -5886,7 +5889,7 @@ algorithm
         ((e2_1, (_, _))) = BackendDAEUtil.extendArrExp((e2, (NONE(), false)));
         // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         // tmp = f() 
-        ident = System.stringReplace(Absyn.pathString(path), ".", "_");
+        ident = Absyn.pathStringReplaceDot(path, "_");
         cr1 = ComponentReference.makeCrefIdent("$TMP_" +& ident +& intString(iuniqueEqIndex), tp, {});
         e1_1 = Expression.crefExp(cr1);
         stms = DAE.STMT_ASSIGN(tp, e1_1, e2_1, source);
@@ -5911,7 +5914,7 @@ algorithm
         ((e1_1, (_, _))) = BackendDAEUtil.extendArrExp((e1, (NONE(), false)));
         // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         // tmp = f() 
-        ident = System.stringReplace(Absyn.pathString(path), ".", "_");
+        ident = Absyn.pathStringReplaceDot(path, "_");
         cr1 = ComponentReference.makeCrefIdent("$TMP_" +& ident +& intString(iuniqueEqIndex), tp, {});
         e2_1 = Expression.crefExp(cr1);
         stms = DAE.STMT_ASSIGN(tp, e2_1, e1_1, source);
@@ -12056,5 +12059,62 @@ algorithm
     else false;
   end match;
 end getProtected;
+
+protected function aliasRecordDeclarations
+  input SimCode.RecordDeclaration inDecl;
+  input HashTableStringToPath.HashTable inHt;
+  output SimCode.RecordDeclaration decl;
+  output HashTableStringToPath.HashTable ht;
+algorithm
+  (decl,ht) := match (inDecl,inHt)
+    local
+      list<SimCode.Variable> vars;
+      Absyn.Path name;
+      String str,sname;
+      Option<String> alias;
+    case (SimCode.RECORD_DECL_FULL(sname, _, name, vars),_)
+      equation
+        str = stringDelimitList(List.map(vars, variableString), "\n");
+        (alias,ht) = aliasRecordDeclarations2(str, name, inHt);
+      then (SimCode.RECORD_DECL_FULL(sname, alias, name, vars),ht);
+    else (inDecl,inHt);
+  end match;
+end aliasRecordDeclarations;
+
+protected function aliasRecordDeclarations2
+  input String str;
+  input Absyn.Path path;
+  input HashTableStringToPath.HashTable inHt;
+  output Option<String> alias;
+  output HashTableStringToPath.HashTable ht;
+algorithm
+  (alias,ht) := matchcontinue (str,path,inHt)
+    local
+      String aliasStr;
+    case (_,_,_)
+      equation
+        aliasStr = Absyn.pathStringReplaceDot(BaseHashTable.get(str, inHt),"_");
+      then (SOME(aliasStr),inHt);
+    else
+      equation
+        ht = BaseHashTable.add((str,path),inHt);
+      then (NONE(),ht);
+  end matchcontinue;
+end aliasRecordDeclarations2;
+
+protected function variableString
+  input SimCode.Variable var;
+  output String str;
+algorithm
+  str := match var
+    local
+      DAE.ComponentRef name;
+      DAE.Type ty;
+    case SimCode.VARIABLE(name=name, ty=ty)
+      then Types.unparseType(ty) +& " " +& ComponentReference.printComponentRefStr(name);
+    case SimCode.FUNCTION_PTR(name=str)
+      then "modelica_fnptr " +& str;
+  end match;
+end variableString;
 
 end SimCodeUtil;

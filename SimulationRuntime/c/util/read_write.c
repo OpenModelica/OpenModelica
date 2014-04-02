@@ -490,7 +490,7 @@ void write_real_array(type_description *desc, const real_array_t *arr)
     memcpy(desc->data.real_array.data, arr->data,
            sizeof(modelica_real) * nr_elements);
   } else {
-    copy_real_array(arr, &(desc->data.real_array));
+    copy_real_array(*arr, &(desc->data.real_array));
   }
 }
 
@@ -512,7 +512,7 @@ void write_integer_array(type_description *desc, const integer_array_t *arr)
            sizeof(modelica_integer) * nr_elements);
   } else {
     clone_integer_array_spec(arr, &(desc->data.int_array));
-    copy_integer_array_data(arr, &(desc->data.int_array));
+    copy_integer_array_data(*arr, &(desc->data.int_array));
   }
 }
 
@@ -533,7 +533,7 @@ void write_boolean_array(type_description *desc, const boolean_array_t *arr)
     memcpy(desc->data.bool_array.data, arr->data,
            sizeof(modelica_boolean) * nr_elements);
   } else {
-    copy_boolean_array(arr, &(desc->data.bool_array));
+    copy_boolean_array(*arr, &(desc->data.bool_array));
   }
 }
 

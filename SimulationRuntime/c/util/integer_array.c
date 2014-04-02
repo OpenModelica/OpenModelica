@@ -40,44 +40,14 @@
 #include <stdarg.h>
 #include <math.h>
 
-modelica_integer integer_get(const integer_array_t *a, size_t i)
+static OMC_INLINE modelica_integer *integer_ptrget(const integer_array_t *a, size_t i)
 {
-    return ((modelica_integer *) a->data)[i];
+  return ((modelica_integer *) a->data) + i;
 }
 
-/* Indexing 2 dimensions */
-modelica_integer integer_get_2D(const integer_array_t *a, size_t i, size_t j)
+static OMC_INLINE void integer_set(integer_array_t *a, size_t i, modelica_integer r)
 {
-  modelica_integer value = integer_get(a, (i * a->dim_size[1]) + j);
-  return value;
-}
-
-/* Indexing 3 dimensions */
-modelica_integer integer_get_3D(const integer_array_t *a, size_t i, size_t j, size_t k)
-{
-  modelica_integer value = integer_get(a, (i * a->dim_size[1] * a->dim_size[2])
-                                        + (j * a->dim_size[2]) + k);
-  return value;
-}
-
-/* Indexing 4 dimensions */
-modelica_integer integer_get_4D(const integer_array_t *a, size_t i, size_t j, size_t k, size_t l)
-{
-  modelica_integer value = integer_get(a, (i * a->dim_size[1] * a->dim_size[2] * a->dim_size[3])
-                                        + (j * a->dim_size[2] * a->dim_size[3])
-                                        + (k * a->dim_size[3]) + l);
-  return value;
-}
-
-
-static inline modelica_integer *integer_ptrget(const integer_array_t *a, size_t i)
-{
-    return ((modelica_integer *) a->data) + i;
-}
-
-static inline void integer_set(integer_array_t *a, size_t i, modelica_integer r)
-{
-    ((modelica_integer *) a->data)[i] = r;
+  ((modelica_integer *) a->data)[i] = r;
 }
 
 /** function: integer_array_create
@@ -119,40 +89,40 @@ void alloc_integer_array_data(integer_array_t* a)
     a->data = integer_alloc(base_array_nr_of_elements(a));
 }
 
-void copy_integer_array_data(const integer_array_t * source, integer_array_t* dest)
+void copy_integer_array_data(const integer_array_t source, integer_array_t* dest)
 {
     size_t i, nr_of_elements;
 
-    assert(base_array_ok(source));
+    assert(base_array_ok(&source));
     assert(base_array_ok(dest));
-    assert(base_array_shape_eq(source, dest));
+    assert(base_array_shape_eq(&source, dest));
 
-    nr_of_elements = integer_array_nr_of_elements(source);
+    nr_of_elements = integer_array_nr_of_elements(&source);
 
     for(i = 0; i < nr_of_elements; ++i) {
         integer_set(dest, i, integer_get(source, i));
     }
 }
 
-void copy_integer_array_data_mem(const integer_array_t *source,
+void copy_integer_array_data_mem(const integer_array_t source,
                                  modelica_integer *dest)
 {
     size_t i, nr_of_elements;
 
-    assert(base_array_ok(source));
+    assert(base_array_ok(&source));
 
-    nr_of_elements = base_array_nr_of_elements(source);
+    nr_of_elements = base_array_nr_of_elements(&source);
 
     for(i = 0; i < nr_of_elements; ++i) {
         dest[i] = integer_get(source, i);
     }
 }
 
-void copy_integer_array(const integer_array_t *source, integer_array_t *dest)
+void copy_integer_array(const integer_array_t source, integer_array_t *dest)
 {
-    clone_base_array_spec(source, dest);
+    clone_base_array_spec(&source, dest);
     alloc_integer_array_data(dest);
-    copy_integer_array_data(source, dest);
+    copy_integer_array_data(*&source, dest);
 }
 
 static modelica_integer integer_le(modelica_integer x, modelica_integer y)
@@ -243,7 +213,7 @@ void print_integer_matrix(const integer_array_t * source)
         printf("%d X %d matrix:\n", (int) source->dim_size[0], (int) source->dim_size[1]);
         for(i = 0; i < source->dim_size[0]; ++i) {
             for(j = 0; j < source->dim_size[1]; ++j) {
-                value = integer_get(source, (i * source->dim_size[1]) + j);
+                value = integer_get(*source, (i * source->dim_size[1]) + j);
                 printf("%ld\t", value);
             }
             printf("\n");
@@ -313,7 +283,7 @@ void simple_indexed_assign_integer_array1(const integer_array_t * source,
 {
     /* Assert that source has the correct dimension */
     /* Assert that dest has the correct dimension */
-    integer_set(dest, i1, integer_get(source, i1));
+    integer_set(dest, i1, integer_get(*source, i1));
 }
 
 void simple_indexed_assign_integer_array2(const integer_array_t * source,
@@ -324,7 +294,7 @@ void simple_indexed_assign_integer_array2(const integer_array_t * source,
     /* Assert that source has correct dimension */
     /* Assert that dest has correct dimension */
     index = (i1 * source->dim_size[1]) + i2;
-    integer_set(dest, index, integer_get(source, index));
+    integer_set(dest, index, integer_get(*source, index));
 }
 
 void indexed_assign_integer_array(const integer_array_t * source,
@@ -371,7 +341,7 @@ void indexed_assign_integer_array(const integer_array_t * source,
 
         integer_set(dest, calc_base_index_spec(dest->ndims, idx_vec1, dest,
                                                dest_spec),
-                    integer_get(source, calc_base_index(source->ndims, idx_vec2,
+                    integer_get(*source, calc_base_index(source->ndims, idx_vec2,
                                                         source)));
 
     } while(0 == next_index(dest_spec->ndims, idx_vec1, idx_size));
@@ -437,7 +407,7 @@ void index_integer_array(const integer_array_t * source,
         }
 
         integer_set(dest, calc_base_index(dest->ndims, idx_vec2, dest),
-                    integer_get(source,
+                    integer_get(*source,
                                 calc_base_index_spec(source->ndims, idx_vec1,
                                                      source, source_spec)));
 
@@ -525,7 +495,7 @@ void simple_index_integer_array1(const integer_array_t * source,
     assert(dest->ndims == (source->ndims - 1));
 
     for(i = 0 ; i < nr_of_elements ; i++) {
-        integer_set(dest, i, integer_get(source, off + i));
+        integer_set(dest, i, integer_get(*source, off + i));
     }
 }
 
@@ -539,7 +509,7 @@ void simple_index_integer_array2(const integer_array_t * source,
     size_t off = nr_of_elements * ((source->dim_size[1] * i1) + i2);
 
     for(i = 0 ; i < nr_of_elements ; i++) {
-        integer_set(dest, i, integer_get(source, off + i));
+        integer_set(dest, i, integer_get(*source, off + i));
     }
 }
 
@@ -563,7 +533,7 @@ void array_integer_array(integer_array_t* dest,int n,integer_array_t* first,...)
     for(i = 0, c = 0; i < n; ++i) {
         int m = base_array_nr_of_elements(elts[i]);
         for(j = 0; j < m; ++j) {
-            integer_set(dest, c, integer_get(elts[i], j));
+            integer_set(dest, c, integer_get(*elts[i], j));
             c++;
         }
     }
@@ -605,7 +575,7 @@ void array_alloc_integer_array(integer_array_t* dest,int n,
     for(i = 0, c = 0; i < n; ++i) {
         int m = base_array_nr_of_elements(elts[i]);
         for(j = 0; j < m; ++j) {
-            integer_set(dest, c, integer_get(elts[i], j));
+            integer_set(dest, c, integer_get(*elts[i], j));
             c++;
         }
     }
@@ -722,7 +692,7 @@ void cat_integer_array(int k, integer_array_t* dest, int n,
             int n_sub_k = n_sub * elts[c]->dim_size[k-1];
             for(r = 0; r < n_sub_k; r++) {
                 integer_set(dest, j,
-                            integer_get(elts[c], r + (i * n_sub_k)));
+                            integer_get(*elts[c], r + (i * n_sub_k)));
                 j++;
             }
         }
@@ -791,7 +761,7 @@ void cat_alloc_integer_array(int k, integer_array_t* dest, int n,
             int n_sub_k = n_sub * elts[c]->dim_size[k-1];
             for(r = 0; r < n_sub_k; r++) {
                 integer_set(dest, j,
-                            integer_get(elts[c], r + (i * n_sub_k)));
+                            integer_get(*elts[c], r + (i * n_sub_k)));
                 j++;
             }
         }
@@ -830,7 +800,7 @@ void add_integer_array(const integer_array_t * a, const integer_array_t * b, int
     assert(integer_array_nr_of_elements(dest) == nr_of_elements);
 
     for(i = 0; i < nr_of_elements; ++i) {
-        integer_set(dest, i, integer_get(a, i)+integer_get(b, i));
+        integer_set(dest, i, integer_get(*a, i)+integer_get(*b, i));
     }
 }
 
@@ -854,7 +824,7 @@ void sub_integer_array(const integer_array_t * a, const integer_array_t * b, int
     assert(integer_array_nr_of_elements(dest) == nr_of_elements);
 
     for(i = 0; i < nr_of_elements; ++i) {
-        integer_set(dest, i, integer_get(a, i)-integer_get(b, i));
+        integer_set(dest, i, integer_get(*a, i)-integer_get(*b, i));
     }
 }
 
@@ -871,7 +841,7 @@ void sub_integer_array_data_mem(const integer_array_t * a, const integer_array_t
     /* Assert that dest are of correct size */
 
     for(i = 0; i < nr_of_elements; ++i) {
-        dest[i] = integer_get(a, i) - integer_get(b, i);
+        dest[i] = integer_get(*a, i) - integer_get(*b, i);
     }
 }
 
@@ -893,7 +863,7 @@ void mul_scalar_integer_array(modelica_integer a,const integer_array_t * b,integ
     assert(integer_array_nr_of_elements(dest) == nr_of_elements);
 
     for(i=0; i < nr_of_elements; ++i) {
-        integer_set(dest, i, a * integer_get(b, i));
+        integer_set(dest, i, a * integer_get(*b, i));
     }
 }
 
@@ -915,7 +885,7 @@ void mul_integer_array_scalar(const integer_array_t * a,modelica_integer b,integ
     assert(integer_array_nr_of_elements(dest) == nr_of_elements);
 
     for(i=0; i < nr_of_elements; ++i) {
-        integer_set(dest, i, integer_get(a, i) * b);
+        integer_set(dest, i, integer_get(*a, i) * b);
     }
 }
 
@@ -942,7 +912,7 @@ modelica_integer mul_integer_scalar_product(const integer_array_t * a, const int
     nr_of_elements = integer_array_nr_of_elements(a);
     res = 0;
     for(i = 0; i < nr_of_elements; ++i) {
-        res += integer_get(a, i)*integer_get(b, i);
+        res += integer_get(*a, i)*integer_get(*b, i);
     }
     return res;
 }
@@ -966,7 +936,7 @@ void mul_integer_matrix_product(const integer_array_t * a,const integer_array_t 
         for(j = 0; j < j_size; ++j) {
             tmp = 0;
             for(k = 0; k < k_size; ++k) {
-                tmp += integer_get(a, (i * k_size) + k)*integer_get(b, (k * j_size) + j);
+                tmp += integer_get(*a, (i * k_size) + k)*integer_get(*b, (k * j_size) + j);
             }
             integer_set(dest, (i * j_size) + j, tmp);
         }
@@ -994,7 +964,7 @@ void mul_integer_matrix_vector(const integer_array_t * a, const integer_array_t 
     for(i = 0; i < i_size; ++i) {
         tmp = 0;
         for(j = 0; j < j_size; ++j) {
-            tmp += integer_get(a, (i * j_size) + j)*integer_get(b, j);
+            tmp += integer_get(*a, (i * j_size) + j)*integer_get(*b, j);
         }
         integer_set(dest, i, tmp);
     }
@@ -1021,7 +991,7 @@ void mul_integer_vector_matrix(const integer_array_t * a, const integer_array_t 
     for(i = 0; i < i_size; ++i) {
         tmp = 0;
         for(j = 0; j < j_size; ++j) {
-            tmp += integer_get(a, j) * integer_get(b, (j * j_size) + i);
+            tmp += integer_get(*a, j) * integer_get(*b, (j * j_size) + i);
         }
         integer_set(dest, i, tmp);
     }
@@ -1055,7 +1025,7 @@ void div_integer_array_scalar(const integer_array_t * a,modelica_integer b,integ
     assert(nr_of_elements == base_array_nr_of_elements(dest));
 
     for(i=0; i < nr_of_elements; ++i) {
-        integer_set(dest, i, integer_get(a, i)/b);
+        integer_set(dest, i, integer_get(*a, i)/b);
     }
 }
 
@@ -1077,7 +1047,7 @@ void division_integer_array_scalar(threadData_t *threadData, const integer_array
     assert(nr_of_elements == base_array_nr_of_elements(dest));
 
     for(i=0; i < nr_of_elements; ++i) {
-        integer_set(dest, i, (modelica_integer)DIVISIONNOTIME(integer_get(a, i),b,division_str));
+        integer_set(dest, i, (modelica_integer)DIVISIONNOTIME(integer_get(*a, i),b,division_str));
     }
 }
 
@@ -1096,7 +1066,7 @@ void div_scalar_integer_array(modelica_integer a, const integer_array_t* b, inte
     /* Do we need to check for b=0? */
     nr_of_elements = base_array_nr_of_elements(b);
     for(i=0; i < nr_of_elements; ++i) {
-        integer_set(dest, i, a / integer_get(b, i));
+        integer_set(dest, i, a / integer_get(*b, i));
     }
 }
 
@@ -1115,7 +1085,7 @@ void pow_integer_array_scalar(const integer_array_t *a, modelica_integer b, inte
   assert(nr_of_elements == base_array_nr_of_elements(dest));
 
   for(i = 0; i < nr_of_elements; ++i) {
-    integer_set(dest, i, (modelica_integer)pow(integer_get(a, i), b));
+    integer_set(dest, i, (modelica_integer)pow(integer_get(*a, i), b));
   }
 }
 
@@ -1142,14 +1112,14 @@ void exp_integer_array(const integer_array_t * a, modelica_integer n, integer_ar
     } else {
         if(n==1) {
             clone_integer_array_spec(a,dest);
-            copy_integer_array_data(a,dest);
+            copy_integer_array_data(*a,dest);
   } else {
             integer_array_t* tmp = 0;
             clone_integer_array_spec(a,tmp);
-            copy_integer_array_data(a,tmp);
+            copy_integer_array_data(*a,tmp);
             for( i = 1; i < n; ++i) {
                 mul_integer_matrix_product(a,tmp,dest);
-                copy_integer_array_data(dest,tmp);
+                copy_integer_array_data(*dest,tmp);
       }
   }
     }
@@ -1240,7 +1210,7 @@ modelica_integer scalar_integer_array(const integer_array_t * a)
     assert(base_array_ok(a));
     assert(base_array_one_element_ok(a));
 
-    return integer_get(a, 0);
+    return integer_get(*a, 0);
 }
 
 void vector_integer_array(const integer_array_t * a, integer_array_t* dest)
@@ -1251,7 +1221,7 @@ void vector_integer_array(const integer_array_t * a, integer_array_t* dest)
 
     nr_of_elements = integer_array_nr_of_elements(a);
     for(i = 0; i < nr_of_elements; ++i) {
-        integer_set(dest, i, integer_get(a, i));
+        integer_set(dest, i, integer_get(*a, i));
     }
 }
 
@@ -1271,7 +1241,7 @@ void matrix_integer_array(const integer_array_t * a, integer_array_t* dest)
     cnt = dest->dim_size[0] * dest->dim_size[1];
 
     for(i = 0; i < cnt; ++i) {
-        integer_set(dest, i, integer_get(a, i));
+        integer_set(dest, i, integer_get(*a, i));
     }
 }
 
@@ -1316,7 +1286,7 @@ void transpose_integer_array(const integer_array_t * a, integer_array_t* dest)
     size_t n,m;
 
     if(a->ndims == 1) {
-        copy_integer_array_data(a,dest);
+        copy_integer_array_data(*a,dest);
         return;
     }
 
@@ -1329,7 +1299,7 @@ void transpose_integer_array(const integer_array_t * a, integer_array_t* dest)
 
     for(i = 0; i < n; ++i) {
         for(j = 0; j < m; ++j) {
-            integer_set(dest, (j * n) + i, integer_get(a, (i * m) + j));
+            integer_set(dest, (j * n) + i, integer_get(*a, (i * m) + j));
         }
     }
 }
@@ -1349,7 +1319,7 @@ void outer_product_integer_array(const integer_array_t * v1,const integer_array_
 
   for(i = 0; i < number_of_elements_a; ++i) {
     for(j = 0; i < number_of_elements_b; ++j) {
-      integer_set(dest, (i * number_of_elements_b) + j, integer_get(v1, i)*integer_get(v2, j));
+      integer_set(dest, (i * number_of_elements_b) + j, integer_get(*v1, i)*integer_get(*v2, j));
     }
   }
 }
@@ -1426,7 +1396,7 @@ void diagonal_integer_array(const integer_array_t * v,integer_array_t* dest)
     }
     j = 0;
     for(i = 0; i < n; ++i) {
-        integer_set(dest, j, integer_get(v, i));
+        integer_set(dest, j, integer_get(*v, i));
         j += n+1;
     }
 }
@@ -1454,14 +1424,14 @@ void linspace_integer_array(modelica_integer x1, modelica_integer x2, int n,
     }
 }
 
-modelica_integer max_integer_array(const integer_array_t * a)
+modelica_integer max_integer_array(const integer_array_t a)
 {
     size_t nr_of_elements;
     modelica_integer max_element = 0;
 
-    assert(base_array_ok(a));
+    assert(base_array_ok(&a));
 
-    nr_of_elements = base_array_nr_of_elements(a);
+    nr_of_elements = base_array_nr_of_elements(&a);
 
     if(nr_of_elements > 0) {
         size_t i;
@@ -1476,14 +1446,14 @@ modelica_integer max_integer_array(const integer_array_t * a)
     return max_element;
 }
 
-modelica_integer min_integer_array(const integer_array_t * a)
+modelica_integer min_integer_array(const integer_array_t a)
 {
   size_t nr_of_elements;
   modelica_integer min_element = -LONG_MAX;
 
-  assert(base_array_ok(a));
+  assert(base_array_ok(&a));
 
-  nr_of_elements = base_array_nr_of_elements(a);
+  nr_of_elements = base_array_nr_of_elements(&a);
 
   if(nr_of_elements > 0) {
     size_t i;
@@ -1497,15 +1467,15 @@ modelica_integer min_integer_array(const integer_array_t * a)
   return min_element;
 }
 
-modelica_integer sum_integer_array(const integer_array_t * a)
+modelica_integer sum_integer_array(const integer_array_t a)
 {
     size_t i;
     size_t nr_of_elements;
     modelica_integer sum = 0;
 
-    assert(base_array_ok(a));
+    assert(base_array_ok(&a));
 
-    nr_of_elements = base_array_nr_of_elements(a);
+    nr_of_elements = base_array_nr_of_elements(&a);
 
     for(i = 0;i < nr_of_elements; ++i) {
         sum += integer_get(a, i);
@@ -1514,15 +1484,15 @@ modelica_integer sum_integer_array(const integer_array_t * a)
     return sum;
 }
 
-modelica_integer product_integer_array(const integer_array_t * a)
+modelica_integer product_integer_array(const integer_array_t a)
 {
     size_t i;
     size_t nr_of_elements;
     modelica_integer product = 1;
 
-    assert(base_array_ok(a));
+    assert(base_array_ok(&a));
 
-    nr_of_elements = base_array_nr_of_elements(a);
+    nr_of_elements = base_array_nr_of_elements(&a);
 
     for(i = 0;i < nr_of_elements; ++i) {
         product *= integer_get(a, i);
@@ -1547,54 +1517,13 @@ void symmetric_integer_array(const integer_array_t * a,integer_array_t* dest)
     for(i = 0; i < nr_of_elements; ++i) {
         for(j = 0; j < i; ++j) {
             integer_set(dest, (i * nr_of_elements) + j,
-                        integer_get(a, (j * nr_of_elements) + i));
+                        integer_get(*a, (j * nr_of_elements) + i));
         }
         for( ; j < nr_of_elements; ++j) {
             integer_set(dest, (i * nr_of_elements) + j,
-                        integer_get(a, (i * nr_of_elements) + j));
+                        integer_get(*a, (i * nr_of_elements) + j));
         }
     }
-}
-
-void cross_integer_array(const integer_array_t * x,const integer_array_t * y, integer_array_t* dest)
-{
-    /* Assert x is vector of size 3 */
-    assert((x->ndims == 1) && (x->dim_size[0] == 3));
-    /* Assert y is vector of size 3 */
-    assert((y->ndims == 1) && (y->dim_size[0] == 3));
-    /* Assert dest is vector of size 3 */
-    assert((dest->ndims == 1) && (dest->dim_size[0] == 3));
-
-    integer_set(dest, 0, (integer_get(x,1) * integer_get(y,2))
-                - (integer_get(x,2) * integer_get(y,1)));
-    integer_set(dest, 1, (integer_get(x,2) * integer_get(y,0))
-                - (integer_get(x,0) * integer_get(y,2)));
-    integer_set(dest, 2, (integer_get(x,0) * integer_get(y,1))
-                - (integer_get(x,1) * integer_get(y,0)));
-}
-
-void cross_alloc_integer_array(const integer_array_t * x,const integer_array_t * y,integer_array_t* dest)
-{
-    alloc_integer_array(dest,1,3);
-    cross_integer_array(x,y,dest);
-}
-
-void skew_integer_array(const integer_array_t * x,integer_array_t* dest)
-{
-    /* Assert x is vector of size 3 */
-    assert((x->ndims == 1) && (x->dim_size[0] == 3));
-    /* Assert dest is 3x3 matrix */
-    assert((dest->ndims == 2) && (dest->dim_size[0] == 3) && (dest->dim_size[1] == 3));
-
-    integer_set(dest, 0, 0);
-    integer_set(dest, 1, -integer_get(x, 2));
-    integer_set(dest, 2, integer_get(x, 1));
-    integer_set(dest, 3, integer_get(x, 2));
-    integer_set(dest, 4, 0);
-    integer_set(dest, 5, -integer_get(x, 0));
-    integer_set(dest, 6, -integer_get(x, 1));
-    integer_set(dest, 7, integer_get(x, 0));
-    integer_set(dest, 8, 0);
 }
 
 /* integer_array_make_index_array
@@ -1619,7 +1548,7 @@ void pack_integer_array(integer_array_t *a)
     size_t n = integer_array_nr_of_elements(a);
 
     for(i = 0; i < n; ++i) {
-      int_data[i] = (int)integer_get(a, i);
+      int_data[i] = (int)integer_get(*a, i);
     }
   }
 }

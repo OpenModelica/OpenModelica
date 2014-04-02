@@ -68,24 +68,24 @@ extern metamodelica_string stringAppendList(modelica_metatype lst);
 extern metamodelica_string stringDelimitList(modelica_metatype lst,metamodelica_string_const delimiter);
 #define stringLength(x) MMC_STRLEN(x)
 extern modelica_integer mmc_stringCompare(const void * str1,const void * str2);
-#define stringGetStringChar(X,Y) boxptr_stringGetStringChar(threadData,X,mmc_mk_icon(Y)).c1
-extern builtin_rettypeboxed boxptr_stringGetStringChar(threadData_t*,metamodelica_string str,modelica_metatype ix);
+#define stringGetStringChar(X,Y) boxptr_stringGetStringChar(threadData,X,mmc_mk_icon(Y))
+extern modelica_metatype boxptr_stringGetStringChar(threadData_t*,metamodelica_string str,modelica_metatype ix);
 #define stringGet(X,Y) nobox_stringGet(threadData,X,Y)
 extern modelica_integer nobox_stringGet(threadData_t *threadData,metamodelica_string str, modelica_integer ix);
 #define stringGetNoBoundsChecking(str,ix) MMC_STRINGDATA((str))[(ix)-1]
-#define stringUpdateStringChar(X,Y,Z) boxptr_stringUpdateStringChar(threadData,X,Y,mmc_mk_icon(Z)).c1
-extern builtin_rettypeboxed boxptr_stringUpdateStringChar(threadData_t *,metamodelica_string str, metamodelica_string c, modelica_metatype ix);
+#define stringUpdateStringChar(X,Y,Z) boxptr_stringUpdateStringChar(threadData,X,Y,mmc_mk_icon(Z))
+extern modelica_metatype boxptr_stringUpdateStringChar(threadData_t *,metamodelica_string str, metamodelica_string c, modelica_metatype ix);
 extern modelica_integer stringHash(metamodelica_string_const);
 extern modelica_integer stringHashDjb2(metamodelica_string_const s);
 extern modelica_integer stringHashDjb2Mod(metamodelica_string_const s,modelica_integer mod);
 extern modelica_integer stringHashSdbm(metamodelica_string_const str);
-#define substring(X,Y,Z) boxptr_substring(threadData,X,mmc_mk_icon(Y),mmc_mk_icon(Z)).c1
-extern builtin_rettypeboxed boxptr_substring(threadData_t *,metamodelica_string_const str, modelica_metatype start, modelica_metatype stop);
+#define substring(X,Y,Z) boxptr_substring(threadData,X,mmc_mk_icon(Y),mmc_mk_icon(Z))
+extern modelica_metatype boxptr_substring(threadData_t *,metamodelica_string_const str, modelica_metatype start, modelica_metatype stop);
 
 #define System_stringHashDjb2Mod stringHashDjb2Mod
 #define boxptr_System_stringHashDjb2Mod boxptr_stringHashDjb2Mod
 
-extern builtin_rettypeboxed boxptr_stringHashDjb2Mod(threadData_t*,modelica_metatype v,modelica_metatype mod);
+extern modelica_metatype boxptr_stringHashDjb2Mod(threadData_t*,modelica_metatype v,modelica_metatype mod);
 
 /* List Operations */
 extern modelica_metatype listReverse(modelica_metatype);
@@ -93,15 +93,15 @@ extern modelica_metatype listReverseInPlace(modelica_metatype);
 extern modelica_boolean listMember(modelica_metatype, modelica_metatype);
 extern modelica_metatype listAppend(modelica_metatype,modelica_metatype);
 extern modelica_integer listLength(modelica_metatype);
-#define listGet(X,Y) boxptr_listGet(threadData,X,mmc_mk_icon(Y)).c1
+#define listGet(X,Y) boxptr_listGet(threadData,X,mmc_mk_icon(Y))
 #define listEmpty(LST) MMC_NILTEST(LST)
-#define listDelete(X,Y) boxptr_listDelete(threadData,X,mmc_mk_icon(Y)).c1
+#define listDelete(X,Y) boxptr_listDelete(threadData,X,mmc_mk_icon(Y))
 #define listRest(X) MMC_CDR(X)
 #define listFirst(X) MMC_CAR(X)
 
-extern builtin_rettypeboxed boxptr_listNth(threadData_t*,modelica_metatype,modelica_metatype);
-extern builtin_rettypeboxed boxptr_listGet(threadData_t*,modelica_metatype,modelica_metatype);
-extern builtin_rettypeboxed boxptr_listDelete(threadData_t*,modelica_metatype,modelica_metatype);
+extern modelica_metatype boxptr_listNth(threadData_t*,modelica_metatype,modelica_metatype);
+extern modelica_metatype boxptr_listGet(threadData_t*,modelica_metatype,modelica_metatype);
+extern modelica_metatype boxptr_listDelete(threadData_t*,modelica_metatype,modelica_metatype);
 
 /* Option Operations */
 #define optionNone(x) (0==MMC_HDRSLOTS(MMC_GETHDR(x)) ? 1 : 0)
@@ -126,24 +126,22 @@ static inline modelica_metatype nobox_arrayGet(threadData_t *threadData,modelica
 }
 extern modelica_metatype arrayCreate(modelica_integer, modelica_metatype);
 #define arrayGetNoBoundsChecking(arr,ix) (MMC_STRUCTDATA((arr))[(ix)-1])
-#define arrayUpdate(X,Y,Z) boxptr_arrayUpdate(threadData,X,mmc_mk_icon(Y),Z).c1
+#define arrayUpdate(X,Y,Z) boxptr_arrayUpdate(threadData,X,mmc_mk_icon(Y),Z)
 extern modelica_metatype arrayAdd(modelica_metatype, modelica_metatype);
 
-extern builtin_rettypeboxed boxptr_arrayNth(threadData_t *threadData,modelica_metatype,modelica_metatype);
-extern builtin_rettypeboxed boxptr_arrayGet(threadData_t *threadData,modelica_metatype,modelica_metatype);
-static inline builtin_rettypeboxed boxptr_arrayUpdate(threadData_t *threadData,modelica_metatype arr, modelica_metatype i, modelica_metatype val)
+extern modelica_metatype boxptr_arrayNth(threadData_t *threadData,modelica_metatype,modelica_metatype);
+extern modelica_metatype boxptr_arrayGet(threadData_t *threadData,modelica_metatype,modelica_metatype);
+static inline modelica_metatype boxptr_arrayUpdate(threadData_t *threadData,modelica_metatype arr, modelica_metatype i, modelica_metatype val)
 {
-  builtin_rettypeboxed res;
   int ix = mmc_unbox_integer(i);
   int nelts = MMC_HDRSLOTS(MMC_GETHDR(arr));
   if (ix < 1 || ix > nelts)
     MMC_THROW_INTERNAL();
   MMC_STRUCTDATA(arr)[ix-1] = val;
-  res.c1 = arr;
-  return res;
+  return arr;
 }
 
-extern builtin_rettypeboxed boxptr_arrayUpdate(threadData_t *threadData,modelica_metatype, modelica_metatype, modelica_metatype);
+extern modelica_metatype boxptr_arrayUpdate(threadData_t *threadData,modelica_metatype, modelica_metatype, modelica_metatype);
 
 /* Misc Operations */
 #define print(X) boxptr_print(NULL,X)
@@ -160,7 +158,7 @@ extern void boxptr_equality(threadData_t *,modelica_metatype, modelica_metatype)
 
 extern modelica_metatype nobox_getGlobalRoot(threadData_t*,modelica_integer);
 extern void boxptr_setGlobalRoot(threadData_t*,modelica_metatype, modelica_metatype);
-extern builtin_rettypeboxed boxptr_valueConstructor(threadData_t*,modelica_metatype);
+extern modelica_metatype boxptr_valueConstructor(threadData_t*,modelica_metatype);
 #define referenceEq(X,Y) ((X) == (Y))
 
 extern modelica_real realMaxLit(void);

@@ -66,7 +66,7 @@ static inline void clone_string_array_spec(const string_array_t * src,
 extern void copy_string_array_data(const string_array_t * source, string_array_t* dest);
 
 /* Copy string data given memory ptr*/
-extern void copy_string_array_data_mem(const string_array_t * source,modelica_string_t* dest);
+extern void copy_string_array_data_mem(const string_array_t source,modelica_string_t* dest);
 
 /* Copy string array*/
 extern void copy_string_array(const string_array_t * source, string_array_t* dest);
@@ -150,8 +150,6 @@ extern void promote_alloc_string_array(const string_array_t * a, int n,
 
 static inline int ndims_string_array(const string_array_t * a)
 { return ndims_base_array(a); }
-static inline int size_of_dimension_string_array(string_array_t *a, int i)
-{ return size_of_dimension_base_array(a, i); }
 static inline modelica_string_t *data_of_string_array(const string_array_t *a)
 { return (modelica_string_t *) a->data; }
 

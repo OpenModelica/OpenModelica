@@ -341,6 +341,7 @@ uniontype RecordDeclaration
   
   record RECORD_DECL_FULL
     String name "struct (record) name ? encoded";
+    Option<String> aliasName "alias of struct (record) name ? encoded. Code generators can generate an aliasing typedef using this, and avoid problems when casting a record from one type to another (*(othertype*)(&var)), which only works if you have a lhs value.";
     Absyn.Path defPath "definition path";
     list<Variable> variables "only name and type";
   end RECORD_DECL_FULL;

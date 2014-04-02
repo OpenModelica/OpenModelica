@@ -35,17 +35,32 @@
 #include "openmodelica.h"
 #include "base_array.h"
 #include "memory_pool.h"
+#include "omc_msvc.h"
 #include "index_spec.h"
 #include <stdarg.h>
 
-/* Indexing 1 dimensions */
-extern modelica_integer integer_get(const integer_array_t *a, size_t i);
-/* Indexing 2 dimensions */
-extern modelica_integer integer_get_2D(const integer_array_t *a, size_t i, size_t j);
-/* Indexing 3 dimensions */
-extern modelica_integer integer_get_3D(const integer_array_t *a, size_t i, size_t j, size_t k);
-/* Indexing 4 dimensions */
-extern modelica_integer integer_get_4D(const integer_array_t *a, size_t i, size_t j, size_t k, size_t l);
+static OMC_INLINE modelica_integer integer_get(const integer_array_t a, size_t i)
+{
+  return ((modelica_integer *) a.data)[i];
+}
+
+static OMC_INLINE modelica_integer integer_get_2D(const integer_array_t a, size_t i, size_t j)
+{
+  return integer_get(a, (i * a.dim_size[1]) + j);
+}
+
+static OMC_INLINE modelica_integer integer_get_3D(const integer_array_t a, size_t i, size_t j, size_t k)
+{
+  return integer_get(a, (i * a.dim_size[1] * a.dim_size[2])
+                        + (j * a.dim_size[2]) + k);
+}
+
+static OMC_INLINE modelica_integer integer_get_4D(const integer_array_t a, size_t i, size_t j, size_t k, size_t l)
+{
+  return integer_get(a, (i * a.dim_size[1] * a.dim_size[2] * a.dim_size[3])
+                        + (j * a.dim_size[2] * a.dim_size[3])
+                        + (k * a.dim_size[3]) + l);
+}
 
 /* Settings the fields of a integer_array */
 extern void integer_array_create(integer_array_t *dest, modelica_integer *data,
@@ -71,14 +86,14 @@ static inline void clone_integer_array_spec(const integer_array_t * source,
 { clone_base_array_spec(source, dest); }
 
 /* Copy integer data*/
-extern void copy_integer_array_data(const integer_array_t * source, integer_array_t* dest);
+extern void copy_integer_array_data(const integer_array_t source, integer_array_t* dest);
 
 /* Copy integer data given memory ptr*/
-extern void copy_integer_array_data_mem(const integer_array_t * source,
+extern void copy_integer_array_data_mem(const integer_array_t source,
                                         modelica_integer *dest);
 
 /* Copy integer array*/
-extern void copy_integer_array(const integer_array_t * source, integer_array_t* dest);
+extern void copy_integer_array(const integer_array_t source, integer_array_t* dest);
 
 extern void create_integer_array_from_range(integer_array_t *dest, modelica_integer start, modelica_integer step, modelica_integer stop);
 
@@ -224,8 +239,6 @@ extern void promote_alloc_integer_array(const integer_array_t * a, int n,
 
 static inline int ndims_integer_array(const integer_array_t * a)
 { return ndims_base_array(a); }
-static inline int size_of_dimension_integer_array(integer_array_t *a, int i)
-{ return size_of_dimension_base_array(a, i); }
 /* This is defined in integer_array since we return an integer array */
 extern void sizes_of_dimensions_base_array(const base_array_t *a, integer_array_t *dest);
 
@@ -247,10 +260,10 @@ extern void diagonal_integer_array(const integer_array_t * v,integer_array_t* de
 extern void fill_integer_array(integer_array_t* dest,modelica_integer s);
 extern void linspace_integer_array(modelica_integer x1,modelica_integer x2,int n,
                                    integer_array_t* dest);
-extern modelica_integer min_integer_array(const integer_array_t * a);
-extern modelica_integer max_integer_array(const integer_array_t * a);
-extern modelica_integer sum_integer_array(const integer_array_t * a);
-extern modelica_integer product_integer_array(const integer_array_t * a);
+extern modelica_integer min_integer_array(const integer_array_t a);
+extern modelica_integer max_integer_array(const integer_array_t a);
+extern modelica_integer sum_integer_array(const integer_array_t a);
+extern modelica_integer product_integer_array(const integer_array_t a);
 extern void symmetric_integer_array(const integer_array_t * a,integer_array_t* dest);
 extern void cross_integer_array(const integer_array_t * x,const integer_array_t * y,integer_array_t* dest);
 extern void cross_alloc_integer_array(const integer_array_t * x,const integer_array_t * y,integer_array_t* dest);

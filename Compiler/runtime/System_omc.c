@@ -668,6 +668,7 @@ extern void System_getGCStatus(int *used, int *allocated)
   *allocated = -1;
 }
 
+extern void System_getLoadModelPath(const char *className, void *prios, void *mps, const char **dir, char **name, int *isDir) __attribute__ ((nonnull));
 extern void System_getLoadModelPath(const char *className, void *prios, void *mps, const char **dir, char **name, int *isDir)
 {
   *name = NULL;
@@ -714,7 +715,7 @@ typedef void* voidp;
 /* Work in progress: Threading support in OMC */
 typedef struct thread_data {
   pthread_mutex_t mutex;
-  builtin_rettypeboxed (*fn)(threadData_t*,modelica_metatype);
+  modelica_metatype (*fn)(threadData_t*,modelica_metatype);
   int fail;
   int current;
   int len;
@@ -735,7 +736,7 @@ static void* System_launchParallelTasksThread(void *in)
     if (data->fail || data->current > data->len) break;
     MMC_TRY_TOP()
     threadData->mmc_thread_work_exit = threadData->mmc_jumper;
-    data->status[n] = data->fn(threadData,data->commands[n]).c1;
+    data->status[n] = data->fn(threadData,data->commands[n]);
     fail = 0;
     MMC_CATCH_TOP()
     if (fail) {
@@ -745,7 +746,7 @@ static void* System_launchParallelTasksThread(void *in)
   return NULL;
 }
 
-static void* System_launchParallelTasksSerial(threadData_t *threadData, void *dataLst, void* (*fn)(void*,void*))
+static void* System_launchParallelTasksSerial(threadData_t *threadData, void *dataLst, modelica_metatype (*fn)(threadData_t *,modelica_metatype))
 {
   void *result = mmc_mk_nil();
   while (!listEmpty(dataLst)) {
@@ -755,7 +756,7 @@ static void* System_launchParallelTasksSerial(threadData_t *threadData, void *da
   return listReverse(dataLst);
 }
 
-extern void* System_launchParallelTasks(threadData_t *threadData, int numThreads, void *dataLst, void* (*fn)(void*,void*))
+extern void* System_launchParallelTasks(threadData_t *threadData, int numThreads, void *dataLst, modelica_metatype (*fn)(threadData_t *,modelica_metatype))
 {
   int len = listLength(dataLst), i;
   void *commands[len];

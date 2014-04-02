@@ -35,6 +35,7 @@
 #include "openmodelica.h"
 #include <stdlib.h>
 #include <stdarg.h>
+#include "omc_msvc.h"
 
 /* Settings the fields of a base_array */
 void base_array_create(base_array_t *dest, void *data, int ndims, va_list ap);
@@ -57,7 +58,12 @@ void clone_base_array_spec(const base_array_t *source, base_array_t *dest);
 void clone_reverse_base_array_spec(const base_array_t* source, base_array_t* dest);
 
 int ndims_base_array(const base_array_t* a);
-int size_of_dimension_base_array(const base_array_t *a, int i);
+static OMC_INLINE int size_of_dimension_base_array(const base_array_t a, int i)
+{
+    /* assert(base_array_ok(&a)); */
+    assert((i > 0) && (i <= a.ndims));
+    return a.dim_size[i-1];
+}
 
 /* Helper functions */
 int base_array_ok(const base_array_t *a);

@@ -38,35 +38,6 @@
 #include <assert.h>
 #include <stdarg.h>
 
-modelica_boolean boolean_get(const boolean_array_t *a, size_t i)
-{
-    return ((modelica_boolean *) a->data)[i];
-}
-
-/* Indexing 2 dimensions */
-modelica_boolean boolean_get_2D(const boolean_array_t *a, size_t i, size_t j)
-{
-    modelica_boolean value = boolean_get(a, (i * a->dim_size[1]) + j);
-    return value;
-}
-
-/* Indexing 3 dimensions */
-modelica_boolean boolean_get_3D(const boolean_array_t *a, size_t i, size_t j, size_t k)
-{
-    modelica_boolean value = boolean_get(a, (i * a->dim_size[1] * a->dim_size[2])
-                                          + (j * a->dim_size[2]) + k);
-    return value;
-}
-
-/* Indexing 4 dimensions */
-modelica_boolean boolean_get_4D(const boolean_array_t *a, size_t i, size_t j, size_t k, size_t l)
-{
-    modelica_boolean value = boolean_get(a, (i * a->dim_size[1] * a->dim_size[2] * a->dim_size[3])
-                                          + (j * a->dim_size[2] * a->dim_size[3])
-                                          + (k * a->dim_size[3]) + l);
-    return value;
-}
-
 static inline modelica_boolean *boolean_ptrget(const boolean_array_t *a, size_t i)
 {
     return ((modelica_boolean *) a->data) + i;
@@ -116,15 +87,15 @@ void alloc_boolean_array_data(boolean_array_t* a)
     a->data = boolean_alloc(base_array_nr_of_elements(a));
 }
 
-void copy_boolean_array_data(const boolean_array_t *source, boolean_array_t *dest)
+void copy_boolean_array_data(const boolean_array_t source, boolean_array_t *dest)
 {
     size_t i, nr_of_elements;
 
-    assert(base_array_ok(source));
+    assert(base_array_ok(&source));
     assert(base_array_ok(dest));
-    assert(base_array_shape_eq(source, dest));
+    assert(base_array_shape_eq(&source, dest));
 
-    nr_of_elements = base_array_nr_of_elements(source);
+    nr_of_elements = base_array_nr_of_elements(&source);
 
     for(i = 0; i < nr_of_elements; ++i) {
         boolean_set(dest, i, boolean_get(source, i));
@@ -148,7 +119,7 @@ void and_boolean_array(const boolean_array_t *source1, const boolean_array_t *so
     nr_of_elements = base_array_nr_of_elements(source1);
 
     for(i = 0; i < nr_of_elements; ++i) {
-        boolean_set(dest, i, boolean_get(source1, i) && boolean_get(source2, i));
+        boolean_set(dest, i, boolean_get(*source1, i) && boolean_get(*source2, i));
     }
 }
 
@@ -169,7 +140,7 @@ void or_boolean_array(const boolean_array_t *source1, const boolean_array_t *sou
     nr_of_elements = base_array_nr_of_elements(source1);
 
     for(i = 0; i < nr_of_elements; ++i) {
-        boolean_set(dest, i, boolean_get(source1, i) || boolean_get(source2, i));
+        boolean_set(dest, i, boolean_get(*source1, i) || boolean_get(*source2, i));
     }
 }
 
@@ -186,26 +157,26 @@ void not_boolean_array(const boolean_array_t *source, boolean_array_t *dest)
     nr_of_elements = base_array_nr_of_elements(source);
 
     for(i = 0; i < nr_of_elements; ++i) {
-        boolean_set(dest, i, !boolean_get(source, i));
+        boolean_set(dest, i, !boolean_get(*source, i));
     }
 }
 
-void copy_boolean_array_data_mem(const boolean_array_t *source, modelica_boolean *dest)
+void copy_boolean_array_data_mem(const boolean_array_t source, modelica_boolean *dest)
 {
     size_t i, nr_of_elements;
 
-    assert(base_array_ok(source));
+    assert(base_array_ok(&source));
 
-    nr_of_elements = base_array_nr_of_elements(source);
+    nr_of_elements = base_array_nr_of_elements(&source);
 
     for(i = 0; i < nr_of_elements; ++i) {
         dest[i] = boolean_get(source, i);
     }
 }
 
-void copy_boolean_array(const boolean_array_t *source, boolean_array_t *dest)
+void copy_boolean_array(const boolean_array_t source, boolean_array_t *dest)
 {
-    clone_base_array_spec(source, dest);
+    clone_base_array_spec(&source, dest);
     alloc_boolean_array_data(dest);
     copy_boolean_array_data(source,dest);
 }
@@ -244,7 +215,7 @@ void print_boolean_matrix(const boolean_array_t *source)
         printf("%d X %d matrix:\n", (int) source->dim_size[0], (int) source->dim_size[1]);
         for(i = 0; i < source->dim_size[0]; ++i) {
             for(j = 0; j < source->dim_size[1]; ++j) {
-                value = boolean_get(source, (i * source->dim_size[1]) + j);
+                value = boolean_get(*source, (i * source->dim_size[1]) + j);
                 printf("%c\t", value ? 'T' : 'F');
             }
             printf("\n");
@@ -319,7 +290,7 @@ void simple_indexed_assign_boolean_array1(const boolean_array_t* source,
 {
     /* Assert that source has the correct dimension */
     /* Assert that dest has the correct dimension */
-    boolean_set(dest, i1, boolean_get(source, i1));
+    boolean_set(dest, i1, boolean_get(*source, i1));
 }
 
 void simple_indexed_assign_boolean_array2(const boolean_array_t* source,
@@ -330,7 +301,7 @@ void simple_indexed_assign_boolean_array2(const boolean_array_t* source,
     /* Assert that source has correct dimension */
     /* Assert that dest has correct dimension */
     index = (i1 * source->dim_size[1]) + i2;
-    boolean_set(dest, index, boolean_get(source, index));
+    boolean_set(dest, index, boolean_get(*source, index));
 }
 
 void indexed_assign_boolean_array(const boolean_array_t* source,
@@ -376,7 +347,7 @@ void indexed_assign_boolean_array(const boolean_array_t* source,
         }
         boolean_set(dest, calc_base_index_spec(dest->ndims, idx_vec1,
                                                dest, dest_spec),
-                    boolean_get(source, calc_base_index(source->ndims,
+                    boolean_get(*source, calc_base_index(source->ndims,
                                                         idx_vec2, source)));
 
     } while(0 == next_index(dest_spec->ndims, idx_vec1, idx_size));
@@ -442,7 +413,7 @@ void index_boolean_array(const boolean_array_t* source,
         }
 
         boolean_set(dest, calc_base_index(dest->ndims, idx_vec2, dest),
-                    boolean_get(source,
+                    boolean_get(*source,
                                 calc_base_index_spec(source->ndims, idx_vec1,
                                                      source, source_spec)));
 
@@ -527,7 +498,7 @@ void simple_index_boolean_array1(const boolean_array_t* source, int i1,
     assert(dest->ndims == (source->ndims - 1));
 
     for(i = 0 ; i < nr_of_elements ; i++) {
-        boolean_set(dest, i, boolean_get(source, off + i));
+        boolean_set(dest, i, boolean_get(*source, off + i));
     }
 }
 
@@ -540,7 +511,7 @@ void simple_index_boolean_array2(const boolean_array_t* source,
     size_t off = nr_of_elements * ((source->dim_size[1] * i1) + i2);
 
     for(i = 0 ; i < nr_of_elements ; i++) {
-        boolean_set(dest, i, boolean_get(source, off + i));
+        boolean_set(dest, i, boolean_get(*source, off + i));
     }
 }
 
@@ -564,7 +535,7 @@ void array_boolean_array(boolean_array_t* dest,int n,boolean_array_t* first,...)
     for(i = 0, c = 0; i < n; ++i) {
         int m = base_array_nr_of_elements(elts[i]);
         for(j = 0; j < m; ++j) {
-            boolean_set(dest, c, boolean_get(elts[i], j));
+            boolean_set(dest, c, boolean_get(*elts[i], j));
             c++;
         }
     }
@@ -606,7 +577,7 @@ void array_alloc_boolean_array(boolean_array_t* dest, int n,
     for(i = 0, c = 0; i < n; ++i) {
         int m = base_array_nr_of_elements(elts[i]);
         for(j = 0; j < m; ++j) {
-            boolean_set(dest, c, boolean_get(elts[i], j));
+            boolean_set(dest, c, boolean_get(*elts[i], j));
             c++;
         }
     }
@@ -724,7 +695,7 @@ void cat_boolean_array(int k, boolean_array_t* dest, int n,
             int n_sub_k = n_sub * elts[c]->dim_size[k-1];
             for(r = 0; r < n_sub_k; r++) {
                 boolean_set(dest, j,
-                            boolean_get(elts[c], r + (i * n_sub_k)));
+                            boolean_get(*elts[c], r + (i * n_sub_k)));
                 j++;
             }
         }
@@ -793,7 +764,7 @@ void cat_alloc_boolean_array(int k, boolean_array_t* dest, int n,
             int n_sub_k = n_sub * elts[c]->dim_size[k-1];
             for(r = 0; r < n_sub_k; r++) {
                 boolean_set(dest, j,
-                            boolean_get(elts[c], r + (i * n_sub_k)));
+                            boolean_get(*elts[c], r + (i * n_sub_k)));
                 j++;
             }
         }
@@ -883,7 +854,7 @@ m_boolean scalar_boolean_array(const boolean_array_t* a)
     assert(base_array_ok(a));
     assert(base_array_one_element_ok(a));
 
-    return boolean_get(a, 0);
+    return boolean_get(*a, 0);
 }
 
 void vector_boolean_array(const boolean_array_t* a, boolean_array_t* dest)
@@ -894,7 +865,7 @@ void vector_boolean_array(const boolean_array_t* a, boolean_array_t* dest)
 
     nr_of_elements = base_array_nr_of_elements(a);
     for(i = 0; i < nr_of_elements; ++i) {
-        boolean_set(dest, i, boolean_get(a, i));
+        boolean_set(dest, i, boolean_get(*a, i));
     }
 }
 
@@ -914,7 +885,7 @@ void matrix_boolean_array(const boolean_array_t* a, boolean_array_t* dest)
     cnt = dest->dim_size[0] * dest->dim_size[1];
 
     for(i = 0; i < cnt; ++i) {
-        boolean_set(dest, i, boolean_get(a, i));
+        boolean_set(dest, i, boolean_get(*a, i));
     }
 }
 
@@ -959,7 +930,7 @@ void transpose_boolean_array(const boolean_array_t* a, boolean_array_t* dest)
     size_t n,m;
 
     if(a->ndims == 1) {
-        copy_boolean_array_data(a,dest);
+        copy_boolean_array_data(*a,dest);
         return;
     }
 
@@ -972,7 +943,7 @@ void transpose_boolean_array(const boolean_array_t* a, boolean_array_t* dest)
 
     for(i = 0; i < n; ++i) {
         for(j = 0; j < m; ++j) {
-            boolean_set(dest, (j*n)+i, boolean_get(a, (i*m)+j));
+            boolean_set(dest, (j*n)+i, boolean_get(*a, (i*m)+j));
         }
     }
 }

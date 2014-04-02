@@ -4218,4 +4218,14 @@ algorithm
   end match;
 end endsWith;
 
+public function isCIdentifier
+  input String str;
+  output Boolean b;
+protected
+  Integer i;
+algorithm
+  (i,_) := System.regex(str, "^[][_A-Za-z0-9]*$", 0, true, false);
+  b := i == 1;
+end isCIdentifier;
+
 end Util;

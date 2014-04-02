@@ -35,31 +35,25 @@
 #include "meta_modelica.h"
 #include "util/modelica_string.h"
 
-#if !defined(META_MODELICA_BUILTIN_BOXPTR__H)
-typedef struct builtin_rettypeboxed {
-  void *c1;
-} builtin_rettypeboxed;
-#endif
-
 #if !defined(META_MODELICA_BUILTIN_BOXPTR__H) || defined(GEN_META_MODELICA_BUILTIN_BOXPTR)
 #define META_MODELICA_BUILTIN_BOXPTR__H
 
 #ifdef GEN_META_MODELICA_BUILTIN_BOXPTR
-#define boxptr_unOp(name,box,unbox,op) builtin_rettypeboxed name(threadData_t *threadData, void* a) {builtin_rettypeboxed res; res.c1 = (void*)box(op(unbox(a))); return res;}
-#define boxptr_unOpThreadData(name,box,unbox,op) builtin_rettypeboxed name(threadData_t *threadData, void* a) {builtin_rettypeboxed res; res.c1 = (void*)box(op(threadData,unbox(a))); return res;}
-#define boxptr_binOp(name,box,unbox,op) builtin_rettypeboxed name(threadData_t *threadData, void* a, void* b) {builtin_rettypeboxed res; res.c1 = (void*)box((unbox(a)) op (unbox(b))); return res;}
-#define boxptr_binFn(name,box,unbox,fn) builtin_rettypeboxed name(threadData_t *threadData, void* a, void* b) {builtin_rettypeboxed res; res.c1 = (void*)box(fn((unbox(a)),(unbox(b)))); return res;}
-#define boxptr_fn2ArgsThreadData(name,box,unbox1,unbox2,fn) builtin_rettypeboxed name(threadData_t *threadData, void* a, void* b) {builtin_rettypeboxed res; res.c1 = (void*)box(fn(threadData,(unbox1(a)),(unbox2(b)))); return res;}
-#define boxptr_wrapper2Args(boxptr,name) builtin_rettypeboxed boxptr(threadData_t *threadData, void* a, void* b) {builtin_rettypeboxed res; res.c1 = name(a,b); return res;}
-#define boxptr_wrapper1Arg(boxptr,name) builtin_rettypeboxed boxptr(threadData_t *threadData, void* a) {builtin_rettypeboxed res; res.c1 = name(a); return res;}
+#define boxptr_unOp(name,box,unbox,op) modelica_metatype name(threadData_t *threadData, void* a) {return  (void*)box(op(unbox(a)));}
+#define boxptr_unOpThreadData(name,box,unbox,op) modelica_metatype name(threadData_t *threadData, void* a) {return  (void*)box(op(threadData,unbox(a)));}
+#define boxptr_binOp(name,box,unbox,op) modelica_metatype name(threadData_t *threadData, void* a, void* b) {return  (void*)box((unbox(a)) op (unbox(b)));}
+#define boxptr_binFn(name,box,unbox,fn) modelica_metatype name(threadData_t *threadData, void* a, void* b) {return  (void*)box(fn((unbox(a)),(unbox(b))));}
+#define boxptr_fn2ArgsThreadData(name,box,unbox1,unbox2,fn) modelica_metatype name(threadData_t *threadData, void* a, void* b) {return  (void*)box(fn(threadData,(unbox1(a)),(unbox2(b))));}
+#define boxptr_wrapper2Args(boxptr,name) modelica_metatype boxptr(threadData_t *threadData, void* a, void* b) {return  name(a,b);}
+#define boxptr_wrapper1Arg(boxptr,name) modelica_metatype boxptr(threadData_t *threadData, void* a) {return  name(a);}
 #else
-#define boxptr_unOp(name,box,unbox,op) builtin_rettypeboxed name(threadData_t *, void*);
-#define boxptr_unOpThreadData(name,box,unbox,op) builtin_rettypeboxed name(threadData_t *, void*);
-#define boxptr_binOp(name,box,unbox,op) builtin_rettypeboxed name(threadData_t *, void*,void*);
-#define boxptr_binFn(name,box,unbox,op) builtin_rettypeboxed name(threadData_t *, void*,void*);
-#define boxptr_fn2ArgsThreadData(name,box,unbox1,unbox2,fn) builtin_rettypeboxed name(threadData_t *, void*,void*);
-#define boxptr_wrapper2Args(boxptr,name) builtin_rettypeboxed boxptr(threadData_t *, void*,void*);
-#define boxptr_wrapper1Arg(boxptr,name) builtin_rettypeboxed boxptr(threadData_t *, void*);
+#define boxptr_unOp(name,box,unbox,op) modelica_metatype name(threadData_t *, void*);
+#define boxptr_unOpThreadData(name,box,unbox,op) modelica_metatype name(threadData_t *, void*);
+#define boxptr_binOp(name,box,unbox,op) modelica_metatype name(threadData_t *, void*,void*);
+#define boxptr_binFn(name,box,unbox,op) modelica_metatype name(threadData_t *, void*,void*);
+#define boxptr_fn2ArgsThreadData(name,box,unbox1,unbox2,fn) modelica_metatype name(threadData_t *, void*,void*);
+#define boxptr_wrapper2Args(boxptr,name) modelica_metatype boxptr(threadData_t *, void*,void*);
+#define boxptr_wrapper1Arg(boxptr,name) modelica_metatype boxptr(threadData_t *, void*);
 #endif
 
 boxptr_unOp(boxptr_boolNot,mmc_mk_bcon,mmc_unbox_boolean,!)

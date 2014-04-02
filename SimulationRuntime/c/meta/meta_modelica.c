@@ -399,12 +399,12 @@ void* mmc_anyString(void* any)
 
 modelica_metatype mmc_gdb_listGet(threadData_t* threadData, modelica_metatype lst, modelica_integer i)
 {
-  return boxptr_listGet(threadData, lst, mmc_mk_icon(i)).c1;
+  return boxptr_listGet(threadData, lst, mmc_mk_icon(i));
 }
 
 modelica_metatype mmc_gdb_arrayGet(threadData_t* threadData, modelica_metatype arr, modelica_integer i)
 {
-  return boxptr_arrayGet(threadData, arr, mmc_mk_icon(i)).c1;
+  return boxptr_arrayGet(threadData, arr, mmc_mk_icon(i));
 }
 
 void printAny(void* any)

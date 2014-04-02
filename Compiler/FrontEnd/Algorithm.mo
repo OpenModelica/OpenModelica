@@ -863,4 +863,19 @@ algorithm
   DAE.STMT_ASSERT(cond=cond) := stmt;
 end getAssertCond;
 
+public function isNotDummyStatement
+  input DAE.Statement stmt;
+  output Boolean b;
+algorithm
+  b := match stmt
+    local
+      DAE.Exp exp;
+    case DAE.STMT_NORETCALL(exp=exp)
+      equation
+        ((_,b)) = Expression.traverseExp(exp,Expression.hasNoSideEffects,true);
+      then not b; // has side effects => this is an expression that could do something
+    else true;
+  end match;
+end isNotDummyStatement;
+
 end Algorithm;

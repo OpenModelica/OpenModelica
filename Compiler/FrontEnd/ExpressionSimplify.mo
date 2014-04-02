@@ -712,7 +712,7 @@ protected function simplifyMatch "simplifies MetaModelica match expressions"
   input DAE.Exp exp;
   output DAE.Exp outExp;
 algorithm
-  outExp := match exp
+  outExp := matchcontinue exp
     local
       DAE.Exp e,e1,e2,e1_1,e2_1;
       Boolean b,b1,b2;
@@ -725,29 +725,31 @@ algorithm
       Option<Values.Value> v;
       DAE.Type ty;
       DAE.ReductionIterators riters;
-    case DAE.MATCHEXPRESSION(inputs={e}, localDecls={}, cases={
+    case DAE.MATCHEXPRESSION(inputs={e}, et=ty, localDecls={}, cases={
         DAE.CASE(patterns={DAE.PAT_CONSTANT(exp=DAE.BCONST(b1))},localDecls={},body={},result=SOME(e1)),
         DAE.CASE(patterns={DAE.PAT_CONSTANT(exp=DAE.BCONST(b2))},localDecls={},body={},result=SOME(e2))
       })
       equation
         false = boolEq(b1,b2);
+        false = Types.isTuple(ty);
         e1_1 = Util.if_(b1,e1,e2);
         e2_1 = Util.if_(b1,e2,e1);
         e = DAE.IFEXP(e, e1_1, e2_1);
       then e;
 
-    case DAE.MATCHEXPRESSION(matchType=DAE.MATCH(switch=_), inputs={e}, localDecls={}, cases={
+    case DAE.MATCHEXPRESSION(matchType=DAE.MATCH(switch=_), et=ty, inputs={e}, localDecls={}, cases={
         DAE.CASE(patterns={DAE.PAT_CONSTANT(exp=DAE.BCONST(b1))},localDecls={},body={},result=SOME(e1)),
         DAE.CASE(patterns={DAE.PAT_WILD()},localDecls={},body={},result=SOME(e2))
       })
       equation
+        false = Types.isTuple(ty);
         e1_1 = Util.if_(b1,e1,e2);
         e2_1 = Util.if_(b1,e2,e1);
         e = DAE.IFEXP(e, e1_1, e2_1);
       then e;
 
      else exp;
-  end match;
+  end matchcontinue;
 end simplifyMatch;
 
 protected function simplifyCast "help function to simplify1"

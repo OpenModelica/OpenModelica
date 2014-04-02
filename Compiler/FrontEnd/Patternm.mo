@@ -1908,11 +1908,16 @@ algorithm
         (cache,body,elabResult,resultInfo,resType,st) = elabResultExp(cache,env,body,result,impl,st,performVectorization,pre,resultInfo);
         (cache,dPatternGuard,st) = elabPatternGuard(cache,env,patternGuard,impl,st,performVectorization,pre,patternInfo);
         localsTree = AvlTreeString.joinAvlTrees(matchExpLocalTree, caseLocalTree);
-        useTree = AvlTreeString.avlTreeNew();
         // Start building the def-use chain bottom-up
+        useTree = AvlTreeString.avlTreeNew();
         ((_,useTree)) = Expression.traverseExp(DAE.META_OPTION(elabResult), useLocalCref, useTree);
-        (body,useTree) = List.map1Fold(listReverse(body),statementFindDeadStore,localsTree,useTree);
-        body = listReverse(body);
+        (body,useTree) = statementListFindDeadStoreRemoveEmptyStatements(body,localsTree,useTree);
+        ((_,useTree)) = Expression.traverseExp(DAE.META_OPTION(dPatternGuard), useLocalCref, useTree);
+        (elabPatterns,_) = traversePatternList(elabPatterns, checkDefUsePattern, (localsTree,useTree,patternInfo));
+        // Do the same thing again, for fun and glory
+        useTree = AvlTreeString.avlTreeNew();
+        ((_,useTree)) = Expression.traverseExp(DAE.META_OPTION(elabResult), useLocalCref, useTree);
+        (body,useTree) = statementListFindDeadStoreRemoveEmptyStatements(body,localsTree,useTree);
         ((_,useTree)) = Expression.traverseExp(DAE.META_OPTION(dPatternGuard), useLocalCref, useTree);
         (elabPatterns,_) = traversePatternList(elabPatterns, checkDefUsePattern, (localsTree,useTree,patternInfo));
         elabCase = DAE.CASE(elabPatterns, dPatternGuard, caseDecls, body, elabResult, resultInfo, 0, info);
@@ -2577,6 +2582,18 @@ algorithm
   end match;
 end addAliasesToEnv;
 
+protected function statementListFindDeadStoreRemoveEmptyStatements
+  input list<DAE.Statement> inBody;
+  input AvlTreeString.AvlTree localsTree;
+  input AvlTreeString.AvlTree inUseTree;
+  output list<DAE.Statement> body;
+  output AvlTreeString.AvlTree useTree;
+algorithm
+  (body,useTree) := List.map1Fold(listReverse(inBody),statementFindDeadStore,localsTree,inUseTree);
+  body := List.select(body,Algorithm.isNotDummyStatement);
+  body := listReverse(body);
+end statementListFindDeadStoreRemoveEmptyStatements;
+
 protected function statementFindDeadStore
   input DAE.Statement inStatement;
   input AvlTreeString.AvlTree localsTree;
@@ -2622,31 +2639,28 @@ algorithm
     case (DAE.STMT_IF(exp=exp,statementLst=body,else_=else_,source=source),_,_)
       equation
         (else_,elseTree) = elseFindDeadStore(else_, localsTree, inUseTree);
-        (body,useTree) = List.map1Fold(listReverse(body),statementFindDeadStore,localsTree,inUseTree);
+        (body,useTree) = statementListFindDeadStoreRemoveEmptyStatements(body,localsTree,inUseTree);
         ((_,useTree)) = Expression.traverseExp(exp, useLocalCref, useTree);
         useTree = AvlTreeString.joinAvlTrees(useTree,elseTree);
-        body = listReverse(body);
       then (DAE.STMT_IF(exp,body,else_,source),useTree);
 
     case (DAE.STMT_FOR(ty,b,id,index,exp,body,source),_,_)
       equation
-        (body,useTree) = List.map1Fold(listReverse(body),statementFindDeadStore,localsTree,inUseTree);
+        (body,useTree) = statementListFindDeadStoreRemoveEmptyStatements(body,localsTree,inUseTree);
         ((_,useTree)) = Expression.traverseExp(exp, useLocalCref, useTree);
         // TODO: We should remove ident from the use-tree in case of shadowing... But our avlTree cannot delete
         useTree = AvlTreeString.joinAvlTrees(useTree,inUseTree);
-        body = listReverse(body);
       then (DAE.STMT_FOR(ty,b,id,index,exp,body,source),useTree);
 
     case (DAE.STMT_WHILE(exp=exp,statementLst=body,source=source),_,_)
       equation
-        (body,useTree) = List.map1Fold(listReverse(body),statementFindDeadStore,localsTree,inUseTree);
+        (body,useTree) = statementListFindDeadStoreRemoveEmptyStatements(body,localsTree,inUseTree);
         ((_,useTree)) = Expression.traverseExp(exp, useLocalCref, useTree);
         // The loop might not be entered just like if. The following should not remove all previous uses:
         // while false loop
         //   return;
         // end while;
         useTree = AvlTreeString.joinAvlTrees(useTree,inUseTree);
-        body = listReverse(body);
       then (DAE.STMT_WHILE(exp,body,source),useTree);
 
     // No PARFOR in MetaModelica
@@ -2682,8 +2696,7 @@ algorithm
     case (DAE.STMT_ARRAY_INIT(source=_),_,_) then (inStatement,inUseTree);
     case (DAE.STMT_FAILURE(body=body,source=source),_,_)
       equation
-        (body,useTree) = List.map1Fold(listReverse(body),statementFindDeadStore,localsTree,inUseTree);
-        body = listReverse(body);
+        (body,useTree) = statementListFindDeadStoreRemoveEmptyStatements(body,localsTree,inUseTree);
       then (DAE.STMT_FAILURE(body,source),useTree);
   end match;
 end statementFindDeadStore;
@@ -2704,17 +2717,15 @@ algorithm
     case (DAE.NOELSE(),_,_) then (inElse,inUseTree);
     case (DAE.ELSEIF(exp,body,else_),_,_)
       equation
-        (body,useTree) = List.map1Fold(listReverse(body),statementFindDeadStore,localsTree,inUseTree);
+        (body,useTree) = statementListFindDeadStoreRemoveEmptyStatements(body,localsTree,inUseTree);
         ((_,useTree)) = Expression.traverseExp(exp, useLocalCref, useTree);
         (else_,elseTree) = elseFindDeadStore(else_, localsTree, inUseTree);
         useTree = AvlTreeString.joinAvlTrees(useTree,elseTree);
-        body = listReverse(body);
         else_ = DAE.ELSEIF(exp,body,else_);
       then (else_,useTree);
     case (DAE.ELSE(body),_,_)
       equation
-        (body,useTree) = List.map1Fold(listReverse(body),statementFindDeadStore,localsTree,inUseTree);
-        body = listReverse(body);
+        (body,useTree) = statementListFindDeadStoreRemoveEmptyStatements(body,localsTree,inUseTree);
         else_ = DAE.ELSE(body);
       then (else_,useTree);
   end match;

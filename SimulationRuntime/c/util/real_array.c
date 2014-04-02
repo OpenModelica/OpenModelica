@@ -42,36 +42,6 @@
 #include <stdarg.h>
 #include <math.h>
 
-/* Indexing 1 dimension */
-modelica_real real_get(const real_array_t *a, size_t i)
-{
-    return ((modelica_real *) a->data)[i];
-}
-
-/* Indexing 2 dimensions */
-modelica_real real_get_2D(const real_array_t *a, size_t i, size_t j)
-{
-  modelica_real value = real_get(a, (i * a->dim_size[1]) + j);
-  return value;
-}
-
-/* Indexing 3 dimensions */
-modelica_real real_get_3D(const real_array_t *a, size_t i, size_t j, size_t k)
-{
-  modelica_real value = real_get(a, (i * a->dim_size[1] * a->dim_size[2])
-                                  + (j * a->dim_size[2]) + k);
-  return value;
-}
-
-/* Indexing 4 dimensions */
-modelica_real real_get_4D(const real_array_t *a, size_t i, size_t j, size_t k, size_t l)
-{
-  modelica_real value = real_get(a, (i * a->dim_size[1] * a->dim_size[2] * a->dim_size[3])
-                                  + (j * a->dim_size[2] * a->dim_size[3])
-                                  + (k * a->dim_size[3]) + l);
-  return value;
-}
-
 static inline modelica_real *real_ptrget(const real_array_t *a, size_t i)
 {
     return ((modelica_real *) a->data) + i;
@@ -120,37 +90,37 @@ void alloc_real_array_data(real_array_t *a)
     a->data = real_alloc(base_array_nr_of_elements(a));
 }
 
-void copy_real_array_data(const real_array_t *source, real_array_t *dest)
+void copy_real_array_data(const real_array_t source, real_array_t *dest)
 {
     size_t i, nr_of_elements;
 
-    assert(base_array_ok(source));
+    assert(base_array_ok(&source));
     assert(base_array_ok(dest));
-    assert(base_array_shape_eq(source, dest));
+    assert(base_array_shape_eq(&source, dest));
 
-    nr_of_elements = base_array_nr_of_elements(source);
+    nr_of_elements = base_array_nr_of_elements(&source);
 
     for(i = 0; i < nr_of_elements; ++i) {
         real_set(dest, i, real_get(source, i));
     }
 }
 
-void copy_real_array_data_mem(const real_array_t *source, modelica_real *dest)
+void copy_real_array_data_mem(const real_array_t source, modelica_real *dest)
 {
     size_t i, nr_of_elements;
 
-    assert(base_array_ok(source));
+    assert(base_array_ok(&source));
 
-    nr_of_elements = base_array_nr_of_elements(source);
+    nr_of_elements = base_array_nr_of_elements(&source);
 
     for(i = 0; i < nr_of_elements; ++i) {
         dest[i] = real_get(source, i);
     }
 }
 
-void copy_real_array(const real_array_t *source, real_array_t *dest)
+void copy_real_array(const real_array_t source, real_array_t *dest)
 {
-    clone_base_array_spec(source, dest);
+    clone_base_array_spec(&source, dest);
     alloc_real_array_data(dest);
     copy_real_array_data(source,dest);
 }
@@ -222,7 +192,7 @@ void print_real_matrix(const real_array_t *source)
         printf("%d X %d matrix:\n", (int) source->dim_size[0], (int) source->dim_size[1]);
         for(i = 0; i < source->dim_size[0]; ++i) {
             for(j = 0; j < source->dim_size[1]; ++j) {
-                value = real_get(source, (i * source->dim_size[1]) + j);
+                value = real_get(*source, (i * source->dim_size[1]) + j);
                 printf("%e\t", value);
             }
             printf("\n");
@@ -292,7 +262,7 @@ void simple_indexed_assign_real_array1(const real_array_t * source,
 {
     /* Assert that source has the correct dimension */
     /* Assert that dest has the correct dimension */
-    real_set(dest, i1, real_get(source, i1));
+    real_set(dest, i1, real_get(*source, i1));
 }
 
 void simple_indexed_assign_real_array2(const real_array_t * source,
@@ -303,18 +273,16 @@ void simple_indexed_assign_real_array2(const real_array_t * source,
     /* Assert that source has correct dimension */
     /* Assert that dest has correct dimension */
     index = (i1 * source->dim_size[1]) + i2;
-    real_set(dest, index, real_get(source, index));
+    real_set(dest, index, real_get(*source, index));
 }
 
-void indexed_assign_real_array(const real_array_t * source,
-             real_array_t* dest,
-             const index_spec_t* dest_spec)
+void indexed_assign_real_array(const real_array_t source, real_array_t* dest, const index_spec_t* dest_spec)
 {
     _index_t* idx_vec1;
     _index_t* idx_size;
     int i,j;
 
-    assert(base_array_ok(source));
+    assert(base_array_ok(&source));
     assert(base_array_ok(dest));
     assert(index_spec_ok(dest_spec));
     assert(index_spec_fit_base_array(dest_spec, dest));
@@ -323,10 +291,10 @@ void indexed_assign_real_array(const real_array_t * source,
             ++j;
         }
     }
-    assert(j == source->ndims);
+    assert(j == source.ndims);
 
     idx_vec1 = size_alloc(dest->ndims);
-    /* idx_vec2 = size_alloc(source->ndims); */
+    /* idx_vec2 = size_alloc(source.ndims); */
     idx_size = size_alloc(dest_spec->ndims);
 
     for(i = 0; i < dest_spec->ndims; ++i) {
@@ -359,12 +327,12 @@ void indexed_assign_real_array(const real_array_t * source,
                  calc_base_index_spec(dest->ndims, idx_vec1, dest, dest_spec),
                  real_get(source, j));
         j++;
-          /*   calc_base_index(source->ndims, idx_vec1, source)));*/
-          /* calc_base_index(source->ndims, idx_vec2, source)));*/
+          /*   calc_base_index(source.ndims, idx_vec1, source)));*/
+          /* calc_base_index(source.ndims, idx_vec2, source)));*/
 
     } while(0 == next_index(dest_spec->ndims, idx_vec1, idx_size));
 
-    assert(j == base_array_nr_of_elements(source));
+    assert(j == base_array_nr_of_elements(&source));
 }
 
 /*
@@ -436,7 +404,7 @@ void index_real_array(const real_array_t * source,
         }
         */
         real_set(dest, j,  /* calc_base_index(dest->ndims, idx_vec2, dest), */
-                 real_get(source,
+                 real_get(*source,
                           calc_base_index_spec(source->ndims, idx_vec1,
                                                source, source_spec)));
         j++;
@@ -563,7 +531,7 @@ void simple_index_real_array1(const real_array_t * source,
     size_t off = nr_of_elements * i1;
 
     for(i = 0 ; i < nr_of_elements ; i++) {
-        real_set(dest, i, real_get(source, off + i));
+        real_set(dest, i, real_get(*source, off + i));
     }
 }
 
@@ -577,7 +545,7 @@ void simple_index_real_array2(const real_array_t * source,
     size_t off = nr_of_elements * ((source->dim_size[1] * i1) + i2);
 
     for(i = 0 ; i < nr_of_elements ; i++) {
-        real_set(dest, i, real_get(source, off + i));
+        real_set(dest, i, real_get(*source, off + i));
     }
 }
 
@@ -601,7 +569,7 @@ void array_real_array(real_array_t* dest,int n,real_array_t* first,...)
     for(i = 0, c = 0; i < n; ++i) {
         int m = base_array_nr_of_elements(elts[i]);
         for(j = 0; j < m; ++j) {
-            real_set(dest, c, real_get(elts[i], j));
+            real_set(dest, c, real_get(*elts[i], j));
             c++;
         }
     }
@@ -642,7 +610,7 @@ void array_alloc_real_array(real_array_t* dest, int n, real_array_t* first,...)
     for(i = 0, c = 0; i < n; ++i) {
         int m = base_array_nr_of_elements(elts[i]);
         for(j = 0; j < m; ++j) {
-            real_set(dest, c, real_get(elts[i], j));
+            real_set(dest, c, real_get(*elts[i], j));
             c++;
         }
     }
@@ -758,7 +726,7 @@ void cat_real_array(int k, real_array_t* dest, int n,
             int n_sub_k = n_sub * elts[c]->dim_size[k-1];
             for(r = 0; r < n_sub_k; r++) {
                 real_set(dest, j,
-                            real_get(elts[c], r + (i * n_sub_k)));
+                            real_get(*elts[c], r + (i * n_sub_k)));
                 j++;
             }
         }
@@ -827,7 +795,7 @@ void cat_alloc_real_array(int k, real_array_t* dest, int n,
             int n_sub_k = n_sub * elts[c]->dim_size[k-1];
             for(r = 0; r < n_sub_k; r++) {
                 real_set(dest, j,
-                            real_get(elts[c], r + (i * n_sub_k)));
+                            real_get(*elts[c], r + (i * n_sub_k)));
                 j++;
             }
         }
@@ -862,15 +830,17 @@ void add_real_array(const real_array_t * a, const real_array_t * b, real_array_t
     /* Assert that dest are of correct size */
     nr_of_elements = base_array_nr_of_elements(a);
     for(i = 0; i < nr_of_elements; ++i) {
-        real_set(dest, i, real_get(a, i)+real_get(b, i));
+        real_set(dest, i, real_get(*a, i)+real_get(*b, i));
     }
 }
 
-void add_alloc_real_array(const real_array_t * a, const real_array_t * b,real_array_t* dest)
+real_array_t add_alloc_real_array(const real_array_t a, const real_array_t b)
 {
-    clone_real_array_spec(a,dest);
-    alloc_real_array_data(dest);
-    add_real_array(a,b,dest);
+    real_array_t dest;
+    clone_real_array_spec(&a,&dest);
+    alloc_real_array_data(&dest);
+    add_real_array(&a,&b,&dest);
+    return dest;
 }
 
 void usub_real_array(real_array_t* a)
@@ -880,14 +850,14 @@ void usub_real_array(real_array_t* a)
     nr_of_elements = base_array_nr_of_elements(a);
     for(i = 0; i < nr_of_elements; ++i)
     {
-        real_set(a, i, -real_get(a, i));
+        real_set(a, i, -real_get(*a, i));
     }
 }
 
-void usub_alloc_real_array(const real_array_t* a, real_array_t* dest)
+void usub_alloc_real_array(const real_array_t a, real_array_t* dest)
 {
     size_t nr_of_elements, i;
-    clone_real_array_spec(a,dest);
+    clone_real_array_spec(&a,dest);
     alloc_real_array_data(dest);
 
     nr_of_elements = base_array_nr_of_elements(dest);
@@ -906,7 +876,7 @@ void sub_real_array(const real_array_t * a, const real_array_t * b, real_array_t
     /* Assert that dest are of correct size */
     nr_of_elements = base_array_nr_of_elements(a);
     for(i = 0; i < nr_of_elements; ++i) {
-        real_set(dest, i, real_get(a, i)-real_get(b, i));
+        real_set(dest, i, real_get(*a, i)-real_get(*b, i));
     }
 }
 
@@ -920,15 +890,17 @@ void sub_real_array_data_mem(const real_array_t * a, const real_array_t * b,
     /* Assert that dest are of correct size */
     nr_of_elements = base_array_nr_of_elements(a);
     for(i = 0; i < nr_of_elements; ++i) {
-        dest[i] = real_get(a, i) - real_get(b, i);
+        dest[i] = real_get(*a, i) - real_get(*b, i);
     }
 }
 
-void sub_alloc_real_array(const real_array_t * a, const real_array_t * b,real_array_t* dest)
+real_array_t sub_alloc_real_array(const real_array_t a, const real_array_t b)
 {
-    clone_real_array_spec(a, dest);
-    alloc_real_array_data(dest);
-    sub_real_array(a, b, dest);
+    real_array_t dest;
+    clone_real_array_spec(&a, &dest);
+    alloc_real_array_data(&dest);
+    sub_real_array(&a, &b, &dest);
+    return dest;
 }
 
 void mul_scalar_real_array(modelica_real a,const real_array_t * b,real_array_t* dest)
@@ -938,15 +910,17 @@ void mul_scalar_real_array(modelica_real a,const real_array_t * b,real_array_t* 
     /* Assert that dest has correct size*/
     nr_of_elements = base_array_nr_of_elements(b);
     for(i=0; i < nr_of_elements; ++i) {
-        real_set(dest, i, a * real_get(b, i));
+        real_set(dest, i, a * real_get(*b, i));
     }
 }
 
-void mul_alloc_scalar_real_array(modelica_real a,const real_array_t * b,real_array_t* dest)
+real_array_t mul_alloc_scalar_real_array(modelica_real a,const real_array_t b)
 {
-    clone_real_array_spec(b,dest);
-    alloc_real_array_data(dest);
-    mul_scalar_real_array(a,b,dest);
+    real_array_t dest;
+    clone_real_array_spec(&b,&dest);
+    alloc_real_array_data(&dest);
+    mul_scalar_real_array(a,&b,&dest);
+    return dest;
 }
 
 void mul_real_array_scalar(const real_array_t * a,modelica_real b,real_array_t* dest)
@@ -956,15 +930,17 @@ void mul_real_array_scalar(const real_array_t * a,modelica_real b,real_array_t* 
     /* Assert that dest has correct size*/
     nr_of_elements = base_array_nr_of_elements(a);
     for(i=0; i < nr_of_elements; ++i) {
-        real_set(dest, i, real_get(a, i) * b);
+        real_set(dest, i, real_get(*a, i) * b);
     }
 }
 
-void mul_alloc_real_array_scalar(const real_array_t * a,modelica_real b,real_array_t* dest)
+real_array_t mul_alloc_real_array_scalar(const real_array_t a,modelica_real b)
 {
-    clone_real_array_spec(a,dest);
-    alloc_real_array_data(dest);
-    mul_real_array_scalar(a,b,dest);
+    real_array_t dest;
+    clone_real_array_spec(&a,&dest);
+    alloc_real_array_data(&dest);
+    mul_real_array_scalar(&a,b,&dest);
+    return dest;
 }
 
 void mul_real_array(const real_array_t *a,const real_array_t *b,real_array_t* dest)
@@ -974,18 +950,20 @@ void mul_real_array(const real_array_t *a,const real_array_t *b,real_array_t* de
   /* Assert that a,b have same sizes? */
   nr_of_elements = base_array_nr_of_elements(a);
   for(i=0; i < nr_of_elements; ++i) {
-    real_set(dest, i, real_get(a, i) * real_get(b, i));
+    real_set(dest, i, real_get(*a, i) * real_get(*b, i));
   }
 }
 
-void mul_alloc_real_array(const real_array_t *a,const real_array_t *b,real_array_t *dest)
+real_array_t mul_alloc_real_array(const real_array_t a,const real_array_t b)
 {
-    clone_real_array_spec(a,dest);
-    alloc_real_array_data(dest);
-    mul_real_array(a,b,dest);
+    real_array_t dest;
+    clone_real_array_spec(&a,&dest);
+    alloc_real_array_data(&dest);
+    mul_real_array(&a,&b,&dest);
+    return dest;
 }
 
-modelica_real mul_real_scalar_product(const real_array_t * a, const real_array_t * b)
+modelica_real mul_real_scalar_product(const real_array_t a, const real_array_t b)
 {
     size_t nr_of_elements;
     size_t i;
@@ -993,7 +971,7 @@ modelica_real mul_real_scalar_product(const real_array_t * a, const real_array_t
     /* Assert that a and b are vectors */
     /* Assert that vectors are of matching size */
 
-    nr_of_elements = real_array_nr_of_elements(a);
+    nr_of_elements = real_array_nr_of_elements(&a);
     res = 0.0;
     for(i = 0; i < nr_of_elements; ++i) {
         res += real_get(a, i)*real_get(b, i);
@@ -1020,7 +998,7 @@ void mul_real_matrix_product(const real_array_t * a,const real_array_t * b,real_
         for(j = 0; j < j_size; ++j) {
             tmp = 0;
             for(k = 0; k < k_size; ++k) {
-                tmp += real_get(a, (i * k_size) + k)*real_get(b, (k * j_size) + j);
+                tmp += real_get(*a, (i * k_size) + k)*real_get(*b, (k * j_size) + j);
             }
             real_set(dest, (i * j_size) + j, tmp);
         }
@@ -1045,7 +1023,7 @@ void mul_real_matrix_vector(const real_array_t * a, const real_array_t * b,real_
     for(i = 0; i < i_size; ++i) {
         tmp = 0;
         for(j = 0; j < j_size; ++j) {
-            tmp += real_get(a, (i * j_size) + j) * real_get(b, j);
+            tmp += real_get(*a, (i * j_size) + j) * real_get(*b, j);
         }
         real_set(dest, i, tmp);
     }
@@ -1070,26 +1048,28 @@ void mul_real_vector_matrix(const real_array_t * a, const real_array_t * b,real_
     for(i = 0; i < i_size; ++i) {
         tmp = 0;
         for(j = 0; j < j_size; ++j) {
-            tmp += real_get(a, j) * real_get(b, (j * j_size) + i);
+            tmp += real_get(*a, j) * real_get(*b, (j * j_size) + i);
         }
         real_set(dest, i, tmp);
     }
 }
 
-void mul_alloc_real_matrix_product_smart(const real_array_t * a, const real_array_t * b, real_array_t* dest)
+real_array_t mul_alloc_real_matrix_product_smart(const real_array_t a, const real_array_t b)
 {
-    if((a->ndims == 1) && (b->ndims == 2)) {
-        simple_alloc_1d_real_array(dest,b->dim_size[1]);
-        mul_real_vector_matrix(a,b,dest);
-    } else if((a->ndims == 2) && (b->ndims == 1)) {
-        simple_alloc_1d_real_array(dest,a->dim_size[0]);
-        mul_real_matrix_vector(a,b,dest);
-    } else if((a->ndims == 2) && (b->ndims == 2)) {
-        simple_alloc_2d_real_array(dest,a->dim_size[0],b->dim_size[1]);
-        mul_real_matrix_product(a,b,dest);
+    real_array_t dest;
+    if((a.ndims == 1) && (b.ndims == 2)) {
+        simple_alloc_1d_real_array(&dest,b.dim_size[1]);
+        mul_real_vector_matrix(&a,&b,&dest);
+    } else if((a.ndims == 2) && (b.ndims == 1)) {
+        simple_alloc_1d_real_array(&dest,a.dim_size[0]);
+        mul_real_matrix_vector(&a,&b,&dest);
+    } else if((a.ndims == 2) && (b.ndims == 2)) {
+        simple_alloc_2d_real_array(&dest,a.dim_size[0],b.dim_size[1]);
+        mul_real_matrix_product(&a,&b,&dest);
     } else {
-        printf("Invalid size of matrix\n");
+        assert(0 == "Invalid size of matrix");
     }
+    return dest;
 }
 
 void div_real_array_scalar(const real_array_t * a,modelica_real b,real_array_t* dest)
@@ -1100,15 +1080,17 @@ void div_real_array_scalar(const real_array_t * a,modelica_real b,real_array_t* 
     /* Do we need to check for b=0? */
     nr_of_elements = base_array_nr_of_elements(a);
     for(i=0; i < nr_of_elements; ++i) {
-        real_set(dest, i, real_get(a, i)/b);
+        real_set(dest, i, real_get(*a, i)/b);
     }
 }
 
-void div_alloc_real_array_scalar(const real_array_t * a,modelica_real b,real_array_t* dest)
+real_array_t div_alloc_real_array_scalar(const real_array_t a,modelica_real b)
 {
-    clone_real_array_spec(a,dest);
-    alloc_real_array_data(dest);
-    div_real_array_scalar(a,b,dest);
+    real_array_t dest;
+    clone_real_array_spec(&a,&dest);
+    alloc_real_array_data(&dest);
+    div_real_array_scalar(&a,b,&dest);
+    return dest;
 }
 
 void division_real_array_scalar(threadData_t *threadData, const real_array_t * a,modelica_real b,real_array_t* dest, const char* division_str)
@@ -1118,15 +1100,17 @@ void division_real_array_scalar(threadData_t *threadData, const real_array_t * a
     /* Assert that dest has correct size*/
     nr_of_elements = base_array_nr_of_elements(a);
     for(i=0; i < nr_of_elements; ++i) {
-        real_set(dest, i, DIVISIONNOTIME(real_get(a, i),b,division_str));
+        real_set(dest, i, DIVISIONNOTIME(real_get(*a, i),b,division_str));
     }
 }
 
-void division_alloc_real_array_scalar(threadData_t *threadData,const real_array_t * a,modelica_real b,real_array_t* dest, const char* division_str)
+real_array_t division_alloc_real_array_scalar(threadData_t *threadData,const real_array_t a,modelica_real b,const char* division_str)
 {
-    clone_real_array_spec(a,dest);
-    alloc_real_array_data(dest);
-    division_real_array_scalar(threadData,a,b,dest,division_str);
+    real_array_t dest;
+    clone_real_array_spec(&a,&dest);
+    alloc_real_array_data(&dest);
+    division_real_array_scalar(threadData,&a,b,&dest,division_str);
+    return dest;
 }
 
 void div_scalar_real_array(modelica_real a, const real_array_t* b, real_array_t* dest)
@@ -1137,15 +1121,17 @@ void div_scalar_real_array(modelica_real a, const real_array_t* b, real_array_t*
     /* Do we need to check for b=0? */
     nr_of_elements = base_array_nr_of_elements(b);
     for(i=0; i < nr_of_elements; ++i) {
-        real_set(dest, i, a / real_get(b, i));
+        real_set(dest, i, a / real_get(*b, i));
     }
 }
 
-void div_alloc_scalar_real_array(modelica_real a, const real_array_t* b, real_array_t* dest)
+real_array_t div_alloc_scalar_real_array(modelica_real a, const real_array_t b)
 {
-    clone_real_array_spec(b,dest);
-    alloc_real_array_data(dest);
-    div_scalar_real_array(a,b,dest);
+    real_array_t dest;
+    clone_real_array_spec(&b,&dest);
+    alloc_real_array_data(&dest);
+    div_scalar_real_array(a,&b,&dest);
+    return dest;
 }
 
 void div_real_array(const real_array_t *a, const real_array_t *b, real_array_t* dest)
@@ -1155,15 +1141,17 @@ void div_real_array(const real_array_t *a, const real_array_t *b, real_array_t* 
   /* Assert that a,b have same sizes? */
   nr_of_elements = base_array_nr_of_elements(a);
   for(i=0; i < nr_of_elements; ++i) {
-    real_set(dest, i, real_get(a, i) / real_get(b, i));
+    real_set(dest, i, real_get(*a, i) / real_get(*b, i));
   }
 }
 
-void div_alloc_real_array(const real_array_t *a, const real_array_t *b, real_array_t *dest)
+real_array_t div_alloc_real_array(const real_array_t a, const real_array_t b)
 {
-    clone_real_array_spec(a,dest);
-    alloc_real_array_data(dest);
-    div_real_array(a, b, dest);
+    real_array_t dest;
+    clone_real_array_spec(&a,&dest);
+    alloc_real_array_data(&dest);
+    div_real_array(&a, &b, &dest);
+    return dest;
 }
 
 
@@ -1175,15 +1163,17 @@ void pow_real_array_scalar(const real_array_t *a, modelica_real b, real_array_t*
   assert(nr_of_elements == base_array_nr_of_elements(dest));
 
   for(i = 0; i < nr_of_elements; ++i) {
-    real_set(dest, i, pow(real_get(a, i), b));
+    real_set(dest, i, pow(real_get(*a, i), b));
   }
 }
 
-void pow_alloc_real_array_scalar(const real_array_t* a, modelica_real b, real_array_t* dest)
+real_array_t pow_alloc_real_array_scalar(const real_array_t a, modelica_real b)
 {
-  clone_real_array_spec(a, dest);
-  alloc_real_array_data(dest);
-  pow_real_array_scalar(a, b, dest);
+  real_array_t dest;
+  clone_real_array_spec(&a, &dest);
+  alloc_real_array_data(&dest);
+  pow_real_array_scalar(&a, b, &dest);
+  return dest;
 }
 
 void exp_real_array(const real_array_t * a, modelica_integer n, real_array_t* dest)
@@ -1199,24 +1189,26 @@ void exp_real_array(const real_array_t * a, modelica_integer n, real_array_t* de
     } else {
         if(n==1) {
             clone_real_array_spec(a,dest);
-            copy_real_array_data(a,dest);
+            copy_real_array_data(*a,dest);
         } else {
             real_array_t* tmp = 0;
             clone_real_array_spec(a,tmp);
-            copy_real_array_data(a,tmp);
+            copy_real_array_data(*a,tmp);
             for(i = 1; i < n; ++i) {
                 mul_real_matrix_product(a,tmp,dest);
-                copy_real_array_data(dest,tmp);
+                copy_real_array_data(*dest,tmp);
             }
         }
     }
 }
 
-void exp_alloc_real_array(const real_array_t * a,modelica_integer b,real_array_t* dest)
+real_array_t exp_alloc_real_array(const real_array_t a,modelica_integer b)
 {
-    clone_real_array_spec(a,dest);
-    alloc_real_array_data(dest);
-    exp_real_array(a,b,dest);
+    real_array_t dest;
+    clone_real_array_spec(&a,&dest);
+    alloc_real_array_data(&dest);
+    exp_real_array(&a,b,&dest);
+    return dest;
 }
 
 /* function: promote_alloc_real_array
@@ -1300,7 +1292,7 @@ modelica_real scalar_real_array(const real_array_t* a)
     assert(base_array_ok(a));
     assert(base_array_one_element_ok(a));
 
-    return real_get(a, 0);
+    return real_get(*a, 0);
 }
 
 void vector_real_array(const real_array_t * a, real_array_t* dest)
@@ -1311,7 +1303,7 @@ void vector_real_array(const real_array_t * a, real_array_t* dest)
 
     nr_of_elements = base_array_nr_of_elements(a);
     for(i = 0; i < nr_of_elements; ++i) {
-        real_set(dest, i, real_get(a, i));
+        real_set(dest, i, real_get(*a, i));
     }
 }
 
@@ -1331,7 +1323,7 @@ void matrix_real_array(const real_array_t * a, real_array_t* dest)
     cnt = dest->dim_size[0] * dest->dim_size[1];
 
     for(i = 0; i < cnt; ++i) {
-        real_set(dest, i, real_get(a, i));
+        real_set(dest, i, real_get(*a, i));
     }
 }
 
@@ -1376,7 +1368,7 @@ void transpose_real_array(const real_array_t * a, real_array_t* dest)
     size_t n,m;
 
     if(a->ndims == 1) {
-        copy_real_array_data(a,dest);
+        copy_real_array_data(*a,dest);
         return;
     }
 
@@ -1389,7 +1381,7 @@ void transpose_real_array(const real_array_t * a, real_array_t* dest)
 
     for(i = 0; i < n; ++i) {
         for(j = 0; j < m; ++j) {
-            real_set(dest, (j * n) + i, real_get(a, (i * m) + j));
+            real_set(dest, (j * n) + i, real_get(*a, (i * m) + j));
         }
     }
 }
@@ -1411,7 +1403,7 @@ void outer_product_real_array(const real_array_t * v1, const real_array_t * v2,
     for(i = 0; i < number_of_elements_a; ++i) {
         for(j = 0; i < number_of_elements_b; ++j) {
             real_set(dest, (i * number_of_elements_b) + j,
-                     real_get(v1, i) * real_get(v2, j));
+                     real_get(*v1, i) * real_get(*v2, j));
         }
     }
 }
@@ -1466,7 +1458,7 @@ void diagonal_real_array(const real_array_t * v,real_array_t* dest)
     }
     j = 0;
     for(i = 0; i < n; ++i) {
-        real_set(dest, j, real_get(v, i));
+        real_set(dest, j, real_get(*v, i));
         j += n+1;
     }
 }
@@ -1494,14 +1486,14 @@ void linspace_real_array(modelica_real x1, modelica_real x2, int n,
     }
 }
 
-modelica_real max_real_array(const real_array_t * a)
+modelica_real max_real_array(const real_array_t a)
 {
     size_t nr_of_elements;
     modelica_real max_element = 0;
 
-    assert(base_array_ok(a));
+    assert(base_array_ok(&a));
 
-    nr_of_elements = base_array_nr_of_elements(a);
+    nr_of_elements = base_array_nr_of_elements(&a);
 
     if(nr_of_elements > 0) {
         size_t i;
@@ -1516,14 +1508,14 @@ modelica_real max_real_array(const real_array_t * a)
     return max_element;
 }
 
-modelica_real min_real_array(const real_array_t * a)
+modelica_real min_real_array(const real_array_t a)
 {
     size_t nr_of_elements;
     modelica_real min_element = 0;
 
-    assert(base_array_ok(a));
+    assert(base_array_ok(&a));
 
-    nr_of_elements = base_array_nr_of_elements(a);
+    nr_of_elements = base_array_nr_of_elements(&a);
 
     if(nr_of_elements > 0) {
         size_t i;
@@ -1538,15 +1530,15 @@ modelica_real min_real_array(const real_array_t * a)
     return min_element;
 }
 
-modelica_real sum_real_array(const real_array_t * a)
+modelica_real sum_real_array(const real_array_t a)
 {
     size_t i;
     size_t nr_of_elements;
     modelica_real sum = 0;
 
-    assert(base_array_ok(a));
+    assert(base_array_ok(&a));
 
-    nr_of_elements = base_array_nr_of_elements(a);
+    nr_of_elements = base_array_nr_of_elements(&a);
 
     for(i = 0; i < nr_of_elements; ++i) {
         sum += real_get(a, i);
@@ -1555,15 +1547,15 @@ modelica_real sum_real_array(const real_array_t * a)
     return sum;
 }
 
-modelica_real product_real_array(const real_array_t * a)
+modelica_real product_real_array(const real_array_t a)
 {
     size_t i;
     size_t nr_of_elements;
     modelica_real product = 1;
 
-    assert(base_array_ok(a));
+    assert(base_array_ok(&a));
 
-    nr_of_elements = base_array_nr_of_elements(a);
+    nr_of_elements = base_array_nr_of_elements(&a);
 
     for(i = 0; i < nr_of_elements; ++i) {
         product *= real_get(a, i);
@@ -1585,11 +1577,11 @@ void symmetric_real_array(const real_array_t * a,real_array_t* dest)
     for(i = 0; i < nr_of_elements; ++i) {
         for(j = 0; j < i; ++j) {
             real_set(dest, (i * nr_of_elements) + j,
-                     real_get(a, (j * nr_of_elements) + i));
+                     real_get(*a, (j * nr_of_elements) + i));
         }
         for( ; j < nr_of_elements; ++j) {
             real_set(dest, (i * nr_of_elements) + j,
-                     real_get(a, (i * nr_of_elements) + j));
+                     real_get(*a, (i * nr_of_elements) + j));
         }
     }
 }
@@ -1603,9 +1595,9 @@ void cross_real_array(const real_array_t * x,const real_array_t * y, real_array_
     /* Assert dest is vector of size 3 */
     assert((dest->ndims == 1) && (dest->dim_size[0] == 3));
 
-    real_set(dest, 0, (real_get(x,1) * real_get(y,2)) - (real_get(x,2) * real_get(y,1)));
-    real_set(dest, 1, (real_get(x,2) * real_get(y,0)) - (real_get(x,0) * real_get(y,2)));
-    real_set(dest, 2, (real_get(x,0) * real_get(y,1)) - (real_get(x,1) * real_get(y,0)));
+    real_set(dest, 0, (real_get(*x,1) * real_get(*y,2)) - (real_get(*x,2) * real_get(*y,1)));
+    real_set(dest, 1, (real_get(*x,2) * real_get(*y,0)) - (real_get(*x,0) * real_get(*y,2)));
+    real_set(dest, 2, (real_get(*x,0) * real_get(*y,1)) - (real_get(*x,1) * real_get(*y,0)));
 }
 
 void cross_alloc_real_array(const real_array_t * x,const real_array_t * y, real_array_t* dest)
@@ -1620,13 +1612,13 @@ void skew_real_array(const real_array_t * x,real_array_t* dest)
     /* Assert x has size 3*/
     /* Assert dest is 3x3*/
     real_set(dest, 0, 0);
-    real_set(dest, 1, -real_get(x, 2));
-    real_set(dest, 2, real_get(x, 1));
-    real_set(dest, 3, real_get(x, 2));
+    real_set(dest, 1, -real_get(*x, 2));
+    real_set(dest, 2, real_get(*x, 1));
+    real_set(dest, 3, real_get(*x, 2));
     real_set(dest, 4, 0);
-    real_set(dest, 5, -real_get(x, 0));
-    real_set(dest, 6, -real_get(x, 1));
-    real_set(dest, 7, real_get(x, 0));
+    real_set(dest, 5, -real_get(*x, 0));
+    real_set(dest, 6, -real_get(*x, 1));
+    real_set(dest, 7, real_get(*x, 0));
     real_set(dest, 8, 0);
 }
 
@@ -1661,7 +1653,7 @@ void cast_integer_array_to_real(const integer_array_t* a, real_array_t* dest)
     clone_base_array_spec(a,dest);
     alloc_real_array_data(dest);
     for(i=0; i<els; i++) {
-        real_set(dest, i, (modelica_real)integer_get(a,i));
+        real_set(dest, i, (modelica_real)integer_get(*a,i));
     }
 }
 
@@ -1672,7 +1664,7 @@ void cast_real_array_to_integer(const real_array_t * a, integer_array_t* dest)
     clone_base_array_spec(a,dest);
     alloc_integer_array_data(dest);
     for(i=0; i<els; i++) {
-        put_integer_element((modelica_integer)real_get(a,i),i,dest);
+        put_integer_element((modelica_integer)real_get(*a,i),i,dest);
     }
 }
 

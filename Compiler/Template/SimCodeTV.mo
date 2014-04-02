@@ -44,6 +44,12 @@ package builtin
     output Boolean nb;
   end boolNot;
   
+  function intMax
+    input Integer a;
+    input Integer b;
+    output Integer c;
+  end intMax;
+
   function intSub
     input Integer a;
     input Integer b;
@@ -533,6 +539,7 @@ package SimCode
   uniontype RecordDeclaration
     record RECORD_DECL_FULL
       String name;
+      Option<String> aliasName;
       Absyn.Path defPath;
       list<Variable> variables;
     end RECORD_DECL_FULL;
@@ -2362,6 +2369,11 @@ package Util
     output Boolean b;
   end endsWith;
 
+  function isCIdentifier
+    input String str;
+    output Boolean b;
+  end isCIdentifier;
+
 end Util;
 
 package List
@@ -2421,13 +2433,25 @@ package List
     input Integer inParts;
     output list<list<Type_a>> outParts;
   end splitEqualParts;
+
+  function rest
+    replaceable type Type_a subtypeof Any;
+    input list<Type_a> inList;
+    output list<Type_a> outParts;
+  end rest;
+
+  function restOrEmpty
+    replaceable type Type_a subtypeof Any;
+    input list<Type_a> inList;
+    output list<Type_a> outParts;
+  end restOrEmpty;
  
 end List;
 
 package ComponentReference
 
   function makeUntypedCrefIdent
-    input DAE.Ident ident;
+    input String ident;
     output DAE.ComponentRef outCrefIdent;
   end makeUntypedCrefIdent;
 
