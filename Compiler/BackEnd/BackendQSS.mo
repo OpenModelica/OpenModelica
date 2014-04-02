@@ -996,6 +996,7 @@ algorithm
       list<String> externalFunctionIncludes;
       list<list<SimCode.SimEqSystem>> algebraicEquations,odeEquations;
       list<SimCode.SimEqSystem> allEquations,residualEquations,startValueEquations,nominalValueEquations,minValueEquations,maxValueEquations,parameterEquations,inlineEquations,removedEquations,algorithmAndEquationAsserts,jacobianEquations;
+      list<SimCode.SimEqSystem> equationsForZeroCrossings;
       list<SimCode.StateSet> stateSets;
       Boolean useSymbolicInitialization, useHomotopy;
       list<SimCode.SimEqSystem> initialEquations;
@@ -1017,7 +1018,7 @@ algorithm
       
     case (SimCode.SIMCODE(modelInfo,literals,recordDecls,externalFunctionIncludes,allEquations,odeEquations,
           algebraicEquations,residualEquations,useSymbolicInitialization,useHomotopy,initialEquations,startValueEquations,nominalValueEquations,minValueEquations,maxValueEquations,
-          parameterEquations,inlineEquations,removedEquations,algorithmAndEquationAsserts,jacobianEquations,stateSets,constraints,classAttributes,zeroCrossings,relations,
+          parameterEquations,inlineEquations,removedEquations,algorithmAndEquationAsserts,equationsForZeroCrossings,jacobianEquations,stateSets,constraints,classAttributes,zeroCrossings,relations,
           timeEvents,whenClauses,discreteModelVars,extObjInfo,makefileParams,
           delayedExps,jacobianMatrixes,simulationSettingsOpt,fileNamePrefix,crefToSimVarHT,hpcOmSchedule),_)
     equation
@@ -1026,7 +1027,7 @@ algorithm
     then SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes,
                          allEquations, {eqs}, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy,
                          initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations, parameterEquations, inlineEquations,
-                         removedEquations, algorithmAndEquationAsserts, jacobianEquations, stateSets, constraints, classAttributes,
+                         removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes,
                          zeroCrossings, relations, timeEvents, whenClauses, discreteModelVars, extObjInfo,
                          makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT,hpcOmSchedule);
 

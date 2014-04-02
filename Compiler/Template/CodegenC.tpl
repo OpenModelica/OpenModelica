@@ -261,7 +261,7 @@ template simulationFile_evt(SimCode simCode, String guid)
 
     <%functionInitSample(timeEvents, modelNamePrefix(simCode))%>
     
-    <%functionZeroCrossing(zeroCrossings, modelNamePrefix(simCode))%>
+    <%functionZeroCrossing(zeroCrossings, equationsForZeroCrossings, modelNamePrefix(simCode))%>
 
     <%functionRelations(relations, modelNamePrefix(simCode))%>
 
@@ -552,7 +552,8 @@ template simulationFile(SimCode simCode, String guid)
     extern int <%symbolName(modelNamePrefixStr,"functionInitialEquations")%>(DATA *data);
     extern int <%symbolName(modelNamePrefixStr,"updateBoundParameters")%>(DATA *data);
     extern int <%symbolName(modelNamePrefixStr,"checkForAsserts")%>(DATA *data);
-    extern int <%symbolName(modelNamePrefixStr,"function_ZeroCrossings")%>(DATA *data, double* gout, double* t);
+    extern int <%symbolName(modelNamePrefixStr,"function_ZeroCrossingsEquations")%>(DATA *data);
+    extern int <%symbolName(modelNamePrefixStr,"function_ZeroCrossings")%>(DATA *data, double* gout);
     extern int <%symbolName(modelNamePrefixStr,"function_updateRelations")%>(DATA *data, int evalZeroCross);
     extern int <%symbolName(modelNamePrefixStr,"checkForDiscreteChanges")%>(DATA *data);
     extern const char* <%symbolName(modelNamePrefixStr,"zeroCrossingDescription")%>(int i, int **out_EquationIndexes);
@@ -597,6 +598,7 @@ template simulationFile(SimCode simCode, String guid)
        <%symbolName(modelNamePrefixStr,"functionInitialEquations")%>,
        <%symbolName(modelNamePrefixStr,"updateBoundParameters")%>,
        <%symbolName(modelNamePrefixStr,"checkForAsserts")%>,
+       <%symbolName(modelNamePrefixStr,"function_ZeroCrossingsEquations")%>,
        <%symbolName(modelNamePrefixStr,"function_ZeroCrossings")%>,
        <%symbolName(modelNamePrefixStr,"function_updateRelations")%>,
        <%symbolName(modelNamePrefixStr,"checkForDiscreteChanges")%>,
@@ -2909,13 +2911,19 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause>
   >>
 end functionDAE;
 
-template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, String modelNamePrefix)
+template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem> equationsForZeroCrossings, String modelNamePrefix)
 "template functionZeroCrossing
   Generates function for ZeroCrossings in simulation file.
   This is a helper of template simulationFile."
 ::=
   let &varDecls = buffer "" /*BUFD*/
-  let zeroCrossingsCode = zeroCrossingsTpl(zeroCrossings, &varDecls /*BUFD*/)
+  let &tmp = buffer ""
+  let eqs = (equationsForZeroCrossings |> eq =>
+       equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFD*/, &tmp, modelNamePrefix)
+      ;separator="\n")
+
+  let &varDecls2 = buffer "" /*BUFD*/
+  let zeroCrossingsCode = zeroCrossingsTpl(zeroCrossings, &varDecls2 /*BUFD*/)
 
   let resDesc = (zeroCrossings |> ZERO_CROSSING(__) => '"<%ExpressionDump.printExpStr(relation_)%>"'
     ;separator=",\n")
@@ -2944,10 +2952,20 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, String modelName
 
   <<
   <%desc%>
-
-  int <%symbolName(modelNamePrefix,"function_ZeroCrossings")%>(DATA *data, double *gout, double *t)
+  
+  int <%symbolName(modelNamePrefix,"function_ZeroCrossingsEquations")%>(DATA *data)
   {
     <%varDecls%>
+
+    data->simulationInfo.discreteCall = 0;
+    <%eqs%>
+
+    return 0;
+  }
+  
+  int <%symbolName(modelNamePrefix,"function_ZeroCrossings")%>(DATA *data, double *gout)
+  {
+    <%varDecls2%>
 
     <%zeroCrossingsCode%>
 

@@ -542,11 +542,10 @@ int function_ZeroCrossingsDASSL(fortran_integer *neqm, double *t, double *y,
   /* read input vars */
   externalInputUpdate(data);
   data->callback->input_function(data);
-  /* eval ode*/
-  data->callback->functionODE(data);
-  data->callback->functionAlgebraics(data);
+  /* eval needed equations*/
+  data->callback->function_ZeroCrossingsEquations(data);
 
-  data->callback->function_ZeroCrossings(data, gout, t);
+  data->callback->function_ZeroCrossings(data, gout);
 
   data->threadData->currentErrorStage = saveJumpState;
   data->localData[0]->timeValue = timeBackup;

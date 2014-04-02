@@ -154,6 +154,7 @@ package SimCode
       list<SimEqSystem> inlineEquations;
       list<SimEqSystem> removedEquations;
       list<SimEqSystem> algorithmAndEquationAsserts;
+      list<SimEqSystem> equationsForZeroCrossings;
       list<SimEqSystem> jacobianEquations;
       //list<DAE.Statement> algorithmAndEquationAsserts;
       list<StateSet> stateSets;

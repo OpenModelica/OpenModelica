@@ -494,7 +494,7 @@ fmiStatus fmiGetEventIndicators(fmiComponent c, fmiReal eventIndicators[], size_
   if (invalidNumber(comp, "fmiGetEventIndicators", "ni", ni, NUMBER_OF_EVENT_INDICATORS))
     return fmiError;
 #if NUMBER_OF_EVENT_INDICATORS>0
-  comp->fmuData->callback->function_ZeroCrossings(comp->fmuData,comp->fmuData->simulationInfo.zeroCrossings,&(comp->fmuData->localData[0]->timeValue));
+  comp->fmuData->callback->function_ZeroCrossings(comp->fmuData,comp->fmuData->simulationInfo.zeroCrossings);
   for (i=0; i<ni; i++) {
     /* retVal = getEventIndicator(comp, i, eventIndicators[i]); // to be implemented by the includer of this file
      * getEventIndicator(comp, eventIndicators); // to be implemented by the includer of this file */

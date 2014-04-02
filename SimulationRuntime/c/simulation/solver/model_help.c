@@ -145,7 +145,7 @@ void saveZeroCrossings(DATA* data)
   for(i=0;i<data->modelData.nZeroCrossings;i++)
     data->simulationInfo.zeroCrossingsPre[i] = data->simulationInfo.zeroCrossings[i];
 
-  data->callback->function_ZeroCrossings(data, data->simulationInfo.zeroCrossings, &(data->localData[0]->timeValue));
+  data->callback->function_ZeroCrossings(data, data->simulationInfo.zeroCrossings);
 }
 
 /*! \fn copyStartValuestoInitValues

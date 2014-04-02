@@ -430,13 +430,12 @@ double bisection(DATA* data, double* a, double* b, double* states_a, double* sta
 
     /*calculates Values dependents on new states*/
     /* read input vars */
-      externalInputUpdate(data);
-      data->callback->input_function(data);
-    /* eval ODE*/
-    data->callback->functionODE(data);
-    data->callback->functionAlgebraics(data);
+    externalInputUpdate(data);
+    data->callback->input_function(data);
+    /* eval needed equations*/
+    data->callback->function_ZeroCrossingsEquations(data);
 
-    data->callback->function_ZeroCrossings(data, data->simulationInfo.zeroCrossings, &(data->localData[0]->timeValue));
+    data->callback->function_ZeroCrossings(data, data->simulationInfo.zeroCrossings);
 
     if(checkZeroCrossings(data, tmpEventList, eventList))  /* If Zerocrossing in left Section */
     {
@@ -526,7 +525,7 @@ void saveZeroCrossingsAfterEvent(DATA *data)
 
   infoStreamPrint(LOG_ZEROCROSSINGS, 0, "save all zerocrossings after an event"); /* ??? */
 
-  data->callback->function_ZeroCrossings(data, data->simulationInfo.zeroCrossings, &(data->localData[0]->timeValue));
+  data->callback->function_ZeroCrossings(data, data->simulationInfo.zeroCrossings);
   for(i=0; i<data->modelData.nZeroCrossings; i++)
     data->simulationInfo.zeroCrossingsPre[i] = data->simulationInfo.zeroCrossings[i];
 }

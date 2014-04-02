@@ -2110,6 +2110,54 @@ algorithm
   outIntegerArray := markStateEquationsWork(eqns,{},m,ass1,arr);
 end markStateEquations;
 
+public function markZeroCrossingEquations "function: markStateEquations
+  This function goes through all equations and marks the ones that
+  calculates a state, or is needed in order to calculate a state,
+  with a non-zero value in the array passed as argument.
+  This is done by traversing the directed graph of nodes where
+  a node is an equation/solved variable and following the edges in the
+  backward direction.
+  inputs: (daeLow: BackendDAE,
+             marks: int array,
+    incidenceMatrix: IncidenceMatrix,
+    incidenceMatrixT: IncidenceMatrixT,
+    assignments1: int vector,
+    assignments2: int vector)
+  outputs: marks: int array"
+  input BackendDAE.EqSystem syst;
+  input list<BackendDAE.ZeroCrossing> inZeroCross;
+  input array<Integer> arr;
+  input array<Integer> ass1;
+  output array<Integer> outIntegerArray;
+protected
+  list<Integer> varindx_lst,eqns;
+  BackendDAE.IncidenceMatrix m;
+  BackendDAE.Variables v,v2;
+  list<BackendDAE.Var> varlst;
+algorithm
+  BackendDAE.EQSYSTEM(orderedVars = v,m=SOME(m)) := syst;
+  (_, (_, varlst)) := traverseZeroCrossingExps(inZeroCross, varsCollector, (v,{}), {});
+  v2 := BackendVariable.listVar(varlst);
+  varindx_lst := BackendVariable.getVarIndexFromVariables(v2, v);
+  eqns := List.map1r(varindx_lst,arrayGet,ass1);
+  eqns := List.select(eqns, Util.intPositive);
+  outIntegerArray := markStateEquationsWork(eqns,{},m,ass1,arr);
+end markZeroCrossingEquations;
+
+protected function varsCollector 
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables, list<BackendDAE.Var>>> inTpl;
+  output tuple<DAE.Exp, tuple<BackendDAE.Variables, list<BackendDAE.Var>>> outTpl;
+protected
+  DAE.Exp inExp;
+  BackendDAE.Variables vars;
+  list<BackendDAE.Var> varsLst, varLst2;
+algorithm
+  (inExp, (vars, varsLst)) := inTpl;
+  varLst2 := BackendEquation.expressionVars(inExp, vars);
+  varsLst := listAppend(varsLst, varLst2);
+  outTpl := (inExp, (vars, varsLst));
+end varsCollector;
+
 protected function markStateEquationsWork
 "Helper function to mark_state_equation
   Does the job by looking at variable indexes and incidencematrices.
@@ -8017,6 +8065,65 @@ algorithm
         (alg,ext_arg_1);
   end match;
 end traverseAlgorithmExpsWithUpdate;
+
+public function traverseWhenClauseExps
+  replaceable type Type_a subtypeof Any;
+  input list<BackendDAE.WhenClause> iWhenClauses;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  input list<BackendDAE.WhenClause> iAcc;
+  output list<BackendDAE.WhenClause> oWhenClauses;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  (oWhenClauses,outTypeA) := match(iWhenClauses,func,inTypeA,iAcc)
+    local
+      list<BackendDAE.WhenClause> whenClause;
+      DAE.Exp condition;
+      list<BackendDAE.WhenOperator> reinitStmtLst;
+      Option<Integer> elseClause;
+      Type_a arg;
+    case({},_,_,_) then (listReverse(iAcc),inTypeA);
+    case(BackendDAE.WHEN_CLAUSE(condition,reinitStmtLst,elseClause)::whenClause,_,_,_)
+      equation
+        ((condition,arg)) = Expression.traverseExp(condition,func,inTypeA);
+        (whenClause,arg) = traverseWhenClauseExps(whenClause,func,arg,BackendDAE.WHEN_CLAUSE(condition,reinitStmtLst,elseClause)::iAcc);
+      then
+        (whenClause,arg);
+  end match;
+end traverseWhenClauseExps;
+
+public function traverseZeroCrossingExps
+  replaceable type Type_a subtypeof Any;
+  input list<BackendDAE.ZeroCrossing> iZeroCrossing;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  input list<BackendDAE.ZeroCrossing> iAcc;
+  output list<BackendDAE.ZeroCrossing> oZeroCrossing;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  (oZeroCrossing,outTypeA) := match(iZeroCrossing,func,inTypeA,iAcc)
+    local
+      list<BackendDAE.ZeroCrossing> zeroCrossing;
+      DAE.Exp relation_;
+      list<Integer> occurEquLst,occurWhenLst;
+      Type_a arg;
+    case({},_,_,_) then (listReverse(iAcc),inTypeA);
+    case(BackendDAE.ZERO_CROSSING(relation_,occurEquLst,occurWhenLst)::zeroCrossing,_,_,_)
+      equation
+        ((relation_,arg)) = Expression.traverseExp(relation_,func,inTypeA);
+        (zeroCrossing,arg) = traverseZeroCrossingExps(zeroCrossing,func,arg,BackendDAE.ZERO_CROSSING(relation_,occurEquLst,occurWhenLst)::iAcc);
+      then
+        (zeroCrossing,arg);
+  end match;
+end traverseZeroCrossingExps;
 
 /*
 protected function traverseBackendDAEExpsWrapper "author: Frenkel TUD

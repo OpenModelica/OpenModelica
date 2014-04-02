@@ -175,15 +175,22 @@ int (*updateBoundParameters)(DATA *data);
 /* function for checking for asserts and terminate */
 int (*checkForAsserts)(DATA *data);
 
+/*! \fn function_ZeroCrossingsEquations
+ *
+ *  This function updates all equations to evaluate function_ZeroCrossings
+ *
+ *  \param [ref] [data]
+ */
+int (*function_ZeroCrossingsEquations)(DATA *data);
+
 /*! \fn function_ZeroCrossings
  *
- *  This function evaluates if a sign change occurs at the cuurect state
+ *  This function evaluates if a sign change occurs at the current state
  *
  *  \param [ref] [data]
  *  \param [ref] [gout]
- *  \param [ref] [t]
  */
-int (*function_ZeroCrossings)(DATA *data, double* gout, double* t);
+int (*function_ZeroCrossings)(DATA *data, double* gout);
 
 /*! \fn function_updateRelations
  *

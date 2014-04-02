@@ -1161,6 +1161,20 @@ algorithm
   end match;
 end isDummyDerVar;
 
+public function isStateDerVar
+"function: isStateDerVar
+  Returns true for der(state) variables, false otherwise."
+  input BackendDAE.Var inVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean:=
+  match (inVar)
+    case (BackendDAE.VAR(varKind = BackendDAE.STATE_DER())) then true;
+  else
+   then false;
+  end match;
+end isStateDerVar;
+
 public function isStateorStateDerVar
 "Returns true for state and der(state) variables, false otherwise."
   input BackendDAE.Var inVar;
@@ -4071,6 +4085,34 @@ algorithm
   v_lst := List.consOnTrue(isStateVar(v),v,v_lst);
   outTpl := (v,v_lst);
 end traversingisStateVarFinder;
+
+public function getAllStateDerVarIndexFromVariables
+  input BackendDAE.Variables inVariables;
+  output list<BackendDAE.Var> v_lst;
+  output list<Integer> i_lst;
+algorithm
+  ((v_lst,i_lst,_)) := traverseBackendDAEVars(inVariables,traversingisStateDerVarIndexFinder,({},{},1));
+end getAllStateDerVarIndexFromVariables;
+
+protected function traversingisStateDerVarIndexFinder
+"author: Frenkel TUD 2010-11"
+  input tuple<BackendDAE.Var, tuple<list<BackendDAE.Var>,list<Integer>,Integer>> inTpl;
+  output tuple<BackendDAE.Var, tuple<list<BackendDAE.Var>,list<Integer>,Integer>> outTpl;
+algorithm
+  outTpl:=
+  matchcontinue (inTpl)
+    local
+      BackendDAE.Var v;
+      list<BackendDAE.Var> v_lst;
+      list<Integer> i_lst;
+      Integer i;
+    case ((v,(v_lst,i_lst,i)))
+      equation
+        true = isStateDerVar(v);
+      then ((v,(v::v_lst,i::i_lst,i+1)));
+    case ((v,(v_lst,i_lst,i))) then ((v,(v_lst,i_lst,i+1)));
+  end matchcontinue;
+end traversingisStateDerVarIndexFinder;
 
 public function getAllStateVarIndexFromVariables
   input BackendDAE.Variables inVariables;
