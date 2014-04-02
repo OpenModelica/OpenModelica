@@ -7070,6 +7070,15 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode)
     '<%var2%>'
+    case CALL(path=IDENT(name="homotopy"),
+            expLst={e1,e2},attr=attr as CALL_ATTR(__)) then
+    let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
+    let var2 = daeExp(e2, context, &preExp, &varDecls,simCode)
+    '<%var1%>'
+     case CALL(path=IDENT(name="homotopyParameter"),
+            expLst={},attr=attr as CALL_ATTR(__)) then
+     '1.0'
+    
    case CALL(path=IDENT(name="exp"),
             expLst={e1},attr=attr as CALL_ATTR(__)) then
     let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")
@@ -7142,10 +7151,13 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
 
   case CALL(path=IDENT(name="cat"), expLst=dim::a0::arrays, attr=attr as CALL_ATTR(__)) then
     let dim_exp = daeExp(dim, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-     let tmp_type_str = match typeof(a0)
+    let& dimstr = buffer "" 
+    let tmp_type_str = match typeof(a0)
       case ty as T_ARRAY(dims=dims) then
+        let &dimstr += listLength(dims)
         'multi_array<<%expTypeShort(ty)%>,<%listLength(dims)%>>'
         else
+        let &dimstr += 'error array dims'
         'array error'
     let ty_str = '<%expTypeArray(attr.ty)%>'
     let tvar = tempDecl(tmp_type_str, &varDecls /*BUFD*/)
@@ -7156,7 +7168,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     'std::vector<<%tmp_type_str%> > <%tvar%>_list; 
      <%tvar%>_list.push_back(<%a0str%>);
      <%arrays_exp%>
-     cat_array(<%dim_exp%>,<%tvar%>, <%tvar%>_list );
+     cat_array<<%ty_str%>,<%dimstr%> >(<%dim_exp%>,<%tvar%>, <%tvar%>_list );
     '
     '<%tvar%>'
 
