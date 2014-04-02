@@ -43,30 +43,30 @@ void* HpcOmSchedulerExtImpl__scheduleMetis(int* xadj, int* adjncy, int* vwgt, in
 {
     void *res = mk_nil();
     int nvert=xadjCount-1;
-  	idx_t met_nvtxs=xadjCount-1;
-	idx_t met_ncon=1;
-	//double * part=new double[nvert];
-	idx_t * met_xadj=new idx_t[nvert+1]; //={0,2,5,8,11,13,16,20,24,28,31,33,36,39,42,44};
-	idx_t * met_adjncy=new idx_t[xadj[nvert]];//={1,5,0,2,6,1,3,7,2,4,8,3,9,0,6,10,1,5,7,11,2,6,8,12,3,7,9,13,4,8,14,5,11,6,10,12,2,7,11,13,8,12,14,9,13};
-	idx_t * met_vwgt=new idx_t[nvert]; //={0,2,5,8,11,13,16,20,24,28,31,33,36,39,42,44};
-	idx_t * met_adjwgt=new idx_t[xadj[nvert]];
-	idx_t met_objval;
-	idx_t * met_part=new idx_t[nvert];
-	idx_t met_nparts=nparts;
-	int returnval;
+    idx_t met_nvtxs=xadjCount-1;
+  idx_t met_ncon=1;
+  //double * part=new double[nvert];
+  idx_t * met_xadj=new idx_t[nvert+1]; //={0,2,5,8,11,13,16,20,24,28,31,33,36,39,42,44};
+  idx_t * met_adjncy=new idx_t[xadj[nvert]];//={1,5,0,2,6,1,3,7,2,4,8,3,9,0,6,10,1,5,7,11,2,6,8,12,3,7,9,13,4,8,14,5,11,6,10,12,2,7,11,13,8,12,14,9,13};
+  idx_t * met_vwgt=new idx_t[nvert]; //={0,2,5,8,11,13,16,20,24,28,31,33,36,39,42,44};
+  idx_t * met_adjwgt=new idx_t[xadj[nvert]];
+  idx_t met_objval;
+  idx_t * met_part=new idx_t[nvert];
+  idx_t met_nparts=nparts;
+  int returnval;
 
-	for(int i=0; i<nvert; i++) {
-  		met_xadj[i]=xadj[i];
-		met_vwgt[i]=vwgt[i];
-//		cout<<met_xadj[i]<<" "<<met_vwgt[i]<<endl;
-	}
-	met_xadj[nvert]=xadj[nvert];
+  for(int i=0; i<nvert; i++) {
+      met_xadj[i]=xadj[i];
+    met_vwgt[i]=vwgt[i];
+//    cout<<met_xadj[i]<<" "<<met_vwgt[i]<<endl;
+  }
+  met_xadj[nvert]=xadj[nvert];
 //        cout<<"test: "<<met_xadj[nvert+4]<<endl;
-	for(int i=0; i<xadj[nvert]; i++) {
-		met_adjncy[i]=adjncy[i];
-		met_adjwgt[i]=adjwgt[i];
-//		cout<<met_adjncy[i]<<" "<<met_adjwgt[i]<<endl;
-	}
+  for(int i=0; i<xadj[nvert]; i++) {
+    met_adjncy[i]=adjncy[i];
+    met_adjwgt[i]=adjwgt[i];
+//    cout<<met_adjncy[i]<<" "<<met_adjwgt[i]<<endl;
+  }
     int * result=new int[nvert];
     returnval=METIS_PartGraphKway(&met_nvtxs,&met_ncon,met_xadj,met_adjncy,met_vwgt,NULL,met_adjwgt,&met_nparts,NULL,NULL,NULL,&met_objval,met_part);
     for(int i=nvert-1; i>=0; i--) {
