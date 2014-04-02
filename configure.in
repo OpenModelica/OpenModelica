@@ -113,6 +113,8 @@ fi
 AC_PREFIX_DEFAULT($PREFIX)
 prefix=$PREFIX
 
+AC_ARG_ENABLE(non-free-packages, [  --enable-non-free-packages     Enables you to link non-free packages. But doing so limits your ability to distribute code under GPL3, even to co-workers and the like. If you are an OSMC member you might be allowed to link and ship such libraries if you have a commercial license for the linked packages.],[test "yes" = "$enableval" && ENABLE_NON_FREE_PACKAGES=1 && NON_FREE_VERSION=") (non-free version for personal use only; seriously do not distribute this binary"] && FINAL_MESSAGES="$FINAL_MESSAGES\nLinking against non-free packages: Yes (this version of omc not for distribution)")
+
 dnl Checks for programs.
 AC_LANG([C])
 AC_PROG_CC
@@ -891,13 +893,16 @@ AC_ARG_WITH(METIS, [  --with-METIS=DIR                 Compile with Metis graph 
 
 AC_ARG_WITH(PATOH, [  --with-PATOH=DIR                 Compile with PATOH hypergraph partitioner in DIR],
 [
-	USE_PATOH=1
-	if test USE_METIS=1; then
-        AC_MSG_RESULT([ Cannot compile with METIS and PATOH. Choosing PATOH only. ] )
-        METISHOME="";
-	fi
-	USE_METIS=0
-	USE_GRAPH=1
+    USE_PATOH=1
+    if test "$ENABLE_NON_FREE_PACKAGES" = ""; then
+      AC_MSG_ERROR([May not compile PATOH unless non-free packages are enabled (enabling those limits your ability to distribute code under GPL3, even to co-workers and the like; if you are an OSMC member you might be allowed to link and ship the library, but only if you have a commercial license...)] )
+    fi
+    if test "$USE_METIS" = 1; then
+      AC_MSG_ERROR([Cannot compile with METIS and PATOH] )
+      METISHOME="";
+    fi
+    USE_METIS=0
+    USE_GRAPH=1
     AC_MSG_RESULT([Enabling PATOH... PATOHHOME="$withval"]);
 	PATOHHOME="$withval";
 ], [
@@ -935,6 +940,7 @@ test -z "$SOURCE_REVISION" && SOURCE_REVISION=`svn info 2>&1 | grep ^Revision: |
 test -z "$SOURCE_REVISION" && SOURCE_REVISION="????"
 
 AC_MSG_RESULT([$SOURCE_REVISION])
+SOURCE_REVISION="$SOURCE_REVISION$NON_FREE_VERSION"
 
 AC_MSG_CHECKING([for OpenModelica platform name])
 # I don't really agree with the Modelica specification since "Intel 32-bit" is

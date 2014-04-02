@@ -5781,8 +5781,8 @@ algorithm
     case ((fromnode,tonode,cost),_,_,_,_)
       equation
         true = intEq(fromnode,actnode);
-        adjwgt = arrayUpdate(adjwgt,imarker,cost);
-        adjncy = arrayUpdate(adjncy,imarker,tonode-1);
+        arrayUpdate(adjwgt,imarker,cost);
+        arrayUpdate(adjncy,imarker,tonode-1);
       then
         imarker+1;
     case (_,_,_,_,_)
@@ -5802,7 +5802,7 @@ protected
   Integer position;
 algorithm
   omarker := List.fold3(help,sortEdgeHelp,actnode,adjncy,adjwgt,imarker);
-  xadj := arrayUpdate(xadj,actnode+1,omarker-1);
+  arrayUpdate(xadj,actnode+1,omarker-1);
 end sortEdge;
 
 
@@ -5816,7 +5816,7 @@ protected
 algorithm
   value:=getExeCost(node,iTaskGraphMeta);
   (_,rv):=value;
-  vwgt:=arrayUpdate(vwgt,node,realInt(rv));
+  arrayUpdate(vwgt,node,realInt(rv));
 end setVwgt;
 
 public function prepareMetis
