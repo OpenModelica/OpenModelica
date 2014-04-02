@@ -6001,7 +6001,7 @@ template functionBodyBoxedImpl(Absyn.Path name, list<Variable> funargs, list<Var
     case (v as VARIABLE(__))::_ then
       let _ = varInit(v, "", &varDecls, &outputAllocIgnore, &varFreesIgnore)
       let out = ("out" + funArgName(v))
-      let _ = funArgBox(out, funArgName(v), v.ty, &varUnbox, &varDecls)
+      let _ = funArgBox(out, funArgName(v), "", v.ty, &varUnbox, &varDecls)
       (if mmcConstructorType(v.ty) then
         let &varDecls += 'modelica_metatype <%out%>;<%\n%>'
         out
@@ -6013,7 +6013,7 @@ template functionBodyBoxedImpl(Absyn.Path name, list<Variable> funargs, list<Var
     )
   let _ = (List.restOrEmpty(outvars) |> var as VARIABLE(__) =>
     let arg = funArgName(var)
-    funArgBox('*out<%arg%>', arg, ty, &varUnbox, &varDecls)
+    funArgBox('*out<%arg%>', arg, 'out<%arg%>', ty, &varUnbox, &varDecls)
     ; separator="\n")
   let prototype = functionPrototype(fname, funargs, outvars, true)
   <<
@@ -6103,13 +6103,13 @@ case T_COMPLEX(complexClassType = RECORD(path = path), varLst = vars) then
   tmpVar
 end unboxRecord;
 
-template funArgBox(String outName, String varName, Type ty, Text &varUnbox, Text &varDecls)
+template funArgBox(String outName, String varName, String condition, Type ty, Text &varUnbox, Text &varDecls)
  "Generates code to box a variable."
 ::=
   let constructorType = mmcConstructorType(ty)
   if constructorType then
     let constructor = mmcConstructor(ty, varName, &varUnbox, &varDecls)
-    let &varUnbox += '<%outName%> = <%constructor%>;<%\n%>'
+    let &varUnbox += if condition then 'if (<%condition%>) { <%outName%> = <%constructor%>; }<%\n%>' else '<%outName%> = <%constructor%>;<%\n%>'
     outName
   else // Some types don't need to be boxed, since they're already boxed.
     varName
@@ -6140,7 +6140,7 @@ template mmcConstructor(Type type, String varName, Text &preExp, Text &varDecls)
     let varsStr = (vars |> var as TYPES_VAR(__) =>
       let tmp = tempDecl("modelica_metatype", &varDecls)
       let varname = '<%varName%>._<%name%>'
-      ", " + funArgBox(tmp, varname, ty, &preExp, &varDecls)
+      ", " + funArgBox(tmp, varname, "", ty, &preExp, &varDecls)
       )
     'mmc_mk_box<%varCount%>(3, &<%underscorePath(path)%>__desc<%varsStr%>)'
   case T_COMPLEX(__) then 'mmc_mk_box(<%varName%>)'
@@ -10216,10 +10216,13 @@ template algStmtAssignPattern(DAE.Statement stmt, Context context, Text &varDecl
     match pat
       case PAT_WILD(__) then '/* Pattern-matching tuple assignment, wild first pattern */<%\n%><%preExp%><%expPart%>;<%\n%><%matchPhase%><%assignments%>'
       else
-        let res = patternMatch(pat,expPart,"MMC_THROW_INTERNAL()",&varDecls,&assignments1)
+        let v = tempDecl(expTypeModelica(ty), &varDecls)
+        let res = patternMatch(pat,v,"MMC_THROW_INTERNAL()",&varDecls,&assignments1)
         <<
         /* Pattern-matching tuple assignment */
-        <%preExp%><%res%><%assignments1%><%matchPhase%><%assignments%>
+        <%preExp%>
+        <%v%> = <%expPart%>;
+        <%res%><%assignments1%><%matchPhase%><%assignments%>
         >>
   case s as STMT_ASSIGN(exp1=lhs as PATTERN(pattern=PAT_WILD(__))) then
     error(sourceInfo(),'Improve simplifcation, got pattern assignment _ = <%printExpStr(exp)%>, expected NORETCALL')

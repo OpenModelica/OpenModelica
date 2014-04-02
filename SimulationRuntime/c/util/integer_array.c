@@ -897,22 +897,22 @@ void mul_alloc_integer_array_scalar(const integer_array_t * a,modelica_integer b
 }
 
 
-modelica_integer mul_integer_scalar_product(const integer_array_t * a, const integer_array_t * b)
+modelica_integer mul_integer_scalar_product(const integer_array_t a, const integer_array_t b)
 {
     size_t nr_of_elements;
     size_t i;
     modelica_integer res;
 
     /* Assert that a and b are vectors */
-    assert(a->ndims == 1);
-    assert(b->ndims == 1);
+    assert(a.ndims == 1);
+    assert(b.ndims == 1);
     /* Assert that vectors are of matching size */
-    assert(a->dim_size[0] == b->dim_size[0]);
+    assert(a.dim_size[0] == b.dim_size[0]);
 
-    nr_of_elements = integer_array_nr_of_elements(a);
+    nr_of_elements = integer_array_nr_of_elements(&a);
     res = 0;
     for(i = 0; i < nr_of_elements; ++i) {
-        res += integer_get(*a, i)*integer_get(*b, i);
+        res += integer_get(a, i)*integer_get(b, i);
     }
     return res;
 }
