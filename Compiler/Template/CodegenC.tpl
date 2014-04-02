@@ -4804,7 +4804,7 @@ template contextArrayReferenceCrefAndCopy(ComponentRef cr, Exp e, Type ty, Conte
       var
     case T_COMPLEX(complexClassType=RECORD(__)) then
       let &varCopyAfter = buffer ""
-      let var = tempDecl(expTypeModelica(ty), &varDecls)
+      let var = tempDecl(expTypeArrayIf(ty), &varDecls)
       let lhs = writeLhsCref(e, var, context, &varCopyAfter, &varDecls)
       let &varCopy += if lhs then '<%lhs%><%\n%>' else error(sourceInfo(), 'Got empty statement from writeLhsCref(<%printExpStr(e)%>)')
       let &varCopy += varCopyAfter
@@ -9198,8 +9198,16 @@ template daeExpTsub(Exp inExp, Context context, Text &preExp /*BUFP*/,
  "Generates code for an tsub expression."
 ::=
   match inExp
-  case TSUB(__) then
+  case TSUB(ix=1) then
     daeExp(exp, context, &preExp, &varDecls)
+  case TSUB(exp=CALL(attr=CALL_ATTR(ty=T_TUPLE(tupleType=tys)))) then
+    let v = tempDecl(expTypeArrayIf(listGet(tys,ix)), &varDecls)
+    let additionalOutputs = List.restOrEmpty(tys) |> ty hasindex i1 fromindex 2 => if intEq(i1,ix) then ', &<%v%>' else ", NULL"
+    let res = daeExpCallTuple(exp, additionalOutputs, context, &preExp, &varDecls)
+    let &preExp += '<%res%>;<%\n%>'
+    v
+  case TSUB(__) then
+    error(sourceInfo(), '<%printExpStr(inExp)%>: TSUB only makes sense if the subscripted expression is a function call of tuple type')
 end daeExpTsub;
 
 template daeExpAsub(Exp inExp, Context context, Text &preExp /*BUFP*/,
@@ -10208,7 +10216,7 @@ template algStmtAssignPattern(DAE.Statement stmt, Context context, Text &varDecl
         let &additionalOutputs += ", NULL"
         ""
       else
-        let v = tempDecl(expTypeModelica(ty), &varDecls)
+        let v = tempDecl(expTypeArrayIf(ty), &varDecls)
         let &additionalOutputs += ', &<%v%>'
         let &matchPhase += patternMatch(pat,v,"MMC_THROW_INTERNAL()",&varDecls,&assignments)
         ""
@@ -10216,7 +10224,7 @@ template algStmtAssignPattern(DAE.Statement stmt, Context context, Text &varDecl
     match pat
       case PAT_WILD(__) then '/* Pattern-matching tuple assignment, wild first pattern */<%\n%><%preExp%><%expPart%>;<%\n%><%matchPhase%><%assignments%>'
       else
-        let v = tempDecl(expTypeModelica(ty), &varDecls)
+        let v = tempDecl(expTypeArrayIf(ty), &varDecls)
         let res = patternMatch(pat,v,"MMC_THROW_INTERNAL()",&varDecls,&assignments1)
         <<
         /* Pattern-matching tuple assignment */
@@ -10300,7 +10308,7 @@ template patternMatch(Pattern pat, Text rhs, Text onPatternFail, Text &varDecls,
         match p
         case PAT_WILD(__) then ""
         else
-        let tvar = tempDecl(expTypeModelica(t), &varDecls)
+        let tvar = tempDecl(expTypeArrayIf(t), &varDecls)
         <<<%tvar%> = <%rhs%>._<%n%>;
         <%patternMatch(p,tvar,onPatternFail,&varDecls,&assignments)%>
         >>%>

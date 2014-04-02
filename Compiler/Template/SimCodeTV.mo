@@ -14,6 +14,13 @@ package builtin
     output Integer result;
   end listLength;
 
+  function listGet
+    replaceable type TypeVar subtypeof Any;    
+    input list<TypeVar> lst;
+    input Integer ix;
+    output TypeVar result;
+  end listGet;
+
   function listNth
     replaceable type TypeVar subtypeof Any;    
     input list<TypeVar> lst;
