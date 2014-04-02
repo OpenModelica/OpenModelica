@@ -8094,13 +8094,10 @@ algorithm
   sode1 := FindZeroCrossings.findZeroCrossings(optsode);
   Debug.execStat("findZeroCrossings", GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   _ := traverseBackendDAEExpsNoCopyWithUpdate(sode1, ExpressionSimplify.simplifyTraverseHelper, 0) "simplify all expressions";
+  Debug.execStat("postOpt SimplifyAllExp", GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   outSODE := calculateValues(sode1);
+  Debug.execStat("calculateValue", GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   
-  // moved to SimCodeUtil because of initial system
-  // Debug.execStat("calculateValue", GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
-  // outSODE := expandAlgorithmsbyInitStmts(sode2);
-  
-  Debug.execStat("expandAlgorithmsbyInitStmts", GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   Debug.fcall2(Flags.DUMP_INDX_DAE, BackendDump.dumpBackendDAE, outSODE, "dumpindxdae");
   Debug.bcall2(Flags.isSet(Flags.DUMP_INDX_DAE) and Flags.isSet(Flags.ADDITIONAL_GRAPHVIZ_DUMP), BackendDump.graphvizBackendDAE, outSODE, "dumpindxdae");
   Debug.fcall2(Flags.DUMP_TRANSFORMED_MODELICA_MODEL, BackendDump.dumpBackendDAEToModelica, outSODE, "dumpindxdae");
