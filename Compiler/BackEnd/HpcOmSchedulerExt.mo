@@ -37,7 +37,7 @@ encapsulated package HpcOmSchedulerExt
   RCS: $Id: HpcOmSchedulerExt.mo 2013-09-27 marcusw $
 
   "
-  
+
 public function readScheduleFromGraphMl
   input String filename;
   output list<Integer> res;
@@ -49,8 +49,19 @@ public function scheduleMetis
   input array<Integer> adjncy;
   input array<Integer> vwgt;
   input array<Integer> adjwgt;
+  input Integer nparts;
   output list<Integer> res;
-  external "C" res=HpcOmSchedulerExt_scheduleMetis(xadj,adjncy,vwgt,adjwgt) annotation(Library = "omcruntime");
+  external "C" res=HpcOmSchedulerExt_scheduleMetis(xadj,adjncy,vwgt,adjwgt,nparts) annotation(Library = "omcruntime");
 end scheduleMetis;
+
+public function schedulehMetis
+  input array<Integer> vwgts;
+  input array<Integer> eptr;
+  input array<Integer> eint;
+  input array<Integer> hewgts;
+  input Integer nparts;
+  output list<Integer> res;
+  external "C" res=HpcOmSchedulerExt_schedulehMetis(vwgts,eptr,eint,hewgts,nparts) annotation(Library = "omcruntime");
+end schedulehMetis;
 
 end HpcOmSchedulerExt;

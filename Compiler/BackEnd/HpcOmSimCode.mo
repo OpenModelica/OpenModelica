@@ -89,7 +89,7 @@ algorithm
       DAE.FunctionTree functionTree;
       BackendDAE.SymbolicJacobians symJacs;
       Absyn.Path class_;
-      
+
       // new variables
       SimCode.ModelInfo modelInfo;
       list<SimCode.SimEqSystem> allEquations;
@@ -131,7 +131,7 @@ algorithm
 
       list<DAE.Exp> lits;
       list<SimCode.SimVar> tempvars;
-      
+
       SimCode.JacobianMatrix jacG;
       Integer highestSccIdx, compCountPlusDummy;
       Option<BackendDAE.BackendDAE> inlineDAE;
@@ -142,10 +142,10 @@ algorithm
       array<Integer> simeqNodeMapping; //Maps each simEq to the scc
       list<BackendDAE.TimeEvent> timeEvents;
       BackendDAE.StrongComponents allComps;
-      
-      HpcOmTaskGraph.TaskGraph taskGraph;  
+
+      HpcOmTaskGraph.TaskGraph taskGraph;
       HpcOmTaskGraph.TaskGraph taskGraphOde;
-      HpcOmTaskGraph.TaskGraph taskGraph1;  
+      HpcOmTaskGraph.TaskGraph taskGraph1;
       HpcOmTaskGraph.TaskGraphMeta taskGraphData;
       HpcOmTaskGraph.TaskGraphMeta taskGraphDataOde;
       String fileName, fileNamePrefix;
@@ -154,7 +154,7 @@ algorithm
       list<list<Integer>> parallelSets;
       list<list<Integer>> criticalPaths, criticalPathsWoC;
       Real cpCosts, cpCostsWoC, serTime, parTime, speedUp, speedUpMax;
-      
+
       //Additional informations to append SimCode
       list<DAE.Exp> simCodeLiterals;
       list<SimCode.JacobianMatrix> jacobianMatrixes;
@@ -162,7 +162,7 @@ algorithm
       Option<SimCode.SimulationSettings> simulationSettingsOpt;
       list<SimCode.RecordDeclaration> simCodeRecordDecls;
       list<String> simCodeExternalFunctionIncludes;
-      
+
       Boolean taskGraphMetaValid, numFixed;
       String taskGraphMetaMessage, criticalPathInfo;
       array<tuple<Integer,Integer,Real>> schedulerInfo;
@@ -173,10 +173,10 @@ algorithm
       Integer graphOps;
     case (BackendDAE.DAE(eqs=eqs), _, _, _, _, _, _, _, _, _, _, _) equation
       uniqueEqIndex = 1;
-    
+
       //Setup
       //-----
-      System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);  
+      System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
       (simCode,(lastEqMappingIdx,equationSccMapping)) = SimCodeUtil.createSimCode(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
       (allComps,_) = HpcOmTaskGraph.getSystemComponents(inBackendDAE);
       highestSccIdx = findHighestSccIdxInMapping(equationSccMapping,-1);
@@ -184,46 +184,46 @@ algorithm
       equationSccMapping1 = removeDummyStateFromMapping(equationSccMapping);
       //the mapping can contain a dummy state as first scc
       equationSccMapping = Util.if_(intEq(highestSccIdx, compCountPlusDummy), equationSccMapping1, equationSccMapping);
-      
+
       sccSimEqMapping = convertToSccSimEqMapping(equationSccMapping, listLength(allComps));
       simeqNodeMapping = convertToSimeqNodeMapping(equationSccMapping, lastEqMappingIdx);
-      Debug.execStat("hpcom setup", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);      
-      
+      Debug.execStat("hpcom setup", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
+
       //dumpSccSimEqMapping(sccSimEqMapping);
 
       //Create TaskGraph
       //----------------
       (taskGraph,taskGraphData) = HpcOmTaskGraph.createTaskGraph(inBackendDAE,filenamePrefix);
-      
-      Debug.execStat("hpcom createTaskGraph", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);  
-      fileName = ("taskGraph"+&filenamePrefix+&".graphml"); 
-      schedulerInfo = arrayCreate(arrayLength(taskGraph), (-1,-1,-1.0));   
+
+      Debug.execStat("hpcom createTaskGraph", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
+      fileName = ("taskGraph"+&filenamePrefix+&".graphml");
+      schedulerInfo = arrayCreate(arrayLength(taskGraph), (-1,-1,-1.0));
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph, taskGraphData, fileName, "", {}, {}, sccSimEqMapping ,schedulerInfo);
-      Debug.execStat("hpcom dump TaskGraph", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES); 
+      Debug.execStat("hpcom dump TaskGraph", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
 
       HpcOmTaskGraph.TASKGRAPHMETA(varNodeMapping=varNodeMapping,eqNodeMapping=eqNodeMapping) = taskGraphData;
       //HpcOmTaskGraph.printvarNodeMapping(varNodeMapping,1);
       //HpcOmTaskGraph.printeqNodeMapping(eqNodeMapping,1);
-      
+
       //Create Costs
       //------------
-      taskGraphData = HpcOmTaskGraph.createCosts(inBackendDAE, filenamePrefix +& "_eqs_prof.xml" , simeqNodeMapping, taskGraphData); 
+      taskGraphData = HpcOmTaskGraph.createCosts(inBackendDAE, filenamePrefix +& "_eqs_prof.xml" , simeqNodeMapping, taskGraphData);
       Debug.execStat("hpcom create costs", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
-      
+
       //Get ODE System
       //--------------
       taskGraphOde = arrayCopy(taskGraph);
       taskGraphDataOde = HpcOmTaskGraph.copyTaskGraphMeta(taskGraphData);
       (taskGraphOde,taskGraphDataOde) = HpcOmTaskGraph.getOdeSystem(taskGraphOde,taskGraphDataOde,inBackendDAE,filenamePrefix);
       Debug.execStat("hpcom get ODE system", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
-      
+
       taskGraphMetaValid = HpcOmTaskGraph.validateTaskGraphMeta(taskGraphDataOde, inBackendDAE);
       taskGraphMetaMessage = Util.if_(taskGraphMetaValid, "TaskgraphMeta valid\n", "TaskgraphMeta invalid\n");
       print(taskGraphMetaMessage);
-      
+
       //HpcOmTaskGraph.printTaskGraph(taskGraphOde);
-      //HpcOmTaskGraph.printTaskGraphMeta(taskGraphDataOde); 
-      
+      //HpcOmTaskGraph.printTaskGraphMeta(taskGraphDataOde);
+
       //Assign levels and get critcal path
       //----------------------------------
       ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC),parallelSets) = HpcOmTaskGraph.longestPathMethod(taskGraphOde,taskGraphDataOde);
@@ -233,10 +233,10 @@ algorithm
       ((graphOps,graphCosts)) = HpcOmTaskGraph.sumUpExecCosts(taskGraphDataOde);
       graphCosts = HpcOmTaskGraph.roundReal(graphCosts,2);
       criticalPathInfo = criticalPathInfo +& " sum: (" +& realString(graphCosts) +& " ; " +& intString(graphOps) +& ")";
-      fileName = ("taskGraph"+&filenamePrefix+&"ODE.graphml");  
+      fileName = ("taskGraph"+&filenamePrefix+&"ODE.graphml");
       schedulerInfo = arrayCreate(arrayLength(taskGraphOde), (-1,-1,-1.0));
       Debug.execStat("hpcom assign levels / get crit. path", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
-      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOde, taskGraphDataOde, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo);  
+      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOde, taskGraphDataOde, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo);
       Debug.execStat("hpcom dump ODE TaskGraph", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
 
       //Apply filters
@@ -247,7 +247,7 @@ algorithm
       Debug.execStat("hpcom GRS", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
       //Debug.fcall(Flags.HPCOM_DUMP,HpcOmTaskGraph.printTaskGraph,taskGraph1);
       //Debug.fcall(Flags.HPCOM_DUMP,HpcOmTaskGraph.printTaskGraphMeta,taskGraphData1);
-      
+
       //Create schedule
       //---------------
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
@@ -258,32 +258,32 @@ algorithm
       taskScheduleSimCode = HpcOmScheduler.convertScheduleToSimCodeSchedule(schedule);
       schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(schedule,arrayLength(taskGraph));
       Debug.execStat("hpcom create schedule", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
-      fileName = ("taskGraph"+&filenamePrefix+&"ODE_schedule.graphml");  
-      
+      fileName = ("taskGraph"+&filenamePrefix+&"ODE_schedule.graphml");
+
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph1, taskGraphData1, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo);
       //HpcOmScheduler.printSchedule(schedule);
-      
+
       Debug.execStat("hpcom dump schedule TaskGraph", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
-      SimCode.SIMCODE(modelInfo, simCodeLiterals, simCodeRecordDecls, simCodeExternalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations, 
-                 parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses, 
+      SimCode.SIMCODE(modelInfo, simCodeLiterals, simCodeRecordDecls, simCodeExternalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
+                 parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT, _) = simCode;
 
       checkOdeSystemSize(taskGraphOde,odeEquations);
       Debug.execStat("hpcom check ODE system size", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
 
-      simCode = SimCode.SIMCODE(modelInfo, simCodeLiterals, simCodeRecordDecls, simCodeExternalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations, 
-                 parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses, 
+      simCode = SimCode.SIMCODE(modelInfo, simCodeLiterals, simCodeRecordDecls, simCodeExternalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
+                 parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT, SOME(taskScheduleSimCode));
-      
-      
+
+
       analyzeCacheBehaviour(modelInfo, taskGraph1, taskGraphData1, eqs, filenamePrefix, schedulerInfo, schedule, sccSimEqMapping, criticalPaths, criticalPathsWoC, criticalPathInfo, allComps);
       //evaluateCacheBehaviour(schedulerInfo,taskGraphData1,clTaskMapping, transposeCacheLineTaskMapping(clTaskMapping, arrayLength(taskGraph1)));
-      
-      
-      
-      
+
+
+
+
       //printCacheMap(cacheMap);
-      
+
       print("HpcOm is still under construction.\n");
       then simCode;
     else equation
@@ -399,8 +399,8 @@ algorithm
         numProc = intMin(numProcSched,numProcSys);
         string1 = "Your system provides only "+&intString(numProcSys)+&" processors!\n";
         string2 = intString(numProcSched)+&" processors might be a reasonable number of processors.\n";
-        string1 = Util.if_(intGt(numProcSched,numProcSys),string1,string2);          
-        isFixed =  Util.if_(intGt(numProcSched,numProcSys),true,false);  
+        string1 = Util.if_(intGt(numProcSched,numProcSys),string1,string2);
+        isFixed =  Util.if_(intGt(numProcSched,numProcSys),true,false);
         print("Please set the number of processors you want to use!\n");
         print(string1);
       then
@@ -417,18 +417,18 @@ end setNumProc;
 
 
 protected function applyFiltersToGraph
-  input HpcOmTaskGraph.TaskGraph iTaskGraph;  
+  input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   input BackendDAE.BackendDAE inBackendDAE;
   input Boolean iApplyFilters;
-  output HpcOmTaskGraph.TaskGraph oTaskGraph;  
+  output HpcOmTaskGraph.TaskGraph oTaskGraph;
   output HpcOmTaskGraph.TaskGraphMeta oTaskGraphMeta;
 protected
   String flagValue;
   Boolean changed1,changed2;
   HpcOmTaskGraph.TaskGraph taskGraph1;
   HpcOmTaskGraph.TaskGraphMeta taskGraphMeta1;
-  
+
   array<list<Integer>> sccSimEqMapping;
   BackendDAE.StrongComponents allComps;
   array<tuple<Integer,Integer>> schedulerInfo;
@@ -446,7 +446,7 @@ algorithm
         taskGraph1 = arrayCopy(iTaskGraph);
         taskGraphMeta1 = HpcOmTaskGraph.copyTaskGraphMeta(iTaskGraphMeta);
         (taskGraph1,taskGraphMeta1,changed1) = HpcOmTaskGraph.mergeSimpleNodes(taskGraph1,taskGraphMeta1,inBackendDAE);
-        
+
         //(allComps,_) = HpcOmTaskGraph.getSystemComponents(inBackendDAE);
         //sccSimEqMapping = arrayCreate(listLength(allComps), {});
         //schedulerInfo = arrayCreate(arrayLength(taskGraph1), (-1,-1));
@@ -460,7 +460,7 @@ algorithm
 end applyFiltersToGraph;
 
 protected function createSchedule
-  input HpcOmTaskGraph.TaskGraph iTaskGraph;  
+  input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   input array<list<Integer>> iSccSimEqMapping;
   input String iFilenamePrefix;
@@ -495,9 +495,15 @@ algorithm
     case(_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
-        true = stringEq(flagValue, "extc");
-        print("Using external-c Scheduler\n");
+        true = stringEq(flagValue, "metis");
+        print("Using METIS Scheduler\n");
       then HpcOmScheduler.createExtCSchedule(iTaskGraph, iTaskGraphMeta, numProc, iSccSimEqMapping);
+    case(_,_,_,_,_)
+      equation
+        flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
+        true = stringEq(flagValue, "hmet");
+        print("Using hMETIS Scheduler\n");
+      then HpcOmScheduler.createhmetSchedule(iTaskGraph, iTaskGraphMeta, numProc, iSccSimEqMapping);
     case(_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
@@ -538,7 +544,7 @@ protected function convertToSccSimEqMapping "function convertToSccSimEqMapping
   input list<tuple<Integer,Integer>> iMapping; //the mapping (simEqIndex -> sccIndex)
   input Integer numOfSccs; //important for arrayCreate
   output array<list<Integer>> oMapping; //the created mapping (sccIndex->simEqIndex)
-  
+
 protected
   array<list<Integer>> tmpMapping;
 
@@ -547,7 +553,7 @@ algorithm
   //print("convertToSccSimEqMapping with " +& intString(numOfSccs) +& " sccs.\n");
   _ := List.fold(iMapping, convertToSccSimEqMapping1, tmpMapping);
   oMapping := tmpMapping;
-  
+
 end convertToSccSimEqMapping;
 
 protected function convertToSccSimEqMapping1 "function convertToSccSimEqMapping1
@@ -556,18 +562,18 @@ protected function convertToSccSimEqMapping1 "function convertToSccSimEqMapping1
   input tuple<Integer,Integer> iMapping; //<simEqIdx,sccIdx>
   input array<list<Integer>> iSccMapping;
   output array<list<Integer>> oSccMapping;
-  
+
 protected
   Integer i1,i2;
   List<Integer> tmpList;
-  
+
 algorithm
   (i1,i2) := iMapping;
   //print("convertToSccSimEqMapping1 accessing index " +& intString(i2) +& ".\n");
   tmpList := arrayGet(iSccMapping,i2);
   tmpList := i1 :: tmpList;
   oSccMapping := arrayUpdate(iSccMapping,i2,tmpList);
-  
+
 end convertToSccSimEqMapping1;
 
 protected function convertToSimeqNodeMapping "function convertToSimeqNodeMapping
@@ -576,10 +582,10 @@ protected function convertToSimeqNodeMapping "function convertToSimeqNodeMapping
   input list<tuple<Integer,Integer>> iMapping; //<simEqIdx,sccIdx>
   input Integer numOfSimEqs;
   output array<Integer> oMapping; //maps each simEq to the scc
-  
+
 protected
   array<Integer> tmpMapping;
-  
+
 algorithm
   tmpMapping := arrayCreate(numOfSimEqs, -1);
   oMapping := List.fold(iMapping, convertToSimeqNodeMapping1, tmpMapping);
@@ -591,10 +597,10 @@ protected function convertToSimeqNodeMapping1 "function convertToSimeqNodeMappin
   input tuple<Integer,Integer> iSimEqTuple; //<simEqIdx,sccIdx>
   input array<Integer> iMapping;
   output array<Integer> oMapping;
- 
+
 protected
   Integer simEqIdx,sccIdx;
-  
+
 algorithm
   (simEqIdx,sccIdx) := iSimEqTuple;
   //print("convertToSimeqNodeMapping1 " +& intString(simEqIdx) +& " .. " +& intString(sccIdx) +& " iMapping_len: " +& intString(arrayLength(iMapping)) +& "\n");
@@ -605,10 +611,10 @@ protected function dumpSccSimEqMapping "function dumpSccSimEqMapping
   author: marcusw
   Prints the given mapping out to the console."
   input array<list<Integer>> iSccMapping;
- 
+
 protected
   String text;
-  
+
 algorithm
   text := "SccToSimEqMapping";
   ((_,text)) := Util.arrayFold(iSccMapping, dumpSccSimEqMapping1, (1,text));
@@ -625,7 +631,7 @@ protected function dumpSccSimEqMapping1 "function dumpSccSimEqMapping1
 protected
   Integer iIndex;
   String text, iText;
-  
+
 algorithm
   (iIndex,iText) := iIndexText;
   text := List.fold(iMapping, dumpSccSimEqMapping2, " ");
@@ -639,10 +645,10 @@ protected function dumpSccSimEqMapping2 "function dumpSccSimEqMapping2
   input Integer iIndex;
   input String iText;
   output String oText;
-  
+
 algorithm
   oText := iText +& intString(iIndex) +& " ";
-   
+
 end dumpSccSimEqMapping2;
 
 public function getSimCodeEqByIndex "function getSimCodeEqByIndex
@@ -877,15 +883,15 @@ algorithm
         //hashTable = fillSimVarHashTable(derivativeVars,listLength(stateVars),0,hashTable);
         hashTable = fillSimVarHashTable(algVars,listLength(stateVars)*2,0,hashTable);
         //hashTable = fillSimVarHashTable(paramVars,listLength(stateVars)*2 + listLength(algVars),0,hashTable);
-      
+
         //Create CacheMap
         scVarTaskMapping = getScVarTaskMapping(iTaskGraphMeta,iEqSystems,listLength(stateVars)*2+listLength(algVars),hashTable);
         (cacheMap,scVarCLMapping,numCL) = createCacheMapOptimized(stateVars,derivativeVars,algVars,paramVars,scVarTaskMapping,64,iAllComponents,iSchedule);
-      
+
         //Create required mappings
         sccNodeMapping = HpcOmTaskGraph.getSccNodeMapping(arrayLength(iSccSimEqMapping), iTaskGraphMeta);
         eqSimCodeVarMapping = getEqSCVarMapping(iEqSystems,hashTable);
-      
+
         (clTaskMapping,scVarTaskMapping) = getCacheLineTaskMapping(iTaskGraphMeta,iEqSystems,hashTable,numCL,scVarCLMapping);
 
         //Append cache line nodes to graph
@@ -897,7 +903,7 @@ algorithm
         SOME((_,threadAttIdx)) = GraphML.getAttributeByNameAndTarget("ThreadId", GraphML.TARGET_NODE(), graphInfo);
         (_,incidenceMatrix,_) = BackendDAEUtil.getIncidenceMatrix(List.first(iEqSystems), BackendDAE.ABSOLUTE(), NONE());
         graphInfo = appendCacheLinesToGraph(cacheMap, arrayLength(iTaskGraph), eqSimCodeVarMapping, iEqSystems, hashTable, eqNodeMapping, scVarTaskMapping, iSchedulerInfo, threadAttIdx, graphInfo);
-        fileName = ("taskGraph"+&iFileNamePrefix+&"ODE_schedule_CL.graphml"); 
+        fileName = ("taskGraph"+&iFileNamePrefix+&"ODE_schedule_CL.graphml");
         GraphML.dumpGraph(graphInfo, fileName);
       then ();
     else then ();
@@ -958,7 +964,7 @@ algorithm
   scVarCLMapping := arrayCreate(1,-1);
   numCL := 0;
   //Iterate over levels
-  
+
   (oCacheMap,oNumCL,_) := appendParamsToCacheMap(cacheMap, numCL, iParamVars,0);
   oScVarCLMapping := scVarCLMapping;
 end createCacheMapLevelOptimized;
@@ -989,7 +995,7 @@ end createCacheMapLevelOptimized0;
 protected function createCacheMapLevelOptimized1
   input HpcOmScheduler.Task iTask;
   input tuple<CacheMap,Integer,list<Integer>> iInfo; //<CacheMap,numNewCL, availableCL>
-  output tuple<CacheMap,Integer,list<Integer>> oInfo;  
+  output tuple<CacheMap,Integer,list<Integer>> oInfo;
 end createCacheMapLevelOptimized1;
 
 protected function appendParamsToCacheMap
@@ -1001,7 +1007,7 @@ protected function appendParamsToCacheMap
   output Integer oNumCL;
   output Integer oNumBytesUsedLastCL;
 protected
-  
+
 algorithm
   ((oCacheMap,oNumCL,oNumBytesUsedLastCL)) := List.fold(iParamVars, appendFloatVarToCacheMap, (iCacheMap,iNumCL,iNumBytesUsedLastCL));
 end appendParamsToCacheMap;
@@ -1091,7 +1097,7 @@ protected function getSCVarCacheLineMappingFloat0
   input SimCode.SimVar iSimVar;
   input Integer iNumBytes;
   input tuple<list<CacheLineMap>,Integer,Integer,Integer,array<Integer>> iCacheLineMappingSimVarIdx; //<filledCacheLines,CacheLineIdx,BytesCLAlreadyUsed,SimVarIdx,scVarCLMapping>
-  output tuple<list<CacheLineMap>,Integer,Integer,Integer,array<Integer>> oCacheLineMappingSimVarIdx; 
+  output tuple<list<CacheLineMap>,Integer,Integer,Integer,array<Integer>> oCacheLineMappingSimVarIdx;
 protected
   CacheLineMap iCacheLineHead;
   list<CacheLineMap> iCacheLines;
@@ -1121,7 +1127,7 @@ algorithm
         iSVarCLMapping = arrayUpdate(iSVarCLMapping,iSimVarIdx,iCacheLineIdx+1);
       then ((iCacheLines, iCacheLineIdx, intMod(iBytesUsed+8,iNumBytes), iSimVarIdx+1, iSVarCLMapping));
     else
-      equation 
+      equation
         print("getSCVarCacheLineMappingFloat0 failed\n");
       then iCacheLineMappingSimVarIdx;
   end matchcontinue;
@@ -1133,7 +1139,7 @@ protected function reverseCacheLineMapEntries
 protected
   Integer idx;
   list<CacheLineEntry> entries;
-algorithm 
+algorithm
   CACHELINEMAP(idx=idx,entries=entries) := iCacheLineMap;
   entries := listReverse(entries);
   oCacheLineMap := CACHELINEMAP(idx,entries);
@@ -1244,7 +1250,7 @@ algorithm
         //print(stringDelimitList(List.map(varIdcList, intString), ","));
         //print("\n");
       then varIdcList;
-    else 
+    else
       then {};
   end match;
 end getVarsBySimEqSystem;
@@ -1257,7 +1263,7 @@ protected
   tuple<HashTableCrILst.HashTable, list<Integer>> iVarInfo;
 algorithm
   (iExp,iVarInfo) := iExpVars;
-  oExpVars := Expression.traverseExp(iExp,createMemoryMapTraverse0,iVarInfo);  
+  oExpVars := Expression.traverseExp(iExp,createMemoryMapTraverse0,iVarInfo);
 end createMemoryMapTraverse;
 
 protected function createMemoryMapTraverse0
@@ -1281,7 +1287,7 @@ algorithm
         //ExpressionDump.dumpExp(iExp);
         oVarList = varIdx :: iVarList;
       then ((iExp,(iHashTable,oVarList)));
-    case((iExp as DAE.CREF(componentRef=componentRef), (iHashTable,iVarList))) 
+    case((iExp as DAE.CREF(componentRef=componentRef), (iHashTable,iVarList)))
       equation
         //print("HpcOmSimCode.createMemoryMapTraverse: Variable not found ( " +& ComponentReference.printComponentRefStr(componentRef) +& ")\n");
       then iExpVars;
@@ -1357,7 +1363,7 @@ end getSCVarVarMapping;
 protected function getSCVarVarMapping0
   input Integer iScVarIdx;
   input tuple<array<Integer>,Integer> iSCVarVarMappingIdx;
-  output tuple<array<Integer>,Integer> oSCVarVarMappingIdx;  
+  output tuple<array<Integer>,Integer> oSCVarVarMappingIdx;
 protected
   Integer iVarIdx;
   array<Integer> iMapping;
@@ -1393,7 +1399,7 @@ protected
   Integer nodeIdx,eqSysIdx,varIdx,scVarOffset,scVarIdx;
   BackendDAE.EqSystem eqSystem;
   DAE.ComponentRef varName;
-  BackendDAE.Var var; 
+  BackendDAE.Var var;
   BackendDAE.Variables orderedVars;
   BackendDAE.VariableArray varArr;
   array<Option<BackendDAE.Var>> varOptArr;
@@ -1757,7 +1763,7 @@ protected function evaluateCacheBehaviour1Filter
   input array<tuple<Integer,Integer,Real>> iSchedulerInfoFull;
   input tuple<Integer,Integer> iNodeIdxThreadIdx;
   input list<Integer> iTaskList;
-  output list<Integer> oTaskList; 
+  output list<Integer> oTaskList;
 protected
   Integer head, otherThreadIdx, iNodeIdx, iThreadIdx;
   Real nodeExecTime, otherNodeExecTime, nodeFinishTime, nodeStartTime, otherNodeFinishTime, otherNodeStartTime;
@@ -1779,7 +1785,7 @@ algorithm
         true = realGt(otherNodeFinishTime, nodeStartTime);//other thread has written to cache line during calculation
         tmpTaskList = iOtherNodeIdx :: iTaskList;
       then tmpTaskList;
-    else    
+    else
       then iTaskList;
   end matchcontinue;
 end evaluateCacheBehaviour1Filter;
@@ -1802,7 +1808,7 @@ protected function appendCacheLinesToGraph "author: marcusw
 protected
   Integer clGroupNodeIdx, graphCount;
   GraphML.GraphInfo tmpGraphInfo;
-  array<list<Integer>> knownEdges; //edges from task to variables    
+  array<list<Integer>> knownEdges; //edges from task to variables
   list<SimCode.SimVar> cacheVariables;
   list<CacheLineMap> cacheLinesFloat;
 algorithm
@@ -1871,7 +1877,7 @@ algorithm
   threadText := appendCacheLineNodesToGraphTraverse0(taskIdx,iSchedulerInfo);
   nodeLabelText := intString(scVarIdx);
   nodeLabel := GraphML.NODELABEL_INTERNAL(nodeLabelText, NONE(), GraphML.FONTPLAIN());
-  (oGraphInfo,_) := GraphML.addNode(nodeId, GraphML.COLOR_GREEN, {nodeLabel}, GraphML.ELLIPSE(), SOME(varString), {(iAttThreadIdIdx,threadText)}, iTopGraphIdx, iGraphInfo); 
+  (oGraphInfo,_) := GraphML.addNode(nodeId, GraphML.COLOR_GREEN, {nodeLabel}, GraphML.ELLIPSE(), SOME(varString), {(iAttThreadIdIdx,threadText)}, iTopGraphIdx, iGraphInfo);
 end appendCacheLineEntryToGraph;
 
 protected function appendCacheLineNodesToGraphTraverse0
@@ -1891,7 +1897,7 @@ algorithm
       then tmpString;
     else
       then "";
-  end matchcontinue;  
+  end matchcontinue;
 end appendCacheLineNodesToGraphTraverse0;
 
 protected function appendCacheLineEdgesToGraphTraverse
@@ -1992,7 +1998,7 @@ algorithm
         print("the ODE-system is NOT correct\n");
       then
         ();
-  end matchcontinue;    
+  end matchcontinue;
 end checkOdeSystemSize;
 
 end HpcOmSimCode;

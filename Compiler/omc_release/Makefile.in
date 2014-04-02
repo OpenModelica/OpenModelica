@@ -8,7 +8,7 @@ LIBSOCKET = @LIBSOCKET@
 LIBLPSOLVE55 = @LIBLPSOLVE55@
 
 USE_CORBA = @USE_CORBA@
-
+USE_GRAPH = @USE_GRAPH@
 SHELL	= /bin/sh
 CC	= @CC@
 OMPCC = @OMPCC@
@@ -28,7 +28,20 @@ else
  CORBALIBS=
 endif
 
-LDFLAGS = @LDFLAGS@ -lm -L$(RMLHOME)/lib/plain -lrml $(LIBSOCKET) $(CORBALIBS) $(LIBLPSOLVE55) -L../../build/lib/omc @RPATH@ @OMC_LIBS@ -lgc -lexpat @RT_LDFLAGS@
+ifdef USE_GRAPH
+ USE_METIS=@USE_METIS@
+ USE_PATOH=@USE_PATOH@
+ ifeq ($(USE_METIS),1)
+    METISHOME=@METISHOME@
+    METISLIB=$(METISHOME)/lib/libmetis.a
+ endif
+ ifeq ($(USE_PATOH),1)
+    PATOHHOME=@PATOHHOME@
+    PATOHLIB=$(PATOHHOME)/libpatoh.a
+ endif
+endif
+
+LDFLAGS = @LDFLAGS@ -lm -L$(RMLHOME)/lib/plain -lrml $(LIBSOCKET) $(CORBALIBS) $(LIBLPSOLVE55) $(METISLIB) $(PATOHLIB) -L../../build/lib/omc @RPATH@ @OMC_LIBS@ -lgc -lexpat @RT_LDFLAGS@
 
 PROG = omc
 RMLC	= @rmlc_bin@

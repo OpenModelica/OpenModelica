@@ -27,8 +27,13 @@ AC_SUBST(CORBALIBS)
 AC_SUBST(IDLCMD)
 AC_SUBST(OPENCL)
 AC_SUBST(IDLPYTHONCMD)
-AC_SUBST(USE_MODPAR)
+AC_SUBST(USE_GRAPH)
+AC_SUBST(USE_METIS)
+AC_SUBST(USE_PATOH)
+AC_SUBST(METISHOME)
+AC_SUBST(PATOHHOME)
 AC_SUBST(BOOSTHOME)
+AC_SUBST(USE_MODPAR)
 AC_SUBST(GENERATED_AUTOCONF_FILES)
 AC_SUBST(RT_LDFLAGS)
 AC_SUBST(RT_LDFLAGS_SIM)
@@ -782,7 +787,7 @@ if test -n "$QMAKE"; then
     else
       AC_MSG_RESULT($with_paradiseo)
     fi
-    
+
   fi
   if test -f /usr/bin/gcc-4.4 -a -f /usr/bin/g++-4.4; then
     OMOPTIM_CC=gcc-4.4
@@ -872,6 +877,36 @@ else
   BOOTSTRAP_STATIC=""
 fi
 
+AC_ARG_WITH(METIS, [  --with-METIS=DIR                 Compile with Metis graph partitioner in DIR],
+[
+	USE_METIS=1
+	USE_GRAPH=1
+	AC_MSG_RESULT([Enabling METIS... METISHOME="$withval"]);
+	METISHOME="$withval";
+	USE_PATOH=0
+], [
+    USE_GRAPH=0
+    USE_METIS=0
+])
+
+AC_ARG_WITH(PATOH, [  --with-PATOH=DIR                 Compile with PATOH hypergraph partitioner in DIR],
+[
+	USE_PATOH=1
+	if test USE_METIS=1; then
+        AC_MSG_RESULT([ Cannot compile with METIS and PATOH. Choosing PATOH only. ] )
+        METISHOME="";
+	fi
+	USE_METIS=0
+	USE_GRAPH=1
+    AC_MSG_RESULT([Enabling PATOH... PATOHHOME="$withval"]);
+	PATOHHOME="$withval";
+], [
+    if test USE_METIS=0; then
+        USE_GRAPH=0
+    fi
+    USE_PATOH=0;
+])
+
 AC_ARG_WITH(MODPAR, [  --with-MODPAR                    Compile with automatic parallelization, requires boost],
 [
 	USE_MODPAR="-DUSE_MODPAR"
@@ -927,6 +962,7 @@ Compiler/omc_release/Makefile \
 Compiler/runtime/Makefile \
 Compiler/modpar/Makefile \
 Compiler/runtime/config.unix.h \
+Compiler/runtime/HpcOmSchedulerExt.h \
 PythonInterface/Makefile \
 PythonInterface/OMPython/OMConfig.py \
 Parser/Makefile \
