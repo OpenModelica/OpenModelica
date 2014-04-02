@@ -111,7 +111,7 @@ algorithm
   BackendDump.dumpEquationList(eqLst, "the equations before evaluationg the functions"); 
    
   //traverse the eqSystem for function calls
-  (eqLst,(shared,addEqs)) := List.mapFold(eqLst,evalFunctions_findFuncs,(sharedIn,{}));
+  (eqLst,(shared,addEqs,_)) := List.mapFold(eqLst,evalFunctions_findFuncs,(sharedIn,{},1));
   eqLst := listAppend(eqLst,addEqs);
   eqs := BackendEquation.listEquation(eqLst);
   eqSysOut := BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching,stateSets);
@@ -127,13 +127,13 @@ end evalFunctions_main;
 
 protected function evalFunctions_findFuncs
   input BackendDAE.Equation eqIn;
-  input tuple<BackendDAE.Shared,list<BackendDAE.Equation>> tplIn;
+  input tuple<BackendDAE.Shared,list<BackendDAE.Equation>,Integer> tplIn;
   output BackendDAE.Equation eqOut;
-  output tuple<BackendDAE.Shared,list<BackendDAE.Equation>> tplOut;
+  output tuple<BackendDAE.Shared,list<BackendDAE.Equation>,Integer> tplOut;
 algorithm
   (eqOut,tplOut) := matchcontinue(eqIn,tplIn)
     local
-      Integer size;
+      Integer size,idx;
       Boolean b1,b2,diff;
       BackendDAE.Equation eq;
       BackendDAE.Shared shared;
@@ -147,13 +147,13 @@ algorithm
         b1 = Expression.containFunctioncall(exp1);
         b2 = Expression.containFunctioncall(exp2);
         true = b1 or b2;
-        (shared,addEqs) = tplIn;
+        (shared,addEqs,idx) = tplIn;
         funcs = BackendDAEUtil.getFunctions(shared);
-        ((rhsExp,lhsExp,addEqs,funcs)) = Debug.bcallret3(b1,evaluateConstantFunction,exp1,exp2,funcs,(exp2,exp1,addEqs,funcs));
-        ((rhsExp,lhsExp,addEqs,funcs)) = Debug.bcallret3(b2,evaluateConstantFunction,exp2,exp1,funcs,(rhsExp,lhsExp,addEqs,funcs));
+        ((rhsExp,lhsExp,addEqs,funcs)) = Debug.bcallret4(b1,evaluateConstantFunction,exp1,exp2,funcs,idx,(exp2,exp1,addEqs,funcs));
+        ((rhsExp,lhsExp,addEqs,funcs)) = Debug.bcallret4(b2,evaluateConstantFunction,exp2,exp1,funcs,idx,(rhsExp,lhsExp,addEqs,funcs));
         eq = BackendDAE.EQUATION(lhsExp,rhsExp,source,diff);
       then
-        (eq,(shared,addEqs));
+        (eq,(shared,addEqs,idx+1));
     case(BackendDAE.ARRAY_EQUATION(dimSize =_, left=exp1, right=exp2, source=source, differentiated=diff),_)
       equation
         print("this is an array equation. update evalFunctions_findFuncs");
@@ -164,10 +164,10 @@ algorithm
         b1 = Expression.containFunctioncall(exp1);
         b2 = Expression.containFunctioncall(exp2);
         true = b1 or b2;
-        (shared,addEqs) = tplIn;
+        (shared,addEqs,idx) = tplIn;
         funcs = BackendDAEUtil.getFunctions(shared);
-        ((rhsExp,lhsExp,addEqs,funcs)) = Debug.bcallret3(b1,evaluateConstantFunction,exp1,exp2,funcs,(exp2,exp1,addEqs,funcs));
-        ((rhsExp,lhsExp,addEqs,funcs)) = Debug.bcallret3(b2,evaluateConstantFunction,exp2,exp1,funcs,(rhsExp,lhsExp,addEqs,funcs));
+        ((rhsExp,lhsExp,addEqs,funcs)) = Debug.bcallret4(b1,evaluateConstantFunction,exp1,exp2,funcs,idx,(exp2,exp1,addEqs,funcs));
+        ((rhsExp,lhsExp,addEqs,funcs)) = Debug.bcallret4(b2,evaluateConstantFunction,exp2,exp1,funcs,idx,(rhsExp,lhsExp,addEqs,funcs));
         shared = BackendDAEUtil.addFunctionTree(funcs,shared);  
         size = DAEUtil.getTupleSize(lhsExp);
         eq = Util.if_(intEq(size,0),BackendDAE.EQUATION(lhsExp,rhsExp,source,diff),BackendDAE.COMPLEX_EQUATION(size,lhsExp,rhsExp,source,diff));
@@ -179,10 +179,10 @@ algorithm
         //BackendDump.printEquation(eq);
         //print("the size of the complex equation: "+&intString(size)+&"\n");
       then
-        (eq,(shared,addEqs));
+        (eq,(shared,addEqs,idx+1));
     else
       equation
-        (shared,addEqs) = tplIn;
+        (shared,addEqs,idx) = tplIn;
       then
         (eqIn,tplIn);
   end matchcontinue;        
@@ -192,9 +192,10 @@ protected function evaluateConstantFunction
   input DAE.Exp rhsExpIn;
   input DAE.Exp lhsExpIn;
   input DAE.FunctionTree funcsIn;
+  input Integer eqIdx;
   output tuple<DAE.Exp, DAE.Exp, list<BackendDAE.Equation>, DAE.FunctionTree> outTpl;
 algorithm
-  outTpl := matchcontinue(rhsExpIn,lhsExpIn,funcsIn)
+  outTpl := matchcontinue(rhsExpIn,lhsExpIn,funcsIn,eqIdx)
     local
       Boolean funcIsConst, funcIsPartConst;
       list<Boolean> bList;
@@ -217,7 +218,7 @@ algorithm
       list<DAE.ComponentRef> constComplexLst;
       list<DAE.ComponentRef> partConstLst;
       list<DAE.ComponentRef> partVarLst;
-    case(DAE.CALL(path=path, expLst=exps, attr=attr1),_,_)
+    case(DAE.CALL(path=path, expLst=exps, attr=attr1),_,_,_)
       equation
         //print("BEFORE:\n");
         //ExpressionDump.dumpExp(rhsExpIn);
@@ -264,7 +265,7 @@ algorithm
           //BackendVarTransform.dumpReplacements(repl);
         
         // go through all algorithms and replace the variables with constants if possible, extend the ht after each algorithm
-        (algs,(_,repl)) = List.mapFold(algs,evaluateFunctions_updateAlgorithms,(funcsIn,repl));
+        (algs,(_,repl,_)) = List.mapFold(algs,evaluateFunctions_updateAlgorithms,(funcsIn,repl,eqIdx));
           //print("\nall algs after"+&intString(listLength(algs))+&"\n"+&DAEDump.dumpElementsStr(algs)+&"\n");
           //BackendVarTransform.dumpReplacements(repl);
                
@@ -311,7 +312,7 @@ algorithm
         elements = listAppend(elements,protectVars);
         elements = listAppend(elements,algs);
         elements = List.unique(elements);
-        (func,path) = updateFunctionBody(func,elements);
+        (func,path) = updateFunctionBody(func,elements,eqIdx);
         attr2 = DAEUtil.replaceCallAttrType(attr1,DAE.T_TUPLE({},DAE.emptyTypeSource));
         attr2 = Util.if_(intEq(listLength(varOutputs),1),attr1,attr2);
         //DAEDump.dumpCallAttr(attr2);
@@ -450,10 +451,11 @@ end generateOutputElements;
 protected function updateFunctionBody
   input DAE.Function funcIn;
   input list<DAE.Element> body;
+  input Integer idx;
   output DAE.Function funcOut;
   output Absyn.Path pathOut;
 algorithm
-  (funcOut,pathOut) := match(funcIn, body)
+  (funcOut,pathOut) := match(funcIn, body, idx)
     local
       String s;
       list<String> chars;
@@ -465,7 +467,7 @@ algorithm
       DAE.ElementSource source;
       DAE.Function func;
       Option<SCode.Comment> comment;
-    case(DAE.FUNCTION(path=path,functions=funcs,type_=typ,partialPrefix=pP,isImpure=iI,inlineType=iType,source=source,comment=comment),_)
+    case(DAE.FUNCTION(path=path,functions=funcs,type_=typ,partialPrefix=pP,isImpure=iI,inlineType=iType,source=source,comment=comment),_,_)
       equation
         //print("the pathname before: "+&Absyn.pathString(path)+&"\n");
         //print("THE FUNCTION BEFORE \n"+&DAEDump.dumpFunctionStr(funcIn)+&"\n");
@@ -473,7 +475,7 @@ algorithm
         chars = stringListStringChar(s);
         chars = listDelete(chars,0);
         s = stringCharListString(chars);
-        path = Absyn.stringPath(s+&"_eval");
+        path = Absyn.stringPath(s+&"_eval"+&intString(idx));
         func = DAE.FUNCTION(path,{DAE.FUNCTION_DEF(body)},typ,pP,iI,iType,source,comment);
         //print("THE FUNCTION AFTER \n"+&DAEDump.dumpFunctionStr(func)+&"\n");
         //print("the pathname after: "+&Absyn.pathString(path)+&"\n");
@@ -613,15 +615,6 @@ algorithm
   end match;
 end replaceCrefIdent;
 
-
-protected function stmt2Alg"makes a DAE.Element.ALGORITHM of a DAE.Statement.
-author:Waurich TUD 2014-03"
-  input DAE.Statement stmt;
-  output DAE.Element alg;
-algorithm
-  alg := DAE.ALGORITHM(DAE.ALGORITHM_STMTS({stmt}),DAE.emptyElementSource);
-end stmt2Alg;
-
 protected function statementRHSIsNotConst"checks whether the rhs of a statement is constant.
 author:Waurich TUD 2014-03"
   input DAE.Statement stmt;
@@ -686,25 +679,25 @@ end crefIsInLst;
 protected function evaluateFunctions_updateAlgorithms"gets the statements from an algorithm in order to traverse them.
 author:Waurich TUD 2014-03"
   input DAE.Element algIn;
-  input tuple<DAE.FunctionTree, BackendVarTransform.VariableReplacements> tplIn;
+  input tuple<DAE.FunctionTree, BackendVarTransform.VariableReplacements,Integer> tplIn;
   output DAE.Element algOut;
-  output tuple<DAE.FunctionTree, BackendVarTransform.VariableReplacements> tplOut;
+  output tuple<DAE.FunctionTree, BackendVarTransform.VariableReplacements,Integer> tplOut;
 protected
+  Integer idx;
   BackendVarTransform.VariableReplacements replIn, replOut;
   DAE.Algorithm alg;
   DAE.ElementSource source;
   DAE.FunctionTree funcs;
   list<DAE.Statement> stmts;
 algorithm
-  (funcs,replIn) := tplIn;
+  (funcs,replIn,idx) := tplIn;
   DAE.ALGORITHM(alg,source) := algIn;
   stmts := DAEUtil.getStatement(algIn);  
   //(stmts,(_,replOut)) := List.mapFold(stmts,evaluateFunctions_updateStatement,(funcs,replIn));
-  (stmts,replOut) := evaluateFunctions_updateStatement(stmts,funcs,replIn,{});
+  (stmts,replOut) := evaluateFunctions_updateStatement(stmts,funcs,replIn,idx,{});
   alg := DAE.ALGORITHM_STMTS(stmts);
-
   algOut := DAE.ALGORITHM(alg,source);
-  tplOut := (funcs,replOut);
+  tplOut := (funcs,replOut,idx);
 end evaluateFunctions_updateAlgorithms;
 
 protected function evaluateFunctions_updateStatement"
@@ -712,11 +705,12 @@ author:Waurich TUD 2014-03"
   input list<DAE.Statement> algsIn;
   input DAE.FunctionTree funcTree;
   input BackendVarTransform.VariableReplacements replIn;
+  input Integer idx;
   input list<DAE.Statement> lstIn;
   output list<DAE.Statement> algsOut;
   output BackendVarTransform.VariableReplacements replOut;
 algorithm
-  (algsOut,replOut) := matchcontinue(algsIn,funcTree,replIn,lstIn)
+  (algsOut,replOut) := matchcontinue(algsIn,funcTree,replIn,idx,lstIn)
     local
       Boolean changed, isCon, simplified, isIf;
       BackendVarTransform.VariableReplacements repl;
@@ -728,12 +722,12 @@ algorithm
       DAE.Type typ;
       list<DAE.Statement> stmts1, stmts2, rest;
       list<DAE.Exp> expLst;
-    case({},_,_,_)
+    case({},_,_,_,_)
       equation
         //stmts1 = listReverse(lstIn);
       then
         (lstIn,replIn);
-    case(DAE.STMT_ASSIGN(type_=typ, exp1=exp1, exp=exp2, source=source)::rest,_,_,_)
+    case(DAE.STMT_ASSIGN(type_=typ, exp1=exp1, exp=exp2, source=source)::rest,_,_,_,_)
       equation
         //print("the STMT_ASSIGN before: "+&DAEDump.ppStatementStr(List.first(algsIn)));
         cref = Expression.expCref(exp1);
@@ -749,22 +743,22 @@ algorithm
         
         alg = Util.if_(isCon,DAE.STMT_ASSIGN(typ,exp1,exp2,source),List.first(algsIn));
           //print("the STMT_ASSIGN after : "+&DAEDump.ppStatementStr(alg)+&"\n");
-        (rest,repl) = evaluateFunctions_updateStatement(rest,funcTree,repl,alg::lstIn);
+        (rest,repl) = evaluateFunctions_updateStatement(rest,funcTree,repl,idx,alg::lstIn);
       then
         (rest,repl);
-    case (DAE.STMT_ASSIGN_ARR(type_=typ, componentRef=cref, exp=exp1, source=source)::rest,_,_,_)
+    case (DAE.STMT_ASSIGN_ARR(type_=typ, componentRef=cref, exp=exp1, source=source)::rest,_,_,_,_)
       equation
           //print("STMT_ASSIGN_ARR");
           //print("the STMT_ASSIGN_ARR: "+&DAEDump.ppStatementStr(List.first(algsIn))+&"\n");
-        (rest,repl) = evaluateFunctions_updateStatement(rest,funcTree,replIn,lstIn);
+        (rest,repl) = evaluateFunctions_updateStatement(rest,funcTree,replIn,idx,lstIn);
       then
         (rest,repl);
-    case(DAE.STMT_IF(exp=exp1, statementLst=stmts1, else_=else_, source=source)::rest,_,_,_)
+    case(DAE.STMT_IF(exp=exp1, statementLst=stmts1, else_=else_, source=source)::rest,_,_,_,_)
       equation
         // simplify the condition
         //print("the STMT_IF before: "+&DAEDump.ppStatementStr(List.first(algsIn)));
           
-        ((exp1,_)) = Expression.traverseExpTopDown(exp1,evaluateConstantFunctionWrapper,(exp1,funcTree));
+        ((exp1,_)) = Expression.traverseExpTopDown(exp1,evaluateConstantFunctionWrapper,(exp1,funcTree,idx));
         (exp1,changed) = BackendVarTransform.replaceExp(exp1,replIn,NONE());
         (exp1,_) = ExpressionSimplify.simplify(exp1);
         
@@ -774,10 +768,10 @@ algorithm
           //print("is it const? "+&boolString(isCon)+&" do we have to use the if: "+&boolString(isIf)+&"\n");
         
         // simplify the if statements
-        (stmts1,(_,repl)) = Debug.bcallret2_2(isIf and isCon, evaluateFunctions_updateStatementLst, stmts1, (funcTree,replIn), stmts1, (funcTree,replIn));
+        (stmts1,(_,repl)) = Debug.bcallret2_2(isIf and isCon, evaluateFunctions_updateStatementLst, stmts1, (funcTree,replIn,idx), stmts1, (funcTree,replIn));
         
         // simplify the else statements
-        (stmts1,simplified) = Debug.bcallret2_2(not isIf and isCon, simplifyElse, else_, (funcTree,replIn), stmts1, false);       
+        (stmts1,simplified) = Debug.bcallret2_2(not isIf and isCon, simplifyElse, else_, (funcTree,replIn,idx), stmts1, false);       
           //print("is it simplified? "+&boolString(simplified)+&"\n");
         
         alg = List.first(algsIn);
@@ -787,16 +781,16 @@ algorithm
           //print("the STMT_IF after: "+&stringDelimitList(List.map(stmts1,DAEDump.ppStatementStr),"\n")+&"\n");
                 
         stmts1 = listAppend(stmts1,lstIn);        
-        (rest,repl) = evaluateFunctions_updateStatement(rest,funcTree,repl,stmts1);
+        (rest,repl) = evaluateFunctions_updateStatement(rest,funcTree,repl,idx,stmts1);
       then
         (rest,repl);
-    case(DAE.STMT_TUPLE_ASSIGN(type_=_, expExpLst=expLst, exp=exp1, source=source)::rest,_,_,_)
+    case(DAE.STMT_TUPLE_ASSIGN(type_=_, expExpLst=expLst, exp=exp1, source=source)::rest,_,_,_,_)
       equation
         //print("the STMT_TUPLE_ASSIGN stmt: "+&DAEDump.ppStatementStr(List.first(algsIn)));
       // IMPLEMENT A PARTIAL FUNCTION EVALUATION FOR FUNCTIONS IN FUNCTIONS
       alg = List.first(algsIn);
       //print("the STMT_TUPLE_ASSIGN after: "+&DAEDump.ppStatementStr(alg));
-      (rest,repl) = evaluateFunctions_updateStatement(rest,funcTree,replIn,alg::lstIn);
+      (rest,repl) = evaluateFunctions_updateStatement(rest,funcTree,replIn,idx,alg::lstIn);
     then (rest,repl);
     else
       equation
@@ -810,42 +804,45 @@ end evaluateFunctions_updateStatement;
 protected function evaluateFunctions_updateStatementLst"
 author:Waurich TUD 2014-03"
   input list<DAE.Statement> stmtsIn;
-  input tuple<DAE.FunctionTree, BackendVarTransform.VariableReplacements> tplIn;
+  input tuple<DAE.FunctionTree, BackendVarTransform.VariableReplacements,Integer> tplIn;
   output list<DAE.Statement> stmtsOut;
   output tuple<DAE.FunctionTree, BackendVarTransform.VariableReplacements> tplOut;
 protected
+  Integer idx;
   BackendVarTransform.VariableReplacements repl;
   DAE.FunctionTree funcs;
 algorithm
-  (funcs,repl) := tplIn;
-  (stmtsOut,repl) := evaluateFunctions_updateStatement(stmtsIn,funcs,repl,{});
+  (funcs,repl,idx) := tplIn;
+  (stmtsOut,repl) := evaluateFunctions_updateStatement(stmtsIn,funcs,repl,idx,{});
   //(stmtsOut,(_,repl)) := List.mapFold(stmtsIn,evaluateFunctions_updateStatement,(funcs,repl));
   tplOut := (funcs,repl);
 end evaluateFunctions_updateStatementLst;
 
 
 protected function evaluateConstantFunctionWrapper
-  input tuple<DAE.Exp,tuple<DAE.Exp, DAE.FunctionTree>> inTpl;
-  output tuple<DAE.Exp, Boolean, tuple<DAE.Exp,DAE.FunctionTree>> outTpl;
+  input tuple<DAE.Exp,tuple<DAE.Exp, DAE.FunctionTree,Integer>> inTpl;
+  output tuple<DAE.Exp, Boolean, tuple<DAE.Exp,DAE.FunctionTree,Integer>> outTpl;
 protected
+  Integer idx;
   DAE.Exp rhs, lhs;
   DAE.FunctionTree funcs;
 algorithm
-  (rhs,(lhs,funcs)) := inTpl;
-  ((rhs,_,_,_)) := evaluateConstantFunction(rhs,lhs,funcs);
-  outTpl := (rhs,true,(lhs,funcs));
+  (rhs,(lhs,funcs,idx)) := inTpl;
+  ((rhs,_,_,_)) := evaluateConstantFunction(rhs,lhs,funcs,idx);
+  outTpl := (rhs,true,(lhs,funcs,idx));
 end evaluateConstantFunctionWrapper;  
 
 
 protected function simplifyElse "evaluates an else or elseIf.
 author:Waurich TUD 2014-03"
   input DAE.Else elseIn;
-  input tuple<DAE.FunctionTree,BackendVarTransform.VariableReplacements> inTpl;
+  input tuple<DAE.FunctionTree,BackendVarTransform.VariableReplacements,Integer> inTpl;
   output list<DAE.Statement> stmtsOut;
   output Boolean simplified;
 algorithm
   (stmtsOut,simplified) := matchcontinue(elseIn,inTpl)
     local
+      Integer idx;
       Boolean const;
       Boolean isElseIf;
       BackendVarTransform.VariableReplacements repl;
@@ -858,12 +855,12 @@ algorithm
         //print("NO ELSE\n");
        then
          ({},true);
-    case(DAE.ELSEIF(exp=exp, statementLst=stmts,else_=else_),(funcs,repl))
+    case(DAE.ELSEIF(exp=exp, statementLst=stmts,else_=else_),(funcs,repl,idx))
         equation
         // simplify the condition
           //print("STMT_IF_EXP_IN_ELSEIF:\n");
           //ExpressionDump.dumpExp(exp);
-        ((exp,_)) = Expression.traverseExpTopDown(exp,evaluateConstantFunctionWrapper,(exp,funcs));
+        ((exp,_)) = Expression.traverseExpTopDown(exp,evaluateConstantFunctionWrapper,(exp,funcs,idx));
         (exp,_) = BackendVarTransform.replaceExp(exp,repl,NONE());
         (exp,_) = ExpressionSimplify.simplify(exp);
 
@@ -873,15 +870,15 @@ algorithm
         const = Expression.isConst(exp);
         isElseIf = Debug.bcallret1(const,Expression.getBoolConst,exp,false);
           //print("do we have to use the elseif: "+&boolString(isElseIf)+&"\n");
-        (stmts,(_,_)) = Debug.bcallret2_2(const and isElseIf,evaluateFunctions_updateStatementLst,stmts,(funcs,repl),stmts,(funcs,repl));  // is this elseif case
-        (stmts,_) = Debug.bcallret2_2(const and not isElseIf,simplifyElse,else_,(funcs,repl),{},false); // is the another elseif case or the else case
+        (stmts,(_,_)) = Debug.bcallret2_2(const and isElseIf,evaluateFunctions_updateStatementLst,stmts,(funcs,repl,idx),stmts,(funcs,repl));  // is this elseif case
+        (stmts,_) = Debug.bcallret2_2(const and not isElseIf,simplifyElse,else_,(funcs,repl,idx),{},false); // is the another elseif case or the else case
       then
         (stmts,false);
-    case(DAE.ELSE(statementLst=stmts),(funcs,repl))
+    case(DAE.ELSE(statementLst=stmts),(funcs,repl,idx))
         equation
            //print("the STMT_ELSE before: "+&stringDelimitList(List.map(stmts,DAEDump.ppStatementStr),"\n")+&"\n");
          repl = BackendVarTransform.emptyReplacements();
-         (stmts,(_,_)) = evaluateFunctions_updateStatementLst(stmts,(funcs,repl));  // is this elseif case
+         (stmts,(_,_)) = evaluateFunctions_updateStatementLst(stmts,(funcs,repl,idx));  // is this elseif case
            //print("the STMT_ELSE simplified: "+&stringDelimitList(List.map(stmts,DAEDump.ppStatementStr),"\n")+&"\n");
       then
          (stmts,false);
