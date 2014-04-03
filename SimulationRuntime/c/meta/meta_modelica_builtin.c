@@ -374,7 +374,7 @@ modelica_metatype boxptr_stringUpdateStringChar(threadData_t *threadData,metamod
 
   MMC_CHECK_STRING(str);
   MMC_CHECK_STRING(c);
-  /* fprintf(stderr, "stringUpdateStringChar(%s,%s,%ld)\n", anyString(str),anyString(c),ix); */
+  /* fprintf(stderr, "stringUpdateStringChar(%s,%s,%ld)\n", MMC_STRINGDATA(str),MMC_STRINGDATA(c),ix); */
 
   if (ix < 1 || MMC_STRLEN(c) != 1)
     MMC_THROW_INTERNAL();
@@ -383,7 +383,7 @@ modelica_metatype boxptr_stringUpdateStringChar(threadData_t *threadData,metamod
     MMC_THROW_INTERNAL();
   p = (struct mmc_string *) mmc_alloc_words_atomic(nwords);
   p->header = header;
-  memcpy(p->data, MMC_STRINGDATA(str), length);
+  memcpy(p->data, MMC_STRINGDATA(str), length+1 /* include NULL */);
   p->data[ix-1] = MMC_STRINGDATA(c)[0];
   res = MMC_TAGPTR(p);
   MMC_CHECK_STRING(res);
