@@ -34,10 +34,10 @@
 #include <limits.h>
 #include <string.h>
 #include <gc.h>
+#include "omc_msvc.h"
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #include <windows.h>
-#include "omc_msvc.h"
 #if defined(_MSC_VER)
 #include <intrin.h>
 #endif
