@@ -896,7 +896,7 @@ See dump Subscript for details.
 "
   input DAE.InstDims arry_Dim;
 algorithm
-  _:= matchcontinue (arry_Dim)
+  _:= match (arry_Dim)
     local
       list<DAE.Subscript> lSub;
       DAE.Subscript sub;
@@ -908,7 +908,7 @@ algorithm
     dumpStrCloseTag(SUBSCRIPT);
     dumpDAEInstDims2(lSub);
   then();
-  end matchcontinue;
+  end match;
 end dumpDAEInstDims2;
 
 
@@ -2348,7 +2348,7 @@ Help function to dumpFunctionNames.
   input list<Absyn.Path> libs;
 algorithm
   _:=
-  matchcontinue (libs)
+  match (libs)
     local
       Absyn.Path s;
       list<Absyn.Path> remaining;
@@ -2365,7 +2365,7 @@ algorithm
       Print.printBuf("\"/>");
       dumpFunctionNames2(remaining);
     then();
-  end matchcontinue;
+  end match;
 end dumpFunctionNames2;
 
 
@@ -2378,14 +2378,14 @@ The functions are printed as Modelica code.
   output String FuncsString;
 algorithm
   FuncsString :=
-  matchcontinue(inL)
+  match(inL)
     local
       DAE.Function el;
       list<DAE.Function> rem;
       //case (_) then ();
       case {}  then "";
       case (el::rem)  then stringAppend(DAEDump.dumpFunctionStr(el),dumpFunctionsStr(rem));
-  end matchcontinue;
+  end match;
 end dumpFunctionsStr;
 
 protected function dumpIncidenceMatrix
@@ -2449,7 +2449,7 @@ public function dumpLibs
   input list<String> libs;
 algorithm
   _:=
-  matchcontinue (libs)
+  match (libs)
     local
       String s;
       list<String> remaining;
@@ -2458,7 +2458,7 @@ algorithm
     equation
       Print.printBuf(s);
     then();
-  end matchcontinue;
+  end match;
 end dumpLibs;
 
 
@@ -3273,7 +3273,7 @@ using the ExpressionDump.printExpStr function.
   input DAE.Subscript inSubscript;
 algorithm
   _:=
-  matchcontinue (inSubscript)
+  match (inSubscript)
     local DAE.Exp e1;
     case (DAE.WHOLEDIM())
       equation
@@ -3290,7 +3290,7 @@ algorithm
         Print.printBuf(printExpStr(e1));
       then
         ();
-  end matchcontinue;
+  end match;
 end dumpSubscript;
 
 

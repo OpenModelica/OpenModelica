@@ -1214,7 +1214,7 @@ protected function printArraydimOpt "
   input Option<Absyn.ArrayDim> inAbsynArrayDimOption;
 algorithm
   _:=
-  matchcontinue (inAbsynArrayDimOption)
+  match (inAbsynArrayDimOption)
     local list<Absyn.Subscript> s;
     case (NONE())
       equation
@@ -1228,7 +1228,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-  end matchcontinue;
+  end match;
 end printArraydimOpt;
 
 public function printArraydim "
@@ -2978,7 +2978,7 @@ public function getOptionStrDefault "Retrieve the string from a string option.
   end FuncTypeType_aToString;
 algorithm
   outString:=
-  matchcontinue (inTypeAOption,inFuncTypeTypeAToString,inString)
+  match (inTypeAOption,inFuncTypeTypeAToString,inString)
     local
       String str,def;
       Type_a a;
@@ -2989,7 +2989,7 @@ algorithm
       then
         str;
     case (NONE(),_,def) then def;
-  end matchcontinue;
+  end match;
 end getOptionStrDefault;
 
 public function getOptionWithConcatStr "

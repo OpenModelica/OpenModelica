@@ -100,7 +100,7 @@ public function printDAE "This function prints out a list of elements (i.e. a DA
   to the stdout. Useful for example when called from Inst.instClass"
   input DAE.DAElist inDAElist;
 algorithm
-  _ := matchcontinue (inDAElist)
+  _ := match (inDAElist)
     local
       DAE.DAElist dae;
       String str;
@@ -113,7 +113,7 @@ algorithm
         print(str);
       then
         ();
-  end matchcontinue;
+  end match;
 end printDAE;
 
 public function dump "This function prints the DAE in the standard output format to the Print buffer.
@@ -763,7 +763,7 @@ end dumpKindStr;
 protected function dumpDirection "Dump VarDirection."
   input DAE.VarDirection inVarDirection;
 algorithm
-  _ := matchcontinue (inVarDirection)
+  _ := match (inVarDirection)
     case DAE.INPUT()
       equation
         Print.printBuf(" input  ");
@@ -779,13 +779,13 @@ algorithm
         Print.printBuf("        ");
       then
         ();
-  end matchcontinue;
+  end match;
 end dumpDirection;
 
 protected function dumpParallelism "Dump VarParallelism."
   input DAE.VarParallelism inVarParallelism;
 algorithm
-  _ := matchcontinue (inVarParallelism)
+  _ := match (inVarParallelism)
     case DAE.NON_PARALLEL()
       equation
         Print.printBuf("        ");
@@ -801,7 +801,7 @@ algorithm
         Print.printBuf(" parlocal ");
       then
         ();
-  end matchcontinue;
+  end match;
 end dumpParallelism;
 
 public function dumpDirectionStr "Dump VarDirection to a string"
@@ -1440,7 +1440,7 @@ public function derivativeCondStr "
   input DAE.derivativeCond dc;
   output String str;
 algorithm
-  str := matchcontinue(dc)
+  str := match(dc)
     local DAE.Exp e;
 
     case(DAE.NO_DERIVATIVE(e))
@@ -1450,7 +1450,7 @@ algorithm
         str;
 
     case(DAE.ZERO_DERIVATIVE()) then "zeroDerivative";
-  end matchcontinue;
+  end match;
 end derivativeCondStr;
 
 protected function dumpFunction
@@ -2497,11 +2497,11 @@ Author BZ 2008-07, dump flow properties to string."
   input DAE.ConnectorType var;
   output String flowString;
 algorithm
-  flowString := matchcontinue(var)
+  flowString := match(var)
     case DAE.FLOW() then "flow";
     case DAE.POTENTIAL() then "effort";
     case DAE.NON_CONNECTOR() then "non_connector";
-  end matchcontinue;
+  end match;
 end dumpFlow;
 
 public function dumpConnectorType

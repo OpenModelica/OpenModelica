@@ -181,14 +181,14 @@ author: PA.
 dump statistics on how many entries per hash value. Useful to see how hash function behaves"
   input HashTable hashTable;
 algorithm
- _ := matchcontinue(hashTable)
+ _ := match(hashTable)
  local HashVector hvec;
    case((hvec,_,_,_,_)) equation
       print("index list lengths:\n");
       print(stringDelimitList(List.map(List.map(arrayList(hvec),listLength),intString),","));
       print("\n");
    then ();
- end matchcontinue;
+ end match;
 end dumpHashTableStatistics;
 
 public function addNoUpdCheck

@@ -127,11 +127,11 @@ public function makePropsNotConst
 "returns the same Properties but with the const flag set to Var"
   input DAE.Properties inProperties;
   output DAE.Properties outProperties;
-algorithm outProperties := matchcontinue (inProperties)
+algorithm outProperties := match (inProperties)
   local
     Type t;
   case(DAE.PROP(type_=t,constFlag=_)) then DAE.PROP(t,DAE.C_VAR());
-  end matchcontinue;
+  end match;
 end makePropsNotConst;
 
 // stefan
@@ -496,10 +496,10 @@ public function getRecordPath "gets the record path"
   input DAE.Type tp;
   output Absyn.Path p;
 algorithm
-  p := matchcontinue(tp)
+  p := match(tp)
     case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(p))) 
       then p;
-  end matchcontinue;
+  end match;
 end getRecordPath;
 
 public function isRecordWithOnlyReals "Returns true if type is a record only containing Reals"
@@ -1200,7 +1200,7 @@ public function setVarInput "Sets a DAE.Var to input"
   input DAE.Var var;
   output DAE.Var outV;
 algorithm
-  outV := matchcontinue(var)
+  outV := match(var)
     local
       String name;
       SCode.ConnectorType ct;
@@ -1215,7 +1215,7 @@ algorithm
     case DAE.TYPES_VAR(name,DAE.ATTR(ct,prl,v,_,io,vis),tp,bind,cnstForRange)
     then DAE.TYPES_VAR(name,DAE.ATTR(ct,prl,v,Absyn.INPUT(),io,vis),tp,bind,cnstForRange);
 
-  end matchcontinue;
+  end match;
 end setVarInput;
 
 public function setVarDefaultInput "Sets a DAE.Var to input"
@@ -1707,7 +1707,7 @@ protected function lookupInBuiltin "Since builtin types are not represented as D
   input String inIdent;
   output DAE.Var outVar;
 algorithm
-  outVar := matchcontinue (inType,inIdent)
+  outVar := match (inType,inIdent)
     local
       DAE.Var v;
       list<DAE.Var> cs;
@@ -1756,7 +1756,7 @@ algorithm
     case (DAE.T_ENUMERATION(index = SOME(_)),"fixed")
       then DAE.TYPES_VAR("fixed", DAE.dummyAttrParam,DAE.T_BOOL_DEFAULT,DAE.UNBOUND(),NONE());
     case (DAE.T_ENUMERATION(index = SOME(_)),"enable") then DAE.TYPES_VAR("enable", DAE.dummyAttrParam,DAE.T_BOOL_DEFAULT,DAE.VALBOUND(Values.BOOL(true),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
-  end matchcontinue;
+  end match;
 end lookupInBuiltin;
 
 protected function lookupComponent2 "This function finds a named Var in a list of Vars, comparing
@@ -1940,10 +1940,10 @@ protected function typeArraydim "If type is an array, return it array dimension"
   input DAE.Type inType;
   output DAE.Dimension outArrayDim;
 algorithm
-  outArrayDim := matchcontinue (inType)
+  outArrayDim := match (inType)
     local DAE.Dimension dim;
     case (DAE.T_ARRAY(dims = {dim})) then dim;
-  end matchcontinue;
+  end match;
 end typeArraydim;
 
 public function arrayElementType "This function turns an array into the element type of the array."
@@ -2795,7 +2795,7 @@ end makeEnumerationType1;
 public function printFarg "Prints a function argument to the Print buffer."
   input DAE.FuncArg inFuncArg;
 algorithm
-  _ := matchcontinue (inFuncArg)
+  _ := match (inFuncArg)
     local
       String n;
       DAE.Type ty;
@@ -2806,7 +2806,7 @@ algorithm
         Print.printErrorBuf(n);
       then
         ();
-  end matchcontinue;
+  end match;
 end printFarg;
 
 public function printFargStr "Prints a function argument to a string"
@@ -5402,7 +5402,7 @@ protected function getAllExpsVar "Helper function to getAllExpsVars."
   input DAE.Var inVar;
   output list<DAE.Exp> outExpExpLst;
 algorithm
-  outExpExpLst := matchcontinue (inVar)
+  outExpExpLst := match (inVar)
     local
       list<DAE.Exp> tyexps,bndexp,exps;
       String id;
@@ -5416,7 +5416,7 @@ algorithm
         exps = listAppend(tyexps, bndexp);
       then
         exps;
-  end matchcontinue;
+  end match;
 end getAllExpsVar;
 
 protected function getAllExpsBinding "Helper function to get_all_exps_var."
@@ -6050,9 +6050,9 @@ end uniontypeFilter;
 public function metarecordFilter
   input DAE.Type ty;
 algorithm
-  _ := matchcontinue ty
+  _ := match ty
     case DAE.T_METARECORD(utPath = _) then ();
-  end matchcontinue;
+  end match;
 end metarecordFilter;
 
 public function getUniontypePaths

@@ -443,7 +443,7 @@ public function getScopeNames " Returns the name of a scope, if no name exist, t
   input Env inEnv;
   output list<String> names;
 algorithm
-  names := matchcontinue (inEnv)
+  names := match (inEnv)
     local
       String name;
       Env rest;
@@ -459,7 +459,7 @@ algorithm
       equation
         names = getScopeNames(rest);
       then "-NONAME-"::names;
-  end matchcontinue;
+  end match;
 end getScopeNames;
 
 public function updateEnv
@@ -1104,9 +1104,9 @@ public function mergeItems
   input Modifications inMods;
   output Item outItem;
 algorithm
-  outItem := matchcontinue(inNewItem, inOldItem, inMods)
+  outItem := match(inNewItem, inOldItem, inMods)
     case (_, _, _) then inNewItem;
-  end matchcontinue;
+  end match;
 end mergeItems;
 
 public function isComponentFrame 
@@ -1456,7 +1456,7 @@ public function printModifications
 "searches the env for propagated modifers"
   input Env inEnv;
 algorithm
-  _ := matchcontinue(inEnv)
+  _ := match(inEnv)
     local
       Modifications pm;
       String str;
@@ -1473,7 +1473,7 @@ algorithm
       then
         ();
       
-  end matchcontinue;
+  end match;
 end printModifications;
 
 public function propagatedModifiersStr
@@ -1481,7 +1481,7 @@ public function propagatedModifiersStr
   input Modifications inPM;
   output String outStr;
 algorithm
-  outStr := matchcontinue(inPM)
+  outStr := match(inPM)
     local
       Modifications rest;
       DAE.Mod m;
@@ -1498,7 +1498,7 @@ algorithm
       then
         str;
     
-  end matchcontinue;
+  end match;
 end propagatedModifiersStr;
 
 public function extendFrameDefunit
@@ -1823,7 +1823,7 @@ end printEnv;
 public function printEnvConnectionCrefs "prints the connection crefs of the top frame"
   input Env env;
 algorithm
-  _ := matchcontinue(env)
+  _ := match(env)
     local
       list<DAE.ComponentRef> crs;
       CSetsType clst;
@@ -1835,7 +1835,7 @@ algorithm
         print(stringDelimitList(List.map(crs,ComponentReference.printComponentRefStr),", "));
         print("\n");
       then ();
-  end matchcontinue;
+  end match;
 end printEnvConnectionCrefs;
 
 protected function printFrameStr "Print a Frame to a string."
@@ -3328,13 +3328,13 @@ public function checkSameRestriction
   output SCode.Restriction outRes;
   output Absyn.Info outInfo;
 algorithm
-  (outRes, outInfo) := matchcontinue(inResNew, inResOrig, inInfoNew, inInfoOrig)
+  (outRes, outInfo) := match(inResNew, inResOrig, inInfoNew, inInfoOrig)
     case (_, _, _, _)
       equation
         // todo: check if the restrictions are the same for redeclared classes
       then
         (inResNew, inInfoNew);
-  end matchcontinue;
+  end match;
 end checkSameRestriction;
 
 public function crefStripEnvPrefix

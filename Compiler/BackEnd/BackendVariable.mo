@@ -955,11 +955,11 @@ public function varNominal "author: PA
   input BackendDAE.Var inVar;
   output Real outReal;
 algorithm
-  outReal := matchcontinue (inVar)
+  outReal := match (inVar)
     local
       Real nominal;
     case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(nominal=SOME(DAE.RCONST(nominal)))))) then nominal;
-  end matchcontinue;
+  end match;
 end varNominal;
 
 public function varCref

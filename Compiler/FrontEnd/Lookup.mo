@@ -344,7 +344,7 @@ public function lookupClass "Tries to find a specified class in an environment"
   output Env.Env outEnv;
 algorithm
   // print("Lookup C1: " +& Absyn.pathString(inPath) +& " env: " +& Env.printEnvPathStr(inEnv) +& " msg: " +& boolString(msg) +& "\n");
-  (outCache,outClass,outEnv) := matchcontinue(inCache, inEnv, inPath, msg)
+  (outCache,outClass,outEnv) := match(inCache, inEnv, inPath, msg)
     local Absyn.Path p;
     /*/ strip fully qualified paths in this env 
     case (_, _, _, _)
@@ -359,7 +359,7 @@ algorithm
          (outCache,outClass,outEnv,_) = lookupClass1(inCache, inEnv, inPath, {}, Util.makeStatefulBoolean(false), msg);
       then
         (outCache,outClass,outEnv);
-  end matchcontinue;
+  end match;
   // print("Lookup C2: " +& " outenv: " +& Env.printEnvPathStr(outEnv) +& "\n");
 end lookupClass;
 
@@ -412,7 +412,7 @@ protected function lookupClass2 "help function to lookupClass, does all the work
   output Env.Env outEnv "The environment in which the class was found (not the environment inside the class)";
   output list<Env.Frame> outPrevFrames;
 algorithm
-  (outCache,outClass,outEnv,outPrevFrames) := matchcontinue (inCache,inEnv,inPath,inPrevFrames,inState,msg)
+  (outCache,outClass,outEnv,outPrevFrames) := match (inCache,inEnv,inPath,inPrevFrames,inState,msg)
     local
       Env.Frame f;
       Env.Cache cache;
@@ -452,7 +452,7 @@ algorithm
         Debug.traceln("lookupClass failed " +& Absyn.pathString(p) +& " " +& Env.printEnvPathStr(env));
       then fail();
     */
-  end matchcontinue;
+  end match;
 end lookupClass2;
 
 protected function lookupClassQualified
@@ -469,7 +469,7 @@ protected function lookupClassQualified
   output Env.Env outEnv "The environment in which the class was found (not the environment inside the class)";
   output list<Env.Frame> outPrevFrames;
 algorithm
-  (outCache,outClass,outEnv,outPrevFrames) := matchcontinue (inCache,inEnv,id,path,inOptFrame,inPrevFrames,inState,msg)
+  (outCache,outClass,outEnv,outPrevFrames) := match (inCache,inEnv,id,path,inOptFrame,inPrevFrames,inState,msg)
     local
       SCode.Element c;
       Absyn.Path scope;
@@ -496,7 +496,7 @@ algorithm
       then
         (cache,c,env,prevFrames);
 
-  end matchcontinue;
+  end match;
 end lookupClassQualified;
 
 protected function lookupClassQualified2
@@ -2390,7 +2390,7 @@ protected function lookupClassAssertClass
   input Env.Item item;
   output SCode.Element c;
 algorithm
-  c := matchcontinue(item)
+  c := match(item)
     local
       String id;
       SCode.Element comp;
@@ -2405,7 +2405,7 @@ algorithm
         Error.addSourceMessage(Error.LOOKUP_TYPE_FOUND_COMP, {id}, info);
       then
         fail();
-  end matchcontinue;
+  end match;
 end lookupClassAssertClass;
 
 protected function reportSeveralNamesError

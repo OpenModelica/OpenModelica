@@ -126,7 +126,7 @@ public function applyReplacementsDAE "Apply a set of replacement rules on a DAE 
     output Boolean outBoolean;
   end FuncTypeExp_ExpToBoolean;
 algorithm
-  outDae := matchcontinue(dae,repl,condExpFunc)
+  outDae := match(dae,repl,condExpFunc)
   local list<DAE.Element> elts;
     DAE.FunctionTree funcs;
     list<tuple<DAE.AvlKey,DAE.AvlValue>> funcLst;
@@ -134,7 +134,7 @@ algorithm
       equation
         elts = applyReplacementsDAEElts(elts,repl,condExpFunc);
       then (DAE.DAE(elts));
-  end matchcontinue;
+  end match;
 end applyReplacementsDAE;
 
 protected function applyReplacementsDAEFuncLst "help function to applyReplacementsDAE, goes though the function tree"
@@ -147,7 +147,7 @@ protected function applyReplacementsDAEFuncLst "help function to applyReplacemen
     output Boolean outBoolean;
   end FuncTypeExp_ExpToBoolean;
 algorithm
-  outFuncLst := matchcontinue(funcLst,repl,condExpFunc)
+  outFuncLst := match(funcLst,repl,condExpFunc)
    local
      Absyn.Path p;
      DAE.Function elt;
@@ -156,7 +156,7 @@ algorithm
       {elt} = applyReplacementsFunctions({elt},repl,condExpFunc);
       outFuncLst = applyReplacementsDAEFuncLst(outFuncLst,repl,condExpFunc);
     then ((p,SOME(elt))::outFuncLst);
-  end matchcontinue;
+  end match;
 end applyReplacementsDAEFuncLst;
 
 public function applyReplacementsDAEElts "Help function to applyReplacementsDAE, goes though the element list"
@@ -393,7 +393,7 @@ protected function applyReplacementsFunctions
     output Boolean outBoolean;
   end FuncTypeExp_ExpToBoolean;
 algorithm
-  outFns := matchcontinue (fns,repl,condExpFunc)
+  outFns := match (fns,repl,condExpFunc)
     local
        list<DAE.Function> dae,dae2;
        list<DAE.Element> elist,elist2;
@@ -419,7 +419,7 @@ algorithm
         dae2 = applyReplacementsFunctions(dae,repl,condExpFunc);
       then
         DAE.FUNCTION(path,DAE.FUNCTION_EXT(elist2,extdecl)::derFuncs,ftp,partialPrefix,isImpure,inlineType,source,cmt)::dae2;
-  end matchcontinue;
+  end match;
 end applyReplacementsFunctions;
 
 protected function applyReplacementsVarAttr "Help function to applyReplacementsDAEElts"
@@ -432,7 +432,7 @@ protected function applyReplacementsVarAttr "Help function to applyReplacementsD
     output Boolean outBoolean;
   end FuncTypeExp_ExpToBoolean;
 algorithm
-  outAttr := matchcontinue(attr,repl,condExpFunc)
+  outAttr := match(attr,repl,condExpFunc)
     local
       Option<DAE.Exp> quantity,unit,displayUnit,min,max,initial_,fixed,nominal,startOrigin;
       Option<DAE.StateSelect> stateSelect;
@@ -477,7 +477,7 @@ algorithm
         then SOME(DAE.VAR_ATTR_STRING(quantity,initial_,eb,ip,fn,startOrigin));
 
       case (NONE(),_,_) then NONE();
-  end matchcontinue;
+  end match;
 end  applyReplacementsVarAttr;
 
 public function applyReplacements "This function takes a VariableReplacements and two component references.
@@ -490,7 +490,7 @@ public function applyReplacements "This function takes a VariableReplacements an
   output DAE.ComponentRef outComponentRef2;
 algorithm
   (outComponentRef1,outComponentRef2):=
-  matchcontinue (inVariableReplacements1,inComponentRef2,inComponentRef3)
+  match (inVariableReplacements1,inComponentRef2,inComponentRef3)
     local
       DAE.ComponentRef cr1_1,cr2_1,cr1,cr2;
       VariableReplacements repl;
@@ -500,7 +500,7 @@ algorithm
         (DAE.CREF(cr2_1,_),_) = replaceExp(Expression.crefExp(cr2), repl,NONE());
       then
         (cr1_1,cr2_1);
-  end matchcontinue;
+  end match;
 end applyReplacements;
 
 public function applyReplacementList " Author: BZ, 2008-11
@@ -511,7 +511,7 @@ public function applyReplacementList " Author: BZ, 2008-11
   input VariableReplacements repl;
   input list<DAE.ComponentRef> increfs;
   output list<DAE.ComponentRef> ocrefs;
-algorithm  (ocrefs):= matchcontinue (repl,increfs)
+algorithm  (ocrefs):= match (repl,increfs)
     local
       DAE.ComponentRef cr1_1,cr1;
     case(_,{}) then {};
@@ -521,7 +521,7 @@ algorithm  (ocrefs):= matchcontinue (repl,increfs)
         ocrefs = applyReplacementList(repl,ocrefs);
       then
         cr1_1::ocrefs;
-  end matchcontinue;
+  end match;
 end applyReplacementList;
 
 public function applyReplacementsExp "
@@ -535,7 +535,7 @@ Similar to applyReplacements but for expressions instead of component references
   output DAE.Exp outExp2;
 algorithm
   (outExp1,outExp2):=
-  matchcontinue (repl,inExp1,inExp2)
+  match (repl,inExp1,inExp2)
     local
       DAE.Exp e1,e2;
       Boolean b1,b2;
@@ -547,7 +547,7 @@ algorithm
         (e2,_) = ExpressionSimplify.simplify1(e2);
       then
         (e1,e2);
-  end matchcontinue;
+  end match;
 end applyReplacementsExp;
 
 public function emptyReplacementsArray "create an array of n empty replacements"
@@ -856,7 +856,7 @@ Function for dumping replacements to string.
 "
   input VariableReplacements inVariableReplacements;
   output String ostr;
-algorithm ostr := matchcontinue (inVariableReplacements)
+algorithm ostr := match (inVariableReplacements)
     local
       list<DAE.Exp> srcs,dsts;
       list<String> srcstrs,dststrs,dststrs_1,strs;
@@ -871,7 +871,7 @@ algorithm ostr := matchcontinue (inVariableReplacements)
         s1 = "Replacements: (" +& intString(listLength(tplLst)) +& ")\n=============\n" +& str +& "\n";
       then
         s1;
-  end matchcontinue;
+  end match;
 end dumpReplacementsStr;
 
 public function getAllReplacements "
@@ -881,7 +881,7 @@ Extract all crefs -> exp to two separate lists.
 input VariableReplacements inVariableReplacements;
 output list<DAE.ComponentRef> crefs;
 output list<DAE.Exp> dsts;
-algorithm (crefs,dsts) := matchcontinue (inVariableReplacements)
+algorithm (crefs,dsts) := match (inVariableReplacements)
     local
       HashTable2.HashTable ht;
       list<tuple<DAE.ComponentRef,DAE.Exp>> tplLst;
@@ -892,7 +892,7 @@ algorithm (crefs,dsts) := matchcontinue (inVariableReplacements)
         dsts = List.map(tplLst,Util.tuple22);
       then
         (crefs,dsts);
-  end matchcontinue;
+  end match;
 end getAllReplacements;
 
 protected function printReplacementTupleStr "help function to dumpReplacements"
@@ -909,21 +909,21 @@ public function replacementSources "Returns all sources of the replacement rules
   input VariableReplacements repl;
   output list<DAE.ComponentRef> sources;
 algorithm
-  sources := matchcontinue(repl)
+  sources := match(repl)
   local list<DAE.Exp> srcs;
     HashTable2.HashTable ht;
     case (REPLACEMENTS(ht,_))
       equation
           sources = BaseHashTable.hashTableKeyList(ht);
       then sources;
-  end matchcontinue;
+  end match;
 end replacementSources;
 
 public function replacementTargets "Returns all targets of the replacement rules"
   input VariableReplacements repl;
   output list<DAE.ComponentRef> sources;
 algorithm
-  sources := matchcontinue(repl)
+  sources := match(repl)
     local
       list<DAE.Exp> targets;
       list<DAE.ComponentRef> targets2;
@@ -935,7 +935,7 @@ algorithm
         targets2 = List.flatten(List.map(targets,Expression.extractCrefsFromExp));
       then
         targets2;
-  end matchcontinue;
+  end match;
 end replacementTargets;
 
 public function addReplacementLst " adds several replacements given by list of crefs and list of expressions by repeatedly calling addReplacement"
@@ -1131,7 +1131,7 @@ public function addReplacementIfNot "Calls addReplacement() if condition (first 
   input DAE.Exp inDst;
   output VariableReplacements outRepl;
 algorithm
-  outRepl:=  matchcontinue (condition,repl,inSrc,inDst)
+  outRepl:=  match (condition,repl,inSrc,inDst)
     local
       DAE.ComponentRef src;
       DAE.Exp dst;
@@ -1142,7 +1142,7 @@ algorithm
       then repl_1;
     case (true,_,src,dst)
       then repl;
-  end matchcontinue;
+  end match;
 end addReplacementIfNot;
 
 protected function makeTransitive "
@@ -1323,7 +1323,7 @@ public function replaceExpOpt "Similar to replaceExp but takes Option<Exp> inste
     output Boolean outBoolean;
   end FuncTypeExp_ExpToBoolean;
 algorithm
-  outExp := matchcontinue (inExp,repl,funcOpt)
+  outExp := match (inExp,repl,funcOpt)
   local DAE.Exp e;
     case(NONE(),_,_) then NONE();
     case(SOME(e),_,_)
@@ -1331,7 +1331,7 @@ algorithm
         /* TODO: Propagate this boolean? */
         (e,_) = replaceExp(e,repl,funcOpt);
       then SOME(e);
-  end matchcontinue;
+  end match;
 end replaceExpOpt;
 
 public function avoidDoubleHashLookup "
@@ -1727,7 +1727,7 @@ protected function bintreeToExplist "This function takes a BinTree and transform
   output list<DAE.Exp> outExpExpLst2;
 algorithm
   (outExpExpLst1,outExpExpLst2):=
-  matchcontinue (inBinTree)
+  match (inBinTree)
     local
       list<DAE.Exp> klst,vlst;
       BinTree bt;
@@ -1736,7 +1736,7 @@ algorithm
         (klst,vlst) = bintreeToExplist2(bt, {}, {});
       then
         (klst,vlst);
-  end matchcontinue;
+  end match;
 end bintreeToExplist;
 
 protected function bintreeToExplist2 "helper function to bintree_to_list"
@@ -1780,7 +1780,7 @@ protected function bintreeToExplistOpt "helper function to bintree_to_list"
   output list<DAE.Exp> outExpExpLst2;
 algorithm
   (outExpExpLst1,outExpExpLst2):=
-  matchcontinue (inBinTreeOption1,inExpExpLst2,inExpExpLst3)
+  match (inBinTreeOption1,inExpExpLst2,inExpExpLst3)
     local
       list<DAE.Exp> klst,vlst;
       BinTree bt;
@@ -1790,7 +1790,7 @@ algorithm
         (klst,vlst) = bintreeToExplist2(bt, klst, vlst);
       then
         (klst,vlst);
-  end matchcontinue;
+  end match;
 end bintreeToExplistOpt;
 
 protected function treeGet "

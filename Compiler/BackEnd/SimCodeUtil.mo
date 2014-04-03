@@ -7360,7 +7360,7 @@ end derVarFromStateVar;
 protected function dumpVar
   input SimCode.SimVar inVar;
 algorithm
-  _ := matchcontinue(inVar)
+  _ := match(inVar)
   local
     DAE.ComponentRef name, name2;
     SimCode.AliasVariable aliasvar;
@@ -7382,7 +7382,7 @@ algorithm
         s2 = ComponentReference.printComponentRefStr(name2);
         print(" Minus Alias for var " +& s1 +& " is " +& s2 +& "\n");
      then ();
-   end matchcontinue;
+   end match;
 end dumpVar;
 
 
@@ -8616,7 +8616,7 @@ protected function getCallPath "Retrive the function name from a CALL expression
   input DAE.Exp inExp;
   output Absyn.Path outPath;
 algorithm
-  outPath := matchcontinue (inExp)
+  outPath := match (inExp)
     local
       Absyn.Path path;
       DAE.ComponentRef cref;
@@ -8628,7 +8628,7 @@ algorithm
         path = ComponentReference.crefToPath(cref);
       then
         path;
-  end matchcontinue;
+  end match;
 end getCallPath;
 
 protected function removeDuplicatePaths "Remove duplicate Paths in a list of Paths."
@@ -8636,7 +8636,7 @@ protected function removeDuplicatePaths "Remove duplicate Paths in a list of Pat
   output list<Absyn.Path> outAbsynPathLst;
 algorithm
   outAbsynPathLst:=
-  matchcontinue (inAbsynPathLst)
+  match (inAbsynPathLst)
     local
       list<Absyn.Path> restwithoutfirst, recresult, rest;
       Absyn.Path first;
@@ -8647,7 +8647,7 @@ algorithm
         recresult = removeDuplicatePaths(restwithoutfirst);
       then
         (first :: recresult);
-  end matchcontinue;
+  end match;
 end removeDuplicatePaths;
 
 protected function removePathFromList

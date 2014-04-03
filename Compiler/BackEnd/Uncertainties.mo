@@ -910,7 +910,7 @@ protected function findReductionCantidates
   input list<tuple<list<Integer>,list<Integer>>> acc;
   output list<tuple<list<Integer>,list<Integer>>> out;
 algorithm
-out:=matchcontinue(variables,occurrences,acc)
+out:=match(variables,occurrences,acc)
   local
     Integer var;
     list<Integer> occurrence,varTail;
@@ -922,7 +922,7 @@ out:=matchcontinue(variables,occurrences,acc)
       newAcc=findReductionCantidates2(var,occurrence,acc);
     then
       findReductionCantidates(varTail,occurrenceTail,newAcc);
-end matchcontinue;
+end match;
 end findReductionCantidates;
 
 protected function findReductionCantidates2
@@ -1559,7 +1559,7 @@ end getExtIncidenceMatrix2;
 protected function dumpExtIncidenceMatrix
   input ExtIncidenceMatrix m;
 algorithm
-  _:=matchcontinue(m)
+  _:=match(m)
     local
       ExtIncidenceMatrix t;
       Integer eq;
@@ -1571,7 +1571,7 @@ algorithm
           print(intString(eq)+&":"+&stringDelimitList(List.map(vars,intString),",")+&"\n");
           dumpExtIncidenceMatrix(t);
         then ();
-  end matchcontinue;
+  end match;
 end dumpExtIncidenceMatrix;
 
 protected function containsAny

@@ -3934,7 +3934,7 @@ public function replaceOrAddElementInProgram
   input Absyn.Path inClassPath;
   output Program outProgram;
 algorithm
-  outProgram := matchcontinue(inProgram, inElement, inClassPath)
+  outProgram := match(inProgram, inElement, inClassPath)
     local
       Program sp;
       Element c, e;
@@ -3962,7 +3962,7 @@ algorithm
         sp = replaceOrAddElementInProgram(inProgram, inElement, p);
       then
         sp;
-  end matchcontinue;
+  end match;
 end replaceOrAddElementInProgram;
 
 public function replaceOrAddElementWithId
@@ -4067,7 +4067,7 @@ public function getElementWithPath
   input Absyn.Path inPath;
   output Element outElement;
 algorithm
-  outElement := matchcontinue(inProgram, inPath)
+  outElement := match(inProgram, inPath)
     local
       Program sp, rest;
       Element c, e;
@@ -4090,7 +4090,7 @@ algorithm
         e = getElementWithPath(sp, p);
       then
         e;
-  end matchcontinue;
+  end match;
 end getElementWithPath;
 
 public function getElementsFromElement
@@ -4098,7 +4098,7 @@ public function getElementsFromElement
   input Element inElement;
   output Program outProgram;
 algorithm
-  outProgram := matchcontinue(inProgram, inElement)
+  outProgram := match(inProgram, inElement)
     local
       Program els;
       Element e;
@@ -4116,7 +4116,7 @@ algorithm
         els = getElementsFromElement(inProgram, e);
       then
         els;
-  end matchcontinue;
+  end match;
 end getElementsFromElement;
 
 public function replaceElementsInElement
@@ -4951,7 +4951,7 @@ public function mergeClassDef
   input ClassDef inOld;
   output ClassDef outNew;
 algorithm
-  outNew := matchcontinue(inNew, inOld)
+  outNew := match(inNew, inOld)
     local
       ClassDef n, o;
       Absyn.TypeSpec ts1, ts2;
@@ -4967,7 +4967,7 @@ algorithm
       then
         n;
       
-  end matchcontinue;
+  end match;
 end mergeClassDef;
 
 public function mergeModifiers

@@ -3050,7 +3050,7 @@ protected function assignOtherEqnVarTpl " assigns otherEqnVarTpl for TORNSYSTEM
   input list<tuple<Integer,list<Integer>>> inOtherEqnVarTpl;
   output list<tuple<Integer,list<Integer>>> outOtherEqnVarTpl;  
 algorithm
- outOtherEqnVarTpl := matchcontinue(inEqns,eindex,vindx,ass2,mapEqnIncRow,inOtherEqnVarTpl)
+ outOtherEqnVarTpl := match(inEqns,eindex,vindx,ass2,mapEqnIncRow,inOtherEqnVarTpl)
    local
      Integer eq,otherEqn;
      list<Integer> eqns,vars,otherVars,rest;
@@ -3063,7 +3063,7 @@ algorithm
     otherEqn = listGet(eindex,eq);
     otherVars = listReverse(selectFromList(vindx,vars));
      then assignOtherEqnVarTpl(rest,eindex,vindx,ass2,mapEqnIncRow,(otherEqn,otherVars)::inOtherEqnVarTpl);   
- end matchcontinue;
+ end match;
 end assignOtherEqnVarTpl;
 
 
@@ -3073,7 +3073,7 @@ varibale (findEqorVar=2) that can be matched
   input tuple<list<Integer>,BackendDAE.IncidenceMatrix,BackendDAE.AdjacencyMatrixEnhanced,array<Integer>,array<Integer>,array<list<Integer>>,Integer> inTpl;
   output tuple<Integer,list<Integer>,list<Integer>> EqnsAndVars;
 algorithm
-  EqnsAndVars := matchcontinue(inTpl)
+  EqnsAndVars := match(inTpl)
     local
       Integer eqn,eqn_coll,var;
       list<Integer> eqns,vars,rest;
@@ -3100,7 +3100,7 @@ algorithm
     b = solvableLst(eqn_enh);
        then Debug.bcallret1(boolNot(b),getpossibleEqnorVar,(rest,m_mt,me_met,ass1,ass2,mapEqnIncRow,2),(eqn,{var},{eqn}));
     else then fail();
-   end matchcontinue;
+   end match;
 end getpossibleEqnorVar;
         
 
@@ -3110,7 +3110,7 @@ protected function markTVars
   input list<Integer> tVars, ass1In;
   output list<Integer> ass1Out;
 algorithm
- ass1Out := matchcontinue(tVars,ass1In)
+ ass1Out := match(tVars,ass1In)
   local
     Integer tVar;
   list<Integer> rest,ass1;
@@ -3119,7 +3119,7 @@ algorithm
    equation
      ass1 = List.set(ass1In,tVar,listLength(ass1In)*2);
   then markTVars(rest,ass1);
- end matchcontinue;
+ end match;
 end markTVars;
   
   
@@ -3250,7 +3250,7 @@ author: Waurich TUD 2013-01"
   input Integer parent,child;
   output array<list<Integer>> lOut,ltOut;
 algorithm
-  (lOut,ltOut) := matchcontinue(lIn,ltIn,parent,child)
+  (lOut,ltOut) := match(lIn,ltIn,parent,child)
     local
       array<list<Integer>> l,lt;
       list<Integer> row,loops,broken,leftovers;
@@ -3267,7 +3267,7 @@ algorithm
         lt = arrayDeleteColumns(ltIn,broken);
       then
           (l,lt);
-  end matchcontinue;
+  end match;
 end updateLoopOccurenceMatrix;
 
 protected function arrayDeleteColumns "deletes columns from array<list<Integer>>
@@ -4219,7 +4219,7 @@ protected function TearingSystemCarpanzano " selects Tearing Set and assigns Var
   input list<list<Integer>> orderIn;
   output list<Integer> OutTVars;
 algorithm
-  OutTVars := matchcontinue(inCausal,mIn,mtIn,meIn,meTIn,ass1In,ass2In,unsolvables,tvarsIn,orderIn)
+  OutTVars := match(inCausal,mIn,mtIn,meIn,meTIn,ass1In,ass2In,unsolvables,tvarsIn,orderIn)
   local
     Integer tvar;
     list<Integer> ass1,ass2,tvars,unassigned;
@@ -4256,7 +4256,7 @@ algorithm
       BackendDump.dumpAdjacencyMatrixTEnhanced(met);
       tvars = TearingSystemCarpanzano(causal,m,mt,me,met,ass1,ass2,unsolvables,tvars,order);
     then tvars;
-  end matchcontinue;
+  end match;
 end TearingSystemCarpanzano;
 
 protected function potentialsCarpanzano

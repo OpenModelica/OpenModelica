@@ -3611,7 +3611,7 @@ protected function replaceOptimicaExps
   output list<DAE.Constraint> ocontraints;
   output list<DAE.ClassAttributes> oclassAttributes;
 algorithm
-  (ocontraints, oclassAttributes) := matchcontinue(icontraints, iclassAttributes, irepl)
+  (ocontraints, oclassAttributes) := match(icontraints, iclassAttributes, irepl)
     local
       Option<DAE.Exp> objetiveE, objectiveIntegrandE, startTimeE, finalTimeE;
       list<DAE.Constraint> constraintLst, rest;
@@ -3633,7 +3633,7 @@ algorithm
         (constraintLst, _) = replaceOptimicaExps(rest, iclassAttributes, irepl);
         constraintLst = listAppend({DAE.CONSTRAINT_EXPS(constraintLstExps)}, constraintLst);
       then (constraintLst, iclassAttributes);
-  end matchcontinue;
+  end match;
 end replaceOptimicaExps;
 
 protected function replaceOptimicaContraints
@@ -3641,7 +3641,7 @@ protected function replaceOptimicaContraints
   input BackendVarTransform.VariableReplacements irepl;
   output list<DAE.Exp> ocontraints;
 algorithm
-  (ocontraints) := matchcontinue(icontraints, irepl)
+  (ocontraints) := match(icontraints, irepl)
     local
       list<DAE.Exp> constraintLst, rest;
       DAE.Exp e;
@@ -3652,7 +3652,7 @@ algorithm
         (constraintLst) = replaceOptimicaContraints(rest, irepl);
         constraintLst = listAppend({e}, constraintLst);
       then (constraintLst);
-  end matchcontinue;
+  end match;
 end replaceOptimicaContraints;
 
 protected function getAliasReplacements "author: Frenkel TUD 2012-12"
@@ -4097,7 +4097,7 @@ protected function negateExpression
   input String message;
   output DAE.Exp outExpression;
 algorithm
-  outExpression := matchcontinue(negationFlag, inExp, inAlternative, message)
+  outExpression := match(negationFlag, inExp, inAlternative, message)
     local DAE.Exp exp, negatedExp, negate;
     // we should negate
     case (true, _, _, _)
@@ -4112,7 +4112,7 @@ algorithm
         Debug.fcall(Flags.DEBUG_ALIAS, BackendDump.debugStrExpStrExpStr, ("Not negating: ", inExp, " returning: ", inAlternative, " " +& message +& ".\n"));
       then
         inAlternative;
-  end matchcontinue;
+  end match;
 end negateExpression;
 
 end RemoveSimpleEquations;

@@ -1257,7 +1257,7 @@ public function traverseEquationItemList
   end FuncTplToTpl;
   replaceable type TypeA subtypeof Any;
 algorithm
-  outTpl := matchcontinue (inEquationItemList,inFunc,inTypeA)
+  outTpl := match (inEquationItemList,inFunc,inTypeA)
     local
       list<EquationItem> cdr,cdr_1;
       FuncTplToTpl rel;
@@ -1270,7 +1270,7 @@ algorithm
         ((cdr_1,arg_2)) = traverseEquationItemList(cdr,rel,arg_1);
       then
         ((ei_1 :: cdr_1,arg_2));
-  end matchcontinue;
+  end match;
 end traverseEquationItemList;
 
 // stefan
@@ -1288,7 +1288,7 @@ public function traverseExpEqItemTupleList
   end FuncTplToTpl;
   replaceable type TypeA subtypeof Any;
 algorithm
-  outTpl := matchcontinue (inList,inFunc,inTypeA)
+  outTpl := match (inList,inFunc,inTypeA)
     local
       FuncTplToTpl rel;
       TypeA arg,arg_1,arg_2;
@@ -1302,7 +1302,7 @@ algorithm
         ((cdr_1,arg_2)) = traverseExpEqItemTupleList(cdr,rel,arg_1);
       then
         (((e,eilst_1) :: cdr_1,arg_2));
-  end matchcontinue;
+  end match;
 end traverseExpEqItemTupleList;
 
 // stefan
@@ -1417,7 +1417,7 @@ public function traverseAlgorithmItemList
   end FuncTplToTpl;
   replaceable type TypeA subtypeof Any;
 algorithm
-  outTpl := matchcontinue (inAlgorithmItemList,inFunc,inTypeA)
+  outTpl := match (inAlgorithmItemList,inFunc,inTypeA)
     local
       FuncTplToTpl rel;
       TypeA arg,arg_1,arg_2;
@@ -1430,7 +1430,7 @@ algorithm
         ((cdr_1,arg_2)) = traverseAlgorithmItemList(cdr,rel,arg_1);
       then
         ((ai_1 :: cdr_1,arg_2));
-  end matchcontinue;
+  end match;
 end traverseAlgorithmItemList;
 
 // stefan
@@ -1448,7 +1448,7 @@ public function traverseExpAlgItemTupleList
   end FuncTplToTpl;
   replaceable type TypeA subtypeof Any;
 algorithm
-  outTpl := matchcontinue (inList,inFunc,inTypeA)
+  outTpl := match (inList,inFunc,inTypeA)
     local
       FuncTplToTpl rel;
       TypeA arg,arg_1,arg_2;
@@ -1462,7 +1462,7 @@ algorithm
         ((cdr_1,arg_2)) = traverseExpAlgItemTupleList(cdr,rel,arg_1);
       then
         (((e,ailst_1) :: cdr_1,arg_2));
-  end matchcontinue;
+  end match;
 end traverseExpAlgItemTupleList;
 
 public function traverseExp
@@ -2516,9 +2516,9 @@ public function expString "returns the string of an expression if it is a string
   input Exp exp;
   output String str;
 algorithm
-  str := matchcontinue(exp)
+  str := match(exp)
     case(STRING(str)) then str;
-  end matchcontinue;
+  end match;
 end expString;
 
 public function expCref "returns the componentRef of an expression if matches."
@@ -3288,7 +3288,7 @@ public function crefRemovePrefix
   input ComponentRef cr;
   output ComponentRef out;
 algorithm
-  out := matchcontinue(prefixCr, cr)
+  out := match(prefixCr, cr)
     local
       Ident prefixIdent, ident;
       ComponentRef prefixRestCr, restCr;
@@ -3312,7 +3312,7 @@ algorithm
       equation
         true = stringEq(prefixIdent, ident);
       then CREF_IDENT("", {});
-  end matchcontinue;
+  end match;
 end crefRemovePrefix;
 
 public function pathContains "
@@ -3349,7 +3349,7 @@ checks if Path contains the given string."
   input String str;
   output Boolean b;
 algorithm
-  b := matchcontinue(p1,str)
+  b := match(p1,str)
     local
       String str1,searchStr;
       Path qp;
@@ -3370,7 +3370,7 @@ algorithm
 
     case(FULLYQUALIFIED(qp), searchStr)
     then pathContainsString(qp, searchStr);
-  end matchcontinue;
+  end match;
 end pathContainsString;
 
 public function pathContainedIn "This function checks if subPath is contained in path.
@@ -3893,12 +3893,12 @@ public function stripFirst "Returns the path given as argument
   output Path outPath;
 algorithm
   outPath:=
-  matchcontinue (inPath)
+  match (inPath)
     local
       Path p;
     case (QUALIFIED(name = _,path = p)) then p;
     case(FULLYQUALIFIED(p)) then stripFirst(p);
-  end matchcontinue;
+  end match;
 end stripFirst;
 
 public function crefToPath "This function converts a ComponentRef to a Path, if possible.
@@ -4220,14 +4220,14 @@ public function crefGetFirst "Returns first ident from a ComponentRef"
   output ComponentRef outComponentRef;
 algorithm
   outComponentRef:=
-  matchcontinue (inComponentRef)
+  match (inComponentRef)
     local
       Ident i;
       ComponentRef cr;
     case (CREF_IDENT(name = i)) then CREF_IDENT(i,{});
     case (CREF_QUAL(name = i)) then CREF_IDENT(i,{});
     case (CREF_FULLYQUALIFIED(cr)) then crefGetFirst(cr);
-  end matchcontinue;
+  end match;
 end crefGetFirst;
 
 public function crefStripFirst "Strip the first ident from a ComponentRef"
@@ -4347,7 +4347,7 @@ public function setClassName "author: BZ
   output Class outClass;
 algorithm
   outClass:=
-  matchcontinue (inClass,newName)
+  match (inClass,newName)
     local
       Ident n;
       Boolean p,f,e;
@@ -4356,7 +4356,7 @@ algorithm
       Info nfo;
     case (CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = body),_)
       then CLASS(newName,p,f,e,r,body,INFO("",false,0,0,0,0, TIMESTAMP(0.0,0.0))  );
-  end matchcontinue;
+  end match;
 end setClassName;
 
 public function crefEqual " Checks if the name of a ComponentRef is

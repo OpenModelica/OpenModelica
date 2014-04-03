@@ -3195,7 +3195,7 @@ protected function renameComponentInAlgorithm
   output Absyn.Algorithm outAlgorithm;
 algorithm
   outAlgorithm:=
-  matchcontinue (inAlgorithm1,inComponentRef2,inComponentRef3)
+  match (inAlgorithm1,inComponentRef2,inComponentRef3)
     local
       Absyn.ComponentRef cr_1,cr,old_comp,new_comp;
       Absyn.Exp exp_1,exp,exp1_1,exp2_1,exp1,exp2;
@@ -3248,7 +3248,7 @@ algorithm
         func_args_1 = renameComponentInFunctionArgs(func_args, old_comp, new_comp);
       then
         Absyn.ALG_NORETCALL(cr_1,func_args_1);
-  end matchcontinue;
+  end match;
 end renameComponentInAlgorithm;
 
 protected function renameComponentInExpAlgoritmsList
@@ -3328,7 +3328,7 @@ protected function renameComponentInIterators
   input Absyn.ComponentRef newComp;
   output Absyn.ForIterators iteratorsRenamed;
 algorithm
-  iteratorsRenamed := matchcontinue(iterators, oldComp, newComp)
+  iteratorsRenamed := match(iterators, oldComp, newComp)
     local
       Absyn.ForIterators rest, restNew;
       Absyn.Exp exp, expNew; String i;
@@ -3342,7 +3342,7 @@ algorithm
       equation
         restNew = renameComponentInIterators(rest, oldComp, newComp);
       then Absyn.ITERATOR(i, NONE(), NONE())::restNew;
-  end matchcontinue;
+  end match;
 end renameComponentInIterators;
 
 protected function renameComponentInNamedArgs
@@ -4306,7 +4306,7 @@ protected function joinComponents
   output GlobalScript.Components outComponents;
 algorithm
   outComponents:=
-  matchcontinue (inComponents1,inComponents2)
+  match (inComponents1,inComponents2)
     local
       list<GlobalScript.Component> comps,comps1,comps2;
       Integer len,len1,len2;
@@ -4316,7 +4316,7 @@ algorithm
         len = listLength(comps);
       then
         GlobalScript.COMPONENTS(comps,len);
-  end matchcontinue;
+  end match;
 end joinComponents;
 
 protected function existsComponentInComponents
@@ -4419,10 +4419,10 @@ protected function lengthComponents
   output Integer outInteger;
 algorithm
   outInteger:=
-  matchcontinue (inComponents)
+  match (inComponents)
     local Integer len;
     case (GlobalScript.COMPONENTS(the = len)) then len;
-  end matchcontinue;
+  end match;
 end lengthComponents;
 
 protected function addComponentToComponents
@@ -4453,7 +4453,7 @@ protected function dumpComponentsToString
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inComponents)
+  match (inComponents)
     local
       GlobalScript.Components res,comps;
       String s1,pa_str,path_str,cr_str,res_str;
@@ -4480,7 +4480,7 @@ algorithm
         res_str = stringAppendList({s1,"ex: ",pa_str,"\t exte: ",path_str,"\n"});
       then
         res_str;
-  end matchcontinue;
+  end match;
 end dumpComponentsToString;
 
 protected function isParameterElement
@@ -5933,10 +5933,10 @@ protected function extendsName
   output Absyn.Path outPath;
 algorithm
   outPath:=
-  matchcontinue (inElementSpec)
+  match (inElementSpec)
     local Absyn.Path path;
     case (Absyn.EXTENDS(path = path)) then path;
-  end matchcontinue;
+  end match;
 end extendsName;
 
 protected function getExtendsElementspecInClass
@@ -10162,7 +10162,7 @@ protected function addClassAnnotationToClass
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   output Absyn.Class outClass;
 algorithm
-  outClass := matchcontinue (inClass,inAbsynNamedArgLst)
+  outClass := match (inClass,inAbsynNamedArgLst)
     local
       list<Absyn.ElementItem> publst,publst2,protlst,protlst2;
       list<Absyn.EquationItem> equationlst,equationlst2;
@@ -10197,7 +10197,7 @@ algorithm
         newann_1 = List.fold(ann,Absyn.mergeAnnotations,newann);
       then
         Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts,{newann_1}),file_info);
-  end matchcontinue;
+  end match;
 end addClassAnnotationToClass;
 
 protected function getInheritanceCount
@@ -10750,7 +10750,7 @@ protected function insertQuotesToList
   input list<String> inStringList;
   output list<String> outStringList;
 algorithm
-  outStringList := matchcontinue (inStringList)
+  outStringList := match (inStringList)
     local
       list<String> res,rest;
       String str_1,str;
@@ -10761,7 +10761,7 @@ algorithm
         res = insertQuotesToList(rest);
       then
         (str_1 :: res);
-  end matchcontinue;
+  end match;
 end insertQuotesToList;
 
 public function getComponents

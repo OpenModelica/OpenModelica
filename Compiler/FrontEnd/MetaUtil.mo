@@ -117,11 +117,11 @@ public function getTypeFromProp "function: getTypeFromProp"
   output DAE.Type outType;
 algorithm
   outType :=
-  matchcontinue (inProp)
+  match (inProp)
     local
       DAE.Type t;
     case (DAE.PROP(t,_)) equation then t;
-  end matchcontinue;
+  end match;
 end getTypeFromProp;
 
 public function getListOfStrings
@@ -368,14 +368,14 @@ function reparseType
   input Absyn.Path path;
   output DAE.Type outType;
 algorithm
-  outType := matchcontinue(path)
+  outType := match(path)
     local
       DAE.Type t;
     case(Absyn.IDENT("Integer")) then DAE.T_INTEGER_DEFAULT;
     case(Absyn.IDENT("Real")) then DAE.T_REAL_DEFAULT;
     case(Absyn.IDENT("String")) then DAE.T_STRING_DEFAULT;
     case(Absyn.IDENT("Boolean")) then DAE.T_BOOL_DEFAULT;
-  end matchcontinue;
+  end match;
 end reparseType;
 
 /* These functions are helper functions for the Uniontypes, added by simbj */
@@ -516,7 +516,7 @@ and types from a record call or metarecord call"
   output list<String> varNames;
   output list<DAE.Type> outTypes;
 algorithm
-  (varNames,outTypes) := matchcontinue (inType)
+  (varNames,outTypes) := match (inType)
     local
       list<String> names;
       list<DAE.Type> types;
@@ -534,7 +534,7 @@ algorithm
         names = List.map(fargs, Util.tuple51);
         types = List.map(fargs, Util.tuple52);
       then (names,types);
-  end matchcontinue;
+  end match;
 end constructorCallTypeToNamesAndTypes;
 
 public function fixUniontype

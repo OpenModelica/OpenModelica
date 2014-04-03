@@ -319,7 +319,7 @@ public function unelabDimension
   input DAE.Dimension inDim;
   output Absyn.Subscript outDim;
 algorithm
-  outDim := matchcontinue (inDim)
+  outDim := match (inDim)
     local
       Integer i;
       Absyn.Path p;
@@ -345,7 +345,7 @@ algorithm
   
     case (DAE.DIM_UNKNOWN()) then Absyn.NOSUB();
       
-  end matchcontinue;
+  end match;
 end unelabDimension;
 
 protected function unleabZeroExpFromType
@@ -1546,7 +1546,7 @@ public function expCrefInclIfExpFactors
   output list<DAE.ComponentRef> outComponentRefs;
 algorithm
   outComponentRefs:=
-  matchcontinue (inExp)
+  match (inExp)
     local ComponentRef cr; DAE.Exp c,tb,fb;
       list<DAE.Exp> f;
       list<DAE.ComponentRef> crefs;
@@ -1555,7 +1555,7 @@ algorithm
       f = List.select(listAppend(factors(tb),factors(fb)),isCref);
       crefs = List.map(f,expCref);
     then crefs;
-  end matchcontinue;
+  end match;
 end expCrefInclIfExpFactors;
 
 public function getArrayContents "returns the list of expressions in the array"

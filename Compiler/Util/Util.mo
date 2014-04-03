@@ -2451,11 +2451,11 @@ public function flattenOption "Returns the second argument if NONE() or the elem
   output Type_a outTypeA;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outTypeA := matchcontinue (inTypeAOption,inTypeA)
+  outTypeA := match (inTypeAOption,inTypeA)
     local Type_a n,c;
     case (NONE(),n) then n;
     case (SOME(c),n) then c;
-  end matchcontinue;
+  end match;
 end flattenOption;
 
 public function isEmptyString "Returns true if string is the empty string."
@@ -2640,7 +2640,7 @@ public function mulListIntegerOpt
   input Integer acc "accumulator, should be given 1";
   output Integer i;
 algorithm
-  i := matchcontinue(ad, acc)
+  i := match(ad, acc)
     local
       Integer ii, iii;
       list<Option<Integer>> rest;
@@ -2653,7 +2653,7 @@ algorithm
       equation
         iii = mulListIntegerOpt(rest, acc);
       then iii;
-  end matchcontinue;
+  end match;
 end mulListIntegerOpt;
 
 public type StatefulBoolean = array<Boolean> "A single boolean value that can be updated (a destructive operation)";

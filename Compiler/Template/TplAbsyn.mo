@@ -6049,7 +6049,7 @@ public function isRecordTag
 
 algorithm
   _ :=
-  matchcontinue (inTagIdent, inTypeInfo, inTypeIdent)
+  match (inTagIdent, inTypeInfo, inTypeIdent)
     local
       Ident typeident, tagident;
       list<tuple<Ident, TypedIdents>> rectags;
@@ -6063,7 +6063,7 @@ algorithm
       equation
         true = stringEq(tagident, typeident);
       then ();
-  end matchcontinue;
+  end match;
 end isRecordTag;
 
 public function fullyQualifyASTDefs

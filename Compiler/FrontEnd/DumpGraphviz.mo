@@ -454,23 +454,23 @@ protected function variabilitySymbol "Return Variability as a string."
   input Absyn.Variability inVariability;
   output String outString;
 algorithm
-  outString := matchcontinue (inVariability)
+  outString := match (inVariability)
     case (Absyn.VAR()) then "";
     case (Absyn.DISCRETE()) then "DISCRETE";
     case (Absyn.PARAM()) then "PARAM";
     case (Absyn.CONST()) then "CONST";
-  end matchcontinue;
+  end match;
 end variabilitySymbol;
 
 protected function directionSymbol "Return direction as a string."
   input Absyn.Direction inDirection;
   output String outString;
 algorithm
-  outString := matchcontinue (inDirection)
+  outString := match (inDirection)
     case (Absyn.BIDIR()) then "";
     case (Absyn.INPUT()) then "INPUT";
     case (Absyn.OUTPUT()) then "OUTPUT";
-  end matchcontinue;
+  end match;
 end directionSymbol;
 
 end DumpGraphviz;

@@ -185,7 +185,7 @@ public function isRecord "Return true if Value is an array."
   input Values.Value inValue;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inValue)
+  outBoolean := match (inValue)
     case (Values.INTEGER(integer = _)) then false;
     case (Values.REAL(real = _)) then false;
     case (Values.STRING(string = _)) then false;
@@ -196,7 +196,7 @@ algorithm
     case (Values.ARRAY(valueLst = _)) then false;
     case (Values.LIST(_)) then false; //MetaModelica list
     case (Values.RECORD(orderd = _)) then true;
-  end matchcontinue;
+  end match;
 end isRecord;
 
 public function nthArrayelt "author: PA

@@ -3735,7 +3735,7 @@ protected function selectDummyStateVars
   output BackendDAE.Variables outlov;
   output list<DAE.ComponentRef> outDummyStates;
 algorithm
-  (outhov,outlov,outDummyStates) := matchcontinue(states,vars,hov,inLov,inDummyStates)
+  (outhov,outlov,outDummyStates) := match(states,vars,hov,inLov,inDummyStates)
     local
       DAE.ComponentRef cr;
       Integer s;
@@ -3754,7 +3754,7 @@ algorithm
          (hov1,lov, dummystates) = selectDummyStateVars(rest,vars,hov1,lov,cr::inDummyStates);
         then
           (hov1,lov, dummystates);
-  end matchcontinue;
+  end match;
 end selectDummyStateVars;
 
 protected function getLevelStates
@@ -4521,7 +4521,7 @@ protected function determinantfromZycles
   input DAE.Exp iExp;
   output DAE.Exp oExp;
 algorithm
-  oExp := matchcontinue(zycles,size,iExp)
+  oExp := match(zycles,size,iExp)
     local
       Integer d;
       Real sign;
@@ -4541,7 +4541,7 @@ algorithm
         e = Expression.expAdd(iExp,e);
       then
         determinantfromZycles(rest,size,e);
-  end matchcontinue;
+  end match;
 end determinantfromZycles;
 
 protected function dumpDigraph
@@ -4712,7 +4712,7 @@ protected function getDeterminantDigraph
   input array<list<tuple<Integer,DAE.Exp>>> iDigraph;
   output array<list<tuple<Integer,DAE.Exp>>> oDigraph;
 algorithm
-  oDigraph := matchcontinue(jac,iDigraph)
+  oDigraph := match(jac,iDigraph)
     local
       Integer i,j;
       DAE.Exp e;
@@ -4726,7 +4726,7 @@ algorithm
         digraph = arrayUpdate(iDigraph,j,(i,e)::ilst);
       then
         getDeterminantDigraph(rest,digraph);
-  end matchcontinue;
+  end match;
 end getDeterminantDigraph;
 
 protected function dumpzycles
@@ -4734,7 +4734,7 @@ protected function dumpzycles
   input list<tuple<list<DAE.Exp>,Integer>> zycles;
   input Integer size;
 algorithm
-  _ := matchcontinue(zycles,size)
+  _ := match(zycles,size)
     local
       Integer d;
       Real sign;
@@ -4749,7 +4749,7 @@ algorithm
         dumpzycles(rest,size);
       then
         ();
-  end matchcontinue;
+  end match;
 end dumpzycles;
 
 protected function changeDerVariablestoStates
@@ -4996,7 +4996,7 @@ protected function changeDerVariablestoStates1
   output BackendDAE.Variables outVars;
   output list<Integer> outChangedVars;
 algorithm
-  (outVars,outChangedVars) := matchcontinue(varlst,indxs,inVars,inChangedVars)
+  (outVars,outChangedVars) := match(varlst,indxs,inVars,inChangedVars)
     local
       BackendDAE.Var v;
       list<BackendDAE.Var> rest;
@@ -5031,7 +5031,7 @@ algorithm
         (outVars,outChangedVars) = changeDerVariablestoStates1(rest,ilst,inVars,inChangedVars);
       then
         (outVars,outChangedVars);
-  end matchcontinue;
+  end match;
 end changeDerVariablestoStates1;
 
 protected function addDummyStateEqn

@@ -5144,7 +5144,7 @@ protected function simplifyMatrixProductOfRecords2
   input Absyn.Path sumFunc;
   output DAE.Exp outProduct;
 algorithm
-  outProduct := matchcontinue(inMatrix1, inMatrix2, mulFunc, sumFunc)
+  outProduct := match(inMatrix1, inMatrix2, mulFunc, sumFunc)
     local
       DAE.Dimension n, m, p;
       list<DAE.Exp> expl1, expl2;
@@ -5163,7 +5163,7 @@ algorithm
       then
         DAE.ARRAY(DAE.T_ARRAY(ty, {n, p}, tp), false, expl1);
 
-  end matchcontinue;
+  end match;
 end simplifyMatrixProductOfRecords2;
 
 protected function simplifyMatrixProductOfRecords3

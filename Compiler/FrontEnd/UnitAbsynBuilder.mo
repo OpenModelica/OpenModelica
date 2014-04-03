@@ -290,11 +290,11 @@ public function updateInstStore "  "
   input UnitAbsyn.Store st;
   output UnitAbsyn.InstStore outStore;
 algorithm
-  outStore := matchcontinue(store,st)
+  outStore := match(store,st)
   local HashTable.HashTable ht; Option<UnitAbsyn.UnitCheckResult> res;
     case(UnitAbsyn.INSTSTORE(_,ht,res),_) then UnitAbsyn.INSTSTORE(st,ht,res);
     case(UnitAbsyn.NOSTORE(),_) then UnitAbsyn.NOSTORE();
-  end matchcontinue;
+  end match;
 end updateInstStore;
 
 protected function expandStore "Expands store to make room for more entries.
@@ -354,10 +354,10 @@ public function instGetStore "Retrives the Store from an InstStore"
   input UnitAbsyn.InstStore store;
   output UnitAbsyn.Store st;
 algorithm
-  st := matchcontinue(store)
+  st := match(store)
     case(UnitAbsyn.INSTSTORE(st,_,_)) then st;
     case(UnitAbsyn.NOSTORE()) then emptyStore();
-  end matchcontinue;
+  end match;
 end instGetStore;
 
 public function emptyInstStore "returns an empty InstStore"
@@ -523,7 +523,7 @@ end printTermStr;
 public function printInstStore "prints the inst store to stdout"
 input UnitAbsyn.InstStore st;
 algorithm
-  _ := matchcontinue(st)
+  _ := match(st)
   local UnitAbsyn.Store s; HashTable.HashTable h;
     case(UnitAbsyn.INSTSTORE(s,h,_)) equation
       print("instStore, s:");
@@ -532,27 +532,27 @@ algorithm
       BaseHashTable.dumpHashTable(h);
     then ();
     case(UnitAbsyn.NOSTORE()) then ();
-  end matchcontinue;
+  end match;
 end printInstStore;
 
 public function printStore "prints the store to stdout"
 input UnitAbsyn.Store st;
 algorithm
-  _ := matchcontinue(st)
+  _ := match(st)
   local array<Option<UnitAbsyn.Unit>> vector; Integer indx;
     list<Option<UnitAbsyn.Unit>> lst;
     case(UnitAbsyn.STORE(vector,indx)) equation
       lst = arrayList(vector);
       printStore2(lst,1);
    then ();
-  end matchcontinue;
+  end match;
 end printStore;
 
 protected function printStore2 "help function to printStore"
 input list<Option<UnitAbsyn.Unit>> lst;
 input Integer indx;
 algorithm
-  _ := matchcontinue(lst,indx)
+  _ := match(lst,indx)
     local
       UnitAbsyn.Unit unit;
       list<Option<UnitAbsyn.Unit>> rest;
@@ -565,7 +565,7 @@ algorithm
       printStore2(rest,indx+1);
     then();
     case(NONE()::_,_) then ();
-  end matchcontinue;
+  end match;
 end printStore2;
 
 protected function printUnit "prints a unit to stdout (only for debugging)"
@@ -1523,14 +1523,14 @@ public function unitMultiply "Multiplying two units corresponds to adding the un
   output UnitAbsyn.Unit u;
 
 algorithm
-  u := matchcontinue(u1,u2)
+  u := match(u1,u2)
   local list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> tparams1,tparams2,tparams;
     list<MMath.Rational> units,units1,units2;
     case(UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(tparams1,units1)),UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(tparams2,units2))) equation
       tparams = listAppend(tparams1,tparams2);
       units = List.threadMap(units1,units2,MMath.addRational);
     then UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(tparams,units));
-  end matchcontinue;
+  end match;
 end unitMultiply;
 
 

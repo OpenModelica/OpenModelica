@@ -523,7 +523,7 @@ public function printComponentRefOptStr
   input Option<DAE.ComponentRef> inComponentRefOpt;
   output String outString;
 algorithm
-   outString := matchcontinue(inComponentRefOpt)
+   outString := match(inComponentRefOpt)
      local
        String str;
        DAE.ComponentRef cref;
@@ -538,7 +538,7 @@ algorithm
          str = "SOME(" +& str +& ")";
        then
          str;
-   end matchcontinue;
+   end match;
 end printComponentRefOptStr;
 
 public function printComponentRefStr
@@ -1917,7 +1917,7 @@ sets the 'last' type of a cref."
   input DAE.Type newType;
   output DAE.ComponentRef outRef;
 algorithm 
-  outRef := matchcontinue (inRef,newType)
+  outRef := match (inRef,newType)
     local
       DAE.Type ty;
       DAE.ComponentRef child;
@@ -1933,7 +1933,7 @@ algorithm
         child = crefSetLastType(child,newType);
       then
         makeCrefQual(id,ty,subs,child);
-  end matchcontinue;
+  end match;
 end crefSetLastType;
 
 public function replaceCrefSliceSub "
@@ -2057,7 +2057,7 @@ Alternative names: stripLastSliceSubs"
   input DAE.ComponentRef inCref;
   output DAE.ComponentRef outCref;
 algorithm
-  outCref := matchcontinue(inCref)
+  outCref := match(inCref)
     local
       DAE.Ident id;
       DAE.ComponentRef cr;
@@ -2075,7 +2075,7 @@ algorithm
         outCref = stripCrefIdentSliceSubs(cr);
       then
         makeCrefQual(id,ty,subs,outCref);
-  end matchcontinue;
+  end match;
 end stripCrefIdentSliceSubs;
 
 protected function removeSliceSubs "
@@ -2200,11 +2200,11 @@ i.e the identifier and eventual subscripts"
   input DAE.ComponentRef inCr;
   output DAE.ComponentRef outCr;
 algorithm
-  outCr := matchcontinue(inCr)
+  outCr := match(inCr)
     local
       DAE.ComponentRef cr;
     case( DAE.CREF_QUAL(componentRef = cr)) then cr;
-  end matchcontinue;
+  end match;
 end crefStripFirstIdent;
 
 public function crefStripLastSubsStringified

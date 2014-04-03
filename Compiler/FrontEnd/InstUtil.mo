@@ -783,7 +783,7 @@ protected function checkExtendsRestrictionMatch
   input SCode.Restriction r1;
   input SCode.Restriction r2;
 algorithm
-  _ := matchcontinue(r1, r2)
+  _ := match(r1, r2)
     // package can be extendended by package
     case (SCode.R_PACKAGE(), SCode.R_PACKAGE()) then ();
     // normal function -> normal function
@@ -828,7 +828,7 @@ algorithm
     case (SCode.R_CLASS(), SCode.R_CLASS()) then ();
     // operator -> operator
     case (SCode.R_OPERATOR(), SCode.R_OPERATOR()) then ();
-  end matchcontinue;
+  end match;
 end checkExtendsRestrictionMatch;
 
 protected function checkExtendsForTypeRestiction
@@ -1262,7 +1262,7 @@ public function printExtcomps
 "prints the tuple of elements and modifiers to stdout"
   input list<tuple<SCode.Element, DAE.Mod>> inTplSCodeElementModLst;
 algorithm
-  _ := matchcontinue (inTplSCodeElementModLst)
+  _ := match (inTplSCodeElementModLst)
     local
       String s;
       SCode.Element el;
@@ -1279,7 +1279,7 @@ algorithm
         printExtcomps(els);
       then
         ();
-  end matchcontinue;
+  end match;
 end printExtcomps;
 
 public function constantEls
@@ -4948,7 +4948,7 @@ helper function for getDeriveAnnotation"
   input Absyn.Info info;
   output list<DAE.FunctionDefinition> element;
 algorithm
-  (element) := matchcontinue(ann,elemDecl,baseFunc,inCache,inEnv,inIH,inPrefix,info)
+  (element) := match(ann,elemDecl,baseFunc,inCache,inEnv,inIH,inPrefix,info)
   local
     list<SCode.SubMod> smlst;
     list<SCode.Annotation> anns;
@@ -4956,7 +4956,7 @@ algorithm
   case(SCode.ANNOTATION(SCode.MOD(subModLst = smlst)),_,_,_,_,_,_,_)
      then getDeriveAnnotation3(smlst,elemDecl,baseFunc,inCache,inEnv,inIH,inPrefix,info);
 
-end matchcontinue;
+end match;
 end getDeriveAnnotation2;
 
 protected function getDeriveAnnotation3 "
@@ -6645,7 +6645,7 @@ This function splits the Element list into four lists
   output list<SCode.Element> extElts;
   output list<SCode.Element> compElts;
 algorithm
-  (cdefImpElts,classextendsElts,extElts,compElts) := matchcontinue (elts)
+  (cdefImpElts,classextendsElts,extElts,compElts) := match (elts)
     local
       list<SCode.Element> innerComps,otherComps,comps;
       SCode.Element cdef,imp,ext;
@@ -6659,7 +6659,7 @@ algorithm
         comps = listAppend(innerComps, otherComps);
       then
         (cdefImpElts,classextendsElts,extElts,comps);
-  end matchcontinue;
+  end match;
 end splitEltsOrderInnerOuter;
 
 public function splitElts "
@@ -7417,7 +7417,7 @@ protected function stringsSubs
 input list<String> inNames;
 output list<Absyn.Subscript> outSubs;
 algorithm
-  outSubs := matchcontinue(inNames)
+  outSubs := match(inNames)
   local
     String n;
     list<String> names;
@@ -7428,7 +7428,7 @@ algorithm
         subs = stringsSubs(names);
       then
         Absyn.SUBSCRIPT(Absyn.CREF(Absyn.CREF_IDENT(n,{})))::subs;
-  end matchcontinue;
+  end match;
 end stringsSubs;
 
 protected function stringSub
@@ -8134,7 +8134,7 @@ protected function printElementAndModList
   input list<tuple<SCode.Element, DAE.Mod>> inLstElAndMod;
   output String outStr;
 algorithm
-  outStr := matchcontinue(inLstElAndMod)
+  outStr := match(inLstElAndMod)
     local
       SCode.Element e;
       DAE.Mod m;
@@ -8152,7 +8152,7 @@ algorithm
       then
         s;
 
-  end matchcontinue;
+  end match;
 end printElementAndModList;
 
 protected function splitClassDefsAndComponents

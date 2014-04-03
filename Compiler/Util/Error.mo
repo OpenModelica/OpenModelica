@@ -966,9 +966,9 @@ end printErrorsNoWarning;
 public function printMessagesStrLst "Returns all messages as a list of strings, one for each message."
   output list<String> outStringLst;
 algorithm
-  outStringLst := matchcontinue ()
+  outStringLst := match ()
     case () then {"Not impl. yet"};
-  end matchcontinue;
+  end match;
 end printMessagesStrLst;
 
 public function printMessagesStrLstType " Returns all messages as a list of strings, one for each message.
@@ -976,9 +976,9 @@ public function printMessagesStrLstType " Returns all messages as a list of stri
   input MessageType inMessageType;
   output list<String> outStringLst;
 algorithm
-  outStringLst := matchcontinue (inMessageType)
+  outStringLst := match (inMessageType)
     case (_) then {"Not impl. yet"};
-  end matchcontinue;
+  end match;
 end printMessagesStrLstType;
 
 public function printMessagesStrLstSeverity "Returns all messages as a list of strings, one for each message.
@@ -986,9 +986,9 @@ public function printMessagesStrLstSeverity "Returns all messages as a list of s
   input Severity inSeverity;
   output list<String> outStringLst;
 algorithm
-  outStringLst := matchcontinue (inSeverity)
+  outStringLst := match (inSeverity)
     case (_) then {"Not impl. yet"};
-  end matchcontinue;
+  end match;
 end printMessagesStrLstSeverity;
 
 public function clearMessages "clears the message buffer"
@@ -1075,11 +1075,11 @@ protected function selectString "author: adrpo, 2006-02-05
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inBoolean1,inString2,inString3)
+  match (inBoolean1,inString2,inString3)
     local String s1,s2;
     case (true,s1,_) then s1;
     case (false,_,s2) then s2;
-  end matchcontinue;
+  end match;
 end selectString;
 
 public function infoStr "

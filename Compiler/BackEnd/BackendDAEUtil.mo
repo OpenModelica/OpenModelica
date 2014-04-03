@@ -2388,7 +2388,7 @@ public function splitoutEquationAndVars
   output BackendDAE.EquationArray outEqns;
   output BackendDAE.Variables outVars;
 algorithm
-  (outEqns,outVars) := matchcontinue(inNeededBlocks,inEqns,inVars, inEqnsNew, inVarsNew)
+  (outEqns,outVars) := match(inNeededBlocks,inEqns,inVars, inEqnsNew, inVarsNew)
   local
     BackendDAE.StrongComponent comp;
     BackendDAE.StrongComponents rest;
@@ -2406,7 +2406,7 @@ algorithm
       eqnsNew = BackendEquation.addEquations(eqn_lst, eqnsNew);
       varsNew = BackendVariable.addVars(var_lst, varsNew);
     then (eqnsNew,varsNew);
- end matchcontinue;
+ end match;
 end splitoutEquationAndVars;
 
 public function whenClauseAddDAE
@@ -7213,7 +7213,7 @@ protected function traverseBackendDAEExpsJacobianEqn "author: wbraun
   end FuncExpType;
 algorithm
   outTypeA :=
-    matchcontinue (inJacEntry, func, inTypeA)
+    match (inJacEntry, func, inTypeA)
      local
       list<tuple<Integer, Integer, BackendDAE.Equation>> rest;
       Integer i,j;
@@ -7224,7 +7224,7 @@ algorithm
       equation
        typeA = traverseBackendDAEExpsOptEqn(SOME(eqn),func,inTypeA);
      then typeA;
-  end matchcontinue;
+  end match;
 end traverseBackendDAEExpsJacobianEqn;
 
 public function traverseStateSetsJacobiansExp

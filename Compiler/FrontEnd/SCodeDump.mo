@@ -290,10 +290,10 @@ public function equationStr2
   input SCodeDumpOptions options;
   output String s;
 algorithm
-  s := matchcontinue(eqns,options)
+  s := match(eqns,options)
     local SCode.EEquation e;
     case(SCode.EQUATION(eEquation=e),_) then equationStr(e,options);
-  end matchcontinue;
+  end match;
 end equationStr2;
 
 public function printInitialStr

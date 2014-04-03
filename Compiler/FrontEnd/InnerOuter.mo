@@ -243,7 +243,7 @@ protected function buildInnerOuterRepl
   input VarTransform.VariableReplacements inRepl;
   output VarTransform.VariableReplacements outRepl;
 algorithm
-  outRepl := matchcontinue(innerVars,outerVars,inRepl)
+  outRepl := match(innerVars,outerVars,inRepl)
     local
       VarTransform.VariableReplacements repl;
       DAE.Element v;
@@ -254,7 +254,7 @@ algorithm
       repl = buildInnerOuterReplVar(v,outerVars,repl);
       repl = buildInnerOuterRepl(rest,outerVars,repl);
     then repl;
-  end matchcontinue;
+  end match;
 end buildInnerOuterRepl;
 
 protected function buildInnerOuterReplVar
@@ -870,10 +870,10 @@ public function failExceptForCheck
  It should be used for the cases when normal instantiation should fail but
  a instantiation for performing checkModel call should not fail"
 algorithm
-  _ := matchcontinue()
+  _ := match()
     case() equation true = Flags.getConfigBool(Flags.CHECK_MODEL); then ();
     case() equation /* false = Flags.getConfigBool(Flags.CHECK_MODEL); */ then fail();
-  end matchcontinue;
+  end match;
 end failExceptForCheck;
 
 public function innerOuterBooleans
@@ -1819,7 +1819,7 @@ public function dumpTuple
   input tuple<Key,Value> tpl;
   output String str;
 algorithm
-  str := matchcontinue(tpl)
+  str := match(tpl)
     local
       Key k; Value v;
     case((k,v))
@@ -1828,7 +1828,7 @@ algorithm
          ComponentReference.crefStr(k) +&
          " opaque InstInner for now, implement printing. " +& "}\n";
       then str;
-  end matchcontinue;
+  end match;
 end dumpTuple;
 
 /* end of InstHierarchyHashTable instance specific code */
@@ -1859,7 +1859,7 @@ public function cloneInstHierarchyHashTable
  Make a stand-alone-copy of hashtable."
 input InstHierarchyHashTable inHash;
 output InstHierarchyHashTable outHash;
-algorithm outHash := matchcontinue(inHash)
+algorithm outHash := match(inHash)
   local
     array<list<tuple<Key,Integer>>> arg1,arg1_2;
     Integer arg3,arg4,arg3_2,arg4_2,arg21,arg21_2,arg22,arg22_2;
@@ -1874,7 +1874,7 @@ algorithm outHash := matchcontinue(inHash)
       arg4_2 = arg4;
       then
         HASHTABLE(arg1_2,VALUE_ARRAY(arg21_2,arg22_2,arg23_2),arg3_2,arg4_2);
-end matchcontinue;
+end match;
 end cloneInstHierarchyHashTable;
 
 public function emptyInstHierarchyHashTable

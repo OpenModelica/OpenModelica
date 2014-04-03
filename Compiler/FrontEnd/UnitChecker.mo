@@ -843,7 +843,7 @@ public function printSpecUnit
   input String text;
   input UnitAbsyn.SpecUnit su;
 algorithm
-  _ := matchcontinue(text,su)
+  _ := match(text,su)
     local
       list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> params;
       list<MMath.Rational> unitvec;
@@ -858,13 +858,13 @@ algorithm
         printSpecUnitParams(params);
         print("}\n");
       then ();
-  end matchcontinue;
+  end match;
 end printSpecUnit;
 
 public function printSpecUnitParams
   input list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> params;
 algorithm
-  _ := matchcontinue(params)
+  _ := match(params)
     local
       String name;
       Integer i1,i2,loc;
@@ -885,7 +885,7 @@ algorithm
         print("),");
         printSpecUnitParams(rest);
       then ();
-  end matchcontinue;
+  end match;
 end printSpecUnitParams;
 
 public function testUnitOp "Test unit operations"
@@ -899,7 +899,7 @@ end testUnitOp;
 public function printResult "Print out the result from the unit check"
   input UnitAbsyn.UnitCheckResult res;
 algorithm
-  _ := matchcontinue(res)
+  _ := match(res)
     local
       UnitAbsyn.SpecUnit u1,u2;
       String str1,str2;
@@ -919,7 +919,7 @@ algorithm
         print(str2);
         print("\"\n---\n");
       then ();
-  end matchcontinue;
+  end match;
 end printResult;
 
 end UnitChecker;

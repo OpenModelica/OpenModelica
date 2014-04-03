@@ -139,12 +139,12 @@ public function expTypeArrayDimensions "returns the array dimensions of an ExpTy
   input DAE.Type tp;
   output list<Integer> dims;
 algorithm
-  dims := matchcontinue(tp)
+  dims := match(tp)
     local DAE.Dimensions array_dims;
     case(DAE.T_ARRAY(dims=array_dims)) equation
       dims = List.map(array_dims, Expression.dimensionSize);
     then dims;
-  end matchcontinue;
+  end match;
 end expTypeArrayDimensions;
 
 public function derivativeOrder "
@@ -241,13 +241,13 @@ Returned bound equation"
   input DAE.VariableAttributes attr;
   output DAE.Exp oe;
 algorithm
-  oe := matchcontinue(attr)
+  oe := match(attr)
     local DAE.Exp beq;
     case (DAE.VAR_ATTR_REAL(equationBound = SOME(beq))) then beq;
     case (DAE.VAR_ATTR_INT(equationBound = SOME(beq))) then beq;
     case (DAE.VAR_ATTR_BOOL(equationBound = SOME(beq))) then beq;
     case (DAE.VAR_ATTR_ENUMERATION(equationBound = SOME(beq))) then beq;
-  end matchcontinue;
+  end match;
 end getBoundStartEquation;
 
 protected import Algorithm;
@@ -1458,9 +1458,9 @@ public function isParameter "author: LS
   input DAE.Element inElement;
 algorithm
   _:=
-  matchcontinue (inElement)
+  match (inElement)
     case DAE.VAR(kind = DAE.PARAM()) then ();
-  end matchcontinue;
+  end match;
 end isParameter;
 
 public function isParameterOrConstant "
@@ -1521,21 +1521,21 @@ public function isInnerVar "author: PA
   input DAE.Element inElement;
 algorithm
   _:=
-  matchcontinue (inElement)
+  match (inElement)
     case DAE.VAR(innerOuter = Absyn.INNER()) then ();
     case DAE.VAR(innerOuter = Absyn.INNER_OUTER())then ();
-  end matchcontinue;
+  end match;
 end isInnerVar;
 
 public function isOuterVar "author: PA
   Succeeds if element is a variable with prefix outer.
 "
   input DAE.Element inElement;
-algorithm _:= matchcontinue (inElement)
+algorithm _:= match (inElement)
     case DAE.VAR(innerOuter = Absyn.OUTER()) then ();
     // FIXME? adrpo: do we need this?
     // case DAE.VAR(innerOuter = Absyn.INNER_OUTER()) then ();
-  end matchcontinue;
+  end match;
 end isOuterVar;
 
 public function isComp "author: LS
@@ -1545,9 +1545,9 @@ public function isComp "author: LS
   input DAE.Element inElement;
 algorithm
   _:=
-  matchcontinue (inElement)
+  match (inElement)
     case DAE.COMP(ident = _) then ();
-  end matchcontinue;
+  end match;
 end isComp;
 
 public function getOutputVars "author: LS
@@ -2045,7 +2045,7 @@ protected function getFlowVariables2 "
   output list<DAE.ComponentRef> outExpComponentRefLst;
 algorithm
   outExpComponentRefLst:=
-  matchcontinue (inExpComponentRefLst,inIdent)
+  match (inExpComponentRefLst,inIdent)
     local
       String id;
       list<DAE.ComponentRef> res,xs;
@@ -2057,7 +2057,7 @@ algorithm
         cr_1 = ComponentReference.makeCrefQual(id,DAE.T_UNKNOWN_DEFAULT,{}, cr);
       then
         (cr_1::res);
-  end matchcontinue;
+  end match;
 end getFlowVariables2;
 
 public function getStreamVariables "Retrive the stream variables of an Element list."
@@ -2101,7 +2101,7 @@ protected function getStreamVariables2 "
   output list<DAE.ComponentRef> outExpComponentRefLst;
 algorithm
   outExpComponentRefLst:=
-  matchcontinue (inExpComponentRefLst,inIdent)
+  match (inExpComponentRefLst,inIdent)
     local
       String id;
       list<DAE.ComponentRef> res,xs;
@@ -2113,7 +2113,7 @@ algorithm
         cr_1 = ComponentReference.makeCrefQual(id,DAE.T_UNKNOWN_DEFAULT,{}, cr);
       then
         (cr_1::res);
-  end matchcontinue;
+  end match;
 end getStreamVariables2;
 
 public function daeToRecordValue "Transforms a list of elements into a record value.
@@ -2175,21 +2175,21 @@ public function toModelicaForm "function toModelicaForm.
   output DAE.DAElist outDAElist;
 algorithm
   outDAElist:=
-  matchcontinue (inDAElist)
+  match (inDAElist)
     local list<DAE.Element> elts_1,elts;
     case (DAE.DAE(elts))
       equation
         elts_1 = toModelicaFormElts(elts);
       then
         DAE.DAE(elts_1);
-  end matchcontinue;
+  end match;
 end toModelicaForm;
 
 protected function toModelicaFormElts "Helper function to toModelicaForm."
   input list<DAE.Element> inElementLst;
   output list<DAE.Element> outElementLst;
 algorithm
-  outElementLst := matchcontinue (inElementLst)
+  outElementLst := match (inElementLst)
     local
       String str,str_1,id;
       list<DAE.Element> elts_1,elts,welts_1,welts,telts_1,eelts_1,telts,eelts,elts2;
@@ -2369,7 +2369,7 @@ algorithm
         e_1 = toModelicaFormExp(e1);
       then
         (DAE.TERMINATE(e_1,source)::elts_1);
-  end matchcontinue;
+  end match;
 end toModelicaFormElts;
 
 public function replaceCrefInVar "
@@ -2472,11 +2472,11 @@ protected function toModelicaFormExpOpt "Helper function to toMdelicaFormElts."
   input Option<DAE.Exp> inExpExpOption;
   output Option<DAE.Exp> outExpExpOption;
 algorithm
-  outExpExpOption := matchcontinue (inExpExpOption)
+  outExpExpOption := match (inExpExpOption)
     local DAE.Exp e_1,e;
     case (SOME(e)) equation e_1 = toModelicaFormExp(e); then SOME(e_1);
     case (NONE()) then NONE();
-  end matchcontinue;
+  end match;
 end toModelicaFormExpOpt;
 
 protected function toModelicaFormCref "Helper function to toModelicaFormElts."
@@ -3342,12 +3342,12 @@ protected function renameTimeToDollarTimeVisitor "author: BZ, 2009-01
   input tuple<DAE.Exp,Integer> itpl;
   output tuple<DAE.Exp,Integer> otpl;
 algorithm
-  otpl := matchcontinue itpl
+  otpl := match itpl
     local
       DAE.Exp exp,oexp;
       Integer arg,oarg;
     case ((exp,oarg)) then Expression.traverseExp(exp,renameTimeToDollarTimeFromCref,oarg);
-  end matchcontinue;
+  end match;
 end renameTimeToDollarTimeVisitor;
 
 protected function renameTimeToDollarTimeFromCref "author: BZ, 2008-12
@@ -3392,12 +3392,12 @@ protected function renameUniqueVisitor "author: BZ, 2008-12
   input tuple<DAE.Exp,Integer> itpl;
   output tuple<DAE.Exp,Integer> otpl;
 algorithm
-  otpl := matchcontinue itpl
+  otpl := match itpl
     local
       DAE.Exp exp,oexp;
       Integer arg,oarg;
     case ((exp,oarg)) then Expression.traverseExp(exp,removeUniqieIdentifierFromCref,oarg);
-  end matchcontinue;
+  end match;
 end renameUniqueVisitor;
 
 protected function removeUniqieIdentifierFromCref "author: BZ, 2008-12
@@ -4599,10 +4599,10 @@ public function getElementSourceInstances
  input DAE.ElementSource source "the source of the element";
  output list<Option<DAE.ComponentRef>> instanceOptLst;
 algorithm
-  instanceOptLst := matchcontinue(source)
+  instanceOptLst := match(source)
     local list<Option<DAE.ComponentRef>> pLst;
     case DAE.SOURCE(instanceOptLst = pLst) then pLst;
-  end matchcontinue;
+  end match;
 end getElementSourceInstances;
 
 public function getElementSourceConnects
@@ -4611,10 +4611,10 @@ public function getElementSourceConnects
  input DAE.ElementSource source "the source of the element";
  output list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst;
 algorithm
-  connectEquationOptLst := matchcontinue(source)
+  connectEquationOptLst := match(source)
     local list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> pLst;
     case DAE.SOURCE(connectEquationOptLst = pLst) then pLst;
-  end matchcontinue;
+  end match;
 end getElementSourceConnects;
 
 public function getElementSourcePartOfs
@@ -4623,10 +4623,10 @@ public function getElementSourcePartOfs
  input DAE.ElementSource source "the source of the element";
  output list<Absyn.Within> withinLst;
 algorithm
-  withinLst := matchcontinue(source)
+  withinLst := match(source)
     local list<Absyn.Within> pLst;
     case DAE.SOURCE(partOfLst = pLst) then pLst;
-  end matchcontinue;
+  end match;
 end getElementSourcePartOfs;
 
 public function addComponentTypeOpt "
@@ -5168,9 +5168,9 @@ protected function nodeValue "return the node value"
 input DAE.AvlTree bt;
 output DAE.AvlValue v;
 algorithm
-  v := matchcontinue(bt)
+  v := match(bt)
     case(DAE.AVLTREENODE(value=SOME(DAE.AVLTREEVALUE(_,v)))) then v;
-  end matchcontinue;
+  end match;
 end nodeValue;
 
 protected function balance "Balances a DAE.AvlTree"
@@ -5426,7 +5426,7 @@ protected function getOptionStr "Retrieve the string from a string option.
     output String outString;
   end FuncTypeType_aToString;
 algorithm
-  outString := matchcontinue (inTypeAOption,inFuncTypeTypeAToString)
+  outString := match (inTypeAOption,inFuncTypeTypeAToString)
     local
       String str;
       Type_a a;
@@ -5437,7 +5437,7 @@ algorithm
       then
         str;
     case (NONE(),_) then "";
-  end matchcontinue;
+  end match;
 end getOptionStr;
 
 public function printAvlTreeStr "
@@ -5445,7 +5445,7 @@ public function printAvlTreeStr "
   input DAE.AvlTree inAvlTree;
   output String outString;
 algorithm
-  outString := matchcontinue (inAvlTree)
+  outString := match (inAvlTree)
     local
       DAE.AvlKey rkey;
       String s1,s2,s3,res;
@@ -5468,7 +5468,7 @@ algorithm
 
       then
         res;
-  end matchcontinue;
+  end match;
 end printAvlTreeStr;
 
 protected function computeHeight "compute the heigth of the DAE.AvlTree and store in the node info"
@@ -6506,13 +6506,13 @@ public function getCommentsFromSource
   input DAE.ElementSource source;
   output list<SCode.Comment> outComments;
 algorithm
-  outComments := matchcontinue (source)
+  outComments := match (source)
     local
       list<SCode.Comment> comment;
 
     case (DAE.SOURCE(comment = comment)) then comment;
 
-  end matchcontinue;
+  end match;
 end getCommentsFromSource;
 
 public function mkEmptyVar

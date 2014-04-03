@@ -4056,7 +4056,7 @@ protected function removeUnusedExpandableVariablesAndConnections
   output list<Set> outSets;
   output DAE.DAElist outDAE;
 algorithm
-  (outSets, outDAE) := matchcontinue(inSets, inDAE, hasExpandable)
+  (outSets, outDAE) := match(inSets, inDAE, hasExpandable)
     local
       list<DAE.Element> elems;
       list<DAE.ComponentRef> expandableVars, unnecessary, usedInDAE, onlyExpandableConnected, equVars;
@@ -4104,7 +4104,7 @@ algorithm
         dae = DAEUtil.removeVariables(dae, unnecessary);
       then
         (sets, dae);
-  end matchcontinue;
+  end match;
 end removeUnusedExpandableVariablesAndConnections; 
 
 end ConnectUtil;

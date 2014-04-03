@@ -1175,7 +1175,7 @@ protected function elabMatrixGetDimensions "Helper function to elab_exp (MATRIX)
   output Integer outInteger2;
 algorithm
   (outInteger1,outInteger2):=
-  matchcontinue (inExp)
+  match (inExp)
     local
       Integer dim1,dim2;
       list<DAE.Exp> lst2,lst;
@@ -1186,7 +1186,7 @@ algorithm
         dim2 = listLength(lst2);
       then
         (dim1,dim2);
-  end matchcontinue;
+  end match;
 end elabMatrixGetDimensions;
 
 protected function elabMatrixToMatrixExp
@@ -4822,7 +4822,7 @@ protected function elabBuiltinIntegerEnum
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
-  (outCache,outExp,outProperties) := matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
+  (outCache,outExp,outProperties) := match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
       DAE.Exp s1_1;
       list<Env.Frame> env;
@@ -4836,7 +4836,7 @@ algorithm
         (cache,s1_1,prop) = verifyBuiltInHandlerType(cache,env,{s1},impl,Types.isEnumeration,"Integer",pre,info);
       then
         (cache,s1_1,prop);
-  end matchcontinue;
+  end match;
 end elabBuiltinIntegerEnum;
 
 protected function elabBuiltinDiagonal "This function elaborates on the builtin operator diagonal, creating a
@@ -9222,7 +9222,7 @@ protected function buildTupleConstList
   input list<DAE.Const> inTypesConstLst;
   output list<DAE.TupleConst> outTypesTupleConstLst;
 algorithm
-  outTypesTupleConstLst := matchcontinue (inTypesConstLst)
+  outTypesTupleConstLst := match (inTypesConstLst)
     local
       list<DAE.TupleConst> restlist;
       DAE.Const c;
@@ -9235,7 +9235,7 @@ algorithm
         restlist = buildTupleConstList(crest);
       then
         (DAE.SINGLE_CONST(c) :: restlist);
-  end matchcontinue;
+  end match;
 end buildTupleConstList;
 
 protected function elabConsts "author: PR
@@ -12428,7 +12428,7 @@ protected function canonCref2 "This function relates a DAE.ComponentRef to its c
   output DAE.ComponentRef outComponentRef;
 algorithm
   (outCache,outComponentRef) :=
-  matchcontinue (inCache,inEnv,inComponentRef,inPrefixCref,inBoolean)
+  match (inCache,inEnv,inComponentRef,inPrefixCref,inBoolean)
     local
       list<DAE.Subscript> ss_1,ss;
       list<Env.Frame> env;
@@ -12447,7 +12447,7 @@ algorithm
         (cache,ss_1) = Ceval.cevalSubscripts(cache,env, ss, sl, impl, Absyn.NO_MSG(),0);
       then
         (cache,ComponentReference.makeCrefIdent(n,ty2,ss_1));
-  end matchcontinue;
+  end match;
 end canonCref2;
 
 public function canonCref "Transform expression to canonical form
@@ -13624,7 +13624,7 @@ addition and multiplication operations and uses them to expand and simplify the 
   output DAE.Exp outDAEExp;
 algorithm
   (outDAEExp) :=
-  matchcontinue (inCache,inEnv,inType1,inType2,inDAEExp1,inDAEExp2,inInfo)
+  match (inCache,inEnv,inType1,inType2,inDAEExp1,inDAEExp2,inInfo)
     local
       Absyn.Path path, multPath, sumPath;
       list<Absyn.Path> operNames;
@@ -13653,7 +13653,7 @@ algorithm
         // Error.addSourceMessage(Error.INTERNAL_ERROR, {"- Static.handleMatMultOfRecords failed."}, inInfo);
       then fail(); 
      
-  end matchcontinue;                
+  end match;                
 end handleMatMultOfRecords;
 
 protected function getOverloadedScalarOperator
@@ -14263,7 +14263,7 @@ protected function buildOperatorTypes
   input Absyn.Path inPath;
   output list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> outTplExpOperatorTypesTypeLstTypesTypeLst;
 algorithm
-  outTplExpOperatorTypesTypeLstTypesTypeLst := matchcontinue (inTypesTypeLst,inPath)
+  outTplExpOperatorTypesTypeLstTypesTypeLst := match (inTypesTypeLst,inPath)
     local
       list<DAE.Type> argtypes,tps;
       list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> rest;
@@ -14277,7 +14277,7 @@ algorithm
         rest = buildOperatorTypes(tps, funcname);
       then
         ((DAE.USERDEFINED(funcname),argtypes,tp) :: rest);
-  end matchcontinue;
+  end match;
 end buildOperatorTypes;
 
 protected function nDimArray "Returns a type based on the type given as input but as an array type with n dimensions."

@@ -176,7 +176,7 @@ end close;
 function delete
   input IOStream inStream;
 algorithm
-  _ := matchcontinue (inStream)
+  _ := match (inStream)
     local
       list<String> listData;
       Integer fileID, bufferID;
@@ -197,7 +197,7 @@ algorithm
         IOStreamExt.deleteBuffer(bufferID);
       then
         ();
-  end matchcontinue;
+  end match;
 end delete;
 
 function clear

@@ -1098,7 +1098,7 @@ protected function printEdges
 "Prints a list of edges to stdout."
   input Edges inEdges;
 algorithm
-  _ := matchcontinue(inEdges)
+  _ := match(inEdges)
     local
       DAE.ComponentRef c1, c2;
       Edges tail;
@@ -1113,7 +1113,7 @@ algorithm
         print("\n");
         printEdges(tail);
       then ();
-  end matchcontinue;
+  end match;
 end printEdges;
 
 protected function printDaeEdges
@@ -1143,7 +1143,7 @@ protected function printConnectionGraph
   "Prints the content of ConnectionGraph structure."
   input ConnectionGraph inGraph;
 algorithm
-  _ := matchcontinue(inGraph)
+  _ := match(inGraph)
     local
       DaeEdges connections;
       Edges branches;
@@ -1155,7 +1155,7 @@ algorithm
         print("Branches:\n");
         printEdges(branches);
       then ();
-  end matchcontinue;
+  end match;
 end printConnectionGraph;
 
 protected function getDefiniteRoots

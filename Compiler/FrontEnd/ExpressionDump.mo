@@ -437,11 +437,11 @@ Returns a string if SOME otherwise ''"
   input Option<DAE.Exp> oexp;
   output String str;
 algorithm
-  str := matchcontinue(oexp)
+  str := match(oexp)
     local DAE.Exp e;
     case(NONE()) then "";
     case(SOME(e)) then printExpStr(e);
-  end matchcontinue;
+  end match;
 end printOptExpStr;
 
 public function printExpStr

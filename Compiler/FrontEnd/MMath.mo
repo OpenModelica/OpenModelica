@@ -76,12 +76,12 @@ public function rationalString "converts a rational to a string"
 input Rational r;
 output String str;
 algorithm
-  str := matchcontinue(r)
+  str := match(r)
   local Integer n,d;
     case(RATIONAL(n,d)) equation
       str = intString(n)+&"/"+&intString(d);
     then str;
-  end matchcontinue;
+  end match;
 end rationalString;
 
 public function subRational "subtracts two rationals"

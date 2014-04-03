@@ -574,7 +574,7 @@ public function prefixCrefInnerOuter "Search for the prefix of the inner when th
   output Env.Cache outCache;
   output DAE.ComponentRef outCref;
 algorithm
-  (outCache,outCref) := matchcontinue (inCache,inEnv,inIH,inCref,inPrefix)
+  (outCache,outCref) := match (inCache,inEnv,inIH,inCref,inPrefix)
     local
       Env.Cache cache;
       Env.Env env;
@@ -640,7 +640,7 @@ algorithm
       then
         (cache,newCref);
     */
-  end matchcontinue;
+  end match;
 end prefixCrefInnerOuter;
 
 public function prefixExp "Add the supplied prefix to all component references in an expression."
@@ -1052,7 +1052,7 @@ protected function prefixStatements "Prefix statements.
   output Env.Cache outCache;
   output list<DAE.Statement> outStmts;
 algorithm
-  (outCache,outStmts) := matchcontinue (cache,env,inIH,stmts,accList,p)
+  (outCache,outStmts) := match (cache,env,inIH,stmts,accList,p)
     local
       Env.Cache localCache;
       Env.Env localEnv;
@@ -1156,7 +1156,7 @@ algorithm
           localAccList = listAppend(localAccList,List.create(elem));
           (localCache,elems) = prefixStatements(localCache,localEnv,ih,rest,localAccList,pre);
         then (localCache,elems);
-  end matchcontinue;
+  end match;
 end prefixStatements;
 
 protected function prefixElse "Prefix else statements.
@@ -1169,7 +1169,7 @@ protected function prefixElse "Prefix else statements.
   output Env.Cache outCache;
   output DAE.Else outElse;
 algorithm
-  (outCache,outElse) := matchcontinue (cache,env,inIH,elseBranch,p)
+  (outCache,outElse) := match (cache,env,inIH,elseBranch,p)
     local
       Env.Cache localCache;
       Env.Env localEnv;
@@ -1195,7 +1195,7 @@ algorithm
        (localCache,lStmt) = prefixStatements(localCache,localEnv,ih,lStmt,{},pre);
         stmt = DAE.ELSE(lStmt);
       then (localCache,stmt);
-  end matchcontinue;
+  end match;
 end prefixElse;
 
 public function makePrefixString "helper function for Mod.verifySingleMod, pretty output"

@@ -953,7 +953,7 @@ author:Waurich TUD 2013-06"
   input list<Integer> list2In;
   output list<Integer> list2Out;
 algorithm
-  list2Out := matchcontinue(list1, assign, list2In)
+  list2Out := match(list1, assign, list2In)
     local
       Integer head;
       Integer entry2;
@@ -969,7 +969,7 @@ algorithm
       equation
         then
           list2In;
-  end matchcontinue;
+  end match;
 end matchWithAssignments1;
 
 protected function matchWithAssignmentsTuple " matches entries of list1 with the assigned values of assign to obtain the values
@@ -989,7 +989,7 @@ author:Waurich TUD 2013-06"
   input list<Integer> list2In;
   output list<Integer> list2Out;
 algorithm
-  list2Out := matchcontinue(list1, assign, list2In)
+  list2Out := match(list1, assign, list2In)
     local
       Integer head;
       Integer entry2;
@@ -1005,7 +1005,7 @@ algorithm
       equation
         then
           list2In;
-  end matchcontinue;
+  end match;
 end matchWithAssignmentsTuple1;
 
 protected function isWhenEquation " checks if the comp is of type SINGLEWHENEQUATION.
@@ -2114,7 +2114,7 @@ author:waurich TUD 2013-06"
   input list<Integer> list2;
   output list<Integer> list1Out;
 algorithm
-  list1Out := matchcontinue(list1In,list2)
+  list1Out := match(list1In,list2)
     local
       Integer entry;
       Integer head;
@@ -2129,7 +2129,7 @@ algorithm
     case(_,{})
       then
         list1In;
-  end matchcontinue;
+  end match;
 end deleteMembersList;
 
 
@@ -2139,7 +2139,7 @@ protected function removeEntriesInGraph "deletes given entries from adjacencyLst
   input list<Integer> noStates;
   output array<list<Integer>> outArray;
 algorithm
-  outArray := matchcontinue(inArray,noStates)
+  outArray := match(inArray,noStates)
   local
     Integer head;
     list<Integer> rest;
@@ -2154,7 +2154,7 @@ algorithm
       ArrayTmp = removeEntriesInGraph(ArrayTmp,rest);
     then
       ArrayTmp;
-  end matchcontinue;
+  end match;
 end removeEntriesInGraph;
 
 
@@ -5227,7 +5227,7 @@ author: Waurich TUD 2013-07"
   output list<Integer> rootLstOut;
   output list<Integer> parentLstOut;
 algorithm
-  (rootLstOut,parentLstOut) := matchcontinue(idx,rootLstIn,parentLstIn)
+  (rootLstOut,parentLstOut) := match(idx,rootLstIn,parentLstIn)
     local
       Integer rootValue;
       Integer parentValue;
@@ -5242,7 +5242,7 @@ algorithm
         parentLstTmp = listDelete(parentLstIn,idx-1);
       then
         (rootLstTmp,parentLstTmp);
-  end matchcontinue;
+  end match;
 end getRootParentLst2;
 
 

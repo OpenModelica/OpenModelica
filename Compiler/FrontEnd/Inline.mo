@@ -2166,13 +2166,13 @@ public function printInlineTypeStr
   input DAE.InlineType it;
   output String str;
 algorithm
-  str := matchcontinue(it)
+  str := match(it)
     case(DAE.NO_INLINE()) then "No inline";
     case(DAE.AFTER_INDEX_RED_INLINE()) then "Inline after index reduction";
     case(DAE.EARLY_INLINE()) then "Inline as soon as possible";
     case(DAE.BUILTIN_EARLY_INLINE()) then "Inline as soon as possible, even if inlining is globally disabled";
     case(DAE.NORM_INLINE()) then "Inline before index reduction";
-  end matchcontinue;
+  end match;
 end printInlineTypeStr;
 
 public function simplifyAndInlineEquationExp "

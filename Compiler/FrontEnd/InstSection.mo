@@ -3683,7 +3683,7 @@ protected function daeDeclareList
  input DAE.DAElist acc;
  output DAE.DAElist outDAE;
 algorithm
-  outDAE := matchcontinue(crefs, state, ty, attrs, vis, io, source, acc)
+  outDAE := match(crefs, state, ty, attrs, vis, io, source, acc)
     local
       Absyn.ArrayDim arrDims;
       DAE.Dimensions daeDims;
@@ -3704,7 +3704,7 @@ algorithm
         daeExpandable = daeDeclareList(lst, state, ty, attrs, vis, io, source, daeExpandable);
       then
         daeExpandable;
-  end matchcontinue;
+  end match;
 end daeDeclareList;
 
 protected function updateEnvComponentsOnQualPath
@@ -4681,7 +4681,7 @@ protected function getVectorizedCref
 input DAE.Exp crefOrArray;
 output DAE.Exp cref;
 algorithm
-   cref := matchcontinue(crefOrArray)
+   cref := match(crefOrArray)
      local
        DAE.ComponentRef cr;
        DAE.Type t;
@@ -4694,7 +4694,7 @@ algorithm
          cr = ComponentReference.crefStripLastSubs(cr);
          crefExp = Expression.makeCrefExp(cr, t);
        then crefExp;
-   end matchcontinue;
+   end match;
 end getVectorizedCref;
 
 

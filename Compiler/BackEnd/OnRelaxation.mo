@@ -2194,7 +2194,7 @@ protected function transformJacToIncidenceMatrix "author: Frenkel TUD"
     output Boolean outBool;
   end CompareFunc;
 algorithm
- _ := matchcontinue(jac,m,mT,func)
+ _ := match(jac,m,mT,func)
     local
       Integer c,r;
       DAE.Exp e;
@@ -2215,7 +2215,7 @@ algorithm
         transformJacToIncidenceMatrix(rest,m,mT,func);
       then
         ();
-   end matchcontinue;
+   end match;
 end transformJacToIncidenceMatrix;
 
 protected function transformJacToMatrix

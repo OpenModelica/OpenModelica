@@ -11,6 +11,22 @@ import subprocess
 parser = OptionParser()
 (options,args) = parser.parse_args()
 
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+
+    def disable(self):
+        self.HEADER = ''
+        self.OKBLUE = ''
+        self.OKGREEN = ''
+        self.WARNING = ''
+        self.FAIL = ''
+        self.ENDC = ''
+
 FILENAME = Regex("[^:]*")
 FILEINFO = (FILENAME + Suppress(":") + Word(nums) + Suppress(":") + Word(nums) + Suppress("-") + Word(nums) + Suppress(":") + Word(nums) + Suppress(Regex("[^]]*"))).setParseAction(
   lambda s,s2: {'fileName':s2[0],'startLine':int(s2[1]),'startCol':int(s2[2]),'endLine':int(s2[3]),'endCol':int(s2[4])})
@@ -50,6 +66,7 @@ def fixFile(stamp,logFile,moFile):
   for n in lst:
     startLine = n[0]['startLine']
     endLine = n[0]['endLine']
+    msg = None
     if len(n)==2 and n[1].has_key('unused_local'):
       pass
       #print "Unused local %s" % n
@@ -64,7 +81,7 @@ def fixFile(stamp,logFile,moFile):
         elif moContents[startLine-1].count("matchcontinue") == 0:
           startLine += 1
         else:
-          msg = "Found 2 matchcontinue on the same line (%d): %s" (startLine,moContents[startLine-1].strip())
+          msg = bcolors.WARNING + "Found 2 matchcontinue on the same line (%d): %s" (startLine,moContents[startLine-1].strip()) + bcolors.ENDC
           break
       while success1 and endLine > startLine:
         if moContents[endLine-1].count("matchcontinue") == 1:
@@ -74,7 +91,7 @@ def fixFile(stamp,logFile,moFile):
         elif moContents[endLine-1].count("matchcontinue") == 0:
           startLine += 1
         else:
-          msg = "Found 2 matchcontinue on the same line (%d): %s" (endLine,moContents[endLine-1].strip())
+          msg = bcolors.WARNING + "Found 2 matchcontinue on the same line (%d): %s" (endLine,moContents[endLine-1].strip()) + bcolors.ENDC
           break
       if success2:
         moContents[startLine-1] = moContents[startLine-1].replace("matchcontinue","match")
@@ -82,6 +99,8 @@ def fixFile(stamp,logFile,moFile):
       else:
         startLine = n[0]['startLine']
         endLine = n[0]['endLine']
+        if msg is None:
+          msg = bcolors.WARNING + "Failed" + bcolors.ENDC
       print "%s Matchcontinue to match: %s\n%6d:  %s\n%6d:  %s" % (infoStr(n[0]),msg,startLine,moContents[startLine-1].strip(),endLine,moContents[endLine-1].strip())
   mo.close()
   mo = open(moFile, 'w')

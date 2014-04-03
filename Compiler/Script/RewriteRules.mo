@@ -438,7 +438,7 @@ public function matchesFargsFrontEnd
   input Binds inAcc;
   output Binds outBinds;
 algorithm
-  outBinds := matchcontinue(inFargs1, inFargs2, inAcc)
+  outBinds := match(inFargs1, inFargs2, inAcc)
     local
       list<Absyn.Exp> exps1a, exps1b;
       list<Absyn.NamedArg> nargs1a, nargs1b;
@@ -460,7 +460,7 @@ algorithm
         outBinds = matchesFrontEnd(e1a, e1b, inAcc);
       then
         outBinds;
-  end matchcontinue;
+  end match;
 end matchesFargsFrontEnd;
 
 public function sortNargsFrontEnd
@@ -488,7 +488,7 @@ public function matchesNargsFrontEnd
   input Binds inAcc;
   output Binds outBinds;
 algorithm
-  outBinds := matchcontinue(inNargs1, inNargs2, inAcc)
+  outBinds := match(inNargs1, inNargs2, inAcc)
     local
       Absyn.Ident n1a, n1b;
       Absyn.Exp e1a, e1b;
@@ -504,7 +504,7 @@ algorithm
       then
         outBinds;
   
-  end matchcontinue;
+  end match;
 end matchesNargsFrontEnd;
 
 public function matchesExpLstLstFrontEnd
@@ -998,7 +998,7 @@ end operatorMatches;
 
 public function loadRules
 algorithm
-  _ := matchcontinue()
+  _ := match()
     local
       String file;
     
@@ -1008,7 +1008,7 @@ algorithm
         loadRulesFromFile(file);
       then ();
   
-  end matchcontinue;
+  end match;
 end loadRules;
 
 public function noRewriteRules

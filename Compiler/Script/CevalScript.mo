@@ -3771,7 +3771,7 @@ protected function moveClass
   input Absyn.Program inProg;
   output Absyn.Program outProg;
 algorithm
-  outProg := matchcontinue(inClassName, inDirection, inProg)
+  outProg := match(inClassName, inDirection, inProg)
     local 
       Absyn.Path c, parent; 
       Absyn.Program p;
@@ -3802,7 +3802,7 @@ algorithm
       then
         p;
   
-  end matchcontinue;
+  end match;
 end moveClass;
 
 protected function moveClassInList
@@ -4378,7 +4378,7 @@ end getWithinStatement;
 protected function compileOrNot "This function compares last-build-time vs last-edit-time, and if we have edited since we built last time
 it fails."
 input Absyn.Class classIn;
-algorithm _:= matchcontinue(classIn)
+algorithm _:= match(classIn)
   local
     Absyn.Class c1;
     Absyn.Info nfo;
@@ -4388,7 +4388,7 @@ algorithm _:= matchcontinue(classIn)
     true = (tb >. te);
      then ();
     case(_) then fail();
-end matchcontinue;
+end match;
 end compileOrNot;
 
 public function subtractDummy
@@ -4419,7 +4419,7 @@ protected function dumpXMLDAEFrontEnd
   output Env.Env outEnv; 
   output DAE.DAElist outDae;
 algorithm
-  (outCache, outEnv, outDae) := matchcontinue(inCache, inEnv, inClassName, inInteractiveSymbolTable)
+  (outCache, outEnv, outDae) := match(inCache, inEnv, inClassName, inInteractiveSymbolTable)
     local
       Absyn.Program p;
       SCode.Program scode;
@@ -4433,7 +4433,7 @@ algorithm
      then
        (outCache, outEnv, outDae);
        
-  end matchcontinue;
+  end match;
 end dumpXMLDAEFrontEnd;
 
 protected function dumpXMLDAE " author: fildo

@@ -181,9 +181,9 @@ protected function nodeValue "return the node value"
 input AvlTree bt;
 output AvlValue v;
 algorithm
-  v := matchcontinue(bt)
+  v := match(bt)
     case(NODE(value=SOME(VALUE(_,v)))) then v;
-  end matchcontinue;
+  end match;
 end nodeValue;
 
 protected function balance "Balances a AvlTree"
@@ -439,7 +439,7 @@ protected function getOptionStr "Retrieve the string from a string option.
     output String outString;
   end FuncTypeType_aToString;
 algorithm
-  outString := matchcontinue (inTypeAOption,inFuncTypeTypeAToString)
+  outString := match (inTypeAOption,inFuncTypeTypeAToString)
     local
       String str;
       Type_a a;
@@ -450,7 +450,7 @@ algorithm
       then
         str;
     case (NONE(),_) then "";
-  end matchcontinue;
+  end match;
 end getOptionStr;
 
 public function printAvlTreeStr "
@@ -458,7 +458,7 @@ public function printAvlTreeStr "
   input AvlTree inAvlTree;
   output String outString;
 algorithm
-  outString := matchcontinue (inAvlTree)
+  outString := match (inAvlTree)
     local
       AvlKey rkey;
       String s1,s2,s3,res;
@@ -481,7 +481,7 @@ algorithm
 
       then
         res;
-  end matchcontinue;
+  end match;
 end printAvlTreeStr;
 
 protected function computeHeight "compute the heigth of the AvlTree and store in the node info"

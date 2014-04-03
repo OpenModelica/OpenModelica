@@ -3815,7 +3815,7 @@ protected function calculateEqSystemJacobians
   output BackendDAE.EqSystem outSyst;
   output  BackendDAE.Shared outShared;
 algorithm
-  (outSyst,outShared) := matchcontinue (inSyst, inShared)
+  (outSyst,outShared) := match (inSyst, inShared)
     local
       BackendDAE.EqSystem syst;
       list<BackendDAE.EqSystem> systs;
@@ -3833,7 +3833,7 @@ algorithm
         equation
           (comps, shared) = calculateJacobiansComponents(comps, vars, eqns, shared, {});
       then (BackendDAE.EQSYSTEM(vars, eqns, m, mT, BackendDAE.MATCHING(ass1,ass2,comps), stateSets), shared);
-  end matchcontinue;
+  end match;
 end calculateEqSystemJacobians;
 
 protected function calculateJacobiansComponents
@@ -3845,7 +3845,7 @@ protected function calculateJacobiansComponents
   output BackendDAE.StrongComponents outComps;
   output  BackendDAE.Shared outShared;
 algorithm
-  (outComps, outShared) := matchcontinue (inComps, inVars, inEqns, inShared, inAccum)
+  (outComps, outShared) := match (inComps, inVars, inEqns, inShared, inAccum)
     local
       BackendDAE.StrongComponents rest, result;
       BackendDAE.StrongComponent comp;
@@ -3856,7 +3856,7 @@ algorithm
           (comp, shared) = calculateJacobianComponent(comp, inVars, inEqns, inShared);
           (result, shared) = calculateJacobiansComponents(rest, inVars, inEqns, shared, comp::inAccum);
       then (result, shared);
-  end matchcontinue;
+  end match;
 end calculateJacobiansComponents;
 
 protected function calculateJacobianComponent
@@ -4106,7 +4106,7 @@ protected function calculateEqSystemStateSetsJacobians
   output BackendDAE.EqSystem outSyst;
   output  BackendDAE.Shared outShared;
 algorithm
-  (outSyst,outShared) := matchcontinue (inSyst, inShared)
+  (outSyst,outShared) := match (inSyst, inShared)
     local
       BackendDAE.EqSystem syst;
       list<BackendDAE.EqSystem> systs;
@@ -4126,7 +4126,7 @@ algorithm
         comps = BackendDAEUtil.getStrongComponents(syst);
         (stateSets, shared) = calculateStateSetsJacobian(stateSets, vars, eqns, comps, shared, {});
       then (BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets), shared);
-  end matchcontinue;
+  end match;
 end calculateEqSystemStateSetsJacobians;
 
 protected function calculateStateSetsJacobian
@@ -4139,7 +4139,7 @@ protected function calculateStateSetsJacobian
   output BackendDAE.StateSets outStateSets;
   output  BackendDAE.Shared outShared;
 algorithm
-  (outStateSets, outShared) := matchcontinue (inStateSets, inVars, inEqns, inComps, inShared, inAccum)
+  (outStateSets, outShared) := match (inStateSets, inVars, inEqns, inComps, inShared, inAccum)
     local
       BackendDAE.StateSets rest, result;
       BackendDAE.StateSet stateSet;
@@ -4151,7 +4151,7 @@ algorithm
         (stateSet, shared) = calculateStateSetJacobian(stateSet, inVars, inEqns, inComps, inShared);
         (result, shared) = calculateStateSetsJacobian(rest, inVars, inEqns, inComps, shared, stateSet::inAccum);
       then (result, shared);
-  end matchcontinue;
+  end match;
 end calculateStateSetsJacobian;
 
 protected function calculateStateSetJacobian
@@ -4163,7 +4163,7 @@ protected function calculateStateSetJacobian
   output BackendDAE.StateSet outStateSet;
   output  BackendDAE.Shared outShared;
 algorithm
-  (outStateSet, outShared) := matchcontinue (inStateSet, inVars, inEqns, inComps, inShared)
+  (outStateSet, outShared) := match (inStateSet, inVars, inEqns, inComps, inShared)
     local
       BackendDAE.StateSet stateSet;
       BackendDAE.Shared shared;
@@ -4232,7 +4232,7 @@ algorithm
         (jacobian, shared) = getSymbolicJacobian(diffVars, cEqns, resVars, oEqns, oVars, inShared, allvars, name);
         
       then (BackendDAE.STATESET(rang, state, crA, varA, statescandidates, ovars, eqns, oeqns, crJ, varJ, jacobian), shared);
-  end matchcontinue;
+  end match;
 end calculateStateSetJacobian;
 
 protected function markSetStates
@@ -4805,7 +4805,7 @@ protected function countOperations1 "author: Frenkel TUD 2011-05
   output tuple<Integer,Integer,Integer,Integer> outTpl;
 algorithm
   outTpl:=
-  matchcontinue (isyst,ishared,inTpl)
+  match (isyst,ishared,inTpl)
     local
       BackendDAE.Shared shared;
       list<DAE.ClassAttributes> clsAttrs;
@@ -4814,7 +4814,7 @@ algorithm
     case (BackendDAE.EQSYSTEM(orderedEqs = eqns),shared,_)
       then
         BackendDAEUtil.traverseBackendDAEExpsEqns(eqns,countOperationsExp,inTpl);
-  end matchcontinue;
+  end match;
 end countOperations1;
 
 public function countOperationstraverseComps "author: Frenkel TUD 2012-05"

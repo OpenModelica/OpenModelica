@@ -183,7 +183,7 @@ public function getZeroCrossingIndicesFromWhenClause "Returns a list of indices 
   output list<Integer> outIntegerLst;
 algorithm
   outIntegerLst:=
-  matchcontinue (inBackendDAE,inInteger)
+  match (inBackendDAE,inInteger)
     local
       list<Integer> res;
       list<BackendDAE.ZeroCrossing> zcLst;
@@ -193,7 +193,7 @@ algorithm
         res = getZeroCrossingIndicesFromWhenClause2(zcLst, 0, when_index);
       then
         res;
-  end matchcontinue;
+  end match;
 end getZeroCrossingIndicesFromWhenClause;
 
 protected function getZeroCrossingIndicesFromWhenClause2 "helper function to get_zero_crossing_indices_from_when_clause
