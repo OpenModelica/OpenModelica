@@ -41,12 +41,13 @@
 #include "simulation/simulation_runtime.h"
 #include "simulation/solver/solver_main.h"
 #include "simulation/solver/model_help.h"
+#include "simulation/solver/external_input.h"
+#include "simulation/solver/epsilon.h"
 
 #include "simulation/solver/dassl.h"
 #include "f2c.h"
 #include "meta_modelica.h"
 
-#include "external_input.h"
 
 static const char *dasslMethodStr[DASSL_MAX] = {"unknown",
                                                 "dassl",
@@ -273,9 +274,10 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
   /* Calculate time steps until TOUT is reached
    * (DASSL calculates beyond TOUT unless info[6] is set to 1!) */
   tout = solverInfo->currentTime + solverInfo->currentStepSize;
+
   /* Check that tout is not less than timeValue
    * else will dassl get in trouble. If that is the case we skip the current step. */
-  if( solverInfo->currentStepSize <= 1e-13)
+  if (solverInfo->currentStepSize < DASSL_STEP_EPS)
   {
     infoStreamPrint(LOG_DDASRT, 0, "Desired step to small try next one");
     infoStreamPrint(LOG_DDASRT, 0, "Interpolate linear");

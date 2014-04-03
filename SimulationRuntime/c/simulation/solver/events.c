@@ -38,7 +38,8 @@
 #include "simulation/simulation_runtime.h"
 #include "simulation/solver/solver_main.h"
 #include "simulation/solver/model_help.h"
-#include "external_input.h"
+#include "simulation/solver/external_input.h"
+#include "simulation/solver/epsilon.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -55,7 +56,6 @@ void saveZeroCrossingsAfterEvent(DATA *data);
 
 int checkForStateEvent(DATA* data, LIST *eventList);
 
-const double eps = 1e-14;
 
 /*! \fn initSample
  *
@@ -105,12 +105,13 @@ void initSample(DATA* data, double startTime, double stopTime)
  */
 void checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo)
 {
-  double time = solverInfo->currentTime + solverInfo->currentStepSize;
+  double nextTimeStep = solverInfo->currentTime + solverInfo->currentStepSize;
 
-  if(data->simulationInfo.nextSampleEvent <= time + eps)
+  if ((data->simulationInfo.nextSampleEvent <= nextTimeStep + SAMPLE_EPS) && (data->simulationInfo.nextSampleEvent >= solverInfo->currentTime))
   {
     solverInfo->currentStepSize = data->simulationInfo.nextSampleEvent - solverInfo->currentTime;
     data->simulationInfo.sampleActivated = 1;
+    infoStreamPrint(LOG_EVENTS_V, 0, "Adjust step-size to %.15g at time %.15g to get next sample event at %.15g", solverInfo->currentStepSize, solverInfo->currentTime, data->simulationInfo.nextSampleEvent );
   }
 }
 
@@ -206,7 +207,7 @@ void handleEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* so
 
     /* activate time event */
     for(i=0; i<data->modelData.nSamples; ++i)
-      if(data->simulationInfo.nextSampleTimes[i] <= time + eps)
+      if(data->simulationInfo.nextSampleTimes[i] <= time + SAMPLE_EPS)
       {
         data->simulationInfo.samples[i] = 1;
         infoStreamPrint(LOG_EVENTS, 0, "[%ld] sample(%g, %g)", data->modelData.samplesInfo[i].index, data->modelData.samplesInfo[i].start, data->modelData.samplesInfo[i].interval);

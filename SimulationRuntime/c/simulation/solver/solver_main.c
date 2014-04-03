@@ -47,6 +47,7 @@
 #include "radau.h"
 #include "model_help.h"
 #include "meta_modelica.h"
+#include "simulation/solver/epsilon.h"
 
 #include "interfaceOptimization.h"
 #include "simulation_inline_solver.h"
@@ -139,6 +140,12 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
 
   SIMULATION_INFO *simInfo = &(data->simulationInfo);
 
+  /* if the given step size is too small redefine it */
+  if ((simInfo->stepSize < MINIMAL_STEP_SIZE) && (simInfo->stopTime > 0)){
+    warningStreamPrint(LOG_STDOUT, 0, "The step-size %g is too small. Adjust the step-size to %g.", simInfo->stepSize, MINIMAL_STEP_SIZE);
+    simInfo->stepSize = MINIMAL_STEP_SIZE;
+  }
+
   /* initial solverInfo */
   solverInfo->currentTime = simInfo->startTime;
   solverInfo->currentStepSize = simInfo->stepSize;
@@ -148,6 +155,13 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   solverInfo->didEventStep = 0;
   solverInfo->stateEvents = 0;
   solverInfo->sampleEvents = 0;
+
+  /* set tolerance for ZeroCrossings */
+  if (simInfo->stepSize < simInfo->tolerance){
+    setZCtol(simInfo->stepSize);
+  } else{
+    setZCtol(simInfo->tolerance);
+  }
 
   if(solverInfo->solverMethod == 2)
   {
@@ -337,6 +351,7 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
 int initializeModel(DATA* data, const char* init_initMethod,
     const char* init_optiMethod, const char* init_file, double init_time,
     int lambda_steps)
+
 {
   int retValue = 0;
 
@@ -360,10 +375,6 @@ int initializeModel(DATA* data, const char* init_initMethod,
 
   /* allocate memory for state selection */
   initializeStateSetJacobians(data);
-
-  /* set tolerance for ZeroCrossings */
-  setZCtol(simInfo->tolerance);
-
 
   data->threadData->currentErrorStage = ERROR_SIMULATION;
   /* try */

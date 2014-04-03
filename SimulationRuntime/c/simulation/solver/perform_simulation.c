@@ -138,7 +138,7 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
       /***** Calculation next step size *****/
       if(solverInfo->didEventStep == 1)
       {
-        infoStreamPrint(LOG_SOLVER, 0, "offset value for the next step: %.10f", (solverInfo->currentTime - solverInfo->laststep));
+        infoStreamPrint(LOG_SOLVER, 0, "offset value for the next step: %.16g", (solverInfo->currentTime - solverInfo->laststep));
       }
       else
       {
@@ -157,12 +157,19 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
 
       /* check for next time event */
       checkForSampleEvent(data, solverInfo);
-      infoStreamPrint(LOG_SOLVER, 1, "call solver from %g to %g (stepSize: %g)", solverInfo->currentTime, solverInfo->currentTime + solverInfo->currentStepSize, solverInfo->currentStepSize);
+
+      /* if regular output point and last time events are almost equals
+       * skip that step and go further */
+      if (solverInfo->currentStepSize < 1e-15 && solverInfo->didEventStep == 1){
+        __currStepNo++;
+        continue;
+      }
 
       /*
        * integration step determine all states by a integration method
        * update continuous system
        */
+      infoStreamPrint(LOG_SOLVER, 1, "call solver from %g to %g (stepSize: %.15g)", solverInfo->currentTime, solverInfo->currentTime + solverInfo->currentStepSize, solverInfo->currentStepSize);
       communicateStatus("Running", (solverInfo->currentTime-simInfo->startTime)/(simInfo->stopTime-simInfo->startTime));
       retValIntegrator = solver_main_step(data, solverInfo);  
 

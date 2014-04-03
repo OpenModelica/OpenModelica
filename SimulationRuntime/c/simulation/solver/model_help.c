@@ -45,9 +45,12 @@
 #include "linearSystem.h"
 #include "mixedSystem.h"
 #include "delay.h"
+#include "epsilon.h"
 
 static const int IterationMax = 200;
 const size_t SIZERINGBUFFER = 3;
+
+static double tolZC;
 
 /*! \fn updateDiscreteSystem
  *
@@ -1021,11 +1024,10 @@ void deInitializeDataStruc(DATA *data)
  * Less is for case LESS and GREATEREQ
  * Greater is for case LESSEQ and GREATER
  */
-static double tolZC = 1e-10;
 
 void setZCtol(double relativeTol)
 {
-  tolZC = 1e-4*relativeTol;
+  tolZC = TOL_HYSTERESIS_ZEROCROSSINGS*relativeTol;
   infoStreamPrint(LOG_EVENTS_V, 0, "Set tolerance for zero-crossing hysteresis to: %e", tolZC);
 }
 
