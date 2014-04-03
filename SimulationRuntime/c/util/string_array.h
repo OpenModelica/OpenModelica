@@ -37,7 +37,10 @@
 #include "base_array.h"
 
 /* Indexing */
-extern modelica_string_t string_get(const string_array_t *a, size_t i);
+static OMC_INLINE modelica_string_t string_get(const string_array_t a, size_t i)
+{
+    return ((modelica_string_t *) a.data)[i];
+}
 
 /* Setting the fields of a string_array */
 extern void string_array_create(string_array_t *dest, modelica_string_t *data, int ndims, ...);
@@ -63,13 +66,13 @@ static inline void clone_string_array_spec(const string_array_t * src,
 { clone_base_array_spec(src, dst); }
 
 /* Copy string data*/
-extern void copy_string_array_data(const string_array_t * source, string_array_t* dest);
+extern void copy_string_array_data(const string_array_t source, string_array_t* dest);
 
 /* Copy string data given memory ptr*/
 extern void copy_string_array_data_mem(const string_array_t source,modelica_string_t* dest);
 
 /* Copy string array*/
-extern void copy_string_array(const string_array_t * source, string_array_t* dest);
+extern void copy_string_array(const string_array_t source, string_array_t* dest);
 
 extern modelica_string_t* calc_string_index(int ndims, const _index_t* idx_vec, const string_array_t * arr);
 extern modelica_string_t* calc_string_index_va(const string_array_t * source,int ndims,

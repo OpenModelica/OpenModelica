@@ -39,11 +39,6 @@
 #include <assert.h>
 #include <stdarg.h>
 
-modelica_string_t string_get(const string_array_t *a, size_t i)
-{
-    return ((modelica_string_t *) a->data)[i];
-}
-
 static inline modelica_string_t *string_ptrget(const string_array_t *a, size_t i)
 {
     return ((modelica_string_t *) a->data) + i;
@@ -93,15 +88,15 @@ void alloc_string_array_data(string_array_t* a)
     a->data = string_alloc(base_array_nr_of_elements(a));
 }
 
-void copy_string_array_data(const string_array_t *source, string_array_t *dest)
+void copy_string_array_data(const string_array_t source, string_array_t *dest)
 {
     size_t i, nr_of_elements;
 
-    assert(base_array_ok(source));
+    assert(base_array_ok(&source));
     assert(base_array_ok(dest));
-    assert(base_array_shape_eq(source, dest));
+    assert(base_array_shape_eq(&source, dest));
 
-    nr_of_elements = base_array_nr_of_elements(source);
+    nr_of_elements = base_array_nr_of_elements(&source);
 
     for(i = 0; i < nr_of_elements; ++i) {
         string_set(dest, i, string_get(source, i));
@@ -117,13 +112,13 @@ void copy_string_array_data_mem(const string_array_t source, modelica_string_t *
     nr_of_elements = base_array_nr_of_elements(&source);
 
     for(i = 0; i < nr_of_elements; ++i) {
-        dest[i] = string_get(&source, i);
+        dest[i] = string_get(*&source, i);
     }
 }
 
-void copy_string_array(const string_array_t *source, string_array_t *dest)
+void copy_string_array(const string_array_t source, string_array_t *dest)
 {
-    clone_base_array_spec(source, dest);
+    clone_base_array_spec(&source, dest);
     alloc_string_array_data(dest);
     copy_string_array_data(source,dest);
 }
@@ -162,7 +157,7 @@ void print_string_matrix(const string_array_t *source)
         printf("%d X %d matrix:\n", (int) source->dim_size[0], (int) source->dim_size[1]);
         for(i = 0; i < source->dim_size[0]; ++i) {
             for(j = 0; j < source->dim_size[1]; ++j) {
-                value = string_get(source, (i * source->dim_size[1]) + j);
+                value = string_get(*source, (i * source->dim_size[1]) + j);
                 printf("%s\t", value);
             }
             printf("\n");
@@ -234,7 +229,7 @@ void simple_indexed_assign_string_array1(const string_array_t * source,
 {
     /* Assert that source has the correct dimension */
     /* Assert that dest has the correct dimension */
-    string_set(dest, i1, string_get(source, i1));
+    string_set(dest, i1, string_get(*source, i1));
 }
 
 void simple_indexed_assign_string_array2(const string_array_t * source,
@@ -245,7 +240,7 @@ void simple_indexed_assign_string_array2(const string_array_t * source,
     /* Assert that source has correct dimension */
     /* Assert that dest has correct dimension */
     index = (i1 * source->dim_size[1]) + i2;
-    string_set(dest, index, string_get(source, index));
+    string_set(dest, index, string_get(*source, index));
 }
 
 void indexed_assign_string_array(const string_array_t * source,
@@ -291,7 +286,7 @@ void indexed_assign_string_array(const string_array_t * source,
         }
         string_set(dest, calc_base_index_spec(dest->ndims, idx_vec1,
                                               dest, dest_spec),
-                   string_get(source, calc_base_index(source->ndims,
+                   string_get(*source, calc_base_index(source->ndims,
                                                       idx_vec2, source)));
 
     } while(0 == next_index(dest_spec->ndims, idx_vec1, idx_size));
@@ -357,7 +352,7 @@ void index_string_array(const string_array_t * source,
         }
 
         string_set(dest, calc_base_index(dest->ndims, idx_vec2, dest),
-                   string_get(source,
+                   string_get(*source,
                               calc_base_index_spec(source->ndims, idx_vec1,
                                                    source, source_spec)));
 
@@ -442,7 +437,7 @@ void simple_index_string_array1(const string_array_t * source, int i1,
     assert(dest->ndims == (source->ndims - 1));
 
     for(i = 0 ; i < nr_of_elements ; i++) {
-        string_set(dest, i, string_get(source, off + i));
+        string_set(dest, i, string_get(*source, off + i));
     }
 }
 
@@ -455,7 +450,7 @@ void simple_index_string_array2(const string_array_t * source,
     size_t off = nr_of_elements * ((source->dim_size[1] * i1) + i2);
 
     for(i = 0 ; i < nr_of_elements ; i++) {
-        string_set(dest, i, string_get(source, off + i));
+        string_set(dest, i, string_get(*source, off + i));
     }
 }
 
@@ -479,7 +474,7 @@ void array_string_array(string_array_t* dest,int n,string_array_t* first,...)
     for(i = 0, c = 0; i < n; ++i) {
         int m = base_array_nr_of_elements(elts[i]);
         for(j = 0; j < m; ++j) {
-            string_set(dest, c, string_get(elts[i], j));
+            string_set(dest, c, string_get(*elts[i], j));
             c++;
         }
     }
@@ -521,7 +516,7 @@ void array_alloc_string_array(string_array_t* dest, int n,
     for(i = 0, c = 0; i < n; ++i) {
         int m = base_array_nr_of_elements(elts[i]);
         for(j = 0; j < m; ++j) {
-            string_set(dest, c, string_get(elts[i], j));
+            string_set(dest, c, string_get(*elts[i], j));
             c++;
         }
     }
@@ -642,7 +637,7 @@ void cat_string_array(int k, string_array_t* dest, int n,
             int n_sub_k = n_sub * elts[c]->dim_size[k-1];
             for(r = 0; r < n_sub_k; r++) {
                 string_set(dest, j,
-                            string_get(elts[c], r + (i * n_sub_k)));
+                            string_get(*elts[c], r + (i * n_sub_k)));
                 j++;
             }
         }
@@ -711,7 +706,7 @@ void cat_alloc_string_array(int k, string_array_t* dest, int n,
             int n_sub_k = n_sub * elts[c]->dim_size[k-1];
             for(r = 0; r < n_sub_k; r++) {
                 string_set(dest, j,
-                            string_get(elts[c], r + (i * n_sub_k)));
+                            string_get(*elts[c], r + (i * n_sub_k)));
                 j++;
             }
         }
@@ -801,7 +796,7 @@ modelica_string_t scalar_string_array(const string_array_t * a)
     assert(base_array_ok(a));
     assert(base_array_one_element_ok(a));
 
-    return string_get(a, 0);
+    return string_get(*a, 0);
 }
 
 void vector_string_array(const string_array_t * a, string_array_t* dest)
@@ -812,7 +807,7 @@ void vector_string_array(const string_array_t * a, string_array_t* dest)
 
     nr_of_elements = base_array_nr_of_elements(a);
     for(i = 0; i < nr_of_elements; ++i) {
-        string_set(dest, i, string_get(a, i));
+        string_set(dest, i, string_get(*a, i));
     }
 }
 
@@ -832,7 +827,7 @@ void matrix_string_array(const string_array_t * a, string_array_t* dest)
     cnt = dest->dim_size[0] * dest->dim_size[1];
 
     for(i = 0; i < cnt; ++i) {
-        string_set(dest, i, string_get(a, i));
+        string_set(dest, i, string_get(*a, i));
     }
 }
 
@@ -877,7 +872,7 @@ void transpose_string_array(const string_array_t * a, string_array_t* dest)
     size_t n,m;
 
     if(a->ndims == 1) {
-        copy_string_array_data(a,dest);
+        copy_string_array_data(*a,dest);
         return;
     }
 
@@ -890,7 +885,7 @@ void transpose_string_array(const string_array_t * a, string_array_t* dest)
 
     for(i = 0; i < n; ++i) {
         for(j = 0; j < m; ++j) {
-            string_set(dest, (j * n) + i, string_get(a, (i * m) + j));
+            string_set(dest, (j * n) + i, string_get(*a, (i * m) + j));
         }
     }
 }

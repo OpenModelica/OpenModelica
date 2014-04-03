@@ -562,7 +562,7 @@ void write_string_array(type_description *desc, const string_array_t *arr)
       ++dst;
     }
   } else {
-    copy_string_array(arr, &(desc->data.string_array));
+    copy_string_array(*arr, &(desc->data.string_array));
   }
 }
 
