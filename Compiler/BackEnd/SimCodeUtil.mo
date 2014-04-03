@@ -12163,84 +12163,84 @@ public function getEnumerationTypes
 algorithm
   outVars := match (inVars)
     local
-      list<SimCode.SimVar> _stateVars, _enumStateVars;
-      list<SimCode.SimVar> _derivativeVars, _enumDerivativeVars;
-      list<SimCode.SimVar> _inlineVars, _enumInlineVars;
-      list<SimCode.SimVar> _algVars, _enumAlgVars;
-      list<SimCode.SimVar> _intAlgVars, _enumIntAlgVars;
-      list<SimCode.SimVar> _boolAlgVars, _enumBoolAlgVars;
-      list<SimCode.SimVar> _inputVars, _enumInputVars;
-      list<SimCode.SimVar> _outputVars, _enumOutputVars;
-      list<SimCode.SimVar> _aliasVars, _enumAliasVars;
-      list<SimCode.SimVar> _intAliasVars, _enumIntAliasVars;
-      list<SimCode.SimVar> _boolAliasVars, _enumBoolAliasVars;
-      list<SimCode.SimVar> _paramVars, _enumParamVars;
-      list<SimCode.SimVar> _intParamVars, _enumIntParamVars;
-      list<SimCode.SimVar> _boolParamVars, _enumBoolParamVars;
-      list<SimCode.SimVar> _stringAlgVars, _enumStringAlgVars;
-      list<SimCode.SimVar> _stringParamVars, _enumStringParamVars;
-      list<SimCode.SimVar> _stringAliasVars, _enumStringAliasVars;
-      list<SimCode.SimVar> _extObjVars, _enumExtObjVars;
-      list<SimCode.SimVar> _constVars, _enumConstVars;
-      list<SimCode.SimVar> _intConstVars, _enumIntConstVars;
-      list<SimCode.SimVar> _boolConstVars, _enumBoolConstVars;
-      list<SimCode.SimVar> _stringConstVars, _enumStringConstVars;
-      list<SimCode.SimVar> _jacobianVars, _enumJacobianVars;
-      list<SimCode.SimVar> _realOptimizeConstraintsVars, _enumRealOptimizeConstraintsVars;
+      list<SimCode.SimVar> stateVars_;
+      list<SimCode.SimVar> derivativeVars_;
+      list<SimCode.SimVar> inlineVars_;
+      list<SimCode.SimVar> algVars_;
+      list<SimCode.SimVar> intAlgVars_;
+      list<SimCode.SimVar> boolAlgVars_;
+      list<SimCode.SimVar> inputVars_;
+      list<SimCode.SimVar> outputVars_;
+      list<SimCode.SimVar> aliasVars_;
+      list<SimCode.SimVar> intAliasVars_;
+      list<SimCode.SimVar> boolAliasVars_;
+      list<SimCode.SimVar> paramVars_;
+      list<SimCode.SimVar> intParamVars_;
+      list<SimCode.SimVar> boolParamVars_;
+      list<SimCode.SimVar> stringAlgVars_;
+      list<SimCode.SimVar> stringParamVars_;
+      list<SimCode.SimVar> stringAliasVars_;
+      list<SimCode.SimVar> extObjVars_;
+      list<SimCode.SimVar> constVars_;
+      list<SimCode.SimVar> intConstVars_;
+      list<SimCode.SimVar> boolConstVars_;
+      list<SimCode.SimVar> stringConstVars_;
+      list<SimCode.SimVar> jacobianVars_;
+      list<SimCode.SimVar> realOptimizeConstraintsVars_;
       list<SimCode.SimVar> tempEnumTypesList, enumTypesList;
-    case (SimCode.SIMVARS(stateVars = _stateVars, derivativeVars = _derivativeVars, inlineVars = _inlineVars, algVars = _algVars, intAlgVars = _intAlgVars,
-                          boolAlgVars = _boolAlgVars, inputVars = _inputVars, outputVars = _outputVars, aliasVars = _aliasVars, intAliasVars = _intAliasVars,
-                          boolAliasVars = _boolAliasVars, paramVars = _paramVars, intParamVars = _intParamVars, boolParamVars = _boolParamVars,
-                          stringAlgVars = _stringAlgVars, stringParamVars = _stringParamVars, stringAliasVars = _stringAliasVars, extObjVars = _extObjVars,
-                          constVars = _constVars, intConstVars = _intConstVars, boolConstVars = _boolConstVars, stringConstVars = _stringConstVars,
-                          jacobianVars = _jacobianVars, realOptimizeConstraintsVars = _realOptimizeConstraintsVars))
+    case (SimCode.SIMVARS(stateVars = stateVars_, derivativeVars = derivativeVars_, inlineVars = inlineVars_, algVars = algVars_, intAlgVars = intAlgVars_,
+                          boolAlgVars = boolAlgVars_, inputVars = inputVars_, outputVars = outputVars_, aliasVars = aliasVars_, intAliasVars = intAliasVars_,
+                          boolAliasVars = boolAliasVars_, paramVars = paramVars_, intParamVars = intParamVars_, boolParamVars = boolParamVars_,
+                          stringAlgVars = stringAlgVars_, stringParamVars = stringParamVars_, stringAliasVars = stringAliasVars_, extObjVars = extObjVars_,
+                          constVars = constVars_, intConstVars = intConstVars_, boolConstVars = boolConstVars_, stringConstVars = stringConstVars_,
+                          jacobianVars = jacobianVars_, realOptimizeConstraintsVars = realOptimizeConstraintsVars_))
       equation
-        enumTypesList = getEnumerationTypesHelper(_stateVars);
-        tempEnumTypesList = getEnumerationTypesHelper(_derivativeVars);
+        enumTypesList = getEnumerationTypesHelper(stateVars_);
+        tempEnumTypesList = getEnumerationTypesHelper(derivativeVars_);
         enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(_inlineVars);
+        tempEnumTypesList = getEnumerationTypesHelper(inlineVars_);
         enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(_algVars);
+        tempEnumTypesList = getEnumerationTypesHelper(algVars_);
         enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(_intAlgVars);
+        tempEnumTypesList = getEnumerationTypesHelper(intAlgVars_);
         enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(_boolAlgVars);
+        tempEnumTypesList = getEnumerationTypesHelper(boolAlgVars_);
         enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(_inputVars);
+        tempEnumTypesList = getEnumerationTypesHelper(inputVars_);
         enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(_outputVars);
+        tempEnumTypesList = getEnumerationTypesHelper(outputVars_);
         enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(_aliasVars);
+        tempEnumTypesList = getEnumerationTypesHelper(aliasVars_);
         enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(_intAliasVars);
+        tempEnumTypesList = getEnumerationTypesHelper(intAliasVars_);
         enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(_boolAliasVars);
+        tempEnumTypesList = getEnumerationTypesHelper(boolAliasVars_);
         enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(_paramVars);
+        tempEnumTypesList = getEnumerationTypesHelper(paramVars_);
         enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(_intParamVars);
+        tempEnumTypesList = getEnumerationTypesHelper(intParamVars_);
         enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(_boolParamVars);
+        tempEnumTypesList = getEnumerationTypesHelper(boolParamVars_);
         enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(_stringAlgVars);
+        tempEnumTypesList = getEnumerationTypesHelper(stringAlgVars_);
         enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(_stringParamVars);
+        tempEnumTypesList = getEnumerationTypesHelper(stringParamVars_);
         enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(_stringAliasVars);
+        tempEnumTypesList = getEnumerationTypesHelper(stringAliasVars_);
         enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(_extObjVars);
+        tempEnumTypesList = getEnumerationTypesHelper(extObjVars_);
         enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(_constVars);
+        tempEnumTypesList = getEnumerationTypesHelper(constVars_);
         enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(_intConstVars);
+        tempEnumTypesList = getEnumerationTypesHelper(intConstVars_);
         enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(_boolConstVars);
+        tempEnumTypesList = getEnumerationTypesHelper(boolConstVars_);
         enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(_stringConstVars);
+        tempEnumTypesList = getEnumerationTypesHelper(stringConstVars_);
         enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(_jacobianVars);
+        tempEnumTypesList = getEnumerationTypesHelper(jacobianVars_);
         enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(_realOptimizeConstraintsVars);
+        tempEnumTypesList = getEnumerationTypesHelper(realOptimizeConstraintsVars_);
         enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
         enumTypesList = List.uniqueOnTrue(enumTypesList, compareEnumerationTypes);
       then
