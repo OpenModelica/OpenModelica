@@ -1,7 +1,14 @@
 #include "TaskGraphResultsCmp.h"
-#include "HpcOmSchedulerExt.h"
+#include "config.h"
 #include <iostream>
 
+#if USE_PATOH
+#include "patoh.h"
+#endif
+
+#if USE_METIS
+#include "metis.h"
+#endif
 
 using namespace std;
 
@@ -38,7 +45,7 @@ void* HpcOmSchedulerExtImpl__readScheduleFromGraphMl(const char *filename)
   return res;
 }
 
-#if usemetis
+#if USE_METIS
 void* HpcOmSchedulerExtImpl__scheduleMetis(int* xadj, int* adjncy, int* vwgt, int* adjwgt, int xadjCount, int adjncyCount, int nparts)
 {
     void *res = mk_nil();
@@ -80,15 +87,8 @@ void* HpcOmSchedulerExtImpl__scheduleMetis(int* xadj, int* adjncy, int* vwgt, in
     delete[] met_part;
     return res;
 }
-#else
-void* HpcOmSchedulerExtImpl__scheduleMetis(int* xadj, int* adjncy, int* vwgt, int* adjwgt, int xadjCount, int adjncyCount, int nparts)
-{
-    std::cerr<<"OpenModelica was not compiled with METIS."<<std::endl;
-}
-#endif
-
-#if usepatoh
-void* HpcOmSchedulerExtImpl__schedulehMetis(int* vwgts, int* eptr, int* eint, int* hewgts, int vwgtsNelts, int eptrNelts, int nparts)
+#elif USE_PATOH
+void* HpcOmSchedulerExtImpl__scheduleMetis(int* vwgts, int* eptr, int* eint, int* hewgts, int vwgtsNelts, int eptrNelts, int nparts)
 {
     void *res = mk_nil();
     int * result=new int[vwgtsNelts];
@@ -111,8 +111,9 @@ void* HpcOmSchedulerExtImpl__schedulehMetis(int* vwgts, int* eptr, int* eint, in
     return res;
 }
 #else
-void* HpcOmSchedulerExtImpl__schedulehMetis(int* vwgts, int* eptr, int* eint, int* hewgts, int vwgtsNelts, int eptrNelts, int nparts)
+void* HpcOmSchedulerExtImpl__scheduleMetis(int* vwgts, int* eptr, int* eint, int* hewgts, int vwgtsNelts, int eptrNelts, int nparts)
 {
-    std::cerr<<"OpenModelica was not compiled with PATOH."<<std::endl;
+    std::cerr<<"OpenModelica was not compiled with PATOH or METIS."<<std::endl;
+    return mk_nil();
 }
 #endif

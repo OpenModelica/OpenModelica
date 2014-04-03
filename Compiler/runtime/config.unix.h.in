@@ -50,3 +50,9 @@
 #endif
 
 #define CONFIG_SYSTEMLIBS mk_cons(mk_scon("-lomcruntime"),mk_cons(mk_scon("-lexpat"),mk_cons(mk_scon("-lsqlite3"),mk_cons(mk_scon(CONFIG_LPSOLVE55),mk_cons(mk_scon(CONFIG_CORBALIBS),mk_nil())))))
+
+#define USE_GRAPH @USE_GRAPH@
+#if usegraph
+#define USE_PATOH @USE_PATOH@
+#define USE_METIS @USE_METIS@
+#endif

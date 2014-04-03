@@ -91,7 +91,7 @@ extern void* HpcOmSchedulerExt_schedulehMetis(modelica_metatype xadjIn, modelica
     std::cerr << "adjwgtElem: " << adjwgtElem << std::endl;
     hewgts[i] = adjwgtElem;
   }
-  return HpcOmSchedulerExtImpl__schedulehMetis(vwgts, eptr, eint, hewgts, vwgtsNelts, eptrNelts, nparts);
+  return HpcOmSchedulerExtImpl__scheduleMetis(vwgts, eptr, eint, hewgts, vwgtsNelts, eptrNelts, nparts);
 }
 
 

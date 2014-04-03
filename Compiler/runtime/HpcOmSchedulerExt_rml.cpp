@@ -137,7 +137,7 @@ RML_BEGIN_LABEL(HpcOmSchedulerExt__schedulehMetis)
     hewgts[i] = adjwgtElem;
   }
 
-  rmlA0 = HpcOmSchedulerExtImpl__schedulehMetis(vwgts, eptr, eint, hewgts, vwgtsNelts, eptrNelts, nparts);
+  rmlA0 = HpcOmSchedulerExtImpl__scheduleMetis(vwgts, eptr, eint, hewgts, vwgtsNelts, eptrNelts, nparts);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
