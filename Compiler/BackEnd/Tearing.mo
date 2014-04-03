@@ -37,7 +37,7 @@ encapsulated package Tearing
                - omc tearing developed by TU Dresden: Frenkel,Schubert
                - Cellier tearing
 
-			   RCS: $Id: Tearing.mo 13560 2012-10-22 23:00:33Z jfrenkel $"
+         RCS: $Id: Tearing.mo 13560 2012-10-22 23:00:33Z jfrenkel $"
 
 public import BackendDAE;
 public import DAE;
