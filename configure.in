@@ -968,7 +968,6 @@ Compiler/omc_release/Makefile \
 Compiler/runtime/Makefile \
 Compiler/modpar/Makefile \
 Compiler/runtime/config.unix.h \
-Compiler/runtime/HpcOmSchedulerExt.unix.h \
 PythonInterface/Makefile \
 PythonInterface/OMPython/OMConfig.py \
 Parser/Makefile \
