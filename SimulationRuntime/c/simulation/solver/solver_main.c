@@ -144,6 +144,7 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   if ((simInfo->stepSize < MINIMAL_STEP_SIZE) && (simInfo->stopTime > 0)){
     warningStreamPrint(LOG_STDOUT, 0, "The step-size %g is too small. Adjust the step-size to %g.", simInfo->stepSize, MINIMAL_STEP_SIZE);
     simInfo->stepSize = MINIMAL_STEP_SIZE;
+    simInfo->numSteps = round((simInfo->stopTime - simInfo->startTime)/simInfo->stepSize);
   }
 
   /* initial solverInfo */
