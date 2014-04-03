@@ -37,6 +37,7 @@
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #include <windows.h>
+#include "omc_msvc.h"
 #if defined(_MSC_VER)
 #include <intrin.h>
 #endif
@@ -379,7 +380,7 @@ int rtclock_compare(rtclock_t t1, rtclock_t t2) {
 
 #endif
 
-static inline void alloc_and_copy(void **ptr, size_t n, size_t sz)
+static OMC_INLINE void alloc_and_copy(void **ptr, size_t n, size_t sz)
 {
   void *newmemory = GC_malloc(n*sz);
   assert(newmemory != 0);
