@@ -132,9 +132,14 @@ referenceExists := referenceFiles <> \"\" and regularFileExists(reference);
 // outputFormat can be overridden in CustomCommands.mos, so we set it to 'default' first
 outputFormat := if outputFormat == \"default\" then (if referenceExists then \"mat\" else \"empty\") else outputFormat;
 
-variableFilter := if referenceExists
-  then sum((stringReplace(stringReplace(s,\"[\",\".\"),\"]\",\".\") + \"|\") for s in readSimulationResultVars(reference))
-  else \".*\";
+if referenceExists then
+  vars := readSimulationResultVars(reference);
+  variableFilter := sum(stringReplace(stringReplace(s,\"[\",\".\"),\"]\",\".\") + \"|\" for s in vars);
+  numCompared := size(vars,1);
+else
+  variableFilter := \"\";
+  outputFormat := \"empty\";
+end if;
 
 // Use twice as many output points as the experiment annotation suggests. Else aim for 5000 points.
 (startTime,stopTime,tolerance,numberOfIntervals,stepSize):=getSimulationOptions("+s+",defaultTolerance="+String(default_tolerance)+",defaultNumberOfIntervals=2500);
@@ -189,7 +194,7 @@ if simRes then
     // Create a file containing only the calibrated variables, for easy display
     if not referenceOK then
       timeDiff := OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
-      referenceCell := \"<td bgcolor=\\\"#FF0000\\\">\"+OpenModelica.Scripting.Internal.Time.readableTime(timeDiff)+\", <a href=\\\"files/"+s+".diff.html\\\">\"+String(size(diffFiles,1))+\" failed</a></td>\";
+      referenceCell := \"<td bgcolor=\\\"#FF0000\\\">\"+OpenModelica.Scripting.Internal.Time.readableTime(timeDiff)+\", <a href=\\\"files/"+s+".diff.html\\\">\"+String(size(diffFiles,1))+\"/\"+String(numCompared)+\" signals failed</a></td>\";
       writeFile(\"files/"+s+".diff.html\",\"<html><body><h1>"+s+" differences from the reference file</h1><p>startTime: \"+String(startTime)+\"</p><p>stopTime: \"+String(stopTime)+\"</p><p>Simulated using tolerance: \"+String(tolerance)+\"</p><ul>\" + sum(\"<li>\"+csvFileToVariable(file)+\" <a href=\\\"\"+OpenModelica.Scripting.basename(file)+\".html\\\">(javascript)</a> <a href=\\\"\"+OpenModelica.Scripting.basename(file)+\".csv\\\">(csv)</a></li>\" for file in diffFiles) + \"</ul></body></html>\");
       {writeFile(prefix + \".\" + var + \".html\",\"<html>
 <head>
@@ -238,7 +243,7 @@ function change(el) {
 </html>\") for var in diffVars};
 
     else
-      referenceCell := \"<td bgcolor=\\\"#00FF00\\\">\"+OpenModelica.Scripting.Internal.Time.readableTime(timeDiff)+\"</td>\";
+      referenceCell := \"<td bgcolor=\\\"#00FF00\\\">\"+OpenModelica.Scripting.Internal.Time.readableTime(timeDiff)+\" (\"+String(numCompared)+\" signals)</td>\";
     end if;
   end if;
 end if;
