@@ -743,10 +743,10 @@ package SimCodeUtil
     output Boolean s;
   end isParallelFunctionContext;
   
-	function getEnumerationTypes
-	  input SimCode.SimVars inVars;
-	  output list<SimCode.SimVar> outVars;
-	end getEnumerationTypes;
+  function getEnumerationTypes
+    input SimCode.SimVars inVars;
+    output list<SimCode.SimVar> outVars;
+  end getEnumerationTypes;
 
 end SimCodeUtil;
 
