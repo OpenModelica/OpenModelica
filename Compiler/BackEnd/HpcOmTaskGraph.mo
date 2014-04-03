@@ -683,7 +683,6 @@ algorithm
       eqDescLst = stringListStringChar(eqString);
       eqDescLst = List.map(eqDescLst,prepareXML);
       eqString = stringCharListString(eqDescLst);
-      descLst = eqString::iEqDesc;
       //get the variable string
       varLst = BackendVariable.varList(orderedVars);
       //var = listGet(varLst,arrayGet(ass2,i));
@@ -702,7 +701,6 @@ algorithm
       eqDescLst = stringListStringChar(eqString);
       eqDescLst = List.map(eqDescLst,prepareXML);
       eqString = stringCharListString(eqDescLst);
-      descLst = eqString::iEqDesc;
       //get the variable string
       varLst = BackendVariable.varList(orderedVars);
       //var = listGet(varLst,arrayGet(ass2,i));
@@ -739,7 +737,6 @@ algorithm
       eqDescLst = stringListStringChar(eqString);
       eqDescLst = List.map(eqDescLst,prepareXML);
       eqString = stringCharListString(eqDescLst);
-      descLst = eqString::iEqDesc;
       //get the variable string
       varLst = BackendVariable.varList(orderedVars);
       //var = listGet(varLst,arrayGet(ass2,i));
@@ -4723,7 +4720,6 @@ algorithm
         costValue2 = costValueParent +. costValue2;
         costValue2 = realMax(costValue1,costValue2);
         levelValue2 = intMax(levelValueParent+1,levelValue1);
-        parentCount2 = parentCount1-1;
         rootInfo = (levelValue2,costValue2,parentCount1);
         nodeInfoTmp = arrayUpdate(nodeInfoIn,rootNode,rootInfo);
         childNodes = arrayGet(graphIn,rootNode);
@@ -4750,7 +4746,6 @@ algorithm
         costValue2 = costValueParent +. costValue2;
         costValue2 = realMax(costValue1,costValue2);
         levelValue2 = intMax(levelValueParent+1,levelValue1);
-        parentCount2 = parentCount1-1;
         rootInfo = (levelValue2,costValue2,parentCount1-1);
         nodeInfoTmp = arrayUpdate(nodeInfoIn,rootNode,rootInfo);
         childNodes = arrayGet(graphIn,rootNode);
@@ -4761,7 +4756,6 @@ algorithm
         foldTmp;
     else
       equation
-        (childNodesIn,nodeInfoIn) = foldIn;
         (rootNodes,rootParents) = rootNodeInfo;
         rootNode = listGet(rootNodes,rootIdx);
         rootParent = listGet(rootParents,rootIdx);

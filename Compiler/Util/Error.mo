@@ -646,7 +646,6 @@ public constant Message GENERATE_SEPARATE_CODE_DEPENDENCIES_FAILED = MESSAGE(242
 public constant Message CYCLIC_DEFAULT_VALUE = MESSAGE(243, SCRIPTING(), ERROR(),
   Util.gettext("The default value of %s causes a cyclic dependency."));
 
-
 public constant Message UNBOUND_PARAMETER_WITH_START_VALUE_WARNING = MESSAGE(499, TRANSLATION(), WARNING(),
   Util.gettext("Parameter %s has no value, and is fixed during initialization (fixed=true), using available start value (start=%s) as default value."));
 public constant Message UNBOUND_PARAMETER_WARNING = MESSAGE(500, TRANSLATION(), WARNING(),
@@ -786,6 +785,9 @@ public constant Message FOUND_NON_NUMERIC_TYPES = MESSAGE(5032, TRANSLATION(), E
   Util.gettext("Operator %s expects numeric types as operands, but got '%s and %s'."));
 public constant Message STRUCTURAL_PARAMETER_OR_CONSTANT_WITH_NO_BINDING = MESSAGE(5033, TRANSLATION(), ERROR(),
   Util.gettext("Could not evaluate structural parameter (or constant): %s which gives dimensions of array: %s. Array dimensions must be known at compile time."));
+public constant Message META_UNUSED_ASSIGNMENT = MESSAGE(5034, TRANSLATION(), NOTIFICATION(),
+  Util.gettext("Removing unused assignment to: %s."));
+
 public constant Message COMPILER_ERROR = MESSAGE(5999, TRANSLATION(), ERROR(),
   Util.notrans("%s"));
 public constant Message COMPILER_WARNING = MESSAGE(6000, TRANSLATION(), WARNING(),

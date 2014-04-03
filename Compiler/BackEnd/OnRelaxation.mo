@@ -2901,7 +2901,6 @@ algorithm
     case (c::rest,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         r = ass2[c];
-        b = queuemark[c];
         //  print("Process Colum " +& intString(c) +& " Rows " +& stringDelimitList(List.map(r,intString),", ") +& "  " +& boolString(b) +&"\n");
         (colums1,b2) = getIndexQueque1(r,c,mT,mark,rowmarks,{},false);
         //  BackendDump.debuglst((colums1,intString,", ","\n"));

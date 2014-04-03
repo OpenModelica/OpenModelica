@@ -461,9 +461,6 @@ algorithm
         then stringAppend(stringAppend("x[",intString(p+1)),"]");
       case (DAE.CREF_QUAL(ident,identType,subscriptLst,r),_,_,_)
       equation
-        ident=DAE.derivativeNamePrefix;
-        identType=DAE.T_REAL_DEFAULT;
-        subscriptLst={};
         p = List.positionOnTrue(r,states,ComponentReference.crefEqual);
         then stringAppend(stringAppend("der(x[",intString(p+1)),"])");
       case (_,_,_,_)

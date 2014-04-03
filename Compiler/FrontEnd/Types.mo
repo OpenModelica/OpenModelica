@@ -4389,7 +4389,6 @@ algorithm
         ty2 = arrayElementType(ty2);
         ety1 = simplifyType(ty2);
         ty2 = liftArrayListDims(ty2, dims);
-        exp = DAE.ARRAY(DAE.T_ARRAY(ety1, dims, DAE.emptyTypeSource), sc, elist_1);
         //TODO: Verify correctness of return value.
       then
         (DAE.ARRAY(DAE.T_ARRAY(ety1, dims, DAE.emptyTypeSource),sc,elist_1), ty2);
@@ -4588,7 +4587,6 @@ algorithm
     case (DAE.TUPLE(elist),DAE.T_TUPLE(tupleType = tys1),ty2 as DAE.T_METABOXED(ty = DAE.T_UNKNOWN(source =_), source = ts2),_)
       equation
         true = Config.acceptMetaModelicaGrammar();
-        e_1 = DAE.META_TUPLE(elist);
         tys2 = List.fill(ty2, listLength(tys1));
         (elist_1,tys_1) = matchTypeTuple(elist, tys1, tys2, printFailtrace);
        then

@@ -152,7 +152,6 @@ algorithm
       equation
         (_,indx) = get1(key, hashSet);
         //print("adding when present, indx =" );print(intString(indx));print("\n");
-        indx_1 = indx - 1;
         varr_1 = valueArraySetnth(varr, indx, key);
       then ((hashvec,varr_1,bsize,n,fntpl));
 
@@ -264,7 +263,6 @@ algorithm
     case (_,(hashvec,varr,bsize,n,fntpl))
       equation
         (_,indx) = get1(key, hashSet);
-        indx_1 = indx - 1;
         varr_1 = valueArrayClearnth(varr, indx);
       then ((hashvec,varr_1,bsize,n,fntpl));
     case (_,_)

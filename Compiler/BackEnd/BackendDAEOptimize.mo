@@ -4907,7 +4907,6 @@ algorithm
         tmpEqns = BackendEquation.listEquation(eqnlst);
         (explst,_) = BackendDAEUtil.getEqnSysRhs(tmpEqns,BackendVariable.listVar1(varlst),SOME(funcs));
         ((_,tpl)) = Expression.traverseExpList(explst,countOperationsExp,tpl);
-        (i1,i2,i3,i4) = tpl;
       then
          countOperationstraverseComps(rest,isyst,ishared,tpl);
     case ((comp as BackendDAE.TORNSYSTEM(tearingvars=vlst, otherEqnVarTpl=eqnvartpllst, linear=false))::rest,_,BackendDAE.SHARED(functionTree=funcs),_)

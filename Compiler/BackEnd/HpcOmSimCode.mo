@@ -173,7 +173,6 @@ algorithm
       Real graphCosts;
       Integer graphOps;
     case (BackendDAE.DAE(eqs=eqs), _, _, _, _, _, _, _, _, _, _, _) equation
-      uniqueEqIndex = 1;
 
       //Setup
       //-----

@@ -186,7 +186,6 @@ algorithm
         (eq,(shared,addEqs,idx+1));
     else
       equation
-        (shared,addEqs,idx) = tplIn;
       then
         (eqIn,tplIn);
   end matchcontinue;        

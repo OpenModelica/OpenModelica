@@ -4942,7 +4942,6 @@ algorithm
         Debug.fprintln(Flags.DYN_LOAD, "buildModel: Compiling done.");
         // SimCodegen.generateMakefileBeast(makefilename, filenameprefix, libs, file_dir);
         win1 = getWithinStatement(classname);
-        p2 = Absyn.PROGRAM({cdef},win1,ts);
         compileModel(filenameprefix, libs, file_dir,method_str);
         // (p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(r1,r2))) = Interactive.updateProgram2(p2,p,false);
         st2 = st; // Interactive.replaceSymbolTableProgram(st,p);

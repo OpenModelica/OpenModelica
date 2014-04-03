@@ -1883,7 +1883,6 @@ algorithm
       equation
         false = numIter < Global.recursionDepthLimit;
         n = Env.printEnvPathStr(env);
-        strDepth = intString(Global.recursionDepthLimit);
         // print("partialInstClassIn recursion depth... " +& n +& "\n");
         Error.addSourceMessage(Error.RECURSION_DEPTH_REACHED,{n},SCode.elementInfo(c));
       then fail();

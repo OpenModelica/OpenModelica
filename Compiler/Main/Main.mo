@@ -255,7 +255,6 @@ algorithm
     else
       equation
         true = Util.isSome(inStatements) or Util.isSome(inProgram);
-        _ = setStackOverflowSignal(false);
         Error.addMessage(Error.STACK_OVERFLOW, {inCommand});
       then ("", inSymbolTable);
 
@@ -1160,7 +1159,6 @@ algorithm
         print("  Most OpenModelica release distributions have scripts that set OPENMODELICAHOME for you.\n\n");
 
         // Functions used by external code that needs to be included for linking
-        _ = Absyn.isDerCref;
       then fail();
   end matchcontinue;
 end main2;

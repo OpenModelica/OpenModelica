@@ -1352,7 +1352,6 @@ algorithm
           Absyn.CLASS(name,false,false,false,Absyn.R_MODEL(),Absyn.dummyParts,Absyn.dummyInfo)
           }, Absyn.WITHIN(path_1),Absyn.dummyTimeStamp), p);
         newst = setSymbolTableAST(st, newp);
-        resstr = stringAppend(name, "\n");
       then
         ("true",newst);
 
@@ -10146,7 +10145,6 @@ algorithm
         newp;
     case ((model_ as Absyn.CREF_IDENT(name = _)),nargs,p as Absyn.PROGRAM(globalBuildTimes=ts))
       equation
-        exp = Absyn.CALL(model_,Absyn.FUNCTIONARGS({},nargs));
         modelpath = Absyn.crefToPath(model_) "Class on top level" ;
         cdef = getPathedClassInProgram(modelpath, p);
         cdef_1 = addClassAnnotationToClass(cdef, nargs);

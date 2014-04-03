@@ -2697,7 +2697,6 @@ algorithm
     case(-1,DAE.CREF(_,_))
       equation
         tp=Expression.typeof(eIn);
-        e=DAE.UNARY(DAE.UMINUS(tp),eIn);
       then eIn;
     case(1,DAE.CREF(_,_))
       then eIn;
@@ -2877,7 +2876,6 @@ algorithm
     case (_,_,_,e1 as DAE.CREF(componentRef = cr1),e2 as DAE.CREF(componentRef = cr2))
       equation
         source=getSourceIfApproximated(eqn);
-        tp = DAE.T_REAL_DEFAULT; //Assume is real
         new_sets=pushToSetList(sets,cr1,e1,1,cr2,e2,1,source);
       then (new_sets,eqn_acc);
     // a = -b;

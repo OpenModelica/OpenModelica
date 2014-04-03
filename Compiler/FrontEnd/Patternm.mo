@@ -1089,7 +1089,7 @@ algorithm
         // TODO: Can skip matchcontinue and failure if there was an AvlTree.exists(key)
         _ = AvlTreeString.avlTreeGet(localsTree,name);
         failure(_ = AvlTreeString.avlTreeGet(useTree,name));
-        Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.META_UNUSED_AS_BINDING,{name},info);
+        Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.META_UNUSED_ASSIGNMENT,{name},info);
       then ((DAE.CREF(DAE.WILD(),ty),extra));
     case ((DAE.PATTERN(pattern=pat),extra))
       equation
@@ -2590,7 +2590,7 @@ protected function statementListFindDeadStoreRemoveEmptyStatements
   output AvlTreeString.AvlTree useTree;
 algorithm
   (body,useTree) := List.map1Fold(listReverse(inBody),statementFindDeadStore,localsTree,inUseTree);
-  body := List.select(body,Algorithm.isNotDummyStatement);
+  body := List.select(body,isNotDummyStatement);
   body := listReverse(body);
 end statementListFindDeadStoreRemoveEmptyStatements;
 
@@ -2730,5 +2730,13 @@ algorithm
       then (else_,useTree);
   end match;
 end elseFindDeadStore;
+
+protected function isNotDummyStatement
+  input DAE.Statement statement;
+  output Boolean b;
+algorithm
+  b := Algorithm.isNotDummyStatement(statement);
+  Error.assertionOrAddSourceMessage(b or not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.META_DEAD_CODE,{"Statement optimised away"},DAEUtil.getElementSourceFileInfo(Algorithm.getStatementSource(statement)));
+end isNotDummyStatement;
 
 end Patternm;

@@ -7500,7 +7500,6 @@ algorithm
 
     case (cache,env,fn,args,nargs,impl,_,st,pre,_)
       equation
-        t4 = args;
         failure((_,_,_) = Lookup.lookupType(cache,env, fn, NONE())) "msg" ;
         scope = Env.printEnvPathStr(env) +& " (looking for a function or record)";
         fn_str = Absyn.pathString(fn);

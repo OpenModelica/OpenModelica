@@ -2881,7 +2881,6 @@ algorithm
     case (DAE.BINARY(exp1 = e1,operator = DAE.POW(ty = _),exp2 = DAE.UNARY(operator = DAE.UMINUS(ty = tp),exp = DAE.ICONST(integer = icoeff))))
       equation
         coeff_1 = intReal(icoeff);
-        coeff_2 = 0.0 -. coeff_1;
       then
         (e1,coeff_1);
 

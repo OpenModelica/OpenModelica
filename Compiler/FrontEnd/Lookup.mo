@@ -2594,7 +2594,6 @@ algorithm
     case(expl,dims)
       equation
         str2 = intString(dims);
-        exp = DAE.ARRAY(DAE.T_INTEGER_DEFAULT,false,expl);
         str1 = stringDelimitList(List.map(expl,ExpressionDump.printExpStr)," and position " );
         Error.addMessage(Error.ARRAY_INDEX_OUT_OF_BOUNDS,{str1,str2});
       then

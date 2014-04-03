@@ -3590,7 +3590,6 @@ algorithm
       equation
         true = List.isNotEmpty(currLoop);
         true = indxCol == listLength(arrayGet(aIn,indxRow));
-        parent = indxRow;
         child = listGet(arrayGet(aIn,indxRow),indxCol);
         currLoop = child::currLoop;
         print("append loop and jump to next vertex "+&stringDelimitList(List.map(currLoop,intString),",")+&"\n");
@@ -3600,7 +3599,6 @@ algorithm
       equation
         true = indxCol < listLength(arrayGet(aIn,indxRow));
         print("now we have more loops\n");
-        parent = indxRow;
         row = arrayGet(aIn,indxRow);
         unfinLoops = traceMooreLoops(unfinLoops,currLoop,row,2);
         child = listGet(arrayGet(aIn,indxRow),indxCol);

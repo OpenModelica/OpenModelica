@@ -306,7 +306,6 @@ algorithm
         
     case (v, _, ((e as BackendDAE.SOLVED_EQUATION(componentRef = cref, exp = e1, source= source_, differentiated=diffed))::xs), eq_count, {}, _, countRelations, countMathFunctions, zcs, relationsLst, sampleLst, eqnsAccum, whenClauseAccum)
       equation
-        eq_count_1 = eq_count + 1;
         (eres1, countRelations, countMathFunctions, res, relationsLst, sampleLst) = findZeroCrossings3(e1, zcs, relationsLst, sampleLst, countRelations, countMathFunctions, eq_count, -1, v, knvars);
          eqnsAccum = listAppend({BackendDAE.SOLVED_EQUATION(cref, eres1, source_, diffed)}, eqnsAccum);
         (res1, eq_reslst, wc_reslst, countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(v, knvars, xs, eq_count, {}, 0, countRelations, countMathFunctions, res, relationsLst, sampleLst, eqnsAccum, whenClauseAccum);

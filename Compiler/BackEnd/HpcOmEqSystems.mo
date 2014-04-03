@@ -755,7 +755,6 @@ algorithm
         mapIncRowEqn = listArray(List.intRange(nEqs));
         mapEqnIncRow = Util.arrayMap(mapIncRowEqn,List.create);
         (sysTmp,compsTmp) = BackendDAETransform.strongComponentsScalar(sysTmp,shared,mapEqnIncRow,mapIncRowEqn);
-        sysTmp = BackendDAE.EQSYSTEM(vars,eqArr,SOME(m),SOME(mt),matching,{});
         compsTmp = listAppend(compsIn,compsTmp);
         matchingTmp = BackendDAE.MATCHING(ass1, ass2, compsTmp);
       then

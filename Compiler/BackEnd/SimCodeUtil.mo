@@ -10056,7 +10056,6 @@ algorithm
       equation
         (_, indx) = get1(key, hashTable);
         // print("adding when present, indx =" );print(intString(indx));print("\n");
-        indx_1 = indx - 1;
         varr_1 = valueArraySetnth(varr, indx, newv);
       then SimCode.HASHTABLE(hashvec, varr_1, bsize, n);
     case (_, _)

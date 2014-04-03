@@ -3811,7 +3811,6 @@ algorithm
     case ( (ident, mexp) :: fms, _, _, usedLocals, astDefs)
       equation
         failure( _ = lookupTupleList(fields, ident) );
-        reason = "#Error - unresolved type - cannot find field '" +& ident +& "'#";
         //locals = addLocalValue(ident, UNRESOLVED_TYPE(reason), locals);
         Debug.fprint(Flags.FAILTRACE, "Error - rewriteMatchExpByLocalNamesRecord failed to find field '" +& ident +& "'\n");
         (fms, usedLocals) = rewriteMatchExpByLocalNamesRecord(fms, fields, inLocalNames, usedLocals, astDefs);

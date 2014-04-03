@@ -695,7 +695,6 @@ algorithm
       equation
         str1 = SCodeDump.unparseElementStr(inClass,SCodeDump.defaultOptions);
         str2 = Env.printEnvPathStr(inEnv);
-        strDepth = intString(Global.recursionDepthLimit);
         // print("instDerivedClassesWork recursion depth... " +& str1 +& " " +& str2 +& "\n");
         Error.addSourceMessage(Error.RECURSION_DEPTH_DERIVED,{str1,str2},inInfo);
       then fail();

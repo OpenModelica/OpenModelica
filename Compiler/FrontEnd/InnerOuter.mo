@@ -1939,7 +1939,6 @@ algorithm
       equation
         (_,indx) = get1(key, hashTable);
         //print("adding when present, indx =" );print(intString(indx));print("\n");
-        indx_1 = indx - 1;
         varr_1 = valueArraySetnth(varr, indx, newv);
         // print("Updated NEW to IH: key:" +& ComponentReference.printComponentRefStr(key) +& " value: " +& printInnerDefStr(value) +& "\n");
       then HASHTABLE(hashvec,varr_1,bsize,n);
@@ -2010,7 +2009,6 @@ algorithm
     case (_,HASHTABLE(hashvec,varr,bsize,n))
       equation
         (_,indx) = get1(key, hashTable);
-        indx_1 = indx - 1;
         varr_1 = valueArrayClearnth(varr, indx);
       then HASHTABLE(hashvec,varr_1,bsize,n);
     else
