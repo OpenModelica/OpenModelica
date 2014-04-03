@@ -2809,6 +2809,14 @@ algorithm
   end match;
 end pathString2;
 
+public function pathString2NoLeadingDot "Tail-recursive version, with string builder (stringDelimitList is optimised)"
+  input Path path;
+  input String delimiter;
+  output String outString;
+algorithm
+  outString := stringDelimitList(pathToStringList(path),delimiter);
+end pathString2NoLeadingDot;
+
 public function pathStringReplaceDot "Helper function to pathString."
   input Path inPath;
   input String inString;

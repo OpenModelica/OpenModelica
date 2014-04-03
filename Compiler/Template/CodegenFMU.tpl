@@ -91,13 +91,13 @@ template fmiModelDescription(SimCode simCode, String guid)
  "Generates code for ModelDescription file for FMU target."
 ::=
 //  <%UnitDefinitions(simCode)%>
-//  <%TypeDefinitions(simCode)%>
 //  <%VendorAnnotations(simCode)%>
 match simCode
 case SIMCODE(__) then
   <<
   <fmiModelDescription
     <%fmiModelDescriptionAttributes(simCode,guid)%>>
+    <%TypeDefinitions(modelInfo)%>
     <%DefaultExperiment(simulationSettingsOpt)%>
     <%ModelVariables(modelInfo)%>
   </fmiModelDescription>
@@ -161,16 +161,52 @@ case SIMCODE(__) then
   >>
 end UnitDefinitions;
 
-template TypeDefinitions(SimCode simCode)
+template TypeDefinitions(ModelInfo modelInfo)
  "Generates code for TypeDefinitions file for FMU target."
 ::=
-match simCode
-case SIMCODE(__) then
+match modelInfo
+case MODELINFO(vars=SIMVARS(__)) then
   <<
   <TypeDefinitions>
+    <%SimCodeUtil.getEnumerationTypes(vars) |> var =>
+      TypeDefinition(var)
+    ;separator="\n"%>
   </TypeDefinitions>
   >>
 end TypeDefinitions;
+
+template TypeDefinition(SimVar simVar)
+::=
+match simVar
+case SIMVAR(__) then
+  <<
+  <%TypeDefinitionType(type_)%>
+  >>
+end TypeDefinition;
+
+template TypeDefinitionType(DAE.Type type_)
+ "Generates code for TypeDefinitions Type file for FMU target."
+::=
+match type_
+  case T_ENUMERATION(__) then 
+  <<
+  <Type name="<%Absyn.pathString2NoLeadingDot(path, ".")%>">
+    <EnumerationType>
+      <%names |> name =>
+        EnumerationType(name)
+      ;separator="\n"%>
+    </EnumerationType>
+  </Type>
+  >>
+  else 'UNKOWN_TYPE'
+end TypeDefinitionType;
+
+template EnumerationType(String name)
+::=
+  <<
+  <Item name="<%name%>"/>
+  >>
+end EnumerationType;
 
 template DefaultExperiment(Option<SimulationSettings> simulationSettingsOpt)
  "Generates code for DefaultExperiment file for FMU target."
@@ -341,7 +377,7 @@ match type_
   case T_REAL(__) then '<Real<%ScalarVariableTypeCommonAttribute(initialValue,isFixed)/*%> <%ScalarVariableTypeRealAttribute(unit,displayUnit)*/%>/>'
   case T_BOOL(__) then '<Boolean<%ScalarVariableTypeCommonAttribute(initialValue,isFixed)%>/>'
   case T_STRING(__) then '<String<%StringVariableTypeCommonAttribute(initialValue,isFixed)%>/>'
-  case T_ENUMERATION(__) then '<Integer<%ScalarVariableTypeCommonAttribute(initialValue,isFixed)%>/>'
+  case T_ENUMERATION(__) then '<Enumeration declaredType="<%Absyn.pathString2NoLeadingDot(path, ".")%>"<%ScalarVariableTypeCommonAttribute(initialValue,isFixed)%>/>'
   else 'UNKOWN_TYPE'
 end ScalarVariableType;
 

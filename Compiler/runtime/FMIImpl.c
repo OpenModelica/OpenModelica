@@ -180,6 +180,7 @@ const char* getFMI2ModelVariableCausality(fmi2_import_variable_t* variable)
 const char* getFMI1ModelVariableBaseType(fmi1_import_variable_t* variable)
 {
   fmi1_base_type_enu_t type = fmi1_import_get_variable_base_type(variable);
+  fmi1_import_variable_typedef_t* variableTypeDefinition = NULL;
   switch (type) {
     case fmi1_base_type_real:
       return "Real";
@@ -190,7 +191,8 @@ const char* getFMI1ModelVariableBaseType(fmi1_import_variable_t* variable)
     case fmi1_base_type_str:
       return "String";
     case fmi1_base_type_enum:
-      return "enumeration";
+      variableTypeDefinition = fmi1_import_get_variable_declared_type(variable);
+      return fmi1_import_get_type_name(variableTypeDefinition);
     default:                    /* Should never be reached. */
       return "";
   }
@@ -202,6 +204,7 @@ const char* getFMI1ModelVariableBaseType(fmi1_import_variable_t* variable)
 const char* getFMI2ModelVariableBaseType(fmi2_import_variable_t* variable)
 {
   fmi2_base_type_enu_t type = fmi2_import_get_variable_base_type(variable);
+  fmi2_import_variable_typedef_t* variableTypeDefinition = NULL;
   switch (type) {
     case fmi2_base_type_real:
       return "Real";
@@ -212,7 +215,8 @@ const char* getFMI2ModelVariableBaseType(fmi2_import_variable_t* variable)
     case fmi2_base_type_str:
       return "String";
     case fmi2_base_type_enum:
-      return "enumeration";
+      variableTypeDefinition = fmi2_import_get_variable_declared_type(variable);
+      return fmi2_import_get_type_name(variableTypeDefinition);
     default:                    /* Should never be reached. */
       return "";
   }
@@ -231,6 +235,7 @@ char* getFMI1ModelVariableName(fmi1_import_variable_t* variable)
   charReplace(res, length, '.', '_');
   charReplace(res, length, '[', '_');
   charReplace(res, length, ']', '_');
+  charReplace(res, length, ' ', '_');
   charReplace(res, length, ',', '_');
   charReplace(res, length, '(', '_');
   charReplace(res, length, ')', '_');

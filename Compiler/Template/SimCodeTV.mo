@@ -742,6 +742,11 @@ package SimCodeUtil
     input SimCode.Context context;
     output Boolean s;
   end isParallelFunctionContext;
+  
+	function getEnumerationTypes
+	  input SimCode.SimVars inVars;
+	  output list<SimCode.SimVar> outVars;
+	end getEnumerationTypes;
 
 end SimCodeUtil;
 
@@ -995,6 +1000,13 @@ package Absyn
   end Within;
 
   constant Info dummyInfo;
+  
+  function pathString2NoLeadingDot "Tail-recursive version, with string builder (stringDelimitList is optimised)"
+    input Path path;
+    input String delimiter;
+    output String outString;
+  end pathString2NoLeadingDot;
+  
 end Absyn;
 
 
