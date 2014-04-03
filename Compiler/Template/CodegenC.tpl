@@ -9128,22 +9128,44 @@ template daeExpMatrix(Exp exp, Context context, Text &preExp /*BUFP*/,
     let &preExp += 'alloc_<%arrayTypeStr%>(&<%tmp%>, 2, 0, 1);<%\n%>'
     tmp
   case m as MATRIX(__) then
+    let typeStr = expTypeShort(m.ty)
     let arrayTypeStr = expTypeArray(m.ty)
-    let &vars2 = buffer "" /*BUFD*/
-    let &promote = buffer "" /*BUFD*/
-    let catAlloc = (m.matrix |> row =>
+    match typeStr
+      // faster creation of the matrix for basic types
+      case "real"
+      case "integer"
+      case "boolean" then
         let tmp = tempDecl(arrayTypeStr, &varDecls /*BUFD*/)
-        let vars = daeExpMatrixRow(row, arrayTypeStr, context,
+        let rows = '<%listLength(m.matrix)%>'
+        let cols = '<%listLength(listGet(m.matrix, 1))%>'
+        let matrix = (m.matrix |> row hasindex i0 =>
+            let els = (row |> e hasindex j0 =>
+              let expVar = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+              'put_<%typeStr%>_matrix_element(<%expVar%>, <%i0%>, <%j0%>, &<%tmp%>);' ;separator="\n")
+          '<%els%>'
+          ;separator="\n")
+        let &preExp += '/* -- start: matrix[<%rows%>,<%cols%>] -- */<%\n%>'
+        let &preExp += 'alloc_<%typeStr%>_array(&<%tmp%>, 2, <%rows%>, <%cols%>);<%\n%>'
+        let &preExp += '<%matrix%><%\n%>'
+        let &preExp += '/* -- end: matrix[<%rows%>,<%cols%>] -- */<%\n%>'
+        tmp
+      // everything else
+      case _ then
+        let &vars2 = buffer "" /*BUFD*/
+        let &promote = buffer "" /*BUFD*/
+        let catAlloc = (m.matrix |> row =>
+          let tmp = tempDecl(arrayTypeStr, &varDecls /*BUFD*/)
+          let vars = daeExpMatrixRow(row, arrayTypeStr, context,
                                  &promote /*BUFC*/, &varDecls /*BUFD*/)
-        let &vars2 += ', &<%tmp%>'
-        'cat_alloc_<%arrayTypeStr%>(2, &<%tmp%>, <%listLength(row)%><%vars%>);'
-      ;separator="\n")
-    let &preExp += promote
-    let &preExp += catAlloc
-    let &preExp += "\n"
-    let tmp = tempDecl(arrayTypeStr, &varDecls /*BUFD*/)
-    let &preExp += 'cat_alloc_<%arrayTypeStr%>(1, &<%tmp%>, <%listLength(m.matrix)%><%vars2%>);<%\n%>'
-    tmp
+          let &vars2 += ', &<%tmp%>'
+          'cat_alloc_<%arrayTypeStr%>(2, &<%tmp%>, <%listLength(row)%><%vars%>);'
+          ;separator="\n")
+        let &preExp += promote
+        let &preExp += catAlloc
+        let &preExp += "\n"
+        let tmp = tempDecl(arrayTypeStr, &varDecls /*BUFD*/)
+        let &preExp += 'cat_alloc_<%arrayTypeStr%>(1, &<%tmp%>, <%listLength(m.matrix)%><%vars2%>);<%\n%>'
+        tmp
 end daeExpMatrix;
 
 

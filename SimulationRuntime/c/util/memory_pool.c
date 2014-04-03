@@ -39,13 +39,18 @@
 extern "C" {
 #endif
 
+static int GC_collect_a_little_or_not(void)
+{
+  return 0;
+}
+
 omc_alloc_interface_t omc_alloc_interface = {
   GC_init,
   GC_malloc,
   GC_malloc_atomic,
   (char*(*)(size_t)) GC_malloc_atomic,
   GC_strdup,
-  GC_collect_a_little
+  GC_collect_a_little_or_not
 };
 
 typedef struct list_s {
