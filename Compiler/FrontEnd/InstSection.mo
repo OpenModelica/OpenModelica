@@ -2677,12 +2677,11 @@ algorithm
         failure(Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "reinit")) = e);
         failure(Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "assert")) = e);
         failure(Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "terminate")) = e);
-        (cache, DAE.CALL(ap, eexpl, attr), _, _) =
-          Static.elabExp(cache, env, e, impl,NONE(), true,pre,info);
-        // DO NOT PREFIX THIS PATH; THE PREFIX IS ONLY USED FOR COMPONENTS, NOT NAMES OF FUNCTIONS....
-        (cache,eexpl) = PrefixUtil.prefixExpList(cache, env, ih, eexpl, pre);
+        (cache, e_1, _, _) = Static.elabExp(cache, env, e, impl, NONE(), true, pre, info);
+        checkValidNoRetcall(e_1,info);
+        (cache,e_1) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
-        stmt = DAE.STMT_NORETCALL(DAE.CALL(ap,eexpl,attr),source);
+        stmt = DAE.STMT_NORETCALL(e_1,source);
       then
         (cache,{stmt});
 
@@ -5690,8 +5689,21 @@ algorithm
   end matchcontinue;
 end collectParallelVariablesInSubscriptList;
 
-
-
-
+protected function checkValidNoRetcall
+  input DAE.Exp exp;
+  input Absyn.Info info;
+algorithm
+  _ := match (exp,info)
+    local
+      String str;
+    case (DAE.CALL(path=_),_) then ();
+    case (DAE.REDUCTION(expr=_),_) then ();
+    else
+      equation
+        str = ExpressionDump.printExpStr(exp);
+        Error.addSourceMessage(Error.NORETCALL_INVALID_EXP,{str},info);
+      then fail();
+  end match;
+end checkValidNoRetcall;
 
 end InstSection;

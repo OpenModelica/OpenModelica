@@ -722,6 +722,8 @@ public constant Message INTEGER_ENUMERATION_OUT_OF_RANGE = MESSAGE(542, TRANSLAT
   Util.gettext("The Integer to %s conversion failed, as the Integer %s is outside the range (1, ..., %s) of values corresponding to enumeration constants."));
 public constant Message INTEGER_TO_UNKNOWN_ENUMERATION = MESSAGE(543, TRANSLATION(), INTERNAL(),
   Util.gettext("The Integer (%s) to enumeration conversion failed because information about the the enumeration type is missing."));
+public constant Message NORETCALL_INVALID_EXP = MESSAGE(544, TRANSLATION(), ERROR(),
+  Util.gettext("Expression %s is not a valid statement - only function calls are allowed."));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));

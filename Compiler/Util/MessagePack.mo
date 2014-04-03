@@ -24,6 +24,13 @@ encapsulated package MessagePack "MessagePack is an efficient binary serializati
       
         external "C" omc_sbuffer_to_file(sbuffer, file) annotation(Include = "#include <msgpack-modelica.h>", Library = {"msgpackc"});
       end writeFile;
+
+      function position
+        input SimpleBuffer sbuffer;
+        output Integer position;
+      
+        external "C" position = omc_sbuffer_position(sbuffer) annotation(Include = "#include <msgpack-modelica.h>", Library = {"msgpackc"});
+      end position;
     end SimpleBuffer;
 
     class Packer
