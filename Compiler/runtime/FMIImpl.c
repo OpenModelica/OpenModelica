@@ -224,14 +224,20 @@ const char* getFMI2ModelVariableBaseType(fmi2_import_variable_t* variable)
   }
 }
 
+int startsWithModelicaDot(const char* str) {
+  if (strncmp(str, "Modelica.", 9) == 0) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
 /*
- * Reads the model variable name. Returns a malloc'd string that should be
+ * Makes the string safe by removing special characters. Returns a malloc'd string that should be
  * free'd.
  */
-char* getFMI1ModelVariableName(fmi1_import_variable_t* variable)
-{
-  const char* name = fmi1_import_get_variable_name(variable);
-  char* res = strdup(name);
+char* makeStringFMISafe(const char* str) {
+  char* res = strdup(str);
   int length = strlen(res);
 
   charReplace(res, length, '.', '_');
@@ -248,19 +254,20 @@ char* getFMI1ModelVariableName(fmi1_import_variable_t* variable)
  * Reads the model variable name. Returns a malloc'd string that should be
  * free'd.
  */
+char* getFMI1ModelVariableName(fmi1_import_variable_t* variable)
+{
+  const char* name = fmi1_import_get_variable_name(variable);
+  return makeStringFMISafe(name);
+}
+
+/*
+ * Reads the model variable name. Returns a malloc'd string that should be
+ * free'd.
+ */
 char* getFMI2ModelVariableName(fmi2_import_variable_t* variable)
 {
   const char* name = fmi2_import_get_variable_name(variable);
-  char* res = strdup(name);
-  int length = strlen(res);
-
-  charReplace(res, length, '.', '_');
-  charReplace(res, length, '[', '_');
-  charReplace(res, length, ']', '_');
-  charReplace(res, length, ',', '_');
-  charReplace(res, length, '(', '_');
-  charReplace(res, length, ')', '_');
-  return res;
+  return makeStringFMISafe(name);
 }
 
 /*
@@ -396,6 +403,15 @@ void FMIImpl__initializeFMI1Import(fmi1_import_t* fmi, void** fmiInfo, fmi_versi
   for (; i < typeDefinitionsSize ; i++) {
     fmi1_import_variable_typedef_t* variableTypeDef = fmi1_import_get_typedef(typeDefinitions, i);
     const char* name = fmi1_import_get_type_name(variableTypeDef);
+    void* typeName = NULL;
+    /* Don't save the types starting with Modelica since we don't want to generate them in the code. Skip them here and we don't have to check anything in CodgenFMU.tpl */
+    if (startsWithModelicaDot(name)) {
+      continue;
+    } else {
+      char* name_safe = makeStringFMISafe(name);
+      typeName = mk_scon_check_null(name_safe);
+      free(name_safe);
+    }
     const char* description = fmi1_import_get_type_description(variableTypeDef);
     /* get the TypeDefinition as EnumerationType */
     fmi1_import_enumeration_typedef_t* enumTypeDef = fmi1_import_get_type_as_enum(variableTypeDef);
@@ -410,16 +426,16 @@ void FMIImpl__initializeFMI1Import(fmi1_import_t* fmi, void** fmiInfo, fmi_versi
       min = fmi1_import_get_enum_type_min(enumTypeDef);
       max = fmi1_import_get_enum_type_max(enumTypeDef);
       itemsSize = fmi1_import_get_enum_type_size(enumTypeDef);
-      unsigned int j = 1;
-      /* get the enumeration items */
-      for (; j <= itemsSize ; j++) {
+      unsigned int j = itemsSize;
+      /* get the enumeration items. Loop the items in reverse order so that they are stored in correct order. */
+      for (; j > 0 ; j--) {
         const char* itemName = fmi1_import_get_enum_type_item_name(enumTypeDef, j);
         const char* itemDescription = fmi1_import_get_enum_type_item_description(enumTypeDef, j);
         enumItem = FMI__ENUMERATIONITEM(mk_scon_check_null(itemName), mk_scon_check_null(itemDescription));
         enumItems = mk_cons(enumItem, enumItems);
       }
     }
-    void* typeDefinition = FMI__ENUMERATIONTYPE(mk_scon_check_null(name), mk_scon_check_null(description), mk_scon_check_null(quantity), mk_icon(min), mk_icon(max), enumItems);
+    void* typeDefinition = FMI__ENUMERATIONTYPE(typeName, mk_scon_check_null(description), mk_scon_check_null(quantity), mk_icon(min), mk_icon(max), enumItems);
     *typeDefinitionsList = mk_cons(typeDefinition, *typeDefinitionsList);
   }
   /* Read the FMI Default Experiment Start value from FMU's modelDescription.xml file. */
@@ -460,7 +476,14 @@ void FMIImpl__initializeFMI1Import(fmi1_import_t* fmi, void** fmiInfo, fmi_versi
     }
     void* variable_description = mk_scon_check_null(description);
     const char* base_type = getFMI1ModelVariableBaseType(model_variable);
-    void* variable_base_type = mk_scon_check_null(base_type);
+    void* variable_base_type = NULL;
+    if (startsWithModelicaDot(base_type)) {
+      variable_base_type = mk_scon_check_null(base_type);
+    } else {
+      char* base_type_safe = makeStringFMISafe(base_type);
+      variable_base_type = mk_scon_check_null(base_type_safe);
+      free(base_type_safe);
+    }
     void* variable_variability = mk_scon_check_null(getFMI1ModelVariableVariability(model_variable));
     const char* causality = getFMI1ModelVariableCausality(model_variable);
     void* variable_causality = mk_scon_check_null(causality);

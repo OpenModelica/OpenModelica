@@ -2088,7 +2088,7 @@ case STRINGVARIABLE(__) then
   >>
 case ENUMERATIONVARIABLE(__) then
   <<
-  <%dumpFMIModelVariableVariability(variability)%><%dumpFMIModelVariableCausalityAndBaseType(causality, baseType, generateInputConnectors, generateOutputConnectors)%> <%name%><%dumpFMIIntegerModelVariableStartValue(hasStartValue, startValue, isFixed)%><%dumpFMIModelVariableDescription(description)%><%dumpFMIModelVariablePlacementAnnotation(x1Placement, x2Placement, y1Placement, y2Placement, generateInputConnectors, generateOutputConnectors, causality)%>;
+  <%dumpFMIModelVariableVariability(variability)%><%dumpFMIModelVariableCausalityAndBaseType(causality, baseType, generateInputConnectors, generateOutputConnectors)%> <%name%><%dumpFMIEnumerationModelVariableStartValue(hasStartValue, startValue, isFixed)%><%dumpFMIModelVariableDescription(description)%><%dumpFMIModelVariablePlacementAnnotation(x1Placement, x2Placement, y1Placement, y2Placement, generateInputConnectors, generateOutputConnectors, causality)%>;
   >>
 end dumpFMIModelVariable;
 
@@ -2144,6 +2144,13 @@ template dumpFMIStringModelVariableStartValue(Boolean hasStartValue, String star
   <%if hasStartValue then "(start=\""+startValue+"\""%><%if boolAnd(hasStartValue,isFixed) then ",fixed=true"%><%if boolAnd(boolNot(hasStartValue),isFixed) then "(fixed=true"%><%if boolOr(hasStartValue,isFixed) then ")"%>
   >>
 end dumpFMIStringModelVariableStartValue;
+
+template dumpFMIEnumerationModelVariableStartValue(Boolean hasStartValue, Integer startValue, Boolean isFixed)
+::=
+  <<
+  <%if hasStartValue then "="+startValue%>
+  >>
+end dumpFMIEnumerationModelVariableStartValue;
 
 template dumpFMIModelVariableDescription(String description)
 ::=
