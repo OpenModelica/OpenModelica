@@ -2902,22 +2902,22 @@ package FMI
   end Info;
   
   uniontype TypeDefinitions
-	  record ENUMERATIONTYPE
-	    String name;
-	    String description;
-	    String quantity;
-	    Integer min;
-	    Integer max;
-	    list<EnumerationItem> items;
-	  end ENUMERATIONTYPE;
-	end TypeDefinitions;
-	
-	uniontype EnumerationItem
-	  record ENUMERATIONITEM
-	    String name;
-	    String description;
-	  end ENUMERATIONITEM;
-	end EnumerationItem;
+    record ENUMERATIONTYPE
+      String name;
+      String description;
+      String quantity;
+      Integer min;
+      Integer max;
+      list<EnumerationItem> items;
+    end ENUMERATIONTYPE;
+  end TypeDefinitions;
+  
+  uniontype EnumerationItem
+    record ENUMERATIONITEM
+      String name;
+      String description;
+    end ENUMERATIONITEM;
+  end EnumerationItem;
   
   uniontype ExperimentAnnotation
     record EXPERIMENTANNOTATION
