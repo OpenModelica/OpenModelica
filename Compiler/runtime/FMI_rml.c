@@ -44,17 +44,19 @@ RML_BEGIN_LABEL(FMIExt__initializeFMIImport)
   void* fmiContext;
   void* fmiInstance;
   void* fmiInfo;
+  void* typeDefinitionsList;
   void* experimentAnnotation;
   void* modelVariablesInstance;
   void* modelVariablesList;
   rmlA0 = FMIImpl__initializeFMIImport(filename, workingDirectory, RML_UNTAGFIXNUM(rmlA2), RML_UNTAGFIXNUM(rmlA3), RML_UNTAGFIXNUM(rmlA4), &fmiContext, &fmiInstance,
-      &fmiInfo, &experimentAnnotation, &modelVariablesInstance, &modelVariablesList) ? RML_TRUE : RML_FALSE;
+      &fmiInfo, &typeDefinitionsList, &experimentAnnotation, &modelVariablesInstance, &modelVariablesList) ? RML_TRUE : RML_FALSE;
   rmlA1 = (void*) fmiContext;
   rmlA2 = (void*) fmiInstance;
   rmlA3 = fmiInfo;
-  rmlA4 = experimentAnnotation;
-  rmlA5 = (void*) modelVariablesInstance;
-  rmlA6 = modelVariablesList;
+  rmlA4 = typeDefinitionsList;
+  rmlA5 = experimentAnnotation;
+  rmlA6 = (void*) modelVariablesInstance;
+  rmlA7 = modelVariablesList;
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

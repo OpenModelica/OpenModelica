@@ -49,6 +49,24 @@ public uniontype Info
   end INFO;
 end Info;
 
+public uniontype TypeDefinitions
+  record ENUMERATIONTYPE
+    String name;
+    String description;
+    String quantity;
+    Integer min;
+    Integer max;
+    list<EnumerationItem> items;
+  end ENUMERATIONTYPE;
+end TypeDefinitions;
+
+public uniontype EnumerationItem
+  record ENUMERATIONITEM
+    String name;
+    String description;
+  end ENUMERATIONITEM;
+end EnumerationItem;
+
 public uniontype ExperimentAnnotation
   record EXPERIMENTANNOTATION
     Real fmiExperimentStartTime;
@@ -154,6 +172,7 @@ public uniontype FmiImport
     Option<Integer> fmiContext;
     Option<Integer> fmiInstance;
     Info fmiInfo;
+    list<TypeDefinitions> fmiTypeDefinitionsList;
     ExperimentAnnotation fmiExperimentAnnotation;
     Option<Integer> fmiModelVariablesInstance;
     list<ModelVariables> fmiModelVariablesList;

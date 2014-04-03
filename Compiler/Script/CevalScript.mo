@@ -860,7 +860,8 @@ algorithm
       Option<Integer> fmiContext, fmiInstance, fmiModelVariablesInstance; /* void* implementation: DO NOT UNBOX THE POINTER AS THAT MIGHT CHANGE IT. Just treat this as an opaque type. */
       Integer fmiLogLevel;
       list<Integer> is;
-      list<FMI.ModelVariables> fmiModelVariablesList, fmiModelVariablesList1;
+      list<FMI.TypeDefinitions> fmiTypeDefinitionsList;
+      list<FMI.ModelVariables> fmiModelVariablesList;
       FMI.ExperimentAnnotation fmiExperimentAnnotation;
       FMI.Info fmiInfo;
       list<String> vars_1,args,strings,strs,strs1,strs2,visvars,postOptModStrings,postOptModStringsOrg,mps,files,dirs;
@@ -1603,11 +1604,12 @@ algorithm
         true = System.regularFileExists(filename);
         workdir = Util.if_(System.directoryExists(workdir), workdir, System.pwd());
         /* Initialize FMI objects */
-        (b, fmiContext, fmiInstance, fmiInfo, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList) = FMIExt.initializeFMIImport(filename, workdir, fmiLogLevel, inputConnectors, outputConnectors);
+        (b, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList) = FMIExt.initializeFMIImport(filename, workdir, fmiLogLevel, inputConnectors, outputConnectors);
         true = b; /* if something goes wrong while initializing */
-        fmiModelVariablesList1 = listReverse(fmiModelVariablesList);
+        fmiTypeDefinitionsList = listReverse(fmiTypeDefinitionsList);
+        fmiModelVariablesList = listReverse(fmiModelVariablesList);
         s1 = System.tolower(System.platform());
-        str = Tpl.tplString(CodegenFMU.importFMUModelica, FMI.FMIIMPORT(s1, filename, workdir, fmiLogLevel, b2, fmiContext, fmiInstance, fmiInfo, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList1, inputConnectors, outputConnectors));
+        str = Tpl.tplString(CodegenFMU.importFMUModelica, FMI.FMIIMPORT(s1, filename, workdir, fmiLogLevel, b2, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList, inputConnectors, outputConnectors));
         pd = System.pathDelimiter();
         str1 = FMI.getFMIModelIdentifier(fmiInfo);
         str2 = FMI.getFMIType(fmiInfo);

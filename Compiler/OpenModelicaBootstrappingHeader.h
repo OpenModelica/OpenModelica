@@ -18,6 +18,36 @@ extern struct record_description FMI_Info_INFO__desc;
 #define FMI__INFO_3dBOX11 3
 #define FMI__INFO(fmiVersion,fmiType,fmiModelName,fmiModelIdentifier,fmiGuid,fmiDescription,fmiGenerationTool,fmiGenerationDateAndTime,fmiVariableNamingConvention,fmiNumberOfContinuousStates,fmiNumberOfEventIndicators) (mmc_mk_box(12, 3,&FMI_Info_INFO__desc,fmiVersion,fmiType,fmiModelName,fmiModelIdentifier,fmiGuid,fmiDescription,fmiGenerationTool,fmiGenerationDateAndTime,fmiVariableNamingConvention,fmiNumberOfContinuousStates,fmiNumberOfEventIndicators))
 #ifdef ADD_METARECORD_DEFINITIONS
+#ifndef FMI_TypeDefinitions_ENUMERATIONTYPE__desc_added
+#define FMI_TypeDefinitions_ENUMERATIONTYPE__desc_added
+ADD_METARECORD_DEFINITIONS const char* FMI_TypeDefinitions_ENUMERATIONTYPE__desc__fields[6] = {"name","description","quantity","min","max","items"};
+ADD_METARECORD_DEFINITIONS struct record_description FMI_TypeDefinitions_ENUMERATIONTYPE__desc = {
+  "FMI_TypeDefinitions_ENUMERATIONTYPE",
+  "FMI.TypeDefinitions.ENUMERATIONTYPE",
+  FMI_TypeDefinitions_ENUMERATIONTYPE__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description FMI_TypeDefinitions_ENUMERATIONTYPE__desc;
+#endif
+#define FMI__ENUMERATIONTYPE_3dBOX6 3
+#define FMI__ENUMERATIONTYPE(name,description,quantity,min,max,items) (mmc_mk_box7(3,&FMI_TypeDefinitions_ENUMERATIONTYPE__desc,name,description,quantity,min,max,items))
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef FMI_EnumerationItem_ENUMERATIONITEM__desc_added
+#define FMI_EnumerationItem_ENUMERATIONITEM__desc_added
+ADD_METARECORD_DEFINITIONS const char* FMI_EnumerationItem_ENUMERATIONITEM__desc__fields[2] = {"name","description"};
+ADD_METARECORD_DEFINITIONS struct record_description FMI_EnumerationItem_ENUMERATIONITEM__desc = {
+  "FMI_EnumerationItem_ENUMERATIONITEM",
+  "FMI.EnumerationItem.ENUMERATIONITEM",
+  FMI_EnumerationItem_ENUMERATIONITEM__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description FMI_EnumerationItem_ENUMERATIONITEM__desc;
+#endif
+#define FMI__ENUMERATIONITEM_3dBOX2 3
+#define FMI__ENUMERATIONITEM(name,description) (mmc_mk_box3(3,&FMI_EnumerationItem_ENUMERATIONITEM__desc,name,description))
+#ifdef ADD_METARECORD_DEFINITIONS
 #ifndef FMI_ExperimentAnnotation_EXPERIMENTANNOTATION__desc_added
 #define FMI_ExperimentAnnotation_EXPERIMENTANNOTATION__desc_added
 ADD_METARECORD_DEFINITIONS const char* FMI_ExperimentAnnotation_EXPERIMENTANNOTATION__desc__fields[3] = {"fmiExperimentStartTime","fmiExperimentStopTime","fmiExperimentTolerance"};
@@ -110,7 +140,7 @@ extern struct record_description FMI_ModelVariables_ENUMERATIONVARIABLE__desc;
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef FMI_FmiImport_FMIIMPORT__desc_added
 #define FMI_FmiImport_FMIIMPORT__desc_added
-ADD_METARECORD_DEFINITIONS const char* FMI_FmiImport_FMIIMPORT__desc__fields[13] = {"platform","fmuFileName","fmuWorkingDirectory","fmiLogLevel","fmiDebugOutput","fmiContext","fmiInstance","fmiInfo","fmiExperimentAnnotation","fmiModelVariablesInstance","fmiModelVariablesList","generateInputConnectors","generateOutputConnectors"};
+ADD_METARECORD_DEFINITIONS const char* FMI_FmiImport_FMIIMPORT__desc__fields[14] = {"platform","fmuFileName","fmuWorkingDirectory","fmiLogLevel","fmiDebugOutput","fmiContext","fmiInstance","fmiInfo","fmiTypeDefinitionsList","fmiExperimentAnnotation","fmiModelVariablesInstance","fmiModelVariablesList","generateInputConnectors","generateOutputConnectors"};
 ADD_METARECORD_DEFINITIONS struct record_description FMI_FmiImport_FMIIMPORT__desc = {
   "FMI_FmiImport_FMIIMPORT",
   "FMI.FmiImport.FMIIMPORT",
@@ -120,8 +150,8 @@ ADD_METARECORD_DEFINITIONS struct record_description FMI_FmiImport_FMIIMPORT__de
 #else /* Only use the file as a header */
 extern struct record_description FMI_FmiImport_FMIIMPORT__desc;
 #endif
-#define FMI__FMIIMPORT_3dBOX13 3
-#define FMI__FMIIMPORT(platform,fmuFileName,fmuWorkingDirectory,fmiLogLevel,fmiDebugOutput,fmiContext,fmiInstance,fmiInfo,fmiExperimentAnnotation,fmiModelVariablesInstance,fmiModelVariablesList,generateInputConnectors,generateOutputConnectors) (mmc_mk_box(14, 3,&FMI_FmiImport_FMIIMPORT__desc,platform,fmuFileName,fmuWorkingDirectory,fmiLogLevel,fmiDebugOutput,fmiContext,fmiInstance,fmiInfo,fmiExperimentAnnotation,fmiModelVariablesInstance,fmiModelVariablesList,generateInputConnectors,generateOutputConnectors))
+#define FMI__FMIIMPORT_3dBOX14 3
+#define FMI__FMIIMPORT(platform,fmuFileName,fmuWorkingDirectory,fmiLogLevel,fmiDebugOutput,fmiContext,fmiInstance,fmiInfo,fmiTypeDefinitionsList,fmiExperimentAnnotation,fmiModelVariablesInstance,fmiModelVariablesList,generateInputConnectors,generateOutputConnectors) (mmc_mk_box(15, 3,&FMI_FmiImport_FMIIMPORT__desc,platform,fmuFileName,fmuWorkingDirectory,fmiLogLevel,fmiDebugOutput,fmiContext,fmiInstance,fmiInfo,fmiTypeDefinitionsList,fmiExperimentAnnotation,fmiModelVariablesInstance,fmiModelVariablesList,generateInputConnectors,generateOutputConnectors))
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Util_ReplacePattern_REPLACEPATTERN__desc_added
 #define Util_ReplacePattern_REPLACEPATTERN__desc_added

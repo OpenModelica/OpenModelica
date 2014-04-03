@@ -1270,7 +1270,7 @@ template importFMUModelica(FmiImport fmi)
  "Generates the Modelica code depending on the FMU type."
 ::=
 match fmi
-case FMIIMPORT(fmiInfo=INFO(__)) then
+case FMIIMPORT(__) then
   match fmiInfo
     case (INFO(fmiVersion = "1.0", fmiType = 0)) then
       importFMU1ModelExchange(fmi)
@@ -1315,6 +1315,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
   let stringOutputVariablesNames = dumpOutputStringVariablesNames(fmiModelVariablesList)
   <<
   model <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU<%if stringEq(fmiInfo.fmiDescription, "") then "" else " \""+fmiInfo.fmiDescription+"\""%>
+    <%dumpFMITypeDefinitions(fmiTypeDefinitionsList)%>
     constant String fmuLocation = "<%fmuFileName%>";
     constant String fmuWorkingDir = "<%fmuWorkingDirectory%>";
     parameter Integer logLevel = <%fmiLogLevel%> "log level used during the loading of FMU" annotation (Dialog(tab="FMI", group="Enable logging"));
@@ -2020,6 +2021,43 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
   end <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU;
   >>
 end importFMU1CoSimulationStandAlone;
+
+template dumpFMITypeDefinitions(list<TypeDefinitions> fmiTypeDefinitionsList)
+ "Generates the Type Definitions code."
+::=
+  <<
+  <%fmiTypeDefinitionsList |> fmiTypeDefinition => dumpFMITypeDefinition(fmiTypeDefinition) ;separator="\n"%>
+  >>
+end dumpFMITypeDefinitions;
+
+template dumpFMITypeDefinition(TypeDefinitions fmiTypeDefinition)
+ "Generates the Type code."
+::=
+match fmiTypeDefinition
+case ENUMERATIONTYPE(__) then
+  <<
+  type <%name%> = enumeration(
+    <%dumpFMITypeDefinitionsItems(items)%>);
+  >>
+end dumpFMITypeDefinition;
+
+template dumpFMITypeDefinitionsItems(list<EnumerationItem> items)
+ "Generates the Enumeration Type items code."
+::=
+  <<
+  <%items |> item => dumpFMITypeDefinitionsItem(item) ;separator=",\n"%>
+  >>
+end dumpFMITypeDefinitionsItems;
+
+template dumpFMITypeDefinitionsItem(EnumerationItem item)
+ "Generates the Enumeration Type item name."
+::=
+match item
+case ENUMERATIONITEM(__) then
+  <<
+  <%name%>
+  >>
+end dumpFMITypeDefinitionsItem;
 
 template dumpFMIModelVariablesList(list<ModelVariables> fmiModelVariablesList, Boolean generateInputConnectors, Boolean generateOutputConnectors)
  "Generates the Model Variables code."

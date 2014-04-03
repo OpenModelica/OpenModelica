@@ -42,6 +42,8 @@ extern "C" {
 #define FMILIB_BUILDING_LIBRARY
 #include "fmilib.h"
 
+#define mk_scon_check_null(s) s?mk_scon(s):mk_scon("")
+
 static void importlogger(jm_callbacks* c, jm_string module, jm_log_level_enu_t log_level, jm_string message)
 {
   const char* tokens[3] = {module,jm_log_level_to_string(log_level),message};
@@ -286,9 +288,9 @@ void* getFMI1ModelVariableStartValue(fmi1_import_variable_t* variable, int hasSt
       fmiBooleanModelVariable = fmi1_import_get_variable_as_boolean(variable);
       return fmiBooleanModelVariable ? mk_bcon(fmi1_import_get_boolean_variable_start(fmiBooleanModelVariable)) : mk_bcon(0);
     case fmi1_base_type_str:
-      if (!hasStartValue) return mk_scon("");
+      if (!hasStartValue) return mk_scon_check_null("");
       fmiStringModelVariable = fmi1_import_get_variable_as_string(variable);
-      return fmiStringModelVariable ? mk_scon(fmi1_import_get_string_variable_start(fmiStringModelVariable)) : mk_scon(0);
+      return mk_scon_check_null(fmi1_import_get_string_variable_start(fmiStringModelVariable));
     case fmi1_base_type_enum:
       if (!hasStartValue) return mk_icon(0);
       fmiEnumerationModelVariable = fmi1_import_get_variable_as_enum(variable);
@@ -323,9 +325,9 @@ void* getFMI2ModelVariableStartValue(fmi2_import_variable_t* variable, int hasSt
       fmiBooleanModelVariable = fmi2_import_get_variable_as_boolean(variable);
       return fmiBooleanModelVariable ? mk_bcon(fmi2_import_get_boolean_variable_start(fmiBooleanModelVariable)) : mk_bcon(0);
     case fmi2_base_type_str:
-      if (!hasStartValue) return mk_scon("");
+      if (!hasStartValue) return mk_scon_check_null("");
       fmiStringModelVariable = fmi2_import_get_variable_as_string(variable);
-      return fmiStringModelVariable ? mk_scon(fmi2_import_get_string_variable_start(fmiStringModelVariable)) : mk_scon(0);
+      return mk_scon_check_null(fmi2_import_get_string_variable_start(fmiStringModelVariable));
     case fmi2_base_type_enum:
       if (!hasStartValue) return mk_icon(0);
       fmiEnumerationModelVariable = fmi2_import_get_variable_as_enum(variable);
@@ -338,8 +340,8 @@ void* getFMI2ModelVariableStartValue(fmi2_import_variable_t* variable, int hasSt
 /*
  * Initializes FMI 1.0 Import.
  */
-void FMIImpl__initializeFMI1Import(fmi1_import_t* fmi, void** fmiInfo, fmi_version_enu_t version, void** experimentAnnotation, void** modelVariablesInstance,
-    void** modelVariablesList, int input_connectors, int output_connectors)
+void FMIImpl__initializeFMI1Import(fmi1_import_t* fmi, void** fmiInfo, fmi_version_enu_t version, void** typeDefinitionsList, void** experimentAnnotation,
+    void** modelVariablesInstance, void** modelVariablesList, int input_connectors, int output_connectors)
 {
   /* Read the model name from FMU's modelDescription.xml file. */
   const char* modelName = fmi1_import_get_model_name(fmi);
@@ -383,14 +385,50 @@ void FMIImpl__initializeFMI1Import(fmi1_import_t* fmi, void** fmiInfo, fmi_versi
     eventIndicatorsList = mk_cons(mk_icon(i), eventIndicatorsList);
   }
   /* construct FMIINFO record */
-  *fmiInfo = FMI__INFO(mk_scon(fmi_version_to_string(version)), mk_icon(fmiType), mk_scon(modelName), mk_scon(modelIdentifier), mk_scon(guid), mk_scon(description),
-      mk_scon(generationTool), mk_scon(generationDateAndTime), mk_scon(namingConvention), continuousStatesList, eventIndicatorsList);
+  *fmiInfo = FMI__INFO(mk_scon_check_null(fmi_version_to_string(version)), mk_icon(fmiType), mk_scon_check_null(modelName), mk_scon_check_null(modelIdentifier), mk_scon_check_null(guid), mk_scon_check_null(description),
+      mk_scon_check_null(generationTool), mk_scon_check_null(generationDateAndTime), mk_scon_check_null(namingConvention), continuousStatesList, eventIndicatorsList);
+  /* get the type definitions */
+  fmi1_import_type_definitions_t* typeDefinitions = fmi1_import_get_type_definitions(fmi);
+  size_t typeDefinitionsSize = typeDefinitions ? fmi1_import_get_type_definition_number(typeDefinitions) : 0;
+  i = 0;
+  *typeDefinitionsList = mk_nil();
+  void* enumItems = mk_nil();
+  for (; i < typeDefinitionsSize ; i++) {
+    fmi1_import_variable_typedef_t* variableTypeDef = fmi1_import_get_typedef(typeDefinitions, i);
+    const char* name = fmi1_import_get_type_name(variableTypeDef);
+    const char* description = fmi1_import_get_type_description(variableTypeDef);
+    /* get the TypeDefinition as EnumerationType */
+    fmi1_import_enumeration_typedef_t* enumTypeDef = fmi1_import_get_type_as_enum(variableTypeDef);
+    const char* quantity = "";
+    int min = 0;
+    int max = 0;
+    unsigned int itemsSize = 0;
+    enumItems = mk_nil();
+    void* enumItem = NULL;
+    if (enumTypeDef) {
+      quantity = fmi1_import_get_type_quantity(variableTypeDef);
+      min = fmi1_import_get_enum_type_min(enumTypeDef);
+      max = fmi1_import_get_enum_type_max(enumTypeDef);
+      itemsSize = fmi1_import_get_enum_type_size(enumTypeDef);
+      unsigned int j = 1;
+      /* get the enumeration items */
+      for (; j <= itemsSize ; j++) {
+        const char* itemName = fmi1_import_get_enum_type_item_name(enumTypeDef, j);
+        const char* itemDescription = fmi1_import_get_enum_type_item_description(enumTypeDef, j);
+        enumItem = FMI__ENUMERATIONITEM(mk_scon_check_null(itemName), mk_scon_check_null(itemDescription));
+        enumItems = mk_cons(enumItem, enumItems);
+      }
+    }
+    void* typeDefinition = FMI__ENUMERATIONTYPE(mk_scon_check_null(name), mk_scon_check_null(description), mk_scon_check_null(quantity), mk_icon(min), mk_icon(max), enumItems);
+    *typeDefinitionsList = mk_cons(typeDefinition, *typeDefinitionsList);
+  }
   /* Read the FMI Default Experiment Start value from FMU's modelDescription.xml file. */
   double experimentStartTime = fmi1_import_get_default_experiment_start(fmi);
   /* Read the FMI Default Experiment Stop value from FMU's modelDescription.xml file. */
   double experimentStopTime = fmi1_import_get_default_experiment_stop(fmi);
   /* Read the FMI Default Experiment Tolerance value from FMU's modelDescription.xml file. */
   double experimentTolerance = fmi1_import_get_default_experiment_tolerance(fmi);
+  /* construct FMIEXPERIMENTANNOTATION record */
   *experimentAnnotation = FMI__EXPERIMENTANNOTATION(mk_rcon(experimentStartTime), mk_rcon(experimentStopTime), mk_rcon(experimentTolerance));
   /* Read the model variables from the FMU's modelDescription.xml file and create a list of it. */
   fmi1_import_variable_list_t* model_variables_list = fmi1_import_get_variable_list(fmi);
@@ -408,7 +446,7 @@ void FMIImpl__initializeFMI1Import(fmi1_import_t* fmi, void** fmiInfo, fmi_versi
     fmi1_import_variable_t* model_variable = fmi1_import_get_variable(model_variables_list, i);
     void* variable_instance = mk_icon((intptr_t)model_variable);
     char *name = getFMI1ModelVariableName(model_variable);
-    void* variable_name = mk_scon(name);
+    void* variable_name = mk_scon_check_null(name);
     free(name);
     const char* description = fmi1_import_get_variable_description(model_variable);
     if (description != NULL) {
@@ -420,12 +458,12 @@ void FMIImpl__initializeFMI1Import(fmi1_import_t* fmi, void** fmiInfo, fmi_versi
     } else {
       description = "";
     }
-    void* variable_description = mk_scon(description);
+    void* variable_description = mk_scon_check_null(description);
     const char* base_type = getFMI1ModelVariableBaseType(model_variable);
-    void* variable_base_type = mk_scon(base_type);
-    void* variable_variability = mk_scon(getFMI1ModelVariableVariability(model_variable));
+    void* variable_base_type = mk_scon_check_null(base_type);
+    void* variable_variability = mk_scon_check_null(getFMI1ModelVariableVariability(model_variable));
     const char* causality = getFMI1ModelVariableCausality(model_variable);
-    void* variable_causality = mk_scon(causality);
+    void* variable_causality = mk_scon_check_null(causality);
     int hasStartValue = fmi1_import_get_variable_has_start(model_variable);
     void* variable_has_start_value = mk_bcon(hasStartValue);
     void* variable_start_value = getFMI1ModelVariableStartValue(model_variable, hasStartValue);
@@ -532,8 +570,8 @@ void FMIImpl__initializeFMI2Import(fmi2_import_t* fmi, void** fmiInfo, fmi_versi
     eventIndicatorsList = mk_cons(mk_icon(i), eventIndicatorsList);
   }
   /* construct FMIINFO record */
-  *fmiInfo = FMI__INFO(mk_scon(fmi_version_to_string(version)), mk_icon(fmiType), mk_scon(modelName), mk_scon(modelIdentifier), mk_scon(guid), mk_scon(description),
-      mk_scon(generationTool), mk_scon(generationDateAndTime), mk_scon(namingConvention), continuousStatesList, eventIndicatorsList);
+  *fmiInfo = FMI__INFO(mk_scon_check_null(fmi_version_to_string(version)), mk_icon(fmiType), mk_scon_check_null(modelName), mk_scon_check_null(modelIdentifier), mk_scon_check_null(guid), mk_scon_check_null(description),
+      mk_scon_check_null(generationTool), mk_scon_check_null(generationDateAndTime), mk_scon_check_null(namingConvention), continuousStatesList, eventIndicatorsList);
   /* Read the FMI Default Experiment Start value from FMU's modelDescription.xml file. */
   double experimentStartTime = fmi2_import_get_default_experiment_start(fmi);
   /* Read the FMI Default Experiment Stop value from FMU's modelDescription.xml file. */
@@ -561,7 +599,7 @@ void FMIImpl__initializeFMI2Import(fmi2_import_t* fmi, void** fmiInfo, fmi_versi
     fmi2_import_variable_t* model_variable = fmi2_import_get_variable(model_variables_list, i);
     void* variable_instance = mk_icon((intptr_t)model_variable);
     char *name = getFMI2ModelVariableName(model_variable);
-    void* variable_name = mk_scon(name);
+    void* variable_name = mk_scon_check_null(name);
     free(name);
     const char* description = fmi2_import_get_variable_description(model_variable);
     if (description != NULL) {
@@ -573,12 +611,12 @@ void FMIImpl__initializeFMI2Import(fmi2_import_t* fmi, void** fmiInfo, fmi_versi
     } else {
       description = "";
     }
-    void* variable_description = mk_scon(description);
+    void* variable_description = mk_scon_check_null(description);
     const char* base_type = getFMI2ModelVariableBaseType(model_variable);
-    void* variable_base_type = mk_scon(base_type);
-    void* variable_variability = mk_scon(getFMI2ModelVariableVariability(model_variable));
+    void* variable_base_type = mk_scon_check_null(base_type);
+    void* variable_variability = mk_scon_check_null(getFMI2ModelVariableVariability(model_variable));
     const char* causality = getFMI2ModelVariableCausality(model_variable);
-    void* variable_causality = mk_scon(causality);
+    void* variable_causality = mk_scon_check_null(causality);
     int hasStartValue = fmi2_import_get_variable_has_start(model_variable);
     void* variable_has_start_value = mk_bcon(hasStartValue);
     void* variable_start_value = getFMI2ModelVariableStartValue(model_variable, hasStartValue);
@@ -637,11 +675,12 @@ void FMIImpl__initializeFMI2Import(fmi2_import_t* fmi, void** fmiInfo, fmi_versi
  * Reads the model variables.
  */
 int FMIImpl__initializeFMIImport(const char* file_name, const char* working_directory, int fmi_log_level, int input_connectors, int output_connectors,
-    void** fmiContext, void** fmiInstance, void** fmiInfo, void** experimentAnnotation, void** modelVariablesInstance, void** modelVariablesList)
+    void** fmiContext, void** fmiInstance, void** fmiInfo, void** typeDefinitionsList, void** experimentAnnotation, void** modelVariablesInstance, void** modelVariablesList)
 {
   *fmiContext = mk_some(0);
   *fmiInstance = mk_some(0);
   *fmiInfo = NULL;
+  *typeDefinitionsList = NULL;
   *experimentAnnotation = NULL;
   *modelVariablesInstance = mk_some(0);
   *modelVariablesList = NULL;
@@ -699,7 +738,7 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
       return 0;
     }
 #endif
-    FMIImpl__initializeFMI1Import(fmi, fmiInfo, version, experimentAnnotation, modelVariablesInstance, modelVariablesList, input_connectors, output_connectors);
+    FMIImpl__initializeFMI1Import(fmi, fmiInfo, version, typeDefinitionsList, experimentAnnotation, modelVariablesInstance, modelVariablesList, input_connectors, output_connectors);
   } else if (version == 2) {
     static int init_fmi2_callback_functions = 0;
     // FMI callback functions
