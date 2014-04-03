@@ -467,7 +467,9 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
 
   if(measure_time_flag)
   {
+    rt_tick(SIM_TIMER_INFO_XML);
     modelInfoXmlInit(&data->modelData.modelDataXml);
+    rt_accumulate(SIM_TIMER_INFO_XML);
     //std::cerr << "ModelData with " << data->modelData.modelDataXml.nFunctions << " functions and " << data->modelData.modelDataXml.nEquations << " equations and " << data->modelData.modelDataXml.nProfileBlocks << " profileBlocks\n" << std::endl;
     rt_init(SIM_TIMER_FIRST_FUNCTION + data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nEquations + data->modelData.modelDataXml.nProfileBlocks + 4 /* sentinel */);
     rt_tick(SIM_TIMER_TOTAL);
@@ -786,7 +788,9 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
   data->simulationInfo.nlsMethod = getNonlinearSolverMethod(argc, argv);
   data->simulationInfo.lsMethod = getlinearSolverMethod(argc, argv);
 
+  rt_tick(SIM_TIMER_INIT_XML);
   read_input_xml(&(data->modelData), &(data->simulationInfo));
+  rt_accumulate(SIM_TIMER_INIT_XML);
 
   /* allocate memory for mixed system solvers */
   allocatemixedSystem(data);

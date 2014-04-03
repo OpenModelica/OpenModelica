@@ -232,6 +232,7 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   {
     rt_accumulate(SIM_TIMER_PREINIT);
     rt_tick(SIM_TIMER_INIT);
+    rt_tick(SIM_TIMER_TOTAL);
   }
 
   return retValue;
@@ -440,7 +441,9 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
     infoStreamPrint(LOG_STATS, 0, "### STATISTICS ###");
 
     infoStreamPrint(LOG_STATS, 1, "timer");
-    infoStreamPrint(LOG_STATS, 0, "%12gs [%5.1f%%] pre-initialization", rt_accumulated(SIM_TIMER_PREINIT), rt_accumulated(SIM_TIMER_PREINIT)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
+    infoStreamPrint(LOG_STATS, 0, "%12gs          reading init.xml", rt_accumulated(SIM_TIMER_INIT_XML));
+    infoStreamPrint(LOG_STATS, 0, "%12gs          reading info.xml", rt_accumulated(SIM_TIMER_INFO_XML));
+    infoStreamPrint(LOG_STATS, 0, "%12gs          pre-initialization", rt_accumulated(SIM_TIMER_PREINIT));
     infoStreamPrint(LOG_STATS, 0, "%12gs [%5.1f%%] initialization", rt_accumulated(SIM_TIMER_INIT), rt_accumulated(SIM_TIMER_INIT)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
     infoStreamPrint(LOG_STATS, 0, "%12gs [%5.1f%%] steps", rt_accumulated(SIM_TIMER_STEP), rt_accumulated(SIM_TIMER_STEP)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
     infoStreamPrint(LOG_STATS, 0, "%12gs [%5.1f%%] creating output-file", rt_accumulated(SIM_TIMER_OUTPUT), rt_accumulated(SIM_TIMER_OUTPUT)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);

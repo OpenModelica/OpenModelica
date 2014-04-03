@@ -33,6 +33,7 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <string.h>
+#include <gc.h>
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #include <windows.h>
@@ -378,24 +379,24 @@ int rtclock_compare(rtclock_t t1, rtclock_t t2) {
 
 #endif
 
+static inline void alloc_and_copy(void **ptr, size_t n, size_t sz)
+{
+  void *newmemory = GC_malloc(n*sz);
+  assert(newmemory != 0);
+  memcpy(newmemory,*ptr,NUM_RT_CLOCKS*sz);
+  *ptr = newmemory;
+}
+
 void rt_init(int numTimers) {
   if (numTimers < NUM_RT_CLOCKS)
     return; /* We already have more than we need statically allocated */
-  acc_tp = calloc(numTimers, sizeof(rtclock_t));
-  max_tp = calloc(numTimers, sizeof(rtclock_t));
-  total_tp = calloc(numTimers, sizeof(rtclock_t));
-  tick_tp = calloc(numTimers, sizeof(rtclock_t));
-  rt_clock_ncall = calloc(numTimers, sizeof(unsigned long));
-  rt_clock_ncall_total = calloc(numTimers, sizeof(unsigned long));
-  rt_clock_ncall_min = malloc(numTimers * sizeof(unsigned long));
-  rt_clock_ncall_max = calloc(numTimers, sizeof(unsigned long));
-  memset(rt_clock_ncall_min, 0xFF, numTimers * sizeof(unsigned long));
-  assert(acc_tp != 0);
-  assert(max_tp != 0);
-  assert(total_tp != 0);
-  assert(tick_tp != 0);
-  assert(rt_clock_ncall != 0);
-  assert(rt_clock_ncall_min != 0);
-  assert(rt_clock_ncall_max != 0);
-  assert(rt_clock_ncall_total != 0);
+  alloc_and_copy((void**)&acc_tp,numTimers,sizeof(rtclock_t));
+  alloc_and_copy((void**)&max_tp,numTimers,sizeof(rtclock_t));
+  alloc_and_copy((void**)&total_tp,numTimers,sizeof(rtclock_t));
+  alloc_and_copy((void**)&tick_tp,numTimers,sizeof(rtclock_t));
+  alloc_and_copy((void**)&rt_clock_ncall,numTimers,sizeof(unsigned long));
+  alloc_and_copy((void**)&rt_clock_ncall_total,numTimers,sizeof(unsigned long));
+  alloc_and_copy((void**)&rt_clock_ncall_min,numTimers,sizeof(unsigned long));
+  alloc_and_copy((void**)&rt_clock_ncall_max,numTimers,sizeof(unsigned long));
+  memset(rt_clock_ncall_min + NUM_RT_CLOCKS*sizeof(unsigned long), 0xFF, (numTimers-NUM_RT_CLOCKS) * sizeof(unsigned long));
 }
