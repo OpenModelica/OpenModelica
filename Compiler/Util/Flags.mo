@@ -798,10 +798,7 @@ constant ConfigFlag TEARING_METHOD = CONFIG_FLAG(44, "tearingMethod",
   SOME(STRING_DESC_OPTION({
     ("noTearing", Util.gettext("Skip tearing.")),
     ("omcTearing", Util.gettext("Tearing method developed by TU Dresden: Frenkel, Schubert.")),
-    ("cellier", Util.gettext("Cellier tearing.")),
-    ("carpanzano2", Util.gettext("Carpanzano2 tearing.")),
-    ("olleroAmselem", Util.gettext("Ollero-Amselem tearing.")),
-    ("steward", Util.gettext("Steward tearing."))})),
+    ("cellier", Util.gettext("Tearing based on Celliers method, revised by FH Bielefeld: Täuber, Patrick"))})),
     Util.gettext("Sets the tearing method to use. Select no tearing or choose tearing method."));
 
 constant ConfigFlag SCALARIZE_MINMAX = CONFIG_FLAG(45, "scalarizeMinMax",
@@ -829,19 +826,19 @@ constant ConfigFlag HPCOM_SCHEDULER = CONFIG_FLAG(50, "hpcomScheduler",
   Util.gettext("Sets the scheduler for task graph scheduling (list | level | levelr | ext | mcp | taskdep). Default: list."));
   
 constant ConfigFlag TEARING_HEURISTIC = CONFIG_FLAG(51, "tearingHeuristic",
-  NONE(), EXTERNAL(), STRING_FLAG("MC1"),
+  NONE(), EXTERNAL(), STRING_FLAG("MC3"),
   SOME(STRING_DESC_OPTION({
     ("MC1", Util.gettext("Original cellier with consideration of impossible assignments and discrete Vars.")),
-  ("MC2", Util.gettext("Modified cellier, drop first step.")),
+    ("MC2", Util.gettext("Modified cellier, drop first step.")),
     ("MC11", Util.gettext("Modified MC1, new last step 'count impossible assignments'.")),
     ("MC21", Util.gettext("Modified MC2, , new last step 'count impossible assignments'.")),
     ("MC12", Util.gettext("Modified MC1, step 'count impossible assignments' before last step.")),
     ("MC22", Util.gettext("Modified MC2, step 'count impossible assignments' before last step.")),
-  ("MC13", Util.gettext("Modified MC1, build sum of impossible assignment and causalizable equations, choose var with biggest sum.")),
-  ("MC23", Util.gettext("Modified MC2, build sum of impossible assignment and causalizable equations, choose var with biggest sum.")),
+    ("MC13", Util.gettext("Modified MC1, build sum of impossible assignment and causalizable equations, choose var with biggest sum.")),
+    ("MC23", Util.gettext("Modified MC2, build sum of impossible assignment and causalizable equations, choose var with biggest sum.")),
     ("MC231", Util.gettext("Modified MC23, Two rounds, choose better potentials-set.")),
-  ("MC3", Util.gettext("Modified cellier, build sum of impossible assignment and causalizable equations for all vars, choose var with biggest sum.")),
-  ("MC4", Util.gettext("Modified cellier, use all heuristics, choose var that occurs most in potential sets"))})),
+    ("MC3", Util.gettext("Modified cellier, build sum of impossible assignment and causalizable equations for all vars, choose var with biggest sum.")),
+    ("MC4", Util.gettext("Modified cellier, use all heuristics, choose var that occurs most in potential sets"))})),
     Util.gettext("Sets the tearing heuristic to use for Cellier-tearing."));
 
 constant ConfigFlag HPCOM_CODE = CONFIG_FLAG(52, "hpcomCode",
