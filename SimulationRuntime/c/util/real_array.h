@@ -47,20 +47,17 @@ static OMC_INLINE modelica_real real_get(const real_array_t a, size_t i)
 
 static OMC_INLINE modelica_real real_get_2D(const real_array_t a, size_t i, size_t j)
 {
-  return real_get(a, (i * a.dim_size[1]) + j);
+  return real_get(a, getIndex_2D(a.dim_size,i,j));
 }
 
 static OMC_INLINE modelica_real real_get_3D(const real_array_t a, size_t i, size_t j, size_t k)
 {
-  return real_get(a, (i * a.dim_size[1] * a.dim_size[2])
-                     + (j * a.dim_size[2]) + k);
+  return real_get(a, getIndex_3D(a.dim_size,i,j,k));
 }
 
 static OMC_INLINE modelica_real real_get_4D(const real_array_t a, size_t i, size_t j, size_t k, size_t l)
 {
-  return real_get(a, (i * a.dim_size[1] * a.dim_size[2] * a.dim_size[3])
-                     + (j * a.dim_size[2] * a.dim_size[3])
-                     + (k * a.dim_size[3]) + l);
+  return real_get(a, getIndex_4D(a.dim_size,i,j,k,l));
 }
 
 /* Setting the fields of a real_array */
@@ -244,8 +241,7 @@ extern void cross_real_array(const real_array_t * x,const real_array_t * y, real
 extern void cross_alloc_real_array(const real_array_t * x,const real_array_t * y, real_array_t* dest);
 extern void skew_real_array(const real_array_t * x,real_array_t* dest);
 
-static inline size_t real_array_nr_of_elements(const real_array_t *a)
-{ return base_array_nr_of_elements(a); }
+#define real_array_nr_of_elements(X) base_array_nr_of_elements(X)
 
 static inline void clone_reverse_real_array_spec(const real_array_t *source,
                                                  real_array_t *dest)

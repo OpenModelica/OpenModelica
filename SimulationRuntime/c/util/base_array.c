@@ -204,17 +204,6 @@ int index_spec_fit_base_array(const index_spec_t *s, const base_array_t *a)
     return 1;
 }
 
-size_t base_array_nr_of_elements(const base_array_t *a)
-{
-  int i;
-  size_t nr_of_elements = 1;
-  for(i = 0; i < a->ndims; ++i)
-  {
-     nr_of_elements *= a->dim_size[i];
-  }
-  return nr_of_elements;
-}
-
 void simple_alloc_1d_base_array(base_array_t *dest, int n, void *data)
 {
     dest->ndims = 1;

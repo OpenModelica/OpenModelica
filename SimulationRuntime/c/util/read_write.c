@@ -241,7 +241,7 @@ void free_type_description(type_description *desc)
   case TYPE_DESC_STRING_ARRAY:
     if(desc->retval) {
       size_t i, cnt;
-      cnt = string_array_nr_of_elements(&(desc->data.string_array));
+      cnt = base_array_nr_of_elements(desc->data.string_array);
       for(i = 0; i < cnt; ++i) {
         modelica_string_t s = ((modelica_string_t*)desc->data.string_array.data)[i];
         if(s != NULL) {
@@ -485,7 +485,7 @@ void write_real_array(type_description *desc, const real_array_t *arr)
     desc->data.real_array.ndims = arr->ndims;
     desc->data.real_array.dim_size = (_index_t*)malloc(sizeof(*(arr->dim_size)) * arr->ndims);
     memcpy(desc->data.real_array.dim_size, arr->dim_size, sizeof(*(arr->dim_size)) * arr->ndims);
-    nr_elements = real_array_nr_of_elements(arr);
+    nr_elements = base_array_nr_of_elements(*arr);
     desc->data.real_array.data = malloc(sizeof(modelica_real) * nr_elements);
     memcpy(desc->data.real_array.data, arr->data,
            sizeof(modelica_real) * nr_elements);
@@ -506,7 +506,7 @@ void write_integer_array(type_description *desc, const integer_array_t *arr)
     desc->data.int_array.ndims = arr->ndims;
     desc->data.int_array.dim_size = (_index_t*)malloc(sizeof(*(arr->dim_size)) * arr->ndims);
     memcpy(desc->data.int_array.dim_size, arr->dim_size, sizeof(*(arr->dim_size)) * arr->ndims);
-    nr_elements = integer_array_nr_of_elements(arr);
+    nr_elements = base_array_nr_of_elements(*arr);
     desc->data.int_array.data = malloc(sizeof(modelica_integer) * nr_elements);
     memcpy(desc->data.int_array.data, arr->data,
            sizeof(modelica_integer) * nr_elements);
@@ -528,7 +528,7 @@ void write_boolean_array(type_description *desc, const boolean_array_t *arr)
     desc->data.bool_array.ndims = arr->ndims;
     desc->data.bool_array.dim_size = (_index_t*)malloc(sizeof(*(arr->dim_size)) * arr->ndims);
     memcpy(desc->data.bool_array.dim_size, arr->dim_size, sizeof(*(arr->dim_size)) * arr->ndims);
-    nr_elements = boolean_array_nr_of_elements(arr);
+    nr_elements = base_array_nr_of_elements(*arr);
     desc->data.bool_array.data = malloc(sizeof(modelica_boolean) * nr_elements);
     memcpy(desc->data.bool_array.data, arr->data,
            sizeof(modelica_boolean) * nr_elements);
@@ -550,7 +550,7 @@ void write_string_array(type_description *desc, const string_array_t *arr)
     desc->data.string_array.ndims = arr->ndims;
     desc->data.string_array.dim_size = (_index_t*)malloc(sizeof(*(arr->dim_size)) * arr->ndims);
     memcpy(desc->data.string_array.dim_size, arr->dim_size, sizeof(*(arr->dim_size)) * arr->ndims);
-    nr_elements = string_array_nr_of_elements(arr);
+    nr_elements = base_array_nr_of_elements(*arr);
     desc->data.string_array.data = malloc(sizeof(modelica_string)* nr_elements);
     dst = (modelica_string_t*)desc->data.string_array.data;
     src = (modelica_string_t*)arr->data;

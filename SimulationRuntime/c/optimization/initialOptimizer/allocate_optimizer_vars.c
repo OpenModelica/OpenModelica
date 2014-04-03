@@ -234,7 +234,7 @@ static int freeIpoptData(IPOPT_DATA_ *iData)
   free(sopt->Hg);
 
   for(i = 0; i < dim->nx; i++)
-    iData->scaling.scaldt[i];
+    free(iData->scaling.scaldt[i]);
   free(iData->scaling.scaldt);
 
   for(i = 0; i < dim->nJ; i++){

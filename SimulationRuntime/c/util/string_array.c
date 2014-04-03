@@ -85,7 +85,7 @@ void alloc_string_array(string_array_t *dest, int ndims, ...)
 
 void alloc_string_array_data(string_array_t* a)
 {
-    a->data = string_alloc(base_array_nr_of_elements(a));
+    a->data = string_alloc(base_array_nr_of_elements(*a));
 }
 
 void copy_string_array_data(const string_array_t source, string_array_t *dest)
@@ -96,7 +96,7 @@ void copy_string_array_data(const string_array_t source, string_array_t *dest)
     assert(base_array_ok(dest));
     assert(base_array_shape_eq(&source, dest));
 
-    nr_of_elements = base_array_nr_of_elements(&source);
+    nr_of_elements = base_array_nr_of_elements(source);
 
     for(i = 0; i < nr_of_elements; ++i) {
         string_set(dest, i, string_get(source, i));
@@ -109,7 +109,7 @@ void copy_string_array_data_mem(const string_array_t source, modelica_string_t *
 
     assert(base_array_ok(&source));
 
-    nr_of_elements = base_array_nr_of_elements(&source);
+    nr_of_elements = base_array_nr_of_elements(source);
 
     for(i = 0; i < nr_of_elements; ++i) {
         dest[i] = string_get(*&source, i);
@@ -186,7 +186,7 @@ void print_string_array(const string_array_t *source)
         size_t k, n;
         _index_t j;
  
-        n = base_array_nr_of_elements(source) /
+        n = base_array_nr_of_elements(*source) /
             (source->dim_size[0] * source->dim_size[1]);
         for(k = 0; k < n; ++k) {
             for(i = 0; i < source->dim_size[1]; ++i) {
@@ -431,7 +431,7 @@ void simple_index_string_array1(const string_array_t * source, int i1,
                                 string_array_t* dest)
 {
     size_t i;
-    size_t nr_of_elements = base_array_nr_of_elements(dest);
+    size_t nr_of_elements = base_array_nr_of_elements(*dest);
     size_t off = nr_of_elements * i1;
 
     assert(dest->ndims == (source->ndims - 1));
@@ -446,7 +446,7 @@ void simple_index_string_array2(const string_array_t * source,
                                 string_array_t* dest)
 {
     size_t i;
-    size_t nr_of_elements = base_array_nr_of_elements(dest);
+    size_t nr_of_elements = base_array_nr_of_elements(*dest);
     size_t off = nr_of_elements * ((source->dim_size[1] * i1) + i2);
 
     for(i = 0 ; i < nr_of_elements ; i++) {
@@ -472,7 +472,7 @@ void array_string_array(string_array_t* dest,int n,string_array_t* first,...)
     check_base_array_dim_sizes((const base_array_t **)elts,n);
 
     for(i = 0, c = 0; i < n; ++i) {
-        int m = base_array_nr_of_elements(elts[i]);
+        int m = base_array_nr_of_elements(*elts[i]);
         for(j = 0; j < m; ++j) {
             string_set(dest, c, string_get(*elts[i], j));
             c++;
@@ -514,7 +514,7 @@ void array_alloc_string_array(string_array_t* dest, int n,
     }
 
     for(i = 0, c = 0; i < n; ++i) {
-        int m = base_array_nr_of_elements(elts[i]);
+        int m = base_array_nr_of_elements(*elts[i]);
         for(j = 0; j < m; ++j) {
             string_set(dest, c, string_get(*elts[i], j));
             c++;
@@ -805,7 +805,7 @@ void vector_string_array(const string_array_t * a, string_array_t* dest)
 
     /* Assert that a has at most one dimension with dim_size>1*/
 
-    nr_of_elements = base_array_nr_of_elements(a);
+    nr_of_elements = base_array_nr_of_elements(*a);
     for(i = 0; i < nr_of_elements; ++i) {
         string_set(dest, i, string_get(*a, i));
     }
@@ -895,7 +895,7 @@ void fill_string_array(string_array_t* dest,modelica_string_t s)
     size_t nr_of_elements;
     size_t i;
 
-    nr_of_elements = base_array_nr_of_elements(dest);
+    nr_of_elements = base_array_nr_of_elements(*dest);
     for(i = 0; i < nr_of_elements; ++i) {
         string_set(dest, i, s);
     }

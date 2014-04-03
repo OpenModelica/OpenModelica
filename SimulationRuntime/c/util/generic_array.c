@@ -41,10 +41,6 @@
 #include <math.h>
 
 
-static inline size_t generic_array_nr_of_elements(const base_array_t *a)
-{ return base_array_nr_of_elements(a); }
-
-
 void* generic_ptrget(const base_array_t *a, size_t sze, size_t i) {
   return (a->data) + (i*sze);
 }
@@ -72,7 +68,7 @@ void* generic_array_element_addr(const base_array_t* source, size_t sze, int ndi
 
 void alloc_generic_array_data(base_array_t* a, size_t sze)
 {
-    a->data = generic_alloc(base_array_nr_of_elements(a),sze);
+    a->data = generic_alloc(base_array_nr_of_elements(*a),sze);
 }
 
 // void copy_generic_array_data(const base_array_t * source, base_array_t* dest)

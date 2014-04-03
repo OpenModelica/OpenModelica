@@ -593,25 +593,25 @@ void *type_desc_to_value(type_description *desc)
   };
   case TYPE_DESC_REAL_ARRAY: {
     void *ptr = (modelica_real *) desc->data.real_array.data
-      + real_array_nr_of_elements(&(desc->data.real_array)) - 1;
+      + base_array_nr_of_elements(desc->data.real_array) - 1;
     return generate_array(TYPE_DESC_REAL, 1, desc->data.real_array.ndims,
                           desc->data.real_array.dim_size, &ptr);
   };
   case TYPE_DESC_INT_ARRAY: {
     void *ptr = (modelica_integer *) desc->data.int_array.data
-      + integer_array_nr_of_elements(&(desc->data.int_array)) - 1;
+      + base_array_nr_of_elements(desc->data.int_array) - 1;
     return generate_array(TYPE_DESC_INT, 1, desc->data.int_array.ndims,
                           desc->data.int_array.dim_size, &ptr);
   };
   case TYPE_DESC_BOOL_ARRAY: {
     void *ptr = (modelica_boolean *) desc->data.bool_array.data
-      + boolean_array_nr_of_elements(&(desc->data.bool_array)) - 1;
+      + base_array_nr_of_elements(desc->data.bool_array) - 1;
     return generate_array(TYPE_DESC_BOOL, 1, desc->data.bool_array.ndims,
                           desc->data.bool_array.dim_size, &ptr);
   };
   case TYPE_DESC_STRING_ARRAY: {
     void *ptr = (modelica_string_t *) desc->data.string_array.data
-      + string_array_nr_of_elements(&(desc->data.string_array)) - 1;
+      + base_array_nr_of_elements(desc->data.string_array) - 1;
     return generate_array(TYPE_DESC_STRING, 1, desc->data.string_array.ndims,
                           desc->data.string_array.dim_size, &ptr);
   };

@@ -37,6 +37,10 @@
 #include <stdarg.h>
 #include "omc_msvc.h"
 
+static OMC_INLINE size_t getIndex_2D(_index_t *dim, int i, int j) {return i*dim[1]+j;}
+static OMC_INLINE size_t getIndex_3D(_index_t *dim, int i, int j, int k) {return i*dim[1]*dim[2]+j*dim[2]+k;}
+static OMC_INLINE size_t getIndex_4D(_index_t *dim, int i, int j, int k, int l) {return i*dim[1]*dim[2]*dim[3]+j*dim[2]*dim[3]+k*dim[3]+l;}
+
 /* Settings the fields of a base_array */
 void base_array_create(base_array_t *dest, void *data, int ndims, va_list ap);
 
@@ -50,7 +54,15 @@ void simple_alloc_2d_base_array(base_array_t *dest, int r, int c, void *data);
 size_t alloc_base_array(base_array_t *dest, int ndims, va_list ap);
 
 /* Number of elements in array. */
-size_t base_array_nr_of_elements(const base_array_t *a);
+static OMC_INLINE size_t base_array_nr_of_elements(const base_array_t a)
+{
+  int i;
+  size_t nr_of_elements = 1;
+  for(i = 0; i < a.ndims; ++i) {
+     nr_of_elements *= a.dim_size[i];
+  }
+  return nr_of_elements;
+}
 
 /* Clones fields */
 void clone_base_array_spec(const base_array_t *source, base_array_t *dest);

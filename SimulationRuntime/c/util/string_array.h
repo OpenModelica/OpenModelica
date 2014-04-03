@@ -167,9 +167,6 @@ extern void transpose_string_array(const string_array_t * a, string_array_t* des
 
 extern void fill_string_array(string_array_t* dest,modelica_string_t s);
 
-static inline size_t string_array_nr_of_elements(const string_array_t *a)
-{ return base_array_nr_of_elements(a); }
-
 static inline void clone_reverse_string_array_spec(const string_array_t *source,
                                                    string_array_t *dest)
 { clone_reverse_base_array_spec(source, dest); }

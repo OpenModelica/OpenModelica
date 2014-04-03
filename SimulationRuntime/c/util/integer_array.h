@@ -46,20 +46,17 @@ static OMC_INLINE modelica_integer integer_get(const integer_array_t a, size_t i
 
 static OMC_INLINE modelica_integer integer_get_2D(const integer_array_t a, size_t i, size_t j)
 {
-  return integer_get(a, (i * a.dim_size[1]) + j);
+  return integer_get(a, getIndex_2D(a.dim_size,i,j));
 }
 
 static OMC_INLINE modelica_integer integer_get_3D(const integer_array_t a, size_t i, size_t j, size_t k)
 {
-  return integer_get(a, (i * a.dim_size[1] * a.dim_size[2])
-                        + (j * a.dim_size[2]) + k);
+  return integer_get(a, getIndex_3D(a.dim_size,i,j,k));
 }
 
 static OMC_INLINE modelica_integer integer_get_4D(const integer_array_t a, size_t i, size_t j, size_t k, size_t l)
 {
-  return integer_get(a, (i * a.dim_size[1] * a.dim_size[2] * a.dim_size[3])
-                        + (j * a.dim_size[2] * a.dim_size[3])
-                        + (k * a.dim_size[3]) + l);
+  return integer_get(a, getIndex_4D(a.dim_size,i,j,k,l));
 }
 
 /* Settings the fields of a integer_array */
@@ -268,9 +265,6 @@ extern void symmetric_integer_array(const integer_array_t * a,integer_array_t* d
 extern void cross_integer_array(const integer_array_t * x,const integer_array_t * y,integer_array_t* dest);
 extern void cross_alloc_integer_array(const integer_array_t * x,const integer_array_t * y,integer_array_t* dest);
 extern void skew_integer_array(const integer_array_t * x,integer_array_t* dest);
-
-static inline size_t integer_array_nr_of_elements(const integer_array_t * a)
-{ return base_array_nr_of_elements(a); }
 
 extern _index_t* integer_array_make_index_array(const integer_array_t *arr);
 

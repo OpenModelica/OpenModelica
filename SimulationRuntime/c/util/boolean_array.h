@@ -45,23 +45,17 @@ static OMC_INLINE modelica_boolean boolean_get(const boolean_array_t a, size_t i
 
 static OMC_INLINE modelica_boolean boolean_get_2D(const boolean_array_t a, size_t i, size_t j)
 {
-    modelica_boolean value = boolean_get(a, (i * a.dim_size[1]) + j);
-    return value;
+    return boolean_get(a, getIndex_2D(a.dim_size,i,j));
 }
 
 static OMC_INLINE modelica_boolean boolean_get_3D(const boolean_array_t a, size_t i, size_t j, size_t k)
 {
-    modelica_boolean value = boolean_get(a, (i * a.dim_size[1] * a.dim_size[2])
-                                          + (j * a.dim_size[2]) + k);
-    return value;
+    return boolean_get(a, getIndex_3D(a.dim_size,i,j,k));
 }
 
 static OMC_INLINE modelica_boolean boolean_get_4D(const boolean_array_t a, size_t i, size_t j, size_t k, size_t l)
 {
-    modelica_boolean value = boolean_get(a, (i * a.dim_size[1] * a.dim_size[2] * a.dim_size[3])
-                                          + (j * a.dim_size[2] * a.dim_size[3])
-                                          + (k * a.dim_size[3]) + l);
-    return value;
+    return boolean_get(a, getIndex_4D(a.dim_size,i,j,k,l));
 }
 
 /* Setting the fields of a boolean_array */
@@ -191,9 +185,6 @@ extern void transpose_alloc_boolean_array(const boolean_array_t* a, boolean_arra
 extern void transpose_boolean_array(const boolean_array_t* a, boolean_array_t* dest);
 
 extern void fill_boolean_array(boolean_array_t* dest,modelica_boolean s);
-
-static inline size_t boolean_array_nr_of_elements(const boolean_array_t*a)
-{ return base_array_nr_of_elements(a); }
 
 static inline void clone_reverse_boolean_array_spec(const boolean_array_t*source,
                                                     boolean_array_t *dest)
