@@ -354,7 +354,7 @@ algorithm
       // a*(1/b)*c*...*n = rhs
     case(_,_,DAE.CREF(componentRef = cr),_)
       equation
-        ({invCr},factors) = List.split1OnTrue(Expression.factors(inExp1),isInverseCref,cr);
+        ({_},factors) = List.split1OnTrue(Expression.factors(inExp1),isInverseCref,cr);
         e = Expression.inverseFactors(inExp2);
         rhs = Expression.makeProductLst(e::factors);
         false = Expression.expHasCrefNoPreorDer(rhs, cr);
@@ -363,14 +363,14 @@ algorithm
       // lhs = a*(1/b)*c*...*n
     case(_,_,DAE.CREF(componentRef = cr),_)
       equation
-        ({invCr},factors) = List.split1OnTrue(Expression.factors(inExp2),isInverseCref,cr);
+        ({_},factors) = List.split1OnTrue(Expression.factors(inExp2),isInverseCref,cr);
         e = Expression.inverseFactors(inExp1);
         rhs = Expression.makeProductLst(e::factors);
         false = Expression.expHasCrefNoPreorDer(rhs, cr);
       then (rhs,{});
 
     // 0 = a*(b-c)  solve for b
-    case (_,_,DAE.CREF(componentRef = cr),_)
+    case (_,_,DAE.CREF(componentRef = _),_)
       equation
         true = Expression.isZero(inExp1);
         (e,a) = solve3(inExp2,inExp3);
@@ -382,7 +382,7 @@ algorithm
         (rhs,asserts);
 
     // swapped args: a*(b-c) = 0  solve for b
-    case (_,_,DAE.CREF(componentRef = cr),_)
+    case (_,_,DAE.CREF(componentRef = _),_)
       equation
         true = Expression.isZero(inExp2);
         (e,a) = solve3(inExp1,inExp3);

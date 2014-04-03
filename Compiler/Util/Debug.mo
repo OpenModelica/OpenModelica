@@ -228,7 +228,7 @@ algorithm
     local
       Type_b res,def;
       FuncTypeToType_b func;
-    case (_,func,def)
+    case (_,func,_)
       equation
         true = Flags.isSet(inFlag);
         res = func();
@@ -259,7 +259,7 @@ algorithm
       Type_b res,def;
       FuncTypeType_aToType_b func;
       Type_a arg;
-    case (_,func,arg,def)
+    case (_,func,arg,_)
       equation
         true = Flags.isSet(inFlag);
         res = func(arg);

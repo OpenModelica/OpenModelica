@@ -643,17 +643,17 @@ algorithm
       DAE.Attributes attr;
 
     case DAE.NOEXTARG() then "";
-    case DAE.EXTARG(componentRef = cr,attributes = DAE.ATTR(connectorType =ct,variability = var,direction = dir),type_ = ty)
+    case DAE.EXTARG(componentRef = cr,attributes = DAE.ATTR(connectorType =_,variability = _,direction = _),type_ = _)
       equation
         crstr = ComponentReference.printComponentRefStr(cr);
       then
         crstr;
-    case DAE.EXTARGEXP(exp = exp,type_ = ty)
+    case DAE.EXTARGEXP(exp = exp,type_ = _)
       equation
         crstr = ExpressionDump.printExpStr(exp);
       then
         crstr;
-    case DAE.EXTARGSIZE(componentRef = cr,attributes = attr,type_ = ty,exp = dim)
+    case DAE.EXTARGSIZE(componentRef = cr,attributes = _,type_ = _,exp = dim)
       equation
         crstr = ComponentReference.printComponentRefStr(cr);
         dimstr = ExpressionDump.printExpStr(dim);
@@ -1497,7 +1497,7 @@ algorithm
         ();
 
     case DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_EXT(body = daeElts, externalDecl = ext_decl)::_),
-                      type_ = t, isImpure = isImpure, comment = c)
+                      type_ = _, isImpure = isImpure, comment = c)
       equation
         impureStr = Util.if_(isImpure, "impure ", "");
         Print.printBuf(impureStr);
@@ -2299,7 +2299,7 @@ algorithm
       list<DAE.Element> l;
     case DAE.VAR(componentRef = cr,
              kind = vk,
-             direction = vd,
+             direction = _,
              binding = NONE(),
              variableAttributesOption = dae_var_attr,
              absynCommentOption = comment)
@@ -2318,7 +2318,7 @@ algorithm
         ();
     case DAE.VAR(componentRef = cr,
              kind = vk,
-             direction = vd,
+             direction = _,
              binding = SOME(e),
              variableAttributesOption = dae_var_attr,
              absynCommentOption = comment)
@@ -2474,7 +2474,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    case DAE.REINIT(exp = e1)
+    case DAE.REINIT(exp = _)
       equation
         Print.printBuf("REINIT()");
       then
@@ -2613,7 +2613,7 @@ algorithm
       String str;
       Type_a var;
     case ({},_,_) then ({},{});
-    case (ignored,printer,count)
+    case (ignored,_,count)
       equation
         (count <= 0) = true;
       then
@@ -2696,13 +2696,13 @@ algorithm
       DAE.Exp exp,e1,e2;
       list<Graphviz.Node> nodes;
       list<DAE.Element> elts;
-    case DAE.VAR(componentRef = cr,kind = vk,direction = vd,binding = NONE())
+    case DAE.VAR(componentRef = cr,kind = vk,direction = _,binding = NONE())
       equation
         crstr = ComponentReference.printComponentRefStr(cr);
         vkstr = dumpKindStr(vk);
       then
         Graphviz.LNODE("VAR",{crstr,vkstr},{},{});
-    case DAE.VAR(componentRef = cr,kind = vk,direction = vd,binding = SOME(exp))
+    case DAE.VAR(componentRef = cr,kind = vk,direction = _,binding = SOME(exp))
       equation
         crstr = ComponentReference.printComponentRefStr(cr);
         vkstr = dumpKindStr(vk);
@@ -3224,7 +3224,7 @@ algorithm
       then
         str;
 
-    case ((DAE.IF_EQUATION(condition1 = {},equations2 = {},equations3 = {}) :: xs), str)
+    case ((DAE.IF_EQUATION(condition1 = {},equations2 = {},equations3 = {}) :: _), str)
       then
         str;
 
@@ -3742,7 +3742,7 @@ algorithm
         str;
 
       case (DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_EXT(body = daeElts, externalDecl = ext_decl)::_),
-                         type_ = t, isImpure = isImpure, comment = c), str)
+                         type_ = _, isImpure = isImpure, comment = c), str)
       equation
         fstr = Absyn.pathStringNoQual(fpath);
         impureStr = Util.if_(isImpure, "impure ", "");
@@ -3833,7 +3833,7 @@ algorithm
       then
         "";
 
-    case (DAE.SOURCE(i, po, iol, ceol, tl, op, cmt))
+    case (DAE.SOURCE(_, po, _, ceol, _, _, cmt))
       equation
         str = cmtListToString(cmt);
         str = str +& " /* models: {" +& stringDelimitList(List.map(po, withinString), ", ") +& "}" +&

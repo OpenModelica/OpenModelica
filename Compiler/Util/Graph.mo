@@ -456,7 +456,7 @@ algorithm
     case ({}, _, _) then inGraph;
     case (_, {}, _) then {};
 
-    case (_, (graph_node as (node, _)) :: rest_graph, _)
+    case (_, ((node, _)) :: rest_graph, _)
       equation
         (rest_nodes, SOME(_)) = List.deleteMemberOnTrue(node, inNodes,
           inEqualFunc);

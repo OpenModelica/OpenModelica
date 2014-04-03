@@ -130,7 +130,7 @@ algorithm
     list<DAE.Subscript> rest_subs;
    
     case({},{},_) then 0;
-    case(i1::rest_dims,s::rest_subs,_)
+    case(_::rest_dims,s::rest_subs,_)
     // TODO: change to using dimensions once cref types has been fixed.
     then hashSubscript(s)*factor + hashSubscripts2(rest_dims,rest_subs,factor*1000/* *i1 */);  
   end match;
@@ -831,7 +831,7 @@ algorithm
     // adrpo: 2010-10-07: first is an ID, second is qualified, see if one is prefix of the other
     //                    even if the first one DOESN'T HAVE SUBSCRIPTS!
     case (DAE.CREF_IDENT(ident = id1,subscriptLst = {}),
-          DAE.CREF_QUAL(ident = id2,subscriptLst = ss2))
+          DAE.CREF_QUAL(ident = id2,subscriptLst = _))
       then stringEq(id1, id2);
     
     // first is an ID, second is qualified, see if one is prefix of the other
@@ -845,7 +845,7 @@ algorithm
     // adrpo: 2010-10-07: first is an ID, second is an ID, see if one is prefix of the other
     //                    even if the first one DOESN'T HAVE SUBSCRIPTS!
     case (DAE.CREF_IDENT(ident = id1,subscriptLst = {}),
-          DAE.CREF_IDENT(ident = id2,subscriptLst = ss2))
+          DAE.CREF_IDENT(ident = id2,subscriptLst = _))
       then stringEq(id1, id2);
     
     case (DAE.CREF_IDENT(ident = id1,subscriptLst = ss1),
@@ -864,7 +864,7 @@ algorithm
         true;*/
     
     // they are not a prefix of one-another
-    case (cr1,cr2)
+    case (_,_)
       equation
         // print("Expression.crefPrefixOf: " +& printComponentRefStr(cr1) +& " NOT PREFIX OF " +& printComponentRefStr(cr2) +& "\n");
       then false;
@@ -1286,12 +1286,12 @@ algorithm
       list<DAE.Subscript> ssl;
       DAE.Ident name;
       DAE.Type ty;
-    case(DAE.CREF_IDENT(name,ty,ssl))
+    case(DAE.CREF_IDENT(_,ty,ssl))
       equation
         wholedim = containWholeDim2(ssl,ty);
       then
         wholedim;
-    case(DAE.CREF_QUAL(name,ty,ssl,cr))
+    case(DAE.CREF_QUAL(_,_,_,cr))
       equation
         wholedim = containWholeDim(cr);
       then
@@ -1319,9 +1319,9 @@ algorithm
     
     case({},_) then false;
     
-    case((ss as DAE.WHOLEDIM())::ssl,DAE.T_ARRAY(tty,ad,ts)) then true;
+    case((DAE.WHOLEDIM())::_,DAE.T_ARRAY(_,_,_)) then true;
     
-    case((ss as DAE.SLICE(es1))::ssl, DAE.T_ARRAY(tty,ad,ts))
+    case((DAE.SLICE(es1))::_, DAE.T_ARRAY(_,ad,_))
       equation
         true = containWholeDim3(es1,ad);
       then
@@ -1427,7 +1427,7 @@ algorithm
       DAE.Ident id;
       DAE.ComponentRef res,cr;
     
-    case (DAE.CREF_IDENT(ident = id)) then inComponentRef;
+    case (DAE.CREF_IDENT(ident = _)) then inComponentRef;
     
     case (DAE.CREF_QUAL(componentRef = cr))
       equation
@@ -1491,7 +1491,7 @@ algorithm
       list<DAE.Subscript> subs,res;
       DAE.ComponentRef cr;
     
-    case (DAE.CREF_IDENT(ident = id,subscriptLst = subs)) then subs;
+    case (DAE.CREF_IDENT(ident = _,subscriptLst = subs)) then subs;
     
     case (DAE.CREF_QUAL(componentRef = cr,subscriptLst=subs))
       equation
@@ -1512,7 +1512,7 @@ algorithm
       list<DAE.Subscript> subs;
       DAE.ComponentRef cr;
       
-    case (DAE.CREF_IDENT(ident=id, subscriptLst=subs))
+    case (DAE.CREF_IDENT(ident=_, subscriptLst=subs))
     then subs;
     
     case (DAE.CREF_QUAL(componentRef=cr)) equation
@@ -1532,8 +1532,8 @@ algorithm
       DAE.ComponentRef cr;
       DAE.Type t2;
     
-    case( DAE.CREF_QUAL(id,t2,subs,cr)) then makeCrefIdent(id,t2,subs);
-    case( DAE.CREF_IDENT(id,t2,subs)) then inCr;
+    case( DAE.CREF_QUAL(id,t2,subs,_)) then makeCrefIdent(id,t2,subs);
+    case( DAE.CREF_IDENT(_,_,_)) then inCr;
   end match;
 end crefFirstCref;
 
@@ -1902,7 +1902,7 @@ algorithm
       list<DAE.Subscript> subs;
       DAE.ComponentRef cr;
     
-    case (DAE.CREF_IDENT(ident=id, identType=tp, subscriptLst=subs), _) 
+    case (DAE.CREF_IDENT(ident=id, identType=tp, subscriptLst=_), _) 
     then makeCrefIdent(id, tp, inSubs);
     
     case (DAE.CREF_QUAL(ident=id, identType=tp, subscriptLst=subs, componentRef=cr) ,_) equation
@@ -2024,7 +2024,7 @@ algorithm
       list<DAE.Subscript> subs;
       DAE.Subscript sub;
     
-    case((sub as DAE.SLICE(_))::subs,_)
+    case((DAE.SLICE(_))::subs,_)
       equation
         subs = listAppend(inSub,subs);
       then
@@ -2034,7 +2034,7 @@ algorithm
     //   WHOLEDIM is *also* a special case of SLICE
     //   that contains the all subscripts, so we need
     //   to handle that too here!
-    case((sub as DAE.WHOLEDIM())::subs,_)
+    case((DAE.WHOLEDIM())::subs,_)
       equation
         subs = listAppend(inSub,subs);
       then
@@ -2182,7 +2182,7 @@ algorithm
       DAE.ComponentRef cr_1,cr;
       DAE.Type t2;
     
-    case (DAE.CREF_IDENT(ident = id,identType = t2,subscriptLst = subs)) 
+    case (DAE.CREF_IDENT(ident = id,identType = t2,subscriptLst = _)) 
       then 
         makeCrefIdent(id,t2,{});
     
@@ -2546,7 +2546,7 @@ algorithm
       list<DAE.Var> varLst;
 
     // A simple cref without subscripts but record type.
-    case (DAE.CREF_IDENT(id, DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)), {}),true)
+    case (DAE.CREF_IDENT(_, DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)), {}),true)
       equation
         // Create a list of crefs from names
         crefs =  List.map(varLst,creffromVar);
@@ -2704,7 +2704,7 @@ algorithm
       then
         crefs;
 
-    case (_, _, _ :: _, _, crefs)
+    case (_, _, _ :: _, _, _)
       then inAccumCrefs;
 
     else

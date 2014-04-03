@@ -136,7 +136,7 @@ algorithm
       String s;
 
     // Adding when not existing previously
-    case (key,((hashvec,varr,bsize,n,fntpl as (hashFunc,_,_))))
+    case (key,((hashvec,varr,bsize,_,fntpl as (hashFunc,_,_))))
       equation
         failure((_) = get(key, hashSet));
         indx = hashFunc(key, bsize);
@@ -155,7 +155,7 @@ algorithm
         varr_1 = valueArraySetnth(varr, indx, key);
       then ((hashvec,varr_1,bsize,n,fntpl));
 
-    case (key,((hashvec,varr,bsize,n,(hashFunc,_,keystrFunc))))
+    case (key,((_,_,bsize,_,(hashFunc,_,keystrFunc))))
       equation
         print("- BaseHashSet.add failed: ");
         print("bsize: ");
@@ -191,7 +191,7 @@ algorithm
       FuncHash hashFunc;
 
     // Adding when not existing previously
-    case (key,(hashvec,varr,bsize,n,fntpl as (hashFunc,_,_)))
+    case (key,(hashvec,varr,bsize,_,fntpl as (hashFunc,_,_)))
       equation
         indx = hashFunc(key, bsize);
         newpos = valueArrayLength(varr);
@@ -226,7 +226,7 @@ algorithm
 
     // Adding when not existing previously
     case (_,
-        ((hashvec, varr, bsize, n, fntpl as (hashFunc, _, _))))
+        ((hashvec, varr, bsize, _, fntpl as (hashFunc, _, _))))
       equation
         failure(_ = get(key, hashSet));
         indx = hashFunc(key, bsize);
@@ -319,7 +319,7 @@ algorithm
       FuncEq keyEqual;
       FuncHash hashFunc;
 
-    case (_,(hashvec,varr,bsize,n,(hashFunc,keyEqual,_)))
+    case (_,(hashvec,varr,bsize,_,(hashFunc,keyEqual,_)))
       equation
         hashindx = hashFunc(key, bsize);
         indexes = hashvec[hashindx + 1];
@@ -400,13 +400,13 @@ algorithm
       Key elt;
       Integer lastpos,n,size;
 
-    case ((0,_,arr)) then {};
+    case ((0,_,_)) then {};
     case ((1,_,arr))
       equation
         SOME(elt) = arr[0 + 1];
       then
         {elt};
-    case ((n,size,arr))
+    case ((n,_,arr))
       equation
         lastpos = n - 1;
       then
@@ -428,7 +428,7 @@ algorithm
       Integer pos,lastpos,pos_1;
       list<Key>  acc;
 
-    case (arr,true,pos,lastpos,acc)
+    case (arr,true,pos,_,acc)
       equation
         acc = List.consOption(arr[pos + 1],acc);
       then listReverse(acc);

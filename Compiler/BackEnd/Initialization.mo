@@ -409,7 +409,7 @@ algorithm
     then (listReverse(inAcc), iLeftCrs);
 
     // single inactive when equation during initialization
-    case ((stmt as DAE.STMT_WHEN(exp=condition, statementLst=stmts, elseWhen=NONE()))::{}, true, _, _) equation
+    case ((DAE.STMT_WHEN(exp=condition, statementLst=stmts, elseWhen=NONE()))::{}, true, _, _) equation
       false = Expression.containsInitialCall(condition, false);
       crefLst = CheckModel.algorithmStatementListOutputs(stmts, DAE.EXPAND()); // expand as we're in an algorithm 
       crintLst = List.map1(crefLst, Util.makeTuple, 1);
@@ -865,7 +865,7 @@ algorithm
       DAE.InstDims arryDim;
 
     // unfixed state
-    case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.STATE(index=_)), vars)) equation
+    case((var as BackendDAE.VAR(varName=_, varKind=BackendDAE.STATE(index=_)), vars)) equation
       false = BackendVariable.varFixed(var);
       // ignore stateset variables
       // false = isStateSetVar(cr);
@@ -1090,7 +1090,7 @@ algorithm
       list<BackendDAE.Var> dumpVars, dumpVars2;
 
     // over-determined system
-    case(BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), (shared, (inDAE, initVars, _))) equation
+    case(BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), (shared, (_, _, _))) equation
       nVars = BackendVariable.varsSize(vars);
       nEqns = BackendDAEUtil.equationSize(eqns);
       true = intGt(nEqns, nVars);
@@ -1443,7 +1443,7 @@ algorithm
       Boolean b;
 
     case ({}, _, _, _, _, _, _, _) then false;
-    case (e::rest, _, _, _, _, _, _, _) equation
+    case (e::_, _, _, _, _, _, _, _) equation
       // row is unmatched -> augmenting path found
       true = intLt(ass2[e], 0);
       reasign(stack, e, ass1, ass2);
@@ -1751,7 +1751,7 @@ algorithm
     // *** MODELICA 3.1 COMPATIBLE ***
     // parameter with binding and fixed=false and no start value
     // use the binding as start value
-    case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.PARAM(), bindExp=SOME(bindExp), varType=ty), (vars, fixvars, eqns, hs))) equation
+    case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.PARAM(), bindExp=SOME(bindExp), varType=_), (vars, fixvars, eqns, hs))) equation
       true = intLe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 31);
       false = BackendVariable.varFixed(var);
       var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
@@ -1770,7 +1770,7 @@ algorithm
     // *** MODELICA 3.1 COMPATIBLE ***
     // parameter with binding and fixed=false and a start value
     // ignore the binding and use the start value
-    case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.PARAM(), bindExp=SOME(bindExp), varType=ty), (vars, fixvars, eqns, hs))) equation
+    case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.PARAM(), bindExp=SOME(bindExp), varType=_), (vars, fixvars, eqns, hs))) equation
       true = intLe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 31);
       false = BackendVariable.varFixed(var);
       var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
@@ -2183,7 +2183,7 @@ algorithm
       list<BackendDAE.Equation> eqnlst;
       Boolean optimizationfound;
     
-    case (BackendDAE.DAE(systs, BackendDAE.SHARED(knownVars=knvars, initialEqs=inieqns))) equation
+    case (BackendDAE.DAE(_, BackendDAE.SHARED(knownVars=knvars, initialEqs=inieqns))) equation
       // search
       initalAliases = HashTable2.emptyHashTable();
       eqnlst = BackendEquation.equationList(inieqns);

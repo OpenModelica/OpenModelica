@@ -1182,16 +1182,16 @@ algorithm
         ((eqilst1_1,arg_1)) = traverseEquationItemList(eqilst1,rel,arg);
         ((eeqitlst_1,arg_2)) = traverseExpEqItemTupleList(eeqitlst,rel,arg_1);
         ((eqilst2_1,arg_3)) = traverseEquationItemList(eqilst2,rel,arg_2);
-        ((EQ_IF(e_1,_,_,_),arg_4)) = rel((eq,arg_3));
+        ((EQ_IF(_,_,_,_),arg_4)) = rel((eq,arg_3));
       then
         ((EQ_IF(e,eqilst1_1,eeqitlst_1,eqilst2_1),arg_4));
-    case(eq as EQ_FOR(fis,eqilst),rel,arg)
+    case(eq as EQ_FOR(_,eqilst),rel,arg)
       equation
         ((eqilst_1,arg_1)) = traverseEquationItemList(eqilst,rel,arg);
         ((EQ_FOR(fis_1,_),arg_2)) = rel((eq,arg_1));
       then
         ((EQ_FOR(fis_1,eqilst_1),arg_2));
-    case(eq as EQ_WHEN_E(e,eqilst,eeqitlst),rel,arg)
+    case(eq as EQ_WHEN_E(_,eqilst,eeqitlst),rel,arg)
       equation
         ((eqilst_1,arg_1)) = traverseEquationItemList(eqilst,rel,arg);
         ((eeqitlst_1,arg_2)) = traverseExpEqItemTupleList(eeqitlst,rel,arg_1);
@@ -1239,7 +1239,7 @@ algorithm
         ((eq_1,arg_1)) = traverseEquation(eq,rel,arg);
       then
         ((EQUATIONITEM(eq_1,oc,info),arg_1));
-    case(ei,rel,arg) then ((ei,arg));
+    case(ei,_,arg) then ((ei,arg));
   end matchcontinue;
 end traverseEquationItem;
 
@@ -1295,7 +1295,7 @@ algorithm
       list<tuple<Exp, list<EquationItem>>> cdr,cdr_1;
       Exp e;
       list<EquationItem> eilst,eilst_1;
-    case({},rel,arg) then (({},arg));
+    case({},_,arg) then (({},arg));
     case((e,eilst) :: cdr,rel,arg)
       equation
         ((eilst_1,arg_1)) = traverseEquationItemList(eilst,rel,arg);
@@ -1330,7 +1330,7 @@ algorithm
       AlgorithmItem ai,ai_1;
       Exp e,e_1;
       ForIterators fis,fis_1;
-    case(alg as ALG_IF(e,ailst1,eaitlst,ailst2),rel,arg)
+    case(alg as ALG_IF(_,ailst1,eaitlst,ailst2),rel,arg)
       equation
         ((ailst1_1,arg1_1)) = traverseAlgorithmItemList(ailst1,rel,arg);
         ((eaitlst_1,arg2_1)) = traverseExpAlgItemTupleList(eaitlst,rel,arg1_1);
@@ -1338,25 +1338,25 @@ algorithm
         ((ALG_IF(e_1,_,_,_),arg_1)) = rel((alg,arg3_1));
       then
         ((ALG_IF(e_1,ailst1_1,eaitlst_1,ailst2_1),arg_1));
-    case(alg as ALG_FOR(fis,ailst),rel,arg)
+    case(alg as ALG_FOR(_,ailst),rel,arg)
       equation
         ((ailst_1,arg1_1)) = traverseAlgorithmItemList(ailst,rel,arg);
         ((ALG_FOR(fis_1,_),arg_1)) = rel((alg,arg1_1));
       then
         ((ALG_FOR(fis_1,ailst_1),arg_1));
-    case(alg as ALG_PARFOR(fis,ailst),rel,arg)
+    case(alg as ALG_PARFOR(_,ailst),rel,arg)
       equation
         ((ailst_1,arg1_1)) = traverseAlgorithmItemList(ailst,rel,arg);
         ((ALG_PARFOR(fis_1,_),arg_1)) = rel((alg,arg1_1));
       then
         ((ALG_PARFOR(fis_1,ailst_1),arg_1));
-    case(alg as ALG_WHILE(e,ailst),rel,arg)
+    case(alg as ALG_WHILE(_,ailst),rel,arg)
       equation
         ((ailst_1,arg1_1)) = traverseAlgorithmItemList(ailst,rel,arg);
         ((ALG_WHILE(e_1,_),arg_1)) = rel((alg,arg1_1));
       then
         ((ALG_WHILE(e_1,ailst_1),arg_1));
-    case(alg as ALG_WHEN_A(e,ailst,eaitlst),rel,arg)
+    case(alg as ALG_WHEN_A(_,ailst,eaitlst),rel,arg)
       equation
         ((ailst_1,arg1_1)) = traverseAlgorithmItemList(ailst,rel,arg);
         ((eaitlst_1,arg2_1)) = traverseExpAlgItemTupleList(eaitlst,rel,arg1_1);
@@ -1455,7 +1455,7 @@ algorithm
       list<tuple<Exp, list<AlgorithmItem>>> cdr,cdr_1;
       Exp e;
       list<AlgorithmItem> ailst,ailst_1;
-    case({},rel,arg) then (({},arg));
+    case({},_,arg) then (({},arg));
     case((e,ailst) :: cdr,rel,arg)
       equation
         ((ailst_1,arg_1)) = traverseAlgorithmItemList(ailst,rel,arg);
@@ -1492,33 +1492,33 @@ algorithm
       FunctionArgs fargs,fargs1,fargs2;
       ComponentRef cfn,cfn_1; Exp e_temp;
       list<list<Exp>> mexpl,mexpl1;
-    case ((e as UNARY(op,e1)),rel,ext_arg) /* unary */
+    case ((e as UNARY(_,e1)),rel,ext_arg) /* unary */
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((UNARY(op_1,_),ext_arg_2)) = rel((e,ext_arg_1));
       then
         ((UNARY(op_1,e1_1),ext_arg_2));
-    case ((e as BINARY(e1,op,e2)),rel,ext_arg) /* binary */
+    case ((e as BINARY(e1,_,e2)),rel,ext_arg) /* binary */
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
         ((BINARY(_,op_1,_),ext_arg_3)) = rel((e,ext_arg_2));
       then
         ((BINARY(e1_1,op_1,e2_1),ext_arg_3));
-    case ((e as LUNARY(op,e1)),rel,ext_arg) /* logic unary */
+    case ((e as LUNARY(_,e1)),rel,ext_arg) /* logic unary */
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((LUNARY(op_1,_),ext_arg_2)) = rel((e,ext_arg_1));
       then
         ((LUNARY(op_1,e1_1),ext_arg_2));
-    case ((e as LBINARY(e1,op,e2)),rel,ext_arg) /* logic binary */
+    case ((e as LBINARY(e1,_,e2)),rel,ext_arg) /* logic binary */
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
         ((LBINARY(_,op_1,_),ext_arg_3)) = rel((e,ext_arg_2));
       then
         ((LBINARY(e1_1,op_1,e2_1),ext_arg_3));
-    case ((e as RELATION(e1,op,e2)),rel,ext_arg) /* RELATION */
+    case ((e as RELATION(e1,_,e2)),rel,ext_arg) /* RELATION */
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
@@ -1532,11 +1532,11 @@ algorithm
         ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
         ((e3_1,ext_arg_3)) = traverseExp(e3, rel, ext_arg_2);
         ((elseIfBranch1,ext_arg_3)) = traverseExpElseIfBranch(elseIfBranch,rel,ext_arg_3);
-        ((e_1,ext_arg_4)) = rel((e,ext_arg_3));
+        ((_,ext_arg_4)) = rel((e,ext_arg_3));
       then
         ((IFEXP(e1_1,e2_1,e3_1,elseIfBranch1),ext_arg_4));
 
-    case ((e as CALL(cfn,fargs)),rel,ext_arg)
+    case ((CALL(cfn,fargs)),rel,ext_arg)
       equation
         ((fargs1,ext_arg_1)) = traverseExpFunctionArgs(fargs, rel, ext_arg);
         e_temp = CALL(cfn,fargs1);
@@ -1545,7 +1545,7 @@ algorithm
         ((CALL(cfn_1,fargs2),ext_arg_2));
 
     //stefan
-    case ((e as PARTEVALFUNCTION(cfn,fargs)),rel,ext_arg)
+    case ((e as PARTEVALFUNCTION(_,fargs)),rel,ext_arg)
       equation
         ((fargs1,ext_arg_1)) = traverseExpFunctionArgs(fargs,rel,ext_arg);
         ((PARTEVALFUNCTION(cfn_1,_),ext_arg_2)) = rel((e,ext_arg_1));
@@ -1579,7 +1579,7 @@ algorithm
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
-        ((e3_1,ext_arg_3)) = traverseExp(e3, rel, ext_arg_2);
+        ((_,ext_arg_3)) = traverseExp(e3, rel, ext_arg_2);
         ((RANGE(_,_,_),ext_arg_4)) = rel((e,ext_arg_3));
       then
         ((RANGE(e1_1,SOME(e3),e2_1),ext_arg_4));
@@ -1587,7 +1587,7 @@ algorithm
     case ((e as TUPLE(expl)),rel,ext_arg)
       equation
         (expl_1,ext_arg_1) = List.mapFoldTuple(expl, rel, ext_arg);
-        ((e_1,ext_arg_2)) = rel((e,ext_arg_1));
+        ((_,ext_arg_2)) = rel((e,ext_arg_1));
       then
         ((TUPLE(expl_1),ext_arg_2));
 
@@ -2955,7 +2955,7 @@ algorithm
       Path p;
 
     case (FULLYQUALIFIED(path = p)) then pathFirstIdent(p);
-    case (QUALIFIED(name = n,path = p)) then n;
+    case (QUALIFIED(name = n,path = _)) then n;
     case (IDENT(name = n)) then n;
   end match;
 end pathFirstIdent;
@@ -3520,7 +3520,7 @@ algorithm
       then
         res;
     
-    case (IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3,elseIfBranch = e4),_,_)
+    case (IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3,elseIfBranch = _),_,_)
       equation
         l1 = getCrefFromExp(e1,includeSubs,includeFunctions);
         l2 = getCrefFromExp(e2,includeSubs,includeFunctions);
@@ -4076,7 +4076,7 @@ algorithm
       Ident id;
       list<Subscript> subs,res;
       ComponentRef cr;
-    case (CREF_IDENT(name = id,subscripts= subs)) then subs;
+    case (CREF_IDENT(name = _,subscripts= subs)) then subs;
     case (CREF_QUAL(componentRef = cr))
       equation
         res = crefLastSubs(cr);
@@ -4100,9 +4100,9 @@ algorithm
       Boolean b;
       ComponentRef c;
 
-    case CREF_IDENT(name = i,subscripts = {}) then false;
+    case CREF_IDENT(name = _,subscripts = {}) then false;
 
-    case CREF_QUAL(name = i,subscripts = {},componentRef = c)
+    case CREF_QUAL(name = _,subscripts = {},componentRef = c)
       equation
         b = crefHasSubscripts(c);
       then
@@ -4158,7 +4158,7 @@ algorithm
       Ident id;
       list<Subscript> subs;
     case(CREF_IDENT(id,subs)) then CREF_IDENT(id,subs);
-    case(CREF_QUAL(id,subs,cref))
+    case(CREF_QUAL(_,_,cref))
       equation
         cref_1 = crefGetLastIdent(cref);
       then
@@ -4181,7 +4181,7 @@ algorithm
       Ident id;
       list<Subscript> subs,s;
       ComponentRef cr_1,cr;
-    case (CREF_IDENT(name = id,subscripts= subs)) then CREF_IDENT(id,{});
+    case (CREF_IDENT(name = id,subscripts= _)) then CREF_IDENT(id,{});
     case (CREF_QUAL(name= id,subscripts= s,componentRef = cr))
       equation
         cr_1 = crefStripLastSubs(cr);
@@ -4362,7 +4362,7 @@ algorithm
       Restriction r;
       ClassDef body;
       Info nfo;
-    case (CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = body),_)
+    case (CLASS(name = _,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = body),_)
       then CLASS(newName,p,f,e,r,body,INFO("",false,0,0,0,0, TIMESTAMP(0.0,0.0))  );
   end match;
 end setClassName;
@@ -4576,7 +4576,7 @@ algorithm
       String id;
       list<tuple<Exp, Exp>> rest;
       Exp e_1,e_2;
-      case (id,{}) then {};
+      case (_,{}) then {};
       case (id,(e_1,e_2)::rest)
         equation
           lst_1=findIteratorInExp(id,e_1);
@@ -4663,7 +4663,7 @@ algorithm
       String id;
       list<Exp> rest;
       Exp exp;
-    case (id,{}) then {};
+    case (_,{}) then {};
     case (id,exp::rest)
       equation
         lst_1=findIteratorInExp(id,exp);
@@ -4684,7 +4684,7 @@ algorithm
       String id;
       list<list<Exp>> rest;
       list<Exp> expLst;
-    case (id,{}) then {};
+    case (_,{}) then {};
     case (id,expLst::rest)
       equation
         lst_1=findIteratorInExpLst(id,expLst);
@@ -4705,7 +4705,7 @@ algorithm
       String id;
       list<NamedArg> rest;
       Exp exp;
-    case (id,{}) then {};
+    case (_,{}) then {};
     case (id,NAMEDARG(_,exp)::rest)
       equation
         lst_1=findIteratorInExp(id,exp);
@@ -4876,7 +4876,7 @@ algorithm
       list<tuple<ComponentRef, Integer>> lst;
       String id;
       Exp exp;
-      case (id,NONE()) then {};
+      case (_,NONE()) then {};
       case (id,SOME(exp))
         equation
           lst=findIteratorInExp(id,exp);
@@ -5013,7 +5013,7 @@ algorithm
       Real lastBuildTime "Last Build Time";
       Real lastEditTime "Last Edit Time";
     case (_, INFO(fileName, isReadOnly, lineNumberStart, columnNumberStart,
-                          lineNumberEnd, columnNumberEnd, TIMESTAMP(lastBuildTime,lastEditTime)))
+                          lineNumberEnd, columnNumberEnd, TIMESTAMP(_,lastEditTime)))
     then
       (INFO(fileName, isReadOnly, lineNumberStart, columnNumberStart, lineNumberEnd, columnNumberEnd, TIMESTAMP(buildTime,lastEditTime)));
   end match;
@@ -5282,7 +5282,7 @@ algorithm
 
     // first handle all graphic enumerations!
     // FillPattern.*, Smooth.*, TextAlignment.*, etc!
-    case ((e as CREF(cr as CREF_QUAL(name=name)), lst))
+    case ((e as CREF(CREF_QUAL(name=name)), lst))
       equation
         true = listMember(name,{
                           "LinePattern",
@@ -5296,7 +5296,7 @@ algorithm
         ((e, lst));
 
     // crefs, add to list
-    case ((e as CREF(cr), lst)) then ((e,e::lst));
+    case ((e as CREF(_), lst)) then ((e,e::lst));
     // anything else, return the same!
     case _ then tpl;
 
@@ -5732,7 +5732,7 @@ algorithm
      ClassPart cp;
      list<ClassPart> rest;
 
-   case ((cp as EXTERNAL(externalDecl = _))::rest) then cp;
+   case ((cp as EXTERNAL(externalDecl = _))::_) then cp;
 
    case (_::rest)
      equation
@@ -5825,7 +5825,7 @@ algorithm
     local Exp e; Boolean b;
 
     // make sure we don't have not initial()
-    case ((UNARY(NOT(), e) , b)) then inExpBooleanTpl;
+    case ((UNARY(NOT(), _) , _)) then inExpBooleanTpl;
     // we have initial
     case ((e , b))
       equation
@@ -5907,7 +5907,7 @@ algorithm
         ANNOTATION(neweltargs) = mergeAnnotations(ANNOTATION(oldrest), ANNOTATION(eltargs));
       then
         ANNOTATION((mod :: neweltargs));
-    case (ANNOTATION(elementArgs = ((mod as MODIFICATION(path = p)) :: oldrest)),ANNOTATION(elementArgs = eltargs))
+    case (ANNOTATION(elementArgs = ((MODIFICATION(path = p)) :: oldrest)),ANNOTATION(elementArgs = eltargs))
       equation
         eltargs_1 = removeModificationInElementargs(eltargs, p);
         ANNOTATION(neweltargs) = mergeAnnotations(ANNOTATION(oldrest), ANNOTATION(eltargs));
@@ -5936,7 +5936,7 @@ algorithm
         true = stringEq(id1, id2);
       then {};
 
-    case ({(m as MODIFICATION(path = IDENT(name = id1)))},IDENT(name = id2))
+    case ({(MODIFICATION(path = IDENT(name = id1)))},IDENT(name = id2))
       equation
         false = stringEq(id1, id2);
       then
@@ -5956,7 +5956,7 @@ algorithm
       then
         (m :: res);
 
-    case (((m as MODIFICATION(path = IDENT(name = id1))) :: xs),IDENT(name = id2))
+    case (((m as MODIFICATION(path = IDENT(name = _))) :: xs),IDENT(name = _))
       equation
         res = removeModificationInElementargs(xs, inPath);
       then
@@ -6218,14 +6218,14 @@ algorithm
       Ident id1,id2;
       Path rest;
 
-    case (((ann as MODIFICATION(path = IDENT(name = id1),modification = mod)) :: _),IDENT(id2),_)
+    case (((MODIFICATION(path = IDENT(name = id1),modification = mod)) :: _),IDENT(id2),_)
       equation
         true = stringEq(id1, id2);
         str = f(mod);
       then
         SOME(str);
 
-    case (((ann as MODIFICATION(path = IDENT(name = id1),modification = SOME(CLASSMOD(elementArgLst=xs)))) :: _),QUALIFIED(name=id2,path=rest),_)
+    case (((MODIFICATION(path = IDENT(name = id1),modification = SOME(CLASSMOD(elementArgLst=xs)))) :: _),QUALIFIED(name=id2,path=rest),_)
       equation
         true = stringEq(id1, id2);
       then getNamedAnnotationStr(xs,rest,f);

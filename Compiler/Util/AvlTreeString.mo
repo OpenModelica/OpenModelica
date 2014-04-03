@@ -129,11 +129,11 @@ algorithm
       AvlTree t_1,t,bt;
 
       /* empty tree*/
-    case (NODE(value = NONE(),height=h,left = NONE(),right = NONE()),key,value)
+    case (NODE(value = NONE(),height=_,left = NONE(),right = NONE()),key,value)
       then NODE(SOME(VALUE(key,value)),1,NONE(),NONE());
 
       /* Replace this node.*/
-    case (NODE(value = SOME(VALUE(rkey,rval)),height=h,left = left,right = right),key,value)
+    case (NODE(value = SOME(VALUE(rkey,_)),height=h,left = left,right = right),key,value)
       equation
         0 = avlKeyCompare(rkey, key);
         bt = balance(NODE(SOME(VALUE(rkey,value)),h,left,right));
@@ -278,7 +278,7 @@ algorithm
    local Option<AvlTreeValue> value;
     Option<AvlTree> l,r;
     Integer height;
-    case(NODE(value,height,l,r),_) then NODE(value,height,l,right);
+    case(NODE(value,height,l,_),_) then NODE(value,height,l,right);
   end match;
 end setRight;
 
@@ -291,7 +291,7 @@ algorithm
   local Option<AvlTreeValue> value;
     Option<AvlTree> l,r;
     Integer height;
-    case(NODE(value,height,l,r),_) then NODE(value,height,left,r);
+    case(NODE(value,height,_,r),_) then NODE(value,height,left,r);
   end match;
 end setLeft;
 
@@ -415,7 +415,7 @@ algorithm
       AvlTree left,right;
 
     // hash func Search to the right
-    case (NODE(value = SOME(VALUE(value=rval))),0,key)
+    case (NODE(value = SOME(VALUE(value=rval))),0,_)
       then rval;
 
     // search to the right
@@ -493,7 +493,7 @@ algorithm
    Option<AvlTreeValue> v;
    AvlValue val;
    Integer hl,hr,height;
- case(NODE(value=v as SOME(VALUE(_,val)),left=l,right=r)) equation
+ case(NODE(value=v as SOME(VALUE(_,_)),left=l,right=r)) equation
     hl = getHeight(l);
     hr = getHeight(r);
     height = intMax(hl,hr) + 1;

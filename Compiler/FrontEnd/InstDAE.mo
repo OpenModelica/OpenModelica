@@ -296,58 +296,58 @@ algorithm
       DAE.Type tty;
       Absyn.Info info;
 
-    case (vn,ty,ct,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_,_,dae_var_attr,_,_,_,_,_)
       equation
         // print("daeDeclare4: " +& ComponentReference.printComponentRefStr(vn) +& " " +& SCode.finalStr(finalPrefix) +& "\n");
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
       then
         fail();
 
-    case (vn,ty as DAE.T_INTEGER(varLst = _),ct,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,_,_,_,_)
+    case (vn,DAE.T_INTEGER(varLst = _),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_,_)
       equation
         finst_dims = List.flatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
       then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,DAE.T_INTEGER_DEFAULT,e,finst_dims,ct,source,dae_var_attr,comment,io)});
 
-    case (vn,ty as DAE.T_REAL(varLst = _),ct,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,_,_,_,_)
+    case (vn,DAE.T_REAL(varLst = _),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_,_)
       equation
         finst_dims = List.flatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
       then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,DAE.T_REAL_DEFAULT,e,finst_dims,ct,source,dae_var_attr,comment,io)});
 
-    case (vn,ty as DAE.T_BOOL(varLst = _),ct,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,_,_,_,_)
+    case (vn,DAE.T_BOOL(varLst = _),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_,_)
       equation
         finst_dims = List.flatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
       then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,DAE.T_BOOL_DEFAULT,e,finst_dims,ct,source,dae_var_attr,comment,io)});
 
-    case (vn,ty as DAE.T_STRING(varLst = _),ct,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,_,_,_,_)
+    case (vn,DAE.T_STRING(varLst = _),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_,_)
       equation
         finst_dims = List.flatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
       then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,DAE.T_STRING_DEFAULT,e,finst_dims,ct,source,dae_var_attr,comment,io)});
 
-    case (vn,ty as DAE.T_ENUMERATION(index = SOME(_)),ct,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,_,_,_,_)
+    case (_,DAE.T_ENUMERATION(index = SOME(_)),_,_,_,_,_,_,_,_,_,_,_,_,_,_)
     then DAE.emptyDae;
 
     // We should not declare each enumeration value of an enumeration when instantiating,
     // e.g Myenum my !=> constant EnumType my.enum1,... {DAE.VAR(vn, kind, dir, DAE.ENUM, e, inst_dims)}
     // instantiation of complex type extending from basic type
-    case (vn,ty as DAE.T_ENUMERATION(names = l),ct,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,_,_,_,_)
+    case (vn,ty as DAE.T_ENUMERATION(names = _),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_,_)
       equation
         finst_dims = List.flatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
       then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,ty,e,finst_dims,ct,source,dae_var_attr,comment,io)});
 
      // complex type that is ExternalObject
-     case (vn, ty as DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path)),ct,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,_,_,_,_)
+     case (vn, ty as DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_)),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_,_)
        equation
          finst_dims = List.flatten(inst_dims);
          dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
        then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,ty,e,finst_dims,ct,source,dae_var_attr,comment,io)});
 
     // instantiation of complex type extending from basic type
-    case (vn,DAE.T_SUBTYPE_BASIC(complexClassType = ci,complexType = tp),ct,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,_,_,_,_)
+    case (vn,DAE.T_SUBTYPE_BASIC(complexClassType = _,complexType = tp),ct,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,_,_,_,_)
       equation
         (_,dae_var_attr) = InstBinding.instDaeVariableAttributes(Env.emptyCache(),Env.emptyEnv, DAE.NOMOD(), tp, {});
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
@@ -355,7 +355,7 @@ algorithm
     then dae;
 
     // array that extends basic type
-    case (vn,DAE.T_ARRAY(dims = {DAE.DIM_INTEGER(integer = dim)},ty = tp),ct,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,_,_,_,_)
+    case (vn,DAE.T_ARRAY(dims = {DAE.DIM_INTEGER(integer = _)},ty = tp),ct,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,_,_,_,_)
       equation
         dae = daeDeclare4(vn, tp, ct, kind, dir, daePrl, prot,e, inst_dims, start, dae_var_attr,comment,io,finalPrefix,source,declareComplexVars);
       then dae;
@@ -369,7 +369,7 @@ algorithm
         dae;
 
     // if arrays are expanded and dimension is unknown, report an error
-    case (vn,DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()}, ty = tp),ct,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,_,_,_,_)
+    case (vn,DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()}, ty = _),_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         true = Config.splitArrays();
         s = ComponentReference.printComponentRefStr(vn);
@@ -379,14 +379,14 @@ algorithm
         fail();
 
     // Complex/Record components, only if declareComplexVars is true
-    case(vn,ty as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),ct,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,_,_,_,true)
+    case(vn,ty as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_,true)
       equation
         finst_dims = List.flatten(inst_dims);
       then
         DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,ty,e,finst_dims,ct,source,dae_var_attr,comment,io)});
 
     // MetaModelica extensions
-    case (vn,tty as DAE.T_FUNCTION(funcArg = _),ct,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,_,_,_,_)
+    case (vn,tty as DAE.T_FUNCTION(funcArg = _),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_,_)
       equation
         finst_dims = List.flatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
@@ -396,7 +396,7 @@ algorithm
         DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,ty,e,finst_dims,ct,source,dae_var_attr,comment,io)});
 
     // MetaModelica extension
-    case (vn,ty,ct,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,_,_,_,_)
+    case (vn,ty,ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_,_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         true = Types.isBoxedType(ty);
@@ -406,13 +406,13 @@ algorithm
         DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,ty,e,finst_dims,ct,source,dae_var_attr,comment,io)});
     /*----------------------------*/
 
-    case (c,ty,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case (_,ty,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         true = Types.isBoxedType(ty);
       then
         fail();
 
-    case (c,ty,_,_,_,_,_,_,_,_,_,_,_,_,_,_) then DAE.emptyDae;
+    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_) then DAE.emptyDae;
   end matchcontinue;
 end daeDeclare4;
 

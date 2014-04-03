@@ -166,7 +166,7 @@ algorithm
       Absyn.Direction direction;
       Absyn.Info info;
 
-    case ((lhs as DAE.CREF(componentRef=DAE.WILD())), lhprop, rhs, rhprop, _, _, _)
+    case ((DAE.CREF(componentRef=DAE.WILD())), _, rhs, _, _, _, _)
       then DAE.STMT_NORETCALL(rhs, source);
 
     // assign to parameter in algorithm okay if record
@@ -178,7 +178,7 @@ algorithm
       then outStatement;
 
     // assign to parameter in algorithm produce error
-    case (lhs, lprop, rhs, rprop, _, SCode.NON_INITIAL(), _)
+    case (lhs, lprop, rhs, _, _, SCode.NON_INITIAL(), _)
       equation
         DAE.C_PARAM() = Types.propAnyConst(lprop);
         lhs_str = ExpressionDump.printExpStr(lhs);
@@ -188,7 +188,7 @@ algorithm
         fail();
 
     // assignment to a constant, report error
-    case (lhs, _, rhs, _, DAE.ATTR(variability = SCode.CONST()), _, _)
+    case (lhs, _, _, _, DAE.ATTR(variability = SCode.CONST()), _, _)
       equation
         lhs_str = ExpressionDump.printExpStr(lhs);
         Error.addSourceMessage(Error.ASSIGN_READONLY_ERROR, {"constant", lhs_str}, DAEUtil.getElementSourceFileInfo(source));
@@ -226,7 +226,7 @@ algorithm
         fail();
 
      /* failing */
-    case (lhs, lprop, rhs, rprop, _, _, _)
+    case (lhs, _, rhs, _, _, _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Algorithm.makeAssignment failed");
@@ -255,7 +255,7 @@ algorithm
       DAE.Type t, ty;
       list<DAE.Exp> ea2;
 
-    case (DAE.CREF(componentRef = c, ty = _), _, _, _, _)
+    case (DAE.CREF(componentRef = _, ty = _), _, _, _, _)
       equation
         (rhs_1, _) = Types.matchProp(rhs, rhprop, lhprop, true);
         false = Types.isPropArray(lhprop);
@@ -280,7 +280,7 @@ algorithm
       then
         DAE.STMT_ASSIGN_ARR(t, c, rhs_1, source);
 
-    case(e3 as DAE.ASUB(e1, ea2), _, _, _, _)
+    case(e3 as DAE.ASUB(_, _), _, _, _, _)
       equation
         (rhs_1, _) = Types.matchProp(rhs, rhprop, lhprop, true);
         //false = Types.isPropArray(lhprop);
@@ -344,7 +344,7 @@ algorithm
       list<DAE.Type> lhrtypes, tpl;
       list<DAE.TupleConst> clist;
 
-    case (lhs, lprop, rhs, rprop, _, _)
+    case (lhs, lprop, rhs, _, _, _)
       equation
         bvals = List.map(lprop, Types.propAnyConst);
         DAE.C_CONST() = List.reduce(bvals, Types.constOr);
@@ -355,7 +355,7 @@ algorithm
         Error.addSourceMessage(Error.ASSIGN_CONSTANT_ERROR, {lhs_str, rhs_str}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
-    case (lhs, lprop, rhs, rprop, SCode.NON_INITIAL(), _)
+    case (lhs, lprop, rhs, _, SCode.NON_INITIAL(), _)
       equation
         bvals = List.map(lprop, Types.propAnyConst);
         DAE.C_PARAM() = List.reduce(bvals, Types.constOr);
@@ -378,7 +378,7 @@ algorithm
       then
         DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT, expl, rhs, source);
     // a tuple in rhs
-    case (expl, lhprops, rhs, DAE.PROP_TUPLE(type_ = DAE.T_TUPLE(tupleType = tpl), tupleConst = DAE.TUPLE_CONST(tupleConstLst = clist)), _, _)
+    case (expl, lhprops, rhs, DAE.PROP_TUPLE(type_ = DAE.T_TUPLE(tupleType = tpl), tupleConst = DAE.TUPLE_CONST(tupleConstLst = _)), _, _)
       equation
         bvals = List.map(lhprops, Types.propAnyConst);
         DAE.C_VAR() = List.reduce(bvals, Types.constOr);
@@ -438,7 +438,7 @@ algorithm
       String e_str, t_str;
       DAE.Type t;
       DAE.Properties prop;
-    case (DAE.BCONST(true), _, tb, eib, fb, _)
+    case (DAE.BCONST(true), _, tb, _, _, _)
       then tb;
     case (DAE.BCONST(false), _, _, {}, fb, _)
       then fb;
@@ -515,9 +515,9 @@ algorithm
       DAE.ElementSource source;
       DAE.Exp cond;
 
-    case (DAE.BCONST(true), stmts, _, source) then (stmts,true);
-    case (DAE.BCONST(false), stmts, DAE.NOELSE(), source) then ({},true);
-    case (DAE.BCONST(false), _, DAE.ELSE(stmts), source) then (stmts,true);
+    case (DAE.BCONST(true), stmts, _, _) then (stmts,true);
+    case (DAE.BCONST(false), _, DAE.NOELSE(), _) then ({},true);
+    case (DAE.BCONST(false), _, DAE.ELSE(stmts), _) then (stmts,true);
     case (DAE.BCONST(false), _, DAE.ELSEIF(cond, stmts, els), source) equation (ostmts,_) = optimizeIf(cond, stmts, els, source); then (ostmts,true);
     else then (DAE.STMT_IF(icond, istmts, iels, isource)::{},false);
   end match;
@@ -555,8 +555,8 @@ algorithm
 
     case ({}, {}, _) then DAE.NOELSE();  /* This removes empty else branches */
     case ({}, fb, _) then DAE.ELSE(fb);
-    case (((DAE.BCONST(true), DAE.PROP(type_ = t), b) :: xs), fb, _) then DAE.ELSE(b);
-    case (((DAE.BCONST(false), DAE.PROP(type_ = t), b) :: xs), fb, _) then makeElse(xs, fb, inSource);
+    case (((DAE.BCONST(true), DAE.PROP(type_ = _), b) :: _), _, _) then DAE.ELSE(b);
+    case (((DAE.BCONST(false), DAE.PROP(type_ = _), _) :: xs), fb, _) then makeElse(xs, fb, inSource);
     case (((e, DAE.PROP(type_ = t), b) :: xs), fb, _)
       equation
         (e, _) = Types.matchType(e, t, DAE.T_BOOL_DEFAULT, true);
@@ -721,7 +721,7 @@ algorithm
         (var_1, _) = Types.matchType(var, tp1, DAE.T_REAL_DEFAULT, true);
       then DAE.STMT_REINIT(var_1, val_1, source);
 
-   case (_, _, prop1, prop2, _)  equation
+   case (_, _, _, _, _)  equation
       Error.addSourceMessage(Error.INTERNAL_ERROR, {"reinit called with wrong args"}, DAEUtil.getElementSourceFileInfo(source));
     then fail();
 

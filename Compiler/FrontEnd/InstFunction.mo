@@ -105,13 +105,13 @@ algorithm
       then
         (cache,env,ih);
 
-    case (cache,ih,{},cr)
+    case (_,_,{},_)
       equation
         Error.addMessage(Error.NO_CLASSES_LOADED, {});
       then
         fail();
 
-    case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.IDENT(name = name2))) /* top level class */
+    case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.IDENT(name = _))) /* top level class */
       equation
         (cache,env) = Builtin.initialEnv(cache);
         (cache,env_1,ih,_) = Inst.instClassDecls(cache, env, ih, cdecls);
@@ -123,7 +123,7 @@ algorithm
       equation
         (cache,env) = Builtin.initialEnv(cache);
         (cache,env_1,ih,_) = Inst.instClassDecls(cache, env, ih, cdecls);
-        (cache,(cdef as SCode.CLASS(name = n)),env_2) = Lookup.lookupClass(cache,env_1, path, true);
+        (cache,(cdef as SCode.CLASS(name = _)),env_2) = Lookup.lookupClass(cache,env_1, path, true);
         env_2 = Env.extendFrameC(env_2, cdef);
         (cache,env,ih) = implicitFunctionInstantiation(cache, env_2, ih, DAE.NOMOD(), Prefix.NOPRE(), cdef, {});
       then
@@ -226,7 +226,7 @@ algorithm
         (cache,env,ih,DAE.emptyDae,ClassInf.EXTERNAL_OBJ(classNameFQ));
 
     // failed
-    case (cache,_,ih,_,_)
+    case (_,_,_,_,_)
       equation
         print("Inst.instantiateExternalObject failed\n");
       then fail();
@@ -254,7 +254,7 @@ algorithm
       then
         (cache,ih);
     // failure
-    case (cache,_,ih,_)
+    case (_,_,_,_)
       equation
         print("Inst.instantiateExternalObjectDestructor failed\n");
       then fail();
@@ -284,7 +284,7 @@ algorithm
         (cache,ty,_) = Lookup.lookupType(cache,env1,Absyn.IDENT("constructor"),NONE());
       then
         (cache,ih,ty);
-    case (cache,_,ih,_)
+    case (_,_,_,_)
       equation
         print("Inst.instantiateExternalObjectConstructor failed\n");
       then fail();
@@ -333,7 +333,7 @@ algorithm
         cache = InstUtil.addFunctionsToDAE(cache, {fun}, pPrefix);
       then (cache,env,ih);
 
-    case (cache,env,ih,mod,pre,(c as SCode.CLASS(name = n,restriction = r,partialPrefix = pPrefix)),inst_dims)
+    case (cache,env,ih,mod,pre,(c as SCode.CLASS(name = _,restriction = r,partialPrefix = pPrefix)),inst_dims)
       equation
         failure(SCode.R_RECORD(_) = r);
         true = MetaUtil.strictRMLCheck(Flags.isSet(Flags.STRICT_RML),c);
@@ -410,7 +410,7 @@ algorithm
         c = Util.if_(Config.acceptMetaModelicaGrammar(),
                      inClass,
                      SCode.setClassPartialPrefix(SCode.NOT_PARTIAL(), inClass));
-        (cache,cenv,ih,_,DAE.DAE(daeElts),_,ty,st,_,_) =
+        (cache,cenv,ih,_,DAE.DAE(daeElts),_,ty,_,_,_) =
           Inst.instClass(cache, env, ih, UnitAbsynBuilder.emptyInstStore(), mod, pre,
             c, inst_dims, true, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
         List.map2_0(daeElts,InstUtil.checkFunctionElement,false,info);
@@ -440,9 +440,9 @@ algorithm
 
     // External functions should also have their type in env, but no dae.
     case (cache,env,ih,mod,pre,(c as SCode.CLASS(partialPrefix=partialPrefix,name = n,restriction = (restr as SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(isImpure))),
-        classDef = cd as (parts as SCode.PARTS(elementLst = els)), cmt=cmt, info=info, encapsulatedPrefix = encapsulatedPrefix)),inst_dims,_)
+        classDef = cd as (parts as SCode.PARTS(elementLst = _)), cmt=cmt, info=info, encapsulatedPrefix = encapsulatedPrefix)),inst_dims,_)
       equation
-        (cache,cenv,ih,_,DAE.DAE(daeElts),_,ty,st,_,_) =
+        (cache,cenv,ih,_,DAE.DAE(daeElts),_,ty,_,_,_) =
           Inst.instClass(cache,env,ih, UnitAbsynBuilder.emptyInstStore(),mod, pre,
             c, inst_dims, true, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
         List.map2_0(daeElts,InstUtil.checkFunctionElement,true,info);
@@ -474,8 +474,8 @@ algorithm
         (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_EXT(daeElts,extdecl)::derFuncs,ty1,partialPrefixBool,isImpure,DAE.NO_INLINE(),source,SOME(cmt))});
 
     // Instantiate overloaded functions
-    case (cache,env,ih,mod,pre,(c as SCode.CLASS(name = n,restriction = (restr as SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(isImpure))),
-          classDef = SCode.OVERLOAD(pathLst = funcnames),cmt=cmt)),inst_dims,_)
+    case (cache,env,ih,_,pre,(SCode.CLASS(name = n,restriction = (SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(isImpure))),
+          classDef = SCode.OVERLOAD(pathLst = funcnames),cmt=cmt)),_,_)
       equation
         (cache,env,ih,resfns) = instOverloadedFunctions(cache,env,ih,pre,funcnames) "Overloaded functions" ;
         (cache,fpath) = Inst.makeFullyQualified(cache,env,Absyn.IDENT(n));
@@ -528,7 +528,7 @@ algorithm
       list<Absyn.Path> paths;
       String fun,scope;
 
-    case(cache,env,ih,{},_,_) then (cache);
+    case(cache,_,_,{},_,_) then (cache);
 
     // Skipped recursive calls (by looking in cache)
     case(cache,env,ih,p::paths,_,_)
@@ -607,9 +607,9 @@ algorithm
       list<Absyn.Path> paths;
 
     // For external functions, include everything essential
-    case (cache,env,ih,SCode.CLASS(name = id,prefixes = prefixes,
-                                   encapsulatedPrefix = e,partialPrefix = p,restriction = r as SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(_)),
-                                   classDef = SCode.PARTS(elementLst = elts,externalDecl=extDecl),cmt=cmt, info = info))
+    case (cache,env,ih,SCode.CLASS(name = _,prefixes = prefixes,
+                                   encapsulatedPrefix = _,partialPrefix = _,restriction = SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(_)),
+                                   classDef = SCode.PARTS(elementLst = _,externalDecl=_),cmt=cmt, info = info))
       equation
         // stripped_class = SCode.CLASS(id,prefixes,e,p,r,SCode.PARTS(elts,{},{},{},{},{},{},extDecl),cmt,info);
         (cache,env_1,ih,funs) = implicitFunctionInstantiation2(cache, env, ih, DAE.NOMOD(), Prefix.NOPRE(), inClass, {}, true);
@@ -620,8 +620,8 @@ algorithm
 
     // The function type can be determined without the body. Annotations need to be preserved though.
     case (cache,env,ih,SCode.CLASS(name = id,prefixes = prefixes,
-                                   encapsulatedPrefix = e,partialPrefix = p,restriction = r,
-                                   classDef = SCode.PARTS(elementLst = elts,externalDecl=extDecl),cmt=cmt, info = info))
+                                   encapsulatedPrefix = e,partialPrefix = p,restriction = _,
+                                   classDef = SCode.PARTS(elementLst = elts,externalDecl=_),cmt=cmt, info = info))
       equation
         elts = List.select(elts,isElementImportForFunctions);
         stripped_class = SCode.CLASS(id,prefixes,e,p,SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(false)),SCode.PARTS(elts,{},{},{},{},{},{},NONE()),cmt,info);
@@ -632,11 +632,11 @@ algorithm
         (cache,env_1,ih);
 
     // Short class definitions.
-    case (cache,env,ih,SCode.CLASS(name = id,partialPrefix = p,encapsulatedPrefix = e,restriction = r,
-                                   classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = cn,arrayDim = ad),
+    case (cache,env,ih,SCode.CLASS(name = id,partialPrefix = _,encapsulatedPrefix = _,restriction = _,
+                                   classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = cn,arrayDim = _),
                                                             modifications = mod1),info = info))
       equation
-        (cache,(c as SCode.CLASS(name = cn2, restriction = r)),cenv) = Lookup.lookupClass(cache, env, cn, false /* Makes MultiBody gravityacceleration hacks shit itself */);
+        (cache,(c as SCode.CLASS(name = _, restriction = _)),cenv) = Lookup.lookupClass(cache, env, cn, false /* Makes MultiBody gravityacceleration hacks shit itself */);
         (cache,mod2) = Mod.elabMod(cache, env, ih, Prefix.NOPRE(), mod1, false, info);
         
         (cache,_,ih,_,dae,_,ty,_,_,_) =
@@ -650,8 +650,8 @@ algorithm
       then
         (cache,env_1,ih);
 
-    case (cache,env,ih,SCode.CLASS(name = id,partialPrefix = p,encapsulatedPrefix = e,restriction = r,
-                                   classDef = SCode.OVERLOAD(pathLst=paths),info = info))
+    case (cache,env,ih,SCode.CLASS(name = _,partialPrefix = _,encapsulatedPrefix = _,restriction = _,
+                                   classDef = SCode.OVERLOAD(pathLst=_),info = info))
       equation
          //(cache,env,ih,_) = implicitFunctionInstantiation2(cache, env, ih, DAE.NOMOD(), Prefix.NOPRE(), inClass, {}, true);          
       then
@@ -700,7 +700,7 @@ algorithm
     case (cache,env,ih,_,(fn :: fns))
       equation
         // print("instOvl: " +& Absyn.pathString(fn) +& "\n");
-        (cache,(c as SCode.CLASS(name=id,partialPrefix=partialPrefix,encapsulatedPrefix=encflag,restriction=rest,info=info)),cenv) = 
+        (cache,(c as SCode.CLASS(name=_,partialPrefix=partialPrefix,encapsulatedPrefix=_,restriction=rest,info=info)),cenv) = 
            Lookup.lookupClass(cache, env, fn, true);
         true = SCode.isFunctionRestriction(rest);
         
@@ -709,7 +709,7 @@ algorithm
       then (cache,env,ih,listAppend(resfns1,resfns2));
 
     // failure
-    case (cache,env,ih,_,(fn :: fns))
+    case (_,_,_,_,(fn :: _))
       equation
         Debug.fprint(Flags.FAILTRACE, "- Inst.instOverloaded_functions failed " +& Absyn.pathString(fn) +& "\n");
       then
@@ -755,7 +755,7 @@ algorithm
       InstanceHierarchy ih;
       Prefix.Prefix pre;
 
-    case (cache,env,ih,n,SCode.PARTS(elementLst=els,externalDecl = SOME(extdecl)),impl,pre,_) /* impl */
+    case (cache,env,ih,n,SCode.PARTS(elementLst=_,externalDecl = SOME(extdecl)),impl,pre,_) /* impl */
       equation
         InstUtil.isExtExplicitCall(extdecl);
         fname = InstUtil.instExtGetFname(extdecl, n);
@@ -779,7 +779,7 @@ algorithm
         daeextdecl = DAE.EXTERNALDECL(fname,fargs,rettype,lang,ann);
       then
         (cache,ih,daeextdecl);
-    case (_,env,ih,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_)
       equation
         Debug.fprintln(Flags.FAILTRACE, "#-- Inst.instExtDecl failed");
       then
@@ -838,10 +838,10 @@ algorithm
     case (cache,env,ih,
           SCode.COMPONENT(name = id,
                           prefixes = prefixes as SCode.PREFIXES(
-                            replaceablePrefix = repl,
+                            replaceablePrefix = _,
                             visibility = vis,
                             finalPrefix = finalPrefix,
-                            innerOuter = io
+                            innerOuter = _
                           ),
                           attributes = (attr as
                           SCode.ATTR(arrayDims = dim, connectorType = ct,
@@ -872,7 +872,7 @@ algorithm
       then
         (cache,ih,DAE.TYPES_VAR(id,DAE.ATTR(ct,prl,var,dir,Absyn.NOT_INNER_OUTER(),vis),tp_1,bind,NONE()));
 
-    case (cache,env,ih,elt,_,impl)
+    case (_,_,_,elt,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- Inst.instRecordConstructorElt failed.,elt:");
@@ -967,7 +967,7 @@ algorithm
       list<DAE.FuncArg> fargs;
 
     // try to instantiate class
-    case (cache, _, ty as DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo, src))
+    case (cache, _, DAE.T_COMPLEX(ClassInf.RECORD(path), _, _, _))
       equation
         path = Absyn.makeFullyQualified(path);
         (cache, _) = getRecordConstructorFunction(cache, inEnv, path);
@@ -975,7 +975,7 @@ algorithm
         cache;
     
     // if previous stuff didn't work, try to use the ty directly
-    case (cache, _, ty as DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo, src))
+    case (cache, _, DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo, src))
       equation
         path = Absyn.makeFullyQualified(path);
         //(cache, _) = getRecordConstructorFunction(cache, inEnv, path);

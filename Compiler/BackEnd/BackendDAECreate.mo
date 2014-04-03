@@ -528,7 +528,7 @@ algorithm
       list<BackendDAE.Equation> eqns;
       String str;
       case ({}, _, _, _, _, _) then (inVars, inKnVars, inExVars, inEqnsLst);
-      case ((var as DAE.VAR(componentRef = cref, ty = tp as DAE.T_ARRAY(ty = arrtp)))::rest,  _, _, _, _, _)
+      case ((var as DAE.VAR(componentRef = cref, ty = DAE.T_ARRAY(ty = arrtp)))::rest,  _, _, _, _, _)
         equation
           crefs = ComponentReference.expandCref(cref, false);
           elem = DAEUtil.replaceTypeInVar(arrtp, var);
@@ -542,7 +542,7 @@ algorithm
           (vars, knvars, exvars, eqns, _) = lowerVar(elem, functionTree, inVars, inKnVars, inExVars, inEqnsLst, HashTableExpToExp.emptyHashTable());
           (vars, knvars, exvars, eqns) = lowerVars(rest, functionTree, vars, knvars, exvars, eqns);
         then (vars, knvars, exvars, eqns);
-      case (elem::rest,  _, _, _, _, _)
+      case (elem::_,  _, _, _, _, _)
        equation
         str = "BackendDAECreate.lowerVars failed for " +& DAEDump.dumpElementsStr({elem});
         Error.addMessage(Error.INTERNAL_ERROR, {str});
@@ -1198,7 +1198,7 @@ algorithm
     
     case(DAE.EQUATION(DAE.TUPLE(explst),e2 as DAE.CALL(path =_),source),_,_,_,_)
       equation
-        (DAE.EQUALITY_EXPS(e1,e2_1), source) = Inline.simplifyAndForceInlineEquationExp(DAE.EQUALITY_EXPS(DAE.TUPLE(explst),e2), (SOME(functionTree), {DAE.NORM_INLINE(), DAE.NO_INLINE()}), source);
+        (DAE.EQUALITY_EXPS(_,e2_1), source) = Inline.simplifyAndForceInlineEquationExp(DAE.EQUALITY_EXPS(DAE.TUPLE(explst),e2), (SOME(functionTree), {DAE.NORM_INLINE(), DAE.NO_INLINE()}), source);
         eqns = lowerExtendedRecordEqn(DAE.TUPLE(explst),e2_1,source,functionTree,inEquations);
       then
         (eqns,inREquations,inIEquations);
@@ -1280,7 +1280,7 @@ algorithm
         (DAE.EQUALITY_EXPS(e1_1,e2_1), source) = Inline.simplifyAndInlineEquationExp(DAE.EQUALITY_EXPS(e1,e2), (SOME(functionTree), {DAE.NORM_INLINE()}), source);
         eqns = Util.if_(b1,inREquations,inEquations);
         eqns = lowerArrayEqn(dims,e1_1,e2_1,source,eqns);
-        ((eqns,reqns)) = Util.if_(b1,(inEquations,eqns),(eqns,inREquations));
+        ((eqns,_)) = Util.if_(b1,(inEquations,eqns),(eqns,inREquations));
       then
         (eqns,inREquations,inIEquations);
 
@@ -1335,7 +1335,7 @@ algorithm
       then
         (eqns,reqns,ieqns);
 
-    case (DAE.ASSERT(condition=cond,message=msg,level=level,source=source),_,_,_,_)
+    case (DAE.ASSERT(condition=_,message=_,level=level,source=source),_,_,_,_)
       equation
         (eqns,reqns,ieqns) = lowerAlgorithm(inElement,functionTree,inEquations,inREquations,inIEquations, DAE.NOT_EXPAND());
       then
@@ -1801,7 +1801,7 @@ algorithm
       then
         (res, whenClauseList);
 
-    case (DAE.WHEN_EQUATION(condition = cond, source = source), _, _, _)
+    case (DAE.WHEN_EQUATION(condition = _, source = source), _, _, _)
       equation
         str = "BackendDAECreate.lowerWhenEqn: equation not handled:\n" +&
               DAEDump.dumpElementsStr({inElement});
@@ -1886,7 +1886,7 @@ algorithm
       then
         (eqnl, reinit);
 
-    case ((el as DAE.IF_EQUATION(condition1=expl, equations2=eqnslst, equations3=eqns, source = source))::xs, _, _, _, _)
+    case ((DAE.IF_EQUATION(condition1=expl, equations2=eqnslst, equations3=eqns, source = source))::xs, _, _, _, _)
       equation
         (expl, source, _) = Inline.inlineExps(expl, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
         // transform if eqution
@@ -2154,7 +2154,7 @@ algorithm
         iHt;
     case ((cr, (e, source))::rest, _, _, _)
       equation
-        ((exp, source1)) = BaseHashTable.get(cr, iHt);
+        ((exp, _)) = BaseHashTable.get(cr, iHt);
         exp = DAE.IFEXP(inCond, e, exp);
         source = DAEUtil.mergeSources(iSource, source);
         ht = BaseHashTable.add((cr, (exp, source)), iHt);
@@ -2343,7 +2343,7 @@ algorithm
       DAE.ElementSource eq_source;
     case ({}, {}, _, _, _) then iEqns;
     // skip CREF(WILD())
-    case (DAE.CREF(componentRef = DAE.WILD())::rest_targets, source::rest_sources, _, _, _)
+    case (DAE.CREF(componentRef = DAE.WILD())::rest_targets, _::rest_sources, _, _, _)
       then
         lowerTupleAssignment(rest_targets, rest_sources, inEq_source, funcs, iEqns);
     // case for complex equations, array equations and equations
@@ -2866,7 +2866,7 @@ algorithm
         w2 = BackendVariable.calcAliasKey(v2);
         b = intGt(w2, w1);
         // select alias
-        ((acr, avar, aindx, ae, cr, var, e)) = Util.if_(b, (cr2, v2, index2, e2, cr1, v1, e1), (cr1, v1, index1, e1, cr2, v2, e2));
+        ((acr, avar, aindx, _, _, var, e)) = Util.if_(b, (cr2, v2, index2, e2, cr1, v1, e1), (cr1, v1, index1, e1, cr2, v2, e2));
         // merge fixed, start, nominal
         var = BackendVariable.mergeAliasVars(var, avar, false, iKnVars);
         // setAliasType
@@ -2887,7 +2887,7 @@ algorithm
         (vars, iKnVars, iExtVars, avars, repl);
     // var/state parameter
     case (BackendDAE.VAR(varName=cr1), _, 1, _,
-          BackendDAE.VAR(varName=cr2), _, 2, _, _, _, _, _, _, _)
+          BackendDAE.VAR(varName=_), _, 2, _, _, _, _, _, _, _)
       equation
         // check if replacable
         replaceableAlias(v1);
@@ -2910,7 +2910,7 @@ algorithm
       then
         (vars, knvars, iExtVars, avars, repl);
     // parameter var/state
-    case (BackendDAE.VAR(varName=cr1), _, 2, _,
+    case (BackendDAE.VAR(varName=_), _, 2, _,
           BackendDAE.VAR(varName=cr2), _, 1, _, _, _, _, _, _, _)
       equation
         // check if replacable
@@ -2935,7 +2935,7 @@ algorithm
         (vars, knvars, iExtVars, avars, repl);
     // var/state extvar
     case (BackendDAE.VAR(varName=cr1), _, 1, _,
-          BackendDAE.VAR(varName=cr2), _, 3, _, _, _, _, _, _, _)
+          BackendDAE.VAR(varName=_), _, 3, _, _, _, _, _, _, _)
       equation
         // check if replacable
         replaceableAlias(v1);
@@ -2958,7 +2958,7 @@ algorithm
       then
         (vars, iKnVars, extvars, avars, repl);
     // extvar var/state
-    case (BackendDAE.VAR(varName=cr1), _, 3, _,
+    case (BackendDAE.VAR(varName=_), _, 3, _,
           BackendDAE.VAR(varName=cr2), _, 1, _, _, _, _, _, _, _)
       equation
         // check if replacable
@@ -3087,7 +3087,7 @@ algorithm
       list<DAE.Subscript> subs;
       
     case (v, _, {}, _) then v;
-    case (v, knv, ((statement as  DAE.STMT_ASSIGN(exp1 = DAE.CREF(componentRef = cr)))::xs), true)
+    case (v, knv, ((DAE.STMT_ASSIGN(exp1 = DAE.CREF(componentRef = cr)))::xs), true)
       equation
         ((var::_), _) = BackendVariable.getVar(cr, v);
         var = BackendVariable.setVarKind(var, BackendDAE.DISCRETE());
@@ -3096,7 +3096,7 @@ algorithm
       then
         v_2;
 
-    case (v, knv, ((statement as DAE.STMT_ASSIGN(exp1 = DAE.ASUB(exp = DAE.CREF(componentRef = cr), sub= expExpLst)))::xs), true)
+    case (v, knv, ((DAE.STMT_ASSIGN(exp1 = DAE.ASUB(exp = DAE.CREF(componentRef = cr), sub= expExpLst)))::xs), true)
       equation
         subs = List.map(expExpLst, Expression.makeIndexSubscript);
         cr = ComponentReference.subscriptCref(cr, subs);
@@ -3195,7 +3195,7 @@ algorithm
       equation
         v_1 = detectImplicitDiscreteAlgsStatemens(v, knv, inStatementLst, true);
       then v_1;
-    case (ie, e::{}, v, knv, statementLst, b)
+    case (ie, e::{}, v, knv, statementLst, _)
       equation
         (statementLst1, _) = DAEUtil.traverseDAEEquationsStmts(statementLst, Expression.replaceExpTpl, ((ie, e)));
         v_1 = detectImplicitDiscreteAlgsStatemens(v, knv, statementLst1, true);
@@ -3238,7 +3238,7 @@ algorithm
       BackendDAE.Variables knv;
       Integer istart, istop, istep;
       list<Integer> ilst;
-    case (DAE.RANGE(ty=tp, start=startvalue, step=stepvalueopt, stop=stopvalue), knv)
+    case (DAE.RANGE(ty=_, start=startvalue, step=stepvalueopt, stop=stopvalue), knv)
       equation
         stepvalue = Util.getOptionOrDefault(stepvalueopt, DAE.ICONST(1));
         istart = expInt(startvalue, knv);

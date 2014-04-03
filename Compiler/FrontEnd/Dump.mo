@@ -553,7 +553,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    case (Absyn.REDECLARATION(finalPrefix = f,redeclareKeywords = keywords,eachPrefix = each_,elementSpec = spec))
+    case (Absyn.REDECLARATION(finalPrefix = f,redeclareKeywords = _,eachPrefix = _,elementSpec = spec))
       equation
         Print.printBuf("Absyn.REDECLARATION(");
         printBool(f);
@@ -796,7 +796,7 @@ algorithm
       String name,text;
       Absyn.ElementSpec spec;
       Absyn.Info info;
-    case (Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = repl,innerOuter = inout,
+    case (Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = _,innerOuter = inout,
                         specification = spec,info = info,constrainClass = NONE()))
       equation
         Print.printBuf("Absyn.ELEMENT(");
@@ -811,7 +811,7 @@ algorithm
         Print.printBuf("),NONE())");
       then
         ();
-    case (Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = repl,innerOuter = inout,
+    case (Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = _,innerOuter = inout,
                         specification = spec,info = info,constrainClass = SOME(_)))
       equation
         Print.printBuf("Absyn.ELEMENT(");
@@ -1189,7 +1189,7 @@ algorithm
       Absyn.Component c;
       Option<Absyn.Exp> optcond;
       Option<Absyn.Comment> optcmt;
-    case (Absyn.COMPONENTITEM(component = c,condition = optcond,comment = optcmt))
+    case (Absyn.COMPONENTITEM(component = c,condition = _,comment = optcmt))
       equation
         Print.printBuf("Absyn.COMPONENTITEM(");
         printComponent(c);
@@ -1643,7 +1643,7 @@ algorithm
       then
         ();
 
-    case Absyn.ALG_WHEN_A(boolExpr = e,whenBody = al,elseWhenAlgorithmBranch = eb)
+    case Absyn.ALG_WHEN_A(boolExpr = e,whenBody = al,elseWhenAlgorithmBranch = _)
       /* rule  Print.print_buf \"WHEN_E \" & print_exp(e) &
          Print.print_buf \" {\" & print_list_debug(\"print_algorithm\",al, print_algorithmitem, \";\") & Print.print_buf \"}\"
          ----------------------------------------------------------
@@ -2034,7 +2034,7 @@ algorithm
       then
         ();
 
-    case (Absyn.IFEXP(ifExp = cond,trueBranch = t,elseBranch = f,elseIfBranch = lst))
+    case (Absyn.IFEXP(ifExp = cond,trueBranch = t,elseBranch = f,elseIfBranch = _))
       equation
         Print.printBuf("Absyn.IFEXP(");
         printExp(cond);
@@ -2775,8 +2775,8 @@ algorithm
   match (inBoolean1,inString2,inString3)
     local
       String a,b;
-    case (true,a,b) then a;
-    case (false,a,b) then b;
+    case (true,a,_) then a;
+    case (false,_,b) then b;
   end match;
 end selectString;
 
@@ -2843,7 +2843,7 @@ algorithm
       FuncTypeType_aTo r;
       list<Type_a> rest;
     case (_,{},_,_) then ();
-    case (caller,{h},r,_)
+    case (_,{h},r,_)
       equation
         r(h);
       then
@@ -3018,7 +3018,7 @@ algorithm
         str_1 = stringAppend(default_str, str);
       then
         str_1;
-    case (NONE(),_,default_str) then "";
+    case (NONE(),_,_) then "";
   end match;
 end getOptionWithConcatStr;
 
@@ -3312,7 +3312,7 @@ algorithm
       list<String> typeVars,vars;
       list<Absyn.NamedArg> classAttrs;
       list<Absyn.Annotation> ann;
-    case Absyn.PARTS(typeVars,classAttrs,classParts,ann,optString)
+    case Absyn.PARTS(typeVars,_,classParts,ann,optString)
       equation
         Print.printBuf("record Absyn.PARTS typeVars = {");
         Print.printBuf(stringDelimitList(typeVars, ","));

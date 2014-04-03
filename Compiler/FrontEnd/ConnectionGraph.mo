@@ -137,7 +137,7 @@ algorithm
         (DAE.DAE(elts), connected, broken);
 
     // handle the connection breaking
-    case (graph, _, _)
+    case (_, _, _)
       equation
         Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.handleOverconstrainedConnections failed for model: " +& modelNameQualified);
       then
@@ -290,7 +290,7 @@ algorithm
         //partition2 = BaseHashTable.add((ref, parentCanonical), partition);
       then parentCanonical;
 
-    case (partition,ref)
+    case (_,ref)
       equation
         //Debug.fprintln(Flags.CGRAPH,
         //  "- ConnectionGraph.canonical_case2(" +& ComponentReference.printComponentRefStr(ref) +& ") = " +&
@@ -348,7 +348,7 @@ algorithm
       then partition;
 
     // cannot connect them
-    case(partition,ref1,ref2)
+    case(partition,_,_)
       equation
       then partition;
   end matchcontinue;
@@ -371,13 +371,13 @@ algorithm
       DAE.ComponentRef ref1, ref2, canon1, canon2;
 
     // leave the connect(ref1,ref2)
-    case(partition,(ref1,ref2,_))
+    case(partition,(ref1,_,_))
       equation
         failure(canon1 = canonical(partition,ref1)); // no parent
       then (partition, {inDaeEdge}, {});
 
     // leave the connect(ref1,ref2)
-    case(partition,(ref1,ref2,_))
+    case(partition,(_,ref2,_))
       equation
         failure(canon2 = canonical(partition,ref2)); // no parent
       then (partition, {inDaeEdge}, {});
@@ -506,7 +506,7 @@ algorithm
       then
         true;
 
-    case((c1,r1), (c2,r2))
+    case((_,r1), (_,r2))
       then r1 >. r2;
   end matchcontinue;
 end ord;
@@ -622,7 +622,7 @@ algorithm
 
         // generate the graphviz representation and display
         // if brokenConnectsViaGraphViz is empty, the user wants to use the current breaking!
-        (brokenConnectsViaGraphViz as "") = generateGraphViz(
+        ("") = generateGraphViz(
               modelNameQualified,
               definiteRoots,
               potentialRoots,
@@ -706,7 +706,7 @@ algorithm
     // handle empty case
     case ({}, _) then {};
     // handle match
-    case ((e as (c1, c2, els))::rest, _)
+    case ((e as (c1, c2, _))::rest, _)
       equation
         sc1 = ComponentReference.printComponentRefStr(c1);
         sc2 = ComponentReference.printComponentRefStr(c2);
@@ -720,7 +720,7 @@ algorithm
       then
         ordered;
     // handle miss
-    case ((e as (c1, c2, els))::rest, _)
+    case ((e as (c1, c2, _))::rest, _)
       equation
         sc1 = ComponentReference.printComponentRefStr(c1);
         sc2 = ComponentReference.printComponentRefStr(c2);
@@ -1040,7 +1040,7 @@ algorithm
     local
       Edges rest;
       DAE.ComponentRef cref1,cref2;
-    case(_,(cref1,cref2)::rest)
+    case(_,(cref1,cref2)::_)
       equation
         cref1 = getEdge1(cr,cref1,cref2);
       then

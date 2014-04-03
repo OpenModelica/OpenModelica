@@ -156,7 +156,7 @@ algorithm
         eq = BackendDAE.EQUATION(lhsExp,rhsExp,source,diff);
       then
         (eq,(shared,addEqs,idx+1));
-    case(BackendDAE.ARRAY_EQUATION(dimSize =_, left=exp1, right=exp2, source=source, differentiated=diff),_)
+    case(BackendDAE.ARRAY_EQUATION(dimSize =_, left=_, right=_, source=source, differentiated=_),_)
       equation
         print("this is an array equation. update evalFunctions_findFuncs");
       then
@@ -470,7 +470,7 @@ algorithm
       DAE.ElementSource source;
       DAE.Function func;
       Option<SCode.Comment> comment;
-    case(DAE.FUNCTION(path=path,functions=funcs,type_=typ,partialPrefix=pP,isImpure=iI,inlineType=iType,source=source,comment=comment),_,_)
+    case(DAE.FUNCTION(path=path,functions=_,type_=typ,partialPrefix=pP,isImpure=iI,inlineType=iType,source=source,comment=comment),_,_)
       equation
         //print("the pathname before: "+&Absyn.pathString(path)+&"\n");
         //print("THE FUNCTION BEFORE \n"+&DAEDump.dumpFunctionStr(funcIn)+&"\n");
@@ -572,7 +572,7 @@ algorithm
       String delimiter,i1,i2;
       DAE.Type typ;
       list<DAE.Subscript> sl;
-    case(cref1 as DAE.CREF_QUAL(ident=i1,identType=typ,subscriptLst=sl,componentRef=cref2),_)
+    case(cref1 as DAE.CREF_QUAL(ident=i1,identType=_,subscriptLst=_,componentRef=cref2),_)
       equation
         true = List.isMemberOnTrue(cref1,changeTheseCrefs,ComponentReference.crefEqual); 
         i2 = ComponentReference.crefFirstIdent(cref2);
@@ -581,7 +581,7 @@ algorithm
         cref2 = makeIdentCref2(cref2,changeTheseCrefs); 
       then
         cref2;
-    case(cref1 as DAE.CREF_IDENT(ident=i1,identType=typ,subscriptLst=sl),_)
+    case(cref1 as DAE.CREF_IDENT(ident=_,identType=_,subscriptLst=_),_)
       equation
        then
          cref1;
@@ -749,7 +749,7 @@ algorithm
         (rest,repl) = evaluateFunctions_updateStatement(rest,funcTree,repl,idx,alg::lstIn);
       then
         (rest,repl);
-    case (DAE.STMT_ASSIGN_ARR(type_=typ, componentRef=cref, exp=exp1, source=source)::rest,_,_,_,_)
+    case (DAE.STMT_ASSIGN_ARR(type_=_, componentRef=_, exp=_, source=source)::rest,_,_,_,_)
       equation
           //print("STMT_ASSIGN_ARR");
           //print("the STMT_ASSIGN_ARR: "+&DAEDump.ppStatementStr(List.first(algsIn))+&"\n");
@@ -787,7 +787,7 @@ algorithm
         (rest,repl) = evaluateFunctions_updateStatement(rest,funcTree,repl,idx,stmts1);
       then
         (rest,repl);
-    case(DAE.STMT_TUPLE_ASSIGN(type_=_, expExpLst=expLst, exp=exp1, source=source)::rest,_,_,_,_)
+    case(DAE.STMT_TUPLE_ASSIGN(type_=_, expExpLst=_, exp=_, source=source)::rest,_,_,_,_)
       equation
         //print("the STMT_TUPLE_ASSIGN stmt: "+&DAEDump.ppStatementStr(List.first(algsIn)));
       // IMPLEMENT A PARTIAL FUNCTION EVALUATION FOR FUNCTIONS IN FUNCTIONS
@@ -987,21 +987,21 @@ algorithm
   case({},{},_)
     equation
       then crefsIn;    
-  case(DAE.CREF_QUAL(ident=id,identType=t2,subscriptLst=sl,componentRef=cr2)::crest, t1::trest, _)
+  case(DAE.CREF_QUAL(ident=_,identType=_,subscriptLst=_,componentRef=_)::crest, t1::trest, _)
     equation
       cr1 = List.first(allCrefs);
       cr1 = ComponentReference.crefSetLastType(cr1,t1);
       crs = setTypesForScalarCrefs(crest,trest,cr1::crefsIn);
     then
       crs;
-  case(DAE.CREF_IDENT(ident=id,identType=t2,subscriptLst=sl)::crest, t1::trest, _)
+  case(DAE.CREF_IDENT(ident=id,identType=_,subscriptLst=sl)::crest, t1::trest, _)
     equation
       cr1 = List.first(allCrefs);
       cr1 = DAE.CREF_IDENT(id,t1,sl);
       crs = setTypesForScalarCrefs(crest,trest,cr1::crefsIn);
     then
       crs;
-  case(DAE.CREF_ITER(ident=id,index=idx,identType=t2,subscriptLst=sl)::crest, t1::trest, _)
+  case(DAE.CREF_ITER(ident=id,index=idx,identType=_,subscriptLst=sl)::crest, t1::trest, _)
     equation
       cr1 = List.first(allCrefs);
       cr1 = DAE.CREF_ITER(id,idx,t1,sl);

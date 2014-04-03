@@ -2178,10 +2178,10 @@ algorithm
       Integer newIdx,midIdx;
       Real pivotElement,r1,r2,r3,e;
       list<Real> marked,rest;
-    case(_,{e},_)
+    case(_,{_},_)
       then
         (({},0));
-    case(_,e::rest,_)
+    case(_,_::_,_)
       equation
         pivotElement = listGet(lstIn,pivotIdx);
         marked = List.deleteMember(markedLstIn,pivotElement);
@@ -2517,10 +2517,10 @@ algorithm
       array<list<Task>> threadTasks;
       Real cpCosts, cpCostsWoC, serTime, parTime, speedUp, speedUpMax;
       String criticalPathInfo;
-    case(LEVELSCHEDULE(tasksOfLevels=levels),_,_,_)
+    case(LEVELSCHEDULE(tasksOfLevels=_),_,_,_)
       equation
         //get the criticalPath
-        ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC),parallelSets) = HpcOmTaskGraph.longestPathMethod(taskGraphIn,taskGraphMetaIn);
+        ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC),_) = HpcOmTaskGraph.longestPathMethod(taskGraphIn,taskGraphMetaIn);
         criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
         Debug.fcall(Flags.HPCOM_DUMP,print,criticalPathInfo);
       then
@@ -2529,7 +2529,7 @@ algorithm
       equation
         Debug.fcall(Flags.HPCOM_DUMP,print,"the number of locks: "+&intString(listLength(lockIdc))+&"\n");
         //get the criticalPath
-        ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC),parallelSets) = HpcOmTaskGraph.longestPathMethod(taskGraphIn,taskGraphMetaIn);
+        ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC),_) = HpcOmTaskGraph.longestPathMethod(taskGraphIn,taskGraphMetaIn);
         criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
         //predict speedup etc.
         (serTime,parTime,speedUp,speedUpMax) = predictExecutionTime(scheduleIn,SOME(cpCostsWoC),numProcIn,taskGraphIn,taskGraphMetaIn);
@@ -2676,7 +2676,7 @@ algorithm
         schedule = THREADSCHEDULE(threadTasksNew,lockIdc);
       then
         (schedule,finTime);
-    case(LEVELSCHEDULE(tasksOfLevels),_,_,_)
+    case(LEVELSCHEDULE(_),_,_,_)
       equation
         schedule = scheduleIn;
         finTime = 0.0;

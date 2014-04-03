@@ -202,7 +202,7 @@ algorithm
       list<Integer> selectedParameter;
       BackendDAE.ExtraInfo ei;
       
-    case (BackendDAE.DAE(systs,shared as BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs,ei)),_)
+    case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs,ei)),_)
       equation
         // get parameters with annotation(Evaluate=true)
         size = BackendVariable.varsSize(knvars);
@@ -642,16 +642,16 @@ algorithm
     case (BackendDAE.VAR(values= NONE()),_,_,_,_,_,_,_,_,_)
       then
         (var,iKnVars,iCache,iRepl,iMark);
-    case (BackendDAE.VAR(varName=cr,values=SOME(DAE.VAR_ATTR_REAL(fixed=SOME(DAE.BCONST(_))))),_,_,_,_,_,_,_,_,_)
+    case (BackendDAE.VAR(varName=_,values=SOME(DAE.VAR_ATTR_REAL(fixed=SOME(DAE.BCONST(_))))),_,_,_,_,_,_,_,_,_)
       then
         (var,iKnVars,iCache,iRepl,iMark);
-    case (BackendDAE.VAR(varName=cr,values=SOME(DAE.VAR_ATTR_INT(fixed=SOME(DAE.BCONST(_))))),_,_,_,_,_,_,_,_,_)
+    case (BackendDAE.VAR(varName=_,values=SOME(DAE.VAR_ATTR_INT(fixed=SOME(DAE.BCONST(_))))),_,_,_,_,_,_,_,_,_)
       then
         (var,iKnVars,iCache,iRepl,iMark);
-    case (BackendDAE.VAR(varName=cr,values=SOME(DAE.VAR_ATTR_BOOL(fixed=SOME(DAE.BCONST(_))))),_,_,_,_,_,_,_,_,_)
+    case (BackendDAE.VAR(varName=_,values=SOME(DAE.VAR_ATTR_BOOL(fixed=SOME(DAE.BCONST(_))))),_,_,_,_,_,_,_,_,_)
       then
         (var,iKnVars,iCache,iRepl,iMark);
-    case (BackendDAE.VAR(varName=cr,values=SOME(DAE.VAR_ATTR_ENUMERATION(fixed=SOME(DAE.BCONST(_))))),_,_,_,_,_,_,_,_,_)
+    case (BackendDAE.VAR(varName=_,values=SOME(DAE.VAR_ATTR_ENUMERATION(fixed=SOME(DAE.BCONST(_))))),_,_,_,_,_,_,_,_,_)
       then
         (var,iKnVars,iCache,iRepl,iMark);
     case (BackendDAE.VAR(varName=cr,values=attr as SOME(DAE.VAR_ATTR_REAL(fixed=SOME(e))),source=source),_,_,_,_,_,_,_,_,_)
@@ -767,7 +767,7 @@ algorithm
       then
         ((e, (vars,b,hs)));
     // true if crefs in expression
-    case ((e as DAE.CREF(componentRef=cr), (vars,_,hs)))
+    case ((e as DAE.CREF(componentRef=_), (vars,_,hs)))
       then
         ((e, (vars,true,hs)));
     else then inTuple;
@@ -948,7 +948,7 @@ algorithm
     BackendVarTransform.VariableReplacements repl;
     DAE.ComponentRef cr;
     Boolean b,b1;
-    case((exp as DAE.CREF(componentRef=cr),(repl,b))) equation
+    case((exp as DAE.CREF(componentRef=_),(repl,b))) equation
       (exp,b1) = BackendVarTransform.replaceExp(exp,repl,NONE());
     then ((exp,(repl,b or b1)));
     else then inTpl;
@@ -997,7 +997,7 @@ algorithm
       DAE.ComponentRef cr;
       Option<DAE.VariableAttributes> attr;
       Boolean b;
-    case ((v as BackendDAE.VAR(varName=cr,bindExp=SOME(e),values=attr),(knVars,m,ieqns,cache,env,mark,markarr,repl,replEvaluate)))
+    case ((v as BackendDAE.VAR(varName=_,bindExp=SOME(e),values=attr),(knVars,m,ieqns,cache,env,mark,markarr,repl,replEvaluate)))
       equation
         // apply replacements
         (e1,true) = BackendVarTransform.replaceExp(e, replEvaluate, NONE());
@@ -1052,7 +1052,7 @@ algorithm
     // do nothing if there are no replacements
     case (true,_,_) then inDAE;
     
-    case (false,BackendDAE.DAE(systs,shared as BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs,ei)),_)
+    case (false,BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs,ei)),_)
       equation
         // do replacements in initial equations
         eqnslst = BackendEquation.equationList(inieqns);

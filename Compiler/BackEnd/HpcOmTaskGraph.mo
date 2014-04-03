@@ -237,7 +237,7 @@ algorithm
       String fileNameOde;
       Integer numberOfVars;
       Integer numberOfEqs;
-    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps=comps), orderedVars=BackendDAE.VARIABLES(numberOfVars=numberOfVars), orderedEqs=BackendDAE.EQUATION_ARRAY(numberOfElement=numberOfEqs)),(shared as BackendDAE.SHARED(functionTree=sharedFuncs)),(graphIn,graphDataIn,eqSysIdx))
+    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps=comps), orderedVars=BackendDAE.VARIABLES(numberOfVars=numberOfVars), orderedEqs=BackendDAE.EQUATION_ARRAY(numberOfElement=_)),(shared as BackendDAE.SHARED(functionTree=sharedFuncs)),(_,_,eqSysIdx))
       equation
         //Create Taskgraph for the first EqSystem
         //TASKGRAPHMETA(varNodeMapping=varNodeMapping,eqNodeMapping=eqNodeMapping) = graphDataIn;
@@ -256,7 +256,7 @@ algorithm
         tplOut = ((graphTmp,graphDataTmp,eqSysIdx+1));
       then
         tplOut;
-    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps=comps), orderedVars=BackendDAE.VARIABLES(numberOfVars=numberOfVars), orderedEqs=BackendDAE.EQUATION_ARRAY(numberOfElement=numberOfEqs)),(shared as BackendDAE.SHARED(functionTree=sharedFuncs)),(graphIn,graphDataIn,eqSysIdx))
+    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps=comps), orderedVars=BackendDAE.VARIABLES(numberOfVars=numberOfVars), orderedEqs=BackendDAE.EQUATION_ARRAY(numberOfElement=_)),(shared as BackendDAE.SHARED(functionTree=sharedFuncs)),(graphIn,graphDataIn,eqSysIdx))
       equation
         //append the remaining equationsystems to the taskgraph
         //TASKGRAPHMETA(varNodeMapping=varNodeMapping,eqNodeMapping=eqNodeMapping) = graphDataIn;
@@ -642,14 +642,14 @@ algorithm
        descLst = desc::iEqDesc;
      then
        descLst;
-  case(BackendDAE.EQUATIONSYSTEM(eqns = es, vars = vs, jac = BackendDAE.FULL_JACOBIAN(jac), jacType = jacT), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars),_)
+  case(BackendDAE.EQUATIONSYSTEM(eqns = _, vars = _, jac = BackendDAE.FULL_JACOBIAN(jac), jacType = _), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars),_)
      equation
        eqnLst = BackendEquation.equationList(orderedEqs);
        desc = ("Equation System");
        descLst = desc::iEqDesc;
      then
        descLst;
-  case(BackendDAE.MIXEDEQUATIONSYSTEM(disc_eqns = es, disc_vars = vs), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars),_)
+  case(BackendDAE.MIXEDEQUATIONSYSTEM(disc_eqns = _, disc_vars = _), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars),_)
      equation
        eqnLst = BackendEquation.equationList(orderedEqs);
        desc = ("MixedEquation System");
@@ -746,7 +746,7 @@ algorithm
       descLst = desc::iEqDesc;
     then
       descLst;
-  case(BackendDAE.TORNSYSTEM(residualequations = es, tearingvars = vs, linear=true), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING(ass2 = ass2)),_)
+  case(BackendDAE.TORNSYSTEM(residualequations = _, tearingvars = _, linear=true), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING(ass2 = ass2)),_)
      equation
       //get the equation string
        eqnLst = BackendEquation.equationList(orderedEqs);
@@ -754,7 +754,7 @@ algorithm
        descLst = desc::iEqDesc;
     then
       descLst;
-  case(BackendDAE.TORNSYSTEM(residualequations = es, tearingvars = vs, linear=false), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING(ass2 = ass2)),_)
+  case(BackendDAE.TORNSYSTEM(residualequations = _, tearingvars = _, linear=false), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING(ass2 = ass2)),_)
      equation
       //get the equation string
        eqnLst = BackendEquation.equationList(orderedEqs);
@@ -1728,7 +1728,7 @@ algorithm
       varOffsetNew = listLength(varLst)+varOffset;
       then
         ((stateNodesIn,varOffsetNew));
-  case(_,_,_,(stateNodesIn,varOffset))
+  case(_,_,_,(_,_))
     equation
       BackendDAE.EQSYSTEM(orderedVars=orderedVars) = systIn;
       varLst = BackendVariable.varList(orderedVars);
@@ -2460,7 +2460,7 @@ algorithm
       equation
         // for a node that consists of contracted nodes
         false = nodeIdx == 0 or nodeIdx == -1;
-        (nameAttIdx, opCountAttIdx, calcTimeAttIdx, taskIdAttIdx, yCoordAttIdx, commCostAttIdx, commVarsAttIdx, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx) = attIdc;
+        (nameAttIdx, opCountAttIdx, calcTimeAttIdx, taskIdAttIdx, _, commCostAttIdx, commVarsAttIdx, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx) = attIdc;
         TASKGRAPHMETA(inComps = inComps, eqNodeMapping=eqNodeMapping, rootNodes = rootNodes, nodeNames =nodeNames ,nodeDescs=nodeDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) = tGraphDataIn;
         components = arrayGet(inComps,nodeIdx);
         false = listLength(components)==1;
@@ -2642,7 +2642,7 @@ algorithm
         tplTmp = getTupleByFirstEntry(rest,valueIn);
       then
         tplTmp;
-    case(head::rest,_)
+    case(head::_,_)
       equation
         (tplValue,_,_) = head;
         true = intEq(tplValue,valueIn);
@@ -2676,7 +2676,7 @@ algorithm
         isMemberTmp = tpl1IsMember(rest,valueIn);
       then
         isMemberTmp;
-    case(head::rest,_)
+    case(head::_,_)
       equation
         (tplValue,_,_) = head;
         true = intEq(tplValue,valueIn);
@@ -3555,7 +3555,7 @@ algorithm
     case(_,_,_,_)
       // the given node is a startNode
       equation
-        (startNodes,deleteNodes,mergedPaths) = mergeInfo;
+        (startNodes,_,mergedPaths) = mergeInfo;
         //print("updateInComps1 startNodes:" +& stringDelimitList(List.map(startNodes,intString),",") +& "\n");
         //print("updateInComps1 deleteNodes:" +& stringDelimitList(List.map(deleteNodes,intString),",") +& "\n");
         //print("updateInComps1 first mergedPath:" +& stringDelimitList(List.map(List.first(mergedPaths),intString),",") +& "\n");
@@ -4625,7 +4625,7 @@ algorithm
         // check the set of rootNodes and continue with their childNodes
         false = List.isEmpty(rootNodesIn);
         rootIdcs = List.intRange(listLength(rootNodesIn));
-        ((childLst,nodeInfo)) = List.fold3(rootIdcs,longestPathMethod2,graphIn,graphDataIn,(rootNodesIn,rootParentsIn),({},nodeInfoIn));
+        ((childLst,_)) = List.fold3(rootIdcs,longestPathMethod2,graphIn,graphDataIn,(rootNodesIn,rootParentsIn),({},nodeInfoIn));
         childLst = listReverse(childLst);
         childLstFlat = List.flatten(childLst);
         parentLst = List.fold2(rootIdcs,getRootParentLst,rootNodesIn,childLst,{});

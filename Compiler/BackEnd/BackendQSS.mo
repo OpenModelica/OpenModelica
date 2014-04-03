@@ -96,7 +96,7 @@ algorithm
       SimCode.SimCode sc;
       Integer offset;
 
-    case (dlow as BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedEqs=eqsdae)},shared), sc as SimCode.SIMCODE(odeEquations={eqs},zeroCrossings=zeroCrossings))
+    case (dlow as BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedEqs=eqsdae)},_), sc as SimCode.SIMCODE(odeEquations={_},zeroCrossings=zeroCrossings))
       equation
         print("\n ----------------------------\n");
         print("BackEndQSS analysis initialized");
@@ -139,7 +139,7 @@ algorithm
       BackendDAE.BackendDAE dae;
       BackendDAE.Variables v,kn;
       
-  case (dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = v)::{},shared=BackendDAE.SHARED(knownVars = kn)))
+  case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = v)::{},shared=BackendDAE.SHARED(knownVars = kn)))
     equation
       orderedVarsList = BackendVariable.varList(v);
       knownVarsList = BackendVariable.varList(kn);
@@ -170,7 +170,7 @@ algorithm
       list<BackendDAE.Var> rest;
       BackendDAE.Var var1;
 
-    case ({}, stateIndices2, loopIndex)
+    case ({}, stateIndices2, _)
       equation
       then
         stateIndices2;
@@ -212,7 +212,7 @@ algorithm
       list<BackendDAE.Var> rest;
       BackendDAE.Var var1;
 
-    case ({}, stateIndices2, loopIndex)
+    case ({}, stateIndices2, _)
       equation
       then
         stateIndices2;
@@ -308,51 +308,51 @@ algorithm
       Integer p;
       String ident;
 
-    case ((e as DAE.CREF(componentRef = cr as DAE.CREF_IDENT(_,t1,subs),ty=t),(states,disc,algs)))
+    case ((DAE.CREF(componentRef = cr as DAE.CREF_IDENT(_,t1,subs),ty=t),(states,disc,algs)))
       equation
       p = List.positionOnTrue(cr,states,ComponentReference.crefEqual);
       ident = stringAppend(stringAppend("x[",intString(p+1)),"]");
       then ((DAE.CREF(DAE.CREF_IDENT(ident,t1,subs),t),(states,disc,algs)));
-    case ((e as DAE.CREF(componentRef = cr as DAE.CREF_QUAL(_,t1,subs,_),ty=t),(states,disc,algs)))
+    case ((DAE.CREF(componentRef = cr as DAE.CREF_QUAL(_,t1,subs,_),ty=t),(states,disc,algs)))
       equation
       p = List.positionOnTrue(cr,states,ComponentReference.crefEqual);
       ident = stringAppend(stringAppend("x[",intString(p+1)),"]");
       then ((DAE.CREF(DAE.CREF_IDENT(ident,t1,subs),t),(states,disc,algs)));
-    case ((e as DAE.CREF(componentRef = cr as DAE.CREF_IDENT(_,t1,subs),ty=t),(states,disc,algs)))
+    case ((DAE.CREF(componentRef = cr as DAE.CREF_IDENT(_,t1,subs),ty=t),(states,disc,algs)))
       equation
       //p = List.position(cr,disc);
       p = List.positionOnTrue(cr,disc,ComponentReference.crefEqual);
       ident = stringAppend(stringAppend("d[",intString(p+1)),"]");
       then ((DAE.CREF(DAE.CREF_IDENT(ident,t1,subs),t),(states,disc,algs)));
-    case ((e as DAE.CREF(componentRef = cr as DAE.CREF_QUAL(_,t1,subs,_),ty=t),(states,disc,algs)))
+    case ((DAE.CREF(componentRef = cr as DAE.CREF_QUAL(_,t1,subs,_),ty=t),(states,disc,algs)))
       equation
       p = List.positionOnTrue(cr,disc,ComponentReference.crefEqual);
       ident = stringAppend(stringAppend("d[",intString(p+1)),"]");
       then ((DAE.CREF(DAE.CREF_IDENT(ident,t1,subs),t),(states,disc,algs)));
-    case ((e as DAE.CREF(componentRef = cr as DAE.CREF_IDENT(_,t1,subs),ty=t),(states,disc,algs)))
+    case ((DAE.CREF(componentRef = cr as DAE.CREF_IDENT(_,t1,subs),ty=t),(states,disc,algs)))
       equation
       //p = List.position(cr,algs);
       p = List.positionOnTrue(cr,algs,ComponentReference.crefEqual);
       ident = stringAppend(stringAppend("a[",intString(p+1)),"]");
       then ((DAE.CREF(DAE.CREF_IDENT(ident,t1,subs),t),(states,disc,algs)));
-    case ((e as DAE.CREF(componentRef = cr as DAE.CREF_QUAL(_,t1,subs,_),ty=t),(states,disc,algs)))
+    case ((DAE.CREF(componentRef = cr as DAE.CREF_QUAL(_,t1,subs,_),ty=t),(states,disc,algs)))
       equation
       //p = List.position(cr,algs);
       p = List.positionOnTrue(cr,algs,ComponentReference.crefEqual);
       ident = stringAppend(stringAppend("a[",intString(p+1)),"]");
       then ((DAE.CREF(DAE.CREF_IDENT(ident,t1,subs),t),(states,disc,algs)));
-    case ((e as DAE.CREF(cr as DAE.CREF_IDENT(_,t1,subs),t),(states,disc,algs)))
+    case ((DAE.CREF(cr as DAE.CREF_IDENT(_,t1,subs),t),(states,disc,algs)))
       equation
       ident=System.stringReplace(ComponentReference.crefStr(cr),".","_");
       then ((DAE.CREF(DAE.CREF_IDENT(ident,t1,subs),t),(states,disc,algs)));
-    case ((e as DAE.CREF(cr as DAE.CREF_QUAL(_,t1,subs,_),t),(states,disc,algs)))
+    case ((DAE.CREF(cr as DAE.CREF_QUAL(_,t1,subs,_),t),(states,disc,algs)))
       equation
       ident=System.stringReplace(ComponentReference.crefStr(cr),".","_");
       then ((DAE.CREF(DAE.CREF_IDENT(ident,t1,subs),t),(states,disc,algs)));
-    case ((e as DAE.IFEXP(expCond=expCond as DAE.RELATION(_,_,_,_,_), expThen=expThen,expElse=expElse),(states,disc,algs)))
+    case ((DAE.IFEXP(expCond=expCond as DAE.RELATION(_,_,_,_,_), expThen=expThen,expElse=expElse),(states,disc,algs)))
       then ((DAE.BINARY(DAE.BINARY(DAE.CALL(Absyn.IDENT("boolToReal"),{expCond},DAE.callAttrBuiltinReal),DAE.MUL(DAE.T_REAL_DEFAULT),expThen),DAE.ADD(DAE.T_REAL_DEFAULT),
              DAE.BINARY(DAE.BINARY(DAE.RCONST(1.0),DAE.SUB(DAE.T_REAL_DEFAULT),DAE.CALL(Absyn.IDENT("boolToReal"),{expCond},DAE.callAttrBuiltinReal)),DAE.MUL(DAE.T_REAL_DEFAULT),expElse)),(states,disc,algs)));
-    case ((e as DAE.IFEXP(expCond=expCond, expThen=expThen,expElse=expElse),(states,disc,algs)))
+    case ((DAE.IFEXP(expCond=expCond, expThen=expThen,expElse=expElse),(states,disc,algs)))
       then ((DAE.BINARY(DAE.BINARY(expCond,DAE.MUL(DAE.T_REAL_DEFAULT),expThen),DAE.ADD(DAE.T_REAL_DEFAULT),
              DAE.BINARY(DAE.BINARY(DAE.RCONST(1.0),DAE.SUB(DAE.T_REAL_DEFAULT),expCond),DAE.MUL(DAE.T_REAL_DEFAULT),expElse)),(states,disc,algs)));
     case ((DAE.CALL(Absyn.IDENT("noEvent"),{e},_),(states,disc,algs)))
@@ -459,7 +459,7 @@ algorithm
       equation
         p = List.positionOnTrue(cr,states,ComponentReference.crefEqual);
         then stringAppend(stringAppend("x[",intString(p+1)),"]");
-      case (DAE.CREF_QUAL(ident,identType,subscriptLst,r),_,_,_)
+      case (DAE.CREF_QUAL(_,_,_,r),_,_,_)
       equation
         p = List.positionOnTrue(r,states,ComponentReference.crefEqual);
         then stringAppend(stringAppend("der(x[",intString(p+1)),"])");
@@ -554,7 +554,7 @@ algorithm
          ((e1,_))=Expression.replaceExp(scalar,condition,DAE.RCONST(0.0));
          s= stringAppend(s,ExpressionDump.printExpStr(replaceVars(e1,states,disc,algs)));
          s= stringAppend(s,";");
-         ((e1,_))=Expression.replaceExp(scalar,condition,DAE.RCONST(0.0));
+         ((_,_))=Expression.replaceExp(scalar,condition,DAE.RCONST(0.0));
        then s;
        case (_,{h},_,_,_,_,false,_,_)
        equation
@@ -564,7 +564,7 @@ algorithm
          ((e1,_))=Expression.replaceExp(scalar,condition,DAE.RCONST(0.0));
          s= stringAppend(s,ExpressionDump.printExpStr(replaceVars(e1,states,disc,algs)));
          s= stringAppend(s,";");
-         ((e1,_))=Expression.replaceExp(scalar,condition,DAE.RCONST(0.0));
+         ((_,_))=Expression.replaceExp(scalar,condition,DAE.RCONST(0.0));
        then s;
        case (_,{h},_,_,_,_,false,_,_)
        equation
@@ -698,7 +698,7 @@ algorithm
       DAE.ComponentRef name;
       String t;
     case ({},_) then stringAppend(stringAppend("0.0 /* ",ComponentReference.crefStr(d))," */ ;");
-    case (SimCode.SIMVAR(name=name,initialValue=SOME(initialExp as DAE.BCONST(_))):: tail,_)
+    case (SimCode.SIMVAR(name=name,initialValue=SOME(initialExp as DAE.BCONST(_))):: _,_)
     equation
       true = ComponentReference.crefEqual(name,d);
       t = stringAppend("(",ExpressionDump.printExpStr(replaceVars(initialExp,{},{},{})));
@@ -706,7 +706,7 @@ algorithm
       t = stringAppend(t,ComponentReference.crefStr(d));
       t = stringAppend(t,"*/;");
     then t;
-    case (SimCode.SIMVAR(name=name,initialValue=SOME(initialExp)):: tail,_)
+    case (SimCode.SIMVAR(name=name,initialValue=SOME(initialExp)):: _,_)
     equation
       true = ComponentReference.crefEqual(name,d);
       t = stringAppend("",ExpressionDump.printExpStr(replaceVars(initialExp,{},{},{})));
@@ -737,7 +737,7 @@ algorithm
       list<SimCode.SimVar> boolAlgVars;
       list<SimCode.SimVar> algVars;
     case ({},_,_,_,_) then "";
-    case (cref::tail,_,_,_,_)
+    case (_::tail,_,_,_,_)
     equation
       true = total - acc -1  < nWhenClause;
       s=stringAppend("","d[");
@@ -839,12 +839,12 @@ algorithm
        Integer p;
        String ident;
        DAE.Exp e;
-     case ((e as DAE.CREF(componentRef = cr as DAE.CREF_IDENT(_,t1,subs),ty=t),inputs))
+     case ((DAE.CREF(componentRef = cr as DAE.CREF_IDENT(_,t1,subs),ty=t),inputs))
       equation
       p = List.positionOnTrue(cr,inputs,ComponentReference.crefEqual);
       ident = stringAppend("i",intString(p));
       then ((DAE.CREF(DAE.CREF_IDENT(ident,t1,subs),t),inputs));
-    case ((e as DAE.CREF(componentRef = cr as DAE.CREF_QUAL(_,t1,subs,_),ty=t),inputs))
+    case ((DAE.CREF(componentRef = cr as DAE.CREF_QUAL(_,t1,subs,_),ty=t),inputs))
       equation
       p = List.positionOnTrue(cr,inputs,ComponentReference.crefEqual);
       ident = stringAppend("i",intString(p));
@@ -914,7 +914,7 @@ algorithm
     case ((head as SimCode.SIM_WHEN_CLAUSE(conditions={DAE.CALL(path=Absyn.IDENT(name="sample"))})) :: tail)
       then listAppend({head},sampleWhens(tail));
      */
-    case (head :: tail)
+    case (_ :: tail)
       then sampleWhens(tail);
     end match;
 end sampleWhens;

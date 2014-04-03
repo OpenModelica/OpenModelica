@@ -102,7 +102,7 @@ algorithm
       Absyn.Restriction r;
       list<Absyn.ClassPart> parts;
 
-    case (Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = Absyn.PARTS(classParts = parts)))
+    case (Absyn.CLASS(name = _,partialPrefix = _,finalPrefix = _,encapsulatedPrefix = _,restriction = r,body = Absyn.PARTS(classParts = parts)))
       equation
         rs = Absyn.restrString(r);
         nl = printParts(parts);
@@ -268,13 +268,13 @@ algorithm
       then
         Graphviz.NODE("CLASSDEF",{ra},{});
 
-    case (Absyn.EXTENDS(path = p,elementArg = l))
+    case (Absyn.EXTENDS(path = p,elementArg = _))
       equation
         en = printPath(p);
       then
         Graphviz.NODE("EXTENDS",{},{en});
 
-    case (Absyn.COMPONENTS(attributes = attr,typeSpec = tspec,components = cs))
+    case (Absyn.COMPONENTS(attributes = _,typeSpec = tspec,components = cs))
       equation
         s = Dump.unparseTypeSpec(tspec);
         pn = makeLeaf(s, {});
@@ -321,7 +321,7 @@ algorithm
       list<Absyn.Subscript> a;
       Option<Absyn.Modification> m;
 
-    case (Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = n,arrayDim = a,modification = m)))
+    case (Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = n,arrayDim = _,modification = _)))
       equation
         nn = Graphviz.NODE(n,{},{});
       then
@@ -343,7 +343,7 @@ algorithm
 
     case {} then {};
 
-    case (Absyn.EQUATIONITEM(equation_ = eq,comment = ann) :: el)
+    case (Absyn.EQUATIONITEM(equation_ = eq,comment = _) :: el)
       equation
         node = printEquation(eq);
         nl = printEquations(el);
@@ -445,7 +445,7 @@ algorithm
     local
       Absyn.Exp e;
 
-    case (Absyn.ALG_ASSIGN(assignComponent = _,value = e)) then Graphviz.NODE("ALG_ASSIGN",{},{});
+    case (Absyn.ALG_ASSIGN(assignComponent = _,value = _)) then Graphviz.NODE("ALG_ASSIGN",{},{});
     case (_) then Graphviz.NODE(" DumpGraphviz.printAlgorithm ALG_ERROR",{},{});
   end matchcontinue;
 end printAlgorithm;

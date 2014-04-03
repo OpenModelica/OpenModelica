@@ -154,7 +154,7 @@ algorithm
       Option<Values.Value> optVal;
       list<DAE.Var> varLst;
 
-    case (mod,varLst,expected_type,{},bind_name,_) /* No subscript/index */
+    case (mod,_,expected_type,{},bind_name,_) /* No subscript/index */
       equation
         mod2 = Mod.lookupCompModification(mod, bind_name);
         SOME(DAE.TYPED(e,optVal,DAE.PROP(ty2,_),_,_)) = Mod.modEquation(mod2);
@@ -163,20 +163,20 @@ algorithm
       then
         SOME(e_1);
 
-    case (mod,varLst,etype,index_list,bind_name,_) /* Have subscript/index */
+    case (mod,_,etype,index_list,bind_name,_) /* Have subscript/index */
       equation
         mod2 = Mod.lookupCompModification(mod, bind_name);
         result = instBinding2(mod2, etype, index_list, bind_name, useConstValue);
       then
         result;
 
-    case (mod,varLst,expected_type,{},bind_name,_) /* No modifier for this name. */
+    case (mod,_,_,{},bind_name,_) /* No modifier for this name. */
       equation
         failure(_ = Mod.lookupCompModification(mod, bind_name));
       then
         NONE();
 
-    case (mod,DAE.TYPES_VAR(name,binding=binding)::_,etype,index_list,bind_name,_)
+    case (_,DAE.TYPES_VAR(name,binding=binding)::_,_,_,bind_name,_)
       equation
         true = stringEq(name, bind_name);
       then
@@ -185,7 +185,7 @@ algorithm
     case (mod,_::varLst,etype,index_list,bind_name,_)
     then instBinding(mod,varLst,etype,index_list,bind_name,useConstValue);
 
-    case (mod,{},etype,index_list,bind_name,_)
+    case (_,{},_,_,_,_)
     then NONE();
   end matchcontinue;
 end instBinding;
@@ -212,7 +212,7 @@ algorithm
       Option<DAE.Exp> result;
       list<Integer> res;
       Option<Values.Value> optVal;
-    case (mod,etype,(index :: {}),bind_name,_) /* Only one element in the index-list */
+    case (mod,etype,(index :: {}),_,_) /* Only one element in the index-list */
       equation
         mod2 = Mod.lookupIdxModification(mod, index);
         SOME(DAE.TYPED(e,optVal,DAE.PROP(ty2,_),_,_)) = Mod.modEquation(mod2);
@@ -226,7 +226,7 @@ algorithm
         result = instBinding2(mod2, etype, res, bind_name,useConstValue);
       then
         result;
-    case (mod,etype,(index :: res),bind_name,_)
+    case (mod,_,(index :: _),_,_)
       equation
         failure(mod2 = Mod.lookupIdxModification(mod, index));
       then
@@ -287,14 +287,14 @@ algorithm
       Ident name;
       list<DAE.Var> varLst;
 
-    case (mod,varLst,bind_name)
+    case (mod,_,bind_name)
       equation
         mod2 = Mod.lookupCompModification(mod, bind_name);
         SOME(_) = Mod.modEquation(mod2);
       then
         SOME(DAE.SCONST("binding"));
 
-    case (mod,DAE.TYPES_VAR(name,binding=binding)::_,bind_name)
+    case (_,DAE.TYPES_VAR(name,binding=binding)::_,bind_name)
       equation
         true = stringEq(name, bind_name);
       then
@@ -303,7 +303,7 @@ algorithm
     case (mod,_::varLst,bind_name)
       then instStartOrigin(mod,varLst,bind_name);
 
-    case (mod,{},bind_name)
+    case (_,{},_)
       then NONE();
   end matchcontinue;
 end instStartOrigin;
@@ -337,7 +337,7 @@ algorithm
       list<DAE.Var> varLst;
 
     // Real
-    case (cache,env,mod,tp as DAE.T_REAL(varLst = varLst, source = ts),index_list)
+    case (cache,env,mod,DAE.T_REAL(varLst = varLst, source = _),index_list)
       equation
         (quantity_str) = instBinding(mod, varLst, DAE.T_STRING_DEFAULT,index_list, "quantity",false);
         (unit_str) = instBinding(mod, varLst, DAE.T_STRING_DEFAULT, index_list, "unit",false);
@@ -363,7 +363,7 @@ algorithm
           start_val,fixed_val,nominal_val,stateSelect_value,uncertainty_value,distribution_value,NONE(),NONE(),NONE(),startOrigin)));
 
     // Integer
-    case (cache,env,mod,tp as DAE.T_INTEGER(varLst = varLst, source = ts),index_list)
+    case (cache,env,mod,DAE.T_INTEGER(varLst = varLst, source = _),index_list)
       equation
         (quantity_str) = instBinding(mod, varLst, DAE.T_STRING_DEFAULT, index_list, "quantity",false);
         (min_val) = instBinding(mod, varLst, DAE.T_INTEGER_DEFAULT, index_list, "min",false);
@@ -379,7 +379,7 @@ algorithm
         (cache,SOME(DAE.VAR_ATTR_INT(quantity_str,(min_val,max_val),start_val,fixed_val,uncertainty_value,distribution_value,NONE(),NONE(),NONE(),startOrigin)));
 
     // Boolean
-    case (cache,env,mod,tp as DAE.T_BOOL(varLst = varLst, source = ts),index_list)
+    case (cache,_,mod,tp as DAE.T_BOOL(varLst = varLst, source = _),index_list)
       equation
         (quantity_str) = instBinding( mod, varLst, DAE.T_STRING_DEFAULT, index_list, "quantity",false);
         (start_val) = instBinding(mod, varLst, tp, index_list, "start",false);
@@ -389,7 +389,7 @@ algorithm
         (cache,SOME(DAE.VAR_ATTR_BOOL(quantity_str,start_val,fixed_val,NONE(),NONE(),NONE(),startOrigin)));
 
     // String
-    case (cache,env,mod,tp as DAE.T_STRING(varLst = varLst, source = ts),index_list)
+    case (cache,_,mod,tp as DAE.T_STRING(varLst = varLst, source = _),index_list)
       equation
         (quantity_str) = instBinding(mod, varLst, tp, index_list, "quantity",false);
         (start_val) = instBinding(mod, varLst, tp, index_list, "start",false);
@@ -398,7 +398,7 @@ algorithm
         (cache,SOME(DAE.VAR_ATTR_STRING(quantity_str,start_val,NONE(),NONE(),NONE(),startOrigin)));
 
     // Enumeration
-    case (cache,env,mod,enumtype as DAE.T_ENUMERATION(attributeLst = varLst, source = ts),index_list)
+    case (cache,_,mod,enumtype as DAE.T_ENUMERATION(attributeLst = varLst, source = _),index_list)
       equation
         (quantity_str) = instBinding(mod, varLst, DAE.T_STRING_DEFAULT,index_list, "quantity",false);
         (exp_bind_min) = instBinding(mod, varLst, enumtype, index_list, "min",false);
@@ -410,7 +410,7 @@ algorithm
         (cache,SOME(DAE.VAR_ATTR_ENUMERATION(quantity_str,(exp_bind_min,exp_bind_max),exp_bind_start,fixed_val,NONE(),NONE(),NONE(),startOrigin)));
 
     // not a basic type?
-    case (cache,env,mod,_,_)
+    case (cache,_,_,_,_)
       then (cache,NONE());
   end matchcontinue;
 end instDaeVariableAttributes;
@@ -438,13 +438,13 @@ algorithm
       String bind_name;
       Env.Cache cache;
 
-    case (cache,env,mod,_,index_list,bind_name,_,_)
+    case (cache,_,mod,_,index_list,bind_name,_,_)
       equation
         result = instBinding(mod, varLst, expected_type, index_list, bind_name,useConstValue);
       then
         (cache,result);
 
-    case (cache,env,mod,_,index_list,bind_name,_,_)
+    case (_,_,_,_,_,bind_name,_,_)
       equation
         Error.addMessage(Error.TYPE_ERROR, {bind_name,"enumeration type"});
       then
@@ -559,20 +559,20 @@ algorithm
 
     // Record constructors are different
     // If it's a constant binding, all fields will already be bound correctly. Don't return a DAE.
-    case (cr,DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),(DAE.MOD(eqModOption = SOME(DAE.TYPED(e,SOME(_),DAE.PROP(_,DAE.C_CONST()),_,_)))),_,impl)
+    case (_,DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),(DAE.MOD(eqModOption = SOME(DAE.TYPED(_,SOME(_),DAE.PROP(_,DAE.C_CONST()),_,_)))),_,_)
     then DAE.emptyDae;
 
     // Special case if the dimensions of the expression is 0.
     // If this is true, and it is instantiated normally, matching properties
     // will result in error messages (Real[0] is not Real), so we handle it here.
-    case (cr,ty1,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,prop2,_,_)))),_,impl)
+    case (_,_,(DAE.MOD(eqModOption = SOME(DAE.TYPED(_,_,prop2,_,_)))),_,_)
       equation
         DAE.T_ARRAY(dims = {DAE.DIM_INTEGER(0)}) = Types.getPropType(prop2);
       then
         DAE.emptyDae;
 
     // Regular cases
-    case (cr,ty1,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,prop2,aexp2,info)))),source,impl)
+    case (cr,ty1,(DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,prop2,aexp2,info)))),source,impl)
       equation
         t = Types.simplifyType(ty1);
         lhs = Expression.makeCrefExp(cr, t);
@@ -584,11 +584,11 @@ algorithm
       then
         dae;
 
-    case (_,_,DAE.MOD(eqModOption = NONE()),_,impl) then DAE.emptyDae;
-    case (_,_,DAE.NOMOD(),_,impl) then DAE.emptyDae;
-    case (_,_,DAE.REDECL(finalPrefix = _),_,impl) then DAE.emptyDae;
+    case (_,_,DAE.MOD(eqModOption = NONE()),_,_) then DAE.emptyDae;
+    case (_,_,DAE.NOMOD(),_,_) then DAE.emptyDae;
+    case (_,_,DAE.REDECL(finalPrefix = _),_,_) then DAE.emptyDae;
 
-    case (c,ty1,m,_,impl)
+    case (c,ty1,m,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.fprint(Flags.FAILTRACE, "- InstBinding.instModEquation failed\n type: ");
@@ -644,9 +644,9 @@ algorithm
       then
         (cache, binding);
 
-    case (cache,_,_,DAE.NOMOD(),tp,_,_,_) then (cache,DAE.UNBOUND());
+    case (cache,_,_,DAE.NOMOD(),_,_,_,_) then (cache,DAE.UNBOUND());
 
-    case (cache,_,_,DAE.REDECL(finalPrefix = _),tp,_,_,_) then (cache,DAE.UNBOUND());
+    case (cache,_,_,DAE.REDECL(finalPrefix = _),_,_,_,_) then (cache,DAE.UNBOUND());
 
     // adrpo: if the binding is missing for a parameter and
     //        the parameter has a start value modification,
@@ -686,7 +686,7 @@ algorithm
       then
         (cache, binding);
 
-    case (cache,_,_,DAE.MOD(eqModOption = NONE()),tp,_,_,_) then (cache,DAE.UNBOUND());
+    case (cache,_,_,DAE.MOD(eqModOption = NONE()),_,_,_,_) then (cache,DAE.UNBOUND());
     /* adrpo: CHECK! do we need this here? numerical values
     case (cache,env,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,DAE.PROP(e_tp,_)))),tp,_,_)
       equation
@@ -718,7 +718,7 @@ algorithm
       then
         (cache,DAE.EQBOUND(e_1,e_val,c,DAE.BINDING_FROM_DEFAULT_VALUE()));
 
-    case (cache,_,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,e_val,prop,_,info))),tp,_,_,_)
+    case (_,_,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,prop,_,info))),tp,_,_,_)
       equation
         e_tp = Types.getPropType(prop);
         c = Types.propAllConst(prop);
@@ -974,18 +974,18 @@ algorithm
 
     // An empty array such as x[:] = {} will cause Types.matchProp to fail, but we
     // shouldn't print an error.
-    case (_, _, c, pr, n, _)
+    case (_, _, _, _, _, _)
       equation
-        SOME(DAE.TYPED(e,_,p as DAE.PROP(type_ = bt),_,_)) = Mod.modEquation(mod);
+        SOME(DAE.TYPED(_,_,DAE.PROP(type_ = bt),_,_)) = Mod.modEquation(mod);
         true = Types.isEmptyArray(bt);
       then
         NONE();
 
     // If Types.matchProp fails, print an error.
-    case (_, _, c, pr, n, _)
+    case (_, _, c, _, n, _)
       equation
         SOME(DAE.TYPED(e,_,p as DAE.PROP(type_ = bt),_,_)) = Mod.modEquation(mod);
-        failure((e1,DAE.PROP(_,c1)) = Types.matchProp(e, p, DAE.PROP(tp, c), true));
+        failure((_,DAE.PROP(_,_)) = Types.matchProp(e, p, DAE.PROP(tp, c), true));
         v_str = n;
         b_str = ExpressionDump.printExpStr(e);
         et_str = Types.unparseType(tp);

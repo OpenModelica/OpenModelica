@@ -133,13 +133,13 @@ algorithm
       Integer n,size;
       list<BackendDAE.Equation> lst;
 
-    case (BackendDAE.EQUATION_ARRAY(numberOfElement = 0,equOptArr = arr)) then {};
+    case (BackendDAE.EQUATION_ARRAY(numberOfElement = 0,equOptArr = _)) then {};
 
     case (BackendDAE.EQUATION_ARRAY(numberOfElement = 1,equOptArr = arr)) equation
       SOME(elt) = arr[1];
     then {elt};
 
-    case (BackendDAE.EQUATION_ARRAY(numberOfElement = n,arrSize = size,equOptArr = arr)) equation
+    case (BackendDAE.EQUATION_ARRAY(numberOfElement = n,arrSize = _,equOptArr = arr)) equation
       lst = equationList2(arr, n, {});
     then lst;
 
@@ -855,7 +855,7 @@ algorithm
         (b4,ext_arg_3) = Debug.bcallret3_2(b2,traverseBackendDAEExpsEqnWithStop,BackendDAE.WHEN_EQUATION(size,elsePart,source),func,ext_arg_2,b3,ext_arg_3);
       then
         (b4,ext_arg_3);
-    case (BackendDAE.ALGORITHM(size=size,alg=alg as DAE.ALGORITHM_STMTS(statementLst = stmts)),_,_)
+    case (BackendDAE.ALGORITHM(size=size,alg=alg as DAE.ALGORITHM_STMTS(statementLst = _)),_,_)
       equation
         print("not implemented error - BackendDAE.ALGORITHM - BackendEquation.traverseBackendDAEExpsEqnWithStop\n");
        // (stmts1,ext_arg_1) = DAEUtil.traverseDAEEquationsStmts(stmts,func,inTypeA);
@@ -996,7 +996,7 @@ algorithm
       then
         (BackendDAE.SOLVED_EQUATION(cr1,e_2,source,diffed),bres,ext_arg_2);
     
-    case (eq as BackendDAE.RESIDUAL_EQUATION(exp = e1,source=source,differentiated=diffed),_,_)
+    case (BackendDAE.RESIDUAL_EQUATION(exp = e1,source=source,differentiated=diffed),_,_)
       equation
         ((e_1,b1,ext_arg_1)) = func((e1,inTypeA));
       then
@@ -1013,7 +1013,7 @@ algorithm
       then
        (BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,cr1,e_2,NONE()),source),bres,ext_arg_2);
     
-    case (eq as BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(condition=cond,left=cr,right=e2,elsewhenPart=SOME(elsePart)),source = source),_,_)
+    case (BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(condition=cond,left=cr,right=e2,elsewhenPart=SOME(elsePart)),source = source),_,_)
       equation
         tp = Expression.typeof(e2);
         e1 = Expression.makeCrefExp(cr,tp);
@@ -1858,14 +1858,14 @@ algorithm
 
     // workaround, should changed to DAE.RCONST(0.0)
     // when new rml is availiable
-    case (BackendDAE.EQUATION(exp=e1 as DAE.RCONST(r), scalar=e2, source=source, differentiated=diffed)) equation
+    case (BackendDAE.EQUATION(exp=DAE.RCONST(r), scalar=e2, source=source, differentiated=diffed)) equation
       true = realEq(r, 0.0);
       eqns ={BackendDAE.RESIDUAL_EQUATION(e2, source, diffed)};
     then eqns;
 
     // workaround, should changed to DAE.RCONST(0.0)
     // when new rml is availiable
-    case (BackendDAE.EQUATION(exp=e1, scalar=e2 as DAE.RCONST(r), source=source, differentiated=diffed)) equation
+    case (BackendDAE.EQUATION(exp=e1, scalar=DAE.RCONST(r), source=source, differentiated=diffed)) equation
       true = realEq(r, 0.0);
       eqns ={BackendDAE.RESIDUAL_EQUATION(e1, source, diffed)};
     then eqns;
@@ -1896,7 +1896,7 @@ algorithm
     case (backendEq as BackendDAE.ALGORITHM(alg=_))                 then {backendEq};
     case (backendEq as BackendDAE.WHEN_EQUATION(whenEquation=_))    then {backendEq};
 
-    case (backendEq) equation
+    case (_) equation
       Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.equationToScalarResidualForm failed");
     then fail();
   end matchcontinue;
@@ -1987,7 +1987,7 @@ algorithm
 
     case (backendEq as BackendDAE.WHEN_EQUATION(whenEquation = _)) then backendEq;
 
-    case (backendEq)
+    case (_)
       equation
         Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.equationToResidualForm failed");
       then
@@ -2345,7 +2345,7 @@ algorithm
       // -a = b;
       case (DAE.UNARY(DAE.UMINUS(ty),DAE.CREF(componentRef = cr1)),DAE.CREF(componentRef = cr2),_)
         then (cr1,cr2,lhs,DAE.UNARY(DAE.UMINUS(ty),rhs),true)::inTpls;
-      case (DAE.UNARY(DAE.UMINUS_ARR(ty),e1 as DAE.CREF(componentRef = cr1)),DAE.CREF(componentRef = cr2),_)
+      case (DAE.UNARY(DAE.UMINUS_ARR(ty),DAE.CREF(componentRef = cr1)),DAE.CREF(componentRef = cr2),_)
         then (cr1,cr2,lhs,DAE.UNARY(DAE.UMINUS_ARR(ty),rhs),true)::inTpls;
       // -a = -b;
       case (DAE.UNARY(DAE.UMINUS(_),e1 as DAE.CREF(componentRef = cr1)),DAE.UNARY(DAE.UMINUS(_),e2 as DAE.CREF(componentRef = cr2)),_)

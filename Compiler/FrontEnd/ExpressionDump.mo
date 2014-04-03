@@ -214,7 +214,7 @@ algorithm
       then
         s;
 
-    case (DAE.POW(ty = t)) then " ^ ";
+    case (DAE.POW(ty = _)) then " ^ ";
     case (DAE.ADD_ARR(ty = t))
       equation
         ts = Types.unparseType(t);
@@ -533,13 +533,13 @@ algorithm
 
     case (DAE.BCONST(bool = b), _, _, _) then boolString(b);
 
-    case (DAE.CREF(componentRef = c,ty = t), _, SOME((pcreffunc,creffuncparam)), _)
+    case (DAE.CREF(componentRef = c,ty = _), _, SOME((pcreffunc,creffuncparam)), _)
       equation
         s = pcreffunc(c,creffuncparam);
       then
         s;
 
-    case (DAE.CREF(componentRef = c,ty = t), _, _, _)
+    case (DAE.CREF(componentRef = c,ty = _), _, _, _)
       equation
         s = ComponentReference.printComponentRefStr(c);
       then
@@ -631,13 +631,13 @@ algorithm
       then
         str;
 
-    case (e as DAE.CALL(path = fcn,expLst = args), _, _, SOME(pcallfunc))
+    case (e as DAE.CALL(path = _,expLst = _), _, _, SOME(pcallfunc))
       equation
         s_2 = pcallfunc(e,stringDelimiter,opcreffunc);
       then
         s_2;
 
-    case (e as DAE.CALL(path = fcn,expLst = args), _, _, _)
+    case (DAE.CALL(path = fcn,expLst = args), _, _, _)
       equation
         fs = Absyn.pathString(Absyn.makeNotFullyQualified(fcn));
         argstr = stringDelimitList(
@@ -655,7 +655,7 @@ algorithm
       then
         s;
 
-    case (DAE.ARRAY(array = es,ty=tp), _, _, _)
+    case (DAE.ARRAY(array = es,ty=_), _, _, _)
       equation
         // s3 = Types.unparseType(tp); // adrpo: not used!
         s = stringDelimitList(
@@ -672,7 +672,7 @@ algorithm
       then
         s;
 
-    case (DAE.MATRIX(matrix = lstes,ty=tp), _, _, _)
+    case (DAE.MATRIX(matrix = lstes,ty=_), _, _, _)
       equation
         // s3 = Types.unparseType(tp); // adrpo: not used!
         s = stringDelimitList(List.map1(lstes, printRowStr, stringDelimiter), "},{");
@@ -1166,7 +1166,7 @@ algorithm
       then
         Graphviz.LNODE("CAST",{tystr},{},{ct});
 
-    case (DAE.ASUB(exp = e,sub = ((ae1 as DAE.ICONST(i))::{})))
+    case (DAE.ASUB(exp = e,sub = ((DAE.ICONST(i))::{})))
       equation
         ct = dumpExpGraphviz(e);
         istr = intString(i);
@@ -1435,7 +1435,7 @@ algorithm
       then
         res_str;
 
-    case (DAE.ASUB(exp = e,sub = ((ae1 as DAE.ICONST(i))::{})),level)
+    case (DAE.ASUB(exp = e,sub = ((DAE.ICONST(i))::{})),level)
       equation
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
@@ -1478,7 +1478,7 @@ algorithm
       then
         res_str;
 
-    case (DAE.RECORD(path=fcn, exps=args,comp=nodes,ty=_),level)
+    case (DAE.RECORD(path=fcn, exps=args,comp=_,ty=_),level)
       equation
         gen_str = genStringNTime("   |", level);
         fs = Absyn.pathString(fcn);
@@ -1510,7 +1510,7 @@ algorithm
       String str,new_str,res_str;
       Integer new_level,level;
 
-    case (str,0) then "";  /* n */
+    case (_,0) then "";  /* n */
 
     case (str,level)
       equation

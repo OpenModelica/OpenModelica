@@ -296,15 +296,15 @@ algorithm
       DAE.ElementSource source;
 
     case ({},_) then "";
-    case (((v as BackendDAE.VAR(varName = cr,
-                            varKind = kind,
+    case (((BackendDAE.VAR(varName = cr,
+                            varKind = _,
                             varDirection = dir,
-                            varType = var_type,
-                            bindExp = e,
+                            varType = _,
+                            bindExp = _,
                             source = source,
-                            values = dae_var_attr,
+                            values = _,
                             comment = comment,
-                            connectorType = ct)) :: {}),varno)
+                            connectorType = _)) :: {}),varno)
       equation
         varnostr = intString(varno);
         dirstr = DAEDump.dumpDirectionStr(dir);
@@ -331,15 +331,15 @@ algorithm
       then
         str;
 
-      case (((v as BackendDAE.VAR(varName = cr,
-                              varKind = kind,
+      case (((BackendDAE.VAR(varName = cr,
+                              varKind = _,
                               varDirection = dir,
-                              varType = var_type,
-                              bindExp = e,
+                              varType = _,
+                              bindExp = _,
                               source = source,
-                              values = dae_var_attr,
+                              values = _,
                               comment = comment,
-                              connectorType = ct)) :: xs),varno)
+                              connectorType = _)) :: xs),varno)
       equation
         varnostr = intString(varno);
         dirstr = DAEDump.dumpDirectionStr(dir);
@@ -526,7 +526,7 @@ algorithm
       then
         res_1;
 
-    case (vars,_)
+    case (_,_)
       equation
         print("- DAEQuery.incidenceRow failed\n");
       then
@@ -717,7 +717,7 @@ algorithm
       then
         pStr;
 
-    case (DAE.IFEXP(expCond = e1 as DAE.RELATION(exp1 = ee1, operator = op1, exp2 =ee2),expThen = e2,expElse = e3),vars) /* if expressions. */
+    case (DAE.IFEXP(expCond = e1 as DAE.RELATION(exp1 = _, operator = op1, exp2 =ee2),expThen = e2,expElse = e3),vars) /* if expressions. */
       equation
         opStr = ExpressionDump.relopSymbol(op1);
         s = printExpStr(ee2);
@@ -753,7 +753,7 @@ algorithm
 */
 
     // If expression with logic sentence.
-    case (DAE.IFEXP(expCond = e1 as DAE.LBINARY(exp1 = ee1, operator = op1, exp2 =ee2),expThen = e2,expElse = e3),vars) /* if expressions. */
+    case (DAE.IFEXP(expCond = e1 as DAE.LBINARY(exp1 = _, operator = _, exp2 =_),expThen = e2,expElse = e3),vars) /* if expressions. */
       equation
         opStr = printExpStr(e1);
         //opStr = ExpressionDump.relopSymbol(op1);
@@ -771,7 +771,7 @@ algorithm
       then
         pStr;
     // if-expressions with a variable (Bool)
-    case (DAE.IFEXP(expCond = e1 as DAE.CREF(componentRef = cref1), expThen = e2, expElse = e3),vars) /* if expressions. */
+    case (DAE.IFEXP(expCond = e1 as DAE.CREF(componentRef = _), expThen = e2, expElse = e3),vars) /* if expressions. */
       equation
         //sb = printExpStr(e1);
 
@@ -845,7 +845,7 @@ algorithm
       then
         pStr;
 
-    case (DAE.TUPLE(PR = expl),vars)
+    case (DAE.TUPLE(PR = _),_)
       equation
         print("- DAEQuery.incidence_row_exp TUPLE not impl. yet.");
       then

@@ -142,7 +142,7 @@ algorithm
       String s;
 
     // Adding when not existing previously.
-    case ((v as (key,value)),
+    case ((v as (key,_)),
         ((hashvec, varr, bsize, n, fntpl as (hashFunc,_,_,_))))
       equation
         failure((_) = get(key, hashTable));
@@ -158,7 +158,7 @@ algorithm
     // Adding when already present => update value.
     case (_, _) then update(entry, hashTable);
 
-    case ((v as (key,value)),
+    case (((key,_)),
         ((_, _, bsize, _, (hashFunc, _, keystrFunc, _))))
       equation
         print("- BaseHashTable.add failed: ");
@@ -212,7 +212,7 @@ algorithm
       FuncHash hashFunc;
 
     // Adding when not existing previously
-    case ((v as (key, value)),
+    case ((v as (key, _)),
        (hashvec, varr, bsize, n, fntpl as (hashFunc, _, _, _)))
       equation
         indx = hashFunc(key, bsize);
@@ -252,7 +252,7 @@ algorithm
       FuncHash hashFunc;
 
     // Adding when not existing previously
-    case ((v as (key, value)),
+    case ((v as (key, _)),
         ((hashvec, varr, bsize, n, fntpl as (hashFunc, _, _, _))))
       equation
         failure((_) = get(key, hashTable));
@@ -332,7 +332,7 @@ algorithm
     
     case({}, _) then false;
     
-    case(key::keys, _) 
+    case(key::_, _) 
       equation
         _ = get(key, inHt);
       then 

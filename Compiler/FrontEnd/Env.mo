@@ -486,9 +486,9 @@ algorithm
 
     case({fr}) then {fr};
 
-    case((fr as FRAME(SOME(id),st,ft,clsAndVars,tys,crs,du,it,extra,parents))::fs)
+    case((FRAME(SOME(id),st,ft,clsAndVars,tys,crs,du,it,extra,parents))::fs)
       equation
-        (old as CLASS(c, env, ity)) = getItemInEnv(id, fs);
+        (CLASS(c, _, ity)) = getItemInEnv(id, fs);
         fs = replaceFrameItem(fs, SCode.elementName(c), CLASS(c, fs, ity), {});
         fs = updateEnv(fs);
       then
@@ -545,7 +545,7 @@ algorithm
       ItemType it;
 
    // Classes
-   case(AVLTREENODE(SOME(AVLTREEVALUE(k,CLASS(cl,env,it))),h,l,r),_)
+   case(AVLTREENODE(SOME(AVLTREEVALUE(k,CLASS(cl,_,it))),h,l,r),_)
      equation
       l = updateEnvClassesInTreeOpt(l,classEnv);
       r = updateEnvClassesInTreeOpt(r,classEnv);
@@ -728,7 +728,7 @@ algorithm
       then
         FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::frames;
 
-    case (_, e, classEnv)
+    case (_, e, _)
       equation
         print("- Env.updateFrameC failed on class: " +& SCodeDump.unparseElementStr(e,SCodeDump.defaultOptions) +& "\n");
       then
@@ -843,7 +843,7 @@ algorithm
         FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs;
 
     // Variable already added, perhaps from baseclass
-    case (FRAME(clsAndVars  = clsAndVars)::fs,v as DAE.TYPES_VAR(name = n),c,m,i,coenv)
+    case (FRAME(clsAndVars  = clsAndVars)::_,DAE.TYPES_VAR(name = n),_,_,_,_)
       equation
         _ = avlTreeGet(clsAndVars, n);
       then
@@ -880,11 +880,11 @@ algorithm
       ItemType itty;
 
     // fully instantiated env of component
-    case ({},_,i,_) then {};
+    case ({},_,_,_) then {};
 
     case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs, v as DAE.TYPES_VAR(name = n), i, coenv)
       equation
-        (var as VAR(_,c,m,_,_,itty)) = avlTreeGet(clsAndVars, n);
+        (VAR(_,c,m,_,_,itty)) = avlTreeGet(clsAndVars, n);
         //Debug.bprint(not Config.acceptMetaModelicaGrammar(), "UE: " +& printEnvPathStr(inEnv) +& "\n");
         //Debug.bprint(not Config.acceptMetaModelicaGrammar(), "NV: " +& valueStr(VAR(v,c,m,i,coenv,itty)) +& "\n");
         //Debug.bprint(not Config.acceptMetaModelicaGrammar(), "PV: " +& valueStr(var) +& "\n");
@@ -893,14 +893,14 @@ algorithm
         FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs;
 
     // Also check frames above, e.g. when variable is in base class
-    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs,v as DAE.TYPES_VAR(name = n), i, coenv)
+    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs,v as DAE.TYPES_VAR(name = _), i, coenv)
       equation
         true = isImplicitScope(id);
         frames = updateFrameV(fs, v, i, coenv);
       then
         FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::frames;
 
-    case (_,v as DAE.TYPES_VAR(name = n),_,_)
+    case (_,DAE.TYPES_VAR(name = _),_,_)
       equation
         /*print("- Env.updateFrameV failed on variable: " +&
               n +& "\n" +& Types.printVarStr(v) +&
@@ -1149,7 +1149,7 @@ algorithm
      // empty case
     case ({}, _) then {};
  
-    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs, _)
+    case (FRAME(_,st,ft,clsAndVars,tys,_,_,it,extra,parents)::fs, _)
       equation
         clsAndVars = emptyAvlTree;
         tys        = emptyAvlTree;
@@ -1187,7 +1187,7 @@ algorithm
       then
         FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs;
         
-    case (FRAME(_,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs, _)
+    case (FRAME(_,_,_,_,_,_,_,_,_,_)::_, _)
       equation
         print("Env.setParentEnv failed!\n");
       then
@@ -1406,7 +1406,7 @@ algorithm
     // empty case
     case ({}) then false;
 
-    case (FRAME(extra = EXTRA(mods = pm))::fs)
+    case (FRAME(extra = EXTRA(mods = pm))::_)
       equation
         true = hasModifications2(pm);
       then
@@ -1580,7 +1580,7 @@ algorithm
       Frame fr,elt;
       Env lst;
     case ({fr}) then fr;
-    case ((elt :: (lst as (_ :: _))))
+    case ((_ :: (lst as (_ :: _))))
       equation
         fr = topFrame(lst);
       then
@@ -1763,7 +1763,7 @@ algorithm
         pathstr = Absyn.pathString(path);
       then
         pathstr;
-    case (env) then "<global scope>";
+    case (_) then "<global scope>";
   end matchcontinue;
 end printEnvPathStr;
 
@@ -1783,7 +1783,7 @@ algorithm
         Print.printBuf(pathstr);
       then
         ();
-    case (env)
+    case (_)
       equation
         Print.printBuf("TOPENV");
       then
@@ -1854,7 +1854,7 @@ algorithm
     case FRAME(name = optName,
                clsAndVars = ht,
                types = httypes,
-               connectionSet = crs,
+               connectionSet = _,
                frameType = frameType)
       equation
         sid = Util.getOptionOrDefault(optName, "unnamed");
@@ -1887,8 +1887,8 @@ algorithm
     case FRAME(name = optName,
                frameType = frameType,
                clsAndVars = ht,
-               types = httypes,
-               connectionSet = crs)
+               types = _,
+               connectionSet = _)
       equation
         sid = Util.stringOption(optName);
         s1 = printAvlTreeStr(ht);
@@ -1960,7 +1960,7 @@ algorithm
       list<DAE.Type> lst;
       Absyn.Import imp;
 
-    case ((n,VAR(instantiated = (tv as DAE.TYPES_VAR(attributes = DAE.ATTR(variability = var),ty = tp,binding = bind)),var = elt,instStatus = i,env = (compframe :: _))))
+    case ((n,VAR(instantiated = (tv as DAE.TYPES_VAR(attributes = DAE.ATTR(variability = var),ty = tp,binding = bind)),var = elt,instStatus = _,env = (compframe :: _))))
       equation
         s = SCodeDump.variabilityString(var);
         elt_str = SCodeDump.unparseElementStr(elt,SCodeDump.defaultOptions);
@@ -1974,7 +1974,7 @@ algorithm
       then
         res;
 
-    case ((n,VAR(instantiated = (tv as DAE.TYPES_VAR(attributes = DAE.ATTR(variability = var),ty = tp)),var = elt,instStatus = i,env = {})))
+    case ((n,VAR(instantiated = (tv as DAE.TYPES_VAR(attributes = DAE.ATTR(variability = var),ty = tp)),var = elt,instStatus = _,env = {})))
       equation
         s = SCodeDump.variabilityString(var);
         elt_str = SCodeDump.unparseElementStr(elt,SCodeDump.defaultOptions);
@@ -2000,7 +2000,7 @@ algorithm
       then
         res;
 
-    case ((n,_))
+    case ((_,_))
       equation
         res = stringAppendList({"oth\n"});
       then
@@ -2480,7 +2480,7 @@ algorithm
    local Option<AvlTreeValue> value;
     Option<AvlTree> l,r;
     Integer height;
-    case(AVLTREENODE(value,height,l,r),_) then AVLTREENODE(value,height,l,right);
+    case(AVLTREENODE(value,height,l,_),_) then AVLTREENODE(value,height,l,right);
   end match;
 end setRight;
 
@@ -2493,7 +2493,7 @@ algorithm
   local Option<AvlTreeValue> value;
     Option<AvlTree> l,r;
     Integer height;
-    case(AVLTREENODE(value,height,l,r),_) then AVLTREENODE(value,height,left,r);
+    case(AVLTREENODE(value,height,_,r),_) then AVLTREENODE(value,height,left,r);
   end match;
 end setLeft;
 
@@ -2618,7 +2618,7 @@ algorithm
       AvlTree left,right;
 
     // hash func Search to the right
-    case (AVLTREENODE(value = SOME(AVLTREEVALUE(value=rval))),0,key)
+    case (AVLTREENODE(value = SOME(AVLTREEVALUE(value=rval))),0,_)
       then rval;
 
     // search to the right
@@ -2671,7 +2671,7 @@ algorithm
       Option<AvlTree> l,r;
       Integer h;
 
-    case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),height = h,left = l,right = r))
+    case (AVLTREENODE(value = SOME(AVLTREEVALUE(_,rval)),height = _,left = l,right = r))
       equation
         s2 = getOptionStr(l, printAvlTreeStr);
         s3 = getOptionStr(r, printAvlTreeStr);
@@ -2740,7 +2740,7 @@ algorithm
     // empty case
     case {} then {};
     // some environment
-    case (fr :: frs)
+    case (fr :: _)
       equation
         lst1 = getVariablesFromFrame(fr);
         // adrpo: TODO! FIXME! CHECK if we really don't need this!
@@ -2784,7 +2784,7 @@ algorithm
       Option<AvlTree> l,r;
       Integer h;
 
-    case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),height = h,left = l,right = r))
+    case (AVLTREENODE(value = SOME(AVLTREEVALUE(_,rval)),height = _,left = l,right = r))
       equation
         lst0 = getVariablesFromAvlValue(rval);
         lst1 = getVariablesFromOptionAvlTree(l);
@@ -3418,7 +3418,7 @@ algorithm
         cref;
     
     // adrpo: leave it as stripped as you can if you can't match it above and we have true for stripPartial
-    case (Absyn.CREF_QUAL(name = id1, subscripts = {}, componentRef = cref),
+    case (Absyn.CREF_QUAL(name = id1, subscripts = {}, componentRef = _),
           env_path, true)
       equation
         false = stringEqual(id1, Absyn.pathFirstIdent(env_path));
@@ -3546,7 +3546,7 @@ algorithm
         cref;
     
     // adrpo: leave it as stripped as you can if you can't match it above and stripPartial is true
-    case (DAE.CREF_QUAL(ident = id1, subscriptLst = {}, componentRef = cref),
+    case (DAE.CREF_QUAL(ident = id1, subscriptLst = {}, componentRef = _),
           env_path, true)
       equation
         false = stringEqual(id1, Absyn.pathFirstIdent(env_path));
@@ -3732,7 +3732,7 @@ algorithm
     case (_, {}) then false;
     
     // we found it
-    case (_, f::fs)
+    case (_, f::_)
       equation
         _ = getItemInEnv(inId, {f});
         b = isTopScope({f});

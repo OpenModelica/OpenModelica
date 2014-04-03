@@ -1430,7 +1430,7 @@ algorithm
         INT_FLAG(i);
 
     // A real value.
-    case ({s}, REAL_FLAG(data = _), _)
+    case ({_}, REAL_FLAG(data = _), _)
       equation
         //r = stringReal(s);
         Error.addMessage(Error.INTERNAL_ERROR,

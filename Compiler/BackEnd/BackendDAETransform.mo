@@ -96,7 +96,7 @@ algorithm
       BackendDAE.Variables vars;
       array<Integer> markarray;
       BackendDAE.StateSets stateSets;
-    case (BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),BackendDAE.MATCHING(ass1=ass1,ass2=ass2),stateSets=stateSets),_,_,_)
+    case (BackendDAE.EQSYSTEM(vars,eqs,SOME(_),SOME(mt),BackendDAE.MATCHING(ass1=ass1,ass2=ass2),stateSets=stateSets),_,_,_)
       equation
         comps = tarjanAlgorithm(mt,ass2);
         markarray = arrayCreate(BackendDAEUtil.equationArraySize(eqs),-1);
@@ -444,10 +444,10 @@ algorithm
       then
         BackendDAE.SINGLEWHENEQUATION(compelem,varindxs);
     
-    case (compelem::{},_,(_,v)::{},_,_,_,ass2,false)
+    case (compelem::{},_,(_,v)::{},_,_,_,_,false)
       then BackendDAE.SINGLEEQUATION(compelem,v);
     
-    case (comp,eqn_lst,var_varindx_lst,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared,ass1,ass2,false)
+    case (comp,eqn_lst,var_varindx_lst,syst as BackendDAE.EQSYSTEM(orderedVars=_,orderedEqs=_),shared,ass1,ass2,false)
       equation
         var_lst = List.map(var_varindx_lst,Util.tuple21);
         true = BackendVariable.hasDiscreteVar(var_lst);
@@ -459,7 +459,7 @@ algorithm
       then
         BackendDAE.MIXEDEQUATIONSYSTEM(sc,indxdisc_eqn,indxdisc_var);
     
-    case (comp,eqn_lst,var_varindx_lst,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared,ass1,ass2,_)
+    case (comp,eqn_lst,var_varindx_lst,syst as BackendDAE.EQSYSTEM(orderedVars=_,orderedEqs=_),shared,_,_,_)
       equation
         var_lst = List.map(var_varindx_lst,Util.tuple21);
         false = BackendVariable.hasDiscreteVar(var_lst);
@@ -480,7 +480,7 @@ algorithm
       then
         BackendDAE.EQUATIONSYSTEM(comp,varindxs,BackendDAE.FULL_JACOBIAN(jac),jac_tp);
     
-    case (comp,eqn_lst,var_varindx_lst,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared,ass1,ass2,_)
+    case (_,eqn_lst,var_varindx_lst,BackendDAE.EQSYSTEM(orderedVars=_,orderedEqs=_),_,_,_,_)
       equation
         var_lst = List.map(var_varindx_lst,Util.tuple21);
         true = BackendVariable.hasDiscreteVar(var_lst);
@@ -747,7 +747,7 @@ algorithm
         e = List.first(elst);
       then
         (eqnlst,varlst,e);
-    case (_,eqns,vars)
+    case (_,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("BackendDAETransform.getEquationAndSolvedVar failed!");
@@ -784,7 +784,7 @@ algorithm
         var = BackendVariable.getVarAt(vars, v);
       then
         (eqn,(var,v));
-    case (e,eqns,vars,ass2) /* equation no. assignments2 */
+    case (e,_,_,_) /* equation no. assignments2 */
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("BackendDAETransform.getEquationAndSolvedVar_Internal failed at index: " +& intString(e));
@@ -1003,12 +1003,12 @@ algorithm
       list<BackendDAE.Equation> eqnLst;
       String errstr;
     
-    case (_, (((eqn as BackendDAE.EQUATION(exp=DAE.CREF(componentRef=cr), scalar=e2))::_), i::_)) equation
+    case (_, (((eqn as BackendDAE.EQUATION(exp=DAE.CREF(componentRef=cr), scalar=_))::_), i::_)) equation
       cr1=BackendVariable.varCref(v);
       true = ComponentReference.crefEqualNoStringCompare(cr1, cr);
     then ((eqn, i));
     
-    case(_, (((eqn as BackendDAE.EQUATION(exp=e2, scalar=DAE.CREF(componentRef=cr)))::_), i::_)) equation
+    case(_, (((eqn as BackendDAE.EQUATION(exp=_, scalar=DAE.CREF(componentRef=cr)))::_), i::_)) equation
       cr1=BackendVariable.varCref(v);
       true = ComponentReference.crefEqualNoStringCompare(cr1, cr);
     then ((eqn, i));
@@ -1485,7 +1485,7 @@ algorithm
       equation
         e1 = Expression.crefExp(cr);
         ((DAE.CREF(cr1,_),(ops,ext_arg_1))) = func((e1,({},inTypeA)));
-        ((e2_1,(ops,ext_arg_2))) = func((e2,(ops,ext_arg_1)));
+        ((e2_1,(ops,_))) = func((e2,(ops,ext_arg_1)));
         source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
       then
         (BackendDAE.SOLVED_EQUATION(cr1,e2_1,source,diffed),ext_arg_1);

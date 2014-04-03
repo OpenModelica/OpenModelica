@@ -398,7 +398,7 @@ algorithm
 
     case {} then ();
 
-    case BackendDAE.EXTOBJCLASS(path,source)::xs equation
+    case BackendDAE.EXTOBJCLASS(path,source)::_ equation
       print("class ");
       print(Absyn.pathString(path));
       print("\n  extends ExternalObject;");
@@ -743,7 +743,7 @@ algorithm
       DAE.ComponentRef cr;
 
     case ({}, _) then ();
-    case (BackendDAE.EQUATION(e1, e2, source, diffed)::res, _) equation /*done*/
+    case (BackendDAE.EQUATION(e1, e2, _, _)::res, _) equation /*done*/
       str = "EQUATION: ";
       str = str +& ExpressionDump.printExpStr(e1);
       str = str +& " = ";
@@ -779,7 +779,7 @@ algorithm
 
       dumpBackendDAEEqnList2(res,printExpTree);
     then ();
-    case (BackendDAE.SOLVED_EQUATION(componentRef=cr,exp=e,source=source)::res,_) equation
+    case (BackendDAE.SOLVED_EQUATION(componentRef=_,exp=e,source=source)::res,_) equation
       print("SOLVED_EQUATION: ");
       str = ExpressionDump.printExpStr(e);
       print(str);
@@ -803,7 +803,7 @@ algorithm
 
       dumpBackendDAEEqnList2(res, printExpTree);
     then ();
-    case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2,source=source)::res,_) equation
+    case (BackendDAE.ARRAY_EQUATION(left=e1,right=_,source=source)::res,_) equation
       print("ARRAY_EQUATION: ");
       str = ExpressionDump.printExpStr(e1);
       print(str);
@@ -1786,7 +1786,7 @@ algorithm
       equation
         print(se);
       then ();
-    case ((a::{},f,c,se))
+    case ((a::{},f,_,se))
       equation
        s = f(a);
        print(s);
@@ -2102,7 +2102,7 @@ algorithm
       DumpHTML.Tags tags;
       BackendDAE.StrongComponents comps;
     case (BackendDAE.NO_MATCHING(),_,_) then inTags;
-    case (BackendDAE.MATCHING(ass1,_,comps),_,_)
+    case (BackendDAE.MATCHING(ass1,_,_),_,_)
       equation
         tags = dumpMatchingHTML(ass1,prefixId,inTags);
         //dumpComponents(comps);
@@ -2648,7 +2648,7 @@ algorithm
      then str;
     case SOME(DAE.VAR_ATTR_INT(min=(NONE(),NONE()),start=NONE(),fixed=NONE(),isProtected=NONE(),finalPrefix=NONE(),distributionOption=NONE(),uncertainOption=NONE()))
      then "";
-    case SOME(DAE.VAR_ATTR_INT(min=(min,max),start=start,fixed=fixed,isProtected=isProtected,finalPrefix=finalPrefix,distributionOption=dist,uncertainOption=uncertainopt))
+    case SOME(DAE.VAR_ATTR_INT(min=(min,max),start=start,fixed=fixed,isProtected=isProtected,finalPrefix=finalPrefix,distributionOption=_,uncertainOption=uncertainopt))
       equation
         str = optExpressionString(min,"min") +& optExpressionString(max,"max") +& optExpressionString(start,"start") +& optExpressionString(fixed,"fixed")
              +& optBooleanString(isProtected,"protected") +& optBooleanString(finalPrefix,"final") +& optUncertainty(uncertainopt);
@@ -3289,7 +3289,7 @@ algorithm
       then
         ();
     
-    case ((headerline,dae as BackendDAE.DAE(eqs,shared)))
+    case ((headerline,BackendDAE.DAE(eqs,shared)))
       equation
         print(headerline); print(":\n");
         List.map_0(eqs,printEqSystem);
@@ -3640,12 +3640,12 @@ algorithm
       e = listLength(ilst1);
     then ((seq,salg,sarr,sce,swe,sie,eqsys,(m_se,m_salg,m_sarr,m_sec,me_jc,me_jt,me_jn,(d,e)::me_nj,me_lt,me_nt),teqsys));
 
-    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=BackendDAE.TORNSYSTEM(tearingvars=ilst1,otherEqnVarTpl=eqnvartpllst,linear=true),disc_eqns=ilst),(seq,salg,sarr,sce,swe,sie,eqsys,(m_se,m_salg,m_sarr,m_sec,me_jc,me_jt,me_jn,me_nj,me_lt,me_nt),teqsys)) equation
+    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=BackendDAE.TORNSYSTEM(tearingvars=_,otherEqnVarTpl=eqnvartpllst,linear=true),disc_eqns=ilst),(seq,salg,sarr,sce,swe,sie,eqsys,(m_se,m_salg,m_sarr,m_sec,me_jc,me_jt,me_jn,me_nj,me_lt,me_nt),teqsys)) equation
       d = listLength(ilst);
       e = listLength(eqnvartpllst);
     then ((seq,salg,sarr,sce,swe,sie,eqsys,(m_se,m_salg,m_sarr,m_sec,me_jc,me_jt,me_jn,me_nj,(d,e)::me_lt,me_nt),teqsys));
     
-    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=BackendDAE.TORNSYSTEM(tearingvars=ilst1,otherEqnVarTpl=eqnvartpllst,linear=false),disc_eqns=ilst),(seq,salg,sarr,sce,swe,sie,eqsys,(m_se,m_salg,m_sarr,m_sec,me_jc,me_jt,me_jn,me_nj,me_lt,me_nt),teqsys)) equation
+    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=BackendDAE.TORNSYSTEM(tearingvars=_,otherEqnVarTpl=eqnvartpllst,linear=false),disc_eqns=ilst),(seq,salg,sarr,sce,swe,sie,eqsys,(m_se,m_salg,m_sarr,m_sec,me_jc,me_jt,me_jn,me_nj,me_lt,me_nt),teqsys)) equation
       d = listLength(ilst);
       e = listLength(eqnvartpllst);
     then ((seq,salg,sarr,sce,swe,sie,eqsys,(m_se,m_salg,m_sarr,m_sec,me_jc,me_jt,me_jn,me_nj,me_lt,(d,e)::me_nt),teqsys));

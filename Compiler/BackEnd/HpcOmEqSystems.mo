@@ -211,7 +211,7 @@ algorithm
         
         // get the otherComps and and update the matching for the othercomps
         matchingOther = getOtherComps(otherEqnVarTpl,ass1All,ass2All);      
-        BackendDAE.MATCHING(ass1=ass1Other, ass2=ass2Other, comps=otherComps) = matchingOther;
+        BackendDAE.MATCHING(ass1=_, ass2=_, comps=otherComps) = matchingOther;
         
         // insert the new components into the BLT instead of the TornSystem, append the updated blocks for the other equations, update matching for the new equations
         numNewSingleEqs = listLength(compsNew)-listLength(tvarIdcs);
@@ -1438,7 +1438,7 @@ algorithm
       DAE.Exp varExp, const, exp1, exp2;
       list<BackendDAE.Equation>  eqLst, eqLstIn;
       list<BackendDAE.Var> varLst, varLstIn;
-  case(_,(varLstIn,eqLstIn,replIn,changed))
+  case(_,(_,eqLstIn,_,_))
     equation
       true = listLength(eqLstIn) < eqIdx;
     then
@@ -1634,7 +1634,7 @@ algorithm
       DAE.Exp newExp;
       list<BackendDAE.Equation> eqLst;
       list<BackendDAE.Var> varLst;
-    case(DAE.CREF(componentRef = cref1),DAE.CREF(componentRef = cref2),_,_,_,_)
+    case(DAE.CREF(componentRef = cref1),DAE.CREF(componentRef = _),_,_,_,_)
       equation
         // a + otherVar = 0  replace: a --> -otherVar   or   a + b = 0 replace: a --> -b
         vars = BackendVariable.listVar(varLstIn);
@@ -1647,7 +1647,7 @@ algorithm
         repl = BackendVarTransform.addReplacement(replIn,cref1,newExp,NONE());
       then
         (eqLst,varLst,repl,true);
-    case(DAE.CREF(componentRef = cref1),DAE.CREF(componentRef = cref2),_,_,_,_)
+    case(DAE.CREF(componentRef = _),DAE.CREF(componentRef = cref2),_,_,_,_)
       equation
         // otherVar + a = 0  replace: a --> -otherVar 
         vars = BackendVariable.listVar(varLstIn);
@@ -1688,7 +1688,7 @@ algorithm
       DAE.ComponentRef cref1,cref2;
       list<BackendDAE.Equation> eqLst;
       list<BackendDAE.Var> varLst;
-    case(DAE.CREF(componentRef = cref1),DAE.CREF(componentRef = cref2),_,_,_,_)
+    case(DAE.CREF(componentRef = cref1),DAE.CREF(componentRef = _),_,_,_,_)
       equation
         // a - otherVar = 0  replace: a --> otherVar   or   a - b = 0 replace: a --> b
         vars = BackendVariable.listVar(varLstIn);
@@ -1700,7 +1700,7 @@ algorithm
         repl = BackendVarTransform.addReplacement(replIn,cref1,exp2,NONE());
       then
         (eqLst,varLst,repl,true);
-    case(DAE.CREF(componentRef = cref1),DAE.CREF(componentRef = cref2),_,_,_,_)
+    case(DAE.CREF(componentRef = _),DAE.CREF(componentRef = cref2),_,_,_,_)
       equation
         // otherVar - a = 0  replace: a --> otherVar 
         vars = BackendVariable.listVar(varLstIn);
@@ -1770,7 +1770,7 @@ algorithm
       list<list<Integer>> otherVarsLst;
       list<tuple<Integer,list<Integer>>> otherEqVarTpl;
       Boolean lin;
-    case(_,BackendDAE.TORNSYSTEM(tearingvars=tvars,residualequations=resEqs, otherEqnVarTpl=otherEqVarTpl, linear=lin))
+    case(_,BackendDAE.TORNSYSTEM(tearingvars=tvars,residualequations=resEqs, otherEqnVarTpl=otherEqVarTpl, linear=_))
       equation
         (eqSysIn,sysIdx) = tplIn;
         BackendDAE.EQSYSTEM(orderedVars,orderedEqs,_,_,_,_) = eqSysIn;

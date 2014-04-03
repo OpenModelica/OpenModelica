@@ -92,7 +92,7 @@ algorithm
       then
         p;
     /* Qualified names: First check if it is defined in a file pack.mo */
-    case (Absyn.QUALIFIED(name = pack,path = rest),_,mp,_)
+    case (Absyn.QUALIFIED(name = pack,path = _),_,mp,_)
       equation
         gd = System.groupDelimiter();
         mps = System.strtok(mp, gd);
@@ -217,7 +217,7 @@ algorithm
         w2 = Absyn.WITHIN(path);
         cp = List.fold3(reverseOrder, loadCompletePackageFromMp2, mp_1, encoding, w2, {});
       then Absyn.CLASS(name,pp,fp,ep,r,Absyn.PARTS(tv,ca,cp,ann,cmt),info);
-    case (_,pack,mp,_,within_,_)
+    case (_,pack,mp,_,_,_)
       equation
         true = numError == Error.getNumErrorMessages();
         str = "loadCompletePackageFromMp failed for unknown reason: mp=" +& mp +& " pack=" +& pack;
@@ -576,7 +576,7 @@ algorithm
       PackageOrder orderElt,load;
     case (namesToSort,{},_,_) then (po,namesToSort);
 
-    case (name1::namesToSort,(ei as Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.COMPONENTS(components=comps),info=info)))::elts,_,_)
+    case (name1::_,(ei as Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.COMPONENTS(components=comps),info=info)))::elts,_,_)
       equation
         compNames = List.map(comps,Absyn.componentName);
         (names,b) = matchCompNames(inNamesToSort,compNames,info);
@@ -593,14 +593,14 @@ algorithm
         (outOrder,names) = getPackageContentNamesinElts(namesToSort,Util.if_(b,elts,inElts),orderElt :: po, pub);
       then (outOrder,names);
 
-    case ({},(ei as Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(class_=Absyn.CLASS(name=name2,info=info)))))::elts,_,_)
+    case ({},(Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(class_=Absyn.CLASS(name=name2,info=info)))))::_,_,_)
       equation
         load = makeClassLoad(name2);
         Error.assertionOrAddSourceMessage(not listMember(load,po), Error.PACKAGE_MO_NOT_IN_ORDER, {name2}, info);
         Error.addSourceMessage(Error.FOUND_ELEMENT_NOT_IN_ORDER_FILE, {name2}, info);
       then fail();
 
-    case ({},Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.COMPONENTS(components=Absyn.COMPONENTITEM(component=Absyn.COMPONENT(name=name2))::_),info=info))::elts,_,_)
+    case ({},Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.COMPONENTS(components=Absyn.COMPONENTITEM(component=Absyn.COMPONENT(name=name2))::_),info=info))::_,_,_)
       equation
         load = makeClassLoad(name2);
         Error.assertionOrAddSourceMessage(not listMember(load,po), Error.PACKAGE_MO_NOT_IN_ORDER, {name2}, info);
@@ -633,7 +633,7 @@ algorithm
         (rest1,b) = matchCompNames(rest1,rest2,info);
         Error.assertionOrAddSourceMessage(b,Error.ORDER_FILE_COMPONENTS, {}, info);
       then (rest1,true);
-    case (n1::rest1,n2::rest2,_)
+    case (n1::rest1,n2::_,_)
       equation
         false = n1 ==& n2;
       then (rest1,false);

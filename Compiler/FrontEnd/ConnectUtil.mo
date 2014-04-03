@@ -536,7 +536,7 @@ algorithm
       then
         (flows, streams);
 
-    case (var :: rest_vars, _ ,_)
+    case (_ :: rest_vars, _ ,_)
       equation
         (flows, streams) =
           getStreamAndFlowVariables(rest_vars, inAccFlows, inAccStreams);
@@ -2196,7 +2196,7 @@ algorithm
       then
         (sets, graph);
 
-    case (_, edge :: rest_edges, _, _)
+    case (_, _ :: rest_edges, _, _)
       equation
         (sets, graph) = setArrayAddConnection(inSet, rest_edges, inSets,
           inGraph);
@@ -2758,8 +2758,8 @@ algorithm
 
     // One inside, one outside:
     // cr1 = cr2;
-    case ({Connect.CONNECTOR_ELEMENT(name = cr1, face = f1, source = src1),
-           Connect.CONNECTOR_ELEMENT(name = cr2, face = f2, source = src2)})
+    case ({Connect.CONNECTOR_ELEMENT(name = cr1, face = _, source = src1),
+           Connect.CONNECTOR_ELEMENT(name = cr2, face = _, source = src2)})
       equation
         src = DAEUtil.mergeSources(src1, src2);
         e1 = Expression.crefExp(cr1);
@@ -3450,18 +3450,18 @@ algorithm
       InnerOuter.InstHierarchy ih;
 
     // is a non-qualified cref => OUTSIDE
-    case (_,ih,DAE.CREF_IDENT(ident = _))
+    case (_,_,DAE.CREF_IDENT(ident = _))
       then Connect.OUTSIDE();
 
     // is a qualified cref and is a connector => OUTSIDE
-    case (_,ih,DAE.CREF_QUAL(ident = id,componentRef = cr))
+    case (_,_,DAE.CREF_QUAL(ident = id,componentRef = _))
       equation
        (_,_,DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)),_,_,_,_,_,_)
          = Lookup.lookupVar(Env.emptyCache(),env,ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{}));
       then Connect.OUTSIDE();
 
     // is a qualified cref and is NOT a connector => INSIDE
-    case (_,ih,DAE.CREF_QUAL(componentRef =_))
+    case (_,_,DAE.CREF_QUAL(componentRef =_))
       then Connect.INSIDE();
   end matchcontinue;
 end componentFace;
@@ -3593,7 +3593,7 @@ algorithm
     case ({}) then (0, 0, 0);
 
     // A connector inside a connector.
-    case ((v as DAE.TYPES_VAR(name = name, ty = ty)) :: rest)
+    case ((DAE.TYPES_VAR(name = name, ty = ty)) :: rest)
       equation
         // Check that it's a connector.
         ty2 = Types.arrayElementType(ty);
@@ -3758,7 +3758,7 @@ algorithm
 
     case ({}, _) then false;
 
-    case (Connect.CONNECTOR_ELEMENT(name = name)::rest, _)
+    case (Connect.CONNECTOR_ELEMENT(name = name)::_, _)
       equation
         true = ComponentReference.crefPrefixOf(inCref, name);
       then

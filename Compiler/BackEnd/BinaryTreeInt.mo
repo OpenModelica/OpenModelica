@@ -197,34 +197,34 @@ algorithm
       then
         TREENODE(SOME(TREEVALUE(inKey,inValue)),NONE(),NONE());
 
-    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = right),_,_)
+    case (TREENODE(value = SOME(TREEVALUE(rkey,_)),leftSubTree = left,rightSubTree = right),_,_)
       equation
         0 = keyCmp(rkey,inKey);
       then
         TREENODE(SOME(TREEVALUE(rkey,inValue)),left,right);
 
-    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = (right as SOME(t))),_,_)
+    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,_)),leftSubTree = left,rightSubTree = (SOME(t))),_,_)
       equation
         1 = keyCmp(rkey,inKey);
         t_1 = treeAdd(t, inKey, inValue);
       then
         TREENODE(optVal,left,SOME(t_1));
 
-    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = (right as NONE())),_,_)
+    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,_)),leftSubTree = left,rightSubTree = (NONE())),_,_)
       equation
         1 = keyCmp(rkey,inKey);
         right_1 = treeAdd(TREENODE(NONE(),NONE(),NONE()), inKey, inValue);
       then
         TREENODE(optVal,left,SOME(right_1));
 
-    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rval)),leftSubTree = (left as SOME(t)),rightSubTree = right),_,_)
+    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,_)),leftSubTree = (SOME(t)),rightSubTree = right),_,_)
       equation
         -1 = keyCmp(rkey,inKey);
         t_1 = treeAdd(t, inKey, inValue);
       then
         TREENODE(optVal,SOME(t_1),right);
 
-    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rval)),leftSubTree = (left as NONE()),rightSubTree = right),_,_)
+    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,_)),leftSubTree = (NONE()),rightSubTree = right),_,_)
       equation
         -1 = keyCmp(rkey,inKey);
         left_1 = treeAdd(TREENODE(NONE(),NONE(),NONE()), inKey, inValue);
@@ -454,7 +454,7 @@ algorithm
       then
         ((key :: klst),(value :: vlst));
 
-    case (TREENODE(value = NONE(),leftSubTree = left,rightSubTree = right),klst,vlst)
+    case (TREENODE(value = NONE(),leftSubTree = left,rightSubTree = _),klst,vlst)
       equation
         (klst,vlst) = bintreeToListOpt(left, klst, vlst);
         (klst,vlst) = bintreeToListOpt(left, klst, vlst);

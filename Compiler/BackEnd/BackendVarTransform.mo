@@ -219,7 +219,7 @@ algorithm
       HashTable3.HashTable invHt,invHt_1;
       list<DAE.Ident> iv;
       Option<HashTable2.HashTable> derConst;
-    case ((REPLACEMENTS(hashTable=ht)),src,dst) /* source dest */
+    case ((REPLACEMENTS(hashTable=ht)),src,_) /* source dest */
       equation
         olddst = BaseHashTable.get(src,ht) "if rule a->b exists, fail" ;
       then
@@ -865,12 +865,12 @@ algorithm
 
       // Note: Most of these functions check if a subexpression did a replacement.
       // If it did not, we do not create a new copy of the expression (to save some memory).
-    case (e as DAE.CREF(componentRef = DAE.CREF_IDENT(ident=ident)),repl,cond)
+    case (e as DAE.CREF(componentRef = DAE.CREF_IDENT(ident=ident)),repl,_)
       equation
         true = isIterationVar(repl, ident);
       then
         (e,false);
-    case ((e as DAE.CREF(componentRef = cr,ty = t)),repl,cond)
+    case ((e as DAE.CREF(componentRef = cr,ty = _)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
         (cr,_) = replaceCrefSubs(cr,repl,cond);
@@ -936,7 +936,7 @@ algorithm
         true = c1 or c2 or c3;
       then
         (DAE.IFEXP(e1_1,e2_1,e3_1),true);
-    case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst={e1 as DAE.CREF(componentRef = cr,ty=t)}),REPLACEMENTS(derConst=SOME(derConst)),cond)
+    case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef = cr,ty=_)}),REPLACEMENTS(derConst=SOME(derConst)),cond)
       equation
         e = BaseHashTable.get(cr,derConst);
         (e,_) = replaceExp(e, inVariableReplacements, cond);
@@ -1002,7 +1002,7 @@ algorithm
         (expl,true) = replaceExpList(expl, repl, cond, {}, c1);
       then
         (Expression.makeASUB(e1_1,expl),true);
-    case ((e as DAE.TSUB(exp = e1,ix = i, ty = tp)),repl,cond)
+    case ((DAE.TSUB(exp = e1,ix = i, ty = tp)),repl,cond)
       equation
         true = replaceExpCond(cond, e1);
         (e1_1,true) = replaceExp(e1, repl, cond);
@@ -1016,7 +1016,7 @@ algorithm
         true = c1 or c2;
       then
         (DAE.SIZE(e1_1,SOME(e2_1)),true);
-    case (DAE.CODE(code = a,ty = tp),repl,cond)
+    case (DAE.CODE(code = a,ty = tp),_,_)
       equation
         print("replace_exp on CODE not impl.\n");
       then
@@ -1027,7 +1027,7 @@ algorithm
         (e1_1,c1) = replaceExp(e1, repl, cond);
         (iters,true) = replaceExpIters(iters, repl, cond, {}, false);
       then (DAE.REDUCTION(reductionInfo,e1_1,iters),true);
-    case (e,repl,cond)
+    case (e,_,_)
       then (e,false);
   end matchcontinue;
 end replaceExp;
@@ -1207,7 +1207,7 @@ algorithm
         (exp,true) = replaceExp(exp, repl, cond);
         (iters,_) = replaceExpIters(iters,repl,cond,DAE.REDUCTIONITER(id,exp,NONE(),ty)::acc1,true);
       then (iters,true);
-    case (DAE.REDUCTIONITER(id,exp,SOME(gexp),ty)::iters,_,_,acc1,acc2)
+    case (DAE.REDUCTIONITER(id,exp,SOME(gexp),ty)::iters,_,_,acc1,_)
       equation
         (exp,b1) = replaceExp(exp, repl, cond);
         (gexp,b2) = replaceExp(gexp, repl, cond);
@@ -1271,7 +1271,7 @@ algorithm
       list<list<DAE.Exp>> acc1;
       Boolean acc2;
 
-    case ({},repl,cond,acc1,acc2) then (listReverse(acc1),acc2);
+    case ({},_,_,acc1,acc2) then (listReverse(acc1),acc2);
     case ((e :: es),repl,cond,acc1,acc2)
       equation
         (e_1,acc2) = replaceExpList(e, repl, cond, {}, acc2);
@@ -2223,7 +2223,7 @@ algorithm
         true = b1 or b2;
       then
         (DAE.ELSEIF(e1,statementLst_1,else_1),true);
-    case (e1,statementLst,else_,repl,_)
+    case (e1,statementLst,else_,_,_)
       then
         (DAE.ELSEIF(e1,statementLst,else_),false);
   end matchcontinue;
@@ -2260,7 +2260,7 @@ algorithm
           statementLst = listAppend(statementLst,es);
           (es_1,b) = replaceStatementLst(statementLst, repl,inFuncTypeExpExpToBooleanOption,inAcc,true);
         then (es_1,b);
-      case (DAE.BCONST(false),_,else_ as DAE.NOELSE(),source,es,repl,_,_,_)
+      case (DAE.BCONST(false),_,DAE.NOELSE(),_,es,repl,_,_,_)
         equation
           (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,inAcc,true);
         then (es_1,b);
@@ -2268,7 +2268,7 @@ algorithm
         equation
           (es_1,b) = replaceSTMT_IF(exp_e,statementLst_e,else_e,source,es,repl,inFuncTypeExpExpToBooleanOption,inAcc,true);
         then (es_1,b);
-      case (DAE.BCONST(false),_,else_ as DAE.ELSE(statementLst=statementLst_e),source,es,repl,_,_,_)
+      case (DAE.BCONST(false),_,DAE.ELSE(statementLst=statementLst_e),_,es,repl,_,_,_)
         equation
           statementLst = listAppend(statementLst_e,es);
           (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,statementLst,true);

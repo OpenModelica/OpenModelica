@@ -719,7 +719,7 @@ algorithm
       then
         DAE.RCONST(r2);
 
-    case (DAE.UNARY(operator = DAE.UMINUS(ty = tp),exp = e))
+    case (DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = e))
       equation
         e_1 = expAbs(e);
       then
@@ -843,7 +843,7 @@ algorithm
       then
         e;
 
-    case (DAE.UNARY(operator=op,exp=e))
+    case (DAE.UNARY(operator=_,exp=e))
       equation
         e_1 = expStripLastSubs(e);
         ty = typeof(e_1);
@@ -876,7 +876,7 @@ algorithm
       then
         e;
 
-    case (DAE.UNARY(operator=op,exp=e))
+    case (DAE.UNARY(operator=_,exp=e))
       equation
         e_1 = expStripLastIdent(e);
         ty = typeof(e_1);
@@ -1028,7 +1028,7 @@ algorithm
 
     case (DAE.T_ARRAY(ty = tp,dims = {_}))
       then tp;
-    case (DAE.T_ARRAY(ty = tp,dims = (d :: ds),source = ts))
+    case (DAE.T_ARRAY(ty = tp,dims = (_ :: ds),source = ts))
       then DAE.T_ARRAY(tp,ds,ts);
     case (t) then t;
   end matchcontinue;
@@ -1551,7 +1551,7 @@ algorithm
       list<DAE.Exp> f;
       list<DAE.ComponentRef> crefs;
     case (DAE.CREF(componentRef = cr)) then {cr};
-    case(DAE.IFEXP(c,tb,fb)) equation
+    case(DAE.IFEXP(_,tb,fb)) equation
       f = List.select(listAppend(factors(tb),factors(fb)),isCref);
       crefs = List.map(f,expCref);
     then crefs;
@@ -2036,7 +2036,7 @@ algorithm
     case (DAE.LBINARY(operator = op)) then typeofOp(op);
     case (DAE.LUNARY(operator = op)) then typeofOp(op);
     case (DAE.RELATION(operator = op)) then typeofRelation(typeofOp(op));
-    case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3)) then typeof(e2);
+    case (DAE.IFEXP(expCond = _,expThen = e2,expElse = _)) then typeof(e2);
     case (DAE.CALL(attr = DAE.CALL_ATTR(ty=tp))) then tp;
     case (DAE.RECORD(ty=tp)) then tp;
     case (DAE.PARTEVALFUNCTION(ty=tp)) then tp;
@@ -2284,7 +2284,7 @@ algorithm
         res;
 
     // terms( a*(b+c)) => {a*b, c*b}
-    case (e as DAE.BINARY(e1,DAE.MUL(tp),e2))
+    case (DAE.BINARY(e1,DAE.MUL(_),e2))
       equation
         (f1 as _::_::_) = allTerms(e2);
         f1 = List.map1(f1,makeProduct,e1);
@@ -2292,7 +2292,7 @@ algorithm
       then
         f1;
 
-    case (e as DAE.BINARY(e1,DAE.MUL_ARR(tp),e2))
+    case (DAE.BINARY(e1,DAE.MUL_ARR(_),e2))
       equation
         (f1 as _::_::_) = allTerms(e2);
         f1 = List.map1(f1,makeProduct,e1);
@@ -2300,7 +2300,7 @@ algorithm
       then
         f1;
 
-    case (e as DAE.BINARY(e1,DAE.MUL_ARRAY_SCALAR(tp),e2))
+    case (DAE.BINARY(e1,DAE.MUL_ARRAY_SCALAR(_),e2))
       equation
         (f1 as _::_::_) = allTerms(e2);
         f1 = List.map1(f1,makeProduct,e1);
@@ -2309,7 +2309,7 @@ algorithm
         f1;
 
     // terms( (b+c)*a) => {b*a, c*a}
-    case (e as DAE.BINARY(e1,DAE.MUL(tp),e2))
+    case (DAE.BINARY(e1,DAE.MUL(_),e2))
       equation
         (f1 as _::_::_) = allTerms(e1);
         f1 = List.map1(f1,makeProduct,e2);
@@ -2317,7 +2317,7 @@ algorithm
       then
         f1;
 
-    case (e as DAE.BINARY(e1,DAE.MUL_ARR(tp),e2))
+    case (DAE.BINARY(e1,DAE.MUL_ARR(_),e2))
       equation
         (f1 as _::_::_) = allTerms(e1);
         f1 = List.map1(f1,makeProduct,e2);
@@ -2325,7 +2325,7 @@ algorithm
       then
         f1;
 
-    case (e as DAE.BINARY(e1,DAE.MUL_ARRAY_SCALAR(tp),e2))
+    case (DAE.BINARY(e1,DAE.MUL_ARRAY_SCALAR(_),e2))
       equation
         (f1 as _::_::_) = allTerms(e1);
         f1 = List.map1(f1,makeProduct,e2);
@@ -2334,7 +2334,7 @@ algorithm
         f1;
 
     // terms( (b+c)/a) => {b/a, c/a}
-    case (e as DAE.BINARY(e1,DAE.DIV(tp),e2))
+    case (DAE.BINARY(e1,DAE.DIV(_),e2))
       equation
         (f1 as _::_::_) = allTerms(e1);
         f1 = List.map1(f1,expDiv,e2);
@@ -2342,7 +2342,7 @@ algorithm
       then
         f1;
 
-    case (e as DAE.BINARY(e1,DAE.DIV_ARR(tp),e2))
+    case (DAE.BINARY(e1,DAE.DIV_ARR(_),e2))
       equation
         (f1 as _::_::_) = allTerms(e1);
         f1 = List.map1(f1,expDiv,e2);
@@ -2350,7 +2350,7 @@ algorithm
       then
         f1;
 
-    case (e as DAE.BINARY(e1,DAE.DIV_ARRAY_SCALAR(tp),e2))
+    case (DAE.BINARY(e1,DAE.DIV_ARRAY_SCALAR(_),e2))
       equation
         (f1 as _::_::_) = allTerms(e1);
         f1 = List.map1(f1,expDiv,e2);
@@ -2358,7 +2358,7 @@ algorithm
       then
         f1;
 
-    case (e as DAE.BINARY(e1,DAE.DIV_SCALAR_ARRAY(tp),e2))
+    case (DAE.BINARY(e1,DAE.DIV_SCALAR_ARRAY(_),e2))
       equation
         (f1 as _::_::_) = allTerms(e1);
         f1 = List.map1(f1,expDiv,e2);
@@ -2366,21 +2366,21 @@ algorithm
       then
         f1;
 
-    case (e as DAE.UNARY(operator = DAE.UMINUS(ty=_),exp=e1))
+    case (DAE.UNARY(operator = DAE.UMINUS(ty=_),exp=e1))
       equation
         f1 = allTerms(e1);
         f1 = List.map(f1,negate);
       then
         f1;
 
-    case (e as DAE.UNARY(operator = DAE.UMINUS_ARR(ty=_),exp=e1))
+    case (DAE.UNARY(operator = DAE.UMINUS_ARR(ty=_),exp=e1))
       equation
         f1 = allTerms(e1);
         f1 = List.map(f1,negate);
       then
         f1;
 
-    case (e as DAE.ASUB(exp = e1,sub=f2))
+    case (DAE.ASUB(exp = e1,sub=f2))
       equation
         f1 = allTerms(e1);
         f1 = List.map1(f1,makeASUB,f2);
@@ -2399,7 +2399,7 @@ algorithm
     case (e as DAE.BINARY(operator = DAE.POW_ARR2(ty = _))) then {e};
     case (e as DAE.BINARY(operator = DAE.POW_ARRAY_SCALAR(ty = _))) then {e};
     case (e as DAE.BINARY(operator = DAE.POW_SCALAR_ARRAY(ty = _))) then {e};
-    case (e as DAE.CREF(componentRef = cr)) then {e};
+    case (e as DAE.CREF(componentRef = _)) then {e};
     case (e as DAE.ICONST(integer = _)) then {e};
     case (e as DAE.RCONST(real = _)) then {e};
     case (e as DAE.SCONST(string = _)) then {e};
@@ -2525,7 +2525,7 @@ algorithm
         acc = factorsWork(e1,acc,true,doInverseFactors);
         acc = factorsWork(e2,acc,true,not doInverseFactors);
       then acc;
-    case (DAE.CREF(componentRef = cr),acc,_,_)
+    case (DAE.CREF(componentRef = _),acc,_,_)
       equation
         e = Debug.bcallret1(doInverseFactors, inverseFactors, inExp, inExp);
       then e::acc;
@@ -2719,7 +2719,7 @@ algorithm
         nonxt = Util.if_(res, zero, e);
       then
         (xt,nonxt);
-    case (e,cr)
+    case (_,_)
       equation
         /*Print.printBuf("Expression.getTerms_containingX failed: ");
         ExpressionDump.printExp(e);
@@ -3010,7 +3010,7 @@ algorithm
       list<DAE.Exp> explst;
       Boolean b;
       
-    case (DAE.ARRAY(ty=ty, scalar=b, array=explst), _) 
+    case (DAE.ARRAY(ty=ty, scalar=_, array=explst), _) 
       equation 
         explst = List.flatten(List.map1(explst, generateCrefsExpLstFromExp, inCrefPrefix));  
       then explst;
@@ -3030,7 +3030,7 @@ algorithm
       then
         {e};
         
-    case (DAE.CREF(componentRef=cr,ty=ty),NONE()) then {inExp};
+    case (DAE.CREF(componentRef=_,ty=ty),NONE()) then {inExp};
   end match;
 end generateCrefsExpLstFromExp;
 
@@ -3465,7 +3465,7 @@ algorithm
       then e;
 
    // (-e)^r = e^r if r is even
-   case (DAE.UNARY(exp=e,operator=DAE.UMINUS(ty=tp)), DAE.RCONST(real = r1)) equation
+   case (DAE.UNARY(exp=e,operator=DAE.UMINUS(ty=_)), DAE.RCONST(real = r1)) equation
     r2 = realMod(r1,2.0);
     true = realEq(r2,0.0);
     e = expPow(e,DAE.RCONST(r1));
@@ -3563,19 +3563,19 @@ algorithm
       then
         res;
     // e1/e*e2 for e = 0 => fail
-    case (DAE.BINARY(exp1 = e1,operator = DAE.DIV(ty = tp),exp2 = e)::es)
+    case (DAE.BINARY(exp1 = _,operator = DAE.DIV(ty = _),exp2 = e)::_)
       equation
         true = isZero(e);
       then
         fail();
         
     // e2*e1/e for e = 0 => fail 
-    case ({e2,DAE.BINARY(exp1 = e1,operator = DAE.DIV(ty = tp),exp2 = e)})
+    case ({_,DAE.BINARY(exp1 = _,operator = DAE.DIV(ty = _),exp2 = e)})
       equation
         true = isZero(e);
       then
         fail();
-     case ((e :: es)) /* to prevent infinite recursion, disregard constant 0. */
+     case ((e :: _)) /* to prevent infinite recursion, disregard constant 0. */
       equation
         true = isZero(e);
       then e;
@@ -4047,7 +4047,7 @@ algorithm
       DAE.Dimensions dims1, dims2;
       DAE.TypeSource ts;
 
-    case (DAE.T_ARRAY(ty = et, dims = dim1 :: dims1, source = ts), DAE.T_ARRAY(dims = dim2 :: dims2))
+    case (DAE.T_ARRAY(ty = et, dims = dim1 :: dims1, source = ts), DAE.T_ARRAY(dims = dim2 :: _))
       equation
         dim1 = dimensionsAdd(dim1, dim2);
       then
@@ -4525,9 +4525,9 @@ algorithm
       then res;
 
     // Why don't we call rel() for these expressions?
-    case (DAE.CODE(code = _),rel,ext_arg) then ((inExp,ext_arg));
+    case (DAE.CODE(code = _),_,ext_arg) then ((inExp,ext_arg));
 
-    case (_,rel,ext_arg)
+    case (_,_,_)
       equation
         str = ExpressionDump.printExpStr(inExp);
         str = "Expression.traverseExp or one of the user-defined functions using it is not implemented correctly: " +& str;
@@ -4726,16 +4726,16 @@ algorithm
         ((e,ext_arg_3));
 
     // logical unary
-    case (DAE.LUNARY(operator = op,exp = e1),rel,ext_arg)
+    case (DAE.LUNARY(operator = _,exp = _),_,ext_arg)
       then
         ((inExp,ext_arg));
 
     // logical binary
-    case (DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2),rel,ext_arg)
+    case (DAE.LBINARY(exp1 = _,operator = _,exp2 = _),_,ext_arg)
       then ((inExp,ext_arg));
 
     // relation
-    case (DAE.RELATION(exp1 = e1,operator = op,exp2 = e2, index=index_, optionExpisASUB= isExpisASUB),rel,ext_arg)
+    case (DAE.RELATION(exp1 = _,operator = _,exp2 = _, index=_, optionExpisASUB= _),_,ext_arg)
       then ((inExp,ext_arg));
 
     // if expressions
@@ -4952,9 +4952,9 @@ algorithm
       then res;
 
     // Why don't we call rel() for these expressions?
-    case (DAE.CODE(code = _),rel,ext_arg) then ((inExp,ext_arg));
+    case (DAE.CODE(code = _),_,ext_arg) then ((inExp,ext_arg));
 
-    case (e,rel,ext_arg)
+    case (e,_,_)
       equation
         str = ExpressionDump.printExpStr(e);
         str = "Expression.traverseExpWithoutRelations or one of the user-defined functions using it is not implemented correctly: " +& str;
@@ -5091,11 +5091,11 @@ algorithm
       ComponentRef cr,cr_1;
       list<list<String>> aliases;
 
-    case (DAE.ICONST(_),rel,ext_arg) then ((inExp,ext_arg));
-    case (DAE.RCONST(_),rel,ext_arg) then ((inExp,ext_arg));
-    case (DAE.SCONST(_),rel,ext_arg) then ((inExp,ext_arg));
-    case (DAE.BCONST(_),rel,ext_arg) then ((inExp,ext_arg));
-    case (DAE.ENUM_LITERAL(name=_),rel,ext_arg) then ((inExp,ext_arg));
+    case (DAE.ICONST(_),_,ext_arg) then ((inExp,ext_arg));
+    case (DAE.RCONST(_),_,ext_arg) then ((inExp,ext_arg));
+    case (DAE.SCONST(_),_,ext_arg) then ((inExp,ext_arg));
+    case (DAE.BCONST(_),_,ext_arg) then ((inExp,ext_arg));
+    case (DAE.ENUM_LITERAL(name=_),_,ext_arg) then ((inExp,ext_arg));
     case (DAE.CREF(cr,tp),rel,ext_arg)
       equation
         (cr_1,ext_arg_1) = traverseExpTopDownCrefHelper(cr,rel,ext_arg);
@@ -5232,7 +5232,7 @@ algorithm
       then
         ((DAE.SIZE(e1_1,SOME(e2_1)),ext_arg_2));
 
-    case (DAE.CODE(ty=_),rel,ext_arg) then ((inExp,ext_arg));
+    case (DAE.CODE(ty=_),_,ext_arg) then ((inExp,ext_arg));
 
     case (DAE.REDUCTION(reductionInfo = reductionInfo, expr = e1, iterators = riters),rel,ext_arg)
       equation
@@ -5291,13 +5291,13 @@ algorithm
       then
         ((DAE.BOX(e1_1),ext_arg_1));
 
-    case (DAE.PATTERN(pattern=_),rel,ext_arg)
+    case (DAE.PATTERN(pattern=_),_,ext_arg)
       then ((inExp,ext_arg));
 
-    case (DAE.SHARED_LITERAL(index=_),rel,ext_arg)
+    case (DAE.SHARED_LITERAL(index=_),_,ext_arg)
       then ((inExp,ext_arg));
 
-    case (_,rel,ext_arg)
+    case (_,_,_)
       equation
         str = ExpressionDump.printExpStr(inExp);
         str = "Expression.traverseExpTopDown1 not implemented correctly: " +& str;
@@ -5452,7 +5452,7 @@ algorithm
       Boolean b;
       DAE.Exp e;
 
-    case((e as DAE.CREF(componentRef = _), b))
+    case((e as DAE.CREF(componentRef = _), _))
       then
         ((e, true));
 
@@ -5522,14 +5522,14 @@ algorithm
       Type ty;
       DAE.Exp e;
 
-    case((e as DAE.CREF(cr,ty), (crefs,dcrefs)))
+    case((e as DAE.CREF(cr,_), (crefs,dcrefs)))
       equation
         crefs = List.unionEltOnTrue(cr,crefs,ComponentReference.crefEqual);
         // e = makeCrefExp(cr,ty);
       then
         ((e, (crefs,dcrefs) ));
 
-    case((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst={DAE.CREF(cr,ty)}), (crefs,dcrefs)))
+    case((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst={DAE.CREF(cr,_)}), (crefs,dcrefs)))
       equation
         dcrefs = List.unionEltOnTrue(cr,dcrefs,ComponentReference.crefEqual);
         // e = makeCrefExp(cr,ty);
@@ -5735,7 +5735,7 @@ algorithm
       Type ty;
       DAE.Exp e;
 
-    case((e as DAE.CREF(cr,ty),(func,arg)))
+    case((e as DAE.CREF(cr,_),(func,arg)))
       equation
         arg1 = func(cr,arg);
       then
@@ -5765,16 +5765,16 @@ algorithm outExp := matchcontinue(inExp)
     DAE.Exp e,e2;
     Type ty;
 
-  case( (e as DAE.BINARY(operator = DAE.DIV(ty),exp2 = e2), exps) )
+  case( (e as DAE.BINARY(operator = DAE.DIV(_),exp2 = e2), exps) )
     then ((e, e2::exps ));
 
-  case( ( e as DAE.BINARY(operator = DAE.DIV_ARR(ty),exp2 = e2), exps) )
+  case( ( e as DAE.BINARY(operator = DAE.DIV_ARR(_),exp2 = e2), exps) )
     then ((e, e2::exps ));
 
-  case( ( e as DAE.BINARY(operator = DAE.DIV_ARRAY_SCALAR(ty),exp2 = e2), exps) )
+  case( ( e as DAE.BINARY(operator = DAE.DIV_ARRAY_SCALAR(_),exp2 = e2), exps) )
     then ((e, e2::exps ));
 
-  case( ( e as DAE.BINARY(operator = DAE.DIV_SCALAR_ARRAY(ty),exp2 = e2), exps) )
+  case( ( e as DAE.BINARY(operator = DAE.DIV_SCALAR_ARRAY(_),exp2 = e2), exps) )
     then ((e, e2::exps ));
 
   else inExp;
@@ -6449,7 +6449,7 @@ algorithm
 
     case (DAE.ICONST(integer = ival)) then intEq(ival,1);
     case (DAE.RCONST(real = rval)) then realEq(rval,1.0);
-    case (DAE.CAST(ty = t,exp = e))
+    case (DAE.CAST(ty = _,exp = e))
       equation
         res = isOne(e) "Casting to one is still one" ;
       then
@@ -6475,7 +6475,7 @@ algorithm
 
     case (DAE.ICONST(integer = ival)) then intEq(ival,0);
     case (DAE.RCONST(real = rval)) then realEq(rval,0.0);
-    case (DAE.CAST(ty = t,exp = e)) then isZero(e);
+    case (DAE.CAST(ty = _,exp = e)) then isZero(e);
 
     case(DAE.UNARY(DAE.UMINUS(_),e)) then isZero(e);
     case(DAE.ARRAY(array = ae)) then List.mapAllValueBool(ae,isZero,true);
@@ -6534,7 +6534,7 @@ algorithm
         b3 = isPositiveOrZero(e1);
         b = b2 or b3;
       then b1 and b;
-    case DAE.BINARY(e1,DAE.POW(ty=_),e2) then isEven(e2);
+    case DAE.BINARY(_,DAE.POW(ty=_),e2) then isEven(e2);
     else isZero(inExp);
 
   end match;
@@ -6597,11 +6597,11 @@ algorithm
     case (DAE.SCONST(string = _),_) then true;
     case (DAE.ENUM_LITERAL(name = _),_) then true;
 
-    case (DAE.UNARY(operator = op,exp = e),_) then isConstWork(e,true);
+    case (DAE.UNARY(operator = _,exp = e),_) then isConstWork(e,true);
 
-    case (DAE.CAST(ty = t,exp = e),_) then isConstWork(e,true);
+    case (DAE.CAST(ty = _,exp = e),_) then isConstWork(e,true);
 
-    case (DAE.BINARY(e1,op,e2),_) then isConstWork(e1,isConstWork(e2,true));
+    case (DAE.BINARY(e1,_,e2),_) then isConstWork(e1,isConstWork(e2,true));
 
     case (DAE.IFEXP(e,e1,e2),_) then isConstWork(e,isConstWork(e1,isConstWork(e2,true)));
 
@@ -7032,13 +7032,13 @@ algorithm
         res;
 
     // binary operators, e1 has a vector function call
-    case (DAE.BINARY(exp1 = e1,exp2 = e2))
+    case (DAE.BINARY(exp1 = e1,exp2 = _))
       equation
         true = containVectorFunctioncall(e1);
       then
         true;
     // binary operators, e2 has a vector function call
-    case (DAE.BINARY(exp1 = e1,exp2 = e2))
+    case (DAE.BINARY(exp1 = _,exp2 = e2))
       equation
         true = containVectorFunctioncall(e2);
       then
@@ -7050,13 +7050,13 @@ algorithm
       then
         res;
     // logical binary operators, e1 is a vector call
-    case (DAE.LBINARY(exp1 = e1,exp2 = e2))
+    case (DAE.LBINARY(exp1 = e1,exp2 = _))
       equation
         true = containVectorFunctioncall(e1);
       then
         true;
     // logical binary operators, e2 is a vector call
-    case (DAE.LBINARY(exp1 = e1,exp2 = e2))
+    case (DAE.LBINARY(exp1 = _,exp2 = e2))
       equation
         true = containVectorFunctioncall(e2);
       then
@@ -7068,31 +7068,31 @@ algorithm
       then
         res;
     // relations e1 op e2, where e1 is a vector call
-    case (DAE.RELATION(exp1 = e1,exp2 = e2))
+    case (DAE.RELATION(exp1 = e1,exp2 = _))
       equation
         true = containVectorFunctioncall(e1);
       then
         true;
     // relations e1 op e2, where e2 is a vector call
-    case (DAE.RELATION(exp1 = e1,exp2 = e2))
+    case (DAE.RELATION(exp1 = _,exp2 = e2))
       equation
         true = containVectorFunctioncall(e2);
       then
         true;
     // if expression where the condition is a vector call
-    case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3))
+    case (DAE.IFEXP(expCond = e1,expThen = _,expElse = _))
       equation
         true = containVectorFunctioncall(e1);
       then
         true;
     // if expression where the then part is a vector call
-    case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3))
+    case (DAE.IFEXP(expCond = _,expThen = e2,expElse = _))
       equation
         true = containVectorFunctioncall(e2);
       then
         true;
     // if expression where the else part is a vector call
-    case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3))
+    case (DAE.IFEXP(expCond = _,expThen = _,expElse = e3))
       equation
         true = containVectorFunctioncall(e3);
       then
@@ -7113,19 +7113,19 @@ algorithm
       then
         res;
     // ranges [e1:step:e2], where e1 is a vector call
-    case (DAE.RANGE(start = e1,step = optexp,stop = e2))
+    case (DAE.RANGE(start = e1,step = _,stop = _))
       equation
         true = containVectorFunctioncall(e1);
       then
         true;
     // ranges [e1:step:e2], where e2 is a vector call
-    case (DAE.RANGE(start = e1,step = optexp,stop = e2))
+    case (DAE.RANGE(start = _,step = _,stop = e2))
       equation
         true = containVectorFunctioncall(e2);
       then
         true;
     // ranges [e1:step:e2], where step is a vector call
-    case (DAE.RANGE(start = e1,step = SOME(e),stop = e2))
+    case (DAE.RANGE(start = _,step = SOME(e),stop = _))
       equation
         true = containVectorFunctioncall(e);
       then
@@ -7144,13 +7144,13 @@ algorithm
       then
         res;
     // size operator
-    case (DAE.SIZE(exp = e1,sz = optexp))
+    case (DAE.SIZE(exp = e1,sz = _))
       equation
         true = containVectorFunctioncall(e1);
       then
         true;
     // size operator
-    case (DAE.SIZE(exp = e1,sz = SOME(e2)))
+    case (DAE.SIZE(exp = _,sz = SOME(e2)))
       equation
         true = containVectorFunctioncall(e2);
       then
@@ -7200,13 +7200,13 @@ algorithm
         res;
 
     // binary
-    case (DAE.BINARY(exp1 = e1,exp2 = e2))
+    case (DAE.BINARY(exp1 = e1,exp2 = _))
       equation
         true = containFunctioncall(e1);
       then
         true;
 
-    case (DAE.BINARY(exp1 = e1,exp2 = e2))
+    case (DAE.BINARY(exp1 = _,exp2 = e2))
       equation
         true = containFunctioncall(e2);
       then
@@ -7220,13 +7220,13 @@ algorithm
         res;
 
     // logical binary
-    case (DAE.LBINARY(exp1 = e1,exp2 = e2))
+    case (DAE.LBINARY(exp1 = e1,exp2 = _))
       equation
         true = containFunctioncall(e1);
       then
         true;
 
-    case (DAE.LBINARY(exp1 = e1,exp2 = e2))
+    case (DAE.LBINARY(exp1 = _,exp2 = e2))
       equation
         true = containFunctioncall(e2);
       then
@@ -7240,32 +7240,32 @@ algorithm
         res;
 
     // relations
-    case (DAE.RELATION(exp1 = e1,exp2 = e2))
+    case (DAE.RELATION(exp1 = e1,exp2 = _))
       equation
         true = containFunctioncall(e1);
       then
         true;
 
-    case (DAE.RELATION(exp1 = e1,exp2 = e2))
+    case (DAE.RELATION(exp1 = _,exp2 = e2))
       equation
         true = containFunctioncall(e2);
       then
         true;
 
     // if expressions
-    case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3))
+    case (DAE.IFEXP(expCond = e1,expThen = _,expElse = _))
       equation
         true = containFunctioncall(e1);
       then
         true;
 
-    case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3))
+    case (DAE.IFEXP(expCond = _,expThen = e2,expElse = _))
       equation
         true = containFunctioncall(e2);
       then
         true;
 
-    case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3))
+    case (DAE.IFEXP(expCond = _,expThen = _,expElse = e3))
       equation
         true = containFunctioncall(e3);
       then
@@ -7289,19 +7289,19 @@ algorithm
         res;
 
     // ranges
-    case (DAE.RANGE(start = e1,step = optexp,stop = e2))
+    case (DAE.RANGE(start = e1,step = _,stop = _))
       equation
         true = containFunctioncall(e1);
       then
         true;
 
-    case (DAE.RANGE(start = e1,step = optexp,stop = e2))
+    case (DAE.RANGE(start = _,step = _,stop = e2))
       equation
         true = containFunctioncall(e2);
       then
         true;
 
-    case (DAE.RANGE(start = e1,step = SOME(e),stop = e2))
+    case (DAE.RANGE(start = _,step = SOME(e),stop = _))
       equation
         true = containFunctioncall(e);
       then
@@ -7323,13 +7323,13 @@ algorithm
         res;
 
     // size
-    case (DAE.SIZE(exp = e1,sz = optexp))
+    case (DAE.SIZE(exp = e1,sz = _))
       equation
         true = containFunctioncall(e1);
       then
         true;
 
-    case (DAE.SIZE(exp = e1,sz = SOME(e2)))
+    case (DAE.SIZE(exp = _,sz = SOME(e2)))
       equation
         true = containFunctioncall(e2);
       then
@@ -7412,7 +7412,7 @@ algorithm
   matchcontinue(inExp)
     local
       DAE.Exp exp1;
-    case(exp1 as DAE.UNARY(operator =_))
+    case(DAE.UNARY(operator =_))
       then
         true;
     case(_)
@@ -7670,8 +7670,8 @@ algorithm
       then valueEq(e1,e2); // TODO! FIXME! should use expEqual on elements
 
     // ranges [start:stop]
-    case (DAE.RANGE(ty = tp1,start = e11,step = NONE(),stop = e13),
-          DAE.RANGE(ty = tp2,start = e21,step = NONE(),stop = e23),_,_)
+    case (DAE.RANGE(ty = _,start = e11,step = NONE(),stop = e13),
+          DAE.RANGE(ty = _,start = e21,step = NONE(),stop = e23),_,_)
       equation
         res = expEqualWork(e11, e21, referenceEq(e11, e21), true);
         res = expEqualWork(e13, e23, referenceEq(e13, e23), res);
@@ -7679,8 +7679,8 @@ algorithm
         res;
 
     // ranges [start:step:stop]
-    case (DAE.RANGE(ty = tp1,start = e11,step = SOME(e12),stop = e13),
-          DAE.RANGE(ty = tp2,start = e21,step = SOME(e22),stop = e23),_,_)
+    case (DAE.RANGE(ty = _,start = e11,step = SOME(e12),stop = e13),
+          DAE.RANGE(ty = _,start = e21,step = SOME(e22),stop = e23),_,_)
       equation
         res = expEqualWork(e11, e21, referenceEq(e11, e21), true);
         res = expEqualWork(e12, e22, referenceEq(e12, e22), res);
@@ -7849,7 +7849,7 @@ algorithm
     case (DAE.SCONST(string = s1),DAE.SCONST(string = s2)) then stringEq(s1, s2);
     case (DAE.BCONST(bool = b1),DAE.BCONST(bool = b2)) then boolEq(b1, b2);
     case (DAE.ENUM_LITERAL(name = enum1), DAE.ENUM_LITERAL(name = enum2)) then Absyn.pathEqual(enum1, enum2);
-    case (DAE.CREF(componentRef = cr1),DAE.CREF(componentRef = cr2)) then true;
+    case (DAE.CREF(componentRef = _),DAE.CREF(componentRef = _)) then true;
 
     // binary ops
     case (DAE.BINARY(exp1 = e11,operator = op1,exp2 = e12),DAE.BINARY(exp1 = e21,operator = op2,exp2 = e22))
@@ -7934,13 +7934,13 @@ algorithm
         b;
 
     // matrix
-    case (e1 as DAE.MATRIX(matrix = explstlst1), e2 as DAE.MATRIX(matrix = explstlst2))
+    case (DAE.MATRIX(matrix = explstlst1), DAE.MATRIX(matrix = explstlst2))
       then
         expStructuralEqualListLst(explstlst1,explstlst2);
 
     // ranges [start:stop]
-    case (DAE.RANGE(ty = tp1,start = e11,step = NONE(),stop = e13),
-          DAE.RANGE(ty = tp2,start = e21,step = NONE(),stop = e23))
+    case (DAE.RANGE(ty = _,start = e11,step = NONE(),stop = e13),
+          DAE.RANGE(ty = _,start = e21,step = NONE(),stop = e23))
       equation
         b = expStructuralEqual(e11, e21);
         b = Debug.bcallret2(b, expStructuralEqual, e13, e23, b);
@@ -7948,8 +7948,8 @@ algorithm
         b;
 
     // ranges [start:step:stop]
-    case (DAE.RANGE(ty = tp1,start = e11,step = SOME(e12),stop = e13),
-          DAE.RANGE(ty = tp2,start = e21,step = SOME(e22),stop = e23))
+    case (DAE.RANGE(ty = _,start = e11,step = SOME(e12),stop = e13),
+          DAE.RANGE(ty = _,start = e21,step = SOME(e22),stop = e23))
       equation
         b = expStructuralEqual(e11, e21);
         b = Debug.bcallret2(b, expStructuralEqual, e12, e22, b);
@@ -7970,7 +7970,7 @@ algorithm
         b;
 
     // array subscripts
-    case (DAE.ASUB(exp = e1,sub = ae1),DAE.ASUB(exp = e2,sub = ae2))
+    case (DAE.ASUB(exp = e1,sub = ae1),DAE.ASUB(exp = _,sub = ae2))
       equation
         b = expStructuralEqual(e1, e1);
         b = Debug.bcallret2(b, expStructuralEqualList, ae1, ae2, b);
@@ -8128,11 +8128,11 @@ algorithm
       Operator op;
       Absyn.Path fcn;
 
-    case (DAE.ICONST(integer = _),cr) then false;
-    case (DAE.RCONST(real = _),cr) then false;
-    case (DAE.SCONST(string = _),cr) then false;
-    case (DAE.BCONST(bool = _),cr) then false;
-    case (DAE.ENUM_LITERAL(name=_), cr) then false;
+    case (DAE.ICONST(integer = _),_) then false;
+    case (DAE.RCONST(real = _),_) then false;
+    case (DAE.SCONST(string = _),_) then false;
+    case (DAE.BCONST(bool = _),_) then false;
+    case (DAE.ENUM_LITERAL(name=_), _) then false;
     case (DAE.ARRAY(array = explist),cr)
       equation
         reslist = List.map1(explist, expContains, cr);
@@ -8146,15 +8146,15 @@ algorithm
       then
         res;
 
-    case ((c1 as DAE.CREF(componentRef = cr1)),(c2 as DAE.CREF(componentRef = cr2)))
+    case ((DAE.CREF(componentRef = cr1)),(DAE.CREF(componentRef = cr2)))
       equation
         res = ComponentReference.crefEqual(cr1, cr2);
       then
         res;
 
-    case ((c1 as DAE.CREF(componentRef = cr1)),c2 ) then false;
+    case ((DAE.CREF(componentRef = _)),_ ) then false;
 
-    case (DAE.BINARY(exp1 = e1,operator = op,exp2 = e2),cr )
+    case (DAE.BINARY(exp1 = e1,operator = _,exp2 = e2),cr )
       equation
         res1 = expContains(e1, cr);
         res2 = expContains(e2, cr);
@@ -8162,13 +8162,13 @@ algorithm
       then
         res;
 
-    case (DAE.UNARY(operator = op,exp = e),cr)
+    case (DAE.UNARY(operator = _,exp = e),cr)
       equation
         res = expContains(e, cr);
       then
         res;
 
-    case (DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2),cr)
+    case (DAE.LBINARY(exp1 = e1,operator = _,exp2 = e2),cr)
       equation
         res1 = expContains(e1, cr);
         res2 = expContains(e2, cr);
@@ -8176,13 +8176,13 @@ algorithm
       then
         res;
 
-    case (DAE.LUNARY(operator = op,exp = e),cr )
+    case (DAE.LUNARY(operator = _,exp = e),cr )
       equation
         res = expContains(e, cr);
       then
         res;
 
-    case (DAE.RELATION(exp1 = e1,operator = op,exp2 = e2),cr)
+    case (DAE.RELATION(exp1 = e1,operator = _,exp2 = e2),cr)
       equation
         res1 = expContains(e1, cr);
         res2 = expContains(e2, cr);
@@ -8206,27 +8206,27 @@ algorithm
       then res;
 
     // pre(v) does not contain variable v
-    case (DAE.CALL(path = Absyn.IDENT(name = "pre"),expLst = {cref}),cr) then false;
+    case (DAE.CALL(path = Absyn.IDENT(name = "pre"),expLst = {_}),_) then false;
 
     // special rule for no arguments
     case (DAE.CALL(expLst = {}),_) then false;
 
     // general case for arguments
-    case (DAE.CALL(path = fcn,expLst = args),(cr as DAE.CREF(componentRef = _)))
+    case (DAE.CALL(path = _,expLst = args),(cr as DAE.CREF(componentRef = _)))
       equation
         reslist = List.map1(args, expContains, cr);
         res = Util.boolOrList(reslist);
       then
         res;
 
-    case (DAE.PARTEVALFUNCTION(path = fcn,expList = args),(cr as DAE.CREF(componentRef = _)))
+    case (DAE.PARTEVALFUNCTION(path = _,expList = args),(cr as DAE.CREF(componentRef = _)))
       equation
         reslist = List.map1(args, expContains, cr);
         res = Util.boolOrList(reslist);
       then
         res;
 
-    case (DAE.CAST(ty = DAE.T_REAL(varLst = _),exp = DAE.ICONST(integer = i)),cr ) then false;
+    case (DAE.CAST(ty = DAE.T_REAL(varLst = _),exp = DAE.ICONST(integer = _)),_ ) then false;
 
     case (DAE.CAST(ty = DAE.T_REAL(varLst= _),exp = e),cr )
       equation
@@ -8249,7 +8249,7 @@ algorithm
       then
         res;
 
-    case (e,cr)
+    case (e,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.fprint(Flags.FAILTRACE, "- Expression.expContains failed\n");
@@ -8358,7 +8358,7 @@ algorithm
     local
       DAE.Dimensions rest_dims;
     case ({}) then false;
-    case (DAE.DIM_UNKNOWN() :: rest_dims) then true;
+    case (DAE.DIM_UNKNOWN() :: _) then true;
     case (_ :: rest_dims) then arrayContainWholeDimension(rest_dims);
   end matchcontinue;
 end arrayContainWholeDimension;
@@ -8635,13 +8635,13 @@ algorithm
 
     case({},_) then true;
 
-    case(ss1 ::ssl1, (ss2 as DAE.WHOLEDIM())::ssl2)
+    case(_ ::ssl1, (DAE.WHOLEDIM())::ssl2)
       equation
         b = subscriptContain(ssl1,ssl2);
       then b;
 
     // Should there be additional checking in this case?
-    case(ss1 ::ssl1, (ss2 as DAE.WHOLE_NONEXP(_))::ssl2)
+    case(_ ::ssl1, (DAE.WHOLE_NONEXP(_))::ssl2)
       equation
         b = subscriptContain(ssl1,ssl2);
       then b;
@@ -8652,7 +8652,7 @@ algorithm
         then
           b;
           */
-    case((ss1 as DAE.INDEX(e1 as DAE.ICONST(i)))::ssl1, (ss2 as DAE.SLICE(e2 as DAE.ARRAY(_,_,expl))) ::ssl2)
+    case((DAE.INDEX(DAE.ICONST(i)))::ssl1, (DAE.SLICE(DAE.ARRAY(_,_,expl))) ::ssl2)
       equation
         true = subscriptContain2(i,expl);
         b = subscriptContain(ssl1,ssl2);
@@ -8681,17 +8681,17 @@ algorithm
       DAE.Exp e1,e2;
       list<DAE.Exp> expl,expl2;
       Integer i,j;
-      case(i,( (e1 as DAE.ICONST(j)) :: expl))
+      case(i,( (DAE.ICONST(j)) :: _))
         equation
             true = (i == j);
           then
             true;
-      case(i,(( e1 as DAE.ICONST(j)) :: expl))
+      case(i,(( DAE.ICONST(_)) :: expl))
         equation
             true = subscriptContain2(i,expl);
           then
             true;
-      case(i,( (e1 as DAE.ARRAY(_,_,expl2)) :: expl))
+      case(i,( (DAE.ARRAY(_,_,expl2)) :: expl))
         equation
           b = subscriptContain2(i,expl2);
           b2 = subscriptContain2(i,expl);
@@ -9126,12 +9126,12 @@ algorithm
     local
       DAE.Type tp;
     case DAE.ADD(ty=DAE.T_STRING(source = _)) then 100;
-    case DAE.ADD(ty=tp) then 1;
-    case DAE.SUB(ty=tp) then 1;
-    case DAE.MUL(ty=tp) then 1;
-    case DAE.DIV(ty=tp) then 1;
-    case DAE.POW(ty=tp) then 30;
-    case DAE.UMINUS(ty=tp) then 1;
+    case DAE.ADD(ty=_) then 1;
+    case DAE.SUB(ty=_) then 1;
+    case DAE.MUL(ty=_) then 1;
+    case DAE.DIV(ty=_) then 1;
+    case DAE.POW(ty=_) then 30;
+    case DAE.UMINUS(ty=_) then 1;
       /* TODO: Array dims? */
     case DAE.UMINUS_ARR(ty=tp) then complexityAlloc+tpComplexity(tp);
     case DAE.ADD_ARR(ty=tp) then complexityAlloc+tpComplexity(tp);
@@ -9150,15 +9150,15 @@ algorithm
     case DAE.POW_ARR(ty=tp) then complexityAlloc+30*tpComplexity(tp);
     case DAE.POW_ARR2(ty=tp) then complexityAlloc+30*tpComplexity(tp);
     /* TODO: Array ops? */
-    case DAE.AND(ty=tp) then 1;
-    case DAE.OR(ty=tp) then 1;
-    case DAE.NOT(ty=tp) then 1;
-    case DAE.LESS(ty=tp) then 1;
-    case DAE.LESSEQ(ty=tp) then 1;
-    case DAE.GREATER(ty=tp) then 1;
-    case DAE.GREATEREQ(ty=tp) then 1;
-    case DAE.EQUAL(ty=tp) then 1;
-    case DAE.NEQUAL(ty=tp) then 1;
+    case DAE.AND(ty=_) then 1;
+    case DAE.OR(ty=_) then 1;
+    case DAE.NOT(ty=_) then 1;
+    case DAE.LESS(ty=_) then 1;
+    case DAE.LESSEQ(ty=_) then 1;
+    case DAE.GREATER(ty=_) then 1;
+    case DAE.GREATEREQ(ty=_) then 1;
+    case DAE.EQUAL(ty=_) then 1;
+    case DAE.NEQUAL(ty=_) then 1;
     case DAE.USERDEFINED(fqName=_) then 100;
     else
       equation
@@ -9280,7 +9280,7 @@ algorithm
     case (DAE.UNARY(operator = _), _) then 4;
     case (DAE.LBINARY(operator = op), _) then priorityLBinop(op);
     case (DAE.LUNARY(operator = _), _) then 7;
-    case (DAE.RELATION(operator = op), _) then 6;
+    case (DAE.RELATION(operator = _), _) then 6;
     case (DAE.RANGE(ty = _), _) then 10;
     case (DAE.IFEXP(expCond = _), _) then 11;
     else 0;
@@ -10010,7 +10010,7 @@ algorithm
       then
         exps;
         
-    case (Absyn.FUNCTIONARGS(aexps, nargs))
+    case (Absyn.FUNCTIONARGS(_, _))
       equation
         print("Expression.fargsToExps: Named arguments are not handled!\n");
       then

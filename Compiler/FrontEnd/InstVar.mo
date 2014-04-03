@@ -215,7 +215,7 @@ algorithm
         (cache,compenv,ih,store,dae,csets,ty,graph);
 
     // is ONLY outer
-    case (cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,_,graph,csets,_)
+    case (cache,env,ih,store,_,mod,pre,n,_,_,pf,_,_,_,_,_,_,graph,csets,_)
       equation
         // only outer!
         io = SCode.prefixesInnerOuter(pf);
@@ -275,14 +275,14 @@ algorithm
         // lookup in IH, crap, we couldn't find it!
         // lookup in IH
         InnerOuter.INST_INNER(
-           innerPrefix,
-           nInner,
-           ioInner,
-           fullName,
+           _,
+           _,
+           _,
+           _,
            typePath,
-           innerScope,
-           instResult as NONE(),
-           outers,_) =
+           _,
+           NONE(),
+           _,_) =
           InnerOuter.lookupInnerVar(cache, env, ih, pre, n, io);
 
         // Debug.fprintln(Flags.INNER_OUTER, "- Inst.instVar failed to lookup inner: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& Env.printEnvPathStr(env));
@@ -409,7 +409,7 @@ algorithm
         (cache,compenv,ih,store,dae,csets,ty,graph);
 
     // failtrace
-    case (cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,_,graph,_,_)
+    case (cache,env,ih,_,_,mod,pre,n,cl,_,_,_,_,_,_,_,_,_,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
@@ -489,7 +489,7 @@ algorithm
     // e.g. Point p => Real p[3]; These must be handled separately since even if they do not
     // appear to be an array, they can. Therefore we need to collect
     // the full dimensionality and call instVar2
-    case (cache,env,ih,store,ci_state,mod,pre,n,SCode.CLASS(name = id),attr as SCode.ATTR(variability = vt),pf,dims,idxs,inst_dims,impl,comment,_,graph,csets)
+    case (cache,env,ih,store,ci_state,mod,pre,n,SCode.CLASS(name = _),attr as SCode.ATTR(variability = vt),pf,dims,idxs,inst_dims,impl,comment,_,graph,csets)
       equation
         // Collect dimensions
         p1 = Absyn.IDENT(n);
@@ -516,7 +516,7 @@ algorithm
         (cache,compenv,ih,store,dae,csets,ty,graph);
 
     // Generic case: fall through
-    case (cache,env,ih,store,ci_state,mod,pre,n,(cl as SCode.CLASS(name = id)),attr as SCode.ATTR(variability = vt),pf,dims,idxs,inst_dims,impl,comment,_,graph, csets)
+    case (cache,env,ih,store,ci_state,mod,pre,n,(cl as SCode.CLASS(name = _)),attr as SCode.ATTR(variability = vt),pf,dims,idxs,inst_dims,impl,comment,_,graph, csets)
       equation
         p1 = Absyn.IDENT(n);
         p1 = PrefixUtil.prefixPath(p1,pre);
@@ -698,7 +698,7 @@ algorithm
         //   R1 r2(v1=1, v1=2);     // <= Here
         // end out;
         // see testsuit/mofiles/RecordBindings.mo.
-     case (cache,env,ih,store,ci_state,mod as DAE.MOD(subModLst = subMods, eqModOption = NONE()),pre,n,cl as SCode.CLASS(restriction = SCode.R_RECORD(_)),attr,pf,dims,idxs,inst_dims,impl,comment,info,graph,csets)
+     case (cache,env,ih,store,ci_state,mod as DAE.MOD(subModLst = _, eqModOption = NONE()),pre,n,cl as SCode.CLASS(restriction = SCode.R_RECORD(_)),attr,pf,dims,_,inst_dims,impl,comment,info,graph,csets)
       equation
         true = ClassInf.isFunction(ci_state);
         InstUtil.checkFunctionVar(n, attr, pf, info);
@@ -738,7 +738,7 @@ algorithm
 
     // mahge: function variables with eqMod modifications.
     // FIXHERE: They might have subMods too (variable attributes). see testsuite/mofiles/Sequence.mo
-    case (cache,env,ih,store,ci_state,mod as DAE.MOD(subModLst = subMods, eqModOption = SOME(_)),pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph,csets)
+    case (cache,env,ih,store,ci_state,mod as DAE.MOD(subModLst = _, eqModOption = SOME(_)),pre,n,cl,attr,pf,dims,_,inst_dims,impl,comment,info,graph,csets)
       equation
         true = ClassInf.isFunction(ci_state);
         InstUtil.checkFunctionVar(n, attr, pf, info);
@@ -779,7 +779,7 @@ algorithm
 
 
     // Function variables without binding
-    case (cache,env,ih,store,ci_state,mod,pre,n,(cl as SCode.CLASS(name=n2)),attr,pf,dims,idxs,inst_dims,impl,comment,info,graph,csets)
+    case (cache,env,ih,store,ci_state,mod,pre,n,(cl as SCode.CLASS(name=_)),attr,pf,dims,_,inst_dims,impl,comment,info,graph,csets)
        equation
         true = ClassInf.isFunction(ci_state);
         InstUtil.checkFunctionVar(n, attr, pf, info);
@@ -816,7 +816,7 @@ algorithm
         (cache, env, ih, store, dae, csets, ty, graph);
 
     // Array variables with unknown dimensions, e.g. Real x[:] = [some expression that can be used to determine dimension].
-    case (cache,env,ih,store,ci_state,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,_,_,_)))),pre,n,cl,attr,pf,
+    case (cache,env,ih,store,ci_state,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(_,_,_,_,_)))),pre,n,cl,attr,pf,
         ((dim as DAE.DIM_UNKNOWN()) :: dims),idxs,inst_dims,impl,comment,info,graph, csets)
       equation
         true = Config.splitArrays();
@@ -833,7 +833,7 @@ algorithm
         (cache,compenv,ih,store,dae,csets,ty_1,graph);
 
     // Array variables with unknown dimensions, non-expanding case
-    case (cache,env,ih,store,ci_state,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,_,_,_)))),pre,n,cl,attr,pf,
+    case (cache,env,ih,store,ci_state,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(_,_,_,_,_)))),pre,n,cl,attr,pf,
       ((dim as DAE.DIM_UNKNOWN()) :: dims),idxs,inst_dims,impl,comment,info,graph, csets)
       equation
         false = Config.splitArrays();
@@ -877,15 +877,15 @@ algorithm
         (cache,compenv,ih,store,dae,csets,ty,graph);
 
     // Array variable with unknown dimensions, but no binding
-    case (cache,env,ih,store,ci_state,DAE.NOMOD(),pre,n,cl,attr,pf,
-      ((dim as DAE.DIM_UNKNOWN()) :: dims),idxs,inst_dims,impl,comment,info,graph,csets)
+    case (_,_,_,_,_,DAE.NOMOD(),_,n,_,_,_,
+      ((DAE.DIM_UNKNOWN()) :: _),_,_,_,_,info,_,_)
       equation
         Error.addSourceMessage(Error.FAILURE_TO_DEDUCE_DIMS_NO_MOD,{n},info);
       then
         fail();
 
     // failtrace
-    case (_,env,ih,_,_,mod,pre,n,_,_,_,_,_,_,_,_,_,_,_)
+    case (_,env,_,_,_,mod,pre,n,_,_,_,_,_,_,_,_,_,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.fprintln(Flags.FAILTRACE, "- Inst.instVar2 failed: " +&
@@ -1312,7 +1312,7 @@ algorithm
       UnitAbsyn.InstStore store;
 
     // component environment If is a function var.
-    case (cache,env,ih,store,(ci_state as ClassInf.FUNCTION(path = _)),mod,pre,n,(cl,attr),pf,i,dim,dims,idxs,inst_dims,impl,comment,_,graph, csets)
+    case (cache,env,ih,store,(ClassInf.FUNCTION(path = _)),mod,pre,n,(cl,_),_,_,dim,_,_,inst_dims,_,_,_,graph, csets)
       equation
         true = Expression.dimensionUnknownOrExp(dim);
         SOME(DAE.TYPED(e,_,p,_,_)) = Mod.modEquation(mod);
@@ -1343,7 +1343,7 @@ algorithm
         (cache,compenv,ih,store,daeLst,csets,ty,graph);
 
     // Special case when instantiating Real[0]. We need to know the type
-    case (cache,env,ih,store,ci_state,mod,pre,n,(cl,attr),pf,i,DAE.DIM_INTEGER(0),dims,idxs,inst_dims,impl,comment,_,graph, csets)
+    case (cache,env,ih,store,ci_state,_,pre,n,(cl,attr),pf,_,DAE.DIM_INTEGER(0),dims,idxs,inst_dims,impl,comment,_,graph, csets)
       equation
         ErrorExt.setCheckpoint("instArray Real[0]");
         s = DAE.INDEX(DAE.ICONST(0));
@@ -1361,7 +1361,7 @@ algorithm
         fail();
 
     case
-      (cache,env,ih,store,ci_state,mod,pre,n,(cl,attr),pf,i,DAE.DIM_INTEGER(integer = stop),dims,idxs,inst_dims,impl,comment,_,graph,csets)
+      (cache,env,ih,store,_,_,_,_,(_,_),_,i,DAE.DIM_INTEGER(integer = stop),_,_,_,_,_,_,graph,csets)
       equation
         true = (i > stop);
       then
@@ -1370,9 +1370,9 @@ algorithm
     // adrpo: if a class is derived WITH AN ARRAY DIMENSION we should instVar2 the derived from type not the actual type!!!
     case (cache,env,ih,store,ci_state,mod,pre,n,
           (cl as SCode.CLASS(classDef=SCode.DERIVED(typeSpec=Absyn.TPATH(path,SOME(_)),
-                                                    modifications=scodeMod,attributes=absynAttr)),
+                                                    modifications=scodeMod,attributes=_)),
                                                     attr),
-          pf,i,DAE.DIM_INTEGER(integer = stop),dims,idxs,inst_dims,impl,comment,_,graph, _)
+          pf,i,DAE.DIM_INTEGER(integer = stop),dims,idxs,_,impl,comment,_,graph, _)
       equation
         (_,clBase,_) = Lookup.lookupClass(cache, env, path, true);
         /* adrpo: TODO: merge also the attributes, i.e.:
@@ -1432,8 +1432,8 @@ algorithm
       then
         (cache, env_1, ih, store, daeLst, csets, ty, graph);
 
-    case (cache,env,ih,store,ci_state,mod,pre,n,(cl,attr),pf,i,
-      DAE.DIM_ENUM(literals = {}),dims,idxs,inst_dims,impl,comment,
+    case (cache,env,ih,store,_,_,_,_,(_,_),_,_,
+      DAE.DIM_ENUM(literals = {}),_,_,_,_,_,
       _,graph, csets)
       then
         (cache,env,ih,store,DAE.emptyDae,csets,DAE.T_UNKNOWN_DEFAULT,graph);
@@ -1450,7 +1450,7 @@ algorithm
       then
         (cache, env_1, ih, store, daeLst, csets, ty, graph);
 
-    case (cache,env,ih,store,ci_state,mod,pre,n,(cl,attr),pf,i,_,dims,idxs,inst_dims,impl,comment,_,graph,_)
+    case (_,_,_,_,ci_state,mod,pre,n,(_,_),_,i,_,_,idxs,_,_,_,_,_,_)
       equation
         failure(_ = Mod.lookupIdxModification(mod, i));
         str1 = PrefixUtil.printPrefixStrIgnoreNoPre(PrefixUtil.prefixAdd(n, {}, pre, SCode.VAR(), ci_state));

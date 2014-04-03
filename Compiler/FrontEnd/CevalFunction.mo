@@ -137,9 +137,9 @@ algorithm
 
     case (_, _, DAE.FUNCTION(
         path = p,
-        functions = func :: _,
-        type_ = ty,
-        partialPrefix = partialPrefix), _, st)
+        functions = _ :: _,
+        type_ = _,
+        partialPrefix = partialPrefix), _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- CevalFunction.evaluate failed for function: " +& Util.if_(partialPrefix, "partial ", "") +& Absyn.pathString(p));
@@ -207,7 +207,7 @@ algorithm
     case (_, _, _, DAE.FUNCTION_EXT(body = body, externalDecl =
         DAE.EXTERNALDECL(name = ext_fun_name,
                          args = ext_fun_args,
-                         returnArg = ext_fun_ret)), _, _, _, st)
+                         returnArg = _)), _, _, _, st)
       equation
         // Get all variables from the function. Ignore everything else, since
         // external functions shouldn't have statements.
@@ -265,7 +265,7 @@ algorithm
 
     case ({}, {}) then {};
 
-    case ((var as DAE.VAR(direction = DAE.INPUT())) :: _, {})
+    case ((DAE.VAR(direction = DAE.INPUT())) :: _, {})
       equation
         Debug.fprintln(Flags.FAILTRACE, "- CevalFunction.pairFuncParamsWithArgs "
          +& "failed because of too few input arguments.");
@@ -1573,7 +1573,7 @@ algorithm
       then
         (cache, env, st);
 
-    case (_, env, (e, _), _)
+    case (_, _, (e, _), _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- CevalFunction.extendEnvWithFunctionVars failed for:");
@@ -1934,7 +1934,7 @@ algorithm
       then
         (cache, DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(0)}, DAE.emptyTypeSource), st);
 
-    case (_, sub :: _, _, _, _, _)
+    case (_, _ :: _, _, _, _, _)
       equation
         Debug.fprintln(Flags.FAILTRACE, "- CevalFunction.appendDimensions2 failed");
       then
@@ -1974,7 +1974,7 @@ algorithm
     case (DAE.WILD(), _, _, _, _) then (inCache, inEnv, inST);
 
     // A record assignment.
-    case (cr as DAE.CREF_IDENT(ident = id, subscriptLst = {}, identType = ety as
+    case (DAE.CREF_IDENT(ident = id, subscriptLst = {}, identType = ety as
         DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = _))), _, _, _, st)
       equation
         (_, var, _, _, inst_status, env) =
@@ -2006,7 +2006,7 @@ algorithm
 
     // A qualified component reference is a record component, so first lookup
     // the records environment, and then assign the variable in that environment.
-    case (cr as DAE.CREF_QUAL(ident = id, subscriptLst = {},
+    case (DAE.CREF_QUAL(ident = id, subscriptLst = {},
         componentRef = cr_rest), _, _, _, st)
       equation
         (_, var, _, _, inst_status, env) =
@@ -2219,7 +2219,7 @@ algorithm
     case (_, _, {}, _, _, _, _, _) then (inCache, inOldValues, inST);
 
     // Skip indices that are smaller than the next index in the slice.
-    case (vl1, v2 :: vl2, index :: rest_indices, _, _, _, _, st)
+    case (vl1, v2 :: vl2, index :: _, _, _, _, _, st)
       equation
         true = (inIndex < ValuesUtil.valueInteger(index));
         (cache, vl1, st) = assignSlice(vl1, vl2, inIndices, inSubscripts,
@@ -2881,7 +2881,7 @@ algorithm
       then
         ((exp, env));
 
-    case ((DAE.TSUB(exp = DAE.TUPLE(exp::_), ix = 1, ty = ety), env))
+    case ((DAE.TSUB(exp = DAE.TUPLE(exp::_), ix = 1, ty = _), env))
       then
         ((exp, env));
 

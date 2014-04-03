@@ -431,7 +431,7 @@ algorithm
     // a := expr;  // where a is array with an empty list as subscript
     case (DAE.STMT_ASSIGN_ARR(componentRef=cr), _, _)
       equation
-        (subs as {}) = ComponentReference.crefLastSubs(cr);
+        ({}) = ComponentReference.crefLastSubs(cr);
         crlst = ComponentReference.expandCref(cr, true);
         ht = List.fold(crlst, BaseHashSet.add, iht);
       then 
@@ -480,7 +480,7 @@ algorithm
         ht = List.fold1(stmts, statementOutputs, inCrefExpansion, iht);
       then ht;
     
-    case (DAE.STMT_WHEN(exp = e, statementLst = stmts, elseWhen = SOME(stmt)), _, _)
+    case (DAE.STMT_WHEN(exp = _, statementLst = stmts, elseWhen = SOME(stmt)), _, _)
       equation
         ht = List.fold1(stmts, statementOutputs, inCrefExpansion, iht);
         ht = statementOutputs(stmt, inCrefExpansion, ht);
@@ -568,7 +568,7 @@ algorithm
     // empty subs
     case((e as DAE.CREF(componentRef=cr), (expand,ht))) 
       equation
-        (subs as {}) = ComponentReference.crefLastSubs(cr);
+        ({}) = ComponentReference.crefLastSubs(cr);
         crlst = ComponentReference.expandCref(cr, true);
         ht = List.fold(crlst, BaseHashSet.add, ht);
       then 
@@ -667,7 +667,7 @@ algorithm
       then simpleEquation(e1, e2, ihs);
 
     // array equations
-    case (DAE.ARRAY_EQUATION(dimension=dims, exp = e1, array = e2), _)
+    case (DAE.ARRAY_EQUATION(dimension=_, exp = e1, array = e2), _)
       then simpleEquation(e1, e2, ihs);
 
     else 0;
@@ -908,7 +908,7 @@ algorithm
       DAE.ComponentRef cr;
       DAE.Exp e;
 
-    case((e as DAE.CREF(componentRef = DAE.WILD()), (hs, crefs)))
+    case((DAE.CREF(componentRef = DAE.WILD()), (_, _)))
       then inExp;
 
     case((e as DAE.CREF(componentRef=cr), (hs, crefs)))

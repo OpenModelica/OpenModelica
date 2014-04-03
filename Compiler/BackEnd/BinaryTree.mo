@@ -237,34 +237,34 @@ algorithm
       then
         TREENODE(SOME(TREEVALUE(key,keystr,keyhash,value)),NONE(),NONE());
 
-    case (TREENODE(value = SOME(TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = left,rightSubTree = right),key,_,_,value)
+    case (TREENODE(value = SOME(TREEVALUE(rkey,rkeystr,rhash,_)),leftSubTree = left,rightSubTree = right),_,_,_,value)
       equation
         0 = keyCompareNinjaSecretHashTricks(rkeystr,rhash,keystr,keyhash);
       then
         TREENODE(SOME(TREEVALUE(rkey,rkeystr,rhash,value)),left,right);
 
-    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = left,rightSubTree = (right as SOME(t))),key,_,_,value)
+    case (TREENODE(value = optVal as SOME(TREEVALUE(_,rkeystr,rhash,_)),leftSubTree = left,rightSubTree = (SOME(t))),key,_,_,value)
       equation
         1 = keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
         t_1 = treeAdd2(t, key, keyhash, keystr, value);
       then
         TREENODE(optVal,left,SOME(t_1));
 
-    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = left,rightSubTree = (right as NONE())),key,_,_,value)
+    case (TREENODE(value = optVal as SOME(TREEVALUE(_,rkeystr,rhash,_)),leftSubTree = left,rightSubTree = (NONE())),key,_,_,value)
       equation
         1 = keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
         right_1 = treeAdd2(TREENODE(NONE(),NONE(),NONE()), key, keyhash, keystr, value);
       then
         TREENODE(optVal,left,SOME(right_1));
 
-    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = (left as SOME(t)),rightSubTree = right),key,_,_,value)
+    case (TREENODE(value = optVal as SOME(TREEVALUE(_,rkeystr,rhash,_)),leftSubTree = (SOME(t)),rightSubTree = right),key,_,_,value)
       equation
         -1 = keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
         t_1 = treeAdd2(t, key, keyhash, keystr, value);
       then
         TREENODE(optVal,SOME(t_1),right);
 
-    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = (left as NONE()),rightSubTree = right),key,_,_,value)
+    case (TREENODE(value = optVal as SOME(TREEVALUE(_,rkeystr,rhash,_)),leftSubTree = (NONE()),rightSubTree = right),key,_,_,value)
       equation
         -1 = keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
         left_1 = treeAdd2(TREENODE(NONE(),NONE(),NONE()), key, keyhash, keystr, value);
@@ -495,7 +495,7 @@ algorithm
       then
         (klst,vlst);
 
-    case (TREENODE(value = NONE(),leftSubTree = left,rightSubTree = right),_,_)
+    case (TREENODE(value = NONE(),leftSubTree = left,rightSubTree = _),_,_)
       equation
         (klst,vlst) = bintreeToListOpt(left, inKeyLst, inValueLst);
         (klst,vlst) = bintreeToListOpt(left, klst, vlst);

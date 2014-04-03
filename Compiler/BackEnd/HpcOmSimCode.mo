@@ -226,7 +226,7 @@ algorithm
 
       //Assign levels and get critcal path
       //----------------------------------
-      ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC),parallelSets) = HpcOmTaskGraph.longestPathMethod(taskGraphOde,taskGraphDataOde);
+      ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC),_) = HpcOmTaskGraph.longestPathMethod(taskGraphOde,taskGraphDataOde);
       cpCosts = HpcOmTaskGraph.roundReal(cpCosts,2);
       cpCostsWoC = HpcOmTaskGraph.roundReal(cpCostsWoC,2);
       criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));

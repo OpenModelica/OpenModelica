@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # Fix warnings in MetaModelica code by refactoring
 
+import copy
+import re
 import sys
 import os
 import os.path
@@ -27,18 +29,21 @@ class bcolors:
         self.FAIL = ''
         self.ENDC = ''
 
+IDENT = Word(alphanums + "_")
 FILENAME = Regex("[^:]*")
 FILEINFO = (FILENAME + Suppress(":") + Word(nums) + Suppress(":") + Word(nums) + Suppress("-") + Word(nums) + Suppress(":") + Word(nums) + Suppress(Regex("[^]]*"))).setParseAction(
   lambda s,s2: {'fileName':s2[0],'startLine':int(s2[1]),'startCol':int(s2[2]),'endLine':int(s2[3]),'endCol':int(s2[4])})
-UNUSED_LOCAL = (Suppress("Notification: Unused local variable: ") + Word(alphanums + "_") + "." + StringEnd()).setParseAction(
+UNUSED_LOCAL = (Suppress("Notification: Unused local variable: ") + IDENT + "." + StringEnd()).setParseAction(
   lambda s,s2: {'unused_local':s2[0]})
 DEAD_STATEMENT = Literal("Notification: Dead code elimination: Statement optimised away.").setParseAction(
   lambda s,s2: {'dead_statement':True})
 USE_MATCH = Literal("Notification: This matchcontinue expression has no overlapping patterns and should be using match instead of matchcontinue.").setParseAction(
   lambda s,s2: {'mc_to_match':True})
+UNUSED_AS = (Literal("Notification: Removing unused as-binding: ") + IDENT + "." + StringEnd() ).setParseAction(
+  lambda s,s2: {'unused_as':s2[1]})
 UNKNOWN = Suppress("Notification:")
 
-NOTIFICATION = (Suppress("[") + FILEINFO + Suppress("]") + (UNUSED_LOCAL|DEAD_STATEMENT|USE_MATCH|UNKNOWN))
+NOTIFICATION = (Suppress("[") + FILEINFO + Suppress("]") + (UNUSED_LOCAL|UNUSED_AS|DEAD_STATEMENT|USE_MATCH|UNKNOWN))
 
 def runOMC(arg):
   try:
@@ -57,15 +62,37 @@ def printWarning(info,s):
 def printInfo(info,s):
   print infoStr(info) + " " + s
 
-def fixFile(stamp,logFile,moFile):
-  runOMC(arg)
+def getContents(moContents,startLine,endLine,startCol,endCol):
+  if startLine == endLine:
+    return moContents[startLine-1][startCol-1:endCol-1]
+  first = moContents[startLine-1][startCol-1:]
+  last = moContents[endLine-1][:endCol-1]
+  return first + "".join(moContents[startLine:endLine-1]) + last
+
+def getIdents(s):
+  return re.split(r'[^0-9A-Za-z_]+',s)
+
+def updateContents(moContents,startLine,endLine,startCol,endCol,s):
+  if startLine == endLine:
+    orig = moContents[startLine-1]
+    moContents[startLine-1] = orig[:startCol-1] + s + orig[endCol-1:]
+    return moContents
+  begin = moContents[startLine-1][:startCol-1]
+  end = moContents[endLine-1][endCol-1:]
+  line = begin + s + end
+  del moContents[startLine:endLine] # Does not delete startLine-1, which is the one we will abuse
+  moContents[startLine-1] = line
+
+def fixFileIter(stamp,moFile,logFile):
+  mo = open(moFile, 'r')
+  moContents = mo.readlines()
+  mo.close()
+  moOriginalContents = copy.deepcopy(moContents)
+  iterate = False
   try:
     log = open(logFile, 'r')
   except:
     return # It's ok; there were no messages
-  mo = open(moFile, 'r')
-  moContents = mo.readlines()
-  moOriginalContents = moContents
   lst = [NOTIFICATION.parseString(line.strip()) for line in log.readlines()]
   len1 = len(lst)
   lst = [n for n in lst if n[0]['fileName'] == moFile]
@@ -79,14 +106,29 @@ def fixFile(stamp,logFile,moFile):
     endLine = info['endLine']
     startCol = info['startCol']
     endCol = info['endCol']
+    lineContentsOfInfo = getContents(moContents,startLine,endLine,startCol,endCol)
     if startLine >= maxLine:
-      printWarning(info,'Skipping entry because a previous operation changed this line number')
-      pass
+      iterate = True
+      continue
     msg = None
     if len(n)==2 and n[1].has_key('unused_local'):
       pass
       #print "Unused local %s" % n
       #print moContents[endLine-1]
+    elif len(n)==2 and n[1].has_key('unused_as'):
+      ident = n[1]['unused_as']
+      s = lineContentsOfInfo
+      c = getIdents(s).count(ident)
+      if c <> 1:
+        if not iterate: printWarning(info,"Trying to remove identifier %s as-pattern from %s, but the identifier has count %d" % (ident,s.strip(),c))
+        continue
+      # First replace the (only) identifier possible with _
+      # Then if we get "_ as ", remove that too
+      # Take care if another identifier ends with _, e.g. "model_ as ..."
+      updated = re.sub("([^a-zA-Z0-9_]|^)_ +as( +|\n|$)","\\1",re.sub("([^a-zA-Z0-9_]|^)%s([^a-zA-Z0-9_]|$)" % ident,"\\1_\\2",s))
+      updateContents(moContents,startLine,endLine,startCol,endCol,updated)
+      maxLine = startLine
+      printInfo(info,"Removed dead as-binding %s in %s" % (ident,updated))
     elif len(n)==2 and n[1].has_key('dead_statement'):
       if startLine <> endLine:
         printWarning(info,'Dead statement spanning multiple rows')
@@ -94,7 +136,7 @@ def fixFile(stamp,logFile,moFile):
       sOrig = moContents[startLine-1]
       s = (sOrig[:startCol-1] + sOrig[endCol:]).strip()
       if s <> "":
-        printWarning(info,"After removing statement '%s' remains" % s)
+        if not iterate: printWarning(info,"After removing statement '%s' remains" % s)
         continue
       del moContents[startLine-1]
       maxLine = startLine
@@ -131,16 +173,28 @@ def fixFile(stamp,logFile,moFile):
         if msg is None:
           msg = bcolors.FAIL + "Failed" + bcolors.ENDC
       print "%s Matchcontinue to match: %s\n%6d:  %s\n%6d:  %s" % (infoStr(info),msg,startLine,moContents[startLine-1].strip(),endLine,moContents[endLine-1].strip())
-  mo.close()
   mo = open(moFile, 'w')
   mo.writelines(moContents)
   mo.close()
   try:
     runOMC(stamp)
   except:
-    print 'Reverting all operations after failing to compile after performing operations on %s' % stamp
+    badFile = moFile + ".err"
+    print 'Reverting all operations after failing to compile after performing operations on %s. The bad file is stored as: %s' % (stamp,badFile)
+    os.rename(moFile, badFile)
+    mo = open(moFile, 'w')
     mo.writelines(moOriginalContents)
+    mo.close()
     sys.exit(1)
+  return iterate
+
+def fixFile(stamp,logFile,moFile):
+  runOMC(arg)
+  iterate = fixFileIter(stamp,moFile,logFile)
+  while iterate:
+    print "Iterating %s" % stamp
+    iterate = fixFileIter(stamp,moFile,logFile)
+  return iterate
 
 def runStamp(arg):
   if not arg.endswith('.stamp.mos'):
@@ -149,6 +203,9 @@ def runStamp(arg):
   f = open(arg)
   moFile = os.readlink(f.readline().split('"')[1])
   logFile = arg.replace('.stamp.mos','.log')
+  if os.path.exists(moFile.replace('.mo','.tpl')):
+    print 'Skipping Susan-generated file %s' % arg
+    return
   fixFile(arg,logFile,moFile)
 
 for arg in args:
