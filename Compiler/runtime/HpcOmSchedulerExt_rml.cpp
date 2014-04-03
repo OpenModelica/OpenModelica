@@ -31,7 +31,6 @@
 extern "C" {
 #include "rml.h"
 }
-#include "HpcOmSchedulerExt.h"
 #include "HpcOmSchedulerExt.cpp"
 #include <iostream>
 extern "C" {
