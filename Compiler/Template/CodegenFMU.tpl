@@ -1321,7 +1321,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     parameter Integer logLevel = <%fmiLogLevel%> "log level used during the loading of FMU" annotation (Dialog(tab="FMI", group="Enable logging"));
     parameter Boolean debugLogging = <%fmiDebugOutput%> "enables the FMU simulation logging" annotation (Dialog(tab="FMI", group="Enable logging"));
     FMI1ModelExchange fmi1me = FMI1ModelExchange(logLevel, fmuWorkingDir, "<%fmiInfo.fmiModelIdentifier%>", debugLogging);
-    <%dumpFMIModelVariablesList(fmiModelVariablesList, generateInputConnectors, generateOutputConnectors)%>
+    <%dumpFMIModelVariablesList(fmiModelVariablesList, fmiTypeDefinitionsList, generateInputConnectors, generateOutputConnectors)%>
     constant Integer numberOfContinuousStates = <%listLength(fmiInfo.fmiNumberOfContinuousStates)%>;
     Real fmi_x[numberOfContinuousStates] "States";
     Real fmi_x_new[numberOfContinuousStates] "New States";
@@ -1599,7 +1599,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     parameter Integer logLevel = <%fmiLogLevel%> "log level used during the loading of FMU" annotation (Dialog(tab="FMI", group="Enable logging"));
     parameter Boolean debugLogging = <%fmiDebugOutput%> "enables the FMU simulation logging" annotation (Dialog(tab="FMI", group="Enable logging"));
     FMI2ModelExchange fmi2me = FMI2ModelExchange(logLevel, fmuWorkingDir, "<%fmiInfo.fmiModelIdentifier%>", debugLogging);
-    <%dumpFMIModelVariablesList(fmiModelVariablesList, generateInputConnectors, generateOutputConnectors)%>
+    <%dumpFMIModelVariablesList(fmiModelVariablesList, fmiTypeDefinitionsList, generateInputConnectors, generateOutputConnectors)%>
     constant Integer numberOfContinuousStates = <%listLength(fmiInfo.fmiNumberOfContinuousStates)%>;
     Real fmi_x[numberOfContinuousStates] "States";
     Real fmi_x_new[numberOfContinuousStates] "New States";
@@ -1885,7 +1885,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     parameter Real communicationStepSize = (StopTime-StartTime)/500 "step size used by fmiDoStep" annotation (Dialog(tab="FMI", group="Step time"));
     constant Boolean stopTimeDefined = false;
     FMI1CoSimulation fmi1cs = FMI1CoSimulation(logLevel, fmuWorkingDir, "<%fmiInfo.fmiModelIdentifier%>", debugLogging, fmuLocation, mimeType, timeout, visible, interactive, StartTime, stopTimeDefined, StopTime);
-    <%dumpFMIModelVariablesList(fmiModelVariablesList, generateInputConnectors, generateOutputConnectors)%>
+    <%dumpFMIModelVariablesList(fmiModelVariablesList, fmiTypeDefinitionsList, generateInputConnectors, generateOutputConnectors)%>
     Real flowControl;
   equation
     flowControl = fmi1Functions.fmi1DoStep(fmi1cs, time, communicationStepSize, true);
@@ -2035,6 +2035,7 @@ template dumpFMITypeDefinition(TypeDefinitions fmiTypeDefinition)
 ::=
 match fmiTypeDefinition
 case ENUMERATIONTYPE(__) then
+  if (intEq(stringFind(name, "Modelica."), -1)) then
   <<
   type <%name%> = enumeration(
     <%dumpFMITypeDefinitionsItems(items)%>);
@@ -2059,15 +2060,15 @@ case ENUMERATIONITEM(__) then
   >>
 end dumpFMITypeDefinitionsItem;
 
-template dumpFMIModelVariablesList(list<ModelVariables> fmiModelVariablesList, Boolean generateInputConnectors, Boolean generateOutputConnectors)
+template dumpFMIModelVariablesList(list<ModelVariables> fmiModelVariablesList, list<TypeDefinitions> fmiTypeDefinitionsList, Boolean generateInputConnectors, Boolean generateOutputConnectors)
  "Generates the Model Variables code."
 ::=
   <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpFMIModelVariable(fmiModelVariable, generateInputConnectors, generateOutputConnectors) ;separator="\n"%>
+  <%fmiModelVariablesList |> fmiModelVariable => dumpFMIModelVariable(fmiModelVariable, fmiTypeDefinitionsList, generateInputConnectors, generateOutputConnectors) ;separator="\n"%>
   >>
 end dumpFMIModelVariablesList;
 
-template dumpFMIModelVariable(ModelVariables fmiModelVariable, Boolean generateInputConnectors, Boolean generateOutputConnectors)
+template dumpFMIModelVariable(ModelVariables fmiModelVariable, list<TypeDefinitions> fmiTypeDefinitionsList, Boolean generateInputConnectors, Boolean generateOutputConnectors)
 ::=
 match fmiModelVariable
 case REALVARIABLE(__) then
@@ -2088,7 +2089,7 @@ case STRINGVARIABLE(__) then
   >>
 case ENUMERATIONVARIABLE(__) then
   <<
-  <%dumpFMIModelVariableVariability(variability)%><%dumpFMIModelVariableCausalityAndBaseType(causality, baseType, generateInputConnectors, generateOutputConnectors)%> <%name%><%dumpFMIEnumerationModelVariableStartValue(hasStartValue, startValue, isFixed)%><%dumpFMIModelVariableDescription(description)%><%dumpFMIModelVariablePlacementAnnotation(x1Placement, x2Placement, y1Placement, y2Placement, generateInputConnectors, generateOutputConnectors, causality)%>;
+  <%dumpFMIModelVariableVariability(variability)%><%dumpFMIModelVariableCausalityAndBaseType(causality, baseType, generateInputConnectors, generateOutputConnectors)%> <%name%><%dumpFMIEnumerationModelVariableStartValue(fmiTypeDefinitionsList, baseType, hasStartValue, startValue, isFixed)%><%dumpFMIModelVariableDescription(description)%><%dumpFMIModelVariablePlacementAnnotation(x1Placement, x2Placement, y1Placement, y2Placement, generateInputConnectors, generateOutputConnectors, causality)%>;
   >>
 end dumpFMIModelVariable;
 
@@ -2145,10 +2146,10 @@ template dumpFMIStringModelVariableStartValue(Boolean hasStartValue, String star
   >>
 end dumpFMIStringModelVariableStartValue;
 
-template dumpFMIEnumerationModelVariableStartValue(Boolean hasStartValue, Integer startValue, Boolean isFixed)
+template dumpFMIEnumerationModelVariableStartValue(list<TypeDefinitions> fmiTypeDefinitionsList, String baseType, Boolean hasStartValue, Integer startValue, Boolean isFixed)
 ::=
   <<
-  <%if hasStartValue then "="+startValue%>
+  <%if hasStartValue then "="+baseType + "." + getEnumerationFromTypes(fmiTypeDefinitionsList, baseType, startValue)%>
   >>
 end dumpFMIEnumerationModelVariableStartValue;
 

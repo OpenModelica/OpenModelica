@@ -217,4 +217,60 @@ algorithm
   end match;
 end getFMIVersion;
 
+public function getEnumerationFromTypes
+  input list<TypeDefinitions> inTypeDefinitionsList;
+  input String inBaseType;
+  input Integer inStartValue;
+  output String outEnumerationItem;
+algorithm
+  outEnumerationItem := matchcontinue (inTypeDefinitionsList, inBaseType, inStartValue)
+    local
+      list<TypeDefinitions> xs;
+      TypeDefinitions tf;
+      String name_;
+      list<EnumerationItem> items_;
+      String baseType;
+      Integer startValue;
+      String enumerationItem;
+    case ((tf as ENUMERATIONTYPE(name = name_, items = items_)) :: xs, baseType, startValue)
+      equation
+        true = stringEqual(name_, baseType);
+        enumerationItem = getEnumerationFromItems(items_, startValue);
+      then
+        enumerationItem;
+    case ((_ :: xs), baseType, startValue)
+      equation
+        enumerationItem = getEnumerationFromTypes(xs, baseType, startValue);
+      then
+        enumerationItem;
+    case ({}, baseType, startValue) then "";
+  end matchcontinue;
+end getEnumerationFromTypes;
+
+protected function getEnumerationFromItems
+  input list<EnumerationItem> inItems;
+  input Integer inStartValue;
+  output String outEnumerationItem;
+algorithm
+  outEnumerationItem := matchcontinue (inItems,inStartValue)
+    local
+      list<EnumerationItem> xs;
+      Integer newn,n;
+      String name_;
+    case ((ENUMERATIONITEM(name = name_) :: _) , 1) then name_;
+    case ((ENUMERATIONITEM(name = name_) :: xs), n)
+      equation
+        newn = n - 1;
+        name_ = getEnumerationFromItems(xs, newn);
+      then
+        name_;
+    case ((_ :: xs),n)
+      equation
+        name_ = getEnumerationFromItems(xs, n);
+      then
+        name_;
+    case ({},_) then "";
+  end matchcontinue;
+end getEnumerationFromItems;
+
 end FMI;

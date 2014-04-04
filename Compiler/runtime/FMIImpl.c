@@ -404,9 +404,8 @@ void FMIImpl__initializeFMI1Import(fmi1_import_t* fmi, void** fmiInfo, fmi_versi
     fmi1_import_variable_typedef_t* variableTypeDef = fmi1_import_get_typedef(typeDefinitions, i);
     const char* name = fmi1_import_get_type_name(variableTypeDef);
     void* typeName = NULL;
-    /* Don't save the types starting with Modelica since we don't want to generate them in the code. Skip them here and we don't have to check anything in CodgenFMU.tpl */
     if (startsWithModelicaDot(name)) {
-      continue;
+      typeName = mk_scon_check_null(name);
     } else {
       char* name_safe = makeStringFMISafe(name);
       typeName = mk_scon_check_null(name_safe);
