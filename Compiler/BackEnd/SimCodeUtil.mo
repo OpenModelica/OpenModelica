@@ -5221,6 +5221,7 @@ algorithm
         sname = Absyn.pathStringReplaceDot(name, "_");
         false = listMember(sname, rt);
         vars = List.map(varlst, typesVarNoBinding);
+        vars = List.sort(vars,compareVariable);
         rt_1 = sname :: rt;
         (accRecDecls, rt_2) = elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1);
         recDecl = SimCode.RECORD_DECL_FULL(sname, NONE(), name, vars);
@@ -12287,5 +12288,23 @@ algorithm
       else false;
   end match;
 end compareEnumerationTypes;
+
+protected function variableName
+  input SimCode.Variable v;
+  output String s;
+algorithm
+  s := match v
+    case SimCode.VARIABLE(name=DAE.CREF_IDENT(ident=s)) then s;
+    case SimCode.FUNCTION_PTR(name=s) then s;
+  end match;
+end variableName;
+
+protected function compareVariable
+  input SimCode.Variable v1;
+  input SimCode.Variable v2;
+  output Boolean b;
+algorithm
+  b := stringCompare(variableName(v1),variableName(v2)) > 0;
+end compareVariable;
 
 end SimCodeUtil;

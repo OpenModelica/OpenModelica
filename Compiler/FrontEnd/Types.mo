@@ -1473,6 +1473,7 @@ algorithm
           DAE.T_COMPLEX(complexClassType = st2,varLst = els2), _)
       equation
         true = classTypeEqualIfRecord(st1, st2) or not requireRecordNamesEqual "We need to add a cast from one record to another";
+        true = listLength(els1) == listLength(els2);
         true = subtypeVarlist(els1, els2);
       then
         true;
@@ -4540,6 +4541,7 @@ algorithm
     case (e, DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(p1),varLst = els1), t2 as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(p2),varLst = els2),_)
       equation
         false = Absyn.pathEqual(p1,p2) "We need to add a cast from one record to another";
+        true = listLength(els1) == listLength(els2);
         true = subtypeVarlist(els1, els2);
         e = DAE.CAST(t2, e);
       then (e, t2);

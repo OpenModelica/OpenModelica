@@ -14,20 +14,21 @@ import crefStr = ComponentReference.printComponentRefStrFixDollarDer;
 
 public function serialize
   input SimCode.SimCode code;
+  output String fileName;
 algorithm
-  true := serializeWork(code);
+  (true,fileName) := serializeWork(code);
 end serialize;
 
 protected function serializeWork "Always succeeds in order to clean-up external objects"
   input SimCode.SimCode code;
   output Boolean success; // We always need to return
+  output String fileName;
 protected
   SimpleBuffer.SimpleBuffer sb = SimpleBuffer.SimpleBuffer();
   Pack.Packer pack = Pack.Packer(sb);
 algorithm
-  success := matchcontinue code
+  (success,fileName) := matchcontinue code
     local
-      String fileName;
       SimCode.ModelInfo mi;
       SimCode.SimVars vars;
     case SimCode.SIMCODE(modelInfo=mi as SimCode.MODELINFO(vars=vars))
@@ -41,11 +42,11 @@ algorithm
         Pack.integer(pack,1);
         serializeVars(pack,vars);
         SimpleBuffer.writeFile(sb,fileName);
-      then true;
+      then (true,fileName);
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"SerializeModelInfo.serialize failed"});
-      then false;
+      then (false,"");
   end matchcontinue;
 end serializeWork;
 
@@ -95,18 +96,36 @@ protected function serializeVar
 algorithm
   ok := match var
     local
-      Absyn.Info info;
-    case SimCode.SIMVAR(source=DAE.SOURCE(info=info))
+      DAE.ElementSource source;
+    case SimCode.SIMVAR()
       equation
         Pack.string(pack,crefStr(var.name));
         Pack.map(pack,2);
         Pack.string(pack,"comment");
         Pack.string(pack,var.comment);
-        Pack.string(pack,"info");
-        serializeInfo(pack,info);
+        Pack.string(pack,"source");
+        serializeSource(pack,var.source);
       then true;
   end match;
 end serializeVar;
+
+protected function serializeSource
+  input Pack.Packer pack;
+  input DAE.ElementSource source;
+protected
+  Absyn.Info info;
+  list<Absyn.Path> typeLst;
+algorithm
+  DAE.SOURCE(typeLst=typeLst,info=info) := source;
+  Pack.string(pack,"info");
+  serializeInfo(pack,info);
+
+  Pack.string(pack,"instance");
+  serializeInfo(pack,info);
+  Pack.string(pack,"typeLst");
+  Pack.sequence(pack,listLength(typeLst));
+  list(Pack.string(pack,Absyn.pathString(ty)) for ty in typeLst);
+end serializeSource;
 
 protected function serializeInfo
   input Pack.Packer pack;
