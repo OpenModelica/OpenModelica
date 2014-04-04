@@ -27,15 +27,33 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef __MSGPACK_MODELICA_H
 #define __MSGPACK_MODELICA_H
 
+/* You can specify -DHAVE_MMAP=0 or -DHAVE_MMAP=1 to enable/disable the mmap implementation
+ * Else we auto-detect mmap using _POSIX_MAPPED_FILES in unistd.h
+ */
+#if !defined(HAVE_MMAP)
+#if defined(unix)
+#include <unistd.h>
+#endif
+#if _POSIX_MAPPED_FILES>0
+#define HAVE_MMAP 1
+#else
+#define HAVE_MMAP 0
+#endif
+#endif
+
 #include <msgpack.h>
 #include <stdio.h>
 #include <errno.h>
+#include <ModelicaUtilities.h>
+
+#if HAVE_MMAP
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <unistd.h>
-#include <ModelicaUtilities.h>
+#endif
+
 
 
 typedef struct {
@@ -110,9 +128,11 @@ static void unpack_print(FILE *fout, const void *ptr, size_t size) {
 static void* msgpack_modelica_new_deserialiser(const char *file)
 {
   s_deserializer *deserializer = (s_deserializer*) malloc(sizeof(s_deserializer));
-  int fd;
-  void *mapped;
+  char *mapped;
+  /* The msgpack api uses raw data, and  mmap is nice if we want to use random access in the file */
+#if HAVE_MMAP
   struct stat s;
+  int fd;
   fd = open(file, O_RDONLY);
   if (fd < 0) {
     ModelicaFormatError("Failed to open file %s for reading: %s\n", file, strerror(errno));
@@ -126,10 +146,27 @@ static void* msgpack_modelica_new_deserialiser(const char *file)
     close(fd);
     ModelicaFormatError("mmap(file=\"%s\",fd=%d,size=%ld) failed: %s\n", file, fd, (long) s.st_size, strerror(errno));
   }
-  msgpack_unpacked_init(&deserializer->msg);
   deserializer->fd = fd;
-  deserializer->ptr = mapped;
   deserializer->size = s.st_size;
+#else
+  size_t sz;
+  FILE *fin = fopen(file, "r");
+  fseek(fin, 0, SEEK_END);
+  sz = ftell(fin);
+  fseek(fin, 0, SEEK_SET);
+  mapped = malloc(sz + 1);
+  if (1 != fread(mapped, sz, 1, fin)) {
+    free(mapped);
+    fclose(fin);
+    ModelicaFormatError("Failed to read contents of size %ld in %s\n", (long) sz, file);
+  }
+  fclose(fin);
+  mapped[sz] = 0;
+  deserializer->fd = -1;
+  deserializer->size = sz;
+#endif
+  msgpack_unpacked_init(&deserializer->msg);
+  deserializer->ptr = mapped;
   return deserializer;
 }
 
@@ -137,8 +174,12 @@ static inline void msgpack_modelica_free_deserialiser(void *ptr)
 {
   s_deserializer *deserializer = (s_deserializer*) ptr;
   msgpack_unpacked_destroy(&deserializer->msg);
+#if HAVE_MMAP
   munmap(deserializer->ptr, deserializer->size);
   close(deserializer->fd);
+#else
+  free(deserializer->ptr);
+#endif
   free(ptr);
 }
 
@@ -167,7 +208,6 @@ static int msgpack_modelica_unpack_int(void *ptr, int offset, int *newoffset, in
   } else {
     ModelicaError("Object is not of integer type\n");
   }
-  return 0; /* Cannot reach here */
 }
 
 static const char* msgpack_modelica_unpack_string(void *ptr, int offset, int *newoffset, int *success)
@@ -187,7 +227,6 @@ static const char* msgpack_modelica_unpack_string(void *ptr, int offset, int *ne
   } else {
     ModelicaError("Object is not of integer type\n");
   }
-  return NULL; /* Cannot reach here */
 }
 
 static inline int msgpack_modelica_get_unpacked_int(void *ptr)
