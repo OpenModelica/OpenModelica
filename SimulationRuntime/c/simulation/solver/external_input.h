@@ -32,8 +32,16 @@
 #ifndef _EXTERNAL_INPUT_H_
 #define _EXTERNAL_INPUT_H_
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 int externalInputallocate(DATA* data);
 int externalInputFree(DATA* data);
 int externalInputUpdate(DATA* data);
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif

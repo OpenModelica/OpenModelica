@@ -2092,6 +2092,8 @@ algorithm
          ty = typeof(e);
       then
         DAE.T_METATYPE(DAE.T_METABOXED(ty, DAE.emptyTypeSource), DAE.emptyTypeSource);
+    case (DAE.MATCHEXPRESSION(et=tp))
+      then tp;
     case (DAE.UNBOX(ty = tp)) then tp;
     case (DAE.SHARED_LITERAL(ty = tp)) then tp;
 

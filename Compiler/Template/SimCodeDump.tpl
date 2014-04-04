@@ -293,7 +293,7 @@ template dumpElementSource(ElementSource source, Boolean withOperations)
       <source>
         <%dumpInfo(info)%>
         <%s.partOfLst |> w => '<part-of><%dumpWithin(w)%></part-of>' %>
-        <%s.instanceOptLst |> SOME(cr) => '<instance><%crefStrNoUnderscore(cr)%></instance>' %>
+        <%match s.instanceOpt case SOME(cr) then '<instance><%crefStrNoUnderscore(cr)%></instance>' %>
         <%s.connectEquationOptLst |> p => "<connect-equation />"%>
         <%s.typeLst |> p => '<type><%escapeModelicaStringToXmlString(dotPath(p))%></type>' ; separator = "\n" %>
       </source>

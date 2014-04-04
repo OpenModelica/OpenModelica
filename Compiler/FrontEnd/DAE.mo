@@ -94,7 +94,7 @@ uniontype ElementSource "gives information about the origin of the element"
   record SOURCE
     Absyn.Info info "the line and column numbers of the equations and algorithms this element came from";
     list<Absyn.Within> partOfLst "the model(s) this element came from";
-    list<Option<ComponentRef>> instanceOptLst "the instance(s) this element is part of";
+    Option<ComponentRef> instanceOpt "the instance(s) this element is part of";
     list<Option<tuple<ComponentRef, ComponentRef>>> connectEquationOptLst "this element came from this connect(s)";
     list<Absyn.Path> typeLst "the classes where the type(s) of the element is defined";
     list<SymbolicOperation> operations "the symbolic operations used to end up with the final state of the element";
@@ -102,7 +102,7 @@ uniontype ElementSource "gives information about the origin of the element"
   end SOURCE;
 end ElementSource;
 
-public constant ElementSource emptyElementSource = SOURCE(Absyn.dummyInfo,{},{},{},{},{},{});
+public constant ElementSource emptyElementSource = SOURCE(Absyn.dummyInfo,{},NONE(),{},{},{},{});
 
 public uniontype SymbolicOperation
   record FLATTEN "From one equation/statement to a list of DAE elements (in case it is expanded)"

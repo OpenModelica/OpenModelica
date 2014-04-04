@@ -1693,7 +1693,7 @@ package DAE
     record SOURCE
       Absyn.Info info;
       list<Absyn.Within> partOfLst;
-      list<Option<ComponentRef>> instanceOptLst;
+      Option<ComponentRef> instanceOpt;
       list<Option<tuple<ComponentRef, ComponentRef>>> connectEquationOptLst;
       list<Absyn.Path> typeLst;
       list<SymbolicOperation> operations;

@@ -175,11 +175,17 @@ template simulationFile_exo(SimCode simCode, String guid)
     case simCode as SIMCODE(__) then
     <<
     /* External objects file */
-    <%simulationFileHeader(simCode)%>    
+    <%simulationFileHeader(simCode)%>
+    #if defined(__cplusplus)
+    extern "C" {
+    #endif
     
     <%functionCallExternalObjectConstructors(extObjInfo, modelNamePrefix(simCode))%>
 
     <%functionCallExternalObjectDestructors(extObjInfo, modelNamePrefix(simCode))%>
+    #if defined(__cplusplus)
+    }
+    #endif
     <%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
@@ -198,6 +204,9 @@ template simulationFile_nls(SimCode simCode, String guid)
     /* dummy REAL_ATTRIBUTE */
     const REAL_ATTRIBUTE dummyREAL_ATTRIBUTE = omc_dummyRealAttribute;
     #include "<%simCode.fileNamePrefix%>_12jac.h"
+    #if defined(__cplusplus)
+    extern "C" {
+    #endif
     <%functionNonLinearResiduals(initialEquations,modelNamePrefixStr)%>
     <%functionNonLinearResiduals(inlineEquations,modelNamePrefixStr)%>
     <%functionNonLinearResiduals(parameterEquations,modelNamePrefixStr)%>
@@ -206,6 +215,9 @@ template simulationFile_nls(SimCode simCode, String guid)
 
     <%functionInitialNonLinearSystems(initialEquations, inlineEquations, parameterEquations, allEquations, jacobianEquations, modelNamePrefixStr)%>
     
+    #if defined(__cplusplus)
+    }
+    #endif
     <%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
@@ -221,11 +233,17 @@ template simulationFile_lsy(SimCode simCode, String guid)
     /* Linear Systems */
     <%simulationFileHeader(simCode)%>
     #include "<%simCode.fileNamePrefix%>_12jac.h"
+    #if defined(__cplusplus)
+    extern "C" {
+    #endif
 
     <%functionSetupLinearSystems(initialEquations, inlineEquations, parameterEquations, allEquations, jacobianEquations)%>
     
     <%functionInitialLinearSystems(initialEquations, inlineEquations, parameterEquations, allEquations, jacobianEquations, modelNamePrefix(simCode))%>
     
+    #if defined(__cplusplus)
+    }
+    #endif
     <%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
@@ -242,8 +260,14 @@ template simulationFile_set(SimCode simCode, String guid)
     <%simulationFileHeader(simCode)%>
     #include "<%simCode.fileNamePrefix%>_11mix.h"
     #include "<%simCode.fileNamePrefix%>_12jac.h"
+    #if defined(__cplusplus)
+    extern "C" {
+    #endif
     <%functionInitialStateSets(stateSets, modelNamePrefix(simCode))%>
     
+    #if defined(__cplusplus)
+    }
+    #endif
     <%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
@@ -258,6 +282,9 @@ template simulationFile_evt(SimCode simCode, String guid)
     <<
     /* Events: Sample, Zero Crossings, Relations, Discrete Changes */
     <%simulationFileHeader(simCode)%>
+    #if defined(__cplusplus)
+    extern "C" {
+    #endif
 
     <%functionInitSample(timeEvents, modelNamePrefix(simCode))%>
     
@@ -267,6 +294,9 @@ template simulationFile_evt(SimCode simCode, String guid)
 
     <%functionCheckForDiscreteChanges(discreteModelVars, modelNamePrefix(simCode))%>
     
+    #if defined(__cplusplus)
+    }
+    #endif
     <%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
@@ -283,12 +313,18 @@ template simulationFile_inz(SimCode simCode, String guid)
     <%simulationFileHeader(simCode)%>
     #include "<%simCode.fileNamePrefix%>_11mix.h"
     #include "<%simCode.fileNamePrefix%>_12jac.h"
+    #if defined(__cplusplus)
+    extern "C" {
+    #endif
     
     <%functionInitialResidual(residualEquations, modelNamePrefix(simCode))%>
     <%functionInitialEquations(useSymbolicInitialization, initialEquations, modelNamePrefix(simCode))%>    
 
     <%functionInitialMixedSystems(initialEquations, inlineEquations, parameterEquations, allEquations, jacobianEquations, modelNamePrefix(simCode))%>
     
+    #if defined(__cplusplus)
+    }
+    #endif
     <%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
@@ -303,9 +339,15 @@ template simulationFile_dly(SimCode simCode, String guid)
     <<
     /* Delay */
     <%simulationFileHeader(simCode)%>
+    #if defined(__cplusplus)
+    extern "C" {
+    #endif
     
     <%functionStoreDelayed(delayedExps, modelNamePrefix(simCode))%>
         
+    #if defined(__cplusplus)
+    }
+    #endif
     <%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
@@ -338,11 +380,17 @@ template simulationFile_bnd(SimCode simCode, String guid)
     <<
     /* update bound parameters and variable attributes (start, nominal, min, max) */
     <%simulationFileHeader(simCode)%>
+    #if defined(__cplusplus)
+    extern "C" {
+    #endif
     
     <%functionUpdateBoundVariableAttributes(startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations, modelNamePrefix(simCode))%>
 
     <%functionUpdateBoundParameters(parameterEquations, modelNamePrefix(simCode))%>
         
+    #if defined(__cplusplus)
+    }
+    #endif
     <%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
@@ -380,9 +428,15 @@ template simulationFile_asr(SimCode simCode, String guid)
     <<
     /* Asserts */
     <%simulationFileHeader(simCode)%>
+    #if defined(__cplusplus)
+    extern "C" {
+    #endif
 
     <%functionAssertsforCheck(algorithmAndEquationAsserts, modelNamePrefix(simCode))%>    
         
+    #if defined(__cplusplus)
+    }
+    #endif
     <%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
@@ -448,8 +502,13 @@ template simulationFile_opt(SimCode simCode, String guid)
     /* Optimization */
     <%simulationFileHeader(simCode)%>
     #include "<%fileNamePrefix%>_12jac.h"
-    
+    #if defined(__cplusplus)
+    extern "C" {
+    #endif
     <%optimizationComponents(classAttributes, simCode, modelNamePrefixStr)%>
+    #if defined(__cplusplus)
+    }
+    #endif
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
   end match
@@ -462,13 +521,13 @@ template simulationFile_opt_header(SimCode simCode, String guid)
     case simCode as SIMCODE(__) then
     let modelNamePrefixStr = modelNamePrefix(simCode)
     <<
-    #if defined(_MSC_VER)
-    extern "C" {
+    #if defined(__cplusplus)
+      extern "C" {
     #endif
       int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real* res);
       int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real* res);
       int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start, modelica_real * startTimeOpt);
-    #if defined(_MSC_VER)
+    #if defined(__cplusplus)
     }
     #endif
     >>
@@ -484,9 +543,14 @@ template simulationFile_lnz(SimCode simCode, String guid)
     <<
     /* Linearization */
     <%simulationFileHeader(simCode)%>
+    #if defined(__cplusplus)
+    extern "C" {
+    #endif
 
     <%functionlinearmodel(modelInfo, modelNamePrefix(simCode))%>    
-        
+    #if defined(__cplusplus)
+    }
+    #endif
     <%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
@@ -516,7 +580,7 @@ template simulationFile(SimCode simCode, String guid)
     /* dummy VARINFO and FILEINFO */
     const FILE_INFO dummyFILE_INFO = omc_dummyFileInfo;
     const VAR_INFO dummyVAR_INFO = omc_dummyVarInfo;
-    #ifdef __cplusplus
+    #if defined(__cplusplus)
     extern "C" {
     #endif
     #ifdef _OMC_MEASURE_TIME
@@ -1076,13 +1140,13 @@ template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes, Str
     let varsDef = variableDefinitionsJacobians2(index0, jacColumn, seedVars, name)
     let sparseDef = defineSparseIndexes(diffVars, diffedVars, name)
     <<
-    #if defined(_MSC_VER)
+    #if defined(__cplusplus)
     extern "C" {
     #endif
       #define <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%name%> <%index0%>
       int <%symbolName(modelNamePrefix,"functionJac")%><%name%>_column(void* data);
       int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%name%>(void* data);
-    #if defined(_MSC_VER)
+    #if defined(__cplusplus)
     }
     #endif
     <%varsDef%>

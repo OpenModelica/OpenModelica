@@ -1820,7 +1820,7 @@ algorithm
         ((mulAdstates,(_,_))) = BackendDAEUtil.extendArrExp((mulAdstates,(NONE(),false)));
         expset = Util.if_(intGt(rang,1),DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)},DAE.emptyTypeSource),true,expcrset),listGet(expcrset,1));
         expderset = Util.if_(intGt(rang,1),DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)},DAE.emptyTypeSource),true,expcrdset),listGet(expcrdset,1));
-        source = DAE.SOURCE(Absyn.INFO("stateselection",false,0,0,0,0,Absyn.dummyTimeStamp),{},{},{},{},{},{});
+        source = DAE.SOURCE(Absyn.INFO("stateselection",false,0,0,0,0,Absyn.dummyTimeStamp),{},NONE(),{},{},{},{});
         // set.x = set.A*set.statecandidates
         eqn  = Util.if_(intGt(rang,1),BackendDAE.ARRAY_EQUATION({rang},expset,mulAstates,source,false),
                                       BackendDAE.EQUATION(expset,mulAstates,source,false));

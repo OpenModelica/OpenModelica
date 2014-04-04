@@ -51,11 +51,6 @@
 #include "linearization/linearize.h"
 #include "simulation/results/simulation_result.h"
 
-#ifndef NO_INTERACTIVE_DEPENDENCY
-#include "../../../interactive/socket.h"
-extern Socket sim_communication_port;
-#endif
-
 extern "C" {
 
 extern int callSolver(DATA* simData, std::string result_file_cstr, std::string init_initMethod,

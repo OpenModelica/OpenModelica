@@ -11,6 +11,7 @@ import MessagePack.Pack.SimpleBuffer;
 import MessagePack.Pack;
 import MessagePack.Utilities;
 import crefStr = ComponentReference.printComponentRefStrFixDollarDer;
+import Util;
 
 public function serialize
   input SimCode.SimCode code;
@@ -115,16 +116,31 @@ protected function serializeSource
 protected
   Absyn.Info info;
   list<Absyn.Path> typeLst;
+  list<Absyn.Within> partOfLst;
+  Option<DAE.ComponentRef> iopt;
+  Integer i;
+  Boolean withInstance;
+  list<String> paths;
 algorithm
-  DAE.SOURCE(typeLst=typeLst,info=info) := source;
+  DAE.SOURCE(typeLst=typeLst,info=info,instanceOpt=iopt,partOfLst=partOfLst) := source;
+  withInstance := Util.isSome(iopt);
+  Pack.map(pack,3 + (if withInstance then 1 else 0));
   Pack.string(pack,"info");
   serializeInfo(pack,info);
+  paths := list(match w case Absyn.WITHIN() then Absyn.pathString(w.path); end match
+                for w guard (match w case Absyn.TOP() then false; else true; end match)
+                in partOfLst);
+  Pack.string(pack,"within");
+  Pack.sequence(pack,listLength(paths));
+  min(Pack.string(pack,s) for s in paths);
 
-  Pack.string(pack,"instance");
-  serializeInfo(pack,info);
+  if withInstance then
+    Pack.string(pack,"instance");
+    Pack.string(pack,crefStr(Util.getOption(iopt)));
+  end if;
   Pack.string(pack,"typeLst");
   Pack.sequence(pack,listLength(typeLst));
-  /*TODO:Remove _ := statement on next tarball*/ _ := list(Pack.string(pack,Absyn.pathString(ty)) for ty in typeLst);
+  min(Pack.string(pack,Absyn.pathStringNoQual(ty)) for ty in typeLst);
 end serializeSource;
 
 protected function serializeInfo
@@ -148,31 +164,5 @@ algorithm
       then ();
   end match;
 end serializeInfo;
-
-/*
-    DAE.ComponentRef name;
-    BackendDAE.VarKind varKind;
-    String comment;
-    String unit;
-    String displayUnit;
-    Integer index;
-    Option<DAE.Exp> minValue;
-    Option<DAE.Exp> maxValue;
-    Option<DAE.Exp> initialValue;
-    Option<DAE.Exp> nominalValue;
-    Boolean isFixed;
-    DAE.Type type_;
-    Boolean isDiscrete;
-    // arrayCref is the name of the array if this variable is the first in that
-    // array
-    Option<DAE.ComponentRef> arrayCref;
-    AliasVariable aliasvar;
-    DAE.ElementSource source;
-    Causality causality;
-    Option<Integer> variable_index;
-    list<String> numArrayElement;
-    Boolean isValueChangeable;
-    Boolean isProtected;
-*/
 
 end SerializeModelInfo;

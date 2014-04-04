@@ -400,11 +400,11 @@ typedef struct MODEL_DATA
 
   MODEL_DATA_XML modelDataXml;         /* TODO: Rename me? */
 
-  modelica_string_t modelName;
-  modelica_string_t modelFilePrefix;
-  modelica_string_t modelDir;
-  modelica_string_t modelGUID;
-  modelica_string_t initXMLData;
+  const char* modelName;
+  const char* modelFilePrefix;
+  const char* modelDir;
+  const char* modelGUID;
+  const char* initXMLData;
 
   long nSamples;                       /* number of different sample-calls */
   SAMPLE_INFO* samplesInfo;            /* array containing each sample-call */
