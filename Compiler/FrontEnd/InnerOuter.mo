@@ -1473,8 +1473,7 @@ algorithm
         cref_ = ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {});
         (_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,inPrefix, cref_);
         // add to hashtable!
-        // Debug.fprintln(Flags.INNER_OUTER, "InnerOuter.updateInstHierarchy adding: " +&
-        //   PrefixUtil.printPrefixStr(inPrefix) +& "/" +& name +& " to IH");
+        // Debug.fprintln(Flags.FAILTRACE, "InnerOuter.updateInstHierarchy adding: " +& PrefixUtil.printPrefixStr(inPrefix) +& "/" +& name +& " to IH");
         ht = add((cref,inInstInner), ht);
       then
         TOP_INSTANCE(pathOpt, ht, outerPrefixes)::restIH;
@@ -1605,9 +1604,7 @@ algorithm
 
         innerCref = changeOuterReferenceToInnerReference(fullCref, outerCrefPrefix, innerCrefPrefix);
 
-        // Debug.fprintln(Flags.INNER_OUTER, "- InnerOuter.prefixOuterCrefWithTheInnerPrefix replaced cref " +&
-        //  ComponentReference.printComponentRefStr(fullCref) +& " with cref: " +&
-        //  ComponentReference.printComponentRefStr(innerCref));
+        // Debug.fprintln(Flags.FAILTRACE, "- InnerOuter.prefixOuterCrefWithTheInnerPrefix replaced cref " +& ComponentReference.printComponentRefStr(fullCref) +& " with cref: " +& ComponentReference.printComponentRefStr(innerCref));
       then
         innerCref;
 
@@ -1615,8 +1612,7 @@ algorithm
     case (_, _, _)
       equation
         // true = Flags.isSet(Flags.FAILTRACE);
-        // Debug.traceln("- InnerOuter.prefixOuterCrefWithTheInnerPrefix failed to find prefix of inner for outer: prefix/cref " +&
-        //   PrefixUtil.printPrefixStr(inPrefix) +& "/" +& ComponentReference.printComponentRefStr(inOuterComponentRef));
+        // Debug.traceln("- InnerOuter.prefixOuterCrefWithTheInnerPrefix failed to find prefix of inner for outer: prefix/cref " +& PrefixUtil.printPrefixStr(inPrefix) +& "/" +& ComponentReference.printComponentRefStr(inOuterComponentRef));
       then
         fail();
   end match;
@@ -1642,6 +1638,7 @@ algorithm
     // an inner prefix a.d.e, then we want a, d.e and f.g, resulting in a.d.e.f.g.
     case (ifull, ocp, icp)
       equation
+        // print("F:" +& ComponentReference.printComponentRefStr(ifull) +& "\n" +& "I:" +& ComponentReference.printComponentRefStr(icp) +& "\n" +& "O:" +& ComponentReference.printComponentRefStr(ocp) +& "\n");
         // Explode the crefs to lists so that they are easier to work with.
         eifull = ComponentReference.explode(ifull);
         eicp = ComponentReference.explode(icp);
@@ -1651,17 +1648,19 @@ algorithm
         (eocp, esuffix) = List.split(eifull, ComponentReference.identifierCount(ocp));
 
         // Extract the common prefix of the outer and inner prefix.
-        (epre, erest) = List.splitEqualPrefix(eocp, eicp,
-          ComponentReference.crefFirstIdentEqual);
+        (epre, erest) = List.splitEqualPrefix(eocp, eicp, ComponentReference.crefFirstIdentEqual);
+        
+        // remove the common prefix from the inner!
+        (_, eicp) = List.splitEqualPrefix(eicp, epre, ComponentReference.crefFirstIdentEqual);
 
         // Extract the common suffix of the outer and inner prefix.
-        (erest, _) = List.splitEqualPrefix(listReverse(erest), listReverse(eicp),
-          ComponentReference.crefFirstIdentEqual);
+        (erest, _) = List.splitEqualPrefix(listReverse(erest), listReverse(eicp), ComponentReference.crefFirstIdentEqual);
 
         // Combine the parts into a new cref.
         erest = listAppend(listReverse(erest), esuffix);
         eifull = listAppend(epre, erest);
         ic = ComponentReference.implode(eifull);
+        // print("C:" +& ComponentReference.printComponentRefStr(ic) +& "\n");
       then
         ic;
 
