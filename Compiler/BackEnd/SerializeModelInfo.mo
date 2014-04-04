@@ -124,7 +124,7 @@ algorithm
   serializeInfo(pack,info);
   Pack.string(pack,"typeLst");
   Pack.sequence(pack,listLength(typeLst));
-  list(Pack.string(pack,Absyn.pathString(ty)) for ty in typeLst);
+  /*TODO:Remove _ := statement on next tarball*/ _ := list(Pack.string(pack,Absyn.pathString(ty)) for ty in typeLst);
 end serializeSource;
 
 protected function serializeInfo
