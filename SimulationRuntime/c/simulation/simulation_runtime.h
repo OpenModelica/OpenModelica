@@ -81,16 +81,6 @@ extern const char* getNameInt(modelica_integer* ptr);
 extern const char* getNameBool(modelica_boolean* ptr);
 extern const char* getNameString(const char** ptr);
 
-
-/* function for calculating state values on residual form */
-/*used in DDASRT fortran function*/
-extern int functionODE_residual(double *t, double *x, double *xprime, double *delta, fortran_integer *ires, double *rpar, fortran_integer* ipar);
-
-/* function for calculating zeroCrossings */
-/*used in DDASRT fortran function*/
-extern int function_ZeroCrossingsDASSL(fortran_integer *neqm, double *t, double *y,
-        fortran_integer *ng, double *gout, double *rpar, fortran_integer* ipar);
-
 extern double getSimulationStepSize();
 extern void printSimulationStepSize(double in_stepSize, double time);
 

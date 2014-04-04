@@ -125,7 +125,7 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
    infoStreamPrint(LOG_SOLVER, 0, "Initializing DASSL");
    sInfo->solverMethod = "dassl";
    solverInfo->solverMethod = S_DASSL;
-   dasrt_initial(iData->data, solverInfo, dasslData);
+   dassl_initial(iData->data, solverInfo, dasslData);
    solverInfo->solverMethod = S_OPTIMIZATION;
    solverInfo->solverData = dasslData;
 
@@ -197,7 +197,7 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
     printf("\n========================================================\n");
   }
 
-  dasrt_deinitial(solverInfo->solverData);
+  dassl_deinitial(solverInfo->solverData);
   externalInputFree(data);
   data->simulationInfo.external_input.active = 0;
 
@@ -296,7 +296,7 @@ static int smallIntSolverStep(IPOPT_DATA_ *iData, SOLVER_INFO* solverInfo, doubl
     do{
 
       solverInfo->currentStepSize = a*(tstop - solverInfo->currentTime);
-      err = dasrt_step(iData->data, solverInfo);
+      err = dassl_step(iData->data, solverInfo);
       a *= 0.5;
       if(++iter >  10){
         warningStreamPrint(LOG_STDOUT, 0, "Initial guess failure at time %.12g", solverInfo->currentTime);

@@ -953,7 +953,7 @@ static void omc_assert_simulation(threadData_t *threadData, FILE_INFO info, cons
 #endif
     break;
   case ERROR_INTEGRATOR:
-    if(ACTIVE_STREAM(LOG_DDASRT))
+    if(ACTIVE_STREAM(LOG_SOLVER))
     {
       va_start(ap,msg);
       fputs("Error: ",stderr);

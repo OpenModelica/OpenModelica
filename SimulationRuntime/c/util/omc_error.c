@@ -42,7 +42,7 @@ const char *LOG_STREAM_NAME[LOG_MAX] = {
   "stdout",
   "assert",
 
-  "LOG_DDASRT",
+  "LOG_DASSL",
   "LOG_DEBUG",
   "LOG_DSS",
   "LOG_DSS_JAC",
@@ -75,7 +75,7 @@ const char *LOG_STREAM_DESC[LOG_MAX] = {
   "this stream is always active",                       /* LOG_STDOUT */
   "this stream is always active",                       /* LOG_ASSERT */
 
-  "additional information about dassl solver",          /* LOG_DDASRT */
+  "additional information about dassl solver",          /* LOG_DASSL */
   "additional debug information",                       /* LOG_DEBUG */
   "outputs information about dynamic state selection",  /* LOG_DSS */
   "outputs jacobian of the dynamic state selection",    /* LOG_DSS_JAC */

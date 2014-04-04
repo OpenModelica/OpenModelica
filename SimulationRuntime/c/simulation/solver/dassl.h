@@ -33,11 +33,11 @@
 
 #include "simulation/solver/solver_main.h"
 
-#define DDASRT ddasrt_
+#define DDASKR ddaskr_
 
 static const unsigned int maxOrder = 5;
 static const unsigned int numStatistics = 5;
-static const unsigned int infoLength = 15;
+static const unsigned int infoLength = 20;
 
 enum DASSL_METHOD
 {
@@ -87,15 +87,15 @@ typedef struct DASSL_DATA{
 
 /* main dassl function to make a step */
 int
-dasrt_step(DATA* simData, SOLVER_INFO* solverInfo);
+dassl_step(DATA* simData, SOLVER_INFO* solverInfo);
 
 
 /* initial main dassl Data */
 int
-dasrt_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData);
+dassl_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData);
 
 /* deinitial main dassl Data */
 int
-dasrt_deinitial(DASSL_DATA *dasslData);
+dassl_deinitial(DASSL_DATA *dasslData);
 
 #endif

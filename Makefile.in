@@ -62,7 +62,7 @@ settings:
 
 omc: @OMCTARGET@
 
-omc-rml: omc-diff interactive docs fmil opencl_rt lis omc-rml-nolink
+omc-rml: omc-diff interactive docs fmil opencl_rt lis Cdaskr omc-rml-nolink
 	$(MAKE) -C Compiler -f Makefile release
 	$(MAKE) omlibrary
 omc-rml-nolink:

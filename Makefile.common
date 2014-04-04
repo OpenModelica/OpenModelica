@@ -24,7 +24,7 @@ INSTALL_MANDIR     = ${DESTDIR}${datadir}/man/
 INSTALL_JAVADIR    = ${DESTDIR}${datadir}/omc/java
 INSTALL_LOCALEDIR  = ${DESTDIR}${datadir}/locale
 
-.PHONY : interactive omc release qtclients mosh all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-python install-openturns runtimeCPPinstall CMinpack boehm-gc
+.PHONY : interactive omc release qtclients mosh all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-python install-openturns runtimeCPPinstall CMinpack Cdaskr boehm-gc
 
 mkbuilddirs:
 	if [ "$(APP)" = ".app" ]; then mkdir -p $(builddir_app); fi
@@ -196,7 +196,15 @@ CMinpack-clean:
 	rm -rf 3rdParty/CMinpack/install
 	if test -f 3rdParty/CMinpack/build/Makefile; then make -C 3rdParty/CMinpack/build clean; fi
 	rm -f 3rdParty/CMinpack/build/Makefile
-    
+ 
+Cdaskr:
+	test -d 3rdParty/Cdaskr/solver
+	(cd 3rdParty/Cdaskr/solver && CC="$(CC)" CFLAGS="$(CFLAGS)" make -f Makefile)
+	(cp -af 3rdParty/Cdaskr/solver/libcdaskr.a $(builddir_lib)/omc/)
+
+Cdaskr-clean:
+	cd 3rdParty/Cdaskr/solver && make -f Makefile clean
+
 testfast: test
 
 test:
@@ -294,7 +302,7 @@ gc-clean:
 	rm -f 3rdParty/gc-7.2/Makefile
 bootstrap-clean:
 	$(MAKE) -C Compiler/boot clean -f $(defaultMakefileTarget)
-clean: qtclean fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean bootstrap-clean msgpack-clean
+clean: qtclean fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean Cdaskr-clean bootstrap-clean msgpack-clean
 	(cd SimulationRuntime/c && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd SimulationRuntime/interactive && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean)

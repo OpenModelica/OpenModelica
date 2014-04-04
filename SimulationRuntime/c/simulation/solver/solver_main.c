@@ -95,7 +95,7 @@ int solver_main_step(DATA* data, SOLVER_INFO* solverInfo)
     return rungekutta_step(data, solverInfo);
 
   case 3:
-    return dasrt_step(data, solverInfo);
+    return dassl_step(data, solverInfo);
 
   case 4:
     data->callback->functionODE_inline(data, solverInfo->currentStepSize);
@@ -180,7 +180,7 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
     /* Initial DASSL solver */
     DASSL_DATA* dasslData = (DASSL_DATA*) malloc(sizeof(DASSL_DATA));
     infoStreamPrint(LOG_SOLVER, 0, "Initializing DASSL");
-    retValue = dasrt_initial(data, solverInfo, dasslData);
+    retValue = dassl_initial(data, solverInfo, dasslData);
     solverInfo->solverData = dasslData;
   }
   else if(solverInfo->solverMethod == 4)
@@ -277,7 +277,7 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   else if(solverInfo->solverMethod == 3)
   {
     /* De-Initial DASSL solver */
-    dasrt_deinitial(solverInfo->solverData);
+    dassl_deinitial(solverInfo->solverData);
   }
   else if(solverInfo->solverMethod == 4)
   {
