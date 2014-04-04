@@ -16,6 +16,7 @@ SRCHSRCDIR = $(SRCH:%.h=$(srcdir)/%.h)
 .PHONY: all vctarget absyn_subdir clean reallyclean nolink $(SUBDIRS) $(PROG)
 
 vpath %.mo $(FRONTEND_DIR)
+vpath %.mo $(FFRONTEND_DIR)
 vpath %.mo $(BACKEND_DIR)
 vpath %.mo $(GLOBAL_DIR)
 vpath %.mo $(TEMPLATE_DIR)

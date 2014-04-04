@@ -1,43 +1,43 @@
 ifeq ($(wildcard $(OMC)),)
 all:
-	$(MAKE) bootstrap-from-tarball
+	$(MAKE) -f $(defaultMakefileTarget) bootstrap-from-tarball
 else
 all:
-	$(MAKE) --no-print-directory generate-files-in-steps
-	$(MAKE) --no-print-directory install INCLUDESOURCES=1
+	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory generate-files-in-steps
+	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory install INCLUDESOURCES=1
 endif
 
 generate-files-in-steps:
-	$(MAKE) -s templates
-	$(MAKE) Makefile.sources
-	$(MAKE) interfaces INCLUDESOURCES=1
-	$(MAKE) Makefile.depends INCLUDESOURCES=1
-	$(MAKE) generate-files INCLUDESOURCES=1 INCLUDEDEPENDS=1
+	$(MAKE) -f $(defaultMakefileTarget) -s templates
+	$(MAKE) -f $(defaultMakefileTarget) Makefile.sources
+	$(MAKE) -f $(defaultMakefileTarget) interfaces INCLUDESOURCES=1
+	$(MAKE) -f $(defaultMakefileTarget) Makefile.depends INCLUDESOURCES=1
+	$(MAKE) -f $(defaultMakefileTarget) generate-files INCLUDESOURCES=1 INCLUDEDEPENDS=1
 
 .PHONY: interfaces generate-files
 
 GEN_DIR=build/
 
 bootstrap-from-tarball:
-	$(MAKE) clean
+	$(MAKE) -f $(defaultMakefileTarget) clean
 	tar xJf bootstrap-sources.tar.xz
-	$(MAKE) install INCLUDESOURCES=1
-	$(MAKE) clean
-	$(MAKE) generate-files-in-steps
-	$(MAKE) install INCLUDESOURCES=1
-	$(MAKE) clean
-	$(MAKE) generate-files-in-steps
-	$(MAKE) install INCLUDESOURCES=1
+	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1
+	$(MAKE) -f $(defaultMakefileTarget) clean
+	$(MAKE) -f $(defaultMakefileTarget) generate-files-in-steps
+	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1
+	$(MAKE) -f $(defaultMakefileTarget) clean
+	$(MAKE) -f $(defaultMakefileTarget) generate-files-in-steps
+	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1
 
 bootstrap-from-compiled: make-separate
 
 make-bootstrap-tarball:
 	rm -rf $(GEN_DIR)
-	$(MAKE) generate-files-in-steps
+	$(MAKE) -f $(defaultMakefileTarget) generate-files-in-steps
 	tar cJf bootstrap-sources.tar.xz $(GEN_DIR) Makefile.sources
 
 templates:
-	$(MAKE) --no-print-directory -C $(TOP_DIR)/Compiler/Template
+	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory -C $(TOP_DIR)/Compiler/Template
 
 clean:
 	rm -rf $(GEN_DIR)
@@ -76,7 +76,7 @@ Makefile.sources: LoadCompilerSources.mos MakeSources.mos
 	mv LoadCompilerInterface.mos.tmp LoadCompilerInterface.mos
 
 LoadCompilerInterface.mos: Makefile.sources
-	@test -f $@ || (rm -f $< && $(MAKE) $<)
+	@test -f $@ || (rm -f $< && $(MAKE) -f $(defaultMakefileTarget) $<)
 Makefile.depends: MakeDepends.mos LoadCompilerInterface.mos Makefile.sources $(ALL_INTERFACES:%.stamp.mo=%.interface.mo)
 	@rm -f $@
 	$(OMC) $<

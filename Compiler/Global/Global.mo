@@ -53,7 +53,7 @@ constant Integer builtinEnvIndex = 13;
 constant Integer profilerTime1Index = 14;
 constant Integer profilerTime2Index = 15;
 constant Integer flagsIndex = 16;
-constant Integer builtinGraphEnvIndex = 17;
+constant Integer builtinFGraphIndex = 17;
 constant Integer rewriteRulesIndex = 18;
 
 // indexes in System.tick

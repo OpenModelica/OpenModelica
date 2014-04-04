@@ -4,8 +4,8 @@
 if true then /* Suppress output */
   setCommandLineOptions("+g=MetaModelica");
   files := {
-    "../Util/MessagePack.mo", // TODO: Add once we bootstrapped omc
-    "../BackEnd/SerializeModelInfo.mo", // TODO: Add once we bootstrapped omc
+    //"../Util/MessagePack.mo", // TODO: Add once we bootstrapped omc
+    //"../BackEnd/SerializeModelInfo.mo", // TODO: Add once we bootstrapped omc
     "../FrontEnd/Absyn.mo",
     "../FrontEnd/Algorithm.mo",
     "../FrontEnd/Builtin.mo",
@@ -97,6 +97,19 @@ if true then /* Suppress output */
     "../FrontEnd/UnitParserExt.mo",
     "../FrontEnd/Values.mo",
     "../FrontEnd/ValuesUtil.mo",
+    
+  // "FFrontEnd";
+    "../FFrontEnd/FCore.mo",
+    "../FFrontEnd/FExpand.mo",
+    "../FFrontEnd/FGraph.mo",
+    "../FFrontEnd/FGraphBuild.mo",
+    "../FFrontEnd/FGraphDump.mo",
+    "../FFrontEnd/FInst.mo",
+    "../FFrontEnd/FLookup.mo",
+    "../FFrontEnd/FNode.mo",
+    "../FFrontEnd/FResolve.mo",
+    "../FFrontEnd/FTraverse.mo",
+    "../FFrontEnd/FVisit.mo",
 
   // "BackEnd";
     "../BackEnd/BackendDAE.mo",

@@ -83,7 +83,7 @@ public function parsebuiltin "Like parse, but skips the SCode check to avoid inf
 protected
   String realpath;
 algorithm
-  realpath := System.realpath(filename);
+  realpath := Util.replaceWindowsBackSlashWithPathDelimiter(System.realpath(filename));
   outProgram := ParserExt.parse(realpath, Util.testsuiteFriendly(realpath), Config.acceptedGrammar(), encoding, Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Config.getRunningTestsuite());
 end parsebuiltin;
 

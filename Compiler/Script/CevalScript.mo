@@ -88,6 +88,7 @@ protected import Expression;
 protected import ExpressionDump;
 protected import FindZeroCrossings;
 protected import Flags;
+protected import FInst;
 protected import Global;
 protected import Graph;
 protected import HashSetString;
@@ -3385,8 +3386,26 @@ algorithm
       NFEnv.Env nfenv;
       DAE.FunctionTree funcs;
 
+    case (cache,env,_,GlobalScript.SYMBOLTABLE(p,fp,ic,iv,cf,lf),_,_)
+      equation
+        true = Flags.isSet(Flags.GRAPH_INST);
+        false = Flags.isSet(Flags.SCODE_INST);
+        str = Absyn.pathString(className);
+        (absynClass as Absyn.CLASS(restriction = restriction)) = Interactive.getPathedClassInProgram(className, p);
+        re = Absyn.restrString(restriction);
+        Error.assertionOrAddSourceMessage(relaxedFrontEnd or not (Absyn.isFunctionRestriction(restriction) or Absyn.isPackageRestriction(restriction)),
+          Error.INST_INVALID_RESTRICTION,{str,re},Absyn.dummyInfo);
+        (p,true) = loadModel(Interactive.getUsesAnnotationOrDefault(Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.dummyTimeStamp)),Settings.getModelicaPath(Config.getRunningTestsuite()),p,false,true);
+
+        scodeP = SCodeUtil.translateAbsyn2SCode(p);
+        dae = FInst.inst(className, scodeP);
+        ic_1 = ic;
+      then 
+        (cache,env,dae,GlobalScript.SYMBOLTABLE(p,fp,ic_1,iv,cf,lf));
+    
     case (_, _, _, GlobalScript.SYMBOLTABLE(p, fp, ic, iv, cf, lf), _, _)
       equation
+        false = Flags.isSet(Flags.GRAPH_INST);
         true = Flags.isSet(Flags.SCODE_INST);
         scodeP = SCodeUtil.translateAbsyn2SCode(p);
         // remove extends Modelica.Icons.*
@@ -3409,6 +3428,7 @@ algorithm
 
     case (cache,env,_,GlobalScript.SYMBOLTABLE(p,fp,ic,iv,cf,lf),_,_)
       equation
+        false = Flags.isSet(Flags.GRAPH_INST);
         false = Flags.isSet(Flags.SCODE_INST);
         str = Absyn.pathString(className);
         (absynClass as Absyn.CLASS(restriction = restriction)) = Interactive.getPathedClassInProgram(className, p);

@@ -9717,4 +9717,17 @@ algorithm
   end match;
 end toListWithPositions;
 
+public function mkOption
+"@author: adrpo
+ make NONE() if the list is empty
+ make SOME(list) if the list is not empty"
+  input list<ElementType> inList;
+  output Option<list<ElementType>> outOption;
+algorithm
+  outOption := match(inList)
+    case ({}) then NONE();
+    case (_) then SOME(inList);
+  end match;
+end mkOption;
+
 end List;

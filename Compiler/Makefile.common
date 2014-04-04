@@ -22,15 +22,16 @@ $(srcdir)/runtime/runtime.a \
 $(srcdir)/modpar/libmodpar.a
 
 FRONTEND_DIR=$(srcdir)/FrontEnd
+FFRONTEND_DIR=$(srcdir)/FFrontEnd
 BACKEND_DIR=$(srcdir)/BackEnd
 GLOBAL_DIR=$(srcdir)/Global
 TEMPLATE_DIR=$(srcdir)/Template
 SCRIPT_DIR=$(srcdir)/Script
 UTIL_DIR=$(srcdir)/Util
 MAIN_DIR=$(srcdir)/Main
-ALL_DIRS = $(FRONTEND_DIR) $(BACKEND_DIR) $(TEMPLATE_DIR) $(UTIL_DIR) $(SCRIPT_DIR) $(MAIN_DIR) $(GLOBAL_DIR)
-RML_INCLUDE_ALL_DIRS = -I$(FRONTEND_DIR) -I$(BACKEND_DIR) -I$(TEMPLATE_DIR) -I$(UTIL_DIR) -I$(SCRIPT_DIR) -I$(MAIN_DIR) -I$(GLOBAL_DIR)
-RMLC_INCLUDE_ALL_DIRS = -I$(FRONTEND_DIR),-I$(BACKEND_DIR),-I$(TEMPLATE_DIR),-I$(UTIL_DIR),-I$(SCRIPT_DIR),-I$(MAIN_DIR),-I$(GLOBAL_DIR)
+ALL_DIRS = $(FRONTEND_DIR) $(FFRONTEND_DIR) $(BACKEND_DIR) $(TEMPLATE_DIR) $(UTIL_DIR) $(SCRIPT_DIR) $(MAIN_DIR) $(GLOBAL_DIR)
+RML_INCLUDE_ALL_DIRS = -I$(FRONTEND_DIR) -I$(FFRONTEND_DIR) -I$(BACKEND_DIR) -I$(TEMPLATE_DIR) -I$(UTIL_DIR) -I$(SCRIPT_DIR) -I$(MAIN_DIR) -I$(GLOBAL_DIR)
+RMLC_INCLUDE_ALL_DIRS = -I$(FRONTEND_DIR),-I$(FFRONTEND_DIR),-I$(BACKEND_DIR),-I$(TEMPLATE_DIR),-I$(UTIL_DIR),-I$(SCRIPT_DIR),-I$(MAIN_DIR),-I$(GLOBAL_DIR)
 
 FRONTEND = \
 Absyn.mo \
@@ -122,6 +123,19 @@ UnitAbsynBuilder.mo \
 UnitChecker.mo \
 Values.mo \
 ValuesUtil.mo
+
+FFRONTEND = \
+FCore.mo \
+FExpand.mo \
+FGraph.mo \
+FGraphBuild.mo \
+FGraphDump.mo \
+FInst.mo \
+FLookup.mo \
+FNode.mo \
+FResolve.mo \
+FVisit.mo \
+FTraverse.mo
 
 BACKEND = \
 BackendDAE.mo \
@@ -269,7 +283,7 @@ FMIExt.mo \
 
 
 # all modules
-SRCMO   = $(FRONTEND) $(BACKEND) $(GLOBAL) $(TEMPLATE) $(UTIL) $(SCRIPT) $(MAIN)
+SRCMO   = $(FRONTEND) $(FFRONTEND) $(BACKEND) $(GLOBAL) $(TEMPLATE) $(UTIL) $(SCRIPT) $(MAIN)
 ALLMO   = $(SRCMO) $(EXTERNAL)
 SRCC    = $(SRCMO:%.mo=%.c)
 SRCH    = $(SRCC:%.c=%.h)

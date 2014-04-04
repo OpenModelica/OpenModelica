@@ -2520,7 +2520,7 @@ algorithm
   s := intString(tick());
 end tickStr;
 
-protected function replaceWindowsBackSlashWithPathDelimiter
+public function replaceWindowsBackSlashWithPathDelimiter
 "@author: adrpo
  replace \\ with path delimiter only in Windows!"
   input String inPath;

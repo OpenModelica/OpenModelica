@@ -45,11 +45,14 @@ public import DAE;
 public import Env;
 public import Error;
 public import SCode;
+public import FCore;
+public import FGraph;
 
 // protected imports
 protected import ClassInf;
 protected import Config;
 protected import Flags;
+protected import FGraphBuild;
 protected import Global;
 protected import List;
 protected import Parser;
@@ -804,6 +807,187 @@ algorithm
         env;    
   end matchcontinue;
 end getSetInitialEnv;
+
+public function initialFGraph
+"The initial environment where instantiation takes place is built
+  up using this function.  It creates an empty environment and adds
+  all the built-in definitions to it.
+  NOTE:
+    The following built in operators can not be described in
+    the type system, since they e.g. have arbitrary arguments, etc.
+  - fill
+  - cat
+    These operators are catched in the elabBuiltinHandler, along with all
+    others."
+  input Env.Cache inCache;
+  output Env.Cache outCache;
+  output FGraph.Graph graph;
+protected
+  Env.Cache cache;
+algorithm
+  (outCache, graph) := matchcontinue(inCache)
+    local
+      list<Absyn.Class> initialClasses;
+      SCode.Program initialProgram;
+
+    /*/ First look for cached version
+    case (cache) equation
+      graph = Graph.getCachedInitialFGraph(cache);
+    then (cache,graph);
+      
+    // then look in the global roots[builtinEnvIndex]
+    case (cache)
+      equation
+        graph = getSetInitialFGraph(NONE());
+      then 
+        (cache, graph);*/
+
+    // if no cached version found create initial graph.
+    case (cache) 
+      equation
+        graph = FGraph.new(FCore.dummyTopModel);
+        graph = FGraphBuild.mkProgramGraph(
+        {rlType, 
+         intType,
+         strType,
+         boolType,
+         enumType,
+         ExternalObjectType,
+         realType,
+         integerType,
+         stringType,
+         booleanType,
+         stateSelectType,
+         uncertaintyType},
+         FCore.BASIC_TYPE(),
+         graph);
+
+      
+      graph = FGraphBuild.mkCompNode(timeComp, FGraph.top(graph), FCore.BUILTIN(), graph);
+
+      graph = initialFGraphOptimica(graph);
+
+      graph = initialFGraphMetaModelica(graph);
+
+      Absyn.PROGRAM(classes=initialClasses) = getInitialFunctions();
+      initialProgram = listReverse(List.fold(initialClasses, SCodeUtil.translate2, {}));
+      // add the ModelicaBuiltin/MetaModelicaBuiltin classes in the initial graph
+      graph = FGraphBuild.mkProgramGraph(initialProgram, FCore.BUILTIN(), graph);
+      
+      graph = FGraphBuild.mkTypeNode(
+               {anyNonExpandableConnector2int,
+                anyExpandableConnector2int}, 
+               "cardinality", graph);
+      graph = FGraphBuild.mkTypeNode({enumeration2int}, "Integer", graph);
+      graph = FGraphBuild.mkTypeNode({enumeration2int}, "EnumToInteger", graph);
+      graph = FGraphBuild.mkTypeNode({real2real}, "noEvent", graph);
+      graph = FGraphBuild.mkTypeNode({real2real}, "actualStream", graph);
+      graph = FGraphBuild.mkTypeNode({real2real}, "inStream", graph);
+      graph = FGraphBuild.mkTypeNode({realrealreal2real,
+                                  array1dimrealarray1dimrealarray1dimreal2array1dimreal,
+                                  array1dimrealarray1dimrealarray1dimreal2array1dimreal}, 
+                                 "constrain", graph);
+    then 
+      (cache,graph);
+  
+  end matchcontinue;
+end initialFGraph;
+
+protected function getSetInitialFGraph
+"gets/sets the initial environment depending on grammar flags"
+  input Option<FGraph.Graph> inEnvOpt;
+  output FGraph.Graph initialEnv;
+algorithm
+  initialEnv := matchcontinue (inEnvOpt)
+    local
+      list<tuple<Integer,FGraph.Graph>> assocLst;
+      FGraph.Graph graph;
+    
+    // nothing there
+    case (_)
+      equation
+        failure(_ = getGlobalRoot(Global.builtinFGraphIndex));
+        setGlobalRoot(Global.builtinFGraphIndex,FGraph.new(FCore.dummyTopModel));
+      then 
+        fail();
+    
+    // return the correct graph depending on flags
+    case (NONE())
+      equation
+        assocLst = getGlobalRoot(Global.builtinFGraphIndex);
+      then 
+        Util.assoc(Flags.getConfigEnum(Flags.GRAMMAR), assocLst);
+    
+    case (SOME(graph))
+      equation
+        true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.METAMODELICA);
+        assocLst = getGlobalRoot(Global.builtinFGraphIndex);
+        setGlobalRoot(Global.builtinFGraphIndex, (Flags.METAMODELICA,graph)::assocLst);
+      then 
+        graph;
+    
+    case (SOME(graph))
+      equation
+        true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PARMODELICA);
+        assocLst = getGlobalRoot(Global.builtinFGraphIndex);
+        setGlobalRoot(Global.builtinFGraphIndex, (Flags.PARMODELICA,graph)::assocLst);
+      then 
+        graph;
+    
+    case (SOME(graph))
+      equation
+        true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.MODELICA) or intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.OPTIMICA);
+        assocLst = getGlobalRoot(Global.builtinFGraphIndex);
+        setGlobalRoot(Global.builtinFGraphIndex, (Flags.MODELICA,graph)::assocLst);
+      then 
+        graph;    
+  end matchcontinue;
+end getSetInitialFGraph;
+
+protected function initialFGraphMetaModelica
+  input FGraph.Graph inEnv;
+  output FGraph.Graph outEnv;
+algorithm
+  outEnv := matchcontinue(inEnv)
+    local
+      FGraph.Graph graph;
+    
+    case (graph)
+      equation
+        true = Config.acceptMetaModelicaGrammar();
+        // getGlobalRoot can not be represented by a regular function...
+        graph = FGraphBuild.mkTypeNode({int2boxed}, "getGlobalRoot", graph);
+      then
+        graph;
+    
+    case graph then graph;
+  
+  end matchcontinue;
+end initialFGraphMetaModelica;
+
+protected function initialFGraphOptimica
+  input FGraph.Graph inEnv;
+  output FGraph.Graph outEnv;
+algorithm
+  outEnv := matchcontinue(inEnv)
+    local
+      FGraph.Graph graph;
+    
+    case (graph)
+      equation
+        //If Optimica add the startTime,finalTime,objectiveIntegrand and objective "builtin" variables.
+        true = Config.acceptOptimicaGrammar();
+        graph = FGraphBuild.mkCompNode(objectiveVarComp, FGraph.top(graph), FCore.BUILTIN(), graph);
+        graph = FGraphBuild.mkCompNode(objectiveIntegrandComp, FGraph.top(graph), FCore.BUILTIN(), graph);
+        graph = FGraphBuild.mkCompNode(startTimeComp, FGraph.top(graph), FCore.BUILTIN(), graph);
+        graph = FGraphBuild.mkCompNode(finalTimeComp, FGraph.top(graph), FCore.BUILTIN(), graph);
+      then
+        graph;
+    
+    case graph then graph;
+  
+  end matchcontinue;
+end initialFGraphOptimica;
 
 end Builtin;
 
