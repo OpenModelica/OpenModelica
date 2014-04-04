@@ -993,10 +993,20 @@ static void omc_terminate_simulation(FILE_INFO info, const char *msg, ...)
   TermInfo = info;
 }
 
+/*
+ * adrpo: workaround function to call setTermMsg with empty va_list!
+ *        removes the uninitialized warning for va_list variable.
+ */
+void setTermMsg_empty_va_list(const char *msg, ...) {
+  va_list dummy;
+  va_start(dummy, msg);
+  setTermMsg(msg, dummy);
+  va_end(dummy);
+}
+
 static void omc_throw_simulation(threadData_t* threadData)
 {
-  va_list ap;
-  setTermMsg("Assertion triggered by external C function", ap);
+  setTermMsg_empty_va_list("Assertion triggered by external C function");
   set_struct(FILE_INFO, TermInfo, omc_dummyFileInfo);
   threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
   longjmp(*threadData->globalJumpBuffer, 1);
