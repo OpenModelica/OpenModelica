@@ -324,49 +324,49 @@ int dassl_step(DATA* simData, SOLVER_INFO* solverInfo)
     simData->callback->input_function(simData);
 
     if(dasslData->dasslMethod ==  DASSL_SYMJAC) {
-    	DDASKR(functionODE_residual, &mData->nStates,
+      DDASKR(functionODE_residual, &mData->nStates,
           &solverInfo->currentTime, sData->realVars, stateDer, &tout,
           dasslData->info, dasslData->rtol, dasslData->atol, &dasslData->idid,
           dasslData->rwork, &dasslData->lrw, dasslData->iwork, &dasslData->liw,
           (double*) (void*) dasslData->rpar, dasslData->ipar, JacobianSymbolic, dummy_precondition,
           function_ZeroCrossingsDASSL, (fortran_integer*) &dasslData->ng, dasslData->jroot);
     } else if(dasslData->dasslMethod ==  DASSL_NUMJAC) {
-    	DDASKR(functionODE_residual, &mData->nStates,
+      DDASKR(functionODE_residual, &mData->nStates,
           &solverInfo->currentTime, sData->realVars, stateDer, &tout,
           dasslData->info, dasslData->rtol, dasslData->atol, &dasslData->idid,
           dasslData->rwork, &dasslData->lrw, dasslData->iwork, &dasslData->liw,
           (double*) (void*) dasslData->rpar, dasslData->ipar, JacobianOwnNum, dummy_precondition,
           function_ZeroCrossingsDASSL,(fortran_integer*) &dasslData->ng, dasslData->jroot);
     } else if(dasslData->dasslMethod ==  DASSL_COLOREDSYMJAC) {
-    	DDASKR(functionODE_residual, &mData->nStates,
+      DDASKR(functionODE_residual, &mData->nStates,
           &solverInfo->currentTime, sData->realVars, stateDer, &tout,
           dasslData->info, dasslData->rtol, dasslData->atol, &dasslData->idid,
           dasslData->rwork, &dasslData->lrw, dasslData->iwork, &dasslData->liw,
           (double*) (void*) dasslData->rpar, dasslData->ipar, JacobianSymbolicColored, dummy_precondition,
           function_ZeroCrossingsDASSL, (fortran_integer*) &dasslData->ng, dasslData->jroot);
     } else if(dasslData->dasslMethod ==  DASSL_INTERNALNUMJAC) {
-    	DDASKR(functionODE_residual, &mData->nStates,
+      DDASKR(functionODE_residual, &mData->nStates,
           &solverInfo->currentTime, sData->realVars, stateDer, &tout,
           dasslData->info, dasslData->rtol, dasslData->atol, &dasslData->idid,
           dasslData->rwork, &dasslData->lrw, dasslData->iwork, &dasslData->liw,
           (double*) (void*) dasslData->rpar, dasslData->ipar, dummy_Jacobian, dummy_precondition,
           function_ZeroCrossingsDASSL, (fortran_integer*) &dasslData->ng, dasslData->jroot);
     } else if(dasslData->dasslMethod ==  DASSL_TEST) {
-    	DDASKR(functionODE_residual, &mData->nStates,
+      DDASKR(functionODE_residual, &mData->nStates,
           &solverInfo->currentTime, sData->realVars, stateDer, &tout,
           dasslData->info, dasslData->rtol, dasslData->atol, &dasslData->idid,
           dasslData->rwork, &dasslData->lrw, dasslData->iwork, &dasslData->liw,
           (double*) (void*) dasslData->rpar, dasslData->ipar, JacobianOwnNumColored, dummy_precondition,
           dummy_zeroCrossing, &dasslData->ngdummy, NULL);
     } else if(dasslData->dasslMethod ==  DASSL_WORT) {
-    	DDASKR(functionODE_residual, &mData->nStates,
+      DDASKR(functionODE_residual, &mData->nStates,
           &solverInfo->currentTime, sData->realVars, stateDer, &tout,
           dasslData->info, dasslData->rtol, dasslData->atol, &dasslData->idid,
           dasslData->rwork, &dasslData->lrw, dasslData->iwork, &dasslData->liw,
           (double*) (void*)dasslData->rpar, dasslData->ipar, JacobianOwnNumColored,  dummy_precondition,
           dummy_zeroCrossing, &dasslData->ngdummy, NULL);
     } else {
-    	DDASKR(functionODE_residual, (fortran_integer*) &mData->nStates,
+      DDASKR(functionODE_residual, (fortran_integer*) &mData->nStates,
           &solverInfo->currentTime, sData->realVars, stateDer, &tout,
           dasslData->info, dasslData->rtol, dasslData->atol, &dasslData->idid,
           dasslData->rwork, &dasslData->lrw, dasslData->iwork, &dasslData->liw,
