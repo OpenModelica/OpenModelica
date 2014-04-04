@@ -40,7 +40,7 @@
 #include "../localFunction.h"
 
 #ifdef WITH_IPOPT
-#define DF_STEP(x,s) ( (fmin(fmax(1e-4*fabs(s*x),1e-8),1e0)))
+#define DF_STEP(x) ((fmin(fmax(1e-4*fabs(x),1e-8),1e2)))
 
 static int num_hessian(double *v, int k, IPOPT_DATA_ *iData, double *lambda, modelica_boolean lagrange_yes, modelica_boolean mayer_yes, double obj_factor);
 static int updateCost(double *v, int k, IPOPT_DATA_ *iData, modelica_boolean lagrange_yes, modelica_boolean mayer_yes,long double *F1, long double *F2);
@@ -259,8 +259,12 @@ static int num_hessian(double *v, int k, IPOPT_DATA_ *iData, double *lambda, mod
 
   for(i = 0; i<dim->nv; ++i){
     v_save = (long double)v[i];
-    h = (long double)DF_STEP(v_save, iData->scaling.vnom[i]);
+    h = (long double)DF_STEP(v_save);
     v[i] += h;
+    if(v[i] > iData->bounds.vmax[i]){
+      h = iData->bounds.vmax[i] - v_save;
+      v[i] = v_save +  h;
+    }
     diff_functionODE_con(v, k , iData, iData->df.Jh[1]);
 
     if(upCost)
