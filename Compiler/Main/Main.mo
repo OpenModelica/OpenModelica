@@ -1022,6 +1022,12 @@ algorithm
         // call GC_init() the first thing we do!
         System.initGarbageCollector();
         Global.initialize();
+        
+        // cheat the function generation that this function is used
+        // this is needed because this function is used in the parser
+        // for the bootstrapped compiler
+        _ = Absyn.isDerCref(Absyn.INTEGER(0));
+        
         System.realtimeTick(GlobalScript.RT_CLOCK_SIMULATE_TOTAL);
         args_1 = Flags.new(args);
         System.gettextInit(Util.if_(Config.getRunningTestsuite(),"C",Flags.getConfigString(Flags.LOCALE_FLAG)));
