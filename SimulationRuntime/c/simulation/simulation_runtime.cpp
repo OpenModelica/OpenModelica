@@ -52,6 +52,16 @@
   #include <regex.h>
 #endif
 
+
+/* ppriv - NO_INTERACTIVE_DEPENDENCY - for simpler debugging in Visual Studio
+ *
+ */
+#ifndef NO_INTERACTIVE_DEPENDENCY
+  #include "../../interactive/omi_ServiceInterface.h"
+  #include "../../../interactive/socket.h"
+  extern Socket sim_communication_port;
+#endif
+
 #include "omc_error.h"
 #include "simulation_data.h"
 #include "openmodelica_func.h"
@@ -79,16 +89,6 @@
 #ifdef _OMC_QSS_LIB
   #include "solver_qss/solver_qss.h"
 #endif
-
-/* ppriv - NO_INTERACTIVE_DEPENDENCY - for simpler debugging in Visual Studio
- *
- */
-#ifndef NO_INTERACTIVE_DEPENDENCY
-  #include "../../interactive/omi_ServiceInterface.h"
-  #include "../../../interactive/socket.h"
-  extern Socket sim_communication_port;
-#endif
-
 
 using namespace std;
 
@@ -995,7 +995,7 @@ static void omc_terminate_simulation(FILE_INFO info, const char *msg, ...)
 
 static void omc_throw_simulation(threadData_t* threadData)
 {
-  va_list ap;
+  va_list ap = NULL;
   setTermMsg("Assertion triggered by external C function", ap);
   set_struct(FILE_INFO, TermInfo, omc_dummyFileInfo);
   threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
