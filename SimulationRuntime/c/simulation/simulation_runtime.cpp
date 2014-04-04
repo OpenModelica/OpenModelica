@@ -995,7 +995,7 @@ static void omc_terminate_simulation(FILE_INFO info, const char *msg, ...)
 
 static void omc_throw_simulation(threadData_t* threadData)
 {
-  va_list ap = NULL;
+  va_list ap = {0};
   setTermMsg("Assertion triggered by external C function", ap);
   set_struct(FILE_INFO, TermInfo, omc_dummyFileInfo);
   threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
