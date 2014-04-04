@@ -2690,16 +2690,10 @@ algorithm
     local
       DAE.Exp e;
       DAE.Type tp;
-    case(-1,DAE.UNARY(DAE.UMINUS(_),DAE.CREF(_,_)))
-      then eIn;
-    case(1,DAE.UNARY(DAE.UMINUS(_),e as DAE.CREF(_,_)))
-      then e;
-    case(-1,DAE.CREF(_,_))
+    case(-1,_)
       equation
-        tp=Expression.typeof(eIn);
-      then eIn;
-    case(1,DAE.CREF(_,_))
-      then eIn;
+        tp = Expression.typeof(eIn);
+      then DAE.UNARY(DAE.UMINUS(tp),eIn);
     case(_,_)
       then eIn;
   end match;
@@ -2978,7 +2972,7 @@ algorithm
         new_symbols=BaseHashSet.add(cr2,symbols);
         new_expl=BaseHashTable.add((cr2,e2),expl);
         source_new=updateSource(source_current,sourceIn);
-      then ALIASSET(new_symbols,expl,new_signs,source_new);
+      then ALIASSET(new_symbols,new_expl,new_signs,source_new);
   end match;
 end addToSet;
 
