@@ -35,7 +35,7 @@ private:
     void extrapolateVars();
     /// Encapsulation of determination of Jacobian
     void calcJacobian(double* jac); 
-    static void fcn(const int *n, const double *x, double *fvec, double *fjac, const int *ldfjac, int *iflag,void* userdata);
+    static void fcn(const int *n, const double *x, double *fvec, double *fjac, const int *ldfjac, int *iflag, void* userdata, const int* sysNumber);
    
     // Member variables
     //---------------------------------------------------------------

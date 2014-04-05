@@ -189,6 +189,7 @@ void Hybrj::solve()
         int iter_retry = 0;
         int iter_retry2 = 0;
         int info;
+        int dummySysNumber;
         _iterationStatus = CONTINUE;
         bool isConsistent = true;
         while(_iterationStatus == CONTINUE)
@@ -198,7 +199,7 @@ void Hybrj::solve()
                 std::transform (_x, _x+_dimSys, _x_scale,_x, std::divides<double>());
             __minpack_func__(hybrj)((minpack_funcder_nn)fcn, &_dimSys, _x, _f, _jac, &_ldfjac, &_xtol, &_maxfev, _diag, 
                 &_mode, &_factor, &_nprint, &info, &_nfev, &_njev, _r, &_lr, _qtf, 
-                _wa1, _wa2, _wa3, _wa4,_data);
+                _wa1, _wa2, _wa3, _wa4, _data, &dummySysNumber);
             //check if  the conditions of the system has changed 
             if(isConsistent)
             {
@@ -420,7 +421,7 @@ void Hybrj::calcJacobian(double *fjac)
 
 }
 
-void Hybrj::fcn(const int *n, const double *x, double *fvec, double *fjac, const int *ldfjac, int *iflag, void* userdata)
+void Hybrj::fcn(const int *n, const double *x, double *fvec, double *fjac, const int *ldfjac, int *iflag, void* userdata, const int *sysNumber)
 {
     if(*iflag == 1)
     {
