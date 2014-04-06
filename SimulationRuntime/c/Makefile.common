@@ -107,11 +107,11 @@ libSimulationRuntimeC.a: $(ALL_OBJS)
 
 	ranlib $@
 
-libSimulationRuntimeC.so: $(ALL_OBJS) $(builddir_lib)/libf2c.a
+libSimulationRuntimeC.so: $(ALL_OBJS) $(builddir_lib)/libf2c.a $(builddir_lib)/libcdaskr.a
 	@rm -f $@
 	$(CC) -shared -o $@ $(ALL_OBJS) $(LDFLAGS_SIM)
 
-libSimulationRuntimeC.dylib: $(ALL_OBJS) $(builddir_lib)/libf2c.a
+libSimulationRuntimeC.dylib: $(ALL_OBJS) $(builddir_lib)/libf2c.a $(builddir_lib)/libcdaskr.a
 	@rm -f $@
 	$(CC) -shared -o $@ $(ALL_OBJS) $(LDFLAGS_SIM) -undefined dynamic_lookup -install_name '@rpath/$@'
 
