@@ -59,7 +59,6 @@ type Refs = FCore.Refs;
 type Children = FCore.Children;
 type Parents = FCore.Parents;
 type ImportTable = FCore.ImportTable;
-type Graph = FCore.Graph;
 type Extra = FCore.Extra;
 type Visited = FCore.Visited;
 type Import = FCore.Import;
