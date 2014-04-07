@@ -1027,7 +1027,8 @@ void deInitializeDataStruc(DATA *data)
 
 void setZCtol(double relativeTol)
 {
-  tolZC = TOL_HYSTERESIS_ZEROCROSSINGS*relativeTol;
+  /* lochel: keep tolZS > 0 */
+  tolZC = max(TOL_HYSTERESIS_ZEROCROSSINGS*relativeTol, TOL_HYSTERESIS_ZEROCROSSINGS*MINIMAL_STEP_SIZE);
   infoStreamPrint(LOG_EVENTS_V, 0, "Set tolerance for zero-crossing hysteresis to: %e", tolZC);
 }
 
