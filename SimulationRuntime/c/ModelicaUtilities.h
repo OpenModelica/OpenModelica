@@ -3,6 +3,9 @@
 
 #include <stddef.h>
 #include <stdarg.h>
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 /* Utility functions which can be called by external Modelica functions.
 
@@ -102,5 +105,9 @@ and free other open resources in case of error. After cleaning up
 resources use ModelicaError or ModelicaFormatError to signal
 the error.
 */
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif
