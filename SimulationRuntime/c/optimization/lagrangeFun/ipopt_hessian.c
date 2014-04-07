@@ -60,6 +60,7 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
   OPTIMIZER_DIM_VARS* dim;
   iData = (IPOPT_DATA_ *) useData;
   dim = &iData->dim;
+  iData->sopt.updateH = new_x;
 
   k = 0;
   if(values == NULL)
@@ -136,12 +137,13 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
     int nJ;
     int tmp_index;
     OPTIMIZER_MBASE *mbase = &iData->mbase;
-
+    iData->helper.i = -1;
     nJ = (int) dim->nJ;
     for(ii = 0; ii <1; ++ii){
+
       for(p = 0, x= v, ll = lambda;p < dim->deg+1;++p, x += dim->nv){
          mayer_yes = iData->sopt.mayer && ii+1 == dim->nsi && p == dim->deg;
-
+         ++iData->helper.i;
          if(p){
            num_hessian(x, p, iData, ll,iData->sopt.lagrange,mayer_yes,obj_factor);
            ll += nJ;
@@ -176,6 +178,7 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
       tmp_index = ii*dim->deg;
       for(p = 1;p < dim->deg +1;++p,x += dim->nv){
         mayer_yes = iData->sopt.mayer && ii+1 == dim->nsi && p == dim->deg;
+        ++iData->helper.i;
         num_hessian(x, tmp_index + p, iData,ll, iData->sopt.lagrange, mayer_yes,obj_factor);
 
         for(i=0;i< dim->nv;++i)
@@ -250,8 +253,16 @@ static int num_hessian(double *v, int k, IPOPT_DATA_ *iData, double *lambda, mod
   short upCost;
   OPTIMIZER_DIM_VARS *dim = &iData->dim;
   int nJ = (k>0) ? dim->nJ : dim->nx;
+  long double **Jlhs;
 
-  diff_functionODE_con(v, k , iData, iData->df.Jh[0]);
+  if(!iData->sopt.updateH){
+    diff_functionODE_con(v, k , iData, iData->df.Jh[0]);
+    Jlhs = iData->df.Jh[0];
+  }else{
+    //printf("\n i = %i\tvon\t%i",iData->helper.i,dim->nt);
+    Jlhs = iData->df.J[iData->helper.i];
+    //printf("\tdone");
+  }
   upCost = (lagrange_yes || mayer_yes) && (obj_factor!=0);   
 
   if(upCost)
@@ -276,7 +287,7 @@ static int num_hessian(double *v, int k, IPOPT_DATA_ *iData, double *lambda, mod
       if(iData->sopt.Hg[i][j]){
        for(l = 0; l< nJ; ++l){
         if(iData->sopt.knowedJ[l][j] + iData->sopt.knowedJ[l][i] >= 2 && lambda[l] != 0.0)
-          iData->df.H[l][i][j]  = (long double)(iData->df.Jh[1][l][j] - iData->df.Jh[0][l][j])*lambda[l]/h;
+          iData->df.H[l][i][j]  = (long double)(iData->df.Jh[1][l][j] - Jlhs[l][j])*lambda[l]/h;
         else
           iData->df.H[l][i][j] = (long double) 0.0;
         iData->df.H[l][j][i] = iData->df.H[l][i][j];

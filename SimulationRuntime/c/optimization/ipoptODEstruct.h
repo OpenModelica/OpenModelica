@@ -135,6 +135,8 @@ typedef struct OPTIMIZER_STUCTURE{
 
   modelica_boolean preSim;
 
+  modelica_boolean updateH;
+
 }OPTIMIZER_STUCTURE;
 
 
@@ -198,6 +200,7 @@ typedef struct OPTIMIZER_HELPER{
   double * start_u;
 
   long double tmp[3];
+  int i;
 
 }OPTIMIZER_HELPER;
 
