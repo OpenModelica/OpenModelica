@@ -54,10 +54,6 @@ Bool evalfF(Index n, double * v, Bool new_x, Number *objValue, void * useData)
   long double lagrange = 0.0;
   OPTIMIZER_MBASE *mbase = &iData->mbase;
 
-  if(iData->sopt.mayer){
-    goal_func_mayer(v + iData->dim.endN, &mayer,iData);
-  }
-
   if(iData->sopt.lagrange){
     double *x;
     double tmp;
@@ -92,7 +88,11 @@ Bool evalfF(Index n, double * v, Bool new_x, Number *objValue, void * useData)
     lagrange = erg_;
   }
 
-  *objValue = mayer + (double)lagrange;
+  if(iData->sopt.mayer){
+    goal_func_mayer(v + iData->dim.endN, &mayer,iData);
+  }
+
+  *objValue = (double)(mayer + lagrange);
   return TRUE;
 }
 
@@ -102,7 +102,8 @@ Bool evalfF(Index n, double * v, Bool new_x, Number *objValue, void * useData)
  **/
 Bool goal_func_mayer(double* vn, double *obj_value, IPOPT_DATA_ *iData)
 {  
-  refreshSimData(vn, vn + iData->dim.nx, iData->dim.nt-1, iData);
+  if(!iData->sopt.lagrange)
+    refreshSimData(vn, vn + iData->dim.nx, iData->dim.nt-1, iData);
   iData->data->callback->mayer(iData->data, obj_value);
   
   return TRUE;

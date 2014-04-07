@@ -328,7 +328,6 @@ static int num_hessian(double *v, int k, IPOPT_DATA_ *iData, double *lambda, mod
 }
 
 
-
 /*
  *  function update goal function 
  *  author: vitalij
