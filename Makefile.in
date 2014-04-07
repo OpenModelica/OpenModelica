@@ -69,7 +69,8 @@ omc-rml-nolink:
 	$(MAKE) -C Compiler/omc_release 
 
 boehm-gc-lib: @LIBGC@
-build/lib/omc/libgc.so: 3rdParty/gc-7.2/.libs/libgc.so mkbuilddirs
+build/lib/omc/libgc.so: 3rdParty/gc-7.2/.libs/libgc.so
+	mkdir -p build/lib/omc/
 	cp -pPR $< $<.* build/lib/omc/
 3rdParty/gc-7.2/.libs/libgc.so: 3rdParty/gc-7.2/Makefile
 	$(MAKE) -C 3rdParty/gc-7.2/
