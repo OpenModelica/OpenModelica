@@ -132,7 +132,6 @@ else
 	cd 3rdParty/modelica3d/build && $(CMAKE_GCC) -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DOSG_BACKEND=1 -DUSE_OMC=0 ..
 	$(MAKE) -C 3rdParty/modelica3d/build
 	cp -p 3rdParty/modelica3d/build/backends/osg-gtk/libm3d-osg-gtk.so 3rdParty/modelica3d/build/lib/proc3d/libproc3d.so build/lib/
-	cp -p 3rdParty/modelica3d/lib/modcount/src/c/modcount.h 3rdParty/modelica3d/lib/modbus/src/c/modbus.h build/include/omc/
 	cp -p 3rdParty/modelica3d/build/lib/modcount/libmodcount.a 3rdParty/modelica3d/build/lib/modbus/libmodbus.a build/lib/omc/
 	mkdir -p build/lib/omlibrary-modelica3d/blender2.59 build/lib/omlibrary-modelica3d/osg-gtk/
 	cp -p 3rdParty/modelica3d/examples/multibody/src/modelica/*.mo build/lib/omlibrary-modelica3d/
