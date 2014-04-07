@@ -192,6 +192,17 @@ typedef struct OPTIMIZER_EVALF{
 
 }OPTIMIZER_EVALF;
 
+typedef struct OPTIMIZER_HELPER{
+
+  double * x0;
+  double * start_u;
+
+  long double tmp[3];
+
+}OPTIMIZER_HELPER;
+
+
+
 
 typedef struct IPOPT_DATA_
 {
@@ -214,8 +225,7 @@ typedef struct IPOPT_DATA_
   OPTIMIZER_EVALF evalf;
 
   /* helper */
-  double * x0;
-  double * start_u;
+  OPTIMIZER_HELPER helper;
 
   double *sh;
   double *sv;

@@ -87,7 +87,7 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
   /*ToDo*/
   for(i=0; i<iData->dim.nx; i++)
   {
-    iData->bounds.Vmin[i] = iData->bounds.Vmax[i] = iData->x0[i]*iData->scaling.scalVar[i];
+    iData->bounds.Vmin[i] = iData->bounds.Vmax[i] = iData->helper.x0[i]*iData->scaling.scalVar[i];
     iData->v[i] = iData->bounds.Vmin[i];
   }
 

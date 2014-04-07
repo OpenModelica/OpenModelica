@@ -86,7 +86,7 @@ static int initial_guess_ipopt_cflag(IPOPT_DATA_ *iData,char* cflags)
     if(id <iData->dim.nx){
       iData->v[i] = iData->data->modelData.realVarsData[id].attribute.start*iData->scaling.scalVar[id];
     }else if(id< iData->dim.nv){
-      iData->v[i] = iData->start_u[id-iData->dim.nx]*iData->scaling.scalVar[id];
+      iData->v[i] = iData->helper.start_u[id-iData->dim.nx]*iData->scaling.scalVar[id];
     }
   }
     return 0;
@@ -129,7 +129,7 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
    solverInfo->solverMethod = S_OPTIMIZATION;
    solverInfo->solverData = dasslData;
 
-   u0 = iData->start_u;
+   u0 = iData->helper.start_u;
    /*x = data->localData[0]->realVars;*/
    v = iData->v;
 

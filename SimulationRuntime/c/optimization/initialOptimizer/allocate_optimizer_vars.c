@@ -98,7 +98,7 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   bounds->Vmax = (double*)malloc(dim->NV*sizeof(double));
   iData->v = (double*)malloc(dim->NV*sizeof(double));
   iData->dtime.time = (long double*)malloc(dim->nt *sizeof(long double));
-  iData->start_u = (double*)malloc(dim->nv*sizeof(double));
+  iData->helper.start_u = (double*)malloc(dim->nv*sizeof(double));
 
   df->J = (long double***) malloc(dim->nt * sizeof(long double**));
   for(j = 0; j < dim->nt; ++j){
@@ -280,7 +280,7 @@ static int freeIpoptData(IPOPT_DATA_ *iData)
   free(dtime->dt);
   free(iData->sv);
   free(iData->sh);
-  free(iData->start_u);
+  free(iData->helper.start_u);
 
   for(i = 0; i<3;++i) {
     if(iData->data->simulationInfo.analyticJacobians[i].seedVars){

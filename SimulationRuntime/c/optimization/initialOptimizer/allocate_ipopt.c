@@ -66,7 +66,7 @@ static int move_grid(IPOPT_DATA_ *iData);
  **/
 int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
 {
-  int id, nH;
+  int id, nH, i;
   double *c;
   OPTIMIZER_DIM_VARS *dim = &iData->dim;
   dim->deg = 3;
@@ -106,7 +106,7 @@ int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
   dim->njac = dim->deg*(dim->nlocalJac-dim->nx+dim->nsi*dim->nlocalJac+dim->deg*dim->nsi*dim->nx)-dim->deg*id;
   dim->nhess = dim->nH*(1+dim->deg*dim->nsi);
   /***********************/
-  iData->x0 = iData->data->localData[1]->realVars;
+  iData->helper.x0 = iData->data->localData[1]->realVars;
   optimizer_bounds_setings(data, iData);
   optimizer_time_setings(iData);
 
@@ -116,6 +116,9 @@ int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
 
   if(ACTIVE_STREAM(LOG_IPOPT_JAC) || ACTIVE_STREAM(LOG_IPOPT_HESSE))
     local_jac_struct_print(iData);
+
+  for(i =0; i <iData->dim.deg; ++i)
+    iData->helper.tmp[i] = iData->dtime.dt[0]*iData->mbase.d[i][4];
 
   return 0;
 }
@@ -465,11 +468,11 @@ static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData)
   modelica_boolean *tmp = (modelica_boolean*)malloc(dim->nv*sizeof(modelica_boolean));
   char **tmpname = iData->input_name;
 
-  double *start = iData->start_u;
+  double *start = iData->helper.start_u;
   double ttmp;
 
   for(i =0; i<dim->nx; ++i){
-    check_nominal(iData, data->modelData.realVarsData[i].attribute.min, data->modelData.realVarsData[i].attribute.max, data->modelData.realVarsData[i].attribute.nominal, data->modelData.realVarsData[i].attribute.useNominal, i, fabs(iData->x0[i]));
+    check_nominal(iData, data->modelData.realVarsData[i].attribute.min, data->modelData.realVarsData[i].attribute.max, data->modelData.realVarsData[i].attribute.nominal, data->modelData.realVarsData[i].attribute.useNominal, i, fabs(iData->helper.x0[i]));
     iData->scaling.scalVar[i] = 1.0 / iData->scaling.vnom[i];
     iData->scaling.scalf[i] = iData->scaling.scalVar[i];
     iData->bounds.xmin[i] = data->modelData.realVarsData[i].attribute.min*iData->scaling.scalVar[i];
@@ -536,7 +539,7 @@ static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData)
     iData->scaling.scalVar[j] = 1.0 / iData->scaling.vnom[j];
     iData->bounds.umin[i] *= iData->scaling.scalVar[j];
     iData->bounds.umax[i] *= iData->scaling.scalVar[j];
-    iData->start_u[i] = fmin(fmax(iData->start_u[i], iData->bounds.umin[i]), iData->bounds.umax[i]);
+    iData->helper.start_u[i] = fmin(fmax(iData->helper.start_u[i], iData->bounds.umin[i]), iData->bounds.umax[i]);
   }
 
   memcpy(iData->bounds.vmin, iData->bounds.xmin, sizeof(double)*dim->nx);
