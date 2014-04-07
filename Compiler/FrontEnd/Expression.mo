@@ -7482,6 +7482,18 @@ algorithm
   end matchcontinue;
 end isCrefScalar;
 
+public function isTuple
+  "Returns true if the given expression is a tuple,
+   otherwise false."
+  input DAE.Exp inExp;
+  output Boolean outIsTuple;
+algorithm
+  outIsTuple := match(inExp)
+    case DAE.TUPLE(PR = _) then true;
+    else false;
+  end match;
+end isTuple;
+
 public function expIsPositive "Returns true if an expression is positive,
 Returns true in the following cases:
 constant >= 0
