@@ -51,7 +51,7 @@ Bool evalfF(Index n, double * v, Bool new_x, Number *objValue, void * useData)
 {
   IPOPT_DATA_ *iData = (IPOPT_DATA_*) useData;
   double mayer = 0.0;
-  double lagrange = 0.0;
+  long double lagrange = 0.0;
   OPTIMIZER_MBASE *mbase = &iData->mbase;
 
   if(iData->sopt.mayer){
@@ -89,10 +89,10 @@ Bool evalfF(Index n, double * v, Bool new_x, Number *objValue, void * useData)
       erg_ += erg*iData->dtime.dt[i];
     }
 
-    lagrange = (double) erg_;
+    lagrange = erg_;
   }
 
-  *objValue = mayer + lagrange;
+  *objValue = mayer + (double)lagrange;
   return TRUE;
 }
 
@@ -167,9 +167,7 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
     }
 
   } else {
-    /*ToDo */
-    for(i=0; i<iData->dim.endN; ++i)
-      gradF[i] = 0.0;
+    memcpy(gradF, iData->evalf.f, iData->dim.NV* sizeof(double));
   }
   if(iData->sopt.mayer){
     x = v + iData->dim.endN;
@@ -185,10 +183,6 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
         gradF[iData->dim.endN + j] = iData->df.dMayer[j];
       }
     }
-  }else if(!iData->sopt.lagrange){
-    /*ToDo */
-    for(j=0; j<iData->dim.nv; ++j)
-      gradF[iData->dim.endN + j] = 0.0;
   }
   return TRUE;
 }

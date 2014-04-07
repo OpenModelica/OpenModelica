@@ -181,7 +181,7 @@ static  int radauJac1(long double *a, long double *J, long double dt, double * v
   /*1*/
   for(l=0; l<nv; ++l){
     if(iData->sopt.knowedJ[j][l]){
-      values[(*k)++] = (j == l) ? dt*J[l]-a[1] : dt*J[l];
+      values[(*k)++] = (j == l) ? dt*J[l] - a[1] : dt*J[l];
     }
   }
 
@@ -201,19 +201,15 @@ static  int lobattoJac1(long double *a, long double *J, long double *J0, long do
 {
   int l;
   /*0*/
-  for(l = 0; l< nv; ++l){
-    if(j == l) {
-      values[(*k)++] = tmp*J0[l] + a[0];
-    } else if(iData->sopt.knowedJ[j][l]) {
-      values[(*k)++] = tmp*J0[l];
-    }
-  }
+  for(l = 0; l< nv; ++l)
+    if(iData->sopt.knowedJ[j][l])
+      values[(*k)++] = (j == l) ? tmp*J0[l] + a[0] : tmp*J0[l];
+
   /*1*/
-  for(l = 0; l< nv; ++l){
-    if(iData->sopt.knowedJ[j][l]){
+  for(l = 0; l< nv; ++l)
+    if(iData->sopt.knowedJ[j][l])
       values[(*k)++] = ((j == l)? dt*J[l] - a[1] : dt*J[l]);
-    }
-  }
+
   /*2*/
   values[(*k)++] = -a[2];
 
@@ -256,22 +252,17 @@ static  int lobattoJac2(long double *a, long double *J, long double *J0, long do
 {
   int l;
   /*0*/
-  for(l = 0; l< nv; ++l){
-    if( j==l){
-      values[(*k)++] = -(tmp*J0[l] + a[0]);
-    } else if(iData->sopt.knowedJ[j][l]) {
-      values[(*k)++] = -tmp*J0[l];
-    }
-  }
+  for(l = 0; l< nv; ++l)
+    if(iData->sopt.knowedJ[j][l])
+      values[(*k)++]  = ( j==l)? -(tmp*J0[l] + a[0]) : -tmp*J0[l];
   /*1*/
   values[(*k)++] = a[1];
 
   /*2*/
-  for(l = 0; l< nv; ++l){
-    if(iData->sopt.knowedJ[j][l]){
+  for(l = 0; l< nv; ++l)
+    if(iData->sopt.knowedJ[j][l])
       values[(*k)++] = ((j == l)? dt*J[l]-a[2] : dt*J[l]);
-    }
-  }
+
   /*3*/
   values[(*k)++] = -a[3];
   return 0;
@@ -291,11 +282,10 @@ static  int radauJac3(long double *a, long double *J, long double dt, double * v
   /*2*/
   values[(*k)++] = a[2];
   /*3*/
-  for(l = 0; l< nv; ++l){
-    if(iData->sopt.knowedJ[j][l]){
+  for(l = 0; l< nv; ++l)
+    if(iData->sopt.knowedJ[j][l])
       values[(*k)++] = ((j == l)? dt*J[l] - a[3] : dt*J[l]);
-    }
-  }
+
   return 0;
 }
 
@@ -307,23 +297,19 @@ static  int lobattoJac3(long double *a, long double *J, long double *J0, long do
 {
   int l;
   /*0*/
-  for(l=0; l<nv; ++l){
-    if(j==l){
-      values[(*k)++] = tmp*J0[l] + a[0];
-    }else if(iData->sopt.knowedJ[j][l]) {
-      values[(*k)++] = tmp*J0[l];
-    }
-  }
+  for(l=0; l<nv; ++l)
+    if(iData->sopt.knowedJ[j][l])
+      values[(*k)++] = (j==l) ? tmp*J0[l] + a[0]: tmp*J0[l];
+
   /*1*/
   values[(*k)++] = -a[1];
   /*2*/
   values[(*k)++] = a[2];
   /*3*/
-  for(l=0; l<nv; ++l){
-    if(iData->sopt.knowedJ[j][l]){
+  for(l=0; l<nv; ++l)
+    if(iData->sopt.knowedJ[j][l])
       values[(*k)++] = ((j == l)? dt*J[l] - a[3] : dt*J[l]);
-    }
-  }
+
   return 0;
 }
 

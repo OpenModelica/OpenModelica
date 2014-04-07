@@ -169,7 +169,7 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   iData->input_name = (char**)malloc(dim->nv*sizeof(char*));
 
   evalf->g = (double*)malloc((dim->NRes) *sizeof(double));
-  evalf->f = (double*)malloc((dim->NV) *sizeof(double));
+  evalf->f = (double*)calloc((dim->NV), sizeof(double));
   evalf->v = (double**)malloc((dim->nt+1) *sizeof(double*));
 
   for(i =0; i< dim->nt+1; ++i)
