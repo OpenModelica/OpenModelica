@@ -42,6 +42,7 @@
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
 #include <boost/math/tools/real_cast.hpp>
+
 using std::vector;
 using std::map;
 using std::string;
@@ -55,6 +56,7 @@ using boost::shared_ptr;
 using boost::weak_ptr;
 using boost::get;
 using boost::unordered_map;
+
 typedef ublas::shallow_array_adaptor<double> adaptor_t;
 typedef ublas::vector<double, adaptor_t> shared_vector_t;
 typedef ublas::matrix<double, adaptor_t> shared_matrix_t;

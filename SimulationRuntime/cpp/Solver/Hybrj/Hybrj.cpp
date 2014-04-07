@@ -115,11 +115,12 @@ void Hybrj::initialize()
              _algLoop->getReal(_x1);
               _algLoop->getReal(_x2);
             _algLoop->getReal(_x);
-             _algLoop->getReal(_x_ex);
-              _algLoop->getReal(_x_restart);
+            _algLoop->getReal(_x_ex);
+            _algLoop->getReal(_x_restart);
+            _algLoop->getNominalReal(_x_nom);
             std::fill_n(_f,_dimSys,0.0);
               std::fill_n(_x_scale,_dimSys,1.0);
-           std::fill_n(_x_nom,_dimSys,1.0);
+           
           std::fill_n(_xHelp,_dimSys,0.0);
           std::fill_n(_fHelp,_dimSys,0.0);
           std::fill_n(_jac,_dimSys*_dimSys,0.0);
@@ -192,6 +193,7 @@ void Hybrj::solve()
         int dummySysNumber;
         _iterationStatus = CONTINUE;
         bool isConsistent = true;
+        double local_tol = 1e-12;
         while(_iterationStatus == CONTINUE)
         {
              /* Scaling x vector */
@@ -214,7 +216,7 @@ void Hybrj::solve()
 
             _fnorm = __minpack_func__(enorm)(&_dimSys, _f);
             /*solution was found*/
-            if(info==1 )
+            if(info==1  || (_fnorm <= local_tol))
                 _iterationStatus = DONE;
             
              /* first try to decrease factor */

@@ -13,7 +13,7 @@ GlobalSettings::GlobalSettings()
 ,_resultsfile_name("results.csv")
 ,_endless_sim(false)
 {
-    
+  
 }
 
 GlobalSettings::~GlobalSettings()
@@ -54,7 +54,16 @@ void GlobalSettings::sethOutput(double h)
  {
      _endless_sim = endles;
  }
-///< Write out results ([false,true]; default: true)
+
+OutputFormat GlobalSettings::getOutputFormat()
+{
+    return _outputFormat;
+}
+void GlobalSettings::setOutputFormat(OutputFormat format)
+{
+   _outputFormat=format;
+}
+ ///< Write out results ([false,true]; default: true)
 bool GlobalSettings::getResultsOutput()
 {
     return _resultsOutput;
@@ -112,7 +121,7 @@ initializes settings object by an xml file
 */
 void GlobalSettings::load(std::string xml_file)
  {
-    try
+    /*try
     {
 
     std::ifstream ifs(xml_file.c_str());
@@ -129,7 +138,7 @@ void GlobalSettings::load(std::string xml_file)
     {
     std::string error = ex.what();
     cout<< error <<std::endl;
-    }
+    }*/
   
 }
   void GlobalSettings::setRuntimeLibrarypath(string path)

@@ -43,7 +43,8 @@ public:
 
   /// Provide variables of given data type 
   virtual void getReal(double* lambda) = 0;
-  
+  /// Provide nominal values of given data type 
+  virtual void getNominalReal(double* lambda) = 0;
   /// Set variables with given data type
   virtual void setReal(const double* lambda) = 0;
   

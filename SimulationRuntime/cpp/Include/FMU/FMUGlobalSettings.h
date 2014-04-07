@@ -25,6 +25,8 @@ public:
     virtual bool getInfoOutput() { return false; }
     virtual void setInfoOutput(bool) {}
     virtual string    getOutputPath() { return "./"; }
+    virtual OutputFormat getOutputFormat(){return CSV;}
+    virtual void setOutputFormat(OutputFormat) {}
     virtual void setOutputPath(string) {}
     virtual string    getSelectedSolver() { return "Euler"; }
     virtual void setSelectedSolver(string) {}

@@ -434,6 +434,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
    #include "Modelica.h"
    #include "OMCpp<%fileNamePrefix%>WriteOutput.h"
+  
    <%lastIdentOfPath(modelInfo.name)%>WriteOutput::<%lastIdentOfPath(modelInfo.name)%>WriteOutput(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData) 
    : <%lastIdentOfPath(modelInfo.name)%>(globalSettings,nonlinsolverfactory,simData)
    {
@@ -969,7 +970,7 @@ let moLib =  makefileParams.compileDir
 let home = makefileParams.omhome
 <<
 #!/bin/sh
-exec ./OMCpp<%fileNamePrefix%>Main -s <%start%> -e <%end%> -f <%stepsize%> -v <%intervals%> -y <%tol%> -i <%solver%> -r <%simulationLibDir(simulationCodeTarget(),simCode)%> -m <%moLib%> -R <%simulationResults(getRunningTestsuite(),simCode)%> $*
+exec ./OMCpp<%fileNamePrefix%>Main -s <%start%> -e <%end%> -f <%stepsize%> -v <%intervals%> -y <%tol%> -i <%solver%> -r <%simulationLibDir(simulationCodeTarget(),simCode)%> -m <%moLib%> -R <%simulationResults(getRunningTestsuite(),simCode)%> -o <%settings.outputFormat%> $*
 >>
 end match)
 case  "win32"
@@ -986,7 +987,7 @@ let moLib =  makefileParams.compileDir
 let home = makefileParams.omhome
 <<
 @echo off
-<%moLib%>/OMCpp<%fileNamePrefix%>Main.exe -s <%start%> -e <%end%> -f <%stepsize%> -v <%intervals%> -y <%tol%> -i <%solver%> -r <%simulationLibDir(simulationCodeTarget(),simCode)%> -m <%moLib%> -R <%simulationResults(getRunningTestsuite(),simCode)%>
+<%moLib%>/OMCpp<%fileNamePrefix%>Main.exe -s <%start%> -e <%end%> -f <%stepsize%> -v <%intervals%> -y <%tol%> -i <%solver%> -r <%simulationLibDir(simulationCodeTarget(),simCode)%> -m <%moLib%> -R <%simulationResults(getRunningTestsuite(),simCode)%> -o <%settings.outputFormat%>
 >>
 end match)
 end simulationMainRunScrip;
@@ -3149,6 +3150,45 @@ case SES_NONLINEAR(__) then
 end giveAlgloopvars;
 
 
+template giveAlgloopNominalvars(SimEqSystem eq,SimCode simCode,Context context)
+ "Generates a non linear equation system."
+::=
+match eq
+case SES_NONLINEAR(__) then
+  let size = listLength(crefs)
+  <<
+
+   <%crefs |> name hasindex i0 =>
+     let namestr = giveAlgloopNominalvars2(name,simCode,context)
+     <<
+       vars[<%i0%>] = <%namestr%>;
+     >>
+     ;separator="\n"
+   %>
+  >>
+ case SES_LINEAR(__) then
+   <<
+      <%vars |> SIMVAR(__) hasindex i0 => 'vars[<%i0%>] =<%cref1(name,simCode,context)%>;' ;separator="\n"%><%inlineVars(contextSimulationNonDiscrete,vars)%>
+   >>
+
+end giveAlgloopNominalvars;
+
+
+template giveAlgloopNominalvars2(ComponentRef inCref,SimCode simCode,Context context)
+ "Generates a non linear equation system."
+::=
+ cref2simvar(inCref, simCode) |> var  =>
+ match var
+ case SIMVAR(nominalValue=SOME(exp)) then
+   let &preExp = buffer "" //dummy ... the value is always a constant
+   let &varDecls = buffer ""
+   let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+  <<
+  <%expPart%>
+  >>
+  else
+  "1.0"
+end giveAlgloopNominalvars2;
 
 
 template writeAlgloopvars(list<list<SimEqSystem>> continousEquations,list<SimEqSystem> discreteEquations,list<SimWhenClause> whenClauses,list<SimEqSystem> parameterEquations,SimCode simCode,Context context)
@@ -3278,7 +3318,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
    void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeOutput(const IWriteOutput::OUTPUT command)
    {
-
+ 
     //Write head line
     if (command & IWriteOutput::HEAD_LINE)
     {
@@ -3685,6 +3725,16 @@ void  <%modelname%>Algloop<%index%>::getReal(double* vars)
     <%giveAlgloopvars(eq,simCode,context)%>
 };
 
+/// Provide nominal variables with given index to the system
+void  <%modelname%>Algloop<%index%>::getNominalReal(double* vars)
+{
+
+       <%giveAlgloopNominalvars(eq,simCode,context)%>
+};
+
+
+
+
 /// Set variables with given index to the system
 void  <%modelname%>Algloop<%index%>::setReal(const double* vars)
 {
@@ -3820,6 +3870,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     virtual void initialize();
     /// Provide variables with given index to the system
     virtual void getReal(double* vars)    ;
+     /// Provide variables with given index to the system
+    virtual void getNominalReal(double* vars)    ;
     /// Set variables with given index to the system
     virtual void setReal(const double* vars)    ;
     /// Update transfer behavior of the system of equations according to command given by solver

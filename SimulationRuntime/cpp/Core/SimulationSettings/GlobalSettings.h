@@ -31,6 +31,9 @@ public:
     ///path for simulation results in textfile
     virtual string    getOutputPath();
     virtual void setOutputPath(string);
+    virtual OutputFormat getOutputFormat();
+    virtual void setOutputFormat(OutputFormat format);
+    
     //solver used for simulation
     virtual string    getSelectedSolver();
     virtual void setSelectedSolver(string);
@@ -58,9 +61,12 @@ private:
         _selected_nonlin_solver,
         _resultsfile_name,
         _runtimeLibraryPath;
-
+    OutputFormat _outputFormat;
+   
+    
     //Serialization of settings class
-    friend class boost::serialization::access;
+     
+    /*friend class boost::serialization::access;
     template<class archive>
     void serialize(archive& ar, const unsigned int version)
 
@@ -86,4 +92,5 @@ private:
 
 
     }
+    */
 };

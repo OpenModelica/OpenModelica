@@ -32,7 +32,7 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
 {
      int opt;
      int portnum;
-
+      std::map<std::string,OutputFormat> outputFormatMap = map_list_of("csv", CSV)("mat", MAT)("empty",EMPTY);
      po::options_description desc("Allowed options");
      desc.add_options()
           ("help", "produce help message")
@@ -44,6 +44,7 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
           ("stop-time,e", po::value< double >()->default_value(1.0),  "simulation stop time")
           ("step-size,f", po::value< double >()->default_value(1e-2),  "simulation step size")
           ("solver,i", po::value< string >()->default_value("euler"),  "solver method")
+          ("OutputFormat,o", po::value< string >()->default_value("csv"),  "output Format [csv,empty]")
           ("number-of-intervalls,v", po::value< int >()->default_value(500),  "number of intervalls")
           ("tollerance,y", po::value< double >()->default_value(1e-6),  "solver tollerance")
           ;
@@ -62,7 +63,7 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
      {
           //cout << "runtime library path set to " << vm["runtime-library"].as<string>() << std::endl;
           runtime_lib_path = vm["runtime-library"].as<string>();
-
+            
      }
      else
      {
@@ -93,13 +94,32 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
           throw std::invalid_argument("resultsfilename  is not set");
      
      }
-     fs::path results_file_path = fs::path( resultsfilename) ;
+     string outputFormat_str;
+     OutputFormat outputFomat;
+     if (vm.count("OutputFormat"))
+     {
+          //cout << "results file: " << vm["results-file"].as<string>() << std::endl;
+          outputFormat_str = vm["OutputFormat"].as<string>();
+          outputFomat = outputFormatMap[outputFormat_str];
+          if((outputFomat!=CSV) && (outputFomat!=EMPTY))
+          {
+            std::string eception_msg = "The output format is not supported yet. Please use outputFormat=\"csv\" or  outputFormat=\"empty\" in simulate command ";
+            throw  std::invalid_argument(eception_msg.c_str());
+          }
+     }
+     else
+     {
+          throw std::invalid_argument("resultsfilename  is not set");
+     
+     }
+     
+     /*fs::path results_file_path = fs::path( resultsfilename) ;
     if(!(results_file_path.extension().string() == ".csv"))
     {
             std::string eception_msg = "The output format is not supported yet. Please use outputFormat=\"csv\" in simulate command ";
           throw  std::invalid_argument(eception_msg.c_str());
             
-    }
+    }*/
       fs::path libraries_path = fs::path( runtime_lib_path) ;
 
         fs::path modelica_path = fs::path( modelica_lib_path) ;
@@ -107,7 +127,7 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
            libraries_path.make_preferred();
         modelica_path.make_preferred();
  
-     SimSettings settings = {solver,"newton",starttime,stoptime,stepsize,1e-20,0.01,tollerance,resultsfilename};
+     SimSettings settings = {solver,"newton",starttime,stoptime,stepsize,1e-20,0.01,tollerance,resultsfilename,outputFomat};
      _library_path = libraries_path;
     _modelicasystem_path = modelica_path;
      return settings;

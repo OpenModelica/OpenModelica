@@ -14,10 +14,10 @@ Copyright (c) 2008, OSMC
 *****************************************************************************/
 #include <string.h>
 using std::string;
-
+enum OutputFormat {CSV, MAT, EMPTY};
 class IGlobalSettings
 {
-  enum {CSV, MAT};
+  
 public:
     virtual  ~IGlobalSettings() {}
     ///< Start time of integration (default: 0.0)
@@ -32,6 +32,8 @@ public:
     ///< Write out results ([false,true]; default: true)
     virtual bool getResultsOutput()=0;
     virtual void setResultsOutput(bool)=0;
+    virtual OutputFormat getOutputFormat() = 0;
+    virtual void setOutputFormat(OutputFormat) = 0;
     virtual bool useEndlessSim()=0;
     virtual void useEndlessSim(bool)=0;
     ///< Write out statistical simulation infos, e.g. number of steps (at the end of simulation); [false,true]; default: true)

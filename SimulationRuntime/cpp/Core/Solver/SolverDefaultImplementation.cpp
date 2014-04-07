@@ -180,35 +180,15 @@ void SolverDefaultImplementation::setZeroState()
 
 void SolverDefaultImplementation::writeToFile(const int& stp, const double& t, const double& h)
 {
-   IWriteOutput* writeoutput_system = dynamic_cast<IWriteOutput*>(_system);
-    //if (_outputStream && _settings->_globalSettings->_resultsOutput)
-    //{
-    //    // Reset curser within output stream to last valid position (before zero crossing)
-    //    if(_outputCommand & IContinuous::RESET)
-    //        if(stp == 1)
-    //            _outputStream->seekp(_curserPosition);
-
-    //    if(_outputCommand & IContinuous::WRITE)
-    //    {
-    //        // In the first step, tell (inital) curser position within output stream
-    //        if(stp == 1)
-    //            _curserPosition = _outputStream->tellp();
-
-    //        // Write current step, time and step size into output stream
-    //        *_outputStream << stp << "\t" << t << "\t" << h;
-
-    //        // Write out output stream
-    //        _system->writeOutput(_outputCommand);
-    //
-    //        // Write a line break into output stream
-    //        *_outputStream << std::endl;
-    //    }
-    //}
-    
+   if(_settings->getGlobalSettings()->getOutputFormat()!= EMPTY)
+   {
+    IWriteOutput* writeoutput_system = dynamic_cast<IWriteOutput*>(_system);
+       
     if(_outputCommand & IWriteOutput::WRITEOUT)
     {
         writeoutput_system->writeOutput(_outputCommand);
       
+    }
     }
 }
 void SolverDefaultImplementation::updateEventState()

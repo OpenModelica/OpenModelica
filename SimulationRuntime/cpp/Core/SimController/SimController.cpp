@@ -82,7 +82,7 @@ void SimController::Start(boost::weak_ptr<IMixedSystem> mixedsystem,SimSettings 
     global_settings->setResultsFileName(simsettings.outputfile_name);
     global_settings->setSelectedNonLinSSolver(simsettings.nonlinear_solver_name);
     global_settings->setSelectedSolver(simsettings.solver_name);
-
+    global_settings->setOutputFormat(simsettings.outputFormat);
     simMgr = boost::shared_ptr<SimManager>(new SimManager(mixedsystem.lock(),_config.get()));
     ISolverSettings* solver_settings = _config->getSolverSettings();
     solver_settings->setLowerLimit(simsettings.lower_limit);

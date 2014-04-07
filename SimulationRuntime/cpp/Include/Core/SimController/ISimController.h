@@ -20,6 +20,7 @@ struct SimSettings
     double upper_limit;
     double tolerance;
     string outputfile_name;
+    OutputFormat outputFormat;
 
 };
 
