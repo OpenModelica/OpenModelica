@@ -253,20 +253,28 @@ static int num_hessian(double *v, int k, IPOPT_DATA_ *iData, double *lambda, mod
   short upCost;
   OPTIMIZER_DIM_VARS *dim = &iData->dim;
   int nJ = (k>0) ? dim->nJ : dim->nx;
-  long double **Jlhs;
+  long double **Jrhs;
+  long double *lagrangeFrhs, *maeyrFrhs;
 
   if(!iData->sopt.updateH){
     diff_functionODE_con(v, k , iData, iData->df.Jh[0]);
-    Jlhs = iData->df.Jh[0];
+    Jrhs = iData->df.Jh[0];
   }else{
-    //printf("\n i = %i\tvon\t%i",iData->helper.i,dim->nt);
-    Jlhs = iData->df.J[iData->helper.i];
-    //printf("\tdone");
+    Jrhs = iData->df.J[iData->helper.i];
   }
+
   upCost = (lagrange_yes || mayer_yes) && (obj_factor!=0);   
 
-  if(upCost)
-    updateCost(v,k,iData,lagrange_yes,mayer_yes, iData->df.gradFh[2], iData->df.gradFh[3]);
+  if(upCost){
+    if(!iData->sopt.updateH){
+      updateCost(v,k,iData,lagrange_yes,mayer_yes, iData->df.gradFh[2], iData->df.gradFh[3]);
+      lagrangeFrhs = iData->df.gradFh[2];
+      maeyrFrhs = iData->df.gradFh[3];
+    }else{
+      lagrangeFrhs = iData->df.dLagrange[i];
+      maeyrFrhs = iData->df.dMayer;
+    }
+  }
 
   for(i = 0; i<dim->nv; ++i){
     v_save = (long double)v[i];
@@ -287,7 +295,7 @@ static int num_hessian(double *v, int k, IPOPT_DATA_ *iData, double *lambda, mod
       if(iData->sopt.Hg[i][j]){
        for(l = 0; l< nJ; ++l){
         if(iData->sopt.knowedJ[l][j] + iData->sopt.knowedJ[l][i] >= 2 && lambda[l] != 0.0)
-          iData->df.H[l][i][j]  = (long double)(iData->df.Jh[1][l][j] - Jlhs[l][j])*lambda[l]/h;
+          iData->df.H[l][i][j]  = (long double)(iData->df.Jh[1][l][j] - Jrhs[l][j])*lambda[l]/h;
         else
           iData->df.H[l][i][j] = (long double) 0.0;
         iData->df.H[l][j][i] = iData->df.H[l][i][j];
@@ -298,7 +306,7 @@ static int num_hessian(double *v, int k, IPOPT_DATA_ *iData, double *lambda, mod
     if(lagrange_yes){
       for(j = i; j < dim->nv; ++j){
        if(iData->sopt.gradFs[iData->lagrange_index][i]*iData->sopt.gradFs[iData->lagrange_index][j] && obj_factor!=0)
-         iData->df.oH[i][j]  = (long double) (iData->df.gradFh[0][j] - iData->df.gradFh[2][j])*h*iData->scaling.vnom[j];
+         iData->df.oH[i][j]  = (long double) (iData->df.gradFh[0][j] - lagrangeFrhs[j])*h*iData->scaling.vnom[j];
        else
          iData->df.oH[i][j] = 0.0;
        iData->df.oH[j][i]  = iData->df.oH[i][j] ;
@@ -308,7 +316,7 @@ static int num_hessian(double *v, int k, IPOPT_DATA_ *iData, double *lambda, mod
     if(mayer_yes){
       for(j = i; j < dim->nv; ++j){
        if(iData->sopt.gradFs[iData->mayer_index][i]*iData->sopt.gradFs[iData->mayer_index][j] && obj_factor!=0)
-         iData->df.mH[i][j]  = (long double) (iData->df.gradFh[1][j] - iData->df.gradFh[3][j])*h* iData->scaling.vnom[j];
+         iData->df.mH[i][j]  = (long double) (iData->df.gradFh[1][j] - maeyrFrhs[j])*h* iData->scaling.vnom[j];
        else
          iData->df.mH[i][j] = 0.0;
        iData->df.mH[j][i]  = iData->df.mH[i][j] ;
