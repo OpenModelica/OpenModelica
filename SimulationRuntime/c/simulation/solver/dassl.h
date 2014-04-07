@@ -33,7 +33,7 @@
 
 #include "simulation/solver/solver_main.h"
 
-#define DDASKR ddaskr_
+#define DDASKR _daskr_ddaskr_
 
 static const unsigned int maxOrder = 5;
 static const unsigned int numStatistics = 5;
