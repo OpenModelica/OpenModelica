@@ -818,12 +818,8 @@ algorithm
         s = stringAppendList({s1,s2,"\n",s3,"  end ",s1});
       then s;
 
-    case (DAE.SHARED_LITERAL(index=i,ty=et), _, _, _)
-      equation
-        s1 = intString(i);
-        s2 = Types.unparseType(et);
-        s = stringAppendList({"#SHARED_LITERAL_",s1," (",s2,")#"});
-      then s;
+    case (DAE.SHARED_LITERAL(exp=e), _, _, _)
+      then printExp2Str(e, stringDelimiter, opcreffunc, opcallfunc);
 
     case (DAE.PATTERN(pattern=pat),_,_,_)
       then Patternm.patternStr(pat);

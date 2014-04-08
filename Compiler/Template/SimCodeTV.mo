@@ -1,56 +1,56 @@
-interface package SimCodeTV 
+interface package SimCodeTV
 
 package builtin
-  
+
   function listReverse
-    replaceable type TypeVar subtypeof Any;    
+    replaceable type TypeVar subtypeof Any;
     input list<TypeVar> lst;
     output list<TypeVar> result;
   end listReverse;
 
   function listLength "Return the length of the list"
-    replaceable type TypeVar subtypeof Any;    
+    replaceable type TypeVar subtypeof Any;
     input list<TypeVar> lst;
     output Integer result;
   end listLength;
 
   function listGet
-    replaceable type TypeVar subtypeof Any;    
+    replaceable type TypeVar subtypeof Any;
     input list<TypeVar> lst;
     input Integer ix;
     output TypeVar result;
   end listGet;
 
   function listNth
-    replaceable type TypeVar subtypeof Any;    
+    replaceable type TypeVar subtypeof Any;
     input list<TypeVar> lst;
     input Integer ix;
     output TypeVar result;
   end listNth;
-  
+
   function intAdd
     input Integer a;
     input Integer b;
     output Integer c;
   end intAdd;
-  
+
   function boolAnd
     input Boolean b1;
     input Boolean b2;
     output Boolean b;
   end boolAnd;
-  
+
   function boolOr
     input Boolean a;
     input Boolean b;
     output Boolean c;
   end boolOr;
-  
+
   function boolNot
     input Boolean b;
     output Boolean nb;
   end boolNot;
-  
+
   function intMax
     input Integer a;
     input Integer b;
@@ -80,32 +80,32 @@ package builtin
     input Integer b;
     output Boolean c;
   end intEq;
-  
+
   function intGt
     input Integer i1;
     input Integer i2;
     output Boolean b;
   end intGt;
-  
+
   function realInt
     input Real r;
     output Integer i;
   end realInt;
-  
-  function arrayList 
-    replaceable type TypeVar subtypeof Any;    
+
+  function arrayList
+    replaceable type TypeVar subtypeof Any;
     input array<TypeVar> arr;
     output list<TypeVar> lst;
   end arrayList;
-  
+
   function stringEq
     input String s1;
     input String s2;
     output Boolean b;
   end stringEq;
- 
+
   function listAppend
-    replaceable type TypeVar subtypeof Any;    
+    replaceable type TypeVar subtypeof Any;
     input list<TypeVar> lst;
     input list<TypeVar> lst1;
     output list<TypeVar> result;
@@ -116,7 +116,7 @@ package builtin
     input Real y;
     output Real z;
   end realDiv;
- 
+
 end builtin;
 
 
@@ -132,7 +132,7 @@ package SimCode
                             tuple<list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,tuple<list<SimVar>,list<SimVar>>>,    // sparse pattern
                             list<list<DAE.ComponentRef>>,    // colored cols
                             Integer>;               // max color used
-  
+
   uniontype SimCode
     record SIMCODE
       ModelInfo modelInfo;
@@ -169,10 +169,10 @@ package SimCode
       ExtObjInfo extObjInfo;
       MakefileParams makefileParams;
       DelayedExpression delayedExps;
-      list<JacobianMatrix> jacobianMatrixes;  
+      list<JacobianMatrix> jacobianMatrixes;
       Option<SimulationSettings> simulationSettingsOpt;
       String fileNamePrefix;
-      Option<HpcOmScheduler.ScheduleSimCode> hpcOmSchedule; 
+      Option<HpcOmScheduler.ScheduleSimCode> hpcOmSchedule;
     end SIMCODE;
 
   end SimCode;
@@ -213,7 +213,7 @@ package SimCode
       String compileDir;
     end MAKEFILE_PARAMS;
   end MakefileParams;
-  
+
   uniontype SimulationSettings
     record SIMULATION_SETTINGS
       Real startTime;
@@ -229,7 +229,7 @@ package SimCode
       String cflags;
     end SIMULATION_SETTINGS;
   end SimulationSettings;
-  
+
   uniontype Context
     record SIMULATION_CONTEXT
       Boolean genDiscrete;
@@ -238,7 +238,7 @@ package SimCode
     end FUNCTION_CONTEXT;
    record JACOBIAN_CONTEXT
    end JACOBIAN_CONTEXT;
- 
+
     record ALGLOOP_CONTEXT
        Boolean genInitialisation;
         Boolean genJacobian;
@@ -249,12 +249,12 @@ package SimCode
     end INLINE_CONTEXT;
     record PARALLEL_FUNCTION_CONTEXT
     end PARALLEL_FUNCTION_CONTEXT;
-    record ZEROCROSSINGS_CONTEXT 
-    end ZEROCROSSINGS_CONTEXT;  
+    record ZEROCROSSINGS_CONTEXT
+    end ZEROCROSSINGS_CONTEXT;
     record OPTIMIZATION_CONTEXT
     end OPTIMIZATION_CONTEXT;
   end Context;
-  
+
   uniontype Variable
     record VARIABLE
       DAE.ComponentRef name;
@@ -262,7 +262,7 @@ package SimCode
       Option<DAE.Exp> value;
       list<DAE.Exp> instDims;
       DAE.VarParallelism parallelism;
-    end VARIABLE;  
+    end VARIABLE;
 
     record FUNCTION_PTR
       String name;
@@ -270,7 +270,7 @@ package SimCode
       list<Variable> args;
     end FUNCTION_PTR;
   end Variable;
-  
+
   uniontype Statement
     record ALGORITHM
        list<DAE.Statement> statementLst;
@@ -283,40 +283,40 @@ package SimCode
       list<ExtAlias> aliases;
     end EXTOBJINFO;
   end ExtObjInfo;
-  
+
   uniontype SimEqSystem
     record SES_RESIDUAL
       Integer index;
       DAE.Exp exp;
       DAE.ElementSource source;
     end SES_RESIDUAL;
-    
+
     record SES_SIMPLE_ASSIGN
       Integer index;
       DAE.ComponentRef cref;
       DAE.Exp exp;
       DAE.ElementSource source;
     end SES_SIMPLE_ASSIGN;
-    
+
     record SES_ARRAY_CALL_ASSIGN
       Integer index;
       DAE.ComponentRef componentRef;
       DAE.Exp exp;
       DAE.ElementSource source;
     end SES_ARRAY_CALL_ASSIGN;
-    
+
     record SES_IFEQUATION
       Integer index;
       list<tuple<DAE.Exp,list<SimEqSystem>>> ifbranches;
       list<SimEqSystem> elsebranch;
       DAE.ElementSource source;
     end SES_IFEQUATION;
-    
+
     record SES_ALGORITHM
       Integer index;
       list<DAE.Statement> statements;
     end SES_ALGORITHM;
-    
+
     record SES_LINEAR
       Integer index;
       Boolean partOfMixed;
@@ -325,7 +325,7 @@ package SimCode
       list<tuple<Integer, Integer, SimEqSystem>> simJac;
       Integer indexLinearSystem;
     end SES_LINEAR;
-    
+
     record SES_NONLINEAR
       Integer index;
       list<SimEqSystem> eqs;
@@ -334,7 +334,7 @@ package SimCode
       Option<JacobianMatrix> jacobianMatrix;
       Boolean linearTearing;
     end SES_NONLINEAR;
-    
+
     record SES_MIXED
       Integer index;
       SimEqSystem cont;
@@ -342,7 +342,7 @@ package SimCode
       list<SimEqSystem> discEqs;
       Integer indexMixedSystem;
     end SES_MIXED;
-    
+
     record SES_WHEN
       Integer index;
       list<DAE.ComponentRef> conditions;    // list of boolean variables as conditions
@@ -368,7 +368,7 @@ package SimCode
 
   uniontype SimWhenClause
     record SIM_WHEN_CLAUSE
-      list<DAE.ComponentRef> conditionVars; // is no longer needed 
+      list<DAE.ComponentRef> conditionVars; // is no longer needed
       list<DAE.ComponentRef> conditions;    // list of boolean variables as conditions
       Boolean initialCall;                  // true, if top-level branch with initial()
       list<BackendDAE.WhenOperator> reinits;
@@ -387,13 +387,13 @@ package SimCode
       list<String> labels;
     end MODELINFO;
   end ModelInfo;
-  
+
   uniontype VarInfo
     record VARINFO
       Integer numZeroCrossings;
       Integer numTimeEvents;
       Integer numRelations;
-      Integer numMathEventFunctions;      
+      Integer numMathEventFunctions;
       Integer numStateVars;
       Integer numInlineVars;
       Integer numAlgVars;
@@ -423,7 +423,7 @@ package SimCode
       Integer numOptimizeConstraints;
       end VARINFO;
   end VarInfo;
-  
+
   uniontype SimVars
     record SIMVARS
       list<SimVar> stateVars;
@@ -436,7 +436,7 @@ package SimCode
       list<SimVar> outputVars;
       list<SimVar> aliasVars;
       list<SimVar> intAliasVars;
-      list<SimVar> boolAliasVars;      
+      list<SimVar> boolAliasVars;
       list<SimVar> paramVars;
       list<SimVar> intParamVars;
       list<SimVar> boolParamVars;
@@ -452,7 +452,7 @@ package SimCode
       list<SimVar> realOptimizeConstraintsVars;
     end SIMVARS;
   end SimVars;
-  
+
   uniontype SimVar
     record SIMVAR
       DAE.ComponentRef name;
@@ -478,26 +478,26 @@ package SimCode
       Boolean isProtected;
     end SIMVAR;
   end SimVar;
-  
+
   uniontype AliasVariable
     record NOALIAS end NOALIAS;
-    record ALIAS 
+    record ALIAS
       DAE.ComponentRef varName;
     end ALIAS;
-    record NEGATEDALIAS 
+    record NEGATEDALIAS
       DAE.ComponentRef varName;
     end NEGATEDALIAS;
   end AliasVariable;
-  
+
   uniontype Causality
     record NONECAUS end NONECAUS;
     record INTERNAL end INTERNAL;
     record OUTPUT end OUTPUT;
     record INPUT end INPUT;
-  end Causality;  
-  
+  end Causality;
+
   uniontype Function
-    record FUNCTION    
+    record FUNCTION
       Absyn.Path name;
       list<Variable> outVars;
       list<Variable> functionArguments;
@@ -543,7 +543,7 @@ package SimCode
       Absyn.Info info;
     end RECORD_CONSTRUCTOR;
   end Function;
-  
+
   uniontype RecordDeclaration
     record RECORD_DECL_FULL
       String name;
@@ -579,7 +579,7 @@ package SimCode
     end SIMEXTARGSIZE;
     record SIMNOEXTARG end SIMNOEXTARG;
   end SimExtArg;
-  
+
   constant Context contextSimulationNonDiscrete;
   constant Context contextSimulationDiscrete;
   constant Context contextInlineSolver;
@@ -587,8 +587,8 @@ package SimCode
   constant Context contextOther;
   constant Context contextAlgloopJacobian;
   constant Context contextAlgloop;
-  constant Context contextJacobian;              
-  constant Context contextAlgloopInitialisation;             
+  constant Context contextJacobian;
+  constant Context contextAlgloopInitialisation;
   constant Context contextParallelFunction;
   constant Context contextZeroCross;
   constant Context contextOptimization;
@@ -603,12 +603,12 @@ package SimCodeUtil
     input list<DAE.Element> ld;
     output list<SimCode.Variable> vars;
   end elementVars;
-  
+
   function crefSubIsScalar
     input DAE.ComponentRef cref;
     output Boolean isScalar;
   end crefSubIsScalar;
-  
+
   function crefNoSub
     input DAE.ComponentRef cref;
     output Boolean noSub;
@@ -631,7 +631,7 @@ package SimCodeUtil
     input Integer increment;
     output Integer outInt;
   end incrementInt;
- 
+
   function decrementInt
     input Integer inInt;
     input Integer decrement;
@@ -643,13 +643,13 @@ package SimCodeUtil
     input DAE.Var inVar;
     output DAE.Exp outExp;
   end makeCrefRecordExp;
-   
+
   function cref2simvar
     input DAE.ComponentRef cref;
     input SimCode.SimCode simCode;
     output SimCode.SimVar outSimVar;
   end cref2simvar;
-  
+
   function isModelTooBigForCSharpInOneFile
     input SimCode.SimCode simCode;
     output Boolean outIsTooBig;
@@ -659,13 +659,13 @@ package SimCodeUtil
     input DAE.ComponentRef inCref;
     output DAE.ComponentRef derCref;
   end derComponentRef;
-  
+
   function hackArrayReverseToCref
     input DAE.Exp inExp;
-    input SimCode.Context context; 
+    input SimCode.Context context;
     output DAE.Exp outExp;
   end hackArrayReverseToCref;
-  
+
   function hackGetFirstExternalFunctionLib
     input list<String> libs;
     output String outFirstLib;
@@ -673,36 +673,36 @@ package SimCodeUtil
 
   function hackMatrixReverseToCref
     input DAE.Exp inExp;
-    input SimCode.Context context; 
+    input SimCode.Context context;
     output DAE.Exp outExp;
   end hackMatrixReverseToCref;
-  
+
   function createArray
     input Integer size;
     output DAE.Exp outArray;
   end createArray;
-  
+
   function createAssertforSqrt
     input DAE.Exp inExp;
     output DAE.Exp outExp;
   end createAssertforSqrt;
- 
+
   function appendLists
     input list<SimCode.SimEqSystem> inEqn1;
     input list<SimCode.SimEqSystem> inEqn2;
     output list<SimCode.SimEqSystem> outEqn;
   end appendLists;
- 
+
   function createDAEString
     input String inString;
     output DAE.Exp outExp;
   end createDAEString;
-  
+
   function isBoxedFunction
     input SimCode.Function fn;
     output Boolean b;
   end isBoxedFunction;
-  
+
   function functionInfo
     input SimCode.Function fn;
     output Absyn.Info info;
@@ -715,7 +715,7 @@ package SimCodeUtil
 
   function countDynamicExternalFunctions
     input list<SimCode.Function> inFncLst;
-    output Integer outDynLoadFuncs;     
+    output Integer outDynLoadFuncs;
   end countDynamicExternalFunctions;
 
   function eqInfo
@@ -727,7 +727,7 @@ package SimCodeUtil
     input SimCode.SimVar var;
     output DAE.ComponentRef cr;
   end varName;
-  
+
   function dimsToAllIndexes
     input DAE.Dimensions inDims;
     output list<list<Integer>> outIndexes;
@@ -737,12 +737,12 @@ package SimCodeUtil
     input list<SimCode.SimEqSystem> eqs;
     output list<SimCode.SimEqSystem> outEqs;
   end sortEqSystems;
-  
+
   function isParallelFunctionContext
     input SimCode.Context context;
     output Boolean s;
   end isParallelFunctionContext;
-  
+
   function getEnumerationTypes
     input SimCode.SimVars inVars;
     output list<SimCode.SimVar> outVars;
@@ -778,21 +778,21 @@ package BackendDAE
       list<Integer> occurWhenLst;
     end ZERO_CROSSING;
   end ZeroCrossing;
-  
+
   uniontype TimeEvent
     record SIMPLE_TIME_EVENT "e.g. time > 0.5"
     end SIMPLE_TIME_EVENT;
-    
+
     record COMPLEX_TIME_EVENT "e.g. sin(time) > 0"
     end COMPLEX_TIME_EVENT;
-    
+
     record SAMPLE_TIME_EVENT "e.g. sample(1, 1)"
       Integer index "unique sample index" ;
       DAE.Exp startExp;
       DAE.Exp intervalExp;
     end SAMPLE_TIME_EVENT;
   end TimeEvent;
-  
+
   uniontype WhenOperator "- Reinit Statement"
     record REINIT
       DAE.ComponentRef stateVar "State variable to reinit" ;
@@ -805,20 +805,20 @@ package BackendDAE
       DAE.Exp message;
       DAE.Exp level;
       DAE.ElementSource source "the origin of the component/equation/algorithm";
-    end ASSERT;  
-  
+    end ASSERT;
+
     record TERMINATE " The Modelica builtin terminate(msg)"
       DAE.Exp message;
       DAE.ElementSource source "the origin of the component/equation/algorithm";
     end TERMINATE;
-  
+
     record NORETCALL "call with no return value, i.e. no equation.
       Typically sideeffect call of external function but also
       Connections.* i.e. Connections.root(...) functions."
       Absyn.Path functionName;
       list<DAE.Exp> functionArgs;
       DAE.ElementSource source "the origin of the component/equation/algorithm";
-    end NORETCALL;  
+    end NORETCALL;
   end WhenOperator;
 
   uniontype WhenEquation
@@ -829,7 +829,7 @@ package BackendDAE
       Option<WhenEquation> elsewhenPart;
     end WHEN_EQ;
   end WhenEquation;
-  
+
 end BackendDAE;
 
 package System
@@ -839,7 +839,7 @@ package System
     input Integer stop;
     output String outString;
   end substring;
-  
+
   function stringFind
     input String str;
     input String searchStr;
@@ -852,11 +852,11 @@ package System
     input String target;
     output String res;
   end stringReplace;
-  
+
   function tmpTick
     output Integer tickNo;
   end tmpTick;
-  
+
   function tmpTickReset
     input Integer start;
   end tmpTickReset;
@@ -871,7 +871,7 @@ package System
     input Integer reserve;
     output Integer tickNo;
   end tmpTickIndexReserve;
-  
+
   function tmpTickResetIndex
     input Integer start;
     input Integer index;
@@ -891,7 +891,7 @@ package System
     output String timeStr;
   end getCurrentTimeStr;
 
-  function getUUIDStr 
+  function getUUIDStr
     output String uuidStr;
   end getUUIDStr;
 
@@ -905,7 +905,7 @@ package System
     input Integer mod;
     output Integer hash;
   end stringHashDjb2Mod;
-  
+
   function escapedString
     input String unescapedString;
     input Boolean unescapeNewline;
@@ -920,7 +920,7 @@ package System
   function os
     output String str;
   end os;
-  
+
   function strtok
     input String s1;
     input String s2;
@@ -940,24 +940,24 @@ package Tpl
     input Text inText;
     input String inFileName;
   end textFile;
-  
+
   function textFileConvertLines
     input Text inText;
     input String inFileName;
   end textFileConvertLines;
 
   //we do not import Error.addSourceMessage() directly
-  //because of list creation in Susan is not possible (yet by design)  
+  //because of list creation in Susan is not possible (yet by design)
   function addSourceTemplateError
     "Wraps call to Error.addSourceMessage() funtion with Error.TEMPLATE_ERROR and one MessageToken."
     input String inErrMsg;
     input Absyn.Info inInfo;
   end addSourceTemplateError;
-  
+
   //for completeness; although the addSourceTemplateError() above is preferable
   function addTemplateError
   "Wraps call to Error.addMessage() funtion with Error.TEMPLATE_ERROR and one MessageToken."
-    input String inErrMsg;  
+    input String inErrMsg;
   end addTemplateError;
 end Tpl;
 
@@ -965,7 +965,7 @@ end Tpl;
 package Absyn
 
   type Ident = String;
-  
+
   uniontype Path
     record QUALIFIED
       Ident name;
@@ -978,7 +978,7 @@ package Absyn
       Path path;
     end FULLYQUALIFIED;
   end Path;
-  
+
   uniontype Info
     record INFO
       String fileName;
@@ -989,7 +989,7 @@ package Absyn
       Integer columnNumberEnd;
     end INFO;
   end Info;
-  
+
   uniontype Within "Within Clauses"
     record WITHIN "the within clause"
       Path path "the path for within";
@@ -1000,27 +1000,27 @@ package Absyn
   end Within;
 
   constant Info dummyInfo;
-  
+
   function pathString2NoLeadingDot "Tail-recursive version, with string builder (stringDelimitList is optimised)"
     input Path path;
     input String delimiter;
     output String outString;
   end pathString2NoLeadingDot;
-  
+
 end Absyn;
 
 
 package DAE
 
   type Ident = String;
-    
+
   uniontype VarKind
     record VARIABLE "variable" end VARIABLE;
     record DISCRETE "discrete" end DISCRETE;
     record PARAM "parameter"   end PARAM;
     record CONST "constant"    end CONST;
-    
-    // back-end dae variable kinds  
+
+    // back-end dae variable kinds
     record STATE end STATE;
     record STATE_DER end STATE_DER;
     record DUMMY_DER end DUMMY_DER;
@@ -1053,27 +1053,27 @@ package DAE
     record BINARY
       Exp exp1;
       Operator operator;
-      Exp exp2; 
+      Exp exp2;
     end BINARY;
     record UNARY
       Operator operator;
-      Exp exp; 
+      Exp exp;
     end UNARY;
     record LBINARY
       Exp exp1;
       Operator operator;
-      Exp exp2; 
+      Exp exp2;
     end LBINARY;
     record LUNARY
       Operator operator;
-      Exp exp; 
+      Exp exp;
     end LUNARY;
     record RELATION
       Exp exp1;
       Operator operator;
       Exp exp2;
       Integer index;
-      Option<tuple<DAE.Exp,Integer,Integer>> optionExpisASUB; 
+      Option<tuple<DAE.Exp,Integer,Integer>> optionExpisASUB;
     end RELATION;
     record IFEXP
       Exp expCond;
@@ -1172,13 +1172,13 @@ package DAE
     end UNBOX;
     record SHARED_LITERAL
       Integer index;
-      Type ty;
+      Exp exp;
     end SHARED_LITERAL;
     record PATTERN
       Pattern pattern;
     end PATTERN;
   end Exp;
-  
+
   uniontype CallAttributes
     record CALL_ATTR
       Type ty "The type of the return value, if several return values this is undefined";
@@ -1199,7 +1199,7 @@ package DAE
   end ReductionIterator;
 
   type ReductionIterators = list<ReductionIterator>;
-  
+
   uniontype ReductionInfo
     record REDUCTIONINFO "A separate uniontype containing the information not required by traverseExp, etc"
       Absyn.Path path "array, sum,..";
@@ -1280,7 +1280,7 @@ package DAE
     end OPTIMICA_ATTR_INST_CREF;
     record WILD end WILD;
   end ComponentRef;
-  
+
   uniontype VarParallelism
     record PARGLOBAL     "Global variables for CUDA and OpenCL"     end PARGLOBAL;
     record PARLOCAL      "Shared for CUDA and local for OpenCL"     end PARLOCAL;
@@ -1354,13 +1354,13 @@ package DAE
     record POW_ARR2
       Type ty;
     end POW_ARR2;
-    record AND 
+    record AND
       Type ty;
     end AND;
-    record OR 
+    record OR
       Type ty;
     end OR;
-    record NOT 
+    record NOT
       Type ty;
     end NOT;
     record LESS
@@ -1385,7 +1385,7 @@ package DAE
       Absyn.Path fqName;
     end USERDEFINED;
   end Operator;
-  
+
   uniontype Statement
     record STMT_ASSIGN
       Type type_;
@@ -1444,7 +1444,7 @@ package DAE
     record STMT_TERMINATE
       Exp msg;
       ElementSource source;
-    end STMT_TERMINATE;  
+    end STMT_TERMINATE;
     record STMT_ASSERT
       Exp cond;
       Exp msg;
@@ -1455,7 +1455,7 @@ package DAE
       Exp var;
       Exp value;
       ElementSource source;
-    end STMT_REINIT;  
+    end STMT_REINIT;
     record STMT_RETURN
       ElementSource source;
     end STMT_RETURN;
@@ -1492,33 +1492,33 @@ package DAE
       Binding binding;
     end TYPES_VAR;
   end Var;
-  
+
   type FuncArg = tuple<Ident, Type, Const, Option<Exp>> "Function Argument; name, type, variability and default binding (should probably be constant)" ;
 
   type TypeSource = list<Absyn.Path> "the class(es) where the type originated";
 
   uniontype Type "models the different front-end and back-end types"
-    
+
     record T_INTEGER
       list<Var> varLst;
-      TypeSource source;  
+      TypeSource source;
     end T_INTEGER;
-  
+
     record T_REAL
       list<Var> varLst;
       TypeSource source;
     end T_REAL;
-  
+
     record T_STRING
       list<Var> varLst;
       TypeSource source;
     end T_STRING;
-  
+
     record T_BOOL
       list<Var> varLst;
       TypeSource source;
     end T_BOOL;
-  
+
     record T_ENUMERATION "If the list of names is empty, this is the super-enumeration that is the super-class of all enumerations"
       Option<Integer> index "the enumeration value index, SOME for element, NONE() for type" ;
       Absyn.Path path "enumeration path" ;
@@ -1527,32 +1527,32 @@ package DAE
       list<Var> attributeLst;
       TypeSource source;
     end T_ENUMERATION;
-  
-    record T_ARRAY 
-      "an array can be represented in two equivalent ways: 
-         1. T_ARRAY(non_array_type, {dim1, dim2, dim3}) =  
+
+    record T_ARRAY
+      "an array can be represented in two equivalent ways:
+         1. T_ARRAY(non_array_type, {dim1, dim2, dim3}) =
          2. T_ARRAY(T_ARRAY(T_ARRAY(non_array_type, {dim1}), {dim2}), {dim3})
          In general Inst generates 1 and all the others generates 2"
       Type ty "Type";
       Dimensions dims "dims";
       TypeSource source;
     end T_ARRAY;
-  
+
     record T_NORETCALL "For functions not returning any values."
-      TypeSource source; 
+      TypeSource source;
     end T_NORETCALL;
-  
+
     record T_UNKNOWN "Used when type is not yet determined"
-      TypeSource source; 
+      TypeSource source;
     end T_UNKNOWN;
-  
+
     record T_COMPLEX
       ClassInf.State complexClassType "The type of. a class" ;
       list<Var> varLst "The variables of a complex type" ;
       EqualityConstraint equalityConstraint;
       TypeSource source;
     end T_COMPLEX;
-    
+
     record T_SUBTYPE_BASIC
       ClassInf.State complexClassType "The type of. a class" ;
       list<Var> varLst "complexVarLst; The variables of a complex type! Should be empty, kept here to verify!";
@@ -1560,62 +1560,62 @@ package DAE
       EqualityConstraint equalityConstraint;
       TypeSource source;
     end T_SUBTYPE_BASIC;
-  
+
     record T_FUNCTION
       list<FuncArg> funcArg "funcArg" ;
       Type funcResultType "Only single-result" ;
       FunctionAttributes functionAttributes;
       TypeSource source;
     end T_FUNCTION;
-    
+
     record T_FUNCTION_REFERENCE_VAR "MetaModelica Function Reference that is a variable"
       Type functionType "the type of the function";
       TypeSource source;
     end T_FUNCTION_REFERENCE_VAR;
-    
+
     record T_FUNCTION_REFERENCE_FUNC "MetaModelica Function Reference that is a direct reference to a function"
       Boolean builtin;
       Type functionType "type of the non-boxptr function";
       TypeSource source;
     end T_FUNCTION_REFERENCE_FUNC;
-    
+
     record T_TUPLE
       list<Type> tupleType "For functions returning multiple values.";
       TypeSource source;
     end T_TUPLE;
-  
+
     record T_CODE
       CodeType ty;
       TypeSource source;
     end T_CODE;
-  
+
     record T_ANYTYPE
       Option<ClassInf.State> anyClassType "anyClassType - used for generic types. When class state present the type is assumed to be a complex type which has that restriction.";
       TypeSource source;
     end T_ANYTYPE;
-  
+
     // MetaModelica extensions
     record T_METALIST "MetaModelica list type"
       Type listType "listType";
       TypeSource source;
     end T_METALIST;
-  
+
     record T_METATUPLE "MetaModelica tuple type"
       list<Type> types;
       TypeSource source;
     end T_METATUPLE;
-  
+
     record T_METAOPTION "MetaModelica option type"
       Type optionType;
       TypeSource source;
     end T_METAOPTION;
-  
+
     record T_METAUNIONTYPE "MetaModelica Uniontype, added by simbj"
       list<Absyn.Path> paths;
       Boolean knownSingleton "The runtime system (dynload), does not know if the value is a singleton. But optimizations are safe if this is true.";
       TypeSource source;
     end T_METAUNIONTYPE;
-  
+
     record T_METARECORD "MetaModelica Record, used by Uniontypes. added by simbj"
       Absyn.Path utPath "the path to its uniontype; this is what we match the type against";
       // If the metarecord constructor was added to the FunctionTree, this would
@@ -1625,27 +1625,27 @@ package DAE
       Boolean knownSingleton "The runtime system (dynload), does not know if the value is a singleton. But optimizations are safe if this is true.";
       TypeSource source;
     end T_METARECORD;
-  
+
     record T_METAARRAY
       Type ty;
       TypeSource source;
     end T_METAARRAY;
-  
+
     record T_METABOXED "Used for MetaModelica generic types"
       Type ty;
       TypeSource source;
     end T_METABOXED;
-  
+
     record T_METAPOLYMORPHIC
       String name;
       TypeSource source;
     end T_METAPOLYMORPHIC;
-    
+
     record T_METATYPE "this type contains all the meta types"
       Type ty;
       TypeSource source;
     end T_METATYPE;
-    
+
   end Type;
 
   type Dimensions = list<Dimension> "a list of dimensions";
@@ -1776,21 +1776,21 @@ package DAE
       list<String> vars;
     end TAIL;
   end TailCall;
-  
+
 
   uniontype FunctionParallelism
     record FP_NON_PARALLEL   "a normal function i.e non_parallel"    end FP_NON_PARALLEL;
     record FP_PARALLEL_FUNCTION "an OpenCL/CUDA parallel/device function" end FP_PARALLEL_FUNCTION;
     record FP_KERNEL_FUNCTION "an OpenCL/CUDA kernel function" end FP_KERNEL_FUNCTION;
   end FunctionParallelism;
-  
+
   uniontype Constraint "The `Constraints\' type corresponds to a whole Constraint section.
   It is simply a list of expressions."
     record CONSTRAINT_EXPS
       list<Exp> constraintLst;
     end CONSTRAINT_EXPS;
   end Constraint;
-  
+
   uniontype ClassAttributes "currently for Optimica extension: these are the objectives of optimization class"
   record OPTIMIZATION_ATTRS
     Option<Exp> objetiveE;
@@ -1799,7 +1799,7 @@ package DAE
     Option<Exp> finalTimeE;
   end OPTIMIZATION_ATTRS;
 end ClassAttributes;
-  
+
 end DAE;
 
 
@@ -1859,7 +1859,7 @@ package ClassInf
       Absyn.Path path;
     end EXTERNAL_OBJ;
   end State;
-  
+
   function getStateName
     input State inState;
     output Absyn.Path outPath;
@@ -1915,8 +1915,8 @@ end Restriction;
 uniontype Mod "- Modifications"
 
   record MOD
-    Final finalPrefix "final prefix";    
-    Each  eachPrefix "each prefix";    
+    Final finalPrefix "final prefix";
+    Each  eachPrefix "each prefix";
     list<SubMod> subModLst;
     Option<tuple<Absyn.Exp,Boolean>> binding "The binding expression of a modification
     has an expression and a Boolean delayElaboration which is true if elaboration(type checking)
@@ -1925,8 +1925,8 @@ uniontype Mod "- Modifications"
   end MOD;
 
   record REDECL
-    Final         finalPrefix "final prefix";    
-    Each          eachPrefix "each prefix";    
+    Final         finalPrefix "final prefix";
+    Each          eachPrefix "each prefix";
     list<Element> elementLst  "elements";
   end REDECL;
 
@@ -1970,7 +1970,7 @@ uniontype ClassDef
   class extends A (modifier)
     new elements;
   end A;"
-  
+
   record PARTS "a class made of parts"
     list<Element>              elementLst          "the list of elements";
     list<Equation>             normalEquationLst   "the list of equations";
@@ -2204,7 +2204,7 @@ uniontype Statement "The Statement type describes one algorithm statement in an 
 
 end Statement;
 
-// common prefixes to elements 
+// common prefixes to elements
 uniontype Visibility "the visibility prefix"
   record PUBLIC    "a public element"    end PUBLIC;
   record PROTECTED "a protected element" end PROTECTED;
@@ -2217,7 +2217,7 @@ end Redeclare;
 
 uniontype Replaceable "the replaceable prefix"
   record REPLACEABLE "a replaceable prefix containing an optional constraint"
-    Option<Absyn.ConstrainClass> cc  "the constraint class"; 
+    Option<Absyn.ConstrainClass> cc  "the constraint class";
   end REPLACEABLE;
   record NOT_REPLACEABLE "a non replaceable prefix" end NOT_REPLACEABLE;
 end Replaceable;
@@ -2251,11 +2251,11 @@ end ConnectorType;
 uniontype Prefixes "the common class or component prefixes"
   record PREFIXES "the common class or component prefixes"
     Visibility       visibility           "the protected/public prefix";
-    Redeclare        redeclarePrefix      "redeclare prefix";    
+    Redeclare        redeclarePrefix      "redeclare prefix";
     Final            finalPrefix          "final prefix, be it at the element or top level";
     Absyn.InnerOuter innerOuter           "the inner/outer/innerouter prefix";
     Replaceable      replaceablePrefix    "replaceable prefix";
-  end PREFIXES;      
+  end PREFIXES;
 end Prefixes;
 
 uniontype Element "- Elements
@@ -2265,13 +2265,13 @@ uniontype Element "- Elements
   CLASS      (for top/local class definitions)
   COMPONENT  (for local variables)
   DEFINEUNIT (for units)"
-  
+
   record IMPORT "an import element"
     Absyn.Import imp                 "the import definition";
-    Visibility   visibility          "the protected/public prefix";    
+    Visibility   visibility          "the protected/public prefix";
     Absyn.Info   info                "the import information";
-  end IMPORT;  
-  
+  end IMPORT;
+
   record EXTENDS "the extends element"
     Path baseClassPath               "the extends path";
     Visibility visibility            "the protected/public prefix";
@@ -2284,15 +2284,15 @@ uniontype Element "- Elements
     Ident   name                     "the name of the class";
     Prefixes prefixes                "the common class or component prefixes";
     Encapsulated encapsulatedPrefix  "the encapsulated prefix";
-    Partial partialPrefix            "the partial prefix";    
+    Partial partialPrefix            "the partial prefix";
     Restriction restriction          "the restriction of the class";
     ClassDef classDef                "the class specification";
     Absyn.Info info                  "the class information";
   end CLASS;
-  
+
   record COMPONENT "a component"
     Ident name                      "the component name";
-    Prefixes prefixes               "the common class or component prefixes";    
+    Prefixes prefixes               "the common class or component prefixes";
     Attributes attributes           "the component attributes";
     Absyn.TypeSpec typeSpec         "the type specification";
     Mod modifications               "the modifications to be applied to the component";
@@ -2307,7 +2307,7 @@ uniontype Element "- Elements
     Option<String> exp               "the unit expression";
     Option<Real> weight              "the weight";
   end DEFINEUNIT;
-  
+
 end Element;
 
 uniontype Attributes "- Attributes"
@@ -2340,7 +2340,7 @@ package SCodeDump
 end SCodeDump;
 
 package Util
-  
+
   uniontype DateTime
     record DATETIME
       Integer sec;
@@ -2350,8 +2350,8 @@ package Util
       Integer mon;
       Integer year;
     end DATETIME;
-  end DateTime;  
-  
+  end DateTime;
+
   function escapeModelicaStringToCString
     input String modelicaString;
     output String cString;
@@ -2370,9 +2370,9 @@ package Util
     input list<Integer> lst;
     output Integer i;
   end intProduct;
-  
+
   function splitTuple212List
-    replaceable type Type_b subtypeof Any; 
+    replaceable type Type_b subtypeof Any;
     input list<tuple<Type_a, Type_b>> inTplTypeATypeBLst;
     output list<Type_b> outTypeALst;
     replaceable type Type_a subtypeof Any;
@@ -2397,7 +2397,7 @@ package Util
 end Util;
 
 package List
-  function fill 
+  function fill
     input Type_a inTypeA;
     input Integer inInteger;
     output list<Type_a> outTypeALst;
@@ -2409,14 +2409,14 @@ package List
     output list<ElementType> outList;
     replaceable type ElementType subtypeof Any;
   end flatten;
-    
+
   function lengthListElements
     input list<list<Type_a>> inListList;
     output Integer outLength;
     replaceable type Type_a subtypeof Any;
   end lengthListElements;
 
-  function union 
+  function union
     input list<Type_a> inTypeALst1;
     input list<Type_a> inTypeALst2;
     output list<Type_a> outTypeALst;
@@ -2424,7 +2424,7 @@ package List
 
   end union;
 
-  function lastN 
+  function lastN
     input list<Type_a> inTypeALst1;
      input Integer inN;
     output list<Type_a> outTypeALst;
@@ -2446,7 +2446,7 @@ package List
     input list<Type_a> inList;
     output Integer outPosition;
   end position;
-  
+
   function splitEqualParts
     replaceable type Type_a subtypeof Any;
     input list<Type_a> inList;
@@ -2465,7 +2465,7 @@ package List
     input list<Type_a> inList;
     output list<Type_a> outParts;
   end restOrEmpty;
- 
+
 end List;
 
 package ComponentReference
@@ -2489,7 +2489,7 @@ package ComponentReference
     input DAE.ComponentRef inRef;
     output DAE.Type res;
   end crefLastType;
-  
+
   function crefTypeConsiderSubs
     input DAE.ComponentRef cr;
     output DAE.Type res;
@@ -2529,7 +2529,7 @@ package Expression
     input DAE.Type inType;
     output Boolean b;
   end isRealType;
- 
+
   function realExpIntLit
     input DAE.Exp exp;
     output Option<Integer> oi;
@@ -2584,11 +2584,11 @@ package Config
   function acceptMetaModelicaGrammar
     output Boolean outBoolean;
   end acceptMetaModelicaGrammar;
-  
+
   function acceptParModelicaGrammar
     output Boolean outBoolean;
   end acceptParModelicaGrammar;
-  
+
   function acceptOptimicaGrammar
     output Boolean outBoolean;
   end acceptOptimicaGrammar;
@@ -2600,7 +2600,7 @@ package Config
   function getRunningTestsuite
     output Boolean runningTestsuite;
   end getRunningTestsuite;
-  
+
   function getDefaultOpenCLDevice
   "Returns the id for the default OpenCL device to be used."
     output Integer defdevid;
@@ -2609,14 +2609,14 @@ package Config
   function simCodeTarget
     output String target;
   end simCodeTarget;
-  
+
   function simulationCodeTarget
   "@author: adrpo
    returns: 'gcc' or 'msvc'
    usage: omc [+target=gcc|msvc], default to 'gcc'."
     output String outCodeTarget;
   end simulationCodeTarget;
-    
+
 end Config;
 
 package Flags
@@ -2634,17 +2634,17 @@ package Flags
     input DebugFlag inFlag;
     output Boolean outValue;
   end isSet;
-  
+
   function getConfigInt
     input ConfigFlag inFlag;
     output Integer outValue;
   end getConfigInt;
-  
+
   function getConfigString
     input ConfigFlag inFlag;
     output String outValue;
   end getConfigString;
-  
+
   function configuredWithClang
     output Boolean yes;
   end configuredWithClang;
@@ -2741,7 +2741,7 @@ package BackendQSS
     input QSSinfo qssInfo;
     output BackendDAE.EquationArray eqs;
   end getEqs;
-  
+
   function generateHandler
     input BackendDAE.EquationArray eqs;
     input list<Integer> handlers;
@@ -2837,7 +2837,7 @@ package BackendVariable
     output Boolean outBoolean;
   end isStateVar;
 
-  function varIndex 
+  function varIndex
     input BackendDAE.Var inVar;
     output Integer outInteger;
   end varIndex;
@@ -2905,7 +2905,7 @@ package FMI
       list<Integer> fmiNumberOfEventIndicators;
     end INFO;
   end Info;
-  
+
   uniontype TypeDefinitions
     record ENUMERATIONTYPE
       String name;
@@ -2916,14 +2916,14 @@ package FMI
       list<EnumerationItem> items;
     end ENUMERATIONTYPE;
   end TypeDefinitions;
-  
+
   uniontype EnumerationItem
     record ENUMERATIONITEM
       String name;
       String description;
     end ENUMERATIONITEM;
   end EnumerationItem;
-  
+
   uniontype ExperimentAnnotation
     record EXPERIMENTANNOTATION
       Real fmiExperimentStartTime;
@@ -2949,7 +2949,7 @@ package FMI
       Integer y1Placement;
       Integer y2Placement;
     end REALVARIABLE;
-  
+
     record INTEGERVARIABLE
       Integer instance;
       String name;
@@ -2966,7 +2966,7 @@ package FMI
       Integer y1Placement;
       Integer y2Placement;
     end INTEGERVARIABLE;
-  
+
     record BOOLEANVARIABLE
       Integer instance;
       String name;
@@ -2983,7 +2983,7 @@ package FMI
       Integer y1Placement;
       Integer y2Placement;
     end BOOLEANVARIABLE;
-  
+
     record STRINGVARIABLE
       Integer instance;
       String name;
@@ -3000,7 +3000,7 @@ package FMI
       Integer y1Placement;
       Integer y2Placement;
     end STRINGVARIABLE;
-  
+
     record ENUMERATIONVARIABLE
       Integer instance;
       String name;
@@ -3037,12 +3037,12 @@ package FMI
       Boolean generateOutputConnectors;
     end FMIIMPORT;
   end FmiImport;
-  
+
   function getFMIType
     input Info inFMIInfo;
     output String fmiType;
   end getFMIType;
-  
+
   function getEnumerationFromTypes
     input list<TypeDefinitions> inTypeDefinitionsList;
     input String inBaseType;
@@ -3057,7 +3057,7 @@ package HpcOmSimCode
     input Integer iIdx;
     output SimCode.SimEqSystem oEq;
   end getSimCodeEqByIndex;
-  
+
   function analyzeOdeEquations
     input list<list<SimCode.SimEqSystem>> systems;
   end analyzeOdeEquations;
@@ -3085,7 +3085,7 @@ package HpcOmScheduler
     record TASKEMPTY //Dummy Task
     end TASKEMPTY;
   end Task;
-  
+
   uniontype ScheduleSimCode
     record LEVELSCHEDULESC
       list<list<Task>> tasksOfLevels;

@@ -136,8 +136,7 @@ match exp
   case UNBOX(__) then
     'unbox(<%dumpExp(exp, stringDelimiter)%>)'
   case SHARED_LITERAL(__) then
-    let ty_str = dumpType(ty)
-    '#SHARED_LITERAL_<%index%>(<%ty_str%>)#'
+    if typeinfo() then '/* Shared literal <%index%> */ <%dumpExp(exp, stringDelimiter)%>' else dumpExp(exp, stringDelimiter)
   case PATTERN(__) then dumpPattern(pattern)
   else errorMsg("ExpressionDumpTpl.dumpExp: Unknown expression.")
 end dumpExp;
@@ -570,8 +569,7 @@ match exp
   case UNBOX(__) then
     'unbox(<%dumpExp(exp, stringDelimiter)%>)'
   case SHARED_LITERAL(__) then
-    let ty_str = dumpType(ty)
-    '#SHARED_LITERAL_<%index%>(<%ty_str%>)#'
+    dumpExpCrefs(exp, stringDelimiter)
   case PATTERN(__) then dumpPattern(pattern)
   else errorMsg("ExpressionDumpTpl.dumpExp: Unknown expression.")
 end dumpExpCrefs;

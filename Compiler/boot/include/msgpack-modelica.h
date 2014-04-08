@@ -131,6 +131,11 @@ MSGPACK_MODELICA_STATIC_INLINE int msgpack_modelica_pack_false(void *packer)
   return msgpack_pack_false((msgpack_packer*)packer);
 }
 
+MSGPACK_MODELICA_STATIC_INLINE int msgpack_modelica_pack_nil(void *packer)
+{
+  return msgpack_pack_nil((msgpack_packer*)packer);
+}
+
 MSGPACK_MODELICA_STATIC_INLINE int msgpack_modelica_pack_double(void *packer, double value)
 {
   return msgpack_pack_double((msgpack_packer*)packer,value);

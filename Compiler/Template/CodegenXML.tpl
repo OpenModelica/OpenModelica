@@ -50,9 +50,9 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     <%bindingEquationsXml(modelInfo)%>
 
     <%equationsXml(allEquations, whenClauses)%>
- 
+
     <%initialEquationsXml(modelInfo)%>
-       
+
     <%algorithmicEquationsXml(allEquations)%>
 
     <%recordsXml(recordDecls)%>
@@ -68,7 +68,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
  /***********************************************************************************
  *      SECTION: GENERATE XML for MODEL DESCRIPTION AND SCALAR VARIABLES IN SIMULATION FILE
  *************************************************************************************/
- 
+
 template vendorAnnotationsXml(SimCode simCode)
 ::=
  match simCode
@@ -133,7 +133,7 @@ match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
   <<
   <ModelVariables>
-  <%vars.stateVars |> var => ScalarVariableXml(var) ;separator="\n"%> 
+  <%vars.stateVars |> var => ScalarVariableXml(var) ;separator="\n"%>
   <%vars.derivativeVars |> var => ScalarVariableXml(var) ;separator="\n"%>
   <%vars.algVars |> var => ScalarVariableXml(var) ;separator="\n"%>
   <%vars.intAlgVars |> var => ScalarVariableXml(var) ;separator="\n"%>
@@ -242,7 +242,7 @@ template variableCategoryXml(VarKind varKind)
   case CONST(__)        then "independentConstant"
   case EXTOBJ(__)       then 'externalObject_<%dotPathXml(fullClassName)%>'
   case JAC_VAR(__)      then "jacobianVar"
-  case JAC_DIFF_VAR(__) then "jacobianDiffVar" 
+  case JAC_DIFF_VAR(__) then "jacobianDiffVar"
   else error(sourceInfo(), "Unexpected simVarTypeName varKind")
 end variableCategoryXml;
 
@@ -604,7 +604,7 @@ case SIM_WHEN_CLAUSE(__) then
    <<
    <equ:When>
      <equ:Condition>
-       <%&cond%> 
+       <%&cond%>
      </equ:Condition>
      <%ifthen%>
    </equ:When>
@@ -693,7 +693,7 @@ template equationsXml( list<SimEqSystem> allEquationsPlusWhen,
     ;separator="\n")
   <<
   <equ:DynamicEquations>
-    <%&tmp%> 
+    <%&tmp%>
     <%eqs%>
     <%reinit%>
   </equ:DynamicEquations>
@@ -728,7 +728,7 @@ let alg =(statements |> stmt =>
 end equationAlgorithmXml;
 
  template initialEquationsXml(ModelInfo modelInfo)
- "Function for Inititial Equations." 
+ "Function for Inititial Equations."
 ::=
 match modelInfo
 case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars),vars=SIMVARS(__)) then
@@ -740,18 +740,18 @@ case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars),vars=SIMVARS(__)) then
     <%vars.intAlgVars |> var => initialEquationXml(var) ;separator="\n"%>
     <%vars.boolAlgVars |> var => initialEquationXml(var) ;separator="\n"%>
     <%vars.stringAlgVars |> var => initialEquationXml(var) ;separator="\n"%>
-  </equ:InitialEquations> 
+  </equ:InitialEquations>
   >>
 end initialEquationsXml;
 
  template initialEquationXml(SimVar var)
-   "Generates XML code for Inititial Equations."  
+   "Generates XML code for Inititial Equations."
  ::=
   match var
-    case SIMVAR(__) then 
+    case SIMVAR(__) then
     let identName = '<%crefXml(name)%>'
-    match initialValue 
-      case SOME(exp) then 
+    match initialValue
+      case SOME(exp) then
       let &varDecls = buffer "" /*BUFD*/
       let &preExp = buffer "" /*BUFD*/
          <<
@@ -761,7 +761,7 @@ end initialEquationsXml;
              <%daeExpXml(exp, contextOther, &preExp, &varDecls)%>
            </equ:Sub>
          </equ:Equation><%\n%>
-         >>      
+         >>
 end initialEquationXml;
 
  /*****************************************************************************
@@ -792,12 +792,12 @@ template equation_Xml(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, 
     then  equationArrayCallAssignXml(e, context, &varD /*BUFD*/)
   case e as SES_IFEQUATION(__)
     then 'IfEquation Assign Not implemente yet'
-  case e as SES_LINEAR(__) 
+  case e as SES_LINEAR(__)
     then  equationLinearXml(e, context, &varD /*BUFD*/)
-  case e as SES_NONLINEAR(__) 
+  case e as SES_NONLINEAR(__)
     then  equationNonlinearXml(e, context, &varD /*BUFD*/)
   case e as SES_WHEN(__)
-    then " " 
+    then " "
   else
     "NOT IMPLEMENTED EQUATION"
   let &eqs +=
@@ -844,7 +844,7 @@ case SES_SIMPLE_ASSIGN(__) then
   let result = if preExp then preExp else expPart
   <<
   <%crefXml(cref)%>
-  <%result%> 
+  <%result%>
   >>
 end equationSimpleAssignXml;
 
@@ -899,7 +899,7 @@ case SES_LINEAR(__) then
   <%beqs |> exp hasindex i0 =>
      let &preExp = buffer "" /*BUFD*/
      let expPart = daeExpXml(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-  '<%preExp%> 
+  '<%preExp%>
    <%expPart%>' ;separator="\n"%>
   >>
 end equationLinearXml;
@@ -954,7 +954,7 @@ match eq
       <<
       <equ:When>
         <equ:Condition>
-          <%cond%> 
+          <%cond%>
         </equ:Condition>
         <eq:Equation>
           <exp:Sub>
@@ -1071,7 +1071,7 @@ template recordDeclarationXml(RecordDeclaration recDecl)
     >>
   case RECORD_DECL_DEF(__) then
     <<
-      Record Declaration definition is not yet implemented 
+      Record Declaration definition is not yet implemented
     >>
 end recordDeclarationXml;
 
@@ -2761,7 +2761,7 @@ case rel as RELATION(__) then
     case LESSEQ(__)                        then
       <<
       <exp:LogLeq>
-        <%e1%> 
+        <%e1%>
         <%e2%>
       </exp:LogLeq>
       >>
@@ -3042,11 +3042,11 @@ case IFEXP(__) then
   let eThen = daeExpXml(expThen, context, &preExpThen, &varDecls /*BUFD*/)
   let &preExpElse = buffer ""
   let eElse = daeExpXml(expElse, context, &preExpElse, &varDecls /*BUFD*/)
-  let &preExp +=  
-  <<   
+  let &preExp +=
+  <<
   <fun:If>
     <fun:Condition>
-      <%condExp%> 
+      <%condExp%>
      </fun:Condition>
      <fun:Statements>
        <%eThen%>
@@ -3192,7 +3192,7 @@ template daeExpCallXml(Exp call, Context context, Text &preExp /*BUFP*/,
         <%argStr%>
       </exp:Sqrt>
       >>
-      
+
   case CALL(path=IDENT(name="div"), expLst={e1,e2}, attr=CALL_ATTR(ty = T_INTEGER(__))) then
     let var1 = daeExpXml(e1, context, &preExp, &varDecls)
     let var2 = daeExpXml(e2, context, &preExp, &varDecls)
@@ -3394,7 +3394,7 @@ template daeExpCallXml(Exp call, Context context, Text &preExp /*BUFP*/,
               <%funName%>
             </exp:Name>
             <exp:Arguments>
-              <%result%> 
+              <%result%>
             </exp:Arguments>
           </exp:FunctionCall>
           >>
@@ -3693,7 +3693,7 @@ end daeExpUnboxXml;
 template daeExpSharedLiteralXml(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
  "Generates code for a match expression."
 ::=
-match exp case exp as SHARED_LITERAL(__) then ''  
+match exp case exp as SHARED_LITERAL(__) then ''
 end daeExpSharedLiteralXml;
 
 // TODO: Optimize as in Codegen
@@ -3948,7 +3948,7 @@ template expTypeFromExpFlagXml(Exp exp, Integer flag)
   case METARECORDCALL(__)
   case BOX(__)           then match flag case 1 then "metatype" else "modelica_metatype"
   case c as UNBOX(__)    then expTypeFlagXml(c.ty, flag)
-  case c as SHARED_LITERAL(__) then expTypeFlagXml(c.ty, flag)
+  case c as SHARED_LITERAL(__) then expTypeFromExpFlagXml(c.exp, flag)
   else error(sourceInfo(), 'expTypeFromExpFlag:<%printExpStr(exp)%>')
 end expTypeFromExpFlagXml;
 

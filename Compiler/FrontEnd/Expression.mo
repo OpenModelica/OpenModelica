@@ -270,7 +270,7 @@ algorithm
         expl_1 = List.map(expl, unelabExp);
       then
         Absyn.TUPLE(expl_1);
-    
+
     case(DAE.CAST(_,e1)) equation
       ae1 = unelabExp(e1);
     then ae1;
@@ -279,7 +279,7 @@ algorithm
     case(DAE.ASUB(_,_)) equation
       print("Internal Error, can not unelab ASUB\n");
     then fail();
-      
+
     // TSUB(expression) => expression
     case(DAE.TSUB(e1,_,_)) equation
       ae1 = unelabExp(e1);
@@ -326,25 +326,25 @@ algorithm
       Absyn.ComponentRef c;
       DAE.Exp e;
       Absyn.Exp ae;
-    
+
     case (DAE.DIM_INTEGER(i)) then Absyn.SUBSCRIPT(Absyn.INTEGER(i));
-    
+
     case (DAE.DIM_BOOLEAN()) then Absyn.SUBSCRIPT(Absyn.CREF(Absyn.CREF_IDENT("Boolean", {})));
-    
+
     case (DAE.DIM_ENUM(enumTypeName = p))
-      equation 
-        c = Absyn.pathToCref(p); 
-      then 
+      equation
+        c = Absyn.pathToCref(p);
+      then
         Absyn.SUBSCRIPT(Absyn.CREF(c));
-    
+
     case (DAE.DIM_EXP(e))
-      equation 
+      equation
         ae = unelabExp(e);
-      then 
+      then
         Absyn.SUBSCRIPT(ae);
-  
+
     case (DAE.DIM_UNKNOWN()) then Absyn.NOSUB();
-      
+
   end match;
 end unelabDimension;
 
@@ -372,11 +372,11 @@ algorithm
       DAE.Exp e;
 
     case (DAE.DIM_INTEGER(i)) then Absyn.INTEGER(i);
-    
+
     case (DAE.DIM_EXP(e)) then unelabExp(e);
-  
+
     else Absyn.INTEGER(1); /* Probably bad, but only used with zero-length arrays */
-      
+
   end matchcontinue;
 end unelabDimensionToFillExp;
 
@@ -2095,7 +2095,7 @@ algorithm
     case (DAE.MATCHEXPRESSION(et=tp))
       then tp;
     case (DAE.UNBOX(ty = tp)) then tp;
-    case (DAE.SHARED_LITERAL(ty = tp)) then tp;
+    case (DAE.SHARED_LITERAL(exp = e)) then typeof(e);
 
     case e
       equation
@@ -2828,7 +2828,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.CHECK_DAE_CREF_TYPE);
         tExisting = ComponentReference.crefLastType(cref);
-        failure(equality(tGiven = tExisting)); 
+        failure(equality(tGiven = tExisting));
         Debug.traceln("Warning: Expression.makeCrefExp: cref " +& ComponentReference.printComponentRefStr(cref) +& " was given type DAE.CREF.ty: " +&
                       Types.unparseType(tGiven) +&
                       " is different from existing DAE.CREF.componentRef.ty: " +&
@@ -2961,7 +2961,7 @@ public function generateCrefsExpFromExp
   input DAE.Exp inExp;
   input DAE.ComponentRef inCrefPrefix;
   output DAE.Exp outCrefExp;
-algorithm 
+algorithm
   outCrefExp := match(inExp,inCrefPrefix)
     local
       String name;
@@ -2972,21 +2972,21 @@ algorithm
       list<DAE.Exp> explst;
       Boolean b;
       DAE.CallAttributes attr;
-      
+
     case (DAE.CREF(componentRef=DAE.WILD()), _) then inExp;
-      
-    case (DAE.ARRAY(ty=ty, scalar=b, array=explst), _) 
-      equation 
-        explst = List.map1(explst, generateCrefsExpFromExp, inCrefPrefix);  
+
+    case (DAE.ARRAY(ty=ty, scalar=b, array=explst), _)
+      equation
+        explst = List.map1(explst, generateCrefsExpFromExp, inCrefPrefix);
       then DAE.ARRAY(ty, b, explst);
-        
+
     case (DAE.CALL(path=p1,expLst=explst,attr=attr as DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(p2)))),_)
       equation
         true = Absyn.pathEqual(p1,p2) "is record constructor";
         explst = List.map1(explst, generateCrefsExpFromExp, inCrefPrefix);
       then
         DAE.CALL(p1,explst,attr);
-        
+
     case (DAE.CREF(componentRef=cr,ty=ty),_)
       equation
         name = ComponentReference.crefModelicaStr(cr);
@@ -3001,7 +3001,7 @@ public function generateCrefsExpLstFromExp
   input DAE.Exp inExp;
   input Option<DAE.ComponentRef> inCrefPrefix;
   output list<DAE.Exp> outCrefExpList;
-algorithm 
+algorithm
   outCrefExpList := match(inExp,inCrefPrefix)
     local
       String name;
@@ -3011,19 +3011,19 @@ algorithm
       Absyn.Path p1,p2;
       list<DAE.Exp> explst;
       Boolean b;
-      
-    case (DAE.ARRAY(ty=ty, scalar=_, array=explst), _) 
-      equation 
-        explst = List.flatten(List.map1(explst, generateCrefsExpLstFromExp, inCrefPrefix));  
+
+    case (DAE.ARRAY(ty=ty, scalar=_, array=explst), _)
+      equation
+        explst = List.flatten(List.map1(explst, generateCrefsExpLstFromExp, inCrefPrefix));
       then explst;
-        
+
     case (DAE.CALL(path=p1,expLst=explst,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(p2)))),_)
       equation
         true = Absyn.pathEqual(p1,p2) "is record constructor";
         explst = List.flatten(List.map1(explst, generateCrefsExpLstFromExp, inCrefPrefix));
       then
         explst;
-        
+
     case (DAE.CREF(componentRef=cr,ty=ty),SOME(incref))
       equation
         name = ComponentReference.crefModelicaStr(cr);
@@ -3031,7 +3031,7 @@ algorithm
         e = makeCrefExp(cr, ty);
       then
         {e};
-        
+
     case (DAE.CREF(componentRef=_,ty=ty),NONE()) then {inExp};
   end match;
 end generateCrefsExpLstFromExp;
@@ -3570,8 +3570,8 @@ algorithm
         true = isZero(e);
       then
         fail();
-        
-    // e2*e1/e for e = 0 => fail 
+
+    // e2*e1/e for e = 0 => fail
     case ({_,DAE.BINARY(exp1 = _,operator = DAE.DIV(ty = _),exp2 = e)})
       equation
         true = isZero(e);
@@ -4065,11 +4065,11 @@ algorithm
   outTpl := matchcontinue(tpl)
     local
       DAE.Exp e, e1, s, t;
-      
+
     case((e, (s, t))) equation
       ((e1, _)) = replaceExp(e, s, t);
     then ((e1, (s, t)));
-    
+
     else tpl;
   end matchcontinue;
 end replaceExpTpl;
@@ -6636,11 +6636,11 @@ algorithm
     case (DAE.SIZE(exp=e,sz=NONE()),_) then isConstWork(e,true);
 
     case (DAE.SIZE(exp=e1,sz=SOME(e2)),_) then isConstWork(e1,isConstWork(e2,true));
-    
+
     case (DAE.CALL(path=_,expLst=ae,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path=_)), tuple_=_, builtin=_, isImpure=false, inlineType=_,tailCall=_)),_) then isConstWorkList(ae,true);
-      
+
     case (DAE.RECORD(path=_,exps=ae,ty=_),_) then isConstWorkList(ae,true);
-      
+
       /*TODO:Make this work for multiple iters, guard exps*/
     case (DAE.REDUCTION(expr=e1,iterators={DAE.REDUCTIONITER(exp=e2)}),_)
       then isConstWork(e1,isConstWork(e2,true));
@@ -7188,11 +7188,11 @@ algorithm
     // any other call is a function call
     case (DAE.CALL(path = _)) then true;
 
-    // mahge: Commented out because it doesn't seem neccessary to 
+    // mahge: Commented out because it doesn't seem neccessary to
     // traverse all expressions. It is not needed (I think) and it
-    // is expensive because success here means exps will be elaborated 
+    // is expensive because success here means exps will be elaborated
     // again by InstSection.condenseArrayEquation for no apparent use.
-    
+
     // partial evaluation functions
     case (DAE.PARTEVALFUNCTION(path = _, expList = elst)) // stefan
       equation
@@ -7336,7 +7336,7 @@ algorithm
         true = containFunctioncall(e2);
       then
         true;
-    
+
     // anything else
     case (_) then false;
 
@@ -9862,7 +9862,7 @@ algorithm
         expl = List.map(crl, crefExp);
       then
         expl;
-        
+
     case DAE.ARRAY(array = expl, ty = DAE.T_ARRAY(ty = _))
       then List.mapFlat(expl, arrayElements);
 
@@ -9901,19 +9901,19 @@ algorithm
       list<DAE.Exp> exps;
       list<list<DAE.Exp>> expslst;
       Option<DAE.Exp> oe;
-      
-    case (Absyn.INTEGER(i)) then DAE.ICONST(i);  
+
+    case (Absyn.INTEGER(i)) then DAE.ICONST(i);
     case (Absyn.REAL(r)) then DAE.RCONST(r);
     case (Absyn.BOOL(b)) then DAE.BCONST(b);
     case (Absyn.STRING(s)) then DAE.SCONST(s);
-    
+
     case (Absyn.CREF(acr))
       equation
         cr = ComponentReference.toExpCref(acr);
-        e = makeCrefExp(cr, DAE.T_UNKNOWN_DEFAULT); 
+        e = makeCrefExp(cr, DAE.T_UNKNOWN_DEFAULT);
       then
         e;
-    
+
     case (Absyn.BINARY(ae1, aop, ae2))
       equation
         op = fromAbsynOperator(aop, DAE.T_UNKNOWN_DEFAULT);
@@ -9982,7 +9982,7 @@ algorithm
         e = DAE.PARTEVALFUNCTION(p, exps, DAE.T_UNKNOWN_DEFAULT);
       then
         e;
-  
+
     case (Absyn.ARRAY(aexps))
       equation
         exps = List.map(aexps, fromAbsynExp);
@@ -10016,10 +10016,10 @@ algorithm
 
     else
     equation
-      print("Expression.fromAbsynExp: Unhandled expression: " +& Dump.printExpStr(inAExp) +& "\n"); 
-    then 
-      fail(); 
-        
+      print("Expression.fromAbsynExp: Unhandled expression: " +& Dump.printExpStr(inAExp) +& "\n");
+    then
+      fail();
+
   end match;
 end fromAbsynExp;
 
@@ -10032,19 +10032,19 @@ algorithm
       list<DAE.Exp> exps;
       list<Absyn.NamedArg> nargs;
       list<Absyn.Exp> aexps;
-    
+
     case (Absyn.FUNCTIONARGS(aexps, {}))
       equation
         exps = List.map(aexps, fromAbsynExp);
       then
         exps;
-        
+
     case (Absyn.FUNCTIONARGS(_, _))
       equation
         print("Expression.fargsToExps: Named arguments are not handled!\n");
       then
         {};
-    
+
   end matchcontinue;
 end fargsToExps;
 
@@ -10056,19 +10056,19 @@ algorithm
     local
       Absyn.Exp ae;
       DAE.Exp e;
-    
+
     case (NONE()) then NONE();
-    
+
     case (SOME(ae))
       equation
         e = fromAbsynExp(ae);
       then
         SOME(e);
-  
+
   end match;
 end fromAbsynExpOpt;
 
-protected function fromAbsynOperator 
+protected function fromAbsynOperator
 "@author: adrpo"
  input Absyn.Operator aop;
  input DAE.Type ty;
@@ -10092,8 +10092,8 @@ algorithm
     case(Absyn.NEQUAL(), _) then DAE.NEQUAL(ty);
     else
     equation
-      print("Expression.fromAbsynOperator: Unhandled operator: " +& Dump.opSymbol(aop) +& "\n"); 
-    then 
+      print("Expression.fromAbsynOperator: Unhandled operator: " +& Dump.opSymbol(aop) +& "\n");
+    then
       fail();
   end match;
 end fromAbsynOperator;
@@ -10124,7 +10124,7 @@ public function replaceDerOpInExpTraverser
   der(cref) with a component reference $DER.cref. If an optional component
   reference is supplied, then only that component reference is replaced.
   Otherwise all calls to der are replaced.
-  
+
   This is done since some parts of the compiler can't handle der-calls, such as
   Derive.differentiateExpression. Ideally these parts should be fixed so that they can
   handle der-calls, but until that happens we just replace the der-calls with
@@ -10137,8 +10137,8 @@ algorithm
       DAE.ComponentRef cr, der_cr;
       DAE.Exp cref_exp;
       DAE.ComponentRef cref;
-      
-    case ((DAE.CALL(path = Absyn.IDENT("der"), expLst = {DAE.CREF(componentRef = cr)}), 
+
+    case ((DAE.CALL(path = Absyn.IDENT("der"), expLst = {DAE.CREF(componentRef = cr)}),
         SOME(cref)))
       equation
         der_cr = ComponentReference.crefPrefixDer(cr);
@@ -10146,8 +10146,8 @@ algorithm
         cref_exp = crefExp(der_cr);
       then
         ((cref_exp, SOME(cref)));
-        
-    case ((DAE.CALL(path = Absyn.IDENT("der"), expLst = {DAE.CREF(componentRef = cr)}), 
+
+    case ((DAE.CALL(path = Absyn.IDENT("der"), expLst = {DAE.CREF(componentRef = cr)}),
         NONE()))
       equation
         cr = ComponentReference.crefPrefixDer(cr);

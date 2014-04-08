@@ -113,7 +113,7 @@ algorithm
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
-      
+
     case (_::_,_,_,_,_,_,_)
       equation
         //  BackendDump.printEqSystem(isyst);
@@ -130,7 +130,7 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP, print, "Reduce Index\n");
         markarr = arrayCreate(size,-1);
         (syst,shared,ass1,ass2,arg,_) =
-         pantelidesIndexReduction1(unassignedStates,unassignedEqns,eqns,eqns_1,actualEqn,isyst,ishared,inAssignments1,inAssignments2,1,markarr,inArg,{});      
+         pantelidesIndexReduction1(unassignedStates,unassignedEqns,eqns,eqns_1,actualEqn,isyst,ishared,inAssignments1,inAssignments2,1,markarr,inArg,{});
         ErrorExt.rollBack("Pantelides");
         ErrorExt.setCheckpoint("Pantelides");
         // get from eqns indexes the scalar indexes
@@ -268,7 +268,7 @@ algorithm
       BackendDAE.Variables vars;
       list<tuple<Integer,Option<BackendDAE.Equation>,BackendDAE.Equation>> eqnstpl;
       list<tuple<list<Integer>,list<Integer>,list<Integer>>> notDiffableMSS;
-      
+
     case (_,_,_,_::_,_,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqnsarray),_,_,_,_,_,(so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,noofeqns),_)
       equation
         // get from scalar eqns indexes the indexes in the equation array
@@ -364,9 +364,9 @@ algorithm
       list<Integer> ilst,unassignedEqns,eqnsLst,discEqns,stateIndxs;
       list<list<Integer>> rest;
       Boolean b;
-    
+
     case ({},_,_,_,_,_,_,_,_,_,_,_,_,_) then (inEqnsLstAcc,inStateIndxsAcc,inUnassEqnsAcc,inDiscEqnsAcc);
-    
+
     case (ilst::rest,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         // print("Eqns " +& stringDelimitList(List.map(ilst,intString),", ") +& "\n");
@@ -380,7 +380,7 @@ algorithm
           minimalStructurallySingularSystemMSS(rest,isyst,ishared,inAssignments1,inAssignments2,inArg,statemark,mark+1,m,vars,eqnsLst::inEqnsLstAcc,stateIndxs::inStateIndxsAcc,unassignedEqns::inUnassEqnsAcc,discEqns);
      then
        (outEqnsLst,outStateIndxs,outUnassEqnsAcc,outDiscEqns);
-  
+
   end match;
 end minimalStructurallySingularSystemMSS;
 
@@ -404,10 +404,10 @@ algorithm
       list<Integer> eqns1;
       BackendDAE.EqSystem syst;
       array<Integer> mapIncRowEqn;
-    
+
     // OK
     case (true,_,_,_::_,_,_,_,_,_) then ();
-    
+
     // Failure
     case (_,_,_,{},_,_,_,_,(_,_,_,mapIncRowEqn,_))
       equation
@@ -421,7 +421,7 @@ algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {"IndexReduction.pantelidesIndexReduction failed! Found empty set of continues equations. Use +d=bltdump to get more information."});
       then
         fail();
-    
+
     case (false,_,_,_::_,_,_,_,_,(_,_,_,mapIncRowEqn,_))
       equation
         Debug.fcall(Flags.BLT_DUMP, print, "Reduce Index failed! System is structurally singulare and cannot handled because number of unassigned continues equations is larger than number of states.\nmarked equations:\n");
@@ -438,7 +438,7 @@ algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {"IndexReduction.pantelidesIndexReduction failed! System is structurally singulare and cannot handled because number of unassigned equations is larger than number of states. Use +d=bltdump to get more information."});
       then
         fail();
-  
+
   end match;
 end singulareSystemError;
 
@@ -734,7 +734,7 @@ algorithm
       Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst, (inNextEqns,intString," ","\n"));
       (eqntpl, shared) = differentiateSetEqns(inNextEqns,{},vars,eqns,ass1,mapIncRowEqn,mark,markarr,ishared,inEqnTpl);
       then
-        (eqntpl, shared);  
+        (eqntpl, shared);
     case (e::es,_,_,_,_,_,_,_,_,_)
       equation
         e_1 = e - 1;
@@ -4327,7 +4327,7 @@ algorithm
       BackendDAE.BackendDAEType btp;
       list<BackendDAE.TimeEvent> timeEvents;
       BackendDAE.ExtraInfo ei;
-      
+
     case (BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,BackendDAE.EVENT_INFO(timeEvents,whenClauseLst,zeroCrossingLst,sampleLst,relationsLst,numberOfRelations,numberOfMathEventFunctions),eoc,btp,symjacs,ei),_)
       equation
         // replace dummy_derivatives in knvars,aliases,ineqns,remeqns
@@ -4338,7 +4338,7 @@ algorithm
         (whenClauseLst1,_) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,replaceDummyDerivatives,ht);
       then
         BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,BackendDAE.EVENT_INFO(timeEvents,whenClauseLst1,zeroCrossingLst,sampleLst,relationsLst,numberOfRelations,numberOfMathEventFunctions),eoc,btp,symjacs,ei);
-  
+
   end match;
 end replaceDummyDerivativesShared;
 

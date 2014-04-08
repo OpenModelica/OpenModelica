@@ -370,7 +370,7 @@ package DAE
 
     record SHARED_LITERAL
       Integer index;
-      Type ty;
+      Exp exp;
     end SHARED_LITERAL;
 
     record PATTERN

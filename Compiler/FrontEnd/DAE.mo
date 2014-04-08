@@ -586,7 +586,7 @@ public
 uniontype Statement "There are four kinds of statements:
     1. assignments ('a := b;')
     2. if statements ('if A then B; elseif C; else D;')
-    3. for loops ('for i in 1:10 loop ...; end for;') 
+    3. for loops ('for i in 1:10 loop ...; end for;')
     4. when statements ('when E do S; end when;')"
   record STMT_ASSIGN
     Type type_;
@@ -1162,7 +1162,7 @@ uniontype Exp "Expressions
   The 'Exp' datatype closely corresponds to the 'Absyn.Exp' datatype, but
   is used for statically analyzed expressions. It includes explicit type
   promotions and typed (non-overloaded) operators. It also contains expression
-  indexing with the 'ASUB' constructor. Indexing arbitrary array expressions 
+  indexing with the 'ASUB' constructor. Indexing arbitrary array expressions
   is currently not supported in Modelica, but it is needed here.
 
   When making additions, update at least the following functions:
@@ -1170,7 +1170,7 @@ uniontype Exp "Expressions
   * Expression.traverseExpTopDown
   * Expression.traverseExpBiDir
   * ExpressionDump.printExpStr"
-  
+
   record ICONST
     Integer integer "Integer constants" ;
   end ICONST;
@@ -1374,8 +1374,8 @@ uniontype Exp "Expressions
     with a SHARED_LITERAL expression. Any immutable type can be shared:
     basic MetaModelica types and Modelica strings are fine. There is no point
     to share Real, Integer, Boolean or Enum though."
-    Integer index;
-    Type ty "The type is required for code generation to work properly";
+    Integer index "A unique indexing that can be used to point to a single shared literal in generated code";
+    Exp exp "For printing strings, code generators that do not support this kind of literal, or for getting the type in case the code generator needs that";
   end SHARED_LITERAL;
 
   record PATTERN "(x,1,ROOT(a as _,false,_)) := rhs; MetaModelica extension"
@@ -1687,7 +1687,7 @@ uniontype Subscript "The `Subscript\' and `ComponentRef\' datatypes are simple
 end Subscript;
 /* -- End Expression.mo -- */
 
-public 
+public
 uniontype Expand "array cref expansion strategy"
   record EXPAND     "expand crefs"     end EXPAND;
   record NOT_EXPAND "not expand crefs" end NOT_EXPAND;

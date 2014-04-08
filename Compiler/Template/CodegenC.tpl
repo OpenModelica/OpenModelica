@@ -81,7 +81,7 @@ template translateModel(SimCode simCode)
     //        the .c file is newer than the .o file if we have succesive simulate commands
     //        for the same model (i.e. see testsuite/linearize/simextfunction.mos).
     let _ = generateSimulationFiles(simCode,guid,fileNamePrefix)
-    
+
 
     // If ParModelica generate the kernels file too.
     if acceptParModelicaGrammar() then
@@ -138,7 +138,7 @@ template generateSimulationFiles(SimCode simCode, String guid, String modelNameP
      let()= textFileConvertLines(simulationFile_lsy(simCode,guid), '<%fileNamePrefix%>_03lsy.c')
      // state set
      let()= textFileConvertLines(simulationFile_set(simCode,guid), '<%fileNamePrefix%>_04set.c')
-     // events: sample, zero crossings, relations 
+     // events: sample, zero crossings, relations
      let()= textFileConvertLines(simulationFile_evt(simCode,guid), '<%fileNamePrefix%>_05evt.c')
      // initialization
      let()= textFileConvertLines(simulationFile_inz(simCode,guid), '<%fileNamePrefix%>_06inz.c')
@@ -179,7 +179,7 @@ template simulationFile_exo(SimCode simCode, String guid)
     #if defined(__cplusplus)
     extern "C" {
     #endif
-    
+
     <%functionCallExternalObjectConstructors(extObjInfo, modelNamePrefix(simCode))%>
 
     <%functionCallExternalObjectDestructors(extObjInfo, modelNamePrefix(simCode))%>
@@ -189,7 +189,7 @@ template simulationFile_exo(SimCode simCode, String guid)
     <%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
-  end match    
+  end match
 end simulationFile_exo;
 
 template simulationFile_nls(SimCode simCode, String guid)
@@ -214,7 +214,7 @@ template simulationFile_nls(SimCode simCode, String guid)
     <%functionNonLinearResiduals(jacobianEquations,modelNamePrefixStr)%>
 
     <%functionInitialNonLinearSystems(initialEquations, inlineEquations, parameterEquations, allEquations, jacobianEquations, modelNamePrefixStr)%>
-    
+
     #if defined(__cplusplus)
     }
     #endif
@@ -238,9 +238,9 @@ template simulationFile_lsy(SimCode simCode, String guid)
     #endif
 
     <%functionSetupLinearSystems(initialEquations, inlineEquations, parameterEquations, allEquations, jacobianEquations)%>
-    
+
     <%functionInitialLinearSystems(initialEquations, inlineEquations, parameterEquations, allEquations, jacobianEquations, modelNamePrefix(simCode))%>
-    
+
     #if defined(__cplusplus)
     }
     #endif
@@ -264,7 +264,7 @@ template simulationFile_set(SimCode simCode, String guid)
     extern "C" {
     #endif
     <%functionInitialStateSets(stateSets, modelNamePrefix(simCode))%>
-    
+
     #if defined(__cplusplus)
     }
     #endif
@@ -287,13 +287,13 @@ template simulationFile_evt(SimCode simCode, String guid)
     #endif
 
     <%functionInitSample(timeEvents, modelNamePrefix(simCode))%>
-    
+
     <%functionZeroCrossing(zeroCrossings, equationsForZeroCrossings, modelNamePrefix(simCode))%>
 
     <%functionRelations(relations, modelNamePrefix(simCode))%>
 
     <%functionCheckForDiscreteChanges(discreteModelVars, modelNamePrefix(simCode))%>
-    
+
     #if defined(__cplusplus)
     }
     #endif
@@ -316,12 +316,12 @@ template simulationFile_inz(SimCode simCode, String guid)
     #if defined(__cplusplus)
     extern "C" {
     #endif
-    
+
     <%functionInitialResidual(residualEquations, modelNamePrefix(simCode))%>
-    <%functionInitialEquations(useSymbolicInitialization, initialEquations, modelNamePrefix(simCode))%>    
+    <%functionInitialEquations(useSymbolicInitialization, initialEquations, modelNamePrefix(simCode))%>
 
     <%functionInitialMixedSystems(initialEquations, inlineEquations, parameterEquations, allEquations, jacobianEquations, modelNamePrefix(simCode))%>
-    
+
     #if defined(__cplusplus)
     }
     #endif
@@ -342,16 +342,16 @@ template simulationFile_dly(SimCode simCode, String guid)
     #if defined(__cplusplus)
     extern "C" {
     #endif
-    
+
     <%functionStoreDelayed(delayedExps, modelNamePrefix(simCode))%>
-        
+
     #if defined(__cplusplus)
     }
     #endif
     <%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
-  end match    
+  end match
 end simulationFile_dly;
 
 template simulationFile_eqs(SimCode simCode, String guid)
@@ -363,13 +363,13 @@ template simulationFile_eqs(SimCode simCode, String guid)
     <<
     /* Equations */
     <%simulationFileHeader(simCode)%>
-    
+
     <%functionInlineEquations(inlineEquations,modelNamePrefixStr)%>
-        
+
     <%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
-  end match    
+  end match
 end simulationFile_eqs;
 
 template simulationFile_bnd(SimCode simCode, String guid)
@@ -383,18 +383,18 @@ template simulationFile_bnd(SimCode simCode, String guid)
     #if defined(__cplusplus)
     extern "C" {
     #endif
-    
+
     <%functionUpdateBoundVariableAttributes(startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations, modelNamePrefix(simCode))%>
 
     <%functionUpdateBoundParameters(parameterEquations, modelNamePrefix(simCode))%>
-        
+
     #if defined(__cplusplus)
     }
     #endif
     <%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
-  end match    
+  end match
 end simulationFile_bnd;
 
 template simulationFile_alg(SimCode simCode, String guid)
@@ -405,13 +405,13 @@ template simulationFile_alg(SimCode simCode, String guid)
     <<
     /* Algebraic */
     <%simulationFileHeader(simCode)%>
-    
+
     #ifdef __cplusplus
     extern "C" {
     #endif
-    
-    <%functionAlgebraic(algebraicEquations, modelNamePrefix(simCode))%>    
-    
+
+    <%functionAlgebraic(algebraicEquations, modelNamePrefix(simCode))%>
+
     #ifdef __cplusplus
     }
     #endif<%\n%>
@@ -432,8 +432,8 @@ template simulationFile_asr(SimCode simCode, String guid)
     extern "C" {
     #endif
 
-    <%functionAssertsforCheck(algorithmAndEquationAsserts, modelNamePrefix(simCode))%>    
-        
+    <%functionAssertsforCheck(algorithmAndEquationAsserts, modelNamePrefix(simCode))%>
+
     #if defined(__cplusplus)
     }
     #endif
@@ -454,7 +454,7 @@ template simulationFile_mix(SimCode simCode, String guid, Text &header)
     <%simulationFileHeader(simCode)%>
     #include "<%simCode.fileNamePrefix%>_11mix.h"
     <%functionSetupMixedSystems(initialEquations, inlineEquations, parameterEquations, allEquations, jacobianEquations, &header, modelNamePrefixStr)%>
-        
+
     <%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
@@ -471,7 +471,7 @@ template simulationFile_jac(SimCode simCode, String guid)
     <%simulationFileHeader(simCode)%>
     #include "<%fileNamePrefix%>_12jac.h"
     <%functionAnalyticJacobians(jacobianMatrixes, modelNamePrefix(simCode))%>
-        
+
     <%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
@@ -547,7 +547,7 @@ template simulationFile_lnz(SimCode simCode, String guid)
     extern "C" {
     #endif
 
-    <%functionlinearmodel(modelInfo, modelNamePrefix(simCode))%>    
+    <%functionlinearmodel(modelInfo, modelNamePrefix(simCode))%>
     #if defined(__cplusplus)
     }
     #endif
@@ -571,8 +571,8 @@ template simulationFile(SimCode simCode, String guid)
       res = _main_SimulationRuntime(argc, argv, &simulation_data);
       >>
     <<
-    /* Main Simulation File */    
-    <%simulationFileHeader(simCode)%>  
+    /* Main Simulation File */
+    <%simulationFileHeader(simCode)%>
 
     #define prefixedName_performSimulation <%symbolName(modelNamePrefixStr,"performSimulation")%>
     #include <simulation/solver/perform_simulation.c>
@@ -596,7 +596,7 @@ template simulationFile(SimCode simCode, String guid)
     <%functionDAE(allEquations, whenClauses, modelNamePrefixStr)%>
 
     <%functionODE(odeEquations,(match simulationSettingsOpt case SOME(settings as SIMULATION_SETTINGS(__)) then settings.method else ""),hpcOmSchedule, modelNamePrefixStr)%>
-    
+
     /* forward the main in the simulation runtime */
     extern int _main_SimulationRuntime(int argc, char**argv, DATA *data);
 
@@ -636,7 +636,7 @@ template simulationFile(SimCode simCode, String guid)
     extern const char* <%symbolName(modelNamePrefixStr,"linear_model_frame")%>(void);
     extern int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real* res);
     extern int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real* res);
-    extern int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start, modelica_real * startTimeOpt); 
+    extern int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start, modelica_real * startTimeOpt);
 
     struct OpenModelicaGeneratedFunctionCallbacks <%symbolName(modelNamePrefixStr,"callback")%> = {
        (int (*)(DATA *, void *)) <%symbolName(modelNamePrefixStr,"performSimulation")%>,
@@ -715,7 +715,7 @@ template simulationFile(SimCode simCode, String guid)
       DATA simulation_data;
       <%mainInit%>
       <%mainTop(mainBody,"https://trac.openmodelica.org/OpenModelica/newticket")%>
-      
+
       <%if Flags.isSet(HPCOM) then "terminateHpcOmThreads();" %>
       fflush(NULL);
       EXIT(res);
@@ -778,27 +778,27 @@ template simulationFileHeader(SimCode simCode)
 
     #include <assert.h>
     #include <string.h>
-  
+
     #include "<%fileNamePrefix%>_functions.h"
     #include "<%fileNamePrefix%>_model.h"
     #include "<%fileNamePrefix%>_literals.h"
 
-    <%if stringEq(getConfigString(HPCOM_CODE),"pthreads_spin") then "#include \"util/omc_spinlock.h\""%> 
+    <%if stringEq(getConfigString(HPCOM_CODE),"pthreads_spin") then "#include \"util/omc_spinlock.h\""%>
 
     <%if Flags.isSet(HPCOM) then "#define HPCOM"%>
-    
+
     #if defined(HPCOM) && !defined(_OPENMP)
       #error "HPCOM requires OpenMP or the results are wrong"
     #endif
     #if defined(_OPENMP)
       #include <omp.h>
     #else
-      /* dummy omp defines */ 
-      #define omp_get_max_threads() 1 
+      /* dummy omp defines */
+      #define omp_get_max_threads() 1
     #endif
-        
+
     #define threadData data->threadData
-    
+
     >>
   end match
 end simulationFileHeader;
@@ -942,17 +942,17 @@ template variableDefinitions(ModelInfo modelInfo, list<BackendDAE.TimeEvent> tim
       <%vars.derivativeVars |> var =>
         globalDataVarDefine(var, "realVars", numStateVars)
       ;separator="\n"%>
-      
+
       /* Algebraic Vars */
       <%vars.algVars |> var =>
         globalDataVarDefine(var, "realVars", intMul(2, numStateVars) )
       ;separator="\n"%>
-      
+
       /* Nonlinear Constraints For Optimization */
       <%vars.realOptimizeConstraintsVars |> var =>
         globalDataVarDefine(var, "realVars", intAdd(intMul(2, numStateVars),numAlgVars))
       ;separator="\n"%>
-      
+
       /* InlineSolver Vars */
       <%vars.inlineVars |> var =>
         globalDataVarDefine(var, "inlineVars", 0)
@@ -1191,10 +1191,10 @@ template jacobianVarDefine(SimVar simVar, String array, Integer indexJac, Intege
         #define _<%cref(name)%>(i) data->simulationInfo.analyticJacobians[<%indexJac%>].tmpVars[<%index0%>]
         #define <%cref(name)%> _<%cref(name)%>(0)
         #define <%cref(name)%>__varInfo dummyVAR_INFO
-        #define $P$ATTRIBUTE<%cref(name)%> dummyREAL_ATTRIBUTE 
+        #define $P$ATTRIBUTE<%cref(name)%> dummyREAL_ATTRIBUTE
         >>
       case _ then
-        << 
+        <<
         #define _<%cref(name)%>(i) data->simulationInfo.analyticJacobians[<%indexJac%>].resultVars[<%index%>]
         #define <%cref(name)%> _<%cref(name)%>(0)
         #define <%cref(name)%>__varInfo dummyVAR_INFO
@@ -1316,7 +1316,7 @@ template functionInput(ModelInfo modelInfo, String modelNamePrefix)
       ;separator="\n"%>
       return 0;
     }
-    
+
     int <%symbolName(modelNamePrefix,"input_function_init")%>(DATA *data)
     {
       <%vars.inputVars |> SIMVAR(__) hasindex i0 =>
@@ -1796,7 +1796,7 @@ template functionUpdateBoundVariableAttributes(list<SimEqSystem> startValueEquat
 
     /* min ******************************************************** */
     <%minEqPart%>
-    
+
     infoStreamPrint(LOG_INIT, 1, "updating min-values");
     <%minValueEquations |> SES_SIMPLE_ASSIGN(__) =>
       <<
@@ -1805,10 +1805,10 @@ template functionUpdateBoundVariableAttributes(list<SimEqSystem> startValueEquat
       >>
     ;separator="\n"%>
     if (ACTIVE_STREAM(LOG_INIT)) messageClose(LOG_INIT);
-    
+
     /* max ******************************************************** */
     <%maxEqPart%>
-    
+
     infoStreamPrint(LOG_INIT, 1, "updating max-values");
     <%maxValueEquations |> SES_SIMPLE_ASSIGN(__) =>
       <<
@@ -1817,10 +1817,10 @@ template functionUpdateBoundVariableAttributes(list<SimEqSystem> startValueEquat
       >>
     ;separator="\n"%>
     if (ACTIVE_STREAM(LOG_INIT)) messageClose(LOG_INIT);
-    
+
     /* nominal **************************************************** */
     <%nominalEqPart%>
-    
+
     infoStreamPrint(LOG_INIT, 1, "updating nominal-values");
     <%nominalValueEquations |> SES_SIMPLE_ASSIGN(__) =>
       <<
@@ -1829,10 +1829,10 @@ template functionUpdateBoundVariableAttributes(list<SimEqSystem> startValueEquat
       >>
     ;separator="\n"%>
     if (ACTIVE_STREAM(LOG_INIT)) messageClose(LOG_INIT);
-    
+
     /* start ****************************************************** */
     <%startEqPart%>
-    
+
     infoStreamPrint(LOG_INIT, 1, "updating start-values");
     <%startValueEquations |> SES_SIMPLE_ASSIGN(__) =>
       <<
@@ -1856,7 +1856,7 @@ template functionUpdateBoundParameters(list<SimEqSystem> parameterEquations, Str
   let body = (parameterEquations |> eq  =>
     '<%equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &tmp, modelNamePrefix)%>'
     ;separator="\n")
-    
+
   <<
   <%&tmp%>
   int <%symbolName(modelNamePrefix,"updateBoundParameters")%>(DATA *data)
@@ -1946,10 +1946,10 @@ template functionInitialEquations(Boolean useSymbolicInitialization, list<SimEqS
 ::=
   let () = System.tmpTickReset(0)
   let &varDecls = buffer "" /*BUFD*/
-    
+
   let &eqfuncs = buffer ""
   let &eqArray = buffer ""
-  let fncalls = if Flags.isSet(Flags.OPENMP) then 
+  let fncalls = if Flags.isSet(Flags.OPENMP) then
                 (initalEquations |> eq hasindex i0 =>
                     equation_arrayFormat(eq, "InitialEquations", contextSimulationDiscrete, i0, &varDecls /*BUFD*/, &eqArray, &eqfuncs, modelNamePrefix)
                     ;separator="\n")
@@ -1957,23 +1957,23 @@ template functionInitialEquations(Boolean useSymbolicInitialization, list<SimEqS
                 (initalEquations |> eq hasindex i0 =>
                     equation_(eq, contextSimulationDiscrete, &varDecls /*BUFC*/, &eqfuncs, modelNamePrefix)
                     ;separator="\n")
-  
-  let eqArrayDecl = if Flags.isSet(Flags.OPENMP) then 
+
+  let eqArrayDecl = if Flags.isSet(Flags.OPENMP) then
                 <<
                 static void (*functionInitialEquations_systems[<%listLength(initalEquations)%>])(DATA *) = {
                     <%eqArray%>
                 };
                 >>
               else
-                "" 
+                ""
 
   let errorMsg = if not useSymbolicInitialization then 'errorStreamPrint(LOG_INIT, 0, "The symbolic initialization was not generated.");'
 
   <<
   <%eqfuncs%>
-  
+
   <%eqArrayDecl%>
-  
+
   int <%symbolName(modelNamePrefix,"functionInitialEquations")%>(DATA *data)
   {
     <%varDecls%>
@@ -2103,9 +2103,9 @@ template functionWhenReinitStatementThen(Boolean initialCall, list<WhenOperator>
            'copy_real_array_data_mem(<%val%>, &<%cref(stateVar)%>);'
          else
            '<%cref(stateVar)%> = <%val%>;'
-      let needToIterate = 
+      let needToIterate =
         if not initialCall then
-          "data->simulationInfo.needToIterate = 1;"         
+          "data->simulationInfo.needToIterate = 1;"
       <<
       infoStreamPrint(LOG_EVENTS, 0, "reinit <%cref(stateVar)%>  = %f", <%val%>);
       <%preExp%>
@@ -2162,13 +2162,13 @@ template functionXXX_systems_HPCOM(list<list<SimEqSystem>> eqs, String name, Tex
  let funcs = (eqs |> eq hasindex i0 fromindex 0 => functionXXX_system_HPCOM(eq,name,i0,hpcOmScheduleOpt, modelNamePrefixStr) ; separator="\n")
  match listLength(eqs)
      case 0 then //empty case
-       let &loop += 
+       let &loop +=
            <<
            /* no <%name%> systems */
-           >> 
-       ""    
+           >>
+       ""
      case 1 then //1 function
-       let &loop += 
+       let &loop +=
            <<
            function<%name%>_system0(data);
            >>
@@ -2202,14 +2202,14 @@ end functionXXX_systems_HPCOM;
 template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String name, Integer n, Option<ScheduleSimCode> hpcOmScheduleOpt, String modelNamePrefixStr)
 ::=
   let type = getConfigString(HPCOM_CODE)
-  match hpcOmScheduleOpt 
+  match hpcOmScheduleOpt
     case SOME(hpcOmSchedule as TASKDEPSCHEDULESC(__)) then
       let taskEqs = functionXXX_system0_HPCOM_TaskDep(hpcOmSchedule.tasks, derivativEquations, type, name, modelNamePrefixStr); separator="\n"
       <<
       void terminateHpcOmThreads()
       {
       }
-      
+
       //using type: <%type%>
       void function<%name%>_system<%n%>(DATA *data)
       {
@@ -2222,7 +2222,7 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
       void terminateHpcOmThreads()
       {
       }
-      
+
       //using type: <%type%>
       void function<%name%>_system<%n%>(DATA *data)
       {
@@ -2233,14 +2233,14 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
       let locks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_createLock(idx, "lock", type); separator="\n"
       let initlocks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_initializeLock(idx, "lock", type); separator="\n"
       let assignLocks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_assignLock(idx, "lock", type); separator="\n"
-      match type 
+      match type
         case ("openmp") then
           let taskEqs = functionXXX_system0_HPCOM_Thread(derivativEquations,name,hpcOmSchedule.threadTasks, type, modelNamePrefixStr); separator="\n"
           <<
           void terminateHpcOmThreads()
           {
           }
-          
+
           //using type: <%type%>
           static int initialized = 0;
           void function<%name%>_system<%n%>(DATA *data)
@@ -2251,13 +2251,13 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
             if(!initialized)
             {
                 <%initlocks%>
-                
+
                 //set locks
                 <%assignLocks%>
-                
+
                 initialized = 1;
             }
-            
+
             <%taskEqs%>
           }
           >>
@@ -2266,7 +2266,7 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
           let threadFuncs = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_func(derivativEquations, name, n, hpcOmSchedule.threadTasks, type, i0, modelNamePrefixStr); separator="\n"
           let threadFuncCalls = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_call(name, n, i0); separator="\n"
           let threadStart = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_start(i0); separator="\n"
-          
+
           let threadLocks = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_createLock(i0, "th_lock", type); separator="\n"
           let threadLocks1 = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_createLock(i0, "th_lock1", type); separator="\n"
           let threadLocksInit = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_initializeLock(i0, "th_lock", type); separator="\n"
@@ -2274,17 +2274,17 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
           let threadAssignLocks = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_assignLock(i0, "th_lock", type); separator="\n"
           let threadAssignLocks1 = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_assignLock(i0, "th_lock1", type); separator="\n"
           let threadReleaseLocks = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_releaseLock(i0, "th_lock", type); separator="\n"
-          
+
           <<
           static int finished; //set to 1 if the hpcom-threads should be destroyed
-          
+
           <%threadDecl%>
-          
+
           <%locks%>
-          
+
           <%threadLocks%>
           <%threadLocks1%>
-          
+
           void terminateHpcOmThreads()
           {
             finished = 1;
@@ -2292,9 +2292,9 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
             //Start the threads one last time
             <%threadReleaseLocks%>
           }
-          
+
           <%threadFuncs%>
-          
+
           //using type: <%type%>
           static int initialized = 0;
           void function<%name%>_system<%n%>(DATA *data)
@@ -2304,20 +2304,20 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
                 <%initlocks%>
                 <%threadLocksInit%>
                 <%threadLocksInit1%>
-                
+
                 //set locks
                 <%assignLocks%>
-                
+
                 <%threadAssignLocks%>
                 <%threadAssignLocks1%>
-                
+
                 <%threadFuncCalls%>
                 initialized = 1;
             }
-            
+
             //Start the threads
             <%threadReleaseLocks%>
-            
+
             //"join"
             <%threadAssignLocks1%>
           }
@@ -2327,7 +2327,7 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
           let threadFuncs = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_func(derivativEquations, name, n, hpcOmSchedule.threadTasks, type, i0, modelNamePrefixStr); separator="\n"
           let threadFuncCalls = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_call(name, n, i0); separator="\n"
           let threadStart = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_start(i0); separator="\n"
-          
+
           let threadLocks = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_createLock(i0, "th_lock", "pthreads"); separator="\n"
           let threadLocks1 = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_createLock(i0, "th_lock1", "pthreads"); separator="\n"
           let threadLocksInit = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_initializeLock(i0, "th_lock", "pthreads"); separator="\n"
@@ -2335,17 +2335,17 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
           let threadAssignLocks = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_assignLock(i0, "th_lock", "pthreads"); separator="\n"
           let threadAssignLocks1 = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_assignLock(i0, "th_lock1", "pthreads"); separator="\n"
           let threadReleaseLocks = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_releaseLock(i0, "th_lock", "pthreads"); separator="\n"
-          
+
           <<
           static int finished; //set to 1 if the hpcom-threads should be destroyed
-          
+
           <%threadDecl%>
-          
+
           <%locks%>
-          
+
           <%threadLocks%>
           <%threadLocks1%>
-          
+
           void terminateHpcOmThreads()
           {
             finished = 1;
@@ -2353,9 +2353,9 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
             //Start the threads one last time
             <%threadReleaseLocks%>
           }
-          
+
           <%threadFuncs%>
-          
+
           //using type: <%type%>
           static int initialized = 0;
           void function<%name%>_system<%n%>(DATA *data)
@@ -2363,29 +2363,29 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
             if(!initialized)
             {
                 finished = 0;
-                
+
                 <%initlocks%>
                 <%threadLocksInit%>
                 <%threadLocksInit1%>
-                
+
                 //set locks
                 <%assignLocks%>
-                
+
                 <%threadAssignLocks%>
                 <%threadAssignLocks1%>
-                
+
                 <%threadFuncCalls%>
                 initialized = 1;
             }
-            
+
             //Start the threads
             <%threadReleaseLocks%>
-            
+
             //"join"
             <%threadAssignLocks1%>
           }
           >>
-   
+
 end functionXXX_system_HPCOM;
 
 template functionXXX_system0_HPCOM_Level(list<SimEqSystem> derivativEquations, String name, list<Task> tasksOfLevel, String iType, String modelNamePrefixStr)
@@ -2415,7 +2415,7 @@ template functionXXX_system0_HPCOM_TaskDep(list<tuple<Task,list<Integer>>> tasks
 ::=
   let odeEqs = tasks |> t => functionXXX_system0_HPCOM_TaskDep0(t,derivativEquations, iType, name, modelNamePrefixStr); separator="\n"
   <<
-  
+
   int t[0];
   #pragma omp parallel
   {
@@ -2429,7 +2429,7 @@ end functionXXX_system0_HPCOM_TaskDep;
 
 template functionXXX_system0_HPCOM_TaskDep0(tuple<Task,list<Integer>> taskIn, list<SimEqSystem> derivativEquations, String iType, String name, String modelNamePrefixStr)
 ::=
-  match taskIn 
+  match taskIn
     case ((task as CALCTASK(__),parents)) then
         let taskEqs = function_HPCOM_Task(derivativEquations, name, task, iType, modelNamePrefixStr); separator="\n"
         let parentDependencies = parents |> p => 't[<%p%>]'; separator = ","
@@ -2445,7 +2445,7 @@ end functionXXX_system0_HPCOM_TaskDep0;
 template functionXXX_system0_HPCOM_Thread(list<SimEqSystem> derivativEquations, String name, list<list<Task>> threadTasks, String iType, String modelNamePrefixStr)
 ::=
   let odeEqs = threadTasks |> tt => functionXXX_system0_HPCOM_Thread0(derivativEquations,name,tt,iType,modelNamePrefixStr); separator="\n"
-  match iType 
+  match iType
     case ("openmp") then
       <<
       if (omp_get_dynamic())
@@ -2469,7 +2469,7 @@ end functionXXX_system0_HPCOM_Thread;
 template functionXXX_system0_HPCOM_Thread0(list<SimEqSystem> derivativEquations, String name, list<Task> threadTaskList, String iType, String modelNamePrefixStr)
 ::=
   let threadTasks = threadTaskList |> tt => function_HPCOM_Task(derivativEquations,name,tt,iType,modelNamePrefixStr); separator="\n"
-  match iType 
+  match iType
     case ("openmp") then
       <<
       #pragma omp section
@@ -2489,7 +2489,7 @@ end functionXXX_system0_HPCOM_Thread0;
 
 template function_HPCOM_Task(list<SimEqSystem> derivativEquations, String name, Task iTask, String iType, String modelNamePrefixStr)
 ::=
-  match iTask 
+  match iTask
     case (task as CALCTASK(__)) then
       let odeEqs = task.eqIdc |> eq => equationNamesHPCOM_Thread_(eq,derivativEquations,contextSimulationNonDiscrete,modelNamePrefixStr); separator="\n"
       <<
@@ -2518,7 +2518,7 @@ end function_HPCOM_Task;
 
 template function_HPCOM_initializeLock(String lockIdx, String lockPrefix, String iType)
 ::=
-  match iType 
+  match iType
     case ("openmp") then
       <<
       omp_init_lock(&<%lockPrefix%>_<%lockIdx%>);
@@ -2535,7 +2535,7 @@ end function_HPCOM_initializeLock;
 
 template function_HPCOM_createLock(String lockIdx, String prefix, String iType)
 ::=
-  match iType 
+  match iType
     case ("openmp") then
       <<
       static omp_lock_t <%prefix%>_<%lockIdx%>;
@@ -2552,7 +2552,7 @@ end function_HPCOM_createLock;
 
 template function_HPCOM_assignLock(String lockIdx, String prefix, String iType)
 ::=
-  match iType 
+  match iType
     case ("openmp") then
       <<
       omp_set_lock(&<%prefix%>_<%lockIdx%>);
@@ -2569,7 +2569,7 @@ end function_HPCOM_assignLock;
 
 template function_HPCOM_releaseLock(String lockIdx, String prefix, String iType)
 ::=
-  match iType 
+  match iType
     case ("openmp") then
       <<
       omp_unset_lock(&<%prefix%>_<%lockIdx%>);
@@ -2591,14 +2591,14 @@ template functionXXX_system0_HPCOM_PThread_func(list<SimEqSystem> derivativEquat
   let relLock = function_HPCOM_releaseLock(idx, "th_lock1", "pthreads"); separator="\n"
   <<
   void function<%name%>_system<%n%>_thread_<%idx%>(DATA *data)
-  { 
+  {
     while(1)
     {
       <%assLock%>
-      
+
       if(finished)
          return;
-      
+
       <%taskEqs%>
       <%relLock%>
     }
@@ -2672,10 +2672,10 @@ else
   //  SIM_PROF_ACC_EQEXT(<%ix%>);
   //#endif
   //>>
-end equationNamesHPCOM_Thread_; 
+end equationNamesHPCOM_Thread_;
 
 //----------------------------------
-// End: Modified functions for HpcOm 
+// End: Modified functions for HpcOm
 //----------------------------------
 
 template functionXXX_system(list<SimEqSystem> derivativEquations, String name, Integer n, String modelNamePrefixStr)
@@ -2683,10 +2683,10 @@ template functionXXX_system(list<SimEqSystem> derivativEquations, String name, I
   let odeEqs = derivativEquations |> eq => equationNames_(eq,contextSimulationNonDiscrete,modelNamePrefixStr); separator="\n"
   let forwardEqs = derivativEquations |> eq => equationForward_(eq,contextSimulationNonDiscrete,modelNamePrefixStr); separator="\n"
   <<
-  
+
   /* forwarded equations */
   <%forwardEqs%>
-  
+
   static void function<%name%>_system<%n%>(DATA *data)
   {
     <%odeEqs%>
@@ -2699,13 +2699,13 @@ template functionXXX_systems(list<list<SimEqSystem>> eqs, String name, Text &loo
   let funcs = (eqs |> eq hasindex i0 fromindex 0 => functionXXX_system(eq,name,i0,modelNamePrefixStr) ; separator="\n")
   match listLength(eqs)
   case 0 then //empty case
-    let &loop += 
+    let &loop +=
         <<
         /* no <%name%> systems */
-        >> 
-    ""    
+        >>
+    ""
   case 1 then //1 function
-    let &loop += 
+    let &loop +=
         <<
         function<%name%>_system0(data);
         >>
@@ -2714,7 +2714,7 @@ template functionXXX_systems(list<list<SimEqSystem>> eqs, String name, Text &loo
     let funcNames = eqs |> e hasindex i0 fromindex 0 => 'function<%name%>_system<%i0%>' ; separator=",\n"
     let head = if Flags.isSet(Flags.OPENMP) then '#pragma omp parallel for private(id) schedule(<%match noProc() case 0 then "dynamic" else "static"%>)'
     let &varDecls += 'int id;<%\n%>'
-  
+
     let &loop +=
       /* Text for the loop body that calls the equations */
       <<
@@ -2752,7 +2752,7 @@ case SIMULATION_CONTEXT(genDiscrete=true) then
     SIM_PROF_TICK_EQEXT(<%ix%>);
   #endif
   // <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(data);
-  function<%name%>_systems[<%arrayIndex%>](data); 
+  function<%name%>_systems[<%arrayIndex%>](data);
   #ifdef _OMC_MEASURE_TIME
     SIM_PROF_ACC_EQEXT(<%ix%>);
   #endif
@@ -2770,7 +2770,7 @@ else
     SIM_PROF_TICK_EQEXT(<%ix%>);
   #endif
   // <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(data);
-  function<%name%>_systems[<%arrayIndex%>](data); 
+  function<%name%>_systems[<%arrayIndex%>](data);
   #ifdef _OMC_MEASURE_TIME
     SIM_PROF_ACC_EQEXT(<%ix%>);
   #endif
@@ -2783,27 +2783,27 @@ match eqlstlst
   case ({}) then
   <<
   /* no <%name%> systems */
-  >> 
-  
-  case eqlstlst as ({eqlst}) then 
-    let nrfuncs = listLength(eqlst)  
+  >>
+
+  case eqlstlst as ({eqlst}) then
+    let nrfuncs = listLength(eqlst)
     let &arrayEqs = buffer ""
     let &forwardEqs = buffer ""
     let &fncalls += (eqlst |> eq hasindex i0 => equationNamesArrayFormat(eq,contextSimulationNonDiscrete,name,i0,arrayEqs,forwardEqs,modelNamePrefixStr); separator="\n")
     <<
     /* forwarded equations */
     <%forwardEqs%>
-    
+
     static void (*function<%name%>_systems[<%nrfuncs%>])(DATA *) = {
       <%arrayEqs%>
     };
 
     >>
 
-  case eqlstlst as ({eqlst::_}) then 
+  case eqlstlst as ({eqlst::_}) then
   <<
   /* TODO more than ODE list in <%name%> systems */
-  >> 
+  >>
 end functionXXX_systems_arrayFormat;
 
 template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Option<HpcOmScheduler.ScheduleSimCode> hpcOmSchedule, String modelNamePrefix)
@@ -2813,8 +2813,8 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Op
   let &varDecls2 = buffer "" /*BUFD*/
   let &varDecls = buffer ""
   let &fncalls = buffer ""
-  let systems = if Flags.isSet(Flags.HPCOM) then 
-                    (functionXXX_systems_HPCOM(derivativEquations, "ODE", &fncalls, &varDecls, hpcOmSchedule, modelNamePrefix)) 
+  let systems = if Flags.isSet(Flags.HPCOM) then
+                    (functionXXX_systems_HPCOM(derivativEquations, "ODE", &fncalls, &varDecls, hpcOmSchedule, modelNamePrefix))
                 else if Flags.isSet(Flags.OPENMP) then
                     (functionXXX_systems_arrayFormat(derivativEquations, "ODE", &fncalls, &varDecls, modelNamePrefix))
                 else
@@ -2834,7 +2834,7 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Op
   #ifdef _OMC_MEASURE_TIME
     rt_tick(SIM_TIMER_FUNCTION_ODE);
   #endif
-    
+
     <%varDecls%>
 
     data->simulationInfo.discreteCall = 0;
@@ -2842,7 +2842,7 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Op
   #ifdef _OMC_MEASURE_TIME
     rt_accumulate(SIM_TIMER_FUNCTION_ODE);
   #endif
-    
+
     return 0;
   }
 
@@ -2884,13 +2884,13 @@ template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations, String mo
   "Generates function in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
-  let &fncalls = buffer ""  
+  let &fncalls = buffer ""
   let systems = if Flags.isSet(Flags.OPENMP) then
                     (functionXXX_systems_arrayFormat(algebraicEquations, "Alg", &fncalls, &varDecls, modelNamePrefix))
                 else
                     (functionXXX_systems(algebraicEquations, "Alg", &fncalls, &varDecls, modelNamePrefix))
-  
-  
+
+
   <<
   <%systems%>
   /* for continuous time variables */
@@ -2933,7 +2933,7 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause>
   let &varDecls = buffer "" /*BUFD*/
   let &eqfuncs = buffer ""
   let &eqArray = buffer ""
-  let fncalls = if Flags.isSet(Flags.OPENMP) then 
+  let fncalls = if Flags.isSet(Flags.OPENMP) then
                 (allEquationsPlusWhen |> eq hasindex i0 =>
                     equation_arrayFormat(eq, "DAE", contextSimulationDiscrete, i0, &varDecls /*BUFD*/, &eqArray, &eqfuncs, modelNamePrefix)
                     ;separator="\n")
@@ -2941,27 +2941,27 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause>
                 (allEquationsPlusWhen |> eq hasindex i0 =>
                     equation_(eq, contextSimulationDiscrete, &varDecls /*BUFC*/, &eqfuncs, modelNamePrefix)
                     ;separator="\n")
-                
+
   let reinit = (whenClauses |> when hasindex i0 =>
     genreinits(when, &varDecls,i0)
-    ;separator="\n";empty) 
-  
-  
-  let eqArrayDecl = if Flags.isSet(Flags.OPENMP) then 
+    ;separator="\n";empty)
+
+
+  let eqArrayDecl = if Flags.isSet(Flags.OPENMP) then
                 <<
                 static void (*functionDAE_systems[<%listLength(allEquationsPlusWhen)%>])(DATA *) = {
                     <%eqArray%>
                 };
                 >>
               else
-                "" 
-  
+                ""
+
 
   <<
   <%&eqfuncs%>
-  
+
   <%eqArrayDecl%>
-  
+
   int <%symbolName(modelNamePrefix,"functionDAE")%>(DATA *data)
   {
     <%varDecls%>
@@ -3016,7 +3016,7 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
 
   <<
   <%desc%>
-  
+
   int <%symbolName(modelNamePrefix,"function_ZeroCrossingsEquations")%>(DATA *data)
   {
     <%varDecls%>
@@ -3026,7 +3026,7 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
 
     return 0;
   }
-  
+
   int <%symbolName(modelNamePrefix,"function_ZeroCrossings")%>(DATA *data, double *gout)
   {
     <%varDecls2%>
@@ -3392,7 +3392,7 @@ match matrixname
       data->simulationInfo.analyticJacobians[index].sparsePattern.index[i+<%index0%>] = <%cref(indexrow)%>$pDER<%matrixname%>$indexdiffed;
       >>
       ;separator="\n")
-    
+
     <<
     static void <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>_<%matrixIndex%>(DATA* data, int index)
     {
@@ -3437,7 +3437,7 @@ case _ then
       >>
       ;separator="\n")
       let indexElems = ( sparsepattern |> (cref,indexes) hasindex index0 =>
-        let &eachCrefParts += mkSparseFunction(matrixname, index0, cref, indexes, modelNamePrefix) 
+        let &eachCrefParts += mkSparseFunction(matrixname, index0, cref, indexes, modelNamePrefix)
         <<
         <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>_<%index0%>(data, index);
         >>
@@ -3452,9 +3452,9 @@ case _ then
       let tmpvarsSize = (jacobianColumn |> (_,vars,_) => listLength(vars);separator="\n")
       let index_ = listLength(seedVars)
       <<
-      
+
       <%eachCrefParts%>
-      
+
       int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(void* inData)
       {
         DATA* data = ((DATA*)inData);
@@ -3561,15 +3561,15 @@ template equationIndex(SimEqSystem eq)
  "Generates an equation."
 ::=
   match eq
-  case SES_RESIDUAL(__) 
+  case SES_RESIDUAL(__)
   case SES_SIMPLE_ASSIGN(__)
-  case SES_ARRAY_CALL_ASSIGN(__) 
+  case SES_ARRAY_CALL_ASSIGN(__)
   case SES_IFEQUATION(__)
   case SES_ALGORITHM(__)
   case SES_LINEAR(__)
   case SES_NONLINEAR(__)
   case SES_MIXED(__)
-  case SES_WHEN(__) 
+  case SES_WHEN(__)
     then index
 end equationIndex;
 
@@ -3580,7 +3580,7 @@ template dumpEqs(list<SimEqSystem> eqs)
       <<
       equation index: <%equationIndex(eq)%>
       type: RESIDUAL
-      
+
       <%escapeCComments(printExpStr(e.exp))%>
       >>
     case e as SES_SIMPLE_ASSIGN(__) then
@@ -3593,7 +3593,7 @@ template dumpEqs(list<SimEqSystem> eqs)
       <<
       equation index: <%equationIndex(eq)%>
       type: ARRAY_CALL_ASSIGN
-      
+
       <%crefStr(e.componentRef)%> = <%escapeCComments(printExpStr(e.exp))%>
       >>
     case e as SES_ALGORITHM(statements={}) then
@@ -3604,14 +3604,14 @@ template dumpEqs(list<SimEqSystem> eqs)
       <<
       equation index: <%equationIndex(eq)%>
       type: ALGORITHM
-      
+
       <%e.statements |> stmt => escapeCComments(ppStmtStr(stmt,2))%>
       >>
     case e as SES_LINEAR(__) then
       <<
       equation index: <%equationIndex(eq)%>
       type: LINEAR
-      
+
       <%e.vars |> SIMVAR(name=cr) => '<var><%crefStr(cr)%></var>' ; separator = "\n" %>
       <row>
         <%beqs |> exp => '<cell><%escapeCComments(printExpStr(exp))%></cell>' ; separator = "\n" %><%\n%>
@@ -3635,7 +3635,7 @@ template dumpEqs(list<SimEqSystem> eqs)
       equation index: <%equationIndex(eq)%>
       indexNonlinear: <%indexNonLinearSystem%>
       type: NONLINEAR
-      
+
       vars: {<%e.crefs |> cr => '<%crefStr(cr)%>' ; separator = ", "%>}
       eqns: {<%e.eqs |> eq => '<%equationIndex(eq)%>' ; separator = ", "%>}
       >>
@@ -3643,10 +3643,10 @@ template dumpEqs(list<SimEqSystem> eqs)
       <<
       equation index: <%equationIndex(eq)%>
       type: MIXED
-      
+
       <%dumpEqs(fill(e.cont,1))%>
       <%dumpEqs(e.discEqs)%><%\n%>
-      
+
       <mixed>
         <continuous index="<%equationIndex(e.cont)%>" />
         <%e.discVars |> SIMVAR(name=cr) => '<var><%crefStr(cr)%></var>' ; separator = ","%>
@@ -3657,7 +3657,7 @@ template dumpEqs(list<SimEqSystem> eqs)
       <<
       equation index: <%equationIndex(eq)%>
       type: WHEN
-      
+
       when {<%conditions |> cond => '<%crefStr(cond)%>' ; separator=", " %>} then
         <%crefStr(e.left)%> = <%escapeCComments(printExpStr(e.right))%>;
       end when;
@@ -3670,7 +3670,7 @@ template dumpEqs(list<SimEqSystem> eqs)
       type: IFEQUATION
 
       <%branches%>
-      <%elsebr%>      
+      <%elsebr%>
       >>
     else
       <<
@@ -3720,7 +3720,7 @@ template equation_arrayFormat(SimEqSystem eq, String name, Context context, Inte
     then "NOT IMPLEMENTED EQUATION SES_MIXED"
   else
     "NOT IMPLEMENTED EQUATION equation_"
-    
+
   let &eqArray += '<%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>, <%\n%>'
   let &eqfuncs +=
   <<
@@ -3738,7 +3738,7 @@ template equation_arrayFormat(SimEqSystem eq, String name, Context context, Inte
   >>
   <<
   // <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>(data);
-  function<%name%>_systems[<%arrayIndex%>](data); 
+  function<%name%>_systems[<%arrayIndex%>](data);
   >>
   )
 end equation_arrayFormat;
@@ -4111,10 +4111,10 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
   match eq
     case SES_WHEN(left=left, right=right, conditions=conditions, elseWhen=NONE()) then
       let helpIf = (conditions |> e => ' || (<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)')
-      let initial_assign = 
+      let initial_assign =
         if initialCall then
           whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
-        else 
+        else
           '<%cref(left)%> = $P$PRE<%cref(left)%>;'
       let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
       <<
@@ -4133,10 +4133,10 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
       >>
     case SES_WHEN(left=left, right=right, conditions=conditions, elseWhen=SOME(elseWhenEq)) then
       let helpIf = (conditions |> e => ' || (<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)')
-      let initial_assign = 
+      let initial_assign =
         if initialCall then
           whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
-        else 
+        else
           '<%cref(left)%> = $P$PRE<%cref(left)%>;'
       let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
       let elseWhen = equationElseWhen(elseWhenEq,context,varDecls)
@@ -4355,7 +4355,7 @@ template recordsFile(String filePrefix, list<RecordDeclaration> recordDecls)
   <<
   /* Additional record code for <%filePrefix%> generated by the OpenModelica Compiler <%getVersionNr()%>. */
   #include "meta/meta_modelica.h"
-  
+
   <%recordDecls |> rd => recordDeclaration(rd) ;separator="\n\n"%>
 
   >>
@@ -4375,7 +4375,7 @@ template simulationFunctionsHeaderFile(String filePrefix, list<Function> functio
   #endif
   <%\n%>
   <%recordDecls |> rd => recordDeclarationHeader(rd) ;separator="\n\n"%>
-  <%\n%>  
+  <%\n%>
   <%functionHeaders(functions)%>
   <%\n%>
   #ifdef __cplusplus
@@ -4470,7 +4470,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
 
   $(FILEPREFIX)$(EXEEXT): $(MAINFILE) $(FILEPREFIX)_functions.h $(CFILES)
   <%\t%>$(CXX) /Fe$(FILEPREFIX)$(EXEEXT) $(MAINFILE) $(CFILES) $(CFLAGS) $(LDFLAGS)
-  
+
   clean:
   <%\t%>rm -f *.obj *.lib *.exp *.c *.h *.xml *.libs *.log *.makefile *.pdb *.idb *.exe
   >>
@@ -4513,7 +4513,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   <%fileNamePrefix%>_01exo.c <%fileNamePrefix%>_02nls.c <%fileNamePrefix%>_03lsy.c <%fileNamePrefix%>_04set.c <%fileNamePrefix%>_05evt.c <%fileNamePrefix%>_06inz.c <%fileNamePrefix%>_07dly.c \
   <%fileNamePrefix%>_08bnd.c <%fileNamePrefix%>_09alg.c <%fileNamePrefix%>_10asr.c <%fileNamePrefix%>_11mix.c <%fileNamePrefix%>_12jac.c <%fileNamePrefix%>_13opt.c <%fileNamePrefix%>_14lnz.c
   OFILES=$(CFILES:.c=.o)
-  GENERATEDFILES=$(MAINFILE) <%fileNamePrefix%>.makefile <%fileNamePrefix%>_literals.h <%fileNamePrefix%>_functions.h $(CFILES)  
+  GENERATEDFILES=$(MAINFILE) <%fileNamePrefix%>.makefile <%fileNamePrefix%>_literals.h <%fileNamePrefix%>_functions.h $(CFILES)
 
   .PHONY: omc_main_target clean bundle
 
@@ -4628,7 +4628,7 @@ end simulationInitFile;
 //     >>
 //   ;separator="\n"
 // end initVals;
-// 
+//
 // template initVal(Exp initialValue)
 // ::=
 //   match initialValue
@@ -4707,11 +4707,11 @@ template functionsHeaderFile(String filePrefix,
   #endif
 
   <%extraRecordDecls |> rd => recordDeclarationHeader(rd) ;separator="\n"%>
-  
+
   <%match mainFunction case SOME(fn) then functionHeader(fn,true)%>
-  
+
   <%functionHeaders(functions)%>
-   
+
   /* start - annotation(Include=...) if we have any */
   <%externalFunctionIncludes(includes)%>
   /* end - annotation(Include=...) */
@@ -4767,7 +4767,7 @@ template contextCref(ComponentRef cr, Context context)
       let &varDecls = buffer ""
       let rec_name = underscorePath(ClassInf.getStateName(record_state))
       let recPtr = tempDecl(rec_name + "*", &varDecls)
-      let dimsLenStr = listLength(crefSubs(cr))   
+      let dimsLenStr = listLength(crefSubs(cr))
       let dimsValuesStr = (crefSubs(cr) |> INDEX(__) => daeDimensionExp(exp, context, &preExp, &varDecls) ; separator=", ")
       <<
       ((<%rec_name%>*)(generic_array_element_addr(&_<%ident%>, sizeof(<%rec_name%>), <%dimsLenStr%>, <%dimsValuesStr%>)))-><%contextCref(componentRef, context)%>
@@ -4818,13 +4818,13 @@ template subscriptToCStr(Subscript subscript)
   case SLICE(exp=ICONST(integer=i)) then i
   case WHOLEDIM(__) then "WHOLEDIM"
   case INDEX(__) then
-   match exp 
+   match exp
     case ICONST(integer=i) then i
     case ENUM_LITERAL(index=i) then i
     case _ then
     let &varDecls = buffer "" /*BUFD*/
     let &preExp = buffer "" /*BUFD*/
-    let index = daeExp(exp, contextOther, &preExp, &varDecls) 
+    let index = daeExp(exp, contextOther, &preExp, &varDecls)
     '<%index%>'
    end match
   else "UNKNOWN_SUBSCRIPT"
@@ -4860,13 +4860,13 @@ template subscriptToMStr(Subscript subscript)
   case SLICE(exp=ICONST(integer=i)) then i
   case WHOLEDIM(__) then "WHOLEDIM"
   case INDEX(__) then
-   match exp 
+   match exp
     case ICONST(integer=i) then i
     case ENUM_LITERAL(index=i) then i
     case _ then
     let &varDecls = buffer "" /*BUFD*/
     let &preExp = buffer "" /*BUFD*/
-    let index = daeExp(exp, contextOther, &preExp, &varDecls) 
+    let index = daeExp(exp, contextOther, &preExp, &varDecls)
     '<%index%>'
    end match
   else "UNKNOWN_SUBSCRIPT"
@@ -5112,7 +5112,7 @@ template recordDefinition(String origName, String encName, String fieldNames, In
          'const char* <%encName%>__desc__fields[1] = {"no fields"};'
        case _ then
          'const char* <%encName%>__desc__fields[<%numFields%>] = {<%fieldNames%>};'
-  <<  
+  <<
   #define <%encName%>__desc_added 1
   <%fieldsDescription%>
   struct record_description <%encName%>__desc = {
@@ -5238,7 +5238,7 @@ match var
 case var as VARIABLE(ty=T_ARRAY(__), parallelism = PARGLOBAL(__)) then
   let varName = '<%contextCref(var.name,contextParallelFunction)%>'
   '__global modelica_<%expTypeShort(var.ty)%>* data_<%varName%>,<%\n%>    __global modelica_integer* info_<%varName%>'
-  
+
 case var as VARIABLE(ty=T_ARRAY(__), parallelism = PARLOCAL(__)) then
   let varName = '<%contextCref(var.name,contextParallelFunction)%>'
   '__local modelica_<%expTypeShort(var.ty)%>* data_<%varName%>,<%\n%>    __local modelica_integer* info_<%varName%>'
@@ -5247,11 +5247,11 @@ case var as VARIABLE(__) then
   let varName = '<%contextCref(var.name,contextParallelFunction)%>'
   if instDims then
     (match parallelism
-    case PARGLOBAL(__) then 
+    case PARGLOBAL(__) then
       '__global modelica_<%expTypeShort(var.ty)%>* data_<%varName%>,<%\n%>    __global modelica_integer* info_<%varName%>'
     case PARLOCAL(__) then
       '__global modelica_<%expTypeShort(var.ty)%>* data_<%varName%>,<%\n%>    __global modelica_integer* info_<%varName%>'
-    )  
+    )
   else
     'modelica_<%expTypeShort(var.ty)%> <%varName%>'
 
@@ -5379,23 +5379,23 @@ case func as EXTERNAL_FUNCTION(__) then
   let fargsStrEscaped = '<%escapeCComments(fargsStr)%>'
   let includesStr = includes |> i => i ;separator=", "
   /*
-   * adrpo: 
+   * adrpo:
    *   only declare the external function definition IF THERE WERE NO INCLUDES!
    *   i did not put includesStr string in the comment below as it might include
-   *   entire files  
+   *   entire files
    */
   if  includes then
     <<
-    /* 
+    /*
      * The function has annotation(Include=...>)
-     * the external function definition should be present 
+     * the external function definition should be present
      * in one of these files and have this prototype:
-     * extern <%extReturnType(extReturn)%> <%fn_name%>(<%fargsStrEscaped%>); 
+     * extern <%extReturnType(extReturn)%> <%fn_name%>(<%fargsStrEscaped%>);
      */
     >>
-  else 
+  else
     <<
-    extern <%extReturnType(extReturn)%> <%fn_name%>(<%fargsStr%>); 
+    extern <%extReturnType(extReturn)%> <%fn_name%>(<%fargsStr%>);
     >>
 end match
 end extFunDef;
@@ -7178,7 +7178,7 @@ template indexedAssign(DAE.Type ty, String exp, DAE.ComponentRef cr,
     match cr
     case CREF_IDENT(identType = T_ARRAY(ty = aty, dims = adims)) then
       // let tmp = tempDecl("real_array", &varDecls)
-      let tmpArr = tempDecl(expTypeArray(aty), &varDecls /*BUFD*/)      
+      let tmpArr = tempDecl(expTypeArray(aty), &varDecls /*BUFD*/)
       let dimsLenStr = listLength(adims)
       let dimsValuesStr = (adims |> dim => dimension(dim) ;separator=", ")
       let atype = expTypeShort(aty)
@@ -8021,7 +8021,7 @@ template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp /*BUFP*/,
                   <<
                    (*((<%rec_name%>*)(generic_array_element_addr(&<%arrName%>, sizeof(<%rec_name%>), <%dimsLenStr%>, <%dimsValuesStr%>))))
                   >>
-                  else 
+                  else
                   <<
                   (*<%arrayType%>_element_addr(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
                   >>
@@ -8035,7 +8035,7 @@ template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp /*BUFP*/,
               else
                 match crefLastType(cr)
                 case et as T_ARRAY(__) then
-                /* subtract one for indexing a C-array*/ 
+                /* subtract one for indexing a C-array*/
                 <<
                 (&<%arrName%>)[<%threadDimSubList(et.dims,crefSubs(cr),context,&preExp,&varDecls)%> - 1]
                 >>
@@ -8452,7 +8452,7 @@ match exp
 case LUNARY(__) then
   let e = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   match operator
-  case NOT(ty = T_ARRAY(__)) then   
+  case NOT(ty = T_ARRAY(__)) then
     let var = tempDecl("boolean_array", &varDecls)
     let &preExp += 'not_boolean_array(&<%e%>,&<%var%>);<%\n%>'
     '<%var%>'
@@ -8754,7 +8754,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls)
     let var1 = daeExp(e1, context, &preExp, &varDecls)
     let var2 = daeExp(e2, context, &preExp, &varDecls)
     '<%var2%>'
-  
+
   case CALL(path=IDENT(name="DIVISION"),
             expLst={e1, e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls)
@@ -8999,7 +8999,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls)
     case "modelica_real" then
       let &preExp += '<%tvar%> = <%typeStr%>_to_modelica_string(<%sExp%>, <%minlenExp%>, <%leftjustExp%>, 6);<%\n%>'
       '<%tvar%>'
-    else 
+    else
     let &preExp += '<%tvar%> = <%typeStr%>_to_modelica_string(<%sExp%>, <%minlenExp%>, <%leftjustExp%>);<%\n%>'
     '<%tvar%>'
     end match
@@ -9172,7 +9172,7 @@ case ARRAY(array = array, scalar = scalar, ty = T_ARRAY(ty = t as T_COMPLEX(__))
       let prefix = if scalar then '(<%expTypeFromExpModelica(e)%>)' else '&'
       '(*((<%rec_name%>*)generic_array_element_addr(&<%arrayVar%>, sizeof(<%rec_name%>), 1, <%i1%>))) = <%prefix%><%daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>;'
       ;separator="\n")
-  let &preExp += '<%params%><%\n%>' 
+  let &preExp += '<%params%><%\n%>'
   arrayVar
 case ARRAY(array={}) then
   let arrayVar = tempDecl("base_array_t", &varDecls /*BUFD*/)
@@ -9646,7 +9646,7 @@ case exp as MATCHEXPRESSION(__) then
           <%preExpInner%>
           <%match exp.matchType
           case MATCH(switch=SOME(_)) then '<%done%> = 0;<%\n%>{'
-          else 
+          else
           <<
           <%ix%> = 0;
           <%done%> = 0;
@@ -9671,7 +9671,7 @@ case exp as MATCHEXPRESSION(__) then
             goto <%prefix%>_end;
             <%prefix%>_end: ;
           }
-          <% match exp.matchType case MATCHCONTINUE(__) then 
+          <% match exp.matchType case MATCHCONTINUE(__) then
           <<
           MMC_CATCH_INTERNAL(mmc_jumper);
           if (!<%done%> && ++<%ix%> < <%listLength(exp.cases)%>) {
@@ -10254,7 +10254,7 @@ template expTypeFromExpFlag(Exp exp, Integer flag)
   case METARECORDCALL(__)
   case BOX(__)           then match flag case 1 then "metatype" else "modelica_metatype"
   case c as UNBOX(__)    then expTypeFlag(c.ty, flag)
-  case c as SHARED_LITERAL(__) then expTypeFlag(c.ty, flag)
+  case c as SHARED_LITERAL(__) then expTypeFromExpFlag(c.exp, flag)
   else error(sourceInfo(), 'expTypeFromExpFlag(flag=<%flag%>):<%printExpStr(exp)%>')
 end expTypeFromExpFlag;
 
@@ -10746,9 +10746,9 @@ template ModelVariables(ModelInfo modelInfo)
       <%vars.stateVars       |> var hasindex i0 => ScalarVariable(var,i0,"rSta") ;separator="\n";empty%>
       <%vars.derivativeVars  |> var hasindex i0 => ScalarVariable(var,i0,"rDer") ;separator="\n";empty%>
       <%vars.algVars         |> var hasindex i0 => ScalarVariable(var,i0,"rAlg") ;separator="\n";empty%>
-      <%vars.realOptimizeConstraintsVars 
+      <%vars.realOptimizeConstraintsVars
                              |> var hasindex i0 => ScalarVariable(var,intAdd(i0,numAlgVars),"rAlg") ;separator="\n";empty%>
-      
+
       <%vars.paramVars       |> var hasindex i0 => ScalarVariable(var,i0,"rPar") ;separator="\n";empty%>
       <%vars.aliasVars       |> var hasindex i0 => ScalarVariable(var,i0,"rAli") ;separator="\n";empty%>
 
@@ -10824,7 +10824,7 @@ template addRootsTempArray()
   let() = System.tmpTickResetIndex(0, 2)
   match System.tmpTickMaximum(1)
     case 0 then ""
-    case i then /* TODO: Find out where we add tmpIndex but discard its use causing us to generate unused tmpMeta with size 1 */ 
+    case i then /* TODO: Find out where we add tmpIndex but discard its use causing us to generate unused tmpMeta with size 1 */
       <<
       modelica_metatype tmpMeta[<%i%>] __attribute__((unused)) = {0};
       >>
@@ -10853,9 +10853,9 @@ template optimizationComponents( list<DAE.ClassAttributes> classAttributes ,SimC
         int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real* res){return -1;}
         int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real* res){return -1;}
         int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start, modelica_real * startTimeOpt){return -1;}
-        >>  
+        >>
       else
-        (classAttributes |> classAttribute => optimizationComponents1(classAttribute,simCode, modelNamePrefixStr); separator="\n") 
+        (classAttributes |> classAttribute => optimizationComponents1(classAttribute,simCode, modelNamePrefixStr); separator="\n")
 end optimizationComponents;
 
 template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode, String modelNamePrefixStr)
@@ -10878,9 +10878,9 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
   case SOME(exp) then
          let startTimeOptExp = daeExp(exp, contextOther, &preExp, &varDecls)
    <<
-          *startTimeOpt = <%startTimeOptExp%>; 
+          *startTimeOpt = <%startTimeOptExp%>;
    >>
-        
+
       let objectiveIntegrand = match objectiveIntegrandE case SOME(exp) then
         <<
          *res =  $P$TMP_lagrangeTerm;
@@ -10905,7 +10905,7 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
               <%objectiveFunction%>
               return  -1;
             }
- 
+
             /* objectiveIntegrand */
             int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real* res)
             {
@@ -10917,8 +10917,8 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
 
             /* opt vars  */
             int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start, modelica_real* startTimeOpt)
-            { 
-              <%inputBounds%> 
+            {
+              <%inputBounds%>
               *startTimeOpt = data->simulationInfo.startTime - 1.0;
               <%startTimeOpt%>
               return 0;

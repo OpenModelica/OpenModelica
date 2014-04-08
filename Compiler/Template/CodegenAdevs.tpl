@@ -787,7 +787,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
        bound_params();
        // Solve for any remaining unknowns
        solve_for_initial_unknowns();
-       selectStateVars(); 
+       selectStateVars();
        calc_vars();
        save_vars();
        <%(vars.stateVars |> SIMVAR(__) => 'q[<%index%>]=<%cref(name)%>;') ;separator="\n"%>
@@ -5464,7 +5464,7 @@ template expTypeFromExpFlag(Exp exp, Integer flag)
   case METARECORDCALL(__)
   case BOX(__)           then match flag case 1 then "metatype" else "modelica_metatype"
   case c as UNBOX(__)    then expTypeFlag(c.ty, flag)
-  case c as SHARED_LITERAL(__) then expTypeFlag(c.ty, flag)
+  case c as SHARED_LITERAL(__) then expTypeFromExpFlag(c.exp, flag)
   else error(sourceInfo(), 'expTypeFromExpFlag:<%printExpStr(exp)%>')
 end expTypeFromExpFlag;
 

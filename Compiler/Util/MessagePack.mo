@@ -111,6 +111,13 @@ encapsulated package MessagePack "MessagePack is an efficient binary serializati
     
       external "C" result = msgpack_modelica_pack_string(packer, str) annotation(Include = "#include <msgpack-modelica.h>", Library = {"msgpackc"});
     end string;
+
+    function nil
+      input Packer packer;
+      output Boolean result;
+    
+      external "C" result = msgpack_modelica_pack_nil(packer) annotation(Include = "#include <msgpack-modelica.h>", Library = {"msgpackc"});
+    end nil;
   end Pack;
 
   package Unpack
