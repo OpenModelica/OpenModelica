@@ -5963,12 +5963,12 @@ algorithm
       then
         (cache,SOME(DAE.EXTARGEXP(exp, ty)));
 
-    case (cache,_,DAE.CALL(path=Absyn.QUALIFIED("OpenModelica",Absyn.IDENT("threadData"))),DAE.PROP(type_ = ty),_,_)
-      then (cache,SOME(DAE.EXTARGEXP(inExp, ty)));
-
     case (cache,_,_,DAE.PROP(type_ = ty),SOME("builtin"),_)
       then (cache,SOME(DAE.EXTARGEXP(inExp, ty)));
 
+    case (cache,_,DAE.CALL(attr = DAE.CALL_ATTR(builtin = true)),DAE.PROP(type_ = ty),_,_)
+      then (cache,SOME(DAE.EXTARGEXP(inExp, ty)));
+                
     case (cache,_,exp,DAE.PROP(type_ = _,constFlag = _),_,_)
       equation
         str = ExpressionDump.printExpStr(exp);
