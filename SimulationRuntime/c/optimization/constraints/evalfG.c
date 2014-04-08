@@ -93,21 +93,21 @@ Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
      /*1*/
      evalG21(g + k, iData, i);
      if(ACTIVE_STREAM(LOG_IPOPT_ERROR))
-       printMaxError(iData,g,dtime->time[1],&max_err, &max_err_time, &max_err_xi);
+       printMaxError(iData,g+k,dtime->time[1],&max_err, &max_err_time, &max_err_xi);
      k += dim->nJ;
 
      /*2*/
      functionODE_(mbase->x[2], mbase->u[2], 2, mbase->dotx[2], iData);
      evalG22(g + k, iData, i);
      if(ACTIVE_STREAM(LOG_IPOPT_ERROR))
-       printMaxError(iData,g,dtime->time[2],&max_err, &max_err_time, &max_err_xi);
+       printMaxError(iData,g+k,dtime->time[2],&max_err, &max_err_time, &max_err_xi);
      k += dim->nJ;
 
      /*3*/
      functionODE_(mbase->x[3], mbase->u[3], 3, mbase->dotx[3], iData);
      evalG23(g + k, iData, i);
      if(ACTIVE_STREAM(LOG_IPOPT_ERROR))
-       printMaxError(iData,g,dtime->time[3],&max_err, &max_err_time, &max_err_xi);
+       printMaxError(iData,g+k,dtime->time[3],&max_err, &max_err_time, &max_err_xi);
      k += dim->nJ;
   }
 
@@ -125,21 +125,21 @@ Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
     functionODE_(mbase->x[1], mbase->u[1], tmp_index + 1, mbase->dotx[1], iData);
     evalG11(g + k, iData, i);
     if(ACTIVE_STREAM(LOG_IPOPT_ERROR))
-      printMaxError(iData,g, dtime->time[tmp_index + 1],&max_err, &max_err_time, &max_err_xi);
+      printMaxError(iData,g+k, dtime->time[tmp_index + 1],&max_err, &max_err_time, &max_err_xi);
     k += dim->nJ;
 
     /*2*/
     functionODE_(mbase->x[2], mbase->u[2], tmp_index + 2, mbase->dotx[2], iData);
     evalG12(g + k, iData, i);
     if(ACTIVE_STREAM(LOG_IPOPT))
-      printMaxError(iData,g,dtime->time[tmp_index + 2],&max_err, &max_err_time, &max_err_xi);
+      printMaxError(iData,g+k,dtime->time[tmp_index + 2],&max_err, &max_err_time, &max_err_xi);
     k += dim->nJ;
 
     /*3*/
     functionODE_(mbase->x[3], mbase->u[3], tmp_index + 3, mbase->dotx[3], iData);
     evalG13(g + k, iData, i);
     if(ACTIVE_STREAM(LOG_IPOPT_ERROR))
-      printMaxError(iData,g,dtime->time[tmp_index + 3],&max_err, &max_err_time, &max_err_xi);
+      printMaxError(iData,g+k,dtime->time[tmp_index + 3],&max_err, &max_err_time, &max_err_xi);
     k += dim->nJ;
   }
   if(ACTIVE_STREAM(LOG_IPOPT_ERROR)){
