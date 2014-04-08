@@ -158,11 +158,7 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   solverInfo->sampleEvents = 0;
 
   /* set tolerance for ZeroCrossings */
-  if (simInfo->stepSize < simInfo->tolerance){
-    setZCtol(simInfo->stepSize);
-  } else{
-    setZCtol(simInfo->tolerance);
-  }
+  setZCtol(min(simInfo->stepSize, simInfo->tolerance));
 
   if(solverInfo->solverMethod == 2)
   {
