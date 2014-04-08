@@ -1714,7 +1714,7 @@ algorithm
       tvars = tvar::tvarsIn;
     // assign vars to eqs until complete or partially causalisation(and restart algorithm)
          Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n" +& BORDER +& "\nBEGINNING of Tarjan\n\n");
-      (ass1,ass2,m,mt,order,causal) = Tarjan(m,mt,meIn,meTIn,ass1,ass2In,tvars,orderIn,mapEqnIncRow,mapIncRowEqn,true);
+      (ass1,ass2,m,mt,order,causal) = Tarjan(m,mt,meIn,meTIn,ass1,ass2In,orderIn,mapEqnIncRow,mapIncRowEqn,true);
          Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nEND of Tarjan\n" +& BORDER +& "\n\n");
          Debug.fcall(Flags.TEARING_DUMP, print,"\nTARJAN RESULTS:\nass1: "+&stringDelimitList(List.map(ass1,intString),",")+&"\n");
          Debug.fcall(Flags.TEARING_DUMP, print,"ass2: "+&stringDelimitList(List.map(ass2,intString),",")+&"\n");
@@ -1743,7 +1743,7 @@ algorithm
          Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n###END print Incidence Matrix w/o tvar##############\n(Function: TearingSystemCellier)\n\n\n");
          Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n" +& BORDER +& "\nBEGINNING of Tarjan\n\n");
       tvars = listAppend(tvars,tvarsIn);
-    (ass1,ass2,m,mt,order,causal) = Tarjan(m,mt,meIn,meTIn,ass1,ass2In,tvars,orderIn,mapEqnIncRow,mapIncRowEqn,true);
+    (ass1,ass2,m,mt,order,causal) = Tarjan(m,mt,meIn,meTIn,ass1,ass2In,orderIn,mapEqnIncRow,mapIncRowEqn,true);
        Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nEND of Tarjan\n" +& BORDER +& "\n\n");
          Debug.fcall(Flags.TEARING_DUMP, print,"\nTARJAN RESULTS:\nass1: "+&stringDelimitList(List.map(ass1,intString),",")+&"\n");
          Debug.fcall(Flags.TEARING_DUMP, print,"ass2: "+&stringDelimitList(List.map(ass2,intString),",")+&"\n");
@@ -2551,7 +2551,7 @@ author:Waurich TUD 2012-11, enhanced: ptaeuber 2013-10"
   input BackendDAE.IncidenceMatrixT mtIn;
   input BackendDAE.AdjacencyMatrixEnhanced meIn;
   input BackendDAE.AdjacencyMatrixTEnhanced metIn;
-  input list<Integer> ass1In,ass2In,tvarsIn;
+  input list<Integer> ass1In,ass2In;
   input list<list<Integer>> orderIn;
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> mapIncRowEqn;
@@ -2562,20 +2562,20 @@ author:Waurich TUD 2012-11, enhanced: ptaeuber 2013-10"
   output list<list<Integer>> orderOut;
   output Boolean causal;
 algorithm
-   (ass1Out,ass2Out,mOut,mtOut,orderOut,causal):= matchcontinue(mIn,mtIn,meIn,metIn,ass1In,ass2In,tvarsIn,orderIn,mapEqnIncRow,mapIncRowEqn,assignable)
+   (ass1Out,ass2Out,mOut,mtOut,orderOut,causal):= matchcontinue(mIn,mtIn,meIn,metIn,ass1In,ass2In,orderIn,mapEqnIncRow,mapIncRowEqn,assignable)
    local
      list<Integer> ass1,ass2,subOrder,unassigned;
      list<list<Integer>> order;
      BackendDAE.IncidenceMatrix m;
      BackendDAE.IncidenceMatrixT mt;
      Boolean ass;
-   case(_,_,_,_,_,_,_,_,_,_,false)
+   case(_,_,_,_,_,_,_,_,_,false)
      equation
      ((_,unassigned)) = List.fold(ass1In,getUnassigned,(1,{}));
        false = List.isEmpty(unassigned);
           Debug.fcall(Flags.TEARING_DUMP, print,"\nnoncausal\n");
      then (ass1In,ass2In,mIn,mtIn,orderIn,false);
-   case(_,_,_,_,_,_,_,_,_,_,false)
+   case(_,_,_,_,_,_,_,_,_,false)
      equation
        ((_,unassigned)) = List.fold(ass1In,getUnassigned,(1,{}));
        true = List.isEmpty(unassigned);
@@ -2585,13 +2585,13 @@ algorithm
        order = List.deletePositions(orderIn,{0});
        orderOut = subOrder::order;
      then (ass1In,ass2In,mIn,mtIn,orderOut,true);
-   case(_,_,_,_,_,_,_,_,_,_,true)
+   case(_,_,_,_,_,_,_,_,_,true)
      equation
           Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nTarjanAssignment:\n");
-       (ass1,ass2,m,mt,order,ass) = TarjanAssignment(mIn,mtIn,meIn,metIn,ass1In,ass2In,tvarsIn,orderIn,mapEqnIncRow,mapIncRowEqn);
+       (ass1,ass2,m,mt,order,ass) = TarjanAssignment(mIn,mtIn,meIn,metIn,ass1In,ass2In,orderIn,mapEqnIncRow,mapIncRowEqn);
          //print("ass1 "+&stringDelimitList(List.map(ass1,intString),",")+&"\n");
          //print("ass2 "+&stringDelimitList(List.map(ass2,intString),",")+&"\n");
-       (ass1Out,ass2Out,mOut,mtOut,orderOut,causal)= Tarjan(m,mt,meIn,metIn,ass1,ass2,tvarsIn,order,mapEqnIncRow,mapIncRowEqn,ass);
+       (ass1Out,ass2Out,mOut,mtOut,orderOut,causal)= Tarjan(m,mt,meIn,metIn,ass1,ass2,order,mapEqnIncRow,mapIncRowEqn,ass);
        then (ass1Out,ass2Out,mOut,mtOut,orderOut,causal);
    end matchcontinue;
 end Tarjan;
@@ -2603,7 +2603,7 @@ author:Waurich TUD 2012-11, enhanced: ptaeuber FHB 2013-10"
   input BackendDAE.IncidenceMatrixT mtIn;
   input BackendDAE.AdjacencyMatrixEnhanced meIn;
   input BackendDAE.AdjacencyMatrixTEnhanced metIn;
-  input list<Integer> ass1In,ass2In,tvarsIn;
+  input list<Integer> ass1In,ass2In;
   input list<list<Integer>> orderIn;
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> mapIncRowEqn;
