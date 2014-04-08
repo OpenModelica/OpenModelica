@@ -1,7 +1,7 @@
 
 #include "stdafx.h"
 #include "Newton.h"
- 
+#include <iostream>
 #include <Math/ILapack.h>        // needed for solution of linear system with Lapack
 #include <Math/Constants.h>        // definitializeion of constants like uround
 
@@ -21,11 +21,11 @@ Newton::Newton(IAlgLoop* algLoop, INonLinSolverSettings* settings)
 }
 
 Newton::~Newton()
-{    
+{
     if(_y)         delete []    _y;
     if(_yHelp)    delete []    _yHelp;
-    if(_f)        delete []    _f;    
-    if(_fHelp)    delete []    _fHelp;    
+    if(_f)        delete []    _f;
+    if(_fHelp)    delete []    _fHelp;
     if(_jac)    delete []    _jac;
 }
 
@@ -37,10 +37,10 @@ void Newton::initialize()
     _algLoop->initialize();
 
     // Dimension of the system (number of variables)
-    int 
+    int
         dimDouble    = _algLoop->getDimReal(),
         dimInt        = 0,
-        dimBool        = 0; 
+        dimBool        = 0;
 
     // Check system dimension
     if (dimDouble != _dimSys)
@@ -51,13 +51,13 @@ void Newton::initialize()
         {
             // initializeialization of vector of unknowns
             if(_y)         delete []    _y;
-            if(_f)        delete []    _f;    
+            if(_f)        delete []    _f;
             if(_yHelp)    delete []    _yHelp;
-            if(_fHelp)    delete []    _fHelp;    
+            if(_fHelp)    delete []    _fHelp;
             if(_jac)    delete []    _jac;
-            
+
             _y            = new double[_dimSys];
-            _f            = new double[_dimSys];    
+            _f            = new double[_dimSys];
             _yHelp        = new double[_dimSys];
             _fHelp        = new double[_dimSys];
             _jac        = new double[_dimSys*_dimSys];
@@ -74,7 +74,7 @@ void Newton::initialize()
         }
     }
 
-    
+
 }
 
 void Newton::solve()
@@ -83,12 +83,12 @@ void Newton::solve()
         dimRHS    = 1,                    // Dimension of right hand side of linear system (=b)
         irtrn    = 0;                    // Retrun-flag of Fortran code
 
-    int 
+    int
         totStps    = 0;                    // Total number of steps
 
     // If initialize() was not called yet
     if (_firstCall)
-        initialize();    
+        initialize();
 
     // Get initializeial values from system
     _algLoop->getReal(_y);
@@ -104,11 +104,12 @@ void Newton::solve()
         _iterationStatus = DONE;
 
         // Check stopping criterion
+        calcFunction(_y,_f);
         if(totStps)
         {
             for(int i=0; i<_dimSys; ++i)
             {
-                if(fabs(_f[i]) > _newtonSettings->getRtol() * (_newtonSettings->getAtol() + fabs(_f[i])))
+                if(fabs(_f[i]) > _newtonSettings->getAtol() + _newtonSettings->getRtol() * (fabs(_f[i])))
                 {
                     _iterationStatus = CONTINUE;
                     break;
@@ -119,7 +120,6 @@ void Newton::solve()
             _iterationStatus = CONTINUE;
 
         // New right hand side
-        calcFunction(_y,_f);
 
         if(_iterationStatus == CONTINUE)
         {
@@ -146,7 +146,7 @@ void Newton::solve()
 
                 if(irtrn!=0)
                 {
-                    // TODO: Throw an error message here. 
+                    // TODO: Throw an error message here.
                     _iterationStatus = SOLVERERROR;
                     break;
                 }
@@ -157,9 +157,9 @@ void Newton::solve()
                 // New solution
                 for(int i=0; i<_dimSys; ++i)
                     _y[i] -= _newtonSettings->getDelta() * _f[i];
-                
+
             }
-            else 
+            else
                 _iterationStatus = SOLVERERROR;
         }
     }
@@ -180,7 +180,7 @@ void Newton::calcFunction(const double *y, double *residual)
 
 void Newton::stepCompleted(double time)
 {
-   
+
 }
 
 
@@ -193,13 +193,16 @@ void Newton::calcJacobian()
         memcpy(_yHelp,_y,_dimSys*sizeof(double));
 
         // Finitializee difference
-        _yHelp[j] += 1e-6;
+        double stepsize=_newtonSettings->getAtol()+(_newtonSettings->getRtol()*_yHelp[j]);
+        _yHelp[j] += stepsize;
 
         calcFunction(_yHelp,_fHelp);
 
         // Build Jacobian in Fortran format
         for(int i=0; i<_dimSys; ++i)
-            _jac[i+j*_dimSys] = (_fHelp[i] - _f[i]) / 1e-6;
+            _jac[i+j*_dimSys] = (_fHelp[i] - _f[i]) / stepsize;
+
+        _yHelp[j] = _y[j];
     }
 }
 

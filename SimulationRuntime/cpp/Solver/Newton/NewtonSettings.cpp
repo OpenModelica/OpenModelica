@@ -7,7 +7,7 @@ NewtonSettings::NewtonSettings()
 : iNewt_max                    (50)
 , dRtol                        (1e-9)
 , dAtol                        (1e-9)
-, dDelta                    (0.9)
+, dDelta                        (1.)
 {
 };
 
