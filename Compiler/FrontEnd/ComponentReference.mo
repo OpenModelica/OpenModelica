@@ -1787,13 +1787,21 @@ algorithm
       Integer idx;
 
     case (_, DAE.CREF_QUAL(id, ty, subs, cr))
-      then DAE.CREF_QUAL(stringAppend(id, inString), ty, subs, cr);
+      equation
+        id = stringAppend(id, inString);
+      then DAE.CREF_QUAL(id, ty, subs, cr);
 
     case (_, DAE.CREF_IDENT(id, ty, subs))
-      then DAE.CREF_IDENT(stringAppend(id, inString), ty, subs);
+      equation
+        id = stringAppend(id, inString);
+      then
+        DAE.CREF_IDENT(id, ty, subs);
 
     case (_, DAE.CREF_ITER(id, idx, ty, subs))
-      then DAE.CREF_ITER(stringAppend(id, inString), idx, ty, subs);
+      equation
+        id = stringAppend(id, inString);
+      then
+        DAE.CREF_ITER(id, idx, ty, subs);
 
   end match;
 end appendStringFirstIdent;
