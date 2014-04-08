@@ -64,6 +64,10 @@ typedef struct DATA_NEWTON
   double* fjac;
   double* rwork;
   integer* iwork;
+
+  /* damped newton */
+  double* x_new;
+  double* x_increment;
 } DATA_NEWTON;
 
 
@@ -108,6 +112,11 @@ int allocateNewtonData(int size, void** voiddata)
   data->rwork = (double*) malloc((size)*sizeof(double));
   data->iwork = (integer*) malloc(size*sizeof(integer));
 
+  /* damped newton */
+  data->x_new = (double*) malloc(size*sizeof(double));
+  data->x_increment = (double*) malloc(size*sizeof(double));
+
+
   assertStreamPrint(NULL, 0 != *voiddata, "allocationNewtonData() voiddata failed!");
   return 0;
 }
@@ -128,6 +137,10 @@ int freeNewtonData(void **voiddata)
   free(data->fjac);
   free(data->rwork);
   free(data->iwork);
+
+  /* damped newton */
+  free(data->x_new);
+  free(data->x_increment);
 
   return 0;
 }
@@ -301,7 +314,7 @@ int solveNewton(DATA *data, int sysNumber)
       giveUp = 0;
       nfunc_evals += solverData->nfev;
       infoStreamPrint(LOG_NLS, 0, " - iteration making no progress:\t try old values.");
-    /* try to vary the initial values */
+    // try to vary the initial values
     }
     else if(retries < 2)
     {
@@ -311,7 +324,7 @@ int solveNewton(DATA *data, int sysNumber)
       giveUp = 0;
       nfunc_evals += solverData->nfev;
       infoStreamPrint(LOG_NLS, 0, " - iteration making no progress:\t vary solution point by 1%%.");
-      /* try to vary the initial values */
+      // try to vary the initial values
     }
     else if(retries < 3)
     {
@@ -414,6 +427,9 @@ static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double*
   integer nrsh = 1;
   integer lapackinfo = 1;
 
+  double lambda=1, current_fvec_enorm, enorm_2;
+
+
   wa = work;
   l = *maxfev;
   error_x = 1.0 + tol_x;
@@ -488,6 +504,8 @@ static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double*
     if(scaledError_f <= tol_f) break;
     if(error_f <= tol_f) break;
 
+    current_fvec_enorm=enorm_(n,fvec);
+
     /* solve J*(x_{n+1} - x_n)=f */
     dgesv_(n, &nrsh, fjac, n, iwork, fvec, n, &lapackinfo);
 
@@ -497,6 +515,9 @@ static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double*
       for(i=0; i<*n; i++)
         infoStreamPrint(LOG_NLS_V, 0, "b[%d] = %e ", i, fvec[i]);
     }
+
+    /* save current fvec */
+    memcpy(solverData->x_increment, fvec, *n*sizeof(double));
 
     if(lapackinfo > 0)
     {
@@ -510,11 +531,48 @@ static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double*
     }
     else
     {
-      /* if no error occurs update x vector */
-      for(i = 0; i<*n; i++)
-        x[i] = x[i] - fvec[i];
+    	lambda=1;
 
-      /* break if root convergence if reached */
+    	for (i=0; i<*n; i++)
+    		solverData->x_new[i]=x[i]-lambda*solverData->x_increment[i];
+
+    	(*f)(n,solverData->x_new,fvec,&iflag,userdata,currentSys);
+    	(*nfev)++;
+
+    	enorm_2=enorm_(n,fvec);
+
+    	/* damping heuristic */
+    	while (enorm_2>=current_fvec_enorm)
+    	{
+    	    j++;
+
+    		lambda=lambda/2;
+    		infoStreamPrint(LOG_NLS_V, 0, "lambda= %e ", lambda);
+
+    		infoStreamPrint(LOG_NLS_V, 0, "number of iteration = %d ", j);
+
+    		for (i=0; i<*n; i++)
+    			solverData->x_new[i]=x[i]-lambda*solverData->x_increment[i];
+
+    		(*f)(n,solverData->x_new,fvec,&iflag,userdata,currentSys);
+    		(*nfev)++;
+    		infoStreamPrint(LOG_NLS_V, 0, "nfev= %d ", *nfev);
+
+    		enorm_2=enorm_(n,fvec);
+
+        	if (lambda<=1e-16)
+        	{
+        		warningStreamPrint(LOG_NLS_V, 0, "Warning: lamdba reached a threshold.");
+        		for (i=0; i<*n; i++)
+        			solverData->x_new[i]=x[i]-solverData->x_increment[i];
+        		break;
+        	}
+    	}
+
+    	for (i=0; i<*n; i++)
+    		x[i]=solverData->x_new[i];
+
+      /* break if root convergence is reached */
       error_x = enorm_(n, fvec);
       if(error_x <= tol_x)
         break;
