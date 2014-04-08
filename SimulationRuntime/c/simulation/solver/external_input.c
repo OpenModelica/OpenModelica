@@ -44,11 +44,12 @@
 
 int externalInputallocate(DATA* data)
 {
-  FILE * pFile;
+  FILE * pFile = NULL;
   int n,m,c;
   int i,j;
 
   pFile = fopen("externalInput.csv","r");
+
   data->simulationInfo.external_input.active = (modelica_boolean) (pFile != NULL);
   n = 0;
   if(data->simulationInfo.external_input.active){
@@ -58,6 +59,13 @@ int externalInputallocate(DATA* data)
         if (c==EOF) break;
         if (c=='\n') ++n;
     }
+    // check if csv file is empty!
+    if (n == 0)
+    {
+      fprintf(stderr, "External input file: externalInput.csv is empty!\n"); fflush(NULL);
+      EXIT(1);
+    }
+
     --n;
     data->simulationInfo.external_input.n = n;
     data->simulationInfo.external_input.N = data->simulationInfo.external_input.n;
@@ -65,6 +73,7 @@ int externalInputallocate(DATA* data)
 
     do{
       c = fgetc(pFile);
+      if (c==EOF) break;
     }while(c!='\n');
 
     m = data->modelData.nInputVars;
