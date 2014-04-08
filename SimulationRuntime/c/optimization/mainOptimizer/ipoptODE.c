@@ -129,19 +129,22 @@ int refreshSimData(double *x, double *u, int k, IPOPT_DATA_ *iData)
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   OPTIMIZER_EVALF *evalf = &iData->evalf;
   long double t = iData->dtime.time[k];
+  double * tmp[3];
 
-  memcpy(data->localData[0]->realVars, evalf->v[k], sizeof(double)*iData->dim.nReal);
-  memcpy(data->localData[1]->realVars, evalf->v[k], sizeof(double)*iData->dim.nReal);
-  memcpy(data->localData[2]->realVars, evalf->v[k], sizeof(double)*iData->dim.nReal);
-
+  for(j = 0; j < 3; ++j){
+    tmp[j] =  data->localData[j]->realVars;
+    data->localData[0]->realVars =  evalf->v[k];
+  }
 
   /*MODEL_DATA      *mData = &(data->modelData);
   SIMULATION_INFO *sInfo = &(data->simulationInfo);*/
-  for(j = 0; j<iData->dim.nx;++j){
+
+
+  for(j = 0; j<iData->dim.nx; ++j){
     sData->realVars[j] = x[j]*iData->scaling.vnom[j];
   }
 
-  for(i = 0; i<iData->dim.nu;++i,++j){
+  for(i = 0; i<iData->dim.nu; ++i, ++j){
     data->simulationInfo.inputVars[i] = u[i]*iData->scaling.vnom[j];
   }
 
@@ -153,7 +156,12 @@ int refreshSimData(double *x, double *u, int k, IPOPT_DATA_ *iData)
   data->callback->functionDAE(data);*/
 
   data->callback->functionDAE(data);
-  memcpy(evalf->v[k], data->localData[0]->realVars, sizeof(double)*iData->dim.nReal);
+
+  for(j = 0; j<3; ++j){
+    data->localData[j]->realVars =  tmp[j];
+  }
+
+  memcpy(data->localData[0]->realVars, evalf->v[k], sizeof(double)*iData->dim.nReal);
 
   return 0;
 }
