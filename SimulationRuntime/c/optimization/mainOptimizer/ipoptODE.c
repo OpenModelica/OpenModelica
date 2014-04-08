@@ -131,34 +131,39 @@ int refreshSimData(double *x, double *u, int k, IPOPT_DATA_ *iData)
   long double t = iData->dtime.time[k];
   double * tmp[3];
 
-  for(j = 0; j < 3; ++j){
-    tmp[j] =  data->localData[j]->realVars;
-    data->localData[0]->realVars =  evalf->v[k];
-  }
+  if(iData->sopt.updateM){
 
-  /*MODEL_DATA      *mData = &(data->modelData);
-  SIMULATION_INFO *sInfo = &(data->simulationInfo);*/
+    for(j = 0; j < 3; ++j){
+      tmp[j] =  data->localData[j]->realVars;
+      data->localData[0]->realVars =  evalf->v[k];
+    }
+
+    /*MODEL_DATA      *mData = &(data->modelData);
+    SIMULATION_INFO *sInfo = &(data->simulationInfo);*/
 
 
-  for(j = 0; j<iData->dim.nx; ++j){
-    sData->realVars[j] = x[j]*iData->scaling.vnom[j];
-  }
+    for(j = 0; j<iData->dim.nx; ++j){
+      sData->realVars[j] = x[j]*iData->scaling.vnom[j];
+    }
 
-  for(i = 0; i<iData->dim.nu; ++i, ++j){
-    data->simulationInfo.inputVars[i] = u[i]*iData->scaling.vnom[j];
-  }
+    for(i = 0; i<iData->dim.nu; ++i, ++j){
+      data->simulationInfo.inputVars[i] = u[i]*iData->scaling.vnom[j];
+    }
 
-  data->callback->input_function(data);
-  sData->timeValue = (double) t;
-  /* updateContinuousSystem(iData->data);
-  data->simulationInfo.discreteCall=1;
-  updateDiscreteSystem(data);
-  data->callback->functionDAE(data);*/
+    data->callback->input_function(data);
+    sData->timeValue = (double) t;
+    /*
+     * updateContinuousSystem(iData->data);
+     * data->simulationInfo.discreteCall=1;
+     * updateDiscreteSystem(data);
+     * data->callback->functionDAE(data);
+     */
 
-  data->callback->functionDAE(data);
+    data->callback->functionDAE(data);
 
-  for(j = 0; j<3; ++j){
-    data->localData[j]->realVars =  tmp[j];
+    for(j = 0; j<3; ++j){
+      data->localData[j]->realVars =  tmp[j];
+    }
   }
 
   memcpy(data->localData[0]->realVars, evalf->v[k], sizeof(double)*iData->dim.nReal);

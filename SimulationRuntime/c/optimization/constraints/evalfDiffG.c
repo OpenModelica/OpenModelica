@@ -113,6 +113,7 @@ Bool evalfDiffG(Index n, double * x, Bool new_x, Index m, Index njac, Index *iRo
     OPTIMIZER_TIME *dtime = &iData->dtime;
     OPTIMIZER_DF *df = &iData->df;
     iData->helper.i = 0;
+    iData->sopt.updateM = !new_x;
     ipoptDebuge(iData,x);
 
     tmp =  &iData->helper.tmp;

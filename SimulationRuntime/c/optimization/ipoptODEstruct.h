@@ -137,6 +137,8 @@ typedef struct OPTIMIZER_STUCTURE{
 
   modelica_boolean updateH;
 
+  modelica_boolean updateM;
+
 }OPTIMIZER_STUCTURE;
 
 

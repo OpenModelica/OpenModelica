@@ -501,7 +501,10 @@ static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData)
       else
         sprintf(buffer, ", min = -Inf");
 
-      printf("\nState[%i]:%s(start = %g, nominal = %g%s",i, iData->data->modelData.realVarsData[i].info.name, data->modelData.realVarsData[i].attribute.start, (double)iData->scaling.vnom[i], buffer);
+      if( data->modelData.realVarsData[i].attribute.useNominal)
+        printf("\nState[%i]:%s(start = %g, nominal = %g%s",i, iData->data->modelData.realVarsData[i].info.name, data->modelData.realVarsData[i].attribute.start, (double)iData->scaling.vnom[i], buffer);
+      else
+        printf("\nState[%i]:%s(start = %g, nominal = ?%s",i, iData->data->modelData.realVarsData[i].info.name, data->modelData.realVarsData[i].attribute.start, buffer);
 
       if (iData->bounds.xmax[i] < 1e20)
         sprintf(buffer, ", max = %g", data->modelData.realVarsData[i].attribute.max);
@@ -513,13 +516,17 @@ static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData)
     }
 
     for(; i<dim->nv; ++i){
-      k = i-dim->nx;
+      k = i - dim->nx;
+
       if (iData->bounds.umin[k] > -1e20)
         sprintf(buffer, ", min = %g", iData->bounds.umin[k]);
       else
         sprintf(buffer, ", min = -Inf");
 
-      printf("\nInput[%i]:%s(start = %g, nominal = %g%s",i, tmpname[k] ,start[k], (double) iData->scaling.vnom[i], buffer);
+      if( data->modelData.realVarsData[i].attribute.useNominal)
+        printf("\nInput[%i]:%s(start = %g, nominal = %g%s",i, tmpname[k] ,start[k], (double) iData->scaling.vnom[i], buffer);
+      else
+        printf("\nInput[%i]:%s(start = %g, nominal = ?%s",i, tmpname[k] ,start[k], buffer);
 
       if (iData->bounds.umax[k] < 1e20)
         sprintf(buffer, ", max = %g", iData->bounds.umax[k]);
@@ -536,10 +543,10 @@ static int optimizer_bounds_setings(DATA *data, IPOPT_DATA_ *iData)
 
   for(i =0,j = dim->nx;i<dim->nu;++i,++j){
     check_nominal(iData, iData->bounds.umin[i], iData->bounds.umax[i], iData->scaling.vnom[j], tmp[i], j, fabs(start[i]));
+    iData->helper.start_u[i] = fmin(fmax(iData->helper.start_u[i], iData->bounds.umin[i]), iData->bounds.umax[i]);
     iData->scaling.scalVar[j] = 1.0 / iData->scaling.vnom[j];
     iData->bounds.umin[i] *= iData->scaling.scalVar[j];
     iData->bounds.umax[i] *= iData->scaling.scalVar[j];
-    iData->helper.start_u[i] = fmin(fmax(iData->helper.start_u[i], iData->bounds.umin[i]), iData->bounds.umax[i]);
   }
 
   memcpy(iData->bounds.vmin, iData->bounds.xmin, sizeof(double)*dim->nx);

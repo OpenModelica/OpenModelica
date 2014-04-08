@@ -54,6 +54,8 @@ Bool evalfF(Index n, double * v, Bool new_x, Number *objValue, void * useData)
   long double lagrange = 0.0;
   OPTIMIZER_MBASE *mbase = &iData->mbase;
 
+  iData->sopt.updateM = !new_x;
+
   if(iData->sopt.lagrange){
     double *x;
     double tmp;
@@ -136,6 +138,8 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
   long double h;
   IPOPT_DATA_ *iData = (IPOPT_DATA_*) useData;
   OPTIMIZER_MBASE *mbase = &iData->mbase;
+
+  iData->sopt.updateM = !new_x;
 
   if(iData->sopt.lagrange) {
     x = v;

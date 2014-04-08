@@ -60,13 +60,16 @@ static int smallIntSolverStep(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo, double
 int initial_guess_ipopt(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
 {
   char *cflags;
+  int opt = 1;
   cflags = (char*)omc_flagValue[FLAG_IPOPT_INIT];
 
   if(cflags){
-    if(!initial_guess_ipopt_cflag(iData, cflags))
+    opt = initial_guess_ipopt_cflag(iData, cflags);
+    if(opt != 1)
       return 0;
   }
-  initial_guess_ipopt_sim(iData, solverInfo);
+  if(opt == 1)
+    initial_guess_ipopt_sim(iData, solverInfo);
 
   return 0;
 
@@ -80,18 +83,31 @@ static int initial_guess_ipopt_cflag(IPOPT_DATA_ *iData,char* cflags)
 {
   if(!strcmp(cflags,"const") || !strcmp(cflags,"CONST")){
     int i, id;
-  for(i = 0, id=0; i<iData->dim.NV;i++,++id){
-    if(id >=iData->dim.nv)
-      id = 0;
-    if(id <iData->dim.nx){
-      iData->v[i] = iData->data->modelData.realVarsData[id].attribute.start*iData->scaling.scalVar[id];
-    }else if(id< iData->dim.nv){
-      iData->v[i] = iData->helper.start_u[id-iData->dim.nx]*iData->scaling.scalVar[id];
+
+    for(i = 0, id=0; i<iData->dim.NV;i++,++id){
+      if(id >=iData->dim.nv)
+        id = 0;
+
+      if(id <iData->dim.nx){
+        iData->v[i] = iData->data->localData[0]->realVars[id]*iData->scaling.scalVar[id];
+      }else if(id< iData->dim.nv){
+        iData->v[i] = iData->helper.start_u[id-iData->dim.nx]*iData->scaling.scalVar[id];
+      }
     }
-  }
+    iData->sopt.updateM = 1;
+    refreshSimData(iData->v, iData->v + iData->dim.nx, 0, iData);
+
+    for(i = 0; i< iData->dim.nt; ++i)
+      memcpy(iData->evalf.v[i], iData->data->localData[0]->realVars, sizeof(double)*iData->dim.nReal);
+
+    infoStreamPrint(LOG_IPOPT, 0, "Using const trajectory as initial guess.");
     return 0;
-  }else if(!strcmp(cflags,"sim") || !strcmp(cflags,"SIM"))
+
+  }else if(!strcmp(cflags,"sim") || !strcmp(cflags,"SIM")){
+
+    infoStreamPrint(LOG_IPOPT, 0, "Using simulation as initial guess.");
     return 1;
+  }
 
   warningStreamPrint(LOG_STDOUT, 1, "not support ipopt_init=%s", cflags);
   return 1;
@@ -103,7 +119,7 @@ static int initial_guess_ipopt_cflag(IPOPT_DATA_ *iData,char* cflags)
  **/
 static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
 {
-  double *u0, /*x,*/ uu,tmp ,lhs, rhs;
+  double *u0;
   int i,j,k,ii,jj,id;
   double *v;
   long double tol;
@@ -114,8 +130,9 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
   OPTIMIZER_DIM_VARS* dim = &iData->dim;
   OPTIMIZER_EVALF *evalf = &iData->evalf;
 
-  if(!data->simulationInfo.external_input.active)
+  if(!data->simulationInfo.external_input.active){
      externalInputallocate(data);
+  }
 
    /* Initial DASSL solver */
    DASSL_DATA* dasslData = (DASSL_DATA*) malloc(sizeof(DASSL_DATA));
@@ -130,11 +147,9 @@ static int initial_guess_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
    solverInfo->solverData = dasslData;
 
    u0 = iData->helper.start_u;
-   /*x = data->localData[0]->realVars;*/
    v = iData->v;
 
    for(ii=dim->nx,j=0; j < dim->nu; ++j, ++ii){
-     u0[j] = fmin(fmax(u0[j],iData->bounds.umin[j]),iData->bounds.umax[j]);
      v[ii] = u0[j]*iData->scaling.scalVar[j + dim->nx];
    }
 
