@@ -7584,7 +7584,7 @@ algorithm
    "The constness of a function depends on the inputs. If all inputs are constant the call itself is constant." ;
 
   (fn_1,functype) := deoverloadFuncname(fn, functype, inEnv);
-  tuple_ := isTuple(restype);
+  tuple_ := Types.isTuple(restype);
   (isBuiltin,builtin,fn_1) := isBuiltinFunc(fn_1,functype);
   inlineType := inlineBuiltin(isBuiltin,inlineType);
 
@@ -8595,17 +8595,6 @@ algorithm
     else (inPath,inType);
   end matchcontinue;
 end deoverloadFuncname;
-
-protected function isTuple
-"Return true if Type is a Tuple type."
-  input DAE.Type inType;
-  output Boolean outBoolean;
-algorithm
-  outBoolean := matchcontinue (inType)
-    case (DAE.T_TUPLE(tupleType = _)) then true;
-    case (_) then false;
-  end matchcontinue;
-end isTuple;
 
 protected function elabTypes "
 function: elabTypes

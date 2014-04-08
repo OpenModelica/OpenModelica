@@ -82,7 +82,7 @@ template modelNamePrefix(SimCode simCode)
 end modelNamePrefix;
 
 template crefStr(ComponentRef cr)
- "Generates the name of a variable for variable name array. Uses undersocres for qualified names.
+ "Generates the name of a variable for variable name array. Uses underscores for qualified names.
  a._b not a.b"
 ::=
   match cr
@@ -94,7 +94,7 @@ template crefStr(ComponentRef cr)
 end crefStr;
 
 template crefStrNoUnderscore(ComponentRef cr)
- "Generates the name of a variable for variable name array. However does not use undersocres on qualified names.
+ "Generates the name of a variable for variable name array. However does not use underscores on qualified names.
  a.b not a._b. Used for generating variable names that are exported e.g. xml files"
 ::=
   match cr

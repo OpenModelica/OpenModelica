@@ -2501,6 +2501,11 @@ package ComponentReference
     output DAE.ComponentRef ocr;
   end appendStringCref;
 
+  function appendStringFirstIdent
+    input String inString;
+    input DAE.ComponentRef inCref;
+    output DAE.ComponentRef outCref;
+  end appendStringFirstIdent;
 end ComponentReference;
 
 package Expression

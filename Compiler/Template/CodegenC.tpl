@@ -6642,7 +6642,7 @@ case TYPES_VAR(ty = T_ARRAY(__)) then
 end recordMemberInit;
 
 template extVarName(ComponentRef cr)
-::= '<%contextCref(cr,contextFunction)%>_ext'
+::= '_<%crefToMStr(appendStringFirstIdent("_ext", cr))%>'
 end extVarName;
 
 template extFunCall(Function fun, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
@@ -6661,7 +6661,8 @@ template extFunCallC(Function fun, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*
 match fun
 case EXTERNAL_FUNCTION(__) then
   /* adpro: 2011-06-24 do vardecls -> extArgs as there might be some sets in there! */
-  let varDecs = (List.union(extArgs, extArgs) |> arg => extFunCallVardecl(arg, &varDecls /*BUFD*/) ;separator="\n")
+  let varDecs = (List.union(extArgs, extArgs) |> arg => extFunCallVardecl(arg, &varDecls) ;separator="\n")
+  let _ = (biVars |> bivar => extFunCallBiVar(bivar, &preExp, &varDecls) ;separator="\n")
   let fname = if dynamicLoad then 'ptr_<%extFunctionName(extName, language)%>' else '<%extName%>'
   let dynamicCheck = if dynamicLoad then
   <<
@@ -6672,9 +6673,7 @@ case EXTERNAL_FUNCTION(__) then
   } else
   >>
     else ''
-  let args = (extArgs |> arg =>
-      extArg(arg, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    ;separator=", ")
+  let args = (extArgs |> arg => extArg(arg, &preExp, &varDecls) ;separator=", ")
   let returnAssign = match extReturn case SIMEXTARG(cref=c) then
       '<%extVarName(c)%> = '
     else
@@ -6788,6 +6787,20 @@ template typeDefaultValue(DAE.Type ty)
   else ""
 end typeDefaultValue;
 
+template extFunCallBiVar(Variable var, Text &preExp, Text &varDecls)
+::=
+  match var
+  case var as VARIABLE(__) then
+    let var_name = extVarName(name)
+    let &varDecls += '<%varType(var)%> <%var_name%>;<%\n%>'
+    let defaultValue = match value
+      case SOME(v) then
+        '<%daeExp(v, contextFunction, &preExp, &varDecls)%>'
+      else ""
+    let &preExp += if defaultValue then '<%var_name%> = <%defaultValue%>;<%\n%>'
+    ""
+end extFunCallBiVar;
+
 template extFunCallBiVarF77(Variable var, Text &preExp, Text &varDecls)
 ::=
   match var
@@ -6861,11 +6874,11 @@ template extArg(SimExtArg extArg, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/
     let shortTypeStr = expTypeShort(t)
     '(<%extType(t,isInput,true)%>) data_of_<%shortTypeStr%>_array(&(<%name%>))'
   case SIMEXTARG(cref=c, isInput=ii, outputIndex=0, type_=t) then
-    let cr = '<%contextCref(c,contextFunction)%>'
+    let cr = match t case T_STRING(__) then contextCref(c,contextFunction) else extVarName(c)
     if acceptMetaModelicaGrammar() then
-      (match t case T_STRING(__) then 'MMC_STRINGDATA(<%cr%>)' else '<%cr%>_ext')
+      (match t case T_STRING(__) then 'MMC_STRINGDATA(<%cr%>)' else cr)
     else
-      '<%cr%><%match t case T_STRING(__) then "" else "_ext"%>'
+      cr
   case SIMEXTARG(cref=c, isInput=ii, outputIndex=oi, type_=t) then
     '&<%extVarName(c)%>'
   case SIMEXTARGEXP(__) then

@@ -5495,13 +5495,26 @@ algorithm
     local
       DAE.ComponentRef cr1,cr2;
       DAE.Exp exp;
-    case (DAE.VAR(componentRef=cr1),DAE.EXTARG(componentRef=cr2))
-      then ComponentReference.crefEqualNoStringCompare(cr1,cr2);
-    case (DAE.VAR(direction=DAE.OUTPUT()),_) then false;
-    case (DAE.VAR(componentRef=cr1),DAE.EXTARGSIZE(componentRef=cr2))
-      then ComponentReference.crefEqualNoStringCompare(cr1,cr2);
-    case (DAE.VAR(componentRef=cr1),DAE.EXTARGEXP(exp=exp))
+
+    case (DAE.VAR(componentRef=cr1), DAE.EXTARG(componentRef=cr2))
+      equation
+        // If the external argument refers to a record member, i.e. a qualified
+        // cref, consider the whole record to be used.
+        cr2 = ComponentReference.crefFirstCref(cr2);
+      then
+        ComponentReference.crefEqualNoStringCompare(cr1,cr2);
+
+    case (DAE.VAR(direction=DAE.OUTPUT()), _) then false;
+
+    case (DAE.VAR(componentRef=cr1), DAE.EXTARGSIZE(componentRef=cr2))
+      equation
+        cr2 = ComponentReference.crefFirstCref(cr2);
+      then
+        ComponentReference.crefEqualNoStringCompare(cr1,cr2);
+
+    case (DAE.VAR(componentRef=cr1), DAE.EXTARGEXP(exp=exp))
       then Expression.expHasCref(exp,cr1);
+
     else false;
   end match;
 end extArgCrefEq;
@@ -5871,7 +5884,7 @@ algorithm
     case (cache,_,{},_,_,_) then (cache,{});
     case (cache,env,(e :: exps),(p :: props),_,_)
       equation
-        (cache,extarg) = instExtGetFargsSingle(cache, env, e, p, lang, info);
+        (cache,SOME(extarg)) = instExtGetFargsSingle(cache, env, e, p, lang, info);
         (cache,extargs) = instExtGetFargs2(cache, env, exps, props, lang, info);
       then
         (cache,extarg :: extargs);
@@ -5888,15 +5901,15 @@ protected function instExtGetFargsSingle
   input Option<String> lang;
   input Absyn.Info info;
   output Env.Cache outCache;
-  output DAE.ExtArg outExtArg;
+  output Option<DAE.ExtArg> outExtArg;
 algorithm
   (outCache,outExtArg) := matchcontinue (inCache,inEnv,inExp,inProperties,lang,info)
     local
-      DAE.Attributes attr;
+      DAE.Attributes attr, fattr;
       DAE.Type ty,varty;
       DAE.Binding bnd;
       list<Env.Frame> env;
-      DAE.ComponentRef cref;
+      DAE.ComponentRef cref, fcr;
       DAE.Type crty;
       DAE.Const cnst;
       String crefstr,scope;
@@ -5907,11 +5920,25 @@ algorithm
       Values.Value val;
       String str;
 
-    case (cache,env,DAE.CREF(componentRef = cref as DAE.CREF_IDENT(ident=_),ty = _),DAE.PROP(type_ = ty,constFlag = DAE.C_VAR()),_,_)
+    case (_, _, DAE.CREF(componentRef = cref as DAE.CREF_QUAL(ident = _)),
+        DAE.PROP(constFlag = DAE.C_VAR()), _, _)
       equation
-        (cache,attr,ty,bnd,_,_,_,_,_) = Lookup.lookupVarLocal(cache,env,cref);
+        (cache, attr, ty, bnd, _, _, _, _, _) = Lookup.lookupVarLocal(inCache, inEnv, cref);
+        // For qualified crefs, copy input/output from the first part of the
+        // cref. This is done so that the correct code can be generated when
+        // using qualified crefs in external function definitions.
+        fcr = ComponentReference.crefFirstCref(cref);
+        (cache, fattr, _, _, _, _, _, _, _) = Lookup.lookupVarLocal(cache, inEnv, fcr);
+        attr = DAEUtil.setAttrDirection(attr, DAEUtil.getAttrDirection(fattr));
       then
-        (cache,DAE.EXTARG(cref,attr,ty));
+        (cache, SOME(DAE.EXTARG(cref, attr, ty)));
+
+    case (_, _, DAE.CREF(componentRef = cref as DAE.CREF_IDENT(ident = _)), 
+        DAE.PROP(constFlag = DAE.C_VAR()), _, _)
+      equation
+        (cache, attr, ty, bnd, _, _, _, _, _) = Lookup.lookupVarLocal(inCache, inEnv, cref);
+      then
+        (cache,SOME(DAE.EXTARG(cref, attr, ty)));
 
     case (cache,env,DAE.CREF(componentRef = cref,ty = _),DAE.PROP(type_ = ty,constFlag = _),_,_)
       equation
@@ -5919,32 +5946,35 @@ algorithm
         crefstr = ComponentReference.printComponentRefStr(cref);
         scope = Env.printEnvPathStr(env);
         Error.addMessage(Error.LOOKUP_VARIABLE_ERROR, {crefstr,scope});
-      then fail();
+      then
+        (cache, NONE());
 
     case (cache,env,DAE.SIZE(exp = DAE.CREF(componentRef = cref,ty = _),sz = SOME(dim)),DAE.PROP(type_ = ty),_,_)
       equation
         (cache,attr,varty,bnd,_,_,_,_,_) = Lookup.lookupVarLocal(cache,env, cref);
       then
-        (cache,DAE.EXTARGSIZE(cref,attr,varty,dim));
+        (cache,SOME(DAE.EXTARGSIZE(cref,attr,varty,dim)));
 
     // adrpo: these can be non-local if they are constants or parameters!
     case (cache,env,_,DAE.PROP(type_ = ty,constFlag = DAE.C_CONST()),_,_)
       equation
         (cache, exp, prop) = Ceval.cevalIfConstant(cache, env, inExp, inProperties, false, info);
-        // TODO: Check it is a scalar
-      then (cache,DAE.EXTARGEXP(exp, ty));
+        true = Expression.isScalarConst(exp);
+      then
+        (cache,SOME(DAE.EXTARGEXP(exp, ty)));
 
     case (cache,_,DAE.CALL(path=Absyn.QUALIFIED("OpenModelica",Absyn.IDENT("threadData"))),DAE.PROP(type_ = ty),_,_)
-      then (cache,DAE.EXTARGEXP(inExp, ty));
+      then (cache,SOME(DAE.EXTARGEXP(inExp, ty)));
 
     case (cache,_,_,DAE.PROP(type_ = ty),SOME("builtin"),_)
-      then (cache,DAE.EXTARGEXP(inExp, ty));
+      then (cache,SOME(DAE.EXTARGEXP(inExp, ty)));
 
-    case (_,_,exp,DAE.PROP(type_ = _,constFlag = _),_,_)
+    case (cache,_,exp,DAE.PROP(type_ = _,constFlag = _),_,_)
       equation
         str = ExpressionDump.printExpStr(exp);
         Error.addSourceMessage(Error.EXTERNAL_ARG_WRONG_EXP,{str},info);
-      then fail();
+      then
+        (cache, NONE());
 
   end matchcontinue;
 end instExtGetFargsSingle;
@@ -5980,7 +6010,7 @@ algorithm
     case (cache,env,SCode.EXTERNALDECL(funcName = _,lang = lang,output_ = SOME(cref),args = args),impl,pre,_)
       equation
         (cache,SOME((exp,prop,_))) = Static.elabCref(cache,env,cref,impl,false /* Do NOT vectorize arrays; we require a CREF */,pre,info);
-        (cache,extarg) = instExtGetFargsSingle(cache,env,exp,prop,lang,info);
+        (cache,SOME(extarg)) = instExtGetFargsSingle(cache,env,exp,prop,lang,info);
         assertExtArgOutputIsCrefVariable(lang,extarg,Types.getPropType(prop),Types.propAllConst(prop),info);
       then
         (cache,extarg);

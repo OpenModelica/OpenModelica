@@ -6083,6 +6083,29 @@ algorithm
   DAE.ATTR(variability = outVar) := inAttr;
 end getAttrVariability;
 
+public function setAttrDirection
+  "Sets the direction attribute in an Attributes record."
+  input DAE.Attributes inAttr;
+  input Absyn.Direction inDir;
+  output DAE.Attributes outAttr;
+protected
+  SCode.ConnectorType ct;
+  SCode.Parallelism prl;
+  SCode.Variability var;
+  Absyn.InnerOuter io;
+  SCode.Visibility vis;
+algorithm
+  DAE.ATTR(ct, prl, var, _, io, vis) := inAttr;
+  outAttr := DAE.ATTR(ct, prl, var, inDir, io, vis);
+end setAttrDirection;
+
+public function getAttrDirection
+  input DAE.Attributes inAttr;
+  output Absyn.Direction outDir;
+algorithm
+  DAE.ATTR(direction = outDir) := inAttr;
+end getAttrDirection;
+
 public function addSymbolicTransformation
   input DAE.ElementSource source;
   input DAE.SymbolicOperation op;

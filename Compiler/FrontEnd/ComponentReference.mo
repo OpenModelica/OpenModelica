@@ -1772,6 +1772,32 @@ algorithm
   ocr := joinCrefs(cr,DAE.CREF_IDENT(str,DAE.T_UNKNOWN_DEFAULT,{}));
 end appendStringCref;
 
+public function appendStringFirstIdent
+  "Appends a string to the first identifier of a cref."
+  input String inString;
+  input DAE.ComponentRef inCref;
+  output DAE.ComponentRef outCref;
+algorithm
+  outCref := match(inString, inCref)
+    local
+      DAE.Ident id;
+      list<DAE.Subscript> subs;
+      DAE.ComponentRef cr;
+      DAE.Type ty;
+      Integer idx;
+
+    case (_, DAE.CREF_QUAL(id, ty, subs, cr))
+      then DAE.CREF_QUAL(stringAppend(id, inString), ty, subs, cr);
+
+    case (_, DAE.CREF_IDENT(id, ty, subs))
+      then DAE.CREF_IDENT(stringAppend(id, inString), ty, subs);
+
+    case (_, DAE.CREF_ITER(id, idx, ty, subs))
+      then DAE.CREF_ITER(stringAppend(id, inString), idx, ty, subs);
+
+  end match;
+end appendStringFirstIdent;
+
 public function joinCrefs
 "Join two component references by concatenating them.
   

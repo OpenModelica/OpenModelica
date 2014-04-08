@@ -476,20 +476,20 @@ public function isTuple "Returns true if type is TUPLE"
   input DAE.Type tp;
   output Boolean b;
 algorithm
-  b := matchcontinue(tp)
+  b := match(tp)
     case (DAE.T_TUPLE(tupleType = _)) then true;
-    case (_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isTuple;
 
 public function isRecord "Returns true if type is COMPLEX and a record (ClassInf)"
   input DAE.Type tp;
   output Boolean b;
 algorithm
-  b := matchcontinue(tp)
+  b := match(tp)
     case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_))) then true;
-    case (_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isRecord;
 
 public function getRecordPath "gets the record path"

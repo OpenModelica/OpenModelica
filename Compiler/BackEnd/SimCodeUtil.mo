@@ -1007,7 +1007,7 @@ algorithm
   simExtArgOut :=
   matchcontinue (simExtArgIn, outVars)
     local
-      DAE.ComponentRef cref;
+      DAE.ComponentRef cref, fcref;
       Boolean isInput;
       Integer outputIndex; // > 0 if output
       Boolean isArray, hasBinding;
@@ -1018,7 +1018,8 @@ algorithm
     case (SimCode.SIMEXTARG(cref, isInput, outputIndex, isArray, _, type_), _)
       equation
         true = outputIndex == -1;
-        (newOutputIndex, hasBinding) = findIndexInList(cref, outVars, 1);
+        fcref = ComponentReference.crefFirstCref(cref);
+        (newOutputIndex, hasBinding) = findIndexInList(fcref, outVars, 1);
       then 
         SimCode.SIMEXTARG(cref, isInput, newOutputIndex, isArray, hasBinding, type_);
     

@@ -7494,6 +7494,21 @@ algorithm
   end match;
 end isTuple;
 
+public function isScalarConst
+  "Returns true if the given expression is a scalar constant, otherwise false."
+  input DAE.Exp inExp;
+  output Boolean outIsScalar;
+algorithm
+  outIsScalar := match(inExp)
+    case DAE.ICONST(integer = _) then true;
+    case DAE.RCONST(real = _) then true;
+    case DAE.SCONST(string = _) then true;
+    case DAE.BCONST(bool = _) then true;
+    case DAE.ENUM_LITERAL(name = _) then true;
+    else false;
+  end match;
+end isScalarConst;
+
 public function expIsPositive "Returns true if an expression is positive,
 Returns true in the following cases:
 constant >= 0
