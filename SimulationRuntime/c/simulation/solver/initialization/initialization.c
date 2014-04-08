@@ -759,7 +759,7 @@ static int symbolic_initialization(DATA *data, long numLambdaSteps)
 
     /* report a warning about strange start values */
     if(stateSelection(data, 1, 1) == 1)
-      warningStreamPrint(LOG_STDOUT, 0, "Cannot initialize unique the dynamic state selection. Use -lv LOG_DSS to see the switching state set.");
+      warningStreamPrint(LOG_STDOUT, 0, "Cannot initialize the dynamic state selection in an unique way. Use -lv LOG_DSS to see the switching state set.");
   }
 
   return 0;

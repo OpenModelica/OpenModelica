@@ -49,7 +49,7 @@ void Initialization::initializeSystem()
 
     /* report a warning about strange start values */
     if(_solver->stateSelection())
-      cout << "Cannot initialize unique the dynamic state selection. " << std::endl;
+      cout << "Cannot initialize the dynamic state selection in an unique way." << std::endl;
   }
   
 }

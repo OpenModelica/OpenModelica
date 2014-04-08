@@ -311,7 +311,7 @@ int stateSelection(DATA *data, char reportError, int switchStates)
   long j=0;
   int globalres=0;
 
-  /* go troug all state sets*/
+  /* go through all the state sets */
   for(i=0; i<data->modelData.nStateSets; i++)
   {
     int res=0;
