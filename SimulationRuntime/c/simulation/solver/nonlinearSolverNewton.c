@@ -531,46 +531,46 @@ static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double*
     }
     else
     {
-    	lambda=1;
+      lambda=1;
 
-    	for (i=0; i<*n; i++)
-    		solverData->x_new[i]=x[i]-lambda*solverData->x_increment[i];
+      for (i=0; i<*n; i++)
+        solverData->x_new[i]=x[i]-lambda*solverData->x_increment[i];
 
-    	(*f)(n,solverData->x_new,fvec,&iflag,userdata,currentSys);
-    	(*nfev)++;
+      (*f)(n,solverData->x_new,fvec,&iflag,userdata,currentSys);
+      (*nfev)++;
 
-    	enorm_2=enorm_(n,fvec);
+      enorm_2=enorm_(n,fvec);
 
-    	/* damping heuristic */
-    	while (enorm_2>=current_fvec_enorm)
-    	{
-    	    j++;
+      /* damping heuristic */
+      while (enorm_2>=current_fvec_enorm)
+      {
+          j++;
 
-    		lambda=lambda/2;
-    		infoStreamPrint(LOG_NLS_V, 0, "lambda= %e ", lambda);
+        lambda=lambda/2;
+        infoStreamPrint(LOG_NLS_V, 0, "lambda= %e ", lambda);
 
-    		infoStreamPrint(LOG_NLS_V, 0, "number of iteration = %d ", j);
+        infoStreamPrint(LOG_NLS_V, 0, "number of iteration = %d ", j);
 
-    		for (i=0; i<*n; i++)
-    			solverData->x_new[i]=x[i]-lambda*solverData->x_increment[i];
+        for (i=0; i<*n; i++)
+          solverData->x_new[i]=x[i]-lambda*solverData->x_increment[i];
 
-    		(*f)(n,solverData->x_new,fvec,&iflag,userdata,currentSys);
-    		(*nfev)++;
-    		infoStreamPrint(LOG_NLS_V, 0, "nfev= %d ", *nfev);
+        (*f)(n,solverData->x_new,fvec,&iflag,userdata,currentSys);
+        (*nfev)++;
+        infoStreamPrint(LOG_NLS_V, 0, "nfev= %d ", *nfev);
 
-    		enorm_2=enorm_(n,fvec);
+        enorm_2=enorm_(n,fvec);
 
-        	if (lambda<=1e-16)
-        	{
-        		warningStreamPrint(LOG_NLS_V, 0, "Warning: lamdba reached a threshold.");
-        		for (i=0; i<*n; i++)
-        			solverData->x_new[i]=x[i]-solverData->x_increment[i];
-        		break;
-        	}
-    	}
+          if (lambda<=1e-16)
+          {
+            warningStreamPrint(LOG_NLS_V, 0, "Warning: lamdba reached a threshold.");
+            for (i=0; i<*n; i++)
+              solverData->x_new[i]=x[i]-solverData->x_increment[i];
+            break;
+          }
+      }
 
-    	for (i=0; i<*n; i++)
-    		x[i]=solverData->x_new[i];
+      for (i=0; i<*n; i++)
+        x[i]=solverData->x_new[i];
 
       /* break if root convergence is reached */
       error_x = enorm_(n, fvec);
