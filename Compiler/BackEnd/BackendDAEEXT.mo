@@ -236,7 +236,7 @@ end cheapmatching;*/
 public function matching
 "author: Frenkel TUD 2012-04
   calls matching algorithms
-  matchingID: id of match algo (1-9)
+  matchingID: id of match algo (1-10)
       1: DFS based
       2: BFS based
       3: MC21 (DFS + lookahead)

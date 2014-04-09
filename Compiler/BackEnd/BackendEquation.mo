@@ -1630,14 +1630,11 @@ algorithm
 end getEqns;
 
 public function equationNth0 "author: PA
-
   Return the n-th equation from the expandable equation array
   indexed from 0..N-1.
 
   inputs:  (EquationArray, int /* n */)
-  outputs:  Equation
-
-"
+  outputs:  Equation"
   input BackendDAE.EquationArray inEquationArray;
   input Integer pos;
   output BackendDAE.Equation outEquation;
@@ -1646,14 +1643,11 @@ algorithm
 end equationNth0;
 
 public function equationNth1 "author: PA
-
   Return the n-th equation from the expandable equation array
   indexed from 1..N.
 
   inputs:  (EquationArray, int /* n */)
-  outputs:  Equation
-
-"
+  outputs:  Equation"
   input BackendDAE.EquationArray inEquationArray;
   input Integer pos;
   output BackendDAE.Equation outEquation;
@@ -2198,12 +2192,10 @@ algorithm
   end match;
 end generateResidualfromRealtion;
 
-public function solveEquation
-"Author: wbraun
-solves an equation w.r.t. a component reference. All equations are transformed
-to a SOLVED_EQUATION(cref, exp).
-Algorithm, when and if equation are left as they are.
-"
+public function solveEquation "author: wbraun
+  Solves an equation w.r.t. a component reference. All equations are transformed
+  to a SOLVED_EQUATION(cref, exp).
+  Algorithm, when and if equation are left as they are."
   input BackendDAE.Equation eqn;
   input DAE.Exp crefExp;
   output BackendDAE.Equation outEqn;

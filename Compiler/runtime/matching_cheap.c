@@ -25,7 +25,14 @@
 
 #include "matchmaker.h"
 
-struct node {int id; int degree; struct node *next; struct node* prvs;};
+struct node
+{
+  int id;
+  int degree;
+  struct node *next;
+  struct node* prvs;
+};
+
 typedef struct node Node;
 
 void old_cheap(int* col_ptrs, int* col_ids, int* match, int* row_match, int n, int m) {
@@ -370,51 +377,59 @@ void sk_cheap_rand(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids,
 }
 
 
-void mind_cheap(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids,
-    int* match, int* row_match, int n, int m) {
-
+void mind_cheap(int *col_ptrs, int *col_ids, int *row_ptrs, int *row_ids, int *match, int *row_match, int n, int m)
+{
   Node* rnodes = (Node*)malloc(sizeof(Node) * m);
-  Node* cnodes = (Node*)malloc(sizeof(Node) * n);;
+  Node* cnodes = (Node*)malloc(sizeof(Node) * n);
   Node* tptr;
 
-  int i, deg, maxdeg = -1, cdeg, vtx, minnbr = -1, ptr, row ,col, temp;
+  int i, deg, maxdeg = -1, cdeg, vtx, minnbr = -1, ptr, row, col, temp;
 
-  for(i = 0; i < n; i++) {
+  for(i=0; i<n; i++)
+  {
     deg = col_ptrs[i+1] - col_ptrs[i];
     cnodes[i].degree = deg;
     cnodes[i].id = i;
-    if(deg > maxdeg) maxdeg = deg;
+    if(deg > maxdeg)
+      maxdeg = deg;
   }
 
-  for(i = 0; i < m; i++) {
+  for(i=0; i<m; i++)
+  {
     deg = row_ptrs[i+1] - row_ptrs[i];
     rnodes[i].degree = deg;
     rnodes[i].id = i + n;
-    if(deg > maxdeg) maxdeg = deg;
+    if(deg > maxdeg)
+      maxdeg = deg;
   }
 
   Node* lists = (Node*)malloc(sizeof(Node) * (maxdeg + 1));
   Node* listse = (Node*)malloc(sizeof(Node) * (maxdeg + 1));
 
-  for(i = 0; i <= maxdeg; i++) {
+  for(i=0; i<=maxdeg; i++)
+  {
     lists[i].next = &(listse[i]); lists[i].prvs = (Node*)0;
     listse[i].next = (Node*)0; listse[i].prvs = &(lists[i]);
     lists[i].id = -1; listse[i].id = -1;
     lists[i].degree = i; listse[i].degree = i;
   }
 
-  for(i = 0; i < n; i++) {
+  for(i=0; i<n; i++)
+  {
     deg = cnodes[i].degree;
-    if(deg > 0) {
+    if(deg > 0)
+    {
       tptr = lists[deg].next;
       tptr->prvs = lists[deg].next = &(cnodes[i]);
       cnodes[i].next = tptr;
       cnodes[i].prvs = &(lists[deg]);
     }
   }
-  for(i = 0; i < m; i++) {
+  for(i=0; i<m; i++)
+  {
     deg = rnodes[i].degree;
-    if(deg > 0) {
+    if(deg > 0)
+    {
       tptr = lists[deg].next;
       tptr->prvs = lists[deg].next = &(rnodes[i]);
       rnodes[i].next = tptr;
@@ -423,25 +438,37 @@ void mind_cheap(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids,
   }
 
   cdeg = 1;
-  while(cdeg <= maxdeg) {
-    if(lists[cdeg].next == &(listse[cdeg])) {cdeg++; continue;}
+  while(cdeg <= maxdeg)
+  {
+    if(lists[cdeg].next == &(listse[cdeg]))
+    {
+      cdeg++;
+      continue;
+    }
+    
     tptr = lists[cdeg].next;
     lists[cdeg].next = tptr->next;
     tptr->next->prvs = &(lists[cdeg]);
     vtx = tptr->id;
 
-    if(vtx < n) {
-      for(ptr = col_ptrs[vtx]; ptr < col_ptrs[vtx+1]; ptr++) {
-        if(row_match[col_ids[ptr]] == -1) {
+    if(vtx < n)
+    {
+      for(ptr=col_ptrs[vtx]; ptr<col_ptrs[vtx+1]; ptr++)
+      {
+        if(row_match[col_ids[ptr]] == -1)
+        {
           minnbr = col_ids[ptr];
           break;
         }
       }
 
-      for(ptr = ptr + 1; ptr < col_ptrs[vtx+1]; ptr++) {
+      for(ptr=ptr+1; ptr<col_ptrs[vtx+1]; ptr++)
+      {
         row = col_ids[ptr];
-        if(row_match[row] == -1) {
-          if(rnodes[row].degree < rnodes[minnbr].degree) {
+        if(row_match[row] == -1)
+        {
+          if(rnodes[row].degree < rnodes[minnbr].degree)
+          {
             minnbr = col_ids[ptr];
           }
         }
@@ -450,19 +477,26 @@ void mind_cheap(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids,
       match[vtx] = minnbr; row_match[minnbr] = vtx;
       rnodes[minnbr].next->prvs = rnodes[minnbr].prvs;
       rnodes[minnbr].prvs->next = rnodes[minnbr].next;
-    } else {
+    }
+    else
+    {
       vtx = vtx - n;
-      for(ptr = row_ptrs[vtx]; ptr < row_ptrs[vtx+1]; ptr++) {
-        if(match[row_ids[ptr]] == -1) {
+      for(ptr=row_ptrs[vtx]; ptr<row_ptrs[vtx+1]; ptr++)
+      {
+        if(match[row_ids[ptr]] == -1)
+        {
           minnbr = row_ids[ptr];
           break;
         }
       }
 
-      for(ptr = ptr + 1; ptr < row_ptrs[vtx+1]; ptr++) {
+      for(ptr=ptr+1; ptr<row_ptrs[vtx+1]; ptr++)
+      {
         col = row_ids[ptr];
-        if(match[col] == -1) {
-          if(cnodes[col].degree < cnodes[minnbr].degree) {
+        if(match[col] == -1)
+        {
+          if(cnodes[col].degree < cnodes[minnbr].degree)
+          {
             minnbr = row_ids[ptr];
           }
         }
@@ -474,14 +508,17 @@ void mind_cheap(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids,
       temp = vtx; vtx = minnbr; minnbr = temp; /* swap */
     }
 
-    for(ptr = col_ptrs[vtx]; ptr < col_ptrs[vtx+1]; ptr++) {
+    for(ptr=col_ptrs[vtx]; ptr<col_ptrs[vtx+1]; ptr++)
+    {
       row = col_ids[ptr];
-      if(row_match[row] == -1) {
+      if(row_match[row] == -1)
+      {
         deg = --(rnodes[row].degree);
         rnodes[row].next->prvs = rnodes[row].prvs;
         rnodes[row].prvs->next = rnodes[row].next;
 
-        if(deg > 0) {
+        if(deg > 0)
+        {
           tptr = lists[deg].next;
           tptr->prvs = lists[deg].next = &(rnodes[row]);
           rnodes[row].next = tptr;
@@ -490,14 +527,17 @@ void mind_cheap(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids,
       }
     }
 
-    for(ptr = row_ptrs[minnbr]; ptr < row_ptrs[minnbr+1]; ptr++) {
+    for(ptr=row_ptrs[minnbr]; ptr<row_ptrs[minnbr+1]; ptr++)
+    {
       col = row_ids[ptr];
-      if(match[col] == -1) {
+      if(match[col] == -1)
+      {
         deg = --(cnodes[col].degree);
         cnodes[col].next->prvs = cnodes[col].prvs;
         cnodes[col].prvs->next = cnodes[col].next;
 
-        if(deg > 0) {
+        if(deg > 0)
+        {
           tptr = lists[deg].next;
           tptr->prvs = lists[deg].next = &(cnodes[col]);
           cnodes[col].next = tptr;
@@ -514,15 +554,22 @@ void mind_cheap(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids,
   free(rnodes);
 }
 
-void cheap_matching(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids,
-    int* match, int* row_match, int n, int m, int cheap_id) {
-  if(cheap_id == do_old_cheap) {
+void cheap_matching(int *col_ptrs, int *col_ids, int *row_ptrs, int *row_ids, int *match, int *row_match, int n, int m, int cheap_id)
+{
+  if(do_old_cheap == cheap_id)
+  {
     old_cheap(col_ptrs, col_ids, match, row_match, n, m);
-  } else if(cheap_id == do_sk_cheap) {
+  }
+  else if(do_sk_cheap == cheap_id)
+  {
     sk_cheap(col_ptrs, col_ids, row_ptrs, row_ids, match, row_match, n, m);
-  } else if(cheap_id == do_sk_cheap_rand) {
+  }
+  else if(do_sk_cheap_rand == cheap_id)
+  {
     sk_cheap_rand(col_ptrs, col_ids, row_ptrs, row_ids, match, row_match, n, m);
-  } else if(cheap_id == do_mind_cheap) {
+  }
+  else if(do_mind_cheap == cheap_id)
+  {
     mind_cheap(col_ptrs, col_ids, row_ptrs, row_ids, match, row_match, n, m);
   }
 }

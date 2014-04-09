@@ -1983,7 +1983,7 @@ algorithm
 end dumpOption;
 
 protected function dumpEqSystemHTML
-"This function dumps the BackendDAE.EqSystem representaton to stdout."
+"This function dumps the BackendDAE.EqSystem representation to stdout."
   input BackendDAE.EqSystem inEqSystem;
   input String inPrefixIdstr;
   input tuple<DumpHTML.Document,Integer> inTpl;
@@ -3019,6 +3019,90 @@ algorithm
         ();
   end matchcontinue;
 end dumpMatching2;
+
+public function dumpMatchingVars "author: PA
+  prints the matching information on stdout."
+  input array<Integer> v;
+protected
+  Integer len;
+  String len_str;
+algorithm
+  print("Matching\n");
+  print(UNDERLINE +& "\n");
+  len := arrayLength(v);
+  len_str := intString(len);
+  print(len_str);
+  print(" variables\n");
+  dumpMatching2Vars(v, 1, len);
+end dumpMatchingVars;
+
+protected function dumpMatching2Vars "author: PA
+  Helper function to dumpMatching."
+  input array<Integer> v;
+  input Integer i;
+  input Integer len;
+algorithm
+  _ := matchcontinue (v,i,len)
+    local
+      Integer eqn;
+      String s,s2;
+    case (_,_,_)
+      equation
+        true = intLe(i,len);
+        s = intString(i);
+        eqn = v[i];
+        s2 = intString(eqn);
+        print("var " +& s +& " is solved in eqn " +& s2 +& "\n");
+        dumpMatching2Vars(v, i+1, len);
+      then
+        ();
+    else
+      then
+        ();
+  end matchcontinue;
+end dumpMatching2Vars;
+
+public function dumpMatchingEqns "author: PA
+  prints the matching information on stdout."
+  input array<Integer> v;
+protected
+  Integer len;
+  String len_str;
+algorithm
+  print("Matching\n");
+  print(UNDERLINE +& "\n");
+  len := arrayLength(v);
+  len_str := intString(len);
+  print(len_str);
+  print(" equations\n");
+  dumpMatching2Eqns(v, 1, len);
+end dumpMatchingEqns;
+
+protected function dumpMatching2Eqns "author: PA
+  Helper function to dumpMatching."
+  input array<Integer> v;
+  input Integer i;
+  input Integer len;
+algorithm
+  _ := matchcontinue (v,i,len)
+    local
+      Integer eqn;
+      String s,s2;
+    case (_,_,_)
+      equation
+        true = intLe(i,len);
+        s = intString(i);
+        eqn = v[i];
+        s2 = intString(eqn);
+        print("eqn " +& s +& " is solved for var " +& s2 +& "\n");
+        dumpMatching2Eqns(v, i+1, len);
+      then
+        ();
+    else
+      then
+        ();
+  end matchcontinue;
+end dumpMatching2Eqns;
 
 public function dumpMarkedEqns
 "Dumps only the equations given as list of indexes to a string."
