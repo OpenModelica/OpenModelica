@@ -6779,20 +6779,20 @@ public function replaceCallAttrType  "replaces the type in the geiven DAE.CALL_A
 algorithm
   caOut := match(caIn,typeIn)
     local
-      Boolean tpl,bi,impure;
+      Boolean tpl,bi,impure_;
       DAE.CallAttributes ca;
       DAE.InlineType iType;
       DAE.Type ty;
       DAE.TailCall tailCall;
-    case(DAE.CALL_ATTR(ty=ty,tuple_=_,builtin=bi,isImpure=impure,inlineType=iType,tailCall=tailCall),DAE.T_TUPLE(_,_))
+    case(DAE.CALL_ATTR(ty=ty,tuple_=_,builtin=bi,isImpure=impure_,inlineType=iType,tailCall=tailCall),DAE.T_TUPLE(_,_))
       equation
-        ca = DAE.CALL_ATTR(typeIn,true,bi,impure,iType,tailCall);
+        ca = DAE.CALL_ATTR(typeIn,true,bi,impure_,iType,tailCall);
       then
         ca;
     else
       equation
-        DAE.CALL_ATTR(ty=ty,tuple_=tpl,builtin=bi,isImpure=impure,inlineType=iType,tailCall=tailCall) = caIn;
-        ca = DAE.CALL_ATTR(typeIn,tpl,bi,impure,iType,tailCall);
+        DAE.CALL_ATTR(ty=ty,tuple_=tpl,builtin=bi,isImpure=impure_,inlineType=iType,tailCall=tailCall) = caIn;
+        ca = DAE.CALL_ATTR(typeIn,tpl,bi,impure_,iType,tailCall);
       then
         ca;
   end match;
