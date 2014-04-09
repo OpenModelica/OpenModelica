@@ -94,28 +94,6 @@ public uniontype functionList
   end FUNCTION_LIST;
 end functionList;
 
-
-
-public function printDAE "This function prints out a list of elements (i.e. a DAE)
-  to the stdout. Useful for example when called from Inst.instClass"
-  input DAE.DAElist inDAElist;
-algorithm
-  _ := match (inDAElist)
-    local
-      DAE.DAElist dae;
-      String str;
-
-    case dae
-      equation
-        Print.clearBuf();
-        dump2(dae);
-        str = Print.getString();
-        print(str);
-      then
-        ();
-  end match;
-end printDAE;
-
 public function dump "This function prints the DAE in the standard output format to the Print buffer.
   For printing to the stdout use print(dumpStr(dae)) instead."
   input DAE.DAElist dae;
@@ -273,304 +251,6 @@ algorithm
     else " --UNDEFINED-- ";
   end match;
 end dumpOperatorSymbol;
-
-public function dump2str "
-printDAEString daeString "
-input DAE.DAElist inDAElist;
-output String str;
-algorithm
-  dump2(inDAElist);
-  str := Print.getString();
-  Print.clearBuf();
-end dump2str;
-
-public function dump2 "Helper function to dump. Prints the DAE using module Print."
-  input DAE.DAElist inDAElist;
-algorithm
-  _ := matchcontinue (inDAElist)
-    local
-      String comment_str,ident;
-      DAE.ComponentRef cr,cr2;
-      DAE.Exp e,e1,e2;
-      DAE.InstDims dims;
-      Option<DAE.VariableAttributes> dae_var_attr;
-      Option<SCode.Comment> comment;
-      list<DAE.Element> xs,elts;
-      DAE.Dimensions dl;
-      Absyn.Path path;
-      list<DAE.Exp> explst;
-
-    case DAE.DAE((DAE.VAR(componentRef = cr,
-                               binding = SOME(e),
-                               dims = dims,
-                               variableAttributesOption = dae_var_attr,
-                               absynCommentOption = comment) :: xs))
-      equation
-        Print.printBuf("VAR(");
-        ComponentReference.printComponentRef(cr);
-
-        /* //include type of var
-
-        s1 = ComponentReference.debugPrintComponentRefTypeStr(cr);
-        s1 = Util.stringReplaceChar(s1,"\n","");
-        Print.printBuf("((" +& s1);
-        Print.printBuf("))");
-        */
-        Print.printBuf("=");
-        ExpressionDump.printExp(e);
-        Print.printBuf(",dims=");
-        Dump.printList(dims, ExpressionDump.printSubscript, ", ");
-        comment_str = dumpCommentAnnotationStr(comment) "  dump_start_value start &" ;
-        Print.printBuf("  comment:");
-        Print.printBuf(comment_str);
-        Print.printBuf(", ");
-        dumpVariableAttributes(dae_var_attr);
-        Print.printBuf(")\n");
-        dump2(DAE.DAE(xs));
-      then
-        ();
-    case DAE.DAE((DAE.VAR(componentRef = cr,binding = NONE(),variableAttributesOption = dae_var_attr,absynCommentOption = comment) :: xs))
-      equation
-        Print.printBuf("VAR(");
-        ComponentReference.printComponentRef(cr);
-        /* // include type in dump
-        s1 = ComponentReference.debugPrintComponentRefTypeStr(cr);
-        s1 = Util.stringReplaceChar(s1,"\n","");
-        Print.printBuf("((" +& s1);
-        Print.printBuf("))");
-        */
-        comment_str = dumpCommentAnnotationStr(comment) "  dump_start_value start &" ;
-        Print.printBuf("  comment:");
-        Print.printBuf(comment_str);
-        Print.printBuf(", ");
-        dumpVariableAttributes(dae_var_attr);
-        Print.printBuf(")\n");
-        dump2(DAE.DAE(xs));
-      then
-        ();
-    case DAE.DAE((DAE.DEFINE(componentRef = cr) :: xs))
-      equation
-        Print.printBuf("DEFINE(");
-        ComponentReference.printComponentRef(cr);
-        Print.printBuf(")\n");
-        dump2(DAE.DAE(xs));
-      then
-        ();
-    case DAE.DAE((DAE.INITIALDEFINE(componentRef = cr) :: xs))
-      equation
-        Print.printBuf("INITIALDEFINE(");
-        ComponentReference.printComponentRef(cr);
-        Print.printBuf(")\n");
-        dump2(DAE.DAE(xs));
-      then
-        ();
-    case DAE.DAE((DAE.EQUATION(exp = e1,scalar = e2) :: xs))
-      equation
-        Print.printBuf("EQUATION(");
-        ExpressionDump.printExp(e1);
-        Print.printBuf(" = ");
-        ExpressionDump.printExp(e2);
-        Print.printBuf(")\n");
-        dump2(DAE.DAE(xs));
-      then
-        ();
-    case DAE.DAE((DAE.INITIALEQUATION(exp1 = e1,exp2 = e2) :: xs))
-      equation
-        Print.printBuf("INITIALEQUATION(");
-        ExpressionDump.printExp(e1);
-        Print.printBuf(" = ");
-        ExpressionDump.printExp(e2);
-        Print.printBuf(")\n");
-        dump2(DAE.DAE(xs));
-      then
-        ();
-    case DAE.DAE((DAE.ARRAY_EQUATION(dimension=dl,exp = e1,array = e2) :: xs))
-      equation
-        Print.printBuf("ARRAY_EQUATION(");
-        Print.printBuf("dims = [");
-        Print.printBuf(stringDelimitList(List.map(dl, ExpressionDump.dimensionString), ", "));
-        Print.printBuf("]; ");
-        ExpressionDump.printExp(e1);
-        Print.printBuf(" = ");
-        ExpressionDump.printExp(e2);
-        Print.printBuf(")\n");
-        dump2(DAE.DAE(xs));
-      then
-        ();
-    case DAE.DAE((DAE.INITIAL_ARRAY_EQUATION(dimension=dl,exp = e1,array = e2) :: xs))
-      equation
-        Print.printBuf("INITIAL_ARRAY_EQUATION(");
-        Print.printBuf("dims = [");
-        Print.printBuf(stringDelimitList(List.map(dl, ExpressionDump.dimensionString), ", "));
-        Print.printBuf("]; ");
-        ExpressionDump.printExp(e1);
-        Print.printBuf(" = ");
-        ExpressionDump.printExp(e2);
-        Print.printBuf(")\n");
-        dump2(DAE.DAE(xs));
-      then
-        ();
-    case (DAE.DAE((DAE.ALGORITHM(algorithm_ = _) :: xs)))
-      equation
-        Print.printBuf("ALGORITHM(...)");
-        dump2(DAE.DAE(xs));
-      then
-        ();
-    case (DAE.DAE((DAE.INITIALALGORITHM(algorithm_ = _) :: xs)))
-      equation
-        Print.printBuf("INITIALALGORITHM(...)");
-        dump2(DAE.DAE(xs));
-      then
-        ();
-    case (DAE.DAE((DAE.COMP(ident = ident,dAElist = elts) :: xs)))
-      equation
-        Print.printBuf("COMP(");
-        Print.printBuf(ident);
-        dump2(DAE.DAE(elts));
-        Print.printBuf(")\n");
-        dump2(DAE.DAE(xs));
-      then
-        ();
-
-    case (DAE.DAE((DAE.ASSERT(condition=e1,message=e2) :: xs)))
-      equation
-        Print.printBuf("ASSERT(");
-        ExpressionDump.printExp(e1);
-        Print.printBuf(",");
-        ExpressionDump.printExp(e2);
-        Print.printBuf(")\n");
-        dump2(DAE.DAE(xs));
-      then
-        ();
-    case(DAE.DAE((DAE.EQUEQUATION(cr1 = cr, cr2 = cr2) :: xs)))
-      equation
-        Print.printBuf("EQUEQUATION(");
-        ComponentReference.printComponentRef(cr);
-        Print.printBuf(" = ");
-        ComponentReference.printComponentRef(cr2);
-        Print.printBuf(")\n");
-        dump2(DAE.DAE(xs));
-      then
-        ();
-    case DAE.DAE((DAE.COMPLEX_EQUATION(lhs = e1,rhs = e2) :: xs))
-      equation
-        Print.printBuf("COMPLEX_EQUATION(");
-        ExpressionDump.printExp(e1);
-        Print.printBuf(" = ");
-        ExpressionDump.printExp(e2);
-        Print.printBuf(")\n");
-        dump2(DAE.DAE(xs));
-      then
-        ();
-    case DAE.DAE((DAE.INITIAL_COMPLEX_EQUATION(lhs = e1,rhs = e2) :: xs))
-      equation
-        Print.printBuf("INITIAL_COMPLEX_EQUATION(");
-        ExpressionDump.printExp(e1);
-        Print.printBuf(" = ");
-        ExpressionDump.printExp(e2);
-        Print.printBuf(")\n");
-        dump2(DAE.DAE(xs));
-      then
-        ();
-    case (DAE.DAE(elementLst = {})) then ();
-
-    case DAE.DAE((DAE.REINIT(componentRef = cr,exp = e2) :: xs))
-      equation
-        Print.printBuf("REINIT(");
-        ComponentReference.printComponentRef(cr);
-        Print.printBuf(" = ");
-        ExpressionDump.printExp(e2);
-        Print.printBuf(")\n");
-        dump2(DAE.DAE(xs));
-      then
-        ();
-
-    case (DAE.DAE((DAE.TERMINATE(message=e1) :: xs)))
-      equation
-        Print.printBuf("TERMINATE(");
-        ExpressionDump.printExp(e1);
-        Print.printBuf(")\n");
-        dump2(DAE.DAE(xs));
-      then
-        ();
-
-    case (DAE.DAE((DAE.NORETCALL(functionName=path,functionArgs=explst) :: xs)))
-      equation
-        Print.printBuf("NORETCALL(");
-        Print.printBuf(Absyn.pathString(path));
-        Print.printBuf("(");
-        Print.printBuf(ExpressionDump.printExpListStr(explst));
-        Print.printBuf("))\n");
-        dump2(DAE.DAE(xs));
-      then
-        ();
-
-    case (DAE.DAE((DAE.EXTOBJECTCLASS(path=path) :: xs)))
-      equation
-        Print.printBuf("EXTOBJECTCLASS(");
-        Print.printBuf(Absyn.pathString(path));
-        Print.printBuf(")\n");
-        dump2(DAE.DAE(xs));
-      then
-        ();
-
-    case (DAE.DAE((DAE.WHEN_EQUATION(condition=e1) :: xs)))
-      equation
-        Print.printBuf("WHEN_EQUATION(");
-        ExpressionDump.printExp(e1);
-        Print.printBuf(",...)\n");
-        dump2(DAE.DAE(xs));
-      then
-        ();
-
-    case (DAE.DAE((DAE.IF_EQUATION(condition1=e1::_) :: xs)))
-      equation
-        Print.printBuf("IF_EQUATION(");
-        ExpressionDump.printExp(e1);
-        Print.printBuf(",...)\n");
-        dump2(DAE.DAE(xs));
-      then
-        ();
-
-    case (DAE.DAE((DAE.INITIAL_IF_EQUATION(condition1=e1::_) :: xs)))
-      equation
-        Print.printBuf("IF_EQUATION(");
-        ExpressionDump.printExp(e1);
-        Print.printBuf(",...)\n");
-        dump2(DAE.DAE(xs));
-      then
-        ();
-
-    case (DAE.DAE((DAE.CONSTRAINT(constraints=_) :: xs)))
-      equation
-        Print.printBuf("CONSTRAINT(");
-        Print.printBuf("...)\n");
-        dump2(DAE.DAE(xs));
-      then
-        ();
-
-    case (DAE.DAE((DAE.CLASS_ATTRIBUTES(classAttrs=_) :: xs)))
-      equation
-        Print.printBuf("CLASS_ATTRIBUTES(");
-        Print.printBuf("...)\n");
-        dump2(DAE.DAE(xs));
-      then
-        ();
-
-    //BZ Could be nice to know when this failes (when new elements are introduced)
-    case(DAE.DAE((_ :: xs)))
-      equation
-        Print.printBuf("\n\ndump2 failed to print element\n");
-        dump2(DAE.DAE(xs));
-      then
-        ();
-    case (_)
-      equation
-        Print.printBuf("dump2 failed\n");
-      then
-        ();
-  end matchcontinue;
-end dump2;
 
 protected function dumpStartValue "Dumps the StartValue for a variable."
   input DAE.StartValue inStartValue;
@@ -1188,12 +868,9 @@ algorithm
       then
         ();
 
-    case (DAE.NORETCALL(functionName = functionName, functionArgs = functionArgs, source = src))
+    case (DAE.NORETCALL(exp = e1, source = src))
       equation
-        Print.printBuf(Absyn.pathString(functionName));
-        Print.printBuf("(");
-        Print.printBuf(ExpressionDump.printExpListStr(functionArgs));
-        Print.printBuf(") ");
+        ExpressionDump.printExp(e1);
         sourceStr = getSourceInformationStr(src);
         Print.printBuf(sourceStr);
         Print.printBuf(";\n");
@@ -1274,6 +951,13 @@ algorithm
         Print.printBuf("  else\n");
         List.map_0(xs2,dumpInitialEquation);
         Print.printBuf("end if;\n");
+      then
+        ();
+
+    case (DAE.INITIAL_NORETCALL(exp = e1))
+      equation
+        ExpressionDump.printExp(e1);
+        Print.printBuf(";\n");
       then
         ();
 
@@ -1367,13 +1051,12 @@ algorithm
       then
         str;
 
-    case (DAE.NORETCALL(functionName=path,functionArgs=es,source = src))
+    case (DAE.NORETCALL(exp=e1,source = src))
       equation
         cmt = DAEUtil.getCommentsFromSource(src);
         sourceStr = cmtListToString(cmt);
-        s1 = Absyn.pathString(path);
-        s2 = ExpressionDump.printExpStr(DAE.TUPLE(es));
-        str = stringAppendList({"  ", s1, s2, sourceStr, ";\n"});
+        s1 = ExpressionDump.printExpStr(e1);
+        str = stringAppendList({"  ", s1, sourceStr, ";\n"});
       then
         str;
     // adrpo: TODO! FIXME! should we say UNKNOWN equation here? we don't handle all cases!
@@ -2479,7 +2162,7 @@ algorithm
         Print.printBuf("REINIT()");
       then
         ();
-    case DAE.NORETCALL(functionName = _)
+    case DAE.NORETCALL(exp = _)
       equation
         Print.printBuf("NORETCALL()");
       then
@@ -2773,13 +2456,13 @@ algorithm
       equation
         DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), source = {path}) =
           Types.arrayElementType(ty);
-        (_, dims) = Types.flattenArrayTypeOpt(tp); 
+        (_, dims) = Types.flattenArrayTypeOpt(tp);
         name = Absyn.pathStringNoQual(path);
         dim_str = List.toString(dims, ExpressionDump.dimensionString, "", "[",
             ", ", "]", false);
       then
         name +& dim_str;
-        
+
     case DAE.T_SUBTYPE_BASIC(complexType = ty as DAE.T_SUBTYPE_BASIC(complexType = _))
       then unparseType(ty);
 
@@ -3291,12 +2974,11 @@ algorithm
       then
         str;
 
-    case ((DAE.NORETCALL(functionName = path, functionArgs = expl, source = src) :: xs), str)
+    case ((DAE.NORETCALL(exp=e, source = src) :: xs), str)
       equation
         sourceStr = getSourceInformationStr(src);
-        s = Absyn.pathString(path);
-        s1 = stringDelimitList(List.map(expl,ExpressionDump.printExpStr),",");
-        str = IOStream.appendList(str, {"  ",s,"(",s1,")", sourceStr, ";\n"});
+        s1 = ExpressionDump.printExpStr(e);
+        str = IOStream.appendList(str, {"  ",s1, sourceStr, ";\n"});
         str = dumpEquationsStream(xs, str);
       then
         str;
@@ -3401,6 +3083,14 @@ algorithm
         str = IOStream.append(str, "  else\n");
         str = dumpInitialEquationsStream(xs2, str);
         str = IOStream.append(str, "  end if;\n");
+        str = dumpInitialEquationsStream(xs, str);
+      then
+        str;
+
+    case ((DAE.INITIAL_NORETCALL(exp=e) :: xs), str)
+      equation
+        s1 = ExpressionDump.printExpStr(e);
+        str = IOStream.appendList(str, {"  ",s1, ";\n"});
         str = dumpInitialEquationsStream(xs, str);
       then
         str;
@@ -3538,7 +3228,7 @@ algorithm
     else "";
   end match;
 end dumpVarBindingStr;
-        
+
 protected function dumpVarStream
   "Dump var to a stream."
   input DAE.Element inElement;
@@ -3562,7 +3252,7 @@ algorithm
       DAE.InstDims dims;
       IOStream.IOStream str;
       list<DAE.Var> ty_vars;
- 
+
     case (DAE.VAR(componentRef = id,
                   kind = kind,
                   direction = dir,
@@ -3595,7 +3285,7 @@ algorithm
 
   end matchcontinue;
 end dumpVarStream;
-        
+
 public function dumpAlgorithmStream
 "Dump algorithm to a stream"
   input DAE.Element inElement;

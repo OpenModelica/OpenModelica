@@ -625,9 +625,6 @@ match lst
     <<
     reinit(<%cref_str%>,<%exp_str%>)<%source_src%>;
     >>
-  case NORETCALL(__) then
-    let source_src = dumpSource(source)
-    'NO_RETURN_CALL<%source_src%>;'
   else 'UNKNOWN EQUATION TYPE'
 end dumpEquation;
 

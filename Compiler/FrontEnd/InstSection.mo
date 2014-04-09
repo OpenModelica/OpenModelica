@@ -836,7 +836,7 @@ algorithm
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         source = DAEUtil.addSymbolicTransformation(source,flattenOp);
 
-        dae = instEquationNoRetCallVectorization(exp,source);
+        dae = instEquationNoRetCallVectorization(exp,inInitial,source);
       then
         (cache,env,ih,dae,csets,ci_state,graph);
 
@@ -951,23 +951,16 @@ algorithm
 end checkTupleCallEquationMessage;
 
 protected function instEquationNoRetCallVectorization "creates DAE for NORETCALLs and also performs vectorization if needed"
-  input DAE.Exp expCall;
+  input DAE.Exp exp;
+  input SCode.Initial initial_;
   input DAE.ElementSource source "the origin of the element";
   output DAE.DAElist dae;
 algorithm
-  dae := match(expCall,source)
-  local Absyn.Path fn; list<DAE.Exp> expl; DAE.Type ty; Boolean s; DAE.Exp e;
-    DAE.DAElist dae1,dae2;
-    case(DAE.CALL(path=fn,expLst=expl),_) equation
-      then DAE.DAE({DAE.NORETCALL(fn,expl,source)});
-    case(DAE.ARRAY(ty,s,e::expl),_)
-      equation
-        dae1 = instEquationNoRetCallVectorization(DAE.ARRAY(ty,s,expl),source);
-        dae2 = instEquationNoRetCallVectorization(e,source);
-        dae = DAEUtil.joinDaes(dae1,dae2);
-      then dae;
-    case(DAE.ARRAY(_,_,{}),_) equation
-      then DAE.emptyDae;
+  dae := match (exp,initial_,source)
+    case(_,SCode.NON_INITIAL(),_) equation
+      then DAE.DAE({DAE.NORETCALL(exp,source)});
+    case(_,SCode.INITIAL(),_) equation
+      then DAE.DAE({DAE.INITIAL_NORETCALL(exp,source)});
   end match;
 end instEquationNoRetCallVectorization;
 
@@ -2126,11 +2119,11 @@ algorithm
       equation
         (cache,e_1,(prop as DAE.PROP(_,cnst)),_) = Static.elabExp(cache, env, e, impl, NONE(), true, pre, info);
         (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl, info);
-        
+
         // only do this if the range is parameter or constant!
         true = listMember(cnst, {DAE.C_CONST(), DAE.C_PARAM()});
         // is empty range array?
-        (cache, Values.ARRAY(valueLst = {}), _) = Ceval.ceval(cache, env, e_1, impl, NONE(), Absyn.MSG(info), 0);        
+        (cache, Values.ARRAY(valueLst = {}), _) = Ceval.ceval(cache, env, e_1, impl, NONE(), Absyn.MSG(info), 0);
       then
         (cache,{});
 
@@ -3575,14 +3568,14 @@ algorithm
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1p,c2p)), NONE());
         // declare the added component in the DAE!
         (cache,c1_2) = PrefixUtil.prefixCref(cache, env, ih, pre, c1_2);
-        
+
         // get the dimensions from the ty1 type!
         daeDims = Types.getDimensions(ty1);
         arrDims = List.map(daeDims,Expression.unelabDimension);
         daeExpandable = generateExpandableDAE(
           c1_2,
-          state, 
-          ty1, 
+          state,
+          ty1,
           SCode.ATTR(arrDims, ct1, prl1, vt1, Absyn.BIDIR()),
           vis1,
           io1,
@@ -3640,10 +3633,10 @@ algorithm
       DAE.Dimensions daeDims;
       DAE.DAElist daeExpandable;
       list<DAE.ComponentRef> crefs;
-    
+
     // scalars!
     case (_, _, _, _, _, _, _)
-      equation   
+      equation
         // get the dimensions from the type!
         (daeDims as {}) = Types.getDimensions(ty);
         arrDims = List.map(daeDims,Expression.unelabDimension);
@@ -3654,10 +3647,10 @@ algorithm
            io, SCode.NOT_FINAL(), source, true);
       then
         daeExpandable;
-   
+
     // arrays
     case (_, _, _, _, _, _, _)
-      equation   
+      equation
         // get the dimensions from the type!
         (daeDims as _::_) = Types.getDimensions(ty);
         arrDims = List.map(daeDims,Expression.unelabDimension);
@@ -3666,7 +3659,7 @@ algorithm
         daeExpandable = daeDeclareList(listReverse(crefs), state, ty, attrs, vis, io, source, DAE.emptyDae);
       then
         daeExpandable;
-  
+
   end matchcontinue;
 end generateExpandableDAE;
 
@@ -3689,9 +3682,9 @@ algorithm
       DAE.DAElist daeExpandable;
       list<DAE.ComponentRef> lst;
       DAE.ComponentRef cref;
-   
+
     case ({}, _, _, _, _, _, _, _) then acc;
-   
+
     case (cref::lst, _, _, _, _, _, _, _)
       equation
         daeExpandable = InstDAE.daeDeclare(cref, state, ty,
@@ -4277,7 +4270,7 @@ algorithm
         const2 = NFInstUtil.toConst(vt2);
         (cache, crefExp1, _) = Ceval.cevalIfConstant(cache, env, crefExp1, DAE.PROP(t1,const1), true, info);
         (cache, crefExp2, _) = Ceval.cevalIfConstant(cache, env, crefExp2, DAE.PROP(t2,const2), true, info);
-        
+
         lhsl = Expression.arrayElements(crefExp1);
         rhsl = Expression.arrayElements(crefExp2);
         elts = List.threadMap1(lhsl, rhsl, generateConnectAssert, source);
@@ -4447,7 +4440,7 @@ algorithm
   outAssert := DAE.ASSERT(exp, DAE.SCONST("automatically generated from connect"),
     DAE.ASSERTIONLEVEL_ERROR, inSource);
 end generateConnectAssert;
-  
+
 protected function connectArrayComponents
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -5016,7 +5009,7 @@ algorithm
         {} = expandArrayDimension(rhs_dim, rhs);
       then
         (cache,{});
-    
+
     // v := expr;
     case (cache,env,ih,pre,Absyn.CREF(cr),e_1,eprop,_,source,_,impl,_,_)
       equation
@@ -5024,20 +5017,20 @@ algorithm
         Static.checkAssignmentToInput(var, attr, env, false, info);
         (cache, ce_1) = Static.canonCref(cache, env, ce, impl);
         (cache, ce_1) = PrefixUtil.prefixCref(cache, env, ih, pre, ce_1);
-        
+
         (cache, t) = PrefixUtil.prefixExpressionsInType(cache, env, ih, pre, t);
-        
+
         lt = Types.getPropType(cprop);
         (cache, lt) = PrefixUtil.prefixExpressionsInType(cache, env, ih, pre, lt);
         cprop = Types.setPropType(cprop, lt);
-        
+
         (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
         (cache, e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
-        
+
         rt = Types.getPropType(eprop);
         (cache, rt) = PrefixUtil.prefixExpressionsInType(cache, env, ih, pre, rt);
         eprop = Types.setPropType(eprop, rt);
-        
+
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = makeAssignment(Expression.makeCrefExp(ce_1,t), cprop, e_2, eprop, attr, initial_, source);
       then

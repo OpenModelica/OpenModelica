@@ -122,7 +122,7 @@ algorithm
   aliasVars := BackendVariable.emptyVars();
   // handle alias equations
   (vars, knvars, extVars, aliasVars, eqns, reqns, ieqns, whenclauses_1) := handleAliasEquations(aliaseqns, vars, knvars, extVars, aliasVars, eqns, reqns, ieqns, whenclauses_1);
-  vars_1 := detectImplicitDiscrete(vars, knvars, eqns); 
+  vars_1 := detectImplicitDiscrete(vars, knvars, eqns);
   (vars_1, eqns) := addOptimizationVarsEqns(vars, eqns, Config.acceptOptimicaGrammar(), clsAttrs, constrs);
   eqnarr := BackendEquation.listEquation(eqns);
   reqnarr := BackendEquation.listEquation(reqns);
@@ -397,7 +397,7 @@ algorithm
       then
         (inVars, inKnVars, inExVars, eqns, reqns, ieqns, inConstraintLst, inClassAttributeLst, inWhenClauseLst, inExtObjClasses, iAliaseqns, iInlineHT);
 
-    case (DAE.NORETCALL(functionName = _), _, _, _, _, _, _, _, _, _, _, _, _, _)
+    case (DAE.NORETCALL(exp = _), _, _, _, _, _, _, _, _, _, _, _, _, _)
       equation
         (eqns, reqns, ieqns) = lowerAlgorithm(inElement, functionTree, inEqnsLst, inREqnsLst, inIEqnsLst, DAE.NOT_EXPAND());
       then
@@ -502,7 +502,7 @@ end transformBuiltinExpression;
 /*
  *  lower all variables
  */
- 
+
 public function lowerVars
 
   input list<DAE.Element> inElements;
@@ -516,7 +516,7 @@ public function lowerVars
   output BackendDAE.Variables outExternalVariables;
   output list<BackendDAE.Equation> oEqnsLst;
 algorithm
-  (outVariables, outKnownVariables, outExternalVariables, oEqnsLst) := 
+  (outVariables, outKnownVariables, outExternalVariables, oEqnsLst) :=
   matchcontinue (inElements, functionTree, inVars, inKnVars, inExVars, inEqnsLst)
     local
       list<DAE.Element> rest, newVars;
@@ -546,8 +546,8 @@ algorithm
        equation
         str = "BackendDAECreate.lowerVars failed for " +& DAEDump.dumpElementsStr({elem});
         Error.addMessage(Error.INTERNAL_ERROR, {str});
-      then fail();     
-        
+      then fail();
+
   end matchcontinue;
 end lowerVars;
 
@@ -1193,9 +1193,9 @@ algorithm
         eqns = lowerTupleAssignment(explst,explst1,source,functionTree,inIEquations);
       then
         (inEquations,inREquations,eqns);
-    
+
     // Only succeds for tuple equations, i.e. (a,b,c) = foo(x,y,z) or foo(x,y,z) = (a,b,c)
-    
+
     case(DAE.EQUATION(DAE.TUPLE(explst),e2 as DAE.CALL(path =_),source),_,_,_,_)
       equation
         (DAE.EQUALITY_EXPS(_,e2_1), source) = Inline.simplifyAndForceInlineEquationExp(DAE.EQUALITY_EXPS(DAE.TUPLE(explst),e2), (SOME(functionTree), {DAE.NORM_INLINE(), DAE.NO_INLINE()}), source);
@@ -1217,7 +1217,7 @@ algorithm
         eqns = lowerExtendedRecordEqn(e1,e2_1,source,functionTree,inIEquations);
       then
         (inEquations,inREquations,eqns);
-        
+
     case(DAE.INITIALEQUATION(e2 as DAE.CALL(path =_),DAE.TUPLE(explst),source),_,_,_,_)
       equation
         (DAE.EQUALITY_EXPS(e1,e2_1), source) = Inline.simplifyAndForceInlineEquationExp(DAE.EQUALITY_EXPS(DAE.TUPLE(explst),e2), (SOME(functionTree), {DAE.NORM_INLINE(), DAE.NO_INLINE()}), source);
@@ -1345,7 +1345,7 @@ algorithm
       then
         (inEquations,inREquations,BackendDAE.ALGORITHM(0, DAE.ALGORITHM_STMTS({DAE.STMT_TERMINATE(msg,source)}), source, DAE.NOT_EXPAND())::inIEquations);
 
-    case (DAE.NORETCALL(functionName = _),_,_,_,_)
+    case (DAE.NORETCALL(exp = _),_,_,_,_)
       equation
         (eqns,reqns,ieqns) = lowerAlgorithm(inElement,functionTree,inEquations,inREquations,inIEquations, DAE.NOT_EXPAND());
       then
@@ -1548,7 +1548,7 @@ algorithm
   (obrancheqns, outEqns) := match(brancheqns, condition, conditions, brancheqns1, inEqns)
     local
       Absyn.Path functionName;
-      DAE.Exp e, cond, msg, level;
+      DAE.Exp e, exp, cond, msg, level;
       list<DAE.Exp> explst;
       DAE.Element eqn;
       list<DAE.Element> eqns, beqns;
@@ -1581,20 +1581,16 @@ algorithm
         (beqns, eqns) = lowerIfEquationAsserts1(eqns, condition, conditions, brancheqns1, DAE.ALGORITHM(DAE.ALGORITHM_STMTS({DAE.STMT_IF(e, {DAE.STMT_TERMINATE(msg, source)}, DAE.NOELSE(), source)}), source)::inEqns);
       then
         (beqns, eqns);
-    case (DAE.NORETCALL(functionName = functionName, functionArgs=explst, source=source)::eqns, NONE(), _, _, _)
+    case (DAE.NORETCALL(exp=exp, source=source)::eqns, NONE(), _, _, _)
       equation
-        // make sure is not constrain as we don't support it.
-        true = boolNot(Util.isEqual(functionName, Absyn.IDENT("constrain")));
         e = List.fold(conditions, makeIfExp, DAE.BCONST(true));
-        (beqns, eqns) = lowerIfEquationAsserts1(eqns, condition, conditions, brancheqns1, DAE.ALGORITHM(DAE.ALGORITHM_STMTS({DAE.STMT_IF(e, {DAE.STMT_NORETCALL(DAE.CALL(functionName, explst, DAE.CALL_ATTR(DAE.T_NORETCALL_DEFAULT, false, false, false, DAE.NORM_INLINE(), DAE.NO_TAIL())), source)}, DAE.NOELSE(), source)}), source)::inEqns);
+        (beqns, eqns) = lowerIfEquationAsserts1(eqns, condition, conditions, brancheqns1, DAE.ALGORITHM(DAE.ALGORITHM_STMTS({DAE.STMT_IF(exp, {DAE.STMT_NORETCALL(exp, source)}, DAE.NOELSE(), source)}), source)::inEqns);
       then
         (beqns, eqns);
-    case (DAE.NORETCALL(functionName = functionName, functionArgs=explst, source=source)::eqns, SOME(e), _, _, _)
+    case (DAE.NORETCALL(exp=exp, source=source)::eqns, SOME(e), _, _, _)
       equation
-        // make sure is not constrain as we don't support it.
-        true = boolNot(Util.isEqual(functionName, Absyn.IDENT("constrain")));
         e = List.fold(conditions, makeIfExp, e);
-        (beqns, eqns) = lowerIfEquationAsserts1(eqns, condition, conditions, brancheqns1, DAE.ALGORITHM(DAE.ALGORITHM_STMTS({DAE.STMT_IF(e, {DAE.STMT_NORETCALL(DAE.CALL(functionName, explst, DAE.CALL_ATTR(DAE.T_NORETCALL_DEFAULT, false, false, false, DAE.NORM_INLINE(), DAE.NO_TAIL())), source)}, DAE.NOELSE(), source)}), source)::inEqns);
+        (beqns, eqns) = lowerIfEquationAsserts1(eqns, condition, conditions, brancheqns1, DAE.ALGORITHM(DAE.ALGORITHM_STMTS({DAE.STMT_IF(e, {DAE.STMT_NORETCALL(exp, source)}, DAE.NOELSE(), source)}), source)::inEqns);
       then
         (beqns, eqns);
     case (eqn::eqns, _, _, _, _)
@@ -1667,7 +1663,7 @@ algorithm
         size = Expression.sizeOf(tp);
       then
         BackendDAE.COMPLEX_EQUATION(size, inExp1, inExp2, source, false)::inEqns;
-        
+
     // array types to array equations
     case (_, _, _, _, _)
       equation
@@ -1940,10 +1936,10 @@ algorithm
       then
         (eqnl, reinit);
 
-    case (DAE.NORETCALL(functionName = functionName, functionArgs=expl, source=source)::xs, _, _, _, _)
+    case (DAE.NORETCALL(exp=e, source=source)::xs, _, _, _, _)
       equation
-        (expl, source, _) = Inline.inlineExps(expl, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
-        (eqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, iEquationLst, BackendDAE.NORETCALL(functionName, expl, source)::iReinitStatementLst);
+        (e, source, _, _) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
+        (eqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, iEquationLst, BackendDAE.NORETCALL(e, source)::iReinitStatementLst);
       then
         (eqnl, reinit);
 
@@ -2363,7 +2359,7 @@ end lowerTupleAssignment;
 protected function lowerAlgorithm
 "Helper function to lower2.
   Transforms a DAE.Element to BackEnd.ALGORITHM.
-NOTE: inCrefExpansionStrategy is needed if we translate equations to algorithms as 
+NOTE: inCrefExpansionStrategy is needed if we translate equations to algorithms as
       we should not expand array crefs to full dimensions in that case because that
       is wrong. Expansion of array crefs to full dimensions SHOULD HAPPEN ONLY IN REAL FULL ALGORITHMS!"
   input DAE.Element inElement;
@@ -2378,7 +2374,7 @@ NOTE: inCrefExpansionStrategy is needed if we translate equations to algorithms 
 algorithm
   (outEquations, outREquations, outIEquations) :=  matchcontinue (inElement, functionTree, inEquations, inREquations, inIEquations, inCrefExpansion)
     local
-      DAE.Exp cond, msg, level;
+      DAE.Exp cond, msg, level,e;
       DAE.Algorithm alg;
       DAE.ElementSource source;
       Integer size;
@@ -2429,29 +2425,12 @@ algorithm
       then
         (inEquations, BackendDAE.ALGORITHM(0, DAE.ALGORITHM_STMTS({DAE.STMT_TERMINATE(msg, source)}), source, inCrefExpansion)::inREquations, inIEquations);
 
-    case (DAE.NORETCALL(functionName = functionName, functionArgs=functionArgs, source=source), _, _, _, _, _)
+    case (DAE.NORETCALL(exp=e, source=source), _, _, _, _, _)
       equation
-        // make sure is not constrain as we don't support it, see below.
-        b1 = boolNot(Util.isEqual(functionName, Absyn.IDENT("constrain")));
-        // constrain is fine when we do check model!
-        b2 = Flags.getConfigBool(Flags.CHECK_MODEL);
-        true = boolOr(b1, b2);
-        (functionArgs, source, _) = Inline.inlineExps(functionArgs, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
-        alg = DAE.ALGORITHM_STMTS({DAE.STMT_NORETCALL(DAE.CALL(functionName, functionArgs, DAE.CALL_ATTR(DAE.T_NORETCALL_DEFAULT, false, false, false, DAE.NORM_INLINE(), DAE.NO_TAIL())), source)});
+        (e, source, _, _) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
+        alg = DAE.ALGORITHM_STMTS({DAE.STMT_NORETCALL(e, source)});
       then
         (inEquations, BackendDAE.ALGORITHM(0, alg, source, inCrefExpansion)::inREquations, inIEquations);
-
-     // constrain is not a standard Modelica function, but used in old libraries such as the old Multibody library.
-    // The OpenModelica backend does not support constrain, but the frontend does (Mathcore needs it for their backend).
-    // To get a meaningful error message when constrain is used we catch it here, instead of silently failing.
-    // User-defined functions should have fully qualified names here, so Absyn.IDENT should only match the builtin constrain function.
-    case (DAE.NORETCALL(functionName = Absyn.IDENT(name = "constrain"), source = DAE.SOURCE(info=info)), _, _, _, _, _)
-      equation
-        str = DAEDump.dumpElementsStr({inElement});
-        str = stringAppend("rewrite code without using constrain", str);
-        Error.addSourceMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE, {"constrain function", str}, info);
-      then
-        fail();
 
     case (_, _, _, _, _, _)
       equation
@@ -2459,8 +2438,8 @@ algorithm
         0 = Error.getNumErrorMessages();
         str = "BackendDAECreate.lowerAlgorithm failed for:\n" +& DAEDump.dumpElementsStr({inElement});
         Error.addSourceMessage(
-          Error.INTERNAL_ERROR, 
-          {str}, 
+          Error.INTERNAL_ERROR,
+          {str},
           DAEUtil.getElementSourceFileInfo(DAEUtil.getElementSource(inElement)));
       then fail();
 
@@ -3085,7 +3064,7 @@ algorithm
       DAE.Exp e, iteratorExp;
       list<DAE.Exp> iteratorexps, expExpLst;
       list<DAE.Subscript> subs;
-      
+
     case (v, _, {}, _) then v;
     case (v, knv, ((DAE.STMT_ASSIGN(exp1 = DAE.CREF(componentRef = cr)))::xs), true)
       equation
@@ -3292,14 +3271,14 @@ end expInt;
 
 protected function addOptimizationVarsEqns
 "add objective function to DAE. Neeed for derivatives"
-  input BackendDAE.Variables inVars; 
+  input BackendDAE.Variables inVars;
   input list<BackendDAE.Equation> inEqns;
   input Boolean inOptimicaFlag;
   input list< .DAE.ClassAttributes> inClassAttr;
   input list< .DAE.Constraint> inConstraint;
   output BackendDAE.Variables outVars;
-  output list<BackendDAE.Equation>  outEqns;  
-algorithm 
+  output list<BackendDAE.Equation>  outEqns;
+algorithm
   (outVars, outEqns) := match(inVars, inEqns, inOptimicaFlag, inClassAttr, inConstraint)
   local
       DAE.ComponentRef leftcref;
@@ -3310,14 +3289,14 @@ algorithm
       list<BackendDAE.Equation> e;
       Option<DAE.Exp> mayer, lagrange;
       list< .DAE.Exp> constraintLst;
-      
+
     case (v, e, true, {DAE.OPTIMIZATION_ATTRS(objetiveE=mayer, objectiveIntegrandE=lagrange)}, _)
       equation
         leftcref = ComponentReference.makeCrefIdent("$TMP_mayerTerm", DAE.T_REAL_DEFAULT, {});
         dummyVar = BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
         objectEqn = BackendEquation.generateSolvedEqnsfromOption(leftcref, mayer, DAE.emptyElementSource);
         b = not List.isEmpty(objectEqn);
-        
+
         v = Util.if_(b, BackendVariable.addNewVar(dummyVar, v), v);
         e = Util.if_(b, listAppend(e, objectEqn), e);
 
@@ -3325,12 +3304,12 @@ algorithm
         dummyVar = BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
         objectEqn = BackendEquation.generateSolvedEqnsfromOption(leftcref, lagrange, DAE.emptyElementSource);
         b = not List.isEmpty(objectEqn);
-        
+
         v = Util.if_(b, BackendVariable.addNewVar(dummyVar, v), v);
         e = Util.if_(b, listAppend(e, objectEqn), e);
-        
+
         (v, e) = addOptimizationVarsEqns2(inConstraint, 1, v, e, true);
-    
+
     then (v, e);
     else then (inVars, inEqns);
   end match;
@@ -3339,7 +3318,7 @@ end addOptimizationVarsEqns;
 protected function addOptimizationVarsEqns1
  input list<DAE.Exp> constraintLst;
  input Integer inI;
- input BackendDAE.Variables inVars; 
+ input BackendDAE.Variables inVars;
  input list<BackendDAE.Equation> inEqns;
  input Boolean b;
  output BackendDAE.Variables outVars;
@@ -3354,7 +3333,7 @@ algorithm
    list<BackendDAE.Equation> conEqn;
    BackendDAE.Variables v;
    list<BackendDAE.Equation> eqns;
-   
+
    case({}, _, _, _, _) then (inVars, inEqns);
    case(e::conLst, _, _, _, _) equation
     //print("con"+& intString(inI) +& " "+& ExpressionDump.printExpStr(e) +& "\n");
@@ -3372,7 +3351,7 @@ end addOptimizationVarsEqns1;
 public function addOptimizationVarsEqns2
  input list< .DAE.Constraint> inConstraint;
  input Integer inI;
- input BackendDAE.Variables inVars; 
+ input BackendDAE.Variables inVars;
  input list<BackendDAE.Equation> inEqns;
  input Boolean b;
  output BackendDAE.Variables outVars;
@@ -3381,7 +3360,7 @@ algorithm
   (outVars, outEqns) := match(inConstraint, inI, inVars, inEqns, b)
   local
    list<BackendDAE.Equation> e;
-   BackendDAE.Variables v; 
+   BackendDAE.Variables v;
    list< .DAE.Exp> constraintLst;
     case({DAE.CONSTRAINT_EXPS(constraintLst = constraintLst)}, _, _, _, _) equation
       (v, e) = addOptimizationVarsEqns1(constraintLst, inI, inVars, inEqns, b);

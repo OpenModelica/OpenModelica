@@ -109,7 +109,7 @@ algorithm
       Env.Cache cache;
       Env.Env env;
       BackendDAE.ExtraInfo ei;
-      
+
     case (itlst,BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,removedEqs=removedEqs,constraints=constrs,classAttrs=clsAttrs,cache=cache,env=env,functionTree=functionTree,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=btp,symjacs=symjacs,info=ei)))
       equation
         tpl = (SOME(functionTree),itlst);
@@ -252,7 +252,7 @@ algorithm
       list<list<BackendDAE.Equation>> eqnslst;
       Boolean b1,b2,b3,d;
       DAE.Expand crefExpand;
-   
+
     case(BackendDAE.EQUATION(e1,e2,source,d),_)
       equation
         (e1_1,source,b1,assrtLst) = inlineExp(e1,fns,source);
@@ -607,14 +607,14 @@ algorithm
       BackendDAE.EventInfo ev;
       Boolean b1, b2, b3;
       list<BackendDAE.TimeEvent> timeEvents;
-      
+
     case(BackendDAE.EVENT_INFO(timeEvents, wclst, zclst, samples, relations, numberOfRelations, numberOfMathEvents), fns) equation
       (wclst_1, b1) = inlineWhenClauses(wclst, fns, {}, false);
       (zclst_1, b2) = inlineZeroCrossings(zclst, fns, {}, false);
       (relations, b3) = inlineZeroCrossings(relations, fns, {}, false);
       ev = Util.if_(b1 or b2 or b3, BackendDAE.EVENT_INFO(timeEvents, wclst_1, zclst_1, samples, relations, numberOfRelations, numberOfMathEvents), inEventInfo);
     then ev;
-    
+
     case(_, _) equation
       Debug.fprintln(Flags.FAILTRACE, "Inline.inlineEventInfo failed");
     then fail();
@@ -637,7 +637,7 @@ algorithm
 
     case ({}, _, _, _)
     then (listReverse(iAcc), iInlined);
-    
+
     case (zc::rest, _, _, _) equation
       (zc, b) = inlineZeroCrossing(zc, fns);
       (stmts, b) = inlineZeroCrossings(rest, fns, zc::iAcc, b or iInlined);
@@ -657,11 +657,11 @@ algorithm
       DAE.Exp e, e_1;
       list<Integer> ilst1, ilst2;
       list<DAE.Statement> assrtLst;
-    
+
     case(BackendDAE.ZERO_CROSSING(e, ilst1, ilst2), fns) equation
       (e_1, _, true, _) = inlineExp(e, fns, DAE.emptyElementSource/*TODO: Propagate operation info*/);
     then (BackendDAE.ZERO_CROSSING(e_1, ilst1, ilst2), true);
-    
+
     case(_, _)
     then (inZeroCrossing, false);
   end matchcontinue;
@@ -1038,11 +1038,17 @@ algorithm
       then
         (DAE.REINIT(componentRef,exp_1,source),true);
 
-    case(DAE.NORETCALL(p,explst,source),fns)
+    case(DAE.NORETCALL(exp,source),fns)
       equation
-        (explst_1,source,true) = inlineExps(explst,fns,source);
+        (exp,source,true,_) = inlineExp(exp,fns,source);
       then
-        (DAE.NORETCALL(p,explst_1,source),true);
+        (DAE.NORETCALL(exp,source),true);
+
+    case(DAE.INITIAL_NORETCALL(exp,source),fns)
+      equation
+        (exp,source,true,_) = inlineExp(exp,fns,source);
+      then
+        (DAE.INITIAL_NORETCALL(exp,source),true);
 
     case(el,_)
       then
@@ -1288,10 +1294,10 @@ algorithm
       DAE.Exp e,e_1,e_2;
       DAE.ElementSource source;
       list<DAE.Statement> assrtLst;
-    
+
     // never inline WILD!
     case (DAE.CREF(componentRef = DAE.WILD()),_,_) then (inExp,inSource,false,{});
-    
+
     case (e,fns,source)
       equation
         ((e_1,(fns,true,assrtLst))) = Expression.traverseExp(e,inlineCall,(fns,false,{}));
@@ -1299,7 +1305,7 @@ algorithm
         (DAE.PARTIAL_EQUATION(e_2),source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.PARTIAL_EQUATION(e_1), source);
       then
         (e_2,source,true,assrtLst);
-    
+
     else (inExp,inSource,false,{});
   end matchcontinue;
 end inlineExp;
@@ -1482,7 +1488,7 @@ algorithm
         ((newExp1,(_,_,assrtLst))) = Expression.traverseExp(newExp,inlineCall,(fns,true,assrtLstIn));
       then
         ((newExp1,(fns,true,assrtLst)));
-        
+
     case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_,assrtLstIn)))
       // assert detected
       equation
@@ -1530,7 +1536,7 @@ protected
   DAE.ElementSource source;
   DAE.Exp cond, msg, level;
 algorithm
-  DAE.STMT_ASSERT(cond=cond, msg=msg, level=level, source=source) := assrtIn;  
+  DAE.STMT_ASSERT(cond=cond, msg=msg, level=level, source=source) := assrtIn;
   (cond,_,_,_) := inlineExp(cond,fns,source);
   ((cond,(_,_,true))) := Expression.traverseExp(cond,replaceArgs,(argmap,checkcr,true));
   //print("ASSERT inlined: "+&ExpressionDump.printExpStr(cond)+&"\n");
@@ -1588,7 +1594,7 @@ algorithm
       VarTransform.VariableReplacements repl;
       Boolean generateEvents,b;
       Option<SCode.Comment> comment;
-    
+
     case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_,assrtLstIn)))
       equation
         false = Config.acceptMetaModelicaGrammar();
@@ -1612,7 +1618,7 @@ algorithm
         ((newExp1,(_,b,assrtLst))) = Expression.traverseExp(newExp,forceInlineCall,(fns,true,assrtLstIn));
       then
         ((newExp1,(fns,b,assrtLst)));
-    
+
     else inTuple;
   end matchcontinue;
 end forceInlineCall;

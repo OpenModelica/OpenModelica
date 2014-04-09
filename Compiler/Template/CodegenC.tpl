@@ -2124,11 +2124,10 @@ template functionWhenReinitStatementThen(Boolean initialCall, list<WhenOperator>
       assertCommon(condition, List.fill(message,1), level, contextSimulationDiscrete, &varDecls, info)
     case NORETCALL(__) then
       let &preExp = buffer "" /*BUFD*/
-      let argStr = (functionArgs |> exp => ', <%daeExp(exp, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>')
-      let funName = '<%underscorePath(functionName)%>'
+      let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls)
       <<
       <%preExp%>
-      omc_<%funName%>(threadData<%argStr%>);
+      <% if isCIdentifier(expPart) then "" else '<%expPart%>;' %>
       >>
   ;separator="\n")
   <<

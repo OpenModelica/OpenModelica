@@ -784,11 +784,11 @@ algorithm
       then
         accum_el;
 
-    case (NFInstTypes.NORETCALL_EQUATION(exp = exp as DAE.CALL(path, expLst, _)), _, _)
+    case (NFInstTypes.NORETCALL_EQUATION(exp = exp), _, _)
       equation
         ty1 = Expression.typeof(exp);
         dims = Types.getDimensions(ty1);
-        accum_el = DAE.NORETCALL(path, expLst, DAE.emptyElementSource)::inAccumEl;
+        accum_el = DAE.NORETCALL(exp, DAE.emptyElementSource)::inAccumEl;
       then
         accum_el;
 

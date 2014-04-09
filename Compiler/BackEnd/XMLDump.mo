@@ -142,7 +142,7 @@ protected import System;        // for stringReplace
   protected constant String START = "start";
   protected constant String VALUE = "value";
   protected constant String ELSE_WHEN_CLAUSE = "elseWhenClause";
-  
+
 
   protected constant String LIST_ = "List";
 
@@ -152,7 +152,7 @@ protected import System;        // for stringReplace
   protected constant String ID                     = "id";
   protected constant String ID_                    = "Id";
   protected constant String CONDITION              = "Condition";
-  
+
   protected constant String REINIT                 = "reinit";
   protected constant String ASSERT                 = "assert";
   protected constant String TERMINATE              = "terminate";
@@ -1007,7 +1007,7 @@ algorithm
       list<BackendDAE.EqSystem> systs;
       BackendDAE.SymbolicJacobians symjacs;
       DAE.FunctionTree funcs;
-      
+
       list<tuple<list<BackendDAE.Equation>, list<BackendDAE.Var>>> eqnsVarsinOrderLst;
       BackendDAE.EventInfo eventInfo;
 
@@ -1015,7 +1015,7 @@ algorithm
                  BackendDAE.SHARED(
                  vars_knownVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_knownVars,varArr=varArr_knownVars,bucketSize=bucketSize_knownVars,numberOfVars=numberOfVars_knownVars),
                  vars_externalObject as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_externalObject,varArr=varArr_externalObject,bucketSize=bucketSize_externalObject,numberOfVars=numberOfVars_externalObject),
-                 vars_aliasVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_aliasVars,varArr=varArr_aliasVars,bucketSize=bucketSize_aliasVars,numberOfVars=numberOfVars_aliasVars), 
+                 vars_aliasVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_aliasVars,varArr=varArr_aliasVars,bucketSize=bucketSize_aliasVars,numberOfVars=numberOfVars_aliasVars),
                  ieqns,reqns,constrs,clsAttrs,_,_,funcs,
                  eventInfo,
                  extObjCls,btp,symjacs,_)),addOrInMatrix,addSolInfo,addMML,dumpRes,false)
@@ -1042,7 +1042,7 @@ algorithm
         dumpEqns(reqnsl,stringAppend(SIMPLE,EQUATIONS_),addMML,dumpRes, false);
         ieqnsl = BackendEquation.equationList(ieqns);
         dumpEqns(ieqnsl,stringAppend(INITIAL,EQUATIONS_),addMML,dumpRes, false);
-        
+
         dumpEventInfo(eventInfo, addMML);
 
         dumpConstraints(constrs);
@@ -1051,12 +1051,12 @@ algorithm
         dumpSolvingInfo(addOrInMatrix,addSolInfo,inBackendDAE);
         dumpStrCloseTag(DAE_CLOSE);
       then ();
-    
+
     case (BackendDAE.DAE(systs,
                  BackendDAE.SHARED(
                  vars_knownVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_knownVars,varArr=varArr_knownVars,bucketSize=bucketSize_knownVars,numberOfVars=numberOfVars_knownVars),
                  vars_externalObject as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_externalObject,varArr=varArr_externalObject,bucketSize=bucketSize_externalObject,numberOfVars=numberOfVars_externalObject),
-                 vars_aliasVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_aliasVars,varArr=varArr_aliasVars,bucketSize=bucketSize_aliasVars,numberOfVars=numberOfVars_aliasVars), 
+                 vars_aliasVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_aliasVars,varArr=varArr_aliasVars,bucketSize=bucketSize_aliasVars,numberOfVars=numberOfVars_aliasVars),
                  ieqns,reqns,constrs,clsAttrs,_,_,funcs,
                  eventInfo,extObjCls,btp,symjacs,_)),addOrInMatrix,addSolInfo,addMML,dumpRes,true)
       equation
@@ -1086,7 +1086,7 @@ algorithm
         dumpEqns(reqnsl,stringAppend(SIMPLE,EQUATIONS_),addMML,dumpRes, false);
         ieqnsl = BackendEquation.equationList(ieqns);
         dumpEqns(ieqnsl,stringAppend(INITIAL,EQUATIONS_),addMML,dumpRes, false);
-        
+
         dumpEventInfo(eventInfo, addMML);
 
         dumpConstraints(constrs);
@@ -1112,9 +1112,9 @@ algorithm
       list<BackendDAE.TimeEvent> timeEvents;
       list<BackendDAE.WhenClause> whenClauseLst;
       list<BackendDAE.ZeroCrossing> zc;
-    
-    case (BackendDAE.EVENT_INFO(timeEvents=timeEvents, 
-                                whenClauseLst=whenClauseLst, 
+
+    case (BackendDAE.EVENT_INFO(timeEvents=timeEvents,
+                                whenClauseLst=whenClauseLst,
                                 zeroCrossingLst=zc), _)
       equation
         dumpTimeEvents(timeEvents, stringAppend(SAMPLES, LIST_), addMML);
@@ -1122,7 +1122,7 @@ algorithm
         dumpZeroCrossing(zc, stringAppend(ZERO_CROSSING, LIST_), addMML);
       then
         ();
-  
+
   end match;
 end dumpEventInfo;
 
@@ -1617,7 +1617,7 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(EQUATION);
       then ();
-    
+
     case (BackendDAE.EQUATION(exp = e1,scalar = e2),indexS,false)
       equation
         s1 = printExpStr(e1);
@@ -1627,7 +1627,7 @@ algorithm
         Print.printBuf(res);
         dumpStrCloseTag(EQUATION);
       then ();
-    
+
     case (BackendDAE.ARRAY_EQUATION(left = e1,right = e2),indexS,true)
       equation
         s1 = printExpStr(e1);
@@ -1645,7 +1645,7 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(ARRAY_EQUATION);
       then ();
-    
+
     case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2),indexS,false)
       equation
         s1 = printExpStr(e1);
@@ -1655,7 +1655,7 @@ algorithm
         Print.printBuf(res);
         dumpStrCloseTag(ARRAY_OF_EQUATIONS);
       then ();
-    
+
     case (BackendDAE.COMPLEX_EQUATION(left = e1,right = e2),indexS,true)
       equation
         s1 = printExpStr(e1);
@@ -1673,7 +1673,7 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(COMPLEX_EQUATION);
       then ();
-    
+
     case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2),indexS,addMMLCode)
       equation
         s1 = printExpStr(e1);
@@ -1683,7 +1683,7 @@ algorithm
         Print.printBuf(res);
         dumpStrCloseTag(COMPLEX_EQUATION);
       then ();
-    
+
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,true)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
@@ -1702,7 +1702,7 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(stringAppend(SOLVED,EQUATION_));
       then ();
-    
+
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,false)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
@@ -1712,7 +1712,7 @@ algorithm
         Print.printBuf(res);
         dumpStrCloseTag(stringAppend(SOLVED,EQUATION_));
       then ();
-    
+
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition = e1,left = cr,right = e2)),indexS,true)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
@@ -1730,16 +1730,16 @@ algorithm
         dumpStrCloseTag(MathMLApply);
         dumpStrCloseTag(MATH);
         dumpStrCloseTag(MathML);
-        
+
         dumpStrOpenTag(stringAppend(stringAppend(WHEN,EQUATION_),CONDITION));
         Print.printBuf("\n");
         Print.printBuf(is);
         dumpExp(e1, true);
         dumpStrCloseTag(stringAppend(stringAppend(WHEN,EQUATION_),CONDITION));
-        
+
         dumpStrCloseTag(stringAppend(WHEN,EQUATION_));
       then ();
-    
+
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition = e1,left = cr,right = e2)),indexS,false)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
@@ -1748,10 +1748,10 @@ algorithm
         res = stringAppendList({s1," := ",s2});
         dumpStrOpenTagAttr(stringAppend(WHEN,EQUATION_),ID,indexS);
         Print.printBuf(res);
-        dumpStrTagContent(stringAppend(stringAppend(WHEN,EQUATION_),CONDITION),is);        
+        dumpStrTagContent(stringAppend(stringAppend(WHEN,EQUATION_),CONDITION),is);
         dumpStrCloseTag(stringAppend(WHEN,EQUATION_));
       then ();
-    
+
     case (BackendDAE.RESIDUAL_EQUATION(exp = e),indexS,true)
       equation
         s1 = printExpStr(e);
@@ -1769,7 +1769,7 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(stringAppend(RESIDUAL,EQUATION_));
       then ();
-    
+
     case (BackendDAE.RESIDUAL_EQUATION(exp = e),indexS,false)
       equation
         s1 = printExpStr(e);
@@ -1778,21 +1778,21 @@ algorithm
         Print.printBuf(res);
         dumpStrCloseTag(stringAppend(RESIDUAL,EQUATION_));
       then ();
-    
+
     case (BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS(stmts),source=source),indexS,_)
       equation
         dumpStrOpenTagAttr(ALGORITHM,ID,indexS);
         Print.printBuf(Util.xmlEscape(DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),source)})));
         dumpStrCloseTag(ALGORITHM);
       then ();
-    
+
     else
       equation
         res = "in XMLDump.dumpEquation - Unknown equation";
         Error.addMessage(Error.INTERNAL_ERROR, {res});
       then
         fail();
-  
+
   end match;
 end dumpEquation;
 
@@ -2850,7 +2850,7 @@ end dumpOptExp;
 public function dumpOptInteger "
 This function print to a new line the content of
 a Optional<Integer> in a XML element like:
-<Content index = intString(e)/>. 
+<Content index = intString(e)/>.
 "
   input Option<Integer> inOption;
   input String Content;
@@ -2860,15 +2860,15 @@ algorithm
   match (inOption,Content,addMathMLCode)
     local
       Integer i;
-    
+
     case (NONE(),_,_) then ();
-    
+
     case (SOME(i),_,_)
       equation
         dumpStrOpenTagAttr(Content,INDEX,intString(i));
         dumpStrCloseTag(Content);
       then ();
-  
+
   end match;
 end dumpOptInteger;
 
@@ -3014,7 +3014,7 @@ algorithm
   // TODO! FIXME!, there are many other characters valid in Modelica
   // function names and identifiers that aren't valid in XML element tags.
   xmlElementTag := System.stringReplace(modelicaIdentifier, "$", "_dollar_");
-  
+
   // TODO! FIXME!, we have issues with accented chars in comments
   // that end up in the Model_init.xml file and makes it not well
   // formed but the line below does not work if the xmlElementTag is
@@ -3336,7 +3336,7 @@ content of a variable. In particular it takes:
 * dir: input, output or bi-directional
 * var_type: builtin type or enumeration
 * indx: if this is a state, how often this states was differentiated
-* derName: if this is a state, the derivative name 
+* derName: if this is a state, the derivative name
 * old_name: the original name of the variable
 * varFixed: fixed attribute for variables (default fixed
   value is used if not found. Default is true for parameters
@@ -3397,21 +3397,21 @@ protected function printIndexAndDerName
 algorithm
   _ := match(indx, derName)
     case ("", "") then ();
-    case (_, "") 
+    case (_, "")
       equation
         Print.printBuf("\" ");Print.printBuf(VAR_INDEX);Print.printBuf("=\"");Print.printBuf(indx);
-      then 
+      then
         ();
-    case ("", _) 
+    case ("", _)
       equation
         Print.printBuf("\" ");Print.printBuf(VAR_DERNAME);Print.printBuf("=\"");Print.printBuf(derName);
-      then 
+      then
         ();
-    case (_, _) 
+    case (_, _)
       equation
         Print.printBuf("\" ");Print.printBuf(VAR_INDEX);Print.printBuf("=\"");Print.printBuf(indx);
         Print.printBuf("\" ");Print.printBuf(VAR_DERNAME);Print.printBuf("=\"");Print.printBuf(derName);
-      then 
+      then
         ();
   end match;
 end printIndexAndDerName;
@@ -3521,7 +3521,7 @@ algorithm
   diffIndex := match(kind)
     local Integer di;
     case (BackendDAE.STATE(index=di)) then intString(di);
-    else ""; 
+    else "";
   end match;
 end getIndex;
 
@@ -3535,7 +3535,7 @@ algorithm
       equation
         dn = ComponentReference.printComponentRefStr(cr);
       then dn;
-    else ""; 
+    else "";
   end match;
 end getDerName;
 
@@ -3634,7 +3634,7 @@ algorithm
       String error_msg;
 
     case ({},_,_,_) then ();
-    
+
     case (((v as BackendDAE.VAR(varName = cr,
                             varKind = kind,
                             varDirection = dir,
@@ -3662,7 +3662,7 @@ algorithm
         var_1 = varno+1;
         dumpVarsAdds2(xs,crefIdxLstArr,var_1,addMMLCode);
       then ();
-    
+
     case (v::xs,_,varno,_)
       equation
         error_msg = "in XMLDump.dumpVarsAdds2 - Unknown var: ";
@@ -3672,12 +3672,12 @@ algorithm
         dumpVarsAdds2(xs,crefIdxLstArr,var_1,addMMLCode);
       then
         ();
-  
+
   end match;
 end dumpVarsAdds2;
 
 public function dumpWhenClauses "
-This function prints the list of WhenClauses 
+This function prints the list of WhenClauses
 elements in a XML format. It takes also as input
 a string in order to know what is the content of
 the zero crossing list. The output is:
@@ -3694,15 +3694,15 @@ algorithm
     local
       Integer len;
       list<BackendDAE.WhenClause> lst;
-      
+
     case ({},_,_) then ();
-    
+
     case (lst, _, _)
       equation
         len = listLength(lst);
         len >= 1 = false;
       then ();
-    
+
     case (lst, _, _)
       equation
         len = listLength(lst);
@@ -3711,7 +3711,7 @@ algorithm
         dumpWhenClauseLst(lst, 1, addMathMLCode);
         dumpStrCloseTag(inContent);
       then ();
-  
+
   end matchcontinue;
 end dumpWhenClauses;
 
@@ -3730,37 +3730,37 @@ algorithm
       list<BackendDAE.WhenOperator> whenOperators;
       Option<Integer> elseClause;
       String str;
-    
+
     case ({}, _, _) then ();
-    
+
     case (BackendDAE.WHEN_CLAUSE(condition = condition, reinitStmtLst = whenOperators, elseClause = elseClause) :: lst, _, _)
       equation
         str = printExpStr(condition);
-        
+
         dumpStrOpenTagAttr(WHEN_CLAUSE, INDEX, intString(inIndex));
-        
+
         dumpStrOpenTag(stringAppend(stringAppend(WHEN,EQUATION_),CONDITION));
         Print.printBuf("\n");
         Print.printBuf(str);
         dumpExp(condition, addMathMLCode);
         dumpStrCloseTag(stringAppend(stringAppend(WHEN,EQUATION_),CONDITION));
-        
+
         dumpWhenOperators(whenOperators, stringAppend(WHEN_OPERATORS, LIST_), addMathMLCode);
-        
+
         dumpOptInteger(elseClause, ELSE_WHEN_CLAUSE, addMathMLCode);
-        
+
         dumpStrCloseTag(WHEN_CLAUSE);
-        
+
         dumpWhenClauseLst(lst, inIndex + 1, addMathMLCode);
-      
-      then 
+
+      then
         ();
-  
+
   end match;
 end dumpWhenClauseLst;
 
 public function dumpWhenOperators "
-This function prints the list of WhenClauses 
+This function prints the list of WhenClauses
 elements in a XML format. It takes also as input
 a string in order to know what is the content of
 the zero crossing list. The output is:
@@ -3779,15 +3779,15 @@ algorithm
       DAE.Exp condition;
       list<BackendDAE.WhenOperator> lst;
       Option<Integer> elseClause;
-      
+
     case ({},_,_) then ();
-    
+
     case (lst, _, _)
       equation
         len = listLength(lst);
         len >= 1 = false;
       then ();
-    
+
     case (lst, _, _)
       equation
         len = listLength(lst);
@@ -3796,7 +3796,7 @@ algorithm
         dumpWhenOperatorLst(lst, addMathMLCode);
         dumpStrCloseTag(inContent);
       then ();
-  
+
   end matchcontinue;
 end dumpWhenOperators;
 
@@ -3815,81 +3815,78 @@ algorithm
       list<BackendDAE.WhenOperator> lst;
       String str;
       Absyn.Path fn;
-    
+
     case ({}, _) then ();
-    
+
     case (BackendDAE.REINIT(stateVar, value, _) :: lst, _)
       equation
         e = Expression.makeCrefExp(stateVar, DAE.T_UNKNOWN_DEFAULT);
         call = DAE.CALL(
-          Absyn.IDENT(REINIT), {e, value}, 
-          DAE.callAttrBuiltinOther); 
+          Absyn.IDENT(REINIT), {e, value},
+          DAE.callAttrBuiltinOther);
         str = printExpStr(call);
-        
+
         dumpStrOpenTag(WHEN_OPERATOR);
         Print.printBuf("\n");
         Print.printBuf(str);
         dumpExp(call, addMathMLCode);
         dumpStrCloseTag(WHEN_OPERATOR);
-        
+
         dumpWhenOperatorLst(lst, addMathMLCode);
-      
-      then 
+
+      then
         ();
-  
+
     case (BackendDAE.ASSERT(cond, msg, level, _) :: lst, _)
       equation
         call = DAE.CALL(
-          Absyn.IDENT(ASSERT), {cond, msg, level}, 
-          DAE.callAttrBuiltinOther); 
+          Absyn.IDENT(ASSERT), {cond, msg, level},
+          DAE.callAttrBuiltinOther);
         str = printExpStr(call);
-        
+
         dumpStrOpenTag(WHEN_OPERATOR);
         Print.printBuf("\n");
         Print.printBuf(str);
         dumpExp(call, addMathMLCode);
         dumpStrCloseTag(WHEN_OPERATOR);
-        
+
         dumpWhenOperatorLst(lst, addMathMLCode);
-      
-      then 
+
+      then
         ();
-  
+
     case (BackendDAE.TERMINATE(msg, _) :: lst, _)
       equation
         call = DAE.CALL(
-          Absyn.IDENT(TERMINATE), {msg}, 
-          DAE.callAttrBuiltinOther); 
+          Absyn.IDENT(TERMINATE), {msg},
+          DAE.callAttrBuiltinOther);
         str = printExpStr(call);
-        
+
         dumpStrOpenTag(WHEN_OPERATOR);
         Print.printBuf("\n");
         Print.printBuf(str);
         dumpExp(call, addMathMLCode);
         dumpStrCloseTag(WHEN_OPERATOR);
-        
+
         dumpWhenOperatorLst(lst, addMathMLCode);
-      
-      then 
+
+      then
         ();
-        
-    case (BackendDAE.NORETCALL(fn, exps, _) :: lst, _)
+
+    case (BackendDAE.NORETCALL(exp=call) :: lst, _)
       equation
-        call = DAE.CALL(
-          fn, exps, 
-          DAE.callAttrBuiltinOther); 
         str = printExpStr(call);
         dumpStrOpenTag(WHEN_OPERATOR);
         Print.printBuf("\n");
         Print.printBuf(str);
         dumpExp(call, addMathMLCode);
         dumpStrCloseTag(WHEN_OPERATOR);
-        
+
         dumpWhenOperatorLst(lst, addMathMLCode);
-      
-      then 
+
+      then
         ();
-  
+
   end match;
 end dumpWhenOperatorLst;
 
@@ -3911,16 +3908,16 @@ algorithm
     local
       Integer len;
       list<tuple<Integer, .DAE.Exp, .DAE.Exp>> samples;
-      
-    
+
+
     case ({},_,_) then ();
-    
+
     case (_,_,_)
       equation
         len = listLength(inTimeEvents);
         len >= 1 = false;
       then();
-    
+
     case (_,_,_)
       equation
         len = listLength(inTimeEvents);
@@ -3929,7 +3926,7 @@ algorithm
         dumpSampleLst(inTimeEvents, addMathMLCode);
         dumpStrCloseTag(inContent);
       then ();
-  
+
   end matchcontinue;
 end dumpTimeEvents;
 
@@ -3951,39 +3948,39 @@ algorithm
       Integer i;
       Boolean addMMLCode;
       list<BackendDAE.TimeEvent> lst;
-    
+
     case ({}, _) then ();
-    
+
     case (BackendDAE.SIMPLE_TIME_EVENT()::lst, addMMLCode)
       equation
         /* TODO */
-        
+
         dumpSampleLst(lst,addMMLCode);
       then ();
-      
+
     case (BackendDAE.COMPLEX_TIME_EVENT()::lst, addMMLCode)
       equation
         /* TODO */
-        
+
         dumpSampleLst(lst, addMMLCode);
       then ();
-    
+
     case (BackendDAE.SAMPLE_TIME_EVENT(i, e1, e2)::lst, addMMLCode)
       equation
         dumpStrOpenTag(stringAppend(SAMPLES, ELEMENT_));
-        
+
         dumpStrOpenTagAttr(INDEX, VALUE, intString(i));
         dumpExp(e1, addMMLCode);
         dumpStrCloseTag(INDEX);
-        
+
         dumpStrOpenTagAttr(START, EXP_STRING, printExpStr(e1));
         dumpExp(e1, addMMLCode);
         dumpStrCloseTag(START);
-        
+
         dumpStrOpenTagAttr(INTERVAL, EXP_STRING, printExpStr(e2));
         dumpExp(e2, addMMLCode);
         dumpStrCloseTag(INTERVAL);
-        
+
         dumpStrCloseTag(stringAppend(SAMPLES, ELEMENT_));
         dumpSampleLst(lst, addMMLCode);
       then ();
@@ -4055,9 +4052,9 @@ algorithm
       Boolean addMMLCode;
       list<Integer> eq,wc;
       list<BackendDAE.ZeroCrossing> zcLst;
-    
+
     case ({},_) then ();
-    
+
     case (BackendDAE.ZERO_CROSSING(relation_ = e,occurEquLst = eq,occurWhenLst = wc) :: zcLst,addMMLCode)
       equation
         dumpStrOpenTagAttr(stringAppend(ZERO_CROSSING,ELEMENT_),EXP_STRING,printExpStr(e));
@@ -4067,7 +4064,7 @@ algorithm
         dumpStrCloseTag(stringAppend(ZERO_CROSSING,ELEMENT_));
         dumpZcLst(zcLst,addMMLCode);
       then ();
-  
+
   end match;
 end dumpZcLst;
 
@@ -4209,7 +4206,7 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(EQUATION);
       then ();
-    
+
     case (BackendDAE.EQUATION(exp = e1,scalar = e2),indexS,false)
       equation
         s1 = printExpStr(e1);
@@ -4219,7 +4216,7 @@ algorithm
         Print.printBuf(res);
         dumpStrCloseTag(EQUATION);
       then ();
-    
+
     case (BackendDAE.ARRAY_EQUATION(left = e1,right = e2),indexS,true)
       equation
         s1 = printExpStr(e1);
@@ -4241,7 +4238,7 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(ARRAY_EQUATION);
       then ();
-    
+
     case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2),indexS,false)
       equation
         s1 = printExpStr(e1);
@@ -4272,7 +4269,7 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(COMPLEX_EQUATION);
       then ();
-    
+
     case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2),indexS,false)
       equation
         s1 = printExpStr(e1);
@@ -4282,7 +4279,7 @@ algorithm
         Print.printBuf(res);
         dumpStrCloseTag(COMPLEX_EQUATION);
       then ();
-    
+
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,true)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
@@ -4305,7 +4302,7 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(stringAppend(SOLVED,EQUATION_));
       then ();
-    
+
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,false)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
@@ -4315,7 +4312,7 @@ algorithm
         Print.printBuf(res);
         dumpStrCloseTag(stringAppend(SOLVED,EQUATION_));
       then ();
-    
+
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition = e1,left = cr,right = e2)),indexS,true)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
@@ -4337,16 +4334,16 @@ algorithm
         dumpStrCloseTag(MathMLApply);
         dumpStrCloseTag(MATH);
         dumpStrCloseTag(MathML);
-        
+
         dumpStrOpenTag(stringAppend(stringAppend(WHEN,EQUATION_),CONDITION));
         Print.printBuf("\n");
         Print.printBuf(is);
         dumpExp(e1, true);
         dumpStrCloseTag(stringAppend(stringAppend(WHEN,EQUATION_),CONDITION));
-        
+
         dumpStrCloseTag(stringAppend(WHEN,EQUATION_));
       then ();
-    
+
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition = e1,left = cr,right = e2)),indexS,false)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
@@ -4358,7 +4355,7 @@ algorithm
         dumpStrTagContent(stringAppend(stringAppend(WHEN,EQUATION_),CONDITION),is);
         dumpStrCloseTag(stringAppend(WHEN,EQUATION_));
       then ();
-    
+
     case (BackendDAE.RESIDUAL_EQUATION(exp = e),indexS,true)
       equation
         s1 = printExpStr(e);
@@ -4376,7 +4373,7 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(stringAppend(RESIDUAL,EQUATION_));
       then ();
-    
+
     case (BackendDAE.RESIDUAL_EQUATION(exp = e),indexS,false)
       equation
         s1 = printExpStr(e);
@@ -4385,14 +4382,14 @@ algorithm
         Print.printBuf(res);
         dumpStrCloseTag(stringAppend(RESIDUAL,EQUATION_));
       then ();
-    
+
     case (BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS(stmts),source=source),indexS,_)
       equation
         dumpStrOpenTagAttr(ALGORITHM,ID,indexS);
         Print.printBuf(Util.xmlEscape(DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),source)})));
         dumpStrCloseTag(ALGORITHM);
       then ();
-  
+
   end match;
 end dumpResidual;
 

@@ -126,7 +126,7 @@ end BackendDAEType;
 
 //
 //  variables and equations definition
-// 
+//
 
 public
 uniontype Variables
@@ -286,7 +286,7 @@ end ExternalObjectClass;
 
 //
 //  Matching, strong components and StateSets
-// 
+//
 
 public
 uniontype Matching
@@ -450,8 +450,7 @@ uniontype WhenOperator
   record NORETCALL "call with no return value, i.e. no equation.
     Typically sideeffect call of external function but also
     Connections.* i.e. Connections.root(...) functions."
-    Absyn.Path functionName;
-    list< .DAE.Exp> functionArgs;
+    .DAE.Exp exp;
     .DAE.ElementSource source "the origin of the component/equation/algorithm";
   end NORETCALL;
 end WhenOperator;
@@ -483,10 +482,10 @@ public
 uniontype TimeEvent
   record SIMPLE_TIME_EVENT "e.g. time > 0.5"
   end SIMPLE_TIME_EVENT;
-  
+
   record COMPLEX_TIME_EVENT "e.g. sin(time) > 0.1"
   end COMPLEX_TIME_EVENT;
-  
+
   record SAMPLE_TIME_EVENT "e.g. sample(1, 1)"
     Integer index "unique sample index" ;
     .DAE.Exp startExp;
@@ -579,19 +578,19 @@ public constant String functionDerivativeNamePrefix = "$funDER";
 
 
 type FullJacobian = Option<list<tuple<Integer, Integer, Equation>>>;
-  
+
 public
 uniontype Jacobian
   record FULL_JACOBIAN
     FullJacobian jacobian;
   end FULL_JACOBIAN;
-  
+
   record GENERIC_JACOBIAN
     SymbolicJacobian jacobian;
     SparsePattern sparsePattern;
     SparseColoring coloring;
   end GENERIC_JACOBIAN;
-  
+
   record EMPTY_JACOBIAN end EMPTY_JACOBIAN;
 end Jacobian;
 
@@ -615,14 +614,14 @@ public
 type SparseColoring = list<list< .DAE.ComponentRef>>;   // coloring
 
 
-public 
+public
 uniontype DifferentiateInputData
   record DIFFINPUTDATA
     Option<Variables> independenentVars;          // Independent variables
     Option<Variables> dependenentVars;            // Dependent variables
-    Option<Variables> knownVars;                  // known variables (e.g. parameter, constants, ...)  
+    Option<Variables> knownVars;                  // known variables (e.g. parameter, constants, ...)
     Option<Variables> allVars;                    // all variables
-    Option<list< Var>> controlVars;               // variables to save control vars of for algorithm  
+    Option<list< Var>> controlVars;               // variables to save control vars of for algorithm
     Option<list< .DAE.ComponentRef>> diffCrefs;   // all crefs to differentiate, needed for generic gradient
     Option<String> matrixName;                    // name to create tempory vars, needed for generic gradient
   end DIFFINPUTDATA;
@@ -641,10 +640,10 @@ uniontype DiffentiationType "Define the behavoir of differentation method for (e
   record SIMPLE_DIFFERENTAION "Used to solve expression for a cref or by the older jacobian generation, differation w.r.t. a given cref"
   end SIMPLE_DIFFERENTAION;
 
-  record DIFFERENTAION_FUNCTION "Used to differentiate a function call w.r.t. a given cref, which need to expand the input arguments 
+  record DIFFERENTAION_FUNCTION "Used to differentiate a function call w.r.t. a given cref, which need to expand the input arguments
                                   by differentiate arguments."
   end DIFFERENTAION_FUNCTION;
-  
+
   record DIFF_FULL_JACOBIAN "Used to generate a full jacobian matrix"
   end DIFF_FULL_JACOBIAN;
 

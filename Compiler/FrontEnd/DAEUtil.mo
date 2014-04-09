@@ -392,7 +392,11 @@ algorithm
       then (DAE.DAE(elts2),DAE.DAE(e::elts3));
 
     // handle also NORETCALL! Connections.root(...)
-    case(DAE.DAE((e as DAE.NORETCALL(functionName=_))::elts))
+    case(DAE.DAE((e as DAE.NORETCALL(exp=_))::elts))
+      equation
+        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
+      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+    case(DAE.DAE((e as DAE.INITIAL_NORETCALL(exp=_))::elts))
       equation
         (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
       then (DAE.DAE(elts2),DAE.DAE(e::elts3));
@@ -415,15 +419,15 @@ algorithm
   outDae := match(dae, vars)
     local
       list<DAE.Element> elements;
-    
-    case (_, {}) then dae; 
-    
+
+    case (_, {}) then dae;
+
     case (DAE.DAE(elements), _)
       equation
         elements = removeVariablesFromElements(elements, vars, {});
       then
         DAE.DAE(elements);
-  
+
   end match;
 end removeVariables;
 
@@ -2462,7 +2466,7 @@ algorithm
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> a11;
       Option<SCode.Comment> a12; Absyn.InnerOuter a13;
-      
+
     case(_, DAE.VAR(a1,a2,a3,prl,a4,a5,_,a7,ct,source,a11,a12,a13))
       then DAE.VAR(a1,a2,a3,prl,a4,a5,SOME(newBindung),a7,ct,source,a11,a12,a13);
   end match;
@@ -2786,7 +2790,7 @@ algorithm
         then
           size;
     else
-      then 
+      then
         0;
   end match;
 end getTupleSize;
@@ -2909,7 +2913,7 @@ algorithm
       then verifyWhenEquationStatements(rest,acc);
 
     // adrpo: TODO! FIXME! WHY??!! we might push values to a file writeFile(time);
-    case(DAE.NORETCALL(functionName=_)::rest,acc)
+    case(DAE.NORETCALL(exp=_)::rest,acc)
       then verifyWhenEquationStatements(rest,acc);
 
     case(DAE.EQUATION(exp = exp, source=source)::_,_)
@@ -2960,7 +2964,7 @@ algorithm (outrefs,matching) := matchcontinue(inCrefs)
   end matchcontinue;
 end compareCrefList;
 
-public function evaluateAnnotation "lochel: This is not used. 
+public function evaluateAnnotation "lochel: This is not used.
   evaluates the annotation Evaluate"
   input Env.Cache inCache;
   input list<Env.Frame> env;
@@ -3942,10 +3946,17 @@ algorithm
       then
         (elt,extraArg);
 
-    case(DAE.NORETCALL(path,expl,source),_,extraArg)
+    case(DAE.NORETCALL(e1,source),_,extraArg)
       equation
-        (expl,extraArg) = traverseDAEExpList(expl,func,extraArg);
-        elt = DAE.NORETCALL(path,expl,source);
+        ((e11,extraArg)) = func((e1,extraArg));
+        elt = DAE.NORETCALL(e11,source);
+      then
+        (elt,extraArg);
+
+    case(DAE.INITIAL_NORETCALL(e1,source),_,extraArg)
+      equation
+        ((e11,extraArg)) = func((e1,extraArg));
+        elt = DAE.INITIAL_NORETCALL(e11,source);
       then
         (elt,extraArg);
 
@@ -5640,9 +5651,14 @@ algorithm
         (v_acc,ie_acc,ia_acc,e_acc,a_acc,ca_acc,co_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,el::e_acc,a_acc,ca_acc,co_acc,o_acc);
       then
         (v_acc,ie_acc,ia_acc,e_acc,a_acc,ca_acc,co_acc,o_acc);
-    case ((el as DAE.NORETCALL(functionName=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,ca_acc,co_acc,o_acc)
+    case ((el as DAE.NORETCALL(exp=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,ca_acc,co_acc,o_acc)
       equation
         (v_acc,ie_acc,ia_acc,e_acc,a_acc,ca_acc,co_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,el::e_acc,a_acc,ca_acc,co_acc,o_acc);
+      then
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,ca_acc,co_acc,o_acc);
+    case ((el as DAE.INITIAL_NORETCALL(exp=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,ca_acc,co_acc,o_acc)
+      equation
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,ca_acc,co_acc,o_acc) = splitElements_dispatch(rest, v_acc,el::ie_acc,ia_acc,e_acc,a_acc,ca_acc,co_acc,o_acc);
       then
         (v_acc,ie_acc,ia_acc,e_acc,a_acc,ca_acc,co_acc,o_acc);
 
@@ -5809,7 +5825,7 @@ end getDAEDeclsFromValueblocks;
 //       then d;
 //   end matchcontinue;
 // end transformDerInline;
-// 
+//
 // protected function simpleInlineDerEuler "This is not used.
 //   Helper function of transformDerInline."
 //   input tuple<DAE.Exp,HashTable.HashTable> itpl;
@@ -5820,7 +5836,7 @@ end getDAEDeclsFromValueblocks;
 //       DAE.ComponentRef cr,cref_1,cref_2;
 //       HashTable.HashTable crs0,crs1;
 //       DAE.Exp exp,e1,e2;
-// 
+//
 //     case ((DAE.CALL(path=Absyn.IDENT("der"),expLst={exp as DAE.CREF(componentRef = cr, ty = DAE.T_REAL(varLst = _))}),crs0))
 //       equation
 //         cref_1 = ComponentReference.makeCrefQual("$old",DAE.T_REAL_DEFAULT,{},cr);
@@ -5834,9 +5850,9 @@ end getDAEDeclsFromValueblocks;
 //         crs1 = BaseHashTable.add((cr,0),crs0);
 //       then
 //         ((exp,crs1));
-// 
+//
 //     case ((exp,crs0)) then ((exp,crs0));
-// 
+//
 //   end matchcontinue;
 // end simpleInlineDerEuler;
 
@@ -5870,17 +5886,17 @@ algorithm
       DAE.ElementSource source;
       Option<SCode.Comment> cmt;
       DAE.Element elt;
-      
+
     case (DAE.VAR(componentRef=cr, kind=DAE.PARAM(), variableAttributesOption=varOpt), _) equation
       _ = BaseHashTable.get(cr, ht);
       // print("Make cr final " +& ComponentReference.printComponentRefStr(cr) +& "\n");
       elt = setVariableAttributes(inElement, setFinalAttr(varOpt, true));
     then elt;
-    
+
     case (DAE.COMP(id, elts, source, cmt), _) equation
       elts = List.map1(elts, makeEvaluatedParamFinal, ht);
     then DAE.COMP(id, elts, source, cmt);
-    
+
     else inElement;
   end matchcontinue;
 end makeEvaluatedParamFinal;
@@ -5986,13 +6002,13 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         // print("Add to cache [check] : " +& Absyn.pathString(functionName(func)) +& "\n");
-        // print("Function added: \n" +& DAEDump.dumpFunctionStr(func) +& "\n"); 
+        // print("Function added: \n" +& DAEDump.dumpFunctionStr(func) +& "\n");
         fOld = Util.getOption(avlTreeGet(tree, functionName(func)));
         failure(equality(fOld = func));
-        print("Function already in the tree and different (keep the one already in the tree):" +& 
-          "\nnew:\n" +& DAEDump.dumpFunctionStr(func) +& 
+        print("Function already in the tree and different (keep the one already in the tree):" +&
+          "\nnew:\n" +& DAEDump.dumpFunctionStr(func) +&
           "\nold:\n" +& DAEDump.dumpFunctionStr(fOld) +& "\n");
-      then 
+      then
         fail();
 */
     case (func::funcs,tree)
@@ -6004,7 +6020,7 @@ algorithm
   end match;
 end addDaeFunction;
 
-public function addFunctionDefinition 
+public function addFunctionDefinition
 "adds a functionDefinition to a function. can be used to add function_der_mapper to a function"
   input DAE.Function ifunc;
   input DAE.FunctionDefinition iFuncDef;
@@ -6025,7 +6041,7 @@ algorithm
     case (DAE.FUNCTION(path=path, functions=functions, type_=type_, partialPrefix=partialPrefix, isImpure=isImpure, inlineType=inlineType, source=source, comment=comment), _)
       equation
         functions = listAppend(functions, {iFuncDef});
-      then 
+      then
         DAE.FUNCTION(path, functions, type_, partialPrefix, isImpure, inlineType, source, comment);
     case (_, _) then ifunc;
   end match;
@@ -6624,18 +6640,18 @@ public function sortDAEInModelicaCodeOrder
   output DAE.DAElist outDae;
 algorithm
   outDae := match(inShouldSort, inElements, inDae)
-    local 
+    local
       list<DAE.Element> els;
-    
+
     case (false, _, _) then inDae;
-    
+
     case (true, {}, _) then inDae;
-    
+
     case (true, _, DAE.DAE(els))
       equation
         els = sortDAEElementsInModelicaCodeOrder(inElements, els, {});
       then DAE.DAE(els);
-  
+
   end match;
 end sortDAEInModelicaCodeOrder;
 
@@ -6648,31 +6664,31 @@ protected function sortDAEElementsInModelicaCodeOrder
   output list<DAE.Element> outDaeEls;
 algorithm
   outDaeEls := match(inElements, inDaeEls, inAcc)
-    local 
+    local
       list<DAE.Element> dae, named, rest, els, acc;
       Absyn.Ident name;
       list<tuple<SCode.Element, DAE.Mod>> restEl;
-      
+
     case ({}, _, _) then listAppend(inAcc, inDaeEls);
-      
+
     case (((SCode.COMPONENT(name = name),_))::restEl, dae, acc)
       equation
         (named, rest) = splitVariableNamed(dae, name, {}, {});
-        acc = listAppend(acc, named); 
-        els = sortDAEElementsInModelicaCodeOrder(restEl, rest, acc); 
-      then 
+        acc = listAppend(acc, named);
+        els = sortDAEElementsInModelicaCodeOrder(restEl, rest, acc);
+      then
         els;
-  
+
     case (((_,_))::restEl, dae, acc)
       equation
         els = sortDAEElementsInModelicaCodeOrder(restEl, dae, acc);
-      then 
+      then
         els;
-  
+
   end match;
 end sortDAEElementsInModelicaCodeOrder;
 
-protected function splitVariableNamed 
+protected function splitVariableNamed
 "@author: adrpo
   Splits into a list with all variables with the given name and the rest"
   input list<DAE.Element> inElementLst;
@@ -6705,7 +6721,7 @@ algorithm
         (accNamed, accRest) = splitVariableNamed(lst, inName, accNamed, x::accRest);
       then
         (accNamed, accRest);
-  
+
   end match;
 end splitVariableNamed;
 
@@ -6733,9 +6749,9 @@ algorithm
       list<DAE.ComponentRef> extra_arg;
     case ((exp,extra_arg))
       equation
-        ((exp,extra_arg)) = Expression.traverseExp(exp,collectAllExpandableCrefsInExp,extra_arg); 
+        ((exp,extra_arg)) = Expression.traverseExp(exp,collectAllExpandableCrefsInExp,extra_arg);
       then
-        ((exp,extra_arg)); 
+        ((exp,extra_arg));
   end match;
 end collectAllExpandableCrefs;
 
@@ -6758,7 +6774,7 @@ algorithm
         ((exp,(cr::acc)));
 
     else itpl;
-  
+
   end matchcontinue;
 end collectAllExpandableCrefsInExp;
 

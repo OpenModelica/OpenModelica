@@ -262,14 +262,14 @@ algorithm
         (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize, ieqnSize+size, ieqnslst, ihs);
       then
         (varSize, eqnSize, eqns, hs);
-    
+
     // initial if equation with condition false and no else
     case (DAE.INITIAL_IF_EQUATION(condition1 = {DAE.BCONST(false)}, equations3 = {})::rest, _, _, _, _)
       equation
         (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize, ieqnSize, ieqnslst, ihs);
       then
         (varSize, eqnSize, eqns, hs);
-    
+
     // initial if equation
     case (DAE.INITIAL_IF_EQUATION(condition1 = _)::rest, _, _, _, _)
       equation
@@ -322,7 +322,13 @@ algorithm
       then
         (varSize, eqnSize, eqns, hs);
 
-    case (DAE.NORETCALL(functionName = _)::rest, _, _, _, _)
+    case (DAE.NORETCALL(exp = _)::rest, _, _, _, _)
+      equation
+        (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize, ieqnSize, ieqnslst, ihs);
+      then
+        (varSize, eqnSize, eqns, hs);
+
+    case (DAE.INITIAL_NORETCALL(exp = _)::rest, _, _, _, _)
       equation
         (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize, ieqnSize, ieqnslst, ihs);
       then
@@ -418,25 +424,25 @@ algorithm
     case (DAE.STMT_ASSIGN(exp1 = exp1), _, _)
       equation
         ((_, (_, ht))) = Expression.traverseExpTopDown(exp1, statementOutputsCrefFinder, (inCrefExpansion, iht));
-      then 
+      then
         ht;
-        
+
     // (a, b, ...) := expr;
-    case (DAE.STMT_TUPLE_ASSIGN(expExpLst = expl), _, _) 
+    case (DAE.STMT_TUPLE_ASSIGN(expExpLst = expl), _, _)
       equation
         ((_, (_, ht))) = Expression.traverseExpListTopDown(expl, statementOutputsCrefFinder, (inCrefExpansion, iht));
-      then 
+      then
         ht;
-        
+
     // a := expr;  // where a is array with an empty list as subscript
     case (DAE.STMT_ASSIGN_ARR(componentRef=cr), _, _)
       equation
         ({}) = ComponentReference.crefLastSubs(cr);
         crlst = ComponentReference.expandCref(cr, true);
         ht = List.fold(crlst, BaseHashSet.add, iht);
-      then 
+      then
         ht;
-        
+
     // a := expr;  // where a is array
     case (DAE.STMT_ASSIGN_ARR(componentRef=cr), _, _)
       equation
@@ -445,15 +451,15 @@ algorithm
         cr = ComponentReference.crefSetLastSubs(cr, subs);
         crlst = ComponentReference.expandCref(cr, true);
         ht = List.fold(crlst, BaseHashSet.add, iht);
-      then 
+      then
         ht;
-    
+
     case(DAE.STMT_IF(statementLst = stmts, else_ = elsebranch), _, _)
       equation
         ht = List.fold1(stmts, statementOutputs, inCrefExpansion, iht);
         ht = statementElseOutputs(elsebranch, inCrefExpansion, ht);
       then ht;
-   
+
     case(DAE.STMT_FOR(type_=tp, iter = iteratorName, range = e, statementLst = stmts), _, _)
       equation
         // replace the iterator variable with the range expression
@@ -461,7 +467,7 @@ algorithm
         (stmts, _) = DAEUtil.traverseDAEEquationsStmts(stmts, Expression.traverseSubexpressionsHelper, (Expression.replaceCref, (cr, e)));
         ht = List.fold1(stmts, statementOutputs, inCrefExpansion, iht);
       then ht;
-   
+
     case(DAE.STMT_PARFOR(type_=tp, iter = iteratorName, range = e, statementLst = stmts), _, _)
       equation
         // replace the iterator variable with the range expression
@@ -469,26 +475,26 @@ algorithm
         (stmts, _) = DAEUtil.traverseDAEEquationsStmts(stmts, Expression.traverseSubexpressionsHelper, (Expression.replaceCref, (cr, e)));
         ht = List.fold1(stmts, statementOutputs, inCrefExpansion, iht);
       then ht;
-   
+
     case(DAE.STMT_WHILE(statementLst = stmts), _, _)
       equation
         ht = List.fold1(stmts, statementOutputs, inCrefExpansion, iht);
       then ht;
-    
+
     case (DAE.STMT_WHEN(statementLst = stmts, elseWhen = NONE()), _, _)
       equation
         ht = List.fold1(stmts, statementOutputs, inCrefExpansion, iht);
       then ht;
-    
+
     case (DAE.STMT_WHEN(exp = _, statementLst = stmts, elseWhen = SOME(stmt)), _, _)
       equation
         ht = List.fold1(stmts, statementOutputs, inCrefExpansion, iht);
         ht = statementOutputs(stmt, inCrefExpansion, ht);
       then ht;
-    
+
     case(DAE.STMT_ASSERT(cond = _), _, _) then iht;
     case(DAE.STMT_TERMINATE(msg = _), _, _) then iht;
-    
+
     // reinit is not a output
     case(DAE.STMT_REINIT(var = _), _, _) then iht;
     case(DAE.STMT_NORETCALL(exp = _), _, _) then iht;
@@ -500,13 +506,13 @@ algorithm
       equation
         ht = List.fold1(stmts, statementOutputs, inCrefExpansion, iht);
       then ht;
-    
+
     else equation
       str = DAEDump.ppStatementStr(inStatement);
       Debug.fprintln(Flags.FAILTRACE, "- CheckModel.statementOutputs failed for " +& str +& "\n");
     then
       fail();
-  
+
   end matchcontinue;
 end statementOutputs;
 
@@ -549,78 +555,78 @@ algorithm
       list<DAE.ComponentRef> crlst;
       list<DAE.Subscript> subs;
       DAE.Expand expand;
-    
+
     // Skip wild
     case((e as DAE.CREF(componentRef=DAE.WILD()), (expand,ht)))
       then
         ((e, false, (expand,ht)));
-    
+
     // Skip time
     case((e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time", subscriptLst={})), (expand,ht)))
       then
         ((e, false, (expand,ht)));
-    
+
     // Skip external Objects
     case((e as DAE.CREF(ty=DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path=_))), (expand,ht)))
       then
         ((e, false, (expand,ht)));
-    
+
     // empty subs
-    case((e as DAE.CREF(componentRef=cr), (expand,ht))) 
+    case((e as DAE.CREF(componentRef=cr), (expand,ht)))
       equation
         ({}) = ComponentReference.crefLastSubs(cr);
         crlst = ComponentReference.expandCref(cr, true);
         ht = List.fold(crlst, BaseHashSet.add, ht);
-      then 
+      then
         ((e, false, (expand,ht)));
-    
+
     // some subs - NOT_EXPAND strategy (needed for equations translated to algorithms)
-    case((e as DAE.CREF(componentRef=cr), (expand as DAE.NOT_EXPAND(),ht))) 
+    case((e as DAE.CREF(componentRef=cr), (expand as DAE.NOT_EXPAND(),ht)))
       equation
         ht = List.fold({cr}, BaseHashSet.add, ht);
-      then 
+      then
         ((e, false, (expand,ht)));
-    
+
     // some subs - EXPAND
-    case((e as DAE.CREF(componentRef=cr), (expand,ht))) 
+    case((e as DAE.CREF(componentRef=cr), (expand,ht)))
       equation
         (subs as _::_) = ComponentReference.crefLastSubs(cr);
         subs = List.fill(DAE.WHOLEDIM(), listLength(subs));
         cr = ComponentReference.crefSetLastSubs(cr, subs);
         crlst = ComponentReference.expandCref(cr, true);
         ht = List.fold(crlst, BaseHashSet.add, ht);
-      then 
+      then
         ((e, false, (expand,ht)));
-      
+
     case((e as DAE.ASUB(exp=exp), (expand,ht)))
       equation
         ((_, (expand,ht))) = Expression.traverseExpTopDown(exp, statementOutputsCrefFinder, (expand,ht));
       then
         ((e, false, (expand,ht)));
-    
+
     case((e as DAE.TSUB(exp=exp), (expand,ht)))
       equation
         ((_, (expand,ht))) = Expression.traverseExpTopDown(exp, statementOutputsCrefFinder, (expand,ht));
       then
         ((e, false, (expand,ht)));
-    
+
     case((e as DAE.RELATION(exp1=_), (expand,ht)))
       then
         ((e, false, (expand,ht)));
-    
+
     case((e as DAE.RANGE(ty=_), (expand,ht)))
       then
         ((e, false, (expand,ht)));
-    
+
     case((e as DAE.IFEXP(expThen=e1, expElse=e2), (expand,ht)))
       equation
         ((_, (expand,ht))) = Expression.traverseExpTopDown(e1, statementOutputsCrefFinder, (expand,ht));
         ((_, (expand,ht))) = Expression.traverseExpTopDown(e2, statementOutputsCrefFinder, (expand,ht));
       then
         ((e, false, (expand,ht)));
-    
+
     case((e, (expand,ht))) then ((e, true, (expand,ht)));
-  
+
   end matchcontinue;
 end statementOutputsCrefFinder;
 

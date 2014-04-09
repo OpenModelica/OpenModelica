@@ -401,11 +401,17 @@ algorithm
       then
         (DAE.REINIT(cref,e_1,source),dae);
 
-    case(DAE.NORETCALL(p,elst,source),dae)
+    case(DAE.NORETCALL(e,source),dae)
       equation
-        ((DAE.CALL(path=p,expLst=elst_1),dae)) = Expression.traverseExp(DAE.CALL(p,elst,DAE.CALL_ATTR(DAE.T_NORETCALL_DEFAULT, false, false, false, DAE.NORM_INLINE(), DAE.NO_TAIL())),elabExp,dae);
+        ((e,dae)) = Expression.traverseExp(e,elabExp,dae);
       then
-        (DAE.NORETCALL(p,elst_1,source),dae);
+        (DAE.NORETCALL(e,source),dae);
+
+    case(DAE.INITIAL_NORETCALL(e,source),dae)
+      equation
+        ((e,dae)) = Expression.traverseExp(e,elabExp,dae);
+      then
+        (DAE.INITIAL_NORETCALL(e,source),dae);
 
     case(DAE.EQUEQUATION(cr1=_),dae)
      then
