@@ -3042,12 +3042,11 @@ package FMI
     output String fmiType;
   end getFMIType;
 
-  function getEnumerationFromTypes
+  function getEnumerationTypeFromTypes
     input list<TypeDefinitions> inTypeDefinitionsList;
     input String inBaseType;
-    input Integer inStartValue;
-    output String outEnumerationItem;
-  end getEnumerationFromTypes;
+    output String outEnumerationType;
+  end getEnumerationTypeFromTypes;
 end FMI;
 
 package HpcOmSimCode

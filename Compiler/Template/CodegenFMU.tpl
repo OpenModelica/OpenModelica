@@ -1366,6 +1366,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     <%if not boolAnd(stringEq(integerOutputVariablesNames, ""), stringEq(integerOutputVariablesVRs, "")) then "{"+integerOutputVariablesNames+"} = fmi1Functions.fmi1GetInteger(fmi1me, {"+integerOutputVariablesVRs+"}, flowStatesInputs);"%>
     <%if not boolAnd(stringEq(booleanOutputVariablesNames, ""), stringEq(booleanOutputVariablesVRs, "")) then "{"+booleanOutputVariablesNames+"} = fmi1Functions.fmi1GetBoolean(fmi1me, {"+booleanOutputVariablesVRs+"}, flowStatesInputs);"%>
     <%if not boolAnd(stringEq(stringOutputVariablesNames, ""), stringEq(stringOutputVariablesVRs, "")) then "{"+stringOutputVariablesNames+"} = fmi1Functions.fmi1GetString(fmi1me, {"+stringOutputVariablesVRs+"}, flowStatesInputs);"%>
+    <%dumpOutputGetEnumerationVariables(fmiModelVariablesList, fmiTypeDefinitionsList, "fmi1Functions.fmi1GetInteger", "fmi1me")%>    
   algorithm
   <%if intGt(listLength(fmiInfo.fmiNumberOfEventIndicators), 0) then
   <<
@@ -1419,6 +1420,10 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
           external "C" FMI1ModelExchangeDestructor_OMC(fmi1me) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
         end destructor;
     end FMI1ModelExchange;
+
+    <%dumpFMITypeDefinitionsMappingFunctions(fmiTypeDefinitionsList)%>
+    
+    <%dumpFMITypeDefinitionsArrayMappingFunctions(fmiTypeDefinitionsList)%>
 
     package fmi1Functions
       function fmi1SetTime
@@ -2035,7 +2040,6 @@ template dumpFMITypeDefinition(TypeDefinitions fmiTypeDefinition)
 ::=
 match fmiTypeDefinition
 case ENUMERATIONTYPE(__) then
-  if (intEq(stringFind(name, "Modelica."), -1)) then
   <<
   type <%name%> = enumeration(
     <%dumpFMITypeDefinitionsItems(items)%>);
@@ -2059,6 +2063,72 @@ case ENUMERATIONITEM(__) then
   <%name%>
   >>
 end dumpFMITypeDefinitionsItem;
+
+template dumpFMITypeDefinitionsMappingFunctions(list<TypeDefinitions> fmiTypeDefinitionsList)
+ "Generates the mapping functions for all enumeration types."
+::=
+  <<
+  <%fmiTypeDefinitionsList |> fmiTypeDefinition => dumpFMITypeDefinitionMappingFunction(fmiTypeDefinition) ;separator="\n"%>
+  >>
+end dumpFMITypeDefinitionsMappingFunctions;
+
+template dumpFMITypeDefinitionMappingFunction(TypeDefinitions fmiTypeDefinition)
+ "Generates the mapping function from integer to enumeration type."
+::=
+match fmiTypeDefinition
+case ENUMERATIONTYPE(__) then
+  <<
+  function map_<%name%>_from_integer
+    input Integer i;
+    output <%name%> outType;
+  algorithm
+    <%items |> item hasindex i0 fromindex 1 => dumpFMITypeDefinitionMappingFunctionItems(item, name, i0) ;separator="\n"%>
+    <%if intGt(listLength(items), 1) then "end if;"%>
+  end map_<%name%>_from_integer;
+  >>
+end dumpFMITypeDefinitionMappingFunction;
+
+template dumpFMITypeDefinitionMappingFunctionItems(EnumerationItem item, String typeName, Integer i)
+ "Dumps the mapping function conditions. This is closely related to dumpFMITypeDefinitionMappingFunction."
+::=
+match item
+case ENUMERATIONITEM(__) then
+  if intEq(i, 1) then
+  <<
+  if i == <%i%> then outType := <%typeName%>.<%name%>;
+  >>
+  else
+  <<
+  elseif i == <%i%> then outType := <%typeName%>.<%name%>;
+  >>
+end dumpFMITypeDefinitionMappingFunctionItems;
+
+template dumpFMITypeDefinitionsArrayMappingFunctions(list<TypeDefinitions> fmiTypeDefinitionsList)
+ "Generates the array mapping functions for all enumeration types."
+::=
+  <<
+  <%fmiTypeDefinitionsList |> fmiTypeDefinition => dumpFMITypeDefinitionsArrayMappingFunction(fmiTypeDefinition) ;separator="\n"%>
+  >>
+end dumpFMITypeDefinitionsArrayMappingFunctions;
+
+template dumpFMITypeDefinitionsArrayMappingFunction(TypeDefinitions fmiTypeDefinition)
+ "Generates the mapping function from integer to enumeration type."
+::=
+match fmiTypeDefinition
+case ENUMERATIONTYPE(__) then
+  <<
+  function map_<%name%>_from_integers
+    input Integer fromInt[size(fromInt, 1)];
+    output <%name%> toEnum[size(fromInt, 1)];
+  protected
+    Integer n = size(fromInt, 1);
+  algorithm
+    for i in 1:n loop
+      toEnum[i] := map_<%name%>_from_integer(fromInt[i]);
+    end for;
+  end map_<%name%>_from_integers;
+  >>
+end dumpFMITypeDefinitionsArrayMappingFunction;
 
 template dumpFMIModelVariablesList(list<ModelVariables> fmiModelVariablesList, list<TypeDefinitions> fmiTypeDefinitionsList, Boolean generateInputConnectors, Boolean generateOutputConnectors)
  "Generates the Model Variables code."
@@ -2149,7 +2219,7 @@ end dumpFMIStringModelVariableStartValue;
 template dumpFMIEnumerationModelVariableStartValue(list<TypeDefinitions> fmiTypeDefinitionsList, String baseType, Boolean hasStartValue, Integer startValue, Boolean isFixed)
 ::=
   <<
-  <%if hasStartValue then "="+baseType + "." + getEnumerationFromTypes(fmiTypeDefinitionsList, baseType, startValue)%>
+  <%if hasStartValue then " = map_" + getEnumerationTypeFromTypes(fmiTypeDefinitionsList, baseType) + "_from_integer(" + startValue + ")"%>
   >>
 end dumpFMIEnumerationModelVariableStartValue;
 
@@ -2521,6 +2591,26 @@ case STRINGVARIABLE(variability = "",causality="output") then
   <%name%>
   >>
 end dumpOutputStringVariableName;
+
+template dumpOutputGetEnumerationVariables(list<ModelVariables> fmiModelVariablesList, list<TypeDefinitions> fmiTypeDefinitionsList, String fmiGetFunction, String fmiType)
+::=
+  <<
+  <%fmiModelVariablesList |> fmiModelVariable => dumpOutputGetEnumerationVariable(fmiModelVariable, fmiTypeDefinitionsList, fmiGetFunction, fmiType)%>
+  >>
+end dumpOutputGetEnumerationVariables;
+
+template dumpOutputGetEnumerationVariable(ModelVariables fmiModelVariable, list<TypeDefinitions> fmiTypeDefinitionsList, String fmiGetFunction, String fmiType)
+::=
+match fmiModelVariable
+case ENUMERATIONVARIABLE(variability = "",causality="") then
+  <<
+  {<%name%>} = map_<%getEnumerationTypeFromTypes(fmiTypeDefinitionsList, baseType)%>_from_integers(<%fmiGetFunction%>(<%fmiType%>, {<%valueReference%>}, flowStatesInputs));<%\n%>
+  >>
+case ENUMERATIONVARIABLE(variability = "",causality="output") then
+  <<
+  {<%name%>} = map_<%getEnumerationTypeFromTypes(fmiTypeDefinitionsList, baseType)%>_from_integers(<%fmiGetFunction%>(<%fmiType%>, {<%valueReference%>}, flowStatesInputs));<%\n%>
+  >>
+end dumpOutputGetEnumerationVariable;
 
 end CodegenFMU;
 

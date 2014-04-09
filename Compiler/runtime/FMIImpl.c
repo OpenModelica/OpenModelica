@@ -224,14 +224,6 @@ const char* getFMI2ModelVariableBaseType(fmi2_import_variable_t* variable)
   }
 }
 
-int startsWithModelicaDot(const char* str) {
-  if (strncmp(str, "Modelica.", 9) == 0) {
-    return 1;
-  } else {
-    return 0;
-  }
-}
-
 /*
  * Makes the string safe by removing special characters. Returns a malloc'd string that should be
  * free'd.
@@ -403,14 +395,9 @@ void FMIImpl__initializeFMI1Import(fmi1_import_t* fmi, void** fmiInfo, fmi_versi
   for (; i < typeDefinitionsSize ; i++) {
     fmi1_import_variable_typedef_t* variableTypeDef = fmi1_import_get_typedef(typeDefinitions, i);
     const char* name = fmi1_import_get_type_name(variableTypeDef);
-    void* typeName = NULL;
-    if (startsWithModelicaDot(name)) {
-      typeName = mk_scon_check_null(name);
-    } else {
-      char* name_safe = makeStringFMISafe(name);
-      typeName = mk_scon_check_null(name_safe);
-      free(name_safe);
-    }
+    char* name_safe = makeStringFMISafe(name);
+    void* typeName = mk_scon_check_null(name_safe);
+    free(name_safe);
     const char* description = fmi1_import_get_type_description(variableTypeDef);
     /* get the TypeDefinition as EnumerationType */
     fmi1_import_enumeration_typedef_t* enumTypeDef = fmi1_import_get_type_as_enum(variableTypeDef);
@@ -475,14 +462,9 @@ void FMIImpl__initializeFMI1Import(fmi1_import_t* fmi, void** fmiInfo, fmi_versi
     }
     void* variable_description = mk_scon_check_null(description);
     const char* base_type = getFMI1ModelVariableBaseType(model_variable);
-    void* variable_base_type = NULL;
-    if (startsWithModelicaDot(base_type)) {
-      variable_base_type = mk_scon_check_null(base_type);
-    } else {
-      char* base_type_safe = makeStringFMISafe(base_type);
-      variable_base_type = mk_scon_check_null(base_type_safe);
-      free(base_type_safe);
-    }
+    char* base_type_safe = makeStringFMISafe(base_type);
+    void* variable_base_type = mk_scon_check_null(base_type_safe);
+    free(base_type_safe);
     void* variable_variability = mk_scon_check_null(getFMI1ModelVariableVariability(model_variable));
     const char* causality = getFMI1ModelVariableCausality(model_variable);
     void* variable_causality = mk_scon_check_null(causality);
