@@ -663,8 +663,12 @@ end removeInnerAttribute;
 public function varCref " returns the component reference of a variable"
   input DAE.Element elt;
   output DAE.ComponentRef cr;
+protected
+  DAE.ComponentRef c;
+  DAE.Type ty;
 algorithm
-  DAE.VAR(componentRef = cr) := elt;
+  DAE.VAR(componentRef = c, ty = ty) := elt;
+  cr := ComponentReference.crefSetLastType(c,ty);
 end varCref;
 
 
@@ -2794,6 +2798,21 @@ algorithm
         0;
   end match;
 end getTupleSize;
+
+public function getTupleExps "gets the list<DAE.Exp> of a DAE.TUPLE or the list of the exp if its not a tuple"
+  input DAE.Exp inExp;
+  output list<DAE.Exp> exps;
+algorithm
+  exps := match(inExp)
+    local
+    case(DAE.TUPLE(exps))
+        then
+          exps;
+    else
+      then 
+        {inExp};
+  end match;
+end getTupleExps;
 
 protected function crefToExp "
   Makes an expression from a ComponentRef.
