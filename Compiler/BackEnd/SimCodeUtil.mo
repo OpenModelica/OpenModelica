@@ -9415,7 +9415,7 @@ algorithm
       equation
         SCode.MOD(binding = SOME((Absyn.STRING(inc), _))) =
           Mod.getUnelabedSubMod(inMod, "Include");
-        inc_1 = System.stringReplace(inc, "\\\"", "\"");
+        inc_1 = System.unescapedString(inc);
       then
         {inc_1};
     else {};
