@@ -381,6 +381,8 @@ constant DebugFlag HPCOM_ANALYZATION_MODE = DEBUG_FLAG(107, "hpcomAnalyzationMod
   Util.gettext("Creates statically linked c++ - code for analyzation (requires statically build cpp-runtime)"));
 constant DebugFlag STRICT_RML = DEBUG_FLAG(108, "strictRml", false,
   Util.gettext("Turns on extra RML checks."));
+constant DebugFlag IMPL_ODE = DEBUG_FLAG(109, "implOde", false,
+  Util.gettext("activates implicit codegen"));
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
 // initialization so that all flags are sorted by index (and thus have unique
@@ -493,7 +495,8 @@ constant list<DebugFlag> allDebugFlags = {
   DUMP_TRANSFORMED_MODELICA_MODEL,
   EVALUATE_CONST_FUNCTIONS,
   HPCOM_ANALYZATION_MODE,
-  STRICT_RML
+  STRICT_RML,
+  IMPL_ODE
 };
 
 // CONFIGURATION FLAGS
