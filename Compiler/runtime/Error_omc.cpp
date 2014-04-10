@@ -36,13 +36,35 @@ extern "C" {
 #include "rml_compatibility.h"
 #define ADD_METARECORD_DEFINITIONS static
 #include "OpenModelicaBootstrappingHeader.h"
-#include "ModelicaUtilities.h"
+#include "ModelicaUtilitiesExtra.h"
 
 }
 
 #include "errorext.cpp"
 
 extern "C" {
+
+/* Handle ModelicaFormatError called during translation (external Modelica packages, print to Error.mo instead of stdout) */
+void OpenModelica_ErrorModule_ModelicaVFormatError(const char *fmt, va_list ap)
+{
+  char *str;
+  vasprintf(&str, fmt, ap);
+  c_add_message(NULL,0,ErrorType_runtime,ErrorLevel_error,str,NULL,0);
+  free(str);
+  MMC_THROW();
+}
+
+void OpenModelica_ErrorModule_ModelicaError(const char *str)
+{
+  c_add_message(NULL,0,ErrorType_runtime,ErrorLevel_error,str,NULL,0);
+  MMC_THROW();
+}
+
+void Error_registerModelicaFormatError()
+{
+  OpenModelica_ModelicaError = OpenModelica_ErrorModule_ModelicaError;
+  OpenModelica_ModelicaVFormatError = OpenModelica_ErrorModule_ModelicaVFormatError;
+}
 
 void Error_addMessage(threadData_t *threadData,int errorID, void *msg_type, void *severity, const char* message, modelica_metatype tokenlst)
 {

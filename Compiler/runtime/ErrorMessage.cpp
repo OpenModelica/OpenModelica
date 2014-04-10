@@ -137,6 +137,8 @@ std::string ErrorMessage::getMessage_(int warningsAsErrors)
     std::string positionInfo = str.str();
     ret_msg = positionInfo + message_;
   }
+  // trim trailing whitespace
+  ret_msg.erase(ret_msg.find_last_not_of(" \n\r\t")+1);
   return ret_msg;
 }
 

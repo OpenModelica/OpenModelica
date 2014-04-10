@@ -193,4 +193,10 @@ RML_BEGIN_LABEL(ErrorExt__setShowErrorMessages)
   RML_TAILCALLK(rmlSC);
 }
 
+RML_BEGIN_LABEL(ErrorExt__registerModelicaFormatError)
+{
+  /* Bootstrapped compiler only */
+  RML_TAILCALLK(rmlSC);
+}
+
 } //extern "C"

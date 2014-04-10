@@ -43,6 +43,13 @@ encapsulated package ErrorExt
 
 public import Error;
 
+public function registerModelicaFormatError
+  external "C" Error_registerModelicaFormatError() annotation(Documentation(info="<html>
+<p>Registers the ModelicaFormatError function to output messages in the Error buffer instead of the default standard output.</p>
+<p>Note: Only works in the bootstrapped compiler!</p>
+</html>"),Library = "omcruntime");
+end registerModelicaFormatError;
+
 public function updateCurrentComponent
   input String str;
   input Boolean writeable;
