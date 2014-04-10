@@ -392,10 +392,10 @@ static int PrintImpl__writeBufConvertLines(threadData_t *threadData,const char *
   /*#modelicaLine [/path/to/a.mo:4:3-4:12]*/
   /*#endModelicaLine*/
   /* which on Windows is (N is the drive letter): */
-  /*#modelicaLine [N:\path\to\a.mo:4:3-4:12]*/
+  /*#modelicaLine [N:/path/to/a.mo:4:3-4:12]*/
   /*#endModelicaLine*/
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  const char *re_str[2] = {"^ */[*]#modelicaLine .(.:\\\\[^:]*):([0-9]*):[0-9]*-[0-9]*:[0-9]*.[*]/$", "^ */[*]#endModelicaLine[*]/$"};
+  const char *re_str[2] = {"^ */[*]#modelicaLine .(.:/[^:]*):([0-9]*):[0-9]*-[0-9]*:[0-9]*.[*]/$", "^ */[*]#endModelicaLine[*]/$"};
 #else /* real OSes */
   const char *re_str[2] = {"^ */[*]#modelicaLine .([^:]*):([0-9]*):[0-9]*-[0-9]*:[0-9]*.[*]/$", "^ */[*]#endModelicaLine[*]/$"};
 #endif
