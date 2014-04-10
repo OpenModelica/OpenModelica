@@ -69,8 +69,10 @@ static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
 #endif
 
 #define PATH_MAX _MAX_PATH
+#include <stdarg.h>
 char *realpath(const char *path, char *resolved_path);
 int asprintf(char **strp, const char *fmt, ...);
+int vasprintf(char **strp, const char *fmt, va_list ap);
 
 #else /* not msvc */
 
@@ -80,7 +82,10 @@ int asprintf(char **strp, const char *fmt, ...);
 #endif /* end msvc */
 
 #if defined(__MINGW32__)
+#include <stdarg.h>
 char *realpath(const char *path, char *resolved_path);
+int asprintf(char **strp, const char *fmt, ...);
+int vasprintf(char **strp, const char *fmt, va_list ap);
 #endif
 
 /* for non GNU compilers */
