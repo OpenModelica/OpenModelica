@@ -13,7 +13,7 @@
    height="225"
    id="svg2"
    version="1.1"
-   inkscape:version="0.48.3.1 r9886"
+   inkscape:version="0.48.4 r9939"
    sodipodi:docname="logo-small.svg">
   <defs
      id="defs4" />
@@ -26,7 +26,7 @@
      inkscape:pageshadow="2"
      inkscape:zoom="1.4"
      inkscape:cx="-12.953924"
-     inkscape:cy="45.339755"
+     inkscape:cy="131.05404"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -62,16 +62,16 @@
     <text
        xml:space="preserve"
        style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
-       x="-86.714264"
-       y="471.90106"
+       x="27.852758"
+       y="469.90005"
        id="text2985"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
          id="tspan2987"
-         x="-86.714264"
-         y="471.90106"
-         style="font-size:144px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:AvantGardeMdITC;-inkscape-font-specification:AvantGardeMdITC Bold"><tspan
-   style="fill:#23afe5;fill-opacity:1"
+         x="27.852758"
+         y="469.90005"
+         style="font-size:138px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:center;text-anchor:middle;font-family:AvantGardeMdITC;-inkscape-font-specification:AvantGardeMdITC Bold"><tspan
+   style="font-size:138px;text-align:center;text-anchor:middle;fill:#23afe5;fill-opacity:1"
    id="tspan2989">O</tspan>M</tspan></text>
   </g>
 </svg>
