@@ -12187,7 +12187,7 @@ algorithm
       list<SimCode.SimVar> stringConstVars_;
       list<SimCode.SimVar> jacobianVars_;
       list<SimCode.SimVar> realOptimizeConstraintsVars_;
-      list<SimCode.SimVar> tempEnumTypesList, enumTypesList;
+      list<SimCode.SimVar> enumTypesList;
     case (SimCode.SIMVARS(stateVars = stateVars_, derivativeVars = derivativeVars_, inlineVars = inlineVars_, algVars = algVars_, intAlgVars = intAlgVars_,
                           boolAlgVars = boolAlgVars_, inputVars = inputVars_, outputVars = outputVars_, aliasVars = aliasVars_, intAliasVars = intAliasVars_,
                           boolAliasVars = boolAliasVars_, paramVars = paramVars_, intParamVars = intParamVars_, boolParamVars = boolParamVars_,
@@ -12195,54 +12195,30 @@ algorithm
                           constVars = constVars_, intConstVars = intConstVars_, boolConstVars = boolConstVars_, stringConstVars = stringConstVars_,
                           jacobianVars = jacobianVars_, realOptimizeConstraintsVars = realOptimizeConstraintsVars_))
       equation
-        enumTypesList = getEnumerationTypesHelper(stateVars_);
-        tempEnumTypesList = getEnumerationTypesHelper(derivativeVars_);
-        enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(inlineVars_);
-        enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(algVars_);
-        enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(intAlgVars_);
-        enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(boolAlgVars_);
-        enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(inputVars_);
-        enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(outputVars_);
-        enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(aliasVars_);
-        enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(intAliasVars_);
-        enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(boolAliasVars_);
-        enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(paramVars_);
-        enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(intParamVars_);
-        enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(boolParamVars_);
-        enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(stringAlgVars_);
-        enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(stringParamVars_);
-        enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(stringAliasVars_);
-        enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(extObjVars_);
-        enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(constVars_);
-        enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(intConstVars_);
-        enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(boolConstVars_);
-        enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(stringConstVars_);
-        enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(jacobianVars_);
-        enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        tempEnumTypesList = getEnumerationTypesHelper(realOptimizeConstraintsVars_);
-        enumTypesList = listAppend(enumTypesList, tempEnumTypesList);
-        enumTypesList = List.uniqueOnTrue(enumTypesList, compareEnumerationTypes);
+        enumTypesList = getEnumerationTypesHelper(stateVars_, {});
+        enumTypesList = getEnumerationTypesHelper(derivativeVars_, enumTypesList);
+        enumTypesList = getEnumerationTypesHelper(inlineVars_, enumTypesList);
+        enumTypesList = getEnumerationTypesHelper(algVars_, enumTypesList);
+        enumTypesList = getEnumerationTypesHelper(intAlgVars_, enumTypesList);
+        enumTypesList = getEnumerationTypesHelper(boolAlgVars_, enumTypesList);
+        enumTypesList = getEnumerationTypesHelper(inputVars_, enumTypesList);
+        enumTypesList = getEnumerationTypesHelper(outputVars_, enumTypesList);
+        enumTypesList = getEnumerationTypesHelper(aliasVars_, enumTypesList);
+        enumTypesList = getEnumerationTypesHelper(intAliasVars_, enumTypesList);
+        enumTypesList = getEnumerationTypesHelper(boolAliasVars_, enumTypesList);
+        enumTypesList = getEnumerationTypesHelper(paramVars_, enumTypesList);
+        enumTypesList = getEnumerationTypesHelper(intParamVars_, enumTypesList);
+        enumTypesList = getEnumerationTypesHelper(boolParamVars_, enumTypesList);
+        enumTypesList = getEnumerationTypesHelper(stringAlgVars_, enumTypesList);
+        enumTypesList = getEnumerationTypesHelper(stringParamVars_, enumTypesList);
+        enumTypesList = getEnumerationTypesHelper(stringAliasVars_, enumTypesList);
+        enumTypesList = getEnumerationTypesHelper(extObjVars_, enumTypesList);
+        enumTypesList = getEnumerationTypesHelper(constVars_, enumTypesList);
+        enumTypesList = getEnumerationTypesHelper(intConstVars_, enumTypesList);
+        enumTypesList = getEnumerationTypesHelper(boolConstVars_, enumTypesList);
+        enumTypesList = getEnumerationTypesHelper(stringConstVars_, enumTypesList);
+        enumTypesList = getEnumerationTypesHelper(jacobianVars_, enumTypesList);
+        enumTypesList = getEnumerationTypesHelper(realOptimizeConstraintsVars_, enumTypesList);
       then
         enumTypesList;
     case (_) then {};
@@ -12251,42 +12227,48 @@ end getEnumerationTypes;
 
 protected function getEnumerationTypesHelper
   input list<SimCode.SimVar> inVars;
+  input list<SimCode.SimVar> inExistsList;
   output list<SimCode.SimVar> outVars;
 algorithm
-  outVars := matchcontinue (inVars)
+  outVars := matchcontinue (inVars, inExistsList)
     local
-      list<SimCode.SimVar> enumVars;
       list<SimCode.SimVar> vars;
+      list<SimCode.SimVar> existsList;
       SimCode.SimVar var;
-    case ((var as SimCode.SIMVAR(type_ = DAE.T_ENUMERATION(_, _, _, _, _, _))) :: vars)
+      DAE.Type ty;
+    case (((var as SimCode.SIMVAR(type_ = ty)) :: vars), existsList)
       equation
-        enumVars = getEnumerationTypesHelper(vars);
+        true = Types.isEnumeration(ty);
+        false = List.exist1(existsList, enumerationTypeExists, ty);
+        existsList = listAppend(existsList, {var});
+        existsList = getEnumerationTypesHelper(vars, existsList);
       then
-        var::enumVars;
-    case ((_ :: vars))
+        existsList;
+    case ((_ :: vars), existsList)
       equation
-        enumVars = getEnumerationTypesHelper(vars);
+        existsList = getEnumerationTypesHelper(vars, existsList);
       then
-        enumVars;
-    case ({}) then {};
+        existsList;
+    case ({}, existsList) then existsList;
   end matchcontinue;
 end getEnumerationTypesHelper;
 
-protected function compareEnumerationTypes
+protected function enumerationTypeExists
   input SimCode.SimVar var;
-  input SimCode.SimVar var1;
+  input DAE.Type inType;
   output Boolean b;
 algorithm
-  b := match (var, var1)
+  b := match (var, inType)
     local
       DAE.Type ty, ty1;
-    case (SimCode.SIMVAR(type_ = ty), SimCode.SIMVAR(type_ = ty1))
+      Boolean res;
+    case (SimCode.SIMVAR(type_ = ty), ty1)
       equation
-        true = Types.equivtypes(ty, ty1);
-      then true;
-      else false;
+        res = stringEq(Types.unparseType(ty), Types.unparseType(ty1));
+      then res;
+    else false;
   end match;
-end compareEnumerationTypes;
+end enumerationTypeExists;
 
 protected function variableName
   input SimCode.Variable v;
