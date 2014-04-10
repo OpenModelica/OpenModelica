@@ -3,6 +3,11 @@
 
 #include "FactoryExport.h"
 #include "HybrjSettings.h"
+
+#if defined(__MINGW32__) /* we have static libcminpack.a on MinGW */
+#define CMINPACK_NO_DLL
+#endif
+
 #include <minpack.h>
 /*
  Hybrj solver from MINPACK: numerical library for function minimization and least-squares solutions
