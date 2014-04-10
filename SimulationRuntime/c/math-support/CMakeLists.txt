@@ -2,11 +2,9 @@
 # CMakefile for compilation of OMC
 
 # Quellen und Header
-SET(math_support_sources  bigden.c biglag.c dogleg.c dpmpar.c
-                          dlamch.c
-                          enorm.c fdjac1.c hybrd.c hybrd1.c hybrj.c lsame.c
-                          nelmead.c newuoa.c newuob.c  pivot.c qform.c  qrfac.c r1mpyq.c
-                          r1updt.c trsapp.c update.c)
+SET(math_support_sources  bigden.c biglag.c dlamch.c lsame.c
+                          nelmead.c newuoa.c newuob.c  pivot.c 
+                          trsapp.c update.c)
 
 SET(math_support_headers blaswrap.h)
 
