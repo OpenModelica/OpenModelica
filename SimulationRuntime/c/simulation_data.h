@@ -290,7 +290,7 @@ typedef struct NONLINEAR_SYSTEM_DATA
   int (*initialAnalyticalJacobian)(void*);
   modelica_integer jacobianIndex;
 
-  void (*residualFunc)(void*, double*, double*, f2c_integer_ptr);
+  void (*residualFunc)(void*, const double*, double*, const int*);
   void (*initializeStaticNLSData)(void*, void*);
 
   void *solverData;

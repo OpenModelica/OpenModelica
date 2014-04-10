@@ -41,27 +41,16 @@
 extern "C" {
 #endif
 
-#include "blaswrap.h"
-#include "f2c.h"
 #ifdef VOID
 #undef VOID
 #endif
 
 extern
-int _omc_hybrj_(int(*) (integer*, double*, double*, double *, integer*, integer*, void* data, int),
-      integer *n,double*x,double*fvec,double*fjac,integer *ldfjac,double*xtol,integer* maxfev,
-      double* diag,integer *mode,double*factor, integer *nprint,integer* info, integer* nfev, integer* njev,
-      double* r, integer *lr,double*qtf,double*wa1,double*wa2,
-      double* wa3,double* wa4, void* userdata, int sysNumber);
-
-extern
-int _omc_hybrd_(int (*) (integer*, double *, double*, integer*, void*),
-      integer* n, double* x ,double* fvec, double* xtol,
-      integer* maxfev, integer* ml, integer* mu, double* epsfcn, double* diag,
-      integer* mode, double* factor, integer* nprint, integer* info, integer* nfev,
-      double* fjac, double* fjacobian, integer* ldfjac, double* r__,
-      integer* lr, double* qtf, double* wa1, double* wa2, double* wa3,
-      double* wa4, void* userdata);
+int hybrj_( int(*) (const int*, const double*, double*, double *, const int*, const int*, void*),  const int *n, double *x, double *fvec, double *fjac, const int *ldfjac,
+  const double *xtol, const int *axfev, double *diag, const int *mode,
+  const double *factor, const int *nprint, int *info, int *nfev, int *njev,
+  double *r, int *lr, double *qtf, double *wa1, double *wa2, 
+  double *wa3, double *wa4, void* user_data);
 
 #ifdef __cplusplus
 }

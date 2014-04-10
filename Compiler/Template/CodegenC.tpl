@@ -1698,7 +1698,7 @@ template functionNonLinearResiduals(list<SimEqSystem> allEquations, String model
        <%body_initializeStaticNLSData%>
      }
 
-     void residualFunc<%index%>(void* dataIn, double* xloc, double* res, integer* iflag)
+     void residualFunc<%index%>(void* dataIn, const double* xloc, double* res, const int* iflag)
      {
        DATA* data = (DATA*) dataIn;
        const int equationIndexes[2] = {1,<%index%>};
