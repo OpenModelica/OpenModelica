@@ -115,6 +115,46 @@ algorithm
   end match;
 end emptyReplacementsSized;
 
+
+public function removeReplacement " removes a replacement rule using BaseHashTable.delete
+the extendhashtable is not updated
+"
+  input VariableReplacements repl;
+  input DAE.ComponentRef inSrc;
+  input DAE.Exp inDst;
+  input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
+  output VariableReplacements outRepl;
+  partial function FuncTypeExp_ExpToBoolean
+    input DAE.Exp inExp;
+    output Boolean outBoolean;
+  end FuncTypeExp_ExpToBoolean;
+algorithm
+  outRepl:=
+  matchcontinue (repl,inSrc,inDst,inFuncTypeExpExpToBooleanOption)
+    local
+      DAE.ComponentRef src;
+      HashTable2.HashTable ht,ht_1,eht,eht_1;
+      HashTable3.HashTable invHt,invHt_1;
+      list<DAE.Ident> iv;
+      String s;
+      Option<HashTable2.HashTable> derConst;
+    case (_,src,_,_)
+      equation
+        REPLACEMENTS(ht,invHt,eht,iv,derConst) = repl;
+        ht_1 = BaseHashTable.delete(inSrc,ht);
+        invHt_1 = removeReplacementInv(invHt, inSrc, inDst);
+      then
+        REPLACEMENTS(ht_1,invHt,eht,iv,derConst);
+    case (_,_,_,_)
+      equation
+        s = ComponentReference.printComponentRefStr(inSrc);
+        print("-BackendVarTransform.removeReplacement failed for " +& s);
+      then
+        fail();
+  end matchcontinue;
+end removeReplacement;
+
+
 public function addReplacements
   input VariableReplacements iRepl;
   input list<DAE.ComponentRef> inSrcs;
@@ -238,6 +278,31 @@ algorithm
         fail();
   end matchcontinue;
 end addReplacementNoTransitive;
+
+protected function removeReplacementInv "
+  Helper function to removeReplacement
+  removes the inverse rule of a replacement in the second binary tree
+  of VariableReplacements.
+"
+  input HashTable3.HashTable invHt;
+  input DAE.ComponentRef src;
+  input DAE.Exp dst;
+  output HashTable3.HashTable outInvHt;
+algorithm
+  outInvHt:=
+  match (invHt,src,dst)
+    local
+      HashTable3.HashTable invHt_1;
+      HashSet.HashSet set;
+      list<DAE.ComponentRef> dests;
+    case (_,_,_) equation
+      ((_,set)) = Expression.traverseExpTopDown(dst, traversingCrefFinder, HashSet.emptyHashSet());
+      dests = BaseHashSet.hashSetList(set);
+      invHt_1 = List.fold(dests,BaseHashTable.delete,invHt);
+      then
+        invHt_1;
+  end match;
+end removeReplacementInv;
 
 protected function addReplacementInv "
   Helper function to addReplacement
