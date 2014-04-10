@@ -184,11 +184,11 @@ CMinpack:
 	test -d 3rdParty/CMinpack
 	mkdir -p 3rdParty/CMinpack/build
 	(cd 3rdParty/CMinpack/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -D CMAKE_AR:String="$(AR)" -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DSHARED_LIBS=$(CMINPACKLIB_SHARED) -DCMAKE_INSTALL_PREFIX:String=../install .. -G $(CMAKE_TARGET))
-	test -f 3rdParty/CMinpack/install/lib*/$(LIBCMINPACK)* || $(MAKE) -C 3rdParty/CMinpack/build
+	test -f 3rdParty/CMinpack/install/lib*/$(LIBCMINPACKLIB)* || $(MAKE) -C 3rdParty/CMinpack/build
 	test -d 3rdParty/CMinpack/install || $(MAKE) -C 3rdParty/CMinpack/build install
-	test ! `uname` = Darwin || install_name_tool -id @rpath/$(LIBCMINPACK) 3rdParty/CMinpack/install/lib/$(LIBCMINPACK) 
+	test ! `uname` = Darwin || install_name_tool -id @rpath/$(LIBCMINPACKLIB) 3rdParty/CMinpack/install/lib/$(LIBCMINPACKLIB) 
 	# copy dll/so to lib/omc/ folders
-	(cp -af 3rdParty/CMinpack/install/lib*/$(LIBCMINPACK)* $(builddir_lib)/omc)
+	(cp -af 3rdParty/CMinpack/install/lib*/$(LIBCMINPACKLIB)* $(builddir_lib)/omc)
 
 CMinpack-clean:
 	rm -rf 3rdParty/CMinpack/install
