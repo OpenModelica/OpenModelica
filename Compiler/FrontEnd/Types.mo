@@ -482,6 +482,16 @@ algorithm
   end match;
 end isTuple;
 
+public function isMetaTuple "Returns true if type is TUPLE"
+  input DAE.Type tp;
+  output Boolean b;
+algorithm
+  b := match(tp)
+    case (DAE.T_METATUPLE(types = _)) then true;
+    else false;
+  end match;
+end isMetaTuple;
+
 public function isRecord "Returns true if type is COMPLEX and a record (ClassInf)"
   input DAE.Type tp;
   output Boolean b;
@@ -497,7 +507,7 @@ public function getRecordPath "gets the record path"
   output Absyn.Path p;
 algorithm
   p := match(tp)
-    case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(p))) 
+    case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(p)))
       then p;
   end match;
 end getRecordPath;
@@ -733,7 +743,7 @@ public function isArray "Returns true if Type is an array."
   output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue (inType,inDims)
-      local 
+      local
         Type t;
         list<Type> tys;
         Boolean b;
@@ -2710,7 +2720,7 @@ public function extendsFunctionTypeArgs
   Extends function argument list adding var for element list."
   input DAE.Type inType;
   input list<DAE.Element> inElementLst;
-  input list<Boolean> inBooltLst;  
+  input list<Boolean> inBooltLst;
   output DAE.Type outType;
 protected
   DAE.TypeSource tysrc;
@@ -2820,7 +2830,7 @@ algorithm
       DAE.Type ty;
       DAE.Const c;
       DAE.VarParallelism p;
-      
+
     case ((n,ty,c,p,_))
       equation
         s = unparseType(ty);
@@ -2849,7 +2859,7 @@ algorithm
   vl_1 := getVars(vl, isOutputVar);
 end getOutputVars;
 
-public function getFixedVarAttributeParameterOrConstant 
+public function getFixedVarAttributeParameterOrConstant
 "Returns the value of the fixed attribute of a builtin type.
  If there is no fixed in the tyep it returns true"
   input DAE.Type tp;
@@ -2862,10 +2872,10 @@ algorithm
         fix = getFixedVarAttribute(tp);
       then
         fix;
-    
+
     // there is no fixed!
     case (_) then true;
-  
+
   end matchcontinue;
 end getFixedVarAttributeParameterOrConstant;
 
@@ -3193,7 +3203,7 @@ algorithm
       Option<DAE.Exp> binding;
       DAE.ComponentRef cref;
       DAE.VarParallelism parallelism;
-    
+
     case (DAE.VAR(componentRef=cref), (_, ty, c, parallelism, binding) )
       equation
         name = ComponentReference.crefLastIdent(cref);
@@ -6518,7 +6528,7 @@ algorithm
       DAE.TypeSource ts;
       list<Option<DAE.Exp>> oe;
       DAE.FunctionAttributes functionAttributes;
-      DAE.Type ty;
+      DAE.Type ty,resType;
       InstTypes.PolymorphicBindings solvedBindings;
 
     case (DAE.T_METALIST(listType = ty),solvedBindings)
@@ -6545,10 +6555,16 @@ algorithm
         ty = DAE.T_METATUPLE(tys,DAE.emptyTypeSource);
       then ty;
 
-    case (DAE.T_FUNCTION(args,ty,functionAttributes,ts),solvedBindings)
+    case (DAE.T_TUPLE(tupleType = tys),solvedBindings)
+      equation
+        tys = replaceSolvedBindings(tys,solvedBindings,false);
+        ty = DAE.T_TUPLE(tys,DAE.emptyTypeSource);
+      then ty;
+
+    case (DAE.T_FUNCTION(args,resType,functionAttributes,ts),solvedBindings)
       equation
         tys = List.map(args, Util.tuple52);
-        tys = replaceSolvedBindings(ty::tys,solvedBindings,false);
+        tys = replaceSolvedBindings(resType::tys,solvedBindings,false);
         tys = List.map(tys, unboxedType);
         ty::tys = List.map(tys, boxIfUnboxedType);
         names = List.map(args, Util.tuple51);
@@ -6556,6 +6572,7 @@ algorithm
         ps = List.map(args, Util.tuple54);
         oe = List.map(args, Util.tuple55);
         args = List.thread5Tuple(names,tys,cs,ps,oe);
+        ty = makeRegularTupleFromMetaTupleOnTrue(isTuple(resType),ty);
         ty = DAE.T_FUNCTION(args,ty,functionAttributes,ts);
       then ty;
 
@@ -7395,7 +7412,7 @@ algorithm
     case(DAE.CONST())    then DAE.C_CONST();
   end match;
 end varKindToConst;
-  
+
 public function isValidFunctionVarType
   input DAE.Type inType;
   output Boolean outIsValid;
