@@ -189,6 +189,8 @@ CMinpack:
 	test ! `uname` = Darwin || install_name_tool -id @rpath/$(LIBCMINPACKLIB) 3rdParty/CMinpack/install/lib/$(LIBCMINPACKLIB) 
 	# copy dll/so to lib/omc/ folders
 	(cp -af 3rdParty/CMinpack/install/lib*/$(LIBCMINPACKLIB)* $(builddir_lib)/omc)
+	# Darwin has to be special always 
+	(test ! `uname` = Darwin || cp -af 3rdParty/CMinpack/install/lib*/*.dylib $(builddir_lib)/omc)
 
 CMinpack-clean:
 	rm -rf 3rdParty/CMinpack/install
