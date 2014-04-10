@@ -70,6 +70,8 @@ AC_SUBST(LIBRUNTIME)
 AC_SUBST(LIBFMIRUNTIME)
 AC_SUBST(LIBFMILIB)
 AC_SUBST(FMILIB_SHARED)
+AC_SUBST(LIBCMINPACKLIB)
+AC_SUBST(CMINPACKLIB_SHARED)
 AC_SUBST(SHREXT)
 AC_SUBST(LINK)
 AC_SUBST(RPATH)
@@ -818,6 +820,8 @@ if test "Darwin" = `uname`; then
   LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.dylib
   LIBFMILIB=libfmilib_shared.dylib
   FMILIB_SHARED=ON
+  LIBCMINPACKLIB=libcminpack.dylib
+  CMINPACKLIB_SHARED=ON
   RT_LDFLAGS_SIM="$LDFLAGS $RT_LDFLAGS $SUNDIALS_LDFLAGS $IPOPT_LDFLAGS -linteractive -llis -lcdaskr -lcminpack -lf2c -lexpat -liconv -lgc -lpthread -lm $LIBDL -lstdc++"
   RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS $LD_LAPACK -liconv -lgc -lpthread -lm $LIBDL -lstdc++"
   # All libraries are dynamically linked; we don't need anything else
@@ -842,6 +846,8 @@ elif test "$host" = "i586-pc-mingw32msvc"; then
   LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.a
   LIBFMILIB=libfmilib.a
   FMILIB_SHARED=OFF
+  LIBCMINPACKLIB=libcminpack.a
+  CMINPACKLIB_SHARED=OFF
   RT_LDFLAGS_SIM="$LDFLAGS $RT_LDFLAGS $SUNDIALS_LDFLAGS $IPOPT_LDFLAGS -linteractive -llis -lcminpack -lstdc++ -lf2c -lgc -lexpat -lm"
   RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS $LD_LAPACK -lgc -lexpat -lpthread -lm"
   RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $RT_LDFLAGS"
@@ -864,6 +870,8 @@ else
   LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.so
   LIBFMILIB=libfmilib_shared.so
   FMILIB_SHARED=ON
+  LIBCMINPACKLIB=libcminpack.so
+  CMINPACKLIB_SHARED=ON
   # For static runtime on Linux:
   # -Wl,-whole-archive -lSimulationRuntimeC -Wl,-no-whole-archive
   RT_LDFLAGS_SIM="$LDFLAGS -Wl,-z,origin -Wl,-rpath,'\$\$ORIGIN' $RT_LDFLAGS $SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $LIBRT -linteractive -llis -lcdaskr -lcminpack -Wl,-Bstatic -lf2c -Wl,-Bdynamic -lexpat -lgc $LIBRT -lpthread -lm $LIBDL -lstdc++ -rdynamic"
