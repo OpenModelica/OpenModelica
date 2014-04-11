@@ -931,7 +931,7 @@ algorithm
     case (SCode.MOD(fp, ep, sl, SOME((e, b)), i),_)
       equation
         sl = removeCrefPrefixFromSubModExp(sl, id);
-        ((e, _)) = Absyn.traverseExp(e, removeCrefPrefix, id);
+        (e, _) = Absyn.traverseExp(e, removeCrefPrefix, id);
       then
         SCode.MOD(fp, ep, sl, SOME((e, b)), i);
 
@@ -980,21 +980,23 @@ algorithm
 end removeCrefPrefixFromSubModExp;
 
 protected function removeCrefPrefix
-  input tuple<Absyn.Exp, Absyn.ComponentRef> inCrefExp_inPrefix;
-  output tuple<Absyn.Exp, Absyn.ComponentRef> outCrefExp_outPrefix;
+  input Absyn.Exp inExp;
+  input Absyn.ComponentRef inPrefix;
+  output Absyn.Exp outExp;
+  output Absyn.ComponentRef outPrefix;
 algorithm
-  outCrefExp_outPrefix := matchcontinue(inCrefExp_inPrefix)
+  (outExp,outPrefix) := matchcontinue (inExp,inPrefix)
     local
       Absyn.ComponentRef cr, pre;
 
-    case ((Absyn.CREF(cr), pre))
+    case (Absyn.CREF(cr), pre)
       equation
         true = Absyn.crefFirstEqual(cr, pre);
         cr = Absyn.crefStripFirst(cr);
       then
-        ((Absyn.CREF(cr), pre));
+        (Absyn.CREF(cr), pre);
 
-    else inCrefExp_inPrefix;
+    else (inExp,inPrefix);
   end matchcontinue;
 end removeCrefPrefix;
 

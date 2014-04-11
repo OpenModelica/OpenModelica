@@ -2137,8 +2137,8 @@ external "builtin";
 annotation(preferredView="text");
 end simulate;
 
-function buildModel "builds a modelica model by generating c code and build it. 
- It does not run the code! 
+function buildModel "builds a modelica model by generating c code and build it.
+ It does not run the code!
  The only required argument is the className, while all others have some default values.
  simulate(className, [startTime], [stopTime], [numberOfIntervals], [stepSize], [tolerance], [method], [fileNamePrefix], [options], [outputFormat], [variableFilter], [measureTime], [cflags], [simflags])
  Example command:
@@ -2162,7 +2162,7 @@ external "builtin";
 annotation(preferredView="text");
 end buildModel;
 
-function moveClass 
+function moveClass
 "moves a class up or down depending on the given direction,
  it returns true if the move was performed or false if we
  could not move the class"

@@ -405,7 +405,7 @@ algorithm
         (cache,sexp,DAE.PROP(_,_),SOME(st_1)) = StaticScript.elabExp(Env.emptyCache(),env, exp, true, SOME(st),true,Prefix.NOPRE(),info);
         (_,value,SOME(st_2)) = CevalScript.ceval(cache,env, sexp, true,SOME(st_1),Absyn.MSG(info),0);
         (_, dsubs, _) = Static.elabSubscripts(cache, env, asubs, true, Prefix.NOPRE(), info);
-        
+
         t = Types.typeOfValue(value) "This type can be more specific than the elaborated type; if the dimensions are unknown...";
         str = ValuesUtil.valString(value);
         newst = addVarToSymboltable(DAE.CREF_IDENT(ident, t, dsubs), value, env, st_2);
@@ -982,7 +982,7 @@ algorithm
     List.findMap3(inVariables, addVarToVarList2, inCref, inValue, inEnv);
   outVariables := addVarToVarList4(found, inCref, inValue, outVariables);
 end addVarToVarList;
-  
+
 protected function addVarToVarList2
   input GlobalScript.Variable inOldVariable;
   input DAE.ComponentRef inCref;
@@ -998,7 +998,7 @@ algorithm
   outFound := stringEq(id1, id2);
   outVariable := addVarToVarList3(outFound, inOldVariable, inCref, inValue, inEnv);
 end addVarToVarList2;
-  
+
 protected function addVarToVarList3
   input Boolean inFound;
   input GlobalScript.Variable inOldVariable;
@@ -1060,7 +1060,7 @@ algorithm
 
   end match;
 end addVarToVarList4;
-    
+
 public function buildEnvFromSymboltable
 " author: PA
    Builds an environment from a symboltable by adding all
@@ -2020,7 +2020,7 @@ algorithm
         resstr = getExtendsModifierValue(class_, crident, subident, p);
       then
         (resstr, st);
-        
+
     case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "isExtendsModifierFinal");
@@ -13735,7 +13735,6 @@ algorithm
     case (Absyn.MODIFICATION(path = Absyn.IDENT(annName),
         modification = SOME(Absyn.CLASSMOD(mod,Absyn.NOMOD())), info = info) :: rest,env,_,_,_)
       equation
-
         (cache, env_2, _) = buildEnvForGraphicProgram(inFullProgram, inModelPath, mod, annName);
 
         (cache,c,env_1) = Lookup.lookupClass(cache, env, Absyn.IDENT(annName), false);
@@ -13796,7 +13795,7 @@ algorithm
         res = getComponentitemsAnnotationsFromItems(rest, env, inClass,inFullProgram,inModelPath);
       then
         (gexpstr_1 :: res);
-        
+
     case ((Absyn.COMPONENTITEM(comment = SOME(Absyn.COMMENT(_,_))) :: rest),env,_,_,_)
       equation
         res = getComponentitemsAnnotationsFromItems(rest, env, inClass,inFullProgram,inModelPath);
@@ -14034,7 +14033,6 @@ algorithm
     case (_, _, _, _)
       equation
         true = Absyn.onlyLiteralsInAnnotationMod(inAnnotationMod);
-
         // debugging
         // print("Get annotation via small instantiation of: " +& Absyn.pathString(inModelPath) +& "\n");
         // print("Annotation to get: (" +& stringDelimitList(List.map(inAnnotationMod, Dump.unparseElementArgStr), ", ") +& ")\n");
@@ -15814,21 +15812,21 @@ algorithm
       String name,str,s1;
       Absyn.TimeStamp ts;
       Integer handle;
-    
+
     case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)),name)
       equation
         publst = getPublicList(parts);
         c1 = getClassFromElementitemlist(publst, name);
       then
         c1;
-    
+
     case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)),name)
       equation
         publst = getPublicList(parts);
         c1 = getClassFromElementitemlist(publst, name);
       then
         c1;
-    
+
     case (c as Absyn.CLASS(info = Absyn.INFO(buildTimes = ts)),name)
       equation
         handle = Print.saveAndClearBuf();
@@ -17214,7 +17212,7 @@ algorithm
     case(Absyn.NOSUB()) then Absyn.NOSUB();
     case(Absyn.SUBSCRIPT(e))
       equation
-        ((e1,_)) = Absyn.traverseExp(e,transformFlatExp,0);
+        (e1,_) = Absyn.traverseExp(e,transformFlatExp,0);
       then
         Absyn.SUBSCRIPT(e1);
   end match;
@@ -17258,7 +17256,7 @@ algorithm
     case (SOME(Absyn.CLASSMOD(eltArgs,Absyn.EQMOD(e,info))))
       equation
         eltArgs1=List.map(eltArgs,transformFlatElementArg);
-        ((e1,_)) = Absyn.traverseExp(e,transformFlatExp,0);
+        (e1,_) = Absyn.traverseExp(e,transformFlatExp,0);
       then SOME(Absyn.CLASSMOD(eltArgs1,Absyn.EQMOD(e1,info)));
     case (SOME(Absyn.CLASSMOD(eltArgs,Absyn.NOMOD())))
       equation
@@ -17319,7 +17317,7 @@ algorithm
 
     case(Absyn.EQ_IF(e1,thenpart,elseifpart,elsepart))
       equation
-        ((e11,_)) = Absyn.traverseExp(e1,transformFlatExp,0);
+        (e11,_) = Absyn.traverseExp(e1,transformFlatExp,0);
         thenpart1 = List.map(thenpart,transformFlatEquationItem);
         elsepart1 = List.map(elsepart,transformFlatEquationItem);
         elseifpart1 = List.map(elseifpart,transformFlatElseIfPart);
@@ -17328,8 +17326,8 @@ algorithm
 
     case(Absyn.EQ_EQUALS(e1,e2))
       equation
-        ((e11,_)) = Absyn.traverseExp(e1,transformFlatExp,0);
-        ((e21,_)) = Absyn.traverseExp(e2,transformFlatExp,0);
+        (e11,_) = Absyn.traverseExp(e1,transformFlatExp,0);
+        (e21,_) = Absyn.traverseExp(e2,transformFlatExp,0);
       then
         Absyn.EQ_EQUALS(e11,e21);
 
@@ -17342,14 +17340,14 @@ algorithm
 
     case(Absyn.EQ_FOR({Absyn.ITERATOR(id,NONE(),SOME(e1))},forEqns))
       equation
-        ((e11,_)) = Absyn.traverseExp(e1,transformFlatExp,0);
+        (e11,_) = Absyn.traverseExp(e1,transformFlatExp,0);
         forEqns1 = List.map(forEqns,transformFlatEquationItem);
       then
         Absyn.EQ_FOR({Absyn.ITERATOR(id,NONE(),SOME(e11))},forEqns1);
 
     case(Absyn.EQ_WHEN_E(e1,whenEqns,elseWhenEqns))
       equation
-        ((e11,_)) = Absyn.traverseExp(e1,transformFlatExp,0);
+        (e11,_) = Absyn.traverseExp(e1,transformFlatExp,0);
         elseWhenEqns1 = List.map(elseWhenEqns,transformFlatElseIfPart);
         whenEqns1 = List.map(whenEqns,transformFlatEquationItem);
       then
@@ -17374,7 +17372,7 @@ algorithm
       list<Absyn.EquationItem> eqnitems,eqnitems1;
     case((e1,eqnitems))
       equation
-        ((e11,_)) = Absyn.traverseExp(e1,transformFlatExp,0);
+        (e11,_) = Absyn.traverseExp(e1,transformFlatExp,0);
         eqnitems1 = List.map(eqnitems,transformFlatEquationItem);
       then
         ((e11,eqnitems1));
@@ -17410,7 +17408,7 @@ algorithm
     local Absyn.Exp e1,e11; Absyn.Ident id;
     case(Absyn.NAMEDARG(id,e1))
       equation
-        ((e11,_)) = Absyn.traverseExp(e1,transformFlatExp,0);
+        (e11,_) = Absyn.traverseExp(e1,transformFlatExp,0);
       then Absyn.NAMEDARG(id,e11);
   end match;
 end transformFlatNamedArg;
@@ -17426,24 +17424,26 @@ algorithm
       Integer i;
     case( (e,i))
       equation
-        ((e1,i)) = Absyn.traverseExp(e,transformFlatExp,0);
+        (e1,i) = Absyn.traverseExp(e,transformFlatExp,0);
       then ((e1,i));
   end match;
 end transformFlatExpTrav;
 
 protected function transformFlatExp
-  input tuple<Absyn.Exp,Integer> inExp;
-  output tuple<Absyn.Exp,Integer> outExp;
+  input Absyn.Exp inExp;
+  input Integer inDummy;
+  output Absyn.Exp outExp;
+  output Integer outDummy;
 algorithm
-  outExp := matchcontinue(inExp)
+  (outExp,outDummy) := matchcontinue(inExp,inDummy)
     local
       Absyn.ComponentRef cr,cr1;
       Absyn.Exp e; Integer i;
-    case( (Absyn.CREF(cr),i))
+    case (Absyn.CREF(cr),i)
       equation
         cr1 = transformFlatComponentRef(cr);
-      then ((Absyn.CREF(cr1),i));
-    case((e,i)) then ((e,i));
+      then (Absyn.CREF(cr1),i);
+    else (inExp,inDummy);
   end matchcontinue;
 end transformFlatExp;
 
@@ -17477,14 +17477,14 @@ algorithm
       Absyn.FunctionArgs fargs,fargs1;
     case (Absyn.ALG_ASSIGN(Absyn.CREF(cr),e1))
       equation
-        ((_,_)) = Absyn.traverseExp(e1,transformFlatExp,0);
+        (_,_) = Absyn.traverseExp(e1,transformFlatExp,0);
         cr1 = transformFlatComponentRef(cr);
       then
         Absyn.ALG_ASSIGN(Absyn.CREF(cr1),e1);
     case (Absyn.ALG_ASSIGN(e1 as Absyn.TUPLE(_),e2))
       equation
-        ((e11,_)) = Absyn.traverseExp(e1,transformFlatExp,0);
-        ((e21,_)) = Absyn.traverseExp(e2,transformFlatExp,0);
+        (e11,_) = Absyn.traverseExp(e1,transformFlatExp,0);
+        (e21,_) = Absyn.traverseExp(e2,transformFlatExp,0);
       then
         Absyn.ALG_ASSIGN(e11,e21);
     case (Absyn.ALG_IF(e1,thenPart,elseIfPart,elsePart))
@@ -17492,34 +17492,34 @@ algorithm
         thenPart1 = List.map(thenPart,transformFlatAlgorithmItem);
         elseIfPart1 =  List.map(elseIfPart,transformFlatElseIfAlgorithm);
         elsePart1 = List.map(elsePart,transformFlatAlgorithmItem);
-        ((e11,_)) = Absyn.traverseExp(e1,transformFlatExp,0);
+        (e11,_) = Absyn.traverseExp(e1,transformFlatExp,0);
     then
       Absyn.ALG_IF(e11,thenPart1,elseIfPart1,elsePart1);
     case (Absyn.ALG_FOR({Absyn.ITERATOR(id,NONE(),SOME(e1))},body))
       equation
-        ((e11,_)) = Absyn.traverseExp(e1,transformFlatExp,0);
+        (e11,_) = Absyn.traverseExp(e1,transformFlatExp,0);
         body1 = List.map(body,transformFlatAlgorithmItem);
       then
         Absyn.ALG_FOR({Absyn.ITERATOR(id,NONE(),SOME(e11))},body1);
     case(Absyn.ALG_WHILE(e1,body))
       equation
-        ((e11,_)) = Absyn.traverseExp(e1,transformFlatExp,0);
+        (e11,_) = Absyn.traverseExp(e1,transformFlatExp,0);
         body1 = List.map(body,transformFlatAlgorithmItem);
-    then
-      Absyn.ALG_WHILE(e11,body1);
+      then
+        Absyn.ALG_WHILE(e11,body1);
     case (Absyn.ALG_WHEN_A(e1,body,whenBranch))
       equation
-       ((e11,_)) = Absyn.traverseExp(e1,transformFlatExp,0);
+        (e11,_) = Absyn.traverseExp(e1,transformFlatExp,0);
         body1 = List.map(body,transformFlatAlgorithmItem);
         whenBranch1 =  List.map(whenBranch,transformFlatElseIfAlgorithm);
-    then
-      Absyn.ALG_WHEN_A(e11,body1,whenBranch1);
+      then
+        Absyn.ALG_WHEN_A(e11,body1,whenBranch1);
     case (Absyn.ALG_NORETCALL(cr,fargs))
       equation
         cr1 = transformFlatComponentRef(cr);
         fargs1 = transformFlatFunctionArgs(fargs);
-    then
-      Absyn.ALG_NORETCALL(cr1,fargs1);
+      then
+        Absyn.ALG_NORETCALL(cr1,fargs1);
     case (Absyn.ALG_BREAK()) then Absyn.ALG_BREAK();
     case (Absyn.ALG_RETURN()) then Absyn.ALG_RETURN();
 
@@ -17536,7 +17536,7 @@ algorithm
       list<Absyn.AlgorithmItem> algitems,algitems1;
     case((e1,algitems))
       equation
-        ((e11,_)) = Absyn.traverseExp(e1,transformFlatExp,0);
+        (e11,_) = Absyn.traverseExp(e1,transformFlatExp,0);
         algitems1 = List.map(algitems,transformFlatAlgorithmItem);
       then ((e11,algitems1));
   end match;
@@ -17729,7 +17729,7 @@ algorithm
       list<Absyn.Class> classes;
       list<String> toPrint;
       Integer handle;
-    
+
     case (_,_)
       equation
         Absyn.PROGRAM(classes = classes) = MetaUtil.createMetaClassesInProgram(ast);
@@ -17741,7 +17741,7 @@ algorithm
         res = Print.getString();
         Print.restoreBuf(handle);
       then res;
-  
+
   end match;
 end getDefinitions;
 
@@ -18650,7 +18650,7 @@ protected
   list<GlobalScript.LoadedFile> files;
 algorithm
   GlobalScript.SYMBOLTABLE(ast, exp_ast, cls, _, comp_funcs, files) := inSymbolTable;
-  outSymbolTable := GlobalScript.SYMBOLTABLE(ast, exp_ast, cls, inVars, comp_funcs, files); 
+  outSymbolTable := GlobalScript.SYMBOLTABLE(ast, exp_ast, cls, inVars, comp_funcs, files);
 end setSymbolTableVars;
 
 public function getFunctionsInProgram

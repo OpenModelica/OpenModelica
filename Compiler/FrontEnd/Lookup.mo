@@ -183,7 +183,7 @@ algorithm
     case (cache,env_1,path,c)
       equation
         path = Env.pathStripEnvIfFullyQualifedInEnv(path, env_1);
-        (cache,t,env_1) = lookupType2(cache,env_1,path,c); 
+        (cache,t,env_1) = lookupType2(cache,env_1,path,c);
       then
         (cache,t,env_1);*/
 
@@ -346,7 +346,7 @@ algorithm
   // print("Lookup C1: " +& Absyn.pathString(inPath) +& " env: " +& Env.printEnvPathStr(inEnv) +& " msg: " +& boolString(msg) +& "\n");
   (outCache,outClass,outEnv) := match(inCache, inEnv, inPath, msg)
     local Absyn.Path p;
-    /*/ strip fully qualified paths in this env 
+    /*/ strip fully qualified paths in this env
     case (_, _, _, _)
       equation
          p = Env.pathStripEnvIfFullyQualifedInEnv(inPath, inEnv);
@@ -393,8 +393,8 @@ algorithm
         true = Flags.isSet(Flags.FAILTRACE);
         id = Absyn.pathString(inPath);
         scope = Env.printEnvPathStr(inEnv);
-        Debug.fprintln(Flags.FAILTRACE,  "- Lookup.lookupClass failed:\n" +& 
-          id +& " in:\n" +& 
+        Debug.fprintln(Flags.FAILTRACE,  "- Lookup.lookupClass failed:\n" +&
+          id +& " in:\n" +&
           scope);
       then fail();*/
   end matchcontinue;
@@ -803,9 +803,9 @@ algorithm
         (cache, res) = moreLookupUnqualifiedImportedClassInFrame(cache, rest, env, ident);
       then
         (cache, res);
-    
+
     case (cache,{},_,_) then (cache,false);
-  
+
   end matchcontinue;
 end moreLookupUnqualifiedImportedClassInFrame;
 
@@ -860,7 +860,7 @@ algorithm
         (cache,c,env_1,prevFrames,unique) = lookupUnqualifiedImportedClassInFrame(cache, rest, env, ident);
       then
         (cache,c,env_1,prevFrames,unique);
-  
+
   end matchcontinue;
 end lookupUnqualifiedImportedClassInFrame;
 
@@ -1005,8 +1005,8 @@ algorithm
     /*/ fail if we couldn't find it
     case (_,env,cref)
       equation
-        Debug.fprintln(Flags.FAILTRACE,  "- Lookup.lookupVar failed:\n" +& 
-          ComponentReference.printComponentRefStr(cref) +& " in:\n" +& 
+        Debug.fprintln(Flags.FAILTRACE,  "- Lookup.lookupVar failed:\n" +&
+          ComponentReference.printComponentRefStr(cref) +& " in:\n" +&
           Env.printEnvPathStr(env));
       then fail();*/
   end matchcontinue;
@@ -1183,10 +1183,10 @@ algorithm
         Util.setStatefulBoolean(inState,true);
 
         true = Env.hasModifications(env2);
-        
+
         // env <> env2!
-        env2 = selectUpdatedEnv(env, env2);  
-        
+        env2 = selectUpdatedEnv(env, env2);
+
         // search directly in env2
         (_, env5) = lookupClassLocal(env2, n);
 
@@ -2362,7 +2362,7 @@ algorithm
         Env.CLASS(c,_,_) = Env.avlTreeGet(ht, name);
       then
         (cache,c,totenv,prevFrames);
-        
+
     // Search among the qualified imports, e.g. import A.B; or import D=A.B;
     case (cache,Env.FRAME(name = sid,importTable = importTable),totenv,name,_,_,_)
       equation

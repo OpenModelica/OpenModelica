@@ -351,7 +351,7 @@ algorithm
     case ((equ as SCode.EQ_FOR(index = iter_name, info = info), env))
       equation
         env = NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
-        (equ, _) = SCode.traverseEEquationExps(equ, (traverseExp, (env, info)));
+        (equ, _) = SCode.traverseEEquationExps(equ, traverseExp, (env, info));
       then
         ((equ, env));
 
@@ -360,14 +360,14 @@ algorithm
       equation
         cref = NFSCodeLookup.lookupComponentRef(cref, env, info);
         equ = SCode.EQ_REINIT(cref, exp, cmt, info);
-        (equ, _) = SCode.traverseEEquationExps(equ, (traverseExp, (env, info)));
+        (equ, _) = SCode.traverseEEquationExps(equ, traverseExp, (env, info));
       then
         ((equ, env));
 
     case ((equ, env))
       equation
         info = SCode.getEEquationInfo(equ);
-        (equ, _) = SCode.traverseEEquationExps(equ, (traverseExp, (env, info)));
+        (equ, _) = SCode.traverseEEquationExps(equ, traverseExp, (env, info));
       then
         ((equ, env));
 
@@ -375,17 +375,12 @@ algorithm
 end flattenEEquationTraverser;
 
 protected function traverseExp
-  input tuple<Absyn.Exp, tuple<Env, Absyn.Info>> inTuple;
-  output tuple<Absyn.Exp, tuple<Env, Absyn.Info>> outTuple;
-protected
-  Absyn.Exp exp;
-  Env env;
-  Absyn.Info info;
+  input Absyn.Exp inExp;
+  input tuple<Env, Absyn.Info> inTuple;
+  output Absyn.Exp outExp;
+  output tuple<Env, Absyn.Info> outTuple;
 algorithm
-  (exp, (env, info)) := inTuple;
-  (exp, (_, _, (env, info))) := Absyn.traverseExpBidir(exp,
-    (flattenExpTraverserEnter, flattenExpTraverserExit, (env, info)));
-  outTuple := (exp, (env, info));
+  (outExp, outTuple) := Absyn.traverseExpBidir(inExp, flattenExpTraverserEnter, flattenExpTraverserExit, inTuple);
 end traverseExp;
 
 protected function flattenConstraints
@@ -435,21 +430,21 @@ algorithm
     case ((stmt as SCode.ALG_FOR(index = iter_name, info = info), env))
       equation
         env = NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
-        (stmt, _) = SCode.traverseStatementExps(stmt, (traverseExp, (env, info)));
+        (stmt, _) = SCode.traverseStatementExps(stmt, traverseExp, (env, info));
       then
         ((stmt, env));
 
     case ((stmt as SCode.ALG_PARFOR(index = iter_name, info = info), env))
       equation
         env = NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
-        (stmt, _) = SCode.traverseStatementExps(stmt, (traverseExp, (env, info)));
+        (stmt, _) = SCode.traverseStatementExps(stmt, traverseExp, (env, info));
       then
         ((stmt, env));
 
     case ((stmt, env))
       equation
         info = SCode.getStatementInfo(stmt);
-        (stmt, _) = SCode.traverseStatementExps(stmt, (traverseExp, (env, info)));
+        (stmt, _) = SCode.traverseStatementExps(stmt, traverseExp, (env, info));
       then
         ((stmt, env));
 
@@ -600,7 +595,7 @@ protected function flattenExp
   input Absyn.Info inInfo;
   output Absyn.Exp outExp;
 algorithm
-  (outExp, _) := Absyn.traverseExpBidir(inExp, (flattenExpTraverserEnter, flattenExpTraverserExit, (inEnv, inInfo)));
+  (outExp, _) := Absyn.traverseExpBidir(inExp, flattenExpTraverserEnter, flattenExpTraverserExit, (inEnv, inInfo));
 end flattenExp;
 
 protected function flattenOptExp
@@ -624,10 +619,12 @@ algorithm
 end flattenOptExp;
 
 protected function flattenExpTraverserEnter
-  input tuple<Absyn.Exp, tuple<Env, Absyn.Info>> inTuple;
-  output tuple<Absyn.Exp, tuple<Env, Absyn.Info>> outTuple;
+  input Absyn.Exp inExp;
+  input tuple<Env, Absyn.Info> inTuple;
+  output Absyn.Exp outExp;
+  output tuple<Env, Absyn.Info> outTuple;
 algorithm
-  outTuple := match(inTuple)
+  (outExp,outTuple) := match(inExp,inTuple)
     local
       Env env;
       Absyn.ComponentRef cref;
@@ -637,68 +634,67 @@ algorithm
       Absyn.Info info;
       tuple<Env, Absyn.Info> tup;
 
-    case ((Absyn.CREF(componentRef = cref), tup as (env, info)))
+    case (Absyn.CREF(componentRef = cref), tup as (env, info))
       equation
         cref = NFSCodeLookup.lookupComponentRef(cref, env, info);
       then
-        ((Absyn.CREF(cref), tup));
+        (Absyn.CREF(cref), tup);
 
-    case ((exp as Absyn.CALL(functionArgs =
-        Absyn.FOR_ITER_FARG(iterators = iters)), (env, info)))
+    case (Absyn.CALL(functionArgs = Absyn.FOR_ITER_FARG(iterators = iters)), (env, info))
       equation
         env = NFSCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
       then
-        ((exp, (env, info)));
+        (inExp, (env, info));
 
-    case ((Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "SOME")), _))
-      then inTuple;
+    case (Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "SOME")), _)
+      then (inExp,inTuple);
 
-    case ((Absyn.CALL(function_ = cref, functionArgs = args),
-        tup as (env, info)))
+    case (Absyn.CALL(function_ = cref, functionArgs = args), tup as (env, info))
       equation
         cref = NFSCodeLookup.lookupComponentRef(cref, env, info);
         // TODO: handle function arguments
       then
-        ((Absyn.CALL(cref, args), tup));
+        (Absyn.CALL(cref, args), tup);
 
-    case ((Absyn.PARTEVALFUNCTION(function_ = cref, functionArgs = args),
-        tup as (env, info)))
+    case (Absyn.PARTEVALFUNCTION(function_ = cref, functionArgs = args), tup as (env, info))
       equation
         cref = NFSCodeLookup.lookupComponentRef(cref, env, info);
         // TODO: handle function arguments
       then
-        ((Absyn.PARTEVALFUNCTION(cref, args), tup));
+        (Absyn.PARTEVALFUNCTION(cref, args), tup);
 
-    case ((exp as Absyn.MATCHEXP(matchTy = _), tup as (env, info)))
+    case (exp as Absyn.MATCHEXP(matchTy = _), tup as (env, info))
       equation
         env = NFSCodeEnv.extendEnvWithMatch(exp, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
       then
-        ((exp, (env, info)));
-    else then inTuple;
+        (exp, (env, info));
+    else (inExp,inTuple);
   end match;
 end flattenExpTraverserEnter;
 
 protected function flattenExpTraverserExit
-  input tuple<Absyn.Exp, tuple<Env, Absyn.Info>> inTuple;
-  output tuple<Absyn.Exp, tuple<Env, Absyn.Info>> outTuple;
+  input Absyn.Exp inExp;
+  input tuple<Env, Absyn.Info> inTuple;
+  output Absyn.Exp outExp;
+  output tuple<Env, Absyn.Info> outTuple;
 algorithm
-  outTuple := match(inTuple)
+  (outExp,outTuple) := match(inExp,inTuple)
     local
       Absyn.Exp e;
       Env env;
       Absyn.Info info;
 
-    case ((e as Absyn.CALL(functionArgs = Absyn.FOR_ITER_FARG(iterators = _)),
-        (NFSCodeEnv.FRAME(frameType = NFSCodeEnv.IMPLICIT_SCOPE(iterIndex=_)) :: env, info)))
+    case (Absyn.CALL(functionArgs = Absyn.FOR_ITER_FARG(iterators = _)),
+        (NFSCodeEnv.FRAME(frameType = NFSCodeEnv.IMPLICIT_SCOPE(iterIndex=_)) :: env, info))
       then
-        ((e, (env, info)));
+        (inExp, (env, info));
 
-    case ((e as Absyn.MATCHEXP(matchTy = _),
-        (NFSCodeEnv.FRAME(frameType = NFSCodeEnv.IMPLICIT_SCOPE(iterIndex=_)) :: env, info)))
+    case (Absyn.MATCHEXP(matchTy = _),
+        (NFSCodeEnv.FRAME(frameType = NFSCodeEnv.IMPLICIT_SCOPE(iterIndex=_)) :: env, info))
       then
-        ((e, (env, info)));
+        (inExp, (env, info));
 
-    else then inTuple;
+    else (inExp,inTuple);
   end match;
 end flattenExpTraverserExit;
 

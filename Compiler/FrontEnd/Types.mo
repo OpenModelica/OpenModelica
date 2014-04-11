@@ -1538,6 +1538,9 @@ algorithm
         true = subtype2(t1,t2,requireRecordNamesEqual);
       then true;
 
+    case (DAE.T_FUNCTION_REFERENCE_VAR(functionType = t1),DAE.T_FUNCTION_REFERENCE_VAR(functionType = t2),_)
+      then subtype(t2,t2);
+
     case(DAE.T_METARECORD(source={p1}),DAE.T_METARECORD(source={p2}),_)
       then Absyn.pathEqual(p1,p2);
 
@@ -5469,6 +5472,7 @@ algorithm
     case (DAE.T_METATYPE(ty = _)) then true;
     case (DAE.T_NORETCALL(source = _)) then true;
     case (DAE.T_CODE(source = _)) then true;
+    case (DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_))) then true;
     case _ then false;
   end matchcontinue;
 end isBoxedType;

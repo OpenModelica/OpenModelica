@@ -1003,7 +1003,7 @@ Author: adrpo, see extractConstantPlusDeps for comments"
   output list<SCode.AlgorithmSection> oalgs;
   output list<SCode.AlgorithmSection> oialgs;
 algorithm
-  (oel, oeql, oieql, oalgs, oialgs) 
+  (oel, oeql, oieql, oalgs, oialgs)
     := matchcontinue(inComps, ocr, allComps, className, ieql, iieql, ialgs, iialgs)
     local
       DAE.ComponentRef cr;
@@ -1531,7 +1531,7 @@ algorithm
       equation
         //(_, (_, _, (els, deps))) = Absyn.traverseExpBidir(e, (getElementDependenciesTraverserEnter, getElementDependenciesTraverserExit, (inAllElements, deps)));
         //deps = getDepsFromExps(rest, els, deps);
-        (_, (_, _, (_, deps))) = Absyn.traverseExpBidir(e, (getElementDependenciesTraverserEnter, getElementDependenciesTraverserExit, (inAllElements, deps)));
+        (_, (_, deps)) = Absyn.traverseExpBidir(e, getElementDependenciesTraverserEnter, getElementDependenciesTraverserExit, (inAllElements, deps));
         deps = getDepsFromExps(rest, inAllElements, deps);
       then
         deps;
@@ -1578,20 +1578,20 @@ algorithm
     local
       list<Absyn.Exp> l1, l2;
       SCode.Mod m;
-    
+
     case (SCode.NOT_REPLACEABLE()) then ({}, {});
-    
+
     // no cc
     case (SCode.REPLACEABLE(NONE())) then ({}, {});
-    
+
     // yeha, we have a ccccc :)
     case (SCode.REPLACEABLE(SOME(SCode.CONSTRAINCLASS(modifier = m))))
       equation
         (l1, l2) = getExpsFromMod(m);
       then
         (l1, l2);
-  
-  end match;    
+
+  end match;
 end getExpsFromConstrainClass;
 
 protected function getExpsFromSubMods
@@ -1627,20 +1627,20 @@ algorithm
   outCrefs := matchcontinue(inMod)
     local
       list<Absyn.Exp> l1, l2;
-    
+
     case (_)
-      equation  
+      equation
         (l1, l2) = getExpsFromMod(inMod);
         outCrefs = List.flatten(List.map2(listAppend(l1, l2), Absyn.getCrefFromExp, true, true));
       then
         outCrefs;
-    
+
     case (_)
       equation
         print("Inst.getCrefFromMod: could not retrieve crefs from SCode.Mod: " +& SCodeDump.printModStr(inMod,SCodeDump.defaultOptions) +& "\n");
       then
         fail();
-  
+
   end matchcontinue;
 end getCrefFromMod;
 
@@ -1680,30 +1680,30 @@ algorithm
         ({}, se);
 
     // redeclare short class, investigate cc mods and own mods/array dims
-    case (SCode.REDECL(element = SCode.CLASS(prefixes = SCode.PREFIXES(replaceablePrefix = rp), 
+    case (SCode.REDECL(element = SCode.CLASS(prefixes = SCode.PREFIXES(replaceablePrefix = rp),
                                              classDef = SCode.DERIVED(Absyn.TPATH(_, ado), m, _))))
       equation
         (l1, l2) = getExpsFromConstrainClass(rp);
         (_, se) = Absyn.getExpsFromArrayDimOpt(ado);
         (l3, l4) = getExpsFromMod(m);
-        l1 = listAppend(listAppend(se, l1), l3); 
-        l2 = listAppend(l2, l4);
-      then
-        (l1, l2);
-        
-    // redeclare long class extends class, investigate cc and mods 
-    case (SCode.REDECL(element = SCode.CLASS(prefixes = SCode.PREFIXES(replaceablePrefix = rp), 
-                                             classDef = SCode.CLASS_EXTENDS(modifications = m))))
-      equation
-        (l1, l2) = getExpsFromConstrainClass(rp);
-        (l3, l4) = getExpsFromMod(m);
-        l1 = listAppend(l1, l3); 
+        l1 = listAppend(listAppend(se, l1), l3);
         l2 = listAppend(l2, l4);
       then
         (l1, l2);
 
-    // redeclare long class, investigate cc 
-    case (SCode.REDECL(element = SCode.CLASS(prefixes = SCode.PREFIXES(replaceablePrefix = rp), 
+    // redeclare long class extends class, investigate cc and mods
+    case (SCode.REDECL(element = SCode.CLASS(prefixes = SCode.PREFIXES(replaceablePrefix = rp),
+                                             classDef = SCode.CLASS_EXTENDS(modifications = m))))
+      equation
+        (l1, l2) = getExpsFromConstrainClass(rp);
+        (l3, l4) = getExpsFromMod(m);
+        l1 = listAppend(l1, l3);
+        l2 = listAppend(l2, l4);
+      then
+        (l1, l2);
+
+    // redeclare long class, investigate cc
+    case (SCode.REDECL(element = SCode.CLASS(prefixes = SCode.PREFIXES(replaceablePrefix = rp),
                                              classDef = _)))
       equation
         (l1, l2) = getExpsFromConstrainClass(rp);
@@ -1711,17 +1711,17 @@ algorithm
         (l1, l2);
 
     // redeclare component, investigate cc mods and own mods/array dims
-    case (SCode.REDECL(element = SCode.COMPONENT(prefixes = SCode.PREFIXES(replaceablePrefix = rp), 
+    case (SCode.REDECL(element = SCode.COMPONENT(prefixes = SCode.PREFIXES(replaceablePrefix = rp),
                                                  modifications = m, attributes = SCode.ATTR(arrayDims = ad))))
       equation
         (l1, l2) = getExpsFromConstrainClass(rp);
         (_, se) = Absyn.getExpsFromArrayDim(ad);
         (l3, l4) = getExpsFromMod(m);
-        l1 = listAppend(listAppend(se, l1), l3); 
+        l1 = listAppend(listAppend(se, l1), l3);
         l2 = listAppend(l2, l4);
       then
         (l1, l2);
-  
+
   end match;
 end getExpsFromMod;
 
@@ -1803,7 +1803,7 @@ algorithm
         deps;
 
     // For input and output variables in function scope return no dependencies so they stay in order!
-    case ((SCode.COMPONENT(name = name, condition = _, 
+    case ((SCode.COMPONENT(name = name, condition = _,
                            attributes = SCode.ATTR(arrayDims = _, direction = direction),
                            modifications = _), _), (_, true))
       equation
@@ -1813,7 +1813,7 @@ algorithm
 
     // For other variables we check the condition, since they might be conditional on a constant or parameter.
     case ((SCode.COMPONENT(name = name, condition = cExpOpt,
-                           prefixes = SCode.PREFIXES(replaceablePrefix = rp), 
+                           prefixes = SCode.PREFIXES(replaceablePrefix = rp),
                            attributes = SCode.ATTR(arrayDims = ad),
                            modifications = mod), daeMod), (inAllElements, isFunctionScope))
       equation
@@ -1838,7 +1838,7 @@ algorithm
         deps;
 
     // We might actually get packages here, check the modifiers and the array dimensions
-    case ((SCode.CLASS(name = name, 
+    case ((SCode.CLASS(name = name,
                        prefixes = SCode.PREFIXES(replaceablePrefix = rp),
                        classDef = SCode.DERIVED(modifications = mod, attributes = SCode.ATTR(arrayDims = ad))),
                        daeMod), (inAllElements, _))
@@ -1857,10 +1857,10 @@ algorithm
 
     // We might have functions here and their input/output elements can have bindings from the list
     // see reference_X in PartialMedium
-    // see ExternalMedia.Media.ExternalTwoPhaseMedium.FluidConstants 
+    // see ExternalMedia.Media.ExternalTwoPhaseMedium.FluidConstants
     //     which depends on function calls which depend on package constants inside external decl
     case ((SCode.CLASS(name = name,
-                       prefixes = SCode.PREFIXES(replaceablePrefix = _), 
+                       prefixes = SCode.PREFIXES(replaceablePrefix = _),
                        classDef = SCode.PARTS(elementLst = _, externalDecl = externalDecl)),
            _), (inAllElements, _))
       equation
@@ -1910,7 +1910,7 @@ algorithm
     case ({}, _) then inAcc;
 
     case (SCode.COMPONENT(
-                  prefixes = SCode.PREFIXES(replaceablePrefix = rp), 
+                  prefixes = SCode.PREFIXES(replaceablePrefix = rp),
                   modifications = m)::rest, _)
       equation
         exps = inAcc;
@@ -1934,11 +1934,13 @@ protected function getElementDependenciesTraverserEnter
   "Traverse function used by getElementDependencies to collect all dependencies
   for an element. The first ElementList in the input argument is a list of all
   elements, and the second is a list of accumulated dependencies."
-  input tuple<Absyn.Exp, tuple<ElementList, ElementList>> inTuple;
-  output tuple<Absyn.Exp, tuple<ElementList, ElementList>> outTuple;
+  input Absyn.Exp inExp;
+  input tuple<ElementList, ElementList> inTuple;
+  output Absyn.Exp outExp;
+  output tuple<ElementList, ElementList> outTuple;
   type ElementList = list<tuple<SCode.Element, DAE.Mod>>;
 algorithm
-  outTuple := matchcontinue(inTuple)
+  (outExp,outTuple) := matchcontinue (inExp,inTuple)
     local
       Absyn.Exp exp;
       String id;
@@ -1946,7 +1948,7 @@ algorithm
       tuple<SCode.Element, DAE.Mod> e;
       Absyn.ComponentRef cref;
 
-    case ((exp as Absyn.CREF(componentRef = cref), (all_el, accum_el)))
+    case (exp as Absyn.CREF(componentRef = cref), (all_el, accum_el))
       equation
         id = Absyn.crefFirstIdent(cref);
         // Try and delete the element with the given name from the list of all
@@ -1954,10 +1956,10 @@ algorithm
         // ensures that we don't add any dependency more than once.
         (all_el, SOME(e)) = List.deleteMemberOnTrue(id, all_el, isElementNamed);
       then
-        ((exp, (all_el, e :: accum_el)));
+        (exp, (all_el, e :: accum_el));
 
     // adpro: add function calls crefs too!
-    case ((exp as Absyn.CALL(function_ = cref), (all_el, accum_el)))
+    case (exp as Absyn.CALL(function_ = cref), (all_el, accum_el))
       equation
         id = Absyn.crefFirstIdent(cref);
         // Try and delete the element with the given name from the list of all
@@ -1965,19 +1967,21 @@ algorithm
         // ensures that we don't add any dependency more than once.
         (all_el, SOME(e)) = List.deleteMemberOnTrue(id, all_el, isElementNamed);
       then
-        ((exp, (all_el, e :: accum_el)));
+        (exp, (all_el, e :: accum_el));
 
-    else then inTuple;
+    else (inExp,inTuple);
   end matchcontinue;
 end getElementDependenciesTraverserEnter;
 
 protected function getElementDependenciesTraverserExit
   "Dummy traversal function used by getElementDependencies."
-  input tuple<Absyn.Exp, tuple<ElementList, ElementList>> inTuple;
-  output tuple<Absyn.Exp, tuple<ElementList, ElementList>> outTuple;
+  input Absyn.Exp inExp;
+  input tuple<ElementList, ElementList> inTuple;
+  output Absyn.Exp outExp;
+  output tuple<ElementList, ElementList> outTuple;
   type ElementList = list<tuple<SCode.Element, DAE.Mod>>;
 algorithm
-  outTuple := matchcontinue(inTuple)
+  (outExp,outTuple) := matchcontinue (inExp,inTuple)
     local
       ElementList all_el, accum_el;
       Absyn.Exp exp;
@@ -1986,13 +1990,13 @@ algorithm
     // branch will be used, which causes some problems with Fluid. So we just
     // reset everything up to this point and pray that we didn't miss anything
     // important.
-    case ((exp as Absyn.IFEXP(ifExp = _), (all_el, accum_el)))
+    case (exp as Absyn.IFEXP(ifExp = _), (all_el, accum_el))
       equation
         all_el = listAppend(accum_el, all_el);
       then
-        ((exp, (all_el, {})));
+        (exp, (all_el, {}));
 
-    else inTuple;
+    else (inExp,inTuple);
   end matchcontinue;
 end getElementDependenciesTraverserExit;
 
@@ -2671,7 +2675,7 @@ algorithm
     case (cache,env,ih,_,_,_,(SCode.EXTENDS(info=_),_),_,_,_,_)
       then (cache,env,ih);
 
-    // classes  
+    // classes
     case (cache,env,ih,_,_,_,(SCode.CLASS(name = _),_),_,_,_,_)
       equation
       then
@@ -2878,7 +2882,7 @@ algorithm
         SCode.MOD(subModLst = subs) = chainRedeclares(inModOuter, SCode.MOD(f, e, rest, b, info));
       then
         SCode.MOD(f, e, SCode.NAMEMOD(name, m2)::subs, b, info);
-    
+
     // something else, move along!
     case (_, SCode.MOD(f, e, sm::rest, b, info))
       equation
@@ -2963,7 +2967,7 @@ algorithm
     // true to delay type checking/elabExp
     case(cache,id,SCode.MOD(fi,ea,subs,SOME((e,_)), info))
       equation
-        ((e1,(_,cnt))) = Absyn.traverseExp(e,removeSelfModReferenceExp,(id,0));
+        (e1,(_,cnt)) = Absyn.traverseExp(e,removeSelfModReferenceExp,(id,0));
         (cache,subs) = removeSelfModReferenceSubs(cache,id,subs);
         delayTpCheck = cnt > 0;
       then
@@ -3015,24 +3019,26 @@ end removeSelfModReferenceSubs;
 
 protected function removeSelfModReferenceExp
 "Help function to removeSelfModReference."
-  input tuple<Absyn.Exp,tuple<String,Integer>> inExp;
-  output tuple<Absyn.Exp,tuple<String,Integer>> outExp;
+  input Absyn.Exp inExp;
+  input tuple<String,Integer> inTpl;
+  output Absyn.Exp outExp;
+  output tuple<String,Integer> outTpl;
 algorithm
-  outExp := matchcontinue(inExp)
+  (outExp,outTpl) := matchcontinue(inExp,inTpl)
   local
     Absyn.ComponentRef cr,cr1;
     Absyn.Exp e,e1;
     String id,id2;
     Integer cnt;
-    case( (Absyn.CREF(cr),(id,cnt)))
+    case( Absyn.CREF(cr),(id,cnt))
       equation
         Absyn.CREF_IDENT(id2,_) = Absyn.crefGetFirst(cr);
         // prefix == first part of cref
         0 = stringCompare(id2,id);
         cr1 = Absyn.crefStripFirst(cr);
-      then ((Absyn.CREF(cr1),(id,cnt+1)));
+      then (Absyn.CREF(cr1),(id,cnt+1));
     // other expressions falltrough
-    case((e,(id,cnt))) then ((e,(id,cnt)));
+    else (inExp,inTpl);
   end matchcontinue;
 end removeSelfModReferenceExp;
 
@@ -3486,7 +3492,7 @@ algorithm
   outVariable := matchcontinue(inEquation, inVariable)
     local
       DAE.ComponentRef cref;
-      DAE.VarKind kind; 
+      DAE.VarKind kind;
       DAE.VarDirection dir;
       DAE.VarParallelism prl;
       DAE.VarVisibility vis;
@@ -3512,7 +3518,7 @@ algorithm
             ComponentReference.printComponentRefStr(cref));
       then
         fail();
-        
+
   end matchcontinue;
 end moveBindings2;
 
@@ -4579,7 +4585,7 @@ algorithm
         (cache,dim) = Static.elabArrayDims(cache,env, cref, ad, impl, st,doVect,pre,info);
       then
         (cache,dim);
-    
+
     case (cache,env,cref,_,ad,SOME(DAE.TYPED(e,_,prop,_,info)),impl,st,doVect,_ ,pre,_,inst_dims) /* Untyped expressions must be elaborated. */
       equation
         t = Types.getPropType(prop);
@@ -4589,7 +4595,7 @@ algorithm
         dim3 = List.threadMap(dim1, dim2, compatibleArraydim);
       then
         (cache,dim3);
-    
+
     case (cache,env,cref,_,ad,SOME(DAE.UNTYPED(aexp,info)),impl,st,doVect, _,pre,_,inst_dims)
       equation
         (cache,e_1,prop,_) = Static.elabExp(cache,env, aexp, impl, st,doVect,pre,info);
@@ -4601,7 +4607,7 @@ algorithm
         dim3 = List.threadMap(dim1, dim2, compatibleArraydim);
       then
         (cache,dim3);
-    
+
     case (cache,env,cref,_,ad,SOME(DAE.TYPED(e,_,DAE.PROP(t,_),_,info)),impl,st,doVect, _,pre,_,inst_dims)
       equation
         // adrpo: do not display error when running checkModel
@@ -4616,7 +4622,7 @@ algorithm
         Error.addSourceMessage(Error.ARRAY_DIMENSION_MISMATCH, {e_str,t_str,dim_str}, info);
       then
         fail();
-    
+
     // print some failures
     case (_,_,cref,_,ad,eq,_,_,_,_,_,_,_)
       equation
@@ -5933,7 +5939,7 @@ algorithm
       then
         (cache, SOME(DAE.EXTARG(cref, attr, ty)));
 
-    case (_, _, DAE.CREF(componentRef = cref as DAE.CREF_IDENT(ident = _)), 
+    case (_, _, DAE.CREF(componentRef = cref as DAE.CREF_IDENT(ident = _)),
         DAE.PROP(constFlag = DAE.C_VAR()), _, _)
       equation
         (cache, attr, ty, bnd, _, _, _, _, _) = Lookup.lookupVarLocal(inCache, inEnv, cref);
@@ -5968,7 +5974,7 @@ algorithm
 
     case (cache,_,DAE.CALL(attr = DAE.CALL_ATTR(builtin = true)),DAE.PROP(type_ = ty),_,_)
       then (cache,SOME(DAE.EXTARGEXP(inExp, ty)));
-                
+
     case (cache,_,exp,DAE.PROP(type_ = _,constFlag = _),_,_)
       equation
         str = ExpressionDump.printExpStr(exp);
@@ -7366,7 +7372,7 @@ algorithm
       equation
         vars = generateUnusedNamesLstCall(e,exps);
         subs = List.mapList(vars,stringSub);
-        ((e2,_)) = Absyn.traverseExp(e,Absyn.crefInsertSubscriptLstLst, subs);
+        (e2,_) = Absyn.traverseExp(e,Absyn.crefInsertSubscriptLstLst, subs);
         e2 = wrapIntoForLst(e2,vars,exps);
       then
         SOME((e2,b));
@@ -7760,7 +7766,7 @@ algorithm
     case(SCode.COMPONENT(attributes = SCode.ATTR(arrayDims = ads)))
       then
         Absyn.getCrefsFromSubs(ads,true,true);
-    
+
     case(_) then {};
 
   end matchcontinue;

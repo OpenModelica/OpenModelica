@@ -32,11 +32,11 @@
 encapsulated package FGraphBuild
 " file:        FGraphBuild.mo
   package:     FGraphBuild
-  description: A node builder for Modelica constructs  
+  description: A node builder for Modelica constructs
 
   RCS: $Id: FGraphBuild.mo 14085 2012-11-27 12:12:40Z adrpo $
 
-  This module builds nodes out of SCode 
+  This module builds nodes out of SCode
 "
 
 public import Absyn;
@@ -64,7 +64,7 @@ type Visited = FCore.Visited;
 type Import = FCore.Import;
 type Graph = FCore.Graph;
 
-protected 
+protected
 import List;
 import SCodeUtil;
 import SCodeDump;
@@ -104,7 +104,7 @@ algorithm
         g = mkClassNode(inClass, inParentRef, inKind, g);
       then
         g;
-  
+
   end match;
 end mkClassGraph;
 
@@ -124,7 +124,7 @@ algorithm
       Absyn.Info info;
       Node n;
       Ref nr;
-    
+
     case (_, _, _, g)
       equation
         cls = SCodeUtil.expandEnumerationClass(inClass);
@@ -137,7 +137,7 @@ algorithm
         g = mkClassChildren(cdef, nr, inKind, g);
       then
         g;
-  
+
   end matchcontinue;
 end mkClassNode;
 
@@ -154,7 +154,7 @@ algorithm
       Node n;
       Ref nr;
       SCode.ConstrainClass cc;
-    
+
     case (SCode.CLASS(prefixes = SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(SOME(cc)))), _, _, g)
       equation
         (g, n) = FGraph.node(g, FNode.ccNodeName, {inParentRef}, FCore.CC(cc));
@@ -162,7 +162,7 @@ algorithm
         FNode.addChildRef(inParentRef, FNode.ccNodeName, nr);
       then
         g;
-    
+
     case (SCode.COMPONENT(prefixes = SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(SOME(cc)))), _, _, g)
       equation
         (g, n) = FGraph.node(g, FNode.ccNodeName, {inParentRef}, FCore.CC(cc));
@@ -170,10 +170,10 @@ algorithm
         FNode.addChildRef(inParentRef, FNode.ccNodeName, nr);
       then
         g;
-    
+
     // no cc found in element!
-    else inGraph; 
-  
+    else inGraph;
+
   end matchcontinue;
 end mkConstrainClass;
 
@@ -194,15 +194,15 @@ algorithm
       SCode.Element e;
       list<SCode.SubMod> sm;
       Option<tuple<Absyn.Exp, Boolean>> b;
-      
+
     // no mods
     case (name, SCode.NOMOD(), _, _, g) then g;
-    
+
     // no binding no sub-mods
     case (name, SCode.MOD(subModLst = {}, binding = NONE()), _, _, g)
       then
         g;
-        
+
     // just a binding
     case (name, SCode.MOD(subModLst = {}, binding = b as SOME(_)), _, _, g)
       equation
@@ -212,7 +212,7 @@ algorithm
         g = mkBindingNode(b, nr, inKind, g);
       then
         g;
-    
+
     // yeha, some mods for sure and a possible binding
     case (name, SCode.MOD(subModLst = sm, binding = b), _, _, g)
       equation
@@ -223,7 +223,7 @@ algorithm
         g = mkBindingNode(b, nr, inKind, g);
       then
         g;
-    
+
     // ouch, a redeclare :)
     case (name, SCode.REDECL(element = e), _, _, g)
       equation
@@ -233,14 +233,14 @@ algorithm
         g = mkElementNode(e, nr, inKind, g);
       then
         g;
-    
+
     // something bad happened!
     case (name, _, _, _, g)
       equation
         print("FGraphBuild.mkModNode failed with: " +& name +& " mod: " +& SCodeDump.printModStr(inMod, SCodeDump.defaultOptions) +& "\n");
       then
         g;
-  
+
   end matchcontinue;
 end mkModNode;
 
@@ -258,18 +258,18 @@ algorithm
       Name id;
       SCode.Mod m;
       Graph g;
-    
+
     // no more, we're done!
     case ({}, _, _, g) then g;
-    
+
     // some sub-mods!
     case (SCode.NAMEMOD(id, m)::rest, _, _, g)
       equation
         g = mkModNode(id, m, inParentRef, inKind, g);
         g = mkSubMods(rest, inParentRef, inKind, g);
-      then 
+      then
         g;
-  
+
   end matchcontinue;
 end mkSubMods;
 
@@ -287,17 +287,17 @@ algorithm
       SCode.Mod m;
       Absyn.Exp e;
       Graph g;
-    
+
     // no binding
     case (NONE(), _, _, g) then g;
-    
+
     // some binding
     case (SOME((e, _)), _, _, g)
       equation
         g = mkExpressionNode(FNode.bndNodeName, e, inParentRef, inKind, g);
-      then 
+      then
         g;
-  
+
   end matchcontinue;
 end mkBindingNode;
 
@@ -427,7 +427,7 @@ algorithm
         (g, n) = FGraph.node(g, name, {inParentRef}, FCore.DU(inElement));
         nr = FNode.toRef(n);
         FNode.addChildRef(inParentRef, name, nr);
-      then 
+      then
         g;
 
   end matchcontinue;
@@ -448,10 +448,10 @@ algorithm
       SCode.Mod m;
       Absyn.ArrayDim a;
       Graph g;
-    
+
     case (_, NONE(), _, _, g) then g;
     case (_, SOME({}), _, _, g) then g;
-    
+
     // some array dims
     case (_, SOME(a as _::_), _, _, g)
       equation
@@ -459,9 +459,9 @@ algorithm
         nr = FNode.toRef(n);
         FNode.addChildRef(inParentRef, inName, nr);
         g = mkDimsNode_helper(0, a, nr, inKind, g);
-      then 
+      then
         g;
-    
+
   end match;
 end mkDimsNode;
 
@@ -483,28 +483,28 @@ algorithm
       Integer i;
       Absyn.Exp e;
       Graph g;
-    
+
     // we're done
     case (_, {}, _, _, g) then g;
-    
+
     // nosub, saved as Absyn.END
     case (i, Absyn.NOSUB()::rest, _, _, g)
       equation
         name = intString(i);
         g = mkExpressionNode(name, Absyn.END(), inParentRef, inKind, g);
-        g = mkDimsNode_helper(i + 1, rest, inParentRef, inKind, g); 
-      then 
+        g = mkDimsNode_helper(i + 1, rest, inParentRef, inKind, g);
+      then
         g;
-    
+
     // subscript, saved as exp
     case (i, Absyn.SUBSCRIPT(e)::rest, _, _, g)
       equation
         name = intString(i);
         g = mkExpressionNode(name, e, inParentRef, inKind, g);
-        g = mkDimsNode_helper(i + 1, rest, inParentRef, inKind, g); 
-      then 
+        g = mkDimsNode_helper(i + 1, rest, inParentRef, inKind, g);
+      then
         g;
-    
+
   end match;
 end mkDimsNode_helper;
 
@@ -556,17 +556,17 @@ algorithm
       Ref nr;
       Absyn.Exp e;
       Graph g;
-    
+
     // no binding
     case (NONE(), _, _, g) then g;
-    
+
     // some condition
     case (SOME(e), _, _, g)
       equation
         g = mkExpressionNode(FNode.cndNodeName, e, inParentRef, inKind, g);
-      then 
+      then
         g;
-  
+
   end matchcontinue;
 end mkConditionNode;
 
@@ -585,16 +585,16 @@ algorithm
       Absyn.Exp e;
       list<Absyn.ComponentRef> crefs;
       Graph g;
-    
+
     case (_, e, _, _, g)
       equation
         (g, n) = FGraph.node(g, inName, {inParentRef}, FCore.EXP(inName, e));
         nr = FNode.toRef(n);
         FNode.addChildRef(inParentRef, inName, nr);
         g = analyseExp(e, nr, inKind, g);
-      then 
+      then
         g;
-  
+
   end matchcontinue;
 end mkExpressionNode;
 
@@ -616,18 +616,18 @@ algorithm
       Absyn.Exp e;
       Graph g;
       Absyn.ComponentRef cr;
-    
+
     // we're done
     case ({}, _, _, g) then g;
-        
+
     // cref::rest
     case (cr::rest, _, _, g)
       equation
         g = mkCrefNode(cr, inParentRef, inKind, g);
-        g = mkCrefsNodes(rest, inParentRef, inKind, g); 
-      then 
+        g = mkCrefsNodes(rest, inParentRef, inKind, g);
+      then
         g;
-    
+
   end match;
 end mkCrefsNodes;
 
@@ -645,7 +645,7 @@ algorithm
       Absyn.Exp e;
       Graph g;
       Name name;
-    
+
     case (_, _, _, g)
       equation
         name = Absyn.printComponentRefStr(inCref);
@@ -655,7 +655,7 @@ algorithm
         g = mkDimsNode(FNode.subsNodeName, List.mkOption(Absyn.getSubsFromCref(inCref, true, true)), nr, inKind, g);
       then
         g;
-  
+
   end matchcontinue;
 end mkCrefNode;
 
@@ -674,9 +674,9 @@ algorithm
       FNode.AvlTree children;
       Node n;
       Graph g;
-    
+
     case (_, _, g) then g;
-    
+
     // type node present, update
     case (_, _, _)
       equation
@@ -686,7 +686,7 @@ algorithm
         FNode.addTypesToRef(nr, inTypes);
       then
         inGraph;
-    
+
     // type node not present, add
     case (_, _, g)
       equation
@@ -703,11 +703,11 @@ algorithm
     else
       equation
         pr = FGraph.top(inGraph);
-        print("FGraphBuild.mkTypeNode: Error making type node: " +& inName +& 
+        print("FGraphBuild.mkTypeNode: Error making type node: " +& inName +&
               " in parent: " +& FNode.name(FNode.fromRef(pr)) +& "\n");
       then
         inGraph;
-  
+
   end matchcontinue;
 end mkTypeNode;
 
@@ -721,13 +721,13 @@ public function mkEqNode
   output Graph outGraph;
 algorithm
   outGraph := match(inName, inEqs, inParentRef, inKind, inGraph)
-    local 
+    local
       Graph g;
       Node n;
       Ref nr;
-    
+
     case (_, {}, _, _, g) then g;
-    
+
     case (_, _, _, _, g)
       equation
         (g, n) = FGraph.node(g, inName, {inParentRef}, FCore.EQ(inName, inEqs));
@@ -736,7 +736,7 @@ algorithm
         g = List.fold2(inEqs, analyseEquation, nr, inKind, g);
       then
         g;
-  
+
   end match;
 end mkEqNode;
 
@@ -750,13 +750,13 @@ public function mkAlNode
   output Graph outGraph;
 algorithm
   outGraph := match(inName, inAlgs, inParentRef, inKind, inGraph)
-    local 
+    local
       Graph g;
       Node n;
       Ref nr;
-    
+
     case (_, {}, _, _, g) then g;
-    
+
     case (_, _, _, _, g)
       equation
         (g, n) = FGraph.node(g, inName, {inParentRef}, FCore.AL(inName, inAlgs));
@@ -765,7 +765,7 @@ algorithm
         g = List.fold2(inAlgs, analyseAlgorithm, nr, inKind, g);
       then
         g;
-  
+
   end match;
 end mkAlNode;
 
@@ -780,13 +780,13 @@ public function mkOptNode
   output Graph outGraph;
 algorithm
   outGraph := match(inName, inConstraintLst, inClsAttrs, inParentRef, inKind, inGraph)
-    local 
+    local
       Graph g;
       Node n;
       Ref nr;
-    
+
     case (_, {}, {}, _, _, g) then g;
-    
+
     case (_, _, _, _, _, g)
       equation
         (g, n) = FGraph.node(g, inName, {inParentRef}, FCore.OT(inConstraintLst, inClsAttrs));
@@ -794,7 +794,7 @@ algorithm
         FNode.addChildRef(inParentRef, inName, nr);
       then
         g;
-  
+
   end match;
 end mkOptNode;
 
@@ -808,7 +808,7 @@ public function mkExternalNode
   output Graph outGraph;
 algorithm
   outGraph := match(inName, inExternalDeclOpt, inParentRef, inKind, inGraph)
-    local 
+    local
       Graph g;
       Node n;
       Ref nr;
@@ -816,9 +816,9 @@ algorithm
       Option<Absyn.ComponentRef> ocr;
       Option<Absyn.Exp> oae;
       list<Absyn.Exp> exps;
-      
+
     case (_, NONE(), _, _, g) then g;
-    
+
     case (_, SOME(ed as SCode.EXTERNALDECL(output_ = ocr, args = exps)), _, _, g)
       equation
         (g, n) = FGraph.node(g, inName, {inParentRef}, FCore.ED(ed));
@@ -828,7 +828,7 @@ algorithm
         g = mkCrefsFromExps(List.consOption(oae, exps), nr, inKind, g);
       then
         g;
-  
+
   end match;
 end mkExternalNode;
 
@@ -847,17 +847,17 @@ algorithm
       list<Absyn.Exp> rest;
       list<Absyn.ComponentRef> crefs;
       Graph g;
-    
+
     case ({}, _, _, g) then g;
-    
+
     case (e::rest, _, _, g)
       equation
         crefs = Absyn.getCrefFromExp(e, true, true);
         g = mkCrefsNodes(crefs, inParentRef, inKind, g);
-        g = mkCrefsFromExps(rest, inParentRef, inKind, g); 
-      then 
+        g = mkCrefsFromExps(rest, inParentRef, inKind, g);
+      then
         g;
-  
+
   end matchcontinue;
 end mkCrefsFromExps;
 
@@ -867,10 +867,9 @@ protected function analyseExp
   input Ref inRef;
   input Kind inKind;
   input Graph inGraph;
-  output Graph outGraph; 
+  output Graph outGraph;
 algorithm
-  (_, (_, _, (_, _, outGraph))) := Absyn.traverseExpBidir(inExp, (analyseExpTraverserEnter,
-    analyseExpTraverserExit, (inRef, inKind, inGraph)));
+  (_, (_, _, outGraph)) := Absyn.traverseExpBidir(inExp, analyseExpTraverserEnter, analyseExpTraverserExit, (inRef, inKind, inGraph));
 end analyseExp;
 
 protected function analyseOptExp
@@ -879,7 +878,7 @@ protected function analyseOptExp
   input Ref inRef;
   input Kind inKind;
   input Graph inGraph;
-  output Graph outGraph; 
+  output Graph outGraph;
 algorithm
   outGraph := match(inExp, inRef, inKind, inGraph)
     local
@@ -887,7 +886,7 @@ algorithm
       Graph g;
 
     case (NONE(), _, _, g) then g;
-    
+
     case (SOME(exp), _, _, g)
       equation
         g = analyseExp(exp, inRef, inKind, g);
@@ -899,17 +898,19 @@ end analyseOptExp;
 
 protected function analyseExpTraverserEnter
   "Traversal enter function for use in analyseExp."
-  input tuple<Absyn.Exp, tuple<Ref, Kind, Graph>> inTuple;
-  output tuple<Absyn.Exp, tuple<Ref, Kind, Graph>> outTuple;
+  input Absyn.Exp inExp;
+  input tuple<Ref, Kind, Graph> inTuple;
+  output Absyn.Exp exp;
+  output tuple<Ref, Kind, Graph> outTuple;
 protected
-  Absyn.Exp exp;
   Ref ref;
   Kind k;
   Graph g;
 algorithm
-  (exp, (ref, k, g)) := inTuple;
-  g := analyseExp2(exp, ref, k, g);
-  outTuple := (exp, (ref, k, g));
+  (ref, k, g) := inTuple;
+  g := analyseExp2(inExp, ref, k, g);
+  exp := inExp;
+  outTuple := (ref, k, g);
 end analyseExpTraverserEnter;
 
 protected function analyseExp2
@@ -989,10 +990,13 @@ end analyseCref;
 
 protected function analyseExpTraverserExit
   "Traversal exit function for use in analyseExp."
-  input tuple<Absyn.Exp, tuple<Ref, Kind, Graph>> inTuple;
-  output tuple<Absyn.Exp, tuple<Ref, Kind, Graph>> outTuple;
+  input Absyn.Exp inExp;
+  input tuple<Ref, Kind, Graph> inTuple;
+  output Absyn.Exp outExp;
+  output tuple<Ref, Kind, Graph> outTuple;
 algorithm
   // nothing to do here!
+  outExp := inExp;
   outTuple := inTuple;
 end analyseExpTraverserExit;
 
@@ -1028,21 +1032,21 @@ algorithm
     case ((equf as SCode.EQ_FOR(index = iter_name, info = info), (ref, k, g)))
       equation
         g = addIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, ref, k, g);
-        (equ, (_, (_, _, g))) = SCode.traverseEEquationExps(equf, (traverseExp, (ref, k, g)));
+        (equ, (_, _, g)) = SCode.traverseEEquationExps(equf, traverseExp, (ref, k, g));
       then
         ((equ, (ref, k, g)));
 
     case ((equr as SCode.EQ_REINIT(cref = cref1, info = info), (ref, k, g)))
       equation
         g = analyseCref(cref1, ref, k, g);
-        (equ, (_, (_, _, g))) = SCode.traverseEEquationExps(equr, (traverseExp, (ref, k, g)));
+        (equ, (_, _, g)) = SCode.traverseEEquationExps(equr, traverseExp, (ref, k, g));
       then
         ((equ, (ref, k, g)));
 
     case ((equ, (ref, k, g)))
       equation
         info = SCode.getEEquationInfo(equ);
-        (equ, (_, (_, _, g))) = SCode.traverseEEquationExps(equ, (traverseExp, (ref, k, g)));
+        (equ, (_, _, g)) = SCode.traverseEEquationExps(equ, traverseExp, (ref, k, g));
       then
         ((equ, (ref, k, g)));
 
@@ -1052,18 +1056,12 @@ end analyseEEquationTraverser;
 protected function traverseExp
   "Traversal function used by analyseEEquationTraverser and
   analyseStatementTraverser."
-  input tuple<Absyn.Exp, tuple<Ref, Kind, Graph>> inTuple;
-  output tuple<Absyn.Exp, tuple<Ref, Kind, Graph>> outTuple;
-protected
-  Absyn.Exp exp;
-  Ref ref;
-  Kind k;
-  Graph g;
+  input Absyn.Exp inExp;
+  input tuple<Ref, Kind, Graph> inTuple;
+  output Absyn.Exp outExp;
+  output tuple<Ref, Kind, Graph> outTuple;
 algorithm
-  (exp, (ref, k, g)) := inTuple;
-  (exp, (_, _, (ref, k, g))) := Absyn.traverseExpBidir(exp,
-    (analyseExpTraverserEnter, analyseExpTraverserExit, (ref, k, g)));
-  outTuple := (exp, (ref, k, g));
+  (outExp, outTuple) := Absyn.traverseExpBidir(inExp, analyseExpTraverserEnter, analyseExpTraverserExit, inTuple);
 end traverseExp;
 
 protected function analyseAlgorithm
@@ -1110,21 +1108,21 @@ algorithm
     case ((stmt as SCode.ALG_FOR(index = iter_name, info = info), (ref, k, g)))
       equation
         g = addIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, ref, k, g);
-        (_, (_, (_, _, g))) = SCode.traverseStatementExps(stmt, (traverseExp, (ref, k, g)));
+        (_, (_, _, g)) = SCode.traverseStatementExps(stmt, traverseExp, (ref, k, g));
       then
         ((stmt, (ref, k, g)));
 
      case ((stmt as SCode.ALG_PARFOR(index = iter_name, parforBody = parforBody, info = info), (ref, k, g)))
       equation
         g = addIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, ref, k, g);
-        (_, (_, (_, _, g))) = SCode.traverseStatementExps(stmt, (traverseExp, (ref, k, g)));
+        (_, (_, _, g)) = SCode.traverseStatementExps(stmt, traverseExp, (ref, k, g));
       then
         ((stmt, (ref, k, g)));
 
     case ((stmt, (ref, k, g)))
       equation
         info = SCode.getStatementInfo(stmt);
-        (_, (_, (_, _, g))) = SCode.traverseStatementExps(stmt, (traverseExp, (ref, k, g)));
+        (_, (_, _, g)) = SCode.traverseStatementExps(stmt, traverseExp, (ref, k, g));
       then
         ((stmt, (ref, k, g)));
 
@@ -1145,7 +1143,7 @@ algorithm
       Node n;
       Ref nr;
       Absyn.ForIterators i;
-      
+
     // FNode.forNodeName already present!
     case (_, _, _, g)
       equation
@@ -1157,14 +1155,14 @@ algorithm
 
     // FNode.forNodeName not present, add it
     case (_, _, _, g)
-      equation  
+      equation
         (g, n) = FGraph.node(g, FNode.forNodeName, {inParentRef}, FCore.FS(inIterators));
         nr = FNode.toRef(n);
         FNode.addChildRef(inParentRef, FNode.forNodeName, nr);
         g = addIterators_helper(inIterators, nr, inKind, g);
       then
         g;
-  
+
   end matchcontinue;
 end addIterators;
 
@@ -1185,20 +1183,20 @@ algorithm
       Absyn.Exp e;
       Graph g;
       Absyn.ComponentRef cr;
-    
+
     // we're done
     case ({}, _, _, g) then g;
-        
+
     // iterator::rest
     case ((i as Absyn.ITERATOR(name=name))::rest, _, _, g)
       equation
         (g, n) = FGraph.node(g, name, {inParentRef}, FCore.FI(i));
         nr = FNode.toRef(n);
         FNode.addChildRef(inParentRef, name, nr);
-        g = addIterators_helper(rest, inParentRef, inKind, g); 
+        g = addIterators_helper(rest, inParentRef, inKind, g);
       then
         g;
-    
+
   end match;
 end addIterators_helper;
 
@@ -1242,27 +1240,27 @@ algorithm
       Graph g;
       Absyn.ComponentRef cr;
       list<SCode.Element> el;
-    
+
     // we're done
     case ({}, _, _, g) then g;
-        
+
     // el::rest
     case (Absyn.ELEMENTITEM(element = element)::rest, _, _, g)
       equation
         // Translate the element item to a SCode element.
         el = SCodeUtil.translateElement(element, SCode.PROTECTED());
         g = List.fold2(el, mkElementNode, inParentRef, inKind, g);
-        g = addMatchScope_helper(rest, inParentRef, inKind, g); 
-      then 
+        g = addMatchScope_helper(rest, inParentRef, inKind, g);
+      then
         g;
-    
+
     // el::rest
     case (_::rest, _, _, g)
       equation
-        g = addMatchScope_helper(rest, inParentRef, inKind, g); 
-      then 
+        g = addMatchScope_helper(rest, inParentRef, inKind, g);
+      then
         g;
-    
+
   end match;
 end addMatchScope_helper;
 
@@ -1278,11 +1276,11 @@ algorithm
       Node n;
       Ref rn, rc;
       Graph g;
-    
+
     // ignore basic types and builtins
     case (_, _, _, g)
       equation
-        true = not FNode.isRefBasicType(inTargetRef) and 
+        true = not FNode.isRefBasicType(inTargetRef) and
                not FNode.isRefBuiltin(inTargetRef);
         (g, n) = FGraph.node(g, inName, {inParentRef}, FCore.REF(inTargetRef));
         // make a ref
@@ -1293,10 +1291,10 @@ algorithm
         (g, rc) = mkCloneNode(FNode.cloneNodeName, inTargetRef, rn, g);
       then
         g;
-    
+
     case (_, _, _, g) then g;
-  
-  end matchcontinue; 
+
+  end matchcontinue;
 end mkRefNode;
 
 public function mkCloneNode
@@ -1316,32 +1314,32 @@ algorithm
       Ref rn, rc;
       Graph g;
       Children kids;
-    
+
     // not basic type, builtin or component
     case (_, _, _, g)
       equation
         false = FNode.isRefInSection(inParentRef);
         false = FNode.isRefInMod(inParentRef);
-        true = not FNode.isRefBasicType(inTargetRef) and 
+        true = not FNode.isRefBasicType(inTargetRef) and
                not FNode.isRefBuiltin(inTargetRef) and
                not FNode.isRefComponent(inTargetRef) and
                not FNode.isRefConstrainClass(inTargetRef) and
                not FNode.isRefFunction(inTargetRef);
-        print("Cloning: " +& FNode.toPathStr(FNode.fromRef(inTargetRef)) +& "/" +& FNode.toStr(FNode.fromRef(inTargetRef)) +& "\n\t" +& 
+        print("Cloning: " +& FNode.toPathStr(FNode.fromRef(inTargetRef)) +& "/" +& FNode.toStr(FNode.fromRef(inTargetRef)) +& "\n\t" +&
               "Scope: " +& FNode.toPathStr(FNode.fromRef(inParentRef)) +& "/" +& FNode.toStr(FNode.fromRef(inParentRef)) +& "\n");
         (g, n) = FGraph.node(g, inName, {inParentRef}, FCore.CLONE(inTargetRef));
         // make a ref
         rn = FNode.toRef(n);
         // add the ref node
         FNode.addChildRef(inParentRef, inName, rn);
-        // clone ref target node children        
+        // clone ref target node children
         (g, kids) = FNode.cloneTree(FNode.children(FNode.fromRef(inTargetRef)), rn, g);
         rn = FNode.updateRef(rn, FNode.setChildren(n, kids));
       then
         (g, rn);
-    
+
     else (inGraph, inTargetRef);
-  
+
   end matchcontinue;
 end mkCloneNode;
 

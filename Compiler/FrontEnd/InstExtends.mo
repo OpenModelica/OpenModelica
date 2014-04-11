@@ -138,7 +138,7 @@ algorithm
         Absyn.IDENT(cn) = Absyn.makeNotFullyQualified(tp);
         true = InstUtil.isBuiltInClass(cn);
         // adrpo: maybe we should check here if what comes down from the other extends has components!
-        (cache,env2,ih,mods_1,compelts2,eq3,ieq3,alg3,ialg3) = instExtendsList(cache,env,ih,mod,pre,rest,elsExtendsScope,ci_state,className,impl,isPartialInst);        
+        (cache,env2,ih,mods_1,compelts2,eq3,ieq3,alg3,ialg3) = instExtendsList(cache,env,ih,mod,pre,rest,elsExtendsScope,ci_state,className,impl,isPartialInst);
       then
         (cache,env2,ih,mods_1,compelts2,eq3,ieq3,alg3,ialg3);
 
@@ -146,7 +146,7 @@ algorithm
     case (cache,env,ih,mod,pre,(SCode.EXTENDS(info = info, baseClassPath = tp, modifications = emod, visibility = vis)) :: rest,elsExtendsScope,ci_state,className,impl,_)
       equation
         emod = InstUtil.chainRedeclares(mod, emod);
-        
+
         // build a ht with the constant elements from the extends scope
         ht = getLocalIdentList(InstUtil.constantAndParameterEls(elsExtendsScope),HashTableStringToPath.emptyHashTable(),getLocalIdentElement);
         // fully qualify modifiers in extends in the extends environment!
@@ -159,7 +159,7 @@ algorithm
         //print("Found " +& cn +& "\n");
         // outermod = Mod.lookupModificationP(mod, Absyn.IDENT(cn));
         outermod = mod;
-        
+
         // cenv = Env.mergeEnv(cenv, env, "$extends_" +& cn, c, Env.M(pre, className, {}, mod, env, {}));
         cenv = Env.addModification(cenv, Env.M(pre, className, {}, mod, env, {}));
         (cache,cenv1,ih,els,eq1,ieq1,alg1,ialg1) = instDerivedClasses(cache,cenv,ih,outermod,pre,c,impl,info);
@@ -198,7 +198,7 @@ algorithm
 
         (cache,env2,ih,mods_1,compelts2,eq3,ieq3,alg3,ialg3) = instExtendsList(cache,env,ih,mod,pre,rest,elsExtendsScope,ci_state,className,impl,isPartialInst)
         "continue with next element in list";
-        
+
         emod_1 = Mod.elabUntypedMod(emod, env2, Prefix.NOPRE());
         mods_1 = Mod.merge(mod, mods_1, env2, Prefix.NOPRE());
         mods_1 = Mod.merge(mods_1, emod_1, env2, Prefix.NOPRE());
@@ -322,7 +322,7 @@ algorithm
 end lookupBaseClass;
 
 
-        
+
 protected function updateElementListVisibility
   input list<SCode.Element> inElements;
   input SCode.Visibility inVisibility;
@@ -389,7 +389,7 @@ protected function instExtendsAndClassExtendsList2 "
   input Prefix.Prefix inPrefix;
   input list<SCode.Element> inExtendsElementLst;
   input list<SCode.Element> inClassExtendsElementLst;
-  input list<SCode.Element> inElementsFromExtendsScope;  
+  input list<SCode.Element> inElementsFromExtendsScope;
   input ClassInf.State inState;
   input String inClassName; // the class name whose elements are getting instantiated.
   input Boolean inImpl;
@@ -570,7 +570,7 @@ algorithm
     // bah, we did not find it
     case (_,_,_,_,{})
       equation
-        
+
         Debug.traceln("TODO: Make a proper Error message here - Inst.instClassExtendsList2 couldn't find the class to extend");
       then
         fail();
@@ -923,8 +923,8 @@ algorithm
         failure(_ = BaseHashTable.get(id, ht));
         ht = BaseHashTable.add((id,p), ht);
       then ht;
-    
-    else inHt; 
+
+    else inHt;
   end matchcontinue;
 end getLocalIdentElement;
 
@@ -1033,7 +1033,7 @@ algorithm
       then
         (cache,SCode.COMPONENT(name, prefixes, SCode.ATTR(ad, ct, prl, var, dir), typeSpec, modifications, comment, condition, info));
 
-    case (cache,env,SCode.CLASS(name, prefixes as SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_)), 
+    case (cache,env,SCode.CLASS(name, prefixes as SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_)),
                                 SCode.ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info),ht)
       equation
         //Debug.fprintln(Flags.DEBUG,"fixClassdef " +& name);
@@ -1053,7 +1053,7 @@ algorithm
       then
         (cache,SCode.CLASS(name, prefixes, SCode.ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info));
 
-    case (cache,env,SCode.CLASS(name, prefixes as SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_)), 
+    case (cache,env,SCode.CLASS(name, prefixes as SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_)),
                                 SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info),ht)
       equation
         //Debug.fprintln(Flags.DEBUG,"fixClassdef " +& name +& str);
@@ -1062,7 +1062,7 @@ algorithm
         (cache,classDef) = fixClassdef(cache,env,classDef,ht);
       then
         (cache,SCode.CLASS(name, prefixes, SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info));
-    
+
     // failed above
     case (cache,env,SCode.CLASS(name, prefixes, SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info),ht)
       equation
@@ -1651,7 +1651,7 @@ algorithm
         cref = Env.crefStripEnvPrefix(cref, env, false);
         //Debug.fprintln(Flags.DEBUG, "Cref VAR fixed: " +& Absyn.printComponentRefStr(cref));
       then (cache,cref);
-    
+
     case (cache,env,cref,_)
       equation
         id = Absyn.crefFirstIdent(cref);
@@ -1780,202 +1780,46 @@ protected function fixExp
   output Env.Cache outCache;
   output Absyn.Exp outExp;
 algorithm
-  (outCache,outExp) := matchcontinue (inCache,inEnv,inExp,inHt)
-    local
-      Absyn.ComponentRef cref;
-      Absyn.FunctionArgs fargs;
-      Absyn.Exp exp1,exp2,ifexp,truebranch,elsebranch,exp;
-      list<Absyn.Exp> expl;
-      Option<Absyn.Exp> optExp;
-      list<list<Absyn.Exp>> expll;
-      list<tuple<Absyn.Exp,Absyn.Exp>> elseifbranches;
-      Absyn.Operator op;
-      Env.Cache cache;
-      Env.Env env;
-      HashTableStringToPath.HashTable ht;
-      Absyn.Path path;
-
-    case (cache,env,Absyn.CREF(cref),ht)
-      equation
-        (cache,cref) = fixCref(cache,env,cref,ht);
-      then (cache,Absyn.CREF(cref));
-    
-    case (cache,env,Absyn.CALL(cref,fargs),ht)
-      equation
-        (cache,fargs) = fixFarg(cache,env,fargs,ht);
-        (cache,cref) = fixCref(cache,env,cref,ht);
-      then (cache,Absyn.CALL(cref,fargs));
-    
-    case (cache,env,Absyn.PARTEVALFUNCTION(cref,fargs),ht)
-      equation
-        (cache,fargs) = fixFarg(cache,env,fargs,ht);
-        (cache,cref) = fixCref(cache,env,cref,ht);
-      then (cache,Absyn.PARTEVALFUNCTION(cref,fargs));
-    
-    case (cache,env,Absyn.BINARY(exp1,op,exp2),ht)
-      equation
-        (cache,exp1) = fixExp(cache,env,exp1,ht);
-        (cache,exp2) = fixExp(cache,env,exp2,ht);
-      then (cache,Absyn.BINARY(exp1,op,exp2));
-    
-    case (cache,env,Absyn.UNARY(op,exp),ht)
-      equation
-        (cache,exp) = fixExp(cache,env,exp,ht);
-      then (cache,Absyn.UNARY(op,exp));
-    
-    case (cache,env,Absyn.LBINARY(exp1,op,exp2),ht)
-      equation
-        (cache,exp1) = fixExp(cache,env,exp1,ht);
-        (cache,exp2) = fixExp(cache,env,exp2,ht);
-      then (cache,Absyn.LBINARY(exp1,op,exp2));
-    
-    case (cache,env,Absyn.LUNARY(op,exp),ht)
-      equation
-        (cache,exp) = fixExp(cache,env,exp,ht);
-      then (cache,Absyn.LUNARY(op,exp));
-    
-    case (cache,env,Absyn.RELATION(exp1,op,exp2),ht)
-      equation
-        (cache,exp1) = fixExp(cache,env,exp1,ht);
-        (cache,exp2) = fixExp(cache,env,exp2,ht);
-      then (cache,Absyn.RELATION(exp1,op,exp2));
-    
-    case (cache,env,Absyn.IFEXP(ifexp,truebranch,elsebranch,elseifbranches),ht)
-      equation
-        (cache,ifexp) = fixExp(cache,env,ifexp,ht);
-        (cache,truebranch) = fixExp(cache,env,truebranch,ht);
-        (cache,elsebranch) = fixExp(cache,env,elsebranch,ht);
-        (cache,elseifbranches) = fixListTuple2(cache,env,elseifbranches,ht,fixExp,fixExp);
-      then (cache,Absyn.IFEXP(ifexp,truebranch,elsebranch,elseifbranches));
-    
-    case (cache,env,Absyn.ARRAY(expl),ht)
-      equation
-        (cache,expl) = fixList(cache,env,expl,ht,fixExp);
-      then (cache,Absyn.ARRAY(expl));
-    
-    case (cache,env,Absyn.MATRIX(expll),ht)
-      equation
-        (cache,expll) = fixListList(cache,env,expll,ht,fixExp);
-      then (cache,Absyn.MATRIX(expll));
-    
-    case (cache,env,Absyn.RANGE(exp1,optExp,exp2),ht)
-      equation
-        (cache,exp1) = fixExp(cache,env,exp1,ht);
-        (cache,exp2) = fixExp(cache,env,exp2,ht);
-        (cache,optExp) = fixOption(cache,env,optExp,ht,fixExp);
-      then (cache,Absyn.RANGE(exp1,optExp,exp2));
-    
-    case (cache,env,Absyn.TUPLE(expl),ht)
-      equation
-        (cache,expl) = fixList(cache,env,expl,ht,fixExp);
-      then (cache,Absyn.TUPLE(expl));
-    
-    case (cache,_,exp as Absyn.INTEGER(_),_) then (cache,exp);
-    case (cache,_,exp as Absyn.REAL(_),_) then (cache,exp);
-    case (cache,_,exp as Absyn.STRING(_),_) then (cache,exp);
-    case (cache,_,exp as Absyn.BOOL(_),_) then (cache,exp);
-    
-    case (_,_,exp,_)
-      equation
-        Debug.fprintln(Flags.FAILTRACE,"InstExtends.fixExp failed: " +& Dump.printExpStr(exp));
-      then fail();
-  end matchcontinue;
+  (outExp,(outCache,_,_)) := Absyn.traverseExp(inExp,fixExpTraverse,(inCache,inEnv,inHt));
 end fixExp;
 
-protected function fixFarg
+protected function fixExpTraverse
 " All of the fix functions do the following:
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input Absyn.FunctionArgs inFargs;
-  input HashTableStringToPath.HashTable inHt;
-  output Env.Cache outCache;
-  output Absyn.FunctionArgs outFarg;
+  input Absyn.Exp inExp;
+  input tuple<Env.Cache,Env.Env,HashTableStringToPath.HashTable> inTpl;
+  output Absyn.Exp outExp;
+  output tuple<Env.Cache,Env.Env,HashTableStringToPath.HashTable> outTpl;
 algorithm
-  (outCache,outFarg) := match (inCache,inEnv,inFargs,inHt)
+  (outExp,outTpl) := match (inExp,inTpl)
     local
-      list<Absyn.Exp> args;
-      list<Absyn.NamedArg> argNames;
-      Absyn.ForIterators iterators;
-      Absyn.Exp exp;
+      Absyn.FunctionArgs fargs;
+      Absyn.ComponentRef cref;
+      Absyn.Path path;
       Env.Cache cache;
       Env.Env env;
       HashTableStringToPath.HashTable ht;
 
-    case (cache,env,Absyn.FUNCTIONARGS(args,argNames),ht)
+    case (Absyn.CREF(cref),(cache,env,ht))
       equation
-        (cache,args) = fixList(cache,env,args,ht,fixExp);
-        (cache,argNames) = fixList(cache,env,argNames,ht,fixNamedArg);
-      then (cache,Absyn.FUNCTIONARGS(args,argNames));
-    case (cache,env,Absyn.FOR_ITER_FARG(exp,iterators),ht)
+        (cache,cref) = fixCref(cache,env,cref,ht);
+      then (Absyn.CREF(cref),(cache,env,ht));
+
+    case (Absyn.CALL(cref,fargs),(cache,env,ht))
       equation
-        (cache,exp) = fixExp(cache,env,exp,ht);
-        (cache,iterators) = fixList(cache,env,iterators,ht,fixForIterator);
-      then (cache,Absyn.FOR_ITER_FARG(exp,iterators));
+        (cache,cref) = fixCref(cache,env,cref,ht);
+      then (Absyn.CALL(cref,fargs),(cache,env,ht));
+
+    case (Absyn.PARTEVALFUNCTION(cref,fargs),(cache,env,ht))
+      equation
+        (cache,cref) = fixCref(cache,env,cref,ht);
+      then (Absyn.PARTEVALFUNCTION(cref,fargs),(cache,env,ht));
+
+    else (inExp,inTpl);
   end match;
-end fixFarg;
-
-protected function fixForIterator
-" All of the fix functions do the following:
-  Analyzes the SCode datastructure and replace paths with a new path (from
-  local lookup or fully qualified in the environment.
-"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input Absyn.ForIterator inIter;
-  input HashTableStringToPath.HashTable inHt;
-  output Env.Cache outCache;
-  output Absyn.ForIterator outIter;
-algorithm
-  (outCache,outIter) := match (inCache,inEnv,inIter,inHt)
-    local
-      String id;
-      Absyn.Exp exp;
-      Option<Absyn.Exp> guardExp;
-      Absyn.ForIterator iter;
-      Env.Cache cache;
-      Env.Env env;
-      HashTableStringToPath.HashTable ht;
-
-    case (cache,env,Absyn.ITERATOR(id,guardExp,SOME(exp)),ht)
-      equation
-        (cache,exp) = fixExp(cache,env,exp,ht);
-        (cache,guardExp) = fixOption(cache,env,guardExp,ht,fixExp);
-      then (cache,Absyn.ITERATOR(id,guardExp,SOME(exp)));
-    case (cache,_,iter,_) then (cache,iter);
-  end match;
-end fixForIterator;
-
-protected function fixNamedArg
-" All of the fix functions do the following:
-  Analyzes the SCode datastructure and replace paths with a new path (from
-  local lookup or fully qualified in the environment.
-"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input Absyn.NamedArg inNarg;
-  input HashTableStringToPath.HashTable inHt;
-  output Env.Cache outCache;
-  output Absyn.NamedArg outNarg;
-algorithm
-  (outCache,outNarg) := match (inCache,inEnv,inNarg,inHt)
-    local
-      String id;
-      Absyn.Exp exp;
-      Env.Cache cache;
-      Env.Env env;
-      HashTableStringToPath.HashTable ht;
-
-    case (cache,env,Absyn.NAMEDARG(id,exp),ht)
-      equation
-        //print("Fixing named: id:" +& id +& " exp:" +& Dump.printExpStr(exp));
-        (cache,exp) = fixExp(cache,env,exp,ht);
-        //print("FIXED named: id:" +& id +& " exp:" +& Dump.printExpStr(exp));
-      then (cache,Absyn.NAMEDARG(id,exp));
-  end match;
-end fixNamedArg;
+end fixExpTraverse;
 
 protected function fixOption
 " Generic function to fix an optional element."

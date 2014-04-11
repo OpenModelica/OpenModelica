@@ -58,8 +58,8 @@ uniontype Restriction
   record R_CLASS end R_CLASS;
   record R_OPTIMIZATION end R_OPTIMIZATION;
   record R_MODEL end R_MODEL;
-  record R_RECORD 
-    Boolean isOperator;  
+  record R_RECORD
+    Boolean isOperator;
   end R_RECORD;
   record R_BLOCK end R_BLOCK;
   record R_CONNECTOR "a connector"
@@ -2415,19 +2415,20 @@ public function traverseEEquationListExps
   "Traverses a list of EEquations, calling the given function on each Absyn.Exp
   it encounters."
   input list<EEquation> inEEquations;
-  input tuple<TraverseFunc, Argument> inTuple;
+  input TraverseFunc traverser;
+  input Argument inArg;
   output list<EEquation> outEEquations;
-  output tuple<TraverseFunc, Argument> outTuple;
+  output Argument outArg;
 
   replaceable type Argument subtypeof Any;
 
   partial function TraverseFunc
-    input tuple<Absyn.Exp, Argument> inTuple;
-    output tuple<Absyn.Exp, Argument> outTuple;
-  end TraverseFunc;
-algorithm
-  (outEEquations, outTuple) :=
-    List.mapFold(inEEquations, traverseEEquationExps, inTuple);
+    input Absyn.Exp inExp;
+    input Argument inArg;
+    output Absyn.Exp outExp;
+    output Argument outArg;
+  end TraverseFunc;algorithm
+  (outEEquations, outArg) := List.map1Fold(inEEquations, traverseEEquationExps, traverser, inArg);
 end traverseEEquationListExps;
 
 public function traverseEEquationExps
@@ -2435,18 +2436,21 @@ public function traverseEEquationExps
   encounters. This funcion is intended to be used together with
   traverseEEquations, and does NOT descend into sub-EEquations."
   input EEquation inEEquation;
-  input tuple<TraverseFunc, Argument> inTuple;
+  input TraverseFunc inFunc;
+  input Argument inArg;
   output EEquation outEEquation;
-  output tuple<TraverseFunc, Argument> outTuple;
+  output Argument outArg;
 
   replaceable type Argument subtypeof Any;
 
   partial function TraverseFunc
-    input tuple<Absyn.Exp, Argument> inTuple;
-    output tuple<Absyn.Exp, Argument> outTuple;
+    input Absyn.Exp inExp;
+    input Argument inArg;
+    output Absyn.Exp outExp;
+    output Argument outArg;
   end TraverseFunc;
 algorithm
-  (outEEquation, outTuple) := match(inEEquation, inTuple)
+  (outEEquation, outArg) := match(inEEquation, inFunc, inArg)
     local
       TraverseFunc traverser;
       Argument arg;
@@ -2461,68 +2465,67 @@ algorithm
       Absyn.ComponentRef cr1, cr2;
       Ident index;
 
-    case (EQ_IF(expl1, then_branch, else_branch, comment, info), (traverser, arg))
+    case (EQ_IF(expl1, then_branch, else_branch, comment, info), traverser, arg)
       equation
-        ((expl1, arg)) = Absyn.traverseExpList(expl1, traverser, arg);
+        (expl1, arg) = Absyn.traverseExpList(expl1, traverser, arg);
       then
-        (EQ_IF(expl1, then_branch, else_branch, comment, info), (traverser, arg));
+        (EQ_IF(expl1, then_branch, else_branch, comment, info), arg);
 
-    case (EQ_EQUALS(e1, e2, comment, info), (traverser, arg))
+    case (EQ_EQUALS(e1, e2, comment, info), traverser, arg)
       equation
-        ((e1, arg)) = traverser((e1, arg));
-        ((e2, arg)) = traverser((e2, arg));
+        (e1, arg) = traverser(e1, arg);
+        (e2, arg) = traverser(e2, arg);
       then
-        (EQ_EQUALS(e1, e2, comment, info), (traverser, arg));
+        (EQ_EQUALS(e1, e2, comment, info), arg);
 
-    case (EQ_CONNECT(cr1, cr2, comment, info), _)
+    case (EQ_CONNECT(cr1, cr2, comment, info), _, _)
       equation
-        (cr1, tup) = traverseComponentRefExps(cr1, inTuple);
-        (cr2, tup) = traverseComponentRefExps(cr2, tup);
+        (cr1, arg) = traverseComponentRefExps(cr1, inFunc, inArg);
+        (cr2, arg) = traverseComponentRefExps(cr2, inFunc, arg);
       then
-        (EQ_CONNECT(cr1, cr2, comment, info), tup);
+        (EQ_CONNECT(cr1, cr2, comment, info), arg);
 
-    case (EQ_FOR(index, SOME(e1), eql, comment, info), (traverser, arg))
+    case (EQ_FOR(index, SOME(e1), eql, comment, info), traverser, arg)
       equation
-        ((e1, arg)) = traverser((e1, arg));
+        (e1, arg) = traverser(e1, arg);
       then
-        (EQ_FOR(index, SOME(e1), eql, comment, info), (traverser, arg));
+        (EQ_FOR(index, SOME(e1), eql, comment, info), arg);
 
-    case (EQ_WHEN(e1, eql, else_when, comment, info), (traverser, arg))
+    case (EQ_WHEN(e1, eql, else_when, comment, info), traverser, arg)
       equation
-        ((e1, arg)) = traverser((e1, arg));
-        (else_when, tup) = List.mapFold(else_when, traverseElseWhenExps,
-          (traverser, arg));
+        (e1, arg) = traverser(e1, arg);
+        (else_when, arg) = List.map1Fold(else_when, traverseElseWhenExps, traverser, arg);
       then
-        (EQ_WHEN(e1, eql, else_when, comment, info), tup);
+        (EQ_WHEN(e1, eql, else_when, comment, info), arg);
 
-    case (EQ_ASSERT(e1, e2, e3, comment, info), (traverser, arg))
+    case (EQ_ASSERT(e1, e2, e3, comment, info), traverser, arg)
       equation
-        ((e1, arg)) = traverser((e1, arg));
-        ((e2, arg)) = traverser((e2, arg));
-        ((e3, arg)) = traverser((e3, arg));
+        (e1, arg) = traverser(e1, arg);
+        (e2, arg) = traverser(e2, arg);
+        (e3, arg) = traverser(e3, arg);
       then
-        (EQ_ASSERT(e1, e2, e3, comment, info), (traverser, arg));
+        (EQ_ASSERT(e1, e2, e3, comment, info), arg);
 
-    case (EQ_TERMINATE(e1, comment, info), (traverser, arg))
+    case (EQ_TERMINATE(e1, comment, info), traverser, arg)
       equation
-        ((e1, arg)) = traverser((e1, arg));
+        (e1, arg) = traverser(e1, arg);
       then
-        (EQ_TERMINATE(e1, comment, info), (traverser, arg));
+        (EQ_TERMINATE(e1, comment, info), arg);
 
-    case (EQ_REINIT(cr1, e1, comment, info), _)
+    case (EQ_REINIT(cr1, e1, comment, info), traverser, _)
       equation
-        (cr1, (traverser, arg)) = traverseComponentRefExps(cr1, inTuple);
-        ((e1, arg)) = traverser((e1, arg));
+        (cr1, arg) = traverseComponentRefExps(cr1, traverser, inArg);
+        (e1, arg) = traverser(e1, arg);
       then
-        (EQ_REINIT(cr1, e1, comment, info), (traverser, arg));
+        (EQ_REINIT(cr1, e1, comment, info), arg);
 
-    case (EQ_NORETCALL(e1, comment, info), (traverser, arg))
+    case (EQ_NORETCALL(e1, comment, info), traverser, arg)
       equation
-        ((e1, arg)) = traverser((e1, arg));
+        (e1, arg) = traverser(e1, arg);
       then
-        (EQ_NORETCALL(e1, comment, info), (traverser, arg));
+        (EQ_NORETCALL(e1, comment, info), arg);
 
-    else then (inEEquation, inTuple);
+    else (inEEquation, inArg);
   end match;
 end traverseEEquationExps;
 
@@ -2530,74 +2533,80 @@ protected function traverseComponentRefExps
   "Traverses the subscripts of a component reference and calls the given
   function on the subscript expressions."
   input Absyn.ComponentRef inCref;
-  input tuple<TraverseFunc, Argument> inTuple;
+  input TraverseFunc inFunc;
+  input Argument inArg;
   output Absyn.ComponentRef outCref;
-  output tuple<TraverseFunc, Argument> outTuple;
+  output Argument outArg;
 
   replaceable type Argument subtypeof Any;
 
   partial function TraverseFunc
-    input tuple<Absyn.Exp, Argument> inTuple;
-    output tuple<Absyn.Exp, Argument> outTuple;
+    input Absyn.Exp inExp;
+    input Argument inArg;
+    output Absyn.Exp outExp;
+    output Argument outArg;
   end TraverseFunc;
 algorithm
-  (outCref, outTuple) := match(inCref, inTuple)
+  (outCref, outArg) := match(inCref, inFunc, inArg)
     local
       Absyn.Ident name;
       list<Absyn.Subscript> subs;
       Absyn.ComponentRef cr;
-      tuple<TraverseFunc, Argument> tup;
+      Argument arg;
 
-    case (Absyn.CREF_FULLYQUALIFIED(componentRef = cr), _)
+    case (Absyn.CREF_FULLYQUALIFIED(componentRef = cr), _, _)
       equation
-        (cr, tup) = traverseComponentRefExps(cr, inTuple);
+        (cr, arg) = traverseComponentRefExps(cr, inFunc, inArg);
       then
-        (Absyn.crefMakeFullyQualified(cr), tup);
+        (Absyn.crefMakeFullyQualified(cr), arg);
 
-    case (Absyn.CREF_QUAL(name = name, subscripts = subs, componentRef = cr), _)
+    case (Absyn.CREF_QUAL(name = name, subscripts = subs, componentRef = cr), _, _)
       equation
-        (cr, tup) = traverseComponentRefExps(cr, inTuple);
-        (subs, tup) = List.mapFold(subs, traverseSubscriptExps, tup);
+        (cr, arg) = traverseComponentRefExps(cr, inFunc, inArg);
+        (subs, arg) = List.map1Fold(subs, traverseSubscriptExps, inFunc, arg);
       then
-        (Absyn.CREF_QUAL(name, subs, cr), tup);
+        (Absyn.CREF_QUAL(name, subs, cr), arg);
 
-    case (Absyn.CREF_IDENT(name = name, subscripts = subs), _)
+    case (Absyn.CREF_IDENT(name = name, subscripts = subs), _, _)
       equation
-        (subs, tup) = List.mapFold(subs, traverseSubscriptExps, inTuple);
+        (subs, arg) = List.map1Fold(subs, traverseSubscriptExps, inFunc, inArg);
       then
-        (Absyn.CREF_IDENT(name, subs), tup);
+        (Absyn.CREF_IDENT(name, subs), arg);
 
-    case (Absyn.WILD(), _) then (inCref, inTuple);
+    case (Absyn.WILD(), _, _) then (inCref, inArg);
   end match;
 end traverseComponentRefExps;
 
 protected function traverseSubscriptExps
   "Calls the given function on the subscript expression."
   input Absyn.Subscript inSubscript;
-  input tuple<TraverseFunc, Argument> inTuple;
+  input TraverseFunc inFunc;
+  input Argument inArg;
   output Absyn.Subscript outSubscript;
-  output tuple<TraverseFunc, Argument> outTuple;
+  output Argument outArg;
 
   replaceable type Argument subtypeof Any;
 
   partial function TraverseFunc
-    input tuple<Absyn.Exp, Argument> inTuple;
-    output tuple<Absyn.Exp, Argument> outTuple;
+    input Absyn.Exp inExp;
+    input Argument inArg;
+    output Absyn.Exp outExp;
+    output Argument outArg;
   end TraverseFunc;
 algorithm
-  (outSubscript, outTuple) := match(inSubscript, inTuple)
+  (outSubscript, outArg) := match(inSubscript, inFunc, inArg)
     local
       Absyn.Exp sub_exp;
       TraverseFunc traverser;
       Argument arg;
 
-    case (Absyn.SUBSCRIPT(subscript = sub_exp), (traverser, arg))
+    case (Absyn.SUBSCRIPT(subscript = sub_exp), traverser, arg)
       equation
-        ((sub_exp, arg)) = traverser((sub_exp, arg));
+        (sub_exp, arg) = traverser(sub_exp, arg);
       then
-        (Absyn.SUBSCRIPT(sub_exp), (traverser, arg));
+        (Absyn.SUBSCRIPT(sub_exp), arg);
 
-    case (Absyn.NOSUB(), _) then (inSubscript, inTuple);
+    case (Absyn.NOSUB(), _, _) then (inSubscript, inArg);
   end match;
 end traverseSubscriptExps;
 
@@ -2605,28 +2614,28 @@ protected function traverseElseWhenExps
   "Traverses the expressions in an else when branch, and calls the given
   function on the expressions."
   input tuple<Absyn.Exp, list<EEquation>> inElseWhen;
-  input tuple<TraverseFunc, Argument> inTuple;
+  input TraverseFunc traverser;
+  input Argument inArg;
   output tuple<Absyn.Exp, list<EEquation>> outElseWhen;
-  output tuple<TraverseFunc, Argument> outTuple;
+  output Argument outArg;
 
   replaceable type Argument subtypeof Any;
 
   partial function TraverseFunc
-    input tuple<Absyn.Exp, Argument> inTuple;
-    output tuple<Absyn.Exp, Argument> outTuple;
+    input Absyn.Exp inExp;
+    input Argument inArg;
+    output Absyn.Exp outExp;
+    output Argument outArg;
   end TraverseFunc;
 
+
 protected
-  TraverseFunc traverser;
-  Argument arg;
   Absyn.Exp exp;
   list<EEquation> eql;
 algorithm
-  (traverser, arg) := inTuple;
   (exp, eql) := inElseWhen;
-  ((exp, arg)) := traverser((exp, arg));
+  (exp, outArg) := traverser(exp, inArg);
   outElseWhen := (exp, eql);
-  outTuple := (traverser, arg);
 end traverseElseWhenExps;
 
 protected function traverseNamedArgExps
@@ -2640,9 +2649,12 @@ protected function traverseNamedArgExps
   replaceable type Argument subtypeof Any;
 
   partial function TraverseFunc
-    input tuple<Absyn.Exp, Argument> inTuple;
-    output tuple<Absyn.Exp, Argument> outTuple;
+    input Absyn.Exp inExp;
+    input Argument inArg;
+    output Absyn.Exp outExp;
+    output Argument outArg;
   end TraverseFunc;
+
 
 protected
   TraverseFunc traverser;
@@ -2652,7 +2664,7 @@ protected
 algorithm
   (traverser, arg) := inTuple;
   Absyn.NAMEDARG(argName = name, argValue = value) := inArg;
-  ((value, arg)) := traverser((value, arg));
+  (value, arg) := traverser(value, arg);
   outArg := Absyn.NAMEDARG(name, value);
   outTuple := (traverser, arg);
 end traverseNamedArgExps;
@@ -2660,46 +2672,50 @@ end traverseNamedArgExps;
 protected function traverseForIteratorExps
   "Calls the given function on the expression associated with a for iterator."
   input Absyn.ForIterator inIterator;
-  input tuple<TraverseFunc, Argument> inTuple;
+  input TraverseFunc inFunc;
+  input Argument inArg;
   output Absyn.ForIterator outIterator;
-  output tuple<TraverseFunc, Argument> outTuple;
+  output Argument outArg;
 
   replaceable type Argument subtypeof Any;
 
   partial function TraverseFunc
-    input tuple<Absyn.Exp, Argument> inTuple;
-    output tuple<Absyn.Exp, Argument> outTuple;
+    input Absyn.Exp inExp;
+    input Argument inArg;
+    output Absyn.Exp outExp;
+    output Argument outArg;
   end TraverseFunc;
+
 algorithm
-  (outIterator, outTuple) := match(inIterator, inTuple)
+  (outIterator, outArg) := match(inIterator, inFunc, inArg)
     local
       TraverseFunc traverser;
       Argument arg;
       Absyn.Ident ident;
       Absyn.Exp guardExp,range;
 
-    case (Absyn.ITERATOR(ident, NONE(), NONE()), (traverser, arg))
+    case (Absyn.ITERATOR(ident, NONE(), NONE()), traverser, arg)
       then
-        (Absyn.ITERATOR(ident, NONE(), NONE()), (traverser, arg));
+        (Absyn.ITERATOR(ident, NONE(), NONE()), arg);
 
-    case (Absyn.ITERATOR(ident, NONE(), SOME(range)), (traverser, arg))
+    case (Absyn.ITERATOR(ident, NONE(), SOME(range)), traverser, arg)
       equation
-        ((range, arg)) = traverser((range, arg));
+        (range, arg) = traverser(range, arg);
       then
-        (Absyn.ITERATOR(ident, NONE(), SOME(range)), (traverser, arg));
+        (Absyn.ITERATOR(ident, NONE(), SOME(range)), arg);
 
-    case (Absyn.ITERATOR(ident, SOME(guardExp), SOME(range)), (traverser, arg))
+    case (Absyn.ITERATOR(ident, SOME(guardExp), SOME(range)), traverser, arg)
       equation
-        ((guardExp, arg)) = traverser((guardExp, arg));
-        ((range, arg)) = traverser((range, arg));
+        (guardExp, arg) = traverser(guardExp, arg);
+        (range, arg) = traverser(range, arg);
       then
-        (Absyn.ITERATOR(ident, SOME(guardExp), SOME(range)), (traverser, arg));
+        (Absyn.ITERATOR(ident, SOME(guardExp), SOME(range)), arg);
 
-    case (Absyn.ITERATOR(ident, SOME(guardExp), NONE()), (traverser, arg))
+    case (Absyn.ITERATOR(ident, SOME(guardExp), NONE()), traverser, arg)
       equation
-        ((guardExp, arg)) = traverser((guardExp, arg));
+        (guardExp, arg) = traverser(guardExp, arg);
       then
-        (Absyn.ITERATOR(ident, SOME(guardExp), NONE()), (traverser, arg));
+        (Absyn.ITERATOR(ident, SOME(guardExp), NONE()), arg);
 
   end match;
 end traverseForIteratorExps;
@@ -2846,19 +2862,22 @@ public function traverseStatementListExps
   "Traverses a list of statements and calls the given function on each
   expression found."
   input list<Statement> inStatements;
-  input tuple<TraverseFunc, Argument> inTuple;
+  input TraverseFunc inFunc;
+  input Argument inArg;
   output list<Statement> outStatements;
-  output tuple<TraverseFunc, Argument> outTuple;
+  output Argument outArg;
+
 
   replaceable type Argument subtypeof Any;
 
   partial function TraverseFunc
-    input tuple<Absyn.Exp, Argument> inTuple;
-    output tuple<Absyn.Exp, Argument> outTuple;
+    input Absyn.Exp inExp;
+    input Argument inArgument;
+    output Absyn.Exp outExp;
+    output Argument outArgument;
   end TraverseFunc;
 algorithm
-  (outStatements, outTuple) :=
-    List.mapFold(inStatements, traverseStatementExps, inTuple);
+  (outStatements, outArg) := List.map1Fold(inStatements, traverseStatementExps, inFunc, inArg);
 end traverseStatementListExps;
 
 public function traverseStatementExps
@@ -2866,18 +2885,21 @@ public function traverseStatementExps
   function is intended to be used together with traverseStatements, and does NOT
   descend into sub-statements."
   input Statement inStatement;
-  input tuple<TraverseFunc, Argument> inTuple;
+  input TraverseFunc inFunc;
+  input Argument inArg;
   output Statement outStatement;
-  output tuple<TraverseFunc, Argument> outTuple;
+  output Argument outArg;
 
   replaceable type Argument subtypeof Any;
 
   partial function TraverseFunc
-    input tuple<Absyn.Exp, Argument> inTuple;
-    output tuple<Absyn.Exp, Argument> outTuple;
+    input Absyn.Exp inExp;
+    input Argument inArgument;
+    output Absyn.Exp outExp;
+    output Argument outArgument;
   end TraverseFunc;
 algorithm
-  (outStatement, outTuple) := match(inStatement, inTuple)
+  (outStatement, outArg) := match(inStatement, inFunc, inArg)
     local
       TraverseFunc traverser;
       Argument arg;
@@ -2889,81 +2911,80 @@ algorithm
       Comment comment;
       Absyn.Info info;
 
-    case (ALG_ASSIGN(e1, e2, comment, info), (traverser, arg))
+    case (ALG_ASSIGN(e1, e2, comment, info), traverser, arg)
       equation
-        ((e1, arg)) = traverser((e1, arg));
-        ((e2, arg)) = traverser((e2, arg));
+        (e1, arg) = traverser(e1, arg);
+        (e2, arg) = traverser(e2, arg);
       then
-        (ALG_ASSIGN(e1, e2, comment, info), (traverser, arg));
+        (ALG_ASSIGN(e1, e2, comment, info), arg);
 
-    case (ALG_IF(e1, stmts1, branches, stmts2, comment, info), (traverser, arg))
+    case (ALG_IF(e1, stmts1, branches, stmts2, comment, info), traverser, arg)
       equation
-        ((e1, arg)) = traverser((e1, arg));
-        (branches, tup) = List.mapFold(branches, traverseBranchExps,
-          (traverser, arg));
+        (e1, arg) = traverser(e1, arg);
+        (branches, arg) = List.map1Fold(branches, traverseBranchExps, traverser, arg);
       then
-        (ALG_IF(e1, stmts1, branches, stmts2, comment, info), tup);
+        (ALG_IF(e1, stmts1, branches, stmts2, comment, info), arg);
 
-    case (ALG_FOR(iterator, SOME(e1), stmts1, comment, info), (traverser, arg))
+    case (ALG_FOR(iterator, SOME(e1), stmts1, comment, info), traverser, arg)
       equation
-        ((e1, arg)) = traverser((e1, arg));
+        (e1, arg) = traverser(e1, arg);
       then
-        (ALG_FOR(iterator, SOME(e1), stmts1, comment, info), (traverser, arg));
+        (ALG_FOR(iterator, SOME(e1), stmts1, comment, info), arg);
 
 
-    case (ALG_PARFOR(iterator, SOME(e1), stmts1, comment, info), (traverser, arg))
+    case (ALG_PARFOR(iterator, SOME(e1), stmts1, comment, info), traverser, arg)
       equation
-        ((e1, arg)) = traverser((e1, arg));
+        (e1, arg) = traverser(e1, arg);
       then
-        (ALG_PARFOR(iterator, SOME(e1), stmts1, comment, info), (traverser, arg));
+        (ALG_PARFOR(iterator, SOME(e1), stmts1, comment, info), arg);
 
-    case (ALG_WHILE(e1, stmts1, comment, info), (traverser, arg))
+    case (ALG_WHILE(e1, stmts1, comment, info), traverser, arg)
       equation
-        ((e1, arg)) = traverser((e1, arg));
+        (e1, arg) = traverser(e1, arg);
       then
-        (ALG_WHILE(e1, stmts1, comment, info), (traverser, arg));
+        (ALG_WHILE(e1, stmts1, comment, info), arg);
 
-    case (ALG_WHEN_A(branches, comment, info), tup)
+    case (ALG_WHEN_A(branches, comment, info), traverser, arg)
       equation
-        (branches, tup) = List.mapFold(branches, traverseBranchExps, tup);
+        (branches, arg) = List.map1Fold(branches, traverseBranchExps, traverser, arg);
       then
-        (ALG_WHEN_A(branches, comment, info), tup);
+        (ALG_WHEN_A(branches, comment, info), arg);
 
-    case (ALG_NORETCALL(e1, comment, info), (traverser, arg))
+    case (ALG_NORETCALL(e1, comment, info), traverser, arg)
       equation
-        ((e1, arg)) = traverser((e1,  arg));
+        (e1, arg) = traverser(e1,  arg);
       then
-        (ALG_NORETCALL(e1, comment, info), (traverser, arg));
+        (ALG_NORETCALL(e1, comment, info), arg);
 
-    else then (inStatement, inTuple);
+    else (inStatement, inArg);
   end match;
 end traverseStatementExps;
 
 protected function traverseBranchExps
   "Calls the given function on each expression found in an if or when branch."
   input tuple<Absyn.Exp, list<Statement>> inBranch;
-  input tuple<TraverseFunc, Argument> inTuple;
+  input TraverseFunc traverser;
+  input Argument inArg;
   output tuple<Absyn.Exp, list<Statement>> outBranch;
-  output tuple<TraverseFunc, Argument> outTuple;
+  output Argument outArg;
 
   replaceable type Argument subtypeof Any;
 
   partial function TraverseFunc
-    input tuple<Absyn.Exp, Argument> inTuple;
-    output tuple<Absyn.Exp, Argument> outTuple;
+    input Absyn.Exp inExp;
+    input Argument inArgument;
+    output Absyn.Exp outExp;
+    output Argument outArgument;
   end TraverseFunc;
 
 protected
-  TraverseFunc traverser;
   Argument arg;
   Absyn.Exp exp;
   list<Statement> stmts;
 algorithm
-  (traverser, arg) := inTuple;
   (exp, stmts) := inBranch;
-  ((exp, arg)) := traverser((exp, arg));
+  (exp, outArg) := traverser(exp, inArg);
   outBranch := (exp, stmts);
-  outTuple := (traverser, arg);
 end traverseBranchExps;
 
 public function elementIsClass
@@ -3913,7 +3934,7 @@ public function isElementProtected
 algorithm
   outIsProtected := not visibilityBool(prefixesVisibility(elementPrefixes(inElement)));
 end isElementProtected;
-  
+
 public function isElementEncapsulated
   input Element inElement;
   output Boolean outIsEncapsulated;
@@ -4310,7 +4331,7 @@ algorithm
   COMPONENT(typeSpec = outTypeSpec) := inE;
 end getComponentTypeSpec;
 
-public function setComponentMod 
+public function setComponentMod
 "@auhtor: adrpo
  set the modification in component"
   input Element inE;
@@ -4328,18 +4349,18 @@ protected
   Mod m;
   Option<Annotation> a;
   Absyn.Info i;
-algorithm 
+algorithm
   COMPONENT(n, pr, atr, ts, m, cmt, cnd, i) := inE;
   outE := COMPONENT(n, pr, atr, ts, inMod, cmt, cnd, i);
 end setComponentMod;
 
-public function getComponentMod 
+public function getComponentMod
 "@auhtor: adrpo
  get the modification in component"
   input Element inE;
   output Mod outMod;
 protected
-algorithm 
+algorithm
   COMPONENT(modifications = outMod) := inE;
 end getComponentMod;
 
@@ -4389,13 +4410,13 @@ algorithm
   CLASS(classDef=DERIVED(typeSpec = outTypeSpec)) := inE;
 end getDerivedTypeSpec;
 
-public function getDerivedMod 
+public function getDerivedMod
 "@auhtor: adrpo
  set the base class path in extends"
   input Element inE;
   output Mod outMod;
 protected
-algorithm 
+algorithm
   CLASS(classDef=DERIVED(modifications = outMod)) := inE;
 end getDerivedMod;
 
@@ -4902,7 +4923,7 @@ public function mergeWithOriginal
  this function merges the original declaration with the redeclared declaration, see 7.3.2 in Spec.
  - modifiers from the constraining class on derived classes are merged into the new declaration
  - modifiers from the original derived classes are merged into the new declaration
- - if the original declaration has no constraining type the 
+ - if the original declaration has no constraining type the
  - prefixes and attributes are merged
  same with components
  TODO! how about non-short class definitions with constrained by with modifications?"
@@ -4938,9 +4959,9 @@ algorithm
         n = CLASS(name1,prefixes1,en1,p1,restr1,cd1,cm,i);
       then
         n;
-    
+
     else inNew;
-  
+
   end matchcontinue;
 end mergeWithOriginal;
 
@@ -4957,16 +4978,16 @@ algorithm
       Absyn.TypeSpec ts1, ts2;
       Mod m1, m2;
       Attributes a1, a2;
-    
+
     case (DERIVED(ts1,m1,a1),
           DERIVED(ts2,m2,a2))
       equation
         m2 = mergeModifiers(m2, m1);
-        a2 = propagateAttributes(a2, a1); 
+        a2 = propagateAttributes(a2, a1);
         n = DERIVED(ts1,m2,a2);
       then
         n;
-      
+
   end match;
 end mergeClassDef;
 

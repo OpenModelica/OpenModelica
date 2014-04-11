@@ -331,10 +331,10 @@ protected function analyseItemIfRedeclares
   input Env inEnv;
 algorithm
   _ := matchcontinue(inRepls, inItem, inEnv)
-    local 
-      Item i; 
+    local
+      Item i;
       NFSCodeEnv.Frame cls_frm;
-      Env env; 
+      Env env;
     // no replacements happened on the environemnt! do nothing
     case ({}, _,  _) then ();
     case (_, _, _)
@@ -564,7 +564,7 @@ algorithm
         redecls = NFSCodeFlattenRedeclare.extractRedeclaresFromModifier(mods);
         (ty_item, ty_env, repls) =
         NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(redecls, ty_item, ty_env, inEnv, NFInstPrefix.emptyPrefix);
-        analyseItemIfRedeclares(repls, ty_item, ty_env); 
+        analyseItemIfRedeclares(repls, ty_item, ty_env);
         analyseModifier(mods, inEnv, ty_env, inInfo);
       then
         ();
@@ -1483,8 +1483,7 @@ protected function analyseExp
   input Env inEnv;
   input Absyn.Info inInfo;
 algorithm
-  (_, _) := Absyn.traverseExpBidir(inExp, (analyseExpTraverserEnter,
-    analyseExpTraverserExit, (inEnv, inInfo)));
+  (_, _) := Absyn.traverseExpBidir(inExp, analyseExpTraverserEnter, analyseExpTraverserExit, (inEnv, inInfo));
 end analyseExp;
 
 protected function analyseOptExp
@@ -1509,16 +1508,18 @@ end analyseOptExp;
 
 protected function analyseExpTraverserEnter
   "Traversal enter function for use in analyseExp."
-  input tuple<Absyn.Exp, tuple<Env, Absyn.Info>> inTuple;
-  output tuple<Absyn.Exp, tuple<Env, Absyn.Info>> outTuple;
+  input Absyn.Exp inExp;
+  input tuple<Env, Absyn.Info> inTuple;
+  output Absyn.Exp outExp;
+  output tuple<Env, Absyn.Info> outTuple;
 protected
-  Absyn.Exp exp;
   Env env;
   Absyn.Info info;
 algorithm
-  (exp, (env, info)) := inTuple;
-  env := analyseExp2(exp, env, info);
-  outTuple := (exp, (env, info));
+  (env, info) := inTuple;
+  env := analyseExp2(inExp, env, info);
+  outExp := inExp;
+  outTuple := (env, info);
 end analyseExpTraverserEnter;
 
 protected function analyseExp2
@@ -1600,10 +1601,12 @@ end analyseCref;
 
 protected function analyseExpTraverserExit
   "Traversal exit function for use in analyseExp."
-  input tuple<Absyn.Exp, tuple<Env, Absyn.Info>> inTuple;
-  output tuple<Absyn.Exp, tuple<Env, Absyn.Info>> outTuple;
+  input Absyn.Exp inExp;
+  input tuple<Env, Absyn.Info> inTuple;
+  output Absyn.Exp outExp;
+  output tuple<Env, Absyn.Info> outTuple;
 algorithm
-  outTuple := match(inTuple)
+  (outExp,outTuple) := match(inExp,inTuple)
     local
       Absyn.Exp e;
       Env env;
@@ -1611,17 +1614,15 @@ algorithm
 
     // Remove any scopes added by the enter function.
 
-    case ((e as Absyn.CALL(functionArgs = Absyn.FOR_ITER_FARG(iterators = _)),
-        (NFSCodeEnv.FRAME(frameType = NFSCodeEnv.IMPLICIT_SCOPE(iterIndex=_)) :: env, info)))
+    case (Absyn.CALL(functionArgs = Absyn.FOR_ITER_FARG(iterators = _)),(NFSCodeEnv.FRAME(frameType = NFSCodeEnv.IMPLICIT_SCOPE(iterIndex=_)) :: env, info))
       then
-        ((e, (env, info)));
+        (inExp, (env, info));
 
-    case ((e as Absyn.MATCHEXP(matchTy = _),
-        (NFSCodeEnv.FRAME(frameType = NFSCodeEnv.IMPLICIT_SCOPE(iterIndex=_)) :: env, info)))
+    case (Absyn.MATCHEXP(matchTy = _),(NFSCodeEnv.FRAME(frameType = NFSCodeEnv.IMPLICIT_SCOPE(iterIndex=_)) :: env, info))
       then
-        ((e, (env, info)));
+        (inExp, (env, info));
 
-    else inTuple;
+    else (inExp, inTuple);
   end match;
 end analyseExpTraverserExit;
 
@@ -1652,21 +1653,21 @@ algorithm
     case ((equ as SCode.EQ_FOR(index = iter_name, info = info), env))
       equation
         env = NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
-        (equ, _) = SCode.traverseEEquationExps(equ, (traverseExp, (env, info)));
+        (equ, _) = SCode.traverseEEquationExps(equ, traverseExp, (env, info));
       then
         ((equ, env));
 
     case ((equ as SCode.EQ_REINIT(cref = cref1, info = info), env))
       equation
         analyseCref(cref1, env, info);
-        (equ, _) = SCode.traverseEEquationExps(equ, (traverseExp, (env, info)));
+        (equ, _) = SCode.traverseEEquationExps(equ, traverseExp, (env, info));
       then
         ((equ, env));
 
     case ((equ, env))
       equation
         info = SCode.getEEquationInfo(equ);
-        (equ, _) = SCode.traverseEEquationExps(equ, (traverseExp, (env, info)));
+        (equ, _) = SCode.traverseEEquationExps(equ, traverseExp, (env, info));
       then
         ((equ, env));
 
@@ -1676,17 +1677,12 @@ end analyseEEquationTraverser;
 protected function traverseExp
   "Traversal function used by analyseEEquationTraverser and
   analyseStatementTraverser."
-  input tuple<Absyn.Exp, tuple<Env, Absyn.Info>> inTuple;
-  output tuple<Absyn.Exp, tuple<Env, Absyn.Info>> outTuple;
-protected
-  Absyn.Exp exp;
-  Env env;
-  Absyn.Info info;
+  input Absyn.Exp inExp;
+  input tuple<Env, Absyn.Info> inTuple;
+  output Absyn.Exp outExp;
+  output tuple<Env, Absyn.Info> outTuple;
 algorithm
-  (exp, (env, info)) := inTuple;
-  (exp, (_, _, (env, info))) := Absyn.traverseExpBidir(exp,
-    (analyseExpTraverserEnter, analyseExpTraverserExit, (env, info)));
-  outTuple := (exp, (env, info));
+  (outExp, outTuple) := Absyn.traverseExpBidir(inExp, analyseExpTraverserEnter, analyseExpTraverserExit, inTuple);
 end traverseExp;
 
 protected function analyseAlgorithm
@@ -1725,21 +1721,21 @@ algorithm
     case ((stmt as SCode.ALG_FOR(index = iter_name, info = info), env))
       equation
         env = NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
-        (_, _) = SCode.traverseStatementExps(stmt, (traverseExp, (env, info)));
+        (_, _) = SCode.traverseStatementExps(stmt, traverseExp, (env, info));
       then
         ((stmt, env));
 
      case ((stmt as SCode.ALG_PARFOR(index = iter_name, parforBody = parforBody, info = info), env))
       equation
         env = NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
-        (_, _) = SCode.traverseStatementExps(stmt, (traverseExp, (env, info)));
+        (_, _) = SCode.traverseStatementExps(stmt, traverseExp, (env, info));
       then
         ((stmt, env));
 
     case ((stmt, env))
       equation
         info = SCode.getStatementInfo(stmt);
-        (_, _) = SCode.traverseStatementExps(stmt, (traverseExp, (env, info)));
+        (_, _) = SCode.traverseStatementExps(stmt, traverseExp, (env, info));
       then
         ((stmt, env));
 

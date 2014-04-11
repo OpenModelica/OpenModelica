@@ -76,7 +76,7 @@ algorithm
   prefix := NFEnv.scopePrefix(inEnv);
   outMod := compactMod(outMod, (prefix, inElementName));
 end translateMod;
-  
+
 public function translateMod2
   input SCode.Mod inMod;
   input String inElementName;
@@ -157,7 +157,7 @@ algorithm
   pd := Util.if_(SCode.eachBool(inEach), 0, inDimensions);
   outSubMods := List.map2(inSubMods, translateSubMod, pd, inEnv);
 end translateSubMods;
-  
+
 protected function translateSubMod
   input SCode.SubMod inSubMod;
   input Integer inDimensions;
@@ -269,7 +269,7 @@ algorithm
         el = NFEnv.entryElement(entry);
         binding = modifierBinding(inModifier);
         info = modifierInfo(inModifier);
-        checkClassModifier(el, binding, inName, info); 
+        checkClassModifier(el, binding, inName, info);
       then
         ();
 
@@ -341,7 +341,7 @@ algorithm
   outExtendsModifiers := match(inEnv, inExtendsCount)
     local
       array<list<Modifier>> ext_mods;
-      
+
     // No extends, no need to partition modifiers.
     case (_, 0) then {};
 
@@ -403,7 +403,7 @@ algorithm
     else inExtendsModifiers;
   end match;
 end partitionExtendsMods4;
-  
+
 protected function collapseExtendsMod
   input list<Modifier> inModifiers;
   output Modifier outModifier;
@@ -415,7 +415,7 @@ algorithm
       NFInstTypes.UNBOUND(), inModifiers, Absyn.dummyInfo);
   end match;
 end collapseExtendsMod;
-        
+
 protected function modifierName
   input Modifier inMod;
   output String outName;
@@ -672,7 +672,7 @@ protected function compactMod
 
     compactMod((x.start = 2.0, y = 4.0, x(min = 1.0, max = 3.0))) =>
       (x(start = 2.0, min = 1.0, max = 3.0), y = 4.0)
-      
+
   "
   input Modifier inModifier;
   input tuple<Prefix, String> inModName "Modifier name for error reporting.";
@@ -1111,7 +1111,7 @@ algorithm
     case (SCode.MOD(fp, ep, sl, SOME((e, b)), i),_)
       equation
         sl = removeCrefPrefixFromSubModExp(sl, id);
-        ((e, _)) = Absyn.traverseExp(e, removeCrefPrefix, id);
+        (e, _) = Absyn.traverseExp(e, removeCrefPrefix, id);
       then
         SCode.MOD(fp, ep, sl, SOME((e, b)), i);
 
@@ -1160,21 +1160,23 @@ algorithm
 end removeCrefPrefixFromSubModExp;
 
 protected function removeCrefPrefix
-  input tuple<Absyn.Exp, Absyn.ComponentRef> inCrefExp_inPrefix;
-  output tuple<Absyn.Exp, Absyn.ComponentRef> outCrefExp_outPrefix;
+  input Absyn.Exp inExp;
+  input Absyn.ComponentRef inPrefix;
+  output Absyn.Exp outExp;
+  output Absyn.ComponentRef outPrefix;
 algorithm
-  outCrefExp_outPrefix := matchcontinue(inCrefExp_inPrefix)
+  (outExp,outPrefix) := matchcontinue (inExp,inPrefix)
     local
       Absyn.ComponentRef cr, pre;
 
-    case ((Absyn.CREF(cr), pre))
+    case (Absyn.CREF(cr), pre)
       equation
         true = Absyn.crefFirstEqual(cr, pre);
         cr = Absyn.crefStripFirst(cr);
       then
-        ((Absyn.CREF(cr), pre));
+        (Absyn.CREF(cr), pre);
 
-    else inCrefExp_inPrefix;
+    else (inExp,inPrefix);
   end matchcontinue;
 end removeCrefPrefix;
 
