@@ -349,7 +349,7 @@ public constant Message LOOKUP_VIA_COMP_NON_FUNCALL = MESSAGE(111, TRANSLATION()
 Util.gettext("Lookup of element %s is not allowed via component %s when looking for %s (only function calls may be looked up via a component)."));
 public constant Message LOOKUP_CLASS_VIA_COMP_COMP = MESSAGE(112, TRANSLATION(), ERROR(),
   Util.gettext("Lookup of class %s is not allowed in composite component name %s (only components may be looked up in this way)."));
-public constant Message SUBSCRIPTED_FUNCTION_CALL = MESSAGE(113, TRANSLATION(), ERROR(), 
+public constant Message SUBSCRIPTED_FUNCTION_CALL = MESSAGE(113, TRANSLATION(), ERROR(),
   Util.gettext("Function call %s contains subscripts."));
 public constant Message IF_EQUATION_UNBALANCED = MESSAGE(114, TRANSLATION(), ERROR(),
   Util.gettext("In equation %s. If-equation with conditions that are not parameter expressions must have the same number of equations in each branch, equation count is %s for each respective branch."));
@@ -645,6 +645,10 @@ public constant Message GENERATE_SEPARATE_CODE_DEPENDENCIES_FAILED = MESSAGE(242
   Util.gettext("Failed to get dependencies for package %s. Perhaps there is an import to a non-existing package."));
 public constant Message CYCLIC_DEFAULT_VALUE = MESSAGE(243, SCRIPTING(), ERROR(),
   Util.gettext("The default value of %s causes a cyclic dependency."));
+public constant Message NAMED_ARG_TYPE_MISMATCH = MESSAGE(244, TRANSLATION(), ERROR(),
+  Util.gettext("Type mismatch for named argument in %s(%s=%s). The argument has type:\n  %s\nexpected type:\n  %s"));
+public constant Message ARG_TYPE_MISMATCH = MESSAGE(245, TRANSLATION(), ERROR(),
+  Util.gettext("Type mismatch for positional argument %s in %s(%s=%s). The argument has type:\n  %s\nexpected type:\n  %s"));
 
 public constant Message UNBOUND_PARAMETER_WITH_START_VALUE_WARNING = MESSAGE(499, TRANSLATION(), WARNING(),
   Util.gettext("Parameter %s has no value, and is fixed during initialization (fixed=true), using available start value (start=%s) as default value."));
