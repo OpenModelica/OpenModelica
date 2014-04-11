@@ -116,12 +116,10 @@ algorithm
 end emptyReplacementsSized;
 
 
-public function removeReplacement " removes a replacement rule using BaseHashTable.delete
-the extendhashtable is not updated
-"
+public function removeReplacement " removes the replacement for a given key using BaseHashTable.delete
+the extendhashtable is not updated"
   input VariableReplacements repl;
   input DAE.ComponentRef inSrc;
-  input DAE.Exp inDst;
   input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
   output VariableReplacements outRepl;
   partial function FuncTypeExp_ExpToBoolean
@@ -129,26 +127,32 @@ the extendhashtable is not updated
     output Boolean outBoolean;
   end FuncTypeExp_ExpToBoolean;
 algorithm
-  outRepl:=
-  matchcontinue (repl,inSrc,inDst,inFuncTypeExpExpToBooleanOption)
+  outRepl := matchcontinue (repl,inSrc,inFuncTypeExpExpToBooleanOption)
     local
-      DAE.ComponentRef src;
+      DAE.Exp dst;
       HashTable2.HashTable ht,ht_1,eht,eht_1;
       HashTable3.HashTable invHt,invHt_1;
       list<DAE.Ident> iv;
       String s;
       Option<HashTable2.HashTable> derConst;
-    case (_,src,_,_)
+    case (_,_,_)
+      equation    
+        REPLACEMENTS(ht,invHt,eht,iv,derConst) = repl;
+        false = BaseHashTable.hasKey(inSrc,ht);
+      then
+        repl;
+    case (_,_,_)
       equation
         REPLACEMENTS(ht,invHt,eht,iv,derConst) = repl;
+        dst = BaseHashTable.get(inSrc,ht);
         ht_1 = BaseHashTable.delete(inSrc,ht);
-        invHt_1 = removeReplacementInv(invHt, inSrc, inDst);
+        invHt_1 = removeReplacementInv(invHt, inSrc, dst);
       then
         REPLACEMENTS(ht_1,invHt,eht,iv,derConst);
-    case (_,_,_,_)
+    case (_,_,_)
       equation
         s = ComponentReference.printComponentRefStr(inSrc);
-        print("-BackendVarTransform.removeReplacement failed for " +& s);
+        print("-BackendVarTransform.removeReplacement failed for " +& s +&"\n");
       then
         fail();
   end matchcontinue;
