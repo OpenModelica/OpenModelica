@@ -119,14 +119,14 @@ build/lib/omc/libopenblas_openmodelica.a:
 	$(MAKE) -C 3rdParty/OpenBLAS-0.2.8 PREFIX=${abs_top_builddir}/build OPENBLAS_LIBRARY_DIR=${abs_top_builddir}/build/lib/omc OPENBLAS_INCLUDE_DIR=${abs_top_builddir}/3rdParty/build/install-includes/ NO_LAPACKE=1 LIBNAMESUFFIX=openmodelica install
 openblas: build/lib/omc/libopenblas_openmodelica.a
 
-opencl_rt: 
+opencl_rt:
 ifeq ("$(OPENCL)","Yes")
 	$(MAKE) -C SimulationRuntime/ParModelica/explicit/openclrt -f $(defaultMakefileTarget)
 endif
 
-opencl_rt_clean: 
+opencl_rt_clean:
 	$(MAKE) -C SimulationRuntime/ParModelica/explicit/openclrt -f $(defaultMakefileTarget) clean
-        
+
 breakprocess:
 	(cd testsuite/openmodelica/bootstrapping && time g++ BreakProcess.cpp -o BreakProcess -static-libgcc)
 	(cd testsuite/openmodelica/bootstrapping && cp BreakProcess.exe ../../../$(builddir_bin)/)
@@ -154,18 +154,18 @@ runtimeCPPinstall: msl-external-libs CMinpack
 	test ! `uname` = Darwin || install_name_tool -change libOMCppSolver.dylib @rpath/cpp/libOMCppSolver.dylib build/lib/omc/cpp/libOMCppCVode.dylib
 	test ! `uname` = Darwin || install_name_tool -change libOMCppSolver.dylib @rpath/cpp/libOMCppSolver.dylib build/lib/omc/cpp/libOMCppEuler.dylib
 
-omc-diff: mkbuilddirs 
+omc-diff: mkbuilddirs
 	$(MAKE) -C testsuite/ -f Makefile omc-diff
 
 testlibrariemsl31cpp:
 	(cd testsuite/openmodelica/cppruntime/libraries/msl31 && time $(MAKE) -f Makefile > testsuite-msl31-cpp-trace.txt 2>&1)
-	echo "log is in testsuite/openmodelica/cppruntime/libraries/msl31/testsuite-msl31-cpp-trace.txt" 
+	echo "log is in testsuite/openmodelica/cppruntime/libraries/msl31/testsuite-msl31-cpp-trace.txt"
 
 testlibrariemsl32cpp:
 	(cd testsuite/openmodelica/cppruntime/libraries/msl32 && time $(MAKE) -f Makefile > testsuite-msl32-cpp-trace.txt 2>&1)
-	echo "log is in testsuite/openmodelica/cppruntime/libraries/msl32/testsuite-msl32-cpp-trace.txt" 
-	
-runtimeCPPclean: 
+	echo "log is in testsuite/openmodelica/cppruntime/libraries/msl32/testsuite-msl32-cpp-trace.txt"
+
+runtimeCPPclean:
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) clean
 
 fmil:
@@ -196,11 +196,10 @@ CMinpack-clean:
 	rm -rf 3rdParty/CMinpack/install
 	if test -f 3rdParty/CMinpack/build/Makefile; then make -C 3rdParty/CMinpack/build clean; fi
 	rm -f 3rdParty/CMinpack/build/Makefile
- 
+
 Cdaskr:
 	test -d 3rdParty/Cdaskr/solver
 	(cd 3rdParty/Cdaskr/solver && CC="$(CC)" CFLAGS="$(CFLAGS)" make -f Makefile)
-	(cp -af 3rdParty/Cdaskr/solver/libcdaskr.a $(builddir_lib)/omc/)
 
 Cdaskr-clean:
 	cd 3rdParty/Cdaskr/solver && make -f Makefile clean
@@ -229,7 +228,7 @@ testsimulation:
 
 testmo:
 	(cd testsuite/flattening/modelica && time $(MAKE) -f Makefile test)
-	
+
 testmeta:
 	(cd testsuite/metamodelica/meta && time $(MAKE) -f Makefile)
 	(cd testsuite/flattening/modelica/records && time $(MAKE) -f Makefile)
@@ -246,41 +245,41 @@ testlibraries:
 testlibrariemsl31:
 	(time $(MAKE) -C testsuite -f Makefile omc-diff)
 	(cd testsuite/simulation/libraries/msl31 && time $(MAKE) -f Makefile > testsuite-msl31-trace.txt 2>&1)
-	echo "log is in testsuite/simulation/libraries/msl31/testsuite-msl31-trace.txt" 
+	echo "log is in testsuite/simulation/libraries/msl31/testsuite-msl31-trace.txt"
 
 testlibrariemsl32:
 	(time $(MAKE) -C testsuite -f Makefile omc-diff)
 	(cd testsuite/simulation/libraries/msl32 && time $(MAKE) -f Makefile > testsuite-msl32-trace.txt 2>&1)
-	echo "log is in testsuite/simulation/libraries/msl32/testsuite-msl31-trace.txt" 
+	echo "log is in testsuite/simulation/libraries/msl32/testsuite-msl31-trace.txt"
 
 testcpp:
 	(cd testsuite/openmodelica/cppruntime/ && time $(MAKE) -f Makefile > testsuite-cpp-trace.txt 2>&1)
-	echo "log is in testsuite/openmodelica/cppruntime/testsuite-cpp-trace.txt" 
-	
+	echo "log is in testsuite/openmodelica/cppruntime/testsuite-cpp-trace.txt"
+
 testfmi:
 	(cd testsuite/openmodelica/fmi && time $(MAKE) -f Makefile)
-	
+
 testcmsvc:
 	(cd testsuite/openmodelica/cruntime/msvc/ && time $(MAKE) -f Makefile > testsuite-c_mcvc-trace.txt 2>&1)
-	echo "log is in testsuite/openmodelica/cruntime/msvc/testsuite-c_mcvc-trace.txt" 	
-	
+	echo "log is in testsuite/openmodelica/cruntime/msvc/testsuite-c_mcvc-trace.txt"
+
 testSummary:
 	(cd testsuite && time $(MAKE) -f Makefile | grep "==")
-	
+
 testPar:
 	(cd testsuite/partest && time ./runtests.pl -j8)
 
 mosh:
 	$(MAKE) -C mosh/src -f $(defaultMakefileTarget)
 
-susan: all sustst	
+susan: all sustst
 
 sustst:
 	(cd Compiler/susan_codegen && $(MAKE) -f Makefile test)
 
 include Makefile.libraries
 
-# a rule to check the .mo sources with the bootstrapped compiler! 
+# a rule to check the .mo sources with the bootstrapped compiler!
 checkcompiler:
 	$(MAKE) -C testsuite/openmodelica/bootstrapping -f $(MAKEFILE_BOOT) build
 

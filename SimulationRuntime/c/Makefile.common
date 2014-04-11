@@ -13,6 +13,8 @@ FFLAGS  = -O -fexceptions
 # P.A: before, g77 had -O3 or -O2 but that caused a bug in DDASRT, giving infinite loop.
 builddir = ../../build
 
+CDASKRDIR=$(top_builddir)/3rdParty/Cdaskr/solver/
+
 RUNTIME_HEADERS = $(LIBF2CHEADER) \
 ./omc_inline.h \
 ./math-support/blaswrap.h \
@@ -22,7 +24,7 @@ RUNTIME_HEADERS = $(LIBF2CHEADER) \
 ./simulation_data.h \
 ./ModelicaUtilities.h
 
-RUNTIMELINEAR_HEADERS = ./linearization/linearize.h 
+RUNTIMELINEAR_HEADERS = ./linearization/linearize.h
 
 RUNTIMEOPTIMZ_HEADERS = ./optimization/interfaceOptimization.h ./optimization/ipoptODEstruct.h ./optimization/localFunction.h
 
@@ -30,9 +32,9 @@ RUNTIMESIMULATION_HEADERS = ./simulation/modelinfo.h \
 ./simulation/options.h \
 ./simulation/simulation_info_xml.h \
 ./simulation/simulation_input_xml.h \
-./simulation/simulation_runtime.h 
+./simulation/simulation_runtime.h
 
-RUNTIMESIMRESULTS_HEADERS = ./simulation/results/simulation_result.h  
+RUNTIMESIMRESULTS_HEADERS = ./simulation/results/simulation_result.h
 
 RUNTIMESIMSOLVER_HEADERS = ./simulation/solver/delay.h \
 ./simulation/solver/mixedSystem.h \
@@ -45,16 +47,16 @@ RUNTIMESIMSOLVER_HEADERS = ./simulation/solver/delay.h \
 ./simulation/solver/dassl.h \
 ./simulation/solver/events.h \
 ./simulation/solver/external_input.h\
-./simulation/solver/solver_main.h 
+./simulation/solver/solver_main.h
 
 RUNTIMEMETA_HEADERS = ./meta/meta_modelica_builtin_boxptr.h \
 ./meta/meta_modelica_builtin.h \
 ./meta/meta_modelica.h \
 ./meta/meta_modelica_mk_box.h \
 ./meta/meta_modelica_segv.h \
-./meta/meta_modelica_string_lit.h 
+./meta/meta_modelica_string_lit.h
 
-RUNTIMEMETAGC_HEADERS = ./meta/gc/mmc_gc.h 
+RUNTIMEMETAGC_HEADERS = ./meta/gc/mmc_gc.h
 
 RUNTIMEUTIL_HEADERS = \
 ./util/base_array.h \
@@ -78,11 +80,11 @@ RUNTIMEUTIL_HEADERS = \
 ./util/string_array.h \
 ./util/utility.h \
 ./util/varinfo.h \
-./util/list.h 
+./util/list.h
 
 RUNTIMEINITIALIZATION_HEADERS = \
 ./simulation/solver/initialization/initialization.h \
-./simulation/solver/initialization/initialization_data.h 
+./simulation/solver/initialization/initialization_data.h
 
 # RUNTIME_HEADERS_FMU = \
 # ./simulation/solver/initialization/initialization.h \
@@ -100,14 +102,14 @@ all_objs : $(ALL_OBJS)
 #recompile all if a header changes!
 $(ALL_OBJS) : $(ALL_HEADERS)
 
-libSimulationRuntimeC.a: $(ALL_OBJS)
+libSimulationRuntimeC.a: $(ALL_OBJS) $(CDASKRDIR)/libcdaskr.a
 	@# You have to remove the old archive first or it may contain old objects
 	@rm -f $@
+	cp -a $(CDASKRDIR)/libcdaskr.a $@
 	$(AR) $@ $(ALL_OBJS)
-
 	ranlib $@
 
-libSimulationRuntimeC.so: $(ALL_OBJS) $(builddir_lib)/libf2c.a $(builddir_lib)/libcdaskr.a
+libSimulationRuntimeC.so: $(ALL_OBJS) $(builddir_lib)/libf2c.a $(CDASKRDIR)/libcdaskr.a
 	@rm -f $@
 	$(CC) -shared -o $@ $(ALL_OBJS) $(LDFLAGS_SIM)
 
