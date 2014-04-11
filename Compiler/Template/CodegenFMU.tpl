@@ -1876,6 +1876,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
   let stringOutputVariablesNames = dumpOutputStringVariablesNames(fmiModelVariablesList)
   <<
   model <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU<%if stringEq(fmiInfo.fmiDescription, "") then "" else " \""+fmiInfo.fmiDescription+"\""%>
+    <%dumpFMITypeDefinitions(fmiTypeDefinitionsList)%>
     constant String fmuLocation = "file://<%fmuWorkingDirectory%>/resources";
     constant String fmuWorkingDir = "<%fmuWorkingDirectory%>";
     parameter Integer logLevel = <%fmiLogLevel%> "log level used during the loading of FMU" annotation (Dialog(tab="FMI", group="Enable logging"));
@@ -1891,7 +1892,15 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     FMI1CoSimulation fmi1cs = FMI1CoSimulation(logLevel, fmuWorkingDir, "<%fmiInfo.fmiModelIdentifier%>", debugLogging, fmuLocation, mimeType, timeout, visible, interactive, StartTime, stopTimeDefined, StopTime);
     <%dumpFMIModelVariablesList(fmiModelVariablesList, fmiTypeDefinitionsList, generateInputConnectors, generateOutputConnectors)%>
     Real flowControl;
+    <%if not stringEq(realInputVariablesVRs, "") then "Real "+realInputVariablesReturnNames+";"%>
+    <%if not stringEq(integerInputVariablesVRs, "") then "Real "+integerInputVariablesReturnNames+";"%>
+    <%if not stringEq(booleanInputVariablesVRs, "") then "Real "+booleanInputVariablesReturnNames+";"%>
+    <%if not stringEq(stringInputVariablesVRs, "") then "Real "+stringInputVariablesReturnNames+";"%>
   equation
+    <%if not stringEq(realInputVariablesVRs, "") then "{"+realInputVariablesReturnNames+"} = fmi1Functions.fmi1SetReal(fmi1cs, {"+realInputVariablesVRs+"}, {"+realInputVariablesNames+"});"%>
+    <%if not stringEq(integerInputVariablesVRs, "") then "{"+integerInputVariablesReturnNames+"} = fmi1Functions.fmi1SetInteger(fmi1cs, {"+integerInputVariablesVRs+"}, {"+integerInputVariablesNames+"});"%>
+    <%if not stringEq(booleanInputVariablesVRs, "") then "{"+booleanInputVariablesReturnNames+"} = fmi1Functions.fmi1SetBoolean(fmi1cs, {"+booleanInputVariablesVRs+"}, {"+booleanInputVariablesNames+"});"%>
+    <%if not stringEq(stringInputVariablesVRs, "") then "{"+stringInputVariablesReturnNames+"} = fmi1Functions.fmi1SetString(fmi1cs, {"+stringInputVariablesVRs+"}, {"+stringStartVariablesNames+"});"%>
     flowControl = fmi1Functions.fmi1DoStep(fmi1cs, time, communicationStepSize, true);
     <%if not boolAnd(stringEq(realOutputVariablesNames, ""), stringEq(realOutputVariablesVRs, "")) then "{"+realOutputVariablesNames+"} = fmi1Functions.fmi1GetReal(fmi1cs, {"+realOutputVariablesVRs+"}, flowControl);"%>
     <%if not boolAnd(stringEq(integerOutputVariablesNames, ""), stringEq(integerOutputVariablesVRs, "")) then "{"+integerOutputVariablesNames+"} = fmi1Functions.fmi1GetInteger(fmi1cs, {"+integerOutputVariablesVRs+"}, flowControl);"%>
@@ -1938,6 +1947,10 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
           external "C" FMI1CoSimulationDestructor_OMC(fmi1cs) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
         end destructor;
     end FMI1CoSimulation;
+    
+    <%dumpFMITypeDefinitionsMappingFunctions(fmiTypeDefinitionsList)%>
+    
+    <%dumpFMITypeDefinitionsArrayMappingFunctions(fmiTypeDefinitionsList)%>
 
     package fmi1Functions
       function fmi1DoStep

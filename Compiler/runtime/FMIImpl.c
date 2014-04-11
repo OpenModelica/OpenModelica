@@ -399,6 +399,10 @@ void FMIImpl__initializeFMI1Import(fmi1_import_t* fmi, void** fmiInfo, fmi_versi
     void* typeName = mk_scon_check_null(name_safe);
     free(name_safe);
     const char* description = fmi1_import_get_type_description(variableTypeDef);
+    /* check if type is enum */
+    if (fmi1_import_get_base_type(variableTypeDef) != fmi1_base_type_enum) {
+      continue;
+    }
     /* get the TypeDefinition as EnumerationType */
     fmi1_import_enumeration_typedef_t* enumTypeDef = fmi1_import_get_type_as_enum(variableTypeDef);
     const char* quantity = "";
