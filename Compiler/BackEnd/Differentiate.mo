@@ -414,7 +414,6 @@ algorithm
     // equations
     case (BackendDAE.EQUATION(exp = e1,scalar = e2,source=source),_,_,_,_)
       equation
-        
         (e1_1,funcs) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         (e1_1,_) = ExpressionSimplify.simplify(e1_1);
         
@@ -1941,6 +1940,13 @@ algorithm
       then
         (e, funcs);
 
+    // der(0^x) = 0
+    case (e0 as DAE.BINARY(exp1 = (e1 as DAE.RCONST(real=0.0)),operator = DAE.POW(tp),exp2 = _), _, _, _, _)
+      equation
+        (zero, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
+      then
+        (zero, inFunctionTree);
+
     // der(r^x)  = r^x*ln(r)*der(x)
     case (e0 as DAE.BINARY(exp1 = (e1 as DAE.RCONST(real=r)),operator = DAE.POW(tp),exp2 = _), _, _, _, _)
       equation
@@ -1950,15 +1956,17 @@ algorithm
       then
         (e, funcs);
 
-    // der(x^y) = x^(y-1) * ( der(y)*ln(x)*x+(y*der(x)))
+    // der(x^y) = x^(y-1) * ( x*ln(x)*der(y)+(y*der(x)))
+    // if x == 0 then 0; 
     case (DAE.BINARY(exp1 = e1,operator = DAE.POW(tp), exp2 = e2), _, _, _, _) 
       equation
         (de1, funcs) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         (de2, funcs) = differentiateExp(e2, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         etmp = Expression.makeBuiltinCall("log", {e1}, tp);
-        e = DAE.BINARY(DAE.BINARY(e1, DAE.POW(tp), DAE.BINARY(e2, DAE.SUB(tp), DAE.RCONST(1.0))),
-                       DAE.MUL(tp), DAE.BINARY(DAE.BINARY(DAE.BINARY(de2, DAE.MUL(tp), etmp), DAE.MUL(tp), e1),
-                                    DAE.ADD(tp), DAE.BINARY(e2, DAE.MUL(tp), de1))); 
+        e = Expression.addNoEventToRelations(DAE.IFEXP(DAE.RELATION(e1, DAE.EQUAL(tp), DAE.RCONST(0.0), -1, NONE()),
+                       DAE.RCONST(0.0), DAE.BINARY(DAE.BINARY(e1, DAE.POW(tp), DAE.BINARY(e2, DAE.SUB(tp), DAE.RCONST(1.0))),
+                       DAE.MUL(tp), DAE.BINARY(DAE.BINARY(DAE.BINARY(e1, DAE.MUL(tp), etmp), DAE.MUL(tp), de2),
+                                    DAE.ADD(tp), DAE.BINARY(e2, DAE.MUL(tp), de1))))); 
       then
         (e, funcs);
 
