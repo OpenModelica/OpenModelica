@@ -64,7 +64,7 @@ omc-rml: omc-diff interactive docs fmil opencl_rt lis omc-rml-nolink
 	$(MAKE) -C Compiler -f Makefile release
 	$(MAKE) omlibrary
 omc-rml-nolink:
-	$(MAKE) -C Compiler/omc_release 
+	$(MAKE) -C Compiler/omc_release nolink
 
 boehm-gc-lib: @LIBGC@
 build/lib/omc/libgc.so: 3rdParty/gc-7.2/.libs/libgc.so
@@ -88,7 +88,7 @@ qtclean: qtclean-common
 else
 omnotebook: mkbuilddirs omplot
 	mkdir -p $(builddir_share)/omnotebook
-	$(MAKE) -C OMNotebook/OMNotebookGUI -f Makefile.unix 
+	$(MAKE) -C OMNotebook/OMNotebookGUI -f Makefile.unix
 omshell: mkbuilddirs
 	$(MAKE) -C OMShell/OMShellGUI -f Makefile.unix
 omplot: mkbuilddirs boehm-gc-lib
@@ -146,7 +146,7 @@ lis: lis-configure mkbuilddirs
 	@# FreeBSD lis does not create the symlinks...
 	! test -f build/lib/omc/liblis.so.0.0 -a ! -f build/lib/omc/liblis.so.0 || ln -s liblis.so.0.0 build/lib/omc/liblis.so.0
 	! test -f build/lib/omc/liblis.so.0.0 -a ! -f build/lib/omc/liblis.so || ln -s liblis.so.0.0 build/lib/omc/liblis.so
-lis-configure: 
+lis-configure:
 	# Configure and build lis
 	if ! test -f 3rdParty/lis-1.4.12/Makefile; then cd 3rdParty/lis-1.4.12 && ./configure "--host=$(host)" --enable-shared --disable-static MPICC="false" CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS) @LIS_LDFLAGS@" && $(MAKE) clean; fi
 lis-clean:
@@ -156,7 +156,7 @@ lis-clean:
 fix-svn-props:
 	tools/apply_autoprops.py --config .svnprops .
 fix-bom:
-	find . -type f \( ! -path '*/.svn/*' -prune \) | while read file;do sed -i '1 s/^\xef\xbb\xbf//' "$$file";done 
+	find . -type f \( ! -path '*/.svn/*' -prune \) | while read file;do sed -i '1 s/^\xef\xbb\xbf//' "$$file";done
 
 SOURCE_DIRS=$(SOURCE_DIRS_UTF8) "libraries/Modelica 2.2.2" testsuite/flattening/libraries/3rdParty/HumMod
 SOURCE_DIRS_UTF8=OM*/ Compiler/ SimulationRuntime/ mosh/ `bash -c echo libraries/{BioChem 1.0,ModelicaAdditions,Modelica_LinearSystems2 2.3,Modelica 1.6,ModelicaServices 1.0,ModelicaServices 1.0 modelica3d,Modelica 3.1,SimpleFluid,Modelica 3.2.1,SimpleVisual.mo}` `bash -c echo testsuite/flattening/libraries/3rdParty/{PlanarMechanics,siemens,SiemensPower,ThermoSysPro}` testsuite/openmodelica/modelicaML testsuite/AVM testsuite/simulation
