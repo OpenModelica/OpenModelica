@@ -461,6 +461,7 @@ algorithm
     case (STATE_PACKAGE(),      STATE_CLASS(), _, _, _) then ();
     case (STATE_CLASS(),        STATE_CLASS(), _, _, _) then ();
     case (STATE_PREDEF_CLASS(), STATE_CLASS(), _, _, _) then ();
+    case (STATE_FUNC(),         STATE_CLASS(), _, _, _) then ();
     case (STATE_FUNC(),         STATE_FUNC(), _, _, _) then ();
     case (STATE_COMP_FUNC(),    STATE_FUNC(), _, _, _) then ();
     
