@@ -1539,7 +1539,7 @@ algorithm
       then true;
 
     case (DAE.T_FUNCTION_REFERENCE_VAR(functionType = t1),DAE.T_FUNCTION_REFERENCE_VAR(functionType = t2),_)
-      then subtype(t2,t2);
+      then subtype(t1,t2);
 
     case(DAE.T_METARECORD(source={p1}),DAE.T_METARECORD(source={p2}),_)
       then Absyn.pathEqual(p1,p2);
@@ -4327,6 +4327,12 @@ algorithm
       list<DAE.Var> els1,els2;
       Absyn.Path p1,p2,tp;
       list<list<String>> aliases;
+      
+    // For the types that cannot be type-converted, but may be subtypes of another type
+    case (e, ty1, ty2, _)
+      equation
+        true = subtype(ty1,ty2);
+      then (e, ty2);
 
     // if we expect notTuple and we get Tuple do DAE.TSUB(e, 1)
     // we try subtype of the first tuple element with the other type!
@@ -5727,10 +5733,10 @@ algorithm
     case (exp,actual,expected,_,polymorphicBindings,_)
       equation
         true = Config.acceptMetaModelicaGrammar();
-        // print("match type: " +& ExpressionDump.printExpStr(exp) +& " of " +& unparseType(actual) +& " with " +& unparseType(expected) +& "\n");
         _::_ = getAllInnerTypesOfType(expected, isPolymorphic);
+        // print("match type: " +& ExpressionDump.printExpStr(exp) +& " of " +& unparseType(actual) +& " with " +& unparseType(expected) +& "\n");
         (exp,actual) = matchType(exp,actual,DAE.T_METABOXED(DAE.T_UNKNOWN_DEFAULT,DAE.emptyTypeSource),printFailtrace);
-        // print("match type: " +& ExpressionDump.printExpStr(exp) +& " of " +& unparseType(actual) +& " with " +& unparseType(expected) +& " (boxed)\n");
+        // print("matched type: " +& ExpressionDump.printExpStr(exp) +& " of " +& unparseType(actual) +& " with " +& unparseType(expected) +& " (boxed)\n");
         polymorphicBindings = subtypePolymorphic(getUniontypeIfMetarecordReplaceAllSubtypes(actual),getUniontypeIfMetarecordReplaceAllSubtypes(expected),envPath,polymorphicBindings);
         // print("match type: " +& ExpressionDump.printExpStr(exp) +& " of " +& unparseType(actual) +& " with " +& unparseType(expected) +& " and bindings " +& polymorphicBindingsStr(polymorphicBindings) +& " (OK)\n");
       then
@@ -6642,6 +6648,11 @@ algorithm
       then subtypePolymorphicList(tList1,tList2,envPath,bindings);
 
     case (DAE.T_METAUNIONTYPE(source = {path1}),DAE.T_METAUNIONTYPE(source = {path2}),_,bindings)
+      equation
+        true = Absyn.pathEqual(path1,path2);
+      then bindings;
+
+    case (DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path1)),DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path2)),_,bindings)
       equation
         true = Absyn.pathEqual(path1,path2);
       then bindings;
