@@ -1,3 +1,6 @@
 OMC=@OMC@ +d=failtrace
 
 include Makefile.common
+
+maybe-run:
+	test ! -f $(OMC) || $(MAKE)
