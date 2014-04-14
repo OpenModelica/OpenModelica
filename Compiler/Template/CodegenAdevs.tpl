@@ -45,6 +45,7 @@
 
 package CodegenAdevs
 import interface SimCodeTV;
+import CodegenUtil.*;
 
 template translateModel(SimCode simCode)
  "Generates Cpp code and header file for an adevs model."
@@ -769,6 +770,15 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
        atEvent = false;
        timeValue = q[numVars()-1] = 0.0;
        clear_event_flags();
+       <%allocArrays(vars.paramVars)%>
+       <%allocArrays(vars.intParamVars)%>
+       <%allocArrays(vars.boolParamVars)%>
+       <%allocArrays(vars.stateVars)%>
+       <%allocArrays(vars.algVars)%>
+       <%allocArrays(vars.intAlgVars)%>
+       <%allocArrays(vars.boolAlgVars)%>
+       <%allocArrays(vars.derivativeVars)%>
+       <%allocArrays(vars.aliasVars)%>
        // Get initial values as given in the model
      <%varDecls%>
        <%initStateSets(stateSets)%>
@@ -893,8 +903,8 @@ end makeReinitDynamicState;
 template accessCrA(DAE.ComponentRef crA, Integer numRows, String rowIndex, String colIndex)
 ::=
   match numRows
-    case 1 then '<%crefarray(crA)%>[<%colIndex%>]'
-    else '<%crefarray(crA)%>[<%rowIndex%>][<%colIndex%>]'
+    case 1 then '<%crefarray(crA)%>.get(<%colIndex%>)'
+    else '<%crefarray(crA)%>.get(<%rowIndex%>,<%colIndex%>)'
 end accessCrA;
 
 template selectState(list<DAE.ComponentRef> states, list<DAE.ComponentRef> statescandidates, DAE.ComponentRef crA, Integer nCandidates, Integer nStates, JacobianMatrix jacobianMatrix)
@@ -1355,16 +1365,6 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
 end equation_;
 
 
-template inlineArray(Context context, String arr, ComponentRef c)
-::= match context case INLINE_CONTEXT(__) then match c
-case CREF_QUAL(ident = "$DER") then <<
-
-inline_integrate_array(size_of_dimension_real_array(&<%arr%>,1),<%cref(c)%>);
-
->>
-end inlineArray;
-
-
 template inlineVars(Context context, list<SimVar> simvars)
 ::= match context case INLINE_CONTEXT(__) then match simvars
 case {} then ''
@@ -1406,29 +1406,11 @@ match eq
 case eqn as SES_ARRAY_CALL_ASSIGN(__) then
   let &preExp = buffer "" /*BUFD*/
   let expPart = daeExp(exp, context, &preExp, &varDecls /*BUFD*/)
-  match expTypeFromExpShort(eqn.exp)
-  case "boolean" then
-    let tvar = tempDecl("boolean_array", &varDecls /*BUFD*/)
-    //let &preExp += 'cast_integer_array_to_real(&<%expPart%>, &<%tvar%>);<%\n%>'
-    <<
-    <%preExp%>
-    copy_boolean_array_data_mem(&<%expPart%>, <%crefarray(eqn.componentRef)%>);<%inlineArray(context,tvar,eqn.componentRef)%>
-    >>
-  case "integer" then
-    let tvar = tempDecl("integer_array", &varDecls /*BUFD*/)
-    //let &preExp += 'cast_integer_array_to_real(&<%expPart%>, &<%tvar%>);<%\n%>'
-    <<
-    <%preExp%>
-    copy_integer_array_data_mem(&<%expPart%>, <%crefarray(eqn.componentRef)%>);<%inlineArray(context,tvar,eqn.componentRef)%>
-    >>
-  case "real" then
-    <<
-    <%preExp%>
-    copy_real_array_data_mem(&<%expPart%>, <%crefarray(eqn.componentRef)%>);<%inlineArray(context,expPart,eqn.componentRef)%>
-    >>
-  else error(sourceInfo(), 'No runtime support for this sort of array call: <%printExpStr(eqn.exp)%>')
+  <<
+  <%preExp%>
+  <%crefarray(eqn.componentRef)%>.assign(<%expPart%>);
+  >>
 end equationArrayCallAssign;
-
 
 template equationAlgorithm(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
  "Generates an equation that is an algorithm."
@@ -1456,14 +1438,14 @@ case SES_LINEAR(__) then
   <% if not partOfMixed then
     <<
     >> %>
-  double** <%aname%> = newDenseMat(<%size%>,<%size%>);
-  double* <%bname%> = newRealArray(<%size%>);
-  long int* <%pname%> = newLintArray(<%size%>);
+  double* <%aname%> = new double[<%size%>*<%size%>];
+  double* <%bname%> = new double[<%size%>];
+  long int* <%pname%> = new long int[<%size%>];
   for (int i = 0; i < <%size%>; i++)
   {
     for (int j = 0; j < <%size%>; j++)
     {
-      <%aname%>[i][j] = 0.0;
+      <%aname%>[j+i*<%size%>] = 0.0;
     }
     <%pname%>[i] = i;
     <%bname%>[i] = 0.0;
@@ -1471,21 +1453,21 @@ case SES_LINEAR(__) then
   <%simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
      let &preExp = buffer "" /*BUFD*/
      let expPart = daeExp(eq.exp, context, &preExp /*BUFC*/,  &varDecls /*BUFD*/)
-     '<%preExp%><%aname%>[<%col%>][<%row%>] = <%expPart%>;'
+     '<%preExp%><%aname%>[<%row%>+<%col%>*<%size%>] = <%expPart%>;'
   ;separator="\n"%>
   <%beqs |> exp hasindex i0 =>
      let &preExp = buffer "" /*BUFD*/
      let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
      '<%preExp%><%bname%>[<%i0%>] = <%expPart%>;'
   ;separator="\n"%>
-  denseGETRF<%mixedPostfix%>(<%aname%>,<%size%>,<%size%>,<%pname%>);
-  denseGETRS<%mixedPostfix%>(<%aname%>,<%size%>,<%pname%>,<%bname%>);
+  GETRF<%mixedPostfix%>(<%aname%>,<%size%>,<%pname%>);
+  GETRS<%mixedPostfix%>(<%aname%>,<%size%>,<%pname%>,<%bname%>);
   <%vars |> SIMVAR(__) hasindex i0 => '<%cref(name)%> = <%bname%>[<%i0%>];' ;separator="\n"%><%inlineVars(context,vars)%>
   <% if not partOfMixed then
   <<
-  destroyMat(<%aname%>);
-  destroyArray(<%bname%>);
-  destroyArray(<%pname%>);
+  delete [] <%aname%>;
+  delete [] <%bname%>;
+  delete [] <%pname%>;
   >> %>
   >>
 end equationLinear;
@@ -1586,9 +1568,28 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseW
   >>
 end equationElseWhen;
 
+template allocArray(SimVar var, Text& prefix) ::=
+  match var
+    case SIMVAR(__) then
+      let argIndices = (numArrayElement |> i => '<%i%>';separator=",")
+      'alloc_array(<%prefix%><%crefarray(name)%>,<%listLength(numArrayElement)%>,<%argIndices%>);'
+end allocArray;
+
+template allocArrays(list<SimVar> varsLst) ::=
+  varsLst |> sv as SIMVAR(__) =>
+      let &arrayIndices = buffer ""
+      let tmp = crefToCStr(name,&arrayIndices)
+      if arrayIndices then
+        let arrayIndicesTest = testForFirstIndex(arrayIndices)
+        if not arrayIndicesTest then
+          '<%allocArray(sv,"")%><%allocArray(sv,"_PRE")%>
+          '
+  ;separator=""
+end allocArrays;
+
 template initValst(Text &varDecls /*BUFP*/,list<SimVar> varsLst) ::=
   varsLst |> sv as SIMVAR(__) =>
-      let &preExp = buffer "" /*BUFD*/
+    let &preExp = buffer "" /*BUFD*/
     match initialValue
       case SOME(v) then
       match daeExp(v, contextOther, &preExp, &varDecls)
@@ -1737,47 +1738,53 @@ template declareSetMethod(SimVar var)
  "Declares a C++ method for setting a component reference."
 ::=
   match var
-    case SIMVAR(numArrayElement={}) then
+    case SIMVAR(__) then
       let &arrayIndices = buffer ""
       let tmp = crefToCStr(name,&arrayIndices)
+      let arrayIndicesTest = testForFirstIndex(arrayIndices)
       if not arrayIndices then
         'void set<%cref(name)%>(<%variableType(type_)%> val) { <%cref(name)%> = val; }'
-    case SIMVAR(numArrayElement=num) then
-      let argIndices = (numArrayElement |> i hasindex i0 => 'int i<%i0%>';separator=",")
-      let accIndices = (numArrayElement |> i hasindex i0 => '[i<%i0%>]';separator="")
-      let firstIndex = getFirstArrayIndexIfZero(name)
-      if firstIndex then
-        <<
-        #ifndef ___<%crefarray(name)%>_set_adevs_modelica
-        #define ___<%crefarray(name)%>_set_adevs_modelica
-        void set<%crefarray(name)%>(<%variableType(type_)%> val, <%argIndices%>) { <%crefarray(name)%><%accIndices%> = val; }
-        #endif
-
-        >>
+      else if not arrayIndicesTest then
+        let argIndices = (numArrayElement |> i hasindex i0 => 'int i<%i0%>';separator=",")
+        let accIndices = (numArrayElement |> i hasindex i0 => 'i<%i0%>';separator=",")
+        'void set<%crefarray(name)%>(<%variableType(type_)%> val, <%argIndices%>) const { <%crefarray(name)%>.get(<%accIndices%>) = val; }'
 end declareSetMethod;
 
 template declareGetMethod(SimVar var)
  "Declares a C++ method for getting a component reference."
 ::=
   match var
-    case SIMVAR(numArrayElement={}) then
+    case SIMVAR(__) then
       let &arrayIndices = buffer ""
       let tmp = crefToCStr(name,&arrayIndices)
+      let arrayIndicesTest = testForFirstIndex(arrayIndices)
       if not arrayIndices then
         '<%variableType(type_)%> get<%cref(name)%>() const { return <%cref(name)%>; }'
-    case SIMVAR(numArrayElement=num) then
-      let argIndices = (numArrayElement |> i hasindex i0 => 'int i<%i0%>';separator=",")
-      let accIndices = (numArrayElement |> i hasindex i0 => '[i<%i0%>]';separator="")
-      let firstIndex = getFirstArrayIndexIfZero(name)
-      if firstIndex then
-        <<
-        #ifndef ___<%crefarray(name)%>_get_adevs_modelica
-        #define ___<%crefarray(name)%>_get_adevs_modelica
-        <%variableType(type_)%> get<%crefarray(name)%>(<%argIndices%>) const { return <%crefarray(name)%><%accIndices%>; }
-        #endif
-
-        >>
+      else if not arrayIndicesTest then
+        let argIndices = (numArrayElement |> i hasindex i0 => 'int i<%i0%>';separator=",")
+        let accIndices = (numArrayElement |> i hasindex i0 => 'i<%i0%>';separator=",")
+        '<%variableType(type_)%> get<%crefarray(name)%>(<%argIndices%>) const { return <%crefarray(name)%>.get(<%accIndices%>); }'
 end declareGetMethod;
+
+template declareCref(SimVar var, String prepend)
+ "Declares a C++ name to be used as a component reference."
+::=
+  match var
+    case SIMVAR(__) then
+      let &arrayIndices = buffer ""
+      let tmp = crefToCStr(name,&arrayIndices)
+      let arrayIndicesTest = testForFirstIndex(arrayIndices)
+      if not arrayIndices then
+        '<%variableType(type_)%> <%prepend%><%cref(name)%>;'
+      else if not arrayIndicesTest then
+        'modelica_array<<%variableType(type_)%>> <%prepend%><%crefarray(name)%>;'
+end declareCref;
+
+template testForFirstIndex(String str) ::=
+  let str_nums = System.stringReplace(str,",","") 
+  let str_zeros = System.stringReplace(str_nums,"0","") 
+  '<%str_zeros%>'
+end testForFirstIndex;
 
 template variableType(DAE.Type type)
 ::=
@@ -1786,50 +1793,10 @@ template variableType(DAE.Type type)
   case T_STRING(__)      then "string"
   case T_INTEGER(__)     then "int"
   case T_BOOL(__)        then "bool"
+  case T_ARRAY(__)       then
+    let arrayType = variableType(ty)
+    'modelica_array<<%arrayType%>>'
 end variableType;
-
-template getFirstArrayIndexIfZeroHelp(list<Subscript> subscriptLst)
-::=
-  (subscriptLst |> subscript hasindex i0 =>
-    match i0
-      case 0 then
-        let sss = subscriptToCStr(subscript)
-        match sss
-          case "0" then '<%sss%>'
-        end match
-  ;separator="")
-end getFirstArrayIndexIfZeroHelp;
-
-template getFirstArrayIndexIfZero(DAE.ComponentRef cr)
-::=
-  match cr
-    case CREF_IDENT(__) then '<%getFirstArrayIndexIfZeroHelp(subscriptLst)%>'
-    case CREF_QUAL(__) then
-      if subscriptLst then '<%getFirstArrayIndexIfZeroHelp(subscriptLst)%>'
-      else getFirstArrayIndexIfZero(componentRef)
-end getFirstArrayIndexIfZero;
-
-template declareCref(SimVar var, String prepend)
- "Declares a C++ name to be used as a component reference."
-::=
-  match var
-    case SIMVAR(numArrayElement={}) then
-      let &arrayIndices = buffer ""
-      let tmp = crefToCStr(name,&arrayIndices)
-      if not arrayIndices then
-        '<%variableType(type_)%> <%prepend%><%cref(name)%>;'
-    case SIMVAR(numArrayElement=num) then
-      let subscriptArray = (numArrayElement |> i => '[<%i%>]';separator="")
-      let firstIndex = getFirstArrayIndexIfZero(name)
-      if firstIndex then
-        <<
-        #ifndef ___<%prepend%><%crefarray(name)%>_declared_adevs_modelica
-        #define ___<%prepend%><%crefarray(name)%>_declared_adevs_modelica
-        <%variableType(type_)%> <%prepend%><%crefarray(name)%><%subscriptArray%>;
-        #endif
-
-        >>
-end declareCref;
 
 template crefarray(ComponentRef cr)
  "Generates C++ name for component reference."
@@ -1863,24 +1830,28 @@ template cref(ComponentRef cr)
     else
         let &arrayIndices = buffer ""
         let varName = crefToCStr(cr,&arrayIndices)
-        '_<%varName%><%arrayIndices%>'
+        if arrayIndices then
+          '_<%varName%>.get(<%arrayIndices%>)'
+        else
+          '_<%varName%>'
 end cref;
 
 template crefToCStr(ComponentRef cr, Text &arrayIndices)
  "Helper function to cref."
 ::=
+  let tmp = arrayIndices
   match cr
     case CREF_IDENT(__) then
-      let &arrayIndices += subscriptsToCStr(subscriptLst)
+      let &arrayIndices += subscriptsToCStr(subscriptLst,tmp)
       '<%unquoteIdentifier(ident)%>'
     case CREF_QUAL(ident="$PRE") then
-      let &arrayIndices += subscriptsToCStr(subscriptLst)
+      let &arrayIndices += subscriptsToCStr(subscriptLst,tmp)
       'PRE_<%crefToCStr(componentRef,&arrayIndices)%>'
     case CREF_QUAL(ident="$DER") then
-      let &arrayIndices += subscriptsToCStr(subscriptLst)
+      let &arrayIndices += subscriptsToCStr(subscriptLst,tmp)
       'DER_<%crefToCStr(componentRef,&arrayIndices)%>'
     case CREF_QUAL(__) then
-      let &arrayIndices += subscriptsToCStr(subscriptLst)
+      let &arrayIndices += subscriptsToCStr(subscriptLst,tmp)
       '<%unquoteIdentifier(ident)%>_<%crefToCStr(componentRef,&arrayIndices)%>'
     case WILD(__) then ''
     else "CREF_NOT_IDENT_OR_QUAL"
@@ -1892,10 +1863,12 @@ template subscriptsToCStrForArray(list<Subscript> subscripts)
     '<%subscripts |> s => subscriptToCStr(s) ;separator="$c"%>'
 end subscriptsToCStrForArray;
 
-template subscriptsToCStr(list<Subscript> subscripts)
+template subscriptsToCStr(list<Subscript> subscripts, String arrayIndices)
 ::=
-  if subscripts then
-    (subscripts |> i => '[<%subscriptToCStr(i)%>]';separator="")
+  if not arrayIndices then
+    (subscripts |> i => '<%subscriptToCStr(i)%>';separator=",")
+  else if subscripts then
+    ',<%(subscripts |> i => '<%subscriptToCStr(i)%>';separator=",")%>'
 end subscriptsToCStr;
 
 template subscriptsToCStr2(list<Subscript> subscripts)
@@ -1961,25 +1934,6 @@ template arrayCrefStr(ComponentRef cr)
   else "CREF_NOT_IDENT_OR_QUAL"
 end arrayCrefStr;
 
-template subscriptsStr(list<Subscript> subscripts)
- "Generares subscript part of the name."
-::=
-  if subscripts then
-    '[<%subscripts |> s => subscriptStr(s) ;separator=","%>]'
-end subscriptsStr;
-
-template subscriptStr(Subscript subscript)
- "Generates a single subscript.
-  Only works for constant integer indicies."
-
-::=
-  match subscript
-  case INDEX(exp=ICONST(integer=i)) then i
-  case SLICE(exp=ICONST(integer=i)) then i
-  case WHOLEDIM(__) then "WHOLEDIM"
-  else "UNKNOWN_SUBSCRIPT"
-end subscriptStr;
-
 template expCref(DAE.Exp ecr)
 ::=
   match ecr
@@ -2007,30 +1961,6 @@ template dotPath(Path path)
   case IDENT(__)          then name
   case FULLYQUALIFIED(__) then dotPath(path)
 end dotPath;
-
-template replaceDotAndUnderscore(String str)
- "Replace _ with __ and dot in identifiers with _"
-::=
-  match str
-  case name then
-    let str_dots = System.stringReplace(name,".", "_")
-    let str_underscores = System.stringReplace(str_dots, "_", "__")
-    '<%str_underscores%>'
-end replaceDotAndUnderscore;
-
-template underscorePath(Path path)
- "Generate paths with components separated by underscores.
-  Replaces also the . in identifiers with _.
-  The dot might happen for world.gravityAccleration"
-::=
-  match path
-  case QUALIFIED(__) then
-    '<%replaceDotAndUnderscore(name)%>_<%underscorePath(path)%>'
-  case IDENT(__) then
-    replaceDotAndUnderscore(name)
-  case FULLYQUALIFIED(__) then
-    underscorePath(path)
-end underscorePath;
 
 template functionHeaders(list<Function> functions)
  "Generates function header part in function files."
@@ -4542,18 +4472,13 @@ template daeExpArray(Exp exp, Context context, Text &preExp /*BUFP*/,
 ::=
 match exp
 case ARRAY(__) then
-  let arrayTypeStr = expTypeArray(ty)
-  let arrayVar = tempDecl(arrayTypeStr, &varDecls /*BUFD*/)
-  let scalarPrefix = if scalar then "scalar_" else ""
   let scalarRef = if scalar then "&" else ""
   let params = (array |> e =>
       let prefix = if scalar then '(<%expTypeFromExpModelica(e)%>)' else '&'
       '<%prefix%><%daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>'
-    ;separator=", ")
-  let &preExp += 'array_alloc_<%scalarPrefix%><%arrayTypeStr%>(&<%arrayVar%>, <%listLength(array)%>, <%params%>);<%\n%>'
-  arrayVar
+    ;separator=",")
+  '<%params%>'
 end daeExpArray;
-
 
 template daeExpMatrix(Exp exp, Context context, Text &preExp /*BUFP*/,
                       Text &varDecls /*BUFP*/)
@@ -5304,7 +5229,7 @@ template expTypeShort(DAE.Type type)
  "Generate type helper."
 ::=
   match type
-  case T_INTEGER(__)         then "integer"
+  case T_INTEGER(__)     then "integer"
   case T_REAL(__)        then "real"
   case T_STRING(__)      then if acceptMetaModelicaGrammar() then "metatype" else "string"
   case T_BOOL(__)        then "boolean"
@@ -5615,12 +5540,6 @@ template patternMatch(Pattern pat, Text rhs, Text onPatternFail, Text &varDecls,
     >>
   else 'UNKNOWN_PATTERN /* rhs: <%rhs%> */<%\n%>'
 end patternMatch;
-
-template infoArgs(Info info)
-::=
-  match info
-  case INFO(__) then '"<%fileName%>",<%lineNumberStart%>,<%columnNumberStart%>,<%lineNumberEnd%>,<%columnNumberEnd%>,<%if isReadOnly then 1 else 0%>'
-end infoArgs;
 
 template assertCommon(Exp condition, Exp message, Context context, Text &varDecls, Info info)
 ::=
