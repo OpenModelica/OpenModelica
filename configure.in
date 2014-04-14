@@ -914,7 +914,7 @@ AC_ARG_WITH(PATOH, [  --with-PATOH=DIR                 Compile with PATOH hyperg
     AC_MSG_RESULT([Enabling PATOH... PATOHHOME="$withval"]);
 	PATOHHOME="$withval";
 ], [
-    if test "$USE_METIS" =0; then
+    if test "$USE_METIS" = 0; then
         USE_GRAPH=0
     fi
     USE_PATOH=0;
