@@ -1128,6 +1128,11 @@ algorithm
         //print("\nExp-Cref\n Array " +& se1); 
       then
         (res, outFunctionTree);
+    
+    // let WILD() => WILD()
+    case ((e as DAE.CREF(componentRef = DAE.WILD())), _, _, _, _)
+      then
+        (e, inFunctionTree);
 
     // D(x)/dx => 1
     case (DAE.CREF(componentRef = cr, ty = tp), _, _, _, _)
