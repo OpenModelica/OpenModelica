@@ -1,7 +1,7 @@
 
 #include "stdafx.h"
 #include "Newton.h"
-#include <iostream>
+
 #include <Math/ILapack.h>        // needed for solution of linear system with Lapack
 #include <Math/Constants.h>        // definitializeion of constants like uround
 
@@ -102,14 +102,14 @@ void Newton::solve()
     while(_iterationStatus == CONTINUE)
     {
         _iterationStatus = DONE;
-
+        calcFunction(_y,_f);
         // Check stopping criterion
         calcFunction(_y,_f);
         if(totStps)
         {
             for(int i=0; i<_dimSys; ++i)
             {
-                if(fabs(_f[i]) > _newtonSettings->getAtol() + _newtonSettings->getRtol() * (fabs(_f[i])))
+                if(fabs(_f[i]) > _newtonSettings->getAtol() +_newtonSettings->getRtol() * ( fabs(_f[i])))
                 {
                     _iterationStatus = CONTINUE;
                     break;
@@ -120,6 +120,7 @@ void Newton::solve()
             _iterationStatus = CONTINUE;
 
         // New right hand side
+
 
         if(_iterationStatus == CONTINUE)
         {
@@ -191,9 +192,10 @@ void Newton::calcJacobian()
     {
         // Reset variables for every column
         memcpy(_yHelp,_y,_dimSys*sizeof(double));
+        double stepsize=1.e-6+(1.e-6*_yHelp[j]);
+
 
         // Finitializee difference
-        double stepsize=_newtonSettings->getAtol()+(_newtonSettings->getRtol()*_yHelp[j]);
         _yHelp[j] += stepsize;
 
         calcFunction(_yHelp,_fHelp);
@@ -202,7 +204,7 @@ void Newton::calcJacobian()
         for(int i=0; i<_dimSys; ++i)
             _jac[i+j*_dimSys] = (_fHelp[i] - _f[i]) / stepsize;
 
-        _yHelp[j] = _y[j];
+        _yHelp[j] -=stepsize;
     }
 }
 
