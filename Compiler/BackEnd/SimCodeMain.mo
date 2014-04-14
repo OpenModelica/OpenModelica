@@ -82,8 +82,7 @@ protected import SimCodeUtil;
 protected import System;
 protected import Util;
 
-protected import SerializeModelInfo; // TODO: Add me once we have switched to bootstrapped omc
-// protected import MessagePack; // TODO: Add me once we have switched to bootstrapped omc
+// protected import SerializeModelInfo; // TODO: Add me once we have switched to bootstrapped omc
 
 public function createSimulationSettings
   input Real startTime;
