@@ -4983,6 +4983,42 @@ algorithm
   end match;
 end fold3;
 
+public function fold3r
+  "Same as fold3, but with reversed order on the fold function arguments."
+  input list<ElementType> inList;
+  input FoldFunc inFoldFunc;
+  input ArgType1 inExtraArg1;
+  input ArgType2 inExtraArg2;
+  input ArgType3 inExtraArg3;
+  input FoldType inStartValue;
+  output FoldType outResult;
+
+  partial function FoldFunc
+    input FoldType inFoldArg;
+    input ElementType inElement;
+    input ArgType1 inConstantArg1;
+    input ArgType2 inConstantArg2;
+    input ArgType3 inConstantArg3;
+    output FoldType outFoldArg;
+  end FoldFunc;
+algorithm
+  outResult := match(inList, inFoldFunc, inExtraArg1, inExtraArg2, inExtraArg3, inStartValue)
+    local
+      ElementType e;
+      list<ElementType> rest;
+      FoldType arg;
+
+    case ({}, _, _, _, _, _) then inStartValue;
+
+    case (e :: rest, _, _, _, _, _)
+      equation
+        arg = inFoldFunc(inStartValue, e, inExtraArg1, inExtraArg2, inExtraArg3);
+      then
+        fold3r(rest, inFoldFunc, inExtraArg1, inExtraArg2, inExtraArg3, arg);
+
+  end match;
+end fold3r;
+
 public function fold4
   "Takes a list and a function operating on list elements having an extra
    argument that is 'updated', thus returned from the function, and four constant
