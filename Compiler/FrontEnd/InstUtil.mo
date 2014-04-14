@@ -6440,7 +6440,7 @@ algorithm
   outBoolean:=
   match (inCallingScope)
     case InstTypes.TOP_CALL() then true;
-    case InstTypes.INNER_CALL() then false;
+    else false;
   end match;
 end isTopCall;
 

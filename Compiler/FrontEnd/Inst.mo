@@ -1035,7 +1035,7 @@ algorithm
              outputs)),
            /*SOME(FUNC_partialInstClassIn( // result for partial instantiation
              (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inClass,inVisibility,inInstDims),
-             (env,ci_state)))*/ NONE());
+             (env,ci_state)))*/ NONE(), callscope);
         /*
         Debug.fprintln(Flags.CACHE, "IIII->added to instCache: " +& Absyn.pathString(fullEnvPathPlusClass) +&
           "\n\tpre: " +& PrefixUtil.printPrefixStr(pre) +& " class: " +&  className +&
@@ -1874,7 +1874,7 @@ algorithm
         addToInstCache(fullEnvPathPlusClass,
            NONE(),
            SOME(FUNC_partialInstClassIn( // result for partial instantiation
-             inputs,outputs)));
+             inputs,outputs)), InstTypes.INNER_CALL());
         //Debug.fprintln(Flags.CACHE, "IIIIPARTIAL->added to instCache: " +& Absyn.pathString(fullEnvPathPlusClass));
       then
         (cache,env,ih,ci_state,vars);
@@ -2389,13 +2389,11 @@ algorithm
         // Add components from base classes to be instantiated in 3 as well.
         compelts_1 = List.flatten({extcomps,compelts_1,cdefelts_1});
 
-        // Take the union of the equations in the current scope and equations
-        // from extends, to filter out identical equations.
-        eqs_1 = List.unionOnTrue(eqs, eqs2, SCode.equationEqual);
-        initeqs_1 = List.unionOnTrue(initeqs, initeqs2, SCode.equationEqual);
-
-        alg_1 = listAppend(alg, alg2);
-        initalg_1 = listAppend(initalg, initalg2);
+        // Add equation and algorithm sections from base classes.
+        eqs_1 = joinExtEquations(eqs, eqs2, callscope);
+        initeqs_1 = joinExtEquations(initeqs, initeqs2, callscope);
+        alg_1 = joinExtAlgorithms(alg, alg2, callscope);
+        initalg_1 = joinExtAlgorithms(initalg, initalg2, callscope);
 
         (compelts_1, eqs_1, initeqs_1, alg_1, initalg_1) = 
           InstUtil.extractConstantPlusDepsTpl(compelts_1, instSingleCref, {}, className, eqs_1, initeqs_1, alg_1, initalg_1);
@@ -2848,6 +2846,32 @@ algorithm
         fail();
   end matchcontinue;
 end instClassdef2;
+
+protected function joinExtEquations
+  input list<SCode.Equation> inEq;
+  input list<SCode.Equation> inExtEq;
+  input InstTypes.CallingScope inCallingScope;
+  output list<SCode.Equation> outEq;
+algorithm
+  outEq := match(inEq, inExtEq, inCallingScope)
+    case (_, _, InstTypes.TYPE_CALL()) then {};
+    // Take the union of the equations in the current scope and equations
+    // from extends, to filter out identical equations.
+    else List.unionOnTrue(inEq, inExtEq, SCode.equationEqual);
+  end match;
+end joinExtEquations;
+
+protected function joinExtAlgorithms
+  input list<SCode.AlgorithmSection> inAlg;
+  input list<SCode.AlgorithmSection> inExtAlg;
+  input InstTypes.CallingScope inCallingScope;
+  output list<SCode.AlgorithmSection> outAlg;
+algorithm
+  outAlg := match(inAlg, inExtAlg, inCallingScope)
+    case (_, _, InstTypes.TYPE_CALL()) then {};
+    else listAppend(inAlg, inExtAlg);
+  end match;
+end joinExtAlgorithms;
 
 protected function instClassDefHelper
 "Function: instClassDefHelper
@@ -5811,25 +5835,30 @@ end makeFullyQualified2;
 //    hash table implementation for cashing instantiation results
 // *********************************************************************
 
-function addToInstCache
+protected function addToInstCache
   input Absyn.Path fullEnvPathPlusClass;
   input Option<CachedInstItem> fullInstOpt;
   input Option<CachedInstItem> partialInstOpt;
+  input InstTypes.CallingScope inCallScope;
 algorithm
-  _ := matchcontinue(fullEnvPathPlusClass,fullInstOpt, partialInstOpt)
+  _ := matchcontinue(fullEnvPathPlusClass,fullInstOpt, partialInstOpt, inCallScope)
     local
       CachedInstItem fullInst, partialInst;
       InstHashTable instHash;
 
+    // Don'ẗ add classes that were only instantiated to get their type,
+    // they are not complete.
+    case (_, _, _, InstTypes.TYPE_CALL()) then ();
+
     // nothing is we have +d=noCache
-    case (_, _, _)
+    case (_, _, _, _)
       equation
         false = Flags.isSet(Flags.CACHE);
        then
          ();
 
     // we have them both
-    case (_, SOME(_), SOME(_))
+    case (_, SOME(_), SOME(_), _)
       equation
         instHash = getGlobalRoot(Global.instHashIndex);
         instHash = BaseHashTable.add((fullEnvPathPlusClass,{fullInstOpt,partialInstOpt}),instHash);
@@ -5838,7 +5867,7 @@ algorithm
         ();
 
     // we have a partial inst result and the full in the cache
-    case (_, NONE(), SOME(_))
+    case (_, NONE(), SOME(_), _)
       equation
         instHash = getGlobalRoot(Global.instHashIndex);
         // see if we have a full inst here
@@ -5849,7 +5878,7 @@ algorithm
         ();
 
     // we have a partial inst result and the full is NOT in the cache
-    case (_, NONE(), SOME(_))
+    case (_, NONE(), SOME(_), _)
       equation
         instHash = getGlobalRoot(Global.instHashIndex);
         // see if we have a full inst here
@@ -5860,7 +5889,7 @@ algorithm
         ();
 
     // we have a full inst result and the partial in the cache
-    case (_, SOME(_), NONE())
+    case (_, SOME(_), NONE(), _)
       equation
         instHash = getGlobalRoot(Global.instHashIndex);
         // see if we have a partial inst here
@@ -5871,7 +5900,7 @@ algorithm
         ();
 
     // we have a full inst result and the partial is NOT in the cache
-    case (_, SOME(_), NONE())
+    case (_, SOME(_), NONE(), _)
       equation
         instHash = getGlobalRoot(Global.instHashIndex);
         // see if we have a partial inst here
@@ -5882,10 +5911,7 @@ algorithm
         ();
 
     // we failed above??!!
-    case (_, _, _)
-      equation
-      then
-        ();
+    else ();
   end matchcontinue;
 end addToInstCache;
 

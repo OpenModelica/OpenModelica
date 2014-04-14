@@ -399,6 +399,7 @@ algorithm
       Boolean partialPrefixBool, isImpure;
       SCode.Comment cmt;
       SCode.FunctionRestriction funcRest;
+      InstTypes.CallingScope cs;
 
     // normal functions
     case (cache,env,ih,mod,pre,SCode.CLASS(classDef=cd,partialPrefix = partialPrefix, name = n,restriction = SCode.R_FUNCTION(funcRest),info = info,cmt=cmt),inst_dims,_)
@@ -410,9 +411,10 @@ algorithm
         c = Util.if_(Config.acceptMetaModelicaGrammar(),
                      inClass,
                      SCode.setClassPartialPrefix(SCode.NOT_PARTIAL(), inClass));
+        cs = Util.if_(instFunctionTypeOnly, InstTypes.TYPE_CALL(), InstTypes.INNER_CALL());
         (cache,cenv,ih,_,DAE.DAE(daeElts),_,ty,_,_,_) =
           Inst.instClass(cache, env, ih, UnitAbsynBuilder.emptyInstStore(), mod, pre,
-            c, inst_dims, true, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
+            c, inst_dims, true, cs, ConnectionGraph.EMPTY, Connect.emptySet);
         List.map2_0(daeElts,InstUtil.checkFunctionElement,false,info);
         env_1 = Env.extendFrameC(env,c);
         (cache,fpath) = Inst.makeFullyQualified(cache, env_1, Absyn.IDENT(n));
@@ -623,7 +625,7 @@ algorithm
                                    encapsulatedPrefix = e,partialPrefix = p,restriction = _,
                                    classDef = SCode.PARTS(elementLst = elts,externalDecl=_),cmt=cmt, info = info))
       equation
-        elts = List.select(elts,isElementImportForFunctions);
+        elts = List.select(elts,isElementImportantForFunction);
         stripped_class = SCode.CLASS(id,prefixes,e,p,SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(false)),SCode.PARTS(elts,{},{},{},{},{},{},NONE()),cmt,info);
         (cache,env_1,ih,funs) = implicitFunctionInstantiation2(cache, env, ih, DAE.NOMOD(), Prefix.NOPRE(), stripped_class, {}, true);
         // Only external functions are valid without an algorithm section... 
@@ -999,7 +1001,7 @@ algorithm
   end matchcontinue;
 end addRecordConstructorFunction;
 
-protected function isElementImportForFunctions
+protected function isElementImportantForFunction
   input SCode.Element elt;
   output Boolean b;
 algorithm
@@ -1009,6 +1011,6 @@ algorithm
       then false;
     else true;
   end match;
-end isElementImportForFunctions;
+end isElementImportantForFunction;
 
 end InstFunction;

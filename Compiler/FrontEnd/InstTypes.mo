@@ -44,6 +44,7 @@ uniontype CallingScope "
 Calling scope is used to determine when unconnected flow variables should be set to zero."
   record TOP_CALL   "this is a top call"    end TOP_CALL;
   record INNER_CALL "this is an inner call" end INNER_CALL;
+  record TYPE_CALL  "a call to determine type of a class" end TYPE_CALL;
 end CallingScope;
 
 type PolymorphicBindings = list<tuple<String,list<DAE.Type>>>;
