@@ -953,7 +953,7 @@ algorithm
       Env.Cache cache;
       Option<SCode.Attributes> oDA;
       DAE.EqualityConstraint equalityConstraint;
-      InstTypes.CallingScope callscope;
+      InstTypes.CallingScope callscope, ccs;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       InstHashTable instHash;
@@ -987,19 +987,20 @@ algorithm
     //  see if we have it in the cache
     case (_, env, ih, store, mods, pre, ci_state,
         c as SCode.CLASS(name = className, restriction=_), _, inst_dims, impl,
-        _, graph, csets, _)
+        callscope, graph, csets, _)
       equation
         true = Flags.isSet(Flags.CACHE);
         instHash = getGlobalRoot(Global.instHashIndex);
         envPathOpt = Env.getEnvPath(inEnv);
         fullEnvPathPlusClass = Absyn.selectPathsOpt(envPathOpt, Absyn.IDENT(className));
         {SOME(FUNC_instClassIn(inputs, outputs)),_} = BaseHashTable.get(fullEnvPathPlusClass, instHash);
-        (_, _, _, _, aa_1, aa_2, aa_3, aa_4, aa_5 as SCode.CLASS(restriction=_), _, aa_7, aa_8, _, aa_9) = inputs;
+        (_, _, _, _, aa_1, aa_2, aa_3, aa_4, aa_5 as SCode.CLASS(restriction=_), _, aa_7, aa_8, _, aa_9, ccs) = inputs;
         // are the important inputs the same??
         InstUtil.prefixEqualUnlessBasicType(aa_2, pre, c);
         bbx = (aa_7,      aa_8, aa_1, aa_3, aa_4,     aa_5, aa_9);
         bby = (inst_dims, impl, mods, csets, ci_state, c,    instSingleCref);
         equality(bbx = bby);
+        true = callingScopeCacheEq(ccs, callscope);
         (env,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graphCached) = outputs;
         graph = ConnectionGraph.merge(graph, graphCached);
         /*
@@ -1026,7 +1027,7 @@ algorithm
         envPathOpt = Env.getEnvPath(inEnv);
         fullEnvPathPlusClass = Absyn.selectPathsOpt(envPathOpt, Absyn.IDENT(className));
 
-        inputs = (inCache,inEnv,inIH,store,inMod,inPrefix,inSets,inState,inClass,inVisibility,inInstDims,implicitInstantiation,inGraph,instSingleCref);
+        inputs = (inCache,inEnv,inIH,store,inMod,inPrefix,inSets,inState,inClass,inVisibility,inInstDims,implicitInstantiation,inGraph,instSingleCref,callscope);
         outputs = (env,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph);
 
         addToInstCache(fullEnvPathPlusClass,
@@ -1035,7 +1036,7 @@ algorithm
              outputs)),
            /*SOME(FUNC_partialInstClassIn( // result for partial instantiation
              (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inClass,inVisibility,inInstDims),
-             (env,ci_state)))*/ NONE(), callscope);
+             (env,ci_state)))*/ NONE());
         /*
         Debug.fprintln(Flags.CACHE, "IIII->added to instCache: " +& Absyn.pathString(fullEnvPathPlusClass) +&
           "\n\tpre: " +& PrefixUtil.printPrefixStr(pre) +& " class: " +&  className +&
@@ -1064,6 +1065,19 @@ algorithm
 
   end matchcontinue;
 end instClassIn2;
+
+protected function callingScopeCacheEq
+  input InstTypes.CallingScope inCallingScope1;
+  input InstTypes.CallingScope inCallingScope2;
+  output Boolean outIsEq;
+algorithm
+  outIsEq := match(inCallingScope1, inCallingScope2)
+    case (InstTypes.TYPE_CALL(), InstTypes.TYPE_CALL()) then true;
+    case (InstTypes.TYPE_CALL(), _) then false;
+    case (_, InstTypes.TYPE_CALL()) then false;
+    else true;
+  end match;
+end callingScopeCacheEq;
 
 public function instClassIn_dispatch
 "This rule instantiates the contents of a class definition, with a new
@@ -1874,7 +1888,7 @@ algorithm
         addToInstCache(fullEnvPathPlusClass,
            NONE(),
            SOME(FUNC_partialInstClassIn( // result for partial instantiation
-             inputs,outputs)), InstTypes.INNER_CALL());
+             inputs,outputs)));
         //Debug.fprintln(Flags.CACHE, "IIIIPARTIAL->added to instCache: " +& Absyn.pathString(fullEnvPathPlusClass));
       then
         (cache,env,ih,ci_state,vars);
@@ -5839,26 +5853,21 @@ protected function addToInstCache
   input Absyn.Path fullEnvPathPlusClass;
   input Option<CachedInstItem> fullInstOpt;
   input Option<CachedInstItem> partialInstOpt;
-  input InstTypes.CallingScope inCallScope;
 algorithm
-  _ := matchcontinue(fullEnvPathPlusClass,fullInstOpt, partialInstOpt, inCallScope)
+  _ := matchcontinue(fullEnvPathPlusClass,fullInstOpt, partialInstOpt)
     local
       CachedInstItem fullInst, partialInst;
       InstHashTable instHash;
 
-    // Don'ẗ add classes that were only instantiated to get their type,
-    // they are not complete.
-    case (_, _, _, InstTypes.TYPE_CALL()) then ();
-
     // nothing is we have +d=noCache
-    case (_, _, _, _)
+    case (_, _, _)
       equation
         false = Flags.isSet(Flags.CACHE);
        then
          ();
 
     // we have them both
-    case (_, SOME(_), SOME(_), _)
+    case (_, SOME(_), SOME(_))
       equation
         instHash = getGlobalRoot(Global.instHashIndex);
         instHash = BaseHashTable.add((fullEnvPathPlusClass,{fullInstOpt,partialInstOpt}),instHash);
@@ -5867,7 +5876,7 @@ algorithm
         ();
 
     // we have a partial inst result and the full in the cache
-    case (_, NONE(), SOME(_), _)
+    case (_, NONE(), SOME(_))
       equation
         instHash = getGlobalRoot(Global.instHashIndex);
         // see if we have a full inst here
@@ -5878,7 +5887,7 @@ algorithm
         ();
 
     // we have a partial inst result and the full is NOT in the cache
-    case (_, NONE(), SOME(_), _)
+    case (_, NONE(), SOME(_))
       equation
         instHash = getGlobalRoot(Global.instHashIndex);
         // see if we have a full inst here
@@ -5889,7 +5898,7 @@ algorithm
         ();
 
     // we have a full inst result and the partial in the cache
-    case (_, SOME(_), NONE(), _)
+    case (_, SOME(_), NONE())
       equation
         instHash = getGlobalRoot(Global.instHashIndex);
         // see if we have a partial inst here
@@ -5900,7 +5909,7 @@ algorithm
         ();
 
     // we have a full inst result and the partial is NOT in the cache
-    case (_, SOME(_), NONE(), _)
+    case (_, SOME(_), NONE())
       equation
         instHash = getGlobalRoot(Global.instHashIndex);
         // see if we have a partial inst here
@@ -5918,7 +5927,7 @@ end addToInstCache;
 protected type CachedInstItemInputs = tuple<Env.Cache, Env.Env, InstanceHierarchy,
     UnitAbsyn.InstStore, DAE.Mod, Prefix.Prefix, Connect.Sets, ClassInf.State,
     SCode.Element, SCode.Visibility, InstDims, Boolean,
-    ConnectionGraph.ConnectionGraph, Option<DAE.ComponentRef>>;
+    ConnectionGraph.ConnectionGraph, Option<DAE.ComponentRef>, InstTypes.CallingScope>;
 
 protected type CachedInstItemOutputs = tuple<Env.Env, DAE.DAElist, Connect.Sets,
     ClassInf.State, list<DAE.Var>, Option<DAE.Type>, Option<SCode.Attributes>,
