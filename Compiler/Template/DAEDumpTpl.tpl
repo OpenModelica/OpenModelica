@@ -934,7 +934,7 @@ template dumpComment(SCode.Comment comment)
 end dumpComment;
 
 template dumpCommentStr(Option<String> comment)
-::= match comment case SOME(cmt) then ' "<%cmt%>"'
+::= match comment case SOME(cmt) then ' "<%System.escapedString(cmt,true)%>"'
 end dumpCommentStr;
 
 template dumpPathLastIndent(Absyn.Path path)
