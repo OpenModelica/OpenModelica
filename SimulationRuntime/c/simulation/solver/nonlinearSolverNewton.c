@@ -314,7 +314,7 @@ int solveNewton(DATA *data, int sysNumber)
       giveUp = 0;
       nfunc_evals += solverData->nfev;
       infoStreamPrint(LOG_NLS, 0, " - iteration making no progress:\t try old values.");
-    // try to vary the initial values
+    /* try to vary the initial values */
     }
     else if(retries < 2)
     {
@@ -324,7 +324,7 @@ int solveNewton(DATA *data, int sysNumber)
       giveUp = 0;
       nfunc_evals += solverData->nfev;
       infoStreamPrint(LOG_NLS, 0, " - iteration making no progress:\t vary solution point by 1%%.");
-      // try to vary the initial values
+    /* try to vary the initial values */
     }
     else if(retries < 3)
     {
