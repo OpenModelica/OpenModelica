@@ -371,7 +371,7 @@ constant DebugFlag RESOLVE_LOOPS = DEBUG_FLAG(102, "resolveLoops", false,
   Util.gettext("Activates the resolveLoops module."));
 constant DebugFlag DISABLE_WINDOWS_PATH_CHECK_WARNING = DEBUG_FLAG(103, "disableWindowsPathCheckWarning", false,
   Util.gettext("Disables warnings on Windows if OPENMODELICAHOME/MinGW is missing."));
-constant DebugFlag DISABLE_RECORD_CONSTRUCTOR_OUTPUT = DEBUG_FLAG(104, "disableRecordConstructorOutput", false, 
+constant DebugFlag DISABLE_RECORD_CONSTRUCTOR_OUTPUT = DEBUG_FLAG(104, "disableRecordConstructorOutput", false,
   Util.gettext("Disables output of record constructors in the flat code."));
 constant DebugFlag DUMP_TRANSFORMED_MODELICA_MODEL = DEBUG_FLAG(105, "dumpTransformedModelica", false,
   Util.gettext("Dumps the back-end DAE to a Modelica-like model after all symbolic transformations are applied."));
@@ -688,7 +688,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
 
 constant ConfigFlag SIMCODE_TARGET = CONFIG_FLAG(17, "simCodeTarget",
   NONE(), EXTERNAL(), STRING_FLAG("C"),
-  SOME(STRING_OPTION({"C", "CSharp", "Cpp", "Adevs", "QSS", "Dump", "XML", "Java", "JavaScript", "None"})),
+  SOME(STRING_OPTION({"C", "CSharp", "Cpp", "Adevs", "QSS", "XML", "Java", "JavaScript", "None"})),
   Util.gettext("Sets the target language for the code generation."));
 
 constant ConfigFlag ORDER_CONNECTIONS = CONFIG_FLAG(18, "orderConnections",
@@ -827,7 +827,7 @@ constant ConfigFlag CORBA_OBJECT_REFERENCE_FILE_PATH = CONFIG_FLAG(49, "corbaObj
 constant ConfigFlag HPCOM_SCHEDULER = CONFIG_FLAG(50, "hpcomScheduler",
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
   Util.gettext("Sets the scheduler for task graph scheduling (list | level | levelr | ext | mcp | taskdep). Default: list."));
-  
+
 constant ConfigFlag TEARING_HEURISTIC = CONFIG_FLAG(51, "tearingHeuristic",
   NONE(), EXTERNAL(), STRING_FLAG("MC3"),
   SOME(STRING_DESC_OPTION({
@@ -860,7 +860,7 @@ constant ConfigFlag REPLACE_HOMOTOPY = CONFIG_FLAG(54, "replaceHomotopy",
     ("simplified", Util.gettext("Replace homotopy(actual, simplified with simplified."))
     })),
     Util.gettext("Replaces homotopy(actual, simplified) with the actual expression or the simplified expression. Good for debugging models which use homotopy. The default is to not replace homotopy."));
-  
+
 constant ConfigFlag GENERATE_SYMBOLIC_JACOBIAN = CONFIG_FLAG(55, "generateSymbolicJacobian",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Generates symbolic jacobian matrix, where der(x) is differentiated w.r.t. x. This matrix can be used to simulate with dasslColorSymJac."));
@@ -1314,7 +1314,7 @@ algorithm
 
   end match;
 end evaluateConfigFlag;
-        
+
 protected function setDebugFlag
   "Enables a debug flag given as a string, or disables it if it's prefixed with -."
   input String inFlag;

@@ -4,8 +4,9 @@
 if true then /* Suppress output */
   setCommandLineOptions("+g=MetaModelica");
   files := {
-    "../Util/MessagePack.mo", // TODO: Add once we bootstrapped omc
-    "../BackEnd/SerializeModelInfo.mo", // TODO: Add once we bootstrapped omc
+    // "../Util/MessagePack.mo", // TODO: Add once we bootstrapped omc, maybe
+    // "../Util/File.mo", // TODO: Add once we bootstrapped omc
+    // "../BackEnd/SerializeModelInfo.mo", // TODO: Add once we bootstrapped omc
     "../FrontEnd/Absyn.mo",
     "../FrontEnd/Algorithm.mo",
     "../FrontEnd/Builtin.mo",
@@ -97,7 +98,7 @@ if true then /* Suppress output */
     "../FrontEnd/UnitParserExt.mo",
     "../FrontEnd/Values.mo",
     "../FrontEnd/ValuesUtil.mo",
-    
+
   // "FFrontEnd";
     "../FFrontEnd/FCore.mo",
     "../FFrontEnd/FExpand.mo",
@@ -130,20 +131,20 @@ if true then /* Suppress output */
     "../BackEnd/DAEQuery.mo",
     "../BackEnd/Differentiate.mo",
     "../BackEnd/DumpHTML.mo",
-	"../BackEnd/EvaluateFunctions.mo",
+    "../BackEnd/EvaluateFunctions.mo",
     "../BackEnd/EvaluateParameter.mo",
     "../BackEnd/ExpressionSolve.mo",
     "../BackEnd/FindZeroCrossings.mo",
     "../BackEnd/HashTableCrSimVars.mo",
-    "../BackEnd/HpcOmBenchmark.mo", 
-    "../BackEnd/HpcOmBenchmarkExt.mo", 
-    "../BackEnd/HpcOmEqSystems.mo", 
-    "../BackEnd/HpcOmScheduler.mo", 
-    "../BackEnd/HpcOmSchedulerExt.mo", 
-    "../BackEnd/HpcOmSimCode.mo", 
-    "../BackEnd/HpcOmTaskGraph.mo",  
+    "../BackEnd/HpcOmBenchmark.mo",
+    "../BackEnd/HpcOmBenchmarkExt.mo",
+    "../BackEnd/HpcOmEqSystems.mo",
+    "../BackEnd/HpcOmScheduler.mo",
+    "../BackEnd/HpcOmSchedulerExt.mo",
+    "../BackEnd/HpcOmSimCode.mo",
+    "../BackEnd/HpcOmTaskGraph.mo",
     "../BackEnd/IndexReduction.mo",
-    "../BackEnd/InlineArrayEquations.mo", 
+    "../BackEnd/InlineArrayEquations.mo",
     "../BackEnd/Initialization.mo",
     "../BackEnd/InlineSolver.mo",
     "../BackEnd/Matching.mo",

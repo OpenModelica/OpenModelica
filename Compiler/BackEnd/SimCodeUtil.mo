@@ -12288,4 +12288,25 @@ algorithm
   b := stringCompare(variableName(v1),variableName(v2)) > 0;
 end compareVariable;
 
+public function equationIndex
+  input SimCode.SimEqSystem eq;
+  output Integer index;
+algorithm
+  index := match eq
+    case SimCode.SES_RESIDUAL(index=index) then index;
+    case SimCode.SES_SIMPLE_ASSIGN(index=index) then index;
+    case SimCode.SES_ARRAY_CALL_ASSIGN(index=index) then index;
+    case SimCode.SES_IFEQUATION(index=index) then index;
+    case SimCode.SES_ALGORITHM(index=index) then index;
+    case SimCode.SES_LINEAR(index=index) then index;
+    case SimCode.SES_NONLINEAR(index=index) then index;
+    case SimCode.SES_MIXED(index=index) then index;
+    case SimCode.SES_WHEN(index=index) then index;
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"SimCode.equationIndex failed"});
+      then fail();
+  end match;
+end equationIndex;
+
 end SimCodeUtil;

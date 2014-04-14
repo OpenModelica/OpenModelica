@@ -53,13 +53,12 @@ template escapeCComments(String stringWithCComments)
 ::= '<%System.stringReplace(System.stringReplace(stringWithCComments, "/*", "(*"), "*/", "*)")%>'
 end escapeCComments;
 
-template translateModel(SimCode simCode)
+template translateModel(SimCode simCode, String guid)
   "Generates C code and Makefile for compiling and running a simulation of a
   Modelica model."
 ::=
   match simCode
   case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
-    let guid = getUUIDStr()
     let target  = simulationCodeTarget()
     let()= textFile(simulationMakefile(target, simCode), '<%fileNamePrefix%>.makefile') // write the makefile first!
 
@@ -70,11 +69,6 @@ template translateModel(SimCode simCode)
     let()= textFileConvertLines(simulationFunctionsFile(fileNamePrefix, modelInfo.functions, sc.externalFunctionIncludes), '<%fileNamePrefix%>_functions.c')
 
     let()= textFile(recordsFile(fileNamePrefix, recordDecls), '<%fileNamePrefix%>_records.c')
-
-    let x = if simulationSettingsOpt then //tests the Option<> for SOME()
-              textFile(simulationInitFile(simCode,guid), '<%fileNamePrefix%>_init.xml')
-    let y = (if stringEq(Config.simCodeTarget(),"JavaScript") then
-              covertTextFileToCLiteral('<%fileNamePrefix%>_init.xml','<%fileNamePrefix%>_init.c'))
 
     let()= textFile(simulationHeaderFile(simCode,guid), '<%fileNamePrefix%>_model.h')
     // adpro: write the main .c file last! Make on windows doesn't seem to realize that
@@ -92,6 +86,17 @@ template translateModel(SimCode simCode)
     ""
   end match
 end translateModel;
+
+template translateInitFile(SimCode simCode, String guid)
+::=
+  match simCode
+  case sc as SIMCODE(__) then
+    let _ = if simulationSettingsOpt then //tests the Option<> for SOME()
+              textFile(simulationInitFile(simCode,guid), '<%fileNamePrefix%>_init.xml')
+    let _ = (if stringEq(Config.simCodeTarget(),"JavaScript") then
+              covertTextFileToCLiteral('<%fileNamePrefix%>_init.xml','<%fileNamePrefix%>_init.c'))
+    ""
+end translateInitFile;
 
 template translateFunctions(FunctionCode functionCode)
   "Generates C code and Makefile for compiling and calling Modelica and

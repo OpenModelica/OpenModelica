@@ -61,7 +61,7 @@ install-python:
 install-openturns: mkbuilddirs
 	(time cp SimulationRuntime/OpenTurns/* $(builddir_share)/omc/scripts/OpenTurns/)
 
-interactive: .testvariables mkbuilddirs boehm-gc fmil msl-external-libs lis Cdaskr CMinpack $(IPOPT_TARGET) msgpack
+interactive: .testvariables mkbuilddirs boehm-gc fmil msl-external-libs lis Cdaskr CMinpack $(IPOPT_TARGET)
 	$(MAKE) -C SimulationRuntime/interactive -f $(defaultMakefileTarget)
 	# Depends on libinteractive.a
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget)
@@ -186,10 +186,10 @@ CMinpack:
 	(cd 3rdParty/CMinpack/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -D CMAKE_AR:String="$(AR)" -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DSHARED_LIBS=$(CMINPACKLIB_SHARED) -DCMAKE_INSTALL_PREFIX:String=../install .. -G $(CMAKE_TARGET))
 	test -f 3rdParty/CMinpack/install/lib*/$(LIBCMINPACKLIB)* || $(MAKE) -C 3rdParty/CMinpack/build
 	test -d 3rdParty/CMinpack/install || $(MAKE) -C 3rdParty/CMinpack/build install
-	test ! `uname` = Darwin || install_name_tool -id @rpath/$(LIBCMINPACKLIB) 3rdParty/CMinpack/install/lib/$(LIBCMINPACKLIB) 
+	test ! `uname` = Darwin || install_name_tool -id @rpath/$(LIBCMINPACKLIB) 3rdParty/CMinpack/install/lib/$(LIBCMINPACKLIB)
 	# copy dll/so to lib/omc/ folders
 	(cp -af 3rdParty/CMinpack/install/lib*/$(LIBCMINPACKLIB)* $(builddir_lib)/omc)
-	# Darwin has to be special always 
+	# Darwin has to be special always
 	(test ! `uname` = Darwin || cp -af 3rdParty/CMinpack/install/lib*/*.dylib $(builddir_lib)/omc)
 
 CMinpack-clean:

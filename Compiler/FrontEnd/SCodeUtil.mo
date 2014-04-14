@@ -90,7 +90,7 @@ algorithm
         // translate given absyn to scode.
         spAbsyn = List.fold(inClasses, translate2, {});
         sp = listReverse(spAbsyn);
-        
+
         // adrpo: note that WE DO NOT NEED to add initial functions to the program
         //        as they are already part of the initialEnv done by Builtin.initialEnv
       then
@@ -1505,6 +1505,7 @@ algorithm
     case(SOME(Absyn.COMMENT(absann,ostr)))
       equation
         ann = Util.applyOption(absann,translateAnnotation);
+        ostr = Util.applyOption(ostr,System.unescapedString);
       then SCode.COMMENT(ann,ostr);
   end match;
 end translateComment;
@@ -2398,9 +2399,9 @@ algorithm
       equation
         {} = Absyn.getCrefFromExp(e, true, true);
       then
-        inBinding; 
+        inBinding;
     // else
-    else NONE();       
+    else NONE();
   end matchcontinue;
 end constantBindingOrNone;
 
@@ -2470,7 +2471,7 @@ algorithm
   outBinding := matchcontinue(inBinding, inCref)
     local
       Absyn.Exp e;
-      list<Absyn.ComponentRef> crlst1, crlst2; 
+      list<Absyn.ComponentRef> crlst1, crlst2;
 
     // if cref is not present keep the binding!
     case (SOME((e, _)),_)
@@ -2479,9 +2480,9 @@ algorithm
         crlst2 = Absyn.removeCrefFromCrefs(crlst1, inCref);
         true = intEq(listLength(crlst1), listLength(crlst2));
       then
-        inBinding; 
+        inBinding;
     // else
-    else NONE();       
+    else NONE();
   end matchcontinue;
 end removeReferenceInBinding;
 
@@ -2566,16 +2567,16 @@ algorithm
       SCode.Comment cmt;
       Absyn.Info info;
       SCode.Element c;
-    
+
     case SCode.CLASS(name = n,restriction = SCode.R_TYPE(),
                      classDef = SCode.ENUMERATION(enumLst=l),cmt=cmt,info = info)
       equation
         c = expandEnumeration(n, l, cmt, info);
       then
         c;
-    
+
     else inElement;
-  
+
   end match;
 end expandEnumerationClass;
 

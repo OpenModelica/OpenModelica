@@ -1,20 +1,21 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Linköping University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
- * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
+ * ACCORDING TO RECIPIENTS CHOICE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköping University, either from the above address,
+ * from OSMC, either from the above address,
  * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
  * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
@@ -22,8 +23,7 @@
  * This program is distributed WITHOUT ANY WARRANTY; without
  * even the implied warranty of  MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
@@ -115,7 +115,7 @@ uniontype SimCode
     String fileNamePrefix;
     //*** a protected section *** not exported to SimCodeTV
     HashTableCrefToSimVar crefToSimVarHT "hidden from typeview - used by cref2simvar() for cref -> SIMVAR lookup available in templates.";
-    Option<HpcOmScheduler.ScheduleSimCode> hpcOmSchedule; 
+    Option<HpcOmScheduler.ScheduleSimCode> hpcOmSchedule;
   end SIMCODE;
 end SimCode;
 
@@ -285,7 +285,7 @@ end Causality;
 
 // TODO: I believe some of these fields can be removed. Check to see what is
 //       used in templates.
-uniontype Function 
+uniontype Function
   "Represents a Modelica or MetaModelica function."
   record FUNCTION
     Absyn.Path name;
@@ -339,14 +339,14 @@ uniontype Function
 end Function;
 
 uniontype RecordDeclaration
-  
+
   record RECORD_DECL_FULL
     String name "struct (record) name ? encoded";
     Option<String> aliasName "alias of struct (record) name ? encoded. Code generators can generate an aliasing typedef using this, and avoid problems when casting a record from one type to another (*(othertype*)(&var)), which only works if you have a lhs value.";
     Absyn.Path defPath "definition path";
     list<Variable> variables "only name and type";
   end RECORD_DECL_FULL;
-  
+
   record RECORD_DECL_DEF
     Absyn.Path path "definition path .. encoded?";
     list<String> fieldNames;
@@ -545,30 +545,30 @@ uniontype Context
   record SIMULATION_CONTEXT
     Boolean genDiscrete;
   end SIMULATION_CONTEXT;
-  
+
   record FUNCTION_CONTEXT
   end FUNCTION_CONTEXT;
-  
+
   record ALGLOOP_CONTEXT
      Boolean genInitialisation;
      Boolean genJacobian;
   end ALGLOOP_CONTEXT;
-  
+
    record JACOBIAN_CONTEXT
    end JACOBIAN_CONTEXT;
- 
+
   record OTHER_CONTEXT
   end OTHER_CONTEXT;
-  
+
   record INLINE_CONTEXT
   end INLINE_CONTEXT;
-  
+
   record PARALLEL_FUNCTION_CONTEXT
   end PARALLEL_FUNCTION_CONTEXT;
-  
+
   record ZEROCROSSINGS_CONTEXT
   end ZEROCROSSINGS_CONTEXT;
-  
+
   record OPTIMIZATION_CONTEXT
   end OPTIMIZATION_CONTEXT;
 end Context;
