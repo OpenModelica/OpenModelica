@@ -908,6 +908,7 @@ algorithm
         printVarList({var});
         eqn = BackendEquation.equationNth0(eqns,e-1);
         printEquationList({eqn});
+        print("\n");
         dumpEqnsSolved2(rest,eqns,vars);
       then
         ();
@@ -918,7 +919,9 @@ algorithm
         printVarList(varlst);
         eqnlst = BackendEquation.getEqns(elst,eqns);
         printEquationList(eqnlst);
+        print("\n");
         dumpEqnsSolved2({comp},eqns,vars);
+        print("\n");
         dumpEqnsSolved2(rest,eqns,vars);
       then
         ();
@@ -929,7 +932,9 @@ algorithm
         printVarList(varlst);
         eqnlst = BackendEquation.getEqns(elst,eqns);
         printEquationList(eqnlst);
+        print("\n");
         print("Jac:\n" +& dumpJacobianStr(jac) +& "\n");
+        print("\n");
         dumpEqnsSolved2(rest,eqns,vars);
       then
         ();
@@ -940,6 +945,7 @@ algorithm
         printVarList(varlst);
         eqn = BackendEquation.equationNth0(eqns,e-1);
         printEquationList({eqn});
+        print("\n");
         dumpEqnsSolved2(rest,eqns,vars);
       then
         ();
@@ -950,6 +956,7 @@ algorithm
         printVarList(varlst);
         eqn = BackendEquation.equationNth0(eqns,e-1);
         printEquationList({eqn});
+        print("\n");
         dumpEqnsSolved2(rest,eqns,vars);
       then
         ();
@@ -960,6 +967,7 @@ algorithm
         printVarList(varlst);
         eqn = BackendEquation.equationNth0(eqns,e-1);
         printEquationList({eqn});
+        print("\n");
         dumpEqnsSolved2(rest,eqns,vars);
       then
         ();
@@ -970,6 +978,7 @@ algorithm
         printVarList(varlst);
         eqn = BackendEquation.equationNth0(eqns,e-1);
         printEquationList({eqn});
+        print("\n");
         dumpEqnsSolved2(rest,eqns,vars);
       then
         ();
@@ -980,6 +989,7 @@ algorithm
         printVarList(varlst);
         eqn = BackendEquation.equationNth0(eqns,e-1);
         printEquationList({eqn});
+        print("\n");
         dumpEqnsSolved2(rest,eqns,vars);
       then
         ();
@@ -993,10 +1003,13 @@ algorithm
         printVarList(varlst);
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
         printVarList(varlst);
+        print("\n");
         eqnlst = BackendEquation.getEqns(elst1,eqns);
         printEquationList(eqnlst);
+        print("\n");
         eqnlst = BackendEquation.getEqns(elst,eqns);
         printEquationList(eqnlst);
+        print("\n");
         dumpEqnsSolved2(rest,eqns,vars);
       then
         ();
