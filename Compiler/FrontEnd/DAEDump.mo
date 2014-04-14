@@ -721,7 +721,9 @@ algorithm
       String cmt;
 
     case SOME(SCode.COMMENT(comment = SOME(cmt)))
-      then stringAppendList({" \"", System.escapedString(cmt,true), "\""});
+      equation
+        cmt = System.escapedString(cmt,true);
+      then stringAppendList({" \"", cmt, "\""});
 
     else "";
 
