@@ -655,6 +655,8 @@ void LineAnnotation::updateConnectionAnnotation()
   OMCProxy *pOMCProxy = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
   pOMCProxy->updateConnection(getStartComponentName(), getEndComponentName(),
                               mpGraphicsView->getModelWidget()->getLibraryTreeNode()->getNameStructure(), annotationString);
+  // make the model modified
+  mpGraphicsView->getModelWidget()->setModelModified();
 }
 
 void LineAnnotation::duplicate()
