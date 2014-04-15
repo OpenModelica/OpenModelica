@@ -52,7 +52,7 @@ typedef integer* f2c_integer_ptr;
 #define omc_dummyVarInfo {-1,"","",omc_dummyFileInfo}
 #define omc_dummyEquationInfo {-1,0,"",-1,NULL}
 #define omc_dummyFunctionInfo {-1,"",omc_dummyFileInfo}
-#define omc_dummyRealAttribute {"","","",DBL_MAX,DBL_MIN,0,0,1.0,0,0.0} 
+#define omc_dummyRealAttribute {"","","",DBL_MAX,DBL_MIN,0,0,1.0,0,0.0}
 
 #if defined(_MSC_VER)
 #define set_struct(TYPE, x, info) { const TYPE tmp = info; x = tmp; }
@@ -76,9 +76,8 @@ typedef struct EQUATION_INFO
 {
   int id;
   int profileBlockIndex;
-  const char *name;
   int numVar;
-  VAR_INFO** vars;
+  const char **vars;
 }EQUATION_INFO;
 
 typedef struct FUNCTION_INFO
@@ -154,7 +153,7 @@ typedef struct ANALYTIC_JACOBIAN
  * extern input for dassl and optimization
  *
  */
-typedef struct EXTERNAL_INPUT 
+typedef struct EXTERNAL_INPUT
 {
     modelica_boolean active;
     modelica_real** u;
@@ -522,7 +521,7 @@ typedef struct SIMULATION_INFO
   double tStart;
   RINGBUFFER **delayStructure;
   const char *OPENMODELICAHOME;
-  
+
   CHATTERING_INFO chatteringInfo;
 } SIMULATION_INFO;
 

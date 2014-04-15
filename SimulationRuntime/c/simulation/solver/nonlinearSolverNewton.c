@@ -248,8 +248,9 @@ int solveNewton(DATA *data, int sysNumber)
   /* debug output */
   if(ACTIVE_STREAM(LOG_NLS))
   {
-    infoStreamPrint(LOG_NLS, 1, "Start solving Non-Linear System %s at time %g with Newton Solver",
-        modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber).name,
+    int indexes[2] = {1,eqSystemNumber};
+    infoStreamPrintWithEquationIndexes(LOG_NLS, 1, indexes, "Start solving Non-Linear System %d at time %g with Newton Solver",
+        eqSystemNumber,
         data->localData[0]->timeValue);
 
     for(i = 0; i < solverData->n; i++)

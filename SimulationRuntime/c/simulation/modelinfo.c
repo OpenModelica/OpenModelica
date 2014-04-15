@@ -213,7 +213,7 @@ static void printProfileBlocks(FILE *fout, FILE *plt, const char *plotFormat, DA
   int i;
   for(i = data->modelData.modelDataXml.nFunctions; i < data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks; i++) {
     const struct EQUATION_INFO eq = modelInfoXmlGetEquationIndexByProfileBlock(&data->modelData.modelDataXml, i-data->modelData.modelDataXml.nFunctions);
-    printPlotCommand(plt, plotFormat, eq.name, data->modelData.modelFilePrefix, data->modelData.modelDataXml.nFunctions+data->modelData.modelDataXml.nProfileBlocks, i, eq.id, "eq");
+    printPlotCommand(plt, plotFormat, "equation", data->modelData.modelFilePrefix, data->modelData.modelDataXml.nFunctions+data->modelData.modelDataXml.nProfileBlocks, i, eq.id, "eq");
     rt_clear(i + SIM_TIMER_FIRST_FUNCTION);
     indent(fout,2);fprintf(fout, "<profileblock>\n");
     indent(fout,4);fprintf(fout, "<ref refid=\"eq%d\"/>\n", (int) eq.id);
@@ -227,7 +227,7 @@ static void printProfileBlocks(FILE *fout, FILE *plt, const char *plotFormat, DA
 static void printEquations(FILE *fout, int n, MODEL_DATA_XML *xml) {
   int i,j;
   for(i=0; i<n; i++) {
-    indent(fout,2);fprintf(fout, "<equation id=\"eq%d\" name=\"", modelInfoXmlGetEquation(xml,i).id);printStrXML(fout,modelInfoXmlGetEquation(xml,i).name);fprintf(fout,"\">\n");
+    indent(fout,2);fprintf(fout, "<equation id=\"eq%d\">\n", modelInfoXmlGetEquation(xml,i).id);
     indent(fout,4);fprintf(fout, "<refs>\n");
     for(j=0; j<modelInfoXmlGetEquation(xml,i).numVar; j++) {
       indent(fout,6);fprintf(fout, "<ref refid=\"var%d\" />\n", 0 /* modelInfoXmlGetEquation(xml,i).vars[j]->id */);
@@ -257,16 +257,16 @@ static void printProfilingDataHeader(FILE *fout, DATA *data) {
     indent(fout, 4); fprintf(fout, "<uint32>");printStrXML(fout,name);fprintf(fout, " (calls)</uint32>\n");
   }
   for(i = 0; i < data->modelData.modelDataXml.nProfileBlocks; i++) {
-    const char *name = modelInfoXmlGetEquationIndexByProfileBlock(&data->modelData.modelDataXml,i).name;
-    indent(fout, 4); fprintf(fout, "<uint32>");printStrXML(fout,name);fprintf(fout, " (calls)</uint32>\n");
+    int id = modelInfoXmlGetEquationIndexByProfileBlock(&data->modelData.modelDataXml,i).id;
+    indent(fout, 4); fprintf(fout, "<uint32>Equation %d (calls)</uint32>\n", id);
   }
   for(i = 0; i < data->modelData.modelDataXml.nFunctions; i++) {
     const char *name = modelInfoXmlGetFunction(&data->modelData.modelDataXml,i).name;
     indent(fout, 4); fprintf(fout, "<double>");printStrXML(fout,name);fprintf(fout, " (cpu time)</double>\n");
   }
   for(i = 0; i < data->modelData.modelDataXml.nProfileBlocks; i++) {
-    const char *name = modelInfoXmlGetEquationIndexByProfileBlock(&data->modelData.modelDataXml,i).name;
-    indent(fout, 4); fprintf(fout, "<double>");printStrXML(fout,name);fprintf(fout, " (cpu time)</double>\n");
+    int id = modelInfoXmlGetEquationIndexByProfileBlock(&data->modelData.modelDataXml,i).id;
+    indent(fout, 4); fprintf(fout, "<double>Equation %d (cpu time)</double>\n", id);
   }
   indent(fout, 2); fprintf(fout, "</format>\n");
 }

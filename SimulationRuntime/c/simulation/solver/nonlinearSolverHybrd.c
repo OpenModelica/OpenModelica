@@ -212,7 +212,7 @@ static void printStatus(DATA *data, DATA_HYBRD *solverData, int eqSystemNumber, 
   for(i=0; i<solverData->n; i++)
     infoStreamPrint(logLevel, 0, "[%ld] %s  = %.20e\n - scaling factor internal = %.16e\n"
                     " - scaling factor external = %.16e", i+1,
-                    modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber).vars[i]->name,
+                    modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber).vars[i],
                     solverData->x[i], solverData->diag[i], solverData->xScalefactors[i]);
   messageClose(logLevel);
 
@@ -263,7 +263,7 @@ static int getNumericalJacobian(struct dataAndSys* dataAndSysNum, double* jac, c
     deltaInv = 1. / delta_hh;
     solverData->xSave[i] = x[i] + delta_hh;
 
-    infoStreamPrint(LOG_NLS_JAC, 0, "%d. %s = %f (delta_hh = %f)", i+1, modelInfoXmlGetEquation(&dataSys->data->modelData.modelDataXml,systemData->equationIndex).vars[i]->name, solverData->xSave[i], delta_hh);
+    infoStreamPrint(LOG_NLS_JAC, 0, "%d. %s = %f (delta_hh = %f)", i+1, modelInfoXmlGetEquation(&dataSys->data->modelData.modelDataXml,systemData->equationIndex).vars[i], solverData->xSave[i], delta_hh);
     wrapper_fvec_hybrj(&solverData->n, (const double*) solverData->xSave, solverData->fvecSave, solverData->fjacobian, &solverData->ldfjac, &iflag, dataSys);
 
     for(j = 0; j < solverData->n; ++j)
@@ -471,12 +471,11 @@ int solveHybrd(DATA *data, int sysNumber)
   /* debug output */
   if(ACTIVE_STREAM(LOG_NLS_V))
   {
-    infoStreamPrint(LOG_NLS_V, 1, "start solving non-linear system >>%s<< at time %g",
-        modelInfoXmlGetEquation(&data->modelData.modelDataXml, eqSystemNumber).name,
-        data->localData[0]->timeValue);
+    int indexes[2] = {1,eqSystemNumber};
+    infoStreamPrintWithEquationIndexes(LOG_NLS_V, 1, indexes, "start solving non-linear system >>%d<< at time %g", eqSystemNumber, data->localData[0]->timeValue);
     for(i=0; i<solverData->n; i++)
     {
-      infoStreamPrint(LOG_NLS_V, 1, "%d. %s = %f", i+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber).vars[i]->name, systemData->nlsx[i]);
+      infoStreamPrint(LOG_NLS_V, 1, "%d. %s = %f", i+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber).vars[i], systemData->nlsx[i]);
       infoStreamPrint(LOG_NLS_V, 0, "    nominal = %f\nold = %f\nextrapolated = %f",
           systemData->nominal[i], systemData->nlsxOld[i], systemData->nlsxExtrapolation[i]);
       messageClose(LOG_NLS_V);
@@ -736,11 +735,12 @@ int solveHybrd(DATA *data, int sysNumber)
       nfunc_evals += solverData->nfev;
       if(ACTIVE_STREAM(LOG_NLS))
       {
+        int indexes[2] = {1,eqSystemNumber};
         /* output solution */
-        infoStreamPrint(LOG_NLS, 1, "solution for %s at t=%g", modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber).name, data->localData[0]->timeValue);
+        infoStreamPrintWithEquationIndexes(LOG_NLS, 1, indexes, "solution for NLS %d at t=%g", eqSystemNumber, data->localData[0]->timeValue);
         for(i=0; i<solverData->n; ++i)
         {
-          infoStreamPrint(LOG_NLS, 0, "[%d] %s = %g", i+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber).vars[i]->name,  solverData->x[i]);
+          infoStreamPrint(LOG_NLS, 0, "[%d] %s = %g", i+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber).vars[i],  solverData->x[i]);
         }
         messageClose(LOG_NLS);
       }else if (ACTIVE_STREAM(LOG_NLS_V)){

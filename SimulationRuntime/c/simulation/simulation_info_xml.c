@@ -39,6 +39,9 @@
 #include <string.h>
 #include "uthash.h"
 #include <stdio.h>
+#include "util/rtclock.h"
+
+#if 1
 
 typedef struct {
   MODEL_DATA_XML *xml;
@@ -58,7 +61,7 @@ static hash_variable *variables = NULL;
 static VAR_INFO var_info;
 static FILE_INFO file_info;
 static int maxVarsBuffer = 0;
-static VAR_INFO *varsBuffer = 0;
+static const char **varsBuffer = 0;
 
 static void add_variable(VAR_INFO vi)
 {
@@ -90,14 +93,14 @@ static void XMLCALL startElement(void *voidData, const char *name, const char **
     if(varsBuffer == 0 || maxVarsBuffer == 0)
     {
       maxVarsBuffer = 32;
-      varsBuffer = (VAR_INFO*) malloc(sizeof(VAR_INFO)*maxVarsBuffer);
+      varsBuffer = (const char**) malloc(sizeof(const char*)*maxVarsBuffer);
     }
     else if(userData->xml->equationInfo[userData->curIndex].numVar+2 >= maxVarsBuffer)
     {
       maxVarsBuffer *= 2;
-      varsBuffer = realloc(varsBuffer, sizeof(VAR_INFO)*maxVarsBuffer);
+      varsBuffer = realloc(varsBuffer, sizeof(const char*)*maxVarsBuffer);
     }
-    varsBuffer[userData->xml->equationInfo[userData->curIndex].numVar++] = *findVariable(attr[1]);
+    varsBuffer[userData->xml->equationInfo[userData->curIndex].numVar++] = attr[1];
     return;
   }
   if(0==strcmp("info", name))
@@ -154,7 +157,6 @@ static void XMLCALL startElement(void *voidData, const char *name, const char **
     }
     userData->xml->equationInfo[userData->curIndex].id = userData->curIndex;
     userData->xml->equationInfo[userData->curIndex].profileBlockIndex = -1; /* TODO: Set when parsing other tags */
-    userData->xml->equationInfo[userData->curIndex].name = "SOME NICE EQUATION NAME (to be set a little later)"; /* TODO: Set when parsing other tags */
     userData->xml->equationInfo[userData->curIndex].numVar = 0; /* TODO: Set when parsing other tags */
     userData->xml->equationInfo[userData->curIndex].vars = NULL; /* Set when parsing other tags (on close). */
     return;
@@ -200,12 +202,10 @@ static void XMLCALL endElement(void *voidData, const char *name)
   if(0 == strcmp("equation", name))
   {
     int i;
-    userData->xml->equationInfo[userData->curIndex].vars = (VAR_INFO**) malloc(sizeof(VAR_INFO*)*userData->xml->equationInfo[userData->curIndex].numVar);
+    userData->xml->equationInfo[userData->curIndex].vars = (const char**) malloc(sizeof(const char*)*userData->xml->equationInfo[userData->curIndex].numVar);
     for(i=0; i<userData->xml->equationInfo[userData->curIndex].numVar; i++)
     {
-      VAR_INFO *var = (VAR_INFO*) malloc(sizeof(VAR_INFO));
-      *var = varsBuffer[i];
-      userData->xml->equationInfo[userData->curIndex].vars[i] = var;
+      userData->xml->equationInfo[userData->curIndex].vars[i] = strdup(varsBuffer[i]);
     }
     userData->curIndex++;
 
@@ -213,14 +213,12 @@ static void XMLCALL endElement(void *voidData, const char *name)
   }
   if(0 == strcmp("linear", name))
   {
-    asprintf((char**)&userData->xml->equationInfo[userData->curIndex].name, "Linear function (index %ld, size %d)", userData->curIndex, userData->xml->equationInfo[userData->curIndex].numVar);
     userData->xml->equationInfo[userData->curIndex].profileBlockIndex = userData->curProfileIndex;
     userData->curProfileIndex++;
     return;
   }
   if(0 == strcmp("nonlinear", name))
   {
-    asprintf((char**)&userData->xml->equationInfo[userData->curIndex].name, "Nonlinear function (residualFunc%ld, size %d)", userData->curIndex, userData->xml->equationInfo[userData->curIndex].numVar);
     userData->xml->equationInfo[userData->curIndex].profileBlockIndex = userData->curProfileIndex;
     userData->curProfileIndex++;
     return;
@@ -264,7 +262,6 @@ void modelInfoXmlInit(MODEL_DATA_XML* xml)
   xml->equationInfo = (EQUATION_INFO*) calloc(1+xml->nEquations, sizeof(EQUATION_INFO));
   xml->equationInfo[0].id = 0;
   xml->equationInfo[0].profileBlockIndex = -1;
-  xml->equationInfo[0].name = "Dummy equation so we can index from 1";
   xml->equationInfo[0].numVar = 0;
   xml->equationInfo[0].vars = NULL;
   XML_SetUserData(parser, (void*) &userData);
@@ -345,3 +342,283 @@ void freeModelInfoXml(MODEL_DATA_XML* xml)
     xml->equationInfo = 0;
   }
 }
+
+#else
+/* JSON */
+
+#if !defined(HAVE_MMAP)
+#if defined(unix)
+#include <unistd.h>
+#endif
+#if _POSIX_MAPPED_FILES>0
+#define HAVE_MMAP 1
+#else
+#define HAVE_MMAP 0
+#endif
+#endif
+
+#if HAVE_MMAP
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <unistd.h>
+#endif
+
+#include "string_util.h"
+
+static inline const char* skipSpace(const char* str)
+{
+  do {
+    switch (*str) {
+    case '\0': return str;
+    case ' ':
+    case '\n':
+    case '\r':
+     str++;
+     break;
+    default: return str;
+    }
+  } while (1);
+}
+
+static const char* skipValue(const char* str);
+
+static inline const char* skipObjectRest(const char* str, int first)
+{
+  str=skipSpace(str);
+  while (*str != '}') {
+    if (!first) {
+      if (*str != ',') {
+        throwStreamPrint(NULL, "JSON object expected ',' or '}', got: %.20s\n", str);
+      }
+      str++;
+    } else {
+      first = 0;
+    }
+    str = skipValue(str);
+    str = skipSpace(str);
+    if (*str++ != ':') {
+      throwStreamPrint(NULL, "JSON object expected ':', got: %.20s\n", str);
+    }
+    str = skipValue(str);
+    str = skipSpace(str);
+  }
+  return str+1;
+}
+
+static const char* skipValue(const char* str)
+{
+  str = skipSpace(str);
+  switch (*str) {
+  case '{':
+  {
+    str = skipObjectRest(str+1,1);
+    return str;
+  }
+  case '[':
+  {
+    int first = 1;
+    str = skipSpace(str+1);
+    while (*str != ']') {
+      if (!first && *str++ != ',') {
+        throwStreamPrint(NULL, "JSON array expected ',' or ']', got: %.20s\n", str);
+      }
+      first = 0;
+      str = skipValue(str);
+      str = skipSpace(str);
+    }
+    return str+1;
+  }
+  case '"':
+    str++;
+    do {
+      switch (*str) {
+      case '\0': throwStreamPrint(NULL, "Found end of file, expected end of string");
+      case '\\':
+        if (str+1 == '\0') {
+          throwStreamPrint(NULL, "Found end of file, expected end of string");
+        }
+        str+=2;
+        break;
+      case '"':
+        return str+1;
+      default:
+        str++;
+      }
+    } while (1);
+    abort();
+  case '-':
+  case '0':
+  case '1':
+  case '2':
+  case '3':
+  case '4':
+  case '5':
+  case '6':
+  case '7':
+  case '8':
+  case '9':
+  {
+    char *endptr = NULL;
+    double d = om_strtod(str,&endptr);
+    if (str == endptr) {
+      throwStreamPrint(NULL, "Not a number, got %.20s\n", str);
+    }
+    return endptr;
+  }
+  default:
+    throwStreamPrint(NULL, "JSON value expected, got: %.20s\n", str);
+  }
+}
+
+/* Does not work for escaped strings. Returns the rest of the string to parse. */
+static inline const char* assertStringValue(const char *str, const char *value)
+{
+  int len = strlen(value);
+  str = skipSpace(str);
+  if ('\"' != *str || strncmp(str+1,value,len) || str[len+1] != '\"') {
+    throwStreamPrint(NULL, "JSON string value %s expected, got: %.20s\n", value, str);
+  }
+  return str + len + 2;
+}
+
+static inline const char* assertChar(const char *str, char c)
+{
+  str = skipSpace(str);
+  if (c != *str) {
+    throwStreamPrint(NULL, "Expected '%c', got: %.20s\n", c, str);
+  }
+  return str + 1;
+}
+
+static inline const char* assertNumber(const char *str, double expected)
+{
+  char *endptr = NULL;
+  double d;
+  str = skipSpace(str);
+  d = om_strtod(str, &endptr);
+  if (str == endptr) {
+    throwStreamPrint(NULL, "Expected number, got: %.20s\n", str);
+  }
+  if (d != expected) {
+    throwStreamPrint(NULL, "Got number %f, expected: %f\n", d, expected);
+  }
+  return endptr;
+}
+
+static const char* readEquation(const char *str,EQUATION_INFO *xml,int i)
+{
+  str=assertChar(str,'{');
+  str=assertStringValue(str,"eqIndex");
+  str=assertChar(str,':');
+  str=assertNumber(str,i);
+  str=skipObjectRest(str,0);
+  return str;
+}
+
+static const char* readEquations(const char *str,MODEL_DATA_XML *xml)
+{
+  int i;
+  str=assertChar(str,'[');
+  for (i=1; i<xml->nEquations; i++) {
+    str = readEquation(str,xml->equationInfo+i,i);
+    /* TODO: Odd, it seems there is 1 fewer equation than expected... */
+    if (i != xml->nEquations-1) {
+      str=assertChar(str,',');
+    }
+  }
+  str=assertChar(str,']');
+  return str;
+}
+
+static void readInfoXml(const char *str,MODEL_DATA_XML *xml)
+{
+  str=assertChar(str,'{');
+  str=assertStringValue(str,"format");
+  str=assertChar(str,':');
+  str=assertStringValue(str,"OpenModelica debug info");
+  str=assertChar(str,',');
+  str=assertStringValue(str,"version");
+  str=assertChar(str,':');
+  str=assertChar(str,'1');
+  str=assertChar(str,',');
+  str=assertStringValue(str,"info");
+  str=assertChar(str,':');
+  str=skipValue(str);
+  str=assertChar(str,',');
+  str=assertStringValue(str,"variables");
+  str=assertChar(str,':');
+  str=skipValue(str);
+  str=assertChar(str,',');
+  str=assertStringValue(str,"equations");
+  str=assertChar(str,':');
+  str=readEquations(str,xml);
+  str=assertChar(str,'}');
+}
+
+void modelInfoXmlInit(MODEL_DATA_XML* xml)
+{
+  rt_tick(0);
+  if(!xml->infoXMLData) {
+    struct stat s;
+    int fd;
+    int len = strlen(xml->fileName);
+    char *fileName = malloc(len + 2);
+    assert(len > 4);
+    strcpy(fileName, xml->fileName);
+    strcpy(fileName+len-3, "json");
+    fd = open(fileName, O_RDONLY);
+    free(fileName);
+    fileName = (char*) xml->fileName;
+    if (fd < 0) {
+      throwStreamPrint(NULL, "Failed to open file %s for reading: %s\n", fileName, strerror(errno));
+    }
+    if (fstat(fd, &s) < 0) {
+      close(fd);
+      throwStreamPrint(NULL, "fstat %s failed: %s\n", fileName, strerror(errno));
+    }
+    xml->infoXMLData = (char*) mmap(0, s.st_size, PROT_READ, MAP_SHARED, fd, 0);
+    if (xml->infoXMLData == MAP_FAILED) {
+      close(fd);
+      throwStreamPrint(NULL, "mmap(file=\"%s\",fd=%d,size=%ld kB) failed: %s\n", fileName, fd, (long) s.st_size, strerror(errno));
+    }
+    close(fd);
+    fprintf(stderr, "Loaded the JSON (%ld kB)...\n", (long) (s.st_size+1023)/1024);
+  }
+
+  xml->equationInfo = (EQUATION_INFO*) calloc(1+xml->nEquations, sizeof(EQUATION_INFO));
+  xml->equationInfo[0].id = 0;
+  xml->equationInfo[0].profileBlockIndex = -1;
+  xml->equationInfo[0].numVar = 0;
+  xml->equationInfo[0].vars = NULL;
+
+  fprintf(stderr, "Loaded the JSON file in %fms...\n", rt_tock(0) * 1000.0);
+  // fprintf(stderr, "Parse the JSON %s\n", xml->infoXMLData);
+  fprintf(stderr, "Parse the JSON %ld...\n", (long) xml->infoXMLData);
+  readInfoXml(xml->infoXMLData, xml);
+  fprintf(stderr, "Parsed the JSON in %fms...\n", rt_tock(0) * 1000.0);
+  EXIT(1);
+}
+
+FUNCTION_INFO modelInfoXmlGetFunction(MODEL_DATA_XML* xml, size_t ix)
+{
+  abort();
+}
+
+EQUATION_INFO modelInfoXmlGetEquation(MODEL_DATA_XML* xml, size_t ix)
+{
+  abort();
+}
+
+EQUATION_INFO modelInfoXmlGetEquationIndexByProfileBlock(MODEL_DATA_XML* xml, size_t ix)
+{
+  abort();
+}
+
+void freeModelInfoXml(MODEL_DATA_XML* xml)
+{
+  munmap((void*)xml->infoXMLData, /* TODO: Improve performance */ strlen(xml->infoXMLData));
+}
+
+#endif

@@ -149,9 +149,7 @@ int check_mixed_solutions(DATA *data, int printFailingSystems)
       retVal = 1;
       if(printFailingSystems && ACTIVE_WARNING_STREAM(LOG_NLS))
       {
-        warningStreamPrint(LOG_NLS, 1, "mixed system fails: %s at t=%g", modelInfoXmlGetEquation(&data->modelData.modelDataXml, system->equationIndex).name, data->localData[0]->timeValue);
-        for(j=0; j<modelInfoXmlGetEquation(&data->modelData.modelDataXml, system->equationIndex).numVar; ++j)
-          warningStreamPrint(LOG_NLS, 0, "[%d] %s", j+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml, system->equationIndex).vars[j]->name);
+        warningStreamPrint(LOG_NLS, 1, "mixed system fails: %d at t=%g", modelInfoXmlGetEquation(&data->modelData.modelDataXml, system->equationIndex).id, data->localData[0]->timeValue);
         messageClose(LOG_NLS);
       }
     }
