@@ -294,7 +294,7 @@ void modelInfoXmlInit(MODEL_DATA_XML* xml)
     }
   }
   assert(xml->nEquations == userData.curIndex);
-  assert(xml->nProfileBlocks = userData.curProfileIndex);
+  assert(xml->nProfileBlocks == userData.curProfileIndex);
   assert(xml->nFunctions == userData.curFunctionIndex);
 }
 
