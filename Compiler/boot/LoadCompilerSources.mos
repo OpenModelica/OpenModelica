@@ -6,7 +6,7 @@ if true then /* Suppress output */
   files := {
     // "../Util/MessagePack.mo", // TODO: Add once we bootstrapped omc, maybe
     "../Util/File.mo", // TODO: Add once we bootstrapped omc
-    "../BackEnd/SerializeModelInfo.mo", // TODO: Add once we bootstrapped omc
+    // "../BackEnd/SerializeModelInfo.mo", // TODO: Add once we bootstrapped omc
     "../FrontEnd/Absyn.mo",
     "../FrontEnd/Algorithm.mo",
     "../FrontEnd/Builtin.mo",
