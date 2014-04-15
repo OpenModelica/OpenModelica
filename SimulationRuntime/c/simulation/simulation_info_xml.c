@@ -245,7 +245,7 @@ void modelInfoXmlInit(MODEL_DATA_XML* xml)
 {
   FILE* file = NULL;
   XML_Parser parser = NULL;
-  void* userData[4] = {xml, (void*)1, (void*)0, (void*)0};
+  userData_t userData = {xml, 1, 0, 0};
   if(!xml->infoXMLData)
   {
     file = fopen(xml->fileName, "r");
@@ -267,7 +267,7 @@ void modelInfoXmlInit(MODEL_DATA_XML* xml)
   xml->equationInfo[0].name = "Dummy equation so we can index from 1";
   xml->equationInfo[0].numVar = 0;
   xml->equationInfo[0].vars = NULL;
-  XML_SetUserData(parser, userData);
+  XML_SetUserData(parser, (void*) &userData);
   XML_SetElementHandler(parser, startElement, endElement);
   if(!xml->infoXMLData)
   {
@@ -293,10 +293,11 @@ void modelInfoXmlInit(MODEL_DATA_XML* xml)
       throwStreamPrint(NULL, "%s: Error: failed to read the XML data %s: %s at line %lu", __FILE__, xml->infoXMLData, err, line);
     }
   }
-  assert(xml->nEquations == (long) userData[1]);
-  xml->nProfileBlocks = (long) userData[2];
-  assert(xml->nFunctions == (long) userData[3]);
+  assert(xml->nEquations == userData.curIndex);
+  assert(xml->nProfileBlocks = userData.curProfileIndex);
+  assert(xml->nFunctions == userData.curFunctionIndex);
 }
+
 EQUATION_INFO modelInfoXmlGetEquation(MODEL_DATA_XML* xml, size_t ix)
 {
   if(xml->equationInfo == NULL)
