@@ -29,21 +29,7 @@
  *
  */
 
-encapsulated package HashSet "
-  This file is an extension to OpenModelica.
-
-  Copyright (c) 2007 MathCore Engineering AB
-
-  All rights reserved.
-
-  file:        HashSet.mo
-  package:     HashSet
-  description: DAE.CR to Integer
-
-  RCS: $Id: HashSet.mo 8796 2011-05-03 19:43:08Z adrpo $
-
-  "
-
+encapsulated package HashSet
 /* Below is the instance specific code. For each hashset the user must define:
 
 Key       - The key used to uniquely define elements in a hashset

@@ -29,22 +29,11 @@
  *
  */
 
-encapsulated package UnitParserExt "
-  Copyright MathCore engineering AB 2008-2009
-
-  file:        UnitParserExt.mo
-  package:     UnitParserExt
-  description: Physical unit checking.
-
-  RCS: $Id$
-"
-
-
+encapsulated package UnitParserExt
 
 public function initSIUnits "initialize the UnitParser with the SI units"
   external "C" UnitParserExtImpl__initSIUnits() annotation(Library = {"omcruntime","lpsolve55"});
 end initSIUnits;
-
 
 public function unit2str"Translate a unit to a string"
   input list<Integer> noms "nominators";

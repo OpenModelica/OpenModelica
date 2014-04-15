@@ -29,20 +29,7 @@
  *
  */
 
-encapsulated package HashTableCrILst "
-  This file is an extension to OpenModelica.
-
-  Copyright (c) 2007 MathCore Engineering AB
-
-  All rights reserved.
-
-  file:        HashTableCrILst.mo
-  package:     HashTableCrILst
-  description: DAE.CR to list<Integer>
-
-  RCS: $Id: HashTableCrILst.mo 8796 2011-05-03 19:43:08Z adrpo $
-
-  "
+encapsulated package HashTableCrILst
 
 /* Below is the instance specific code. For each hashtable the user must define:
 

@@ -29,20 +29,7 @@
  *
  */
 
-encapsulated package HashTableStringToPath "
-  This file is an extension to OpenModelica.
-
-  Copyright (c) 2007 MathCore Engineering AB
-
-  All rights reserved.
-
-  file:        HashTableStringToPath.mo
-  package:     HashTableStringToPath
-  description: String to Path
-
-  RCS: $Id$
-
-  "
+encapsulated package HashTableStringToPath
 
 /* Below is the instance specific code. For each hashtable the user must define:
 

@@ -29,20 +29,7 @@
  *
  */
 
-encapsulated package HashTable6 "
-  This file is an extension to OpenModelica.
-
-  Copyright (c) 2007 MathCore Engineering AB
-
-  All rights reserved.
-
-  file:        HashTable6.mo
-  package:     HashTable6
-  description: (DAE.CR,DAE.CR) to DAE.Exp
-
-  RCS: $Id$
-
-  "
+encapsulated package HashTable6
 
 /* Below is the instance specific code. For each hashtable the user must define:
 

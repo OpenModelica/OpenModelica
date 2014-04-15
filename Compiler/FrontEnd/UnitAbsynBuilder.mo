@@ -29,19 +29,8 @@
  *
  */
 
-encapsulated package UnitAbsynBuilder " Copyright MathCore Engineering AB 2008-2009
-  Author: Peter Aronsson (peter.aronsson@mathcore.com)
+encapsulated package UnitAbsynBuilder
 
-  file:        UnitAbsynBuilder.mo
-  package:     UnitAbsynBuilder
-  description: Physical unit checking.
-
-  RCS: $Id$
-
-  This module contains functions for building UnitAbsyn terms that are used for building constraint equations
-  for unit checker module
-
-"
 public import UnitAbsyn;
 public import DAE;
 public import MMath;

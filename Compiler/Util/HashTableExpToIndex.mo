@@ -29,20 +29,7 @@
  *
  */
 
-encapsulated package HashTableExpToIndex "
-  This file is an extension to OpenModelica.
-
-  Copyright (c) 2007 MathCore Engineering AB
-
-  All rights reserved.
-
-  file:        HashTableExpToIndex.mo
-  package:     HashTableExpToIndex
-  description: DAE.Exp to Integer
-
-  RCS: $Id$
-
-  "
+encapsulated package HashTableExpToIndex
 
 /* Below is the instance specific code. For each hashtable the user must define:
 

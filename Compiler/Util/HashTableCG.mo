@@ -29,20 +29,7 @@
  *
  */
 
-encapsulated package HashTableCG "
-  This file is an extension to OpenModelica.
-
-  Copyright (c) 2007 MathCore Engineering AB
-
-  All rights reserved.
-
-  file:        HashTableCG.mo
-  package:     HashTableCG
-  description: DAE.CR to DAE.CR
-
-  RCS: $Id$
-
-  "
+encapsulated package HashTableCG
 
 /* Below is the instance specific code. For each hashtable the user must define:
 

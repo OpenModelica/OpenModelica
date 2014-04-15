@@ -29,20 +29,7 @@
  *
  */
 
-encapsulated package HashTablePathToFunction "
-  This file is an extension to OpenModelica.
-
-  Copyright (c) 2007 MathCore Engineering AB
-
-  All rights reserved.
-
-  file:        HashTablePathToFunction.mo
-  package:     HashTablePathToFunction
-  description: Absyn.Path to NFInstTypes.Function
-
-  RCS: $Id$
-
-  "
+encapsulated package HashTablePathToFunction
 
 /* Below is the instance specific code. For each hashtable the user must define:
 

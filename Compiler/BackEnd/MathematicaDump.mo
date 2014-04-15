@@ -29,7 +29,7 @@
  *
  */
 
-encapsulated package MathematicaDump "Copyright (C) MathCore Engineering AB, 2005 "
+encapsulated package MathematicaDump
 
   import BackendDAE;
   import BackendVariable;

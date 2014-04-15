@@ -29,20 +29,7 @@
  *
  */
 
-encapsulated package HashTable4 "
-  This file is an extension to OpenModelica.
-
-  Copyright (c) 2007 MathCore Engineering AB
-
-  All rights reserved.
-
-  file:        HashTable4.mo
-  package:     HashTable4
-  description: DAE.Exp to DAE.CR
-
-  RCS: $Id$
-
-  "
+encapsulated package HashTable4
 
 /* Below is the instance specific code. For each hashtable the user must define:
 

@@ -29,20 +29,7 @@
  *
  */
 
-encapsulated package HashTableCrIntToExp "
-  This file is an extension to OpenModelica.
-
-  Copyright (c) 2007 MathCore Engineering AB
-
-  All rights reserved.
-
-  file:        HashTableCrIntToExp.mo
-  package:     HashTableCrIntToExp
-  description: (DAE.CR,DAE.CR) to DAE.Exp
-
-  RCS: $Id: HashTableCrIntToExp.mo 8796 2011-05-03 19:43:08Z adrpo $
-
-  "
+encapsulated package HashTableCrIntToExp
 
 /* Below is the instance specific code. For each hashtable the user must define:
 

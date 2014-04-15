@@ -29,20 +29,7 @@
  *
  */
 
-encapsulated package HashTable5 "
-  This file is an extension to OpenModelica.
-
-  Copyright (c) 2007 MathCore Engineering AB
-
-  All rights reserved.
-
-  file:        HashTable5.mo
-  package:     HashTable5
-  description: Absyn.CR to Integer
-
-  RCS: $Id$
-
-  "
+encapsulated package HashTable5
 
 /* Below is the instance specific code. For each hashtable the user must define:
 
