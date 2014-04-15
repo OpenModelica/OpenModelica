@@ -8,7 +8,7 @@
 
 
              Previous update: 2010-04-27 Adrian Pop, Adrian.Pop@liu.se 
-             Last update:     2012-02-10 Adrian Pop, Adrian.Ppo@liu.se
+             Last update:     2012-02-10 Adrian Pop, Adrian.Pop@liu.se
 
 BIG WARNING:
  THIS DOCUMENT IS OBSOLETE!
