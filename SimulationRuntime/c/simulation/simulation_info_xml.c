@@ -40,6 +40,13 @@
 #include "uthash.h"
 #include <stdio.h>
 
+typedef struct {
+  MODEL_DATA_XML *xml;
+  long curIndex;
+  long curProfileIndex;
+  long curFunctionIndex;
+} userData_t;
+
 typedef struct hash_variable
 {
   const char *id;
@@ -73,12 +80,9 @@ static VAR_INFO* findVariable(const char *name)
   return &s->var_info;
 }
 
-static void XMLCALL startElement(void *userData, const char *name, const char **attr)
+static void XMLCALL startElement(void *voidData, const char *name, const char **attr)
 {
-  MODEL_DATA_XML* xml = (MODEL_DATA_XML*)((void**)userData)[0];
-  long curIndex = (long) ((void**)userData)[1];
-  /* long curProfileIndex = (long) ((void**)userData)[2]; */
-  long curFunctionIndex = (long) ((void**)userData)[3];
+  userData_t *userData = (userData_t*) voidData;
 
   if(0==strcmp("defines", name))
   {
@@ -88,12 +92,12 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
       maxVarsBuffer = 32;
       varsBuffer = (VAR_INFO*) malloc(sizeof(VAR_INFO)*maxVarsBuffer);
     }
-    else if(xml->equationInfo[curIndex].numVar+2 >= maxVarsBuffer)
+    else if(userData->xml->equationInfo[userData->curIndex].numVar+2 >= maxVarsBuffer)
     {
       maxVarsBuffer *= 2;
       varsBuffer = realloc(varsBuffer, sizeof(VAR_INFO)*maxVarsBuffer);
     }
-    varsBuffer[xml->equationInfo[curIndex].numVar++] = *findVariable(attr[1]);
+    varsBuffer[userData->xml->equationInfo[userData->curIndex].numVar++] = *findVariable(attr[1]);
     return;
   }
   if(0==strcmp("info", name))
@@ -126,7 +130,7 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
       }
       else
       {
-        throwStreamPrint(NULL, "%s: Unknown attribute in <info>", xml->fileName);
+        throwStreamPrint(NULL, "%s: Unknown attribute in <info>", userData->xml->fileName);
       }
       attr += 2;
     }
@@ -135,24 +139,24 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
   if(0 == strcmp("equation", name))
   {
     long ix;
-    if(curIndex > xml->nEquations)
+    if(userData->curIndex > userData->xml->nEquations)
     {
-      throwStreamPrint(NULL, "%s: Info XML %s contained more equations than expected (%ld)", __FILE__, xml->fileName, xml->nEquations);
+      throwStreamPrint(NULL, "%s: Info XML %s contained more equations than expected (%ld)", __FILE__, userData->xml->fileName, userData->xml->nEquations);
     }
     if(strcmp("index", attr[0]))
     {
-      throwStreamPrint(NULL, "%s: Info XML %s contained equation without index", __FILE__, xml->fileName);
+      throwStreamPrint(NULL, "%s: Info XML %s contained equation without index", __FILE__, userData->xml->fileName);
     }
     ix = strtol(attr[1], NULL, 10);
-    if(curIndex != ix)
+    if(userData->curIndex != ix)
     {
-      throwStreamPrint(NULL, "%s: Info XML %s got equation with index %ld, expected %ld", __FILE__, xml->fileName, ix, curIndex);
+      throwStreamPrint(NULL, "%s: Info XML %s got equation with index %ld, expected %ld", __FILE__, userData->xml->fileName, ix, userData->curIndex);
     }
-    xml->equationInfo[curIndex].id = curIndex;
-    xml->equationInfo[curIndex].profileBlockIndex = -1; /* TODO: Set when parsing other tags */
-    xml->equationInfo[curIndex].name = "SOME NICE EQUATION NAME (to be set a little later)"; /* TODO: Set when parsing other tags */
-    xml->equationInfo[curIndex].numVar = 0; /* TODO: Set when parsing other tags */
-    xml->equationInfo[curIndex].vars = NULL; /* Set when parsing other tags (on close). */
+    userData->xml->equationInfo[userData->curIndex].id = userData->curIndex;
+    userData->xml->equationInfo[userData->curIndex].profileBlockIndex = -1; /* TODO: Set when parsing other tags */
+    userData->xml->equationInfo[userData->curIndex].name = "SOME NICE EQUATION NAME (to be set a little later)"; /* TODO: Set when parsing other tags */
+    userData->xml->equationInfo[userData->curIndex].numVar = 0; /* TODO: Set when parsing other tags */
+    userData->xml->equationInfo[userData->curIndex].vars = NULL; /* Set when parsing other tags (on close). */
     return;
   }
   if(0 == strcmp("variable", name))
@@ -177,19 +181,16 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
   }
   if(0 == strcmp("function", name))
   {
-    xml->functionNames[curFunctionIndex].id = curFunctionIndex;
-    xml->functionNames[curFunctionIndex].name = "#FIXME#";
-    xml->functionNames[curFunctionIndex].name = strdup(attr[1]);
-    xml->functionNames[curFunctionIndex].info.filename = "TODO: Set me up!!!";
+    userData->xml->functionNames[userData->curFunctionIndex].id = userData->curFunctionIndex;
+    userData->xml->functionNames[userData->curFunctionIndex].name = "#FIXME#";
+    userData->xml->functionNames[userData->curFunctionIndex].name = strdup(attr[1]);
+    userData->xml->functionNames[userData->curFunctionIndex].info.filename = "TODO: Set me up!!!";
   }
 }
 
-static void XMLCALL endElement(void *userData, const char *name)
+static void XMLCALL endElement(void *voidData, const char *name)
 {
-  MODEL_DATA_XML* xml = (MODEL_DATA_XML*) ((void**)userData)[0];
-  long curIndex = (long) ((void**)userData)[1];
-  long curProfileIndex = (long) ((void**)userData)[2];
-  long curFunctionIndex = (long) ((void**)userData)[3];
+  userData_t *userData = (userData_t*) voidData;
 
   if(0 == strcmp("variable", name))
   {
@@ -199,34 +200,34 @@ static void XMLCALL endElement(void *userData, const char *name)
   if(0 == strcmp("equation", name))
   {
     int i;
-    xml->equationInfo[curIndex].vars = (VAR_INFO**) malloc(sizeof(VAR_INFO*)*xml->equationInfo[curIndex].numVar);
-    for(i=0; i<xml->equationInfo[curIndex].numVar; i++)
+    userData->xml->equationInfo[userData->curIndex].vars = (VAR_INFO**) malloc(sizeof(VAR_INFO*)*userData->xml->equationInfo[userData->curIndex].numVar);
+    for(i=0; i<userData->xml->equationInfo[userData->curIndex].numVar; i++)
     {
       VAR_INFO *var = (VAR_INFO*) malloc(sizeof(VAR_INFO));
       *var = varsBuffer[i];
-      xml->equationInfo[curIndex].vars[i] = var;
+      userData->xml->equationInfo[userData->curIndex].vars[i] = var;
     }
-    ((void**)userData)[1] = (void*) (curIndex+1);
+    userData->curIndex++;
 
     return;
   }
   if(0 == strcmp("linear", name))
   {
-    asprintf((char**)&xml->equationInfo[curIndex].name, "Linear function (index %ld, size %d)", curIndex, xml->equationInfo[curIndex].numVar);
-    xml->equationInfo[curIndex].profileBlockIndex = curProfileIndex;
-    ((void**)userData)[2] = (void*) (curProfileIndex+1);
+    asprintf((char**)&userData->xml->equationInfo[userData->curIndex].name, "Linear function (index %ld, size %d)", userData->curIndex, userData->xml->equationInfo[userData->curIndex].numVar);
+    userData->xml->equationInfo[userData->curIndex].profileBlockIndex = userData->curProfileIndex;
+    userData->curProfileIndex++;
     return;
   }
   if(0 == strcmp("nonlinear", name))
   {
-    asprintf((char**)&xml->equationInfo[curIndex].name, "Nonlinear function (residualFunc%ld, size %d)", curIndex, xml->equationInfo[curIndex].numVar);
-    xml->equationInfo[curIndex].profileBlockIndex = curProfileIndex;
-    ((void**)userData)[2] = (void*) (curProfileIndex+1);
+    asprintf((char**)&userData->xml->equationInfo[userData->curIndex].name, "Nonlinear function (residualFunc%ld, size %d)", userData->curIndex, userData->xml->equationInfo[userData->curIndex].numVar);
+    userData->xml->equationInfo[userData->curIndex].profileBlockIndex = userData->curProfileIndex;
+    userData->curProfileIndex++;
     return;
   }
   if(0 == strcmp("function", name))
   {
-    ((void**)userData)[3] = (void*) (curFunctionIndex+1);
+    userData->curFunctionIndex++;
     return;
   }
 }
