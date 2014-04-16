@@ -380,13 +380,13 @@ void ModelicaClassDialog::createModelicaClass()
   QString model, parentPackage;
   if (mpParentClassTextBox->text().isEmpty())
   {
-    model = mpNameTextBox->text();
+    model = mpNameTextBox->text().trimmed();
     parentPackage = "Global Scope";
   }
   else
   {
-    model = QString(mpParentClassTextBox->text()).append(".").append(mpNameTextBox->text());
-    parentPackage = QString("in Package '").append(mpParentClassTextBox->text()).append("'");
+    model = QString(mpParentClassTextBox->text().trimmed()).append(".").append(mpNameTextBox->text().trimmed());
+    parentPackage = QString("in Package '").append(mpParentClassTextBox->text().trimmed()).append("'");
   }
   // Check whether model exists or not.
   if (mpMainWindow->getOMCProxy()->existClass(model))
@@ -402,7 +402,7 @@ void ModelicaClassDialog::createModelicaClass()
   modelicaClass.append(mpSpecializationComboBox->currentText().toLower());
   if (mpParentClassTextBox->text().isEmpty())
   {
-    if (!mpMainWindow->getOMCProxy()->createClass(modelicaClass, mpNameTextBox->text(), mpExtendsClassTextBox->text()))
+    if (!mpMainWindow->getOMCProxy()->createClass(modelicaClass, mpNameTextBox->text().trimmed(), mpExtendsClassTextBox->text().trimmed()))
     {
       QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
                               GUIMessages::ERROR_OCCURRED).arg(mpMainWindow->getOMCProxy()->getResult()).append("\n\n").
@@ -412,7 +412,7 @@ void ModelicaClassDialog::createModelicaClass()
   }
   else
   {
-    if(!mpMainWindow->getOMCProxy()->createSubClass(modelicaClass, mpNameTextBox->text(), mpParentClassTextBox->text(), mpExtendsClassTextBox->text()))
+    if(!mpMainWindow->getOMCProxy()->createSubClass(modelicaClass, mpNameTextBox->text().trimmed(), mpParentClassTextBox->text().trimmed(), mpExtendsClassTextBox->text().trimmed()))
     {
       QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
                               GUIMessages::ERROR_OCCURRED).arg(mpMainWindow->getOMCProxy()->getResult()).append("\n\n").
@@ -422,9 +422,9 @@ void ModelicaClassDialog::createModelicaClass()
   }
   //open the new tab in central widget and add the model to library tree.
   LibraryTreeNode *pLibraryTreeNode;
-  pLibraryTreeNode = pLibraryTreeWidget->addLibraryTreeNode(mpNameTextBox->text(),
+  pLibraryTreeNode = pLibraryTreeWidget->addLibraryTreeNode(mpNameTextBox->text().trimmed(),
                                                             StringHandler::getModelicaClassType(mpSpecializationComboBox->currentText()),
-                                                            mpParentClassTextBox->text(), false);
+                                                            mpParentClassTextBox->text().trimmed(), false);
   pLibraryTreeNode->setSaveContentsType(mpSaveContentsInOneFileCheckBox->isChecked() ? LibraryTreeNode::SaveInOneFile : LibraryTreeNode::SaveFolderStructure);
   pLibraryTreeWidget->addToExpandedLibraryTreeNodesList(pLibraryTreeNode);
   pLibraryTreeWidget->showModelWidget(pLibraryTreeNode, true, !mpExtendsClassTextBox->text().isEmpty());
