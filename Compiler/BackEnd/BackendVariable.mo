@@ -1718,7 +1718,7 @@ algorithm
       SCode.Annotation anno;
     // Parameter with evaluate=true
     case BackendDAE.VAR(comment=SOME(SCode.COMMENT(annotation_=SOME(anno))))
-      then SCode.hasBooleanNamedAnnotation({anno},"Evaluate");
+      then SCode.hasBooleanNamedAnnotation(anno,"Evaluate");
     else then false;
   end match;
 end hasVarEvaluateAnnotation;

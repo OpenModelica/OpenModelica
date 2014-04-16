@@ -3158,7 +3158,7 @@ algorithm
     case ((ht,_),DAE.VAR(componentRef = cr,kind=DAE.PARAM(),binding=SOME(e),absynCommentOption=SOME(comment)),pv)
       equation
         SCode.COMMENT(annotation_=SOME(anno)) = comment;
-        true = SCode.hasBooleanNamedAnnotation({anno},"Evaluate");
+        true = SCode.hasBooleanNamedAnnotation(anno,"Evaluate");
         e1 = evaluateParameter(e,pv);
         ht1 = BaseHashTable.add((cr,e1),ht);
       then

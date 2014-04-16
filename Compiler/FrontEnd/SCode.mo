@@ -699,10 +699,11 @@ Author BZ, 2009-01
 check if an element is of type EXTENDS or not."
   input Element ele;
   output Boolean isExtend;
-algorithm isExtend := matchcontinue(ele)
-  case(EXTENDS(baseClassPath = _)) then true;
-  case(_) then false;
-end matchcontinue;
+algorithm 
+  isExtend := match(ele)
+    case EXTENDS(baseClassPath = _) then true;
+    else false;
+  end match;
 end isElementExtends;
 
 public function isNotElementClassExtends "
@@ -710,10 +711,10 @@ check if an element is not of type CLASS_EXTENDS."
   input Element ele;
   output Boolean isExtend;
 algorithm
-  isExtend := matchcontinue(ele)
-    case(CLASS(classDef = CLASS_EXTENDS(baseClassName = _))) then false;
-    case(_) then true;
-  end matchcontinue;
+  isExtend := match(ele)
+    case CLASS(classDef = CLASS_EXTENDS(baseClassName = _)) then false;
+    else true;
+  end match;
 end isNotElementClassExtends;
 
 public function isParameterOrConst
@@ -768,11 +769,11 @@ algorithm
 end countParts;
 
 public function componentNames
-"Return a string list of all component names of a class."
+  "Return a string list of all component names of a class."
   input Element inClass;
   output list<String> outStringLst;
 algorithm
-  outStringLst := matchcontinue (inClass)
+  outStringLst := match (inClass)
     local list<String> res; list<Element> elts;
 
     case (CLASS(classDef = PARTS(elementLst = elts)))
@@ -788,10 +789,25 @@ algorithm
       then
         res;
 
-    case (_) then {};
+    else {};
 
-  end matchcontinue;
+  end match;
 end componentNames;
+
+public function componentNamesFromElts
+  "Helper function to componentNames."
+  input list<Element> inElements;
+  output list<String> outComponentNames;
+algorithm
+  outComponentNames := List.filterMap(inElements, componentName);
+end componentNamesFromElts;
+
+public function componentName
+  input Element inComponent;
+  output String outName;
+algorithm
+  COMPONENT(name = outName) := inComponent;
+end componentName;
 
 public function elementInfo "retrieves the element info"
   input Element e;
@@ -894,33 +910,15 @@ algorithm
   end match;
 end enumName;
 
-public function componentNamesFromElts
-"Helper function to componentNames."
-  input list<Element> inElementLst;
-  output list<String> outStringLst;
-algorithm
-  outStringLst := matchcontinue (inElementLst)
-    local list<String> res; String id; list<Element> rest;
-    case ({}) then {};
-    case ((COMPONENT(name = id) :: rest))
-      equation
-        res = componentNamesFromElts(rest);
-      then
-        (id :: res);
-    case _ :: rest
-      then componentNamesFromElts(rest);
-  end matchcontinue;
-end componentNamesFromElts;
-
 public function isRecord
 "Return true if Class is a record."
   input Element inClass;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inClass)
+  outBoolean := match(inClass)
     case CLASS(restriction = R_RECORD(_)) then true;
-    case _ then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isRecord;
 
 public function isOperatorRecord
@@ -928,10 +926,10 @@ public function isOperatorRecord
   input Element inClass;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inClass)
+  outBoolean := match(inClass)
     case CLASS(restriction = R_RECORD(true)) then true;
-    case _ then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isOperatorRecord;
 
 public function isFunction
@@ -939,10 +937,10 @@ public function isFunction
   input Element inClass;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inClass)
+  outBoolean := match(inClass)
     case CLASS(restriction = R_FUNCTION(_)) then true;
-    case _ then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isFunction;
 
 public function isFunctionRestriction
@@ -950,10 +948,10 @@ public function isFunctionRestriction
   input Restriction inRestriction;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inRestriction)
+  outBoolean := match(inRestriction)
     case R_FUNCTION(_) then true;
-    case _ then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isFunctionRestriction;
 
 public function isFunctionOrExtFunctionRestriction
@@ -962,13 +960,12 @@ public function isFunctionOrExtFunctionRestriction
   input Restriction r;
   output Boolean res;
 algorithm
-  res := matchcontinue(r)
+  res := match(r)
     case (R_FUNCTION(FR_NORMAL_FUNCTION(_))) then true;
     case (R_FUNCTION(FR_EXTERNAL_FUNCTION(_))) then true;
-    case(_) then false;
-  end matchcontinue;
- end isFunctionOrExtFunctionRestriction;
-
+    else false;
+  end match;
+end isFunctionOrExtFunctionRestriction;
 
 public function isOperator
 "restriction is operator or operator function.
@@ -976,23 +973,19 @@ public function isOperator
   input Element el;
   output Boolean res;
 algorithm
-  res := matchcontinue(el)
+  res := match(el)
     case (CLASS(restriction=R_OPERATOR())) then true;
     case (CLASS(restriction=R_FUNCTION(FR_OPERATOR_FUNCTION()))) then true;
-    case(_) then false;
-  end matchcontinue;
- end isOperator;
+    else false;
+  end match;
+end isOperator;
 
 public function className
-"Returns the class name of a Class."
+  "Returns the class name of a Class."
   input Element inClass;
-  output String outString;
+  output String outName;
 algorithm
-  outString := matchcontinue (inClass)
-    local String n;
-    case CLASS(name = n) then n;
-    case _ then "Not a class";
-  end matchcontinue;
+  CLASS(name = outName) := inClass;
 end className;
 
 public function classSetPartial
@@ -1104,18 +1097,12 @@ public function annotationEqual
   input Annotation annotation1;
   input Annotation annotation2;
   output Boolean equal;
+protected
+  Mod mod1, mod2;
 algorithm
-  equal := matchcontinue(annotation1,annotation2)
-    local
-      Mod mod1,mod2;
-      Boolean res;
-    case(ANNOTATION(mod1),ANNOTATION(mod2))
-      equation
-        res = modEqual(mod1,mod2);
-      then
-        res;
-    case(_,_) then false;
-  end matchcontinue;
+  ANNOTATION(modification = mod1) := annotation1;
+  ANNOTATION(modification = mod2) := annotation2;
+  equal := modEqual(mod1, mod2);
 end annotationEqual;
 
 public function restrictionEqual "Returns true if two Restriction's are equal."
@@ -1123,30 +1110,30 @@ public function restrictionEqual "Returns true if two Restriction's are equal."
   input Restriction restr2;
   output Boolean equal;
 algorithm
-   equal := matchcontinue(restr1,restr2)
-   local
-     FunctionRestriction funcRest1,funcRest2;
+  equal := match(restr1,restr2)
+    local
+      FunctionRestriction funcRest1,funcRest2;
 
-     case (R_CLASS(),R_CLASS()) then true;
-     case (R_OPTIMIZATION(),R_OPTIMIZATION()) then true;
-     case (R_MODEL(),R_MODEL()) then true;
-     case (R_RECORD(true),R_RECORD(true)) then true; // operator record
-     case (R_RECORD(false),R_RECORD(false)) then true;
-     case (R_BLOCK(),R_BLOCK()) then true;
-     case (R_CONNECTOR(true),R_CONNECTOR(true)) then true; // expandable connectors
-     case (R_CONNECTOR(false),R_CONNECTOR(false)) then true; // non expandable connectors
-     case (R_OPERATOR(),R_OPERATOR()) then true; // operator
-     case (R_TYPE(),R_TYPE()) then true;
-     case (R_PACKAGE(),R_PACKAGE()) then true;
-     case (R_FUNCTION(funcRest1),R_FUNCTION(funcRest2)) then funcRestrictionEqual(funcRest1,funcRest2);
-     case (R_ENUMERATION(),R_ENUMERATION()) then true;
-     case (R_PREDEFINED_INTEGER(),R_PREDEFINED_INTEGER()) then true;
-     case (R_PREDEFINED_REAL(),R_PREDEFINED_REAL()) then true;
-     case (R_PREDEFINED_STRING(),R_PREDEFINED_STRING()) then true;
-     case (R_PREDEFINED_BOOLEAN(),R_PREDEFINED_BOOLEAN()) then true;
-     case (R_PREDEFINED_ENUMERATION(),R_PREDEFINED_ENUMERATION()) then true;
-     case (_,_) then false;
-   end matchcontinue;
+    case (R_CLASS(),R_CLASS()) then true;
+    case (R_OPTIMIZATION(),R_OPTIMIZATION()) then true;
+    case (R_MODEL(),R_MODEL()) then true;
+    case (R_RECORD(true),R_RECORD(true)) then true; // operator record
+    case (R_RECORD(false),R_RECORD(false)) then true;
+    case (R_BLOCK(),R_BLOCK()) then true;
+    case (R_CONNECTOR(true),R_CONNECTOR(true)) then true; // expandable connectors
+    case (R_CONNECTOR(false),R_CONNECTOR(false)) then true; // non expandable connectors
+    case (R_OPERATOR(),R_OPERATOR()) then true; // operator
+    case (R_TYPE(),R_TYPE()) then true;
+    case (R_PACKAGE(),R_PACKAGE()) then true;
+    case (R_FUNCTION(funcRest1),R_FUNCTION(funcRest2)) then funcRestrictionEqual(funcRest1,funcRest2);
+    case (R_ENUMERATION(),R_ENUMERATION()) then true;
+    case (R_PREDEFINED_INTEGER(),R_PREDEFINED_INTEGER()) then true;
+    case (R_PREDEFINED_REAL(),R_PREDEFINED_REAL()) then true;
+    case (R_PREDEFINED_STRING(),R_PREDEFINED_STRING()) then true;
+    case (R_PREDEFINED_BOOLEAN(),R_PREDEFINED_BOOLEAN()) then true;
+    case (R_PREDEFINED_ENUMERATION(),R_PREDEFINED_ENUMERATION()) then true;
+    else false;
+   end match;
 end restrictionEqual;
 
 public function funcRestrictionEqual
@@ -1289,21 +1276,20 @@ protected function arraydimOptEqual
 end arraydimOptEqual;
 
 protected function subscriptEqual
-"Returns true if two Absyn.Subscript are equal"
-input Absyn.Subscript sub1;
-input Absyn.Subscript sub2;
-output Boolean equal;
+  "Returns true if two Absyn.Subscript are equal"
+  input Absyn.Subscript sub1;
+  input Absyn.Subscript sub2;
+  output Boolean equal;
 algorithm
-  equal := matchcontinue(sub1,sub2)
+  equal := match(sub1,sub2)
     local
       Absyn.Exp e1,e2;
+
     case(Absyn.NOSUB(),Absyn.NOSUB()) then true;
     case(Absyn.SUBSCRIPT(e1),Absyn.SUBSCRIPT(e2))
-      equation
-        equal=Absyn.expEqual(e1,e2);
-      then equal;
-    case (_,_) then false;
-  end matchcontinue;
+      then Absyn.expEqual(e1,e2);
+
+  end match;
 end subscriptEqual;
 
 protected function algorithmEqual
@@ -1323,7 +1309,7 @@ algorithm
         true;
 
     // false otherwise!
-    case (_, _) then false;
+    else false;
   end matchcontinue;
 end algorithmEqual;
 
@@ -1369,23 +1355,21 @@ algorithm
     //case (Absyn.ALG_WHILE(_,_),Absyn.ALG_WHILE(_,_)) then false; // TODO: ALG_WHILE
     //case(Absyn.ALG_WHEN_A(_,_,_),Absyn.ALG_WHEN_A(_,_,_)) then false; //TODO: ALG_WHILE
     //case (Absyn.ALG_NORETCALL(_,_),Absyn.ALG_NORETCALL(_,_)) then false; //TODO: ALG_NORETCALL
-    case(_,_) then false;
-   end matchcontinue;
- end algorithmEqual2;
+    else false;
+  end matchcontinue;
+end algorithmEqual2;
 
 public function equationEqual
 "Returns true if two equations are equal."
   input Equation eqn1;
   input Equation eqn2;
   output Boolean equal;
+protected
+  EEquation eq1, eq2;
 algorithm
-  equal := match(eqn1,eqn2)
-    local EEquation eq1,eq2;
-    case (EQUATION(eq1),EQUATION(eq2))
-      equation
-        equal = equationEqual2(eq1,eq2);
-        then equal;
-  end match;
+  EQUATION(eEquation = eq1) := eqn1;
+  EQUATION(eEquation = eq2) := eqn2;
+  equal := equationEqual2(eq1, eq2);
 end equationEqual;
 
 protected function equationEqual2
@@ -1469,7 +1453,7 @@ algorithm
         true;
 
     // otherwise false
-    case(_,_) then false;
+    else false;
   end matchcontinue;
 end equationEqual2;
 
@@ -1595,7 +1579,7 @@ algorithm
       then
         true;
 
-    case(_,_) then false;
+    else false;
   end matchcontinue;
 end subscriptsEqual;
 
@@ -1619,12 +1603,11 @@ algorithm
         true = valueEq(ct1, ct2);
         true = parallelismEqual(prl1,prl2);
         true = variabilityEqual(var1,var2);
-        true = directionEqual(dir1,dir2);
+        true = Absyn.directionEqual(dir1,dir2);
       then
         true;
 
-    case(_, _) then false;
-
+    else false;
   end matchcontinue;
 end attributesEqual;
 
@@ -1634,12 +1617,12 @@ public function parallelismEqual
   input Parallelism prl2;
   output Boolean equal;
 algorithm
-  equal := matchcontinue(prl1,prl2)
+  equal := match(prl1,prl2)
     case(PARGLOBAL(),PARGLOBAL()) then true;
     case(PARLOCAL(),PARLOCAL()) then true;
     case(NON_PARALLEL(),NON_PARALLEL()) then true;
-    case(_,_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end parallelismEqual;
 
 public function variabilityEqual
@@ -1648,28 +1631,14 @@ public function variabilityEqual
   input Variability var2;
   output Boolean equal;
 algorithm
-  equal := matchcontinue(var1,var2)
+  equal := match(var1,var2)
     case(VAR(),VAR()) then true;
     case(DISCRETE(),DISCRETE()) then true;
     case(PARAM(),PARAM()) then true;
     case(CONST(),CONST()) then true;
-    case(_,_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end variabilityEqual;
-
-protected function directionEqual
-"Returns true if two Direction prefixes are equal"
-  input Absyn.Direction dir1;
-  input Absyn.Direction dir2;
-  output Boolean equal;
-algorithm
-  equal := matchcontinue(dir1,dir2)
-    case(Absyn.INPUT(),Absyn.INPUT()) then true;
-    case(Absyn.OUTPUT(),Absyn.OUTPUT()) then true;
-    case(Absyn.BIDIR(),Absyn.BIDIR()) then true;
-    case(_,_) then false;
-  end matchcontinue;
-end directionEqual;
 
 protected function arrayDimEqual
 "Return true if two arraydims are equal"
@@ -1941,32 +1910,23 @@ algorithm
   end match;
 end findIteratorInElsewhen;
 
-
 protected function filterComponents
-"This function returns the components from a class"
-  input list<Element> elts;
-  output list<Element> compElts;
-  output list<String> compNames;
+  "Filters out the components from the given list of elements, as well as their names."
+  input list<Element> inElements;
+  output list<Element> outComponents;
+  output list<String> outComponentNames;
 algorithm
-  (compElts,compNames) := matchcontinue (elts)
-    local
-      list<Element> rest, comps;
-      Element comp; String name;
-      list<String> names;
-    // handle the empty things
-    case ({}) then ({},{});
-    // collect components
-    case (( comp as COMPONENT(name=name)) :: rest)
-      equation
-        (comps, names) = filterComponents(rest);
-      then (comp::comps,name::names);
-    // ignore others
-    case (_ :: rest)
-      equation
-        (comps, names) = filterComponents(rest);
-      then (comps, names);
-  end matchcontinue;
+  (outComponents, outComponentNames) := List.map_2(inElements, filterComponents2);
 end filterComponents;
+
+protected function filterComponents2
+  input Element inElement;
+  output Element outComponent;
+  output String outName;
+algorithm
+  COMPONENT(name = outName) := inElement;
+  outComponent := inElement;
+end filterComponents2;
 
 public function getClassComponents
 "This function returns the components from a class"
@@ -2008,20 +1968,22 @@ algorithm
 end makeEnumType;
 
 public function variabilityOr
-"returns the more constant of two Variabilities (considers VAR() < DISCRETE() < PARAM() < CONST() ), similarly to Types.constOr"
+  "Returns the more constant of two Variabilities
+   (considers VAR() < DISCRETE() < PARAM() < CONST()),
+   similarly to Types.constOr."
   input Variability inConst1;
   input Variability inConst2;
   output Variability outConst;
 algorithm
-outConst := matchcontinue(inConst1, inConst2)
-  case (CONST(),_) then CONST();
-  case (_,CONST()) then CONST();
-  case (PARAM(),_) then PARAM();
-  case (_,PARAM()) then PARAM();
-  case (DISCRETE(),_) then DISCRETE();
-  case (_,DISCRETE()) then DISCRETE();
-  case (_,_) then VAR();
-  end matchcontinue;
+  outConst := match(inConst1, inConst2)
+    case (CONST(),_) then CONST();
+    case (_,CONST()) then CONST();
+    case (PARAM(),_) then PARAM();
+    case (_,PARAM()) then PARAM();
+    case (DISCRETE(),_) then DISCRETE();
+    case (_,DISCRETE()) then DISCRETE();
+    else VAR();
+  end match;
 end variabilityOr;
 
 public function statementToAlgorithmItem
@@ -2177,7 +2139,7 @@ algorithm
         then lst;
       case (id,ALG_NORETCALL(exp = e_1))
         then Absyn.findIteratorInExp(id,e_1);
-      case (_,_) then {};
+      else then {};
   end matchcontinue;
 end findIteratorInStatement;
 
@@ -2250,11 +2212,11 @@ public function emptyModOrEquality
   input Mod mod;
   output Boolean b;
 algorithm
-  b := matchcontinue mod
+  b := match(mod)
     case NOMOD() then true;
     case MOD(subModLst={}) then true;
-    case _ then false;
-  end matchcontinue;
+    else false;
+  end match;
 end emptyModOrEquality;
 
 public function isComponentWithDirection
@@ -2262,33 +2224,46 @@ public function isComponentWithDirection
   input Absyn.Direction dir1;
   output Boolean b;
 algorithm
-  b := matchcontinue (elt,dir1)
+  b := match(elt,dir1)
     local
       Absyn.Direction dir2;
-    case (COMPONENT(attributes = ATTR(direction = dir2)),_) then directionEqual(dir1,dir2);
-    case (_,_) then false;
-  end matchcontinue;
+
+    case (COMPONENT(attributes = ATTR(direction = dir2)),_) 
+      then Absyn.directionEqual(dir1,dir2);
+
+    else false;
+  end match;
 end isComponentWithDirection;
 
 public function isComponent
   input Element elt;
   output Boolean b;
 algorithm
-  b := matchcontinue (elt)
-    case (COMPONENT(attributes = _)) then true;
+  b := match(elt)
+    case COMPONENT(attributes = _) then true;
     else false;
-  end matchcontinue;
+  end match;
 end isComponent;
 
 public function isNotComponent
   input Element elt;
   output Boolean b;
 algorithm
-  b := matchcontinue (elt)
-    case (COMPONENT(attributes = _)) then false;
+  b := match(elt)
+    case COMPONENT(attributes = _) then false;
     else true;
-  end matchcontinue;
+  end match;
 end isNotComponent;
+
+public function isClassOrComponent
+  input Element inElement;
+  output Boolean outIsClassOrComponent;
+algorithm
+  outIsClassOrComponent := match(inElement)
+    case CLASS(name = _) then true;
+    case COMPONENT(name = _) then true;
+  end match;
+end isClassOrComponent;
 
 public function traverseEEquationsList
   "Traverses a list of EEquations, calling traverseEEquations on each EEquation
@@ -3289,14 +3264,14 @@ public function boolReplaceable
   input Option<ConstrainClass> inOptConstrainClass;
   output Replaceable outReplaceable;
 algorithm
-  outReplaceable := matchcontinue(inBoolReplaceable, inOptConstrainClass)
+  outReplaceable := match(inBoolReplaceable, inOptConstrainClass)
     case (true, _) then REPLACEABLE(inOptConstrainClass);
     case (false, SOME(_))
       equation
         print("Ignoring constraint class because replaceable prefix is not present!\n");
       then NOT_REPLACEABLE();
     case (false, _) then NOT_REPLACEABLE();
-  end matchcontinue;
+  end match;
 end boolReplaceable;
 
 public function encapsulatedBool
@@ -3514,11 +3489,11 @@ public function eachEqual "Returns true if two each attributes are equal"
   input Each each2;
   output Boolean equal;
 algorithm
-  equal := matchcontinue(each1,each2)
-    case(NOT_EACH(),NOT_EACH()) then true;
-    case(EACH(),EACH()) then true;
-    case(_,_) then false;
-  end matchcontinue;
+  equal := match(each1,each2)
+    case (NOT_EACH(), NOT_EACH()) then true;
+    case (EACH(), EACH()) then true;
+    else false;
+  end match;
 end eachEqual;
 
 public function replaceableEqual "Returns true if two replaceable attributes are equal"
@@ -3543,7 +3518,7 @@ algorithm
 
     case(REPLACEABLE(NONE()),REPLACEABLE(NONE())) then true;
 
-    case(_,_) then false;
+    else false;
 
   end matchcontinue;
 end replaceableEqual;
@@ -3717,13 +3692,13 @@ public function hasBooleanNamedAnnotationInClass
   input String namedAnnotation;
   output Boolean hasAnn;
 algorithm
-  hasAnn := matchcontinue(inClass,namedAnnotation)
+  hasAnn := match(inClass,namedAnnotation)
     local
       Annotation ann;
     case(CLASS(cmt=COMMENT(annotation_=SOME(ann))),_)
-      then hasBooleanNamedAnnotation(ann::{},namedAnnotation);
+      then hasBooleanNamedAnnotation(ann,namedAnnotation);
     else false;
-  end matchcontinue;
+  end match;
 end hasBooleanNamedAnnotationInClass;
 
 public function optCommentHasBooleanNamedAnnotation
@@ -3736,74 +3711,41 @@ algorithm
     local
       Annotation ann;
     case (SOME(COMMENT(annotation_=SOME(ann))),_)
-      then hasBooleanNamedAnnotation({ann},annotationName);
+      then hasBooleanNamedAnnotation(ann,annotationName);
     else false;
   end match;
 end optCommentHasBooleanNamedAnnotation;
 
 public function hasBooleanNamedAnnotation
-"check if the named annotation is present and has value true"
-  input list<Annotation> inAnnos;
-  input String annotationName;
-  output Boolean outB;
+  "Checks if the given annotation contains an entry with the given name with the
+   value true."
+  input Annotation inAnnotation;
+  input String inName;
+  output Boolean outHasEntry;
+protected
+  list<SubMod> submods;
 algorithm
-  outB := matchcontinue (inAnnos,annotationName)
-    local
-      Boolean b;
-      list<Annotation> rest;
-      Mod mod;
-    case (ANNOTATION(modification = mod) :: rest,_)
-      equation
-        true = hasBooleanNamedAnnotation2(mod,annotationName);
-      then
-        true;
-    case (ANNOTATION(modification = mod) :: rest,_)
-      equation
-        false = hasBooleanNamedAnnotation2(mod,annotationName);
-      then hasBooleanNamedAnnotation(rest,annotationName);
-    case ({}, _) then false;
-  end matchcontinue;
+  ANNOTATION(modification = MOD(subModLst = submods)) := inAnnotation;
+  outHasEntry := List.exist1(submods, hasBooleanNamedAnnotation2, inName);
 end hasBooleanNamedAnnotation;
 
 protected function hasBooleanNamedAnnotation2
-"check if the named annotation is present"
-  input Mod inMod;
-  input String annotationName;
-  output Boolean outB;
+  "Checks if a submod has the same name as the given name, and if its binding
+   in that case is true."
+  input SubMod inSubMod;
+  input String inName;
+  output Boolean outIsMatch;
 algorithm
-  (outB) := match (inMod,annotationName)
+  outIsMatch := match(inSubMod, inName)
     local
-      list<SubMod> subModLst;
-    case (MOD(subModLst=subModLst),_)
-      then hasBooleanNamedAnnotation3(subModLst,annotationName);
+      String id;
+
+    case (NAMEMOD(ident = id, A = MOD(binding = SOME((Absyn.BOOL(value = true), _)))), _)
+      then stringEq(id, inName);
+
+    else false;
   end match;
 end hasBooleanNamedAnnotation2;
-
-protected function hasBooleanNamedAnnotation3
-"check if the named annotation is present in comment"
-  input list<SubMod> inSubModes;
-  input String namedAnnotation;
-  output Boolean outB;
-algorithm
-  (outB) := matchcontinue (inSubModes,namedAnnotation)
-    local
-      Boolean b;
-      list<SubMod> rest;
-      SubMod submod;
-      Mod mod;
-      String id;
-    case (NAMEMOD(ident = id,A=MOD(binding=SOME((Absyn.BOOL(value=true),_)))) :: rest,_)
-      equation
-        true = id ==& namedAnnotation;
-      then true;
-    case (submod :: rest,_)
-      equation
-        b = hasBooleanNamedAnnotation3(rest,namedAnnotation);
-      then
-        b;
-    case ({}, _) then false;
-  end matchcontinue;
-end hasBooleanNamedAnnotation3;
 
 public function getEvaluateAnnotation
 "@author: adrpo
@@ -3816,8 +3758,8 @@ algorithm
     local
       Annotation ann;
     case (SOME(COMMENT(annotation_ = SOME(ann))))
-      then hasBooleanNamedAnnotation({ann}, "Evaluate");
-    case (_) then false;
+      then hasBooleanNamedAnnotation(ann, "Evaluate");
+    else false;
   end match;
 end getEvaluateAnnotation;
 
@@ -4067,10 +4009,7 @@ algorithm
         e;
 
     case (_::rest, i)
-      equation
-        e = getElementWithId(rest, i);
-      then
-        e;
+      then getElementWithId(rest, i);
 
     // not found, fail
     case ({}, i)
@@ -4480,7 +4419,7 @@ public function equationContainReinit
   input EEquation inEq;
   output Boolean hasReinit;
 algorithm
-  hasReinit := matchcontinue(inEq)
+  hasReinit := match(inEq)
     local
       Boolean b;
       list<EEquation> eqs;
@@ -4511,7 +4450,7 @@ algorithm
 
     else false;
 
-  end matchcontinue;
+  end match;
 end equationContainReinit;
 
 public function algorithmsContainReinit
@@ -4536,7 +4475,7 @@ public function algorithmContainReinit
   input Statement inAlg;
   output Boolean hasReinit;
 algorithm
-  hasReinit := matchcontinue(inAlg)
+  hasReinit := match(inAlg)
     local
       Boolean b, b1, b2, b3;
       list<Statement> algs, algs1, algs2;
@@ -4576,7 +4515,7 @@ algorithm
 
     else false;
 
-  end matchcontinue;
+  end match;
 end algorithmContainReinit;
 
 public function getClassPartialPrefix
@@ -4701,7 +4640,7 @@ algorithm
     case CLASS(classDef = PARTS(externalDecl =
       SOME(EXTERNALDECL(lang = SOME("builtin"))))) then true;
     case CLASS(cmt = COMMENT(annotation_ = SOME(ann)))
-      then hasBooleanNamedAnnotation({ann}, "__OpenModelica_builtin");
+      then hasBooleanNamedAnnotation(ann, "__OpenModelica_builtin");
     else false;
   end match;
 end isBuiltinElement;
@@ -5279,10 +5218,10 @@ public function isPackage
   input Element inClass;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inClass)
+  outBoolean := match(inClass)
     case CLASS(restriction = R_PACKAGE()) then true;
-    case _ then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isPackage;
 
 public function isPartial
@@ -5290,10 +5229,10 @@ public function isPartial
   input Element inClass;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inClass)
+  outBoolean := match(inClass)
     case CLASS(partialPrefix = PARTIAL()) then true;
-    case _ then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isPartial;
 
 public function isValidPackageElement
@@ -5315,32 +5254,35 @@ public function classIsExternalObject
   input Element cl;
   output Boolean res;
 algorithm
-  res := matchcontinue (cl)
-  local list<Element> els;
+  res := match(cl)
+    local
+      list<Element> els;
+
     case CLASS(classDef=PARTS(elementLst=els))
-      equation
-        res = isExternalObject(els);
-     then res;
-    case (_) then false;
-  end matchcontinue;
+      then isExternalObject(els);
+
+    else false;
+  end match;
 end classIsExternalObject;
 
 public function isExternalObject
 "Returns true if the element list fulfills the condition of an External Object.
 An external object extends the builtinClass ExternalObject, and has two local
 functions, destructor and constructor. "
-input  list<Element> els;
-output Boolean res;
+  input  list<Element> els;
+  output Boolean res;
 algorithm
- res := matchcontinue(els)
- case _
-   equation
-    true = hasExtendsOfExternalObject(els);
-    true = hasExternalObjectDestructor(els);
-    true = hasExternalObjectConstructor(els);
-    3 = listLength(els);
-  then true;
-  case (_) then false;
+  res := matchcontinue(els)
+    case _
+      equation
+        3 = listLength(els);
+        true = hasExtendsOfExternalObject(els);
+        true = hasExternalObjectDestructor(els);
+        true = hasExternalObjectConstructor(els);
+      then
+        true;
+
+    else false;
   end matchcontinue;
 end isExternalObject;
 
@@ -5363,12 +5305,12 @@ protected function hasExternalObjectDestructor
   input list<Element> inEls;
   output Boolean res;
 algorithm
-  res:= matchcontinue(inEls)
+  res:= match(inEls)
     local list<Element> els;
     case CLASS(name="destructor")::_ then true;
     case _::els then hasExternalObjectDestructor(els);
-    case _ then false;
-  end matchcontinue;
+    else false;
+  end match;
 end hasExternalObjectDestructor;
 
 protected function hasExternalObjectConstructor
@@ -5376,12 +5318,12 @@ protected function hasExternalObjectConstructor
   input list<Element> inEls;
   output Boolean res;
 algorithm
-  res:= matchcontinue(inEls)
+  res:= match(inEls)
     local list<Element> els;
     case CLASS(name="constructor")::_ then true;
     case _::els then hasExternalObjectConstructor(els);
-    case _ then false;
-  end matchcontinue;
+    else false;
+  end match;
 end hasExternalObjectConstructor;
 
 public function getExternalObjectDestructor
@@ -5389,11 +5331,11 @@ public function getExternalObjectDestructor
   input list<Element> inEls;
   output Element cl;
 algorithm
-  cl:= matchcontinue(inEls)
+  cl:= match(inEls)
     local list<Element> els;
     case ((cl as CLASS(name="destructor"))::_) then cl;
     case (_::els) then getExternalObjectDestructor(els);
-  end matchcontinue;
+  end match;
 end getExternalObjectDestructor;
 
 public function getExternalObjectConstructor
@@ -5401,11 +5343,11 @@ public function getExternalObjectConstructor
 input list<Element> inEls;
 output Element cl;
 algorithm
-  cl:= matchcontinue(inEls)
+  cl:= match(inEls)
     local list<Element> els;
     case ((cl as CLASS(name="constructor"))::_) then cl;
     case (_::els) then getExternalObjectConstructor(els);
-  end matchcontinue;
+  end match;
 end getExternalObjectConstructor;
 
 public function isInstantiableClassRestriction
