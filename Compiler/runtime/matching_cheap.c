@@ -445,7 +445,7 @@ void mind_cheap(int *col_ptrs, int *col_ids, int *row_ptrs, int *row_ids, int *m
       cdeg++;
       continue;
     }
-    
+
     tptr = lists[cdeg].next;
     lists[cdeg].next = tptr->next;
     tptr->next->prvs = &(lists[cdeg]);

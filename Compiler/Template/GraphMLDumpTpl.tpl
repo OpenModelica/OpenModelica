@@ -1,5 +1,5 @@
 // This file defines templates for transforming a GraphML-Graph into a Yed *.graphml-File.
-// 
+//
 // 2014-02-04 mwalther
 
 package GraphMLDumpTpl
@@ -22,13 +22,13 @@ template dumpGraphInfoInternal(GraphML.GraphInfo graphInfo)
             <<
             <?xml version="1.0" encoding="UTF-8" standalone="no"?>
             <graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:y="http://www.yworks.com/xml/graphml" xmlns:yed="http://www.yworks.com/xml/yed/3" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://www.yworks.com/xml/schema/graphml/1.1/ygraphml.xsd">
-                
+
                 <key for="node" id="<%graphNodeKey%>" yfiles.type="nodegraphics"/>
                 <key attr.name="Beschreibung" attr.type="string" for="node" id="ddesc" />
                 <key for="edge" id="<%graphEdgeKey%>" yfiles.type="edgegraphics"/>
 
                 <%attDefDump%>
-                
+
                 <!-- Graph Idx: <%arrayLength(graphs)%> -->
                 <%dumpGraph(arrayGet(graphs,arrayLength(graphs)), graphs, nodes, edgeDump, graphNodeKey)%>
             </graphml>
@@ -42,11 +42,11 @@ template dumpGraph(GraphML.Graph graph, array<GraphML.Graph> allGraphs, array<Gr
         case GRAPH() then
             let graphNodes = nodeIdc |> idc => dumpNode(arrayGet(allNodes,intAdd(1,intSub(arrayLength(allNodes),idc))),allGraphs,allNodes,graphNodeKey) ; separator="\n"
             let attKeys = attValues |> val => dumpAttKey(val) ; separator="\n"
-            << 
+            <<
             <graph edgedefault="<%dumpDirected(directed)%>" id="<%id%>">
                 <%attKeys%>
                 <%graphNodes%>
-                
+
                 <%edgeDesc%>
             </graph>
             >>

@@ -39,13 +39,13 @@ encapsulated package FGraph
 "
 
 // public imports
-public 
+public
 import Absyn;
 import FCore;
 import FNode;
 import FVisit;
 
-protected 
+protected
 import System;
 import Debug;
 
@@ -175,7 +175,7 @@ algorithm
         // true = b;
      then
        (g, n);
-  
+
   end matchcontinue;
 end node;
 

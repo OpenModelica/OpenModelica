@@ -69,7 +69,7 @@ typedef struct SOLVER_INFO
   enum SOLVER_METHOD
   {
     S_UNKNOWN = 0,
-    
+
     S_EULER,         /*  1 */
     S_RUNGEKUTTA,    /*  2 */
     S_DASSL,         /*  3 */
@@ -89,7 +89,7 @@ typedef struct SOLVER_INFO
     S_DASSLINTERNALNUMJAC,
     S_INLINE_RUNGEKUTTA,
     S_QSS,
-    
+
     S_MAX
   };
 

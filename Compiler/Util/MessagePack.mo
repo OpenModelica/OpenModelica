@@ -7,13 +7,13 @@ encapsulated package MessagePack "MessagePack is an efficient binary serializati
 
         function constructor
           output SimpleBuffer buf;
-        
+
           external "C" buf = msgpack_modelica_sbuffer_new() annotation(Include = "#include <msgpack-modelica.h>", Library = "msgpackc");
         end constructor;
 
         function destructor
           input SimpleBuffer buf;
-        
+
           external "C" msgpack_modelica_sbuffer_free(buf) annotation(Include = "#include <msgpack-modelica.h>", Library = "msgpackc");
         end destructor;
       end SimpleBuffer;
@@ -21,14 +21,14 @@ encapsulated package MessagePack "MessagePack is an efficient binary serializati
       function writeFile
         input SimpleBuffer sbuffer;
         input String file;
-      
+
         external "C" msgpack_modelica_sbuffer_to_file(sbuffer, file) annotation(Include = "#include <msgpack-modelica.h>", Library = {"msgpackc"});
       end writeFile;
 
       function position
         input SimpleBuffer sbuffer;
         output Integer position;
-      
+
         external "C" position = msgpack_modelica_sbuffer_position(sbuffer) annotation(Include = "#include <msgpack-modelica.h>", Library = {"msgpackc"});
       end position;
     end SimpleBuffer;
@@ -39,13 +39,13 @@ encapsulated package MessagePack "MessagePack is an efficient binary serializati
       function constructor
         input SimpleBuffer.SimpleBuffer buf;
         output Packer packer;
-      
+
         external "C" packer = msgpack_modelica_packer_new_sbuffer(buf) annotation(Include = "#include <msgpack-modelica.h>", Library = {"msgpackc"});
       end constructor;
 
       function destructor
         input Packer packer;
-      
+
         external "C" msgpack_modelica_packer_free(packer) annotation(Include = "#include <msgpack-modelica.h>", Library = "msgpackc");
       end destructor;
     end Packer;
@@ -54,7 +54,7 @@ encapsulated package MessagePack "MessagePack is an efficient binary serializati
       input Packer packer;
       input Real dbl;
       output Boolean result;
-    
+
       external "C" result = msgpack_modelica_pack_double(packer, dbl) annotation(Include = "#include <msgpack-modelica.h>", Library = "msgpackc");
     end double;
 
@@ -62,7 +62,7 @@ encapsulated package MessagePack "MessagePack is an efficient binary serializati
       input Packer packer;
       input Integer i;
       output Boolean result;
-    
+
       external "C" result = msgpack_modelica_pack_int(packer, i) annotation(Include = "#include <msgpack-modelica.h>", Library = "msgpackc");
     end integer;
 
@@ -74,14 +74,14 @@ encapsulated package MessagePack "MessagePack is an efficient binary serializati
       function msgpack_pack_true
         input Packer packer;
         output Boolean result;
-      
+
         external "C" result = msgpack_modelica_pack_true(packer) annotation(Include = "#include <msgpack-modelica.h>", Library = "msgpackc");
       end msgpack_pack_true;
 
       function msgpack_pack_false
         input Packer packer;
         output Boolean result;
-      
+
         external "C" result = msgpack_modelica_pack_false(packer) annotation(Include = "#include <msgpack-modelica.h>", Library = "msgpackc");
       end msgpack_pack_false;
     algorithm
@@ -92,7 +92,7 @@ encapsulated package MessagePack "MessagePack is an efficient binary serializati
       input Packer packer;
       input Integer len;
       output Boolean result;
-    
+
       external "C" result = msgpack_modelica_pack_array(packer, len) annotation(Include = "#include <msgpack-modelica.h>", Library = {"msgpackc"});
     end sequence;
 
@@ -100,7 +100,7 @@ encapsulated package MessagePack "MessagePack is an efficient binary serializati
       input Packer packer;
       input Integer len;
       output Boolean result;
-    
+
       external "C" result = msgpack_modelica_pack_map(packer, len) annotation(Include = "#include <msgpack-modelica.h>", Library = {"msgpackc"});
     end map;
 
@@ -108,14 +108,14 @@ encapsulated package MessagePack "MessagePack is an efficient binary serializati
       input Packer packer;
       input String str;
       output Boolean result;
-    
+
       external "C" result = msgpack_modelica_pack_string(packer, str) annotation(Include = "#include <msgpack-modelica.h>", Library = {"msgpackc"});
     end string;
 
     function nil
       input Packer packer;
       output Boolean result;
-    
+
       external "C" result = msgpack_modelica_pack_nil(packer) annotation(Include = "#include <msgpack-modelica.h>", Library = {"msgpackc"});
     end nil;
   end Pack;
@@ -127,13 +127,13 @@ encapsulated package MessagePack "MessagePack is an efficient binary serializati
       function constructor
         input String file;
         output Deserializer deserializer;
-      
+
         external "C" deserializer = msgpack_modelica_new_deserialiser(file) annotation(Include = "#include <msgpack-modelica.h>", Library = {"msgpackc"});
       end constructor;
 
       function destructor
         input Deserializer deserializer;
-      
+
         external "C" msgpack_modelica_free_deserialiser(deserializer) annotation(Include = "#include <msgpack-modelica.h>", Library = {"msgpackc"});
       end destructor;
     end Deserializer;
@@ -143,7 +143,7 @@ encapsulated package MessagePack "MessagePack is an efficient binary serializati
       input Integer offset;
       output Boolean success;
       output Integer newoffset;
-    
+
       external "C" success = msgpack_modelica_unpack_next(deserializer, offset, newoffset) annotation(Include = "#include <msgpack-modelica.h>", Library = {"msgpackc"});
     end next;
 
@@ -153,7 +153,7 @@ encapsulated package MessagePack "MessagePack is an efficient binary serializati
       input Integer offset;
       output Integer newoffset;
       output Boolean success;
-    
+
       external "C" success = msgpack_modelica_unpack_next_to_stream(deserializer, ss, offset, newoffset) annotation(Include = "#include <msgpack-modelica.h>", Library = {"msgpackc"});
     end toStream;
 
@@ -163,7 +163,7 @@ encapsulated package MessagePack "MessagePack is an efficient binary serializati
       output Integer res;
       output Integer newoffset;
       output Boolean success;
-    
+
       external "C" res = msgpack_modelica_unpack_int(deserializer, offset, newoffset, success) annotation(Include = "#include <msgpack-modelica.h>", Library = {"msgpackc"});
     end integer;
 
@@ -173,7 +173,7 @@ encapsulated package MessagePack "MessagePack is an efficient binary serializati
       output String res;
       output Integer newoffset;
       output Boolean success;
-    
+
       external "C" res = msgpack_modelica_unpack_string(deserializer, offset, newoffset, success) annotation(Include = "#include <msgpack-modelica.h>", Library = {"msgpackc"});
     end string;
 
@@ -181,7 +181,7 @@ encapsulated package MessagePack "MessagePack is an efficient binary serializati
       // TODO: Create package MessagePack.Object and move this there
       input Deserializer deserializer;
       output Integer res;
-    
+
       external "C" res = msgpack_modelica_get_unpacked_int(deserializer) annotation(Include = "#include <msgpack-modelica.h>", Library = {"msgpackc"});
     end get_integer;
   end Unpack;
@@ -194,13 +194,13 @@ encapsulated package MessagePack "MessagePack is an efficient binary serializati
         function constructor
           input String file = "" "Output file or \"\" for an in-memory string accessible using get()";
           output Stream ss;
-        
+
           external "C" ss = msgpack_modelica_new_stream(file) annotation(Include = "#include <msgpack-modelica.h>", Library = {"msgpackc"});
         end constructor;
 
         function destructor
           input Stream ss;
-        
+
           external "C" msgpack_modelica_free_stream(ss) annotation(Include = "#include <msgpack-modelica.h>", Library = {"msgpackc"});
         end destructor;
       end Stream;
@@ -209,7 +209,7 @@ encapsulated package MessagePack "MessagePack is an efficient binary serializati
         // Make this a part of the Stream class once the Modelica Spec allows it...
         input Stream ss;
         output String str;
-      
+
         external "C" str = msgpack_modelica_stream_get(ss) annotation(Include = "#include <msgpack-modelica.h>", Library = {"msgpackc"});
       end get;
 
@@ -217,7 +217,7 @@ encapsulated package MessagePack "MessagePack is an efficient binary serializati
         // Make this a part of the Stream class once the Modelica Spec allows it...
         input Stream ss;
         input String str;
-      
+
         external "C" msgpack_modelica_stream_append(ss, str) annotation(Include = "#include <msgpack-modelica.h>", Library = {"msgpackc"});
       end append;
     end Stream;

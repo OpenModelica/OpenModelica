@@ -264,12 +264,12 @@ ModelicaXML::ModelicaXML(char* dtdURL)
   // get a serializer, an instance of DOMLSSerializer
   XMLCh tempStr[3] = {chLatin_L, chLatin_S, chNull};
   DOMImplementation *impl = DOMImplementationRegistry::getDOMImplementation(tempStr);
-  // create the writer            
+  // create the writer
   domSerializer = ((DOMImplementationLS*)impl)->createLSSerializer();
   theOutputDesc = ((DOMImplementationLS*)impl)->createLSOutput();
   static XMLCh*                   gOutputEncoding        = 0;
   // set user specified output encoding
-  theOutputDesc->setEncoding(gOutputEncoding);            
+  theOutputDesc->setEncoding(gOutputEncoding);
 
   DOMConfiguration* serializerConfig=domSerializer->getDomConfig();
   // set the pretty print feature

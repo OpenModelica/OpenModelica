@@ -19,7 +19,7 @@ SystemDefaultImplementation::SystemDefaultImplementation(IGlobalSettings& global
 ,_start_time(0.0)
 {
 
- 
+
 
 }
 
@@ -79,7 +79,7 @@ void SystemDefaultImplementation::initialize()
     if((_dimContinuousStates) > 0)
     {
         // Initialize "extended state vector"
-    if(__z) delete [] __z ; 
+    if(__z) delete [] __z ;
     if(__zDot) delete [] __zDot;
 
     __z = new double[_dimContinuousStates];
@@ -90,27 +90,27 @@ void SystemDefaultImplementation::initialize()
   }
   if(_dimZeroFunc > 0)
   {
-    if(_conditions) delete [] _conditions ; 
-   
+    if(_conditions) delete [] _conditions ;
+
     _conditions = new bool[_dimZeroFunc];
-  
+
     memset(_conditions,false,(_dimZeroFunc)*sizeof(bool));
-  
+
   }
   if(_dimTimeEvent > 0)
   {
-    if(_time_conditions) delete [] _time_conditions ; 
+    if(_time_conditions) delete [] _time_conditions ;
     if(_time_event_counter) delete [] _time_event_counter;
     _time_conditions = new bool[_dimTimeEvent];
-   
-   
+
+
    _time_event_counter = new int[_dimTimeEvent];
-   
+
    memset(_time_conditions,false,(_dimTimeEvent)*sizeof(bool));
     memset(_time_event_counter,0,(_dimTimeEvent)*sizeof(int));
   }
   _start_time =0.0;
-  
+
 };
 
 
@@ -123,7 +123,7 @@ void SystemDefaultImplementation::setTime(const double& t)
 
 /// getter for variables of different types
 void SystemDefaultImplementation::getBoolean(bool* z)
-{ 
+{
     for(int i=0; i< _dimBoolean; ++i)
     {
       //z[i] = __z[i];
@@ -133,7 +133,7 @@ void SystemDefaultImplementation::getBoolean(bool* z)
 };
 
 void SystemDefaultImplementation::getReal(double* z)
-{ 
+{
     for(int i=0; i< _dimReal; ++i)
     {
       //z[i] = __z[i];
@@ -143,7 +143,7 @@ void SystemDefaultImplementation::getReal(double* z)
 };
 
 void SystemDefaultImplementation::getInteger(int* z)
-{ 
+{
     for(int i=0; i< _dimInteger; ++i)
     {
       //z[i] = __z[i];
@@ -153,7 +153,7 @@ void SystemDefaultImplementation::getInteger(int* z)
 };
 
 void SystemDefaultImplementation::getString(string* z)
-{ 
+{
     for(int i=0; i< _dimString; ++i)
     {
       //z[i] = __z[i];
@@ -163,7 +163,7 @@ void SystemDefaultImplementation::getString(string* z)
 };
 
 void SystemDefaultImplementation::getContinuousStates(double* z)
-{ 
+{
     for(int i=0; i< _dimContinuousStates; ++i)
     {
         z[i] = __z[i];
@@ -185,7 +185,7 @@ void SystemDefaultImplementation::getContinuousStates(double* z)
                 system->getCondition(i);
          }
         getConditions(conditions1);
-        bool isConsistent =  std::equal (conditions1, conditions1+_dimZeroFunc,conditions0);  
+        bool isConsistent =  std::equal (conditions1, conditions1+_dimZeroFunc,conditions0);
        _callType = pre_call_type;
         setConditions(conditions0);
        delete[] conditions0;
@@ -194,8 +194,8 @@ void SystemDefaultImplementation::getContinuousStates(double* z)
      }
      else
         return true;
-    
-    
+
+
  }
  void SystemDefaultImplementation::setConditions(bool* c)
    {
@@ -211,7 +211,7 @@ void SystemDefaultImplementation::getContinuousStates(double* z)
 /// setter for variables of different types
 
 void SystemDefaultImplementation::setBoolean(const bool* z)
-{ 
+{
     for(int i=0; i< _dimBoolean; ++i)
     {
       //z[i] = __z[i];
@@ -221,7 +221,7 @@ void SystemDefaultImplementation::setBoolean(const bool* z)
 };
 
 void SystemDefaultImplementation::setInteger(const int* z)
-{ 
+{
     for(int i=0; i< _dimInteger; ++i)
     {
       //z[i] = __z[i];
@@ -231,7 +231,7 @@ void SystemDefaultImplementation::setInteger(const int* z)
 };
 
 void SystemDefaultImplementation::setString(const string* z)
-{ 
+{
     for(int i=0; i< _dimString; ++i)
     {
       //z[i] = __z[i];
@@ -241,7 +241,7 @@ void SystemDefaultImplementation::setString(const string* z)
 };
 
 void SystemDefaultImplementation::setReal(const double* z)
-{ 
+{
     for(int i=0; i< _dimReal; ++i)
     {
       //z[i] = __z[i];
@@ -272,7 +272,7 @@ void SystemDefaultImplementation::setRHS(const double* f)
 /// Provide the right hand side (according to the index)
 void SystemDefaultImplementation::getRHS(double* f)
 {
- 
+
      for(int i=0; i<_dimRHS; ++i)
       f[i] = __zDot[i];
 
@@ -294,36 +294,36 @@ void SystemDefaultImplementation::storeDelay(unsigned int expr_id,double expr_va
     map<unsigned int,buffer_type>::iterator iter;
     if((iter = _delay_buffer.find(expr_id))!=_delay_buffer.end())
     {
-    
+
         iter->second.push_back(expr_value);
         //buffer_type::iterator pos = find_if(_time_buffer.begin(),_time_buffer.end(),bind2nd(std::greater<double>(),time-(_delay_max+UROUND)));
-        //if(pos!=_time_buffer.end()) 
+        //if(pos!=_time_buffer.end())
         //{
         //   buffer_type::iterator first = _time_buffer.begin(); // first time entry
-        //   unsigned int n = std::distance(first,pos); 
+        //   unsigned int n = std::distance(first,pos);
         //   iter->second.erase_begin(n-1);
         //}
-        
+
     }
     else
-        throw  std::invalid_argument("invalid delay expression id"); 
+        throw  std::invalid_argument("invalid delay expression id");
 }
  void SystemDefaultImplementation::storeTime(double time)
  {
- 
+
     _time_buffer.push_back(time);
     // buffer_type::iterator pos = find_if(_time_buffer.begin(),_time_buffer.end(),bind2nd(std::greater<double>(),time-(_delay_max+UROUND)));
-    //if(pos!=_time_buffer.end()) 
+    //if(pos!=_time_buffer.end())
     //{
     //  buffer_type::iterator first = _time_buffer.begin(); // first time entry
-    //  unsigned int n = std::distance(first,pos); 
+    //  unsigned int n = std::distance(first,pos);
     //   _time_buffer.erase_begin(n-1);
     //}
  }
- 
+
 double SystemDefaultImplementation::delay(unsigned int expr_id,double expr_value,double delayTime, double delayMax)
 {
-  
+
   map<unsigned int,buffer_type>::iterator iter;
   //find buffer for delay expression
   if((iter = _delay_buffer.find(expr_id))!=_delay_buffer.end())
@@ -334,25 +334,25 @@ double SystemDefaultImplementation::delay(unsigned int expr_id,double expr_value
       }
       if(_time_buffer.size()==0) //occurs in the initialization phase
       {
-      
+
         return expr_value;
       }
       if(_simTime<=_start_time)
         return expr_value;
-        
+
       double ts; //difference of current time and delay time
       double tl; //last buffer entry
       double res0, res1, t0, t1;
-     
+
       if(_simTime <=  delayTime)
       {
          res0 = iter->second[0];
-         return res0;  
+         return res0;
       }
       else //time > delay time
       {
         ts = _simTime -delayTime;
-        
+
         tl = _time_buffer.back();
         if(ts > tl)
         {
@@ -365,11 +365,11 @@ double SystemDefaultImplementation::delay(unsigned int expr_id,double expr_value
         {
          //find posion in value buffer for queried time
            buffer_type::iterator pos = find_if(_time_buffer.begin(),_time_buffer.end(),bind2nd(std::greater_equal<double>(),ts));
-          
-           if(pos!=_time_buffer.end()) 
+
+           if(pos!=_time_buffer.end())
            {
                 buffer_type::iterator first = _time_buffer.begin(); // first time entry
-                unsigned int index = std::distance(first,pos); //index of found time 
+                unsigned int index = std::distance(first,pos); //index of found time
                 t0 = *pos;
                 res0 = iter->second[index];
                 unsigned int length = _time_buffer.size();
@@ -378,7 +378,7 @@ double SystemDefaultImplementation::delay(unsigned int expr_id,double expr_value
                 t1 = _time_buffer[index+1];
                 double time_e = _time_buffer.back();
                 res1 = iter->second[index+1];
-                
+
            }
            else
            {
@@ -392,7 +392,7 @@ double SystemDefaultImplementation::delay(unsigned int expr_id,double expr_value
             return res1;
         else //linear interpolation
         {
-          
+
           double timedif = t1 - t0;
           double dt0 = t1 - ts;
           double dt1 = ts - t0;
@@ -402,8 +402,8 @@ double SystemDefaultImplementation::delay(unsigned int expr_id,double expr_value
       }
   }
   else
-    throw  std::invalid_argument("invalid delay expression id"); 
-  
-  
+    throw  std::invalid_argument("invalid delay expression id");
+
+
 }
- 
+

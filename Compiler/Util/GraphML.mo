@@ -263,7 +263,7 @@ public function addNode "author: marcusw
   input ShapeType shapeType;
   input Option<String> optDesc;
   input list<tuple<Integer,String>> attValues; //a key-value list of additional values -> the keys have to be registered in the graphinfo-structure first
-  
+
   input Integer iGraphIdx; //the parent-graph of the new node -> with this additional information, nested graphs are supported now
   input GraphInfo iGraphInfo;
   output GraphInfo oGraphInfo;
@@ -277,10 +277,10 @@ protected
   Integer nodeCount; //number of nodes in the nodes list
   list<Edge> edges;
   Integer edgeCount; //number of edges in the edge list
-  list<Attribute> attributes; 
+  list<Attribute> attributes;
   String graphNodeKey;
   String graphEdgeKey;
-  
+
   //values of graph
   Graph iGraph;
   String gid;
@@ -321,10 +321,10 @@ protected
   Integer nodeCount; //number of nodes in the nodes list
   list<Edge> edges;
   Integer edgeCount; //number of edges in the edge list
-  list<Attribute> attributes; 
+  list<Attribute> attributes;
   String graphNodeKey;
   String graphEdgeKey;
-  
+
   //values of graph
   Graph iGraph, newGraph;
   String gid;
@@ -344,7 +344,7 @@ algorithm
   tmpNode := GROUPNODE(id, newGraphIdx,isFolded,iHeader);
   nodes := tmpNode :: nodes;
   nodeIdc := nodeCount :: nodeIdc;
-  
+
   iGraph := GRAPH(gid,directed,nodeIdc,attValues);
   graphs := List.set(graphs,graphCount-iGraphIdx+1,iGraph);
   oGraphInfo := GRAPHINFO(graphs,graphCount,nodes,nodeCount,edges,edgeCount,attributes,graphNodeKey,graphEdgeKey);
@@ -377,7 +377,7 @@ protected
   Integer nodeCount; //number of nodes in the nodes list
   list<Edge> edges;
   Integer edgeCount; //number of edges in the edge list
-  list<Attribute> attributes; 
+  list<Attribute> attributes;
   String graphNodeKey;
   String graphEdgeKey;
 
@@ -391,7 +391,7 @@ algorithm
 end addEdge;
 
 public function addAttribute "author: marcusw
-  Adds a new attribute to the given graphInfo. 
+  Adds a new attribute to the given graphInfo.
   These attributes can be used by graphs, nodes and edges to display some additional informations."
   input String defaultValue;
   input String name;
@@ -413,7 +413,7 @@ protected
   Integer nodeCount; //number of nodes in the nodes list
   list<Edge> edges;
   Integer edgeCount; //number of edges in the edge list
-  list<Attribute> attributes; 
+  list<Attribute> attributes;
   String graphNodeKey;
   String graphEdgeKey;
 algorithm
@@ -439,7 +439,7 @@ protected
   Integer nodeCount; //number of nodes in the nodes list
   list<Edge> edges;
   Integer edgeCount; //number of edges in the edge list
-  list<Attribute> attributes; 
+  list<Attribute> attributes;
   String graphNodeKey;
   String graphEdgeKey;
   //values of graph
@@ -456,17 +456,17 @@ algorithm
 
   //Append attribute to graph
   attValues := iValue :: attValues;
-  
-  iGraph := GRAPH(gid,directed,nodeIdc,attValues);  
+
+  iGraph := GRAPH(gid,directed,nodeIdc,attValues);
   graphs := List.set(graphs,graphCount-iGraphIdx+1,iGraph);
   oGraphInfo := GRAPHINFO(graphs,graphCount,nodes,nodeCount,edges,edgeCount,attributes,graphNodeKey,graphEdgeKey);
-end addGraphAttributeValue; 
+end addGraphAttributeValue;
 
 // -------------------------
 // Helper
 // -------------------------
 public function getMainGraph "author: marcusw
-  This function will return the top-level graph (usually with index 1) if there is one in the graphInfo-structure. 
+  This function will return the top-level graph (usually with index 1) if there is one in the graphInfo-structure.
   Otherwise it will return NONE()."
   input GraphInfo iGraphInfo;
   output Option<tuple<Integer,Graph>> oGraph;

@@ -6,11 +6,11 @@
 Configuration::Configuration( PATH libraries_path,PATH config_path,PATH modelicasystem_path)
  :ConfigurationPolicy(libraries_path,modelicasystem_path,config_path)
 {
-     
+
      _settings_factory = createSettingsFactory();
-    
+
      _global_settings = _settings_factory->createSolverGlobalSettings();
-    
+
 }
 
 Configuration::~Configuration(void)

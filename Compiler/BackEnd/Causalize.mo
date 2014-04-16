@@ -108,17 +108,17 @@ algorithm
   outSyst := matchcontinue (nvars,neqns,isyst,inMatchingOptions,matchingAlgorithm,arg,ishared)
     local
       String esize_str,vsize_str;
-    
+
     case (_,_,_,(_,BackendDAE.ALLOW_UNDERCONSTRAINED()),_,_,_)
       then
         singularSystemCheck1(nvars,neqns,isyst,BackendDAE.ALLOW_UNDERCONSTRAINED(),matchingAlgorithm,arg,ishared);
-    
+
     case (_,_,_,(_,BackendDAE.EXACT()),_,_,_)
       equation
         true = intEq(nvars,neqns);
       then
         singularSystemCheck1(nvars,neqns,isyst,BackendDAE.EXACT(),matchingAlgorithm,arg,ishared);
-    
+
     case (_,_,_,(_,BackendDAE.EXACT()),_,_,_)
       equation
         true = intGt(nvars,neqns);
@@ -127,7 +127,7 @@ algorithm
         Error.addMessage(Error.UNDERDET_EQN_SYSTEM, {esize_str,vsize_str});
       then
         fail();
-    
+
     case (_,_,_,_,_,_,_)
       equation
         true = intLt(nvars,neqns);
@@ -136,13 +136,13 @@ algorithm
         Error.addMessage(Error.OVERDET_EQN_SYSTEM, {esize_str,vsize_str});
       then
         fail();
-    
+
     else
       equation
         Debug.fprint(Flags.FAILTRACE, "- Causalize.singularSystemCheck failed\n");
       then
         fail();
-  
+
   end matchcontinue;
 end singularSystemCheck;
 
@@ -276,7 +276,7 @@ algorithm
   var_str := BackendDump.dumpMarkedVars(isyst, vars);
   source := BackendEquation.markedEquationSource(isyst, listGet(unmatched1,1));
   info := DAEUtil.getElementSourceFileInfo(source);
-  
+
   Debug.bcall3(BackendDAEUtil.isInitializationDAE(ishared), Error.addSourceMessage, Error.STRUCTURAL_SINGULAR_INITIAL_SYSTEM, {eqn_str,var_str}, info);
   Debug.bcall3(not BackendDAEUtil.isInitializationDAE(ishared), Error.addSourceMessage, Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,var_str}, info);
 end singularSystemError;

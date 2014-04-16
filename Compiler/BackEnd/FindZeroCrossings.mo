@@ -121,11 +121,11 @@ protected
   BackendDAE.EqSystems systs;
   BackendDAE.ExtraInfo ei;
 algorithm
-  BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, 
-    cache, env, funcs, einfo as BackendDAE.EVENT_INFO(timeEvents=timeEvents, zeroCrossingLst=zero_crossings, relationsLst=relationsLst, 
-    sampleLst=sampleLst, whenClauseLst=whenclauses, relationsNumber=countRelations, 
+  BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs,
+    cache, env, funcs, einfo as BackendDAE.EVENT_INFO(timeEvents=timeEvents, zeroCrossingLst=zero_crossings, relationsLst=relationsLst,
+    sampleLst=sampleLst, whenClauseLst=whenclauses, relationsNumber=countRelations,
     numberMathEvents=countMathFunctions), eoc, btp, symjacs, ei)) := inDAE;
-          
+
   vars := BackendVariable.listVar1(allvars);
   eqs_lst := BackendEquation.equationList(remeqns);
   (zero_crossings, eqs_lst1, whenclauses, countRelations, countMathFunctions, relationsLst, sampleLst) := findZeroCrossings2(vars, knvars, eqs_lst, 0, whenclauses, 0, countRelations, countMathFunctions, zero_crossings, relationsLst, sampleLst, {}, {});
@@ -172,12 +172,12 @@ protected
   BackendDAE.ExtraInfo ei;
 algorithm
   BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets) := syst;
-  (BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, 
-    cache, env, funcs, einfo as BackendDAE.EVENT_INFO(timeEvents=timeEvents, zeroCrossingLst=zero_crossings, 
-    sampleLst=sampleLst, whenClauseLst=whenclauses, relationsLst=relations, 
-    relationsNumber=countRelations, numberMathEvents=countMathFunctions), 
+  (BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs,
+    cache, env, funcs, einfo as BackendDAE.EVENT_INFO(timeEvents=timeEvents, zeroCrossingLst=zero_crossings,
+    sampleLst=sampleLst, whenClauseLst=whenclauses, relationsLst=relations,
+    relationsNumber=countRelations, numberMathEvents=countMathFunctions),
     eoc, btp, symjacs, ei), allvars) := shared;
-          
+
   eqs_lst := BackendEquation.equationList(eqns);
   (zero_crossings, eqs_lst1, _, countRelations, countMathFunctions, relations, sampleLst) := findZeroCrossings2(vars, knvars, eqs_lst, 0, {}, 0, countRelations, countMathFunctions, zero_crossings, relations, sampleLst, {}, {});
   eqs_lst1 := listReverse(eqs_lst1);
@@ -200,7 +200,7 @@ protected function findZeroCrossings2 "
   input Integer inEqnCount;
   input list<BackendDAE.WhenClause> inWhenClauseLst4;
   input Integer inWhenClauseCount;
-  
+
   input Integer inNumberOfRelations;
   input Integer inNumberOfMathFunctions;
   input list<BackendDAE.ZeroCrossing> inZeroCrossingLst;
@@ -303,7 +303,7 @@ algorithm
       then
         (res1, eq_reslst, wc_reslst, countRelations, countMathFunctions, relationsLst, sampleLst);
 
-        
+
     case (v, _, ((BackendDAE.SOLVED_EQUATION(componentRef = cref, exp = e1, source= source_, differentiated=diffed))::xs), eq_count, {}, _, countRelations, countMathFunctions, zcs, relationsLst, sampleLst, eqnsAccum, whenClauseAccum)
       equation
         (eres1, countRelations, countMathFunctions, res, relationsLst, sampleLst) = findZeroCrossings3(e1, zcs, relationsLst, sampleLst, countRelations, countMathFunctions, eq_count, -1, v, knvars);
@@ -312,7 +312,7 @@ algorithm
       then
         (res1, eq_reslst, wc_reslst, countRelations, countMathFunctions, relationsLst, sampleLst);
 
-        
+
     case (v, _, ((BackendDAE.RESIDUAL_EQUATION(exp = e1, source= source_, differentiated=diffed))::xs), eq_count, {}, _, countRelations, countMathFunctions, zcs, relationsLst, sampleLst, eqnsAccum, whenClauseAccum)
       equation
         eq_count = eq_count + 1;
@@ -1329,7 +1329,7 @@ end traverseStmtsExps;
 
 protected function traverseStmtsElseExps "author: BZ, 2008-12
   modified: 2011-01 by wbraun
-  Helper function for traverseStmtsExps to find ZeroCrosssings in algorithm 
+  Helper function for traverseStmtsExps to find ZeroCrosssings in algorithm
   else statements."
   input DAE.Else inElse;
   input FuncExpType func;
@@ -1363,7 +1363,7 @@ algorithm
 end traverseStmtsElseExps;
 
 protected function traverseStmtsForExps "modified: 2011-01 by wbraun
-  Helper function for traverseStmtsExps to processed for loops to search 
+  Helper function for traverseStmtsExps to processed for loops to search
   zero crosssings."
   input DAE.Exp inIteratorExp;
   input list<DAE.Exp> inExplst;
@@ -1402,8 +1402,8 @@ algorithm
 end traverseStmtsForExps;
 
 protected function makeZeroCrossings "
-  Constructs a list of ZeroCrossings from a list expressions and lists of 
-  equation indices and when clause indices. Each Zerocrossing gets the same 
+  Constructs a list of ZeroCrossings from a list expressions and lists of
+  equation indices and when clause indices. Each Zerocrossing gets the same
   lists of indicies."
   input list<DAE.Exp> inExpExpLst1;
   input list<Integer> inIntegerLst2;
@@ -1417,20 +1417,20 @@ algorithm
       DAE.Exp e;
       list<DAE.Exp> xs;
       list<Integer> eq_ind, wc_ind;
-      
+
     case ({}, _, _)
     then {};
-    
+
     case ((e::xs), {-1}, wc_ind) equation
       resx = makeZeroCrossings(xs, {}, wc_ind);
       res = BackendDAE.ZERO_CROSSING(e, {}, wc_ind);
     then (res::resx);
-      
+
     case ((e::xs), eq_ind, {-1}) equation
       resx = makeZeroCrossings(xs, eq_ind, {});
       res = BackendDAE.ZERO_CROSSING(e, eq_ind, {});
     then (res::resx);
-    
+
     case ((e::xs), eq_ind, wc_ind) equation
       resx = makeZeroCrossings(xs, eq_ind, wc_ind);
       res = BackendDAE.ZERO_CROSSING(e, eq_ind, wc_ind);

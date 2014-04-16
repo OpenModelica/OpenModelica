@@ -2809,7 +2809,7 @@ algorithm
         then
           exps;
     else
-      then 
+      then
         {inExp};
   end match;
 end getTupleExps;

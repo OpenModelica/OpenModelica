@@ -944,13 +944,13 @@ public function addReplacementLst " adds several replacements given by list of c
   input list<DAE.Exp> dsts;
   output VariableReplacements repl;
 algorithm
-  repl := match (inRepl,crs,dsts) 
-    local 
+  repl := match (inRepl,crs,dsts)
+    local
       DAE.ComponentRef cr;
       DAE.Exp dst;
       list<DAE.ComponentRef> crrest;
       list<DAE.Exp> dstrest;
-    
+
     case (repl,{},{}) then repl;
     case (repl,cr::crrest,dst::dstrest) equation
       repl = addReplacement(repl,cr,dst);

@@ -101,7 +101,7 @@ bool SystemStateSelection::stateSelection(int switchStates)
                   changed = true;
             else
                   changed = false;
-      }  
+      }
       return changed;
 
 }
@@ -158,7 +158,7 @@ void SystemStateSelection::setAMatrix(int* newEnable,unsigned int index)
             throw  std::invalid_argument("No A matrix availibale for state selection");
       _state_selection->setStates(index,states);
       delete [] states ;
-      delete [] states2 ; 
+      delete [] states2 ;
 }
 
 

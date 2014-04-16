@@ -132,7 +132,7 @@ static void write_description(std::ofstream &fp, const char *name, const char *c
 
 static void write_alias(std::ofstream &fp, const char *name, const char *sig, bool negate) {
   msgpack_str(fp, name); // alias name
-  msgpack_obj_header(fp, negate ? 2 : 1); 
+  msgpack_obj_header(fp, negate ? 2 : 1);
   msgpack_str(fp, "s");
   msgpack_str(fp, sig);
   if (negate) { msgpack_str(fp, "t"); msgpack_str(fp, "inv"); }
@@ -151,7 +151,7 @@ static void write_aliases(std::ofstream &fp, MODEL_DATA *modelData, int include[
   for(long i=0;i<modelData->nAliasString;i++)
     na += include[modelData->stringAlias[i].aliasType];
 
-  msgpack_obj_header(fp, na); 
+  msgpack_obj_header(fp, na);
 
   for(long i=0;i<modelData->nAliasReal;i++) {
     DATA_REAL_ALIAS *alias = &modelData->realAlias[i];
@@ -243,7 +243,7 @@ static void write_cont_table(std::ofstream &fp, MODEL_DATA *modelData) {
   msgpack_str(fp, "sigs");
   msgpack_array_header(fp, nvars+1);
   msgpack_str(fp, "time");
-  for(long i=0;i<modelData->nVariablesReal;i++) 
+  for(long i=0;i<modelData->nVariablesReal;i++)
     msgpack_str(fp, modelData->realVarsData[i].info.name);
   for(long i=0;i<modelData->nVariablesInteger;i++)
     msgpack_str(fp, modelData->integerVarsData[i].info.name);
@@ -349,7 +349,7 @@ void write_parameter_data(std::ofstream &fp, double t,
   for(i=0;i<modelData->nParametersInteger;i++) msgpack_int32(fp, sInfo->integerParameter[i]);
   for(i=0;i<modelData->nParametersBoolean;i++) msgpack_boolean(fp, sInfo->booleanParameter[i]);
   for(i=0;i<modelData->nParametersString;i++) msgpack_str(fp, sInfo->stringParameter[i]);
-  
+
   long end_pos = fp.tellp();
   fp.seekp(length_pos);
   raw_uint32(fp, end_pos-data_pos);
@@ -393,7 +393,7 @@ void recon_wall_emit(simulation_result *self,DATA *data)
     msgpack_boolean(fp, data->localData[0]->booleanVars[i]);
   for(i=0;i<modelData->nVariablesString;i++)
     msgpack_str(fp, data->localData[0]->stringVars[i]);
-  
+
   long end_pos = fp.tellp();
   fp.seekp(length_pos);
   raw_uint32(fp, end_pos-data_pos);

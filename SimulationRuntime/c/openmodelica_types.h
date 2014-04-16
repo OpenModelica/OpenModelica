@@ -104,20 +104,20 @@ typedef integer_array_t integer_array;
 typedef boolean_array_t boolean_array;
 typedef string_array_t string_array;
 
-/* 
- * ERROR_STAGE defines different 
- * stages where an assertion can be triggered. 
- * 
- */ 
-typedef enum { 
-  ERROR_UNKOWN = 0, 
-  ERROR_SIMULATION, 
-  ERROR_INTEGRATOR, 
-  ERROR_NONLINEARSOLVER, 
-  ERROR_EVENTSEARCH, 
-  ERROR_OPTIMIZE, 
-  ERROR_MAX 
-} errorStage; 
+/*
+ * ERROR_STAGE defines different
+ * stages where an assertion can be triggered.
+ *
+ */
+typedef enum {
+  ERROR_UNKOWN = 0,
+  ERROR_SIMULATION,
+  ERROR_INTEGRATOR,
+  ERROR_NONLINEARSOLVER,
+  ERROR_EVENTSEARCH,
+  ERROR_OPTIMIZE,
+  ERROR_MAX
+} errorStage;
 
 #include <setjmp.h>
 /* Thread-specific data passed around in most functions.
@@ -144,17 +144,17 @@ typedef struct threadData_s {
   jmp_buf *mmc_thread_work_exit;
   void *localRoots[MAX_LOCAL_ROOTS];
 /*
- * simulationJumpBufer: 
- *  Jump-buffer to handle simulation error 
- *  like asserts or divisions by zero. 
- * 
- * currentJumpStage: 
- *   define which simulation jump buffer 
- *   is currently used. 
- */ 
-  jmp_buf *globalJumpBuffer; 
-  jmp_buf *simulationJumpBuffer; 
-  errorStage currentErrorStage; 
+ * simulationJumpBufer:
+ *  Jump-buffer to handle simulation error
+ *  like asserts or divisions by zero.
+ *
+ * currentJumpStage:
+ *   define which simulation jump buffer
+ *   is currently used.
+ */
+  jmp_buf *globalJumpBuffer;
+  jmp_buf *simulationJumpBuffer;
+  errorStage currentErrorStage;
 } threadData_t;
 
 #if defined(__cplusplus)

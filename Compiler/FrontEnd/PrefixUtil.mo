@@ -682,7 +682,7 @@ algorithm
     case (cache,_,_,e,Prefix.NOPRE())
       equation
          false = System.getHasInnerOuterDefinitions();
-      then 
+      then
         (cache,e);
 
     // handle literal constants
@@ -1227,10 +1227,10 @@ algorithm
         true = Config.acceptMetaModelicaGrammar();
       then
        (inCache, inTy);
-    
+
     case (_, _, _, _, _)
       equation
-        ((outTy, (outCache, _, _, _))) = Types.traverseType((inTy, (inCache, inEnv, inIH, inPre)), prefixArrayDimensions); 
+        ((outTy, (outCache, _, _, _))) = Types.traverseType((inTy, (inCache, inEnv, inIH, inPre)), prefixArrayDimensions);
       then
         (outCache, outTy);
   end matchcontinue;
@@ -1255,7 +1255,7 @@ algorithm
     case ((DAE.T_ARRAY(ty,dims,ts),(cache, env, ih, pre)))
       equation
         (cache, dims) = prefixDimensions(cache, env, ih, pre, dims);
-      then 
+      then
         ((DAE.T_ARRAY(ty,dims,ts),(cache, env, ih, pre)));
 
     else tpl;
@@ -1278,19 +1278,19 @@ algorithm
       DAE.Dimensions rest, new;
       DAE.Dimension d;
       Env.Cache cache;
-    
+
     case (_, _, _, _, {}) then (inCache, {});
-    
+
     case (_, _, _, _, DAE.DIM_EXP(exp=e)::rest)
       equation
         (cache, e) = prefixExp(inCache, inEnv, inIH, e, inPre);
-        (cache, new) = prefixDimensions(cache, inEnv, inIH, inPre, rest); 
+        (cache, new) = prefixDimensions(cache, inEnv, inIH, inPre, rest);
       then
         (cache, DAE.DIM_EXP(e)::new);
-    
+
     case (_, _, _, _, d::rest)
       equation
-        (cache, new) = prefixDimensions(inCache, inEnv, inIH, inPre, rest); 
+        (cache, new) = prefixDimensions(inCache, inEnv, inIH, inPre, rest);
       then
         (cache, d::new);
   end matchcontinue;

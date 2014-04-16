@@ -160,12 +160,12 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
 
   #include "Modelica.h"
   #include "OMCpp<%lastIdentOfPath(modelInfo.name)%>Extension.h"
-  
+
   <%ModelDefineData(modelInfo)%>
   #define NUMBER_OF_EVENT_INDICATORS <%zerocrosslength(simCode)%>
 
   #include "FMU/FMUWrapper.cpp"
-  
+
   #define OBJECTCONSTRUCTOR (new FMUWrapper(instanceName, GUID, functions, loggingOn))
   #include "FMU/FMULibInterface.cpp"
 
@@ -510,9 +510,9 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   EXEEXT=<%makefileParams.exeext%>
   DLLEXT=<%makefileParams.dllext%>
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
-  
+
   CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -I"<%makefileParams.omhome%>/include/omc/cpp" -I"<%makefileParams.omhome%>/include/omc/cpp/Core" -I"<%makefileParams.omhome%>/include/omc/cpp/SimCoreFactory" -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %>
-  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" -L$(BOOST_LIBS)  -L"$(BOOST_LIBS)" -l:$(BOOST_SYSTEM_LIB) -l:$(BOOST_FILESYSTEM_LIB)  -l:$(BOOST_PROGRAM_OPTIONS_LIB) 
+  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" -L$(BOOST_LIBS)  -L"$(BOOST_LIBS)" -l:$(BOOST_SYSTEM_LIB) -l:$(BOOST_FILESYSTEM_LIB)  -l:$(BOOST_PROGRAM_OPTIONS_LIB)
   PLATFORM="<%platformstr%>"
   SRC=OMCpp<%modelName%>.cpp
   SRC+= OMCpp<%modelName%>FMU.cpp
@@ -527,7 +527,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   LIBS= -lOMCppSystem_static -lOMCppDataExchange_static -lOMCppOMCFactory
   LIBS+= $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_SERIALIZATION_LIB)
   LIBS+= $(LINUX_LIB_DL)
-  
+
   <%modelName%>.fmu: $(SRC)
   <%\t%>$(CXX) -shared -I. -o <%modelName%>$(DLLEXT) $(SRC) $(CFLAGS) $(LDFLAGS) $(LIBS)
   <%\t%>rm -rf binaries
@@ -536,11 +536,11 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   <%\t%>rm -f <%modelName%>.fmu
   <%\t%>zip -r "<%modelName%>.fmu" modelDescription.xml binaries binaries/$(PLATFORM) binaries/$(PLATFORM)/<%modelName%>$(DLLEXT)
   <%\t%>rm -rf binaries
-  
+
   .PHONY: clean
   clean:
   <%\t%>rm $(SRC) <%modelName%>$(DLLEXT)
-  
+
   >>
 end fmuMakefile;
 

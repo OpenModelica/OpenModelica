@@ -326,17 +326,17 @@ public function hasKey"checks if the given key is in the hashTable"
   output Boolean b;
 algorithm
    b := matchcontinue(key,hashTable)
-    local 
+    local
       list<Key> keys;
-    case(_, _) 
+    case(_, _)
       equation
         _ = get(key, hashTable);
-      then 
+      then
         true;
     else
       then
         false;
-  end matchcontinue;  
+  end matchcontinue;
 end hasKey;
 
 public function anyKeyInHashTable "Returns true if any of the keys are present in the hashtable. Stops and returns true upon first occurence"
@@ -345,21 +345,21 @@ public function anyKeyInHashTable "Returns true if any of the keys are present i
   output Boolean res;
 algorithm
   res := matchcontinue(inKeys,inHt)
-    local 
-      Key key; 
+    local
+      Key key;
       list<Key> keys;
-    
+
     case({}, _) then false;
-    
-    case(key::_, _) 
+
+    case(key::_, _)
       equation
         _ = get(key, inHt);
-      then 
+      then
         true;
-    
-    case(_::keys, _) 
+
+    case(_::keys, _)
       then anyKeyInHashTable(keys, inHt);
-  
+
   end matchcontinue;
 end anyKeyInHashTable;
 

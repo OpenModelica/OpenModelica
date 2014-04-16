@@ -136,7 +136,7 @@ algorithm
       String s;
       Option<HashTable2.HashTable> derConst;
     case (_,_,_)
-      equation    
+      equation
         REPLACEMENTS(ht,invHt,eht,iv,derConst) = repl;
         false = BaseHashTable.hasKey(inSrc,ht);
       then

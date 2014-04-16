@@ -715,7 +715,7 @@ algorithm
     case "always" then NFBuiltin.BUILTIN_TYPE_STATE_SELECT;
   end match;
 end getBasicTypeAttrTypeStateSelect;
-  
+
 protected function instElementList
   input list<SCode.Element> inElements;
   input list<Modifier> inExtendsMods;
@@ -806,7 +806,7 @@ algorithm
         (res, globals) = instComponentEntry(entry, inPrefixes, inEnv, inGlobals);
       then
         (res :: inAccumEl, inExtendsMods, inExtendsState, globals);
-        
+
     // An extends clause.
     case (SCode.EXTENDS(baseClassPath = _), mod :: ext_mods, _, _, _, es, globals)
       equation
@@ -873,10 +873,10 @@ algorithm
         smod = getRedeclaredModifier(orig_el);
       then
         (inEntry, (smod, inEnv), inEnv);
-      
+
   end match;
 end redeclareEntry;
-    
+
 protected function instComponentEntry
   input Entry inEntry;
   input Prefixes inPrefixes;
@@ -932,7 +932,7 @@ algorithm
           inPrefixes, inEnv, inGlobals);
       then
         (el, globals);
-        
+
     // A normal component.
     case (SCode.COMPONENT(condition = NONE()), _, _, _, _, _)
       equation
@@ -973,7 +973,7 @@ algorithm
   outElement := match(inElement, inOuterModifier, inPrefixes, inEnv)
     local
       Prefix prefix;
-      Absyn.Path path, tpath; 
+      Absyn.Path path, tpath;
       Component comp;
       String name;
 
@@ -990,7 +990,7 @@ algorithm
 
   end match;
 end instComponentOuter;
-  
+
 protected function instComponentEnum
   input SCode.Element inElement;
   input Modifier inOuterModifier;
@@ -2260,7 +2260,7 @@ algorithm
   outPrefix := match(inPrefix, inEnv)
     local
       Prefix prefix;
-      
+
     // The current scope has a prefix, use it.
     case (SOME(prefix), _) then prefix;
     // The current scope has no prefix, use the environment to make one.
@@ -2317,7 +2317,7 @@ algorithm
     // will be instantiated normally, in which case NONE() is returned.
     case (false, SOME(prefix), _, _)
       then Util.if_(NFInstPrefix.isPackagePrefix(prefix), inPrefix, NONE());
-        
+
     // Otherwise we have a component without a prefix or a class.
     else
       equation
@@ -2374,7 +2374,7 @@ algorithm
       equation
         false = NFEnv.isClassEntry(inEntry);
         env = NFEnv.setScopePrefix(prefix, inEnv);
-        (elem, (consts, funcs)) = 
+        (elem, (consts, funcs)) =
           instComponentEntry(inEntry, NFInstTypes.NO_PREFIXES(), env, inGlobals);
         consts = NFInstSymbolTable.addElement(elem, consts);
       then
@@ -2509,7 +2509,7 @@ algorithm
   outComponent := NFInstTypes.TYPED_COMPONENT(inEnumPath, ty, NONE(),
     NFInstTypes.DEFAULT_CONST_DAE_PREFIXES, binding, inInfo);
 end instEnumTypeComponent;
-  
+
 protected function prefixPath
   "Prefixes a path so that it can be uniquely identified."
   input Absyn.Path inPath;
@@ -2617,7 +2617,7 @@ algorithm
 
   end match;
 end instBuiltinSize;
-    
+
 protected function instFunction
   input Absyn.ComponentRef inName;
   input Env inEnv;

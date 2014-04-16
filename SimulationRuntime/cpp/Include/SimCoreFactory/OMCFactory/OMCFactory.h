@@ -23,7 +23,7 @@ class OMCFactory
 
     protected:
 
-        SimSettings ReadSimulationParameter(int argc, const char* argv[]); 
+        SimSettings ReadSimulationParameter(int argc, const char* argv[]);
         boost::shared_ptr<ISimController> _simController;
         std::map<string,shared_library> _modules;
         PATH _library_path;

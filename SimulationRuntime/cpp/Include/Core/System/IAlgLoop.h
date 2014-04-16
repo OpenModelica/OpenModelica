@@ -41,21 +41,21 @@ public:
   /// (Re-) initialize the system of equations
   virtual void initialize() = 0;
 
-  /// Provide variables of given data type 
+  /// Provide variables of given data type
   virtual void getReal(double* lambda) = 0;
-  /// Provide nominal values of given data type 
+  /// Provide nominal values of given data type
   virtual void getNominalReal(double* lambda) = 0;
   /// Set variables with given data type
   virtual void setReal(const double* lambda) = 0;
-  
+
   /// Update transfer behavior of the system of equations according to command given by solver
   virtual void evaluate(const IContinuous::UPDATETYPE command = IContinuous::UNDEF_UPDATE) = 0;   // vxworksupdate
 
   /// Provide the right hand side (according to the index)
   virtual void getRHS(double* res) = 0;
-  
+
   virtual void getSystemMatrix(double* A_matrix) = 0;
-  
+
   virtual bool isLinear() = 0;
   virtual bool isConsistent() = 0;
   /*/// Fügt das übergebene Objekt als Across-Kante hinzu

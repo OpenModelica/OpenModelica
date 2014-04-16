@@ -615,7 +615,7 @@ algorithm
       equation
         // stripped_class = SCode.CLASS(id,prefixes,e,p,r,SCode.PARTS(elts,{},{},{},{},{},{},extDecl),cmt,info);
         (cache,env_1,ih,funs) = implicitFunctionInstantiation2(cache, env, ih, DAE.NOMOD(), Prefix.NOPRE(), inClass, {}, true);
-        // Only external functions are valid without an algorithm section... 
+        // Only external functions are valid without an algorithm section...
         cache = Env.addDaeExtFunction(cache, funs);
       then
         (cache,env_1,ih);
@@ -628,7 +628,7 @@ algorithm
         elts = List.select(elts,isElementImportantForFunction);
         stripped_class = SCode.CLASS(id,prefixes,e,p,SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(false)),SCode.PARTS(elts,{},{},{},{},{},{},NONE()),cmt,info);
         (cache,env_1,ih,funs) = implicitFunctionInstantiation2(cache, env, ih, DAE.NOMOD(), Prefix.NOPRE(), stripped_class, {}, true);
-        // Only external functions are valid without an algorithm section... 
+        // Only external functions are valid without an algorithm section...
         // cache = Env.addDaeExtFunction(cache, funs);
       then
         (cache,env_1,ih);
@@ -640,11 +640,11 @@ algorithm
       equation
         (cache,(c as SCode.CLASS(name = _, restriction = _)),cenv) = Lookup.lookupClass(cache, env, cn, false /* Makes MultiBody gravityacceleration hacks shit itself */);
         (cache,mod2) = Mod.elabMod(cache, env, ih, Prefix.NOPRE(), mod1, false, info);
-        
+
         (cache,_,ih,_,dae,_,ty,_,_,_) =
           Inst.instClass(cache,cenv,ih,UnitAbsynBuilder.emptyInstStore(), mod2,
             Prefix.NOPRE(), c, {}, true, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
-        
+
         env_1 = Env.extendFrameC(env,c);
         (cache,fpath) = Inst.makeFullyQualified(cache,env_1, Absyn.IDENT(id));
         ty1 = InstUtil.setFullyQualifiedTypename(ty,fpath);
@@ -655,7 +655,7 @@ algorithm
     case (cache,env,ih,SCode.CLASS(name = _,partialPrefix = _,encapsulatedPrefix = _,restriction = _,
                                    classDef = SCode.OVERLOAD(pathLst=_),info = info))
       equation
-         //(cache,env,ih,_) = implicitFunctionInstantiation2(cache, env, ih, DAE.NOMOD(), Prefix.NOPRE(), inClass, {}, true);          
+         //(cache,env,ih,_) = implicitFunctionInstantiation2(cache, env, ih, DAE.NOMOD(), Prefix.NOPRE(), inClass, {}, true);
       then
         (cache,env,ih);
 
@@ -702,10 +702,10 @@ algorithm
     case (cache,env,ih,_,(fn :: fns))
       equation
         // print("instOvl: " +& Absyn.pathString(fn) +& "\n");
-        (cache,(c as SCode.CLASS(name=_,partialPrefix=partialPrefix,encapsulatedPrefix=_,restriction=rest,info=info)),cenv) = 
+        (cache,(c as SCode.CLASS(name=_,partialPrefix=partialPrefix,encapsulatedPrefix=_,restriction=rest,info=info)),cenv) =
            Lookup.lookupClass(cache, env, fn, true);
         true = SCode.isFunctionRestriction(rest);
-        
+
         (cache,env,ih,resfns1) = implicitFunctionInstantiation2(inCache, cenv, inIH, DAE.NOMOD(), pre, c, {}, false);
         (cache,env,ih,resfns2) = instOverloadedFunctions(cache,env,ih,pre,fns);
       then (cache,env,ih,listAppend(resfns1,resfns2));
@@ -786,7 +786,7 @@ algorithm
         Debug.fprintln(Flags.FAILTRACE, "#-- Inst.instExtDecl failed");
       then
         fail();
-  
+
   end matchcontinue;
 end instExtDecl;
 
@@ -869,7 +869,7 @@ algorithm
         (cache,compenv,ih,_,_,_,tp_1,_) = InstVar.instVar(cache, cenv, ih, UnitAbsyn.noStore, ClassInf.FUNCTION(Absyn.IDENT(""), false), mod_1, Prefix.NOPRE(),
           id, cl, attr, prefixes, dimexp, {}, {}, impl, comment, info, ConnectionGraph.EMPTY, Connect.emptySet, env);
         (compenv, env) = Env.splitEnv(compenv, env, id);
-        
+
         (cache,bind) = InstBinding.makeBinding(cache,env, attr, mod_1, tp_1, Prefix.NOPRE(), id, info);
       then
         (cache,ih,DAE.TYPES_VAR(id,DAE.ATTR(ct,prl,var,dir,Absyn.NOT_INNER_OUTER(),vis),tp_1,bind,NONE()));
@@ -975,27 +975,27 @@ algorithm
         (cache, _) = getRecordConstructorFunction(cache, inEnv, path);
       then
         cache;
-    
+
     // if previous stuff didn't work, try to use the ty directly
     case (cache, _, DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo, src))
       equation
         path = Absyn.makeFullyQualified(path);
         //(cache, _) = getRecordConstructorFunction(cache, inEnv, path);
-        
+
         (inputs,locals) = List.extractOnTrue(vars, Types.isModifiableTypesVar);
         inputs = List.map(inputs,Types.setVarDefaultInput);
         locals = List.map(locals,Types.setVarProtected);
         vars = listAppend(inputs,locals);
-                
+
         fixedTy = DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo, src);
         fargs = Types.makeFargsList(inputs);
         funcTy = DAE.T_FUNCTION(fargs, fixedTy, DAE.FUNCTION_ATTRIBUTES_DEFAULT, {path});
         func = DAE.RECORD_CONSTRUCTOR(path,funcTy,DAE.emptyElementSource);
-        
+
         cache = InstUtil.addFunctionsToDAE(cache, {func}, SCode.NOT_PARTIAL());
       then
         (cache);
-    
+
     else inCache;
 
   end matchcontinue;

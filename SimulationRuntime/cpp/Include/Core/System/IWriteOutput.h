@@ -20,12 +20,12 @@ public:
     RESULTS      =  0x00000020,      ///< Write out results
     SIMINFO      =  0x00000040      ///< Write out simulation info (e.g. number of steps)
   };
-   
+
   virtual ~IWriteOutput()  {};
   /// Output routine (to be called by the solver after every successful integration step)
   virtual void writeOutput(const OUTPUT command = UNDEF_OUTPUT) = 0;
   virtual IHistory* getHistory()=0;
- 
-  
+
+
 
 };

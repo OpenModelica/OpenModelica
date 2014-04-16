@@ -50,13 +50,13 @@ public:
     void initialize();
 
     /// Provide variables with given index to the system
-  
+
     void getReal(double* lambda) ;
-    
+
     /// Set variables with given index to the system
-    
+
     void setReal(const double* lambda);
-    
+
     /// Provide the right hand side (according to the index)
     void getRHS(double* res);
 

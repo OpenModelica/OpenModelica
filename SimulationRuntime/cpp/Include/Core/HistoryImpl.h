@@ -24,8 +24,8 @@ public:
     void setOutputs(map<unsigned int,string> var_outputs)
     {
         _var_outputs=var_outputs;
-        
-    
+
+
     }
     void init()
     {

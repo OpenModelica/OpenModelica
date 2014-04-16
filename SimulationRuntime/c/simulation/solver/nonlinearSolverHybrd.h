@@ -48,7 +48,7 @@ extern
 int hybrj_( int(*) (const int*, const double*, double*, double *, const int*, const int*, void*),  const int *n, double *x, double *fvec, double *fjac, const int *ldfjac,
   const double *xtol, const int *axfev, double *diag, const int *mode,
   const double *factor, const int *nprint, int *info, int *nfev, int *njev,
-  double *r, int *lr, double *qtf, double *wa1, double *wa2, 
+  double *r, int *lr, double *qtf, double *wa1, double *wa2,
   double *wa3, double *wa4, void* user_data);
 
 #ifdef __cplusplus

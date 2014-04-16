@@ -34,7 +34,7 @@ public:
   //DenseOut
   virtual bool getDenseOutput() = 0;
    virtual void setDenseOutput(bool) = 0;
-   //Event Output 
+   //Event Output
    virtual bool getEventOutput() = 0;
    virtual void setEventOutput(bool) = 0;
 
@@ -42,7 +42,7 @@ public:
   virtual void setATol(double) = 0;
    virtual double getRTol() = 0;
   virtual void setRTol(double) = 0;
- 
+
     ///  Global simulation settings
     virtual IGlobalSettings* getGlobalSettings()=0;
     virtual void load(string)=0;

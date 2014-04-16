@@ -329,14 +329,14 @@ algorithm
       Boolean b2;
       String idn;
       Integer n;
-    
+
     // homotopy(e, e) => e
     case DAE.CALL(path=Absyn.IDENT("homotopy"),expLst={e1,e2})
       equation
         true = Expression.expEqual(e1,e2);
       then
-        e1;    
-    
+        e1;
+
     // noEvent propagated to relations and event triggering functions
     case DAE.CALL(path=Absyn.IDENT("noEvent"),expLst={e})
       equation
@@ -352,10 +352,10 @@ algorithm
 
     case DAE.CALL(path=Absyn.IDENT("pre"), expLst={DAE.CREF(componentRef=_)})
       then inExp;
-    
+
     case DAE.CALL(path=Absyn.IDENT("change"), expLst={DAE.CREF(componentRef=_)})
       then inExp;
-    
+
     case DAE.CALL(path=Absyn.IDENT("edge"), expLst={DAE.CREF(componentRef=_)})
       then inExp;
 
@@ -1043,7 +1043,7 @@ algorithm
      equation
        true = Expression.isConst(e1);
      then e1;
-       
+
    // delay of constant expression
    case DAE.CALL(path=Absyn.IDENT("delay"),expLst={e1,_,_})
      equation
@@ -3282,7 +3282,7 @@ algorithm
   ty := Expression.typeof(elem);
   outAsubArray := Expression.makeScalarArray(asubs, ty);
 end simplifyAsubSlicing;
-  
+
 protected function simplifyAsubSlicing2
   input list<DAE.Exp> inSubscripts;
   input DAE.Exp inExp;
@@ -3611,11 +3611,11 @@ algorithm
 
     // a + ((-b) op2 c) = a - (b op2 c)
     case (DAE.ADD(ty = tp),e1,DAE.BINARY(DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = e2), op2, e3))
-      equation 
-        true = Expression.operatorEqual(op2,DAE.DIV(tp)); 
+      equation
+        true = Expression.operatorEqual(op2,DAE.DIV(tp));
               //or  Expression.operatorEqual(op2,MUL.DIV(tp));
          e = DAE.BINARY(e1, DAE.SUB(tp), DAE.BINARY(e2,op2,e3));
-      then e; 
+      then e;
 
     // Commutative
     // (-a)+b = b + (-a)
@@ -3702,7 +3702,7 @@ algorithm
     case(DAE.DIV(ty),DAE.CALL(path=Absyn.IDENT("abs"),expLst={e1}),e2)
      equation
      true = Expression.expEqual(e1,e2);
-     res = Expression.makeBuiltinCall("sign",{e1},ty); 
+     res = Expression.makeBuiltinCall("sign",{e1},ty);
     then
      res;
 
@@ -3851,8 +3851,8 @@ algorithm
     case (_,DAE.DIV(ty),DAE.BINARY(DAE.BINARY(e1, DAE.MUL(_), e2), op1,e3),e4,_,_)
       equation
         true = Expression.expEqual(e2,e4);
-        true = Expression.operatorEqual(op1,DAE.SUB(ty)) or 
-              Expression.operatorEqual(op1,DAE.ADD(ty)); 
+        true = Expression.operatorEqual(op1,DAE.SUB(ty)) or
+              Expression.operatorEqual(op1,DAE.ADD(ty));
     e = Expression.expDiv(e3,e4);
     res = DAE.BINARY(e1,op1,e);
       then res;
@@ -3861,8 +3861,8 @@ algorithm
     case (_,DAE.DIV(ty),DAE.BINARY(e3, op1,DAE.BINARY(e1, DAE.MUL(_), e2)),e4,_,_)
       equation
         true = Expression.expEqual(e2,e4);
-        true = Expression.operatorEqual(op1,DAE.SUB(ty)) or 
-              Expression.operatorEqual(op1,DAE.ADD(ty)); 
+        true = Expression.operatorEqual(op1,DAE.SUB(ty)) or
+              Expression.operatorEqual(op1,DAE.ADD(ty));
         e = Expression.expDiv(e3,e4);
         res = DAE.BINARY(e,op1,e1);
       then res;
@@ -3871,12 +3871,12 @@ algorithm
     case (_,DAE.DIV(ty),DAE.BINARY(DAE.BINARY(e1, op2, DAE.BINARY(e2, DAE.MUL(_), e3)), op1,e4),e5,_,_)
       equation
         true = Expression.expEqual(e3,e5);
-        true = Expression.operatorEqual(op1,DAE.SUB(ty)) or 
-              Expression.operatorEqual(op1,DAE.ADD(ty)); 
+        true = Expression.operatorEqual(op1,DAE.SUB(ty)) or
+              Expression.operatorEqual(op1,DAE.ADD(ty));
         true = Expression.operatorEqual(op2,DAE.DIV(ty)) or
         Expression.operatorEqual(op2,DAE.MUL(ty));
         e = Expression.expDiv(e4,e3);
-        e1_1 = DAE.BINARY(e1,op2,e2); 
+        e1_1 = DAE.BINARY(e1,op2,e2);
         res = DAE.BINARY(e1_1,op1,e);
       then res;
 
@@ -3885,7 +3885,7 @@ algorithm
       equation
         ty = Expression.typeof(e1);
         true = Expression.operatorEqual(op2,DAE.DIV(ty)) or
-        Expression.operatorEqual(op2,DAE.MUL(ty)); 
+        Expression.operatorEqual(op2,DAE.MUL(ty));
         res = DAE.BINARY(e1, op2, e2);
       then Expression.makeBuiltinCall("abs",{res},ty);
 /*
@@ -4042,9 +4042,9 @@ algorithm
       then res;
 
     // exp / r = exp * (1/r)
-    case(_, DAE.DIV(ty=tp), e1, DAE.RCONST(real=r1), _, _) 
+    case(_, DAE.DIV(ty=tp), e1, DAE.RCONST(real=r1), _, _)
       equation
-        true = r1 <. 1e6 and r1 >. 1e-20; 
+        true = r1 <. 1e6 and r1 >. 1e-20;
         r = 1.0 /. r1;
         r1 = 1e6 *. r;
         0.0 = realMod(r1, 1.0);
@@ -4264,8 +4264,8 @@ algorithm
         res = Expression.expPow(e1,res);
       then res;
 
-    // (e1 op2 e2) op1 (e3 op3 e4) => (e1 op1 e3) op2 e2 
-    // e2 = e4; op2=op3 \in {*, /}; op1 \in {+, -} 
+    // (e1 op2 e2) op1 (e3 op3 e4) => (e1 op1 e3) op2 e2
+    // e2 = e4; op2=op3 \in {*, /}; op1 \in {+, -}
     case (_,op2,_,
           op1,
           _,op3,_,
@@ -4273,8 +4273,8 @@ algorithm
       equation
        ty = Expression.typeof(e1);
 
-       true = Expression.operatorEqual(op1,DAE.SUB(ty)) or 
-              Expression.operatorEqual(op1,DAE.ADD(ty)); 
+       true = Expression.operatorEqual(op1,DAE.SUB(ty)) or
+              Expression.operatorEqual(op1,DAE.ADD(ty));
 
        true = Expression.operatorEqual(op2,DAE.DIV(ty)) or
               Expression.operatorEqual(op2,DAE.MUL(ty));
@@ -4282,35 +4282,35 @@ algorithm
         DAE.BINARY(DAE.BINARY(e1,op1,e3),op2,e4);
 
     // (e1 * e2) op1 (e3 / e4) => (e1 * e2) op1 (e1 * (1/ e4) ) => e1*(e2 op1 (1/ e4))
-    // e1 = e3; op1 \in {+, -} 
+    // e1 = e3; op1 \in {+, -}
     case (_,DAE.MUL(ty),_,
           op1,
           _,DAE.DIV(_),_,
           true /*e1==e3*/,_,_,_,false /*isConst(e1)*/,_,_,_)
       equation
-       true = Expression.operatorEqual(op1,DAE.SUB(ty)) or 
-              Expression.operatorEqual(op1,DAE.ADD(ty)); 
+       true = Expression.operatorEqual(op1,DAE.SUB(ty)) or
+              Expression.operatorEqual(op1,DAE.ADD(ty));
        one = Expression.makeConstOne(ty);
-       e = Expression.expDiv(one,e4); 
+       e = Expression.expDiv(one,e4);
       then
         DAE.BINARY(DAE.BINARY(e2,op1,e),DAE.MUL(ty),e1);
 
     // (e1 / e2) op1 (e3 * e4) => (e1 * (1/e2)) op1 (e1 * e4 ) => e1*(1/e2 op1 e4)
-    // e1 = e3; op1 \in {+, -} 
+    // e1 = e3; op1 \in {+, -}
     case (_,DAE.MUL(ty),_,
           op1,
           _,DAE.DIV(_),_,
           true /*e1==e3*/,_,_,_,false /*isConst(e1)*/,_,_,_)
       equation
-       true = Expression.operatorEqual(op1,DAE.SUB(ty)) or 
-              Expression.operatorEqual(op1,DAE.ADD(ty)); 
+       true = Expression.operatorEqual(op1,DAE.SUB(ty)) or
+              Expression.operatorEqual(op1,DAE.ADD(ty));
        one = Expression.makeConstOne(ty);
-       e = Expression.expDiv(one,e2); 
+       e = Expression.expDiv(one,e2);
       then
         DAE.BINARY(DAE.BINARY(e,op1,e4),DAE.MUL(ty),e1);
 
-    // [(e1*e2) op2 e] op1 [(e4*e5) op2 e] => (e1*e2 op1 e4*e5) op2 e 
-    // op2 \in {*, /}; op1 \in {+, -} 
+    // [(e1*e2) op2 e] op1 [(e4*e5) op2 e] => (e1*e2 op1 e4*e5) op2 e
+    // op2 \in {*, /}; op1 \in {+, -}
     case (DAE.BINARY(e_1,DAE.MUL(ty),e_2),op2,e_3,
           op1,
           DAE.BINARY(e_4,DAE.MUL(_),e_5),op3,e_6,
@@ -4318,8 +4318,8 @@ algorithm
       equation
         ty = Expression.typeof(e_1);
 
-        true = Expression.operatorEqual(op1,DAE.SUB(ty)) or 
-               Expression.operatorEqual(op1,DAE.ADD(ty)); 
+        true = Expression.operatorEqual(op1,DAE.SUB(ty)) or
+               Expression.operatorEqual(op1,DAE.ADD(ty));
 
         true = Expression.operatorEqual(op2,DAE.DIV(ty)) or
                Expression.operatorEqual(op2,DAE.MUL(ty));
@@ -4328,20 +4328,20 @@ algorithm
         res = DAE.BINARY(e1_1,op1,e);
       then DAE.BINARY(res,op2,e_3);
 
-    // [(e1 op2 e) * e3] op1 [(e4*e5) op2 e] => (e1*e3 op1 e4*e5) op2 e 
-    // op2 \in {*, /}; op1 \in {+, -} 
+    // [(e1 op2 e) * e3] op1 [(e4*e5) op2 e] => (e1*e3 op1 e4*e5) op2 e
+    // op2 \in {*, /}; op1 \in {+, -}
     case (DAE.BINARY(e_1,op2,e_2),DAE.MUL(ty),e_3,
           op1,
           DAE.BINARY(e_4,DAE.MUL(_),e_5),op3,e_6,
           _,_,_,_,_,_,_,_)
       equation
         false = Expression.isConst(e_2);
-        true = Expression.expEqual(e_2,e_6);  
+        true = Expression.expEqual(e_2,e_6);
         true = Expression.operatorEqual(op2,op3);
         ty = Expression.typeof(e_1);
 
-        true = Expression.operatorEqual(op1,DAE.SUB(ty)) or 
-               Expression.operatorEqual(op1,DAE.ADD(ty)); 
+        true = Expression.operatorEqual(op1,DAE.SUB(ty)) or
+               Expression.operatorEqual(op1,DAE.ADD(ty));
 
         true = Expression.operatorEqual(op2,DAE.DIV(ty)) or
                Expression.operatorEqual(op2,DAE.MUL(ty));
@@ -4350,20 +4350,20 @@ algorithm
         res = DAE.BINARY(e1_1,op1,e);
       then DAE.BINARY(res,op2,e_2);
 
-    // [(e1 op2 e) * e3] op1 [(e4 op2 e) * e6] => (e1*e3 op1 e4*e6) op2 e 
-    // op2 \in {*, /}; op1 \in {+, -} 
+    // [(e1 op2 e) * e3] op1 [(e4 op2 e) * e6] => (e1*e3 op1 e4*e6) op2 e
+    // op2 \in {*, /}; op1 \in {+, -}
     case (DAE.BINARY(e_1,op2,e_2),DAE.MUL(ty),e_3,
           op1,
           DAE.BINARY(e_4,op3,e_5),DAE.MUL(_),e_6,
           _,_,_,_,_,_,_,_)
       equation
         false = Expression.isConst(e_2);
-        true = Expression.expEqual(e_2,e_5);  
+        true = Expression.expEqual(e_2,e_5);
         true = Expression.operatorEqual(op2,op3);
         ty = Expression.typeof(e_1);
 
-        true = Expression.operatorEqual(op1,DAE.SUB(ty)) or 
-               Expression.operatorEqual(op1,DAE.ADD(ty)); 
+        true = Expression.operatorEqual(op1,DAE.SUB(ty)) or
+               Expression.operatorEqual(op1,DAE.ADD(ty));
 
         true = Expression.operatorEqual(op2,DAE.DIV(ty)) or
                Expression.operatorEqual(op2,DAE.MUL(ty));
@@ -4372,19 +4372,19 @@ algorithm
         res = DAE.BINARY(e1_1,op1,e);
       then DAE.BINARY(res,op2,e_2);
 
-    // [(e1 * e2) op2 e] op1 [(e4 op2 e) * e6] => (e1*e2 op1 e4*e6) op2 e 
-    // op2 \in {*, /}; op1 \in {+, -} 
+    // [(e1 * e2) op2 e] op1 [(e4 op2 e) * e6] => (e1*e2 op1 e4*e6) op2 e
+    // op2 \in {*, /}; op1 \in {+, -}
     case (DAE.BINARY(e_1,op2,e_2),DAE.MUL(ty),e_3,
           op1,
           DAE.BINARY(e_4,op3,e_5),DAE.MUL(_),e_6,
           _,_,_,_,_,false /*isConst(e2==e_3)*/,_,_)
       equation
-        true = Expression.expEqual(e_3,e_5);  
+        true = Expression.expEqual(e_3,e_5);
         true = Expression.operatorEqual(op2,op3);
         ty = Expression.typeof(e1);
- 
-        true = Expression.operatorEqual(op1,DAE.SUB(ty)) or 
-               Expression.operatorEqual(op1,DAE.ADD(ty)); 
+
+        true = Expression.operatorEqual(op1,DAE.SUB(ty)) or
+               Expression.operatorEqual(op1,DAE.ADD(ty));
 
         true = Expression.operatorEqual(op2,DAE.DIV(ty)) or
                Expression.operatorEqual(op2,DAE.MUL(ty));
@@ -5115,7 +5115,7 @@ end condSimplifyAddSymbolicOperation;
 
 
 public function simplifyMatrixProductOfRecords
-  "mahge: Simplifies matrix multiplication of record types by using overloaded 
+  "mahge: Simplifies matrix multiplication of record types by using overloaded
   multiplication and addition functions."
   input DAE.Exp inMatrix1;
   input DAE.Exp inMatrix2;
@@ -5135,7 +5135,7 @@ end simplifyMatrixProductOfRecords;
 
 
 protected function simplifyMatrixProductOfRecords2
-" Simplifies the scalar product of two vectors of record types using overloaded 
+" Simplifies the scalar product of two vectors of record types using overloaded
   scalar addition and multiplication functions."
   input DAE.Exp inMatrix1;
   input DAE.Exp inMatrix2;
@@ -5166,7 +5166,7 @@ algorithm
 end simplifyMatrixProductOfRecords2;
 
 protected function simplifyMatrixProductOfRecords3
-  "mahge: Simplifies the scalar product of two vectors of record types using overloaded 
+  "mahge: Simplifies the scalar product of two vectors of record types using overloaded
   scalar addition and multiplication functions."
   input DAE.Exp inRow;
   input list<DAE.Exp> inMatrix;
@@ -5179,7 +5179,7 @@ end simplifyMatrixProductOfRecords3;
 
 
 public function simplifyScalarProductOfRecords
-  "mahge: Simplifies the scalar product of two vectors of record types using overloaded 
+  "mahge: Simplifies the scalar product of two vectors of record types using overloaded
   scalar addition and multiplication functions."
   input DAE.Exp inVector1;
   input DAE.Exp inVector2;
@@ -5192,11 +5192,11 @@ algorithm
       list<DAE.Exp> expl, expl1, expl2;
       DAE.Exp exp;
       Type   tp;
-            
+
     case (DAE.ARRAY(array = expl1), DAE.ARRAY(array = expl2), _, _)
       equation
         expl = List.threadMap1(expl2, expl1, makeDaeCall, mulFunc);
-        exp = List.reduce1(expl, makeDaeCall, sumFunc);        
+        exp = List.reduce1(expl, makeDaeCall, sumFunc);
       then
         exp;
 
@@ -5210,7 +5210,7 @@ protected function makeDaeCall
   output DAE.Exp outExp;
 algorithm
   /* mahge: TODO: Fix the type of the call attributes. Type should propagate and reach here from handleMatMultOfRecords*/
-  outExp := DAE.CALL(funcPath,{inArg1,inArg2},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));  
+  outExp := DAE.CALL(funcPath,{inArg1,inArg2},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
 end makeDaeCall;
 
 protected function simplifySize
@@ -5226,7 +5226,7 @@ algorithm
       DAE.Dimensions dims;
       DAE.Dimension dim;
       DAE.Exp dimExp;
-      
+
     // simplify size operator
     case (_,_,SOME(dimExp))
       equation
@@ -5250,7 +5250,7 @@ algorithm
       list<DAE.Exp> expl;
       Integer i;
       DAE.Exp e;
-      
+
     // NOTE: It should be impossible for TSUB to use an index that becomes out of range, so match is correct here...
     case DAE.TSUB(exp = DAE.CAST(exp = DAE.TUPLE(PR = expl)), ix = i)
       then listGet(expl, i);

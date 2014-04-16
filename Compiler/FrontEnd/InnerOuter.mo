@@ -1074,7 +1074,7 @@ algorithm
         Error.addSourceMessage(Error.OUTER_MODIFICATION, {s}, inInfo);
       then
         true;
-    
+
     else false;
 
   end matchcontinue;
@@ -1649,7 +1649,7 @@ algorithm
 
         // Extract the common prefix of the outer and inner prefix.
         (epre, erest) = List.splitEqualPrefix(eocp, eicp, ComponentReference.crefFirstIdentEqual);
-        
+
         // remove the common prefix from the inner!
         (_, eicp) = List.splitEqualPrefix(eicp, epre, ComponentReference.crefFirstIdentEqual);
 

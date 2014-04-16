@@ -1779,7 +1779,7 @@ public function stringDelimitListAndSeparate "author: PA
   input String sep2;
   input Integer n;
   output String res;
-protected 
+protected
   Integer handle;
 algorithm
   handle := Print.saveAndClearBuf();
@@ -1858,7 +1858,7 @@ public function stringReplaceChar "Takes a string and two chars and replaces the
   output String outString;
 algorithm
   outString := System.stringReplace(inString1, inString2, inString3);
-  /* 
+  /*
   matchcontinue (inString1,inString2,inString3)
     local
       list<String> strList,resList;
@@ -2022,7 +2022,7 @@ algorithm
     local
       String name, derName;
       list<String> names;
-      
+
     case(derName) equation
       0 = System.strncmp(derName,"der(",4);
       // adrpo: 2009-09-08
@@ -2134,10 +2134,10 @@ algorithm
   end match;
 end boolAndList;
 
-public function applyOption 
+public function applyOption
   "Takes an option value and a function over the value. It returns in another
    option value, resulting from the application of the function on the value.
-   
+
    Example:
      applyOption(SOME(1), intString) => SOME(\"1\")
      applyOption(NONE(),  intString) => NONE()
@@ -2325,7 +2325,7 @@ public function stringOption "author: PA
   output String outString;
 algorithm
   outString:= match(inStringOption)
-    local 
+    local
       String s;
 
     case SOME(s) then s;
@@ -2364,7 +2364,7 @@ public function genericOption "author: BZ
   input Option<Type_a> inOption;
   output list<Type_a> outOption;
   replaceable type Type_a subtypeof Any;
-algorithm 
+algorithm
   outOption := match(inOption)
     local
       Type_a item;
@@ -2527,19 +2527,19 @@ public function replaceWindowsBackSlashWithPathDelimiter
   output String outPath;
 algorithm
   outPath := matchcontinue(inPath)
-    local 
+    local
       String pd;
-    
-    case _ 
+
+    case _
       equation
         true = stringEq("Windows_NT", System.os());
         pd = System.pathDelimiter();
         outPath = System.stringReplace(inPath, "\\", pd);
       then
         outPath;
-    
+
     else inPath;
- 
+
  end matchcontinue;
 end replaceWindowsBackSlashWithPathDelimiter;
 
@@ -3680,10 +3680,10 @@ algorithm
   true := inIndex <= arrayLength(inArray);
   e := arrayGet(inArray, inIndex);
   b := inCompFunc(inValue, e);
-  outTuple := Debug.bcallret4(boolNot(b), arrayGetMemberOnTrue2, 
+  outTuple := Debug.bcallret4(boolNot(b), arrayGetMemberOnTrue2,
     inValue, inArray, inCompFunc, inIndex + 1, (e, inIndex));
 end arrayGetMemberOnTrue2;
-   
+
 public function boolInt
   "Returns 1 if the given boolean is true, otherwise 0."
   input Boolean inBoolean;
@@ -4105,20 +4105,20 @@ algorithm
       list<String> strs;
       String newName;
     case (_,true,_) then System.basename(name);
-    
+
     case (true,_,_)
       equation
         newName = Debug.bcallret3("Windows_NT" ==& System.os(), System.stringReplace, name, "\\", "/", name);
         (i,strs) = System.regex(newName, "^(.*/testsuite/)?(.*/lib/omlibrary/)?(.*/build/)?(.*)$", 5, true, false);
         friendly = listGet(strs,i);
       then friendly;
-    
+
     else name;
   end match;
 end testsuiteFriendly2;
 
 public function testsuiteFriendlyPath
-"Adds ../ in front of a relative file path if we're running 
+"Adds ../ in front of a relative file path if we're running
  the testsuite, to compensate for tests being sandboxed.
  adrpo: only when running with partest the tests are sandboxed!"
   input String inPath;
@@ -4135,7 +4135,7 @@ algorithm
         // directory or file does not exist in this directory
         false = System.directoryExists(inPath);
         false = System.regularFileExists(inPath);
-        // prefix the path 
+        // prefix the path
         path = "../" +& inPath;
         true = System.directoryExists(path) or System.regularFileExists(path);
       then
@@ -4144,7 +4144,7 @@ algorithm
     else inPath;
   end matchcontinue;
 end testsuiteFriendlyPath;
-        
+
 protected function createDirectoryTreeH
   input String inString;
   input String parentDir;

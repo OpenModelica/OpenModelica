@@ -59,7 +59,7 @@ protected import Util;
 // =============================================================================
 // section for type definitions
 //
-// 
+//
 // =============================================================================
 
 protected constant String BORDER    = "****************************************";
@@ -86,13 +86,13 @@ algorithm
       TearingMethod method;
       BackendDAE.BackendDAEType DAEtype;
       BackendDAE.Shared shared;
-      
+
     // if noTearing is selected, do nothing.
     case(_) equation
       methodString = Config.getTearingMethod();
       true = stringEqual(methodString, "noTearing");
     then inDAE;
-    
+
     // get method function and traveres systems
     case(_) equation
       //Debug.fcall2(Flags.TEARING_DUMPVERBOSE, BackendDump.dumpBackendDAE, inDAE, "DAE");
@@ -105,7 +105,7 @@ algorithm
       Debug.fcall(Flags.TEARING_DUMP, print, "!\n" +& UNDERLINE +& "\n");
       (outDAE, _) = BackendDAEUtil.mapEqSystemAndFold(inDAE, tearingSystemWork, method);
     then outDAE;
-    
+
     else equation
       Error.addInternalError("./Compiler/BackEnd/Tearing.mo: function tearingSystem failed");
     then fail();
@@ -126,11 +126,11 @@ algorithm
     case (_) equation
       true = stringEqual(inTearingMethod, "omcTearing");
     then OMC_TEARING();
-    
+
     case (_) equation
       true = stringEqual(inTearingMethod, "cellier");
     then CELLIER_TEARING();
-  
+
     else equation
       Error.addInternalError("./Compiler/BackEnd/Tearing.mo: function getTearingMethod failed");
     then fail();
@@ -149,16 +149,16 @@ protected function callTearingMethod
   output Boolean outRunMatching;
 algorithm
   (ocomp, outRunMatching) := match(inTearingMethod, isyst, ishared, eindex, vindx, ojac, jacType)
-    case(OMC_TEARING(), _, _, _, _, _, _) 
+    case(OMC_TEARING(), _, _, _, _, _, _)
    equation
          (ocomp,outRunMatching)=omcTearing(isyst, ishared, eindex, vindx, ojac, jacType);
       then (ocomp,outRunMatching);
-    
-    case(CELLIER_TEARING(), _, _, _, _, _, _) 
+
+    case(CELLIER_TEARING(), _, _, _, _, _, _)
    equation
       (ocomp,outRunMatching)=CellierTearing(isyst, ishared, eindex, vindx, ojac, jacType);
       then (ocomp,outRunMatching);
-  
+
   end match;
 end callTearingMethod;
 
@@ -201,10 +201,10 @@ algorithm
       BackendDAE.StrongComponent comp, comp1;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> ojac;
       BackendDAE.JacobianType jacType;
-      
+
     case ({}, _, _, _, _, _)
     then (listReverse(iAcc), iRunMatching);
-    
+
     // don't tear linear system as long as we do not handle them
     // as linear system while the runtime
     case ((comp as BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType))::comps, _, _, _, _, _) equation
@@ -216,7 +216,7 @@ algorithm
       (comp1, true) = callTearingMethod(inMethod, isyst, ishared, eindex, vindx, ojac, jacType);
       (acc, b1) = traverseComponents(comps, isyst, ishared, inMethod, comp1::iAcc, true);
     then (acc, b1);
-        
+
     // tearing of non-linear systems
     case ((comp as BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType))::comps, _, _, _, _, _) equation
       failure(equality(jacType = BackendDAE.JAC_TIME_VARYING()));
@@ -225,7 +225,7 @@ algorithm
       (comp1, true) = callTearingMethod(inMethod, isyst, ishared, eindex, vindx, ojac, jacType);
       (acc, b1) = traverseComponents(comps, isyst, ishared, inMethod, comp1::iAcc, true);
     then (acc, b1);
-        
+
     // only continues part of a mixed system
     case ((comp as BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1, disc_eqns=eindex, disc_vars=vindx))::comps, _, _, _, _, _) equation
       Debug.fcall(Flags.TEARING_DUMP, print, "\nCase mixed in traverseComponents\nUse '+d=tearingdumpV' for more details\n\n");
@@ -234,7 +234,7 @@ algorithm
       (comp1::{}, true) = traverseComponents({comp1}, isyst, ishared, inMethod, {}, false);
       (acc, b1) = traverseComponents(comps, isyst, ishared, inMethod, BackendDAE.MIXEDEQUATIONSYSTEM(comp1, eindex, vindx)::iAcc, true);
     then (acc, b1);
-    
+
     // mixed and continues part
     case ((comp as BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1, disc_eqns=eindex, disc_vars=vindx))::comps, _, _, _, _, _) equation
       true = Flags.isSet(Flags.MIXED_TEARING);
@@ -243,7 +243,7 @@ algorithm
       (comp1, true) = callTearingMethod(inMethod, isyst, ishared, eindex, vindx, NONE(), BackendDAE.JAC_NO_ANALYTIC());
       (acc, b1) = traverseComponents(comps, isyst, ishared, inMethod, comp1::iAcc, true);
     then (acc, b1);
-        
+
     // no component for tearing
     case (comp::comps, _, _, _, _, _) equation
       (acc, b) = traverseComponents(comps, isyst, ishared, inMethod, comp::iAcc, iRunMatching);
@@ -315,7 +315,7 @@ algorithm
      Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nmapEqnIncRow:"); //+& stringDelimitList(List.map(List.flatten(arrayList(mapEqnIncRow)),intString),",") +& "\n\n");
      Debug.fcall(Flags.TEARING_DUMPVERBOSE, BackendDump.dumpIncidenceMatrix, mapEqnIncRow);
      Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nmapIncRowEqn:\n" +& stringDelimitList(List.map(arrayList(mapIncRowEqn),intString),",") +& "\n\n");
-  
+
   ass1 := arrayCreate(size,-1);
   ass2 := arrayCreate(size,-1);
   // get all unsolvable variables
@@ -323,15 +323,15 @@ algorithm
      Debug.fcall(Flags.TEARING_DUMP, print,"\n\nUnsolvable Vars:\n");
      Debug.fcall(Flags.TEARING_DUMP, BackendDump.debuglst,(unsolvables,intString,", ","\n"));
   columark := arrayCreate(size,-1);
-  
+
   // determine tvars and do cheap matching until a maximum matching is there
   // if cheap matching stucks select additional tearing variable and continue
   // (mark+1 for every call of omcTearing3)
      Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n" +& BORDER +& "\nBEGINNING of omcTearing2\n\n");
   (tvars,mark) := omcTearing2(unsolvables,me,meT,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,1,{});
      Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nEND of omcTearing2\n" +& BORDER +& "\n\n");
- 
-  // unassign tvars  
+
+  // unassign tvars
   ass1 := List.fold(tvars,unassignTVars,ass1);
      Debug.fcall(Flags.TEARING_DUMP, print,"\nBFS RESULTS:\nass1: "+& stringDelimitList(List.map(arrayList(ass1),intString),",") +&"\n");
      Debug.fcall(Flags.TEARING_DUMP, print,"ass2: "+& stringDelimitList(List.map(arrayList(ass2),intString),",") +&"\n\n");
@@ -340,11 +340,11 @@ algorithm
   residual := Matching.getUnassigned(size,ass2,{});
      //  subsyst := BackendDAEUtil.setEqSystemMatching(subsyst,BackendDAE.MATCHING(ass1,ass2,{}));
      //  IndexReduction.dumpSystemGraphML(subsyst,ishared,NONE(),"TornSystem" +& intString(size) +& ".graphml");
-  
+
   // check if tearing makes sense
   tornsize := listLength(tvars);
   true := intLt(tornsize,size-1);
-  
+
   // create incidence matrices w/o tvar and residual
   m1 := arrayCreate(size,{});
   mt1 := arrayCreate(size,{});
@@ -359,15 +359,15 @@ algorithm
      Debug.fcall(Flags.TEARING_DUMP, print, "\nOtherEquationsOrder:\n");
      Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpComponentsOLD,othercomps);
      Debug.fcall(Flags.TEARING_DUMP, print, "\n");
-  
+
   // calculate influence of tearing vars in residual equations
   // mt1: row=variable, columns: tvars, that influence the result of the variable
   mt1 := arrayCreate(size, {});
   mark := getDependenciesOfVars(othercomps, ass1, ass2, m, mt1, columark, mark);
-    
+
   (residual, mark) := sortResidualDepentOnTVars(residual, tvars, ass1, m, mt1, columark, mark);
   (ocomp,outRunMatching) := omcTearing4(jacType,isyst,ishared,subsyst,tvars,residual,ass1,ass2,othercomps,eindex,vindx,mapEqnIncRow,mapIncRowEqn,columark,mark);
-    
+
      Debug.fcall(Flags.TEARING_DUMP, print,Util.if_(outRunMatching,"\nStatus:\nOk system torn\n\n","\nStatus:\nSystem not torn\n\n"));
      Debug.fcall(Flags.TEARING_DUMP, print, "\n" +& BORDER +& "\n* TEARING RESULTS:\n*\n* No of equations in strong Component: "+&intString(size)+&"\n");
      Debug.fcall(Flags.TEARING_DUMP, print, "* No of tVars: "+&intString(tornsize)+&"\n");
@@ -736,7 +736,7 @@ algorithm
     case (e::eqns,_,_,_,_,_,_,_)
       equation
         vars = List.select(m[e], Util.intPositive);
-        tvars = tVarsofEqn(vars,ass1,mT,visited,iMark,{});        
+        tvars = tVarsofEqn(vars,ass1,mT,visited,iMark,{});
         // change indices to local
         tvars = List.map1r(tvars,arrayGet,varGlobalLocal);
         (oMark,oAcc) = tVarsofResidualEqns(eqns,m,ass1,mT,varGlobalLocal,visited,iMark+1,tvars::iAcc);
@@ -866,7 +866,7 @@ algorithm
         tvar;
 */
 
-    // if there is a variable unsolvable select it 
+    // if there is a variable unsolvable select it
     case(_,_,_,_,_)
       equation
         unsolvables = getUnsolvableVarsConsiderMatching(1,BackendVariable.varsSize(vars),mt,ass1,ass2,{});
@@ -885,7 +885,7 @@ algorithm
            Debug.fcall(Flags.TEARING_DUMPVERBOSE,  BackendDump.debuglst,(freeVars,intString,", ","\n"));
         size = listLength(freeVars);
         true = intGt(size,0);
-        
+
         // CALCULATE TEARING-VARIABLE WEIGHTS
         points = arrayCreate(varsize,0);
         // 1st: Points for solvability (see function solvabilityWeights)
@@ -913,8 +913,8 @@ algorithm
 end omcTearingSelectTearingVar;
 
 
-protected function getUnsolvableVarsConsiderMatching 
-" returns one unsolvable var with respect to the current matching 
+protected function getUnsolvableVarsConsiderMatching
+" returns one unsolvable var with respect to the current matching
   author: Frenkel TUD 2012-08"
   input Integer index;
   input Integer size;
@@ -960,9 +960,9 @@ algorithm
 end getUnsolvableVarsConsiderMatching;
 
 
-protected function removeMatched 
-" helper function for getUnsolvableVarsConsiderMatching, 
-  returns only unmatched equations 
+protected function removeMatched
+" helper function for getUnsolvableVarsConsiderMatching,
+  returns only unmatched equations
   author: Frenkel TUD 2012-08"
   input BackendDAE.AdjacencyMatrixElementEnhanced elem;
   input array<Integer> ass2;
@@ -987,7 +987,7 @@ algorithm
 end removeMatched;
 
 
-protected function calcVarWeights "function giving points for solvability" 
+protected function calcVarWeights "function giving points for solvability"
  input Integer v;
  input BackendDAE.AdjacencyMatrixTEnhanced mt;
  input array<Integer> ass2;
@@ -1001,7 +1001,7 @@ algorithm
 end calcVarWeights;
 
 
-protected function calcSolvabilityWeight 
+protected function calcSolvabilityWeight
 "helper function for calcVarWeights, giving points for solvability"
   input BackendDAE.AdjacencyMatrixElementEnhanced inRow;
   input array<Integer> ass2;
@@ -1011,7 +1011,7 @@ algorithm
 end calcSolvabilityWeight;
 
 
-protected function solvabilityWeightsnoStates 
+protected function solvabilityWeightsnoStates
 "helper function for calcSolvabilityWeight, giving points for solvability
   author: Frenkel TUD 2012-05"
   input tuple<Integer,BackendDAE.Solvability> inTpl;
@@ -1035,8 +1035,8 @@ algorithm
 end solvabilityWeightsnoStates;
 
 
-protected function solvabilityWeights 
-" helper function for solvabilityWeightsnoStates 
+protected function solvabilityWeights
+" helper function for solvabilityWeightsnoStates
   author: Frenkel TUD 2012-05,
   return a integer for the solvability, this function is used
   to calculade weights for variables to select the tearing variable."
@@ -1057,7 +1057,7 @@ algorithm
 end solvabilityWeights;
 
 
-protected function addEqnWeights 
+protected function addEqnWeights
 "function adds five points to variables for each equation it would causalize as tvar"
  input Integer e;
  input BackendDAE.AdjacencyMatrixEnhanced m;
@@ -1103,7 +1103,7 @@ algorithm
 end isAssignedSaveEnhanced;
 
 
-protected function discriminateDiscrete " leaves only one-tenth of points for each discrete variable 
+protected function discriminateDiscrete " leaves only one-tenth of points for each discrete variable
  author: Frenkel TUD 2012-08"
  input Integer v;
  input BackendDAE.Variables vars;
@@ -1171,7 +1171,7 @@ algorithm
       BackendDAE.AdjacencyMatrixElementEnhanced rest,newqueue,rows;
     // if there are no more equations in queue maximum matching is found
     case ({},_,_,_,_,_,_,_,_,_,{}) then ();
-      
+
     // if queue is empty, use next queue
     case ({},_,_,_,_,_,_,_,_,_,_)
       equation
@@ -1400,8 +1400,8 @@ algorithm
 end omcTearing3;
 
 
-protected function omcTearing4 
-" maps indexes back to entire system and creates strong component from tearing information 
+protected function omcTearing4
+" maps indexes back to entire system and creates strong component from tearing information
   author: Frenkel TUD 2012-09"
   input BackendDAE.JacobianType jacType;
   input BackendDAE.EqSystem isyst;
@@ -1449,7 +1449,7 @@ algorithm
 end omcTearing4;
 
 
-protected function omcTearing4_1 
+protected function omcTearing4_1
 " creates otherEqnVarTpl for TORNSYSTEM
   author: Frenkel TUD 2012-09"
   input list<list<Integer>> othercomps;
@@ -1515,7 +1515,7 @@ end getLinearfromJacType;
 //
 // =============================================================================
 
-protected function CellierTearing "  
+protected function CellierTearing "
 author: Waurich TUD 2012-10, enhanced: ptaeuber FHB 2013/2014"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
@@ -1579,7 +1579,7 @@ algorithm
   unsolvables := getUnsolvableVars(1,size,meT,{});
      Debug.fcall(Flags.TEARING_DUMP, print, "\nUNSOLVABLES:\n" +& stringDelimitList(List.map(unsolvables,intString),",") +& "\n\n");
   //determine discrete vars
-  discreteVars := findDiscrete(var_lst,{},1);  
+  discreteVars := findDiscrete(var_lst,{},1);
      Debug.fcall(Flags.TEARING_DUMP, print, "\nDiscrete Vars:\n" +& stringDelimitList(List.map(discreteVars,intString),",") +& "\n\n");
   ass1 := List.fill(-1,size);
   ass2 := List.fill(-1,size);
@@ -1612,7 +1612,7 @@ algorithm
 end CellierTearing;
 
 
-protected function deleteNegativeEntries 
+protected function deleteNegativeEntries
  "deletes all negative entries from incidence matrix, works with Util.arrayMap1, needed for proper Cellier-Tearing
   author:ptaeuber FHB 2014-01"
   input list<Integer> rowIn;
@@ -1623,7 +1623,7 @@ algorithm
   local
     Integer indx;
     list<Integer> newLst;
-  Boolean b;   
+  Boolean b;
   case(_,indx)
    equation
      true = intLe(indx, listLength(rowIn));
@@ -1636,7 +1636,7 @@ algorithm
    equation
      true = intGt(index,listLength(rowIn));
   then
-    rowIn; 
+    rowIn;
  end matchcontinue;
 end deleteNegativeEntries;
 
@@ -1692,7 +1692,7 @@ algorithm
     Boolean causal;
   case(true,_,_,_,_,_,_,_,_,_,_,_,_)
     equation
-     then 
+     then
        (tvarsIn,ass1In,ass2In,orderIn);
   case(false,_,_,_,_,_,_,{},_,_,_,_,_)
     equation
@@ -1725,9 +1725,9 @@ algorithm
         // ((_,unassigned)) = List.fold(ass2,getUnassigned,(1,{}));
         // ((_,unassigned)) = List.fold(ass1,getUnassigned,(1,{}));
       (tvars, ass1, ass2, order) = TearingSystemCellier(causal,m,mt,meIn,meTIn,ass1,ass2,unsolvables,tvars,discreteVars,order,mapEqnIncRow,mapIncRowEqn);
-     then 
+     then
        (tvars,ass1,ass2,order);
-  case(false,_,_,_,_,_,_,unsolvables,_,_,_,_,_) 
+  case(false,_,_,_,_,_,_,unsolvables,_,_,_,_,_)
     equation
         // First choose unsolvables as tVars
       tvars = unsolvables;
@@ -1751,7 +1751,7 @@ algorithm
       // find out if there are new unsolvables now
       unsolvables = getUnsolvableVarsConsiderMatching(1,arrayLength(meTIn),meTIn,listArray(ass1),listArray(ass2),{});
       (_,unsolvables,_) = List.intersection1OnTrue(unsolvables,tvars,intEq);
-    (tvars, ass1, ass2, order) = TearingSystemCellier(causal,m,mt,meIn,meTIn,ass1,ass2,unsolvables,tvars,discreteVars,order,mapEqnIncRow,mapIncRowEqn);    
+    (tvars, ass1, ass2, order) = TearingSystemCellier(causal,m,mt,meIn,meTIn,ass1,ass2,unsolvables,tvars,discreteVars,order,mapEqnIncRow,mapIncRowEqn);
      then
        (tvars, ass1, ass2, order);
   end matchcontinue;
@@ -1777,7 +1777,7 @@ algorithm
       String heuristic;
     case(_,_,_,_,_,_,_,_,_)
       equation
-           Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n" +& BORDER +& "\nBEGINNING of potentialsCellier\n\n");  
+           Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n" +& BORDER +& "\nBEGINNING of potentialsCellier\n\n");
         heuristic = Config.getTearingHeuristic();
            Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Chosen Heuristic: " +& heuristic +& "\n\n\n");
         potentials = Debug.bcallret6(stringEqual(heuristic,"MC1"),potentialsCellier,m,mt,me,meT,(ass1In,ass2In,discreteVars),(mapEqnIncRow,mapIncRowEqn),{});
@@ -1793,7 +1793,7 @@ algorithm
         potentials = Debug.bcallret6(stringEqual(heuristic,"MC4"),potentialsCellier11,m,mt,me,meT,(ass1In,ass2In,discreteVars),(mapEqnIncRow,mapIncRowEqn),potentials);
         true = intGe(listLength(potentials),1);
            Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nEND of potentialsCellier\n" +& BORDER +& "\n\n");
-      then 
+      then
         listGet(potentials,1);
     else
       equation
@@ -1829,7 +1829,7 @@ algorithm
          Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"1st: " +& stringDelimitList(List.map(selectedcols1,intString),",") +& "\n");
       // Without discrete:
       (_,selectedcols1,_) := List.intersection1OnTrue(selectedcols1,discreteVars,intEq);
-         Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Without Discrete: " +& stringDelimitList(List.map(selectedcols1,intString),",") +& "\n(Variables in the equation(s) with most Variables)\n\n");    
+         Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Without Discrete: " +& stringDelimitList(List.map(selectedcols1,intString),",") +& "\n(Variables in the equation(s) with most Variables)\n\n");
       // 2. gather these columns in a new array (reduced mt)
       mtsel := Util.arraySelect(mt,selectedcols1);
       // 3. choose rows (vars) with most nonzero entries and write the indexes in a list
@@ -1922,7 +1922,7 @@ algorithm
          Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"1st: " +& stringDelimitList(List.map(selectedcols1,intString),",") +& "\n");
       // Without discrete:
       (_,selectedcols1,_) := List.intersection1OnTrue(selectedcols1,discreteVars,intEq);
-         Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Without Discrete: " +& stringDelimitList(List.map(selectedcols1,intString),",") +& "\n(Variables in the equation(s) with most Variables)\n\n");    
+         Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Without Discrete: " +& stringDelimitList(List.map(selectedcols1,intString),",") +& "\n(Variables in the equation(s) with most Variables)\n\n");
       // 2. gather these columns in a new array (reduced mt)
       mtsel := Util.arraySelect(mt,selectedcols1);
       // 3. choose rows (vars) with most nonzero entries and write the indexes in a list
@@ -2021,7 +2021,7 @@ algorithm
          Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"1st: " +& stringDelimitList(List.map(selectedcols1,intString),",") +& "\n");
       // Without discrete:
       (_,selectedcols1,_) := List.intersection1OnTrue(selectedcols1,discreteVars,intEq);
-         Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Without Discrete: " +& stringDelimitList(List.map(selectedcols1,intString),",") +& "\n(Variables in the equation(s) with most Variables)\n\n");    
+         Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Without Discrete: " +& stringDelimitList(List.map(selectedcols1,intString),",") +& "\n(Variables in the equation(s) with most Variables)\n\n");
       // 2. gather these columns in a new array (reduced mt)
       mtsel := Util.arraySelect(mt,selectedcols1);
       // 3. choose rows (vars) with most nonzero entries and write the indexes in a list
@@ -2032,7 +2032,7 @@ algorithm
          Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"2nd: "+& stringDelimitList(List.map(selectedcols1,intString),",")+&"\n(Variables from (1st) with most occurrence in equations (" +& intString(edges) +&" times))\n\n");
       // 5. choose vars with the most impossible assignments
       (selectedcols1,_,_) := countImpossibleAss(selectedcols1,ass2In,met,{},{},0);
-         Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n3rd: "+& stringDelimitList(List.map(selectedcols1,intString),",")+&"\n(Variables from (2nd) with most incident impossible assignments)\n\n");   
+         Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n3rd: "+& stringDelimitList(List.map(selectedcols1,intString),",")+&"\n(Variables from (2nd) with most incident impossible assignments)\n\n");
       // 6. select the rows(eqs) from m which could be causalized by knowing one more Var
       ((_,assEq)) := List.fold(ass2In,getUnassigned,(1,{}));
       (assEq_multi,assEq_single) := traverseEqnsforAssignable(assEq,m,mapEqnIncRow,mapIncRowEqn,1,{},{});
@@ -2120,7 +2120,7 @@ algorithm
          Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"1st: " +& stringDelimitList(List.map(selectedcols1,intString),",") +& "\n");
       // Without discrete:
       (_,selectedcols1,_) := List.intersection1OnTrue(selectedcols1,discreteVars,intEq);
-         Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Without Discrete: " +& stringDelimitList(List.map(selectedcols1,intString),",") +& "\n(Variables in the equation(s) with most Variables)\n\n");    
+         Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Without Discrete: " +& stringDelimitList(List.map(selectedcols1,intString),",") +& "\n(Variables in the equation(s) with most Variables)\n\n");
       // 2. gather these columns in a new array (reduced mt)
       mtsel := Util.arraySelect(mt,selectedcols1);
       // 3. choose rows (vars) with most nonzero entries and write the indexes in a list
@@ -2439,10 +2439,10 @@ protected function selectCausalVars
       then ((me,ass1In,selEqs,selVars,{indx},size,indx+1,size::counts));
     end matchcontinue;
   end selectCausalVars;
-  
-  
-protected function sizeOfAssignable 
-" calculates the number of equations a potential tvar would 
+
+
+protected function sizeOfAssignable
+" calculates the number of equations a potential tvar would
   causalize considering the impossible assignments
   author: ptaeuber FHB 2013-10"
   input Integer Eqn;
@@ -2462,7 +2462,7 @@ algorithm
   Vars := List.removeOnTrue(listArray(ass1), isAssignedSaveEnhanced,me[Eqn]);
   b := solvableLst(Vars);
   outSize := Util.if_(b,inSize+1,inSize);
-end sizeOfAssignable;  
+end sizeOfAssignable;
 
 
 protected function countImpossibleAss
@@ -2743,7 +2743,7 @@ algorithm
      enonscalar = mapIncRowEqn[e];
      true = listLength(m[e]) == listLength(mapEqnIncRow[enonscalar]) + prescient;
      (acc1,acc2) = traverseEqnsforAssignable(rest,m,mapEqnIncRow,mapIncRowEqn,prescient,e::inAcc1,inAcc2);
-  then (acc1,acc2);  
+  then (acc1,acc2);
    case(e::rest,_,_,_,_,_,_)
     equation
      (acc1,acc2) = traverseEqnsforAssignable(rest,m,mapEqnIncRow,mapIncRowEqn,prescient,inAcc1,inAcc2);
@@ -2786,12 +2786,12 @@ algorithm
 end makeAssignment;
 
 
-protected function assignOtherEqnVarTpl " assigns otherEqnVarTpl for TORNSYSTEM 
+protected function assignOtherEqnVarTpl " assigns otherEqnVarTpl for TORNSYSTEM
   author: ptaeuber FHB 2013-08"
   input list<Integer> inEqns,eindex,vindx,ass2;
   input array<list<Integer>> mapEqnIncRow;
   input list<tuple<Integer,list<Integer>>> inOtherEqnVarTpl;
-  output list<tuple<Integer,list<Integer>>> outOtherEqnVarTpl;  
+  output list<tuple<Integer,list<Integer>>> outOtherEqnVarTpl;
 algorithm
  outOtherEqnVarTpl := matchcontinue(inEqns,eindex,vindx,ass2,mapEqnIncRow,inOtherEqnVarTpl)
    local
@@ -2805,12 +2805,12 @@ algorithm
     vars = List.map1r(eqns,listGet,ass2);
     otherEqn = listGet(eindex,eq);
     otherVars = listReverse(selectFromList(vindx,vars));
-     then assignOtherEqnVarTpl(rest,eindex,vindx,ass2,mapEqnIncRow,(otherEqn,otherVars)::inOtherEqnVarTpl);   
+     then assignOtherEqnVarTpl(rest,eindex,vindx,ass2,mapEqnIncRow,(otherEqn,otherVars)::inOtherEqnVarTpl);
  end matchcontinue;
 end assignOtherEqnVarTpl;
 
 
-protected function getpossibleEqnorVar " finds equation (findEqorVar=1) or 
+protected function getpossibleEqnorVar " finds equation (findEqorVar=1) or
 varibale (findEqorVar=2) that can be matched
   author: ptaeuber FHB 2013-08"
   input tuple<list<Integer>,BackendDAE.IncidenceMatrix,BackendDAE.AdjacencyMatrixEnhanced,array<Integer>,array<Integer>,array<list<Integer>>,Integer> inTpl;
@@ -2845,7 +2845,7 @@ algorithm
     else then fail();
    end matchcontinue;
 end getpossibleEqnorVar;
-        
+
 
 protected function markTVars
 " marks several tVars in ass1
@@ -2864,7 +2864,7 @@ algorithm
   then markTVars(rest,ass1);
  end matchcontinue;
 end markTVars;
-  
+
 
 protected function countMultiples "counts multiple entries in array<list<Integer row(list)-wise.
 counter gives the maximum amount of same entries and value gives the corresponding entry.
@@ -3076,8 +3076,8 @@ algorithm
        then mIn;
    end matchcontinue;
  end updateIncidence2;
- 
- 
+
+
 protected function updateIncidenceT2 "deletes several rows from transposed incidence matrix
   author: ptaeuber 2013-08"
   input BackendDAE.IncidenceMatrixT mtIn;

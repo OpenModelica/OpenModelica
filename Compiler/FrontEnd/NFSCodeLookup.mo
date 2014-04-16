@@ -953,7 +953,7 @@ algorithm
         cref = cref_rest;
       then
         (item, cref);
-  
+
   end matchcontinue;
 end lookupCrefInPackage;
 
@@ -1586,7 +1586,7 @@ algorithm
         true = stringEqual(id1, id2);
       then
         cref;
-    
+
     // adrpo: leave it as stripped as you can if you can't match it above!
     case (Absyn.CREF_QUAL(name = id1, subscripts = {}, componentRef = cref),
           Absyn.IDENT(name = id2))

@@ -27,7 +27,7 @@ FMUWrapper::FMUWrapper(fmiString instanceName, fmiString GUID,
   _tmp_bool_buffer.resize(_model->getDimBoolean());
 }
 
-FMUWrapper::~FMUWrapper() 
+FMUWrapper::~FMUWrapper()
 {
 }
 
@@ -146,7 +146,7 @@ fmiStatus FMUWrapper::initialize(fmiBoolean toleranceControlled, fmiReal relativ
    {
      _model->getCondition(i);
    }
- 
+
   _model->setInitial(false);
   _need_update = false;
   // TODO set options for algerbraic solver according to toleranceControlled and relativeTolerance

@@ -180,7 +180,7 @@ int ipoptDebuge(IPOPT_DATA_ *iData, double *x)
   if(ACTIVE_STREAM(LOG_IPOPT_FULL)){
     int i,j,k;
     double tmp;
-    
+
     if(iData->index_debug_iter++ < iData->index_debug_next)
       return 0;
 
@@ -219,7 +219,7 @@ static int res2file(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
   FILE * pFile;
 
   solverInfo->currentTime = iData->dtime.time[0];
-  
+
   pFile = fopen("optimizeInput.csv", "wt");
   fprintf(pFile, "%s ", "time");
   for(i=0; i< iData->dim.nu; ++i){
@@ -233,7 +233,7 @@ static int res2file(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
     for(i=0; i< iData->dim.nx; ++i){
       sData->realVars[i] = iData->v[k++]*iData->scaling.vnom[i];
     }
-    
+
     fprintf(pFile, "%lf ",(double)iData->dtime.time[iData->current_time]);
     for(i=0,j=iData->dim.nx; i< iData->dim.nu; ++i,++j){
       data->simulationInfo.inputVars[i] = iData->v[k]*iData->scaling.vnom[j];

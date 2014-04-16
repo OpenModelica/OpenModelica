@@ -30,11 +30,11 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif  
+#endif
 #include "rml.h"
 #ifdef __cplusplus
 }
-#endif  
+#endif
 
 #include "Absyn.h"
 #include "parse.c"
@@ -54,7 +54,7 @@ RML_BEGIN_LABEL(ParserExt__parse)
   if(grammarFlag == 2) flags |= PARSE_META_MODELICA;
   else if(grammarFlag == 3) flags |= PARSE_PARMODELICA;
   else if(grammarFlag == 4) flags |= PARSE_OPTIMICA;
-  
+
   rmlA0 = parseFile(RML_STRINGDATA(rmlA0),RML_STRINGDATA(rmlA1),flags,RML_STRINGDATA(rmlA3),RML_UNTAGFIXNUM(rmlA4),RML_UNTAGFIXNUM(rmlA5));
   if (rmlA0)
     RML_TAILCALLK(rmlSC);
@@ -71,7 +71,7 @@ RML_BEGIN_LABEL(ParserExt__parseexp)
   if(grammarFlag == 2) flags |= PARSE_META_MODELICA;
   else if(grammarFlag == 3) flags |= PARSE_PARMODELICA;
   else if(grammarFlag == 4) flags |= PARSE_OPTIMICA;
-  
+
   rmlA0 = parseFile(RML_STRINGDATA(rmlA0),RML_STRINGDATA(rmlA1),flags,"UTF-8",RML_UNTAGFIXNUM(rmlA3),RML_UNTAGFIXNUM(rmlA4));
   if (rmlA0)
     RML_TAILCALLK(rmlSC);
@@ -87,7 +87,7 @@ RML_BEGIN_LABEL(ParserExt__parsestring)
   if(grammarFlag == 2) flags |= PARSE_META_MODELICA;
   else if(grammarFlag == 3) flags |= PARSE_PARMODELICA;
   else if(grammarFlag == 4) flags |= PARSE_OPTIMICA;
-  
+
   rmlA0 = parseString(RML_STRINGDATA(rmlA0),RML_STRINGDATA(rmlA1),flags,RML_UNTAGFIXNUM(rmlA3),RML_UNTAGFIXNUM(rmlA4));
   if (rmlA0) {
     RML_TAILCALLK(rmlSC);
@@ -105,7 +105,7 @@ RML_BEGIN_LABEL(ParserExt__parsestringexp)
   if(grammarFlag == 2) flags |= PARSE_META_MODELICA;
   else if(grammarFlag == 3) flags |= PARSE_PARMODELICA;
   else if(grammarFlag == 4) flags |= PARSE_OPTIMICA;
-  
+
   rmlA0 = parseString(RML_STRINGDATA(rmlA0),RML_STRINGDATA(rmlA1),flags,RML_UNTAGFIXNUM(rmlA3),RML_UNTAGFIXNUM(rmlA4));
   if (rmlA0) {
     RML_TAILCALLK(rmlSC);

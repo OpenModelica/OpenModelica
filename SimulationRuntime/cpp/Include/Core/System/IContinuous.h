@@ -28,7 +28,7 @@ public:
         ALL        =  0x00000003,
         DISCRETE   = 0x00000004,
         CONTINUOUS  = 0x00000008,
-        RANKING      =  0x00000016      ///< Ranking Method  
+        RANKING      =  0x00000016      ///< Ranking Method
     };
 
 
@@ -93,8 +93,8 @@ public:
     /// Provide real variables
     virtual void setString(const std::string* z) = 0;
 
-  
-    
+
+
 
 
 
@@ -102,7 +102,7 @@ public:
 
     virtual bool evaluate(const UPDATETYPE command = UNDEF_UPDATE) = 0;  // vxworks
 
-    
+
 
     virtual void stepCompleted(double time) = 0;
 

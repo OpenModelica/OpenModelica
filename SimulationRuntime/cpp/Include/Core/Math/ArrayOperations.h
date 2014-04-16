@@ -19,14 +19,14 @@ Copyright (c) 2010, OSMC
 
 
 /**
-Assertion function 
+Assertion function
 */
-//void boost::assertion_failed(char const * expr, char const * function, 
+//void boost::assertion_failed(char const * expr, char const * function,
 //                             char const * file, long line);
 #include <boost/multi_array.hpp>
 #include <functional>
 #define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
-#include <boost/numeric/ublas/storage.hpp> 
+#include <boost/numeric/ublas/storage.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/io.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
@@ -72,7 +72,7 @@ Helper function for multiply_array,divide_array copies array a used as return va
 template < typename T, size_t NumDims, class F >
 boost::multi_array< T, NumDims > op_cp_array( boost::multi_array_ref< T, NumDims > a, F f )
 {
-  boost::multi_array< T, NumDims > retVal(a); 
+  boost::multi_array< T, NumDims > retVal(a);
   Operation< T, T, F > opis( f );
   return array_operation( retVal, a, opis );
 }
@@ -180,12 +180,12 @@ boost::multi_array_ref< T1, dims >  array_operation( boost::multi_array< T1, dim
 
 
 /**
-Applies array operation F  (*,/) on one dimensional array 
+Applies array operation F  (*,/) on one dimensional array
 */
 template<
   typename T1, typename T2, class F
 >
-boost::multi_array< T1, 1 > array_operation( boost::multi_array< T1, 1 > a, boost::multi_array_ref< T2, 1 > b, F& op ) 
+boost::multi_array< T1, 1 > array_operation( boost::multi_array< T1, 1 > a, boost::multi_array_ref< T2, 1 > b, F& op )
 {
   typename boost::multi_array_ref< T2, 1 >::const_iterator j = b.begin();
   for ( typename boost::multi_array< T1, 1 >::iterator i = a.begin();
@@ -270,7 +270,7 @@ boost::detail::multi_array::sub_array< T1, dims > array_operation( boost::detail
   return a;
 }
 /**
-Applies array operation F (+,-) on array 
+Applies array operation F (+,-) on array
 */
 
 template<
@@ -350,22 +350,22 @@ void cat_array (int k,boost::multi_array< T, NumDims >& a, std::vector<boost::mu
     /* check dim sizes of all inputs */
     if(n<1)
       throw std::invalid_argument("No input arrays");
-     
+
     if(x[0].num_dimensions() < k)
      throw std::invalid_argument("Wrong dimension for input array");
-    
+
     new_k_dim_size = x[0].shape()[k-1];
-    for(int i = 1; i < n; i++) 
+    for(int i = 1; i < n; i++)
     {
         if(x[0].num_dimensions() != x[i].num_dimensions())
            throw std::invalid_argument("Wrong dimension for input array");
-        for(int j = 0; j < (k - 1); j++) 
+        for(int j = 0; j < (k - 1); j++)
         {
             if (x[0].shape()[j] != x[i].shape()[j])
                 throw std::invalid_argument("Wrong size for input array");
         }
         new_k_dim_size += x[i].shape()[k-1];
-        for(int j = k; j < x[0].num_dimensions(); j++) 
+        for(int j = k; j < x[0].num_dimensions(); j++)
         {
           if (x[0].shape()[j] != x[i].shape()[j])
             throw std::invalid_argument("Wrong size for input array");
@@ -374,11 +374,11 @@ void cat_array (int k,boost::multi_array< T, NumDims >& a, std::vector<boost::mu
     /* calculate size of sub and super structure in 1-dim data representation */
     unsigned int n_sub = 1;
     unsigned int n_super = 1;
-    for (int i = 0; i < (k - 1); i++) 
+    for (int i = 0; i < (k - 1); i++)
     {
         n_super *= x[0].shape()[i];
     }
-    for (int i = k; i < x[0].num_dimensions(); i++) 
+    for (int i = k; i < x[0].num_dimensions(); i++)
     {
         n_sub *= x[0].shape()[i];
     }
@@ -386,21 +386,21 @@ void cat_array (int k,boost::multi_array< T, NumDims >& a, std::vector<boost::mu
     const size_t* shape = x[0].shape();
     std::vector<size_t> ex;
     ex.assign( shape, shape+x[0].num_dimensions() );
-    ex[k-1] = new_k_dim_size;   
+    ex[k-1] = new_k_dim_size;
     if(ex.size()<k)
     throw std::invalid_argument("Error resizing concatenate array");
   a.resize( ex );
-    
+
   /* concatenation along k-th dimension */
     T* a_data = a.data();
     int j = 0;
-    for(int i = 0; i < n_super; i++) 
+    for(int i = 0; i < n_super; i++)
   {
-        for(int c = 0; c < n; c++) 
+        for(int c = 0; c < n; c++)
     {
             int n_sub_k = n_sub * x[c].shape()[k-1];
             T* x_data = x[c].data();
-      for(int r = 0; r < n_sub_k; r++) 
+      for(int r = 0; r < n_sub_k; r++)
       {
                 a_data[j] =       x_data[r + (i * n_sub_k)];
                 j++;
@@ -408,19 +408,19 @@ void cat_array (int k,boost::multi_array< T, NumDims >& a, std::vector<boost::mu
         }
     }
     a.reindex(1);
-  
+
 }
 
 
 /**
-finds min/max elements of an array 
+finds min/max elements of an array
 template < typename T, size_t NumDims >
 std::pair <T,T>
 min_max (boost::multi_array_ref< T, NumDims > x, T val )
 {
-  
+
   boost::minmax_element(x.data(), x.data() + x.num_elements());
- 
+
 }
 */
 
@@ -431,9 +431,9 @@ template < typename T, size_t NumDims >
 std::pair <T,T>
 min_max (boost::multi_array_ref< int, 1 > x)
 {
-  
+
   boost::minmax_element(x.data(), x.data() + x.num_elements());
- 
+
 }
 
 
@@ -462,7 +462,7 @@ template <class T>
 ublas::vector<T,ublas::shallow_array_adaptor<T> >
 toVector(const size_t size, T * data)
 {
-    ublas::vector<T,ublas::shallow_array_adaptor<T> > 
+    ublas::vector<T,ublas::shallow_array_adaptor<T> >
     v(size,ublas::shallow_array_adaptor<T>(size,data));
     return v;
 }

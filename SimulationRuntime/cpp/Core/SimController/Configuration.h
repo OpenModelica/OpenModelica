@@ -15,11 +15,11 @@ public:
     ISolverSettings* getSolverSettings();
     ISimControllerSettings* getSimControllerSettings();
 private:
-    
+
      boost::shared_ptr<ISettingsFactory> _settings_factory;
      boost::shared_ptr<ISolverSettings>  _solver_settings;
      boost::shared_ptr<IGlobalSettings>  _global_settings;
      boost::shared_ptr<ISimControllerSettings>  _simcontroller_settings;
      boost::shared_ptr<ISolver> _solver;
-     
+
 };

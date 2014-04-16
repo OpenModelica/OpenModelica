@@ -201,7 +201,7 @@ algorithm
       BackendDAE.IncidenceMatrixT mt;
       list<Integer> selectedParameter;
       BackendDAE.ExtraInfo ei;
-      
+
     case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs,ei)),_)
       equation
         // get parameters with annotation(Evaluate=true)
@@ -1048,10 +1048,10 @@ algorithm
       BackendDAE.Shared shared;
       Boolean b;
       BackendDAE.ExtraInfo ei;
-    
+
     // do nothing if there are no replacements
     case (true,_,_) then inDAE;
-    
+
     case (false,BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs,ei)),_)
       equation
         // do replacements in initial equations
@@ -1066,7 +1066,7 @@ algorithm
         systs = List.map1(systs,replaceEvaluatedParametersSystemEqns,repl);
       then
         BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs,ei));
-  
+
   end match;
 end replaceEvaluatedParametersEqns;
 

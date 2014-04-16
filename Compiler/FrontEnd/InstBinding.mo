@@ -665,7 +665,7 @@ algorithm
         false = Mod.isEmptyMod(startValueModification);
         (cache,binding) = makeBinding(cache,inEnv,inAttributes,startValueModification,inType,inPrefix,componentName,inInfo);
         binding = DAEUtil.setBindingSource(binding, DAE.BINDING_FROM_START_VALUE());
-        
+
         // lochel: I moved the waring to the back end for now
         // s = componentName;
         // pre_str = PrefixUtil.printPrefixStr2(inPrefix);

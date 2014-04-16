@@ -760,7 +760,7 @@ algorithm
         true = List.isEmpty(knownsSystem);
         print("Warning: The system is ill-posed. There are no remaining equations containing the knowns.\n");
     then
-      ({},{});    
+      ({},{});
   case(_,_,_,_,_,_,_,_)
       equation
         //print("Knowns = ");printIntList(knowns);print(";\n");
@@ -1957,7 +1957,7 @@ algorithm
       //true = RTOpts.eliminationLevel() > 0;
       //false = equationHasZeroCrossing(e);
       ({e},_) = BackendVarTransform.replaceEquations({e},repl,NONE()) "this can be dangerous in case of if-equations, because the can be simplified to a list of equations";
-      
+
       // Attempt to solve the equation wrt to the variables to be eliminated.
       varIndexList = m[eqnIndex];
       (elimVarIndex :: _) = List.intersectionOnTrue(varIndexList, elimVarIndexList, intEq);
@@ -2123,21 +2123,21 @@ algorithm
     DAE.FunctionTree funcs;
     BackendDAE.EventInfo eventInfo "eventInfo" ;
     BackendDAE.ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";
-    BackendDAE.BackendDAEType backendDAEType "indicate for what the BackendDAE is used"; 
+    BackendDAE.BackendDAEType backendDAEType "indicate for what the BackendDAE is used";
     BackendDAE.SymbolicJacobians symjacs;
     BackendDAE.StateSets stateSets;
     BackendDAE.ExtraInfo ei;
-  
+
     case(BackendDAE.DAE(
       (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,m=m,mT=mT,matching=matching,stateSets=stateSets))::systList,
       (shared as BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,
                                    removedEqs=removedEqs,constraints=constrs,classAttrs=clsAttrs,cache=cache,env=env,
-                                   functionTree=funcs,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=backendDAEType,symjacs=symjacs,info=ei))),_,_,_) 
+                                   functionTree=funcs,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=backendDAEType,symjacs=symjacs,info=ei))),_,_,_)
     equation
        orderedVars = BackendVariable.listVar1(replaceVars(BackendVariable.varList(orderedVars),repl,func,replaceVariables));
        (orderedEqs,_) = BackendVarTransform.replaceEquationsArr(orderedEqs,repl,NONE());
        syst = BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching,stateSets);
-       shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constrs,clsAttrs,cache,env,funcs,eventInfo,extObjClasses,backendDAEType,symjacs,ei);                              
+       shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constrs,clsAttrs,cache,env,funcs,eventInfo,extObjClasses,backendDAEType,symjacs,ei);
     then
        BackendDAE.DAE(syst::systList,shared);
 
@@ -2928,7 +2928,7 @@ algorithm
 end addPairToSet;
 
 protected function getSourceIfApproximated "Returns SOME(source) if the equation is approximated"
-    input BackendDAE.Equation eqn;    
+    input BackendDAE.Equation eqn;
     output Option<DAE.ElementSource> source;
     protected DAE.ElementSource temp;
 algorithm
@@ -3010,9 +3010,9 @@ end addToSet;
 protected function updateSource "Takes the source of the current set and the new alias.
 If the existing source is NONE and the new SOME, if is replaced, otherwise the source is kept.
 Note: the source is only added when the equation is approximated."
-  input Option<DAE.ElementSource> source1;  
-  input Option<DAE.ElementSource> source2;  
-  output Option<DAE.ElementSource> sourceOut;  
+  input Option<DAE.ElementSource> source1;
+  input Option<DAE.ElementSource> source2;
+  output Option<DAE.ElementSource> sourceOut;
 algorithm
   sourceOut:=match(source1,source2)
         local
@@ -3022,10 +3022,10 @@ algorithm
         case(SOME(s),NONE())
             then SOME(s);
         case(NONE(),SOME(s))
-            then SOME(s);    
+            then SOME(s);
         case(SOME(s),SOME(_))
             then SOME(s);
-  end match;  
+  end match;
 end updateSource;
 
 protected function existsInSet
@@ -3109,7 +3109,7 @@ out:=match(set)
   case(ALIASSET(_,_,_,SOME(source)))
     then source;
   case(ALIASSET(_,_,_,NONE()))
-    then DAE.emptyElementSource;  
+    then DAE.emptyElementSource;
 end match;
 end getAliasSetSource;
 
@@ -3196,11 +3196,11 @@ algorithm
   then ();
   case(SOME(DAE.SOURCE(comment=comment)))
   equation
-    str = Util.if_(isApproximatedEquation2(comment),"true","false");    
+    str = Util.if_(isApproximatedEquation2(comment),"true","false");
     print(" *Approximated = "+&str);
   then ();
   end match;
-end dumpAliasSets3; 
+end dumpAliasSets3;
 
 end Uncertainties;
 

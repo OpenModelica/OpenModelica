@@ -4327,7 +4327,7 @@ algorithm
       list<DAE.Var> els1,els2;
       Absyn.Path p1,p2,tp;
       list<list<String>> aliases;
-      
+
     // For the types that cannot be type-converted, but may be subtypes of another type
     case (e, ty1, ty2, _)
       equation

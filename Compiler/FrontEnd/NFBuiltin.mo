@@ -231,7 +231,7 @@ public constant SCode.Element BUILTIN_STATESELECT = SCode.CLASS("StateSelect",
   SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
   SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
   SCode.noComment, Absyn.dummyInfo);
-  
+
 // Builtin variable time:
 public constant SCode.Element BUILTIN_TIME = SCode.COMPONENT("time", SCode.defaultPrefixes,
     SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.INPUT()),

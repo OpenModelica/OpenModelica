@@ -48,11 +48,11 @@ extern "C" {
 enum NONLINEAR_SOLVER
 {
   NLS_NONE = 0,
-  
+
   NLS_HYBRID,
   NLS_KINSOL,
   NLS_NEWTON,
-  
+
   NLS_MAX
 };
 

@@ -184,7 +184,7 @@ package Absyn
       Info info;
     end TEXT;
   end Element;
-  
+
   uniontype ConstrainClass
     record CONSTRAINCLASS
       ElementSpec elementSpec;
@@ -209,7 +209,7 @@ package Absyn
       Option<Comment> comment;
       Info info;
     end IMPORT;
-  
+
     record COMPONENTS
       ElementAttributes attributes;
       TypeSpec typeSpec;
@@ -649,7 +649,7 @@ package Absyn
       Modification modification;
     end C_MODIFICATION;
   end CodeNode;
-    
+
   uniontype FunctionArgs
     record FUNCTIONARGS
       list<Exp> args;
@@ -779,7 +779,7 @@ package Absyn
     record FR_NORMAL_FUNCTION
       FunctionPurity purity;
     end FR_NORMAL_FUNCTION;
-  
+
     record FR_OPERATOR_FUNCTION end FR_OPERATOR_FUNCTION;
     record FR_PARALLEL_FUNCTION end FR_PARALLEL_FUNCTION;
     record FR_KERNEL_FUNCTION end FR_KERNEL_FUNCTION;

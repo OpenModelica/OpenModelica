@@ -11,8 +11,8 @@
 using boost::extensions::factory;
 
 BOOST_EXTENSION_TYPE_MAP_FUNCTION {
- 
+
    types.get<std::map<std::string, factory<IAlgLoopSolverFactory,IGlobalSettings& > > >()
-    ["AlgLoopSolverFactory"].set<AlgLoopSolverFactory>();  
+    ["AlgLoopSolverFactory"].set<AlgLoopSolverFactory>();
 
 }

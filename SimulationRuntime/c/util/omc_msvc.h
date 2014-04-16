@@ -53,7 +53,7 @@ static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
 #if defined(_MSC_VER)
 
 /* get rid of inline for MSVC */
-#define OMC_INLINE 
+#define OMC_INLINE
 
 #ifndef WIN32
 #define WIN32

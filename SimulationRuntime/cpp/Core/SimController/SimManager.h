@@ -36,7 +36,7 @@ public:
 
 private:
 
-   
+
     void computeEndTimes(std::vector<std::pair<double,int> > &tStopsSub);
     void runSingleProcess();
     void writeProperties();
@@ -44,7 +44,7 @@ private:
     boost::shared_ptr<IMixedSystem> _mixed_system;
     Configuration* _config;
 
-    
+
 
     std::vector<std::vector<std::pair<double,int> > >                  ///<             - Stopzeitpunkte aufgrund von Time-Events
         _tStops;
@@ -54,16 +54,16 @@ private:
     int            _dimtimeevent,      ///< Temp                  - Timeevent-Dimensionen-Array
             _dimZeroFunc;                              ///< Number of zero functions
     int*      _timeeventcounter;      ///< Temp                  - Timeevent-Counter-Array
-    int                  
+    int
         _totStps,                        ///< Output                  - Anzahl steps der Prozesse
         _accStps,                        ///< Output                  - Anzahl akzeptierte steps der Prozesse
         _rejStps;                        ///< Output                  - Anzahl verworfene steps der Prozesse
 
     ISolver::SOLVERCALL                  _solverTask;                  ///< Temporary            - Beschreibt die Aufgabe mit der der Solver aufgerufen wird
-    
+
     int
             _idid;                              ///< Output                  - DebugID
-    bool       
+    bool
         _continueSimulation                        ///<       - Flag für Endlossimulation (wird gesetzt, wenn Solver zurückkehrt)
         ,_writeFinalState;                        ///< Temporary            - Ist am Ende noch ein Time-Event???
     bool*

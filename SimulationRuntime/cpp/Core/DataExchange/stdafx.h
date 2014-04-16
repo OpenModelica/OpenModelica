@@ -9,7 +9,7 @@
 #define BOOST_ALL_DYN_LINK
 #endif
 
-#define WIN32_LEAN_AND_MEAN    
+#define WIN32_LEAN_AND_MEAN
 
 
 #include <vector>
@@ -21,7 +21,7 @@
 #include <boost/bind.hpp>
 //vxworks  #include <boost/function.hpp>
 #define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
-#include <boost/numeric/ublas/storage.hpp> 
+#include <boost/numeric/ublas/storage.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/io.hpp>
 #include <boost/numeric/ublas/matrix.hpp>

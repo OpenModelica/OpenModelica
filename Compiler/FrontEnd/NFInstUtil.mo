@@ -813,7 +813,7 @@ algorithm
         dims = {DAE.DIM_INTEGER(dim_size)}))
       then
         DAE.DIM_ENUM(path, enum_lits, dim_size);
-        
+
     case DAE.CREF(ty = ty)
       equation
         DAE.T_ENUMERATION(path = path, names = enum_lits) =

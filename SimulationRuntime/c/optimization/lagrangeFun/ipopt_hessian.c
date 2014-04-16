@@ -262,7 +262,7 @@ static int num_hessian(double *v, int k, IPOPT_DATA_ *iData, double *lambda, mod
     Jrhs = iData->df.J[iData->helper.i];
   }
 
-  upCost = (lagrange_yes || mayer_yes) && (obj_factor!=0);   
+  upCost = (lagrange_yes || mayer_yes) && (obj_factor!=0);
 
   if(upCost){
     if(!iData->sopt.updateH){
@@ -301,7 +301,7 @@ static int num_hessian(double *v, int k, IPOPT_DATA_ *iData, double *lambda, mod
        }
       }
     }
-    h = obj_factor/h; 
+    h = obj_factor/h;
     if(lagrange_yes){
       for(j = i; j < dim->nv; ++j){
        if(iData->sopt.gradFs[iData->lagrange_index][i]*iData->sopt.gradFs[iData->lagrange_index][j] && obj_factor!=0)
@@ -328,7 +328,7 @@ static int num_hessian(double *v, int k, IPOPT_DATA_ *iData, double *lambda, mod
 
 
 /*
- *  function update goal function 
+ *  function update goal function
  *  author: vitalij
  */
 static int updateCost(double *v, int k, IPOPT_DATA_ *iData, modelica_boolean lagrange_yes, modelica_boolean mayer_yes, long double *F1, long double *F2)
@@ -339,7 +339,7 @@ static int updateCost(double *v, int k, IPOPT_DATA_ *iData, modelica_boolean lag
 
   if(mayer_yes)
     diff_symColoredObject(iData, F2, iData->mayer_index);
-  
+
   return 0;
 }
 

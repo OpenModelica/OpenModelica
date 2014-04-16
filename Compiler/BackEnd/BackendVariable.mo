@@ -74,7 +74,7 @@ protected constant Real HASHVECFACTOR = 1.4;
 
 /* =======================================================
  *
- *  Section for functions that deals with Var 
+ *  Section for functions that deals with Var
  *
  * =======================================================
  */
@@ -2095,10 +2095,10 @@ algorithm
         msg = DAE.BINARY(
               DAE.SCONST(str),
               DAE.ADD(DAE.T_STRING_DEFAULT),
-              DAE.CALL(Absyn.IDENT("String"), {e, DAE.SCONST(format)}, DAE.callAttrBuiltinString) 
+              DAE.CALL(Absyn.IDENT("String"), {e, DAE.SCONST(format)}, DAE.callAttrBuiltinString)
               );
         BackendDAEUtil.checkAssertCondition(cond,msg,DAE.ASSERTIONLEVEL_WARNING,DAEUtil.getElementSourceFileInfo(source));
-      then 
+      then
         DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,DAE.ASSERTIONLEVEL_WARNING,source)})::iMinmax;
     else then iMinmax;
   end matchcontinue;
@@ -2616,7 +2616,7 @@ algorithm
     case (_,_,_,_)
       equation
         arr = resizeVars3(varOptArr[index],index,bucketSize,iArr);
-      then 
+      then
         resizeVars2(index-1,varOptArr,bucketSize,arr);
   end match;
 end resizeVars2;
@@ -3003,7 +3003,7 @@ algorithm
       equation
         print("BackendVariable.compressVariables failed\n");
       then
-        fail();     
+        fail();
   end matchcontinue;
 end compressVariables;
 
@@ -3117,12 +3117,12 @@ algorithm
       BackendDAE.SymbolicJacobians symjacs;
       BackendDAE.BackendDAEType btp;
       BackendDAE.ExtraInfo ei;
-      
+
     case (_,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs,ei))
       equation
         knvars1 = addVar(inVar,knvars);
       then BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs,ei);
-  
+
   end match;
 end addKnVarDAE;
 
@@ -3141,19 +3141,19 @@ algorithm
       list<DAE.Constraint> constrs;
       list<DAE.ClassAttributes> clsAttrs;
       Env.Cache cache;
-      Env.Env env;      
+      Env.Env env;
       DAE.FunctionTree funcs;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.SymbolicJacobians symjacs;
       BackendDAE.BackendDAEType btp;
       BackendDAE.ExtraInfo ei;
-      
+
     case (_,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs,ei))
       equation
         knvars1 = addNewVar(inVar,knvars);
       then BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs,ei);
-  
+
   end match;
 end addNewKnVarDAE;
 
@@ -3179,12 +3179,12 @@ algorithm
       BackendDAE.SymbolicJacobians symjacs;
       BackendDAE.BackendDAEType btp;
       BackendDAE.ExtraInfo ei;
-      
+
     case (_,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs,ei))
       equation
         aliasVars = addVar(inVar,aliasVars);
       then BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs,ei);
-  
+
   end match;
 end addAliasVarDAE;
 
@@ -3203,19 +3203,19 @@ algorithm
       list<DAE.Constraint> constrs;
       list<DAE.ClassAttributes> clsAttrs;
       Env.Cache cache;
-      Env.Env env;      
+      Env.Env env;
       DAE.FunctionTree funcs;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.SymbolicJacobians symjacs;
       BackendDAE.BackendDAEType btp;
       BackendDAE.ExtraInfo ei;
-      
+
     case (_,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs,ei))
       equation
         aliasVars = addNewVar(inVar,aliasVars);
       then BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs,ei);
-  
+
   end match;
 end addNewAliasVarDAE;
 
@@ -3524,7 +3524,7 @@ algorithm
         crlst = ComponentReference.expandCref(cr1,true);
         (vLst as _::_,indxs) = getVarLst(crlst,inVariables,{},{});
       then
-        (vLst,indxs);        
+        (vLst,indxs);
     /* failure
     case (_,_)
       equation
@@ -4816,7 +4816,7 @@ algorithm
   end match;
 end stateSelectToInteger;
 
-public function transformXToXd 
+public function transformXToXd
 "author: PA
   this function transforms x variables (in the state vector)
   to corresponding xd variable (in the derivatives vector)"
@@ -4837,24 +4837,24 @@ algorithm
       DAE.ConnectorType ct;
       DAE.ElementSource source;
       BackendDAE.Var backendVar;
-      
-    case (BackendDAE.VAR(varName = cr, 
-      varKind = BackendDAE.STATE(index=_), 
-      varDirection = dir, 
-      varParallelism = prl, 
-      varType = tp, 
-      bindExp = exp, 
-      bindValue = v, 
-      arryDim = dim, 
-      source = source, 
-      values = attr, 
-      comment = comment, 
+
+    case (BackendDAE.VAR(varName = cr,
+      varKind = BackendDAE.STATE(index=_),
+      varDirection = dir,
+      varParallelism = prl,
+      varType = tp,
+      bindExp = exp,
+      bindValue = v,
+      arryDim = dim,
+      source = source,
+      values = attr,
+      comment = comment,
       connectorType = ct))
       equation
         cr = ComponentReference.crefPrefixDer(cr);
       then
         BackendDAE.VAR(cr, BackendDAE.STATE_DER(), dir, prl, tp, exp, v, dim, source, attr, comment, ct);
-        
+
     case (backendVar)
     then
       backendVar;

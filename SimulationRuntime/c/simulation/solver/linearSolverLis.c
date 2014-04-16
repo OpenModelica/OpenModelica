@@ -43,7 +43,7 @@
 #include "linearSystem.h"
 #include "linearSolverLis.h"
 
-/*! \fn allocate memory for linear system solver Lis 
+/*! \fn allocate memory for linear system solver Lis
  *
  */
 int
@@ -69,14 +69,14 @@ allocateLisData(int n_row, int n_col, int nz, void** voiddata)
   return 0;
 }
 
-/*! \fn free memory for linear system solver Lis 
+/*! \fn free memory for linear system solver Lis
  *
  */
-int 
+int
 freeLisData(void **voiddata)
 {
   DATA_LIS* data = (DATA_LIS*) *voiddata;
-  
+
   lis_solver_destroy(data->solver);
   lis_vector_destroy(data->b);
   lis_vector_destroy(data->x);

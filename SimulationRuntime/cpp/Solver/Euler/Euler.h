@@ -131,7 +131,7 @@ private:
     ///// im aktuellen Ausgabeintervall)
     //void denseout(double* pK1, double* pK2, double b, double* w1, double* w2, double* w3);
 
-  
+
     /// Berechnung der Jacobimatrix
     void calcJac(double* yHelp, double* _fHelp, const double* _f, double* jac, const bool& flag);
 
@@ -146,9 +146,9 @@ private:
         _idid;                                        ///< Input, Output    - Status Flag
 
     int
-         _outputStp, 
+         _outputStp,
         _outputStps;                                ///< Output            - Number of output steps
-        
+
     double
         *_z,                                        ///< Temp            - State vector
         *_z0,                                        ///< Temp            - (Old) state vector at left border of intervall (last step)
@@ -168,7 +168,7 @@ private:
          _h11;
 
 
-    double 
+    double
         _tOut,                                        ///< Output            - Time for dense output
         _tLastZero,                                 ///< Temp            - Stores the time of the last zero (not last zero crossing!)
         _tRealInitZero,                                ///< Temp            - Time of the very first zero in all zero functions
@@ -181,7 +181,7 @@ private:
     int
         *_zeroSignIter;                                ///< Temp            - Temporary zeroSign Vector
 
-    ISystemProperties* _properties; 
+    ISystemProperties* _properties;
     IContinuous* _continuous_system;
     IEvent* _event_system;
     IMixedSystem* _mixed_system;

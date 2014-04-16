@@ -296,10 +296,10 @@ end treeAdd2;
 //       Value rval;
 //       Option<TreeValue> optVal;
 //       Integer rhash;
-// 
+//
 //     case ((bt as TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE())),_,_)
 //       then bt;
-// 
+//
 //     case (TREENODE(value = SOME(TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = optLeft,rightSubTree = SOME(right)),_,_)
 //       equation
 //         0 = keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
@@ -307,19 +307,19 @@ end treeAdd2;
 //         optRight = treePruneEmptyNodes(right);
 //       then
 //         TREENODE(SOME(rightmost),optLeft,optRight);
-// 
+//
 //     case (TREENODE(value = SOME(TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = SOME(left as TREENODE(value=_)),rightSubTree = NONE()),_,_)
 //       equation
 //         0 = keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
 //       then
 //         left;
-// 
+//
 //     case (TREENODE(value = SOME(TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = NONE(),rightSubTree = NONE()),_,_)
 //       equation
 //         0 = keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
 //       then
 //         TREENODE(NONE(),NONE(),NONE());
-// 
+//
 //     case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = optLeft,rightSubTree = SOME(t)),_,_)
 //       equation
 //         1 = keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
@@ -327,7 +327,7 @@ end treeAdd2;
 //         optTree = treePruneEmptyNodes(t);
 //       then
 //         TREENODE(optVal,optLeft,optTree);
-// 
+//
 //     case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree =  SOME(t),rightSubTree = optRight),_,_)
 //       equation
 //         -1 = keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
@@ -335,7 +335,7 @@ end treeAdd2;
 //         optTree = treePruneEmptyNodes(t);
 //       then
 //         TREENODE(optVal,optTree,optRight);
-// 
+//
 //     else
 //       equation
 //         Error.addMessage(Error.INTERNAL_ERROR,{"-BinaryTree.treeDelete failed\n"});
@@ -362,27 +362,27 @@ end treeAdd2;
 //       BinTree left,right,bt;
 //       Option<BinTree> optRight, optLeft;
 //       Option<TreeValue> optTreeVal;
-// 
+//
 //     case (TREENODE(value = SOME(treeVal),leftSubTree = NONE(),rightSubTree = NONE()))
 //       then (treeVal,TREENODE(NONE(),NONE(),NONE()));
-// 
+//
 //     case (TREENODE(value = SOME(treeVal),leftSubTree = SOME(left),rightSubTree = NONE()))
 //       then (treeVal,left);
-// 
+//
 //     case (TREENODE(value = optTreeVal,leftSubTree = optLeft,rightSubTree = SOME(right)))
 //       equation
 //         (value,right) = treeDeleteRightmostValue(right);
 //         optRight = treePruneEmptyNodes(right);
 //       then
 //         (value,TREENODE(optTreeVal,optLeft,optRight));
-// 
+//
 //     case (TREENODE(value = SOME(treeVal),leftSubTree = NONE(),rightSubTree = SOME(right)))
 //       equation
 //         failure((_,_) = treeDeleteRightmostValue(right));
 //         print("- BinaryTree.treeDeleteRightmostValue: right value was empty, left NONE\n");
 //       then
 //         (treeVal,TREENODE(NONE(),NONE(),NONE()));
-// 
+//
 //     else
 //       equation
 //         Error.addMessage(Error.INTERNAL_ERROR,{"- BinaryTree.treeDeleteRightmostValue failed\n"});
@@ -416,9 +416,9 @@ end treeAdd2;
 //     local
 //       Value ld,rd,res;
 //       BinTree left,right;
-// 
+//
 //     case (TREENODE(leftSubTree = NONE(),rightSubTree = NONE())) then 1;
-// 
+//
 //     case (TREENODE(leftSubTree = SOME(left),rightSubTree = SOME(right)))
 //       equation
 //         ld = bintreeDepth(left);
@@ -426,13 +426,13 @@ end treeAdd2;
 //         res = intMax(ld, rd);
 //       then
 //         res + 1;
-// 
+//
 //     case (TREENODE(leftSubTree = SOME(left),rightSubTree = NONE()))
 //       equation
 //         ld = bintreeDepth(left);
 //       then
 //         ld;
-// 
+//
 //     case (TREENODE(leftSubTree = NONE(),rightSubTree = SOME(right)))
 //       equation
 //         rd = bintreeDepth(right);

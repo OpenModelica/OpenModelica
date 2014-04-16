@@ -138,7 +138,7 @@ algorithm
       list<BackendDAE.Var> knownVarsList;
       BackendDAE.BackendDAE dae;
       BackendDAE.Variables v,kn;
-      
+
   case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = v)::{},shared=BackendDAE.SHARED(knownVars = kn)))
     equation
       orderedVarsList = BackendVariable.varList(v);
@@ -408,7 +408,7 @@ end replaceVars;
 //       list<SimCode.SimEqSystem> tail;
 //       Integer p;
 //       list<list<Integer>> acc_1;
-// 
+//
 //     case (_,{},_) then acc;
 //     case (_,((SimCode.SES_SIMPLE_ASSIGN(cref=cref))::tail),_)
 //     equation
@@ -1013,7 +1013,7 @@ algorithm
       list<BackendDAE.TimeEvent> timeEvents;
       Option<HpcOmScheduler.ScheduleSimCode> hpcOmSchedule;
       Option<SimCode.BackendMapping> backendMapping;
-      
+
     case (SimCode.SIMCODE(modelInfo,literals,recordDecls,externalFunctionIncludes,allEquations,odeEquations,
           algebraicEquations,residualEquations,useSymbolicInitialization,useHomotopy,initialEquations,startValueEquations,nominalValueEquations,minValueEquations,maxValueEquations,
           parameterEquations,removedEquations,algorithmAndEquationAsserts,equationsForZeroCrossings,jacobianEquations,stateSets,constraints,classAttributes,zeroCrossings,relations,

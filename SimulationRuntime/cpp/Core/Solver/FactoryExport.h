@@ -2,9 +2,9 @@
 
 #if defined(__vxworks)
 
-#define BOOST_EXTENSION_SOLVER_DECL 
-#define BOOST_EXTENSION_SOLVERSETTINGS_DECL 
-  
+#define BOOST_EXTENSION_SOLVER_DECL
+#define BOOST_EXTENSION_SOLVERSETTINGS_DECL
+
 
 #elif defined(OMC_BUILD) || defined(SIMSTER_BUILD)
 

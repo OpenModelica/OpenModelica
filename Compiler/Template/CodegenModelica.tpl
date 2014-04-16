@@ -66,7 +66,7 @@ template dumpBackendDAE(BackendDAE.BackendDAE backendDAE)
                 else '?unknown?'
               end match
             else ''
-          
+
           '<%typeStr%> <%crefStr(var.varName)%>(<%attrStr%>);'
           ;separator="\n")
         <<
@@ -74,7 +74,7 @@ template dumpBackendDAE(BackendDAE.BackendDAE backendDAE)
         <%varDeclaration%>
         >>
         ;separator="\n\n")
-        
+
       let eqn = (eqs |> eqSystem as BackendDAE.EQSYSTEM(__) hasindex clusterID fromindex 1 =>
         let eqnDeclaration = (BackendEquation.equationList(eqSystem.orderedEqs) |> eq hasindex eqID fromindex 1 =>
           '<%BackendDump.equationString(eq)%>;'
@@ -84,7 +84,7 @@ template dumpBackendDAE(BackendDAE.BackendDAE backendDAE)
         <%eqnDeclaration%>
         >>
         ;separator="\n\n")
-        
+
       <<
       /* This is probably not complete. */
       model <%info.fileNamePrefix%>

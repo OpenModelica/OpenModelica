@@ -54,7 +54,7 @@ int main(int argc, const char* argv[])
         {
             //cout << "runtime library path set to " << vm["runtime-library"].as<string>() << std::endl;
             runtime_lib_path = vm["runtime-library"].as<string>();
-        
+
         }
         else
         {
@@ -114,15 +114,15 @@ int main(int argc, const char* argv[])
         }
 
 
-            
+
         //SimController to start simulation
          SimSettings settings = {solver,"newton",starttime,stoptime,stepsize,1e-20,0.01,tollerance,results_file_path.string()};
         boost::shared_ptr<ISimController> sim_controller =  boost::shared_ptr<ISimController>(new SimController(runtime_lib_path,modelica_path));
          //create Modelica system
         std::pair<boost::weak_ptr<IMixedSystem>,boost::weak_ptr<ISimData> > system = sim_controller->LoadSystem("ModelicaSystem");
-   
+
         sim_controller->Start(system.first,settings);
-       
+
 
     }
     catch(std::exception& ex)

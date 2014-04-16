@@ -17,7 +17,7 @@ using std::string;
 enum OutputFormat {CSV, MAT, EMPTY};
 class IGlobalSettings
 {
-  
+
 public:
     virtual  ~IGlobalSettings() {}
     ///< Start time of integration (default: 0.0)

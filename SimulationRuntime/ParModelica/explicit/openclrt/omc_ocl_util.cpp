@@ -203,7 +203,7 @@ void ocl_initialize(){
     timeval t1, t2;
     double elapsedTime;
     gettimeofday(&t1, NULL);
-  
+
     if (!device_comm_queue){
         if(!ocl_device){
             ocl_get_device();
@@ -211,12 +211,12 @@ void ocl_initialize(){
         ocl_create_context_and_comm_queue();
         ocl_build_p_from_src();
     }
-    
+
     gettimeofday(&t2, NULL);
     elapsedTime = (t2.tv_sec - t1.tv_sec) * 1000.0;      // sec to ms
     elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;   // us to ms
     printf ("\tOpenCL initialization :        %lf ms\n", elapsedTime);
-    
+
     setenv("CUDA_CACHE_DISABLE", "1", 1);
 }
 
@@ -423,11 +423,11 @@ void ocl_set_local_kernel_arg(cl_kernel kernel, int arg_nr, size_t in_size){
 void ocl_execute_kernel(cl_kernel kernel){
 
     cl_int err = 0;
-    
+
     timeval t1, t2;
     double elapsedTime;
     gettimeofday(&t1, NULL);
-    
+
     if (WORK_DIM == 0){
         size_t GlobalSize[1] = {GLOBAL_SIZE[0]}; // one dimensional Range
         //automatic division to workgroups by OpenCL.
@@ -439,7 +439,7 @@ void ocl_execute_kernel(cl_kernel kernel){
         size_t GlobalSize[1] = {GLOBAL_SIZE[0]}; // one dimensional Range
         size_t LocalSize[1] = {LOCAL_SIZE[0]}; // one dimensional Range
         err = clEnqueueNDRangeKernel(device_comm_queue, kernel, 1, NULL,
-        GlobalSize, LocalSize, 0, NULL, NULL);        
+        GlobalSize, LocalSize, 0, NULL, NULL);
     }
 
     else if (WORK_DIM == 2){
@@ -462,8 +462,8 @@ void ocl_execute_kernel(cl_kernel kernel){
 
     clFinish(device_comm_queue);
     ocl_error_check(OCL_ENQUE_ND_RANGE_KERNEL, err);
-    
-    
+
+
     gettimeofday(&t2, NULL);
     elapsedTime = (t2.tv_sec - t1.tv_sec) * 1000.0;      // sec to ms
     elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;   // us to ms
@@ -909,7 +909,7 @@ void ocl_error_check(int operation, cl_int error_code){
                     printf("Possible unknown error in : OCL_COPY_DEV_TO_HOST\n");
             }
             break;
-            
+
             case OCL_REALEASE_MEM_OBJECT:
             switch (error_code){
                 case CL_INVALID_MEM_OBJECT:
@@ -923,7 +923,7 @@ void ocl_error_check(int operation, cl_int error_code){
                     printf("Possible unknown error in : OCL_COPY_DEV_TO_HOST\n");
             }
             break;
-            
+
 
     }
 }

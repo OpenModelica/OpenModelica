@@ -29,7 +29,7 @@ public:
         std::map<std::string, factory<IAlgLoopSolverFactory,IGlobalSettings*,PATH,PATH> >::iterator iter;
         std::map<std::string, factory<IAlgLoopSolverFactory,IGlobalSettings*,PATH,PATH> >& algloopsolver_factory(_system_type_map->get());
         iter = algloopsolver_factory.find("AlgLoopSolverFactory");
-        if (iter ==algloopsolver_factory.end()) 
+        if (iter ==algloopsolver_factory.end())
          {
             throw std::invalid_argument("No AlgLoopSolverFactory  found");
         }
@@ -57,20 +57,20 @@ public:
             tmp << "Failed loading System library!" << std::endl << modelica_path.string();
             throw std::runtime_error(tmp.str());
         }
-        
+
         std::map<std::string, factory<IMixedSystem,IGlobalSettings*,boost::shared_ptr<IAlgLoopSolverFactory>, boost::shared_ptr<ISimData> > >::iterator system_iter;
         std::map<std::string, factory<IMixedSystem,IGlobalSettings*,boost::shared_ptr<IAlgLoopSolverFactory>, boost::shared_ptr<ISimData> > >& factories(_system_type_map->get());
         system_iter = factories.find(modelKey);
-        if (system_iter ==factories.end()) 
+        if (system_iter ==factories.end())
         {
             throw std::invalid_argument("No system found");
         }
-       
-       
+
+
         std::map<std::string, factory<ISimData> >::iterator simdata_iter;
         std::map<std::string, factory<ISimData > >& simdata_factory(_system_type_map->get());
         simdata_iter = simdata_factory.find("SimData");
-        if (simdata_iter ==simdata_factory.end()) 
+        if (simdata_iter ==simdata_factory.end())
         {
             throw std::invalid_argument("No simdata found");
         }
@@ -110,7 +110,7 @@ protected:
         }
     }
 
-    bool _use_modelica_compiler;    
+    bool _use_modelica_compiler;
     type_map* _system_type_map;
 
-}; 
+};

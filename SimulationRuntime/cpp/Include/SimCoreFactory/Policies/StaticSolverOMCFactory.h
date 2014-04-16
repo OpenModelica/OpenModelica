@@ -11,7 +11,7 @@
 /*
 Policy class to create solver object
 */
-template <class CreationPolicy> 
+template <class CreationPolicy>
 struct StaticSolverOMCFactory : public SolverOMCFactory<CreationPolicy>
 {
 

@@ -287,7 +287,7 @@ static void* parseStream(pANTLR3_INPUT_STREAM input, int langStd, int runningTes
     pLexer->rec->displayRecognitionError = handleLexerError;
     pLexer->recover = lexNoRecover;
     tstream = antlr3CommonTokenStreamSourceNew(ANTLR3_SIZE_HINT, TOKENSOURCE(((pMetaModelica_Lexer)lxr)));
-  } 
+  }
   else if (ModelicaParser_flags & PARSE_PARMODELICA) {
     lxr = ParModelica_LexerNew(input);
     //printf("Parsing ParModelica.\n\n");
@@ -336,7 +336,7 @@ static void* parseStream(pANTLR3_INPUT_STREAM input, int langStd, int runningTes
   tstream = (pANTLR3_COMMON_TOKEN_STREAM) NULL;
   if (ModelicaParser_flags & PARSE_META_MODELICA) {
     ((pMetaModelica_Lexer)lxr)->free((pMetaModelica_Lexer)lxr);
-  } 
+  }
   else if (ModelicaParser_flags & PARSE_PARMODELICA) {
     ((pParModelica_Lexer)lxr)->free((pParModelica_Lexer)lxr);
   } else {
@@ -396,14 +396,14 @@ static void* parseFile(const char* fileName, const char* infoName, int flags, co
   parser_members members;
   pthread_once(&parser_once_create_key,make_key);
   pthread_setspecific(modelicaParserKey,&members);
-  
+
   members.encoding = encoding;
   members.filename_C = fileName;
   members.filename_C_testsuiteFriendly = infoName;
   members.flags = flags;
   members.readonly = !SystemImpl__regularFileWritable(fileName);
   omc_first_comment = 0;
-  
+
   if (debug) { fprintf(stderr, "Starting parsing of file: %s\n", fileName); fflush(stderr); }
 
   len = strlen(fileName);

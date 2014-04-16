@@ -406,9 +406,9 @@ algorithm
         b = diveIsExpandable(b, cr);
       then
         b;
-    
+
     else false;
-  
+
   end match;
 end isExpandable;
 
@@ -420,15 +420,15 @@ protected function diveIsExpandable
   output Boolean b;
 algorithm
   b := match(inIsExpandable, inName)
-    
+
     case (true, _) then true;
-    
+
     case (false, _)
       equation
-        b = isExpandable(inName); 
+        b = isExpandable(inName);
       then
         b;
-  
+
   end match;
 end diveIsExpandable;
 
@@ -468,7 +468,7 @@ end isVarExpandable;
 
 protected function getExpandableVariablesWithNoBinding
 "@author: adrpo
- Goes through a list of expandable variables 
+ Goes through a list of expandable variables
  THAT HAVE NO BINDING and returns their crefs"
   input list<DAE.Element> inVariables;
   input list<DAE.ComponentRef> inAccPotential;
@@ -487,9 +487,9 @@ algorithm
     // TODO: actually only if their binding is not another expandable??!!
     case (DAE.VAR(componentRef = name, binding = bnd) :: rest_vars, _)
       equation
-        potential = 
-          Util.if_(Util.isSome(bnd), 
-            inAccPotential, 
+        potential =
+          Util.if_(Util.isSome(bnd),
+            inAccPotential,
             List.consOnTrue(isExpandable(name), name, inAccPotential));
         potential = getExpandableVariablesWithNoBinding(rest_vars, potential);
       then
@@ -3053,7 +3053,7 @@ algorithm
     case (_, _, _, _, _)
       equation
         (dae, _, _) = DAEUtil.traverseDAE(inDae, DAE.emptyFuncTree,
-          evaluateConnectionOperators2, 
+          evaluateConnectionOperators2,
           (inHasStream, inHasCardinality, inSets, inSetArray));
         dae = simplifyDAEElements(inHasCardinality, dae);
       then
@@ -3103,7 +3103,7 @@ algorithm
       Boolean has_stream, has_cardinality;
 
     case ((DAE.CALL(path = Absyn.IDENT("inStream"),
-                    expLst = {DAE.CREF(componentRef = cr, ty = ty)}), 
+                    expLst = {DAE.CREF(componentRef = cr, ty = ty)}),
           (has_stream as true, has_cardinality as _, sets, set_arr, _)))
       equation
         e = evaluateInStream(cr, (has_stream, has_cardinality, sets, set_arr));
@@ -3112,7 +3112,7 @@ algorithm
         ((e, (has_stream, has_cardinality, sets, set_arr, true)));
 
     case ((DAE.CALL(path = Absyn.IDENT("actualStream"),
-                    expLst = {DAE.CREF(componentRef = cr, ty = ty)}), 
+                    expLst = {DAE.CREF(componentRef = cr, ty = ty)}),
           (has_stream as true, has_cardinality as _, sets, set_arr, _)))
       equation
         e = evaluateActualStream(cr, sets, set_arr);
@@ -3121,7 +3121,7 @@ algorithm
         ((e, (has_stream, has_cardinality, sets, set_arr, true)));
 
     case ((DAE.CALL(path = Absyn.IDENT("cardinality"),
-                    expLst = {DAE.CREF(componentRef = cr, ty = ty)}), 
+                    expLst = {DAE.CREF(componentRef = cr, ty = ty)}),
           (has_stream as _, has_cardinality as true, sets, set_arr, _)))
       equation
         e = evaluateCardinality(cr, sets);
@@ -3302,7 +3302,7 @@ algorithm
         // actualStream(stream_var) = smooth(0, if flow_var > 0 then inStream(stream_var)
         //                                            else stream_var);
         e = DAE.CALL(Absyn.IDENT("smooth"), {
-              DAE.ICONST(0), 
+              DAE.ICONST(0),
               DAE.IFEXP(DAE.RELATION(flow_exp, DAE.GREATER(ety), DAE.RCONST(0.0), -1, NONE()),
                           instream_exp, stream_exp)}, DAE.callAttrBuiltinReal);
       then
@@ -3322,7 +3322,7 @@ algorithm
   count := getConnectCount(inCref, sets);
   outExp := DAE.ICONST(count);
 end evaluateCardinality;
-    
+
 protected function simplifyDAEElements
 "run this only if we have cardinality"
   input Boolean inHasCardinality;
@@ -3332,17 +3332,17 @@ algorithm
   outDAE := match(inHasCardinality, inDAE)
     local
       list<DAE.Element> elems;
-    
+
     case (false, _) then inDAE;
-    
+
     case (true, _)
-      equation 
+      equation
         DAE.DAE(elementLst = elems) = inDAE;
         elems = List.mapFlat(elems, simplifyDAEElement);
         outDAE = DAE.DAE(elems);
       then
         outDAE;
-  
+
   end match;
 end simplifyDAEElements;
 
@@ -3362,7 +3362,7 @@ algorithm
 
     case DAE.INITIAL_IF_EQUATION(conds, branches, else_branch, src)
       then simplifyDAEIfEquation(conds, branches, else_branch, src);
-      
+
     case DAE.ASSERT(condition = DAE.BCONST(true)) then {};
     else {inElement};
 
@@ -3395,7 +3395,7 @@ algorithm
 
   end match;
 end simplifyDAEIfEquation;
-    
+
 protected function removeStreamSetElement
   "This function removes the given cref from a connection set."
   input DAE.ComponentRef inCref;
@@ -4041,7 +4041,7 @@ protected function removeUnusedExpandableVariablesAndConnections
 "@author: adrpo
  this function will remove all unconnected/unused/unnecessary expandable variables and connections from the DAE.
  NOTE that this is not so obvious:
- 1. collect all expandable variables crefs 
+ 1. collect all expandable variables crefs
  2. collect all expandable crefs used in the DAE (with the expandable variables THAT HAVE NO BINDING removed)
  3. get all expandable crefs that are connected ONLY with expandable
  4. substract: (3)-(2)
@@ -4071,13 +4071,13 @@ algorithm
         // 1 - get all expandable crefs
         expandableVars = getExpandableVariablesWithNoBinding(elems, {});
         // print("All expandable (1):\n  " +& stringDelimitList(List.map(expandableVars, ComponentReference.printComponentRefStr), "\n  ") +& "\n");
-        
+
         // 2 - remove all expandable without binding from the dae
         dae = DAEUtil.removeVariables(inDAE, expandableVars);
         // 2 - get all expandable crefs used in the dae (without the expandable vars)
         usedInDAE = DAEUtil.getAllExpandableCrefsFromDAE(dae);
         // print("Used in the DAE (2):\n  " +& stringDelimitList(List.map(usedInDAE, ComponentReference.printComponentRefStr), "\n  ") +& "\n");
-        
+
         // 3 - get all expandable crefs that are connected ONLY with expandable
         setsAsCrefs = getExpandableEquSetsAsCrefs(inSets, {});
         setsAsCrefs = mergeEquSetsAsCrefs(setsAsCrefs);
@@ -4089,14 +4089,14 @@ algorithm
         // 4 - subtract (2) from (3)
         unnecessary = List.setDifferenceOnTrue(onlyExpandableConnected, usedInDAE, ComponentReference.crefEqualWithoutSubs);
         // print("REMOVE: (3)-(2):\n  " +& stringDelimitList(List.map(unnecessary, ComponentReference.printComponentRefStr), "\n  ") +& "\n");
-                
-        // 5 - remove unnecessary variables form the DAE 
+
+        // 5 - remove unnecessary variables form the DAE
         dae = DAEUtil.removeVariables(inDAE, unnecessary);
         // 5 - remove unnecessary variables form the connection sets
         sets = removeCrefsFromSets(inSets, unnecessary);
-        
+
         equVars = getAllEquCrefs(sets, {});
-        // print("(6):\n  " +& stringDelimitList(List.map(equVars, ComponentReference.printComponentRefStr), "\n  ") +& "\n");        
+        // print("(6):\n  " +& stringDelimitList(List.map(equVars, ComponentReference.printComponentRefStr), "\n  ") +& "\n");
         expandableVars = List.setDifferenceOnTrue(expandableVars, usedInDAE, ComponentReference.crefEqualWithoutSubs);
         // print("(1)-(2)=(7):\n  " +& stringDelimitList(List.map(equVars, ComponentReference.printComponentRefStr), "\n  ") +& "\n");
         unnecessary = List.setDifferenceOnTrue(expandableVars, equVars, ComponentReference.crefEqualWithoutSubs);
@@ -4105,7 +4105,7 @@ algorithm
       then
         (sets, dae);
   end match;
-end removeUnusedExpandableVariablesAndConnections; 
+end removeUnusedExpandableVariablesAndConnections;
 
 end ConnectUtil;
 

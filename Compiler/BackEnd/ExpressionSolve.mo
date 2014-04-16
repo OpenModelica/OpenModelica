@@ -471,28 +471,28 @@ end solve2;
 //       DAE.ComponentRef cr,cr1;
 //       DAE.Exp e,e1,e2;
 //       Option<DAE.Exp> oe;
-// 
+//
 //     case ((e as DAE.BINARY(exp1 = e1 as DAE.CREF(componentRef = cr1),operator = DAE.POW(_),exp2 = e2), (cr,false,NONE())))
 //       equation
 //         true = ComponentReference.crefPrefixOf(cr1,cr);
 //         false = Expression.expHasCrefNoPreorDer(e2, cr);
 //       then
 //         ((e1,false,(cr,false,SOME(e))));
-// 
+//
 //     case ((e as DAE.CREF(componentRef = cr1), (cr,false,oe)))
 //       equation
 //         b = ComponentReference.crefEqualNoStringCompare(cr,cr1);
 //       then
 //         ((e,not b,(cr,b,oe)));
-// 
+//
 //     case ((e as DAE.CREF(componentRef = cr1), (cr,false,oe)))
 //       equation
 //         b = ComponentReference.crefPrefixOf(cr1,cr);
 //       then
 //         ((e,not b,(cr,b,oe)));
-// 
+//
 //     case (((e,(cr,b,oe)))) then ((e,not b,(cr,b,oe)));
-// 
+//
 //   end matchcontinue;
 // end traversingVarOnlyinPow;
 

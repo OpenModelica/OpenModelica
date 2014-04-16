@@ -1,11 +1,11 @@
 #if defined(__vxworks)
-    
+
     /*Defines*/
     #define PATH string
     #include <VxWorksFactory/VxWorksFactory.h>
-    
+
 #elif defined(SIMSTER_BUILD)
-   
+
 
     /*Factory includes*/
     #include "Utils/extension/extension.hpp"
@@ -18,13 +18,13 @@
     #include <boost/filesystem/path.hpp>
     #include <boost/archive/xml_oarchive.hpp>
     #include <boost/archive/xml_iarchive.hpp>
-   
+
     #include <boost/unordered_map.hpp>
     /*Namespaces*/
     using namespace boost::extensions;
     namespace fs = boost::filesystem;
     using boost::unordered_map;
-    
+
      /*Defines*/
     #define PATH fs::path
 
@@ -41,14 +41,14 @@
     #include <boost/filesystem/path.hpp>
     //#include <boost/archive/xml_oarchive.hpp>
     //#include <boost/archive/xml_iarchive.hpp>
-   
+
     #include <boost/unordered_map.hpp>
-   
+
     /*Namespaces*/
     using namespace boost::extensions;
     namespace fs = boost::filesystem;
     using boost::unordered_map;
-    
+
      /*Defines*/
     #define PATH fs::path
     #include "LibrariesConfig.h"

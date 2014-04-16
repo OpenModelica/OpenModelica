@@ -174,9 +174,9 @@ algorithm
     /*/ failure
     case (cache,env,ih,pre,m,impl,info)
       equation
-        str = "- Mod.elabMod  failed: " +& 
-              SCodeDump.printModStr(m) +& 
-              " in env: " +& 
+        str = "- Mod.elabMod  failed: " +&
+              SCodeDump.printModStr(m) +&
+              " in env: " +&
               Env.printEnvStr(env);
         Debug.fprintln(Flags.FAILTRACE, str);
       then
@@ -278,7 +278,7 @@ algorithm
         modOriginal = SCodeUtil.getConstrainedByModifiers(prefixes);
         (c, _) = Lookup.lookupClassLocal(env, cn);
         SCode.CLASS(cn,prefixes as SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(tp,mod,attr1),cmt,i) = c;
-        // merge modifers from the component to the modifers from the constrained by 
+        // merge modifers from the component to the modifers from the constrained by
         mod = SCode.mergeModifiers(mod, SCodeUtil.getConstrainedByModifiers(prefixes));
         mod = SCode.mergeModifiers(mod, modOriginal);
         (cache,emod) = elabMod(cache,env,ih,pre,mod,impl,info);
@@ -287,7 +287,7 @@ algorithm
         mod = unelabMod(emod);
       then
         ((SCode.CLASS(cn,SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(tp1,mod,attr1),cmt,i),emod));
-    
+
     // Only derived classdefinitions supported in redeclares for now.
     // TODO: What is allowed according to spec? adrpo: 2011-06-28: is not decided yet,
     //       but i think only derived even if in the Modelica.Media we have redeclare-as-element
@@ -296,7 +296,7 @@ algorithm
       SCode.CLASS(cn,
         prefixes as SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(tp,mod,attr1),cmt,i),_,_)
       equation
-        // merge modifers from the component to the modifers from the constrained by 
+        // merge modifers from the component to the modifers from the constrained by
         mod = SCode.mergeModifiers(mod, SCodeUtil.getConstrainedByModifiers(prefixes));
         (cache,emod) = elabMod(cache,env,ih,pre,mod,impl,info);
         (cache,tp1) = elabModQualifyTypespec(cache,env,ih,pre,impl,info,cn,tp);
@@ -315,7 +315,7 @@ algorithm
     // redeclare of component declaration
     case(cache,env,ih,pre,f,SCode.COMPONENT(compname,prefixes as SCode.PREFIXES(vis,redecl,fi,io,repl),attr,tp,mod,cmt,cond,i),_,_)
       equation
-        // merge modifers from the component to the modifers from the constrained by 
+        // merge modifers from the component to the modifers from the constrained by
         mod = SCode.mergeModifiers(mod, SCodeUtil.getConstrainedByModifiers(prefixes));
         (cache,emod) = elabMod(cache,env,ih,pre,mod,impl,info);
         (cache,tp1) = elabModQualifyTypespec(cache,env,ih,pre,impl,info,compname,tp);
@@ -330,7 +330,7 @@ algorithm
         print("Unhandled element redeclare (we keep it as it is!): " +& SCodeDump.unparseElementStr(element,SCodeDump.defaultOptions) +& "\n");
       then
         ((element,DAE.NOMOD()));
-  
+
   end matchcontinue;
 end elabModRedeclareElement;
 
@@ -344,7 +344,7 @@ protected function elabModQualifyTypespec
   input Prefix.Prefix inPrefix;
   input Boolean impl;
   input Absyn.Info info;
-  input Absyn.Ident name;  
+  input Absyn.Ident name;
   input Absyn.TypeSpec tp;
   output Env.Cache outCache;
   output Absyn.TypeSpec outTp;
@@ -358,14 +358,14 @@ algorithm
         DAE.Dimensions edims;
         InnerOuter.InstHierarchy ih;
         Prefix.Prefix pre;
-        
+
     // no array dimensions
     case (cache, env, _, _, _, _, _, Absyn.TPATH(p,NONE()))
       equation
         (cache,p1) = Inst.makeFullyQualified(cache,env,p);
-    then 
+    then
       (cache,Absyn.TPATH(p1,NONE()));
-    
+
     // some array dimensions, elaborate them!
     case (cache, env, ih, pre, _, _, _, Absyn.TPATH(p,SOME(dims)))
       equation
@@ -374,7 +374,7 @@ algorithm
         (cache,edims) = PrefixUtil.prefixDimensions(cache, env, ih, pre, edims);
         dims = List.map(edims, Expression.unelabDimension);
         (cache,p1) = Inst.makeFullyQualified(cache,env,p);
-    then 
+    then
       (cache,Absyn.TPATH(p1,SOME(dims)));
 
   end match;
@@ -442,7 +442,7 @@ algorithm
         subs_1 = unelabSubmods(subs);
       then
         SCode.MOD(finalPrefix,each_,subs_1,NONE(),Absyn.dummyInfo);
-    
+
     case ((m as DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,eqModOption = SOME(DAE.UNTYPED(e,info)))))
       equation
         subs_1 = unelabSubmods(subs);
@@ -1634,7 +1634,7 @@ algorithm
     case (DAE.NOMOD(),m,_,_) then m;
     case (m,DAE.NOMOD(),_,_) then m;
     // That's a NOMOD() if I ever saw one...
-    case (m,DAE.MOD(subModLst={},eqModOption=NONE()),_,_) then m; 
+    case (m,DAE.MOD(subModLst={},eqModOption=NONE()),_,_) then m;
     case (DAE.MOD(subModLst={},eqModOption=NONE()),m,_,_) then m;
 
     case(_,_,_,_)
@@ -1787,21 +1787,21 @@ algorithm
               comment,cond,info1),emod)});
 
     // Redeclaring same class.
-    case (DAE.REDECL(finalPrefix = f1, eachPrefix = each1, tplSCodeElementModLst = 
+    case (DAE.REDECL(finalPrefix = f1, eachPrefix = each1, tplSCodeElementModLst =
             {(SCode.CLASS(name = id1,
-                prefixes = pf1, 
-                restriction = res1, 
+                prefixes = pf1,
+                restriction = res1,
                 classDef = cdef,
                 cmt = comment,
-                info = info1), 
-                m1_1)}), 
-          DAE.REDECL(finalPrefix = f2, eachPrefix = each2, tplSCodeElementModLst = 
-            {(SCode.CLASS(name = id2, 
+                info = info1),
+                m1_1)}),
+          DAE.REDECL(finalPrefix = f2, eachPrefix = each2, tplSCodeElementModLst =
+            {(SCode.CLASS(name = id2,
                 prefixes = pf2,
                 restriction = res2,
-                encapsulatedPrefix = ep, 
+                encapsulatedPrefix = ep,
                 partialPrefix = pp,
-                info = info2), 
+                info = info2),
                 m2_1)}), env, pre)
       equation
         true = stringEq(id1, id2);
@@ -1816,16 +1816,16 @@ algorithm
     // luc_pop : this shoud return the first mod because it have been merged in merge_subs
     case (mod as DAE.REDECL(finalPrefix = f1,eachPrefix = each1,
                        tplSCodeElementModLst = {(el as SCode.COMPONENT(name = id1),cm)}),
-          mods as DAE.MOD(subModLst = subs),env,pre) 
+          mods as DAE.MOD(subModLst = subs),env,pre)
       equation
         //mod = merge(cm,mods,env,pre);
-      then 
+      then
         mod; //DAE.REDECL(f1,each1,{(el,mod)});
 
     case ((icm as DAE.MOD(subModLst = subs)),
           DAE.REDECL(
-            finalPrefix = f1, 
-            eachPrefix = each1, 
+            finalPrefix = f1,
+            eachPrefix = each1,
             tplSCodeElementModLst = (els as {( (celm as SCode.COMPONENT(name = id1)),cm)})),env,pre)
       equation
         cm = merge(icm,cm,env,pre);
@@ -1847,8 +1847,8 @@ algorithm
     // see testcase mofiles/Modification14.mo
     case (mm1 as DAE.MOD(subModLst = subs),
           mm2 as DAE.REDECL(
-                  finalPrefix = finalPrefix,eachPrefix = each1, 
-                  tplSCodeElementModLst = (els as 
+                  finalPrefix = finalPrefix,eachPrefix = each1,
+                  tplSCodeElementModLst = (els as
                   {((elementOne as SCode.CLASS(name = id1)),mm3)})),
                   env,pre)
       equation
@@ -2610,7 +2610,7 @@ algorithm
       Values.Value e_val;
       DAE.Properties prop;
       Absyn.Exp ae;
-    
+
     case NONE() then "";
 
     case SOME(DAE.TYPED(e,SOME(e_val),prop,_,_))
@@ -2621,7 +2621,7 @@ algorithm
         res = stringAppendList({" = (typed)",str," ",str2,", value: ",e_val_str});
       then
         res;
-    
+
     case SOME(DAE.TYPED(e,NONE(),prop,_,_))
       equation
         str = ExpressionDump.printExpStr(e);
@@ -2629,14 +2629,14 @@ algorithm
         res = stringAppendList({" = (typed)",str, ", type:\n", str2});
       then
         res;
-    
+
     case SOME(DAE.UNTYPED(exp=ae))
       equation
         str = Dump.printExpStr(ae);
         res = stringAppend(" =(untyped) ", str);
       then
         res;
-    
+
     case(_)
       equation
         res = "---Mod.printEqmodStr FAILED---";
@@ -3396,7 +3396,7 @@ algorithm
   isEmpty := match(inMod)
     case (DAE.NOMOD()) then true;
     // That's a NOMOD() if I ever saw one...
-    case (DAE.MOD(subModLst={},eqModOption=NONE())) then true; 
+    case (DAE.MOD(subModLst={},eqModOption=NONE())) then true;
     else false;
   end match;
 end isEmptyMod;

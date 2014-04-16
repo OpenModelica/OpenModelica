@@ -33,7 +33,7 @@ public:
     virtual void setOutputPath(string);
     virtual OutputFormat getOutputFormat();
     virtual void setOutputFormat(OutputFormat format);
-    
+
     //solver used for simulation
     virtual string    getSelectedSolver();
     virtual void setSelectedSolver(string);
@@ -62,10 +62,10 @@ private:
         _resultsfile_name,
         _runtimeLibraryPath;
     OutputFormat _outputFormat;
-   
-    
+
+
     //Serialization of settings class
-     
+
     /*friend class boost::serialization::access;
     template<class archive>
     void serialize(archive& ar, const unsigned int version)

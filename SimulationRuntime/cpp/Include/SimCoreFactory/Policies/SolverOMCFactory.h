@@ -7,7 +7,7 @@
 /*
 Policy class to create solver object
 */
-template <class CreationPolicy> 
+template <class CreationPolicy>
 struct SolverOMCFactory : public  ObjectFactory<CreationPolicy>
 {
 

@@ -184,7 +184,7 @@ void print_string_array(const string_array_t *source)
     } else if(source->ndims > 1) {
         size_t k, n;
         _index_t j;
- 
+
         n = base_array_nr_of_elements(*source) /
             (source->dim_size[0] * source->dim_size[1]);
         for(k = 0; k < n; ++k) {

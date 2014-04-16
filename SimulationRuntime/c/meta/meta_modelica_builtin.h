@@ -12,7 +12,7 @@
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
  * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
  * ACCORDING TO RECIPIENTS CHOICE.
- * 
+ *
  * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
  * Public License (OSMC-PL) are obtained from OSMC, either from the above
  * address, from the URLs: http://www.openmodelica.org or

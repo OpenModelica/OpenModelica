@@ -266,7 +266,7 @@ BOOL GetSystemOSVersion(LPDWORD dwVersion)
         }
         else if (osvi.dwMajorVersion == 6) { /* Windows 7 and Vista! */
             *dwVersion = OS_VERSION_WINNT;
-        }        
+        }
     else {
             return FALSE;
         }

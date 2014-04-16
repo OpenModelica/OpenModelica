@@ -663,7 +663,7 @@ algorithm
       list<DAE.SubMod> subMods;
       Absyn.Path path;
       list<DAE.Var> vars;
-    
+
     /*
     case (cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph,csets)
       equation
@@ -1119,10 +1119,10 @@ algorithm
   outClassDAE := match(inClassDAE, inType, inEqDAE)
     local
       list<DAE.Element> els, eqs;
-      
+
     // Check if the component is of record type, and if any equations have been
     // generated for the component's binding.
-    case (DAE.DAE(elementLst = els), 
+    case (DAE.DAE(elementLst = els),
           DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = _)),
           DAE.DAE(elementLst = eqs as _ :: _))
       equation
@@ -1145,7 +1145,7 @@ algorithm
     local
       DAE.ComponentRef var_cr, eq_cr;
       list<DAE.Element> rest_eqs;
-      
+
     case (DAE.VAR(componentRef = var_cr),
           DAE.EQUATION(exp = DAE.CREF(componentRef = eq_cr)) :: rest_eqs)
       equation

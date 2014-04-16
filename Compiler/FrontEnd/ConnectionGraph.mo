@@ -922,9 +922,9 @@ algorithm
       HashTable3.HashTable table;
       Edges branches;
       DaeEdges connections;
-    
+
     case (_,_, {}) then {};
-    
+
     case (_,_, _)
       equation
         // built table
@@ -942,7 +942,7 @@ algorithm
         //  BaseHashTable.dumpHashTable(rooted);
         (outDae, _) = DAEUtil.traverseDAE2(inDae, evalRootedAndIsRootHelper, (rooted,inRoots,graph));
       then outDae;
-  
+
   end matchcontinue;
 end evalRootedAndIsRoot;
 
@@ -981,7 +981,7 @@ algorithm
 
     // no roots, same exp
     case ((exp, (rooted,roots as {},graph))) then ((exp, (rooted,roots,graph)));
-    
+
     // deal with Connections.isRoot
     case ((inExp as DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),
           expLst={DAE.CREF(componentRef = cref)}), (rooted,roots,graph)))
@@ -990,7 +990,7 @@ algorithm
         Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.evalIsRootHelper: " +&
            ExpressionDump.printExpStr(inExp) +& " = " +& Util.if_(result, "true", "false"));
       then ((DAE.BCONST(result), (rooted,roots,graph)));
-    
+
     // deal with NOT Connections.isRoot
     case ((inExp as DAE.LUNARY(DAE.NOT(_), DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),
           expLst={DAE.CREF(componentRef = cref)})), (rooted,roots,graph)))
@@ -1000,7 +1000,7 @@ algorithm
         Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.evalIsRootHelper: " +&
            ExpressionDump.printExpStr(inExp) +& " = " +& Util.if_(result, "true", "false"));
       then ((DAE.BCONST(result), (rooted,roots,graph)));
-    
+
     // no replacement needed
     case ((exp, (rooted,roots,graph)))
       equation
@@ -1418,7 +1418,7 @@ algorithm
            "style = \"bold, filled\", ",
            "rank = \"max\"","]\n\n"});
         // output settings for edges
-        graphVizStream = IOStream.appendList(graphVizStream, {i, "edge [", 
+        graphVizStream = IOStream.appendList(graphVizStream, {i, "edge [",
            "color = \"black\", ",
            "style = bold",
            "]\n\n"});

@@ -552,9 +552,9 @@ end incidenceRow;
 //       list<DAE.Exp> expl;
 //       DAE.Else else_;
 //       list<list<String>> lstlst;
-// 
+//
 //     case ({},_) then {};
-// 
+//
 //     case ((DAE.STMT_ASSIGN(type_ = tp,exp1 = e1,exp = e) :: rest),vars)
 //       equation
 //         lst1 = incidenceRowStmts(rest, vars);
@@ -563,7 +563,7 @@ end incidenceRow;
 //         res = List.flatten({lst1,lst2,lst3});
 //       then
 //         res;
-// 
+//
 //     case ((DAE.STMT_TUPLE_ASSIGN(type_ = tp,expExpLst = expl,exp = e) :: rest),vars)
 //       equation
 //         lst1 = incidenceRowStmts(rest, vars);
@@ -573,7 +573,7 @@ end incidenceRow;
 //         res = List.flatten({lst1,lst2,lst3_1});
 //       then
 //         res;
-// 
+//
 //     case ((DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr,exp = e) :: rest),vars)
 //       equation
 //         lst1 = incidenceRowStmts(rest, vars);
@@ -582,37 +582,37 @@ end incidenceRow;
 //         res = List.flatten({lst1,lst2,lst3});
 //       then
 //         res;
-// 
+//
 //     case ((DAE.STMT_IF(exp = e,statementLst = stmts,else_ = else_) :: rest),vars)
 //       equation
 //         print("- DAEQuery.incidenceRowStmts on IF not implemented\n");
 //       then
 //         {};
-// 
+//
 //     case ((DAE.STMT_FOR(type_ = _) :: rest),vars)
 //       equation
 //         print("- DAEQuery.incidenceRowStmts on FOR not implemented\n");
 //       then
 //         {};
-// 
+//
 //     case ((DAE.STMT_PARFOR(type_ = _) :: rest),vars)
 //       equation
 //         print("- DAEQuery.incidenceRowStmts on PARFOR not implemented\n");
 //       then
 //         {};
-// 
+//
 //     case ((DAE.STMT_WHILE(exp = _) :: rest),vars)
 //       equation
 //         print("- DAEQuery.incidenceRowStmts on WHILE not implemented\n");
 //       then
 //         {};
-// 
+//
 //     case ((DAE.STMT_WHEN(exp = e) :: rest),vars)
 //       equation
 //         print("- DAEQuery.incidenceRowStmts on WHEN not implemented\n");
 //       then
 //         {};
-// 
+//
 //     case ((DAE.STMT_ASSERT(cond = _) :: rest),vars)
 //       equation
 //         print("- DAEQuery.incidenceRowStmts on ASSERT not implemented\n");

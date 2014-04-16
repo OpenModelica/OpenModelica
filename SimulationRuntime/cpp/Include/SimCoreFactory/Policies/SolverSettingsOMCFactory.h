@@ -6,7 +6,7 @@
 /*
 Policy class to create solver settings object
 */
-template <class CreationPolicy> 
+template <class CreationPolicy>
 struct SolverSettingsOMCFactory : public  ObjectFactory<CreationPolicy>
 {
 
@@ -17,18 +17,18 @@ public:
 
         _solver_type_map = new type_map();
     }
-    
+
     void loadGlobalSettings( boost::shared_ptr<IGlobalSettings> global_settings)
     {
-               
+
     }
-    
+
   virtual ~SolverSettingsOMCFactory()
     {
        delete _solver_type_map;
         ObjectFactory<CreationPolicy>::_factory->UnloadAllLibs();
-    }    
-    
+    }
+
   virtual boost::shared_ptr<ISolverSettings> createSolverSettings(string solvername,boost::shared_ptr<IGlobalSettings> globalSettings)
     {
 
@@ -76,7 +76,7 @@ public:
         iter = factories.find(settings);
         if (iter ==factories.end())
         {
-            
+
             throw std::invalid_argument("No such Solver "+ solvername );
         }
         boost::shared_ptr<ISolverSettings> solver_settings  = boost::shared_ptr<ISolverSettings>(iter->second.create(globalSettings.get()));
@@ -87,5 +87,5 @@ public:
     }
  private:
     type_map* _solver_type_map;
-    
+
 };

@@ -1929,7 +1929,7 @@ algorithm
   v := Values.STRING(s);
 end makeString;
 
-public function makeTuple 
+public function makeTuple
 "Construct an tuple of a list of Values."
   input list<Values.Value> inValueLst;
   output Values.Value outValue;
@@ -2307,7 +2307,7 @@ algorithm
       list<Values.Value> rest;
       list<String> varnames;
       Integer handle;
-      
+
     case (filename,Values.ARRAY(valueLst = (time :: rest)),(timevar :: varnames),message) /* filename values Variable names message string */
       equation
         handle = Print.saveAndClearBuf();
@@ -2440,7 +2440,7 @@ algorithm
       Integer n;
       Values.Value res,preRes;
       list<Values.Value> vlst,vlst2;
-    
+
     case({},_, preRes) then preRes;
     case (((Values.INTEGER(integer=n))::vlst2),Values.ARRAY(valueLst = vlst),preRes)
       equation

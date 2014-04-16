@@ -444,7 +444,7 @@ algorithm
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,shared,arg);
-    
+
     // fail case if system is empty
     case (_,_,_,_,_,_)
       equation
@@ -457,7 +457,7 @@ algorithm
         syst = BackendDAEUtil.setEqSystemMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,ishared,inArg);
-    
+
     else
       equation
         Debug.fprint(Flags.FAILTRACE, "- Matching.BFSB failed\n");
@@ -500,13 +500,13 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1,parentcolum1;
-    
+
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         true=intGt(i,ne);
       then
         (ass1,ass2,isyst,ishared,inArg);
-    
+
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         // not assigned
@@ -775,7 +775,7 @@ algorithm
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,shared,arg);
-    
+
     // fail case if system is empty
     case (_,_,_,_,_,_)
       equation
@@ -788,7 +788,7 @@ algorithm
         syst = BackendDAEUtil.setEqSystemMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,ishared,inArg);
-    
+
     else
       equation
         Debug.fprint(Flags.FAILTRACE, "- Matching.BFSB failed\n");

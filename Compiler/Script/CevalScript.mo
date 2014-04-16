@@ -480,12 +480,12 @@ protected function setFileNamePrefixInSimulationOptions
   output GlobalScript.SimulationOptions outSimOpt;
 protected
   DAE.Exp startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, options, outputFormat, variableFilter, measureTime, cflags, simflags;
-  Boolean UseOtimica;  
+  Boolean UseOtimica;
 algorithm
   UseOtimica := Config.acceptOptimicaGrammar();
   GlobalScript.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, _, options, outputFormat, variableFilter, measureTime, cflags, simflags) := inSimOpt;
   method := Util.if_(UseOtimica, DAE.SCONST("optimization"),method);
-  outSimOpt := GlobalScript.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, DAE.SCONST(inFileNamePrefix), options, outputFormat, variableFilter, measureTime, cflags, simflags); 
+  outSimOpt := GlobalScript.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, DAE.SCONST(inFileNamePrefix), options, outputFormat, variableFilter, measureTime, cflags, simflags);
 end setFileNamePrefixInSimulationOptions;
 
 protected function getConst
@@ -1420,7 +1420,7 @@ algorithm
         (cache,st,compileDir,executable,method_str,outputFormat_str,_,simflags,resultValues) = buildModel(cache,env,vals,st_1,msg);
 
         cit = winCitation();
-       
+
         exeDir=compileDir;
          (cache,simSettings) = calculateSimulationSettings(cache,env,vals,st_1,msg);
         SimCode.SIMULATION_SETTINGS(startTime=_,stopTime=_,tolerance=_,stepSize=_,method = _, outputFormat = outputFormat_str)
@@ -1471,7 +1471,7 @@ algorithm
         simValue = Values.BOOL(false);
       then
         (cache,simValue,st);
-    
+
     // everything should work fine here
     case (cache,_,"moveClass",{Values.CODE(Absyn.C_TYPENAME(className)),
                                         Values.STRING(direction)},
@@ -1484,7 +1484,7 @@ algorithm
         simValue = Values.BOOL(true);
       then
         (cache,simValue,st);
-    
+
     // adrpo: some error happened!
     case (cache,_,"moveClass",{Values.CODE(Absyn.C_TYPENAME(className)),
                                         Values.STRING(_)},
@@ -1502,7 +1502,7 @@ algorithm
       equation
 
         System.realtimeTick(GlobalScript.RT_CLOCK_SIMULATE_TOTAL);
-        
+
         b = Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION);
         Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, true);
 
@@ -1535,20 +1535,20 @@ algorithm
         Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, b);
       then
         (cache,simValue,newst);
-        
+
    case (cache,env,"optimize",(vals as Values.CODE(Absyn.C_TYPENAME(className))::_),st_1,_)
       equation
 
         System.realtimeTick(GlobalScript.RT_CLOCK_SIMULATE_TOTAL);
-        
+
         b = Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION);
         Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, true);
 
         (cache,st,compileDir,executable,method_str,outputFormat_str,_,simflags,resultValues) = buildModel(cache,env,vals,st_1,msg);
         cit = winCitation();
         exeDir=compileDir;
-        (cache,simSettings) = calculateSimulationSettings(cache,env,vals,st_1,msg); 
-        SimCode.SIMULATION_SETTINGS(startTime=_,stopTime=_,tolerance=_,stepSize=_,method = _, outputFormat = outputFormat_str) = simSettings;   
+        (cache,simSettings) = calculateSimulationSettings(cache,env,vals,st_1,msg);
+        SimCode.SIMULATION_SETTINGS(startTime=_,stopTime=_,tolerance=_,stepSize=_,method = _, outputFormat = outputFormat_str) = simSettings;
         result_file = stringAppendList(List.consOnTrue(not Config.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
         executableSuffixedExe = stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),System.platform()));
         logFile = stringAppend(executable,".log");
@@ -1893,7 +1893,7 @@ algorithm
         v = ValuesUtil.makeArray(List.map(messages, errorToValue));
       then
         (cache,v,st);
-    
+
     case (cache,_,"getMessagesStringInternal",{Values.BOOL(false)},st,_)
       equation
         v = ValuesUtil.makeArray(List.map(Error.getMessages(), errorToValue));
@@ -1996,7 +1996,7 @@ algorithm
       equation
         (sp,st) = Interactive.symbolTableToSCode(st);
         names = List.filterMap(sp,SCode.getElementName);
-        
+
         deps = Graph.buildGraph(names,buildDependencyGraph,sp);
         namesPublic = List.map(List.select(sp, containsPublicInterface), SCode.getElementName);
         namesChanged = List.filterMap1(sp,getChangedClass,suffix);
@@ -2630,10 +2630,10 @@ algorithm
         cvars = List.map(strings,ValuesUtil.makeString);
         v = ValuesUtil.makeArray(cvars);
       then (cache,v,st);
-    
+
     case (cache,_,"checkTaskGraph",_,st,_)
       then (cache,Values.STRING("Error in checkTaskGraph"),st);
-        
+
     case (cache,_,"getPlotSilent",{},st,_)
       equation
         b = Config.getPlotSilent();
@@ -3169,7 +3169,7 @@ algorithm
         (cache,ValuesUtil.makeTuple({Values.BOOL(true),Values.STRING(xml_filename)}),st);
 
     case (cache,_,"dumpXMLDAE",_,st,_)
-      then 
+      then
         (cache,ValuesUtil.makeTuple({Values.BOOL(false),Values.STRING("")}),st);
 
     case (cache,_,"solveLinearSystem",{Values.ARRAY(valueLst=vals),v,Values.ENUM_LITERAL(index=1 /*dgesv*/),Values.ARRAY(valueLst={Values.INTEGER(-1)})},st,_)
@@ -3253,9 +3253,9 @@ algorithm
     case ("Cpp","WIN64")
        then ".bat";
     else
-  then System.getExeExt(); 
+  then System.getExeExt();
   end match;
- end getSimulationExtension;    
+ end getSimulationExtension;
 
 
 protected function sconstToString
@@ -3352,7 +3352,7 @@ public function runFrontEnd
   output DAE.DAElist dae;
   output GlobalScript.SymbolTable st;
 algorithm
-  // add program to the cache so it can be used to lookup modelica:// 
+  // add program to the cache so it can be used to lookup modelica://
   // URIs in external functions IncludeDirectory/LibraryDirectory
   cache := Env.setProgramInCache(inCache, Interactive.getSymbolTableAST(inInteractiveSymbolTable));
   (cache,env,dae,st) := runFrontEndWork(cache,inEnv,className,inInteractiveSymbolTable,relaxedFrontEnd,Error.getNumErrorMessages());
@@ -3400,9 +3400,9 @@ algorithm
         scodeP = SCodeUtil.translateAbsyn2SCode(p);
         dae = FInst.inst(className, scodeP);
         ic_1 = ic;
-      then 
+      then
         (cache,env,dae,GlobalScript.SYMBOLTABLE(p,fp,ic_1,iv,cf,lf));
-    
+
     case (_, _, _, GlobalScript.SYMBOLTABLE(p, fp, ic, iv, cf, lf), _, _)
       equation
         false = Flags.isSet(Flags.GRAPH_INST);
@@ -3461,7 +3461,7 @@ algorithm
         // adrpo: do not add it to the instantiated classes, it just consumes memory for nothing.
         ic_1 = ic;
         // ic_1 = Interactive.addInstantiatedClass(ic, GlobalScript.INSTCLASS(className,dae,env));
-      
+
       then (cache,env,dae,GlobalScript.SYMBOLTABLE(p,fp,ic_1,iv,cf,lf));
 
     case (cache,env,_,st as GlobalScript.SYMBOLTABLE(ast=p),_,_)
@@ -3795,28 +3795,28 @@ protected function moveClass
   output Absyn.Program outProg;
 algorithm
   outProg := match(inClassName, inDirection, inProg)
-    local 
-      Absyn.Path c, parent; 
+    local
+      Absyn.Path c, parent;
       Absyn.Program p;
       list<Absyn.Class>  cls;
       Absyn.Within       w;
       Absyn.TimeStamp    gbt;
       String name;
       Absyn.Class parentClass;
-      
+
     case (Absyn.FULLYQUALIFIED(c), _, _)
       equation
         p = moveClass(c, inDirection, inProg);
       then
         p;
-    
+
     case (Absyn.IDENT(name), _, Absyn.PROGRAM(cls, w, gbt))
       equation
         cls = moveClassInList(name, cls, inDirection);
         p = Absyn.PROGRAM(cls, w, gbt);
       then
         p;
-        
+
     case (Absyn.QUALIFIED(_, _), _, p)
       equation
         name = Absyn.pathLastIdent(inClassName);
@@ -3824,7 +3824,7 @@ algorithm
         parentClass = Interactive.getPathedClassInProgram(parent, p);
       then
         p;
-  
+
   end match;
 end moveClass;
 
@@ -3996,7 +3996,7 @@ algorithm
            ("timeSimulation", Values.REAL(timeSimulation)) ::
           resultValues);
         newst = Interactive.addVarToSymboltable(
-          DAE.CREF_IDENT("currentSimulationResult", DAE.T_STRING_DEFAULT, {}), 
+          DAE.CREF_IDENT("currentSimulationResult", DAE.T_STRING_DEFAULT, {}),
           Values.STRING(result_file), Env.emptyEnv, inSt);
       then
         (inCache,simValue,newst);
@@ -4075,7 +4075,7 @@ algorithm
     case "WIN64"
       then ".bat";
    end match;
- end getRunScriptExtension;     
+ end getRunScriptExtension;
 
 protected function runOpenTURNSPythonScript
 "runs OpenTURNS with the given python script returning the log file"
@@ -4439,23 +4439,23 @@ protected function dumpXMLDAEFrontEnd
   input Absyn.Path inClassName;
   input GlobalScript.SymbolTable inInteractiveSymbolTable;
   output Env.Cache outCache;
-  output Env.Env outEnv; 
+  output Env.Env outEnv;
   output DAE.DAElist outDae;
 algorithm
   (outCache, outEnv, outDae) := match(inCache, inEnv, inClassName, inInteractiveSymbolTable)
     local
       Absyn.Program p;
       SCode.Program scode;
-    
-    case (_, _, _, _) 
+
+    case (_, _, _, _)
       equation
-        GlobalScript.SYMBOLTABLE(ast = p) = inInteractiveSymbolTable;  
+        GlobalScript.SYMBOLTABLE(ast = p) = inInteractiveSymbolTable;
         scode = SCodeUtil.translateAbsyn2SCode(p);
         (outCache, outEnv, _, outDae) = Inst.instantiateClass(inCache, InnerOuter.emptyInstHierarchy, scode, inClassName);
         outDae = DAEUtil.transformationsBeforeBackend(outCache,outEnv,outDae);
      then
        (outCache, outEnv, outDae);
-       
+
   end match;
 end dumpXMLDAEFrontEnd;
 
@@ -4491,33 +4491,33 @@ algorithm
                      Values.STRING(filenameprefix),Values.STRING(rewriteRulesFile)},st,_)
       equation
         Error.clearMessages() "Clear messages";
-        
+
         // set the rewrite rules flag
         Flags.setConfigString(Flags.REWRITE_RULES_FILE, rewriteRulesFile);
         // load the rewrite rules
         RewriteRules.loadRules();
-        
+
         (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname, st);
         description = DAEUtil.daeDescription(dae);
-        
+
         compileDir = System.pwd() +& System.pathDelimiter();
         cname_str = Absyn.pathString(classname);
         filenameprefix = Util.if_(filenameprefix ==& "<default>", cname_str, filenameprefix);
-        
+
         dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix)); //Verificare cosa fa
         dlow_1 = BackendDAEUtil.preOptimizeBackendDAE(dlow,NONE());
         dlow_1 = FindZeroCrossings.findZeroCrossings(dlow_1);
         xml_filename = stringAppendList({filenameprefix,".xml"});
-        
+
         // apply rewrite rules to the back-end
         dlow_1 = applyRewriteRulesOnBackend(dlow_1);
-        
+
         Print.clearBuf();
         XMLDump.dumpBackendDAE(dlow_1,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,false);
         Print.writeBuf(xml_filename);
         Print.clearBuf();
         compileDir = Util.if_(Config.getRunningTestsuite(),"",compileDir);
-        
+
         // clear the rewrite rules!
         Flags.setConfigString(Flags.REWRITE_RULES_FILE, "");
         RewriteRules.clearRules();
@@ -4536,29 +4536,29 @@ algorithm
         Flags.setConfigString(Flags.REWRITE_RULES_FILE, rewriteRulesFile);
         // load the rewrite rules
         RewriteRules.loadRules();
-        
+
         (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname, st);
         description = DAEUtil.daeDescription(dae);
-        
+
         compileDir = System.pwd() +& System.pathDelimiter();
         cname_str = Absyn.pathString(classname);
         filenameprefix = Util.if_(filenameprefix ==& "<default>", cname_str, filenameprefix);
-        
+
         dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix)); //Verificare cosa fa
         dlow_1 = BackendDAEUtil.preOptimizeBackendDAE(dlow,NONE());
         dlow_1 = BackendDAEUtil.transformBackendDAE(dlow_1,NONE(),NONE(),NONE());
         dlow_1 = FindZeroCrossings.findZeroCrossings(dlow_1);
         xml_filename = stringAppendList({filenameprefix,".xml"});
-        
+
         // apply rewrite rules to the back-end
         dlow_1 = applyRewriteRulesOnBackend(dlow_1);
-        
+
         Print.clearBuf();
         XMLDump.dumpBackendDAE(dlow_1,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,false);
         Print.writeBuf(xml_filename);
         Print.clearBuf();
         compileDir = Util.if_(Config.getRunningTestsuite(),"",compileDir);
-        
+
         // clear the rewrite rules!
         Flags.setConfigString(Flags.REWRITE_RULES_FILE, "");
         RewriteRules.clearRules();
@@ -4572,7 +4572,7 @@ algorithm
       equation
         //asInSimulationCode==true => it's necessary to do all the translation's steps before dumping with xml
         Error.clearMessages() "Clear messages";
-        
+
         // set the rewrite rules flag
         Flags.setConfigString(Flags.REWRITE_RULES_FILE, rewriteRulesFile);
         // load the rewrite rules
@@ -4580,30 +4580,30 @@ algorithm
 
         (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname, st);
         description = DAEUtil.daeDescription(dae);
-        
+
         compileDir = System.pwd() +& System.pathDelimiter();
         cname_str = Absyn.pathString(classname);
         filenameprefix = Util.if_(filenameprefix ==& "<default>", cname_str, filenameprefix);
-        
+
         dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
         indexed_dlow = BackendDAEUtil.getSolvedSystem(dlow, NONE(), NONE(), NONE(), NONE());
         xml_filename = stringAppendList({filenameprefix,".xml"});
-        
+
         // apply rewrite rules to the back-end
         indexed_dlow = applyRewriteRulesOnBackend(indexed_dlow);
-        
+
         Print.clearBuf();
         XMLDump.dumpBackendDAE(indexed_dlow,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,false);
         Print.writeBuf(xml_filename);
         Print.clearBuf();
         compileDir = Util.if_(Config.getRunningTestsuite(),"",compileDir);
-        
+
         // clear the rewrite rules!
         Flags.setConfigString(Flags.REWRITE_RULES_FILE, "");
-        RewriteRules.clearRules();        
+        RewriteRules.clearRules();
       then
         (cache,st,stringAppendList({compileDir,xml_filename}));
-        
+
     case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),Values.STRING(string="stateSpace"),
                      Values.BOOL(addOriginalIncidenceMatrix),Values.BOOL(addSolvingInfo),
                      Values.BOOL(addMathMLCode),Values.BOOL(dumpResiduals),
@@ -4611,7 +4611,7 @@ algorithm
       equation
         //asInSimulationCode==true => it's necessary to do all the translation's steps before dumping with xml
         Error.clearMessages() "Clear messages";
-        
+
         // set the rewrite rules flag
         Flags.setConfigString(Flags.REWRITE_RULES_FILE, rewriteRulesFile);
         // load the rewrite rules
@@ -4619,37 +4619,37 @@ algorithm
 
         (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname, st);
         description = DAEUtil.daeDescription(dae);
-        
+
         compileDir = System.pwd() +& System.pathDelimiter();
         cname_str = Absyn.pathString(classname);
         filenameprefix = Util.if_(filenameprefix ==& "<default>", cname_str, filenameprefix);
-        
+
         dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
         indexed_dlow = BackendDAEUtil.getSolvedSystem(dlow, NONE(), NONE(), NONE(), NONE());
         xml_filename = stringAppendList({filenameprefix,".xml"});
-        
+
         // apply rewrite rules to the back-end
         indexed_dlow = applyRewriteRulesOnBackend(indexed_dlow);
-        
+
         Print.clearBuf();
         XMLDump.dumpBackendDAE(indexed_dlow,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,true);
         Print.writeBuf(xml_filename);
         Print.clearBuf();
         compileDir = Util.if_(Config.getRunningTestsuite(),"",compileDir);
-        
+
         // clear the rewrite rules!
         Flags.setConfigString(Flags.REWRITE_RULES_FILE, "");
         RewriteRules.clearRules();
       then
         (cache,st,stringAppendList({compileDir,xml_filename}));
-  
+
     else
     equation
         // clear the rewrite rules if we fail!
         Flags.setConfigString(Flags.REWRITE_RULES_FILE, "");
         RewriteRules.clearRules();
     then fail();
-  
+
   end matchcontinue;
 end dumpXMLDAE;
 
@@ -4683,18 +4683,18 @@ algorithm
     case _
       equation
         true = RewriteRules.noRewriteRulesBackEnd();
-      then 
+      then
         inBackendDAE;
 
     // some rewrites
     case _
       equation
         false = RewriteRules.noRewriteRulesBackEnd();
-        outBackendDAE = BackendDAEOptimize.applyRewriteRulesBackend(inBackendDAE); 
+        outBackendDAE = BackendDAEOptimize.applyRewriteRulesBackend(inBackendDAE);
       then
         outBackendDAE;
-  
-  end matchcontinue; 
+
+  end matchcontinue;
 end applyRewriteRulesOnBackend;
 
 protected function getClassnamesInClassList
@@ -5005,7 +5005,7 @@ algorithm
         n1 = Absyn.pathFirstIdent(functionPath);
         n2 = Absyn.pathLastIdent(functionPath);
         name = System.unquoteIdentifier(n1 +& "_" +& n2);
-        name = name +& "_" +& intString(tick()); 
+        name = name +& "_" +& intString(tick());
       then
         name;
     case (_)
@@ -6893,7 +6893,7 @@ algorithm
         true = Flags.isSet(Flags.GEN);
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
         ErrorExt.setCheckpoint("cevalCallFunctionEvaluateOrGenerate_NO_SYMTAB");
-        
+
         Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: [NO SYMTAB] not in in CF list: " +& Absyn.pathString(funcpath) +& "\n");
 
         // we might actually have a function loaded here already!

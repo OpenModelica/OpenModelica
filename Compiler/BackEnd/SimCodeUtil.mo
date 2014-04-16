@@ -1490,9 +1490,9 @@ algorithm
       System.tmpTickReset(0);
       uniqueEqIndex = 1;
       ifcpp = stringEqual(Config.simCodeTarget(), "Cpp");
-      
+
       backendMapping = setUpBackendMapping(inBackendDAE);
-      
+
       // Debug.fcall(Flags.FAILTRACE, print, "is that Cpp? : " +& Dump.printBoolStr(ifcpp) +& "\n");
       cname = Absyn.pathStringNoQual(class_);
 
@@ -2200,7 +2200,7 @@ algorithm
       list<tuple<Integer,Integer>> tmpEqSccMapping, tmpEqBackendSimCodeMapping;
       BackendDAE.ExtraInfo ei;
       SimCode.BackendMapping tmpBackendMapping;
-      
+
     // handle empty
     case (_, _, _, _, {}, _, _, _,_, _, _) then ({}, {}, {}, {}, iuniqueEqIndex, itempvars, ieqSccMapping, ieqBackendSimCodeMapping, iBackendMapping);
 
@@ -2223,11 +2223,11 @@ algorithm
         isEqSys = isSimEqSys(firstSES);
         firstEqIndex = Util.if_(isEqSys,uniqueEqIndex-1,iuniqueEqIndex);
         //tmpEqSccMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
-                
+
         tmpEqSccMapping = List.fold1(List.intRange2(firstEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
         tmpEqBackendSimCodeMapping = List.fold1(List.intRange2(firstEqIndex, uniqueEqIndex - 1), appendSccIdx, index, ieqBackendSimCodeMapping);
         tmpBackendMapping = setEqMapping(List.intRange2(firstEqIndex, uniqueEqIndex - 1),{index}, iBackendMapping);
-        
+
         (odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings, uniqueEqIndex, tempvars, tmpEqSccMapping, tmpEqBackendSimCodeMapping, tmpBackendMapping) =
           createEquationsForSystem1(stateeqnsmark, zceqnsmark, syst, shared, restComps, uniqueEqIndex, tempvars, isccIndex+1, tmpEqSccMapping, tmpEqBackendSimCodeMapping, tmpBackendMapping);
 
@@ -2255,7 +2255,7 @@ algorithm
         tmpEqSccMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
         tmpEqBackendSimCodeMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, e, ieqBackendSimCodeMapping);
         tmpBackendMapping = iBackendMapping;
-        
+
         (odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings, uniqueEqIndex, tempvars, tmpEqSccMapping, tmpEqBackendSimCodeMapping, tmpBackendMapping) =
           createEquationsForSystem1(stateeqnsmark, zceqnsmark, syst, shared, restComps, uniqueEqIndex, tempvars, isccIndex+1, tmpEqSccMapping, tmpEqBackendSimCodeMapping, iBackendMapping);
 
@@ -2281,7 +2281,7 @@ algorithm
         tmpEqSccMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
         tmpEqBackendSimCodeMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, e, ieqBackendSimCodeMapping);
         tmpBackendMapping = iBackendMapping;
-        
+
         (odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings, uniqueEqIndex, tempvars, tmpEqSccMapping, tmpEqBackendSimCodeMapping, tmpBackendMapping) =
           createEquationsForSystem1(stateeqnsmark, zceqnsmark, syst, shared, restComps, uniqueEqIndex, itempvars, isccIndex+1, tmpEqSccMapping, tmpEqBackendSimCodeMapping, tmpBackendMapping);
 
@@ -12411,7 +12411,7 @@ algorithm
         SimCode.BACKENDMAPPING(m,mt,eqMapping,varMapping);
     else
       SimCode.NO_MAPPING();
-  end matchcontinue;      
+  end matchcontinue;
 end getBackendVarMapping;
 
 protected function getSimVarIndex"gets the index from a SimVar and calculates the place in the localData array
@@ -12448,7 +12448,7 @@ algorithm
       SimCode.SIMVAR(index=i) = var;
     then
       i+2*offset;
-  end matchcontinue;     
+  end matchcontinue;
 end getSimVarIndex;
 
 protected function makeVarMapTuple"builds a tuple for the varMapping. ((simvarindex,backendvarindex))
@@ -12466,7 +12466,7 @@ algorithm
     case({},{},_)
       then
         foldIn;
-    case(i1::rest1,i2::rest2,_) 
+    case(i1::rest1,i2::rest2,_)
       equation
         fold = makeVarMapTuple(rest1,rest2,(i1,i2)::foldIn);
       then

@@ -22,7 +22,7 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_hybrj(boost::extens
 #include "Hybrj.h"
 #include "HybrjSettings.h"
 
-    
+
 using boost::extensions::factory;
 
 BOOST_EXTENSION_TYPE_MAP_FUNCTION {
@@ -39,4 +39,3 @@ error "operating system not supported"
 
 
 
-   

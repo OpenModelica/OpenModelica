@@ -32,7 +32,7 @@ match within
     >>
 end dumpWithin;
 
-template dumpClassHeader(Absyn.Class cls, String final_str, 
+template dumpClassHeader(Absyn.Class cls, String final_str,
     String redecl_str, String repl_str, String io_str)
 ::=
 match cls
@@ -41,8 +41,8 @@ match cls
     let pref_str = dumpClassPrefixes(cls, final_str, redecl_str, repl_str, io_str)
     '<%pref_str%><%res_str%>'
 end dumpClassHeader;
-    
-template dumpClassElement(Absyn.Class cls, String final_str, 
+
+template dumpClassElement(Absyn.Class cls, String final_str,
     String redecl_str, String repl_str, String io_str)
 ::=
 match cls
@@ -70,10 +70,10 @@ match cdef
   case DERIVED(__) then
     let attr_str = dumpElementAttr(attributes)
     let ty_str = dumpTypeSpec(typeSpec)
-    let mod_str = if arguments then 
-      '(<%(arguments |> arg => dumpElementArg(arg) ;separator=", ")%>)' 
+    let mod_str = if arguments then
+      '(<%(arguments |> arg => dumpElementArg(arg) ;separator=", ")%>)'
     let cmt_str = dumpCommentOpt(comment)
-    ' <%cls_name%> = <%attr_str%><%ty_str%><%mod_str%><%cmt_str%>' 
+    ' <%cls_name%> = <%attr_str%><%ty_str%><%mod_str%><%cmt_str%>'
   case CLASS_EXTENDS(__) then
     let body_str = (parts |> class_part hasindex idx =>
       dumpClassPart(class_part, idx) ;separator="\n")
@@ -90,11 +90,11 @@ match cdef
   case ENUMERATION(__) then
     let enum_str = dumpEnumDef(enumLiterals)
     let cmt_str = dumpCommentOpt(comment)
-    ' <%cls_name%> = enumeration(<%enum_str%>)<%cmt_str%>' 
+    ' <%cls_name%> = enumeration(<%enum_str%>)<%cmt_str%>'
   case OVERLOAD(__) then
     let funcs_str = (functionNames |> fn => dumpPath(fn) ;separator=", ")
     let cmt_str = dumpCommentOpt(comment)
-    ' <%cls_name%> = $overload(<%funcs_str%>)<%cmt_str%>' 
+    ' <%cls_name%> = $overload(<%funcs_str%>)<%cmt_str%>'
   case PDER(__) then
     let fn_str = dumpPath(functionName)
     let vars_str = (vars |> var => var ;separator=", ")
@@ -127,7 +127,7 @@ match cls
     let fin_str = dumpFinal(finalPrefix)
     '<%redecl_str%><%fin_str%><%io_str%><%repl_str%><%enc_str%><%partial_str%>'
 end dumpClassPrefixes;
-    
+
 template dumpRestriction(Absyn.Restriction restriction)
 ::=
 match restriction
@@ -161,7 +161,7 @@ match restriction
   case R_METARECORD(__) then "metarecord"
   case R_UNKNOWN(__) then "*unknown*"
 end dumpRestriction;
-  
+
 template dumpClassPart(Absyn.ClassPart class_part, Integer idx)
 ::=
 match class_part
@@ -242,7 +242,7 @@ template dumpElementItemPreSpacing(String curSpacing, String prevSpacing)
 end dumpElementItemPreSpacing;
 
 template dumpElementItemSpacing(Absyn.ElementItem item)
-::= 
+::=
 match item
   case ELEMENTITEM(element = ELEMENT(specification = CLASSDEF(class_ = CLASS(body = cdef))))
     then dumpClassDefSpacing(cdef)
@@ -254,7 +254,7 @@ match cdef
   case PARTS(__) then '<%\n%>'
   case CLASS_EXTENDS(__) then '<%\n%>'
 end dumpClassDefSpacing;
- 
+
 template dumpElementItem(Absyn.ElementItem eitem)
 ::=
 match eitem
@@ -267,12 +267,12 @@ template dumpElement(Absyn.Element elem)
 match elem
   case ELEMENT(__) then
     let final_str = dumpFinal(finalPrefix)
-    let redecl_str = match redeclareKeywords case SOME(re) then dumpRedeclare(re) 
+    let redecl_str = match redeclareKeywords case SOME(re) then dumpRedeclare(re)
     let repl_str = match redeclareKeywords case SOME(re) then dumpReplaceable(re)
     let io_str = dumpInnerOuter(innerOuter)
     let ec_str = dumpElementSpec(specification, final_str, redecl_str, repl_str, io_str)
     let cc_str = match constrainClass case SOME(cc) then dumpConstrainClass(cc)
-    '<%ec_str%><%cc_str%>;' 
+    '<%ec_str%><%cc_str%>;'
   case DEFINEUNIT(__) then
     let args_str = if args then '(<%(args |> arg => dumpNamedArg(arg))%>)'
     'defineunit <%name%><%args_str%>;'
@@ -316,7 +316,7 @@ template dumpCommentOpt(Option<Absyn.Comment> ocmt)
 end dumpCommentOpt;
 
 template dumpElementArg(Absyn.ElementArg earg)
-::= 
+::=
 match earg
   case MODIFICATION(__) then
     let each_str = dumpEach(eachPrefix)
@@ -339,7 +339,7 @@ end dumpElementArg;
 template dumpEach(Absyn.Each each)
 ::= match each case EACH() then "each "
 end dumpEach;
- 
+
 template dumpFinal(Boolean final)
 ::= if final then "final "
 end dumpFinal;
@@ -383,7 +383,7 @@ match eqmod
     let exp_str = dumpExp(exp)
     ' = <%exp_str%>'
 end dumpEqMod;
-    
+
 template dumpElementSpec(Absyn.ElementSpec elem, String final, String redecl,
     String repl, String io)
 ::=
@@ -399,7 +399,7 @@ match elem
     let ty_str = dumpTypeSpec(typeSpec)
     let attr_str = dumpElementAttr(attributes)
     let dim_str = dumpElementAttrDim(attributes)
-    let comps_str = (components |> comp => dumpComponentItem(comp) ;separator=", ") 
+    let comps_str = (components |> comp => dumpComponentItem(comp) ;separator=", ")
     let prefix_str = '<%redecl%><%final%><%io%><%repl%>'
     '<%prefix_str%><%attr_str%><%ty_str%><%dim_str%> <%comps_str%>'
   case IMPORT(__) then
@@ -457,7 +457,7 @@ match cc
     let cmt_str = dumpCommentOpt(comment)
     ' constrainedby <%path_str%><%el_str%><%cmt_str%>'
 end dumpConstrainClass;
-    
+
 template dumpComponentItem(Absyn.ComponentItem comp)
 ::=
 match comp
@@ -496,7 +496,7 @@ match imp
     let groups_str = (groups |> group => dumpGroupImport(group) ;separator=",")
     '<%prefix_str%>.{<%groups_str%>}'
 end dumpImport;
-    
+
 template dumpGroupImport(Absyn.GroupImport gimp)
 ::=
 match gimp
@@ -523,7 +523,7 @@ template dumpEquation(Absyn.Equation eq)
 match eq
   case EQ_IF(__) then
     let if_str = dumpEquationBranch(ifExp, equationTrueItems, "if")
-    let elseif_str = (elseIfBranches |> (c, b) => 
+    let elseif_str = (elseIfBranches |> (c, b) =>
         dumpEquationBranch(c, b, "elseif") ;separator="\n")
     let else_branch_str = dumpEquationItems(equationElseItems)
     let else_str = if else_branch_str then
@@ -604,7 +604,7 @@ match alg
     '<%lhs_str%> := <%rhs_str%>'
   case ALG_IF(__) then
     let if_str = dumpAlgorithmBranch(ifExp, trueBranch, "if", "then")
-    let elseif_str = (elseIfAlgorithmBranch |> (c, b) => 
+    let elseif_str = (elseIfAlgorithmBranch |> (c, b) =>
         dumpAlgorithmBranch(c, b, "elseif", "then") ;separator="\n")
     let else_branch_str = dumpAlgorithmItems(elseBranch)
     let else_str = if else_branch_str then
@@ -860,7 +860,7 @@ match code
   case C_EXPRESSION(__) then dumpExp(exp)
   case C_MODIFICATION(__) then dumpModification(modification)
 end dumpCodeNode;
-  
+
 template dumpMatchExp(Absyn.Exp match_exp)
 ::=
 match match_exp
@@ -875,7 +875,7 @@ match match_exp
     <%locals_str%>
       <%cases_str%><%cmt_str%>
     end <%ty_str%>
-    >> 
+    >>
 end dumpMatchExp;
 
 template dumpMatchType(Absyn.MatchType match_type)
@@ -902,7 +902,7 @@ template dumpMatchEquations(list<EquationItem> eql)
       <%(eql |> eq => dumpEquationItem(eq) ;separator="\n")%>
   >>
 end dumpMatchEquations;
-  
+
 template dumpMatchCase(Absyn.Case c)
 ::=
 match c
@@ -923,7 +923,7 @@ match c
     case <%pattern_str%> <%guard_str%><%eql_str%><%then_str%>;
     >>
 end dumpMatchCase;
-    
+
 template dumpOperator(Absyn.Operator op)
 ::=
 match op

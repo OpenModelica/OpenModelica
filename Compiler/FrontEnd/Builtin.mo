@@ -36,7 +36,7 @@ encapsulated package Builtin
 
   RCS: $Id$
 
-  This module defines the builtin types, variables and functions in Modelica.  
+  This module defines the builtin types, variables and functions in Modelica.
 
   There are several builtin attributes defined in the builtin types, such as unit, start, etc."
 
@@ -213,7 +213,7 @@ protected constant SCode.Element stateSelect = SCode.COMPONENT("stateSelect",com
           Absyn.CREF(
           Absyn.CREF_QUAL("StateSelect",{},Absyn.CREF_IDENT("default",{}))),false)), Absyn.dummyInfo),SCode.noComment,NONE(),Absyn.dummyInfo);
 
-// Extensions for uncertainties          
+// Extensions for uncertainties
 protected constant SCode.Element uncertainty=SCode.COMPONENT("uncertain",commonPrefixes,
           attrParam,Absyn.TPATH(Absyn.IDENT("Uncertainty"),NONE()),
           SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},
@@ -252,7 +252,7 @@ protected constant SCode.Element uncertaintyType = SCode.CLASS("Uncertainty",com
 protected constant SCode.Element ExternalObjectType = SCode.CLASS("ExternalObject",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_CLASS(),
           SCode.PARTS({},{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo) "ExternalObject type" ;
 
-// The Real type 
+// The Real type
 protected constant SCode.Element realType = SCode.CLASS("Real",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_REAL(),
           SCode.PARTS({unit,quantity,displayUnit,min,max,realStart,fixed,nominal,
           stateSelect,uncertainty,distribution,startOrigin},{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo) "- The `Real\' type" ;
@@ -261,11 +261,11 @@ protected constant SCode.Element realType = SCode.CLASS("Real",commonPrefixes,SC
 protected constant SCode.Element integerType = SCode.CLASS("Integer",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_INTEGER(),
           SCode.PARTS({quantity,min,max,integerStart,fixed,uncertainty,distribution,startOrigin},{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo) "- The `Integer\' type" ;
 
-// The String type 
+// The String type
 protected constant SCode.Element stringType = SCode.CLASS("String",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_STRING(),
           SCode.PARTS({quantity,stringStart,startOrigin},{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo) "- The `String\' type" ;
 
-// The Boolean type 
+// The Boolean type
 protected constant SCode.Element booleanType = SCode.CLASS("Boolean",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_BOOLEAN(),
           SCode.PARTS({quantity,booleanStart,fixed,startOrigin},{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo) "- The `Boolean\' type" ;
 
@@ -529,14 +529,14 @@ public function variableIsBuiltin
 algorithm
   b := match (cref, useOptimica)
     case(DAE.CREF_IDENT(ident="time"),_) then true;
-    case(_,false) then false;  
-      
+    case(_,false) then false;
+
     //If accepting Optimica then these variabels are also builtin
     case(DAE.CREF_IDENT(ident="startTime"),true) then true;
     case(DAE.CREF_IDENT(ident="finalTime"),true) then true;
     case(DAE.CREF_IDENT(ident="objective"),true) then true;
     case(DAE.CREF_IDENT(ident="objectiveIntegrand"),true) then true;
-      
+
     else false;
   end match;
 end variableIsBuiltin;
@@ -578,19 +578,19 @@ algorithm
     case (cache) equation
       env = Env.getCachedInitialEnv(cache);
     then (cache,env);
-      
+
     // then look in the global roots[builtinEnvIndex]
     case (cache)
       equation
         env = getSetInitialEnv(NONE());
-      then 
+      then
         (cache, env);
 
     // if no cached version found create initial env.
     case (cache) equation
       env = Env.openScope(Env.emptyEnv, SCode.NOT_ENCAPSULATED(), NONE(), NONE());
       env = Env.extendFrameClasses(env,
-              {rlType, 
+              {rlType,
                intType,
                strType,
                boolType,
@@ -605,11 +605,11 @@ algorithm
                SOME(Env.BASIC_TYPE()));
 
       env = Env.extendFrameV(
-              env, 
+              env,
               timeVar,
               timeComp,
-              DAE.NOMOD(), 
-              Env.VAR_UNTYPED(), 
+              DAE.NOMOD(),
+              Env.VAR_UNTYPED(),
               {});
 
       //If Optimica add the startTime,finalTime,objectiveIntegrand and objective "builtin" variables.
@@ -671,9 +671,9 @@ algorithm
       env = Env.extendFrameClasses(env, listReverse(List.fold(initialClasses, SCodeUtil.translate2, {})), SOME(Env.BUILTIN()));
       cache = Env.setCachedInitialEnv(cache,env);
       _ = getSetInitialEnv(SOME(env));
-    then 
+    then
       (cache,env);
-  
+
   end matchcontinue;
 end initialEnv;
 
@@ -766,45 +766,45 @@ algorithm
     local
       list<tuple<Integer,Env.Env>> assocLst;
       Env.Env env;
-    
+
     // nothing there
     case (_)
       equation
         failure(_ = getGlobalRoot(Global.builtinEnvIndex));
         setGlobalRoot(Global.builtinEnvIndex,{});
-      then 
+      then
         fail();
-    
+
     // return the correct env depending on flags
     case (NONE())
       equation
         assocLst = getGlobalRoot(Global.builtinEnvIndex);
-      then 
+      then
         Util.assoc(Flags.getConfigEnum(Flags.GRAMMAR), assocLst);
-    
+
     case (SOME(env))
       equation
         true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.METAMODELICA);
         assocLst = getGlobalRoot(Global.builtinEnvIndex);
         setGlobalRoot(Global.builtinEnvIndex, (Flags.METAMODELICA,env)::assocLst);
-      then 
+      then
         env;
-    
+
     case (SOME(env))
       equation
         true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PARMODELICA);
         assocLst = getGlobalRoot(Global.builtinEnvIndex);
         setGlobalRoot(Global.builtinEnvIndex, (Flags.PARMODELICA,env)::assocLst);
-      then 
+      then
         env;
-    
+
     case (SOME(env))
       equation
         true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.MODELICA) or intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.OPTIMICA);
         assocLst = getGlobalRoot(Global.builtinEnvIndex);
         setGlobalRoot(Global.builtinEnvIndex, (Flags.MODELICA,env)::assocLst);
-      then 
-        env;    
+      then
+        env;
   end matchcontinue;
 end getSetInitialEnv;
 
@@ -834,20 +834,20 @@ algorithm
     case (cache) equation
       graph = Graph.getCachedInitialFGraph(cache);
     then (cache,graph);
-      
+
     // then look in the global roots[builtinEnvIndex]
     case (cache)
       equation
         graph = getSetInitialFGraph(NONE());
-      then 
+      then
         (cache, graph);*/
 
     // if no cached version found create initial graph.
-    case (cache) 
+    case (cache)
       equation
         graph = FGraph.new(FCore.dummyTopModel);
         graph = FGraphBuild.mkProgramGraph(
-        {rlType, 
+        {rlType,
          intType,
          strType,
          boolType,
@@ -862,7 +862,7 @@ algorithm
          FCore.BASIC_TYPE(),
          graph);
 
-      
+
       graph = FGraphBuild.mkCompNode(timeComp, FGraph.top(graph), FCore.BUILTIN(), graph);
 
       graph = initialFGraphOptimica(graph);
@@ -873,10 +873,10 @@ algorithm
       initialProgram = listReverse(List.fold(initialClasses, SCodeUtil.translate2, {}));
       // add the ModelicaBuiltin/MetaModelicaBuiltin classes in the initial graph
       graph = FGraphBuild.mkProgramGraph(initialProgram, FCore.BUILTIN(), graph);
-      
+
       graph = FGraphBuild.mkTypeNode(
                {anyNonExpandableConnector2int,
-                anyExpandableConnector2int}, 
+                anyExpandableConnector2int},
                "cardinality", graph);
       graph = FGraphBuild.mkTypeNode({enumeration2int}, "Integer", graph);
       graph = FGraphBuild.mkTypeNode({enumeration2int}, "EnumToInteger", graph);
@@ -885,11 +885,11 @@ algorithm
       graph = FGraphBuild.mkTypeNode({real2real}, "inStream", graph);
       graph = FGraphBuild.mkTypeNode({realrealreal2real,
                                   array1dimrealarray1dimrealarray1dimreal2array1dimreal,
-                                  array1dimrealarray1dimrealarray1dimreal2array1dimreal}, 
+                                  array1dimrealarray1dimrealarray1dimreal2array1dimreal},
                                  "constrain", graph);
-    then 
+    then
       (cache,graph);
-  
+
   end matchcontinue;
 end initialFGraph;
 
@@ -902,45 +902,45 @@ algorithm
     local
       list<tuple<Integer,FGraph.Graph>> assocLst;
       FGraph.Graph graph;
-    
+
     // nothing there
     case (_)
       equation
         failure(_ = getGlobalRoot(Global.builtinFGraphIndex));
         setGlobalRoot(Global.builtinFGraphIndex,FGraph.new(FCore.dummyTopModel));
-      then 
+      then
         fail();
-    
+
     // return the correct graph depending on flags
     case (NONE())
       equation
         assocLst = getGlobalRoot(Global.builtinFGraphIndex);
-      then 
+      then
         Util.assoc(Flags.getConfigEnum(Flags.GRAMMAR), assocLst);
-    
+
     case (SOME(graph))
       equation
         true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.METAMODELICA);
         assocLst = getGlobalRoot(Global.builtinFGraphIndex);
         setGlobalRoot(Global.builtinFGraphIndex, (Flags.METAMODELICA,graph)::assocLst);
-      then 
+      then
         graph;
-    
+
     case (SOME(graph))
       equation
         true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PARMODELICA);
         assocLst = getGlobalRoot(Global.builtinFGraphIndex);
         setGlobalRoot(Global.builtinFGraphIndex, (Flags.PARMODELICA,graph)::assocLst);
-      then 
+      then
         graph;
-    
+
     case (SOME(graph))
       equation
         true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.MODELICA) or intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.OPTIMICA);
         assocLst = getGlobalRoot(Global.builtinFGraphIndex);
         setGlobalRoot(Global.builtinFGraphIndex, (Flags.MODELICA,graph)::assocLst);
-      then 
-        graph;    
+      then
+        graph;
   end matchcontinue;
 end getSetInitialFGraph;
 
@@ -951,7 +951,7 @@ algorithm
   outEnv := matchcontinue(inEnv)
     local
       FGraph.Graph graph;
-    
+
     case (graph)
       equation
         true = Config.acceptMetaModelicaGrammar();
@@ -959,9 +959,9 @@ algorithm
         graph = FGraphBuild.mkTypeNode({int2boxed}, "getGlobalRoot", graph);
       then
         graph;
-    
+
     case graph then graph;
-  
+
   end matchcontinue;
 end initialFGraphMetaModelica;
 
@@ -972,7 +972,7 @@ algorithm
   outEnv := matchcontinue(inEnv)
     local
       FGraph.Graph graph;
-    
+
     case (graph)
       equation
         //If Optimica add the startTime,finalTime,objectiveIntegrand and objective "builtin" variables.
@@ -983,9 +983,9 @@ algorithm
         graph = FGraphBuild.mkCompNode(finalTimeComp, FGraph.top(graph), FCore.BUILTIN(), graph);
       then
         graph;
-    
+
     case graph then graph;
-  
+
   end matchcontinue;
 end initialFGraphOptimica;
 

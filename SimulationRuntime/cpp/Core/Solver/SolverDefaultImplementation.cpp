@@ -51,7 +51,7 @@ SolverDefaultImplementation::~SolverDefaultImplementation()
         delete [] _zeroValLastSuccess;
     if(_events)
         delete [] _events;
-    
+
 }
 
         void SolverDefaultImplementation::setStartTime(const double& t)
@@ -75,11 +75,11 @@ SolverDefaultImplementation::~SolverDefaultImplementation()
     {
         return _solverStatus;
     };
-  
+
 bool SolverDefaultImplementation::stateSelection()
 {
    return _state_selection->stateSelection(1);
-} 
+}
 void SolverDefaultImplementation::initialize()
 {
     IContinuous* continous_system = dynamic_cast<IContinuous*>(_system);
@@ -88,9 +88,9 @@ void SolverDefaultImplementation::initialize()
   IWriteOutput* writeoutput_system = dynamic_cast<IWriteOutput*>(_system);
     // Set current start time to the system
     timeevent_system->setTime(_tCurrent);
-    
-   
-    
+
+
+
 
     //// Write out head line
     //if (_outputStream)
@@ -125,7 +125,7 @@ void SolverDefaultImplementation::initialize()
         _zeroValLastSuccess      = new double[_dimZeroFunc];
         _events                        = new bool[_dimZeroFunc];
         _zeroValInit                  = new double[_dimZeroFunc];
-       
+
         event_system->getZeroFunc(_zeroVal);
         memcpy(_zeroValLastSuccess,_zeroVal,_dimZeroFunc*sizeof(double));
         memcpy(_zeroValInit,_zeroVal,_dimZeroFunc*sizeof(double));
@@ -133,9 +133,9 @@ void SolverDefaultImplementation::initialize()
     }
 
      // Set flags
-    _firstCall                  = true; 
+    _firstCall                  = true;
     _firstStep                  = true;
- 
+
 
     // Reset counter
     _totStps     = 0;
@@ -153,7 +153,7 @@ void SolverDefaultImplementation::setZeroState()
 
         // Reset Zero-State
     _zeroStatus = ISolver::UNCHANGED_SIGN;;
-    
+
     // Alle Elemente im ZeroFunction-Array durchgehen
     for (int i=0; i<_dimZeroFunc; ++i)
     {
@@ -183,11 +183,11 @@ void SolverDefaultImplementation::writeToFile(const int& stp, const double& t, c
    if(_settings->getGlobalSettings()->getOutputFormat()!= EMPTY)
    {
     IWriteOutput* writeoutput_system = dynamic_cast<IWriteOutput*>(_system);
-       
+
     if(_outputCommand & IWriteOutput::WRITEOUT)
     {
         writeoutput_system->writeOutput(_outputCommand);
-      
+
     }
     }
 }

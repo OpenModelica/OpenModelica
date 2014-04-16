@@ -1,7 +1,7 @@
 
 
 #if defined(__vxworks)
-    
+
   #include "stdafx.h"
     #include "SimController.h"
   extern "C" ISimController* createSimController(PATH library_path,PATH modelicasystem_path)
@@ -16,7 +16,7 @@
 /*Simster factory*/
 extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_simcontroller(boost::extensions::factory_map & fm)
 {
- 
+
     fm.get<ISimController,int,PATH,PATH>()[1].set<SimController>();
     // fm.get<ISimData,int>()[1].set<SimData>();
 }
@@ -33,11 +33,11 @@ types.get<std::map<std::string, factory<ISimController,PATH,PATH> > >()
 ["SimController"].set<SimController>();
 
 }
-  
+
 #else
     error "operating system not supported"
 #endif
 
 
-           
+
 

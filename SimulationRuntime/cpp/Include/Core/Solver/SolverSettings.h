@@ -39,14 +39,14 @@ public:
    virtual double getEndTimeTol();
   virtual void setEndTimeTol(double);
 
-  //dense Output 
+  //dense Output
   virtual bool getDenseOutput();
    virtual void setDenseOutput(bool);
-   //Event Output 
+   //Event Output
    virtual bool getEventOutput();
    virtual void setEventOutput(bool);
-  
-   
+
+
    virtual double getATol();
   virtual void setATol(double);
    virtual double getRTol();
@@ -63,13 +63,13 @@ private:
     _endTimeTol,      ///< Tolerance to reach _endTime (default: 1e-6)
   _dRtol,
     _dAtol;
-    IGlobalSettings*  
+    IGlobalSettings*
     _globalSettings;  ///< Global simulation settings
 
   bool
     _denseOutput,
     _eventOutput;
-   
+
 
    //Serialization of settings class
   /*friend class boost::serialization::access;     vxworkstodo

@@ -19,7 +19,7 @@ public:
     virtual ~ISystemInitialization()    {};
 
 
-  
+
 
   /// (Re-) initialize the system of equations and bounded parameters
   virtual void initialize() = 0;

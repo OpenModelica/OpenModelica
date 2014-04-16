@@ -254,10 +254,10 @@ end treeAdd;
 //       Value rval;
 //       Option<TreeValue> optVal;
 //       Integer rhash;
-// 
+//
 //     case ((bt as TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE())),_)
 //       then bt;
-// 
+//
 //     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),leftSubTree = optLeft,rightSubTree = SOME(right)),_)
 //       equation
 //         0 = keyCmp(rkey, inKey);
@@ -265,19 +265,19 @@ end treeAdd;
 //         optRight = treePruneEmptyNodes(right);
 //       then
 //         TREENODE(SOME(rightmost),optLeft,optRight);
-// 
+//
 //     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),leftSubTree = SOME(left as TREENODE(value=_)),rightSubTree = NONE()),_)
 //       equation
 //         0 = keyCmp(rkey, inKey);
 //       then
 //         left;
-// 
+//
 //     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),leftSubTree = NONE(),rightSubTree = NONE()),_)
 //       equation
 //         0 = keyCmp(rkey, inKey);
 //       then
 //         TREENODE(NONE(),NONE(),NONE());
-// 
+//
 //     case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rval)),leftSubTree = optLeft,rightSubTree = SOME(t)),_)
 //       equation
 //         1 = keyCmp(rkey, inKey);
@@ -285,7 +285,7 @@ end treeAdd;
 //         optTree = treePruneEmptyNodes(t);
 //       then
 //         TREENODE(optVal,optLeft,optTree);
-// 
+//
 //     case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rval)),leftSubTree =  SOME(t),rightSubTree = optRight),_)
 //       equation
 //         -1 = keyCmp(rkey, inKey);
@@ -293,7 +293,7 @@ end treeAdd;
 //         optTree = treePruneEmptyNodes(t);
 //       then
 //         TREENODE(optVal,optTree,optRight);
-// 
+//
 //     else
 //       equation
 //         Error.addMessage(Error.INTERNAL_ERROR,{"-BinaryTree.treeDelete failed\n"});
@@ -320,27 +320,27 @@ end treeAdd;
 //       BinTree left,right,bt;
 //       Option<BinTree> optRight, optLeft;
 //       Option<TreeValue> optTreeVal;
-// 
+//
 //     case (TREENODE(value = SOME(treeVal),leftSubTree = NONE(),rightSubTree = NONE()))
 //       then (treeVal,TREENODE(NONE(),NONE(),NONE()));
-// 
+//
 //     case (TREENODE(value = SOME(treeVal),leftSubTree = SOME(left),rightSubTree = NONE()))
 //       then (treeVal,left);
-// 
+//
 //     case (TREENODE(value = optTreeVal,leftSubTree = optLeft,rightSubTree = SOME(right)))
 //       equation
 //         (value,right) = treeDeleteRightmostValue(right);
 //         optRight = treePruneEmptyNodes(right);
 //       then
 //         (value,TREENODE(optTreeVal,optLeft,optRight));
-// 
+//
 //     case (TREENODE(value = SOME(treeVal),leftSubTree = NONE(),rightSubTree = SOME(right)))
 //       equation
 //         failure((_,_) = treeDeleteRightmostValue(right));
 //         print("- BinaryTree.treeDeleteRightmostValue: right value was empty, left NONE\n");
 //       then
 //         (treeVal,TREENODE(NONE(),NONE(),NONE()));
-// 
+//
 //     else
 //       equation
 //         Error.addMessage(Error.INTERNAL_ERROR,{"- BinaryTree.treeDeleteRightmostValue failed\n"});
@@ -374,9 +374,9 @@ end treeAdd;
 //     local
 //       Value ld,rd,res;
 //       BinTree left,right;
-// 
+//
 //     case (TREENODE(leftSubTree = NONE(),rightSubTree = NONE())) then 1;
-// 
+//
 //     case (TREENODE(leftSubTree = SOME(left),rightSubTree = SOME(right)))
 //       equation
 //         ld = bintreeDepth(left);
@@ -384,13 +384,13 @@ end treeAdd;
 //         res = intMax(ld, rd);
 //       then
 //         res + 1;
-// 
+//
 //     case (TREENODE(leftSubTree = SOME(left),rightSubTree = NONE()))
 //       equation
 //         ld = bintreeDepth(left);
 //       then
 //         ld;
-// 
+//
 //     case (TREENODE(leftSubTree = NONE(),rightSubTree = SOME(right)))
 //       equation
 //         rd = bintreeDepth(right);

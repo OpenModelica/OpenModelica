@@ -386,7 +386,7 @@ static int check_nominal(IPOPT_DATA_ *iData, double min, double max, double nomi
           iData->scaling.vnom[i] = 1.0 + x0;
         }
       }
-      
+
     iData->scaling.vnom[i] = fmax(iData->scaling.vnom[i],1e-16);
   }
   return 0;

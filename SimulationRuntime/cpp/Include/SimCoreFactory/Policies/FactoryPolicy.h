@@ -16,7 +16,7 @@
 #elif defined(SIMSTER_BUILD)
 
       /*Policy include*/
-  
+
     #include <Policies/SolverFactory.h>
     #include <Policies/SolverSettingsFactory.h>
     #include <Policies/SystemFactory.h>

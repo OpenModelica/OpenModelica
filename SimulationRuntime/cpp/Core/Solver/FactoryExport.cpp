@@ -1,8 +1,8 @@
 
 
 #if defined(__vxworks)
-    
-  
+
+
 
 #elif defined(OMC_BUILD)
 
@@ -33,7 +33,7 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_solver(boost::exten
     fm.get<SolverDefaultImplementation,int,IMixedSystem*, ISolverSettings*>()[1].set<SolverDefaultImplementation>();
   fm.get<ISolverSettings,int, IGlobalSettings* >()[1].set<SolverSettings>();
 }
-  
+
 #else
     error "operating system not supported"
 #endif

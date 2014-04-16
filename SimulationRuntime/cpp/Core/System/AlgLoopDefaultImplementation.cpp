@@ -3,7 +3,7 @@
 #include "stdafx.h"
 #include "FactoryExport.h"
 #include <System/AlgLoopDefaultImplementation.h>
- 
+
 
 
 AlgLoopDefaultImplementation::AlgLoopDefaultImplementation()
@@ -18,7 +18,7 @@ AlgLoopDefaultImplementation::~AlgLoopDefaultImplementation()
 
 }
 /// Provide number (dimension) of variables according to data type
-int AlgLoopDefaultImplementation::getDimReal() const    
+int AlgLoopDefaultImplementation::getDimReal() const
 {
 
     return _dimAEq;
@@ -40,11 +40,11 @@ void AlgLoopDefaultImplementation::initialize()
     _dimAEq = 0;
     if(_constraintType ==IAlgLoop::REAL)
     {
-        std::vector<double>::const_iterator 
+        std::vector<double>::const_iterator
             constr_iter = __xd.begin(),
             constr_iter_end = __xd.end();
 
-        std::vector<double>::iterator 
+        std::vector<double>::iterator
             init_iter = _xd_init.begin();
 
         for (; constr_iter != constr_iter_end; ++constr_iter)
@@ -55,11 +55,11 @@ void AlgLoopDefaultImplementation::initialize()
     }
     else if(_constraintType == IAlgLoop::INTEGER)
     {
-        std::vector<int>::const_iterator 
+        std::vector<int>::const_iterator
             constr_iter = __xi.begin(),
             constr_iter_end = __xi.end();
 
-        std::vector<int>::iterator 
+        std::vector<int>::iterator
             init_iter = _xi_init.begin();
 
         for (; constr_iter != constr_iter_end; ++constr_iter)
@@ -70,11 +70,11 @@ void AlgLoopDefaultImplementation::initialize()
     }
     else if(_constraintType == IAlgLoop::BOOLEAN)
     {
-        std::vector<bool>::const_iterator 
+        std::vector<bool>::const_iterator
             constr_iter = __xb.begin(),
             constr_iter_end = __xb.end();
 
-        std::vector<bool>::iterator 
+        std::vector<bool>::iterator
             init_iter = _xb_init.begin();
 
         for (; constr_iter != constr_iter_end; ++constr_iter)
@@ -91,7 +91,7 @@ void AlgLoopDefaultImplementation::initialize()
     if ( _dimAEq == 0 )
         throw std::invalid_argument("AlgLoop::initialize(): No constraint defined.");
 
-   
+
 };
 
 
@@ -107,9 +107,9 @@ void AlgLoopDefaultImplementation::writeOutput(const OUTPUT command )
         if (command & HEAD_LINE)
         {
             for(int i=0; i<_dimAEq; ++i)
-                *_outputStream << "\tdoubleUnknowns[" << i << "]"; 
+                *_outputStream << "\tdoubleUnknowns[" << i << "]";
             for(int i=0; i<_dimAEq; ++i)
-                *_outputStream << "\tintUnknowns[" << i << "]"; 
+                *_outputStream << "\tintUnknowns[" << i << "]";
             for(int i=0; i<_dimAEq; ++i)
                 *_outputStream << "\tboolUnknowns[" << i << "]";
         }
@@ -131,7 +131,7 @@ void AlgLoopDefaultImplementation::writeOutput(const OUTPUT command )
 
 
 /// Set stream for output
-void AlgLoopDefaultImplementation::setOutput(ostream* outputStream) 
+void AlgLoopDefaultImplementation::setOutput(ostream* outputStream)
 {
     _outputStream = outputStream;
 };
@@ -140,11 +140,11 @@ void AlgLoopDefaultImplementation::setOutput(ostream* outputStream)
 //in algloop default verschieben
 void AlgLoopDefaultImplementation::setReal(const double* lambda)
 {
-   
-    std::vector<double>::iterator 
+
+    std::vector<double>::iterator
             constr_iter = __xd.begin(),
             constr_iter_end = __xd.end();
-        std::vector<double>::iterator 
+        std::vector<double>::iterator
             init_iter = _xd_init.begin();
 
         const double* lambda_iter = lambda;
@@ -152,17 +152,17 @@ void AlgLoopDefaultImplementation::setReal(const double* lambda)
         // lambda zuweisen: InitialValue = ConstrValue = lambda
         for (; constr_iter != constr_iter_end; ++constr_iter)
             *init_iter++ = *constr_iter = *lambda_iter++;
-   
+
 }
 /*
 //in algloop default verschieben
 void AlgLoopDefaultImplementation::setVars(const int* lambda)
 {
-   
-        std::vector<int>::iterator  
+
+        std::vector<int>::iterator
             constr_iter = __xi.begin(),
             constr_iter_end = __xi.end();
-        std::vector<int>::iterator 
+        std::vector<int>::iterator
             init_iter = _xi_init.begin();
 
         const int* lambda_iter = lambda;
@@ -170,16 +170,16 @@ void AlgLoopDefaultImplementation::setVars(const int* lambda)
         // lambda zuweisen: InitialValue = ConstrValue = lambda
         for (; constr_iter != constr_iter_end; ++constr_iter)
             *init_iter++ = *constr_iter = *lambda_iter++;
-    
+
 }
 //in algloop default verschieben
 void AlgLoopDefaultImplementation::setVars(const bool* lambda)
 {
-    
-        std::vector<bool>::iterator  
+
+        std::vector<bool>::iterator
             constr_iter = __xb.begin(),
             constr_iter_end = __xb.end();
-        std::vector<bool>::iterator 
+        std::vector<bool>::iterator
             init_iter = _xb_init.begin();
 
         const bool* lambda_iter = lambda;
@@ -187,14 +187,14 @@ void AlgLoopDefaultImplementation::setVars(const bool* lambda)
         // lambda zuweisen: InitialValue = ConstrValue = lambda
         for (; constr_iter != constr_iter_end; ++constr_iter)
             *init_iter++ = *constr_iter = *lambda_iter++;
-   
+
 }
 */
 //in algloop default verschieben
 void AlgLoopDefaultImplementation::getReal(double* lambda)
 {
-    
-        std::vector<double>::iterator 
+
+        std::vector<double>::iterator
             constr_iter = __xd.begin(),
             constr_iter_end = __xd.end();
 
@@ -203,13 +203,13 @@ void AlgLoopDefaultImplementation::getReal(double* lambda)
         // lambda zurückgeben: lambda = ConstrValue
         for (; constr_iter != constr_iter_end; ++constr_iter)
             *lambda_iter++ = *constr_iter;
-    
+
 }
 /*
 //in algloop default verschieben
 void AlgLoopDefaultImplementation::giveVars(int* lambda)
 {
-     std::vector<int>::iterator 
+     std::vector<int>::iterator
             constr_iter = __xi.begin(),
             constr_iter_end = __xi.end();
 
@@ -218,12 +218,12 @@ void AlgLoopDefaultImplementation::giveVars(int* lambda)
         // lambda zurückgeben: lambda = ConstrValue
         for (; constr_iter != constr_iter_end; ++constr_iter)
             *lambda_iter++ = *constr_iter;
-   
+
 }
 //in algloop default verschieben
 void AlgLoopDefaultImplementation::giveVars(bool* lambda)
 {
-    std::vector<bool>::iterator  
+    std::vector<bool>::iterator
             constr_iter = __xb.begin(),
             constr_iter_end = __xb.end();
 
@@ -232,16 +232,16 @@ void AlgLoopDefaultImplementation::giveVars(bool* lambda)
         // lambda zurückgeben: lambda = ConstrValue
         for (; constr_iter != constr_iter_end; ++constr_iter)
             *lambda_iter++ = *constr_iter;
-   
+
 }
 */
 //in algloop default verschieben
 void AlgLoopDefaultImplementation::getRHS(double* res)
 {
-     std::vector<double>::iterator  
+     std::vector<double>::iterator
             constr_iter = __xd.begin(),
             constr_iter_end = __xd.end();
-        std::vector<double>::iterator 
+        std::vector<double>::iterator
             init_iter = _xd_init.begin();
 
         double* res_iter = res;
@@ -249,17 +249,17 @@ void AlgLoopDefaultImplementation::getRHS(double* res)
         // resiudum zurückgeben: res = InitialValue - ResultValue
         for (; constr_iter != constr_iter_end; ++constr_iter)
             *res_iter++ = /**init_iter++ - */*constr_iter;
-   
+
 }
 /*
 //in algloop default verschieben
 void AlgLoopDefaultImplementation::getRHS(int* res)
 {
-    
-        std::vector<int>::iterator 
+
+        std::vector<int>::iterator
             constr_iter = __xi.begin(),
             constr_iter_end = __xi.end();
-        std::vector<int>::iterator 
+        std::vector<int>::iterator
             init_iter = _xi_init.begin();
 
         int* res_iter = res;
@@ -267,17 +267,17 @@ void AlgLoopDefaultImplementation::getRHS(int* res)
         // resiudum zurückgeben: res = InitialValue - ResultValue
         for (; constr_iter != constr_iter_end; ++constr_iter)
             *res_iter++ = *init_iter++ - *constr_iter;
-    
+
 }
 
 //in algloop default verschieben
 void AlgLoopDefaultImplementation::giveRHS(bool* res)
 {
-    
-        std::vector<bool>::iterator 
+
+        std::vector<bool>::iterator
             constr_iter = __xb.begin(),
             constr_iter_end = __xb.end();
-        std::vector<bool>::iterator 
+        std::vector<bool>::iterator
             init_iter = _xb_init.begin();
 
         bool* res_iter = res;
@@ -285,6 +285,6 @@ void AlgLoopDefaultImplementation::giveRHS(bool* res)
         // resiudum zurückgeben: res = InitialValue XNOR ResultValue
         for (; constr_iter != constr_iter_end; ++constr_iter)
             *res_iter++ = !(*init_iter++ ^ *constr_iter);
-    
+
 }
 */

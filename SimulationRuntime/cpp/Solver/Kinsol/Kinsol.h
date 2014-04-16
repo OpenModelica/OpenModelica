@@ -33,7 +33,7 @@ private:
   void calcFunction(const double* y, double* residual);
 
   /// Encapsulation of determination of Jacobian
-  void calcJacobian(); 
+  void calcJacobian();
   int check_flag(void *flagvalue, char *funcname, int opt);
   static int kin_fCallback(N_Vector y, N_Vector fval, void *user_data);
 

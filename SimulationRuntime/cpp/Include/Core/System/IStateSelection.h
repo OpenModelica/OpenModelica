@@ -5,7 +5,7 @@
 class IStateSelection
 {
 public:
-   
+
   virtual ~IStateSelection()  {};
   virtual int getDimStateSets() const = 0;
   virtual int getDimStates(unsigned int index) const = 0;

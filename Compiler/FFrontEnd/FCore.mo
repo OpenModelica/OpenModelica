@@ -36,11 +36,11 @@ encapsulated package FCore
 
   RCS: $Id: FCore.mo 14085 2012-11-27 12:12:40Z adrpo $
 
-  This module holds types used in FNode, FGraph and all the other F* packages 
+  This module holds types used in FNode, FGraph and all the other F* packages
 "
 
 
-public 
+public
 import Absyn;
 import DAE;
 import SCode;
@@ -49,7 +49,7 @@ import SCode;
 // ************************ FNode structures ***************************
 // ************************ FNode structures ***************************
 // ************************ FNode structures ***************************
- 
+
 type Name = String "An identifier is just a string";
 type Import = Absyn.Import;
 type Id = Integer;
@@ -84,7 +84,7 @@ uniontype Node
 end Node;
 
 uniontype Data
-  record TOP "top"    
+  record TOP "top"
   end TOP;
 
   record CL "class"
@@ -93,18 +93,18 @@ uniontype Data
     // we don't add the imports in node's children as they don't have a name
     ImportTable importTable "imports";
   end CL;
-  
+
   record CO "component"
     SCode.Element e;
     DAE.Var instantiated "instantiated component" ;
     Status status "if it untyped, typed or fully instantiated (dae)";
     Kind kind "usedefined, builtin, basic type";
   end CO;
-  
+
   record EX "extends"
     SCode.Element e;
   end EX;
-  
+
   record DE "derived"
     SCode.ClassDef d;
   end DE;
@@ -112,7 +112,7 @@ uniontype Data
   record DU "unit"
     SCode.Element e;
   end DU;
-    
+
   record TY "type node"
     list<DAE.Type> tys "list since several types with the same name can exist in the same scope (overloading)";
   end TY;
@@ -121,29 +121,29 @@ uniontype Data
     Name name "al or ial (initial)";
     list<SCode.AlgorithmSection> a;
   end AL;
-  
+
   record EQ "equation section"
     Name name "eq or ieq (initial)";
     list<SCode.Equation> e;
   end EQ;
-  
+
   record OT "optimization"
     list<SCode.ConstraintSection> constrainLst;
     list<Absyn.NamedArg> clsAttrs;
   end OT;
-  
+
   record ED "external declaration"
     SCode.ExternalDecl ed;
   end ED;
-  
+
   record FS "for iterators scope"
     Absyn.ForIterators fis;
   end FS;
-  
+
   record FI "for iterator"
     Absyn.ForIterator fi;
   end FI;
-  
+
   record MS "match scope"
     Absyn.Exp e;
   end MS;
@@ -151,7 +151,7 @@ uniontype Data
   record MO "mod"
     SCode.Mod m;
   end MO;
-    
+
   record EXP "binding, condition, array dim, etc"
     String name "what is the expression for";
     Absyn.Exp e;
@@ -173,7 +173,7 @@ uniontype Data
   record REF "reference node"
     Ref target;
   end REF;
-  
+
   record CLONE "clone node"
     Ref target;
   end CLONE;
@@ -208,7 +208,7 @@ uniontype CAvlTreeValue "Each node in the binary tree can have a value associate
 end CAvlTreeValue;
 
 constant CAvlTree emptyCAvlTree = CAVLTREENODE(NONE(),0,NONE(),NONE());
-  
+
 uniontype Kind
   record USERDEFINED end USERDEFINED;
   record BUILTIN end BUILTIN;
@@ -244,7 +244,7 @@ uniontype Visit "Visit Node Info"
 end Visit;
 
 uniontype Visited "Visited structure is an AvlTree Id <-> Visit"
-  record V 
+  record V
     VAvlTree tree;
     Next next "the next visit node id";
   end V;
@@ -277,7 +277,7 @@ constant VAvlTree emptyVAvlTree = VAVLTREENODE(NONE(),0,NONE(),NONE());
 // ************************ FGraph structures ***************************
 
 
-constant Absyn.Path dummyTopModel = Absyn.IDENT("$EMPTY"); 
+constant Absyn.Path dummyTopModel = Absyn.IDENT("$EMPTY");
 constant Extra dummyExtra = EXTRA(dummyTopModel);
 
 constant String forScopeName="$for loop scope$" "a unique scope used in for equations";
@@ -287,13 +287,13 @@ constant String parForIterScopeName="$parforiter loop scope$" "a unique scope us
 constant String matchScopeName="$match scope$" "a unique scope used by match expressions";
 constant String caseScopeName="$case scope$" "a unique scope used by match expressions; to be removed when local decls are deprecated";
 constant list<String> implicitScopeNames={forScopeName,forIterScopeName,parForScopeName,parForIterScopeName,matchScopeName,caseScopeName};
- 
+
 uniontype Extra "propagate more info into env if needed"
   record EXTRA "propagate more info into env if needed"
     Absyn.Path topModel;
   end EXTRA;
 end Extra;
-  
+
 uniontype Graph
   record G
     Ref top;
@@ -304,7 +304,7 @@ uniontype Graph
 end Graph;
 
 
-public constant Id firstId = 0; 
+public constant Id firstId = 0;
 
 public function next
   input Next inext;

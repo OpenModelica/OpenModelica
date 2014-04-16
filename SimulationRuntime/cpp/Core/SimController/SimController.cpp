@@ -13,7 +13,7 @@ SimController::SimController(PATH library_path,PATH modelicasystem_path)
 
 SimController::~SimController()
 {
-  
+
 }
 
 std::pair<boost::weak_ptr<IMixedSystem>,boost::weak_ptr<ISimData> > SimController::LoadSystem(boost::shared_ptr<ISimData> (*createSimDataCallback)(), boost::shared_ptr<IMixedSystem> (*createSystemCallback)(IGlobalSettings*, boost::shared_ptr<IAlgLoopSolverFactory>, boost::shared_ptr<ISimData>), string modelKey)
@@ -68,7 +68,7 @@ std::pair<boost::weak_ptr<IMixedSystem>,boost::weak_ptr<ISimData> > SimControlle
 
 void SimController::Start(boost::weak_ptr<IMixedSystem> mixedsystem,SimSettings simsettings/*,ISimData* simData*/)
 {
-  
+
   try
   {
 

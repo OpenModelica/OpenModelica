@@ -81,7 +81,7 @@ protected constant Entry STATESELECT_PREFER_ENTRY = NFInstTypes.ENTRY(
     "prefer", NFBuiltin.BUILTIN_STATESELECT_PREFER, NOMOD, {NFInstTypes.BUILTIN_ORIGIN()});
 protected constant Entry STATESELECT_ALWAYS_ENTRY = NFInstTypes.ENTRY(
     "always", NFBuiltin.BUILTIN_STATESELECT_ALWAYS, NOMOD, {NFInstTypes.BUILTIN_ORIGIN()});
-    
+
 protected uniontype LookupState
   "LookupState is used by the name lookup to keep track of what state it's in,
    so that the rules for composite name lookup can be enforced. See nextState."
@@ -110,7 +110,7 @@ public function lookupClassName
 protected
   LookupState state;
 algorithm
-  (outEntry, outEnv, state) := lookupName(inName, inEnv, STATE_BEGIN(), inInfo, 
+  (outEntry, outEnv, state) := lookupName(inName, inEnv, STATE_BEGIN(), inInfo,
     Error.LOOKUP_ERROR);
   validateEndState(state, STATE_CLASS(), outEntry, inName, inInfo);
 end lookupClassName;
@@ -284,7 +284,7 @@ algorithm
     inTypeName,
     SCode.defaultPrefixes,
     SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
-    SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()), 
+    SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
     SCode.noComment, Absyn.dummyInfo);
 end makeDummyMetaType;
 
@@ -413,7 +413,7 @@ algorithm
 
   end matchcontinue;
 end lookupName;
-  
+
 protected function checkPartial
   "Checks that a found entry isn't partial. and prints an error if it is."
   input Entry inEntry;
@@ -464,7 +464,7 @@ algorithm
     case (STATE_FUNC(),         STATE_CLASS(), _, _, _) then ();
     case (STATE_FUNC(),         STATE_FUNC(), _, _, _) then ();
     case (STATE_COMP_FUNC(),    STATE_FUNC(), _, _, _) then ();
-    
+
     // Found a class via a component, but expected a function.
     case (STATE_COMP_CLASS(), STATE_FUNC(), _, _, _)
       equation
@@ -572,7 +572,7 @@ algorithm
   Error.addSourceMessage(Error.LOOKUP_FOUND_WRONG_TYPE,
     {name, expected_str, found_str}, inInfo);
 end printFoundWrongTypeError;
-    
+
 protected function nextState
   "Checks that the found name is allowed to be looked up given the current state
    of the name lookup, and returns the new state if it is. Otherwise it will
@@ -642,7 +642,7 @@ algorithm
     case SCode.CLASS(restriction = _) then STATE_CLASS();
   end match;
 end elementState;
-  
+
 protected function nextState2
  "This function implements the state machine that checks which transitions are
   valid during composite name lookup, as defined in section 5.3.2 of the
@@ -650,17 +650,17 @@ protected function nextState2
   STATE_CLASS, STATE_FUNC or STATE_PACKAGE, indicating what type the found
   element is. The state machine looks like this flow diagram (nodes in
   [brackets] are nodes with an edge to themselves):
-            
+
      BEGIN----------------+-----------------+-------------+
                           |(COMP)           |(PACKAGE)    |(CLASS/FUNC)
                           v                 v             v
          +---------------COMP------+----[PACKAGE]<->[CLASS/FUNC]
-         |(CLASS|PACKAGE) |(FUNC)  |(COMP)                |(COMP) 
+         |(CLASS|PACKAGE) |(FUNC)  |(COMP)                |(COMP)
          |                |        |                      |only if
          v                |        v                      |package-like
     [COMP_CLASS]          |   [COMP_COMP]<----------------+
-         ^(CLASS|PACKAGE) |     
-         |                |      
+         ^(CLASS|PACKAGE) |
+         |                |
          v(FUNC)          |
     [COMP_FUNC]<----------+
 
@@ -684,7 +684,7 @@ algorithm
     case (STATE_COMP(),    STATE_COMP(), _)       then STATE_COMP_COMP();
     case (STATE_FUNC(),    STATE_COMP(), _)       then STATE_COMP_FUNC();
     case (_,               STATE_COMP(), _)       then STATE_COMP_CLASS();
-    
+
     // Transitions from COMP_COMP.
     case (STATE_COMP(),    STATE_COMP_COMP(), _)  then STATE_COMP_COMP();
 
@@ -727,7 +727,7 @@ algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
         fail();
-          
+
   end match;
 end nextState2;
 
@@ -777,10 +777,10 @@ algorithm
           {env_str, name}, info);
       then
         fail();
-        
+
   end matchcontinue;
 end checkPackageLikeAccess;
-      
+
 protected function isValidPackageElement
   "Helper function to checkPackageLikeAccess, checks that a given entry is a
    valid package element (a constant or class)."
@@ -832,7 +832,7 @@ algorithm
         entry = NFEnv.lookupEntry(inName, inEnv);
       then
         (entry, inEnv);
-        
+
     // If not found in the local scope and the current frame isn't encapsulated,
     // check the next frame.
     case (_, _)

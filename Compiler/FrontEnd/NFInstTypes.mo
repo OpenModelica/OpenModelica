@@ -230,7 +230,7 @@ public uniontype ConstrainingClass
     Modifier mod;
   end CONSTRAINING_CLASS;
 end ConstrainingClass;
-    
+
 public uniontype Prefixes
   record NO_PREFIXES end NO_PREFIXES;
 
@@ -462,7 +462,7 @@ end Entry;
 public uniontype ScopeType
   record BUILTIN_SCOPE end BUILTIN_SCOPE;
   record TOP_SCOPE end TOP_SCOPE;
-  record NORMAL_SCOPE 
+  record NORMAL_SCOPE
     Boolean isEncapsulated;
   end NORMAL_SCOPE;
   record IMPLICIT_SCOPE "This scope contains one or more iterators; they are made unique by the following index (plus their name)" Integer iterIndex; end IMPLICIT_SCOPE;

@@ -1,8 +1,8 @@
 //#pragma once
 
 #if defined(__vxworks)
-    
-  
+
+
 
 #elif defined(OMC_BUILD)
 #include "stdafx.h"

@@ -73,7 +73,7 @@ Simulation loading</span>. &nbsp Time: <span id="statustimer"> </span></div>
 class : form-horizontal
 col1class : col-sm-7
 col2class : col-sm-5
-html: 
+html:
   - name: stopTime
     type: number
     bs3caption: Stop time, sec

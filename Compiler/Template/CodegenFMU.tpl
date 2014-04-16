@@ -63,9 +63,9 @@ case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let()= textFile(simulationFunctionsFile(fileNamePrefix, modelInfo.functions, sc.externalFunctionIncludes), '<%fileNamePrefix%>_functions.c')
   let()= textFile(recordsFile(fileNamePrefix, recordDecls), '<%fileNamePrefix%>_records.c')
   let()= textFile(simulationHeaderFile(simCode,guid), '<%fileNamePrefix%>_model.h')
-  
+
   let _ = generateSimulationFiles(simCode,guid,fileNamePrefix)
-  
+
   let()= textFile(simulationInitFile(simCode,guid), '<%fileNamePrefix%>_init.xml')
   let x = covertTextFileToCLiteral('<%fileNamePrefix%>_init.xml','<%fileNamePrefix%>_init.c')
   let()= textFile(fmumodel_identifierFile(simCode,guid,FMUVersion), '<%fileNamePrefix%>_FMU.c')
@@ -86,7 +86,7 @@ case SIMCODE(__) then
   if stringEq(FMUVersion, "2.0") then fmi2ModelDescription(simCode,guid)
   else fmiModelDescription(simCode,guid)
   %>
-  
+
   >>
 end fmuModelDescriptionFile;
 
@@ -238,7 +238,7 @@ template TypeDefinitionType(DAE.Type type_)
  "Generates code for TypeDefinitions Type file for FMU target."
 ::=
 match type_
-  case T_ENUMERATION(__) then 
+  case T_ENUMERATION(__) then
   <<
   <Type name="<%Absyn.pathString2NoLeadingDot(path, ".")%>">
     <EnumerationType>
@@ -543,7 +543,7 @@ case SIMCODE(__) then
   else
   '#define fmu1_model_interface_setupDataStruc <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>
   #include "fmu1_model_interface.c"'%>
-  
+
   <%setDefaultStartValues(modelInfo)%>
   <%setStartValues(modelInfo)%>
   <%eventUpdateFunction(simCode)%>
@@ -1262,7 +1262,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   PLAT34 = <%makefileParams.platform%>
   CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -I"<%makefileParams.omhome%>/include/omc/c" <%if stringEq(FMUVersion, "2.0") then '-I"<%makefileParams.omhome%>/include/omc/c/fmi2"' else '-I"<%makefileParams.omhome%>/include/omc/c/fmi1"'%> <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags /* From the simulate() command */%>
   CPPFLAGS=-I"<%makefileParams.omhome%>/include/omc/c" <%if stringEq(FMUVersion, "2.0") then '-I"<%makefileParams.omhome%>/include/omc/c/fmi2"' else '-I"<%makefileParams.omhome%>/include/omc/c/fmi1"'%> -I. <%makefileParams.includes ; separator=" "%>
-  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" -Wl,-rpath,'<%makefileParams.omhome%>/lib/omc' -lSimulationRuntimeC -linteractive <%makefileParams.ldflags%> <%makefileParams.runtimelibs%> <%dirExtra%> 
+  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" -Wl,-rpath,'<%makefileParams.omhome%>/lib/omc' -lSimulationRuntimeC -linteractive <%makefileParams.ldflags%> <%makefileParams.runtimelibs%> <%dirExtra%>
   PERL=perl
   MAINFILE=<%fileNamePrefix%>_FMU.c
   MAINOBJ=<%fileNamePrefix%>_FMU.o
@@ -1468,7 +1468,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     <%if not boolAnd(stringEq(integerOutputVariablesNames, ""), stringEq(integerOutputVariablesVRs, "")) then "{"+integerOutputVariablesNames+"} = fmi1Functions.fmi1GetInteger(fmi1me, {"+integerOutputVariablesVRs+"}, flowStatesInputs);"%>
     <%if not boolAnd(stringEq(booleanOutputVariablesNames, ""), stringEq(booleanOutputVariablesVRs, "")) then "{"+booleanOutputVariablesNames+"} = fmi1Functions.fmi1GetBoolean(fmi1me, {"+booleanOutputVariablesVRs+"}, flowStatesInputs);"%>
     <%if not boolAnd(stringEq(stringOutputVariablesNames, ""), stringEq(stringOutputVariablesVRs, "")) then "{"+stringOutputVariablesNames+"} = fmi1Functions.fmi1GetString(fmi1me, {"+stringOutputVariablesVRs+"}, flowStatesInputs);"%>
-    <%dumpOutputGetEnumerationVariables(fmiModelVariablesList, fmiTypeDefinitionsList, "fmi1Functions.fmi1GetInteger", "fmi1me")%>    
+    <%dumpOutputGetEnumerationVariables(fmiModelVariablesList, fmiTypeDefinitionsList, "fmi1Functions.fmi1GetInteger", "fmi1me")%>
   algorithm
   <%if intGt(listLength(fmiInfo.fmiNumberOfEventIndicators), 0) then
   <<
@@ -1516,7 +1516,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
           output FMI1ModelExchange fmi1me;
           external "C" fmi1me = FMI1ModelExchangeConstructor_OMC(logLevel, workingDirectory, instanceName, debugLogging) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
         end constructor;
-        
+
         function destructor
           input FMI1ModelExchange fmi1me;
           external "C" FMI1ModelExchangeDestructor_OMC(fmi1me) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
@@ -1524,7 +1524,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     end FMI1ModelExchange;
 
     <%dumpFMITypeDefinitionsMappingFunctions(fmiTypeDefinitionsList)%>
-    
+
     <%dumpFMITypeDefinitionsArrayMappingFunctions(fmiTypeDefinitionsList)%>
 
     package fmi1Functions
@@ -1574,7 +1574,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Real realValues[size(realValuesReferences, 1)];
         external "C" fmi1GetReal_OMC(fmi1me, size(realValuesReferences, 1), realValuesReferences, inFlowStatesInput, realValues, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi1GetReal;
-    
+
       function fmi1SetReal
         input FMI1ModelExchange fmi1me;
         input Real realValuesReferences[:];
@@ -1582,7 +1582,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Real out_Values[size(realValuesReferences, 1)];
         external "C" fmi1SetReal_OMC(fmi1me, size(realValuesReferences, 1), realValuesReferences, realValues, out_Values, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi1SetReal;
-    
+
       function fmi1GetInteger
         input FMI1ModelExchange fmi1me;
         input Real integerValuesReferences[:];
@@ -1590,7 +1590,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Integer integerValues[size(integerValuesReferences, 1)];
         external "C" fmi1GetInteger_OMC(fmi1me, size(integerValuesReferences, 1), integerValuesReferences, inFlowStatesInput, integerValues, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi1GetInteger;
-    
+
       function fmi1SetInteger
         input FMI1ModelExchange fmi1me;
         input Real integerValuesReferences[:];
@@ -1598,7 +1598,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Real out_Values[size(integerValuesReferences, 1)];
         external "C" fmi1SetInteger_OMC(fmi1me, size(integerValuesReferences, 1), integerValuesReferences, integerValues, out_Values, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi1SetInteger;
-    
+
       function fmi1GetBoolean
         input FMI1ModelExchange fmi1me;
         input Real booleanValuesReferences[:];
@@ -1606,7 +1606,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Boolean booleanValues[size(booleanValuesReferences, 1)];
         external "C" fmi1GetBoolean_OMC(fmi1me, size(booleanValuesReferences, 1), booleanValuesReferences, inFlowStatesInput, booleanValues, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi1GetBoolean;
-    
+
       function fmi1SetBoolean
         input FMI1ModelExchange fmi1me;
         input Real booleanValuesReferences[:];
@@ -1614,7 +1614,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Real out_Values[size(booleanValuesReferences, 1)];
         external "C" fmi1SetBoolean_OMC(fmi1me, size(booleanValuesReferences, 1), booleanValuesReferences, booleanValues, out_Values, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi1SetBoolean;
-    
+
       function fmi1GetString
         input FMI1ModelExchange fmi1me;
         input Real stringValuesReferences[:];
@@ -1622,7 +1622,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output String stringValues[size(stringValuesReferences, 1)];
         external "C" fmi1GetString_OMC(fmi1me, size(stringValuesReferences, 1), stringValuesReferences, inFlowStatesInput, stringValues, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi1GetString;
-    
+
       function fmi1SetString
         input FMI1ModelExchange fmi1me;
         input Real stringValuesReferences[:];
@@ -1798,7 +1798,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
           output FMI2ModelExchange fmi2me;
           external "C" fmi2me = FMI2ModelExchangeConstructor_OMC(logLevel, workingDirectory, instanceName, debugLogging) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
         end constructor;
-        
+
         function destructor
           input FMI2ModelExchange fmi2me;
           external "C" FMI2ModelExchangeDestructor_OMC(fmi2me) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
@@ -1852,7 +1852,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Real realValues[size(realValuesReferences, 1)];
         external "C" fmi2GetReal_OMC(fmi2me, size(realValuesReferences, 1), realValuesReferences, inFlowStatesInput, realValues, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi2GetReal;
-    
+
       function fmi2SetReal
         input FMI2ModelExchange fmi2me;
         input Real realValuesReferences[:];
@@ -1860,7 +1860,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Real out_Values[size(realValuesReferences, 1)];
         external "C" fmi2SetReal_OMC(fmi2me, size(realValuesReferences, 1), realValuesReferences, realValues, out_Values, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi2SetReal;
-    
+
       function fmi2GetInteger
         input FMI2ModelExchange fmi2me;
         input Real integerValuesReferences[:];
@@ -1868,7 +1868,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Integer integerValues[size(integerValuesReferences, 1)];
         external "C" fmi2GetInteger_OMC(fmi2me, size(integerValuesReferences, 1), integerValuesReferences, inFlowStatesInput, integerValues, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi2GetInteger;
-    
+
       function fmi2SetInteger
         input FMI2ModelExchange fmi2me;
         input Real integerValuesReferences[:];
@@ -1876,7 +1876,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Real out_Values[size(integerValuesReferences, 1)];
         external "C" fmi2SetInteger_OMC(fmi2me, size(integerValuesReferences, 1), integerValuesReferences, integerValues, out_Values, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi2SetInteger;
-    
+
       function fmi2GetBoolean
         input FMI2ModelExchange fmi2me;
         input Real booleanValuesReferences[:];
@@ -1884,7 +1884,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Boolean booleanValues[size(booleanValuesReferences, 1)];
         external "C" fmi2GetBoolean_OMC(fmi2me, size(booleanValuesReferences, 1), booleanValuesReferences, inFlowStatesInput, booleanValues, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi2GetBoolean;
-    
+
       function fmi2SetBoolean
         input FMI2ModelExchange fmi2me;
         input Real booleanValuesReferences[:];
@@ -1892,7 +1892,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Real out_Values[size(booleanValuesReferences, 1)];
         external "C" fmi2SetBoolean_OMC(fmi2me, size(booleanValuesReferences, 1), booleanValuesReferences, booleanValues, out_Values, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi2SetBoolean;
-    
+
       function fmi2GetString
         input FMI2ModelExchange fmi2me;
         input Real stringValuesReferences[:];
@@ -1900,7 +1900,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output String stringValues[size(stringValuesReferences, 1)];
         external "C" fmi2GetString_OMC(fmi2me, size(stringValuesReferences, 1), stringValuesReferences, inFlowStatesInput, stringValues, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi2GetString;
-    
+
       function fmi2SetString
         input FMI2ModelExchange fmi2me;
         input Real stringValuesReferences[:];
@@ -2044,15 +2044,15 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
           output FMI1CoSimulation fmi1cs;
           external "C" fmi1cs = FMI1CoSimulationConstructor_OMC(fmiLogLevel, workingDirectory, instanceName, debugLogging, fmuLocation, mimeType, timeOut, visible, interactive, tStart, stopTimeDefined, tStop) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
         end constructor;
-        
+
         function destructor
           input FMI1CoSimulation fmi1cs;
           external "C" FMI1CoSimulationDestructor_OMC(fmi1cs) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
         end destructor;
     end FMI1CoSimulation;
-    
+
     <%dumpFMITypeDefinitionsMappingFunctions(fmiTypeDefinitionsList)%>
-    
+
     <%dumpFMITypeDefinitionsArrayMappingFunctions(fmiTypeDefinitionsList)%>
 
     package fmi1Functions
@@ -2072,7 +2072,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Real realValues[size(realValuesReferences, 1)];
         external "C" fmi1GetReal_OMC(fmi1cs, size(realValuesReferences, 1), realValuesReferences, inFlowStatesInput, realValues, 2) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi1GetReal;
-    
+
       function fmi1SetReal
         input FMI1CoSimulation fmi1cs;
         input Real realValuesReferences[:];
@@ -2080,7 +2080,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Real out_Values[size(realValuesReferences, 1)];
         external "C" fmi1SetReal_OMC(fmi1cs, size(realValuesReferences, 1), realValuesReferences, realValues, out_Values, 2) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi1SetReal;
-    
+
       function fmi1GetInteger
         input FMI1CoSimulation fmi1cs;
         input Real integerValuesReferences[:];
@@ -2088,7 +2088,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Integer integerValues[size(integerValuesReferences, 1)];
         external "C" fmi1GetInteger_OMC(fmi1cs, size(integerValuesReferences, 1), integerValuesReferences, inFlowStatesInput, integerValues, 2) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi1GetInteger;
-    
+
       function fmi1SetInteger
         input FMI1CoSimulation fmi1cs;
         input Real integerValuesReferences[:];
@@ -2096,7 +2096,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Real out_Values[size(integerValuesReferences, 1)];
         external "C" fmi1SetInteger_OMC(fmi1cs, size(integerValuesReferences, 1), integerValuesReferences, integerValues, out_Values, 2) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi1SetInteger;
-    
+
       function fmi1GetBoolean
         input FMI1CoSimulation fmi1cs;
         input Real booleanValuesReferences[:];
@@ -2104,7 +2104,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Boolean booleanValues[size(booleanValuesReferences, 1)];
         external "C" fmi1GetBoolean_OMC(fmi1cs, size(booleanValuesReferences, 1), booleanValuesReferences, inFlowStatesInput, booleanValues, 2) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi1GetBoolean;
-    
+
       function fmi1SetBoolean
         input FMI1CoSimulation fmi1cs;
         input Real booleanValuesReferences[:];
@@ -2112,7 +2112,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Real out_Values[size(booleanValuesReferences, 1)];
         external "C" fmi1SetBoolean_OMC(fmi1cs, size(booleanValuesReferences, 1), booleanValuesReferences, booleanValues, out_Values, 2) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi1SetBoolean;
-    
+
       function fmi1GetString
         input FMI1CoSimulation fmi1cs;
         input Real stringValuesReferences[:];
@@ -2120,7 +2120,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output String stringValues[size(stringValuesReferences, 1)];
         external "C" fmi1GetString_OMC(fmi1cs, size(stringValuesReferences, 1), stringValuesReferences, inFlowStatesInput, stringValues, 2) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi1GetString;
-    
+
       function fmi1SetString
         input FMI1CoSimulation fmi1cs;
         input Real stringValuesReferences[:];

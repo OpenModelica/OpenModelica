@@ -38,7 +38,7 @@
 #define isnan _isnan
 #define snprintf _snprintf
 #endif
- 
+
 #include <string.h>
 
 #include "radau.h"
@@ -144,8 +144,8 @@ int allocateKinOde(DATA* data, SOLVER_INFO* solverInfo, int flag, int N)
     KINSpgmr(kinOde->kData->kmem, N*kinOde->nlp->nStates+1);
   else
     KINSpbcg(kinOde->kData->kmem, N*kinOde->nlp->nStates+1);
-  kinOde->kData->glstr = KIN_LINESEARCH; 
-  
+  kinOde->kData->glstr = KIN_LINESEARCH;
+
   return 0;
 }
 
@@ -341,7 +341,7 @@ static int allocateKINSOLODE(KINODE *kinOde)
   int i, j, k;
   double* c;
   KDATAODE * kData = (kinOde)->kData;
-  m =  kinOde->N*n;  
+  m =  kinOde->N*n;
   kData->x = N_VNew_Serial(m);
   kData->sVars = N_VNew_Serial(m);
   kData->sEqns = N_VNew_Serial(m);
@@ -424,7 +424,7 @@ static int initKinsol(KINODE *kinOde)
     for(i=0;i<n;++i,++k)
     {
       hf = 0.5*nlp->dt*nlp->a[j]*(3*nlp->f0[i]-f2[i]);
-      if(fabs(hf) < hf_min) hf_min = fabs(hf); 
+      if(fabs(hf) < hf_min) hf_min = fabs(hf);
       x[k] = (nlp->x0[i] + hf);
       tmp = fabs(x[k] + nlp->x0[i]) + 1e-12;
       tmp = (tmp < 1e-9) ? nlp->s[i] : 2.0/tmp;
@@ -658,7 +658,7 @@ int kinsolOde(void* ode)
   initKinsol(kinOde);
   for(i = 0;i <3; ++i)
   {
-   
+
     kData->error_code = KINSol(kData->kmem,           /* KINSol memory block */
                                kData->x,              /* initial guess on input; solution vector */
                                kData->glstr,          /* global stragegy choice */
@@ -666,14 +666,14 @@ int kinsolOde(void* ode)
                                kData->sEqns );
     if(kData->error_code>=0)
       return 0;
-      
+
     if(i == 0)
     {
      KINDense(kinOde->kData->kmem, kinOde->N*kinOde->nlp->nStates);
      infoStreamPrint(LOG_SOLVER,0,"Restart Kinsol: change linear solver to KINDense.");
     }
     else if(i == 1)
-    { 
+    {
       KINSptfqmr(kinOde->kData->kmem, kinOde->N*kinOde->nlp->nStates);
       infoStreamPrint(LOG_SOLVER,0,"Restart Kinsol: change linear solver to KINSptfqmr.");
     }

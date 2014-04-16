@@ -386,7 +386,7 @@ public function start "
   input Absyn.Path inPath;
   output State outState;
 algorithm
-  outState := start_dispatch(inRestriction, Absyn.makeFullyQualified(inPath)); 
+  outState := start_dispatch(inRestriction, Absyn.makeFullyQualified(inPath));
 end start;
 
 // Transitions
@@ -398,7 +398,7 @@ protected function start_dispatch "
 algorithm
   outState:=
   match (inRestriction,inPath)
-    local Absyn.Path p; Boolean isExpandable, isImpure; 
+    local Absyn.Path p; Boolean isExpandable, isImpure;
     case (SCode.R_CLASS(),p) then UNKNOWN(p);
     case (SCode.R_OPTIMIZATION(),p) then OPTIMIZATION(p);
     case (SCode.R_MODEL(),p) then MODEL(p);

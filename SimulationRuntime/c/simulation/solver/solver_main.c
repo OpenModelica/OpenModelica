@@ -427,7 +427,7 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
     infoStreamPrint(LOG_EVENTS_V, 0, "terminal event at stop time %g", solverInfo->currentTime);
     data->simulationInfo.terminal = 1;
     updateDiscreteSystem(data);
-    
+
     /* prevent emit if noeventemit flag is used */
     if (!(omc_flag[FLAG_NOEVENTEMIT]))
       sim_result.emit(&sim_result,data);
@@ -465,7 +465,7 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
 
     infoStreamPrint(LOG_STATS, 0, "%12gs [%5.1f%%] total", rt_accumulated(SIM_TIMER_TOTAL), rt_accumulated(SIM_TIMER_TOTAL)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
     messageClose(LOG_STATS);
-    
+
     infoStreamPrint(LOG_STATS, 1, "events");
     infoStreamPrint(LOG_STATS, 0, "%5ld state events", solverInfo->stateEvents);
     infoStreamPrint(LOG_STATS, 0, "%5ld time events", solverInfo->sampleEvents);
@@ -526,7 +526,7 @@ int solver_main(DATA* data, const char* init_initMethod,
   SIMULATION_INFO *simInfo = &(data->simulationInfo);
 
   solverInfo.solverMethod = solverID;
-  
+
   /* do some solver specific checks */
   switch(solverInfo.solverMethod)
   {
@@ -555,7 +555,7 @@ int solver_main(DATA* data, const char* init_initMethod,
     warningStreamPrint(LOG_STDOUT, 0, "Ipopt is needed but not available.");
     return 1;
 #endif
-    
+
 
   case S_INLINE_EULER:
     if(!_omc_force_solver || strcmp(_omc_force_solver, "inline-euler"))
@@ -564,7 +564,7 @@ int solver_main(DATA* data, const char* init_initMethod,
       return 1;
     }
     break;
-    
+
   case S_INLINE_RUNGEKUTTA:
     if(!_omc_force_solver || strcmp(_omc_force_solver, "inline-rungekutta"))
     {
@@ -698,7 +698,7 @@ int radau_lobatto_step(DATA* data, SOLVER_INFO* solverInfo)
     solverInfo->currentTime += solverInfo->currentStepSize;
     return 0;
   }
-  return -1; 
+  return -1;
 }
 #endif
 

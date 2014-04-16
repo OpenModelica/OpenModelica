@@ -10,7 +10,7 @@ template dumpBackendDAE(BackendDAE.BackendDAE backendDAE, String suffix)
       let _ = dumpIncidenceMatrix(dae, suffix)
       let _ = textFile(dumpMatching(dae, suffix), '<%info.fileNamePrefix%>_<%suffix%>_matching.dot')
       //let _ = textFile(dumpSorting(dae, suffix), '<%info.fileNamePrefix%>_<%suffix%>_sorting.dot')
-      
+
       //this top-level template always returns an empty result
       //since generated texts are written to files directly
       ''
@@ -41,19 +41,19 @@ template dumpDependence(BackendDAE.BackendDAE backendDAE, String suffix)
           'eq<%clusterID%>_<%eqID%> [label="<%BackendDump.equationString(eq)%>", shape="box"]'
           ;separator="\n")
         <<
-        subgraph cluster_<%clusterID%> { 
+        subgraph cluster_<%clusterID%> {
           label = "system #<%clusterID%>";
           color=white
 
           <%varDeclaration%>
-          
+
           <%eqDeclaration%>
-          
+
           <%dumpDependence2(clusterID, eqSystem.m)%>
         }
         >>
         ;separator="\n\n")
-      
+
       <<
       digraph G {
         label="<%info.fileNamePrefix%> [<%suffix%> - dependence]";
@@ -97,19 +97,19 @@ template dumpMatching(BackendDAE.BackendDAE backendDAE, String suffix)
           >>
           ;separator="\n")
         <<
-        subgraph cluster_<%clusterID%> { 
+        subgraph cluster_<%clusterID%> {
           label = "system #<%clusterID%>";
           color=white
 
           <%varDeclaration%>
-          
+
           <%eqDeclaration%>
-          
+
           <%connections(clusterID, eqSystem.matching, eqSystem.m)%>
         }
         >>
         ;separator="\n\n")
-      
+
       <<
       digraph G {
         label="<%info.fileNamePrefix%> [<%suffix%> - matching]";
@@ -179,17 +179,17 @@ template dumpSorting(BackendDAE.BackendDAE backendDAE, String suffix)
           'eq<%clusterID%>_<%eqID%> [label="<%BackendDump.equationString(eq)%>", shape="box"]'
           ;separator="\n")
         <<
-        subgraph cluster_<%clusterID%> { 
+        subgraph cluster_<%clusterID%> {
           label = "system #<%clusterID%>";
           color=white
 
           <%varDeclaration%>
-          
+
           <%dumpStrongComponent(clusterID, eqSystem.matching)%>
         }
         >>
         ;separator="\n\n")
-      
+
       <<
       digraph G {
         label="<%info.fileNamePrefix%> [<%suffix%> - sorting]";

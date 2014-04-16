@@ -1,4 +1,4 @@
-interface package GraphvizDumpTV 
+interface package GraphvizDumpTV
 
   package builtin
     function intGt
@@ -6,19 +6,19 @@ interface package GraphvizDumpTV
       input Integer b;
       output Boolean c;
     end intGt;
-    
-    function arrayList 
-      replaceable type TypeVar subtypeof Any;    
+
+    function arrayList
+      replaceable type TypeVar subtypeof Any;
       input array<TypeVar> arr;
       output list<TypeVar> lst;
     end arrayList;
-    
+
     function arrayGet "Extract (indexed access) an array element from the array"
       input array<Type_a> inVec;
       output Type_a outElement;
       replaceable type Type_a subtypeof Any;
     end arrayGet;
-    
+
     function listGet "
       Return the element of the list at the given index.
       The index starts from 1."
@@ -27,19 +27,19 @@ interface package GraphvizDumpTV
       input Integer index;
       output TypeVar result;
     end listGet;
-    
+
     function intEq "Integer equality comparison"
       input Integer i1;
       input Integer i2;
       output Boolean result;
     end intEq;
-    
+
     function intString "Integer to String conversion"
       input Integer i;
       output String result;
     end intString;
   end builtin;
-  
+
   package ExpressionDump
     function printExpStr
       input DAE.Exp e;
@@ -50,7 +50,7 @@ interface package GraphvizDumpTV
       output String s;
     end printCrefsFromExpStr;
   end ExpressionDump;
-  
+
   package BackendDAE
     uniontype BackendDAE
       record DAE
@@ -58,9 +58,9 @@ interface package GraphvizDumpTV
         Shared shared;
       end DAE;
     end BackendDAE;
-    
+
     type EqSystems = list<EqSystem>;
-    
+
     uniontype EqSystem
       record EQSYSTEM
         Variables orderedVars;
@@ -71,7 +71,7 @@ interface package GraphvizDumpTV
         StateSets stateSets;
       end EQSYSTEM;
     end EqSystem;
-    
+
     uniontype Matching
       record NO_MATCHING
       end NO_MATCHING;
@@ -82,7 +82,7 @@ interface package GraphvizDumpTV
         StrongComponents comps;
       end MATCHING;
     end Matching;
-    
+
     type StrongComponents = list<StrongComponent> "Order of the equations the have to be solved" ;
 
     uniontype StrongComponent
@@ -136,19 +136,19 @@ interface package GraphvizDumpTV
         Boolean linear;
       end TORNSYSTEM;
     end StrongComponent;
-    
+
     type IncidenceMatrixElementEntry = Integer;
     type IncidenceMatrixElement = list<IncidenceMatrixElementEntry>;
     type IncidenceMatrix = array<IncidenceMatrixElement>;
     type IncidenceMatrixT = IncidenceMatrix;
-    
+
     uniontype Shared
       record SHARED
         Variables knownVars                  "Known variables, i.e. constants and parameters" ;
         Variables externalObjects            "External object variables";
         Variables aliasVars                  "Data originating from removed simple equations needed to build
                                               variables' lookup table (in C output).
-                                             
+
                                               In that way, double buffering of variables in pre()-buffer, extrapolation
                                               buffer and results caching, etc., is avoided, but in C-code output all the
                                               data about variables' names, comments, units, etc. is preserved as well as
@@ -167,13 +167,13 @@ interface package GraphvizDumpTV
         ExtraInfo info                       "contains extra info that we send around like the model name";
       end SHARED;
     end Shared;
-    
+
     uniontype ExtraInfo "extra information that we should send arround with the DAE"
       record EXTRA_INFO
         String fileNamePrefix "the model name to be used in the dumps";
       end EXTRA_INFO;
     end ExtraInfo;
-    
+
     uniontype Variables
       record VARIABLES
         array<list<CrefIndex>> crefIdxLstArr "HashTB, cref->indx";
@@ -182,7 +182,7 @@ interface package GraphvizDumpTV
         Integer numberOfVars "no. of vars";
       end VARIABLES;
     end Variables;
-    
+
     uniontype Var "variables"
       record VAR
         DAE.ComponentRef varName "variable name" ;
@@ -224,14 +224,14 @@ interface package GraphvizDumpTV
         list<Integer> occurWhenLst;
       end ZERO_CROSSING;
     end ZeroCrossing;
-    
+
     uniontype SampleLookup
       record SAMPLE_LOOKUP
         Integer nSamples                              "total number of different sample calls" ;
         list<tuple<Integer, DAE.Exp, DAE.Exp>> lookup "sample arguments (index, start, interval)" ;
       end SAMPLE_LOOKUP;
     end SampleLookup;
-    
+
     uniontype WhenOperator "- Reinit Statement"
       record REINIT
         DAE.ComponentRef stateVar "State variable to reinit" ;
@@ -244,20 +244,20 @@ interface package GraphvizDumpTV
         DAE.Exp message;
         DAE.Exp level;
         DAE.ElementSource source "the origin of the component/equation/algorithm";
-      end ASSERT;  
-    
+      end ASSERT;
+
       record TERMINATE " The Modelica builtin terminate(msg)"
         DAE.Exp message;
         DAE.ElementSource source "the origin of the component/equation/algorithm";
       end TERMINATE;
-    
+
       record NORETCALL "call with no return value, i.e. no equation.
         Typically sideeffect call of external function but also
         Connections.* i.e. Connections.root(...) functions."
         Absyn.Path functionName;
         list<DAE.Exp> functionArgs;
         DAE.ElementSource source "the origin of the component/equation/algorithm";
-      end NORETCALL;  
+      end NORETCALL;
     end WhenOperator;
 
     uniontype WhenEquation
@@ -268,7 +268,7 @@ interface package GraphvizDumpTV
         Option<WhenEquation> elsewhenPart;
       end WHEN_EQ;
     end WhenEquation;
-    
+
     uniontype EquationArray
       record EQUATION_ARRAY
         Integer size "size of the Equations in scalar form";
@@ -277,7 +277,7 @@ interface package GraphvizDumpTV
         array<Option<Equation>> equOptArr;
       end EQUATION_ARRAY;
     end EquationArray;
-    
+
     uniontype Equation
       record EQUATION
         DAE.Exp exp;
@@ -336,33 +336,33 @@ interface package GraphvizDumpTV
       end IF_EQUATION;
     end Equation;
   end BackendDAE;
-  
+
   package BackendVariable
     function isStateVar
       input BackendDAE.Var inVar;
       output Boolean outBoolean;
     end isStateVar;
-  
+
     function varList
       input BackendDAE.Variables inVariables;
       output list<BackendDAE.Var> outVarLst;
     end varList;
   end BackendVariable;
-  
+
   package BackendEquation
     function equationList
       input BackendDAE.EquationArray inEquationArray;
       output list<BackendDAE.Equation> outEquationLst;
     end equationList;
   end BackendEquation;
-  
+
   package BackendDump
     function equationString "Helper function to e.g. dump."
       input BackendDAE.Equation inEquation;
       output String outString;
     end equationString;
   end BackendDump;
-  
+
   package DAE
     uniontype ComponentRef
       record CREF_QUAL
@@ -382,7 +382,7 @@ interface package GraphvizDumpTV
       end OPTIMICA_ATTR_INST_CREF;
       record WILD end WILD;
     end ComponentRef;
-    
+
     uniontype Type "models the different front-end and back-end types"
       record T_INTEGER
         list<Var> varLst;
@@ -531,7 +531,7 @@ interface package GraphvizDumpTV
         TypeSource source;
       end T_METATYPE;
     end Type;
-    
+
     uniontype VariableAttributes
       record VAR_ATTR_REAL
         Option<Exp> quantity "quantity";
@@ -594,30 +594,30 @@ interface package GraphvizDumpTV
       end VAR_ATTR_ENUMERATION;
     end VariableAttributes;
   end DAE;
-  
+
   package Tpl
     function textFile
       input Text inText;
       input String inFileName;
     end textFile;
-    
+
     function textFileConvertLines
       input Text inText;
       input String inFileName;
     end textFileConvertLines;
 
     //we do not import Error.addSourceMessage() directly
-    //because of list creation in Susan is not possible (yet by design)  
+    //because of list creation in Susan is not possible (yet by design)
     function addSourceTemplateError
       "Wraps call to Error.addSourceMessage() funtion with Error.TEMPLATE_ERROR and one MessageToken."
       input String inErrMsg;
       input Absyn.Info inInfo;
     end addSourceTemplateError;
-    
+
     //for completeness; although the addSourceTemplateError() above is preferable
     function addTemplateError
       "Wraps call to Error.addMessage() funtion with Error.TEMPLATE_ERROR and one MessageToken."
-      input String inErrMsg;  
+      input String inErrMsg;
     end addTemplateError;
   end Tpl;
 end GraphvizDumpTV;

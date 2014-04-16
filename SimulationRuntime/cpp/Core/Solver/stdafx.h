@@ -19,7 +19,7 @@
 #include <boost/bind.hpp>
 //vxworks  #include <boost/function.hpp>
 #define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
-#include <boost/numeric/ublas/storage.hpp> 
+#include <boost/numeric/ublas/storage.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/io.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
@@ -31,7 +31,7 @@
 #include <boost/tuple/tuple.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
-#include <boost/shared_array.hpp> 
+#include <boost/shared_array.hpp>
 //vxworks #include <boost/algorithm/string.hpp>
 #include <boost/circular_buffer.hpp>
 #include <boost/foreach.hpp>

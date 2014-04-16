@@ -229,7 +229,7 @@ void dumpInitialSolution(DATA *simData)
 
   const MODEL_DATA      *mData = &(simData->modelData);
   const SIMULATION_INFO *sInfo = &(simData->simulationInfo);
-  
+
   if (ACTIVE_STREAM(LOG_INIT))
     printParameters(simData, LOG_INIT);
 
@@ -859,7 +859,7 @@ static int importStartValues(DATA *data, const char *pInitFile, double initTime)
   }
   free(resultFile);
   resultFile = 0;
-  
+
   pError = omc_new_matlab4_reader(pInitFile, &reader);
   if(pError)
   {
@@ -1092,7 +1092,7 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
 
   data->simulationInfo.initial = 0;
   /* initialization is done */
-  
+
   storePreValues(data);                 /* save pre-values */
   updateDiscreteSystem(data);           /* evaluate discrete variables (event iteration) */
   saveZeroCrossings(data);

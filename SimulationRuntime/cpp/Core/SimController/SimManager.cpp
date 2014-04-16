@@ -8,11 +8,11 @@ SimManager::SimManager(boost::shared_ptr<IMixedSystem> system,Configuration* con
       ,_timeeventcounter(NULL)
       , _events(NULL)
 {
-  
+
       _solver = _config->createSelectedSolver(system.get());
-  
+
       _initialization = new Initialization(boost::dynamic_pointer_cast<ISystemInitialization>(_mixed_system),_solver);
-  
+
 }
 SimManager::~SimManager()
 {
@@ -33,7 +33,7 @@ void SimManager::initialize()
       BOOST_LOG_SEV(simmgr_lg::get(), simmgr_info) << "start init";*/
 
       // Flag für Endlossimulaton (wird gesetzt wenn Solver zurückkommt)
-      _continueSimulation = true; 
+      _continueSimulation = true;
 
       // Reset debug ID
       _idid = 0;
@@ -69,7 +69,7 @@ void SimManager::initialize()
       //// Task: WRITE und FIRST_CALL+LAST_CALL, da es nur einen Solver (und somit keine Koppelschritte) gibt
       _solverTask = ISolver::SOLVERCALL(ISolver::FIRST_CALL);
       if (_dimZeroFunc= event_system->getDimZeroFunc() )
-      { 
+      {
             if(_events)
                   delete [] _events;
             _events                        = new bool[_dimZeroFunc];
@@ -88,22 +88,22 @@ void SimManager::runSimulation()
             */
             runSingleProcess();
             // Zeit messen, Ausgabe der SimInfos
-            ISolver::SOLVERSTATUS  status = _solver->getSolverStatus(); 
+            ISolver::SOLVERSTATUS  status = _solver->getSolverStatus();
             if(status & ISolver::DONE ||  status & ISolver::USER_STOP)
             {
                   /* Logs temporarily disabled
                   BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal) << "Simulation done at t= " << _tEnd;
-                  BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal) <<  "Number of steps: " << _totStps.at(0); 
-                  BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal) << "Simulationsdauer: " << (_tClockEnd-_tClockStart)/1000.0; 
+                  BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal) <<  "Number of steps: " << _totStps.at(0);
+                  BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal) << "Simulationsdauer: " << (_tClockEnd-_tClockStart)/1000.0;
                   */
                   writeProperties();
             }
       }
-      catch(std::exception& ex) 
+      catch(std::exception& ex)
       {
             /* Logs temporarily disabled
             BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal) << "Simulation finish with errors at t= " << _tEnd;
-            BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal) <<  "Number of steps: " << _totStps.at(0); 
+            BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal) <<  "Number of steps: " << _totStps.at(0);
             */
             writeProperties();
             std::string simmgr_error_simmgr_info = ex.what();
@@ -124,7 +124,7 @@ void SimManager::writeProperties()
       }
       BOOST_LOG_SCOPED_LOGGER_TAG(simmgr_lg::get(),"SimTag", std::string, "sim info");
 
-      // Zeit 
+      // Zeit
       if(_settings->_globalSettings->bEndlessSim)
       {
       BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal)<< "Geforderte Simulationszeit: endlos";
@@ -253,7 +253,7 @@ void SimManager::writeProperties()
 
 
 void SimManager::computeEndTimes(std::vector<std::pair<double,int> > &tStopsSub)
-{      
+{
       boost::shared_ptr<ITime> timeevent_system = boost::dynamic_pointer_cast<ITime>(_mixed_system);
       int
             counterTimes = 0,
@@ -302,7 +302,7 @@ void SimManager::computeEndTimes(std::vector<std::pair<double,int> > &tStopsSub)
             if (tStopsSub.size() ==0)
             {
                   tStopsSub.push_back(std::make_pair(_tEnd,0));
-                  _writeFinalState = false;                  
+                  _writeFinalState = false;
             }
       } // end if endlessSim
       else
@@ -345,7 +345,7 @@ void SimManager::computeEndTimes(std::vector<std::pair<double,int> > &tStopsSub)
             if (tStopsSub.size() ==0)
             {
                   tStopsSub.push_back(std::make_pair(_tEnd,0));
-                  _writeFinalState = false;                  
+                  _writeFinalState = false;
             }
       }
 }
@@ -355,16 +355,16 @@ void SimManager::computeEndTimes(std::vector<std::pair<double,int> > &tStopsSub)
 
 void SimManager::runSingleProcess()
 {
-      
+
       boost::shared_ptr<IEvent> event_system = boost::dynamic_pointer_cast<IEvent>(_mixed_system);
       boost::shared_ptr<IContinuous> cont_system = boost::dynamic_pointer_cast<IContinuous>(_mixed_system);
       boost::shared_ptr<ITime> timeevent_system = boost::dynamic_pointer_cast<ITime>(_mixed_system);
-      double 
+      double
             startTime,
             endTime,
             *zeroVal_0,
             *zeroVal_new;
-      int 
+      int
             dimZeroF;
 
       std::vector<std::pair<double,int> >
@@ -374,7 +374,7 @@ void SimManager::runSingleProcess()
       _solverTask = ISolver::SOLVERCALL(_solverTask | ISolver::RECORDCALL);
       _solver->setStartTime(_tStart);
       _solver->setEndTime(_tEnd);
-     
+
     _solver->solve(_solverTask);
       _solverTask = ISolver::SOLVERCALL(_solverTask ^ ISolver::RECORDCALL);
       /* Logs temporarily disabled
@@ -382,7 +382,7 @@ void SimManager::runSingleProcess()
       // Zeitinvervall speichern
       //_H =_tEnd - _tStart;
 
-  
+
 
             memset(_timeeventcounter,0,_dimtimeevent*sizeof(int));
             computeEndTimes(tStopsSub);
@@ -415,7 +415,7 @@ void SimManager::runSingleProcess()
             */
             startTime = _tStart;
             bool user_stop = false;
-           
+
       while(_continueSimulation)
             {
                   for(; iter != _tStops[0].end(); ++iter)
@@ -487,7 +487,7 @@ void SimManager::runSingleProcess()
                   else // Event am Schluss recorden.
                   {
                         if(_writeFinalState)
-                        {      
+                        {
                               _solverTask = ISolver::SOLVERCALL(ISolver::RECORDCALL);
                               _solver->solve(_solverTask);
                         }
@@ -495,10 +495,10 @@ void SimManager::runSingleProcess()
 
                   // Beendigung der Simulation
                   if((!(_config->getGlobalSettings()->useEndlessSim()))
-                        || (_solver->getSolverStatus() & ISolver::SOLVERERROR) 
+                        || (_solver->getSolverStatus() & ISolver::SOLVERERROR)
                         || (_solver->getSolverStatus() & ISolver::USER_STOP) )
                   {
-                        _continueSimulation = false; 
+                        _continueSimulation = false;
                   }
 
                   // Endlossimulation
@@ -511,7 +511,7 @@ void SimManager::runSingleProcess()
                         computeEndTimes(tStopsSub);
                         _tStops.push_back(tStopsSub);
                         if (_dimtimeevent)
-                        {      
+                        {
                               if(zeroVal_new)
                               {
                                     timeevent_system->handleTimeEvent(_timeeventcounter);

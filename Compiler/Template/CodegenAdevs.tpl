@@ -1778,8 +1778,8 @@ template declareCref(SimVar var, String prepend)
 end declareCref;
 
 template testForFirstIndex(String str) ::=
-  let str_nums = System.stringReplace(str,",","") 
-  let str_zeros = System.stringReplace(str_nums,"0","") 
+  let str_nums = System.stringReplace(str,",","")
+  let str_zeros = System.stringReplace(str_nums,"0","")
   '<%str_zeros%>'
 end testForFirstIndex;
 

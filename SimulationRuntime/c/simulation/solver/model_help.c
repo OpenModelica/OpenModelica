@@ -92,7 +92,7 @@ void updateDiscreteSystem(DATA *data)
 
     storePreValues(data);
     storeRelations(data);
-    
+
     printRelations(data, LOG_EVENTS_V);
 
     data->callback->functionDAE(data);
@@ -114,14 +114,14 @@ void updateDiscreteSystem(DATA *data)
  *
  *  \param [ref] [data]
  */
- 
-/*! 
+
+/*!
  *  Moved to perform_simulation.c and omp_perform_simulation.c
  *  and included in the generrated code. The things we do for
  *  OPENMP.
  */
 
-/* 
+/*
 void updateContinuousSystem(DATA *data)
 {
   functionODE(data);
@@ -267,7 +267,7 @@ void printAllVarsDebug(DATA *data, int ringSegment, int stream)
   for(i=0; i<mData->nVariablesString; ++i)
     debugStreamPrint(stream, 0, "%ld: %s = %s (pre: %s)", i+1, mData->stringVarsData[i].info.name, data->localData[ringSegment]->stringVars[i], sInfo->stringVarsPre[i]);
   messageClose(stream);
-  
+
   messageClose(stream);
 }
 #endif
@@ -330,7 +330,7 @@ void printParameters(DATA *data, int stream)
   {
     infoStreamPrint(stream, 1, "string parameters");
     for(i=0; i<mData->nParametersString; ++i)
-      infoStreamPrint(stream, 0, "[%ld] parameter String %s(start=\"%s\") = \"%s\"", i+1, 
+      infoStreamPrint(stream, 0, "[%ld] parameter String %s(start=\"%s\") = \"%s\"", i+1,
                                  mData->stringParameterData[i].info.name,
                                  mData->stringParameterData[i].attribute.start,
                                  data->simulationInfo.stringParameter[i]);
@@ -356,7 +356,7 @@ void printRelationsDebug(DATA *data, int stream)
 
   for(i=0; i<data->modelData.nRelations; i++)
     debugStreamPrint(stream, 0, "[%ld] %s = %c | pre(%s) = %c", i, data->callback->relationDescription(i), data->simulationInfo.relations[i] ? 'T' : 'F', data->callback->relationDescription(i), data->simulationInfo.relationsPre[i] ? 'T' : 'F');
- 
+
   messageClose(stream);
 }
 #endif
@@ -860,7 +860,7 @@ void initializeDataStruc(DATA *data)
   data->simulationInfo.chatteringInfo.messageEmitted = 0;
 
   data->simulationInfo.lambda = 1.0;
-  
+
   /* initial build calls terminal, initial */
   data->simulationInfo.terminal = 0;
   data->simulationInfo.initial = 0;

@@ -106,7 +106,7 @@ algorithm
 
   end match;
 end addOptPath;
-    
+
 public function addString
   "Prefixes the prefix with the given String."
   input String inName;
@@ -218,7 +218,7 @@ algorithm
 
   end match;
 end prefixStr;
-    
+
 public function toCref
   "Converts a prefix to an untyped DAE.ComponentRef."
   input Prefix inPrefix;
@@ -384,7 +384,7 @@ algorithm
   outIsPackagePrefix := match(inPrefix)
     local
       Prefix prefix;
-      
+
     case PREFIX(restPrefix = prefix) then isPackagePrefix(prefix);
     case EMPTY_PREFIX(classPath = NONE()) then true;
     else false;

@@ -17,7 +17,7 @@ public:
     ~EventHandling(void);
     //Inits the event variables
     void initialize(IEvent* system,int dim);
-    //Returns the help vector 
+    //Returns the help vector
     void getHelpVars(double* h);
     //sets the help vector
     void setHelpVars(const double* h);
@@ -47,8 +47,8 @@ public:
 
     void saveDiscreteVar(double var,string key);
     bool changeDiscreteVar(double var,string key);
-   
-  
+
+
     getCondition_type  getCondition;
 private:
     //Stores all varibales occured before an event

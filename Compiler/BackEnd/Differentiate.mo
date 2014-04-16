@@ -112,7 +112,7 @@ algorithm
         source = BackendEquation.equationSource(inEquation);
         Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, DAEUtil.getElementSourceFileInfo(source));
       then fail();
-      
+
   end matchcontinue;
 end differentiateEquationTime;
 
@@ -142,20 +142,20 @@ algorithm
       then (dexp, oshared);
     else
     equation
-        // expandDerOperator expectes sometime that differentiate fails, 
+        // expandDerOperator expectes sometime that differentiate fails,
         // so the calling function need to take care of the error messages.
         // TODO: change that in expandDerOperator
-        //Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, DAEUtil.getElementSourceFileInfo(DAE.emptyElementSource)); 
+        //Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, DAEUtil.getElementSourceFileInfo(DAE.emptyElementSource));
 
         true = Flags.isSet(Flags.FAILTRACE);
         msg = "\nDifferentiate.differentiateExpTime failed for " +& ExpressionDump.printExpStr(inExp) +& "\n\n";
         Debug.fprint(Flags.FAILTRACE, msg);
       then fail();
-      
+
   end matchcontinue;
 end differentiateExpTime;
 
-public function differentiateExpSolve 
+public function differentiateExpSolve
 "function: differentiateEquationSolve
   Differentiates an equation with respect to the cref variable."
   input DAE.Exp inExp;
@@ -175,14 +175,14 @@ algorithm
         (dexp, _) = differentiateExp(inExp, inCref, diffData, BackendDAE.SIMPLE_DIFFERENTAION(), DAE.emptyFuncTree);
         (dexp,_) = ExpressionSimplify.simplify(dexp);
       then dexp;
-        
+
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         msg = "\nDifferentiate.differentiateExpSolve failed for " +& ExpressionDump.printExpStr(inExp) +& "\n\n";
-        Debug.fprint(Flags.FAILTRACE, msg); 
+        Debug.fprint(Flags.FAILTRACE, msg);
       then fail();
-        
+
   end matchcontinue;
 end differentiateExpSolve;
 
@@ -213,16 +213,16 @@ algorithm
       then (dexp, oshared);
     else
     equation
-        // expandDerOperator expectes sometime that differentiate fails, 
+        // expandDerOperator expectes sometime that differentiate fails,
         // so the calling function need to take care of the error messages.
         // TODO: change that in expandDerOperator
-        //Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, DAEUtil.getElementSourceFileInfo(DAE.emptyElementSource)); 
+        //Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, DAEUtil.getElementSourceFileInfo(DAE.emptyElementSource));
 
         true = Flags.isSet(Flags.FAILTRACE);
         msg = "\nDifferentiate.differentiateExpTime failed for " +& ExpressionDump.printExpStr(inExp) +& "\n\n";
         Debug.fprint(Flags.FAILTRACE, msg);
       then fail();
-      
+
   end matchcontinue;
 end differentiateExpCref;
 
@@ -245,16 +245,16 @@ algorithm
       then dexp;
     else
     equation
-        // expandDerOperator expectes sometime that differentiate fails, 
+        // expandDerOperator expectes sometime that differentiate fails,
         // so the calling function need to take care of the error messages.
         // TODO: change that in expandDerOperator
-        //Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, DAEUtil.getElementSourceFileInfo(DAE.emptyElementSource)); 
+        //Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, DAEUtil.getElementSourceFileInfo(DAE.emptyElementSource));
 
         true = Flags.isSet(Flags.FAILTRACE);
         msg = "\nDifferentiate.differentiateExpTime failed for " +& ExpressionDump.printExpStr(inExp) +& "\n\n";
         Debug.fprint(Flags.FAILTRACE, msg);
       then fail();
-      
+
   end matchcontinue;
 end differentiateExpCrefFunction;
 
@@ -285,20 +285,20 @@ algorithm
       then (dexp, oshared);
     else
     equation
-        // expandDerOperator expectes sometime that differentiate fails, 
+        // expandDerOperator expectes sometime that differentiate fails,
         // so the calling function need to take care of the error messages.
         // TODO: change that in expandDerOperator
-        //Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, DAEUtil.getElementSourceFileInfo(DAE.emptyElementSource)); 
+        //Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, DAEUtil.getElementSourceFileInfo(DAE.emptyElementSource));
 
         true = Flags.isSet(Flags.FAILTRACE);
         msg = "\nDifferentiate.differentiateExpTime failed for " +& ExpressionDump.printExpStr(inExp) +& "\n\n";
         Debug.fprint(Flags.FAILTRACE, msg);
       then fail();
-      
+
   end matchcontinue;
 end differentiateExpCrefFullJacobian;
 
-public function differentiateFunctionPartial 
+public function differentiateFunctionPartial
 "function: differentiateFunctionPartial
   Differentiates an function with respect to a list of ComponentReference
   with are inputs arguments of that function."
@@ -327,7 +327,7 @@ algorithm
         msg = "\nDifferentiate.differentiateFunctionPartial failed for function: " +& Absyn.pathString(fname) +& "\n";
         Debug.fprint(Flags.FAILTRACE, msg);
       then fail();
-      
+
   end matchcontinue;
 end differentiateFunctionPartial;
 
@@ -359,7 +359,7 @@ algorithm
       String msg;
       DAE.ElementSource source;
       list<Integer> ass, ass2;
-      
+
     case ({},_,_,_,_,_) then (listReverse(inEquationsAccum), inFunctionTree);
 
     // equations
@@ -416,10 +416,10 @@ algorithm
       equation
         (e1_1,funcs) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         (e1_1,_) = ExpressionSimplify.simplify(e1_1);
-        
+
         (e2_1,funcs) = differentiateExp(e2, inDiffwrtCref, inInputData, inDiffType, funcs);
         (e2_1,_) = ExpressionSimplify.simplify(e2_1);
-        
+
         op1 = DAE.OP_DIFFERENTIATE(inDiffwrtCref,e1,e1_1);
         op2 = DAE.OP_DIFFERENTIATE(inDiffwrtCref,e2,e2_1);
         source = List.foldr({op1,op2},DAEUtil.addSymbolicTransformation,source);
@@ -430,56 +430,56 @@ algorithm
     case (BackendDAE.SOLVED_EQUATION(componentRef = cref, exp = e2,source=source),_,_,_,_)
       equation
         e1 = Expression.crefExp(cref);
-        
+
         (e1_1,funcs) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         (e1_1,_) = ExpressionSimplify.simplify(e1_1);
-        
+
         (e2_1,funcs) = differentiateExp(e2, inDiffwrtCref, inInputData, inDiffType, funcs);
         (e2_1,_) = ExpressionSimplify.simplify(e2_1);
-        
+
         op1 = DAE.OP_DIFFERENTIATE(inDiffwrtCref,e1,e1_1);
         op2 = DAE.OP_DIFFERENTIATE(inDiffwrtCref,e2,e2_1);
         source = List.foldr({op1,op2},DAEUtil.addSymbolicTransformation,source);
       then
         (BackendDAE.EQUATION(e1_1,e2_1,source,false), funcs);
-                
+
     // RESIDUAL_EQUATION
     case (BackendDAE.RESIDUAL_EQUATION(exp = e1,source=source),_,_,_,_)
       equation
 
         (e1_1,funcs) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         (e1_1,_) = ExpressionSimplify.simplify(e1_1);
-        
+
         op1 = DAE.OP_DIFFERENTIATE(inDiffwrtCref,e1,e1_1);
         source = List.foldr({op1},DAEUtil.addSymbolicTransformation,source);
-        
+
       then
         (BackendDAE.RESIDUAL_EQUATION(e1_1,source,false), funcs);
- 
+
     // complex equations
     case (BackendDAE.COMPLEX_EQUATION(size=size,left = e1,right = e2,source=source),_,_,_,_)
       equation
         (e1_1,funcs) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         (e1_1,_) = ExpressionSimplify.simplify(e1_1);
-        
+
         (e2_1,funcs) = differentiateExp(e2, inDiffwrtCref, inInputData, inDiffType, funcs);
         (e2_1,_) = ExpressionSimplify.simplify(e2_1);
-        
+
         op1 = DAE.OP_DIFFERENTIATE(inDiffwrtCref,e1,e1_1);
         op2 = DAE.OP_DIFFERENTIATE(inDiffwrtCref,e2,e2_1);
         source = List.foldr({op1,op2},DAEUtil.addSymbolicTransformation,source);
       then
         (BackendDAE.COMPLEX_EQUATION(size,e1_1,e2_1,source,false), funcs);
-   
-    // Array Equations   
+
+    // Array Equations
     case (BackendDAE.ARRAY_EQUATION(dimSize=dimSize,left = e1,right = e2,source=source),_,_,_,_)
       equation
         (e1_1,funcs) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         (e1_1,_) = ExpressionSimplify.simplify(e1_1);
-        
+
         (e2_1,funcs) = differentiateExp(e2, inDiffwrtCref, inInputData, inDiffType, funcs);
         (e2_1,_) = ExpressionSimplify.simplify(e2_1);
-        
+
         op1 = DAE.OP_DIFFERENTIATE(inDiffwrtCref,e1,e1_1);
         op2 = DAE.OP_DIFFERENTIATE(inDiffwrtCref,e2,e2_1);
         source = List.foldr({op1,op2},DAEUtil.addSymbolicTransformation,source);
@@ -492,7 +492,7 @@ algorithm
         // get Allgorithm
         (statementLst, funcs) = differentiateStatements(statementLst, inDiffwrtCref, inInputData, inDiffType, {}, inFunctionTree);
         alg = DAE.ALGORITHM_STMTS(statementLst);
-        
+
         //op1 = DAE.OP_DIFFERENTIATE(cr, before, after)
         //op1 = DAE.OP_DIFFERENTIATE(inDiffwrtCref,e1,e2);
         //source = DAEUtil.addSymbolicTransformation(source,op1);
@@ -500,19 +500,19 @@ algorithm
         (BackendDAE.ALGORITHM(size, alg, source, expand), funcs);
 
     // if-equations
-    case (BackendDAE.IF_EQUATION(conditions=expExpLst, eqnstrue=eqnslst, eqnsfalse=eqns, source=source),_,_,_,_) 
+    case (BackendDAE.IF_EQUATION(conditions=expExpLst, eqnstrue=eqnslst, eqnsfalse=eqns, source=source),_,_,_,_)
       equation
         (eqnslst, funcs) = differentiateEquationsLst(eqnslst, inDiffwrtCref, inInputData, inDiffType, {}, inFunctionTree);
         (eqns, funcs) = differentiateEquations(eqns, inDiffwrtCref, inInputData, inDiffType, {}, funcs);
       then
-        (BackendDAE.IF_EQUATION(expExpLst,eqnslst,eqns,source), funcs); 
+        (BackendDAE.IF_EQUATION(expExpLst,eqnslst,eqns,source), funcs);
 
     case (BackendDAE.WHEN_EQUATION(size=size, whenEquation=whenEqn, source=source), _, _, _, _)
        equation
         (whenEqn, funcs) = differentiateWhenEquations(whenEqn, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
       then
         (BackendDAE.WHEN_EQUATION(size, whenEqn, source), funcs);
-      
+
     else
       equation
         msg = "\nDifferentiate.differentiateEquation failed for " +& BackendDump.equationString(inEquation) +& "\n\n";
@@ -542,9 +542,9 @@ algorithm
       list<BackendDAE.Equation> eqns;
       String msg;
       DAE.ElementSource source;
-      
+
     case ({},_,_,_,_,_) then (listReverse(inEquationsLstAccum), inFunctionTree);
-          
+
     // equations
     case (eqns::rest,_,_,_,_,_)
       equation
@@ -552,7 +552,7 @@ algorithm
         eqnsLst = listAppend({eqns}, inEquationsLstAccum);
         (eqnsLst, funcs) = differentiateEquationsLst(rest, inDiffwrtCref, inInputData, inDiffType, eqnsLst, funcs);
       then (eqnsLst, funcs);
-        
+
     case (_::_,_,_,_,_,_)
       equation
         msg = "\nDifferentiate.differentiateEquationsLst failed.\n\n";
@@ -581,7 +581,7 @@ algorithm
       DAE.ComponentRef left, dleft;
       DAE.Exp right, dright, eleft;
       BackendDAE.WhenEquation elsewhenPart, delsewhenPart;
-      
+
     // equations
     case (BackendDAE.WHEN_EQ(condition=condition, left=left, right=right, elsewhenPart=NONE()) ,_,_,_,_)
       equation
@@ -599,7 +599,7 @@ algorithm
         dleft = Expression.expCref(eleft);
         (delsewhenPart, funcs) = differentiateWhenEquations(elsewhenPart, inDiffwrtCref, inInputData, inDiffType, funcs);
       then (BackendDAE.WHEN_EQ(condition, dleft, dright, SOME(delsewhenPart)), funcs);
-        
+
     case (_,_,_,_,_)
       equation
         msg = "\nDifferentiate.differentiateWhenEquations failed.\n\n";
@@ -636,48 +636,48 @@ algorithm
       DAE.Exp res, res1, res2;
       DAE.Type tp;
       DAE.Operator op;
-      
+
       String s1,s2,serr;
       String se1;
       Integer i;
       Boolean b;
-      
+
       list<DAE.Exp> sub, expl;
       list<list<DAE.Exp>> matrix, dmatrix;
-      
+
       DAE.FunctionTree functionTree;
-      
+
       DAE.CallAttributes attr;
       Absyn.Path p;
 
-      
+
     // constants => results in zero
-    case (DAE.BCONST(bool = b), _, _, _, _) then (DAE.BCONST(b), inFunctionTree);  
+    case (DAE.BCONST(bool = b), _, _, _, _) then (DAE.BCONST(b), inFunctionTree);
     case (DAE.ICONST(integer = _), _, _, _, _) then (DAE.ICONST(0), inFunctionTree);
     case (DAE.RCONST(real = _), _, _, _, _) then (DAE.RCONST(0.0), inFunctionTree);
-      
+
     // differentiate cref
     case (e as DAE.CREF(ty = _), _, _, _, _)
       equation
         //se1 = ExpressionDump.printExpStr(e);
         //print("\nExp-Cref\nDifferentiate exp: " +& se1);
-        
+
         (res, functionTree) = differentiateCrefs(e, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
-        
+
         //se1 = ExpressionDump.printExpStr(res);
         //print("\nresults to exp: " +& se1);
       then (res, functionTree);
 
     /*/ differentiate homotopy
     case( e as DAE.CALL(
-                path = p as Absyn.IDENT(name="homotopy"), 
+                path = p as Absyn.IDENT(name="homotopy"),
                 expLst = {actual,simplified},
                 attr = attr), _, _, _, _)
       equation
         (e1, functionTree) = differentiateExp(actual, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         (e2, functionTree) = differentiateExp(simplified, inDiffwrtCref, inInputData, inDiffType, functionTree);
         res = DAE.CALL(p, {e1, e2}, attr);
-      then 
+      then
         (res, functionTree);*/
 
     // differentiate call
@@ -685,9 +685,9 @@ algorithm
       equation
         //se1 = ExpressionDump.printExpStr(e);
         //print("\nExp-Call\nDifferentiate exp: " +& se1);
-        
+
         (res, functionTree) = differentiateCalls(e, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
-        
+
         //se1 = ExpressionDump.printExpStr(res);
         //print("\nresults to exp: " +& se1);
       then (res, functionTree);
@@ -697,9 +697,9 @@ algorithm
       equation
         //se1 = ExpressionDump.printExpStr(e);
         //print("\nExp-BINARY\nDifferentiate exp: " +& se1);
-        
+
         (res, functionTree) = differentiateBinary(e, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
-        
+
         //se1 = ExpressionDump.printExpStr(res);
         //print("\nresults to exp: " +& se1);
       then (res, functionTree);
@@ -709,7 +709,7 @@ algorithm
       equation
         //se1 = ExpressionDump.printExpStr(e);
         //print("\nExp-UNARY\nDifferentiate exp: " +& se1);
-        
+
         (res, functionTree) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
 
         res = DAE.UNARY(op,res);
@@ -723,9 +723,9 @@ algorithm
       equation
         //se1 = ExpressionDump.printExpStr(e);
         //print("\nExp-CAST\nDifferentiate exp: " +& se1);
-        
+
         (res, functionTree) = differentiateExp(e, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
-        
+
         //se1 = ExpressionDump.printExpStr(res);
         //print("\nresults to exp: " +& se1);
       then (DAE.CAST(tp, res), functionTree);
@@ -735,11 +735,11 @@ algorithm
       equation
         //se1 = ExpressionDump.printExpStr(e);
         //print("\nExp-ASUB\nDifferentiate exp: " +& se1);
-        
+
         (res1, functionTree) = differentiateExp(e, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
-        
-        res = Expression.makeASUB(res1,sub); 
-        
+
+        res = Expression.makeASUB(res1,sub);
+
         //se1 = ExpressionDump.printExpStr(res);
         //print("\nresults to exp: " +& se1);
       then
@@ -749,27 +749,27 @@ algorithm
       equation
         //se1 = ExpressionDump.printExpStr(e);
         //print("\nExp-ARRAY\nDifferentiate exp: " +& se1);
-        
+
         (expl, functionTree) = List.map3Fold(expl, differentiateExp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
-        
+
         res = DAE.ARRAY(tp, b, expl);
         //(res,_) = ExpressionSimplify.simplify(res);
-        
+
         //se1 = ExpressionDump.printExpStr(res);
         //print("\nresults to exp: " +& se1);
       then
         (res, functionTree);
-        
-    
+
+
     case ((DAE.MATRIX(ty = tp, integer=i, matrix=matrix)), _, _, _, _)
       equation
         //se1 = ExpressionDump.printExpStr(e);
         //print("\nExp-MARTIX\nDifferentiate exp: " +& se1);
-                
+
         (dmatrix, functionTree) = List.map3FoldList(matrix, differentiateExp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
 
         res = DAE.MATRIX(tp, i, dmatrix);
-        
+
         //se1 = ExpressionDump.printExpStr(e);
         //print("\nresults to exp: " +& se1);
       then
@@ -782,17 +782,17 @@ algorithm
         //print("\nExp-TSUB\nDifferentiate exp: " +& se1);
         //work-a-round, sicne otherwise AVM-model have issues with index reduction
         failure(BackendDAE.DIFFERENTATION_TIME() = inDiffType);
-        
+
         (res1, functionTree) = differentiateExp(e, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
 
         res =  DAE.TSUB(res1, i, tp);
         //(res,_) = ExpressionSimplify.simplify(res);
-        
+
         //se1 = ExpressionDump.printExpStr(res);
         //print("\nresults to exp: " +& se1);
       then
         (res, functionTree);
-       
+
     // differentiate tuple
     case (DAE.TUPLE(PR = expl), _, _, _, _)
       equation
@@ -800,11 +800,11 @@ algorithm
         //print("\nExp-TUPLE\nDifferentiate exp: " +& se1);
         //work-a-round, sicne otherwise AVM-model have issues with index reduction
         failure(BackendDAE.DIFFERENTATION_TIME() = inDiffType);
-        
+
         (expl, functionTree) = List.map3Fold(expl, differentiateExp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
-        
-        res = DAE.TUPLE(expl); 
-        
+
+        res = DAE.TUPLE(expl);
+
         //se1 = ExpressionDump.printExpStr(res);
         //print("\nresults to exp: " +& se1);
       then
@@ -814,12 +814,12 @@ algorithm
       equation
         //se1 = ExpressionDump.printExpStr(e);
         //print("\nExp-IF-EXP\nDifferentiate exp: " +& se1);
-        
+
         (res1, functionTree) = differentiateExp(e2, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         (res2, functionTree) = differentiateExp(e3, inDiffwrtCref, inInputData, inDiffType, functionTree);
-        
+
         res = DAE.IFEXP(e1, res1, res2);
-        
+
         //se1 = ExpressionDump.printExpStr(res);
         //print("\nresults to exp: " +& se1);
       then
@@ -829,11 +829,11 @@ algorithm
     case (e as DAE.RELATION(operator = _), _, _, _, _)
       then
         (e, inFunctionTree);
-            
+
     case (e as DAE.LBINARY(operator = _), _, _, _, _)
       then
         (e, inFunctionTree);
-    
+
     case (e as DAE.LUNARY(operator = _), _, _, _, _)
       then
         (e, inFunctionTree);
@@ -847,7 +847,7 @@ algorithm
         Debug.fprint(Flags.FAILTRACE, serr);
       then
         fail();
-  
+
   end match;
 
 end differentiateExp;
@@ -870,7 +870,7 @@ algorithm
   (outDiffedStmts, outFunctionTree) :=
     match(inStmts, inDiffwrtCref, inInputData, inDiffType, inStmtsAccum, inFunctionTree)
     local
-    
+
     DAE.ComponentRef cref;
     DAE.ElementSource source;
     DAE.Exp lhs, rhs, derivedLHS, derivedRHS;
@@ -886,14 +886,14 @@ algorithm
     DAE.Else elseif_else_;
     list<DAE.Exp> expLst, dexpLst;
     Integer index;
-    
+
     list<DAE.Statement> statementLst, restStatements, derivedStatements1, derivedStatements2, else_statementLst, elseif_statementLst;
-    
+
     String s1,s2,serr;
-    
+
     case({}, _, _, _, _, _) then (listReverse(inStmtsAccum), inFunctionTree);
-    
-    case ((currStatement as DAE.STMT_ASSIGN(type_=type_, exp1=lhs, exp=rhs, source=source))::restStatements, _, _, _, _, _) 
+
+    case ((currStatement as DAE.STMT_ASSIGN(type_=type_, exp1=lhs, exp=rhs, source=source))::restStatements, _, _, _, _, _)
       equation
         (derivedLHS, functions) = differentiateExp(lhs, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         (derivedRHS, functions) = differentiateExp(rhs, inDiffwrtCref, inInputData, inDiffType, functions);
@@ -933,7 +933,7 @@ algorithm
         (derivedStatements1, functions) = differentiateStatements(statementLst, inDiffwrtCref, inputData, inDiffType, {}, inFunctionTree);
 
         derivedStatements1 = {DAE.STMT_FOR(type_, iterIsArray, ident, index, exp, derivedStatements1, source)};
-      
+
         derivedStatements1 = listAppend(derivedStatements1, inStmtsAccum);
         (derivedStatements2, functions) = differentiateStatements(restStatements, inDiffwrtCref, inInputData, inDiffType, derivedStatements1, functions);
     then (derivedStatements2, functions);
@@ -1034,7 +1034,7 @@ algorithm
         Debug.fprint(Flags.FAILTRACE, serr);
       then
         fail();
-        
+
   end match;
 end differentiateStatements;
 
@@ -1064,9 +1064,9 @@ algorithm
   (outDiffedExp, outFunctionTree) :=
     matchcontinue(inExp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree)
     local
-      
+
       Absyn.Path path;
-      
+
       BackendDAE.Variables timevars;
       BackendDAE.Variables knvars;
       BackendDAE.Var var;
@@ -1078,13 +1078,13 @@ algorithm
       DAE.Exp res, res1;
       DAE.ComponentRef cr, cr1;
       list<DAE.Exp> expl, expl_1;
-      
+
       list<DAE.Var> varLst;
       list<Boolean> b_lst;
       list<DAE.ComponentRef> crefs, diffCref;
 
       String s1, s2, serr, se1, matrixName;
-      
+
     //
     // This part contains general rules for differentation crefs
     //
@@ -1095,9 +1095,9 @@ algorithm
         expl = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
         (expl_1, outFunctionTree) = List.map3Fold(expl, differentiateExp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         res = DAE.CALL(path,expl_1,DAE.CALL_ATTR(tp,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
-        
+
         //se1 = ExpressionDump.printExpStr(res);
-        //print("\nExp-Cref\n records " +& se1); 
+        //print("\nExp-Cref\n records " +& se1);
       then
         (res, outFunctionTree);
 
@@ -1120,15 +1120,15 @@ algorithm
       equation
         //se1 = ExpressionDump.printExpStr(e);
         //print("\nExp-Cref\n Array " +& se1);
-         
+
         ((e1,(_,true))) = BackendDAEUtil.extendArrExp((e,(SOME(inFunctionTree),false)));
         (res, outFunctionTree) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
-        
+
         //se1 = ExpressionDump.printExpStr(res);
-        //print("\nExp-Cref\n Array " +& se1); 
+        //print("\nExp-Cref\n Array " +& se1);
       then
         (res, outFunctionTree);
-    
+
     // let WILD() => WILD()
     case ((e as DAE.CREF(componentRef = DAE.WILD())), _, _, _, _)
       then
@@ -1139,7 +1139,7 @@ algorithm
       equation
         true = ComponentReference.crefEqual(cr, inDiffwrtCref);
         one = Expression.makeConstOne(tp);
-        
+
         //print("\nExp-Cref\n d(x)/d(x) = 1");
       then
         (one, inFunctionTree);
@@ -1148,7 +1148,7 @@ algorithm
     case (DAE.CREF(componentRef = _, ty = tp), _, _, BackendDAE.SIMPLE_DIFFERENTAION(), _)
       equation
         (zero,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
-        
+
         //print("\nExp-Cref\n d(x)/d(x) = 1");
       then
         (zero, inFunctionTree);
@@ -1157,21 +1157,21 @@ algorithm
     case (DAE.CREF(componentRef = _, ty = tp), _, _, BackendDAE.DIFF_FULL_JACOBIAN(), _)
       equation
         (zero,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
-        
+
         //print("\nExp-Cref\n d(x)/d(x) = 1");
       then
         (zero, inFunctionTree);
-   
-    // Constants, known variables, parameters and discrete variables have a 0-derivative, not the inputs 
-    case ((DAE.CREF(componentRef = cr, ty = tp)), _, BackendDAE.DIFFINPUTDATA(knownVars=SOME(knvars)), _, _) 
+
+    // Constants, known variables, parameters and discrete variables have a 0-derivative, not the inputs
+    case ((DAE.CREF(componentRef = cr, ty = tp)), _, BackendDAE.DIFFINPUTDATA(knownVars=SOME(knvars)), _, _)
       equation
         //print("\nExp-Cref\n known vars: " +& ExpressionDump.printExpStr(e));
         (var::{},_) = BackendVariable.getVar(cr, knvars);
         false = BackendVariable.isVarOnTopLevelAndInput(var);
         (zero,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
-        
+
         //print("\nExp-Cref\n known variables = 0");
-      then 
+      then
         (zero, inFunctionTree);
 
     // d(discrete)/d(x) = 0
@@ -1179,11 +1179,11 @@ algorithm
       equation
         ({BackendDAE.VAR(varKind = kind)},_) = BackendVariable.getVar(cr, timevars);
         //print("\nExp-Cref\n known vars: " +& ComponentReference.printComponentRefStr(cr));
-        true = listMember(kind,{BackendDAE.DISCRETE()}) or not Types.isReal(tp); 
+        true = listMember(kind,{BackendDAE.DISCRETE()}) or not Types.isReal(tp);
         (zero,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
-        
+
         //print("\nExp-Cref\n discrete variables = 0");
-      then 
+      then
         (zero, inFunctionTree);
 
     //
@@ -1195,12 +1195,12 @@ algorithm
       equation
         //se1 = ExpressionDump.printExpStr(e);
         //print("\nExp-Cref\nDUMMY_STATE: " +& se1);
-        
+
         ({var},_) = BackendVariable.getVar(cr, timevars);
         true = BackendVariable.isDummyStateVar(var);
         cr = ComponentReference.crefPrefixDer(cr);
         res = Expression.makeCrefExp(cr, tp);
-        
+
         //se1 = ExpressionDump.printExpStr(res);
         //print("\nresults to exp: " +& se1);
       then
@@ -1211,11 +1211,11 @@ algorithm
       equation
         //se1 = ExpressionDump.printExpStr(e);
         //print("\nExp-Cref\n all other vars: " +& se1);
-        
+
         //({BackendDAE.VAR(varKind = BackendDAE.STATE(index=_))},_) = BackendVariable.getVar(cr, timevars);
         ({_},_) = BackendVariable.getVar(cr, timevars);
         res = DAE.CALL(Absyn.IDENT("der"),{e},DAE.CALL_ATTR(tp,false,true,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
-        
+
         //se1 = ExpressionDump.printExpStr(res);
         //print("\nresults to exp: " +& se1);
       then
@@ -1233,7 +1233,7 @@ algorithm
         cr1 = ComponentReference.crefStripLastSubs(cr);
         (vars,_) = BackendVariable.getVar(cr1, timevars);
         (zero, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
-          
+
         //se1 = ExpressionDump.printExpStr(zero);
         //print("\nresults to exp: " +& se1);
       then
@@ -1247,22 +1247,22 @@ algorithm
 
         (vars,_) = BackendVariable.getVar(cr, timevars);
         (zero, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
-          
+
         //se1 = ExpressionDump.printExpStr(zero);
         //print("\nresults to exp: " +& se1);
       then
         (zero, inFunctionTree);
 
-    // all other variable crefs are needed to differentiate 
+    // all other variable crefs are needed to differentiate
     case ((DAE.CREF(componentRef = cr,ty=tp)), _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), BackendDAE.DIFFERENTAION_FUNCTION(), _)
       equation
         //se1 = ExpressionDump.printExpStr(e);
         //print("\nExp-Cref\n dependent cref: " +& se1);
-        
+
         cr = ComponentReference.prependStringCref(BackendDAE.functionDerivativeNamePrefix, cr);
         cr = ComponentReference.prependStringCref(matrixName, cr);
         res = Expression.makeCrefExp(cr, tp);
-        
+
         //se1 = ExpressionDump.printExpStr(res);
         //print("\nresults to exp: " +& se1);
       then
@@ -1279,7 +1279,7 @@ algorithm
         (_::_, _) = BackendVariable.getVar(cr, timevars);
         cr = differentiateCrefWithRespectToX(cr, cr, matrixName);
         res = DAE.CREF(cr, tp);
-        
+
         //se1 = ExpressionDump.printExpStr(e);
         //print("\nExp-Cref\n GG seed: " +& se1);
         //print(" *** diffCref : " +& ComponentReference.printComponentRefStr(cr) +& " w.r.t " +& ComponentReference.printComponentRefStr(inDiffwrtCref) +& "\n");
@@ -1293,16 +1293,16 @@ algorithm
         (var::_, _) = BackendVariable.getVar(cr, timevars);
         //Take care! state means => der(state)
         false = BackendVariable.isStateVar(var);
-        
+
         //se1 = ExpressionDump.printExpStr(e);
         //print("\nExp-Cref\n GG dummy: " +& se1);
-        
+
         cr = differentiateCrefWithRespectToX(cr, inDiffwrtCref, matrixName);
         res = DAE.CREF(cr, tp);
-        
+
         //se1 = ExpressionDump.printExpStr(res);
         //print("\nresults to exp: " +& se1);
-      then 
+      then
         (res, inFunctionTree);
 
     // d(x)/d(z) = CREF(d(x)/d(dummy))
@@ -1311,18 +1311,18 @@ algorithm
         (var::_, _) = BackendVariable.getVar(cr, timevars);
         //Take care! state means => der(state)
         false = BackendVariable.isStateVar(var);
-        
+
         //se1 = ExpressionDump.printExpStr(e);
         //print("\nExp-Cref\n GG dummy: " +& se1);
-        
+
         cr = differentiateCrefWithRespectToX(cr, inDiffwrtCref, matrixName);
         res = DAE.CREF(cr, tp);
-        
+
         //se1 = ExpressionDump.printExpStr(res);
         //print("\nresults to exp: " +& se1);
-      then 
+      then
         (res, inFunctionTree);
-      
+
     // d(state)/d(x) = 0
     // d(input)/d(x) = 0
     // d(all other)/d(x) = 0
@@ -1330,12 +1330,12 @@ algorithm
       equation
         //se1 = ExpressionDump.printExpStr(e);
         //print("\nExp-Cref\n GG zero: " +& se1);
-        
+
         (zero, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
-        
+
         //se1 = ExpressionDump.printExpStr(zero);
         //print("\nresults to exp: " +& se1);
-      then 
+      then
         (zero, inFunctionTree);
 
    else
@@ -1363,7 +1363,7 @@ algorithm
       DAE.ComponentRef cref, x;
       String id,str;
       String matrixName;
-      
+
     case(cref, x, matrixName)
       equation
         id = ComponentReference.printComponentRefStr(cref) +& BackendDAE.partialDerivativeNamePrefix +& matrixName +& "$P" +& ComponentReference.printComponentRefStr(x);
@@ -1372,7 +1372,7 @@ algorithm
         id = Util.stringReplaceChar(id, "[", "$lB");
         id = Util.stringReplaceChar(id, "]", "$rB");
       then ComponentReference.makeCrefIdent(id, DAE.T_REAL_DEFAULT, {});
-      
+
     case(cref, _, _)
       equation
         str = "Differentiate.differentiateCrefWithRespectToX failed: " +&  ComponentReference.printComponentRefStr(cref);
@@ -1399,9 +1399,9 @@ algorithm
   (outDiffedExp, outFunctionTree) :=
     match(inExp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree)
     local
-      
+
       Absyn.Path path;
-      
+
       BackendDAE.Var var;
       BackendDAE.Variables timevars;
       BackendDAE.Variables knvars;
@@ -1412,16 +1412,16 @@ algorithm
       DAE.Exp res, res1;
       DAE.Type tp;
       DAE.FunctionTree funcs;
-      
+
       Integer i;
-      
+
       list<Boolean> blst;
       list<DAE.ComponentRef> crefs;
       list<DAE.Exp> expl, expl_1;
 
       list<list<DAE.ComponentRef>> crefslstls;
       Option<BackendDAE.Shared> optShared;
-      
+
       String s1, s2, serr, matrixName, name;
 
     case (e as DAE.CALL(path = path as Absyn.IDENT(name = "pre"),expLst = _,attr=attr), _, _, _, _)
@@ -1431,7 +1431,7 @@ algorithm
     case (DAE.CALL(path = path as Absyn.IDENT(name = "der"),expLst = {e},attr=attr), _, _, BackendDAE.DIFFERENTATION_TIME(), _)
       then
         (DAE.CALL(path,{e,DAE.ICONST(2)},attr),  inFunctionTree);
-    
+
     case (DAE.CALL(path = (path as Absyn.IDENT(name = "der")),expLst = {e,DAE.ICONST(i)},attr=attr), _, _, BackendDAE.DIFFERENTATION_TIME(), _)
       equation
         i = i + 1;
@@ -1443,12 +1443,12 @@ algorithm
         cr = Expression.expCref(e);
         tp = Expression.typeof(e);
         cr = ComponentReference.crefPrefixDer(cr);
-        cr = differentiateCrefWithRespectToX(cr, inDiffwrtCref, matrixName);   
+        cr = differentiateCrefWithRespectToX(cr, inDiffwrtCref, matrixName);
         res = Expression.makeCrefExp(cr, tp);
       then
         (res,  inFunctionTree);
-    
-    // differentiate builtin calls with 1 argument 
+
+    // differentiate builtin calls with 1 argument
     case (DAE.CALL(path=Absyn.IDENT(name),attr=DAE.CALL_ATTR(builtin=true),expLst={e}), _, _, _, _)
       equation
         //s1 = ExpressionDump.printExpStr(e);
@@ -1476,7 +1476,7 @@ algorithm
         //s1 = ExpressionDump.printExpStr(e);
         //print("\nresults to exp: " +& s1);
       then (res,  funcs);
-    
+
     case (e as DAE.CALL(path = path,expLst = _), _, _, _, _)
       equation
         (e1, funcs) = differentiateFunctionCall(e, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
@@ -1556,7 +1556,7 @@ algorithm
         (exp_1, funcs) = differentiateExp(exp, inDiffwrtCref, inInputData,inDiffType,inFuncs);
         exp_2 = Expression.makeBuiltinCall("sqrt", {DAE.BINARY(DAE.RCONST(1.0),DAE.SUB(tp),DAE.BINARY(exp,DAE.MUL(tp),exp))}, tp);
       then (DAE.BINARY(exp_1,DAE.DIV(tp),exp_2), funcs);
-    
+
     // der(arccos(x)) = -der(x)/sqrt(1-x^2)
     case ("acos",_,_,_,_,_)
       equation
@@ -1564,7 +1564,7 @@ algorithm
         (exp_1, funcs) = differentiateExp(exp, inDiffwrtCref, inInputData,inDiffType,inFuncs);
         exp_2 = Expression.makeBuiltinCall("sqrt", {DAE.BINARY(DAE.RCONST(1.0),DAE.SUB(tp),DAE.BINARY(exp,DAE.MUL(tp),exp))}, tp);
       then (DAE.UNARY(DAE.UMINUS(tp),DAE.BINARY(exp_1,DAE.DIV(tp),exp_2)), funcs);
-    
+
     // der(arctan(x)) = der(x)/(1+x^2)
     case ("atan",_,_,_,_,_)
       equation
@@ -1596,7 +1596,7 @@ algorithm
         exp_2 = Expression.makeBuiltinCall("cosh", {exp}, tp);
       then (DAE.BINARY(exp_1, DAE.DIV(tp),
                       DAE.BINARY(exp_2, DAE.POW(tp), DAE.RCONST(2.0))), funcs);
-    
+
     // diff(exp(x)) = der(x)*exp(x)
     case ("exp",_,_,_,_,_)
       equation
@@ -1604,7 +1604,7 @@ algorithm
         (exp_1, funcs) = differentiateExp(exp, inDiffwrtCref, inInputData,inDiffType,inFuncs);
         exp_2 = Expression.makeBuiltinCall("exp",{exp},tp);
       then (DAE.BINARY(exp_2, DAE.MUL(tp), exp_1), funcs);
-    
+
     // diff(log(x)) = der(x)/x
     case ("log",_,_,_,_,_)
       equation
@@ -1612,8 +1612,8 @@ algorithm
         (exp_1, funcs) = differentiateExp(exp, inDiffwrtCref, inInputData,inDiffType,inFuncs);
       then
         (DAE.BINARY(exp_1, DAE.DIV(tp), exp), funcs);
-    
-    // diff(log10(x)) = der(x)/(x*log(10))  
+
+    // diff(log10(x)) = der(x)/(x*log(10))
     case ("log10",_,_,_,_,_)
       equation
         tp = Expression.typeof(exp);
@@ -1622,7 +1622,7 @@ algorithm
       then
         (DAE.BINARY(exp_1, DAE.DIV(tp),
           DAE.BINARY(exp, DAE.MUL(tp), exp_2)), funcs);
-    
+
     // diff(sqrt(x)) = der(x)/(2*sqrt(x))
     case ("sqrt",_,_,_,_,_)
       equation
@@ -1632,7 +1632,7 @@ algorithm
       then
         (DAE.BINARY(exp_1, DAE.DIV(tp),
           DAE.BINARY(DAE.RCONST(2.0), DAE.MUL(tp), exp_2)), funcs);
-    
+
     // der(abs(x)) = sign(x)der(x)
     case ("abs",_,_,_,_,_)
       equation
@@ -1726,7 +1726,7 @@ algorithm
         res1 = Expression.makeBuiltinCall("cross",{res1,e2},tp);
       then
         (DAE.BINARY(res2, DAE.ADD_ARR(tp), res1), funcs);
-        
+
     case ("max", {e1,e2}, DAE.CALL_ATTR(ty=tp), _, _, _, _)
       equation
         (res1, funcs) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
@@ -1777,9 +1777,9 @@ algorithm
   (outDiffedExp, outFunctionTree) :=
     match(inExp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree)
     local
-      
+
       Absyn.Path path;
-      
+
       BackendDAE.Var var;
       BackendDAE.Variables timevars;
       BackendDAE.Variables knvars;
@@ -1791,18 +1791,18 @@ algorithm
       DAE.FunctionTree funcs;
       DAE.Operator op;
       DAE.Type tp, tp1;
-      
+
       Integer i;
-      
+
       list<Boolean> blst;
       list<DAE.ComponentRef> crefs;
       list<DAE.Exp> expl, expl_1;
 
       list<list<DAE.ComponentRef>> crefslstls;
       Option<BackendDAE.Shared> optShared;
-      
+
       Real r;
-      
+
       String s1, s2, serr;
 
     case (DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = tp),exp2 = e2), _, _, _, _)
@@ -1811,7 +1811,7 @@ algorithm
         (de2, funcs) = differentiateExp(e2, inDiffwrtCref, inInputData, inDiffType, funcs);
       then
         (DAE.BINARY(de1,DAE.ADD(tp),de2), funcs);
-        
+
     case (DAE.BINARY(exp1 = e1,operator = DAE.ADD_ARR(ty = tp),exp2 = e2), _, _, _, _)
       equation
         (de1, funcs) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
@@ -1825,7 +1825,7 @@ algorithm
         (de2, funcs) = differentiateExp(e2, inDiffwrtCref, inInputData, inDiffType, funcs);
       then
         (DAE.BINARY(de1,DAE.ADD_ARRAY_SCALAR(tp),de2), funcs);
-    
+
     case (DAE.BINARY(exp1 = e1,operator = DAE.SUB(ty = tp),exp2 = e2), _, _, _, _)
       equation
         (de1, funcs) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
@@ -1891,10 +1891,10 @@ algorithm
       then
         (DAE.BINARY(DAE.BINARY(e1,DAE.MUL_MATRIX_PRODUCT(tp),de2),DAE.ADD_ARR(tp),
           DAE.BINARY(de1,DAE.MUL_MATRIX_PRODUCT(tp),e2)), funcs);
-                        
+
     // (f\'g - fg\') / g^2
     case (DAE.BINARY(exp1 = e1,operator = DAE.DIV(ty = tp),exp2 = e2), _, _, _, _)
-      equation  
+      equation
         (de1, funcs) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         (de2, funcs) = differentiateExp(e2, inDiffwrtCref, inInputData, inDiffType, funcs);
       then
@@ -1962,8 +1962,8 @@ algorithm
         (e, funcs);
 
     // der(x^y) = x^(y-1) * ( x*ln(x)*der(y)+(y*der(x)))
-    // if x == 0 then 0; 
-    case (DAE.BINARY(exp1 = e1,operator = DAE.POW(tp), exp2 = e2), _, _, _, _) 
+    // if x == 0 then 0;
+    case (DAE.BINARY(exp1 = e1,operator = DAE.POW(tp), exp2 = e2), _, _, _, _)
       equation
         (de1, funcs) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         (de2, funcs) = differentiateExp(e2, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
@@ -1971,7 +1971,7 @@ algorithm
         e = Expression.addNoEventToRelations(DAE.IFEXP(DAE.RELATION(e1, DAE.EQUAL(tp), DAE.RCONST(0.0), -1, NONE()),
                        DAE.RCONST(0.0), DAE.BINARY(DAE.BINARY(e1, DAE.POW(tp), DAE.BINARY(e2, DAE.SUB(tp), DAE.RCONST(1.0))),
                        DAE.MUL(tp), DAE.BINARY(DAE.BINARY(DAE.BINARY(e1, DAE.MUL(tp), etmp), DAE.MUL(tp), de2),
-                                    DAE.ADD(tp), DAE.BINARY(e2, DAE.MUL(tp), de1))))); 
+                                    DAE.ADD(tp), DAE.BINARY(e2, DAE.MUL(tp), de1)))));
       then
         (e, funcs);
 
@@ -1984,7 +1984,7 @@ algorithm
         Debug.fprint(Flags.FAILTRACE, serr);
       then
         fail();
-   
+
     end match;
 end differentiateBinary;
 
@@ -2007,9 +2007,9 @@ algorithm
   (outDiffedExp, outFunctionTree) :=
     matchcontinue(inExp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree)
     local
-      
+
       BackendDAE.DifferentiateInputData inputData, diffFuncData;
-      
+
       DAE.Exp e, zero;
       list<DAE.Exp> expl,expl1,dexpl;
       BackendDAE.Variables timevars;
@@ -2026,13 +2026,13 @@ algorithm
       String typstring, dastring, funstring, str;
       list<String> typlststring;
       DAE.TailCall tc;
-      
+
       list<DAE.Element> funcbody, funcbodyDer;
       list<DAE.Element> inputVars, inputVarsNoDer, inputVarsDer;
       list<DAE.Element> outputVars, outputVarsNoDer, outputVarsDer;
       list<DAE.Element> protectedVars, protectedVarsNoDer, protectedVarsDer, newProtectedVars;
       list<DAE.Statement> bodyStmts, derbodyStmts;
-      
+
       DAE.FunctionDefinition derfuncdef;
       DAE.Function func,dfunc;
       list<DAE.Function> fns;
@@ -2046,7 +2046,7 @@ algorithm
         (mapper, tp) = getFunctionMapper(path, inFunctionTree);
         (dpath, blst) = differentiateFunction1(path,mapper, tp, expl, (inDiffwrtCref, inInputData, inDiffType, inFunctionTree));
         SOME(DAE.FUNCTION(type_=dtp,inlineType=dinl)) = DAEUtil.avlTreeGet(inFunctionTree, dpath);
-        // check if derivativ function has all expected inputs 
+        // check if derivativ function has all expected inputs
         (true,_) = checkDerivativeFunctionInputs(blst, tp, dtp);
         (expl1,_) = List.splitOnBoolList(expl, blst);
         (dexpl, outFunctionTree) = List.map3Fold(expl1, differentiateExp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
@@ -2057,11 +2057,11 @@ algorithm
     case (DAE.CALL(path=path,expLst=expl), _, _, _, _)
       equation
         // get function mapper
-        //print("Search for function mapper2\n"); 
+        //print("Search for function mapper2\n");
         (mapper, tp) = getFunctionMapper(path, inFunctionTree);
         (dpath, blst) = differentiateFunction1(path, mapper, tp, expl, (inDiffwrtCref, inInputData, inDiffType, inFunctionTree));
         SOME(DAE.FUNCTION(type_=dtp,inlineType=_)) = DAEUtil.avlTreeGet(inFunctionTree, dpath);
-        // check if derivativ function has all expected inputs 
+        // check if derivativ function has all expected inputs
         (false, tlst) = checkDerivativeFunctionInputs(blst, tp, dtp);
         // add Warning
         typlststring = List.map(tlst, Types.unparseType);
@@ -2071,7 +2071,7 @@ algorithm
         Error.addMessage(Error.UNEXPECTED_FUNCTION_INPUTS_WARNING, {dastring,typstring});
       then
         fail();
-        
+
     // try to inline
     case (DAE.CALL(path = path,expLst = _,attr=DAE.CALL_ATTR(tuple_=_,builtin=false,isImpure=isImpure,ty=ty,tailCall=_)), _, _, _, _)
       equation
@@ -2084,18 +2084,18 @@ algorithm
         (e, functions) = differentiateExp(e, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
       then
         (e, functions);
-        
+
     // differentiate function
     case (DAE.CALL(path=path,expLst=expl,attr=DAE.CALL_ATTR(tuple_=b,builtin=false,isImpure=isImpure,ty=ty,tailCall=tc)), _, _, _, _)
       equation
-        // TODO: FIXIT! expressionSolve and analyticJacobian don't 
+        // TODO: FIXIT! expressionSolve and analyticJacobian don't
         // return  new functionTree, so we can't differentiate functions then.
         failure(BackendDAE.SIMPLE_DIFFERENTAION() = inDiffType);
         failure(BackendDAE.DIFF_FULL_JACOBIAN() = inDiffType);
-        
+
         // get algorithm of the function
         SOME(func) = DAEUtil.avlTreeGet(inFunctionTree,path);
-        
+
         // debug
         //funstring = Tpl.tplString(DAEDumpTpl.dumpFunction, func);
         //print("\n\nFunction: \n" +& funstring +& "\n");
@@ -2104,22 +2104,22 @@ algorithm
         outputVars =  DAEUtil.getFunctionOutputVars(func);
         protectedVars  = DAEUtil.getFunctionProtectedVars(func);
         bodyStmts = DAEUtil.getFunctionAlgorithmStmts(func);
-        
+
         funcname = Util.modelicaStringToCStr(Absyn.pathString(path), false);
         diffFuncData = BackendDAE.DIFFINPUTDATA(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),SOME(funcname));
-        
+
         (inputVarsDer, functions, inputVarsNoDer, blst) = differentiateElementVars(inputVars, inDiffwrtCref, diffFuncData, BackendDAE.DIFFERENTAION_FUNCTION(), inFunctionTree, {}, {}, {});
         (outputVarsDer, functions, outputVarsNoDer, _) = differentiateElementVars(outputVars, inDiffwrtCref, diffFuncData, BackendDAE.DIFFERENTAION_FUNCTION(), functions, {}, {}, {});
 
         //add protected variables to dependent Vars
         (inputData,_) = addElementVars2Dep(inputVarsNoDer, functions, diffFuncData);
         (inputData,_) = addElementVars2Dep(outputVarsNoDer, functions, inputData);
-        
+
         (protectedVarsDer, functions, protectedVarsNoDer, _) = differentiateElementVars(protectedVars, inDiffwrtCref, inputData, BackendDAE.DIFFERENTAION_FUNCTION(), functions, {}, {}, {});
-        
+
         //add protected variables to dependent Vars
         (inputData,_) = addElementVars2Dep(protectedVarsNoDer, functions, inputData);
-        
+
         // differentiate algorithm statemeants
         //print("Function diff: statemeants");
         (derbodyStmts, functions) = differentiateStatements(listReverse(bodyStmts), inDiffwrtCref, inputData, BackendDAE.DIFFERENTAION_FUNCTION(), {}, functions);
@@ -2127,27 +2127,27 @@ algorithm
         // create function and add it to function tree
         funstring = Absyn.pathString(path);
         dpath = Absyn.stringPath("$DER" +& funstring);
-        
+
         tp = DAEUtil.getFunctionType(func);
         dtp = Types.extendsFunctionTypeArgs(tp, inputVarsDer, blst);
-        
+
         inputVars = listAppend(inputVars, inputVarsDer);
         protectedVars = listAppend(protectedVars, protectedVarsDer);
         funcbodyDer = listAppend(inputVars, outputVarsDer);
         funcbodyDer = listAppend(funcbodyDer, protectedVars);
-        
+
         //change output vars to protected vars and direction bidir
         newProtectedVars = List.map1(outputVars, DAEUtil.setElementVarVisibility, DAE.PROTECTED());
         newProtectedVars = List.map1(newProtectedVars, DAEUtil.setElementVarDirection, DAE.BIDIR());
         funcbodyDer = listAppend(funcbodyDer, newProtectedVars);
-    
+
         funcbodyDer = listAppend(funcbodyDer, {DAE.ALGORITHM(DAE.ALGORITHM_STMTS(derbodyStmts), DAE.emptyElementSource)});
         dfunc = DAE.FUNCTION(dpath, {DAE.FUNCTION_DEF(funcbodyDer)}, dtp, false, isImpure, DAE.NO_INLINE(), DAE.emptyElementSource, NONE());
 
         // debug
         //funstring = Tpl.tplString(DAEDumpTpl.dumpFunction, dfunc);
         //print("\n\nDER.Function: \n" +& funstring +& "\n\n");
-                 
+
         functions = DAEUtil.addDaeFunction({dfunc}, functions);
         // add differentiated function as function mapper
         func = DAEUtil.addFunctionDefinition(func, DAE.FUNCTION_DER_MAPPER(path, dpath, 1, {}, NONE(), {}));
@@ -2159,8 +2159,8 @@ algorithm
         //print(stringDelimitList(List.map(expl, ExpressionDump.printExpStr), ", ") +& "\n");
         //print("Diff ExpList Types: \n");
         //print(stringDelimitList(List.map(List.map(expl, Expression.typeof), Types.printTypeStr), " | ") +& "\n");
-        
-        
+
+
         // create differentiated call arguments
         expBoolLst = List.threadTuple(expl, blst);
         expBoolLst = List.filterOnTrue(expBoolLst, Util.tuple22);
@@ -2168,15 +2168,15 @@ algorithm
         (dexpl,functions) = List.map3Fold(expl1, differentiateExp, inDiffwrtCref, inInputData, inDiffType, functions);
         dexpl = listAppend(expl, dexpl);
 
-        e = DAE.CALL(dpath,dexpl,DAE.CALL_ATTR(ty,b,false,isImpure,DAE.NO_INLINE(),tc)); 
-        
+        e = DAE.CALL(dpath,dexpl,DAE.CALL_ATTR(ty,b,false,isImpure,DAE.NO_INLINE(),tc));
+
         // debug
-        
+
         //print("Diffed ExpList: \n");
         //print(stringDelimitList(List.map(dexpl, ExpressionDump.printExpStr), ", ") +& "\n");
         //print("Finished differentiate Expression in Call.\n");
         //print("DER.Function call : \n" +& ExpressionDump.printExpStr(e));
-        
+
       then
         (e, functions);
 
@@ -2196,7 +2196,7 @@ algorithm
       equation
         str = "Differentiate.differentiateFunctionCall failed for " +& ExpressionDump.printExpStr(inExp);
         Debug.fprint(Flags.FAILTRACE, str);
-      then fail();  
+      then fail();
   end matchcontinue;
 end differentiateFunctionCall;
 
@@ -2216,9 +2216,9 @@ algorithm
   (outDerFunction, outFunctionTree) :=
     matchcontinue(inFunction, inDiffwrtCrefs, inDerFunctionName, inInputData, inDiffType, inFunctionTree)
     local
-      
+
       BackendDAE.DifferentiateInputData inputData, diffFuncData;
-      
+
       Absyn.Path path,dpath;
       Boolean isImpure;
       DAE.InlineType dinl;
@@ -2226,24 +2226,24 @@ algorithm
       DAE.FunctionTree functions;
       DAE.Type tp;
       String  str;
-      
+
       list<DAE.Element> funcbody, funcbodyDer;
       list<DAE.Element> inputVars, inputVarsNoDer, inputVarsDer;
       list<DAE.Element> outputVars, outputVarsNoDer, outputVarsDer;
       list<DAE.Element> protectedVars, protectedVarsNoDer, protectedVarsDer, newProtectedVars;
       list<DAE.Statement> bodyStmts, derbodyStmts;
-      
+
       DAE.Function func,dfunc;
-      
+
       String funcname;
       DAE.ComponentRef diffwrtCref;
       list<DAE.ComponentRef> diffwrtCrefs;
 
     case (_, {}, _, _, _, _) then (inFunction, inFunctionTree);
-      
+
     // differentiate function
     case (func, diffwrtCref::diffwrtCrefs, dpath, _, _, _)
-      equation 
+      equation
         // debug
         //funstring = Tpl.tplString(DAEDumpTpl.dumpFunction, func);
         //print("Function: \n" +& funstring +& "\n");
@@ -2252,7 +2252,7 @@ algorithm
         outputVars =  DAEUtil.getFunctionOutputVars(func);
         protectedVars  = DAEUtil.getFunctionProtectedVars(func);
         bodyStmts = DAEUtil.getFunctionAlgorithmStmts(func);
-        
+
         path = DAEUtil.functionName(func);
         funcname = Util.modelicaStringToCStr(Absyn.pathString(path), false);
         diffFuncData = BackendDAE.DIFFINPUTDATA(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),SOME(funcname));
@@ -2261,35 +2261,35 @@ algorithm
         (outputVarsDer, functions, outputVarsNoDer, _) = differentiateElementVars(outputVars, diffwrtCref, diffFuncData, BackendDAE.DIFFERENTAION_FUNCTION(), functions, {}, {}, {});
         (protectedVarsDer, functions, protectedVarsNoDer, _) = differentiateElementVars(protectedVars, diffwrtCref, diffFuncData, BackendDAE.DIFFERENTAION_FUNCTION(), functions, {}, {}, {});
         //print("Finished diffed Vars\n");
-        
+
         //add protected variables to dependent Vars
         (inputData,_) = addElementVars2InDep(inputVarsNoDer, functions, diffFuncData);
         (inputData,_) = addElementVars2InDep(outputVarsNoDer, functions, inputData);
         (inputData,_) = addElementVars2InDep(protectedVarsNoDer, functions, inputData);
-        
+
         // differentiate algorithm statemeants
         (derbodyStmts, functions) = differentiateStatements(listReverse(bodyStmts), diffwrtCref, inputData, BackendDAE.DIFFERENTAION_FUNCTION(), {}, functions);
-        
+
         tp = DAEUtil.getFunctionType(func);
-        
+
         //append differentiatet inputsVars to protected vars, since
-        //for partial differentiation the input arguments are not expanded. 
+        //for partial differentiation the input arguments are not expanded.
         inputVars = listAppend(protectedVars, inputVarsDer);
         protectedVars = listAppend(protectedVars, protectedVarsDer);
         funcbodyDer = listAppend(inputVars, outputVarsDer);
         funcbodyDer = listAppend(funcbodyDer, protectedVars);
-        
+
         //change output vars to protected vars and direction bidir
         newProtectedVars = List.map1(outputVars, DAEUtil.setElementVarVisibility, DAE.PROTECTED());
         newProtectedVars = List.map1(newProtectedVars, DAEUtil.setElementVarDirection, DAE.BIDIR());
         funcbodyDer = listAppend(funcbodyDer, newProtectedVars);
-    
+
         funcbodyDer = listAppend(funcbodyDer, {DAE.ALGORITHM(DAE.ALGORITHM_STMTS(derbodyStmts), DAE.emptyElementSource)});
-        
+
         isImpure = DAEUtil.getFunctionImpureAttribute(func);
         dinl = DAEUtil.getFunctionInlineType(func);
         dfunc = DAE.FUNCTION(dpath, {DAE.FUNCTION_DEF(funcbodyDer)}, tp, false, isImpure, dinl, DAE.emptyElementSource, NONE());
-        
+
         // debug
         //funstring = Tpl.tplString(DAEDumpTpl.dumpFunction, func);
         //print("Function: \n" +& funstring +& "\n");
@@ -2302,7 +2302,7 @@ algorithm
         path = DAEUtil.functionName(inFunction);
         str = "\nDifferentiate.differentiatePartialFunction failed for function: " +& Absyn.pathString(path) +& "\n";
         Debug.fprint(Flags.FAILTRACE, str);
-      then fail();  
+      then fail();
   end matchcontinue;
 end differentiatePartialFunction;
 
@@ -2335,8 +2335,8 @@ algorithm
     DAE.Exp binding, dbinding;
     list<DAE.Var> varLst;
     list<Boolean> blst;
-    
-    
+
+
     case ({}, _, _, _, _, _, _, _) then (inElementsDer, inFunctionTree, inElementsNoDer, inBooleanLst);
 
     case ((var as DAE.VAR(componentRef = cref, ty= (DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(path=_)))))::rest, _, _, _, _, _, _, _)
@@ -2346,9 +2346,9 @@ algorithm
         crefLst = List.map1(varLst,Expression.generateCrefsFromExpVar,cref);
         tpLst = List.map(varLst,Types.getVarType);
         // ComponentReference.printComponentRefList(crefLst);
-        
+
         newVars = List.threadMap1(crefLst, tpLst, DAEUtil.replaceCrefandTypeInVar, var);
-        
+
         elementsNoDer = listAppend(inElementsNoDer, newVars);
         blst = listAppend(inBooleanLst, {false});
         (vars, functions, elementsNoDer, blst) = differentiateElementVars(rest, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, inElementsDer, elementsNoDer, blst);
@@ -2378,7 +2378,7 @@ algorithm
         blst = listAppend(inBooleanLst, {true});
         (vars, functions, elementsNoDer, blst) = differentiateElementVars(rest, inDiffwrtCref, inInputData, inDiffType, functions, vars, inElementsNoDer, blst);
       then (vars, functions, elementsNoDer, blst);
-    
+
     case((var1 as DAE.VAR(componentRef = cref, ty=tp))::rest, _, _, _, _, _, _, _)
       equation
         true = Types.isRealOrSubTypeReal(tp);
@@ -2397,7 +2397,7 @@ algorithm
         blst = listAppend(inBooleanLst, {false});
         (vars, functions, elementsNoDer, blst) = differentiateElementVars(rest, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, inElementsDer, elementsNoDer, blst);
       then (vars, functions, elementsNoDer, blst);
-        
+
   end matchcontinue;
 end differentiateElementVars;
 
@@ -2410,9 +2410,9 @@ Author: Frenkel TUD"
   input BackendDAE.DifferentiateInputArguments inDiffArgs;
   output Absyn.Path outFuncName;
   output list<Boolean> blst;
-algorithm    
+algorithm
   (outFuncName,blst) := matchcontinue (inFuncName,inMapper,inTp,expl,inDiffArgs)
-    local 
+    local
       BackendDAE.Variables timevars;
       DAE.FunctionTree functions;
       Absyn.Path default,fname,da,inDFuncName;
@@ -2424,8 +2424,8 @@ algorithm
       list<Absyn.Path> lowerOrderDerivatives;
       DAE.FunctionDefinition mapper;
       DAE.Type tp;
-      
-    // check conditions, order=1  
+
+    // check conditions, order=1
     case (_,DAE.FUNCTION_DER_MAPPER(derivativeFunction=inDFuncName,derivativeOrder=derivativeOrder,conditionRefs=cr),DAE.T_FUNCTION(funcArg=funcArg),_,_)
       equation
          true = intEq(1,derivativeOrder);
@@ -2434,7 +2434,7 @@ algorithm
          bl1 = checkDerFunctionConds(bl,cr,expl,inDiffArgs);
       then
         (inDFuncName,bl1);
-    // check conditions, order>1  
+    // check conditions, order>1
     case (_,DAE.FUNCTION_DER_MAPPER(derivativeFunction=inDFuncName,derivativeOrder=derivativeOrder,conditionRefs=cr),tp,_,(_,_,_,functions))
       equation
          failure(true = intEq(1,derivativeOrder));
@@ -2451,7 +2451,7 @@ algorithm
          bl3 = checkDerFunctionConds(bl,cr,expl,inDiffArgs);
       then
         (inDFuncName,bl3);
-    // conditions failed use default 
+    // conditions failed use default
     case (_,DAE.FUNCTION_DER_MAPPER(derivedFunction=fname,derivativeFunction=_,derivativeOrder=derivativeOrder,conditionRefs=_,defaultDerivative=SOME(default),lowerOrderDerivatives=lowerOrderDerivatives),tp,_,_)
       equation
           (da,bl) = differentiateFunction1(inFuncName,DAE.FUNCTION_DER_MAPPER(fname,default,derivativeOrder,{},SOME(default),lowerOrderDerivatives),tp,expl,inDiffArgs);
@@ -2483,7 +2483,7 @@ algorithm
         tlst = List.map(falst2,Util.tuple52);
         dtlst = List.map(dfalst,Util.tuple52);
         ret = List.isEqualOnTrue(tlst,dtlst,Types.equivtypes);
-      then 
+      then
         (ret,tlst);
     case (_,_,_)
       equation
@@ -2502,22 +2502,22 @@ Author: Frenkel TUD"
   output list<Boolean> outblst;
 algorithm
   outblst := matchcontinue(inblst,icrlst,expl,inDiffArgs)
-    local 
+    local
       Integer i;
       DAE.Exp e,de;
       list<Boolean> bl,bl1;
       array<Boolean> ba;
       Absyn.Path p1,p2;
       list<tuple<Integer,DAE.derivativeCond>> crlst;
-      
+
       DAE.ComponentRef diffwrtCref;
       BackendDAE.DifferentiateInputData inputData;
       BackendDAE.DiffentiationType diffType;
       DAE.FunctionTree functionTree;
-    
+
     // no conditions
     case (_,{},_,_) then inblst;
-    
+
     // zeroDerivative
     case(_,(i,DAE.ZERO_DERIVATIVE())::crlst,_,(diffwrtCref,inputData,diffType,functionTree))
       equation
@@ -2532,9 +2532,9 @@ algorithm
         ba = arrayUpdate(ba,i,false);
         bl1 = arrayList(ba);
         bl = checkDerFunctionConds(bl1,crlst,expl,(diffwrtCref,inputData,diffType,functionTree));
-      then 
+      then
         bl;
-    
+
     // noDerivative
     case(_,(i,DAE.NO_DERIVATIVE(binding=DAE.CALL(path=p1)))::crlst,_,_)
       equation
@@ -2547,10 +2547,10 @@ algorithm
         ba = arrayUpdate(ba,i,false);
         bl1 = arrayList(ba);
         bl = checkDerFunctionConds(bl1,crlst,expl,inDiffArgs);
-      then 
+      then
         bl;
-    
-    // noDerivative  
+
+    // noDerivative
     case(_,(i,DAE.NO_DERIVATIVE(binding=DAE.ICONST(_)))::crlst,_,_)
       equation
         // remove input from list
@@ -2558,9 +2558,9 @@ algorithm
         ba = arrayUpdate(ba,i,false);
         bl1 = arrayList(ba);
         bl = checkDerFunctionConds(bl1,crlst,expl,inDiffArgs);
-      then 
+      then
         bl;
-    
+
     // failure
     else
       equation
@@ -2577,7 +2577,7 @@ Author: Frenkel TUD"
   output Absyn.Path outFName;
 algorithm
   outFName := match(fname,functions)
-    local 
+    local
       list<DAE.FunctionDefinition> flst;
       list<Absyn.Path> lowerOrderDerivatives;
       Absyn.Path name;
@@ -2598,7 +2598,7 @@ Author: Frenkel TUD"
   output DAE.Type tp;
 algorithm
   (mapper,tp) := matchcontinue(fname,functions)
-    local 
+    local
       list<DAE.FunctionDefinition> flst;
       DAE.Type t;
       DAE.FunctionDefinition m;
@@ -2625,11 +2625,11 @@ Author: Frenkel TUD"
   output DAE.FunctionDefinition mapper;
 algorithm
   mapper := matchcontinue(inFuncDefs)
-    local 
+    local
       DAE.FunctionDefinition m;
       Absyn.Path p1;
       list<DAE.FunctionDefinition> funcDefs;
-    
+
     case((m as DAE.FUNCTION_DER_MAPPER(derivativeFunction=_))::_) then m;
     case(_::funcDefs)
     equation
@@ -2659,7 +2659,7 @@ algorithm
 end getFunctionResultTypes;
 
 //
-// util functions for Types: DifferentiateInputData, DifferentiateInputArguments, DiffentiationType 
+// util functions for Types: DifferentiateInputData, DifferentiateInputArguments, DiffentiationType
 //
 
 protected function addDependentVars
@@ -2680,13 +2680,13 @@ algorithm
         depVars = BackendVariable.addVars(inVarsLst, depVars);
         //BackendDump.dumpVariables(depVars, "dep Vars: ");
       then BackendDAE.DIFFINPUTDATA(indepVars, SOME(depVars), knownVars, allVars, algVars, diffCrefs, diffname);
-  
+
       case (_, BackendDAE.DIFFINPUTDATA(indepVars, NONE(), knownVars, allVars, algVars, diffCrefs, diffname))
       equation
         depVars = BackendVariable.listVar(inVarsLst);
         //BackendDump.dumpVariables(depVars, "dep Vars: ");
       then BackendDAE.DIFFINPUTDATA(indepVars, SOME(depVars), knownVars, allVars, algVars, diffCrefs, diffname);
-        
+
   end match;
 end addDependentVars;
 
@@ -2703,17 +2703,17 @@ algorithm
     Option<list< .DAE.ComponentRef>> diffCrefs;
     Option<String> diffname;
     case ({}, _) then inDiffData;
-      
+
     case (_, BackendDAE.DIFFINPUTDATA(NONE(), depVars, knownVars, allVars, algVars, diffCrefs, diffname))
       equation
         indepVars = BackendVariable.listVar(inVarsLst);
       then BackendDAE.DIFFINPUTDATA(SOME(indepVars), depVars, knownVars, allVars, algVars, diffCrefs, diffname);
-        
+
     case (_, BackendDAE.DIFFINPUTDATA(SOME(indepVars), depVars, knownVars, allVars, algVars, diffCrefs, diffname))
       equation
         indepVars = BackendVariable.addVars(inVarsLst, indepVars);
       then BackendDAE.DIFFINPUTDATA(SOME(indepVars), depVars, knownVars, allVars, algVars, diffCrefs, diffname);
-        
+
   end match;
 end addIndependentVars;
 
@@ -2735,13 +2735,13 @@ algorithm
         allVars = BackendVariable.addVars(inVarsLst, allVars);
         //BackendDump.dumpVariables(allVars, "indep Vars: ");
       then BackendDAE.DIFFINPUTDATA(indepVars, depVars, knownVars, SOME(allVars), algVars, diffCrefs, diffname);
-  
+
       case (_, BackendDAE.DIFFINPUTDATA(indepVars, depVars, knownVars, NONE(), algVars, diffCrefs, diffname))
       equation
         allVars = BackendVariable.listVar(inVarsLst);
         //BackendDump.dumpVariables(allVars, "indep Vars: ");
       then BackendDAE.DIFFINPUTDATA(indepVars, depVars, knownVars, SOME(allVars), algVars, diffCrefs, diffname);
-        
+
   end match;
 end addAllVars;
 
@@ -2770,7 +2770,7 @@ algorithm
        equation
         str = "Differentiate.lowerVarsElementVars failed";
         Error.addMessage(Error.INTERNAL_ERROR, {str});
-      then fail();    
+      then fail();
   end matchcontinue;
 end lowerVarsElementVars;
 
@@ -2796,7 +2796,7 @@ algorithm
        equation
         str = "Differentiate.addElementVars2Dep failed";
         Error.addMessage(Error.INTERNAL_ERROR, {str});
-      then fail();    
+      then fail();
   end matchcontinue;
 end addElementVars2Dep;
 
@@ -2821,7 +2821,7 @@ algorithm
        equation
         str = "Differentiate.addElementVars2InDep failed";
         Error.addMessage(Error.INTERNAL_ERROR, {str});
-      then fail();    
+      then fail();
   end matchcontinue;
 end addElementVars2InDep;
 
@@ -2846,7 +2846,7 @@ algorithm
        equation
         str = "Differentiate.addVars2AllVars failed";
         Error.addMessage(Error.INTERNAL_ERROR, {str});
-      then fail();    
+      then fail();
   end matchcontinue;
 end addElementVars2AllVars;
 

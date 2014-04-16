@@ -27,7 +27,7 @@ int parseFile(char* fileName)
   pModelica_3_Lexer           lxr;
   pANTLR3_COMMON_TOKEN_STREAM tstream;
   pModelicaParser             psr;
-  
+
   fprintf(stderr, "Parsing %s\n", fileName); fflush(stderr);
 
   fName  = (pANTLR3_UINT8)fileName;
@@ -69,7 +69,7 @@ int hasMoFiles(char* directory)
   sprintf(pattern, "%s\\*.mo", directory);
 
   sh = FindFirstFile(pattern, &FileData);
-  if (sh != INVALID_HANDLE_VALUE) 
+  if (sh != INVALID_HANDLE_VALUE)
   {
     FindClose(sh);
     return 1;
@@ -88,7 +88,7 @@ int parseMoFilesInDirectory(char* directory)
   /*
   HANDLE parseThreadHandle;
   DWORD parseThreadId;
-  semaphore = CreateSemaphore( 
+  semaphore = CreateSemaphore(
         NULL, // default security attributes
         5,   // initial count
         5,   // maximum count
@@ -97,7 +97,7 @@ int parseMoFilesInDirectory(char* directory)
   sprintf(pattern, "%s\\*.mo", directory);
 
   sh = FindFirstFile(pattern, &FileData);
-  if (sh != INVALID_HANDLE_VALUE) 
+  if (sh != INVALID_HANDLE_VALUE)
   {
     while(more)
     {
@@ -126,12 +126,12 @@ int recurseDirectories(char* directory)
   sprintf(pattern, "%s\\*", directory);
 
   sh = FindFirstFile(pattern, &FileData);
-  if (sh != INVALID_HANDLE_VALUE) 
+  if (sh != INVALID_HANDLE_VALUE)
   {
     while(more)
     {
-      if (FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY && 
-        strcmp(FileData.cFileName,".") != 0 &&  
+      if (FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY &&
+        strcmp(FileData.cFileName,".") != 0 &&
         strcmp(FileData.cFileName,"..") != 0)
       {
         sprintf(directoryName, "%s/%s", directory, FileData.cFileName);

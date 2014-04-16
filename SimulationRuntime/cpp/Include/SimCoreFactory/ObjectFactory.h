@@ -1,7 +1,7 @@
-#pragma once 
+#pragma once
 
 template<class T>
-struct ObjectFactory 
+struct ObjectFactory
 {
   ObjectFactory(PATH library_path,PATH modelicasystem_path,PATH config_path)
             :_library_path(library_path)
@@ -10,7 +10,7 @@ struct ObjectFactory
     {
     _factory = boost::shared_ptr<T>(new T(library_path,modelicasystem_path));
   }
-        
+
     protected:
     boost::shared_ptr<T>  _factory;
     PATH _library_path;

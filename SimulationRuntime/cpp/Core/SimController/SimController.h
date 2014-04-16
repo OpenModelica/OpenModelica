@@ -8,13 +8,13 @@
 #include <SimController/ISimController.h>
 #endif
 
-class SimController : public ISimController, 
+class SimController : public ISimController,
                       public SimControllerPolicy
 {
 public:
     SimController(PATH library_path,PATH modelicasystem_path);
     virtual ~SimController();
-   
+
   ///Load and translates a Modelica modell to IMixedSystem dll
     virtual std::pair<boost::weak_ptr<IMixedSystem>,boost::weak_ptr<ISimData> > LoadSystem(string modelLib,string modelKey);
   virtual std::pair<boost::weak_ptr<IMixedSystem>,boost::weak_ptr<ISimData> > LoadSystem(boost::shared_ptr<ISimData> (*createSimDataCallback)(), boost::shared_ptr<IMixedSystem> (*createSystemCallback)(IGlobalSettings*, boost::shared_ptr<IAlgLoopSolverFactory>, boost::shared_ptr<ISimData>), string modelKey);

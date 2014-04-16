@@ -4,10 +4,10 @@
 
 
 
-Modelica::Modelica(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> ) 
+Modelica::Modelica(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> )
 :SystemDefaultImplementation(*globalSettings)
 
-{ 
+{
     _dimBoolean =0;
     _dimInteger =0;
     _dimString =0;
@@ -19,8 +19,8 @@ Modelica::Modelica(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSol
     // Initialize the state vector
     SystemDefaultImplementation::initialize();
     //Instantiate auxiliary object for event handling functionality
-  
-} 
+
+}
 
 Modelica::~Modelica()
 {
@@ -88,67 +88,67 @@ int Modelica::getDimRHS() const
 
 // Provide variables to the system
 void Modelica::getBoolean(bool* z)
-{ 
+{
   SystemDefaultImplementation::getBoolean(z);
 }
 
 void Modelica::getInteger(int* z)
-{ 
+{
   SystemDefaultImplementation::getInteger(z);
 }
 
 void Modelica::getString(string* z)
-{ 
+{
   SystemDefaultImplementation::getString(z);
 }
 
 
 void Modelica::getReal(double* z)
-{ 
+{
   SystemDefaultImplementation::getReal(z);
 }
 
 
 
 void Modelica::getContinuousStates(double* z)
-{ 
+{
   SystemDefaultImplementation::getContinuousStates(z);
 }
 
 // Provide the right hand side (according to the index)
 void Modelica::getRHS(double* z)
-{ 
+{
   SystemDefaultImplementation::getRHS(z);
 }
 
 // Set variables to the system
 void Modelica::setBoolean(const bool* z)
-{ 
+{
   SystemDefaultImplementation::setBoolean(z);
 }
 
 void Modelica::setInteger(const int* z)
-{ 
+{
   SystemDefaultImplementation::setInteger(z);
 }
 
 void Modelica::setString(const string* z)
-{ 
+{
   SystemDefaultImplementation::setString(z);
 }
 
 void Modelica::setReal(const double* z)
-{ 
+{
   SystemDefaultImplementation::setReal(z);
 }
 
 void Modelica::setContinuousStates(const double* z)
-{ 
+{
   SystemDefaultImplementation::setContinuousStates(z);
 }
 
 void Modelica::setRHS(const double* f)
-{ 
+{
   SystemDefaultImplementation::setRHS(f);
 }
 
@@ -156,24 +156,24 @@ void Modelica::setRHS(const double* f)
 
 void Modelica::getZeroFunc(double* f)
 {
-  
+
 }
 
 void Modelica::handleEvent(const bool* events)
 {
-  
+
 }
 
 bool Modelica::handleSystemEvents( bool* events)
 {
  return false;
- 
+
 }
 
 bool Modelica::checkForDiscreteEvents()
 {
     bool restart = false;
-  
+
   return restart;
 }
 void Modelica::stepCompleted(double time)
@@ -181,18 +181,18 @@ void Modelica::stepCompleted(double time)
 }
  bool Modelica::checkConditions()
  {
-     throw std::runtime_error("checkConditions is not yet implemented"); 
+     throw std::runtime_error("checkConditions is not yet implemented");
  }
 
 
 
 void Modelica::getJacobian(SparseMatrix& matrix)
 {
-  throw std::runtime_error("giveJacobian is not yet implemented");  
+  throw std::runtime_error("giveJacobian is not yet implemented");
 }
 void Modelica::getStateSetJacobian(SparseMatrix& matrix)
 {
-  throw std::runtime_error("giveStateJacobian is not yet implemented");  
+  throw std::runtime_error("giveStateJacobian is not yet implemented");
 }
 
 

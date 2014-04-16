@@ -94,8 +94,8 @@ algorithm
         daeIn;
   end matchcontinue;
 end traverseEqSystemsWithIndex;
-  
-  
+
+
 public function reduceLinearTornSystem  "checks the EqSystem for tornSystems in order to dissassemble them into various SingleEquation and a reduced EquationSystem.
 This is useful in order to reduce the execution costs of the equationsystem and generate a bunch of parallel singleEquations. use +d=doLienarTearing,partlintornsystem to activate it.
 Remark: this is still under development
@@ -119,7 +119,7 @@ algorithm
       BackendDAE.Variables vars, varsTmp;
     case(_,_,_)
       equation
-        BackendDAE.EQSYSTEM(matching = BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps= allComps)) = systIn; 
+        BackendDAE.EQSYSTEM(matching = BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps= allComps)) = systIn;
           //BackendDump.dumpEqSystem(systIn,"original system");
         (systTmp,tornSysIdx) = reduceLinearTornSystem1(1, allComps, ass1, ass2, systIn,sharedIn,tornSysIdxIn);
           //BackendDump.dumpEqSystem(systTmp,"new system");
@@ -129,7 +129,7 @@ algorithm
     else
       equation
         print("reduceLinearTornSystem failed!");
-      then 
+      then
         fail();
   end matchcontinue;
 end reduceLinearTornSystem;
@@ -176,7 +176,7 @@ algorithm
       equation
         // strongComponent is a linear tornSystem
         true = listLength(compsIn) >= compIdx;
-        
+
         comp = listGet(compsIn,compIdx);
         BackendDAE.TORNSYSTEM(tearingvars = tvarIdcs, residualequations = resEqIdcs, otherEqnVarTpl = otherEqnVarTpl, linear = linear) = comp;
         true = linear;
@@ -185,43 +185,43 @@ algorithm
            //print("handle tornsystem with compnumber:"+&intString(compIdx)+&"\n");
            //BackendDump.dumpEqSystem(systIn,"the original system");
         // build the new components, the new variables and the new equations
-          
+
         (varsNew,eqsNew,tvars,resEqs,matchingNew) = reduceLinearTornSystem2(systIn,sharedIn,tvarIdcs,resEqIdcs,otherEqnVarTpl,tornSysIdxIn);
-        
+
         BackendDAE.MATCHING(ass1=ass1New, ass2=ass2New, comps=compsNew) = matchingNew;
         // add the new vars and equations to the original EqSystem
         BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqs, stateSets = stateSets) = systIn;
         varsOld = BackendVariable.varList(vars);
         eqsOld = BackendEquation.equationList(eqs);
-                       
+
         varLst = listAppend(varsOld,varsNew);
         eqLst = listAppend(eqsOld, eqsNew);
         eqLst = List.fold2(List.intRange(listLength(resEqIdcs)),replaceAtPositionFromList,resEqs,resEqIdcs,eqLst);  // replaces the old residualEquations with the new ones
         vars = BackendVariable.listVar1(varLst);  // !!! BackendVariable.listVar outputs the reversed order therefore listVar1
-        eqs = BackendEquation.listEquation(eqLst);      
+        eqs = BackendEquation.listEquation(eqLst);
         Debug.fcall(Flags.HPCOM_DUMP,print,"number of equations added: "+&intString(listLength(eqLst))+&" and the size of the linear torn system: "+&intString(listLength(tvarIdcs))+&"\n");
         //print("new systemsize:"+&intString(listLength(varLst))+&" vars. and "+&intString(listLength(eqLst))+&" eqs\n");
-                
+
         // build the matching
         ass1All = arrayCreate(listLength(varLst),-1);
         ass2All = arrayCreate(listLength(varLst),-1);  // actually has to be listLength(eqLst), but there is stille the probelm taht ass1 and ass2 have the same size
         ass1All = Util.arrayCopy(ass1,ass1All);  // the comps before and after the tornsystem
         ass2All = Util.arrayCopy(ass2,ass2All);
         ((ass1All, ass2All)) = List.fold2(List.intRange(listLength(tvarIdcs)),updateResidualMatching,tvarIdcs,resEqIdcs,(ass1All,ass2All));  // sets matching info for the tearingVars and residuals
-        
+
         // get the otherComps and and update the matching for the othercomps
-        matchingOther = getOtherComps(otherEqnVarTpl,ass1All,ass2All);      
+        matchingOther = getOtherComps(otherEqnVarTpl,ass1All,ass2All);
         BackendDAE.MATCHING(ass1=_, ass2=_, comps=otherComps) = matchingOther;
-        
+
         // insert the new components into the BLT instead of the TornSystem, append the updated blocks for the other equations, update matching for the new equations
         numNewSingleEqs = listLength(compsNew)-listLength(tvarIdcs);
           //print("num of new comps:"+&intString(numNewSingleEqs)+&"\n");
           //BackendDump.dumpComponents(compsNew);
         compsNew = listAppend(compsNew, otherComps);
         compsTmp = List.replaceAtWithList(compsNew,compIdx-1,compsIn);
-        ((ass1All,ass2All)) = List.fold2(List.intRange(arrayLength(ass1New)),updateMatching,(listLength(eqsOld),listLength(varsOld)),(ass1New,ass2New),(ass1All,ass2All));               
+        ((ass1All,ass2All)) = List.fold2(List.intRange(arrayLength(ass1New)),updateMatching,(listLength(eqsOld),listLength(varsOld)),(ass1New,ass2New),(ass1All,ass2All));
         matching = BackendDAE.MATCHING(ass1All, ass2All, compsTmp);
-        
+
         //build new EqSystem
         systTmp = BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),matching,stateSets);
         (systTmp,_,_) = BackendDAEUtil.getIncidenceMatrix(systTmp, BackendDAE.NORMAL(),NONE());
@@ -239,7 +239,7 @@ algorithm
   end matchcontinue;
 end reduceLinearTornSystem1;
 
-  
+
 protected function reduceLinearTornSystem2  " builds from a torn system various linear equation systems that can be computed in parallel.
 author: Waurich TUD 2013-07"
   input BackendDAE.EqSystem isyst;
@@ -284,86 +284,86 @@ algorithm
    tvars := List.map1r(tearingVars, BackendVariable.getVarAt, vars);
    tvarsReplaced := List.map(tvars, BackendVariable.transformXToXd);
    tcrs := List.map(tvarsReplaced, BackendVariable.varCref);
-      
+
    // get residual eqns
    reqns := BackendEquation.getEqns(residualEqs, eqns);
    reqns := BackendEquation.replaceDerOpInEquationList(reqns);
-   
+
    // get the other equations and the other variables
    otherEqnsInts := List.map(otherEqsVarTpl, Util.tuple21);
    otherEqnsLst := BackendEquation.getEqns(otherEqnsInts, eqns);
    oeqns := BackendEquation.listEquation(otherEqnsLst);
    otherEqnsLstReplaced := BackendEquation.replaceDerOpInEquationList(otherEqnsLst);   // for computing the new equations
-   
+
    otherVarsIntsLst := List.map(otherEqsVarTpl, Util.tuple22);
    otherVarsInts := List.unionList(otherVarsIntsLst);
    ovarsLst := List.map1r(otherVarsInts, BackendVariable.getVarAt, vars);
    ovarsLst := List.map(ovarsLst, BackendVariable.transformXToXd);  //try this
    ovars := BackendVariable.listVar1(ovarsLst);
    ovcrs := List.map(ovarsLst, BackendVariable.varCref);
-      
+
    //build the components and systems to get the system for computing the tearingVars
    size := listLength(tvars);
    otherEqSize := listLength(otherEqnsLst);
    compSize := listLength(comps);
    tVarRange := List.intRange2(0,size);
    repl1 := BackendVarTransform.emptyReplacements();
-   
+
    //  get g_i(xt=e_i, xa=xa_i) with xa_i as variables to be solved
    (g_i_lst,xa_i_lst,replLst) := getAlgebraicEquationsForEI(tVarRange,size,otherEqnsLstReplaced,tvarsReplaced,tcrs,ovarsLst,ovcrs,{},{},{},tornSysIdx);
    (g_i_lst1,xa_i_lst1,repl1) := simplifyEquations(g_i_lst,xa_i_lst,repl1);
-     
+
      //dumpVarLstLst(xa_i_lst,"xa");
      //dumpEqLstLst(g_i_lst,"g");
-   
+
    //  compute residualValues h_i(xt=e_i,xa_i,r_i) for r_i
    (h_i_lst,r_i_lst) := addResidualVarToEquation(tVarRange,reqns,{},{},tornSysIdx);
    h_i_lst := replaceVarsInResidualEquations(tVarRange,h_i_lst,replLst,{});
    (h_i_lst1,r_i_lst1,repl1) := simplifyEquations(h_i_lst,r_i_lst,repl1);
-   
+
       //dumpVarLstLst(r_i_lst,"r");
       //dumpEqLstLst(h_i_lst,"h");
-   
-   //  get the co-efficients for the new residualEquations a_i from hs_i(r_i,xt=e_i, a_i) 
+
+   //  get the co-efficients for the new residualEquations a_i from hs_i(r_i,xt=e_i, a_i)
    (hs_i_lst,a_i_lst) := getTornSystemCoefficients(tVarRange,size,r_i_lst,{},{},tornSysIdx);
    (hs_i_lst1,a_i_lst1,repl1) := simplifyEquations(hs_i_lst,a_i_lst,repl1);
-   
+
       //dumpVarLstLst(a_i_lst,"a");
       //dumpEqLstLst(hs_i_lst,"hs_i");
-   
+
    // gather all additional equations and build the strongComponents (not including the new residual equation)
    eqsNewOut := List.flatten(listAppend(listAppend(g_i_lst1,h_i_lst1),hs_i_lst1));
    varsNewOut := List.flatten(listAppend(listAppend(xa_i_lst1,r_i_lst1),a_i_lst1));
    matchingNew := buildSingleEquationSystem(compSize,eqsNewOut,varsNewOut,ishared,{});
    BackendDAE.MATCHING(ass1=ass1New, ass2=ass2New, comps=compsNew) := matchingNew;
-   
+
    //BackendDump.dumpComponents(compsNew);
-   
+
    compsNew := List.map2(compsNew,updateIndicesInComp,listLength(varLst),listLength(eqLst));
-   
+
    //BackendDump.dumpVarList(varsNewOut,"varsNew");
    //BackendDump.dumpEquationList(eqsNewOut,"eqsNew");
 
    // compute the tearing vars in the new residual equations hs
    (a_0::a_i_lst) := a_i_lst;
    //a_0 := listReverse(a_0);
-   
+
    hs := buildNewResidualEquation(1,a_i_lst,a_0,tvars,{});
    (hs1,_) := BackendVarTransform.replaceEquations(hs,repl1,NONE());
    tVarsOut := tvars;
    resEqsOut := hs1;
-   
+
    //// get the strongComponent for the residual equations and add it at the end of the new StrongComponents
    //BackendDump.dumpEquationList(resEqsOut,"the equations of the system\n");
    //BackendDump.dumpVarList(tVarsOut, "the vars of the system\n");
-   
+
    isSingleEq := intEq(listLength(resEqsOut),1);
    rComp := buildEqSystemComponent(isSingleEq,tearingVars,residualEqs,a_i_lst);
    oComps := List.appendElt(rComp,compsNew);
    matchingOut := BackendDAE.MATCHING(ass1New,ass2New,oComps);
-   
+
    //printPartLinTornInfo(tcrs,reqns,otherEqnsLst,ovcrs,xa_i_lst,g_i_lst,r_i_lst,h_i_lst,a_i_lst,hs_i_lst,hs,compsNew);
-end reduceLinearTornSystem2; 
+end reduceLinearTornSystem2;
 
 
 protected function buildEqSystemComponent "builds a strongComponent for the reduced System. if the system size is 1, a SingleEquation is built, otherwise a EqSystem with jacobian.
@@ -391,17 +391,17 @@ algorithm
       equation
         jac = buildLinearJacobian(jacValuesIn);
         //print("Jac:\n" +& BackendDump.dumpJacobianStr(jac) +& "\n");
-        comp = BackendDAE.EQUATIONSYSTEM(eqIdcsIn,varIdcsIn,BackendDAE.FULL_JACOBIAN(jac),BackendDAE.JAC_TIME_VARYING());   
+        comp = BackendDAE.EQUATIONSYSTEM(eqIdcsIn,varIdcsIn,BackendDAE.FULL_JACOBIAN(jac),BackendDAE.JAC_TIME_VARYING());
         //print("the eqs of the sys: "+&stringDelimitList(List.map(varIdcsIn,intString),"\n")+&"\n");
         //print("the vars of the sys: "+&stringDelimitList(List.map(eqIdcsIn,intString),"\n")+&"\n");
-        //comp = BackendDAE.EQUATIONSYSTEM(eqIdcsIn,varIdcsIn,NONE(),BackendDAE.JAC_NO_ANALYTIC());   
+        //comp = BackendDAE.EQUATIONSYSTEM(eqIdcsIn,varIdcsIn,NONE(),BackendDAE.JAC_NO_ANALYTIC());
         //comp = BackendDAE.TORNSYSTEM(varIdcsIn,eqIdcsIn,{},true);
         Debug.fcall(Flags.HPCOM_DUMP,print,"a linear equationsystem of size "+&intString(listLength(eqIdcsIn))+&" is left from the partitioning.\n\n");
       then
         comp;
   end match;
-end buildEqSystemComponent;  
-  
+end buildEqSystemComponent;
+
 
 protected function buildLinearJacobian "builds the jacobian out of the given jacobian-entries
 author:Waurich TUD 2013-12"
@@ -410,9 +410,9 @@ author:Waurich TUD 2013-12"
 protected
   list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
 algorithm
-  jac := List.fold1(List.intRange(listLength(inElements)),buildLinearJacobian1,inElements,{});  
-  jac := listReverse(jac); 
-  outJac := SOME(jac); 
+  jac := List.fold1(List.intRange(listLength(inElements)),buildLinearJacobian1,inElements,{});
+  jac := listReverse(jac);
+  outJac := SOME(jac);
 end buildLinearJacobian;
 
 
@@ -427,7 +427,7 @@ protected
   list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
 algorithm
   elements := listGet(inElements,rowIdx);
-  outJac := List.fold2(List.intRange(listLength(inElements)),buildLinearJacobian2,elements,rowIdx,inJac);  
+  outJac := List.fold2(List.intRange(listLength(inElements)),buildLinearJacobian2,elements,rowIdx,inJac);
 end buildLinearJacobian1;
 
 
@@ -499,7 +499,7 @@ end updateResidualMatching;
 
 
 protected function getOtherComps "builds ordered StrongComponents and matching for the other equations.
-author: Waurich TUD 2013-09" 
+author: Waurich TUD 2013-09"
   input list<tuple<Integer, list<Integer>>> otherEqsVarTpl;
   input array<Integer> ass1;
   input array<Integer> ass2;
@@ -533,7 +533,7 @@ algorithm
         varIdx = listGet(varIdcs,1);
         comp = BackendDAE.SINGLEEQUATION(eqIdx,varIdx);
         ass1 = arrayUpdate(ass1,varIdx,eqIdx);
-        ass2 = arrayUpdate(ass2,eqIdx,varIdx);    
+        ass2 = arrayUpdate(ass2,eqIdx,varIdx);
         compsTmp = comp::compsIn;
       then
         ((ass1,ass2,compsTmp));
@@ -561,7 +561,7 @@ algorithm
   idx := listGet(positionLst,n);
   entry := listGet(replacingLst,n);
   outLst := List.replaceAt(entry,idx-1,inLst);
-end replaceAtPositionFromList; 
+end replaceAtPositionFromList;
 
 
 protected function updateIndicesInComp " raises the indices of the vars and eqs in the given component according to the given offsets.
@@ -630,7 +630,7 @@ algorithm
         eqLstTmp = hs::resEqsIn;
         eqLstTmp = buildNewResidualEquation(resIdx+1,aCoeffLst,a0CoeffLst,tvars,eqLstTmp);
       then
-        eqLstTmp;      
+        eqLstTmp;
     else
       equation
         print("buildNewResidualEquation failed");
@@ -712,7 +712,7 @@ end addProductToExp;
 
 
 protected function buildSingleEquationSystem "function to build a system of singleEquations which can be solved partially parallel, from an EquationArray and Variables.
-author: Waurich TUD 2013-07" 
+author: Waurich TUD 2013-07"
   input Integer eqSizeOrig;
   input list<BackendDAE.Equation> inEqs;
   input list<BackendDAE.Var> inVars;
@@ -734,7 +734,7 @@ algorithm
       BackendDAE.StrongComponents compsTmp;
       BackendDAE.Variables vars;
     case(_,_,_,_,_)
-      equation        
+      equation
         // build a singleEquation from a list<Equation> and list<Var> which are indexed by compIdx;
         // get the EQSYSTEM, the incidenceMatrix and a matching
         vars = BackendVariable.listVar1(inVars);
@@ -771,7 +771,7 @@ end buildSingleEquationSystem;
 protected function getTornSystemCoefficients "gets the co-efficients for the new residual equations of the linear torn system
 the first index is for the residualvar and the second for the tearingvar
 (r1) = (a11 a12..) (xt1)+(a01)
-(r2) = (a21 a22..)*(xt2)+(a02)    
+(r2) = (a21 a22..)*(xt2)+(a02)
 (:)  = (:   :    ) ( : )+( : )
 this is meant to be a matrix :)
 author: Waurich TUD 2013-08"
@@ -826,7 +826,7 @@ end getTornSystemCoefficients;
 
 protected function getTornSystemCoefficients1 "gets the equations with coefficients for one e_i
 author: Waurich TUD 2013-08"
-  input list<Integer> resIdxLst; 
+  input list<Integer> resIdxLst;
   input Integer iIdx;
   input list<BackendDAE.Var> resVal_iIn;
   input list<list<BackendDAE.Equation>>hs_i_lstIn;
@@ -913,7 +913,7 @@ algorithm
         fail();
   end matchcontinue;
 end getTornSystemCoefficients1;
-        
+
 
 protected function varExp "gets an DAE.Exp for the CREF of the given BackendDAE.Var
 author: Waurich TUD 2013-08"
@@ -956,21 +956,21 @@ algorithm
         repl = listGet(inReplLst,iValue);
         h_i_Eqs = listGet(resEqsIn,iValue);
         (h_i_Eqs,_) = BackendVarTransform.replaceEquations(h_i_Eqs,repl,NONE());
-        h_i_lstTmp = replaceVarsInResidualEquations(iLstRest,resEqsIn,inReplLst,h_i_Eqs::h_i_lstIn);        
+        h_i_lstTmp = replaceVarsInResidualEquations(iLstRest,resEqsIn,inReplLst,h_i_Eqs::h_i_lstIn);
       then
        h_i_lstTmp;
     else
       equation
-        print("replaceVarsInResidualEquations failed \n");  
+        print("replaceVarsInResidualEquations failed \n");
       then
-        fail();      
+        fail();
   end matchcontinue;
 end replaceVarsInResidualEquations;
 
 
 protected function addResidualVarToEquation "adds a variable r_x to  the right hand side of an equation. this corresponds to the residual value in a residual equation
 author: Waurich TUD 2013-08"
-  input list<Integer> iIn; 
+  input list<Integer> iIn;
   input list<BackendDAE.Equation> resEqLstIn;
   input list<list<BackendDAE.Equation>> h_i_lstIn;
   input list<list<BackendDAE.Var>> r_i_lstIn;
@@ -1009,12 +1009,12 @@ algorithm
         //BackendDump.dumpEquationList(listGet(h_i_lstTmp,1),"h_"+&intString(iValue)+&"\n");
         (h_i_lstTmp,r_i_lstTmp) = addResidualVarToEquation(iLstRest,resEqLstIn,{}::h_i_lstTmp,{}::r_i_lstTmp,tornSysIdx);
       then
-        (h_i_lstTmp,r_i_lstTmp);        
+        (h_i_lstTmp,r_i_lstTmp);
     else
       equation
         print("addResidualVarToEquation failed! \n");
       then
-        fail(); 
+        fail();
   end matchcontinue;
 end addResidualVarToEquation;
 
@@ -1026,7 +1026,7 @@ author:Waurich TUD 2013-08 "
   input String resVarName;
   input tuple<list<list<BackendDAE.Equation>>,list<list<BackendDAE.Var>>> tplIn;
   output tuple<list<list<BackendDAE.Equation>>,list<list<BackendDAE.Var>>> tplOut;
-protected 
+protected
   String resName;
   list<BackendDAE.Equation> resEqLst;
   list<BackendDAE.Var> resVarLst;
@@ -1118,12 +1118,12 @@ algorithm
         //print("\n append with \n");
         //print("residualValue: "+&ExpressionDump.dumpExpStr(exp2,0)+&"\n");
         exp1 = Expression.expAdd(exp1,exp2);
-      then 
+      then
         ((exp1,(exp2,true)));
     case(((exp1,(exp2,rhs))))
       equation
         false = rhs;
-      then 
+      then
         ((exp1,(exp2,true)));
     end matchcontinue;
 end addResidualVarToEquation2;
@@ -1169,8 +1169,8 @@ algorithm
       xa_i_lstOut = listReverse(xa_i_lstIn);
       replacementLstOut = listReverse(replacementLstIn);
     then
-      (g_i_lstOut,xa_i_lstOut,replacementLstOut);      
-            
+      (g_i_lstOut,xa_i_lstOut,replacementLstOut);
+
   case(iValue::iLstRest,_,_,_,_,_,_,_,_,_,_)
     // get xa_o from g_0
     equation
@@ -1182,7 +1182,7 @@ algorithm
       (g_i_lstTmp,xa_i_lstTmp,replLstTmp) = getAlgebraicEquationsForEI(iLstRest,size,otherEqLstIn,tvarLstIn,tVarCRefLstIn,otherVarLstIn,oVarCRefLstIn, replTmp::replacementLstIn, gEqLstTmp::g_i_lstIn,xaVarLstTmp::xa_i_lstIn, tornSysIdx);
     then
       (g_i_lstTmp,xa_i_lstTmp,replLstTmp);
-      
+
   case(iValue::iLstRest,_,_,_,_,_,_,_,_,_,_)
     // computes xa_i from g_i
     equation
@@ -1202,7 +1202,7 @@ algorithm
       (g_i_lstTmp,xa_i_lstTmp,replLstTmp) = getAlgebraicEquationsForEI(iLstRest,size,otherEqLstIn,tvarLstIn,tVarCRefLstIn,otherVarLstIn,oVarCRefLstIn, replTmp::replacementLstIn, gEqLstTmp::g_i_lstIn,xaVarLstTmp::xa_i_lstIn,tornSysIdx);
     then
       (g_i_lstTmp,xa_i_lstTmp,replLstTmp);
-      
+
   else
     equation
       print("getAlgebraicEquationsForEI1 failed!\n");
@@ -1225,7 +1225,7 @@ end replaceTVarWithReal;
 
 protected function replaceOtherVarsWithPrefixCref "adds the replacement rule to set the cref to $prefix.cref
 author: Waurich TUD 2013-07"
-  input Integer indxIn; 
+  input Integer indxIn;
   input String prefix;
   input list<DAE.ComponentRef> oVarCRefLstIn;
   input tuple<list<BackendDAE.Var>,BackendVarTransform.VariableReplacements> tplIn;
@@ -1276,7 +1276,7 @@ protected
 algorithm
   inLst := listGet(inLstLst,lstIdx);
   str1 := heading+&"_"+&intString(lstIdx-1);
-  BackendDump.dumpVarList(inLst,str1); 
+  BackendDump.dumpVarList(inLst,str1);
   headingOut := heading;
 end dumpVarLstLst1;
 
@@ -1305,7 +1305,7 @@ protected
 algorithm
   inLst := listGet(inLstLst,lstIdx);
   str1 := heading+&"_"+&intString(lstIdx-1);
-  BackendDump.dumpEquationList(inLst,str1); 
+  BackendDump.dumpEquationList(inLst,str1);
   headingOut := heading;
 end dumpEqLstLst1;
 
@@ -1343,7 +1343,7 @@ algorithm
    BackendDump.dumpEquationList(hs,"hs");
    print("components to get the A-matrix\n");
    BackendDump.dumpComponents(compsNew);
-   print("\n");  
+   print("\n");
 end printPartLinTornInfo;
 
 
@@ -1360,8 +1360,8 @@ author: Waurich TUD 2013-10"
   output list<list<BackendDAE.Var>> varLstLstOut;
   output BackendVarTransform.VariableReplacements replOut;
 algorithm
-  ((eqLstLstOut,varLstLstOut,replOut)) := List.fold(List.intRange(listLength(eqLstLstIn)),simplifyEquations1,(eqLstLstIn,varLstLstIn,replIn));  
-  //(eqLstLstOut,varLstLstOut,replOut) := (eqLstLstIn,varLstLstIn,replIn); 
+  ((eqLstLstOut,varLstLstOut,replOut)) := List.fold(List.intRange(listLength(eqLstLstIn)),simplifyEquations1,(eqLstLstIn,varLstLstIn,replIn));
+  //(eqLstLstOut,varLstLstOut,replOut) := (eqLstLstIn,varLstLstIn,replIn);
 end simplifyEquations;
 
 
@@ -1375,7 +1375,7 @@ protected
   list<BackendDAE.Var> varLst;
   list<list<BackendDAE.Equation>> eqLstLst;
   list<list<BackendDAE.Var>> varLstLst;
-algorithm 
+algorithm
   (eqLstLst,varLstLst,repl) := tplIn;
   eqLst := listGet(eqLstLst,idx);
   varLst := listGet(varLstLst,idx);
@@ -1418,7 +1418,7 @@ algorithm
       then
         fail();
   end matchcontinue;
-end simplifyEquations2; 
+end simplifyEquations2;
 
 
 protected function removeConstOrAlias "removes the equations and vars for which vars are assigned to constants or alias and replaces them.
@@ -1484,12 +1484,12 @@ algorithm
     else
       equation
         print("removeConstOrAlias failed!\n");
-      then 
+      then
         fail();
   end matchcontinue;
-end removeConstOrAlias;           
-      
-      
+end removeConstOrAlias;
+
+
 protected function handleConstantSide "checks if the equation is a constant assignment i.e. a=const, const=a or a simple equation i.e. a+b=0
 author: Waurich TUD 2013-10"
   input DAE.Exp varExp;
@@ -1535,7 +1535,7 @@ algorithm
     else
       equation
       then
-        (eqLstIn,varLstIn,replIn,false);        
+        (eqLstIn,varLstIn,replIn,false);
   end matchcontinue;
 end handleConstantSide;
 
@@ -1581,7 +1581,7 @@ algorithm
         (eqLst,varLst,repl,changed);
     case((DAE.CREF(componentRef = cref1)),_,DAE.DIV(_),_,_,_,_)
       equation
-        // a/otherVar = 0  replace: a --> 0  
+        // a/otherVar = 0  replace: a --> 0
         vars = BackendVariable.listVar(varLstIn);
         true = BackendVariable.existsVar(cref1,vars,false);
         vars = BackendVariable.removeCref(cref1,vars);
@@ -1595,7 +1595,7 @@ algorithm
       equation
         true = Expression.isCref(unaryExp);
         DAE.CREF(componentRef = cref1) = unaryExp;
-        // a/otherVar = 0  replace: a --> 0  
+        // a/otherVar = 0  replace: a --> 0
         vars = BackendVariable.listVar(varLstIn);
         true = BackendVariable.existsVar(cref1,vars,false);
         vars = BackendVariable.removeCref(cref1,vars);
@@ -1649,7 +1649,7 @@ algorithm
         (eqLst,varLst,repl,true);
     case(DAE.CREF(componentRef = _),DAE.CREF(componentRef = cref2),_,_,_,_)
       equation
-        // otherVar + a = 0  replace: a --> -otherVar 
+        // otherVar + a = 0  replace: a --> -otherVar
         vars = BackendVariable.listVar(varLstIn);
         true = BackendVariable.existsVar(cref2,vars,false);
         vars = BackendVariable.removeCref(cref2,vars);
@@ -1702,7 +1702,7 @@ algorithm
         (eqLst,varLst,repl,true);
     case(DAE.CREF(componentRef = _),DAE.CREF(componentRef = cref2),_,_,_,_)
       equation
-        // otherVar - a = 0  replace: a --> otherVar 
+        // otherVar - a = 0  replace: a --> otherVar
         vars = BackendVariable.listVar(varLstIn);
         true = BackendVariable.existsVar(cref2,vars,false);
         //print("checkForPosAlias: replace "+&ComponentReference.printComponentRefStr(cref2)+&" with "+&ExpressionDump.printExpStr(exp1)+&"\n");
@@ -1743,7 +1743,7 @@ algorithm
       equation
       then
         (false,NONE());
-  end matchcontinue;  
+  end matchcontinue;
 end oneSideConstant;
 
 //--------------------------------------------------//
@@ -1790,8 +1790,8 @@ algorithm
         (mEqSys,mEqSysT) = BackendDAEUtil.incidenceMatrixDispatch(vars,eqs,{},mEqSys, 0, numberOfEqs, intLt(0, numberOfEqs), BackendDAE.ABSOLUTE(), NONE());
         BackendDump.dumpVariables(vars, "vars of the torn system");
         BackendDump.dumpEquationArray(eqs,"eqs of the torn system");
-        BackendDump.dumpIncidenceMatrix(mEqSys);      
-        BackendDump.dumpIncidenceMatrixT(mEqSysT);   
+        BackendDump.dumpIncidenceMatrix(mEqSys);
+        BackendDump.dumpIncidenceMatrixT(mEqSysT);
         varRange = List.intRange(numberOfVars);
         eqRange = List.intRange(numberOfEqs);
         graphInfo = GraphML.createGraphInfo();
@@ -1821,7 +1821,7 @@ case(_,BackendDAE.EQUATIONSYSTEM(eqns=allEqs,vars=allVars, jac=_, jacType=_))
         //(mEqSys,mEqSysT) = BackendDAEUtil.incidenceMatrixDispatch(vars,eqs,{},mEqSysT, 0, numberOfEqs, intLt(0, numberOfEqs), BackendDAE.ABSOLUTE(), NONE());
         BackendDump.dumpVariables(vars, "vars of the torn system");
         BackendDump.dumpEquationArray(eqs,"eqs of the torn system");
-        BackendDump.dumpIncidenceMatrix(mEqSys);       
+        BackendDump.dumpIncidenceMatrix(mEqSys);
         varRange = List.intRange(numberOfVars);
         eqRange = List.intRange(numberOfEqs);
         graphInfo = GraphML.createGraphInfo();
@@ -1900,7 +1900,7 @@ author:Waurich TUD 2013-12"
   output String varString;
 algorithm
   varString := "varNode"+&intString(idx);
-end getVarNodeIdx; 
+end getVarNodeIdx;
 
 
 protected function getEqNodeIdx "outputs the identifier string for the given varIdx.
@@ -1909,9 +1909,9 @@ author:Waurich TUD 2013-12"
   output String varString;
 algorithm
   varString := "eqNode"+&intString(idx);
-end getEqNodeIdx; 
+end getEqNodeIdx;
 
-    
+
 protected function addVarNodeToGraph "adds a node for a variable to the graph.
 author:Waurich TUD 2013-12"
   input Integer indx;
@@ -1919,7 +1919,7 @@ author:Waurich TUD 2013-12"
   input list<Integer> attributeIdcs;//<name,type>
   input tuple<GraphML.GraphInfo,Integer> graphInfoIn;
   output tuple<GraphML.GraphInfo,Integer> graphInfoOut;
-protected 
+protected
   BackendDAE.Var var;
   Integer nameAttrIdx,typeAttIdx, graphIdx;
   String varString, varNodeId, idxString;
@@ -1934,7 +1934,7 @@ algorithm
   varString := BackendDump.varString(var);
   varChars := stringListStringChar(varString);
   varChars := List.map(varChars,HpcOmTaskGraph.prepareXML);
-  varString := stringCharListString(varChars); 
+  varString := stringCharListString(varChars);
   varNodeId := getVarNodeIdx(indx);
   idxString := intString(indx);
   nodeLabel := GraphML.NODELABEL_INTERNAL(idxString,NONE(),GraphML.FONTPLAIN());
@@ -1950,7 +1950,7 @@ author:Waurich TUD 2013-12"
   input list<Integer> attributeIdcs;//<name>
   input tuple<GraphML.GraphInfo,Integer> graphInfoIn;
   output tuple<GraphML.GraphInfo,Integer> graphInfoOut;
-protected 
+protected
   BackendDAE.Equation eq;
   Integer nameAttrIdx, graphIdx;
   String eqString, eqNodeId, idxString;
@@ -1964,7 +1964,7 @@ algorithm
   eqString := BackendDump.equationString(eq);
   eqChars := stringListStringChar(eqString);
   eqChars := List.map(eqChars,HpcOmTaskGraph.prepareXML);
-  eqString := stringCharListString(eqChars); 
+  eqString := stringCharListString(eqChars);
   eqNodeId := getEqNodeIdx(indx);
   idxString := intString(indx);
   nodeLabel := GraphML.NODELABEL_INTERNAL(idxString,NONE(),GraphML.FONTPLAIN());
@@ -2002,7 +2002,7 @@ algorithm
       BackendDAE.StateSets stateSets;
       BackendDAE.StrongComponent comp;
       BackendDAE.Variables daeVars, vars;
-      
+
       list<BackendDAE.Equation> eqLst, daeEqLst;
       list<BackendDAE.Var> varLst, daeVarLst;
     case(_,_,_,_,_,_,_)
@@ -2023,7 +2023,7 @@ algorithm
         BackendDAE.EQSYSTEM(orderedVars = daeVars, orderedEqs = daeEqs,stateSets = stateSets) = systIn;
         daeVarLst = BackendVariable.varList(daeVars);
         daeEqLst = BackendEquation.equationList(daeEqs);
-        
+
         // collect the vars of the loop
         otherVarsIntsLst = List.map(otherEqnVarTpl, Util.tuple22);
         otherVarsIdcs = List.unionList(otherVarsIntsLst);
@@ -2031,25 +2031,25 @@ algorithm
         varLst = List.map1r(varIdcs, BackendVariable.getVarAt, daeVars);
         vars = BackendVariable.listVar(varLst);
         varIdcs = listReverse(varIdcs);
-        
+
         // collect the eqs of the loops
         otherEqsIdcs = List.map(otherEqnVarTpl, Util.tuple21);
         eqIdcs = listAppend(resEqIdcs,otherEqsIdcs);
         eqLst = BackendEquation.getEqns(eqIdcs,daeEqs);
         eqs = BackendEquation.listEquation(eqLst);
-        
+
         // build the incidenceMatrix, dump eqSystem as graphML
         numEqs = BackendDAEUtil.equationArraySize(eqs);
         numVars = BackendVariable.numVariables(vars);
         m = arrayCreate(numEqs, {});
         mT = arrayCreate(numVars, {});
-        (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(vars,eqs,{},mT, 0, numEqs, intLt(0, numEqs), BackendDAE.ABSOLUTE(), NONE()); 
+        (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(vars,eqs,{},mT, 0, numEqs, intLt(0, numEqs), BackendDAE.ABSOLUTE(), NONE());
         dumpEquationSystemGraphML1(vars,eqs,m,"linSystem"+&intString(tornSysIdxIn));
-        
+
         print("START RESOLVING THE COMPONENT\n");
         //daeEqLst = BackendDAEOptimize.resolveLoops12(m,mT,eqIdcs,varIdcs,daeVarLst,daeEqLst,{});
         //daeEqs = BackendEquation.listEquation(daeEqLst);
-        
+
         //systTmp = BackendDAE.EQSYSTEM(daeVars,daeEqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets);
         //(systTmp,tornSysIdx) = resolveLinearSystem(compIdx+1,compsIn,ass1,ass2,systTmp,sharedIn,tornSysIdxIn+1);
       then
@@ -2062,9 +2062,9 @@ algorithm
       then
         (systTmp,tornSysIdx);
   end matchcontinue;
-end resolveLinearSystem; 
+end resolveLinearSystem;
 //--------------------------------------------------//
-// 
+//
 //-------------------------------------------------//
 
 end HpcOmEqSystems;

@@ -24,14 +24,14 @@ AlgLoopSolverFactory::~AlgLoopSolverFactory()
 /// Creates a solver according to given system of equations of type algebraic loop
 boost::shared_ptr<IAlgLoopSolver> AlgLoopSolverFactory::createAlgLoopSolver(IAlgLoop* algLoop)
 {
-   
+
     if(algLoop->getDimReal() > 0)
     {
-       
+
         string nonlinsolver_name = _global_settings->getSelectedNonLinSolver();
          boost::shared_ptr<INonLinSolverSettings> algsolversetting= createNonLinSolverSettings(nonlinsolver_name);
         _algsolversettings.push_back(algsolversetting);
-       
+
 
         boost::shared_ptr<IAlgLoopSolver> algsolver= createNonLinSolver(algLoop,nonlinsolver_name,algsolversetting);
         _algsolvers.push_back(algsolver);

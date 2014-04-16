@@ -1746,7 +1746,7 @@ algorithm
   outInitialEnv := {FRAME(NONE(), NORMAL_SCOPE(), tree, exts, imps, SOME(is_used))};
 
   // add the builtin classes from ModelicaBuiltin.mo and MetaModelicaBuiltin.mo
-  Absyn.PROGRAM(classes=initialClasses) := Builtin.getInitialFunctions();  
+  Absyn.PROGRAM(classes=initialClasses) := Builtin.getInitialFunctions();
   outInitialEnv := extendEnvWithClasses(listReverse(List.fold(initialClasses, SCodeUtil.translate2, {})), outInitialEnv);
 end buildInitialEnv;
 

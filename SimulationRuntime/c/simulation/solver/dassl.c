@@ -529,7 +529,7 @@ int functionODE_residual(double *t, double *y, double *yd, double* cj, double *d
   if (!success) {
     *ires = -1;
   }
-  
+
   data->threadData->currentErrorStage = saveJumpState;
 
   data->localData[0]->timeValue = timeBackup;

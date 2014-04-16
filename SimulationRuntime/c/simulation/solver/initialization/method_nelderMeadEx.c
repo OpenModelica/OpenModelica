@@ -388,10 +388,10 @@ int nelderMeadEx_initialization(INIT_DATA *initData, double *lambda, long lambda
     return -1;
 
   retVal = reportResidualValue(initData);
-  
+
   if(0 != retVal) {
     warningStreamPrint(LOG_INIT, 0, "try -ils to activate start value homotopy");
   }
-    
+
   return retVal;
 }

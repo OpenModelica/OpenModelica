@@ -221,7 +221,7 @@ template dumpClassAnnotation(SCode.Comment comment, SCodeDumpOptions options)
 ::=
 if Config.showAnnotations() then
   match comment
-    case COMMENT(__) then dumpAnnotationOpt(annotation_, options) 
+    case COMMENT(__) then dumpAnnotationOpt(annotation_, options)
 end dumpClassAnnotation;
 
 template dumpComponent(SCode.Element component, String each, SCodeDumpOptions options)
@@ -777,7 +777,7 @@ if Config.showAnnotations() then
 end dumpComment;
 
 template dumpCommentStr(Option<String> comment)
-::= match comment 
+::= match comment
     case SOME(cmt) then ' "<%cmt%>"'
     else ''
 end dumpCommentStr;

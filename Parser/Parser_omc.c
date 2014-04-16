@@ -37,8 +37,8 @@ void* ParserExt_parse(const char* filename, const char* infoname, int acceptedGr
 {
   int flags = PARSE_MODELICA;
   if(acceptedGrammer == 2) flags |= PARSE_META_MODELICA;
-  else if(acceptedGrammer == 3) flags |= PARSE_PARMODELICA; 
-  else if(acceptedGrammer == 4) flags |= PARSE_OPTIMICA; 
+  else if(acceptedGrammer == 3) flags |= PARSE_PARMODELICA;
+  else if(acceptedGrammer == 4) flags |= PARSE_OPTIMICA;
 
   void *res = parseFile(filename, infoname, flags, encoding, langStd, runningTestsuite);
   if (res == NULL)
@@ -52,8 +52,8 @@ void* ParserExt_parseexp(const char* filename, const char* infoname, int accepte
   int flags = PARSE_EXPRESSION;
   if(acceptedGrammer == 2) flags |= PARSE_META_MODELICA;
   else if(acceptedGrammer == 3) flags |= PARSE_PARMODELICA;
-  else if(acceptedGrammer == 4) flags |= PARSE_OPTIMICA; 
-  
+  else if(acceptedGrammer == 4) flags |= PARSE_OPTIMICA;
+
   void *res = parseFile(filename, infoname, flags, "UTF-8", langStd, runningTestsuite);
   if (res == NULL)
     MMC_THROW();
@@ -80,7 +80,7 @@ void* ParserExt_parsestringexp(const char* data, const char* filename, int accep
   int flags = PARSE_EXPRESSION;
   if(acceptedGrammer == 2) flags |= PARSE_META_MODELICA;
   else if(acceptedGrammer == 3) flags |= PARSE_PARMODELICA;
-  else if(acceptedGrammer == 4) flags |= PARSE_OPTIMICA; 
+  else if(acceptedGrammer == 4) flags |= PARSE_OPTIMICA;
 
   void *res = parseString(data, filename, flags, langStd, runningTestsuite);
   if (res != NULL) {

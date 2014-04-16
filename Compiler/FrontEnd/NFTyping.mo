@@ -797,19 +797,19 @@ algorithm
       DAE.CallAttributes attrs;
       Function func;
 
-    case (DAE.ICONST(integer = _), _, _, st, _) 
+    case (DAE.ICONST(integer = _), _, _, st, _)
       then (inExp, DAE.T_INTEGER_DEFAULT, DAE.C_CONST(), st);
 
-    case (DAE.RCONST(real = _), _, _, st, _) 
+    case (DAE.RCONST(real = _), _, _, st, _)
       then (inExp, DAE.T_REAL_DEFAULT, DAE.C_CONST(), st);
 
-    case (DAE.SCONST(string = _), _, _, st, _) 
+    case (DAE.SCONST(string = _), _, _, st, _)
       then (inExp, DAE.T_STRING_DEFAULT, DAE.C_CONST(), st);
 
-    case (DAE.BCONST(bool = _), _, _, st, _) 
+    case (DAE.BCONST(bool = _), _, _, st, _)
       then (inExp, DAE.T_BOOL_DEFAULT, DAE.C_CONST(), st);
 
-    case (DAE.ENUM_LITERAL(name = name), _, _, st, _) 
+    case (DAE.ENUM_LITERAL(name = name), _, _, st, _)
       equation
         NFInstTypes.TYPED_COMPONENT(ty = ty) =
           NFInstSymbolTable.lookupName(name, st);

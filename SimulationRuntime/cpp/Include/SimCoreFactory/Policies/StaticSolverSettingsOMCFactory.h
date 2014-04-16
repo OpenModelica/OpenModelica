@@ -8,7 +8,7 @@
 /*
 Policy class to create solver settings object
 */
-template <class CreationPolicy> 
+template <class CreationPolicy>
 struct StaticSolverSettingsOMCFactory : public  SolverSettingsOMCFactory<CreationPolicy>
 {
 
@@ -20,8 +20,8 @@ public:
 
     virtual ~StaticSolverSettingsOMCFactory()
     {
-    }    
-  
+    }
+
     virtual boost::shared_ptr<ISolverSettings> createSolverSettings(string solvername,boost::shared_ptr<IGlobalSettings> globalSettings)
     {
         if((solvername.compare("cvode")==0)||(solvername.compare("dassl")==0))
@@ -31,5 +31,5 @@ public:
         }
         else
             throw std::invalid_argument("Selected Solver is not available");
-    }    
+    }
 };

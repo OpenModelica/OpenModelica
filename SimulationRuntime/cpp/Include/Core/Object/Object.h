@@ -41,7 +41,7 @@ public:
 
     DCS_API virtual void setName(const string name);
 
-  
+
   /// (Re-)Initialisiert das Objekt und schließt den Aufbau ab
   DCS_API virtual void initialize();
 

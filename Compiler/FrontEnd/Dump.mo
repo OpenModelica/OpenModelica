@@ -112,20 +112,20 @@ algorithm
   outString := Tpl.tplString(AbsynDumpTpl.dump, inProgram);
 end unparseStr;
 
-public function unparseClassList 
-  "Prettyprints a list of classes" 
-  input list<Absyn.Class> inClasses; 
-  output String outString; 
-algorithm 
+public function unparseClassList
+  "Prettyprints a list of classes"
+  input list<Absyn.Class> inClasses;
+  output String outString;
+algorithm
   outString := Tpl.tplString(AbsynDumpTpl.dump,
     Absyn.PROGRAM(inClasses, Absyn.TOP(), Absyn.TIMESTAMP(0.0, 0.0)));
-end unparseClassList; 
+end unparseClassList;
 
-public function unparseClassStr 
+public function unparseClassStr
   "Prettyprints a Class."
-  input Absyn.Class inClass; 
-  output String outString; 
-algorithm 
+  input Absyn.Class inClass;
+  output String outString;
+algorithm
   outString := Tpl.tplString(AbsynDumpTpl.dumpClass, inClass);
 end unparseClassStr;
 
@@ -1384,7 +1384,7 @@ public function unparseModificationStr
   input Absyn.Modification inModification;
   output String outString;
 algorithm
-  outString := Tpl.tplString(AbsynDumpTpl.dumpModification, inModification); 
+  outString := Tpl.tplString(AbsynDumpTpl.dumpModification, inModification);
 end unparseModificationStr;
 
 public function equationName
@@ -2424,10 +2424,10 @@ algorithm
       Integer diff;
 
     case (Absyn.UNARY(op = _), _, _) then true;
-      
+
     else
       equation
-        diff = Util.intCompare(expPriority(inOperand, inLhs), 
+        diff = Util.intCompare(expPriority(inOperand, inLhs),
                                expPriority(inOperator, inLhs));
       then
         shouldParenthesize2(diff, inOperand, inLhs);

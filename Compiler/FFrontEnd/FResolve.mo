@@ -39,14 +39,14 @@ encapsulated package FResolve
 "
 
 // public imports
-public 
+public
 import Absyn;
 import FCore;
 import FNode;
 import FGraph;
 import FLookup;
 
-protected 
+protected
 import SCode;
 import FGraphBuild;
 
@@ -83,14 +83,14 @@ algorithm
     local
       Refs refs;
       Graph g;
-    
+
     case (_, g)
       equation
         // apply on all extends nodes
         g = FNode.apply1(inRef, ext_helper, g);
       then
         g;
-  
+
   end match;
 end ext;
 
@@ -109,7 +109,7 @@ algorithm
       Node n;
       Absyn.Info i;
       Graph g;
-        
+
     // found ref
     case (r, g)
       equation
@@ -121,7 +121,7 @@ algorithm
         g = FGraphBuild.mkRefNode(FNode.refNodeName, rr, r, g);
       then
         g;
-    
+
     // not found ref
     case (r, g)
       equation
@@ -130,13 +130,13 @@ algorithm
         p = SCode.getBaseClassPath(e);
         i = SCode.elementInfo(e);
         failure(_ = FLookup.name(r, p, FLookup.ignoreNothing, dummyLookupOption));
-        print("FResolve.ext_helper: baseclass " +& Absyn.pathString(p) +& 
+        print("FResolve.ext_helper: baseclass " +& Absyn.pathString(p) +&
               " not found in: " +& FNode.toPathStr(FNode.fromRef(r)) +&"!\n");
       then
         g;
-    
-    else ig; 
-  
+
+    else ig;
+
   end matchcontinue;
 end ext_helper;
 
@@ -151,14 +151,14 @@ algorithm
     local
       Refs refs;
       Graph g;
-      
+
     case (_, g)
       equation
         // apply on all derived nodes
         g = FNode.apply1(inRef, derived_helper, g);
       then
         g;
-  
+
   end match;
 end derived;
 
@@ -177,7 +177,7 @@ algorithm
       Node n;
       Absyn.Info i;
       Graph g;
-    
+
     // found ref
     case (r, g)
       equation
@@ -188,7 +188,7 @@ algorithm
         g = FGraphBuild.mkRefNode(FNode.refNodeName, rr, r, g);
       then
         g;
-    
+
     // not found ref
     case (r, g)
       equation
@@ -196,13 +196,13 @@ algorithm
         FCore.DE(d) = FNode.data(FNode.fromRef(r));
         SCode.DERIVED(typeSpec = Absyn.TPATH(p, _)) = d;
         failure(_ = FLookup.name(r, p, FLookup.ignoreNothing, dummyLookupOption));
-        print("FResolve.derived_helper: baseclass " +& Absyn.pathString(p) +& 
-              " not found in: " +& FNode.toPathStr(FNode.fromRef(r)) +&"!\n"); 
+        print("FResolve.derived_helper: baseclass " +& Absyn.pathString(p) +&
+              " not found in: " +& FNode.toPathStr(FNode.fromRef(r)) +&"!\n");
       then
         g;
-        
+
     else ig;
-  
+
   end matchcontinue;
 end derived_helper;
 
@@ -217,14 +217,14 @@ algorithm
     local
       Refs refs;
       Graph g;
-    
+
     case (_, g)
       equation
         // apply to all component nodes
         g = FNode.apply1(inRef, ty_helper, g);
       then
         g;
-  
+
   end match;
 end ty;
 
@@ -243,7 +243,7 @@ algorithm
       Node n;
       Absyn.Info i;
       Graph g;
-        
+
     // found ref
     case (r, g)
       equation
@@ -255,7 +255,7 @@ algorithm
         g = FGraphBuild.mkRefNode(FNode.refNodeName, rr, r, g);
       then
         g;
-    
+
     // not found ref
     case (r, g)
       equation
@@ -263,13 +263,13 @@ algorithm
         FCore.CO(e = e) = FNode.data(FNode.fromRef(r));
         Absyn.TPATH(p, _) = SCode.getComponentTypeSpec(e);
         failure(_ = FLookup.name(r, p, FLookup.ignoreNothing, dummyLookupOption));
-        print("FResolve.ty_helper: type path " +& Absyn.pathString(p) +& 
+        print("FResolve.ty_helper: type path " +& Absyn.pathString(p) +&
               " not found in: " +& FNode.toPathStr(FNode.fromRef(r)) +&"!\n");
       then
         g;
-    
+
     else ig;
-    
+
   end matchcontinue;
 end ty_helper;
 
@@ -284,14 +284,14 @@ algorithm
     local
       Refs refs;
       Graph g;
-    
+
     case (_, g)
       equation
         // apply on all constraintby nodes
         g = FNode.apply1(inRef, cc_helper, g);
       then
         g;
-  
+
   end match;
 end cc;
 
@@ -310,7 +310,7 @@ algorithm
       Node n;
       Absyn.Info i;
       Graph g;
-        
+
     // found ref
     case (r, g)
       equation
@@ -320,20 +320,20 @@ algorithm
         g = FGraphBuild.mkRefNode(FNode.refNodeName, rr, r, g);
       then
         g;
-    
+
     // not found ref
     case (r, g)
       equation
         true = FNode.isRefConstrainClass(r);
         FCore.CC(SCode.CONSTRAINCLASS(constrainingClass = p)) = FNode.data(FNode.fromRef(r));
         failure(_ = FLookup.name(r, p, FLookup.ignoreNothing, dummyLookupOption));
-        print("FResolve.cc_helper: type path " +& Absyn.pathString(p) +& 
+        print("FResolve.cc_helper: type path " +& Absyn.pathString(p) +&
               " not found in: " +& FNode.toPathStr(FNode.fromRef(r)) +&"!\n");
       then
         g;
-    
+
     else ig;
-  
+
   end matchcontinue;
 end cc_helper;
 
@@ -348,14 +348,14 @@ algorithm
     local
       Refs refs;
       Graph g;
-      
+
     case (_, g)
       equation
         // apply on all class extends nodes
         g = FNode.apply1(inRef, clsext_helper, g);
       then
         g;
-  
+
   end match;
 end clsext;
 
@@ -374,7 +374,7 @@ algorithm
       Absyn.Info i;
       Name id;
       Graph g;
-        
+
     // found ref
     case (r, g)
       equation
@@ -387,7 +387,7 @@ algorithm
         g = FGraphBuild.mkRefNode(FNode.refNodeName, rr, r, g);
       then
         g;
-    
+
     // not found ref
     case (r, g)
       equation
@@ -397,13 +397,13 @@ algorithm
         p::_ = FNode.parents(FNode.fromRef(r));
         // search ONLY in extends!
         failure(_ = FLookup.ext(p, id, FLookup.ignoreParentsAndImports, dummyLookupOption));
-        print("FResolve.clsext_helper: class extends " +& id +& 
+        print("FResolve.clsext_helper: class extends " +& id +&
               " not found in extends of: " +& FNode.toPathStr(FNode.fromRef(r)) +&"!\n");
       then
         g;
-        
-    else ig; 
-  
+
+    else ig;
+
   end matchcontinue;
 end clsext_helper;
 
@@ -418,14 +418,14 @@ algorithm
     local
       Refs refs;
       Graph g;
-    
+
     case (_, g)
       equation
         // apply on all comopnent reference nodes
         g = FNode.apply1(inRef, cr_helper, g);
       then
         g;
-  
+
   end match;
 end cr;
 
@@ -443,7 +443,7 @@ algorithm
       Node n;
       Absyn.Info i;
       Graph g;
-        
+
     // found ref
     case (r, g)
       equation
@@ -453,20 +453,20 @@ algorithm
         g = FGraphBuild.mkRefNode(FNode.refNodeName, rr, r, g);
       then
         g;
-    
+
     // not found ref
     case (r, g)
       equation
         true = FNode.isRefCref(r);
         FCore.CR(r = cr) = FNode.data(FNode.fromRef(r));
         failure(_ = FLookup.cr(r, cr, FLookup.ignoreNothing, dummyLookupOption));
-        print("FResolve.cr_helper: component reference " +& Absyn.crefString(cr) +& 
+        print("FResolve.cr_helper: component reference " +& Absyn.crefString(cr) +&
               " not found in: " +& FNode.toPathStr(FNode.fromRef(r)) +&"!\n");
       then
         g;
-   
-    else ig; 
-  
+
+    else ig;
+
   end matchcontinue;
 end cr_helper;
 

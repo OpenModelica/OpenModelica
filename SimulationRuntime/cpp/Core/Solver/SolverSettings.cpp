@@ -75,7 +75,7 @@ bool SolverSettings::getDenseOutput()
 void SolverSettings::setDenseOutput(bool dense)
 {
   _denseOutput = dense;
-}  
+}
 
 
 bool SolverSettings::getEventOutput()

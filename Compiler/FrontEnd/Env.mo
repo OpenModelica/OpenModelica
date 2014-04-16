@@ -195,8 +195,8 @@ uniontype Frame
     list<SCode.Element>   defineUnits        "List of units defined in the frame";
     ImportTable           importTable        "The Import table";
     Extra                 extra              "Contains more info, see Extra";
-    Env                   parents            "Contains the parent environments"; 
-  end FRAME;  
+    Env                   parents            "Contains the parent environments";
+  end FRAME;
 end Frame;
 
 public uniontype ItemType
@@ -246,7 +246,7 @@ uniontype Item
   record IMPORT "not really pushed in the frame, just to unify the env management"
     SCode.Element i;
   end IMPORT;
-  
+
   record PARENT
     Absyn.Path name;
     Env parentEnv;
@@ -254,10 +254,10 @@ uniontype Item
     Env childEnv;
     Modification m;
   end PARENT;
-  
+
 end Item;
 
-public function emptyCache 
+public function emptyCache
 "returns an empty cache"
   output Cache cache;
 protected
@@ -770,11 +770,11 @@ public function getItemType
 algorithm
   outType := match(inClassDef, inItemType)
     local ItemType itemType;
-    
+
     // A builtin class.
     case (_, SOME(itemType)) then itemType;
     case (SCode.PARTS(externalDecl = SOME(SCode.EXTERNALDECL(lang = SOME("builtin")))), _) then BUILTIN();
-    
+
     // A user-defined class (i.e. not builtin).
     else then USERDEFINED();
   end match;
@@ -971,7 +971,7 @@ algorithm
   end match;
 end extendFrameI;
 
-public function addFrameItem 
+public function addFrameItem
 " This function replaces an item in the environment!"
   input Env inEnv;
   input Ident inName;
@@ -1009,7 +1009,7 @@ algorithm
   end matchcontinue;
 end addFrameItem;
 
-public function replaceFrameItem 
+public function replaceFrameItem
 " This function replaces an item in the environment!"
   input Env inEnv;
   input Ident inName;
@@ -1025,7 +1025,7 @@ algorithm
       AvlTree             clsAndVars;
       AvlTree             tys;
       CSetsType           crs;
-      list<SCode.Element> du;      
+      list<SCode.Element> du;
       ImportTable         it;
       Extra extra;
       Env fs, env, parents;
@@ -1048,7 +1048,7 @@ algorithm
   end matchcontinue;
 end replaceFrameItem;
 
-public function pushFrameItem 
+public function pushFrameItem
 " This function adds an item to the environment or updates it if is already there!"
   input Env inEnv;
   input Ident inName;
@@ -1109,7 +1109,7 @@ algorithm
   end match;
 end mergeItems;
 
-public function isComponentFrame 
+public function isComponentFrame
 "returns true if this a virtual component name added during instantiation"
   input Frame inFrame;
   output Boolean b;
@@ -1120,14 +1120,14 @@ algorithm
     case (FRAME(extra = EXTRA(_, tyLen)))
       equation
         b = intNe(tyLen, -1);
-      then 
+      then
         b;
-    
+
     else false;
   end match;
 end isComponentFrame;
 
-public function setEnvName 
+public function setEnvName
  "set the name in the env"
    input Env inEnv;
    input Option<Ident> inEnvName;
@@ -1145,10 +1145,10 @@ algorithm
       ImportTable         it;
       Extra               extra;
       Env fs, env, parents;
- 
+
      // empty case
     case ({}, _) then {};
- 
+
     case (FRAME(_,st,ft,clsAndVars,tys,_,_,it,extra,parents)::fs, _)
       equation
         clsAndVars = emptyAvlTree;
@@ -1157,11 +1157,11 @@ algorithm
       then
         //FRAME(inEnvName,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs;
         FRAME(inEnvName,st,ft,clsAndVars,tys,{},{},it,extra,parents)::fs;
- 
+
    end match;
  end setEnvName;
 
-public function setParentEnv 
+public function setParentEnv
 "set the name in the env"
   input Env inEnv;
   input Frame inFrame;
@@ -1186,7 +1186,7 @@ algorithm
         parents = inFrame::parents;
       then
         FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs;
-        
+
     case (FRAME(_,_,_,_,_,_,_,_,_,_)::_, _)
       equation
         print("Env.setParentEnv failed!\n");
@@ -1197,7 +1197,7 @@ end setParentEnv;
 
 public function mergeEnv
 "@author: adrpo
- in order to keep track of where we are 
+ in order to keep track of where we are
  we merge environments when we switch scopes:
  We are in A.B.C we lookup X.Y.Z for component z
  -> merged env: COMPOSITE(A.B.C.z).X.Y.Z
@@ -1252,21 +1252,21 @@ algorithm
         //print("Merging2RE: " +& getEnvNameStr(c) +& "/" +& SCode.elementName(inChildClass) +& "\n");
       then
         c;
-        
+
     case (_, _, _, _, _)
       equation
-        print("Merge fail CE: " +& getEnvNameStr(inChildEnv) +& "\n" +& 
-              "           PE: " +& getEnvNameStr(inParentEnv) +& "\n" +& 
+        print("Merge fail CE: " +& getEnvNameStr(inChildEnv) +& "\n" +&
+              "           PE: " +& getEnvNameStr(inParentEnv) +& "\n" +&
               " with element: " +& inName +& "\n");
       then
-        inChildEnv; 
+        inChildEnv;
 
   end matchcontinue;
 end mergeEnv;
 
 public function splitEnv
 "@author: adrpo
- in order to keep track of where we are 
+ in order to keep track of where we are
  we merge environments when we switch scopes:
  We are in A.B.C we lookup X.Y.Z for component z
  -> merged env: A.B.C.z.X.Y.Z
@@ -1289,15 +1289,15 @@ algorithm
         true = Config.acceptMetaModelicaGrammar();
       then
         (inChildEnv, inParentEnv);
-    
+
     case (_, _, _)
       equation
         /*
-        print("Split fail CE: " +& getEnvNameStr(inChildEnv) +& "\n" +& 
-              "           PE: " +& getEnvNameStr(inParentEnv) +& "\n" +& 
+        print("Split fail CE: " +& getEnvNameStr(inChildEnv) +& "\n" +&
+              "           PE: " +& getEnvNameStr(inParentEnv) +& "\n" +&
               " with element: " +& inName +& "\n");*/
       then
-        (inChildEnv, inParentEnv); 
+        (inChildEnv, inParentEnv);
 
   end matchcontinue;
 end splitEnv;
@@ -1315,11 +1315,11 @@ algorithm
     case ({}) then {};
 
     case (FRAME(extra = EXTRA(mods = pm))::_) then pm;
-  
+
   end match;
 end getModifications;
 
-public function addModifications 
+public function addModifications
 "add the propagated modifers to the ones already in the env"
   input Env inEnv;
   input Modifications inPMs;
@@ -1341,7 +1341,7 @@ algorithm
 
     case (_, _)
       equation
-        true = Config.acceptMetaModelicaGrammar(); 
+        true = Config.acceptMetaModelicaGrammar();
       then inEnv;
 
     // empty case
@@ -1353,11 +1353,11 @@ algorithm
         // mo = List.union(inPMs, mo);
       then
         FRAME(id,st,ft,clsAndVars,tys,crs,du,it,EXTRA(mo,isCo),parents)::fs;
-  
+
   end matchcontinue;
 end addModifications;
 
-public function addModification 
+public function addModification
 "add the propagated modifers to the ones already in the env"
   input Env inEnv;
   input Modification inPM;
@@ -1379,9 +1379,9 @@ algorithm
 
     case (_, _)
       equation
-        true = Config.acceptMetaModelicaGrammar(); 
+        true = Config.acceptMetaModelicaGrammar();
       then inEnv;
-   
+
     // empty case
     case ({}, _) then {};
 
@@ -1392,7 +1392,7 @@ algorithm
   end matchcontinue;
 end addModification;
 
-public function hasModifications 
+public function hasModifications
 "searches the env for propagated modifers"
   input Env inEnv;
   output Boolean yes;
@@ -1411,18 +1411,18 @@ algorithm
         true = hasModifications2(pm);
       then
         true;
-    
+
     case (FRAME(extra = EXTRA(mods = pm))::fs)
       equation
         false = hasModifications2(pm);
         b = hasModifications(fs);
       then
         b;
-  
+
   end matchcontinue;
 end hasModifications;
 
-public function hasModifications2 
+public function hasModifications2
 "searches the env for propagated modifers"
   input Modifications inPM;
   output Boolean yes;
@@ -1446,13 +1446,13 @@ algorithm
         b = hasModifications2(rest);
       then
         b;
-    
+
      else true;
 
   end matchcontinue;
 end hasModifications2;
 
-public function printModifications 
+public function printModifications
 "searches the env for propagated modifers"
   input Env inEnv;
 algorithm
@@ -1472,7 +1472,7 @@ algorithm
         printModifications(fs);
       then
         ();
-      
+
   end match;
 end printModifications;
 
@@ -1497,7 +1497,7 @@ algorithm
         str = str +& " " +& propagatedModifiersStr(rest);
       then
         str;
-    
+
   end match;
 end propagatedModifiersStr;
 
@@ -1565,7 +1565,7 @@ algorithm
             BUILTIN()
             ),
           {});
-      then 
+      then
         new_env;
 
   end match;
@@ -1637,7 +1637,7 @@ algorithm
     case (FRAME(name = SOME(id)) :: rest)
       equation
         outPath = getEnvName2(rest, Absyn.IDENT(id));
-      then 
+      then
         outPath;
   end match;
 end getEnvName_dispatch;
@@ -1655,7 +1655,7 @@ algorithm
 
     case (FRAME(name = SOME(id)) :: rest, _)
       then getEnvName2(rest, Absyn.QUALIFIED(id, inPath));
-    
+
     else inPath;
   end match;
 end getEnvName2;
@@ -2018,7 +2018,7 @@ algorithm
   end match;
 end getProgramFromCache;
 
-public function setProgramInCache 
+public function setProgramInCache
   input Cache inCache;
   input Absyn.Program program;
   output Cache outCache;
@@ -2096,10 +2096,10 @@ algorithm
         s = DAEDump.dumpFunctionNamesStr(arrayGet(ef,1));
         str = "Instantiated funcs: " +& s +&"\n";
       then str;
-    
+
     // empty cache
     else "EMPTY CACHE\n";
-  
+
   end matchcontinue;
 end printCacheStr;
 
@@ -2899,7 +2899,7 @@ algorithm
       StructuralParameters ht;
       Absyn.Path p;
       Absyn.Program program;
-    
+
     // Don't overwrite SOME() with NONE()
     case (_, _)
       equation
@@ -2910,10 +2910,10 @@ algorithm
       equation
         ef = arrayUpdate(ef,1,DAEUtil.avlTreeAdd(arrayGet(ef, 1),func,NONE()));
       then CACHE(ienv,ef,ht,p,program);
-    
+
     // Non-FQ paths mean aliased functions; do not add these to the cache
     case (_,_) then (cache);
-  
+
   end matchcontinue;
 end addCachedInstFuncGuard;
 
@@ -2930,13 +2930,13 @@ algorithm
       StructuralParameters ht;
       Absyn.Path p;
       Absyn.Program program;
-    
+
     case (CACHE(ienv,ef,ht,p,program),_)
       equation
         ef = arrayUpdate(ef,1,DAEUtil.addDaeFunction(funcs, arrayGet(ef, 1)));
       then CACHE(ienv,ef,ht,p,program);
     else inCache;
-  
+
   end match;
 end addDaeFunction;
 
@@ -2953,13 +2953,13 @@ algorithm
       StructuralParameters ht;
       Absyn.Path p;
       Absyn.Program program;
-    
+
     case (CACHE(ienv,ef,ht,p,program),_)
       equation
         ef = arrayUpdate(ef,1,DAEUtil.addDaeExtFunction(funcs, arrayGet(ef,1)));
       then CACHE(ienv,ef,ht,p,program);
     else inCache;
-  
+
   end match;
 end addDaeExtFunction;
 
@@ -3048,12 +3048,12 @@ algorithm
       list<DAE.ComponentRef> crs;
       Absyn.Path p;
       Absyn.Program program;
-    
+
     case (CACHE(initialEnv,functions,(ht,crs::st),p,program),SCode.PARAM(),_)
       then CACHE(initialEnv,functions,(ht,(cr::crs)::st),p,program);
-    
+
     else cache;
-  
+
   end match;
 end addEvaluatedCref;
 
@@ -3416,7 +3416,7 @@ algorithm
         true = stringEqual(id1, id2);
       then
         cref;
-    
+
     // adrpo: leave it as stripped as you can if you can't match it above and we have true for stripPartial
     case (Absyn.CREF_QUAL(name = id1, subscripts = {}, componentRef = _),
           env_path, true)
@@ -3480,7 +3480,7 @@ algorithm
         true = stringEqual(id1, id2);
       then
         path;
-    
+
     // adrpo: leave it as stripped as you can if you can't match it above and stripPartial is true
     case (Absyn.QUALIFIED(name = id1, path = path), env_path, true)
       equation
@@ -3544,7 +3544,7 @@ algorithm
         true = stringEqual(id1, id2);
       then
         cref;
-    
+
     // adrpo: leave it as stripped as you can if you can't match it above and stripPartial is true
     case (DAE.CREF_QUAL(ident = id1, subscriptLst = {}, componentRef = _),
           env_path, true)
@@ -3653,8 +3653,8 @@ algorithm
   outCref := daeCrefStripEnvPrefix(inCref, inEnv, true);
   false := ComponentReference.crefEqualNoStringCompare(outCref, inCref);
   /*
-  print("DC->: " +& ComponentReference.printComponentRefStr(inCref) +& 
-      "\nDC<-" +& ComponentReference.printComponentRefStr(outCref) +& 
+  print("DC->: " +& ComponentReference.printComponentRefStr(inCref) +&
+      "\nDC<-" +& ComponentReference.printComponentRefStr(outCref) +&
       "\nE:" +& getEnvNameStr(inEnv) +& "\n");*/
 end daeCrefStripEnvIfFullyQualifedInEnv;
 
@@ -3673,8 +3673,8 @@ algorithm
   outCref := crefStripEnvPrefix(inCref, inEnv, true);
   false := Absyn.crefEqual(outCref, inCref);
   /*
-  print("C->: " +& Absyn.printComponentRefStr(inCref) +& 
-      "\nC<-" +& Absyn.printComponentRefStr(outCref) +& 
+  print("C->: " +& Absyn.printComponentRefStr(inCref) +&
+      "\nC<-" +& Absyn.printComponentRefStr(outCref) +&
       "\nE:" +& getEnvNameStr(inEnv) +& "\n");*/
 end crefStripEnvIfFullyQualifedInEnv;
 
@@ -3693,8 +3693,8 @@ algorithm
   outPath := pathStripEnvPrefix(inPath, inEnv, true);
   false := Absyn.pathEqual(outPath, inPath);
   /*
-  print("P->: " +& Absyn.pathString(inPath) +& 
-      "\nP<-" +& Absyn.pathString(outPath) +& 
+  print("P->: " +& Absyn.pathString(inPath) +&
+      "\nP<-" +& Absyn.pathString(outPath) +&
       "\nE:" +& getEnvNameStr(inEnv) +& "\n");*/
 end pathStripEnvIfFullyQualifedInEnv;
 
@@ -3728,17 +3728,17 @@ public function isIdentOnlyInTop
 algorithm
   isFQ := matchcontinue(inId, inEnv)
     local Frame f; Env fs; Ident id; Boolean b;
-    
+
     case (_, {}) then false;
-    
+
     // we found it
     case (_, f::_)
       equation
         _ = getItemInEnv(inId, {f});
         b = isTopScope({f});
-      then 
+      then
         b;
-    
+
     // we haven't found it
     case (_, f::fs)
       equation

@@ -227,7 +227,7 @@ static int pre_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
    int k = 1,i,j,err;
    double t;
    DATA * data = iData->data;
-   
+
    if(iData->dtime.time[0] > iData->dtime.startTimeOpt)
     iData->dtime.time[0] = iData->dtime.startTimeOpt;
    solverInfo->currentTime = iData->dtime.time[0];
@@ -241,7 +241,7 @@ static int pre_ipopt_sim(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
 
      smallIntSolverStep(iData, solverInfo, t);
      sim_result.emit(&sim_result,data);
-     ++k; 
+     ++k;
     }
   iData->dtime.t0 = iData->data->localData[0]->timeValue;
 

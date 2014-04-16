@@ -39,25 +39,25 @@ encapsulated package FVisit
 "
 
 // public imports
-public 
+public
 import FCore;
 import FNode;
 
 // protected imports
-protected 
+protected
 import Global;
 import List;
 import Util;
 import Error;
 import System;
 
-public 
+public
 type Id = FCore.Id;
 type Seq = FCore.Seq;
 type Next = FCore.Next;
 type Node = FCore.Node;
 type Ref = FCore.Ref;
-type Data = FCore.Data; 
+type Data = FCore.Data;
 type Visit = FCore.Visit;
 type VAvlTree = FCore.VAvlTree;
 type Visited = FCore.Visited;
@@ -109,8 +109,8 @@ algorithm
       Seq seq;
       AvlTree a;
       Id id;
-    
-    // there 
+
+    // there
     case (FCore.V(tree = a), _)
       equation
         id = FNode.id(FNode.fromRef(inRef));
@@ -158,16 +158,16 @@ algorithm
       AvlTree a;
       Visit v;
       Id id;
-    
+
     // already there, something's fishy!
     case (_, _)
       equation
         id = FNode.id(FNode.fromRef(inRef));
         v = avlTreeGet(tree(inVisited), FNode.id(FNode.fromRef(inRef)));
-        print("Already visited: " +& FNode.toStr(FNode.fromRef(inRef)) +& " seq: " +& intString(seq(v)) +& "\n"); 
+        print("Already visited: " +& FNode.toStr(FNode.fromRef(inRef)) +& " seq: " +& intString(seq(v)) +& "\n");
       then
         fail();
-    
+
     case (FCore.V(a, _), _)
       equation
         id = FNode.id(FNode.fromRef(inRef));
@@ -177,7 +177,7 @@ algorithm
         outVisited = FCore.V(a, n);
       then
         outVisited;
-  end matchcontinue;    
+  end matchcontinue;
 end visit;
 
 // ************************ AVL Tree implementation ***************************

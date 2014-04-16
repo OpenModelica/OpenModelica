@@ -37,7 +37,7 @@ void modelica_parser::stored_definition() {
   RefMyAST cd_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)RefToken  s = ANTLR_USE_NAMESPACE(antlr)nullToken;
   RefMyAST s_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   switch ( LA(1)) {
   case END:
   {
@@ -53,9 +53,9 @@ void modelica_parser::stored_definition() {
     if ( inputState->guessing==0 ) {
       stored_definition_AST = RefMyAST(currentAST.root);
 #line 97 "modelica_parser.g"
-      
+
       stored_definition_AST = RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(END_DEFINITION,"END_DEFINITION")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(stored_definition_AST))));
-      
+
 #line 60 "modelica_parser.cpp"
       currentAST.root = stored_definition_AST;
       if ( stored_definition_AST!=RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) &&
@@ -86,9 +86,9 @@ void modelica_parser::stored_definition() {
     if ( inputState->guessing==0 ) {
       stored_definition_AST = RefMyAST(currentAST.root);
 #line 103 "modelica_parser.g"
-      
+
       stored_definition_AST = RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(COMPONENT_DEFINITION,"COMPONENT_DEFINITION")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(stored_definition_AST))));
-      
+
 #line 93 "modelica_parser.cpp"
       currentAST.root = stored_definition_AST;
       if ( stored_definition_AST!=RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) &&
@@ -112,9 +112,9 @@ void modelica_parser::stored_definition() {
     if ( inputState->guessing==0 ) {
       stored_definition_AST = RefMyAST(currentAST.root);
 #line 109 "modelica_parser.g"
-      
+
       stored_definition_AST = RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(IMPORT_DEFINITION,"IMPORT_DEFINITION")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(stored_definition_AST))));
-      
+
 #line 119 "modelica_parser.cpp"
       currentAST.root = stored_definition_AST;
       if ( stored_definition_AST!=RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) &&
@@ -275,9 +275,9 @@ void modelica_parser::stored_definition() {
       if ( inputState->guessing==0 ) {
         stored_definition_AST = RefMyAST(currentAST.root);
 #line 92 "modelica_parser.g"
-        
+
         stored_definition_AST = RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(BEGIN_DEFINITION,"BEGIN_DEFINITION")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(stored_definition_AST))));
-        
+
 #line 282 "modelica_parser.cpp"
         currentAST.root = stored_definition_AST;
         if ( stored_definition_AST!=RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) &&
@@ -370,7 +370,7 @@ void modelica_parser::stored_definition() {
           match(SEMICOLON);
           if ( inputState->guessing==0 ) {
 #line 117 "modelica_parser.g"
-            
+
                     /* adrpo, fix the end of this AST node */
                     if(cd_AST != NULL)
                     {
@@ -381,14 +381,14 @@ void modelica_parser::stored_definition() {
                     RefMyAST(cd_AST)->setEndLine(s->getLine());
                     RefMyAST(cd_AST)->setEndColumn(s->getColumn());
                      }
-                  
+
 #line 386 "modelica_parser.cpp"
           }
         }
         else {
           goto _loop14;
         }
-        
+
       }
       _loop14:;
       } // ( ... )*
@@ -396,9 +396,9 @@ void modelica_parser::stored_definition() {
       if ( inputState->guessing==0 ) {
         stored_definition_AST = RefMyAST(currentAST.root);
 #line 131 "modelica_parser.g"
-        
+
                 stored_definition_AST = RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(STORED_DEFINITION,"STORED_DEFINITION")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(stored_definition_AST))));
-              
+
 #line 403 "modelica_parser.cpp"
         currentAST.root = stored_definition_AST;
         if ( stored_definition_AST!=RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) &&
@@ -421,7 +421,7 @@ void modelica_parser::class_type() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST class_type_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   {
   switch ( LA(1)) {
   case CLASS:
@@ -541,7 +541,7 @@ void modelica_parser::component_clause() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST component_clause_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   type_prefix();
   if (inputState->guessing==0) {
     astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
@@ -582,7 +582,7 @@ void modelica_parser::import_clause() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST import_clause_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp25_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp25_AST = astFactory->create(LT(1));
@@ -605,7 +605,7 @@ void modelica_parser::import_clause() {
   else {
     throw ANTLR_USE_NAMESPACE(antlr)NoViableAltException(LT(1), getFilename());
   }
-  
+
   }
   comment();
   if (inputState->guessing==0) {
@@ -619,7 +619,7 @@ void modelica_parser::within_clause() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST within_clause_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp26_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp26_AST = astFactory->create(LT(1));
@@ -654,7 +654,7 @@ void modelica_parser::class_definition() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST class_definition_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   {
   switch ( LA(1)) {
   case ENCAPSULATED:
@@ -727,9 +727,9 @@ void modelica_parser::class_definition() {
   if ( inputState->guessing==0 ) {
     class_definition_AST = RefMyAST(currentAST.root);
 #line 151 "modelica_parser.g"
-    
+
           class_definition_AST = RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(CLASS_DEFINITION,"CLASS_DEFINITION")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(class_definition_AST))));
-        
+
 #line 734 "modelica_parser.cpp"
     currentAST.root = class_definition_AST;
     if ( class_definition_AST!=RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) &&
@@ -747,7 +747,7 @@ void modelica_parser::name_path() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST name_path_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   if (((LA(1) == IDENT) && (_tokenSet_6.member(LA(2))))&&( LA(2)!=DOT )) {
     RefMyAST tmp29_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
     if ( inputState->guessing == 0 ) {
@@ -779,7 +779,7 @@ void modelica_parser::name_path() {
   else {
     throw ANTLR_USE_NAMESPACE(antlr)NoViableAltException(LT(1), getFilename());
   }
-  
+
   returnAST = name_path_AST;
 }
 
@@ -787,7 +787,7 @@ void modelica_parser::class_specifier() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST class_specifier_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   switch ( LA(1)) {
   case IDENT:
   {
@@ -880,9 +880,9 @@ void modelica_parser::class_specifier() {
     if ( inputState->guessing==0 ) {
       class_specifier_AST = RefMyAST(currentAST.root);
 #line 163 "modelica_parser.g"
-      
+
       class_specifier_AST = RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(CLASS_EXTENDS,"CLASS_EXTENDS")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(class_specifier_AST))));
-      
+
 #line 887 "modelica_parser.cpp"
       currentAST.root = class_specifier_AST;
       if ( class_specifier_AST!=RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) &&
@@ -907,7 +907,7 @@ void modelica_parser::class_specifier2() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST class_specifier2_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   {
   if ((_tokenSet_7.member(LA(1)))) {
     string_comment();
@@ -1033,7 +1033,7 @@ void modelica_parser::class_specifier2() {
   else {
     throw ANTLR_USE_NAMESPACE(antlr)NoViableAltException(LT(1), getFilename());
   }
-  
+
   }
   class_specifier2_AST = RefMyAST(currentAST.root);
   returnAST = class_specifier2_AST;
@@ -1043,7 +1043,7 @@ void modelica_parser::class_modification() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST class_modification_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   match(LPAR);
   {
   switch ( LA(1)) {
@@ -1073,9 +1073,9 @@ void modelica_parser::class_modification() {
   if ( inputState->guessing==0 ) {
     class_modification_AST = RefMyAST(currentAST.root);
 #line 424 "modelica_parser.g"
-    
+
           class_modification_AST=RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(CLASS_MODIFICATION,"CLASS_MODIFICATION")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(class_modification_AST))));
-        
+
 #line 1080 "modelica_parser.cpp"
     currentAST.root = class_modification_AST;
     if ( class_modification_AST!=RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) &&
@@ -1093,7 +1093,7 @@ void modelica_parser::string_comment() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST string_comment_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   {
   switch ( LA(1)) {
   case STRING:
@@ -1128,7 +1128,7 @@ void modelica_parser::string_comment() {
         else {
           if ( _cnt274>=1 ) { goto _loop274; } else {throw ANTLR_USE_NAMESPACE(antlr)NoViableAltException(LT(1), getFilename());}
         }
-        
+
         _cnt274++;
       }
       _loop274:;
@@ -1234,12 +1234,12 @@ void modelica_parser::string_comment() {
   if ( inputState->guessing==0 ) {
     string_comment_AST = RefMyAST(currentAST.root);
 #line 969 "modelica_parser.g"
-    
+
     if (string_comment_AST)
     {
     string_comment_AST = RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(STRING_COMMENT,"STRING_COMMENT")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(string_comment_AST))));
     }
-        
+
 #line 1244 "modelica_parser.cpp"
     currentAST.root = string_comment_AST;
     if ( string_comment_AST!=RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) &&
@@ -1257,7 +1257,7 @@ void modelica_parser::composition() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST composition_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   element_list();
   if (inputState->guessing==0) {
     astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
@@ -1345,7 +1345,7 @@ void modelica_parser::base_prefix() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST base_prefix_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   type_prefix();
   if (inputState->guessing==0) {
     astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
@@ -1358,7 +1358,7 @@ void modelica_parser::array_subscripts() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST array_subscripts_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp48_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp48_AST = astFactory->create(LT(1));
@@ -1381,7 +1381,7 @@ void modelica_parser::array_subscripts() {
     else {
       goto _loop263;
     }
-    
+
   }
   _loop263:;
   } // ( ... )*
@@ -1394,7 +1394,7 @@ void modelica_parser::comment() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST comment_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   {
   string_comment();
   if (inputState->guessing==0) {
@@ -1428,9 +1428,9 @@ void modelica_parser::comment() {
   if ( inputState->guessing==0 ) {
     comment_AST = RefMyAST(currentAST.root);
 #line 962 "modelica_parser.g"
-    
+
           comment_AST=RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(COMMENT,"COMMENT")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(comment_AST))));
-        
+
 #line 1435 "modelica_parser.cpp"
     currentAST.root = comment_AST;
     if ( comment_AST!=RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) &&
@@ -1448,7 +1448,7 @@ void modelica_parser::enumeration() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST enumeration_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp51_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp51_AST = astFactory->create(LT(1));
@@ -1495,7 +1495,7 @@ void modelica_parser::pder() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST pder_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp55_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp55_AST = astFactory->create(LT(1));
@@ -1525,7 +1525,7 @@ void modelica_parser::overloading() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST overloading_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp59_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp59_AST = astFactory->create(LT(1));
@@ -1550,7 +1550,7 @@ void modelica_parser::ident_list() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST ident_list_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   if ((LA(1) == IDENT) && (LA(2) == RPAR)) {
     RefMyAST tmp62_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
     if ( inputState->guessing == 0 ) {
@@ -1575,9 +1575,9 @@ void modelica_parser::ident_list() {
     if ( inputState->guessing==0 ) {
       ident_list_AST = RefMyAST(currentAST.root);
 #line 182 "modelica_parser.g"
-      
+
       ident_list_AST=RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(IDENT_LIST,"IDENT_LIST")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(ident_list_AST))));
-      
+
 #line 1582 "modelica_parser.cpp"
       currentAST.root = ident_list_AST;
       if ( ident_list_AST!=RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) &&
@@ -1592,7 +1592,7 @@ void modelica_parser::ident_list() {
   else {
     throw ANTLR_USE_NAMESPACE(antlr)NoViableAltException(LT(1), getFilename());
   }
-  
+
   returnAST = ident_list_AST;
 }
 
@@ -1600,7 +1600,7 @@ void modelica_parser::name_list() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST name_list_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   name_path();
   if (inputState->guessing==0) {
     astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
@@ -1617,7 +1617,7 @@ void modelica_parser::name_list() {
     else {
       goto _loop35;
     }
-    
+
   }
   _loop35:;
   } // ( ... )*
@@ -1629,7 +1629,7 @@ void modelica_parser::type_prefix() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST type_prefix_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   {
   switch ( LA(1)) {
   case FLOW:
@@ -1751,7 +1751,7 @@ void modelica_parser::enum_list() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST enum_list_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   enumeration_literal();
   if (inputState->guessing==0) {
     astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
@@ -1768,7 +1768,7 @@ void modelica_parser::enum_list() {
     else {
       goto _loop40;
     }
-    
+
   }
   _loop40:;
   } // ( ... )*
@@ -1780,7 +1780,7 @@ void modelica_parser::enumeration_literal() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST enumeration_literal_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp74_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp74_AST = astFactory->create(LT(1));
@@ -1794,9 +1794,9 @@ void modelica_parser::enumeration_literal() {
   if ( inputState->guessing==0 ) {
     enumeration_literal_AST = RefMyAST(currentAST.root);
 #line 209 "modelica_parser.g"
-    
+
           enumeration_literal_AST=RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(ENUMERATION_LITERAL,"ENUMERATION_LITERAL")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(enumeration_literal_AST))));
-        
+
 #line 1801 "modelica_parser.cpp"
     currentAST.root = enumeration_literal_AST;
     if ( enumeration_literal_AST!=RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) &&
@@ -1818,7 +1818,7 @@ void modelica_parser::element_list() {
   RefMyAST a_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)RefToken  s = ANTLR_USE_NAMESPACE(antlr)nullToken;
   RefMyAST s_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   { // ( ... )*
   for (;;) {
     if ((_tokenSet_9.member(LA(1)))) {
@@ -1880,7 +1880,7 @@ void modelica_parser::element_list() {
       match(SEMICOLON);
       if ( inputState->guessing==0 ) {
 #line 266 "modelica_parser.g"
-        
+
                /* adrpo, fix the end of this AST node */
                if (e_AST)
                {
@@ -1900,15 +1900,15 @@ void modelica_parser::element_list() {
                  RefMyAST(e_AST->getFirstChild())->setEndColumn(s->getColumn());
                     }
                }
-        
-            
+
+
 #line 1906 "modelica_parser.cpp"
       }
     }
     else {
       goto _loop61;
     }
-    
+
   }
   _loop61:;
   } // ( ... )*
@@ -1920,7 +1920,7 @@ void modelica_parser::public_element_list() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST public_element_list_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp75_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp75_AST = astFactory->create(LT(1));
@@ -1939,7 +1939,7 @@ void modelica_parser::protected_element_list() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST protected_element_list_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp76_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp76_AST = astFactory->create(LT(1));
@@ -1959,7 +1959,7 @@ void modelica_parser::initial_equation_clause() {
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST initial_equation_clause_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   RefMyAST ec_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   if (!( LA(2)==EQUATION))
     throw ANTLR_USE_NAMESPACE(antlr)SemanticException(" LA(2)==EQUATION");
   match(INITIAL);
@@ -1971,9 +1971,9 @@ void modelica_parser::initial_equation_clause() {
   if ( inputState->guessing==0 ) {
     initial_equation_clause_AST = RefMyAST(currentAST.root);
 #line 481 "modelica_parser.g"
-    
+
     initial_equation_clause_AST = RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(INITIAL_EQUATION,"INTIAL_EQUATION")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(ec_AST))));
-    
+
 #line 1978 "modelica_parser.cpp"
     currentAST.root = initial_equation_clause_AST;
     if ( initial_equation_clause_AST!=RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) &&
@@ -1992,7 +1992,7 @@ void modelica_parser::initial_algorithm_clause() {
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST initial_algorithm_clause_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   RefMyAST ac_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   if (!( LA(2)==ALGORITHM ))
     throw ANTLR_USE_NAMESPACE(antlr)SemanticException(" LA(2)==ALGORITHM ");
   match(INITIAL);
@@ -2004,9 +2004,9 @@ void modelica_parser::initial_algorithm_clause() {
   if ( inputState->guessing==0 ) {
     initial_algorithm_clause_AST = RefMyAST(currentAST.root);
 #line 527 "modelica_parser.g"
-    
+
     initial_algorithm_clause_AST = RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(INITIAL_ALGORITHM,"INTIAL_ALGORITHM")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(ac_AST))));
-    
+
 #line 2011 "modelica_parser.cpp"
     currentAST.root = initial_algorithm_clause_AST;
     if ( initial_algorithm_clause_AST!=RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) &&
@@ -2024,7 +2024,7 @@ void modelica_parser::equation_clause() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST equation_clause_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp79_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp79_AST = astFactory->create(LT(1));
@@ -2043,7 +2043,7 @@ void modelica_parser::algorithm_clause() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST algorithm_clause_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp80_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp80_AST = astFactory->create(LT(1));
@@ -2062,7 +2062,7 @@ void modelica_parser::external_clause() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST external_clause_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp81_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp81_AST = astFactory->create(LT(1));
@@ -2161,7 +2161,7 @@ void modelica_parser::language_specification() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST language_specification_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp83_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp83_AST = astFactory->create(LT(1));
@@ -2176,7 +2176,7 @@ void modelica_parser::external_function_call() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST external_function_call_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   {
   if ((LA(1) == IDENT) && (_tokenSet_10.member(LA(2)))) {
     component_reference();
@@ -2195,7 +2195,7 @@ void modelica_parser::external_function_call() {
   else {
     throw ANTLR_USE_NAMESPACE(antlr)NoViableAltException(LT(1), getFilename());
   }
-  
+
   }
   RefMyAST tmp85_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
@@ -2246,9 +2246,9 @@ void modelica_parser::external_function_call() {
   if ( inputState->guessing==0 ) {
     external_function_call_AST = RefMyAST(currentAST.root);
 #line 258 "modelica_parser.g"
-    
+
           external_function_call_AST=RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(EXTERNAL_FUNCTION_CALL,"EXTERNAL_FUNCTION_CALL")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(external_function_call_AST))));
-        
+
 #line 2253 "modelica_parser.cpp"
     currentAST.root = external_function_call_AST;
     if ( external_function_call_AST!=RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) &&
@@ -2266,7 +2266,7 @@ void modelica_parser::annotation() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST annotation_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp88_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp88_AST = astFactory->create(LT(1));
@@ -2285,7 +2285,7 @@ void modelica_parser::external_annotation() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST external_annotation_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   annotation();
   if (inputState->guessing==0) {
     astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
@@ -2294,9 +2294,9 @@ void modelica_parser::external_annotation() {
   if ( inputState->guessing==0 ) {
     external_annotation_AST = RefMyAST(currentAST.root);
 #line 237 "modelica_parser.g"
-    
+
     external_annotation_AST=RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(EXTERNAL_ANNOTATION,"EXTERNAL_ANNOTATION")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(external_annotation_AST))));
-    
+
 #line 2301 "modelica_parser.cpp"
     currentAST.root = external_annotation_AST;
     if ( external_annotation_AST!=RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) &&
@@ -2314,7 +2314,7 @@ void modelica_parser::component_reference() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST component_reference_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp90_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp90_AST = astFactory->create(LT(1));
@@ -2450,7 +2450,7 @@ void modelica_parser::expression_list() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST expression_list_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   expression_list2();
   if (inputState->guessing==0) {
     astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
@@ -2458,9 +2458,9 @@ void modelica_parser::expression_list() {
   if ( inputState->guessing==0 ) {
     expression_list_AST = RefMyAST(currentAST.root);
 #line 941 "modelica_parser.g"
-    
+
           expression_list_AST=RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(EXPRESSION_LIST,"EXPRESSION_LIST")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(expression_list_AST))));
-        
+
 #line 2465 "modelica_parser.cpp"
     currentAST.root = expression_list_AST;
     if ( expression_list_AST!=RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) &&
@@ -2482,7 +2482,7 @@ void modelica_parser::element() {
   RefMyAST ec_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   RefMyAST cc_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   RefMyAST cc2_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   switch ( LA(1)) {
   case IMPORT:
   {
@@ -2854,7 +2854,7 @@ void modelica_parser::element() {
     if ( inputState->guessing==0 ) {
       element_AST = RefMyAST(currentAST.root);
 #line 322 "modelica_parser.g"
-      
+
             if(cc_AST != null || cc2_AST != null)
             {
               element_AST = RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(DECLARATION,"DECLARATION")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(element_AST))));
@@ -2863,7 +2863,7 @@ void modelica_parser::element() {
             {
               element_AST = RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(DEFINITION,"DEFINITION")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(element_AST))));
             }
-          
+
 #line 2868 "modelica_parser.cpp"
       currentAST.root = element_AST;
       if ( element_AST!=RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) &&
@@ -2888,7 +2888,7 @@ void modelica_parser::extends_clause() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST extends_clause_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp97_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp97_AST = astFactory->create(LT(1));
@@ -2931,7 +2931,7 @@ void modelica_parser::constraining_clause() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST constraining_clause_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   switch ( LA(1)) {
   case EXTENDS:
   {
@@ -2993,7 +2993,7 @@ void modelica_parser::explicit_import_name() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST explicit_import_name_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp99_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp99_AST = astFactory->create(LT(1));
@@ -3020,11 +3020,11 @@ void modelica_parser::implicit_import_name() {
   RefMyAST implicit_import_name_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   RefMyAST np_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 #line 342 "modelica_parser.g"
-  
+
         bool has_star = false;
-      
+
 #line 3027 "modelica_parser.cpp"
-  
+
   has_star=name_path_star();
   if (inputState->guessing==0) {
     np_AST = returnAST;
@@ -3032,7 +3032,7 @@ void modelica_parser::implicit_import_name() {
   if ( inputState->guessing==0 ) {
     implicit_import_name_AST = RefMyAST(currentAST.root);
 #line 348 "modelica_parser.g"
-    
+
           if (has_star)
           {
             implicit_import_name_AST = RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(UNQUALIFIED,"UNQUALIFIED")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(np_AST))));
@@ -3041,7 +3041,7 @@ void modelica_parser::implicit_import_name() {
           {
             implicit_import_name_AST = RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(QUALIFIED,"QUALIFIED")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(np_AST))));
           }
-        
+
 #line 3046 "modelica_parser.cpp"
     currentAST.root = implicit_import_name_AST;
     if ( implicit_import_name_AST!=RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) &&
@@ -3064,7 +3064,7 @@ bool  modelica_parser::name_path_star() {
   ANTLR_USE_NAMESPACE(antlr)RefToken  i = ANTLR_USE_NAMESPACE(antlr)nullToken;
   RefMyAST i_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   RefMyAST np_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   if (((LA(1) == IDENT) && (_tokenSet_11.member(LA(2))))&&( LA(2) != DOT )) {
     RefMyAST tmp101_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
     if ( inputState->guessing == 0 ) {
@@ -3140,7 +3140,7 @@ bool  modelica_parser::name_path_star() {
   else {
     throw ANTLR_USE_NAMESPACE(antlr)NoViableAltException(LT(1), getFilename());
   }
-  
+
   returnAST = name_path_star_AST;
   return val;
 }
@@ -3149,7 +3149,7 @@ void modelica_parser::type_specifier() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST type_specifier_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   name_path();
   if (inputState->guessing==0) {
     astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
@@ -3162,7 +3162,7 @@ void modelica_parser::component_list() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST component_list_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   component_declaration();
   if (inputState->guessing==0) {
     astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
@@ -3179,7 +3179,7 @@ void modelica_parser::component_list() {
     else {
       goto _loop89;
     }
-    
+
   }
   _loop89:;
   } // ( ... )*
@@ -3191,7 +3191,7 @@ void modelica_parser::component_declaration() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST component_declaration_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   declaration();
   if (inputState->guessing==0) {
     astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
@@ -3234,7 +3234,7 @@ void modelica_parser::declaration() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST declaration_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp105_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp105_AST = astFactory->create(LT(1));
@@ -3308,7 +3308,7 @@ void modelica_parser::conditional_attribute() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST conditional_attribute_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp106_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp106_AST = astFactory->create(LT(1));
@@ -3327,7 +3327,7 @@ void modelica_parser::expression() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST expression_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   {
   switch ( LA(1)) {
   case IF:
@@ -3384,7 +3384,7 @@ void modelica_parser::modification() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST modification_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   {
   switch ( LA(1)) {
   case LPAR:
@@ -3465,7 +3465,7 @@ void modelica_parser::argument_list() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST argument_list_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   argument();
   if (inputState->guessing==0) {
     astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
@@ -3482,16 +3482,16 @@ void modelica_parser::argument_list() {
     else {
       goto _loop103;
     }
-    
+
   }
   _loop103:;
   } // ( ... )*
   if ( inputState->guessing==0 ) {
     argument_list_AST = RefMyAST(currentAST.root);
 #line 432 "modelica_parser.g"
-    
+
           argument_list_AST=RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(ARGUMENT_LIST,"ARGUMENT_LIST")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(argument_list_AST))));
-        
+
 #line 3496 "modelica_parser.cpp"
     currentAST.root = argument_list_AST;
     if ( argument_list_AST!=RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) &&
@@ -3511,7 +3511,7 @@ void modelica_parser::argument() {
   RefMyAST argument_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   RefMyAST em_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   RefMyAST er_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   {
   switch ( LA(1)) {
   case EACH:
@@ -3526,9 +3526,9 @@ void modelica_parser::argument() {
     if ( inputState->guessing==0 ) {
       argument_AST = RefMyAST(currentAST.root);
 #line 439 "modelica_parser.g"
-      
+
             argument_AST = RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(ELEMENT_MODIFICATION,"ELEMENT_MODIFICATION")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(em_AST))));
-          
+
 #line 3533 "modelica_parser.cpp"
       currentAST.root = argument_AST;
       if ( argument_AST!=RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) &&
@@ -3549,8 +3549,8 @@ void modelica_parser::argument() {
     if ( inputState->guessing==0 ) {
       argument_AST = RefMyAST(currentAST.root);
 #line 443 "modelica_parser.g"
-      
-            argument_AST = RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(ELEMENT_REDECLARATION,"ELEMENT_REDECLARATION")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(er_AST))));     
+
+            argument_AST = RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(ELEMENT_REDECLARATION,"ELEMENT_REDECLARATION")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(er_AST))));
 #line 3555 "modelica_parser.cpp"
       currentAST.root = argument_AST;
       if ( argument_AST!=RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) &&
@@ -3575,7 +3575,7 @@ void modelica_parser::element_modification_or_replaceable() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST element_modification_or_replaceable_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   {
   switch ( LA(1)) {
   case EACH:
@@ -3655,7 +3655,7 @@ void modelica_parser::element_redeclaration() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST element_redeclaration_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp113_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp113_AST = astFactory->create(LT(1));
@@ -3832,7 +3832,7 @@ void modelica_parser::element_modification() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST element_modification_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   component_reference();
   if (inputState->guessing==0) {
     astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
@@ -3873,7 +3873,7 @@ void modelica_parser::element_replaceable() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST element_replaceable_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp116_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp116_AST = astFactory->create(LT(1));
@@ -3955,7 +3955,7 @@ void modelica_parser::component_clause1() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST component_clause1_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   type_prefix();
   if (inputState->guessing==0) {
     astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
@@ -3976,7 +3976,7 @@ void modelica_parser::component_declaration1() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST component_declaration1_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   declaration();
   if (inputState->guessing==0) {
     astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
@@ -3993,7 +3993,7 @@ void modelica_parser::equation_annotation_list() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST equation_annotation_list_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   if (((_tokenSet_12.member(LA(1))) && (_tokenSet_13.member(LA(2))))&&( LA(1) == END || LA(1) == EQUATION || LA(1) == ALGORITHM || LA(1)==INITIAL
      || LA(1) == PROTECTED || LA(1) == PUBLIC )) {
     equation_annotation_list_AST = RefMyAST(currentAST.root);
@@ -4054,7 +4054,7 @@ void modelica_parser::equation_annotation_list() {
   else {
     throw ANTLR_USE_NAMESPACE(antlr)NoViableAltException(LT(1), getFilename());
   }
-  
+
   returnAST = equation_annotation_list_AST;
 }
 
@@ -4062,7 +4062,7 @@ void modelica_parser::equation() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST equation_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   {
   switch ( LA(1)) {
   case IF:
@@ -4139,9 +4139,9 @@ void modelica_parser::equation() {
   if ( inputState->guessing==0 ) {
     equation_AST = RefMyAST(currentAST.root);
 #line 540 "modelica_parser.g"
-    
+
     equation_AST = RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(EQUATION_STATEMENT,"EQUATION_STATEMENT")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(equation_AST))));
-    
+
 #line 4146 "modelica_parser.cpp"
     currentAST.root = equation_AST;
     if ( equation_AST!=RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) &&
@@ -4163,7 +4163,7 @@ void modelica_parser::algorithm_annotation_list() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST algorithm_annotation_list_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   if (((_tokenSet_12.member(LA(1))) && (_tokenSet_13.member(LA(2))))&&( LA(1) == END || LA(1) == EQUATION || LA(1) == ALGORITHM || LA(1)==INITIAL
      || LA(1) == PROTECTED || LA(1) == PUBLIC )) {
     algorithm_annotation_list_AST = RefMyAST(currentAST.root);
@@ -4224,7 +4224,7 @@ void modelica_parser::algorithm_annotation_list() {
   else {
     throw ANTLR_USE_NAMESPACE(antlr)NoViableAltException(LT(1), getFilename());
   }
-  
+
   returnAST = algorithm_annotation_list_AST;
 }
 
@@ -4235,7 +4235,7 @@ void modelica_parser::simple_expression() {
   RefMyAST l1_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   RefMyAST l2_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   RefMyAST l3_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   logical_expression();
   if (inputState->guessing==0) {
     l1_AST = returnAST;
@@ -4327,7 +4327,7 @@ void modelica_parser::simple_expression() {
   if ( inputState->guessing==0 ) {
     simple_expression_AST = RefMyAST(currentAST.root);
 #line 727 "modelica_parser.g"
-    
+
           if (l3_AST != null)
           {
             simple_expression_AST = RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(4))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(RANGE3,"RANGE3")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(l1_AST))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(l2_AST))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(l3_AST))));
@@ -4340,7 +4340,7 @@ void modelica_parser::simple_expression() {
           {
             simple_expression_AST = l1_AST;
           }
-        
+
 #line 4345 "modelica_parser.cpp"
     currentAST.root = simple_expression_AST;
     if ( simple_expression_AST!=RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) &&
@@ -4357,7 +4357,7 @@ void modelica_parser::equality_equation() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST equality_equation_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   simple_expression();
   if (inputState->guessing==0) {
     astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
@@ -4380,7 +4380,7 @@ void modelica_parser::conditional_equation_e() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST conditional_equation_e_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp124_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp124_AST = astFactory->create(LT(1));
@@ -4407,7 +4407,7 @@ void modelica_parser::conditional_equation_e() {
     else {
       goto _loop143;
     }
-    
+
   }
   _loop143:;
   } // ( ... )*
@@ -4447,7 +4447,7 @@ void modelica_parser::for_clause_e() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST for_clause_e_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp129_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp129_AST = astFactory->create(LT(1));
@@ -4473,7 +4473,7 @@ void modelica_parser::connect_clause() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST connect_clause_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp133_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp133_AST = astFactory->create(LT(1));
@@ -4499,7 +4499,7 @@ void modelica_parser::when_clause_e() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST when_clause_e_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp137_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp137_AST = astFactory->create(LT(1));
@@ -4526,7 +4526,7 @@ void modelica_parser::when_clause_e() {
     else {
       goto _loop154;
     }
-    
+
   }
   _loop154:;
   } // ( ... )*
@@ -4540,7 +4540,7 @@ void modelica_parser::function_call() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST function_call_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   match(LPAR);
   {
   function_arguments();
@@ -4552,9 +4552,9 @@ void modelica_parser::function_call() {
   if ( inputState->guessing==0 ) {
     function_call_AST = RefMyAST(currentAST.root);
 #line 884 "modelica_parser.g"
-    
+
           function_call_AST = RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(FUNCTION_ARGUMENTS,"FUNCTION_ARGUMENTS")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(function_call_AST))));
-        
+
 #line 4559 "modelica_parser.cpp"
     currentAST.root = function_call_AST;
     if ( function_call_AST!=RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) &&
@@ -4572,7 +4572,7 @@ void modelica_parser::algorithm() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST algorithm_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   {
   switch ( LA(1)) {
   case IF:
@@ -4659,9 +4659,9 @@ void modelica_parser::algorithm() {
   if ( inputState->guessing==0 ) {
     algorithm_AST = RefMyAST(currentAST.root);
 #line 563 "modelica_parser.g"
-    
+
     algorithm_AST = RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(ALGORITHM_STATEMENT,"ALGORITHM_STATEMENT")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(algorithm_AST))));
-    
+
 #line 4666 "modelica_parser.cpp"
     currentAST.root = algorithm_AST;
     if ( algorithm_AST!=RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) &&
@@ -4679,7 +4679,7 @@ void modelica_parser::assign_clause_a() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST assign_clause_a_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   simple_expression();
   if (inputState->guessing==0) {
     astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
@@ -4702,7 +4702,7 @@ void modelica_parser::multi_assign_clause_a() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST multi_assign_clause_a_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   match(LPAR);
   expression_list();
   if (inputState->guessing==0) {
@@ -4731,7 +4731,7 @@ void modelica_parser::conditional_equation_a() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST conditional_equation_a_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp147_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp147_AST = astFactory->create(LT(1));
@@ -4758,7 +4758,7 @@ void modelica_parser::conditional_equation_a() {
     else {
       goto _loop147;
     }
-    
+
   }
   _loop147:;
   } // ( ... )*
@@ -4798,7 +4798,7 @@ void modelica_parser::for_clause_a() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST for_clause_a_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp152_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp152_AST = astFactory->create(LT(1));
@@ -4824,7 +4824,7 @@ void modelica_parser::while_clause() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST while_clause_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp156_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp156_AST = astFactory->create(LT(1));
@@ -4850,7 +4850,7 @@ void modelica_parser::when_clause_a() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST when_clause_a_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp160_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp160_AST = astFactory->create(LT(1));
@@ -4877,7 +4877,7 @@ void modelica_parser::when_clause_a() {
     else {
       goto _loop158;
     }
-    
+
   }
   _loop158:;
   } // ( ... )*
@@ -4891,7 +4891,7 @@ void modelica_parser::equation_list() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST equation_list_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   if ((((LA(1) >= ELSE && LA(1) <= END)) && (_tokenSet_21.member(LA(2))))&&(LA(1) != END || (LA(1) == END && LA(2) != IDENT))) {
     equation_list_AST = RefMyAST(currentAST.root);
   }
@@ -4912,7 +4912,7 @@ void modelica_parser::equation_list() {
   else {
     throw ANTLR_USE_NAMESPACE(antlr)NoViableAltException(LT(1), getFilename());
   }
-  
+
   returnAST = equation_list_AST;
 }
 
@@ -4920,7 +4920,7 @@ void modelica_parser::equation_elseif() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST equation_elseif_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp165_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp165_AST = astFactory->create(LT(1));
@@ -4944,7 +4944,7 @@ void modelica_parser::algorithm_list() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST algorithm_list_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   if ((((LA(1) >= ELSE && LA(1) <= END)) && (_tokenSet_23.member(LA(2))))&&(LA(1) != END || (LA(1) == END && LA(2) != IDENT))) {
     algorithm_list_AST = RefMyAST(currentAST.root);
   }
@@ -4965,7 +4965,7 @@ void modelica_parser::algorithm_list() {
   else {
     throw ANTLR_USE_NAMESPACE(antlr)NoViableAltException(LT(1), getFilename());
   }
-  
+
   returnAST = algorithm_list_AST;
 }
 
@@ -4973,7 +4973,7 @@ void modelica_parser::algorithm_elseif() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST algorithm_elseif_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp168_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp168_AST = astFactory->create(LT(1));
@@ -4997,7 +4997,7 @@ void modelica_parser::for_indices() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST for_indices_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   for_index();
   if (inputState->guessing==0) {
     astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
@@ -5014,7 +5014,7 @@ void modelica_parser::else_when_e() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST else_when_e_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp170_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp170_AST = astFactory->create(LT(1));
@@ -5038,7 +5038,7 @@ void modelica_parser::else_when_a() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST else_when_a_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp172_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp172_AST = astFactory->create(LT(1));
@@ -5062,7 +5062,7 @@ void modelica_parser::connector_ref() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST connector_ref_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp174_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp174_AST = astFactory->create(LT(1));
@@ -5126,7 +5126,7 @@ void modelica_parser::connector_ref_2() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST connector_ref_2_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp176_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp176_AST = astFactory->create(LT(1));
@@ -5162,7 +5162,7 @@ void modelica_parser::if_expression() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST if_expression_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp177_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp177_AST = astFactory->create(LT(1));
@@ -5189,7 +5189,7 @@ void modelica_parser::if_expression() {
     else {
       goto _loop176;
     }
-    
+
   }
   _loop176:;
   } // ( ... )*
@@ -5213,7 +5213,7 @@ void modelica_parser::code_expression() {
   RefMyAST ieq_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   RefMyAST alg_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   RefMyAST ialg_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp180_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp180_AST = astFactory->create(LT(1));
@@ -5320,7 +5320,7 @@ void modelica_parser::code_expression() {
   if ( inputState->guessing==0 ) {
     code_expression_AST = RefMyAST(currentAST.root);
 #line 748 "modelica_parser.g"
-    
+
           if (e_AST) {
             code_expression_AST = RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(CODE_EXPRESSION,"CODE_EXPRESSION")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(e_AST))));
           } else if (m_AST) {
@@ -5336,7 +5336,7 @@ void modelica_parser::code_expression() {
           } else if (ialg_AST) {
             code_expression_AST = RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(CODE_INITIALALGORITHM,"CODE_ALGORITHM")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(ialg_AST))));
           }
-        
+
 #line 5341 "modelica_parser.cpp"
     currentAST.root = code_expression_AST;
     if ( code_expression_AST!=RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) &&
@@ -5353,7 +5353,7 @@ void modelica_parser::elseif_expression() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST elseif_expression_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp184_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp184_AST = astFactory->create(LT(1));
@@ -5377,7 +5377,7 @@ void modelica_parser::for_index() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST for_index_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   {
   RefMyAST tmp186_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
@@ -5424,7 +5424,7 @@ void modelica_parser::for_indices2() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST for_indices2_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   if (((_tokenSet_30.member(LA(1))))&&(LA(2) != IN)) {
     for_indices2_AST = RefMyAST(currentAST.root);
   }
@@ -5445,7 +5445,7 @@ void modelica_parser::for_indices2() {
   else {
     throw ANTLR_USE_NAMESPACE(antlr)NoViableAltException(LT(1), getFilename());
   }
-  
+
   returnAST = for_indices2_AST;
 }
 
@@ -5453,7 +5453,7 @@ void modelica_parser::logical_expression() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST logical_expression_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   logical_term();
   if (inputState->guessing==0) {
     astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
@@ -5475,7 +5475,7 @@ void modelica_parser::logical_expression() {
     else {
       goto _loop205;
     }
-    
+
   }
   _loop205:;
   } // ( ... )*
@@ -5487,7 +5487,7 @@ void modelica_parser::code_equation_clause() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST code_equation_clause_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   {
   RefMyAST tmp190_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
@@ -5554,7 +5554,7 @@ void modelica_parser::code_initial_equation_clause() {
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST code_initial_equation_clause_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   RefMyAST ec_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   if (!( LA(2)==EQUATION))
     throw ANTLR_USE_NAMESPACE(antlr)SemanticException(" LA(2)==EQUATION");
   match(INITIAL);
@@ -5566,9 +5566,9 @@ void modelica_parser::code_initial_equation_clause() {
   if ( inputState->guessing==0 ) {
     code_initial_equation_clause_AST = RefMyAST(currentAST.root);
 #line 774 "modelica_parser.g"
-    
+
     code_initial_equation_clause_AST = RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(INITIAL_EQUATION,"INTIAL_EQUATION")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(ec_AST))));
-    
+
 #line 5573 "modelica_parser.cpp"
     currentAST.root = code_initial_equation_clause_AST;
     if ( code_initial_equation_clause_AST!=RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) &&
@@ -5586,7 +5586,7 @@ void modelica_parser::code_algorithm_clause() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST code_algorithm_clause_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp194_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp194_AST = astFactory->create(LT(1));
@@ -5650,7 +5650,7 @@ void modelica_parser::code_initial_algorithm_clause() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST code_initial_algorithm_clause_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   if (!( LA(2) == ALGORITHM ))
     throw ANTLR_USE_NAMESPACE(antlr)SemanticException(" LA(2) == ALGORITHM ");
   match(INITIAL);
@@ -5712,9 +5712,9 @@ void modelica_parser::code_initial_algorithm_clause() {
   if ( inputState->guessing==0 ) {
     code_initial_algorithm_clause_AST = RefMyAST(currentAST.root);
 #line 788 "modelica_parser.g"
-    
+
           code_initial_algorithm_clause_AST = RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(INITIAL_ALGORITHM,"INTIAL_ALGORITHM")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(code_initial_algorithm_clause_AST))));
-        
+
 #line 5719 "modelica_parser.cpp"
     currentAST.root = code_initial_algorithm_clause_AST;
     if ( code_initial_algorithm_clause_AST!=RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) &&
@@ -5732,7 +5732,7 @@ void modelica_parser::logical_term() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST logical_term_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   logical_factor();
   if (inputState->guessing==0) {
     astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
@@ -5754,7 +5754,7 @@ void modelica_parser::logical_term() {
     else {
       goto _loop208;
     }
-    
+
   }
   _loop208:;
   } // ( ... )*
@@ -5766,7 +5766,7 @@ void modelica_parser::logical_factor() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST logical_factor_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   {
   switch ( LA(1)) {
   case NOT:
@@ -5816,7 +5816,7 @@ void modelica_parser::relation() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST relation_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   arithmetic_expression();
   if (inputState->guessing==0) {
     astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
@@ -5942,7 +5942,7 @@ void modelica_parser::arithmetic_expression() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST arithmetic_expression_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   unary_arithmetic_expression();
   if (inputState->guessing==0) {
     astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
@@ -6006,7 +6006,7 @@ void modelica_parser::arithmetic_expression() {
     else {
       goto _loop219;
     }
-    
+
   }
   _loop219:;
   } // ( ... )*
@@ -6018,7 +6018,7 @@ void modelica_parser::rel_op() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST rel_op_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   {
   switch ( LA(1)) {
   case LESS:
@@ -6100,7 +6100,7 @@ void modelica_parser::unary_arithmetic_expression() {
   RefMyAST t3_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   RefMyAST t4_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   RefMyAST t5_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   {
   switch ( LA(1)) {
   case PLUS:
@@ -6227,7 +6227,7 @@ void modelica_parser::unary_arithmetic_expression() {
     if ( inputState->guessing==0 ) {
       unary_arithmetic_expression_AST = RefMyAST(currentAST.root);
 #line 825 "modelica_parser.g"
-        unary_arithmetic_expression_AST = t5_AST;  
+        unary_arithmetic_expression_AST = t5_AST;
 #line 6232 "modelica_parser.cpp"
       currentAST.root = unary_arithmetic_expression_AST;
       if ( unary_arithmetic_expression_AST!=RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) &&
@@ -6252,7 +6252,7 @@ void modelica_parser::term() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST term_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   factor();
   if (inputState->guessing==0) {
     astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
@@ -6316,7 +6316,7 @@ void modelica_parser::term() {
     else {
       goto _loop225;
     }
-    
+
   }
   _loop225:;
   } // ( ... )*
@@ -6328,7 +6328,7 @@ void modelica_parser::factor() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST factor_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   primary();
   if (inputState->guessing==0) {
     astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
@@ -6424,7 +6424,7 @@ void modelica_parser::primary() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST primary_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   {
   switch ( LA(1)) {
   case UNSIGNED_INTEGER:
@@ -6539,7 +6539,7 @@ void modelica_parser::primary() {
       else {
         goto _loop232;
       }
-      
+
     }
     _loop232:;
     } // ( ... )*
@@ -6589,7 +6589,7 @@ void modelica_parser::component_reference__function_call() {
   RefMyAST fc_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)RefToken  i = ANTLR_USE_NAMESPACE(antlr)nullToken;
   RefMyAST i_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   switch ( LA(1)) {
   case IDENT:
   {
@@ -6656,7 +6656,7 @@ void modelica_parser::component_reference__function_call() {
     if ( inputState->guessing==0 ) {
       component_reference__function_call_AST = RefMyAST(currentAST.root);
 #line 854 "modelica_parser.g"
-      
+
             if (fc_AST != null)
             {
               component_reference__function_call_AST = RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(3))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(FUNCTION_CALL,"FUNCTION_CALL")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(cr_AST))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(fc_AST))));
@@ -6665,7 +6665,7 @@ void modelica_parser::component_reference__function_call() {
             {
               component_reference__function_call_AST = cr_AST;
             }
-          
+
 #line 6670 "modelica_parser.cpp"
       currentAST.root = component_reference__function_call_AST;
       if ( component_reference__function_call_AST!=RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) &&
@@ -6689,9 +6689,9 @@ void modelica_parser::component_reference__function_call() {
     if ( inputState->guessing==0 ) {
       component_reference__function_call_AST = RefMyAST(currentAST.root);
 #line 864 "modelica_parser.g"
-      
+
             component_reference__function_call_AST = RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(INITIAL_FUNCTION_CALL,"INITIAL_FUNCTION_CALL")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(i_AST))));
-          
+
 #line 6696 "modelica_parser.cpp"
       currentAST.root = component_reference__function_call_AST;
       if ( component_reference__function_call_AST!=RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) &&
@@ -6718,7 +6718,7 @@ void modelica_parser::for_or_expression_list() {
   RefMyAST e_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   RefMyAST explist_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   RefMyAST forind_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   {
   if (((_tokenSet_33.member(LA(1))) && (_tokenSet_34.member(LA(2))))&&(LA(1)==IDENT && LA(2) == EQUALS|| LA(1) == RPAR)) {
   }
@@ -6772,7 +6772,7 @@ void modelica_parser::for_or_expression_list() {
     if ( inputState->guessing==0 ) {
       for_or_expression_list_AST = RefMyAST(currentAST.root);
 #line 905 "modelica_parser.g"
-      
+
       if (forind_AST != null) {
       for_or_expression_list_AST =
       RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(FOR_ITERATOR,"FOR_ITERATOR")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(for_or_expression_list_AST))));
@@ -6781,7 +6781,7 @@ void modelica_parser::for_or_expression_list() {
       for_or_expression_list_AST =
       RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(EXPRESSION_LIST,"EXPRESSION_LIST")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(for_or_expression_list_AST))));
       }
-      
+
 #line 6786 "modelica_parser.cpp"
       currentAST.root = for_or_expression_list_AST;
       if ( for_or_expression_list_AST!=RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) &&
@@ -6795,7 +6795,7 @@ void modelica_parser::for_or_expression_list() {
   else {
     throw ANTLR_USE_NAMESPACE(antlr)NoViableAltException(LT(1), getFilename());
   }
-  
+
   }
   for_or_expression_list_AST = RefMyAST(currentAST.root);
   returnAST = for_or_expression_list_AST;
@@ -6805,7 +6805,7 @@ void modelica_parser::function_arguments() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST function_arguments_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   {
   for_or_expression_list();
   if (inputState->guessing==0) {
@@ -6840,7 +6840,7 @@ void modelica_parser::named_arguments() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST named_arguments_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   named_arguments2();
   if (inputState->guessing==0) {
     astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
@@ -6848,9 +6848,9 @@ void modelica_parser::named_arguments() {
   if ( inputState->guessing==0 ) {
     named_arguments_AST = RefMyAST(currentAST.root);
 #line 926 "modelica_parser.g"
-    
+
           named_arguments_AST=RefMyAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->create(NAMED_ARGUMENTS,"NAMED_ARGUMENTS")))->add(ANTLR_USE_NAMESPACE(antlr)RefAST(named_arguments_AST))));
-        
+
 #line 6855 "modelica_parser.cpp"
     currentAST.root = named_arguments_AST;
     if ( named_arguments_AST!=RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) &&
@@ -6868,7 +6868,7 @@ void modelica_parser::for_or_expression_list2() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST for_or_expression_list2_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   if (((_tokenSet_33.member(LA(1))) && (_tokenSet_34.member(LA(2))))&&(LA(2) == EQUALS)) {
     for_or_expression_list2_AST = RefMyAST(currentAST.root);
   }
@@ -6905,7 +6905,7 @@ void modelica_parser::for_or_expression_list2() {
   else {
     throw ANTLR_USE_NAMESPACE(antlr)NoViableAltException(LT(1), getFilename());
   }
-  
+
   returnAST = for_or_expression_list2_AST;
 }
 
@@ -6913,7 +6913,7 @@ void modelica_parser::named_arguments2() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST named_arguments2_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   named_argument();
   if (inputState->guessing==0) {
     astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
@@ -6947,7 +6947,7 @@ void modelica_parser::named_argument() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST named_argument_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   RefMyAST tmp249_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   if ( inputState->guessing == 0 ) {
     tmp249_AST = astFactory->create(LT(1));
@@ -6972,7 +6972,7 @@ void modelica_parser::expression_list2() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST expression_list2_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   expression();
   if (inputState->guessing==0) {
     astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
@@ -7008,7 +7008,7 @@ void modelica_parser::subscript() {
   returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
   ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
   RefMyAST subscript_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-  
+
   switch ( LA(1)) {
   case CODE:
   case DER:
@@ -7218,175 +7218,175 @@ const char* modelica_parser::tokenNames[] = {
 };
 
 const unsigned long modelica_parser::_tokenSet_0_data_[] = { 1086327424UL, 8540224UL, 0UL, 0UL, 0UL, 0UL };
-// "block" "class" "connector" "encapsulated" "expandable" "function" "model" 
-// "package" "partial" "record" "type" 
+// "block" "class" "connector" "encapsulated" "expandable" "function" "model"
+// "package" "partial" "record" "type"
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_parser::_tokenSet_0(_tokenSet_0_data_,6);
 const unsigned long modelica_parser::_tokenSet_1_data_[] = { 1082133120UL, 8540224UL, 0UL, 1UL, 0UL, 0UL, 0UL, 0UL };
-// "block" "class" "connector" "expandable" "function" "model" "package" 
-// "partial" "record" "type" IDENT 
+// "block" "class" "connector" "expandable" "function" "model" "package"
+// "partial" "record" "type" IDENT
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_parser::_tokenSet_1(_tokenSet_1_data_,8);
 const unsigned long modelica_parser::_tokenSet_2_data_[] = { 1220545154UL, 276975680UL, 0UL, 0UL, 0UL, 0UL };
-// EOF "block" "class" "connector" "encapsulated" "expandable" "final" 
-// "function" "model" "package" "partial" "record" "type" "within" 
+// EOF "block" "class" "connector" "encapsulated" "expandable" "final"
+// "function" "model" "package" "partial" "record" "type" "within"
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_parser::_tokenSet_2(_tokenSet_2_data_,6);
 const unsigned long modelica_parser::_tokenSet_3_data_[] = { 1103104642UL, 8540224UL, 134217728UL, 1UL, 0UL, 0UL, 0UL, 0UL };
-// EOF "block" "class" "connector" "encapsulated" "expandable" "extends" 
-// "function" "model" "package" "partial" "record" "type" SEMICOLON IDENT 
+// EOF "block" "class" "connector" "encapsulated" "expandable" "extends"
+// "function" "model" "package" "partial" "record" "type" SEMICOLON IDENT
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_parser::_tokenSet_3(_tokenSet_3_data_,8);
 const unsigned long modelica_parser::_tokenSet_4_data_[] = { 1220545152UL, 8540224UL, 0UL, 0UL, 0UL, 0UL };
-// "block" "class" "connector" "encapsulated" "expandable" "final" "function" 
-// "model" "package" "partial" "record" "type" 
+// "block" "class" "connector" "encapsulated" "expandable" "final" "function"
+// "model" "package" "partial" "record" "type"
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_parser::_tokenSet_4(_tokenSet_4_data_,6);
 const unsigned long modelica_parser::_tokenSet_5_data_[] = { 64UL, 33554432UL, 134283268UL, 64UL, 0UL, 0UL, 0UL, 0UL };
-// "annotation" "." RPAR STAR_EW SEMICOLON STRING 
+// "annotation" "." RPAR STAR_EW SEMICOLON STRING
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_parser::_tokenSet_5(_tokenSet_5_data_,8);
 const unsigned long modelica_parser::_tokenSet_6_data_[] = { 16777280UL, 536870912UL, 134742030UL, 65UL, 0UL, 0UL, 0UL, 0UL };
-// "annotation" "extends" "constrainedby" LPAR RPAR LBRACK COMMA SEMICOLON 
-// IDENT STRING 
+// "annotation" "extends" "constrainedby" LPAR RPAR LBRACK COMMA SEMICOLON
+// IDENT STRING
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_parser::_tokenSet_6(_tokenSet_6_data_,8);
 const unsigned long modelica_parser::_tokenSet_7_data_[] = { 1541946064UL, 9435485UL, 1UL, 65UL, 0UL, 0UL, 0UL, 0UL };
-// "algorithm" "annotation" "block" "class" "connector" "constant" "discrete" 
-// "end" "equation" "encapsulated" "expandable" "extends" "external" "final" 
-// "flow" "function" "import" "initial" "inner" "input" "model" "outer" 
-// "output" "package" "parameter" "partial" "protected" "public" "record" 
-// "redeclare" "replaceable" "type" "stream" IDENT STRING 
+// "algorithm" "annotation" "block" "class" "connector" "constant" "discrete"
+// "end" "equation" "encapsulated" "expandable" "extends" "external" "final"
+// "flow" "function" "import" "initial" "inner" "input" "model" "outer"
+// "output" "package" "parameter" "partial" "protected" "public" "record"
+// "redeclare" "replaceable" "type" "stream" IDENT STRING
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_parser::_tokenSet_7(_tokenSet_7_data_,8);
 const unsigned long modelica_parser::_tokenSet_8_data_[] = { 268447744UL, 10256UL, 1UL, 1UL, 0UL, 0UL, 0UL, 0UL };
-// "constant" "discrete" "flow" "input" "output" "parameter" "stream" IDENT 
+// "constant" "discrete" "flow" "input" "output" "parameter" "stream" IDENT
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_parser::_tokenSet_8(_tokenSet_8_data_,8);
 const unsigned long modelica_parser::_tokenSet_9_data_[] = { 1505770176UL, 9337177UL, 1UL, 1UL, 0UL, 0UL, 0UL, 0UL };
-// "annotation" "block" "class" "connector" "constant" "discrete" "encapsulated" 
-// "expandable" "extends" "final" "flow" "function" "import" "inner" "input" 
-// "model" "outer" "output" "package" "parameter" "partial" "record" "redeclare" 
-// "replaceable" "type" "stream" IDENT 
+// "annotation" "block" "class" "connector" "constant" "discrete" "encapsulated"
+// "expandable" "extends" "final" "flow" "function" "import" "inner" "input"
+// "model" "outer" "output" "package" "parameter" "partial" "record" "redeclare"
+// "replaceable" "type" "stream" IDENT
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_parser::_tokenSet_9(_tokenSet_9_data_,8);
 const unsigned long modelica_parser::_tokenSet_10_data_[] = { 0UL, 33554432UL, 136UL, 0UL, 0UL, 0UL, 0UL, 0UL };
-// "." LBRACK EQUALS 
+// "." LBRACK EQUALS
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_parser::_tokenSet_10(_tokenSet_10_data_,8);
 const unsigned long modelica_parser::_tokenSet_11_data_[] = { 64UL, 0UL, 134283268UL, 64UL, 0UL, 0UL, 0UL, 0UL };
-// "annotation" RPAR STAR_EW SEMICOLON STRING 
+// "annotation" RPAR STAR_EW SEMICOLON STRING
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_parser::_tokenSet_11(_tokenSet_11_data_,8);
 const unsigned long modelica_parser::_tokenSet_12_data_[] = { 36175888UL, 98308UL, 0UL, 0UL, 0UL, 0UL };
-// "algorithm" "end" "equation" "external" "initial" "protected" "public" 
+// "algorithm" "end" "equation" "external" "initial" "protected" "public"
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_parser::_tokenSet_12(_tokenSet_12_data_,6);
 const unsigned long modelica_parser::_tokenSet_13_data_[] = { 4293426896UL, 231733725UL, 134268459UL, 97UL, 0UL, 0UL, 0UL, 0UL };
-// "algorithm" "annotation" "block" "class" "connect" "connector" "constant" 
-// "discrete" "der" "end" "equation" "encapsulated" "expandable" "extends" 
-// "external" "false" "final" "flow" "for" "function" "if" "import" "initial" 
-// "inner" "input" "model" "not" "outer" "output" "package" "parameter" 
-// "partial" "protected" "public" "record" "redeclare" "replaceable" "true" 
-// "type" "unsigned_real" "when" "while" "stream" LPAR LBRACK LBRACE PLUS 
-// MINUS PLUS_EW MINUS_EW SEMICOLON IDENT UNSIGNED_INTEGER STRING 
+// "algorithm" "annotation" "block" "class" "connect" "connector" "constant"
+// "discrete" "der" "end" "equation" "encapsulated" "expandable" "extends"
+// "external" "false" "final" "flow" "for" "function" "if" "import" "initial"
+// "inner" "input" "model" "not" "outer" "output" "package" "parameter"
+// "partial" "protected" "public" "record" "redeclare" "replaceable" "true"
+// "type" "unsigned_real" "when" "while" "stream" LPAR LBRACK LBRACE PLUS
+// MINUS PLUS_EW MINUS_EW SEMICOLON IDENT UNSIGNED_INTEGER STRING
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_parser::_tokenSet_13(_tokenSet_13_data_,8);
 const unsigned long modelica_parser::_tokenSet_14_data_[] = { 2752005184UL, 88080516UL, 50730UL, 97UL, 0UL, 0UL, 0UL, 0UL };
-// "annotation" "connect" "der" "end" "false" "for" "if" "initial" "not" 
-// "true" "unsigned_real" "when" LPAR LBRACK LBRACE PLUS MINUS PLUS_EW 
-// MINUS_EW IDENT UNSIGNED_INTEGER STRING 
+// "annotation" "connect" "der" "end" "false" "for" "if" "initial" "not"
+// "true" "unsigned_real" "when" LPAR LBRACK LBRACE PLUS MINUS PLUS_EW
+// MINUS_EW IDENT UNSIGNED_INTEGER STRING
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_parser::_tokenSet_14(_tokenSet_14_data_,8);
 const unsigned long modelica_parser::_tokenSet_15_data_[] = { 2215133472UL, 54527108UL, 133693162UL, 97UL, 0UL, 0UL, 0UL, 0UL };
-// "and" "Code" "der" "end" "false" "if" "initial" "not" "or" "true" "unsigned_real" 
-// "." LPAR LBRACK LBRACE RBRACE EQUALS PLUS MINUS STAR SLASH POWER PLUS_EW 
-// MINUS_EW STAR_EW SLASH_EW POWER_EW LESS LESSEQ GREATER GREATEREQ EQEQ 
-// LESSGT COLON IDENT UNSIGNED_INTEGER STRING 
+// "and" "Code" "der" "end" "false" "if" "initial" "not" "or" "true" "unsigned_real"
+// "." LPAR LBRACK LBRACE RBRACE EQUALS PLUS MINUS STAR SLASH POWER PLUS_EW
+// MINUS_EW STAR_EW SLASH_EW POWER_EW LESS LESSEQ GREATER GREATEREQ EQEQ
+// LESSGT COLON IDENT UNSIGNED_INTEGER STRING
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_parser::_tokenSet_15(_tokenSet_15_data_,8);
 const unsigned long modelica_parser::_tokenSet_16_data_[] = { 67649536UL, 20971652UL, 50730UL, 97UL, 0UL, 0UL, 0UL, 0UL };
-// "der" "end" "false" "initial" "not" "true" "unsigned_real" LPAR LBRACK 
-// LBRACE PLUS MINUS PLUS_EW MINUS_EW IDENT UNSIGNED_INTEGER STRING 
+// "der" "end" "false" "initial" "not" "true" "unsigned_real" LPAR LBRACK
+// LBRACE PLUS MINUS PLUS_EW MINUS_EW IDENT UNSIGNED_INTEGER STRING
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_parser::_tokenSet_16(_tokenSet_16_data_,8);
 const unsigned long modelica_parser::_tokenSet_17_data_[] = { 0UL, 33554432UL, 10UL, 0UL, 0UL, 0UL, 0UL, 0UL };
-// "." LPAR LBRACK 
+// "." LPAR LBRACK
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_parser::_tokenSet_17(_tokenSet_17_data_,8);
 const unsigned long modelica_parser::_tokenSet_18_data_[] = { 2752004160UL, 222298244UL, 50730UL, 97UL, 0UL, 0UL, 0UL, 0UL };
-// "annotation" "der" "end" "false" "for" "if" "initial" "not" "true" "unsigned_real" 
-// "when" "while" LPAR LBRACK LBRACE PLUS MINUS PLUS_EW MINUS_EW IDENT 
-// UNSIGNED_INTEGER STRING 
+// "annotation" "der" "end" "false" "for" "if" "initial" "not" "true" "unsigned_real"
+// "when" "while" LPAR LBRACK LBRACE PLUS MINUS PLUS_EW MINUS_EW IDENT
+// UNSIGNED_INTEGER STRING
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_parser::_tokenSet_18(_tokenSet_18_data_,8);
 const unsigned long modelica_parser::_tokenSet_19_data_[] = { 2215133472UL, 54527108UL, 133693290UL, 97UL, 0UL, 0UL, 0UL, 0UL };
-// "and" "Code" "der" "end" "false" "if" "initial" "not" "or" "true" "unsigned_real" 
-// "." LPAR LBRACK LBRACE RBRACE ASSIGN PLUS MINUS STAR SLASH POWER PLUS_EW 
-// MINUS_EW STAR_EW SLASH_EW POWER_EW LESS LESSEQ GREATER GREATEREQ EQEQ 
-// LESSGT COLON IDENT UNSIGNED_INTEGER STRING 
+// "and" "Code" "der" "end" "false" "if" "initial" "not" "or" "true" "unsigned_real"
+// "." LPAR LBRACK LBRACE RBRACE ASSIGN PLUS MINUS STAR SLASH POWER PLUS_EW
+// MINUS_EW STAR_EW SLASH_EW POWER_EW LESS LESSEQ GREATER GREATEREQ EQEQ
+// LESSGT COLON IDENT UNSIGNED_INTEGER STRING
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_parser::_tokenSet_19(_tokenSet_19_data_,8);
 const unsigned long modelica_parser::_tokenSet_20_data_[] = { 2215133440UL, 20971652UL, 50730UL, 97UL, 0UL, 0UL, 0UL, 0UL };
-// "Code" "der" "end" "false" "if" "initial" "not" "true" "unsigned_real" 
-// LPAR LBRACK LBRACE PLUS MINUS PLUS_EW MINUS_EW IDENT UNSIGNED_INTEGER 
-// STRING 
+// "Code" "der" "end" "false" "if" "initial" "not" "true" "unsigned_real"
+// LPAR LBRACK LBRACE PLUS MINUS PLUS_EW MINUS_EW IDENT UNSIGNED_INTEGER
+// STRING
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_parser::_tokenSet_20(_tokenSet_20_data_,8);
 const unsigned long modelica_parser::_tokenSet_21_data_[] = { 2752005376UL, 88080516UL, 50730UL, 97UL, 0UL, 0UL, 0UL, 0UL };
-// "Code" "connect" "der" "end" "false" "for" "if" "initial" "not" "true" 
-// "unsigned_real" "when" LPAR LBRACK LBRACE PLUS MINUS PLUS_EW MINUS_EW 
-// IDENT UNSIGNED_INTEGER STRING 
+// "Code" "connect" "der" "end" "false" "for" "if" "initial" "not" "true"
+// "unsigned_real" "when" LPAR LBRACK LBRACE PLUS MINUS PLUS_EW MINUS_EW
+// IDENT UNSIGNED_INTEGER STRING
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_parser::_tokenSet_21(_tokenSet_21_data_,8);
 const unsigned long modelica_parser::_tokenSet_22_data_[] = { 2752005120UL, 88080516UL, 50730UL, 97UL, 0UL, 0UL, 0UL, 0UL };
-// "connect" "der" "end" "false" "for" "if" "initial" "not" "true" "unsigned_real" 
-// "when" LPAR LBRACK LBRACE PLUS MINUS PLUS_EW MINUS_EW IDENT UNSIGNED_INTEGER 
-// STRING 
+// "connect" "der" "end" "false" "for" "if" "initial" "not" "true" "unsigned_real"
+// "when" LPAR LBRACK LBRACE PLUS MINUS PLUS_EW MINUS_EW IDENT UNSIGNED_INTEGER
+// STRING
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_parser::_tokenSet_22(_tokenSet_22_data_,8);
 const unsigned long modelica_parser::_tokenSet_23_data_[] = { 2752004352UL, 222298244UL, 50730UL, 97UL, 0UL, 0UL, 0UL, 0UL };
-// "Code" "der" "end" "false" "for" "if" "initial" "not" "true" "unsigned_real" 
-// "when" "while" LPAR LBRACK LBRACE PLUS MINUS PLUS_EW MINUS_EW IDENT 
-// UNSIGNED_INTEGER STRING 
+// "Code" "der" "end" "false" "for" "if" "initial" "not" "true" "unsigned_real"
+// "when" "while" LPAR LBRACK LBRACE PLUS MINUS PLUS_EW MINUS_EW IDENT
+// UNSIGNED_INTEGER STRING
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_parser::_tokenSet_23(_tokenSet_23_data_,8);
 const unsigned long modelica_parser::_tokenSet_24_data_[] = { 2752004096UL, 222298244UL, 50730UL, 97UL, 0UL, 0UL, 0UL, 0UL };
-// "der" "end" "false" "for" "if" "initial" "not" "true" "unsigned_real" 
-// "when" "while" LPAR LBRACK LBRACE PLUS MINUS PLUS_EW MINUS_EW IDENT 
-// UNSIGNED_INTEGER STRING 
+// "der" "end" "false" "for" "if" "initial" "not" "true" "unsigned_real"
+// "when" "while" LPAR LBRACK LBRACE PLUS MINUS PLUS_EW MINUS_EW IDENT
+// UNSIGNED_INTEGER STRING
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_parser::_tokenSet_24(_tokenSet_24_data_,8);
 const unsigned long modelica_parser::_tokenSet_25_data_[] = { 2215133472UL, 54527108UL, 133693038UL, 97UL, 0UL, 0UL, 0UL, 0UL };
-// "and" "Code" "der" "end" "false" "if" "initial" "not" "or" "true" "unsigned_real" 
-// "." LPAR RPAR LBRACK LBRACE RBRACE PLUS MINUS STAR SLASH POWER PLUS_EW 
-// MINUS_EW STAR_EW SLASH_EW POWER_EW LESS LESSEQ GREATER GREATEREQ EQEQ 
-// LESSGT COLON IDENT UNSIGNED_INTEGER STRING 
+// "and" "Code" "der" "end" "false" "if" "initial" "not" "or" "true" "unsigned_real"
+// "." LPAR RPAR LBRACK LBRACE RBRACE PLUS MINUS STAR SLASH POWER PLUS_EW
+// MINUS_EW STAR_EW SLASH_EW POWER_EW LESS LESSEQ GREATER GREATEREQ EQEQ
+// LESSGT COLON IDENT UNSIGNED_INTEGER STRING
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_parser::_tokenSet_25(_tokenSet_25_data_,8);
 const unsigned long modelica_parser::_tokenSet_26_data_[] = { 0UL, 0UL, 386UL, 0UL, 0UL, 0UL, 0UL, 0UL };
-// LPAR EQUALS ASSIGN 
+// LPAR EQUALS ASSIGN
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_parser::_tokenSet_26(_tokenSet_26_data_,8);
 const unsigned long modelica_parser::_tokenSet_27_data_[] = { 2349383936UL, 21758084UL, 50734UL, 97UL, 0UL, 0UL, 0UL, 0UL };
-// "Code" "der" "each" "end" "false" "final" "if" "initial" "not" "redeclare" 
-// "replaceable" "true" "unsigned_real" LPAR RPAR LBRACK LBRACE PLUS MINUS 
-// PLUS_EW MINUS_EW IDENT UNSIGNED_INTEGER STRING 
+// "Code" "der" "each" "end" "false" "final" "if" "initial" "not" "redeclare"
+// "replaceable" "true" "unsigned_real" LPAR RPAR LBRACK LBRACE PLUS MINUS
+// PLUS_EW MINUS_EW IDENT UNSIGNED_INTEGER STRING
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_parser::_tokenSet_27(_tokenSet_27_data_,8);
 const unsigned long modelica_parser::_tokenSet_28_data_[] = { 1505770112UL, 9337177UL, 1UL, 1UL, 0UL, 0UL, 0UL, 0UL };
-// "block" "class" "connector" "constant" "discrete" "encapsulated" "expandable" 
-// "extends" "final" "flow" "function" "import" "inner" "input" "model" 
-// "outer" "output" "package" "parameter" "partial" "record" "redeclare" 
-// "replaceable" "type" "stream" IDENT 
+// "block" "class" "connector" "constant" "discrete" "encapsulated" "expandable"
+// "extends" "final" "flow" "function" "import" "inner" "input" "model"
+// "outer" "output" "package" "parameter" "partial" "record" "redeclare"
+// "replaceable" "type" "stream" IDENT
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_parser::_tokenSet_28(_tokenSet_28_data_,8);
 const unsigned long modelica_parser::_tokenSet_29_data_[] = { 1505770112UL, 42629464UL, 9UL, 1UL, 0UL, 0UL, 0UL, 0UL };
-// "block" "class" "connector" "constant" "discrete" "encapsulated" "expandable" 
-// "extends" "final" "flow" "function" "inner" "input" "model" "outer" 
-// "output" "package" "parameter" "partial" "record" "replaceable" "type" 
-// "." "stream" LBRACK IDENT 
+// "block" "class" "connector" "constant" "discrete" "encapsulated" "expandable"
+// "extends" "final" "flow" "function" "inner" "input" "model" "outer"
+// "output" "package" "parameter" "partial" "record" "replaceable" "type"
+// "." "stream" LBRACK IDENT
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_parser::_tokenSet_29(_tokenSet_29_data_,8);
 const unsigned long modelica_parser::_tokenSet_30_data_[] = { 0UL, 32UL, 68UL, 1UL, 0UL, 0UL, 0UL, 0UL };
-// "loop" RPAR RBRACE IDENT 
+// "loop" RPAR RBRACE IDENT
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_parser::_tokenSet_30(_tokenSet_30_data_,8);
 const unsigned long modelica_parser::_tokenSet_31_data_[] = { 0UL, 0UL, 50688UL, 0UL, 0UL, 0UL, 0UL, 0UL };
-// PLUS MINUS PLUS_EW MINUS_EW 
+// PLUS MINUS PLUS_EW MINUS_EW
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_parser::_tokenSet_31(_tokenSet_31_data_,8);
 const unsigned long modelica_parser::_tokenSet_32_data_[] = { 0UL, 0UL, 202752UL, 0UL, 0UL, 0UL, 0UL, 0UL };
-// STAR SLASH STAR_EW SLASH_EW 
+// STAR SLASH STAR_EW SLASH_EW
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_parser::_tokenSet_32(_tokenSet_32_data_,8);
 const unsigned long modelica_parser::_tokenSet_33_data_[] = { 0UL, 0UL, 68UL, 1UL, 0UL, 0UL, 0UL, 0UL };
-// RPAR RBRACE IDENT 
+// RPAR RBRACE IDENT
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_parser::_tokenSet_33(_tokenSet_33_data_,8);
 const unsigned long modelica_parser::_tokenSet_34_data_[] = { 2701328480UL, 538969120UL, 268435412UL, 65UL, 0UL, 0UL, 0UL, 0UL };
-// "and" "annotation" "else" "elseif" "extends" "for" "if" "loop" "or" 
-// "then" "constrainedby" RPAR RBRACK RBRACE EQUALS ASSIGN PLUS MINUS STAR 
-// SLASH POWER PLUS_EW MINUS_EW STAR_EW SLASH_EW POWER_EW COMMA LESS LESSEQ 
-// GREATER GREATEREQ EQEQ LESSGT COLON SEMICOLON IDENT STRING 
+// "and" "annotation" "else" "elseif" "extends" "for" "if" "loop" "or"
+// "then" "constrainedby" RPAR RBRACK RBRACE EQUALS ASSIGN PLUS MINUS STAR
+// SLASH POWER PLUS_EW MINUS_EW STAR_EW SLASH_EW POWER_EW COMMA LESS LESSEQ
+// GREATER GREATEREQ EQEQ LESSGT COLON SEMICOLON IDENT STRING
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_parser::_tokenSet_34(_tokenSet_34_data_,8);
 const unsigned long modelica_parser::_tokenSet_35_data_[] = { 2752004384UL, 54527108UL, 134217326UL, 97UL, 0UL, 0UL, 0UL, 0UL };
-// "and" "Code" "der" "end" "false" "for" "if" "initial" "not" "or" "true" 
-// "unsigned_real" "." LPAR RPAR LBRACK LBRACE RBRACE PLUS MINUS STAR SLASH 
-// POWER PLUS_EW MINUS_EW STAR_EW SLASH_EW POWER_EW COMMA LESS LESSEQ GREATER 
-// GREATEREQ EQEQ LESSGT COLON IDENT UNSIGNED_INTEGER STRING 
+// "and" "Code" "der" "end" "false" "for" "if" "initial" "not" "or" "true"
+// "unsigned_real" "." LPAR RPAR LBRACK LBRACE RBRACE PLUS MINUS STAR SLASH
+// POWER PLUS_EW MINUS_EW STAR_EW SLASH_EW POWER_EW COMMA LESS LESSEQ GREATER
+// GREATEREQ EQEQ LESSGT COLON IDENT UNSIGNED_INTEGER STRING
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_parser::_tokenSet_35(_tokenSet_35_data_,8);
 const unsigned long modelica_parser::_tokenSet_36_data_[] = { 2215133472UL, 54527108UL, 134217326UL, 97UL, 0UL, 0UL, 0UL, 0UL };
-// "and" "Code" "der" "end" "false" "if" "initial" "not" "or" "true" "unsigned_real" 
-// "." LPAR RPAR LBRACK LBRACE RBRACE PLUS MINUS STAR SLASH POWER PLUS_EW 
-// MINUS_EW STAR_EW SLASH_EW POWER_EW COMMA LESS LESSEQ GREATER GREATEREQ 
-// EQEQ LESSGT COLON IDENT UNSIGNED_INTEGER STRING 
+// "and" "Code" "der" "end" "false" "if" "initial" "not" "or" "true" "unsigned_real"
+// "." LPAR RPAR LBRACK LBRACE RBRACE PLUS MINUS STAR SLASH POWER PLUS_EW
+// MINUS_EW STAR_EW SLASH_EW POWER_EW COMMA LESS LESSEQ GREATER GREATEREQ
+// EQEQ LESSGT COLON IDENT UNSIGNED_INTEGER STRING
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_parser::_tokenSet_36(_tokenSet_36_data_,8);
 
 

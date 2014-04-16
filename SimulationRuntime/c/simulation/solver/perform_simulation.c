@@ -89,7 +89,7 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
   SIMULATION_INFO *simInfo = &(data->simulationInfo);
 
   solverInfo->currentTime = simInfo->startTime;
-  
+
   unsigned int __currStepNo = 0;
 
   if(measure_time_flag)
@@ -145,7 +145,7 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
       }
       solverInfo->currentStepSize = (double)(__currStepNo*(simInfo->stopTime-simInfo->startTime))/(simInfo->numSteps) + simInfo->startTime - solverInfo->currentTime;
 
-      // if retry reduce stepsize 
+      // if retry reduce stepsize
       if(retry)
       {
         solverInfo->currentStepSize /= 2;
@@ -170,7 +170,7 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
        */
       infoStreamPrint(LOG_SOLVER, 1, "call solver from %g to %g (stepSize: %.15g)", solverInfo->currentTime, solverInfo->currentTime + solverInfo->currentStepSize, solverInfo->currentStepSize);
       communicateStatus("Running", (solverInfo->currentTime-simInfo->startTime)/(simInfo->stopTime-simInfo->startTime));
-      retValIntegrator = solver_main_step(data, solverInfo);  
+      retValIntegrator = solver_main_step(data, solverInfo);
 
       if (S_OPTIMIZATION == solverInfo->solverMethod) break;
 
@@ -182,7 +182,7 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
 
       /***** Event handling *****/
       if (measure_time_flag) rt_tick(SIM_TIMER_EVENT);
-      
+
       eventType = checkEvents(data, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo);
       if(eventType > 0) /* event */
       {
@@ -203,7 +203,7 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
         solverInfo->laststep = solverInfo->currentTime;
         solverInfo->didEventStep=0;
       }
-      
+
       if (measure_time_flag) rt_accumulate(SIM_TIMER_EVENT);
       /***** End event handling *****/
 
@@ -223,7 +223,7 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
       {
         retry=0;
       }
-      
+
       /***** Emit this time step *****/
       storePreValues(data);
       storeOldValues(data);
@@ -236,7 +236,7 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
         unsigned int tmpint;
         rt_tick(SIM_TIMER_OVERHEAD);
         rt_accumulate(SIM_TIMER_STEP);
-        
+
         /* Disable time measurements if we have trouble writing to the file... */
         flag = flag && 1 == fwrite(&stepNo, sizeof(unsigned int), 1, fmt);
         stepNo++;
@@ -261,7 +261,7 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
           fmt = NULL;
         }
       }
-      
+
       /* prevent emit if noEventEmit flag is used, if it's an event */
       if ((omc_flag[FLAG_NOEVENTEMIT] && solverInfo->didEventStep == 0) || !omc_flag[FLAG_NOEVENTEMIT])
       {

@@ -38,7 +38,7 @@ encapsulated package FLookup
 
 "
 
-public 
+public
 import Absyn;
 import FCore;
 import FNode;
@@ -89,10 +89,10 @@ public function id
   output Ref outRef;
 algorithm
   outRef := matchcontinue(inRef, inName, inOptions, inMsg)
-    local 
+    local
       Ref r;
       Parents p;
-    
+
     // implicit scope which has for iterators
     case (_, _, _, _)
       equation
@@ -100,7 +100,7 @@ algorithm
         r = FNode.child(r, inName);
       then
         r;
-    
+
     // implicit scope? move upwards
     case (_, _, _, _)
       equation
@@ -111,7 +111,7 @@ algorithm
         r = id(r, inName, inOptions, inMsg);
       then
         r;
-    
+
     // local?
     case (_, _, _, _)
       equation
@@ -119,7 +119,7 @@ algorithm
         r = FNode.child(inRef, inName);
       then
         r;
-    
+
     // lookup in imports
     case (_, _, OPTIONS(false, _, _), _)
       equation
@@ -127,7 +127,7 @@ algorithm
         r = imp(inRef, inName, inOptions, inMsg);
       then
         r;
-        
+
     // lookup in extends
     case (_, _, OPTIONS(_, false, _), _)
       equation
@@ -135,7 +135,7 @@ algorithm
         r = ext(inRef, inName, inOptions, inMsg);
       then
         r;
-    
+
     // encapsulated
     case (_, _, OPTIONS(_, _, false), _)
       equation
@@ -145,34 +145,34 @@ algorithm
         r = id(r, inName, inOptions, inMsg);
       then
         r;
-    
+
     // search parent
     case (_, _, OPTIONS(_, _, false), _)
       equation
         false = FNode.isRefImplicitScope(inRef);
         false = FNode.isEncapsulated(FNode.fromRef(inRef));
-        true = FNode.hasParents(FNode.fromRef(inRef)); 
+        true = FNode.hasParents(FNode.fromRef(inRef));
         p = FNode.parents(FNode.fromRef(inRef));
         r = FNode.original(p);
         r = search({r}, inName, inOptions, inMsg);
       then
         r;
-    
+
     // top node reached
     case (_, _, OPTIONS(_, _, false), _)
       equation
-        false = FNode.hasParents(FNode.fromRef(inRef)); 
+        false = FNode.hasParents(FNode.fromRef(inRef));
       then
         fail();
-    
+
     // failure
     case (_, _, _, SOME(_))
       equation
         print("FLookup.id failed for: " +& inName +& " in: " +& FNode.toPathStr(FNode.fromRef(inRef)) +& "\n");
       then
         fail();
-  
-  end matchcontinue; 
+
+  end matchcontinue;
 end id;
 
 public function search
@@ -185,27 +185,27 @@ public function search
   output Ref outRef;
 algorithm
   outRef := matchcontinue(inRefs, inName, inOptions, inMsg)
-    local 
+    local
       Ref r;
       Refs rest;
-    
+
     // not found
     case ({}, _, _, _) then fail();
-    
-    // found    
+
+    // found
     case (r::rest, _, _, _)
       equation
         r = id(r, inName, inOptions, inMsg);
       then
         r;
-    
+
     // search rest
     case (_::rest, _, _, _)
       equation
         r = search(rest, inName, inOptions, inMsg);
       then
         r;
-        
+
     // failure
     case (_, _, _, SOME(_))
       equation
@@ -213,8 +213,8 @@ algorithm
            FNode.toPathStr(FNode.fromRef(List.first(inRefs))) +& "\n");
       then
         fail();
-  
-  end matchcontinue; 
+
+  end matchcontinue;
 end search;
 
 public function name
@@ -254,13 +254,13 @@ algorithm
         r = name(r, rest, inOptions, inMsg);
       then
         r;
-    
+
     case (_, _, _, SOME(_))
       equation
         print("FLookup.name failed for: " +& Absyn.pathString(inPath) +& " in: " +& FNode.toPathStr(FNode.fromRef(inRef)) +& "\n");
       then
         fail();
-  
+
   end matchcontinue;
 end name;
 
@@ -274,12 +274,12 @@ public function ext
   output Ref outRef;
 algorithm
   outRef := matchcontinue(inRef, inName, inOptions, inMsg)
-    local 
+    local
       Ref r;
       Refs refs;
       Parents p;
-    
-    // for class extends we're searching inside the base class also!      
+
+    // for class extends we're searching inside the base class also!
     case (_, _, _, _)
       equation
         true = FNode.isClassExtends(FNode.fromRef(inRef));
@@ -293,7 +293,7 @@ algorithm
         // print("Found it in: " +& FNode.toPathStr(FNode.fromRef(r)) +& "\n");
       then
         r;
-    
+
     case (_, _, _, _)
       equation
         refs = FNode.extendsRefs(inRef);
@@ -303,7 +303,7 @@ algorithm
         r = search(refs, inName, ignoreParentsAndImports, inMsg);
       then
         r;
-  
+
   end matchcontinue;
 end ext;
 
@@ -317,11 +317,11 @@ public function imp
   output Ref outRef;
 algorithm
   outRef := matchcontinue(inRef, inName, inOptions, inMsg)
-    local 
+    local
       Ref r;
       Parents p;
       list<Import> qi, uqi;
-    
+
     // lookup in qual
     case (_, _, _, _)
       equation
@@ -330,7 +330,7 @@ algorithm
         r = imp_qual(inRef, inName, qi, inOptions, inMsg);
       then
         r;
-        
+
     // lookup in un-qual
     case (_, _, _, _)
       equation
@@ -339,7 +339,7 @@ algorithm
         r = imp_unqual(inRef, inName, uqi, inOptions, inMsg);
       then
         r;
-      
+
   end matchcontinue;
 end imp;
 
@@ -375,7 +375,7 @@ algorithm
       then
         r;
 
-    // Partial match, return failure 
+    // Partial match, return failure
     case (_, _, Absyn.NAMED_IMPORT(name = name, path = path) :: _, _, _)
       equation
         true = stringEqual(inName, name);
@@ -489,14 +489,14 @@ algorithm
         r = cr(r, rest, inOptions, inMsg);
       then
         r;
-    
+
     case (_, _, _, SOME(_))
       equation
         print("FLookup.cr failed for: " +& Absyn.crefString(inCref) +& " in: " +& FNode.toPathStr(FNode.fromRef(inRef)) +& "\n");
       then
         fail();
-  
-  end matchcontinue; 
+
+  end matchcontinue;
 end cr;
 
 end FLookup;

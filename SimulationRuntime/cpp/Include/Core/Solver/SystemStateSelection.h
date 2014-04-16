@@ -13,15 +13,15 @@ public:
     SystemStateSelection(IMixedSystem* system);
 
     ~SystemStateSelection();
-    
+
     bool stateSelection(int switchStates);
   void initialize();
   private:
-   
+
    void setAMatrix(int* newEnable,unsigned int index);
    int comparePivot(int *oldPivot, int *newPivot,int switchStates,unsigned int index);
-   
-   
+
+
    IMixedSystem* _system;
    IStateSelection* _state_selection;
    std::vector<boost::shared_array<int> > _rowPivot;

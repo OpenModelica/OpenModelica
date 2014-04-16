@@ -36,11 +36,11 @@ encapsulated package FNode
 
   RCS: $Id: FNode.mo 14085 2012-11-27 12:12:40Z adrpo $
 
-  This module builds nodes out of SCode 
+  This module builds nodes out of SCode
 "
 
 // public imports
-public 
+public
 import Absyn;
 import DAE;
 import SCode;
@@ -48,7 +48,7 @@ import Util;
 import FCore;
 
 // protected imports
-protected 
+protected
 import Error;
 import List;
 import FGraph;
@@ -149,7 +149,7 @@ end hasParents;
 
 public function target
 "returns a target from a REF node"
-  input Node inNode; 
+  input Node inNode;
   output Ref outRef;
 algorithm
   outRef := match(inNode)
@@ -286,7 +286,7 @@ protected
 algorithm
   FCore.N(n, id, p, c, d) := fromRef(inParentRef);
   c := avlTreeAdd(c, inName, inChildRef);
-  parent := updateRef(inParentRef, FCore.N(n, id, p, c, d)); 
+  parent := updateRef(inParentRef, FCore.N(n, id, p, c, d));
 end addChildRef;
 
 public function addImportToRef
@@ -305,7 +305,7 @@ protected
 algorithm
   FCore.N(n, id, p, c, FCore.CL(e, t, it)) := fromRef(ref);
   it := addImport(imp, it);
-  r := updateRef(ref, FCore.N(n, id, p, c, FCore.CL(e, t, it))); 
+  r := updateRef(ref, FCore.N(n, id, p, c, FCore.CL(e, t, it)));
 end addImportToRef;
 
 public function addTypesToRef
@@ -379,27 +379,27 @@ algorithm
   outTop := matchcontinue(inRef)
     local
       Ref t;
-    
+
     // already at the top
     case (_)
       equation
         false = hasParents(fromRef(inRef));
-      then 
+      then
         inRef;
-    
+
         // already at the top
     case (_)
       equation
         true = hasParents(fromRef(inRef));
         t = top(List.first(parents(fromRef(inRef))));
-      then 
+      then
         t;
-  
+
   end matchcontinue;
 end top;
 
 public function children
-  input Node inNode; 
+  input Node inNode;
   output Children outChildren;
 algorithm
   FCore.N(children = outChildren) := inNode;
@@ -462,9 +462,9 @@ algorithm
                                     attr as SCode.ATTR(ad,ct,prl,var,dir),
                                     t,m,comment,condition,info), _)
       equation
-        nd = FCore.CO(inElement, 
+        nd = FCore.CO(inElement,
                 DAE.TYPES_VAR(
-                  n, 
+                  n,
                   DAE.ATTR(ct,prl,var,dir,io,vis),
                   DAE.T_UNKNOWN_DEFAULT,
                   DAE.UNBOUND(),NONE()),
@@ -472,7 +472,7 @@ algorithm
                 inKind);
       then
         nd;
-  
+
   end match;
 end element2Data;
 
@@ -523,16 +523,16 @@ algorithm
 
     case (FCore.N(n, i, p, c, d))
       equation
-        outStr = 
-           "[i:" +& intString(i) +& "] " +& 
+        outStr =
+           "[i:" +& intString(i) +& "] " +&
            "[p:" +& stringDelimitList(List.map(List.map(List.map(p, fromRef), id), intString), ", ") +& "] " +&
-           "[n:" +& name(inNode) +& "] " +& 
+           "[n:" +& name(inNode) +& "] " +&
            "[d:" +& dataStr(d) +& "]";
       then
         outStr;
-    
+
     else "Unhandled node!";
-  
+
   end matchcontinue;
 end toStr;
 
@@ -550,14 +550,14 @@ algorithm
      Data d;
      Ref nr;
      String s;
- 
+
     // top node
     case (FCore.N(n, id, {}, c, d))
       equation
         outStr = name(inNode);
       then
         outStr;
-    
+
     case (FCore.N(n, id, nr::_, c, d))
       equation
         true = hasParents(fromRef(nr));
@@ -565,7 +565,7 @@ algorithm
         outStr = s +& "." +& name(inNode);
       then
         outStr;
-        
+
     case (FCore.N(n, id, nr::_, c, d))
       equation
         false = hasParents(fromRef(nr));
@@ -577,7 +577,7 @@ end toPathStr;
 
 public function isImplicitScope
 "anything that is not top, class or a component is an implicit scope!"
-  input Node inNode; 
+  input Node inNode;
   output Boolean b;
 algorithm
   b := match(inNode)
@@ -592,14 +592,14 @@ end isImplicitScope;
 
 public function isRefImplicitScope
 "anything that is not a class or a component is an implicit scope!"
-  input Ref inRef; 
+  input Ref inRef;
   output Boolean b;
 algorithm
   b := isImplicitScope(fromRef(inRef));
 end isRefImplicitScope;
 
 public function isEncapsulated
-  input Node inNode; 
+  input Node inNode;
   output Boolean b;
 algorithm
   b := match(inNode)
@@ -609,7 +609,7 @@ algorithm
 end isEncapsulated;
 
 public function isReference
-  input Node inNode; 
+  input Node inNode;
   output Boolean b;
 algorithm
   b := match(inNode)
@@ -619,7 +619,7 @@ algorithm
 end isReference;
 
 public function isUserDefined
-  input Node inNode; 
+  input Node inNode;
   output Boolean b;
 algorithm
   b := matchcontinue(inNode)
@@ -634,22 +634,22 @@ algorithm
         b = isRefUserDefined(p);
       then
         b;
-    else false; 
+    else false;
   end matchcontinue;
 end isUserDefined;
 
 public function isTop
-  input Node inNode; 
+  input Node inNode;
   output Boolean b;
 algorithm
   b := match(inNode)
     case FCore.N(data = FCore.TOP()) then true;
-    else false; 
+    else false;
   end match;
 end isTop;
 
 public function isExtends
-  input Node inNode; 
+  input Node inNode;
   output Boolean b;
 algorithm
   b := match(inNode)
@@ -659,7 +659,7 @@ algorithm
 end isExtends;
 
 public function isDerived
-  input Node inNode; 
+  input Node inNode;
   output Boolean b;
 algorithm
   b := match(inNode)
@@ -669,7 +669,7 @@ algorithm
 end isDerived;
 
 public function isClass
-  input Node inNode; 
+  input Node inNode;
   output Boolean b;
 algorithm
   b := match(inNode)
@@ -679,7 +679,7 @@ algorithm
 end isClass;
 
 public function isClassExtends
-  input Node inNode; 
+  input Node inNode;
   output Boolean b;
 algorithm
   b := match(inNode)
@@ -689,7 +689,7 @@ algorithm
 end isClassExtends;
 
 public function isComponent
-  input Node inNode; 
+  input Node inNode;
   output Boolean b;
 algorithm
   b := match(inNode)
@@ -699,7 +699,7 @@ algorithm
 end isComponent;
 
 public function isConstrainClass
-  input Node inNode; 
+  input Node inNode;
   output Boolean b;
 algorithm
   b := match(inNode)
@@ -709,7 +709,7 @@ algorithm
 end isConstrainClass;
 
 public function isCref
-  input Node inNode; 
+  input Node inNode;
   output Boolean b;
 algorithm
   b := match(inNode)
@@ -719,7 +719,7 @@ algorithm
 end isCref;
 
 public function isBasicType
-  input Node inNode; 
+  input Node inNode;
   output Boolean b;
 algorithm
   b := match(inNode)
@@ -729,7 +729,7 @@ algorithm
 end isBasicType;
 
 public function isBuiltin
-  input Node inNode; 
+  input Node inNode;
   output Boolean b;
 algorithm
   b := match(inNode)
@@ -740,7 +740,7 @@ algorithm
 end isBuiltin;
 
 public function isFunction
-  input Node inNode; 
+  input Node inNode;
   output Boolean b;
 algorithm
   b := matchcontinue(inNode)
@@ -755,7 +755,7 @@ algorithm
 end isFunction;
 
 public function isRecord
-  input Node inNode; 
+  input Node inNode;
   output Boolean b;
 algorithm
   b := matchcontinue(inNode)
@@ -791,14 +791,14 @@ algorithm
 end isMod;
 
 public function isInMod
-  input Node inNode; 
+  input Node inNode;
   output Boolean b;
 algorithm
   b := match(inNode)
     local
       Scope s;
       Boolean b1, b2;
-    
+
     case _
       equation
         s = originalScope(toRef(inNode));
@@ -808,19 +808,19 @@ algorithm
         b = boolOr(b1, b2);
       then
         b;
-  
+
   end match;
 end isInMod;
 
 public function isInSection
-  input Node inNode; 
+  input Node inNode;
   output Boolean b;
 algorithm
   b := match(inNode)
     local
       Scope s;
       Boolean b1, b2;
-    
+
     case _
       equation
         s = originalScope(toRef(inNode));
@@ -830,16 +830,16 @@ algorithm
         b = boolOr(b1, b2);
       then
         b;
-  
+
   end match;
 end isInSection;
 
 public function originalScope
 "@author:
  return the scope from this ref to the top as a list of references.
- NOTE: 
-   the starting point reference is included and 
-   the scope is returned reversed, from leafs 
+ NOTE:
+   the starting point reference is included and
+   the scope is returned reversed, from leafs
    to top"
   input Ref inRef;
   output Scope outScope;
@@ -850,9 +850,9 @@ end originalScope;
 public function originalScope_dispatch
 "@author:
  return the scope from this ref to the top as a list of references.
- NOTE: 
-   the starting point reference is included and 
-   the scope is returned reversed, from leafs 
+ NOTE:
+   the starting point reference is included and
+   the scope is returned reversed, from leafs
    to top"
   input Ref inRef;
   input Scope inAcc;
@@ -862,14 +862,14 @@ algorithm
     local
       Scope acc;
       Ref r;
-    
+
     // top
     case (_, acc)
       equation
         true = isTop(fromRef(inRef));
       then
         listReverse(inRef::acc);
-    
+
     // not top
     case (_, acc)
       equation
@@ -877,7 +877,7 @@ algorithm
         acc = originalScope_dispatch(r, inRef::acc);
       then
         acc;
-  
+
   end matchcontinue;
 end originalScope_dispatch;
 
@@ -893,9 +893,9 @@ end original;
 public function contextualScope
 "@author:
  return the scope from this ref to the top as a list of references.
- NOTE: 
-   the starting point reference is included and 
-   the scope is returned reversed, from leafs 
+ NOTE:
+   the starting point reference is included and
+   the scope is returned reversed, from leafs
    to top"
   input Ref inRef;
   output Scope outScope;
@@ -906,9 +906,9 @@ end contextualScope;
 public function contextualScope_dispatch
 "@author:
  return the scope from this ref to the top as a list of references.
- NOTE: 
-   the starting point reference is included and 
-   the scope is returned reversed, from leafs 
+ NOTE:
+   the starting point reference is included and
+   the scope is returned reversed, from leafs
    to top"
   input Ref inRef;
   input Scope inAcc;
@@ -918,14 +918,14 @@ algorithm
     local
       Scope acc;
       Ref r;
-    
+
     // top
     case (_, acc)
       equation
         true = isTop(fromRef(inRef));
       then
         listReverse(inRef::acc);
-    
+
     // not top
     case (_, acc)
       equation
@@ -933,7 +933,7 @@ algorithm
         acc = contextualScope_dispatch(r, inRef::acc);
       then
         acc;
-  
+
   end matchcontinue;
 end contextualScope_dispatch;
 
@@ -951,7 +951,7 @@ public function filter
  filter the children of the given
  reference by the given filter"
   input Ref inRef;
-  input Filter inFilter; 
+  input Filter inFilter;
   output Refs filtered;
   partial function Filter
     input Ref inRef;
@@ -962,139 +962,139 @@ algorithm
     local
       Refs rfs;
       Children c;
-    
+
     case (_, _)
       equation
         c = children(fromRef(inRef));
         rfs = getAvlValues(c);
-        rfs = List.filterOnTrue(rfs, inFilter); 
-      then 
+        rfs = List.filterOnTrue(rfs, inFilter);
+      then
         rfs;
-  
+
   end match;
 end filter;
 
 public function isRefExtends
-  input Ref inRef; 
+  input Ref inRef;
   output Boolean b;
 algorithm
   b := isExtends(fromRef(inRef));
 end isRefExtends;
 
 public function isRefDerived
-  input Ref inRef; 
+  input Ref inRef;
   output Boolean b;
 algorithm
   b := isDerived(fromRef(inRef));
 end isRefDerived;
 
 public function isRefComponent
-  input Ref inRef; 
+  input Ref inRef;
   output Boolean b;
 algorithm
   b := isComponent(fromRef(inRef));
 end isRefComponent;
 
 public function isRefConstrainClass
-  input Ref inRef; 
+  input Ref inRef;
   output Boolean b;
 algorithm
   b := isConstrainClass(fromRef(inRef));
 end isRefConstrainClass;
 
 public function isRefClass
-  input Ref inRef; 
+  input Ref inRef;
   output Boolean b;
 algorithm
   b := isClass(fromRef(inRef));
 end isRefClass;
 
 public function isRefClassExtends
-  input Ref inRef; 
+  input Ref inRef;
   output Boolean b;
 algorithm
   b := isClassExtends(fromRef(inRef));
 end isRefClassExtends;
 
 public function isRefCref
-  input Ref inRef; 
+  input Ref inRef;
   output Boolean b;
 algorithm
   b := isCref(fromRef(inRef));
 end isRefCref;
 
 public function isRefReference
-  input Ref inRef; 
+  input Ref inRef;
   output Boolean b;
 algorithm
   b := isReference(fromRef(inRef));
 end isRefReference;
 
 public function isRefUserDefined
-  input Ref inRef; 
+  input Ref inRef;
   output Boolean b;
 algorithm
   b := isUserDefined(fromRef(inRef));
 end isRefUserDefined;
 
 public function isRefTop
-  input Ref inRef; 
+  input Ref inRef;
   output Boolean b;
 algorithm
   b := isTop(fromRef(inRef));
 end isRefTop;
 
 public function isRefBasicType
-  input Ref inRef; 
+  input Ref inRef;
   output Boolean b;
 algorithm
   b := isBasicType(fromRef(inRef));
 end isRefBasicType;
 
 public function isRefBuiltin
-  input Ref inRef; 
+  input Ref inRef;
   output Boolean b;
 algorithm
   b := isBuiltin(fromRef(inRef));
 end isRefBuiltin;
 
 public function isRefFunction
-  input Ref inRef; 
+  input Ref inRef;
   output Boolean b;
 algorithm
   b := isFunction(fromRef(inRef));
 end isRefFunction;
 
 public function isRefRecord
-  input Ref inRef; 
+  input Ref inRef;
   output Boolean b;
 algorithm
   b := isRecord(fromRef(inRef));
 end isRefRecord;
 
 public function isRefSection
-  input Ref inRef; 
+  input Ref inRef;
   output Boolean b;
 algorithm
   b := isSection(fromRef(inRef));
 end isRefSection;
 
 public function isRefMod
-  input Ref inRef; 
+  input Ref inRef;
   output Boolean b;
 algorithm
   b := isMod(fromRef(inRef));
 end isRefMod;
 
 public function isRefInSection
-  input Ref inRef; 
+  input Ref inRef;
   output Boolean b;
 algorithm
   b := isInSection(fromRef(inRef));
 end isRefInSection;
 
 public function isRefInMod
-  input Ref inRef; 
+  input Ref inRef;
   output Boolean b;
 algorithm
   b := isInMod(fromRef(inRef));
@@ -1102,7 +1102,7 @@ end isRefInMod;
 
 public function dfs
 "@author: adrpo
- return all refs as given by 
+ return all refs as given by
  depth first search"
   input Ref inRef;
   output Refs outRefs;
@@ -1111,7 +1111,7 @@ algorithm
     local
       Refs refs;
       Children c;
-    
+
     case _
       equation
         c = children(fromRef(inRef));
@@ -1120,15 +1120,15 @@ algorithm
         refs = inRef::refs;
       then
         refs;
-  
+
   end match;
 end dfs;
 
 public function dfs_filter
 "@author: adrpo
- return all refs as given by 
- reversed depth first search 
- filtered by the given filter 
+ return all refs as given by
+ reversed depth first search
+ filtered by the given filter
  function"
   input Ref inRef;
   input Filter inFilter;
@@ -1142,7 +1142,7 @@ algorithm
     local
       Refs refs;
       Boolean b;
-    
+
     case (_, _)
       equation
         b = inFilter(inRef);
@@ -1150,7 +1150,7 @@ algorithm
         refs = dfs_filter_helper(children(fromRef(inRef)), inFilter, refs);
       then
         refs;
-  
+
   end match;
 end dfs_filter;
 
@@ -1170,21 +1170,21 @@ algorithm
       AvlValue v;
       AvlTree t, tl, tr;
       Boolean b;
-    
+
     // empty tree
-    case (FCore.CAVLTREENODE(NONE(), _, NONE(), NONE()), _, _) 
-      then 
+    case (FCore.CAVLTREENODE(NONE(), _, NONE(), NONE()), _, _)
+      then
         inAcc;
-    
+
     // leaf
     case (FCore.CAVLTREENODE(SOME(FCore.CAVLTREEVALUE(_, v)), _, NONE(), NONE()), _, acc)
       equation
         b = inFilter(v);
         acc = List.consOnTrue(b, v, acc);
         acc = dfs_filter_helper(children(fromRef(v)), inFilter, acc);
-      then 
+      then
         acc;
-        
+
     // non-leaf on left
     case (FCore.CAVLTREENODE(SOME(FCore.CAVLTREEVALUE(_, v)), _, SOME(t), NONE()), _, acc)
       equation
@@ -1192,9 +1192,9 @@ algorithm
         acc = List.consOnTrue(b, v, acc);
         acc = dfs_filter_helper(children(fromRef(v)), inFilter, acc);
         acc = dfs_filter_helper(t, inFilter, acc);
-      then 
+      then
         acc;
-    
+
     // non-leaf on right
     case (FCore.CAVLTREENODE(SOME(FCore.CAVLTREEVALUE(_, v)), _, NONE(), SOME(t)), _, acc)
       equation
@@ -1202,9 +1202,9 @@ algorithm
         acc = List.consOnTrue(b, v, acc);
         acc = dfs_filter_helper(children(fromRef(v)), inFilter, acc);
         acc = dfs_filter_helper(t, inFilter, acc);
-      then 
+      then
         acc;
-    
+
     // non-leaf on both left and right
     case (FCore.CAVLTREENODE(SOME(FCore.CAVLTREEVALUE(_, v)), _, SOME(tl), SOME(tr)), _, acc)
       equation
@@ -1215,7 +1215,7 @@ algorithm
         acc = dfs_filter_helper(tr, inFilter, acc);
       then
         acc;
-  
+
   end match;
 end dfs_filter_helper;
 
@@ -1233,14 +1233,14 @@ algorithm
     local
       Refs refs;
       Boolean b;
-    
+
     case (_, _)
       equation
         inApply(inRef);
         apply_helper(children(fromRef(inRef)), inApply);
       then
         ();
-  
+
   end match;
 end apply;
 
@@ -1257,38 +1257,38 @@ algorithm
       AvlValue v;
       AvlTree t, tl, tr;
       Boolean b;
-    
+
     // empty tree
-    case (FCore.CAVLTREENODE(NONE(), _, NONE(), NONE()), _) 
-      then 
+    case (FCore.CAVLTREENODE(NONE(), _, NONE(), NONE()), _)
+      then
         ();
-    
+
     // leaf
     case (FCore.CAVLTREENODE(SOME(FCore.CAVLTREEVALUE(_, v)), _, NONE(), NONE()), _)
       equation
         inApply(v);
         apply_helper(children(fromRef(v)), inApply);
-      then 
+      then
         ();
-        
+
     // non-leaf on left
     case (FCore.CAVLTREENODE(SOME(FCore.CAVLTREEVALUE(_, v)), _, SOME(t), NONE()), _)
       equation
         inApply(v);
         apply_helper(children(fromRef(v)), inApply);
         apply_helper(t, inApply);
-      then 
+      then
         ();
-    
+
     // non-leaf on right
     case (FCore.CAVLTREENODE(SOME(FCore.CAVLTREEVALUE(_, v)), _, NONE(), SOME(t)), _)
       equation
         inApply(v);
         apply_helper(children(fromRef(v)), inApply);
         apply_helper(t, inApply);
-      then 
+      then
         ();
-    
+
     // non-leaf on both left and right
     case (FCore.CAVLTREENODE(SOME(FCore.CAVLTREEVALUE(_, v)), _, SOME(tl), SOME(tr)), _)
       equation
@@ -1298,7 +1298,7 @@ algorithm
         apply_helper(tr, inApply);
       then
         ();
-  
+
   end match;
 end apply_helper;
 
@@ -1322,14 +1322,14 @@ algorithm
       Refs refs;
       Boolean b;
       ExtraArg a;
-    
+
     case (_, _, a)
       equation
         a = inApply(inRef, a);
         a = apply_helper1(children(fromRef(inRef)), inApply, a);
       then
         a;
-  
+
   end match;
 end apply1;
 
@@ -1352,20 +1352,20 @@ algorithm
       AvlTree t, tl, tr;
       Boolean b;
       ExtraArg a;
-    
+
     // empty tree
-    case (FCore.CAVLTREENODE(NONE(), _, NONE(), NONE()), _, a) 
-      then 
+    case (FCore.CAVLTREENODE(NONE(), _, NONE(), NONE()), _, a)
+      then
         a;
-    
+
     // leaf
     case (FCore.CAVLTREENODE(SOME(FCore.CAVLTREEVALUE(_, v)), _, NONE(), NONE()), _, a)
       equation
         a = inApply(v, a);
         a = apply_helper1(children(fromRef(v)), inApply, a);
-      then 
+      then
         a;
-        
+
     // non-leaf on left
     case (FCore.CAVLTREENODE(SOME(FCore.CAVLTREEVALUE(_, v)), _, SOME(t), NONE()), _, a)
       equation
@@ -1374,16 +1374,16 @@ algorithm
         a = apply_helper1(t, inApply, a);
       then
         a;
-    
+
     // non-leaf on right
     case (FCore.CAVLTREENODE(SOME(FCore.CAVLTREEVALUE(_, v)), _, NONE(), SOME(t)), _, a)
       equation
         a = inApply(v, a);
         a = apply_helper1(children(fromRef(v)), inApply, a);
         a = apply_helper1(t, inApply, a);
-      then 
+      then
         a;
-    
+
     // non-leaf on both left and right
     case (FCore.CAVLTREENODE(SOME(FCore.CAVLTREEVALUE(_, v)), _, SOME(tl), SOME(tr)), _, a)
       equation
@@ -1393,7 +1393,7 @@ algorithm
         a = apply_helper1(tr, inApply, a);
       then
         a;
-  
+
   end match;
 end apply_helper1;
 
@@ -1431,7 +1431,7 @@ algorithm
   outRefs := matchcontinue(inRef)
     local
       Refs refs;
-    
+
     case (_)
       equation
         // we have a class
@@ -1441,9 +1441,9 @@ algorithm
         refs = List.flatten(List.map1(refs, filter, isRefReference));
       then
         refs;
-    
-    else {}; 
-  
+
+    else {};
+
   end matchcontinue;
 end extendsRefs;
 
@@ -1464,14 +1464,14 @@ algorithm
       Node n;
       Graph g;
       Ref r;
-    
+
     case (_, _, _, g)
       equation
         (g, r) = clone(fromRef(inRef), inParentRef, g);
         addChildRef(inParentRef, inName, r);
       then
         (g, r);
-  
+
   end match;
 end cloneRef;
 
@@ -1496,7 +1496,7 @@ algorithm
       Parents parents;
       Children children;
       Data data;
-    
+
     case (FCore.N(name, id, parents, children, data), _, g)
       equation
         // add parent
@@ -1508,10 +1508,10 @@ algorithm
         // clone children
         (g, children) = cloneTree(children, r, g);
         // set the children in the new node
-        r = updateRef(r, FCore.N(name, id, parents, children, data)); 
+        r = updateRef(r, FCore.N(name, id, parents, children, data));
       then
         (g, r);
-  
+
   end match;
 end clone;
 
@@ -1532,7 +1532,7 @@ algorithm
       Option<AvlTree> l, r;
       Option<AvlTreeValue> v;
       Graph g;
-    
+
     // tree
     case (FCore.CAVLTREENODE(v, h, l, r), _, g)
       equation
@@ -1541,7 +1541,7 @@ algorithm
         (g, r) = cloneTreeOpt(r, inParentRef, g);
       then
         (g, FCore.CAVLTREENODE(v, h, l, r));
-          
+
   end match;
 end cloneTree;
 
@@ -1563,16 +1563,16 @@ algorithm
       Integer h;
       AvlTree t;
       Graph g;
-    
+
     // empty tree
     case (NONE(), _, _) then (inGraph, NONE());
     // some tree
     case (SOME(t), _, _)
       equation
         (g, t) = cloneTree(t, inParentRef, inGraph);
-      then 
-        (g, SOME(t)); 
-  
+      then
+        (g, SOME(t));
+
   end match;
 end cloneTreeOpt;
 
@@ -1591,16 +1591,16 @@ algorithm
       Name name;
       AvlTreeValue v;
       Graph g;
-    
+
     // empty value
     case (NONE(), _, _) then (inGraph, NONE());
     // some value
     case (SOME(FCore.CAVLTREEVALUE(name, ref)), _, _)
       equation
         (g, ref) = cloneRef(name, ref, inParentRef, inGraph);
-      then 
+      then
         (g, SOME(FCore.CAVLTREEVALUE(name, ref)));
-  
+
   end match;
 end cloneTreeValueOpt;
 
@@ -2204,7 +2204,7 @@ protected
   list<AvlTreeValue> avlTreeValues;
 algorithm
   avlTreeValues := getAvlTreeValues({SOME(inAvlTree)}, {});
-  outAvlValues := List.map(avlTreeValues, getAvlValue); 
+  outAvlValues := List.map(avlTreeValues, getAvlValue);
 end getAvlValues;
 
 // ************************ END AVL Tree implementation ***************************

@@ -134,11 +134,11 @@ algorithm
     local
       Integer nVars, nEqns;
       Boolean samesize;
-      
+
     case (_) equation
       false = Flags.isSet(Flags.CHECK_BACKEND_DAE);
     then ();
-    
+
     case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=BackendDAE.VARIABLES(numberOfVars=nVars), orderedEqs=BackendDAE.EQUATION_ARRAY(size=nEqns))::{})) equation
       //true = Flags.isSet(Flags.CHECK_BACKEND_DAE);
       //Check for correct size
@@ -147,7 +147,7 @@ algorithm
       (expCrefs, wrongEqns) = checkBackendDAE(inBackendDAE);
       printcheckBackendDAEWithErrorMsg(expCrefs, wrongEqns);
     then ();
-    
+
     else equation
       Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEUtil.mo: function checkBackendDAEWithErrorMsg failed"});
     then fail();
@@ -492,7 +492,7 @@ algorithm
       EqSystems eqns;
       BackendDAE.Shared shared,shared1;
       BackendDAE.BackendDAE bDAE;
-      
+
     case (bDAE as BackendDAE.DAE(eqs=eqns, shared=shared))
       equation
         BackendDAE.DAE(eqs=eqns) = mapEqSystem(bDAE, copyBackendDAEEqSystem);
@@ -556,7 +556,7 @@ algorithm
       BackendDAEType btp;
       BackendDAE.SymbolicJacobians symjacs;
       BackendDAE.ExtraInfo ei;
-      
+
     case (BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,einfo,eoc,btp,symjacs,ei))
       equation
         knvars1 = BackendVariable.copyVariables(knvars);
@@ -610,13 +610,13 @@ algorithm
       BackendDAEType btp;
       BackendDAE.SymbolicJacobians symjacs;
       BackendDAE.ExtraInfo ei;
-      
+
     case (_,_,_,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,einfo,eoc,btp,symjacs,ei))
       equation
         symjacs = {(SOME(inSymJac),inSparsePattern,inSparseColoring),(NONE(),({},({},{})),{}),(NONE(),({},({},{})),{}),(NONE(),({},({},{})),{})};
       then
         BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,einfo,eoc,btp,symjacs,ei);
-  
+
   end match;
 end addBackendDAESharedJacobian;
 
@@ -641,11 +641,11 @@ algorithm
       BackendDAEType btp;
       BackendDAE.SymbolicJacobians symjacs;
       BackendDAE.ExtraInfo ei;
-      
+
     case (_,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,einfo,eoc,btp,_,ei))
       then
         BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,einfo,eoc,btp,inSymJac,ei);
-  
+
   end match;
 end addBackendDAESharedJacobians;
 
@@ -673,14 +673,14 @@ algorithm
       BackendDAE.SymbolicJacobians symjacs;
       Option<BackendDAE.SymbolicJacobian> symJac;
       BackendDAE.ExtraInfo ei;
-      
+
     case (_, _, _, BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,einfo,eoc,btp,symjacs,ei))
       equation
         ((symJac,_,_)) = listGet(symjacs, inIndex);
         symjacs = List.set(symjacs, inIndex, ((symJac, inSparsePattern, inSparseColoring)));
       then
         BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,einfo,eoc,btp,symjacs,ei);
-  
+
   end match;
 end addBackendDAESharedJacobianSparsePattern;
 
@@ -706,10 +706,10 @@ algorithm
       BackendDAE.SymbolicJacobians symjacs;
       EqSystems eqs;
       BackendDAE.ExtraInfo ei;
-      
+
     case (_,BackendDAE.DAE(eqs=eqs,shared=BackendDAE.SHARED(_,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,einfo,eoc,btp,symjacs,ei)))
       then BackendDAE.DAE(eqs,BackendDAE.SHARED(inKnVars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,einfo,eoc,btp,symjacs,ei));
-  
+
   end match;
 end addBackendDAEKnVars;
 
@@ -734,10 +734,10 @@ algorithm
       BackendDAE.SymbolicJacobians symjacs;
       EqSystems eqs;
       BackendDAE.ExtraInfo ei;
-      
+
     case (_,BackendDAE.DAE(eqs=eqs,shared=BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,_,einfo,eoc,btp,symjacs,ei)))
       then BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,inFunctionTree,einfo,eoc,btp,symjacs,ei));
-  
+
   end match;
 end addBackendDAEFunctionTree;
 
@@ -763,10 +763,10 @@ algorithm
       BackendDAE.SymbolicJacobians symjacs;
       EqSystems eqs;
       BackendDAE.ExtraInfo ei;
-      
+
     case (_,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,_,einfo,eoc,btp,symjacs,ei))
       then BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,inFunctionTree,einfo,eoc,btp,symjacs,ei);
-  
+
   end match;
 end addFunctionTree;
 
@@ -1195,10 +1195,10 @@ algorithm
       BackendDAEType btp;
       BackendDAE.SymbolicJacobians symjacs;
       BackendDAE.ExtraInfo ei;
-      
+
     case (BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars = knvars,externalObjects=extVars,aliasVars = av,
-                 initialEqs = ie,removedEqs = seqns, constraints = constrs,classAttrs = clsAttrs, 
-                 cache=cache,env=env, functionTree = funcs, eventInfo = wc, extObjClasses=extObjCls, 
+                 initialEqs = ie,removedEqs = seqns, constraints = constrs,classAttrs = clsAttrs,
+                 cache=cache,env=env, functionTree = funcs, eventInfo = wc, extObjClasses=extObjCls,
                  backendDAEType=btp, symjacs=symjacs, info=ei)))
       equation
         knvarlst = BackendVariable.varList(knvars);
@@ -2144,7 +2144,7 @@ algorithm
   outIntegerArray := markStateEquationsWork(eqns,{},m,ass1,arr);
 end markZeroCrossingEquations;
 
-protected function varsCollector 
+protected function varsCollector
   input tuple<DAE.Exp, tuple<BackendDAE.Variables, list<BackendDAE.Var>>> inTpl;
   output tuple<DAE.Exp, tuple<BackendDAE.Variables, list<BackendDAE.Var>>> outTpl;
 protected
@@ -2432,12 +2432,12 @@ algorithm
       BackendDAEType btp;
       list<BackendDAE.TimeEvent> timeEvents;
       BackendDAE.ExtraInfo ei;
-    
+
     case (_,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO(timeEvents,wclst,zc,smplLst,rellst,numberOfRelations,numberOfMathEventFunctions),eoc,btp,symjacs,ei))
       equation
         wclst1 = listAppend(wclst,inWcLst);
       then BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO(timeEvents,wclst1,zc,smplLst,rellst,numberOfRelations,numberOfMathEventFunctions),eoc,btp,symjacs,ei);
-  
+
   end match;
 end whenClauseAddDAE;
 
@@ -2934,11 +2934,11 @@ algorithm
       list<DAE.Dimension> dims;
 
     case({}) then {};
-    
+
     case(DAE.DIM_UNKNOWN()::dims) equation
       rangelist = dimensionsToRange(dims);
     then {}::rangelist;
-    
+
     case(d::dims) equation
       subs = ComponentReference.expandDimension(d);
       rangelist = dimensionsToRange(dims);
@@ -5455,14 +5455,14 @@ algorithm
         true = expCrefLstHasCref(explst,cr1);
         false = Expression.expHasCrefNoPreorDer(e1,cr1);
       then
-        adjacencyRowEnhanced1(rest,e1,e2,vars,kvars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED())::inRow);        
+        adjacencyRowEnhanced1(rest,e1,e2,vars,kvars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED())::inRow);
     case(r::rest,DAE.TUPLE(PR=explst),DAE.CALL(path=path,expLst=_),_,_,_,_,_)
       equation
         rabs = intAbs(r);
         // if not negatet rowmark then
         false = intEq(rowmark[rabs],-mark);
         // solved?
-        BackendDAE.VAR(varName=cr1) = BackendVariable.getVarAt(vars, rabs); 
+        BackendDAE.VAR(varName=cr1) = BackendVariable.getVarAt(vars, rabs);
         explst = List.flatten(List.map1(explst, Expression.generateCrefsExpLstFromExp, NONE()));
         crlst = List.map(explst, Expression.expCref);
         crlst = List.flatten(List.map1(crlst, ComponentReference.expandCref, true));
@@ -6248,7 +6248,7 @@ algorithm
         (eqns, shared) = calculateJacobianRow2(e, vars, scalar_eqn_indx, var_indxs_1,differentiateIfExp,iShared,source,iAcc);
       then
         (eqns, 1, shared);
-        
+
     // solved equations
     case (BackendDAE.SOLVED_EQUATION(componentRef=cr,exp=e2,source=source),_,_,_,_,_,_,_,_)
       equation
@@ -6259,7 +6259,7 @@ algorithm
         (eqns, shared) = calculateJacobianRow2(Expression.expSub(e1,e2), vars, scalar_eqn_indx, var_indxs_1,differentiateIfExp,iShared,source,iAcc);
       then
         (eqns, 1, shared);
-        
+
     // array equations
     case (BackendDAE.ARRAY_EQUATION(dimSize=ds,left=e1,right=e2,source=source),_,_,_,_,_,_,_,_)
       equation
@@ -6277,7 +6277,7 @@ algorithm
         size = List.fold(ds,intMul,1);
       then
         (eqns, size, shared);
-        
+
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
@@ -6441,7 +6441,7 @@ algorithm
         (es, shared) = calculateJacobianRow2(inExp, vars, eqn_indx, vindxs, differentiateIfExp, shared, source, es);
       then
         (es, shared);
-        
+
     case (_,_,_,vindx::vindxs,_,_,_,_)
       equation
         v = BackendVariable.getVarAt(vars, vindx);
@@ -6453,7 +6453,7 @@ algorithm
         (es, shared) = calculateJacobianRow2(inExp, vars, eqn_indx, vindxs, differentiateIfExp, shared, source, es);
       then
         (es, shared);
-        
+
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
@@ -6672,7 +6672,7 @@ end rhsConstant2;
 //       list<Boolean> b_lst;
 //       Boolean res,res_1;
 //       BackendDAE.Variables vars;
-// 
+//
 //     case (e,_)
 //       equation
 //         {} = Expression.extractCrefsFromExp(e) "Special case for expressions with no variables" ;
@@ -6976,7 +6976,7 @@ algorithm
         (zero, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
         e1 = Expression.expMul(cond,t);
         e2 = Expression.expMul(cond,f);
-        exp = DAE.IFEXP(DAE.RELATION(cond, DAE.GREATEREQ(tp), zero, -1, NONE()), e1, e2); 
+        exp = DAE.IFEXP(DAE.RELATION(cond, DAE.GREATEREQ(tp), zero, -1, NONE()), e1, e2);
         ((exp, (_, _, _, b))) = Expression.traverseExpTopDown(exp, getEqnsysRhsExp1, (repl, vars, funcs, b));
       then
         ((exp,false,(repl,vars,funcs,b)));
@@ -8185,7 +8185,7 @@ algorithm
   Debug.fcall2(Flags.DUMP_DAE_LOW, BackendDump.dumpBackendDAE, inDAE, "dumpdaelow");
   Debug.bcall2(Flags.isSet(Flags.DUMP_DAE_LOW) and Flags.isSet(Flags.ADDITIONAL_GRAPHVIZ_DUMP), BackendDump.graphvizIncidenceMatrix, inDAE, "dumpdaelow");
   System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
-  
+
   // pre-optimization phase
   // Frenkel TUD: why is this neccesarray? it only consumes time!
   _ := traverseBackendDAEExpsNoCopyWithUpdate(inDAE, ExpressionSimplify.simplifyTraverseHelper, 0) "simplify all expressions";
@@ -8204,13 +8204,13 @@ algorithm
   Debug.execStat("postOpt SimplifyAllExp", GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   outSODE := calculateValues(sode1);
   Debug.execStat("calculateValue", GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
-  
+
   Debug.fcall2(Flags.DUMP_INDX_DAE, BackendDump.dumpBackendDAE, outSODE, "dumpindxdae");
   Debug.bcall2(Flags.isSet(Flags.DUMP_INDX_DAE) and Flags.isSet(Flags.ADDITIONAL_GRAPHVIZ_DUMP), BackendDump.graphvizBackendDAE, outSODE, "dumpindxdae");
   Debug.fcall2(Flags.DUMP_TRANSFORMED_MODELICA_MODEL, BackendDump.dumpBackendDAEToModelica, outSODE, "dumpindxdae");
   Debug.bcall(Flags.isSet(Flags.DUMP_BACKENDDAE_INFO) or Flags.isSet(Flags.DUMP_STATESELECTION_INFO) or Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO), BackendDump.dumpCompShort, outSODE);
   Debug.fcall2(Flags.DUMP_EQNINORDER, BackendDump.dumpEqnsSolved, outSODE, "indxdae: eqns in order");
-  
+
   checkBackendDAEWithErrorMsg(outSODE);
 end getSolvedSystem;
 
@@ -8242,11 +8242,11 @@ algorithm
       Boolean b;
       BackendDAE.EqSystems systs;
       BackendDAE.Shared shared;
-      
+
     case (_, {}) equation
       Debug.fcall(Flags.OPT_DAE_DUMP, print, "pre-optimization done.\n");
     then (inDAE,Util.SUCCESS());
-    
+
     case (_, (optModule, moduleStr, _)::rest) equation
       BackendDAE.DAE(systs, shared) = optModule(inDAE);
       systs = filterEmptySystems(systs);
@@ -8256,7 +8256,7 @@ algorithm
       Debug.fcall(Flags.OPT_DAE_DUMP, BackendDump.printBackendDAE, dae);
       (dae1,status) = preOptimizeDAE(dae, rest);
     then (dae1, status);
-    
+
     case (_, (_, moduleStr, b)::rest) equation
       Debug.execStat("<failed> preOpt " +& moduleStr, GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       str = stringAppendList({"pre-optimization module ", moduleStr, " failed."});
@@ -8333,10 +8333,10 @@ algorithm
       Option<BackendDAE.StructurallySingularSystemHandlerArg> arg;
       list<Option<BackendDAE.StructurallySingularSystemHandlerArg>> args;
       Boolean causalized;
-      
+
     case ({},_,_,_,_,_,_,_)
     then (listReverse(acc),ishared,listReverse(acc1),iCausalized);
-    
+
     case (syst::systs,_,_,_,_,_,_,_) equation
       (syst,shared,arg,causalized) = causalizeDAEWork(syst,ishared,inMatchingOptions,matchingAlgorithm,stateDeselection,iCausalized);
       (systs,shared,args,causalized) = mapCausalizeDAE(systs,shared,inMatchingOptions,matchingAlgorithm,stateDeselection,syst::acc,arg::acc1,causalized);
@@ -8376,7 +8376,7 @@ algorithm
     case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=_)),_,_,_,_,_)
       then
         (isyst,ishared,NONE(),iCausalized);
-    
+
     case (BackendDAE.EQSYSTEM(matching=BackendDAE.NO_MATCHING()),_,_,(matchingAlgorithmfunc,mAmethodstr),(sssHandler,str1,_,_),_)
       equation
         //  print("SystemSize: " +& intString(systemSize(isyst)) +& "\n");
@@ -8393,7 +8393,7 @@ algorithm
         (syst,shared,arg) = matchingAlgorithmfunc(syst, ishared, false, match_opts, sssHandler, arg);
         Debug.execStat("transformDAE -> matchingAlgorithm " +& mAmethodstr +& " index Reduction Method " +& str1,GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       then (syst,shared,SOME(arg),true);
-    
+
     case (_,_,_,(_,mAmethodstr),(_,str1,_,_),_)
       equation
         str = "Transformation Module " +& mAmethodstr +& " index Reduction Method " +& str1 +& " failed!";
@@ -8419,7 +8419,7 @@ algorithm
       BackendDAE.Shared shared;
       String methodstr;
       BackendDAEFunc.stateDeselectionFunc sDfunc;
-      
+
     case (true,BackendDAE.DAE(systs,shared),_,(_,_,sDfunc,methodstr))
       equation
         // do state selection
@@ -8444,20 +8444,20 @@ algorithm
       BackendDAE.EqSystem syst;
       list<BackendDAE.EqSystem> systs;
       BackendDAE.Shared shared;
-    
+
     case ({},_,_) then (listReverse(acc),ishared);
-    
+
     case ((syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=_::_)))::systs,_,_)
       equation
         (systs,shared) = mapSortEqnsDAE(systs,ishared,syst::acc);
       then (systs,shared);
-    
+
     case (syst::systs,_,_)
       equation
         (syst,shared) = sortEqnsDAEWork(syst,ishared);
         (systs,shared) = mapSortEqnsDAE(systs,shared,syst::acc);
       then (systs,shared);
-  
+
   end match;
 end mapSortEqnsDAE;
 
@@ -8476,7 +8476,7 @@ algorithm
       array<Integer> mapIncRowEqn;
       DAE.FunctionTree funcs;
       BackendDAE.ExtraInfo ei;
-    
+
     case (_,BackendDAE.SHARED(info = _))
       equation
         // sorting algorithm
@@ -8486,13 +8486,13 @@ algorithm
         dumpStrongComponents(syst,ishared);
         Debug.execStat("transformDAE -> sort components",GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       then (syst,ishared);
-    
+
     else
       equation
         str = "Transformation Module sort components failed!";
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
-  
+
   end matchcontinue;
 end sortEqnsDAEWork;
 
@@ -8502,22 +8502,22 @@ function dumpStrongComponents
   input BackendDAE.Shared ishared;
 algorithm
   _ := matchcontinue(isyst, ishared)
-    local 
+    local
       String fileName, fileNamePrefix;
       Integer seqNo;
-      
+
     case (_, _)
       equation
         false = Flags.isSet(Flags.DUMP_SCC_GRAPHML);
       then ();
-    
+
     case (_, BackendDAE.SHARED(info = BackendDAE.EXTRA_INFO(fileNamePrefix=fileNamePrefix)))
       equation
         seqNo = System.tmpTickIndex(Global.backendDAE_fileSequence);
         fileName = fileNamePrefix +& "_" +& intString(seqNo) +& "_Comps" +& intString(systemSize(isyst)) +& ".graphml";
         IndexReduction.dumpSystemGraphML(isyst,ishared,NONE(),fileName,false);
       then ();
-  
+
   end matchcontinue;
 end dumpStrongComponents;
 
@@ -8539,11 +8539,11 @@ algorithm
       Boolean b;
       BackendDAE.EqSystems systs;
       BackendDAE.Shared shared;
-      
+
     case (_, {}, _, _) equation
       Debug.fcall(Flags.OPT_DAE_DUMP, print, "post-optimization done.\n");
     then (inDAE,Util.SUCCESS());
-    
+
     case (_, (optModule, moduleStr, _)::rest, _, _) equation
       BackendDAE.DAE(systs, shared) = optModule(inDAE);
       systs = filterEmptySystems(systs);
@@ -8554,7 +8554,7 @@ algorithm
       dae1 = causalizeDAE(dae, NONE(), matchingAlgorithm, daeHandler, false);
       (dae2, status) = postOptimizeDAE(dae1, rest, matchingAlgorithm, daeHandler);
     then (dae2, status);
-    
+
     case (_, (_, moduleStr, b)::rest, _, _) equation
       Debug.execStat("postOpt <failed> " +& moduleStr, GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       str = stringAppendList({"post-optimization module ", moduleStr, " failed."});

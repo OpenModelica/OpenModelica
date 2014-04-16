@@ -74,7 +74,7 @@ algorithm
       true = Flags.isSet(Flags.ON_RELAXATION);
       (outDAE,_) = BackendDAEUtil.mapEqSystemAndFold(inDAE, relaxSystem0, false);
     then outDAE;
-    
+
     else then inDAE;
   end matchcontinue;
 end relaxSystem;
@@ -1798,7 +1798,7 @@ algorithm
     case (_, _, _) equation
       true = intGt(row, size);
     then ();
-    
+
     case (_, _, _) equation
       print(intString(row) +& ": ");
       BackendDump.debuglst((matrix[row], dumpMatrix1, ", ", "\n"));
@@ -2233,11 +2233,11 @@ algorithm
       list<DAE.Exp> b1;
       list<tuple<Integer, Integer, BackendDAE.Equation>> rest;
       list<tuple<Integer, DAE.Exp>> lst;
-      
+
     case (_, _, _, _, _, _) equation
       true = intGt(row, size);
     then ();
-    
+
     case (_, _, _, _, _, _) equation
       true = intGt(col, size);
       be::b1 = b;
@@ -2247,11 +2247,11 @@ algorithm
       _ = arrayUpdate(matrix, row, lst);
       transformJacToMatrix(jac, row+1, 1, size, b1, matrix);
     then ();
-    
+
     case ({}, _, _, _, _, _) equation
       transformJacToMatrix(jac, row, col+1, size, b, matrix);
     then ();
-    
+
     case ((r, c, BackendDAE.RESIDUAL_EQUATION(exp = e))::rest, _, _, _, _, _) equation
       true = intEq(r, row);
       true = intEq(c, col);
@@ -2260,13 +2260,13 @@ algorithm
       _ = arrayUpdate(matrix, row, lst);
       transformJacToMatrix(rest, row, col+1, size, b, matrix);
     then ();
-    
+
     case ((r, c, _)::rest, _, _, _, _, _) equation
       true = intEq(r, row);
       true = intLt(col, c);
       transformJacToMatrix(jac, row, col+1, size, b, matrix);
     then ();
-    
+
     case ((r, c, _)::rest, _, _, _, _, _) equation
       true = intGe(r, row);
       transformJacToMatrix(jac, row, col+1, size, b, matrix);

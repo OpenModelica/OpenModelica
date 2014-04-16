@@ -1,5 +1,5 @@
 model dcmotor
-  Modelica.Electrical.Analog.Basic.Resistor     resistor1(R = 10); 
+  Modelica.Electrical.Analog.Basic.Resistor     resistor1(R = 10);
   //Observe the difference between MSL 2.2 and 3.1 regarding the default values, in 3.1 there are no default values set, only start values
   Modelica.Electrical.Analog.Basic.Inductor     inductor1(L = 0.2);
   Modelica.Electrical.Analog.Basic.Ground       ground1;

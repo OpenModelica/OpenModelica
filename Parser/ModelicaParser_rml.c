@@ -30,13 +30,13 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif  
+#endif
 #include "rml.h"
 #include "Absyn.h"
 #include "GlobalScript.h"
 #ifdef __cplusplus
 }
-#endif  
+#endif
 
 #define UNBOX_OFFSET 0
 #define optionNone(X) (RML_GETHDR(X) == RML_STRUCTHDR(0,0))

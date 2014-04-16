@@ -6,7 +6,7 @@
 #include <System/ITime.h>
 #include <System/IWriteOutput.h>
 #include <System/ISystemInitialization.h>
-#include <System/ISystemProperties.h>  
+#include <System/ISystemProperties.h>
 #include <Solver/ISolver.h>        // Solver interface
 #include <Solver/ISolverSettings.h>      // SolverSettings interface
 #include <Solver/SystemStateSelection.h>
@@ -110,17 +110,17 @@ protected:
     double
         *_zeroVal,            ///< Vector (of dimension _dimZeroF) containing values of all zero functions
         *_zeroValInit,          ///< Vektor (der Dimension _dimZeroF) mit Nullstellenfunktionswerten am Anfang des Integrationsintervalles
-        *_zeroValLastSuccess;    ///< Vector (of dimension _dimZeroF) containing values of all zero functions of last sucessfull integration step (before zero crossing) 
+        *_zeroValLastSuccess;    ///< Vector (of dimension _dimZeroF) containing values of all zero functions of last sucessfull integration step (before zero crossing)
 
-    ISolver::ZEROSTATUS        
+    ISolver::ZEROSTATUS
         _zeroStatus;            ///< Denotes whether a change in sign in at least one zero function occured
 
     ISolver::SOLVERSTATUS
         _solverStatus;          ///< Denotes the current status of the solver
 
-    IWriteOutput::OUTPUT  
+    IWriteOutput::OUTPUT
         _outputCommand;          ///< Controls the output
-    
+
 private:
     /// Definition of signum function
     inline static int sgn (const double &c)

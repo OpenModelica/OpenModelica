@@ -39,7 +39,7 @@ encapsulated package FExpand
 "
 
 // public imports
-public 
+public
 import Absyn;
 import FNode;
 import FLookup;
@@ -59,7 +59,7 @@ algorithm
   _ := match(inRef)
     case _
       equation
-        
+
       then
         ();
   end match;

@@ -45,10 +45,10 @@ public import FVisit;
 public import FGraph;
 
 // protected imports
-protected 
+protected
 import System;
 
-public 
+public
 type Ident = String " An identifier is just a string " ;
 type Import = Absyn.Import;
 
@@ -74,7 +74,7 @@ uniontype Options
   record NO_OPTIONS end NO_OPTIONS;
   record OPTIONS
     WalkOptions ws;
-    VisitOptions vs; 
+    VisitOptions vs;
   end OPTIONS;
 end Options;
 
@@ -96,7 +96,7 @@ algorithm
     case (_, _, _, _)
       equation
       then
-        (inGraph, inExtra); 
+        (inGraph, inExtra);
   end match;
 end walk;
 

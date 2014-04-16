@@ -1,9 +1,9 @@
 #include "stdafx.h"
 #include <OMCFactory/OMCFactory.h>
- 
+
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
- 
+
 OMCFactory::OMCFactory(PATH library_path, PATH modelicasystem_path)
     : _library_path(library_path)
     , _modelicasystem_path(modelicasystem_path)
@@ -51,7 +51,7 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
      po::variables_map vm;
      po::store(po::parse_command_line(argc, argv, desc), vm);
      po::notify(vm);
-     
+
      string runtime_lib_path;
      string modelica_lib_path;
      double starttime =  vm["start-time"].as<double>();
@@ -63,12 +63,12 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
      {
           //cout << "runtime library path set to " << vm["runtime-library"].as<string>() << std::endl;
           runtime_lib_path = vm["runtime-library"].as<string>();
-            
+
      }
      else
      {
           throw  std::invalid_argument("runtime  libraries path is not set");
-          
+
      }
 
      if (vm.count("Modelica-system-library"))
@@ -79,7 +79,7 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
      else
      {
           throw  std::invalid_argument("Modelica library path is not set");
-          
+
      }
 
      string resultsfilename;
@@ -92,7 +92,7 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
      else
      {
           throw std::invalid_argument("resultsfilename  is not set");
-     
+
      }
      string outputFormat_str;
      OutputFormat outputFomat;
@@ -110,15 +110,15 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
      else
      {
           throw std::invalid_argument("resultsfilename  is not set");
-     
+
      }
-     
+
      /*fs::path results_file_path = fs::path( resultsfilename) ;
     if(!(results_file_path.extension().string() == ".csv"))
     {
             std::string eception_msg = "The output format is not supported yet. Please use outputFormat=\"csv\" in simulate command ";
           throw  std::invalid_argument(eception_msg.c_str());
-            
+
     }*/
       fs::path libraries_path = fs::path( runtime_lib_path) ;
 
@@ -126,7 +126,7 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
 
            libraries_path.make_preferred();
         modelica_path.make_preferred();
- 
+
      SimSettings settings = {solver,"newton",starttime,stoptime,stepsize,1e-20,0.01,tollerance,resultsfilename,outputFomat};
      _library_path = libraries_path;
     _modelicasystem_path = modelica_path;
@@ -161,16 +161,16 @@ std::pair<boost::shared_ptr<ISimController>,SimSettings> OMCFactory::createSimul
 
 LOADERRESULT OMCFactory::LoadLibrary(string libName,type_map& current_map)
 {
-    
+
     shared_library lib;
         if(!load_single_library(current_map,libName,lib))
            return LOADER_ERROR;
-     _modules.insert(std::make_pair(libName,lib)); 
-return LOADER_SUCCESS;     
+     _modules.insert(std::make_pair(libName,lib));
+return LOADER_SUCCESS;
 }
 
 LOADERRESULT OMCFactory::UnloadLibrary(shared_library lib)
-{  
+{
     if(lib.is_open())
     {
        if(!lib.close())

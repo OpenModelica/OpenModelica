@@ -120,7 +120,7 @@ algorithm
   builtin_frame :: top_frame :: _ := listReverse(inEnv);
   outEnv := {top_frame, builtin_frame};
 end topScope;
-  
+
 public function builtinScope
   input Env inEnv;
   output Env outEnv;
@@ -130,7 +130,7 @@ algorithm
   builtin_frame :: _ := listReverse(inEnv);
   outEnv := {builtin_frame};
 end builtinScope;
-  
+
 public function isTopScope
   input Env inEnv;
   output Boolean outIsTopScope;
@@ -163,7 +163,7 @@ algorithm
   SCode.EXTENDS(baseClassPath = bc, info = info) := inExtends;
   outOrigin := NFInstTypes.INHERITED_ORIGIN(bc, info, {}, inEnv, inIndex);
 end makeInheritedOrigin;
-  
+
 public function makeImportedOrigin
   input SCode.Element inImport;
   input Env inEnv;
@@ -175,7 +175,7 @@ algorithm
   SCode.IMPORT(imp = imp, info = info) := inImport;
   outOrigin := NFInstTypes.IMPORTED_ORIGIN(imp, info, inEnv);
 end makeImportedOrigin;
-  
+
 public function makeEntry
   input SCode.Element inElement;
   output Entry outEntry;
@@ -302,7 +302,7 @@ protected function mergeInheritedOrigin
   "This function handles the case when an element has multiple origins from the
    same base class, i.e. when an element is inherited from multiple sources in a
    base class. For example:
-     
+
      class A      class B     class C          class D
        Real x;      Real x;     extends A;       extends C;
      end A;       end B;        extends B;     end D;
@@ -613,7 +613,7 @@ algorithm
   origin := NFInstTypes.REDECLARED_ORIGIN(inOldEntry, env);
   outEntry := setEntryOrigin(entry, {origin});
 end replaceEntry2;
-  
+
 public function updateEntry
   input String inName;
   input ArgType inArg;
@@ -1093,7 +1093,7 @@ public function setScopePrefix
 algorithm
   outEnv := setScopePrefixOpt(SOME(inPrefix), inEnv);
 end setScopePrefix;
-  
+
 public function setScopePrefixOpt
   input Option<Prefix> inPrefix;
   input Env inEnv;
@@ -1123,7 +1123,7 @@ algorithm
   NFInstTypes.FRAME(name, _, st, entries) :: rest_env := inDest;
   outDest := NFInstTypes.FRAME(name, prefix, st, entries) :: rest_env;
 end copyScopePrefix;
-  
+
 public function buildInitialEnv
   input SCode.Program inProgram;
   input SCode.Program inBuiltin;

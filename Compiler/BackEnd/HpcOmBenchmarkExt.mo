@@ -53,7 +53,7 @@ function readCalcTimesFromXml
   input String fileName;
   output list<Real> requiredTime;
 
-  external "C" requiredTime=HpcOmBenchmarkExt_readCalcTimesFromXml(fileName) annotation(Library = "omcruntime"); 
+  external "C" requiredTime=HpcOmBenchmarkExt_readCalcTimesFromXml(fileName) annotation(Library = "omcruntime");
 end readCalcTimesFromXml;
 
 end HpcOmBenchmarkExt;

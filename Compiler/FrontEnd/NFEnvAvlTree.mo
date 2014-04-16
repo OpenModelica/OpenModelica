@@ -334,7 +334,7 @@ algorithm
     case (NFInstTypes.AVLTREENODE(value = SOME(NFInstTypes.AVLTREEVALUE(key = key))), _, _, _)
       equation
         key_comp = stringCompare(key, inKey);
-        (tree, updated_val) = 
+        (tree, updated_val) =
           update2(inAvlTree, key_comp, inKey, inUpdateFunc, inArg);
       then
         (tree, updated_val);
@@ -452,7 +452,7 @@ protected
   FoldArg fold_arg;
 algorithm
   NFInstTypes.AVLTREENODE(value, height, left, right) := inTree;
-  fold_arg := Util.applyOptionOrDefault2(value, foldValue, inFoldFunc, inFoldArg, inFoldArg); 
+  fold_arg := Util.applyOptionOrDefault2(value, foldValue, inFoldFunc, inFoldArg, inFoldArg);
   fold_arg := Util.applyOptionOrDefault2(left, fold, inFoldFunc, fold_arg, fold_arg);
   outFoldArg := Util.applyOptionOrDefault2(right, fold, inFoldFunc, fold_arg, fold_arg);
 end fold;

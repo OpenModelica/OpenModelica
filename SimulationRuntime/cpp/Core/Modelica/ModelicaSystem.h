@@ -18,10 +18,10 @@
 
 
 class Modelica: public IMixedSystem ,public IContinuous ,public IEvent ,public ISystemProperties, public SystemDefaultImplementation
- { 
-      public: 
+ {
+      public:
 
-      Modelica(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData>); 
+      Modelica(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData>);
 
   ~Modelica();
 
@@ -97,39 +97,39 @@ class Modelica: public IMixedSystem ,public IContinuous ,public IEvent ,public I
   //Set current integration time
    virtual void setTime(const double& t);
 
-  
 
 
- 
+
+
 
   // Provide Jacobian
    virtual void getJacobian(SparseMatrix& matrix);
    virtual void getStateSetJacobian(SparseMatrix& matrix);
-  // Provide number (dimension) of zero functions 
+  // Provide number (dimension) of zero functions
    virtual int getDimZeroFunc() ;
 
-  // Provides current values of root/zero functions 
+  // Provides current values of root/zero functions
    virtual void getZeroFunc(double* f);
    virtual bool checkConditions();
    virtual void getConditions(bool* c);
 
-   //Called to handle all  events occured at same time  
+   //Called to handle all  events occured at same time
    virtual bool handleSystemEvents( bool* events);
   //Called to handle an event
    virtual void handleEvent(const bool* events);
- 
+
   //Checks if a discrete variable has changed and triggers an event
    virtual bool checkForDiscreteEvents();
 
-  
 
-  // M is regular 
+
+  // M is regular
    virtual bool isODE();
 
   // M is singular
    virtual bool isAlgebraic();
 
-  // System is able to provide the Jacobian symbolically 
+  // System is able to provide the Jacobian symbolically
    virtual bool provideSymbolicJacobian() ;
    virtual void saveDiscreteVars();
    virtual void stepCompleted(double time);

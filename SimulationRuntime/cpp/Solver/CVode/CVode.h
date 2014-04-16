@@ -18,7 +18,7 @@
 /*****************************************************************************
 Copyright (c) 2004, Bosch Rexroth AG, All rights reserved
 *****************************************************************************/
-class Cvode 
+class Cvode
   : public ISolver,  public SolverDefaultImplementation
 {
 public:
@@ -85,7 +85,7 @@ private:
   // Nulltellenfunktion
   void giveZeroVal(const double &t,const double *y,double *zeroValue);
   void writeCVodeOutput(const double &time,const double &h,const int &stp);
- 
+
   // Callback der Nullstellenfunktion
   static int CV_ZerofCallback(double t, N_Vector y, double *zeroval, void *user_data);
 
@@ -106,22 +106,22 @@ private:
   int
     _outStps,                  ///< Output      - Total number of output-steps
     *_zeroSign;
-  
-  
+
+
   double
     *_z,            ///< Output      - (Current) State vector
     *_zInit,          ///< Temp      - Initial state vector
     *_zWrite;                   ///< Temp      - Zustand den das System rausschreibt
-   
+
   double
     _hOut;            ///< Temp      - Ouput step size for dense output
-   
-   unsigned int 
+
+   unsigned int
     _event_n;
 double
   _tLastEvent;
 
-  double 
+  double
     _tOut,            ///< Output      - Time for dense output
     _tZero,            ///< Temp      - Nullstelle
     _tLastWrite;        ///< Temp      - Letzter Ausgabezeitpunkt
@@ -129,22 +129,22 @@ double
   bool
     _bWritten,                  ///< Temp      - Is output already written
     _zeroFound;
-   
-   
-   
+
+
+
 
   N_Vector
     _CV_y0,                  ///< Temp      - Initial values in the Cvode Format
     _CV_y,                  ///< Temp      - State in Cvode Format
       _CV_yWrite;                ///< Temp      - Vector for dense out
   bool _cvode_initialized;
- 
 
-   ISystemProperties* _properties; 
+
+   ISystemProperties* _properties;
    IContinuous* _continuous_system;
    IEvent* _event_system;
    IMixedSystem* _mixed_system;
    ITime* _time_system;
-  
+
 };
 

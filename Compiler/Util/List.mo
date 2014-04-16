@@ -2743,7 +2743,7 @@ algorithm
 
     case (NONE() :: rest, _, _, _, _)
       then map2Option_tail(rest, inFunc, inArg1, inArg2, inAccumList);
-  
+
   end match;
 end map2Option_tail;
 
@@ -4904,7 +4904,7 @@ algorithm
     case (e :: rest, _, _, _, _)
       equation
         arg = fold2(e, inFoldFunc, inExtraArg1, inExtraArg2, inStartValue);
-      then 
+      then
         foldList2(rest, inFoldFunc, inExtraArg1, inExtraArg2, arg);
 
   end match;
@@ -9499,7 +9499,7 @@ protected function combinationMap_tail
   input list<ElementInType> inCombination;
   input list<ElementOutType> inAccumElems;
   output list<ElementOutType> outElements;
- 
+
   partial function MapFunc
     input list<ElementInType> inElements;
     output ElementOutType outElement;
@@ -9551,7 +9551,7 @@ algorithm
 
     case ({}, _, _, _, _)
       then inAccumElems;
-        
+
   end match;
 end combinationMap_tail2;
 
@@ -9587,7 +9587,7 @@ protected function combinationMap1_tail
   input list<ElementInType> inCombination;
   input list<ElementOutType> inAccumElems;
   output list<ElementOutType> outElements;
- 
+
   partial function MapFunc
     input list<ElementInType> inElements;
     input ArgType1 inArg;
@@ -9642,7 +9642,7 @@ algorithm
 
     case ({}, _, _, _, _, _)
       then inAccumElems;
-        
+
   end match;
 end combinationMap1_tail2;
 

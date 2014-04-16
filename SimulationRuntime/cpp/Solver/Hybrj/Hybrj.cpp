@@ -164,7 +164,7 @@ void Hybrj::solve()
 {
     // If initialize() was not called yet
     if (_firstCall)
-        initialize();    
+        initialize();
 
 
 
@@ -198,8 +198,8 @@ void Hybrj::solve()
              /* Scaling x vector */
             if(_usescale)
                 std::transform (_x, _x+_dimSys, _x_scale,_x, std::divides<double>());
-            __minpack_func__(hybrj)((minpack_funcder_nn)fcn, &_dimSys, _x, _f, _jac, &_ldfjac, &_xtol, &_maxfev, _diag, 
-                &_mode, &_factor, &_nprint, &info, &_nfev, &_njev, _r, &_lr, _qtf, 
+            __minpack_func__(hybrj)((minpack_funcder_nn)fcn, &_dimSys, _x, _f, _jac, &_ldfjac, &_xtol, &_maxfev, _diag,
+                &_mode, &_factor, &_nprint, &info, &_nfev, &_njev, _r, &_lr, _qtf,
                 _wa1, _wa2, _wa3, _wa4,_data);
             //check if  the conditions of the system has changed 
             if(isConsistent)
@@ -265,7 +265,7 @@ void Hybrj::solve()
             else if((info==4 || info == 5) && iter_retry<2)
             {
                 memcpy(_x, _x_ex, _dimSys*(sizeof(double)));
-                for(int i = 0; i < _dimSys; i++) 
+                for(int i = 0; i < _dimSys; i++)
                 {
                     _x[i] *= 1.01;
                 }
@@ -278,7 +278,7 @@ void Hybrj::solve()
             else if((info==4 || info == 5) && iter_retry<3)
             {
                  memcpy(_x, _x_ex, _dimSys*(sizeof(double)));
-                     for(int i = 0; i < _dimSys; i++) 
+                     for(int i = 0; i < _dimSys; i++)
                      {
                         _x[i] *= 0.99;
                      }
@@ -392,12 +392,12 @@ void  Hybrj::extrapolateVars()
 {
   if (_t1 == _t2)
   {
-      
+
     memcpy(_x_ex, _x1, _dimSys*(sizeof(double)));
   }
   else
-  { 
-      for(int i = 0; i < _dimSys; i++) 
+  {
+      for(int i = 0; i < _dimSys; i++)
         _x_ex[i]= _x2[i] + (_t0 -_t2) / (_t1-_t2)*(_x1[i]-_x2[i]);
   }
 }

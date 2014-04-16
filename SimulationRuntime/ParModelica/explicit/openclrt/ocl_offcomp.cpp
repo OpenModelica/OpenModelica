@@ -468,7 +468,7 @@ void ocl_error_check(int operation, cl_int error_code){
           printf("Possible unknown error in : OCL_COPY_DEV_TO_HOST\n");
       }
       break;
-      
+
       case OCL_REALEASE_MEM_OBJECT:
       switch (error_code){
         case CL_INVALID_MEM_OBJECT:
@@ -482,7 +482,7 @@ void ocl_error_check(int operation, cl_int error_code){
           printf("Possible unknown error in : OCL_COPY_DEV_TO_HOST\n");
       }
       break;
-      
+
 
   }
 }
@@ -648,7 +648,7 @@ void ocl_initialize(){
         }
         ocl_create_context_and_comm_queue();
     }
-    
+
     // setenv("CUDA_CACHE_DISABLE", "1", 1);
 }
 

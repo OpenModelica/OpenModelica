@@ -22,7 +22,7 @@ EventHandling::~EventHandling(void)
 Inits the event variables
 */
 void EventHandling::initialize(IEvent* system,int dim)
-{   
+{
     _dimH=dim;
     _event_system=system;
     if(_dimH > 0)
@@ -37,7 +37,7 @@ void EventHandling::initialize(IEvent* system,int dim)
 Returns the help vector
 */
 void EventHandling::getHelpVars(double* h)
-{      
+{
     for(int i=0; i<_dimH; ++i)
     {
         h[i] = _h[i];
@@ -136,20 +136,20 @@ bool EventHandling::IterateEventQueue(bool& state_vars_reinitialized)
 
     //save discrete varibales
     _event_system->saveDiscreteVars(); // store values of discrete vars vor next check
-  
+
     unsigned int dim = _event_system->getDimZeroFunc();
     bool* conditions0 = new bool[dim];
     bool* conditions1 = new bool[dim];
     _event_system->getConditions(conditions0);
     //Handle all events
 
-    state_vars_reinitialized =     countinous_system->evaluate();  
+    state_vars_reinitialized =     countinous_system->evaluate();
 
-  
+
     //check if discrete variables changed
     bool drestart= _event_system->checkForDiscreteEvents();
 
-    
+
     _event_system->getConditions(conditions1);
     bool crestart = !std::equal (conditions1, conditions1+dim,conditions0);
     delete[] conditions0;
@@ -165,7 +165,7 @@ bool EventHandling::checkConditions(const bool* events, bool all)
        bool* conditions0 = new bool[dim];
        bool* conditions1 = new bool[dim];
        event_system->getConditions(conditions0);
-       
+
        for(int i=0;i<dim;i++)
        {
          if(all||events[i])
@@ -173,7 +173,7 @@ bool EventHandling::checkConditions(const bool* events, bool all)
        }
        event_system->getConditions(conditions1);
        return !std::equal (conditions1, conditions1+dim,conditions0);
-       
+
 }
 */
 

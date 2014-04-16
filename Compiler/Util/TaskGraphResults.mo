@@ -37,7 +37,7 @@ encapsulated package TaskGraphResults
   RCS: $Id: TaskGraphResults.mo 2013-06-11 marcusw $
 
   "
-  
+
 public function checkTaskGraph
   input String filename;
   input String reffilename;

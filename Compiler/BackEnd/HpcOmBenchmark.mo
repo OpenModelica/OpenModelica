@@ -40,7 +40,7 @@ protected import HpcOmBenchmarkExt;
 
 public function benchSystem
   output tuple<tuple<Integer,Integer>,tuple<Integer,Integer>> oTime; //required time for <op,com>
-  
+
 protected
   Integer comCostM,comCostN,opCostM,opCostN;
   list<Integer> opCosts, comCosts;
@@ -54,24 +54,24 @@ algorithm
     s1 := intString(opCostM);
     s2 := intString(opCostN);
     //print("Test op y= " +& s1 +& " * x + " +& s2 +& "\n");
-    
+
     comCosts := HpcOmBenchmarkExt.requiredTimeForComm();
     comCostM := listGet(comCosts,1); //m
     comCostN := listGet(comCosts,2); //n
     s1 := intString(comCostM);
     s2 := intString(comCostN);
     //print("Test comm y= " +& s1 +& " * x + " +& s2 +& "\n");
-    
+
     oTime := ((opCostM,opCostN),(comCostM,comCostN));
 end benchSystem;
 
 public function readCalcTimesFromXml
   input String fileName;
   output List<tuple<Integer,Integer,Real>> calcTimes; //<simEqIdx,numberOfCalcs,calcTimeSum>
-  
+
 protected
   list<Real> tmpResult;
-  
+
 algorithm
   tmpResult := HpcOmBenchmarkExt.readCalcTimesFromXml(fileName);
   calcTimes := readCalcTimesFromXml1(tmpResult,{});
@@ -81,7 +81,7 @@ protected function readCalcTimesFromXml1
   input list<Real> iList;
   input list<tuple<Integer,Integer,Real>> iTuples; //<eqIdx,numOfCalcs,calcTimeSum> attention: eqIdx starts with zero
   output list<tuple<Integer,Integer,Real>> oTuples;
-  
+
 protected
   Real eqIdx, numOfCalcs, calcTimeSum;
   Integer intNumOfCalcs,intEqIdx;

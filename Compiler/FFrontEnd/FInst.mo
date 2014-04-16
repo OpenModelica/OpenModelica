@@ -39,7 +39,7 @@ encapsulated package FInst
 "
 
 // public imports
-public 
+public
 import Absyn;
 import SCode;
 import DAE;
@@ -88,83 +88,83 @@ public function inst
   output DAE.DAElist dae;
 algorithm
   dae := matchcontinue(inPath, inProgram)
-    local 
+    local
       Graph g;
       SCode.Program p;
       list<Real> lst;
-    
+
     case (_, _)
       equation
         p = doSCodeDep(inProgram, inPath);
-        
+
         lst = {};
-        
+
         // enableTrace();
         System.startTimer();
         (_, g) = Builtin.initialFGraph(Env.emptyCache());
         g = FGraphBuild.mkProgramGraph(
-                 p, 
-                 FCore.USERDEFINED(), 
+                 p,
+                 FCore.USERDEFINED(),
                  g);
         System.stopTimer();
         lst = List.consr(lst, System.getTimerIntervalTime());
         print("SCode->FGraph:  " +& realString(List.first(lst)) +& "\n");
-        
+
         System.startTimer();
         // resolve extends
         g = FResolve.ext(FGraph.top(g), g);
         System.stopTimer();
         lst = List.consr(lst, System.getTimerIntervalTime());
         print("Extends:        " +& realString(List.first(lst)) +& "\n");
-        
+
         System.startTimer();
         // resolve derived
         g = FResolve.derived(FGraph.top(g), g);
         System.stopTimer();
         lst = List.consr(lst, System.getTimerIntervalTime());
         print("Derived:        " +& realString(List.first(lst)) +& "\n");
-        
+
         System.startTimer();
         // resolve type paths
         g = FResolve.ty(FGraph.top(g), g);
         System.stopTimer();
         lst = List.consr(lst, System.getTimerIntervalTime());
         print("ComponentTypes: " +& realString(List.first(lst)) +& "\n");
-        
+
         System.startTimer();
         // resolve type paths for constrain classes
         g = FResolve.cc(FGraph.top(g), g);
         System.stopTimer();
         lst = List.consr(lst, System.getTimerIntervalTime());
         print("ConstrainedBy:  " +& realString(List.first(lst)) +& "\n");
-        
+
         System.startTimer();
         // resolve class extends nodes
         g = FResolve.clsext(FGraph.top(g), g);
         System.stopTimer();
         lst = List.consr(lst, System.getTimerIntervalTime());
         print("ClassExtends:   " +& realString(List.first(lst)) +& "\n");
-        
+
         System.startTimer();
         // resolve all component references
-        g = FResolve.cr(FGraph.top(g), g);        
+        g = FResolve.cr(FGraph.top(g), g);
         System.stopTimer();
         lst = List.consr(lst, System.getTimerIntervalTime());
         print("Comp Refs:      " +& realString(List.first(lst)) +& "\n");
-        
+
         print("FGraph nodes:   " +& intString(FGraph.lastId(g)) +& "\n");
         print("Total time:     " +& realString(List.fold(lst, realAdd, 0.0)) +& "\n");
-        
+
         FGraphDump.dumpGraph(g, "F:\\dev\\" +& Absyn.pathString(inPath) +& ".graph.graphml");
       then
         DAE.emptyDae;
-  
+
     case (_, _)
       equation
         print("FInst.inst failed!\n");
       then
         DAE.emptyDae;
-  
+
   end matchcontinue;
 end inst;
 
@@ -183,6 +183,6 @@ algorithm
         outProgram;
     else inProgram;
   end matchcontinue;
-end doSCodeDep; 
+end doSCodeDep;
 
 end FInst;

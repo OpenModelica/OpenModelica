@@ -102,7 +102,7 @@ int externalInputallocate(DATA* data)
       }
       printf("\n========================================================\n");
     }
-  
+
     fclose(pFile);
     data->simulationInfo.external_input.i = 0;
   }

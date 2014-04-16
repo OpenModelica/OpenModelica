@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Math/Functions.h>      
+#include <Math/Functions.h>
 #include <System/EventHandling.h>
 #include <boost/any.hpp>
 #include <boost/unordered_map.hpp>
@@ -38,9 +38,9 @@ public:
     SystemDefaultImplementation(IGlobalSettings& globalSettings);
 
     ~SystemDefaultImplementation();
-    
-    
-    
+
+
+
     /// Provide number (dimension) of boolean variables
     virtual int getDimBoolean() const;
 
@@ -99,14 +99,14 @@ public:
 
     /// Provide the right hand side
     virtual void setRHS(const double* f);
-    
+
 
 
     /// (Re-) initialize the system of equations
      void initialize();
     /// Set current integration time
      void setTime(const double& t);
-    
+
 protected:
      void Assert(bool cond,string msg);
      void Terminate(string msg);
@@ -128,15 +128,15 @@ protected:
         }
     };
     double
-        _simTime;        ///< current simulation time (given by the solver) 
+        _simTime;        ///< current simulation time (given by the solver)
 
     double
         *__z,        ///< "Extended state vector", containing all states and algebraic variables of all types
         *__zDot;       ///< "Extended vector of derivatives", containing all right hand sides of differential and algebraic equations
-    bool   
+    bool
         * _conditions,    ///< External conditions changed by the solver
         * _time_conditions;
-    
+
     int
          _dimContinuousStates,
          _dimRHS,            ///< Dimension der rechten Seite
@@ -147,23 +147,23 @@ protected:
          _dimZeroFunc,          ///< Dimension (=Anzahl) Nullstellenfunktion
          _dimTimeEvent,          ///< Dimension (=Anzahl) Time event (start zeit und frequenz)
          _dimAE;        ///< Number (dimension) of algebraic equations (e.g. constraints from an algebraic loop)
-    
+
     int
        * _time_event_counter;
        std::ostream *_outputStream;        ///< Output stream for results
 
      IContinuous::UPDATETYPE _callType;
-      
 
-    bool _initial;    
+
+    bool _initial;
     SValuesMap _start_values;
     EventHandling _event_handling;
-    
+
     typedef boost::circular_buffer<double> buffer_type;
     map<unsigned int,buffer_type> _delay_buffer;
     buffer_type _time_buffer;
     double _delay_max;
     double _start_time;
-    
+
 };
 

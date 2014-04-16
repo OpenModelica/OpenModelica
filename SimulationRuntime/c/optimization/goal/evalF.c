@@ -102,11 +102,11 @@ Bool evalfF(Index n, double * v, Bool new_x, Number *objValue, void * useData)
  *  author: Vitalij Ruge
  **/
 Bool goal_func_mayer(double* vn, double *obj_value, IPOPT_DATA_ *iData)
-{  
+{
   if(!iData->sopt.lagrange)
     refreshSimData(vn, vn + iData->dim.nx, iData->dim.nt-1, iData);
   iData->data->callback->mayer(iData->data, obj_value);
-  
+
   return TRUE;
 }
 
@@ -115,10 +115,10 @@ Bool goal_func_mayer(double* vn, double *obj_value, IPOPT_DATA_ *iData)
  *  author: Vitalij Ruge
  **/
 Bool goal_func_lagrange(double* vn, double *obj_value, int k, IPOPT_DATA_ *iData)
-{  
+{
   refreshSimData(vn, vn + iData->dim.nx, k, iData);
   iData->data->callback->lagrange(iData->data, obj_value);
-  
+
   return TRUE;
 }
 
@@ -143,7 +143,7 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
   if(iData->sopt.lagrange) {
     x = v;
     id = 0;
-    
+
     for(i=0; i<1; ++i){
       for(k=0; k<iData->dim.deg+1; ++k, x+=iData->dim.nv){
         tmpk = i*iData->dim.deg+k;

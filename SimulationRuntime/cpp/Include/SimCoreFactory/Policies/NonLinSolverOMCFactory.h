@@ -5,7 +5,7 @@
 /*
 Policy class to create nonlin solver object
 */
-template <class CreationPolicy> 
+template <class CreationPolicy>
 struct NonLinSolverOMCFactory : public  ObjectFactory<CreationPolicy>
 {
 
