@@ -699,7 +699,7 @@ Author BZ, 2009-01
 check if an element is of type EXTENDS or not."
   input Element ele;
   output Boolean isExtend;
-algorithm 
+algorithm
   isExtend := match(ele)
     case EXTENDS(baseClassPath = _) then true;
     else false;
@@ -2228,7 +2228,7 @@ algorithm
     local
       Absyn.Direction dir2;
 
-    case (COMPONENT(attributes = ATTR(direction = dir2)),_) 
+    case (COMPONENT(attributes = ATTR(direction = dir2)),_)
       then Absyn.directionEqual(dir1,dir2);
 
     else false;
