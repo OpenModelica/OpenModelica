@@ -12567,6 +12567,47 @@ algorithm
   oSccIdc:=(iCurrentIdx,iEqIdx)::iSccIdc;
 end appendEqIdcs;
 
+public function getSimVarsInSimEq"gets the indeces for the simVars occuring in the given simEq
+author:Waurich TUD 2014-04"
+  input Integer simEq;
+  input SimCode.BackendMapping map;
+  output list<Integer> simVars;
+protected
+  list<Integer> bVars,bEqs,simVars;
+  list<list<Integer>> bVarsLst;
+  list<tuple<Integer,list<Integer>>> eqMapping;
+  list<tuple<Integer,Integer>> varMapping;
+  BackendDAE.IncidenceMatrix m;
+  BackendDAE.IncidenceMatrixT mt;
+algorithm
+  SimCode.BACKENDMAPPING(m=m,mT=mt,eqMapping=eqMapping,varMapping=varMapping) := map;
+  bEqs := getBackendEqsForSimEq(simEq,map);
+  bVarsLst := List.map1(bEqs,Util.arrayGetIndexFirst,m);
+  bVars := List.flatten(bVarsLst);
+  bVars := List.filter1OnTrue(bVars,intGt,0);
+  bVars := List.unique(bVars);
+  simVars := List.map1(bVars,getSimVarForBackendVar,map);  
+end getSimVarsInSimEq;
+
+public function getSimEqsOfSimVar"gets the indeces for the simVars occuring in the given simEq
+author:Waurich TUD 2014-04"
+  input Integer simVar;
+  input SimCode.BackendMapping map;
+  output list<Integer> simEqs;
+protected
+  Integer bVar;
+  list<Integer> bEqs;
+  list<tuple<Integer,list<Integer>>> eqMapping;
+  list<tuple<Integer,Integer>> varMapping;
+  BackendDAE.IncidenceMatrix m;
+  BackendDAE.IncidenceMatrixT mt;
+algorithm
+  SimCode.BACKENDMAPPING(m=m,mT=mt,eqMapping=eqMapping,varMapping=varMapping) := map;
+  bVar := getBackendVarForSimVar(simVar,map);
+  bEqs := arrayGet(mt,bVar);
+  simEqs := List.map1(bEqs,getSimEqsForBackendEqs,map);  
+end getSimEqsOfSimVar;
+
 public function getReqSimEqsForSimVar"outputs the indeces for the required simEqSys for the indexed SimVar
 author:Waurich TUD 2014-04"
   input Integer simVar;
@@ -12603,7 +12644,7 @@ algorithm
   eqsOut := List.fold1(preEqs,collectReqSimEqs,tree,reqEqs);
 end collectReqSimEqs;
 
-protected function getBackendVarForSimVar"outputs the backendVar indeces for the given SimEVar index
+protected function getBackendVarForSimVar"outputs the backendVar indeces for the given SimVar index
 author:Waurich TUD 2014-04"
   input Integer simVar;
   input SimCode.BackendMapping map;
@@ -12614,6 +12655,18 @@ algorithm
   SimCode.BACKENDMAPPING(varMapping=varMapping) := map;
   ((_,bVar)):= List.getMemberOnTrue(simVar,varMapping,findSimVar);
 end getBackendVarForSimVar;
+
+protected function getSimVarForBackendVar"outputs the SimVar indeces for the given backendVar index
+author:Waurich TUD 2014-04"
+  input Integer bVar;
+  input SimCode.BackendMapping map;
+  output Integer simVar;
+protected
+  list<tuple<Integer,Integer>> varMapping;
+algorithm
+  SimCode.BACKENDMAPPING(varMapping=varMapping) := map;  
+  ((simVar,_)):= List.getMemberOnTrue(bVar,varMapping,findBackendVar);
+end getSimVarForBackendVar;
 
 protected function getBackendEqsForSimEq"outputs the backendEq indeces for the given SimEqSys index
 author:Waurich TUD 2014-04"
@@ -12650,6 +12703,18 @@ algorithm
   (simVar1,_) := varTpl;
   b := intEq(simVar,simVar1);
 end findSimVar;
+
+protected function findBackendVar"outputs true if the tuple contains mapping information about the SimVar
+author:Waurich TUD 2014-04"
+  input Integer bVar;
+  input tuple<Integer,Integer> varTpl;
+  output Boolean b;
+protected
+  Integer bVar1;
+algorithm
+  (_,bVar1) := varTpl;
+  b := intEq(bVar,bVar1);
+end findBackendVar;
 
 protected function findSimEqs"outputs true if the tuple contains mapping information about the SimEquation
 author:Waurich TUD 2014-04"
