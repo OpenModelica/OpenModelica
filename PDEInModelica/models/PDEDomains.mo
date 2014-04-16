@@ -136,7 +136,7 @@ package PDEDomains
     extends Domain(ndim=2);
     parameter Real cx, cy, rx, ry; //x/y center, x/y radius
     coordinate Real cartesian[ndim], x = cartesian[1], y = cartesian[2];
-    coordinate modPolar[ndim], r = modPolar[1], phi = modPolar[2]; 
+    coordinate modPolar[ndim], r = modPolar[1], phi = modPolar[2];
     equation
       x = rx*r*cos(phi) + cx;
       y = ry*r*sin(phi) + cy;

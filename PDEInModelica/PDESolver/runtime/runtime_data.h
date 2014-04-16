@@ -14,7 +14,7 @@ struct RUNTIME_DATA {
     double endTime;
     double dt; //time step
     double cfl; // Courant-Friedrichs-Lewy number (lambda*dt/dx < cfl)
-    ofstream resultsFile; 
+    ofstream resultsFile;
     DScheme dScheme;
 };
 

@@ -39,15 +39,15 @@ model membraneInAir
 
 
   parameter Real c_m = 100; //wave speed traversing the membrane
-  
+
   function u0
     input x, y;
     output u0 = cos(sqrt(x^2 + y^2)*C.pi/(2*r));
   end u0;
-  
-  field Real u(domain = membrane, start[0] = u0, start[1] = 0);  
 
-  
+  field Real u(domain = membrane, start[0] = u0, start[1] = 0);
+
+
 equation
   //membrane equations:
   pder(u,t,t) = c_m^2*grad(diverg(u))  in membrane.interior;
@@ -58,7 +58,7 @@ equation
   pder(p,t) + rho_0*c_0^2*diverg(v) = 0  in room.interior;
   v*region.n = 0  in room.boundary;
 
-  v*region.n = pder(u,t)  in membrane.interior; 
+  v*region.n = pder(u,t)  in membrane.interior;
 end membraneInAir;
 
 
@@ -101,6 +101,6 @@ class RoomAndMembrane
 equation
   ...
   v*region.n = pder(u,t)  in room.membrane; //relation between membrane and air fields
-  ...  
+  ...
 end RoomAndMembrane
 

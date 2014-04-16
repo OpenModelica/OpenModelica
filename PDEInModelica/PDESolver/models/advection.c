@@ -22,7 +22,7 @@ int setupArrayDimensions(struct MODEL_DATA* mData) {
 int setupModelParameters(struct MODEL_DATA* mData)
 {
     /*interior:*/
-    mData->domainRange[0].v0 = 0; 
+    mData->domainRange[0].v0 = 0;
     mData->domainRange[0].v1 = 1;
     /*left*/
     mData->domainRange[1].v0 = 0;

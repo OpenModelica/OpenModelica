@@ -27,11 +27,11 @@ model arterialPulsWave
   Real P[N];
   Real tp;
 //initial conditions:
-initial equation 
+initial equation
   for i in 2:N - 1 loop
     Q[i]=CO;
   end for;
-equation 
+equation
 //border conditions:
   tp=mod(time, Tc);
   Q[1]=if tp < Tc/3 then Qmax*sin(3*Modelica.Constants.pi*tp/Tc)^2 else 0;

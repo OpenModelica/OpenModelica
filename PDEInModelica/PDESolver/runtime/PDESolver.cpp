@@ -161,7 +161,7 @@ int main() {
     rData->modelData = mData;
     int nSteps = 0;
     rData->dScheme = lax_friedrichs;//forwardT_backwardS;//
-    
+
 
 
     try{
@@ -187,7 +187,7 @@ int main() {
 
     }
     catch (Exceptions e){
-        switch (e) { 
+        switch (e) {
         case generalSoverE:
             puts("Internal solver error\n");
             break;
