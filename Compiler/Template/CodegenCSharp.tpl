@@ -93,13 +93,11 @@ namespace Bodylight.Models<%modelNameSpace(modelInfo.name)%>
          <<
          <%functionNonlinearResiduals(initialEquations, contextAlgloopInitialisation, simCode)%>
          
-         <%functionNonlinearResiduals(inlineEquations, contextAlgloop, simCode)%>
-         
          <%functionNonlinearResiduals(parameterEquations, contextAlgloop, simCode)%>
          
          <%functionNonlinearResiduals(allEquations, contextAlgloop, simCode)%>
          
-         <%functionInitialNonLinearSystems(initialEquations, inlineEquations, parameterEquations, allEquations, simCode)%>
+         <%functionInitialNonLinearSystems(initialEquations, parameterEquations, allEquations, simCode)%>
          
          <%functionInitialResidual(residualEquations, simCode)%>
          >>
@@ -1133,7 +1131,7 @@ template functionNonlinearResidual(SimEqSystem equ, Context context, SimCode sim
     >> 
 end functionNonlinearResidual;
 
-template functionInitialNonLinearSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> inlineEquations, 
+template functionInitialNonLinearSystems(list<SimEqSystem> initialEquations, 
    list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, SimCode simCode)
 ::=
   <<
@@ -1142,7 +1140,6 @@ template functionInitialNonLinearSystems(list<SimEqSystem> initialEquations, lis
     var nlss = NonLinearSystems;
     NLSystem nls;
     <%bodyNonLinearSystems(initialEquations, simCode)%>
-    <%bodyNonLinearSystems(inlineEquations, simCode)%>
     <%bodyNonLinearSystems(parameterEquations, simCode)%>
     <%bodyNonLinearSystems(allEquations, simCode)%>
   }

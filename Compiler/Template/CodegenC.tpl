@@ -213,12 +213,11 @@ template simulationFile_nls(SimCode simCode, String guid)
     extern "C" {
     #endif
     <%functionNonLinearResiduals(initialEquations,modelNamePrefixStr)%>
-    <%functionNonLinearResiduals(inlineEquations,modelNamePrefixStr)%>
     <%functionNonLinearResiduals(parameterEquations,modelNamePrefixStr)%>
     <%functionNonLinearResiduals(allEquations,modelNamePrefixStr)%>
     <%functionNonLinearResiduals(jacobianEquations,modelNamePrefixStr)%>
 
-    <%functionInitialNonLinearSystems(initialEquations, inlineEquations, parameterEquations, allEquations, jacobianEquations, modelNamePrefixStr)%>
+    <%functionInitialNonLinearSystems(initialEquations, parameterEquations, allEquations, jacobianEquations, modelNamePrefixStr)%>
 
     #if defined(__cplusplus)
     }
@@ -242,9 +241,9 @@ template simulationFile_lsy(SimCode simCode, String guid)
     extern "C" {
     #endif
 
-    <%functionSetupLinearSystems(initialEquations, inlineEquations, parameterEquations, allEquations, jacobianEquations)%>
+    <%functionSetupLinearSystems(initialEquations, parameterEquations, allEquations, jacobianEquations)%>
 
-    <%functionInitialLinearSystems(initialEquations, inlineEquations, parameterEquations, allEquations, jacobianEquations, modelNamePrefix(simCode))%>
+    <%functionInitialLinearSystems(initialEquations, parameterEquations, allEquations, jacobianEquations, modelNamePrefix(simCode))%>
 
     #if defined(__cplusplus)
     }
@@ -325,7 +324,7 @@ template simulationFile_inz(SimCode simCode, String guid)
     <%functionInitialResidual(residualEquations, modelNamePrefix(simCode))%>
     <%functionInitialEquations(useSymbolicInitialization, initialEquations, modelNamePrefix(simCode))%>
 
-    <%functionInitialMixedSystems(initialEquations, inlineEquations, parameterEquations, allEquations, jacobianEquations, modelNamePrefix(simCode))%>
+    <%functionInitialMixedSystems(initialEquations, parameterEquations, allEquations, jacobianEquations, modelNamePrefix(simCode))%>
 
     #if defined(__cplusplus)
     }
@@ -364,12 +363,9 @@ template simulationFile_eqs(SimCode simCode, String guid)
 ::=
   match simCode
     case simCode as SIMCODE(__) then
-    let modelNamePrefixStr = modelNamePrefix(simCode)
     <<
     /* Equations */
     <%simulationFileHeader(simCode)%>
-
-    <%functionInlineEquations(inlineEquations,modelNamePrefixStr)%>
 
     <%\n%>
     >>
@@ -458,7 +454,7 @@ template simulationFile_mix(SimCode simCode, String guid, Text &header)
     /* Mixed Systems */
     <%simulationFileHeader(simCode)%>
     #include "<%simCode.fileNamePrefix%>_11mix.h"
-    <%functionSetupMixedSystems(initialEquations, inlineEquations, parameterEquations, allEquations, jacobianEquations, &header, modelNamePrefixStr)%>
+    <%functionSetupMixedSystems(initialEquations, parameterEquations, allEquations, jacobianEquations, &header, modelNamePrefixStr)%>
 
     <%\n%>
     >>
@@ -865,7 +861,6 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData.nLinearSystems = <%varInfo.numLinearSystems%>;
     data->modelData.nNonLinearSystems = <%varInfo.numNonLinearSystems%>;
     data->modelData.nStateSets = <%varInfo.numStateSets%>;
-    data->modelData.nInlineVars = <%varInfo.numInlineVars%>;
     data->modelData.nOptimizeConstraints = <%varInfo.numOptimizeConstraints%>;
 
     data->modelData.nDelayExpressions = <%match delayed case DELAYED_EXPRESSIONS(__) then maxDelayedIndex%>;
@@ -956,11 +951,6 @@ template variableDefinitions(ModelInfo modelInfo, list<BackendDAE.TimeEvent> tim
       /* Nonlinear Constraints For Optimization */
       <%vars.realOptimizeConstraintsVars |> var =>
         globalDataVarDefine(var, "realVars", intAdd(intMul(2, numStateVars),numAlgVars))
-      ;separator="\n"%>
-
-      /* InlineSolver Vars */
-      <%vars.inlineVars |> var =>
-        globalDataVarDefine(var, "inlineVars", 0)
       ;separator="\n"%>
 
       /* Algebraic Parameter */
@@ -1384,11 +1374,10 @@ template functionInitSample(list<BackendDAE.TimeEvent> timeEvents, String modelN
 end functionInitSample;
 
 
-template functionInitialMixedSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> inlineEquations, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, list<SimEqSystem> jacobianEquations, String modelNamePrefix)
+template functionInitialMixedSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, list<SimEqSystem> jacobianEquations, String modelNamePrefix)
   "Generates functions in simulation file."
 ::=
   let initbody = functionInitialMixedSystemsTemp(initialEquations)
-  let inlinebody = functionInitialMixedSystemsTemp(inlineEquations)
   let parambody = functionInitialMixedSystemsTemp(parameterEquations)
   let body = functionInitialMixedSystemsTemp(allEquations)
   let jacobianbody = functionInitialMixedSystemsTemp(jacobianEquations)
@@ -1398,8 +1387,6 @@ template functionInitialMixedSystems(list<SimEqSystem> initialEquations, list<Si
   {
     /* initial mixed systems */
     <%initbody%>
-    /* inline mixed systems */
-    <%inlinebody%>
     /* parameter mixed systems */
     <%parambody%>
     /* model mixed systems */
@@ -1427,19 +1414,16 @@ template functionInitialMixedSystemsTemp(list<SimEqSystem> allEquations)
 end functionInitialMixedSystemsTemp;
 
 
-template functionSetupMixedSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> inlineEquations, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, list<SimEqSystem> jacobianEquations, Text &header, String modelNamePrefixStr)
+template functionSetupMixedSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, list<SimEqSystem> jacobianEquations, Text &header, String modelNamePrefixStr)
   "Generates functions in simulation file."
 ::=
   let initbody = functionSetupMixedSystemsTemp(initialEquations,&header,modelNamePrefixStr)
-  let inlinebody = functionSetupMixedSystemsTemp(inlineEquations,&header,modelNamePrefixStr)
   let parambody = functionSetupMixedSystemsTemp(parameterEquations,&header,modelNamePrefixStr)
   let body = functionSetupMixedSystemsTemp(allEquations,&header,modelNamePrefixStr)
   let jacobianbody = functionSetupMixedSystemsTemp(jacobianEquations,&header,modelNamePrefixStr)
   <<
   /* initial mixed systems */
   <%initbody%>
-  /* inline mixed systems */
-  <%inlinebody%>
   /* parameter mixed systems */
   <%parambody%>
   /* model mixed systems */
@@ -1487,11 +1471,10 @@ template functionSetupMixedSystemsTemp(list<SimEqSystem> allEquations, Text &hea
 end functionSetupMixedSystemsTemp;
 
 
-template functionInitialLinearSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> inlineEquations, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, list<SimEqSystem> jacobianEquations, String modelNamePrefix)
+template functionInitialLinearSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, list<SimEqSystem> jacobianEquations, String modelNamePrefix)
   "Generates functions in simulation file."
 ::=
   let initbody = functionInitialLinearSystemsTemp(initialEquations)
-  let inlinebody = functionInitialLinearSystemsTemp(inlineEquations)
   let parambody = functionInitialLinearSystemsTemp(parameterEquations)
   let body = functionInitialLinearSystemsTemp(allEquations)
   let jacobianbody = functionInitialLinearSystemsTemp(jacobianEquations)
@@ -1501,8 +1484,6 @@ template functionInitialLinearSystems(list<SimEqSystem> initialEquations, list<S
   {
     /* initial linear systems */
     <%initbody%>
-    /* inline linear systems */
-    <%inlinebody%>
     /* parameter linear systems */
     <%parambody%>
     /* model linear systems */
@@ -1532,19 +1513,16 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> allEquations)
    ;separator="\n\n")
 end functionInitialLinearSystemsTemp;
 
-template functionSetupLinearSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> inlineEquations, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, list<SimEqSystem> jacobianEquations)
+template functionSetupLinearSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, list<SimEqSystem> jacobianEquations)
   "Generates functions in simulation file."
 ::=
   let initbody = functionSetupLinearSystemsTemp(initialEquations)
-  let inlinebody = functionSetupLinearSystemsTemp(inlineEquations)
   let parambody = functionSetupLinearSystemsTemp(parameterEquations)
   let body = functionSetupLinearSystemsTemp(allEquations)
   let jacobianbody = functionSetupLinearSystemsTemp(jacobianEquations)
   <<
   /* initial linear systems */
   <%initbody%>
-  /* inline linear systems */
-  <%inlinebody%>
   /* parameter linear systems */
   <%parambody%>
   /* model linear systems */
@@ -1595,11 +1573,10 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> allEquations)
    ;separator="\n\n")
 end functionSetupLinearSystemsTemp;
 
-template functionInitialNonLinearSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> inlineEquations, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, list<SimEqSystem> jacobianEquations, String modelNamePrefix)
+template functionInitialNonLinearSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, list<SimEqSystem> jacobianEquations, String modelNamePrefix)
   "Generates functions in simulation file."
 ::=
   let initbody = functionInitialNonLinearSystemsTemp(initialEquations,modelNamePrefix)
-  let inlinebody = functionInitialNonLinearSystemsTemp(inlineEquations,modelNamePrefix)
   let parambody = functionInitialNonLinearSystemsTemp(parameterEquations,modelNamePrefix)
   let equationbody = functionInitialNonLinearSystemsTemp(allEquations,modelNamePrefix)
   let jacbody = functionInitialNonLinearSystemsTemp(jacobianEquations,modelNamePrefix)
@@ -1608,7 +1585,6 @@ template functionInitialNonLinearSystems(list<SimEqSystem> initialEquations, lis
   void <%symbolName(modelNamePrefix,"initialNonLinearSystem")%>(NONLINEAR_SYSTEM_DATA* nonLinearSystemData)
   {
     <%initbody%>
-    <%inlinebody%>
     <%parambody%>
     <%equationbody%>
     <%jacbody%>
@@ -1992,35 +1968,6 @@ template functionInitialEquations(Boolean useSymbolicInitialization, list<SimEqS
   }
   >>
 end functionInitialEquations;
-
-// =============================================================================
-// section for inline solver
-//
-// This section generates the followng c functions:
-//   - int functionInlineEquations(DATA *data)
-// =============================================================================
-
-template functionInlineEquations(list<SimEqSystem> inlineEquations, String modelNamePrefix)
-  "Generates function in simulation file."
-::=
-  let () = System.tmpTickReset(0)
-  let &varDecls = buffer "" /*BUFD*/
-  let &tmp = buffer ""
-  let body = (inlineEquations |> eq  =>
-      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &tmp, modelNamePrefix)
-    ;separator="\n")
-  <<
-  <%&tmp%>
-  int functionInlineEquations(DATA *data)
-  {
-    <%varDecls%>
-
-    <%body%>
-
-    return 0;
-  }
-  >>
-end functionInlineEquations;
 
 template functionStoreDelayed(DelayedExpression delayed, String modelNamePrefix)
   "Generates function in simulation file."

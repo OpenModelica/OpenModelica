@@ -151,7 +151,6 @@ package SimCode
       list<SimEqSystem> minValueEquations;
       list<SimEqSystem> maxValueEquations;
       list<SimEqSystem> parameterEquations;
-      list<SimEqSystem> inlineEquations;
       list<SimEqSystem> removedEquations;
       list<SimEqSystem> algorithmAndEquationAsserts;
       list<SimEqSystem> equationsForZeroCrossings;
@@ -395,7 +394,6 @@ package SimCode
       Integer numRelations;
       Integer numMathEventFunctions;
       Integer numStateVars;
-      Integer numInlineVars;
       Integer numAlgVars;
       Integer numDiscreteReal;
       Integer numIntAlgVars;
@@ -428,7 +426,6 @@ package SimCode
     record SIMVARS
       list<SimVar> stateVars;
       list<SimVar> derivativeVars;
-      list<SimVar> inlineVars;
       list<SimVar> algVars;
       list<SimVar> intAlgVars;
       list<SimVar> boolAlgVars;

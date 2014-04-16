@@ -76,7 +76,6 @@ protected import Error;
 protected import Flags;
 protected import HpcOmEqSystems;
 protected import HpcOmSimCode;
-protected import Settings;
 protected import SimCodeDump;
 protected import SimCodeUtil;
 protected import System;

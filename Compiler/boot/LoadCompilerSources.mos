@@ -146,7 +146,6 @@ if true then /* Suppress output */
     "../BackEnd/IndexReduction.mo",
     "../BackEnd/InlineArrayEquations.mo",
     "../BackEnd/Initialization.mo",
-    "../BackEnd/InlineSolver.mo",
     "../BackEnd/Matching.mo",
     "../BackEnd/MathematicaDump.mo",
     "../BackEnd/OnRelaxation.mo",

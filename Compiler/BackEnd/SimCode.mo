@@ -93,7 +93,6 @@ uniontype SimCode
     list<SimEqSystem> minValueEquations;
     list<SimEqSystem> maxValueEquations;
     list<SimEqSystem> parameterEquations;
-    list<SimEqSystem> inlineEquations;
     list<SimEqSystem> removedEquations;
     list<SimEqSystem> algorithmAndEquationAsserts;
     list<SimEqSystem> equationsForZeroCrossings;
@@ -188,7 +187,6 @@ uniontype VarInfo "Number of variables of various types in a Modelica model."
     Integer numRelations;
     Integer numMathEventFunctions;
     Integer numStateVars;
-    Integer numInlineVars;
     Integer numAlgVars;
     Integer numDiscreteReal;
     Integer numIntAlgVars;
@@ -221,7 +219,6 @@ uniontype SimVars "Container for metadata about variables in a Modelica model."
   record SIMVARS
     list<SimVar> stateVars;
     list<SimVar> derivativeVars;
-    list<SimVar> inlineVars;
     list<SimVar> algVars;
     list<SimVar> intAlgVars;
     list<SimVar> boolAlgVars;
@@ -246,7 +243,7 @@ uniontype SimVars "Container for metadata about variables in a Modelica model."
   end SIMVARS;
 end SimVars;
 
-public constant SimVars emptySimVars = SIMVARS({}, {}, {}, {}, {}, {}, {}, {},
+public constant SimVars emptySimVars = SIMVARS({}, {}, {}, {}, {}, {}, {},
   {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},{});
 
 uniontype SimVar "Information about a variable in a Modelica model."

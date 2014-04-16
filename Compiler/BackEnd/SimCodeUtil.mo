@@ -85,7 +85,6 @@ protected import HashSet;
 protected import HpcOmScheduler;
 protected import Initialization;
 protected import Inline;
-protected import InlineSolver;
 protected import List;
 protected import Mod;
 protected import PartFn;
@@ -1455,7 +1454,6 @@ algorithm
       list<SimCode.SimEqSystem> minValueEquations;          // --> updateBoundMinValues
       list<SimCode.SimEqSystem> maxValueEquations;          // --> updateBoundMaxValues
       list<SimCode.SimEqSystem> parameterEquations;         // --> updateBoundParameters
-      list<SimCode.SimEqSystem> inlineEquations;            // --> inline solver
       list<SimCode.SimEqSystem> removedEquations;
       list<SimCode.SimEqSystem> algorithmAndEquationAsserts;
       list<SimCode.SimEqSystem> equationsForZeroCrossings;
@@ -1481,7 +1479,6 @@ algorithm
       list<SimCode.SimVar> tempvars, jacobianSimvars;
 
       SimCode.JacobianMatrix jacG;
-      Option<BackendDAE.BackendDAE> inlineDAE;
       list<SimCode.StateSet> stateSets;
       array<Integer> systemIndexMap;
       list<BackendDAE.TimeEvent> timeEvents;
@@ -1505,17 +1502,11 @@ algorithm
       // replace pre(alias) in time-equations
       dlow = BackendDAEOptimize.simplifyTimeIndepFuncCalls(dlow);
 
-      // generate system for inline solver
-      (inlineDAE, _) = InlineSolver.generateDAE(dlow);
-
       // check if the Sytems has states
       dlow = BackendDAEUtil.addDummyStateIfNeeded(dlow);
 
-      // inline solver stuff
-      (inlineEquations, uniqueEqIndex, tempvars) = createInlineSolverEqns(inlineDAE, uniqueEqIndex, {});
-
       // initialization stuff
-      (residuals, initialEquations, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, useSymbolicInitialization) = createInitialResiduals(dlow, initDAE, uniqueEqIndex, tempvars);
+      (residuals, initialEquations, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, useSymbolicInitialization) = createInitialResiduals(dlow, initDAE, uniqueEqIndex, {});
       (jacG, uniqueEqIndex) = createInitialMatrices(dlow, uniqueEqIndex);
 
       // addInitialStmtsToAlgorithms
@@ -1578,8 +1569,6 @@ algorithm
       // update indexNonLinear in SES_NONLINEAR and count
       SymbolicJacsNLS = {};
       (initialEquations, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, SymbolicJacsTemp) = countandIndexAlgebraicLoops(initialEquations, 0, 0, 0, {});
-      SymbolicJacsNLS = listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
-      (inlineEquations, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, SymbolicJacsTemp) = countandIndexAlgebraicLoops(inlineEquations, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, {});
       SymbolicJacsNLS = listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
       (parameterEquations, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, SymbolicJacsTemp) = countandIndexAlgebraicLoops(parameterEquations, numberofLinearSys, numberofNonLinearSys, numberofMixedSys,  {});
       SymbolicJacsNLS = listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
@@ -1654,7 +1643,6 @@ algorithm
                                 minValueEquations,
                                 maxValueEquations,
                                 parameterEquations,
-                                inlineEquations,
                                 removedEquations,
                                 algorithmAndEquationAsserts,
                                 equationsForZeroCrossings,
@@ -1702,12 +1690,12 @@ algorithm
       String description,directory;
       SimCode.VarInfo varInfo;
       SimCode.SimVars vars;
-      list<SimCode.SimVar> stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars;
+      list<SimCode.SimVar> stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars;
       list<SimCode.SimVar> stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, realOptimizeConstraintsVars;
       list<SimCode.Function> functions;
       list<String> labels;
       Integer numZeroCrossings, numTimeEvents, numRelations, numMathEvents;
-      Integer numStateVars, numInlineVars, numAlgVars, numDiscreteReal, numIntAlgVars, numBoolAlgVars, numAlgAliasVars, numIntAliasVars, numBoolAliasVars;
+      Integer numStateVars, numAlgVars, numDiscreteReal, numIntAlgVars, numBoolAlgVars, numAlgAliasVars, numIntAliasVars, numBoolAliasVars;
       Integer numParams, numIntParams, numBoolParams, numOutVars, numInVars;
       Integer numInitialEquations, numInitialAlgorithms, numInitialResiduals, numExternalObjects, numStringAlgVars;
       Integer numStringParamVars, numStringAliasVars, numStateSets, numOptimizeConstraints;
@@ -1716,10 +1704,10 @@ algorithm
     case({}, _) then modelInfo;
     case(_, SimCode.MODELINFO(name, description, directory, varInfo, vars, functions, labels))
       equation
-        SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEvents, numStateVars, numInlineVars, numAlgVars, numDiscreteReal, numIntAlgVars, numBoolAlgVars, numAlgAliasVars, numIntAliasVars, numBoolAliasVars, numParams,
+        SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEvents, numStateVars, numAlgVars, numDiscreteReal, numIntAlgVars, numBoolAlgVars, numAlgAliasVars, numIntAliasVars, numBoolAliasVars, numParams,
            numIntParams, numBoolParams, numOutVars, numInVars, numInitialEquations, numInitialAlgorithms, numInitialResiduals, numExternalObjects, numStringAlgVars,
            numStringParamVars, numStringAliasVars, numEqns, numLinearSys, numNonLinearSys, numMixedLinearSys, numStateSets, numOptimizeConstraints) = varInfo;
-        SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
+        SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
                stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars,realOptimizeConstraintsVars) = vars;
 
        (numAlgVars, algVars, numIntAlgVars, intAlgVars, numBoolAlgVars, boolAlgVars, numStringAlgVars, stringAlgVars)=
@@ -1730,10 +1718,10 @@ algorithm
         boolAlgVars = listReverse(boolAlgVars);
         stringAlgVars = listReverse(stringAlgVars);
 
-        varInfo = SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEvents, numStateVars, numInlineVars, numAlgVars, numDiscreteReal, numIntAlgVars, numBoolAlgVars, numAlgAliasVars, numIntAliasVars, numBoolAliasVars, numParams,
+        varInfo = SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEvents, numStateVars, numAlgVars, numDiscreteReal, numIntAlgVars, numBoolAlgVars, numAlgAliasVars, numIntAliasVars, numBoolAliasVars, numParams,
            numIntParams, numBoolParams, numOutVars, numInVars, numInitialEquations, numInitialAlgorithms, numInitialResiduals, numExternalObjects, numStringAlgVars,
            numStringParamVars, numStringAliasVars, numEqns, numLinearSys, numNonLinearSys, numMixedLinearSys, numStateSets, numOptimizeConstraints);
-        vars = SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
+        vars = SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
                stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, realOptimizeConstraintsVars);
       then
        SimCode.MODELINFO(name, description, directory, varInfo, vars, functions, labels);
@@ -1840,17 +1828,17 @@ algorithm
       String description,directory;
       SimCode.VarInfo varInfo;
       SimCode.SimVars vars;
-      list<SimCode.SimVar> stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars;
+      list<SimCode.SimVar> stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars;
       list<SimCode.SimVar> stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobiansVars,realOptimizeConstraintsVars;
       list<SimCode.Function> functions;
       list<String> labels;
     case({}, _) then modelInfo;
     case(_, SimCode.MODELINFO(name, description, directory, varInfo, vars, functions, labels))
       equation
-        SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
+        SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
                stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, _, realOptimizeConstraintsVars) = vars;
 
-        vars = SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
+        vars = SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
                stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars,realOptimizeConstraintsVars);
       then
        SimCode.MODELINFO(name, description, directory, varInfo, vars, functions, labels);
@@ -1874,17 +1862,17 @@ algorithm
     list<SimCode.Function> functions;
     list<String> labels;
     Integer numZeroCrossings, numTimeEvents, numRelations, numMathEvents;
-    Integer numStateVars, numInlineVars, numAlgVars, numDiscreteReal, numIntAlgVars, numBoolAlgVars, numAlgAliasVars, numIntAliasVars, numBoolAliasVars;
+    Integer numStateVars, numAlgVars, numDiscreteReal, numIntAlgVars, numBoolAlgVars, numAlgAliasVars, numIntAliasVars, numBoolAliasVars;
     Integer numParams, numIntParams, numBoolParams, numOutVars, numInVars;
     Integer numInitialEquations, numInitialAlgorithms, numInitialResiduals, numExternalObjects, numStringAlgVars;
     Integer numStringParamVars, numStringAliasVars, numStateSets, numOptimizeConstraints;
 
 
     case(SimCode.MODELINFO(name, description, directory, varInfo, vars, functions, labels), _, _, _, _) equation
-      SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEvents, numStateVars, numInlineVars, numAlgVars, numDiscreteReal, numIntAlgVars, numBoolAlgVars, numAlgAliasVars, numIntAliasVars, numBoolAliasVars, numParams,
+      SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEvents, numStateVars, numAlgVars, numDiscreteReal, numIntAlgVars, numBoolAlgVars, numAlgAliasVars, numIntAliasVars, numBoolAliasVars, numParams,
       numIntParams, numBoolParams, numOutVars, numInVars, numInitialEquations, numInitialAlgorithms, numInitialResiduals, numExternalObjects, numStringAlgVars,
       numStringParamVars, numStringAliasVars, _, _, _, _, numStateSets, numOptimizeConstraints) = varInfo;
-      varInfo = SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEvents, numStateVars, numInlineVars, numAlgVars, numDiscreteReal, numIntAlgVars, numBoolAlgVars, numAlgAliasVars, numIntAliasVars, numBoolAliasVars, numParams,
+      varInfo = SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEvents, numStateVars, numAlgVars, numDiscreteReal, numIntAlgVars, numBoolAlgVars, numAlgAliasVars, numIntAliasVars, numBoolAliasVars, numParams,
       numIntParams, numBoolParams, numOutVars, numInVars, numInitialEquations, numInitialAlgorithms, numInitialResiduals, numExternalObjects, numStringAlgVars,
       numStringParamVars, numStringAliasVars, numEqns, numLinearSys, numNonLinearSys, numMixedLinearSys, numStateSets, numOptimizeConstraints);
     then SimCode.MODELINFO(name, description, directory, varInfo, vars, functions, labels);
@@ -6356,52 +6344,6 @@ algorithm
   end matchcontinue;
 end createSingleArrayEqnCode2;
 
-protected function createInlineSolverEqns "author: lochel
-  This function generates equations needed for inline integration."
-  input Option<BackendDAE.BackendDAE> inInlineDAE;
-  input Integer inUniqueEqIndex;
-  input list<SimCode.SimVar> inTempvars;
-  output list<SimCode.SimEqSystem> outInlineEqns;
-  output Integer outUniqueEqIndex;
-  output list<SimCode.SimVar> outTempVars;
-algorithm
-  (outInlineEqns, outUniqueEqIndex, outTempVars) := matchcontinue(inInlineDAE, inUniqueEqIndex, inTempvars)
-    local
-      BackendDAE.EqSystems systs;
-      BackendDAE.Shared shared;
-      BackendDAE.Variables knownVars, aliasVars;
-      BackendDAE.EquationArray removedEqs;
-      Integer uniqueEqIndex;
-      list<SimCode.SimVar> tempvars;
-      list<SimCode.SimEqSystem> allEquations, removedEquations, knvarseqns, aliasEquations;
-
-    // try to solve the inital system symbolical.
-    case (SOME(BackendDAE.DAE(systs,
-                              shared as BackendDAE.SHARED(knownVars=knownVars,
-                                                          aliasVars=aliasVars,
-                                                          removedEqs=removedEqs))), uniqueEqIndex, tempvars) equation
-      // generate equations from the solved systems
-      (uniqueEqIndex, _, _, allEquations, _, tempvars, _, _, _) = createEquationsForSystems(systs, shared, uniqueEqIndex, {}, {}, {}, {}, {}, tempvars,0, {}, {}, SimCode.NO_MAPPING());
-      // generate equations from the removed equations
-      ((uniqueEqIndex, removedEquations)) = BackendEquation.traverseBackendDAEEqns(removedEqs, traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
-      allEquations = listAppend(allEquations, removedEquations);
-      // generate equations from the known unfixed variables
-      ((uniqueEqIndex, knvarseqns)) = BackendVariable.traverseBackendDAEVars(knownVars, traverseKnVarsToSimEqSystem, (uniqueEqIndex, {}));
-      allEquations = listAppend(allEquations, knvarseqns);
-      // generate equations from the alias variables
-      ((uniqueEqIndex, aliasEquations)) = BackendVariable.traverseBackendDAEVars(aliasVars, traverseAliasVarsToSimEqSystem, (uniqueEqIndex, {}));
-      allEquations = listAppend(allEquations, aliasEquations);
-    then (allEquations, uniqueEqIndex, tempvars);
-
-    case (NONE(), _, _) equation
-    then ({}, inUniqueEqIndex, inTempvars);
-
-    else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: createInlineSolverEqns failed"});
-    then fail();
-  end matchcontinue;
-end createInlineSolverEqns;
-
 protected function createInitialResiduals "author: lochel
   This function generates all initial_residuals."
   input BackendDAE.BackendDAE inDAE;
@@ -7081,7 +7023,6 @@ algorithm
       SimCode.SimVars vars;
       list<SimCode.SimVar> stateVars;
       list<SimCode.SimVar> derivativeVars;
-      list<SimCode.SimVar> inlineVars;
       list<SimCode.SimVar> algVars;
       list<SimCode.SimVar> intAlgVars;
       list<SimCode.SimVar> boolAlgVars;
@@ -7103,7 +7044,7 @@ algorithm
       list<SimCode.SimVar> stringConstVars;
       list<SimCode.SimVar> jacobianVars;
       list<SimCode.SimVar> realOptimizeConstraintsVars;
-      Integer nx, numInlineVars, ny, np, na, next, numOutVars, numInVars, ny_int, np_int, na_int, ny_bool, np_bool, dim_1, dim_2, numOptimizeConstraints;
+      Integer nx, ny, np, na, next, numOutVars, numInVars, ny_int, np_int, na_int, ny_bool, np_bool, dim_1, dim_2, numOptimizeConstraints;
       Integer na_bool, ny_string, np_string, na_string;
       list<SimCode.SimVar> states1, states_lst, states_lst2, der_states_lst;
       list<SimCode.SimVar> states_2, derivatives_2;
@@ -7114,14 +7055,13 @@ algorithm
         // name = Absyn.pathStringNoQual(class_);
         directory = System.trim(fileDir, "\"");
         vars = createVars(dlow);
-        SimCode.SIMVARS(stateVars=stateVars, inlineVars=inlineVars, algVars=algVars, intAlgVars=intAlgVars, boolAlgVars=boolAlgVars,
+        SimCode.SIMVARS(stateVars=stateVars, algVars=algVars, intAlgVars=intAlgVars, boolAlgVars=boolAlgVars,
                 inputVars=inputVars, outputVars=outputVars, aliasVars=aliasVars, intAliasVars=intAliasVars, boolAliasVars=boolAliasVars,
                 paramVars=paramVars, intParamVars=intParamVars, boolParamVars=boolParamVars, stringAlgVars=stringAlgVars,
                 stringParamVars=stringParamVars, stringAliasVars=stringAliasVars, extObjVars=extObjVars, constVars=constVars,
                 intConstVars=intConstVars, boolConstVars=boolConstVars, stringConstVars=stringConstVars, jacobianVars=jacobianVars, realOptimizeConstraintsVars=realOptimizeConstraintsVars) = vars;
         BackendDAE.DAE(shared=BackendDAE.SHARED(info=BackendDAE.EXTRA_INFO(description=description))) = dlow;
         nx = listLength(stateVars);
-        numInlineVars = listLength(inlineVars);
         ny = listLength(algVars);
         ny_int = listLength(intAlgVars);
         ny_bool = listLength(boolAlgVars);
@@ -7139,7 +7079,7 @@ algorithm
         next = listLength(extObjVars);
         numOptimizeConstraints =  listLength(realOptimizeConstraintsVars);
 
-        varInfo = createVarInfo(dlow, nx, numInlineVars, ny, np, na, next, numOutVars, numInVars, numInitialEquations, numInitialAlgorithms,
+        varInfo = createVarInfo(dlow, nx, ny, np, na, next, numOutVars, numInVars, numInitialEquations, numInitialAlgorithms,
                  ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string, numStateSets, numOptimizeConstraints);
       then
         SimCode.MODELINFO(class_, description, directory, varInfo, vars, functions, labels);
@@ -7156,7 +7096,6 @@ end createModelInfo;
 protected function createVarInfo
   input BackendDAE.BackendDAE dlow;
   input Integer nx;
-  input Integer numInlineVars;
   input Integer ny;
   input Integer np;
   input Integer na;
@@ -7186,7 +7125,7 @@ algorithm
   numRelations := filterNg(numRelations);
   numInitialResiduals := numInitialEquations+numInitialAlgorithms;
   nDiscreteReal := BackendDAEUtil.numberOfDiscreteVars(dlow);
-  varInfo := SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEventFunctions, nx, numInlineVars, ny, nDiscreteReal, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, numOutVars, numInVars,
+  varInfo := SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEventFunctions, nx, ny, nDiscreteReal, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, numOutVars, numInVars,
           numInitialEquations, numInitialAlgorithms, numInitialResiduals, next, ny_string, np_string, na_string, 0, 0, 0, 0, numStateSets,numOptimizeConstraints);
 end createVarInfo;
 
@@ -7259,7 +7198,6 @@ algorithm
     local
       list<SimCode.SimVar> stateVars;
       list<SimCode.SimVar> derivativeVars;
-      list<SimCode.SimVar> inlineVars;
       list<SimCode.SimVar> algVars;
       list<SimCode.SimVar> intAlgVars;
       list<SimCode.SimVar> boolAlgVars;
@@ -7286,7 +7224,7 @@ algorithm
       BackendDAE.Variables v;
       Boolean isalias;
     case (_, _, v,
-      SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars,
+      SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars,
           aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
           stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, realOptimizeConstraintsVars))
       equation
@@ -7340,7 +7278,7 @@ algorithm
         realOptimizeConstraintsVars = List.consOnTrue((not isalias) and
           BackendVariable.isRealOptimizeConstraintsVars(dlowVar), simvar, realOptimizeConstraintsVars);
       then
-        SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars,
+        SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars,
           aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
           stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, realOptimizeConstraintsVars);
   end match;
@@ -7520,7 +7458,6 @@ algorithm
     local
       list<SimCode.SimVar> stateVars;
       list<SimCode.SimVar> derivativeVars;
-      list<SimCode.SimVar> inlineVars;
       list<SimCode.SimVar> algVars;
       list<SimCode.SimVar> intAlgVars;
       list<SimCode.SimVar> boolAlgVars;
@@ -7544,7 +7481,7 @@ algorithm
       list<SimCode.SimVar> realOptimizeConstraintsVars;
       HashSet.HashSet set;
     // runtime CPP, there it is not necesarry to sort the arrays because different memory management
-    /*case (true, SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars,
+    /*case (true, SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
       outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
       stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars))
       equation
@@ -7553,7 +7490,6 @@ algorithm
         set = HashSet.emptyHashSet();
         set = List.fold(stateVars, collectArrayFirstVars, set);
         set = List.fold(derivativeVars, collectArrayFirstVars, set);
-        set = List.fold(inlineVars, collectArrayFirstVars, set);
         set = List.fold(algVars, collectArrayFirstVars, set);
         set = List.fold(intAlgVars, collectArrayFirstVars, set);
         set = List.fold(boolAlgVars, collectArrayFirstVars, set);
@@ -7577,7 +7513,6 @@ algorithm
         // add array information to incomplete arrays
         (stateVars, set) = List.mapFold(stateVars, setArrayElementnoFirst, set);
         (derivativeVars, set) = List.mapFold(derivativeVars, setArrayElementnoFirst, set);
-        (inlineVars, set) = List.mapFold(inlineVars, setArrayElementnoFirst, set);
         (algVars, set) = List.mapFold(algVars, setArrayElementnoFirst, set);
         (intAlgVars, set) = List.mapFold(intAlgVars, setArrayElementnoFirst, set);
         (boolAlgVars, set) = List.mapFold(boolAlgVars, setArrayElementnoFirst, set);
@@ -7598,17 +7533,16 @@ algorithm
         (boolConstVars, set) = List.mapFold(boolConstVars, setArrayElementnoFirst, set);
         (stringConstVars, set) = List.mapFold(stringConstVars, setArrayElementnoFirst, set);
         (jacobianVars, set) = List.mapFold(jacobianVars, setArrayElementnoFirst, set);
-      then SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars,
+      then SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
         outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
         stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars);
     */// other runtimes
-    case (SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars,
+    case (SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
       outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
       stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, realOptimizeConstraintsVars))
       equation
         stateVars = sortSimVars1(stateVars);
         derivativeVars = sortSimVars1(derivativeVars);
-        inlineVars = sortSimVars1(inlineVars);
         algVars = sortSimVars1(algVars);
         intAlgVars = sortSimVars1(intAlgVars);
         boolAlgVars = sortSimVars1(boolAlgVars);
@@ -7630,7 +7564,7 @@ algorithm
         stringConstVars = sortSimVars1(stringConstVars);
         jacobianVars = sortSimVars1(jacobianVars);
         realOptimizeConstraintsVars =  sortSimVars1(realOptimizeConstraintsVars);
-      then SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars,
+      then SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
         outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
         stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, realOptimizeConstraintsVars);
   end match;
@@ -7646,7 +7580,6 @@ algorithm
     local
       list<SimCode.SimVar> stateVars;
       list<SimCode.SimVar> derivativeVars;
-      list<SimCode.SimVar> inlineVars;
       list<SimCode.SimVar> algVars;
       list<SimCode.SimVar> intAlgVars;
       list<SimCode.SimVar> boolAlgVars;
@@ -7670,7 +7603,7 @@ algorithm
       list<SimCode.SimVar> realOptimizeConstraintsVars;
       HashSet.HashSet set;
 
-    case (SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars,
+    case (SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
       outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
       stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars,realOptimizeConstraintsVars))
       equation
@@ -7679,7 +7612,6 @@ algorithm
         set = HashSet.emptyHashSet();
         set = List.fold(stateVars, collectArrayFirstVars, set);
         set = List.fold(derivativeVars, collectArrayFirstVars, set);
-        set = List.fold(inlineVars, collectArrayFirstVars, set);
         set = List.fold(algVars, collectArrayFirstVars, set);
         set = List.fold(intAlgVars, collectArrayFirstVars, set);
         set = List.fold(boolAlgVars, collectArrayFirstVars, set);
@@ -7704,7 +7636,6 @@ algorithm
         // add array information to incomplete arrays
         (stateVars, set) = List.mapFold(stateVars, setArrayElementnoFirst, set);
         (derivativeVars, set) = List.mapFold(derivativeVars, setArrayElementnoFirst, set);
-        (inlineVars, set) = List.mapFold(inlineVars, setArrayElementnoFirst, set);
         (algVars, set) = List.mapFold(algVars, setArrayElementnoFirst, set);
         (intAlgVars, set) = List.mapFold(intAlgVars, setArrayElementnoFirst, set);
         (boolAlgVars, set) = List.mapFold(boolAlgVars, setArrayElementnoFirst, set);
@@ -7727,7 +7658,7 @@ algorithm
         (jacobianVars, set) = List.mapFold(jacobianVars, setArrayElementnoFirst, set);
         (realOptimizeConstraintsVars, set) = List.mapFold(realOptimizeConstraintsVars, setArrayElementnoFirst, set);
 
-      then SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars,
+      then SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
         outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
         stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars,realOptimizeConstraintsVars);
 
@@ -8121,7 +8052,6 @@ algorithm
     local
       list<SimCode.SimVar> stateVars;
       list<SimCode.SimVar> derivativeVars;
-      list<SimCode.SimVar> inlineVars;
       list<SimCode.SimVar> algVars;
       list<SimCode.SimVar> intAlgVars;
       list<SimCode.SimVar> boolAlgVars;
@@ -8144,13 +8074,12 @@ algorithm
       list<SimCode.SimVar> jacobianVars;
       list<SimCode.SimVar> realOptimizeConstraintsVars;
 
-    case (SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars,
+    case (SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
       outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
       stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars,jacobianVars,realOptimizeConstraintsVars))
       equation
         stateVars = rewriteIndex(stateVars, 0);
         derivativeVars = rewriteIndex(derivativeVars, 0);
-        inlineVars = rewriteIndex(inlineVars, 0);
         algVars = rewriteIndex(algVars, 0);
         intAlgVars = rewriteIndex(intAlgVars, 0);
         boolAlgVars = rewriteIndex(boolAlgVars, 0);
@@ -8172,7 +8101,7 @@ algorithm
         outputVars = rewriteIndex(outputVars, 0);
         realOptimizeConstraintsVars = rewriteIndex(realOptimizeConstraintsVars, 0);
         //jacobianVars don't need a index rewrite
-      then SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars,
+      then SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
         outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
         stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, realOptimizeConstraintsVars);
   end match;
@@ -8244,28 +8173,27 @@ algorithm
   outHT :=  matchcontinue (modelInfo)
     local
       SimCode.HashTableCrefToSimVar ht;
-      list<SimCode.SimVar> stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, aliasVars,
+      list<SimCode.SimVar> stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, aliasVars,
                             intAliasVars, boolAliasVars, stringAliasVars, paramVars, intParamVars, boolParamVars,
                             stringAlgVars, stringParamVars, extObjVars, constVars, intConstVars, boolConstVars,
                             stringConstVars, jacobianVars, realOptimizeConstraintsVars;
-      Integer numStateVars,numInlineVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars;
+      Integer numStateVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars;
       Integer numBoolAliasVars,numParams,numIntParams,numBoolParams,numOutVars,numInVars,numOptimizeConstraints, size;
-    case (SimCode.MODELINFO(varInfo = SimCode.VARINFO(numStateVars=numStateVars,numInlineVars=numInlineVars,numAlgVars=numAlgVars,
+    case (SimCode.MODELINFO(varInfo = SimCode.VARINFO(numStateVars=numStateVars,numAlgVars=numAlgVars,
       numIntAlgVars=numIntAlgVars,numBoolAlgVars=numBoolAlgVars,numAlgAliasVars=numAlgAliasVars,numIntAliasVars=numIntAliasVars,
       numBoolAliasVars=numBoolAliasVars,numParams=numParams,numIntParams=numIntParams,numBoolParams=numBoolParams,
       numOutVars=numOutVars,numInVars=numInVars, numOptimizeConstraints= numOptimizeConstraints),
       vars = SimCode.SIMVARS(
-      stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars,
+      stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars,
       _/*inputVars*/, _/*outputVars*/, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
       stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, realOptimizeConstraintsVars)))
       equation
-        size = numStateVars+numInlineVars+numAlgVars+numIntAlgVars+numBoolAlgVars+numAlgAliasVars+numIntAliasVars+
+        size = numStateVars+numAlgVars+numIntAlgVars+numBoolAlgVars+numAlgAliasVars+numIntAliasVars+
                numBoolAliasVars+numParams+numIntParams+numBoolParams+numOutVars+numInVars + numOptimizeConstraints;
         size = intMax(size,1000);
         ht = emptyHashTableSized(size);
         ht = List.fold(stateVars, addSimVarToHashTable, ht);
         ht = List.fold(derivativeVars, addSimVarToHashTable, ht);
-        ht = List.fold(inlineVars, addSimVarToHashTable, ht);
         ht = List.fold(algVars, addSimVarToHashTable, ht);
         ht = List.fold(intAlgVars, addSimVarToHashTable, ht);
         ht = List.fold(boolAlgVars, addSimVarToHashTable, ht);
@@ -11057,16 +10985,16 @@ algorithm
   outFiles := match(inSimVars, inFiles)
     local
       SimCode.Files files;
-      list<SimCode.SimVar> stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars,
+      list<SimCode.SimVar> stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars,
                    boolAliasVars, paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars,
                    extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, realOptimizeConstraintsVars;
 
-    case (SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars,
+    case (SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars,
                   paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, realOptimizeConstraintsVars),
           files)
       equation
         (_, files) = List.mapFoldList(
-                       {stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars,
+                       {stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars,
                         paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, realOptimizeConstraintsVars},
                        getFilesFromSimVar, files);
       then
@@ -11521,7 +11449,7 @@ algorithm
       list<String> externalFunctionIncludes;
       list<list<SimCode.SimEqSystem>> eqsTmp;
       list<list<SimCode.SimEqSystem>> odeEquations, algebraicEquations;
-      list<SimCode.SimEqSystem> allEquations, residualEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations, parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, jacobianEquations, equationsForZeroCrossings;
+      list<SimCode.SimEqSystem> allEquations, residualEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations, parameterEquations, removedEquations, algorithmAndEquationAsserts, jacobianEquations, equationsForZeroCrossings;
       list<SimCode.StateSet> stateSets;
       Boolean useSymbolicInitialization, useHomotopy;
       list<SimCode.SimEqSystem> initialEquations;
@@ -11553,7 +11481,7 @@ algorithm
       then inSimCode;
 
     case SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
-                 parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
+                 parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT, hpcOmSchedule,backendMapping)
       equation
         SimCode.MODELINFO(name, description, directory, varInfo, vars, functions, labels) = modelInfo;
@@ -11570,7 +11498,7 @@ algorithm
         modelInfo = SimCode.MODELINFO(name, description, directory, varInfo, vars, functions, labels);
       then
         SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
-                  parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
+                  parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
                   discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT, hpcOmSchedule,backendMapping);
 
     case _
@@ -11772,12 +11700,12 @@ protected function traveseSimVars
 algorithm
   (outSimVars, oTpl) := match(inSimVars, func, iTpl)
     local
-     list<SimCode.SimVar> stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars,
+     list<SimCode.SimVar> stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars,
                    boolAliasVars, paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars,
                    extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, realOptimizeConstraintsVars;
      tpl intpl;
 
-    case (SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars,
+    case (SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars,
                   paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, realOptimizeConstraintsVars), _, intpl)
          equation
            (stateVars, intpl) = List.mapFoldTuple(stateVars, func, intpl);
@@ -11803,7 +11731,7 @@ algorithm
            (jacobianVars, intpl) = List.mapFoldTuple(jacobianVars, func, intpl);
            (realOptimizeConstraintsVars, intpl) = List.mapFoldTuple(realOptimizeConstraintsVars, func, intpl);
 
-         then (SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars,
+         then (SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars,
                   paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars,realOptimizeConstraintsVars), intpl);
     case (_, _, _) then fail();
   end match;
@@ -11839,7 +11767,6 @@ algorithm
       list<SimCode.SimEqSystem> minValueEquations;
       list<SimCode.SimEqSystem> maxValueEquations;
       list<SimCode.SimEqSystem> parameterEquations;
-      list<SimCode.SimEqSystem> inlineEquations;
       list<SimCode.SimEqSystem> removedEquations;
       list<SimCode.SimEqSystem> algorithmAndEquationAsserts;
       list<SimCode.SimEqSystem> jacobianEquations;
@@ -11866,7 +11793,7 @@ algorithm
     case (SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes,
                           allEquations, odeEquations, algebraicEquations, residualEquations,
                           useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
-                          parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings,
+                          parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings,
                           jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings,
                           relations, timeEvents, whenClauses, discreteModelVars, extObjInfo, makefileParams,
                           delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix,
@@ -11894,7 +11821,7 @@ algorithm
       then (SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes,
                             allEquations, odeEquations, algebraicEquations, residualEquations,
                             useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
-                            parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings,
+                            parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings,
                             jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings,
                             relations, timeEvents, whenClauses, discreteModelVars, extObjInfo, makefileParams,
                             delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix,
@@ -12051,7 +11978,6 @@ algorithm
       list<SimCode.SimEqSystem> minValueEquations;
       list<SimCode.SimEqSystem> maxValueEquations;
       list<SimCode.SimEqSystem> parameterEquations;
-      list<SimCode.SimEqSystem> inlineEquations;
       list<SimCode.SimEqSystem> removedEquations;
       list<SimCode.SimEqSystem> algorithmAndEquationAsserts;
       list<SimCode.SimEqSystem> jacobianEquations;
@@ -12077,14 +12003,14 @@ algorithm
     case (SimCode.SIMCODE(modelInfo, _, recordDecls, externalFunctionIncludes,
                           allEquations, odeEquations, algebraicEquations, residualEquations,
                           useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
-                          parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings,
+                          parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings,
                           jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings,
                           relations, timeEvents, whenClauses, discreteModelVars, extObjInfo, makefileParams,
                           delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT, hpcOmSchedule, backendMapping), _)
       then SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes,
                            allEquations, odeEquations, algebraicEquations, residualEquations,
                            useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
-                           parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts,equationsForZeroCrossings,
+                           parameterEquations, removedEquations, algorithmAndEquationAsserts,equationsForZeroCrossings,
                            jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings,
                            relations, timeEvents, whenClauses, discreteModelVars, extObjInfo, makefileParams,
                            delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT, hpcOmSchedule, backendMapping);
@@ -12191,7 +12117,6 @@ algorithm
     local
       list<SimCode.SimVar> stateVars_;
       list<SimCode.SimVar> derivativeVars_;
-      list<SimCode.SimVar> inlineVars_;
       list<SimCode.SimVar> algVars_;
       list<SimCode.SimVar> intAlgVars_;
       list<SimCode.SimVar> boolAlgVars_;
@@ -12214,7 +12139,7 @@ algorithm
       list<SimCode.SimVar> jacobianVars_;
       list<SimCode.SimVar> realOptimizeConstraintsVars_;
       list<SimCode.SimVar> enumTypesList;
-    case (SimCode.SIMVARS(stateVars = stateVars_, derivativeVars = derivativeVars_, inlineVars = inlineVars_, algVars = algVars_, intAlgVars = intAlgVars_,
+    case (SimCode.SIMVARS(stateVars = stateVars_, derivativeVars = derivativeVars_, algVars = algVars_, intAlgVars = intAlgVars_,
                           boolAlgVars = boolAlgVars_, inputVars = inputVars_, outputVars = outputVars_, aliasVars = aliasVars_, intAliasVars = intAliasVars_,
                           boolAliasVars = boolAliasVars_, paramVars = paramVars_, intParamVars = intParamVars_, boolParamVars = boolParamVars_,
                           stringAlgVars = stringAlgVars_, stringParamVars = stringParamVars_, stringAliasVars = stringAliasVars_, extObjVars = extObjVars_,
@@ -12223,7 +12148,6 @@ algorithm
       equation
         enumTypesList = getEnumerationTypesHelper(stateVars_, {});
         enumTypesList = getEnumerationTypesHelper(derivativeVars_, enumTypesList);
-        enumTypesList = getEnumerationTypesHelper(inlineVars_, enumTypesList);
         enumTypesList = getEnumerationTypesHelper(algVars_, enumTypesList);
         enumTypesList = getEnumerationTypesHelper(intAlgVars_, enumTypesList);
         enumTypesList = getEnumerationTypesHelper(boolAlgVars_, enumTypesList);

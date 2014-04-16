@@ -59,8 +59,8 @@ template dumpSimCodeBase(SimCode code, Boolean withOperations)
   <residual-equations size="<%listLength(residualEquations)%>">
     <%dumpEqs(SimCodeUtil.sortEqSystems(residualEquations),withOperations)%>
   </residual-equations>
-  <equations size="<%intAdd(listLength(inlineEquations),listLength(allEquations))%>">
-    <%dumpEqs(SimCodeUtil.sortEqSystems(listAppend(inlineEquations,allEquations)),withOperations)%>
+  <equations size="<%listLength(allEquations)%>">
+    <%dumpEqs(SimCodeUtil.sortEqSystems(allEquations),withOperations)%>
   </equations>
   <start-equations size="<%listLength(startValueEquations)%>">
     <%dumpEqs(SimCodeUtil.sortEqSystems(startValueEquations),withOperations)%>

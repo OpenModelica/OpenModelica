@@ -270,9 +270,6 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
  // Derivative variables
  <%(vars.derivativeVars |> v =>
    '<%declareCref(v,"")%> <%declareCref(v,"_PRE")%>');separator="\n"%>
- // Inline variables
- <%(vars.inlineVars |> v =>
-   '<%declareCref(v,"")%> <%declareCref(v,"_PRE")%>');separator="\n"%>
  // Algebraic variables
  <%(vars.algVars |> v =>
    '<%declareCref(v,"")%> <%declareCref(v,"_PRE")%>');separator="\n"%>
