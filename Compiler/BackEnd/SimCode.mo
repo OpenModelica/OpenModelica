@@ -126,6 +126,9 @@ uniontype BackendMapping
     BackendDAE.IncidenceMatrixT mT;
     list<tuple<Integer,list<Integer>>> eqMapping; //indx:order <simEq,{backendEq}>
     list<tuple<Integer,Integer>> varMapping;  //<simVar,backendVar>
+    array<Integer> eqMatch;  //indx:eq entry:var
+    array<Integer> varMatch;  //indx:var entry:eq
+    array<list<Integer>> eqTree;  // arrayIndx:eq list:required eqs
   end BACKENDMAPPING;
   record NO_MAPPING
   end NO_MAPPING;

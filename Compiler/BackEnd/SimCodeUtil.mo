@@ -1485,6 +1485,8 @@ algorithm
       list<tuple<Integer,Integer>> equationSccMapping, eqBackendSimCodeMapping;
       Integer highestSimEqIndex;
       SimCode.BackendMapping backendMapping;
+      
+      list<Integer> debugInt1;  // can be removed
 
     case (dlow, class_, _, fileDir, _, _, _, _, _, _, _, _) equation
       System.tmpTickReset(0);
@@ -1625,8 +1627,9 @@ algorithm
       crefToSimVarHT = createCrefToSimVarHT(modelInfo);
       Debug.fcall(Flags.EXEC_HASH, print, "*** SimCode -> generate cref2simVar hastable done!: " +& realString(clock()) +& "\n");
 
-      backendMapping = getBackendVarMapping(inBackendDAE,crefToSimVarHT,modelInfo,backendMapping);
+      backendMapping = setBackendVarMapping(inBackendDAE,crefToSimVarHT,modelInfo,backendMapping);
       //dumpBackendMapping(backendMapping);
+      
       simCode = SimCode.SIMCODE(modelInfo,
                                 {}, // Set by the traversal below...
                                 recordDecls,
@@ -12271,6 +12274,8 @@ algorithm
   mapping := matchcontinue(dae)
     local
       Integer sizeE,sizeV;
+      array<Integer> eqMatch, varMatch;
+      array<list<Integer>> tree;
       BackendDAE.EqSystems eqs;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
@@ -12278,19 +12283,24 @@ algorithm
       list<BackendDAE.IncidenceMatrixT> mtLst;
       list<tuple<Integer,Integer>> varMap;
       list<tuple<Integer,list<Integer>>> eqMap;
-      list<tuple<Integer,Integer,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT>> tpl;
+      list<tuple<Integer,Integer,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT,array<Integer>,array<Integer>>> tpl;
     case(_)
       equation
         BackendDAE.DAE(eqs=eqs) = dae;
         tpl = List.map(eqs,setUpSystMapping);
-        sizeE = List.fold(List.map(tpl,Util.tuple41),intAdd,0);
-        sizeV = List.fold(List.map(tpl,Util.tuple42),intAdd,0);
+        sizeE = List.fold(List.map(tpl,Util.tuple61),intAdd,0);
+        sizeV = List.fold(List.map(tpl,Util.tuple62),intAdd,0);       
         eqMap = {};
         varMap = {};
+        eqMatch = arrayCreate(sizeE,0);
+        varMatch = arrayCreate(sizeV,0);
         m = arrayCreate(sizeE,{});
         mt = arrayCreate(sizeV,{});
-        ((_,_,m,mt)) = List.fold(tpl,appendAdjacencyMatrices,(0,0,m,mt));
-        mapping = SimCode.BACKENDMAPPING(m,mt,eqMap,varMap);
+        ((_,_,m,mt,eqMatch,varMatch)) = List.fold(tpl,appendAdjacencyMatrices,(0,0,m,mt,eqMatch,varMatch));
+        tree = arrayCreate(sizeE,{});
+        tree = List.fold4(List.intRange(sizeE),setUpEqTree,m,mt,eqMatch,varMatch,tree);
+        tree = Util.arrayMap(tree,List.unique);
+        mapping = SimCode.BACKENDMAPPING(m,mt,eqMap,varMap,eqMatch,varMatch,tree);
       then
         mapping;
     else
@@ -12299,26 +12309,53 @@ algorithm
   end matchcontinue;
 end setUpBackendMapping;
 
+protected function setUpEqTree" builds the tree graph. the index depicts an equation and the entry depicts the direct predecessors.
+author:Waurich TUD 2014-04"
+  input Integer beq;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrixT mt;
+  input array<Integer> eqMatch;
+  input array<Integer> varMatch;
+  input array<list<Integer>> treeIn;
+  output array<list<Integer>> treeOut;
+protected
+  Integer assVar;
+  list<Integer> preEqs,depVars;
+algorithm
+  assVar := arrayGet(eqMatch,beq);
+  depVars := arrayGet(m,beq);
+  depVars := List.filter1OnTrue(depVars,intGt,0);
+  depVars := List.filter1OnTrue(depVars,intNe,assVar);
+  preEqs := List.map1(depVars,Util.arrayGetIndexFirst,varMatch);
+  Util.arrayUpdateElementListAppend(beq,preEqs,treeIn);
+  treeOut := treeIn;
+end setUpEqTree;
+
 protected function appendAdjacencyMatrices"appends the adjacencymatrices for the different equation systems.
 the indeces are raised according to the number of equations and vars in the previous systems
 author:Waurich TUD 2014-04"
-  input tuple<Integer,Integer,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT> tplIn;
-  input tuple<Integer,Integer,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT> foldIn;
-  output tuple<Integer,Integer,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT> foldOut;
+  input tuple<Integer,Integer,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT,array<Integer>,array<Integer>> tplIn;
+  input tuple<Integer,Integer,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT,array<Integer>,array<Integer>> foldIn;
+  output tuple<Integer,Integer,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT,array<Integer>,array<Integer>> foldOut;
 algorithm
   foldOut := matchcontinue(tplIn,foldIn)
     local
       Integer sizeE,sizeV,addV,addE;
+      array<Integer> eqMatch,varMatch,eqMatchIn,varMatchIn;
       BackendDAE.IncidenceMatrix mIn,m;
       BackendDAE.IncidenceMatrixT mtIn,mt;
-    case((addE,addV,m,mt),(sizeE,sizeV,mIn,mtIn))
+    case((addE,addV,m,mt,eqMatch,varMatch),(sizeE,sizeV,mIn,mtIn,eqMatchIn,varMatchIn))
       equation
         m = Util.arrayMap1(m,addIntLst,sizeV);
         mt = Util.arrayMap1(mt,addIntLst,sizeE);
+        eqMatch = Util.arrayMap1(eqMatch,intAdd,sizeV);
+        varMatch = Util.arrayMap1(varMatch,intAdd,sizeE);
         mIn = List.fold2(List.intRange(addE),updateInAdjacencyMatrix,sizeE,m,mIn);
         mtIn = List.fold2(List.intRange(addV),updateInAdjacencyMatrix,sizeV,mt,mtIn);
+        eqMatchIn = List.fold2(List.intRange(addE),updateInMatching,sizeE,eqMatch,eqMatchIn);
+        varMatchIn = List.fold2(List.intRange(addV),updateInMatching,sizeV,varMatch,varMatchIn);
       then
-        ((sizeE+addE,sizeV+addV,mIn,mtIn));
+        ((sizeE+addE,sizeV+addV,mIn,mtIn,eqMatchIn,varMatchIn));
   end matchcontinue;
 end appendAdjacencyMatrices;
 
@@ -12336,6 +12373,20 @@ algorithm
   mOut := arrayUpdate(mIn,idx+offset,entry);
 end updateInAdjacencyMatrix;
 
+protected function updateInMatching"updates an entry in the matching. the indeces are raised by the offset
+author: Waurich TUD 2014-04"
+  input Integer idx;
+  input Integer offset;
+  input array<Integer> matchingAppend;
+  input array<Integer> matchingIn;
+  output array<Integer> matchingOut;
+protected
+  Integer entry;
+algorithm
+  entry := arrayGet(matchingAppend,idx);
+  matchingOut := arrayUpdate(matchingIn,idx+offset,entry);
+end updateInMatching;
+
 protected function addIntLst"add an integer to every entry in the lst
 author:Waurich TUD 2014-04"
   input list<Integer> lstIn;
@@ -12348,32 +12399,36 @@ end addIntLst;
 protected function setUpSystMapping"gets the mapping information for every system of equations in the backenddae.
 author:Waurich TUD 2014-04"
   input BackendDAE.EqSystem dae;
-  output tuple<Integer,Integer,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT> outTpl;
+  output tuple<Integer,Integer,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT,array<Integer>,array<Integer>> outTpl;
 protected
   Integer sizeV,sizeE;
+  array<Integer> ass1, ass2;
   BackendDAE.IncidenceMatrix m;
   BackendDAE.IncidenceMatrixT mt;
+  BackendDAE.Matching matching;
 algorithm
   outTpl := matchcontinue(dae)
   case(_)
     equation
-      BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt))= dae;
+      BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt),matching=matching)= dae;
+      BackendDAE.MATCHING(ass1=ass1,ass2=ass2) = matching;
       sizeE = BackendDAEUtil.equationArraySizeDAE(dae);
       sizeV = BackendVariable.daenumVariables(dae);
     then
-      ((sizeE,sizeV,m,mt));
+      ((sizeE,sizeV,m,mt,ass2,ass1));
   case(_)
     equation
-      BackendDAE.EQSYSTEM(m=NONE(),mT=NONE()) = dae;
-      (_,m,mt) = BackendDAEUtil.getIncidenceMatrix(dae,BackendDAE.ABSOLUTE(),NONE());
+      BackendDAE.EQSYSTEM(m=NONE(),mT=NONE(),matching=matching) = dae;
+      BackendDAE.MATCHING(ass1=ass1,ass2=ass2) = matching;
+      (_,m,mt) = BackendDAEUtil.getIncidenceMatrix(dae,BackendDAE.NORMAL(),NONE());
       sizeE = BackendDAEUtil.equationArraySizeDAE(dae);
       sizeV = BackendVariable.daenumVariables(dae);
     then
-      ((sizeE,sizeV,m,mt));
+      ((sizeE,sizeV,m,mt,ass2,ass1));
   end matchcontinue;
 end setUpSystMapping;
 
-protected function getBackendVarMapping"sets the varmapping in the backendmapping.
+protected function setBackendVarMapping"sets the varmapping in the backendmapping.
 author:Waurich TUD 2014-04"
   input BackendDAE.BackendDAE dae;
   input SimCode.HashTableCrefToSimVar ht;
@@ -12383,6 +12438,8 @@ author:Waurich TUD 2014-04"
 algorithm
   bmapOut := matchcontinue(dae,ht,modelInfo,bmapIn)
     local
+      array<Integer> eqMatch,varMatch;
+      array<list<Integer>> tree;
       SimCode.VarInfo varInfo;
       SimCode.SimVars allVars;
       list<Integer> bVarIdcs,simVarIdcs;
@@ -12396,7 +12453,7 @@ algorithm
       BackendDAE.IncidenceMatrixT mt;
     case(_,_,_,_)
       equation
-        SimCode.BACKENDMAPPING(m=m,mT=mt,eqMapping=eqMapping,varMapping=varMapping) = bmapIn;
+        SimCode.BACKENDMAPPING(m=m,mT=mt,eqMapping=eqMapping,varMapping=varMapping,eqMatch=eqMatch,varMatch=varMatch,eqTree=tree) = bmapIn;
         SimCode.MODELINFO(varInfo=varInfo,vars=allVars) = modelInfo;
         BackendDAE.DAE(eqs=eqs) = dae;
         vars = BackendVariable.equationSystemsVarsLst(eqs,{});
@@ -12408,11 +12465,11 @@ algorithm
         //print(stringDelimitList(List.map(crefs,ComponentReference.printComponentRefStr),"\n")+&"\n");
         //List.map_0(simVars,dumpVar);
       then
-        SimCode.BACKENDMAPPING(m,mt,eqMapping,varMapping);
+        SimCode.BACKENDMAPPING(m,mt,eqMapping,varMapping,eqMatch,varMatch,tree);
     else
       SimCode.NO_MAPPING();
   end matchcontinue;
-end getBackendVarMapping;
+end setBackendVarMapping;
 
 protected function getSimVarIndex"gets the index from a SimVar and calculates the place in the localData array
 author:Waurich TUD 2014-04"
@@ -12483,15 +12540,17 @@ author:Waurich TUD 2014-04"
 algorithm
   mapOut := match(simEqs,bEq,mapIn)
     local
+      array<Integer> eqMatch,varMatch;
+      array<list<Integer>> tree;
       list<tuple<Integer,list<Integer>>> eqMapping;
       list<tuple<Integer,Integer>> varMapping;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
-    case(_,_,SimCode.BACKENDMAPPING(m=m,mT=mt,eqMapping=eqMapping,varMapping=varMapping))
+    case(_,_,SimCode.BACKENDMAPPING(m=m,mT=mt,eqMapping=eqMapping,varMapping=varMapping,eqMatch=eqMatch,varMatch=varMatch,eqTree=tree))
       equation
         eqMapping = List.fold1(simEqs, appendEqIdcs, bEq, eqMapping);
       then
-        SimCode.BACKENDMAPPING(m,mt,eqMapping,varMapping);
+        SimCode.BACKENDMAPPING(m,mt,eqMapping,varMapping,eqMatch,varMatch,tree);
     case(_,_,SimCode.NO_MAPPING())
       then
         mapIn;
@@ -12508,21 +12567,135 @@ algorithm
   oSccIdc:=(iCurrentIdx,iEqIdx)::iSccIdc;
 end appendEqIdcs;
 
+public function getReqSimEqsForSimVar"outputs the indeces for the required simEqSys for the indexed SimVar
+author:Waurich TUD 2014-04"
+  input Integer simVar;
+  input SimCode.BackendMapping map;
+  output list<Integer> simEqs;
+protected
+  Integer bVar,bEq;
+  list<Integer> beqs;
+  array<Integer> eqMatch,varMatch;
+  array<list<Integer>> tree;
+  BackendDAE.IncidenceMatrix m;
+  BackendDAE.IncidenceMatrixT mt;
+algorithm
+  SimCode.BACKENDMAPPING(m=m,mT=mt,eqMatch=eqMatch,varMatch=varMatch,eqTree=tree) := map;
+  bVar := getBackendVarForSimVar(simVar,map);
+  bEq := arrayGet(varMatch,bVar);
+  beqs := collectReqSimEqs(bEq,tree,{});
+  simEqs := List.map1(beqs,getSimEqsForBackendEqs,map);  
+  simEqs := List.unique(simEqs);
+end getReqSimEqsForSimVar;
+
+protected function collectReqSimEqs"gets the previously required equations from the tree and gets the required equations for them and so on
+author:Waurich TUD 2014-04"
+  input Integer eq;
+  input array<list<Integer>> tree;
+  input list<Integer> eqsIn;
+  output list<Integer> eqsOut;
+protected
+  list<Integer> preEqs,reqEqs;
+algorithm
+  preEqs := arrayGet(tree,eq);
+  (_,preEqs,_) := List.intersection1OnTrue(preEqs,eqsIn,intEq);
+  reqEqs := listAppend(preEqs,eqsIn);
+  eqsOut := List.fold1(preEqs,collectReqSimEqs,tree,reqEqs);
+end collectReqSimEqs;
+
+protected function getBackendVarForSimVar"outputs the backendVar indeces for the given SimEVar index
+author:Waurich TUD 2014-04"
+  input Integer simVar;
+  input SimCode.BackendMapping map;
+  output Integer bVar;
+protected
+  list<tuple<Integer,Integer>> varMapping;
+algorithm
+  SimCode.BACKENDMAPPING(varMapping=varMapping) := map;  
+  ((_,bVar)):= List.getMemberOnTrue(simVar,varMapping,findSimVar);
+end getBackendVarForSimVar;
+
+protected function getBackendEqsForSimEq"outputs the backendEq indeces for the given SimEqSys index
+author:Waurich TUD 2014-04"
+  input Integer simEq;
+  input SimCode.BackendMapping map;
+  output list<Integer> bEqs;
+protected
+  list<tuple<Integer,list<Integer>>> eqMapping;
+algorithm
+  SimCode.BACKENDMAPPING(eqMapping=eqMapping) := map;  
+  ((_,bEqs)):= List.getMemberOnTrue(simEq,eqMapping,findSimEqs);
+end getBackendEqsForSimEq;
+
+protected function getSimEqsForBackendEqs"outputs the simEqSys index for the given backendEquation index
+author:Waurich TUD 2014-04"
+  input Integer bEq;
+  input SimCode.BackendMapping map;
+  output Integer simEq;
+protected
+  list<tuple<Integer,list<Integer>>> eqMapping;
+algorithm
+  SimCode.BACKENDMAPPING(eqMapping=eqMapping) := map;  
+  ((simEq,_)):= List.getMemberOnTrue(bEq,eqMapping,findBEqs);
+end getSimEqsForBackendEqs;
+
+protected function findSimVar"outputs true if the tuple contains mapping information about the SimVar
+author:Waurich TUD 2014-04"
+  input Integer simVar;
+  input tuple<Integer,Integer> varTpl;
+  output Boolean b;
+protected
+  Integer simVar1;
+algorithm
+  (simVar1,_) := varTpl;
+  b := intEq(simVar,simVar1);
+end findSimVar;
+
+protected function findSimEqs"outputs true if the tuple contains mapping information about the SimEquation
+author:Waurich TUD 2014-04"
+  input Integer simEq;
+  input tuple<Integer,list<Integer>> eqTpl;
+  output Boolean b;
+protected
+  Integer simEq1;
+algorithm
+  (simEq1,_) := eqTpl;
+  b := intEq(simEq,simEq1);
+end findSimEqs;
+
+protected function findBEqs"outputs true if the tuple contains mapping information about the backend equation
+author:Waurich TUD 2014-04"
+  input Integer bEq;
+  input tuple<Integer,list<Integer>> eqTpl;
+  output Boolean b;
+protected
+  list<Integer> bEq1;
+algorithm
+  (_,bEq1) := eqTpl;
+  b := listMember(bEq,bEq1);
+end findBEqs;
+
 protected function dumpBackendMapping"dump function for the backendmapping
 author:Waurich TUD 2014-04"
   input SimCode.BackendMapping mapIn;
 protected
+  array<Integer> eqMatch,varMatch;
+  array<list<Integer>> tree;
   list<tuple<Integer,list<Integer>>> eqMapping;
   list<tuple<Integer,Integer>> varMapping;
   BackendDAE.IncidenceMatrix m;
   BackendDAE.IncidenceMatrixT mt;
 algorithm
-  SimCode.BACKENDMAPPING(m=m,mT=mt,eqMapping=eqMapping,varMapping=varMapping) := mapIn;
+  SimCode.BACKENDMAPPING(m=m,mT=mt,eqMapping=eqMapping,varMapping=varMapping,eqMatch=eqMatch,varMatch=varMatch,eqTree=tree) := mapIn;
   dumpEqMapping(eqMapping);
   dumpVarMapping(varMapping);
-  print("the incidence Matrix (backendIndices)\n");
+  print("\nthe incidence Matrix (backendIndices)\n");
   BackendDump.dumpIncidenceMatrix(m);
-  BackendDump.dumpIncidenceMatrix(mt);
+  BackendDump.dumpIncidenceMatrixT(mt);
+  print("\nvars matched to eq (backend indeces)\n");
+  BackendDump.dumpMatching(varMatch);
+  print("\nequations tree (rows:backendEqs, entrys: list of required backend equations)");
+  BackendDump.dumpIncidenceMatrix(tree);
 end dumpBackendMapping;
 
 protected function dumpEqMapping"dump function for the equation mapping
