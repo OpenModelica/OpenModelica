@@ -111,28 +111,19 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = SIMVARS(stateVars = listStates))) then
   let fmiVersion = '2.0'
   let modelName = dotPath(modelInfo.name)
-  let modelIdentifier = modelNamePrefix(simCode)
-  let description = ''
-  let author = ''
-  let version= ''
+  let description = modelInfo.description
   let generationTool= 'OpenModelica Compiler <%getVersionNr()%>'
   let generationDateAndTime = xsdateTime(getCurrentDateTime())
   let variableNamingConvention = 'structured'
-  let numberOfContinuousStates = if intEq(vi.numStateVars,1) then statesnumwithDummy(listStates) else  vi.numStateVars
   let numberOfEventIndicators = vi.numZeroCrossings
-//  description="<%description%>"
-//    author="<%author%>"
-//    version="<%version%>"
   <<
   fmiVersion="<%fmiVersion%>"
   modelName="<%modelName%>"
-  modelIdentifier="<%modelIdentifier%>"
   guid="{<%guid%>}"
   description="<%description%>"
   generationTool="<%generationTool%>"
   generationDateAndTime="<%generationDateAndTime%>"
   variableNamingConvention="<%variableNamingConvention%>"
-  numberOfContinuousStates="<%numberOfContinuousStates%>"
   numberOfEventIndicators="<%numberOfEventIndicators%>"
   >>
 end fmi2ModelDescriptionAttributes;
