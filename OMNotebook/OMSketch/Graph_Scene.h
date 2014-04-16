@@ -116,43 +116,43 @@ class Graph_Scene:public QGraphicsScene
      void draw_rect();
      void draw_rect_move(QPointF pnt,QPointF pnt1);
      void draw_rect_state(QPointF pnt,QPointF pnt1);
-     
+
 
      void draw_round_rect();
      void draw_round_rect_move(QPointF pnt,QPointF pnt1);
      void draw_round_rect_state(QPointF pnt,QPointF pnt1);
-     
+
 
      void draw_ellep();
      void draw_ellep_move(QPointF pnt,QPointF pnt1);
      void draw_ellep_state(QPointF pnt,QPointF pnt1);
-     
+
 
      void draw_polygon();
      void draw_polygon_move(QPointF pnt,QPointF pnt1);
      void draw_polygon_state(QPointF pnt,QPointF pnt1);
-     
+
 
      void draw_arc();
      void draw_arc_move(QPointF pnt,QPointF pnt1);
      void draw_arc_state(QPointF pnt,QPointF pnt1);
-     
-   
+
+
      void draw_arrow();
      void draw_arrow_move(QPointF pnt,QPointF pnt1);
      void draw_arrow_state(QPointF pnt,QPointF pnt1);
-     
+
 
 
      void draw_linearrow();
      void draw_linearrow_move(QPointF pnt,QPointF pnt1);
      void draw_linearrow_state(QPointF pnt,QPointF pnt1);
-     
+
 
      void draw_triangle();
      void draw_triangle_move(QPointF pnt,QPointF pnt1);
      void draw_triangle_state(QPointF pnt,QPointF pnt1);
-     
+
 
      void draw_text();
      void draw_text_move(QPointF pnt,QPointF pnt1);
@@ -181,7 +181,7 @@ class Graph_Scene:public QGraphicsScene
      Draw_LineArrow *linearrow;
      QVector<Draw_LineArrow*> linearrows;
 
-    
+
      QVector<Draw_Rectangle*> rects;
 
      //Round Rectangle variables
@@ -210,7 +210,7 @@ class Graph_Scene:public QGraphicsScene
 
    QVector<QPointF> pnts;
 
-   
+
 
      QGraphicsLineItem *line_item;
 

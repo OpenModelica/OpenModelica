@@ -26,7 +26,7 @@
  *
  * See the full OSMC Public License conditions for more details.
  *
- * For more information about the Qt-library visit TrollTech's webpage 
+ * For more information about the Qt-library visit TrollTech's webpage
  * regarding the Qt licence: http://www.trolltech.com/products/qt/licensing.html
  */
 
@@ -141,7 +141,7 @@ namespace IAEX
         throw runtime_error(msg.c_str());
       }
     }
-    
+
     if(ba.indexOf("<InputCell") != -1)
     {
       /*
@@ -408,7 +408,7 @@ namespace IAEX
       {
         if( e.tagName() == XML_TEXT )
         {
-          
+
           // adrpo --> add URL conversion because Qt 4.4.2 doesn't accept \ in the URL!
           QString text = e.text();
           // replace all href="...\..." with href=".../..."
@@ -426,7 +426,7 @@ namespace IAEX
           {
             while (done > -1)
             {
-              // int numX = rx.numCaptures(); QString s1 = rx.cap(1),s2 = rx.cap(2); 
+              // int numX = rx.numCaptures(); QString s1 = rx.cap(1),s2 = rx.cap(2);
               // cout << numX << " " << s1.toStdString() << "-" << s2.toStdString() << endl;
               text = text.replace(rx, rx.cap(1) + QString::fromAscii("/") + rx.cap(2));
               done = rx.indexIn(text);

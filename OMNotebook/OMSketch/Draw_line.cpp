@@ -150,14 +150,14 @@ void Draw_Line::setTranslate(QPointF pnt,QPointF pnt1)
 {
 
   if(item->rotation()==0)
-  {     
+  {
         for(int i=0;i<poly_pnts.size();i++)
             poly_pnts[i]-=(pnt-pnt1);
 
        for(int i=0;i<poly_pnts.size();i++)
          edge_items[i]->setRect((QRectF(QPointF(poly_pnts[i].x()-5.0,poly_pnts[i].y()-5.0),QPointF(poly_pnts[i].x()+5.0,poly_pnts[i].y()+5.0))));
 
-  
+
        QPainterPath polygon;
 
        if(!poly_pnts.isEmpty())
@@ -167,7 +167,7 @@ void Draw_Line::setTranslate(QPointF pnt,QPointF pnt1)
      }
 
      item->setPath(polygon);
-  
+
        pnt.setX(((polygon.boundingRect().topLeft().x()+polygon.boundingRect().bottomRight().x())/2)-5);
        pnt.setY(polygon.boundingRect().topLeft().y()-20);
 
@@ -290,7 +290,7 @@ QPainterPath Draw_Line::getPolyLine()
   QPainterPath polygon;
     if(!poly_pnts.isEmpty())
     {
-        
+
         polygon.addPolygon(QPolygonF(poly_pnts));
         drawEdges();
 
@@ -353,7 +353,7 @@ void Draw_Line::drawImage(QPainter *painter, QString &text,QPointF point)
         text+=" "+color_r.setNum(this->pen.style())+"\n";
         text+="PenWidth";
         text+=" "+color_r.setNum(this->pen.width())+"\n";
-        
+
 
     text+="Rotation";
       text+=" "+color_r.setNum(this->item->rotation(),'g',6)+"\n";
@@ -479,7 +479,7 @@ void Draw_Line::showHandles()
 
    if(!Rot_Rect->isVisible())
      Rot_Rect->show();
-}  
+}
 
 void Draw_Line::hideHandles()
 {
@@ -507,7 +507,7 @@ bool Draw_Line::isClickedOnHandleOrShape(QPointF point)
         else if(isMouseClickedOnRotateHandle(point))
             return true;
     }
-    
+
   return false;
 }
 
@@ -531,7 +531,7 @@ void Draw_Line::rotateShape(float angle)
     Rot_Rect->update();
 
   QPointF pnt1;
-  
+
   pnt1.setX((item->boundingRect().topLeft().x()+item->boundingRect().bottomRight().x())/2);
     pnt1.setY((item->boundingRect().topLeft().y()+item->boundingRect().bottomRight().y())/2);
     for(int i=0;i<edge_items.size();i++)

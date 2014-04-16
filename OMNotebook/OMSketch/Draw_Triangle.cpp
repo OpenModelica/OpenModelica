@@ -137,13 +137,13 @@ void Draw_Triangle::setEdgeRects()
     Rot_Rect = new QGraphicsEllipseItem(QRectF(pnt1,pnt2));
     Rot_Rect->setBrush(rectbrush);
 
-  
+
 }
 
 void Draw_Triangle::updateEdgeRects()
 {
-  
-     
+
+
   handles[0]->setRect(QRectF(QPointF(item->boundingRect().topLeft().x()-5.0,item->boundingRect().topLeft().y()-5.0),QPointF(item->boundingRect().topLeft().x()+5.0,item->boundingRect().topLeft().y()+5.0)));
   handles[1]->setRect(QRectF(QPointF(item->boundingRect().topLeft().x()-5.0,((item->boundingRect().topLeft().y()+StrtPnt.y())/2)-5.0),QPointF(item->boundingRect().topLeft().x()+5.0,((item->boundingRect().topLeft().y()+StrtPnt.y())/2)+5.0)));
   handles[2]->setRect(QRectF(QPointF(item->boundingRect().topRight().x()-5.0,item->boundingRect().topRight().y()-5.0),QPointF(item->boundingRect().topRight().x()+5.0,item->boundingRect().topRight().y()+5.0)));
@@ -152,9 +152,9 @@ void Draw_Triangle::updateEdgeRects()
   handles[6]->setRect(QRectF(QPointF(EndPnt.x()-5.0,EndPnt.y()-5.0),QPointF(EndPnt.x()+5.0,EndPnt.y()+5.0)));
   handles[5]->setRect(QRectF(QPointF(((StrtPnt.x()+EndPnt.x())/2)-5.0,StrtPnt.y()-5.0),QPointF((StrtPnt.x()+EndPnt.x())/2+5.0,StrtPnt.y()+5.0)));
   handles[7]->setRect(QRectF(QPointF(HeightPnt.x()-5.0,HeightPnt.y()-5.0),QPointF(HeightPnt.x()+5.0,HeightPnt.y()+5.0)));
-  
 
-  
+
+
   Bounding_Rect->setRect(QRectF(item->boundingRect().topLeft(),item->boundingRect().bottomRight()));
 
     QPointF pnt1,pnt2;
@@ -303,7 +303,7 @@ void Draw_Triangle::setTranslate(QPointF pnt,QPointF pnt1)
     Rot_Rect->setPos(Rot_Rect->pos()-(pnt-pnt1));
   Rot_Rect->update();
     Bounding_Rect->setPos(Bounding_Rect->pos()-(pnt-pnt1));
-    
+
 }
 
 void Draw_Triangle::translate_items(QPointF pnt,QPointF pnt1)
@@ -341,7 +341,7 @@ void Draw_Triangle::setRotate(const QPointF &pnt,const QPointF &pnt1)
      {
       handles[i]->setRotation(angle);
       handles[i]->update();
-     }  
+     }
        Rot_Rect->setRotation(angle);
        Bounding_Rect->setRotation(angle);
     }
@@ -349,12 +349,12 @@ void Draw_Triangle::setRotate(const QPointF &pnt,const QPointF &pnt1)
     item->update();
     Rot_Rect->update();
     Bounding_Rect->update();
-    
+
 
     QPointF rot_pnt(item->boundingRect().topLeft()-item->sceneBoundingRect().topLeft());
     QPointF rot_pnt1(item->boundingRect().bottomRight()-item->sceneBoundingRect().bottomRight());
 
-  
+
 
     //setStartPoint(item->sceneBoundingRect().topLeft());
     //setEndPoint(item->sceneBoundingRect().bottomRight());
@@ -450,7 +450,7 @@ void Draw_Triangle::drawImage(QPainter *painter, QString &text,QPointF point)
     painter->setBrush(this->brush);
     painter->drawPath(triangle);
 
-  
+
     text+="Triangle\n";
     text+="Coords";
     text+=" "+str_x.setNum(this->triangle_pnts.size()*2.0);
@@ -635,7 +635,7 @@ QBrush Draw_Triangle::getBrush()
 
 void Draw_Triangle::showHandles()
 {
-  
+
   for(int i=0;i<handles.size();i++)
   {
     if(!handles[i]->isVisible())
@@ -679,7 +679,7 @@ bool Draw_Triangle::isClickedOnHandleOrShape(QPointF point)
         else if(isMouseClickedOnRotateHandle(point))
             return true;
     }
-    
+
   return false;
 }
 

@@ -51,6 +51,6 @@
 #include <QtGui/QDialog>
 #include <QtGui/QColorDialog>
 #include <QtGui/QDialogButtonBox>
-     
+
 
 #endif // BASIC_H

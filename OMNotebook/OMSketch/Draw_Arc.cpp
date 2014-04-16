@@ -16,7 +16,7 @@ Draw_Arc::Draw_Arc()
 
   isObjectSelected=false;
 
-  
+
 
     click=-1;
 
@@ -251,7 +251,7 @@ void Draw_Arc::setTranslate(QPointF pnt,QPointF pnt1)
     setEndPoint(getEndPnt()-(pnt-pnt1));
     setCurvePoint(getCurvePnt()-(pnt-pnt1));*/
 
-  
+
   item->setPos(item->pos()-(pnt-pnt1));
   item->update();
 
@@ -485,7 +485,7 @@ bool Draw_Arc::isClickedOnHandleOrShape(QPointF point)
         else if(isMouseClickedOnRotateHandle(point))
             return true;
     }
-    
+
     return false;
 }
 

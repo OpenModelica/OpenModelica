@@ -66,7 +66,7 @@ class Draw_Polygon:QGraphicsPathItem
    QPainterPath getPolygon();
    void drawEdges();
    QPainterPath getPolygon(int indx,QPointF pnt1,QPointF pnt2);
-   
+
    //writes the shapes and shapes attributes to an image
    void drawImage(QPainter *painter,QString &text,QPointF point);
 
@@ -97,7 +97,7 @@ class Draw_Polygon:QGraphicsPathItem
    //hide handles
    void hideHandles();
 
-   //return the handle index 
+   //return the handle index
    int getHandelIndex();
 
    //rotate the shapes

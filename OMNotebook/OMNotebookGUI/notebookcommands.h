@@ -26,7 +26,7 @@
  *
  * See the full OSMC Public License conditions for more details.
  *
- * For more information about the Qt-library visit TrollTech's webpage 
+ * For more information about the Qt-library visit TrollTech's webpage
  * regarding the Qt licence: http://www.trolltech.com/products/qt/licensing.html
  */
 
@@ -121,7 +121,7 @@ namespace IAEX
         QDomDocument doc( "OMNotebook" );
 
         QFileInfo fileInfo( filename_ );
-        
+
         QFile file ( filename_.trimmed() );
 
         QString oldFilepath;
@@ -175,18 +175,18 @@ namespace IAEX
         QByteArray ba = doc.toByteArray(2);
         if (!ba.size())
         {
-          string msg = "Document is empty and will not be saved to file: " + 
+          string msg = "Document is empty and will not be saved to file: " +
             file.fileName().toStdString();
           throw runtime_error( msg.c_str() );
         }
 
         if(file.exists() && (file.permissions().testFlag(QFile::WriteUser) != true))
         {
-          string msg = "The file for saving the document is not writable: " + 
+          string msg = "The file for saving the document is not writable: " +
             file.fileName().toStdString() + "\nPlease use Save As.";
           throw runtime_error( msg.c_str() );
         }
-        
+
         if (file.open(QIODevice::WriteOnly | QIODevice::Truncate) == true)
         {
           if(filename_.endsWith("onbz", Qt::CaseInsensitive))
@@ -203,8 +203,8 @@ namespace IAEX
         }
         else
         {
-          string msg = "Could not write document to file:\n" + 
-            file.fileName().toStdString() + " because:\n" + 
+          string msg = "Could not write document to file:\n" +
+            file.fileName().toStdString() + " because:\n" +
             file.errorString().toStdString() + " error code: ";
           throw runtime_error( msg.c_str() );
         }

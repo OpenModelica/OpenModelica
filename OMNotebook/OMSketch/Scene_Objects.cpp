@@ -12,7 +12,7 @@ Scene_Objects::Scene_Objects()
 
     ObjectStrtBoundPnt=pnt1;
     ObjectEndBoundPnt=pnt1;
- 
+
   rotation=0;
 }
 
@@ -115,7 +115,7 @@ int Scene_Objects::getObject(int &position)
               return ObjectId;
            }
 
-          
+
            if(ObjectId==9)
            {
               position=ObjectPos;

@@ -359,24 +359,24 @@ void Sketch_Files::parseText(QString text,QVector<int> &values,QVector<float> &v
             {
         if(subText.contains("Rotation"))
           state=1;
-        if(state!=1)       
-        {   
+        if(state!=1)
+        {
                     qDebug()<<"values "<<subText<<"\n";
                     values.push_back(subText.toInt(&ok,10));
-          
+
         }
 
         if(state==1)
         {
           if(!subText.contains("Rotation"))
             value.push_back(subText.toFloat(&ok));
-        } 
+        }
             }
 
-      
+
         }
 
-    
+
     }
 }
 

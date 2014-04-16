@@ -592,14 +592,14 @@ bool Draw_RoundRect::isClickedOnHandleOrShape(QPointF point)
         else if(isMouseClickedOnRotateHandle(point))
             return true;
     }
-    
+
     return false;
 }
 
 void Draw_RoundRect::rotateShape(float angle)
 {
-  
-  
+
+
   item->setRotation(angle);
     Strt_Rect->setRotation(angle);
     End_Rect->setRotation(angle);
@@ -619,7 +619,7 @@ void Draw_RoundRect::rotateShape(float angle)
     Rot_Rect->setTransformOriginPoint(pnt1);
 }
 
-Draw_RoundRect::~Draw_RoundRect() 
+Draw_RoundRect::~Draw_RoundRect()
 {
-  
+
 }

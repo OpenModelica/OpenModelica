@@ -43,7 +43,7 @@ class Scene_Objects
     QGraphicsEllipseItem *Rot_Rect;
     QPen pen;
     QBrush brush;
-    
+
 
 
 };

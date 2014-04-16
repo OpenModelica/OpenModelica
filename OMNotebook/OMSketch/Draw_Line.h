@@ -66,7 +66,7 @@ class Draw_Line:QGraphicsPathItem
    QPainterPath getPolyLine();
    void drawEdges();
    QPainterPath getPolyLine(int indx,QPointF pnt1,QPointF pnt2);
-   
+
    //writes the shapes and shapes attributes to an image
    void drawImage(QPainter *painter,QString &text,QPointF point);
 
@@ -88,13 +88,13 @@ class Draw_Line:QGraphicsPathItem
    void setPenWidth(const int width);
    QPen getPen();
 
- 
+
    //show handles
    void showHandles();
    //hide handles
    void hideHandles();
 
-   //return the handle index 
+   //return the handle index
    int getHandelIndex();
 
    //rotate the shapes

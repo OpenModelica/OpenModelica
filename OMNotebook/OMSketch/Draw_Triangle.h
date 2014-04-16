@@ -50,7 +50,7 @@ class Draw_Triangle:public QGraphicsPathItem
     //checking the mouse position to resize and move rectangle
     bool isMouseClickedOnHandle(const QPointF pnt);
   bool isMouseClickedOnRotateHandle(const QPointF pnt);
-    bool isMouseClickedOnShape(const QPointF pnt);  
+    bool isMouseClickedOnShape(const QPointF pnt);
     bool get_line(QPointF pnt);
   bool isClickedOnHandleOrShape(QPointF point);
 

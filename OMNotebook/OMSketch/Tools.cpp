@@ -8,7 +8,7 @@ Tools::Tools(Document *document1,DocumentView *doc1):document(document1),doc_vie
     fileMenu = new QMenu;
     editMenu = new QMenu;
     toolMenu = new QMenu;
-  
+
     tool_bar = new QToolBar();
     rect = new QToolButton();
     hlayout = new QVBoxLayout;
@@ -27,7 +27,7 @@ Tools::Tools(Document *document1,DocumentView *doc1):document(document1),doc_vie
 
         edit=false;
         isSaved=false;
-  
+
         tabWidget = new QTabWidget();
     add_components();
 
@@ -55,14 +55,14 @@ Tools::Tools(Document *document1,DocumentView *doc1):document(document1),doc_vie
     }
 
         scene->isObjectEdited=false;
-  
+
     /*if(application =="Text")
     {
         textEdit = new QTextEdit;
         openFile();
         setCentralWidget(textEdit);
     }*/
-  
+
     button_action();
     menu();
         draw_shapes();
@@ -71,8 +71,8 @@ Tools::Tools(Document *document1,DocumentView *doc1):document(document1),doc_vie
     msg_save=msg->addButton("Save",QMessageBox::AcceptRole);
     msg_dnt_save=msg->addButton("Don't Save",QMessageBox::AcceptRole);
     msg_cancle=msg->addButton("Cancel",QMessageBox::AcceptRole);
-  
-  
+
+
     filenames.clear();
         onbfilenames.clear();
         imagefilenames.clear();
@@ -92,7 +92,7 @@ Tools::Tools(Document *document1,DocumentView *doc1):document(document1),doc_vie
 
     itemSelected=false;
 
-  
+
 }
 
 void Tools::button_action()
@@ -138,7 +138,7 @@ void Tools::button_action()
 
   file_image_save = new QAction(tr("&Export Image"),this);
   connect(file_image_save,SIGNAL(triggered()), this, SLOT(draw_image_save()));
-  
+
   copy = new QAction(tr("&Copy"),this);
   copy->setShortcut(tr("Ctrl+C"));
   connect(copy,SIGNAL(triggered()), this, SLOT(draw_copy()));
@@ -191,7 +191,7 @@ void Tools::draw_arc()
 void Tools::draw_arrow()
 {
   QMessageBox::about(this,"Arrow","In Process");
-  //in process 
+  //in process
   /*isSaved=false;
     if(!copy_shape->isEnabled())
         copy_shape->setDisabled(false);
@@ -316,7 +316,7 @@ void Tools::draw_ellipse()
   enableProperties();
 
   reloadShapesProerties();
-  
+
   scene->setObject(3);
 
 }
@@ -335,7 +335,7 @@ void Tools::draw_polygon()
   scene->hide_object_edges();
 
   enableProperties();
-  
+
   reloadShapesProerties();
 
 
@@ -421,12 +421,12 @@ void Tools::draw_save()
       else if(opt==QMessageBox::Yes)
       {
                           QString file_name=QFileDialog::getSaveFileName(this,"Save",QString(),tr("Image(*.png);;Image(*.jpg);;Images(*.bmp)"));
-         
-        QMessageBox::about(this,"file name ",file_name);  
+
+        QMessageBox::about(this,"file name ",file_name);
         writeImage(file_name);
-          
+
         isSaved=true;
-      } 
+      }
       else if(opt == QMessageBox::Cancel)
       {
        break;
@@ -555,9 +555,9 @@ void Tools::draw_image_save()//exporting of image
         QPointF minPos,maxPos;
         objectsPos.clear();
       QString text = QString();
-     
+
         scene->getObjectsPos(objectsPos);
-    
+
 
      for(int i=0;i<scene->getObjects().size();i++)
        scene->getObjects().at(i)->print();
@@ -583,28 +583,28 @@ void Tools::draw_image_save()//exporting of image
      QTextImageFormat imageformat;
      QTextCursor cursor = document->getCursor()->currentCell()->textCursor();
 
-     QTextCharFormat format2 = cursor.charFormat(); 
-      
+     QTextCharFormat format2 = cursor.charFormat();
+
        //p->end();
      isSaved=false;
      if(edit==false)
      {
         QString num;
-              
+
         QSize size;
         QString num1;
 
-   
+
         //copies the image and coordinates into image_info struct
-        images.image = new QImage(); 
+        images.image = new QImage();
         images.image=image;
-     
-    
+
+
         size.setWidth(images.image->width());
         size.setHeight(images.image->height());
-       
+
       //QMessageBox::about(this,"image text first export ",text);
-       
+
         if(!cursor.isNull())
         {
         dir.setPath(dir.absolutePath()+"/OMNotebook_tempfiles");
@@ -621,7 +621,7 @@ void Tools::draw_image_save()//exporting of image
         //QMessageBox::about(this,"image name",images.imageName);
         imagefilenames.push_back(imagename);
           editor = document->getCursor()->currentCell()->textEdit();
-      
+
           if( editor )
           {
           // save text settings and set them after image have been inserted
@@ -632,20 +632,20 @@ void Tools::draw_image_save()//exporting of image
 
             //qDebug()<<"images width and height "<<images.image->width()<<" "<<images.image->height()<<"\n";
             //qDebug()<<"image width and height "<<image->width()<<"  "<<image->height()<<"\n";
-                              
+
             imageformat.merge( format );
             imageformat.setHeight( images.image->height());
             imageformat.setWidth( images.image->width());
             imageformat.setName( imagename );
-          
+
             cursor.insertImage( imageformat );
             statusBar->showMessage("Image Exported ",10000);
             }
-      
+
          }
 
-     
-   } 
+
+   }
 
    if(edit==true)
    {
@@ -657,20 +657,20 @@ void Tools::draw_image_save()//exporting of image
       edit_img_info=edit_imgs_info[edit_imgs_info.size()-1];
     }
 
-        
+
     if(edit_img_info.image)
     {
       //QMessageBox::about(this,"edit image info name ",edit_img_info.imageName);
       delete edit_img_info.image;
       edit_img_info.image=NULL;
     }
-    edit_img_info.image = new QImage(); 
+    edit_img_info.image = new QImage();
       edit_img_info.image=image;
     QString num;
     //image->setText("Shapes",text);
     //QMessageBox::about(this,"image text ",text);
       edit_img_info.text=text;
-  
+
     //QMessageBox::about(this,"edit image info name ",edit_img_info.imageName);
 
 
@@ -688,10 +688,10 @@ void Tools::draw_image_save()//exporting of image
       {
       QString imagename = QFileInfo(edit_img_info.imageName).completeBaseName();
       imagename+=".png";
-      if(imagename.contains("OMSketchImage"))  
+      if(imagename.contains("OMSketchImage"))
       {
 
-              QMessageBox::about(this,"image",imagename);  
+              QMessageBox::about(this,"image",imagename);
         int strt_indx = imagename.lastIndexOf("e",-1);
         int end_indx = imagename.lastIndexOf(".",-1);
 
@@ -705,7 +705,7 @@ void Tools::draw_image_save()//exporting of image
         dir.setPath(dir.absolutePath()+"/OMNotebook_tempfiles");
         imagename="OMSketchImage";
         imagename+=num.number(pos);
-        imagename=dir.absolutePath() + "/" +imagename; 
+        imagename=dir.absolutePath() + "/" +imagename;
         imagename+=".png";
 
         //dir.setPath(dir.absolutePath()+"/OMNotebook_tempfiles");
@@ -716,8 +716,8 @@ void Tools::draw_image_save()//exporting of image
 
         edit_img_info.imageName=imagename;
       }
-      
-      else if(imagename.contains("png"))  
+
+      else if(imagename.contains("png"))
       {
         int strt_indx = imagename.lastIndexOf("/",-1);
         int end_indx = imagename.lastIndexOf(".",-1);
@@ -736,7 +736,7 @@ void Tools::draw_image_save()//exporting of image
         imagename+="OMSketchImage";
 
         imagename+=num.number(pos);
-      
+
         imagename+=".png";
 
         edit_img_info.imageName=imagename;
@@ -753,7 +753,7 @@ void Tools::draw_image_save()//exporting of image
         dir.setPath(dir.absolutePath()+"/OMNotebook_tempfiles");
           imagename="OMSketchImage";
             imagename=num.number(pos);
-      
+
           imagename+=".png";
 
         dir.setPath(dir.absolutePath()+"/OMNotebook_tempfiles");
@@ -769,7 +769,7 @@ void Tools::draw_image_save()//exporting of image
 
       writeImage(edit_img_info);
       editor = document->getCursor()->currentCell()->textEdit();
-        
+
         if( editor )
         {
           // save text settings and set them after image have been inserted
@@ -784,19 +784,19 @@ void Tools::draw_image_save()//exporting of image
           imageformat1.setHeight( image->height());
           imageformat1.setWidth(  image->width());
           imageformat1.setName( edit_img_info.imageName );
-                    
+
           cursor.insertImage( imageformat1 );
           document->getCursor()->currentCell()->update();
           statusBar->showMessage("Image Exported ",10000);
       }
-    
+
        }
 
      edit_imgs_info[edit_imgs_info.size()-1]=edit_img_info;
      edit=false;
     }
-   
-   
+
+
  }
 
 
@@ -811,12 +811,12 @@ void Tools::SaveSketchImage(QString filename)
       filename=file_info.absolutePath();
 
     QFile fd1(filename+"/files.xml");//It is a datafile from which we are taking the data
-    QXmlStreamWriter xw1(&fd1);  
+    QXmlStreamWriter xw1(&fd1);
     fd1.open(QFile::WriteOnly);//checks whther the file is open or not
     xw1.setAutoFormatting(true);
     xw1.writeStartDocument();
     xw1.writeStartElement("Files");
-  
+
     for(int i=0;i<documents_info.size();i++)
     {
       for(int j=0;j<documents_info[i].images_info.size();j++)
@@ -828,7 +828,7 @@ void Tools::SaveSketchImage(QString filename)
         xw1.writeTextElement("CellId",documents_info[i].images_info[j].cellId);
       }
     }
-     
+
     xw1.writeEndElement();
     xw1.writeEndDocument();
    }
@@ -859,32 +859,32 @@ void Tools::readXml(QString file_name)
      bool ok;
 
      //QMessageBox::about(this,"entered","Entered reading files");
-     
+
      QString num1;
 
-     
-     
+
+
      while(!xr.atEnd())
      {
           //QMessageBox::about(this,"entered","Entered reading file contents");
         if(xr.name()=="FileName")
         {
-      
+
          num1=(QString)xr.readElementText(QXmlStreamReader::IncludeChildElements);
          filenames1.push_back(num1);
-  
+
         }
 
         if(xr.name()=="OnbFileName")
         {
-      
+
          num1=(QString)xr.readElementText(QXmlStreamReader::IncludeChildElements);
          onbfilenames1.push_back(num1);
         }
 
-        
+
         if(xr.name()=="Position")
-        {  
+        {
          num1=(QString)xr.readElementText(QXmlStreamReader::IncludeChildElements);
          positions1.push_back(num1);
         }
@@ -952,7 +952,7 @@ void Tools::readXml(QString file_name)
       /*In order to compare weather a image belong to a document, its enough to compare the image name and document name,
       str1 conatins the image name and every image is index after its onb document name,In order to extract the onb document name
       from the image. The last part of image file name is reomved by following function.*/
-      /*The two sting lengths are subtracted to get by how much length the image is differed from document*/ 
+      /*The two sting lengths are subtracted to get by how much length the image is differed from document*/
 
       str1.remove(str1.length()-(str1.length()-indx),(str1.length()-indx));
 
@@ -962,7 +962,7 @@ void Tools::readXml(QString file_name)
       if(str==str1)
       {
              //QMessageBox::about(this,"attrib",filenames1[j]+" "+positions1[j]+" "+texts1[j]+" "+cellIds1[j]+" "+img.imageName);
-       
+
              img.imageName=filenames1[j];
        img.cursor_position=positions1[j];
        img.cell_text=texts1[j];
@@ -976,20 +976,20 @@ void Tools::readXml(QString file_name)
   }
 
 
-  
+
 
   /*for(int i=0;i<documents_info.size();i++)
   {
     QMessageBox::about(this,"images info ",num.number(documents_info[i].images_info.size()));
   }*/
 
-  
-  
+
+
 }
 
  void Tools::writeXml(QString &image_name)
  {
-      
+
  }
 
 
@@ -1019,20 +1019,20 @@ void Tools::draw_paste()
 
 void Tools::mousePressEvent(QMouseEvent *event)
 {
-  if(itemSelected) 
+  if(itemSelected)
   {
      QPen shapePen;
      QBrush shapeBrush;
 
      scene->getSelectedShapeProperties(shapePen,shapeBrush);
 
-  
+
     select_pen->setCurrentIndex(shapePen.style());
     penWidth->setValue(shapePen.width());
     pen.setColor(QColor(shapePen.color().red(),shapePen.color().green(),shapePen.color().blue(),255));
 
     select_brush->setCurrentIndex(shapeBrush.style());
-   
+
     if(scene->isObjectEdited)
       isSaved=false;
 
@@ -1072,7 +1072,7 @@ void Tools::draw_shapes()
 
     addToolBar(tool_bar);
 
-    
+
 }
 
 void Tools::msg_save_file()
@@ -1111,7 +1111,7 @@ void Tools::openFile()
 void Tools::open(const QString filename)
 {
   /*file_name=filename;
-  
+
   if(file_name!=NULL)
     {
        scene->open_Scene(file_name);
@@ -1128,13 +1128,13 @@ void Tools::open()//edit
   scene->new_Scene();
   enableProperties();
   getCellId(document->getCursor()->currentCell(),id);
-  
+
   //gets the format at the current cursor position
   QTextCharFormat format = document->getCursor()->currentCell()->textCursor().charFormat();
 
   image_info img;
 
-  //checks for image at that cursor position 
+  //checks for image at that cursor position
   if(format.objectType()==1)
   {
     QTextImageFormat format1 = format.toImageFormat();
@@ -1143,7 +1143,7 @@ void Tools::open()//edit
     //editing  an image from saved file, that is when an open file option is used choosed in OMnotebook
     if(imagename.contains("file:///"))
     {
-          QImage *image=document->getImage(imagename);  
+          QImage *image=document->getImage(imagename);
           imagename.remove( "file:///" );
       file_name=imagename;
       onb_file_name=document->getFilename();
@@ -1154,7 +1154,7 @@ void Tools::open()//edit
       QMessageBox::about(this,"filename",edit_imgs_info[0].imageName);
       imageinfo(imagename);
       edit=true;
-    } 
+    }
     else //editing an image from an unsaved file
     {
           file_name=imagename;
@@ -1167,7 +1167,7 @@ void Tools::open()//edit
       edit=true;
     }
     //QMessageBox::about(this,"image name",imagename);
-  }  
+  }
 
 }
 
@@ -1185,11 +1185,11 @@ void Tools::imageinfo(QString filename)
    QVector<float> value;
    values.clear();
    value.clear();
-   
-   
+
+
    //values contains cooridinates, color info etc
    files->parseText(text,values,value);
-   
+
    QString num;
 
   //QMessageBox::about(this,"values size",num.number(values.size()));
@@ -1198,7 +1198,7 @@ void Tools::imageinfo(QString filename)
    {
        QMessageBox::about(this,"image values ",num.setNum(values[i]));
    }*/
-   
+
   if(values.size()!=0)
     {
        scene->open_Scene(values,value);
@@ -1212,7 +1212,7 @@ void Tools::getCells(const QVector<Cell*> cells)
   {
      QString cell_size;
      //QMessageBox::about(this,"cells in tools from notebook",cell_size.number(cells.size()));
-  
+
      this->cells=cells;
      //QMessageBox::about(this,"cells in tools",cell_size.number(this->cells.size()));
   }
@@ -1238,7 +1238,7 @@ void Tools::getCells(const QVector<Cell*> cells)
 
         // get the image name
         QString imagename = cells[i]->textHtml().mid( start, end - start );
-        
+
         QImage *image=document->getImage(imagename);
 
         //QMessageBox::about(this,"images in cells ",image->text("Shapes"));
@@ -1248,16 +1248,16 @@ void Tools::getCells(const QVector<Cell*> cells)
         //img.image = new QImage();
         img.image = image;
         img.imageName=imagename;
-        img.cellId =num.number(i); 
+        img.cellId =num.number(i);
         doc_images.push_back(img);
-                
+
         pos = end + 1;
       }
       else
         break;
     }
   }
-  
+
   //QMessageBox::about(this,"images cells ",num.number(doc_images.size()));
   QVector<int> values;
   values.clear();
@@ -1296,7 +1296,7 @@ void Tools::getCells(const QVector<Cell*> cells)
        if(documents_info[i].onbFileName==document->getFilename())
        {
          found=true;
-       }      
+       }
       }
     if(found)
       {
@@ -1308,11 +1308,11 @@ void Tools::getCells(const QVector<Cell*> cells)
            {
                      documents_info[i].images_info.push_back(doc_images[j]);
            //QMessageBox::about(this,"entered","new image is added");
-          
-           }   
+
+           }
          break;
           }
-       }  
+       }
        }
        else
        {
@@ -1323,8 +1323,8 @@ void Tools::getCells(const QVector<Cell*> cells)
        }
      }
 
-  images_info.clear();*/ 
-  
+  images_info.clear();*/
+
 }
 
 void Tools::getCellId(const Cell* cell,int &id)
@@ -1352,12 +1352,12 @@ void Tools::getCellId(const Cell* cell,int &id)
      cells.insert(indx+1,c);
      id=indx+1;
    }*/
-     
+
 }
 
 void Tools::getFileName(const QString &FileName)
 {
-  
+
 }
 
 
@@ -1367,11 +1367,11 @@ void Tools::closeEvent(QCloseEvent* event)
   if(!isSaved)
   {
       int opt=QMessageBox::question(this,"Save file","File not saved, do you want to save",QMessageBox::Yes | QMessageBox::Default, QMessageBox::No,  QMessageBox::Cancel);
-    if(opt==QMessageBox::No) 
+    if(opt==QMessageBox::No)
     {
       edit=false;
       scene->new_Scene();
-      
+
         //break;
     }
     else if(opt==QMessageBox::Yes)
@@ -1385,7 +1385,7 @@ void Tools::closeEvent(QCloseEvent* event)
        isSaved=true;
        edit=false;
        scene->new_Scene();
-    } 
+    }
     else if(opt == QMessageBox::Cancel)
     {
       event->ignore();
@@ -1395,7 +1395,7 @@ void Tools::closeEvent(QCloseEvent* event)
   else
     scene->new_Scene();
 
-  
+
 }
 
 void Tools::writeImage(QImage *&image)
@@ -1415,7 +1415,7 @@ void Tools::writeImage(QImage *image,QString fileName)
   writer.setDescription( "Temporary OMNotebook image" );
   writer.setQuality( 100 );
   writer.write( *image );
-      
+
 }
 
 
@@ -1427,7 +1427,7 @@ void Tools::setColors()
        pen.setColor(QColor(color));
        scene->setPen(pen);
      isSaved=false;
-  }   
+  }
 
 }
 
@@ -1599,7 +1599,7 @@ void Tools::brush_color()
 
 void Tools::readFileAttributes(QVector<QString> &subStrings)
 {
-  
+
   int id;
   bool ok;
   QString str,str1;
@@ -1635,7 +1635,7 @@ void Tools::readFileAttributes(QVector<QString> &subStrings)
       }
     }
   }
-    
+
    scene->new_Scene();
 
    QImageReader imr(file_name);
@@ -1647,12 +1647,12 @@ void Tools::readFileAttributes(QVector<QString> &subStrings)
      {
        files->parseText(text,subStrings);
      }
-  
+
 }
 
 void Tools::insertImage(QString imageName)
 {
-        
+
    /*QString img_name=imageName;
 
    QString num;
@@ -1685,7 +1685,7 @@ void Tools::insertImage(QString imageName)
 
         QMessageBox::about(this,"image name  ",imagename);
 
-        
+
         QImage *image = new QImage(imagename);
 
         QMessageBox::about(this,"images in cells ",image->text("Shapes"));
@@ -1695,16 +1695,16 @@ void Tools::insertImage(QString imageName)
         //img.image = new QImage();
         img.image = image;
         img.text = image->text("Shapes");
-        img.cellId =num.number(i); 
+        img.cellId =num.number(i);
         imgs.push_back(img);
-                
+
         pos = end + 1;
       }
       else
         break;
     }
   }
-  
+
   QMessageBox::about(this,"images cells ",num.number(imgs.size()));
   QVector<int> values;
   values.clear();
@@ -1742,11 +1742,11 @@ void Tools::insertImage(QString imageName)
        if(documents_info[i].onbFileName==img_name)
        {
          found=true;
-       }      
+       }
       }
     if(found)
       {
-           
+
          for(int i=0;i<documents_info.size();i++)
       {
           if(documents_info[i].onbFileName==img_name)
@@ -1754,13 +1754,13 @@ void Tools::insertImage(QString imageName)
                  for(int j=0;j<images_info.size();j++)
            {
            documents_info[i].images_info.push_back(images_info[j]);
-           
+
            //QMessageBox::about(this,"entered","new image is added");
-          
-           }   
+
+           }
          break;
           }
-       }  
+       }
        }
        else
        {
@@ -1784,7 +1784,7 @@ void Tools::insertImage(QString imageName)
   }
 
   images_info.clear();*/
-  
+
 }
 
 //function to write the image of each shape the data the image_info object
@@ -1795,7 +1795,7 @@ void Tools::writeImage(image_info imageinfo)
   QImageWriter writer( imageinfo.imageName, "png" );
   writer.setDescription( "Temporary OMNotebook image" );
   writer.setQuality( 100 );
-  
+
   writer.setText("Shapes",imageinfo.text);
   writer.write( *imageinfo.image );
 }
@@ -1808,11 +1808,11 @@ void Tools::writeImage(image_info imageinfo,QString filename,int indx)
 
 void Tools::writeImage(document_info &docs)
 {
-   
+
   /*QTextEdit *editor = new QTextEdit();
     QTextImageFormat imageformat;
     QTextCursor cursor;
-  
+
   QString num;
   QString str;
 
@@ -1822,7 +1822,7 @@ void Tools::writeImage(document_info &docs)
    {
    for(int i=0;i<docs.images_info.size();i++)
    {
-    
+
       //if(!QFile(docs.images_info[i].imageName).exists())
       {
            str=QFileInfo(docs.onbFileName).completeBaseName();
@@ -1848,7 +1848,7 @@ void Tools::writeImage(document_info &docs)
           writeImage(docs.images_info[i]);
           //QString imagename = img_file_name;
           /*editor = cell->textEdit();
-    
+
           if( editor )
           {
            // save text settings and set them after image have been inserted
@@ -1860,14 +1860,14 @@ void Tools::writeImage(document_info &docs)
            imageformat.setHeight( docs.images_info[i].image->height());
            imageformat.setWidth( docs.images_info[i].image->width());
            imageformat.setName(str);
-                    
+
             cursor.insertImage( imageformat );
           }//end of if
           }//end of if
       }//end of if
-     }//end of for   
+     }//end of for
    }//end of if
-   
+
    if(!edit_imgs_info.isEmpty())
    {
      for(int i=0;i<documents_info.size();i++)
@@ -1898,7 +1898,7 @@ void Tools::writeImage(document_info &docs)
                    {
                     writeImage(edit_imgs_info[k]);
                     editor = cell->textEdit();
-    
+
                     if( editor )
                     {
                      // save text settings and set them after image have been inserted
@@ -1910,19 +1910,19 @@ void Tools::writeImage(document_info &docs)
                      imageformat.setHeight( edit_imgs_info[k].image->height());
                      imageformat.setWidth( edit_imgs_info[k].image->width());
                      imageformat.setName(edit_imgs_info[k].imageName);
-                    
+
                       cursor.insertImage( imageformat );
                     }//end of if
                    }//end of if
-                   
+
             }
          }
       }
       }
      }
- 
+
    }
-   
+
    edit_imgs_info.clear();
 
    if(!filenames.isEmpty())
@@ -1940,19 +1940,19 @@ void Tools::writeImage(document_info &docs)
 
 void Tools::updateCells()
 {
-  
+
 }
- 
+
 void Tools::updateImages()
 {
-   
+
 }
 
 
 void Tools::writeImage(QString filename)
 {
   //QRgb rgb;
-  if(!scene->getObjects().isEmpty())   
+  if(!scene->getObjects().isEmpty())
   {
        QVector<QPointF> objectsPos;
        QPointF minPos,maxPos;
@@ -1961,9 +1961,9 @@ void Tools::writeImage(QString filename)
     //QString str_x,str_y,str_x1,str_y1;
     //QString color_r,color_g,color_b;
     //int r,g,b;
-     
+
       scene->getObjectsPos(objectsPos);
-   
+
 
     for(int i=0;i<scene->getObjects().size();i++)
        scene->getObjects().at(i)->print();
@@ -1983,7 +1983,7 @@ void Tools::writeImage(QString filename)
       scene->getMaxPosition(maxPos);
 
       QPainter* p = new QPainter(image);
-      
+
       qDebug()<<"min position "<<minPos<<"\n";
     scene->writeToImage(p,text,-(minPos));
 
@@ -2013,8 +2013,8 @@ void Tools::writeImage(QString filename)
       writer_img.setText("Shapes",text);
         writer_img.write( *image );
     }
-  
-    
+
+
 
     p->end();
   }
@@ -2227,7 +2227,7 @@ void Tools::color_pen_components()
 
     penWidthLayout->addWidget(label);
     penWidthLayout->addWidget(penWidth);
-  
+
 
     color_pen_layout->addWidget(select_color,0,0,1,1,Qt::AlignLeft);
     color_pen_layout->addWidget(fill_color,1,0,1,1,Qt::AlignLeft);
@@ -2259,7 +2259,7 @@ void Tools::reloadShapesProerties()
   select_brush->setCurrentIndex(0);
   penWidth->setValue(0);
   pen.setColor(QColor(0,0,0,255));
-   
+
 }
 
 void Tools::enableProperties()
@@ -2295,12 +2295,12 @@ void Tools::mouseReleaseEvent(QMouseEvent *event)
     {
             setCursor(Qt::ArrowCursor);
             pen.setStyle(Qt::SolidLine);
-            brush.setStyle(Qt::NoBrush);  
+            brush.setStyle(Qt::NoBrush);
     }
 
-     
+
     }
-   
+
 
 }
 
@@ -2320,7 +2320,7 @@ void Tools::keyReleaseEvent(QKeyEvent* event)
     if(event->key()==Qt::Key_Control)
     {
        scene->isMultipleSelected=false;
-     
+
     }
 }
 

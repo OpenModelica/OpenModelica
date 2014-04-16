@@ -199,7 +199,7 @@ bool Draw_Ellipse::isMouseClickedOnStartHandle(QPointF pnt)
 
 bool Draw_Ellipse::isMouseClickedOnEndHandle(QPointF pnt)
 {
-      
+
     if(this->End_Rect->isUnderMouse())
     {
         draw_state=2;
@@ -535,7 +535,7 @@ bool Draw_Ellipse::isClickedOnHandleOrShape(QPointF point)
         else if(isMouseClickedOnRotateHandle(point))
             return true;
     }
-    
+
     return false;
 }
 

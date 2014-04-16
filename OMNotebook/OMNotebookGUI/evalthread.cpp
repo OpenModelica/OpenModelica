@@ -26,7 +26,7 @@
  *
  * See the full OSMC Public License conditions for more details.
  *
- * For more information about the Qt-library visit TrollTech's webpage 
+ * For more information about the Qt-library visit TrollTech's webpage
  * regarding the Qt licence: http://www.trolltech.com/products/qt/licensing.html
  */
 
@@ -37,7 +37,7 @@
 #include <QMessageBox>
 using namespace std;
 
-EvalThread::EvalThread(InputCellDelegate* delegate_, QString expr_, QObject* parent): 
+EvalThread::EvalThread(InputCellDelegate* delegate_, QString expr_, QObject* parent):
   QThread(parent), delegate_(delegate_), expr(expr_)
 {
   res = "";
@@ -93,7 +93,7 @@ QMutex evalMutex; // adrpo 2009-01-19
 
 void EvalThread::run()
 {
-  evalMutex.lock(); // lock so NO other threads can enter this part!  
+  evalMutex.lock(); // lock so NO other threads can enter this part!
   try
   {
     delegate_->evalExpression(expr);

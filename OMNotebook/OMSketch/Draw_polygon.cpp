@@ -30,13 +30,13 @@ void Draw_Polygon::setStartPoint(QPointF pnt)
      {
      qDebug()<<"entered the new line mode \n";
           line->setLine(QLineF(pnt,pnt));
-      
+
      }
      else
      {
           line = new QGraphicsLineItem();
           line->setLine(QLineF(pnt,pnt));
-      
+
      }
 }
 
@@ -152,14 +152,14 @@ void Draw_Polygon::setTranslate(QPointF pnt,QPointF pnt1)
 {
 
   if(item->rotation()==0)
-  {     
+  {
         for(int i=0;i<poly_pnts.size();i++)
             poly_pnts[i]-=(pnt-pnt1);
 
        for(int i=0;i<poly_pnts.size()-1;i++)
          edge_items[i]->setRect((QRectF(QPointF(poly_pnts[i].x()-5.0,poly_pnts[i].y()-5.0),QPointF(poly_pnts[i].x()+5.0,poly_pnts[i].y()+5.0))));
 
-  
+
        QPainterPath polygon;
 
        if(!poly_pnts.isEmpty())
@@ -169,7 +169,7 @@ void Draw_Polygon::setTranslate(QPointF pnt,QPointF pnt1)
      }
 
      item->setPath(polygon);
-  
+
        pnt.setX(((polygon.boundingRect().topLeft().x()+polygon.boundingRect().bottomRight().x())/2)-5);
        pnt.setY(polygon.boundingRect().topLeft().y()-20);
 
@@ -292,7 +292,7 @@ QPainterPath Draw_Polygon::getPolygon()
   QPainterPath polygon;
     if(!poly_pnts.isEmpty())
     {
-        
+
         polygon.addPolygon(QPolygonF(poly_pnts));
         drawEdges();
 
@@ -569,7 +569,7 @@ void Draw_Polygon::showHandles()
 
    if(!Rot_Rect->isVisible())
      Rot_Rect->show();
-}  
+}
 
 void Draw_Polygon::hideHandles()
 {
@@ -597,7 +597,7 @@ bool Draw_Polygon::isClickedOnHandleOrShape(QPointF point)
         else if(isMouseClickedOnRotateHandle(point))
             return true;
     }
-    
+
   return false;
 }
 

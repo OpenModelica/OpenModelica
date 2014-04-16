@@ -19,7 +19,7 @@ class Tools:public QMainWindow
       struct image_info
       {
              QString imageName;//image file name
-             QImage* image;//image 
+             QImage* image;//image
        QString text;//text written into the image
        QString cellId;//cellId
        QString cell_text;//text of the cell
@@ -57,9 +57,9 @@ class Tools:public QMainWindow
       //function takes the information from image_info and filename
       void writeImage(image_info imageinfo,QString filename,int indx);
 
-      
-      void writeImage(QString filename); 
-      
+
+      void writeImage(QString filename);
+
 
 
       void updateCells();
@@ -67,7 +67,7 @@ class Tools:public QMainWindow
       void updateImages();
 
         QVector<QString> filenames;
-      
+
         private slots:
            //methods initializes the respective shapes to draw
            void draw_arc();
@@ -111,19 +111,19 @@ class Tools:public QMainWindow
 
        void enableProperties();
 
-       
+
 
     protected:
        //void mouseMoveEvent(QMouseEvent *);
            void mousePressEvent(QMouseEvent *);
        void mouseReleaseEvent(QMouseEvent *);
        void closeEvent(QCloseEvent* event);//function to close the window
-       
-           
+
+
 
            void keyPressEvent(QKeyEvent *);
            void keyReleaseEvent(QKeyEvent *);
-          
+
         private:
            void button_action();
            void action();
@@ -140,7 +140,7 @@ class Tools:public QMainWindow
        void item_selected(Graph_Scene* scene_item);
 
        void reloadShapesProerties();
-    
+
        QString application;
        QString file_name,onb_file_name,img_file_name;
 
@@ -180,10 +180,10 @@ class Tools:public QMainWindow
      QStatusBar *statusBar;
 
      image_info images;
-     image_info edit_img_info; 
+     image_info edit_img_info;
 
 
-   
+
      QVector<QString> onbfilenames;
      QVector<QString> imagefilenames;
      QVector<QString> positions;
@@ -197,17 +197,17 @@ class Tools:public QMainWindow
      QVector<document_info> documents_info;
 
      //Return the present cellId
-     void getCellId(const Cell* cell,int &id);//Added by jhansi 
+     void getCellId(const Cell* cell,int &id);//Added by jhansi
 
      void writeImage(QImage *&image);
 
        QTextEdit *textEdit;
        QTextCharFormat *textFormat;
 
-     
+
      Document *document;
      DocumentView *doc_view;
-     
+
      bool itemSelected;
 
      bool edit;
@@ -220,7 +220,7 @@ class Tools:public QMainWindow
      QBrush brush;
        QColor color;
 
-     
+
      QTabWidget *tabWidget;
 
        //push buttons for file managment
@@ -241,11 +241,11 @@ class Tools:public QMainWindow
        QWidget *tab_widget;
        QSize size;
 
-     Sketch_Files* files; 
+     Sketch_Files* files;
 
      QVector<QImage*> drawn_images;
-     
-     
+
+
 };
 
 #endif // TOOLS_H

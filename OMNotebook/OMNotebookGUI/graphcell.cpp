@@ -26,7 +26,7 @@
  *
  * See the full OSMC Public License conditions for more details.
  *
- * For more information about the Qt-library visit TrollTech's webpage 
+ * For more information about the Qt-library visit TrollTech's webpage
  * regarding the Qt licence: http://www.trolltech.com/products/qt/licensing.html
  */
 
@@ -471,7 +471,7 @@ namespace IAEX {
     emit urlClicked(QUrl(text()));
   }
 
-  MyAction::MyAction(const QString& text, QObject* parent): QAction(text, parent) 
+  MyAction::MyAction(const QString& text, QObject* parent): QAction(text, parent)
   {
   }
 
@@ -505,8 +505,8 @@ namespace IAEX {
   * 2005-11-23 AF, added document to the constructor, because need
   * the document to insert images to the output part if ploting.
   */
-  GraphCell::GraphCell(Document *doc, QWidget *parent) : 
-   Cell(parent), evaluated_(false), closed_(true), delegate_(0), 
+  GraphCell::GraphCell(Document *doc, QWidget *parent) :
+   Cell(parent), evaluated_(false), closed_(true), delegate_(0),
     oldHeight_( 0 ), document_(doc), mpPlotWindow(0)
   {
     QWidget *main = new QWidget(this);
@@ -1307,7 +1307,7 @@ namespace IAEX {
   bool GraphCell::isEvaluated()
   {
     return evaluated_;
-  }  
+  }
 
   void GraphCell::setExpr(QString expr)
   {
@@ -1377,8 +1377,8 @@ namespace IAEX {
 
       QString openmodelica = OmcInteractiveEnvironment::OpenModelicaHome();
       if( openmodelica.isEmpty() )
-        QMessageBox::critical( 0, 
-           "OpenModelica Error", 
+        QMessageBox::critical( 0,
+           "OpenModelica Error",
            "Could not find environment variable OPENMODELICAHOME; OMNotebook will therefore not work correctly" );
 
       if( openmodelica.endsWith("/") || openmodelica.endsWith( "\\") )
@@ -1419,10 +1419,10 @@ namespace IAEX {
         return;
       }
 
-      {    
+      {
         guard->lock();
         try
-        {          
+        {
           // adrpo:FIXME! WRONG! TODO! this is wrong!
           //       the commands should be sent to OMC in the same sequence
           //       they appear in the notebook, otherwise a simulate command

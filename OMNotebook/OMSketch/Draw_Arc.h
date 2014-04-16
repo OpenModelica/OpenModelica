@@ -47,7 +47,7 @@ public:
     bool isMouseClickedOnCurveHandle(const QPointF pnt);
     bool isMouseClickedOnRotateHandle(const QPointF pnt);
     bool isMouseClickedOnShape(const QPointF pnt);
-    bool isClickedOnHandleOrShape(QPointF point); 
+    bool isClickedOnHandleOrShape(QPointF point);
 
     //setting the pen color
     QColor getPenColor();
