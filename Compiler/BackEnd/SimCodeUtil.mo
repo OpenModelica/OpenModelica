@@ -12573,7 +12573,7 @@ author:Waurich TUD 2014-04"
   input SimCode.BackendMapping map;
   output list<Integer> simVars;
 protected
-  list<Integer> bVars,bEqs,simVars;
+  list<Integer> bVars,bEqs;
   list<list<Integer>> bVarsLst;
   list<tuple<Integer,list<Integer>>> eqMapping;
   list<tuple<Integer,Integer>> varMapping;
