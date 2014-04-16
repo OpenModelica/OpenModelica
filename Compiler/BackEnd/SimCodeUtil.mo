@@ -1485,7 +1485,7 @@ algorithm
       list<tuple<Integer,Integer>> equationSccMapping, eqBackendSimCodeMapping;
       Integer highestSimEqIndex;
       SimCode.BackendMapping backendMapping;
-      
+
       list<Integer> debugInt1;  // can be removed
 
     case (dlow, class_, _, fileDir, _, _, _, _, _, _, _, _) equation
@@ -1629,7 +1629,7 @@ algorithm
 
       backendMapping = setBackendVarMapping(inBackendDAE,crefToSimVarHT,modelInfo,backendMapping);
       //dumpBackendMapping(backendMapping);
-      
+
       simCode = SimCode.SIMCODE(modelInfo,
                                 {}, // Set by the traversal below...
                                 recordDecls,
@@ -12289,7 +12289,7 @@ algorithm
         BackendDAE.DAE(eqs=eqs) = dae;
         tpl = List.map(eqs,setUpSystMapping);
         sizeE = List.fold(List.map(tpl,Util.tuple61),intAdd,0);
-        sizeV = List.fold(List.map(tpl,Util.tuple62),intAdd,0);       
+        sizeV = List.fold(List.map(tpl,Util.tuple62),intAdd,0);
         eqMap = {};
         varMap = {};
         eqMatch = arrayCreate(sizeE,0);
@@ -12584,7 +12584,7 @@ algorithm
   bVar := getBackendVarForSimVar(simVar,map);
   bEq := arrayGet(varMatch,bVar);
   beqs := collectReqSimEqs(bEq,tree,{});
-  simEqs := List.map1(beqs,getSimEqsForBackendEqs,map);  
+  simEqs := List.map1(beqs,getSimEqsForBackendEqs,map);
   simEqs := List.unique(simEqs);
 end getReqSimEqsForSimVar;
 
@@ -12611,7 +12611,7 @@ author:Waurich TUD 2014-04"
 protected
   list<tuple<Integer,Integer>> varMapping;
 algorithm
-  SimCode.BACKENDMAPPING(varMapping=varMapping) := map;  
+  SimCode.BACKENDMAPPING(varMapping=varMapping) := map;
   ((_,bVar)):= List.getMemberOnTrue(simVar,varMapping,findSimVar);
 end getBackendVarForSimVar;
 
@@ -12623,7 +12623,7 @@ author:Waurich TUD 2014-04"
 protected
   list<tuple<Integer,list<Integer>>> eqMapping;
 algorithm
-  SimCode.BACKENDMAPPING(eqMapping=eqMapping) := map;  
+  SimCode.BACKENDMAPPING(eqMapping=eqMapping) := map;
   ((_,bEqs)):= List.getMemberOnTrue(simEq,eqMapping,findSimEqs);
 end getBackendEqsForSimEq;
 
@@ -12635,7 +12635,7 @@ author:Waurich TUD 2014-04"
 protected
   list<tuple<Integer,list<Integer>>> eqMapping;
 algorithm
-  SimCode.BACKENDMAPPING(eqMapping=eqMapping) := map;  
+  SimCode.BACKENDMAPPING(eqMapping=eqMapping) := map;
   ((simEq,_)):= List.getMemberOnTrue(bEq,eqMapping,findBEqs);
 end getSimEqsForBackendEqs;
 
