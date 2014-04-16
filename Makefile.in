@@ -156,7 +156,7 @@ lis-clean:
 fix-svn-props:
 	tools/apply_autoprops.py --config .svnprops .
 fix-bom:
-	find . -type f \( ! -path '*/.svn/*' -prune \) | while read file;do sed -i '1 s/^\xef\xbb\xbf//' "$$file";done
+	find . -type f \( ! -path '*/.svn/*' -or -path '*/.git/*' -prune \) | while read file;do sed -i '1 s/^\xef\xbb\xbf//' "$$file";done
 
 SOURCE_DIRS=$(SOURCE_DIRS_UTF8) "libraries/Modelica 2.2.2" testsuite/flattening/libraries/3rdParty/HumMod
 SOURCE_DIRS_UTF8=OM*/ Compiler/ SimulationRuntime/ mosh/ `bash -c echo libraries/{BioChem 1.0,ModelicaAdditions,Modelica_LinearSystems2 2.3,Modelica 1.6,ModelicaServices 1.0,ModelicaServices 1.0 modelica3d,Modelica 3.1,SimpleFluid,Modelica 3.2.1,SimpleVisual.mo}` `bash -c echo testsuite/flattening/libraries/3rdParty/{PlanarMechanics,siemens,SiemensPower,ThermoSysPro}` testsuite/openmodelica/modelicaML testsuite/AVM testsuite/simulation
@@ -164,7 +164,7 @@ SOURCE_DIRS_UTF8=OM*/ Compiler/ SimulationRuntime/ mosh/ `bash -c echo libraries
 bom-error:
 	rm -f bom-error.log bom-error.sh
 	echo "#!/bin/sh\ntest \"\`head -c3 \\\"\$$1\\\"\`\" = \"\`/bin/echo -ne \"\\xef\\xbb\\xbf\"\`\" && (echo \$$1 contains BOM >> bom-error.log)" > bom-error.sh
-	find $(SOURCE_DIRS) -type f \( ! -path '*/.svn/*' -prune \) \( ! -path 'libraries/Modelica 3.2.1/*' -prune \) -exec sh bom-error.sh "{}" ';'
+	find $(SOURCE_DIRS) -type f \( ! -path '*/.svn/*' -or -path '*/.git/*' -prune \) \( ! -path 'libraries/Modelica 3.2.1/*' -prune \) -exec sh bom-error.sh "{}" ';'
 	@if test -e bom-error.log; then cat bom-error.log; fi
 	@test ! -e bom-error.log
 	rm -f bom-error.log bom-error.sh
@@ -174,7 +174,7 @@ tab-error:
           grep -v " 0\$$" | egrep -v '/omc_release/|/omc_debug/|/omc_profiling/|/GenTest/|/antlr-3.2/|Parser/MetaModelica_|Parser/ParModelica_|Parser/Modelica_3_|Parser/ModelicaParser'
 # Trims trailing whitespace and replaces tabs with spaces
 fix-whitespace:
-	find . -type f \( ! -path '*/.svn/*' -prune \) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec sh -c 'sed -i -e "s/	/  /g" -e "s/ *\$$//" "{}"' ";"
+	find . -type f \( ! -path '*/.svn/*' -or -path '*/.git/*' -prune \) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec sh -c 'sed -i -e "s/	/  /g" -e "s/ *\$$//" "{}"' ";"
 
 spellcheck:
 	grep -oE 'gettext[(]["]([^"]|([\\]["]))*["]' `ls Compiler/*/*.mo | grep -v Flags.mo` | sed "s/[\\%]./ /g" | aspell -p ./.openmodelica.aspell --mode=ccpp --lang=en_US list | sort -u | sed 's/^/aspell: /' | tee aspell.log
