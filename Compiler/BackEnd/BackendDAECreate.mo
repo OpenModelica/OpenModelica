@@ -1117,7 +1117,7 @@ algorithm
       DAE.Type t;
 
     case (DAE.VAR(componentRef = name,
-                  
+
                   direction = dir,
                   parallelism = prl,
                   ty = t,

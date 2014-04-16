@@ -8187,7 +8187,7 @@ algorithm
       equation
         path = Absyn.crefToPath(cr);
         Absyn.CLASS(
-          
+
           body = cdef as Absyn.DERIVED(typeSpec = Absyn.TPATH(baseClassPath, _),
                                        attributes = attr as Absyn.ATTR(flowPrefix, streamPrefix, _, _, _, _)) )
         = getPathedClassInProgram(path, p);

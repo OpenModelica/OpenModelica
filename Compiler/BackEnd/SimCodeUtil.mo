@@ -1517,7 +1517,7 @@ algorithm
       BackendDAE.DAE(systs, shared as BackendDAE.SHARED(removedEqs=removedEqs,
                                                         constraints=constraints,
                                                         classAttrs=classAttributes,
-                                                        
+
                                                         symjacs=symJacs,
                                                         eventInfo=BackendDAE.EVENT_INFO(timeEvents=timeEvents))) = dlow;
 
@@ -6719,7 +6719,7 @@ algorithm
 
       BackendDAE.ExtraInfo ei;
 
-    case (BackendDAE.SHARED(knownVars=knvars, externalObjects=extobj, 
+    case (BackendDAE.SHARED(knownVars=knvars, externalObjects=extobj,
                             initialEqs=ie, removedEqs=_, constraints=constrs, classAttrs=clsAttrs, cache=cache, env=env,
                             extObjClasses=extObjClasses, functionTree=funcs, eventInfo=_, backendDAEType=_,  info = ei), _, _, _)
       equation
@@ -7061,7 +7061,7 @@ algorithm
         SimCode.SIMVARS(stateVars=stateVars, algVars=algVars, intAlgVars=intAlgVars, boolAlgVars=boolAlgVars,
                 inputVars=inputVars, outputVars=outputVars, aliasVars=aliasVars, intAliasVars=intAliasVars, boolAliasVars=boolAliasVars,
                 paramVars=paramVars, intParamVars=intParamVars, boolParamVars=boolParamVars, stringAlgVars=stringAlgVars,
-                stringParamVars=stringParamVars, stringAliasVars=stringAliasVars, extObjVars=extObjVars, 
+                stringParamVars=stringParamVars, stringAliasVars=stringAliasVars, extObjVars=extObjVars,
                     realOptimizeConstraintsVars=realOptimizeConstraintsVars) = vars;
         BackendDAE.DAE(shared=BackendDAE.SHARED(info=BackendDAE.EXTRA_INFO(description=description))) = dlow;
         nx = listLength(stateVars);

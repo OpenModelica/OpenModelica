@@ -842,7 +842,7 @@ algorithm
                           prefixes = prefixes as SCode.PREFIXES(
                             replaceablePrefix = _,
                             visibility = vis,
-                            
+
                             innerOuter = _
                           ),
                           attributes = (attr as

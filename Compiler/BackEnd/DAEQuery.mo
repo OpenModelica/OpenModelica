@@ -301,9 +301,9 @@ algorithm
                             varDirection = dir,
                             varType = _,
                             bindExp = _,
-                            
+
                             values = _,
-                            
+
                             connectorType = _)) :: {}),varno)
       equation
         varnostr = intString(varno);
@@ -336,9 +336,9 @@ algorithm
                               varDirection = dir,
                               varType = _,
                               bindExp = _,
-                              
+
                               values = _,
-                              
+
                               connectorType = _)) :: xs),varno)
       equation
         varnostr = intString(varno);
