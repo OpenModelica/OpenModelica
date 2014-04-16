@@ -50,7 +50,7 @@ import CodegenUtil.*;
 import CodegenC.*; //unqualified import, no need the CodegenC is optional when calling a template; or mandatory when the same named template exists in this package (name hiding)
 
 
-template translateModel(SimCode simCode)
+template translateModel(SimCode simCode, String FMUVersion)
  "Generates C code and Makefile for compiling a FMU of a
   Modelica model."
 ::=
@@ -68,24 +68,74 @@ case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   
   let()= textFile(simulationInitFile(simCode,guid), '<%fileNamePrefix%>_init.xml')
   let x = covertTextFileToCLiteral('<%fileNamePrefix%>_init.xml','<%fileNamePrefix%>_init.c')
-  let()= textFile(fmumodel_identifierFile(simCode,guid), '<%fileNamePrefix%>_FMU.c')
-  let()= textFile(fmuModelDescriptionFile(simCode,guid), 'modelDescription.xml')
+  let()= textFile(fmumodel_identifierFile(simCode,guid,FMUVersion), '<%fileNamePrefix%>_FMU.c')
+  let()= textFile(fmuModelDescriptionFile(simCode,guid,FMUVersion), 'modelDescription.xml')
   let()= textFile(fmudeffile(simCode), '<%fileNamePrefix%>.def')
   let()= textFile(fmuMakefile(target,simCode), '<%fileNamePrefix%>_FMU.makefile')
   "" // Return empty result since result written to files directly
 end translateModel;
 
-template fmuModelDescriptionFile(SimCode simCode, String guid)
+template fmuModelDescriptionFile(SimCode simCode, String guid, String FMUVersion)
  "Generates code for ModelDescription file for FMU target."
 ::=
 match simCode
 case SIMCODE(__) then
   <<
   <?xml version="1.0" encoding="UTF-8"?>
-  <%fmiModelDescription(simCode,guid)%>
-
+  <%
+  if stringEq(FMUVersion, "2.0") then fmi2ModelDescription(simCode,guid)
+  else fmiModelDescription(simCode,guid)
+  %>
+  
   >>
 end fmuModelDescriptionFile;
+
+template fmi2ModelDescription(SimCode simCode, String guid)
+ "Generates code for ModelDescription file for FMU target."
+::=
+//  <%UnitDefinitions(simCode)%>
+//  <%VendorAnnotations(simCode)%>
+match simCode
+case SIMCODE(__) then
+  <<
+  <fmiModelDescription
+    <%fmi2ModelDescriptionAttributes(simCode,guid)%>>
+  </fmiModelDescription>
+  >>
+end fmi2ModelDescription;
+
+template fmi2ModelDescriptionAttributes(SimCode simCode, String guid)
+ "Generates code for ModelDescription file for FMU target."
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = SIMVARS(stateVars = listStates))) then
+  let fmiVersion = '2.0'
+  let modelName = dotPath(modelInfo.name)
+  let modelIdentifier = modelNamePrefix(simCode)
+  let description = ''
+  let author = ''
+  let version= ''
+  let generationTool= 'OpenModelica Compiler <%getVersionNr()%>'
+  let generationDateAndTime = xsdateTime(getCurrentDateTime())
+  let variableNamingConvention = 'structured'
+  let numberOfContinuousStates = if intEq(vi.numStateVars,1) then statesnumwithDummy(listStates) else  vi.numStateVars
+  let numberOfEventIndicators = vi.numZeroCrossings
+//  description="<%description%>"
+//    author="<%author%>"
+//    version="<%version%>"
+  <<
+  fmiVersion="<%fmiVersion%>"
+  modelName="<%modelName%>"
+  modelIdentifier="<%modelIdentifier%>"
+  guid="{<%guid%>}"
+  description="<%description%>"
+  generationTool="<%generationTool%>"
+  generationDateAndTime="<%generationDateAndTime%>"
+  variableNamingConvention="<%variableNamingConvention%>"
+  numberOfContinuousStates="<%numberOfContinuousStates%>"
+  numberOfEventIndicators="<%numberOfEventIndicators%>"
+  >>
+end fmi2ModelDescriptionAttributes;
 
 template fmiModelDescription(SimCode simCode, String guid)
  "Generates code for ModelDescription file for FMU target."
@@ -438,7 +488,7 @@ template externalFunction(Function fn)
 end externalFunction;
 
 
-template fmumodel_identifierFile(SimCode simCode, String guid)
+template fmumodel_identifierFile(SimCode simCode, String guid, String FMUVersion)
  "Generates code for ModelDescription file for FMU target."
 ::=
 match simCode
@@ -463,7 +513,7 @@ case SIMCODE(__) then
   #include "fmiModelFunctions.h"
   #include "simulation/solver/initialization/initialization.h"
   #include "simulation/solver/events.h"
-  #include "fmu1_model_interface.h"
+  <%if stringEq(FMUVersion, "2.0") then '#include "fmu2_model_interface.h"' else '#include "fmu1_model_interface.h"'%>
 
   #ifdef __cplusplus
   extern "C" {
@@ -484,9 +534,13 @@ case SIMCODE(__) then
   <%ModelDefineData(modelInfo)%>
 
   // implementation of the Model Exchange functions
-  #define fmu1_model_interface_setupDataStruc <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>
-  #include "fmu1_model_interface.c"
-
+  <%if stringEq(FMUVersion, "2.0") then
+  '#define fmu2_model_interface_setupDataStruc <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>
+  #include "fmu2_model_interface.c"'
+  else
+  '#define fmu1_model_interface_setupDataStruc <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>
+  #include "fmu1_model_interface.c"'%>
+  
   <%setDefaultStartValues(modelInfo)%>
   <%setStartValues(modelInfo)%>
   <%eventUpdateFunction(simCode)%>

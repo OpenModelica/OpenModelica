@@ -206,7 +206,9 @@ install: $(LIBSIMULATION) $(LIBRUNTIME) $(LIBFMIRUNTIME) simulation/libf2c/libf2
 	cp -p $(RUNTIMEUTIL_HEADERS) $(builddir_inc)/c/util/
 	# copy fmi stuff
 	cp -p $(RUNTIME_HEADERS_FMU) ../fmi/export/fmi1/*.h \
-	   ../fmi/export/fmi1/fmu1_model_interface.c $(builddir_inc)/c
+	   ../fmi/export/fmi1/fmu1_model_interface.c \
+	   ../fmi/export/fmi2/*.h \
+	   ../fmi/export/fmi2/fmu2_model_interface.c $(builddir_inc)/c
 	# copy java interface stuff
 	@$(MAKE) -C util/java_interface -f $(LIBMAKEFILE) && \
 	$(MAKE) -C util/java_interface -f $(LIBMAKEFILE) install || \

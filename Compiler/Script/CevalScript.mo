@@ -1202,11 +1202,11 @@ algorithm
       then
         (cache,ret_val,st_1);*/
 
-    case (cache,env,"translateModelFMU", {Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)},st,_)
+    case (cache,env,"translateModelFMU", {Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(str1),Values.STRING(filenameprefix)},st,_)
       equation
         filenameprefix = Util.stringReplaceChar(filenameprefix,".","_");
         simSettings = convertSimulationOptionsToSimCode(defaultSimulationOptions);
-        (cache,ret_val,st_1) = translateModelFMU(cache, env, className, st, filenameprefix, true, SOME(simSettings));
+        (cache,ret_val,st_1) = translateModelFMU(cache, env, className, st, str1, filenameprefix, true, SOME(simSettings));
       then
         (cache,ret_val,st_1);
 
@@ -3561,6 +3561,7 @@ protected function translateModelFMU " author: Frenkel TUD
   input Env.Env inEnv;
   input Absyn.Path className "path for the model";
   input GlobalScript.SymbolTable inInteractiveSymbolTable;
+  input String inFMUVersion;
   input String inFileNamePrefix;
   input Boolean addDummy "if true, add a dummy state";
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
@@ -3569,7 +3570,7 @@ protected function translateModelFMU " author: Frenkel TUD
   output GlobalScript.SymbolTable outInteractiveSymbolTable;
 algorithm
   (outCache,outValue,outInteractiveSymbolTable):=
-  match (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy,inSimSettingsOpt)
+  match (inCache,inEnv,className,inInteractiveSymbolTable,inFMUVersion,inFileNamePrefix,addDummy,inSimSettingsOpt)
     local
       Env.Cache cache;
       list<Env.Frame> env;
@@ -3577,11 +3578,11 @@ algorithm
       GlobalScript.SymbolTable st;
       list<String> libs;
       Values.Value outValMsg;
-      String file_dir, fileNamePrefix, str;
-    case (cache,env,_,st,fileNamePrefix,_,_) /* mo file directory */
+      String file_dir, FMUVersion, fileNamePrefix, str;
+    case (cache,env,_,st,FMUVersion,fileNamePrefix,_,_) /* mo file directory */
       equation
         (cache, outValMsg, st, indexed_dlow, libs, file_dir, _) =
-          SimCodeMain.translateModelFMU(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt);
+          SimCodeMain.translateModelFMU(cache,env,className,st,FMUVersion,fileNamePrefix,addDummy,inSimSettingsOpt);
 
         // compile
         fileNamePrefix = stringAppend(fileNamePrefix,"_FMU");
@@ -3589,7 +3590,7 @@ algorithm
 
       then
         (cache,outValMsg,st);
-    case (cache,_,_,st,_,_,_) /* mo file directory */
+    case (cache,_,_,st,_,_,_,_) /* mo file directory */
       equation
          str = Error.printMessagesStr(false);
       then

@@ -2096,7 +2096,6 @@ external "builtin";
 annotation(preferredView="text");
 end reopenStandardStream;
 
-/* Under Development */
 function importFMU "Imports the Functional Mockup Unit
   Example command:
   importFMU(\"A.fmu\");"
@@ -2111,7 +2110,6 @@ function importFMU "Imports the Functional Mockup Unit
 external "builtin";
 annotation(preferredView="text");
 end importFMU;
-/* Under Development */
 
 function simulate "simulates a modelica model by generating c code, build it and run the simulation executable.
  The only required argument is the className, while all others have some default values.

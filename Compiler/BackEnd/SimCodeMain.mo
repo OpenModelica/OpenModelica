@@ -115,6 +115,7 @@ protected function generateModelCodeFMU "
   input Absyn.Program p;
   input DAE.DAElist dae;
   input Absyn.Path className;
+  input String FMUVersion;
   input String filenamePrefix;
   input Option<SimCode.SimulationSettings> simSettingsOpt;
   output BackendDAE.BackendDAE outIndexedBackendDAE;
@@ -143,7 +144,7 @@ algorithm
   Debug.execStat("SimCode",GlobalScript.RT_CLOCK_SIMCODE);
 
   System.realtimeTick(GlobalScript.RT_CLOCK_TEMPLATES);
-  callTargetTemplatesFMU(simCode, Config.simCodeTarget());
+  callTargetTemplatesFMU(simCode, Config.simCodeTarget(), FMUVersion);
   timeTemplates := System.realtimeTock(GlobalScript.RT_CLOCK_TEMPLATES);
 end generateModelCodeFMU;
 
@@ -196,6 +197,7 @@ public function translateModelFMU
   input Env.Env inEnv;
   input Absyn.Path className "path for the model";
   input GlobalScript.SymbolTable inInteractiveSymbolTable;
+  input String inFMUVersion;
   input String inFileNamePrefix;
   input Boolean addDummy "if true, add a dummy state";
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
@@ -208,9 +210,9 @@ public function translateModelFMU
   output list<tuple<String,Values.Value>> resultValues;
 algorithm
   (outCache,outValue,outInteractiveSymbolTable,outBackendDAE,outStringLst,outFileDir,resultValues):=
-  matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy, inSimSettingsOpt)
+  matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inFMUVersion,inFileNamePrefix,addDummy, inSimSettingsOpt)
     local
-      String filenameprefix,file_dir,resstr;
+      String FMUVersion,filenameprefix,file_dir,resstr;
       DAE.DAElist dae;
       list<Env.Frame> env;
       BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow_1;
@@ -222,7 +224,7 @@ algorithm
       DAE.FunctionTree funcs;
       Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
       String description;
-    case (cache,env,_,st as GlobalScript.SYMBOLTABLE(ast=p),filenameprefix,_, _)
+    case (cache,env,_,st as GlobalScript.SYMBOLTABLE(ast=p),FMUVersion,filenameprefix,_, _)
       equation
         /* calculate stuff that we need to create SimCode data structure */
         System.realtimeTick(GlobalScript.RT_CLOCK_FRONTEND);
@@ -240,7 +242,7 @@ algorithm
         timeBackend = System.realtimeTock(GlobalScript.RT_CLOCK_BACKEND);
 
         (indexed_dlow_1,libs,file_dir,timeSimCode,timeTemplates) =
-          generateModelCodeFMU(dlow_1, p, dae,  className, filenameprefix, inSimSettingsOpt);
+          generateModelCodeFMU(dlow_1, p, dae,  className, FMUVersion, filenameprefix, inSimSettingsOpt);
 
         resultValues =
         {("timeTemplates",Values.REAL(timeTemplates)),
@@ -252,7 +254,7 @@ algorithm
         resstr = stringAppendList({"SimCode: The model ",resstr," has been translated to FMU"});
       then
         (cache,Values.STRING(resstr),st,indexed_dlow_1,libs,file_dir, resultValues);
-    case (_,_,_,_,_,_, _)
+    case (_,_,_,_,_,_,_, _)
       equation
         resstr = Absyn.pathStringNoQual(className);
         resstr = stringAppendList({"SimCode: The model ",resstr," could not be translated to FMU"});
@@ -514,21 +516,22 @@ protected function callTargetTemplatesFMU
 "Generate target code by passing the SimCode data structure to templates."
   input SimCode.SimCode simCode;
   input String target;
+  input String FMUVersion;
 algorithm
-  _ := match (simCode,target)
+  _ := match (simCode,target,FMUVersion)
     local
-      String str;
+      String str,version;
 
-    case (_,"C")
+    case (_,"C",version)
       equation
         Tpl.tplNoret2(SimCodeDump.dumpSimCodeToC, simCode, false);
-        Tpl.tplNoret(CodegenFMU.translateModel, simCode);
+        Tpl.tplNoret2(CodegenFMU.translateModel, simCode, version);
       then ();
-    case (_,"Cpp")
+    case (_,"Cpp",_)
       equation
         Tpl.tplNoret(CodegenFMUCpp.translateModel, simCode);
       then ();
-    case (_,_)
+    case (_,_,_)
       equation
         str = "Unknown template target: " +& target;
         Error.addMessage(Error.INTERNAL_ERROR, {str});

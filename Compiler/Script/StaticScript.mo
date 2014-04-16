@@ -270,7 +270,7 @@ public function elabCallInteractive "This function elaborates the functions defi
       Boolean impl;
       GlobalScript.SymbolTable st;
       Ident cname_str,str;
-      DAE.Exp filenameprefix,exp_1,crefExp,outputFile,dumpExtractionSteps;
+      DAE.Exp filenameprefix,exp_1,crefExp,outputFile,dumpExtractionSteps,fmuversion;
       DAE.Type recordtype;
       list<Absyn.NamedArg> args;
       list<DAE.Exp> excludeList;
@@ -330,6 +330,8 @@ public function elabCallInteractive "This function elaborates the functions defi
       equation
         className = Absyn.crefToPath(cr);
         cname_str = Absyn.pathString(className);
+        (cache,fmuversion) = Static.getOptionalNamedArg(cache,env, SOME(st), impl, "version",
+                                                     DAE.T_STRING_DEFAULT, args, DAE.SCONST("1.0"),pre,info);
         (cache,filenameprefix) = Static.getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix",
                                                      DAE.T_STRING_DEFAULT, args, DAE.SCONST(cname_str),pre,info);
         recordtype =
@@ -339,7 +341,7 @@ public function elabCallInteractive "This function elaborates the functions defi
            NONE(),DAE.emptyTypeSource);
       then
         (cache,Expression.makeBuiltinCall("translateModelFMU",
-          {DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),filenameprefix},DAE.T_STRING_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
+          {DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),fmuversion,filenameprefix},DAE.T_STRING_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "translateModelXML"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
       equation
