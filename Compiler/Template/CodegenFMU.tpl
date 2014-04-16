@@ -90,6 +90,7 @@ case SIMCODE(__) then
   >>
 end fmuModelDescriptionFile;
 
+// Code for generating modelDescription.xml file for FMI 2.0.
 template fmi2ModelDescription(SimCode simCode, String guid)
  "Generates code for ModelDescription file for FMU target."
 ::=
@@ -101,6 +102,8 @@ case SIMCODE(__) then
   <fmiModelDescription
     <%fmi2ModelDescriptionAttributes(simCode,guid)%>>
     <%ModelExchange(simCode)%>
+    <%TypeDefinitions(modelInfo,"2.0")%>
+    <%DefaultExperiment(simulationSettingsOpt)%>
   </fmiModelDescription>
   >>
 end fmi2ModelDescription;
@@ -142,6 +145,7 @@ case SIMCODE(__) then
   >>
 end ModelExchange;
 
+// Code for generating modelDescription.xml file for FMI 1.0 ModelExchange.
 template fmiModelDescription(SimCode simCode, String guid)
  "Generates code for ModelDescription file for FMU target."
 ::=
@@ -152,7 +156,7 @@ case SIMCODE(__) then
   <<
   <fmiModelDescription
     <%fmiModelDescriptionAttributes(simCode,guid)%>>
-    <%TypeDefinitions(modelInfo)%>
+    <%TypeDefinitions(modelInfo,"1.0")%>
     <%DefaultExperiment(simulationSettingsOpt)%>
     <%ModelVariables(modelInfo)%>
   </fmiModelDescription>
@@ -211,7 +215,7 @@ case SIMCODE(__) then
   >>
 end UnitDefinitions;
 
-template TypeDefinitions(ModelInfo modelInfo)
+template TypeDefinitions(ModelInfo modelInfo, String FMUVersion)
  "Generates code for TypeDefinitions file for FMU target."
 ::=
 match modelInfo
@@ -219,44 +223,43 @@ case MODELINFO(vars=SIMVARS(__)) then
   <<
   <TypeDefinitions>
     <%SimCodeUtil.getEnumerationTypes(vars) |> var =>
-      TypeDefinition(var)
+      TypeDefinition(var,FMUVersion)
     ;separator="\n"%>
   </TypeDefinitions>
   >>
 end TypeDefinitions;
 
-template TypeDefinition(SimVar simVar)
+template TypeDefinition(SimVar simVar, String FMUVersion)
 ::=
 match simVar
 case SIMVAR(__) then
   <<
-  <%TypeDefinitionType(type_)%>
+  <%TypeDefinitionType(type_,FMUVersion)%>
   >>
 end TypeDefinition;
 
-template TypeDefinitionType(DAE.Type type_)
+template TypeDefinitionType(DAE.Type type_, String FMUVersion)
  "Generates code for TypeDefinitions Type file for FMU target."
 ::=
 match type_
   case T_ENUMERATION(__) then
+  if stringEq(FMUVersion, "2.0") then
+  <<
+  <SimpleType name="<%Absyn.pathString2NoLeadingDot(path, ".")%>">
+    <Enumeration>
+      <%names |> name hasindex i0 fromindex 1 => '<Item name="<%name%>" value="<%i0%>"/>' ;separator="\n"%>
+    </Enumeration>
+  </SimpleType>
+  >>
+  else
   <<
   <Type name="<%Absyn.pathString2NoLeadingDot(path, ".")%>">
     <EnumerationType>
-      <%names |> name =>
-        EnumerationType(name)
-      ;separator="\n"%>
+      <%names |> name => '<Item name="<%name%>"/>' ;separator="\n"%>
     </EnumerationType>
   </Type>
   >>
-  else 'UNKOWN_TYPE'
 end TypeDefinitionType;
-
-template EnumerationType(String name)
-::=
-  <<
-  <Item name="<%name%>"/>
-  >>
-end EnumerationType;
 
 template DefaultExperiment(Option<SimulationSettings> simulationSettingsOpt)
  "Generates code for DefaultExperiment file for FMU target."
@@ -275,7 +278,7 @@ match simulationSettings
   case SIMULATION_SETTINGS(__) then
     <<
     startTime="<%startTime%>" stopTime="<%stopTime%>" tolerance="<%tolerance%>"
-      >>
+    >>
 end DefaultExperimentAttribute;
 
 template VendorAnnotations(SimCode simCode)
