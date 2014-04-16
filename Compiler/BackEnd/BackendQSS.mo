@@ -1012,12 +1012,13 @@ algorithm
       list<SimCode.SimEqSystem> eqs;
       list<BackendDAE.TimeEvent> timeEvents;
       Option<HpcOmScheduler.ScheduleSimCode> hpcOmSchedule;
+      Option<SimCode.BackendMapping> backendMapping;
       
     case (SimCode.SIMCODE(modelInfo,literals,recordDecls,externalFunctionIncludes,allEquations,odeEquations,
           algebraicEquations,residualEquations,useSymbolicInitialization,useHomotopy,initialEquations,startValueEquations,nominalValueEquations,minValueEquations,maxValueEquations,
           parameterEquations,inlineEquations,removedEquations,algorithmAndEquationAsserts,equationsForZeroCrossings,jacobianEquations,stateSets,constraints,classAttributes,zeroCrossings,relations,
           timeEvents,whenClauses,discreteModelVars,extObjInfo,makefileParams,
-          delayedExps,jacobianMatrixes,simulationSettingsOpt,fileNamePrefix,crefToSimVarHT,hpcOmSchedule),_)
+          delayedExps,jacobianMatrixes,simulationSettingsOpt,fileNamePrefix,crefToSimVarHT,hpcOmSchedule,backendMapping),_)
     equation
       {eqs} = odeEquations;
       eqs = List.map1(eqs,replaceZC,zc_exps);
@@ -1026,7 +1027,7 @@ algorithm
                          initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations, parameterEquations, inlineEquations,
                          removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes,
                          zeroCrossings, relations, timeEvents, whenClauses, discreteModelVars, extObjInfo,
-                         makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT,hpcOmSchedule);
+                         makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT,hpcOmSchedule,backendMapping);
 
   end match;
 end replaceDiscontsInOde;

@@ -116,10 +116,21 @@ uniontype SimCode
     //*** a protected section *** not exported to SimCodeTV
     HashTableCrefToSimVar crefToSimVarHT "hidden from typeview - used by cref2simvar() for cref -> SIMVAR lookup available in templates.";
     Option<HpcOmScheduler.ScheduleSimCode> hpcOmSchedule;
+    Option<BackendMapping> backendMapping;
   end SIMCODE;
 end SimCode;
 
-
+public
+uniontype BackendMapping
+  record BACKENDMAPPING
+    BackendDAE.IncidenceMatrix m;
+    BackendDAE.IncidenceMatrixT mT;
+    list<tuple<Integer,list<Integer>>> eqMapping; //indx:order <simEq,{backendEq}>
+    list<tuple<Integer,Integer>> varMapping;  //<simVar,backendVar>
+  end BACKENDMAPPING;
+  record NO_MAPPING
+  end NO_MAPPING;
+end BackendMapping;
 
 uniontype DelayedExpression
   "Delayed expressions type"
