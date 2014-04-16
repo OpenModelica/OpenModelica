@@ -100,6 +100,7 @@ case SIMCODE(__) then
   <<
   <fmiModelDescription
     <%fmi2ModelDescriptionAttributes(simCode,guid)%>>
+    <%ModelExchange(simCode)%>
   </fmiModelDescription>
   >>
 end fmi2ModelDescription;
@@ -127,6 +128,19 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = SIMVARS(s
   numberOfEventIndicators="<%numberOfEventIndicators%>"
   >>
 end fmi2ModelDescriptionAttributes;
+
+template ModelExchange(SimCode simCode)
+ "Generates ModelExchange code for ModelDescription file for FMU target."
+::=
+match simCode
+case SIMCODE(__) then
+  let modelIdentifier = modelNamePrefix(simCode)
+  <<
+  <ModelExchange
+    modelIdentifier="<%modelIdentifier%>">
+  </ModelExchange>
+  >>
+end ModelExchange;
 
 template fmiModelDescription(SimCode simCode, String guid)
  "Generates code for ModelDescription file for FMU target."
