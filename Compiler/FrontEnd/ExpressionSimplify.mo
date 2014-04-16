@@ -1119,19 +1119,20 @@ algorithm
       then e;
 
     // promote 1-dim to 2-dim
-    case DAE.CALL(path=Absyn.IDENT("promote"),expLst=(DAE.ARRAY(tp1 as DAE.T_ARRAY(dims={_}),sc,es))::DAE.ICONST(1)::{},attr=DAE.CALL_ATTR(ty=tp))
+    case DAE.CALL(path=Absyn.IDENT("promote"),expLst=(DAE.ARRAY(tp1 as DAE.T_ARRAY(dims={_}),sc,es))::DAE.ICONST(1)::{})
       equation
-        es = List.map2(List.map(es,List.create), Expression.makeArray, Types.liftArray(Types.unliftArray(tp1),DAE.DIM_INTEGER(1)), sc);
-        e = DAE.ARRAY(tp,false,es);
-      then e;
+        tp = Types.liftArray(Types.unliftArray(tp1), DAE.DIM_INTEGER(1));
+        es = List.map2(List.map(es,List.create), Expression.makeArray, tp, sc);
+        i = listLength(es);
+        tp = Expression.liftArrayLeft(tp, DAE.DIM_INTEGER(i));
+      then
+        DAE.ARRAY(tp,false,es);
 
     case DAE.CALL(path=Absyn.IDENT("transpose"),expLst=e::{},attr=DAE.CALL_ATTR(ty=tp))
       equation
-        mexpl = List.transposeList(Expression.get2dArrayOrMatrixContent(e));
-        tp1 = Types.unliftArray(tp);
-        es = List.map2(mexpl, Expression.makeArray, tp1, not Types.isArray(tp1,{}));
-        e = Expression.makeArray(es, tp, false);
-      then e;
+        (e, true) = Expression.transposeArray(e);
+      then
+        e;
 
     case DAE.CALL(path=Absyn.IDENT("symmetric"),expLst=e::{},attr=DAE.CALL_ATTR(ty=_))
       equation
@@ -2232,7 +2233,7 @@ algorithm
   mat2 := Expression.matrixToArray(inMatrix2);
   // Transpose the second matrix. This makes it easier to do the multiplication,
   // since we can do row-row multiplications instead of row-column.
-  mat2 := Expression.transposeArray(mat2);
+  (mat2, _) := Expression.transposeArray(mat2);
   outProduct := simplifyMatrixProduct2(mat1, mat2);
 end simplifyMatrixProduct;
 
@@ -5129,7 +5130,7 @@ algorithm
   mat2 := Expression.matrixToArray(inMatrix2);
   // Transpose the second matrix. This makes it easier to do the multiplication,
   // since we can do row-row multiplications instead of row-column.
-  mat2 := Expression.transposeArray(mat2);
+  (mat2, _) := Expression.transposeArray(mat2);
   outProduct := simplifyMatrixProductOfRecords2(mat1, mat2, mulFunc, sumFunc);
 end simplifyMatrixProductOfRecords;
 

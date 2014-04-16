@@ -9807,8 +9807,9 @@ end matrixToArray;
 public function transposeArray
   input DAE.Exp inArray;
   output DAE.Exp outArray;
+  output Boolean outWasTransposed;
 algorithm
-  outArray := match(inArray)
+  (outArray, outWasTransposed) := match(inArray)
     local
       DAE.Type ty, row_ty;
       DAE.Dimension dim1, dim2;
@@ -9817,7 +9818,7 @@ algorithm
       list<list<Exp>> matrix;
 
     case DAE.ARRAY(DAE.T_ARRAY(ty, {dim1, dim2}, ty_src), false, {})
-      then DAE.ARRAY(DAE.T_ARRAY(ty, {dim2, dim1}, ty_src), false, {});
+      then (DAE.ARRAY(DAE.T_ARRAY(ty, {dim2, dim1}, ty_src), false, {}), true);
 
     case DAE.ARRAY(DAE.T_ARRAY(ty, {dim1, dim2}, ty_src), false, expl)
       equation
@@ -9826,9 +9827,9 @@ algorithm
         matrix = List.transposeList(matrix);
         expl = List.map2(matrix, makeArray, row_ty, true);
       then
-        DAE.ARRAY(DAE.T_ARRAY(ty, {dim2, dim1}, ty_src), false, expl);
+        (DAE.ARRAY(DAE.T_ARRAY(ty, {dim2, dim1}, ty_src), false, expl), true);
 
-    else inArray;
+    else (inArray, false);
 
   end match;
 end transposeArray;
