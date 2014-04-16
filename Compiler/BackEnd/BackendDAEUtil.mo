@@ -1164,7 +1164,7 @@ algorithm
       DAE.InstDims arryDim;
 
     // discrete
-    case((var as BackendDAE.VAR(varKind=BackendDAE.DISCRETE(), varType=DAE.T_REAL(source = _), arryDim=arryDim), nDiscreteVars)) equation
+    case((var as BackendDAE.VAR(varKind=BackendDAE.DISCRETE(), varType=DAE.T_REAL(source = _)), nDiscreteVars)) equation
     then ((var, nDiscreteVars+1));
 
     else
@@ -1689,7 +1689,7 @@ algorithm
       list<DAE.Exp> subs;
       DAE.Exp e;
 
-    case (DAE.ASUB(exp = DAE.ARRAY(array = (DAE.CREF(componentRef = cr, ty = ty)::_)), sub = subs))
+    case (DAE.ASUB(exp = DAE.ARRAY(array = (DAE.CREF(componentRef = cr)::_)), sub = subs))
       equation
         cr = ComponentReference.crefStripLastSubs(cr);
         e = Expression.crefExp(cr);
@@ -1698,7 +1698,7 @@ algorithm
         //        shouldn't we change the type using the subs?
         Expression.makeASUB(e, subs);
 
-    case (DAE.ASUB(exp = DAE.MATRIX(matrix = (((DAE.CREF(componentRef = cr, ty = ty))::_)::_)), sub = subs))
+    case (DAE.ASUB(exp = DAE.MATRIX(matrix = (((DAE.CREF(componentRef = cr))::_)::_)), sub = subs))
       equation
         cr = ComponentReference.crefStripLastSubs(cr);
         e = Expression.crefExp(cr);
@@ -2794,41 +2794,41 @@ algorithm outExp := matchcontinue(inExp)
     Boolean b;
     DAE.Statement x;
     // do nothing if try to collate when codition expression
-    case ((e as DAE.MATRIX(ty=ty,integer=_,matrix=((DAE.CREF(componentRef = _))::_)::_), (x as DAE.STMT_WHEN(exp=_), funcs)))
+    case ((e as DAE.MATRIX(integer=_,matrix=((DAE.CREF(componentRef = _))::_)::_), (x as DAE.STMT_WHEN(exp=_), funcs)))
       then
         ((e,(x,funcs)));
-    case ((e as DAE.MATRIX(ty=ty,integer=_,matrix=(((DAE.UNARY(exp = DAE.CREF(componentRef = _))))::_)::_), (x as DAE.STMT_WHEN(exp=_), funcs)))
+    case ((e as DAE.MATRIX(integer=_,matrix=(((DAE.UNARY(exp = DAE.CREF(componentRef = _))))::_)::_), (x as DAE.STMT_WHEN(exp=_), funcs)))
       then
         ((e,(x,funcs)));
-    case ((e as DAE.ARRAY(ty=ty,scalar=_,array=(DAE.CREF(componentRef = _))::_), (x as DAE.STMT_WHEN(exp=_), funcs)))
+    case ((e as DAE.ARRAY(scalar=_,array=(DAE.CREF(componentRef = _))::_), (x as DAE.STMT_WHEN(exp=_), funcs)))
       then
         ((e,(x,funcs)));
-    case ((e as DAE.ARRAY(ty=ty,scalar=_,array=(DAE.UNARY(exp = DAE.CREF(componentRef = _)))::_), (x as DAE.STMT_WHEN(exp=_), funcs)))
+    case ((e as DAE.ARRAY(scalar=_,array=(DAE.UNARY(exp = DAE.CREF(componentRef = _)))::_), (x as DAE.STMT_WHEN(exp=_), funcs)))
       then
         ((e,(x,funcs)));
      // collate in other cases
-    case ((e as DAE.MATRIX(ty=ty,integer=_,matrix=((e1 as DAE.CREF(componentRef = _))::_)::_), (x, funcs)))
+    case ((e as DAE.MATRIX(integer=_,matrix=((e1 as DAE.CREF(componentRef = _))::_)::_), (x, funcs)))
       equation
         e1_1 = Expression.expStripLastSubs(e1);
         ((e1_2,(_,true))) = extendArrExp((e1_1,(funcs,false)));
         true = Expression.expEqual(e,e1_2);
       then
         ((e1_1,(x,funcs)));
-    case ((e as DAE.MATRIX(ty=ty,integer=_,matrix=(((e1 as DAE.UNARY(exp = DAE.CREF(componentRef = _))))::_)::_), (x, funcs)))
+    case ((e as DAE.MATRIX(integer=_,matrix=(((e1 as DAE.UNARY(exp = DAE.CREF(componentRef = _))))::_)::_), (x, funcs)))
       equation
         e1_1 = Expression.expStripLastSubs(e1);
         ((e1_2,(_,true))) = extendArrExp((e1_1,(funcs,false)));
         true = Expression.expEqual(e,e1_2);
       then
         ((e1_1,(x,funcs)));
-    case ((e as DAE.ARRAY(ty=ty,scalar=_,array=(e1 as DAE.CREF(componentRef = _))::_), (x, funcs)))
+    case ((e as DAE.ARRAY(scalar=_,array=(e1 as DAE.CREF(componentRef = _))::_), (x, funcs)))
       equation
         e1_1 = Expression.expStripLastSubs(e1);
         ((e1_2,(_,true))) = extendArrExp((e1_1,(funcs,false)));
         true = Expression.expEqual(e,e1_2);
       then
         ((e1_1,(x,funcs)));
-    case ((e as DAE.ARRAY(ty=ty,scalar=_,array=(e1 as DAE.UNARY(exp = DAE.CREF(componentRef = _)))::_), (x, funcs)))
+    case ((e as DAE.ARRAY(scalar=_,array=(e1 as DAE.UNARY(exp = DAE.CREF(componentRef = _)))::_), (x, funcs)))
       equation
         e1_1 = Expression.expStripLastSubs(e1);
         ((e1_2,(_,true))) = extendArrExp((e1_1,(funcs,false)));
@@ -2887,28 +2887,28 @@ algorithm outExp := matchcontinue(inExp)
     Integer i;
     DAE.Exp e,e1,e1_1,e1_2;
     Boolean b;
-    case ((e as DAE.MATRIX(ty=ty,integer=_,matrix=((e1 as DAE.CREF(componentRef = _))::_)::_),funcs))
+    case ((e as DAE.MATRIX(integer=_,matrix=((e1 as DAE.CREF(componentRef = _))::_)::_),funcs))
       equation
         e1_1 = Expression.expStripLastSubs(e1);
         ((e1_2,(_,true))) = extendArrExp((e1_1,(funcs,false)));
         true = Expression.expEqual(e,e1_2);
       then
         ((e1_1,funcs));
-    case ((e as DAE.MATRIX(ty=ty,integer=_,matrix=(((e1 as DAE.UNARY(exp = DAE.CREF(componentRef = _))))::_)::_),funcs))
+    case ((e as DAE.MATRIX(integer=_,matrix=(((e1 as DAE.UNARY(exp = DAE.CREF(componentRef = _))))::_)::_),funcs))
       equation
         e1_1 = Expression.expStripLastSubs(e1);
         ((e1_2,(_,true))) = extendArrExp((e1_1,(funcs,false)));
         true = Expression.expEqual(e,e1_2);
       then
         ((e1_1,funcs));
-    case ((e as DAE.ARRAY(ty=ty,scalar=_,array=(e1 as DAE.CREF(componentRef = _))::_),funcs))
+    case ((e as DAE.ARRAY(scalar=_,array=(e1 as DAE.CREF(componentRef = _))::_),funcs))
       equation
         e1_1 = Expression.expStripLastSubs(e1);
         ((e1_2,(_,true))) = extendArrExp((e1_1,(funcs,false)));
         true = Expression.expEqual(e,e1_2);
       then
         ((e1_1,funcs));
-    case ((e as DAE.ARRAY(ty=ty,scalar=_,array=(e1 as DAE.UNARY(exp = DAE.CREF(componentRef = _)))::_),funcs))
+    case ((e as DAE.ARRAY(scalar=_,array=(e1 as DAE.UNARY(exp = DAE.CREF(componentRef = _)))::_),funcs))
       equation
         e1_1 = Expression.expStripLastSubs(e1);
         ((e1_2,(_,true))) = extendArrExp((e1_1,(funcs,false)));
@@ -5456,7 +5456,7 @@ algorithm
         false = Expression.expHasCrefNoPreorDer(e1,cr1);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,kvars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED())::inRow);
-    case(r::rest,DAE.TUPLE(PR=explst),DAE.CALL(path=path,expLst=_),_,_,_,_,_)
+    case(r::rest,DAE.TUPLE(PR=explst),DAE.CALL(expLst=_),_,_,_,_,_)
       equation
         rabs = intAbs(r);
         // if not negatet rowmark then
@@ -6877,14 +6877,14 @@ algorithm
         sources = List.consN(BackendEquation.equationSize(eqn), source, sources);
       then ((eqn,(v,explst,sources,funcs,repl)));
 
-    case ((eqn as BackendDAE.SOLVED_EQUATION(source=source),_))
+    case ((eqn as BackendDAE.SOLVED_EQUATION(source=_),_))
       equation
         str = BackendDump.equationString(eqn);
         str = "BackendDAEUtil.equationToExp failed for solved equation: " +& str;
         Error.addSourceMessage(Error.INTERNAL_ERROR,{str},BackendEquation.equationInfo(eqn));
       then fail();
 
-    case ((eqn as BackendDAE.COMPLEX_EQUATION(source=source),_))
+    case ((eqn as BackendDAE.COMPLEX_EQUATION(source=_),_))
       equation
         str = BackendDump.equationString(eqn);
         str = "BackendDAEUtil.equationToExp failed for complex equation: " +& str;

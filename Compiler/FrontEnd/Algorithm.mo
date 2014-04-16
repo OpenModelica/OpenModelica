@@ -202,7 +202,7 @@ algorithm
         outStatement = makeAssignment2(lhs, lhprop, rhs, rhprop, source);
       then outStatement;
 
-    case (lhs, lhprop, rhs, rhprop, DAE.ATTR(direction=direction), _, _)
+    case (lhs, lhprop, rhs, rhprop, DAE.ATTR(direction=_), _, _)
       equation
         DAE.C_VAR() = Types.propAnyConst(lhprop);
         outStatement = makeAssignment2(lhs, lhprop, rhs, rhprop, source);

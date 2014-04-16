@@ -133,7 +133,7 @@ algorithm
     case (cache,env,ih,mod,_,{},_,_,_,_,_) then (cache,env,ih,mod,{},{},{},{},{});
 
     // instantiate a basic type base class
-    case (cache,env,ih,mod,pre,(SCode.EXTENDS(info = info, baseClassPath = tp, modifications = _, visibility = _)) :: rest,elsExtendsScope,ci_state,className,impl,_)
+    case (cache,env,ih,mod,pre,(SCode.EXTENDS( baseClassPath = tp, modifications = _, visibility = _)) :: rest,elsExtendsScope,ci_state,className,impl,_)
       equation
         Absyn.IDENT(cn) = Absyn.makeNotFullyQualified(tp);
         true = InstUtil.isBuiltInClass(cn);
@@ -228,7 +228,7 @@ algorithm
          (elt as SCode.COMPONENT(name = _, attributes =
           SCode.ATTR(variability = var),
           modifications = _,
-          prefixes = SCode.PREFIXES(finalPrefix=finalPrefix),
+          prefixes = SCode.PREFIXES(finalPrefix=_),
           comment = _)) :: rest,elsExtendsScope,
           ci_state,className,impl,_)
       equation
@@ -669,7 +669,7 @@ algorithm
       then
         (cache,env,ih,elt,eq,ieq,alg,ialg);
 
-    case (cache,env,ih,mod,pre,SCode.CLASS(name = name, info = info, classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(tp, _),modifications = _)),impl, _, false, _)
+    case (cache,env,ih,mod,pre,SCode.CLASS( info = info, classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(tp, _),modifications = _)),impl, _, false, _)
       equation
         // Debug.fprintln(Flags.INST_TRACE, "DERIVED: " +& Env.printEnvPathStr(env) +& " el: " +& SCodeDump.unparseElementStr(inClass) +& " mods: " +& Mod.printModStr(mod));
         (cache, c, cenv) = Lookup.lookupClass(cache, env, tp, true);

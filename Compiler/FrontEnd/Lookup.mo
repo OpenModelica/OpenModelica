@@ -141,7 +141,7 @@ algorithm
         (cache,t,env_2);
 
     // Error for type not found
-    case (cache,env,path,SOME(info))
+    case (_,env,path,SOME(info))
       equation
         classname = Absyn.pathString(path);
         classname = stringAppend(classname," (its type) ");
@@ -188,7 +188,7 @@ algorithm
         (cache,t,env_1);*/
 
     // Record constructors
-    case (cache,env_1,path,c as SCode.CLASS(name=id,restriction=SCode.R_RECORD(_)))
+    case (cache,env_1,_,c as SCode.CLASS(name=_,restriction=SCode.R_RECORD(_)))
       equation
         (cache,env_1,t) = buildRecordType(cache,env_1,c);
       then
@@ -216,14 +216,14 @@ algorithm
         (cache,t,env_3);
 
     // Metamodelica extension, Uniontypes
-    case (cache,env_1,path,c as SCode.CLASS(restriction=SCode.R_METARECORD(index=_)))
+    case (cache,env_1,_,c as SCode.CLASS(restriction=SCode.R_METARECORD(index=_)))
       equation
         (cache,env_2,t) = buildMetaRecordType(cache,env_1,c);
       then
         (cache,t,env_2);
 
     // Classes that are external objects. Implicitly instantiate to get type
-    case (cache,env_1,path,c)
+    case (cache,env_1,_,c)
       equation
         // Debug.fprintln(Flags.INST_TRACE, "LOOKUP TYPE ICD: " +& Env.printEnvPathStr(env_1) +& " path:" +& Absyn.pathString(path));
         true = SCode.classIsExternalObject(c);
@@ -239,7 +239,7 @@ algorithm
     // If we find a class definition that is a function or external function
     // with the same name then we implicitly instantiate that function, look
     // up the type.
-    case (cache,env_1,path,c as SCode.CLASS(name = id,restriction=SCode.R_FUNCTION(_)))
+    case (cache,env_1,_,c as SCode.CLASS(name = id,restriction=SCode.R_FUNCTION(_)))
       equation
         // Debug.fprintln(Flags.INST_TRACE, "LOOKUP TYPE ICD: " +& Env.printEnvPathStr(env_1) +& " path:" +& Absyn.pathString(path));
         (cache,env_2,_) =
@@ -318,7 +318,7 @@ algorithm
       list<DAE.Type> acc;
       HashTableStringToPath.HashTable ht;
 
-    case (cache, env, _, _, ht, acc)
+    case (cache, _, _, _, ht, acc)
       equation
         _ = BaseHashTable.get(str, ht);
       then (cache, ht, acc);
@@ -432,7 +432,7 @@ algorithm
         (cache,c,env_1,prevFrames);
 
     // Qualified names are handled in a special function in order to avoid infinite recursion.
-    case (cache,env,(p as Absyn.QUALIFIED(name = pack,path = path)),prevFrames,_,_)
+    case (cache,env,(Absyn.QUALIFIED(name = pack,path = path)),prevFrames,_,_)
       equation
         (optFrame,prevFrames) = lookupPrevFrames(pack,prevFrames);
         (cache,c,env_2,prevFrames) = lookupClassQualified(cache,env,pack,path,optFrame,prevFrames,inState,msg);
@@ -583,14 +583,14 @@ algorithm
       Absyn.Path path;
 
       // For imported simple name, e.g. A, not possible to assert sub-path package
-    case (Absyn.QUAL_IMPORT(path = path) :: rest, _)
+    case (Absyn.QUAL_IMPORT(path = path) :: _, _)
       equation
         id = Absyn.pathLastIdent(path);
         true = id ==& ident;
       then ComponentReference.pathToCref(path);
 
     // Named imports, e.g. import A = B.C;
-    case (Absyn.NAMED_IMPORT(name = id,path = path) :: rest, _)
+    case (Absyn.NAMED_IMPORT(name = id,path = path) :: _, _)
       equation
         true = id ==& ident;
       then ComponentReference.pathToCref(path);
@@ -621,7 +621,7 @@ algorithm
       DAE.ComponentRef cref;
       Absyn.Path path;
 
-    case (cache,Absyn.UNQUAL_IMPORT(path = path) :: rest,env,ident)
+    case (cache,Absyn.UNQUAL_IMPORT(path = path) :: _,env,ident)
       equation
         f::prevFrames = listReverse(env);
         cref = ComponentReference.pathToCref(path);
@@ -727,7 +727,7 @@ algorithm
       then
         (cache,c,env_1,prevFrames);
 
-    case (cache,Absyn.QUAL_IMPORT(path = path) :: rest,env,ident,_)
+    case (cache,Absyn.QUAL_IMPORT(path = path) :: _,env,ident,_)
       equation
         id = Absyn.pathLastIdent(path) "For imported path A.B.C, assert A.B is package" ;
         true = id ==& ident;
@@ -740,7 +740,7 @@ algorithm
       then
         (cache,c,env_1,prevFrames);
 
-    case (cache,Absyn.NAMED_IMPORT(name = id,path = path) :: rest,env,ident,_)
+    case (cache,Absyn.NAMED_IMPORT(name = id,path = path) :: _,env,ident,_)
       equation
         true = id ==& ident "Named imports";
         Util.setStatefulBoolean(inState,true);
@@ -785,7 +785,7 @@ algorithm
       Env.Cache cache;
 
     // Not found, instantiate
-    case (cache,Absyn.UNQUAL_IMPORT(path = path) :: rest,env,ident)
+    case (cache,Absyn.UNQUAL_IMPORT(path = path) :: _,env,ident)
       equation
         fr = Env.topFrame(env);
         (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = lookupClass(cache, {fr}, path, false);
@@ -884,7 +884,7 @@ algorithm
     case (cache,env,path)
       equation
         (cache,c,env_1) = lookupClass(cache,env, path, false);
-        SCode.CLASS(name = name, restriction=SCode.R_RECORD(_)) = c;
+        SCode.CLASS( restriction=SCode.R_RECORD(_)) = c;
         (cache,_,c) = buildRecordConstructorClass(cache,env_1,c);
       then
         (cache,c,env_1);
@@ -926,7 +926,7 @@ algorithm
     // qualified component reference
     case(cache,env,DAE.CREF_QUAL(ident=_))
       equation
-        (cache,attr1 as DAE.ATTR(ct,prl,var,dir,_,vis),ty1,_,_,_,_,_,_) = lookupVarLocal(cache,env,cr);
+        (cache,DAE.ATTR(ct,prl,var,dir,_,vis),ty1,_,_,_,_,_,_) = lookupVarLocal(cache,env,cr);
         cr1 = ComponentReference.crefStripLastIdent(cr);
         // Find innerOuter attribute from "parent"
         (cache,DAE.ATTR(innerOuter=io),_,_,_,_,_,_,_) = lookupVarLocal(cache,env,cr1);
@@ -1069,7 +1069,7 @@ algorithm
       Env.Env env,componentEnv;
 
     // look into the current frame
-    case (cache, Env.FRAME(name = sid,clsAndVars = ht)::fs, ref, _)
+    case (cache, Env.FRAME(name = _,clsAndVars = ht)::_, ref, _)
       equation
         (cache,attr,ty,binding,cnstForRange,splicedExpData,componentEnv,name) = lookupVarF(cache, ht, ref);
       then
@@ -1160,7 +1160,7 @@ algorithm
 
       // If we search for A1.A2....An.x while in scope A1.A2...An, just search for x.
       // Must do like this to ensure finite recursion
-    case (cache,env,cr as DAE.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref),prevFrames,_) /* First part of name is a previous frame */
+    case (cache,env,DAE.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref),prevFrames,_) /* First part of name is a previous frame */
       equation
         (SOME(f),prevFrames) = lookupPrevFrames(id,prevFrames);
         Util.setStatefulBoolean(inState,true);
@@ -1195,7 +1195,7 @@ algorithm
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name); */
 
     // lookup of constants on form A.B in packages. instantiate package and look inside.
-    case (cache,env,cr as DAE.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref),prevFrames,_) /* First part of name is a class. */
+    case (cache,env,DAE.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref),prevFrames,_) /* First part of name is a class. */
       equation
         (NONE(),prevFrames) = lookupPrevFrames(id,prevFrames);
         (cache,(c as SCode.CLASS(name=n,encapsulatedPrefix=encflag,restriction=r)),env2,prevFrames) =
@@ -1222,7 +1222,7 @@ algorithm
 
     // Why is this done? It is already done done in lookupVar!
     // BZ: This is due to recursive call when it might become DAE.CREF_IDENT calls.
-    case (cache,env,(cr as DAE.CREF_IDENT(ident = id,subscriptLst = sb)),prevFrames,_)
+    case (cache,env,(cr as DAE.CREF_IDENT(ident = _,subscriptLst = _)),_,_)
       equation
         (cache,attr,ty,bind,cnstForRange,splicedExpData,classEnv,componentEnv,name) = lookupVarLocal(cache, env, cr);
         Util.setStatefulBoolean(inState,true);
@@ -1237,7 +1237,7 @@ algorithm
         (cache, env, attr, ty, bind, cnstForRange, splicedExpData, componentEnv, name);
 
     // Search among qualified imports, e.g. import A.B; or import D=A.B;
-    case (cache,(env as (Env.FRAME(name = sid, importTable = importTable) :: _)),DAE.CREF_IDENT(ident = id,subscriptLst = sb),prevFrames,_)
+    case (cache,(env as (Env.FRAME(name = _, importTable = importTable) :: _)),DAE.CREF_IDENT(ident = id,subscriptLst = _),prevFrames,_)
       equation
         imports = getQualifiedImports(importTable);
         cr = lookupQualifiedImportedVarInFrame(imports, id);
@@ -1248,7 +1248,7 @@ algorithm
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name);
 
     // Search among unqualified imports, e.g. import A.B.*
-    case (cache,(env as (Env.FRAME(name = sid, importTable = importTable) :: _)),(cr as DAE.CREF_IDENT(ident = id,subscriptLst = sb)),prevFrames,_)
+    case (cache,(env as (Env.FRAME(name = _, importTable = importTable) :: _)),(DAE.CREF_IDENT(ident = id,subscriptLst = _)),_,_)
       equation
         imports = getUnQualifiedImports(importTable);
         (cache,p_env,attr,ty,bind,cnstForRange,unique,splicedExpData,componentEnv,name) = lookupUnqualifiedImportedVarInFrame(cache, imports, env, id);
@@ -1258,14 +1258,14 @@ algorithm
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name);
 
      // Search parent scopes
-    case (cache,((f as Env.FRAME(name = SOME(id))):: fs),cr,prevFrames,_)
+    case (cache,((f as Env.FRAME(name = SOME(_))):: fs),cr,prevFrames,_)
       equation
         false = Util.getStatefulBoolean(inState);
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name) = lookupVarInPackages(cache,fs,cr,f::prevFrames,inState);
       then
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name);
 
-    case (cache,env,cr,prevFrames,_)
+    case (_,_,_,_,_)
       equation
         //true = Flags.isSet(Flags.FAILTRACE);
         //Debug.traceln("- Lookup.lookupVarInPackages failed on exp:" +& ComponentReference.printComponentRefStr(cr) +& " in scope: " +& Env.printEnvPathStr(env));
@@ -1341,7 +1341,7 @@ algorithm
       Env.Cache cache;
 
     // component environment
-    case (cache, env as Env.FRAME(name = sid, clsAndVars = ht)::fs, id)
+    case (cache, Env.FRAME(name = _, clsAndVars = ht)::_, id)
       equation
         (cache,fv,c,m,i,componentEnv) = lookupVar2(cache, ht, id);
       then
@@ -1371,7 +1371,7 @@ algorithm
       Option<String> sid;
       Env.AvlTree ht;
       String id;
-    case (env as (Env.FRAME(name = sid, clsAndVars = ht) :: _),id) /* component environment */
+    case (env as (Env.FRAME(name = _, clsAndVars = ht) :: _),id) /* component environment */
       equation
         Env.CLASS(cl,env,_) = Env.avlTreeGet(ht, id);
       then
@@ -1404,7 +1404,7 @@ algorithm
       Env.Env rest,e;
       Env.Cache cache;
 
-    case (cache,(Env.FRAME(name = sid,clsAndVars = ht) :: _),id)
+    case (cache,(Env.FRAME(name = _,clsAndVars = ht) :: _),id)
       equation
         (cache,fv,c,m,i,_) = lookupVar2(cache, ht, id);
       then
@@ -1460,14 +1460,14 @@ algorithm
       then
         (cache,res);
 
-   case (cache,env,Absyn.QUALIFIED(name, id),info)
+   case (_,_,Absyn.QUALIFIED(_, _),_)
      equation
        ErrorExt.rollBack("functionViaComponentRef");
      then
        fail();
 
     // uq paths are different!
-    case (cache,env,id,info)
+    case (cache,env,id,_)
       equation
         true = Env.hasModifications(env); // Absyn.pathContainsString(id, "$uq");
         true = Absyn.pathPrefixOf(Absyn.stripLast(id), Env.getEnvName(env));
@@ -1478,7 +1478,7 @@ algorithm
         (cache,res);
 
     // Builtin operators are looked up in top frame directly
-    case (cache,env,(id as Absyn.IDENT(name = str)),info)
+    case (cache,env,(Absyn.IDENT(name = str)),info)
       equation
         _ = Static.elabBuiltinHandler(str) "Check for builtin operators";
         (cache,env as {Env.FRAME(clsAndVars = ht,types = httypes)}) = Builtin.initialEnv(cache);
@@ -1487,7 +1487,7 @@ algorithm
         (cache,res);
 
     // Check for special builtin operators that can not be represented in environment like for instance cardinality
-    case (cache,_,id as Absyn.IDENT(name = str),_)
+    case (cache,_,Absyn.IDENT(name = str),_)
       equation
         _ = Static.elabBuiltinHandlerGeneric(str);
         (cache,env) = Builtin.initialEnv(cache);
@@ -1590,7 +1590,7 @@ algorithm
       Env.FrameType frameTy;
 
     // Simple name, search frame
-    case (cache,(env as (Env.FRAME(name = sid,clsAndVars = ht,types = httypes) :: fs)),id as Absyn.IDENT(name = str),_,_)
+    case (cache,(env as (Env.FRAME(name = _,clsAndVars = ht,types = httypes) :: _)),Absyn.IDENT(name = str),_,_)
       equation
         (cache,res as _::_)= lookupFunctionsInFrame(cache, ht, httypes, env, str, info);
       then
@@ -1603,11 +1603,11 @@ algorithm
         //        just search in {f} not f::fs as otherwise we might get us in an infinite loop
         // Bjozac: Readded the f::fs search frame, otherwise we might get caught in a inifinite loop!
         //           Did not investigate this further then that it can crasch the kernel.
-        (cache,(c as SCode.CLASS(name=str,encapsulatedPrefix=encflag,restriction=restr)),env_1) = lookupClass(cache,f::fs, id, false);
+        (cache,(c as SCode.CLASS(name=str,encapsulatedPrefix=_,restriction=restr)),env_1) = lookupClass(cache,f::fs, id, false);
         true = SCode.isFunctionRestriction(restr);
         // get function dae from instantiation
         // Debug.fprintln(Flags.INST_TRACE, "LOOKUP FUNCTIONS IN ENV ID ICD: " +& Env.printEnvPathStr(env_1) +& "." +& str);
-        (cache,(env_2 as (Env.FRAME(name = sid,clsAndVars = ht,types = httypes)::_)),_)
+        (cache,(env_2 as (Env.FRAME(name = _,clsAndVars = ht,types = httypes)::_)),_)
            = InstFunction.implicitFunctionTypeInstantiation(cache,env_1,InnerOuter.emptyInstHierarchy, c);
 
         (cache,res as _::_)= lookupFunctionsInFrame(cache, ht, httypes, env_2, str, info);
@@ -1615,7 +1615,7 @@ algorithm
         (cache,res);
 
     // For qualified function names, e.g. Modelica.Math.sin
-    case (cache,(env as (Env.FRAME(name = sid,clsAndVars = ht,types = httypes) :: fs)),id as Absyn.QUALIFIED(name = pack,path = path),_,_)
+    case (cache,(env as (Env.FRAME(name = _,clsAndVars = _,types = _) :: _)),Absyn.QUALIFIED(name = pack,path = path),_,_)
       equation
         (cache,(c as SCode.CLASS(name=str,encapsulatedPrefix=encflag,restriction=restr)),env_1) = lookupClass(cache, env, Absyn.IDENT(pack), false);
         env2 = Env.openScope(env_1, encflag, SOME(str), Env.restrictionToScopeType(restr));
@@ -1639,7 +1639,7 @@ algorithm
       then
         (cache,res);
 
-    case (cache,Env.FRAME(frameType = Env.ENCAPSULATED_SCOPE())::env,id as Absyn.IDENT(name = str),false,_)
+    case (cache,Env.FRAME(frameType = Env.ENCAPSULATED_SCOPE())::env,id as Absyn.IDENT(name = _),false,_)
       equation
         (cache,env) = Builtin.initialEnv(cache);
         (cache,res) = lookupFunctionsInEnv2(cache, env, id, true, info);
@@ -1662,7 +1662,7 @@ algorithm
     local list<Env.Frame> env;
 
     // function_name cardinality
-    case (env,"cardinality")
+    case (_,"cardinality")
       then {DAE.T_FUNCTION(
               {("x",DAE.T_COMPLEX(ClassInf.CONNECTOR(Absyn.IDENT("$$"),false),{},NONE(),DAE.emptyTypeSource),DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
               DAE.T_INTEGER_DEFAULT,
@@ -1702,7 +1702,7 @@ algorithm
       Env.Cache cache;
       Absyn.Path path;
 
-    case (cache,(env as (Env.FRAME(name = sid,clsAndVars = ht,types = httypes) :: fs)),Absyn.IDENT(name = id))
+    case (cache,(env as (Env.FRAME(name = _,clsAndVars = ht,types = httypes) :: _)),Absyn.IDENT(name = id))
       equation
         (cache,c,env_1) = lookupTypeInFrame(cache, ht, httypes, env, id);
       then
@@ -1737,7 +1737,7 @@ algorithm
       String id;
       Env.Cache cache;
       Env.Item item;
-    case (cache,ht,httypes,env,id)
+    case (cache,_,httypes,env,id)
       equation
         item = Env.avlTreeGet(httypes, id);
         (cache,t,env) = lookupTypeInFrame2(cache,item,env,id);
@@ -1766,9 +1766,9 @@ algorithm
       Env.Cache cache;
       Absyn.Info info;
 
-    case (cache,Env.TYPE((t :: _)),env,id) then (cache,t,env);
+    case (cache,Env.TYPE((t :: _)),env,_) then (cache,t,env);
 
-    case (cache,Env.VAR(var = comp),env,id)
+    case (_,Env.VAR(var = comp),_,id)
       equation
         info = SCode.elementInfo(comp);
         Error.addSourceMessage(Error.LOOKUP_TYPE_FOUND_COMP, {id}, info);
@@ -1776,13 +1776,13 @@ algorithm
         fail();
 
     // Record constructor function
-    case (cache,Env.CLASS((cdef as SCode.CLASS(name=n,restriction=SCode.R_RECORD(_))),cenv,_),env,id)
+    case (cache,Env.CLASS((cdef as SCode.CLASS(name=_,restriction=SCode.R_RECORD(_))),_,_),env,_)
       equation
         (cache,env_3,ty) = buildRecordType(cache,env,cdef);
       then
         (cache,ty,env_3);
 
-    case (cache,Env.CLASS((cdef as SCode.CLASS(name=n,restriction=SCode.R_METARECORD(index=_))),cenv,_),env,id)
+    case (cache,Env.CLASS((cdef as SCode.CLASS(name=_,restriction=SCode.R_METARECORD(index=_))),cenv,_),_,_)
       equation
         (cache,env_3,ty) = buildMetaRecordType(cache,cenv,cdef);
       then
@@ -1833,21 +1833,21 @@ algorithm
       SCode.Restriction restr;
 
     // Classes and vars Types
-    case (cache,ht,httypes,env,id,_)
+    case (cache,_,httypes,_,id,_)
       equation
         Env.TYPE(tps) = Env.avlTreeGet(httypes, id);
       then
         (cache,tps);
 
     // MetaModelica Partial Function. sjoelund
-    case (cache,ht,httypes,env,id,_)
+    case (cache,ht,_,_,id,_)
       equation
         Env.VAR(instantiated = DAE.TYPES_VAR(ty = tty as DAE.T_FUNCTION(funcArg = _))) = Env.avlTreeGet(ht, id);
         tty = Types.setTypeSource(tty, Types.mkTypeSource(SOME(Absyn.IDENT(id))));
       then
         (cache,{tty});
 
-    case (cache,ht,httypes,env,id,_)
+    case (_,ht,_,_,id,_)
       equation
         Env.VAR(var = _) = Env.avlTreeGet(ht, id);
         Error.addSourceMessage(Error.LOOKUP_TYPE_FOUND_COMP, {id}, info);
@@ -1855,15 +1855,15 @@ algorithm
         fail();
 
     // Records, create record constructor function
-    case (cache,ht,httypes,env,id,_)
+    case (cache,ht,_,env,id,_)
       equation
-        Env.CLASS((cdef as SCode.CLASS(name=n,restriction=SCode.R_RECORD(_))),cenv,_) = Env.avlTreeGet(ht, id);
+        Env.CLASS((cdef as SCode.CLASS(name=_,restriction=SCode.R_RECORD(_))),_,_) = Env.avlTreeGet(ht, id);
         (cache,_,ftype) = buildRecordType(cache,env,cdef);
       then
         (cache,{ftype});
 
     // Found class that is function, instantiate to get type
-    case (cache,ht,httypes,env,id,_)
+    case (cache,ht,_,env,id,_)
       equation
         Env.CLASS((cdef as SCode.CLASS(restriction=restr)),cenv,_) = Env.avlTreeGet(ht, id);
         true = SCode.isFunctionRestriction(restr) "If found class that is function.";
@@ -1881,7 +1881,7 @@ algorithm
         (cache,tps);
 
     // Found class that is is external object
-    case (cache,ht,httypes,env,id,_)
+    case (cache,ht,_,env,id,_)
       equation
         Env.CLASS(cdef,cenv,_) = Env.avlTreeGet(ht, id);
         true = SCode.classIsExternalObject(cdef);
@@ -1976,7 +1976,7 @@ algorithm
         cl = SCode.CLASS(id,SCode.defaultPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_FUNCTION(SCode.FR_RECORD_CONSTRUCTOR()),SCode.PARTS((reselt :: funcelts),{},{},{},{},{},{},NONE()),SCode.noComment,info);
       then
         (cache,env,cl);
-    case (cache,env,cl)
+    case (_,_,_)
       equation
         Debug.fprintln(Flags.FAILTRACE,"buildRecordConstructorClass failed");
       then fail();
@@ -2025,7 +2025,7 @@ algorithm
       then (cache,env1,funcelts,elts);
 
     // fail
-    case(cache,env,_,_) equation
+    case(_,_,_,_) equation
       Debug.traceln("buildRecordConstructorClass2 failed, cl:"+&SCodeDump.unparseElementStr(cl,SCodeDump.defaultOptions)+&"\n");
     then fail();
       /* TODO: short class defs */
@@ -2083,8 +2083,7 @@ algorithm
     case ({},_,_) then {};
 
     // final becomes protected, Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
-    case ((((comp as
-      SCode.COMPONENT(
+    case ((((      SCode.COMPONENT(
         id,
         SCode.PREFIXES(vis, redecl, f as SCode.FINAL(), io, repl),
         SCode.ATTR(d,ct,prl,var,dir),tp,mod,comment,cond,info)),cmod) :: rest),_,_)
@@ -2112,8 +2111,7 @@ algorithm
 
     // constants become protected, Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
     // mahge: 2013-01-15 : only if they have bindings. otherwise they are still modifiable.
-    case ((((comp as
-      SCode.COMPONENT(
+    case ((((      SCode.COMPONENT(
         id,
         SCode.PREFIXES(vis, redecl, f, io, repl),
         SCode.ATTR(d,ct,prl,SCode.CONST(),dir),tp,mod as SCode.NOMOD(),comment,cond,info)), cmod) :: rest),_,_)
@@ -2140,8 +2138,7 @@ algorithm
         (SCode.COMPONENT(id,SCode.PREFIXES(vis,redecl,f,io,repl),SCode.ATTR(d,ct,prl,var,dir),tp,umod,comment,cond,info) :: res);
 
 
-    case ((((comp as
-      SCode.COMPONENT(
+    case ((((      SCode.COMPONENT(
         id,
         SCode.PREFIXES(vis, redecl, f, io, repl),
         SCode.ATTR(d,ct,prl,var as SCode.CONST(),dir),tp,mod,comment,cond,info)),cmod) :: rest),_,_)
@@ -2168,8 +2165,7 @@ algorithm
         (SCode.COMPONENT(id,SCode.PREFIXES(vis,redecl,f,io,repl),SCode.ATTR(d,ct,prl,var,dir),tp,umod,comment,cond,info) :: res);
 
     // all others, add input see Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
-    case ((((comp as
-      SCode.COMPONENT(
+    case ((((      SCode.COMPONENT(
         id,
         SCode.PREFIXES(vis, redecl, f, io, repl),
         SCode.ATTR(d,ct,prl,var,dir),tp,mod,comment,cond,info)),cmod) :: rest),_,_)
@@ -2253,7 +2249,7 @@ algorithm
         (cache,_::_) = lookupFunctionsInEnv2(cache,i_env,path,true,Absyn.dummyInfo);
       then
         (cache,true);
-    case (cache,path) then (cache,false);
+    case (cache,_) then (cache,false);
   end matchcontinue;
 end isInBuiltinEnv;
 
@@ -2300,7 +2296,7 @@ algorithm
 
     // lookup stops at encapsulated classes except for builtin
     // scope, if not found in builtin scope, error
-    case (cache,(env as (Env.FRAME(name = SOME(sid),frameType = Env.ENCAPSULATED_SCOPE()) :: fs)),_,prevFrames,_,true)
+    case (cache,(env as (Env.FRAME(name = SOME(_),frameType = Env.ENCAPSULATED_SCOPE()) :: _)),_,_,_,true)
       equation
         (cache,i_env) = Builtin.initialEnv(cache);
         failure((_,_,_,_) = lookupClassInEnv(cache, i_env, id, {}, inState, false));
@@ -2310,7 +2306,7 @@ algorithm
         fail();
 
     // lookup stops at encapsulated classes, except for builtin scope
-    case (cache,(Env.FRAME(frameType = Env.ENCAPSULATED_SCOPE()) :: fs),_,prevFrames,_,msgflag)
+    case (cache,(Env.FRAME(frameType = Env.ENCAPSULATED_SCOPE()) :: _),_,prevFrames,_,msgflag)
       equation
         (cache,i_env) = Builtin.initialEnv(cache);
         (cache,c,env_1,prevFrames) = lookupClassInEnv(cache, i_env, id, {}, inState, msgflag);
@@ -2357,14 +2353,14 @@ algorithm
       Boolean unique;
 
     // Check this scope for class
-    case (cache,Env.FRAME(name = sid,clsAndVars = ht),totenv,name,prevFrames,_,_)
+    case (cache,Env.FRAME(name = _,clsAndVars = ht),totenv,name,prevFrames,_,_)
       equation
         Env.CLASS(c,_,_) = Env.avlTreeGet(ht, name);
       then
         (cache,c,totenv,prevFrames);
 
     // Search among the qualified imports, e.g. import A.B; or import D=A.B;
-    case (cache,Env.FRAME(name = sid,importTable = importTable),totenv,name,_,_,_)
+    case (cache,Env.FRAME(name = _,importTable = importTable),totenv,name,_,_,_)
       equation
         imports = getQualifiedImports(importTable);
         (cache,c,env_1,prevFrames) = lookupQualifiedImportedClassInFrame(cache,imports,totenv,name,inState);
@@ -2372,7 +2368,7 @@ algorithm
         (cache,c,env_1,prevFrames);
 
     // Search among the unqualified imports, e.g. import A.B.*;
-    case (cache,Env.FRAME(name = sid,importTable = importTable),totenv,name,_,_,_)
+    case (cache,Env.FRAME(name = _,importTable = importTable),totenv,name,_,_,_)
       equation
         imports = getUnQualifiedImports(importTable);
         (cache,c,env_1,prevFrames,unique) = lookupUnqualifiedImportedClassInFrame(cache,imports,totenv,name);
@@ -2457,11 +2453,11 @@ algorithm
       then
         (cache,fv,c,m,i,env);
 
-    case (cache, ht, id)
+    case (_, ht, id)
       equation
         true = Flags.isSet(Flags.LOOKUP);
         false = Config.acceptMetaModelicaGrammar(); // MetaModelica function references generate too much failtrace...
-        Env.CLASS(SCode.CLASS(name = name, restriction = r), env, _) = Env.avlTreeGet(ht, id);
+        Env.CLASS(SCode.CLASS(name = name, restriction = _), env, _) = Env.avlTreeGet(ht, id);
         name = id +& " = " +& Env.printEnvPathStr(env) +& "." +& name;
         Debug.traceln("- Lookup.lookupVar2 failed because we find a class instead of a variable: " +& name);
       then
@@ -2514,7 +2510,7 @@ algorithm
       then
         DAE.T_ARRAY(t_1, {dim}, ts);
 
-    case (DAE.T_ARRAY(dims = {dim}, ty = t, source = ts),
+    case (DAE.T_ARRAY(dims = {dim}, ty = t, source = _),
           (DAE.INDEX(exp = DAE.ICONST(integer = ind)) :: ys))
       equation
         sz = Expression.dimensionSize(dim);
@@ -2526,7 +2522,7 @@ algorithm
 
     // HJ: Subscripts needn't be constant. No range-checking can be done
     case (DAE.T_ARRAY(dims = {dim}, ty = t),
-          (DAE.INDEX(exp = e) :: ys))
+          (DAE.INDEX(exp = _) :: ys))
       equation
         true = Expression.dimensionKnown(dim);
         t_1 = checkSubscripts(t, ys);
@@ -2683,7 +2679,7 @@ algorithm
       list<DAE.Var> fields;
 
     // Simple identifier
-    case (cache,ht,ids as DAE.CREF_IDENT(ident = id,subscriptLst = ss) )
+    case (cache,ht,DAE.CREF_IDENT(ident = id,subscriptLst = ss) )
       equation
         (cache,DAE.TYPES_VAR(name,attr,ty,bind,cnstForRange),_,_,_,componentEnv) = lookupVar2(cache,ht, id);
         ty_1 = checkSubscripts(ty, ss);
@@ -2698,14 +2694,14 @@ algorithm
     // Qualified variables looked up through component environment with a spliced exp
     case (cache,ht,DAE.CREF_QUAL(ident = id,subscriptLst = ss,componentRef = ids))
       equation
-        (cache,DAE.TYPES_VAR(_,DAE.ATTR(variability = vt2),ty2,bind,cnstForRange),_,_,_,componentEnv) = lookupVar2(cache, ht, id);
+        (cache,DAE.TYPES_VAR(_,DAE.ATTR(variability = vt2),ty2,_,cnstForRange),_,_,_,componentEnv) = lookupVar2(cache, ht, id);
         // outer variables are not local!
         // this doesn't work yet!
         // false = Absyn.isOuter(io);
         //
         (cache,DAE.ATTR(ct,prl,vt,di,io,vis),ty,binding,cnstForRange,InstTypes.SPLICEDEXPDATA(texp,idTp),_,componentEnv,name) = lookupVar(cache, componentEnv, ids);
         ty = Debug.bcallret1(Types.isBoxedType(ty2), Types.boxIfUnboxedType, ty, ty) "The internal types in a metarecord are lookup up in a clean environment, so we have to box them";
-        (tCref::ltCref) = elabComponentRecursive((texp));
+        (tCref::_) = elabComponentRecursive((texp));
         ty1 = checkSubscripts(ty2, ss);
         ty = sliceDimensionType(ty1,ty);
         ss = addArrayDimensions(ty2,ss);
@@ -2718,9 +2714,9 @@ algorithm
         (cache,DAE.ATTR(ct,prl,vt,di,io,vis),ty,binding,cnstForRange,InstTypes.SPLICEDEXPDATA(SOME(splicedExp),idTp),componentEnv,name);
 
     // Qualified componentname without spliced Expression.
-    case (cache,ht,xCref as (DAE.CREF_QUAL(ident = id,subscriptLst = ss,componentRef = ids)))
+    case (cache,ht,(DAE.CREF_QUAL(ident = id,subscriptLst = _,componentRef = ids)))
       equation
-        (cache,DAE.TYPES_VAR(_,DAE.ATTR(variability = vt2),ty2,bind,cnstForRange),_,_,_,componentEnv) = lookupVar2(cache,ht, id);
+        (cache,DAE.TYPES_VAR(_,DAE.ATTR(variability = vt2),_,_,cnstForRange),_,_,_,componentEnv) = lookupVar2(cache,ht, id);
         (cache,DAE.ATTR(ct,prl,vt,di,io,vis),ty,binding,cnstForRange,InstTypes.SPLICEDEXPDATA(texp,idTp),_,componentEnv,name) = lookupVar(cache, componentEnv, ids);
         {} = elabComponentRecursive((texp));
         vt = SCode.variabilityOr(vt,vt2);
@@ -2728,7 +2724,7 @@ algorithm
         (cache,DAE.ATTR(ct,prl,vt,di,io,vis),ty,binding,cnstForRange,InstTypes.SPLICEDEXPDATA(NONE(),idTp),componentEnv,name);
 
     // Qualified componentname without spliced Expression.
-    case (cache,ht,xCref as (DAE.CREF_QUAL(ident = id,subscriptLst = {},componentRef = DAE.CREF_IDENT(ident=id2,subscriptLst={}))))
+    case (cache,ht,(DAE.CREF_QUAL(ident = id,subscriptLst = {},componentRef = DAE.CREF_IDENT(ident=id2,subscriptLst={}))))
       equation
         true = Config.acceptMetaModelicaGrammar();
         (cache,DAE.TYPES_VAR(ty=DAE.T_METARECORD(fields=fields)),_,_,_,componentEnv) = lookupVar2(cache,ht, id);
@@ -2749,10 +2745,10 @@ algorithm
       Option<DAE.Exp> exp;DAE.ComponentRef ecpr;
 
     // expression is an unqualified component reference
-    case( exp as SOME(DAE.CREF(ecpr as DAE.CREF_IDENT(_,_,_),_ )))  then (ecpr::{});
+    case( SOME(DAE.CREF(ecpr as DAE.CREF_IDENT(_,_,_),_ )))  then (ecpr::{});
 
     // expression is an qualified component reference
-    case( exp as SOME(DAE.CREF(ecpr as DAE.CREF_QUAL(_,_,_,_),_ ))) then (ecpr::{});
+    case( SOME(DAE.CREF(ecpr as DAE.CREF_QUAL(_,_,_,_),_ ))) then (ecpr::{});
 
     case(_) then {};
   end matchcontinue;
@@ -2808,7 +2804,7 @@ algorithm
       then
         DAE.SLICE(DAE.ARRAY(DAE.T_BOOL_DEFAULT, true, expl));
     // Array with enumeration dimension.
-    case DAE.DIM_ENUM(enumTypeName = enum_name, literals = l, size = sz)
+    case DAE.DIM_ENUM(enumTypeName = enum_name, literals = l, size = _)
       equation
         expl = makeEnumLiteralIndices(enum_name, l, 1);
       then
@@ -2866,12 +2862,12 @@ algorithm
         (sub1 :: subs2);
     case(_,{}) then {};
     case({},subs2) then subs2;
-    case(((sub1 as DAE.WHOLEDIM())::subs1), (sub2::subs2))
+    case(((DAE.WHOLEDIM())::subs1), (sub2::subs2))
       equation
         subs2 = expandWholeDimSubScript(subs1,subs2);
       then
         (sub2::subs2);
-    case((sub1::subs1), (sub2::subs2))
+    case((sub1::subs1), (_::subs2))
       equation
         subs2 = expandWholeDimSubScript(subs1,subs2);
       then

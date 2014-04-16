@@ -273,7 +273,7 @@ algorithm
       Absyn.Class class_, cl2;
       list<Absyn.Class> metaClasses, classes;
       list<Absyn.ElementItem> elementItems;
-    case (Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(replaceable_=replaceable_,class_=class_),info=info)))
+    case (Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(class_=class_))))
       equation
         metaClasses = createMetaClasses(class_);
         cl2 = createMetaClassesFromPackage(class_);
@@ -323,8 +323,8 @@ algorithm
       Absyn.ClassDef d;
       Absyn.Info file_info;
 
-    case(c as Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-         body = d as Absyn.PARTS(classParts = cls as {Absyn.PUBLIC(contents = els)},comment = _),info = file_info))
+    case(c as Absyn.CLASS(name = n,partialPrefix = _,finalPrefix = _,encapsulatedPrefix = _,restriction = r,
+         body = Absyn.PARTS(classParts = {Absyn.PUBLIC(contents = els)},comment = _),info = _))
       equation
         r_1 = SCodeUtil.translateRestriction(c, r); // uniontype will not get elaborated!
         SCode.R_UNIONTYPE() = r_1;
@@ -388,7 +388,7 @@ algorithm
       Absyn.ElementSpec spec;
       Absyn.Class cl;
       Absyn.Restriction r;
-    case(Absyn.ELEMENT(specification=spec as Absyn.CLASSDEF(class_=cl as Absyn.CLASS(restriction=r))))
+    case(Absyn.ELEMENT(specification=Absyn.CLASSDEF(class_=Absyn.CLASS(restriction=r))))
       then r;
     case(_)
       then Absyn.R_UNKNOWN();
@@ -504,7 +504,7 @@ algorithm
         element = fixElement(element,name,index,singleton);
         rest = fixElementItems(rest,name,index+1,singleton);
       then (Absyn.ELEMENTITEM(element)::rest);
-    case (elementitem::rest,_,_,_) then fixElementItems(rest,name,index,singleton);
+    case (_::rest,_,_,_) then fixElementItems(rest,name,index,singleton);
   end match;
 end fixElementItems;
 

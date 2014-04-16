@@ -1006,19 +1006,19 @@ algorithm
       (derivedStatements1, functions) = differentiateStatements(restStatements, inDiffwrtCref, inInputData, inDiffType, derivedStatements1, inFunctionTree);
     then (derivedStatements1, functions);
 
-    case((currStatement as DAE.STMT_NORETCALL(exp=exp, source=source))::restStatements, _, _, _, _, _)
+    case((currStatement as DAE.STMT_NORETCALL(source=_))::restStatements, _, _, _, _, _)
     equation
       derivedStatements1 = listAppend({currStatement}, inStmtsAccum);
       (derivedStatements1, functions) = differentiateStatements(restStatements, inDiffwrtCref, inInputData, inDiffType, derivedStatements1, inFunctionTree);
     then (derivedStatements1, functions);
 
-    case((currStatement as DAE.STMT_RETURN(source=source))::restStatements, _, _, _, _, _)
+    case((currStatement as DAE.STMT_RETURN(source=_))::restStatements, _, _, _, _, _)
     equation
       derivedStatements1 = listAppend({currStatement}, inStmtsAccum);
       (derivedStatements1, functions) = differentiateStatements(restStatements, inDiffwrtCref, inInputData, inDiffType, derivedStatements1, inFunctionTree);
     then (derivedStatements1, functions);
 
-    case((currStatement as DAE.STMT_BREAK(source=source))::restStatements, _, _, _, _, _)
+    case((currStatement as DAE.STMT_BREAK(source=_))::restStatements, _, _, _, _, _)
     equation
       derivedStatements1 = listAppend({currStatement}, inStmtsAccum);
       (derivedStatements1, functions) = differentiateStatements(restStatements, inDiffwrtCref, inInputData, inDiffType, derivedStatements1, inFunctionTree);
@@ -1424,7 +1424,7 @@ algorithm
 
       String s1, s2, serr, matrixName, name;
 
-    case (e as DAE.CALL(path = path as Absyn.IDENT(name = "pre"),expLst = _,attr=attr), _, _, _, _)
+    case (e as DAE.CALL(path = path as Absyn.IDENT(name = "pre"),expLst = _), _, _, _, _)
       then
         (e,  inFunctionTree);
 
@@ -1477,14 +1477,14 @@ algorithm
         //print("\nresults to exp: " +& s1);
       then (res,  funcs);
 
-    case (e as DAE.CALL(path = path,expLst = _), _, _, _, _)
+    case (e as DAE.CALL(expLst = _), _, _, _, _)
       equation
         (e1, funcs) = differentiateFunctionCall(e, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         (e,_,_,_) = Inline.inlineExp(e1,(SOME(funcs),{DAE.NORM_INLINE(),DAE.NO_INLINE()}),DAE.emptyElementSource/*TODO:Can we propagate source?*/);
       then
         (e, funcs);
 
-    case (e as DAE.CALL(path = path,expLst = _), _, _, _, _)
+    case (e as DAE.CALL(expLst = _), _, _, _, _)
       equation
         s1 = ExpressionDump.printExpStr(e);
         serr = stringAppendList({"\n- Function differentiateCalls failed ", s1});
@@ -1946,7 +1946,7 @@ algorithm
         (e, funcs);
 
     // der(0^x) = 0
-    case (e0 as DAE.BINARY(exp1 = (e1 as DAE.RCONST(real=0.0)),operator = DAE.POW(tp),exp2 = _), _, _, _, _)
+    case (DAE.BINARY(exp1 = (DAE.RCONST(real=0.0)),operator = DAE.POW(tp),exp2 = _), _, _, _, _)
       equation
         (zero, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then
@@ -2073,7 +2073,7 @@ algorithm
         fail();
 
     // try to inline
-    case (DAE.CALL(path = path,expLst = _,attr=DAE.CALL_ATTR(tuple_=_,builtin=false,isImpure=isImpure,ty=ty,tailCall=_)), _, _, _, _)
+    case (DAE.CALL(expLst = _,attr=DAE.CALL_ATTR(tuple_=_,builtin=false,tailCall=_)), _, _, _, _)
       equation
         //s1 = ExpressionDump.printExpStr(e);
         //print("\nExp-CALL\n build-funcs force-inline: " +& s1);

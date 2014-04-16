@@ -83,7 +83,7 @@ algorithm
       Env.Env env;
 
     // special case for Parham Vaseles OpenModelica Interactive, where buildModel takes stepSize instead of startTime, stopTime and numberOfIntervals
-    case (cache,env,{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,info,_)
+    case (cache,env,{Absyn.CREF(componentRef = _)},args,impl,SOME(st),pre,info,_)
       equation
         // An ICONST is used as the default value of stepSize so that this case
         // fails if stepSize isn't given as argument to buildModel.
@@ -108,7 +108,7 @@ algorithm
         (cache, startTime, stopTime, numberOfIntervals);
 
     // normal case, fill in defaults
-    case (cache,env,{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,info,_)
+    case (cache,env,{Absyn.CREF(componentRef = _)},args,impl,SOME(st),pre,info,_)
       equation
         // An ICONST is used as the default value of stepSize so that this case
         // fails if stepSize isn't given as argument to buildModel.
@@ -283,7 +283,7 @@ public function elabCallInteractive "This function elaborates the functions defi
       Absyn.Path className;
       list<DAE.Exp> simulationArgs;
       String name;
-    case (cache,env,cr2 as Absyn.CREF_IDENT(name = name),_,_,impl,SOME(st),_,_)
+    case (cache,env,cr2 as Absyn.CREF_IDENT(name=_),_,_,impl,SOME(st),_,_)
       equation
         ErrorExt.setCheckpoint("Scripting");
         cr = Absyn.joinCrefs(Absyn.CREF_QUAL("OpenModelica",{},Absyn.CREF_IDENT("Scripting",{})),cr2);
@@ -291,12 +291,12 @@ public function elabCallInteractive "This function elaborates the functions defi
         ErrorExt.delCheckpoint("Scripting");
       then (cache,exp_1,prop,st_1);
 
-    case (cache,env,Absyn.CREF_IDENT(name = _),_,_,_,SOME(st),_,_)
+    case (_,_,Absyn.CREF_IDENT(name = _),_,_,_,SOME(_),_,_)
       equation
         ErrorExt.rollBack("Scripting");
       then fail();
 
-    case (cache,env,Absyn.CREF_IDENT(name = "translateModel"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
+    case (cache,env,Absyn.CREF_IDENT(name = "translateModel"),{Absyn.CREF(componentRef = _)},args,_,SOME(st),_,_)
       equation
         (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info, NONE());
       then
@@ -373,42 +373,42 @@ public function elabCallInteractive "This function elaborates the functions defi
         (cache,Expression.makeBuiltinCall("exportDAEtoMatlab",
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),filenameprefix},DAE.T_STRING_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "buildModel"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
+    case (cache,env,Absyn.CREF_IDENT(name = "buildModel"),{Absyn.CREF(componentRef = _)},args,_,SOME(st),_,_)
       equation
         (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info, NONE());
       then
         (cache,Expression.makeBuiltinCall("buildModel",simulationArgs,DAE.T_UNKNOWN_DEFAULT),
          DAE.PROP(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_INTEGER(2)},DAE.emptyTypeSource),DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "buildModelBeast"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
+    case (cache,env,Absyn.CREF_IDENT(name = "buildModelBeast"),{Absyn.CREF(componentRef = _)},args,_,SOME(st),_,_)
       equation
         (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info, NONE());
       then
         (cache,Expression.makeBuiltinCall("buildModelBeast",simulationArgs,DAE.T_UNKNOWN_DEFAULT),
          DAE.PROP(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_INTEGER(2)},DAE.emptyTypeSource),DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "simulate"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_) /* Fill in rest of defaults here */
+    case (cache,env,Absyn.CREF_IDENT(name = "simulate"),{Absyn.CREF(componentRef = _)},args,_,SOME(st),_,_) /* Fill in rest of defaults here */
       equation
         (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info, NONE());
         recordtype = CevalScript.getSimulationResultType();
       then
         (cache,Expression.makeBuiltinCall("simulate",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "simulation"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_) /* Fill in rest of defaults here */
+    case (cache,env,Absyn.CREF_IDENT(name = "simulation"),{Absyn.CREF(componentRef = _)},args,_,SOME(st),_,_) /* Fill in rest of defaults here */
       equation
         (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info, NONE());
         recordtype = CevalScript.getDrModelicaSimulationResultType();
       then
         (cache,Expression.makeBuiltinCall("simulation",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "linearize"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_) /* Fill in rest of defaults here */
+    case (cache,env,Absyn.CREF_IDENT(name = "linearize"),{Absyn.CREF(componentRef = _)},args,_,SOME(st),_,_) /* Fill in rest of defaults here */
       equation
         (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info, NONE());
         recordtype = CevalScript.getSimulationResultType();
       then
         (cache,Expression.makeBuiltinCall("linearize",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "optimize"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_) /* Fill in rest of defaults here */
+    case (cache,env,Absyn.CREF_IDENT(name = "optimize"),{Absyn.CREF(componentRef = _)},args,_,SOME(st),_,_) /* Fill in rest of defaults here */
       equation
         (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info, NONE());
         recordtype = CevalScript.getSimulationResultType();
@@ -416,7 +416,7 @@ public function elabCallInteractive "This function elaborates the functions defi
         (cache,Expression.makeBuiltinCall("optimize",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "jacobian"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_) /* Fill in rest of defaults here */
+    case (cache,env,Absyn.CREF_IDENT(name = "jacobian"),{Absyn.CREF(componentRef = cr)},_,impl,SOME(st),pre,_) /* Fill in rest of defaults here */
       equation
         (cache,cr_1) = Static.elabUntypedCref(cache,env,cr,impl,pre,info);
         crefExp = Expression.crefExp(cr_1);
@@ -430,7 +430,7 @@ public function elabCallInteractive "This function elaborates the functions defi
         (cache,Expression.makeBuiltinCall("timing",{exp_1},DAE.T_REAL_DEFAULT),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()),st_1);
 
       // MathCore-specific. Should be in MathCoreBuiltin.mo :p
-    case (cache,env,Absyn.CREF_IDENT(name = "checkExamplePackages"),{},args,impl,SOME(st),pre,_)
+    case (cache,_,Absyn.CREF_IDENT(name = "checkExamplePackages"),{},args,_,SOME(st),_,_)
       equation
         excludeList = Static.getOptionalNamedArgExpList("exclude", args);
         excludeListSize = listLength(excludeList);
@@ -440,7 +440,7 @@ public function elabCallInteractive "This function elaborates the functions defi
         DAE.T_STRING_DEFAULT),
         DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "checkExamplePackages"),{Absyn.STRING(value = str)},args,impl,SOME(st),pre,_)
+    case (cache,_,Absyn.CREF_IDENT(name = "checkExamplePackages"),{Absyn.STRING(value = str)},args,_,SOME(st),_,_)
       equation
         excludeList = Static.getOptionalNamedArgExpList("exclude", args);
         excludeListSize = listLength(excludeList);
@@ -450,7 +450,7 @@ public function elabCallInteractive "This function elaborates the functions defi
         DAE.T_STRING_DEFAULT),
         DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "checkExamplePackages"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
+    case (cache,_,Absyn.CREF_IDENT(name = "checkExamplePackages"),{Absyn.CREF(componentRef = cr)},args,_,SOME(st),_,_)
       equation
         className = Absyn.crefToPath(cr);
         excludeList = Static.getOptionalNamedArgExpList("exclude", args);
@@ -462,7 +462,7 @@ public function elabCallInteractive "This function elaborates the functions defi
         DAE.T_STRING_DEFAULT),
         DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "checkExamplePackages"),{Absyn.CREF(componentRef = cr), Absyn.STRING(value = str)},args,impl,SOME(st),pre,_)
+    case (cache,_,Absyn.CREF_IDENT(name = "checkExamplePackages"),{Absyn.CREF(componentRef = cr), Absyn.STRING(value = str)},args,_,SOME(st),_,_)
       equation
         className = Absyn.crefToPath(cr);
         excludeList = Static.getOptionalNamedArgExpList("exclude", args);
@@ -527,7 +527,7 @@ algorithm
       list<Absyn.NamedArg> nargs;
       Env.Cache cache;
       Prefix.Prefix pre;
-  case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,doVect,pre,_,_)
+  case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,_,pre,_,_)
       equation
         (cache,e_1,prop,st_1) = elabCall(cache,env, fn, args, nargs, impl, st,pre,info,Error.getNumErrorMessages());
         c = Types.propAllConst(prop);
@@ -608,7 +608,7 @@ algorithm
       Env.Cache cache;
       Prefix.Prefix pre;
     // Function calls
-    case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,pre,_)
+    case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),_,pre,_)
       equation
         (cache,e_1,prop,_) = elabCall(cache,env, fn, args, nargs, true,NONE(),pre,info,Error.getNumErrorMessages());
       then

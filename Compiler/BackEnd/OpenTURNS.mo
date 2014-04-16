@@ -401,7 +401,7 @@ algorithm
       DAE.ComponentRef cr;
       list<DAE.Exp> expl1,expl2;
 
-    case((DAE.DISTRIBUTION(DAE.SCONST(name as "LogNormal"),DAE.ARRAY(array=expl1),DAE.ARRAY(array=expl2)),cr),_)
+    case((DAE.DISTRIBUTION(DAE.SCONST(name as "LogNormal"),DAE.ARRAY(array=expl1),DAE.ARRAY(array=_)),cr),_)
       equation
         // e.g. distributionL = Beta(0.93, 3.2, 2.8e7, 4.8e7)
         // TODO:  make sure that the arguments are in correct order by looking at the expl2 list containing strings of argument names
@@ -415,7 +415,7 @@ algorithm
       then
         (str,(varName,distVar));
 
-    case((DAE.DISTRIBUTION(DAE.SCONST(name),DAE.ARRAY(array=expl1),DAE.ARRAY(array=expl2)),cr),_)
+    case((DAE.DISTRIBUTION(DAE.SCONST(name),DAE.ARRAY(array=expl1),DAE.ARRAY(array=_)),cr),_)
       equation
         // e.g. distributionL = Beta(0.93, 3.2, 2.8e7, 4.8e7)
         // TODO:  make sure that the arguments are in correct order by looking at the expl2 list containing strings of argument names

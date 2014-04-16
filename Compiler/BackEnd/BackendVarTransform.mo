@@ -137,7 +137,7 @@ algorithm
       Option<HashTable2.HashTable> derConst;
     case (_,_,_)
       equation
-        REPLACEMENTS(ht,invHt,eht,iv,derConst) = repl;
+        REPLACEMENTS(ht,_,_,_,_) = repl;
         false = BaseHashTable.hasKey(inSrc,ht);
       then
         repl;
@@ -576,7 +576,7 @@ algorithm
         crefs =  List.map(varLst,ComponentReference.creffromVar);
         erepl = List.fold1r(crefs,addExtendReplacement,SOME(precr),erepl);
       then erepl;
-    case (_,DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=varLst),subscriptLst=subscriptLst),SOME(pcr))
+    case (_,DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=varLst)),SOME(pcr))
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
         precr1 = ComponentReference.joinCrefs(pcr,cr);

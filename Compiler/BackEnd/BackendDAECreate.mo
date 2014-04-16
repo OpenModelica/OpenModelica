@@ -605,7 +605,7 @@ algorithm
         (vars, inKnVars, inExVars, BackendDAE.EQUATION(e1, e2, source, false)::inEqnsLst, iInlineHT);
 
     // variables: states and algebraic variables with NO binding equation
-    case (DAE.VAR(binding=NONE(), source = source), _, _, _, _, _, _)
+    case (DAE.VAR(binding=NONE()), _, _, _, _, _, _)
       equation
         true = isStateOrAlgvar(inElement);
         (backendVar1) = lowerDynamicVar(inElement, functionTree);
@@ -614,7 +614,7 @@ algorithm
         (vars, inKnVars, inExVars, inEqnsLst, iInlineHT);
 
     // variables: states and algebraic variables with NO binding equation
-    case (DAE.VAR(binding=NONE(), source = source), _, _, _, _, _, _)
+    case (DAE.VAR(binding=NONE()), _, _, _, _, _, _)
       equation
         true = isStateOrAlgvar(inElement);
         (backendVar1) = lowerDynamicVar(inElement, functionTree);
@@ -1117,7 +1117,7 @@ algorithm
       DAE.Type t;
 
     case (DAE.VAR(componentRef = name,
-                  kind = kind,
+                  
                   direction = dir,
                   parallelism = prl,
                   ty = t,
@@ -1335,7 +1335,7 @@ algorithm
       then
         (eqns,reqns,ieqns);
 
-    case (DAE.ASSERT(condition=_,message=_,level=level,source=source),_,_,_,_)
+    case (DAE.ASSERT(condition=_,message=_),_,_,_,_)
       equation
         (eqns,reqns,ieqns) = lowerAlgorithm(inElement,functionTree,inEquations,inREquations,inIEquations, DAE.NOT_EXPAND());
       then

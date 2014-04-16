@@ -736,7 +736,7 @@ algorithm
         inSets;
 
     // Otherwise, add a new set for it.
-    case (Connect.SETS(sets, sc, c, o), _, DAE.SOURCE(info = info), _)
+    case (Connect.SETS(sets, sc, c, o), _, DAE.SOURCE(info=_), _)
       equation
         sc = sc + 1;
         src = DAEUtil.addAdditionalComment(inSource, " add inside flow(" +&
@@ -3103,7 +3103,7 @@ algorithm
       Boolean has_stream, has_cardinality;
 
     case ((DAE.CALL(path = Absyn.IDENT("inStream"),
-                    expLst = {DAE.CREF(componentRef = cr, ty = ty)}),
+                    expLst = {DAE.CREF(componentRef = cr)}),
           (has_stream as true, has_cardinality as _, sets, set_arr, _)))
       equation
         e = evaluateInStream(cr, (has_stream, has_cardinality, sets, set_arr));
@@ -3112,7 +3112,7 @@ algorithm
         ((e, (has_stream, has_cardinality, sets, set_arr, true)));
 
     case ((DAE.CALL(path = Absyn.IDENT("actualStream"),
-                    expLst = {DAE.CREF(componentRef = cr, ty = ty)}),
+                    expLst = {DAE.CREF(componentRef = cr)}),
           (has_stream as true, has_cardinality as _, sets, set_arr, _)))
       equation
         e = evaluateActualStream(cr, sets, set_arr);
@@ -3121,7 +3121,7 @@ algorithm
         ((e, (has_stream, has_cardinality, sets, set_arr, true)));
 
     case ((DAE.CALL(path = Absyn.IDENT("cardinality"),
-                    expLst = {DAE.CREF(componentRef = cr, ty = ty)}),
+                    expLst = {DAE.CREF(componentRef = cr)}),
           (has_stream as _, has_cardinality as true, sets, set_arr, _)))
       equation
         e = evaluateCardinality(cr, sets);
@@ -3593,7 +3593,7 @@ algorithm
     case ({}) then (0, 0, 0);
 
     // A connector inside a connector.
-    case ((DAE.TYPES_VAR(name = name, ty = ty)) :: rest)
+    case ((DAE.TYPES_VAR( ty = ty)) :: rest)
       equation
         // Check that it's a connector.
         ty2 = Types.arrayElementType(ty);

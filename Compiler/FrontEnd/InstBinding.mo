@@ -294,7 +294,7 @@ algorithm
       then
         SOME(DAE.SCONST("binding"));
 
-    case (_,DAE.TYPES_VAR(name,binding=binding)::_,bind_name)
+    case (_,DAE.TYPES_VAR(name=name)::_,bind_name)
       equation
         true = stringEq(name, bind_name);
       then

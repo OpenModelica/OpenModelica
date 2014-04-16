@@ -207,7 +207,7 @@ algorithm
 
     // don't tear linear system as long as we do not handle them
     // as linear system while the runtime
-    case ((comp as BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType))::comps, _, _, _, _, _) equation
+    case ((BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType))::comps, _, _, _, _, _) equation
       equality(jacType = BackendDAE.JAC_TIME_VARYING());
       Debug.fcall(Flags.TEARING_DUMP, print, "\nCase linear in traverseComponents\nUse Flag '+d=tearingdumpV' for more details\n\n");
       true = Flags.isSet(Flags.LINEAR_TEARING);
@@ -218,7 +218,7 @@ algorithm
     then (acc, b1);
 
     // tearing of non-linear systems
-    case ((comp as BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType))::comps, _, _, _, _, _) equation
+    case ((BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType))::comps, _, _, _, _, _) equation
       failure(equality(jacType = BackendDAE.JAC_TIME_VARYING()));
       Debug.fcall(Flags.TEARING_DUMP, print, "\nCase non-linear in traverseComponents\nUse Flag '+d=tearingdumpV' for more details\n\n");
       Debug.fcall(Flags.TEARING_DUMPVERBOSE, print, "Jacobian:\n" +& BackendDump.dumpJacobianStr(ojac) +& "\n\n");
@@ -227,7 +227,7 @@ algorithm
     then (acc, b1);
 
     // only continues part of a mixed system
-    case ((comp as BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1, disc_eqns=eindex, disc_vars=vindx))::comps, _, _, _, _, _) equation
+    case ((BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1, disc_eqns=eindex, disc_vars=vindx))::comps, _, _, _, _, _) equation
       Debug.fcall(Flags.TEARING_DUMP, print, "\nCase mixed in traverseComponents\nUse '+d=tearingdumpV' for more details\n\n");
       false = Flags.isSet(Flags.MIXED_TEARING);
       Debug.fcall(Flags.TEARING_DUMP, print, "Flag 'MixedTearing' is not set\n(disabled by user)\n\n");
@@ -439,7 +439,7 @@ algorithm
         b1 = Debug.bcallret1(b1, unsolvable, rest, false);
       then
         b1;
-    case ((e,BackendDAE.SOLVABILITY_PARAMETER(b=false))::rest)
+    case ((_,BackendDAE.SOLVABILITY_PARAMETER(b=false))::rest)
       then
         unsolvable(rest);
     case ((e,BackendDAE.SOLVABILITY_PARAMETER(b=true))::rest)
@@ -448,16 +448,16 @@ algorithm
         b1 = Debug.bcallret1(b1, unsolvable, rest, false);
       then
         b1;
-    case ((e,BackendDAE.SOLVABILITY_TIMEVARYING(b=false))::rest)
+    case ((_,BackendDAE.SOLVABILITY_TIMEVARYING(b=false))::rest)
       then
         unsolvable(rest);
-    case ((e,BackendDAE.SOLVABILITY_TIMEVARYING(b=true))::rest)
+    case ((_,BackendDAE.SOLVABILITY_TIMEVARYING(b=true))::rest)
       then
         unsolvable(rest);
-    case ((e,BackendDAE.SOLVABILITY_NONLINEAR())::rest)
+    case ((_,BackendDAE.SOLVABILITY_NONLINEAR())::rest)
       then
         unsolvable(rest);
-    case ((e,BackendDAE.SOLVABILITY_UNSOLVABLE())::rest)
+    case ((_,BackendDAE.SOLVABILITY_UNSOLVABLE())::rest)
       then
         unsolvable(rest);
   end match;
@@ -980,7 +980,7 @@ algorithm
         true = intLt(ass2[e],0);
       then
         removeMatched(rest,ass2,(e,s)::iAcc);
-    case ((e,s)::rest,_,_)
+    case ((_,_)::rest,_,_)
       then
         removeMatched(rest,ass2,iAcc);
   end matchcontinue;
@@ -1302,13 +1302,13 @@ algorithm
       Integer r;
       BackendDAE.Solvability s;
       BackendDAE.AdjacencyMatrixElementEnhanced rest;
-    case ((r,s)::{}) then solvable(s);
-    case ((r,s)::rest)
+    case ((_,s)::{}) then solvable(s);
+    case ((_,s)::rest)
       equation
         true = solvable(s);
       then
         solvableLst(rest);
-  case ((r,s)::rest)
+  case ((_,s)::_)
       equation
         false = solvable(s);
       then
@@ -1352,7 +1352,7 @@ algorithm
       BackendDAE.Solvability s;
       BackendDAE.AdjacencyMatrixElementEnhanced rest,vareqns,newqueue;
     case ({},_,_,_,_,_,_,_) then inNextQueue;
-    case ((r,s)::rest,c::ilst,_,_,_,_,_,_)
+    case ((r,_)::rest,c::ilst,_,_,_,_,_,_)
       equation
            Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Assignment: Eq " +& intString(c) +& " - Var " +& intString(r) +& "\n");
         // assign
@@ -1658,7 +1658,7 @@ algorithm
     equation
     true = BackendVariable.isVarDiscrete(head);
      then findDiscrete(rest,index::discreteVarsIn,index+1);
-  case(head::rest,_,_)
+  case(_::rest,_,_)
      then findDiscrete(rest,discreteVarsIn,index+1);
   else
     equation
@@ -2430,7 +2430,7 @@ protected function selectCausalVars
            Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Var " +& intString(listGet(selVars,indx)) +& " would causalize " +& intString(size) +& " Eqns\n");
         true = size == num;
       then ((me,ass1In,selEqs,selVars,indx::cVars,num,indx+1,size::counts));
-    case(_,(me,ass1In,selEqs,selVars,cVars,num,indx,counts))
+    case(_,(me,ass1In,selEqs,selVars,_,num,indx,counts))
       equation
         interEqs = List.intersectionOnTrue(row,selEqs,intEq);
         size = List.fold4(interEqs,sizeOfAssignable,me,ass1In,selVars,indx,0);
@@ -2513,7 +2513,7 @@ algorithm
    equation
      false = solvable(s);
     then countImpossibleAss2(rest,inCount+1);
-  case((_,s)::rest,_)
+  case((_,_)::rest,_)
     then countImpossibleAss2(rest,inCount);
  end matchcontinue;
 end countImpossibleAss2;
@@ -2744,7 +2744,7 @@ algorithm
      true = listLength(m[e]) == listLength(mapEqnIncRow[enonscalar]) + prescient;
      (acc1,acc2) = traverseEqnsforAssignable(rest,m,mapEqnIncRow,mapIncRowEqn,prescient,e::inAcc1,inAcc2);
   then (acc1,acc2);
-   case(e::rest,_,_,_,_,_,_)
+   case(_::rest,_,_,_,_,_,_)
     equation
      (acc1,acc2) = traverseEqnsforAssignable(rest,m,mapEqnIncRow,mapIncRowEqn,prescient,inAcc1,inAcc2);
     then (acc1,acc2);
@@ -2793,7 +2793,7 @@ protected function assignOtherEqnVarTpl " assigns otherEqnVarTpl for TORNSYSTEM
   input list<tuple<Integer,list<Integer>>> inOtherEqnVarTpl;
   output list<tuple<Integer,list<Integer>>> outOtherEqnVarTpl;
 algorithm
- outOtherEqnVarTpl := matchcontinue(inEqns,eindex,vindx,ass2,mapEqnIncRow,inOtherEqnVarTpl)
+ outOtherEqnVarTpl := match(inEqns,eindex,vindx,ass2,mapEqnIncRow,inOtherEqnVarTpl)
    local
      Integer eq,otherEqn;
      list<Integer> eqns,vars,otherVars,rest;
@@ -2806,7 +2806,7 @@ algorithm
     otherEqn = listGet(eindex,eq);
     otherVars = listReverse(selectFromList(vindx,vars));
      then assignOtherEqnVarTpl(rest,eindex,vindx,ass2,mapEqnIncRow,(otherEqn,otherVars)::inOtherEqnVarTpl);
- end matchcontinue;
+ end match;
 end assignOtherEqnVarTpl;
 
 
@@ -2816,7 +2816,7 @@ varibale (findEqorVar=2) that can be matched
   input tuple<list<Integer>,BackendDAE.IncidenceMatrix,BackendDAE.AdjacencyMatrixEnhanced,array<Integer>,array<Integer>,array<list<Integer>>,Integer> inTpl;
   output tuple<Integer,list<Integer>,list<Integer>> EqnsAndVars;
 algorithm
-  EqnsAndVars := matchcontinue(inTpl)
+  EqnsAndVars := match(inTpl)
     local
       Integer eqn,eqn_coll,var;
       list<Integer> eqns,vars,rest;
@@ -2843,7 +2843,7 @@ algorithm
     b = solvableLst(eqn_enh);
        then Debug.bcallret1(boolNot(b),getpossibleEqnorVar,(rest,m_mt,me_met,ass1,ass2,mapEqnIncRow,2),(eqn,{var},{eqn}));
     else then fail();
-   end matchcontinue;
+   end match;
 end getpossibleEqnorVar;
 
 
@@ -2853,7 +2853,7 @@ protected function markTVars
   input list<Integer> tVars, ass1In;
   output list<Integer> ass1Out;
 algorithm
- ass1Out := matchcontinue(tVars,ass1In)
+ ass1Out := match(tVars,ass1In)
   local
     Integer tVar;
   list<Integer> rest,ass1;
@@ -2862,7 +2862,7 @@ algorithm
    equation
      ass1 = List.set(ass1In,tVar,listLength(ass1In)*2);
   then markTVars(rest,ass1);
- end matchcontinue;
+ end match;
 end markTVars;
 
 
@@ -2964,7 +2964,7 @@ algorithm
         equation
           true = intEq(value,maxValue);
           then ((indx+1,maxValue,indx::ilst));
-      case(_,(indx,maxValue,ilst))
+      case(_,(indx,maxValue,_))
         equation
           true = intGt(value,maxValue);
           then ((indx+1,value,{indx}));
@@ -3015,8 +3015,8 @@ algorithm
     local
       Integer e;
       list<Integer> rest;
-    case (_,-1, e :: rest) then inList;
-    case (_, 0, e :: rest) then inElement :: rest;
+    case (_,-1, _ :: _) then inList;
+    case (_, 0, _ :: rest) then inElement :: rest;
     case (_, _, e :: rest)
       equation
         (inPosition >= 1) = true;
@@ -3112,7 +3112,7 @@ algorithm
     local
       Integer length,length1;
       list<list<Integer>> ilst;
-    case(_,(length,ilst))
+    case(_,(length,_))
       equation
         length1 = listLength(row);
         true = length1 > length;
@@ -3141,7 +3141,7 @@ algorithm
     local
       Integer length,length1,indx;
       list<Integer> ilst;
-    case(_,(length,indx,ilst))
+    case(_,(length,indx,_))
       equation
         length1 = listLength(row);
         true = length1 > length;

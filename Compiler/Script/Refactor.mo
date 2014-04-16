@@ -150,13 +150,13 @@ algorithm
       then
         Absyn.PARTS(typeVars,classAttrs,resultPart,ann,cmt);
 
-    case(Absyn.DERIVED(typeSpec = ts, attributes = attrs,arguments = args, comment = SOME(Absyn.COMMENT(annotation_=SOME(Absyn.ANNOTATION(elementArgs = annList)),comment = cmt))),p,cPath,env)
+    case(Absyn.DERIVED(typeSpec = ts, attributes = attrs,arguments = args, comment = SOME(Absyn.COMMENT(annotation_=SOME(Absyn.ANNOTATION(elementArgs = annList)),comment = cmt))),p,_,_)
       equation
         resAnnList = transformClassAnnList(annList,{"Class"},{},p);
       then
         Absyn.DERIVED(ts,attrs,args,SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(resAnnList)),cmt)));
 
-    case(cd,p,_,_) then cd;
+    case(cd,_,_,_) then cd;
 
   end matchcontinue;
 
@@ -244,7 +244,7 @@ algorithm
       then
         Absyn.INITIALALGORITHMS(resultAlgContent);
 
-    case(cp,p,_,_) then cp;
+    case(cp,_,_,_) then cp;
   end matchcontinue;
 end refactorGraphAnnInClassPart;
 
@@ -334,7 +334,7 @@ algorithm
         annList = transformConnectAnnList(annList,{"Connect"},{},p); //Connectannotation
       then
         Absyn.EQUATIONITEM(e,SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annList)),com)),info);
-    case(ei,p,_,_) then ei;
+    case(ei,_,_,_) then ei;
   end matchcontinue;
 end refactorGraphAnnInEqItem;
 
@@ -355,14 +355,14 @@ algorithm
       list<Absyn.ElementArg> annList;
       Absyn.Info info;
     case(Absyn.ALGORITHMITEM(algorithm_ = alg, info = info, comment =
-      SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annList)),com))),p,_,_)
+      SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annList)),com))),_,_,_)
       equation
         //        a = transformGraphAnn(a,p); whut?
 
       then
         Absyn.ALGORITHMITEM(alg,SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annList)),com)),info);
 
-    case(algI,p,_,_) then algI;
+    case(algI,_,_,_) then algI;
 
   end matchcontinue;
 
@@ -468,7 +468,7 @@ algorithm
       Env.Env env;
       Option<Absyn.ArrayDim> z;
 
-    case(Absyn.CLASSDEF(replaceable_ = r, class_ = cl),p,cPath,env)
+    case(Absyn.CLASSDEF(replaceable_ = r, class_ = cl),p,cPath,_)
 
       equation
 
@@ -489,7 +489,7 @@ algorithm
 
 
 
-    case(e,p,_,_)
+    case(e,_,_,_)
 
     then e;
 
@@ -582,8 +582,8 @@ algorithm
       path =
         Absyn.IDENT(name = "extent"),
       modification =
-        SOME(Absyn.CLASSMOD(elementArgLst = args, eqMod = Absyn.EQMOD(exp=Absyn.MATRIX(matrix = {{x1,y1},{x2,y2}} )))),
-      comment = com, info = info) :: rest,context as ("Component" :: c),res,cPath,path,p,env)
+        SOME(Absyn.CLASSMOD(elementArgLst = _, eqMod = Absyn.EQMOD(exp=Absyn.MATRIX(matrix = {{x1,y1},{x2,y2}} )))),
+      comment = com, info = info) :: rest,context as ("Component" :: _),res,cPath,path,p,env)
       equation
         Absyn.R_CONNECTOR() = getRestrictionFromPath(cPath,path,p,env)"Fails the case if we shouldn't have a iconTransformation";
         rot = getRotationDegree(listAppend(res,rest));
@@ -594,8 +594,8 @@ algorithm
         res = {Absyn.MODIFICATION(fi, e, Absyn.IDENT("Placement"), SOME(Absyn.CLASSMOD(trans,Absyn.NOMOD())),/*NONE,*/com, info)};//:: res; //SOME(Absyn.ARRAY({Absyn.ARRAY({x1,y1}  ),Absyn.ARRAY({x2,y2})}))
       then res;
 
-    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "extent"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, eqMod = Absyn.EQMOD(exp=Absyn.MATRIX(matrix = {{x1,y1},{x2,y2}} )))), comment = com, info = info) :: rest,
-      context as ("Component" :: c),res,cPath,path,p,env)
+    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "extent"), modification = SOME(Absyn.CLASSMOD(elementArgLst = _, eqMod = Absyn.EQMOD(exp=Absyn.MATRIX(matrix = {{x1,y1},{x2,y2}} )))), comment = com, info = info) :: rest,
+      context as ("Component" :: _),res,cPath,path,p,env)
       equation
         rot = getRotationDegree(listAppend(res,rest));
         diagramTrans = getDiagramTransformation(x1,y1,x2,y2,rot,cPath,path,p,env);
@@ -630,7 +630,7 @@ algorithm
       Absyn.Restriction restriction;
       Env.Env env;
 
-    case(cPath,path,p, env) // try directly first
+    case(cPath,path,p, _) // try directly first
       equation
         fullPath = fixPaths(cPath, path);
        // debug_print("getRestrictionFromPath: TryingLookingUp:", Absyn.pathString(fullPath));
@@ -639,7 +639,7 @@ algorithm
       then
         restriction;
 
-    case(cPath,path,p, env) // if it fails try the hard way
+    case(_,path,p, env) // if it fails try the hard way
       equation
         (_,fullPath) = Inst.makeFullyQualified(Env.emptyCache(),env,path);
     //    debug_print("getRestrictionFromPath: LookingUp:", Absyn.pathString(fullPath));
@@ -648,7 +648,7 @@ algorithm
       then
         restriction;
 
-    case(cPath,path,p, env)
+    case(_,_,_, _)
       equation
 //        debug_print("\ngetPathedClassInProgram:", "failed!");
       then fail();
@@ -687,7 +687,7 @@ algorithm
 
     case({}) then NONE();
 
-    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "rotation"), modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=ex)))) :: rest)
+    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "rotation"), modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=ex)))) :: _)
       equation
         rot = (getValueFromExp(ex));
       then
@@ -987,7 +987,7 @@ algorithm
 
       Env.Env env;
 
-    case(cPath,path,p,context, env) // try directly first
+    case(cPath,path,p,context, _) // try directly first
       equation
         fullPath = fixPaths(cPath, path);
 //        debug_print("getCoordsInPath: TryingLookingUp:", Absyn.pathString(fullPath));
@@ -996,7 +996,7 @@ algorithm
       then
        (x1,y1,x2,y2);
 
-    case(cPath,path,p,context, env) // if it doesn't work, try the hard way
+    case(_,path,p,context, env) // if it doesn't work, try the hard way
       equation
         //  p_1 = SCodeUtil.translateAbsyn2SCode(p);
         //  (_,env) = Inst.makeEnvFromProgram(Env.emptyCache,p_1, Absyn.IDENT(""));
@@ -1011,7 +1011,7 @@ algorithm
       then
         (x1,y1,x2,y2);//(Absyn.REAL(-100.0),Absyn.REAL(-100.0),Absyn.REAL(100.0),Absyn.REAL(100.0));
 
-    case(cPath,path,p,context, env) // if it doesn't work, try the hard way
+    case(_,_,_,_, _) // if it doesn't work, try the hard way
       equation
   //     debug_print("\ngetPathedClassInProgram:", "failed!");
       then fail();
@@ -1069,19 +1069,19 @@ algorithm
       Context context;
 
     case({},_) then (Absyn.REAL(-100.0),Absyn.REAL(-100.0),Absyn.REAL(100.0),Absyn.REAL(100.0))/*If coordsys is not explicit defined, old implicit standard is [-100,-100;100,100]*/;
-    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "Coordsys"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args)))::rest,context)
+    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "Coordsys"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args)))::_,_)
       equation
         (x1,y1,x2,y2) = getCoordsFromCoordSysArgs(args);
       then
         (x1,y1,x2,y2);
 
-    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "Icon"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args)))::rest,"Icon" :: context)
+    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "Icon"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args)))::_,"Icon" :: _)
       equation
         (x1,y1,x2,y2) = getCoordsFromLayerArgs(args);
       then
         (x1,y1,x2,y2);
 
-    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "Diagram"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args)))::rest,"Diagram" :: context)
+    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "Diagram"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args)))::_,"Diagram" :: _)
       equation
         (x1,y1,x2,y2) = getCoordsFromLayerArgs(args);
       then
@@ -1108,7 +1108,7 @@ algorithm
     local
       list<Absyn.ElementArg> rest;
 
-    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "extent"), modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=Absyn.MATRIX(matrix = {{x1,y1},{x2,y2}} ))))) :: rest)
+    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "extent"), modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=Absyn.MATRIX(matrix = {{x1,y1},{x2,y2}} ))))) :: _)
     then
       (x1,y1,x2,y2);
 
@@ -1132,7 +1132,7 @@ algorithm
     local list<Absyn.ElementArg> rest;
     case (Absyn.MODIFICATION(
       path = Absyn.IDENT(name = "extent"),
-      modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=Absyn.ARRAY({Absyn.ARRAY({x1,y1}  ),Absyn.ARRAY({x2,y2})}))) )):: rest)
+      modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=Absyn.ARRAY({Absyn.ARRAY({x1,y1}  ),Absyn.ARRAY({x2,y2})}))) )):: _)
       equation
       then (x1,y1,x2,y2);
 
@@ -1155,7 +1155,7 @@ algorithm
     local
       list<Absyn.ElementArg> rest,args;
 
-    case (Absyn.MODIFICATION(path = Absyn.IDENT(name = "coordinateSystem"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args)))::rest)
+    case (Absyn.MODIFICATION(path = Absyn.IDENT(name = "coordinateSystem"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args)))::_)
       equation
         (x1,y1,x2,y2) = getExtentModification(args);
       then
@@ -1202,22 +1202,22 @@ algorithm
       Absyn.EqMod eqMod;
       Absyn.Info info, mod_info;
 
-    case({},_,res,p) then res ;
+    case({},_,res,_) then res ;
 
-    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "points"), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,eqMod = Absyn.EQMOD(Absyn.MATRIX(matrix = expMatrix),info)  )), comment = com, info = mod_info) :: rest,context as ("Connect" :: c),res,p)
+    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "points"), modification = SOME(Absyn.CLASSMOD( elementArgLst = _ ,eqMod = Absyn.EQMOD(Absyn.MATRIX(matrix = expMatrix),info)  )), comment = com, info = mod_info) :: rest,context as ("Connect" :: _),res,p)
       equation
         context = addContext(context,"Line");
         expLst = List.map(expMatrix,matrixToArray);
         res = transformConnectAnnList(rest,context,res,p);
       then {Absyn.MODIFICATION(fi,e,Absyn.IDENT("Line"), SOME(Absyn.CLASSMOD(Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT("points"),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.ARRAY(expLst),info))),NONE(),mod_info) :: res,Absyn.NOMOD())),com,mod_info)};//res;
 
-    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "points"), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,eqMod = Absyn.EQMOD(Absyn.MATRIX(matrix = expMatrix),info)  )), comment = com, info = mod_info) :: rest,context as ("Line" :: c),res,p)
+    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "points"), modification = SOME(Absyn.CLASSMOD( elementArgLst = _ ,eqMod = Absyn.EQMOD(Absyn.MATRIX(matrix = expMatrix),info)  )), comment = com, info = mod_info) :: rest,context as ("Line" :: _),res,p)
       equation
         expLst = List.map(expMatrix,matrixToArray);
         res = transformConnectAnnList(rest,context,res,p);
       then Absyn.MODIFICATION(fi,e,Absyn.IDENT("points"),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.ARRAY(expLst),info))),com,mod_info) :: res; //res;
 
-    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "style"), modification = SOME(Absyn.CLASSMOD( elementArgLst = args , eqMod = eqMod)), comment = com, info = mod_info) :: rest,context as ("Connect" :: c),res,p)
+    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "style"), modification = SOME(Absyn.CLASSMOD( elementArgLst = args , eqMod = eqMod)), comment = com, info = mod_info) :: rest,context as ("Connect" :: _),res,p)
       equation
         context = addContext(context,"Line");
         args = cleanStyleAttrs(args,{},context);
@@ -1225,7 +1225,7 @@ algorithm
         res = transformConnectAnnList(rest,context,res,p);
       then {Absyn.MODIFICATION(fi,e,Absyn.IDENT("Line"),SOME(Absyn.CLASSMOD(res,eqMod)),com,mod_info)};
 
-    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "style"), modification = SOME(Absyn.CLASSMOD( elementArgLst = args)), comment = com) :: rest,context as ("Line" :: c),res,p)
+    case(Absyn.MODIFICATION(finalPrefix = _, eachPrefix = _, path = Absyn.IDENT(name = "style"), modification = SOME(Absyn.CLASSMOD( elementArgLst = args)), comment = _) :: rest,context as ("Line" :: _),res,p)
       equation
         args = cleanStyleAttrs(args,{},context);
         rest = listAppend(args,rest);
@@ -1233,29 +1233,29 @@ algorithm
       then res;
 
 
-    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "color"), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,eqMod = Absyn.EQMOD(Absyn.INTEGER(value = x),info))), comment = com, info = mod_info) :: rest,context as ("Line" :: c),res,p)
+    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "color"), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,eqMod = Absyn.EQMOD(Absyn.INTEGER(value = x),info))), comment = com, info = mod_info) :: rest,context as ("Line" :: _),res,p)
       equation
         (color1,color2,color3) = getMappedColor(x);
         res = transformConnectAnnList(rest,context,res,p);
       then Absyn.MODIFICATION(fi,e,Absyn.IDENT("color"), SOME(Absyn.CLASSMOD(args,Absyn.EQMOD(Absyn.ARRAY({Absyn.INTEGER(color1),Absyn.INTEGER(color2),Absyn.INTEGER(color3)}),info))),com,mod_info):: res;
 
-    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "pattern"), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,eqMod = Absyn.EQMOD(exp=Absyn.INTEGER(value = x)))), comment = com, info = mod_info) :: rest,context as ("Line" :: c),res,p)
+    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "pattern"), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,eqMod = Absyn.EQMOD(exp=Absyn.INTEGER(value = x)))), comment = com, info = mod_info) :: rest,context as ("Line" :: _),res,p)
       equation
         val = arrayGet(listArray(patternMapList),x+1);
         res = transformConnectAnnList(rest,context,res,p);
       then Absyn.MODIFICATION(fi,e,Absyn.IDENT("pattern"), SOME(Absyn.CLASSMOD(args,Absyn.EQMOD(Absyn.CREF(Absyn.CREF_QUAL("LinePattern", {},Absyn.CREF_IDENT(val, {}))),Absyn.dummyInfo))),com, mod_info):: res;
 
-    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "thickness"), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,eqMod = Absyn.EQMOD(exp=Absyn.INTEGER(value = x)))), comment = com, info = mod_info) :: rest,context as ("Line" :: c),res,p)
+    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "thickness"), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,eqMod = Absyn.EQMOD(exp=Absyn.INTEGER(value = x)))), comment = com, info = mod_info) :: rest,context as ("Line" :: _),res,p)
       equation
         thick = arrayGet(listArray(thicknessMapList),x);
         res = transformConnectAnnList(rest,context,res,p);
       then Absyn.MODIFICATION(fi,e,Absyn.IDENT("thickness"), SOME(Absyn.CLASSMOD(args,Absyn.EQMOD(Absyn.REAL(thick),Absyn.dummyInfo))),com,mod_info):: res;
 
-    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "smooth"), modification = SOME(Absyn.CLASSMOD( elementArgLst = args , eqMod = eqMod)), comment = com, info = mod_info) :: rest,context as ("Line" :: c),res,p)
+    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "smooth"), modification = SOME(Absyn.CLASSMOD( elementArgLst = args , eqMod = eqMod)), comment = com, info = mod_info) :: rest,context as ("Line" :: _),res,p)
       equation
         res = transformConnectAnnList(rest,context,res,p); then Absyn.MODIFICATION(fi,e,Absyn.IDENT("smooth"), SOME(Absyn.CLASSMOD(args,eqMod)),com, mod_info):: res;
 
-    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "arrow"), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,eqMod = Absyn.EQMOD(exp=Absyn.INTEGER(value = x)))), comment = com, info = mod_info) :: rest,context as ("Line" :: c),res,p)
+    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "arrow"), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,eqMod = Absyn.EQMOD(exp=Absyn.INTEGER(value = x)))), comment = com, info = mod_info) :: rest,context as ("Line" :: _),res,p)
       equation
         arrows = arrayGet(listArray(arrowMapList),x+1);
         val1 = arrayGet(listArray(arrows),1);
@@ -1301,7 +1301,7 @@ algorithm
       Absyn.EqMod eqMod;
       Absyn.Info info, mod_info;
 
-    case({},_,res,p) then res ;
+    case({},_,res,_) then res ;
 
     case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "Icon"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, eqMod = eqMod)), comment = com, info = mod_info) :: rest,context as ("Class" :: c),res,p)
       equation
@@ -1336,7 +1336,7 @@ algorithm
         res = transformClassAnnList(rest,context,res,p);
       then List.deleteMember(res,Absyn.MODIFICATION(fi, e, Absyn.IDENT("Coordsys"), SOME(Absyn.CLASSMOD(args, eqMod)),com,mod_info));
 
-    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "extent"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, eqMod = Absyn.EQMOD(Absyn.MATRIX(matrix = {{x1,y1},{x2,y2}} ),info))), comment = com, info = mod_info) :: rest,context as ("Coordsys" :: c),res,p)
+    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "extent"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, eqMod = Absyn.EQMOD(Absyn.MATRIX(matrix = {{x1,y1},{x2,y2}} ),info))), comment = com, info = mod_info) :: rest,context as ("Coordsys" :: _),res,p)
       equation
         res = Absyn.MODIFICATION(fi, e, Absyn.IDENT("extent"), SOME(Absyn.CLASSMOD(args, Absyn.EQMOD(Absyn.ARRAY({Absyn.ARRAY({x1,y1}),Absyn.ARRAY({x2,y2})}),info))),com,mod_info) :: res;
         res = transformClassAnnList(rest,context,res,p);
@@ -1387,12 +1387,12 @@ algorithm
 
     case({}) then false;
 
-    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "Diagram")) :: rest)
+    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "Diagram")) :: _)
 
     then
       true;
 
-    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "Icon")) :: rest)
+    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "Icon")) :: _)
 
     then
       true;
@@ -1438,7 +1438,7 @@ algorithm
       Absyn.EQMOD(Absyn.ARRAY({Absyn.ARRAY({Absyn.INTEGER(-100),Absyn.INTEGER(-100)}),Absyn.ARRAY({Absyn.INTEGER(100),Absyn.INTEGER(100)})}),Absyn.dummyInfo))),
       NONE(),Absyn.dummyInfo)},Absyn.NOMOD())),NONE(),Absyn.dummyInfo)/*Create default*/;
 
-    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "Coordsys"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, eqMod = eqMod)), comment = com, info = info) :: rest,p)
+    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "Coordsys"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, eqMod = eqMod)), comment = com, info = info) :: _,p)
       equation
         args = transformClassAnnList(args,"Coordsys"::{},{},p);
       then
@@ -1566,7 +1566,7 @@ algorithm
 
     case({},_) then {} ;
 
-    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "extent"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, eqMod = Absyn.EQMOD(exp=Absyn.MATRIX(matrix = {{x1,y1},{x2,y2}} ))))) :: rest,context)
+    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "extent"), modification = SOME(Absyn.CLASSMOD(elementArgLst = _, eqMod = Absyn.EQMOD(exp=Absyn.MATRIX(matrix = {{x1,y1},{x2,y2}} ))))) :: rest,context)
       equation
         restRes = transAnnLstToNamedArgs(rest,context);
       then Absyn.NAMEDARG("extent",Absyn.ARRAY({Absyn.ARRAY({x1,y1}  ),Absyn.ARRAY({x2,y2})})) :: restRes;//res;
@@ -1579,13 +1579,13 @@ algorithm
         res = listAppend(argRes,restRes);
       then res;
 
-    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "color"), modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=Absyn.INTEGER(value = x))))) :: rest, context as ("Text" :: c))
+    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "color"), modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=Absyn.INTEGER(value = x))))) :: rest, context as ("Text" :: _))
       equation
         (color1,color2,color3) = getMappedColor(x);
         restRes = transAnnLstToNamedArgs(rest,context);
       then Absyn.NAMEDARG("fillColor", Absyn.ARRAY({Absyn.INTEGER(color1),Absyn.INTEGER(color2),Absyn.INTEGER(color3)})) :: restRes;//res;
 
-    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "color"), modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=Absyn.INTEGER(value = x))))) :: rest, context as ("Line" :: c))
+    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "color"), modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=Absyn.INTEGER(value = x))))) :: rest, context as ("Line" :: _))
       equation
         (color1,color2,color3) = getMappedColor(x);
         restRes = transAnnLstToNamedArgs(rest,context);
@@ -1615,7 +1615,7 @@ algorithm
         restRes = transAnnLstToNamedArgs(rest,context);
       then Absyn.NAMEDARG("fillPattern",Absyn.CREF(Absyn.CREF_QUAL("FillPattern", {},Absyn.CREF_IDENT(val, {})))) :: restRes;
 
-    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "thickness"), modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=Absyn.INTEGER(value = x))   ))) :: rest,context as ("Line" :: c))
+    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "thickness"), modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=Absyn.INTEGER(value = x))   ))) :: rest,context as ("Line" :: _))
       equation
         thick = arrayGet(listArray(thicknessMapList),x);
         restRes = transAnnLstToNamedArgs(rest,context);
@@ -1646,22 +1646,22 @@ algorithm
         restRes = transAnnLstToNamedArgs(rest,context);
       then Absyn.NAMEDARG("arrow",Absyn.ARRAY({Absyn.CREF(Absyn.CREF_QUAL("Arrow", {},Absyn.CREF_IDENT(val1, {}))),Absyn.CREF(Absyn.CREF_QUAL("Arrow",{},Absyn.CREF_IDENT(val2,{})))})):: restRes    ;
 
-    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "textStyle"), modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=exp)   ))) :: rest,context as ("Text" :: c))
+    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "textStyle"), modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=exp)   ))) :: rest,context as ("Text" :: _))
       equation
         restRes = transAnnLstToNamedArgs(rest,context);
       then Absyn.NAMEDARG("textStyle",exp) :: restRes;
 
-    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "font"), modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=exp)))) :: rest,context as ("Text" :: c))
+    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "font"), modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=exp)))) :: rest,context as ("Text" :: _))
       equation
         restRes = transAnnLstToNamedArgs(rest,context);
       then Absyn.NAMEDARG("font",exp) :: restRes;
 
-    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "string"), modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=exp)))) :: rest,context as ("Text" :: c))
+    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "string"), modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=exp)))) :: rest,context as ("Text" :: _))
       equation
         restRes = transAnnLstToNamedArgs(rest,context);
       then Absyn.NAMEDARG("textString",exp) :: restRes;
 
-    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "name"), modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=exp)))) :: rest,context as ("Bitmap" :: c))
+    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "name"), modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=exp)))) :: rest,context as ("Bitmap" :: _))
       equation
         restRes = transAnnLstToNamedArgs(rest,context);
       then Absyn.NAMEDARG("fileName",exp) :: restRes;
@@ -1727,7 +1727,7 @@ algorithm
   local
     list<Absyn.ElementArg> eltargs;
     case(Absyn.MODIFICATION(path = Absyn.IDENT("color"),
-        modification = SOME(Absyn.CLASSMOD(eltargs,_))))
+        modification = SOME(Absyn.CLASSMOD(_,_))))
       then true;
     case(_) then false;
   end matchcontinue;
@@ -1788,23 +1788,13 @@ algorithm
 
     case({},resultList,_) then resultList;
 
-    case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "color"), modification = m, comment = com)) :: rest, resultList,context  )
+    case((arg as Absyn.MODIFICATION(finalPrefix = _, eachPrefix = _, path = Absyn.IDENT(name = "color"), modification = _, comment = _)) :: rest, resultList,context  )
       equation
         resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "fillColor"), modification = m, comment = com)) :: rest, resultList,context as ("Rectangle"::c))
-      equation
-        //If fillColor is specified but not fillPattern or Gradient we need to insert a FillPattern
-        false = isGradientInList(listAppend(rest,resultList));
-        false = isFillPatternInList(listAppend(rest,resultList));
-        resultList = insertFillPatternInList(resultList);
-        resultList = List.appendElt(arg,resultList);
-        outList = cleanStyleAttrs2(rest,resultList,context);
-      then outList;
-
-    case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "fillColor"), modification = m, comment = com)) :: rest, resultList,context as ("Ellipse"::c))
+    case((arg as Absyn.MODIFICATION(finalPrefix = _, eachPrefix = _, path = Absyn.IDENT(name = "fillColor"), modification = _, comment = _)) :: rest, resultList,context as ("Rectangle"::_))
       equation
         //If fillColor is specified but not fillPattern or Gradient we need to insert a FillPattern
         false = isGradientInList(listAppend(rest,resultList));
@@ -1814,7 +1804,17 @@ algorithm
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "fillColor"), modification = m, comment = com)) :: rest, resultList,context as ("Polygon"::c))
+    case((arg as Absyn.MODIFICATION(finalPrefix = _, eachPrefix = _, path = Absyn.IDENT(name = "fillColor"), modification = _, comment = _)) :: rest, resultList,context as ("Ellipse"::_))
+      equation
+        //If fillColor is specified but not fillPattern or Gradient we need to insert a FillPattern
+        false = isGradientInList(listAppend(rest,resultList));
+        false = isFillPatternInList(listAppend(rest,resultList));
+        resultList = insertFillPatternInList(resultList);
+        resultList = List.appendElt(arg,resultList);
+        outList = cleanStyleAttrs2(rest,resultList,context);
+      then outList;
+
+    case((arg as Absyn.MODIFICATION(finalPrefix = _, eachPrefix = _, path = Absyn.IDENT(name = "fillColor"), modification = _, comment = _)) :: rest, resultList,context as ("Polygon"::_))
 
       equation
         //If fillColor is specified but not fillPattern or Gradient we need to insert a FillPattern
@@ -1825,87 +1825,87 @@ algorithm
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "fillColor"), modification = m, comment = com)) :: rest, resultList,context as ("Rectangle"::c))
+    case((arg as Absyn.MODIFICATION(finalPrefix = _, eachPrefix = _, path = Absyn.IDENT(name = "fillColor"), modification = _, comment = _)) :: rest, resultList,context as ("Rectangle"::_))
       equation
         resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "fillColor"), modification = m, comment = com)) :: rest, resultList,context as ("Ellipse"::c))
+    case((arg as Absyn.MODIFICATION(finalPrefix = _, eachPrefix = _, path = Absyn.IDENT(name = "fillColor"), modification = _, comment = _)) :: rest, resultList,context as ("Ellipse"::_))
       equation
         resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "fillColor"), modification = m, comment = com)) :: rest, resultList,context as ("Polygon"::c))
+    case((arg as Absyn.MODIFICATION(finalPrefix = _, eachPrefix = _, path = Absyn.IDENT(name = "fillColor"), modification = _, comment = _)) :: rest, resultList,context as ("Polygon"::_))
       equation
         resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "pattern"), modification = m, comment = com)) :: rest, resultList,context as ("Rectangle" :: c))
-
-      equation
-        resultList = List.appendElt(arg,resultList);
-        outList = cleanStyleAttrs2(rest,resultList,context);
-      then outList;
-
-    case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "pattern"), modification = m, comment = com)) :: rest, resultList,context as ("Ellipse" :: c))
-      equation
-        resultList = List.appendElt(arg,resultList);
-        outList = cleanStyleAttrs2(rest,resultList,context);
-      then outList;
-
-    case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "pattern"), modification = m, comment = com)) :: rest, resultList,context as ("Polygon" :: c))
+    case((arg as Absyn.MODIFICATION(finalPrefix = _, eachPrefix = _, path = Absyn.IDENT(name = "pattern"), modification = _, comment = _)) :: rest, resultList,context as ("Rectangle" :: _))
 
       equation
         resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "pattern"), modification = m, comment = com)) :: rest, resultList,context as ("Line" :: c))
+    case((arg as Absyn.MODIFICATION(finalPrefix = _, eachPrefix = _, path = Absyn.IDENT(name = "pattern"), modification = _, comment = _)) :: rest, resultList,context as ("Ellipse" :: _))
       equation
         resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "fillPattern"), modification = m, comment = com)) :: rest, resultList,context as("Rectangle" :: c))
+    case((arg as Absyn.MODIFICATION(finalPrefix = _, eachPrefix = _, path = Absyn.IDENT(name = "pattern"), modification = _, comment = _)) :: rest, resultList,context as ("Polygon" :: _))
+
       equation
         resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "fillPattern"), modification = m, comment = com)) :: rest, resultList,context as("Ellipse" :: c))
+    case((arg as Absyn.MODIFICATION(finalPrefix = _, eachPrefix = _, path = Absyn.IDENT(name = "pattern"), modification = _, comment = _)) :: rest, resultList,context as ("Line" :: _))
       equation
         resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "fillPattern"), modification = m, comment = com)) :: rest, resultList,context as("Polygon" :: c))
+    case((arg as Absyn.MODIFICATION(finalPrefix = _, eachPrefix = _, path = Absyn.IDENT(name = "fillPattern"), modification = _, comment = _)) :: rest, resultList,context as("Rectangle" :: _))
       equation
         resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "thickness"), modification = m, comment = com)) :: rest, resultList,context as("Bitmap" :: c))
+    case((arg as Absyn.MODIFICATION(finalPrefix = _, eachPrefix = _, path = Absyn.IDENT(name = "fillPattern"), modification = _, comment = _)) :: rest, resultList,context as("Ellipse" :: _))
+      equation
+        resultList = List.appendElt(arg,resultList);
+        outList = cleanStyleAttrs2(rest,resultList,context);
+      then outList;
+
+    case((arg as Absyn.MODIFICATION(finalPrefix = _, eachPrefix = _, path = Absyn.IDENT(name = "fillPattern"), modification = _, comment = _)) :: rest, resultList,context as("Polygon" :: _))
+      equation
+        resultList = List.appendElt(arg,resultList);
+        outList = cleanStyleAttrs2(rest,resultList,context);
+      then outList;
+
+    case((Absyn.MODIFICATION(finalPrefix = _, eachPrefix = _, path = Absyn.IDENT(name = "thickness"), modification = _, comment = _)) :: rest, resultList,context as("Bitmap" :: _))
       equation
         //Filter away, bitmaps can have no thickness.
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "thickness"), modification = m, comment = com)) :: rest, resultList,context)
+    case((arg as Absyn.MODIFICATION(finalPrefix = _, eachPrefix = _, path = Absyn.IDENT(name = "thickness"), modification = _, comment = _)) :: rest, resultList,context)
       equation
         resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "gradient"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args,eqMod = Absyn.EQMOD(exp=Absyn.INTEGER(value = 0)))), comment = com)) :: rest, resultList,context)
+    case((Absyn.MODIFICATION(finalPrefix = _, eachPrefix = _, path = Absyn.IDENT(name = "gradient"), modification = SOME(Absyn.CLASSMOD(elementArgLst = _,eqMod = Absyn.EQMOD(exp=Absyn.INTEGER(value = 0)))), comment = _)) :: rest, resultList,context)
       //Filter away
       equation
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "gradient"), modification = m, comment = com)) :: rest, resultList,context as ("Rectangle" :: c))
+    case((arg as Absyn.MODIFICATION(finalPrefix = _, eachPrefix = _, path = Absyn.IDENT(name = "gradient"), modification = _, comment = _)) :: rest, resultList,context as ("Rectangle" :: _))
       equation
         rest = removeFillPatternInList(rest) /*If we have a old gradient any old fillPattern should be removed.*/;
         resultList = removeFillPatternInList(resultList) /*If we have a old gradient any old fillPattern should be removed.*/;
@@ -1916,7 +1916,7 @@ algorithm
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "gradient"), modification = m, comment = com)) :: rest, resultList,context as ("Ellipse" :: c))
+    case((arg as Absyn.MODIFICATION(finalPrefix = _, eachPrefix = _, path = Absyn.IDENT(name = "gradient"), modification = _, comment = _)) :: rest, resultList,context as ("Ellipse" :: _))
       equation
         rest = removeFillPatternInList(rest) /*If we have a old gradient any old fillPattern should be removed.*/;
         resultList = removeFillPatternInList(resultList) /*If we have a old gradient any old fillPattern should be removed.*/;
@@ -1927,31 +1927,31 @@ algorithm
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "smooth"), modification = m, comment = com)) :: rest, resultList,context as("Polygon" :: c))
+    case((arg as Absyn.MODIFICATION(finalPrefix = _, eachPrefix = _, path = Absyn.IDENT(name = "smooth"), modification = _, comment = _)) :: rest, resultList,context as("Polygon" :: _))
       equation
         resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "smooth"), modification = m, comment = com)) :: rest, resultList,context as("Line" :: c))
+    case((arg as Absyn.MODIFICATION(finalPrefix = _, eachPrefix = _, path = Absyn.IDENT(name = "smooth"), modification = _, comment = _)) :: rest, resultList,context as("Line" :: _))
       equation
         resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "arrow"), modification = m, comment = com)) :: rest, resultList,context as("Line" :: c))
+    case((arg as Absyn.MODIFICATION(finalPrefix = _, eachPrefix = _, path = Absyn.IDENT(name = "arrow"), modification = _, comment = _)) :: rest, resultList,context as("Line" :: _))
       equation
         resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "textStyle"), modification = m, comment = com)) :: rest, resultList,context as("Text" :: c))
+    case((arg as Absyn.MODIFICATION(finalPrefix = _, eachPrefix = _, path = Absyn.IDENT(name = "textStyle"), modification = _, comment = _)) :: rest, resultList,context as("Text" :: _))
       equation
         resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "font"), modification = m, comment = com)) :: rest, resultList,context as("Text" :: c))
+    case((arg as Absyn.MODIFICATION(finalPrefix = _, eachPrefix = _, path = Absyn.IDENT(name = "font"), modification = _, comment = _)) :: rest, resultList,context as("Text" :: _))
       equation
         resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
@@ -2009,10 +2009,10 @@ algorithm
 
     case({}) then false;
 
-    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "gradient"), modification = m, comment = com):: rest)
+    case(Absyn.MODIFICATION(finalPrefix = _, eachPrefix = _, path = Absyn.IDENT(name = "gradient"), modification = _, comment = _):: _)
     then true;
 
-    case(arg :: rest)
+    case(_ :: rest)
       equation
         res = isGradientInList(rest);
       then res;
@@ -2038,10 +2038,10 @@ algorithm
       Option<String> com;
 
     case({}) then false;
-    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "fillPattern"), modification = m, comment = com):: rest)
+    case(Absyn.MODIFICATION(finalPrefix = _, eachPrefix = _, path = Absyn.IDENT(name = "fillPattern"), modification = _, comment = _):: _)
     then true;
 
-    case(arg :: rest)
+    case(_ :: rest)
       equation
         res = isFillPatternInList(rest);
       then res;
@@ -2066,7 +2066,7 @@ algorithm
 
     case({}) then {};
 
-    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "fillPattern"), modification = m, comment = com) :: rest)
+    case(Absyn.MODIFICATION(finalPrefix = _, eachPrefix = _, path = Absyn.IDENT(name = "fillPattern"), modification = _, comment = _) :: rest)
 
     then rest;
 
@@ -2115,9 +2115,9 @@ algorithm
       Absyn.ElementArg arg;
     case({})
     then false;
-    case( Absyn.MODIFICATION(path = Absyn.IDENT(name = "fillColor")):: rest)
+    case( Absyn.MODIFICATION(path = Absyn.IDENT(name = "fillColor")):: _)
     then true;
-    case(arg::rest)
+    case(_::rest)
     then isFillColorInList(rest);
   end matchcontinue;
 end isFillColorInList;
@@ -2137,12 +2137,12 @@ algorithm
       Absyn.Info info;
 
     case({}) then {};
-    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "thickness"), modification = SOME(Absyn.CLASSMOD(elementArgLst= args)), comment = com, info = info) :: rest)
+    case(Absyn.MODIFICATION(finalPrefix = _, eachPrefix = _, path = Absyn.IDENT(name = "thickness"), modification = SOME(Absyn.CLASSMOD(elementArgLst= _)), comment = _) :: rest)
       equation
         lst = setDefaultLineInList(rest);
       then lst; //filtered
 
-    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "pattern"), modification = SOME(Absyn.CLASSMOD(elementArgLst= args)), comment = com, info = info) :: rest)
+    case(Absyn.MODIFICATION(finalPrefix = _, eachPrefix = _, path = Absyn.IDENT(name = "pattern"), modification = SOME(Absyn.CLASSMOD(elementArgLst= _)), comment = _) :: rest)
       equation
         lst = setDefaultLineInList(rest);
       then lst; //filtered
@@ -2345,7 +2345,7 @@ algorithm
       then
         out;
 
-    case (ip1, ip2) // if everything else fails, return ip2
+    case (_, ip2) // if everything else fails, return ip2
       then
         ip2;
 

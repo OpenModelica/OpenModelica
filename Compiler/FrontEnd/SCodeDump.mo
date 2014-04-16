@@ -179,13 +179,13 @@ algorithm
       then
         res;
 
-    case SCode.COMPONENT(name = n)
+    case SCode.COMPONENT(name = _)
       equation
         res = unparseElementStr(inElement,defaultOptions);
       then
         res;
 
-    case SCode.CLASS(name = n, partialPrefix = pp, prefixes = SCode.PREFIXES(innerOuter = io, redeclarePrefix = rdp, replaceablePrefix = rpp),
+    case SCode.CLASS(name = _, partialPrefix = _, prefixes = SCode.PREFIXES(innerOuter = _, redeclarePrefix = _, replaceablePrefix = _),
                      classDef = SCode.DERIVED(typeSpec = _))
       equation
         res = unparseElementStr(inElement,defaultOptions);

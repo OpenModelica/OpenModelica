@@ -199,7 +199,7 @@ algorithm
       list<Boolean> blist;
       Env.Cache cache;
 
-    case (_,DAE.INITIAL_IF_EQUATION(condition1 = conds, equations2=tbs, equations3=fb, source=source),cache,_)
+    case (_,DAE.INITIAL_IF_EQUATION(condition1 = conds, equations2=tbs, equations3=fb),cache,_)
       equation
         //print(" (Initial if)To ceval: " +& stringDelimitList(List.map(conds,ExpressionDump.printExpStr),", ") +& "\n");
         (cache,valList,_) = Ceval.cevalList(cache,env, conds, true, NONE(), Absyn.NO_MSG(),0);
@@ -1803,7 +1803,7 @@ algorithm
         deps;
 
     // For input and output variables in function scope return no dependencies so they stay in order!
-    case ((SCode.COMPONENT(name = name, condition = _,
+    case ((SCode.COMPONENT( condition = _,
                            attributes = SCode.ATTR(arrayDims = _, direction = direction),
                            modifications = _), _), (_, true))
       equation
@@ -3414,7 +3414,7 @@ algorithm
 
     case({},_) then {};
     case(subs,{}) then subs;
-    case((sub as DAE.NAMEMOD(ident=n,mod=mod))::subs,_)
+    case((sub as DAE.NAMEMOD(ident=n))::subs,_)
       equation
         osubs = keepConstrainingTypeModifersOnly2(subs,elems);
         b = List.isMemberOnTrue(n,elems,stringEq);
@@ -6013,7 +6013,7 @@ algorithm
 
     case (cache,_,SCode.EXTERNALDECL(output_ = NONE()),_,_,_) then (cache,DAE.NOEXTARG());  /* impl */
 
-    case (cache,env,SCode.EXTERNALDECL(funcName = _,lang = lang,output_ = SOME(cref),args = args),impl,pre,_)
+    case (cache,env,SCode.EXTERNALDECL(funcName = _,lang = lang,output_ = SOME(cref)),impl,pre,_)
       equation
         (cache,SOME((exp,prop,_))) = Static.elabCref(cache,env,cref,impl,false /* Do NOT vectorize arrays; we require a CREF */,pre,info);
         (cache,SOME(extarg)) = instExtGetFargsSingle(cache,env,exp,prop,lang,info);
@@ -8124,7 +8124,7 @@ algorithm
     case (SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_KERNEL_FUNCTION())),_)
       then DAE.FUNCTION_ATTRIBUTES(DAE.NO_INLINE(),true,false,DAE.FUNCTION_NOT_BUILTIN(),DAE.FP_KERNEL_FUNCTION());
 
-    case (SCode.CLASS(name=name,restriction=restriction),_)
+    case (SCode.CLASS(restriction=restriction),_)
       equation
         inlineType = isInlineFunc(cl);
         isBuiltin = Util.if_(SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_BuiltinPtr"), DAE.FUNCTION_BUILTIN_PTR(), DAE.FUNCTION_NOT_BUILTIN());

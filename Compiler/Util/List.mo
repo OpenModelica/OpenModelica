@@ -1720,7 +1720,7 @@ algorithm
 
     case ({}, _, _, _) then listReverse(accumList);
     case (_, _, 0, _) then listReverse(accumList);
-    case (e :: rest_e, _, _, _)
+    case (_ :: rest_e, _, _, _)
       equation
         (inOffset > 1) = true;
         rest_e = sublist_tail(rest_e, inOffset - 1, inLength, accumList);
@@ -2001,7 +2001,7 @@ algorithm
       then
         e :: rest;
 
-    case (e :: rest, _, _)
+    case (_ :: rest, _, _)
       then intersectionOnTrue(rest, inList2, inCompFunc);
 
   end matchcontinue;
@@ -7158,7 +7158,7 @@ algorithm
       list<list<ElementType>> rest;
       Integer index, pos;
 
-    case (_, e :: rest, _)
+    case (_, e :: _, _)
       equation
         pos = position(inElement, e);
       then
@@ -7184,7 +7184,7 @@ algorithm
       list<ElementType> ys;
       Boolean a;
     case (_,{}) then false;
-    case (x,(y :: ys))
+    case (x,(y :: _))
       equation
         equality(x = y);
       then
@@ -7826,7 +7826,7 @@ algorithm
         filterOnTrue_tail(rest, inFilterFunc, e :: inAccumList);
 
     // Filter out and move along.
-    case (e :: rest, _, _)
+    case (_ :: rest, _, _)
       then filterOnTrue_tail(rest, inFilterFunc, inAccumList);
 
   end matchcontinue;
@@ -7864,7 +7864,7 @@ algorithm
         (lst1,lst2);
 
     // Filter out and move along.
-    case (e :: rest, _, f :: restf, _, _)
+    case (_ :: rest, _, _ :: restf, _, _)
       equation
 
       (lst1,lst2) = filterOnTrueSync_tail(rest, inFilterFunc, restf, inAccumList, inAccumSyncList);
@@ -7908,7 +7908,7 @@ algorithm
         (lst1,lst2);
 
     // Filter out and move along.
-    case (e :: rest, _, _, f :: restf, _, _)
+    case (_ :: rest, _, _, _ :: restf, _, _)
       equation
       (lst1,lst2) = filter1OnTrueSync_tail(rest, inFilterFunc, inArg1, restf, inAccumList, inAccumSyncList);
      then
@@ -8563,7 +8563,7 @@ algorithm
       list<Integer> rest_pos;
 
     case (_, {}, _, _) then listAppend(listReverse(inAccumList), inList);
-    case (e :: rest, pos :: rest_pos, _, _)
+    case (_ :: rest, pos :: rest_pos, _, _)
       equation
         // Matching index, remove.
         true = pos == inIndex;
@@ -8616,7 +8616,7 @@ algorithm
       ElementType e;
       list<ElementType> rest;
 
-    case (_, 0, e :: rest) then inElement :: rest;
+    case (_, 0, _ :: rest) then inElement :: rest;
     case (_, _, e :: rest)
       equation
         (inPosition >= 1) = true;
@@ -8641,7 +8641,7 @@ algorithm
       ElementType e;
       list<ElementType> rest;
 
-    case (_, 0, e :: rest) then listAppend(inReplacementList, rest);
+    case (_, 0, _ :: rest) then listAppend(inReplacementList, rest);
     case (_, _, e :: rest)
       equation
         (inPosition >= 1) = true;
@@ -8675,8 +8675,8 @@ algorithm
       Integer numfills_1,numfills,nn,n,p;
       String pos;
 
-    case (x, 0, {}, fillv) then {x};
-    case (x, 0, (y :: ys), fillv) then (x :: ys);
+    case (x, 0, {}, _) then {x};
+    case (x, 0, (_ :: ys), _) then (x :: ys);
     case (x, 1, {}, fillv) then {fillv, x};
 
     case (x, numfills, {}, fillv)
@@ -8763,7 +8763,7 @@ public function hasOneElement
 algorithm
   b := match(inList)
     local ElementType x;
-    case ({x}) then true;
+    case ({_}) then true;
     case (_) then false;
   end match;
 end hasOneElement;
@@ -8776,7 +8776,7 @@ public function hasSeveralElements
 algorithm
   b := match(inList)
     local ElementType x;
-    case ({x}) then false;
+    case ({_}) then false;
     case ({}) then false;
     else then true;
   end match;

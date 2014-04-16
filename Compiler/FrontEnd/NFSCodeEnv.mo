@@ -959,7 +959,7 @@ algorithm
         env;
 
     // redeclare-as-element class
-    case (SCode.CLASS(name = name, prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE())), _)
+    case (SCode.CLASS( prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE())), _)
       equation
         env = addElementRedeclarationToEnvExtendsTable(inElement, inEnv);
         env = extendEnvWithClassDef(inElement, env);
@@ -1450,7 +1450,7 @@ algorithm
       SCode.Element cls;
       ClassType ct;
 
-    case (CLASS(cls, env, ct), _)
+    case (CLASS(cls, _, ct), _)
       then CLASS(cls, inNewEnv, ct);
     case (REDECLARED_ITEM(item = item), _)
       then setItemEnv(item, inNewEnv);
@@ -1869,7 +1869,7 @@ algorithm
 
     case (NONE()) then "";
     case (SOME(AVLTREENODE(value = NONE()))) then "";
-    case (SOME(AVLTREENODE(value = SOME(value), height = height, left = left, right = right)))
+    case (SOME(AVLTREENODE(value = SOME(value),  left = left, right = right)))
       equation
         left_str = printAvlTreeStr(left);
         right_str = printAvlTreeStr(right);
@@ -2017,7 +2017,7 @@ algorithm
       Absyn.Info info;
 
     // Don't allow replacing of nodes.
-    case (_, 0, key, _)
+    case (_, 0, _, _)
       equation
         info = getItemInfo(inValue);
         Error.addSourceMessage(Error.DOUBLE_DECLARATION_OF_ELEMENTS,

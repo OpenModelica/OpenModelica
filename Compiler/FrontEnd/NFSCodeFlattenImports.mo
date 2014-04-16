@@ -663,7 +663,7 @@ algorithm
       then
         (Absyn.PARTEVALFUNCTION(cref, args), tup);
 
-    case (exp as Absyn.MATCHEXP(matchTy = _), tup as (env, info))
+    case (exp as Absyn.MATCHEXP(matchTy = _), (env, info))
       equation
         env = NFSCodeEnv.extendEnvWithMatch(exp, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
       then

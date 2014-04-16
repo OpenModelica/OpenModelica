@@ -1089,7 +1089,7 @@ algorithm
 
     case (QUALIFIED_EXTENDS(ext = ext), _) then SOME(ext);
 
-    case (UNQUALIFIED_EXTENDS(ext = NFSCodeEnv.EXTENDS(baseClass = bc)), _)
+    case (UNQUALIFIED_EXTENDS(ext = NFSCodeEnv.EXTENDS(baseClass = _)), _)
       then NONE();
 
   end match;

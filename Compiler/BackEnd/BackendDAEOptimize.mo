@@ -610,7 +610,7 @@ algorithm
         pos_1 = pos-1;
         eqns = BackendEquation.daeEqns(syst);
         eqn = BackendEquation.equationNth0(eqns,pos_1);
-        BackendDAE.EQUATION(exp=e1,scalar=e2,source=source) = eqn;
+        BackendDAE.EQUATION(exp=e1,scalar=e2) = eqn;
         // variable time not there
         knvars = BackendVariable.daeKnVars(shared);
         ((_,(false,_,_,_,_))) = Expression.traverseExpTopDown(e1, traversingTimeEqnsFinder, (false,vars,knvars,true,false));
@@ -630,7 +630,7 @@ algorithm
         pos_1 = pos-1;
         eqns = BackendEquation.daeEqns(syst);
         eqn = BackendEquation.equationNth0(eqns,pos_1);
-        BackendDAE.EQUATION(exp=e1,scalar=e2,source=source) = eqn;
+        BackendDAE.EQUATION(exp=e1,scalar=e2) = eqn;
         // variable time not there
         knvars = BackendVariable.daeKnVars(shared);
         ((_,(false,_,_,_,_))) = Expression.traverseExpTopDown(e1, traversingTimeEqnsFinder, (false,vars,knvars,false,false));
@@ -655,7 +655,7 @@ algorithm
       equation
         pos_1 = pos-1;
         eqns = BackendEquation.daeEqns(syst);
-        (eqn as BackendDAE.EQUATION(source=source)) = BackendEquation.equationNth0(eqns,pos_1);
+        (eqn as BackendDAE.EQUATION(source=_)) = BackendEquation.equationNth0(eqns,pos_1);
         _ = BackendEquation.aliasEquation(eqn);
       then ();
   end matchcontinue;
@@ -740,12 +740,12 @@ algorithm
       Option< .DAE.VariableAttributes> values;
       DAE.Exp exp,exp1;
       Values.Value bindValue;
-    case ((v as BackendDAE.VAR(varName=varName,varKind=BackendDAE.PARAM(),bindExp=SOME(exp),values=values),(repl,vars)))
+    case ((v as BackendDAE.VAR(varName=varName,varKind=BackendDAE.PARAM(),bindExp=SOME(exp)),(repl,vars)))
       equation
         ((exp1, _)) = Expression.traverseExp(exp, BackendDAEUtil.replaceCrefsWithValues, (vars, varName));
         repl_1 = BackendVarTransform.addReplacement(repl, varName, exp1,NONE());
       then ((v,(repl_1,vars)));
-    case ((v as BackendDAE.VAR(varName=varName,varKind=BackendDAE.PARAM(),bindValue=SOME(bindValue),values=values),(repl,vars)))
+    case ((v as BackendDAE.VAR(varName=varName,varKind=BackendDAE.PARAM(),bindValue=SOME(bindValue)),(repl,vars)))
       equation
         exp = ValuesUtil.valueExp(bindValue);
         repl_1 = BackendVarTransform.addReplacement(repl, varName, exp,NONE());
@@ -2004,7 +2004,7 @@ algorithm
 
     case (_,{},_) then (({},({},{})),{});
     case (_,_,{}) then (({},({},{})),{});
-    case(BackendDAE.DAE(eqs = (syst as BackendDAE.EQSYSTEM(matching=bdaeMatching as BackendDAE.MATCHING(comps=comps, ass1=ass1, ass2=ass2)))::{}, shared=shared),indiffVars,indiffedVars)
+    case(BackendDAE.DAE(eqs = (syst as BackendDAE.EQSYSTEM(matching=bdaeMatching as BackendDAE.MATCHING(comps=comps, ass1=ass1)))::{}),indiffVars,indiffedVars)
       equation
         Debug.fcall(Flags.DUMP_SPARSE_VERBOSE,print," start getting sparsity pattern diff Vars : " +& intString(listLength(indiffedVars))  +& " diffed vars: " +& intString(listLength(indiffVars)) +&"\n");
         // prepare crefs
@@ -2731,7 +2731,7 @@ algorithm
       DAE = BackendDAEUtil.transformBackendDAE(DAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());  // calculate matching
 
       // preparing all needed variables
-      BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs)}, BackendDAE.SHARED(knownVars=knownVars)) = DAE;
+      BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars=orderedVars)}, BackendDAE.SHARED(knownVars=knownVars)) = DAE;
 
       orderedVarList = BackendVariable.varList(orderedVars);
       orderedVarCrefList = List.map(orderedVarList, BackendVariable.varCref);
@@ -2811,7 +2811,7 @@ algorithm
       DAE = BackendDAEUtil.transformBackendDAE(DAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());  // calculate matching
 
       // preparing all needed variables
-      BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs)}, BackendDAE.SHARED(knownVars=knownVars)) = DAE;
+      BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars=orderedVars)}, BackendDAE.SHARED(knownVars=knownVars)) = DAE;
 
       orderedVarList = BackendVariable.varList(orderedVars);
       orderedVarCrefList = List.map(orderedVarList, BackendVariable.varCref);
@@ -2882,7 +2882,7 @@ algorithm
       DAE = BackendDAEUtil.transformBackendDAE(DAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());  // calculate matching
 
       // preparing all needed variables
-      BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs)}, BackendDAE.SHARED(knownVars=knownVars)) = DAE;
+      BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars=orderedVars)}, BackendDAE.SHARED(knownVars=knownVars)) = DAE;
 
       orderedVarList = BackendVariable.varList(orderedVars);
       orderedVarCrefList = List.map(orderedVarList, BackendVariable.varCref);
@@ -3409,7 +3409,7 @@ algorithm
       jacobian = BackendDAE.DAE({BackendDAE.EQSYSTEM(jacOrderedVars, jacOrderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(),{})}, BackendDAE.SHARED(jacKnownVars, jacExternalObjects, jacAliasVars, jacInitialEqs, jacRemovedEqs, {}, {}, cache, env, functions, jacEventInfo, jacExtObjClasses,BackendDAE.JACOBIAN(),{},ei));
     then (jacobian, DAE.emptyFuncTree);
 
-    case(BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,matching=BackendDAE.MATCHING(ass2=ass2))::{}, BackendDAE.SHARED(knownVars=knownVars, removedEqs=removedEqs ,cache=cache,env=env,  functionTree=functions, info=ei)), diffVars, diffedVars, _, _, _, _, matrixName) equation
+    case(BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,matching=BackendDAE.MATCHING(ass2=ass2))::{}, BackendDAE.SHARED(knownVars=knownVars, cache=cache,env=env,  functionTree=functions, info=ei)), diffVars, diffedVars, _, _, _, _, matrixName) equation
 
       // Generate tmp varibales
       dummyVarName = ("dummyVar" +& matrixName);
@@ -3455,7 +3455,7 @@ algorithm
 
     then (jacobian, functions);
 
-    case(BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,matching=BackendDAE.MATCHING(ass2=ass2))::{}, BackendDAE.SHARED(knownVars=knownVars, removedEqs=removedEqs ,cache=cache,env=env,  functionTree=functions, info=_)), diffVars, diffedVars, _, _, _, _, matrixName) equation
+    case(BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,matching=BackendDAE.MATCHING(ass2=ass2))::{}, BackendDAE.SHARED(knownVars=knownVars,   functionTree=functions, info=_)), diffVars, diffedVars, _, _, _, _, matrixName) equation
 
       // Generate tmp varibales
       dummyVarName = ("dummyVar" +& matrixName);
@@ -5007,7 +5007,7 @@ algorithm
     case ((e as DAE.BINARY(operator=op),(i1,i2,i3,i4))) equation
       (i1_1,i2_1,i3_1,i4_1) = countOperator(op,i1,i2,i3,i4);
       then ((e, (i1_1,i2_1,i3_1,i4_1)));
-    case ((e as DAE.CALL(path=Absyn.IDENT(name=opName),expLst=expLst),(i1,i2,i3,i4))) equation
+    case ((e as DAE.CALL(path=Absyn.IDENT(name=opName)),(i1,i2,i3,i4))) equation
       true = stringEq(opName,"sin") or stringEq(opName,"cos") or stringEq(opName,"tan");
       (i1_1,i2_1,i3_1,i4_1) = (i1,i2,i3,i4+1);
       then ((e, (i1_1,i2_1,i3_1,i4_1)));
@@ -5420,7 +5420,7 @@ algorithm
     case (_,{},_)
       then
         iHt;
-    case (_,BackendDAE.EQUATION(exp=DAE.CREF(componentRef=cr), scalar=e, source=source)::rest,_)
+    case (_,BackendDAE.EQUATION(exp=DAE.CREF(componentRef=cr), scalar=e)::rest,_)
       equation
         false = Expression.expHasCref(e, cr);
         exp = BaseHashTable.get(cr, iHt);
@@ -5428,7 +5428,7 @@ algorithm
         ht = BaseHashTable.add((cr,exp), iHt);
       then
         simplifySolvedIfEqns1(condition,rest,ht);
-    case (_,BackendDAE.EQUATION(exp=DAE.UNARY(operator=DAE.UMINUS(ty=_), exp=DAE.CREF(componentRef=cr)), scalar=e, source=source)::rest,_)
+    case (_,BackendDAE.EQUATION(exp=DAE.UNARY(operator=DAE.UMINUS(ty=_), exp=DAE.CREF(componentRef=cr)), scalar=e)::rest,_)
       equation
         false = Expression.expHasCref(e, cr);
         exp = BaseHashTable.get(cr, iHt);
@@ -5457,14 +5457,14 @@ algorithm
     case ({},_)
       then
         iHt;
-    case (BackendDAE.EQUATION(exp=DAE.CREF(componentRef=cr), scalar=e, source=source)::rest,_)
+    case (BackendDAE.EQUATION(exp=DAE.CREF(componentRef=cr), scalar=e)::rest,_)
       equation
         failure( _ = BaseHashTable.get(cr, iHt));
         false = Expression.expHasCref(e, cr);
         ht = BaseHashTable.add((cr,e), iHt);
       then
         simplifySolvedIfEqnsElse(rest,ht);
-    case (BackendDAE.EQUATION(exp=DAE.UNARY(operator=DAE.UMINUS(ty=_), exp=DAE.CREF(componentRef=cr)), scalar=e, source=source)::rest,_)
+    case (BackendDAE.EQUATION(exp=DAE.UNARY(operator=DAE.UMINUS(ty=_), exp=DAE.CREF(componentRef=cr)), scalar=e)::rest,_)
       equation
         failure( _ = BaseHashTable.get(cr, iHt));
         false = Expression.expHasCref(e, cr);

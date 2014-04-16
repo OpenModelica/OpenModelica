@@ -119,7 +119,7 @@ algorithm
       list<DAE.Var> vars;
       DAE.Var var;
 
-    case (NFInstTypes.ELEMENT(component = comp, cls = cls), vars)
+    case (NFInstTypes.ELEMENT(component = comp), vars)
       equation
         var = componentToDaeVar(comp);
       then
@@ -345,7 +345,7 @@ algorithm
       then
         NFInstTypes.COMPLEX_CLASS(name, el, eq, ieq, al, ial);
 
-    case (_, NFInstTypes.BASIC_TYPE(name))
+    case (_, NFInstTypes.BASIC_TYPE(_))
       equation
         Error.addMessage(Error.INTERNAL_ERROR,
           {"NFSCodeInst.addElementsToClass: Can't add elements to basic type.\n"});
@@ -1037,7 +1037,7 @@ algorithm
 
     // Both outer and inner prefixes => merge them.
     case (NFInstTypes.PREFIXES(vis1, var1, fp1, io1, dir1, ct1, _),
-          NFInstTypes.PREFIXES(vis2, var2, fp2, io2, dir2, ct2, va2), _, _)
+          NFInstTypes.PREFIXES(vis2, var2, fp2, _, dir2, ct2, va2), _, _)
       equation
         vis2 = mergeVisibility(vis1, vis2);
         var2 = mergeVariability(var1, var2);

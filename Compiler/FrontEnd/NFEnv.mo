@@ -240,7 +240,7 @@ algorithm
     // Merge the origins to make sure that it's a valid insertion.
     // Then update the old entry with the new origins.
     case (NFInstTypes.ENTRY(name, old_element, old_mod, old_origins),
-        NFInstTypes.ENTRY(element = new_element, mod = new_mod, origins = new_origins))
+        NFInstTypes.ENTRY(element = new_element, mod = _, origins = new_origins))
       equation
         // New entries should only have one origin.
         origin = getSingleOriginFromList(new_origins);

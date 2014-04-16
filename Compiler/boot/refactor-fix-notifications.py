@@ -119,6 +119,20 @@ def fixFileIter(stamp,moFile,logFile):
       ident = n[1]['unused_as']
       s = lineContentsOfInfo
       c = getIdents(s).count(ident)
+      reSameEqComma = "%s *= *%s *," % (ident,ident)
+      reSameEqParens = ", *%s *= *%s *[)]" % (ident,ident)
+      reSameEqBothParens = "[(] *%s *= *%s *[)]" % (ident,ident)
+      done = False
+      for (regex,replace) in [(reSameEqComma,""),(reSameEqParens,")"),(reSameEqBothParens,"(%s=_)" % ident)]:
+        if c == 2 and re.search(regex,s):
+          updated = re.sub(regex,replace,s)
+          printInfo(info,"Removed dead as-binding %s=%s in %s" % (ident,ident,updated.strip()))
+          updateContents(moContents,startLine,endLine,startCol,endCol,updated)
+          maxLine = startLine
+          done = True
+          break
+      if done:
+        continue
       if c <> 1:
         if not iterate: printWarning(info,"Trying to remove identifier %s as-pattern from %s, but the identifier has count %d" % (ident,s.strip(),c))
         continue

@@ -119,7 +119,7 @@ algorithm
       then
         (cache,env_2,ih);
 
-    case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.QUALIFIED(name = name))) /* class in package */
+    case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.QUALIFIED(name=_))) /* class in package */
       equation
         (cache,env) = Builtin.initialEnv(cache);
         (cache,env_1,ih,_) = Inst.instClassDecls(cache, env, ih, cdecls);
@@ -609,9 +609,9 @@ algorithm
       list<Absyn.Path> paths;
 
     // For external functions, include everything essential
-    case (cache,env,ih,SCode.CLASS(name = _,prefixes = prefixes,
+    case (cache,env,ih,SCode.CLASS(name = _,
                                    encapsulatedPrefix = _,partialPrefix = _,restriction = SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(_)),
-                                   classDef = SCode.PARTS(elementLst = _,externalDecl=_),cmt=cmt, info = info))
+                                   classDef = SCode.PARTS(elementLst = _,externalDecl=_)))
       equation
         // stripped_class = SCode.CLASS(id,prefixes,e,p,r,SCode.PARTS(elts,{},{},{},{},{},{},extDecl),cmt,info);
         (cache,env_1,ih,funs) = implicitFunctionInstantiation2(cache, env, ih, DAE.NOMOD(), Prefix.NOPRE(), inClass, {}, true);
@@ -653,7 +653,7 @@ algorithm
         (cache,env_1,ih);
 
     case (cache,env,ih,SCode.CLASS(name = _,partialPrefix = _,encapsulatedPrefix = _,restriction = _,
-                                   classDef = SCode.OVERLOAD(pathLst=_),info = info))
+                                   classDef = SCode.OVERLOAD(pathLst=_)))
       equation
          //(cache,env,ih,_) = implicitFunctionInstantiation2(cache, env, ih, DAE.NOMOD(), Prefix.NOPRE(), inClass, {}, true);
       then
@@ -702,7 +702,7 @@ algorithm
     case (cache,env,ih,_,(fn :: fns))
       equation
         // print("instOvl: " +& Absyn.pathString(fn) +& "\n");
-        (cache,(c as SCode.CLASS(name=_,partialPrefix=partialPrefix,encapsulatedPrefix=_,restriction=rest,info=info)),cenv) =
+        (cache,(c as SCode.CLASS(name=_,encapsulatedPrefix=_,restriction=rest)),cenv) =
            Lookup.lookupClass(cache, env, fn, true);
         true = SCode.isFunctionRestriction(rest);
 
@@ -842,7 +842,7 @@ algorithm
                           prefixes = prefixes as SCode.PREFIXES(
                             replaceablePrefix = _,
                             visibility = vis,
-                            finalPrefix = finalPrefix,
+                            
                             innerOuter = _
                           ),
                           attributes = (attr as

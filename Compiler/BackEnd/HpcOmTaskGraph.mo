@@ -237,7 +237,7 @@ algorithm
       String fileNameOde;
       Integer numberOfVars;
       Integer numberOfEqs;
-    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps=comps), orderedVars=BackendDAE.VARIABLES(numberOfVars=numberOfVars), orderedEqs=BackendDAE.EQUATION_ARRAY(numberOfElement=_)),(shared as BackendDAE.SHARED(functionTree=sharedFuncs)),(_,_,eqSysIdx))
+    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps=comps), orderedVars=BackendDAE.VARIABLES(numberOfVars=_), orderedEqs=BackendDAE.EQUATION_ARRAY(numberOfElement=_)),(shared as BackendDAE.SHARED(functionTree=sharedFuncs)),(_,_,eqSysIdx))
       equation
         //Create Taskgraph for the first EqSystem
         //TASKGRAPHMETA(varNodeMapping=varNodeMapping,eqNodeMapping=eqNodeMapping) = graphDataIn;
@@ -256,7 +256,7 @@ algorithm
         tplOut = ((graphTmp,graphDataTmp,eqSysIdx+1));
       then
         tplOut;
-    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps=comps), orderedVars=BackendDAE.VARIABLES(numberOfVars=numberOfVars), orderedEqs=BackendDAE.EQUATION_ARRAY(numberOfElement=_)),(shared as BackendDAE.SHARED(functionTree=sharedFuncs)),(graphIn,graphDataIn,eqSysIdx))
+    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps=comps), orderedVars=BackendDAE.VARIABLES(numberOfVars=_), orderedEqs=BackendDAE.EQUATION_ARRAY(numberOfElement=_)),(shared as BackendDAE.SHARED(functionTree=sharedFuncs)),(graphIn,graphDataIn,eqSysIdx))
       equation
         //append the remaining equationsystems to the taskgraph
         //TASKGRAPHMETA(varNodeMapping=varNodeMapping,eqNodeMapping=eqNodeMapping) = graphDataIn;
@@ -642,21 +642,21 @@ algorithm
        descLst = desc::iEqDesc;
      then
        descLst;
-  case(BackendDAE.EQUATIONSYSTEM(eqns = _, vars = _, jac = BackendDAE.FULL_JACOBIAN(jac), jacType = _), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars),_)
+  case(BackendDAE.EQUATIONSYSTEM(eqns = _, vars = _, jac = BackendDAE.FULL_JACOBIAN(jac), jacType = _), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs),_)
      equation
        eqnLst = BackendEquation.equationList(orderedEqs);
        desc = ("Equation System");
        descLst = desc::iEqDesc;
      then
        descLst;
-  case(BackendDAE.MIXEDEQUATIONSYSTEM(disc_eqns = _, disc_vars = _), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars),_)
+  case(BackendDAE.MIXEDEQUATIONSYSTEM(disc_eqns = _, disc_vars = _), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs),_)
      equation
        eqnLst = BackendEquation.equationList(orderedEqs);
        desc = ("MixedEquation System");
        descLst = desc::iEqDesc;
      then
        descLst;
-   case(BackendDAE.SINGLEARRAY(eqn = i, vars = vs), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING(ass2 = ass2)),_)
+   case(BackendDAE.SINGLEARRAY(eqn = i, vars = vs), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING(ass2=_)),_)
      equation
       //get the equation string
       eqnLst = BackendEquation.equationList(orderedEqs);
@@ -674,7 +674,7 @@ algorithm
       descLst = desc::iEqDesc;
     then
       descLst;
-   case(BackendDAE.SINGLEALGORITHM(eqn = i, vars = vs), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING(ass2 = ass2)),_)
+   case(BackendDAE.SINGLEALGORITHM(eqn = i, vars = vs), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING(ass2=_)),_)
      equation
       //get the equation string
       eqnLst = BackendEquation.equationList(orderedEqs);
@@ -692,7 +692,7 @@ algorithm
       descLst = desc::iEqDesc;
     then
       descLst;
-   case(BackendDAE.SINGLECOMPLEXEQUATION(eqn = i, vars = vs), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING(ass2 = ass2)),_)
+   case(BackendDAE.SINGLECOMPLEXEQUATION(eqn = i, vars = vs), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING(ass2=_)),_)
      equation
       //get the equation string
       eqnLst = BackendEquation.equationList(orderedEqs);
@@ -710,7 +710,7 @@ algorithm
       descLst = desc::iEqDesc;
     then
       descLst;
-   case(BackendDAE.SINGLEWHENEQUATION(eqn = i, vars = vs), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING(ass2 = ass2)),_)
+   case(BackendDAE.SINGLEWHENEQUATION(eqn = i, vars = vs), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING(ass2=_)),_)
      equation
       //get the equation string
       eqnLst = BackendEquation.equationList(orderedEqs);
@@ -728,7 +728,7 @@ algorithm
       descLst = desc::iEqDesc;
     then
       descLst;
-   case(BackendDAE.SINGLEIFEQUATION(eqn = i, vars = vs), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING(ass2 = ass2)),_)
+   case(BackendDAE.SINGLEIFEQUATION(eqn = i, vars = vs), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING(ass2=_)),_)
      equation
       //get the equation string
       eqnLst = BackendEquation.equationList(orderedEqs);
@@ -746,7 +746,7 @@ algorithm
       descLst = desc::iEqDesc;
     then
       descLst;
-  case(BackendDAE.TORNSYSTEM(residualequations = _, tearingvars = _, linear=true), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING(ass2 = ass2)),_)
+  case(BackendDAE.TORNSYSTEM(residualequations = _, tearingvars = _, linear=true), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs,  matching= BackendDAE.MATCHING(ass2=_)),_)
      equation
       //get the equation string
        eqnLst = BackendEquation.equationList(orderedEqs);
@@ -754,7 +754,7 @@ algorithm
        descLst = desc::iEqDesc;
     then
       descLst;
-  case(BackendDAE.TORNSYSTEM(residualequations = _, tearingvars = _, linear=false), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING(ass2 = ass2)),_)
+  case(BackendDAE.TORNSYSTEM(residualequations = _, tearingvars = _, linear=false), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs,  matching= BackendDAE.MATCHING(ass2=_)),_)
      equation
       //get the equation string
        eqnLst = BackendEquation.equationList(orderedEqs);
@@ -1012,7 +1012,7 @@ author:Waurich TUD 2013-06"
 algorithm
   isWhenEq := matchcontinue(inComp)
   local Integer eqn;
-    case(BackendDAE.SINGLEWHENEQUATION(eqn=eqn))
+    case(BackendDAE.SINGLEWHENEQUATION(eqn=_))
     then
       true;
   else
@@ -2415,7 +2415,7 @@ algorithm
       equation
         false = nodeIdx == 0 or nodeIdx == -1;
         (nameAttIdx, opCountAttIdx, calcTimeAttIdx, taskIdAttIdx, yCoordAttIdx, commCostAttIdx, commVarsAttIdx, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx) = attIdc;
-        TASKGRAPHMETA(inComps = inComps, eqNodeMapping=eqNodeMapping, rootNodes = rootNodes, nodeNames =nodeNames ,nodeDescs=nodeDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) = tGraphDataIn;
+        TASKGRAPHMETA(inComps = inComps,   nodeNames =nodeNames ,nodeDescs=nodeDescs, exeCosts = exeCosts,  nodeMark=nodeMark) = tGraphDataIn;
         components = arrayGet(inComps,nodeIdx);
         true = listLength(components)==1;
         primalComp = listGet(components,1);
@@ -2461,7 +2461,7 @@ algorithm
         // for a node that consists of contracted nodes
         false = nodeIdx == 0 or nodeIdx == -1;
         (nameAttIdx, opCountAttIdx, calcTimeAttIdx, taskIdAttIdx, _, commCostAttIdx, commVarsAttIdx, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx) = attIdc;
-        TASKGRAPHMETA(inComps = inComps, eqNodeMapping=eqNodeMapping, rootNodes = rootNodes, nodeNames =nodeNames ,nodeDescs=nodeDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) = tGraphDataIn;
+        TASKGRAPHMETA(inComps = inComps,   nodeNames =nodeNames ,nodeDescs=nodeDescs, exeCosts = exeCosts) = tGraphDataIn;
         components = arrayGet(inComps,nodeIdx);
         false = listLength(components)==1;
         primalComp = List.last(components);

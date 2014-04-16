@@ -228,7 +228,7 @@ algorithm
       list<TypeDefinitions> xs;
       String name_;
       String baseType;
-    case ((ENUMERATIONTYPE(name = name_) :: xs), baseType)
+    case ((ENUMERATIONTYPE(name = name_) :: _), baseType)
       equation
         true = stringEqual(name_, baseType);
       then
@@ -238,7 +238,7 @@ algorithm
         name_ = getEnumerationTypeFromTypes(xs, baseType);
       then
         name_;
-    case ({}, baseType) then "";
+    case ({}, _) then "";
   end matchcontinue;
 end getEnumerationTypeFromTypes;
 

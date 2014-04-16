@@ -352,7 +352,7 @@ algorithm
     case (LINE_INFO( parseInfo = PARSE_INFO(fileName = fname, errors = errLst, wasFatalError = wasFatalError),
                                      lineNumber = lnum, lineLength = llen, startOfLineChars = solchars
                            ),
-          LINE_INFO(parseInfo = PARSE_INFO(errors = errLstToAdd, wasFatalError = wasFatalErrorToAdd ) ))
+          LINE_INFO(parseInfo = PARSE_INFO(errors = errLstToAdd, wasFatalError = _ ) ))
       equation
         errLst = listAppend(errLstToAdd, errLst); //error lists are in reversed order
         //let the fatal error state from the first, leading file, only add errors from the other file
@@ -1217,7 +1217,7 @@ algorithm
         (chars, linfo) = endDefPathIdent(chars, linfo,pid);
       then (chars, linfo, TplAbsyn.TEMPL_PACKAGE(pid, astDefs,templDefs));
 
-    case (chars, linfo)
+    case (_, _)
       equation
         Debug.fprint(Flags.FAILTRACE, "!!!Parse error - TplParser.templPackage failed.\n");
       then fail();
@@ -1727,7 +1727,7 @@ algorithm
         (chars, linfo) = endDefPathIdent(chars, linfo,pid);
       then (chars, linfo, pid, astDefs);
 
-    case (chars, linfo, _)
+    case (_, _, _)
       equation
         Debug.fprint(Flags.FAILTRACE, "!!!Parse error - TplParser.interfacePackage failed.\n");
       then fail();
@@ -1865,7 +1865,7 @@ algorithm
         (linfo) = parseError(chars, linfo, "Expected 'end' keyword at the position.", true);
       then (chars, linfo);
 
-   case (chars, linfo, pidToMatch)
+   case (chars, linfo, _)
      equation
         Debug.fprint(Flags.FAILTRACE, "!!!Parse error - TplParser.endDefPathIdent failed.\n");
      then (chars, linfo);
@@ -1918,7 +1918,7 @@ algorithm
       then (chars, linfo);
 
    //error "end" expected
-   case (chars, linfo, idToMatch)
+   case (chars, linfo, _)
       equation
         (_, false) = isKeyword(chars, "e"::"n"::"d"::{});
         (linfo) = parseError(chars, linfo, "Expected 'end' keyword at the position.", true);
@@ -2532,7 +2532,7 @@ algorithm
       then (chars, linfo);
 
     //otherwise, error is already reported
-    case (chars, linfo, ctype, litType)
+    case (chars, linfo, _, _)
       then (chars, linfo);
 
   end matchcontinue;
@@ -2584,7 +2584,7 @@ algorithm
         (chars, linfo, exp) = expression(chars, linfo, "<", ">", false);
       then (chars, linfo, exp, "<", ">");
 
-  case (chars, linfo)
+  case (_, _)
       equation
         Debug.fprint(Flags.FAILTRACE, "!!!Parse error - TplParser.templDef_Templ failed.\n");
       then fail();
@@ -2855,7 +2855,7 @@ algorithm
         exp = makeEscapedExp(chars, linfo, exp, opts);
       then (chars, linfo, exp);
 
-    case (chars, linfo, lesc, resc, false)
+    case (chars, linfo, _, _, false)
       equation
         (linfo) = parseError(chars, linfo, "Expecting an expression - not able to parse from this point.", true);
       then (chars, linfo, (TplAbsyn.ERROR_EXP(), dummySourceInfo));
@@ -3085,7 +3085,7 @@ algorithm
         (chars, linfo, outIndexOffsetOption) = fromOpt(chars, linfo, lesc, resc);
       then (chars, linfo, SOME(id), outIndexOffsetOption );
 
-    case (chars, linfo, lesc, resc)
+    case (chars, linfo, _, _)
       then (chars, linfo, NONE(), {});
 
   end matchcontinue;
@@ -3132,7 +3132,7 @@ algorithm
         (chars, linfo, exp) = expression_base(chars, linfo, lesc, resc);
       then (chars, linfo, {(TplAbsyn.indexOffsetOptionId, SOME(exp))} );
 
-    case (chars, linfo, lesc, resc)
+    case (chars, linfo, _, _)
       then (chars, linfo,{});
 
   end matchcontinue;
@@ -3301,7 +3301,7 @@ algorithm
         (chars, linfo, exp) = expression(chars, linfo, lesc, resc, false);
       then (chars, linfo, (TplAbsyn.TEXT_ADD(id, exp), sinfo));
 
-  case ("&":: startChars, startLInfo, lesc, resc)
+  case ("&":: startChars, startLInfo, _, _)
       equation
         (chars, linfo) = interleave(startChars, startLInfo);
         (chars, linfo, id) = identifierNoOpt(chars, linfo);
@@ -3319,7 +3319,7 @@ algorithm
         sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 2), chars, linfo);
       then (chars, linfo, (TplAbsyn.NORET_CALL(name, args), sinfo));
 
-  case ("("::")":: startChars, startLInfo, lesc, resc)
+  case ("("::")":: startChars, startLInfo, _, _)
       equation
         (chars, linfo) = interleaveExpectChar(startChars, startLInfo, "=");
         (chars, linfo) = interleave(chars, linfo);
@@ -3537,7 +3537,7 @@ algorithm
         (chars, linfo, expLst) = concatExp_rest(chars, linfo, lesc, resc);
       then (chars, linfo, exp::expLst);
 
-    case (chars, linfo, lesc, resc)
+    case (chars, linfo, _, _)
       then (chars, linfo, {});
 
   end matchcontinue;
@@ -3612,7 +3612,7 @@ algorithm
         (chars, linfo, exp) = templateExp(chars, linfo, lesc, resc);
       then (chars, linfo, exp);
 
-   case ("{" :: startChars, startLInfo, lesc, resc)
+   case ("{" :: startChars, startLInfo, _, _)
       equation
         (chars, linfo) = interleave(startChars, startLInfo);
         ("}" :: chars) = chars;
@@ -3637,7 +3637,7 @@ algorithm
       then (chars, linfo, exp);
 
    //TODO: be a ref Text buffer
-   case ("&" :: startChars, startLInfo, lesc, resc)
+   case ("&" :: startChars, startLInfo, _, _)
       equation
         (chars, linfo) = interleave(startChars, startLInfo);
         (chars, linfo, id) = identifierNoOpt(chars, linfo);
@@ -3721,7 +3721,7 @@ algorithm
       TplAbsyn.Expression exp;
       list<TplAbsyn.Expression> expLst;
 
-    case ("(":: chars, linfo, name, lesc, resc)
+    case ("(":: chars, linfo, name, _, _)
       equation
         (chars, linfo) = interleave(chars, linfo);
         (")" :: chars) = chars;
@@ -4310,7 +4310,7 @@ algorithm
       list<String> chars, ds;
       TplAbsyn.TypeSignature litType;
 
-    case ("e" :: chars, litType)
+    case ("e" :: chars, _)
       equation
         (chars,pm) = plusMinus(chars);
         (chars,ds) = digits(chars);
@@ -4318,7 +4318,7 @@ algorithm
         ex = "e" +& pm +& stringCharListString(ds);
       then (chars, ex, TplAbsyn.REAL_TYPE());
 
-    case ("E" :: chars, litType)
+    case ("E" :: chars, _)
       equation
         (chars,pm) = plusMinus(chars);
         (chars,ds) = digits(chars);
@@ -4614,7 +4614,7 @@ algorithm
       then (chars, linfo, expB);
 
    //<% expression %>
-   case (startChars as (c :: "%":: chars), startLinfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars)
+   case ((c :: "%":: chars), startLinfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars)
       equation
         equality( c  = lesc );
         (chars, linfo) = interleave(chars, startLinfo);
@@ -4639,14 +4639,14 @@ algorithm
       then (chars, linfo, expB);
 
    //isSingleQuote = true
-   case ("'" :: chars, linfo, lesc, resc, true, expLst, indStack, actInd, lineInd, accChars)
+   case ("'" :: chars, linfo, _, _, true, expLst, indStack, actInd, lineInd, accChars)
       equation
         expLst = onTemplEnd(false, expLst, indStack, actInd, lineInd, accChars);
         expB = makeTemplateFromExpList(expLst, "'","'");
       then (chars, linfo, expB);
 
    //isDoubleQuote = false =>  << >>
-   case (">"::">":: chars, linfo, lesc, resc, false, expLst, indStack, actInd, lineInd, accChars)
+   case (">"::">":: chars, linfo, _, _, false, expLst, indStack, actInd, lineInd, accChars)
       equation
         expLst = onTemplEnd(true, expLst, indStack, actInd, lineInd, accChars);
         expB = makeTemplateFromExpList(expLst, "<<",">>");
@@ -4666,7 +4666,7 @@ algorithm
         (chars, linfo, expB) = restOfTemplLine(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, c :: accChars);
       then (chars, linfo, expB);
 
-   case ({}, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars)
+   case ({}, linfo, _, _, _, _, _, _, _, _)
       equation
         (linfo) = parseError({}, linfo, "Not able to parse the text template expression from the point.", true);
       then ({}, linfo, TplAbsyn.ERROR_EXP());
@@ -5440,7 +5440,7 @@ algorithm
         (chars, linfo, elseBr) = expressionLet(chars, linfo, lesc, resc);
       then (chars, linfo, SOME(elseBr));
 
-   case (chars, linfo, lesc, resc)
+   case (chars, linfo, _, _)
       then (chars, linfo,NONE());
 
   end matchcontinue;
@@ -5689,7 +5689,7 @@ algorithm
         (chars,linfo,exp) = expressionLet(chars, linfo, lesc, resc);
       then (chars, linfo, { (TplAbsyn.REST_MATCH(), exp) } );
 
-   case (chars, linfo, lesc, resc)
+   case (chars, linfo, _, _)
       then (chars, linfo, {} );
 
   end matchcontinue;

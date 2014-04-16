@@ -2174,7 +2174,7 @@ algorithm
         printElement(el) +& printInstStatus(instStatus) +& " env: " +& printEnvPathStr(env);
       then str;
 
-    case(CLASS(cls = e as SCode.CLASS(name=name), env = env))
+    case(CLASS(cls = e as SCode.CLASS(name=_), env = env))
       equation
         str = "class: " +& SCodeDump.shortElementStr(e) +& " env: " +& printEnvPathStr(env);
       then str;
@@ -3482,7 +3482,7 @@ algorithm
         path;
 
     // adrpo: leave it as stripped as you can if you can't match it above and stripPartial is true
-    case (Absyn.QUALIFIED(name = id1, path = path), env_path, true)
+    case (Absyn.QUALIFIED(name = id1), env_path, true)
       equation
         false = stringEqual(id1, Absyn.pathFirstIdent(env_path));
       then

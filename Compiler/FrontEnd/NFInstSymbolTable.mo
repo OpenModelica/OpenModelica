@@ -239,7 +239,7 @@ algorithm
       SymbolTable rest_st;
 
     // Search the first scope.
-    case (_, ht :: rest_st) then BaseHashTable.get(inName, ht);
+    case (_, ht :: _) then BaseHashTable.get(inName, ht);
     // Search the next scope if it wasn't found in the first.
     case (_, _ :: rest_st) then get(inName, rest_st);
 
@@ -259,7 +259,7 @@ algorithm
       Absyn.Path name;
 
     // A basic type doesn't have any components, nothing to add.
-    case (NFInstTypes.BASIC_TYPE(name), st) then st;
+    case (NFInstTypes.BASIC_TYPE(_), st) then st;
 
     // A complex class, add its components to the symboltable.
     case (NFInstTypes.COMPLEX_CLASS(components = comps), st)
@@ -321,7 +321,7 @@ algorithm
       Class cls;
       SymbolTable st;
 
-    case (cls, st, false) then st;
+    case (_, st, false) then st;
     case (cls, st, true)
       equation
         st = addClass(cls, st);
@@ -614,7 +614,7 @@ algorithm
     // element from an extends. In that case we should make sure that the new
     // component is equivalent to the old one, and return the symboltable
     // unchanged.
-    case (_, _, SOME(comp), st)
+    case (_, _, SOME(_), st)
       equation
         /*********************************************************************/
         // TODO: Check if this is still needed, since we check duplicate

@@ -70,20 +70,20 @@ algorithm
       then (st);
 
     // No more terms?
-    case ({},UnitAbsyn.INSTSTORE(st1,ht,res))
+    case ({},UnitAbsyn.INSTSTORE(st1,ht,_))
       then UnitAbsyn.INSTSTORE(st1,ht,SOME(UnitAbsyn.CONSISTENT()));
 
     // Is consistent?
-    case (tm1::rest1,UnitAbsyn.INSTSTORE(st1,ht,res))
+    case (tm1::rest1,UnitAbsyn.INSTSTORE(st1,ht,_))
       equation
         (UnitAbsyn.CONSISTENT(),_,st2) = checkTerm(tm1,st1);
         (st) = check(rest1,UnitAbsyn.INSTSTORE(st2,ht,SOME(UnitAbsyn.CONSISTENT())));
       then(st);
 
      // Is inconsistent?
-     case (tm1::rest1,UnitAbsyn.INSTSTORE(st1,ht,res))
+     case (tm1::_,UnitAbsyn.INSTSTORE(st1,ht,_))
        equation
-         (UnitAbsyn.INCONSISTENT(su1,su2),_,st2) = checkTerm(tm1,st1);
+         (UnitAbsyn.INCONSISTENT(su1,su2),_,_) = checkTerm(tm1,st1);
          s1 = UnitAbsynBuilder.printTermsStr({tm1});
          s2 = UnitAbsynBuilder.unit2str(UnitAbsyn.SPECIFIED(su1));
          s3 = UnitAbsynBuilder.unit2str(UnitAbsyn.SPECIFIED(su2));
@@ -137,7 +137,7 @@ algorithm
 
     case ({},_,st2) then (true,st2);
 
-    case (SOME(u1)::lst,_,st2)
+    case (SOME(_)::lst,_,st2)
       equation
         (u2,st3) = normalize(indx,st2);
         false = unitHasUnknown(u2);
@@ -145,7 +145,7 @@ algorithm
       then
         (comp1,st3);
 
-    case (SOME(u1)::lst,_,st2)
+    case (SOME(_)::_,_,st2)
       equation
         (u2,st3) = normalize(indx,st2);
         true = unitHasUnknown(u2);
@@ -370,7 +370,7 @@ algorithm
       list<MMath.Rational> unitvec1;
       list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> rest1;
 
-    case(UnitAbsyn.SPECUNIT((expo1,UnitAbsyn.TYPEPARAMETER(name,loc1))::rest1,unitvec1))
+    case(UnitAbsyn.SPECUNIT((expo1,UnitAbsyn.TYPEPARAMETER(_,loc1))::rest1,unitvec1))
       equation
         su1 = divSpecUnit(newDimlessSpecUnit(),UnitAbsyn.SPECUNIT(rest1,unitvec1));
         expo2 = MMath.divRational(MMath.RATIONAL(1,1), expo1);
@@ -755,7 +755,7 @@ algorithm
 
     case ({},_) then (false,MMath.RATIONAL(1,1),{});
 
-    case ((expo,UnitAbsyn.TYPEPARAMETER(name,loc2))::rest,_)
+    case ((expo,UnitAbsyn.TYPEPARAMETER(_,loc2))::rest,_)
       equation
         true = intEq(loc2, loc);
       then
@@ -849,7 +849,7 @@ algorithm
       list<MMath.Rational> unitvec;
       String str;
 
-    case(str,UnitAbsyn.SPECUNIT(params,unitvec))
+    case(str,UnitAbsyn.SPECUNIT(params,_))
       equation
         print(str);
         print(" \"");

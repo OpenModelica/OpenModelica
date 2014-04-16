@@ -458,9 +458,9 @@ algorithm
       Data nd;
 
     // a component
-    case (SCode.COMPONENT(n,SCode.PREFIXES(vis,redecl,finalPrefix,io,repl),
-                                    attr as SCode.ATTR(ad,ct,prl,var,dir),
-                                    t,m,comment,condition,info), _)
+    case (SCode.COMPONENT(n,SCode.PREFIXES(vis,_,_,io,_),
+                                    SCode.ATTR(_,ct,prl,var,dir),
+                                    _,_,_,_,_), _)
       equation
         nd = FCore.CO(inElement,
                 DAE.TYPES_VAR(
@@ -521,7 +521,7 @@ algorithm
      Children c;
      Data d;
 
-    case (FCore.N(n, i, p, c, d))
+    case (FCore.N(_, i, p, _, d))
       equation
         outStr =
            "[i:" +& intString(i) +& "] " +&
@@ -552,13 +552,13 @@ algorithm
      String s;
 
     // top node
-    case (FCore.N(n, id, {}, c, d))
+    case (FCore.N(_, _, {}, _, _))
       equation
         outStr = name(inNode);
       then
         outStr;
 
-    case (FCore.N(n, id, nr::_, c, d))
+    case (FCore.N(_, _, nr::_, _, _))
       equation
         true = hasParents(fromRef(nr));
         s = toPathStr(fromRef(nr));
@@ -566,7 +566,7 @@ algorithm
       then
         outStr;
 
-    case (FCore.N(n, id, nr::_, c, d))
+    case (FCore.N(_, _, nr::_, _, _))
       equation
         false = hasParents(fromRef(nr));
         outStr = "." +& name(inNode);
@@ -1830,7 +1830,7 @@ algorithm
    local Option<AvlTreeValue> value;
     Option<AvlTree> l,r;
     Integer height;
-    case(FCore.CAVLTREENODE(value,height,l,r),_) then FCore.CAVLTREENODE(value,height,l,right);
+    case(FCore.CAVLTREENODE(value,height,l,_),_) then FCore.CAVLTREENODE(value,height,l,right);
   end match;
 end setRight;
 
@@ -1843,7 +1843,7 @@ algorithm
   local Option<AvlTreeValue> value;
     Option<AvlTree> l,r;
     Integer height;
-    case(FCore.CAVLTREENODE(value,height,l,r),_) then FCore.CAVLTREENODE(value,height,left,r);
+    case(FCore.CAVLTREENODE(value,height,_,r),_) then FCore.CAVLTREENODE(value,height,left,r);
   end match;
 end setLeft;
 
@@ -1968,7 +1968,7 @@ algorithm
       AvlTree left,right;
 
     // hash func Search to the right
-    case (FCore.CAVLTREENODE(value = SOME(FCore.CAVLTREEVALUE(value=rval))),0,key)
+    case (FCore.CAVLTREENODE(value = SOME(FCore.CAVLTREEVALUE(value=rval))),0,_)
       then rval;
 
     // search to the right
@@ -2021,7 +2021,7 @@ algorithm
       Option<AvlTree> l,r;
       Integer h;
 
-    case (FCore.CAVLTREENODE(value = SOME(FCore.CAVLTREEVALUE(rkey,rval)),height = h,left = l,right = r))
+    case (FCore.CAVLTREENODE(value = SOME(FCore.CAVLTREEVALUE(_,rval)),height = _,left = l,right = r))
       equation
         s2 = getOptionStr(l, printAvlTreeStr);
         s3 = getOptionStr(r, printAvlTreeStr);

@@ -444,10 +444,10 @@ algorithm
     case (MODEL(path = _),NEWDEF()) then inState;
     case (RECORD(path = _),NEWDEF()) then inState;
     case (BLOCK(path = _),NEWDEF()) then inState;
-    case (CONNECTOR(path = _,isExpandable=isExpandable),NEWDEF()) then inState;
+    case (CONNECTOR(path = _),NEWDEF()) then inState;
     case (TYPE(path = p),NEWDEF()) then TYPE(p); // A type can be constructed with long definition
     case (PACKAGE(path = p),NEWDEF()) then PACKAGE(p);
-    case (FUNCTION(path = _, isImpure = isImpure),NEWDEF()) then inState;
+    case (FUNCTION(path = _),NEWDEF()) then inState;
     case (ENUMERATION(path = _),NEWDEF()) then inState;
     case (TYPE_INTEGER(path = _),NEWDEF()) then inState;
     case (TYPE_REAL(path = _),NEWDEF()) then inState;

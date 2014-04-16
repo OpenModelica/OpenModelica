@@ -156,7 +156,7 @@ public function node
   output Graph outGraph;
   output Node outNode;
 algorithm
-  (outGraph, outNode) := matchcontinue(inGraph, inName, inParents, inData)
+  (outGraph, outNode) := match(inGraph, inName, inParents, inData)
     local
       Integer i;
       Boolean b;
@@ -176,7 +176,7 @@ algorithm
      then
        (g, n);
 
-  end matchcontinue;
+  end match;
 end node;
 
 end FGraph;

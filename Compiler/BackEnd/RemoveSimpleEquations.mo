@@ -678,7 +678,7 @@ algorithm
     case (DAE.UNARY(DAE.UMINUS(ty), DAE.CREF(componentRef = cr1)), DAE.CREF(componentRef = cr2), _, _, _)
       then addSimpleEquationAcausal(cr1, lhs, true, cr2,  DAE.UNARY(DAE.UMINUS(ty), rhs), false, eqnAttributes, selfCalled, inTpl);
 
-    case (DAE.UNARY(DAE.UMINUS_ARR(ty), e1 as DAE.CREF(componentRef = cr1)), DAE.CREF(componentRef = cr2), _, _, _)
+    case (DAE.UNARY(DAE.UMINUS_ARR(ty), DAE.CREF(componentRef = cr1)), DAE.CREF(componentRef = cr2), _, _, _)
       then addSimpleEquationAcausal(cr1, lhs, true, cr2,  DAE.UNARY(DAE.UMINUS_ARR(ty), rhs), false, eqnAttributes, selfCalled, inTpl);
 
     // -a = -b;
@@ -1051,7 +1051,7 @@ algorithm
       DAE.Exp e1, e2;
       DAE.Type ty;
 
-    case(_, _, _, _, _, _, _, _, (vars, shared, eqns, seqns, index, mT, b))
+    case(_, _, _, _, _, _, _, _, (vars, shared, eqns, seqns, index, mT, _))
       equation
         Debug.fcall(Flags.DEBUG_ALIAS, BackendDump.debugStrCrefStrCrefStr, ("Alias Equation ", cr1, " = ", cr2, " found. Negated lhs[" +& boolString(negatedCr1) +& "] = rhs[" +& boolString(negatedCr2) +& "].\n"));
         // get Variables
@@ -1207,7 +1207,7 @@ algorithm
       then
         (PARAMETERALIAS(cr1, negatedCr1, i1, cr2, negatedCr2, i2, eqnAttributes, -1)::iSeqns, iIndex+1, iMT);
 
-    case (BackendDAE.VAR(varName=cr1), _, _, true, BackendDAE.VAR(varName=cr2), _, _, true, (source, _), _, _, _)
+    case (BackendDAE.VAR(varName=cr1), _, _, true, BackendDAE.VAR(varName=cr2), _, _, true, (_, _), _, _, _)
       equation
         crexp1 = Expression.crefExp(cr1);
         crexp2 = Expression.crefExp(cr2);
@@ -1393,7 +1393,7 @@ algorithm
     // var
     case((e as DAE.CREF(cr, _), (b, vars, knvars, b1, b2, ilst)))
       equation
-        (var::_, vlst)= BackendVariable.getVar(cr, vars);
+        (_::_, vlst)= BackendVariable.getVar(cr, vars);
         ilst = listAppend(ilst, vlst);
       then ((e, true, (b, vars, knvars, b1, b2, ilst)));
     case((e, (b, vars, knvars, b1, b2, ilst))) then ((e, not b, (b, vars, knvars, b1, b2, ilst)));
@@ -1525,7 +1525,7 @@ algorithm
       Boolean b, negated;
       list<Integer> colum;
     // alias a
-    case (_, _, _, _, _, (vars, shared, eqns, seqns, index, mT, b))
+    case (_, _, _, _, _, (vars, shared, eqns, seqns, index, mT, _))
       equation
         // alias
         (negated, cra) = aliasExp(exp);
@@ -1537,7 +1537,7 @@ algorithm
       then
          ((vars, shared, eqns, seqns, index, mT, true));
     // const
-    case (_, _, _, _, _, (vars, shared, eqns, seqns, index, mT, b))
+    case (_, _, _, _, _, (vars, shared, eqns, seqns, index, mT, _))
       equation
         Debug.fcall(Flags.DEBUG_ALIAS, BackendDump.debugStrCrefStrExpStr, ("Const Equation ", cr, " = ", exp, " found.\n"));
         colum = mT[i];
@@ -1799,7 +1799,7 @@ algorithm
       then
         circularEqualityMsg_dispatch(rest, iR, simpleeqnsarr, slst);
 
-    case (r::rest, _, _, _)
+    case (r::_, _, _, _)
       equation
         true = intEq(r, iR);
       then
@@ -2510,7 +2510,7 @@ algorithm
       String msg;
       VarSetAttributes vsattr;
 
-    case (ALIAS(cr1, negatedCr1, i1, cr2, negatedCr2, i2, (source, diffed), _), _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
+    case (ALIAS(_, negatedCr1, i1, _, negatedCr2, i2, (source, diffed), _), _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
       equation
         i = Util.if_(intEq(i1, ilast), i2, i1);
         negated = boolOr(negatedCr2, negatedCr1);
@@ -2533,7 +2533,7 @@ algorithm
       then
         (vars, eqnslst, shared, repl, vsattr);
 
-    case (PARAMETERALIAS(cr1, negatedCr1, i1, cr2, negatedCr2, i2, (source, _), _), _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
+    case (PARAMETERALIAS(cr1, negatedCr1, i1, cr2, negatedCr2, _, (_, _), _), _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
       equation
         // report error
         cr = Util.if_(intEq(i1, ilast), cr2, cr1);
@@ -2546,7 +2546,7 @@ algorithm
       then
         fail();
 
-    case (TIMEALIAS(cr1=cr1, negatedCr1=negatedCr1, cr2=cr2, negatedCr2=negatedCr2), _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
+    case (TIMEALIAS(negatedCr2=_), _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
       equation
         // report error
         msg = "Found Equation without time dependent variables ";
@@ -2555,7 +2555,7 @@ algorithm
       then
         fail();
 
-    case (TIMEINDEPENTVAR(cr=cr, exp=exp1), _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
+    case (TIMEINDEPENTVAR( exp=exp1), _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
       equation
         // report error
         msg = "Found Equation without time dependent variables ";
@@ -2713,7 +2713,7 @@ algorithm
       ((_, start, _)) = equalNonFreeStartValues(values, knVars, (start1, start, cr));
     then BackendVariable.setVarStartValueOption(v, start);
 
-    case (_, true, (_, values), BackendDAE.SHARED(knownVars=knVars)) equation
+    case (_, true, (_, values), BackendDAE.SHARED(knownVars=_)) equation
       v = BackendVariable.setVarFixed(inVar, true);
       // get all nonzero values
       zerofreevalues = List.fold(values, getZeroFreeValues, {});
@@ -3094,7 +3094,7 @@ algorithm
       then
         ((e, (vars, true, hs)));
     // true if crefs in expression
-    case ((e as DAE.CREF(componentRef=cr), (vars, _, hs)))
+    case ((e as DAE.CREF(componentRef=_), (vars, _, hs)))
       then
         ((e, (vars, true, hs)));
     else then inTuple;
@@ -3140,7 +3140,7 @@ algorithm
 
     case ({(e, cr, i)}) then ((e, cr, i));
 
-    case ((e, cr, i)::rest)
+    case ((e, cr, i)::_)
       equation
         false = Expression.isZero(e);
       then
@@ -3210,7 +3210,7 @@ algorithm
     then selectFreeValue1(zerofreevalues, favorit, s, iAttributeName, inFunc, inVar);
 
     // less than, remove all from list, return just this one
-    case ((e, cr)::zerofreevalues, (es, crs, is)::rest, _, _, _, _) equation
+    case ((e, cr)::zerofreevalues, (_, _, is)::_, _, _, _, _) equation
       s = iStr +& " * candidate: " +& ComponentReference.printComponentRefStr(cr) +& "(" +& iAttributeName +& " = " +& ExpressionDump.printExpStr(e) +& ")\n";
       i = selectMinDepth(ComponentReference.crefDepth(cr), e);
       favorit = Util.if_(intLt(i, is), {(e, cr, i)}, iFavorit);
@@ -3845,7 +3845,7 @@ algorithm
       HashSet.HashSet hs;
       DAE.ComponentRef cr;
       DAE.Exp e;
-    case((e as DAE.CREF(componentRef=DAE.WILD()), hs))
+    case((DAE.CREF(componentRef=DAE.WILD()), _))
       then
         inExp;
 

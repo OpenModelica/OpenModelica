@@ -359,7 +359,7 @@ algorithm
       list<list<Integer>> paths, allPaths, simpleLoops, varEqsLst, crossEqLst, paths0, paths1, closedPaths, loopConnectors, connectedPaths;
       BackendDAE.Equation resolvedEq, startEq;
       list<BackendDAE.Equation> eqLst;
-    case(_,_,eqIdx::eqCrossLst,{},_,_)
+    case(_,_,_::_,{},_,_)
       equation
           //print("partition has only eqCrossNodes\n");
         // get the paths between the crossEqNodes and order them according to their length
@@ -388,7 +388,7 @@ algorithm
         //print("all paths to be resolved: \n"+&stringDelimitList(List.map(paths0,HpcOmTaskGraph.intLstString)," / ")+&"\n");
       then
         paths0;
-    case(_,_,{},varIdx::varCrossLst,_,_)
+    case(_,_,{},_::_,_,_)
       equation
           //print("partition has only varCrossNodes\n");
         // get the paths between the crossVarNodes and order them according to their length
@@ -417,7 +417,7 @@ algorithm
          subLoop = Util.if_(isNoSingleLoop,{},eqsIn);
        then
          {subLoop};
-    case(_,_,eqIdx::eqCrossLst,varIdx::varCrossLst,_,_)
+    case(_,_,_::_,_::_,_,_)
       equation
         //print("there are both varCrossNodes and eqNodes\n");
       then
@@ -470,7 +470,7 @@ algorithm
         true = intEq(startNode,endNode);
       then
         path;
-    case(_,startNode::restPath)
+    case(_,startNode::_)
       equation
         nextPaths1 = List.filter1OnTrue(allPathsIn, firstInListIsEqual, startNode);
         nextPaths2 = List.filter1OnTrue(allPathsIn, lastInListIsEqual, startNode);
@@ -527,7 +527,7 @@ algorithm
     equation
       then
         (eqLstIn,replEqsIn);
-  case(loop1::rest,crossEq::crossEqs,{},_,_,_,_,_,_,_)
+  case(loop1::rest,_::crossEqs,{},_,_,_,_,_,_,_)
     equation
       // only eqCrossNodes
       //print("only eqCrossNodes\n");
@@ -573,7 +573,7 @@ algorithm
       (eqLst,replEqs) = resolveLoops_resolveAndReplace(rest,eqCrossLstIn,varCrossLstIn,mIn,mTIn,eqMapping,varMapping,eqLst,varLstIn,replEqs);
     then
       (eqLst,replEqs);
-  case(loop1::rest,{},crossVar::crossVars,_,_,_,_,_,_,_)
+  case(loop1::rest,{},_::crossVars,_,_,_,_,_,_,_)
     equation
       // only varCrossNodes
         //print("only varCrossNodes\n");
@@ -635,7 +635,7 @@ algorithm
 
       // update IncidenceMatrix
       (_,crossEqs,_) = List.intersection1OnTrue(loop1,replEqsIn,intEq);  // do not replace an already replaced Eq
-      (pos::removeCrossEqs) = crossEqs;  // the equation that will be replaced = pos
+      (pos::_) = crossEqs;  // the equation that will be replaced = pos
       eqVars = List.map1(loop1,Util.arrayGetIndexFirst,mIn);
       vars = List.flatten(eqVars);
         //print("delete vars: "+&stringDelimitList(List.map(vars,intString),",")+&" in the eqs: "+&stringDelimitList(List.map(crossEqs,intString),",")+&"\n");
@@ -782,7 +782,7 @@ algorithm
         lst;
     else
       equation
-        (elem::elemLst) = elemLstIn;
+        (_::elemLst) = elemLstIn;
         lst = getDoubles(elemLst,lstIn);
       then
         lst;
@@ -848,7 +848,7 @@ algorithm
       BackendDAE.Equation eq2,resolvedEq;
       BackendDAE.Var var;
       DAE.ComponentRef cref, eqCrefs;
-    case(_,{eqIdx1},_,_,_,_,_,_)
+    case(_,{_},_,_,_,_,_,_)
       equation
           //print("finished loop\n");
       then
@@ -936,7 +936,7 @@ algorithm
     case(_,_)
       equation
         // it is an open path
-        startNode::restPath = pathIn;
+        startNode::_ = pathIn;
         endNode = List.last(pathIn);
         path = findPathByEnds(pathLstIn,startNode,endNode);
         closed = List.isNotEmpty(path);
@@ -1463,7 +1463,7 @@ algorithm
       DAE.Operator op;
       DAE.ComponentRef cref;
       DAE.Type ty;
-    case((DAE.CREF(componentRef=cref, ty = ty),true))
+    case((DAE.CREF(componentRef=_),true))
       equation
         //x
         (exp,b) = inTpl;
@@ -1500,7 +1500,7 @@ algorithm
         ((exp,b));
     else
       equation
-        (exp,b) = inTpl;
+        (exp,_) = inTpl;
       then
         ((exp,false));
   end match;

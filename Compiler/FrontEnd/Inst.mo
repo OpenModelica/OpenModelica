@@ -192,7 +192,7 @@ algorithm
         (cache,env_2,ih,dae2);
 
     // class in package
-    case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.QUALIFIED(name = name)))
+    case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.QUALIFIED(name=_)))
       equation
         cache = Env.setCacheClassName(cache,path);
         cdecls = InstUtil.scodeFlatten(cdecls, inPath);
@@ -355,7 +355,7 @@ algorithm
       then
         (cache,env_2,ih,dae);
 
-    case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.QUALIFIED(name = name))) /* class in package */
+    case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.QUALIFIED(name=_))) /* class in package */
       equation
         (cache,env) = Builtin.initialEnv(cache);
         (cache,env_1,ih,_) = instClassDecls(cache, env, ih, cdecls);
@@ -425,7 +425,7 @@ algorithm
       then
         (cache,env_2,ih,dae);
 
-    case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.QUALIFIED(name = name))) /* class in package */
+    case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.QUALIFIED(name=_))) /* class in package */
       equation
         (cache,env) = Builtin.initialEnv(cache);
         (cache,env_1,ih,_) = instClassDecls(cache, env, ih, cdecls);
@@ -1970,7 +1970,7 @@ algorithm
         System.setPartialInstantiation(partialInst);
       then (cache,env,ih,ci_state,{});
 
-    case (cache,env,ih,mods,pre,ci_state,(c as SCode.CLASS(name = _,restriction = _,partialPrefix=partialPrefix,classDef = d, info = info)),vis,inst_dims,_,_)
+    case (cache,env,ih,mods,pre,ci_state,(c as SCode.CLASS(name = _,restriction = _,classDef = d)),vis,inst_dims,_,_)
       equation
         // t1 = clock();
         (cache,env_1,ih,ci_state_1,vars) =
@@ -2567,7 +2567,7 @@ algorithm
       equation
         false = Util.getStatefulBoolean(stopInst);
 
-        (cache,(c as SCode.CLASS(name=cn2,encapsulatedPrefix=enc2,restriction=r,classDef=classDef)),cenv) = Lookup.lookupClass(cache, env, cn, true);
+        (cache,(c as SCode.CLASS(name=cn2,encapsulatedPrefix=enc2,restriction=r)),cenv) = Lookup.lookupClass(cache, env, cn, true);
 
         // if is a basic type or derived from it, follow the normal path
         true = InstUtil.checkDerivedRestriction(re, r, cn2);
@@ -2653,7 +2653,7 @@ algorithm
           re,vis,_,_,inst_dims,impl,callscope,graph,_,_,_,_)
       equation
         false = Util.getStatefulBoolean(stopInst);
-        (cache,(c as SCode.CLASS(name=cn2,encapsulatedPrefix=enc2,restriction=r,classDef=classDef)),cenv) = Lookup.lookupClass(cache, env, cn, true);
+        (cache,(c as SCode.CLASS(name=cn2,encapsulatedPrefix=enc2,restriction=r)),cenv) = Lookup.lookupClass(cache, env, cn, true);
 
         // not a basic type, change class name!
         false = InstUtil.checkDerivedRestriction(re, r, cn2);
@@ -5354,7 +5354,7 @@ algorithm
       then
         (cache,env_2,ih,dae);
 
-    case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.QUALIFIED(name = name))) /* class in package */
+    case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.QUALIFIED(name=_))) /* class in package */
       equation
         (cache,env) = Builtin.initialEnv(cache);
         (cache,env_1,ih,_) = instClassDecls(cache,env,ih, cdecls);

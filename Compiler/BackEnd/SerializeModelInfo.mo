@@ -87,7 +87,7 @@ algorithm
         serializeEquation(file,eq,"initial",withOperations,first=true);
         min(serializeEquation(file,eq,"initial",withOperations) for eq in eqs);
         min(serializeEquation(file,eq,"residual",withOperations) for eq in SimCodeUtil.sortEqSystems(code.residualEquations));
-        min(serializeEquation(file,eq,"regular",withOperations) for eq in SimCodeUtil.sortEqSystems(listAppend(code.inlineEquations,code.allEquations)));
+        min(serializeEquation(file,eq,"regular",withOperations) for eq in SimCodeUtil.sortEqSystems(code.allEquations));
         min(serializeEquation(file,eq,"start",withOperations) for eq in SimCodeUtil.sortEqSystems(code.startValueEquations));
         min(serializeEquation(file,eq,"nominal",withOperations) for eq in SimCodeUtil.sortEqSystems(code.nominalValueEquations));
         min(serializeEquation(file,eq,"min",withOperations) for eq in SimCodeUtil.sortEqSystems(code.minValueEquations));

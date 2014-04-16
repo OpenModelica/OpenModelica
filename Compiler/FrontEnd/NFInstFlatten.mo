@@ -340,7 +340,7 @@ algorithm
       SymbolTable st;
 
     // Try to add the component to the symbol table.
-    case (_, _, _, _, st, accum_el)
+    case (_, _, _, _, st, _)
       equation
         st = BaseHashTable.addUnique((inName, (inComponent, inExtendPath)), st);
       then
@@ -349,7 +349,7 @@ algorithm
     // If we couldn't add the component to the symbol table it means it already
     // exists, so we need to check that it's identical to the already existing
     // component.
-    case (_, _, _, _, st, accum_el)
+    case (_, _, _, _, st, _)
       equation
         /**********************************************************************/
         // TODO: Look up the already existing component here and check that they

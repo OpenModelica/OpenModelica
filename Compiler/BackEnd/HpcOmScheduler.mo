@@ -1708,7 +1708,7 @@ algorithm
       list<String> lockIdc;
       list<list<Task>> tasksOfLevels;
       Schedule schedule;
-    case(LEVELSCHEDULE(tasksOfLevels=tasksOfLevels),_,_)
+    case(LEVELSCHEDULE(tasksOfLevels=_),_,_)
       then
         scheduleIn;
     case(THREADSCHEDULE(threadTasks=threadTasks,lockIdc=lockIdc),_,_)
@@ -1753,7 +1753,7 @@ algorithm
       list<Task> taskLst1,taskLst,taskLstAss,taskLstRel, removeLocks;
       Schedule schedule;
       Task task;
-    case(_,_,SOME({}),_,_,_,_,_,_,THREADSCHEDULE(threadTasks=threadTasks, lockIdc=lockIdc))
+    case(_,_,SOME({}),_,_,_,_,_,_,THREADSCHEDULE(lockIdc=_))
       equation
       then
         (scheduleIn,removeLocksIn);
@@ -1777,7 +1777,7 @@ algorithm
         relLockIdc = List.map1(otherChildren,getReleaseLockString,node);
         taskLstRel = List.map(relLockIdc,getReleaseLockTask);
         //build the calcTask
-        HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,exeCosts=exeCosts,commCosts=commCosts,nodeMark=nodeMark) = taskGraphMetaIn;
+        HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMark) = taskGraphMetaIn;
         components = arrayGet(inComps,node);
         mark = arrayGet(nodeMark,node);
         ((_,exeCost)) = HpcOmTaskGraph.getExeCost(node,taskGraphMetaIn);
@@ -1794,7 +1794,7 @@ algorithm
         (schedule,removeLocks) = createScheduleFromAssignments(taskAss,procAss,SOME(rest),taskGraphIn,taskGraphTIn,taskGraphMetaIn,SccSimEqMappingIn,removeLocks,orderIn,schedule);
       then
         (schedule,removeLocks);
-    case(_,_,NONE(),_,_,_,_,_,_,THREADSCHEDULE(threadTasks=threadTasks, lockIdc=lockIdc))
+    case(_,_,NONE(),_,_,_,_,_,_,THREADSCHEDULE(lockIdc=_))
       equation
         print("createSchedulerFromAssignments failed.implement this!\n");
       then
@@ -2525,7 +2525,7 @@ algorithm
         Debug.fcall(Flags.HPCOM_DUMP,print,criticalPathInfo);
       then
         criticalPathInfo;
-    case(THREADSCHEDULE(threadTasks=threadTasks,lockIdc=lockIdc),_,_,_)
+    case(THREADSCHEDULE(lockIdc=lockIdc),_,_,_)
       equation
         Debug.fcall(Flags.HPCOM_DUMP,print,"the number of locks: "+&intString(listLength(lockIdc))+&"\n");
         //get the criticalPath

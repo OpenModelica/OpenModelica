@@ -136,8 +136,8 @@ algorithm
       Absyn.Info info;
       String str;
 
-    case (NFInstTypes.ELEMENT(comp as NFInstTypes.UNTYPED_COMPONENT(name = name, info = info), cls),
-        _, _, st)
+    case (NFInstTypes.ELEMENT(NFInstTypes.UNTYPED_COMPONENT(name = name, info = info), _),
+        _, _, _)
       equation
         str = "Found untyped component: " +& Absyn.pathString(name);
         Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, info);
@@ -151,7 +151,7 @@ algorithm
       then
         (NFInstTypes.ELEMENT(comp, cls), st);
 
-    case (NFInstTypes.CONDITIONAL_ELEMENT(_), _, _, st)
+    case (NFInstTypes.CONDITIONAL_ELEMENT(_), _, _, _)
       then (inElement, inSymbolTable);
 
   end match;
@@ -177,8 +177,8 @@ algorithm
       String str;
       Absyn.Info info;
 
-    case (NFInstTypes.UNTYPED_COMPONENT(name = name, baseType = ty, binding = binding, info = info),
-        _, c, st)
+    case (NFInstTypes.UNTYPED_COMPONENT(name = name, baseType = _,  info = info),
+        _, _, _)
       equation
         str = "Found untyped component: " +& Absyn.pathString(name);
         Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, info);
@@ -187,7 +187,7 @@ algorithm
 
     // check and convert if needed the type of
     // the binding vs the type of the component
-    case (NFInstTypes.TYPED_COMPONENT(name = name), _, _, st)
+    case (NFInstTypes.TYPED_COMPONENT(name=_), _, _, st)
       equation
         comp = NFInstUtil.setComponentParent(inComponent, inParent);
         comp = checkComponentBindingType(comp);
@@ -201,7 +201,7 @@ algorithm
       then
         (comp, st);
 
-    case (NFInstTypes.OUTER_COMPONENT(name = name, innerName = NONE()), _, _, st)
+    case (NFInstTypes.OUTER_COMPONENT( innerName = NONE()), _, _, st)
       equation
         (_, SOME(inner_comp), st) = NFInstSymbolTable.updateInnerReference(inComponent, st);
         (inner_comp, st) = checkComponent(inner_comp, inParent, inContext, st);
@@ -214,7 +214,7 @@ algorithm
       then
         fail();
 
-    case (NFInstTypes.DELETED_COMPONENT(name = name), _, _, st)
+    case (NFInstTypes.DELETED_COMPONENT(name=_), _, _, st)
       then (inComponent, st);
 
   end match;
@@ -246,7 +246,7 @@ algorithm
 
     // when the component name is equal to the component type we have a constant enumeration!
     // StateSelect = {StateSelect.always, StateSelect.prefer, StateSelect.default, StateSelect.avoid, StateSelect.never}
-    case (NFInstTypes.TYPED_COMPONENT(name = name, ty = DAE.T_ENUMERATION(path = eName), binding = binding))
+    case (NFInstTypes.TYPED_COMPONENT(name = name, ty = DAE.T_ENUMERATION(path = eName)))
       equation
         true = Absyn.pathEqual(name, eName);
       then
@@ -262,9 +262,9 @@ algorithm
       then
         NFInstTypes.TYPED_COMPONENT(name, ty, parent, prefixes, binding, info);
 
-    case (NFInstTypes.TYPED_COMPONENT(name, ty, parent, prefixes, binding, info))
+    case (NFInstTypes.TYPED_COMPONENT(name, ty, parent, _, binding, info))
       equation
-        NFInstTypes.TYPED_BINDING(bindingExp, bindingType, propagatedDims, binfo) = binding;
+        NFInstTypes.TYPED_BINDING(bindingExp, bindingType, propagatedDims, _) = binding;
         parentDimensions = getParentDimensions(parent, {});
         propagatedTy = liftArray(ty, parentDimensions, propagatedDims);
         failure((_, _) = Types.matchType(bindingExp, bindingType, propagatedTy, true));
@@ -356,8 +356,8 @@ algorithm
        ty = DAE.T_ARRAY(ty, dims, ts);
      then
        ty;
-    case (_, {}, pdims) then inTy;
-    case (_,  _, pdims) then DAE.T_ARRAY(inTy, inParentDimensions, DAE.emptyTypeSource);
+    case (_, {}, _) then inTy;
+    case (_,  _, _) then DAE.T_ARRAY(inTy, inParentDimensions, DAE.emptyTypeSource);
   end matchcontinue;
 end liftArray;
 
@@ -1295,7 +1295,7 @@ algorithm
     // No vectorization mode.
     // If argument failed to match not because of dim mismatch
     // but due to actuall type mismatch then it is an invalid call and we fail here.
-    case (e::restargs, (t1 :: restinty), (t2 :: restexpcty), {})
+    case (e::_, (t1 :: _), (t2 :: _), {})
       equation
         failure((_,_) = matchCallArg(e,t1,t2,{}));
 
@@ -1312,7 +1312,7 @@ algorithm
     // No -> Yes vectorization mode.
     // If argument fails to match due to dim mistmatch. then we
     // have our vect. dim and we start from the begining.
-    case (e::restargs, (t1 :: restinty), (t2 :: restexpcty), {})
+    case (e::_, (t1 :: _), (t2 :: _), {})
       equation
         (e_1, dims1) = matchCallArg(e,t1,t2,{});
 
@@ -1335,7 +1335,7 @@ algorithm
 
 
 
-    case (e::_,(t1 :: _),(t2 :: _), _)
+    case (_::_,(_ :: _),(_ :: _), _)
       equation
         Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.matchCallArgs failed ");
       then
@@ -1389,7 +1389,7 @@ algorithm
     // No vectorization mode.
     // If it failed NOT because of dim mismatch but because
     // of actuall type mismatch then fail here.
-    case (e,e_type,expected_type, {})
+    case (_,e_type,expected_type, {})
       equation
         dims1 = Types.getDimensions(e_type);
         dims2 = Types.getDimensions(expected_type);
@@ -1565,7 +1565,7 @@ algorithm
       then
         dim1::dims1;
 
-    case(dim1::dims1, _)
+    case(_::_, _)
       equation
         Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.findVectorizationDim failed with dimensions: [" +&
          ExpressionDump.printListStr(inGivenDims,ExpressionDump.dimensionString,",") +& "] vs [" +&

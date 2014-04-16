@@ -1065,7 +1065,7 @@ algorithm
       TemplPackage tplPackage;
       list<MMDeclaration> accMMDecls;
 
-    case ( (TEMPLATE(items = explst), sinfo), mmopts,
+    case ( (TEMPLATE(items = explst), _), mmopts,
            stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls )
       equation
         warnIfSomeOptions(mmopts);
@@ -1074,14 +1074,14 @@ algorithm
       then ( stmts, locals, scEnv, accMMDecls, intxt);
 
     //inline a literal in its string-token form
-    case ( (LITERAL(value = litvalue), sinfo), mmopts,
+    case ( (LITERAL(value = litvalue), _), mmopts,
            stmts, intxt, outtxt, locals, scEnv, _, accMMDecls )
       equation
         warnIfSomeOptions(mmopts);
         stmt = tplStatement("writeTok", { MM_STR_TOKEN(Tpl.ST_STRING(litvalue)) }, intxt, outtxt);
       then ( stmt :: stmts, locals, scEnv, accMMDecls, outtxt);
 
-    case ( (SOFT_NEW_LINE(), sinfo), mmopts,
+    case ( (SOFT_NEW_LINE(), _), mmopts,
            stmts, intxt, outtxt, locals, scEnv, _, accMMDecls )
       equation
         warnIfSomeOptions(mmopts);
@@ -1089,13 +1089,13 @@ algorithm
       then ( stmt :: stmts, locals, scEnv, accMMDecls, outtxt);
 
     //empty string -> nothing
-    case ( (STR_TOKEN(value = Tpl.ST_STRING("")), sinfo), mmopts,
-           stmts, intxt, outtxt, locals, scEnv, _, accMMDecls )
+    case ( (STR_TOKEN(value = Tpl.ST_STRING("")), _), mmopts,
+           stmts, intxt, _, locals, scEnv, _, accMMDecls )
       equation
         warnIfSomeOptions(mmopts);
       then ( stmts, locals, scEnv, accMMDecls, intxt);
 
-    case ( (STR_TOKEN(value = st), sinfo), mmopts,
+    case ( (STR_TOKEN(value = st), _), mmopts,
            stmts, intxt, outtxt, locals, scEnv, _, accMMDecls )
       equation
         warnIfSomeOptions(mmopts);
@@ -1155,7 +1155,7 @@ algorithm
     //    then ( stmt :: stmts, locals, scEnv, accMMDecls, intxt);
 
 
-    case ( (MATCH(matchExp = exp, cases = mcases), sinfo), mmopts,
+    case ( (MATCH(matchExp = exp, cases = mcases), _), mmopts,
            stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls )
       equation
         warnIfSomeOptions(mmopts);
@@ -1170,7 +1170,7 @@ algorithm
       then ( (stmt :: stmts),  locals, scEnv, accMMDecls, intxt);
 
     case ( (CONDITION( isNot = isnot, lhsExp = exp,
-                      rhsValue = rhsval, trueBranch = tbranch, elseBranch = ebranch), sinfo), mmopts,
+                      rhsValue = rhsval, trueBranch = tbranch, elseBranch = ebranch), _), mmopts,
            stmts, intxt, outtxt, locals, scEnv, tplPackage as TEMPL_PACKAGE(astDefs = astDefs), accMMDecls )
       equation
         warnIfSomeOptions(mmopts);
@@ -1188,7 +1188,7 @@ algorithm
           = statementFromFun(argvals, fname, iargs, oargs, {}, intxt, outtxt, locals, tplPackage);
       then ( (stmt :: stmts),  locals, scEnv, accMMDecls, intxt);
 
-    case ( (MAP(argExp = argexp, ofBinding = ofbind, mapExp = mapexp, hasIndexIdentOpt = idxNmOpt), sinfo), mmopts,
+    case ( (MAP(argExp = argexp, ofBinding = ofbind, mapExp = mapexp, hasIndexIdentOpt = idxNmOpt), _), mmopts,
            stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls )
       equation
         explst = getExpListForMap(argexp);
@@ -1204,7 +1204,7 @@ algorithm
                stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls);*/
       then ( stmts, locals, scEnv, accMMDecls, intxt);
 
-    case ( (MAP_ARG_LIST(parts = explst), sinfo), mmopts,
+    case ( (MAP_ARG_LIST(parts = explst), _), mmopts,
            stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls )
       equation
         (argvals, stmts, locals, scEnv, accMMDecls)
@@ -1219,7 +1219,7 @@ algorithm
           = statementsFromExpList(explst, stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls);*/
       then ( stmts, locals, scEnv, accMMDecls, intxt);
 
-    case ( (ESCAPED(exp = exp, options = opts), sinfo), mmopts,
+    case ( (ESCAPED(exp = exp, options = opts), _), mmopts,
            stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls )
       equation
         warnIfSomeOptions(mmopts); // new options will be elaborated
@@ -1242,7 +1242,7 @@ algorithm
          stmts = listAppend(popstmts, stmts);
       then ( stmts, locals, scEnv, accMMDecls, intxt);
 
-    case ( (INDENTATION(width = n, items = explst), sinfo), mmopts,
+    case ( (INDENTATION(width = n, items = explst), _), mmopts,
            stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls )
       equation
          warnIfSomeOptions(mmopts);
@@ -1257,7 +1257,7 @@ algorithm
 
     //TODO: let _ =  ....
     case ( (LET(letExp = (TEXT_CREATE(name = ident, exp = txtexp), _),
-               exp = exp), sinfo),
+               exp = exp), _),
            mmopts, stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls )
       equation
         warnIfSomeOptions(mmopts);
@@ -1282,7 +1282,7 @@ algorithm
         (stmts, locals, scEnv, accMMDecls, intxt)
           = statementsFromExp(exp, {}, stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls);
         //pop the let scope
-        (LET_SCOPE(_, _, _, isUsed) :: scEnv) = scEnv;
+        (LET_SCOPE(_, _, _, _) :: scEnv) = scEnv;
         //TODO: worn when not used
       then ( stmts, locals, scEnv, accMMDecls, intxt);
 
@@ -1301,7 +1301,7 @@ algorithm
     */
 
     case ( (LET(letExp = (TEXT_ADD(name = ident, exp = txtexp),sinfo2),
-               exp = exp), sinfo),
+               exp = exp), _),
            mmopts, stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls )
       equation
         warnIfSomeOptions(mmopts);
@@ -1336,8 +1336,8 @@ algorithm
     */
 
     case ( (LET(letExp = (NORET_CALL(name = fname, args = explst),sinfo2),
-               exp = exp), sinfo),
-           mmopts, stmts, intxt, outtxt, locals, scEnv, tplPackage as TEMPL_PACKAGE(astDefs = astDefs), accMMDecls )
+               exp = exp), _),
+           mmopts, stmts, intxt, outtxt, locals, scEnv, tplPackage as TEMPL_PACKAGE(astDefs=_), accMMDecls )
       equation
         warnIfSomeOptions(mmopts);
         Debug.fprint(Flags.FAILTRACE,"\n NORET_CALL fname = " +& pathIdentString(fname) +& "\n");
@@ -1362,9 +1362,9 @@ algorithm
 
       then ( stmts, locals, scEnv, accMMDecls, intxt);
 
-    case ( (LET(letExp = (NORET_CALL(name = fname, args = explst),sinfo2),
-               exp = exp), sinfo),
-           mmopts, stmts, intxt, outtxt, locals, scEnv, tplPackage as TEMPL_PACKAGE(astDefs = astDefs), accMMDecls )
+    case ( (LET(letExp = (NORET_CALL(name = fname, args = _),sinfo2),
+               exp = exp), _),
+           _, _, _, _, _, _, tplPackage as TEMPL_PACKAGE(astDefs=_), _ )
       equation
         (fname, iargs, oargs, tyVars) = getFunSignature(fname, sinfo2, tplPackage);
         //Debug.fprint(Flags.FAILTRACE," after fname = " +& pathIdentString(fname) +& "\n");
@@ -1614,7 +1614,7 @@ algorithm
         popstmts = listAppend(popstmts, {pstmt} );
       then ( mmopts, (stmt :: stmts), popstmts, outtxt);
 
-    case ( mmopts, optid, btid, stmts, popstmts, intxt, _)
+    case ( mmopts, optid, _, stmts, popstmts, intxt, _)
       //equation
         //failure(((mmexp,_), mmopts) = lookupDeleteTupleList(mmopts, optid));
       then ( mmopts, stmts, popstmts, intxt);
@@ -1741,7 +1741,7 @@ algorithm
     //or embed it into the FUN_CALL ??... --> match
     case ( (FUN_CALL(name = IDENT("sourceInfo"), args = {}),
             sinfo as Absyn.INFO(fileName = fileName, lineNumberStart = lineNumberStart, columnNumberStart = columnNumberStart)),
-           stmts, locals, scEnv, tplPackage, accMMDecls )
+           stmts, locals, scEnv, _, accMMDecls )
       equation
         Debug.fprint(Flags.FAILTRACE," arg sourceInfo \n");
         fname = PATH_IDENT("Tpl", IDENT("sourceInfo"));
@@ -2145,7 +2145,7 @@ algorithm
     //one return value
     //- make a locally bound return value and assign the function to it
     case (argvals, fname, iargs,  { (_, outtype) }, tyVars,
-         intxt, _, locals, tplPackage as TEMPL_PACKAGE(astDefs = astDefs))
+         intxt, _, locals, TEMPL_PACKAGE(astDefs = astDefs))
       equation
         //equality(listLength(argvals) = listLength(iargs));
         (mmargs, setTyVars) = typeAdaptMMArgsForFun(argvals, iargs, tyVars, {}, astDefs);
@@ -2163,7 +2163,7 @@ algorithm
     //no return value - i.e. an intrinsic call like <# fun(arg) #>
     //- inline it as it is
     case (argvals, fname, iargs,  {}, tyVars,
-          intxt, _, locals, tplPackage as TEMPL_PACKAGE(astDefs = astDefs))
+          intxt, _, locals, TEMPL_PACKAGE(astDefs = astDefs))
       equation
         //equality(listLength(argvals) = listLength(iargs));
         (mmargs,_) = typeAdaptMMArgsForFun(argvals, iargs, tyVars, {}, astDefs);
@@ -2172,7 +2172,7 @@ algorithm
         //perhaps, UNIT_TYPE() or VOID_TYPE will fit here better
         ( false, mmexp, mmexp, UNRESOLVED_TYPE("No return value."), locals, intxt );
 
-    case (argvals, fname, iargs,  oargs, tyVars, intxt, outtxt, locals, tplPackage)
+    case (argvals, fname, iargs,  oargs, _, _, _, _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         errArgVals = List.map(argvals, Util.tuple312);
@@ -2395,7 +2395,7 @@ algorithm
         ( MM_FN_CALL(IDENT(msg),{ mmarg }), setTyVars);
 
     //fail when no case is useful and no error shoud be reported
-    case ( mmarg, argtype, sinfo, false, targettype,_,_,_)
+    case ( _, _, _, false, _,_,_,_)
       equation
         Debug.fprint(Flags.FAILTRACE, "Fail branch- typeAdaptMMArg failed\n");
       then
@@ -2444,7 +2444,7 @@ algorithm
         (mmarg, stmts, locals);
 
     //textStrTok -  when from a template
-    case ( mmarg, TEXT_TYPE(), _, STRING_TOKEN_TYPE(), stmts, locals, astdefs)
+    case ( mmarg, TEXT_TYPE(), _, STRING_TOKEN_TYPE(), stmts, locals, _)
       equation
         mmarg = MM_FN_CALL(PATH_IDENT("Tpl",IDENT("textStrTok")), { mmarg });
         (mmarg, stmts, locals) = mmEnsureNonFunctionArg(mmarg, STRING_TOKEN_TYPE(), stmts, locals);
@@ -2452,7 +2452,7 @@ algorithm
         (mmarg, stmts, locals);
 
     //stringStrTok - when from a value of type string or others (int, real, bool)
-    case ( mmarg, argtype, _, STRING_TOKEN_TYPE(), stmts, locals, astdefs)
+    case ( mmarg, argtype, _, STRING_TOKEN_TYPE(), stmts, locals, _)
       equation
         mmarg = mmExpToString(mmarg, argtype, sinfo);
         (mmarg, stmts, locals) = mmEnsureNonFunctionArg(mmarg, STRING_TYPE(), stmts, locals);
@@ -2553,7 +2553,7 @@ algorithm
     //a text argument that is input and output
     //an actual parameter ident ... non-internal idents all starts with "_"
     //- put it out
-    case ( MM_IDENT(IDENT(txtarg)) :: mmargs, iarg :: iargs, oarg :: oargs, tplPackage)
+    case ( MM_IDENT(IDENT(txtarg)) :: mmargs, _ :: iargs, _ :: oargs, tplPackage)
       equation
         // obsolete ... "_" = stringGetStringChar(txtarg, 1);
         //areEqualInOutArgs(iarg , oarg);
@@ -2563,7 +2563,7 @@ algorithm
 
     //a text argument that is input and output
     //an actual parameter is not a local text value (it is a constant/function) - put it as '_'
-    case ( _ :: mmargs, iarg :: iargs, oarg :: oargs, tplPackage)
+    case ( _ :: mmargs, _ :: iargs, _ :: oargs, tplPackage)
       equation
         //failure(MM_IDENT(IDENT()) = mmarg);
         //failure("_" = stringGetStringChar(txtarg, 1));
@@ -2647,7 +2647,7 @@ algorithm
       then ( stmts, locals, scEnv, accMMDecls, intxt);
 
     //List map - elaborate the list-mapping function
-    case ( isfirst, (argtomap as (argmmexp,argtype,_)) :: restargs,
+    case ( isfirst, (argtomap as (_,argtype,_)) :: restargs,
              MAP_CONTEXT(ofBinding = ofbind,
                          mapExp = mapexp,
                          iterMMExpOptions = iopts,
@@ -2747,7 +2747,7 @@ algorithm
 
     //scalar map - <argtomap of ofbind: mapexp; iopts>
     //TODO: try to inline or eliminate this at all ... design problems with mixed list/scalar arguments in { }, i.e. MAP_ARG_LIST
-    case ( isfirst, (argtomap as (argmmexp,argtype,_)) :: restargs,
+    case ( isfirst, (argtomap as (_,argtype,_)) :: restargs,
              MAP_CONTEXT(ofBinding = ofbind,
                          mapExp = mapexp,
                          iterMMExpOptions = iopts,
@@ -2962,7 +2962,7 @@ algorithm
         locals = addLocalValue(localidxid, INTEGER_TYPE(), locals);
       then ( stmt :: stmts, locals );
 
-    case ( false, _, stmts, intxt, locals)
+    case ( false, _, stmts, _, locals)
       then ( stmts, locals);
 
     //should not happen
@@ -3039,7 +3039,7 @@ algorithm
         (mexpOpts, specopts) = makeMMExpOptions(rest, specopts);
       then ((mexpopt :: mexpOpts), specopts);
 
-    case ( (optid, (mexpopt,_)) :: rest,  specopts )
+    case ( (_, (mexpopt,_)) :: rest,  specopts )
       equation
         //failure( _ = lookupTupleList(specopts, optid));
         (mexpOpts, specopts) = makeMMExpOptions(rest, specopts);
@@ -3116,7 +3116,7 @@ algorithm
       Ident fname, matchArgName, implicitValueName;
       list<Ident> assignedIdents;
 
-    case ( argval as (mmexp, exptype, sinfo), mcases, _, _, scEnv, tplPackage, accMMDecls )
+    case ( argval as (mmexp, exptype, _), mcases, _, _, scEnv, tplPackage, accMMDecls )
       equation
         //TODO: when mmexp is an identifier, it should be made available through implicit context
         //so we will prepend it before each mexp in every case (instead 'it')
@@ -3291,7 +3291,7 @@ algorithm
       then
         ( {}, locals, scEnv, accMMDecls, {});
 
-    case ( argval as (mmexp, exptype), _,
+    case ( argval as (_, exptype), _,
            (mexp,exp) :: mcases,
            _, locals, accCaseLocals, scEnv,
            tplPackage as TEMPL_PACKAGE(astDefs = astdefs), accMMDecls )
@@ -3442,7 +3442,7 @@ algorithm
         mexp;
 
     //TODO: a HACK!!; this only can happen for "if" condition with a TEXT argument to be tested for emptiness
-    case ( mexp as RECORD_MATCH(tagName = _), TEXT_TYPE(), astDefs )
+    case ( mexp as RECORD_MATCH(tagName = _), TEXT_TYPE(), _ )
       then
         mexp;
 
@@ -3531,7 +3531,7 @@ algorithm
     // ** failures ***
     //TODO: will be concrete with output message
 
-    case (mexp, mtype,_)
+    case (_, _,_)
       equation
         //locals = addLocalValue("#Error - type check#", mtype, locals);
         Debug.fprint(Flags.FAILTRACE, "Error - typeCheckMatchingExp failed\n");
@@ -3577,7 +3577,7 @@ algorithm
       then
         ((ident, mexp) :: fms);
 
-    case ( (ident, mexp) :: fms, _, astDefs)
+    case ( (ident, _) :: _, _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         failure( _ = lookupTupleList(fields, ident) );
@@ -3628,7 +3628,7 @@ algorithm
       then
         (mexp :: mexpLst);
 
-    case ( mexpLst as (_ :: _), {}, _)
+    case ( (_ :: _), {}, _)
       equation
         Debug.fprint(Flags.FAILTRACE, "Error - typeCheckMatchingExpList more expressions to chceck than required (a tuple type has less arguments than provided?).\n");
       then
@@ -4034,7 +4034,7 @@ algorithm
       then
         ( restcases );
 
-    case ( (elabcase as (mexp, _, _)) :: restcases )
+    case ( (elabcase as (_, _, _)) :: restcases )
       equation
         //failure(isAlwaysMatched(mexp));
         restcases = addRestElabCase(restcases);
@@ -4182,31 +4182,31 @@ algorithm
     */
 
     // List ... if valLst then / if not valLst then
-    case ( LIST_TYPE(_), isnot,NONE(), tbranch, ebranchOpt, tplPackage)
+    case ( LIST_TYPE(_), isnot,NONE(), tbranch, ebranchOpt, _)
       then
        casesForTrueFalseCondition(isnot, LIST_MATCH({}), tbranch, ebranchOpt);
     // Option
-    case ( OPTION_TYPE(_), isnot,NONE(), tbranch, ebranchOpt, tplPackage)
+    case ( OPTION_TYPE(_), isnot,NONE(), tbranch, ebranchOpt, _)
       then
        casesForTrueFalseCondition(isnot, NONE_MATCH(), tbranch, ebranchOpt);
     // String and Text (auto-converted to String)
-    case ( STRING_TYPE(), isnot,NONE(), tbranch, ebranchOpt, tplPackage)
+    case ( STRING_TYPE(), isnot,NONE(), tbranch, ebranchOpt, _)
       then
        casesForTrueFalseCondition(isnot, STRING_MATCH(""), tbranch, ebranchOpt);
     //Integer
-    case ( INTEGER_TYPE(), isnot,NONE(), tbranch, ebranchOpt, tplPackage)
+    case ( INTEGER_TYPE(), isnot,NONE(), tbranch, ebranchOpt, _)
       then
        casesForTrueFalseCondition(isnot, LITERAL_MATCH("0", INTEGER_TYPE()), tbranch, ebranchOpt);
     //Real
-    case ( REAL_TYPE(), isnot,NONE(), tbranch, ebranchOpt, tplPackage)
+    case ( REAL_TYPE(), isnot,NONE(), tbranch, ebranchOpt, _)
       then
        casesForTrueFalseCondition(isnot, LITERAL_MATCH("0.0", REAL_TYPE()), tbranch, ebranchOpt);
     //Boolean
-    case ( BOOLEAN_TYPE(), isnot,NONE(), tbranch, ebranchOpt, tplPackage)
+    case ( BOOLEAN_TYPE(), isnot,NONE(), tbranch, ebranchOpt, _)
       then
        casesForTrueFalseCondition(isnot, LITERAL_MATCH("false", BOOLEAN_TYPE()), tbranch, ebranchOpt);
 
-    case ( TEXT_TYPE(), isnot, NONE(), tbranch, ebranchOpt, tplPackage)
+    case ( TEXT_TYPE(), isnot, NONE(), tbranch, ebranchOpt, _)
       then
        casesForTrueFalseCondition(isnot,
           //MEM_TEXT( tokens = {} )
@@ -4399,7 +4399,7 @@ algorithm
       PathIdent path;
       String reason, msg;
 
-    case ( path, UNRESOLVED_TYPE(reason), msg, _)
+    case ( _, UNRESOLVED_TYPE(reason), msg, _)
       equation
 
         //true = Flags.isSet(Flags.FAILTRACE);
@@ -4487,7 +4487,7 @@ algorithm
       String litstr, reason;
 
     // string constants are of StringToken type and does not involve a type conversion, use them through idents
-    case ( STR_TOKEN_DEF(value = st), ident)
+    case ( STR_TOKEN_DEF(value = _), ident)
       equation
         ident = constantNamePrefix +& ident; //no encoding needed, just prefix, it is a constant
       then
@@ -4579,7 +4579,7 @@ algorithm
 
     //Error - test recursive usage of TEXT_ADD ident or an actually elaborated let expression
     case (ident, _, _,
-          scEnv as (RECURSIVE_SCOPE(recIdent = letIdent) :: _), _)
+          (RECURSIVE_SCOPE(recIdent = letIdent) :: _), _)
       equation
         true = stringEq(ident, letIdent);
         Debug.fprint(Flags.FAILTRACE, "Error - trying to use '" +& ident
@@ -4620,7 +4620,7 @@ algorithm
 
     //found in the function scope
     case ( ident, path , _,
-           scEnv as (FUN_SCOPE(args = fargs, localArgs = localArgs) :: _ ), _  )
+           scEnv as (FUN_SCOPE(args = fargs) :: _ ), _  )
       equation
         idtype = lookupTupleList(fargs, ident);
         //encode the ident ... a_ident
@@ -4693,7 +4693,7 @@ algorithm
 
     //ident refers to the matched argument itself (originally to 'it')
     //avoid to look up --> find/create the binding of the whole pattern expression
-    case ( ident, path, _,
+    case ( ident, _, _,
            CASE_SCOPE(
              mExp = mexp,
              mType = mtype,
@@ -4701,7 +4701,7 @@ algorithm
              accLocals = accLocals,
              extArgs = extargs,
              matchArgName = matchArgName,
-             hasImplicitScope = hasImplicitScope) :: restEnv , astdefs  )
+             hasImplicitScope = hasImplicitScope) :: restEnv , _  )
       equation
         true = stringEq(ident, matchArgName);
         (ident, mexp) = prepareMatchArgument(mexp, matchArgName);
@@ -5031,9 +5031,9 @@ algorithm
       then
         ( mtype, inmexp );
 
-    case ( inid, PATH_IDENT(ident = id, path = path ),
+    case ( inid, PATH_IDENT(ident = id),
            inmexp as BIND_MATCH(
-             bindIdent = bid ), mtype, astDefs )
+             bindIdent = bid ), _, _ )
       equation
         true = stringEq(id, bid);
         reason = "Unresolved path '" +& inid +& "' after first dot - only the first part '" +& id +& "' resolved as a bind match.";
@@ -5167,7 +5167,7 @@ algorithm
       then
         ( valtype, RECORD_MATCH(tagpath, fms) );
 
-    case ( inid, PATH_IDENT(ident = id, path = path),
+    case ( inid, PATH_IDENT(ident = id),
            RECORD_MATCH(
              tagName = tagpath,
              fieldMatchings = fms ), mtype, astDefs )
@@ -5183,7 +5183,7 @@ algorithm
 
     // here we can insert an implicit resolution for pure record types (not embedded in a union)
     // just check the type if it is a pure record type and then expand the mexp with the record match
-    case ( inid, path, mexp, mtype, astDefs )
+    case ( inid, path, mexp, _, _ )
       equation
         reason = "Unresolved path (encoded) '" +& inid
                  +& "', cannot follow the rest path '" +& pathIdentString(path) +& "', no record match available to look down the path.";
@@ -5258,7 +5258,7 @@ algorithm
 
     case ( inid, inmexp as BIND_AS_MATCH(
                              bindIdent = bid,
-                             matchingExp = mexp ) )
+                             matchingExp = _ ) )
       equation
         true = stringEq(inid, bid);
       then
@@ -5322,7 +5322,7 @@ algorithm
       MatchingExp mexp;
       String reason;
 
-    case ( inid, fieldid, path, {}, mtype, astDefs )
+    case ( inid, fieldid, _, {}, _, _ )
       equation
         reason = "Unresolved path '" +& inid +& "', cannot follow the path after a dot, no record match available to look down the path after '" +& fieldid +& "'.\n";
         valtype = UNRESOLVED_TYPE(reason);
@@ -5388,7 +5388,7 @@ algorithm
       then
         ( valtype, (ident, mexp) :: fms );
 
-    case ( inid, path, (ident, mexp) :: fms, fields, astDefs )
+    case ( _, _, (ident, _) :: _, fields, _ )
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         failure( _ = lookupTupleList(fields, ident) );
@@ -5431,13 +5431,13 @@ algorithm
     //  then
     //    fail();
 
-    case ( inid, path, (mexp :: mexpLst), (mtype :: mtypeLst), astDefs )
+    case ( inid, path, (mexp :: mexpLst), (mtype :: _), astDefs )
       equation
         ( valtype, mexp ) = lookupUpdateMatchingExp(inid, path, mexp, mtype, astDefs);
       then
         ( valtype, (mexp :: mexpLst) );
 
-    case ( inid, path, (mexp :: mexpLst), (mtype :: mtypeLst), astDefs )
+    case ( inid, path, (mexp :: mexpLst), (_ :: mtypeLst), astDefs )
       equation
         ( valtype, mexpLst ) = lookupUpdateMExpList(inid, path, mexpLst, mtypeLst, astDefs);
       then
@@ -5477,14 +5477,14 @@ algorithm
       then
         (fields, typepath);
 
-    case ( mtype as NAMED_TYPE(name = _), tagpath, _)
+    case ( NAMED_TYPE(name = _), tagpath, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.fprint(Flags.FAILTRACE, "Error - (getFieldsForRecord) for case tag '" +& pathIdentString(tagpath) +& "' failed for reason above.\n");
       then
         fail();
 
-    case ( mtype, tagpath, _)
+    case ( _, tagpath, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         //failure(NAMED_TYPE(_) = mtype);
@@ -5588,7 +5588,7 @@ algorithm
           AST_DEF(
             importPackage = importckg,
             isDefault = true,
-            types = typeLst) :: astDefs )
+            types = typeLst) :: _ )
       equation
         typeinfo = lookupTupleList(typeLst, typeident);
       then
@@ -5597,7 +5597,7 @@ algorithm
     case ( SOME(typepckg), typeident,
           AST_DEF(
             importPackage = importckg,
-            types = typeLst) :: astDefs )
+            types = typeLst) :: _ )
       equation
         equality(typepckg = importckg);
         typeinfo = lookupTupleList(typeLst, typeident);
@@ -5727,7 +5727,7 @@ algorithm
         setTyVars;
 
     //try set type vars first
-    case ( NAMED_TYPE(name = IDENT(tid)), tyConcrete, tyVars as (_::_), setTyVars, astDefs )
+    case ( NAMED_TYPE(name = IDENT(tid)), tyConcrete, (_::_), setTyVars, astDefs )
       equation
         ty = lookupTupleList(setTyVars, tid);
         //true = listMember(na, tyVars); //must be true
@@ -5737,7 +5737,7 @@ algorithm
         setTyVars;
 
     //failed after found set type var
-    case ( NAMED_TYPE(name = IDENT(tid)), tyConcrete, tyVars as (_::_), setTyVars, astDefs )
+    case ( NAMED_TYPE(name = IDENT(tid)), tyConcrete, (_::_), setTyVars, astDefs )
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         ty = lookupTupleList(setTyVars, tid);
@@ -5764,13 +5764,13 @@ algorithm
 
 
     //?? don't know if this is needed
-    case ( UNRESOLVED_TYPE(_), UNRESOLVED_TYPE(_), tyVars, setTyVars, _ )
+    case ( UNRESOLVED_TYPE(_), UNRESOLVED_TYPE(_), _, setTyVars, _ )
       then
         setTyVars;
 
     // all the others can be matched structurally (as they have no structure)
     //except NAMED_TYPE that was matched above
-    case ( ty, tyConcrete, tyVars, setTyVars,_ )
+    case ( ty, tyConcrete, _, setTyVars,_ )
       equation
         failure(NAMED_TYPE(name = _) = ty);
         equality(ty = tyConcrete);
@@ -5888,14 +5888,14 @@ algorithm
         TUPLE_TYPE(otaLst);
 
     //normal named type that is not a type variable
-    case ( tyConcrete as NAMED_TYPE(name = IDENT(tid)), tyVars, setTyVars)
+    case ( tyConcrete as NAMED_TYPE(name = IDENT(tid)), tyVars, _)
       equation
         false = listMember(tid, tyVars);
       then
         tyConcrete;
 
     //try set type vars first
-    case ( NAMED_TYPE(name = IDENT(tid)), tyVars as (_::_), setTyVars)
+    case ( NAMED_TYPE(name = IDENT(tid)), (_::_), setTyVars)
       equation
         tyConcrete = lookupTupleList(setTyVars, tid);
       then
@@ -5914,7 +5914,7 @@ algorithm
 
     // all the others are concrete already
     //except NAMED_TYPE with ident that was dealt above
-    case ( tyConcrete, tyVars, setTyVars)
+    case ( tyConcrete, _, _)
       equation
         failure(NAMED_TYPE(name = IDENT(_)) = tyConcrete);
       then
@@ -5957,7 +5957,7 @@ algorithm
       then
         (fname, iargs, oargs, {});
 
-    case (fname as IDENT(templname), _, TEMPL_PACKAGE(templateDefs = templateDefs))
+    case (IDENT(templname), _, TEMPL_PACKAGE(templateDefs = templateDefs))
       equation
         _  =  lookupTupleList(templateDefs, templname);
         msg = "Constant template '" +& templname +& "' is used in a function/template context (while it is defined as a constant).";
@@ -6049,7 +6049,7 @@ algorithm
       then
         fields;
 
-    case ( tagident, TI_RECORD_TYPE(fields = fields), typeident )
+    case ( tagident, TI_RECORD_TYPE(fields=_), typeident )
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         false = stringEq(tagident, typeident);
@@ -6120,8 +6120,8 @@ algorithm
 
     case ( AST_DEF(
             importPackage = importckg,
-            isDefault     = isdefault,
-            types         = typeLst) :: restAstDefs)
+            isDefault     = _,
+            types         = typeLst) :: _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         failure(typeLst = listMap1Tuple22(typeLst, fullyQualifyAstTypeInfo, importckg));
@@ -6247,7 +6247,7 @@ algorithm
         TUPLE_TYPE(typeLst);
 
     //exclude a type variable from qualification
-    case ( ts as NAMED_TYPE(name = IDENT(ident = typeident)),  importpckg, tyVars )
+    case ( ts as NAMED_TYPE(name = IDENT(ident = typeident)),  _, tyVars )
       equation
         true = listMember(typeident, tyVars);
       then
@@ -6263,7 +6263,7 @@ algorithm
         ts;
 
     //convert  Tpl.Text -> TEXT_TYPE()
-    case ( NAMED_TYPE(name = na as PATH_IDENT(_,_)),  importpckg, _ )
+    case ( NAMED_TYPE(name = na as PATH_IDENT(_,_)),  _, _ )
       equation
         ts = convertNameTypeIfIntrinsic(na);
       then
@@ -6400,7 +6400,7 @@ algorithm
         TUPLE_TYPE(typeLst);
 
     //a special case for Text ... Text is an intrinsic type from Susan's viewpoint
-    case ( NAMED_TYPE(name = IDENT("Text")),  astDefs )
+    case ( NAMED_TYPE(name = IDENT("Text")),  _ )
       then
         TEXT_TYPE();
 
@@ -6442,7 +6442,7 @@ algorithm
        Type_b itemB;
        list<tuple<Type_a,Type_b>> rest;
 
-    case ( (a, itemB) :: rest, itemA )
+    case ( (a, itemB) :: _, itemA )
       equation
         equality(a = itemA);
       then itemB;

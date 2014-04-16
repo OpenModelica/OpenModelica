@@ -643,14 +643,14 @@ algorithm
       NFSCodeEnv.ClassType ty1, ty2;
       Item item;
 
-    case (NFSCodeEnv.VAR(var = el1, isUsed = iu1),
+    case (NFSCodeEnv.VAR(var = el1, isUsed = _),
           NFSCodeEnv.VAR(var = el2, isUsed = iu2))
       equation
         el2 = propagateAttributesVar(el1, el2);
       then
         NFSCodeEnv.VAR(el2, iu2);
 
-    case (NFSCodeEnv.CLASS(cls = el1, env = env1, classType = ty1),
+    case (NFSCodeEnv.CLASS(cls = el1, env = _, classType = _),
           NFSCodeEnv.CLASS(cls = el2, env = env2, classType = ty2))
       equation
         el2 = propagateAttributesClass(el1, el2);

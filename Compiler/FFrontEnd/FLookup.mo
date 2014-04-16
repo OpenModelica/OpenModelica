@@ -193,7 +193,7 @@ algorithm
     case ({}, _, _, _) then fail();
 
     // found
-    case (r::rest, _, _, _)
+    case (r::_, _, _, _)
       equation
         r = id(r, inName, inOptions, inMsg);
       then
@@ -376,7 +376,7 @@ algorithm
         r;
 
     // Partial match, return failure
-    case (_, _, Absyn.NAMED_IMPORT(name = name, path = path) :: _, _, _)
+    case (_, _, Absyn.NAMED_IMPORT(name = name) :: _, _, _)
       equation
         true = stringEqual(inName, name);
       then
@@ -451,14 +451,14 @@ algorithm
       list<Absyn.Subscript> ss;
 
     // simple name
-    case (_, Absyn.CREF_IDENT(i, ss), _, _)
+    case (_, Absyn.CREF_IDENT(i, _), _, _)
       equation
         r = id(inRef, i, inOptions, inMsg);
       then
         r;
 
     // qualified name, first is component
-    case (_, Absyn.CREF_QUAL(i, ss, rest), _, _)
+    case (_, Absyn.CREF_QUAL(i, _, rest), _, _)
       equation
         r = id(inRef, i, inOptions, inMsg);
         // inRef is a component, lookup in type
@@ -473,7 +473,7 @@ algorithm
         r;
 
     // qualified name
-    case (_, Absyn.CREF_QUAL(i, ss, rest), _, _)
+    case (_, Absyn.CREF_QUAL(i, _, rest), _, _)
       equation
         // inRef is a class
         r = id(inRef, i, inOptions, inMsg);

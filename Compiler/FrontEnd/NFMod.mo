@@ -1075,7 +1075,7 @@ algorithm
 
     case ({}, _) then {};
 
-    case (SCode.NAMEMOD(ident = n, A = SCode.MOD(binding = SOME((e, _))))::rest, _)
+    case (SCode.NAMEMOD(ident = _, A = SCode.MOD(binding = SOME((e, _))))::rest, _)
       equation
         cl = Absyn.getCrefFromExp(e,true,true);
         true = List.fold(List.map1(cl, Absyn.crefFirstEqual, id), boolOr, false);

@@ -126,7 +126,7 @@ algorithm
       SymbolTable st;
       Absyn.Path name;
 
-    case (NFInstTypes.BASIC_TYPE(name), _, _, st, _) then (inClass, st);
+    case (NFInstTypes.BASIC_TYPE(_), _, _, st, _) then (inClass, st);
 
     case (NFInstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial), _, _, st, _)
       equation
@@ -195,7 +195,7 @@ algorithm
       Component comp, inner_comp;
       Context c;
 
-    case (NFInstTypes.UNTYPED_COMPONENT(name = name, baseType = ty, binding = binding),
+    case (NFInstTypes.UNTYPED_COMPONENT( baseType = ty),
         _, c, st, _)
       equation
         (ty, st) = typeComponentDims(inComponent, inContext, st, inFunctionTable);
@@ -222,7 +222,7 @@ algorithm
       then
         (comp, st);
 
-    case (NFInstTypes.OUTER_COMPONENT(name = name, innerName = NONE()), _, _, st, _)
+    case (NFInstTypes.OUTER_COMPONENT( innerName = NONE()), _, _, st, _)
       equation
         (_, SOME(inner_comp), st) = NFInstSymbolTable.updateInnerReference(inComponent, st);
         (inner_comp, st) = typeComponent(inner_comp, inParent, inContext, st, inFunctionTable);
@@ -255,7 +255,7 @@ algorithm
       Absyn.Path name;
       Absyn.Info info;
 
-    case (NFInstTypes.UNTYPED_COMPONENT(baseType = ty, dimensions = dims, info = info), _, st, _)
+    case (NFInstTypes.UNTYPED_COMPONENT(baseType = ty, dimensions = dims), _, st, _)
       equation
         true = intEq(0, arrayLength(dims));
       then
@@ -613,7 +613,7 @@ algorithm
       Absyn.Info info;
       String str;
 
-    case (t1, t2, e, info)
+    case (t1, t2, e, _)
       equation
         (_, _) = Types.matchType(e, t2, t1, true);
       then
@@ -875,7 +875,7 @@ algorithm
       then
         (e3, ty, const, st);
 
-    case (DAE.SIZE(exp = e1 as DAE.CREF(componentRef = cref), sz = SOME(e2)), ep, c, st, ft)
+    case (DAE.SIZE(exp = e1 as DAE.CREF(componentRef = cref), sz = SOME(e2)), _, c, st, ft)
       equation
         (e2 as DAE.ICONST(dim_int), _, _, st) = typeExp(e2, EVAL_CONST_PARAM(), c, st, ft);
         comp = NFInstSymbolTable.lookupCref(cref, st);
@@ -1144,7 +1144,7 @@ algorithm
       then
         (exp, ty, st);
 
-    case (_, NFInstTypes.TYPED_COMPONENT(ty = ty), false, _, c, st, _)
+    case (_, NFInstTypes.TYPED_COMPONENT(ty = ty), false, _, _, st, _)
       equation
         ty = propagateCrefSubsToType(ty, inCref);
         cref = NFInstUtil.typeCrefWithComponent(inCref, inComponent);
@@ -1296,7 +1296,7 @@ algorithm
       Connections conn;
       Absyn.Path name;
 
-    case (NFInstTypes.BASIC_TYPE(name), _, _, _) then (inClass, inConnections);
+    case (NFInstTypes.BASIC_TYPE(_), _, _, _) then (inClass, inConnections);
 
     case (NFInstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial), st, _, conn)
       equation
@@ -1347,7 +1347,7 @@ algorithm
       then
         (NFInstTypes.ELEMENT(comp, cls), conn);
 
-    case (NFInstTypes.CONDITIONAL_ELEMENT(_), st, _, _)
+    case (NFInstTypes.CONDITIONAL_ELEMENT(_), _, _, _)
       equation
         Error.addMessage(Error.INTERNAL_ERROR,
           {"NFTyping.typeSectionsInElement got a conditional element!"});
@@ -1457,7 +1457,7 @@ algorithm
       then
         (eq :: acc_el, conn);
 
-    case (NFInstTypes.FOR_EQUATION(_, _, _, NONE(), eql, info), st, _, acc_el, _)
+    case (NFInstTypes.FOR_EQUATION(_, _, _, NONE(), _, info), _, _, _, _)
       equation
         Error.addSourceMessage(Error.INTERNAL_ERROR,{"Implicit for ranges are not yet implemented"},info);
       then fail();
@@ -1965,7 +1965,7 @@ algorithm
         (rhs,rty,_,_) = typeExp(rhs, EVAL_CONST(), c, st, ft);
         (lhs, _, rhs, _) = NFTypeCheck.checkExpEquality(lhs, lty, rhs, rty, "alg", info);
       then typeAssignment(lhs,rhs,info,inAcc);
-    case (NFInstTypes.FUNCTION_ARRAY_INIT(name=name,ty=ty,info=info),c,st,_,_)
+    case (NFInstTypes.FUNCTION_ARRAY_INIT(name=name,ty=ty,info=info),_,st,_,_)
       equation
         NFInstTypes.TYPED_COMPONENT(ty=ty) = NFInstSymbolTable.lookupCref(DAE.CREF_IDENT(name,ty,{}),st);
       then NFInstTypes.FUNCTION_ARRAY_INIT(name,ty,info) :: inAcc;
@@ -1982,7 +1982,7 @@ algorithm
         branches = List.map3(branches, typeBranchStatement, c, st, ft);
       then
         NFInstTypes.IF_STMT(branches, info) :: inAcc;
-    case (NFInstTypes.FOR_STMT(info=_),c,st,ft,_)
+    case (NFInstTypes.FOR_STMT(info=_),_,_,_,_)
       then
         inStmt :: inAcc;
     else

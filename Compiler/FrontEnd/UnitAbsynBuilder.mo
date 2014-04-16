@@ -88,7 +88,7 @@ algorithm
      local
        Env.Env env;
      case(_,_) equation
-       (_,_,env as Env.FRAME(defineUnits = du)::_) = Lookup.lookupClass(Util.tuple21(tpl),Util.tuple22(tpl),p,false);
+       (_,_,Env.FRAME(defineUnits = du)::_) = Lookup.lookupClass(Util.tuple21(tpl),Util.tuple22(tpl),p,false);
      then du;
      case (_,_) then {};
   end matchcontinue;
@@ -146,7 +146,7 @@ algorithm
        UnitParserExt.registerWeight(n,w);
        registerUnitWeightDefineunits2(du);
      then ();
-     case(SCode.DEFINEUNIT(name=n,weight = NONE())::du) equation
+     case(SCode.DEFINEUNIT(name=_,weight = NONE())::du) equation
        registerUnitWeightDefineunits2(du);
      then ();
      case(_::du) equation
@@ -188,7 +188,7 @@ algorithm
     list<Absyn.Element> defunits;
     list<Absyn.ElementItem> elts;
     String n;
-    case((cl as Absyn.CLASS(name=n),pa,i)) equation
+    case((cl as Absyn.CLASS(name=_),pa,i)) equation
       elts = Interactive.getElementitemsInClass(cl);
       defunits = Interactive.getDefineunitsInElements(elts);
       registerDefineunits(defunits);
@@ -360,7 +360,7 @@ algorithm
     local
       array<Option<UnitAbsyn.Unit>> vector;
       Integer indx;
-    case(_,UnitAbsyn.STORE(vector,indx)) equation
+    case(_,UnitAbsyn.STORE(vector,_)) equation
       SOME(unit) = vector[index];
     then unit;
     case(_,_) equation
@@ -476,7 +476,7 @@ algorithm
       array<Type_a> src,dst,dst_1,dst_2;
       Type_a elt;
       Integer pos;
-    case (src,dst,-1) then dst;  /* src dst current pos */
+    case (_,dst,-1) then dst;  /* src dst current pos */
     case (src,dst,pos)
       equation
         elt = src[pos + 1];
@@ -509,31 +509,31 @@ algorithm
   local UnitAbsyn.UnitTerm ut1,ut2; String s1;
     Integer i,i1,i2;
     DAE.Exp e;
-    case(UnitAbsyn.ADD(ut1,ut2,e)) equation
+    case(UnitAbsyn.ADD(_,_,e)) equation
       s1 = ExpressionDump.printExpStr(e);
     then s1;
 
-    case(UnitAbsyn.SUB(ut1,ut2,e)) equation
+    case(UnitAbsyn.SUB(_,_,e)) equation
       s1 = ExpressionDump.printExpStr(e);
     then s1;
 
-    case(UnitAbsyn.MUL(ut1,ut2,e)) equation
+    case(UnitAbsyn.MUL(_,_,e)) equation
       s1 = ExpressionDump.printExpStr(e);
     then s1;
 
-    case(UnitAbsyn.DIV(ut1,ut2,e)) equation
+    case(UnitAbsyn.DIV(_,_,e)) equation
       s1 = ExpressionDump.printExpStr(e);
     then s1;
 
-    case(UnitAbsyn.EQN(ut1,ut2,e)) equation
+    case(UnitAbsyn.EQN(_,_,e)) equation
       s1 = ExpressionDump.printExpStr(e);
     then s1;
 
-    case(UnitAbsyn.LOC(i,e)) equation
+    case(UnitAbsyn.LOC(_,e)) equation
     s1 = ExpressionDump.printExpStr(e);
     then s1;
 
-    case(UnitAbsyn.POW(ut1,MMath.RATIONAL(i1,i2),e)) equation
+    case(UnitAbsyn.POW(_,MMath.RATIONAL(_,_),e)) equation
       s1 = ExpressionDump.printExpStr(e);
     then s1;
 
@@ -561,7 +561,7 @@ algorithm
   _ := match(st)
   local array<Option<UnitAbsyn.Unit>> vector; Integer indx;
     list<Option<UnitAbsyn.Unit>> lst;
-    case(UnitAbsyn.STORE(vector,indx)) equation
+    case(UnitAbsyn.STORE(vector,_)) equation
       lst = arrayList(vector);
       printStore2(lst,1);
    then ();
@@ -826,7 +826,7 @@ algorithm
   outStore := matchcontinue(n,istore)
     local UnitAbsyn.Store store;
     case(0,store) then store;
-    case(_,store) equation
+    case(_,_) equation
       true = n < 0;
       print("addUnspecifiedStores n < 0!\n");
     then fail();
@@ -856,18 +856,18 @@ algorithm
       HashTable.HashTable ht;
       Integer nextElt;
 
-    case(store as UnitAbsyn.STORE(vect,numElts),ht,_,nextElt) equation
+    case(store as UnitAbsyn.STORE(_,numElts),ht,_,nextElt) equation
       true = i > numElts;
      then (store,ht,nextElt);
 
-    case(store as UnitAbsyn.STORE(vect,numElts),ht,_,nextElt) equation
+    case(UnitAbsyn.STORE(vect,numElts),ht,_,nextElt) equation
       SOME(unit) = vect[i];
       (unit,ht,nextElt) = createTypeParameterLocations3(unit,ht,nextElt);
       vect = arrayUpdate(vect,i,SOME(unit));
       (store,ht,nextElt) = createTypeParameterLocations2(UnitAbsyn.STORE(vect,numElts),ht,i+1,nextElt);
     then (store,ht,nextElt);
 
-    case(store as UnitAbsyn.STORE(vect,numElts),ht,_,nextElt) equation
+    case(UnitAbsyn.STORE(vect,numElts),ht,_,nextElt) equation
       (store,ht,nextElt) = createTypeParameterLocations2(UnitAbsyn.STORE(vect,numElts),ht,i+1,nextElt);
     then (store,ht,nextElt);
   end matchcontinue;
@@ -1059,7 +1059,7 @@ algorithm
       (ut,terms,store) = buildTermExp(env,e1,divOrMul,ht,store);
     then (ut,terms,store);
 
-    case(_,e as DAE.CREF(cr,_),divOrMul,ht,store) equation
+    case(_,e as DAE.CREF(cr,_),_,ht,store) equation
      indx = BaseHashTable.get(cr,ht);
     then (UnitAbsyn.LOC(indx,e),{},store);
 
@@ -1091,7 +1091,7 @@ algorithm
     then (ut,terms,store);
 
       /* failed to build term for e2, use e1*/
-    case(_,DAE.BINARY(e1,op,e2),divOrMul,ht,store) equation
+    case(_,DAE.BINARY(e1,op,_),divOrMul,ht,store) equation
       divOrMul = Expression.operatorDivOrMul(op);
       (ut,terms,store) = buildTermExp(env,e1,divOrMul,ht,store);
       failure((_,_,_) = buildTermExp(env,e1,divOrMul,ht,store));
@@ -1104,7 +1104,7 @@ algorithm
       (ut,terms,store) = buildTermExp(env,e2,divOrMul,ht,store);
     then (ut,terms,store);
 
-    case(_,DAE.UNARY(op,e1),divOrMul,ht,store) equation
+    case(_,DAE.UNARY(_,e1),divOrMul,ht,store) equation
       (ut,terms,store) = buildTermExp(env,e1,divOrMul,ht,store);
     then (ut,terms,store);
 
@@ -1123,7 +1123,7 @@ algorithm
 
     /* Array, all elements must be of same dimension, since an array with different units in different positions
     can not be declared in Modelica, since modifiers on arrays must affect the whole array */
-    case(_,e as DAE.ARRAY(_,_,expl),divOrMul,ht,store)
+    case(_,e as DAE.ARRAY(_,_,expl),_,ht,store)
       equation
         print("vector ="+&ExpressionDump.printExpStr(e)+&"\n");
       (uts,terms,store) = buildTermExpList(env,expl,ht,store);
@@ -1131,7 +1131,7 @@ algorithm
       terms = listAppend(terms,uts);
     then (ut,terms,store);
 
-    case(_,e as DAE.MATRIX(matrix=mexpl),divOrMul,ht,store)
+    case(_,e as DAE.MATRIX(matrix=mexpl),_,ht,store)
       equation
         print("Matrix ="+&ExpressionDump.printExpStr(e)+&"\n");
         expl = List.flatten(mexpl);
@@ -1140,7 +1140,7 @@ algorithm
         terms = listAppend(terms,uts);
       then (ut,terms,store);
 
-    case(_,e as DAE.CALL(path=_),divOrMul,ht,store) equation
+    case(_,e as DAE.CALL(path=_),_,_,_) equation
       print("buildTermDAE.CALL failed exp: "+&ExpressionDump.printExpStr(e)+&"\n");
     then fail();
   end matchcontinue;
@@ -1195,7 +1195,7 @@ algorithm
        (store,formalParamIndxs) = buildFuncTypeStores(functp,funcInstId,store);
        (actTermLst,extraTerms,store) = buildTermExpList(env,expl,ht,store);
         terms = buildFormal2ActualParamTerms(formalParamIndxs,actTermLst);
-        (terms2 as {ut},extraTerms2,store) = buildResultTerms(functp,funcInstId,funcCallExp,store);
+        ({ut},extraTerms2,store) = buildResultTerms(functp,funcInstId,funcCallExp,store);
         extraTerms = listAppend(extraTerms,listAppend(extraTerms2,terms));
     then (ut,extraTerms,store);
   end match;
@@ -1444,7 +1444,7 @@ algorithm
       then (store,ht);
 
     /* Failed to parse will give unspecified unit*/
-    case(DAE.DAE(elementLst = DAE.VAR(componentRef=cr,variableAttributesOption=attropt)::elts),_,_)
+    case(DAE.DAE(elementLst = DAE.VAR(componentRef=cr,variableAttributesOption=_)::_),_,_)
       equation
         (store,indx) = add(UnitAbsyn.UNSPECIFIED(),inStore);
         ht = BaseHashTable.add((cr,indx),inHt);

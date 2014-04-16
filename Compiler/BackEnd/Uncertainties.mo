@@ -174,7 +174,7 @@ algorithm
         //      printSep(getMathematicaText("All variables"));
         //      printSep(variablesToMathematicaGrid(List.intRange(BackendVariable.varsSize(allVars)),allVars));
         //print("Checkpoint 1\n");
-        BackendDAE.DAE(currentSystem::eqsyslist,shared) = dlow_1;
+        BackendDAE.DAE(currentSystem::_,shared) = dlow_1;
         BackendDAE.EQSYSTEM(orderedVars=allVars,orderedEqs=allEqs) = currentSystem;
         BackendDAE.SHARED(knownVars=sharedVars) = shared;
 
@@ -566,7 +566,7 @@ algorithm
             inner_ret = getEquationsWithApproximatedAnnotation2(t,i+1);
           then
             i::inner_ret;
-        case(h::t,i)
+        case(_::t,i)
           equation
             inner_ret = getEquationsWithApproximatedAnnotation2(t,i+1);
           then
@@ -611,7 +611,7 @@ protected function isApproximatedEquation2
         ret = (List.exist(subModLst,isApproximatedEquation3)) or isApproximatedEquation2(t);
       then
         ret;
-    case(h::t)
+    case(_::t)
       equation
         ret = isApproximatedEquation2(t);
       then
@@ -1006,7 +1006,7 @@ mOut:=matchcontinue(mIn,outputs)
       newM=removeEquations(m,o);
       newM=eliminateOutputVariables(newM,tail);
     then newM;
-  case(m,var::tail)
+  case(m,_::tail)
     equation
       newM=eliminateOutputVariables(m,tail);
     then newM;
@@ -1030,7 +1030,7 @@ algorithm
           ret = occurrencesOfVariable(tail,var);
         then
           eq::ret;
-      case((eq,vars)::tail,_)
+      case((_,_)::tail,_)
         equation
           ret = occurrencesOfVariable(tail,var);
         then
@@ -1254,7 +1254,7 @@ mOut:=matchcontinue(m,set,acc)
   case({},_,_)
     equation
     then listReverse(acc);
-  case((eq,vars)::t,_,_)
+  case((_,vars)::t,_,_)
       equation
         newVars = List.filter1OnTrue(vars,removeVarsNotInSet_helper,set);
         true = List.isEmpty(newVars);
@@ -1285,7 +1285,7 @@ mOut:=matchcontinue(m,eqns)
       false = containsAny({eq},eqns);
       inner_ret=removeEquations(t,eqns);
     then e::inner_ret;
-  case((e as (eq,_))::t,_)
+  case(((eq,_))::t,_)
     equation
       true = containsAny({eq},eqns);
       inner_ret=removeEquations(t,eqns);
@@ -1398,13 +1398,13 @@ varsOut:=matchcontinue(m,vars)
   case({},_)
       equation
       then {};
-  case((h as (_,eqvars))::t,_)
+  case(((_,eqvars))::t,_)
     equation
       true = containsAny(eqvars,vars);
       eqvars = listAppend(eqvars,getRelatedVariables(t,vars));
       eqvars = List.setDifference(setOfList(eqvars),vars);
     then eqvars;
-  case((h as (_,eqvars))::t,_)
+  case(((_,eqvars))::t,_)
     equation
       false = containsAny(eqvars,vars);
       eqvars = getRelatedVariables(t,vars);
@@ -1761,7 +1761,7 @@ algorithm
       then
         ht;
 
-    case((eq1 as BackendDAE.ARRAY_EQUATION(left=e1,right=e2)) :: eqs,ht)
+    case((BackendDAE.ARRAY_EQUATION(left=e1,right=e2)) :: eqs,ht)
       equation
         ht = findArraysPartiallyIndexed2({e1,e2},ht,HashTable.emptyHashTable());
         ht = findArrayVariables({e1,e2},ht) "finds all array variables, including earlier special case for v = foo(..)";
@@ -1793,7 +1793,7 @@ algorithm
 
     case({}, _, ht) then ht;
 
-    case(((e1 as DAE.CREF(c1,_))::expl1),dubRef,ht)
+    case(((DAE.CREF(c1,_))::expl1),dubRef,ht)
       equation
         c2 = ComponentReference.crefStripLastSubs(c1);
         failure(_ = BaseHashTable.get(c2,dubRef));
@@ -1801,7 +1801,7 @@ algorithm
         ht = findArraysPartiallyIndexed2(expl1,dubRef,ht);
       then ht;
 
-    case(((e1 as DAE.CREF(c1,_))::expl1),dubRef,ht)
+    case(((DAE.CREF(c1,_))::expl1),dubRef,ht)
       equation
         c2 = ComponentReference.crefStripLastSubs(c1);
         _ = BaseHashTable.get(c2,dubRef);
@@ -1809,7 +1809,7 @@ algorithm
         ht = findArraysPartiallyIndexed2(expl1,dubRef,ht);
       then ht;
 
-    case(((e1 as DAE.CREF(c1,_))::expl1),dubRef,ht)
+    case(((DAE.CREF(c1,_))::expl1),dubRef,ht)
       equation
         c2 = ComponentReference.crefStripLastSubs(c1);
         _ = BaseHashTable.get(c2,dubRef);
@@ -1837,7 +1837,7 @@ algorithm
       DAE.ComponentRef c1;
       HashTable.HashTable ht;
     case({},ht) then ht;
-    case((e1 as DAE.CREF(c1,_))::expl1,ht) equation
+    case((DAE.CREF(c1,_))::expl1,ht) equation
       true = Expression.isArrayType(ComponentReference.crefTypeConsiderSubs(c1));
 
       ht = BaseHashTable.add((c1,1),ht);
@@ -2066,17 +2066,17 @@ algorithm
     BackendDAE.ExtraInfo ei;
 
     case(BackendDAE.DAE(
-      (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,m=m,mT=mT,matching=matching,stateSets=stateSets))::systList,
-      (shared as BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,
-                                   removedEqs=removedEqs,functionTree=funcs,
-                                   eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=backendDAEType,symjacs=symjacs,info=ei))),_,false)
+      (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,m=m,mT=mT,matching=matching,stateSets=stateSets))::systList,
+      (shared as BackendDAE.SHARED(
+                                   functionTree=_,
+                                   info=_))),_,false)
     equation
        syst = BackendDAE.EQSYSTEM(orderedVars,eqns,m,mT,matching,stateSets);
     then
        BackendDAE.DAE(syst::systList,shared);
 
     case(BackendDAE.DAE(systList,
-      shared as BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,
+      shared as BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,
                                    removedEqs=removedEqs,constraints=constrs,classAttrs=clsAttrs,cache=cache,env=env,
                                    functionTree=funcs,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=backendDAEType,symjacs=symjacs,info=ei)),_,true)
     equation
@@ -2451,7 +2451,7 @@ algorithm
       then
         l :: res;
 
-    case (l :: _, r :: r_rest, _,_)
+    case (_ :: _, r :: r_rest, _,_)
       equation
         res = mergeBy1(inLeft, r_rest, inCompFunc,inArgument1);
       then
@@ -2904,19 +2904,19 @@ algorithm
         new_sets=pushToSetList(sets,cr1,e1,1,cr2,e2,1,source);
       then (new_sets,eqn_acc);
     // a = -b;
-    case (_,_,_,e1 as DAE.CREF(componentRef = cr1),DAE.UNARY(DAE.UMINUS(tp),e2 as DAE.CREF(componentRef = cr2)))
+    case (_,_,_,e1 as DAE.CREF(componentRef = cr1),DAE.UNARY(DAE.UMINUS(_),e2 as DAE.CREF(componentRef = cr2)))
       equation
         source=getSourceIfApproximated(eqn);
         new_sets=pushToSetList(sets,cr1,e1,1,cr2,e2,-1,source);
       then (new_sets,eqn_acc);
     // -a = b;
-    case (_,_,_,e1 as DAE.UNARY(DAE.UMINUS(tp),DAE.CREF(componentRef = cr1)),e2 as DAE.CREF(componentRef = cr2))
+    case (_,_,_,e1 as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = cr1)),e2 as DAE.CREF(componentRef = cr2))
       equation
         source=getSourceIfApproximated(eqn);
         new_sets=pushToSetList(sets,cr1,e1,-1,cr2,e2,1,source);
       then (new_sets,eqn_acc);
     // -a = -b;
-    case (_,_,_,e1 as DAE.UNARY(DAE.UMINUS(tp),DAE.CREF(componentRef = cr1)),e2 as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = cr2)))
+    case (_,_,_,e1 as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = cr1)),e2 as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = cr2)))
       equation
         source=getSourceIfApproximated(eqn);
         new_sets=pushToSetList(sets,cr1,e1,-1,cr2,e2,-1,source);

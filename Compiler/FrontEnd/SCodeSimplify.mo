@@ -132,7 +132,7 @@ algorithm
         SCode.CLASS_EXTENDS(baseClassName, mod, cDef);
 
     // handle derived!
-    case (SCode.DERIVED(typeSpec, mod, attr))
+    case (SCode.DERIVED(_, _, _))
       then
         inClassDef;
 

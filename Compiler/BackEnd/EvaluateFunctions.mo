@@ -157,7 +157,7 @@ algorithm
         eq = BackendDAE.EQUATION(lhsExp,rhsExp,source,diff);
       then
         (eq,(shared,addEqs,idx+1));
-    case(BackendDAE.ARRAY_EQUATION(dimSize =_, left=_, right=_, source=source, differentiated=_),_)
+    case(BackendDAE.ARRAY_EQUATION(dimSize =_, left=_, right=_,  differentiated=_),_)
       equation
         print("this is an array equation. update evalFunctions_findFuncs");
       then
@@ -568,7 +568,7 @@ algorithm
         //print("the new var id \n"+&DAEDump.dumpElementsStr({var})+&"\n");
       then
         var;
-    case(DAE.CREF_IDENT(ident=_,identType=typ,subscriptLst=sl),_,_)
+    case(DAE.CREF_IDENT(ident=_,identType=typ,subscriptLst=_),_,_)
       equation
         var = List.first(inFuncOutputs);
         var = DAEUtil.replaceCrefandTypeInVar(cref,typ,var);
@@ -762,7 +762,7 @@ algorithm
         stmtLst = listReverse(stmtsFold);
       then
         stmtsFold;
-    case (DAE.STMT_IF(exp =e, statementLst=stmtLst, else_=else_,source=source)::rest,_,_,_)
+    case (DAE.STMT_IF(exp =_, statementLst=stmtLst, else_=else_)::rest,_,_,_)
       equation
         x = List.first(stmtsIn);
         stmtLstLst = getDAEelseStatemntLsts(else_,{});
@@ -1016,7 +1016,7 @@ algorithm
       list<DAE.ComponentRef> scalars;
       list<DAE.Statement> stmts1, stmts2, rest, addStmts;
       list<DAE.Exp> expLst;
-    case({},(funcTree,replIn,idx),_)
+    case({},(_,_,_),_)
       equation
       then
         (lstIn,tplIn);
@@ -1048,7 +1048,7 @@ algorithm
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,repl,idx),stmts1);
       then
         (rest,(funcTree,repl,idx));
-    case (DAE.STMT_ASSIGN_ARR(type_=_, componentRef=_, exp=_, source=source)::rest,(funcTree,replIn,idx),_)
+    case (DAE.STMT_ASSIGN_ARR(type_=_, componentRef=_, exp=_)::rest,(funcTree,_,idx),_)
       equation
         //print("STMT_ASSIGN_ARR");
         //print("the STMT_ASSIGN_ARR: "+&DAEDump.ppStatementStr(List.first(algsIn))+&"\n");
@@ -1056,7 +1056,7 @@ algorithm
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,tplIn,alg::lstIn);
       then
         (rest,(funcTree,repl,idx));
-    case(DAE.STMT_IF(exp=exp0, statementLst=stmts1, else_=else_, source=source)::rest,(funcTree,replIn,idx),_)
+    case(DAE.STMT_IF(exp=exp0, statementLst=stmts1, else_=else_)::rest,(funcTree,replIn,idx),_)
       equation
         // check if its the IF case, if true then evaluate:
         //print("the STMT_IF before: "+&DAEDump.ppStatementStr(List.first(algsIn)));
@@ -1088,7 +1088,7 @@ algorithm
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,repl,idx),stmts1);
       then
         (rest,(funcTree,repl,idx));
-    case(DAE.STMT_TUPLE_ASSIGN(type_=_, expExpLst=expLst, exp=exp0, source=source)::rest,(funcTree,replIn,idx),_)
+    case(DAE.STMT_TUPLE_ASSIGN(type_=_, expExpLst=expLst, exp=exp0)::rest,(funcTree,replIn,idx),_)
       equation
         //print("the STMT_TUPLE_ASSIGN stmt: "+&DAEDump.ppStatementStr(List.first(algsIn)));
         //print("idx: "+&intString(idx)+&"\n");
@@ -1523,7 +1523,7 @@ algorithm
       list<DAE.Statement> stmts1,addStmts;
       list<list<DAE.Statement>> stmtsLst;
       list<tuple<list<DAE.Statement>,BackendVarTransform.VariableReplacements>> tplLst;
-    case(DAE.STMT_IF(exp=exp1, statementLst=stmts1, else_=else_, source=source),_)
+    case(DAE.STMT_IF(exp=_, statementLst=stmts1, else_=else_),_)
        equation
          //print("start prediction\n");
          (funcTree,replIn,idx) = tplIn;
@@ -1630,11 +1630,11 @@ algorithm
         els = updateStatementsInElse(rest,els);
       then
         DAE.ELSEIF(exp,stmts,els);
-    case(stmts::rest,DAE.ELSE(statementLst=_))
+    case(stmts::_,DAE.ELSE(statementLst=_))
       equation
       then
         DAE.ELSE(stmts);
-    case(stmts::rest,DAE.NOELSE())
+    case(_::_,DAE.NOELSE())
       equation
       then
         DAE.NOELSE();
@@ -1665,7 +1665,7 @@ algorithm
         posLst = compareConstantExps(rest,posLst);
       then
         posLst;
-    case({lst1},_)
+    case({_},_)
       equation
         then
           posLstIn;
@@ -1679,7 +1679,7 @@ protected function compareConstantExps2
   input list<Integer> posLstIn;
   output list<Integer> posLstOut;
 algorithm
-  posLstOut := matchcontinue(idxIn,lst1,lst2,posLstIn)
+  posLstOut := match(idxIn,lst1,lst2,posLstIn)
     local
       Boolean b;
       Integer idx;
@@ -1699,7 +1699,7 @@ algorithm
     case({},_,_,_)
       then
         posLstIn;
-  end matchcontinue;
+  end match;
 end compareConstantExps2;
 
 protected function makeAssignmentMap"mapping functino fo build the statements for a list of lhs and rhs exps.

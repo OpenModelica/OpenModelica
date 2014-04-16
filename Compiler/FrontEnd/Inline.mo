@@ -1503,7 +1503,7 @@ algorithm
         true = List.isNotEmpty(assrtStmts);
         true = listLength(assrtStmts) == 1;
         assrt = listGet(assrtStmts,1);
-        DAE.STMT_ASSERT(cond=cond, msg=msg, level=level, source=source) = assrt;
+        DAE.STMT_ASSERT(source=_) = assrt;
         newExp = VarTransform.getReplacement(repl,cr);  // the function that replaces the output variable
         argmap = List.threadTuple(crefs,args);
         (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());

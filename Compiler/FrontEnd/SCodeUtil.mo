@@ -166,7 +166,7 @@ algorithm
       then
         scodeClass;
 
-    case (c as Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = d,info = file_info), _)
+    case (Absyn.CLASS(name = n,partialPrefix = _,finalPrefix = _,encapsulatedPrefix = _,restriction = _,body = _,info = file_info), _)
       equation
         // Print out an internal error msg only if no other errors have already
         // been printed.
@@ -199,7 +199,7 @@ algorithm
       list<Absyn.Annotation> aann;
       Option<SCode.Annotation> ann;
 
-  case (Absyn.PARTS(classParts = parts,ann=aann, comment = cmtString),opName,_)
+  case (Absyn.PARTS(classParts = parts,ann=aann, comment = cmtString),_,_)
       equation
         els = translateClassdefElements(parts);
         cmt = translateCommentList(aann,cmtString);
@@ -1060,7 +1060,7 @@ algorithm
     case(Absyn.NAMEDARG(name,Absyn.STRING(str))::_,arg) equation
       true = name ==& arg;
     then SOME(str);
-    case({},arg) then NONE();
+    case({},_) then NONE();
     case(_::args,arg) then translateDefineunitParam(args,arg);
   end matchcontinue;
 end translateDefineunitParam;
@@ -1078,7 +1078,7 @@ algorithm
     case(Absyn.NAMEDARG(name,Absyn.REAL(r))::_,arg) equation
       true = name ==& arg;
     then SOME(r);
-    case({},arg) then NONE();
+    case({},_) then NONE();
     case(_::args,arg) then translateDefineunitParam2(args,arg);
   end matchcontinue;
 end translateDefineunitParam2;
@@ -1138,7 +1138,7 @@ algorithm
       Option<SCode.ConstrainClass> scc;
 
 
-    case (_,_,_,repl,vis, Absyn.CLASSDEF(replaceable_ = rp, class_ = (cl as Absyn.CLASS(name = n,partialPrefix = pa,finalPrefix = fi,encapsulatedPrefix = e,restriction = Absyn.R_OPERATOR(),body = de,info = i))),_)
+    case (_,_,_,repl,vis, Absyn.CLASSDEF(replaceable_ = rp, class_ = (Absyn.CLASS(name = n,partialPrefix = pa,finalPrefix = _,encapsulatedPrefix = e,restriction = Absyn.R_OPERATOR(),body = de,info = i))),_)
       equation
         (de_1,cmt) = translateOperatorDef(de,n,i);
         (_, redecl) = translateRedeclarekeywords(repl);
@@ -1156,7 +1156,7 @@ algorithm
         {cls};
 
 
-    case (_,_,_,repl,vis, Absyn.CLASSDEF(replaceable_ = rp, class_ = (cl as Absyn.CLASS(name = n,partialPrefix = pa,finalPrefix = fi,encapsulatedPrefix = e,restriction = re,body = de,info = i))),_)
+    case (_,_,_,repl,vis, Absyn.CLASSDEF(replaceable_ = rp, class_ = (cl as Absyn.CLASS(name = n,partialPrefix = pa,finalPrefix = _,encapsulatedPrefix = e,restriction = re,body = de,info = i))),_)
       equation
         // Debug.fprintln(Flags.TRANSLATE, "translating local class: " +& n);
         re_1 = translateRestriction(cl, re); // uniontype will not get translated!
@@ -1175,14 +1175,14 @@ algorithm
       then
         {cls};
 
-    case (_,_,_,repl,vis,Absyn.EXTENDS(path = path,elementArg = args,annotationOpt = NONE()),info)
+    case (_,_,_,_,vis,Absyn.EXTENDS(path = path,elementArg = args,annotationOpt = NONE()),info)
       equation
         // Debug.fprintln(Flags.TRANSLATE, "translating extends: " +& Absyn.pathString(n));
         mod = translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), Absyn.dummyInfo);
       then
         {SCode.EXTENDS(path,vis,mod,NONE(),info)};
 
-    case (_,_,_,repl,vis,Absyn.EXTENDS(path = path,elementArg = args,annotationOpt = SOME(absann)),info)
+    case (_,_,_,_,vis,Absyn.EXTENDS(path = path,elementArg = args,annotationOpt = SOME(absann)),info)
       equation
         // Debug.fprintln(Flags.TRANSLATE, "translating extends: " +& Absyn.pathString(n));
         mod = translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), Absyn.dummyInfo);
@@ -1190,7 +1190,7 @@ algorithm
       then
         {SCode.EXTENDS(path,vis,mod,SOME(ann),info)};
 
-    case (_,_,_,_,_,Absyn.COMPONENTS(components = {}),info) then {};
+    case (_,_,_,_,_,Absyn.COMPONENTS(components = {}),_) then {};
 
     case (_,_,_,repl,vis,Absyn.COMPONENTS(attributes =
       (attr as Absyn.ATTR(flowPrefix = fl,streamPrefix=st,parallelism=parallelism,variability = variability,direction = di,arrayDim = ad)),typeSpec = t,
@@ -1219,7 +1219,7 @@ algorithm
           SCode.ATTR(tot_dim,ct,prl1,var1,di),
           t,mod,cmt,cond,info) :: xs_1);
 
-    case (_,_,_,repl,vis,Absyn.IMPORT(import_ = imp, info = info),_)
+    case (_,_,_,_,vis,Absyn.IMPORT(import_ = imp, info = info),_)
       equation
         // Debug.fprintln(Flags.TRANSLATE, "translating import: " +& Dump.unparseImportStr(imp));
         xs_1 = translateImports(imp,vis,info);
@@ -1611,7 +1611,7 @@ algorithm
       then
         SCode.EQ_IF(conditions,trueEEquations,fb_1,com,info);
 
-    case (Absyn.EQ_IF(ifExp = e,equationTrueItems = tb,elseIfBranches = ((ee,ei) :: eis),equationElseItems = fb),com,info,_)
+    case (Absyn.EQ_IF(ifExp = _,equationTrueItems = _,elseIfBranches = ((_,_) :: _),equationElseItems = _),_,_,_)
       equation
         /* adrpo: we do handle else if clauses in OpenModelica, what do we do with this??!
         eq = translateEquation(Absyn.EQ_IF(e,tb,{},{Absyn.EQUATIONITEM(Absyn.EQ_IF(ee,ei,eis,fb),NONE())}));
@@ -1668,7 +1668,7 @@ algorithm
       then
         SCode.EQ_FOR(i,NONE(),{eq},com,info);
 
-    case (Absyn.EQ_FOR(iterators = Absyn.ITERATOR(guardExp=SOME(_))::_,forEquations = l),_,info,_)
+    case (Absyn.EQ_FOR(iterators = Absyn.ITERATOR(guardExp=SOME(_))::_,forEquations = _),_,info,_)
       equation
         Error.addSourceMessage(Error.INTERNAL_ERROR, {"For loops with guards not yet implemented"}, info);
       then
@@ -2008,7 +2008,7 @@ algorithm
     case (Absyn.BOOL(_), _) then exp;
 
     // do NOT prefix if you have qualified component references
-    case (Absyn.CREF(componentRef = c as Absyn.CREF_QUAL(name=_)), _) then exp;
+    case (Absyn.CREF(componentRef = Absyn.CREF_QUAL(name=_)), _) then exp;
 
     // do prefix if you have simple component references
     case (Absyn.CREF(componentRef = c as Absyn.CREF_IDENT(name=_)), _)
@@ -2187,7 +2187,7 @@ algorithm
         el::els1;
 
     // redeclare-as-element class extends, ignore!
-    case ((el as SCode.CLASS(prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE()), classDef = SCode.CLASS_EXTENDS(baseClassName = _)))::els)
+    case ((SCode.CLASS(prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE()), classDef = SCode.CLASS_EXTENDS(baseClassName = _)))::els)
       equation
         els1 = getRedeclareAsElements(els);
       then
@@ -2244,7 +2244,7 @@ algorithm
         SCode.EXTENDS(baseClassPath, visibility, mod, ann, info)::out;
 
     // failure
-    case ((el as SCode.EXTENDS(baseClassPath = _))::rest, redecls)
+    case ((el as SCode.EXTENDS(baseClassPath = _))::_, redecls)
       equation
         print("- SCodeUtil.addRedeclareAsElementsToExtends failed on:\nextends:\n\t" +& SCodeDump.shortElementStr(el) +&
                  "\nredeclares:\n" +& stringDelimitList(List.map1(redecls, SCodeDump.unparseElementStr, SCodeDump.defaultOptions), "\n") +& "\n");
@@ -2293,7 +2293,7 @@ algorithm
     //  then
     //    SCode.MOD(f2, e2, newSubMods, b, info);
     case (SCode.MOD(f1, e1, subMods1, b1, info),
-          SCode.MOD(f2, e2, subMods2, b2, _))
+          SCode.MOD(_, _, subMods2, b2, _))
       equation
         subMods1 = listAppend(subMods1, subMods2);
         b1 = Util.if_(Util.isSome(b1), b1, b2);
@@ -2346,10 +2346,10 @@ algorithm
       list<SCode.SubMod> newSubMods;
 
     // empty
-    case (f, e, {}) then {};
+    case (_, _, {}) then {};
 
     // class extends, error!
-    case (f, e, (el as SCode.CLASS(name = n, classDef = SCode.CLASS_EXTENDS(baseClassName = _)))::rest)
+    case (f, e, (el as SCode.CLASS(name = _, classDef = SCode.CLASS_EXTENDS(baseClassName = _)))::rest)
       equation
         // print an error here
         print("- SCodeUtil.makeElementsIntoSubMods ignoring class-extends redeclare-as-element: " +& SCodeDump.unparseElementStr(el,SCodeDump.defaultOptions) +& "\n");

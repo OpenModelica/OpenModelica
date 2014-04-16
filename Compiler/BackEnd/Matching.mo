@@ -170,7 +170,7 @@ algorithm
       then
         (ass1_1,ass2_1,syst,ishared,inArg);
 
-    case (syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_,_,_,_)
+    case (syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(_)),_,_,_,_,_,_,_,_,_,_,_)
       equation
         i_1 = i + 1;
         true = intGt(ass2[i],0);
@@ -303,14 +303,14 @@ algorithm
       array<Integer> ass1_1,ass2_1;
       Integer v;
       list<Integer> vs;
-    case (_,(v :: vs),_,_)
+    case (_,(v :: _),_,_)
       equation
         false = intGt(ass1[v],0);
         ass1_1 = arrayUpdate(ass1,v,i);
         ass2_1 = arrayUpdate(ass2,i,v);
       then
         (ass1_1,ass2_1);
-    case (_,(v :: vs),_,_)
+    case (_,(_ :: vs),_,_)
       equation
         (ass1_1,ass2_1) = assignFirstUnassigned(i, vs, ass1, ass2);
       then
@@ -387,7 +387,7 @@ algorithm
       Integer assarg,v;
       array<Integer> ass1_1,ass2_1,ass1_2,ass2_2;
       list<Integer> vars,vs;
-    case (_,_,_,_,_,_,(vars as (v :: vs)),_,_)
+    case (_,_,_,_,_,_,((v :: _)),_,_)
       equation
         _ = arrayUpdate(vmark,v,imark);
         assarg = ass1[v];
@@ -396,7 +396,7 @@ algorithm
         ass2_2 = arrayUpdate(ass2_1,i,v);
       then
         (ass1_2,ass2_2);
-    case (_,_,_,_,_,_,(vars as (v :: vs)),_,_)
+    case (_,_,_,_,_,_,((_ :: vs)),_,_)
       equation
         (ass1_1,ass2_1) = forallUnmarkedVarsInEqnBody(m, mt, i, imark, emark, vmark, vs, ass1, ass2);
       then
@@ -641,7 +641,7 @@ algorithm
       Integer rc,r;
       Boolean b;
       case ({},_,_,_,_,_,_,_,_,_,_,_,_) then (listReverse(queue),false);
-    case (r::rest,_,_,_,_,_,_,_,_,_,_,_,_)
+    case (r::_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         // row is unmatched -> augmenting path found
         true = intLt(ass2[r],0);
@@ -924,7 +924,7 @@ algorithm
       list<Integer> rest,visitedColums;
       Integer rc,r;
     case ({},_,_,_,_,_,_,_,_,_,_) then inVisitedColums;
-    case (r::rest,_,_,_,_,_,_,_,_,_,_)
+    case (r::_,_,_,_,_,_,_,_,_,_,_)
       equation
         // row is unmatched -> augmenting path found
         true = intLt(ass2[r],0);
@@ -1283,7 +1283,7 @@ algorithm
         _ = arrayUpdate(lookahead,c,l);
        then
          MC21AtraverseRows(rows1,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,inVisitedColums);
-    case (r::rest,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case (r::_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         // row is unmatched -> augmenting path found
         true = intLt(ass2[r],0);
@@ -1685,14 +1685,14 @@ algorithm
         _ = arrayUpdate(lookahead,c,l);
        then
          PFtraverseRows(rows1,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2);
-    case (r::rest,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case (r::_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         // row is unmatched -> augmenting path found
         true = intLt(ass2[r],0);
         DFSBreasign(stack,r,ass1,ass2);
       then
         true;
-    case (r::rest,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case (_::rest,_,_,_,_,_,_,_,_,_,_,_,_,_)
       then
         PFtraverseRowsUnmatched(rest,rows1,stack,i,c,l,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2);
   end matchcontinue;
@@ -1731,7 +1731,7 @@ algorithm
         b = PFphase(rc::stack,i,rc,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2);
       then
         PFtraverseRows1(rest,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,b);
-    case (r::rest,_,_,_,_,_,_,_,_,_,_)
+    case (_::rest,_,_,_,_,_,_,_,_,_,_)
       then
         PFtraverseRows(rest,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2);
     else
@@ -2037,7 +2037,7 @@ algorithm
         _ = arrayUpdate(lookahead,c,l);
        then
          PFPlustraverseRows(rows1,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,reverseRows);
-    case (r::rest,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case (r::_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         // row is unmatched -> augmenting path found
         true = intLt(ass2[r],0);
@@ -2084,7 +2084,7 @@ algorithm
         b = PFPlusphase(rc::stack,i,rc,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,reverseRows);
       then
         PFPlustraverseRows1(rest,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,b,reverseRows);
-    case (r::rest,_,_,_,_,_,_,_,_,_,_,_)
+    case (_::rest,_,_,_,_,_,_,_,_,_,_,_)
       then
         PFPlustraverseRows(rest,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,reverseRows);
     else
@@ -2679,7 +2679,7 @@ algorithm
         false = intEq(level[c],l);
       then
         HKDFStraverseCollums(rest,stack,i,l,nv,ne,m,mT,collummarks,level,ass1,ass2,inMatched);
-    case (c::rest,_,_,_,_,_,_,_,_,_,_,_,_)
+    case (c::_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         // collum is in graph
         true = intEq(level[c],l);
@@ -3031,7 +3031,7 @@ algorithm
       Integer r,c;
       Boolean b;
     case ({},_,_,_,_,_,_,_,_,_,_) then inMatched;
-    case (c::rest,_,_,_,_,_,_,_,_,_,_)
+    case (c::_,_,_,_,_,_,_,_,_,_,_)
       equation
         // collum is unvisited
         true = intLt(collummarks[c],i);
@@ -3727,7 +3727,7 @@ algorithm
         _ = arrayUpdate(colptrs,r,0);
       then
         (i+1,false);
-    case (c::rest,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case (c::_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         // collum is unmatched
         true = intLt(ass1[c],0);
@@ -4128,7 +4128,7 @@ algorithm
         _ = arrayUpdate(r_label,rc,l_label[c]+1);
       then
         PR_Global_Relabel_traverseCollums(rest,max,r,l_label,r_label,nv,ne,m,mT,ass1,ass2,rc::nextqueue);
-    case (c::rest,_,_,_,_,_,_,_,_,_,_,_)
+    case (_::rest,_,_,_,_,_,_,_,_,_,_,_)
       then
         PR_Global_Relabel_traverseCollums(rest,max,r,l_label,r_label,nv,ne,m,mT,ass1,ass2,nextqueue);
     else
@@ -4287,7 +4287,7 @@ algorithm
       list<Integer> rest;
       Integer r,minlabel,minvertex,rel;
     case ({},_,_,_,_,_,_,_,_,_,_,_,_,_) then (relabels,min_label,min_vertex);
-    case (r::rest,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case (r::_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         true = intLt(r_label[r],min_label);
         minlabel = r_label[r];
@@ -4304,7 +4304,7 @@ algorithm
         (rel,minlabel,minvertex) = PR_FIFO_FAIRphase_traverseRows(rest,relabels,max_vertex,minvertex,minlabel,max,nv,ne,m,mT,l_label,r_label,ass1,ass2);
       then
         (rel,minlabel,minvertex);
-    case (r::rest,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case (_::rest,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         (rel,minlabel,minvertex) = PR_FIFO_FAIRphase_traverseRows(rest,relabels,max_vertex,min_vertex,min_label,max,nv,ne,m,mT,l_label,r_label,ass1,ass2);
       then
@@ -4525,7 +4525,7 @@ algorithm
     local
       list<Integer> rest;
       Integer r;
-    case (r::rest,_,_,_)
+    case (r::_,_,_,_)
       equation
         // row is unmatched -> return
         true = intLt(ass2[r],0);
@@ -4841,7 +4841,7 @@ algorithm
         list<Integer> rest,lst;
         Integer e;
       case (_,{},_,_,_,_,_,_) then stack;
-      case (_,e::rest,_,_,_,_,_,_)
+      case (_,e::_,_,_,_,_,_,_)
         equation
           true = intLt(ass2[e],0);
           lst = List.select(incidence[e], Util.intPositive);
@@ -6010,7 +6010,7 @@ algorithm
         testMatchingAlgorithms1(rest,isyst,ishared,inMatchingOptions);
       then
         ();
-    case ((str,matchingAlgorithm)::rest,_,_,_)
+    case ((str,_)::rest,_,_,_)
       equation
         print(str +& "failed!\n");
         testMatchingAlgorithms1(rest,isyst,ishared,inMatchingOptions);
@@ -6070,7 +6070,7 @@ algorithm
         testExternMatchingAlgorithms1(rest,cheapId,nv,ne);
       then
         ();
-    case ((str,matchingAlgorithm)::rest,_,_,_)
+    case ((str,_)::rest,_,_,_)
       equation
         print(str +& "failed!\n");
         testExternMatchingAlgorithms1(rest,cheapId,nv,ne);

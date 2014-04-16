@@ -2895,7 +2895,7 @@ algorithm
     case(DAE.VAR(componentRef = _)::rest,acc)
       then verifyWhenEquationStatements(rest,acc);
 
-    case(DAE.DEFINE(componentRef = cref,exp = exp)::rest,acc)
+    case(DAE.DEFINE(componentRef = cref)::rest,acc)
       then verifyWhenEquationStatements(rest,cref::acc);
 
     case(DAE.EQUATION(exp = DAE.CREF(cref,_))::rest,acc)
@@ -2928,7 +2928,7 @@ algorithm
     case(DAE.TERMINATE(message = _)::rest,acc)
       then verifyWhenEquationStatements(rest,acc);
 
-    case(DAE.REINIT(componentRef=_,source=source)::rest,acc)
+    case(DAE.REINIT(componentRef=_)::rest,acc)
       then verifyWhenEquationStatements(rest,acc);
 
     // adrpo: TODO! FIXME! WHY??!! we might push values to a file writeFile(time);
@@ -4252,10 +4252,10 @@ algorithm
         x = Util.if_(referenceEq(e,e_1),inStmt,DAE.STMT_NORETCALL(e_1,source));
       then (x::{},extraArg);
 
-    case (x as DAE.STMT_RETURN(source = source),_,_,extraArg)
+    case (x as DAE.STMT_RETURN(source=_),_,_,extraArg)
       then (x::{},extraArg);
 
-    case (x as DAE.STMT_BREAK(source = source),_,_,extraArg)
+    case (x as DAE.STMT_BREAK(source=_),_,_,extraArg)
       then (x::{},extraArg);
 
     // MetaModelica extension. KS
@@ -4444,12 +4444,12 @@ algorithm
         (xs_1, extraArg) = traverseDAEStmts(xs, func, extraArg);
       then (DAE.STMT_NORETCALL(e_1,source)::xs_1,extraArg);
 
-    case (((x as DAE.STMT_RETURN(source = source))::xs),_,extraArg)
+    case (((x as DAE.STMT_RETURN(source=_))::xs),_,extraArg)
       equation
         (xs_1, extraArg) = traverseDAEStmts(xs, func, extraArg);
       then (x::xs_1,extraArg);
 
-    case (((x as DAE.STMT_BREAK(source = source))::xs),_,extraArg)
+    case (((x as DAE.STMT_BREAK(source=_))::xs),_,extraArg)
       equation
         (xs_1, extraArg) = traverseDAEStmts(xs, func, extraArg);
       then (x::xs_1,extraArg);
@@ -6819,14 +6819,14 @@ algorithm
       DAE.InlineType iType;
       DAE.Type ty;
       DAE.TailCall tailCall;
-    case(DAE.CALL_ATTR(ty=ty,tuple_=_,builtin=bi,isImpure=impure_,inlineType=iType,tailCall=tailCall),DAE.T_TUPLE(_,_))
+    case(DAE.CALL_ATTR(tuple_=_,builtin=bi,isImpure=impure_,inlineType=iType,tailCall=tailCall),DAE.T_TUPLE(_,_))
       equation
         ca = DAE.CALL_ATTR(typeIn,true,bi,impure_,iType,tailCall);
       then
         ca;
     else
       equation
-        DAE.CALL_ATTR(ty=ty,tuple_=tpl,builtin=bi,isImpure=impure_,inlineType=iType,tailCall=tailCall) = caIn;
+        DAE.CALL_ATTR(tuple_=tpl,builtin=bi,isImpure=impure_,inlineType=iType,tailCall=tailCall) = caIn;
         ca = DAE.CALL_ATTR(typeIn,tpl,bi,impure_,iType,tailCall);
       then
         ca;

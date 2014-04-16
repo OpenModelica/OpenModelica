@@ -850,7 +850,7 @@ algorithm
       then
         (aind, true, aind);
 
-    case (ST_LINE(line = str), nchars, false, aind)
+    case (ST_LINE(line = str), _, false, aind)
       equation
         Print.printBuf(str);
       then
@@ -901,7 +901,7 @@ algorithm
       Boolean isstart, hasNL;
 
 
-    case ({}, nchars, isstart, aind)
+    case ({}, _, isstart, aind)
       then
         (aind, isstart, aind);
 

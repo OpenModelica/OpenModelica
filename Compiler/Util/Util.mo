@@ -154,12 +154,12 @@ algorithm
         0 = stringCompare(flag,arg);
       then
         "";
-   case(_,arg::value::args)
+   case(_,arg::value::_)
       equation
         0 = stringCompare(flag,arg);
       then
         value;
-   case(_,arg::args)
+   case(_,_::args)
       equation
         value = flagValue(flag,args);
       then
@@ -1084,7 +1084,7 @@ algorithm
         true = (s ==& "");
         res = selectFirstNonEmptyString(rest);
       then res;
-    case (s::rest)
+    case (s::_)
       equation
         false = stringEq(s,"");
       then s;
@@ -1133,7 +1133,7 @@ algorithm
       Integer alen,pos;
       array<Type_a> res,arr,newarr,res_1;
       Type_a x,fillv;
-    case (pos,x,fillv,arr)
+    case (pos,x,_,arr)
       equation
         alen = arrayLength(arr) "Replacing element with index in range of the array" ;
         (pos <= alen) = true;
@@ -1327,7 +1327,7 @@ algorithm
       array<Type_a> src,dst,dst_1,dst_2;
       Type_a elt;
       Integer pos;
-    case (src,dst,-1) then dst;  /* src dst current pos */
+    case (_,dst,-1) then dst;  /* src dst current pos */
     case (src,dst,pos)
       equation
         elt = src[pos + 1];
@@ -1724,7 +1724,7 @@ algorithm
       list<Integer> xs;
     case ({},_,_) then {};
     case (_,{},_) then lst;
-    case (head::tail,x::xs,_)
+    case (_::tail,x::xs,_)
       equation
         true = intEq(x, pos); // equality(x=pos);
         res = filterList(tail,xs,pos+1);
@@ -1783,7 +1783,7 @@ algorithm
       String f,delim,str1,str2,str;
       list<String> r;
     case ({},_) then ();
-    case ({f},delim) equation Print.printBuf(f); then ();
+    case ({f},_) equation Print.printBuf(f); then ();
     case ((f :: r),delim)
       equation
         stringDelimitListPrintBuf(r, delim);
@@ -2028,7 +2028,7 @@ algorithm
         false = Flags.getConfigBool(Flags.TRANSLATE_DAE_STRING);
         then
           s;
-    case(s,false)
+    case(_,false)
       equation
         res_str = "$"+& modelicaStringToCStr1(str, replaceStringPatterns);
         // debug_print("prefix$", res_str);
@@ -2136,7 +2136,7 @@ algorithm
       list<Boolean> rest;
     case({}) then false;
     case ({b}) then b;
-    case ((true :: rest))  then true;
+    case ((true :: _))  then true;
     case ((false :: rest)) then boolOrList(rest);
   end match;
 end boolOrList;
@@ -2155,7 +2155,7 @@ algorithm
       list<Boolean> rest;
     case({}) then true;
     case ({b}) then b;
-    case ((false :: rest)) then false;
+    case ((false :: _)) then false;
     case ((true :: rest))  then boolAndList(rest);
   end match;
 end boolAndList;
@@ -2480,7 +2480,7 @@ algorithm
   outTypeA := match (inTypeAOption,inTypeA)
     local Type_a n,c;
     case (NONE(),n) then n;
-    case (SOME(c),n) then c;
+    case (SOME(c),_) then c;
   end match;
 end flattenOption;
 
@@ -2511,7 +2511,7 @@ algorithm
         System.writeFile(filename, str);
       then
         ();
-    case (filename,str)
+    case (filename,_)
       equation
         error_str = stringAppendList({"# Cannot write to file: ",filename,"."});
         Print.printErrorBuf(error_str);
@@ -2971,9 +2971,9 @@ algorithm
       list<String> ra,rb;
       String fa,fb, md, ed, str;
 
-    case ({},{}, md, ed) then "";
+    case ({},{}, _, _) then "";
 
-    case ({fa},{fb}, md, ed)
+    case ({fa},{fb}, md, _)
       equation
         str = stringAppendList({fa, md, fb});
       then
@@ -3216,7 +3216,7 @@ algorithm
       Integer i, len, pos;
 
     // array is empty
-    case (arr, _, _)
+    case (_, _, _)
       equation
         true = intEq(0, inFilledSize);
       then 0;
@@ -3244,7 +3244,7 @@ algorithm
       array<Type_a> arr;
       Integer i, len, pos;
     // array is empty
-    case (arr, _, _)
+    case (_, _, _)
       equation
         true = intEq(0, inFilledSize);
       then 0;
@@ -3275,13 +3275,13 @@ algorithm
       Type_a e;
 
     // we're at the end
-    case (arr, _, i, len)
+    case (_, _, i, len)
       equation
         true = intEq(i, len);
       then 0;
 
     // not at the end, see if we find it
-    case (arr, _, i, len)
+    case (arr, _, i, _)
       equation
         e = arrayGet(arr, i);
         true = valueEq(e, inElement);
@@ -3316,13 +3316,13 @@ algorithm
       Option<Type_a> e;
 
     // we're at the end
-    case (arr, _, i, len)
+    case (_, _, i, len)
       equation
         true = intEq(i, len);
       then 0;
 
     // not at the end, see if we find it
-    case (arr, _, i, len)
+    case (arr, _, i, _)
       equation
         e = arrayGet(arr, i);
         true = valueEq(e, inElement);
@@ -3398,14 +3398,14 @@ algorithm
       Type_a e;
 
     // we're at the end
-    case (arr, _, _, i, len)
+    case (_, _, _, i, len)
       equation
         true = intEq(i, len);
       then
         0;
 
     // not at the end, see if we find it
-    case (arr, _, _, i, len)
+    case (arr, _, _, i, _)
       equation
         SOME(e) = arrayGet(arr, i);
         true = inFunc(e, inExtra);
@@ -3603,7 +3603,7 @@ algorithm
       Integer i, len, pos;
 
     // array is empty
-    case (arr, _, _, _)
+    case (_, _, _, _)
       equation
         true = intEq(0, inFilledSize);
       then
@@ -3642,13 +3642,13 @@ algorithm
       Option<Type_a> e;
 
     // we're at the end
-    case (arr, _, _, i, len)
+    case (_, _, _, i, len)
       equation
         true = intEq(i, len);
       then 0;
 
     // not at the end, see if we find it
-    case (arr, _, _, i, len)
+    case (arr, _, _, i, _)
       equation
         e = arrayGet(arr, i);
         true = inEqualityCheckFunction(e, inElement);
@@ -3861,7 +3861,7 @@ algorithm
     case ({}, _, _, _, _, 0, _) then listReverse(inAccumStrings);
 
     // Wrap on newline (the newline will be thrown away).
-    case ("\n" :: rest_str, wl, delim, dl, acc_str, sl, acc_strl)
+    case ("\n" :: rest_str, wl, delim, dl, acc_str, _, acc_strl)
       equation
         // The delimiter should not be applied to the first string.
         delim = if_(List.isEmpty(acc_strl), "", delim);

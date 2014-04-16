@@ -2498,7 +2498,7 @@ algorithm
     case (Absyn.UNARY(op = _), _) then 4;
     case (Absyn.LBINARY(op = op), _) then priorityLBinop(op);
     case (Absyn.LUNARY(op = _), _) then 7;
-    case (Absyn.RELATION(op = op), _) then 6;
+    case (Absyn.RELATION(op=_), _) then 6;
     case (Absyn.RANGE(start = _), _) then 10;
     case (Absyn.IFEXP(ifExp = _), _) then 11;
     else 0;

@@ -4841,7 +4841,7 @@ algorithm
 
     // A variable without a binding -> error in a simulation model
     // and we can only check that at the DAE level!
-    case (_, _, _, _, _, DAE.UNBOUND(), NONE(), _, _, _, _, false, Absyn.MSG(info = info), _)
+    case (_, _, _, _, _, DAE.UNBOUND(), NONE(), _, _, _, _, false, Absyn.MSG(info=_), _)
       equation
         str = ComponentReference.printComponentRefStr(inCref);
         scope_str = Env.printEnvPathStr(inEnv);
@@ -4954,7 +4954,7 @@ algorithm
         (cache,res);
 
     // arbitrary expressions, C_VAR, value exists.
-    case (cache,env,cr,DAE.EQBOUND(exp = exp,evaluatedExp = SOME(e_val),constant_ = DAE.C_VAR()),impl,msg,_)
+    case (cache,env,cr,DAE.EQBOUND(evaluatedExp = SOME(e_val),constant_ = DAE.C_VAR()),impl,msg,_)
       equation
         subsc = ComponentReference.crefLastSubs(cr);
         (cache,res) = cevalSubscriptValue(cache,env, subsc, e_val, impl,msg,numIter+1);
@@ -4962,7 +4962,7 @@ algorithm
         (cache,res);
 
     // arbitrary expressions, C_PARAM, value exists.
-    case (cache,env,cr,DAE.EQBOUND(exp = exp,evaluatedExp = SOME(e_val),constant_ = DAE.C_PARAM()),impl,msg,_)
+    case (cache,env,cr,DAE.EQBOUND(evaluatedExp = SOME(e_val),constant_ = DAE.C_PARAM()),impl,msg,_)
       equation
         subsc = ComponentReference.crefLastSubs(cr);
         (cache,res)= cevalSubscriptValue(cache,env, subsc, e_val, impl,msg,numIter+1);
@@ -5885,7 +5885,7 @@ algorithm
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
       Env.Cache cache;
-    case (cache,env,Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = io,specification = Absyn.COMPONENTS(attributes = attr,typeSpec = tp,components = citems),info = (info as Absyn.INFO(fileName = _,isReadOnly = isReadOnly,lineNumberStart = _,columnNumberStart = _,lineNumberEnd = _,columnNumberEnd = _)),constrainClass = c),impl,st,msg)
+    case (cache,env,Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = io,specification = Absyn.COMPONENTS(attributes = attr,typeSpec = tp,components = citems),info = (info as Absyn.INFO(fileName = _,lineNumberStart = _,columnNumberStart = _,lineNumberEnd = _,columnNumberEnd = _)),constrainClass = c),impl,st,msg)
       equation
         (cache,citems_1) = cevalAstCitems(cache,env, citems, impl, st, msg, info);
       then

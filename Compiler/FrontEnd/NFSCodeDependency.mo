@@ -339,7 +339,7 @@ algorithm
     case ({}, _,  _) then ();
     case (_, _, _)
       equation
-        cls_frm::env = inEnv;
+        _::env = inEnv;
         //i = NFSCodeEnv.setItemEnv(inItem, {cls_frm});
         analyseItemNoStopOnUsed(inItem, env);
       then ();
@@ -420,7 +420,7 @@ algorithm
 
     case (NFSCodeEnv.VAR(isUsed = NONE()), _) then ();
 
-    case (NFSCodeEnv.CLASS(env = {cls_env}, cls = SCode.CLASS(name = name)), _)
+    case (NFSCodeEnv.CLASS(env = {cls_env}, cls = SCode.CLASS(name=_)), _)
       equation
         markFrameAsUsed(cls_env);
         markEnvAsUsed(inEnv);
@@ -544,7 +544,7 @@ algorithm
         ();
 
     // A class extends.
-    case (SCode.CLASS_EXTENDS(baseClassName = bc), _, _, _, _)
+    case (SCode.CLASS_EXTENDS(baseClassName = _), _, _, _, _)
       equation
         Error.addSourceMessage(Error.INTERNAL_ERROR,
           {"NFSCodeDependency.analyseClassDef failed on CLASS_EXTENDS"}, inInfo);
@@ -552,7 +552,7 @@ algorithm
         fail();
 
     // A derived class definition.
-    case (SCode.DERIVED(typeSpec = ty, modifications = mods, attributes = attr),
+    case (SCode.DERIVED(typeSpec = ty, modifications = mods, attributes = _),
         _, _ :: env, _, _)
       equation
         env = Util.if_(inInModifierScope, inEnv, env);
@@ -754,7 +754,7 @@ algorithm
         false = SCode.isElementRedeclare(inClass);
       then ();
 
-    case (SCode.CLASS(name = name), _)
+    case (SCode.CLASS(name=_), _)
       equation
         item = NFSCodeEnv.CLASS(inClass, NFSCodeEnv.emptyEnv, NFSCodeEnv.USERDEFINED());
         analyseRedeclaredClass2(item, inEnv);
@@ -776,7 +776,7 @@ algorithm
       SCode.Element cls;
       Absyn.Info info;
 
-    case (NFSCodeEnv.CLASS(cls = cls as SCode.CLASS(name = name, info = info)), _)
+    case (NFSCodeEnv.CLASS(cls = cls as SCode.CLASS( info = info)), _)
       equation
         (item, env) = NFSCodeLookup.lookupRedeclaredClassByItem(inItem, inEnv, info);
         markItemAsUsed(item, env);
@@ -862,7 +862,7 @@ algorithm
       then fail();
 
     // An extends-clause.
-    case (SCode.EXTENDS(baseClassPath = bc2, modifications = mods, info = info), _,
+    case (SCode.EXTENDS(baseClassPath = _, modifications = mods, info = info), _,
         NFSCodeEnv.EXTENDS(baseClass = bc) :: exts, _)
       equation
         //print("bc = " +& Absyn.pathString(bc) +& "\n");
@@ -1419,7 +1419,7 @@ algorithm
       SCode.Mod mods;
       list<SCode.SubMod> sub_mods;
 
-    case (SCode.ANNOTATION(modification = mods as SCode.MOD(subModLst = sub_mods)),
+    case (SCode.ANNOTATION(modification = SCode.MOD(subModLst = sub_mods)),
         _, _)
       equation
         List.map2_0(sub_mods, analyseAnnotationMod, inEnv, inInfo);
@@ -1548,13 +1548,13 @@ algorithm
       then
         env;
 
-    case (Absyn.CALL(function_ = cref, functionArgs = args), _, _)
+    case (Absyn.CALL(function_ = cref, functionArgs = _), _, _)
       equation
         analyseCref(cref, inEnv, inInfo);
       then
         inEnv;
 
-    case (Absyn.PARTEVALFUNCTION(function_ = cref, functionArgs = args), _, _)
+    case (Absyn.PARTEVALFUNCTION(function_ = cref, functionArgs = _), _, _)
       equation
         analyseCref(cref, inEnv, inInfo);
       then
@@ -1725,7 +1725,7 @@ algorithm
       then
         ((stmt, env));
 
-     case ((stmt as SCode.ALG_PARFOR(index = iter_name, parforBody = parforBody, info = info), env))
+     case ((stmt as SCode.ALG_PARFOR(index = iter_name,  info = info), env))
       equation
         env = NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
         (_, _) = SCode.traverseStatementExps(stmt, traverseExp, (env, info));
@@ -1812,7 +1812,7 @@ algorithm
       then
         ();
 
-    case (NFSCodeEnv.AVLTREEVALUE(key = key_str, value = NFSCodeEnv.CLASS(cls = cls,
+    case (NFSCodeEnv.AVLTREEVALUE(key = _, value = NFSCodeEnv.CLASS(cls = cls,
         env = {cls_env}, classType = cls_ty)), _)
       equation
         env = NFSCodeEnv.enterFrame(cls_env, inEnv);
@@ -1966,7 +1966,7 @@ algorithm
       SCode.Comment cmt;
 
     case (SCode.CLASS(name, prefixes as SCode.PREFIXES(replaceablePrefix =
-        SCode.REPLACEABLE(cc)), ep, pp, res, cdef, cmt, info), _, _, _, _, _)
+        SCode.REPLACEABLE(_)), ep, pp, res, cdef, cmt, info), _, _, _, _, _)
       equation
         /*********************************************************************/
         // TODO: Fix the usage of alias items in this case.

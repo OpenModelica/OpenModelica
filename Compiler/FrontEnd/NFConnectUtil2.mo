@@ -468,7 +468,7 @@ algorithm
       list<Element> sub_comps;
       list<NFConnect2.Connector> flows;
 
-    case (NFInstTypes.ELEMENT(component = comp as NFInstTypes.TYPED_COMPONENT(ty = ty),
+    case (NFInstTypes.ELEMENT(component = comp as NFInstTypes.TYPED_COMPONENT(ty=_),
         cls = cls as NFInstTypes.COMPLEX_CLASS(components = sub_comps)), flows)
       equation
         true = NFInstUtil.isConnectorComponent(comp);

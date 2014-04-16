@@ -89,7 +89,7 @@ algorithm
       GlobalScript.SymbolTable newsymb,ressymb,isymb;
       Integer shandle;
     case (false,_,isymb) then isymb;
-    case (_,-1,isymb) then fail();
+    case (_,-1,_) then fail();
     case (_,shandle,isymb)
       equation
         str = Socket.handlerequest(shandle);
@@ -447,7 +447,7 @@ algorithm
    case ({}, st) then st;
 
    // A .mo-file.
-   case (f :: rest, st as GlobalScript.SYMBOLTABLE(p, _, ic, iv, cf, lf))
+   case (f :: rest, GlobalScript.SYMBOLTABLE(p, _, ic, iv, cf, lf))
      equation
        isModelicaFile(f);
        pnew = Parser.parse(f,"UTF-8");
@@ -458,7 +458,7 @@ algorithm
       newst;
 
    // some libs present
-   case (lib::rest, st as GlobalScript.SYMBOLTABLE(p,_,ic,iv,cf,lf))
+   case (lib::rest, GlobalScript.SYMBOLTABLE(p,_,ic,iv,cf,lf))
      equation
        path = parsePathFromString(lib);
        mp = Settings.getModelicaPath(Config.getRunningTestsuite());
@@ -509,7 +509,7 @@ algorithm
         // Check that it's a .mo-file.
         isModelicaFile(f);
         // Parse the first file.
-        (p as Absyn.PROGRAM(classes = cls)) = Parser.parse(f,"UTF-8");
+        (p as Absyn.PROGRAM(classes = _)) = Parser.parse(f,"UTF-8");
         // Parse libraries and extra mo-files that might have been given at the command line.
         GlobalScript.SYMBOLTABLE(ast = pLibs) = loadLibs(libs, GlobalScript.emptySymboltable);
         // Show any errors that occured during parsing.
@@ -831,7 +831,7 @@ algorithm
         _ = serverLoopCorba(symbolTable);
       then
         ();
-    case symbolTable
+    case _
       equation
         failure(Corba.initialize());
         Print.printBuf("Failed to initialize Corba! Is another OMC already running?\n");
@@ -981,7 +981,7 @@ algorithm
         ();
 
     // do not display anything if +d=disableWindowsPathCheckWarning
-    case (omHome)
+    case (_)
       equation
         true = Flags.isSet(Flags.DISABLE_WINDOWS_PATH_CHECK_WARNING);
       then

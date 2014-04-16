@@ -2413,7 +2413,7 @@ algorithm
       BackendDAE.Variables hov;
       list<Integer> derstatesindexs;
       Option<DAE.ComponentRef> derName;
-    case ((v as BackendDAE.VAR(varName=cr,varKind=BackendDAE.STATE(derName=derName)),(stateindexs,invmap,indx,s,nv,hov,derstatesindexs)))
+    case ((v as BackendDAE.VAR(varName=cr,varKind=BackendDAE.STATE(derName=_)),(stateindexs,invmap,indx,s,nv,hov,derstatesindexs)))
       equation
         (_::_,_) = BackendVariable.getVar(cr, hov);
         s = s+1;
@@ -3799,7 +3799,7 @@ algorithm
         var = BackendDAE.VAR(cr,BackendDAE.STATE(1,NONE()),dir,prl,tp,NONE(),NONE(),dim,source,odattr,comment,ct);
       then (var,ht);
    // state
-    case (BackendDAE.VAR(varName=_,varKind=BackendDAE.STATE(index=diffcount,derName=derName),varDirection=_,varParallelism=_,varType=_,arryDim=_,source=source,comment=comment,connectorType=_),_,_)
+    case (BackendDAE.VAR(varName=_,varKind=BackendDAE.STATE(index=diffcount,derName=derName),varDirection=_,varParallelism=_,varType=_,arryDim=_,connectorType=_),_,_)
       equation
         true = intGt(diffcount,1);
         var = BackendVariable.setVarKind(inVar, BackendDAE.STATE(1,derName));

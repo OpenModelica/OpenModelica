@@ -136,10 +136,10 @@ algorithm
       str = stringAppendList({s1,"== 0"});
     then str;
 
-    case (BackendDAE.ALGORITHM(alg=alg),(vars,knvars)) equation
+    case (BackendDAE.ALGORITHM(alg=alg),(_,_)) equation
       str = "Missing[\"Algorithm\",\""+&escapeMmaString(dumpSingleAlgorithmStr(alg))+&"\"]";
     then str;
-    case (BackendDAE.WHEN_EQUATION(whenEquation = whenEq),(vars,knvars)) equation
+    case (BackendDAE.WHEN_EQUATION(whenEquation = whenEq),(_,_)) equation
       str = "Missing[\"When\",\""+&escapeMmaString(whenEquationStr(whenEq))+&"\"]";
     then str;
     case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2),(vars,knvars))
@@ -213,7 +213,7 @@ algorithm
     case (DAE.BCONST(bool = false),_,_) then "False";
     case (DAE.BCONST(bool = true),_,_) then "True";
 
-    case (DAE.CREF(componentRef = cr,ty = tp),_,_) equation
+    case (DAE.CREF(componentRef = cr,ty = _),_,_) equation
         s = printComponentRefMmaStr(cr,vars,knvars);
     then s;
 
@@ -340,7 +340,7 @@ algorithm
       then
         s_2;
 
-    case (e as DAE.CALL(path = fcn,expLst = args),_,_)
+    case (DAE.CALL(path = fcn,expLst = args),_,_)
       equation
         fs = Absyn.pathString(fcn);
         argstr = stringDelimitList(List.map2(args, printExpMmaStr,vars,knvars),",");
@@ -783,7 +783,7 @@ algorithm
       BackendDAE.Var v;
       DAE.ComponentRef name;
       String ident;
-    case(v as BackendDAE.VAR(varName=name as (DAE.CREF_IDENT(ident,_,{})),varDirection = DAE.OUTPUT()))
+    case(v as BackendDAE.VAR(varName=name as (DAE.CREF_IDENT(_,_,{})),varDirection = DAE.OUTPUT()))
       equation
         true=BackendVariable.isVarOnTopLevelAndOutput(v);
       str = printComponentRefMmaStr(name,BackendVariable.emptyVars(),BackendVariable.emptyVars());
@@ -803,7 +803,7 @@ algorithm
       DAE.ComponentRef name;
       String ident;
       BackendDAE.Var v;
-    case(v as BackendDAE.VAR(varName=name as (DAE.CREF_IDENT(ident,_,{})),varDirection = DAE.INPUT()))
+    case(v as BackendDAE.VAR(varName=name as (DAE.CREF_IDENT(_,_,{})),varDirection = DAE.INPUT()))
       equation
       true=BackendVariable.isVarOnTopLevelAndInput(v);
       str = printComponentRefMmaStr(name,BackendVariable.emptyVars(),BackendVariable.emptyVars());

@@ -2679,7 +2679,7 @@ algorithm
         (cache,{stmt});
 
     /// break
-    case (cache,_,_,_,_,SCode.ALG_BREAK(comment = comment, info = info),source,_,_,_,_)
+    case (cache,_,_,_,_,SCode.ALG_BREAK( info = info),source,_,_,_,_)
       equation
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = DAE.STMT_BREAK(source);
@@ -2687,7 +2687,7 @@ algorithm
         (cache,{stmt});
 
     // return
-    case (cache,_,_,_,ClassInf.FUNCTION(path=_),SCode.ALG_RETURN(comment = comment, info = info),source,_,_,_,_)
+    case (cache,_,_,_,ClassInf.FUNCTION(path=_),SCode.ALG_RETURN( info = info),source,_,_,_,_)
       equation
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = DAE.STMT_RETURN(source);
@@ -2697,7 +2697,7 @@ algorithm
     //------------------------------------------
     // part of MetaModelica extension.
     //------------------------------------------
-    case (cache,env,ih,pre,_,SCode.ALG_FAILURE(stmts = sl, comment = comment, info = info),source,_,impl,_,_)
+    case (cache,env,ih,pre,_,SCode.ALG_FAILURE(stmts = sl,  info = info),source,_,impl,_,_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         (cache,sl_1) = instStatements(cache,env,ih,pre,ci_state,sl,source,initial_,impl,unrollForLoops,{});
@@ -4727,7 +4727,7 @@ algorithm
       list<SCode.Statement> algs;
 
     // do not add an error
-    case SCode.ALG_WHEN_A(branches = (exp, algs)::_ , info = info)
+    case SCode.ALG_WHEN_A(branches = (exp, algs)::_ )
       equation
         b1 = Absyn.expContainsInitial(exp);
         b2 = SCode.algorithmsContainReinit(algs);
@@ -4759,7 +4759,7 @@ algorithm
       list<SCode.Statement> algs;
 
     // continue if when equations are not nested
-    case (SCode.ALG_WHEN_A(branches = (_,algs)::_, info = info))
+    case (SCode.ALG_WHEN_A(branches = (_,algs)::_))
       equation
         false = containsWhenStatements(algs);
       then
@@ -4810,7 +4810,7 @@ algorithm
       list<tuple<Absyn.Exp, list<SCode.EEquation>>> tpl_el;
 
     // add an error for when initial() then reinit()
-    case SCode.EQ_WHEN(condition = exp, eEquationLst = el, elseBranches = _, info = info)
+    case SCode.EQ_WHEN(condition = exp, eEquationLst = el, elseBranches = _)
       equation
         b1 = Absyn.expContainsInitial(exp);
         b2 = SCode.equationsContainReinit(el);
@@ -5000,7 +5000,7 @@ algorithm
     case (cache,env,_,pre,Absyn.CREF(cr),e_1,_,_,_,_,impl,_,_)
       equation
         (cache,SOME((lhs as DAE.CREF(_,t),_,attr))) = Static.elabCrefNoEval(cache, env, cr, impl, false, pre, info);
-        DAE.T_ARRAY(ty = ty, dims = {_}) = t;
+        DAE.T_ARRAY( dims = {_}) = t;
         rhs = e_1;
         Static.checkAssignmentToInput(var, attr, env, false, info);
         DAE.T_ARRAY(dims = lhs_dim :: _) = Expression.typeof(lhs);

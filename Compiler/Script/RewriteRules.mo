@@ -130,7 +130,7 @@ algorithm
     case (_, {}) then (inExp, false);
 
     // matches the head
-    case (_, FRONTEND_RULE(from, to)::rest)
+    case (_, FRONTEND_RULE(from, to)::_)
       equation
         (binds as _::_) = matchesFrontEnd(inExp, from, {});
         outExp = rewriteExpFrontEnd(to, binds);
@@ -197,14 +197,14 @@ algorithm
     case (_, {}) then inExp;
 
     // found it
-    case (_, FRONTEND_BIND(e, to)::rest)
+    case (_, FRONTEND_BIND(e, to)::_)
       equation
         true = Absyn.expEqual(inExp, e);
       then
         to;
 
     // not found it
-    case (_, FRONTEND_BIND(e, to)::rest)
+    case (_, FRONTEND_BIND(e, _)::rest)
       equation
         false = Absyn.expEqual(inExp, e);
         to = replaceBindFrontEnd(inExp, rest);
@@ -316,7 +316,7 @@ algorithm
       then
         outBinds;
 
-    case (Absyn.IFEXP(cond1a, e1a, e2a, elseIfa), Absyn.IFEXP(cond1b, e1b, e2b, elseIfb), _)
+    case (Absyn.IFEXP(cond1a, e1a, e2a, _), Absyn.IFEXP(cond1b, e1b, e2b, _), _)
       equation
         outBinds = matchesFrontEnd(cond1a, cond1b, inAcc);
         outBinds = matchesFrontEnd(e1a, e1b, outBinds);
@@ -597,7 +597,7 @@ algorithm
     case (_, {}) then (inExp, false);
 
     // matches the head
-    case (_, BACKEND_RULE(afrom, ato)::rest)
+    case (_, BACKEND_RULE(afrom, ato)::_)
       equation
         from = Expression.fromAbsynExp(afrom);
         to =  Expression.fromAbsynExp(ato);
@@ -663,14 +663,14 @@ algorithm
     case (_, {}) then inExp;
 
     // found it
-    case (_, BACKEND_BIND(e, to)::rest)
+    case (_, BACKEND_BIND(e, to)::_)
       equation
         true = expEqual(inExp, e);
       then
         to;
 
     // not found it
-    case (_, BACKEND_BIND(e, to)::rest)
+    case (_, BACKEND_BIND(e, _)::rest)
       equation
         false = expEqual(inExp, e);
         to = replaceBindBackEnd(inExp, rest);
@@ -1152,7 +1152,7 @@ algorithm
         lst = getRulesFrontEnd(rest);
       then r::lst;
 
-    case (r::rest) then getRulesFrontEnd(rest);
+    case (_::rest) then getRulesFrontEnd(rest);
 
   end match;
 end getRulesFrontEnd;
@@ -1173,7 +1173,7 @@ algorithm
         lst = getRulesBackEnd(rest);
       then r::lst;
 
-    case (r::rest) then getRulesBackEnd(rest);
+    case (_::rest) then getRulesBackEnd(rest);
 
   end match;
 end getRulesBackEnd;
@@ -1254,7 +1254,7 @@ algorithm
       then
         acc;
 
-    case (s::rest, _)
+    case (s::_, _)
       equation
         Error.addInternalError("Unable to parse rewrite rule: " +&
           Interactive.printIstmtStr(GlobalScript.ISTMTS({s}, true)));

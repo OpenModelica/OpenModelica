@@ -303,13 +303,13 @@ algorithm
         pattern = Util.if_(Types.isFunctionType(ty2), DAE.PAT_AS_FUNC_PTR(id,DAE.PAT_WILD()), DAE.PAT_AS(id,et,attr,DAE.PAT_WILD()));
       then (cache,pattern);
 
-    case (cache,_,Absyn.AS(id,exp),ty2,_,_)
+    case (cache,_,Absyn.AS(id,_),_,_,_)
       equation
         failure((_,_,_,_,_,_) = Lookup.lookupIdent(cache,env,id));
         Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR,{id,""},info);
       then fail();
 
-    case (cache,_,Absyn.CREF(Absyn.CREF_IDENT(id,{})),ty2,_,_)
+    case (cache,_,Absyn.CREF(Absyn.CREF_IDENT(id,{})),_,_,_)
       equation
         failure((_,_,_,_,_,_) = Lookup.lookupIdent(cache,env,id));
         Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR,{id,""},info);
@@ -317,7 +317,7 @@ algorithm
 
     case (cache,_,Absyn.CREF(Absyn.WILD()),_,_,_) then (cache,DAE.PAT_WILD());
 
-    case (cache,_,lhs,_,_,_)
+    case (_,_,lhs,_,_,_)
       equation
         true = numError == Error.getNumErrorMessages();
         str = Dump.printExpStr(lhs) +& " of type " +& Types.unparseType(ty);
@@ -355,7 +355,7 @@ algorithm
         (cache,patterns) = elabPatternTuple(cache,env,exps,tys,info,lhs);
       then (cache,pattern::patterns);
 
-    case (cache,_,_,_,_,_)
+    case (_,_,_,_,_,_)
       equation
         s = Dump.printExpStr(lhs);
         s = "pattern " +& s;
@@ -393,7 +393,7 @@ algorithm
 
     case (cache,_,_,Absyn.FUNCTIONARGS(funcArgs,namedArgList),utPath2,_,_)
       equation
-        (cache,t as DAE.T_METARECORD(utPath=utPath1,index=index,fields=fieldVarList,knownSingleton = knownSingleton,source = {fqPath}),_) =
+        (cache,DAE.T_METARECORD(utPath=utPath1,index=index,fields=fieldVarList,knownSingleton = knownSingleton,source = {fqPath}),_) =
           Lookup.lookupType(cache, env, callPath, NONE());
         validUniontype(utPath1,utPath2,info,lhs);
 
@@ -413,7 +413,7 @@ algorithm
 
     case (cache,_,_,Absyn.FUNCTIONARGS(funcArgs,namedArgList),utPath2,_,_)
       equation
-        (cache,t as DAE.T_FUNCTION(funcResultType = DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=fieldVarList), source = {fqPath}),_) =
+        (cache,DAE.T_FUNCTION(funcResultType = DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=fieldVarList), source = {fqPath}),_) =
           Lookup.lookupType(cache, env, callPath, NONE());
         true = Absyn.pathEqual(fqPath,utPath2);
 
@@ -764,7 +764,7 @@ algorithm
       Integer extraarg;
       list<Option<list<DAE.Pattern>>> patternMatrix;
 
-    case (SOME(pats)::patternMatrix,_,_,_)
+    case (SOME(pats)::_,_,_,_)
       equation
         (ty,extraarg) = findPatternToConvertToSwitch2(pats, {}, DAE.T_UNKNOWN_DEFAULT, true, numPatternsInMatrix);
       then ((index,ty,extraarg));
@@ -973,7 +973,7 @@ algorithm
         _ = BaseHashTable.get(id, ht);
         Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.META_UNUSED_AS_BINDING, {id}, info);
       then ((pat,tpl));
-    case ((DAE.PAT_AS_FUNC_PTR(id=id,pat=pat),tpl as (ht,info)))
+    case ((DAE.PAT_AS_FUNC_PTR(id=id,pat=pat),tpl as (ht,_)))
       equation
         _ = BaseHashTable.get(id, ht);
       then ((pat,tpl));
@@ -1083,7 +1083,7 @@ algorithm
       Absyn.Info info;
       DAE.Type ty;
       tuple<AvlTreeString.AvlTree,AvlTreeString.AvlTree,Absyn.Info> extra;
-    case ((exp as DAE.CREF(componentRef=cr,ty=ty),extra as (localsTree,useTree,info)))
+    case ((DAE.CREF(componentRef=cr,ty=ty),extra as (localsTree,useTree,info)))
       equation
         name = ComponentReference.crefFirstIdent(cr);
         // TODO: Can skip matchcontinue and failure if there was an AvlTree.exists(key)
@@ -1848,7 +1848,7 @@ algorithm
       list<DAE.Exp> accExps;
       list<DAE.Type> accTypes;
 
-    case (cache,env,{},_,_,_,_,st,_,_,_,accExps,accTypes) then (cache,listReverse(inAccCases),listReverse(accExps),listReverse(accTypes),st);
+    case (cache,_,{},_,_,_,_,st,_,_,_,accExps,accTypes) then (cache,listReverse(inAccCases),listReverse(accExps),listReverse(accTypes),st);
     case (cache,env,case_::rest,_,_,_,_,st,_,_,_,accExps,accTypes)
       equation
         (cache,elabCase,optExp,optType,st) = elabMatchCase(cache,env,case_,tys,inputAliases,matchExpLocalTree,impl,st,performVectorization,pre);
@@ -1965,7 +1965,7 @@ algorithm
       list<DAE.Statement> body;
       Absyn.Info info;
 
-    case (cache,env,body,Absyn.CALL(function_ = Absyn.CREF_IDENT("fail",{}), functionArgs = Absyn.FUNCTIONARGS({},{})),_,st,_,_,info)
+    case (cache,_,body,Absyn.CALL(function_ = Absyn.CREF_IDENT("fail",{}), functionArgs = Absyn.FUNCTIONARGS({},{})),_,st,_,_,info)
       then (cache,body,NONE(),info,NONE(),st);
 
     case (cache,env,body,_,_,st,_,_,info)
@@ -2002,7 +2002,7 @@ algorithm
       Absyn.Info info;
       String str;
 
-    case (cache,env,NONE(),_,st,_,_,info)
+    case (cache,_,NONE(),_,st,_,_,_)
       then (cache,NONE(),st);
 
     case (cache,env,SOME(exp),_,st,_,_,info)
@@ -2259,7 +2259,7 @@ algorithm
         res = Util.if_(b,NONE(),SOME((env2,dae1,declsTree)));
       then (cache,res);
 
-    case (cache,env,ld,_,_,_)
+    case (cache,_,ld,_,_,_)
       equation
         ld2 = SCodeUtil.translateEitemlist(ld, SCode.PROTECTED());
         (ld2 as _::_) = List.filterOnTrue(ld2, SCode.isNotComponent);
@@ -2310,7 +2310,7 @@ algorithm
         (cache,DAE.ATTR(variability=SCode.CONST()),_,_,_,_,_,_,_) = Lookup.lookupVarLocal(cache,env,DAE.CREF_IDENT(name,DAE.T_UNKNOWN_DEFAULT,{}));
         // Allow shadowing constants. Should be safe since they become values pretty much straight away.
       then ((cache,b));
-    case (SCode.COMPONENT(name=name,info=info),_,(cache,b))
+    case (SCode.COMPONENT(name=name,info=info),_,(cache,_))
       equation
         Error.addSourceMessage(Error.MATCH_SHADOWING,{name},info);
       then ((cache,true));

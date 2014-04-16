@@ -412,7 +412,7 @@ algorithm
    local Option<AvlTreeValue> value;
     Option<AvlTree> l,r;
     Integer height;
-    case(FCore.VAVLTREENODE(value,height,l,r),_) then FCore.VAVLTREENODE(value,height,l,right);
+    case(FCore.VAVLTREENODE(value,height,l,_),_) then FCore.VAVLTREENODE(value,height,l,right);
   end match;
 end setRight;
 
@@ -425,7 +425,7 @@ algorithm
   local Option<AvlTreeValue> value;
     Option<AvlTree> l,r;
     Integer height;
-    case(FCore.VAVLTREENODE(value,height,l,r),_) then FCore.VAVLTREENODE(value,height,left,r);
+    case(FCore.VAVLTREENODE(value,height,_,r),_) then FCore.VAVLTREENODE(value,height,left,r);
   end match;
 end setLeft;
 
@@ -550,7 +550,7 @@ algorithm
       AvlTree left,right;
 
     // hash func Search to the right
-    case (FCore.VAVLTREENODE(value = SOME(FCore.VAVLTREEVALUE(value=rval))),0,key)
+    case (FCore.VAVLTREENODE(value = SOME(FCore.VAVLTREEVALUE(value=rval))),0,_)
       then rval;
 
     // search to the right
@@ -603,7 +603,7 @@ algorithm
       Option<AvlTree> l,r;
       Integer h;
 
-    case (FCore.VAVLTREENODE(value = SOME(FCore.VAVLTREEVALUE(rkey,rval)),height = h,left = l,right = r))
+    case (FCore.VAVLTREENODE(value = SOME(FCore.VAVLTREEVALUE(_,rval)),height = _,left = l,right = r))
       equation
         s2 = getOptionStr(l, printAvlTreeStr);
         s3 = getOptionStr(r, printAvlTreeStr);

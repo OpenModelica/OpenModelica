@@ -132,17 +132,17 @@ algorithm
       String str;
 
     // no modifications
-    case (cache,_,_,_,SCode.NOMOD(),impl,_) then (cache,DAE.NOMOD());
+    case (cache,_,_,_,SCode.NOMOD(),_,_) then (cache,DAE.NOMOD());
 
     // no top binding
-    case (cache,env,ih,pre,(m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = NONE())),impl,info)
+    case (cache,env,ih,pre,(SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = NONE())),impl,info)
       equation
         (cache,subs_1) = elabSubmods(cache, env, ih, pre, subs, impl,info);
       then
         (cache,DAE.MOD(finalPrefix,each_,subs_1,NONE()));
 
     // Only elaborate expressions with non-delayed type checking, see SCode.MOD.
-    case (cache,env,ih,pre,(m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = SOME((e,false)), info=info)),impl,_)
+    case (cache,env,ih,pre,(SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = SOME((e,false)), info=info)),impl,_)
       equation
         (cache,subs_1) = elabSubmods(cache, env, ih, pre, subs, impl,info);
         // print("Mod.elabMod: calling elabExp on mod exp: " +& Dump.printExpStr(e) +& " in env: " +& Env.printEnvPathStr(env) +& "\n");
@@ -156,7 +156,7 @@ algorithm
         (cache,DAE.MOD(finalPrefix,each_,subs_1,SOME(DAE.TYPED(e_2,e_val,prop,e,info))));
 
     // Delayed type checking
-    case (cache,env,ih,pre,(m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = SOME((e,_)), info = info)),impl,_)
+    case (cache,env,ih,pre,(SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = SOME((e,_)), info = info)),impl,_)
       equation
         // print("Mod.elabMod: delayed mod : " +& Dump.printExpStr(e) +& " in env: " +& Env.printEnvPathStr(env) +& "\n");
         (cache,subs_1) = elabSubmods(cache, env, ih, pre, subs, impl, info);
@@ -164,7 +164,7 @@ algorithm
         (cache,DAE.MOD(finalPrefix,each_,subs_1,SOME(DAE.UNTYPED(e,info))));
 
     // redeclarations
-    case (cache,env,ih,pre,(m as SCode.REDECL(finalPrefix = finalPrefix, eachPrefix = each_, element = elem)),impl,info)
+    case (cache,env,ih,pre,(SCode.REDECL(finalPrefix = finalPrefix, eachPrefix = each_, element = elem)),impl,info)
       equation
         //elist_1 = Inst.addNomod(elist);
         (el_mod) = elabModRedeclareElement(cache,env,ih,pre,finalPrefix,elem,impl,info);
@@ -273,7 +273,7 @@ algorithm
       SCode.Prefixes prefixes;
 
     // search for it locally in the freaking env as it might have been redeclared
-    case(cache,env,ih,pre,f,SCode.CLASS(name = cn,prefixes = prefixes, info = i),_,_)
+    case(cache,env,ih,pre,_,SCode.CLASS(name = cn,prefixes = prefixes, info = i),_,_)
       equation
         modOriginal = SCodeUtil.getConstrainedByModifiers(prefixes);
         (c, _) = Lookup.lookupClassLocal(env, cn);
@@ -292,7 +292,7 @@ algorithm
     // TODO: What is allowed according to spec? adrpo: 2011-06-28: is not decided yet,
     //       but i think only derived even if in the Modelica.Media we have redeclare-as-element
     //       replacing entire functions with PARTS and everything, so i added the case below
-    case(cache,env,ih,pre,f,
+    case(cache,env,ih,pre,_,
       SCode.CLASS(cn,
         prefixes as SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(tp,mod,attr1),cmt,i),_,_)
       equation
@@ -306,14 +306,14 @@ algorithm
         ((SCode.CLASS(cn,SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(tp1,mod,attr1),cmt,i),emod));
 
     // replaceable type E=enumeration(e1,...,en), E=enumeration(:)
-    case(cache,env,ih,pre,f,
+    case(_,_,_,_,_,
       SCode.CLASS(cn,
-        prefixes as SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.ENUMERATION(enumLst),cmt,i),_,_)
+        SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.ENUMERATION(enumLst),cmt,i),_,_)
       then
         ((SCode.CLASS(cn,SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.ENUMERATION(enumLst),cmt,i),DAE.NOMOD()));
 
     // redeclare of component declaration
-    case(cache,env,ih,pre,f,SCode.COMPONENT(compname,prefixes as SCode.PREFIXES(vis,redecl,fi,io,repl),attr,tp,mod,cmt,cond,i),_,_)
+    case(cache,env,ih,pre,_,SCode.COMPONENT(compname,prefixes as SCode.PREFIXES(vis,redecl,fi,io,repl),attr,tp,mod,cmt,cond,i),_,_)
       equation
         // merge modifers from the component to the modifers from the constrained by
         mod = SCode.mergeModifiers(mod, SCodeUtil.getConstrainedByModifiers(prefixes));
@@ -325,7 +325,7 @@ algorithm
         ((SCode.COMPONENT(compname,SCode.PREFIXES(vis,redecl,fi,io,repl),attr,tp1,mod,cmt,cond,i),emod));
 
     // redeclare failure?
-    case(cache,env,ih,pre,f,element,_,_)
+    case(_,_,_,_,_,element,_,_)
       equation
         print("Unhandled element redeclare (we keep it as it is!): " +& SCodeDump.unparseElementStr(element,SCodeDump.defaultOptions) +& "\n");
       then
@@ -437,20 +437,20 @@ algorithm
       Values.Value v;
 
     case (DAE.NOMOD()) then SCode.NOMOD();
-    case ((m as DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,eqModOption = NONE())))
+    case ((DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,eqModOption = NONE())))
       equation
         subs_1 = unelabSubmods(subs);
       then
         SCode.MOD(finalPrefix,each_,subs_1,NONE(),Absyn.dummyInfo);
 
-    case ((m as DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,eqModOption = SOME(DAE.UNTYPED(e,info)))))
+    case ((DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,eqModOption = SOME(DAE.UNTYPED(e,info)))))
       equation
         subs_1 = unelabSubmods(subs);
       then
         SCode.MOD(finalPrefix,each_,subs_1,SOME((e,false)),info); // Default type checking non-delayed
 
     // use the constant first!
-    case ((m as DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,
+    case ((DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,
                         eqModOption = SOME(DAE.TYPED(modifierAsValue = SOME(v), info = info)))))
       equation
         //es = ExpressionDump.printExpStr(e);
@@ -459,8 +459,8 @@ algorithm
       then
         SCode.MOD(finalPrefix,each_,subs_1,SOME((e_1,false)),info); // default typechecking non-delayed
 
-    case ((m as DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,
-                        eqModOption = SOME(DAE.TYPED(_,_,p,absynExp,info)))))
+    case ((DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,
+                        eqModOption = SOME(DAE.TYPED(_,_,_,absynExp,info)))))
       equation
         //es = ExpressionDump.printExpStr(e);
         subs_1 = unelabSubmods(subs);
@@ -468,7 +468,7 @@ algorithm
       then
         SCode.MOD(finalPrefix,each_,subs_1,SOME((e_1,false)),info); // default typechecking non-delayed
 
-    case ((m as DAE.REDECL(finalPrefix = finalPrefix,eachPrefix = each_,tplSCodeElementModLst = {(elem, _)})))
+    case ((DAE.REDECL(finalPrefix = finalPrefix,eachPrefix = each_,tplSCodeElementModLst = {(elem, _)})))
       then
         SCode.REDECL(finalPrefix,each_,elem);
 
@@ -575,11 +575,11 @@ algorithm
       String str;
       Absyn.Info info;
 
-    case (cache,_,_,_,DAE.NOMOD(),impl,info) then (cache,DAE.NOMOD());
+    case (cache,_,_,_,DAE.NOMOD(),_,_) then (cache,DAE.NOMOD());
 
-    case (cache,_,_,_,(m as DAE.REDECL(finalPrefix = _)),impl,info) then (cache,m);
+    case (cache,_,_,_,(m as DAE.REDECL(finalPrefix = _)),_,_) then (cache,m);
 
-    case (cache,env,ih,pre,(m as DAE.MOD(finalPrefix = f,eachPrefix = each_,subModLst = subs,eqModOption = SOME(DAE.UNTYPED(e,info)))),impl,_)
+    case (cache,env,ih,pre,(DAE.MOD(finalPrefix = f,eachPrefix = each_,subModLst = subs,eqModOption = SOME(DAE.UNTYPED(e,info)))),impl,_)
       equation
         (cache,subs_1) = updateSubmods(cache, env, ih, pre, subs, impl, info);
         (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl,NONE(), true, pre, info);
@@ -603,7 +603,7 @@ algorithm
       then
         (cache,DAE.MOD(f,each_,subs_1,NONE()));
 
-    case (cache,env,ih,pre,m,impl,info)
+    case (_,_,_,_,m,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         str = printModStr(m);
@@ -634,7 +634,7 @@ algorithm
       Env.Cache cache;
       InstanceHierarchy ih;
 
-    case (cache,_,ih,_,{},impl,_) then (cache,{});  /* impl */
+    case (cache,_,_,_,{},_,_) then (cache,{});  /* impl */
     case (cache,env,ih,pre,(x :: xs),impl,_)
       equation
         (cache,x_1) = updateSubmod(cache, env, ih, pre, x, impl, info);
@@ -704,20 +704,20 @@ algorithm
       String s;
       Absyn.Info info;
     case (SCode.NOMOD(),_,_) then DAE.NOMOD();
-    case ((m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = NONE())),env,pre)
+    case ((SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = NONE())),env,pre)
       equation
         subs_1 = elabUntypedSubmods(subs, env, pre);
       then
         DAE.MOD(finalPrefix,each_,subs_1,NONE());
-    case ((m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = SOME((e,_)),info = info)),env,pre)
+    case ((SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = SOME((e,_)),info = info)),env,pre)
       equation
         subs_1 = elabUntypedSubmods(subs, env, pre);
       then
         DAE.MOD(finalPrefix,each_,subs_1,SOME(DAE.UNTYPED(e,info)));
-    case ((m as SCode.REDECL(finalPrefix = finalPrefix,eachPrefix = each_, element = elem)),env,pre)
+    case ((SCode.REDECL(finalPrefix = finalPrefix,eachPrefix = each_, element = elem)),_,_)
       then
         DAE.REDECL(finalPrefix,each_,{(elem, DAE.NOMOD())});
-    case (mod,env,pre)
+    case (mod,_,_)
       equation
         print("- elab_untyped_mod ");
         s = SCodeDump.printModStr(mod,SCodeDump.defaultOptions);
@@ -752,7 +752,7 @@ algorithm
       Env.Cache cache;
       InstanceHierarchy ih;
 
-    case (cache,_,_,_,{},impl,_) then (cache,{});  /* impl */
+    case (cache,_,_,_,{},_,_) then (cache,{});  /* impl */
     case (cache,env,ih,pre,(x :: xs),impl,_)
       equation
         (cache,x_1) = elabSubmod(cache, env, ih, pre, x, impl,info);
@@ -1155,7 +1155,7 @@ algorithm
 
     case(NONE(),_,_,_) then DAE.NOMOD();
 
-    case(SOME(DAE.TYPED(e,SOME(Values.RECORD(_,values,names,-1)),
+    case(SOME(DAE.TYPED(_,SOME(Values.RECORD(_,values,names,-1)),
                         DAE.PROP(DAE.T_COMPLEX(varLst = varLst),_),_,info)),
          _,_,_)
       equation
@@ -1253,7 +1253,7 @@ algorithm
       list<tuple<SCode.Element, DAE.Mod>> elsmods1, elsmods2;
       SCode.Program els1, els2;
 
-    case(DAE.MOD(f1,each1,submods1,eqmod1),DAE.MOD(f2,each2,submods2,eqmod2))
+    case(DAE.MOD(_,_,submods1,eqmod1),DAE.MOD(f2,each2,submods2,eqmod2))
       equation
         true = subModsEqual(submods1,submods2);
         true = eqModEqual(eqmod1,eqmod2);
@@ -1261,7 +1261,7 @@ algorithm
         (DAE.MOD(f2,each2,submods2,eqmod2), true);
 
     // two exactly the same mod, return just one! (used when it is REDECL or a submod is REDECL)
-    case(DAE.REDECL(f1, each1, elsmods1),DAE.REDECL(f2, each2, elsmods2))
+    case(DAE.REDECL(_, _, elsmods1),DAE.REDECL(f2, each2, elsmods2))
       equation
         els1 = List.map(elsmods1, Util.tuple21);
         els2 = List.map(elsmods2, Util.tuple21);
@@ -1301,7 +1301,7 @@ algorithm
         x :: lst;
 
     // a named modification that doesn't match, skip it
-    case ((x  as DAE.NAMEMOD(ident = id1)) :: rest,id2)
+    case ((DAE.NAMEMOD(ident = id1)) :: rest,id2)
       equation
         false = stringEq(id1, id2);
         lst = lookupNamedModifications(rest, id2);
@@ -1339,7 +1339,7 @@ algorithm
 
     case ({DAE.NAMEMOD(mod=mod)}) then mod;
 
-    case ((x as DAE.NAMEMOD(mod=mod1))::rest)
+    case ((DAE.NAMEMOD(mod=mod1))::rest)
       equation
         // make sure x is not present in the rest
         fullMods = getFullModsFromSubMods(ComponentReference.makeCrefIdent("", DAE.T_UNKNOWN_DEFAULT, {}), inSubModLst);
@@ -1396,7 +1396,7 @@ algorithm
     case (_,id)
       equation
         duplicates = lookupNamedModifications(inSubModLst, id);
-        (head::tail) = duplicates;
+        (head::_) = duplicates;
         DAE.NAMEMOD(mod=mod) = head;
         /*
         s = printSubsStr(duplicates, true);
@@ -1437,7 +1437,7 @@ algorithm
 
     case (DAE.NOMOD(),_) then DAE.NOMOD();
     case (DAE.REDECL(finalPrefix = _),_) then DAE.NOMOD();
-    case ((inmod as DAE.MOD(finalPrefix = f,eachPrefix = each_,subModLst = subs,eqModOption = eq)),idx)
+    case ((DAE.MOD(finalPrefix = f,eachPrefix = each_,subModLst = subs,eqModOption = eq)),idx)
       equation
         (mod_1,subs_1) = lookupIdxModification2(subs,idx);
         mod_2 = merge(DAE.MOD(f,each_,subs_1,NONE()), mod_1, {}, Prefix.NOPRE());
@@ -1478,7 +1478,7 @@ algorithm
 
     case ({},_) then (DAE.NOMOD(),{});
 
-    case ((DAE.NAMEMOD(ident = name,mod = nmod) :: subs),y)
+    case ((DAE.NAMEMOD(ident = _,mod = nmod) :: subs),y)
       equation
         DAE.NOMOD() = lookupIdxModification3(nmod, y);
         (mod_1,subs_1) = lookupIdxModification2(subs,y);
@@ -1528,7 +1528,7 @@ algorithm
         eq_1 = indexEqmod(eq, {idx});
       then
         DAE.MOD(f,SCode.NOT_EACH(),subs_1,eq_1);
-    case (DAE.MOD(finalPrefix = f,eachPrefix = SCode.EACH(),subModLst = subs,eqModOption = eq),idx)
+    case (DAE.MOD(finalPrefix = f,eachPrefix = SCode.EACH(),subModLst = subs,eqModOption = eq),_)
       then DAE.MOD(f,SCode.EACH(),subs,eq);
     case (_,idx)
       equation
@@ -1566,7 +1566,7 @@ algorithm
     case (emod,{}) then emod;
 
     // Subscripting empty array gives no value. This is needed in e.g. fill(1.0,0,2)
-    case (SOME(DAE.TYPED(_,SOME(Values.ARRAY(valueLst = {})),_,_,_)),xs) then NONE();
+    case (SOME(DAE.TYPED(_,SOME(Values.ARRAY(valueLst = {})),_,_,_)),_) then NONE();
 
     // For modifiers with value, retrieve nth element
     case (SOME(DAE.TYPED(e,SOME(e_val),DAE.PROP(t,c),ae,info)),(x :: xs))
@@ -1756,14 +1756,14 @@ algorithm
                 condition=cond,
                 info=info1),
                 emod1)}),
-          DAE.REDECL(finalPrefix = f2, eachPrefix = each2, tplSCodeElementModLst =
+          DAE.REDECL(finalPrefix = _, eachPrefix = _, tplSCodeElementModLst =
             {(SCode.COMPONENT(
                 name = id2,
                 prefixes = pf2,
                 attributes = attr2,
                 modifications = m2,
-                comment = comment2,
-                info=info2),
+                comment = _,
+                info=_),
                 emod2)}),env,pre)
       equation
         true = stringEq(id1, id2);
@@ -1795,7 +1795,7 @@ algorithm
                 cmt = comment,
                 info = info1),
                 m1_1)}),
-          DAE.REDECL(finalPrefix = f2, eachPrefix = each2, tplSCodeElementModLst =
+          DAE.REDECL(finalPrefix = _, eachPrefix = _, tplSCodeElementModLst =
             {(SCode.CLASS(name = id2,
                 prefixes = pf2,
                 restriction = res2,
@@ -1814,26 +1814,26 @@ algorithm
         DAE.REDECL(f1, each1, {(SCode.CLASS(id1, pf, ep, pp, res, cdef, comment, info), m)});
 
     // luc_pop : this shoud return the first mod because it have been merged in merge_subs
-    case (mod as DAE.REDECL(finalPrefix = f1,eachPrefix = each1,
-                       tplSCodeElementModLst = {(el as SCode.COMPONENT(name = id1),cm)}),
-          mods as DAE.MOD(subModLst = subs),env,pre)
+    case (mod as DAE.REDECL(finalPrefix = _,eachPrefix = _,
+                       tplSCodeElementModLst = {(SCode.COMPONENT(name = _),_)}),
+          DAE.MOD(subModLst = _),_,_)
       equation
         //mod = merge(cm,mods,env,pre);
       then
         mod; //DAE.REDECL(f1,each1,{(el,mod)});
 
-    case ((icm as DAE.MOD(subModLst = subs)),
+    case ((icm as DAE.MOD(subModLst = _)),
           DAE.REDECL(
             finalPrefix = f1,
             eachPrefix = each1,
-            tplSCodeElementModLst = (els as {( (celm as SCode.COMPONENT(name = id1)),cm)})),env,pre)
+            tplSCodeElementModLst = ({( (celm as SCode.COMPONENT(name = _)),cm)})),env,pre)
       equation
         cm = merge(icm,cm,env,pre);
       then
         DAE.REDECL(f1,each1,{(celm,cm)});
 
     case (DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each1,subModLst = subs1,eqModOption = ass1),
-          DAE.MOD(finalPrefix = _/* SCode.NOT_FINAL(), see case above.*/,eachPrefix = each2,subModLst = subs2,eqModOption = ass2),env,pre)
+          DAE.MOD(finalPrefix = _/* SCode.NOT_FINAL(), see case above.*/,eachPrefix = _,subModLst = subs2,eqModOption = ass2),env,pre)
       equation
         subs = mergeSubs(subs1, subs2, env, pre);
         ass = mergeEq(ass1, ass2);
@@ -1845,19 +1845,18 @@ algorithm
     // Case when we have a modifier on a redeclared class
     // This is of current date BZ:2008-03-04 not completly working.
     // see testcase mofiles/Modification14.mo
-    case (mm1 as DAE.MOD(subModLst = subs),
-          mm2 as DAE.REDECL(
+    case (mm1 as DAE.MOD(subModLst = _),
+          DAE.REDECL(
                   finalPrefix = finalPrefix,eachPrefix = each1,
-                  tplSCodeElementModLst = (els as
-                  {((elementOne as SCode.CLASS(name = id1)),mm3)})),
+                  tplSCodeElementModLst = (                  {((elementOne as SCode.CLASS(name = _)),mm3)})),
                   env,pre)
       equation
         mm4 = merge(mm1,mm3,env,pre);
       then
         DAE.REDECL(finalPrefix,each1,{(elementOne,mm4)});
 
-    case (mm2 as DAE.REDECL(finalPrefix = finalPrefix,eachPrefix = each1, tplSCodeElementModLst = (els as {((elementOne as SCode.CLASS(name = id1)),mm3)})),
-          mm1 as DAE.MOD(subModLst = subs),env,pre)
+    case (DAE.REDECL(finalPrefix = finalPrefix,eachPrefix = each1, tplSCodeElementModLst = ({((elementOne as SCode.CLASS(name = _)),mm3)})),
+          mm1 as DAE.MOD(subModLst = _),env,pre)
       equation
         mm4 = merge(mm3,mm1,env,pre);
       then
@@ -2067,13 +2066,13 @@ algorithm
     // adrpo: handle non-overlap: final parameter Real eAxis_ia[3](each final unit="1") = {1,2,3};
     //        mod1 = final each unit="1" mod2 = final = {1,2,3}
     //        otherwise we get an error as: Error: Variable eAxis_ia: trying to override final variable ...
-    case(DAE.MOD(f1,each1,submods1,NONE()),DAE.MOD(f2,SCode.NOT_EACH(),{},eqmod2 as SOME(_)))
+    case(DAE.MOD(f1,_,_,NONE()),DAE.MOD(f2,SCode.NOT_EACH(),{},SOME(_)))
       equation
         true = SCode.finalEqual(f1, f2);
       then
         true;
 
-    case(DAE.MOD(f1,each1,submods1,eqmod1),DAE.MOD(f2,SCode.NOT_EACH(),{},eqmod2))
+    case(DAE.MOD(_,_,_,eqmod1),DAE.MOD(_,SCode.NOT_EACH(),{},eqmod2))
       equation
         true = eqModSubsetOrEqual(eqmod1,eqmod2);
       then
@@ -2122,10 +2121,10 @@ algorithm
     case(NONE(),NONE()) then true;
 
     // none vs. some (subset) mods
-    case(NONE(),SOME(teq)) then true;
+    case(NONE(),SOME(_)) then true;
 
     // typed mods
-    case(SOME(DAE.TYPED(modifierAsExp = exp1)),SOME(DAE.TYPED(modifierAsExp = exp2)))
+    case(SOME(DAE.TYPED(modifierAsExp = _)),SOME(DAE.TYPED(modifierAsExp = _)))
       equation
         true = eqModEqual(eqMod1,eqMod2);
       then
@@ -2468,12 +2467,12 @@ algorithm
       list<DAE.SubMod> subs;
 
     case({},_) then "";
-    case((s as DAE.NAMEMOD(id,(m as DAE.REDECL(finalPrefix=_))))::subs,_)
+    case((DAE.NAMEMOD(id,(DAE.REDECL(finalPrefix=_))))::_,_)
       equation
         s2 = " redeclare(" +& id +&  "), class or component " +& id;
       then
         s2;
-    case((s as DAE.NAMEMOD(id,m))::subs,_)
+    case((DAE.NAMEMOD(id,m))::_,_)
       equation
         s2  = prettyPrintMod(m,depth+1);
         s2 = Util.if_(stringLength(s2) == 0, "", s2);
@@ -2497,7 +2496,7 @@ algorithm
       SCode.Each ep;
       list<tuple<SCode.Element, DAE.Mod>> elist;
 
-    case(DAE.NAMEMOD(id,(m as DAE.REDECL(fp, ep, elist))))
+    case(DAE.NAMEMOD(id,(DAE.REDECL(fp, ep, elist))))
       equation
         s1 = stringDelimitList(List.map1(List.map(elist, Util.tuple21), SCodeDump.unparseElementStr, SCodeDump.defaultOptions), ", ");
         s2 = id +& "(redeclare " +&
@@ -2792,7 +2791,7 @@ algorithm
     case (_, {}, _, _) then {};
 
     // SCode.CLASS, TODO! FIXME! what do we do with the mod??
-    case (_, (x as (SCode.CLASS(name = id), mod))::rest, _, _)
+    case (_, (x as (SCode.CLASS(name = id), _))::rest, _, _)
       equation
         cref = ComponentReference.joinCrefs(
                  inTopCref,
@@ -2803,7 +2802,7 @@ algorithm
         MOD(cref, DAE.REDECL(finalPrefix, eachPrefix, {x}))::fullMods;
 
     // SCode.COMPONENT, TODO! FIXME! what do we do with the mod??
-    case (_, (x as (SCode.COMPONENT(name = id), mod))::rest, _, _)
+    case (_, (x as (SCode.COMPONENT(name = id), _))::rest, _, _)
       equation
         cref = ComponentReference.joinCrefs(
                  inTopCref,
@@ -2814,7 +2813,7 @@ algorithm
         MOD(cref, DAE.REDECL(finalPrefix, eachPrefix, {x}))::fullMods;
 
     // anything else, just ignore, TODO! FIXME! maybe report an error??!!
-    case (_, (el, mod)::rest, _, _)
+    case (_, (_, _)::rest, _, _)
       equation
         fullMods = getFullModsFromModRedeclare(inTopCref, rest, finalPrefix, eachPrefix);
       then
@@ -3113,7 +3112,7 @@ algorithm
       list<SubMod> subs;
       Option<EqMod> eq;
       DAE.Mod m;
-    case (DAE.MOD(finalPrefix = f,eachPrefix = each_,subModLst = subs,eqModOption = eq))
+    case (DAE.MOD(finalPrefix = f,eachPrefix = each_,subModLst = _,eqModOption = eq))
       then DAE.MOD(f,each_,{},eq);
     case (m) then m;
   end matchcontinue;
@@ -3134,7 +3133,7 @@ algorithm
       DAE.Mod m;
     case (DAE.MOD(finalPrefix = f,eachPrefix = each_,subModLst = {},eqModOption = eq))
       then DAE.MOD(f,each_,{},eq);
-    case (DAE.MOD(finalPrefix = f,eachPrefix = each_,subModLst = subs,eqModOption = NONE()))
+    case (DAE.MOD(finalPrefix = _,eachPrefix = _,subModLst = subs,eqModOption = NONE()))
       equation
          {} = removeRedecl(subs);
       then
@@ -3161,7 +3160,7 @@ algorithm
       list<SubMod> subs;
 
     case({}) then {};
-    case(DAE.NAMEMOD(s,DAE.REDECL(_,_,_))::subs) then removeRedecl(subs);
+    case(DAE.NAMEMOD(_,DAE.REDECL(_,_,_))::subs) then removeRedecl(subs);
     case(sm::subs)
       equation
         osubs = removeRedecl(subs);
@@ -3183,7 +3182,7 @@ algorithm
     local
       list<String> rest;
     case(_,{}) then inMod;
-    case(_, s::rest)
+    case(_, s::_)
       then removeModList(removeMod(inMod,s),remStrings);
   end match;
 end removeModList;
@@ -3239,7 +3238,7 @@ algorithm
 
     case({},_) then {};
 
-    case((comp,mod)::lst,_)
+    case((comp,_)::lst,_)
       equation
         outLst = removeRedeclareMods(lst,currComp);
         s1 = SCode.elementName(comp);
@@ -3276,7 +3275,7 @@ algorithm
       SubMod sub;
 
     case({},_) then {};
-    case((sub as DAE.NAMEMOD(s1,m1))::subs,_)
+    case((DAE.NAMEMOD(s1,m1))::subs,_)
       equation
         subs1 = Util.if_(stringEq(s1,componentName),{},{DAE.NAMEMOD(s1,m1)});
         subs2 = removeModInSubs(subs,componentName) "check for multiple mod on same comp";
@@ -3304,7 +3303,7 @@ algorithm
     case (_, {}) then inMod;
     case (DAE.NOMOD(), _) then DAE.NOMOD();
 
-    case (DAE.REDECL(finalPrefix,eachPrefix,elist), _)
+    case (DAE.REDECL(finalPrefix,_,elist), _)
       then
         DAE.REDECL(finalPrefix,SCode.EACH(),elist);
 
@@ -3344,11 +3343,11 @@ algorithm
 
     case (DAE.NOMOD()) then DAE.NOMOD();
 
-    case (DAE.REDECL(finalPrefix,eachPrefix,elist))
+    case (DAE.REDECL(finalPrefix,_,elist))
       then
         DAE.REDECL(finalPrefix,SCode.EACH(),elist);
 
-    case (DAE.MOD(finalPrefix,eachPrefix,subs,eq))
+    case (DAE.MOD(finalPrefix,_,subs,eq))
       then
         DAE.MOD(finalPrefix,SCode.EACH(),subs,eq);
 

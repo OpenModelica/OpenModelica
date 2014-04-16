@@ -217,7 +217,7 @@ algorithm
       then
         el;
 
-    case (NFInstTypes.ELEMENT(component = comp, cls = cls), _, _, _)
+    case (NFInstTypes.ELEMENT(component = _, cls = cls), _, _, _)
       equation
         el = expandClass(cls, {} :: inSubscripts, inAccumEl);
       then
@@ -333,10 +333,10 @@ algorithm
       then
         el;
 
-    case (_, EXPAND_FUNCTION(), DAE.DIM_EXP(exp) :: rest_dims, subs :: rest_subs, _, _)
+    case (_, EXPAND_FUNCTION(), DAE.DIM_EXP(exp) :: rest_dims, _ :: _, _, _)
       then expandArrayExpDim(inElement, DAE.INDEX(exp), rest_dims, inSubscripts, inAccumEl, inScalarFunc);
 
-    case (_, EXPAND_FUNCTION(), DAE.DIM_UNKNOWN() :: rest_dims, subs :: rest_subs, _, _)
+    case (_, EXPAND_FUNCTION(), DAE.DIM_UNKNOWN() :: rest_dims, _ :: _, _, _)
       then expandArrayExpDim(inElement, DAE.WHOLEDIM(), rest_dims, inSubscripts, inAccumEl, inScalarFunc);
 
     else
@@ -737,14 +737,14 @@ algorithm
       then
         inAccumEl;
 
-    case (NFInstTypes.FOR_EQUATION(name, index, indexType, range, body, info), _, _)
+    case (NFInstTypes.FOR_EQUATION(_, _, _, _, body, _), _, _)
       equation
         accum_el = List.flatten(List.map2(body, expandEquation, inSubscripts, inAccumEl));
         accum_el = listAppend(accum_el, inAccumEl);
       then
         accum_el;
 
-    case (NFInstTypes.IF_EQUATION(branches, info), _, _)
+    case (NFInstTypes.IF_EQUATION(_, _), _, _)
       equation
          //accum_el = DAE.IF_EQUATION();
          print("Skipping if equation\n");
@@ -752,7 +752,7 @@ algorithm
       then
         accum_el;
 
-    case (NFInstTypes.WHEN_EQUATION(branches, info), _, _)
+    case (NFInstTypes.WHEN_EQUATION(_, _), _, _)
       equation
          //accum_el = DAE.IF_EQUATION();
          print("Skipping when equation\n");
@@ -760,7 +760,7 @@ algorithm
       then
         accum_el;
 
-    case (NFInstTypes.ASSERT_EQUATION(condition = exp, message = msg, level = level, info = info), _, _)
+    case (NFInstTypes.ASSERT_EQUATION(condition = exp, message = msg, level = level), _, _)
       equation
         ty1 = Expression.typeof(exp);
         dims = Types.getDimensions(ty1);
@@ -768,7 +768,7 @@ algorithm
       then
         accum_el;
 
-    case (NFInstTypes.TERMINATE_EQUATION(message = msg, info = info), _, _)
+    case (NFInstTypes.TERMINATE_EQUATION(message = msg), _, _)
       equation
         ty1 = Expression.typeof(msg);
         dims = Types.getDimensions(ty1);
@@ -776,7 +776,7 @@ algorithm
       then
         accum_el;
 
-    case (NFInstTypes.REINIT_EQUATION(cref = cref1, reinitExp = exp, info = info), _, _)
+    case (NFInstTypes.REINIT_EQUATION(cref = cref1, reinitExp = exp), _, _)
       equation
         ty1 = Expression.typeof(exp);
         dims = Types.getDimensions(ty1);

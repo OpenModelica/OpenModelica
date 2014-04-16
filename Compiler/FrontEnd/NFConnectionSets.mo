@@ -499,11 +499,11 @@ algorithm
       then
         inNode;
 
-    case (NODE(conn, parent_id, index), _)
+    case (NODE(_, parent_id, _), _)
       equation
         // Look up the parent to this node and continue looking.
         parent = arrayGet(inNodes, parent_id);
-        (parent as NODE(index = parent_id)) = findRoot(parent, inNodes);
+        (parent as NODE(index = _)) = findRoot(parent, inNodes);
 
         // Path compression. Any node found while looking for the root may as
         // well be attached to the root node directly so that future look up is

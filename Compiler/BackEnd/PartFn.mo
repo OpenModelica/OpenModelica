@@ -829,7 +829,7 @@ algorithm
       DAE.ElementSource source "the origin of the element";
       Option<SCode.Comment> cmt;
 
-    case(bigfn as DAE.FUNCTION(current,{DAE.FUNCTION_DEF(fnparts)},ty,pp,isImpure,inlineType,source,cmt),smallfn,p,dae,numArgs)
+    case(DAE.FUNCTION(current,{DAE.FUNCTION_DEF(fnparts)},ty,pp,isImpure,inlineType,source,cmt),smallfn,p,dae,numArgs)
       equation
         (fnparts_1,vars) = buildNewFunctionParts(fnparts,smallfn,dae,numArgs,current);
         ty = buildNewFunctionType(ty,vars);
@@ -886,7 +886,7 @@ algorithm
         result1 = buildNewFunctionType_params(xs, new_args1);
         result2 = x :: result1;
       then result2;
-    case (x::xs,new_args1) then listAppend(new_args1, xs);
+    case (_::xs,new_args1) then listAppend(new_args1, xs);
     case ({}, {}) then {};
   end matchcontinue;
 end buildNewFunctionType_params;
@@ -921,7 +921,7 @@ algorithm
       String s;
       Integer numArgs;
       list<DAE.Var> vars;
-    case(parts,smallfn as DAE.FUNCTION(path=p,
+    case(parts,DAE.FUNCTION(path=p,
          functions={DAE.FUNCTION_DEF(smallparts)}),
          dae,numArgs,current)
       equation
@@ -1326,7 +1326,7 @@ algorithm
         DAE.STMT_REINIT(e1_1,e2_1,source) :: cdr_1;
     case(DAE.STMT_NORETCALL(e,source) :: cdr,dae,p,inputs,current)
       equation
-        ((e_1,_)) = Expression.traverseExp(e,fixCall,(p,inputs,dae,current));
+        ((_,_)) = Expression.traverseExp(e,fixCall,(p,inputs,dae,current));
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
         DAE.STMT_NORETCALL(e,source) :: cdr_1;

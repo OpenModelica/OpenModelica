@@ -817,7 +817,7 @@ algorithm
         ((_,b2,ext_arg_2)) = Debug.bcallret1(b1,func,(e2,ext_arg_1),(e2,b1,ext_arg_1));
       then
         (b2,ext_arg_2);
-    case (BackendDAE.ARRAY_EQUATION(dimSize=dimSize,left = e1,right = e2),_,_)
+    case (BackendDAE.ARRAY_EQUATION(left = e1,right = e2),_,_)
       equation
         ((_,b1,ext_arg_1)) = func((e1,inTypeA));
         ((_,b2,ext_arg_2)) = Debug.bcallret1(b1,func,(e2,ext_arg_1),(e2,b1,ext_arg_1));
@@ -836,7 +836,7 @@ algorithm
         ((_,b1,ext_arg_1)) = func((e1,inTypeA));
       then
         (b1,ext_arg_1);
-    case (BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(condition=cond,left = cr,right = e2,elsewhenPart=NONE())),_,_)
+    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition=cond,left = cr,right = e2,elsewhenPart=NONE())),_,_)
       equation
         tp = Expression.typeof(e2);
         e1 = Expression.makeCrefExp(cr,tp);
@@ -855,14 +855,14 @@ algorithm
         (b4,ext_arg_3) = Debug.bcallret3_2(b2,traverseBackendDAEExpsEqnWithStop,BackendDAE.WHEN_EQUATION(size,elsePart,source),func,ext_arg_2,b3,ext_arg_3);
       then
         (b4,ext_arg_3);
-    case (BackendDAE.ALGORITHM(size=size,alg=alg as DAE.ALGORITHM_STMTS(statementLst = _)),_,_)
+    case (BackendDAE.ALGORITHM(alg=alg as DAE.ALGORITHM_STMTS(statementLst = _)),_,_)
       equation
         print("not implemented error - BackendDAE.ALGORITHM - BackendEquation.traverseBackendDAEExpsEqnWithStop\n");
        // (stmts1,ext_arg_1) = DAEUtil.traverseDAEEquationsStmts(stmts,func,inTypeA);
       then
         fail();
         //(true,inTypeA);
-    case (BackendDAE.COMPLEX_EQUATION(size=size,left = e1,right = e2),_,_)
+    case (BackendDAE.COMPLEX_EQUATION(left = e1,right = e2),_,_)
       equation
         ((_,b1,ext_arg_1)) = func((e1,inTypeA));
         ((_,b2,ext_arg_2)) = Debug.bcallret1(b1,func,(e2,ext_arg_1),(e2,b1,ext_arg_1));
@@ -1690,7 +1690,7 @@ algorithm
     case (_,{})
       then
         inEquationArray;
-    case (BackendDAE.EQUATION_ARRAY(numberOfElement=numberOfElement,arrSize=arrSize,equOptArr=equOptArr),_)
+    case (BackendDAE.EQUATION_ARRAY(arrSize=arrSize,equOptArr=equOptArr),_)
       equation
         equOptArr = List.fold1r(inIntLst,arrayUpdate,NONE(),equOptArr);
         eqnlst = equationDelete1(arrSize,equOptArr,{});
@@ -1748,7 +1748,7 @@ algorithm
         size1 = size - eqnsize;
       then
         BackendDAE.EQUATION_ARRAY(size1,numberOfElement,arrSize,equOptArr);
-    case (_,BackendDAE.EQUATION_ARRAY(size=size,numberOfElement=numberOfElement,arrSize=arrSize,equOptArr=equOptArr))
+    case (_,BackendDAE.EQUATION_ARRAY(numberOfElement=numberOfElement,equOptArr=equOptArr))
       equation
         true = intLe(inPos,numberOfElement);
         NONE() = equOptArr[inPos];
@@ -1885,8 +1885,8 @@ algorithm
       eqns = List.map1(explst, generateRESIDUAL_EQUATION, source);
     then eqns;
 
-    case (backendEq as BackendDAE.COMPLEX_EQUATION(source=source))  then {backendEq};
-    case (backendEq as BackendDAE.RESIDUAL_EQUATION(source=source)) then {backendEq};
+    case (backendEq as BackendDAE.COMPLEX_EQUATION(source=_))  then {backendEq};
+    case (backendEq as BackendDAE.RESIDUAL_EQUATION(source=_)) then {backendEq};
     case (backendEq as BackendDAE.ALGORITHM(alg=_))                 then {backendEq};
     case (backendEq as BackendDAE.WHEN_EQUATION(whenEquation=_))    then {backendEq};
 

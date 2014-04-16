@@ -384,7 +384,7 @@ algorithm
     // Special case to lookup fields of records.
     // SimulationResult, etc are not in the environment,
     // but it's nice to be able to script them anyway
-    case (Absyn.ALGORITHMITEM(info=info,algorithm_ =
+    case (Absyn.ALGORITHMITEM(algorithm_ =
           Absyn.ALG_ASSIGN(assignComponent =
           Absyn.CREF(Absyn.CREF_IDENT(name = ident,subscripts = {})),value = Absyn.CREF(cr))),
           (st as GlobalScript.SYMBOLTABLE(lstVarVal = vars)))
@@ -2675,7 +2675,7 @@ algorithm
       then
         (comp_1 :: res_1);
     case (((comp as Absyn.COMPONENTITEM(component =
-      Absyn.COMPONENT(name = name,arrayDim = arrayDim,modification = _),condition = _,comment = comment)) :: res),old_comp,new_comp)
+      Absyn.COMPONENT(modification = _),condition = _)) :: res),old_comp,new_comp)
       equation
         res_1 = renameComponentInComponentitems(res, old_comp, new_comp);
       then
@@ -4029,7 +4029,7 @@ algorithm
       Absyn.Info info;
       Absyn.Path pa;
       list<Env.Frame> env;
-    case (Absyn.CLASS(name = _,body = classdef,info = info),pa,comps,env) /* the QUALIFIED path */
+    case (Absyn.CLASS(name = _,body = classdef),pa,comps,env) /* the QUALIFIED path */
       equation
         comps_1 = extractComponentsFromClassdef(pa, classdef, comps, env);
       then
@@ -6392,7 +6392,7 @@ algorithm
         Absyn.MODIFICATION(f,each_,p,SOME(Absyn.CLASSMOD(submods,Absyn.NOMOD())),cmt,info)::rest;
 
     // Clear modification, m with no submodifiers
-    case ((Absyn.MODIFICATION(finalPrefix = _,eachPrefix = _,path = Absyn.IDENT(name = name),comment = _,modification=SOME(Absyn.CLASSMOD({},_)), info = info) :: rest),Absyn.IDENT(name = submodident),(Absyn.CLASSMOD( {},Absyn.NOMOD())))
+    case ((Absyn.MODIFICATION(finalPrefix = _,eachPrefix = _,path = Absyn.IDENT(name = name),comment = _,modification=SOME(Absyn.CLASSMOD({},_))) :: rest),Absyn.IDENT(name = submodident),(Absyn.CLASSMOD( {},Absyn.NOMOD())))
       equation
         true = stringEq(name, submodident);
       then
@@ -7834,7 +7834,7 @@ algorithm
           (Absyn.ELEMENTITEM(Absyn.ELEMENT(f,r,io,Absyn.CLASSDEF(repl,cl),info,constr))::elts_1),pa_2,args_2));
 
    /* Visitor failed in elementspec, remove class */
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = _,info = info,constrainClass = _)) :: elts),pa,visitor,args,visit_prot)
+    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = _,constrainClass = _)) :: elts),pa,visitor,args,visit_prot)
       equation
         ((elts_1,pa_2,args_2)) = traverseInnerClassElements(elts, pa, visitor, args, visit_prot);
       then
@@ -8187,7 +8187,7 @@ algorithm
       equation
         path = Absyn.crefToPath(cr);
         Absyn.CLASS(
-          name = name,
+          
           body = cdef as Absyn.DERIVED(typeSpec = Absyn.TPATH(baseClassPath, _),
                                        attributes = attr as Absyn.ATTR(flowPrefix, streamPrefix, _, _, _, _)) )
         = getPathedClassInProgram(path, p);
@@ -11380,7 +11380,7 @@ algorithm
       list<Absyn.ElementItem> es;
       Absyn.ComponentRef cr1;
       Absyn.ElementItem e;
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = _,redeclareKeywords = _,innerOuter = _,specification = spec,info = info,constrainClass = _)) :: _),cr1)
+    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = _,redeclareKeywords = _,innerOuter = _,specification = spec,constrainClass = _)) :: _),cr1)
       equation
         cmt = getComponentCommentInElementspec(spec, cr1);
       then
@@ -12658,7 +12658,7 @@ algorithm
 
     case ({}) then 0;
 
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.EXTENDS(path = path))) :: rest))
+    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.EXTENDS(path=_))) :: rest))
       equation
         cl = countBaseClassesFromElts(rest) "Inherited class" ;
       then
@@ -15583,12 +15583,12 @@ algorithm
       Absyn.Class cnew,c1,c2,cinner,cnew_1;
       String name,name2;
       Absyn.Path path;
-    case (c1,Absyn.WITHIN(path = Absyn.IDENT(name = name)),c2)
+    case (c1,Absyn.WITHIN(path = Absyn.IDENT(name=_)),c2)
       equation
         cnew = replaceInnerClass(c1, c2);
       then
         cnew;
-    case (c1,Absyn.WITHIN(path = Absyn.QUALIFIED(name = name,path = path)),c2)
+    case (c1,Absyn.WITHIN(path = Absyn.QUALIFIED(path = path)),c2)
       equation
         name2 = getFirstIdentFromPath(path);
         cinner = getInnerClass(c2, name2);
@@ -15617,7 +15617,7 @@ algorithm
       String name;
       Absyn.Path path;
     case (Absyn.IDENT(name = name)) then name;
-    case (Absyn.QUALIFIED(name = name,path = path)) then name;
+    case (Absyn.QUALIFIED(name = name)) then name;
   end match;
 end getFirstIdentFromPath;
 
@@ -16756,7 +16756,7 @@ algorithm
       DAE.DAElist dae;
       list<Env.Frame> env;
       list<GlobalScript.InstantiatedClass> xs;
-    case (((x as GlobalScript.INSTCLASS(qualName = path,daeElementLst = _,env = env)) :: _),path2)
+    case (((x as GlobalScript.INSTCLASS(qualName = path,daeElementLst = _)) :: _),path2)
       equation
         true = Absyn.pathEqual(path, path2);
       then
@@ -18188,7 +18188,7 @@ algorithm
         str = stringAppendList({"elementtype=import, ",import_str});
       then
         str;*/
-    case (Absyn.COMPONENTS(attributes = _,typeSpec = typeSpec,components = lst))
+    case (Absyn.COMPONENTS(attributes = _,components = lst))
       equation
 //        str = Dump.unparseTypeSpec(typeSpec);
         names = getComponentitemsName(lst,false);
@@ -18499,7 +18499,7 @@ algorithm
       equation
         strlist = getClassnamesInParts(parts,b);
       then strlist;
-    case (_,_,Absyn.CLASS(body = Absyn.DERIVED(typeSpec=Absyn.TPATH(path = path))),_)
+    case (_,_,Absyn.CLASS(body = Absyn.DERIVED(typeSpec=Absyn.TPATH(path=_))),_)
       equation
         //(cdef,newpath) = lookupClassdef(path, inmodel, p);
         //res = getClassnamesInClassList(newpath, p, cdef);

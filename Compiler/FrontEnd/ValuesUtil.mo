@@ -116,7 +116,7 @@ algorithm
     case(Values.REAL(_)) then DAE.T_REAL_DEFAULT;
     case(Values.BOOL(_)) then DAE.T_BOOL_DEFAULT;
     case(Values.STRING(_)) then DAE.T_STRING_DEFAULT;
-    case(Values.ENUM_LITERAL(name = path, index = indx))
+    case(Values.ENUM_LITERAL(name = path, index = _))
       equation
         path = Absyn.pathPrefix(path);
       then DAE.T_ENUMERATION(NONE(),path,{},{},{},DAE.emptyTypeSource);
@@ -125,7 +125,7 @@ algorithm
       dims = List.map(int_dims, Expression.intDimension);
     then DAE.T_ARRAY(eltTp,dims,DAE.emptyTypeSource);
 
-    case(Values.RECORD(path,valLst,nameLst,indx)) equation
+    case(Values.RECORD(path,valLst,nameLst,_)) equation
       eltTps = List.map(valLst,valueExpType);
       varLst = List.threadMap(eltTps,nameLst,valueExpTypeExpVar);
     then DAE.T_COMPLEX(ClassInf.RECORD(path),varLst,NONE(),DAE.emptyTypeSource);
@@ -1003,7 +1003,7 @@ algorithm
       equation
         failure(Values.ARRAY(valueLst = _) = v);
         explist = List.map((v :: xs), valueExp);
-        DAE.MATRIX(t,i,mexpl) = valueExp(Values.ARRAY(xs2,int_dims));
+        DAE.MATRIX(t,_,mexpl) = valueExp(Values.ARRAY(xs2,int_dims));
         t = Expression.arrayDimensionSetFirst(t, DAE.DIM_INTEGER(dim));
       then
         DAE.MATRIX(t,dim,explist::mexpl);
@@ -1363,14 +1363,14 @@ algorithm
         v2 = divScalarArrayelt(sval, rest);
       then
         (Values.ARRAY(v1,dims) :: v2);
-    case (sval ,(Values.INTEGER(integer = i2) :: rest))
+    case (sval ,(Values.INTEGER(integer = i2) :: _))
       equation
         true = intEq(i2, 0);
         s2 = valString(sval);
         Error.addMessage(Error.DIVISION_BY_ZERO, {"0",s2});
       then
         fail();
-    case (sval ,(Values.REAL(real = r2) :: rest))
+    case (sval ,(Values.REAL(real = r2) :: _))
       equation
         true = realEq(r2, 0.0);
         s2 = valString(sval);
@@ -1681,7 +1681,7 @@ algorithm
         Values.ARRAY(v :: vals, dim::dims);
     case ((vlst as (Values.INTEGER(integer = _) :: _)),(mat as (Values.ARRAY(valueLst = {_}) :: _)))
       equation
-        (Values.ARRAY(valueLst = col),mat_1) = matrixStripFirstColumn(mat);
+        (Values.ARRAY(valueLst = col),_) = matrixStripFirstColumn(mat);
         Values.INTEGER(i1) = multScalarProduct(vlst, col);
       then
         makeArray({Values.INTEGER(i1)});
@@ -1695,11 +1695,11 @@ algorithm
         Values.ARRAY(v :: vals, dim::dims);
     case ((vlst as (Values.REAL(real = _) :: _)),(mat as (Values.ARRAY(valueLst = {_}) :: _)))
       equation
-        (Values.ARRAY(valueLst = col),mat_1) = matrixStripFirstColumn(mat);
+        (Values.ARRAY(valueLst = col),_) = matrixStripFirstColumn(mat);
         Values.REAL(r1) = multScalarProduct(vlst, col);
       then
         makeArray({Values.REAL(r1)});
-    case (lst1,lst2)
+    case (_,_)
       equation
         Debug.fprintln(Flags.FAILTRACE, "Values.multScalarProduct failed");
       then
@@ -1757,7 +1757,7 @@ algorithm
     local
       Values.Value res1;
       list<Values.Value> res2,m1,v1lst,rest1,m2;
-    case ((m1 as (Values.ARRAY(valueLst = v1lst) :: rest1)),(m2 as (Values.ARRAY(valueLst = _) :: _)))
+    case (((Values.ARRAY(valueLst = v1lst) :: rest1)),(m2 as (Values.ARRAY(valueLst = _) :: _)))
       equation
         res1 = multScalarProduct(v1lst, m2);
         res2 = multMatrix(rest1, m2);
@@ -1782,14 +1782,14 @@ algorithm
       Real v1,v2_1,v1_1,v2;
       list<Values.Value> vlst,r1,r2,vals,rest;
       list<Integer> dims;
-    case ((sval as Values.REAL(real = v1)),vlst)
+    case ((Values.REAL(real = v1)),vlst)
       equation
         true = realEq(v1, 0.0);
         s2 = unparseValues(vlst);
         Error.addMessage(Error.DIVISION_BY_ZERO, {"0.0",s2});
       then
         fail();
-    case ((sval as Values.INTEGER(integer = i1)),vlst)
+    case ((Values.INTEGER(integer = i1)),vlst)
       equation
         true = intEq(i1, 0);
         s2 = unparseValues(vlst);
@@ -2070,7 +2070,7 @@ algorithm
       then
         ();
 
-    case ((r as Values.RECORD(record_ = Absyn.IDENT("SimulationResult"), orderd = xs, comp = ids)))
+    case ((Values.RECORD(record_ = Absyn.IDENT("SimulationResult"), orderd = xs, comp = ids)))
       equation
         Print.printBuf("record SimulationResult\n");
         (xs,ids) = filterSimulationResults(Flags.isSet(Flags.SHORT_OUTPUT),xs,ids,{},{});
@@ -2079,7 +2079,7 @@ algorithm
       then
         ();
 
-    case ((r as Values.RECORD(record_ = recordPath, orderd = xs, comp = ids)))
+    case ((Values.RECORD(record_ = recordPath, orderd = xs, comp = ids)))
       equation
         recordName = Absyn.pathStringNoQual(recordPath);
 
@@ -2308,7 +2308,7 @@ algorithm
       list<String> varnames;
       Integer handle;
 
-    case (filename,Values.ARRAY(valueLst = (time :: rest)),(timevar :: varnames),message) /* filename values Variable names message string */
+    case (filename,Values.ARRAY(valueLst = (time :: rest)),(_ :: varnames),message) /* filename values Variable names message string */
       equation
         handle = Print.saveAndClearBuf();
 
@@ -2378,7 +2378,7 @@ algorithm
         unparsePtolemySet2(Values.ARRAY(v1s,{}), Values.ARRAY(v2s,{}));
       then
         ();
-    case (v1, v2)
+    case (v1, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.fprintln(Flags.FAILTRACE, "- ValuesUtil.unparsePtolemySet2 failed on v1: " +&
@@ -2442,7 +2442,7 @@ algorithm
       list<Values.Value> vlst,vlst2;
 
     case({},_, preRes) then preRes;
-    case (((Values.INTEGER(integer=n))::vlst2),Values.ARRAY(valueLst = vlst),preRes)
+    case (((Values.INTEGER(integer=n))::vlst2),Values.ARRAY(valueLst = vlst),_)
       equation
         res = listGet(vlst, n);
         res = nthnthArrayelt(vlst2,res,res);
@@ -2586,21 +2586,21 @@ algorithm
       list<Values.Value> rest, lst;
       Option<Values.Value> vOpt;
 
-    case ((v as Values.EMPTY(scope = _))::rest) then SOME(v);
+    case ((v as Values.EMPTY(scope = _))::_) then SOME(v);
 
-    case (Values.ARRAY(valueLst = lst)::rest)
+    case (Values.ARRAY(valueLst = lst)::_)
       equation
         vOpt = containsEmpty(lst);
       then
         vOpt;
 
-    case (Values.RECORD(orderd = lst)::rest)
+    case (Values.RECORD(orderd = lst)::_)
       equation
         vOpt = containsEmpty(lst);
       then
         vOpt;
 
-    case (Values.TUPLE(valueLst = lst)::rest)
+    case (Values.TUPLE(valueLst = lst)::_)
       equation
         vOpt = containsEmpty(lst);
       then

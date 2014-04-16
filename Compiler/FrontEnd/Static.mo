@@ -709,7 +709,7 @@ algorithm
 
     //Check if 'String' is overloaded. This can be moved down the chain to avoid checking for normal types.
     //However elab call prints error messags if it can not elaborate it even though the function might be overloaded.
-    case (cache,env, e as Absyn.CALL(function_ = Absyn.CREF_IDENT("String",_),functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = _)),impl,st,doVect,pre,_,_)
+    case (cache,env, e as Absyn.CALL(function_ = Absyn.CREF_IDENT("String",_),functionArgs = Absyn.FUNCTIONARGS(argNames = _)),impl,st,doVect,pre,_,_)
       equation
         (cache,exp_1,prop,st_1) = userDefOperatorDeoverloadString(cache,env,e,impl,st,doVect,pre,info);
       then
@@ -7269,7 +7269,7 @@ algorithm
       equation
         (cache,cl as SCode.CLASS(restriction = SCode.R_PACKAGE()),_) =
            Lookup.lookupClass(cache, env, Absyn.IDENT("GraphicalAnnotationsProgram____"), false);
-        (cache,cl as SCode.CLASS(name = name, restriction = SCode.R_RECORD(_)),env_1) = Lookup.lookupClass(cache, env, fn, false);
+        (cache,cl as SCode.CLASS( restriction = SCode.R_RECORD(_)),env_1) = Lookup.lookupClass(cache, env, fn, false);
         (cache,cl,env_2) = Lookup.lookupRecordConstructorClass(cache, env_1 /* env */, fn);
         (_,_::names) = SCode.getClassComponents(cl); // remove the fist one as it is the result!
         /*
@@ -7297,7 +7297,7 @@ algorithm
         fnIdent = Absyn.pathLastIdent(fn); // take the suffix: gravityAcceleration
         Absyn.IDENT(componentName) = fnPrefix; // see that is just a name TODO! this might be a path
         (_, _, SCode.COMPONENT(
-          prefixes = SCode.PREFIXES(innerOuter=innerOuter),
+          prefixes = SCode.PREFIXES(innerOuter=_),
           typeSpec = Absyn.TPATH(componentType, _)),_, _, _) =
           Lookup.lookupIdent(cache, env, componentName); // search for the component
         // join the type with the function name: Modelica.Mechanics.MultiBody.World.gravityAcceleration
@@ -7413,7 +7413,7 @@ algorithm
 
         true = Config.acceptMetaModelicaGrammar();
         false = Util.getStatefulBoolean(stopElab);
-        (cache,t as DAE.T_METARECORD(utPath=utPath,index=index,fields=_,source={_}),_) = Lookup.lookupType(cache, env, fn, NONE());
+        (cache,t as DAE.T_METARECORD(fields=_,source={_}),_) = Lookup.lookupType(cache, env, fn, NONE());
         Util.setStatefulBoolean(stopElab,true);
         (cache,expProps) = elabCallArgsMetarecord(cache,env,t,args,nargs,impl,stopElab,st,pre,info);
       then
@@ -7856,7 +7856,7 @@ algorithm
         Error.addSourceMessage(Error.WRONG_NO_OF_ARGS,{fn_str},info);
       then (cache,NONE());
 
-    case (cache,env,t as DAE.T_METARECORD(index=index,utPath=utPath,fields=vars,knownSingleton=knownSingleton,source={fqPath}),args,nargs,impl,_,st,pre,_)
+    case (cache,env,t as DAE.T_METARECORD(index=index,utPath=utPath,fields=vars,source={fqPath}),args,nargs,impl,_,st,pre,_)
       equation
         fieldNames = List.map(vars, Types.getVarName);
         tys = List.map(vars, Types.getVarType);
@@ -7873,7 +7873,7 @@ algorithm
         (cache,SOME((DAE.METARECORDCALL(fqPath,args_2,fieldNames,index),prop)));
 
     // MetaRecord failure
-    case (cache,env,DAE.T_METARECORD(utPath=utPath,index=index,fields=vars,source={fqPath}),args,_,_,_,st,pre,_)
+    case (cache,env,DAE.T_METARECORD(fields=vars,source={fqPath}),args,_,_,_,st,pre,_)
       equation
         (cache,daeExp,prop,_) = elabExp(cache,env,Absyn.TUPLE(args),false,st,false,pre,info);
         tys = List.map(vars, Types.getVarType);
@@ -8317,7 +8317,7 @@ algorithm
         (vect_exp_1,prop);
 
     /* array expression of function calls */
-    case (DAE.ARRAY(scalar = scalar,array = _),(dim :: ad),slots,DAE.PROP(tp,c),_)
+    case (DAE.ARRAY(array = _),(dim :: ad),slots,DAE.PROP(tp,c),_)
       equation
         int_dim = Expression.dimensionSize(dim);
         exp_type = Types.simplifyType(Types.liftArray(tp, dim));
@@ -8395,7 +8395,7 @@ algorithm
       DAE.Type tp;
       Integer cur_dim;
       list<Slot> slots;
-    case (DAE.ARRAY(ty = tp,scalar = scalar,array = expl),cur_dim,slots) /* cur_dim */
+    case (DAE.ARRAY(ty = tp,array = expl),cur_dim,slots) /* cur_dim */
       equation
         arr_expl = vectorizeCallArray2(expl, tp, cur_dim, slots);
         scalar_1 = Expression.typeBuiltin(tp);
@@ -10616,7 +10616,7 @@ algorithm
         exp1;
 
     // Qualified cref, might be a package constant.
-    case(_, _, _, _, DAE.CREF(componentRef = cr, ty = ty), _, _, _, _)
+    case(_, _, _, _, DAE.CREF(componentRef = cr), _, _, _, _)
       equation
         (essl as _ :: _) = ComponentReference.crefLastSubs(cr);
         cr = ComponentReference.crefStripLastSubs(cr);
@@ -10973,7 +10973,7 @@ algorithm
         (cache,e,DAE.C_PARAM(),attr);
 
     // a binding equation and evalparam
-    case (cache,env,cr,attr as DAE.ATTR(variability = var),_,_,tt,DAE.EQBOUND(exp = exp,constant_ = _),doVect,InstTypes.SPLICEDEXPDATA(_,idTp),_,_,_)
+    case (cache,env,cr,attr as DAE.ATTR(variability = var),_,_,tt,DAE.EQBOUND(constant_ = _),doVect,InstTypes.SPLICEDEXPDATA(_,idTp),_,_,_)
       equation
         true = SCode.isParameterOrConst(var);
         true = boolOr(Flags.isSet(Flags.EVAL_PARAM), Config.getEvaluateParametersInAnnotations());
@@ -11001,7 +11001,7 @@ algorithm
         (cache,e_1,DAE.C_PARAM(),attr);
 
     // a constant with a binding
-    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),_,_,tt,DAE.EQBOUND(exp = exp,constant_ = DAE.C_CONST()),doVect,InstTypes.SPLICEDEXPDATA(_,idTp),_,_,_)
+    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),_,_,tt,DAE.EQBOUND(constant_ = DAE.C_CONST()),doVect,InstTypes.SPLICEDEXPDATA(_,idTp),_,_,_)
       equation
         expTy = Types.simplifyType(tt) "Constants with equal bindings should be constant, i.e. true
                                     but const is passed on, allowing constants to have wrong bindings
@@ -11030,7 +11030,7 @@ algorithm
         (cache,e_1,DAE.C_CONST(),attr);
 
     // vectorization of parameters with binding equations
-    case (cache,_,cr,attr as DAE.ATTR(variability = SCode.PARAM()),_,_,tt,DAE.EQBOUND(exp = exp ,constant_ = _),doVect,InstTypes.SPLICEDEXPDATA(sexp,idTp),_,_,_)
+    case (cache,_,cr,attr as DAE.ATTR(variability = SCode.PARAM()),_,_,tt,DAE.EQBOUND(constant_ = _),doVect,InstTypes.SPLICEDEXPDATA(sexp,idTp),_,_,_)
       equation
         expTy = Types.simplifyType(tt) "parameters with equal binding becomes C_PARAM" ;
         expIdTy = Types.simplifyType(idTp);
@@ -11040,7 +11040,7 @@ algorithm
         (cache,e_1,DAE.C_PARAM(),attr);
 
     // variables with constant binding
-    case (cache,_,cr,attr,_,_,tt,DAE.EQBOUND(exp = exp),doVect,InstTypes.SPLICEDEXPDATA(_,idTp),_,_,_)
+    case (cache,_,cr,attr,_,_,tt,DAE.EQBOUND(exp=_),doVect,InstTypes.SPLICEDEXPDATA(_,idTp),_,_,_)
       equation
         expTy = Types.simplifyType(tt) "..the rest should be non constant, even if they have a constant binding." ;
         expIdTy = Types.simplifyType(idTp);

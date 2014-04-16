@@ -191,7 +191,7 @@ algorithm
       Prefix.ClassPrefix cp;
       Prefix.ComponentPrefix c;
       ClassInf.State ci_state;
-    case (Prefix.PREFIX(Prefix.PRE(prefix = a,subscripts = b,next = c,ci_state=ci_state),cp))
+    case (Prefix.PREFIX(Prefix.PRE(prefix = a,subscripts = b,next = _,ci_state=ci_state),cp))
       then Prefix.PREFIX(Prefix.PRE(a,b,Prefix.NOCOMPPRE(),ci_state),cp);
   end match;
 end prefixFirst;
@@ -218,7 +218,7 @@ algorithm
       Prefix.Prefix res;
       Prefix.ClassPrefix cp;
 
-    case ((res as Prefix.PREFIX(Prefix.PRE(next = Prefix.NOCOMPPRE()),cp))) then res;
+    case ((res as Prefix.PREFIX(Prefix.PRE(next = Prefix.NOCOMPPRE()),_))) then res;
 
     case (Prefix.PREFIX(Prefix.PRE(next = p),cp))
       equation
@@ -279,7 +279,7 @@ algorithm
       Prefix.ClassPrefix cp;
 
     case (p,Prefix.NOPRE()) then p;
-    case (p,Prefix.PREFIX(Prefix.PRE(prefix = s,next = Prefix.NOCOMPPRE()),cp))
+    case (p,Prefix.PREFIX(Prefix.PRE(prefix = s,next = Prefix.NOCOMPPRE()),_))
       equation
         p_1 = Absyn.QUALIFIED(s,p);
       then p_1;
@@ -546,7 +546,7 @@ algorithm
       Env.Cache cache;
       Env.Env env;
 
-    case(cache,env,_,_,DAE.WHOLEDIM()) then (cache,DAE.WHOLEDIM());
+    case(cache,_,_,_,DAE.WHOLEDIM()) then (cache,DAE.WHOLEDIM());
 
     case(cache,env,_,_,DAE.SLICE(exp)) equation
       (cache,exp) = prefixExp(cache,env,inIH,exp,pre);
@@ -585,7 +585,7 @@ algorithm
       String n;
 
 
-    case (cache,env,ih,cref,pre)
+    case (cache,_,ih,cref,pre)
       equation
         newCref = InnerOuter.prefixOuterCrefWithTheInnerPrefix(ih, cref, pre);
       then
@@ -713,14 +713,14 @@ algorithm
       then
         (cache,crefExp);
 
-    case (cache,env,_,e as DAE.CREF(componentRef = cr,ty = t),pre)
+    case (cache,env,_,e as DAE.CREF(componentRef = cr,ty = _),_)
       equation
         // adrpo: do NOT prefix if we have a for iterator!
         (cache,_,_,_,SOME(_),_,_,_,_) = Lookup.lookupVarLocal(cache, env, cr);
       then
         (cache,e);
 
-    case (cache,env,ih,e as DAE.CREF(componentRef = cr,ty = t),pre)
+    case (cache,env,ih,DAE.CREF(componentRef = cr,ty = t),pre)
       equation
         failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVarLocal(cache, env, cr));
         (cache, cr_1) = prefixSubscriptsInCref(cache, env, ih, pre, cr);
@@ -729,7 +729,7 @@ algorithm
       then
         (cache,crefExp);
 
-    case (cache,env,ih,(e as DAE.ASUB(exp = e1, sub = expl)),pre)
+    case (cache,env,ih,(DAE.ASUB(exp = e1, sub = expl)),pre)
       equation
         (cache,es_1) = prefixExpList(cache, env, ih, expl, pre);
         (cache,e1) = prefixExp(cache, env, ih, e1,pre);
@@ -737,7 +737,7 @@ algorithm
       then
         (cache,e2);
 
-    case (cache,env,ih,(e as DAE.TSUB(e1, index_, t)),pre)
+    case (cache,env,ih,(DAE.TSUB(e1, index_, t)),pre)
       equation
         (cache,e1) = prefixExp(cache, env, ih, e1, pre);
         e2 = DAE.TSUB(e1, index_, t);
@@ -810,7 +810,7 @@ algorithm
       then
         (cache,DAE.RECORD(f,es,fieldNames,t));
 
-    case (cache,env,ih,DAE.ARRAY(ty = t,scalar = sc,array = {}),p)
+    case (cache,_,_,DAE.ARRAY(ty = t,scalar = sc,array = {}),_)
       then
         (cache,DAE.ARRAY(t,sc,{}));
 
@@ -826,14 +826,14 @@ algorithm
       then
         (cache,DAE.TUPLE(es_1));
 
-    case (cache,env,ih,DAE.MATRIX(ty = t,integer = a,matrix = {}),p)
+    case (cache,_,_,DAE.MATRIX(ty = t,integer = a,matrix = {}),_)
       then
         (cache,DAE.MATRIX(t,a,{}));
 
     case (cache,env,ih,DAE.MATRIX(ty = t,integer = a,matrix = (x :: xs)),p)
       equation
         (cache,x_1) = prefixExpList(cache, env, ih, x, p);
-        (cache,DAE.MATRIX(t,b,xs_1)) = prefixExp(cache, env, ih, DAE.MATRIX(t,a,xs), p);
+        (cache,DAE.MATRIX(t,_,xs_1)) = prefixExp(cache, env, ih, DAE.MATRIX(t,a,xs), p);
       then
         (cache,DAE.MATRIX(t,a,(x_1 :: xs_1)));
 
@@ -887,7 +887,7 @@ algorithm
         (cache,e1) = prefixExp(cache, env, ih, e1, p);
       then (cache,DAE.META_OPTION(SOME(e1)));
 
-    case (cache,env,ih,DAE.META_OPTION(NONE()),p)
+    case (cache,_,_,DAE.META_OPTION(NONE()),_)
       equation
       then (cache,DAE.META_OPTION(NONE()));
         // ------------------------
@@ -1179,7 +1179,7 @@ algorithm
       list<DAE.Statement> lStmt;
       DAE.Else el,stmt;
 
-    case (localCache,localEnv,ih,DAE.NOELSE(),pre)
+    case (localCache,_,_,DAE.NOELSE(),_)
       then (localCache,DAE.NOELSE());
 
     case (localCache,localEnv,ih,DAE.ELSEIF(e,lStmt,el),pre)

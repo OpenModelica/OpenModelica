@@ -825,7 +825,7 @@ public function initialFGraph
 protected
   Env.Cache cache;
 algorithm
-  (outCache, graph) := matchcontinue(inCache)
+  (outCache, graph) := match(inCache)
     local
       list<Absyn.Class> initialClasses;
       SCode.Program initialProgram;
@@ -890,7 +890,7 @@ algorithm
     then
       (cache,graph);
 
-  end matchcontinue;
+  end match;
 end initialFGraph;
 
 protected function getSetInitialFGraph

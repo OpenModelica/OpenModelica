@@ -1194,8 +1194,8 @@ protected function classDefEqual
        String bcName1, bcName2;
        list<Absyn.NamedArg> clsttrs1,clsttrs2;
 
-     case(PARTS(elts1,eqns1,ieqns1,algs1,ialgs1,cons1,clsttrs1,_),
-          PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,cons2,clsttrs2,_))
+     case(PARTS(elts1,eqns1,ieqns1,algs1,ialgs1,_,_,_),
+          PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,_,_,_))
        equation
          List.threadMapAllValue(elts1,elts2,elementEqual,true);
          List.threadMapAllValue(eqns1,eqns2,equationEqual,true);
@@ -1219,8 +1219,8 @@ protected function classDefEqual
        then
          true;
 
-     case (CLASS_EXTENDS(bcName1,mod1,PARTS(elts1,eqns1,ieqns1,algs1,ialgs1,cons1,clsttrs1,_)),
-           CLASS_EXTENDS(bcName2,mod2,PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,cons2,clsttrs2,_)))
+     case (CLASS_EXTENDS(bcName1,mod1,PARTS(elts1,eqns1,ieqns1,algs1,ialgs1,_,_,_)),
+           CLASS_EXTENDS(bcName2,mod2,PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,_,_,_)))
        equation
          List.threadMapAllValue(elts1,elts2,elementEqual,true);
          List.threadMapAllValue(eqns1,eqns2,equationEqual,true);
@@ -1232,7 +1232,7 @@ protected function classDefEqual
        then
          true;
 
-     case (PDER(p1,ilst1),PDER(p2,ilst2))
+     case (PDER(_,ilst1),PDER(_,ilst2))
        equation
          List.threadMapAllValue(ilst1,ilst2,stringEq,true);
        then
@@ -1271,7 +1271,7 @@ protected function arraydimOptEqual
       then
         true;
     // oth. false
-    case(SOME(lst1),SOME(lst2)) then false;
+    case(SOME(_),SOME(_)) then false;
   end matchcontinue;
 end arraydimOptEqual;
 
@@ -1478,7 +1478,7 @@ algorithm
         true = equationEqual22(tb1,tb2);
       then
         true;
-    case(tb_1::tb1,tb_2::tb2) then false;
+    case(_::_,_::_) then false;
 
   end matchcontinue;
 end equationEqual22;
@@ -1798,7 +1798,7 @@ algorithm
           lst_2=findIteratorInEEquationLst(id,eeqLst);
           lst=listAppend(lst_1,lst_2);
         then lst;
-      case (id,EQ_FOR(index = id_1, range = SOME(e_1), eEquationLst = eeqLst))
+      case (id,EQ_FOR(index = id_1, range = SOME(e_1), eEquationLst = _))
         equation
           true = stringEq(id, id_1);
           lst=Absyn.findIteratorInExp(id,e_1);
@@ -1808,7 +1808,7 @@ algorithm
           false = stringEq(id, id_1);
           lst=findIteratorInEEquationLst(id,eeqLst);
         then lst;
-      case (id,EQ_FOR(index = id_1, range = NONE(), eEquationLst = eeqLst))
+      case (id,EQ_FOR(index = id_1, range = NONE(), eEquationLst = _))
         equation
           true = stringEq(id, id_1);
         then {};
@@ -1854,7 +1854,7 @@ algorithm
       String id;
       list<EEquation> rest;
       EEquation eeq;
-      case (id,{}) then {};
+      case (_,{}) then {};
       case (id,eeq::rest)
         equation
           lst_1=findIteratorInEEquation(id,eeq);
@@ -1876,7 +1876,7 @@ algorithm
       String id;
       list<list<EEquation>> rest;
       list<EEquation> eeq;
-      case (id,{}) then {};
+      case (_,{}) then {};
       case (id,eeq::rest)
         equation
           lst_1=findIteratorInEEquationLst(id,eeq);
@@ -1899,7 +1899,7 @@ algorithm
       list<tuple<Absyn.Exp, list<EEquation>>> rest;
       Absyn.Exp e;
       list<EEquation> eeq;
-      case (id,{}) then {};
+      case (_,{}) then {};
       case (id,(e,eeq)::rest)
         equation
           lst_1 = Absyn.findIteratorInExp(id,e);
@@ -2130,8 +2130,8 @@ algorithm
           lst_2=findIteratorInStatements(id,algLst_1);
           lst=listAppend(lst_1,lst_2);
         then lst;
-      case (id,ALG_WHEN_A(branches = {})) then {};
-      case (id,ALG_WHEN_A(branches = (e_1,algLst_1)::branches))
+      case (_,ALG_WHEN_A(branches = {})) then {};
+      case (id,ALG_WHEN_A(branches = (_,_)::branches))
         equation
           lst_1=Absyn.findIteratorInExpLst(id,List.map(branches,Util.tuple21));
           lst_lst = List.map1r(List.map(branches,Util.tuple22),findIteratorInStatements,id);
@@ -2157,7 +2157,7 @@ algorithm
       String id;
       list<Statement> rest;
       Statement algItem;
-      case (id,{}) then {};
+      case (_,{}) then {};
       case (id,algItem::rest)
         equation
           lst_1=findIteratorInStatement(id,algItem);
@@ -2179,7 +2179,7 @@ algorithm
       list<tuple<Absyn.Exp, list<Statement>>> rest;
       Absyn.Exp exp;
       list<Statement> algItemLst;
-      case (id,{}) then {};
+      case (_,{}) then {};
       case (id,(exp,algItemLst)::rest)
         equation
           lst_1=Absyn.findIteratorInExp(id,exp);
@@ -2669,7 +2669,7 @@ algorithm
       Absyn.Ident ident;
       Absyn.Exp guardExp,range;
 
-    case (Absyn.ITERATOR(ident, NONE(), NONE()), traverser, arg)
+    case (Absyn.ITERATOR(ident, NONE(), NONE()), _, arg)
       then
         (Absyn.ITERATOR(ident, NONE(), NONE()), arg);
 
@@ -3451,7 +3451,7 @@ algorithm
       ConnectorType ct1, ct2, ct;
 
     case (_,NONE()) then SOME(ele);
-    case(ATTR(ad1,ct1,p1,v1,d1), SOME(ATTR(ad2,ct2,p2,v2,d2)))
+    case(ATTR(ad1,ct1,p1,v1,d1), SOME(ATTR(_,ct2,p2,v2,d2)))
       equation
         ct = propagateConnectorType(ct1, ct2);
         p = propagateParallelism(p1,p2);
@@ -3968,7 +3968,7 @@ algorithm
         e::sp;
 
     // not found, add it
-    case ({}, _, i)
+    case ({}, _, _)
       equation
         sp = {inElement};
       then
@@ -3990,19 +3990,19 @@ algorithm
       Absyn.Path p;
       Absyn.Ident i, n;
 
-    case ((e as CLASS(name = n))::rest, i)
+    case ((e as CLASS(name = n))::_, i)
       equation
         true = stringEq(n, i);
       then
         e;
 
-    case ((e as COMPONENT(name = n))::rest, i)
+    case ((e as COMPONENT(name = n))::_, i)
       equation
         true = stringEq(n, i);
       then
         e;
 
-    case ((e as EXTENDS(baseClassPath = p))::rest, i)
+    case ((e as EXTENDS(baseClassPath = p))::_, i)
       equation
         true = stringEq(Absyn.pathString(p), i);
       then
@@ -4158,7 +4158,7 @@ algorithm
     // a parts
     case (_,
           PARTS(
-            elementLst,
+            _,
             normalEquationLst,
             initialEquationLst,
             normalAlgorithmLst,
@@ -4185,7 +4185,7 @@ algorithm
         (CLASS_EXTENDS(baseClassName, modifications, composition), NONE());
 
     // a class extends
-    case (_, CLASS_EXTENDS(baseClassName, modifications, composition), _)
+    case (_, CLASS_EXTENDS(_, _, composition), _)
       equation
         (composition, SOME(e)) = replaceElementsInClassDef(inProgram, composition, inElements);
       then
@@ -4376,7 +4376,7 @@ algorithm
       Comment cmt;
 
     // not the same, change
-    case(_,CLASS(id,prefixes,e,pp,restriction,parts,cmt,info))
+    case(_,CLASS(id,_,e,pp,restriction,parts,cmt,info))
       then CLASS(id,inPrefixes,e,pp,restriction,parts,cmt,info);
   end match;
 end setClassPrefixes;
@@ -4891,7 +4891,7 @@ algorithm
       Absyn.Info i;
 
 
-    case (CLASS(name1,prefixes1,en1,p1,restr1,cd1,cm,i),CLASS(name2,prefixes2,en2,p2,restr2,cd2,_,_))
+    case (CLASS(name1,prefixes1,en1,p1,restr1,cd1,cm,i),CLASS(_,prefixes2,_,_,_,cd2,_,_))
       equation
         cd1 = mergeClassDef(cd1, cd2);
         prefixes1 = propagatePrefixes(prefixes2, prefixes1);
@@ -4919,7 +4919,7 @@ algorithm
       Attributes a1, a2;
 
     case (DERIVED(ts1,m1,a1),
-          DERIVED(ts2,m2,a2))
+          DERIVED(_,m2,a2))
       equation
         m2 = mergeModifiers(m2, m1);
         a2 = propagateAttributes(a2, a1);
@@ -4949,7 +4949,7 @@ algorithm
     case (REDECL(element = _), _) then inNewMod;
 
     case (MOD(f1, e1, sl1, b1, i1),
-          MOD(f2, e2, sl2, b2, i2))
+          MOD(_, _, sl2, b2, _))
       equation
         b = mergeBindings(b1, b2);
         sl = mergeSubMods(sl1, sl2);
@@ -5042,7 +5042,7 @@ algorithm
       Element c;
 
     case (COMPONENT(n1, p1, a1, t1, m1, c1, cnd1, i1),
-          COMPONENT(n2, p2, a2, t2, m2, c2, cnd2, i2))
+          COMPONENT(_, _, _, _, m2, _, _, _))
       equation
         m = mergeModifiers(m1, m2);
         c = COMPONENT(n1, p1, a1, t1, m, c1, cnd1, i1);

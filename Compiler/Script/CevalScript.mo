@@ -4719,7 +4719,7 @@ algorithm
       then
         strlist;
 
-    case (_,_,Absyn.CLASS(body = Absyn.DERIVED(typeSpec=Absyn.TPATH(path = path))),_)
+    case (_,_,Absyn.CLASS(body = Absyn.DERIVED(typeSpec=Absyn.TPATH(path=_))),_)
       equation
       then
         {};
@@ -6441,7 +6441,7 @@ algorithm
       Absyn.Import import_;
       list<Absyn.ElementItem> els;
       Integer c1, res;
-    case (Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.IMPORT(import_ = import_))) :: els)
+    case (Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.IMPORT(import_=_))) :: els)
       equation
         c1 = getImportsInElementItems(els);
       then
@@ -6544,7 +6544,7 @@ algorithm
         vals = unparseNthImport(import_);
       then
         vals;
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.IMPORT(import_ = import_))) :: els), n)
+    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.IMPORT(import_=_))) :: els), n)
       equation
         newn = n - 1;
         vals = getNthImportInElementItems(els, newn);
@@ -6759,7 +6759,7 @@ algorithm
       DAE.Type ty;
 
     // try function interpretation
-    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(ty = ty, builtin = false)), vallst, _, st, msg, _)
+    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR( builtin = false)), vallst, _, st, msg, _)
       equation
         true = Flags.isSet(Flags.EVAL_FUNC);
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
@@ -7090,7 +7090,7 @@ algorithm
         (cache, newval, st);
 
     // partial and replaceable functions should not be evaluated!
-    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(ty = ty, builtin = false)), _, _, _, msg, _)
+    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR( builtin = false)), _, _, _, msg, _)
       equation
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
         false = isCompleteFunction(cache, env, funcpath);
@@ -7460,11 +7460,11 @@ algorithm
     case SCode.IMPORT(info=_) then false;
     case SCode.EXTENDS(info=_) then false;
     case SCode.CLASS(restriction=SCode.R_FUNCTION(_)) then false;
-    case SCode.COMPONENT(name=name,prefixes=SCode.PREFIXES(visibility=SCode.PUBLIC()))
+    case SCode.COMPONENT(prefixes=SCode.PREFIXES(visibility=SCode.PUBLIC()))
       equation
         // print("public component " +& name +& ": ");
       then true;
-    case SCode.CLASS(name=name,prefixes=SCode.PREFIXES(visibility=SCode.PUBLIC()))
+    case SCode.CLASS(prefixes=SCode.PREFIXES(visibility=SCode.PUBLIC()))
       equation
         // print("public class " +& name +& ": ");
       then true;
@@ -7524,7 +7524,7 @@ algorithm
   name := matchcontinue (elt,suffix)
     local
       String fileName;
-    case (SCode.CLASS(name=name,info=Absyn.INFO(fileName=fileName)),_)
+    case (SCode.CLASS(name=name,info=Absyn.INFO(fileName=_)),_)
       equation
         false = System.regularFileExists(name +& suffix);
       then name;

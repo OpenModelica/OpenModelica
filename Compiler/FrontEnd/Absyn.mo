@@ -3257,7 +3257,7 @@ algorithm
         l1 = getCrefsFromSubs(subs,includeSubs,includeFunctions);
       then cr::l1;
 
-    case (BINARY(exp1 = e1,op = op,exp2 = e2),_,_)
+    case (BINARY(exp1 = e1,exp2 = e2),_,_)
       equation
         l1 = getCrefFromExp(e1,includeSubs,includeFunctions);
         l2 = getCrefFromExp(e2,includeSubs,includeFunctions);
@@ -3265,13 +3265,13 @@ algorithm
       then
         res;
 
-    case (UNARY(op = op,exp = e1),_,_)
+    case (UNARY(exp = e1),_,_)
       equation
         res = getCrefFromExp(e1,includeSubs,includeFunctions);
       then
         res;
 
-    case (LBINARY(exp1 = e1,op = op,exp2 = e2),_,_)
+    case (LBINARY(exp1 = e1,exp2 = e2),_,_)
       equation
         l1 = getCrefFromExp(e1,includeSubs,includeFunctions);
         l2 = getCrefFromExp(e2,includeSubs,includeFunctions);
@@ -3279,13 +3279,13 @@ algorithm
       then
         res;
 
-    case (LUNARY(op = op,exp = e1),_,_)
+    case (LUNARY(exp = e1),_,_)
       equation
         res = getCrefFromExp(e1,includeSubs,includeFunctions);
       then
         res;
 
-    case (RELATION(exp1 = e1,op = op,exp2 = e2),_,_)
+    case (RELATION(exp1 = e1,exp2 = e2),_,_)
       equation
         l1 = getCrefFromExp(e1,includeSubs,includeFunctions);
         l2 = getCrefFromExp(e2,includeSubs,includeFunctions);

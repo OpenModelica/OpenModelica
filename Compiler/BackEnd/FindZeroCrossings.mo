@@ -1280,17 +1280,17 @@ algorithm
         ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
       then ((DAE.STMT_WHEN(e_1, conditions, initialCall, stmts, SOME(ew_1), source)::xs_1, extraArg));
 
-    case (((x as DAE.STMT_ASSERT(cond = _, msg=_, source = source))::xs), _, extraArg, _)
+    case (((x as DAE.STMT_ASSERT(cond = _, msg=_))::xs), _, extraArg, _)
       equation
         ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
       then ((x::xs_1, extraArg));
 
-    case (((x as DAE.STMT_TERMINATE(msg = _, source = source))::xs), _, extraArg, _)
+    case (((x as DAE.STMT_TERMINATE(msg = _))::xs), _, extraArg, _)
       equation
         ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
       then ((x::xs_1, extraArg));
 
-    case (((x as DAE.STMT_REINIT(var = _, value=_, source = source))::xs), _, extraArg, _)
+    case (((x as DAE.STMT_REINIT(var = _, value=_))::xs), _, extraArg, _)
       equation
         ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
       then ((x::xs_1, extraArg));
@@ -1301,12 +1301,12 @@ algorithm
         ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
       then ((DAE.STMT_NORETCALL(e_1, source)::xs_1, extraArg));
 
-    case (((x as DAE.STMT_RETURN(source = source))::xs), _, extraArg, _)
+    case (((x as DAE.STMT_RETURN(source=_))::xs), _, extraArg, _)
       equation
         ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
       then ((x::xs_1, extraArg));
 
-    case (((x as DAE.STMT_BREAK(source = source))::xs), _, extraArg, _)
+    case (((x as DAE.STMT_BREAK(source=_))::xs), _, extraArg, _)
       equation
         ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
       then ((x::xs_1, extraArg));

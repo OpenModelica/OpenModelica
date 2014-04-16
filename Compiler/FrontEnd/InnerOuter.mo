@@ -1456,7 +1456,7 @@ algorithm
         ih;*/
 
     // no hashtable, create one!
-    case({},_,_,INST_INNER(name=name))
+    case({},_,_,INST_INNER(name=_))
       equation
         // print ("InnerOuter.updateInstHierarchy creating an empty hash table! \n");
         ht = emptyInstHierarchyHashTable();
@@ -1467,7 +1467,7 @@ algorithm
 
     // add to the hierarchy
     case((TOP_INSTANCE(pathOpt, ht, outerPrefixes))::restIH,_,_,
-         INST_INNER(name=name, io=io))
+         INST_INNER(name=name))
       equation
         // prefix the name!
         cref_ = ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {});
@@ -1479,7 +1479,7 @@ algorithm
         TOP_INSTANCE(pathOpt, ht, outerPrefixes)::restIH;
 
     // failure
-    case(_,_,_,INST_INNER(name=name, io=io))
+    case(_,_,_,INST_INNER(io=_))
       equation
         // prefix the name!
         //(_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,inPrefix, ComponentReference.makeCrefIdent("UNKNOWN", DAE.T_UNKNOWN_DEFAULT, {}));

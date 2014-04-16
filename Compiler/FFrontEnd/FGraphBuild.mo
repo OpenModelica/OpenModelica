@@ -99,7 +99,7 @@ algorithm
       Absyn.Info info;
 
     // class (we don't care here if is replaceable or not we can get that from the class)
-    case (SCode.CLASS(name = name, classDef = cdef), _, _, g)
+    case (SCode.CLASS( classDef = _), _, _, g)
       equation
         g = mkClassNode(inClass, inParentRef, inKind, g);
       then
@@ -115,7 +115,7 @@ public function mkClassNode
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := matchcontinue(inClass, inParentRef, inKind, inGraph)
+  outGraph := match(inClass, inParentRef, inKind, inGraph)
     local
       SCode.ClassDef cdef;
       SCode.Element cls;
@@ -128,7 +128,7 @@ algorithm
     case (_, _, _, g)
       equation
         cls = SCodeUtil.expandEnumerationClass(inClass);
-        SCode.CLASS(name = name, classDef = cdef, info = info) = cls;
+        SCode.CLASS(name = name, classDef = cdef) = cls;
         (g, n) = FGraph.node(g, name, {inParentRef}, FCore.CL(cls, inKind, FCore.emptyImportTable));
         nr = FNode.toRef(n);
         FNode.addChildRef(inParentRef, name, nr);
@@ -138,7 +138,7 @@ algorithm
       then
         g;
 
-  end matchcontinue;
+  end match;
 end mkClassNode;
 
 public function mkConstrainClass
@@ -196,10 +196,10 @@ algorithm
       Option<tuple<Absyn.Exp, Boolean>> b;
 
     // no mods
-    case (name, SCode.NOMOD(), _, _, g) then g;
+    case (_, SCode.NOMOD(), _, _, g) then g;
 
     // no binding no sub-mods
-    case (name, SCode.MOD(subModLst = {}, binding = NONE()), _, _, g)
+    case (_, SCode.MOD(subModLst = {}, binding = NONE()), _, _, g)
       then
         g;
 
@@ -251,7 +251,7 @@ public function mkSubMods
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := matchcontinue(inSubMod, inParentRef, inKind, inGraph)
+  outGraph := match(inSubMod, inParentRef, inKind, inGraph)
     local
       list<SCode.SubMod> rest;
       SCode.SubMod s;
@@ -270,7 +270,7 @@ algorithm
       then
         g;
 
-  end matchcontinue;
+  end match;
 end mkSubMods;
 
 public function mkBindingNode
@@ -280,7 +280,7 @@ public function mkBindingNode
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := matchcontinue(inBinding, inParentRef, inKind, inGraph)
+  outGraph := match(inBinding, inParentRef, inKind, inGraph)
     local
       Node n;
       Ref nr;
@@ -298,7 +298,7 @@ algorithm
       then
         g;
 
-  end matchcontinue;
+  end match;
 end mkBindingNode;
 
 protected function mkClassChildren
@@ -379,7 +379,7 @@ public function mkElementNode
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := matchcontinue(inElement, inParentRef, inKind, inGraph)
+  outGraph := match(inElement, inParentRef, inKind, inGraph)
     local
       Graph g;
       SCode.Ident name;
@@ -430,7 +430,7 @@ algorithm
       then
         g;
 
-  end matchcontinue;
+  end match;
 end mkElementNode;
 
 public function mkDimsNode
@@ -550,7 +550,7 @@ public function mkConditionNode
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := matchcontinue(inCondition, inParentRef, inKind, inGraph)
+  outGraph := match(inCondition, inParentRef, inKind, inGraph)
     local
       Node n;
       Ref nr;
@@ -567,7 +567,7 @@ algorithm
       then
         g;
 
-  end matchcontinue;
+  end match;
 end mkConditionNode;
 
 public function mkExpressionNode
@@ -578,7 +578,7 @@ public function mkExpressionNode
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := matchcontinue(inName, inExp, inParentRef, inKind, inGraph)
+  outGraph := match(inName, inExp, inParentRef, inKind, inGraph)
     local
       Node n;
       Ref nr;
@@ -595,7 +595,7 @@ algorithm
       then
         g;
 
-  end matchcontinue;
+  end match;
 end mkExpressionNode;
 
 public function mkCrefsNodes
@@ -638,7 +638,7 @@ public function mkCrefNode
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := matchcontinue(inCref, inParentRef, inKind, inGraph)
+  outGraph := match(inCref, inParentRef, inKind, inGraph)
     local
       Node n;
       Ref nr;
@@ -656,7 +656,7 @@ algorithm
       then
         g;
 
-  end matchcontinue;
+  end match;
 end mkCrefNode;
 
 public function mkTypeNode
@@ -839,7 +839,7 @@ public function mkCrefsFromExps
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := matchcontinue(inExps, inParentRef, inKind, inGraph)
+  outGraph := match(inExps, inParentRef, inKind, inGraph)
     local
       Node n;
       Ref nr;
@@ -858,7 +858,7 @@ algorithm
       then
         g;
 
-  end matchcontinue;
+  end match;
 end mkCrefsFromExps;
 
 protected function analyseExp
@@ -941,13 +941,13 @@ algorithm
       then
         g;
 
-    case (Absyn.CALL(function_ = cref, functionArgs = args), _, _, g)
+    case (Absyn.CALL(function_ = cref, functionArgs = _), _, _, g)
       equation
         g = analyseCref(cref, inRef, inKind, g);
       then
         g;
 
-    case (Absyn.PARTEVALFUNCTION(function_ = cref, functionArgs = args), _, _, g)
+    case (Absyn.PARTEVALFUNCTION(function_ = cref, functionArgs = _), _, _, g)
       equation
         g = analyseCref(cref, inRef, inKind, g);
       then
@@ -1029,14 +1029,14 @@ algorithm
       Graph g;
       Kind k;
 
-    case ((equf as SCode.EQ_FOR(index = iter_name, info = info), (ref, k, g)))
+    case ((equf as SCode.EQ_FOR(index = iter_name), (ref, k, g)))
       equation
         g = addIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, ref, k, g);
         (equ, (_, _, g)) = SCode.traverseEEquationExps(equf, traverseExp, (ref, k, g));
       then
         ((equ, (ref, k, g)));
 
-    case ((equr as SCode.EQ_REINIT(cref = cref1, info = info), (ref, k, g)))
+    case ((equr as SCode.EQ_REINIT(cref = cref1), (ref, k, g)))
       equation
         g = analyseCref(cref1, ref, k, g);
         (equ, (_, _, g)) = SCode.traverseEEquationExps(equr, traverseExp, (ref, k, g));
@@ -1105,14 +1105,14 @@ algorithm
       Graph g;
       Kind k;
 
-    case ((stmt as SCode.ALG_FOR(index = iter_name, info = info), (ref, k, g)))
+    case ((stmt as SCode.ALG_FOR(index = iter_name), (ref, k, g)))
       equation
         g = addIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, ref, k, g);
         (_, (_, _, g)) = SCode.traverseStatementExps(stmt, traverseExp, (ref, k, g));
       then
         ((stmt, (ref, k, g)));
 
-     case ((stmt as SCode.ALG_PARFOR(index = iter_name, parforBody = parforBody, info = info), (ref, k, g)))
+     case ((stmt as SCode.ALG_PARFOR(index = iter_name), (ref, k, g)))
       equation
         g = addIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, ref, k, g);
         (_, (_, _, g)) = SCode.traverseStatementExps(stmt, traverseExp, (ref, k, g));

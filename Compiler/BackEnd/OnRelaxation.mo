@@ -140,7 +140,7 @@ algorithm
     case (_,_,{})
       then (isyst,ishared,false);
     case (_,shared as BackendDAE.SHARED(functionTree=funcs),
-      (comp as BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=BackendDAE.FULL_JACOBIAN(SOME(jac)),jacType=BackendDAE.JAC_TIME_VARYING()))::comps)
+      (BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=BackendDAE.FULL_JACOBIAN(SOME(jac)),jacType=BackendDAE.JAC_TIME_VARYING()))::comps)
       equation
         print("try to relax\n");
           BackendDAEUtil.profilerinit();
@@ -402,13 +402,13 @@ algorithm
         (syst,shared,b) = relaxSystem1(syst,shared,comps);
       then
         (syst,shared,true);
-    case (_,_,(comp as BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1))::comps)
+    case (_,_,(BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1))::comps)
       equation
         (syst,shared,b) = relaxSystem1(isyst,ishared,{comp1});
         (syst,shared,b1) = relaxSystem1(syst,shared,comps);
       then
         (syst,shared,b1 or b);
-    case (_,_,comp::comps)
+    case (_,_,_::comps)
       equation
         (syst,shared,b) = relaxSystem1(isyst,ishared,comps);
       then
@@ -911,7 +911,7 @@ algorithm
         b = prepairOrphansOrder1(next,ass1,ass2,m,mt,mark,rowmarks,colummarks,preorphan,orphans,r,b1 or ifoundFlow,vars);
       then
         prepairOrphansOrder1(rest,ass1,ass2,m,mt,mark,rowmarks,colummarks,preorphan,orphans,prer,b,vars);
-    case (e::rest,_,_,_,_,_,_,_,_,_,_,_,_)
+    case (_::rest,_,_,_,_,_,_,_,_,_,_,_,_)
       then
         prepairOrphansOrder1(rest,ass1,ass2,m,mt,mark,rowmarks,colummarks,preorphan,orphans,prer,ifoundFlow,vars);
   end matchcontinue;
@@ -1006,7 +1006,7 @@ algorithm
         prepairOrphansOrder3(rest,ass1,ass2,m,mt,mark,rowmarks,colummarks,preorphan,partner,orphans,prer);
       then
         ();
-    case (e::rest,_,_,_,_,_,_,_,_,_,_,_)
+    case (_::rest,_,_,_,_,_,_,_,_,_,_,_)
       equation
         prepairOrphansOrder3(rest,ass1,ass2,m,mt,mark,rowmarks,colummarks,preorphan,partner,orphans,prer);
       then
@@ -1234,7 +1234,7 @@ algorithm
         getOrphansOrderEdvanced1(nextQueue,ass1,ass2,m,mt,mark,rowmarks,colummarks,preorphan,orphans,{});
       then
         ();
-    case (e::rest,_,_,_,_,_,_,_,_,_,_)
+    case (e::_,_,_,_,_,_,_,_,_,_,_)
       equation
         // print("Check Eqn: " +& intString(e) +& "\n");
         false = intEq(colummarks[e],mark);
@@ -1643,7 +1643,7 @@ algorithm
       list<Integer> comp;
       list<list<Integer>> rest;
     case({},_) then ();
-    case((c::{})::rest,_)
+    case((_::{})::rest,_)
       equation
         reduceOrphancMatrix(rest,m);
       then
@@ -1744,7 +1744,7 @@ algorithm
     case ({},_,_,_)
       then
         (inExp,DAE.RCONST(0.0));
-    case ((c,e)::rest,_,_,_)
+    case ((c,e)::_,_,_,_)
       equation
         true = intGt(c,size);
       then
@@ -1851,7 +1851,7 @@ algorithm
     case (_,{},_,_,_,_,_)
       then
         (listAppend(listReverse(inElst),inA),inVars,inEqns,inTpl);
-    case ((ca,ea)::resta,(cb,eb)::restb,_,_,_,_,_)
+    case ((ca,_)::resta,(cb,_)::restb,_,_,_,_,_)
       equation
         true = intEq(ca,cb);
         true = intEq(ca,col);
@@ -1867,27 +1867,27 @@ algorithm
         (elst,vars,eqns,tpl) = addRows(resta,restb,col,vars,eqns,tpl,(ca,e)::inElst);
       then
         (elst,vars,eqns,tpl);
-    case ((ca,ea)::resta,(cb,eb)::restb,_,_,_,_,_)
+    case ((ca,_)::_,(cb,_)::restb,_,_,_,_,_)
       equation
         true = intGt(ca,cb);
         true = intEq(cb,col);
         (elst,vars,eqns,tpl) = addRows(inA,restb,col,inVars,inEqns,inTpl,inElst);
       then
         (elst,vars,eqns,tpl);
-    case ((ca,ea)::resta,(cb,eb)::restb,_,_,_,_,_)
+    case ((ca,_)::_,(cb,eb)::restb,_,_,_,_,_)
       equation
         true = intGt(ca,cb);
         (elst,vars,eqns,tpl) = addRows(inA,restb,col,inVars,inEqns,inTpl,(cb,eb)::inElst);
       then
         (elst,vars,eqns,tpl);
-    case ((ca,ea)::resta,(cb,eb)::restb,_,_,_,_,_)
+    case ((ca,_)::resta,(cb,_)::_,_,_,_,_,_)
       equation
         true = intLt(ca,cb);
         true = intEq(ca,col);
         (elst,vars,eqns,tpl) = addRows(resta,inB,col,inVars,inEqns,inTpl,inElst);
       then
         (elst,vars,eqns,tpl);
-    case ((ca,ea)::resta,(cb,eb)::restb,_,_,_,_,_)
+    case ((ca,ea)::resta,(cb,_)::_,_,_,_,_,_)
       equation
         true = intLt(ca,cb);
         (elst,vars,eqns,tpl) = addRows(resta,inB,col,inVars,inEqns,inTpl,(ca,ea)::inElst);
@@ -1924,7 +1924,7 @@ algorithm
       case (_,{},_)
         then
           listReverse(inAcc);
-      case (_,(c,e)::rest,_)
+      case (_,(c,_)::rest,_)
         equation
           true = intEq(i,c);
           acc = listReverse(inAcc);
@@ -2261,13 +2261,13 @@ algorithm
       transformJacToMatrix(rest, row, col+1, size, b, matrix);
     then ();
 
-    case ((r, c, _)::rest, _, _, _, _, _) equation
+    case ((r, c, _)::_, _, _, _, _, _) equation
       true = intEq(r, row);
       true = intLt(col, c);
       transformJacToMatrix(jac, row, col+1, size, b, matrix);
     then ();
 
-    case ((r, c, _)::rest, _, _, _, _, _) equation
+    case ((r, _, _)::_, _, _, _, _, _) equation
       true = intGe(r, row);
       transformJacToMatrix(jac, row, col+1, size, b, matrix);
     then ();
@@ -2318,14 +2318,14 @@ algorithm
       dumpJacMatrix(rest, row, col+1, size, vars);
     then ();
 
-    case ((r, c, _)::rest, _, _, _, _) equation
+    case ((r, c, _)::_, _, _, _, _) equation
       true = intEq(r, row);
       true = intLt(col, c);
       print("0,");
       dumpJacMatrix(jac, row, col+1, size, vars);
     then ();
 
-    case ((r, c, _)::rest, _, _, _, _) equation
+    case ((r, _, _)::_, _, _, _, _) equation
       false = intEq(r, row);
       print("0,");
       dumpJacMatrix(jac, row, col+1, size, vars);
@@ -2546,7 +2546,7 @@ algorithm
         getOrphansPairs1(nextQueue,ass1,ass2,m,mt,mark,rowmarks,colummarks,orphan,{});
       then
         ();
-    case (r::rest,_,_,_,_,_,_,_,_,_)
+    case (r::_,_,_,_,_,_,_,_,_,_)
       equation
         // print("Check Var: " +& intString(r) +& "\n");
         false = intEq(rowmarks[r],mark);
@@ -2638,7 +2638,7 @@ algorithm
         getOrphansPairsConstraints1(nextQueue,ass1,ass2,m,mt,mark,rowmarks,colummarks,eqnsarr,orphan,{});
       then
         ();
-    case (e::rest,_,_,_,_,_,_,_,_,_,_)
+    case (e::_,_,_,_,_,_,_,_,_,_,_)
       equation
         // print("Check Eqn: " +& intString(e) +& "\n");
         false = intEq(colummarks[e],mark);
@@ -2777,7 +2777,7 @@ algorithm
 
       then
        getIndexesForEqnsAdvanced(rest,index1+1,m,mT,mark+2,rowmarks,colummarks,orowmarks,ocolummarks,ass1,ass2,vec1,vec2,queuemark, vars,eqns,shared,size);
-    case (vorphan::rest,_,_,_,_,_,_,_,_,_,_,_ ,_,_,_,_,_,_)
+    case (_::rest,_,_,_,_,_,_,_,_,_,_,_ ,_,_,_,_,_,_)
       then
        getIndexesForEqnsAdvanced(rest,index,m,mT,imark,rowmarks,colummarks,orowmarks,ocolummarks,ass1,ass2,vec1,vec2,queuemark, vars,eqns,shared,size);
   end matchcontinue;
@@ -2857,7 +2857,7 @@ algorithm
         _ = arrayUpdate(colummark,col,mark);
       then
         ((index+1,col::elst,listAppend(r,rlst)));
-    case (_,(vec1,vec2,ass2,queuemark,colummark,mark),(index,elst,rlst))
+    case (_,(_,_,ass2,_,colummark,mark),(index,elst,rlst))
       equation
         r = ass2[col];
         false = intEq(colummark[col],mark);
@@ -3090,7 +3090,7 @@ algorithm
         markIndexSubgraph(b,ass2[e],mark,rowmarks);
       then
         getIndexSubGraph(rest,vorphan,m,mT,mark,rowmarks,colummarks,orowmarks,ocolummarks,ass1,ass2,b or ifound);
-    case (r::rest,_,_,_,_,_,_,_,_,_,_,_)
+    case (_::rest,_,_,_,_,_,_,_,_,_,_,_)
       then
         getIndexSubGraph(rest,vorphan,m,mT,mark,rowmarks,colummarks,orowmarks,ocolummarks,ass1,ass2,ifound);
   end matchcontinue;
@@ -3234,7 +3234,7 @@ algorithm
         crlst = List.map1r(cr::crlst,ComponentReference.joinCrefs,precr);
         set = List.fold(crlst,BaseHashSet.add,ihs);
       then set;
-    case (cr as DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),_,NONE())
+    case (DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),_,NONE())
       equation
         idcr = ComponentReference.makeCrefIdent(ident,ty,{});
         set = BaseHashSet.add(idcr,ihs);
@@ -3242,7 +3242,7 @@ algorithm
         set = BaseHashSet.add(idcr,set);
       then
         addCrefandParentsToSet(subcr,set,SOME(idcr));
-    case (cr as DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),_,SOME(precr))
+    case (DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),_,SOME(precr))
       equation
         idcr = ComponentReference.makeCrefIdent(ident,ty,{});
         idcr = ComponentReference.joinCrefs(precr,idcr);
@@ -3705,7 +3705,7 @@ algorithm
       list<BackendDAE.Var> rest;
       DAE.ComponentRef cr;
       DAE.Exp e1,e2;
-    case (v::rest,_,_,_)
+    case (v::_,_,_,_)
       equation
         cr = BackendVariable.varCref(v);
         (_,i::_) = BackendVariable.getVar(cr,vars);

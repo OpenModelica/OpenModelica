@@ -3625,7 +3625,7 @@ algorithm
     //  then e;
 
     // 0+e => e
-    case (DAE.ADD(ty = ty),e1,e2)
+    case (DAE.ADD(ty=_),e1,e2)
       equation
         true = Expression.isZero(e1);
       then
@@ -3638,14 +3638,14 @@ algorithm
       then DAE.BINARY(e,DAE.DIV(tp2),e3);
 
     // 0 * a = 0
-    case (DAE.MUL(ty = ty),_,e2)
+    case (DAE.MUL(ty=_),_,e2)
       equation
         true = Expression.isZero(e2);
       then
         e2;
 
     // 1 * a = a
-    case (DAE.MUL(ty = ty),e1,e2)
+    case (DAE.MUL(ty=_),e1,e2)
       equation
         true = Expression.isConstOne(e2);
       then
@@ -3990,7 +3990,7 @@ algorithm
       then DAE.UNARY(DAE.UMINUS(ty),e2);
 
     // subtract zero
-    case (_,DAE.SUB(ty = ty),e1,e2,_,true)
+    case (_,DAE.SUB(ty=_),e1,e2,_,true)
       equation
         true = Expression.isZero(e2);
       then e1;
@@ -4014,14 +4014,14 @@ algorithm
       then DAE.BINARY(e1,DAE.ADD(ty),e2);
 
     // 0 / x = 0
-    case (_,DAE.DIV(ty = ty),e1,e2,true,false)
+    case (_,DAE.DIV(ty=_),e1,e2,true,false)
       equation
         true = Expression.isZero(e1);
         false = Expression.isZero(e2);
       then DAE.RCONST(0.0);
 
     // a / 1 = a
-    case (_,DAE.DIV(ty = ty),e1,e2,false,true)
+    case (_,DAE.DIV(ty=_),e1,e2,false,true)
       equation
         true = Expression.isConstOne(e2);
       then e1;
@@ -4592,13 +4592,13 @@ algorithm
       then e1;
 
     // -x => 0 - x
-    case (_,DAE.UMINUS(ty = ty),DAE.ICONST(integer = i))
+    case (_,DAE.UMINUS(ty=_),DAE.ICONST(integer = i))
       equation
         i_1 = intNeg(i);
       then DAE.ICONST(i_1);
 
     // -x => 0.0 - x
-    case (_,DAE.UMINUS(ty = ty),DAE.RCONST(real = r))
+    case (_,DAE.UMINUS(ty=_),DAE.RCONST(real = r))
       equation
         r_1 = realNeg(r);
       then DAE.RCONST(r_1);
@@ -4610,11 +4610,11 @@ algorithm
     case (_,DAE.UMINUS_ARR(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.MUL_ARR(ty = ty1),exp2 = e2))
       then DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(ty),e1),DAE.MUL_ARR(ty1),e2);
     // -0 => 0
-    case (_,DAE.UMINUS(ty = ty),e1)
+    case (_,DAE.UMINUS(ty=_),e1)
       equation
         true = Expression.isZero(e1);
       then e1;
-    case (_,DAE.UMINUS_ARR(ty = ty),e1)
+    case (_,DAE.UMINUS_ARR(ty=_),e1)
       equation
         true = Expression.isZero(e1);
       then e1;
@@ -4905,7 +4905,7 @@ algorithm
         expr = ValuesUtil.valueExp(Values.META_FAIL());
       then expr;
 
-    case DAE.REDUCTION(reductionInfo = DAE.REDUCTIONINFO(path = Absyn.IDENT(str), exprType = ty, defaultValue = defaultValue, foldExp = foldExp), expr = expr, iterators = iterators)
+    case DAE.REDUCTION(reductionInfo = DAE.REDUCTIONINFO(path = Absyn.IDENT(str), exprType = ty, defaultValue = defaultValue), expr = expr, iterators = iterators)
       equation
         true = listMember(str,{"array","min","max","sum","product"});
         {DAE.REDUCTIONITER(id = iter_name, guardExp = NONE(), exp = range)} = iterators;

@@ -3012,7 +3012,7 @@ algorithm
       list<DAE.Exp> explst;
       Boolean b;
 
-    case (DAE.ARRAY(ty=ty, scalar=_, array=explst), _)
+    case (DAE.ARRAY( scalar=_, array=explst), _)
       equation
         explst = List.flatten(List.map1(explst, generateCrefsExpLstFromExp, inCrefPrefix));
       then explst;
@@ -3032,7 +3032,7 @@ algorithm
       then
         {e};
 
-    case (DAE.CREF(componentRef=_,ty=ty),NONE()) then {inExp};
+    case (DAE.CREF(componentRef=_),NONE()) then {inExp};
   end match;
 end generateCrefsExpLstFromExp;
 

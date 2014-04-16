@@ -201,7 +201,7 @@ algorithm
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph, taskGraphData, fileName, "", {}, {}, sccSimEqMapping ,schedulerInfo);
       Debug.execStat("hpcom dump TaskGraph", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
 
-      HpcOmTaskGraph.TASKGRAPHMETA(varNodeMapping=varNodeMapping,eqNodeMapping=eqNodeMapping) = taskGraphData;
+      HpcOmTaskGraph.TASKGRAPHMETA(eqNodeMapping=_) = taskGraphData;
       //HpcOmTaskGraph.printvarNodeMapping(varNodeMapping,1);
       //HpcOmTaskGraph.printeqNodeMapping(eqNodeMapping,1);
 

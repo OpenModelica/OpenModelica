@@ -87,7 +87,7 @@ algorithm
         daeTmp = traverseEqSystemsWithIndex(eqSysIdx+1,tornSysIdx,daeTmp);
       then
         daeTmp;
-    case(_,_,BackendDAE.DAE(eqs=eqSysts, shared=shared))
+    case(_,_,BackendDAE.DAE(eqs=eqSysts))
       equation
         true = listLength(eqSysts) < eqSysIdx;
       then
@@ -1515,7 +1515,7 @@ algorithm
       DAE.Operator op;
       list<BackendDAE.Equation> eqLst;
       list<BackendDAE.Var> varLst;
-    case(DAE.CREF(componentRef = cref),DAE.RCONST(real=real),_,_,_,_,_)
+    case(DAE.CREF(componentRef = cref),DAE.RCONST(real=_),_,_,_,_,_)
       equation
         // check for simple equations: a = const.
         vars = BackendVariable.listVar(varLstIn);
@@ -2020,7 +2020,7 @@ algorithm
         BackendDAE.TORNSYSTEM(tearingvars = tvarIdcs, residualequations = resEqIdcs, otherEqnVarTpl = otherEqnVarTpl, linear = linear) = comp;
         true = linear;
         print("we found a linear EQSYS\n");
-        BackendDAE.EQSYSTEM(orderedVars = daeVars, orderedEqs = daeEqs,stateSets = stateSets) = systIn;
+        BackendDAE.EQSYSTEM(orderedVars = daeVars, orderedEqs = daeEqs) = systIn;
         daeVarLst = BackendVariable.varList(daeVars);
         daeEqLst = BackendEquation.equationList(daeEqs);
 

@@ -373,13 +373,13 @@ algorithm
     then (eqn::iEqns, iVars);
 
     // inactive when equation during initialization
-    case (BackendDAE.WHEN_EQ(condition=condition, left=left, right=right, elsewhenPart=NONE()), _, _, _) equation
+    case (BackendDAE.WHEN_EQ(condition=condition, left=left,  elsewhenPart=NONE()), _, _, _) equation
       false = Expression.containsInitialCall(condition, false);
       (eqns, vars) = generateInactiveWhenEquationForInitialization({left}, source, iEqns, iVars);
     then (eqns, iVars);
 
     // inactive when equation during initialization with else when part (no strict Modelica)
-    case (BackendDAE.WHEN_EQ(condition=condition, left=left, right=right, elsewhenPart=SOME(weqn)), _, _, _) equation
+    case (BackendDAE.WHEN_EQ(condition=condition,   elsewhenPart=SOME(weqn)), _, _, _) equation
       false = Expression.containsInitialCall(condition, false);  // do not use Expression.traverseExp
       (eqns, vars) = inlineWhenForInitializationWhenEquation(weqn, source, iEqns, iVars);
     then (eqns, vars);

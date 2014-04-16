@@ -792,7 +792,7 @@ algorithm
 
     // Partial match, return NONE(). This is when only part of the import path
     // can be found, in which case we should stop looking further.
-    case (_, Absyn.NAMED_IMPORT(name = name, path = path) :: _, _)
+    case (_, Absyn.NAMED_IMPORT(name = name) :: _, _)
       equation
         true = stringEqual(inName, name);
       then
@@ -885,7 +885,7 @@ algorithm
         (item, path, env);
 
     // Qualified name.
-    case (Absyn.QUALIFIED(name = name, path = path), top_scope :: _)
+    case (Absyn.QUALIFIED(name = name, path = path), _ :: _)
       equation
         // Look up the name in the local scope.
         (SOME(item), SOME(new_path), SOME(env)) =
@@ -942,11 +942,11 @@ algorithm
         (item, cref);
 
     // Qualified identifier, what we get back is fully qualified, i.e. from import!
-    case (Absyn.CREF_QUAL(name = name, subscripts = subs,
+    case (Absyn.CREF_QUAL(name = name, subscripts = _,
         componentRef = cref_rest), _)
       equation
         // Look in the local scope.
-        (SOME(item), SOME(new_path), SOME(env)) =
+        (SOME(item), SOME(_), SOME(env)) =
           lookupInLocalScope(name, inEnv, {});
         // Look for the rest of the reference in the found item, fully qualified
         (item, cref_rest as Absyn.CREF_FULLYQUALIFIED(_)) = lookupCrefInItem(cref_rest, item, env);
@@ -1100,7 +1100,7 @@ algorithm
       list<Item> items;
       list<Absyn.Path> bcl;
 
-    case (NFSCodeEnv.EXTENDS(baseClass = bc, redeclareModifiers = redecls,
+    case (NFSCodeEnv.EXTENDS(baseClass = bc, redeclareModifiers = _,
         info = info), _, _, _)
       equation
         // Look up the base class.
@@ -1588,7 +1588,7 @@ algorithm
         cref;
 
     // adrpo: leave it as stripped as you can if you can't match it above!
-    case (Absyn.CREF_QUAL(name = id1, subscripts = {}, componentRef = cref),
+    case (Absyn.CREF_QUAL(name = id1, subscripts = {}, componentRef = _),
           Absyn.IDENT(name = id2))
       equation
         false = stringEqual(id1, id2);

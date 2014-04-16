@@ -95,7 +95,7 @@ algorithm
     case (_, p1, Absyn.FULLYQUALIFIED(p2))
       then Absyn.pathEqual(Absyn.joinPaths(p1, Absyn.IDENT(inTypeName)), p2);
 
-    case (_, p1, p2)
+    case (_, _, p2)
       then stringEqual(Absyn.pathLastIdent(inTypePath), Absyn.pathFirstIdent(p2));
 
   end match;
@@ -217,9 +217,9 @@ algorithm
 
     case (NFSCodeEnv.VAR(var =
         SCode.COMPONENT(name = name, prefixes = SCode.PREFIXES(
-            visibility = vis1, finalPrefix = fin, replaceablePrefix = repl),
+            visibility = _, finalPrefix = fin, replaceablePrefix = repl),
           attributes = SCode.ATTR(variability = var), info = info)),
-        SCode.COMPONENT(prefixes = SCode.PREFIXES(visibility = vis2)), _)
+        SCode.COMPONENT(prefixes = SCode.PREFIXES(visibility = _)), _)
       equation
         err_count = Error.getNumErrorMessages();
         ty = "component";
@@ -233,9 +233,9 @@ algorithm
 
     case (NFSCodeEnv.CLASS(cls =
         SCode.CLASS(name = name, prefixes = SCode.PREFIXES(
-          visibility = vis1, finalPrefix = fin, replaceablePrefix = repl),
+          visibility = _, finalPrefix = fin, replaceablePrefix = repl),
           restriction = res, info = info)),
-        SCode.CLASS(prefixes = SCode.PREFIXES(visibility = vis2)), _)
+        SCode.CLASS(prefixes = SCode.PREFIXES(visibility = _)), _)
       equation
         err_count = Error.getNumErrorMessages();
         ty = SCodeDump.restrictionStringPP(res);
@@ -410,7 +410,7 @@ algorithm
 
     case (_, _, {}) then false;
 
-    case (_, _, redecl :: rest_redecls)
+    case (_, _, redecl :: _)
       equation
         (el_name, el_info) = NFSCodeEnv.getRedeclarationNameInfo(redecl);
         true = stringEqual(inRedeclareName, el_name);
@@ -420,7 +420,7 @@ algorithm
       then
         true;
 
-    case (_, _, redecl :: rest_redecls)
+    case (_, _, _ :: rest_redecls)
       then checkDuplicateRedeclarations2(inRedeclareName,
         inRedeclareInfo, rest_redecls);
 

@@ -319,7 +319,7 @@ algorithm
       then
         (NFInstTypes.BASIC_TYPE(inTypePath), ty, NFInstTypes.NO_PREFIXES(), globals);
 
-    case (_, SCode.CLASS(name = name, restriction = SCode.R_TYPE(),
+    case (_, SCode.CLASS( restriction = SCode.R_TYPE(),
         classDef = SCode.PARTS(elementLst = el)), _, _, _, _, _, globals)
       equation
         cdef = makeDerivedTypeClassDef(el);
@@ -331,7 +331,7 @@ algorithm
 
     // A class with parts, instantiate all elements in it.
     case (_, SCode.CLASS(name = name, restriction = res,
-          classDef = cdef as SCode.PARTS(elementLst = el), info = info), _,
+          classDef = cdef as SCode.PARTS(elementLst = el)), _,
         _, _, _, _, globals)
       equation
         // Enter the class scope.
@@ -356,7 +356,7 @@ algorithm
 
     // A derived class, look up the inherited class and instantiate it.
     case (_, SCode.CLASS(name = name, classDef = SCode.DERIVED(modifications = smod,
-          typeSpec = dty, attributes = attr), restriction = res, info = info),
+          typeSpec = dty, attributes = _), restriction = res, info = info),
         _, _, _, _, _, globals)
       equation
         // Look up the inherited class.
@@ -401,7 +401,7 @@ algorithm
       then
         (cls, ty, NFInstTypes.NO_PREFIXES(), globals);
 
-    case (_, SCode.CLASS(classDef = SCode.ENUMERATION(enumLst = enums), info = info),
+    case (_, SCode.CLASS(classDef = SCode.ENUMERATION(enumLst = enums)),
         _, _, _, _, _, globals)
       equation
         ty = NFInstUtil.makeEnumType(enums, inTypePath);
@@ -451,8 +451,8 @@ algorithm
       Globals globals;
       String name;
 
-    case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(modifications = mod,
-        composition = cdef)), _, _, _, globals)
+    case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(modifications = _,
+        composition = _)), _, _, _, _)
       equation
         print("instClassExtends");
       then
@@ -1294,7 +1294,7 @@ algorithm
       Absyn.Info info;
       Globals globals;
 
-    case (NFInstTypes.RAW_BINDING(aexp, env, pl, info), cd, globals)
+    case (NFInstTypes.RAW_BINDING(aexp, env, pl, info), _, globals)
       equation
         (dexp, globals) = instExp(aexp, env, info, globals);
       then
@@ -1870,7 +1870,7 @@ algorithm
         (dexp1, globals);
 
     // failure
-    case (Absyn.CALL(function_ = funcName), _, _, globals)
+    case (Absyn.CALL(function_ = _), _, _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         //bval = isBuiltinFunctionName(funcName);
@@ -1962,7 +1962,7 @@ algorithm
       then
         (DAE.LBINARY(dexp1, dop, dexp2), globals);
 
-    case (Absyn.LUNARY(op = aop, exp = aexp1), _, _, globals)
+    case (Absyn.LUNARY(op = _, exp = aexp1), _, _, globals)
       equation
         (dexp1, globals) = instExp(aexp1, inEnv, inInfo, globals);
         //dop = instOperator(aop);
@@ -2363,7 +2363,7 @@ algorithm
         inGlobals;
 
     // An enumeration typename used as a dimension or for range.
-    case (_, _, _, SOME(prefix), _, (consts, funcs))
+    case (_, _, _, SOME(prefix), _, (_, _))
       equation
         true = NFEnv.isClassEntry(inEntry);
       then
@@ -2965,7 +2965,7 @@ algorithm
       Element elt;
       list<Statement> bindings;
 
-    case (elt as NFInstTypes.ELEMENT(NFInstTypes.UNTYPED_COMPONENT(name=Absyn.IDENT(name),dimensions=dimensions,info=info),cls),_)
+    case (elt as NFInstTypes.ELEMENT(NFInstTypes.UNTYPED_COMPONENT(name=Absyn.IDENT(name),dimensions=dimensions,info=info),_),_)
       equation
         dims = List.map(arrayList(dimensions),NFInstUtil.unwrapDimension);
         bindings = Util.if_(arrayLength(dimensions)>0,
