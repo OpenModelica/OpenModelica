@@ -284,10 +284,42 @@ QString TextAnnotation::getShapeAnnotation()
   return QString("Text(").append(annotationString.join(",")).append(")");
 }
 
+void TextAnnotation::updateTextStringHelper(QRegExp regExp)
+{
+  int pos = 0;
+  while ((pos = regExp.indexIn(mTextString, pos)) != -1)
+  {
+    QString variable = regExp.cap(0);
+    if ((!variable.isEmpty()) && (variable.compare("%%") != 0) && (variable.compare("%name") != 0) && (variable.compare("%class") != 0))
+    {
+      variable.remove("%");
+      if (!variable.isEmpty())
+      {
+        QString textValue = mpComponent->getParameterDisplayString(variable);
+        if (!textValue.isEmpty())
+        {
+          mTextString.replace(pos, regExp.matchedLength(), textValue);
+        }
+        /* if the value of %\\W* is empty then remove the % sign. */
+        else
+        {
+          mTextString.replace(pos, 1, "");
+        }
+      }
+      /* if there is just alone % then remove it. Because if you want to print % then use %%. */
+      else
+      {
+        mTextString.replace(pos, 1, "");
+      }
+    }
+    pos += regExp.matchedLength();
+  }
+}
+
 void TextAnnotation::updateTextString()
 {
   /*
-    From Modelica Spec 33,
+    From Modelica Spec 32revision2,
     There are a number of common macros that can be used in the text, and they should be replaced when displaying
     the text as follows:
     - %par replaced by the value of the parameter par. The intent is that the text is easily readable, thus if par is
@@ -298,38 +330,27 @@ void TextAnnotation::updateTextString()
     - %name replaced by the name of the component (i.e. the identifier for it in in the enclosing class).
     - %class replaced by the name of the class.
   */
-  if (!mOriginalTextString.contains("%"))
+  mTextString = mOriginalTextString;
+  if (!mTextString.contains("%"))
     return;
-  if (mOriginalTextString.toLower().compare("%name") == 0)
+  if (mOriginalTextString.toLower().contains("%name"))
   {
-    mTextString = QString(mOriginalTextString).replace("%name", mpComponent->getRootParentComponent()->getName(), Qt::CaseInsensitive);
+    mTextString.replace(QRegExp("%name"), mpComponent->getRootParentComponent()->getName());
   }
-  else if (mOriginalTextString.toLower().compare("%class") == 0)
+  if (mOriginalTextString.toLower().contains("%class"))
   {
-    mTextString = QString(mOriginalTextString).replace("%class", mpComponent->getRootParentComponent()->getClassName(), Qt::CaseInsensitive);
+    mTextString.replace(QRegExp("%class"), mpComponent->getRootParentComponent()->getClassName());
   }
-  else
+  if (!mTextString.contains("%"))
+    return;
+  /* handle variables now */
+  updateTextStringHelper(QRegExp("(%%|%\\w*)"));
+  /* call again with non-word characters so invalid % can be removed. */
+  updateTextStringHelper(QRegExp("(%%|%\\W*)"));
+  /* handle %% */
+  if (mOriginalTextString.toLower().contains("%%"))
   {
-    /* handle variables now */
-    QRegExp variablesRegExp ("%\\w+");
-    QStringList variablesList;
-    int pos = 0;
-    while ((pos = variablesRegExp.indexIn(mOriginalTextString, pos)) != -1)
-    {
-      variablesList << variablesRegExp.cap(0);
-      pos += variablesRegExp.matchedLength();
-    }
-    foreach (QString variable, variablesList)
-    {
-      if (!variable.isEmpty())
-      {
-        QString textValue = mpComponent->getParameterDisplayString(variable.remove("%"));
-        if (!textValue.isEmpty())
-        {
-          mTextString = QString(mOriginalTextString).replace(QString("%").append(variable), textValue);
-        }
-      }
-    }
+    mTextString.replace(QRegExp("%%"), "%");
   }
 }
 

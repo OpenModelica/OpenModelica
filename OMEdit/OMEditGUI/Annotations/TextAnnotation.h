@@ -58,6 +58,8 @@ public:
   QString getShapeAnnotation();
 private:
   Component *mpComponent;
+
+  void updateTextStringHelper(QRegExp regExp);
 public slots:
   void updateTextString();
   void duplicate();
