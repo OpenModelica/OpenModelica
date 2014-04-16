@@ -67,7 +67,7 @@ Legend::~Legend()
 }
 
 void Legend::legendMenu(const QPoint& pos)
-{        
+{
 #if QWT_VERSION >= 0x060100
   QwtLegendLabel *pItem = dynamic_cast<QwtLegendLabel*>(childAt(pos));
 #else

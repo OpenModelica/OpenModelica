@@ -41,7 +41,7 @@ using namespace OMPlot;
 
 PlotCurve::PlotCurve(Plot *pParent)
   : mCustomColor(false)
-{   
+{
   mpParentPlot = pParent;
   /* set curve width and style */
   mWidth = mpParentPlot->getParentPlotWindow()->getCurveWidth();
