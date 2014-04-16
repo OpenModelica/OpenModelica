@@ -70,8 +70,8 @@ case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let x = covertTextFileToCLiteral('<%fileNamePrefix%>_init.xml','<%fileNamePrefix%>_init.c')
   let()= textFile(fmumodel_identifierFile(simCode,guid,FMUVersion), '<%fileNamePrefix%>_FMU.c')
   let()= textFile(fmuModelDescriptionFile(simCode,guid,FMUVersion), 'modelDescription.xml')
-  let()= textFile(fmudeffile(simCode), '<%fileNamePrefix%>.def')
-  let()= textFile(fmuMakefile(target,simCode), '<%fileNamePrefix%>_FMU.makefile')
+  let()= textFile(fmudeffile(simCode,FMUVersion), '<%fileNamePrefix%>.def')
+  let()= textFile(fmuMakefile(target,simCode,FMUVersion), '<%fileNamePrefix%>_FMU.makefile')
   "" // Return empty result since result written to files directly
 end translateModel;
 
@@ -509,11 +509,14 @@ case SIMCODE(__) then
   #include "util/omc_error.h"
   #include "<%fileNamePrefix%>_functions.h"
   #include "<%fileNamePrefix%>_literals.h"
-  #include "fmiModelTypes.h"
-  #include "fmiModelFunctions.h"
   #include "simulation/solver/initialization/initialization.h"
   #include "simulation/solver/events.h"
-  <%if stringEq(FMUVersion, "2.0") then '#include "fmu2_model_interface.h"' else '#include "fmu1_model_interface.h"'%>
+  <%if stringEq(FMUVersion, "2.0") then
+  '#include "fmu2_model_interface.h"'
+  else
+  '#include "fmiModelTypes.h"
+  #include "fmiModelFunctions.h"
+  #include "fmu1_model_interface.h"'%>
 
   #ifdef __cplusplus
   extern "C" {
@@ -1144,7 +1147,7 @@ match platform
   >>
 end getPlatformString2;
 
-template fmuMakefile(String target, SimCode simCode)
+template fmuMakefile(String target, SimCode simCode, String FMUVersion)
  "Generates the contents of the makefile for the simulation case. Copy libexpat & correct linux fmu"
 ::=
 match target
@@ -1181,7 +1184,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /I - Include Directories
   # /DNOMINMAX - Define NOMINMAX (does what it says)
   # /TP - Use C++ Compiler
-  CFLAGS=/Od /ZI /EHa /fp:except /I"<%makefileParams.omhome%>/include/omc/c" /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY
+  CFLAGS=/Od /ZI /EHa /fp:except /I"<%makefileParams.omhome%>/include/omc/c" <%if stringEq(FMUVersion, "2.0") then '/I"<%makefileParams.omhome%>/include/omc/c/fmi2"' else '/I"<%makefileParams.omhome%>/include/omc/c/fmi1"'%> /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY
 
   # /ZI enable Edit and Continue debug info
   CDFLAGS = /ZI
@@ -1257,8 +1260,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
   PLATFORM = <%platformstr%>
   PLAT34 = <%makefileParams.platform%>
-  CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -I"<%makefileParams.omhome%>/include/omc/c" <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags /* From the simulate() command */%>
-  CPPFLAGS=-I"<%makefileParams.omhome%>/include/omc/c" -I. <%makefileParams.includes ; separator=" "%>
+  CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -I"<%makefileParams.omhome%>/include/omc/c" <%if stringEq(FMUVersion, "2.0") then '-I"<%makefileParams.omhome%>/include/omc/c/fmi2"' else '-I"<%makefileParams.omhome%>/include/omc/c/fmi1"'%> <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags /* From the simulate() command */%>
+  CPPFLAGS=-I"<%makefileParams.omhome%>/include/omc/c" <%if stringEq(FMUVersion, "2.0") then '-I"<%makefileParams.omhome%>/include/omc/c/fmi2"' else '-I"<%makefileParams.omhome%>/include/omc/c/fmi1"'%> -I. <%makefileParams.includes ; separator=" "%>
   LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" -Wl,-rpath,'<%makefileParams.omhome%>/lib/omc' -lSimulationRuntimeC -linteractive <%makefileParams.ldflags%> <%makefileParams.runtimelibs%> <%dirExtra%> 
   PERL=perl
   MAINFILE=<%fileNamePrefix%>_FMU.c
@@ -1285,11 +1288,57 @@ else
   error(sourceInfo(), 'target <%target%> is not handled!')
 end fmuMakefile;
 
-template fmudeffile(SimCode simCode)
+template fmudeffile(SimCode simCode, String FMUVersion)
  "Generates the def file of the fmu."
 ::=
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
+  if stringEq(FMUVersion, "2.0") then
+  <<
+  EXPORTS
+    ;***************************************************
+    ;Common Functions
+    ;****************************************************
+    <%fileNamePrefix%>_fmiGetTypesPlatform @1
+    <%fileNamePrefix%>_fmiGetVersion @2
+    <%fileNamePrefix%>_fmiSetDebugLogging @3
+    <%fileNamePrefix%>_fmiInstantiate @4
+    <%fileNamePrefix%>_fmiFreeInstance @5
+    <%fileNamePrefix%>_fmiSetupExperiment @6
+    <%fileNamePrefix%>_fmiEnterInitializationMode @7
+    <%fileNamePrefix%>_fmiExitInitializationMode @8
+    <%fileNamePrefix%>_fmiTerminate @9
+    <%fileNamePrefix%>_fmiReset @10
+    <%fileNamePrefix%>_fmiGetReal @11
+    <%fileNamePrefix%>_fmiGetInteger @12
+    <%fileNamePrefix%>_fmiGetBoolean @13
+    <%fileNamePrefix%>_fmiGetString @14
+    <%fileNamePrefix%>_fmiSetReal @15
+    <%fileNamePrefix%>_fmiSetInteger @16
+    <%fileNamePrefix%>_fmiSetBoolean @17
+    <%fileNamePrefix%>_fmiSetString @18
+    <%fileNamePrefix%>_fmiGetFMUstate @19
+    <%fileNamePrefix%>_fmiSetFMUstate @20
+    <%fileNamePrefix%>_fmiFreeFMUstate @21
+    <%fileNamePrefix%>_fmiSerializedFMUstateSize @22
+    <%fileNamePrefix%>_fmiSerializeFMUstate @23
+    <%fileNamePrefix%>_fmiDeSerializeFMUstate @24
+    <%fileNamePrefix%>_fmiGetDirectionalDerivative @25
+    ;***************************************************
+    ;Functions for FMI for Model Exchange
+    ;****************************************************
+    <%fileNamePrefix%>_fmiEnterEventMode @26
+    <%fileNamePrefix%>_fmiNewDiscreteStates @27
+    <%fileNamePrefix%>_fmiEnterContinuousTimeMode @28
+    <%fileNamePrefix%>_fmiCompletedIntegratorStep @29
+    <%fileNamePrefix%>_fmiSetTime @30
+    <%fileNamePrefix%>_fmiSetContinuousStates @31
+    <%fileNamePrefix%>_fmiGetDerivatives @32
+    <%fileNamePrefix%>_fmiGetEventIndicators @33
+    <%fileNamePrefix%>_fmiGetContinuousStates @34
+    <%fileNamePrefix%>_fmiGetNominalsOfContinuousStates @35
+  >>
+  else
   <<
   EXPORTS
     <%fileNamePrefix%>_fmiCompletedIntegratorStep @1

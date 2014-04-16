@@ -40,6 +40,8 @@ mkbuilddirs:
 	mkdir -p $(builddir_inc)/c/meta/
 	mkdir -p $(builddir_inc)/c/meta/gc/
 	mkdir -p $(builddir_inc)/c/util/
+	mkdir -p $(builddir_inc)/c/fmi1/
+	mkdir -p $(builddir_inc)/c/fmi2/
 	mkdir -p $(builddir_java)
 	mkdir -p $(builddir_share)/omc/scripts/OpenTurns/
 	mkdir -p $(builddir_doc)/omc/testmodels
