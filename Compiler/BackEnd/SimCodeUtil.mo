@@ -12586,7 +12586,7 @@ algorithm
   bVars := List.flatten(bVarsLst);
   bVars := List.filter1OnTrue(bVars,intGt,0);
   bVars := List.unique(bVars);
-  simVars := List.map1(bVars,getSimVarForBackendVar,map);  
+  simVars := List.map1(bVars,getSimVarForBackendVar,map);
 end getSimVarsInSimEq;
 
 public function getSimEqsOfSimVar"gets the indeces for the simVars occuring in the given simEq
@@ -12605,7 +12605,7 @@ algorithm
   SimCode.BACKENDMAPPING(m=m,mT=mt,eqMapping=eqMapping,varMapping=varMapping) := map;
   bVar := getBackendVarForSimVar(simVar,map);
   bEqs := arrayGet(mt,bVar);
-  simEqs := List.map1(bEqs,getSimEqsForBackendEqs,map);  
+  simEqs := List.map1(bEqs,getSimEqsForBackendEqs,map);
 end getSimEqsOfSimVar;
 
 public function getReqSimEqsForSimVar"outputs the indeces for the required simEqSys for the indexed SimVar
@@ -12664,7 +12664,7 @@ author:Waurich TUD 2014-04"
 protected
   list<tuple<Integer,Integer>> varMapping;
 algorithm
-  SimCode.BACKENDMAPPING(varMapping=varMapping) := map;  
+  SimCode.BACKENDMAPPING(varMapping=varMapping) := map;
   ((simVar,_)):= List.getMemberOnTrue(bVar,varMapping,findBackendVar);
 end getSimVarForBackendVar;
 
