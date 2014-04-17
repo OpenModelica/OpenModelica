@@ -624,9 +624,9 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
         comp->fmuData->simulationInfo.samples[i] = 1;
         infoStreamPrint(LOG_EVENTS, 0, "[%ld] sample(%g, %g)", comp->fmuData->modelData.samplesInfo[i].index, comp->fmuData->modelData.samplesInfo[i].start, comp->fmuData->modelData.samplesInfo[i].interval);
       }
-    
+
     comp->fmuData->callback->functionDAE(comp->fmuData);
-    
+
     /* deactivate sample events */
     for(i=0; i<comp->fmuData->modelData.nSamples; ++i)
     {
@@ -652,7 +652,7 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
 
 
   comp->fmuData->callback->functionDAE(comp->fmuData);
-	}
+  }
 
   if(comp->fmuData->callback->checkForDiscreteChanges(comp->fmuData) || comp->fmuData->simulationInfo.needToIterate || checkRelations(comp->fmuData) || eventInfo->stateValuesChanged){
     intermediateResults = fmiTrue;
