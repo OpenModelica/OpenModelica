@@ -118,7 +118,7 @@ void Newton::solve()
             _iterationStatus = CONTINUE;
 
         // New right hand side
-	//calcFunction(_y,_f);
+  //calcFunction(_y,_f);
 
         if(_iterationStatus == CONTINUE)
         {
