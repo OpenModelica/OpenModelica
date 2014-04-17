@@ -158,7 +158,7 @@ algorithm
       equation
         mod2 = Mod.lookupCompModification(mod, bind_name);
         SOME(DAE.TYPED(e,optVal,DAE.PROP(ty2,_),_,_)) = Mod.modEquation(mod2);
-        (e_1,ty_1) = Types.matchType(e, ty2, expected_type, true);
+        (e_1,_) = Types.matchType(e, ty2, expected_type, true);
         e_1 = InstUtil.checkUseConstValue(useConstValue,e_1,optVal);
       then
         SOME(e_1);
@@ -216,7 +216,7 @@ algorithm
       equation
         mod2 = Mod.lookupIdxModification(mod, index);
         SOME(DAE.TYPED(e,optVal,DAE.PROP(ty2,_),_,_)) = Mod.modEquation(mod2);
-        (e_1,ty_1) = Types.matchType(e, ty2, etype, true);
+        (e_1,_) = Types.matchType(e, ty2, etype, true);
         e_1 = InstUtil.checkUseConstValue(useConstValue,e_1,optVal);
       then
         SOME(e_1);
@@ -228,7 +228,7 @@ algorithm
         result;
     case (mod,_,(index :: _),_,_)
       equation
-        failure(mod2 = Mod.lookupIdxModification(mod, index));
+        failure(_ = Mod.lookupIdxModification(mod, index));
       then
         NONE();
     case (_,_,_,_,_)
@@ -499,7 +499,7 @@ algorithm
 
         crName = ComponentReference.crefPrependIdent(cr,"name",{},DAE.T_STRING_DEFAULT);
         crParams = ComponentReference.crefPrependIdent(cr,"params",{},DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(paramDim)},DAE.emptyTypeSource));
-        crParamNames = ComponentReference.crefPrependIdent(cr,"params",{},DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_INTEGER(paramDim)},DAE.emptyTypeSource));
+        _ = ComponentReference.crefPrependIdent(cr,"params",{},DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_INTEGER(paramDim)},DAE.emptyTypeSource));
         name = Expression.makeCrefExp(crName,DAE.T_STRING_DEFAULT);
         params = Expression.makeCrefExp(crParams,DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(paramDim)},DAE.emptyTypeSource));
         paramNames = Expression.makeCrefExp(crParams,DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_INTEGER(paramDim)},DAE.emptyTypeSource));
@@ -721,7 +721,7 @@ algorithm
     case (_,_,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,prop,_,info))),tp,_,_,_)
       equation
         e_tp = Types.getPropType(prop);
-        c = Types.propAllConst(prop);
+        _ = Types.propAllConst(prop);
         failure((_,_) = Types.matchType(e, e_tp, tp, false));
         e_tp_str = Types.unparseType(e_tp);
         tp_str = Types.unparseType(tp);

@@ -375,7 +375,7 @@ algorithm
     // inactive when equation during initialization
     case (BackendDAE.WHEN_EQ(condition=condition, left=left,  elsewhenPart=NONE()), _, _, _) equation
       false = Expression.containsInitialCall(condition, false);
-      (eqns, vars) = generateInactiveWhenEquationForInitialization({left}, source, iEqns, iVars);
+      (eqns,_) = generateInactiveWhenEquationForInitialization({left}, source, iEqns, iVars);
     then (eqns, iVars);
 
     // inactive when equation during initialization with else when part (no strict Modelica)
@@ -412,7 +412,7 @@ algorithm
     case ((DAE.STMT_WHEN(exp=condition, statementLst=stmts, elseWhen=NONE()))::{}, true, _, _) equation
       false = Expression.containsInitialCall(condition, false);
       crefLst = CheckModel.algorithmStatementListOutputs(stmts, DAE.EXPAND()); // expand as we're in an algorithm
-      crintLst = List.map1(crefLst, Util.makeTuple, 1);
+      _ = List.map1(crefLst, Util.makeTuple, 1);
       leftCrs = List.fold(crefLst, addWhenLeftCr, iLeftCrs);
     then ({}, leftCrs);
 
@@ -1100,7 +1100,7 @@ algorithm
 
       // analyze system
       funcs = BackendDAEUtil.getFunctions(shared);
-      (system, m, mt, mapEqnIncRow, mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(isyst, BackendDAE.NORMAL(), SOME(funcs));
+      (_, m, mt, mapEqnIncRow, mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(isyst, BackendDAE.NORMAL(), SOME(funcs));
       // BackendDump.printEqSystem(system);
       vec1 = arrayCreate(nVars, -1);
       vec2 = arrayCreate(nEqns, -1);
@@ -1641,7 +1641,7 @@ algorithm
     // state
     case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.STATE(index=_), varType=ty), (vars, fixvars, eqns, hs))) equation
       isFixed = BackendVariable.varFixed(var);
-      startValue = BackendVariable.varStartValueOption(var);
+      _ = BackendVariable.varStartValueOption(var);
       preUsed = BaseHashSet.has(cr, hs);
 
       startExp = BackendVariable.varStartValue(var);

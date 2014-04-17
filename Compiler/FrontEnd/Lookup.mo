@@ -844,7 +844,7 @@ algorithm
         env2 = Env.openScope(env_1, encflag, SOME(id), Env.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         // Debug.fprintln(Flags.INST_TRACE, "LOOKUP UNQUALIFIED IMPORTED ICD: " +& Env.printEnvPathStr(env) +& "." +& ident);
-        (cache,env2,_,cistate1,_) =
+        (cache,env2,_,_,_) =
         Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
         // Restrict import to the imported scope only, not its parents, thus {f} below
@@ -1224,7 +1224,7 @@ algorithm
     // BZ: This is due to recursive call when it might become DAE.CREF_IDENT calls.
     case (cache,env,(cr as DAE.CREF_IDENT(ident = _,subscriptLst = _)),_,_)
       equation
-        (cache,attr,ty,bind,cnstForRange,splicedExpData,classEnv,componentEnv,name) = lookupVarLocal(cache, env, cr);
+        (cache,attr,ty,bind,cnstForRange,splicedExpData,_,componentEnv,name) = lookupVarLocal(cache, env, cr);
         Util.setStatefulBoolean(inState,true);
       then
         (cache,env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name);
@@ -1622,7 +1622,7 @@ algorithm
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
 
         // Debug.fprintln(Flags.INST_TRACE, "LOOKUP FUNCTIONS IN ENV QUAL ICD: " +& Env.printEnvPathStr(env2) +& "." +& str);
-        (cache,env_2,_,cistate1,_) =
+        (cache,env_2,_,_,_) =
         Inst.partialInstClassIn(
           cache, env2, InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(),
@@ -1971,7 +1971,7 @@ algorithm
 
     case (cache,env,cl as SCode.CLASS(name=id,info=info))
       equation
-        (cache,env,funcelts,elts) = buildRecordConstructorClass2(cache,env,cl,DAE.NOMOD());
+        (cache,env,funcelts,_) = buildRecordConstructorClass2(cache,env,cl,DAE.NOMOD());
         reselt = buildRecordConstructorResultElt(funcelts,id,env,info);
         cl = SCode.CLASS(id,SCode.defaultPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_FUNCTION(SCode.FR_RECORD_CONSTRUCTOR()),SCode.PARTS((reselt :: funcelts),{},{},{},{},{},{},NONE()),SCode.noComment,info);
       then
@@ -2623,7 +2623,7 @@ algorithm
     // Variable index, can't check at compile time.
     case (exp :: expl, dims)
       equation
-        failure(x = Expression.expInt(exp));
+        failure(_ = Expression.expInt(exp));
         true = checkSubscriptsRange2(expl, dims);
       then
         true;

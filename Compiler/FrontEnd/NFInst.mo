@@ -169,7 +169,7 @@ algorithm
 
         // Instantiate conditional components now that we have typed all crefs
         // that might be used as conditions.
-        constants = NFInstSymbolTable.create();
+        _ = NFInstSymbolTable.create();
         //(cls, symtab, (constants, functions)) =
         //  instConditionalComponents(cls, symtab, (constants, functions));
 
@@ -869,7 +869,7 @@ algorithm
     else
       equation
         orig_el = NFEnv.entryElement(inEntry);
-        name = SCode.elementName(orig_el);
+        _ = SCode.elementName(orig_el);
         smod = getRedeclaredModifier(orig_el);
       then
         (inEntry, (smod, inEnv), inEnv);
@@ -1028,7 +1028,7 @@ algorithm
         prefix = NFEnv.scopePrefix(inEnv);
         path = NFInstPrefix.prefixPath(Absyn.IDENT(name), prefix);
 
-        (cls, ty, cls_prefs, globals) = instClassEntry(tpath, cls_entry, NFInstTypes.NOMOD(),
+        (cls, ty,_, globals) = instClassEntry(tpath, cls_entry, NFInstTypes.NOMOD(),
           inPrefixes, env, prefix, globals);
 
         binding = NFInstTypes.TYPED_BINDING(DAE.ENUM_LITERAL(path, enum_idx), ty, -1, info);
@@ -3705,7 +3705,7 @@ algorithm
     case (SCode.EQ_WHEN(condition = exp1, eEquationLst = eql,
         elseBranches = when_branches, info = info), _, globals)
       equation
-        (dexp1, globals) = instExp(exp1, inEnv, info, globals);
+        (_, globals) = instExp(exp1, inEnv, info, globals);
         (ieql, globals) = instEEquations(eql, inEnv, globals);
         (inst_branches, globals) = List.map2Fold(when_branches, instWhenBranch, inEnv, info, globals);
         // Add else branch as a branch with condition true last in the list.

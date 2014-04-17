@@ -453,7 +453,7 @@ algorithm
         true = BackendVariable.hasDiscreteVar(var_lst);
         true = BackendVariable.hasContinousVar(var_lst);
         varindxs = List.map(var_varindx_lst,Util.tuple22);
-        (cont_eqn,cont_var,disc_eqn,disc_var,indxcont_eqn,indxcont_var,indxdisc_eqn,indxdisc_var) = splitMixedEquations(eqn_lst, comp, var_lst, varindxs);
+        (cont_eqn,cont_var,_,_,indxcont_eqn,indxcont_var,indxdisc_eqn,indxdisc_var) = splitMixedEquations(eqn_lst, comp, var_lst, varindxs);
         var_varindx_lst_cond = List.threadTuple(cont_var,indxcont_var);
         sc = analyseStrongComponentBlock(indxcont_eqn,cont_eqn,var_varindx_lst_cond,syst,shared,ass1,ass2,true);
       then
@@ -529,7 +529,7 @@ algorithm
       equation
         jacVals = BackendDAEOptimize.evaluateConstantJacobian(size,jac);
         rhsVals = List.fill(0.0,size);
-        (solvedVals,linInfo) = System.dgesv(jacVals,rhsVals);
+        (_,linInfo) = System.dgesv(jacVals,rhsVals);
         false = intEq(linInfo,0);
         varname = ComponentReference.printComponentRefStr(BackendVariable.varCref(listGet(iVars,linInfo)));
         infoStr = intString(linInfo);

@@ -1067,7 +1067,7 @@ algorithm
     case(_,e as DAE.BINARY(e1,DAE.POW(_),e2 as DAE.ICONST(i)),divOrMul,ht,store)
       equation
         (ut1,terms1,store) = buildTermExp(env,e1,divOrMul,ht,store);
-        (ut2,terms2,store) = buildTermExp(env,e2,divOrMul,ht,store);
+        (_,terms2,store) = buildTermExp(env,e2,divOrMul,ht,store);
         terms = listAppend(terms1,terms2);
         ut = UnitAbsyn.POW(ut1,MMath.RATIONAL(i,1),e);
     then (ut,terms,store);
@@ -1075,7 +1075,7 @@ algorithm
     case(_,e as DAE.BINARY(e1,DAE.POW(_),e2 as DAE.RCONST(r)),divOrMul,ht,store)
       equation
         (ut1,terms1,store) = buildTermExp(env,e1,divOrMul,ht,store);
-        (ut2,terms2,store) = buildTermExp(env,e2,divOrMul,ht,store);
+        (_,terms2,store) = buildTermExp(env,e2,divOrMul,ht,store);
         terms = listAppend(terms1,terms2);
         i = realInt(r);
         true = intReal(i) -. r ==. 0.0;

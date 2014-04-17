@@ -326,7 +326,7 @@ algorithm
     case (_, _, _, _)
       equation
         true = FNode.hasImports(FNode.fromRef(inRef));
-        (qi, uqi) = FNode.imports(FNode.fromRef(inRef));
+        (qi,_) = FNode.imports(FNode.fromRef(inRef));
         r = imp_qual(inRef, inName, qi, inOptions, inMsg);
       then
         r;
@@ -335,7 +335,7 @@ algorithm
     case (_, _, _, _)
       equation
         true = FNode.hasImports(FNode.fromRef(inRef));
-        (qi, uqi) = FNode.imports(FNode.fromRef(inRef));
+        (_, uqi) = FNode.imports(FNode.fromRef(inRef));
         r = imp_unqual(inRef, inName, uqi, inOptions, inMsg);
       then
         r;

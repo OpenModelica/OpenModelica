@@ -250,7 +250,7 @@ algorithm
 
     case (cache,_,ih,_)
       equation
-        (cache,env1,ih) = implicitFunctionInstantiation(cache,env,ih,DAE.NOMOD(),Prefix.NOPRE(),cl,{});
+        (cache,_,ih) = implicitFunctionInstantiation(cache,env,ih,DAE.NOMOD(),Prefix.NOPRE(),cl,{});
       then
         (cache,ih);
     // failure
@@ -535,7 +535,7 @@ algorithm
     // Skipped recursive calls (by looking in cache)
     case(cache,env,ih,p::paths,_,_)
       equation
-        (cache,cdef,cenv) = Lookup.lookupClass(cache,env,p,true);
+        (cache,_,cenv) = Lookup.lookupClass(cache,env,p,true);
         (cache,p) = Inst.makeFullyQualified(cache,cenv,p);
         Env.checkCachedInstFuncGuard(cache,p);
       then instantiateDerivativeFuncs2(cache,env,ih,paths,path,info);
@@ -627,7 +627,7 @@ algorithm
       equation
         elts = List.select(elts,isElementImportantForFunction);
         stripped_class = SCode.CLASS(id,prefixes,e,p,SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(false)),SCode.PARTS(elts,{},{},{},{},{},{},NONE()),cmt,info);
-        (cache,env_1,ih,funs) = implicitFunctionInstantiation2(cache, env, ih, DAE.NOMOD(), Prefix.NOPRE(), stripped_class, {}, true);
+        (cache,env_1,ih,_) = implicitFunctionInstantiation2(cache, env, ih, DAE.NOMOD(), Prefix.NOPRE(), stripped_class, {}, true);
         // Only external functions are valid without an algorithm section...
         // cache = Env.addDaeExtFunction(cache, funs);
       then
@@ -641,7 +641,7 @@ algorithm
         (cache,(c as SCode.CLASS(name = _, restriction = _)),cenv) = Lookup.lookupClass(cache, env, cn, false /* Makes MultiBody gravityacceleration hacks shit itself */);
         (cache,mod2) = Mod.elabMod(cache, env, ih, Prefix.NOPRE(), mod1, false, info);
 
-        (cache,_,ih,_,dae,_,ty,_,_,_) =
+        (cache,_,ih,_,_,_,ty,_,_,_) =
           Inst.instClass(cache,cenv,ih,UnitAbsynBuilder.emptyInstStore(), mod2,
             Prefix.NOPRE(), c, {}, true, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
 

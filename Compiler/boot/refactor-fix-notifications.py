@@ -37,13 +37,15 @@ UNUSED_LOCAL = (Suppress("Notification: Unused local variable: ") + IDENT + "." 
   lambda s,s2: {'unused_local':s2[0]})
 DEAD_STATEMENT = Literal("Notification: Dead code elimination: Statement optimised away.").setParseAction(
   lambda s,s2: {'dead_statement':True})
+UNUSED_ASSIGN = (Suppress("Notification: Removing unused assignment to: ") + IDENT + "." + StringEnd()).setParseAction(
+  lambda s,s2: {'unused_assign':s2[0]})
 USE_MATCH = Literal("Notification: This matchcontinue expression has no overlapping patterns and should be using match instead of matchcontinue.").setParseAction(
   lambda s,s2: {'mc_to_match':True})
 UNUSED_AS = (Literal("Notification: Removing unused as-binding: ") + IDENT + "." + StringEnd() ).setParseAction(
   lambda s,s2: {'unused_as':s2[1]})
 UNKNOWN = Suppress("Notification:")
 
-NOTIFICATION = (Suppress("[") + FILEINFO + Suppress("]") + (UNUSED_LOCAL|UNUSED_AS|DEAD_STATEMENT|USE_MATCH|UNKNOWN))
+NOTIFICATION = (Suppress("[") + FILEINFO + Suppress("]") + (UNUSED_LOCAL|UNUSED_AS|UNUSED_ASSIGN|DEAD_STATEMENT|USE_MATCH|UNKNOWN))
 
 def runOMC(arg):
   try:
@@ -115,6 +117,16 @@ def fixFileIter(stamp,moFile,logFile):
       pass
       #print "Unused local %s" % n
       #print moContents[endLine-1]
+    elif len(n)==2 and n[1].has_key('unused_assign'):
+      ident = n[1]['unused_assign']
+      split = re.split("(^|[(,]) *%s *([,)=]|:=)" % ident, lineContentsOfInfo, maxsplit=1)
+      if len(split) <> 4:
+        printWarning(info,'Failed to find assignment to %s in %s' % (ident,lineContentsOfInfo.strip()))
+        continue
+      updated = split[0]+split[1]+('_ ' if re.match('[:]?=',split[2]) else '_')+split[2]+split[3]
+      updateContents(moContents,startLine,endLine,startCol,endCol,updated)
+      printInfo(info, 'Replaced dead assign %s in %s with %s' % (ident,lineContentsOfInfo.strip(),updated))
+      maxLine = startLine
     elif len(n)==2 and n[1].has_key('unused_as'):
       ident = n[1]['unused_as']
       s = lineContentsOfInfo

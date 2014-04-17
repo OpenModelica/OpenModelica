@@ -113,7 +113,7 @@ algorithm
     // there
     case (FCore.V(tree = a), _)
       equation
-        id = FNode.id(FNode.fromRef(inRef));
+        _ = FNode.id(FNode.fromRef(inRef));
         _ = avlTreeGet(a, FNode.id(FNode.fromRef(inRef)));
       then
         true;
@@ -162,7 +162,7 @@ algorithm
     // already there, something's fishy!
     case (_, _)
       equation
-        id = FNode.id(FNode.fromRef(inRef));
+        _ = FNode.id(FNode.fromRef(inRef));
         v = avlTreeGet(tree(inVisited), FNode.id(FNode.fromRef(inRef)));
         print("Already visited: " +& FNode.toStr(FNode.fromRef(inRef)) +& " seq: " +& intString(seq(v)) +& "\n");
       then

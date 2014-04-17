@@ -806,7 +806,7 @@ algorithm
 
     case (cache,env,ih,DAE.RECORD(f,es,fieldNames,t),p)
       equation
-        (cache,es_1) = prefixExpList(cache, env, ih, es, p);
+        (cache,_) = prefixExpList(cache, env, ih, es, p);
       then
         (cache,DAE.RECORD(f,es,fieldNames,t));
 

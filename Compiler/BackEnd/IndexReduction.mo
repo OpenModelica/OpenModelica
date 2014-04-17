@@ -123,7 +123,7 @@ algorithm
         //  dumpSystemGraphML(syst,ishared,NONE(),"ConstrainRevoluteJoint" +& intString(listLength(List.flatten(eqns))) +& ".graphml");
         // check by count vars of equations, if len(eqns) > len(vars) stop because of structural singular system
         ErrorExt.setCheckpoint("Pantelides");
-        (eqns_1,unassignedStates,unassignedEqns,discEqns) = minimalStructurallySingularSystem(eqns,isyst,ishared,inAssignments1,inAssignments2,inArg);
+        (eqns_1,unassignedStates,unassignedEqns,_) = minimalStructurallySingularSystem(eqns,isyst,ishared,inAssignments1,inAssignments2,inArg);
         size = BackendDAEUtil.systemSize(isyst);
         ErrorExt.delCheckpoint("Pantelides");
         ErrorExt.setCheckpoint("Pantelides");
@@ -1801,7 +1801,7 @@ algorithm
       equation
         rang = nStateCandidates - nUnassignedEquations;
          // generate Set Vars
-        (set,crset,setVars,crA,aVars,tp,crJ,varJ) = getSetVars(iSetIndex,rang,nStateCandidates,nUnassignedEquations,level);
+        (_,crset,setVars,crA,aVars,tp,crJ,varJ) = getSetVars(iSetIndex,rang,nStateCandidates,nUnassignedEquations,level);
         // add Equations
         // set.x = set.A*set.statecandidates
         // der(set.x) = set.A*der(set.candidates)
@@ -1995,7 +1995,7 @@ algorithm
     case (_,_,BackendDAE.EQSYSTEM(orderedVars=vars,matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2)),_,_,_,_,_,_,_)
       equation
         // get orgequations of that level
-        (eqnslst1,ilst,orgEqnsLst) = getFirstOrgEqns(iOrgEqnsLst,{},{},{});
+        (eqnslst1,_,orgEqnsLst) = getFirstOrgEqns(iOrgEqnsLst,{},{},{});
         // replace final parameter
         (eqnslst,_) = BackendEquation.traverseBackendDAEExpsEqnList(eqnslst1, replaceFinalVarsEqn,(BackendVariable.daeKnVars(ishared),false,BackendVarTransform.emptyReplacements()));
         // replace all der(x) with dx
@@ -2029,7 +2029,7 @@ algorithm
         // change dummy states, update Assignments
         (syst,ht) = addDummyStates(dummyVars,level,repl,syst,iHt);
         // fix derivative indexes
-        vars = List.fold1(iHov, fixDerivativeIndex, level, BackendVariable.daeVars(syst));
+        _ = List.fold1(iHov, fixDerivativeIndex, level, BackendVariable.daeVars(syst));
         // update IncidenceMatrix
         (syst,m,_,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE(), SOME(funcs));
         // genereate new Matching
@@ -2276,14 +2276,14 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpMatching, vec1);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpMatching, vec2);
         // get the matched state candidates -> dummyVars
-        (dstates,states) = checkAssignment(1,nv,vec1,vars,{},{});
+        (dstates,_) = checkAssignment(1,nv,vec1,vars,{},{});
         dummyVars = List.map1r(List.map(dstates,Util.tuple22),BackendVariable.getVarAt,vars);
         dummyVars = List.select(dummyVars, BackendVariable.isStateVar);
         Debug.fcall(Flags.BLT_DUMP, print, ("select as Dummy States:\n"));
         Debug.fcall(Flags.BLT_DUMP, BackendDump.printVarList,dummyVars);
         // get assigned and unassigned equations
         unassigned = Matching.getUnassigned(ne, vec2, {});
-        assigned = Matching.getAssigned(ne, vec2, {});
+        _ = Matching.getAssigned(ne, vec2, {});
         Debug.fcall(Flags.BLT_DUMP, print, ("Unassigned Eqns:\n"));
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((unassigned,intString," ","\n")));
         // splitt it into sets
@@ -2736,7 +2736,7 @@ algorithm
         //  BackendDump.printEqSystem(syst);
         //  BackendDump.dumpMatching(listArray(ass1));
         //  BackendDump.dumpMatching(listArray(ass2));
-        (me,meT,mapEqnIncRow1,mapIncRowEqn1) = BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst,iShared);
+        (_,_,_,mapIncRowEqn1) = BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst,iShared);
         ass1arr = listArray(ass1);
         nass1arr = arrayLength(ass1arr);
         (dstates1,states1) = checkAssignment(1,nass1arr,ass1arr,vars,{},{});
@@ -3300,7 +3300,7 @@ algorithm
       DAE.Exp e;
     case _
       equation
-        e = BackendVariable.varStartValueFail(v);
+        _ = BackendVariable.varStartValueFail(v);
       then 1.0;
     else then 0.0;
   end matchcontinue;
@@ -4182,7 +4182,7 @@ algorithm
         dn = intMax(diffindex-level,0);
         // generate names
         (name,dummyderName) = crefPrefixDerN(dn,name);
-        source1 = DAEUtil.addSymbolicTransformation(source,DAE.NEW_DUMMY_DER(dummyderName,{}));
+        _ = DAEUtil.addSymbolicTransformation(source,DAE.NEW_DUMMY_DER(dummyderName,{}));
         /* Dummy variables are algebraic variables, hence fixed = false */
         dattr = BackendVariable.getVariableAttributefromType(tp);
         odattr = DAEUtil.setFixedAttr(SOME(dattr), SOME(DAE.BCONST(false)));
@@ -5185,7 +5185,7 @@ algorithm
         vars = BackendVariable.daeVars(isyst);
         eqns = BackendEquation.daeEqns(isyst);
         funcs = BackendDAEUtil.getFunctions(ishared);
-        (_,m,mt) = BackendDAEUtil.getIncidenceMatrix(isyst,BackendDAE.NORMAL(),SOME(funcs));
+        (_,m,_) = BackendDAEUtil.getIncidenceMatrix(isyst,BackendDAE.NORMAL(),SOME(funcs));
         mapIncRowEqn = listArray(List.intRange(arrayLength(m)));
         graphInfo = GraphML.createGraphInfo();
         (graphInfo,(_,graph)) = GraphML.addGraph("G",false,graphInfo);
@@ -5222,7 +5222,7 @@ algorithm
         //(_,m,mt) = BackendDAEUtil.getIncidenceMatrix(isyst, BackendDAE.NORMAL(), SOME(funcs));
         //mapIncRowEqn = listArray(List.intRange(arrayLength(m)));
         //(_,m,mt,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(isyst,BackendDAE.SOLVABLE(), SOME(funcs)));
-        (syst,m,mt,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(isyst,BackendDAE.NORMAL(), SOME(funcs));
+        (_,m,_,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(isyst,BackendDAE.NORMAL(), SOME(funcs));
         graphInfo = GraphML.createGraphInfo();
         (graphInfo,(_,graph)) = GraphML.addGraph("G",false,graphInfo);
         ((_,_,_,(graphInfo,graph))) = BackendVariable.traverseBackendDAEVars(vars,addVarGraphMatch,(numberMode,1,vec1,(graphInfo,graph)));
@@ -5241,7 +5241,7 @@ algorithm
         vars = BackendVariable.daeVars(isyst);
         eqns = BackendEquation.daeEqns(isyst);
         funcs = BackendDAEUtil.getFunctions(ishared);
-        (_,m,mt,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(isyst,BackendDAE.NORMAL(), SOME(funcs));
+        (_,m,_,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(isyst,BackendDAE.NORMAL(), SOME(funcs));
         graphInfo = GraphML.createGraphInfo();
         (graphInfo,(_,graph)) = GraphML.addGraph("G",false,graphInfo);
         ((_,_,(graphInfo,graph))) = BackendVariable.traverseBackendDAEVars(vars,addVarGraph,(numberMode,1,(graphInfo,graph)));
@@ -5255,7 +5255,7 @@ algorithm
     case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=_,ass2=_,comps=comps)),_,NONE(),_,_)
       equation
         vars = BackendVariable.daeVars(isyst);
-        eqns = BackendEquation.daeEqns(isyst);
+        _ = BackendEquation.daeEqns(isyst);
         funcs = BackendDAEUtil.getFunctions(ishared);
         (_,m,mt) = BackendDAEUtil.getIncidenceMatrix(isyst, BackendDAE.NORMAL(), SOME(funcs));
         graphInfo = GraphML.createGraphInfo();

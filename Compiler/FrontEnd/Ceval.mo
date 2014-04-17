@@ -136,7 +136,7 @@ algorithm
       equation
         str1 = intString(Global.recursionDepthLimit);
         str2 = ExpressionDump.printExpStr(inExp);
-        str3 = Env.printEnvPathStr(inEnv);
+        _ = Env.printEnvPathStr(inEnv);
         Error.addSourceMessage(Error.RECURSION_DEPTH_WARNING, {str1,str2}, info);
       then fail();
   end match;
@@ -1500,7 +1500,7 @@ algorithm
 
     case (cache,env,DAE.CREF(componentRef = cr),dimExp,impl,st,msg,_)
       equation
-        (cache,attr,tp,bind,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr) "If dimensions known, always ceval" ;
+        (cache,_,tp,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr) "If dimensions known, always ceval" ;
         true = Types.dimensionsKnown(tp);
         (sizelst as (_ :: _)) = Types.getDimensionSizes(tp);
         (cache,Values.INTEGER(dim),st_1) = ceval(cache, env, dimExp, impl, st,msg,numIter+1);
@@ -1527,7 +1527,7 @@ algorithm
     case (cache,env,DAE.CREF(componentRef = cr),dimExp,false,_,
         Absyn.MSG(info = info),_)
       equation
-        (cache,attr,tp,bind,_,_,_,_,_) = Lookup.lookupVar(cache, env, cr) "If dimensions not known and impl=false, error message";
+        (cache,_,tp,_,_,_,_,_,_) = Lookup.lookupVar(cache, env, cr) "If dimensions not known and impl=false, error message";
         false = Types.dimensionsKnown(tp);
         cr_str = ComponentReference.printComponentRefStr(cr);
         dim_str = ExpressionDump.printExpStr(dimExp);
@@ -1548,7 +1548,7 @@ algorithm
     // For crefs with value binding e.g. size(x,1) when Real x[:]=fill(0,1);
     case (cache,env,(DAE.CREF(componentRef = cr,ty = _)),dimExp,impl,st,msg,_)
       equation
-        (cache,attr,tp,binding,_,_,_,_,_) = Lookup.lookupVar(cache, env, cr)  ;
+        (cache,_,_,binding,_,_,_,_,_) = Lookup.lookupVar(cache, env, cr)  ;
         (cache,Values.INTEGER(dimv),st_1) = ceval(cache,env,dimExp,impl,st,msg,numIter+1);
         (cache,val) = cevalCrefBinding(cache,env, cr, binding, impl,msg,numIter+1);
         v2 = cevalBuiltinSize2(val, dimv);
@@ -5815,7 +5815,7 @@ algorithm
 
     case (cache,env,(e :: es),impl,st,msg,_)
       equation
-        (cache,e_1) = cevalAstExp(cache,env, e, impl, st, msg, info);
+        (cache,_) = cevalAstExp(cache,env, e, impl, st, msg, info);
         (cache,res) = cevalAstExpList(cache,env, es, impl, st, msg, info);
       then
         (cache,e :: res);
@@ -5848,7 +5848,7 @@ algorithm
 
     case (cache,env,(e :: es),impl,st,msg,_)
       equation
-        (cache,e_1) = cevalAstExpList(cache,env, e, impl, st, msg, info);
+        (cache,_) = cevalAstExpList(cache,env, e, impl, st, msg, info);
         (cache,res) = cevalAstExpListList(cache,env, es, impl, st, msg, info);
       then
         (cache,e :: res);
@@ -6075,7 +6075,7 @@ algorithm
     case (cache,env,(Absyn.SUBSCRIPT(subscript = e) :: xs),impl,st,msg,_)
       equation
         (cache,res) = cevalAstArraydim(cache,env, xs, impl, st, msg, info);
-        (cache,e_1) = cevalAstExp(cache,env, e, impl, st, msg, info);
+        (cache,_) = cevalAstExp(cache,env, e, impl, st, msg, info);
       then
         (cache,Absyn.SUBSCRIPT(e) :: res);
   end match;

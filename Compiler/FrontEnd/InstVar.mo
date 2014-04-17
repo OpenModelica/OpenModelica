@@ -383,7 +383,7 @@ algorithm
 
         // now instantiate it as an outer with no modifications
         pf = SCode.prefixesSetInnerOuter(pf, Absyn.OUTER());
-        (cache,compenv,ih,store,dae,csetsOuter,ty,graph) =
+        (cache,compenv,ih,store,dae,_,ty,graph) =
           instVar(cache,env,ih,store,ci_state,DAE.NOMOD(),pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph,csets,componentDefinitionParentEnv);
 
         // keep the dae we get from the instantiation of the outer
@@ -711,7 +711,7 @@ algorithm
         //        anyhow the modifications are handled below.
         //        input Integer sequence[3](min = {1,1,1}, max = {3,3,3}) = {1,2,3}; // this will fail if we send in the mod.
         //        see testsuite/mofiles/Sequence.mo
-        (cache,env_1,ih,store,dae1,csets,ty,st,_,graph) =
+        (cache,env_1,ih,store,_,csets,ty,_,_,graph) =
           Inst.instClass(cache, env, ih, store, /* mod */ DAE.NOMOD(), pre, cl, inst_dims, impl, InstTypes.INNER_CALL(), graph, csets);
         //Make it an array type since we are not flattening
         ty_1 = InstUtil.makeArrayType(dims, ty);
@@ -753,7 +753,7 @@ algorithm
         //        anyhow the modifications are handled below.
         //        input Integer sequence[3](min = {1,1,1}, max = {3,3,3}) = {1,2,3}; // this will fail if we send in the mod.
         //        see testsuite/mofiles/Sequence.mo
-        (cache,env_1,ih,store,dae1,csets,ty,st,_,graph) =
+        (cache,env_1,ih,store,_,csets,ty,_,_,graph) =
           Inst.instClass(cache, env, ih, store, /* mod */ DAE.NOMOD(), pre, cl, inst_dims, impl, InstTypes.INNER_CALL(), graph, csets);
         //Make it an array type since we are not flattening
         ty_1 = InstUtil.makeArrayType(dims, ty);
@@ -785,7 +785,7 @@ algorithm
         InstUtil.checkFunctionVar(n, attr, pf, info);
 
          //Instantiate type of the component, skip dae/not flattening
-        (cache,env_1,ih,store,dae1,csets,ty,st,_,_) =
+        (cache,env_1,ih,store,_,csets,ty,_,_,_) =
           Inst.instClass(cache, env, ih, store, mod, pre, cl, inst_dims, impl, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, csets);
         arrty = InstUtil.makeArrayType(dims, ty);
         InstUtil.checkFunctionVarType(arrty, ci_state, n, info);
@@ -968,7 +968,7 @@ algorithm
         idxs = listReverse(idxs);
         ci_state = ClassInf.start(res, Absyn.IDENT(cls_name));
         pre = PrefixUtil.prefixAdd(inName, idxs, inPrefix, vt, ci_state);
-        (cache, env, ih, store, dae1, csets, ty, ci_state, opt_attr, graph) =
+        (cache, env, ih, store, dae1, csets, ty,_, opt_attr, graph) =
           Inst.instClass(cache, env, ih, store, inMod, pre, inClass, inInstDims,
             inImpl, InstTypes.INNER_CALL(), inGraph, inSets);
 
@@ -1316,7 +1316,7 @@ algorithm
       equation
         true = Expression.dimensionUnknownOrExp(dim);
         SOME(DAE.TYPED(e,_,p,_,_)) = Mod.modEquation(mod);
-        (cache,env_1,ih,store,dae1,_,ty,st,_,graph) =
+        (cache,env_1,ih,store,_,_,ty,_,_,graph) =
           Inst.instClass(cache,env,ih,store, mod, pre, cl, inst_dims, true, InstTypes.INNER_CALL(), graph, csets) "Which has an expression binding";
         ty_1 = Types.simplifyType(ty);
         (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre,ComponentReference.makeCrefIdent(n,ty_1,{})) "check their types";
@@ -1347,7 +1347,7 @@ algorithm
       equation
         ErrorExt.setCheckpoint("instArray Real[0]");
         s = DAE.INDEX(DAE.ICONST(0));
-        (cache,compenv,ih,store,daeLst,csets,ty,graph) =
+        (cache,compenv,ih,store,_,csets,ty,graph) =
            instVar2(cache,env,ih,store, ci_state, DAE.NOMOD(), pre, n, cl, attr,pf, dims, (s :: idxs), inst_dims, impl, comment,info,graph, csets);
         ErrorExt.rollBack("instArray Real[0]");
       then

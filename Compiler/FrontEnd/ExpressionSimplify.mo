@@ -1726,13 +1726,13 @@ algorithm
 
     case (e1,op as DAE.MUL_ARR(ty = _),e2)
       equation
-        tp = Expression.typeof(e1);
+        _ = Expression.typeof(e1);
         a1 = simplifyVectorBinary(e1, op, e2);
       then a1;
 
     case (e1,op as DAE.DIV_ARR(ty = _),e2)
       equation
-        tp = Expression.typeof(e1);
+        _ = Expression.typeof(e1);
         a1 = simplifyVectorBinary(e1, op, e2);
       then a1;
 

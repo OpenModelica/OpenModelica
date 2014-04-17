@@ -2121,7 +2121,7 @@ algorithm
       DAE.TypeSource source;
     case (DAE.T_ARRAY(ty=ty,dims=dims,source=source))
       equation
-        ty1 = typeofRelation(ty);
+        _ = typeofRelation(ty);
       then
         DAE.T_ARRAY(ty,dims,source);
     else DAE.T_BOOL_DEFAULT;

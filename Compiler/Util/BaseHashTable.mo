@@ -397,7 +397,7 @@ algorithm
         (k,n)::indexes = hashvec[hashindx + 1];
         eq = keyEqual(k,key);
         indx = get2(eq, n, key, indexes, keyEqual);
-        (k, v) = valueArrayNth(varr, indx);
+        (_, v) = valueArrayNth(varr, indx);
       then
         (v, indx);
 

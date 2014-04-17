@@ -596,7 +596,7 @@ algorithm
     case (i, e, DAE.PROP(type_ = DAE.T_ARRAY(ty = t, dims = dims)), stmts, _)
       equation
         isArray = Types.isArray(t, dims);
-        et = Types.simplifyType(t);
+        _ = Types.simplifyType(t);
       then
         DAE.STMT_FOR(t, isArray, i, -1, e, stmts, source);
 
@@ -633,7 +633,7 @@ algorithm
     case (i, e, DAE.PROP(type_ = DAE.T_ARRAY(ty = t, dims = dims)), stmts, _, _)
       equation
         isArray = Types.isArray(t, dims);
-        et = Types.simplifyType(t);
+        _ = Types.simplifyType(t);
       then
         DAE.STMT_PARFOR(t, isArray, i, -1, e, stmts, inLoopPrlVars, source);
 

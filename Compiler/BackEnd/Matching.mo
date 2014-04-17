@@ -1801,7 +1801,7 @@ algorithm
         rowmarks = arrayCreate(nvars,-1);
         lookahead = arrayCreate(neqns,0);
         unmatched = cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,true);
-        (i,vec1,vec2,syst,shared,arg) = PFPlus1(0,unmatched,rowmarks,lookahead,isyst,ishared,nvars,neqns,vec1,vec2,inMatchingOptions,sssHandler,inArg);
+        (_,vec1,vec2,syst,shared,arg) = PFPlus1(0,unmatched,rowmarks,lookahead,isyst,ishared,nvars,neqns,vec1,vec2,inMatchingOptions,sssHandler,inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,shared,arg);

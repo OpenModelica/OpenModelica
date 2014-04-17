@@ -263,7 +263,7 @@ algorithm
 
     case (Absyn.CLASSDEF(replaceable_ = repl,class_ = cl))
       equation
-        nl = printClass(cl);
+        _ = printClass(cl);
         ra = makeBoolAttr("replaceable", repl);
       then
         Graphviz.NODE("CLASSDEF",{ra},{});

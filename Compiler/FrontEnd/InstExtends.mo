@@ -173,7 +173,7 @@ algorithm
         ialg1_1 = Util.if_(isPartialInst, {}, ialg1);
 
         cenv3 = Env.openScope(cenv1, encf, SOME(cn), Env.classInfToScopeType(ci_state));
-        new_ci_state = ClassInf.start(r, Env.getEnvName(cenv3));
+        _ = ClassInf.start(r, Env.getEnvName(cenv3));
         /* Add classdefs and imports to env, so e.g. imports from baseclasses found, see Extends5.mo */
         (importelts,cdefelts,classextendselts,els_1) = InstUtil.splitEltsNoComponents(els);
         (cenv3,ih) = InstUtil.addClassdefsToEnv(cenv3,ih,pre,importelts,impl,NONE());
@@ -181,7 +181,7 @@ algorithm
 
         els_1 = SCodeUtil.addRedeclareAsElementsToExtends(els_1, SCodeUtil.getRedeclareAsElements(els_1));
 
-        (cache,_,ih,mods,compelts1,eq2,ieq2,alg2,ialg2) = instExtendsAndClassExtendsList2(cache,cenv3,ih,outermod,pre,els_1,classextendselts,els,ci_state,className,impl,isPartialInst)
+        (cache,_,ih,_,compelts1,eq2,ieq2,alg2,ialg2) = instExtendsAndClassExtendsList2(cache,cenv3,ih,outermod,pre,els_1,classextendselts,els,ci_state,className,impl,isPartialInst)
         "recurse to fully flatten extends elements env";
 
         ht = getLocalIdentList(compelts1,HashTableStringToPath.emptyHashTable(),getLocalIdentElementTpl);
@@ -216,7 +216,7 @@ algorithm
     // base class was not found
     case (cache,env,_,_,_,(SCode.EXTENDS(info = info, baseClassPath = tp,modifications = _) :: _),_,_,_,_,_)
       equation
-        failure((_,c,cenv) = Lookup.lookupClass(cache, env, tp, false));
+        failure((_,_,_) = Lookup.lookupClass(cache, env, tp, false));
         s = Absyn.pathString(tp);
         scope_str = Env.printEnvPathStr(env);
         Error.addSourceMessage(Error.LOOKUP_BASECLASS_ERROR, {s,scope_str}, info);
@@ -1408,7 +1408,7 @@ algorithm
     case (cache,env,SCode.ALG_WHILE(exp,whilebody,comment,info),ht)
       equation
         (cache,exp) = fixExp(cache,env,exp,ht);
-        (cache,forbody) = fixList(cache,env,whilebody,ht,fixStatement);
+        (cache,_) = fixList(cache,env,whilebody,ht,fixStatement);
       then (cache,SCode.ALG_WHILE(exp,whilebody,comment,info));
 
     case (cache,env,SCode.ALG_WHEN_A(whenlst,comment,info),ht)

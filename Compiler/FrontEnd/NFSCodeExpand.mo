@@ -104,7 +104,7 @@ algorithm
         tree = DAE.emptyFuncTree;
         tree = DAEUtil.addDaeFunction(funcs, tree);
 
-        (vars, params) = countElements(el, 0, 0);
+        (_,_) = countElements(el, 0, 0);
         //print("\nFound " +& intString(vars) +& " components and " +&
         //  intString(params) +& " parameters.\n");
       then
@@ -762,7 +762,7 @@ algorithm
     case (NFInstTypes.ASSERT_EQUATION(condition = exp, message = msg, level = level), _, _)
       equation
         ty1 = Expression.typeof(exp);
-        dims = Types.getDimensions(ty1);
+        _ = Types.getDimensions(ty1);
         accum_el = DAE.ASSERT(exp, msg, level, DAE.emptyElementSource)::inAccumEl;
       then
         accum_el;
@@ -770,7 +770,7 @@ algorithm
     case (NFInstTypes.TERMINATE_EQUATION(message = msg), _, _)
       equation
         ty1 = Expression.typeof(msg);
-        dims = Types.getDimensions(ty1);
+        _ = Types.getDimensions(ty1);
         accum_el = DAE.TERMINATE(msg, DAE.emptyElementSource)::inAccumEl;
       then
         accum_el;
@@ -778,7 +778,7 @@ algorithm
     case (NFInstTypes.REINIT_EQUATION(cref = cref1, reinitExp = exp), _, _)
       equation
         ty1 = Expression.typeof(exp);
-        dims = Types.getDimensions(ty1);
+        _ = Types.getDimensions(ty1);
         accum_el = DAE.REINIT(cref1, exp, DAE.emptyElementSource)::inAccumEl;
       then
         accum_el;
@@ -786,7 +786,7 @@ algorithm
     case (NFInstTypes.NORETCALL_EQUATION(exp = exp), _, _)
       equation
         ty1 = Expression.typeof(exp);
-        dims = Types.getDimensions(ty1);
+        _ = Types.getDimensions(ty1);
         accum_el = DAE.NORETCALL(exp, DAE.emptyElementSource)::inAccumEl;
       then
         accum_el;

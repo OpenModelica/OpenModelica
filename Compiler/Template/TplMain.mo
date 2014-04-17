@@ -823,7 +823,7 @@ end Susan;:)";
 
         txt = emptyTxt;
         txt = TplCodegen.pathIdent(txt, pid);
-        ident = Tpl.textString(txt);
+        _ = Tpl.textString(txt);
         strOut = Tpl.booleanString(tequal) +&"*" +& stringCharListString(chars);
         notPassedCnt = testStringEquality(strOut,
            "true*:)", true, true, "TplParser.templPackage - function stringListStringChar\n", notPassedCnt);
@@ -1034,11 +1034,11 @@ end TplAbsyn;
 end Susan;:)";
         chars = stringListStringChar( str );
 
-        (chars,_, pid, astDefs) = TplParser.interfacePackage(chars, TplParser.makeStartLineInfo(chars, "in memory test"),{});
+        (chars,_, pid,_) = TplParser.interfacePackage(chars, TplParser.makeStartLineInfo(chars, "in memory test"),{});
 
         txt = emptyTxt;
         txt = TplCodegen.pathIdent(txt, pid);
-        ident = Tpl.textString(txt);
+        _ = Tpl.textString(txt);
         strOut = "parsed*" +& stringCharListString(chars);
         notPassedCnt = testStringEquality(strOut,
            "parsed*:)", true, true, "TplParser.templPackage - all types for Susan's backend\n", notPassedCnt);

@@ -439,7 +439,7 @@ algorithm
     // Other cases shouldn't occur.
     else
       equation
-        name = SCode.elementName(inNewElement);
+        _ = SCode.elementName(inNewElement);
         err_msg = "NFEnv.checkOrigin failed on unhandled origin!";
         Error.addMessage(Error.INTERNAL_ERROR, {err_msg});
       then

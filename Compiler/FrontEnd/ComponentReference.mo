@@ -464,7 +464,7 @@ algorithm
     case ((e :: xs))
       equation
         s = Dump.printSubscriptsStr({e});
-        str = stringAppendList({"#Error converting subscript: ",s," to Expression.\n"});
+        _ = stringAppendList({"#Error converting subscript: ",s," to Expression.\n"});
         //print("#Error converting subscript: " +& s +& " to Expression.\n");
         //Print.printErrorBuf(str);
         xs_1 = toExpCrefSubs(xs);

@@ -1045,7 +1045,7 @@ algorithm
 
     case ((equ, (ref, k, g)))
       equation
-        info = SCode.getEEquationInfo(equ);
+        _ = SCode.getEEquationInfo(equ);
         (equ, (_, _, g)) = SCode.traverseEEquationExps(equ, traverseExp, (ref, k, g));
       then
         ((equ, (ref, k, g)));
@@ -1121,7 +1121,7 @@ algorithm
 
     case ((stmt, (ref, k, g)))
       equation
-        info = SCode.getStatementInfo(stmt);
+        _ = SCode.getStatementInfo(stmt);
         (_, (_, _, g)) = SCode.traverseStatementExps(stmt, traverseExp, (ref, k, g));
       then
         ((stmt, (ref, k, g)));
@@ -1288,7 +1288,7 @@ algorithm
         // add the ref node
         FNode.addChildRef(inParentRef, inName, rn);
         // clone ref target node!
-        (g, rc) = mkCloneNode(FNode.cloneNodeName, inTargetRef, rn, g);
+        (g,_) = mkCloneNode(FNode.cloneNodeName, inTargetRef, rn, g);
       then
         g;
 

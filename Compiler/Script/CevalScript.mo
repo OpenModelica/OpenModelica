@@ -1169,7 +1169,7 @@ algorithm
         description = DAEUtil.daeDescription(dae);
         daelow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
         (BackendDAE.DAE({syst},shared)) = BackendDAEUtil.preOptimizeBackendDAE(daelow,NONE());
-        (syst,m,mt) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL(),NONE());
+        (syst,m,_) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL(),NONE());
         vars = BackendVariable.daeVars(syst);
         eqnarr = BackendEquation.daeEqns(syst);
         (jac, _) = BackendDAEUtil.calculateJacobian(vars, eqnarr, m, false,shared);
@@ -1367,7 +1367,7 @@ algorithm
       equation
         List.map_0(GlobalScript.buildModelClocks,System.realtimeClear);
         System.realtimeTick(GlobalScript.RT_CLOCK_SIMULATE_TOTAL);
-        (cache,st,compileDir,executable,method_str,outputFormat_str,initfilename,_,_) = buildModel(cache,env, vals, st, msg);
+        (cache,st,compileDir,executable,_,_,initfilename,_,_) = buildModel(cache,env, vals, st, msg);
         executable = Util.if_(not Config.getRunningTestsuite(),compileDir +& executable,executable);
       then
         (cache,ValuesUtil.makeArray({Values.STRING(executable),Values.STRING(initfilename)}),st);
@@ -1399,7 +1399,7 @@ algorithm
 
     case (cache,env,"buildModelBeast",vals,st,_)
       equation
-        (cache,st,compileDir,executable,method_str,initfilename) = buildModelBeast(cache,env,vals,st,msg);
+        (cache,st,compileDir,executable,_,initfilename) = buildModelBeast(cache,env,vals,st,msg);
         executable = Util.if_(not Config.getRunningTestsuite(),compileDir +& executable,executable);
       then
         (cache,ValuesUtil.makeArray({Values.STRING(executable),Values.STRING(initfilename)}),st);
@@ -1417,7 +1417,7 @@ algorithm
     case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st_1,_)
       equation
         System.realtimeTick(GlobalScript.RT_CLOCK_SIMULATE_TOTAL);
-        (cache,st,compileDir,executable,method_str,outputFormat_str,_,simflags,resultValues) = buildModel(cache,env,vals,st_1,msg);
+        (cache,st,compileDir,executable,_,outputFormat_str,_,simflags,resultValues) = buildModel(cache,env,vals,st_1,msg);
 
         cit = winCitation();
 
@@ -1444,7 +1444,7 @@ algorithm
 
     case (cache,_,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st,_)
       equation
-        omhome = Settings.getInstallationDirectoryPath() "simulation fail for some other reason than OPENMODELICAHOME not being set." ;
+        _ = Settings.getInstallationDirectoryPath() "simulation fail for some other reason than OPENMODELICAHOME not being set." ;
         str = Absyn.pathString(className);
         res = "Failed to build model: " +& str;
         simValue = createSimulationResultFailure(res, simOptionsAsString(vals));
@@ -1506,7 +1506,7 @@ algorithm
         b = Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION);
         Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, true);
 
-        (cache,st,compileDir,executable,method_str,outputFormat_str,_,simflags,resultValues) = buildModel(cache,env,vals,st_1,msg);
+        (cache,st,compileDir,executable,_,outputFormat_str,_,simflags,resultValues) = buildModel(cache,env,vals,st_1,msg);
         Values.REAL(linearizeTime) = getListNthShowError(vals,"try to get stop time",0,2);
         cit = winCitation();
         executableSuffixedExe = stringAppend(executable, System.getExeExt());
@@ -1544,7 +1544,7 @@ algorithm
         b = Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION);
         Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, true);
 
-        (cache,st,compileDir,executable,method_str,outputFormat_str,_,simflags,resultValues) = buildModel(cache,env,vals,st_1,msg);
+        (cache,st,compileDir,executable,_,outputFormat_str,_,simflags,resultValues) = buildModel(cache,env,vals,st_1,msg);
         cit = winCitation();
         exeDir=compileDir;
         (cache,simSettings) = calculateSimulationSettings(cache,env,vals,st_1,msg);
@@ -2218,7 +2218,7 @@ algorithm
         (st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       equation
         absynClass = Interactive.getPathedClassInProgram(classpath, p);
-        str = Dump.unparseStr(Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.TIMESTAMP(0.0,0.0)),true);
+        _ = Dump.unparseStr(Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.TIMESTAMP(0.0,0.0)),true);
         Error.addMessage(Error.WRITING_FILE_ERROR, {name});
       then
         (cache,Values.BOOL(false),st);
@@ -2501,10 +2501,10 @@ algorithm
         usercflags = Util.makeValueOrDefault(System.readEnv,"MODELICAUSERCFLAGS","");
         workdir = System.pwd();
         touch_res = 0 == System.systemCall("touch " +& touch_file, "");
-        uname_res = 0 == System.systemCall("uname -a", touch_file);
+        _ = 0 == System.systemCall("uname -a", touch_file);
         uname = System.readFile(touch_file);
         rm_res = 0 == System.systemCall("rm " +& touch_file, "");
-        platform = System.platform();
+        _ = System.platform();
         senddata = System.getRTLibs();
         gcc = System.getCCompiler();
         have_corba = Corba.haveCorba();
@@ -2794,7 +2794,7 @@ algorithm
         // get the variables list
         vars_1 = List.map(cvars, ValuesUtil.printCodeVariableName);
         // seperate the variables
-        str = stringDelimitList(vars_1,"\" \"");
+        _ = stringDelimitList(vars_1,"\" \"");
         // get the simulation filename
         (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
         pd = System.pathDelimiter();
@@ -2837,7 +2837,7 @@ algorithm
         // create absolute path of simulation result file
         str = System.pwd() +& pd +& filename;
         filename = Util.if_(System.regularFileExists(str), str, filename);
-        (visvars,visvar_str) = Interactive.getElementsOfVisType(className, p);
+        (_,visvar_str) = Interactive.getElementsOfVisType(className, p);
         // write the visualizing objects to the file
         str1 = System.pwd() +& pd +& Absyn.pathString(className) +& ".visualize";
         System.writeFile(str1, visvar_str);
@@ -3323,7 +3323,7 @@ algorithm
         Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,p_1,className);
         dae  = DAEUtil.transformationsBeforeBackend(cache,env,dae_1);
         description = DAEUtil.daeDescription(dae);
-        ic_1 = Interactive.addInstantiatedClass(ic, GlobalScript.INSTCLASS(className,dae,env));
+        _ = Interactive.addInstantiatedClass(ic, GlobalScript.INSTCLASS(className,dae,env));
         a_cref = Absyn.pathToCref(className);
         file_dir = getFileDir(a_cref, p);
         dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
@@ -3580,7 +3580,7 @@ algorithm
       String file_dir, FMUVersion, fileNamePrefix, str;
     case (cache,env,_,st,FMUVersion,fileNamePrefix,_,_) /* mo file directory */
       equation
-        (cache, outValMsg, st, indexed_dlow, libs, file_dir, _) =
+        (cache, outValMsg, st,_, libs, file_dir, _) =
           SimCodeMain.translateModelFMU(cache,env,className,st,FMUVersion,fileNamePrefix,addDummy,inSimSettingsOpt);
 
         // compile
@@ -3623,7 +3623,7 @@ algorithm
       String file_dir, fileNamePrefix, str;
     case (cache,env,_,st,fileNamePrefix,_,_) /* mo file directory */
       equation
-        (cache, outValMsg, st, indexed_dlow, libs, file_dir, _) =
+        (cache, outValMsg, st,_,_,_, _) =
           SimCodeMain.translateModelXML(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt);
       then
         (cache,outValMsg,st);
@@ -3818,9 +3818,9 @@ algorithm
 
     case (Absyn.QUALIFIED(_, _), _, p)
       equation
-        name = Absyn.pathLastIdent(inClassName);
+        _ = Absyn.pathLastIdent(inClassName);
         parent = Absyn.stripLast(inClassName);
-        parentClass = Interactive.getPathedClassInProgram(parent, p);
+        _ = Interactive.getPathedClassInProgram(parent, p);
       then
         p;
 
@@ -3882,13 +3882,13 @@ algorithm
         // className, startTime, stopTime, numberOfIntervals, tolerance, method, fileNamePrefix,
         // options, outputFormat, variableFilter, measureTime, cflags, simflags
         (Values.CODE(Absyn.C_TYPENAME(classname)),vals) = getListFirstShowError(vals, "while retreaving the className (1 arg) from the buildModel arguments");
-        (starttime,vals) = getListFirstShowError(vals, "while retreaving the startTime (2 arg) from the buildModel arguments");
-        (stoptime,vals) = getListFirstShowError(vals, "while retreaving the stopTime (3 arg) from the buildModel arguments");
-        (interval,vals) = getListFirstShowError(vals, "while retreaving the numberOfIntervals (4 arg) from the buildModel arguments");
-        (tolerance,vals) = getListFirstShowError(vals, "while retreaving the tolerance (5 arg) from the buildModel arguments");
+        (_,vals) = getListFirstShowError(vals, "while retreaving the startTime (2 arg) from the buildModel arguments");
+        (_,vals) = getListFirstShowError(vals, "while retreaving the stopTime (3 arg) from the buildModel arguments");
+        (_,vals) = getListFirstShowError(vals, "while retreaving the numberOfIntervals (4 arg) from the buildModel arguments");
+        (_,vals) = getListFirstShowError(vals, "while retreaving the tolerance (5 arg) from the buildModel arguments");
         (Values.STRING(method_str),vals) = getListFirstShowError(vals, "while retreaving the method (6 arg) from the buildModel arguments");
         (Values.STRING(filenameprefix),vals) = getListFirstShowError(vals, "while retreaving the fileNamePrefix (7 arg) from the buildModel arguments");
-        (options,vals) = getListFirstShowError(vals, "while retreaving the options (8 arg) from the buildModel arguments");
+        (_,vals) = getListFirstShowError(vals, "while retreaving the options (8 arg) from the buildModel arguments");
         (Values.STRING(outputFormat_str),vals) = getListFirstShowError(vals, "while retreaving the outputFormat (9 arg) from the buildModel arguments");
         (_,vals) = getListFirstShowError(vals, "while retreaving the variableFilter (10 arg) from the buildModel arguments");
         (_,vals) = getListFirstShowError(vals, "while retreaving the measureTime (11 arg) from the buildModel arguments");
@@ -3914,15 +3914,15 @@ algorithm
         // options, outputFormat, variableFilter, measureTime, cflags, simflags
         values = vals;
         (Values.CODE(Absyn.C_TYPENAME(classname)),vals) = getListFirstShowError(vals, "while retreaving the className (1 arg) from the buildModel arguments");
-        (starttime,vals) = getListFirstShowError(vals, "while retreaving the startTime (2 arg) from the buildModel arguments");
-        (stoptime,vals) = getListFirstShowError(vals, "while retreaving the stopTime (3 arg) from the buildModel arguments");
-        (interval,vals) = getListFirstShowError(vals, "while retreaving the numberOfIntervals (4 arg) from the buildModel arguments");
-        (tolerance,vals) = getListFirstShowError(vals, "while retreaving the tolerance (5 arg) from the buildModel arguments");
-        (method,vals) = getListFirstShowError(vals, "while retreaving the method (6 arg) from the buildModel arguments");
+        (_,vals) = getListFirstShowError(vals, "while retreaving the startTime (2 arg) from the buildModel arguments");
+        (_,vals) = getListFirstShowError(vals, "while retreaving the stopTime (3 arg) from the buildModel arguments");
+        (_,vals) = getListFirstShowError(vals, "while retreaving the numberOfIntervals (4 arg) from the buildModel arguments");
+        (_,vals) = getListFirstShowError(vals, "while retreaving the tolerance (5 arg) from the buildModel arguments");
+        (_,vals) = getListFirstShowError(vals, "while retreaving the method (6 arg) from the buildModel arguments");
         (Values.STRING(filenameprefix),vals) = getListFirstShowError(vals, "while retreaving the fileNamePrefix (7 arg) from the buildModel arguments");
-        (options,vals) = getListFirstShowError(vals, "while retreaving the options (8 arg) from the buildModel arguments");
-        (outputFormat,vals) = getListFirstShowError(vals, "while retreaving the outputFormat (9 arg) from the buildModel arguments");
-        (variableFilter,vals) = getListFirstShowError(vals, "while retreaving the variableFilter (10 arg) from the buildModel arguments");
+        (_,vals) = getListFirstShowError(vals, "while retreaving the options (8 arg) from the buildModel arguments");
+        (_,vals) = getListFirstShowError(vals, "while retreaving the outputFormat (9 arg) from the buildModel arguments");
+        (_,vals) = getListFirstShowError(vals, "while retreaving the variableFilter (10 arg) from the buildModel arguments");
         (_,vals) = getListFirstShowError(vals, "while retreaving the measureTime (11 arg) from the buildModel arguments");
         (_,vals) = getListFirstShowError(vals, "while retreaving the cflags (12 arg) from the buildModel arguments");
         (Values.STRING(simflags),vals) = getListFirstShowError(vals, "while retreaving the simflags (13 arg) from the buildModel arguments");
@@ -3936,7 +3936,7 @@ algorithm
         SimCode.SIMULATION_SETTINGS(method = method_str, outputFormat = outputFormat_str)
            = simSettings;
 
-        (cache,st,indexed_dlow_1,libs,file_dir,resultValues) = translateModel(cache,env, classname, st_1, filenameprefix,true, SOME(simSettings));
+        (cache,st,_,libs,file_dir,resultValues) = translateModel(cache,env, classname, st_1, filenameprefix,true, SOME(simSettings));
         //cname_str = Absyn.pathString(classname);
         //SimCodeUtil.generateInitData(indexed_dlow_1, classname, filenameprefix, init_filename,
         //  starttime_r, stoptime_r, interval_r, tolerance_r, method_str,options_str,outputFormat_str);
@@ -4037,7 +4037,7 @@ algorithm
 
     case(cache,_,{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(templateFile),Values.BOOL(showFlatModelica)},GlobalScript.SYMBOLTABLE(ast=p),_)
       equation
-        (cache,env,dae,st) = runFrontEnd(cache,inEnv,className,inSt,false);
+        (cache,env,dae,_) = runFrontEnd(cache,inEnv,className,inSt,false);
         //print("instantiated class\n");
         dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
         funcs = Env.getFunctionTree(cache);
@@ -4161,7 +4161,7 @@ algorithm
         pd = System.pathDelimiter();
         omhome = Settings.getInstallationDirectoryPath();
         omhome_1 = System.stringReplace(omhome, "\"", "");
-        cd_path = System.pwd();
+        _ = System.pwd();
         libsfilename = stringAppend(fileprefix, ".libs");
         libs_str = stringDelimitList(libs, " ");
 
@@ -4299,7 +4299,7 @@ algorithm
         true = Absyn.isFunctionRestriction(restriction) or Absyn.isPackageRestriction(restriction);
         Error.clearMessages() "Clear messages";
         Print.clearErrorBuf() "Clear error buffer";
-        (cache,env,dae,st) = runFrontEnd(cache,env,className,st,true);
+        (cache,env,_,st) = runFrontEnd(cache,env,className,st,true);
 
         //UnitParserExt.clear();
         //UnitAbsynBuilder.registerUnits(ptot);
@@ -4948,11 +4948,11 @@ algorithm
     // normal call
     case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),_,_,_,_, _,Values.STRING(filenameprefix),_},(st as GlobalScript.SYMBOLTABLE(ast = p  as Absyn.PROGRAM(globalBuildTimes=_))),msg)
       equation
-        cdef = Interactive.getPathedClassInProgram(classname,p);
+        _ = Interactive.getPathedClassInProgram(classname,p);
         Error.clearMessages() "Clear messages";
         compileDir = System.pwd() +& System.pathDelimiter();
         (cache,simSettings) = calculateSimulationSettings(cache,env,vals,st,msg);
-        (cache,st,indexed_dlow_1,libs,file_dir,_)
+        (cache,st,_,libs,file_dir,_)
           = translateModel(cache,env, classname, st, filenameprefix,true,SOME(simSettings));
         SimCode.SIMULATION_SETTINGS(method = method_str) = simSettings;
         //cname_str = Absyn.pathString(classname);
@@ -4963,7 +4963,7 @@ algorithm
         compileModel(filenameprefix, libs, file_dir, method_str);
         Debug.fprintln(Flags.DYN_LOAD, "buildModel: Compiling done.");
         // SimCodegen.generateMakefileBeast(makefilename, filenameprefix, libs, file_dir);
-        win1 = getWithinStatement(classname);
+        _ = getWithinStatement(classname);
         compileModel(filenameprefix, libs, file_dir,method_str);
         // (p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(r1,r2))) = Interactive.updateProgram2(p2,p,false);
         st2 = st; // Interactive.replaceSymbolTableProgram(st,p);
@@ -6926,7 +6926,7 @@ algorithm
     case (_,_,(DAE.CALL(path = funcpath,expLst = _)),_,_,_, _, _)
       equation
         Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: FAILED to constant evaluate function: " +& Absyn.pathString(funcpath) +& "\n");
-        error_Str = Absyn.pathString(funcpath);
+        _ = Absyn.pathString(funcpath);
         //TODO: readd this when testsuite is okay.
         //Error.addMessage(Error.FAILED_TO_EVALUATE_FUNCTION, {error_Str});
         false = Flags.isSet(Flags.GEN);

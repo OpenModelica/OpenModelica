@@ -146,7 +146,7 @@ algorithm
         REPLACEMENTS(ht,invHt,eht,iv,derConst) = repl;
         dst = BaseHashTable.get(inSrc,ht);
         ht_1 = BaseHashTable.delete(inSrc,ht);
-        invHt_1 = removeReplacementInv(invHt, inSrc, dst);
+        _ = removeReplacementInv(invHt, inSrc, dst);
       then
         REPLACEMENTS(ht_1,invHt,eht,iv,derConst);
     case (_,_,_)
@@ -288,7 +288,7 @@ algorithm
       Option<HashTable2.HashTable> derConst;
     case ((REPLACEMENTS(hashTable=ht)),src,_) /* source dest */
       equation
-        olddst = BaseHashTable.get(src,ht) "if rule a->b exists, fail" ;
+        _ = BaseHashTable.get(src,ht) "if rule a->b exists, fail" ;
       then
         fail();
     case ((REPLACEMENTS(ht,invHt,eht,iv,derConst)),src,dst)
@@ -601,7 +601,7 @@ algorithm
       then erepl;
     case (_,DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=varLst)),SOME(pcr))
       equation
-        precr = ComponentReference.makeCrefIdent(ident,ty,{});
+        _ = ComponentReference.makeCrefIdent(ident,ty,{});
         precr1 = ComponentReference.joinCrefs(pcr,cr);
         failure(_ = BaseHashTable.get(precr1,extendrepl));
         // update Replacements
@@ -1000,7 +1000,7 @@ algorithm
       equation
         true = replaceExpCond(cond, e);
         (cr,_) = replaceCrefSubs(cr,repl,cond);
-        e1 = getExtendReplacement(repl, cr);
+        _ = getExtendReplacement(repl, cr);
         ((e2,(_,true))) = BackendDAEUtil.extendArrExp((e,(NONE(),false)));
         (e3,_) = replaceExp(e2,repl,cond);
       then
@@ -1150,7 +1150,7 @@ algorithm
     case ((e as DAE.REDUCTION(reductionInfo = reductionInfo,expr = e1,iterators = iters)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
-        (e1_1,c1) = replaceExp(e1, repl, cond);
+        (e1_1,_) = replaceExp(e1, repl, cond);
         (iters,true) = replaceExpIters(iters, repl, cond, {}, false);
       then (DAE.REDUCTION(reductionInfo,e1_1,iters),true);
     case (e,_,_)

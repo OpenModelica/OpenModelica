@@ -141,13 +141,13 @@ algorithm
       equation
         (u2,st3) = normalize(indx,st2);
         false = unitHasUnknown(u2);
-        (comp1,st4) = completeCheck(lst,indx+1,st3);
+        (comp1,_) = completeCheck(lst,indx+1,st3);
       then
         (comp1,st3);
 
     case (SOME(_)::_,_,st2)
       equation
-        (u2,st3) = normalize(indx,st2);
+        (u2,_) = normalize(indx,st2);
         true = unitHasUnknown(u2);
       then
         (false,st2);

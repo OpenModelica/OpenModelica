@@ -849,7 +849,7 @@ algorithm
         (e2, ty2, const2, st) = typeExp(e2, ep, c, st, ft);
 
         // Check operands vs operator
-        (e3,ty) = NFTypeCheck.checkLogicalBinaryOperation(e1,ty1,op,e2,ty2);
+        (_,ty) = NFTypeCheck.checkLogicalBinaryOperation(e1,ty1,op,e2,ty2);
 
         const = Types.constAnd(const1, const2);
       then
@@ -1432,7 +1432,7 @@ algorithm
         (lhs, ty1, _, _) = typeExp(lhs, EVAL_CONST(), CONTEXT_MODEL(), st, inFunctionTable);
         (rhs, ty2, _, _) = typeExp(rhs, EVAL_CONST(), CONTEXT_MODEL(), st, inFunctionTable);
 
-        (lhs, tty1, rhs, tty2) = NFTypeCheck.checkExpEquality(lhs, ty1, rhs, ty2, "equ", info);
+        (lhs,_, rhs,_) = NFTypeCheck.checkExpEquality(lhs, ty1, rhs, ty2, "equ", info);
 
         eq = NFInstTypes.EQUALITY_EQUATION(lhs, rhs, info);
       then

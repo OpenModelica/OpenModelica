@@ -5347,7 +5347,7 @@ algorithm
     // handle NOSUB
     case (NOSUB()::rest, acc)
       equation
-        (b, exps) = getExpsFromArrayDim_tail(rest, acc);
+        (_, exps) = getExpsFromArrayDim_tail(rest, acc);
        then
          (true, exps);
   end match;
@@ -5707,7 +5707,7 @@ algorithm
         ANNOTATION((mod :: neweltargs));
     case (ANNOTATION(elementArgs = ((MODIFICATION(path = p)) :: oldrest)),ANNOTATION(elementArgs = eltargs))
       equation
-        eltargs_1 = removeModificationInElementargs(eltargs, p);
+        _ = removeModificationInElementargs(eltargs, p);
         ANNOTATION(neweltargs) = mergeAnnotations(ANNOTATION(oldrest), ANNOTATION(eltargs));
       then ANNOTATION(neweltargs);
     case (ANNOTATION(elementArgs = {}),a) then a;

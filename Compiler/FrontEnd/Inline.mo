@@ -255,16 +255,16 @@ algorithm
 
     case(BackendDAE.EQUATION(e1,e2,source,d),_)
       equation
-        (e1_1,source,b1,assrtLst) = inlineExp(e1,fns,source);
-        (e2_1,source,b2,assrtLst) = inlineExp(e2,fns,source);
+        (e1_1,source,b1,_) = inlineExp(e1,fns,source);
+        (e2_1,source,b2,_) = inlineExp(e2,fns,source);
         true = b1 or b2;
       then
        (BackendDAE.EQUATION(e1_1,e2_1,source,d),true);
 
     case(BackendDAE.ARRAY_EQUATION(dimSize,e1,e2,source,d),_)
       equation
-        (e1_1,source,b1,assrtLst) = inlineExp(e1,fns,source);
-        (e2_1,source,b2,assrtLst) = inlineExp(e2,fns,source);
+        (e1_1,source,b1,_) = inlineExp(e1,fns,source);
+        (e2_1,source,b2,_) = inlineExp(e2,fns,source);
         true = b1 or b2;
       then
         (BackendDAE.ARRAY_EQUATION(dimSize,e1_1,e2_1,source,d),true);
@@ -296,8 +296,8 @@ algorithm
 
     case(BackendDAE.COMPLEX_EQUATION(size,e1,e2,source,d),_)
       equation
-        (e1_1,source,b1,assrtLst) = inlineExp(e1,fns,source);
-        (e2_1,source,b2,assrtLst) = inlineExp(e2,fns,source);
+        (e1_1,source,b1,_) = inlineExp(e1,fns,source);
+        (e2_1,source,b2,_) = inlineExp(e2,fns,source);
         true = b1 or b2;
       then
         (BackendDAE.COMPLEX_EQUATION(size,e1_1,e2_1,source,d),true);
@@ -381,15 +381,15 @@ algorithm
       list<DAE.Statement> assrtLst;
     case (BackendDAE.WHEN_EQ(cond,cref,e,NONE()),_,_)
       equation
-        (e_1,source,b1,assrtLst) = inlineExp(e,fns,inSource);
-        (cond,source,b2,assrtLst) = inlineExp(cond,fns,source);
+        (e_1,source,b1,_) = inlineExp(e,fns,inSource);
+        (cond,source,b2,_) = inlineExp(cond,fns,source);
         true = b1 or b2;
       then
         (BackendDAE.WHEN_EQ(cond,cref,e_1,NONE()),source,true);
     case (BackendDAE.WHEN_EQ(cond,cref,e,SOME(weq)),_,_)
       equation
-        (e_1,source,b1,assrtLst) = inlineExp(e,fns,inSource);
-        (cond,source,b2,assrtLst) = inlineExp(cond,fns,source);
+        (e_1,source,b1,_) = inlineExp(e,fns,inSource);
+        (cond,source,b2,_) = inlineExp(cond,fns,source);
         (weq_1,source,b3) = inlineWhenEq(weq,fns,source);
         true = b1 or b2 or b3;
       then
@@ -709,7 +709,7 @@ algorithm
       list<DAE.Statement> assrtLst;
     case(BackendDAE.WHEN_CLAUSE(e,rslst,io),fns)
       equation
-        (e_1,_,b1,assrtLst) = inlineExp(e,fns,DAE.emptyElementSource/*TODO: Propagate operation info*/);
+        (e_1,_,b1,_) = inlineExp(e,fns,DAE.emptyElementSource/*TODO: Propagate operation info*/);
         (rslst_1,b2) = inlineReinitStmts(rslst,fns,{},false);
         true = b1 or b2;
       then
@@ -919,47 +919,47 @@ algorithm
 
     case(DAE.EQUATION(exp1,exp2,source),fns)
       equation
-        (exp1_1,source,b1,assrtLst) = inlineExp(exp1,fns,source);
-        (exp2_1,source,b2,assrtLst) = inlineExp(exp2,fns,source);
+        (exp1_1,source,b1,_) = inlineExp(exp1,fns,source);
+        (exp2_1,source,b2,_) = inlineExp(exp2,fns,source);
         true = b1 or b2;
       then
         (DAE.EQUATION(exp1_1,exp2_1,source),true);
 
     case(DAE.ARRAY_EQUATION(dimension,exp1,exp2,source),fns)
       equation
-        (exp1_1,source,b1,assrtLst) = inlineExp(exp1,fns,source);
-        (exp2_1,source,b2,assrtLst) = inlineExp(exp2,fns,source);
+        (exp1_1,source,b1,_) = inlineExp(exp1,fns,source);
+        (exp2_1,source,b2,_) = inlineExp(exp2,fns,source);
         true = b1 or b2;
       then
         (DAE.ARRAY_EQUATION(dimension,exp1_1,exp2_1,source),true);
 
     case(DAE.INITIAL_ARRAY_EQUATION(dimension,exp1,exp2,source),fns)
       equation
-        (exp1_1,source,b1,assrtLst) = inlineExp(exp1,fns,source);
-        (exp2_1,source,b2,assrtLst) = inlineExp(exp2,fns,source);
+        (exp1_1,source,b1,_) = inlineExp(exp1,fns,source);
+        (exp2_1,source,b2,_) = inlineExp(exp2,fns,source);
         true = b1 or b2;
       then
         (DAE.INITIAL_ARRAY_EQUATION(dimension,exp1_1,exp2_1,source),true);
 
     case(DAE.COMPLEX_EQUATION(exp1,exp2,source),fns)
       equation
-        (exp1_1,source,b1,assrtLst) = inlineExp(exp1,fns,source);
-        (exp2_1,source,b2,assrtLst) = inlineExp(exp2,fns,source);
+        (exp1_1,source,b1,_) = inlineExp(exp1,fns,source);
+        (exp2_1,source,b2,_) = inlineExp(exp2,fns,source);
         true = b1 or b2;
       then
         (DAE.COMPLEX_EQUATION(exp1_1,exp2_1,source),true);
 
     case(DAE.INITIAL_COMPLEX_EQUATION(exp1,exp2,source),fns)
       equation
-        (exp1_1,source,b1,assrtLst) = inlineExp(exp1,fns,source);
-        (exp2_1,source,b2,assrtLst) = inlineExp(exp2,fns,source);
+        (exp1_1,source,b1,_) = inlineExp(exp1,fns,source);
+        (exp2_1,source,b2,_) = inlineExp(exp2,fns,source);
         true = b1 or b2;
       then
         (DAE.INITIAL_COMPLEX_EQUATION(exp1_1,exp2_1,source),true);
 
     case(DAE.WHEN_EQUATION(exp,elist,SOME(el),source),fns)
       equation
-        (exp_1,source,b1,assrtLst) = inlineExp(exp,fns,source);
+        (exp_1,source,b1,_) = inlineExp(exp,fns,source);
         (elist_1,b2) = inlineDAEElements(elist,fns,{},false);
         (el_1,b3) = inlineDAEElement(el,fns);
         true = b1 or b2 or b3;
@@ -968,7 +968,7 @@ algorithm
 
     case(DAE.WHEN_EQUATION(exp,elist,NONE(),source),fns)
       equation
-        (exp_1,source,b1,assrtLst) = inlineExp(exp,fns,source);
+        (exp_1,source,b1,_) = inlineExp(exp,fns,source);
         (elist_1,b2) = inlineDAEElements(elist,fns,{},false);
         true = b1 or b2;
       then
@@ -994,8 +994,8 @@ algorithm
 
     case(DAE.INITIALEQUATION(exp1,exp2,source),fns)
       equation
-        (exp1_1,source,b1,assrtLst) = inlineExp(exp1,fns,source);
-        (exp2_1,source,b2,assrtLst) = inlineExp(exp2,fns,source);
+        (exp1_1,source,_,_) = inlineExp(exp1,fns,source);
+        (exp2_1,source,_,_) = inlineExp(exp2,fns,source);
       then
         (DAE.INITIALEQUATION(exp1_1,exp2_1,source),true);
 
@@ -1019,9 +1019,9 @@ algorithm
 
     case(DAE.ASSERT(exp1,exp2,exp3,source) ,fns)
       equation
-        (exp1_1,source,b1,assrtLst) = inlineExp(exp1,fns,source);
-        (exp2_1,source,b2,assrtLst) = inlineExp(exp2,fns,source);
-        (exp3_1,source,b3,assrtLst) = inlineExp(exp3,fns,source);
+        (exp1_1,source,b1,_) = inlineExp(exp1,fns,source);
+        (exp2_1,source,b2,_) = inlineExp(exp2,fns,source);
+        (exp3_1,source,b3,_) = inlineExp(exp3,fns,source);
         true = b1 or b2 or b3;
       then
         (DAE.ASSERT(exp1_1,exp2_1,exp3_1,source),true);
@@ -1129,15 +1129,15 @@ algorithm
       list<DAE.Statement> assrtLst;
     case (DAE.STMT_ASSIGN(t,e1,e2,source),fns)
       equation
-        (e1_1,source,b1,assrtLst) = inlineExp(e1,fns,source);
-        (e2_1,source,b2,assrtLst) = inlineExp(e2,fns,source);
+        (e1_1,source,b1,_) = inlineExp(e1,fns,source);
+        (e2_1,source,b2,_) = inlineExp(e2,fns,source);
         true = b1 or b2;
       then
         (DAE.STMT_ASSIGN(t,e1_1,e2_1,source),true);
     case(DAE.STMT_TUPLE_ASSIGN(t,explst,e,source),fns)
       equation
         (explst_1,source,b1) = inlineExps(explst,fns,source);
-        (e_1,source,b2,assrtLst) = inlineExp(e,fns,source);
+        (e_1,source,b2,_) = inlineExp(e,fns,source);
         true = b1 or b2;
       then
         (DAE.STMT_TUPLE_ASSIGN(t,explst_1,e_1,source),true);
@@ -1148,7 +1148,7 @@ algorithm
         (DAE.STMT_ASSIGN_ARR(t,cref,e_1,source),true);
     case(DAE.STMT_IF(e,stmts,a_else,source),fns)
       equation
-        (e_1,source,b1,assrtLst) = inlineExp(e,fns,source);
+        (e_1,source,b1,_) = inlineExp(e,fns,source);
         (stmts_1,b2) = inlineStatements(stmts,fns,{},false);
         (a_else_1,source,b3) = inlineElse(a_else,fns,source);
         true = b1 or b2 or b3;
@@ -1156,21 +1156,21 @@ algorithm
         (DAE.STMT_IF(e_1,stmts_1,a_else_1,source),true);
     case(DAE.STMT_FOR(t,b,i,ix,e,stmts,source),fns)
       equation
-        (e_1,source,b1,assrtLst) = inlineExp(e,fns,source);
+        (e_1,source,b1,_) = inlineExp(e,fns,source);
         (stmts_1,b2) = inlineStatements(stmts,fns,{},false);
         true = b1 or b2;
       then
         (DAE.STMT_FOR(t,b,i,ix,e_1,stmts_1,source),true);
     case(DAE.STMT_WHILE(e,stmts,source),fns)
       equation
-        (e_1,source,b1,assrtLst) = inlineExp(e,fns,source);
+        (e_1,source,b1,_) = inlineExp(e,fns,source);
         (stmts_1,b2) = inlineStatements(stmts,fns,{},false);
         true = b1 or b2;
       then
         (DAE.STMT_WHILE(e_1,stmts_1,source),true);
     case(DAE.STMT_WHEN(e,conditions,initialCall,stmts,SOME(stmt),source),fns)
       equation
-        (e_1,source,b1,assrtLst) = inlineExp(e,fns,source);
+        (e_1,source,b1,_) = inlineExp(e,fns,source);
         (stmts_1,b2) = inlineStatements(stmts,fns,{},false);
         (stmt_1,b3) = inlineStatement(stmt,fns);
         true = b1 or b2 or b3;
@@ -1178,16 +1178,16 @@ algorithm
         (DAE.STMT_WHEN(e_1,conditions,initialCall,stmts_1,SOME(stmt_1),source),true);
     case(DAE.STMT_WHEN(e,conditions,initialCall,stmts,NONE(),source),fns)
       equation
-        (e_1,source,b1,assrtLst) = inlineExp(e,fns,source);
+        (e_1,source,b1,_) = inlineExp(e,fns,source);
         (stmts_1,b2) = inlineStatements(stmts,fns,{},false);
         true = b1 or b2;
       then
         (DAE.STMT_WHEN(e_1,conditions,initialCall,stmts_1,NONE(),source),true);
     case(DAE.STMT_ASSERT(e1,e2,e3,source),fns)
       equation
-        (e1_1,source,b1,assrtLst) = inlineExp(e1,fns,source);
-        (e2_1,source,b2,assrtLst) = inlineExp(e2,fns,source);
-        (e3_1,source,b3,assrtLst) = inlineExp(e3,fns,source);
+        (e1_1,source,b1,_) = inlineExp(e1,fns,source);
+        (e2_1,source,b2,_) = inlineExp(e2,fns,source);
+        (e3_1,source,b3,_) = inlineExp(e3,fns,source);
         true = b1 or b2 or b3;
       then
         (DAE.STMT_ASSERT(e1_1,e2_1,e3_1,source),true);
@@ -1198,8 +1198,8 @@ algorithm
         (DAE.STMT_TERMINATE(e_1,source),true);
     case(DAE.STMT_REINIT(e1,e2,source),fns)
       equation
-        (e1_1,source,b1,assrtLst) = inlineExp(e1,fns,source);
-        (e2_1,source,b2,assrtLst) = inlineExp(e2,fns,source);
+        (e1_1,source,b1,_) = inlineExp(e1,fns,source);
+        (e2_1,source,b2,_) = inlineExp(e2,fns,source);
         true = b1 or b2;
       then
         (DAE.STMT_REINIT(e1_1,e2_1,source),true);
@@ -1237,7 +1237,7 @@ algorithm
       list<DAE.Statement> assrtLst;
     case (DAE.ELSEIF(e,stmts,a_else),fns,source)
       equation
-        (e_1,source,b1,assrtLst) = inlineExp(e,fns,source);
+        (e_1,source,b1,_) = inlineExp(e,fns,source);
         (stmts_1,b2) = inlineStatements(stmts,fns,{},false);
         (a_else_1,source,b3) = inlineElse(a_else,fns,source);
         true = b1 or b2 or b3;
@@ -1271,7 +1271,7 @@ algorithm
     case(NONE(),_,_) then (NONE(),inSource,false);
     case(SOME(exp),_,_)
       equation
-        (exp,source,b,assrtLst) = inlineExp(exp,inElementList,inSource);
+        (exp,source,b,_) = inlineExp(exp,inElementList,inSource);
       then
         (SOME(exp),source,b);
   end match;
@@ -1373,7 +1373,7 @@ algorithm
     case ({},_,_,_,_) then (listReverse(iAcc),inSource,iInlined);
     case (e::exps,_,_,_,_)
       equation
-        (e,source,b,assrtLst) = inlineExp(e,fns,inSource);
+        (e,source,b,_) = inlineExp(e,fns,inSource);
         (exps,source,b) = inlineExpsWork(exps,fns,source,e::iAcc,b or iInlined);
       then
         (exps,source,b);
@@ -1603,7 +1603,7 @@ algorithm
         // get inputs, body and output
         (crefs,{cr},stmts,repl) = getFunctionInputsOutputBody(fn,{},{},{},VarTransform.emptyReplacements());
         // merge statements to one line
-        (repl,assrtStmts) = mergeFunctionBody(stmts,repl,{});
+        (repl,_) = mergeFunctionBody(stmts,repl,{});
         newExp = VarTransform.getReplacement(repl,cr);
         argmap = List.threadTuple(crefs,args);
         (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());

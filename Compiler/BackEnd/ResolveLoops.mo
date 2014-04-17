@@ -142,7 +142,7 @@ algorithm
         // cut the deadends (vars and eqs outside of the loops)
         m_cut = arrayCopy(m);
         mT_cut = arrayCopy(mT);
-        (loopEqIdcs,loopVarIdcs,nonLoopEqIdcs,nonLoopVarIdcs) = resolveLoops_cutNodes(m_cut,mT_cut,eqMapping,varMapping,varLst,eqLst);
+        (_,_,nonLoopEqIdcs,_) = resolveLoops_cutNodes(m_cut,mT_cut,eqMapping,varMapping,varLst,eqLst);
         HpcOmEqSystems.dumpEquationSystemGraphML1(simpVars,simpEqs,m_cut,"rL_loops_"+&intString(sysIdx));
 
         // handle the partitions separately, resolve the loops in the partitions, insert the resolved equation
@@ -156,8 +156,8 @@ algorithm
         numSimpEqs = listLength(simpEqLst);
         numVars = listLength(simpVarLst);
         m_after = arrayCreate(numSimpEqs, {});
-        mT_after = arrayCreate(numVars, {});
-        (m_after,mT_after) = BackendDAEUtil.incidenceMatrixDispatch(simpVars,simpEqs,{},mT, 0, numSimpEqs, intLt(0, numSimpEqs), BackendDAE.ABSOLUTE(), NONE());
+        _ = arrayCreate(numVars, {});
+        (m_after,_) = BackendDAEUtil.incidenceMatrixDispatch(simpVars,simpEqs,{},mT, 0, numSimpEqs, intLt(0, numSimpEqs), BackendDAE.ABSOLUTE(), NONE());
         HpcOmEqSystems.dumpEquationSystemGraphML1(simpVars,simpEqs,m_after,"rL_after_"+&intString(sysIdx));
 
         eqSys = BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets);
@@ -1207,7 +1207,7 @@ algorithm
     case(_,BackendDAE.EQUATION(exp = e1,scalar = e2,source=_,differentiated=_))
       equation
         (exists1,sign1) = expIsCref(e1,crefIn);
-        (exists2,sign2) = expIsCref(e2,crefIn);
+        (_,sign2) = expIsCref(e2,crefIn);
         sign1 = Util.if_(exists1,not sign1,sign2);
      then
        sign1;

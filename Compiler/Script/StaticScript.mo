@@ -425,7 +425,7 @@ public function elabCallInteractive "This function elaborates the functions defi
 
     case (cache,env,Absyn.CREF_IDENT(name = "timing"),{exp},{},impl,SOME(st),pre,_)
       equation
-        (cache,exp_1,prop,st_1) = elabExp(cache,env, exp, impl, SOME(st),true,pre,info);
+        (cache,exp_1,_,st_1) = elabExp(cache,env, exp, impl, SOME(st),true,pre,info);
       then
         (cache,Expression.makeBuiltinCall("timing",{exp_1},DAE.T_REAL_DEFAULT),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()),st_1);
 
@@ -530,7 +530,7 @@ algorithm
   case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,_,pre,_,_)
       equation
         (cache,e_1,prop,st_1) = elabCall(cache,env, fn, args, nargs, impl, st,pre,info,Error.getNumErrorMessages());
-        c = Types.propAllConst(prop);
+        _ = Types.propAllConst(prop);
         (e_1,_) = ExpressionSimplify.simplify1(e_1);
       then
         (cache,e_1,prop,st_1);

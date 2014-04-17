@@ -58,7 +58,7 @@ algorithm
       list<String> params,inputs,states,algs,outputs,inputsStates;
     case((vars,knvars,eqns,ieqns)) equation
 
-        (states,algs,outputs,inputsStates) = printMmaVarsStr(vars);
+        (states,algs,outputs,_) = printMmaVarsStr(vars);
         (params,inputs) = printMmaParamsStr(knvars);
         //inputs = listAppend(inputs,inputsStates); This should not happen, if a input is used as a state, index reduction should be active!
         s1_1 = Util.stringDelimitListNonEmptyElts(states,",");
@@ -276,7 +276,7 @@ algorithm
         s2 = printExp2MmaStr(e2,vars,knvars);
         p = ExpressionDump.expPriority(e);
         p1 = ExpressionDump.expPriority(e1);
-        p2 = ExpressionDump.expPriority(e2);
+        _ = ExpressionDump.expPriority(e2);
         s1_1 = ExpressionDump.parenthesize(s1, p1, p,false);
         s2_1 = ExpressionDump.parenthesize(s2, p1, p,true);
         s = stringAppend(s1_1, sym);

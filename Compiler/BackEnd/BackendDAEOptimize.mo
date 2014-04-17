@@ -985,7 +985,7 @@ algorithm
         (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL(),SOME(funcs));
         // check equations
         (m_1,(mT_1,_,_,changed)) = traverseIncidenceMatrix(m,removeEqualFunctionCallFinder,(mT,vars,eqns,{}));
-        b = List.isNotEmpty(changed);
+        _ = List.isNotEmpty(changed);
         // update arrayeqns and algorithms, collect info for wrappers
         syst = BackendDAE.EQSYSTEM(vars,eqns,SOME(m_1),SOME(mT_1),BackendDAE.NO_MATCHING(),stateSets);
         syst = BackendDAEUtil.updateIncidenceMatrix(syst,BackendDAE.NORMAL(),NONE(),changed);
@@ -1735,7 +1735,7 @@ algorithm
         eqn_lst = BackendEquation.getEqns(eindex,eqns);
         var_lst = List.map1r(vindx, BackendVariable.getVarAt, vars);
         (syst,shared) = solveLinearSystem(syst,shared,eqn_lst,eindex,var_lst,vindx,jac);
-        (syst,shared,b) = constantLinearSystem1(syst,shared,comps);
+        (syst,shared,_) = constantLinearSystem1(syst,shared,comps);
       then
         (syst,shared,true);
     case (syst,shared,(BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1))::comps)
@@ -2584,7 +2584,7 @@ algorithm
 
       crefExp = DAE.CREF(cref, DAE.T_REAL_DEFAULT);
 
-      e = Expression.crefExp(cref);
+      _ = Expression.crefExp(cref);
       e1 = DAE.BINARY(crefExp, DAE.SUB(DAE.T_REAL_DEFAULT), bindExp);
 
       eqn = BackendDAE.RESIDUAL_EQUATION(e1, DAE.emptyElementSource,false);
@@ -2734,15 +2734,15 @@ algorithm
       BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars=orderedVars)}, BackendDAE.SHARED(knownVars=knownVars)) = DAE;
 
       orderedVarList = BackendVariable.varList(orderedVars);
-      orderedVarCrefList = List.map(orderedVarList, BackendVariable.varCref);
+      _ = List.map(orderedVarList, BackendVariable.varCref);
       knownVarList = BackendVariable.varList(knownVars);
-      knownVarCrefList = List.map(knownVarList, BackendVariable.varCref);
+      _ = List.map(knownVarList, BackendVariable.varCref);
       states = BackendVariable.getAllStateVarFromVariables(orderedVars);
       inputs = List.select(knownVarList, BackendVariable.isInput);
       parameters = List.select(knownVarList, BackendVariable.isParam);
       outputs = List.select(orderedVarList, BackendVariable.isVarOnTopLevelAndOutput);
 
-      (jacobian, sparsityPattern, _, funcs) = createJacobian(DAE,                                     // DAE
+      (jacobian, sparsityPattern, _,_) = createJacobian(DAE,                                     // DAE
                                                       states,                                  //
                                                       BackendVariable.listVar1(states),         //
                                                       BackendVariable.listVar1(inputs),         //
@@ -2814,12 +2814,12 @@ algorithm
       BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars=orderedVars)}, BackendDAE.SHARED(knownVars=knownVars)) = DAE;
 
       orderedVarList = BackendVariable.varList(orderedVars);
-      orderedVarCrefList = List.map(orderedVarList, BackendVariable.varCref);
+      _ = List.map(orderedVarList, BackendVariable.varCref);
       knownVarList = BackendVariable.varList(knownVars);
-      knownVarCrefList = List.map(knownVarList, BackendVariable.varCref);
-      states = BackendVariable.getAllStateVarFromVariables(orderedVars);
-      inputs = List.select(knownVarList, BackendVariable.isInput);
-      parameters = List.select(knownVarList, BackendVariable.isParam);
+      _ = List.map(knownVarList, BackendVariable.varCref);
+      _ = BackendVariable.getAllStateVarFromVariables(orderedVars);
+      _ = List.select(knownVarList, BackendVariable.isInput);
+      _ = List.select(knownVarList, BackendVariable.isParam);
       outputs = List.select(orderedVarList, BackendVariable.isVarOnTopLevelAndOutput);
     then (DAE, outputs);
 
@@ -2885,12 +2885,12 @@ algorithm
       BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars=orderedVars)}, BackendDAE.SHARED(knownVars=knownVars)) = DAE;
 
       orderedVarList = BackendVariable.varList(orderedVars);
-      orderedVarCrefList = List.map(orderedVarList, BackendVariable.varCref);
+      _ = List.map(orderedVarList, BackendVariable.varCref);
       knownVarList = BackendVariable.varList(knownVars);
-      knownVarCrefList = List.map(knownVarList, BackendVariable.varCref);
+      _ = List.map(knownVarList, BackendVariable.varCref);
       states = BackendVariable.getAllStateVarFromVariables(orderedVars);
-      inputs = List.select(knownVarList, BackendVariable.isInput);
-      parameters = List.select(knownVarList, BackendVariable.isParam);
+      _ = List.select(knownVarList, BackendVariable.isInput);
+      _ = List.select(knownVarList, BackendVariable.isParam);
       outputs = List.select(orderedVarList, BackendVariable.isVarOnTopLevelAndOutput);
 
       (sparsityPattern, _) = generateSparsePattern(DAE, states, outputs);
@@ -3022,9 +3022,9 @@ algorithm
         */
         // Prepare all needed variables
         varlst = BackendVariable.varList(v);
-        comref_vars = List.map(varlst,BackendVariable.varCref);
+        _ = List.map(varlst,BackendVariable.varCref);
         knvarlst = BackendVariable.varList(kv);
-        comref_knvars = List.map(knvarlst,BackendVariable.varCref);
+        _ = List.map(knvarlst,BackendVariable.varCref);
         states = BackendVariable.getAllStateVarFromVariables(v);
         inputvars = List.select(knvarlst,BackendVariable.isInput);
         paramvars = List.select(knvarlst, BackendVariable.isParam);
@@ -3082,18 +3082,18 @@ algorithm
 
         // Prepare all needed variables
         varlst = BackendVariable.varList(v);
-        comref_vars = List.map(varlst,BackendVariable.varCref);
+        _ = List.map(varlst,BackendVariable.varCref);
         knvarlst = BackendVariable.varList(kv);
-        comref_knvars = List.map(knvarlst,BackendVariable.varCref);
+        _ = List.map(knvarlst,BackendVariable.varCref);
         states = BackendVariable.getAllStateVarFromVariables(v);
         inputvars = List.select(knvarlst,BackendVariable.isInput);
         paramvars = List.select(knvarlst, BackendVariable.isParam);
         inputvars2 = List.select(knvarlst,BackendVariable.isVarOnTopLevelAndInput);
         outputvars = List.select(varlst, BackendVariable.isVarOnTopLevelAndOutput);
 
-        comref_states = List.map(states,BackendVariable.varCref);
-        comref_inputvars = List.map(inputvars2,BackendVariable.varCref);
-        comref_outputvars = List.map(outputvars,BackendVariable.varCref);
+        _ = List.map(states,BackendVariable.varCref);
+        _ = List.map(inputvars2,BackendVariable.varCref);
+        _ = List.map(outputvars,BackendVariable.varCref);
 
         statesarr = BackendVariable.listVar1(states);
         inputvarsarr = BackendVariable.listVar1(inputvars);
@@ -3138,18 +3138,18 @@ algorithm
 
         // Prepare all needed variables
         varlst = BackendVariable.varList(v);
-        comref_vars = List.map(varlst,BackendVariable.varCref);
+        _ = List.map(varlst,BackendVariable.varCref);
         knvarlst = BackendVariable.varList(kv);
-        comref_knvars = List.map(knvarlst,BackendVariable.varCref);
+        _ = List.map(knvarlst,BackendVariable.varCref);
         states = BackendVariable.getAllStateVarFromVariables(v);
         inputvars = List.select(knvarlst,BackendVariable.isInput);
         paramvars = List.select(knvarlst, BackendVariable.isParam);
         inputvars2 = List.select(knvarlst,BackendVariable.isVarOnTopLevelAndInput);
         outputvars = List.select(varlst, BackendVariable.isVarOnTopLevelAndOutput);
         states_inputs = listAppend(states, inputvars2);
-        comref_states = List.map(states,BackendVariable.varCref);
-        comref_inputvars = List.map(inputvars2,BackendVariable.varCref);
-        comref_outputvars = List.map(outputvars,BackendVariable.varCref);
+        _ = List.map(states,BackendVariable.varCref);
+        _ = List.map(inputvars2,BackendVariable.varCref);
+        _ = List.map(outputvars,BackendVariable.varCref);
 
         statesarr = BackendVariable.listVar1(states);
         inputvarsarr = BackendVariable.listVar1(inputvars);
@@ -3240,7 +3240,7 @@ algorithm
 
         comref_vars = List.map(inDiffVars, BackendVariable.varCref);
         seedlst = List.map1(comref_vars, createSeedVars, (inName,false));
-        comref_seedVars = List.map(seedlst, BackendVariable.varCref);
+        _ = List.map(seedlst, BackendVariable.varCref);
         s1 =  intString(listLength(inVars));
 
         Debug.execStat("analytical Jacobians -> starting to generate the jacobian. DiffVars:"
@@ -3418,9 +3418,9 @@ algorithm
       // differentiate the equation system
       Debug.fcall(Flags.JAC_DUMP2, print, "*** analytical Jacobians -> derived all algorithms time: " +& realString(clock()) +& "\n");
       diffVarsArr = BackendVariable.listVar1(diffVars);
-      diffedVarLst = BackendVariable.varList(diffedVars);
+      _ = BackendVariable.varList(diffedVars);
       comref_diffvars = List.map(diffVars, BackendVariable.varCref);
-      assLst = arrayList(ass2);
+      _ = arrayList(ass2);
       diffData = BackendDAE.DIFFINPUTDATA(SOME(diffVarsArr), SOME(diffedVars), SOME(knownVars), SOME(orderedVars), SOME({}), SOME(comref_diffvars), SOME(matrixName));
       eqns = BackendEquation.equationList(orderedEqs);
       (derivedEquations, functions) = deriveAll(eqns, arrayList(ass2), x, diffData, {}, functions);
@@ -3464,11 +3464,11 @@ algorithm
       // differentiate the equation system
       Debug.fcall(Flags.JAC_DUMP2, print, "*** analytical Jacobians -> derived all algorithms time: " +& realString(clock()) +& "\n");
       diffVarsArr = BackendVariable.listVar1(diffVars);
-      diffedVarLst = BackendVariable.varList(diffedVars);
+      _ = BackendVariable.varList(diffedVars);
       comref_diffvars = List.map(diffVars, BackendVariable.varCref);
-      assLst = arrayList(ass2);
+      _ = arrayList(ass2);
       diffData = BackendDAE.DIFFINPUTDATA(SOME(diffVarsArr), SOME(diffedVars), SOME(knownVars), SOME(orderedVars), SOME({}), SOME(comref_diffvars), SOME(matrixName));
-      eqns = BackendEquation.equationList(orderedEqs);
+      _ = BackendEquation.equationList(orderedEqs);
 
       comref_diffvars = List.map(diffVars, BackendVariable.varCref);
       diffvars = BackendVariable.varList(orderedVars);
@@ -4065,7 +4065,7 @@ algorithm
         // prepare creation of symbolic jacobian
         // create dependent variables
         dependentVarsLst = BackendVariable.varList(dependentVars);
-        dependentVarsComRefs = List.map(dependentVarsLst, BackendVariable.varCref);
+        _ = List.map(dependentVarsLst, BackendVariable.varCref);
 
         (symJacBDAE, sparsePattern, sparseColoring, funcs) = createJacobian(backendDAE,
           independentVarsLst,
@@ -4203,7 +4203,7 @@ algorithm
         // match the equations to get the residual equations
         (ceqns, oeqns) = IndexReduction.splitEqnsinConstraintAndOther(compvars, compeqns, inShared);
         // add vars for A
-        vars = BackendVariable.addVars(varA, inVars);
+        _ = BackendVariable.addVars(varA, inVars);
         // change state vars to ders
         compvars = List.map(compvars, BackendVariable.transformXToXd);
         // replace der in equations
@@ -4911,7 +4911,7 @@ algorithm
          countOperationstraverseComps(rest,isyst,ishared,tpl);
     case ((comp as BackendDAE.TORNSYSTEM(tearingvars=vlst, otherEqnVarTpl=_, linear=false))::rest,_,BackendDAE.SHARED(functionTree=_),_)
       equation
-        (eqnlst,varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, BackendEquation.daeEqns(isyst), BackendVariable.daeVars(isyst));
+        (eqnlst,_,_) = BackendDAETransform.getEquationAndSolvedVar(comp, BackendEquation.daeEqns(isyst), BackendVariable.daeVars(isyst));
         ((i1_1,i2_1,i3_1,i4_1)) = addJacSpecificOperations(listLength(vlst),(0,0,0,0));
         (i1_1,i2_1,i3_1,i4_1) = (i1_1*3,i2_1*3,i3_1*3,i4_1*3);
         (i1,i2,i3,i4) = inTpl;

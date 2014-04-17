@@ -373,7 +373,7 @@ algorithm
     case (eqn::_,_,_,_,_,_)
       equation
         msg = "\nDifferentiate.differentiateEquations failed for " +& BackendDump.equationString(eqn) +& "\n\n";
-        source = BackendEquation.equationSource(eqn);
+        _ = BackendEquation.equationSource(eqn);
         Debug.fprint(Flags.FAILTRACE, msg);
       then
         fail();
@@ -516,7 +516,7 @@ algorithm
     else
       equation
         msg = "\nDifferentiate.differentiateEquation failed for " +& BackendDump.equationString(inEquation) +& "\n\n";
-        source = BackendEquation.equationSource(inEquation);
+        _ = BackendEquation.equationSource(inEquation);
         Debug.fprint(Flags.FAILTRACE, msg);
       then
         fail();
@@ -1231,7 +1231,7 @@ algorithm
         //print("\nExp-Cref\n independent cref: " +& se1);
 
         cr1 = ComponentReference.crefStripLastSubs(cr);
-        (vars,_) = BackendVariable.getVar(cr1, timevars);
+        (_,_) = BackendVariable.getVar(cr1, timevars);
         (zero, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
 
         //se1 = ExpressionDump.printExpStr(zero);
@@ -1245,7 +1245,7 @@ algorithm
         //se1 = ExpressionDump.printExpStr(e);
         //print("\nExp-Cref\n independent cref: " +& se1);
 
-        (vars,_) = BackendVariable.getVar(cr, timevars);
+        (_,_) = BackendVariable.getVar(cr, timevars);
         (zero, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
 
         //se1 = ExpressionDump.printExpStr(zero);
@@ -2341,7 +2341,7 @@ algorithm
 
     case ((var as DAE.VAR(componentRef = cref, ty= (DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(path=_)))))::rest, _, _, _, _, _, _, _)
       equation
-        e = Expression.crefExp(cref);
+        _ = Expression.crefExp(cref);
         //ExpressionDump.printExp(e);
         crefLst = List.map1(varLst,Expression.generateCrefsFromExpVar,cref);
         tpLst = List.map(varLst,Types.getVarType);
@@ -2443,7 +2443,7 @@ algorithm
          // get mapper
          (mapper,tp) = getFunctionMapper(fname,functions);
          // get bool list
-         (da,blst) = differentiateFunction1(fname,mapper,tp,expl,inDiffArgs);
+         (_,blst) = differentiateFunction1(fname,mapper,tp,expl,inDiffArgs);
          // count true
          (bl1,_) = List.split1OnTrue(blst,Util.isEqual,true);
          bl2 = List.fill(false,listLength(blst));

@@ -101,12 +101,12 @@ algorithm
         print("\n ----------------------------\n");
         print("BackEndQSS analysis initialized");
         print("\n ----------------------------\n");
-        (allVarsList, stateVarsList,orderedVarsList) = getAllVars(dlow);
-        stateVarsList = List.filterOnTrue(orderedVarsList,BackendVariable.isStateVar);
+        (_,_,orderedVarsList) = getAllVars(dlow);
+        _ = List.filterOnTrue(orderedVarsList,BackendVariable.isStateVar);
         discVarsLst = List.filterOnTrue(orderedVarsList,isDiscreteVar);
         disc = List.map(discVarsLst,BackendVariable.varCref);
         (eqsindex,zc_exps) = getEquationsWithDiscont(zeroCrossings);
-        offset = listLength(disc);
+        _ = listLength(disc);
         disc = listAppend(disc, newDiscreteVariables(getEquations(eqsdae,eqsindex),0));
         //states = List.map(stateVarsList,BackendVariable.varCref);
         //algs = computeAlgs(eqs,states,{});
@@ -798,9 +798,9 @@ algorithm
   case (SimCode.SES_SIMPLE_ASSIGN(cref=cref,exp=exp),
         SimCode.SIMVARS(paramVars=paramVars,intParamVars=intParamVars,boolParamVars=boolParamVars))
   equation
-    failure(i = List.position(cref,List.map(paramVars,SimCodeUtil.varName)));
-    failure(i = List.position(cref,List.map(intParamVars,SimCodeUtil.varName)));
-    failure(i = List.position(cref,List.map(boolParamVars,SimCodeUtil.varName)));
+    failure(_ = List.position(cref,List.map(paramVars,SimCodeUtil.varName)));
+    failure(_ = List.position(cref,List.map(intParamVars,SimCodeUtil.varName)));
+    failure(_ = List.position(cref,List.map(boolParamVars,SimCodeUtil.varName)));
     t = stringAppend("parameter Real ",System.stringReplace(replaceCref(cref,{},{},{}),".","_"));
     t = stringAppend(t," = ");
     t = stringAppend(t,ExpressionDump.printExpStr(replaceVars(exp,{},{},{})));

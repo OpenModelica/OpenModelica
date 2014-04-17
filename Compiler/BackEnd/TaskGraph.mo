@@ -367,7 +367,7 @@ algorithm
     case (vars,residuals) /* variables residuals */
       equation
         size = listLength(vars);
-        size_str = intString(size);
+        _ = intString(size);
         taskname = buildResidualCode(vars, residuals);
         tid = TaskGraphExt.newTask(taskname);
         TaskGraphExt.setTaskType(tid, 3);
@@ -469,7 +469,7 @@ algorithm
     case ({},_,_) then "";
     case ((e :: es),pos,repl)
       equation
-        (e_1,_) = VarTransform.replaceExp(e, repl,NONE());
+        (_,_) = VarTransform.replaceExp(e, repl,NONE());
         //s1 = SimCodegen.printExpCppStr(e_1);
         s1 = "NOT WORKING";
         pos_1 = pos + 1;
@@ -706,7 +706,7 @@ algorithm
       DAE.Type tp;
     case (cr,(exp as DAE.CREF(componentRef = cr2,ty = _)),origname) /* varname expression orig. name */
       equation
-        (task,str) = buildExpression(exp) "special rule for equation a:=b" ;
+        (task,_) = buildExpression(exp) "special rule for equation a:=b" ;
         tid = TaskGraphExt.newTask("copy");
         cr2s = ComponentReference.crefStr(cr2);
         TaskGraphExt.addEdge(task, tid, cr2s, 0);
@@ -717,7 +717,7 @@ algorithm
         ();
     case (cr,exp,origname)
       equation
-        (task,str) = buildExpression(exp);
+        (task,_) = buildExpression(exp);
         crs = ComponentReference.crefStr(cr);
         TaskGraphExt.storeResult(crs, task, true, origname);
       then

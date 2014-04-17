@@ -230,7 +230,7 @@ algorithm
         true = List.isNotEmpty(elements);
         protectVars = List.filterOnTrue(elements,DAEUtil.isProtectedVar);
         algs = List.filter(elements,DAEUtil.isAlgorithm);
-        isTuple = Expression.isTuple(lhsExpIn);
+        _ = Expression.isTuple(lhsExpIn);
 
         // get all input crefs and expresssions (scalar and one dimensioanl)
         allInputs = List.filter(elements,DAEUtil.isInputVar);
@@ -557,7 +557,7 @@ algorithm
          //print("\the cref\n"+&stringDelimitList(List.map({cref},ComponentReference.printComponentRefStr),"\n")+&"\n");
 
         true = List.isNotEmpty(scalars);
-        (constVars,varVars,_) = List.intersection1OnTrue(scalars,constCrefs,ComponentReference.crefEqual);
+        (constVars,_,_) = List.intersection1OnTrue(scalars,constCrefs,ComponentReference.crefEqual);
         //print("\constVars\n"+&stringDelimitList(List.map(constVars,ComponentReference.printComponentRefStr),"\n")+&"\n");
         //print("\varVars\n"+&stringDelimitList(List.map(varVars,ComponentReference.printComponentRefStr),"\n")+&"\n");
 
@@ -618,7 +618,7 @@ algorithm
         typ = ComponentReference.crefLastType(cref);
         //cref1 = ComponentReference.crefStripLastIdent(cref);
         //print("cref\n"+&ComponentReference.printComponentRefStr(cref)+&"\n");
-        exp = Expression.crefExp(cref);
+        _ = Expression.crefExp(cref);
 
         // its not possible to use qualified output crefs
         i1 = ComponentReference.crefFirstIdent(cref);
@@ -670,7 +670,7 @@ algorithm
     case(DAE.CREF_QUAL(ident=_,identType=_,subscriptLst=sl,componentRef=_),_,_)
       equation
         typ = ComponentReference.crefLastType(cref);
-        exp = Expression.crefExp(cref);
+        _ = Expression.crefExp(cref);
         i1 = ComponentReference.crefFirstIdent(cref);
         i2 = ComponentReference.crefLastIdent(cref);
         i1 = i1+&"_"+&i2;
@@ -828,7 +828,7 @@ algorithm
       DAE.Statement x;
     case ({},_,_,_)
       equation
-        stmtLst = listReverse(stmtsFold);
+        _ = listReverse(stmtsFold);
       then
         stmtsFold;
     case (DAE.STMT_IF(exp =_, statementLst=stmtLst, else_=else_)::rest,_,_,_)
@@ -1093,12 +1093,12 @@ algorithm
       equation
         //print("the STMT_ASSIGN before: "+&DAEDump.ppStatementStr(List.first(algsIn)));
         cref = Expression.expCref(exp1);
-        scalars = getRecordScalars(cref);
+        _ = getRecordScalars(cref);
         (exp2,changed) = BackendVarTransform.replaceExp(exp2,replIn,NONE());
         ((exp2,(exp1,funcTree,idx,addStmts))) = Expression.traverseExpTopDown(exp2,evaluateConstantFunctionWrapper,(exp1,funcTree,idx,{}));
         (exp2,changed) = Debug.bcallret1_2(changed,ExpressionSimplify.simplify,exp2,exp2,changed);
         (exp2,_) = ExpressionSimplify.simplify(exp2);
-        expLst = Expression.getComplexContents(exp2);
+        _ = Expression.getComplexContents(exp2);
         isCon = Expression.isConst(exp2);
         isRec = ComponentReference.isRecord(cref);
 
@@ -1132,7 +1132,7 @@ algorithm
         // check if its the IF case, if true then evaluate:
         //print("the STMT_IF before: "+&DAEDump.ppStatementStr(List.first(algsIn)));
         ((exp1,(_,funcTree,idx,addStmts))) = Expression.traverseExpTopDown(exp0,evaluateConstantFunctionWrapper,(exp0,funcTree,idx,{}));
-        (exp1,changed) = BackendVarTransform.replaceExp(exp1,replIn,NONE());
+        (exp1,_) = BackendVarTransform.replaceExp(exp1,replIn,NONE());
         (exp1,_) = ExpressionSimplify.simplify(exp1);
         isCon = Expression.isConst(exp1);
         isIf = Debug.bcallret1(isCon,Expression.getBoolConst,exp1,false);
@@ -1172,7 +1172,7 @@ algorithm
         //print(stringDelimitList(List.map(expLst,ExpressionDump.printExpStr),"\n")+&"\n");
         //print("the RHS before\n");
         //print(ExpressionDump.printExpStr(exp1)+&"\n");
-        (exp1,changed) = BackendVarTransform.replaceExp(exp0,replIn,NONE());
+        (exp1,_) = BackendVarTransform.replaceExp(exp0,replIn,NONE());
         //print("the RHS replaced\n");
         //print(ExpressionDump.printExpStr(exp1)+&"\n");
 
@@ -1482,7 +1482,7 @@ algorithm
         names = List.map(varLst,DAEUtil.typeVarIdent);
         //print("the names for the scalar crefs: "+&stringDelimitList(names,"\n")+&"\n");
         types = List.map(varLst,DAEUtil.VarType);
-        exp = Expression.crefExp(cref);
+        _ = Expression.crefExp(cref);
         crefs = List.map1(names,ComponentReference.appendStringCref,cref);
         crefs = setTypesForScalarCrefs(crefs,types,{});
         crefs = listReverse(crefs);
@@ -1681,7 +1681,7 @@ algorithm
          // compare the constant outputs
          constantOutputs = compareConstantExps(expLstLst,List.intRange(listLength(allLHS)));
          outExps = List.map1(constantOutputs,List.getIndexFirst,allLHS);
-         crefs = List.map(outExps,Expression.expCref);
+         _ = List.map(outExps,Expression.expCref);
          //print("constantOutputs: "+&stringDelimitList(List.map(constantOutputs,intString),",")+&"\n");
          expLst = List.map1(constantOutputs,List.getIndexFirst,List.first(expLstLst));
          //print("the constant shared outputs: "+&stringDelimitList(List.map(expLst,ExpressionDump.printExpStr),"\n")+&"\n");

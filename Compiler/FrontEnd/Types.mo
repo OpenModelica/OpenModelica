@@ -2838,7 +2838,7 @@ algorithm
       equation
         s = unparseType(ty);
         cs = DAEUtil.constStrFriendly(c);
-        ps = DAEUtil.dumpVarParallelismStr(p);
+        _ = DAEUtil.dumpVarParallelismStr(p);
         // res = stringAppendList({ps,cs,s," ",n});
         res = stringAppendList({cs,s," ",n});
       then
@@ -4592,7 +4592,7 @@ algorithm
       equation
         true = Config.acceptMetaModelicaGrammar();
         elist = Patternm.resultExps(cases);
-        (elist_1,tys_1) = matchTypeList(elist, actual, expected, printFailtrace);
+        (elist_1,_) = matchTypeList(elist, actual, expected, printFailtrace);
         cases=Patternm.fixCaseReturnTypes2(cases,elist_1,Absyn.dummyInfo);
         et=simplifyType(expected);
       then
@@ -4666,7 +4666,7 @@ algorithm
       equation
         (e,t1) = matchType(e,t1,unboxedType(t2),printFailtrace);
         t2 = DAE.T_METABOXED(t1,DAE.emptyTypeSource);
-        t = simplifyType(t2);
+        _ = simplifyType(t2);
         e = Expression.boxExp(e);
       then (e,t2);
 
@@ -4674,7 +4674,7 @@ algorithm
       equation
         (e,t1) = matchType(e,t1,unboxedType(t2),printFailtrace);
         t2 = DAE.T_METABOXED(t1,DAE.emptyTypeSource);
-        t = simplifyType(t2);
+        _ = simplifyType(t2);
         e = Expression.boxExp(e);
       then (e,t2);
 
@@ -4682,7 +4682,7 @@ algorithm
       equation
         (e,t1) = matchType(e,t1,unboxedType(t2),printFailtrace);
         t2 = DAE.T_METABOXED(t1,DAE.emptyTypeSource);
-        t = simplifyType(t2);
+        _ = simplifyType(t2);
         e = Expression.boxExp(e);
       then (e,t2);
 
@@ -4691,7 +4691,7 @@ algorithm
         // true = Config.acceptMetaModelicaGrammar();
         (e, t1) = matchType(e, t1, unboxedType(t2), printFailtrace);
         t2 = DAE.T_METABOXED(t1,DAE.emptyTypeSource);
-        t = simplifyType(t2);
+        _ = simplifyType(t2);
         e = Expression.boxExp(e);
       then
         (e, t2);
@@ -4761,21 +4761,21 @@ algorithm
     case (e,DAE.T_METABOXED(ty = t1),t2 as DAE.T_INTEGER(varLst = _),_)
       equation
         true = subtype(t1,t2);
-        (e_1,_) = matchType(e,t1,t2,printFailtrace);
+        (_,_) = matchType(e,t1,t2,printFailtrace);
         t = simplifyType(t2);
       then (DAE.UNBOX(e,t),t2);
 
     case (e,DAE.T_METABOXED(ty = t1),t2 as DAE.T_REAL(varLst = _),_)
       equation
         true = subtype(t1,t2);
-        (e_1,_) = matchType(e,t1,t2,printFailtrace);
+        (_,_) = matchType(e,t1,t2,printFailtrace);
         t = simplifyType(t2);
       then (DAE.UNBOX(e,t),t2);
 
     case (e,DAE.T_METABOXED(ty = t1),t2 as DAE.T_BOOL(varLst = _),_)
       equation
         true = subtype(t1,t2);
-        (e_1,_) = matchType(e,t1,t2,printFailtrace);
+        (_,_) = matchType(e,t1,t2,printFailtrace);
         t = simplifyType(t2);
       then (DAE.UNBOX(e,t),t2);
 
@@ -4912,7 +4912,7 @@ algorithm
     case (expl::rest, DAE.T_ARRAY(ty=DAE.T_ARRAY(ty=t1)), DAE.T_METALIST(DAE.T_METALIST(listType=t2),_),_)
       equation
         (e,t1) = typeConvertMatrixRowToList(expl, t1, t2, printFailtrace);
-        t = simplifyType(t1);
+        _ = simplifyType(t1);
         (expl,_) = typeConvertMatrixToList(rest, inType, outType, printFailtrace);
       then (e::expl,DAE.T_METALIST(t1,DAE.emptyTypeSource));
     case (_,_,_,_)

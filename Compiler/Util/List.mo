@@ -1956,7 +1956,7 @@ algorithm
 
     case(i :: irest, _, _)
       equation
-        arr = arrayUpdate(inArray, i, intAdd(inArray[i],inIndex));
+        _ = arrayUpdate(inArray, i, intAdd(inArray[i],inIndex));
         arr = addPos(irest, inArray, inIndex);
       then
         arr;

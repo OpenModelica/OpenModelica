@@ -515,7 +515,7 @@ algorithm
       equation
         cr = ComponentReference.makeCrefIdent("#DUMMY#",DAE.T_UNKNOWN_DEFAULT,{});
         crefExp = Expression.crefExp(cr);
-        (_,et) = Types.matchType(crefExp,ty1,ty2,true);
+        (_,_) = Types.matchType(crefExp,ty1,ty2,true);
       then NONE();
 
     case (ty1,ty2,_,_)
@@ -2013,7 +2013,7 @@ algorithm
 
     case (cache,env,SOME(exp),_,st,_,_,info)
       equation
-        (cache,elabExp,prop,st) = Static.elabExp(cache,env,exp,impl,st,performVectorization,pre,info);
+        (cache,_,prop,st) = Static.elabExp(cache,env,exp,impl,st,performVectorization,pre,info);
         str = Types.unparseType(Types.getPropType(prop));
         Error.addSourceMessage(Error.GUARD_EXPRESSION_TYPE_MISMATCH, {str}, info);
       then fail();
@@ -2269,7 +2269,7 @@ algorithm
 
     case (cache,env,ld,_,_,_)
       equation
-        env2 = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(scopeName),NONE());
+        _ = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(scopeName),NONE());
 
         // Tranform declarations such as Real x,y; to Real x; Real y;
         ld2 = SCodeUtil.translateEitemlist(ld, SCode.PROTECTED());

@@ -306,8 +306,8 @@ algorithm
 
                             connectorType = _)) :: {}),varno)
       equation
-        varnostr = intString(varno);
-        dirstr = DAEDump.dumpDirectionStr(dir);
+        _ = intString(varno);
+        _ = DAEDump.dumpDirectionStr(dir);
         str1 = ComponentReference.printComponentRefStr(cr);
         /*
         paths_lst = List.map(paths, Absyn.pathString);
@@ -341,8 +341,8 @@ algorithm
 
                               connectorType = _)) :: xs),varno)
       equation
-        varnostr = intString(varno);
-        dirstr = DAEDump.dumpDirectionStr(dir);
+        _ = intString(varno);
+        _ = DAEDump.dumpDirectionStr(dir);
         str1 = ComponentReference.printComponentRefStr(cr);
         /*
         paths_lst = List.map(paths, Absyn.pathString);
@@ -755,7 +755,7 @@ algorithm
     // If expression with logic sentence.
     case (DAE.IFEXP(expCond = e1 as DAE.LBINARY(exp1 = _, operator = _, exp2 =_),expThen = e2,expElse = e3),vars) /* if expressions. */
       equation
-        opStr = printExpStr(e1);
+        _ = printExpStr(e1);
         //opStr = ExpressionDump.relopSymbol(op1);
         //s = printExpStr(ee2);
         sb = stringAppendList({"'true',","'=='"});
@@ -812,7 +812,7 @@ algorithm
     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars)
       equation
         (_,p) = BackendVariable.getVar(cr, vars);
-        pStr = List.map(p, intString);
+        _ = List.map(p, intString);
       then
         {};
 

@@ -419,7 +419,7 @@ algorithm
 
    case (str)
      equation
-       failure(strLst = Util.stringSplitAtChar(str, "."));
+       failure(_ = Util.stringSplitAtChar(str, "."));
        // no "." present in the string, say is a path!
      then
        Absyn.IDENT(str);
@@ -576,7 +576,7 @@ algorithm
         // show errors if there are any
         showErrors(Print.getErrorString(), ErrorExt.printMessagesStr(false));
         // evaluate statements and print the result to stdout directly
-        newst = Interactive.evaluateToStdOut(stmts, st, true);
+        _ = Interactive.evaluateToStdOut(stmts, st, true);
       then
         ();
     case {f} /* A template file .tpl (in the Susan language)*/
@@ -1115,7 +1115,7 @@ algorithm
 
         //setGlobalRoot(Global.crefIndex,  ComponentReference.createEmptyCrefMemory());
         //Env.globalCache = fill(Env.emptyCache,1);
-        symbolTable = readSettings(args);
+        _ = readSettings(args);
         // non of the interactive mode was set, flatten the file
         translateFile(args);
         /*

@@ -2149,8 +2149,8 @@ algorithm
         p = listGet(lstIn,pivotIdx);
         (leftLst,rightLst)= List.split(lstIn,pivotIdx);
         rightLst = listReverse(rightLst);
-        (l,lIdx,b1) = getMemberOnTrueWithIdx(p,leftLst,realLt);
-        (r,rIdx,b2) = getMemberOnTrueWithIdx(p,rightLst,realGt);
+        (_,lIdx,b1) = getMemberOnTrueWithIdx(p,leftLst,realLt);
+        (_,rIdx,b2) = getMemberOnTrueWithIdx(p,rightLst,realGt);
         rIdx = size+1-rIdx;
         lstTmp = Debug.bcallret3(b1,swapEntriesInList,pivotIdx,lIdx,lstIn,lstIn);
         lstTmp = Debug.bcallret3(b2,swapEntriesInList,pivotIdx,rIdx,lstTmp,lstTmp);

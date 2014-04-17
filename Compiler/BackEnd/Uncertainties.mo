@@ -148,7 +148,7 @@ algorithm
         BackendDAE.EQSYSTEM(orderedVars=allVars,orderedEqs=allEqs) = currentSystem;
         BackendDAE.SHARED(knownVars=sharedVars) = shared;
 
-        (m,mt,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.incidenceMatrixScalar(currentSystem,BackendDAE.NORMAL(),NONE());
+        (m,_,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.incidenceMatrixScalar(currentSystem,BackendDAE.NORMAL(),NONE());
 
         //(dlow_1 as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=allVars,orderedEqs=allEqs,m=SOME(m),mT=SOME(mt))::eqsyslist,_)) = BackendDAEUtil.mapEqSystem(dlow_1,BackendDAEUtil.getIncidenceMatrixScalarfromOptionForMapEqSystem);
 
@@ -179,7 +179,7 @@ algorithm
         BackendDAE.SHARED(knownVars=sharedVars) = shared;
 
 
-        (m,mt,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.incidenceMatrixScalar(currentSystem,BackendDAE.NORMAL(),NONE());
+        (m,_,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.incidenceMatrixScalar(currentSystem,BackendDAE.NORMAL(),NONE());
 
               printSep(getMathematicaText("After Symbolic Elimination"));
               printSep(getMathematicaText("Equations (Function calls represent more than one equation)"));
@@ -654,7 +654,7 @@ algorithm
       System.realtimeTick(GlobalScript.RT_CLOCK_UNCERTAINTIES);
       p_1 = SCodeUtil.translateAbsyn2SCode(p);
       (cache,env,_,dae) = Inst.instantiateClass(icache,InnerOuter.emptyInstHierarchy,p_1,className);
-      timeFrontend = System.realtimeTock(GlobalScript.RT_CLOCK_UNCERTAINTIES);
+      _ = System.realtimeTock(GlobalScript.RT_CLOCK_UNCERTAINTIES);
       System.realtimeTick(GlobalScript.RT_CLOCK_BACKEND);
       dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
     then (dae,cache,env);
@@ -1692,14 +1692,14 @@ algorithm
       BackendVarTransform.VariableReplacements repl;
 
     case(_,dae as BackendDAE.DAE((syst as BackendDAE.EQSYSTEM(orderedEqs=eqns,orderedVars=vars))::_,(shared as BackendDAE.SHARED(knownVars=kvars,initialEqs=ieqns)))) equation
-      ieqnLst = BackendEquation.equationList(ieqns);
+      _ = BackendEquation.equationList(ieqns);
       eqnLst = BackendEquation.equationList(eqns);
       crefDouble = findArraysPartiallyIndexed(eqnLst);
       //print("partially indexed crs:"+&Util.stringDelimitList(Util.listMap(crefDouble,Exp.printComponentRefStr),",\n")+&"\n");
       repl = BackendVarTransform.emptyReplacements();
 
       (m,_,_,_) = BackendDAEUtil.incidenceMatrixScalar(syst, BackendDAE.NORMAL(),NONE());
-      (eqnLst,seqns,movedvars_1,repl) = eliminateVariablesDAE2(eqnLst,1,vars,kvars,HashTable.emptyHashTable(),repl,crefDouble,m,elimVarIndexList,false);
+      (eqnLst,_,movedvars_1,repl) = eliminateVariablesDAE2(eqnLst,1,vars,kvars,HashTable.emptyHashTable(),repl,crefDouble,m,elimVarIndexList,false);
       //Debug.fcall("dumprepl",BackendVarTransform.dumpReplacements,repl);
 
       dae = setDaeEqns(dae,BackendEquation.listEquation(eqnLst),false);
@@ -1756,7 +1756,7 @@ algorithm
     case({},ht) then  ht;
     case( BackendDAE.ALGORITHM(alg=alg) :: eqs,ht)
       equation
-        expl = Algorithm.getAllExps(alg);
+        _ = Algorithm.getAllExps(alg);
         ht = findArraysPartiallyIndexed1(eqs,ht);
       then
         ht;

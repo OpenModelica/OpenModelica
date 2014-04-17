@@ -186,7 +186,7 @@ algorithm
            //BackendDump.dumpEqSystem(systIn,"the original system");
         // build the new components, the new variables and the new equations
 
-        (varsNew,eqsNew,tvars,resEqs,matchingNew) = reduceLinearTornSystem2(systIn,sharedIn,tvarIdcs,resEqIdcs,otherEqnVarTpl,tornSysIdxIn);
+        (varsNew,eqsNew,_,resEqs,matchingNew) = reduceLinearTornSystem2(systIn,sharedIn,tvarIdcs,resEqIdcs,otherEqnVarTpl,tornSysIdxIn);
 
         BackendDAE.MATCHING(ass1=ass1New, ass2=ass2New, comps=compsNew) = matchingNew;
         // add the new vars and equations to the original EqSystem
@@ -864,7 +864,7 @@ algorithm
         //aName = "$a_"+&intString(resIdx)+&"_"+&intString(iIdx);
         ty = DAE.T_REAL_DEFAULT;
         aCRef = ComponentReference.makeCrefIdent(aName,ty,{});
-        aExp = Expression.makeCrefExp(aCRef,ty);
+        _ = Expression.makeCrefExp(aCRef,ty);
         a_ii = BackendDAE.VAR(aCRef,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),ty,NONE(),NONE(),{},DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR());
         // build the equations to solve for the coefficients
         resIdx1 = listLength(resVal_iIn)+1-resIdx;
@@ -1188,7 +1188,7 @@ algorithm
     equation
       true = iValue > 0;
       str1 = "$xa"+&intString(tornSysIdx)+&intString(iValue);
-      str2 = "$g"+&intString(tornSysIdx)+&intString(iValue);
+      _ = "$g"+&intString(tornSysIdx)+&intString(iValue);
       tVarCRef = listGet(tVarCRefLstIn,iValue);
       tVarCRefLst1 = listDelete(tVarCRefLstIn,iValue-1);
       replTmp = BackendVarTransform.emptyReplacementsSized(size);
@@ -1817,7 +1817,7 @@ case(_,BackendDAE.EQUATIONSYSTEM(eqns=allEqs,vars=allVars, jac=_, jacType=_))
         //mEqSysT = arrayCreate(listLength(allVars), {});
         numberOfEqs = BackendDAEUtil.equationArraySize(eqs);
         numberOfVars = listLength(allVars);
-        (mEqSys,mEqSysT) = BackendDAEUtil.incidenceMatrixDispatch(vars,eqs,{},mEqSys, 0, numberOfEqs, intLt(0, numberOfEqs), BackendDAE.ABSOLUTE(), NONE());
+        (mEqSys,_) = BackendDAEUtil.incidenceMatrixDispatch(vars,eqs,{},mEqSys, 0, numberOfEqs, intLt(0, numberOfEqs), BackendDAE.ABSOLUTE(), NONE());
         //(mEqSys,mEqSysT) = BackendDAEUtil.incidenceMatrixDispatch(vars,eqs,{},mEqSysT, 0, numberOfEqs, intLt(0, numberOfEqs), BackendDAE.ABSOLUTE(), NONE());
         BackendDump.dumpVariables(vars, "vars of the torn system");
         BackendDump.dumpEquationArray(eqs,"eqs of the torn system");
@@ -2021,8 +2021,8 @@ algorithm
         true = linear;
         print("we found a linear EQSYS\n");
         BackendDAE.EQSYSTEM(orderedVars = daeVars, orderedEqs = daeEqs) = systIn;
-        daeVarLst = BackendVariable.varList(daeVars);
-        daeEqLst = BackendEquation.equationList(daeEqs);
+        _ = BackendVariable.varList(daeVars);
+        _ = BackendEquation.equationList(daeEqs);
 
         // collect the vars of the loop
         otherVarsIntsLst = List.map(otherEqnVarTpl, Util.tuple22);

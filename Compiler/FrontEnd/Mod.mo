@@ -407,7 +407,7 @@ algorithm
         false = Types.constIsVariable(c);
         // Show error messages from ceval only if the expression is a constant.
         msg = Util.if_(Types.constIsConst(c) and not impl, Absyn.MSG(inInfo), Absyn.NO_MSG());
-        (cache,v,_) = Ceval.ceval(inCache,inEnv,inExp,false,NONE(),msg,0);
+        (_,v,_) = Ceval.ceval(inCache,inEnv,inExp,false,NONE(),msg,0);
       then
         (inCache /*Yeah; this makes sense :)*/,SOME(v));
     // Constant evaluation failed, return no value.
@@ -1595,7 +1595,7 @@ algorithm
         // allowed but working anyway. Some standard Modelica libraries are
         // missing the 'each' keyword though (e.g. the DoublePendulum example),
         // and therefore relying on this behaviour, so just print a warning here.
-        failure(t_1 = Types.unliftArray(t));
+        failure(_ = Types.unliftArray(t));
         exp_str = ExpressionDump.printExpStr(exp);
         Error.addSourceMessage(Error.MODIFIER_NON_ARRAY_TYPE_WARNING, {exp_str}, info);
       then

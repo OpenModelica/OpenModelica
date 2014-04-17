@@ -636,7 +636,7 @@ algorithm
         source = DAEUtil.addSymbolicTransformation(source,flattenOp);
 
         (cache,env_1,ih,DAE.DAE(daeElts1),_,_,graph) = Inst.instList(cache,env,ih, mod, pre, csets, ci_state, instEEquation, el, impl, alwaysUnroll, graph);
-        lhsCrefs = DAEUtil.verifyWhenEquation(daeElts1);
+        _ = DAEUtil.verifyWhenEquation(daeElts1);
         // TODO: fix error reporting, print(" exps: " +& stringDelimitList(List.map(lhsCrefs,ComponentReference.printComponentRefStr),", ") +& "\n");
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
         dae = DAE.DAE({DAE.WHEN_EQUATION(e_2,daeElts1,NONE(),source)});
@@ -827,7 +827,7 @@ algorithm
     // no return calls
     case (cache,env,ih,_,pre,csets,ci_state,SCode.EQ_NORETCALL(exp = e, info = info),_,impl,graph,_)
       equation
-        (cache,exp,prop1,_) = Static.elabExp(cache,env,e,impl,NONE(),false,pre,info);
+        (cache,exp,_,_) = Static.elabExp(cache,env,e,impl,NONE(),false,pre,info);
         // This is probably an external function call that the user wants to evaluat at runtime
         // (cache, exp, prop1) = Ceval.cevalIfConstant(cache, env, exp, prop1, impl, info);
         (cache,exp) = PrefixUtil.prefixExp(cache,env,ih,exp,pre);
@@ -1175,7 +1175,7 @@ algorithm
         // the iterator is not constant but the range is constant
         env_2 = Env.extendFrameForIterator(env_1, i, ty, DAE.VALBOUND(fst,DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.CONST(), SOME(DAE.C_CONST()));
         /* use instEEquation*/
-        (cache,env_3,_,dae1,csets_1,ci_state_1,graph) =
+        (cache,_,_,dae1,csets_1,ci_state_1,graph) =
           Inst.instList(cache, env_2, ih, mods, pre, csets, ci_state, instEEquation, eqs, impl, alwaysUnroll, graph);
         (cache,dae2,csets_2,graph) = unroll(cache, env, ih, mods, pre, csets_1, ci_state_1, i, ty, Values.ARRAY(rest,dims), eqs, initial_, impl,graph);
         dae = DAEUtil.joinDaes(dae1, dae2);
@@ -1191,7 +1191,7 @@ algorithm
         // the iterator is not constant but the range is constant
         env_2 = Env.extendFrameForIterator(env_1, i, ty, DAE.VALBOUND(fst,DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.CONST(), SOME(DAE.C_CONST()));
         // Use instEInitialEquation
-        (cache,env_3,_,dae1,csets_1,ci_state_1,graph) =
+        (cache,_,_,dae1,csets_1,ci_state_1,graph) =
           Inst.instList(cache, env_2, ih, mods, pre, csets, ci_state, instEInitialEquation, eqs, impl, alwaysUnroll, graph);
         (cache,dae2,csets_2,graph) = unroll(cache, env, ih, mods, pre, csets_1, ci_state_1, i, ty, Values.ARRAY(rest,dims), eqs, initial_, impl,graph);
         dae = DAEUtil.joinDaes(dae1, dae2);
@@ -3393,12 +3393,12 @@ algorithm
         (cache,SOME((DAE.CREF(c1_1,_),_,_))) = Static.elabCref(cache,env,c1_prefix,impl,false,pre,info);
         // lookup the expandable connector
         (cache,c1_2) = Static.canonCref(cache, env, c1_1, impl);
-        (cache,attr1,ty1) = Lookup.lookupConnectorVar(cache, env, c1_2);
+        (cache,_,ty1) = Lookup.lookupConnectorVar(cache, env, c1_2);
         // make sure is expandable!
         true = isExpandableConnectorType(ty1);
         // strip last subs to get the full type!
         c1_2 = ComponentReference.crefStripLastSubs(c1_2);
-        (_,attr,ty,binding,cnstForRange,splicedExpData,_,envExpandable,_) = Lookup.lookupVar(cache, env, c1_2);
+        (_,attr,ty,binding,cnstForRange,_,_,envExpandable,_) = Lookup.lookupVar(cache, env, c1_2);
         (_,_,_,_,_,_,_,envComponent,_) = Lookup.lookupVar(cache, env, c2_2);
 
         // we have more than 1 variables in the envComponent, we need to add an empty environment for c1
@@ -3485,7 +3485,7 @@ algorithm
         true = isExpandableConnectorType(ty1);
         // strip last subs to get the full type!
         c1_2 = ComponentReference.crefStripLastSubs(c1_2);
-        (_,attr,ty,binding,cnstForRange,splicedExpData,_,envExpandable,_) = Lookup.lookupVar(cache, env, c1_2);
+        (_,attr,ty,binding,cnstForRange,_,_,envExpandable,_) = Lookup.lookupVar(cache, env, c1_2);
         (_,_,_,_,_,_,_,envComponent,_) = Lookup.lookupVar(cache, env, c2_2);
 
         // we have more than 1 variables in the envComponent, we need to add an empty environment for c1
@@ -3587,8 +3587,8 @@ algorithm
 
         (cache,c1_2) = Static.canonCref(cache,env, c1_1, impl);
         (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
-        (cache,attr1,ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
-        (cache,attr2,ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
+        (cache,_,ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
+        (cache,_,ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
 
         // non-expandable
         false = isExpandableConnectorType(ty1);
@@ -3631,7 +3631,7 @@ algorithm
       equation
         // get the dimensions from the type!
         (daeDims as {}) = Types.getDimensions(ty);
-        arrDims = List.map(daeDims,Expression.unelabDimension);
+        _ = List.map(daeDims,Expression.unelabDimension);
         daeExpandable = InstDAE.daeDeclare(cref, state, ty,
            attrs,
            vis, NONE(), {}, NONE(), NONE(),
@@ -3645,7 +3645,7 @@ algorithm
       equation
         // get the dimensions from the type!
         (daeDims as _::_) = Types.getDimensions(ty);
-        arrDims = List.map(daeDims,Expression.unelabDimension);
+        _ = List.map(daeDims,Expression.unelabDimension);
         crefs = ComponentReference.expandCref(cref, false);
         // print(" crefs: " +& stringDelimitList(List.map(crefs, ComponentReference.printComponentRefStr),", ") +& "\n");
         daeExpandable = daeDeclareList(listReverse(crefs), state, ty, attrs, vis, io, source, DAE.emptyDae);
@@ -4028,8 +4028,8 @@ algorithm
     // Different dimensionality.
     case (_, _, _, _, _)
       equation
-        (t1, dims1) = Types.flattenArrayType(inLhsType);
-        (t2, dims2) = Types.flattenArrayType(inRhsType);
+        (_, dims1) = Types.flattenArrayType(inLhsType);
+        (_, dims2) = Types.flattenArrayType(inRhsType);
         false = List.isEqualOnTrue(dims1, dims2, intEq);
         false = (listLength(dims1) + listLength(dims2)) == 0;
         cref_str1 = ComponentReference.printComponentRefStr(inLhsCref);
@@ -4297,7 +4297,7 @@ algorithm
         DAE.T_COMPLEX(complexClassType=_) = Types.arrayElementType(t2);
 
         true = Expression.dimensionsKnownAndEqual(dim1, dim2);
-        dim_int = Expression.dimensionSize(dim1);
+        _ = Expression.dimensionSize(dim1);
 
         crefs1 = ComponentReference.expandCref(c1,false);
         crefs2 = ComponentReference.expandCref(c2,false);
@@ -4399,8 +4399,8 @@ algorithm
     // Error
     case (cache,env,ih,_,pre,c1,_,t1,_,c2,_,t2,_,_,_,_,_,_)
       equation
-        (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
-        (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
+        (cache,_) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
+        (cache,_) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
         c1_str = ComponentReference.printComponentRefStr(c1);
         t1_str = Types.unparseType(t1);
         c2_str = ComponentReference.printComponentRefStr(c2);

@@ -332,7 +332,7 @@ algorithm
     case (_,_)
       equation
         true = System.regularFileExists(name);
-        (dir,filename) = Util.getAbsoluteDirectoryAndFile(name);
+        (_,filename) = Util.getAbsoluteDirectoryAndFile(name);
         false = stringEq(filename,"package.mo");
         p1 = Parser.parse(name,encoding);
         checkOnLoadMessage(p1);

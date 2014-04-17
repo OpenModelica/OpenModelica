@@ -1817,7 +1817,7 @@ algorithm
                            attributes = SCode.ATTR(arrayDims = ad),
                            modifications = mod), daeMod), (inAllElements, isFunctionScope))
       equation
-        (hasUnknownDims, exps) = Absyn.getExpsFromArrayDim(ad);
+        (_, exps) = Absyn.getExpsFromArrayDim(ad);
         (bexps, sexps) = getExpsFromMod(mod);
         exps = listAppend(sexps, exps);
         // ignore the bindings in function scope so we keep the order!
@@ -3096,7 +3096,7 @@ algorithm
     case (_,_,_,_,_,
           ((SCode.COMPONENT(name = n),_)),_,_)
       equation
-        failure((_,_,oldElt,oldMod,_,_) = Lookup.lookupIdentLocal(cache, env, n));
+        failure((_,_,_,_,_,_) = Lookup.lookupIdentLocal(cache, env, n));
         ErrorExt.rollBack("checkMultiplyDeclared");
       then false;
 
@@ -3138,7 +3138,7 @@ algorithm
     case (_,_,_,_,_,
           ((SCode.CLASS(name=n),_)),_,_)
       equation
-        failure((oldClass,_) = Lookup.lookupClassLocal(env, n));
+        failure((_,_) = Lookup.lookupClassLocal(env, n));
         ErrorExt.rollBack("checkMultiplyDeclared");
       then false;
 
@@ -3849,7 +3849,7 @@ algorithm
       equation
         (_,_,{SCode.EXTENDS(path, _, mod,_, info)},{}) = splitElts(els); // ONLY ONE extends!
         (cache,mod_1) = Mod.elabModForBasicType(cache, env, ih, pre, mod, impl, info);
-        (cache,cl,cenv) = Lookup.lookupClass(cache, env, path, false);
+        (cache,cl,_) = Lookup.lookupClass(cache, env, path, false);
         (cache,res,cl,type_mods) = getUsertypeDimensions(cache,env,ih,pre,cl,{},impl);
         // type_mods = Mod.addEachIfNeeded(type_mods, res);
         type_mods = Mod.merge(mod_1, type_mods, env, pre);
@@ -4615,7 +4615,7 @@ algorithm
         false = Flags.getConfigBool(Flags.CHECK_MODEL);
         (cache,dim1) = Static.elabArrayDims(cache, env, cref, ad, impl, st,doVect,pre,info);
         dim2 = elabArraydimType(t, ad, e, path, pre, cref, info,inst_dims);
-        failure(dim3 = List.threadMap(dim1, dim2, compatibleArraydim));
+        failure(_ = List.threadMap(dim1, dim2, compatibleArraydim));
         e_str = ExpressionDump.printExpStr(e);
         t_str = Types.unparseType(t);
         dim_str = printDimStr(dim1);
@@ -5929,7 +5929,7 @@ algorithm
     case (_, _, DAE.CREF(componentRef = cref as DAE.CREF_QUAL(ident = _)),
         DAE.PROP(constFlag = DAE.C_VAR()), _, _)
       equation
-        (cache, attr, ty, bnd, _, _, _, _, _) = Lookup.lookupVarLocal(inCache, inEnv, cref);
+        (cache, attr, ty,_, _, _, _, _, _) = Lookup.lookupVarLocal(inCache, inEnv, cref);
         // For qualified crefs, copy input/output from the first part of the
         // cref. This is done so that the correct code can be generated when
         // using qualified crefs in external function definitions.
@@ -5942,7 +5942,7 @@ algorithm
     case (_, _, DAE.CREF(componentRef = cref as DAE.CREF_IDENT(ident = _)),
         DAE.PROP(constFlag = DAE.C_VAR()), _, _)
       equation
-        (cache, attr, ty, bnd, _, _, _, _, _) = Lookup.lookupVarLocal(inCache, inEnv, cref);
+        (cache, attr, ty,_, _, _, _, _, _) = Lookup.lookupVarLocal(inCache, inEnv, cref);
       then
         (cache,SOME(DAE.EXTARG(cref, attr, ty)));
 
@@ -5957,14 +5957,14 @@ algorithm
 
     case (cache,env,DAE.SIZE(exp = DAE.CREF(componentRef = cref,ty = _),sz = SOME(dim)),DAE.PROP(type_ = _),_,_)
       equation
-        (cache,attr,varty,bnd,_,_,_,_,_) = Lookup.lookupVarLocal(cache,env, cref);
+        (cache,attr,varty,_,_,_,_,_,_) = Lookup.lookupVarLocal(cache,env, cref);
       then
         (cache,SOME(DAE.EXTARGSIZE(cref,attr,varty,dim)));
 
     // adrpo: these can be non-local if they are constants or parameters!
     case (cache,env,_,DAE.PROP(type_ = ty,constFlag = DAE.C_CONST()),_,_)
       equation
-        (cache, exp, prop) = Ceval.cevalIfConstant(cache, env, inExp, inProperties, false, info);
+        (cache, exp,_) = Ceval.cevalIfConstant(cache, env, inExp, inProperties, false, info);
         true = Expression.isScalarConst(exp);
       then
         (cache,SOME(DAE.EXTARGEXP(exp, ty)));
@@ -6986,7 +6986,7 @@ algorithm
     case(_,ih,pre, SOME(DAE.MOD(_,_, lsm ,_)), SCode.CLASS(name=str))
       equation
         // Debug.fprintln(Flags.INST_TRACE, "Mods in addClassdefsToEnv3: " +& Mod.printModStr(mo) +& " class name: " +& str);
-        (mo2,lsm2) = extractCorrectClassMod2(lsm,str,{});
+        (mo2,_) = extractCorrectClassMod2(lsm,str,{});
         // Debug.fprintln(Flags.INST_TRACE, "Mods in addClassdefsToEnv3 after extractCorrectClassMod2: " +& Mod.printModStr(mo2) +& " class name: " +& str);
         // TODO: classinf below should be FQ
         (_,env2,ih, sele2 as SCode.CLASS(name = _) , _) =

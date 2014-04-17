@@ -715,7 +715,7 @@ algorithm
       equation
         cdef = SCode.getClassDef(e);
         clsTy = getItemType(cdef, NONE());
-        oldItem = avlTreeGet(clsAndVars, n);
+        _ = avlTreeGet(clsAndVars, n);
         clsAndVars = avlTreeAdd(clsAndVars, n, CLASS(e, classEnv, clsTy));
       then
         FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs;
@@ -1966,7 +1966,7 @@ algorithm
         elt_str = SCodeDump.unparseElementStr(elt,SCodeDump.defaultOptions);
         tp_str = Types.unparseType(tp);
         var_str = Types.unparseVar(tv);
-        frame_str = printFrameVarsStr(compframe);
+        _ = printFrameVarsStr(compframe);
         bind_str = Types.printBindingStr(bind);
         res = stringAppendList(
           {"v:",n," ",s,"(",elt_str,") [",tp_str,"] {",var_str,

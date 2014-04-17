@@ -889,7 +889,7 @@ algorithm
         ty_env = NFSCodeEnv.mergeItemEnv(ty_item, ty_env);
         NFSCodeCheck.checkRecursiveComponentDeclaration(name, info, ty_env, ty_item, inEnv);
         redecls = NFSCodeFlattenRedeclare.extractRedeclaresFromModifier(mods);
-        (ty_item, ty_env, repls) =
+        (ty_item, ty_env,_) =
         NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(redecls, ty_item, ty_env, inEnv, NFInstPrefix.emptyPrefix);
         // analyseItemIfRedeclares(repls, ty_item, ty_env);
         analyseModifier(mods, inEnv, ty_env, info);
@@ -1992,7 +1992,7 @@ algorithm
     case (SCode.CLASS(name, prefixes, ep, pp, res, cdef, cmt, info), _, _, _, _, _)
       equation
         // TODO! FIXME! add cc to the used classes!
-        cc = SCode.replaceableOptConstraint(SCode.prefixesReplaceable(prefixes));
+        _ = SCode.replaceableOptConstraint(SCode.prefixesReplaceable(prefixes));
         // Check if the class is used.
         item = NFSCodeEnv.avlTreeGet(inClsAndVars, name);
         true = checkClassUsed(item, cdef);

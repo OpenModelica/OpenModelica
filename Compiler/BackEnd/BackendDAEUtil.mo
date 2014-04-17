@@ -560,7 +560,7 @@ algorithm
     case (BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,einfo,eoc,btp,symjacs,ei))
       equation
         knvars1 = BackendVariable.copyVariables(knvars);
-        exobj1 = BackendVariable.copyVariables(exobj);
+        _ = BackendVariable.copyVariables(exobj);
         inieqns1 = BackendEquation.copyEquationArray(inieqns);
         remeqns1 = BackendEquation.copyEquationArray(remeqns);
       then
@@ -920,7 +920,7 @@ algorithm
         // input variables are put in the known var list, but they should be counted by the ny counter
         next = BackendVariable.varsSize(extvars);
         ((np,np_string,np_int, np_bool)) = BackendVariable.traverseBackendDAEVars(knvars,calculateParamSizes,(0,0,0,0));
-        (ng,nsam) = calculateNumberZeroCrossings(zc, 0, 0);
+        (_,nsam) = calculateNumberZeroCrossings(zc, 0, 0);
         ((nx,ny,ny_string,ny_int, ny_bool)) = BackendVariable.traverseBackendDAEVars(vars,calculateVarSizes,(0, 0, 0, 0, 0));
         ((nx_1,ny_1,ny_1_string,ny_1_int, ny_1_bool)) = BackendVariable.traverseBackendDAEVars(knvars,calculateVarSizes,(nx, ny, ny_string, ny_int, ny_bool));
       then
@@ -4142,7 +4142,7 @@ algorithm
         abse = intAbs(e);
         e_1 = abse - 1;
         eqn = BackendEquation.equationNth0(daeeqns, e_1);
-        size = BackendEquation.equationSize(eqn);
+        _ = BackendEquation.equationSize(eqn);
         (row,_) = incidenceRow(eqn,vars,inIndxType,functionTree,{});
         scalarindxs = iMapEqnIncRow[abse];
         oldvars = getOldVars(m,listGet(scalarindxs,1));
@@ -6263,7 +6263,7 @@ algorithm
     // array equations
     case (BackendDAE.ARRAY_EQUATION(dimSize=ds,left=e1,right=e2,source=source),_,_,_,_,_,_,_,_)
       equation
-        t = Expression.typeof(e1);
+        _ = Expression.typeof(e1);
         e = Expression.expSub(e1,e2);
         ((e,_)) = extendArrExp((e,(NONE(),false)));
         ad = List.map(ds,Util.makeOption);
@@ -6434,7 +6434,7 @@ algorithm
         dcrexp = Expression.crefExp(cr);
         dcrexp = DAE.CALL(Absyn.IDENT("der"),{dcrexp},DAE.callAttrBuiltinReal);
         ((e,_)) = Expression.replaceExp(inExp, dcrexp, Expression.crefExp(dcr));
-        ft = getFunctions(iShared);
+        _ = getFunctions(iShared);
         (e_1, shared) = Differentiate.differentiateExpCrefFullJacobian(e, dcr, vars, iShared);
         (e_2,_) = ExpressionSimplify.simplify(e_1);
         es = calculateJacobianRow3(eqn_indx,vindx,e_2,source,iAcc);
@@ -6446,7 +6446,7 @@ algorithm
       equation
         v = BackendVariable.getVarAt(vars, vindx);
         cr = BackendVariable.varCref(v);
-        ft = getFunctions(iShared);
+        _ = getFunctions(iShared);
         (e_1, shared) = Differentiate.differentiateExpCrefFullJacobian(inExp, cr, vars, iShared);
         (e_2,_) = ExpressionSimplify.simplify(e_1);
         es = calculateJacobianRow3(eqn_indx,vindx,e_2,source,iAcc);

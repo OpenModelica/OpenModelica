@@ -1625,7 +1625,7 @@ algorithm
         // in the enclosing scope of the component reference.
         cref = NFSCodeFlattenImports.flattenComponentRefSubs(inCref, inEnv, inInfo);
         // Then look up the component reference itself.
-        (cref, env) = lookupComponentRef2(cref, inEnv);
+        (cref,_) = lookupComponentRef2(cref, inEnv);
         cref = crefStripEnvPrefix(cref, inEnv);
       then
         cref;

@@ -951,7 +951,7 @@ algorithm
         rest_comps, accum)
       equation
         accum = addBindingDependency(binding, name, accum);
-        dimsl = arrayList(dims);
+        _ = arrayList(dims);
         //accum = List.fold(dimsl, addDimensionDependency, accum);
         accum = buildDependencyGraph(rest_comps, accum);
       then

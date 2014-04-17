@@ -374,13 +374,13 @@ algorithm
     // leave the connect(ref1,ref2)
     case(partition,(ref1,_,_))
       equation
-        failure(canon1 = canonical(partition,ref1)); // no parent
+        failure(_ = canonical(partition,ref1)); // no parent
       then (partition, {inDaeEdge}, {});
 
     // leave the connect(ref1,ref2)
     case(partition,(_,ref2,_))
       equation
-        failure(canon2 = canonical(partition,ref2)); // no parent
+        failure(_ = canonical(partition,ref2)); // no parent
       then (partition, {inDaeEdge}, {});
 
     // leave the connect(ref1,ref2)
@@ -651,7 +651,7 @@ algorithm
           stringDelimitList(List.map(orderedPotentialRoots, printPotentialRootTuple), ", "));
 
         // add connections to the table and return the broken/connected connections
-        (table, connected, broken) = addConnections(table, connections);
+        (table,_, broken) = addConnections(table, connections);
         // create a dummy root
         dummyRoot = ComponentReference.makeCrefIdent("__DUMMY_ROOT", DAE.T_INTEGER_DEFAULT, {});
         // select final roots

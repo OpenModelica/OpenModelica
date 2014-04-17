@@ -3586,7 +3586,7 @@ algorithm
     case ({}, _) then (inSubscript,iPerformed);
     case (DAE.WHOLEDIM()::rest, _)
       equation
-        (res,b) = replaceVarWithWholeDimSubs(rest,iPerformed);
+        (_,b) = replaceVarWithWholeDimSubs(rest,iPerformed);
       then (DAE.WHOLEDIM()::rest, b);
 
     case (DAE.SLICE(exp = sub_exp)::rest, _)
@@ -3763,7 +3763,7 @@ algorithm
     case ((v,(vars,v_lst)))
       equation
         cr = varCref(v);
-       (vlst,indxlst) = getVar(cr, vars);
+       (_,indxlst) = getVar(cr, vars);
        v_lst = listAppend(v_lst,indxlst);
       then ((v,(vars,v_lst)));
     case _ then inTpl;
@@ -4254,7 +4254,7 @@ algorithm
       then v1;
     case (v,false,SOME(_),_,_,true,NONE(),_,_,_)
       equation
-        v1 = setVarStartValueOption(v,NONE());
+        _ = setVarStartValueOption(v,NONE());
         v1 = setVarFixed(v,true);
       then v1;
     // legal case both fixed=false
@@ -4273,7 +4273,7 @@ algorithm
         sb = startValueType(sva,tya);
         e = Debug.bcallret1(negate,Expression.negate,sb,sb);
         (e,origin) = getNonZeroStart(false,sa,so,e,soa,knVars);
-        v1 = setVarStartValue(v,e);
+        _ = setVarStartValue(v,e);
         v1 = setVarStartOrigin(v,origin);
       then v1;
     case (v as BackendDAE.VAR(varName=cr,varType=ty),false,_,_,BackendDAE.VAR(varName=cra,varType=tya),false,_,_,_,_)
@@ -4297,7 +4297,7 @@ algorithm
         sb = startValueType(sva,tya);
         e = Debug.bcallret1(negate,Expression.negate,sb,sb);
         (e,origin) = getNonZeroStart(true,sa,so,e,soa,knVars);
-        v1 = setVarStartValue(v,e);
+        _ = setVarStartValue(v,e);
         v1 = setVarStartOrigin(v,origin);
       then v1;
     // not legal case both fixed with unequal start values

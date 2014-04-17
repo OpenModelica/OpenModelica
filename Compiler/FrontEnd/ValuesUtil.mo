@@ -520,7 +520,7 @@ algorithm
         str;
     case ((Values.STRING(string = sval) :: xs))
       equation
-        s1 = unparseDescription(xs);
+        _ = unparseDescription(xs);
         slen = stringLength(sval);
         slenstr = intString(slen);
         str = stringAppendList({"# s! 1 ",slenstr,"\n"});

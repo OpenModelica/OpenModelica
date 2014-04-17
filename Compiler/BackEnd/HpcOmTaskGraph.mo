@@ -644,14 +644,14 @@ algorithm
        descLst;
   case(BackendDAE.EQUATIONSYSTEM(jac = BackendDAE.FULL_JACOBIAN(_)), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs),_)
      equation
-       eqnLst = BackendEquation.equationList(orderedEqs);
+       _ = BackendEquation.equationList(orderedEqs);
        desc = ("Equation System");
        descLst = desc::iEqDesc;
      then
        descLst;
   case(BackendDAE.MIXEDEQUATIONSYSTEM(disc_eqns = _), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs),_)
      equation
-       eqnLst = BackendEquation.equationList(orderedEqs);
+       _ = BackendEquation.equationList(orderedEqs);
        desc = ("MixedEquation System");
        descLst = desc::iEqDesc;
      then
@@ -749,7 +749,7 @@ algorithm
   case(BackendDAE.TORNSYSTEM(residualequations = _, tearingvars = _, linear=true), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs,  matching= BackendDAE.MATCHING(ass2=_)),_)
      equation
       //get the equation string
-       eqnLst = BackendEquation.equationList(orderedEqs);
+       _ = BackendEquation.equationList(orderedEqs);
        desc = ("Torn linear System");
        descLst = desc::iEqDesc;
     then
@@ -757,7 +757,7 @@ algorithm
   case(BackendDAE.TORNSYSTEM(residualequations = _, tearingvars = _, linear=false), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs,  matching= BackendDAE.MATCHING(ass2=_)),_)
      equation
       //get the equation string
-       eqnLst = BackendEquation.equationList(orderedEqs);
+       _ = BackendEquation.equationList(orderedEqs);
        desc = ("Torn nonlinear System");
        descLst = desc::iEqDesc;
     then
@@ -1257,7 +1257,7 @@ algorithm
     case (BackendDAE.SINGLEEQUATION(eqn=eqnIdx),_)
       equation
         eqnVars = getVarsByEqn(eqnIdx,incidenceMatrix);
-        dumpStr = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
+        _ = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
       then
         eqnVars;
     case (BackendDAE.EQUATIONSYSTEM(eqns=eqns),_)
@@ -1277,31 +1277,31 @@ algorithm
     case (BackendDAE.SINGLEARRAY(eqn=eqnIdx),_)
       equation
         eqnVars = getVarsByEqn(eqnIdx,incidenceMatrix);
-        dumpStr = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
+        _ = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
       then
         eqnVars;
     case (BackendDAE.SINGLEALGORITHM(eqn=eqnIdx),_)
       equation
         eqnVars = getVarsByEqn(eqnIdx,incidenceMatrix);
-        dumpStr = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
+        _ = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
       then
         eqnVars;
     case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=eqnIdx),_)
       equation
         eqnVars = getVarsByEqn(eqnIdx,incidenceMatrix);
-        dumpStr = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
+        _ = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
       then
         eqnVars;
     case (BackendDAE.SINGLEWHENEQUATION(eqn=eqnIdx),_)
       equation
         eqnVars = getVarsByEqn(eqnIdx,incidenceMatrix);
-        dumpStr = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
+        _ = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
       then
         eqnVars;
     case (BackendDAE.SINGLEIFEQUATION(eqn=eqnIdx),_)
       equation
         eqnVars = getVarsByEqn(eqnIdx,incidenceMatrix);
-        dumpStr = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
+        _ = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
       then
         eqnVars;
     case (BackendDAE.TORNSYSTEM(residualequations=resEqns,otherEqnVarTpl = otherEqVars),_)
@@ -1481,13 +1481,13 @@ algorithm
       equation
         //print("HpcOmTaskGraph.getvarNodeMapping0 for singleEquation varNodeMapping-length:" +& intString(arrayLength(varNodeMapping)) +& " varIdx: " +& intString(compVarIdx) +& " varOffset: " +& intString(iVarOffset) +& "\n");
         //print("HpcOmTaskGraph.getvarNodeMapping0 for singleEquation eqNodeMapping-length:" +& intString(arrayLength(eqNodeMapping)) +& " eqIdx: " +& intString(eq) +& " eqOffset: " +& intString(iEqOffset) +& "\n");
-        tmpvarNodeMapping = arrayUpdate(varNodeMapping,compVarIdx + iVarOffset,(iSccIdx,iEqSysIdx,iVarOffset));
-        tmpeqNodeMapping = arrayUpdate(eqNodeMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
+        _ = arrayUpdate(varNodeMapping,compVarIdx + iVarOffset,(iSccIdx,iEqSysIdx,iVarOffset));
+        _ = arrayUpdate(eqNodeMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
       then iSccIdx+1;
     case(BackendDAE.EQUATIONSYSTEM(vars = compVarIdc, eqns=eqns),_,_,_,(iVarOffset,iEqOffset),_)
       equation
-        tmpvarNodeMapping = List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varNodeMapping);
-        tmpeqNodeMapping = List.fold3(eqns,updateMappingTuple,iSccIdx,iEqSysIdx,iEqOffset,eqNodeMapping);
+        _ = List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varNodeMapping);
+        _ = List.fold3(eqns,updateMappingTuple,iSccIdx,iEqSysIdx,iEqOffset,eqNodeMapping);
       then
         iSccIdx+1;
     case(BackendDAE.MIXEDEQUATIONSYSTEM(condSystem = condSys, disc_vars = compVarIdc, disc_eqns = eqns),_,_,_,(iVarOffset,iEqOffset),_)
@@ -1500,26 +1500,26 @@ algorithm
         iSccIdx+1;
     case(BackendDAE.SINGLEWHENEQUATION(vars = compVarIdc,eqn = eq),_,_,_,(iVarOffset,iEqOffset),_)
       equation
-        tmpvarNodeMapping = List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varNodeMapping);
-        tmpeqNodeMapping = arrayUpdate(eqNodeMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
+        _ = List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varNodeMapping);
+        _ = arrayUpdate(eqNodeMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
       then
         iSccIdx+1;
     case(BackendDAE.SINGLEARRAY(vars = compVarIdc, eqn = eq),_,_,_,(iVarOffset,iEqOffset),_)
       equation
-        tmpvarNodeMapping = List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varNodeMapping);
-        tmpeqNodeMapping = arrayUpdate(eqNodeMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
+        _ = List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varNodeMapping);
+        _ = arrayUpdate(eqNodeMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
       then
         iSccIdx+1;
     case(BackendDAE.SINGLEALGORITHM(vars = compVarIdc,eqn = eq),_,_,_,(iVarOffset,iEqOffset),_)
       equation
-        tmpvarNodeMapping = List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varNodeMapping);
-        tmpeqNodeMapping =arrayUpdate(eqNodeMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
+        _ = List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varNodeMapping);
+        _ =arrayUpdate(eqNodeMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
         then
           iSccIdx+1;
     case(BackendDAE.SINGLECOMPLEXEQUATION(vars = compVarIdc, eqn = eq),_,_,_,(iVarOffset,iEqOffset),_)
       equation
-        tmpvarNodeMapping = List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varNodeMapping);
-        tmpeqNodeMapping = arrayUpdate(eqNodeMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
+        _ = List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varNodeMapping);
+        _ = arrayUpdate(eqNodeMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
         then
           iSccIdx+1;
     case(BackendDAE.TORNSYSTEM(tearingvars = compVarIdc,residualequations = residuals, otherEqnVarTpl = tearEqVarTpl),_,_,_,(iVarOffset,iEqOffset),_)
@@ -1531,15 +1531,15 @@ algorithm
       //print("test3\n");
       eqns = listAppend(othereqs,residuals);
       //print("test4\n");
-      tmpvarNodeMapping = List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varNodeMapping);
+      _ = List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varNodeMapping);
       //print("test5\n");
-      tmpeqNodeMapping = List.fold3(eqns,updateMappingTuple,iSccIdx,iEqSysIdx,iEqOffset,eqNodeMapping);
+      _ = List.fold3(eqns,updateMappingTuple,iSccIdx,iEqSysIdx,iEqOffset,eqNodeMapping);
       then
         iSccIdx+1;
     case(BackendDAE.SINGLEIFEQUATION(vars = compVarIdc, eqn = eq),_,_,_,(iVarOffset,iEqOffset),_)
       equation
-        tmpvarNodeMapping = List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varNodeMapping);
-        tmpeqNodeMapping = arrayUpdate(eqNodeMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
+        _ = List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varNodeMapping);
+        _ = arrayUpdate(eqNodeMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
         then
           iSccIdx+1;
     else
@@ -1606,7 +1606,7 @@ algorithm
     case(_,_)
       equation
       (eq,varTplLst)=otherEqnVarTpl;
-      var = listGet(varTplLst,1);
+      _ = listGet(varTplLst,1);
       (eqLst,varLst) = othersIn;
       varLst = listAppend(varTplLst,varLst);
       eqLst = eq::eqLst;
@@ -3562,7 +3562,7 @@ algorithm
         inComps = listGet(inCompLstIn,nodeIdx);
         //print("updateInComps1 inComps:" +& stringDelimitList(List.map(inComps,intString),",") +& "\n");
         //true = listLength(inComps) == 1;
-        inComp = listGet(inComps,1);
+        _ = listGet(inComps,1);
         //print("updateInComps1 inComp:" +& intString(inComp) +& "\n");
         true = List.isMemberOnTrue(nodeIdx,startNodes,intEq);
         mergeGroupIdx = List.position(nodeIdx,startNodes)+1;
@@ -4748,7 +4748,7 @@ algorithm
         levelValue2 = intMax(levelValueParent+1,levelValue1);
         rootInfo = (levelValue2,costValue2,parentCount1-1);
         nodeInfoTmp = arrayUpdate(nodeInfoIn,rootNode,rootInfo);
-        childNodes = arrayGet(graphIn,rootNode);
+        _ = arrayGet(graphIn,rootNode);
         //print(" set level "+&intString(levelValue2)+&" and costs "+&realString(costValue2)+&" and parentCount "+&intString(parentCount2)+&"\n");
         childNodesTmp = {}::childNodesIn;
         foldTmp = (childNodesTmp,nodeInfoTmp);
@@ -5190,7 +5190,7 @@ algorithm
       equation
         // handle nodes that should not be analysed yet
         false = List.isEmpty(parentLstIn);
-        rootNode = listGet(rootsIn,rootIdx);
+        _ = listGet(rootsIn,rootIdx);
         childLst = listGet(childLstIn,rootIdx);
         true = List.isEmpty(childLst);
       then
@@ -5199,7 +5199,7 @@ algorithm
       equation
         // handle nodes that should not be analysed yet
         true = List.isEmpty(parentLstIn);
-        rootNode = listGet(rootsIn,rootIdx);
+        _ = listGet(rootsIn,rootIdx);
         childLst = listGet(childLstIn,rootIdx);
         true = List.isEmpty(childLst);
       then
@@ -5230,8 +5230,8 @@ algorithm
     case(_,_,_)
       equation
         true = idx <= listLength(rootLstIn);
-        rootValue = listGet(rootLstIn,idx);
-        parentValue = listGet(parentLstIn,idx);
+        _ = listGet(rootLstIn,idx);
+        _ = listGet(parentLstIn,idx);
         rootLstTmp = listDelete(rootLstIn,idx-1);
         parentLstTmp = listDelete(parentLstIn,idx-1);
       then
@@ -5273,7 +5273,7 @@ algorithm
         // the root node is contracted
         primalChildLst = arrayGet(inComps,childNode);
         true = listLength(primalChildLst) > 1;
-        primalChild = listGet(primalChildLst,1);
+        _ = listGet(primalChildLst,1);
         costs = getCostsForContractedNodes(primalChildLst,exeCosts);
       then
         costs;
@@ -5294,7 +5294,7 @@ algorithm
       equation
         // the childNode is contracted
         primalChildLst = arrayGet(inComps,childNode);
-        primalParentLst = arrayGet(inComps,parentNode);
+        _ = arrayGet(inComps,parentNode);
         true = listLength(primalChildLst) > 1;
         costs = getCostsForContractedNodes(primalChildLst,exeCosts);
       then

@@ -4951,7 +4951,7 @@ algorithm
     case (MOD(f1, e1, sl1, b1, i1),
           MOD(_, _, sl2, b2, _))
       equation
-        b = mergeBindings(b1, b2);
+        _ = mergeBindings(b1, b2);
         sl = mergeSubMods(sl1, sl2);
         m = MOD(f1, e1, sl, b1, i1);
       then

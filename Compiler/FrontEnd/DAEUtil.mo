@@ -3000,7 +3000,7 @@ algorithm
       equation
         pv = getParameterVars(dae,HashTable2.emptyHashTable());
         (ht,true) = evaluateAnnotation1(dae,pv,HashTable2.emptyHashTable());
-        (elts1,ht1,cache) = evaluateAnnotation2_loop(inCache,env,dae,ht,BaseHashTable.hashTableCurrentSize(ht));
+        (_,ht1,_) = evaluateAnnotation2_loop(inCache,env,dae,ht,BaseHashTable.hashTableCurrentSize(ht));
         (elts2,(_,_,_)) = traverseDAE2(elts, evaluateAnnotationVisitor, (ht1,0,0));
       then
         DAE.DAE(elts2);
@@ -4807,7 +4807,7 @@ algorithm
     // a top level
     case (_, NONE())
       equation
-        src = addElementSourcePartOf(inSource, Absyn.TOP());
+        _ = addElementSourcePartOf(inSource, Absyn.TOP());
       then inSource;
     case (_, SOME(classPath))
       equation
@@ -6453,7 +6453,7 @@ algorithm
     case (DAE.FUNCTION_DEF(els)::_)
       equation
         // algs are not empty
-        (v,ie,ia,e,a,ca,co,o) = splitElements(els);
+        (_,_,_,_,a,_,_,_) = splitElements(els);
         false = List.isEmpty(a);
       then
         true;

@@ -1352,7 +1352,7 @@ algorithm
         Debug.fprint(Flags.FAILTRACE," NORET_CALL argList stmts generation passed.\n" );
         //Debug.fprint(Flags.FAILTRACE," NORET_CALL after argList stmts (in reverse order) =\n" +& stmtsString(stmts) +& "\n");
 
-        (hasretval, stmt, mmexp, rettype, locals, intxt)
+        (_, stmt,_,_, locals, intxt)
           = statementFromFun(argvals, fname, iargs, oargs, tyVars, intxt, outtxt, locals, tplPackage);
         Debug.fprint(Flags.FAILTRACE," NORET_CALL stmt =\n" +& stmtsString({stmt}) +& "\n");
         stmts = stmt::stmts;
@@ -1365,7 +1365,7 @@ algorithm
     case ( (LET(letExp = (NORET_CALL(name = fname),sinfo2)), _),
            _, _, _, _, _, _, tplPackage as TEMPL_PACKAGE(astDefs=_), _ )
       equation
-        (fname, iargs, oargs, tyVars) = getFunSignature(fname, sinfo2, tplPackage);
+        (fname,_, oargs,_) = getFunSignature(fname, sinfo2, tplPackage);
         //Debug.fprint(Flags.FAILTRACE," after fname = " +& pathIdentString(fname) +& "\n");
         (_::_) = oargs;
 

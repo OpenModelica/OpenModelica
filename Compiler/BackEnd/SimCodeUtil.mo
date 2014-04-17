@@ -246,7 +246,7 @@ algorithm
     case (cref, _)
       equation
         badcref = ComponentReference.makeCrefIdent("ERROR_cref2simvar_failed", DAE.T_REAL_DEFAULT, {});
-        errstr = "Template did not find the simulation variable for "+& ComponentReference.printComponentRefStr(cref) +& ". ";
+        _ = "Template did not find the simulation variable for "+& ComponentReference.printComponentRefStr(cref) +& ". ";
         /*Todo: This also generates an error for example itearation variables, so i commented  out
         Error.addMessage(Error.INTERNAL_ERROR, {errstr});*/
       then
@@ -645,7 +645,7 @@ algorithm
       equation
         // skip over builtin functions
         b = listMember(name, SCode.knownExternalCFunctions);
-        (fn, rt_1, decls, includes, includeDirs, libs) = elaborateFunction(program, fel, rt, decls, includes, includeDirs, libs);
+        (fn,_, decls, includes, includeDirs, libs) = elaborateFunction(program, fel, rt, decls, includes, includeDirs, libs);
         (fns, rt_2, decls, includes, includeDirs, libs) = elaborateFunctions2(program, rest, List.consOnTrue(not b, fn, accfns), rt, decls, includes, includeDirs, libs);
       then
         (fns, rt_2, decls, includes, includeDirs, libs);
@@ -817,8 +817,8 @@ algorithm
         biVars = List.map(DAEUtil.getBidirVars(daeElts), daeInOutSimVar);
         (recordDecls, rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt);
         (fn_includes, fn_includeDirs, fn_libs, dynamicLoad) = generateExtFunctionIncludes(program, fpath, ann);
-        hasIncludeAnnotation = List.isNotEmpty(fn_includes);
-        hasLibraryAnnotation = List.isNotEmpty(fn_libs);
+        _ = List.isNotEmpty(fn_includes);
+        _ = List.isNotEmpty(fn_libs);
         includes = List.union(fn_includes, includes);
         includeDirs = List.union(fn_includeDirs, includeDirs);
         libs = List.union(fn_libs, libs);
@@ -1496,7 +1496,7 @@ algorithm
       backendMapping = setUpBackendMapping(inBackendDAE);
 
       // Debug.fcall(Flags.FAILTRACE, print, "is that Cpp? : " +& Dump.printBoolStr(ifcpp) +& "\n");
-      cname = Absyn.pathStringNoQual(class_);
+      _ = Absyn.pathStringNoQual(class_);
 
       // generate initDAE before replacing pre(alias)!
       (initDAE, useHomotopy) = Initialization.solveInitialSystem(dlow);
@@ -1904,7 +1904,7 @@ algorithm
     then sysIndexMap;
 
     case(SimCode.SES_MIXED(cont=cont, index=index, indexMixedSystem=systemIndex), _) equation
-      sysIndexMap = getSystemIndexMap(cont, inSysIndexMap);
+      _ = getSystemIndexMap(cont, inSysIndexMap);
       sysIndexMap = arrayUpdate(inSysIndexMap, index, systemIndex);
     then sysIndexMap;
 
@@ -2215,7 +2215,7 @@ algorithm
         bwhen = BackendEquation.isWhenEquation(eqn);
         // ignore discrete if we should not generate them
         v = BackendVariable.getVarAt(vars, index);
-        bdisc = BackendVariable.isVarDiscrete(v);
+        _ = BackendVariable.isVarDiscrete(v);
         // block is dynamic, belong in dynamic section
         bdynamic = BackendDAEUtil.blockIsDynamic({index}, stateeqnsmark);
         // block need to evaluate zeroCrossings
@@ -2250,7 +2250,7 @@ algorithm
         // block need to evaluate zeroCrossings
         bzceqns = BackendDAEUtil.blockIsDynamic({e}, zceqnsmark);
 
-        (eqnlst, varlst, index) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
+        (eqnlst, varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
         // States are solved for der(x) not x.
         varlst = List.map(varlst, BackendVariable.transformXToXd);
         (equations1, noDiscEquations1, uniqueEqIndex, tempvars) = createSingleArrayEqnCode(true, eqnlst, varlst, iuniqueEqIndex, itempvars, ei);
@@ -2303,7 +2303,7 @@ algorithm
         // block need to evaluate zeroCrossings
         bzceqns = BackendDAEUtil.blockIsDynamic({e}, zceqnsmark);
 
-        (eqnlst, varlst, index) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
+        (eqnlst, varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
         // States are solved for der(x) not x.
         varlst = List.map(varlst, BackendVariable.transformXToXd);
         (equations1, uniqueEqIndex, tempvars) = createSingleComplexEqnCode(listGet(eqnlst, 1), varlst, iuniqueEqIndex, itempvars);
@@ -2325,9 +2325,9 @@ algorithm
     case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, (comp as BackendDAE.SINGLEWHENEQUATION(eqn=e)) :: restComps, _, _, _, _, _, _)
       equation
         // block is dynamic, belong in dynamic section
-        bdynamic = BackendDAEUtil.blockIsDynamic({e}, stateeqnsmark);
+        _ = BackendDAEUtil.blockIsDynamic({e}, stateeqnsmark);
         // block need to evaluate zeroCrossings
-        bzceqns = BackendDAEUtil.blockIsDynamic({e}, zceqnsmark);
+        _ = BackendDAEUtil.blockIsDynamic({e}, zceqnsmark);
 
         (eqnlst, varlst, index) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
         // States are solved for der(x) not x.
@@ -2541,7 +2541,7 @@ algorithm
       // A single array equation
     case (_, _, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), BackendDAE.SHARED(info = ei), BackendDAE.SINGLEARRAY(eqn=_), _, _)
       equation
-        (eqnlst, varlst, index) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
+        (eqnlst, varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
         // States are solved for der(x) not x.
         varlst = List.map(varlst, BackendVariable.transformXToXd);
         (equations1, noDiscEquations1, uniqueEqIndex, tempvars) = createSingleArrayEqnCode(genDiscrete, eqnlst, varlst, iuniqueEqIndex, itempvars, ei);
@@ -2558,7 +2558,7 @@ algorithm
       // A single complex equation
     case (_, _, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, BackendDAE.SINGLECOMPLEXEQUATION(eqn=_), _, _)
       equation
-        (eqnlst, varlst, index) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
+        (eqnlst, varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
         // States are solved for der(x) not x.
         varlst = List.map(varlst, BackendVariable.transformXToXd);
         (equations1, uniqueEqIndex, tempvars) = createSingleComplexEqnCode(listGet(eqnlst, 1), varlst, iuniqueEqIndex, itempvars);
@@ -2567,7 +2567,7 @@ algorithm
     // A single when equation
     case (_, _, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, BackendDAE.SINGLEWHENEQUATION(eqn=_), _, _)
       equation
-        (eqnlst, varlst, index) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
+        (eqnlst, varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
         // States are solved for der(x) not x.
         varlst = List.map(varlst, BackendVariable.transformXToXd);
         (equations1, uniqueEqIndex, tempvars) = createSingleWhenEqnCode(listGet(eqnlst, 1), varlst, shared, iuniqueEqIndex, itempvars);
@@ -2576,7 +2576,7 @@ algorithm
     // A single if equation
     case (_, _, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, BackendDAE.SINGLEIFEQUATION(eqn=_), _, _)
       equation
-        (eqnlst, varlst, index) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
+        (eqnlst, varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
         // States are solved for der(x) not x.
         varlst = List.map(varlst, BackendVariable.transformXToXd);
         (equations1, uniqueEqIndex, tempvars) = createSingleIfEqnCode(listGet(eqnlst, 1), varlst, shared, genDiscrete, iuniqueEqIndex, itempvars);
@@ -3844,7 +3844,7 @@ algorithm
       Debug.fprintln(Flags.FAILTRACE, "./Compiler/BackEnd/SimCodeUtil.mo: function createOdeSystem create continuous system.");
       // print("\ncreateOdeSystem -> Cont sys: ...\n");
       // extract the variables and equations of the block.
-      (eqn_lst, var_lst, index) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
+      (eqn_lst, var_lst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
       // BackendDump.printEquationList(eqn_lst);
       // BackendDump.dumpVars(var_lst);
       eqn_lst = BackendEquation.replaceDerOpInEquationList(eqn_lst);
@@ -3961,8 +3961,8 @@ algorithm
         crefs = BackendVariable.getAllCrefFromVariables(v);
         (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(eqn_lst, iuniqueEqIndex, itempvars);
         // create symbolic jacobian for simulation
-        emptyEqns = BackendEquation.listEquation({});
-        emptyVars =  BackendVariable.emptyVars();
+        _ = BackendEquation.listEquation({});
+        _ =  BackendVariable.emptyVars();
         (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(jacobian, uniqueEqIndex, tempvars);
       then
         ({SimCode.SES_NONLINEAR(uniqueEqIndex, resEqs, crefs, 0, jacobianMatrix, false)}, uniqueEqIndex+1, tempvars);
@@ -6000,7 +6000,7 @@ algorithm
     // Tuple(crefs) = Tuple(expl)
     case (_, e1 as DAE.TUPLE(expl), DAE.TUPLE(expl1), _, _, _)
       equation
-        tp = Expression.typeof(e1);
+        _ = Expression.typeof(e1);
         //print("Tuple crefs Strings: "+& ComponentReference.printComponentRefListStr(crefs) +& "\n");
         //check that all crefs are on lhs
         ht = HashSet.emptyHashSet();
@@ -6026,7 +6026,7 @@ algorithm
     // Tuple(expl) = Tuple(crefs)
     case (_, e1 as DAE.TUPLE(expl1), DAE.TUPLE(expl), _, _, _)
       equation
-        tp = Expression.typeof(e1);
+        _ = Expression.typeof(e1);
         //check that all crefs are on rhs
         ht = HashSet.emptyHashSet();
         ht = List.fold(crefs, BaseHashSet.add, ht);
@@ -6232,8 +6232,8 @@ algorithm
         // inverse Algorithm for single variable.
     case (BackendDAE.ALGORITHM(alg=alg, expand=crefExpand)::_, _, false, _)
       equation
-        solvedVars = List.map(vars, BackendVariable.varCref);
-        algOutVars = CheckModel.algorithmOutputs(alg, crefExpand);
+        _ = List.map(vars, BackendVariable.varCref);
+        _ = CheckModel.algorithmOutputs(alg, crefExpand);
         // We need to solve an inverse problem of an algorithm section.
         DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
         algStatements = solveAlgorithmInverse(algStatements, vars);
@@ -6294,7 +6294,7 @@ algorithm
     case (cr, eltcr, (DAE.UNARY(exp=DAE.CREF(componentRef = cr2))), e2, _, _)
       equation
         true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
-        ty = Expression.typeof(e2);
+        _ = Expression.typeof(e2);
         e2 = Expression.negate(e2);
       then
         (SimCode.SES_ARRAY_CALL_ASSIGN(iuniqueEqIndex, eltcr, e2, source), iuniqueEqIndex+1);
@@ -6510,7 +6510,7 @@ algorithm
       equation
         true = Expression.isConst(e1);
         true = Expression.isConst(e2);
-        b1 = Expression.expEqual(e1, e2);
+        _ = Expression.expEqual(e1, e2);
         // Error.addSourceMessage(inErrorMsg, inMessageTokens, inInfo)
       then
         false;
@@ -6519,7 +6519,7 @@ algorithm
       equation
         true = Expression.isConst(e1);
         true = Expression.isConst(e2);
-        b1 = Expression.expEqual(e1, e2);
+        _ = Expression.expEqual(e1, e2);
         // Error.addSourceMessage(inErrorMsg, inMessageTokens, inInfo)
       then
         false;
@@ -6528,7 +6528,7 @@ algorithm
       equation
         true = Expression.isConst(e1);
         true = Expression.isConst(e2);
-        b1 = Expression.expEqual(e1, e2);
+        _ = Expression.expEqual(e1, e2);
         // Error.addSourceMessage(inErrorMsg, inMessageTokens, inInfo)
       then
         false;
@@ -6734,7 +6734,7 @@ algorithm
         funcs = DAEUtil.avlTreeNew();
         syst = BackendDAE.EQSYSTEM(v, pe, NONE(), NONE(), BackendDAE.NO_MATCHING(), {});
         shared = BackendDAE.SHARED(kn, extobj, alisvars, emptyeqns, emptyeqns, constrs, clsAttrs, cache, env, funcs, BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0, 0), extObjClasses, BackendDAE.PARAMETERSYSTEM(), {}, ei);
-        (syst, m, mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.NORMAL(), SOME(funcs));
+        (syst,_,_) = BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.NORMAL(), SOME(funcs));
         v1 = listArray(lv1);
         v2 = listArray(lv2);
         syst = BackendDAEUtil.setEqSystemMatching(syst, BackendDAE.MATCHING(v1, v2, {}));

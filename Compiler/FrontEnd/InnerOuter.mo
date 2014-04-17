@@ -1028,7 +1028,7 @@ algorithm
         (_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,prefix, ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {}));
 
         // search in instance hierarchy we had a failure
-        failure(instInner = get(cref, ht));
+        failure(_ = get(cref, ht));
 
         // Debug.fprintln(Flags.INNER_OUTER, "InnerOuter.lookupInnerInIH : Couldn't find: " +& ComponentReference.printComponentRefStr(cref) +& " going deeper");
 

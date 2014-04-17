@@ -647,7 +647,7 @@ algorithm
 
         // Try converting both to REAL type.
         (exp1,ty1) = Types.matchType(inExp1,inType1,DAE.T_REAL_DEFAULT,true);
-        (exp2,ty2) = Types.matchType(inExp2,inType2,DAE.T_REAL_DEFAULT,true);
+        (exp2,_) = Types.matchType(inExp2,inType2,DAE.T_REAL_DEFAULT,true);
 
         // (exp1,exp2,ty1) = matchTypeBothWays(inExp1,inType1,inExp2,inType2);
 
@@ -1314,7 +1314,7 @@ algorithm
     // have our vect. dim and we start from the begining.
     case (e::_, (t1 :: _), (t2 :: _), {})
       equation
-        (e_1, dims1) = matchCallArg(e,t1,t2,{});
+        (_, dims1) = matchCallArg(e,t1,t2,{});
 
         // This is just to be realllly sure. The cases above actually make sure of it.
         false = Expression.dimsEqual(dims1, {});

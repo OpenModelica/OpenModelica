@@ -325,7 +325,7 @@ algorithm
 
     case (DAE.COMP(id,elist,source,cmt)::dae,_,_)
       equation
-        elist2 = applyReplacementsDAEElts(elist,repl,condExpFunc);
+        _ = applyReplacementsDAEElts(elist,repl,condExpFunc);
         dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.COMP(id,elist,source,cmt)::dae2;
 
@@ -541,8 +541,8 @@ algorithm
       Boolean b1,b2;
     case (_,e1,e2)
       equation
-        (e1,b1) = replaceExp(e1, repl, NONE());
-        (e2,b2) = replaceExp(e2, repl, NONE());
+        (e1,_) = replaceExp(e1, repl, NONE());
+        (e2,_) = replaceExp(e2, repl, NONE());
         (e1,_) = ExpressionSimplify.simplify1(e1);
         (e2,_) = ExpressionSimplify.simplify1(e2);
       then
@@ -1034,7 +1034,7 @@ algorithm
       HashTable3.HashTable invHt,invHt_1;
     case ((REPLACEMENTS(ht,_)),src,_) /* source dest */
       equation
-        olddst = BaseHashTable.get(src,ht) "if rule a->b exists, fail" ;
+        _ = BaseHashTable.get(src,ht) "if rule a->b exists, fail" ;
       then
         fail();
     case ((REPLACEMENTS(ht,invHt)),src,dst)
@@ -1576,7 +1576,7 @@ algorithm
     case ((e as DAE.REDUCTION(reductionInfo = reductionInfo,expr = e1,iterators = iters)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
-        (e1_1,c1) = replaceExp(e1, repl, cond);
+        (e1_1,_) = replaceExp(e1, repl, cond);
         (iters,true) = replaceExpIters(iters, repl, cond, {}, false);
       then (DAE.REDUCTION(reductionInfo,e1_1,iters),true);
     case (e,_,_)

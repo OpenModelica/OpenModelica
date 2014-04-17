@@ -1746,7 +1746,7 @@ algorithm
     case {"topics"}
       equation
         /* TODO: RML won't let us compile with the text inside the list directly... */
-        str1 = System.gettext("Help on the command-line and scripting environments, including OMShell and OMNotebook.");
+        _ = System.gettext("Help on the command-line and scripting environments, including OMShell and OMNotebook.");
         str2 = System.gettext("The command-line options available for omc.");
         str3 = System.gettext("Flags that enable debugging, diagnostics, and research prototypes.");
         str4 = System.gettext("Flags that determine which symbolic methods are used to produce the causalized equation system.");

@@ -2724,7 +2724,7 @@ algorithm
     case (_, str)
      equation
        // classify DAE
-       (v,ie,ia,e,a,ca,co,o) = DAEUtil.splitElements(l);
+       (v,ie,ia,e,a,_,co,_) = DAEUtil.splitElements(l);
 
        // dump variables
        str = dumpVarsStream(v, false, str);
@@ -2945,7 +2945,7 @@ algorithm
 
     case ((DAE.WHEN_EQUATION(condition = e,equations = xs1,elsewhen_ = SOME(el), source = src) :: xs), str)
       equation
-        sourceStr = getSourceInformationStr(src);
+        _ = getSourceInformationStr(src);
         str = IOStream.append(str, "when ");
         str = IOStream.append(str, ExpressionDump.printExpStr(e));
         str = IOStream.append(str, " then\n");

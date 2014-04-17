@@ -650,7 +650,7 @@ algorithm
         (DAE.ELSEIF(e_1,stmts_1,els_1),dae);
     case(DAE.ELSE(stmts),dae)
       equation
-        (stmts_1,dae) = elabStmts(stmts,dae);
+        (_,dae) = elabStmts(stmts,dae);
       then
         (DAE.ELSE(stmts),dae);
     case(_,_)

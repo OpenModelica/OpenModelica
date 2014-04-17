@@ -352,7 +352,7 @@ algorithm
           (scheduleIn,numProcIn,0);
     case(_,_,_,_,_,_,_,false,_,_,_)
       equation
-        (serTime,parTime,speedUp,speedUpMax) = HpcOmScheduler.predictExecutionTime(scheduleIn,SOME(cpCostsWoC),numProcIn,taskGraphIn,taskGraphMetaIn);
+        (_,_,speedUp,speedUpMax) = HpcOmScheduler.predictExecutionTime(scheduleIn,SOME(cpCostsWoC),numProcIn,taskGraphIn,taskGraphMetaIn);
         diff = speedUpMax -. speedUp;
         //print("the new speedUp with "+&intString(numProcIn)+&" processors: "+&realString(speedUp)+&"\n");
         true = diff <. maxDiff;
@@ -396,11 +396,11 @@ algorithm
         maxSpeedUp = realDiv(serCosts,cpCosts);
         numProcSched = realInt(realAdd(maxSpeedUp,1.0));
         numProcSys = System.numProcessors();
-        numProc = intMin(numProcSched,numProcSys);
+        _ = intMin(numProcSched,numProcSys);
         string1 = "Your system provides only "+&intString(numProcSys)+&" processors!\n";
         string2 = intString(numProcSched)+&" processors might be a reasonable number of processors.\n";
         string1 = Util.if_(intGt(numProcSched,numProcSys),string1,string2);
-        isFixed =  Util.if_(intGt(numProcSched,numProcSys),true,false);
+        _ =  Util.if_(intGt(numProcSched,numProcSys),true,false);
         print("Please set the number of processors you want to use!\n");
         print(string1);
       then

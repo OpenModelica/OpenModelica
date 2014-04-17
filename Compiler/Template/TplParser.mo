@@ -683,7 +683,7 @@ algorithm
         file = TplAbsyn.pathIdentString(interfaceName) +& ".mo";
         (chars, linfo, errOpt) = openFile(file);
         (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, pid, astDefs) = interfacePackage(chars, linfo, astDefs);
+        (chars, linfo,_, astDefs) = interfacePackage(chars, linfo, astDefs);
         (_, linfo) = interleaveExpectEndOfFile(chars, linfo);
       then (astDefs, linfo, errOpt);
 
@@ -3304,7 +3304,7 @@ algorithm
   case ("&":: startChars, startLInfo, _, _)
       equation
         (chars, linfo) = interleave(startChars, startLInfo);
-        (chars, linfo, id) = identifierNoOpt(chars, linfo);
+        (chars, linfo,_) = identifierNoOpt(chars, linfo);
         linfo = parseError(chars, linfo, "Expecting a '=' or '+=' text variable creation/addition (&var = exp or &var += exp) at the position.", true);
       then (chars, linfo, (TplAbsyn.ERROR_EXP(), dummySourceInfo));
 
@@ -3323,7 +3323,7 @@ algorithm
       equation
         (chars, linfo) = interleaveExpectChar(startChars, startLInfo, "=");
         (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, name) = pathIdentNoOpt(chars, linfo);
+        (chars, linfo,_) = pathIdentNoOpt(chars, linfo);
         //(chars, linfo) = interleaveExpectChar(chars, linfo, "(");
         linfo = parseError(chars, linfo, "Expecting a non-return function call( let () = [package.]funName(args,...) ) at the position.", true);
       then (chars, linfo, (TplAbsyn.ERROR_EXP(), dummySourceInfo));

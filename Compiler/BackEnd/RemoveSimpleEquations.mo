@@ -2520,7 +2520,7 @@ algorithm
         // negate if necessary
         globalnegated1 = Util.if_(negated, not globalnegated, globalnegated);
         exp1 = negateExpression(globalnegated1, exp, exp, " ALIAS_1 ");
-        dexp = Debug.bcallret1(globalnegated1, negateOptExp, derReplaceState, derReplaceState);
+        _ = Debug.bcallret1(globalnegated1, negateOptExp, derReplaceState, derReplaceState);
         // replace alias with selected variable if replaceable_
         source = Debug.bcallret3(replaceable_, addSubstitutionOption, optExp, crexp, source, source);
         (vars, eqnslst, shared, repl) = handleSetVar(replaceable_ and replaceble1, derReplaceState, v, i, (source, diffed), exp1, iMT, iVars, iEqnslst, ishared, iRepl);

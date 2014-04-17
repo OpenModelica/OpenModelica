@@ -337,7 +337,7 @@ algorithm
         //_ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqns, replaceFinalParameter, BackendVariable.daeKnVars(shared));
 
         subsyst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),{});
-        (subsyst,m,mt) = BackendDAEUtil.getIncidenceMatrix(subsyst, BackendDAE.ABSOLUTE(), SOME(funcs));
+        (subsyst,m,_) = BackendDAEUtil.getIncidenceMatrix(subsyst, BackendDAE.ABSOLUTE(), SOME(funcs));
         //  BackendDump.dumpEqSystem(subsyst);
         //  IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),intString(size) +& "SystemIndexed.graphml");
         (SOME(jac),_) = BackendDAEUtil.calculateJacobian(vars, eqns, m, true, ishared);
@@ -351,7 +351,7 @@ algorithm
         transformJacToMatrix(jac,1,1,size,beqs,matrix);
         //  print("Jacobian as Matrix:\n");
         //  dumpMatrix(1,size,matrix);
-        ht = HashTable4.emptyHashTable();
+        _ = HashTable4.emptyHashTable();
         (tvars,teqns) = gaussElimination(1,size,matrix,BackendVariable.emptyVars(),BackendEquation.listEquation({}),(1,1));
         //  dumpMatrix(1,size,matrix);
         //  subsyst = BackendDAE.EQSYSTEM(tvars,teqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),{});
@@ -399,7 +399,7 @@ algorithm
         //  print("Mul Operations: " +& intString(i2) +& "\n");
         //  print("Oth Operations: " +& intString(i3) +& "\n");
           print("Ok system relaxed\n");
-        (syst,shared,b) = relaxSystem1(syst,shared,comps);
+        (syst,shared,_) = relaxSystem1(syst,shared,comps);
       then
         (syst,shared,true);
     case (_,_,(BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1))::comps)
@@ -3682,7 +3682,7 @@ algorithm
         false = intGt(vec2[id],0);
         e = Expression.expSub(e1,e2);
         vlst =BackendEquation.equationVars(eqn,vars);
-        (cr,i) = getConstOneVariable(vlst,e,vec1,vars);
+        (_,i) = getConstOneVariable(vlst,e,vec1,vars);
         vec1 = arrayUpdate(vec1,i,id);
         vec2 = arrayUpdate(vec2,id,i);
       then ((id+1,vec1,vec2));
