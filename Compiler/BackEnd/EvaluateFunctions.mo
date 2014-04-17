@@ -1093,12 +1093,12 @@ algorithm
       equation
         //print("the STMT_ASSIGN before: "+&DAEDump.ppStatementStr(List.first(algsIn)));
         cref = Expression.expCref(exp1);
-        _ = getRecordScalars(cref);
+        scalars = getRecordScalars(cref);
         (exp2,changed) = BackendVarTransform.replaceExp(exp2,replIn,NONE());
         ((exp2,(exp1,funcTree,idx,addStmts))) = Expression.traverseExpTopDown(exp2,evaluateConstantFunctionWrapper,(exp1,funcTree,idx,{}));
         (exp2,changed) = Debug.bcallret1_2(changed,ExpressionSimplify.simplify,exp2,exp2,changed);
         (exp2,_) = ExpressionSimplify.simplify(exp2);
-        _ = Expression.getComplexContents(exp2);
+        expLst = Expression.getComplexContents(exp2);
         isCon = Expression.isConst(exp2);
         isRec = ComponentReference.isRecord(cref);
 
