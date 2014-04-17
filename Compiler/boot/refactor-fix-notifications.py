@@ -122,8 +122,9 @@ def fixFileIter(stamp,moFile,logFile):
       reSameEqComma = "%s *= *%s *," % (ident,ident)
       reSameEqParens = ", *%s *= *%s *[)]" % (ident,ident)
       reSameEqBothParens = "[(] *%s *= *%s *[)]" % (ident,ident)
+      reSameEqAs = "%s *= *%s *as *" % (ident,ident)
       done = False
-      for (regex,replace) in [(reSameEqComma,""),(reSameEqParens,")"),(reSameEqBothParens,"(%s=_)" % ident)]:
+      for (regex,replace) in [(reSameEqComma,""),(reSameEqParens,")"),(reSameEqBothParens,"(%s=_)" % ident),(reSameEqAs,"%s=" % ident)]:
         if c == 2 and re.search(regex,s):
           updated = re.sub(regex,replace,s)
           printInfo(info,"Removed dead as-binding %s=%s in %s" % (ident,ident,updated.strip()))

@@ -6332,18 +6332,17 @@ algorithm
       then
         (SimCode.SES_ARRAY_CALL_ASSIGN(iuniqueEqIndex, cr2, e2, source), iuniqueEqIndex+1);
 
-        // failure
+/*
     case (cr, _, e1, e2, _, _)
-      /*
        equation
        s1 = ExpressionDump.printExpStr(e1);
        s2 = ExpressionDump.printExpStr(e2);
        s3 = ComponentReference.crefStr(cr);
        s = stringAppendList({"./Compiler/BackEnd/SimCodeUtil.mo: function createSingleArrayEqnCode2 failed for: ", s1, " = " , s2, " solve for ", s3 });
        Error.addMessage(Error.INTERNAL_ERROR, {s});
-       */
     then
       fail();
+*/
   end matchcontinue;
 end createSingleArrayEqnCode2;
 

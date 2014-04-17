@@ -272,7 +272,7 @@ algorithm
         fail();*/
 
     // replace this node
-    case (FCore.VAVLTREENODE(value = SOME(FCore.VAVLTREEVALUE(key=rkey)),height=h,left = left,right = right),0,key,value)
+    case (FCore.VAVLTREENODE(value = SOME(FCore.VAVLTREEVALUE(key=rkey)),height=h,left = left,right = right),0,_,value)
       equation
         // inactive for now, but we should check if we don't replace a class with a var or vice-versa!
         // checkValueReplacementCompatible(rval, value);

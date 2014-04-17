@@ -3823,11 +3823,10 @@ algorithm
         ret_val = ExpressionDump.printExpStr(differentiated_exp_1);
       then
         (cache,Values.STRING(ret_val),st);
-    case (_,_,_,_,st,_,_) /* =>  (Values.CODE(Absyn.C_EXPRESSION(absyn_exp)),st) */
+    else
       equation
-        print("#- Differentiation failed. Celab.cevalBuiltinDifferentiate failed.\n");
-      then
-        fail();
+        Error.addMessage(Error.INTERNAL_ERROR, {"#- Differentiation failed. Celab.cevalBuiltinDifferentiate failed."});
+      then fail();
   end matchcontinue;
 end cevalBuiltinDifferentiate;
 
@@ -3862,7 +3861,7 @@ algorithm
         ret_val = ExpressionDump.printExpStr(exp1_1) "this should be used instead but unelab_exp must be able to unelaborate a complete exp Expression.unelab_exp(simplifyd_exp\') => absyn_exp" ;
       then
         (cache,Values.STRING(ret_val),st);
-    case (_,_,_,_,st,Absyn.MSG(info = info),_) /* =>  (Values.CODE(Absyn.C_EXPRESSION(absyn_exp)),st) */
+    case (_,_,_,_,_,Absyn.MSG(info = info),_)
       equation
         Error.addSourceMessage(Error.COMPILER_ERROR,
           {"Simplification failed. Ceval.cevalBuiltinSimplify failed."}, info);

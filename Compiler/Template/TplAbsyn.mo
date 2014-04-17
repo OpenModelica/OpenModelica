@@ -1362,8 +1362,7 @@ algorithm
 
       then ( stmts, locals, scEnv, accMMDecls, intxt);
 
-    case ( (LET(letExp = (NORET_CALL(name = fname, args = _),sinfo2),
-               exp = exp), _),
+    case ( (LET(letExp = (NORET_CALL(name = fname),sinfo2)), _),
            _, _, _, _, _, _, tplPackage as TEMPL_PACKAGE(astDefs=_), _ )
       equation
         (fname, iargs, oargs, tyVars) = getFunSignature(fname, sinfo2, tplPackage);
@@ -1614,7 +1613,7 @@ algorithm
         popstmts = listAppend(popstmts, {pstmt} );
       then ( mmopts, (stmt :: stmts), popstmts, outtxt);
 
-    case ( mmopts, optid, _, stmts, popstmts, intxt, _)
+    case ( mmopts, _, _, stmts, popstmts, intxt, _)
       //equation
         //failure(((mmexp,_), mmopts) = lookupDeleteTupleList(mmopts, optid));
       then ( mmopts, stmts, popstmts, intxt);

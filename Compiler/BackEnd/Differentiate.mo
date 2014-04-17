@@ -1424,7 +1424,7 @@ algorithm
 
       String s1, s2, serr, matrixName, name;
 
-    case (e as DAE.CALL(path = path as Absyn.IDENT(name = "pre"),expLst = _), _, _, _, _)
+    case (e as DAE.CALL(path=Absyn.IDENT(name = "pre"),expLst = _), _, _, _, _)
       then
         (e,  inFunctionTree);
 
@@ -1438,7 +1438,7 @@ algorithm
       then
         (DAE.CALL(path,{e,DAE.ICONST(i)},attr), inFunctionTree);
 
-    case (DAE.CALL(path = path as Absyn.IDENT(name = "der"),expLst = {e}), _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), BackendDAE.GENERIC_GRADIENT(), _)
+    case (DAE.CALL(path=Absyn.IDENT(name = "der"),expLst = {e}), _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), BackendDAE.GENERIC_GRADIENT(), _)
       equation
         cr = Expression.expCref(e);
         tp = Expression.typeof(e);

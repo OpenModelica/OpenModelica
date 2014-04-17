@@ -170,7 +170,7 @@ algorithm
       then
         (ass1_1,ass2_1,syst,ishared,inArg);
 
-    case (syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(_)),_,_,_,_,_,_,_,_,_,_,_)
+    case (syst as BackendDAE.EQSYSTEM(m=SOME(_),mT=SOME(_)),_,_,_,_,_,_,_,_,_,_,_)
       equation
         i_1 = i + 1;
         true = intGt(ass2[i],0);

@@ -1125,7 +1125,7 @@ algorithm
       then
         selem::outComps;
         */
-    case( ((selem as SCode.CLASS(name=name2)))::comps,SOME(DAE.CREF_IDENT(ident=name)),allComps,_,existing)
+    case( ((selem as SCode.CLASS(name=name2)))::comps,SOME(DAE.CREF_IDENT(ident=_)),allComps,_,existing)
       equation
         //false = stringEq(name,name2);
         allComps = selem::allComps;
@@ -5802,7 +5802,7 @@ algorithm
 
     // special case for  size
     case (cache,env,(Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "size"),
-          functionArgs = Absyn.FUNCTIONARGS(args = (args as {arraycr,dim}),argNames = _))),impl,st,pre,_)
+          functionArgs = Absyn.FUNCTIONARGS(args = {arraycr,dim}))),impl,st,pre,_)
       equation
         (cache,dimp,prop as DAE.PROP(_,_),_) = Static.elabExp(cache, env, dim, impl,NONE(),false,pre,info);
         (cache, dimp, prop) = Ceval.cevalIfConstant(cache, env, dimp, prop, impl, info);
@@ -5946,7 +5946,7 @@ algorithm
       then
         (cache,SOME(DAE.EXTARG(cref, attr, ty)));
 
-    case (cache,env,DAE.CREF(componentRef = cref,ty = _),DAE.PROP(type_ = ty,constFlag = _),_,_)
+    case (cache,env,DAE.CREF(componentRef = cref),DAE.PROP(constFlag = _),_,_)
       equation
         failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVarLocal(cache,env,cref));
         crefstr = ComponentReference.printComponentRefStr(cref);
@@ -5955,7 +5955,7 @@ algorithm
       then
         (cache, NONE());
 
-    case (cache,env,DAE.SIZE(exp = DAE.CREF(componentRef = cref,ty = _),sz = SOME(dim)),DAE.PROP(type_ = ty),_,_)
+    case (cache,env,DAE.SIZE(exp = DAE.CREF(componentRef = cref,ty = _),sz = SOME(dim)),DAE.PROP(type_ = _),_,_)
       equation
         (cache,attr,varty,bnd,_,_,_,_,_) = Lookup.lookupVarLocal(cache,env, cref);
       then
@@ -8605,11 +8605,11 @@ algorithm
       DAE.InstDims dims;
       DAE.VarDirection dir;
       list<DAE.Var> vars;
-    case ({},NONE(),unbound,outputs,_)
+    case ({},NONE(),_,_,_)
       // This would run also for partial function inst... So let's skip it
       // equation
       //  unbound = List.fold1(outputs, checkOutputDefUse, inInfo, unbound);
-      then unbound;
+      then inUnbound;
     case ({},SOME(stmts),unbound,outputs,_)
       equation
         ((_,_,unbound)) = List.fold1(stmts, checkFunctionDefUseStmt, false, (false,false,unbound));

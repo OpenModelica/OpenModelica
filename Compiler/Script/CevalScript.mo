@@ -2056,8 +2056,7 @@ algorithm
 
     case (_,_,"loadModel",{Values.CODE(Absyn.C_TYPENAME(path)),Values.ARRAY(valueLst=cvars),Values.BOOL(b),Values.STRING(str)},
           (GlobalScript.SYMBOLTABLE(
-            ast = p,instClsLst = ic,
-            lstVarVal = iv,compiledFunctions = cf,
+            ast = p,lstVarVal = iv,compiledFunctions = cf,
             loadedFiles = lf)),_) /* add path to symboltable for compiled functions
             GlobalScript.SYMBOLTABLE(p,sp,ic,iv,(path,t)::cf),
             but where to get t? */

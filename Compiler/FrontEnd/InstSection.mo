@@ -804,7 +804,7 @@ algorithm
     // Connections.potentialRoot(cr,priority =prio ) - priority as named argument
     case (cache,env,ih,_,_,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
               function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("potentialRoot", {})),
-              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(_)}, {Absyn.NAMEDARG("priority", Absyn.REAL(priority))}))),_,_,graph,_)
+              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(_)}, {Absyn.NAMEDARG("priority", Absyn.REAL(_))}))),_,_,graph,_)
       equation
         Error.addSourceMessage(Error.ARGUMENT_MUST_BE_INTEGER,
           {"Second", "Connections.potentialRoot", ""}, info);
@@ -1276,15 +1276,7 @@ algorithm
         dae;
 
     case (e1, (p1 as DAE.PROP(type_ = _)),
-          e2, (p2 as DAE.PROP(type_ = _, constFlag = c)), _, initial_, impl) /* impl PR. e1= lefthandside, e2=righthandside
-   This seem to be a strange function.
-   wich rule is matched? or is both rules matched?
-   LS: Static.type_convert in Static.match_prop can probably fail,
-    then the first rule will not match. Question if whether the second
-    rule can match in that case.
-   This rule is matched first, if it fail the next rule is matched.
-   If it fails then this rule is matched.
-   BZ(2007-05-30): Not so strange it checks for eihter exp1 or exp2 to be from expected type.*/
+          e2, (p2 as DAE.PROP(constFlag = c)), _, initial_, _) /* If e2 is not of e1's type, check if e1 has e2's type instead */
       equation
         (e1_1, DAE.PROP(t_1, _)) = Types.matchProp(e1, p1, p2, false);
         (e1_1,_) = ExpressionSimplify.simplify(e1_1);

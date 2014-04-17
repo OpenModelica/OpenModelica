@@ -2842,11 +2842,7 @@ algorithm
         (vars,_) = removeVars(ilst,inVariables,{});
       then
         vars;
-    case (cr,_)
-//      equation
-//        BackendDump.debugStrCrefStr(("var ",cr," not in inVariables\n"));
-      then
-        inVariables;
+    else inVariables;
   end matchcontinue;
 end removeCref;
 

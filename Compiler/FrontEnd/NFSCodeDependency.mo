@@ -776,7 +776,7 @@ algorithm
       SCode.Element cls;
       Absyn.Info info;
 
-    case (NFSCodeEnv.CLASS(cls = cls as SCode.CLASS( info = info)), _)
+    case (NFSCodeEnv.CLASS(cls=SCode.CLASS( info = info)), _)
       equation
         (item, env) = NFSCodeLookup.lookupRedeclaredClassByItem(inItem, inEnv, info);
         markItemAsUsed(item, env);

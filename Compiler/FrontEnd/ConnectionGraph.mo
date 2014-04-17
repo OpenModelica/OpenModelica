@@ -852,7 +852,7 @@ algorithm
       then
         setRootDistance(rest,table,distance,nextLevel,irooted);
 */
-    case(cr::rest,_,_,_,_)
+    case (_::rest,_,_,_,_)
       //equation
       //  print("- ConnectionGraph.setRootDistance: cannot found " +& ComponentReference.printComponentRefStr(cr) +& "\n");
       then

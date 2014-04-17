@@ -5606,7 +5606,7 @@ algorithm
 
     //        this operator is not even specified in the specification!
     //        http://trac.modelica.org/Modelica/ticket/95
-    case (cache,env,{exp0},{},impl,pre,_) /* impl */
+    case (cache,env,{exp0},{},_,pre,_)
       equation
         (cache, exp, _, _) = elabExp(cache, env, exp0, false,NONE(), false,pre,info);
       then

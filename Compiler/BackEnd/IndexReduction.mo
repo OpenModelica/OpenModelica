@@ -4828,7 +4828,7 @@ algorithm
       list<Integer> ilst,changedVars;
       BackendDAE.Variables vars;
     case({},{},_,_) then (inVars,iChangedVars);
-    case((BackendDAE.VAR(varKind = BackendDAE.STATE(index=_)))::vlst,index::ilst,_,_)
+    case((BackendDAE.VAR(varKind = BackendDAE.STATE(index=_)))::vlst,_::ilst,_,_)
       equation
         (vars,changedVars) = algebraicState(vlst,ilst,inVars,iChangedVars);
       then
@@ -4977,7 +4977,7 @@ algorithm
         ((e, (vars_1,eqns,so,changedVars,eindx,mapIncRowEqn,mt)));
     case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,eqns,so,ilst,eindx,mapIncRowEqn,mt)))
       equation
-        (v::_,_::_) = BackendVariable.getVar(cr, vars) "der(v) v is alg var => der_v" ;
+        (_::_,_::_) = BackendVariable.getVar(cr, vars) "der(v) v is alg var => der_v" ;
         print("wrong Variable in der: \n");
         BackendDump.debugExpStr((e,"\n"));
       then

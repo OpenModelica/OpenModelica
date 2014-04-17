@@ -210,8 +210,7 @@ algorithm
       then
         el;
 
-    case (NFInstTypes.ELEMENT(component = NFInstTypes.TYPED_COMPONENT(ty =
-        DAE.T_ARRAY(ty = ty, dims = dims)), cls = cls), _, _, _)
+    case (NFInstTypes.ELEMENT(component = NFInstTypes.TYPED_COMPONENT(ty = DAE.T_ARRAY(dims = dims)), cls = cls), _, _, _)
       equation
         el = expandArray(cls, inKind, dims, {} :: inSubscripts, inAccumEl, expandClass);
       then

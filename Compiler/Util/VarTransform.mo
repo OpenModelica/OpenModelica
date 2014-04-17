@@ -1865,7 +1865,7 @@ algorithm
         0 = stringCompare(rkeystr, keystr);
       then
         TREENODE(SOME(TREEVALUE(rkey,value)),left,right);
-    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = left,right = (right as SOME(t))),key,value)
+    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = left,right = SOME(t)),key,value)
       equation
         keystr = ComponentReference.printComponentRefStr(key) "Insert to right subtree" ;
         rkeystr = ComponentReference.printComponentRefStr(rkey);
@@ -1874,7 +1874,7 @@ algorithm
         t_1 = treeAdd(t, key, value);
       then
         TREENODE(SOME(TREEVALUE(rkey,rval)),left,SOME(t_1));
-    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = left,right = (right as NONE())),key,value)
+    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = left,right = NONE()),key,value)
       equation
         keystr = ComponentReference.printComponentRefStr(key) "Insert to right node" ;
         rkeystr = ComponentReference.printComponentRefStr(rkey);
@@ -1883,7 +1883,7 @@ algorithm
         right_1 = treeAdd(TREENODE(NONE(),NONE(),NONE()), key, value);
       then
         TREENODE(SOME(TREEVALUE(rkey,rval)),left,SOME(right_1));
-    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = (left as SOME(t)),right = right),key,value)
+    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = SOME(t),right = right),key,value)
       equation
         keystr = ComponentReference.printComponentRefStr(key) "Insert to left subtree" ;
         rkeystr = ComponentReference.printComponentRefStr(rkey);
@@ -1892,7 +1892,7 @@ algorithm
         t_1 = treeAdd(t, key, value);
       then
         TREENODE(SOME(TREEVALUE(rkey,rval)),SOME(t_1),right);
-    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = (left as NONE()),right = right),key,value)
+    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = NONE(),right = right),key,value)
       equation
         keystr = ComponentReference.printComponentRefStr(key) "Insert to left node" ;
         rkeystr = ComponentReference.printComponentRefStr(rkey);
@@ -1980,7 +1980,7 @@ algorithm
         0 = stringCompare(rkeystr, keystr);
       then
         TREENODE2(SOME(TREEVALUE2(rkey,value)),left,right);
-    case (TREENODE2(value = SOME(TREEVALUE2(rkey,rval)),left = left,right = (right as SOME(t))),key,value)
+    case (TREENODE2(value = SOME(TREEVALUE2(rkey,rval)),left = left,right = SOME(t)),key,value)
       equation
         keystr = ComponentReference.printComponentRefStr(key) "Insert to right subtree" ;
         rkeystr = ComponentReference.printComponentRefStr(rkey);
@@ -1989,7 +1989,7 @@ algorithm
         t_1 = treeAdd2(t, key, value);
       then
         TREENODE2(SOME(TREEVALUE2(rkey,rval)),left,SOME(t_1));
-    case (TREENODE2(value = SOME(TREEVALUE2(rkey,rval)),left = left,right = (right as NONE())),key,value)
+    case (TREENODE2(value = SOME(TREEVALUE2(rkey,rval)),left = left,right = NONE()),key,value)
       equation
         keystr = ComponentReference.printComponentRefStr(key) "Insert to right node" ;
         rkeystr = ComponentReference.printComponentRefStr(rkey);
@@ -1998,7 +1998,7 @@ algorithm
         right_1 = treeAdd2(TREENODE2(NONE(),NONE(),NONE()), key, value);
       then
         TREENODE2(SOME(TREEVALUE2(rkey,rval)),left,SOME(right_1));
-    case (TREENODE2(value = SOME(TREEVALUE2(rkey,rval)),left = (left as SOME(t)),right = right),key,value)
+    case (TREENODE2(value = SOME(TREEVALUE2(rkey,rval)),left = SOME(t),right = right),key,value)
       equation
         keystr = ComponentReference.printComponentRefStr(key) "Insert to left subtree" ;
         rkeystr = ComponentReference.printComponentRefStr(rkey);
@@ -2007,7 +2007,7 @@ algorithm
         t_1 = treeAdd2(t, key, value);
       then
         TREENODE2(SOME(TREEVALUE2(rkey,rval)),SOME(t_1),right);
-    case (TREENODE2(value = SOME(TREEVALUE2(rkey,rval)),left = (left as NONE()),right = right),key,value)
+    case (TREENODE2(value = SOME(TREEVALUE2(rkey,rval)),left = NONE(),right = right),key,value)
       equation
         keystr = ComponentReference.printComponentRefStr(key) "Insert to left node" ;
         rkeystr = ComponentReference.printComponentRefStr(rkey);

@@ -6543,7 +6543,7 @@ algorithm
         ((f,(_,b))) = Expression.traverseExpTopDown(f, varsNotInRelations, (vars,b));
       then
         ((DAE.IFEXP(cond,t,f),false,(vars,b)));
-    case ((e as DAE.CALL(path = path as Absyn.IDENT(name = "der")),(vars,b)))
+    case ((e as DAE.CALL(path=Absyn.IDENT(name = "der")),(vars,b)))
       then
         ((e,true,(vars,b)));
     case ((e as DAE.CALL(path = Absyn.IDENT(name = "pre")),(vars,b)))
@@ -6964,7 +6964,7 @@ algorithm
         ((f,(_,_,_,b))) = Expression.traverseExpTopDown(f, getEqnsysRhsExp1, (repl,vars,funcs,b));
       then
         ((DAE.IFEXP(cond,t,f),false,(repl,vars,funcs,b)));
-    case ((e as DAE.CALL(path = path as Absyn.IDENT(name = "der")),(repl,vars,funcs,b)))
+    case ((e as DAE.CALL(path=Absyn.IDENT(name = "der")),(repl,vars,funcs,b)))
       then
         ((e,true,(repl,vars,funcs,b)));
     case ((e as DAE.CALL(path = Absyn.IDENT(name = "pre")),(repl,vars,funcs,b)))

@@ -855,7 +855,7 @@ algorithm
         (b4,ext_arg_3) = Debug.bcallret3_2(b2,traverseBackendDAEExpsEqnWithStop,BackendDAE.WHEN_EQUATION(size,elsePart,source),func,ext_arg_2,b3,ext_arg_3);
       then
         (b4,ext_arg_3);
-    case (BackendDAE.ALGORITHM(alg=alg as DAE.ALGORITHM_STMTS(statementLst = _)),_,_)
+    case (BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS(statementLst = _)),_,_)
       equation
         print("not implemented error - BackendDAE.ALGORITHM - BackendEquation.traverseBackendDAEExpsEqnWithStop\n");
        // (stmts1,ext_arg_1) = DAEUtil.traverseDAEEquationsStmts(stmts,func,inTypeA);

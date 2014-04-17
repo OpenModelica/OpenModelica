@@ -642,14 +642,14 @@ algorithm
        descLst = desc::iEqDesc;
      then
        descLst;
-  case(BackendDAE.EQUATIONSYSTEM(eqns = _, vars = _, jac = BackendDAE.FULL_JACOBIAN(jac), jacType = _), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs),_)
+  case(BackendDAE.EQUATIONSYSTEM(jac = BackendDAE.FULL_JACOBIAN(_)), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs),_)
      equation
        eqnLst = BackendEquation.equationList(orderedEqs);
        desc = ("Equation System");
        descLst = desc::iEqDesc;
      then
        descLst;
-  case(BackendDAE.MIXEDEQUATIONSYSTEM(disc_eqns = _, disc_vars = _), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs),_)
+  case(BackendDAE.MIXEDEQUATIONSYSTEM(disc_eqns = _), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs),_)
      equation
        eqnLst = BackendEquation.equationList(orderedEqs);
        desc = ("MixedEquation System");

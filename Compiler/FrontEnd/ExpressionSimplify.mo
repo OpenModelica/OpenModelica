@@ -645,38 +645,38 @@ algorithm
     case DAE.CALL(path=Absyn.IDENT("listAppend"),expLst={e1,DAE.LIST(valList={})})
       then e1;
 
-    case DAE.CALL(path=path as Absyn.IDENT("intString"),expLst={DAE.ICONST(i)})
+    case DAE.CALL(path=Absyn.IDENT("intString"),expLst={DAE.ICONST(i)})
       equation
         s = intString(i);
       then DAE.SCONST(s);
 
-    case DAE.CALL(path=path as Absyn.IDENT("realString"),expLst={DAE.RCONST(r)})
+    case DAE.CALL(path=Absyn.IDENT("realString"),expLst={DAE.RCONST(r)})
       equation
         s = realString(r);
       then DAE.SCONST(s);
 
-    case DAE.CALL(path=path as Absyn.IDENT("boolString"),expLst={DAE.BCONST(b)})
+    case DAE.CALL(path=Absyn.IDENT("boolString"),expLst={DAE.BCONST(b)})
       equation
         s = boolString(b);
       then DAE.SCONST(s);
 
-    case DAE.CALL(path=path as Absyn.IDENT("listReverse"),expLst={DAE.LIST(el)})
+    case DAE.CALL(path=Absyn.IDENT("listReverse"),expLst={DAE.LIST(el)})
       equation
         el = listReverse(el);
         e1_1 = DAE.LIST(el);
       then e1_1;
 
-    case DAE.CALL(path=path as Absyn.IDENT("listReverse"),expLst={DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("list"),ty,v,foldExp),e1,riters)})
+    case DAE.CALL(path=Absyn.IDENT("listReverse"),expLst={DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("list"),ty,v,foldExp),e1,riters)})
       equation
         e1 = DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("listReverse"),ty,v,foldExp),e1,riters);
       then e1;
 
-    case DAE.CALL(path=path as Absyn.IDENT("listReverse"),expLst={DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("listReverse"),ty,v,foldExp),e1,riters)})
+    case DAE.CALL(path=Absyn.IDENT("listReverse"),expLst={DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("listReverse"),ty,v,foldExp),e1,riters)})
       equation
         e1 = DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("list"),ty,v,foldExp),e1,riters);
       then e1;
 
-    case DAE.CALL(path=path as Absyn.IDENT("listLength"),expLst={DAE.LIST(el)})
+    case DAE.CALL(path=Absyn.IDENT("listLength"),expLst={DAE.LIST(el)})
       equation
         i = listLength(el);
       then DAE.ICONST(i);
@@ -1128,7 +1128,7 @@ algorithm
       then
         DAE.ARRAY(tp,false,es);
 
-    case DAE.CALL(path=Absyn.IDENT("transpose"),expLst=e::{},attr=DAE.CALL_ATTR(ty=tp))
+    case DAE.CALL(path=Absyn.IDENT("transpose"),expLst=e::{},attr=DAE.CALL_ATTR(ty=_))
       equation
         (e, true) = Expression.transposeArray(e);
       then
@@ -3821,19 +3821,19 @@ algorithm
       then e1;
 
     // a*(b^(-e)) => a/(b^e)
-    case (_,DAE.MUL(ty = ty),e1,DAE.BINARY(exp1 = e2,operator = DAE.POW(ty = ty2),exp2 = DAE.UNARY(exp=e3,operator=DAE.UMINUS(ty=_))),_,_)
+    case (_,DAE.MUL(ty = _),e1,DAE.BINARY(exp1 = e2,operator = DAE.POW(ty = ty2),exp2 = DAE.UNARY(exp=e3,operator=DAE.UMINUS(ty=_))),_,_)
       equation
         res = DAE.BINARY(e1,DAE.DIV(ty2),DAE.BINARY(e2,DAE.POW(ty2),e3));
       then res;
 
     // a/(b^(-e)) => a*(b^e)
-    case (_,DAE.DIV(ty = ty),e1,DAE.BINARY(exp1 = e2,operator = DAE.POW(ty = ty2),exp2 = DAE.UNARY(exp=e3,operator=DAE.UMINUS(ty=_))),_,_)
+    case (_,DAE.DIV(ty = _),e1,DAE.BINARY(exp1 = e2,operator = DAE.POW(ty = ty2),exp2 = DAE.UNARY(exp=e3,operator=DAE.UMINUS(ty=_))),_,_)
       equation
         res = DAE.BINARY(e1,DAE.MUL(ty2),DAE.BINARY(e2,DAE.POW(ty2),e3));
       then res;
 
     // a*(b^(-r)) => a/(b^r)
-    case (_,DAE.MUL(ty = ty),e1,DAE.BINARY(exp1 = e2,operator = DAE.POW(ty = ty2),exp2 = DAE.RCONST(r)),_,_)
+    case (_,DAE.MUL(ty = _),e1,DAE.BINARY(exp1 = e2,operator = DAE.POW(ty = ty2),exp2 = DAE.RCONST(r)),_,_)
       equation
         true = realLt(r,0.0);
         r = realNeg(r);
@@ -3841,7 +3841,7 @@ algorithm
       then res;
 
     // a/(b^(-r)) => a*(b^r)
-    case (_,DAE.DIV(ty = ty),e1,DAE.BINARY(exp1 = e2,operator = DAE.POW(ty = ty2),exp2 = DAE.RCONST(r)),_,_)
+    case (_,DAE.DIV(ty = _),e1,DAE.BINARY(exp1 = e2,operator = DAE.POW(ty = ty2),exp2 = DAE.RCONST(r)),_,_)
       equation
         true = realLt(r,0.0);
         r = realNeg(r);
@@ -4269,7 +4269,7 @@ algorithm
     // e2 = e4; op2=op3 \in {*, /}; op1 \in {+, -}
     case (_,op2,_,
           op1,
-          _,op3,_,
+          _,_,_,
           _,_,_,true /*e2==e4*/,_,false /*isConst(e2)*/,_,true /*op2==op3*/)
       equation
        ty = Expression.typeof(e1);
@@ -4314,7 +4314,7 @@ algorithm
     // op2 \in {*, /}; op1 \in {+, -}
     case (DAE.BINARY(e_1,DAE.MUL(ty),e_2),op2,e_3,
           op1,
-          DAE.BINARY(e_4,DAE.MUL(_),e_5),op3,e_6,
+          DAE.BINARY(e_4,DAE.MUL(_),e_5),_,_,
           _,_,_,true /*e2==e4==e_3==e_6*/,_,false /*isConst(e2==e_3)*/,_,true /*op2==op3*/)
       equation
         ty = Expression.typeof(e_1);
@@ -4620,9 +4620,9 @@ algorithm
         true = Expression.isZero(e1);
       then e1;
     //  -(a-b) => b - a
-    case (_,DAE.UMINUS(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.SUB(ty = ty1),exp2 = e2))
+    case (_,DAE.UMINUS(ty = _),DAE.BINARY(exp1 = e1,operator = DAE.SUB(ty = ty1),exp2 = e2))
       then DAE.BINARY(e2,DAE.SUB(ty1),e1);
-    case (_, DAE.UMINUS_ARR(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.SUB_ARR(ty = ty1),exp2 = e2))
+    case (_, DAE.UMINUS_ARR(ty = _),DAE.BINARY(exp1 = e1,operator = DAE.SUB_ARR(ty = ty1),exp2 = e2))
       then DAE.BINARY(e2,DAE.SUB_ARR(ty1),e1);
     // -(a + b) => -b - a
     case (_,DAE.UMINUS(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = ty1),exp2 = e2))

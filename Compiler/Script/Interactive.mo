@@ -2598,9 +2598,9 @@ algorithm
       Option<Absyn.ConstrainClass> constrainClass;
       Absyn.ComponentRef old_comp,new_comp;
     case ({},_,_) then {};  /* the old name for the component */
-    case (((element as Absyn.ELEMENTITEM(element =
+    case ((Absyn.ELEMENTITEM(element =
       Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = redeclare_,innerOuter = inner_outer,
-                    specification = elementspec,info = info,constrainClass = constrainClass))) :: res),old_comp,new_comp)
+                    specification = elementspec,info = info,constrainClass = constrainClass)) :: res),old_comp,new_comp)
       equation
         res_1 = renameComponentInElements(res, old_comp, new_comp);
         elementspec_1 = renameComponentInElementSpec(elementspec, old_comp, new_comp);
@@ -3720,7 +3720,7 @@ algorithm
     local
       Integer len,old_len;
       GlobalScript.Components comps,in_comps,in_comps_1,comps_1,out_comps;
-    case (comps,in_comps,old_len) /* rule  dump_components_to_string(comps) => str & print \"---------comps----------\\n\" & print str & print \"===================\\n\" & dump_components_to_string(in_comps) => str & print \"---------in_comps----------\\n\" & print str & print \"===================\\n\" & int_eq(1,2) => true --------------------------- get_dependency_with_type(comps, in_comps, old_len) => in_comps */
+    case (_,in_comps,old_len)
       equation
         len = lengthComponents(in_comps);
         (old_len == len) = true;
@@ -5262,7 +5262,7 @@ algorithm
           ", replaceable=",repl,", inout=",inout_str,", ",element_str});
       then
         str;
-    case (Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = inout,specification = elementSpec,info = (info as Absyn.INFO(fileName = file,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scol,lineNumberEnd = eline,columnNumberEnd = ecol))))) /* if is not a classdef, just follow the normal stuff */
+    case (Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = inout,specification = elementSpec,info = Absyn.INFO(fileName = file,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scol,lineNumberEnd = eline,columnNumberEnd = ecol)))) /* if is not a classdef, just follow the normal stuff */
       equation
         finalPrefix = boolString(f);
         r_1 = keywordReplaceable(r);
@@ -7338,7 +7338,7 @@ algorithm
       Absyn.Path old_comp,new_comp;
       list<Env.Frame> env;
     case ({},_,_,_) then ({},false);  /* the old name for the component signal if something in class have been changed */
-    case (((element as Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = redeclare_,innerOuter = inner_outer,specification = elementspec,info = info,constrainClass = constrainClass))) :: res),old_comp,new_comp,env)
+    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = redeclare_,innerOuter = inner_outer,specification = elementspec,info = info,constrainClass = constrainClass)) :: res),old_comp,new_comp,env)
       equation
         (res_1,changed1) = renameClassInElements(res, old_comp, new_comp, env);
         (elementspec_1,changed2) = renameClassInElementSpec(elementspec, old_comp, new_comp, env);
@@ -16284,7 +16284,7 @@ algorithm
         res = getPathedClassInProgram(path,p);
       then
         res;
-    case ((path as Absyn.QUALIFIED(name = str,path = prest)),(p as Absyn.PROGRAM(within_ = w,globalBuildTimes=ts)))
+    case (Absyn.QUALIFIED(name = str,path = prest),(p as Absyn.PROGRAM(within_ = w,globalBuildTimes=ts)))
       equation
         c1def = getClassInProgram(str, p);
         classes = getClassesInClass(Absyn.IDENT(str), p, c1def);
@@ -16727,7 +16727,7 @@ algorithm
       list<Env.Frame> env,env_1;
       list<GlobalScript.InstantiatedClass> xs,res;
     case ({},cl) then {cl};
-    case ((GlobalScript.INSTCLASS(qualName = path,daeElementLst = _,env = env) :: xs),(newc as GlobalScript.INSTCLASS(qualName = path2,daeElementLst = _,env = _)))
+    case ((GlobalScript.INSTCLASS(qualName = path,daeElementLst = _) :: xs),newc as GlobalScript.INSTCLASS(qualName = path2))
       equation
         true = Absyn.pathEqual(path, path2);
       then

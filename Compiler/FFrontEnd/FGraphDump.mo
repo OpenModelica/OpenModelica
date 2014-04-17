@@ -348,7 +348,7 @@ algorithm
         (GraphML.COLOR_PURPLE, GraphML.HEXAGON(), s);
 
     // dimensions
-    case (FCore.N(name, _, _, _, nd as FCore.DIMS(name = _, dims = dims)))
+    case (FCore.N(_, _, _, _, nd as FCore.DIMS(name = _, dims = dims)))
       equation
         s = FNode.dataStr(nd) +& ":" +& Util.escapeModelicaStringToXmlString(Dump.printArraydimStr(dims));
       then
