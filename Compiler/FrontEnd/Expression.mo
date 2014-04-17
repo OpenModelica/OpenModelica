@@ -1565,7 +1565,8 @@ algorithm
   DAE.ARRAY(array=es) := e;
 end getArrayContents;
 
-public function getComplexContents "returns the list of expressions from a complex structure like array,record,call..."
+public function getComplexContents "returns the list of expressions from a complex structure like array,record,call,tuple...
+author:Waurich TUD 2014-04"
   input DAE.Exp e;
   output list<DAE.Exp> es;
 algorithm
@@ -1579,6 +1580,9 @@ algorithm
       then
         expLst;
     case(DAE.ARRAY(ty=_,scalar=_,array=expLst))
+      then
+        expLst;
+    case(DAE.TUPLE(PR=expLst))
       then
         expLst;
     else

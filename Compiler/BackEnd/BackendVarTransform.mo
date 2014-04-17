@@ -158,6 +158,29 @@ algorithm
   end matchcontinue;
 end removeReplacement;
 
+public function removeReplacements
+  input VariableReplacements iRepl;
+  input list<DAE.ComponentRef> inSrcs;
+  input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
+  output VariableReplacements outRepl;
+  partial function FuncTypeExp_ExpToBoolean
+    input DAE.Exp inExp;
+    output Boolean outBoolean;
+  end FuncTypeExp_ExpToBoolean;
+algorithm
+   outRepl := match(iRepl,inSrcs,inFuncTypeExpExpToBooleanOption)
+     local
+       DAE.ComponentRef cr;
+       list<DAE.ComponentRef> crlst;
+       VariableReplacements repl;
+     case (_,{},_) then iRepl;
+     case (_,cr::crlst,_)
+       equation
+         repl = removeReplacement(iRepl,cr,inFuncTypeExpExpToBooleanOption);
+       then
+         removeReplacements(repl,crlst,inFuncTypeExpExpToBooleanOption);
+   end match;
+end removeReplacements;
 
 public function addReplacements
   input VariableReplacements iRepl;
@@ -780,6 +803,40 @@ algorithm
         dst;
   end match;
 end getReplacement;
+
+public function hasReplacement "
+  Outputs true if the replacements contain a rule for the cref
+"
+  input VariableReplacements inVariableReplacements;
+  input DAE.ComponentRef inComponentRef;
+  output Boolean bOut;
+algorithm
+  bOut:=
+  matchcontinue (inVariableReplacements,inComponentRef)
+    local
+      DAE.ComponentRef src;
+      DAE.Exp dst;
+      HashTable2.HashTable ht;
+    case (REPLACEMENTS(hashTable=ht),src)
+      equation
+        _ = BaseHashTable.get(src,ht);
+      then
+        true;
+      else
+      equation
+        then false;
+  end matchcontinue;
+end hasReplacement;
+
+public function getReplacementVarArraySize
+  input VariableReplacements inVariableReplacements;
+  output Integer size;
+protected
+  HashTable2.HashTable hashTable;
+algorithm
+  REPLACEMENTS(hashTable=hashTable) := inVariableReplacements;
+  size := BaseHashTable.hashTableCurrentSize(hashTable);
+end getReplacementVarArraySize;
 
 public function getReplacementCRefFirst "
   Retrives a replacement variable given a set of replacement rules and a
@@ -2126,6 +2183,42 @@ algorithm
         (es_1,b1);
   end matchcontinue;
 end replaceStatementLst;
+
+public function replaceStatementLstRHS
+  input list<DAE.Statement> inStatementLst;
+  input VariableReplacements inVariableReplacements;
+  input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
+  input list<DAE.Statement> inAcc;
+  input Boolean inBAcc;
+  output list<DAE.Statement> outStatementLst;
+  output Boolean replacementPerformed;
+partial function FuncTypeExp_ExpToBoolean
+  input DAE.Exp inExp;
+  output Boolean outBoolean;
+  end FuncTypeExp_ExpToBoolean;
+algorithm
+  (outStatementLst,(_,_,replacementPerformed)) := DAEUtil.traverseDAEEquationsStmtsRhsOnly(inStatementLst,replaceExpWrapper,(inVariableReplacements,inFuncTypeExpExpToBooleanOption,false));
+end replaceStatementLstRHS;
+
+protected function replaceExpWrapper"to use replaceExp in DAEUtil.traverseDAEEquationsStmtsRhsOnly
+author: Waurich TUD 2014-4"
+  input tuple<DAE.Exp,tuple<VariableReplacements,Option<FuncTypeExp_ExpToBoolean>,Boolean>> tplIn;
+  output tuple<DAE.Exp,tuple<VariableReplacements,Option<FuncTypeExp_ExpToBoolean>,Boolean>> tplOut;
+partial function FuncTypeExp_ExpToBoolean
+  input DAE.Exp inExp;
+  output Boolean outBoolean;
+end FuncTypeExp_ExpToBoolean;
+protected
+  Boolean b1,b2;
+  DAE.Exp exp;
+  VariableReplacements repl;
+  Option<FuncTypeExp_ExpToBoolean> opt;
+algorithm
+  (exp,(repl,opt,b1)) := tplIn;
+  (exp,b2) := replaceExp(exp,repl,opt);
+  b2 := b1 or b2;
+  tplOut := (exp,(repl,opt,b2));
+end replaceExpWrapper;
 
 protected function moveNegateRhs
   input DAE.Exp inLhs;
