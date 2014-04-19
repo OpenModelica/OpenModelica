@@ -59,12 +59,15 @@ public function startExternalViewer
 algorithm
   status := matchcontinue(host, port)
     local
-      String omhome;
+      String omhome, command, commandWin, commandLinux;
 
     case (_, _)
       equation
         omhome = Settings.getInstallationDirectoryPath();
-        status = System.systemCall("start /b java -jar " +& omhome +& "/../3rdParty/graphstream/org.omc.graphstream.jar", "");
+        commandWin = "start /b java -jar " +& omhome +& "share/omc/java/org.omc.graphstream.jar";
+        commandLinux = "java -jar " +& omhome +& "share/omc/java/org.omc.graphstream.jar &";
+        command = Util.if_("Windows_NT" ==& System.os(), commandWin, commandLinux);
+        status = System.systemCall(command, "");
         true = status == 0;
       then
         status;
