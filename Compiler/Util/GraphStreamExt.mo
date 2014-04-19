@@ -36,12 +36,12 @@ encapsulated package GraphStreamExt
 
 
   RCS: $Id: GraphStreamExt.mo 2014-02-04 mwalther $
-  
+
   The implementation is external.
-  
+
 "
 
-public 
+public
 import Values;
 
 public function newStream
@@ -49,8 +49,8 @@ public function newStream
   input String host;
   input Integer port;
   input Boolean debug;
-  
-  external "C" GraphStreamExt_newStream(OpenModelica.threadData(), streamName, host, port, debug) annotation(Library = "omcruntime");  
+
+  external "C" GraphStreamExt_newStream(OpenModelica.threadData(), streamName, host, port, debug) annotation(Library = "omcruntime");
 end newStream;
 
 public function addNode
@@ -142,8 +142,8 @@ public function changeGraphAttribute
   external "C" GraphStreamExt_changeGraphAttribute(OpenModelica.threadData(), streamName, sourceId, timeId, attributeName, attributeValueOld, attributeValueNew) annotation(Library = "omcruntime");
 end changeGraphAttribute;
 
-public function cleanup  
-  external "C" GraphStreamExt_cleanup(OpenModelica.threadData()) annotation(Library = "omcruntime");  
+public function cleanup
+  external "C" GraphStreamExt_cleanup(OpenModelica.threadData()) annotation(Library = "omcruntime");
 end cleanup;
 
 end GraphStreamExt;

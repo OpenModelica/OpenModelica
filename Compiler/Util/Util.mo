@@ -4268,7 +4268,7 @@ algorithm
         true = stringLength(str) <= len;
       then
         str;
-    
+
     case (_, _)
       equation
         true = stringLength(str) > len;

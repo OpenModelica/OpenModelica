@@ -40,7 +40,7 @@ encapsulated package FMod
 "
 
 // public imports
-public 
+public
 import Absyn;
 import DAE;
 import SCode;
@@ -48,7 +48,7 @@ import Util;
 import FCore;
 
 // protected imports
-protected 
+protected
 import Error;
 import List;
 import FGraph;

@@ -98,9 +98,9 @@ algorithm
     case (_, _)
       equation
         p = doSCodeDep(inProgram, inPath);
-        
+
         FGraphStream.start();
-        
+
         lst = {};
 
         // enableTrace();
@@ -124,7 +124,7 @@ algorithm
         print("Total time:     " +& realString(List.fold(lst, realAdd, 0.0)) +& "\n");
 
         FGraphDump.dumpGraph(g, "F:\\dev\\" +& Absyn.pathString(inPath) +& ".graph.graphml");
-        
+
         FGraphStream.finish();
       then
         DAE.emptyDae;

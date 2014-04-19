@@ -39,7 +39,7 @@ encapsulated package FGraphDump
   This module builds a graph out of SCode
 "
 
-public 
+public
 import SCode;
 import DAE;
 import FCore;
@@ -286,9 +286,9 @@ algorithm
         b = FNode.isClassExtends(node);
         s = Util.if_(b, "rdrpCE:", "rdrpC:");
         s = s +& FNode.name(node);
-      then 
+      then
         (GraphML.COLOR_YELLOW, GraphML.HEXAGON(), s);
-    
+
     // redeclare class
     case (FCore.N(_, _, _, _, FCore.CL(e = e)), _)
       equation
@@ -303,8 +303,8 @@ algorithm
     case (FCore.N(_, _, _, _, FCore.CL(e = e)), _)
       equation
         true = SCode.isElementReplaceable(e);
-        s = "rpC:" +& FNode.name(node); 
-      then 
+        s = "rpC:" +& FNode.name(node);
+      then
         (GraphML.COLOR_RED, GraphML.RECTANGLE(), s);
 
     // redeclare replaceable component
@@ -313,9 +313,9 @@ algorithm
         true = SCode.isElementRedeclare(e);
         true = SCode.isElementReplaceable(e);
         s = "rdrpc:" +& FNode.name(node);
-      then 
+      then
         (GraphML.COLOR_YELLOW, GraphML.ELLIPSE(), s);
-    
+
     // redeclare component
     case (FCore.N(_, _, _, _, FCore.CO(e = e)), _)
       equation

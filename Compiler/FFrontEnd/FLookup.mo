@@ -65,7 +65,7 @@ type Extra = FCore.Extra;
 type Visited = FCore.Visited;
 type Import = FCore.Import;
 type Msg = Option<Absyn.Info>;
-  
+
 constant Option<Absyn.Info> dummyLookupOption = NONE(); // SOME(Absyn.dummyInfo);
 
 public uniontype Options
@@ -112,7 +112,7 @@ algorithm
         false = FNode.isRefImplicitScope(r);
       then
         r;*/
-    
+
     // implicit scope? move upwards
     case (_, _, _, _)
       equation

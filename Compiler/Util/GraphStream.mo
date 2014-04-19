@@ -33,21 +33,21 @@ encapsulated package GraphStream
 " file:        GraphStream
   package:     GraphStream
   description: GraphStream contains functions to send the graph dynamically to a GraphStream viewer.
-               For more info see: 
+               For more info see:
                  http://graphstream-project.org/
                  http://graphstream-project.org/doc/Tutorials/Storing-retrieving-and-displaying-data-in-graphs_1.0/
                  http://graphstream-project.org/doc/Tutorials/GraphStream-CSS-Reference_1.0/
 
   RCS: $Id: GraphStream 2014-02-04 mwalther $
-  
+
   Most of the implementation is external in GraphStreamExt.
-  
+
 "
 
-public 
+public
 import Values;
 
-protected 
+protected
 import GraphStreamExt;
 import System;
 import Settings;
@@ -68,11 +68,11 @@ algorithm
         true = status == 0;
       then
         status;
-    
-    else 
+
+    else
       equation
         print("GraphStream: failed to start the external viewer!\n");
-      then 
+      then
         fail();
   end matchcontinue;
 end startExternalViewer;
@@ -177,7 +177,7 @@ end changeGraphAttribute;
 
 public function cleanup
 algorithm
-  GraphStreamExt.cleanup();  
+  GraphStreamExt.cleanup();
 end cleanup;
 
 end GraphStream;

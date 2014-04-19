@@ -71,10 +71,10 @@ type Visited = FCore.Visited;
 public function start
 algorithm
   _ := matchcontinue()
-    
+
     case ()
       equation
-        true = Flags.isSet(Flags.GRAPH_INST_SHOW_GRAPH); 
+        true = Flags.isSet(Flags.GRAPH_INST_SHOW_GRAPH);
         // _ = GraphStream.startExternalViewer("localhost", 2001);
         GraphStream.newStream("default", "localhost", 2001, false);
         GraphStream.addGraphAttribute("default", "omc", -1, "stylesheet", Values.STRING("node{fill-mode:plain;fill-color:#567;size:6px;}"));
@@ -82,26 +82,26 @@ algorithm
         // GraphStream.addGraphAttribute("default", "omc", -1, "layout.stabilization-limit", Values.INTEGER(0));
       then
         ();
-    
-    else (); 
-  
+
+    else ();
+
   end matchcontinue;
 end start;
 
 public function finish
 algorithm
   _ := matchcontinue()
-    
+
     case ()
       equation
-        true = Flags.isSet(Flags.GRAPH_INST_SHOW_GRAPH); 
+        true = Flags.isSet(Flags.GRAPH_INST_SHOW_GRAPH);
         GraphStream.cleanup();
       then
         ();
-    
-    else (); 
-  
-  end matchcontinue;        
+
+    else ();
+
+  end matchcontinue;
 end finish;
 
 
@@ -111,7 +111,7 @@ algorithm
   _ := matchcontinue(n)
     local
       String color, nds, id;
-    
+
     case (_)
       equation
         true = Flags.isSet(Flags.GRAPH_INST_SHOW_GRAPH);
@@ -120,15 +120,15 @@ algorithm
         false = FNode.isIn(n, FNode.isRefSection);
         false = FNode.isIn(n, FNode.isRefMod);
         false = FNode.isIn(n, FNode.isRefDims);
-        id = intString(FNode.id(n)); 
+        id = intString(FNode.id(n));
         (color, _, nds) = FGraphDump.graphml(n, false);
         GraphStream.addNode("default", "omc", -1, id);
         GraphStream.addNodeAttribute("default", "omc", -1, id, "ui.label", Values.STRING(nds));
       then
         ();
-    
-    else (); 
-  
+
+    else ();
+
   end matchcontinue;
 end node;
 
@@ -137,16 +137,16 @@ public function edge
   input Node target;
 algorithm
   _ := matchcontinue(source, target)
-    
+
     case (_, _)
       equation
         true = Flags.isSet(Flags.GRAPH_INST_SHOW_GRAPH);
         false = FNode.isBuiltin(source);
         false = FNode.isBuiltin(target);
-        
+
         false = FNode.isIn(source, FNode.isRefBuiltin);
         false = FNode.isIn(target, FNode.isRefBuiltin);
-        
+
         false = FNode.isIn(source, FNode.isRefSection);
         false = FNode.isIn(source, FNode.isRefMod);
         false = FNode.isIn(source, FNode.isRefDims);
@@ -156,9 +156,9 @@ algorithm
         GraphStream.addEdge("default", "omc", -1, intString(FNode.id(source)), intString(FNode.id(target)), false);
       then
         ();
-    
-    else (); 
-  
+
+    else ();
+
   end matchcontinue;
 end edge;
 

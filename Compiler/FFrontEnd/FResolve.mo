@@ -115,8 +115,8 @@ algorithm
         // it does have a reference child already!
         _ = FNode.child(r, FNode.refNodeName);
       then
-        g; 
-        
+        g;
+
     // found extends
     case (r, g)
       equation
@@ -137,7 +137,7 @@ algorithm
         p = SCode.getBaseClassPath(e);
         _ = SCode.elementInfo(e);
         failure(_ = FLookup.name(r, p, FLookup.ignoreNothing, FLookup.dummyLookupOption));
-        print("FResolve.ext_one: baseclass " +& Absyn.pathString(p) +& 
+        print("FResolve.ext_one: baseclass " +& Absyn.pathString(p) +&
               " not found in: " +& FNode.toPathStr(FNode.fromRef(r)) +&"!\n");
       then
         g;
@@ -192,8 +192,8 @@ algorithm
         // it does have a reference child already!
         _ = FNode.child(r, FNode.refNodeName);
       then
-        g; 
-        
+        g;
+
     // found derived
     case (r, g)
       equation
@@ -212,8 +212,8 @@ algorithm
         FCore.DE(d) = FNode.data(FNode.fromRef(r));
         SCode.DERIVED(typeSpec = Absyn.TPATH(p, _)) = d;
         failure(_ = FLookup.name(r, p, FLookup.ignoreNothing, FLookup.dummyLookupOption));
-        print("FResolve.derived_one: baseclass " +& Absyn.pathString(p) +& 
-              " not found in: " +& FNode.toPathStr(FNode.fromRef(r)) +&"!\n"); 
+        print("FResolve.derived_one: baseclass " +& Absyn.pathString(p) +&
+              " not found in: " +& FNode.toPathStr(FNode.fromRef(r)) +&"!\n");
       then
         g;
 
@@ -259,7 +259,7 @@ algorithm
       Node n;
       Absyn.Info i;
       Graph g;
-    
+
     // found component that has a ref node
     case (r, g)
       equation
@@ -267,8 +267,8 @@ algorithm
         // it does have a reference child already!
         _ = FNode.child(r, FNode.refNodeName);
       then
-        g; 
-        
+        g;
+
     // found component
     case (r, g)
       equation
@@ -288,7 +288,7 @@ algorithm
         FCore.CO(e = e) = FNode.data(FNode.fromRef(r));
         Absyn.TPATH(p, _) = SCode.getComponentTypeSpec(e);
         failure(_ = FLookup.name(r, p, FLookup.ignoreNothing, FLookup.dummyLookupOption));
-        print("FResolve.ty_one: type path " +& Absyn.pathString(p) +& 
+        print("FResolve.ty_one: type path " +& Absyn.pathString(p) +&
               " not found in: " +& FNode.toPathStr(FNode.fromRef(r)) +&"!\n");
       then
         g;
@@ -335,7 +335,7 @@ algorithm
       Node n;
       Absyn.Info i;
       Graph g;
-    
+
     // found constraint class that has a ref node
     case (r, g)
       equation
@@ -343,8 +343,8 @@ algorithm
         // it does have a reference child already!
         _ = FNode.child(r, FNode.refNodeName);
       then
-        g; 
-        
+        g;
+
     // found constraint class
     case (r, g)
       equation
@@ -361,7 +361,7 @@ algorithm
         true = FNode.isRefConstrainClass(r);
         FCore.CC(SCode.CONSTRAINCLASS(constrainingClass = p)) = FNode.data(FNode.fromRef(r));
         failure(_ = FLookup.name(r, p, FLookup.ignoreNothing, FLookup.dummyLookupOption));
-        print("FResolve.cc_one: type path " +& Absyn.pathString(p) +& 
+        print("FResolve.cc_one: type path " +& Absyn.pathString(p) +&
               " not found in: " +& FNode.toPathStr(FNode.fromRef(r)) +&"!\n");
       then
         g;
@@ -416,8 +416,8 @@ algorithm
         // it does have a reference child already!
         _ = FNode.child(r, FNode.refNodeName);
       then
-        g; 
-        
+        g;
+
     // found class extends
     case (r, g)
       equation
@@ -440,7 +440,7 @@ algorithm
         p::_ = FNode.parents(FNode.fromRef(r));
         // search ONLY in extends!
         failure(_ = FLookup.ext(p, id, FLookup.ignoreParentsAndImports, FLookup.dummyLookupOption));
-        print("FResolve.clsext_one: class extends " +& id +& 
+        print("FResolve.clsext_one: class extends " +& id +&
               " not found in extends of: " +& FNode.toPathStr(FNode.fromRef(r)) +&"!\n");
       then
         g;
@@ -495,8 +495,8 @@ algorithm
         // it does have a reference child already!
         _ = FNode.child(r, FNode.refNodeName);
       then
-        g; 
-        
+        g;
+
     // found cref
     case (r, g)
       equation
@@ -513,13 +513,13 @@ algorithm
         true = FNode.isRefCref(r);
         FCore.CR(r = cr) = FNode.data(FNode.fromRef(r));
         failure(_ = FLookup.cr(r, cr, FLookup.ignoreNothing, FLookup.dummyLookupOption));
-        print("FResolve.cr_one: component reference " +& Absyn.crefString(cr) +& 
+        print("FResolve.cr_one: component reference " +& Absyn.crefString(cr) +&
               " not found in: " +& FNode.toPathStr(FNode.fromRef(r)) +&"!\n");
       then
         g;
-   
+
     else ig;
-  
+
   end matchcontinue;
 end cr_one;
 
