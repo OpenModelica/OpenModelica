@@ -49,7 +49,7 @@ mkbuilddirs:
 
 release: omc-diff omc
 
-bootstrap-dependencies: omc-diff interactive docs fmi fmil opencl_rt lis
+bootstrap-dependencies: omc-diff interactive docs fmi fmil opencl_rt lis graphstream
 	# NOTE: OpenModelicaBootstrappingHeader.h has to be regenerated without any other process writing to so/etc or you get bus errors
 	$(MAKE) -C Compiler OpenModelicaBootstrappingHeader.h
 	$(MAKE) -C Compiler/runtime install
@@ -397,10 +397,10 @@ msgpack-clean:
 	test ! -f 3rdParty/msgpack-0.5.8/Makefile || $(MAKE) -C 3rdParty/msgpack-0.5.8 distclean || true
 	rm -f 3rdParty/msgpack-0.5.8/Makefile
 
-graphstream: build/share/omc/java/org.omc.graphstream.jar
+graphstream: mkbuilddirs build/share/omc/java/org.omc.graphstream.jar
 	if test -f 3rdParty/graphstream/Makefile; then $(MAKE) -C 3rdParty/graphstream/; fi
 
-build/share/omc/java/org.omc.graphstream.jar: 
+build/share/omc/java/org.omc.graphstream.jar:
 	if test -f 3rdParty/graphstream/org.omc.graphstream.jar; then cp -p 3rdParty/graphstream/org.omc.graphstream.jar build/share/omc/java/.; fi
 	
 graphstream-clean:
