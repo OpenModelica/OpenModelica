@@ -93,8 +93,8 @@ FMI_rml.o : FMI_rml.c FMIImpl.c
 FMI_omc.o : FMIImpl.c ../OpenModelicaBootstrappingHeader.h
 ModelicaExternalC_rml.o : $(SimRuntimeCDir)/../meta/meta_modelica.h
 getMemorySize_rml.o: getMemorySize_rml.c getMemorySize.c
-GraphStreamExt_rml.o : GraphStreamExt_impl.cpp ../Values.h
-GraphStreamExt_omc.o : GraphStreamExt_impl.cpp $(RML_COMPAT) ../Values.h
+GraphStreamExt_rml.o : ../Values.h GraphStreamExt_impl.cpp
+GraphStreamExt_omc.o : ../OpenModelicaBootstrappingHeader.h GraphStreamExt_impl.cpp $(RML_COMPAT)
 
 clean:
 	$(RM) -rf *.a *.o omc_communication.cc omc_communication.h omc_communication-*

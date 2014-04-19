@@ -39,7 +39,8 @@
 extern "C" {
 #include "meta_modelica.h"
 #include "rml_compatibility.h"
-#include "Values.h"
+#define ADD_METARECORD_DEFINITIONS static
+#include "OpenModelicaBootstrappingHeader.h"
 }
 
 #define UNBOX_OFFSET 1
