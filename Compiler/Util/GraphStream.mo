@@ -50,6 +50,7 @@ import Values;
 protected
 import GraphStreamExt;
 import System;
+import Util;
 import Settings;
 
 public function startExternalViewer
