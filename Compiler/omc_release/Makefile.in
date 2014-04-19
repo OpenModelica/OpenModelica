@@ -16,6 +16,7 @@ CFLAGS	= @CFLAGS@
 RMLHOME	= @rmlhome@
 RMLINC  = -I$(RMLHOME)/include/plain
 FMILIB = -lfmilib -lOpenModelicaFMIRuntimeC
+GRAPHSTREAMLIB = -L../../3rdParty/graphstream/gs-netstream/c++/ -lnetstream
 
 EXEEXT  = @EXEEXT@
 
@@ -41,7 +42,7 @@ ifdef USE_GRAPH
  endif
 endif
 
-LDFLAGS = @LDFLAGS@ -lm -L$(RMLHOME)/lib/plain -lrml $(LIBSOCKET) $(CORBALIBS) $(LIBLPSOLVE55) $(METISLIB) $(PATOHLIB) -L../../build/lib/omc @RPATH@ @OMC_LIBS@ -lgc -lexpat @RT_LDFLAGS@
+LDFLAGS = @LDFLAGS@ -lm -L$(RMLHOME)/lib/plain -lrml $(GRAPHSTREAMLIB) $(LIBSOCKET) $(CORBALIBS) $(LIBLPSOLVE55) $(METISLIB) $(PATOHLIB) -L../../build/lib/omc @RPATH@ @OMC_LIBS@ -lgc -lexpat @RT_LDFLAGS@
 
 PROG = omc
 RMLC	= @rmlc_bin@

@@ -303,7 +303,7 @@ gc-clean:
 	rm -f 3rdParty/gc-7.2/Makefile
 bootstrap-clean:
 	$(MAKE) -C Compiler/boot clean -f $(defaultMakefileTarget)
-clean: qtclean fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean Cdaskr-clean bootstrap-clean msgpack-clean
+clean: qtclean fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean Cdaskr-clean bootstrap-clean msgpack-clean graphstream-clean
 	(cd SimulationRuntime/c && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd SimulationRuntime/interactive && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean)
@@ -396,3 +396,12 @@ endif
 msgpack-clean:
 	test ! -f 3rdParty/msgpack-0.5.8/Makefile || $(MAKE) -C 3rdParty/msgpack-0.5.8 distclean || true
 	rm -f 3rdParty/msgpack-0.5.8/Makefile
+
+graphstream: build/share/omc/java/org.omc.graphstream.jar
+	if test -f 3rdParty/graphstream/Makefile; then $(MAKE) -C 3rdParty/graphstream/; fi
+
+build/share/omc/java/org.omc.graphstream.jar: 
+	if test -f 3rdParty/graphstream/org.omc.graphstream.jar; then cp -p 3rdParty/graphstream/org.omc.graphstream.jar build/share/omc/java/.; fi
+	
+graphstream-clean:
+	if test -f 3rdParty/graphstream/Makefile; then $(MAKE) -C 3rdParty/graphstream/ clean; fi

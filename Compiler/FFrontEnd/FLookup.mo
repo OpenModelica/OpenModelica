@@ -65,6 +65,8 @@ type Extra = FCore.Extra;
 type Visited = FCore.Visited;
 type Import = FCore.Import;
 type Msg = Option<Absyn.Info>;
+  
+constant Option<Absyn.Info> dummyLookupOption = NONE(); // SOME(Absyn.dummyInfo);
 
 public uniontype Options
   record OPTIONS
@@ -101,12 +103,22 @@ algorithm
       then
         r;
 
+    /*/ self?
+    case (_, _, _, _)
+      equation
+        true = FNode.isRefImplicitScope(inRef);
+        true = stringEq(FNode.name(FNode.fromRef(inRef)), inName);
+        r = FNode.child(inRef, inName);
+        false = FNode.isRefImplicitScope(r);
+      then
+        r;*/
+    
     // implicit scope? move upwards
     case (_, _, _, _)
       equation
         true = FNode.isRefImplicitScope(inRef);
         p = FNode.parents(FNode.fromRef(inRef));
-        // get the original node, not the clone!
+        // get the original parent
         r = FNode.original(p);
         r = id(r, inName, inOptions, inMsg);
       then
@@ -153,6 +165,7 @@ algorithm
         false = FNode.isEncapsulated(FNode.fromRef(inRef));
         true = FNode.hasParents(FNode.fromRef(inRef));
         p = FNode.parents(FNode.fromRef(inRef));
+        // get the original parent
         r = FNode.original(p);
         r = search({r}, inName, inOptions, inMsg);
       then
@@ -294,6 +307,7 @@ algorithm
       then
         r;
 
+    // get all extends of the node and search in them
     case (_, _, _, _)
       equation
         refs = FNode.extendsRefs(inRef);

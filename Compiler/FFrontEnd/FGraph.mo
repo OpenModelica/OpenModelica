@@ -48,6 +48,7 @@ import FVisit;
 protected
 import System;
 import Debug;
+import FGraphStream;
 
 public
 type Name = FCore.Name;
@@ -168,11 +169,14 @@ algorithm
       equation
         (g, id) = nextId(g);
         n = FNode.new(inName, id, inParents, inData);
+        FGraphStream.node(n);
         // uncomment this if unique node id's are not unique!
-        // i = System.tmpTickIndex(21);
-        // b = (id == i);
-        // Debug.bcall1(b, print, "Next: " +& intString(id) +& " <-> " +& intString(i) +& " node: " +& FNode.toStr(n) +& "\n");
-        // true = b;
+        /*
+        i = System.tmpTickIndex(21);
+        b = (id == i);
+        Debug.bcall1(not b, print, "Next: " +& intString(id) +& " <-> " +& intString(i) +& " node: " +& FNode.toStr(n) +& "\n");
+        true = b;
+        */
      then
        (g, n);
 

@@ -13,6 +13,7 @@ RMLINCLUDE = -I@rmlinc@
 endif
 
 FMIINCLUDE = ../../3rdParty/FMIL/install/include
+GRAPHSTREAMINCLUDE = ../../3rdParty/graphstream/gs-netstream/c++/src/
 CFLAGS = @CFLAGS@ $(USE_CORBA)
 OMPCC = @OMPCC@
 
@@ -36,7 +37,7 @@ CXX	= @CXX@
 IDL	= @IDLCMD@
 IDLPYTHON = @IDLPYTHONCMD@
 CXXFLAGS = $(CFLAGS)
-CPPFLAGS = @CPPFLAGS@ $(RMLINCLUDE) -I$(top_builddir)/SimulationRuntime/c -I$(top_builddir)/SimulationRuntime/c/simulation/results -I$(top_builddir)/SimulationRuntime/c/simulation/libf2c -I$(top_builddir)/SimulationRuntime/c/util -I$(top_builddir)/SimulationRuntime/c/meta -I$(top_builddir)/SimulationRuntime/c/meta/gc -I$(srcdir) -I. $(CORBAINCL) -I$(FMIINCLUDE) -I$(top_builddir)/3rdParty/gc-7.2/include
+CPPFLAGS = @CPPFLAGS@ $(RMLINCLUDE) -I$(top_builddir)/SimulationRuntime/c -I$(top_builddir)/SimulationRuntime/c/simulation/results -I$(top_builddir)/SimulationRuntime/c/simulation/libf2c -I$(top_builddir)/SimulationRuntime/c/util -I$(top_builddir)/SimulationRuntime/c/meta -I$(top_builddir)/SimulationRuntime/c/meta/gc -I$(srcdir) -I. $(CORBAINCL) -I$(FMIINCLUDE) -I$(top_builddir)/3rdParty/gc-7.2/include -I$(GRAPHSTREAMINCLUDE)
 
 include Makefile.common
 

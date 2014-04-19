@@ -41,28 +41,123 @@ encapsulated package FExpand
 // public imports
 public
 import Absyn;
+import FCore;
 import FNode;
-import FLookup;
 
-type Node = FNode.Node;
-type Ref = FNode.Ref;
-type Refs = FNode.Refs;
-type Parents = FNode.Parents;
-type Name = FNode.Name;
+protected
+import System;
+import FLookup;
+import FResolve;
+import FGraph;
+import List;
+
+public
+type Name = FCore.Name;
+type Id = FCore.Id;
+type Seq = FCore.Seq;
+type Next = FCore.Next;
+type Node = FCore.Node;
+type Data = FCore.Data;
+type Kind = FCore.Kind;
+type Ref = FCore.Ref;
+type Refs = FCore.Refs;
+type Children = FCore.Children;
+type Parents = FCore.Parents;
+type Scope = FCore.Scope;
+type ImportTable = FCore.ImportTable;
+type Graph = FCore.Graph;
+type Extra = FCore.Extra;
+type Visited = FCore.Visited;
+type Import = FCore.Import;
 type Msg = Option<Absyn.Info>;
 
-public function ext
+public function path
 "@author: adrpo
- for all extends.$ref add an extends.$ty in the node."
-  input Ref inRef;
+ expand a path in the graph."
+  input Absyn.Path inPath;
+  input Graph inGraph;
+  output Graph outGraph;
+  output Ref outRef;
 algorithm
-  _ := match(inRef)
-    case _
+  (outGraph, outRef)  := match(inPath, inGraph)
+    local
+      Ref r, t;
+      Name n;
+      Absyn.Path p;
+      Graph g;
+      Scope s;
+    
+    case (p, g)
       equation
-
+        t = FGraph.top(g);
+        r = t;
       then
-        ();
+        (g, r);
+  
   end match;
-end ext;
+end path;
+
+public function all
+"@author: adrpo
+ expand all references in the graph."
+  input Graph inGraph;
+  output Graph outGraph;
+algorithm
+  outGraph  := match(inGraph)
+    local
+      list<Real> lst;
+      Graph g;
+    
+    case g
+      equation
+        lst = {};
+        
+        System.startTimer();
+        // resolve extends
+        g = FResolve.ext(FGraph.top(g), g);
+        System.stopTimer();
+        lst = List.consr(lst, System.getTimerIntervalTime());
+        print("Extends:        " +& realString(List.first(lst)) +& "\n");
+        
+        System.startTimer();
+        // resolve derived
+        g = FResolve.derived(FGraph.top(g), g);
+        System.stopTimer();
+        lst = List.consr(lst, System.getTimerIntervalTime());
+        print("Derived:        " +& realString(List.first(lst)) +& "\n");
+        
+        System.startTimer();
+        // resolve type paths
+        g = FResolve.ty(FGraph.top(g), g);
+        System.stopTimer();
+        lst = List.consr(lst, System.getTimerIntervalTime());
+        print("ComponentTypes: " +& realString(List.first(lst)) +& "\n");
+        
+        System.startTimer();
+        // resolve type paths for constrain classes
+        g = FResolve.cc(FGraph.top(g), g);
+        System.stopTimer();
+        lst = List.consr(lst, System.getTimerIntervalTime());
+        print("ConstrainedBy:  " +& realString(List.first(lst)) +& "\n");
+        
+        System.startTimer();
+        // resolve class extends nodes
+        g = FResolve.clsext(FGraph.top(g), g);
+        System.stopTimer();
+        lst = List.consr(lst, System.getTimerIntervalTime());
+        print("ClassExtends:   " +& realString(List.first(lst)) +& "\n");
+        
+        System.startTimer();
+        // resolve all component references
+        g = FResolve.cr(FGraph.top(g), g);
+        System.stopTimer();
+        lst = List.consr(lst, System.getTimerIntervalTime());
+        print("Comp Refs:      " +& realString(List.first(lst)) +& "\n");
+        print("FExpand.all:    " +& realString(List.fold(lst, realAdd, 0.0)) +& "\n");
+      then
+        g;
+  
+  end match;
+end all;
 
 end FExpand;

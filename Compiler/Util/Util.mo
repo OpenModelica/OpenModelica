@@ -4254,4 +4254,28 @@ algorithm
   b := i == 1;
 end isCIdentifier;
 
+public function stringTrunc
+"@author:adrpo
+ if the string is bigger than len keep only until len
+ if not, return the same string"
+  input String str;
+  input Integer len;
+  output String truncatedStr;
+algorithm
+  truncatedStr := matchcontinue(str, len)
+    case (_, _)
+      equation
+        true = stringLength(str) <= len;
+      then
+        str;
+    
+    case (_, _)
+      equation
+        true = stringLength(str) > len;
+        truncatedStr = System.substring(str, 0, len);
+      then
+        truncatedStr;
+  end matchcontinue;
+end stringTrunc;
+
 end Util;

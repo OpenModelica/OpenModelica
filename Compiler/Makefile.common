@@ -130,8 +130,10 @@ FExpand.mo \
 FGraph.mo \
 FGraphBuild.mo \
 FGraphDump.mo \
+FGraphStream.mo \
 FInst.mo \
 FLookup.mo \
+FMod.mo \
 FNode.mo \
 FResolve.mo \
 FVisit.mo \
@@ -225,6 +227,7 @@ Error.mo \
 Flags.mo \
 FMI.mo \
 Graph.mo \
+GraphStream.mo \
 HashSet.mo \
 HashSetString.mo \
 HashTable.mo \
@@ -279,7 +282,7 @@ System.mo \
 TaskGraphExt.mo \
 BackendDAEEXT.mo \
 FMIExt.mo \
-
+GraphStreamExt.mo \
 
 # all modules
 SRCMO   = $(FRONTEND) $(FFRONTEND) $(BACKEND) $(GLOBAL) $(TEMPLATE) $(UTIL) $(SCRIPT) $(MAIN)

@@ -52,8 +52,10 @@ import FNode;
 import FGraph;
 import FLookup;
 import FResolve;
+import FExpand;
 import FGraphBuild;
 import FGraphDump;
+import FGraphStream;
 import System;
 import InstUtil;
 import Flags;
@@ -96,7 +98,9 @@ algorithm
     case (_, _)
       equation
         p = doSCodeDep(inProgram, inPath);
-
+        
+        FGraphStream.start();
+        
         lst = {};
 
         // enableTrace();
@@ -111,51 +115,17 @@ algorithm
         print("SCode->FGraph:  " +& realString(List.first(lst)) +& "\n");
 
         System.startTimer();
-        // resolve extends
-        g = FResolve.ext(FGraph.top(g), g);
+        // resolve all
+        g = FExpand.all(g);
         System.stopTimer();
         lst = List.consr(lst, System.getTimerIntervalTime());
-        print("Extends:        " +& realString(List.first(lst)) +& "\n");
-
-        System.startTimer();
-        // resolve derived
-        g = FResolve.derived(FGraph.top(g), g);
-        System.stopTimer();
-        lst = List.consr(lst, System.getTimerIntervalTime());
-        print("Derived:        " +& realString(List.first(lst)) +& "\n");
-
-        System.startTimer();
-        // resolve type paths
-        g = FResolve.ty(FGraph.top(g), g);
-        System.stopTimer();
-        lst = List.consr(lst, System.getTimerIntervalTime());
-        print("ComponentTypes: " +& realString(List.first(lst)) +& "\n");
-
-        System.startTimer();
-        // resolve type paths for constrain classes
-        g = FResolve.cc(FGraph.top(g), g);
-        System.stopTimer();
-        lst = List.consr(lst, System.getTimerIntervalTime());
-        print("ConstrainedBy:  " +& realString(List.first(lst)) +& "\n");
-
-        System.startTimer();
-        // resolve class extends nodes
-        g = FResolve.clsext(FGraph.top(g), g);
-        System.stopTimer();
-        lst = List.consr(lst, System.getTimerIntervalTime());
-        print("ClassExtends:   " +& realString(List.first(lst)) +& "\n");
-
-        System.startTimer();
-        // resolve all component references
-        g = FResolve.cr(FGraph.top(g), g);
-        System.stopTimer();
-        lst = List.consr(lst, System.getTimerIntervalTime());
-        print("Comp Refs:      " +& realString(List.first(lst)) +& "\n");
 
         print("FGraph nodes:   " +& intString(FGraph.lastId(g)) +& "\n");
         print("Total time:     " +& realString(List.fold(lst, realAdd, 0.0)) +& "\n");
 
         FGraphDump.dumpGraph(g, "F:\\dev\\" +& Absyn.pathString(inPath) +& ".graph.graphml");
+        
+        FGraphStream.finish();
       then
         DAE.emptyDae;
 
