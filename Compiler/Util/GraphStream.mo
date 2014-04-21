@@ -65,8 +65,8 @@ algorithm
     case (_, _)
       equation
         omhome = Settings.getInstallationDirectoryPath();
-        commandWin = "start /b java -jar " +& omhome +& "share/omc/java/org.omc.graphstream.jar";
-        commandLinux = "java -jar " +& omhome +& "share/omc/java/org.omc.graphstream.jar &";
+        commandWin = "start /b java -jar " +& omhome +& "/share/omc/java/org.omc.graphstream.jar";
+        commandLinux = "java -jar " +& omhome +& "/share/omc/java/org.omc.graphstream.jar &";
         command = Util.if_("Windows_NT" ==& System.os(), commandWin, commandLinux);
         status = System.systemCall(command, "");
         true = status == 0;

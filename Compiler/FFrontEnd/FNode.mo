@@ -351,7 +351,6 @@ algorithm
   r := updateRef(ref, FCore.N(n, id, p, c, FCore.FS(it)));
 end addIteratorsToRef;
 
-
 public function name
   input Node n;
   output String name;
@@ -842,6 +841,34 @@ algorithm
 
   end match;
 end isIn;
+
+public function nonImplicitRefFromScope
+"@author: adrpo
+ returns the first NON implicit 
+ reference from the given scope!"
+  input Scope inScope;
+  output Ref outRef;
+algorithm
+  outRef := matchcontinue(inScope)
+    local
+      Ref r;
+      Scope rest;
+    
+    case ({}) then fail();
+    
+    case (r::rest)
+      equation
+        false = isRefImplicitScope(r);
+      then
+        r;
+    
+    case (_::rest)
+      equation
+        r = nonImplicitRefFromScope(rest);
+      then
+        r;
+  end matchcontinue;
+end nonImplicitRefFromScope;
 
 public function originalScope
 "@author:

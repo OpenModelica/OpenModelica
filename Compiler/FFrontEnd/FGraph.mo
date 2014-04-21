@@ -103,8 +103,9 @@ algorithm
   n := FNode.new(".", FCore.firstId, {}, FCore.TOP());
   nr := FNode.toRef(n);
   v := FVisit.new();
-  next := FCore.firstId;
+  next := FCore.next(FCore.firstId);
   outGraph := FCore.G(nr,v,FCore.EXTRA(path),next);
+  FGraphStream.node(n);
 end new;
 
 public function visit
@@ -125,6 +126,8 @@ algorithm
 end visit;
 
 public function nextId
+"@author:adrpo
+ return the current FCore.G.next and then increments it"
   input Graph inGraph;
   output Graph outGraph;
   output Id id;

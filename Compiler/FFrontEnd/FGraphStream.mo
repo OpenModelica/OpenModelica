@@ -75,7 +75,7 @@ algorithm
     case ()
       equation
         true = Flags.isSet(Flags.GRAPH_INST_SHOW_GRAPH);
-        // _ = GraphStream.startExternalViewer("localhost", 2001);
+        _ = GraphStream.startExternalViewer("localhost", 2001);
         GraphStream.newStream("default", "localhost", 2001, false);
         GraphStream.addGraphAttribute("default", "omc", -1, "stylesheet", Values.STRING("node{fill-mode:plain;fill-color:#567;size:6px;}"));
         // GraphStream.addGraphAttribute("default", "omc", -1, "ui.antialias", Values.BOOL(true));
@@ -115,11 +115,17 @@ algorithm
     case (_)
       equation
         true = Flags.isSet(Flags.GRAPH_INST_SHOW_GRAPH);
+        // filter basic types, builtins and things in sections, modifers or dimensions
+        false = FNode.isBasicType(n);
+        false = FNode.isIn(n, FNode.isRefBasicType);
+        
         false = FNode.isBuiltin(n);
         false = FNode.isIn(n, FNode.isRefBuiltin);
+        
         false = FNode.isIn(n, FNode.isRefSection);
         false = FNode.isIn(n, FNode.isRefMod);
         false = FNode.isIn(n, FNode.isRefDims);
+        
         id = intString(FNode.id(n));
         (color, _, nds) = FGraphDump.graphml(n, false);
         GraphStream.addNode("default", "omc", -1, id);
@@ -141,9 +147,15 @@ algorithm
     case (_, _)
       equation
         true = Flags.isSet(Flags.GRAPH_INST_SHOW_GRAPH);
+        
+        // filter basic types, builtins and things in sections, modifers or dimensions
+        false = FNode.isBasicType(source);
+        false = FNode.isBasicType(target);
+        false = FNode.isIn(source, FNode.isRefBasicType);
+        false = FNode.isIn(target, FNode.isRefBasicType);
+
         false = FNode.isBuiltin(source);
         false = FNode.isBuiltin(target);
-
         false = FNode.isIn(source, FNode.isRefBuiltin);
         false = FNode.isIn(target, FNode.isRefBuiltin);
 
