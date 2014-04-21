@@ -118,14 +118,14 @@ algorithm
         // filter basic types, builtins and things in sections, modifers or dimensions
         false = FNode.isBasicType(n);
         false = FNode.isIn(n, FNode.isRefBasicType);
-        
+
         false = FNode.isBuiltin(n);
         false = FNode.isIn(n, FNode.isRefBuiltin);
-        
+
         false = FNode.isIn(n, FNode.isRefSection);
         false = FNode.isIn(n, FNode.isRefMod);
         false = FNode.isIn(n, FNode.isRefDims);
-        
+
         id = intString(FNode.id(n));
         (color, _, nds) = FGraphDump.graphml(n, false);
         GraphStream.addNode("default", "omc", -1, id);
@@ -147,7 +147,7 @@ algorithm
     case (_, _)
       equation
         true = Flags.isSet(Flags.GRAPH_INST_SHOW_GRAPH);
-        
+
         // filter basic types, builtins and things in sections, modifers or dimensions
         false = FNode.isBasicType(source);
         false = FNode.isBasicType(target);

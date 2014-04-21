@@ -844,7 +844,7 @@ end isIn;
 
 public function nonImplicitRefFromScope
 "@author: adrpo
- returns the first NON implicit 
+ returns the first NON implicit
  reference from the given scope!"
   input Scope inScope;
   output Ref outRef;
@@ -853,15 +853,15 @@ algorithm
     local
       Ref r;
       Scope rest;
-    
+
     case ({}) then fail();
-    
+
     case (r::rest)
       equation
         false = isRefImplicitScope(r);
       then
         r;
-    
+
     case (_::rest)
       equation
         r = nonImplicitRefFromScope(rest);

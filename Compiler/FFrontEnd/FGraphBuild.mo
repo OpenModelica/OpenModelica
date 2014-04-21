@@ -1283,19 +1283,19 @@ algorithm
         // ignore basic types and builtins
         true = not FNode.isRefBasicType(inTargetRef) and
                not FNode.isRefBuiltin(inTargetRef);
-        
-        // if target is a reference found on the way 
+
+        // if target is a reference found on the way
         // to the top from parent ref do not clone!
         true = listMember(inTargetRef, FNode.originalScope(inParentRef));
-        
+
         /*
-        // if the first non implicit scope of target 
+        // if the first non implicit scope of target
         // and parent are the same do not clone
         true = referenceEq(
                   FNode.nonImplicitRefFromScope(FNode.originalScope(inTargetRef)),
                   FNode.nonImplicitRefFromScope(FNode.originalScope(inParentRef)));
         */
-        
+
         (g, n) = FGraph.node(g, inName, {inParentRef}, FCore.REF(inTargetRef));
         // make a ref
         rn = FNode.toRef(n);
