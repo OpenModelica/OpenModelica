@@ -818,6 +818,8 @@ public constant Message OPTIMICA_ERROR = MESSAGE(7006, TRANSLATION(), ERROR(),
   Util.notrans("Optimica: %s."));
 public constant Message FILE_NOT_FOUND_ERROR = MESSAGE(7007, SCRIPTING(), ERROR(),
   Util.gettext("File not Found: %s."));
+public constant Message UNKNOWN_FMU_VERSION = MESSAGE(7008, SCRIPTING(), ERROR(),
+  Util.gettext("Unknown FMU version %s. Only version 1.0 & 2.0 are supported."));
 
 protected import ErrorExt;
 

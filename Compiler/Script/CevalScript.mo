@@ -1204,11 +1204,18 @@ algorithm
 
     case (cache,env,"translateModelFMU", {Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(str1),Values.STRING(filenameprefix)},st,_)
       equation
+        true = checkFMUVersion(str1);
         filenameprefix = Util.stringReplaceChar(filenameprefix,".","_");
         simSettings = convertSimulationOptionsToSimCode(defaultSimulationOptions);
         (cache,ret_val,st_1) = translateModelFMU(cache, env, className, st, str1, filenameprefix, true, SOME(simSettings));
       then
         (cache,ret_val,st_1);
+        
+    case (cache,env,"translateModelFMU", {Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(str1),Values.STRING(filenameprefix)},st,_)
+      equation
+        Error.addMessage(Error.UNKNOWN_FMU_VERSION, {str1});
+      then
+        (cache,Values.STRING(""),st);
 
     case (cache,env,"translateModelXML",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)},st,_)
       equation
@@ -7625,5 +7632,18 @@ algorithm
     else acc;
   end match;
 end findFunctionsToCompile;
+
+protected function checkFMUVersion "Checks if the FMU version is supported."
+  input String inFMUVersion;
+  output Boolean success;
+algorithm
+  success := match (inFMUVersion)
+    case ("1") then true;
+    case ("1.0") then true;
+    case ("2") then true;
+    case ("2.0") then true;
+    else false;
+  end match;
+end checkFMUVersion;
 
 end CevalScript;
