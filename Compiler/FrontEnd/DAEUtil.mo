@@ -2986,7 +2986,7 @@ end compareCrefList;
 public function evaluateAnnotation "lochel: This is not used.
   evaluates the annotation Evaluate"
   input Env.Cache inCache;
-  input list<Env.Frame> env;
+  input Env.Env env;
   input DAE.DAElist inDAElist;
   output DAE.DAElist outDAElist;
 algorithm
@@ -3197,7 +3197,7 @@ end evaluateParameter;
 
 protected function evaluateAnnotation2_loop
   input Env.Cache cache;
-  input list<Env.Frame> env;
+  input Env.Env env;
   input DAE.DAElist inDAElist;
   input HashTable2.HashTable inHt;
   input Integer sizeBefore;
@@ -3215,7 +3215,7 @@ end evaluateAnnotation2_loop;
 protected function evaluateAnnotation2_loop1
   input Boolean finish;
   input Env.Cache inCache;
-  input list<Env.Frame> env;
+  input Env.Env env;
   input DAE.DAElist inDAElist;
   input HashTable2.HashTable inHt;
   input Integer sizeBefore;
@@ -3240,7 +3240,7 @@ end evaluateAnnotation2_loop1;
 protected function evaluateAnnotation2
 "evaluates the parameters with bindings parameters with annotation Evaluate"
   input Env.Cache inCache;
-  input list<Env.Frame> env;
+  input Env.Env env;
   input DAE.DAElist inDAElist;
   input HashTable2.HashTable inHt;
   output list<DAE.Element> outDAElist;
@@ -3264,15 +3264,15 @@ end evaluateAnnotation2;
 protected function evaluateAnnotation3
 "evaluates the parameters with bindings parameters with annotation Evaluate"
   input DAE.Element iel;
-  input tuple<HashTable2.HashTable,Env.Cache,list<Env.Frame>> inHt;
+  input tuple<HashTable2.HashTable,Env.Cache,Env.Env> inHt;
   output DAE.Element oel;
-  output tuple<HashTable2.HashTable,Env.Cache,list<Env.Frame>> outHt;
+  output tuple<HashTable2.HashTable,Env.Cache,Env.Env> outHt;
 algorithm
   (oel,outHt) := matchcontinue (iel,inHt)
     local
-      tuple<HashTable2.HashTable,Env.Cache,list<Env.Frame>> httpl;
+      tuple<HashTable2.HashTable,Env.Cache,Env.Env> httpl;
       Env.Cache cache;
-      list<Env.Frame> env;
+      Env.Env env;
       list<DAE.Element> rest,sublist,sublist1,newlst;
       HashTable2.HashTable ht,ht1,ht2;
       DAE.ComponentRef cr;
@@ -3317,7 +3317,7 @@ end evaluateAnnotation3;
 protected function evaluateAnnotation4
 "evaluates the parameters with bindings parameters with annotation Evaluate"
   input Env.Cache inCache;
-  input list<Env.Frame> env;
+  input Env.Env env;
   input DAE.ComponentRef inCr;
   input DAE.Exp inExp;
   input Integer inInteger1;
@@ -5877,7 +5877,7 @@ end getDAEDeclsFromValueblocks;
 
 public function transformationsBeforeBackend
   input Env.Cache cache;
-  input list<Env.Frame> env;
+  input Env.Env env;
   input DAE.DAElist inDAElist;
   output DAE.DAElist outDAElist;
 protected

@@ -2256,7 +2256,7 @@ public function addClassdefsToEnv
 algorithm
   (outEnv,outIH) := matchcontinue (inEnv,inIH,inPrefix,inSCodeElementLst,inBoolean,redeclareMod)
     local
-      list<Env.Frame> env,env_1,env_2;
+      Env.Env env,env_1,env_2;
       list<SCode.Element> els;
       Boolean impl;
       Prefix.Prefix pre;
@@ -2292,7 +2292,7 @@ protected function addClassdefsToEnv2
 algorithm
   (outEnv,outIH) := match (inEnv,inIH,inPrefix,inSCodeElementLst,inBoolean,redeclareMod)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       SCode.Element elt;
       list<SCode.Element> xs;
       Boolean impl;
@@ -2321,7 +2321,7 @@ protected function addClassdefToEnv2
 algorithm
   (outEnv,outIH) := matchcontinue (inEnv,inIH,inPrefix,inSCodeElement,inBoolean,redeclareMod)
     local
-      list<Env.Frame> env,env_1;
+      Env.Env env,env_1;
       SCode.Element cl2, enumclass, imp;
       SCode.Element sel1,elt;
       list<SCode.Enum> enumLst;
@@ -2523,7 +2523,7 @@ public function addComponentsToEnv
 algorithm
   (outCache,outEnv,outIH) := match (inCache,inEnv1,inIH,inMod2,inPrefix3,inState5,inTplSCodeElementModLst6,inTplSCodeElementModLst7,inSCodeEquationLst8,inInstDims9,inBoolean10)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       tuple<SCode.Element, DAE.Mod> el;
       list<tuple<SCode.Element, DAE.Mod>> xs;
       InstanceHierarchy ih;
@@ -2573,7 +2573,7 @@ protected function addComponentToEnv
 algorithm
   (outCache,outEnv,outIH) := matchcontinue (inCache,inEnv1,inIH,inMod2,inPrefix3,inState5,inTplSCodeElementMod6,inTplSCodeElementModLst7,inSCodeEquationLst8,inInstDims9,inBoolean10)
     local
-      list<Env.Frame> env,env_1;
+      Env.Env env,env_1;
       DAE.Mod mod,cmod;
       Prefix.Prefix pre;
       ClassInf.State cistate;
@@ -2709,7 +2709,7 @@ algorithm
   (outCache,outEnv,outIH) := matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inState,inElement,inInstDims,inBoolean)
     local
       DAE.Mod compmod,cmod_1,mods,cmod;
-      list<Env.Frame> env_1,env_2,env;
+      Env.Env env_1,env_2,env;
       Prefix.Prefix pre;
       ClassInf.State ci_state;
       SCode.Element comp;
@@ -3751,7 +3751,7 @@ algorithm
   (outCache,outDimensionLst,classToInstantiate,outMods) := matchcontinue (inCache,inEnv,inIH,inPrefix,inClass,inInstDims,inBoolean)
     local
       SCode.Element cl;
-      list<Env.Frame> cenv,env;
+      Env.Env cenv,env;
       Absyn.ComponentRef owncref;
       list<Absyn.Subscript> ad_1;
       DAE.Mod mod_1,type_mods;
@@ -4411,7 +4411,7 @@ algorithm
       DAE.Mod cmod,cmod_1,m_2,mod_2;
       DAE.EqMod eq;
       DAE.Dimensions dims;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.ComponentRef cref;
       Env.Cache cache;
       list<DAE.Subscript> subs;
@@ -4466,7 +4466,7 @@ algorithm
       DAE.Dimensions lst_1;
       DAE.Exp e;
       DAE.Type t;
-      list<Env.Frame> env;
+      Env.Env env;
       Env.Cache cache;
 
     case (cache,DAE.TYPED(modifierAsExp = _,properties = DAE.PROP(type_ = t)),_)
@@ -4501,7 +4501,7 @@ algorithm
   match (inCache,inEnv,inComponentRef,path,inAbsynArrayDimOption,inTypesEqModOption,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info,inInstDims)
     local
       DAE.Dimensions res;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.ComponentRef owncref;
       list<Absyn.Subscript> ad;
       Option<DAE.EqMod> eq;
@@ -4554,7 +4554,7 @@ algorithm
     local
       DAE.Dimensions dim,dim1,dim2;
       DAE.Dimensions dim3;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.ComponentRef cref;
       list<Absyn.Subscript> ad;
       Boolean impl;
@@ -5751,7 +5751,7 @@ algorithm
       DAE.Properties p;
       list<DAE.Exp> exps;
       list<DAE.Properties> props;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Exp e;
       list<Absyn.Exp> rest;
       Env.Cache cache;
@@ -5790,7 +5790,7 @@ algorithm
       DAE.Exp dimp,arraycrefe,exp,e;
       DAE.Type dimty;
       DAE.Properties arraycrprop,prop;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Exp call,arraycr,dim;
       list<Absyn.Exp> args;
       list<Absyn.NamedArg> nargs;
@@ -5844,7 +5844,7 @@ algorithm
       list<DAE.Exp> exps;
       list<DAE.Properties> props;
       list<DAE.ExtArg> extargs;
-      list<Env.Frame> env;
+      Env.Env env;
       Option<String> id,lang;
       Option<Absyn.ComponentRef> retcr;
       list<Absyn.Exp> absexps;
@@ -5881,7 +5881,7 @@ algorithm
     local
       list<DAE.ExtArg> extargs;
       DAE.ExtArg extarg;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp e;
       list<DAE.Exp> exps;
       DAE.Properties p;
@@ -5914,7 +5914,7 @@ algorithm
       DAE.Attributes attr, fattr;
       DAE.Type ty,varty;
       DAE.Binding bnd;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.ComponentRef cref, fcr;
       DAE.Type crty;
       DAE.Const cnst;
@@ -6002,7 +6002,7 @@ algorithm
       DAE.Exp exp;
       DAE.Properties prop;
       DAE.ExtArg extarg;
-      list<Env.Frame> env;
+      Env.Env env;
       Option<String> n,lang;
       Absyn.ComponentRef cref;
       list<Absyn.Exp> args;

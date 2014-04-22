@@ -108,7 +108,7 @@ algorithm
       SCode.Encapsulated encf;
       Boolean impl,notConst,eq_name;
       SCode.Restriction r;
-      list<Env.Frame> cenv,cenv1,cenv3,env2,env,env_1;
+      Env.Env cenv,cenv1,cenv3,env2,env,env_1;
       DAE.Mod outermod,mods,mods_1,emod_1,mod;
       list<SCode.Element> importelts,els,els_1,rest,cdefelts,classextendselts, elsExtendsScope;
       list<SCode.Equation> eq1,ieq1,eq1_1,ieq1_1,eq2,ieq2,eq3,ieq3,eq,ieq,initeq2;
@@ -634,7 +634,7 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inClass,inBoolean,inInfo,overflow,numIter)
     local
       list<SCode.Element> elt;
-      list<Env.Frame> env,cenv;
+      Env.Env env,cenv;
       DAE.Mod mod;
       list<SCode.Equation> eq,ieq;
       list<SCode.AlgorithmSection> alg,ialg;

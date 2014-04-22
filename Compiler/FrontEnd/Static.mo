@@ -159,7 +159,7 @@ algorithm
       DAE.Properties p;
       list<DAE.Exp> exps;
       list<DAE.Properties> props;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Exp e;
       list<Absyn.Exp> rest;
       Env.Cache cache;
@@ -221,7 +221,7 @@ algorithm
       list<DAE.Properties> p;
       list<list<DAE.Exp>> exps;
       list<list<DAE.Properties>> props;
-      list<Env.Frame> env;
+      Env.Env env;
       list<Absyn.Exp> e;
       list<list<Absyn.Exp>> rest;
       Env.Cache cache;
@@ -541,7 +541,7 @@ algorithm
       Option<GlobalScript.SymbolTable> st,st_1,st_2;
       DAE.Exp exp,e1_1,e2_1,exp_1,e_1,mexp,mexp_1,arrexp;
       DAE.Properties prop,prop1,prop2;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.ComponentRef cr,fn;
       DAE.Type t,t1,t2,arrtp,t_1,t_2,tp,ty;
       DAE.Const c1,c2,c,const;
@@ -1291,7 +1291,7 @@ algorithm
       DAE.Exp exp_1;
       DAE.Type expty;
       DAE.Const iterconst,expconst,const;
-      list<Env.Frame> env_foldExp,env_1,env;
+      Env.Env env_foldExp,env_1,env;
       Option<GlobalScript.SymbolTable> st;
       DAE.Properties prop;
       Absyn.Path fn_1;
@@ -1789,7 +1789,7 @@ protected function elabCodeType "This function will construct the correct type f
   output DAE.Type outType;
 algorithm
   outType := match (inEnv,inCode)
-    local list<Env.Frame> env;
+    local Env.Env env;
 
     case (_,Absyn.C_TYPENAME(path = _))
       then DAE.T_CODE(DAE.C_TYPENAME(),DAE.emptyTypeSource);
@@ -1839,7 +1839,7 @@ algorithm
       String s,ps;
       DAE.Exp dexp,e1_1,e2_1,e_1,e3_1,start_1,stop_1,start_2,stop_2,step_1,step_2,mexp,mexp_1;
       DAE.Properties prop,prop1,prop2,prop3;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.ComponentRef cr,fn;
       DAE.Type t,start_t,stop_t,step_t,t_1,t_2;
       DAE.Const c1,c,c_start,c_stop,const,c_step;
@@ -2280,7 +2280,7 @@ algorithm
       DAE.Properties p;
       list<DAE.Exp> exps_1;
       list<DAE.Properties> props;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Exp e;
       list<Absyn.Exp> exps;
       Boolean impl;
@@ -2662,7 +2662,7 @@ algorithm
     local
       DAE.Exp e_1;
       DAE.Properties prop;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Exp e;
       Boolean impl;
       DAE.Type t1,t2;
@@ -2733,7 +2733,7 @@ algorithm
       DAE.Dimension t1_dim1_1,t1_dim2_1,dim1,dim2,dim2_1;
       Boolean impl,havereal,a,doVect;
       DAE.Type at;
-      list<Env.Frame> env;
+      Env.Env env;
       Option<GlobalScript.SymbolTable> st;
       list<DAE.Exp> els_1,els;
       Env.Cache cache;
@@ -2980,7 +2980,7 @@ algorithm
       Integer maxn,dim;
       DAE.Dimension dim1,dim2,dim1_1,dim2_1,dim1_2;
       Boolean impl,havereal;
-      list<Env.Frame> env;
+      Env.Env env;
       Option<GlobalScript.SymbolTable> st;
       list<DAE.Exp> els;
       list<list<DAE.Exp>> elss;
@@ -3100,7 +3100,7 @@ algorithm
     local
       DAE.Exp exp_1;
       DAE.Type tp1;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Exp exp;
       Boolean impl;
       Env.Cache cache;
@@ -3143,7 +3143,7 @@ algorithm
       DAE.Const c1,c;
       Boolean impl,b1,b2;
       DAE.Type tp,tp1;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Exp p,expr;
       list<Absyn.Exp> expl;
       Env.Cache cache;
@@ -3241,7 +3241,7 @@ algorithm
       DAE.Type arrtp;
       DAE.Properties prop;
       Boolean impl;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Exp arraycr,dim;
       Env.Cache cache;
       Prefix.Prefix pre;
@@ -3436,7 +3436,7 @@ algorithm
       DAE.Exp arraycrefe,exp;
       DAE.Type arrtp;
       Boolean impl;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Exp arraycr;
       Env.Cache cache;
       list<Absyn.Exp> expl;
@@ -3483,7 +3483,7 @@ algorithm
       list<DAE.Properties> dimprops;
       DAE.Type sty;
       list<Values.Value> dimvals;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Exp s;
       list<Absyn.Exp> dims;
       Boolean impl;
@@ -3590,7 +3590,7 @@ algorithm
       list<DAE.Exp> arraylist;
       DAE.Type at;
       Boolean a;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp s,exp;
       DAE.Type sty,ty,sty2;
       Integer v;
@@ -3688,7 +3688,7 @@ algorithm
       DAE.Type eltp,newtp;
       DAE.Properties prop;
       DAE.Const c;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Exp matexp;
       DAE.Exp exp_1,exp;
       Env.Cache cache;
@@ -3755,7 +3755,7 @@ algorithm
       Integer dim1,dim2,dimMax;
       DAE.Properties prop;
       DAE.Const c;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Exp matexp;
       DAE.Exp exp_1,exp;
       Env.Cache cache;
@@ -3904,7 +3904,7 @@ algorithm
       DAE.Exp exp_1,exp_2;
       DAE.Type t,tp;
       DAE.Const c;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Exp arrexp;
       Boolean impl,b;
       Env.Cache cache;
@@ -3948,7 +3948,7 @@ algorithm
       DAE.Dimension dim;
       DAE.Type t,tp;
       DAE.Const c;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Exp arrexp;
       Boolean impl;
       DAE.Type ty,ty2;
@@ -4026,7 +4026,7 @@ algorithm
     local
       DAE.Exp exp_1,exp_2, call;
       DAE.Const c;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Exp exp;
       DAE.Dimension dim;
       Boolean impl,sc;
@@ -4359,7 +4359,7 @@ algorithm
       DAE.Type newtp_1;
       Boolean scalar,impl;
       DAE.Exp exp;
-      list<Env.Frame> env;
+      Env.Env env;
       list<Absyn.Exp> expl;
       Env.Cache cache;
       Prefix.Prefix pre;
@@ -4462,7 +4462,7 @@ algorithm
     local
       DAE.Exp e;
       DAE.Properties p;
-      list<Env.Frame> env;
+      Env.Env env;
       list<Absyn.Exp> args;
       Boolean impl;
       Env.Cache cache;
@@ -4573,7 +4573,7 @@ algorithm
     local
       DAE.Exp e;
       DAE.Properties p;
-      list<Env.Frame> env;
+      Env.Env env;
       list<Absyn.Exp> args;
       Boolean impl;
       Env.Cache cache;
@@ -4641,7 +4641,7 @@ algorithm
       DAE.Type tp;
       DAE.Type ty,ty1,ty2,elt_ty;
       DAE.Const c,c1,c2;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Exp arrexp,s1,s2;
       Boolean impl;
       Env.Cache cache;
@@ -4787,7 +4787,7 @@ algorithm
   match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
       DAE.Exp s1_1;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Exp s1;
       Boolean impl;
       Env.Cache cache;
@@ -4825,7 +4825,7 @@ algorithm
   (outCache,outExp,outProperties) := match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
       DAE.Exp s1_1;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Exp s1;
       Boolean impl;
       Env.Cache cache;
@@ -4861,7 +4861,7 @@ algorithm
       DAE.Type arrType,ty;
       DAE.Const c;
       DAE.Exp res,s1_1;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Exp v1,s1;
       Env.Cache cache;
       Prefix.Prefix pre;
@@ -4961,7 +4961,7 @@ algorithm
     local
       list<Absyn.ComponentRef> cref_list1,cref_list2,cref_list;
       GlobalScript.SymbolTable symbol_table;
-      list<Env.Frame> gen_env,env;
+      Env.Env gen_env,env;
       DAE.Exp s1_1,s2_1,call;
       DAE.Properties st;
       Absyn.Exp s1,s2;
@@ -5012,7 +5012,7 @@ algorithm
     local
       list<Absyn.ComponentRef> cref_list;
       GlobalScript.SymbolTable symbol_table;
-      list<Env.Frame> gen_env,env;
+      Env.Env gen_env,env;
       DAE.Exp s1_1;
       DAE.Properties st;
       Absyn.Exp s1;
@@ -5107,7 +5107,7 @@ algorithm
     local
       DAE.Exp exp_1;
       DAE.Properties prop;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Exp exp;
       Boolean impl;
       Env.Cache cache;
@@ -5140,7 +5140,7 @@ algorithm
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
       DAE.Exp exp_1,exp_2;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Exp exp;
       Boolean impl;
       DAE.Const c;
@@ -5187,7 +5187,7 @@ algorithm
     local
       DAE.Exp e,ee1;
       DAE.Properties prop;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Exp exp;
       Boolean impl;
       DAE.Const c;
@@ -5273,7 +5273,7 @@ algorithm
       DAE.ComponentRef cr_1;
       DAE.Const c;
       DAE.Type tp1;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.ComponentRef cr;
       Boolean impl;
       Env.Cache cache;
@@ -5317,7 +5317,7 @@ algorithm
       DAE.ComponentRef cr_1;
       DAE.Const c;
       DAE.Type tp1,tp2;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Exp exp;
       Boolean impl;
       Env.Cache cache;
@@ -5389,7 +5389,7 @@ algorithm
       list<DAE.Exp> matrices_1;
       list<DAE.Properties> props;
       DAE.Type result_type,result_type_1,ty;
-      list<Env.Frame> env;
+      Env.Env env;
       list<Absyn.Exp> matrices;
       list<DAE.Type> tys,tys2;
       Boolean impl;
@@ -5512,7 +5512,7 @@ algorithm
       DAE.Exp dim_exp, call;
       Integer size;
       DAE.Dimension dim_size;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Exp dim;
       Boolean impl;
       Env.Cache cache;
@@ -5564,7 +5564,7 @@ algorithm
   (outCache,outExp,outProperties):=
   match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       Env.Cache cache;
       Boolean impl;
       Absyn.Exp exp0;
@@ -5597,7 +5597,7 @@ protected function elabBuiltinRooted
 algorithm
   (outCache,outExp,outProperties) := match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       Env.Cache cache;
       Boolean impl;
       Absyn.Exp exp0;
@@ -5722,7 +5722,7 @@ algorithm
       DAE.Type tp;
       DAE.Const c;
       list<DAE.Const> constlist;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Exp e;
       Boolean impl;
       list<DAE.Exp> args_1;
@@ -5834,7 +5834,7 @@ algorithm
       DAE.Type tp,tp_1,arr_tp;
       DAE.Const c;
       DAE.Type etp;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Exp e;
       Boolean impl,scalar;
       list<DAE.Exp> expl,expl_1,expl_2;
@@ -6413,7 +6413,7 @@ protected function elabCallBuiltin "This function elaborates on builtin operator
   output DAE.Properties outProperties;
   partial function handlerFunc
     input Env.Cache inCache;
-    input list<Env.Frame> inEnvFrameLst;
+    input Env.Env inEnvFrameLst;
     input list<Absyn.Exp> inAbsynExpLst;
     input list<Absyn.NamedArg> inNamedArgs;
     input Boolean inBoolean;
@@ -6430,7 +6430,7 @@ algorithm
       handlerFunc handler;
       DAE.Exp exp;
       DAE.Properties prop;
-      list<Env.Frame> env;
+      Env.Env env;
       String name;
       list<Absyn.Exp> args;
       list<Absyn.NamedArg> nargs;
@@ -6508,7 +6508,7 @@ algorithm
       DAE.Exp e;
       DAE.Properties prop;
       Option<GlobalScript.SymbolTable> st;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.ComponentRef fn;
       list<Absyn.Exp> args;
       list<Absyn.NamedArg> nargs;
@@ -6717,7 +6717,7 @@ algorithm
       DAE.Exp exp,exp_1,exp_2,dexp;
       DAE.Type t,tp;
       DAE.Const c1;
-      list<Env.Frame> env;
+      Env.Env env;
       Option<GlobalScript.SymbolTable> st;
       Boolean impl;
       String id,id2;
@@ -6758,7 +6758,7 @@ algorithm
   match (inCache,inEnv,inComponentRef,inBoolean,inPrefix,info)
     local
       list<DAE.Subscript> subs_1;
-      list<Env.Frame> env;
+      Env.Env env;
       String id;
       list<Absyn.Subscript> subs;
       Boolean impl;
@@ -7651,7 +7651,7 @@ algorithm
   isValid := matchcontinue(inFn,isBuiltin,inFuncParallelism,inEnv,inInfo)
   local
     String scopeName, errorString;
-    list<Env.Frame> restFrames;
+    Env.Env restFrames;
 
 
     // non-parallel builtin function call is OK everywhere.
@@ -8629,7 +8629,7 @@ algorithm
       list<DAE.Exp> args_1;
       list<DAE.Const> clist;
       DAE.Dimensions dims;
-      list<Env.Frame> env;
+      Env.Env env;
       list<Absyn.Exp> args;
       list<Absyn.NamedArg> nargs;
       DAE.Type t,restype;
@@ -9447,7 +9447,7 @@ algorithm
       list<Slot> slots_1,newslots,slots;
       list<DAE.Const> clist1,clist2,clist;
       list<DAE.Exp> explst,newexp;
-      list<Env.Frame> env;
+      Env.Env env;
       list<Absyn.Exp> exp;
       list<Absyn.NamedArg> narg;
       Env.Cache cache;
@@ -9602,7 +9602,7 @@ algorithm
       Option<DAE.Exp> e;
       DAE.Dimensions ds;
       SCode.Element class_;
-      list<Env.Frame> env;
+      Env.Env env;
       Boolean impl;
       Absyn.Exp dexp;
       DAE.Exp exp,exp_1;
@@ -9754,7 +9754,7 @@ algorithm
       DAE.Const c1,c2;
       DAE.VarParallelism pr;
       list<DAE.Const> clist;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Exp e;
       list<Absyn.Exp> es;
       DAE.FuncArg farg;
@@ -9818,7 +9818,7 @@ algorithm
       DAE.VarParallelism pr;
       DAE.Properties prop;
       list<DAE.Const> clist;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Exp e;
       list<Absyn.Exp> es;
       list<DAE.FuncArg> vs;
@@ -9927,7 +9927,7 @@ algorithm
       DAE.VarParallelism pr;
       list<Slot> slots_1,newslots,slots;
       list<DAE.Const> clist;
-      list<Env.Frame> env;
+      Env.Env env;
       String id, pre_str;
       Absyn.Exp e;
       Absyn.NamedArg na;
@@ -9991,7 +9991,7 @@ algorithm
       DAE.VarParallelism pr;
       list<Slot> slots_1,newslots,slots;
       list<DAE.Const> clist;
-      list<Env.Frame> env;
+      Env.Env env;
       String id, pre_str, str;
       Absyn.Exp e;
       list<Absyn.NamedArg> nas,narg;
@@ -10246,7 +10246,7 @@ algorithm
       DAE.Type t,origt;
       DAE.Type tt;
       DAE.Exp exp,exp1,exp2,crefExp,expASUB;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.ComponentRef c;
       Env.Cache cache;
       Boolean impl,doVect,isBuiltinFn,isBuiltinFnOrInlineBuiltin,hasZeroSizeDim;
@@ -10582,7 +10582,7 @@ algorithm
       String id2;
       DAE.Type ty,ty2,tty2;
       DAE.ComponentRef cr,cref_;
-      list<Env.Frame> env;
+      Env.Env env;
       Boolean impl;
       Env.Cache cache;
       Prefix.Prefix pre;
@@ -10805,7 +10805,7 @@ algorithm
       DAE.Exp e,e_1,exp,index;
       Option<DAE.Exp> sexp;
       Values.Value v;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Const const;
       SCode.Variability var;
       DAE.Binding binding_1,bind;
@@ -11820,7 +11820,7 @@ algorithm
       DAE.Type t;
       DAE.Dimensions sl;
       DAE.Const const,const1,const2;
-      list<Env.Frame> crefEnv;
+      Env.Env crefEnv;
       String id;
       list<Absyn.Subscript> ss;
       Boolean impl, hasZeroSizeDim;
@@ -11928,7 +11928,7 @@ algorithm
       DAE.Subscript sub_1;
       DAE.Const const1,const2,const;
       list<DAE.Subscript> subs_1;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Subscript sub;
       list<Absyn.Subscript> subs;
       Boolean impl;
@@ -12149,7 +12149,7 @@ algorithm
       DAE.Type ty;
       DAE.Const const;
       DAE.Subscript sub_2;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Exp sub;
       Env.Cache cache;
       DAE.Properties prop;
@@ -12347,7 +12347,7 @@ algorithm
     local
       DAE.Const c,c1,c2,c3;
       DAE.Exp exp,e1,e2,e3,e2_1,e3_1;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Type t2,t3,t2_1,t3_1,t1,ty;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -12443,7 +12443,7 @@ algorithm
   (outCache,outExp,outType) :=
   matchcontinue (inCache,inEnv1,inExp2,inExp3,inExp4,inConst5,trueType,falseType,defaultType,inBoolean6,inST,inInfo)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp e1,e2,e3,res;
       Boolean impl,cond;
       Option<GlobalScript.SymbolTable> st;
@@ -12517,7 +12517,7 @@ algorithm
   match (inCache,inEnv,inComponentRef,inPrefixCref,inBoolean)
     local
       list<DAE.Subscript> ss_1,ss;
-      list<Env.Frame> env;
+      Env.Env env;
       String n;
       Boolean impl;
       Env.Cache cache;
@@ -12551,7 +12551,7 @@ algorithm
       DAE.Type t;
       list<Integer> sl;
       list<DAE.Subscript> ss_1,ss;
-      list<Env.Frame> env, componentEnv;
+      Env.Env env, componentEnv;
       String n;
       Boolean impl;
       DAE.ComponentRef c_1,c,cr;

@@ -176,7 +176,7 @@ algorithm
       String str,lhvStr,rhvStr,s;
       Boolean impl,b,b_1,lhvBool,rhvBool,resBool, bstart, bstop;
       Absyn.Exp exp_1,exp;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Msg msg;
       Absyn.Element elt_1,elt;
       Absyn.CodeNode c;
@@ -1030,7 +1030,7 @@ protected function cevalBuiltin
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
   partial function HandlerFunc
     input Env.Cache inCache;
-    input list<Env.Frame> inEnvFrameLst;
+    input Env.Env inEnvFrameLst;
     input list<DAE.Exp> inExpExpLst;
     input Boolean inBoolean;
     input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
@@ -1046,7 +1046,7 @@ algorithm
     local
       Values.Value v,newval;
       Option<GlobalScript.SymbolTable> st;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp,dim,e;
       Boolean impl;
       Absyn.Msg msg;
@@ -1193,7 +1193,7 @@ public function cevalKnownExternalFuncs "Evaluates external functions that are k
   output Values.Value res;
 protected
   SCode.Element cdef;
-  list<Env.Frame> env_1;
+  Env.Env env_1;
   String fid,id;
   Option<String> oid;
   Option<SCode.ExternalDecl> extdecl;
@@ -1422,7 +1422,7 @@ algorithm
     local
       Values.Value v;
       list<Values.Value> vl;
-      list<Env.Frame> env;
+      Env.Env env;
       list<DAE.Exp> expl;
       list<list<DAE.Exp>> expll;
       Boolean impl;
@@ -1461,7 +1461,7 @@ algorithm
       list<Integer> sizelst,adims;
       Integer dim,dim_1,dimv,len,i;
       Option<GlobalScript.SymbolTable> st_1,st;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.ComponentRef cr;
       Boolean impl,bl;
       Absyn.Msg msg;
@@ -1680,7 +1680,7 @@ algorithm
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv,rv_1;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -1720,7 +1720,7 @@ algorithm
     local
       Real rv;
       Boolean b1,b2,b3,impl;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
@@ -1764,7 +1764,7 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv,rv_1;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -1798,7 +1798,7 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Values.Value v;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -1831,7 +1831,7 @@ algorithm
       Integer dim_int;
       list<Values.Value> mat_lst;
       Values.Value v;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp dim;
       list<DAE.Exp> matrices;
       Boolean impl;
@@ -1868,7 +1868,7 @@ algorithm
       Integer dim_int,dim_int_1;
       list<DAE.Exp> expl;
       list<Values.Value> retExp;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp dim;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -1905,7 +1905,7 @@ algorithm
     local
       Values.Value arr_val,res;
       Integer dim_val;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp arr,dim;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -1966,7 +1966,7 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp str_exp, start_exp, stop_exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -2004,7 +2004,7 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp, len_exp, justified_exp, sig_dig;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -2102,7 +2102,7 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -2133,7 +2133,7 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -2165,7 +2165,7 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -2199,7 +2199,7 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -2231,7 +2231,7 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -2263,7 +2263,7 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -2296,7 +2296,7 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -2328,7 +2328,7 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -2370,7 +2370,7 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -2408,7 +2408,7 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -2442,7 +2442,7 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp1,exp2;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -2477,7 +2477,7 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -2509,7 +2509,7 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp1,exp2;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -2541,7 +2541,7 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp1;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -2572,7 +2572,7 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp1;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -2602,7 +2602,7 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp1;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -2757,7 +2757,7 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp1;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -2876,7 +2876,7 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv,rv_1;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -2909,7 +2909,7 @@ algorithm
     local
       Real rv,rv_1,rvt,realRet;
       Integer ri,ri_1;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -2953,7 +2953,7 @@ algorithm
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv,rv_1;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -2994,7 +2994,7 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv,rv_1;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -3026,7 +3026,7 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv,rv_1;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -3058,7 +3058,7 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv,rv_1;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -3090,7 +3090,7 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv,rv_1;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -3122,7 +3122,7 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv,rv_1;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -3153,7 +3153,7 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv,rv_1;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -3185,7 +3185,7 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv,sv,cv,rv_1;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -3219,7 +3219,7 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv,rv_1;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -3251,7 +3251,7 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv,rv_1;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -3283,7 +3283,7 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv,rv_1;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -3315,7 +3315,7 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv,rv_1;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -3346,7 +3346,7 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv,rv_1,rv_2;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp1,exp2;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -3380,7 +3380,7 @@ algorithm
     local
       Real rv1,rv2,rv_1,rv_2;
       Integer ri,ri_1,ri1,ri2;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp1,exp2;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -3475,7 +3475,7 @@ algorithm
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Real rv1,rv2,rva,rvb,rvc,rvd;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp1,exp2;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -3580,7 +3580,7 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Values.Value v,v1,v2,v_1;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp arr,s1,s2;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -3689,7 +3689,7 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Values.Value v,v1,v2,v_1;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp arr,s1,s2;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -3804,7 +3804,7 @@ algorithm
     local
       DAE.Exp differentiated_exp,differentiated_exp_1,exp1;
       String ret_val;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.ComponentRef cr;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -3848,7 +3848,7 @@ algorithm
     local
       DAE.Exp exp1_1,exp1;
       String ret_val;
-      list<Env.Frame> env;
+      Env.Env env;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
@@ -3888,7 +3888,7 @@ algorithm
     local
       Real rv1,rv2,rvd,dr;
       Integer ri,ri1,ri2,ri_1,di;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp1,exp2;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -3970,7 +3970,7 @@ algorithm
     local
       Real rv;
       Integer ri;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -4004,7 +4004,7 @@ algorithm
       Real rv;
       Integer iv;
       Boolean bv;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -4053,7 +4053,7 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -4084,7 +4084,7 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       Integer ri;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -4117,7 +4117,7 @@ algorithm
     local
       list<Values.Value> rv2,retExp;
       Integer dimension,correctDimension;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -4165,7 +4165,7 @@ algorithm
       Real rv2;
       Integer correctDim,correctPlace,newRow,matrixDimension,row,iv2;
       list<Values.Value> zeroList,listWithElement,retExp,appendedList,listIN,list_;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp s1,s2;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -4273,7 +4273,7 @@ algorithm
     local
       list<Values.Value> xv,yv;
       Values.Value res;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp xe,ye;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -4316,7 +4316,7 @@ algorithm
       list<Values.Value> vlst,vlst2,vlst_1;
       Integer i1,i2;
       list<Integer> il;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -4733,7 +4733,7 @@ algorithm
   (outCache,outValuesValueLst,outInteractiveInteractiveSymbolTableOption) :=
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Msg msg;
       Values.Value v;
       DAE.Exp exp;
@@ -4892,7 +4892,7 @@ algorithm
       DAE.ComponentRef cr,e1;
       list<DAE.Subscript> subsc;
       Values.Value res,v,e_val;
-      list<Env.Frame> env;
+      Env.Env env;
       Boolean impl;
       Absyn.Msg msg;
       String rfn,iter,expstr,s1,s2,str;
@@ -5046,7 +5046,7 @@ algorithm
     local
       Integer n,n_1;
       Values.Value subval,res,v;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp exp;
       list<DAE.Subscript> subs;
       list<Values.Value> lst,sliceLst,subvals;
@@ -5126,7 +5126,7 @@ algorithm
   match (inCache,inEnv,inExpSubscriptLst,inValue,inBoolean,inMsg,numIter)
     local
       Values.Value subval,res;
-      list<Env.Frame> env;
+      Env.Env env;
       list<Values.Value> lst,subvals;
       Boolean impl;
       Absyn.Msg msg;
@@ -5163,7 +5163,7 @@ algorithm
     local
       DAE.Subscript sub_1,sub;
       list<DAE.Subscript> subs_1,subs;
-      list<Env.Frame> env;
+      Env.Env env;
       Integer dim;
       list<Integer> dims;
       Boolean impl;
@@ -5206,7 +5206,7 @@ algorithm
   (outCache,outSubscript) :=
   matchcontinue (inCache,inEnv,inSubscript,inInteger,inBoolean,inMsg,numIter)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       Values.Value v1;
       DAE.Exp e1_1,e1;
       Integer dim;
@@ -5678,7 +5678,7 @@ algorithm
   matchcontinue (inCache,inEnv,inExp,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
     local
       Absyn.Exp e,e1_1,e2_1,e1,e2,e_1,cond_1,then_1,else_1,cond,then_,else_,exp,e3_1,e3;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Operator op;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
@@ -5803,7 +5803,7 @@ algorithm
   (outCache,outAbsynExpLst) :=
   match (inCache,inEnv,inAbsynExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Msg msg;
       Absyn.Exp e_1,e;
       list<Absyn.Exp> res,es;
@@ -5836,7 +5836,7 @@ algorithm
   (outCache,outAbsynExpLstLst) :=
   match (inCache,inEnv,inAbsynExpLstLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Msg msg;
       list<Absyn.Exp> e_1,e;
       list<list<Absyn.Exp>> res,es;
@@ -5871,7 +5871,7 @@ algorithm
   match (inCache,inEnv,inElement,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       list<Absyn.ComponentItem> citems_1,citems;
-      list<Env.Frame> env;
+      Env.Env env;
       Boolean f,isReadOnly,impl;
       Option<Absyn.RedeclareKeywords> r;
       Absyn.InnerOuter io;
@@ -5911,7 +5911,7 @@ algorithm
       list<Absyn.ComponentItem> res,xs;
       Option<Absyn.Modification> modopt_1,modopt;
       list<Absyn.Subscript> ad_1,ad;
-      list<Env.Frame> env;
+      Env.Env env;
       String id;
       Option<Absyn.Exp> cond;
       Option<Absyn.Comment> cmt;
@@ -5951,7 +5951,7 @@ algorithm
   match (inCache,inEnv,inAbsynModificationOption,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
     local
       Absyn.Modification res,mod;
-      list<Env.Frame> env;
+      Env.Env env;
       Boolean st;
       Option<GlobalScript.SymbolTable> impl;
       Absyn.Msg msg;
@@ -5982,7 +5982,7 @@ algorithm
     local
       Absyn.Exp e_1,e;
       list<Absyn.ElementArg> eltargs_1,eltargs;
-      list<Env.Frame> env;
+      Env.Env env;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
@@ -6016,7 +6016,7 @@ algorithm
   (outCache,outAbsynElementArgLst):=
   matchcontinue (inCache,inEnv,inAbsynElementArgLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Msg msg;
       Absyn.Modification mod_1,mod;
       list<Absyn.ElementArg> res,args;
@@ -6059,7 +6059,7 @@ algorithm
   (outCache,outArrayDim) :=
   match (inCache,inEnv,inArrayDim,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Msg msg;
       list<Absyn.Subscript> res,xs;
       Boolean impl;
@@ -6099,7 +6099,7 @@ algorithm
       Absyn.Msg msg;
       Absyn.Exp e1_1,e2_1,e1,e2;
       list<tuple<Absyn.Exp, Absyn.Exp>> res,xs;
-      list<Env.Frame> env;
+      Env.Env env;
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Env.Cache cache;

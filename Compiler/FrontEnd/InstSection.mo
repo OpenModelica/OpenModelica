@@ -115,7 +115,7 @@ algorithm
   (outCache,outEnv,outIH,outDae,outSets,outState,outGraph) :=
   matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inEquation,inBoolean,unrollForLoops,inGraph)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.DAElist dae;
       Connect.Sets csets_1,csets;
       ClassInf.State ci_state_1,ci_state;
@@ -173,7 +173,7 @@ algorithm
       DAE.DAElist dae;
       Connect.Sets csets_1,csets;
       ClassInf.State ci_state_1,ci_state;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Mod mods;
       Prefix.Prefix pre;
       SCode.EEquation eq;
@@ -224,7 +224,7 @@ algorithm
   (outCache,outEnv,outIH,outDae,outSets,outState,outGraph):=
   matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inEquation,inBoolean,unrollForLoops,inGraph)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.DAElist dae;
       Connect.Sets csets_1,csets;
       ClassInf.State ci_state_1,ci_state;
@@ -278,7 +278,7 @@ algorithm
       DAE.DAElist dae;
       Connect.Sets csets_1,csets;
       ClassInf.State ci_state_1,ci_state;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Mod mods;
       Prefix.Prefix pre;
       SCode.EEquation eq;
@@ -420,7 +420,7 @@ algorithm
       Connect.Sets csets_1,csets;
       DAE.DAElist dae;
       ClassInf.State ci_state_1,ci_state,ci_state_2;
-      list<Env.Frame> env,env_1,env_2;
+      Env.Env env,env_1,env_2;
       DAE.Mod mods,mod;
       Prefix.Prefix pre;
       Absyn.ComponentRef c1,c2,cr,cr1,cr2;
@@ -1145,7 +1145,7 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inIdent,inIteratorType,inValue,inSCodeEEquationLst,inInitial,inImplicit,inGraph)
     local
       Connect.Sets csets,csets_1,csets_2;
-      list<Env.Frame> env_1,env_2,env_3,env;
+      Env.Env env_1,env_2,env_3,env;
       DAE.DAElist dae1,dae2,dae;
       ClassInf.State ci_state_1,ci_state;
       DAE.Mod mods;
@@ -1878,7 +1878,7 @@ algorithm
   (outCache,outStatements) := matchcontinue(inCache,inEnv,inIH,inPrefix,ci_state,iterator,range,inForBody,info,source,inInitial,inBool,unrollForLoops)
     local
       Env.Cache cache;
-      list<Env.Frame> env,env_1;
+      Env.Env env,env_1;
       Prefix.Prefix pre;
       list<SCode.Statement> sl;
       SCode.Initial initial_;
@@ -1943,7 +1943,7 @@ algorithm
   (outCache,outStatements) := matchcontinue(inCache,inEnv,inIH,inPrefix,ci_state,iterator,range,inForBody,info,source,inInitial,inBool,unrollForLoops)
     local
       Env.Cache cache;
-      list<Env.Frame> env;
+      Env.Env env;
       Prefix.Prefix pre;
       list<SCode.Statement> sl;
       SCode.Initial initial_;
@@ -2088,7 +2088,7 @@ algorithm
   matchcontinue(inCache,inEnv,inIH,inPrefix,ci_state,iterator,range,inForBody,info,inSource,inInitial,inBool,unrollForLoops)
     local
       Env.Cache cache;
-      list<Env.Frame> env,env_1;
+      Env.Env env,env_1;
       Prefix.Prefix pre;
       list<SCode.Statement> sl;
       SCode.Initial initial_;
@@ -2244,7 +2244,7 @@ algorithm
   (outCache,outEnv,outIH,outDae,outSets,outState,outGraph) :=
   matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inAlgorithm,inBoolean,unrollForLoops,inGraph)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       list<DAE.Statement> statements_1;
       Connect.Sets csets;
       ClassInf.State ci_state;
@@ -2316,7 +2316,7 @@ algorithm
   (outCache,outEnv,outIH,outDae,outSets,outState,outGraph):=
   matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inAlgorithm,inBoolean,unrollForLoops,inGraph)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       list<DAE.Statement> statements_1;
       Connect.Sets csets;
       ClassInf.State ci_state;
@@ -2365,7 +2365,7 @@ algorithm
   (outCache,outEnv,outDae,outState) :=
   matchcontinue (inCache,inEnv,inPrefix,inState,inConstraints,inBoolean)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       list<DAE.Exp> constraints_1;
       ClassInf.State ci_state;
       list<Absyn.Exp> constraints;
@@ -2421,7 +2421,7 @@ public function instStatements
 algorithm
   (outCache,outAlgorithmStatementLst) := match (inCache,inEnv,inIH,inPre,ci_state,inAbsynAlgorithmLst,source,initial_,inBoolean,unrollForLoops,acc)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       Boolean impl;
       list<DAE.Statement> stmts;
       SCode.Statement x;
@@ -2491,7 +2491,7 @@ algorithm
       DAE.Properties cprop,prop,msgprop,varprop,valprop,levelprop;
       DAE.Exp e_1,e_2,cond_1,cond_2,msg_1,msg_2,var_1,var_2,value_1,value_2,level_1,level_2;
       DAE.Statement stmt, stmt1;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Exp e,cond,msg,level,var,value;
       Boolean impl;
       list<DAE.Statement> tb_1,fb_1,sl_1,stmts;
@@ -2833,7 +2833,7 @@ algorithm
   (outCache,outStatements) :=
   matchcontinue (inCache,inEnv,inIH,inPrefix,ci_state,inIdent,inValue,inAlgItmLst,source,inInitial,inBoolean,unrollForLoops)
     local
-      list<Env.Frame> env_1,env_2,env;
+      Env.Env env_1,env_2,env;
       Prefix.Prefix pre;
       String i;
       Values.Value fst,v;
@@ -2922,7 +2922,7 @@ algorithm
   (outCache,outEnv,outIH,outDaeLst,outSets,outState,outGraph):=
   matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inTypeALst,IE,inBoolean,inGraph)
     local
-      list<Env.Frame> env,env_1,env_2;
+      Env.Env env,env_1,env_2;
       DAE.Mod mod;
       Prefix.Prefix pre;
       Connect.Sets csets,csets_1,csets_2;
@@ -2986,7 +2986,7 @@ algorithm
   (outCache,outTplExpExpTypesPropertiesAlgorithmStatementLstLst) :=
   matchcontinue (inCache,inEnv,inIH,inPre,ci_state,inTplAbsynExpAbsynAlgorithmItemLstLst,source,initial_,inBoolean,unrollForLoops,info)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       Boolean impl;
       DAE.Exp e_1,e_2;
       DAE.Properties prop;
@@ -3053,7 +3053,7 @@ algorithm
       Connect.Face f1,f2;
       Connect.Sets sets;
       DAE.DAElist dae;
-      list<Env.Frame> env;
+      Env.Env env;
       Prefix.Prefix pre;
       Absyn.ComponentRef c1,c2;
       Env.Cache cache;
@@ -3276,7 +3276,7 @@ algorithm
       DAE.Type ty1,ty2,ty;
       Connect.Sets sets;
       DAE.DAElist dae, daeExpandable;
-      list<Env.Frame> env, envExpandable, envComponent, env1, env2, envComponentEmpty;
+      Env.Env env, envExpandable, envComponent, env1, env2, envComponentEmpty;
       Prefix.Prefix pre;
       Absyn.ComponentRef c1,c2,c1_prefix;
       Env.Cache cache;
@@ -3804,7 +3804,7 @@ algorithm
       Boolean impl;
       Connect.Sets sets;
       DAE.DAElist dae, dae1, dae2;
-      list<Env.Frame> env;
+      Env.Env env;
       Prefix.Prefix pre;
       Absyn.ComponentRef c1,c2,c1_full,c2_full;
       Env.Cache cache;
@@ -4191,7 +4191,7 @@ algorithm
     local
       DAE.ComponentRef c1_1,c2_1,c1,c2,c1p,c2p;
       Connect.Sets sets_1,sets;
-      list<Env.Frame> env;
+      Env.Env env;
       Prefix.Prefix pre;
       Connect.Face f1,f2;
       DAE.Type t1, t2, bc_tp1, bc_tp2, equalityConstraintFunctionReturnType;
@@ -4527,7 +4527,7 @@ algorithm
   match (inCache,inEnv,inIH,inSets,inPrefix,inComponentRef3,inFace4,inTypesVarLst5,vt1,inComponentRef6,inFace7,inTypesVarLst8,vt2,inConnectorType,io1,io2,inGraph,info)
     local
       Connect.Sets sets,sets_1,sets_2;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.ComponentRef c1_1,c2_1,c1,c2;
       DAE.DAElist dae,dae2,dae_1;
       Connect.Face f1,f2;
@@ -4969,7 +4969,7 @@ algorithm
       DAE.Properties cprop,eprop,prop,prop1,prop2;
       DAE.Exp e_1, e_2, cre, cre2, e2_2, e2_2_2, lhs, rhs;
       DAE.Statement stmt;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.ComponentRef cr;
       Absyn.Exp e,e1,e2, left;
       Boolean impl;
@@ -5216,7 +5216,7 @@ algorithm
   (outCache,outStatements) := matchcontinue(inCache,inEnv,inIH,inPrefix,ci_state,iterator,range,inForBody,info,source,inInitial,inBool,unrollForLoops)
     local
       Env.Cache cache;
-      list<Env.Frame> env;
+      Env.Env env;
       Prefix.Prefix pre;
       list<SCode.Statement> sl;
       SCode.Initial initial_;
@@ -5268,7 +5268,7 @@ algorithm
   matchcontinue(inCache,inEnv,inIH,inPrefix,ci_state,iterator,range,inForBody,info,inSource,inInitial,inBool,unrollForLoops)
     local
       Env.Cache cache;
-      list<Env.Frame> env,env_1;
+      Env.Env env,env_1;
       Prefix.Prefix pre;
       list<SCode.Statement> sl;
       SCode.Initial initial_;

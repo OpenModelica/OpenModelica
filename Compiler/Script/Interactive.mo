@@ -322,7 +322,7 @@ protected function evaluateAlgStmt
 algorithm
   (outString,outSymbolTable) := matchcontinue (inAlgorithmItem,inSymbolTable)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp econd,msg_1,sexp,srexp;
       DAE.Properties prop,rprop;
       GlobalScript.SymbolTable st_1,st_2,st_3,st_4,st,newst;
@@ -726,7 +726,7 @@ algorithm
   (outValue,outSymbolTable):=
   matchcontinue (inExp,inSymbolTable,info)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp sexp;
       DAE.Properties prop;
       GlobalScript.SymbolTable st_1,st_2,st;
@@ -764,7 +764,7 @@ protected function stringRepresOfExpr
   output String estr;
   output GlobalScript.SymbolTable st;
 protected
-  list<Env.Frame> env;
+  Env.Env env;
   DAE.Exp sexp;
   DAE.Properties prop;
   GlobalScript.SymbolTable st_1;
@@ -1072,7 +1072,7 @@ algorithm
   (outEnv,st) := match (inSymbolTable)
     local
       list<SCode.Element> p_1;
-      list<Env.Frame> env,env_1;
+      Env.Env env,env_1;
       list<GlobalScript.Variable> vars;
 
     case (st as GlobalScript.SYMBOLTABLE(lstVarVal = vars))
@@ -1094,7 +1094,7 @@ protected function addVarsToEnv
 algorithm
   outEnv := matchcontinue (inVariableLst,inEnv)
     local
-      list<Env.Frame> env_1,env_2,env;
+      Env.Env env_1,env_2,env;
       String id;
       Values.Value v;
       DAE.Type tp;
@@ -3945,7 +3945,7 @@ algorithm
   comps := match(p, path)
     local
         SCode.Program p_1;
-        list<Env.Frame> env;
+        Env.Env env;
 
     // if we have a qualified class, a modification into it can affect any other
     case (_, _)
@@ -3970,7 +3970,7 @@ algorithm
     local
       Absyn.Path path_1,pa_1,pa;
       Option<Absyn.Path> paOpt;
-      list<Env.Frame> cenv,env;
+      Env.Env cenv,env;
       GlobalScript.Components comps_1,comps;
       Absyn.Class class_;
       String id;
@@ -4028,7 +4028,7 @@ algorithm
       Absyn.ClassDef classdef;
       Absyn.Info info;
       Absyn.Path pa;
-      list<Env.Frame> env;
+      Env.Env env;
     case (Absyn.CLASS(name = _,body = classdef),pa,comps,env) /* the QUALIFIED path */
       equation
         comps_1 = extractComponentsFromClassdef(pa, classdef, comps, env);
@@ -4056,7 +4056,7 @@ algorithm
       GlobalScript.Components comps_1,comps;
       Absyn.Path pa,path;
       list<Absyn.ClassPart> parts;
-      list<Env.Frame> env;
+      Env.Env env;
       list<Absyn.ElementArg> elementargs,elementarg;
       String id_ex;
     case (pa,Absyn.PARTS(classParts = parts),comps,env) /* the QUALIFIED path for the class */
@@ -4091,7 +4091,7 @@ algorithm
   outComponents:= matchcontinue (inPath,inAbsynClassPartLst,inComponents,inEnv)
     local
       GlobalScript.Components comps,comps_1,comps_2;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Path pa;
       list<Absyn.ElementItem> elements;
       list<Absyn.ClassPart> res;
@@ -4125,7 +4125,7 @@ algorithm
   matchcontinue (inPath,inAbsynElementItemLst,inComponents,inEnv)
     local
       GlobalScript.Components comps,comps_1,comps_2;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Path pa;
       Absyn.ElementSpec elementspec;
       list<Absyn.ElementItem> res;
@@ -4158,7 +4158,7 @@ algorithm
   matchcontinue (inPath,inElementSpec,inComponents,inEnv)
     local
       String id;
-      list<Env.Frame> cenv,env;
+      Env.Env cenv,env;
       Absyn.Path path_1,path,pa;
       GlobalScript.Components comps_1,comps,comps_2;
       list<Absyn.ComponentItem> comp_items;
@@ -4205,7 +4205,7 @@ algorithm
   matchcontinue (inPath1,inPath2,inAbsynComponentItemLst3,inComponents4,inEnv5)
     local
       GlobalScript.Components comps,comps_1,comps_2,comps_3;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.ComponentRef comp;
       Absyn.Path pa,path;
       String id;
@@ -4240,7 +4240,7 @@ algorithm
     local
       Absyn.Path pa;
       GlobalScript.Components comps,comps_1,comps_2,comps_3;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.ElementSpec elementspec,elementspec2;
       list<Absyn.ElementArg> res;
       Absyn.ConstrainClass constrainclass;
@@ -4286,7 +4286,7 @@ algorithm
     local
       Absyn.Path pa;
       GlobalScript.Components comps,comps_1;
-      list<Env.Frame> env;
+      Env.Env env;
       list<Absyn.ElementArg> elementargs;
     case (_,NONE(),comps,_) then comps;  /* the QUALIFIED path for the class */
     case (pa,SOME(Absyn.CLASSMOD(elementargs,_)),comps,env)
@@ -4542,7 +4542,7 @@ public function getClassEnv
   output Env.Env env_2;
 protected
   list<SCode.Element> p_1;
-  list<Env.Frame> env,env_1,env2;
+  Env.Env env,env_1,env2;
   SCode.Element cl;
   String id;
   SCode.Encapsulated encflag;
@@ -5498,7 +5498,7 @@ algorithm
       Absyn.Path p_class,inherit_class;
       Absyn.Within within_;
       Absyn.Class cdef,cdef_1;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Program newp,p;
       Absyn.ComponentRef class_,inheritclass,subident;
       Absyn.Modification mod;
@@ -5549,7 +5549,7 @@ algorithm
       Absyn.Path inherit_name;
       Absyn.ComponentRef submod;
       Absyn.Modification mod;
-      list<Env.Frame> env;
+      Env.Env env;
       list<Absyn.ElementArg> modif;
       list<String> typeVars;
       list<Absyn.NamedArg> classAttrs;
@@ -5596,7 +5596,7 @@ algorithm
       Absyn.Path inherit;
       Absyn.ComponentRef submod;
       Absyn.Modification mod;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.ClassPart elt;
     case ({},_,_,_,_) then {};
     case ((Absyn.PUBLIC(contents = elts) :: rest),inherit,submod,mod,env)
@@ -5642,7 +5642,7 @@ algorithm
       Absyn.Path inherit;
       Absyn.ComponentRef submod;
       Absyn.Modification mod;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.ElementItem elitem;
     case ({},_,_,_,_) then {};
     case ((Absyn.ELEMENTITEM(element = elt) :: rest),inherit,submod,mod,env)
@@ -5685,7 +5685,7 @@ algorithm
       Absyn.Info info;
       Option<Absyn.ConstrainClass> constr;
       Absyn.ComponentRef submod;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Modification mod;
       Absyn.Element elt;
       Option<Absyn.Annotation> annOpt;
@@ -5730,7 +5730,7 @@ algorithm
     local
       Absyn.Path p_class,name,extpath;
       Absyn.Class cdef;
-      list<Env.Frame> env;
+      Env.Env env;
       list<Absyn.ElementSpec> exts,exts_1;
       list<Absyn.ElementArg> extmod;
       Absyn.Modification mod;
@@ -5775,7 +5775,7 @@ algorithm
     local
       Absyn.Path p_class,name,extpath;
       Absyn.Class cdef;
-      list<Env.Frame> env;
+      Env.Env env;
       list<Absyn.ElementSpec> exts,exts_1;
       list<Absyn.ElementArg> extmod;
       Absyn.Modification mod;
@@ -5848,7 +5848,7 @@ algorithm
     local
       Absyn.Path path_1,path;
       list<Absyn.ElementArg> earg;
-      list<Env.Frame> env;
+      Env.Env env;
       Option<Absyn.Annotation> annOpt;
 
     case (Absyn.EXTENDS(path = path,elementArg = earg,annotationOpt=annOpt),env)
@@ -5881,7 +5881,7 @@ algorithm
       Absyn.Path p_class,name,extpath;
       Absyn.Class cdef;
       list<Absyn.ElementSpec> exts,exts_1;
-      list<Env.Frame> env;
+      Env.Env env;
       list<Absyn.ElementArg> extmod;
       list<String> res,res1;
       String res_1,res_2;
@@ -7085,7 +7085,7 @@ algorithm
       Absyn.Program p,p_1;
       Absyn.ComponentRef old_class,new_name;
       list<SCode.Element> pa_1;
-      list<Env.Frame> env;
+      Env.Env env;
       list<String> path_str_lst;
     case (p,_,(new_name as Absyn.CREF_QUAL(name = _)))
       equation
@@ -7143,9 +7143,9 @@ algorithm
       Absyn.Info file_info;
       Absyn.Program p;
       list<String> path_str_lst;
-      list<Env.Frame> env,cenv;
+      Env.Env env,cenv;
       Absyn.Class class_1,class_;
-      tuple<Absyn.Path, Absyn.Path, Absyn.Program, list<String>, list<Env.Frame>> args;
+      tuple<Absyn.Path, Absyn.Path, Absyn.Program, list<String>, Env.Env> args;
       Option<Absyn.Path> opath;
 
     // Skip readonly classes.
@@ -7228,7 +7228,7 @@ algorithm
       Option<String> comment;
       Absyn.Info file_info;
       Absyn.Path old_comp,new_comp,path_1,path,new_path;
-      list<Env.Frame> env,cenv;
+      Env.Env env,cenv;
       list<Absyn.ElementArg> modifications,elementarg;
       Option<Absyn.Comment> co;
       Absyn.Class class_;
@@ -7285,7 +7285,7 @@ algorithm
   (outAbsynClassPartLst,outBoolean):=
   matchcontinue (inAbsynClassPartLst1,inPath2,inPath3,inEnv4)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       list<Absyn.ClassPart> res_1,res;
       Boolean changed1,changed2,changed;
       list<Absyn.ElementItem> elements_1,elements;
@@ -7336,7 +7336,7 @@ algorithm
       Absyn.Info info;
       Option<Absyn.ConstrainClass> constrainClass;
       Absyn.Path old_comp,new_comp;
-      list<Env.Frame> env;
+      Env.Env env;
     case ({},_,_,_) then ({},false);  /* the old name for the component signal if something in class have been changed */
     case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = redeclare_,innerOuter = inner_outer,specification = elementspec,info = info,constrainClass = constrainClass)) :: res),old_comp,new_comp,env)
       equation
@@ -7371,7 +7371,7 @@ algorithm
   matchcontinue (inElementSpec1,inPath2,inPath3,inEnv4)
     local
       String id;
-      list<Env.Frame> cenv,env;
+      Env.Env cenv,env;
       Absyn.Path path_1,path,new_path,old_comp,new_comp,comps;
       Absyn.ElementAttributes a;
       list<Absyn.ComponentItem> comp_items;
@@ -7424,7 +7424,7 @@ algorithm
   (outImport,outBoolean):=
   matchcontinue (inImport1,inPath2,inPath3,inEnv4)
     local
-      list<Env.Frame> cenv,env;
+      Env.Env cenv,env;
       Absyn.Path path,new_path,path_1,old_comp,new_comp;
       String id;
       Absyn.Import import_;
@@ -10238,7 +10238,7 @@ algorithm
       Absyn.Path modelpath,path;
       Absyn.Class cdef;
       list<SCode.Element> p_1;
-      list<Env.Frame> env,env_1;
+      Env.Env env,env_1;
       SCode.Element c;
       String id,str,s;
       SCode.Encapsulated encflag;
@@ -10501,7 +10501,7 @@ algorithm
       String str,id;
       SCode.Element c;
       Absyn.Class cdef;
-      list<Env.Frame> env,env2,env_2;
+      Env.Env env,env2,env_2;
       ClassInf.State ci_state;
       SCode.Encapsulated encflag;
       SCode.Restriction restr;
@@ -10659,7 +10659,7 @@ algorithm
     local
       Absyn.Path modelpath;
       list<SCode.Element> p_1;
-      list<Env.Frame> env,env_1;
+      Env.Env env,env_1;
       SCode.Element c;
       String id,str;
       SCode.Encapsulated encflag;
@@ -10695,7 +10695,7 @@ algorithm
   outString:=
   matchcontinue (inClass1,inClass2,inInteger3,inEnv4)
     local
-      list<Env.Frame> env2,env_2,env;
+      Env.Env env2,env_2,env;
       ClassInf.State ci_state;
       Absyn.Element comp;
       String s1,str,id;
@@ -10788,7 +10788,7 @@ algorithm
       Absyn.Path modelpath;
       Absyn.Class cdef;
       list<SCode.Element> p_1;
-      list<Env.Frame> env,env_1,env2,env_2;
+      Env.Env env,env_1,env2,env_2;
       SCode.Element c;
       String id,s1,s2,str,res;
       SCode.Encapsulated encflag;
@@ -12456,7 +12456,7 @@ algorithm
     local
       list<Absyn.ComponentRef> res;
       list<Absyn.ClassPart> parts;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Path tp;
       String baseClassName;
       Option<String> comment;
@@ -12518,7 +12518,7 @@ algorithm
       list<Absyn.ComponentRef> c1,c2,res;
       list<Absyn.ElementItem> elts;
       list<Absyn.ClassPart> rest;
-      list<Env.Frame> env;
+      Env.Env env;
 
     case ((Absyn.PUBLIC(contents = elts) :: rest),env)
       equation
@@ -12547,7 +12547,7 @@ protected function getBaseClassesFromElts
 algorithm
   outAbsynComponentRefLst := matchcontinue (inAbsynElementItemLst,inEnv)
     local
-      list<Env.Frame> env,env_1;
+      Env.Env env,env_1;
       list<Absyn.ComponentRef> cl;
       SCode.Element c;
       Absyn.Path envpath,p_1,path;
@@ -13338,7 +13338,7 @@ algorithm
     local
       Absyn.FunctionArgs fargs;
       list<SCode.Element> p_1;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp newexp;
       String gexpstr, gexpstr_1, annName;
       list<String> res;
@@ -13652,7 +13652,7 @@ protected function getComponentAnnotationsFromElts
   output String resStr;
 protected
   list<SCode.Element> graphicProgramSCode;
-  list<Env.Frame> env;
+  Env.Env env;
   list<String> res;
   Absyn.Program placementProgram;
 algorithm
@@ -13677,7 +13677,7 @@ algorithm
       list<String> res1,res2,res;
       list<Absyn.ComponentItem> items;
       list<Absyn.Element> rest;
-      list<Env.Frame> env;
+      Env.Env env;
 
     case ({},_,_,_,_) then {};
 
@@ -13715,7 +13715,7 @@ protected function getComponentitemsAnnotationsElArgs
 algorithm
   outStringLst := matchcontinue (inElArgLst,inEnv,inClass,inFullProgram,inModelPath)
     local
-      list<Env.Frame> env,env_1,env_2;
+      Env.Env env,env_1,env_2;
       SCode.Element c,c_1;
       SCode.Mod mod_1;
       DAE.Mod mod_2;
@@ -13774,7 +13774,7 @@ protected function getComponentitemsAnnotationsFromItems
 algorithm
   outStringLst := match (inAbsynComponentItemLst,inEnv,inClass,inFullProgram,inModelPath)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       String gexpstr,gexpstr_1;
       list<String> res;
       list<Absyn.ElementArg>  annotations;
@@ -14065,7 +14065,7 @@ algorithm
       list<Absyn.ElementArg> stripmod,mod,gxmods;
       Absyn.Exp graphicexp;
       SCode.Mod mod_1;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Class placementc;
       SCode.Element placementclass;
       DAE.Mod mod_2;
@@ -14779,7 +14779,7 @@ algorithm
   matchcontinue (inElement,inBoolean,inString,inEnv)
     local
       SCode.Element c;
-      list<Env.Frame> env_1,env;
+      Env.Env env_1,env;
       Absyn.Path envpath,p_1,p;
       String tpname,typename,finalPrefix,repl,inout_str,flowPrefixstr,streamPrefixstr,variability_str,dir_str,str,access;
       String typeAdStr;
@@ -14905,7 +14905,7 @@ algorithm
       list<String> lst;
       String lst_1,res,access;
       list<Absyn.Element> elts;
-      list<Env.Frame> env;
+      Env.Env env;
       Boolean b;
     case (elts,_,access,env)
       equation
@@ -14935,7 +14935,7 @@ algorithm
       Absyn.Element elt;
       list<Absyn.Element> rest;
       String access;
-      list<Env.Frame> env;
+      Env.Env env;
       Boolean b;
     case ({},_,_,_,_) then listReverse(acc);
     case ((elt :: rest),b,access,env,_)
@@ -14972,7 +14972,7 @@ algorithm
   matchcontinue (inElement,inEnv)
     local
       SCode.Element c;
-      list<Env.Frame> env_1,env;
+      Env.Env env_1,env;
       Absyn.Path envpath,p_1,p;
       String tpname,typename;
       list<Absyn.ComponentItem> lst;
@@ -16724,7 +16724,7 @@ algorithm
       GlobalScript.InstantiatedClass cl,newc,x;
       Absyn.Path path,path2;
       DAE.DAElist dae,dae_1;
-      list<Env.Frame> env,env_1;
+      Env.Env env,env_1;
       list<GlobalScript.InstantiatedClass> xs,res;
     case ({},cl) then {cl};
     case ((GlobalScript.INSTCLASS(qualName = path,daeElementLst = _) :: xs),newc as GlobalScript.INSTCLASS(qualName = path2))
@@ -16754,7 +16754,7 @@ algorithm
       GlobalScript.InstantiatedClass x,res;
       Absyn.Path path,path2;
       DAE.DAElist dae;
-      list<Env.Frame> env;
+      Env.Env env;
       list<GlobalScript.InstantiatedClass> xs;
     case (((x as GlobalScript.INSTCLASS(qualName = path,daeElementLst = _)) :: _),path2)
       equation
@@ -18860,7 +18860,7 @@ protected
   String id;
   SCode.Encapsulated encflag;
   SCode.Restriction restr;
-  list<Env.Frame> env_1,env2;
+  Env.Env env_1,env2;
   ClassInf.State ci_state;
   Real t1,t2;
   Env.Cache cache;

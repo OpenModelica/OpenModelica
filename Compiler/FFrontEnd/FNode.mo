@@ -288,7 +288,7 @@ algorithm
   FCore.N(n, i, p, c, d) := fromRef(inParentRef);
   c := avlTreeAdd(c, inName, inChildRef);
   parent := updateRef(inParentRef, FCore.N(n, i, p, c, d));
-  FGraphStream.edge(fromRef(parent), fromRef(inChildRef));
+  FGraphStream.edge(inName, fromRef(parent), fromRef(inChildRef));
 end addChildRef;
 
 public function addImportToRef

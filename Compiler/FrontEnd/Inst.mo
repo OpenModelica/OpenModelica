@@ -159,7 +159,7 @@ algorithm
   (outCache,outEnv,outIH,outDAElist) := match (inCache,inIH,inProgram,inPath)
     local
       Absyn.Path path;
-      list<Env.Frame> env,env_1,env_2;
+      Env.Env env,env_1,env_2;
       DAE.DAElist dae1,dae,dae2;
       list<SCode.Element> cdecls;
       String name2,n,pathstr,name;
@@ -327,7 +327,7 @@ algorithm
   (outCache,outEnv,outIH,outDAElist) := matchcontinue (inCache,inIH,inProgram,inPath)
     local
       Absyn.Path cr,path;
-      list<Env.Frame> env,env_1,env_2;
+      Env.Env env,env_1,env_2;
       DAE.DAElist dae1,dae;
       list<SCode.Element> cdecls;
       String name2,n,pathstr,name,cname_str;
@@ -403,7 +403,7 @@ algorithm
   (outCache,outEnv,outIH,outDAElist) := matchcontinue (inCache,inIH,inProgram,inPath)
     local
       Absyn.Path cr,path;
-      list<Env.Frame> env,env_1,env_2;
+      Env.Env env,env_1,env_2;
       DAE.DAElist dae1,dae;
       list<SCode.Element> cdecls;
       String name2,n,name;
@@ -512,7 +512,7 @@ algorithm
   (outCache, outEnv, outIH, outDae) :=
   matchcontinue(inCache, inEnv, inIH, inProgram, inPath)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.DAElist dae;
       SCode.Element c;
       String name;
@@ -609,7 +609,7 @@ algorithm
   (cache,outEnv,outIH,outStore,outDae,outSets,outType,outState,optDerAttr,outGraph):=
   matchcontinue (inCache,inEnv,inIH,inStore,inMod,inPrefix,inClass,inInstDims,inBoolean,inCallingScope,inGraph,inSets)
     local
-      list<Env.Frame> env,env_1,env_3;
+      Env.Env env,env_1,env_3;
       DAE.Mod mod;
       Prefix.Prefix pre;
       Connect.Sets csets;
@@ -751,7 +751,7 @@ algorithm
   (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outTypeVars,outState):=
   match (inCache,inEnv,inIH,inStore,inMod,inPrefix,inClass,inInstDims,inImplicit,inCallingScope,inSets)
     local
-      list<Env.Frame> env_1,env_3,env;
+      Env.Env env_1,env_3,env;
       ClassInf.State ci_state,ci_state_1;
       SCode.Element c_1,c;
       DAE.DAElist dae1,dae1_1,dae;
@@ -837,7 +837,7 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,inStore,inMod,inPrefix,inState,inClass,inVisibility,inInstDims,implicitInstantiation,inCallingScope,inGraph,inSets,instSingleCref)
     local
       Option<DAE.Type> bc;
-      list<Env.Frame> env;
+      Env.Env env;
       ClassInf.State ci_state;
       SCode.Element c;
       String n;
@@ -936,7 +936,7 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,inStore,inMod,inPrefix,inState,inClass,inVisibility,inInstDims,implicitInstantiation,inCallingScope,inGraph,inSets,instSingleCref)
     local
       Option<DAE.Type> bc;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Mod mods;
       Prefix.Prefix pre;
       ClassInf.State ci_state;
@@ -1121,7 +1121,7 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,inStore,inMod,inPrefix,inState,inClass,inVisibility,inInstDims,implicitInstantiation,inCallingScope,inGraph,inSets,instSingleCref)
     local
       Option<DAE.Type> bc;
-      list<Env.Frame> env,env_1;
+      Env.Env env,env_1;
       DAE.Mod mods;
       Prefix.Prefix pre;
       ClassInf.State ci_state,ci_state_1;
@@ -1142,7 +1142,7 @@ algorithm
       DAE.DAElist dae,dae1,dae1_1;
       Absyn.Info info;
       DAE.Type typ;
-      list<Env.Frame> env_2, env_3;
+      Env.Env env_2, env_3;
       list<SCode.Element> els;
       list<tuple<SCode.Element, DAE.Mod>> comp;
       list<String> names;
@@ -1791,7 +1791,7 @@ public function partialInstClassIn
 algorithm
   (outCache,outEnv,outIH,outState,outTys) := matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inState,inClass,inVisibility,inInstDims,numIter)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Mod mods;
       Prefix.Prefix pre;
       ClassInf.State ci_state,ci_state_1;
@@ -1934,7 +1934,7 @@ protected function partialInstClassIn_dispatch
 algorithm
   (outCache,outEnv,outIH,outState,outVars) := matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inState,inClass,inVisibility,inInstDims,partialInst,numIter)
     local
-      list<Env.Frame> env,env_1;
+      Env.Env env,env_1;
       DAE.Mod mods;
       Prefix.Prefix pre;
       ClassInf.State ci_state,ci_state_1;
@@ -2091,7 +2091,7 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,inStore,inMod2,inPrefix3,inState5,className,inClassDef6,inRestriction7,inVisibility,inInstDims9,inBoolean10,inGraph,inSets,instSingleCref,info,stopInst)
     local
       list<SCode.Element> cdefelts,compelts,extendselts,els;
-      list<Env.Frame> env1,env2,env3,env;
+      Env.Env env1,env2,env3,env;
       list<tuple<SCode.Element, DAE.Mod>> cdefelts_1,cdefelts_2;
       Connect.Sets csets;
       DAE.DAElist dae1,dae2,dae;
@@ -2999,7 +2999,7 @@ algorithm
     local
       DAE.Mod m_1,m_2,mods;
       SCode.Element cdef;
-      list<Env.Frame> cenv,env_1,env;
+      Env.Env cenv,env_1,env;
       DAE.DAElist dae;
       DAE.Type ty;
       list<DAE.Var> tys;
@@ -3088,7 +3088,7 @@ algorithm
   local
       DAE.Mod m_1,mods;
       SCode.Element cdef,cdef_1;
-      list<Env.Frame> cenv,env_1,env;
+      Env.Env cenv,env_1,env;
       DAE.DAElist dae;
       DAE.Type ty;
       ClassInf.State st;
@@ -3495,7 +3495,7 @@ algorithm
   match (inCache, inEnv, inIH, inStore, inMod, inPrefix, inState,
       inElements, inInstDims, inImplicit, inCallingScope, inGraph, inSets, inStopOnError, daeAcc, varAcc)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       Connect.Sets csets;
       ClassInf.State ci_state;
       DAE.DAElist dae;
@@ -3571,7 +3571,7 @@ algorithm
   matchcontinue (inCache, inEnv, inIH, inStore, inMod, inPrefix, inState,
       inElement, inInstDims, inImplicit, inCallingScope, inGraph, inSets, inStopOnError)
     local
-      list<Env.Frame> env,env_1;
+      Env.Env env,env_1;
       Connect.Sets csets;
       ClassInf.State ci_state,ci_state_1;
       list<DAE.Var> tys1;
@@ -4104,7 +4104,7 @@ algorithm
   (outCache,outEnv,outIH,outTplSCodeElementModLst):=
   matchcontinue (inCache,inEnv,inIH,inPrefix,inTplSCodeElementModLst,inState,inBoolean)
     local
-      list<Env.Frame> env,env2,env3;
+      Env.Env env,env2,env3;
       Prefix.Prefix pre;
       SCode.Mod umod;
       list<Absyn.ComponentRef> crefs,crefs_1;
@@ -4228,7 +4228,7 @@ algorithm
   (outCache,outEnv,outIH,outElement,outMod) := matchcontinue (inCache,inEnv,inIH,inMod,inElement,inPrefix,inState,inImplicit,inCmod)
     local
       list<Absyn.ComponentRef> crefs;
-      list<Env.Frame> env_1,env;
+      Env.Env env_1,env;
       DAE.Mod m_1,old_m_1,m_2,m_3,m,rmod,innerCompMod,compMod;
       SCode.Element redecl,newcomp,comp,redComp;
       String n1,n2;
@@ -4472,7 +4472,7 @@ algorithm
       SCode.Comment comment;
       DAE.Mod cmod,mods;
       SCode.Element cl, compNew;
-      list<Env.Frame> cenv,env2,env_1;
+      Env.Env cenv,env2,env_1;
       list<Absyn.ComponentRef> crefs,crefs2,crefs3,crefs_1,crefs_2;
       Option<Absyn.Exp> cond;
       DAE.Var tyVar;
@@ -4725,7 +4725,7 @@ algorithm
     local
       DAE.Type ty;
       DAE.Mod m_1,classmod,mm,mod_1,mod_2,mod_3,mod;
-      list<Env.Frame> compenv;
+      Env.Env compenv;
       Option<DAE.EqMod> eq;
       DAE.Dimensions dims;
       DAE.Binding binding;
@@ -4959,7 +4959,7 @@ public function makeEnvFromProgram
   output Env.Cache outCache;
   output Env.Env env_1;
 protected
-  list<Env.Frame> env;
+  Env.Env env;
   Env.Cache cache;
 algorithm
   // prog := scodeFlatten(prog, path);
@@ -4981,7 +4981,7 @@ public function makeFullyQualified
 algorithm
   (outCache,outPath) := matchcontinue (inCache,inEnv,inPath)
     local
-      list<Env.Frame> env,env_1;
+      Env.Env env,env_1;
       Absyn.Path path,path_2,path3;
       String s;
       Env.Cache cache;
@@ -5122,7 +5122,7 @@ algorithm
   (outCache,outEnv,outIH,outDae,outSets,outState,outGraph):=
   match (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,instFunc,inTypeALst,inBoolean,unrollForLoops,inGraph)
     local
-      list<Env.Frame> env,env_1,env_2;
+      Env.Env env,env_1,env_2;
       DAE.Mod mod;
       Prefix.Prefix pre;
       Connect.Sets csets,csets_1,csets_2;
@@ -5162,7 +5162,7 @@ protected function instConstraints
 algorithm
   (outCache,outEnv,outDae,outState) := match(inCache,inEnv,inPrefix,inState,inConstraints,inImpl)
     local
-      list<Env.Frame> env1,env2;
+      Env.Env env1,env2;
       DAE.DAElist constraints_1,constraints_2;
       ClassInf.State ci_state;
       list<SCode.ConstraintSection> rest;
@@ -5240,7 +5240,7 @@ algorithm
   (outCache,outEnv,outDae):=
   match (inCache,inEnv,inPrefix,inAttrs,inBoolean,inInfo,inClsAttrs)
     local
-      list<Env.Frame> env,env_2;
+      Env.Env env,env_2;
       Prefix.Prefix pre;
       Boolean impl;
       Absyn.NamedArg na;
@@ -5332,7 +5332,7 @@ algorithm
   matchcontinue (inCache,inIH,inProgram,inPath)
     local
       Absyn.Path cr,path;
-      list<Env.Frame> env,env_1,env_2;
+      Env.Env env,env_1,env_2;
       DAE.DAElist dae1,dae;
       list<SCode.Element> cdecls;
       String name2,n,pathstr,name,cname_str;
@@ -5393,7 +5393,7 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,inProgram,inPath)
     local
       DAE.DAElist dae;
-      list<Env.Frame> env_1,env;
+      Env.Env env_1,env;
       SCode.Element c;
       String name1,name2;
       list<SCode.Element> cs;
@@ -5778,7 +5778,7 @@ algorithm
   (outCache,outEnv,outIH,outUpdatedComps) :=
   matchcontinue (inCache,inEnv,inIH,pre,mod,crefs,ci_state,impl,inUpdatedComps,currentCref)
     local
-      list<Env.Frame> env_1,env_2;
+      Env.Env env_1,env_2;
       DAE.Mod mods;
       Absyn.ComponentRef cr;
       list<Absyn.ComponentRef> rest;

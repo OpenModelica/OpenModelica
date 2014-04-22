@@ -835,7 +835,7 @@ algorithm
       Absyn.Path path,classpath,className,baseClassPath;
       SCode.Program scodeP,sp;
       Option<list<SCode.Element>> fp;
-      list<Env.Frame> env;
+      Env.Env env;
       GlobalScript.SymbolTable newst,st_1,st;
       Absyn.Program p,pnew,newp,ptot;
       list<Absyn.Program> newps;
@@ -3304,7 +3304,7 @@ algorithm
       String filename,file_dir, str;
       list<SCode.Element> p_1;
       DAE.DAElist dae_1,dae;
-      list<Env.Frame> env;
+      Env.Env env;
       list<GlobalScript.InstantiatedClass> ic_1,ic;
       BackendDAE.BackendDAE dlow;
       Absyn.ComponentRef a_cref;
@@ -3500,7 +3500,7 @@ algorithm
   match (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy,inSimSettingsOpt)
     local
       Env.Cache cache;
-      list<Env.Frame> env;
+      Env.Env env;
       BackendDAE.BackendDAE indexed_dlow;
       GlobalScript.SymbolTable st;
       list<String> libs;
@@ -3538,7 +3538,7 @@ algorithm
   match (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy,inSimSettingsOpt)
     local
       Env.Cache cache;
-      list<Env.Frame> env;
+      Env.Env env;
       BackendDAE.BackendDAE indexed_dlow;
       GlobalScript.SymbolTable st;
       list<String> libs;
@@ -3572,7 +3572,7 @@ algorithm
   match (inCache,inEnv,className,inInteractiveSymbolTable,inFMUVersion,inFileNamePrefix,addDummy,inSimSettingsOpt)
     local
       Env.Cache cache;
-      list<Env.Frame> env;
+      Env.Env env;
       BackendDAE.BackendDAE indexed_dlow;
       GlobalScript.SymbolTable st;
       list<String> libs;
@@ -3615,7 +3615,7 @@ algorithm
   match (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy,inSimSettingsOpt)
     local
       Env.Cache cache;
-      list<Env.Frame> env;
+      Env.Env env;
       BackendDAE.BackendDAE indexed_dlow;
       GlobalScript.SymbolTable st;
       list<String> libs;
@@ -3649,7 +3649,7 @@ algorithm
   (outCache,outValue,outInteractiveSymbolTable) :=
   matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inMsg)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       list<GlobalScript.InstantiatedClass> ic;
       GlobalScript.SymbolTable st;
       Absyn.Program p;
@@ -3705,7 +3705,7 @@ algorithm
       Values.Value starttime_v,stoptime_v,tolerance_v;
       Integer interval_i;
       Real starttime_r,stoptime_r,tolerance_r;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Msg msg;
       Env.Cache cache;
       Boolean measureTime;
@@ -3864,7 +3864,7 @@ algorithm
       Absyn.Program p;
       Absyn.Class cdef;
       Real edit,build,globalEdit,globalBuild,timeCompile;
-      list<Env.Frame> env;
+      Env.Env env;
       SimCode.SimulationSettings simSettings;
       Values.Value starttime,stoptime,interval,tolerance,method,options,outputFormat,variableFilter;
       list<Values.Value> vals, values;
@@ -4261,7 +4261,7 @@ algorithm
   matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inMsg)
     local
       DAE.DAElist dae;
-      list<Env.Frame> env;
+      Env.Env env;
       GlobalScript.SymbolTable st;
       Absyn.Program p;
       Absyn.Msg msg;
@@ -4473,7 +4473,7 @@ algorithm
   matchcontinue (inCache,inEnv,vals,inInteractiveSymbolTable,inMsg)
     local
       String cname_str,filenameprefix,compileDir,rewriteRulesFile,description;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Path classname;
       Absyn.Program p;
       BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow;
@@ -4816,7 +4816,7 @@ algorithm
       Absyn.Msg msg;
       Env.Cache cache;
       String ret;
-      list<Env.Frame> env;
+      Env.Env env;
       Boolean b;
 
     case (cache,env,_,b,(st as GlobalScript.SYMBOLTABLE(ast = p)),msg)
@@ -4871,7 +4871,7 @@ algorithm
       Absyn.Msg msg;
       Env.Cache cache;
       String  str, s;
-      list<Env.Frame> env;
+      Env.Env env;
       Real t1, t2, elapsedTime;
       Absyn.ComponentRef cr;
       Absyn.Class c;
@@ -4937,7 +4937,7 @@ algorithm
       Absyn.Path classname;
       Absyn.Program p,p2;
       Absyn.Class cdef;
-      list<Env.Frame> env;
+      Env.Env env;
       Values.Value starttime,stoptime,interval,method,tolerance,options;
       Absyn.Msg msg;
       Absyn.Within win1;
@@ -5063,7 +5063,7 @@ algorithm
   (outCache,functionName,functionFileName) := matchcontinue (inCache,inEnv,program,inPath)
     local
       String pathstr, fileName;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Path path;
       Env.Cache cache;
       DAE.Function mainFunction;
@@ -6720,7 +6720,7 @@ algorithm
   (outCache,outValue,outSymTab) := matchcontinue (inCache,inEnv,inExp,inValuesValueLst,impl,inSymTab,inMsg,bIsCompleteFunction)
     local
       Values.Value newval;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp e;
       Absyn.Path funcpath;
       list<DAE.Exp> expl;
@@ -7026,7 +7026,7 @@ algorithm
   (outCache,outValue,outSymTab) := matchcontinue (inCache,inEnv,inExp,inValuesValueLst,impl,inSymTab,inMsg,numIter)
     local
       Values.Value newval;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Exp e;
       Absyn.Path funcpath;
       list<DAE.Exp> expl;
@@ -7205,7 +7205,7 @@ algorithm
     local
       Option<GlobalScript.SymbolTable> stOpt;
       Boolean impl;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Msg msg;
       list<Values.Value> vallst;
       list<DAE.Exp> expl;

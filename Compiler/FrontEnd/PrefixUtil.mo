@@ -656,7 +656,7 @@ algorithm
     local
       DAE.Exp e,e1_1,e2_1,e1,e2,e3_1,e3,cref_1,dim_1,cref,dim,start_1,stop_1,start,stop,step_1,step,e_1,exp_1,exp,crefExp;
       DAE.ComponentRef cr,cr_1;
-      list<Env.Frame> env;
+      Env.Env env;
       Prefix.Prefix pre;
       DAE.Operator o;
       list<DAE.Exp> es_1,es;
@@ -956,7 +956,7 @@ algorithm
     local
       DAE.Exp e_1,e;
       list<DAE.Exp> es_1,es;
-      list<Env.Frame> env;
+      Env.Env env;
       Prefix.Prefix p;
       Env.Cache cache;
       InstanceHierarchy ih;

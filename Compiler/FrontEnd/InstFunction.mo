@@ -91,7 +91,7 @@ algorithm
   (outCache,outEnv,outIH) := matchcontinue (inCache,inIH,inProgram,inPath)
     local
       Absyn.Path cr,path;
-      list<Env.Frame> env,env_1,env_2;
+      Env.Env env,env_1,env_2;
       list<SCode.Element> cdecls;
       String name2,n,name;
       SCode.Element cdef;
@@ -152,7 +152,7 @@ protected function instFunctionInProgramImplicit
 algorithm
   (outCache,outEnv,outIH) := matchcontinue (inCache,inEnv,inIH,inProgram,inPath)
     local
-      list<Env.Frame> env;
+      Env.Env env;
       SCode.Element c;
       String name;
       Env.Cache cache;
@@ -196,7 +196,7 @@ algorithm
       Absyn.Path classNameFQ;
       DAE.Type functp;
       Env.Frame f;
-      list<Env.Frame> fs,fs1;
+      Env.Env fs,fs1;
       InstanceHierarchy ih;
       DAE.ElementSource source "the origin of the element";
       // Explicit instantiation, generate constructor and destructor and the function type.
@@ -309,7 +309,7 @@ algorithm
   (outCache,outEnv,outIH):= match (inCache,inEnv,inIH,inMod,inPrefix,inClass,inInstDims)
     local
       DAE.Type ty1;
-      list<Env.Frame> env,cenv;
+      Env.Env env,cenv;
       Absyn.Path fpath;
       DAE.Mod mod;
       Prefix.Prefix pre;
@@ -372,7 +372,7 @@ algorithm
     local
       DAE.Type ty,ty1;
       ClassInf.State st;
-      list<Env.Frame> env_1,env,tempenv,cenv;
+      Env.Env env_1,env,tempenv,cenv;
       Absyn.Path fpath;
       DAE.Mod mod;
       Prefix.Prefix pre;
@@ -584,7 +584,7 @@ algorithm
   (outCache,outEnv,outIH) := matchcontinue (inCache,inEnv,inIH,inClass)
     local
       SCode.Element stripped_class;
-      list<Env.Frame> env_1,env;
+      Env.Env env_1,env;
       String id,cn2;
       SCode.Partial p;
       SCode.Encapsulated e;
@@ -683,7 +683,7 @@ protected function instOverloadedFunctions
 algorithm
   (outCache,outEnv,outIH,outFns) := matchcontinue (inCache,inEnv,inIH,pre,inAbsynPathLst)
     local
-      list<Env.Frame> env,cenv;
+      Env.Env env,cenv;
       SCode.Element c;
       String id;
       SCode.Encapsulated encflag;
@@ -749,7 +749,7 @@ algorithm
       DAE.ExtArg rettype;
       Option<SCode.Annotation> ann;
       DAE.ExternalDecl daeextdecl;
-      list<Env.Frame> env;
+      Env.Env env;
       SCode.ExternalDecl extdecl,orgextdecl;
       Boolean impl;
       list<SCode.Element> els;

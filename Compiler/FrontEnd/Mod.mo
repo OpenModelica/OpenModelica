@@ -115,7 +115,7 @@ algorithm
       Boolean impl;
       SCode.Final finalPrefix;
       list<DAE.SubMod> subs_1;
-      list<Env.Frame> env;
+      Env.Env env;
       Prefix.Prefix pre;
       SCode.Mod m;
       SCode.Each each_;
@@ -565,7 +565,7 @@ algorithm
       DAE.Exp e_1,e_2;
       DAE.Properties prop,p;
       Option<Values.Value> e_val;
-      list<Env.Frame> env;
+      Env.Env env;
       Prefix.Prefix pre;
       SCode.Each each_;
       Absyn.Exp e;
@@ -628,7 +628,7 @@ algorithm
     local
       Boolean impl;
       list<DAE.SubMod> x_1,xs_1,res,xs;
-      list<Env.Frame> env;
+      Env.Env env;
       Prefix.Prefix pre;
       DAE.SubMod x;
       Env.Cache cache;
@@ -660,7 +660,7 @@ algorithm
   match (inCache,inEnv,inIH,inPrefix,inSubMod,inBoolean,info)
     local
       DAE.Mod m_1,m;
-      list<Env.Frame> env;
+      Env.Env env;
       Prefix.Prefix pre;
       String i;
       Boolean impl;
@@ -697,7 +697,7 @@ algorithm
       SCode.Final finalPrefix;
       SCode.Each each_;
       list<SCode.SubMod> subs;
-      list<Env.Frame> env;
+      Env.Env env;
       Prefix.Prefix pre;
       Absyn.Exp e;
       SCode.Element elem;
@@ -745,7 +745,7 @@ algorithm
     local
       Boolean impl;
       list<DAE.SubMod> x_1,xs_1,res;
-      list<Env.Frame> env;
+      Env.Env env;
       Prefix.Prefix pre;
       SCode.SubMod x;
       list<SCode.SubMod> xs;
@@ -780,7 +780,7 @@ algorithm
   match (inCache,inEnv,inIH,inPrefix,inSubMod,inBoolean,info)
     local
       DAE.Mod m_1;
-      list<Env.Frame> env;
+      Env.Env env;
       Prefix.Prefix pre;
       String i;
       SCode.Mod m;
@@ -814,7 +814,7 @@ algorithm
       list<DAE.SubMod> x_1,xs_1,res;
       SCode.SubMod x;
       list<SCode.SubMod> xs;
-      list<Env.Frame> env;
+      Env.Env env;
       Prefix.Prefix pre;
     case ({},_,_) then {};
     case ((x :: xs),env,pre)
@@ -842,7 +842,7 @@ algorithm
       DAE.Mod m_1;
       String i;
       SCode.Mod m;
-      list<Env.Frame> env;
+      Env.Env env;
       Prefix.Prefix pre;
       list<Absyn.Subscript> subcr;
       list<DAE.Subscript> sList;
@@ -868,7 +868,7 @@ algorithm
     local
       list<DAE.SubMod> x_1,xs_1,l,xs,y;
       DAE.SubMod x;
-      list<Env.Frame> env;
+      Env.Env env;
       Prefix.Prefix pre;
 
     case ({},_,_,_) then {};
@@ -1720,7 +1720,7 @@ algorithm
       SCode.Mod m1,m2,sm,cm1,cm2;
       SCode.Comment comment,comment2;
       Option<SCode.Annotation> ann;
-      list<Env.Frame> env;
+      Env.Env env;
       Prefix.Prefix pre;
       list<tuple<SCode.Element, DAE.Mod>> els;
       list<DAE.SubMod> subs,subs1,subs2;
@@ -1902,7 +1902,7 @@ algorithm
     local
       list<DAE.SubMod> s1,s2,s2_new,s_rec;
       DAE.SubMod s,s_first;
-      list<Env.Frame> env;
+      Env.Env env;
       Prefix.Prefix pre;
 
     case ({},s1,_,_) then s1;
@@ -1932,7 +1932,7 @@ algorithm
       DAE.Mod m,m1,m2;
       String n1,n2;
       list<DAE.SubMod> ss,ss_1;
-      list<Env.Frame> env;
+      Env.Env env;
       Prefix.Prefix pre;
       list<Integer> i1,i2;
 
@@ -1974,7 +1974,7 @@ algorithm
       DAE.Mod m,m1,m2;
       String n1,n2;
       list<DAE.SubMod> ss,ss_1;
-      list<Env.Frame> env;
+      Env.Env env;
       Prefix.Prefix pre;
       list<Integer> i1,i2;
 

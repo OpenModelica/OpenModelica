@@ -565,7 +565,7 @@ public function initialEnv
     others."
   input Env.Cache inCache;
   output Env.Cache outCache;
-  output list<Env.Frame> env;
+  output Env.Env env;
 protected
   Env.Cache cache;
 algorithm
@@ -678,12 +678,12 @@ algorithm
 end initialEnv;
 
 protected function initialEnvMetaModelica
-  input list<Env.Frame> inEnv;
-  output list<Env.Frame> outEnv;
+  input Env.Env inEnv;
+  output Env.Env outEnv;
 algorithm
   outEnv := matchcontinue(inEnv)
     local
-      list<Env.Frame> env;
+      Env.Env env;
     case (env)
       equation
         true = Config.acceptMetaModelicaGrammar();

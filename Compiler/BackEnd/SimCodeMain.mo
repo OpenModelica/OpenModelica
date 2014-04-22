@@ -213,7 +213,7 @@ algorithm
     local
       String FMUVersion,filenameprefix,file_dir,resstr;
       DAE.DAElist dae;
-      list<Env.Frame> env;
+      Env.Env env;
       BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow_1;
       list<String> libs;
       GlobalScript.SymbolTable st;
@@ -288,7 +288,7 @@ algorithm
     local
       String filenameprefix,file_dir,resstr,description;
       DAE.DAElist dae;
-      list<Env.Frame> env;
+      Env.Env env;
       BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow_1;
       list<String> libs;
       GlobalScript.SymbolTable st;
@@ -570,7 +570,7 @@ algorithm
     local
       String filenameprefix, file_dir, resstr, description;
       DAE.DAElist dae;
-      list<Env.Frame> env;
+      Env.Env env;
       BackendDAE.BackendDAE dlow, dlow_1, indexed_dlow_1;
       list<String> libs;
       GlobalScript.SymbolTable st;

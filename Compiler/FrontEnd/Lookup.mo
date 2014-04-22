@@ -104,7 +104,7 @@ algorithm
   matchcontinue (inCache,inEnv,inPath,msg)
     local
       DAE.Type t;
-      list<Env.Frame> env_1,env,env_2;
+      Env.Env env_1,env,env_2;
       Absyn.Path path;
       SCode.Element c;
       String classname,scope;
@@ -167,7 +167,7 @@ algorithm
   (outCache,outType,outEnv) := matchcontinue (inCache,inEnv,inPath,inClass)
     local
       DAE.Type t;
-      list<Env.Frame> env_1,env_2,env_3;
+      Env.Env env_1,env_2,env_3;
       Absyn.Path path;
       SCode.Element c;
       String id;
@@ -367,13 +367,13 @@ protected function lookupClass1 "help function to lookupClass, does all the work
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path inPath "The path of the class to lookup";
-  input list<Env.Frame> inPrevFrames "Environment in reverse order. Contains frames we previously had in the scope. Will be looked up instead of the environment in order to avoid infinite recursion.";
+  input Env.Env inPrevFrames "Environment in reverse order. Contains frames we previously had in the scope. Will be looked up instead of the environment in order to avoid infinite recursion.";
   input Util.StatefulBoolean inState "If true, we have found a class. If the path was qualified, we should no longer look in previous frames of the environment";
   input Boolean msg "Print error messages";
   output Env.Cache outCache;
   output SCode.Element outClass;
   output Env.Env outEnv "The environment in which the class was found (not the environment inside the class)";
-  output list<Env.Frame> outPrevFrames;
+  output Env.Env outPrevFrames;
 algorithm
   (outCache,outClass,outEnv,outPrevFrames) := matchcontinue (inCache,inEnv,inPath,inPrevFrames,inState,msg)
     local
@@ -404,20 +404,20 @@ protected function lookupClass2 "help function to lookupClass, does all the work
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path inPath "The path of the class to lookup";
-  input list<Env.Frame> inPrevFrames "Environment in reverse order. Contains frames we previously had in the scope. Will be looked up instead of the environment in order to avoid infinite recursion.";
+  input Env.Env inPrevFrames "Environment in reverse order. Contains frames we previously had in the scope. Will be looked up instead of the environment in order to avoid infinite recursion.";
   input Util.StatefulBoolean inState "If true, we have found a class. If the path was qualified, we should no longer look in previous frames of the environment";
   input Boolean msg "Print error messages";
   output Env.Cache outCache;
   output SCode.Element outClass;
   output Env.Env outEnv "The environment in which the class was found (not the environment inside the class)";
-  output list<Env.Frame> outPrevFrames;
+  output Env.Env outPrevFrames;
 algorithm
   (outCache,outClass,outEnv,outPrevFrames) := match (inCache,inEnv,inPath,inPrevFrames,inState,msg)
     local
       Env.Frame f;
       Env.Cache cache;
       SCode.Element c;
-      list<Env.Frame> env,env_1,env_2,fs,prevFrames;
+      Env.Env env,env_1,env_2,fs,prevFrames;
       Absyn.Path path,p,scope;
       String id,pack;
       Option<Env.Frame> optFrame;
@@ -461,13 +461,13 @@ protected function lookupClassQualified
   input String id;
   input Absyn.Path path;
   input Option<Env.Frame> inOptFrame;
-  input list<Env.Frame> inPrevFrames "Environment in reverse order. Contains frames we previously had in the scope. Will be looked up instead of the environment in order to avoid infinite recursion.";
+  input Env.Env inPrevFrames "Environment in reverse order. Contains frames we previously had in the scope. Will be looked up instead of the environment in order to avoid infinite recursion.";
   input Util.StatefulBoolean inState "If true, we have found a class. If the path was qualified, we should no longer look in previous frames of the environment";
   input Boolean msg "Print error messages";
   output Env.Cache outCache;
   output SCode.Element outClass;
   output Env.Env outEnv "The environment in which the class was found (not the environment inside the class)";
-  output list<Env.Frame> outPrevFrames;
+  output Env.Env outPrevFrames;
 algorithm
   (outCache,outClass,outEnv,outPrevFrames) := match (inCache,inEnv,id,path,inOptFrame,inPrevFrames,inState,msg)
     local
@@ -505,13 +505,13 @@ protected function lookupClassQualified2
   input Absyn.Path path;
   input SCode.Element inC;
   input Option<Env.Frame> optFrame;
-  input list<Env.Frame> inPrevFrames "Environment in reverse order. Contains frames we previously had in the scope. Will be looked up instead of the environment in order to avoid infinite recursion.";
+  input Env.Env inPrevFrames "Environment in reverse order. Contains frames we previously had in the scope. Will be looked up instead of the environment in order to avoid infinite recursion.";
   input Util.StatefulBoolean inState "If true, we have found a class. If the path was qualified, we should no longer look in previous frames of the environment";
   input Boolean msg "Print error messages";
   output Env.Cache outCache;
   output SCode.Element outClass;
   output Env.Env outEnv "The environment in which the class was found (not the environment inside the class)";
-  output list<Env.Frame> outPrevFrames;
+  output Env.Env outPrevFrames;
 algorithm
   (outCache,outClass,outEnv,outPrevFrames) := match (inCache,inEnv,path,inC,optFrame,inPrevFrames,inState,msg)
     local
@@ -551,14 +551,14 @@ end lookupClassQualified2;
 
 protected function lookupPrevFrames
   input String id;
-  input list<Env.Frame> inPrevFrames;
+  input Env.Env inPrevFrames;
   output Option<Env.Frame> outFrame;
-  output list<Env.Frame> outPrevFrames;
+  output Env.Env outPrevFrames;
 algorithm
   (outFrame,outPrevFrames) := matchcontinue (id,inPrevFrames)
     local
       String sid;
-      list<Env.Frame> prevFrames;
+      Env.Env prevFrames;
       Env.Frame frame;
     case (_,(frame as Env.FRAME(name = SOME(sid)))::prevFrames)
       equation
@@ -615,7 +615,7 @@ algorithm
       Env.Frame f;
       String ident;
       Boolean res;
-      list<Env.Frame> env,prevFrames;
+      Env.Env env,prevFrames;
       list<Absyn.Import> rest;
       Env.Cache cache;
       DAE.ComponentRef cref;
@@ -666,7 +666,7 @@ algorithm
       DAE.ComponentRef cref;
       String ident;
       Boolean more,unique;
-      list<Env.Frame> env,classEnv,componentEnv,prevFrames;
+      Env.Env env,classEnv,componentEnv,prevFrames;
       DAE.Attributes attr;
       DAE.Type ty;
       DAE.Binding bind;
@@ -712,7 +712,7 @@ algorithm
     local
       Env.Frame fr;
       SCode.Element c;
-      list<Env.Frame> env_1,env,prevFrames;
+      Env.Env env_1,env,prevFrames;
       String id,ident;
       list<Absyn.Import> rest;
       Absyn.Path path;
@@ -777,7 +777,7 @@ algorithm
       SCode.Encapsulated encflag;
       Boolean res;
       SCode.Restriction restr;
-      list<Env.Frame> env_1,env2,env;
+      Env.Env env_1,env2,env;
       ClassInf.State ci_state;
       Absyn.Path path;
       Absyn.Ident firstIdent;
@@ -829,7 +829,7 @@ algorithm
       SCode.Encapsulated encflag;
       Boolean more,unique;
       SCode.Restriction restr;
-      list<Env.Frame> env_1,env2,env,prevFrames;
+      Env.Env env_1,env2,env,prevFrames;
       ClassInf.State ci_state,cistate1;
       Absyn.Path path;
       list<Absyn.Import> rest;
@@ -978,7 +978,7 @@ algorithm
       DAE.Attributes attr;
       DAE.Type ty;
       DAE.Binding binding;
-      list<Env.Frame> env, componentEnv, classEnv;
+      Env.Env env, componentEnv, classEnv;
       DAE.ComponentRef cref;
       Env.Cache cache;
       InstTypes.SplicedExpData splicedExpData;
@@ -1061,7 +1061,7 @@ algorithm
       DAE.Binding binding;
       Option<String> sid;
       Env.AvlTree ht;
-      list<Env.Frame> fs;
+      Env.Env fs;
       Env.Frame f;
       DAE.ComponentRef ref;
       Env.Cache cache;
@@ -1122,7 +1122,7 @@ public function lookupVarInPackages "This function is called when a lookup of a 
   input Env.Cache inCache;
   input Env.Env inEnv;
   input DAE.ComponentRef inComponentRef;
-  input list<Env.Frame> inPrevFrames "Environment in reverse order. Contains frames we previously had in the scope. Will be looked up instead of the environment in order to avoid infinite recursion.";
+  input Env.Env inPrevFrames "Environment in reverse order. Contains frames we previously had in the scope. Will be looked up instead of the environment in order to avoid infinite recursion.";
   input Util.StatefulBoolean inState "If true, we have found a class. If the path was qualified, we should no longer look in a lower scope.";
   output Env.Cache outCache;
   output Env.Env outClassEnv;
@@ -1141,7 +1141,7 @@ algorithm
       String n,id;
       SCode.Encapsulated encflag;
       SCode.Restriction r;
-      list<Env.Frame> env2,env3,env5,env,fs,p_env,prevFrames, classEnv, componentEnv;
+      Env.Env env2,env3,env5,env,fs,p_env,prevFrames, classEnv, componentEnv;
       ClassInf.State ci_state;
       DAE.Attributes attr;
       DAE.Type ty;
@@ -1334,7 +1334,7 @@ algorithm
       DAE.Mod m;
       Env.InstStatus i;
       Env.Frame f;
-      list<Env.Frame> env,fs,componentEnv;
+      Env.Env env,fs,componentEnv;
       Option<String> sid;
       Env.AvlTree ht;
       String id;
@@ -1367,7 +1367,7 @@ algorithm
   (outClass,outEnv) := match(inEnv,inIdent)
     local
       SCode.Element cl;
-      list<Env.Frame> env;
+      Env.Env env;
       Option<String> sid;
       Env.AvlTree ht;
       String id;
@@ -1579,7 +1579,7 @@ algorithm
       Env.AvlTree httypes;
       Env.AvlTree ht;
       list<DAE.Type> res;
-      list<Env.Frame> env,fs,env_1,env2,env_2;
+      Env.Env env,fs,env_1,env2,env_2;
       String pack,str;
       SCode.Element c;
       SCode.Encapsulated encflag;
@@ -1659,7 +1659,7 @@ protected function createGenericBuiltinFunctions
   output list<DAE.Type> outTypesTypeLst;
 algorithm
   outTypesTypeLst := match (inEnv,inString)
-    local list<Env.Frame> env;
+    local Env.Env env;
 
     // function_name cardinality
     case (_,"cardinality")
@@ -1693,7 +1693,7 @@ algorithm
   matchcontinue (inCache,inEnv,inPath)
     local
       DAE.Type c;
-      list<Env.Frame> env_1,env,fs;
+      Env.Env env_1,env,fs;
       Option<String> sid;
       Env.AvlTree httypes;
       Env.AvlTree ht;
@@ -1733,7 +1733,7 @@ algorithm
       DAE.Type t;
       Env.AvlTree httypes;
       Env.AvlTree ht;
-      list<Env.Frame> env;
+      Env.Env env;
       String id;
       Env.Cache cache;
       Env.Item item;
@@ -1760,7 +1760,7 @@ algorithm
   match (inCache,item,inEnv3,inIdent4)
     local
       DAE.Type t,ty;
-      list<Env.Frame> env,cenv,env_1,env_3;
+      Env.Env env,cenv,env_1,env_3;
       String id,n;
       SCode.Element cdef, comp;
       Env.Cache cache;
@@ -1824,7 +1824,7 @@ algorithm
       list<DAE.Type> tps;
       Env.AvlTree httypes;
       Env.AvlTree ht;
-      list<Env.Frame> env,cenv,env_1;
+      Env.Env env,cenv,env_1;
       String id,n;
       SCode.Element cdef;
       DAE.Type ftype,t;
@@ -2230,7 +2230,7 @@ public function isInBuiltinEnv
 algorithm
   (outCache,outBoolean) := matchcontinue (inCache,inPath)
     local
-      list<Env.Frame> i_env;
+      Env.Env i_env;
       Absyn.Path path;
       Env.Cache cache;
       SCode.FunctionRestriction funcRest;
@@ -2261,18 +2261,18 @@ protected function lookupClassInEnv
   input Env.Cache inCache;
   input Env.Env inEnv;
   input String id;
-  input list<Env.Frame> inPrevFrames;
+  input Env.Env inPrevFrames;
   input Util.StatefulBoolean inState;
   input Boolean inMsg;
   output Env.Cache outCache;
   output SCode.Element outClass;
   output Env.Env outEnv;
-  output list<Env.Frame> outPrevFrames;
+  output Env.Env outPrevFrames;
 algorithm
   (outCache,outClass,outEnv,outPrevFrames) := matchcontinue (inCache,inEnv,id,inPrevFrames,inState,inMsg)
     local
       SCode.Element c;
-      list<Env.Frame> env_1,env,fs,i_env,prevFrames;
+      Env.Env env_1,env,fs,i_env,prevFrames;
       Env.Frame frame;
       String sid,scope;
       Boolean msg,msgflag;
@@ -2332,18 +2332,18 @@ protected function lookupClassInFrame "Search for a class within one frame."
   input Env.Frame inFrame;
   input Env.Env inEnv;
   input SCode.Ident inIdent;
-  input list<Env.Frame> inPrevFrames;
+  input Env.Env inPrevFrames;
   input Util.StatefulBoolean inState;
   input Boolean inBoolean;
   output Env.Cache outCache;
   output SCode.Element outClass;
   output Env.Env outEnv;
-  output list<Env.Frame> outPrevFrames;
+  output Env.Env outPrevFrames;
 algorithm
   (outCache,outClass,outEnv,outPrevFrames) := matchcontinue (inCache,inFrame,inEnv,inIdent,inPrevFrames,inState,inBoolean)
     local
       SCode.Element c;
-      list<Env.Frame> totenv,env_1,prevFrames;
+      Env.Env totenv,env_1,prevFrames;
       Option<String> sid;
       Env.AvlTree ht;
       String name;
@@ -2441,7 +2441,7 @@ algorithm
       SCode.Element c;
       DAE.Mod m;
       Env.InstStatus i;
-      list<Env.Frame> env;
+      Env.Env env;
       Env.AvlTree ht;
       String id, name;
       Env.Cache cache;
@@ -2662,7 +2662,7 @@ algorithm
       DAE.Binding bind,binding;
       Env.AvlTree ht;
       list<DAE.Subscript> ss;
-      list<Env.Frame> componentEnv;
+      Env.Env componentEnv;
       DAE.ComponentRef ids;
       Env.Cache cache;
       DAE.Type ty2_2;

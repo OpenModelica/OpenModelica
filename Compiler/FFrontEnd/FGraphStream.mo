@@ -139,12 +139,13 @@ algorithm
 end node;
 
 public function edge
+  input Name name;
   input Node source;
   input Node target;
 algorithm
-  _ := matchcontinue(source, target)
+  _ := matchcontinue(name, source, target)
 
-    case (_, _)
+    case (_, _, _)
       equation
         true = Flags.isSet(Flags.GRAPH_INST_SHOW_GRAPH);
 
@@ -165,7 +166,9 @@ algorithm
         false = FNode.isIn(target, FNode.isRefSection);
         false = FNode.isIn(target, FNode.isRefMod);
         false = FNode.isIn(target, FNode.isRefDims);
+        
         GraphStream.addEdge("default", "omc", -1, intString(FNode.id(source)), intString(FNode.id(target)), false);
+        GraphStream.addEdgeAttribute("default", "omc", -1, intString(FNode.id(source)), intString(FNode.id(target)), "ui.label", Values.STRING(name));
       then
         ();
 

@@ -123,7 +123,7 @@ algorithm
       componentDefinitionParentEnv)
     local
       DAE.Dimensions dims;
-      list<Env.Frame> compenv,env,innerCompEnv,outerCompEnv;
+      Env.Env compenv,env,innerCompEnv,outerCompEnv;
       DAE.DAElist dae, outerDAE, innerDAE;
       Connect.Sets csets,csetsInner,csetsOuter;
       DAE.Type ty;
@@ -460,7 +460,7 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,inStore,inState,inMod,inPrefix,inIdent,inClass,inAttributes,inPrefixes,inDimensionLst,inIntegerLst,inInstDims,inBoolean,inSCodeComment,info,inGraph,inSets)
     local
       DAE.Dimensions dims;
-      list<Env.Frame> compenv,env;
+      Env.Env compenv,env;
       DAE.DAElist dae;
       Connect.Sets csets;
       DAE.Type ty;
@@ -628,7 +628,7 @@ algorithm
       list<DAE.Subscript> dims_1;
       DAE.Exp e,e_1;
       DAE.Properties p;
-      list<Env.Frame> env_1,env,compenv;
+      Env.Env env_1,env,compenv;
       Connect.Sets csets;
       DAE.Type ty,ty_1,arrty;
       ClassInf.State st,ci_state;

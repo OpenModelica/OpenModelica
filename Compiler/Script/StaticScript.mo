@@ -265,7 +265,7 @@ public function elabCallInteractive "This function elaborates the functions defi
   matchcontinue (inCache,inEnv,inComponentRef,inExps,inNamedArgs,inBoolean,inInteractiveInteractiveSymbolTableOption,inPrefix,info)
     local
       DAE.ComponentRef cr_1;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.ComponentRef cr,cr2;
       Boolean impl;
       GlobalScript.SymbolTable st;
@@ -519,7 +519,7 @@ algorithm
       Option<GlobalScript.SymbolTable> st,st_1;
       DAE.Exp e_1;
       DAE.Properties prop;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.ComponentRef fn;
       DAE.Const c;
       Absyn.Exp exp;
@@ -567,7 +567,7 @@ algorithm
       DAE.Exp e;
       DAE.Properties prop;
       Option<GlobalScript.SymbolTable> st;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.ComponentRef fn;
       list<Absyn.Exp> args;
       list<Absyn.NamedArg> nargs;
@@ -600,7 +600,7 @@ algorithm
       Boolean impl;
       DAE.Exp e_1;
       DAE.Properties prop;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.ComponentRef fn;
       Absyn.Exp e;
       list<Absyn.Exp> args;

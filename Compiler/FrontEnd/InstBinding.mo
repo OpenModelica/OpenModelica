@@ -327,7 +327,7 @@ algorithm
       Option<DAE.StateSelect> stateSelect_value;
       Option<DAE.Uncertainty> uncertainty_value;
       Option<DAE.Distribution> distribution_value;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Mod mod;
       DAE.TypeSource ts;
       list<Integer> index_list;
@@ -432,7 +432,7 @@ algorithm
   (outCache,outExpExpOption) := matchcontinue (inCache,inEnv,inMod,varLst,inIntegerLst,inString,expected_type,useConstValue)
     local
       Option<DAE.Exp> result;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.Mod mod;
       list<Integer> index_list;
       String bind_name;

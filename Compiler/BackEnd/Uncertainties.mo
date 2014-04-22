@@ -102,7 +102,7 @@ algorithm
 
       DAE.DAElist dae;
       Env.Cache cache;
-      list<Env.Frame> env;
+      Env.Env env;
       Absyn.Program p;
 
       BackendDAE.BackendDAE dlow,dlow_1;
@@ -638,14 +638,14 @@ protected function flattenModel
   input Env.Cache icache;
   output DAE.DAElist daeOut;
   output Env.Cache cacheOut;
-  output list<Env.Frame> envOut;
+  output Env.Env envOut;
 algorithm
 (daeOut,cacheOut,envOut):=matchcontinue(className,p,icache)
   local
     list<SCode.Element> p_1;
     Absyn.Program ptot;
     DAE.DAElist dae;
-    list<Env.Frame> env;
+    Env.Env env;
     Real timeFrontend;
     String resstr;
     Env.Cache cache;

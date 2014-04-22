@@ -127,13 +127,6 @@ algorithm
         print("Derived:        " +& realString(List.first(lst)) +& "\n");
 
         System.startTimer();
-        // resolve type paths
-        g = FResolve.ty(FGraph.top(g), g);
-        System.stopTimer();
-        lst = List.consr(lst, System.getTimerIntervalTime());
-        print("ComponentTypes: " +& realString(List.first(lst)) +& "\n");
-
-        System.startTimer();
         // resolve type paths for constrain classes
         g = FResolve.cc(FGraph.top(g), g);
         System.stopTimer();
@@ -146,6 +139,13 @@ algorithm
         System.stopTimer();
         lst = List.consr(lst, System.getTimerIntervalTime());
         print("ClassExtends:   " +& realString(List.first(lst)) +& "\n");
+
+        System.startTimer();
+        // resolve type paths
+        g = FResolve.ty(FGraph.top(g), g);
+        System.stopTimer();
+        lst = List.consr(lst, System.getTimerIntervalTime());
+        print("ComponentTypes: " +& realString(List.first(lst)) +& "\n");
 
         System.startTimer();
         // resolve all component references

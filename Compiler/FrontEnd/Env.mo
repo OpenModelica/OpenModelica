@@ -2841,7 +2841,7 @@ public function inFunctionScope
 algorithm
   inFunction := matchcontinue(inEnv)
     local
-      list<Frame> fl;
+      Env fl;
     case ({}) then false;
     case (FRAME(scopeType = SOME(FUNCTION_SCOPE())) :: _) then true;
     case (FRAME(scopeType = SOME(PARALLEL_SCOPE())) :: _) then true;
