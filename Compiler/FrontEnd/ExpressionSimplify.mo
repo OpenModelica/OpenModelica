@@ -1975,7 +1975,7 @@ algorithm
   DAE.ARRAY(ty = ty, scalar = sc, array = lhs) := inLhs;
   DAE.ARRAY(array = rhs) := inRhs;
   op := removeOperatorDimension(inOperator);
-  res := List.threadMap1(lhs, rhs, simplifyVectorBinary2, inOperator);
+  res := List.threadMap1(lhs, rhs, simplifyVectorBinary2, op);
   outResult := DAE.ARRAY(ty, sc, res);
 end simplifyVectorBinary;
 
