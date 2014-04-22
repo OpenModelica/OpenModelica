@@ -166,7 +166,7 @@ algorithm
         false = FNode.isIn(target, FNode.isRefSection);
         false = FNode.isIn(target, FNode.isRefMod);
         false = FNode.isIn(target, FNode.isRefDims);
-        
+
         GraphStream.addEdge("default", "omc", -1, intString(FNode.id(source)), intString(FNode.id(target)), false);
         GraphStream.addEdgeAttribute("default", "omc", -1, intString(FNode.id(source)), intString(FNode.id(target)), "ui.label", Values.STRING(name));
       then
