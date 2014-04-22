@@ -1869,30 +1869,27 @@ end unliftOperator;
 
 protected function simplifyVectorScalar
 "Simplifies vector scalar operations."
-  input DAE.Exp inExp1;
-  input Operator inOperator2;
-  input DAE.Exp inExp3;
+  input DAE.Exp inLhs;
+  input Operator inOperator;
+  input DAE.Exp inRhs;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue (inExp1,inOperator2,inExp3)
+  outExp := match(inLhs, inOperator, inRhs)
     local
-      DAE.Exp s1,e1,e;
+      DAE.Exp s1;
       Operator op;
       Type tp;
       Boolean sc;
-      list<DAE.Exp> es_1,es;
+      list<DAE.Exp> es;
       list<list<DAE.Exp>> mexpl;
       Integer dims;
 
     // scalar operator array
-    case (_, _, DAE.ARRAY(array = {})) then inExp3;
-    case (s1,op,DAE.ARRAY(ty = tp,scalar = sc,array = {e1})) then DAE.ARRAY(tp,sc,{DAE.BINARY(s1,op,e1)});
-
-    case (s1,op,DAE.ARRAY(ty = tp,scalar = sc,array = (e1 :: es)))
+    case (_, _, DAE.ARRAY(ty = tp, scalar = sc, array = es))
       equation
-        DAE.ARRAY(_,_,es_1) = simplifyVectorScalar(s1, op, DAE.ARRAY(tp,sc,es));
+        es = List.map2r(es, Expression.makeBinaryExp, inLhs, inOperator);
       then
-        DAE.ARRAY(tp,sc,(DAE.BINARY(s1,op,e1) :: es_1));
+        DAE.ARRAY(tp, sc, es);
 
     case (s1,op,DAE.MATRIX(tp,dims,mexpl))
       equation
@@ -1901,26 +1898,19 @@ algorithm
         DAE.MATRIX(tp,dims,mexpl);
 
     // array operator scalar
-    case (DAE.ARRAY(ty = tp,scalar = sc,array = {}),_,_) then DAE.ARRAY(tp,sc,{/*DAE.BINARY(DAE.ICONST(0),op,s1)*/});
-    case (DAE.ARRAY(ty = tp,scalar = sc,array = {e1}),op,s1)
+    case (DAE.ARRAY(ty = tp, scalar = sc, array = es), _, _)
       equation
-        e = DAE.BINARY(e1,op,s1);
+        es = List.map2(es, Expression.makeBinaryExp, inOperator, inRhs);
       then
-        DAE.ARRAY(tp,sc,{e});
-
-    case (DAE.ARRAY(ty = tp,scalar = sc,array = (e1 :: es)),op,s1)
-      equation
-        DAE.ARRAY(_,_,es_1) = simplifyVectorScalar(DAE.ARRAY(tp,sc,es),op,s1);
-        e = DAE.BINARY(e1,op,s1);
-      then
-        DAE.ARRAY(tp,sc,(e :: es_1));
+        DAE.ARRAY(tp, sc, es);
 
     case (DAE.MATRIX(tp,dims,mexpl),op,s1)
       equation
         mexpl = simplifyVectorScalarMatrix(mexpl,op,s1,true/*array-scalar*/);
       then
         DAE.MATRIX(tp,dims,mexpl);
-  end matchcontinue;
+
+  end match;
 end simplifyVectorScalar;
 
 protected function simplifyVectorBinary0 "help function to simplify1, prevents simplify1 to be called multiple times
@@ -1972,152 +1962,74 @@ algorithm
 end simplifyVectorBinary0;
 
 protected function simplifyVectorBinary
-"author: PA
-  Simplifies vector addition and subtraction"
-  input DAE.Exp inExp1;
-  input Operator inOperator2;
-  input DAE.Exp inExp3;
-  output DAE.Exp outExp;
+  input DAE.Exp inLhs;
+  input Operator inOperator;
+  input DAE.Exp inRhs;
+  output DAE.Exp outResult;
+protected
+  DAE.Type ty;
+  Boolean sc;
+  list<DAE.Exp> lhs, rhs, res;
+  Operator op;
 algorithm
-  outExp := match (inExp1,inOperator2,inExp3)
-    local
-      Type tp1,tp2;
-      Boolean scalar1,scalar2;
-      DAE.Exp e1,e2;
-      Operator op,op2;
-      list<DAE.Exp> es_1,es1,es2;
-
-    case (DAE.ARRAY(ty = tp1,scalar = scalar1,array = {e1}),
-          op,
-         DAE.ARRAY(ty = _,scalar = _,array = {e2}))
-      equation
-        op2 = removeOperatorDimension(op);
-      then
-        DAE.ARRAY(tp1,scalar1,{DAE.BINARY(e1,op2,e2)});  /* resulting operator */
-
-    case (DAE.ARRAY(ty = tp1,scalar = scalar1,array = (e1 :: es1)),
-          op,
-          DAE.ARRAY(ty = tp2,scalar = scalar2,array = (e2 :: es2)))
-      equation
-        DAE.ARRAY(_,_,es_1) = simplifyVectorBinary(DAE.ARRAY(tp1,scalar1,es1), op, DAE.ARRAY(tp2,scalar2,es2));
-        op2 = removeOperatorDimension(op);
-      then
-        DAE.ARRAY(tp1,scalar1,(DAE.BINARY(e1,op2,e2) :: es_1));
-  end match;
+  DAE.ARRAY(ty = ty, scalar = sc, array = lhs) := inLhs;
+  DAE.ARRAY(array = rhs) := inRhs;
+  op := removeOperatorDimension(inOperator);
+  res := List.threadMap1(lhs, rhs, simplifyVectorBinary2, inOperator);
+  outResult := DAE.ARRAY(ty, sc, res);
 end simplifyVectorBinary;
 
-protected function simplifyMatrixBinary
-"author: PA
-  Simplifies matrix addition and subtraction"
-  input DAE.Exp inExp1;
-  input Operator inOperator2;
-  input DAE.Exp inExp3;
+protected function simplifyVectorBinary2
+  input DAE.Exp inLhs;
+  input DAE.Exp inRhs;
+  input Operator inOperator;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue (inExp1,inOperator2,inExp3)
-    local
-      Type tp1,tp2;
-      Integer integer1,integer2,i1,i2;
-      list<DAE.Exp> e,e1,e2;
-      Operator op,op2;
-      list<list<DAE.Exp>> es_1,es1,es2;
-      list<DAE.Exp> el1,el2;
-      DAE.Exp exp1;
-    case (DAE.MATRIX(ty = tp1,integer=integer1,matrix = {e1}),
-          op,
-         DAE.MATRIX(ty = _,integer=_,matrix = {e2}))
-      equation
-        op2 = removeOperatorDimension(op);
-        e = simplifyMatrixBinary1(e1,op2,e2);
-      then DAE.MATRIX(tp1,integer1,{e});  /* resulting operator */
-
-    case (DAE.MATRIX(ty = tp1,integer=integer1,matrix = (e1 :: es1)),
-          op,
-          DAE.MATRIX(ty = tp2,integer=integer2,matrix = (e2 :: es2)))
-      equation
-        op2 = removeOperatorDimension(op);
-        e = simplifyMatrixBinary1(e1,op2,e2);
-        i1 = integer1-1;
-        i2 = integer2-1;
-        DAE.MATRIX(matrix = es_1) = simplifyMatrixBinary(DAE.MATRIX(tp1,i1,es1), op, DAE.MATRIX(tp2,i2,es2));
-      then
-        DAE.MATRIX(tp1,integer1,(e :: es_1));
-
-    // because identity is array of array
-    case (DAE.ARRAY(ty=_,scalar=false,array={DAE.ARRAY(array=el2)}),
-          op,
-         DAE.MATRIX(ty = tp2,integer=integer2,matrix = {e2}))
-      equation
-        op2 = removeOperatorDimension(op);
-        e1 = el2;
-        e = simplifyMatrixBinary1(e1,op2,e2);
-      then DAE.MATRIX(tp2,integer2,{e});  /* resulting operator */
-
-    case (DAE.ARRAY(ty=tp1,scalar=false,array=((DAE.ARRAY(array=el2))::el1)),
-          op,
-          DAE.MATRIX(ty = tp2,integer=integer2,matrix = (e2 :: es2)))
-      equation
-        op2 = removeOperatorDimension(op);
-        e1 = el2;
-        e = simplifyMatrixBinary1(e1,op2,e2);
-        i2 = integer2-1;
-        DAE.MATRIX(_,_,es_1) = simplifyMatrixBinary(DAE.ARRAY(tp1,false,el1), op, DAE.MATRIX(tp2,i2,es2));
-      then
-        DAE.MATRIX(tp2,integer2,(e :: es_1));
-
-    case (DAE.MATRIX(ty = tp2,integer=integer2,matrix = {e2}),
-          op,
-         DAE.ARRAY(ty=_,scalar=false,array={DAE.ARRAY(array=el2)}))
-      equation
-        op2 = removeOperatorDimension(op);
-        e1 = el2;
-        e = simplifyMatrixBinary1(e1,op2,e2);
-      then DAE.MATRIX(tp2,integer2,{e});  /* resulting operator */
-
-    case (DAE.MATRIX(ty = tp2,integer=integer2,matrix = (e2 :: es2)),
-          op,
-          DAE.ARRAY(ty=tp1,scalar=false,array=((DAE.ARRAY(array=el2))::el1)))
-      equation
-        op2 = removeOperatorDimension(op);
-        e1 = el2;
-        e = simplifyMatrixBinary1(e1,op2,e2);
-        i2 = integer2-1;
-        DAE.MATRIX(matrix = es_1) = simplifyMatrixBinary(DAE.ARRAY(tp1,false,el1), op, DAE.MATRIX(tp2,i2,es2));
-      then
-        DAE.MATRIX(tp2,integer2,(e :: es_1));
-
-  end matchcontinue;
+  outExp := DAE.BINARY(inLhs, inOperator, inRhs);
+end simplifyVectorBinary2;
+  
+protected function simplifyMatrixBinary
+  "Simplifies matrix addition and subtraction"
+  input DAE.Exp inLhs;
+  input Operator inOperator;
+  input DAE.Exp inRhs;
+  output DAE.Exp outResult;
+protected
+  list<list<DAE.Exp>> lhs, rhs, res;
+  Operator op;
+  Integer sz;
+  DAE.Type ty;
+algorithm
+  lhs := Expression.get2dArrayOrMatrixContent(inLhs);
+  rhs := Expression.get2dArrayOrMatrixContent(inRhs);
+  op := removeOperatorDimension(inOperator);
+  res := List.threadMap1(lhs, rhs, simplifyMatrixBinary1, op);
+  sz := listLength(res);
+  ty := Expression.typeof(inLhs);
+  outResult := DAE.MATRIX(ty, sz, res);
 end simplifyMatrixBinary;
 
 protected function simplifyMatrixBinary1
-"author: PA
-  Simplifies matrix addition and subtraction"
-  input list<DAE.Exp> inExp1;
-  input Operator inOperator2;
-  input list<DAE.Exp> inExp3;
-  output list<DAE.Exp> outExp;
+  "Simplifies matrix addition and subtraction."
+  input list<DAE.Exp> inLhs;
+  input list<DAE.Exp> inRhs;
+  input Operator inOperator;
+  output list<DAE.Exp> outExpl;
 algorithm
-  outExp:=
-  matchcontinue (inExp1,inOperator2,inExp3)
-    local
-      DAE.Exp e1,e2,e;
-      Operator op,op2;
-      list<DAE.Exp> es_1,es1,es2;
-    case ({e1},op,{e2})
-      equation
-        op2 = removeOperatorDimension(op);
-        // failure(_ = removeOperatorDimension(op2));
-        e = DAE.BINARY(e1,op2,e2);
-      then {e};  // resulting operator
-    case (e1::es1,op,e2::es2)
-      equation
-        op2 = removeOperatorDimension(op);
-        e = DAE.BINARY(e1,op2,e2);
-        es_1 = simplifyMatrixBinary1(es1, op, es2);
-      then
-        e :: es_1;
-  end matchcontinue;
+  outExpl := List.threadMap1(inLhs, inRhs, simplifyMatrixBinary2, inOperator);
 end simplifyMatrixBinary1;
+
+protected function simplifyMatrixBinary2
+  input DAE.Exp inLhs;
+  input DAE.Exp inRhs;
+  input Operator inOperator;
+  output DAE.Exp outExp;
+protected
+  Operator op;
+algorithm
+  op := removeOperatorDimension(inOperator);
+  outExp := DAE.BINARY(inLhs, op, inRhs);
+end simplifyMatrixBinary2;
 
 protected function simplifyMatrixPow
 "author: Frenkel TUD
@@ -2512,34 +2424,10 @@ protected function simplifyMul
 protected
   list<tuple<DAE.Exp, Real>> exp_const,exp_const_1;
 algorithm
-  exp_const := simplifyMul2(expl);
+  exp_const := List.map(expl, simplifyBinaryMulCoeff2);
   exp_const_1 := simplifyMulJoinFactors(exp_const);
   expl_1 := simplifyMulMakePow(exp_const_1);
 end simplifyMul;
-
-protected function simplifyMul2
-"author: PA
-  Helper function to simplifyMul."
-  input list<DAE.Exp> inExpLst;
-  output list<tuple<DAE.Exp, Real>> outTplExpRealLst;
-algorithm
-  outTplExpRealLst := match (inExpLst)
-    local
-      DAE.Exp e_1,e;
-      Real coeff;
-      list<tuple<DAE.Exp, Real>> rest;
-      list<DAE.Exp> es;
-
-    case ({}) then {};
-
-    case ((e :: es))
-      equation
-        (e_1,coeff) = simplifyBinaryMulCoeff2(e);
-        rest = simplifyMul2(es);
-      then
-        ((e_1,coeff) :: rest);
-  end match;
-end simplifyMul2;
 
 protected function simplifyMulJoinFactors
 " author: PA
@@ -2654,7 +2542,7 @@ algorithm
 
     case (expl)
       equation
-        exp_const = simplifyAdd2(expl);
+        exp_const = List.map(inExpLst, simplifyBinaryAddCoeff2);
         exp_const_1 = simplifyAddJoinTerms(exp_const);
         expl_1 = simplifyAddMakeMul(exp_const_1);
       then
@@ -2667,36 +2555,6 @@ algorithm
         fail();
   end matchcontinue;
 end simplifyAdd;
-
-protected function simplifyAdd2
-"author: PA
-  Helper function to simplifyAdd"
-  input list<DAE.Exp> inExpLst;
-  output list<tuple<DAE.Exp, Real>> outTplExpRealLst;
-algorithm
-  outTplExpRealLst := matchcontinue (inExpLst)
-    local
-      DAE.Exp e_1,e;
-      Real coeff;
-      list<tuple<DAE.Exp, Real>> rest;
-      list<DAE.Exp> es;
-
-    case ({}) then {};
-
-    case ((e :: es))
-      equation
-        (e_1,coeff) = simplifyBinaryAddCoeff2(e);
-        rest = simplifyAdd2(es);
-      then
-        ((e_1,coeff) :: rest);
-
-    case (_)
-      equation
-        Debug.fprint(Flags.FAILTRACE,"- ExpressionSimplify.simplifyAdd2 failed\n");
-      then
-        fail();
-  end matchcontinue;
-end simplifyAdd2;
 
 protected function simplifyAddJoinTerms
 "author: PA
@@ -2799,49 +2657,48 @@ end simplifyAddMakeMul;
 protected function simplifyBinaryAddCoeff2
 "This function checks for x+x+x+x and returns (x,4.0)"
   input DAE.Exp inExp;
-  output DAE.Exp outExp;
-  output Real outReal;
+  output tuple<DAE.Exp, Real> outRes;
 algorithm
-  (outExp,outReal) := matchcontinue (inExp)
+  outRes := matchcontinue (inExp)
     local
       DAE.Exp exp,e1,e2,e;
       Real coeff,coeff_1;
       Integer icoeff;
       Type tp;
 
-    case ((exp as DAE.CREF(componentRef = _))) then (exp,1.0);
+    case ((exp as DAE.CREF(componentRef = _))) then ((exp,1.0));
 
     case (DAE.UNARY(operator = DAE.UMINUS(ty = DAE.T_REAL(varLst = _)), exp = exp))
       equation
         (exp,coeff) = simplifyBinaryAddCoeff2(exp);
         coeff = realMul(-1.0,coeff);
-      then (exp,coeff);
+      then ((exp,coeff));
 
     case (DAE.BINARY(exp1 = DAE.RCONST(real = coeff),operator = DAE.MUL(ty = _),exp2 = e1))
-      then (e1,coeff);
+      then ((e1,coeff));
 
     case (DAE.BINARY(exp1 = e1,operator = DAE.MUL(ty = _),exp2 = DAE.RCONST(real = coeff)))
-      then (e1,coeff);
+      then ((e1,coeff));
 
     case (DAE.BINARY(exp1 = e1,operator = DAE.MUL(ty = _),exp2 = DAE.ICONST(integer = icoeff)))
       equation
         coeff_1 = intReal(icoeff);
       then
-        (e1,coeff_1);
+        ((e1,coeff_1));
 
     case (DAE.BINARY(exp1 = DAE.ICONST(integer = icoeff),operator = DAE.MUL(ty = _),exp2 = e1))
       equation
         coeff_1 = intReal(icoeff);
       then
-        (e1,coeff_1);
+        ((e1,coeff_1));
 
     case (DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = _),exp2 = e2))
       equation
         true = Expression.expEqual(e1, e2);
       then
-        (e1,2.0);
+        ((e1,2.0));
 
-    case (e) then (e,1.0);
+    else ((inExp,1.0));
 
   end matchcontinue;
 end simplifyBinaryAddCoeff2;
@@ -2850,10 +2707,9 @@ protected function simplifyBinaryMulCoeff2
 "This function takes an expression XXXXX
   and return (X,5.0) to be used for X^5."
   input DAE.Exp inExp;
-  output DAE.Exp outExp;
-  output Real outReal;
+  output tuple<DAE.Exp, Real> outRes;
 algorithm
-  (outExp,outReal) := matchcontinue (inExp)
+  outRes := matchcontinue (inExp)
     local
       DAE.Exp e,e1,e2;
       ComponentRef cr;
@@ -2862,42 +2718,42 @@ algorithm
       Integer icoeff;
 
     case ((e as DAE.CREF(componentRef = _)))
-      then (e,1.0);
+      then ((e,1.0));
 
     case (DAE.BINARY(exp1 = e1,operator = DAE.POW(ty = _),exp2 = DAE.RCONST(real = coeff)))
-      then (e1,coeff);
+      then ((e1,coeff));
 
     case (DAE.BINARY(exp1 = e1,operator = DAE.POW(ty = _),exp2 = DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = DAE.RCONST(real = coeff))))
       equation
         coeff_1 = 0.0 -. coeff;
       then
-        (e1,coeff_1);
+        ((e1,coeff_1));
 
     case (DAE.BINARY(exp1 = e1,operator = DAE.POW(ty = _),exp2 = DAE.ICONST(integer = icoeff)))
       equation
         coeff_1 = intReal(icoeff);
       then
-        (e1,coeff_1);
+        ((e1,coeff_1));
 
     case (DAE.BINARY(exp1 = e1,operator = DAE.POW(ty = _),exp2 = DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = DAE.ICONST(integer = icoeff))))
       equation
         coeff_1 = intReal(icoeff);
       then
-        (e1,coeff_1);
+        ((e1,coeff_1));
 
     case (DAE.BINARY(exp1 = e1, operator = DAE.POW(ty = _), exp2 = DAE.ICONST(integer = icoeff)))
       equation
         coeff_1 = intReal(icoeff);
       then
-        (e1, coeff_1);
+        ((e1, coeff_1));
 
     case (DAE.BINARY(exp1 = e1,operator = DAE.MUL(ty = _),exp2 = e2))
       equation
         true = Expression.expEqual(e1, e2);
       then
-        (e1,2.0);
+        ((e1,2.0));
 
-    case (e) then (e,1.0);
+    case (e) then ((e,1.0));
 
   end matchcontinue;
 end simplifyBinaryMulCoeff2;

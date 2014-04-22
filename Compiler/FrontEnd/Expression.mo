@@ -6619,10 +6619,7 @@ algorithm
 
     case (DAE.ARRAY(array = ae),_) then isConstWorkList(ae,true);
 
-    case (DAE.MATRIX(matrix = matrix),_)
-      equation
-        res = List.fold(matrix,isConstWorkList,true);
-      then res;
+    case (DAE.MATRIX(matrix = matrix),_) then isConstWorkListList(matrix, true);
 
     case (DAE.RANGE(start=e1,step=NONE(),stop=e2),_) then isConstWork(e1,isConstWork(e2,true));
 
@@ -6673,14 +6670,8 @@ algorithm
     case (DAE.BCONST(bool = _),_) then true;
     case (DAE.SCONST(string = _),_) then true;
     case (DAE.ENUM_LITERAL(name = _),_) then true;
-
     case (DAE.ARRAY(array = ae),_) then isConstValueWorkList(ae,true);
-
-    case (DAE.MATRIX(matrix = matrix),_)
-      equation
-        res = List.fold(matrix,isConstValueWorkList,true);
-      then res;
-
+    case (DAE.MATRIX(matrix = matrix),_) then isConstValueWorkListList(matrix, true);
     else false;
 
   end match;
@@ -6709,6 +6700,22 @@ algorithm
   end match;
 end isConstWorkList;
 
+protected function isConstWorkListList
+  input list<list<DAE.Exp>> inExps;
+  input Boolean inIsConst;
+  output Boolean outIsConst;
+algorithm
+  outIsConst := match(inExps, inIsConst)
+    local
+      list<DAE.Exp> e;
+      list<list<DAE.Exp>> exps;
+
+    case (_, false) then false;
+    case (e :: exps, _) then isConstWorkListList(exps, isConstWorkList(e, true));
+    else false;
+  end match;
+end isConstWorkListList;
+
 public function isConstValueWorkList
 "Returns true if a list of expressions is a constant value"
   input list<DAE.Exp> inExps;
@@ -6723,6 +6730,22 @@ algorithm
     case (e::exps,_) then isConstValueWorkList(exps,isConstValueWork(e,true));
   end match;
 end isConstValueWorkList;
+
+protected function isConstValueWorkListList
+  input list<list<DAE.Exp>> inExps;
+  input Boolean inIsConst;
+  output Boolean outIsConst;
+algorithm
+  outIsConst := match(inExps, inIsConst)
+    local
+      list<DAE.Exp> e;
+      list<list<DAE.Exp>> exps;
+
+    case (_, false) then false;
+    case (e :: exps, _) then isConstValueWorkListList(exps, isConstWorkList(e, true));
+    else false;
+  end match;
+end isConstValueWorkListList;
 
 public function isNotConst
 "author: PA
@@ -10162,5 +10185,14 @@ algorithm
     case (_) then inExp;
   end matchcontinue;
 end replaceDerOpInExpTraverser;
+
+public function makeBinaryExp
+  input DAE.Exp inLhs;
+  input DAE.Operator inOp;
+  input DAE.Exp inRhs;
+  output DAE.Exp outExp;
+algorithm
+  outExp := DAE.BINARY(inLhs, inOp, inRhs);
+end makeBinaryExp;
 
 end Expression;
