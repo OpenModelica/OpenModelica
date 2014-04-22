@@ -2670,7 +2670,7 @@ algorithm
 
     case (DAE.UNARY(operator = DAE.UMINUS(ty = DAE.T_REAL(varLst = _)), exp = exp))
       equation
-        (exp,coeff) = simplifyBinaryAddCoeff2(exp);
+        ((exp,coeff)) = simplifyBinaryAddCoeff2(exp);
         coeff = realMul(-1.0,coeff);
       then ((exp,coeff));
 
