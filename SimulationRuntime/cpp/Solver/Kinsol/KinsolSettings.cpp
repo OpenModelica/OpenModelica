@@ -5,7 +5,7 @@
 
 KinsolSettings::KinsolSettings()
 : iNewt_max         (700)
-, dRtol           (1e-6)
+, dRtol           (1e-12)
 , dAtol           (1.0)
 , dDelta          (0.9)
 {

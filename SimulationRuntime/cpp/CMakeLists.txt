@@ -208,7 +208,7 @@ endif()
 if(USE_SUNDIALS)
 #add  Cvode solver project
 add_subdirectory (Solver/CVode)
-#add_subdirectory (Solver/Kinsol)
+add_subdirectory (Solver/Kinsol)
 #add  Idas solver project
 #add_subdirectory (Solver/Idas/Implementation)
 #add_subdirectory (Solver/Ida/Implementation)
