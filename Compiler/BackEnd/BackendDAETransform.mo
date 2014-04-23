@@ -1463,86 +1463,87 @@ algorithm
       Type_a ext_arg_1,ext_arg_2,ext_arg_3;
       Boolean diffed;
       DAE.Expand crefExpand;
+      BackendDAE.EquationKind eqKind;
 
-    case (BackendDAE.EQUATION(exp = e1,scalar = e2,source = source,differentiated = diffed),_,_)
+    case (BackendDAE.EQUATION(exp = e1,scalar = e2,source = source,differentiated = diffed, kind=eqKind),_,_)
       equation
         ((e1_1,(ops,ext_arg_1))) = func((e1,({},inTypeA)));
         ((e2_1,(ops,ext_arg_2))) = func((e2,(ops,ext_arg_1)));
         source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
       then
-        (BackendDAE.EQUATION(e1_1,e2_1,source,diffed),ext_arg_2);
+        (BackendDAE.EQUATION(e1_1,e2_1,source,diffed,eqKind),ext_arg_2);
 
     // Array equation
-    case (BackendDAE.ARRAY_EQUATION(dimSize=dimSize,left = e1,right = e2,source = source,differentiated = diffed),_,_)
+    case (BackendDAE.ARRAY_EQUATION(dimSize=dimSize,left = e1,right = e2,source = source,differentiated = diffed, kind=eqKind),_,_)
       equation
         ((e1_1,(ops,ext_arg_1))) = func((e1,({},inTypeA)));
         ((e2_1,(ops,ext_arg_2))) = func((e2,(ops,ext_arg_1)));
         source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
       then
-        (BackendDAE.ARRAY_EQUATION(dimSize,e1_1,e2_1,source,diffed),ext_arg_2);
+        (BackendDAE.ARRAY_EQUATION(dimSize,e1_1,e2_1,source,diffed,eqKind),ext_arg_2);
 
-    case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2,source=source,differentiated = diffed),_,_)
+    case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2,source=source,differentiated = diffed,kind=eqKind),_,_)
       equation
         e1 = Expression.crefExp(cr);
         ((DAE.CREF(cr1,_),(ops,ext_arg_1))) = func((e1,({},inTypeA)));
         ((e2_1,(ops,_))) = func((e2,(ops,ext_arg_1)));
         source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
       then
-        (BackendDAE.SOLVED_EQUATION(cr1,e2_1,source,diffed),ext_arg_1);
+        (BackendDAE.SOLVED_EQUATION(cr1,e2_1,source,diffed,eqKind),ext_arg_1);
 
-    case (BackendDAE.RESIDUAL_EQUATION(exp = e1,source=source,differentiated = diffed),_,_)
+    case (BackendDAE.RESIDUAL_EQUATION(exp = e1,source=source,differentiated = diffed,kind=eqKind),_,_)
       equation
         ((e1_1,(ops,ext_arg_1))) = func((e1,({},inTypeA)));
         source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
       then
-        (BackendDAE.RESIDUAL_EQUATION(e1_1,source,diffed),ext_arg_1);
+        (BackendDAE.RESIDUAL_EQUATION(e1_1,source,diffed,eqKind),ext_arg_1);
 
     // Algorithms
-    case (BackendDAE.ALGORITHM(size = size,alg=DAE.ALGORITHM_STMTS(statementLst = statementLst),source = source, expand = crefExpand),_,_)
+    case (BackendDAE.ALGORITHM(size = size,alg=DAE.ALGORITHM_STMTS(statementLst = statementLst),source = source, expand = crefExpand, kind=eqKind),_,_)
       equation
         (statementLst,(ops,ext_arg_1)) = DAEUtil.traverseDAEEquationsStmts(statementLst, func, ({},inTypeA));
         source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
-      then (BackendDAE.ALGORITHM(size,DAE.ALGORITHM_STMTS(statementLst),source, crefExpand),ext_arg_1);
+      then (BackendDAE.ALGORITHM(size,DAE.ALGORITHM_STMTS(statementLst),source, crefExpand, eqKind),ext_arg_1);
 
     case (BackendDAE.WHEN_EQUATION(size=size,whenEquation =
-          BackendDAE.WHEN_EQ(condition=cond,left = cr,right = e1,elsewhenPart=NONE()),source = source),_,_)
+          BackendDAE.WHEN_EQ(condition=cond,left = cr,right = e1,elsewhenPart=NONE()),source = source, kind=eqKind),_,_)
       equation
         e2 = Expression.crefExp(cr);
         ((e1_1,(ops,ext_arg_1))) = func((e1,({},inTypeA)));
         ((DAE.CREF(cr1,_),(ops,ext_arg_2))) = func((e2,(ops,ext_arg_1)));
         ((cond,(ops,ext_arg_3))) = func((cond,(ops,ext_arg_2)));
         source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
-        res = BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,cr1,e1_1,NONE()),source);
+        res = BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,cr1,e1_1,NONE()),source,eqKind);
      then
         (res,ext_arg_3);
 
     case (BackendDAE.WHEN_EQUATION(size=size,whenEquation =
-          BackendDAE.WHEN_EQ(condition=cond,left = cr,right = e1,elsewhenPart=SOME(elsepart)),source = source),_,_)
+          BackendDAE.WHEN_EQ(condition=cond,left = cr,right = e1,elsewhenPart=SOME(elsepart)),source = source,kind=eqKind),_,_)
       equation
         ((e1_1,(ops,ext_arg_1))) = func((e1,({},inTypeA)));
         ((cond,(ops,ext_arg_2))) = func((cond,(ops,ext_arg_1)));
         source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
-        (BackendDAE.WHEN_EQUATION(whenEquation=elsepartRes,source=source),ext_arg_3) = traverseBackendDAEExpsEqnWithSymbolicOperation(BackendDAE.WHEN_EQUATION(size,elsepart,source),func,ext_arg_2);
-        res = BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,cr,e1_1,SOME(elsepartRes)),source);
+        (BackendDAE.WHEN_EQUATION(whenEquation=elsepartRes,source=source),ext_arg_3) = traverseBackendDAEExpsEqnWithSymbolicOperation(BackendDAE.WHEN_EQUATION(size,elsepart,source,eqKind),func,ext_arg_2);
+        res = BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,cr,e1_1,SOME(elsepartRes)),source,eqKind);
       then
         (res,ext_arg_3);
 
-    case (BackendDAE.COMPLEX_EQUATION(size=size,left = e1,right = e2,source = source,differentiated = diffed),_,_)
+    case (BackendDAE.COMPLEX_EQUATION(size=size,left = e1,right = e2,source = source,differentiated = diffed,kind=eqKind),_,_)
       equation
         ((e1_1,(ops,ext_arg_1))) = func((e1,({},inTypeA)));
         ((e2_1,(ops,ext_arg_2))) = func((e2,(ops,ext_arg_1)));
         source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
       then
-        (BackendDAE.COMPLEX_EQUATION(size,e1_1,e2_1,source,diffed),ext_arg_2);
+        (BackendDAE.COMPLEX_EQUATION(size,e1_1,e2_1,source,diffed,eqKind),ext_arg_2);
 
-    case (BackendDAE.IF_EQUATION(conditions=expl, eqnstrue=eqnslst, eqnsfalse=eqns, source=source),_,_)
+    case (BackendDAE.IF_EQUATION(conditions=expl, eqnstrue=eqnslst, eqnsfalse=eqns, source=source,kind=eqKind),_,_)
       equation
         (expl,(ops,ext_arg_1)) = traverseBackendDAEExpsLstEqnWithSymbolicOperation(expl,func,({},inTypeA),{});
         source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
         (eqnslst,ext_arg_1) = traverseBackendDAEExpsEqnLstLstWithSymbolicOperation(eqnslst,func,ext_arg_1,{});
         (eqns,ext_arg_1) = traverseBackendDAEExpsEqnLstWithSymbolicOperation(eqns,func,ext_arg_1,{});
       then
-        (BackendDAE.IF_EQUATION(expl,eqnslst,eqns,source),ext_arg_1);
+        (BackendDAE.IF_EQUATION(expl,eqnslst,eqns,source,eqKind),ext_arg_1);
 
     else
       equation

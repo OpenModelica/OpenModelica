@@ -741,14 +741,15 @@ algorithm
       DAE.Algorithm alg;
       Boolean diffed;
       DAE.ComponentRef cr;
+      BackendDAE.EquationKind eqKind;
 
     case ({}, _) then ();
-    case (BackendDAE.EQUATION(e1, e2, _, _)::res, _) equation /*done*/
+    case (BackendDAE.EQUATION(e1, e2, _, _, eqKind)::res, _) equation /*done*/
       str = "EQUATION: ";
       str = str +& ExpressionDump.printExpStr(e1);
       str = str +& " = ";
       str = str +& ExpressionDump.printExpStr(e2);
-      str = str +& "\n";
+      str = str +& " (" +& equationKindString(eqKind) +& ")\n";
       print(str);
 
       str = "LHS:\n";
@@ -761,12 +762,12 @@ algorithm
 
       dumpBackendDAEEqnList2(res, printExpTree);
     then ();
-    case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2)::res, _) equation /*done*/
+    case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, kind=eqKind)::res, _) equation /*done*/
       str = "COMPLEX_EQUATION: ";
       str = str +& ExpressionDump.printExpStr(e1);
       str = str +& " = ";
       str = str +& ExpressionDump.printExpStr(e2);
-      str = str +& "\n";
+      str = str +& " (" +& equationKindString(eqKind) +& ")\n";
       print(str);
 
       str = "LHS:\n";
@@ -779,21 +780,21 @@ algorithm
 
       dumpBackendDAEEqnList2(res,printExpTree);
     then ();
-    case (BackendDAE.SOLVED_EQUATION(componentRef=_,exp=e)::res,_) equation
+    case (BackendDAE.SOLVED_EQUATION(componentRef=_,exp=e,kind=eqKind)::res,_) equation
       print("SOLVED_EQUATION: ");
       str = ExpressionDump.printExpStr(e);
       print(str);
-      print("\n");
+      print(" (" +& equationKindString(eqKind) +& ")\n");
       str = ExpressionDump.dumpExpStr(e,0);
       str = Util.if_(printExpTree,str,"");
       print(str);
       print("\n");
       dumpBackendDAEEqnList2(res,printExpTree);
     then ();
-    case (BackendDAE.RESIDUAL_EQUATION(exp=e)::res, _) equation /*done*/
+    case (BackendDAE.RESIDUAL_EQUATION(exp=e,kind=eqKind)::res, _) equation /*done*/
       str = "RESIDUAL_EQUATION: ";
       str = str +& ExpressionDump.printExpStr(e);
-      str = str +& "\n";
+      str = str +& " (" +& equationKindString(eqKind) +& ")\n";
       print(str);
 
       str = ExpressionDump.dumpExpStr(e, 0);
@@ -803,28 +804,28 @@ algorithm
 
       dumpBackendDAEEqnList2(res, printExpTree);
     then ();
-    case (BackendDAE.ARRAY_EQUATION(left=e1,right=_)::res,_) equation
+    case (BackendDAE.ARRAY_EQUATION(left=e1,kind=eqKind)::res,_) equation
       print("ARRAY_EQUATION: ");
       str = ExpressionDump.printExpStr(e1);
       print(str);
-      print("\n");
+      str = str +& " (" +& equationKindString(eqKind) +& ")\n";
       str = ExpressionDump.dumpExpStr(e1,0);
       str = Util.if_(printExpTree,str,"");
       print(str);
       print("\n");
       dumpBackendDAEEqnList2(res,printExpTree);
     then ();
-    case (BackendDAE.ALGORITHM(alg=alg)::res,_) equation
+    case (BackendDAE.ALGORITHM(alg=alg,kind=eqKind)::res,_) equation
       print("ALGORITHM: ");
       dumpAlgorithms({alg},0);
-      print("\n");
+      print(" (" +& equationKindString(eqKind) +& ")\n");
       dumpBackendDAEEqnList2(res,printExpTree);
     then ();
-    case (BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(right=e/*TODO handle elsewhe also*/))::res, _) equation
+    case (BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(right=e/*TODO handle elsewhe also*/),source=source,kind=eqKind)::res, _) equation
       print("WHEN_EQUATION: ");
       str = ExpressionDump.printExpStr(e);
       print(str);
-      print("\n");
+      str = str +& " (" +& equationKindString(eqKind) +& ")\n";
       str = ExpressionDump.dumpExpStr(e,0);
       str = Util.if_(printExpTree,str,"");
       print(str);
@@ -2723,7 +2724,6 @@ protected function optStateSelectionString
   output String outString;
 algorithm
   outString:= match(ss)
-  local
     case(SOME(DAE.NEVER())) then  "stateSelect=StateSelect.never ";
     case(SOME(DAE.AVOID())) then  "stateSelect=StateSelect.avoid ";
     case(SOME(DAE.DEFAULT())) then "";
@@ -2732,6 +2732,18 @@ algorithm
     else "";
   end match;
 end optStateSelectionString;
+
+protected function equationKindString
+  input BackendDAE.EquationKind inEqKind;
+  output String outString;
+algorithm
+  outString:= match(inEqKind)
+    case BackendDAE.DYNAMIC_EQUATION() then  "dynamic";
+    case BackendDAE.INITIAL_EQUATION() then  "initial";
+    case BackendDAE.UNKNOWN_EQUATION_KIND() then  "unknown";
+    else "???";
+  end match;
+end equationKindString;
 
 protected function optExpressionString
 "Helper function to dump."

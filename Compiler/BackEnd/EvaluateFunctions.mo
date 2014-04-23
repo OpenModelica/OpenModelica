@@ -46,7 +46,6 @@ protected import BackendVarTransform;
 protected import BackendVariable;
 protected import ComponentReference;
 protected import DAEUtil;
-protected import DAEDump;
 protected import Debug;
 protected import Expression;
 protected import ExpressionDump;
@@ -55,7 +54,6 @@ protected import Flags;
 protected import List;
 protected import RemoveSimpleEquations;
 protected import SCode;
-protected import Types;
 protected import Util;
 
 
@@ -143,6 +141,8 @@ algorithm
       DAE.FunctionTree funcs;
       list<BackendDAE.Equation> addEqs, addEqs1, addEqs2;
       list<DAE.Exp> lhs;
+      BackendDAE.EquationKind eqKind;
+
     case(BackendDAE.EQUATION(exp=exp1, scalar=exp2,source=source,differentiated=diff),_)
       equation
         b1 = Expression.containFunctioncall(exp1);
@@ -154,7 +154,7 @@ algorithm
         ((rhsExp,lhsExp,addEqs2,funcs,idx)) = Debug.bcallret4(b2,evaluateConstantFunction,exp2,exp1,funcs,idx,(rhsExp,lhsExp,{},funcs,idx));
         addEqs = listAppend(addEqs1,addEqs);
         addEqs = listAppend(addEqs2,addEqs);
-        eq = BackendDAE.EQUATION(lhsExp,rhsExp,source,diff);
+        eq = BackendDAE.EQUATION(lhsExp,rhsExp,source,diff,BackendDAE.UNKNOWN_EQUATION_KIND());
       then
         (eq,(shared,addEqs,idx+1));
     case(BackendDAE.ARRAY_EQUATION(dimSize =_, left=_, right=_,  differentiated=_),_)
@@ -162,7 +162,7 @@ algorithm
         print("this is an array equation. update evalFunctions_findFuncs");
       then
         (eqIn,tplIn);
-    case(BackendDAE.COMPLEX_EQUATION(size =_, left=exp1, right=exp2, source=source, differentiated=diff),_)
+    case(BackendDAE.COMPLEX_EQUATION(size =_, left=exp1, right=exp2, source=source, differentiated=diff, kind=eqKind),_)
       equation
         b1 = Expression.containFunctioncall(exp1);
         b2 = Expression.containFunctioncall(exp2);
@@ -175,7 +175,7 @@ algorithm
         addEqs = listAppend(addEqs2,addEqs);
         shared = BackendDAEUtil.addFunctionTree(funcs,shared);
         size = DAEUtil.getTupleSize(lhsExp);
-        eq = Util.if_(intEq(size,0),BackendDAE.EQUATION(lhsExp,rhsExp,source,diff),BackendDAE.COMPLEX_EQUATION(size,lhsExp,rhsExp,source,diff));
+        eq = Util.if_(intEq(size,0),BackendDAE.EQUATION(lhsExp,rhsExp,source,diff,eqKind),BackendDAE.COMPLEX_EQUATION(size,lhsExp,rhsExp,source,diff,eqKind));
         (eq,addEqs) = convertTupleEquations(eq,addEqs);
         //print("the lhs:\n");
         //ExpressionDump.dumpExp(lhsExp);
@@ -240,7 +240,7 @@ algorithm
         eqLstIn;
     case(l::lrest,r::rrest,_)
       equation
-        eq = BackendDAE.EQUATION(r,l,DAE.emptyElementSource,false);
+        eq = BackendDAE.EQUATION(r,l,DAE.emptyElementSource,false,BackendDAE.UNKNOWN_EQUATION_KIND());
         eqLst = eq::eqLstIn;
        eqLst = makeBackendEquation(lrest,rrest,eqLst);
       then
@@ -1105,7 +1105,7 @@ algorithm
         eqsIn;
     case(lhs::lrest,rhs::rrest,_)
       equation
-        eq = BackendDAE.EQUATION(lhs,rhs,DAE.emptyElementSource,false);
+        eq = BackendDAE.EQUATION(lhs,rhs,DAE.emptyElementSource,false,BackendDAE.UNKNOWN_EQUATION_KIND());
         eqs = generateConstEqs(lrest,rrest,eq::eqsIn);
       then
         eqs;

@@ -252,64 +252,65 @@ algorithm
       list<list<BackendDAE.Equation>> eqnslst;
       Boolean b1,b2,b3,d;
       DAE.Expand crefExpand;
+      BackendDAE.EquationKind eqKind;
 
-    case(BackendDAE.EQUATION(e1,e2,source,d),_)
+    case(BackendDAE.EQUATION(e1,e2,source,d,eqKind),_)
       equation
         (e1_1,source,b1,_) = inlineExp(e1,fns,source);
         (e2_1,source,b2,_) = inlineExp(e2,fns,source);
         true = b1 or b2;
       then
-       (BackendDAE.EQUATION(e1_1,e2_1,source,d),true);
+       (BackendDAE.EQUATION(e1_1,e2_1,source,d,eqKind),true);
 
-    case(BackendDAE.ARRAY_EQUATION(dimSize,e1,e2,source,d),_)
+    case(BackendDAE.ARRAY_EQUATION(dimSize,e1,e2,source,d,eqKind),_)
       equation
         (e1_1,source,b1,_) = inlineExp(e1,fns,source);
         (e2_1,source,b2,_) = inlineExp(e2,fns,source);
         true = b1 or b2;
       then
-        (BackendDAE.ARRAY_EQUATION(dimSize,e1_1,e2_1,source,d),true);
+        (BackendDAE.ARRAY_EQUATION(dimSize,e1_1,e2_1,source,d,eqKind),true);
 
-    case(BackendDAE.SOLVED_EQUATION(cref,e,source,d),_)
+    case(BackendDAE.SOLVED_EQUATION(cref,e,source,d,eqKind),_)
       equation
         (e_1,source,true,_) = inlineExp(e,fns,source);
       then
-        (BackendDAE.SOLVED_EQUATION(cref,e_1,source,d),true);
+        (BackendDAE.SOLVED_EQUATION(cref,e_1,source,d,eqKind),true);
 
-    case(BackendDAE.RESIDUAL_EQUATION(e,source,d),_)
+    case(BackendDAE.RESIDUAL_EQUATION(e,source,d,eqKind),_)
       equation
         (e_1,source,true,_) = inlineExp(e,fns,source);
       then
-        (BackendDAE.RESIDUAL_EQUATION(e_1,source,d),true);
+        (BackendDAE.RESIDUAL_EQUATION(e_1,source,d,eqKind),true);
 
-    case(BackendDAE.ALGORITHM(size=size,alg=alg as DAE.ALGORITHM_STMTS(statementLst = stmts),source=source,expand=crefExpand),_)
+    case(BackendDAE.ALGORITHM(size,alg as DAE.ALGORITHM_STMTS(statementLst = stmts),source,crefExpand,eqKind),_)
       equation
         (stmts1,true) = inlineStatements(stmts,fns,{},false);
         alg = DAE.ALGORITHM_STMTS(stmts1);
       then
-        (BackendDAE.ALGORITHM(size,alg,source,crefExpand),true);
+        (BackendDAE.ALGORITHM(size,alg,source,crefExpand,eqKind),true);
 
-    case(BackendDAE.WHEN_EQUATION(size,weq,source),_)
+    case(BackendDAE.WHEN_EQUATION(size,weq,source,eqKind),_)
       equation
         (weq_1,source,true) = inlineWhenEq(weq,fns,source);
       then
-        (BackendDAE.WHEN_EQUATION(size,weq_1,source),true);
+        (BackendDAE.WHEN_EQUATION(size,weq_1,source,eqKind),true);
 
-    case(BackendDAE.COMPLEX_EQUATION(size,e1,e2,source,d),_)
+    case(BackendDAE.COMPLEX_EQUATION(size,e1,e2,source,d,eqKind),_)
       equation
         (e1_1,source,b1,_) = inlineExp(e1,fns,source);
         (e2_1,source,b2,_) = inlineExp(e2,fns,source);
         true = b1 or b2;
       then
-        (BackendDAE.COMPLEX_EQUATION(size,e1_1,e2_1,source,d),true);
+        (BackendDAE.COMPLEX_EQUATION(size,e1_1,e2_1,source,d,eqKind),true);
 
-    case(BackendDAE.IF_EQUATION(explst,eqnslst,eqns,source),_)
+    case(BackendDAE.IF_EQUATION(explst,eqnslst,eqns,source,eqKind),_)
       equation
         (explst,source,b1) = inlineExps(explst,fns,source);
         (eqnslst,b2) = inlineEqsLst(eqnslst,fns,{},false);
         (eqns,b3) = inlineEqs(eqns,fns,{},false);
         true = b1 or b2 or b3;
       then
-        (BackendDAE.IF_EQUATION(explst,eqnslst,eqns,source),true);
+        (BackendDAE.IF_EQUATION(explst,eqnslst,eqns,source,eqKind),true);
     else
       then
         (inEquation,false);

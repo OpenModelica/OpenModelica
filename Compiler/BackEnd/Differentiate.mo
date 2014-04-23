@@ -424,7 +424,7 @@ algorithm
         op2 = DAE.OP_DIFFERENTIATE(inDiffwrtCref,e2,e2_1);
         source = List.foldr({op1,op2},DAEUtil.addSymbolicTransformation,source);
       then
-        (BackendDAE.EQUATION(e1_1,e2_1,source,false), funcs);
+        (BackendDAE.EQUATION(e1_1,e2_1,source,false,BackendDAE.UNKNOWN_EQUATION_KIND()), funcs);
 
     // solved equations
     case (BackendDAE.SOLVED_EQUATION(componentRef = cref, exp = e2,source=source),_,_,_,_)
@@ -441,7 +441,7 @@ algorithm
         op2 = DAE.OP_DIFFERENTIATE(inDiffwrtCref,e2,e2_1);
         source = List.foldr({op1,op2},DAEUtil.addSymbolicTransformation,source);
       then
-        (BackendDAE.EQUATION(e1_1,e2_1,source,false), funcs);
+        (BackendDAE.EQUATION(e1_1,e2_1,source,false,BackendDAE.UNKNOWN_EQUATION_KIND()), funcs);
 
     // RESIDUAL_EQUATION
     case (BackendDAE.RESIDUAL_EQUATION(exp = e1,source=source),_,_,_,_)
@@ -454,7 +454,7 @@ algorithm
         source = List.foldr({op1},DAEUtil.addSymbolicTransformation,source);
 
       then
-        (BackendDAE.RESIDUAL_EQUATION(e1_1,source,false), funcs);
+        (BackendDAE.RESIDUAL_EQUATION(e1_1,source,false,BackendDAE.UNKNOWN_EQUATION_KIND()), funcs);
 
     // complex equations
     case (BackendDAE.COMPLEX_EQUATION(size=size,left = e1,right = e2,source=source),_,_,_,_)
@@ -469,7 +469,7 @@ algorithm
         op2 = DAE.OP_DIFFERENTIATE(inDiffwrtCref,e2,e2_1);
         source = List.foldr({op1,op2},DAEUtil.addSymbolicTransformation,source);
       then
-        (BackendDAE.COMPLEX_EQUATION(size,e1_1,e2_1,source,false), funcs);
+        (BackendDAE.COMPLEX_EQUATION(size,e1_1,e2_1,source,false,BackendDAE.UNKNOWN_EQUATION_KIND()), funcs);
 
     // Array Equations
     case (BackendDAE.ARRAY_EQUATION(dimSize=dimSize,left = e1,right = e2,source=source),_,_,_,_)
@@ -484,7 +484,7 @@ algorithm
         op2 = DAE.OP_DIFFERENTIATE(inDiffwrtCref,e2,e2_1);
         source = List.foldr({op1,op2},DAEUtil.addSymbolicTransformation,source);
       then
-        (BackendDAE.ARRAY_EQUATION(dimSize,e1_1,e2_1,source,false), funcs);
+        (BackendDAE.ARRAY_EQUATION(dimSize,e1_1,e2_1,source,false,BackendDAE.UNKNOWN_EQUATION_KIND()), funcs);
 
     // differentiate algorithm
     case (BackendDAE.ALGORITHM(size = size, alg=DAE.ALGORITHM_STMTS(statementLst=statementLst),source=source, expand=expand),_,_,_,_)
@@ -497,7 +497,7 @@ algorithm
         //op1 = DAE.OP_DIFFERENTIATE(inDiffwrtCref,e1,e2);
         //source = DAEUtil.addSymbolicTransformation(source,op1);
        then
-        (BackendDAE.ALGORITHM(size, alg, source, expand), funcs);
+        (BackendDAE.ALGORITHM(size, alg, source, expand,BackendDAE.UNKNOWN_EQUATION_KIND()), funcs);
 
     // if-equations
     case (BackendDAE.IF_EQUATION(conditions=expExpLst, eqnstrue=eqnslst, eqnsfalse=eqns, source=source),_,_,_,_)
@@ -505,13 +505,13 @@ algorithm
         (eqnslst, funcs) = differentiateEquationsLst(eqnslst, inDiffwrtCref, inInputData, inDiffType, {}, inFunctionTree);
         (eqns, funcs) = differentiateEquations(eqns, inDiffwrtCref, inInputData, inDiffType, {}, funcs);
       then
-        (BackendDAE.IF_EQUATION(expExpLst,eqnslst,eqns,source), funcs);
+        (BackendDAE.IF_EQUATION(expExpLst,eqnslst,eqns,source,BackendDAE.UNKNOWN_EQUATION_KIND()), funcs);
 
     case (BackendDAE.WHEN_EQUATION(size=size, whenEquation=whenEqn, source=source), _, _, _, _)
        equation
         (whenEqn, funcs) = differentiateWhenEquations(whenEqn, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
       then
-        (BackendDAE.WHEN_EQUATION(size, whenEqn, source), funcs);
+        (BackendDAE.WHEN_EQUATION(size, whenEqn, source,BackendDAE.UNKNOWN_EQUATION_KIND()), funcs);
 
     else
       equation

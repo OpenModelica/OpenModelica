@@ -203,6 +203,12 @@ uniontype VarKind "variable kind"
   record OPT_CONSTR end OPT_CONSTR;
 end VarKind;
 
+public uniontype EquationKind "equation kind"
+  record DYNAMIC_EQUATION end DYNAMIC_EQUATION;
+  record INITIAL_EQUATION end INITIAL_EQUATION;
+  record UNKNOWN_EQUATION_KIND end UNKNOWN_EQUATION_KIND;
+end EquationKind;
+
 public
 uniontype Equation
   record EQUATION
@@ -210,6 +216,7 @@ uniontype Equation
     .DAE.Exp scalar;
     .DAE.ElementSource source "origin of equation";
     Boolean differentiated "true if the equation was differentiated, and should not differentiated again to avoid equal equations";
+    EquationKind kind;
   end EQUATION;
 
   record ARRAY_EQUATION
@@ -218,6 +225,7 @@ uniontype Equation
     .DAE.Exp right "rhs" ;
     .DAE.ElementSource source "the element source";
     Boolean differentiated "true if the equation was differentiated, and should not differentiated again to avoid equal equations";
+    EquationKind kind;
   end ARRAY_EQUATION;
 
   record SOLVED_EQUATION
@@ -225,12 +233,14 @@ uniontype Equation
     .DAE.Exp exp;
     .DAE.ElementSource source "origin of equation";
     Boolean differentiated "true if the equation was differentiated, and should not differentiated again to avoid equal equations";
+    EquationKind kind;
   end SOLVED_EQUATION;
 
   record RESIDUAL_EQUATION
     .DAE.Exp exp "not present from FrontEnd" ;
     .DAE.ElementSource source "origin of equation";
      Boolean differentiated "true if the equation was differentiated, and should not differentiated again to avoid equal equations";
+     EquationKind kind;
   end RESIDUAL_EQUATION;
 
   record ALGORITHM
@@ -238,12 +248,14 @@ uniontype Equation
     .DAE.Algorithm alg;
     .DAE.ElementSource source "origin of algorithm";
     .DAE.Expand expand "this algorithm was translated from an equation. we should not expand array crefs!";
+    EquationKind kind;
   end ALGORITHM;
 
   record WHEN_EQUATION
     Integer size "size of equation";
     WhenEquation whenEquation;
     .DAE.ElementSource source "origin of equation";
+    EquationKind kind;
   end WHEN_EQUATION;
 
   record COMPLEX_EQUATION "complex equations: recordX = function call(x, y, ..);"
@@ -252,6 +264,7 @@ uniontype Equation
     .DAE.Exp right "rhs" ;
     .DAE.ElementSource source "the element source";
      Boolean differentiated "true if the equation was differentiated, and should not differentiated again to avoid equal equations";
+     EquationKind kind;
   end COMPLEX_EQUATION;
 
   record IF_EQUATION "an if-equation"
@@ -259,6 +272,7 @@ uniontype Equation
     list<list<Equation>> eqnstrue "Equations of true branch";
     list<Equation> eqnsfalse "Equations of false branch";
     .DAE.ElementSource source "origin of equation";
+    EquationKind kind;
   end IF_EQUATION;
 end Equation;
 
@@ -504,7 +518,7 @@ public
 type IncidenceMatrixElement = list<IncidenceMatrixElementEntry>;
 
 public
-type IncidenceMatrix = array<IncidenceMatrixElement>;
+type IncidenceMatrix = array<IncidenceMatrixElement> "array<list<Integer>>" ;
 
 public
 type IncidenceMatrixT = IncidenceMatrix

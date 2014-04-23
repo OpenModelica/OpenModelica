@@ -6948,6 +6948,48 @@ algorithm
   end match;
 end threadFold3;
 
+public function threadFold4
+  "This is a combination of thread and fold that applies a function to the head
+   of two lists with an extra argument that is updated and passed on. This
+   function also takes four extra constant arguments that is passed to the function."
+  input list<ElementType1> inList1;
+  input list<ElementType2> inList2;
+  input FoldFunc inFoldFunc;
+  input ArgType1 inArg1;
+  input ArgType2 inArg2;
+  input ArgType3 inArg3;
+  input ArgType4 inArg4;
+  input FoldType inFoldArg;
+  output FoldType outFoldArg;
+
+  partial function FoldFunc
+    input ElementType1 inElement1;
+    input ElementType2 inElement2;
+    input ArgType1 inArg1;
+    input ArgType2 inArg2;
+    input ArgType3 inArg3;
+    input ArgType4 inArg4;
+    input FoldType inFoldArg;
+    output FoldType outFoldArg;
+  end FoldFunc;
+algorithm
+  outFoldArg := match(inList1, inList2, inFoldFunc, inArg1, inArg2, inArg3, inArg4, inFoldArg)
+    local
+      ElementType1 e1;
+      list<ElementType1> rest1;
+      ElementType2 e2;
+      list<ElementType2> rest2;
+      FoldType res;
+
+    case ({}, {}, _, _, _, _, _, _) then inFoldArg;
+
+    case (e1::rest1, e2::rest2, _, _, _, _, _, _)
+      equation
+        res = inFoldFunc(e1, e2, inArg1, inArg2, inArg3, inArg4, inFoldArg);
+      then threadFold4(rest1, rest2, inFoldFunc, inArg1, inArg2, inArg3, inArg4, res);
+  end match;
+end threadFold4;
+
 public function threadFold
   "This is a combination of thread and fold that applies a function to the head
    of two lists with an extra argument that is updated and passed on."

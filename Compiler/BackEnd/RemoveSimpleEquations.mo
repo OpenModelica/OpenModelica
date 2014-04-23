@@ -75,7 +75,7 @@ protected import List;
 protected import Types;
 protected import Util;
 
-protected type EquationAttributes = tuple<DAE.ElementSource, Boolean> "eqnAttributes(source,differentiated)";
+protected type EquationAttributes = tuple<DAE.ElementSource, Boolean, BackendDAE.EquationKind> "eqnAttributes(source,differentiated,eqKind)";
 
 protected
 uniontype SimpleContainer
@@ -609,36 +609,38 @@ algorithm
       Integer index;
       array<list<Integer>> mT;
       Boolean b, differentiated;
-    case (BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, differentiated=differentiated), _)
+      BackendDAE.EquationKind eqKind;
+      
+    case (BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, differentiated=differentiated, kind=eqKind), _)
       equation
         Debug.fcall(Flags.DEBUG_ALIAS, BackendDump.debugStrExpStrExpStr, ("Found Equation ", e1, " = ", e2, " to handle.\n"));
       then
-        simpleEquationAcausal(e1, e2, (source, differentiated), false, inTpl);
+        simpleEquationAcausal(e1, e2, (source, differentiated, eqKind), false, inTpl);
 
-    case (BackendDAE.ARRAY_EQUATION(left=e1, right=e2, source=source, differentiated=differentiated), _)
+    case (BackendDAE.ARRAY_EQUATION(left=e1, right=e2, source=source, differentiated=differentiated, kind=eqKind), _)
       equation
         Debug.fcall(Flags.DEBUG_ALIAS, BackendDump.debugStrExpStrExpStr, ("Found Array Equation ", e1, " = ", e2, " to handle.\n"));
       then
-        simpleEquationAcausal(e1, e2, (source, differentiated), false, inTpl);
+        simpleEquationAcausal(e1, e2, (source, differentiated, eqKind), false, inTpl);
 
-    case (BackendDAE.SOLVED_EQUATION(componentRef=cr, exp=e2, source=source, differentiated=differentiated), _)
+    case (BackendDAE.SOLVED_EQUATION(componentRef=cr, exp=e2, source=source, differentiated=differentiated, kind=eqKind), _)
       equation
         e1 = Expression.crefExp(cr);
         Debug.fcall(Flags.DEBUG_ALIAS, BackendDump.debugStrExpStrExpStr, ("Found Solved Equation ", e1, " = ", e2, " to handle.\n"));
       then
-        simpleEquationAcausal(e1, e2, (source, differentiated), false, inTpl);
+        simpleEquationAcausal(e1, e2, (source, differentiated, eqKind), false, inTpl);
 
-    case (BackendDAE.RESIDUAL_EQUATION(exp=e1, source=source, differentiated=differentiated), _)
+    case (BackendDAE.RESIDUAL_EQUATION(exp=e1, source=source, differentiated=differentiated, kind=eqKind), _)
       equation
         Debug.fcall(Flags.DEBUG_ALIAS, BackendDump.debugStrExpStr, ("Found Residual Equation ", e1, " to handle.\n"));
       then
-        simpleExpressionAcausal(e1, (source, differentiated), false, inTpl);
+        simpleExpressionAcausal(e1, (source, differentiated, eqKind), false, inTpl);
 
-    case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source, differentiated=differentiated), _)
+    case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source, differentiated=differentiated, kind=eqKind), _)
       equation
         Debug.fcall(Flags.DEBUG_ALIAS, BackendDump.debugStrExpStrExpStr, ("Found Complex Equation ", e1, " = ", e2, " to handle.\n"));
       then
-        simpleEquationAcausal(e1, e2, (source, differentiated), false, inTpl);
+        simpleEquationAcausal(e1, e2, (source, differentiated, eqKind), false, inTpl);
 
     case (_, (v, s, eqns, seqns, index, mT, b))
       then ((v, s, eqn::eqns, seqns, index, mT, b));
@@ -917,25 +919,27 @@ algorithm
       array<list<Integer>> mT;
       Boolean b, b1, b2, differentiated;
       DAE.ElementSource source;
+      BackendDAE.EquationKind eqKind;
+      
     // complex types to complex equations
-    case (_, _, _, (source, differentiated), (v, s, eqns, seqns, index, mT, b))
+    case (_, _, _, (source, differentiated, eqKind), (v, s, eqns, seqns, index, mT, b))
       equation
         true = DAEUtil.expTypeComplex(ty);
         size = Expression.sizeOf(ty);
         //  print("Add Equation:\n" +& BackendDump.equationStr(BackendDAE.COMPLEX_EQUATION(size, lhs, rhs, source)) +& "\n");
        then
-        ((v, s, BackendDAE.COMPLEX_EQUATION(size, lhs, rhs, source, differentiated)::eqns, seqns, index, mT, b));
+        ((v, s, BackendDAE.COMPLEX_EQUATION(size, lhs, rhs, source, differentiated, eqKind)::eqns, seqns, index, mT, b));
     // array types to array equations
-    case (_, _, _, (source, differentiated), (v, s, eqns, seqns, index, mT, b))
+    case (_, _, _, (source, differentiated, eqKind), (v, s, eqns, seqns, index, mT, b))
       equation
         true = DAEUtil.expTypeArray(ty);
         dims = Expression.arrayDimension(ty);
         ds = Expression.dimensionsSizes(dims);
         //  print("Add Equation:\n" +& BackendDump.equationStr(BackendDAE.ARRAY_EQUATION(ds, lhs, rhs, source)) +& "\n");
       then
-        ((v, s, BackendDAE.ARRAY_EQUATION(ds, lhs, rhs, source, differentiated)::eqns, seqns, index, mT, b));
+        ((v, s, BackendDAE.ARRAY_EQUATION(ds, lhs, rhs, source, differentiated, eqKind)::eqns, seqns, index, mT, b));
     // other types
-    case (_, _, _, (source, differentiated), (v, s, eqns, seqns, index, mT, b))
+    case (_, _, _, (source, differentiated, eqKind), (v, s, eqns, seqns, index, mT, b))
       equation
         b1 = DAEUtil.expTypeComplex(ty);
         b2 = DAEUtil.expTypeArray(ty);
@@ -943,7 +947,7 @@ algorithm
         //  print("Add Equation:\n" +& BackendDump.equationStr(BackendDAE.EQUATION(lhs, rhs, source)) +& "\n");
         //Error.assertionOrAddSourceMessage(not b1, Error.INTERNAL_ERROR, {str}, Absyn.dummyInfo);
       then
-        ((v, s, BackendDAE.EQUATION(lhs, rhs, source, differentiated)::eqns, seqns, index, mT, b));
+        ((v, s, BackendDAE.EQUATION(lhs, rhs, source, differentiated, eqKind)::eqns, seqns, index, mT, b));
     else
       equation
         // show only on failtrace!
@@ -1206,8 +1210,7 @@ algorithm
         _ = arrayUpdate(iMT, i1, iIndex::colum);
       then
         (PARAMETERALIAS(cr1, negatedCr1, i1, cr2, negatedCr2, i2, eqnAttributes, -1)::iSeqns, iIndex+1, iMT);
-
-    case (BackendDAE.VAR(varName=cr1), _, _, true, BackendDAE.VAR(varName=cr2), _, _, true, (_, _), _, _, _)
+    case (BackendDAE.VAR(varName=cr1), _, _, true, BackendDAE.VAR(varName=cr2), _, _, true, (source, _, _), _, _, _)
       equation
         crexp1 = Expression.crefExp(cr1);
         crexp2 = Expression.crefExp(cr2);
@@ -1241,7 +1244,7 @@ algorithm
 
     case(false, _, _, _, _, _) then ();
 
-    case(true, BackendDAE.VAR(varName=cr1), _, BackendDAE.VAR(varName=cr2), _, (source, _))
+    case(true, BackendDAE.VAR(varName=cr1), _, BackendDAE.VAR(varName=cr2), _, (source, _, _))
       equation
         var_str = BackendDump.varString(v1);
         crexp1 = Expression.crefExp(cr1);
@@ -1420,6 +1423,8 @@ algorithm
       DAE.FunctionTree functionTree;
       DAE.ElementSource source;
       Boolean diffed;
+      BackendDAE.EquationKind eqKind;
+      
     case ({v as BackendDAE.VAR(varName=cr)}, {i}, _, _, _, _)
       equation
         // try to solve the equation
@@ -1428,7 +1433,7 @@ algorithm
         // constant or alias
       then
         constOrAliasAcausal(v, i, cr, es, eqnAttributes, inTpl);
-    case (_, _, _, _, (source, diffed), (_, BackendDAE.SHARED(functionTree=functionTree), _, _, _, _, _))
+    case (_, _, _, _, (source, diffed, eqKind), (_, BackendDAE.SHARED(functionTree=functionTree), _, _, _, _, _))
       equation
         // size of equation have to be equal with number of vars
         size = Expression.sizeOf(Expression.typeof(lhs));
@@ -1437,7 +1442,7 @@ algorithm
         (lhs1, source, _) = Inline.forceInlineExp(lhs, (SOME(functionTree), {DAE.NORM_INLINE(), DAE.NO_INLINE()}), source);
         (rhs1, source, _) = Inline.forceInlineExp(rhs, (SOME(functionTree), {DAE.NORM_INLINE(), DAE.NO_INLINE()}), source);
       then
-        solveTimeIndependentAcausal1(vlst, ilst, lhs1, rhs1, (source, diffed), inTpl);
+        solveTimeIndependentAcausal1(vlst, ilst, lhs1, rhs1, (source, diffed, eqKind), inTpl);
   end match;
 end solveTimeIndependentAcausal;
 
@@ -2308,7 +2313,7 @@ algorithm
       BackendVarTransform.VariableReplacements repl;
       DAE.ElementSource source;
 
-   case (true, _, BackendDAE.VAR(varName=cr), _, (source, _), _, _, _, _, _, _)
+   case (true, _, BackendDAE.VAR(varName=cr), _, (source, _, _), _, _, _, _, _, _)
      equation
        (vars, shared, bs) = moveVarShared(v, i, source, exp, BackendVariable.addAliasVarDAE, iVars, ishared);
        // add to replacements
@@ -2369,7 +2374,7 @@ algorithm
       DAE.Exp crexp;
       DAE.ElementSource source;
 
-    case(true, _, _, (source, _), _, _, _, _, _, _)
+    case(true, _, _, (source, _, _), _, _, _, _, _, _)
       equation
         (oVars, oshared, bs) = moveVarShared(v, i, source, exp, func, iVars, ishared);
       then
@@ -2509,8 +2514,9 @@ algorithm
       Option<DAE.Exp> dexp;
       String msg;
       VarSetAttributes vsattr;
+      BackendDAE.EquationKind eqKind;
 
-    case (ALIAS(_, negatedCr1, i1, _, negatedCr2, i2, (source, diffed), _), _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
+    case (ALIAS(_, negatedCr1, i1, _, negatedCr2, i2, (source, diffed, eqKind), _), _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
       equation
         i = Util.if_(intEq(i1, ilast), i2, i1);
         negated = boolOr(negatedCr2, negatedCr1);
@@ -2523,7 +2529,7 @@ algorithm
         _ = Debug.bcallret1(globalnegated1, negateOptExp, derReplaceState, derReplaceState);
         // replace alias with selected variable if replaceable_
         source = Debug.bcallret3(replaceable_, addSubstitutionOption, optExp, crexp, source, source);
-        (vars, eqnslst, shared, repl) = handleSetVar(replaceable_ and replaceble1, derReplaceState, v, i, (source, diffed), exp1, iMT, iVars, iEqnslst, ishared, iRepl);
+        (vars, eqnslst, shared, repl) = handleSetVar(replaceable_ and replaceble1, derReplaceState, v, i, (source, diffed, eqKind), exp1, iMT, iVars, iEqnslst, ishared, iRepl);
         vsattr = Debug.bcallret5(replaceable_ and replaceble1, addVarSetAttributes, v, globalnegated1, mark, simpleeqnsarr, iAttributes, iAttributes);
         // negate if necessary
         crexp = negateExpression(negated, crexp, crexp, " ALIAS_2 ");
@@ -2533,7 +2539,7 @@ algorithm
       then
         (vars, eqnslst, shared, repl, vsattr);
 
-    case (PARAMETERALIAS(cr1, negatedCr1, i1, cr2, negatedCr2, _, (_, _), _), _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
+    case (PARAMETERALIAS(cr1, negatedCr1, i1, cr2, negatedCr2, i2, (source, _, _), _), _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
       equation
         // report error
         cr = Util.if_(intEq(i1, ilast), cr2, cr1);

@@ -325,7 +325,7 @@ algorithm
       crintLst = BaseHashTable.hashTableList(leftCrs);
       crefLst = List.fold(crintLst, selectSecondZero, {});
       (eqns, vars) = generateInactiveWhenEquationForInitialization(crefLst, source, eqns, vars);
-      eqns = List.consOnTrue(List.isNotEmpty(stmts), BackendDAE.ALGORITHM(size, alg, source, crefExpand), eqns);
+      eqns = List.consOnTrue(List.isNotEmpty(stmts), BackendDAE.ALGORITHM(size, alg, source, crefExpand, BackendDAE.INITIAL_EQUATION()), eqns);
     then ((eqn, (vars, eqns)));
 
     case ((eqn, (vars, eqns)))
@@ -533,7 +533,7 @@ algorithm
       identType = ComponentReference.crefTypeConsiderSubs(cr);
       crefExp = DAE.CREF(cr, identType);
       crefPreExp = Expression.makeBuiltinCall("pre", {crefExp}, DAE.T_BOOL_DEFAULT);
-      eqn = BackendDAE.EQUATION(crefExp, crefPreExp, inSource, false);
+      eqn = BackendDAE.EQUATION(crefExp, crefPreExp, inSource, false, BackendDAE.INITIAL_EQUATION());
       (eqns, vars) = generateInactiveWhenEquationForInitialization(rest, inSource, eqn::inEqns, iVars);
     then (eqns, vars);
  end match;
@@ -1096,6 +1096,7 @@ algorithm
       true = intGt(nEqns, nVars);
       Error.addCompilerWarning("Trying to fix over-determined initial system with " +& intString(nVars) +& " variables and " +& intString(nEqns) +& " equations... [not implemented yet!]");
 
+      //BackendDump.dumpBackendDAEEqnList(BackendEquation.equationList(eqns), "over-determined system", false);
       true = Flags.isSet(Flags.INITIALIZATION);
 
       // analyze system
@@ -1233,7 +1234,7 @@ algorithm
       tp = Expression.typeof(e);
       startExp = Expression.makeBuiltinCall("$_start", {e}, tp);
 
-      eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource, false);
+      eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource, false, BackendDAE.INITIAL_EQUATION());
       eqns = BackendEquation.equationAdd(eqn, inEqns);
 
       dumpVar = BackendVariable.copyVarNewName(cref, var);
@@ -1253,7 +1254,7 @@ algorithm
       tp = Expression.typeof(e);
       startExp = Expression.makeBuiltinCall("$_start", {e}, tp);
 
-      eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource, false);
+      eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource, false, BackendDAE.INITIAL_EQUATION());
       eqns = BackendEquation.equationAdd(eqn, inEqns);
 
       // crStr = BackendDump.varString(var);
@@ -1552,7 +1553,7 @@ algorithm
       // preVar = BackendVariable.setVarFixed(preVar, true);
       // preVar = BackendVariable.setVarStartValueOption(preVar, SOME(DAE.CREF(cr, ty)));
 
-      eqn = BackendDAE.EQUATION(DAE.CREF(preCR, ty), startValue, DAE.emptyElementSource, false);
+      eqn = BackendDAE.EQUATION(DAE.CREF(preCR, ty), startValue, DAE.emptyElementSource, false, BackendDAE.INITIAL_EQUATION());
 
       vars = Debug.bcallret2(preUsed, BackendVariable.addVar, preVar, vars, vars);
       eqns = Debug.bcallret2(preUsed and isFixed, BackendEquation.equationAdd, eqn, eqns, eqns);
@@ -1645,7 +1646,7 @@ algorithm
       preUsed = BaseHashSet.has(cr, hs);
 
       startExp = BackendVariable.varStartValue(var);
-      eqn = BackendDAE.EQUATION(DAE.CREF(cr, ty), startExp, DAE.emptyElementSource, false);
+      eqn = BackendDAE.EQUATION(DAE.CREF(cr, ty), startExp, DAE.emptyElementSource, false, BackendDAE.INITIAL_EQUATION());
       eqns = Debug.bcallret2(isFixed, BackendEquation.equationAdd, eqn, eqns, eqns);
 
       var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
@@ -1664,7 +1665,7 @@ algorithm
       preVar = BackendVariable.setVarFixed(preVar, true);
       preVar = BackendVariable.setVarStartValueOption(preVar, SOME(DAE.CREF(cr, ty)));
 
-      eqn = BackendDAE.EQUATION(DAE.CREF(cr, ty), DAE.CREF(preCR, ty), DAE.emptyElementSource, false);
+      eqn = BackendDAE.EQUATION(DAE.CREF(cr, ty), DAE.CREF(preCR, ty), DAE.emptyElementSource, false, BackendDAE.INITIAL_EQUATION());
 
       vars = BackendVariable.addVar(derVar, vars);
       vars = BackendVariable.addVar(var, vars);
@@ -1688,7 +1689,7 @@ algorithm
       preVar = BackendVariable.setVarFixed(preVar, false);
       preVar = BackendVariable.setVarStartValueOption(preVar, SOME(startValue_));
 
-      eqn = BackendDAE.EQUATION(DAE.CREF(preCR, ty), startValue_, DAE.emptyElementSource, false);
+      eqn = BackendDAE.EQUATION(DAE.CREF(preCR, ty), startValue_, DAE.emptyElementSource, false, BackendDAE.INITIAL_EQUATION());
 
       vars = BackendVariable.addVar(var, vars);
       vars = BackendVariable.addVar(preVar, vars);
@@ -1742,7 +1743,7 @@ algorithm
       info = DAEUtil.getElementSourceFileInfo(BackendVariable.getVarSource(var));
       Error.addSourceMessage(Error.UNFIXED_PARAMETER_WITH_BINDING, {s, s, str}, info);
 
-      eqn = BackendDAE.EQUATION(DAE.CREF(cr, ty), bindExp, DAE.emptyElementSource, false);
+      eqn = BackendDAE.EQUATION(DAE.CREF(cr, ty), bindExp, DAE.emptyElementSource, false, BackendDAE.INITIAL_EQUATION());
       eqns = BackendEquation.equationAdd(eqn, eqns);
 
       vars = BackendVariable.addVar(var, vars);
@@ -1821,7 +1822,7 @@ algorithm
       preVar = BackendVariable.setVarFixed(preVar, true);
       preVar = BackendVariable.setVarStartValueOption(preVar, SOME(DAE.CREF(cr, ty)));
 
-      eqn = BackendDAE.EQUATION(DAE.CREF(cr, ty), startValue_, DAE.emptyElementSource, false);
+      eqn = BackendDAE.EQUATION(DAE.CREF(cr, ty), startValue_, DAE.emptyElementSource, false, BackendDAE.INITIAL_EQUATION());
 
       vars = Debug.bcallret2(not isInput, BackendVariable.addVar, var, vars, vars);
       fixvars = Debug.bcallret2(isInput, BackendVariable.addVar, var, fixvars, fixvars);
@@ -1949,7 +1950,7 @@ algorithm
     // binding
     case((var as BackendDAE.VAR(varName=cr, bindExp=SOME(bindExp), varType=ty, source=source), (eqns, reeqns))) equation
       crefExp = DAE.CREF(cr, ty);
-      eqn = BackendDAE.EQUATION(crefExp, bindExp, source, false);
+      eqn = BackendDAE.EQUATION(crefExp, bindExp, source, false, BackendDAE.INITIAL_EQUATION());
       eqns = BackendEquation.equationAdd(eqn, eqns);
     then ((var, (eqns, reeqns)));
 

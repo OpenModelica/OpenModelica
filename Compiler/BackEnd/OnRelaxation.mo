@@ -1783,7 +1783,7 @@ algorithm
         //(e,_) = ExpressionSimplify.simplify(e);
         //(b,_) = ExpressionSimplify.simplify(b);
         //  BackendDump.debugStrExpStrExpStr(("",e," = ",b,"\n"));
-        eqn = BackendDAE.EQUATION(e,b,DAE.emptyElementSource,false);
+        eqn = BackendDAE.EQUATION(e,b,DAE.emptyElementSource,false,BackendDAE.UNKNOWN_EQUATION_KIND());
       then
         makeGausElimination(row+1,size,matrix,vars,eqn::iAcc);
   end matchcontinue;
@@ -1976,7 +1976,7 @@ algorithm
       sb = intString(b);
       cr = ComponentReference.makeCrefIdent(stringAppendList({"$tmp",sa,"_",sb}),DAE.T_REAL_DEFAULT,{});
       cexp = Expression.crefExp(cr);
-      eqns = BackendEquation.equationAdd(BackendDAE.EQUATION(cexp,e,DAE.emptyElementSource,false),inEqns);
+      eqns = BackendEquation.equationAdd(BackendDAE.EQUATION(cexp,e,DAE.emptyElementSource,false,BackendDAE.UNKNOWN_EQUATION_KIND()),inEqns);
       v = BackendDAE.VAR(cr,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR());
       vars = BackendVariable.addVar(v,inVars);
     then

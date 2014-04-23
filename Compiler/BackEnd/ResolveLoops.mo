@@ -1189,7 +1189,7 @@ algorithm
   exp2 := sumUp2Expressions(false,exp2,exp1);
   (exp2,_) := ExpressionSimplify.simplify(exp2);
   exp1 := DAE.RCONST(0.0);
-  eqOut := BackendDAE.EQUATION(exp1,exp2,DAE.emptyElementSource,false);
+  eqOut := BackendDAE.EQUATION(exp1,exp2,DAE.emptyElementSource,false,BackendDAE.UNKNOWN_EQUATION_KIND());
 end sumUp2Equations;
 
 protected function CRefIsPosOnRHS "author:Waurich TUD 2013-12

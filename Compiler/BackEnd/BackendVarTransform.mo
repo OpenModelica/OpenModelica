@@ -1600,8 +1600,9 @@ algorithm
       list<BackendDAE.Equation> eqns;
       list<list<BackendDAE.Equation>> eqnslst;
       DAE.Expand crefExpand;
+      BackendDAE.EquationKind eqKind;
 
-    case (BackendDAE.ARRAY_EQUATION(dimSize=dimSize,left = e1,right = e2,source = source,differentiated = diffed),repl,_,_,_)
+    case (BackendDAE.ARRAY_EQUATION(dimSize=dimSize, left=e1, right=e2, source=source, differentiated=diffed, kind=eqKind),repl,_,_,_)
       equation
         (e1_1,b1) = replaceExp(e1, repl,inFuncTypeExpExpToBooleanOption);
         (e2_1,b2) = replaceExp(e2, repl,inFuncTypeExpExpToBooleanOption);
@@ -1610,9 +1611,9 @@ algorithm
         source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,e2,e2_1);
         (DAE.EQUALITY_EXPS(e1_2,e2_2),source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.EQUALITY_EXPS(e1_1,e2_1),source);
       then
-        (BackendDAE.ARRAY_EQUATION(dimSize,e1_2,e2_2,source,diffed)::inAcc,true);
+        (BackendDAE.ARRAY_EQUATION(dimSize,e1_2,e2_2,source,diffed,eqKind)::inAcc,true);
 
-    case (BackendDAE.COMPLEX_EQUATION(size=size,left = e1,right = e2,source = source,differentiated = diffed),repl,_,_,_)
+    case (BackendDAE.COMPLEX_EQUATION(size=size, left=e1, right=e2, source=source, differentiated=diffed, kind=eqKind),repl,_,_,_)
       equation
         (e1_1,b1) = replaceExp(e1, repl,inFuncTypeExpExpToBooleanOption);
         (e2_1,b2) = replaceExp(e2, repl,inFuncTypeExpExpToBooleanOption);
@@ -1621,9 +1622,9 @@ algorithm
         source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,e2,e2_1);
         (DAE.EQUALITY_EXPS(e1_2,e2_2),source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.EQUALITY_EXPS(e1_1,e2_1),source);
       then
-        (BackendDAE.COMPLEX_EQUATION(size,e1_2,e2_2,source,diffed)::inAcc,true);
+        (BackendDAE.COMPLEX_EQUATION(size,e1_2,e2_2,source,diffed,eqKind)::inAcc,true);
 
-    case (BackendDAE.EQUATION(exp = e1,scalar = e2,source = source,differentiated = diffed),repl,_,_,_)
+    case (BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, differentiated=diffed, kind=eqKind),repl,_,_,_)
       equation
         (e1_1,b1) = replaceExp(e1, repl,inFuncTypeExpExpToBooleanOption);
         (e2_1,b2) = replaceExp(e2, repl,inFuncTypeExpExpToBooleanOption);
@@ -1632,40 +1633,40 @@ algorithm
         source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,e2,e2_1);
         (DAE.EQUALITY_EXPS(e1_2,e2_2),source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.EQUALITY_EXPS(e1_1,e2_1),source);
       then
-        (BackendDAE.EQUATION(e1_2,e2_2,source,diffed)::inAcc,true);
+        (BackendDAE.EQUATION(e1_2,e2_2,source,diffed,eqKind)::inAcc,true);
 
-    case (BackendDAE.ALGORITHM(size=size,alg = alg as DAE.ALGORITHM_STMTS(statementLst = stmts),source = source, expand = crefExpand),repl,_,_,_)
+    case (BackendDAE.ALGORITHM(size=size, alg=alg as DAE.ALGORITHM_STMTS(statementLst=stmts), source=source, expand=crefExpand, kind=eqKind), repl, _, _, _)
       equation
         (stmts1,true) = replaceStatementLst(stmts,repl,inFuncTypeExpExpToBooleanOption,{},false);
         alg = DAE.ALGORITHM_STMTS(stmts1);
         // if all statements are removed, remove the whole algorithm
-        eqns = Util.if_(listLength(stmts1)>0, BackendDAE.ALGORITHM(size,alg,source,crefExpand)::inAcc, inAcc);
+        eqns = Util.if_(listLength(stmts1)>0, BackendDAE.ALGORITHM(size,alg,source,crefExpand,eqKind)::inAcc, inAcc);
       then
         (eqns,true);
 
-    case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e,source = source,differentiated = diffed),repl,_,_,_)
+    case (BackendDAE.SOLVED_EQUATION(componentRef=cr, exp=e, source=source, differentiated=diffed, kind=eqKind),repl,_,_,_)
       equation
         (e_1,true) = replaceExp(e, repl,inFuncTypeExpExpToBooleanOption);
         (e_2,_) = ExpressionSimplify.simplify(e_1);
         source = DAEUtil.addSymbolicTransformationSubstitution(true,source,e,e_2);
       then
-        (BackendDAE.SOLVED_EQUATION(cr,e_2,source,diffed)::inAcc,true);
+        (BackendDAE.SOLVED_EQUATION(cr,e_2,source,diffed,eqKind)::inAcc,true);
 
-    case (BackendDAE.RESIDUAL_EQUATION(exp = e,source = source,differentiated = diffed),repl,_,_,_)
+    case (BackendDAE.RESIDUAL_EQUATION(exp=e, source=source, differentiated=diffed, kind=eqKind),repl,_,_,_)
       equation
         (e_1,true) = replaceExp(e, repl,inFuncTypeExpExpToBooleanOption);
         (e_2,_) = ExpressionSimplify.simplify(e_1);
         source = DAEUtil.addSymbolicTransformationSubstitution(true,source,e,e_2);
       then
-        (BackendDAE.RESIDUAL_EQUATION(e_2,source,diffed)::inAcc,true);
+        (BackendDAE.RESIDUAL_EQUATION(e_2,source,diffed,eqKind)::inAcc,true);
 
-    case (BackendDAE.WHEN_EQUATION(size,whenEqn,source),repl,_,_,_)
+    case (BackendDAE.WHEN_EQUATION(size,whenEqn,source,eqKind),repl,_,_,_)
       equation
         (whenEqn1,source,true) = replaceWhenEquation(whenEqn,repl,inFuncTypeExpExpToBooleanOption,source);
       then
-        (BackendDAE.WHEN_EQUATION(size,whenEqn1,source)::inAcc,true);
+        (BackendDAE.WHEN_EQUATION(size,whenEqn1,source,eqKind)::inAcc,true);
 
-    case (BackendDAE.IF_EQUATION(conditions=expl, eqnstrue=eqnslst, eqnsfalse=eqns, source = source),repl,_,_,_)
+    case (BackendDAE.IF_EQUATION(conditions=expl, eqnstrue=eqnslst, eqnsfalse=eqns, source=source, kind=eqKind),repl,_,_,_)
       equation
         (expl1,blst) = replaceExpList1(expl, repl, inFuncTypeExpExpToBooleanOption, {}, {});
         b1 = Util.boolOrList(blst);
@@ -1675,7 +1676,7 @@ algorithm
         (eqnslst,b2) = List.map3Fold(eqnslst,replaceEquations2,repl,inFuncTypeExpExpToBooleanOption,{},false);
         (eqns,b3) = replaceEquations2(eqns,repl,inFuncTypeExpExpToBooleanOption,{},false);
         true = b1 or b2 or b3;
-        eqns = optimizeIfEquation(expl2,eqnslst,eqns,{},{},source,inAcc);
+        eqns = optimizeIfEquation(expl2,eqnslst,eqns,{},{},source,eqKind,inAcc);
       then
         (eqns,true);
 
@@ -1691,10 +1692,11 @@ protected function optimizeIfEquation
   input list<DAE.Exp> conditions1;
   input list<list<BackendDAE.Equation>> theneqns1;
   input DAE.ElementSource source;
+  input BackendDAE.EquationKind inEqKind;
   input list<BackendDAE.Equation> inEqns;
   output list<BackendDAE.Equation> outEqns;
 algorithm
-  outEqns := matchcontinue(conditions,theneqns,elseenqs,conditions1,theneqns1,source,inEqns)
+  outEqns := matchcontinue(conditions,theneqns,elseenqs,conditions1,theneqns1,source,inEqKind,inEqns)
     local
       DAE.Exp e;
       list<DAE.Exp> explst;
@@ -1702,35 +1704,35 @@ algorithm
       list<BackendDAE.Equation> eqns;
 
     // no true case left with condition<>false
-    case ({},{},_,{},{},_,_)
+    case ({},{},_,{},{},_,_,_)
       then
         listAppend(elseenqs,inEqns);
     // true case left with condition<>false
-    case ({},{},_,_,_,_,_)
+    case ({},{},_,_,_,_,_,_)
       equation
         explst = listReverse(conditions1);
         eqnslst = listReverse(theneqns1);
       then
-        BackendDAE.IF_EQUATION(explst,eqnslst,elseenqs,source)::inEqns;
+        BackendDAE.IF_EQUATION(explst,eqnslst,elseenqs,source,inEqKind)::inEqns;
     // if true use it if it is the first one
-    case(DAE.BCONST(true)::_,eqns::_,_,{},{},_,_)
+    case(DAE.BCONST(true)::_,eqns::_,_,{},{},_,_,_)
       then
         listAppend(eqns,inEqns);
     // if true use it as new else if it is not the first one
-    case(DAE.BCONST(true)::_,eqns::_,_,{},{},_,_)
+    case(DAE.BCONST(true)::_,eqns::_,_,{},{},_,_,_)
       equation
         explst = listReverse(conditions1);
         eqnslst = listReverse(theneqns1);
       then
-        BackendDAE.IF_EQUATION(explst,eqnslst,eqns,source)::inEqns;
+        BackendDAE.IF_EQUATION(explst,eqnslst,eqns,source,inEqKind)::inEqns;
     // if false skip it
-    case(DAE.BCONST(false)::explst,_::eqnslst,_,_,_,_,_)
+    case(DAE.BCONST(false)::explst,_::eqnslst,_,_,_,_,_,_)
       then
-        optimizeIfEquation(explst,eqnslst,elseenqs,conditions1,theneqns1,source,inEqns);
+        optimizeIfEquation(explst,eqnslst,elseenqs,conditions1,theneqns1,source,inEqKind,inEqns);
     // all other cases
-    case(e::explst,eqns::eqnslst,_,_,_,_,_)
+    case(e::explst,eqns::eqnslst,_,_,_,_,_,_)
       then
-        optimizeIfEquation(explst,eqnslst,elseenqs,e::conditions1,eqns::theneqns1,source,inEqns);
+        optimizeIfEquation(explst,eqnslst,elseenqs,e::conditions1,eqns::theneqns1,source,inEqKind,inEqns);
   end matchcontinue;
 end optimizeIfEquation;
 

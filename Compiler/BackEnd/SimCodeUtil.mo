@@ -2853,7 +2853,7 @@ algorithm
         prevarexp = Expression.makeBuiltinCall("pre", {varexp}, Expression.typeof(varexp));
         prevarexp = Expression.expSub(varexp, prevarexp);
         ((e2, _)) = Expression.traverseExp(e2, replaceIFBrancheswithoutVar, (varexp, prevarexp));
-        eqn = BackendDAE.EQUATION(e1, e2, source, false);
+        eqn = BackendDAE.EQUATION(e1, e2, source, false, BackendDAE.UNKNOWN_EQUATION_KIND());
         (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations({eqn}, iuniqueEqIndex, itempvars);
         cr = Debug.bcallret1(BackendVariable.isStateVar(v), ComponentReference.crefPrefixDer, cr, cr);
       then
@@ -6804,7 +6804,7 @@ algorithm
         startv = BackendVariable.varStartValueFail(var);
         false = Expression.isConst(startv);
         SimCode.NOALIAS() = getAliasVar(var, SOME(av));
-        initialEquation = BackendDAE.SOLVED_EQUATION(name, startv, source, false);
+        initialEquation = BackendDAE.SOLVED_EQUATION(name, startv, source, false, BackendDAE.UNKNOWN_EQUATION_KIND());
       then
         ((var, (initialEquation :: eqns, av)));
 
@@ -6830,7 +6830,7 @@ algorithm
       nominalv = BackendVariable.varNominalValueFail(var);
       false = Expression.isConst(nominalv);
       SimCode.NOALIAS() = getAliasVar(var, SOME(av));
-      initialEquation = BackendDAE.SOLVED_EQUATION(name, nominalv, source, false);
+      initialEquation = BackendDAE.SOLVED_EQUATION(name, nominalv, source, false, BackendDAE.UNKNOWN_EQUATION_KIND());
     then ((var, (initialEquation :: eqns, av)));
 
     case _ then inTpl;
@@ -6855,7 +6855,7 @@ algorithm
       minv = BackendVariable.varMinValueFail(var);
       false = Expression.isConst(minv);
       SimCode.NOALIAS() = getAliasVar(var, SOME(av));
-      initialEquation = BackendDAE.SOLVED_EQUATION(name, minv, source, false);
+      initialEquation = BackendDAE.SOLVED_EQUATION(name, minv, source, false, BackendDAE.UNKNOWN_EQUATION_KIND());
     then ((var, (initialEquation :: eqns, av)));
 
     case _ then inTpl;
@@ -6880,7 +6880,7 @@ algorithm
       maxv = BackendVariable.varMaxValueFail(var);
       false = Expression.isConst(maxv);
       SimCode.NOALIAS() = getAliasVar(var, SOME(av));
-      initialEquation = BackendDAE.SOLVED_EQUATION(name, maxv, source, false);
+      initialEquation = BackendDAE.SOLVED_EQUATION(name, maxv, source, false, BackendDAE.UNKNOWN_EQUATION_KIND());
     then ((var, (initialEquation :: eqns, av)));
 
     case _ then inTpl;
@@ -6917,7 +6917,7 @@ algorithm
         // if not parameter use it, else use it only if not constant
         true = (not b1) or (b1 and not b2);
         cre = Expression.crefExp(cr);
-        initialEquation = BackendDAE.EQUATION(cre, e, source, false);
+        initialEquation = BackendDAE.EQUATION(cre, e, source, false, BackendDAE.UNKNOWN_EQUATION_KIND());
         var1 = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
       then
         ((var, (initialEquation :: eqns, var1::v, kn, pos::v1, pos::v2, pos+1)));

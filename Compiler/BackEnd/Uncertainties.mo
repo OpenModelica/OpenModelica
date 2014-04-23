@@ -1978,7 +1978,7 @@ algorithm
       mvars_1 = BaseHashTable.add((cr1,0),mvars);
       (eqns_1,seqns_1,mvars_2,repl_2) = eliminateVariablesDAE2(eqns, eqnIndex + 1, vars, knvars, mvars_1, repl_1, inDoubles, m, elimVarIndexList_1, failCheck);
     then
-      (eqns_1,(BackendDAE.SOLVED_EQUATION(cr1,e2,source,false) :: seqns_1),mvars_2,repl_2);
+      (eqns_1,(BackendDAE.SOLVED_EQUATION(cr1,e2,source,false,BackendDAE.UNKNOWN_EQUATION_KIND()) :: seqns_1),mvars_2,repl_2);
 
     // Next equation.
     case ((e :: eqns),_,_,_,_,_,_,_,_,false)
@@ -2745,7 +2745,7 @@ algorithm
         // These values are temporary
         differentiated=false;
       then
-        BackendDAE.SOLVED_EQUATION(cr,e,source,differentiated);
+        BackendDAE.SOLVED_EQUATION(cr,e,source,differentiated,BackendDAE.UNKNOWN_EQUATION_KIND());
   end match;
 end generateEquation;
 
