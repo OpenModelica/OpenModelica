@@ -6721,6 +6721,7 @@ algorithm
 
     case (_, false) then false;
     case (e :: exps, _) then isConstWorkListList(exps, isConstWorkList(e, true));
+    case ({}, _) then true;
     else false;
   end match;
 end isConstWorkListList;
