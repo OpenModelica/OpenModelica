@@ -10,3 +10,5 @@
 //typedef ublas::shallow_array_adaptor<double> adaptor_t;
 //typedef ublas::vector<double, adaptor_t> shared_vector_t;
 //typedef ublas::matrix<double, adaptor_t> shared_matrix_t;
+#include <vector>
+using std::vector;

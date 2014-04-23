@@ -75,6 +75,7 @@ using boost::multi_array;
 using std::max;
 using std::min;
 using std::string;
+using std::vector;
 typedef  double modelica_real ;
 typedef  int modelica_integer;
 typedef  bool modelica_boolean;

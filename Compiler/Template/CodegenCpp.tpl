@@ -4,6 +4,8 @@ import interface SimCodeTV;
 
 // SECTION: SIMULATION TARGET, ROOT TEMPLATE
 
+
+
 template translateModel(SimCode simCode) ::=
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
@@ -5493,6 +5495,13 @@ template tempDecl(String ty, Text &varDecls /*BUFP*/)
   newVar
 end tempDecl;
 
+template tempDeclAssign(String ty, Text &varDecls /*BUFP*/,String assign)
+ "Declares a temporary variable in varDecls and returns the name."
+::=
+  let newVar = 'tmp<%System.tmpTick()%>'
+  let &varDecls += '<%ty%> <%newVar%> = <%assign%>;<%\n%>'
+  newVar
+end tempDeclAssign;
 
 template contextCref(ComponentRef cr, Context context,SimCode simCode)
   "Generates code for a component reference depending on which context we're in."
@@ -7225,18 +7234,30 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     '<%tvar%>'
 
   case CALL(path=IDENT(name="promote"), expLst={A, n}) then
+  match A
+    case component as CREF(componentRef=cr, ty=ty) then
     let var1 = daeExp(A, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let var2 = daeExp(n, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-    let arr_tp_str = '<%expTypeFromExpArray(A)%>'
-    let tvar = tempDecl(arr_tp_str, &varDecls /*BUFD*/)
-    let &preExp += 'promote_alloc_<%arr_tp_str%>(&<%var1%>, <%var2%>, &<%tvar%>);<%\n%>'
-    '<%tvar%>'
-
+    //let temp = tempDeclAssign('const size_t*', &varDecls /*BUFD*/,'<%var1%>.shape()')
+    //let temp_ex = tempDecl('std::vector<size_t>', &varDecls /*BUFD*/)
+    let arrayType = expTypeArray(ty)
+    let dimstr = listLength(crefSubs(cr))
+    let tmp = tempDecl('multi_array<<%arrayType%>,<%dimstr%>>', &varDecls /*BUFD*/)
+    
+   // let arr_tp_str = '<%expTypeFromExpArray(A)%>'
+    //let tvar = tempDecl(arr_tp_str, &varDecls /*BUFD*/)
+    let &preExp += 'promote_array(<%var2%>,<%var1%>, <%tmp%>);<%\n%>'
+                    
+   
+    '<%tmp%> '
+   else
+   'promote array error'
   case CALL(path=IDENT(name="transpose"), expLst={A}) then
     let var1 = daeExp(A, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+    let type_str = expTypeFromExpShort(A)
     let arr_tp_str = '<%expTypeFromExpArray(A)%>'
     let tvar = tempDecl(arr_tp_str, &varDecls /*BUFD*/)
-    let &preExp += 'transpose_alloc_<%arr_tp_str%>(&<%var1%>, &<%tvar%>);<%\n%>'
+    let &preExp += 'transpose_array< <%type_str%> >(<%tvar%>,<%var1%>);<%\n%>'
     '<%tvar%>'
 
    case CALL(path=IDENT(name="cross"), expLst={v1, v2},attr=CALL_ATTR(ty=ty as T_ARRAY(dims=dims))) then
@@ -7399,7 +7420,7 @@ end expTypeFromExpModelica;
 template expTypeFromExpArray(Exp exp)
 
 ::=
-  expTypeFromExpFlag(exp, 3)
+  expTypeFromExpFlag(exp, 6)
 end expTypeFromExpArray;
 
 template assertCommon(Exp condition, Exp message, Context context, Text &varDecls, Info info,SimCode simCode)
@@ -7539,7 +7560,7 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
                         else "double"
   let var = tempDecl('multi_array<<%type%>,<%listLength(dims)%>>', &varDecls /*BUFD*/)
     //let var = tempDecl1(type,e1,&varDecls /*BUFD*/)
-    let &preExp += 'assign_array(<%var%>,subtract_array<<%type%>,<%listLength(dims)%>>(<%e1%>, <%e2%>));<%\n%>'
+    let &preExp += 'assign_array(<%var%>,(subtract_array<<%type%>,<%listLength(dims)%>>(<%e1%>, <%e2%>)));<%\n%>'
     '<%var%>'
   case MUL_ARR(__) then "daeExpBinary:ERR MUL_ARR not supported"
   case DIV_ARR(__) then "daeExpBinary:ERR DIV_ARR not supported"
@@ -7670,10 +7691,14 @@ template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp /*BUFP*/,
     else
       // The array subscript denotes a slice
       let arrName = contextArrayCref(cr, context)
-      let arrayType = expTypeArray(ty)
+      let arrayType = expTypeFlag(ty, 6)
+      /* let dimstr = listLength(crefSubs(cr))
+      let dimsValuesStr = (crefSubs(cr) |> INDEX(__) =>
+          daeExp(exp, context, &preExp , &varDecls ,simCode)
+        ;separator="][")*/
       let tmp = tempDecl(arrayType, &varDecls /*BUFD*/)
       let spec1 = daeExpCrefRhsIndexSpec(crefSubs(cr), context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-      let &preExp += 'index_alloc_<%arrayType%>(&<%arrName%>, &<%spec1%>, &<%tmp%>);<%\n%>'
+      let &preExp += 'create_array_from_shape(<%spec1%>,<%arrName%>,<%tmp%>);<%\n%>'
       tmp
 end daeExpCrefRhs2;
 
@@ -7681,30 +7706,28 @@ template daeExpCrefRhsIndexSpec(list<Subscript> subs, Context context,
                                 Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/,SimCode simCode)
  "Helper to daeExpCrefRhs."
 ::=
+  let tmp = tempDecl("vector< vector<size_t> >", &varDecls /*BUFD*/)
   let nridx_str = listLength(subs)
-  let idx_str = (subs |> sub =>
+  let idx_str = (subs |> sub  hasindex i1 =>
       match sub
       case INDEX(__) then
-        let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-        <<
-        (0), make_index_array(1, (int) <%expPart%>), 'S'
-
-        >>
+       /* let tmp_index = tempDecl("vector<size_t>", &varDecls)
+        let &preExp += '<%tmp_index%>.push_back(0);//<%\n%>
+                        <%tmp%>.push_back(<%tmp_index%>);<%\n%> '*/
+      ''
       case WHOLEDIM(__) then
-        <<
-        (1), (int*)0, 'W'
-        >>
+       let tmp_index = tempDecl("vector<size_t>", &varDecls /*BUFD*/)
+       let &preExp += '<%tmp_index%>.push_back(1);<%\n%>
+                       <%tmp%>.push_back(<%tmp_index%>);<%\n%>'
+       '' 
       case SLICE(__) then
+        let tmp_index = tempDecl("vector<size_t>", &varDecls /*BUFD*/)
         let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-        let tmp = tempDecl("int", &varDecls /*BUFD*/)
-        let &preExp += '<%tmp%> = <%expPart%>.shape()[0]'
-        <<
-        (int) <%tmp%>, integer_array_make_index_array(&<%expPart%>), 'A'
-        >>
-    ;separator=", ")
-  let tmp = tempDecl("index_spec_t", &varDecls /*BUFD*/)
-  let &preExp += 'create_index_spec(&<%tmp%>, <%nridx_str%>, <%idx_str%>);<%\n%>'
-  tmp
+        let &preExp += '<%tmp_index%>.assign(<%expPart%>.data(),<%expPart%>.data()+<%expPart%>.num_elements());<%\n%>
+                        <%tmp%>.push_back(<%tmp_index%>);<%\n%>'
+       ''
+    ;separator="\n ")
+   tmp
 end daeExpCrefRhsIndexSpec;
 
 
@@ -8932,7 +8955,7 @@ template expTypeFromExpFlag(Exp exp, Integer flag)
   case c as RANGE(__)
   case c as CAST(__)
   case c as CREF(__)
-  case c as CODE(__)     then expTypeFlag(c.ty, flag)
+  case c as CODE(__)     then expTypeFlag(c.ty, flag) 
   case ASUB(__)          then expTypeFromExpFlag(exp, flag)
   case REDUCTION(__)     then expTypeFlag(typeof(exp), flag)
   case BOX(__)

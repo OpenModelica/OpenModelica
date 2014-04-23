@@ -41,11 +41,11 @@ using boost::multi_array_ref;
 /**
 Operation class which performs the array operation *,/
 */
-template< typename T1, typename T2, class F >
+template< typename T, class F >
 struct Operation
 {
   Operation( F op ): _op(op) {}
-  T1 &operator()( T1 &x, const T2 &y ) const
+  T &operator()( T &x, const T &y ) const
   {
       x = _op( y );
     return x;
@@ -73,7 +73,7 @@ template < typename T, size_t NumDims, class F >
 boost::multi_array< T, NumDims > op_cp_array( boost::multi_array_ref< T, NumDims > a, F f )
 {
   boost::multi_array< T, NumDims > retVal(a);
-  Operation< T, T, F > opis( f );
+  Operation< T, F > opis( f );
   return array_operation( retVal, a, opis );
 }
 /**
@@ -133,7 +133,7 @@ template < typename T >
 T dot_array( boost::multi_array_ref< T, 1 > a ,  boost::multi_array_ref< T, 1 > b  )
 {
   T tmp = 0;
-  typename boost::multi_array< T, 1 >::const_iterator j = b.begin();
+  typename boost::multi_array< T, 1 >::iterator j = b.begin();
   for ( typename boost::multi_array< T, 1 >::iterator i = a.begin();  i != a.end(); i++, j++ )
     tmp += (*i) * (*j);
 
@@ -168,11 +168,11 @@ void usub_array(boost::multi_array_ref< T, dims > &a)
 Applies array operation F (*,/) on array
 */
 
-template< typename T1, typename T2, size_t dims, class F >
-boost::multi_array_ref< T1, dims >  array_operation( boost::multi_array< T1, dims > a, const boost::multi_array_ref< T2, dims > b, F& op )
+template< typename T, size_t dims, class F >
+boost::multi_array_ref< T, dims >  array_operation( boost::multi_array< T, dims > a,  boost::multi_array_ref< T, dims > b, F& op )
 {
-  typename boost::multi_array_ref< T2, dims >::const_iterator j = b.begin();
-  for ( typename boost::multi_array< T1, dims >::iterator i = a.begin();
+  typename boost::multi_array_ref< T, dims >::iterator j = b.begin();
+  for ( typename boost::multi_array< T, dims >::iterator i = a.begin();
         i != a.end(); i++, j++ )
         array_operation( *i, *j, op );
   return a;
@@ -183,12 +183,12 @@ boost::multi_array_ref< T1, dims >  array_operation( boost::multi_array< T1, dim
 Applies array operation F  (*,/) on one dimensional array
 */
 template<
-  typename T1, typename T2, class F
+  typename T, class F
 >
-boost::multi_array< T1, 1 > array_operation( boost::multi_array< T1, 1 > a, boost::multi_array_ref< T2, 1 > b, F& op )
+boost::multi_array< T, 1 > array_operation( boost::multi_array< T, 1 > a, boost::multi_array_ref< T, 1 > b, F& op ) 
 {
-  typename boost::multi_array_ref< T2, 1 >::const_iterator j = b.begin();
-  for ( typename boost::multi_array< T1, 1 >::iterator i = a.begin();
+  typename boost::multi_array_ref< T, 1 >::iterator j = b.begin();
+  for ( typename boost::multi_array< T, 1 >::iterator i = a.begin();
         i != a.end(); i++, j++ )
     op( *i, *j );
   return a;
@@ -197,12 +197,12 @@ boost::multi_array< T1, 1 > array_operation( boost::multi_array< T1, 1 > a, boos
 /**
 Applies array operation F  (*,/) on  sub array a[i]
 */
-template<typename T1, typename T2, size_t NumDims, class F >
+template<typename T, size_t NumDims, class F >
 
-boost::detail::multi_array::sub_array< T1, NumDims > array_operation( boost::detail::multi_array::sub_array< T1, NumDims > a, const boost::multi_array_ref< T2, NumDims > &b, F op )
+boost::detail::multi_array::sub_array< T, NumDims > array_operation( boost::detail::multi_array::sub_array< T, NumDims > a,  boost::detail::multi_array::sub_array< T, NumDims > b, F op )
 {
-  typename boost::multi_array_ref< T2, NumDims >::const_iterator j = b.begin();
-  for ( typename boost::detail::multi_array::sub_array< T1, NumDims >::iterator i = a.begin();
+  typename boost::detail::multi_array::sub_array< T, NumDims >::iterator j = b.begin();
+  for ( typename boost::detail::multi_array::sub_array< T, NumDims >::iterator i = a.begin();
         i != a.end(); i++, j++ )
     array_operation( *i, *j, op );
   return a;
@@ -211,11 +211,11 @@ boost::detail::multi_array::sub_array< T1, NumDims > array_operation( boost::det
 /**
 Applies array operation F  (*,/) on one dimensial sub array a[i]
 */
-template< typename T1, typename T2, class F >
-boost::detail::multi_array::sub_array< T1, 1 > array_operation( boost::detail::multi_array::sub_array< T1, 1 > a, boost::multi_array_ref< T2, 1 > &b,  F op )
+template< typename T, class F >
+boost::detail::multi_array::sub_array< T, 1 > array_operation( boost::detail::multi_array::sub_array< T, 1 > a, boost::detail::multi_array::sub_array< T, 1 > b,  F op )
 {
-  typename boost::multi_array_ref< T2, 1 >::const_iterator j = b.begin();
-  for ( typename boost::detail::multi_array::sub_array< T1, 1 >::iterator i = a.begin();
+  typename boost::detail::multi_array::sub_array< T, 1 >::iterator j = b.begin();
+  for ( typename boost::detail::multi_array::sub_array< T, 1 >::iterator i = a.begin();
         i != a.end(); i++, j++ )
     op( *i, *j );
   return a;
@@ -227,12 +227,12 @@ Applies array operation F (+,-) on  on dimensional  subarray
 */
 
 template<
-  typename T1, typename T2, typename T3, class F >
-boost::detail::multi_array::sub_array< T1, 1 > array_operation( boost::detail::multi_array::sub_array< T1, 1 > a,  boost::multi_array_ref< T2, 1 > &b, boost::multi_array_ref< T3, 1 > &c, F op )
+  typename T, class F >
+boost::detail::multi_array::sub_array< T, 1 > array_operation( boost::detail::multi_array::sub_array< T, 1 > a,  boost::detail::multi_array::sub_array< T, 1 > b, boost::detail::multi_array::sub_array< T, 1 > c, F& op )
 {
-  typename boost::multi_array_ref< T2, 1 >::const_iterator j = b.begin();
-  typename boost::multi_array_ref< T3, 1 >::const_iterator k = c.begin();
-  for ( typename boost::detail::multi_array::sub_array< T1, 1 >::iterator i = a.begin();
+  typename boost::detail::multi_array::sub_array< T, 1 >::iterator j = b.begin();
+  typename boost::detail::multi_array::sub_array< T, 1 >::iterator k = c.begin();
+  for ( typename boost::detail::multi_array::sub_array< T, 1 >::iterator i = a.begin();
         i != a.end(); i++, j++, k++ )
    op( *i, *j, *k );
   return a;
@@ -244,12 +244,12 @@ Applies array operation F (+,-) on array
 */
 
 template<
-  typename T1, typename T2, typename T3, class F >
-boost::multi_array< T1, 1 > &array_operation( boost::multi_array< T1, 1 > &a,  boost::multi_array_ref< T2, 1 > &b,  boost::multi_array_ref< T3, 1 > &c, F op )
+  typename T, class F >
+boost::multi_array< T, 1 > &array_operation( boost::multi_array< T, 1 > &a,  boost::multi_array_ref< T, 1 > b,  boost::multi_array_ref< T, 1 > c, F op )
 {
- typename boost::multi_array_ref< T2, 1 >::const_iterator j = b.begin();
- typename boost::multi_array_ref< T3, 1 >::const_iterator k = c.begin();
-  for ( typename boost::multi_array< T1, 1 >::iterator i = a.begin();
+ typename boost::multi_array_ref< T, 1 >::iterator j = b.begin();
+ typename boost::multi_array_ref< T, 1 >::iterator k = c.begin();
+  for ( typename boost::multi_array< T, 1 >::iterator i = a.begin();
         i != a.end(); i++, j++, k++ )
     op( *i, *j, *k );
   return a;
@@ -260,26 +260,26 @@ Applies array operation F (+,-) on subarray
 */
 
 template<
-  typename T1, typename T2, typename T3, size_t dims, class F >
-boost::detail::multi_array::sub_array< T1, dims > array_operation( boost::detail::multi_array::sub_array< T1, dims > a, boost::multi_array_ref< T2, dims > &b, boost::multi_array_ref< T3, dims > &c,  F op )
+  typename T, size_t dims, class F >
+boost::detail::multi_array::sub_array< T, dims > array_operation( boost::detail::multi_array::sub_array< T, dims > a, boost::detail::multi_array::sub_array< T, dims > b, boost::detail::multi_array::sub_array< T, dims > c,  F op )
 {
-  typename boost::multi_array_ref< T2, dims >::const_iterator j = b.begin();
-  typename boost::multi_array_ref< T3, dims >::const_iterator k = c.begin();
-  for ( typename boost::detail::multi_array::sub_array< T1, dims >::iterator i = a.begin();
+  typename boost::detail::multi_array::sub_array< T, dims >::iterator j = b.begin();
+  typename boost::detail::multi_array::sub_array< T, dims >::iterator k = c.begin();
+  for ( typename boost::detail::multi_array::sub_array< T, dims >::iterator i = a.begin();
         i != a.end(); i++, j++, k++ )    array_operation( *i, *j, *k, op );
   return a;
 }
 /**
-Applies array operation F (+,-) on array
+Applies array operation F (+,-) on array 
 */
 
 template<
-  typename T1, typename T2, typename T3, size_t dims, class F >
-boost::multi_array< T1, dims > &array_operation( boost::multi_array< T1, dims > &a,  boost::multi_array_ref< T2, dims > b,  boost::multi_array_ref< T3, dims > c, F op )
+  typename T, size_t dims, class F >
+boost::multi_array< T, dims > &array_operation( boost::multi_array< T, dims > &a,  boost::multi_array_ref< T, dims > b,  boost::multi_array_ref< T, dims > c, F op )
 {
-  typename boost::multi_array_ref< T2, dims >::const_iterator j = b.begin();
-  typename boost::multi_array_ref< T3, dims >::const_iterator k = c.begin();
-  for (typename boost::multi_array< T1, dims >::iterator i = a.begin();
+  typename boost::multi_array_ref< T, dims >::iterator j = b.begin();
+  typename boost::multi_array_ref< T, dims >::iterator k = c.begin();
+  for (typename boost::multi_array< T, dims >::iterator i = a.begin();
         i != a.end(); i++, j++, k++ )
     array_operation( *i, *j, *k, op );
   return a;
@@ -291,15 +291,15 @@ boost::multi_array< T1, dims > &array_operation( boost::multi_array< T1, dims > 
 Copies a array
 */
 template<
-  typename T1, typename T2, size_t dims,
+  typename T, size_t dims,
   template< typename, size_t > class MultiArray
 >
-boost::multi_array< T1, dims > empty_clone
-( MultiArray< T2, dims > x )
+boost::multi_array< T, dims > empty_clone
+( MultiArray< T, dims > x )
 {
   boost::array< size_t, dims > shape;
   std::copy( x.shape(), x.shape() + dims, shape.begin() );
-  boost::multi_array< T1, dims > retVal( shape );
+  boost::multi_array< T, dims > retVal( shape );
   return retVal;
 }
 
@@ -384,7 +384,7 @@ void cat_array (int k,boost::multi_array< T, NumDims >& a, std::vector<boost::mu
     }
     /* allocate output array */
     const size_t* shape = x[0].shape();
-    std::vector<size_t> ex;
+    vector<size_t> ex;
     ex.assign( shape, shape+x[0].num_dimensions() );
     ex[k-1] = new_k_dim_size;
     if(ex.size()<k)
@@ -412,19 +412,68 @@ void cat_array (int k,boost::multi_array< T, NumDims >& a, std::vector<boost::mu
 }
 
 
-/**
-finds min/max elements of an array
-template < typename T, size_t NumDims >
-std::pair <T,T>
-min_max (boost::multi_array_ref< T, NumDims > x, T val )
+template < typename T >
+void transpose_array (boost::multi_array< T, 2 >& a, boost::multi_array< T, 2 >  x )
+
 {
 
-  boost::minmax_element(x.data(), x.data() + x.num_elements());
+    const size_t* shape = x.shape();
+    vector<size_t> ex;
+    ex.assign( shape, shape+x.num_dimensions() );
+    std::swap( ex[0], ex[1] ); 
+    a.resize(ex);
+    a.reindex(1);
+     T* data = x.data();
+    a.assign( data, data + a.num_elements() );
 
 }
-*/
+
+template < typename T , size_t NumDims, size_t NumDims2 >
+void create_array_from_shape(const vector<vector<size_t> >& sp,boost::multi_array< T, NumDims >& s,boost::multi_array< T, NumDims2 >& d)
+{
+     vector<size_t> shape;
+     vector<vector<size_t> >::const_iterator iter;
+     vector<size_t>::const_iterator index_iter;
+     for(iter = sp.begin();iter!=sp.end();++iter)
+     {
+          if((iter->size())!=0)
+               shape.push_back(iter->size());
+
+     }
+     d.resize(shape);
+     d.reindex(1);
+     T* data = new T[d.num_elements()];
+     int i = 0;
+     T* source_data = s.data();
+     for(iter = sp.begin();iter!=sp.end();++iter)
+     {
+          for(index_iter = iter->begin();index_iter!=iter->end();++index_iter)
+          {
+               unsigned int  index = *index_iter -1;
+               data[i] = source_data[index];
+               i++;
+          }
+          
+     }
+     
+     d.assign( data, data + d.num_elements() );
+     delete [] data;
+ }
 
 
+ template < typename T , size_t NumDims, size_t NumDims2 >
+void promote_array(unsigned int n,boost::multi_array< T, NumDims >& s,boost::multi_array< T, NumDims2 >& d)
+{
+   const size_t* shape = s.shape();
+   vector<size_t> ex;
+   ex.assign( shape, shape+ s.num_dimensions() );
+   for(int i=0;i<n;i++)
+    ex.push_back(1);
+   d.resize(ex);
+   T* data = s.data();
+   d.assign( data, data + d.num_elements() );
+}
+ 
 /**
 finds min/max elements of an array */
 template < typename T, size_t NumDims >
