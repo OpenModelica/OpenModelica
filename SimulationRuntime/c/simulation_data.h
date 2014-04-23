@@ -373,6 +373,7 @@ typedef struct MODEL_DATA_XML
 {
   const char *fileName;
   const char *infoXMLData;
+  size_t modelInfoXmlLength;
   long nFunctions;
   long nEquations;
   long nProfileBlocks;

@@ -10441,6 +10441,17 @@ algorithm
   end match;
 end functionInfo;
 
+public function functionPath
+  input SimCode.Function fn;
+  output Absyn.Path name;
+algorithm
+  name := match fn
+    case SimCode.FUNCTION(name=name) then name;
+    case SimCode.EXTERNAL_FUNCTION(name=name) then name;
+    case SimCode.RECORD_CONSTRUCTOR(name=name) then name;
+  end match;
+end functionPath;
+
 public function eqInfo
   input SimCode.SimEqSystem eq;
   output Absyn.Info info;

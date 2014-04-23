@@ -854,6 +854,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData.nInitResiduals = <%varInfo.numInitialResiduals%>;    /* data->modelData.nInitEquations + data->modelData.nInitAlgorithms */
     data->modelData.nExtObjs = <%varInfo.numExternalObjects%>;
     data->modelData.modelDataXml.fileName = "<%fileNamePrefix%>_info.xml";
+    data->modelData.modelDataXml.modelInfoXmlLength = 0;
     data->modelData.modelDataXml.nFunctions = <%listLength(functions)%>;
     data->modelData.modelDataXml.nProfileBlocks = 0;
     data->modelData.modelDataXml.nEquations = <%varInfo.numEquations%>;

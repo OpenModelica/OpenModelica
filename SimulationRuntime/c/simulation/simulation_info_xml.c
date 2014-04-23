@@ -509,18 +509,52 @@ static inline const char* assertNumber(const char *str, double expected)
 
 static const char* readEquation(const char *str,EQUATION_INFO *xml,int i)
 {
+  int n=0,j;
+  const char *str2;
   str=assertChar(str,'{');
   str=assertStringValue(str,"eqIndex");
   str=assertChar(str,':');
   str=assertNumber(str,i);
-  str=skipObjectRest(str,0);
-  return str;
+  str=skipSpace(str);
+  xml->id = i;
+  xml->profileBlockIndex = 0;
+  if (strncmp(",\"defines\":[", str, 12)) {
+    xml->numVar = 0;
+    xml->vars = 0;
+    return skipObjectRest(str,0);
+  }
+  str += 12;
+  str = skipSpace(str);
+  if (*str == ']') {
+    xml->numVar = 0;
+    xml->vars = 0;
+    return skipObjectRest(str,0);
+  }
+  str2 = str;
+  while (1) {
+    str=skipValue(str);
+    n++;
+    str=skipSpace(str);
+    if (*str != ',') {
+      break;
+    }
+    str++;
+  };
+  str = assertChar(str, ']');
+  xml->numVar = n;
+  xml->vars = malloc(sizeof(const char*)*i);
+  for (j=0; j<n; j++) {
+    xml->vars[j] = "some variable";
+  }
+  return skipObjectRest(str,0);
 }
 
 static const char* readEquations(const char *str,MODEL_DATA_XML *xml)
 {
   int i;
   str=assertChar(str,'[');
+  str = readEquation(str,xml->equationInfo,0);
+  str = assertChar(str,',');
   for (i=1; i<xml->nEquations; i++) {
     str = readEquation(str,xml->equationInfo+i,i);
     /* TODO: Odd, it seems there is 1 fewer equation than expected... */
@@ -529,6 +563,41 @@ static const char* readEquations(const char *str,MODEL_DATA_XML *xml)
     }
   }
   str=assertChar(str,']');
+  return str;
+}
+
+static const char* readFunction(const char *str,FUNCTION_INFO *xml,int i)
+{
+  FILE_INFO info = omc_dummyFileInfo;
+  size_t len;
+  char *name;
+  const char *str2;
+  str=skipSpace(str);
+  str2=assertChar(str,'"');
+  str=skipValue(str);
+  xml->id = i;
+  len = str-str2;
+  name = malloc(len);
+  memcpy(name, str2, len-1);
+  name[len-1] = '\0';
+  xml->name = name;
+  xml->info = info;
+  return str;
+}
+
+static const char* readFunctions(const char *str,MODEL_DATA_XML *xml)
+{
+  int i;
+  if (xml->nFunctions == 0) {
+    str=assertChar(str,'[');
+    str=assertChar(str,']');
+    return str;
+  }
+  str=assertChar(str,'[');
+  for (i=0; i<xml->nFunctions; i++) {
+    str = readFunction(str,xml->functionNames+i,i);
+    str=assertChar(str,xml->nFunctions==i+1 ? ']' : ',');
+  }
   return str;
 }
 
@@ -554,13 +623,17 @@ static void readInfoXml(const char *str,MODEL_DATA_XML *xml)
   str=assertStringValue(str,"equations");
   str=assertChar(str,':');
   str=readEquations(str,xml);
+  str=assertChar(str,',');
+  str=assertStringValue(str,"functions");
+  str=assertChar(str,':');
+  str=readFunctions(str,xml);
   str=assertChar(str,'}');
 }
 
 void modelInfoXmlInit(MODEL_DATA_XML* xml)
 {
   rt_tick(0);
-  if(!xml->infoXMLData) {
+  if (!xml->infoXMLData) {
     struct stat s;
     int fd;
     int len = strlen(xml->fileName);
@@ -578,37 +651,46 @@ void modelInfoXmlInit(MODEL_DATA_XML* xml)
       close(fd);
       throwStreamPrint(NULL, "fstat %s failed: %s\n", fileName, strerror(errno));
     }
-    xml->infoXMLData = (char*) mmap(0, s.st_size, PROT_READ, MAP_SHARED, fd, 0);
+    xml->modelInfoXmlLength = s.st_size;
+    xml->infoXMLData = (char*) mmap(0, xml->modelInfoXmlLength, PROT_READ, MAP_SHARED, fd, 0);
     if (xml->infoXMLData == MAP_FAILED) {
       close(fd);
       throwStreamPrint(NULL, "mmap(file=\"%s\",fd=%d,size=%ld kB) failed: %s\n", fileName, fd, (long) s.st_size, strerror(errno));
     }
     close(fd);
-    fprintf(stderr, "Loaded the JSON (%ld kB)...\n", (long) (s.st_size+1023)/1024);
+    // fprintf(stderr, "Loaded the JSON (%ld kB)...\n", (long) (s.st_size+1023)/1024);
   }
 
+  xml->functionNames = (FUNCTION_INFO*) calloc(xml->nFunctions, sizeof(FUNCTION_INFO));
   xml->equationInfo = (EQUATION_INFO*) calloc(1+xml->nEquations, sizeof(EQUATION_INFO));
   xml->equationInfo[0].id = 0;
   xml->equationInfo[0].profileBlockIndex = -1;
   xml->equationInfo[0].numVar = 0;
   xml->equationInfo[0].vars = NULL;
 
-  fprintf(stderr, "Loaded the JSON file in %fms...\n", rt_tock(0) * 1000.0);
+  // fprintf(stderr, "Loaded the JSON file in %fms...\n", rt_tock(0) * 1000.0);
   // fprintf(stderr, "Parse the JSON %s\n", xml->infoXMLData);
-  fprintf(stderr, "Parse the JSON %ld...\n", (long) xml->infoXMLData);
+  // fprintf(stderr, "Parse the JSON %ld...\n", (long) xml->infoXMLData);
   readInfoXml(xml->infoXMLData, xml);
-  fprintf(stderr, "Parsed the JSON in %fms...\n", rt_tock(0) * 1000.0);
-  EXIT(1);
+  // fprintf(stderr, "Parsed the JSON in %fms...\n", rt_tock(0) * 1000.0);
 }
 
 FUNCTION_INFO modelInfoXmlGetFunction(MODEL_DATA_XML* xml, size_t ix)
 {
-  abort();
+  if(xml->functionNames == NULL)
+  {
+    modelInfoXmlInit(xml);
+  }
+  return xml->functionNames[ix];
 }
 
 EQUATION_INFO modelInfoXmlGetEquation(MODEL_DATA_XML* xml, size_t ix)
 {
-  abort();
+  if(xml->equationInfo == NULL)
+  {
+    modelInfoXmlInit(xml);
+  }
+  return xml->equationInfo[ix];
 }
 
 EQUATION_INFO modelInfoXmlGetEquationIndexByProfileBlock(MODEL_DATA_XML* xml, size_t ix)
@@ -618,7 +700,9 @@ EQUATION_INFO modelInfoXmlGetEquationIndexByProfileBlock(MODEL_DATA_XML* xml, si
 
 void freeModelInfoXml(MODEL_DATA_XML* xml)
 {
-  munmap((void*)xml->infoXMLData, /* TODO: Improve performance */ strlen(xml->infoXMLData));
+  if (xml->modelInfoXmlLength) {
+    munmap((void*)xml->infoXMLData, xml->modelInfoXmlLength);
+  }
 }
 
 #endif
