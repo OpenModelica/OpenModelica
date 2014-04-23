@@ -217,7 +217,7 @@ algorithm
    else
      then
        (eqIn,addEqsIn);
-  end matchcontinue;    
+  end matchcontinue;
 end convertTupleEquations;
 
 protected function makeBackendEquation"builds backendEquations for the list of lhs-exps and rhs-exps.
@@ -382,7 +382,7 @@ algorithm
         outputExp = Util.if_(funcIsPartConst,outputExp,lhsExpIn);
         lhsExps = getCrefsForRecord(lhsExpIn);
         outputExp = Util.if_(isConstRec,DAE.TUPLE(lhsExps),outputExp);
-        
+
         exp2 = Debug.bcallret1(List.hasOneElement(constComplexExps) and funcIsConst,List.first,constComplexExps,DAE.TUPLE(constComplexExps));  // either a single equation or a tuple equation
         exp = Util.if_(funcIsConst,exp2,rhsExpIn);
         exp = Util.if_(funcIsPartConst,DAE.CALL(path, exps, attr2),exp);
@@ -401,7 +401,7 @@ algorithm
         ((rhsExpIn,lhsExpIn,{},funcsIn,eqIdx));
   end matchcontinue;
 end evaluateConstantFunction;
-        
+
 public function getCrefsForRecord "
 author:Waurich TUD 2014-04"
   input DAE.Exp e;
@@ -1184,16 +1184,16 @@ algorithm
         expLst = Expression.getComplexContents(exp2);
         isCon = Expression.isConst(exp2);
         isRec = ComponentReference.isRecord(cref);
-        isTpl = Expression.isTuple(exp1) and Expression.isTuple(exp2); 
+        isTpl = Expression.isTuple(exp1) and Expression.isTuple(exp2);
         //print("is it const? "+&boolString(isCon)+&" ,is it rec: "+&boolString(isRec)+&" ,is it tpl: "+&boolString(isTpl)+&"\n");
         //Debug.bcall(isCon and not isRec,print,"add the replacement: "+&ComponentReference.crefStr(cref)+&" --> "+&ExpressionDump.printExpStr(exp2)+&"\n");
-        //Debug.bcall(not isCon,print,"remove the replacement for: "+&ComponentReference.crefStr(cref)+&"\n");     
-        
+        //Debug.bcall(not isCon,print,"remove the replacement for: "+&ComponentReference.crefStr(cref)+&"\n");
+
         repl = Debug.bcallret4(isCon and not isRec, BackendVarTransform.addReplacement, replIn,cref,exp2,NONE(),replIn);
         repl = Debug.bcallret4(isCon and isRec, BackendVarTransform.addReplacements, repl,scalars,expLst,NONE(),repl);
         repl = Debug.bcallret3(not isCon, BackendVarTransform.removeReplacement, repl,cref,NONE(),repl);
         //BackendVarTransform.dumpReplacements(repl);
-       
+
         //alg = Util.if_(isCon and not isRec,DAE.STMT_ASSIGN(typ,exp1,exp2,source),List.first(algsIn));
         //alg = Util.if_(not isRec,DAE.STMT_ASSIGN(typ,exp1,exp2,source),List.first(algsIn));
         alg = Util.if_(isCon,DAE.STMT_ASSIGN(typ,exp1,exp2,source),List.first(algsIn));
@@ -1274,7 +1274,7 @@ algorithm
         ((_,isCon)) = Expression.traverseExp(exp1,expIsConstTraverser,true);
         exp1 = Util.if_(isCon,exp1,exp0);
         //print("is the tupl const? "+&boolString(isCon)+&"\n");
-        
+
         // add the replacements
         repl = Debug.bcallret3(isCon,addTplReplacements,replIn,exp1,exp2,replIn);
 
@@ -1324,7 +1324,7 @@ algorithm
    else
      then
        replIn;
-  end matchcontinue;        
+  end matchcontinue;
 end addTplReplacements;
 
 protected function expIsConstTraverser "traverser function to check if there are any variable expressions"
@@ -1918,7 +1918,7 @@ protected
 algorithm
   num := listLength(List.first(expLstLstIn));
   idcs := List.intRange(num);
-  posLstOut := List.fold1(idcs,compareConstantExps2,expLstLstIn,{}); 
+  posLstOut := List.fold1(idcs,compareConstantExps2,expLstLstIn,{});
 end compareConstantExps;
 
 protected function compareConstantExps2

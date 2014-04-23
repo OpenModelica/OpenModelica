@@ -1987,7 +1987,7 @@ protected function simplifyVectorBinary2
 algorithm
   outExp := DAE.BINARY(inLhs, inOperator, inRhs);
 end simplifyVectorBinary2;
-  
+
 protected function simplifyMatrixBinary
   "Simplifies matrix addition and subtraction"
   input DAE.Exp inLhs;

@@ -22,7 +22,7 @@ Kinsol::Kinsol(IAlgLoop* algLoop, INonLinSolverSettings* settings)
 }
 
 Kinsol::~Kinsol()
-{  
+{
      if(_y)            delete []  _y;
      if(_y0)            delete []  _y0;
      if(_yScale)     delete []  _yScale;
@@ -49,10 +49,10 @@ void Kinsol::initialize()
      _algLoop->initialize();
 
      // Dimension of the system (number of variables)
-     int 
+     int
           dimDouble  = _algLoop->getDimReal(),
           dimInt    = 0,
-          dimBool    = 0; 
+          dimBool    = 0;
 
      // Check system dimension
      if (dimDouble != _dimSys)
@@ -76,7 +76,7 @@ void Kinsol::initialize()
                _fScale     = new double[_dimSys];
                _f            = new double[_dimSys];
                _helpArray       = new double[_dimSys];
-               _jac            = new double[_dimSys*_dimSys];  
+               _jac            = new double[_dimSys*_dimSys];
 
                _algLoop->getReal(_y);
                _algLoop->getReal(_y0);
@@ -84,7 +84,7 @@ void Kinsol::initialize()
                memset(_f,0,_dimSys*sizeof(double));
                memset(_helpArray,0,_dimSys*sizeof(double));
 
-               
+
                _algLoop->getNominalReal(_yScale);
 
                for (int i=0;i<_dimSys;i++)
@@ -101,14 +101,14 @@ void Kinsol::initialize()
                //Set Options
                //idid = KINSetNumMaxIters(_kinMem, _kinsolSettings->getNewtMax());
                idid = KINInit(_kinMem, kin_fCallback, _Kin_y);
-               if (check_flag(&idid, "KINInit", 1)) 
+               if (check_flag(&idid, "KINInit", 1))
                     throw std::invalid_argument("Kinsol::initialize()");
                idid = KINSetUserData(_kinMem, _data);
-               if (check_flag(&idid, "KINSetUserData", 1)) 
+               if (check_flag(&idid, "KINSetUserData", 1))
                     throw std::invalid_argument("Kinsol::initialize()");
 
                idid = KINSpgmr(_kinMem,0);
-               if (check_flag(&idid, "KINSpgmr", 1)) 
+               if (check_flag(&idid, "KINSpgmr", 1))
                     throw std::invalid_argument("Kinsol::initialize()");
 
                idid = KINSetErrFile(_kinMem, NULL);
@@ -117,9 +117,9 @@ void Kinsol::initialize()
 
                _fnormtol  = 1.e-12;     /* function tolerance */
                _scsteptol = 1.e-12;     /* step tolerance */
-               
+
                idid = KINSetFuncNormTol(_kinMem, _fnormtol);
-               
+
 
 
           }
@@ -174,10 +174,10 @@ void Kinsol::solve()
 
                // Reset initial guess
                memcpy(_y,_y0,_dimSys*sizeof(double));
-               
+
                // Call Kinsol
                idid = KINSol(_kinMem, _Kin_y, KIN_NONE, _Kin_yScale, _Kin_yScale);
-               
+
                //Check of return flag
                if (idid < 0)
                {
@@ -197,20 +197,20 @@ void Kinsol::solve()
                     _iterationStatus = DONE;
                     break;
                }
-               
+
                if(iter > 10)
                {
                     break;
                }
-          }     
-               
-          
+          }
+
+
           // TRY ITERATIVE SOLVER
           if(_iterationStatus == CONTINUE)
           {
                memcpy(_y,_y0,_dimSys*sizeof(double));
-               
-               _scsteptol = 1.e-8;     // step tolerance 
+
+               _scsteptol = 1.e-8;     // step tolerance
 
                idid = KINSetScaledStepTol(_kinMem, _scsteptol);
 
@@ -224,7 +224,7 @@ void Kinsol::solve()
                // TRY ITERATIVE SOLVER
                idid = KINSpgmr(_kinMem,5);
                idid = KINSol(_kinMem, _Kin_y, KIN_NONE, _Kin_yScale, _Kin_yScale);
-               
+
                if (idid< 0)
                {
                     _algLoop->setReal(_y); 
@@ -237,12 +237,12 @@ void Kinsol::solve()
                }else
                     _iterationStatus = DONE;
           }
-          
+
      }
 
      if(_iterationStatus == SOLVERERROR)
           throw std::runtime_error("Nonlinear solver failed!");
-     
+
      if(_iterationStatus == CONTINUE && EventRetry)
           memcpy(_y, _helpArray ,_dimSys*sizeof(double));
 }
@@ -280,7 +280,7 @@ int Kinsol::check_flag(void *flagvalue, char *funcname, int opt)
 
      /* Check if SUNDIALS function returned NULL pointer - no memory allocated */
      if (opt == 0 && flagvalue == NULL) {
-          fprintf(stderr, 
+          fprintf(stderr,
                "\nSUNDIALS_ERROR: %s() failed - returned NULL pointer\n\n",
                funcname);
           return(1);
@@ -293,7 +293,7 @@ int Kinsol::check_flag(void *flagvalue, char *funcname, int opt)
                fprintf(stderr,
                     "\nSUNDIALS_ERROR: %s() failed with flag = %d\n\n",
                     funcname, *errflag);
-               return(1); 
+               return(1);
           }
      }
 
