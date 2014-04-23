@@ -420,7 +420,7 @@ algorithm
       Integer countRelations, countMathFunctions;
       DAE.ElementSource source_;
       BackendDAE.EquationKind eqKind;
-      
+
     case (BackendDAE.IF_EQUATION(conditions={}, eqnstrue={}, eqnsfalse=elseeqns, source=source_, kind=eqKind), _, _, _, _, _, _, _, _, _)
       equation
         (zc, elseeqns, _, countRelations, countMathFunctions, relations, samples) = findZeroCrossings2(vars, knvars, elseeqns, counteq, {}, countwc, incountRelations, incountMathFunctions, inZeroCrossings, inrelationsinZC, inSamplesLst, {}, {});

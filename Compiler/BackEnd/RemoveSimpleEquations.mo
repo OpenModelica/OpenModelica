@@ -610,7 +610,7 @@ algorithm
       array<list<Integer>> mT;
       Boolean b, differentiated;
       BackendDAE.EquationKind eqKind;
-      
+
     case (BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, differentiated=differentiated, kind=eqKind), _)
       equation
         Debug.fcall(Flags.DEBUG_ALIAS, BackendDump.debugStrExpStrExpStr, ("Found Equation ", e1, " = ", e2, " to handle.\n"));
@@ -920,7 +920,7 @@ algorithm
       Boolean b, b1, b2, differentiated;
       DAE.ElementSource source;
       BackendDAE.EquationKind eqKind;
-      
+
     // complex types to complex equations
     case (_, _, _, (source, differentiated, eqKind), (v, s, eqns, seqns, index, mT, b))
       equation
@@ -1424,7 +1424,7 @@ algorithm
       DAE.ElementSource source;
       Boolean diffed;
       BackendDAE.EquationKind eqKind;
-      
+
     case ({v as BackendDAE.VAR(varName=cr)}, {i}, _, _, _, _)
       equation
         // try to solve the equation

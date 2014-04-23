@@ -2210,7 +2210,7 @@ algorithm
       Boolean differentiated;
       DAE.ElementSource source;
       BackendDAE.EquationKind eqKind;
-      
+
     case (BackendDAE.EQUATION(exp=e1,scalar=e2,source=source,differentiated=differentiated,kind=eqKind),_)
       equation
         (res,_) = ExpressionSolve.solve(e1,e2,crefExp);
@@ -2775,7 +2775,7 @@ algorithm
       list<list<BackendDAE.Equation>> eqnstrue;
       list<BackendDAE.Equation> eqnsfalse;
       BackendDAE.EquationKind eqKind;
-      
+
     case BackendDAE.EQUATION(exp=e1,scalar=e2,source=source,kind=eqKind)
       then BackendDAE.EQUATION(e1,e2,source,true,eqKind);
     case BackendDAE.ARRAY_EQUATION(dimSize=dimSize,left=e1,right=e2,source=source,kind=eqKind)

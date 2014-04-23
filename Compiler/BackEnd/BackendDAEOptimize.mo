@@ -6588,9 +6588,9 @@ algorithm
       list<DAE.ComponentRef> crlst;
       DAE.Expand crExpand;
       BackendDAE.EquationKind eqKind;
-    
-    case((BackendDAE.ALGORITHM(size=size, alg=alg as DAE.ALGORITHM_STMTS(statements), source=source, expand=crExpand, kind=eqKind), vars)) 
-      equation 
+
+    case((BackendDAE.ALGORITHM(size=size, alg=alg as DAE.ALGORITHM_STMTS(statements), source=source, expand=crExpand, kind=eqKind), vars))
+      equation
         crlst = CheckModel.algorithmOutputs(alg, crExpand);
         outputs = List.map(crlst, Expression.crefExp);
         statements = expandAlgorithmStmts(statements, outputs, vars);
