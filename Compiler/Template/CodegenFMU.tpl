@@ -86,7 +86,6 @@ case SIMCODE(__) then
   if stringEq(FMUVersion, "2.0") then fmi2ModelDescription(simCode,guid)
   else fmiModelDescription(simCode,guid)
   %>
-
   >>
 end fmuModelDescriptionFile;
 
@@ -102,8 +101,9 @@ case SIMCODE(__) then
   <fmiModelDescription
     <%fmi2ModelDescriptionAttributes(simCode,guid)%>>
     <%ModelExchange(simCode)%>
-    <%TypeDefinitions(modelInfo,"2.0")%>
+    <%TypeDefinitions(modelInfo, "2.0")%>
     <%DefaultExperiment(simulationSettingsOpt)%>
+    <%ModelVariables(modelInfo, "2.0")%>
   </fmiModelDescription>
   >>
 end fmi2ModelDescription;
@@ -145,6 +145,91 @@ case SIMCODE(__) then
   >>
 end ModelExchange;
 
+template ScalarVariableAttribute2(SimVar simVar)
+ "Generates code for ScalarVariable Attribute file for FMU 2.0 target."
+::=
+match simVar
+  case SIMVAR(__) then
+  let valueReference = '<%System.tmpTick()%>'
+  let description = if comment then 'description="<%Util.escapeModelicaStringToXmlString(comment)%>"'
+  let caus = getCausality2(causality, varKind, isValueChangeable)
+  let variability = getVariability2(varKind, isFixed)
+  <<
+  name="<%System.stringReplace(crefStrNoUnderscore(name),"$", "_D_")%>"
+  valueReference="<%valueReference%>"
+  <%description%>
+  variability="<%variability%>"
+  causality="<%caus%>"
+  >>
+end ScalarVariableAttribute2;
+
+template getVariability2(VarKind varKind, Boolean isFixed)
+ "Returns the variability Attribute of ScalarVariable."
+::=
+match varKind
+  case DISCRETE(__) then "discrete"
+  case PARAM(__) then if isFixed then "fixed" else "tunable"
+  case CONST(__) then "constant"
+  else "continuous"
+end getVariability2;
+
+template getCausality2(Causality c, VarKind varKind, Boolean isValueChangeable)
+ "Returns the Causality Attribute of ScalarVariable."
+::=
+match c
+  case NONECAUS(__) then getCausality2Helper(varKind, isValueChangeable)
+  case INTERNAL(__) then getCausality2Helper(varKind, isValueChangeable)
+  case OUTPUT(__) then "output"
+  case INPUT(__) then "input"
+  /*TODO! Handle "independent" causality.*/
+  else "local"
+end getCausality2;
+
+template getCausality2Helper(VarKind varKind, Boolean isValueChangeable)
+::=
+match varKind
+  case PARAM(__) then if isValueChangeable then "parameter" else "calculatedParameter"
+  else "local"
+end getCausality2Helper;
+
+template ScalarVariableType2(DAE.Type type_, String unit, String displayUnit, Option<DAE.Exp> initialValue)
+ "Generates code for ScalarVariable Type file for FMU 2.0 target."
+::=
+match type_
+  case T_INTEGER(__) then '<Integer<%ScalarVariableTypeCommonAttribute2(initialValue)%>/>'
+  /* Don't generate the units for now since it is wrong. If you generate a unit attribute here then we must add the UnitDefinitions tag section also. */
+  case T_REAL(__) then '<Real<%ScalarVariableTypeCommonAttribute2(initialValue)/*%> <%ScalarVariableTypeRealAttribute(unit,displayUnit)*/%>/>'
+  case T_BOOL(__) then '<Boolean<%ScalarVariableTypeCommonAttribute2(initialValue)%>/>'
+  case T_STRING(__) then '<String<%StringVariableTypeCommonAttribute2(initialValue)%>/>'
+  case T_ENUMERATION(__) then '<Enumeration declaredType="<%Absyn.pathString2NoLeadingDot(path, ".")%>"<%ScalarVariableTypeCommonAttribute2(initialValue)%>/>'
+  else 'UNKOWN_TYPE'
+end ScalarVariableType2;
+
+template StartString2(DAE.Exp exp)
+::=
+match exp
+  case ICONST(__) then ' start="<%initValXml(exp)%>"'
+  case RCONST(__) then ' start="<%initValXml(exp)%>"'
+  case SCONST(__) then ' start="<%initValXml(exp)%>"'
+  case BCONST(__) then ' start="<%initValXml(exp)%>"'
+  case ENUM_LITERAL(__) then ' start="<%initValXml(exp)%>"'
+  else ''
+end StartString2;
+
+template ScalarVariableTypeCommonAttribute2(Option<DAE.Exp> initialValue)
+ "Generates code for ScalarVariable Type file for FMU 2.0 target."
+::=
+match initialValue
+  case SOME(exp) then '<%StartString2(exp)%>'
+end ScalarVariableTypeCommonAttribute2;
+
+template StringVariableTypeCommonAttribute2(Option<DAE.Exp> initialValue)
+ "Generates code for ScalarVariable Type file for FMU 2.0 target."
+::=
+match initialValue
+  case SOME(exp) then ' start=<%initVal(exp)%>'
+end StringVariableTypeCommonAttribute2;
+
 // Code for generating modelDescription.xml file for FMI 1.0 ModelExchange.
 template fmiModelDescription(SimCode simCode, String guid)
  "Generates code for ModelDescription file for FMU target."
@@ -156,9 +241,9 @@ case SIMCODE(__) then
   <<
   <fmiModelDescription
     <%fmiModelDescriptionAttributes(simCode,guid)%>>
-    <%TypeDefinitions(modelInfo,"1.0")%>
+    <%TypeDefinitions(modelInfo, "1.0")%>
     <%DefaultExperiment(simulationSettingsOpt)%>
-    <%ModelVariables(modelInfo)%>
+    <%ModelVariables(modelInfo, "1.0")%>
   </fmiModelDescription>
   >>
 end fmiModelDescription;
@@ -292,7 +377,7 @@ case SIMCODE(__) then
   >>
 end VendorAnnotations;
 
-template ModelVariables(ModelInfo modelInfo)
+template ModelVariables(ModelInfo modelInfo, String FMUVersion)
  "Generates code for ModelVariables file for FMU target."
 ::=
 match modelInfo
@@ -301,49 +386,49 @@ case MODELINFO(vars=SIMVARS(__)) then
   <ModelVariables>
   <%System.tmpTickReset(0)%>
   <%vars.stateVars |> var =>
-    ScalarVariable(var)
+    ScalarVariable(var, FMUVersion)
   ;separator="\n"%>
   <%vars.derivativeVars |> var =>
-    ScalarVariable(var)
+    ScalarVariable(var, FMUVersion)
   ;separator="\n"%>
   <%vars.algVars |> var =>
-    ScalarVariable(var)
+    ScalarVariable(var, FMUVersion)
   ;separator="\n"%>
   <%vars.paramVars |> var =>
-    ScalarVariable(var)
+    ScalarVariable(var, FMUVersion)
   ;separator="\n"%>
   <%vars.aliasVars |> var =>
-    ScalarVariable(var)
+    ScalarVariable(var, FMUVersion)
   ;separator="\n"%>
   <%System.tmpTickReset(0)%>
   <%vars.intAlgVars |> var =>
-    ScalarVariable(var)
+    ScalarVariable(var, FMUVersion)
   ;separator="\n"%>
   <%vars.intParamVars |> var =>
-    ScalarVariable(var)
+    ScalarVariable(var, FMUVersion)
   ;separator="\n"%>
   <%vars.intAliasVars |> var =>
-    ScalarVariable(var)
+    ScalarVariable(var, FMUVersion)
   ;separator="\n"%>
   <%System.tmpTickReset(0)%>
   <%vars.boolAlgVars |> var =>
-    ScalarVariable(var)
+    ScalarVariable(var, FMUVersion)
   ;separator="\n"%>
   <%vars.boolParamVars |> var =>
-    ScalarVariable(var)
+    ScalarVariable(var, FMUVersion)
   ;separator="\n"%>
   <%vars.boolAliasVars |> var =>
-    ScalarVariable(var)
+    ScalarVariable(var, FMUVersion)
   ;separator="\n"%>
   <%System.tmpTickReset(0)%>
   <%vars.stringAlgVars |> var =>
-    ScalarVariable(var)
+    ScalarVariable(var, FMUVersion)
   ;separator="\n"%>
   <%vars.stringParamVars |> var =>
-    ScalarVariable(var)
+    ScalarVariable(var, FMUVersion)
   ;separator="\n"%>
   <%vars.stringAliasVars |> var =>
-    ScalarVariable(var)
+    ScalarVariable(var, FMUVersion)
   ;separator="\n"%>
   <%System.tmpTickReset(0)%>
   <%externalFunctions(modelInfo)%>
@@ -351,7 +436,7 @@ case MODELINFO(vars=SIMVARS(__)) then
   >>
 end ModelVariables;
 
-template ScalarVariable(SimVar simVar)
+template ScalarVariable(SimVar simVar, String FMUVersion)
  "Generates code for ScalarVariable file for FMU target."
 ::=
 match simVar
@@ -360,6 +445,13 @@ case SIMVAR(__) then
   <<>>
   else if stringEq(crefStr(name),"der($dummy)") then
   <<>>
+  else if stringEq(FMUVersion, "2.0") then
+  <<
+  <ScalarVariable
+    <%ScalarVariableAttribute2(simVar)%>>
+    <%ScalarVariableType2(type_,unit,displayUnit,initialValue)%>
+  </ScalarVariable>
+  >>
   else
   <<
   <ScalarVariable
@@ -375,7 +467,7 @@ template ScalarVariableAttribute(SimVar simVar)
 match simVar
   case SIMVAR(__) then
   let valueReference = '<%System.tmpTick()%>'
-  let variability = getVariablity(varKind)
+  let variability = getVariability(varKind)
   let description = if comment then 'description="<%Util.escapeModelicaStringToXmlString(comment)%>"'
   let alias = getAliasVar(aliasvar)
   let caus = getCausality(causality)
@@ -399,15 +491,15 @@ match c
   case INPUT(__) then "input"
 end getCausality;
 
-template getVariablity(VarKind varKind)
- "Returns the variablity Attribute of ScalarVariable."
+template getVariability(VarKind varKind)
+ "Returns the variability Attribute of ScalarVariable."
 ::=
 match varKind
   case DISCRETE(__) then "discrete"
   case PARAM(__) then "parameter"
   case CONST(__) then "constant"
   else "continuous"
-end getVariablity;
+end getVariability;
 
 template getAliasVar(AliasVariable aliasvar)
  "Returns the alias Attribute of ScalarVariable."
@@ -436,13 +528,13 @@ end ScalarVariableType;
 
 template StartString(DAE.Exp exp, Boolean isFixed)
 ::=
-  match exp
-    case ICONST(__) then ' start="<%initValXml(exp)%>" fixed="<%isFixed%>"'
-    case RCONST(__) then ' start="<%initValXml(exp)%>" fixed="<%isFixed%>"'
-    case SCONST(__) then ' start="<%initValXml(exp)%>" fixed="<%isFixed%>"'
-    case BCONST(__) then ' start="<%initValXml(exp)%>" fixed="<%isFixed%>"'
-    case ENUM_LITERAL(__) then ' start="<%initValXml(exp)%>" fixed="<%isFixed%>"'
-    else ''
+match exp
+  case ICONST(__) then ' start="<%initValXml(exp)%>" fixed="<%isFixed%>"'
+  case RCONST(__) then ' start="<%initValXml(exp)%>" fixed="<%isFixed%>"'
+  case SCONST(__) then ' start="<%initValXml(exp)%>" fixed="<%isFixed%>"'
+  case BCONST(__) then ' start="<%initValXml(exp)%>" fixed="<%isFixed%>"'
+  case ENUM_LITERAL(__) then ' start="<%initValXml(exp)%>" fixed="<%isFixed%>"'
+  else ''
 end StartString;
 
 template ScalarVariableTypeCommonAttribute(Option<DAE.Exp> initialValue, Boolean isFixed)

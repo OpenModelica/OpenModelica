@@ -110,7 +110,7 @@ case SIMCODE(__) then
   <fmiModelDescription
     <%fmiModelDescriptionAttributesCpp(simCode,guid)%>>
     <%CodegenFMU.DefaultExperiment(simulationSettingsOpt)%>
-    <%CodegenFMU.ModelVariables(modelInfo)%>
+    <%CodegenFMU.ModelVariables(modelInfo,"1.0")%>
   </fmiModelDescription>
   >>
 end fmiModelDescriptionCpp;
