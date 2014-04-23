@@ -1079,6 +1079,9 @@ algorithm
       equation
         (p_1,st) = symbolTableToSCode(st);
         (_,env) = Inst.makeEnvFromProgram(Env.emptyCache(), p_1, Absyn.IDENT(""));
+        // Reverse the variable list to make sure iterators overwrite other
+        // variables (iterators are appended to the front of the list).
+        vars = listReverse(vars);
         env_1 = addVarsToEnv(vars, env);
       then
         (env_1,st);
