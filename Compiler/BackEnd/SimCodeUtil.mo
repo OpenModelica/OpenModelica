@@ -1486,8 +1486,6 @@ algorithm
       Integer highestSimEqIndex;
       SimCode.BackendMapping backendMapping;
 
-      list<Integer> debugInt1;  // can be removed
-
     case (dlow, class_, _, fileDir, _, _, _, _, _, _, _, _) equation
       System.tmpTickReset(0);
       uniqueEqIndex = 1;
@@ -1666,7 +1664,7 @@ algorithm
                                 filenamePrefix,
                                 crefToSimVarHT,
                                 NONE(),
-                                NONE());
+                                SOME(backendMapping));
       (simCode, (_, _, lits)) = traverseExpsSimCode(simCode, findLiteralsHelper, literals);
       simCode = setSimCodeLiterals(simCode, listReverse(lits));
 
@@ -12604,6 +12602,7 @@ algorithm
   SimCode.BACKENDMAPPING(m=m,mT=mt,eqMapping=eqMapping,varMapping=varMapping) := map;
   bVar := getBackendVarForSimVar(simVar,map);
   bEqs := arrayGet(mt,bVar);
+  bEqs := List.filter1OnTrue(bEqs,intGe,0);
   simEqs := List.map1(bEqs,getSimEqsForBackendEqs,map);
 end getSimEqsOfSimVar;
 
