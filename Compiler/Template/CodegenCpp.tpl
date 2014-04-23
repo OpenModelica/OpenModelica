@@ -7243,12 +7243,12 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let arrayType = expTypeArray(ty)
     let dimstr = listLength(crefSubs(cr))
     let tmp = tempDecl('multi_array<<%arrayType%>,<%dimstr%>>', &varDecls /*BUFD*/)
-    
+
    // let arr_tp_str = '<%expTypeFromExpArray(A)%>'
     //let tvar = tempDecl(arr_tp_str, &varDecls /*BUFD*/)
     let &preExp += 'promote_array(<%var2%>,<%var1%>, <%tmp%>);<%\n%>'
-                    
-   
+
+
     '<%tmp%> '
    else
    'promote array error'
@@ -7719,7 +7719,7 @@ template daeExpCrefRhsIndexSpec(list<Subscript> subs, Context context,
        let tmp_index = tempDecl("vector<size_t>", &varDecls /*BUFD*/)
        let &preExp += '<%tmp_index%>.push_back(1);<%\n%>
                        <%tmp%>.push_back(<%tmp_index%>);<%\n%>'
-       '' 
+       ''
       case SLICE(__) then
         let tmp_index = tempDecl("vector<size_t>", &varDecls /*BUFD*/)
         let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
@@ -8955,7 +8955,7 @@ template expTypeFromExpFlag(Exp exp, Integer flag)
   case c as RANGE(__)
   case c as CAST(__)
   case c as CREF(__)
-  case c as CODE(__)     then expTypeFlag(c.ty, flag) 
+  case c as CODE(__)     then expTypeFlag(c.ty, flag)
   case ASUB(__)          then expTypeFromExpFlag(exp, flag)
   case REDUCTION(__)     then expTypeFlag(typeof(exp), flag)
   case BOX(__)

@@ -185,7 +185,7 @@ Applies array operation F  (*,/) on one dimensional array
 template<
   typename T, class F
 >
-boost::multi_array< T, 1 > array_operation( boost::multi_array< T, 1 > a, boost::multi_array_ref< T, 1 > b, F& op ) 
+boost::multi_array< T, 1 > array_operation( boost::multi_array< T, 1 > a, boost::multi_array_ref< T, 1 > b, F& op )
 {
   typename boost::multi_array_ref< T, 1 >::iterator j = b.begin();
   for ( typename boost::multi_array< T, 1 >::iterator i = a.begin();
@@ -270,7 +270,7 @@ boost::detail::multi_array::sub_array< T, dims > array_operation( boost::detail:
   return a;
 }
 /**
-Applies array operation F (+,-) on array 
+Applies array operation F (+,-) on array
 */
 
 template<
@@ -420,7 +420,7 @@ void transpose_array (boost::multi_array< T, 2 >& a, boost::multi_array< T, 2 > 
     const size_t* shape = x.shape();
     vector<size_t> ex;
     ex.assign( shape, shape+x.num_dimensions() );
-    std::swap( ex[0], ex[1] ); 
+    std::swap( ex[0], ex[1] );
     a.resize(ex);
     a.reindex(1);
      T* data = x.data();
@@ -453,9 +453,9 @@ void create_array_from_shape(const vector<vector<size_t> >& sp,boost::multi_arra
                data[i] = source_data[index];
                i++;
           }
-          
+
      }
-     
+
      d.assign( data, data + d.num_elements() );
      delete [] data;
  }
@@ -473,7 +473,7 @@ void promote_array(unsigned int n,boost::multi_array< T, NumDims >& s,boost::mul
    T* data = s.data();
    d.assign( data, data + d.num_elements() );
 }
- 
+
 /**
 finds min/max elements of an array */
 template < typename T, size_t NumDims >
