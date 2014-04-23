@@ -1572,7 +1572,10 @@ author:Waurich TUD 2014-04"
 algorithm
   es := match(e)
     local
+      DAE.ComponentRef cref;
+      DAE.Exp exp;
       list<DAE.Exp> expLst;
+      list<DAE.ComponentRef> crefs;
     case(DAE.CALL(path=_,expLst=expLst,attr=_))
       then
         expLst;
@@ -1585,7 +1588,13 @@ algorithm
     case(DAE.TUPLE(PR=expLst))
       then
         expLst;
+    case(DAE.CAST(ty=_,exp=exp))
+      equation
+        expLst = getComplexContents(exp);
+      then
+        expLst;
     else
+    equation
     then
       {};
   end match;
@@ -8447,6 +8456,8 @@ public function isNotComplex "returns true if the exp is 1-dimensional"
 algorithm
   b := match(e)
     local
+      Boolean b2;
+      DAE.Exp e2;
     case(DAE.CALL(path=_,expLst=_,attr=_))
       then
         false;
@@ -8456,6 +8467,10 @@ algorithm
     case(DAE.ARRAY(ty=_,scalar=_,array=_))
       then
         false;
+    case(DAE.CAST(ty=_,exp=e2))
+      equation
+        b2 = isNotComplex(e2);
+      then b2;
     else
     then
       true;
