@@ -291,6 +291,7 @@ void modelInfoXmlInit(MODEL_DATA_XML* xml)
     }
   }
   assert(xml->nEquations == userData.curIndex);
+  xml->nProfileBlocks = userData.curProfileIndex; /* Set the number of profile blocks to the number we read */
   assert(xml->nFunctions == userData.curFunctionIndex);
 }
 

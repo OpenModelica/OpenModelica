@@ -161,7 +161,7 @@ algorithm
       String cname_str;
       Absyn.Path className;
       DAE.Exp exp,startTime,stopTime,numberOfIntervals,tolerance,method,cflags,simflags;
-      DAE.Exp fileNamePrefix,options,outputFormat,variableFilter,measureTime;
+      DAE.Exp fileNamePrefix,options,outputFormat,variableFilter;
       GlobalScript.SimulationOptions defaulSimOpt;
       Env.Cache cache;
       Env.Env env;
@@ -211,11 +211,6 @@ algorithm
                               args,  CevalScript.getSimulationOption(defaulSimOpt, "variableFilter"),
                               pre, info);
 
-        (cache,measureTime) =
-          Static.getOptionalNamedArg(cache, env, SOME(st), impl, "measureTime", DAE.T_BOOL_DEFAULT,
-                              args,  CevalScript.getSimulationOption(defaulSimOpt, "measureTime"),
-                              pre, info);
-
         (cache,cflags) =
           Static.getOptionalNamedArg(cache, env, SOME(st), impl, "cflags", DAE.T_STRING_DEFAULT,
                               args,  CevalScript.getSimulationOption(defaulSimOpt, "cflags"),
@@ -237,7 +232,6 @@ algorithm
           options,
           outputFormat,
           variableFilter,
-          measureTime,
           cflags,
           simflags});
 

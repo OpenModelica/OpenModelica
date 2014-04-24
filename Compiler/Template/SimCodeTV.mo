@@ -224,7 +224,6 @@ package SimCode
       String options;
       String outputFormat;
       String variableFilter;
-      Boolean measureTime;
       String cflags;
     end SIMULATION_SETTINGS;
   end SimulationSettings;
@@ -2623,6 +2622,7 @@ package Flags
   constant DebugFlag GEN_DEBUG_SYMBOLS;
   constant DebugFlag WRITE_TO_BUFFER;
   constant DebugFlag HPCOM_ANALYZATION_MODE;
+  constant DebugFlag MEASURE_TIME;
   constant ConfigFlag NUM_PROC;
   constant ConfigFlag HPCOM_CODE;
 

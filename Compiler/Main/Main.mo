@@ -776,7 +776,7 @@ algorithm
         Print.clearErrorBuf();
         Print.clearBuf();
         cname_str = Absyn.pathString(classname);
-        simSettings = SimCodeMain.createSimulationSettings(0.0, 1.0, 500, 1e-6,"dassl","","mat",".*",false,"");
+        simSettings = SimCodeMain.createSimulationSettings(0.0, 1.0, 500, 1e-6,"dassl","","mat",".*","");
         _ = System.realtimeTock(GlobalScript.RT_CLOCK_BACKEND); // Is this necessary?
         (_,_,_,_,_) = SimCodeMain.generateModelCode(dlow,ap,dae,classname,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
         Debug.execStat("Codegen Done",GlobalScript.RT_CLOCK_EXECSTAT_MAIN);
@@ -793,7 +793,7 @@ algorithm
         Print.clearErrorBuf();
         Print.clearBuf();
         cname_str = Absyn.pathString(classname);
-        simSettings = SimCodeMain.createSimulationSettings(0.0, 1.0, 1, 1e-6,"dassl","","plt",".*",false,"");
+        simSettings = SimCodeMain.createSimulationSettings(0.0, 1.0, 1, 1e-6,"dassl","","plt",".*","");
         _ = System.realtimeTock(GlobalScript.RT_CLOCK_BACKEND); // Is this necessary?
         (_,_,_,_,_) = SimCodeMain.generateModelCode(dlow,ap,dae,classname,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
         Debug.execStat("Codegen Done",GlobalScript.RT_CLOCK_EXECSTAT_MAIN);

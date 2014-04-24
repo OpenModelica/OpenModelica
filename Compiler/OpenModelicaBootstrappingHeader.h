@@ -902,7 +902,7 @@ static void *Values__LESSEQOP = MMC_REFSTRUCTLIT(Values__LESSEQOP__struct);
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef GlobalScript_SimulationOptions_SIMULATION__OPTIONS__desc_added
 #define GlobalScript_SimulationOptions_SIMULATION__OPTIONS__desc_added
-ADD_METARECORD_DEFINITIONS const char* GlobalScript_SimulationOptions_SIMULATION__OPTIONS__desc__fields[13] = {"startTime","stopTime","numberOfIntervals","stepSize","tolerance","method","fileNamePrefix","options","outputFormat","variableFilter","measureTime","cflags","simflags"};
+ADD_METARECORD_DEFINITIONS const char* GlobalScript_SimulationOptions_SIMULATION__OPTIONS__desc__fields[12] = {"startTime","stopTime","numberOfIntervals","stepSize","tolerance","method","fileNamePrefix","options","outputFormat","variableFilter","cflags","simflags"};
 ADD_METARECORD_DEFINITIONS struct record_description GlobalScript_SimulationOptions_SIMULATION__OPTIONS__desc = {
   "GlobalScript_SimulationOptions_SIMULATION__OPTIONS",
   "GlobalScript.SimulationOptions.SIMULATION_OPTIONS",
@@ -912,8 +912,8 @@ ADD_METARECORD_DEFINITIONS struct record_description GlobalScript_SimulationOpti
 #else /* Only use the file as a header */
 extern struct record_description GlobalScript_SimulationOptions_SIMULATION__OPTIONS__desc;
 #endif
-#define GlobalScript__SIMULATION_5fOPTIONS_3dBOX13 3
-#define GlobalScript__SIMULATION_5fOPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,fileNamePrefix,options,outputFormat,variableFilter,measureTime,cflags,simflags) (mmc_mk_box(14, 3,&GlobalScript_SimulationOptions_SIMULATION__OPTIONS__desc,startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,fileNamePrefix,options,outputFormat,variableFilter,measureTime,cflags,simflags))
+#define GlobalScript__SIMULATION_5fOPTIONS_3dBOX12 3
+#define GlobalScript__SIMULATION_5fOPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,fileNamePrefix,options,outputFormat,variableFilter,cflags,simflags) (mmc_mk_box(13, 3,&GlobalScript_SimulationOptions_SIMULATION__OPTIONS__desc,startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,fileNamePrefix,options,outputFormat,variableFilter,cflags,simflags))
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef GlobalScript_CompiledCFunction_CFunction__desc_added
 #define GlobalScript_CompiledCFunction_CFunction__desc_added

@@ -1255,7 +1255,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   let libsPos2 = if dirExtra then libsStr // else ""
   let fmudirname = '<%fileNamePrefix%>.fmutmp'
   let extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then
-    '<%if s.measureTime then "-D_OMC_MEASURE_TIME "%> <%match s.method
+    '<%match s.method
        case "inline-euler" then "-D_OMC_INLINE_EULER"
        case "inline-rungekutta" then "-D_OMC_INLINE_RK"%>'
   let compilecmds = getPlatformString2(modelNamePrefix(simCode), makefileParams.platform, fileNamePrefix, dirExtra, libsPos1, libsPos2, makefileParams.omhome)
@@ -1336,7 +1336,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   let libsPos1 = if not dirExtra then libsStr //else ""
   let libsPos2 = if dirExtra then libsStr // else ""
   let extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then
-    '<%if s.measureTime then "-D_OMC_MEASURE_TIME "%> <%match s.method
+    '<%match s.method
        case "inline-euler" then "-D_OMC_INLINE_EULER"
        case "inline-rungekutta" then "-D_OMC_INLINE_RK"%>'
   let compilecmds = getPlatformString2(modelNamePrefix(simCode), makefileParams.platform, fileNamePrefix, dirExtra, libsPos1, libsPos2, makefileParams.omhome)

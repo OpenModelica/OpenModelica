@@ -545,7 +545,6 @@ uniontype SimulationSettings
     String options;
     String outputFormat;
     String variableFilter;
-    Boolean measureTime;
     String cflags;
   end SIMULATION_SETTINGS;
 end SimulationSettings;

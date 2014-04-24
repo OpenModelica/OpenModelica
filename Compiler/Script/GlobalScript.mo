@@ -76,7 +76,6 @@ uniontype SimulationOptions "these are the simulation/buildModel* options"
     DAE.Exp options "options, default ''";
     DAE.Exp outputFormat "output format, default 'plt'";
     DAE.Exp variableFilter "variable filter, regex does whole string matching, i.e. it becomes ^.*$ in the runtime";
-    DAE.Exp measureTime "Enables time measurements, default false";
     DAE.Exp cflags "Compiler flags, in addition to MODELICAUSERCFLAGS";
     DAE.Exp simflags "Flags sent to the simulation executable (doesn't do anything for buildModel)";
   end SIMULATION_OPTIONS;

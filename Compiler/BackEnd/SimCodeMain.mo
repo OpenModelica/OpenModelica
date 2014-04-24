@@ -92,7 +92,6 @@ public function createSimulationSettings
   input String options;
   input String outputFormat;
   input String variableFilter;
-  input Boolean measureTime;
   input String cflags;
   output SimCode.SimulationSettings simSettings;
 protected
@@ -103,7 +102,7 @@ algorithm
   stepSize := (stopTime -. startTime) /. intReal(numberOfIntervals);
   simSettings := SimCode.SIMULATION_SETTINGS(
     startTime, stopTime, numberOfIntervals, stepSize, tolerance,
-    method, options, outputFormat, variableFilter, measureTime, cflags);
+    method, options, outputFormat, variableFilter, cflags);
 end createSimulationSettings;
 
 
