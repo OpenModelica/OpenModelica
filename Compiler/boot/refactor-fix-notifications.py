@@ -114,9 +114,25 @@ def fixFileIter(stamp,moFile,logFile):
       continue
     msg = None
     if len(n)==2 and n[1].has_key('unused_local'):
-      pass
-      #print "Unused local %s" % n
-      #print moContents[endLine-1]
+      # Skip these. Some optimizations make declarations seem unused but the source code still uses them
+      continue
+      ident = n[1]['unused_local']
+      endCol += 2
+      s = getContents(moContents,startLine,endLine,startCol,endCol)
+      if not s.endswith(";\n"):
+        printWarning(info,'%s does not look like an element declaration' % (ident,lineContentsOfInfo.strip()))
+        continue
+      c = getIdents(s).count(ident)
+      if c<>1:
+        printWarning(info,'Tried to remove unused local element %s from %s, but the element occurs %d times rather than 1' % (ident,lineContentsOfInfo.strip(),c))
+        continue
+      if re.search(',%s' % ident, s):
+        updated = re.sub(',%s' % ident,'',s)
+        updateContents(moContents,startLine,endLine,startCol,endCol,updated)
+        printInfo(info, 'Removed unused local element %s in %s' % (ident,s.strip()))
+        maxLine = startLine
+        continue
+      print s
     elif len(n)==2 and n[1].has_key('unused_assign'):
       ident = n[1]['unused_assign']
       split = re.split("(^|[(,]) *%s *([,)=]|:=)" % ident, lineContentsOfInfo, maxsplit=1)
