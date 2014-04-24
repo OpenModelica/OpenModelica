@@ -81,6 +81,7 @@ algorithm
         (eqSysts,(shared,_)) = List.mapFold(eqSysts,evalFunctions_main,(shared,1));
         outDAE = BackendDAE.DAE(eqSysts,shared);
         outDAE = RemoveSimpleEquations.fastAcausal(outDAE);
+        outDAE = updateVarKinds(outDAE);
       then
         outDAE;
     else
@@ -1179,7 +1180,7 @@ author:Waurich TUD 2014-03"
 algorithm
   (algsOut,tplOut) := matchcontinue(algsIn,tplIn,lstIn)
     local
-      Boolean changed, isCon, simplified, isIf, isRec, isTpl, predicted, eqDim;
+      Boolean changed, isCon, simplified, isIf, isRec, isTpl, predicted, eqDim, isCall;
       Integer idx, size,s;
       BackendVarTransform.VariableReplacements repl, replIn;
       DAE.ComponentRef cref;
@@ -1196,8 +1197,9 @@ algorithm
       list<DAE.Exp> expLst,tplExpsLHS,tplExpsRHS,lhsExps;
     case({},(_,_,_),_)
       equation
+        stmts1 = listReverse(lstIn);
       then
-        (lstIn,tplIn);
+        (stmts1,tplIn);
     case(DAE.STMT_ASSIGN(type_=typ, exp1=exp1, exp=exp2, source=source)::rest,(funcTree,replIn,idx),_)
       equation
         // replace, evaluate, simplify the assignment
@@ -1216,7 +1218,8 @@ algorithm
         eqDim = listLength(scalars) == listLength(expLst);  // so it can be partly constant
         isRec = ComponentReference.isRecord(cref);
         isTpl = Expression.isTuple(exp1) and Expression.isTuple(exp2);
-        //print("is it const? "+&boolString(isCon)+&" ,is it rec: "+&boolString(isRec)+&" ,is it tpl: "+&boolString(isTpl)+&"\n");
+        isCall = Expression.isCall(exp2);
+        //print("is it const? "+&boolString(isCon)+&" ,is it rec: "+&boolString(isRec)+&" ,is it tpl: "+&boolString(isTpl)+&" ,is it call: "+&boolString(isCall)+&"\n");
 
         // remove the variable crefs and add the constant crefs to the replacements
         //print("scalars\n"+&stringDelimitList(List.map(scalars,ComponentReference.printComponentRefStr),"\n")+&"\n");
@@ -1242,10 +1245,11 @@ algorithm
         //alg = Util.if_(not isRec,DAE.STMT_ASSIGN(typ,exp1,exp2,source),List.first(algsIn));
         alg = Util.if_(isCon,DAE.STMT_ASSIGN(typ,exp1,exp2,source),List.first(algsIn));
         tplExpsLHS = Debug.bcallret1(isTpl,Expression.getComplexContents,exp1,{});
-        alg = Util.if_(isTpl,DAE.STMT_TUPLE_ASSIGN(typ,tplExpsLHS,exp2,source),List.first(algsIn));
+        alg = Util.if_(isTpl,DAE.STMT_TUPLE_ASSIGN(typ,tplExpsLHS,exp2,source),alg);
 
         //print("the STMT_ASSIGN after : "+&DAEDump.ppStatementStr(alg)+&"\n");
-        stmts1 = listAppend(lstIn,{alg});
+        stmts1 = listAppend({alg},lstIn);
+        //print("\nthe traverse LIST after :"+&stringDelimitList(List.map(stmts1,DAEDump.ppStatementStr),"\n")+&"\n");
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,repl,idx),stmts1);
       then
         (rest,(funcTree,repl,idx));
@@ -1309,6 +1313,7 @@ algorithm
         //print("\nthe REST if after :"+&stringDelimitList(List.map(rest,DAEDump.ppStatementStr),"\n")+&"\n");
 
         stmts1 = listAppend(stmts1,lstIn);
+        //print("\nthe traverse LIST after :"+&stringDelimitList(List.map(stmts1,DAEDump.ppStatementStr),"\n")+&"\n");
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,repl,idx),stmts1);
       then
         (rest,(funcTree,repl,idx));
@@ -1357,9 +1362,9 @@ algorithm
         stmts1 = List.map(addEqs,equationToStatement);
         //stmts2 = alg2::stmts1;
         stmts2 = listAppend(stmts2,stmts1);
+        //print("\nthe STMT_TUPLE_ASSIGN stmt after :"+&stringDelimitList(List.map(stmts2,DAEDump.ppStatementStr),"\n")+&"\n");
         stmts2 = listAppend(stmts2,lstIn);
 
-        //print("\nthe STMT_TUPLE_ASSIGN stmt after :"+&stringDelimitList(List.map(stmts2,DAEDump.ppStatementStr),"\n")+&"\n");
         //print("idx: "+&intString(idx)+&"\n");
         //print("\nthe traverse LIST tpl after :"+&stringDelimitList(List.map(stmts2,DAEDump.ppStatementStr),"\n")+&"\n");
         //print("\nthe REST tpl after :"+&stringDelimitList(List.map(rest,DAEDump.ppStatementStr),"\n")+&"\n");
@@ -2157,5 +2162,107 @@ algorithm
   ty := Expression.typeof(rhs);
   stmtOut := DAE.STMT_ASSIGN(ty,lhs,rhs,DAE.emptyElementSource);
 end makeAssignment;
+
+
+// =============================================================================
+// redeclare the varKinds (maybe some state candidates are vanished)
+//
+// =============================================================================
+
+protected function updateVarKinds"
+author:Waurich TUD 2014-04"
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+protected
+  BackendDAE.EqSystems systs;
+  BackendDAE.Shared shared;
+algorithm
+  BackendDAE.DAE(eqs=systs,shared=shared) := inDAE;
+  systs := List.map1(systs,updateVarKinds_eqSys,shared);
+  outDAE := BackendDAE.DAE(systs,shared);
+end updateVarKinds;
+
+protected function updateVarKinds_eqSys"
+author:Waurich TUD 2014-04"
+  input BackendDAE.EqSystem sysIn;
+  input BackendDAE.Shared shared;
+  output BackendDAE.EqSystem sysOut;
+protected
+  BackendDAE.Variables vars;
+  list<BackendDAE.Var> states,varLst;
+  BackendDAE.EquationArray eqs;
+  BackendDAE.StateSets stateSets;
+  BackendDAE.Matching matching;
+  list<DAE.ComponentRef> derVars;
+  Option<BackendDAE.IncidenceMatrix> m;
+  Option<BackendDAE.IncidenceMatrixT> mT;
+algorithm
+  BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,m=m,mT=mT,matching=matching,stateSets=stateSets) := sysIn;
+  varLst := BackendVariable.varList(vars);
+  states := List.filterOnTrue(varLst,BackendVariable.isStateorStateDerVar);
+  derVars := BackendDAEUtil.traverseBackendDAEExpsEqns(eqs,findDerVarCrefs,{});
+  derVars := List.unique(derVars);
+  (vars,_) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars,setVarKindForStates,derVars);
+  sysOut := BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching,stateSets);
+end updateVarKinds_eqSys;
+
+protected function setVarKindForStates
+  input tuple<BackendDAE.Var,list<DAE.ComponentRef>> tplIn;
+  output tuple<BackendDAE.Var,list<DAE.ComponentRef>> tplOut;
+algorithm
+  tplOut := matchcontinue(tplIn)
+    local
+      Boolean isState;
+      DAE.ComponentRef cr1;
+      BackendDAE.Var varOld,varNew;
+      list<DAE.ComponentRef> derVars;
+    case((varOld as BackendDAE.VAR(varName=cr1,varKind=BackendDAE.STATE(index=_,derName=_)),derVars))
+      equation
+        isState = List.isMemberOnTrue(cr1,derVars,ComponentReference.crefEqual);
+        varNew = Debug.bcallret2(not isState,BackendVariable.setVarKind,varOld,BackendDAE.VARIABLE(),varOld);
+      then
+        ((varNew,derVars));
+    else
+      then
+        tplIn;
+  end matchcontinue;
+end setVarKindForStates;
+
+protected function findDerVarCrefs"traverses the lhs end the rhs exp of the equations and searches for der(var)
+author:Waurich TUD 2014-04"
+  input tuple<DAE.Exp,list<DAE.ComponentRef>> tplIn;
+  output tuple<DAE.Exp,list<DAE.ComponentRef>> tplOut;
+protected
+  DAE.Exp e;
+  list<DAE.ComponentRef> varLst;
+algorithm
+  (e,varLst) := tplIn;
+  ((_,varLst)) := Expression.traverseExp(e,findDerVarCrefs1,varLst); 
+  tplOut := (e,varLst);
+end findDerVarCrefs;
+
+protected function findDerVarCrefs1"traverses all the sub expressions and searches for der(var)"
+  input tuple<DAE.Exp,list<DAE.ComponentRef>> tplIn;
+  output tuple<DAE.Exp,list<DAE.ComponentRef>> tplOut;
+algorithm
+  tplOut := match(tplIn)
+    local
+      DAE.Exp e;
+      DAE.ComponentRef cr;
+      list<DAE.ComponentRef> varsIn;
+      tuple<DAE.Exp,list<DAE.ComponentRef>> tpl;
+    case((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),_))
+      equation
+        (e,varsIn) = tplIn;
+        tpl = (e,cr::varsIn);
+       then
+         tpl;
+    else
+    equation
+      (e,varsIn) = tplIn;
+      then
+        tplIn;
+  end match;      
+end findDerVarCrefs1;
 
 end EvaluateFunctions;

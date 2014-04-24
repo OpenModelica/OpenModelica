@@ -7472,6 +7472,18 @@ algorithm
   end match;
 end isCref;
 
+public function isCall
+  "Returns true if the given expression is a function call,
+   otherwise false."
+  input DAE.Exp inExp;
+  output Boolean outIsCall;
+algorithm
+  outIsCall := match(inExp)
+    case DAE.CALL(path=_,expLst=_, attr=_) then true;
+    else false;
+  end match;
+end isCall;
+
 public function isNotCref
   "Returns true if the given expression is a not component reference,
    otherwise false."
