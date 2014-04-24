@@ -150,7 +150,8 @@ void Kinsol::solve()
   {
 
     // Try Dense first
-    KINDense(_kinMem, _dimSys);
+    
+      KINDense(_kinMem, _dimSys);
     solveNLS();
     if(_iterationStatus == DONE)
       return;
@@ -161,7 +162,7 @@ void Kinsol::solve()
       _iterationStatus = CONTINUE;
       return;
     }
-
+    
     // Try Spgmr
     KINSpgmr(_kinMem,5);
     _iterationStatus = CONTINUE;
@@ -288,7 +289,7 @@ void Kinsol::solveNLS()
     method = KIN_NONE,
     iter = 0,
     idid;
-  double maxSteps = 1e-3;
+   double maxSteps = 1e-3;
   realtype fnorm;
 
   while(_iterationStatus == CONTINUE)
@@ -306,8 +307,9 @@ void Kinsol::solveNLS()
       //Is the solution finite
       if(!isfinite(_y,_dimSys))
       {
-        idid = -99;
-        memcpy(_y,_y0,_dimSys*sizeof(double));
+         memcpy(_y,_y0,_dimSys*sizeof(double));
+         _iterationStatus = SOLVERERROR;
+         break;
       }
 
       // Did we reach a saddle point
