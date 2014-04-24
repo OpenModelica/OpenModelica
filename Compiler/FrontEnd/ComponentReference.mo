@@ -1126,6 +1126,18 @@ algorithm
   end matchcontinue;
 end crefIsIdent;
 
+public function crefIsNotIdent
+"returns true if ComponentRef is not an ident,
+ i.e a => false , a.b => true"
+  input DAE.ComponentRef cr;
+  output Boolean res;
+algorithm
+  res := matchcontinue(cr)
+    case(DAE.CREF_IDENT(_,_,_)) then false;
+    case(_) then true;
+  end matchcontinue;
+end crefIsNotIdent;
+
 public function isRecord "
 function isRecord
   returns true if the type of the last ident is a record"
