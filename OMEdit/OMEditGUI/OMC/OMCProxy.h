@@ -211,6 +211,7 @@ public:
   QString getDerivedClassModifierValue(QString className, QString modifierName);
   bool getDocumentationClassAnnotation(QString className);
   QString numProcessors();
+  bool setDebugFlags(QString flags);
 signals:
   void commandFinished();
 public slots:

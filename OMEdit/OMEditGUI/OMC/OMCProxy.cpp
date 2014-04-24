@@ -2428,3 +2428,9 @@ void CustomExpressionBox::keyPressEvent(QKeyEvent *event)
       QLineEdit::keyPressEvent(event);
   }
 }
+
+bool OMCProxy::setDebugFlags(QString debugFlags)
+{
+  sendCommand("setDebugFlags(\"" + debugFlags + "\")");
+  return StringHandler::unparseBool(getResult());
+}
