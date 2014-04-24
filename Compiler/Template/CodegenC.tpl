@@ -5054,8 +5054,8 @@ template functionPrototype(String fname, list<Variable> fargs, list<Variable> ou
   let boxPtrStr = if boxed then "boxptr" else "omc"
   if outVars then
     let outargs = List.rest(outVars) |> var => ", " + (match var
-      case var as VARIABLE(__) then '<%if boxed then varTypeBoxed(var) else varType(var)%> *out<%contextCref(var.name,contextFunction)%>'
-      case FUNCTION_PTR(__) then 'modelica_fnptr *out_<%name%>')
+      case var as VARIABLE(__) then '<%if boxed then varTypeBoxed(var) else varType(var)%> *out<%funArgName(var)%>'
+      case FUNCTION_PTR(__) then 'modelica_fnptr *out<%funArgName(var)%>')
     '<%outarg%> <%boxPtrStr%>_<%fname%>(threadData_t *threadData<%fargsStr%><%outargs%>)'
   else
   'void <%boxPtrStr%>_<%fname%>(threadData_t *threadData<%fargsStr%>)'
@@ -5957,7 +5957,7 @@ template functionBodyBoxedImpl(Absyn.Path name, list<Variable> funargs, list<Var
           ", &" + funArgName(var)
         else
           ", out" + funArgName(var)
-      case FUNCTION_PTR(__) then ", out_" + name
+      case FUNCTION_PTR(__) then ", out" + funArgName(var)
     ; empty
     )
   let retvar = (match outvars
@@ -9966,12 +9966,13 @@ template expTypeShort(DAE.Type type)
                       then "complex"
   case T_COMPLEX(__)     then '<%underscorePath(ClassInf.getStateName(complexClassType))%>'
   case T_METATYPE(__) case T_METABOXED(__)    then "metatype"
+  case T_FUNCTION_REFERENCE_FUNC(__)
   case T_FUNCTION_REFERENCE_VAR(__) then "fnptr"
   case T_UNKNOWN(__) then if acceptMetaModelicaGrammar() /* TODO: Don't do this to me! */
                           then "complex /* assumming void* for uknown type! when +g=MetaModelica */ "
                           else "real /* assumming real for uknown type! */"
   case T_ANYTYPE(__) then "complex" /* TODO: Don't do this to me! */
-  else error(sourceInfo(),'expTypeShort:<%unparseType(type)%>')
+  else error(sourceInfo(),'expTypeShort: <%unparseType(type)%>')
 end expTypeShort;
 
 template mmcVarType(Variable var)
