@@ -12617,6 +12617,41 @@ algorithm
   simEqs := List.map1(bEqs,getSimEqsForBackendEqs,map);
 end getSimEqsOfSimVar;
 
+public function getReqSimEqSysForSimVar
+  input Integer simVar;
+  input SimCode.SimCode simCode;
+  output list<SimCode.SimEqSystem> ses;
+protected
+  list<Integer> sesIdcs;
+  list<SimCode.SimEqSystem> sesLst;
+  SimCode.BackendMapping bmap;
+  Option<SimCode.BackendMapping> bmapOpt;
+algorithm
+  SimCode.SIMCODE(allEquations=sesLst, backendMapping=bmapOpt) := simCode;  
+  bmap := Util.getOption(bmapOpt);
+  sesIdcs := getReqSimEqsForSimVar(simVar,bmap);
+  ses := List.map1(sesIdcs,getSimEqSysForIndex,sesLst);
+end getReqSimEqSysForSimVar;
+
+protected function getSimEqSysForIndex
+  input Integer idx;
+  input list<SimCode.SimEqSystem> allSimEqs;
+  output SimCode.SimEqSystem outSimEq;
+algorithm
+  outSimEq :=List.getMemberOnTrue(idx,allSimEqs,indexIsEqual);  
+end getSimEqSysForIndex;
+
+protected function indexIsEqual
+  input Integer idx;
+  input SimCode.SimEqSystem ses;
+  output Boolean b;
+protected
+  Integer idx2;
+algorithm
+  idx2 := equationIndex(ses);
+  b := intEq(idx,idx2);
+end indexIsEqual;
+
 public function getReqSimEqsForSimVar"outputs the indeces for the required simEqSys for the indexed SimVar
 author:Waurich TUD 2014-04"
   input Integer simVar;
