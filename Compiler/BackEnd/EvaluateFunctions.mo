@@ -2237,7 +2237,7 @@ protected
   list<DAE.ComponentRef> varLst;
 algorithm
   (e,varLst) := tplIn;
-  ((_,varLst)) := Expression.traverseExp(e,findDerVarCrefs1,varLst); 
+  ((_,varLst)) := Expression.traverseExp(e,findDerVarCrefs1,varLst);
   tplOut := (e,varLst);
 end findDerVarCrefs;
 
@@ -2262,7 +2262,7 @@ algorithm
       (e,varsIn) = tplIn;
       then
         tplIn;
-  end match;      
+  end match;
 end findDerVarCrefs1;
 
 end EvaluateFunctions;
