@@ -1313,7 +1313,7 @@ algorithm
     case "Boolean" then getBoolAttributeType;
   end match;
 end getBasicTypeAttrTyper;
-     
+
 protected function getRealAttributeType
   input String inAttrName;
   input DAE.Type inBaseType;
@@ -1340,7 +1340,7 @@ algorithm
         fail();
   end match;
 end getRealAttributeType;
-      
+
 protected function getIntAttributeType
   input String inAttrName;
   input DAE.Type inBaseType;
