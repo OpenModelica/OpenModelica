@@ -34,7 +34,7 @@ private:
   /// Encapsulation of determination of residuals to given unknowns
   void calcFunction(const double* y, double* residual);
 
-  
+
   int check_flag(void *flagvalue, char *funcname, int opt);
   static int kin_fCallback(N_Vector y, N_Vector fval, void *user_data);
   void solveNLS();
@@ -60,19 +60,19 @@ private:
   double
     *_y,             ///< Temp   - Unknowns
     *_f,             ///< Temp   - Residuals
-	*_helpArray,
+  *_helpArray,
     *_y0,            ///< Temp   - Auxillary variables
-	*_yScale,	     ///< Temp   - Auxillary variables
-	*_fScale,		///< Temp   - Auxillary variables
-	*_jac;
-  
-  double	_fnormtol,
-			_scsteptol;
+  *_yScale,       ///< Temp   - Auxillary variables
+  *_fScale,    ///< Temp   - Auxillary variables
+  *_jac;
+
+  double  _fnormtol,
+      _scsteptol;
 
 
   N_Vector
-    _Kin_y,			///< Temp     - Initial values in the Sundials Format
-	_Kin_y0,
+    _Kin_y,      ///< Temp     - Initial values in the Sundials Format
+  _Kin_y0,
     _Kin_yScale,
     _Kin_fScale;
   void
@@ -80,5 +80,5 @@ private:
     *_data;           ///< Temp     - User data. Contains pointer to Kinsol
 
   bool
-	  _eventRetry;
+    _eventRetry;
 };
