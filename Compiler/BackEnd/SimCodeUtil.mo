@@ -12627,7 +12627,7 @@ protected
   SimCode.BackendMapping bmap;
   Option<SimCode.BackendMapping> bmapOpt;
 algorithm
-  SimCode.SIMCODE(allEquations=sesLst, backendMapping=bmapOpt) := simCode;  
+  SimCode.SIMCODE(allEquations=sesLst, backendMapping=bmapOpt) := simCode;
   bmap := Util.getOption(bmapOpt);
   sesIdcs := getReqSimEqsForSimVar(simVar,bmap);
   ses := List.map1(sesIdcs,getSimEqSysForIndex,sesLst);
@@ -12638,7 +12638,7 @@ protected function getSimEqSysForIndex
   input list<SimCode.SimEqSystem> allSimEqs;
   output SimCode.SimEqSystem outSimEq;
 algorithm
-  outSimEq :=List.getMemberOnTrue(idx,allSimEqs,indexIsEqual);  
+  outSimEq :=List.getMemberOnTrue(idx,allSimEqs,indexIsEqual);
 end getSimEqSysForIndex;
 
 protected function indexIsEqual

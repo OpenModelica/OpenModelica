@@ -150,7 +150,7 @@ void Kinsol::solve()
   {
 
     // Try Dense first
-    
+
       KINDense(_kinMem, _dimSys);
     solveNLS();
     if(_iterationStatus == DONE)
@@ -162,7 +162,7 @@ void Kinsol::solve()
       _iterationStatus = CONTINUE;
       return;
     }
-    
+
     // Try Spgmr
     KINSpgmr(_kinMem,5);
     _iterationStatus = CONTINUE;
