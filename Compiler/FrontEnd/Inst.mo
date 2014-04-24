@@ -105,6 +105,13 @@ protected type InstDims = list<list<DAE.Subscript>>
  This so when instantiating classes extending from primitive types can collect the dimension of -one- surrounding scope to create type.
  E.g. RealInput p[3]; gives the list {3} for this scope and other lists for outer (in instance hierachy) scopes";
 
+protected partial function BasicTypeAttrTyper
+  input String inAttrName;
+  input DAE.Type inClassType;
+  input Absyn.Info inInfo;
+  output DAE.Type outType;
+end BasicTypeAttrTyper;
+
 // protected imports
 protected import BaseHashTable;
 protected import Builtin;
@@ -1154,52 +1161,20 @@ algorithm
       SCode.Encapsulated encapsulatedPrefix;
       UnitAbsyn.InstStore store;
       Boolean b;
+      BasicTypeAttrTyper typer;
 
-    //  Real class
-    case (cache,env,ih,store,mods,pre, ci_state,
-        (SCode.CLASS(name = "Real",restriction = _,classDef = _)),_,inst_dims,_,_,graph,_,_)
+    // Builtin type (Real, Integer, etc.).
+    case (cache, env, ih, store, mods, pre, ci_state,
+        SCode.CLASS(name = n), _, inst_dims, _, _, graph, _, _)
       equation
-        true = Config.splitArrays();
-        tys = instRealClass(cache,env,mods,pre,DAE.T_REAL_DEFAULT);
-        bc = arrayBasictypeBaseclass(inst_dims, DAE.T_REAL(tys, DAE.emptyTypeSource));
+        ty = getBasicTypeType(n);
+        typer = getBasicTypeAttrTyper(n);
+        ty = liftNonExpType(ty, inst_dims, Config.splitArrays());
+        tys = instBasicTypeAttributes(cache, env, mods, ty, typer, pre);
+        ty = Types.setTypeVars(ty, tys);
+        bc = arrayBasictypeBaseclass(inst_dims, ty);
       then
-        (cache,env,ih,store,DAE.emptyDae, inSets,ci_state,tys,bc /* NONE() */,NONE(),NONE(),graph);
-
-    //  Real class, non-expanded arrays. Similar cases are needed for other built-in classes as well,
-    //  I just want to make Reals work first
-    case (cache,env,ih,store,mods,pre, ci_state,
-        (SCode.CLASS(name = "Real",restriction = _,classDef = _)),_,inst_dims,_,_,graph,_,_)
-      equation
-        false = Config.splitArrays();
-        typ = Types.liftArraySubscriptList(DAE.T_REAL_DEFAULT, List.first(inst_dims));
-        tys = instRealClass(cache,env,mods,pre,typ);
-        bc = arrayBasictypeBaseclass(inst_dims, DAE.T_REAL(tys,DAE.emptyTypeSource));
-      then
-        (cache,env,ih,store,DAE.emptyDae, inSets,ci_state,tys,bc /* NONE() */,NONE(),NONE(),graph);
-
-    // Integer class
-    case (cache,env,ih,store,mods,pre,ci_state,
-      (SCode.CLASS(name = "Integer",restriction = _,classDef = _)),_,inst_dims,_,_,graph,_,_)
-      equation
-        tys =  instIntegerClass(cache,env,mods,pre);
-        bc = arrayBasictypeBaseclass(inst_dims, DAE.T_INTEGER(tys,DAE.emptyTypeSource));
-      then (cache,env,ih,store,DAE.emptyDae, inSets,ci_state,tys,bc /* NONE() */,NONE(),NONE(),graph);
-
-    // String class
-    case (cache,env,ih,store,mods,pre, ci_state,
-      (SCode.CLASS(name = "String",restriction = _,classDef = _)),_,inst_dims,_,_,graph,_,_)
-      equation
-        tys =  instStringClass(cache,env,mods,pre);
-        bc = arrayBasictypeBaseclass(inst_dims, DAE.T_STRING(tys,DAE.emptyTypeSource));
-      then (cache,env,ih,store,DAE.emptyDae, inSets,ci_state,tys,bc /* NONE() */,NONE(),NONE(),graph);
-
-    // Boolean class
-    case (cache,env,ih,store,mods,pre,ci_state,
-      (SCode.CLASS(name = "Boolean",restriction = _,classDef = _)),_,inst_dims,_,_,graph,_,_)
-      equation
-        tys =  instBooleanClass(cache,env,mods,pre);
-        bc = arrayBasictypeBaseclass(inst_dims, DAE.T_BOOL(tys,DAE.emptyTypeSource));
-      then (cache,env,ih,store,DAE.emptyDae, inSets,ci_state,tys,bc /* NONE() */,NONE(),NONE(),graph);
+        (cache, env, ih, store, DAE.emptyDae, inSets, ci_state, tys, bc, NONE(), NONE(), graph);
 
     // adrpo: 2010-09-27: here we do two things at once, but not correctly!
     // Instantiate enumeration class at top level Prefix.NOPRE()
@@ -1216,7 +1191,8 @@ algorithm
       (c as SCode.CLASS(name = n,restriction = SCode.R_ENUMERATION(),classDef =
       SCode.PARTS(elementLst = els),info = info)),_,inst_dims,impl,callscope,graph,_,_)
       equation
-        tys = instEnumerationClass(cache, env, mods, pre);
+        tys = instBasicTypeAttributes(cache, env, mods,
+          DAE.T_ENUMERATION_DEFAULT, getEnumAttributeType, pre);
         /* uncomment this and see how checkAllModelsRecursive(Modelica.Electrical.Digital) looks like
            especially MUX.Or1.auxiliary doesn't get its start/fixed bindings
         print("Inst enumeration class (empty prefix) / variable (some pre): " +& n +&
@@ -1296,351 +1272,265 @@ algorithm
   end matchcontinue;
 end instClassIn_dispatch;
 
-protected function instRealClass
-"Instantiation of the Real class"
-  input Env.Cache cache;
-  input Env.Env env;
-  input DAE.Mod mods;
-  input Prefix.Prefix pre;
-  input DAE.Type inType "expected variable type; used for start, min and max in the case of non-expanded arrays";
-  output list<DAE.Var> varLst;
+protected function liftNonExpType
+  input DAE.Type inType;
+  input InstDims inInstDims;
+  input Boolean inSplitArrays;
+  output DAE.Type outType;
 algorithm
-  varLst := matchcontinue(cache,env,mods,pre,inType)
+  outType := match(inType, inInstDims, inSplitArrays)
     local
-      SCode.Final f;
-      SCode.Each e;
+      list<DAE.Subscript> subs;
+
+    case (_, subs :: _, false)
+      then Types.liftArraySubscriptList(inType, subs);
+
+    else inType;
+
+  end match;
+end liftNonExpType;
+
+protected function getBasicTypeType
+  input String inName;
+  output DAE.Type outType;
+algorithm
+  outType := match(inName)
+    case "Real" then DAE.T_REAL_DEFAULT;
+    case "Integer" then DAE.T_INTEGER_DEFAULT;
+    case "String" then DAE.T_STRING_DEFAULT;
+    case "Boolean" then DAE.T_BOOL_DEFAULT;
+  end match;
+end getBasicTypeType;
+
+protected function getBasicTypeAttrTyper
+  input String inName;
+  output BasicTypeAttrTyper outTyper;
+algorithm
+  outTyper := match(inName)
+    case "Real" then getRealAttributeType;
+    case "Integer" then getIntAttributeType;
+    case "String" then getStringAttributeType;
+    case "Boolean" then getBoolAttributeType;
+  end match;
+end getBasicTypeAttrTyper;
+     
+protected function getRealAttributeType
+  input String inAttrName;
+  input DAE.Type inBaseType;
+  input Absyn.Info inInfo;
+  output DAE.Type outType;
+algorithm
+  outType := match(inAttrName, inBaseType, inInfo)
+    case ("quantity", _, _) then DAE.T_STRING_DEFAULT;
+    case ("unit", _, _) then DAE.T_STRING_DEFAULT;
+    case ("displayUnit", _, _) then DAE.T_STRING_DEFAULT;
+    case ("min", _, _) then inBaseType;
+    case ("max", _, _) then inBaseType;
+    case ("start", _, _) then inBaseType;
+    case ("fixed", _, _) then DAE.T_BOOL_DEFAULT;
+    case ("nominal", _, _) then inBaseType;
+    case ("stateSelect", _, _) then InstBinding.stateSelectType;
+    case ("uncertain", _, _) then InstBinding.uncertaintyType;
+    case ("distribution", _, _) then InstBinding.distributionType;
+    else
+      equation
+        Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
+          {inAttrName, "Real"}, inInfo);
+      then
+        fail();
+  end match;
+end getRealAttributeType;
+      
+protected function getIntAttributeType
+  input String inAttrName;
+  input DAE.Type inBaseType;
+  input Absyn.Info inInfo;
+  output DAE.Type outType;
+algorithm
+  outType := match(inAttrName, inBaseType, inInfo)
+    case ("quantity", _, _) then DAE.T_STRING_DEFAULT;
+    case ("min", _, _) then inBaseType;
+    case ("max", _, _) then inBaseType;
+    case ("start", _, _) then inBaseType;
+    case ("fixed", _, _) then DAE.T_BOOL_DEFAULT;
+    case ("nominal", _, _) then inBaseType;
+    case ("uncertain", _, _) then InstBinding.uncertaintyType;
+    case ("distribution", _, _) then InstBinding.distributionType;
+    else
+      equation
+        Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
+          {inAttrName, "Integer"}, inInfo);
+      then
+        fail();
+  end match;
+end getIntAttributeType;
+
+protected function getStringAttributeType
+  input String inAttrName;
+  input DAE.Type inBaseType;
+  input Absyn.Info inInfo;
+  output DAE.Type outType;
+algorithm
+  outType := match(inAttrName, inBaseType, inInfo)
+    case ("quantity", _, _) then DAE.T_STRING_DEFAULT;
+    case ("start", _, _) then inBaseType;
+    else
+      equation
+        Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
+          {inAttrName, "String"}, inInfo);
+      then
+        fail();
+  end match;
+end getStringAttributeType;
+
+protected function getBoolAttributeType
+  input String inAttrName;
+  input DAE.Type inBaseType;
+  input Absyn.Info inInfo;
+  output DAE.Type outType;
+algorithm
+  outType := match(inAttrName, inBaseType, inInfo)
+    case ("quantity", _, _) then DAE.T_STRING_DEFAULT;
+    case ("start", _, _) then inBaseType;
+    case ("fixed", _, _) then DAE.T_BOOL_DEFAULT;
+    else
+      equation
+        Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
+          {inAttrName, "Boolean"}, inInfo);
+      then
+        fail();
+  end match;
+end getBoolAttributeType;
+
+protected function getEnumAttributeType
+  input String inAttrName;
+  input DAE.Type inBaseType;
+  input Absyn.Info inInfo;
+  output DAE.Type outType;
+algorithm
+  outType := match(inAttrName, inBaseType, inInfo)
+    case ("quantity", _, _) then DAE.T_STRING_DEFAULT;
+    case ("min", _, _) then inBaseType;
+    case ("max", _, _) then inBaseType;
+    case ("start", _, _) then inBaseType;
+    case ("fixed", _, _) then DAE.T_BOOL_DEFAULT;
+    else
+      equation
+        Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
+          {inAttrName, "enumeration(:)"}, inInfo);
+      then
+        fail();
+  end match;
+end getEnumAttributeType;
+
+protected function instBasicTypeAttributes
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input DAE.Mod inMod;
+  input DAE.Type inBaseType;
+  input BasicTypeAttrTyper inTypeFunc;
+  input Prefix.Prefix inPrefix;
+  output list<DAE.Var> outVars;
+algorithm
+  outVars := match(inCache, inEnv, inMod, inBaseType, inTypeFunc, inPrefix)
+    local
       list<DAE.SubMod> submods;
-      Option<DAE.EqMod> eqmod;
-      DAE.Exp exp;
-      DAE.Var v;
-      DAE.Properties p;
-      Option<Values.Value> optVal;
-      DAE.Type ty;
-      String s1;
-      DAE.SubMod smod;
-      DAE.Mod mym;
 
-    case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("quantity",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_,ty)
+    case (_, _, DAE.MOD(subModLst = submods), _, _, _)
       equation
-        varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
-        v = instBuiltinAttribute(cache,env,"quantity",optVal,exp,DAE.T_STRING_DEFAULT,p);
-      then v::varLst;
-    case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("unit",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_,ty)
-      equation
-        varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
-        v = instBuiltinAttribute(cache,env,"unit",optVal,exp,DAE.T_STRING_DEFAULT,p);
-      then v::varLst;
-    case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("displayUnit",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_,ty)
-      equation
-        varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
-        v = instBuiltinAttribute(cache,env,"displayUnit",optVal,exp,DAE.T_STRING_DEFAULT,p);
-      then v::varLst;
-    case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("min",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_,ty)
-      equation
-        true = Config.splitArrays();
-        varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
-        v = instBuiltinAttribute(cache,env,"min",optVal,exp,DAE.T_REAL_DEFAULT,p);
-      then v::varLst;
-    // min, the case of non-expanded arrays
-    case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("min",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_,ty)
-      equation
-        false = Config.splitArrays();
-        varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
-        v = instBuiltinAttribute(cache,env,"min",optVal,exp,DAE.T_REAL_DEFAULT,p);
-      then v::varLst;
-    case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("max",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_,ty)
-      equation
-        true = Config.splitArrays();
-        varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
-        v = instBuiltinAttribute(cache,env,"max",optVal,exp,DAE.T_REAL_DEFAULT,p);
-      then v::varLst;
-    // max, the case of non-expanded arrays
-    case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("max",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_,ty)
-      equation
-        false = Config.splitArrays();
-        varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
-        v = instBuiltinAttribute(cache,env,"max",optVal,exp,DAE.T_REAL_DEFAULT,p);
-      then v::varLst;
-    case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("start",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_,ty)
-      equation
-        true = Config.splitArrays();
-        varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
-        v = instBuiltinAttribute(cache,env,"start",optVal,exp,DAE.T_REAL_DEFAULT,p);
-      then v::varLst;
-    // start, the case of non-expanded arrays
-    case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("start",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_,ty)
-      equation
-        false = Config.splitArrays();
-        varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
-        v = instBuiltinAttribute(cache,env,"start",optVal,exp,ty,p);
-      then v::varLst;
-    case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("fixed",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_,ty)
-      equation
-        varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
-        v = instBuiltinAttribute(cache,env,"fixed",optVal,exp,DAE.T_BOOL_DEFAULT,p);
-      then v::varLst;
-    case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("nominal",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_,ty)
-      equation
-        varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
-        v = instBuiltinAttribute(cache,env,"nominal",optVal,exp,DAE.T_REAL_DEFAULT,p);
-      then v::varLst;
-    case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("stateSelect",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_,ty)
-      equation
-        varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
-        v = instBuiltinAttribute(cache,env,"stateSelect",optVal,exp,InstBinding.stateSelectType,p);
-      then v::varLst;
-    case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("uncertain",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_,ty)
-      equation
-        varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
-        v = instBuiltinAttribute(cache,env,"uncertain",optVal,exp,InstBinding.uncertaintyType,p);
-      then v::varLst;
-    case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("distribution",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_,ty)
-      equation
-        varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
-        v = instBuiltinAttribute(cache,env,"distribution",optVal,exp,InstBinding.distributionType,p);
-      then v::varLst;
-    case(_,_,( DAE.MOD(_,_,smod::_,_)),_,_)
-      equation
-        s1 = Mod.prettyPrintSubmod(smod) +& ", not processed in the built-in class Real";
-        Error.addMessage(Error.UNUSED_MODIFIER,{s1});
-      then fail();
-    case (_,_,DAE.MOD(_,_,{},_),_,_) then {};
-    case (_,_,DAE.NOMOD(),_,_) then {};
-    case (_,_,DAE.REDECL(_,_,_),_,_) then {}; /*TODO, report error when redeclaring in Real*/
-  end matchcontinue;
-end instRealClass;
+        checkDuplicateModInBasicType(submods, inPrefix);
+      then
+        List.map4(submods, instBasicTypeAttributes2, inCache, inEnv, inBaseType, inTypeFunc);
 
-protected function instIntegerClass
-"Instantiation of the Integer class"
-  input Env.Cache cache;
-  input Env.Env env;
-  input DAE.Mod mods;
-  input Prefix.Prefix pre;
-  output list<DAE.Var> varLst;
+    case (_, _, DAE.NOMOD(), _, _, _) then {};
+    case (_, _, DAE.REDECL(finalPrefix = _), _, _, _) then {};
+  end match;
+end instBasicTypeAttributes;
+
+protected function checkDuplicateModInBasicType
+  input list<DAE.SubMod> inSubMods;
+  input Prefix.Prefix inPrefix;
 algorithm
-  varLst := matchcontinue(cache,env,mods,pre)
+  _ := match(inSubMods, inPrefix)
     local
-      SCode.Final f;
-      SCode.Each e;
-      list<DAE.SubMod> submods;
-      Option<DAE.EqMod> eqmod;
-      DAE.Exp exp;
-      DAE.Var v;
-      DAE.Properties p;
-      Option<Values.Value> optVal;
-      String s1;
-      DAE.SubMod smod;
+      DAE.SubMod mod;
+      list<DAE.SubMod> rest_mods;
 
-    case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("quantity",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_)
+    case (mod :: rest_mods, _)
       equation
-        varLst = instIntegerClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"quantity",optVal,exp,DAE.T_STRING_DEFAULT,p);
-        then v::varLst;
+        List.map2_0(rest_mods, checkDuplicateModInBasicType2, mod, inPrefix);
+        checkDuplicateModInBasicType(rest_mods, inPrefix);
+      then
+        ();
 
-    case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("min",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_)
-      equation
-        varLst = instIntegerClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"min",optVal,exp,DAE.T_INTEGER_DEFAULT,p);
-        then v::varLst;
-    case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("max",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_)
-      equation
-        varLst = instIntegerClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"max",optVal,exp,DAE.T_INTEGER_DEFAULT,p);
-        then v::varLst;
-    case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("start",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_)
-      equation
-        varLst = instIntegerClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"start",optVal,exp,DAE.T_INTEGER_DEFAULT,p);
-        then v::varLst;
-    case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("fixed",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_)
-      equation
-        varLst = instIntegerClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"fixed",optVal,exp,DAE.T_BOOL_DEFAULT,p);
-        then v::varLst;
-    case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("nominal",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_)
-      equation
-        varLst = instIntegerClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"nominal",optVal,exp,DAE.T_INTEGER_DEFAULT,p);
-        then v::varLst;
-    case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("uncertain",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_)
-      equation
-        varLst = instIntegerClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"uncertain",optVal,exp,InstBinding.uncertaintyType,p);
-      then v::varLst;
-    case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("distribution",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_)
-      equation
-        varLst = instIntegerClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"distribution",optVal,exp,InstBinding.distributionType,p);
-      then v::varLst;
-    case(_,_,DAE.MOD(_,_,smod::_,_),_)
-      equation
-        s1 = Mod.prettyPrintSubmod(smod) +& ", not processed in the built-in class Integer";
-        Error.addMessage(Error.UNUSED_MODIFIER,{s1});
-      then fail();
-    case (_,_,DAE.MOD(_,_,{},_),_) then {};
-    case (_,_,DAE.NOMOD(),_) then {};
-    case (_,_,DAE.REDECL(_,_,_),_) then fail(); /*TODO, report error when redeclaring in Real*/
-  end matchcontinue;
-end instIntegerClass;
+    case ({}, _) then ();
 
-protected function instStringClass
-"Instantiation of the String class"
-  input Env.Cache cache;
-  input Env.Env env;
-  input DAE.Mod mods;
-  input Prefix.Prefix pre;
-  output list<DAE.Var> varLst;
+  end match;
+end checkDuplicateModInBasicType;
+
+protected function checkDuplicateModInBasicType2
+  input DAE.SubMod inSubMod1;
+  input DAE.SubMod inSubMod2;
+  input Prefix.Prefix inPrefix;
 algorithm
-  varLst := matchcontinue(cache,env,mods,pre)
+  _ := matchcontinue(inSubMod1, inSubMod2, inPrefix)
     local
-      SCode.Final f;
-      SCode.Each e;
-      list<DAE.SubMod> submods; Option<DAE.EqMod> eqmod; DAE.Exp exp;
-      DAE.Var v;
-      DAE.Properties p;
-      Option<Values.Value> optVal;
-      String s1;
-      DAE.SubMod smod;
+      DAE.Ident id1, id2;
+      DAE.Mod m1, m2;
+      Absyn.Info info1, info2;
+      String pre_str;
 
-    case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("quantity",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_)
+    case (DAE.NAMEMOD(ident = id1), DAE.NAMEMOD(ident = id2), _)
       equation
-        varLst = instStringClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"quantity",optVal,exp,DAE.T_STRING_DEFAULT,p);
-        then v::varLst;
-    case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("start",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_)
+        false = stringEq(id1, id2);
+      then
+        ();
+
+    case (DAE.NAMEMOD(ident = id1, mod = m1), DAE.NAMEMOD(mod = m2), _)
       equation
-        varLst = instStringClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"start",optVal,exp,DAE.T_STRING_DEFAULT,p);
-        then v::varLst;
-    case(_,_,DAE.MOD(_,_,smod::_,_),_)
-      equation
-        s1 = Mod.prettyPrintSubmod(smod) +& ", not processed in the built-in class String";
-        Error.addMessage(Error.UNUSED_MODIFIER,{s1});
+        info1 = Mod.getModInfo(m1);
+        info2 = Mod.getModInfo(m2);
+        pre_str = PrefixUtil.printPrefixStr(inPrefix);
+        Error.addMultiSourceMessage(Error.DUPLICATE_MODIFICATIONS,
+          {id1, pre_str}, {info1, info2});
       then
         fail();
 
-    case(_,_,DAE.MOD(_,_,{},_),_)
-      then {};
-
-    case(_,_,DAE.NOMOD(),_)
-      then {};
-
-    case(_,_,_,_)
-      equation
-        s1 = "Ignoring modifier: " +& Mod.printModStr(mods) +& ", not processed in the built-in class String";
-        Error.addMessage(Error.INTERNAL_ERROR,{s1});
-      then
-        {};
   end matchcontinue;
-end instStringClass;
+end checkDuplicateModInBasicType2;
 
-protected function instBooleanClass
-"Instantiation of the Boolean class"
-  input Env.Cache cache;
-  input Env.Env env;
-  input DAE.Mod mods;
-  input Prefix.Prefix pre;
-  output list<DAE.Var> varLst;
+protected function instBasicTypeAttributes2
+  input DAE.SubMod inSubMod;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input DAE.Type inBaseType;
+  input BasicTypeAttrTyper inTypeFunc;
+  output DAE.Var outVar;
 algorithm
-  varLst := matchcontinue(cache,env,mods,pre)
+  outVar := match(inSubMod, inCache, inEnv, inBaseType, inTypeFunc)
     local
-      SCode.Final f;
-      SCode.Each e;
-      list<DAE.SubMod> submods;
-      Option<DAE.EqMod> eqmod;
+      DAE.Ident name;
+      DAE.Type ty;
       DAE.Exp exp;
-      Option<Values.Value> optVal;
-      DAE.Var v;
+      Option<Values.Value> val;
       DAE.Properties p;
-      String s1;
-      DAE.SubMod smod;
+      Absyn.Info info;
 
-    case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("quantity",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_)
+    case (DAE.NAMEMOD(ident = name, mod = DAE.MOD(eqModOption = SOME(DAE.TYPED(
+        modifierAsExp = exp, modifierAsValue = val, properties = p, info = info)))), _, _, _, _)
       equation
-        varLst = instBooleanClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"quantity",optVal,exp,DAE.T_STRING_DEFAULT,p);
-        then v::varLst;
-    case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("start",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_)
-      equation
-        varLst = instBooleanClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"start",optVal,exp,DAE.T_BOOL_DEFAULT,p);
-      then v::varLst;
-    case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("fixed",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_)
-      equation
-        varLst = instBooleanClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"fixed",optVal,exp,DAE.T_BOOL_DEFAULT,p);
-      then v::varLst;
-    case(_,_,DAE.MOD(_,_,smod::_,_),_)
-      equation
-        s1 = Mod.prettyPrintSubmod(smod) +& ", not processed in the built-in class Boolean";
-        Error.addMessage(Error.UNUSED_MODIFIER,{s1});
-      then fail();
-    case (_,_,DAE.MOD(_,_,{},_),_) then {};
-    case (_,_,DAE.NOMOD(),_) then {};
-    case(_,_,DAE.REDECL(_,_,_),_)
-      equation
-        print("Inst.instBooleanClass: ignoring wrong modifier:" +& Mod.printModStr(mods) +& "\n");
+        ty = getRealAttributeType(name, inBaseType, info);
       then
-        {};
-  end matchcontinue;
-end instBooleanClass;
+        instBuiltinAttribute(inCache, inEnv, name, val, exp, ty, p);
 
-protected function instEnumerationClass
-"Instantiation of the Enumeration class"
-  input Env.Cache cache;
-  input Env.Env env;
-  input DAE.Mod mods;
-  input Prefix.Prefix pre;
-  output list<DAE.Var> varLst;
-algorithm
-  varLst := matchcontinue(cache,env,mods,pre)
-    local
-      SCode.Final f;
-      SCode.Each e;
-      list<DAE.SubMod> submods;
-      Option<DAE.EqMod> eqmod;
-      DAE.Exp exp;
-      Option<Values.Value> optVal;
-      DAE.Var v;
-      DAE.Properties p;
-      String s1;
-      DAE.SubMod smod;
+    case (DAE.NAMEMOD(ident = name), _, _, _, _)
+      equation
+        Debug.fprintln(Flags.FAILTRACE, "- Inst.instBasicTypeAttributes2 failed on " +& name);
+      then
+        fail();
 
-    case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("quantity",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_)
-      equation
-        varLst = instEnumerationClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"quantity",optVal,exp,DAE.T_STRING_DEFAULT,p);
-        then v::varLst;
-   case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("min",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_)
-      equation
-        varLst = instEnumerationClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"min",optVal,exp,DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{},{},{},DAE.emptyTypeSource),p);
-        then v::varLst;
-    case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("max",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_)
-      equation
-        varLst = instEnumerationClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"max",optVal,exp,DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{},{},{},DAE.emptyTypeSource),p);
-        then v::varLst;
-    case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("start",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_)
-      equation
-        varLst = instEnumerationClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"start",optVal,exp,DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{},{},{},DAE.emptyTypeSource),p);
-      then v::varLst;
-    case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("fixed",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_)
-      equation
-        varLst = instEnumerationClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"fixed",optVal,exp,DAE.T_BOOL_DEFAULT,p);
-      then v::varLst;
-    case(_,_,DAE.MOD(_,_,smod::_,_),_)
-      equation
-        s1 = Mod.prettyPrintSubmod(smod) +& ", not processed in the built-in class Enumeration";
-        Error.addMessage(Error.UNUSED_MODIFIER,{s1});
-      then fail();
-    case (_,_,DAE.MOD(_,_,{},_),_) then {};
-    case (_,_,DAE.NOMOD(),_) then {};
-    case (_,_,DAE.REDECL(_,_,_),_) then fail(); /*TODO, report error when redeclaring in Real*/
-  end matchcontinue;
-end instEnumerationClass;
+  end match;
+end instBasicTypeAttributes2;
 
 protected function instBuiltinAttribute
 "Help function to e.g. instRealClass, etc."

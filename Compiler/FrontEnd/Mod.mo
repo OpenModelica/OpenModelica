@@ -3400,5 +3400,18 @@ algorithm
   end match;
 end isEmptyMod;
 
+public function getModInfo
+  input DAE.Mod inMod;
+  output Absyn.Info outInfo;
+algorithm
+  outInfo := match(inMod)
+    local
+      Absyn.Info info;
+
+    case DAE.MOD(eqModOption = SOME(DAE.TYPED(info = info))) then info;
+    case DAE.MOD(eqModOption = SOME(DAE.UNTYPED(info = info))) then info;
+  end match;
+end getModInfo;
+
 end Mod;
 

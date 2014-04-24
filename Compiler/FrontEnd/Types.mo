@@ -7865,6 +7865,45 @@ algorithm
   end match;
 end stripTypeVars;
 
+public function setTypeVars
+  input DAE.Type inType;
+  input list<DAE.Var> inVars;
+  output DAE.Type outType;
+algorithm
+  outType := match(inType, inVars)
+    local
+      DAE.TypeSource src;
+      Option<Integer> i;
+      Absyn.Path p;
+      list<String> n;
+      list<Var> vars;
+      DAE.Type ty;
+      DAE.Dimensions dims;
+      ClassInf.State st;
+      DAE.EqualityConstraint ec;
+
+    case (DAE.T_REAL(_, src), _) then DAE.T_REAL(inVars, src);
+    case (DAE.T_INTEGER(_, src), _) then DAE.T_INTEGER(inVars, src);
+    case (DAE.T_STRING(_, src), _) then DAE.T_STRING(inVars, src);
+    case (DAE.T_BOOL(_, src), _) then DAE.T_BOOL(inVars, src);
+    case (DAE.T_ENUMERATION(i, p, n, vars, _, src), _)
+      then DAE.T_ENUMERATION(i, p, n, vars, inVars, src);
+
+    case (DAE.T_ARRAY(ty, dims, src), _)
+      equation
+        ty = setTypeVars(ty, inVars);
+      then
+        DAE.T_ARRAY(ty, dims, src);
+
+    case (DAE.T_SUBTYPE_BASIC(st, vars, ty, ec, src), _)
+      equation
+        ty = setTypeVars(ty, inVars);
+      then
+        DAE.T_SUBTYPE_BASIC(st, vars, ty, ec, src);
+
+  end match;
+end setTypeVars;
+
 public function isEmptyOrNoRetcall
   input DAE.Type ty;
   output Boolean b;
