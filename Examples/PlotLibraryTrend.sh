@@ -10,14 +10,14 @@ HISTORY="$1"
 LIB="$2"
 test -d "$HISTORY"
 
-FIRST_DATE=`grep -H "Simulation Results:" "$HISTORY/${LIB}"*.html | head -n1 | cut -d: -f1 | grep -o "20[0-9-]*"`
-LAST_DATE=`grep -H "Simulation Results:" "$HISTORY/${LIB}"*.html | tail -n1 | cut -d: -f1 | grep -o "20[0-9-]*"`
+FIRST_DATE=`grep -H "Simulation Results:" "$HISTORY/${LIB}"-*.html | head -n1 | cut -d: -f1 | grep -o "20[0-9-]*"`
+LAST_DATE=`grep -H "Simulation Results:" "$HISTORY/${LIB}"-*.html | tail -n1 | cut -d: -f1 | grep -o "20[0-9-]*"`
 if test "$FIRST_DATE" = "$LAST_DATE"; then
   FIRST_DATE="1970-01-01"
 fi
-GOAL=`grep -H "Simulation Results:" "$HISTORY/${LIB}"*.html | tail -n1 | grep -o "[0-9][0-9]*/[0-9][0-9]*" | sed s,.*/,,`
-CURS=`grep -H "Simulation Results:" "$HISTORY/${LIB}"*.html | tail -n1 | grep -o "[0-9][0-9]*/[0-9][0-9]*" | sed s,/.*,,`
-CURC=`grep -H "BuildModel Results:" "$HISTORY/${LIB}"*.html | tail -n1 | grep -o "[0-9][0-9]*/[0-9][0-9]*" | sed s,/.*,,`
+GOAL=`grep -H "Simulation Results:" "$HISTORY/${LIB}"-*.html | tail -n1 | grep -o "[0-9][0-9]*/[0-9][0-9]*" | sed s,.*/,,`
+CURS=`grep -H "Simulation Results:" "$HISTORY/${LIB}"-*.html | tail -n1 | grep -o "[0-9][0-9]*/[0-9][0-9]*" | sed s,/.*,,`
+CURC=`grep -H "BuildModel Results:" "$HISTORY/${LIB}"-*.html | tail -n1 | grep -o "[0-9][0-9]*/[0-9][0-9]*" | sed s,/.*,,`
 cat > "$HISTORY/${LIB}-trend.gnuplot" <<EOF
 set term png
 set datafile separator ","
@@ -46,7 +46,7 @@ plot "${LIB}-trend.csv" using 1:2 title 'Target: $GOAL'   with lines ls 1, \
      "${LIB}-trend.csv" using 1:4 title 'Simulate: $CURS' with lines ls 3
 EOF
 rm -f "$HISTORY/${LIB}"-trend.csv
-for f in `grep -H "Simulation Results:" "$HISTORY/${LIB}"*.html | cut -d: -f1` ; do
+for f in `grep -H "Simulation Results:" "$HISTORY/${LIB}"-*.html | cut -d: -f1` ; do
   DATE=`echo "$f" | grep -o "20[0-9-]*"`
   BUILD=`grep "BuildModel Results:" "$f" | cut -d: -f2 | cut -d/ -f1 | tr -d \ `
   SIM=`grep "Simulation Results:" "$f" | cut -d: -f2`
