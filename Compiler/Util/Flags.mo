@@ -387,6 +387,9 @@ constant DebugFlag IMPL_ODE = DEBUG_FLAG(110, "implOde", false,
   Util.gettext("activates implicit codegen"));
 constant DebugFlag MEASURE_TIME = DEBUG_FLAG(111, "measureTime", false,
   Util.gettext("Activates simulation code profiling (performance measurements)."));
+constant DebugFlag EVAL_FUNC_DUMP = DEBUG_FLAG(112, "evalFuncDump", false,
+  Util.gettext("dumps debug information about the function evaluation"));
+  
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
 // initialization so that all flags are sorted by index (and thus have unique
@@ -502,7 +505,8 @@ constant list<DebugFlag> allDebugFlags = {
   HPCOM_ANALYZATION_MODE,
   STRICT_RML,
   IMPL_ODE,
-  MEASURE_TIME
+  MEASURE_TIME,
+  EVAL_FUNC_DUMP
 };
 
 // CONFIGURATION FLAGS
