@@ -352,7 +352,7 @@ algorithm
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and funcIsConst,print,"the function output is completely constant\n");
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and funcIsPartConst,print,"the function output is partially constant\n");
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and not funcIsPartConst and not funcIsConst,print,"the function output is not constant in any case\n");
-                  
+
         true =  funcIsPartConst or funcIsConst;
 
         // build the new lhs, the new statements for the function, the constant parts...
@@ -1251,7 +1251,7 @@ algorithm
         alg = Util.if_(isTpl,DAE.STMT_TUPLE_ASSIGN(typ,tplExpsLHS,exp2,source),alg);
 
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"evaluated assignment to:\n"+&DAEDump.ppStatementStr(alg)+&"\n");
-          
+
         stmts1 = listAppend({alg},lstIn);
         //print("\nthe traverse LIST after :"+&stringDelimitList(List.map(stmts1,DAEDump.ppStatementStr),"\n")+&"\n");
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,repl,idx),stmts1);
@@ -1269,7 +1269,7 @@ algorithm
     case(DAE.STMT_IF(exp=exp0, statementLst=stmts1, else_=else_)::rest,(funcTree,replIn,idx),_)
       equation
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"IF-statement:\n"+&DAEDump.ppStatementStr(List.first(algsIn)));
-        
+
         // get all stmts in the function and the assigned crefs
         stmtsLst = getDAEelseStatemntLsts(else_,{});
         stmtsLst = listReverse(stmtsLst);
@@ -1301,11 +1301,11 @@ algorithm
         ((stmtsNew,addStmts),(funcTree,repl,idx)) = Debug.bcallret2_2(not isCon and not simplified,predictIfOutput,alg,(funcTree,replIn,idx),(stmts1,{}),(funcTree,repl,idx));
         predicted = List.isNotEmpty(addStmts) or List.isEmpty(stmtsNew) and not isCon;
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and not simplified,print,"could it be predicted? "+&boolString(predicted)+&"\n");
-          
+
         // if nothing can be done, remove the replacements for the variables assigned in the if stmt
         repl = Debug.bcallret3(not predicted and not simplified and not isIf, BackendVarTransform.removeReplacements, repl,outputs,NONE(),repl);
         //print("REMOVE THE REPLACEMENTS\n"+&stringDelimitList(List.map(outputs,ComponentReference.printComponentRefStr),"\n")+&"\n");
-        
+
         //stmts1 = Util.if_(simplified and isCon, listAppend(stmts1,addStmts), stmts1);
 
         stmts1 = Util.if_(predicted, stmtsNew,stmts1);
@@ -1316,7 +1316,7 @@ algorithm
         //print("the STMT_IF after: \n"+&stringDelimitList(List.map(listAppend(stmts1,addStmts),DAEDump.ppStatementStr),"\n")+&"\n");
         //print("\nthe REST if after :"+&stringDelimitList(List.map(rest,DAEDump.ppStatementStr),"\n")+&"\n");
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"evaluated IF-statements to:\n"+&stringDelimitList(List.map(listAppend(stmts1,addStmts),DAEDump.ppStatementStr),"\n")+&"\n\n");
-          
+
         stmts1 = listAppend(stmts1,lstIn);
         //print("\nthe traverse LIST after :"+&stringDelimitList(List.map(stmts1,DAEDump.ppStatementStr),"\n")+&"\n");
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,repl,idx),stmts1);
@@ -1346,12 +1346,12 @@ algorithm
         ((_,isCon)) = Expression.traverseExp(exp1,expIsConstTraverser,true);
         exp1 = Util.if_(isCon,exp1,exp0);
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"--> is the tuple const? "+&boolString(isCon)+&"\n");
-        
+
         // add the replacements
         varScalars = List.map(expLst,Expression.expCref);
         repl = Debug.bcallret3(not isCon,BackendVarTransform.removeReplacements,replIn,varScalars,NONE(),replIn); // remove the lhs crefs if tis not constant
         repl = Debug.bcallret3(isCon,addTplReplacements,replIn,exp1,exp2,replIn);  // add all tuple exps to repl if the whole tuple is constant
-                
+
         // build the new statements
         size = DAEUtil.getTupleSize(exp2);
         typ = Expression.typeof(exp2);
@@ -1362,7 +1362,7 @@ algorithm
         tplExpsRHS = DAEUtil.getTupleExps(exp1);
         tplExpsRHS = Util.if_(isCon,tplExpsRHS,{});
         stmtsNew = List.map2(List.intRange(listLength(tplExpsLHS)),makeAssignmentMap,tplExpsLHS,tplExpsRHS); // if the tuple is completely constant
-        
+
         alg = List.first(algsIn);
         stmtsNew = Util.if_(isCon,stmtsNew,{alg});
         stmts2 = Util.if_(intEq(size,0),{DAE.STMT_ASSIGN(typ,exp2,exp1,DAE.emptyElementSource)},stmtsNew);
@@ -1371,7 +1371,7 @@ algorithm
         //stmts2 = alg2::stmts1;
         stmts2 = listAppend(stmts2,stmts1);
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"evaluated Tuple-statements to (incl. addEqs):\n"+&stringDelimitList(List.map(stmts2,DAEDump.ppStatementStr),"\n")+&"\n");
-        
+
         stmts2 = listAppend(stmts2,lstIn);
         //print("idx: "+&intString(idx)+&"\n");
         //print("\nthe traverse LIST tpl after :"+&stringDelimitList(List.map(stmts2,DAEDump.ppStatementStr),"\n")+&"\n");

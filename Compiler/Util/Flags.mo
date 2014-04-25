@@ -389,7 +389,7 @@ constant DebugFlag MEASURE_TIME = DEBUG_FLAG(111, "measureTime", false,
   Util.gettext("Activates simulation code profiling (performance measurements)."));
 constant DebugFlag EVAL_FUNC_DUMP = DEBUG_FLAG(112, "evalFuncDump", false,
   Util.gettext("dumps debug information about the function evaluation"));
-  
+
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
 // initialization so that all flags are sorted by index (and thus have unique
