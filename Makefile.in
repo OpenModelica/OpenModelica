@@ -77,6 +77,13 @@ qtclean-common:
 	rm -rf OMShell/bin/OMShell$(EXE) OMShell/OMShellGUI/omc_communication.*
 	rm -rf OMNotebook/bin/OMNotebook$(EXE) OMNotebook/OMNotebookGUI/omc_communication.*
 	rm -rf OMOptim/build/OMOptim$(EXE) OMOptim/build/omc_communication.*
+	for f in OMEdit/OMEditGUI \
+	         OMNotebook/OMNotebookGUI \
+	         OMOptim/build \
+	         OMOptimBasis/build \
+	         OMShell/OMShellGUI \
+	         OMPlot/OMPlotGUI \
+	         ; do test ! -f $$f/Makefile || (make -C $$f clean && rm -f $$f/Makefile); done
 ifeq ($(QMAKE),)
 qtclients:
 	@echo "*** OpenModelica configured without support for Qt"
