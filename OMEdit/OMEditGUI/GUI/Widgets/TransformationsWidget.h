@@ -181,7 +181,7 @@ public:
   void clearTreeWidgetItems(QTreeWidget *pTreeWidget);
 private:
   MainWindow *mpMainWindow;
-  QString mInfoXMLFullFileName;
+  QString mInfoXMLFullFileName, mProfJSONFullFileName;
   MyHandler *mpInfoXMLFileHandler;
   QLineEdit *mpFindVariablesTextBox;
   QComboBox *mpFindSyntaxComboBox;
@@ -209,6 +209,8 @@ private:
   QSplitter *mpEquationsHorizontalSplitter;
   QSplitter *mpTransformationsVerticalSplitter;
   QSplitter *mpTransformationsHorizontalSplitter;
+
+  void parseProfiling(QString fileName);
 public slots:
   void reloadTransformations();
   void findVariables();

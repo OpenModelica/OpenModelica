@@ -180,6 +180,9 @@ INCLUDEPATH += $$(OMDEV)/lib/omniORB-4.1.6-mingw/include \
     }
 }
 
+LIBS += -lqjson
+INCLUDEPATH += ../../3rdParty/qjson-0.8.1/build/include
+
 INCLUDEPATH += . \
                 Annotations \
                 Component \

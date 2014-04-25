@@ -224,6 +224,10 @@ public:
   static QString index;
   static QString equation;
   static QString transformationalDebugger;
+  static QString executionCount;
+  static QString executionMaxTime;
+  static QString executionTime;
+  static QString executionFraction;
 };
 
 class GUIMessages : public QObject

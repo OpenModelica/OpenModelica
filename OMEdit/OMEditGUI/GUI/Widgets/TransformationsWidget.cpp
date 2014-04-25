@@ -417,15 +417,20 @@ EquationTreeWidget::EquationTreeWidget(TransformationsWidget *pTransformationWid
   setItemDelegate(new ItemDelegate(this));
   setObjectName("EquationsTree");
   setIndentation(Helper::treeIndentation);
-  setColumnCount(3);
+  setColumnCount(7);
   setTextElideMode(Qt::ElideMiddle);
   setSortingEnabled(true);
   sortByColumn(0, Qt::AscendingOrder);
-  setColumnWidth(0, 45);
+  setColumnWidth(0, 55);
   setColumnWidth(1, 60);
+  setColumnWidth(2, 200);
+  setColumnWidth(3, 55);
+  setColumnWidth(4, 80);
+  setColumnWidth(5, 80);
+  setColumnWidth(6, 60);
   setExpandsOnDoubleClick(false);
   QStringList headerLabels;
-  headerLabels << Helper::index << Helper::type << Helper::equation;
+  headerLabels << Helper::index << Helper::type << Helper::equation << Helper::executionCount << Helper::executionMaxTime << Helper::executionTime << Helper::executionFraction;
   setHeaderLabels(headerLabels);
   connect(this, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), mpTransformationWidget, SLOT(fetchEquationData(QTreeWidgetItem*,int)));
 }
@@ -433,6 +438,11 @@ EquationTreeWidget::EquationTreeWidget(TransformationsWidget *pTransformationWid
 TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWindow *pMainWindow)
   : mInfoXMLFullFileName(infoXMLFullFileName), mpMainWindow(pMainWindow)
 {
+  if (!mInfoXMLFullFileName.endsWith("_info.xml")) {
+    mProfJSONFullFileName = "";
+  } else {
+    mProfJSONFullFileName = infoXMLFullFileName.left(infoXMLFullFileName.size() - 8) + "prof.json";
+  }
   setWindowIcon(QIcon(":/Resources/icons/debugger.svg"));
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::transformationalDebugger));
   QToolButton *pReloadToolButton = new QToolButton;
@@ -763,6 +773,7 @@ void TransformationsWidget::loadTransformations()
   mpTVariablesTreeModel->insertTVariablesItems();
   /* load equations */
   fetchEquations();
+  parseProfiling(mProfJSONFullFileName);
 }
 
 void TransformationsWidget::fetchDefinedInEquations(OMVariable &variable)
@@ -1091,4 +1102,32 @@ void TransformationsWidget::fetchEquationData(QTreeWidgetItem *pEquationTreeItem
     }
   }
   fetchEquationData(equationIndex);
+}
+
+#include <qjson/parser.h>
+
+void TransformationsWidget::parseProfiling(QString fileName)
+{
+  QFile *file = new QFile(fileName);
+  if (!file->exists()) {
+    delete file;
+    return;
+  }
+  QJson::Parser parser;
+  bool ok;
+  QVariantMap result = parser.parse(file, &ok).toMap();
+  double totalStepsTime = result["totalStepsTime"].toDouble();
+  foreach (QVariant v, result["profileBlocks"].toList()) {
+    QVariantMap eq = v.toMap();
+    long id = eq["id"].toInt();
+    QTreeWidgetItem *pTreeWidgetItem = findEquationTreeItem(id);
+    if (pTreeWidgetItem) {
+      double time = eq["time"].toDouble();
+      pTreeWidgetItem->setText(3, QString::number(eq["ncall"].toInt()));
+      pTreeWidgetItem->setText(4, QString::number(eq["maxTime"].toDouble(), 'g', 3));
+      pTreeWidgetItem->setText(5, QString::number(time, 'g', 3));
+      pTreeWidgetItem->setText(6, QString::number(100 * time / totalStepsTime, 'g', 3) + "%");
+    }
+  }
+  delete file;
 }

@@ -218,6 +218,10 @@ QString Helper::reload;
 QString Helper::index;
 QString Helper::equation;
 QString Helper::transformationalDebugger;
+QString Helper::executionCount;
+QString Helper::executionMaxTime;
+QString Helper::executionTime;
+QString Helper::executionFraction;
 
 void Helper::initHelperVariables()
 {
@@ -349,6 +353,10 @@ void Helper::initHelperVariables()
   Helper::index = tr("Index");
   Helper::equation = tr("Equation");
   Helper::transformationalDebugger = tr("Transformational Debugger");
+  Helper::executionCount = tr("Executions");
+  Helper::executionMaxTime = tr("Max time");
+  Helper::executionTime = tr("Time");
+  Helper::executionFraction = tr("Fraction");
 }
 
 QString GUIMessages::getMessage(int type)
