@@ -569,12 +569,14 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
 
   if(0 == retVal && measure_time_flag)
   {
+    const string jsonInfo = string(data->modelData.modelFilePrefix) + "_prof.json";
     const string modelInfo = string(data->modelData.modelFilePrefix) + "_prof.xml";
     const string plotFile = string(data->modelData.modelFilePrefix) + "_prof.plt";
     rt_accumulate(SIM_TIMER_TOTAL);
     const char* plotFormat = omc_flagValue[FLAG_MEASURETIMEPLOTFORMAT];
     retVal = printModelInfo(data, modelInfo.c_str(), plotFile.c_str(), plotFormat ? plotFormat : "svg",
         data->simulationInfo.solverMethod, data->simulationInfo.outputFormat, result_file_cstr.c_str()) && retVal;
+    retVal = printModelInfoJSON(data, jsonInfo.c_str(), result_file_cstr.c_str()) && retVal;
   }
 
   return retVal;

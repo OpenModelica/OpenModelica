@@ -182,6 +182,14 @@ fmil:
 	#TODO: Only copy required headers, add them in omc/fmi subfolder, and do not copy c/txt-files
 	#cp -rp 3rdParty/FMIL/install/include/* $(builddir_inc)
 
+qjson:
+	test -d 3rdParty/qjson-0.8.1
+	mkdir -p 3rdParty/qjson-0.8.1/build/include
+	(cd 3rdParty/qjson-0.8.1/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -D CMAKE_AR:String="$(AR)" .. -G $(CMAKE_TARGET))
+	test -f 3rdParty/qjson-0.8.1/build/lib/libqjson$(SHREXT) || $(MAKE) -C 3rdParty/qjson-0.8.1/build
+	test "(" ! `uname` = Darwin ")" -o "(" ! -f 3rdParty/qjson-0.8.1/build/lib/libqjson$(SHREXT) ")" || install_name_tool -id @rpath/libqjson$(SHREXT) 3rdParty/qjson-0.8.1/build/lib/libqjson$(SHREXT)
+	cp -a 3rdParty/qjson-0.8.1/build/lib/libqjson*$(SHREXT)* $(builddir_lib)/omc/
+	cp -a 3rdParty/qjson-0.8.1/src/*.h 3rdParty/qjson-0.8.1/build/include
 CMinpack:
 	test -d 3rdParty/CMinpack
 	mkdir -p 3rdParty/CMinpack/build

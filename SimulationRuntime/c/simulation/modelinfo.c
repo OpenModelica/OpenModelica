@@ -39,6 +39,7 @@
 #include <string.h>
 #include <time.h>
 #include <assert.h>
+#include <stdint.h>
 
 /* UNDEF to debug the gnuplot file
 #define NO_PIPE
@@ -58,6 +59,56 @@ static size_t fileSize(const char *filename) {
 
 static void indent(FILE *fout, int n) {
   while(n--) fputc(' ', fout);
+}
+
+static void convertProfileData(const char *prefix, int numFnsAndBlocks)
+{
+  size_t len = strlen(prefix);
+  int i;
+  uint32_t step;
+  double time[2];
+  uint32_t iarr[numFnsAndBlocks];
+  double darr[numFnsAndBlocks];
+  char inBinary[len + 11];
+  char outCsv[len + 10];
+  FILE *fin;
+  FILE *fout;
+  int fail = 0;
+  memcpy(inBinary,prefix,len);
+  memcpy(outCsv,prefix,len);
+  strcpy(inBinary + len, "_prof.data");
+  strcpy(outCsv + len, "_prof.csv");
+  fin = fopen(inBinary, "rb");
+  if (!fin) {
+    throwStreamPrint(NULL, "Failed to open %s for reading", inBinary);
+  }
+  fout = fopen(outCsv, "wb");
+  if (!fout) {
+    fclose(fin);
+    throwStreamPrint(NULL, "Failed to open %s for writing", outCsv);
+  }
+  do {
+    fail |= 1 != fread(&step, sizeof(uint32_t), 1, fin);
+    fail |= 2 != fread(time, sizeof(double), 2, fin);
+    fail |= numFnsAndBlocks != fread(iarr, sizeof(uint32_t), numFnsAndBlocks, fin);
+    fail |= numFnsAndBlocks != fread(darr, sizeof(double), numFnsAndBlocks, fin);
+    if (fail) {
+      break;
+    }
+    fprintf(fout, "%d,%g,%g", step, time[0], time[1]);
+    for (i=0; i<numFnsAndBlocks; i++) {
+      fprintf(fout, ",%d", iarr[i]);
+    }
+    for (i=0; i<numFnsAndBlocks; i++) {
+      fprintf(fout, ",%g", darr[i]);
+    }
+    fputc('\n', fout);
+  } while (!feof(fin));
+  fclose(fin);
+  fclose(fout);
+  if (fail && !feof(fin)) {
+    throwStreamPrint(NULL, "Failed to read all data from %s", inBinary);
+  }
 }
 
 static void printPlotCommand(FILE *plt, const char *plotFormat, const char *title, const char *prefix, int numFnsAndBlocks, int i, int id, const char *idPrefix) {
@@ -446,5 +497,109 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
     infoStreamPrint(LOG_STDOUT, 0, "Time measurements are stored in %s_prof.html (human-readable) and %s_prof.xml (for XSL transforms or more details)", data->modelData.modelFilePrefix, data->modelData.modelFilePrefix);
     free(buf);
   }
+  return 0;
+}
+
+#define ERROR_WRITE() throwStreamPrint(NULL, "Failed to write to opened file")
+
+void escapeJSON(FILE *file, const char *data)
+{
+  while (*data) {
+    switch (*data) {
+    case '\"': if (fputs("\\\"",file)<0) ERROR_WRITE();break;
+    case '\\': if (fputs("\\\\",file)<0) ERROR_WRITE();break;
+    case '\n': if (fputs("\\n",file)<0) ERROR_WRITE();break;
+    case '\b': if (fputs("\\b",file)<0) ERROR_WRITE();break;
+    case '\f': if (fputs("\\f",file)<0) ERROR_WRITE();break;
+    case '\r': if (fputs("\\r",file)<0) ERROR_WRITE();break;
+    case '\t': if (fputs("\\t",file)<0) ERROR_WRITE();break;
+    default:
+      if (*data < ' ') { /* Escape other control characters */
+        if (fprintf(file, "\\u%04x",*data)<0) ERROR_WRITE();
+      } else {
+        if (putc(*data,file)<0) ERROR_WRITE();
+      }
+    }
+    data++;
+  }
+}
+
+static void printJSONFunctions(FILE *fout, DATA *data) {
+  int i;
+  for(i = 0; i < data->modelData.modelDataXml.nFunctions; i++) {
+    const struct FUNCTION_INFO func = modelInfoXmlGetFunction(&data->modelData.modelDataXml, i);
+    rt_clear(i + SIM_TIMER_FIRST_FUNCTION);
+    fputs(i == 0 ? "\n" : ",\n", fout);
+    fprintf(fout, "{\"name\":\"");
+    escapeJSON(fout, func.name);
+    fprintf(fout, "\",\"ncall\":%d,\"time\":%.9f,\"maxTime\":%.9f}",
+      (int) rt_ncall_total(i + SIM_TIMER_FIRST_FUNCTION),
+      rt_total(i + SIM_TIMER_FIRST_FUNCTION),
+      rt_max_accumulated(i + SIM_TIMER_FIRST_FUNCTION));
+  }
+}
+
+static void printJSONProfileBlocks(FILE *fout, DATA *data) {
+  int i;
+  for(i = data->modelData.modelDataXml.nFunctions; i < data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks; i++) {
+    const struct EQUATION_INFO eq = modelInfoXmlGetEquationIndexByProfileBlock(&data->modelData.modelDataXml, i-data->modelData.modelDataXml.nFunctions);
+    rt_clear(i + SIM_TIMER_FIRST_FUNCTION);
+    fputs(i == data->modelData.modelDataXml.nFunctions ? "\n" : ",\n", fout);
+    fprintf(fout, "{\"id\":%d,\"ncall\":%d,\"time\":%.9f,\"maxTime\":%.9f}",
+      (int) eq.id,
+      (int) rt_ncall_total(i + SIM_TIMER_FIRST_FUNCTION),
+      rt_total(i + SIM_TIMER_FIRST_FUNCTION),
+      rt_max_accumulated(i + SIM_TIMER_FIRST_FUNCTION));
+  }
+}
+
+int printModelInfoJSON(DATA *data, const char *filename, const char *outputFilename)
+{
+  char buf[256];
+  FILE *fout = fopen(filename, "wb");
+  time_t t;
+  if (!fout) {
+    throwStreamPrint(NULL, "Failed to open file %s for writing", filename);
+  }
+  convertProfileData(data->modelData.modelFilePrefix, data->modelData.modelDataXml.nFunctions+data->modelData.modelDataXml.nProfileBlocks);
+  if(time(&t) < 0)
+  {
+    fclose(fout);
+    throwStreamPrint(LOG_UTIL, 0, "time() failed: %s", strerror(errno));
+  }
+  if(!strftime(buf, 250, "%Y-%m-%d %H:%M:%S", localtime(&t)))
+  {
+    fclose(fout);
+    throwStreamPrint(LOG_UTIL, 0, "strftime() failed");
+  }
+  fprintf(fout, "{\n\"name\":\"");
+  escapeJSON(fout, data->modelData.modelName);
+  fprintf(fout, "\",\n\"prefix\":\"");
+  escapeJSON(fout, data->modelData.modelFilePrefix);
+  fprintf(fout, "\",\n\"date\":\"");
+  escapeJSON(fout, buf);
+  fprintf(fout, "\",\n\"method\":\"");
+  escapeJSON(fout, data->simulationInfo.solverMethod);
+  fprintf(fout, "\",\n\"outputFormat\":\"");
+  escapeJSON(fout, data->simulationInfo.outputFormat);
+  fprintf(fout, "\",\n\"outputFilename\":\"");
+  escapeJSON(fout, outputFilename);
+  fprintf(fout, "\",\n\"outputFilesize\":%ld",(long) fileSize(outputFilename));
+  fprintf(fout, ",\n\"overheadTime\":%g",rt_accumulated(SIM_TIMER_OVERHEAD));
+  fprintf(fout, ",\n\"preinitTime\":%g",rt_accumulated(SIM_TIMER_PREINIT));
+  fprintf(fout, ",\n\"initTime\":%g",rt_accumulated(SIM_TIMER_INIT));
+  fprintf(fout, ",\n\"eventTime\":%g",rt_accumulated(SIM_TIMER_EVENT));
+  fprintf(fout, ",\n\"outputTime\":%g",rt_accumulated(SIM_TIMER_OUTPUT));
+  fprintf(fout, ",\n\"linearizeTime\":%g",rt_accumulated(SIM_TIMER_LINEARIZE));
+  fprintf(fout, ",\n\"totalTime\":%g",rt_accumulated(SIM_TIMER_TOTAL));
+  fprintf(fout, ",\n\"totalStepsTime\":%g",rt_total(SIM_TIMER_STEP));
+  fprintf(fout, ",\n\"numStep\":%d", (int) rt_ncall_total(SIM_TIMER_STEP));
+  fprintf(fout, ",\n\"maxTime\":%.9g", rt_max_accumulated(SIM_TIMER_STEP));
+  fprintf(fout, ",\n\"functions\":[");
+  printJSONFunctions(fout,data);
+  fprintf(fout, "\n],\n\"profileBlocks\":[");
+  printJSONProfileBlocks(fout,data);
+  fprintf(fout, "\n]\n");
+  fprintf(fout, "}");
   return 0;
 }

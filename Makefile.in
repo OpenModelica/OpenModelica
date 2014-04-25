@@ -93,7 +93,7 @@ omshell: mkbuilddirs
 	$(MAKE) -C OMShell/OMShellGUI -f Makefile.unix
 omplot: mkbuilddirs boehm-gc-lib
 	$(MAKE) -C OMPlot/OMPlotGUI -f Makefile.unix
-omedit: mkbuilddirs omplot boehm-gc-lib
+omedit: mkbuilddirs omplot boehm-gc-lib qjson
 	$(MAKE) -C OMEdit/OMEditGUI -f Makefile.unix
 ifeq (@with_paradiseo@,)
 omoptim:
