@@ -152,23 +152,26 @@ match simVar
   case SIMVAR(__) then
   let valueReference = '<%System.tmpTick()%>'
   let description = if comment then 'description="<%Util.escapeModelicaStringToXmlString(comment)%>"'
+  let variability = getVariability2(varKind)
   let caus = getCausality2(causality, varKind, isValueChangeable)
-  let variability = getVariability2(varKind, isFixed)
+  let initial = hasStartValue(varKind, initialValue)
   <<
   name="<%System.stringReplace(crefStrNoUnderscore(name),"$", "_D_")%>"
   valueReference="<%valueReference%>"
   <%description%>
   variability="<%variability%>"
   causality="<%caus%>"
+  initial="<%initial%>"
   >>
 end ScalarVariableAttribute2;
 
-template getVariability2(VarKind varKind, Boolean isFixed)
+template getVariability2(VarKind varKind)
  "Returns the variability Attribute of ScalarVariable."
 ::=
 match varKind
   case DISCRETE(__) then "discrete"
-  case PARAM(__) then if isFixed then "fixed" else "tunable"
+  case PARAM(__) then "fixed"
+  /*case PARAM(__) then "tunable"*/  /*TODO! Don't know how tunable variables are represented in OpenModelica.*/
   case CONST(__) then "constant"
   else "continuous"
 end getVariability2;
@@ -192,13 +195,24 @@ match varKind
   else "local"
 end getCausality2Helper;
 
-template ScalarVariableType2(DAE.Type type_, String unit, String displayUnit, Option<DAE.Exp> initialValue)
+template hasStartValue(VarKind varKind, Option<DAE.Exp> initialValue)
+ "Returns the Initial Attribute of ScalarVariable."
+::=
+match varKind
+  case STATE_DER(__) then "calculated"
+  else
+    match initialValue
+      case SOME(exp) then "exact"
+      else "calculated"
+end hasStartValue;
+
+template ScalarVariableType2(DAE.Type type_, String unit, String displayUnit, Option<DAE.Exp> initialValue, VarKind varKind, Integer index)
  "Generates code for ScalarVariable Type file for FMU 2.0 target."
 ::=
 match type_
   case T_INTEGER(__) then '<Integer<%ScalarVariableTypeCommonAttribute2(initialValue)%>/>'
   /* Don't generate the units for now since it is wrong. If you generate a unit attribute here then we must add the UnitDefinitions tag section also. */
-  case T_REAL(__) then '<Real<%ScalarVariableTypeCommonAttribute2(initialValue)/*%> <%ScalarVariableTypeRealAttribute(unit,displayUnit)*/%>/>'
+  case T_REAL(__) then '<Real<%RealVariableTypeCommonAttribute2(initialValue, varKind, index)%>/>'
   case T_BOOL(__) then '<Boolean<%ScalarVariableTypeCommonAttribute2(initialValue)%>/>'
   case T_STRING(__) then '<String<%StringVariableTypeCommonAttribute2(initialValue)%>/>'
   case T_ENUMERATION(__) then '<Enumeration declaredType="<%Absyn.pathString2NoLeadingDot(path, ".")%>"<%ScalarVariableTypeCommonAttribute2(initialValue)%>/>'
@@ -222,6 +236,16 @@ template ScalarVariableTypeCommonAttribute2(Option<DAE.Exp> initialValue)
 match initialValue
   case SOME(exp) then '<%StartString2(exp)%>'
 end ScalarVariableTypeCommonAttribute2;
+
+template RealVariableTypeCommonAttribute2(Option<DAE.Exp> initialValue, VarKind varKind, Integer index)
+ "Generates code for ScalarVariable Type file for FMU 2.0 target."
+::=
+match varKind
+  case STATE_DER(__) then ' derivative="<%index%>"'
+  else
+    match initialValue
+      case SOME(exp) then ' start="<%initValXml(exp)%>"'
+end RealVariableTypeCommonAttribute2;
 
 template StringVariableTypeCommonAttribute2(Option<DAE.Exp> initialValue)
  "Generates code for ScalarVariable Type file for FMU 2.0 target."
@@ -449,7 +473,7 @@ case SIMVAR(__) then
   <<
   <ScalarVariable
     <%ScalarVariableAttribute2(simVar)%>>
-    <%ScalarVariableType2(type_,unit,displayUnit,initialValue)%>
+    <%ScalarVariableType2(type_,unit,displayUnit,initialValue,varKind,index)%>
   </ScalarVariable>
   >>
   else
