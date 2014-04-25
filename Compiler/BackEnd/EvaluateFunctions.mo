@@ -1216,8 +1216,8 @@ algorithm
         (exp2,_) = ExpressionSimplify.simplify(exp2);
         expLst = Expression.getComplexContents(exp2);
         //print("SIMPLIFIED\n"+&stringDelimitList(List.map({exp2},ExpressionDump.printExpStr),"\n")+&"\n");
-        
-        // add the replacements for the addStmts       
+
+        // add the replacements for the addStmts
 
         // check if its constant, a record or a tuple
         isCon = Expression.isConst(exp2);
