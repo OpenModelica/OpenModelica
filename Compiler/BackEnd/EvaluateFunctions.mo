@@ -815,7 +815,6 @@ algorithm
   end match;
 end updateFunctionBody;
 
-
 protected function buildPartialFunction "build a partial function for the variable outputs of a complex function and generate some simple equations for the constant outputs.
 author:Waurich TUD 2014-03"
   input tuple<list<DAE.ComponentRef>,list<DAE.Element>> varPart;
@@ -843,7 +842,8 @@ algorithm
 
   // build the partial function algorithm, replace the qualified crefs
   stmts1 := List.mapFlat(funcAlgs, DAEUtil.getStatement);
-  stmts1 := List.filterOnTrue(stmts1,statementRHSIsNotConst);
+  //stmts1 := listReverse(stmts1);
+  //stmts1 := List.filterOnTrue(stmts1,statementRHSIsNotConst);
   // remove the constant values
   stmts1 := traverseStmtsAndUpdate(stmts1,stmtCanBeRemoved,replIn,{});
   // build new crefs for the scalars
@@ -1187,16 +1187,17 @@ algorithm
       BackendVarTransform.VariableReplacements repl, replIn;
       DAE.ComponentRef cref;
       DAE.ElementSource source;
-      DAE.Exp exp0,exp1, exp2;
+      DAE.Exp exp0, exp1, exp2;
       DAE.Else else_;
       DAE.FunctionTree funcTree,funcTree2;
       DAE.Statement alg, alg2;
       DAE.Type typ;
       list<BackendDAE.Equation> addEqs;
-      list<DAE.ComponentRef> scalars, varScalars,constScalars, outputs;
-      list<DAE.Statement> stmts1, stmts2, rest, addStmts,stmtsNew, allStmts;
+      list<DAE.ComponentRef> scalars, varScalars,constScalars, outputs, initOutputs;
+      list<list<DAE.Exp>> lhsExpLst;
+      list<DAE.Statement> stmts1, stmts2, rest, addStmts,stmtsNew, allStmts, initStmts;
       list<list<DAE.Statement>> stmtsLst;
-      list<DAE.Exp> expLst,tplExpsLHS,tplExpsRHS,lhsExps;
+      list<DAE.Exp> expLst,tplExpsLHS,tplExpsRHS,lhsExps,lhsExpsInit,rhsExps;
     case({},(_,_,_),_)
       equation
         stmts1 = listReverse(lstIn);
@@ -1215,6 +1216,8 @@ algorithm
         (exp2,_) = ExpressionSimplify.simplify(exp2);
         expLst = Expression.getComplexContents(exp2);
         //print("SIMPLIFIED\n"+&stringDelimitList(List.map({exp2},ExpressionDump.printExpStr),"\n")+&"\n");
+        
+        // add the replacements for the addStmts       
 
         // check if its constant, a record or a tuple
         isCon = Expression.isConst(exp2);
@@ -1296,7 +1299,7 @@ algorithm
         stmts1 = Util.if_(simplified and isCon, listAppend(stmts1,addStmts), {alg});
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and not isIf,print,"-->is it an other case? "+&boolString(simplified)+&"\n");
 
-        // if its not definite which case, try to predict a constant output
+        // if its not definite which case, try to predict a constant output, maybe its partially constant, then remove function outputs replacements
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and not simplified,print,"-->try to predict the outputs \n");
         ((stmtsNew,addStmts),(funcTree,repl,idx)) = Debug.bcallret2_2(not isCon and not simplified,predictIfOutput,alg,(funcTree,replIn,idx),(stmts1,{}),(funcTree,repl,idx));
         predicted = List.isNotEmpty(addStmts) or List.isEmpty(stmtsNew) and not isCon;

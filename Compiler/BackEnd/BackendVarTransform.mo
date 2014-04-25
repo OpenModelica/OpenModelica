@@ -828,6 +828,54 @@ algorithm
   end matchcontinue;
 end hasReplacement;
 
+public function hasReplacementCrefFirst "
+  Outputs true if the replacements contain a rule for the cref
+"
+  input DAE.ComponentRef inComponentRef;
+  input VariableReplacements inVariableReplacements;
+  output Boolean bOut;
+algorithm
+  bOut:=
+  matchcontinue (inComponentRef,inVariableReplacements)
+    local
+      DAE.ComponentRef src;
+      DAE.Exp dst;
+      HashTable2.HashTable ht;
+    case (src,REPLACEMENTS(hashTable=ht))
+      equation
+        _ = BaseHashTable.get(src,ht);
+      then
+        true;
+      else
+      equation
+        then false;
+  end matchcontinue;
+end hasReplacementCrefFirst;
+
+public function hasNoReplacementCrefFirst "
+  Outputs true if the replacements contain a rule for the cref
+"
+  input DAE.ComponentRef inComponentRef;
+  input VariableReplacements inVariableReplacements;
+  output Boolean bOut;
+algorithm
+  bOut:=
+  matchcontinue (inComponentRef,inVariableReplacements)
+    local
+      DAE.ComponentRef src;
+      DAE.Exp dst;
+      HashTable2.HashTable ht;
+    case (src,REPLACEMENTS(hashTable=ht))
+      equation
+        _ = BaseHashTable.get(src,ht);
+      then
+        false;
+      else
+      equation
+        then true;
+  end matchcontinue;
+end hasNoReplacementCrefFirst;
+
 public function getReplacementVarArraySize
   input VariableReplacements inVariableReplacements;
   output Integer size;
@@ -1990,6 +2038,7 @@ algorithm
   (outStatementLst,replacementPerformed) :=
   matchcontinue (inStatementLst,inVariableReplacements,inFuncTypeExpExpToBooleanOption,inAcc,inBAcc)
     local
+      Boolean isCon;
       VariableReplacements repl;
       list<DAE.Statement> es,es_1,statementLst,statementLst_1;
       DAE.Statement statement,statement_1;
@@ -2012,6 +2061,10 @@ algorithm
     case ((DAE.STMT_ASSIGN(type_=type_,exp1=e1,exp=e2,source=source)::es),repl,_,_,_)
       equation
         (e1_1,b1) = replaceExp(e1, repl,inFuncTypeExpExpToBooleanOption);
+        //isCon = Expression.isConst(e1_1);
+        //e1_1 = Util.if_(isCon,e1,e1_1);
+        //cr = Expression.expCref(e1);
+        //repl = Debug.bcallret3(isCon,removeReplacement,repl,cr,NONE(),repl);
         (e2_1,b2) = replaceExp(e2, repl,inFuncTypeExpExpToBooleanOption);
         true = b1 or b2;
         (e1_2,_) = ExpressionSimplify.simplify(e1_1);
