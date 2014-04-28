@@ -1095,8 +1095,8 @@ algorithm
         (exp2,_) = ExpressionSimplify.simplify(exp2);
         expLst = Expression.getComplexContents(exp2);
         //print("SIMPLIFIED\n"+&stringDelimitList(List.map({exp2},ExpressionDump.printExpStr),"\n")+&"\n");
-        
-        // add the replacements for the addStmts       
+
+        // add the replacements for the addStmts
 
         // check if its constant, a record or a tuple
         isCon = Expression.isConst(exp2);
@@ -1152,7 +1152,7 @@ algorithm
       equation
         alg = List.first(algsIn);
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"IF-statement:\n"+&DAEDump.ppStatementStr(alg));
-          
+
         // get all stmts in the function and the assigned crefs (need the outputs in order to remove the replacements if nothing can be evaluated)
         stmtsLst = getDAEelseStatemntLsts(else_,{});
         stmtsLst = listReverse(stmtsLst);
@@ -1161,10 +1161,10 @@ algorithm
         lhsExps = List.fold1(allStmts,getStatementLHSScalar,funcTree,{});
         lhsExps = List.unique(lhsExps);
         outputs = List.map(lhsExps,Expression.expCref);
- 
+
         //check if the conditions can be evaluated, get evaluated stmts
         (isEval,stmts1) = evaluateIfStatement(alg,FUNCINFO(replIn,funcTree,idx));
-        
+
         // if its not definite which case, try to predict a constant output, maybe its partially constant, then remove function outputs replacements
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and not isEval,print,"-->try to predict the outputs \n");
         ((stmtsNew,addStmts),(funcTree,repl,idx)) = Debug.bcallret2_2(not isEval ,predictIfOutput,alg,(funcTree,replIn,idx),(stmts1,{}),(funcTree,replIn,idx));
@@ -1256,7 +1256,7 @@ algorithm
   end matchcontinue;
 end evaluateFunctions_updateStatement;
 
-protected function evaluateIfStatement"check if the cases are constant and if so evaluate them. 
+protected function evaluateIfStatement"check if the cases are constant and if so evaluate them.
 author: Waurich TUD 2014-04"
   input DAE.Statement stmtIn;
   input FuncInfo info;
@@ -1281,25 +1281,25 @@ algorithm
         (exp1,_) = ExpressionSimplify.simplify(exp1);
         isCon = Expression.isConst(exp1);
         isIf = Debug.bcallret1(isCon,Expression.getBoolConst,exp1,false);
-        
+
         // check if its the IF case, if true then evaluate:
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"-->is the if const? "+&boolString(isCon)+&" and is it the if case ? "+&boolString(isIf)+&"\n");
         //(stmts1,(funcTree,repl,idx)) = Debug.bcallret3_2(isIf and isCon,evaluateFunctions_updateStatement,stmtsIf,(funcTree,replIn,idx),lstIn,stmtsIf,(funcTree,replIn,idx));
         (stmts1,(funcTree,repl,idx)) = Debug.bcallret3_2(isIf and isCon,evaluateFunctions_updateStatement,stmtsIf,(funcTree,replIn,idx),{},{stmtIn},(funcTree,replIn,idx));  // without listIn
-        
+
         // if its definitly not the if, check the else
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and not isIf,print,"-->try to check if its another case\n");
         (stmtsElse,isElse) = Debug.bcallret2_2(isCon and not isIf,evaluateElse,else_,info,{stmtIn},false);
-          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and not isIf,print,"-->is it an other case? "+&boolString(isElse)+&"\n");               
+          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and not isIf,print,"-->is it an other case? "+&boolString(isElse)+&"\n");
         (stmts1,(funcTree,repl,idx)) = Debug.bcallret3_2(isCon and isElse,evaluateFunctions_updateStatement,stmtsElse,(funcTree,replIn,idx),{},stmts1,(funcTree,replIn,idx));
         eval = isCon and (isIf or isElse);
      then
        (eval,stmts1);
      else
        equation
-         print("evaluateIfStatement failed \n");  
+         print("evaluateIfStatement failed \n");
        then
-         fail();       
+         fail();
   end matchcontinue;
 end evaluateIfStatement;
 
@@ -1340,7 +1340,7 @@ algorithm
       equation
       then
         ({},true);
-  end matchcontinue;      
+  end matchcontinue;
 end evaluateElse;
 
 protected function addTplReplacements
