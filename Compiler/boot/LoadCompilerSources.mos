@@ -194,6 +194,7 @@ if true then /* Suppress output */
     "../Template/NFInstDumpTpl.mo",
     "../Template/SCodeDumpTpl.mo",
     "../Template/SimCodeDump.mo",
+    "../Template/TaskSystemDump.mo",
     "../Template/TplAbsyn.mo",
     "../Template/TplCodegen.mo",
     "../Template/TplMain.mo",
