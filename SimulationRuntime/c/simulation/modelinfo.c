@@ -67,10 +67,10 @@ static void convertProfileData(const char *prefix, int numFnsAndBlocks)
   int i;
   uint32_t step;
   double time[2];
-  uint32_t iarr[numFnsAndBlocks];
-  double darr[numFnsAndBlocks];
-  char inBinary[len + 11];
-  char outCsv[len + 10];
+  uint32_t *iarr = (uint32_t*)GC_malloc(sizeof(uint32_t)*numFnsAndBlocks);
+  double *darr = (double*)GC_malloc(sizeof(double)*numFnsAndBlocks);
+  char *inBinary = (char*)GC_malloc(sizeof(char)*(len + 11));
+  char *outCsv = (char*)GC_malloc(sizeof(char)*(len + 10));
   FILE *fin;
   FILE *fout;
   int fail = 0;
