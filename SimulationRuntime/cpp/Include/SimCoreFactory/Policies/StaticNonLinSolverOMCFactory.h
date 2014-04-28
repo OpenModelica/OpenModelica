@@ -42,18 +42,18 @@ public:
 
    virtual boost::shared_ptr<IAlgLoopSolver> createNonLinSolver(IAlgLoop* algLoop, string solver_name, boost::shared_ptr<INonLinSolverSettings> solver_settings)
    {
-	   if(solver_name.compare("newton")==0)
-	   {
-		   boost::shared_ptr<IAlgLoopSolver> solver = boost::shared_ptr<IAlgLoopSolver>(new Newton(algLoop,solver_settings.get()));
-		   return solver;
-	   }
-	   else if(solver_name.compare("kinsol")==0)
-	   {
-	       boost::shared_ptr<IAlgLoopSolver> settings = boost::shared_ptr<IAlgLoopSolver>(new Kinsol(algLoop,solver_settings.get()));
-	       return settings;
-	   }
-	   else
-	     return NonLinSolverOMCFactory<CreationPolicy>::createNonLinSolver(algLoop, solver_name, solver_settings);
+     if(solver_name.compare("newton")==0)
+     {
+       boost::shared_ptr<IAlgLoopSolver> solver = boost::shared_ptr<IAlgLoopSolver>(new Newton(algLoop,solver_settings.get()));
+       return solver;
+     }
+     else if(solver_name.compare("kinsol")==0)
+     {
+         boost::shared_ptr<IAlgLoopSolver> settings = boost::shared_ptr<IAlgLoopSolver>(new Kinsol(algLoop,solver_settings.get()));
+         return settings;
+     }
+     else
+       return NonLinSolverOMCFactory<CreationPolicy>::createNonLinSolver(algLoop, solver_name, solver_settings);
 
    }
 };
