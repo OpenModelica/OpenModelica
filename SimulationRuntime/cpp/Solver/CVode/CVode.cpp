@@ -43,6 +43,10 @@ Cvode::~Cvode()
 
 void Cvode::initialize()
 {
+#ifdef SCOREP_TRACE
+  SCOREP_USER_REGION_DEFINE(cvode_initialization_handle)
+  SCOREP_USER_REGION_BEGIN(cvode_initialization_handle, "Cvode_initialization", SCOREP_USER_REGION_TYPE_FUNCTION )
+#endif
   _properties = dynamic_cast<ISystemProperties*>(_system);
   _continuous_system = dynamic_cast<IContinuous*>(_system);
   _event_system =  dynamic_cast<IEvent*>(_system);
@@ -192,6 +196,9 @@ void Cvode::initialize()
     //
 
   }
+#ifdef SCOREP_TRACE
+  SCOREP_USER_REGION_END(cvode_initialization_handle)
+#endif
 }
 
 void Cvode::solve(const SOLVERCALL action)

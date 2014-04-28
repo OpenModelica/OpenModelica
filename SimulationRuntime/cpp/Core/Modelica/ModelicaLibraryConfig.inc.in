@@ -4,6 +4,7 @@ LIBOMCPPSIMULATIONSETTINGS = "$(OMHOME)/lib/omc/@LIBINSTALLEXT@/lib@SimulationSe
 LIBOMCPPSYSTEM = "$(OMHOME)/lib/omc/@LIBINSTALLEXT@/lib@SystemName@.a"
 LIBOMCPPDATAEXCHANGE = "$(OMHOME)/lib/omc/@LIBINSTALLEXT@/lib@DataExchangeName@_static.a"
 LIBOMCPPNEWTON = "$(OMHOME)/lib/omc/@LIBINSTALLEXT@/lib@NewtonName@.a"
+LIBOMCPPKINSOL = "$(OMHOME)/lib/omc/@LIBINSTALLEXT@/lib@KinsolName@.a"
 LIBOMCPPCVODE = "$(OMHOME)/lib/omc/@LIBINSTALLEXT@/lib@CVodeName@.a"
 LIBOMCPPSOLVER = "$(OMHOME)/lib/omc/@LIBINSTALLEXT@/lib@SolverName@.a"
 LIBOMCPPMATH = "$(OMHOME)/lib/omc/@LIBINSTALLEXT@/lib@MathName@.a"

@@ -8,7 +8,9 @@
 #include <nvector/nvector_serial.h>
 #include <cvodes/cvodes_dense.h>
 
-
+#ifdef SCOREP_TRACE
+#include <scorep/SCOREP_User.h>
+#endif
 
 /*****************************************************************************/
 // Cvode aus dem SUNDIALS-Package
