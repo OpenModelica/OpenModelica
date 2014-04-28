@@ -2630,8 +2630,22 @@ algorithm
 
     case (cache,_,"checkTaskGraph",_,st,_)
       then (cache,Values.STRING("Error in checkTaskGraph"),st);
-
-    case (cache,_,"getPlotSilent",{},st,_)
+        
+    case (cache,env,"checkCodeGraph",{Values.STRING(filename),Values.STRING(filename_1)},st,_)
+      equation
+        pwd = System.pwd();
+        pd = System.pathDelimiter();
+        filename = Util.if_(System.substring(filename,1,1) ==& "/",filename,stringAppendList({pwd,pd,filename}));
+        filename_1 = Util.if_(System.substring(filename_1,1,1) ==& "/",filename_1,stringAppendList({pwd,pd,filename_1}));
+        strings = TaskGraphResults.checkCodeGraph(filename, filename_1);
+        cvars = List.map(strings,ValuesUtil.makeString);
+        v = ValuesUtil.makeArray(cvars);
+      then (cache,v,st);
+    
+    case (cache,env,"checkCodeGraph",_,st,_)
+      then (cache,Values.STRING("Error in checkCodeGraph"),st);
+        
+    case (cache,env,"getPlotSilent",{},st,_)
       equation
         b = Config.getPlotSilent();
       then

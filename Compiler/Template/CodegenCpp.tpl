@@ -1618,7 +1618,7 @@ template functionBody(Function fn, Boolean inFunc,SimCode simCode)
  "Generates the body for a function."
 ::=
 match fn
-  /*workarroung until we support these functions*/
+  /*workarround until we support these functions*/
   case fn as FUNCTION(__)
   case fn as EXTERNAL_FUNCTION(__)
   case fn as RECORD_CONSTRUCTOR(__)
@@ -1640,7 +1640,7 @@ match fn
        case "OpenModelica_Scripting_regex"
              then ""
        else
- /* end workarroung */
+ /* end workarround */
   match fn
   case fn as FUNCTION(__)           then functionBodyRegularFunction(fn, inFunc,simCode)
   case fn as EXTERNAL_FUNCTION(__)  then functionBodyExternalFunction(fn, inFunc,simCode)
@@ -1709,7 +1709,7 @@ template functionHeaderBody2(Function fn,SimCode simCode)
  "Generates the body for a function."
 ::=
   match fn
-  /*workarroung until we support these functions*/
+  /*workarround until we support these functions*/
   case fn as FUNCTION(__)
   case fn as EXTERNAL_FUNCTION(__)
   case fn as RECORD_CONSTRUCTOR(__)
@@ -1731,7 +1731,7 @@ template functionHeaderBody2(Function fn,SimCode simCode)
        case "OpenModelica_Scripting_regex"
              then ""
        else
- /* end workarroung */
+ /* end workarround */
   match fn
   case fn as FUNCTION(__)           then functionHeaderRegularFunction2(fn,simCode)
   case fn as EXTERNAL_FUNCTION(__)  then functionHeaderRegularFunction2(fn,simCode)
@@ -1874,8 +1874,8 @@ match fn
  case FUNCTION(outVars={var}) then
  let fname = underscorePath(name)
   << /*default return type*/
-    typedef <%funReturnDefinition1(var,simCode)%>  <%fname%>RetType;
-    typedef <%funReturnDefinition2(var,simCode)%>  <%fname%>RefRetType;
+    typedef <%funReturnDefinition1(var,simCode)%>  <%fname%>RetType /* functionHeaderRegularFunction1 */;
+    typedef <%funReturnDefinition2(var,simCode)%>  <%fname%>RefRetType /* functionHeaderRegularFunction1 */;
   >>
 
 
@@ -1894,7 +1894,7 @@ case FUNCTION(outVars= vars as _::_) then
       }
       TUPLE_ARRAY data;
     };
-    typedef <%fname%>Type <%fname%>RetType;
+    typedef <%fname%>Type <%fname%>RetType /* functionHeaderRegularFunction1 */;
   >>
 
  case RECORD_CONSTRUCTOR(__) then
@@ -1903,9 +1903,26 @@ case FUNCTION(outVars= vars as _::_) then
 
       <<
 
-      typedef <%fname%>Type <%fname%>RetType;
+      typedef <%fname%>Type <%fname%>RetType /* functionHeaderRegularFunction1 */;
       >>
-
+ case PARALLEL_FUNCTION(__) then
+    let fname = underscorePath(name)
+     <<
+     //PARALLEL_FUNCTION
+     //typedef <%fname%>Type <%fname%>RetType out of functionHeaderRegularFunction1;
+     >>
+ case KERNEL_FUNCTION(__) then
+    let fname = underscorePath(name)
+     <<
+     //KERNEL_FUNCTION
+     //typedef <%fname%>Type <%fname%>RetType out of functionHeaderRegularFunction1;
+     >>
+ case EXTERNAL_FUNCTION(__) then 
+    let fname = underscorePath(name)
+     <<
+     //EXTERNAL_FUNCTION
+     //typedef <%fname%>Type <%fname%>RetType out of functionHeaderRegularFunction1;
+     >>        
 end functionHeaderRegularFunction1;
 
 template tupplearrayassign(Variable var,Integer index)
@@ -1935,14 +1952,40 @@ case EXTERNAL_FUNCTION(outVars={var}) then
 
   let fname = underscorePath(name)
   <<
-    typedef  <%funReturnDefinition1(var,simCode)%> <%fname%>RetType;
+    typedef  <%funReturnDefinition1(var,simCode)%> <%fname%>RetType /* functionHeaderExternFunction */;
   >>
  case EXTERNAL_FUNCTION(outVars=_::_) then
 
   let fname = underscorePath(name)
   <<
-    typedef boost::tuple< <%outVars |> var => funReturnDefinition1(var,simCode) ;separator=", "%> >  <%fname%>RetType;
+    typedef boost::tuple< <%outVars |> var => funReturnDefinition1(var,simCode) ;separator=", "%> >  <%fname%>RetType /* functionHeaderExternFunction */;
   >>
+ case FUNCTION(outVars= vars as _::_) then 
+  let fname = underscorePath(name)
+  <<
+  //FUNCTION
+  //typedef <%fname%>Type <%fname%>RetType out of functionHeaderExternFunction;
+  >>
+
+ case RECORD_CONSTRUCTOR(__) then
+  let fname = underscorePath(name)
+  <<
+  //RECORD_CONSTRUCTOR
+  //typedef <%fname%>Type <%fname%>RetType out of functionHeaderExternFunction;
+  >>
+ case PARALLEL_FUNCTION(__) then
+  let fname = underscorePath(name)
+  <<
+  //PARALLEL_FUNCTION
+  //typedef <%fname%>Type <%fname%>RetType out of functionHeaderExternFunction;
+  >>
+ case KERNEL_FUNCTION(__) then
+  let fname = underscorePath(name)
+  <<
+  //KERNEL_FUNCTION
+  //typedef <%fname%>Type <%fname%>RetType out of functionHeaderExternFunction;
+  >>
+  
 end functionHeaderExternFunction;
 
 template recordDeclarationHeader(RecordDeclaration recDecl,SimCode simCode)
@@ -2031,11 +2074,13 @@ case FUNCTION(outVars={}) then
 case FUNCTION(outVars=_) then
   let fname = underscorePath(name)
   <<
+        /* functionHeaderRegularFunction2 */
         <%fname%>RetType <%fname%>(<%functionArguments |> var => funArgDefinition(var,simCode) ;separator=", "%>);
   >>
 case EXTERNAL_FUNCTION(outVars=var::_) then
 let fname = underscorePath(name)
    <<
+        /* functionHeaderRegularFunction2 */
         <%fname%>RetType <%fname%>(<%funArgs |> var => funArgDefinition(var,simCode) ;separator=", "%>);
    >>
 case EXTERNAL_FUNCTION(outVars={}) then
@@ -2053,11 +2098,13 @@ case FUNCTION(outVars={}) then ""
 case FUNCTION(outVars=_) then
   let fname = underscorePath(name)
   <<
+        /* functionHeaderRegularFunction3 */
         <%fname%>RetType _<%fname%>;
   >>
  case EXTERNAL_FUNCTION(outVars=var::_) then
  let fname = underscorePath(name)
  <<
+        /* functionHeaderRegularFunction3 */
         <%fname%>RetType _<%fname%>;
   >>
 end functionHeaderRegularFunction3;
@@ -2069,7 +2116,7 @@ match fn
 case FUNCTION(__) then
   let()= System.tmpTickReset(1)
   let fname = underscorePath(name)
-  let retType = if outVars then '<%fname%>RetType' else "void"
+  let retType = if outVars then '<%fname%>RetType /* functionBodyRegularFunction */' else "void"
   let &varDecls = buffer "" /*BUFD*/
   let &varInits = buffer "" /*BUFD*/
   //let retVar = if outVars then tempDecl(retType, &varDecls /*BUFD*/)
@@ -2103,6 +2150,7 @@ case FUNCTION(__) then
   <<
   <%retType%> Functions::<%fname%>(<%functionArguments |> var => funArgDefinition(var,simCode) ;separator=", "%>)
   {
+    //functionBodyRegularFunction
     <%varDecls%>
     <%outVarInits%>
     <%varInits%>
@@ -2586,7 +2634,7 @@ need to initialize."
 match var
 case var as FUNCTION_PTR(__) then
   let typelist = (args |> arg => mmcVarType(arg) ;separator=", ")
-  let rettype = '<%name%>RetType'
+  let rettype = '<%name%>RetType /* functionArg */'
   match tys
     case {} then
       let &varInit += '_<%name%> = (void(*)(<%typelist%>)) <%name%><%\n%>;'
@@ -7074,7 +7122,8 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let retVar = tempDecl(retType, &varDecls /*BUFD*/)
     let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
     if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
-    case CALL(path=IDENT(name="log10"),
+    
+   case CALL(path=IDENT(name="log10"),
             expLst={e1},attr=attr as CALL_ATTR(__)) then
     let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")
     let funName = '<%underscorePath(path)%>'
@@ -7082,6 +7131,16 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let retVar = tempDecl(retType, &varDecls /*BUFD*/)
     let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
     if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
+
+   case CALL(path=IDENT(name="sum"),
+            expLst={e1},attr=attr as CALL_ATTR(__)) then
+    let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")
+    let funName = '<%underscorePath(path)%>'
+    let retType = expTypeShort(attr.ty) /* exp. sum */
+    let retVar = tempDecl(retType, &varDecls /*BUFD*/)
+    let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%>sum(<%argStr%>);<%\n%>'
+    if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
+    
    case CALL(path=IDENT(name="acos"),
             expLst={e1},attr=attr as CALL_ATTR(__)) then
     let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")
@@ -7357,7 +7416,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
 
     let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")
     let funName = '<%underscorePath(path)%>'
-    let retType = '<%funName%>RetType'
+    let retType = '<%funName%>RetType /* undefined */'
     let retVar = tempDecl(retType, &varDecls)
     let arraytpye =  'multi_array_ref<<%expTypeShort(ty)%>,<%listLength(dims)%>>'
     let &preExp += match context
@@ -7382,7 +7441,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     else
     /*end workaround*/
     let argStr = (explist |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")
-    let retType = '<%funName%>RetType'
+    let retType = '<%funName%>RetType /* undefined */'
     let retVar = tempDecl(retType, &varDecls)
     let &preExp += match context case FUNCTION_CONTEXT(__) then'<%if retVar then '<%retVar%> = '%><%funName%>(<%argStr%>);<%\n%>'
     else '<%if retVar then '<%retVar%> = '%>(_functions.<%funName%>(<%argStr%>));<%\n%>'

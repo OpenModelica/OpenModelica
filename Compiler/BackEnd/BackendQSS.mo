@@ -47,11 +47,12 @@ public import Absyn;
 public import Util;
 public import ExpressionDump;
 public import Expression;
-public import HpcOmScheduler;
+
 
 protected import BackendEquation;
 protected import BackendVariable;
 protected import ComponentReference;
+protected import HpcOmSimCode;
 protected import List;
 protected import SimCodeUtil;
 
@@ -1011,14 +1012,15 @@ algorithm
       list<SimCode.JacobianMatrix> jacobianMatrixes;
       list<SimCode.SimEqSystem> eqs;
       list<BackendDAE.TimeEvent> timeEvents;
-      Option<HpcOmScheduler.ScheduleSimCode> hpcOmSchedule;
+      Option<HpcOmSimCode.Schedule> hpcOmSchedule;
       Option<SimCode.BackendMapping> backendMapping;
+      Option<HpcOmSimCode.MemoryMap> hpOmMemoryMap;
 
     case (SimCode.SIMCODE(modelInfo,literals,recordDecls,externalFunctionIncludes,allEquations,odeEquations,
           algebraicEquations,residualEquations,useSymbolicInitialization,useHomotopy,initialEquations,startValueEquations,nominalValueEquations,minValueEquations,maxValueEquations,
           parameterEquations,removedEquations,algorithmAndEquationAsserts,equationsForZeroCrossings,jacobianEquations,stateSets,constraints,classAttributes,zeroCrossings,relations,
           timeEvents,whenClauses,discreteModelVars,extObjInfo,makefileParams,
-          delayedExps,jacobianMatrixes,simulationSettingsOpt,fileNamePrefix,crefToSimVarHT,hpcOmSchedule,backendMapping),_)
+          delayedExps,jacobianMatrixes,simulationSettingsOpt,fileNamePrefix,hpcOmSchedule,hpOmMemoryMap,crefToSimVarHT,backendMapping),_)
     equation
       {eqs} = odeEquations;
       eqs = List.map1(eqs,replaceZC,zc_exps);
@@ -1027,7 +1029,7 @@ algorithm
                          initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations, parameterEquations,
                          removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes,
                          zeroCrossings, relations, timeEvents, whenClauses, discreteModelVars, extObjInfo,
-                         makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT,hpcOmSchedule,backendMapping);
+                         makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpOmMemoryMap, crefToSimVarHT,backendMapping);
 
   end match;
 end replaceDiscontsInOde;

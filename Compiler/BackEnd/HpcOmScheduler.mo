@@ -37,6 +37,7 @@ encapsulated package HpcOmScheduler
 "
 
 public import HpcOmTaskGraph;
+public import HpcOmSimCode;
 
 protected import BackendDAEUtil;
 protected import Debug;
@@ -45,57 +46,6 @@ protected import HpcOmSchedulerExt;
 protected import List;
 protected import System;
 protected import Util;
-
-public uniontype Task
-  record CALCTASK //Task which calculates something
-    Integer weighting;
-    Integer index;
-    Real calcTime;
-    Real timeFinished;
-    Integer threadIdx;
-    list<Integer> eqIdc;
-  end CALCTASK;
-  record CALCTASK_LEVEL
-    list<Integer> eqIdc;
-    Integer nodeIdx; //index of the graph-node
-  end CALCTASK_LEVEL;
-  record ASSIGNLOCKTASK //Task which assignes a lock
-    String lockId;
-  end ASSIGNLOCKTASK;
-  record RELEASELOCKTASK //Task which releases a lock
-    String lockId;
-  end RELEASELOCKTASK;
-  record TASKEMPTY //Dummy Task
-  end TASKEMPTY;
-end Task;
-
-public uniontype Schedule   // stores all scheduling-informations
-  record LEVELSCHEDULE
-    list<list<Task>> tasksOfLevels; //List of tasks solved in the same level in parallel
-  end LEVELSCHEDULE;
-  record THREADSCHEDULE
-    array<list<Task>> threadTasks; //List of tasks assigned to the thread <%idx%>
-    list<String> lockIdc;
-  end THREADSCHEDULE;
-  record TASKDEPSCHEDULE
-    list<tuple<Task,list<Integer>>> tasks; //topological sorted tasks with <taskIdx, parentTaskIdc>
-  end TASKDEPSCHEDULE;
-  record EMPTYSCHEDULE  // a dummy schedule. used if there is no ODE-system
-  end EMPTYSCHEDULE;
-end Schedule;
-
-public uniontype ScheduleSimCode //Schedule-structure for sim code
-  record LEVELSCHEDULESC
-    list<list<Task>> tasksOfLevels;
-  end LEVELSCHEDULESC;
-  record THREADSCHEDULESC
-    list<list<Task>> threadTasks;
-    list<String> lockIdc;
-  end THREADSCHEDULESC;
-  record TASKDEPSCHEDULESC
-    list<tuple<Task,list<Integer>>> tasks; //topological sorted tasks with <taskIdx, parentTaskIdc>
-  end TASKDEPSCHEDULESC;
-end ScheduleSimCode;
 
 public type TaskAssignment = array<Integer>; //the information which node <idx> is assigned to which processor <value>
 
@@ -110,17 +60,17 @@ public function createListSchedule "function createListSchedule
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   input Integer iNumberOfThreads;
   input array<list<Integer>> iSccSimEqMapping; //Maps each scc to a list of simEqs
-  output Schedule oSchedule;
+  output HpcOmSimCode.Schedule oSchedule;
 protected
   HpcOmTaskGraph.TaskGraph taskGraphT;
-  list<tuple<Task,Integer>> nodeList_refCount; //list of nodes which are ready to schedule
-  list<Task> nodeList;
+  list<tuple<HpcOmSimCode.Task,Integer>> nodeList_refCount; //list of nodes which are ready to schedule
+  list<HpcOmSimCode.Task> nodeList;
   list<Integer> rootNodes;
   array<Real> threadReadyTimes;
-  array<tuple<Task,Integer>> allTasks;
-  array<list<Task>> threadTasks;
+  array<tuple<HpcOmSimCode.Task,Integer>> allTasks;
+  array<list<HpcOmSimCode.Task>> threadTasks;
   array<list<tuple<Integer, Integer, Integer>>> commCosts;
-  Schedule tmpSchedule;
+  HpcOmSimCode.Schedule tmpSchedule;
 algorithm
   HpcOmTaskGraph.TASKGRAPHMETA(commCosts=commCosts) := iTaskGraphMeta;
   taskGraphT := HpcOmTaskGraph.transposeTaskGraph(iTaskGraph);
@@ -131,7 +81,7 @@ algorithm
   nodeList := List.sort(nodeList, compareTasksByWeighting);
   threadReadyTimes := arrayCreate(iNumberOfThreads,0.0);
   threadTasks := arrayCreate(iNumberOfThreads,{});
-  tmpSchedule := THREADSCHEDULE(threadTasks,{});
+  tmpSchedule := HpcOmSimCode.THREADSCHEDULE(threadTasks,{});
   (tmpSchedule,_) := createListSchedule1(nodeList,threadReadyTimes, iTaskGraph, taskGraphT, allTasks, commCosts, iSccSimEqMapping, getLocksByPredecessorList, tmpSchedule);
   tmpSchedule := addSuccessorLocksToSchedule(iTaskGraph,allTasks,addReleaseLocksToSchedule,tmpSchedule);
   //() := printSchedule(tmpSchedule);
@@ -141,51 +91,51 @@ end createListSchedule;
 protected function createListSchedule1 "function createListSchedule1
   author: marcusw
   Create a list schedule, starting with the given nodeList and ready times. This method will add calcTasks and assignLockTasks, but no releaseLockTasks!"
-  input list<Task> iNodeList; //the sorted nodes -> this method will pick the first task
+  input list<HpcOmSimCode.Task> iNodeList; //the sorted nodes -> this method will pick the first task
   input array<Real> iThreadReadyTimes; //the time until the thread is ready to handle a new task
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraph iTaskGraphT;
-  input array<tuple<Task,Integer>> iAllTasks; //all tasks with ref-counter
+  input array<tuple<HpcOmSimCode.Task,Integer>> iAllTasks; //all tasks with ref-counter
   input array<list<tuple<Integer, Integer, Integer>>> iCommCosts;
   input array<list<Integer>> iSccSimEqMapping; //Maps each scc to a list of simEqs
   input FuncType iLockWithPredecessorHandler; //Function which handles locks to all predecessors
-  input Schedule iSchedule;
-  output Schedule oSchedule;
+  input HpcOmSimCode.Schedule iSchedule;
+  output HpcOmSimCode.Schedule oSchedule;
   output array<Real> oThreadReadyTimes;
 
   partial function FuncType
     input Integer iNodeIdx;
     input Integer iThreadIdx;
-    input list<tuple<Task,Integer>> iPredecessors;
-    output list<Task> oTasks; //lock tasks
+    input list<tuple<HpcOmSimCode.Task,Integer>> iPredecessors;
+    output list<HpcOmSimCode.Task> oTasks; //lock tasks
     output list<String> oLockNames; //lock names
   end FuncType;
 protected
-  Task head, newTask;
+  HpcOmSimCode.Task head, newTask;
   Integer newTaskRefCount;
-  list<Task> rest;
+  list<HpcOmSimCode.Task> rest;
   Real lastChildFinishTime; //The time when the last child has finished calculation
-  Task lastChild;
-  list<tuple<Task,Integer>> predecessors, successors;
+  HpcOmSimCode.Task lastChild;
+  list<tuple<HpcOmSimCode.Task,Integer>> predecessors, successors;
   list<Integer> successorIdc;
   list<String> lockIdc, newLockIdc;
   array<Real> threadFinishTimes;
   Integer firstEq;
-  array<list<Task>> allThreadTasks;
-  list<Task> threadTasks, lockTasks;
+  array<list<HpcOmSimCode.Task>> allThreadTasks;
+  list<HpcOmSimCode.Task> threadTasks, lockTasks;
   Integer threadId;
   Real threadFinishTime;
   array<Real> tmpThreadReadyTimes;
-  list<Task> tmpNodeList;
+  list<HpcOmSimCode.Task> tmpNodeList;
   Integer weighting;
   Integer index;
   Real calcTime;
   list<Integer> eqIdc, simEqIdc;
-  array<tuple<Task,Integer>> tmpAllTasks;
-  Schedule tmpSchedule;
+  array<tuple<HpcOmSimCode.Task,Integer>> tmpAllTasks;
+  HpcOmSimCode.Schedule tmpSchedule;
 algorithm
   (oSchedule,oThreadReadyTimes) := matchcontinue(iNodeList,iThreadReadyTimes, iTaskGraph, iTaskGraphT, iAllTasks, iCommCosts, iSccSimEqMapping, iLockWithPredecessorHandler, iSchedule)
-    case((head as CALCTASK(weighting=weighting,index=index,calcTime=calcTime,eqIdc=(eqIdc as firstEq::_)))::rest,_,_,_,_,_,_,_,THREADSCHEDULE(threadTasks=allThreadTasks, lockIdc=lockIdc))
+    case((head as HpcOmSimCode.CALCTASK(weighting=weighting,index=index,calcTime=calcTime,eqIdc=(eqIdc as firstEq::_)))::rest,_,_,_,_,_,_,_,HpcOmSimCode.THREADSCHEDULE(threadTasks=allThreadTasks, lockIdc=lockIdc))
       equation
         //get all predecessors (childs)
         (predecessors, _) = getSuccessorsByTask(head, iTaskGraphT, iAllTasks);
@@ -195,7 +145,7 @@ algorithm
 
         //get last child finished time
         lastChild = getTaskWithHighestFinishTime(predecessors, NONE());
-        CALCTASK(timeFinished=lastChildFinishTime) = lastChild;
+        HpcOmSimCode.CALCTASK(timeFinished=lastChildFinishTime) = lastChild;
         //find the best thread for scheduling
         threadFinishTimes = calculateFinishTimes(lastChildFinishTime, head, predecessors, iCommCosts, iThreadReadyTimes);
         ((threadId, threadFinishTime)) = getThreadFinishTimesMin(1,threadFinishTimes,-1,0.0);
@@ -213,7 +163,7 @@ algorithm
         //print("Simcodeeq idc: " +& stringDelimitList(List.map(simEqIdc, intString), ",") +& "\n");
         //simEqIdc has the wrong order -> reverse list
         simEqIdc = listReverse(simEqIdc);
-        newTask = CALCTASK(weighting,index,calcTime,threadFinishTime,threadId,simEqIdc);
+        newTask = HpcOmSimCode.CALCTASK(weighting,index,calcTime,threadFinishTime,threadId,simEqIdc);
         threadTasks = newTask::threadTasks;
         allThreadTasks = arrayUpdate(allThreadTasks,threadId,threadTasks);
         //print("Successors: " +& stringDelimitList(List.map(successorIdc, intString), ",") +& "\n");
@@ -223,9 +173,9 @@ algorithm
         tmpNodeList = List.sort(tmpNodeList, compareTasksByWeighting);
         ((_,newTaskRefCount)) = arrayGet(iAllTasks,index);
         _ = arrayUpdate(iAllTasks,index,(newTask,newTaskRefCount));
-        (tmpSchedule,tmpThreadReadyTimes) = createListSchedule1(tmpNodeList,tmpThreadReadyTimes,iTaskGraph, iTaskGraphT, tmpAllTasks, iCommCosts, iSccSimEqMapping, iLockWithPredecessorHandler, THREADSCHEDULE(allThreadTasks,lockIdc));
+        (tmpSchedule,tmpThreadReadyTimes) = createListSchedule1(tmpNodeList,tmpThreadReadyTimes,iTaskGraph, iTaskGraphT, tmpAllTasks, iCommCosts, iSccSimEqMapping, iLockWithPredecessorHandler, HpcOmSimCode.THREADSCHEDULE(allThreadTasks,lockIdc));
       then (tmpSchedule,tmpThreadReadyTimes);
-    case((head as CALCTASK(weighting=weighting,index=index,calcTime=calcTime,eqIdc=(eqIdc as firstEq::_)))::rest,_,_,_,_,_,_,_,THREADSCHEDULE(threadTasks=allThreadTasks,lockIdc=lockIdc))
+    case((head as HpcOmSimCode.CALCTASK(weighting=weighting,index=index,calcTime=calcTime,eqIdc=(eqIdc as firstEq::_)))::rest,_,_,_,_,_,_,_,HpcOmSimCode.THREADSCHEDULE(threadTasks=allThreadTasks,lockIdc=lockIdc))
       equation
         (successors, successorIdc) = getSuccessorsByTask(head, iTaskGraph, iAllTasks);
         //print("Handle task " +& intString(index) +& " with 0 child nodes and " +& intString(listLength(successorIdc)) +& " parent nodes.\n");
@@ -240,7 +190,7 @@ algorithm
         simEqIdc = List.flatten(List.map1(eqIdc,getSccSimEqMappingByIndex,iSccSimEqMapping));
         //simEqIdc has the wrong order -> reverse list
         simEqIdc = listReverse(simEqIdc);
-        newTask = CALCTASK(weighting,index,calcTime,threadFinishTime,threadId,simEqIdc);
+        newTask = HpcOmSimCode.CALCTASK(weighting,index,calcTime,threadFinishTime,threadId,simEqIdc);
         allThreadTasks = arrayUpdate(allThreadTasks,threadId,newTask::threadTasks);
         //print("Successors: " +& stringDelimitList(List.map(successorIdc, intString), ",") +& "\n");
         //add all successors with refcounter = 1
@@ -249,7 +199,7 @@ algorithm
         tmpNodeList = List.sort(tmpNodeList, compareTasksByWeighting);
         ((_,newTaskRefCount)) = arrayGet(iAllTasks,index);
         _ = arrayUpdate(iAllTasks,index,(newTask,newTaskRefCount));
-        (tmpSchedule,tmpThreadReadyTimes) = createListSchedule1(tmpNodeList,tmpThreadReadyTimes,iTaskGraph, iTaskGraphT, tmpAllTasks, iCommCosts, iSccSimEqMapping, iLockWithPredecessorHandler, THREADSCHEDULE(allThreadTasks,lockIdc));
+        (tmpSchedule,tmpThreadReadyTimes) = createListSchedule1(tmpNodeList,tmpThreadReadyTimes,iTaskGraph, iTaskGraphT, tmpAllTasks, iCommCosts, iSccSimEqMapping, iLockWithPredecessorHandler, HpcOmSimCode.THREADSCHEDULE(allThreadTasks,lockIdc));
       then (tmpSchedule,tmpThreadReadyTimes);
     case({},_,_,_,_,_,_,_,_) then (iSchedule,iThreadReadyTimes);
     else
@@ -269,17 +219,17 @@ public function createListScheduleReverse "function createListScheduleReverse
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   input Integer iNumberOfThreads;
   input array<list<Integer>> iSccSimEqMapping; //Maps each scc to a list of simEqs
-  output Schedule oSchedule;
+  output HpcOmSimCode.Schedule oSchedule;
 protected
   HpcOmTaskGraph.TaskGraph taskGraphT;
-  list<tuple<Task,Integer>> nodeList_refCount; //list of nodes which are ready to schedule
-  list<Task> nodeList;
+  list<tuple<HpcOmSimCode.Task,Integer>> nodeList_refCount; //list of nodes which are ready to schedule
+  list<HpcOmSimCode.Task> nodeList;
   list<Integer> leaveNodes;
   array<Real> threadReadyTimes;
-  array<tuple<Task,Integer>> allTasks;
-  array<list<Task>> threadTasks;
+  array<tuple<HpcOmSimCode.Task,Integer>> allTasks;
+  array<list<HpcOmSimCode.Task>> threadTasks;
   array<list<tuple<Integer, Integer, Integer>>> commCosts, commCostsT;
-  Schedule tmpSchedule;
+  HpcOmSimCode.Schedule tmpSchedule;
   list<String> lockIdc;
 algorithm
   HpcOmTaskGraph.TASKGRAPHMETA(commCosts=commCosts) := iTaskGraphMeta;
@@ -294,40 +244,40 @@ algorithm
   nodeList := List.sort(nodeList, compareTasksByWeighting);
   threadReadyTimes := arrayCreate(iNumberOfThreads,0.0);
   threadTasks := arrayCreate(iNumberOfThreads,{});
-  tmpSchedule := THREADSCHEDULE(threadTasks,{});
+  tmpSchedule := HpcOmSimCode.THREADSCHEDULE(threadTasks,{});
   (tmpSchedule,_) := createListSchedule1(nodeList,threadReadyTimes, taskGraphT, iTaskGraph, allTasks, commCostsT, iSccSimEqMapping, getLocksByPredecessorListReverse, tmpSchedule);
 
   tmpSchedule := addSuccessorLocksToSchedule(taskGraphT,allTasks,addAssignLocksToSchedule,tmpSchedule);
-  THREADSCHEDULE(threadTasks=threadTasks,lockIdc=lockIdc) := tmpSchedule;
+  HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks,lockIdc=lockIdc) := tmpSchedule;
   threadTasks := Util.arrayMap(threadTasks, listReverse);
-  tmpSchedule := THREADSCHEDULE(threadTasks,lockIdc);
+  tmpSchedule := HpcOmSimCode.THREADSCHEDULE(threadTasks,lockIdc);
   //() := printSchedule(tmpSchedule);
   oSchedule := tmpSchedule;
 end createListScheduleReverse;
 
 protected function addSuccessorLocksToSchedule
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
-  input array<tuple<Task,Integer>> iAllTasks;
+  input array<tuple<HpcOmSimCode.Task,Integer>> iAllTasks;
   input FuncType iCreateLockFunction;
-  input Schedule iSchedule;
-  output Schedule oSchedule;
+  input HpcOmSimCode.Schedule iSchedule;
+  output HpcOmSimCode.Schedule oSchedule;
 
   partial function FuncType
-    input tuple<Task,Integer> iSuccessorTask;
+    input tuple<HpcOmSimCode.Task,Integer> iSuccessorTask;
     input Integer iTaskIdx;
-    input list<Task> iReleaseTasks;
-    output list<Task> oReleaseTasks;
+    input list<HpcOmSimCode.Task> iReleaseTasks;
+    output list<HpcOmSimCode.Task> oReleaseTasks;
   end FuncType;
 protected
-  array<list<Task>> allThreadTasks;
-  Schedule tmpSchedule;
+  array<list<HpcOmSimCode.Task>> allThreadTasks;
+  HpcOmSimCode.Schedule tmpSchedule;
   list<String> lockIdc;
 algorithm
   oSchedule := match(iTaskGraph,iAllTasks,iCreateLockFunction,iSchedule)
-    case(_,_,_,THREADSCHEDULE(threadTasks=allThreadTasks,lockIdc=lockIdc))
+    case(_,_,_,HpcOmSimCode.THREADSCHEDULE(threadTasks=allThreadTasks,lockIdc=lockIdc))
       equation
         ((allThreadTasks,_)) = Util.arrayFold3(allThreadTasks, addSuccessorLocksToSchedule0, iTaskGraph, iAllTasks, iCreateLockFunction, (allThreadTasks,1));
-        tmpSchedule = THREADSCHEDULE(allThreadTasks,lockIdc);
+        tmpSchedule = HpcOmSimCode.THREADSCHEDULE(allThreadTasks,lockIdc);
     then tmpSchedule;
     else
       equation
@@ -337,23 +287,23 @@ algorithm
 end addSuccessorLocksToSchedule;
 
 protected function addSuccessorLocksToSchedule0
-  input list<Task> iThreadTaskList;
+  input list<HpcOmSimCode.Task> iThreadTaskList;
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
-  input array<tuple<Task,Integer>> iAllTasks;
+  input array<tuple<HpcOmSimCode.Task,Integer>> iAllTasks;
   input FuncType iCreateLockFunction;
-  input tuple<array<list<Task>>, Integer> iThreadTasks; //<schedulerTasks, threadId>
-  output tuple<array<list<Task>>, Integer> oThreadTasks;
+  input tuple<array<list<HpcOmSimCode.Task>>, Integer> iThreadTasks; //<schedulerTasks, threadId>
+  output tuple<array<list<HpcOmSimCode.Task>>, Integer> oThreadTasks;
 
   partial function FuncType
-    input tuple<Task,Integer> iSuccessorTask;
+    input tuple<HpcOmSimCode.Task,Integer> iSuccessorTask;
     input Integer iTaskIdx;
-    input list<Task> iReleaseTasks;
-    output list<Task> oReleaseTasks;
+    input list<HpcOmSimCode.Task> iReleaseTasks;
+    output list<HpcOmSimCode.Task> oReleaseTasks;
   end FuncType;
 protected
   Integer threadId;
-  array<list<Task>> allThreadTasks;
-  list<Task> threadTasks;
+  array<list<HpcOmSimCode.Task>> allThreadTasks;
+  list<HpcOmSimCode.Task> threadTasks;
 algorithm
   (allThreadTasks,threadId) := iThreadTasks;
   threadTasks := List.fold4(iThreadTaskList, addSuccessorLocksToSchedule1, iTaskGraph, iAllTasks, threadId, iCreateLockFunction, {});
@@ -362,27 +312,27 @@ algorithm
 end addSuccessorLocksToSchedule0;
 
 protected function addSuccessorLocksToSchedule1
-  input Task iTask;
+  input HpcOmSimCode.Task iTask;
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
-  input array<tuple<Task,Integer>> iAllTasks;
+  input array<tuple<HpcOmSimCode.Task,Integer>> iAllTasks;
   input Integer iThreadId;
   input FuncType iCreateLockFunction;
-  input list<Task> iThreadTasks; //schedulerTasks
-  output list<Task> oThreadTasks;
+  input list<HpcOmSimCode.Task> iThreadTasks; //schedulerTasks
+  output list<HpcOmSimCode.Task> oThreadTasks;
 
   partial function FuncType
-    input tuple<Task,Integer> iSuccessorTask;
+    input tuple<HpcOmSimCode.Task,Integer> iSuccessorTask;
     input Integer iTaskIdx;
-    input list<Task> iReleaseTasks;
-    output list<Task> oReleaseTasks;
+    input list<HpcOmSimCode.Task> iReleaseTasks;
+    output list<HpcOmSimCode.Task> oReleaseTasks;
   end FuncType;
 protected
   Integer threadIdx,index,listIndex;
-  list<tuple<Task,Integer>> successors;
-  list<Task> tmpThreadTasks, releaseTasks;
+  list<tuple<HpcOmSimCode.Task,Integer>> successors;
+  list<HpcOmSimCode.Task> tmpThreadTasks, releaseTasks;
 algorithm
   oThreadTasks := match(iTask, iTaskGraph, iAllTasks, iThreadId, iCreateLockFunction, iThreadTasks)
-    case(CALCTASK(threadIdx=threadIdx,index=index),_,_,_,_,tmpThreadTasks)
+    case(HpcOmSimCode.CALCTASK(threadIdx=threadIdx,index=index),_,_,_,_,tmpThreadTasks)
       equation
         (successors,_) = getSuccessorsByTask(iTask, iTaskGraph, iAllTasks);
         successors = List.removeOnTrue(threadIdx, compareTaskWithThreadIdx, successors);
@@ -402,34 +352,34 @@ algorithm
 end addSuccessorLocksToSchedule1;
 
 protected function addReleaseLocksToSchedule
-  input tuple<Task,Integer> iSuccessorTask;
+  input tuple<HpcOmSimCode.Task,Integer> iSuccessorTask;
   input Integer iTaskIdx;
-  input list<Task> iReleaseTasks;
-  output list<Task> oReleaseTasks;
+  input list<HpcOmSimCode.Task> iReleaseTasks;
+  output list<HpcOmSimCode.Task> oReleaseTasks;
 protected
-  Task tmpTask, successorTask;
+  HpcOmSimCode.Task tmpTask, successorTask;
   String lockString;
   Integer lockId, successorTaskId;
 algorithm
   (successorTask,_) := iSuccessorTask;
-  CALCTASK(index=successorTaskId) := successorTask;
+  HpcOmSimCode.CALCTASK(index=successorTaskId) := successorTask;
   lockString := intString(successorTaskId) +& "_" +& intString(iTaskIdx);
   tmpTask := convertLockIdToReleaseTask(lockString);
   oReleaseTasks := tmpTask :: iReleaseTasks;
 end addReleaseLocksToSchedule;
 
 protected function addAssignLocksToSchedule
-  input tuple<Task,Integer> iSuccessorTask;
+  input tuple<HpcOmSimCode.Task,Integer> iSuccessorTask;
   input Integer iTaskIdx;
-  input list<Task> iReleaseTasks;
-  output list<Task> oReleaseTasks;
+  input list<HpcOmSimCode.Task> iReleaseTasks;
+  output list<HpcOmSimCode.Task> oReleaseTasks;
 protected
-  Task tmpTask, successorTask;
+  HpcOmSimCode.Task tmpTask, successorTask;
   String lockString;
   Integer lockId, successorTaskId;
 algorithm
   (successorTask,_) := iSuccessorTask;
-  CALCTASK(index=successorTaskId) := successorTask;
+  HpcOmSimCode.CALCTASK(index=successorTaskId) := successorTask;
   lockString := intString(iTaskIdx) +& "_" +& intString(successorTaskId);
   tmpTask := convertLockIdToAssignTask(lockString);
   oReleaseTasks := tmpTask :: iReleaseTasks;
@@ -446,8 +396,8 @@ end getSccSimEqMappingByIndex;
 protected function getLocksByPredecessorList
   input Integer iTaskIdx; //The parent task
   input Integer iThreadIdx; //Thread handling task <%iTaskIdx%>
-  input list<tuple<Task,Integer>> iPredecessorList;
-  output list<Task> oLockTasks;
+  input list<tuple<HpcOmSimCode.Task,Integer>> iPredecessorList;
+  output list<HpcOmSimCode.Task> oLockTasks;
   output list<String> oLockIdc;
 protected
   list<String> tmpLockIdc;
@@ -458,7 +408,7 @@ algorithm
 end getLocksByPredecessorList;
 
 protected function getLockIdcByPredecessorList
-  input tuple<Task,Integer> iPredecessorTask;
+  input tuple<HpcOmSimCode.Task,Integer> iPredecessorTask;
   input Integer iTaskIdx; //The parent task
   input Integer iThreadIdx; //Thread handling task <%iTaskIdx%>
   input list<String> iLockIdc;
@@ -469,7 +419,7 @@ protected
   list<String> tmpLockIdc;
 algorithm
   oLockIdc := matchcontinue(iPredecessorTask,iTaskIdx,iThreadIdx,iLockIdc)
-    case((CALCTASK(threadIdx=threadIdx,index=index),_),_,_,_)
+    case((HpcOmSimCode.CALCTASK(threadIdx=threadIdx,index=index),_),_,_,_)
       equation
         true = intNe(iThreadIdx,threadIdx);
         //print("Adding a new lock for the tasks " +& intString(iTaskIdx) +& " " +& intString(index) +& "\n");
@@ -484,8 +434,8 @@ end getLockIdcByPredecessorList;
 protected function getLocksByPredecessorListReverse
   input Integer iTaskIdx; //The parent task
   input Integer iThreadIdx; //Thread handling task <%iTaskIdx%>
-  input list<tuple<Task,Integer>> iPredecessorList;
-  output list<Task> oLockTasks;
+  input list<tuple<HpcOmSimCode.Task,Integer>> iPredecessorList;
+  output list<HpcOmSimCode.Task> oLockTasks;
   output list<String> oLockIdc;
 protected
   list<String> tmpLockIdc;
@@ -496,7 +446,7 @@ algorithm
 end getLocksByPredecessorListReverse;
 
 protected function getLockIdcByPredecessorListReverse
-  input tuple<Task,Integer> iPredecessorTask;
+  input tuple<HpcOmSimCode.Task,Integer> iPredecessorTask;
   input Integer iTaskIdx; //The parent task
   input Integer iThreadIdx; //Thread handling task <%iTaskIdx%>
   input list<String> iLockIdc;
@@ -507,7 +457,7 @@ protected
   list<String> tmpLockIdc;
 algorithm
   oLockIdc := matchcontinue(iPredecessorTask,iTaskIdx,iThreadIdx,iLockIdc)
-    case((CALCTASK(threadIdx=threadIdx,index=index),_),_,_,_)
+    case((HpcOmSimCode.CALCTASK(threadIdx=threadIdx,index=index),_),_,_,_)
       equation
         true = intNe(iThreadIdx,threadIdx);
         //print("Adding a new lock for the tasks " +& intString(iTaskIdx) +& " " +& intString(index) +& "\n");
@@ -521,33 +471,33 @@ end getLockIdcByPredecessorListReverse;
 
 protected function convertLockIdToAssignTask
   input String iLockId;
-  output Task oAssignTask;
+  output HpcOmSimCode.Task oAssignTask;
 algorithm
-  oAssignTask := ASSIGNLOCKTASK(iLockId);
+  oAssignTask := HpcOmSimCode.ASSIGNLOCKTASK(iLockId);
 end convertLockIdToAssignTask;
 
 protected function convertLockIdToReleaseTask
   input String iLockId;
-  output Task oReleaseTask;
+  output HpcOmSimCode.Task oReleaseTask;
 algorithm
-  oReleaseTask := RELEASELOCKTASK(iLockId);
+  oReleaseTask := HpcOmSimCode.RELEASELOCKTASK(iLockId);
 end convertLockIdToReleaseTask;
 
 protected function updateRefCounterBySuccessorIdc "function updateRefCounterBySuccessorIdc
   author: marcusw
   Decrement the ref-counter off all tasks in the successor-list. If the new ref-counter is 0, the task
   will be append to the second return argument."
-  input array<tuple<Task,Integer>> iAllTasks; //all tasks with ref-counter
+  input array<tuple<HpcOmSimCode.Task,Integer>> iAllTasks; //all tasks with ref-counter
   input list<Integer> iSuccessorIdc;
-  input list<Task> iRefZeroTasks;
-  output array<tuple<Task,Integer>> oAllTasks;
-  output list<Task> oRefZeroTasks; //Tasks with new ref-counter = 0
+  input list<HpcOmSimCode.Task> iRefZeroTasks;
+  output array<tuple<HpcOmSimCode.Task,Integer>> oAllTasks;
+  output list<HpcOmSimCode.Task> oRefZeroTasks; //Tasks with new ref-counter = 0
 protected
   Integer head, currentRefCount;
   list<Integer> rest;
-  list<Task> tmpRefZeroTasks;
-  Task currentTask;
-  array<tuple<Task,Integer>> tmpAllTasks;
+  list<HpcOmSimCode.Task> tmpRefZeroTasks;
+  HpcOmSimCode.Task currentTask;
+  array<tuple<HpcOmSimCode.Task,Integer>> tmpAllTasks;
 
 algorithm
   (oAllTasks,oRefZeroTasks) := matchcontinue(iAllTasks,iSuccessorIdc,iRefZeroTasks)
@@ -596,18 +546,18 @@ end getThreadFinishTimesMin;
 protected function getTaskWithHighestFinishTime "function getTaskWithHighestFinishTime
   author: marcusw
   Pick the task with the highest finish time out of the given task list."
-  input list<tuple<Task,Integer>> iTasks; //Tasks with ref-counter
-  input Option<Task> iCurrentTask;
-  output Task oTask; //The task with the highest finish time
+  input list<tuple<HpcOmSimCode.Task,Integer>> iTasks; //Tasks with ref-counter
+  input Option<HpcOmSimCode.Task> iCurrentTask;
+  output HpcOmSimCode.Task oTask; //The task with the highest finish time
 protected
-  Task head;
-  Task tmpTask;
-  list<tuple<Task,Integer>> tail;
+  HpcOmSimCode.Task head;
+  HpcOmSimCode.Task tmpTask;
+  list<tuple<HpcOmSimCode.Task,Integer>> tail;
   Real timeFinishedHead, timeFinishedCurrent;
 algorithm
   oTask := matchcontinue(iTasks, iCurrentTask)
     case((head,_)::tail, NONE()) then getTaskWithHighestFinishTime(tail, SOME(head));
-    case(((head as CALCTASK(timeFinished=timeFinishedHead)),_)::tail, SOME(CALCTASK(timeFinished=timeFinishedCurrent)))
+    case(((head as HpcOmSimCode.CALCTASK(timeFinished=timeFinishedHead)),_)::tail, SOME(HpcOmSimCode.CALCTASK(timeFinished=timeFinishedCurrent)))
       equation
         true = realGt(timeFinishedHead, timeFinishedCurrent);
       then getTaskWithHighestFinishTime(tail, SOME(head));
@@ -626,18 +576,18 @@ protected function convertTaskGraphToTasks "function convertTaskGraphToTasks
   input HpcOmTaskGraph.TaskGraph iTaskGraphT;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   input FuncType iConverterFunc; //Pointer to function which converts one Task
-  output array<tuple<Task,Integer>> oTasks; //all Tasks with ref_Counter
+  output array<tuple<HpcOmSimCode.Task,Integer>> oTasks; //all Tasks with ref_Counter
   partial function FuncType
     input Integer iNodeIdx;
     input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
-    output Task oTask;
+    output HpcOmSimCode.Task oTask;
   end FuncType;
 protected
-  array<tuple<Task,Integer>> tmpTaskArray;
+  array<tuple<HpcOmSimCode.Task,Integer>> tmpTaskArray;
   array<list<Integer>> inComps;
 algorithm
   //HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps) := iTaskGraphMeta;
-  tmpTaskArray := arrayCreate(arrayLength(iTaskGraphT), ((TASKEMPTY(),0)));
+  tmpTaskArray := arrayCreate(arrayLength(iTaskGraphT), ((HpcOmSimCode.TASKEMPTY(),0)));
   oTasks := convertTaskGraphToTasks1(iTaskGraphMeta,iTaskGraphT,1,iConverterFunc,tmpTaskArray);
 end convertTaskGraphToTasks;
 
@@ -648,20 +598,20 @@ protected function convertTaskGraphToTasks1 "function convertTaskGraphToTasks1
   input HpcOmTaskGraph.TaskGraph iTaskGraphT;
   input Integer iIndex; //Index of current node
   input FuncType iConverterFunc; //Pointer to function which converts one Task
-  input array<tuple<Task,Integer>> iTasks;
-  output array<tuple<Task,Integer>> oTasks;
+  input array<tuple<HpcOmSimCode.Task,Integer>> iTasks;
+  output array<tuple<HpcOmSimCode.Task,Integer>> oTasks;
   partial function FuncType
     input Integer iNodeIdx;
     input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
-    output Task oTask;
+    output HpcOmSimCode.Task oTask;
   end FuncType;
 protected
   array<list<Integer>> inComps;
   array<Integer> nodeMarks;
-  array<tuple<Task,Integer>> tmpTasks;
+  array<tuple<HpcOmSimCode.Task,Integer>> tmpTasks;
   Integer refCount;
   array<tuple<Integer,Real>> exeCosts;
-  Task newTask;
+  HpcOmSimCode.Task newTask;
 algorithm
   oTasks := matchcontinue(iTaskGraphMeta, iTaskGraphT, iIndex, iConverterFunc, iTasks)
     case(_,_,_,_,_)
@@ -682,7 +632,7 @@ protected function convertNodeToTask "function convertNodeToTask
   Convert one TaskGraph-Node to a Scheduler-Task and set weighting = nodeMark."
   input Integer iNodeIdx;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
-  output Task oTask;
+  output HpcOmSimCode.Task oTask;
 protected
   Integer nodeMark, primalComp;
   list<Integer> components;
@@ -700,7 +650,7 @@ algorithm
         //nodeMark = nodeMark * (-1); //switch from LLP to HLP
         //((_,exeCost)) = arrayGet(exeCosts,iNodeIdx);
         ((_,exeCost)) = HpcOmTaskGraph.getExeCost(iNodeIdx,iTaskGraphMeta);
-      then CALCTASK(nodeMark,iNodeIdx,exeCost,-1.0,-1, components);
+      then HpcOmSimCode.CALCTASK(nodeMark,iNodeIdx,exeCost,-1.0,-1, components);
     else
       equation
         print("HpcOmScheduler.convertNodeToTask failed!\n");
@@ -713,7 +663,7 @@ protected function convertNodeToTaskReverse "function convertNodeToTaskReverse
   Convert one TaskGraph-Node to a Scheduler-Task and set weighting = -nodeMark."
   input Integer iNodeIdx;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
-  output Task oTask;
+  output HpcOmSimCode.Task oTask;
 protected
   Integer nodeMark, primalComp;
   list<Integer> components;
@@ -730,7 +680,7 @@ algorithm
         nodeMark = arrayGet(nodeMarks,primalComp);
         ((_,exeCost)) = arrayGet(exeCosts,iNodeIdx);
         nodeMark = nodeMark * (-1);
-      then CALCTASK(nodeMark,iNodeIdx,exeCost,-1.0,-1, components);
+      then HpcOmSimCode.CALCTASK(nodeMark,iNodeIdx,exeCost,-1.0,-1, components);
     else
       equation
         print("HpcOmScheduler.convertNodeToTask failed!\n");
@@ -740,8 +690,8 @@ end convertNodeToTaskReverse;
 
 protected function calculateFinishTimes
   input Real iPredecessorTaskLastFinished; //time when the last predecessor has finished
-  input Task iTask;
-  input list<tuple<Task,Integer>> iPredecessorTasks; //all child tasks with ref-counter
+  input HpcOmSimCode.Task iTask;
+  input list<tuple<HpcOmSimCode.Task,Integer>> iPredecessorTasks; //all child tasks with ref-counter
   input array<list<tuple<Integer, Integer, Integer>>> iCommCosts;
   input array<Real> iThreadReadyTimes;
   output array<Real> oFinishTimes;
@@ -755,8 +705,8 @@ end calculateFinishTimes;
 
 protected function calculateFinishTimes1
   input Real iPredecessorTaskLastFinished; //time when the last successor has finished
-  input Task iTask;
-  input list<tuple<Task,Integer>> iPredecessorTasks; //all child tasks
+  input HpcOmSimCode.Task iTask;
+  input list<tuple<HpcOmSimCode.Task,Integer>> iPredecessorTasks; //all child tasks
   input array<list<tuple<Integer, Integer, Integer>>> iCommCosts;
   input array<Real> iThreadReadyTimes;
   input Integer iThreadIdx;
@@ -782,17 +732,17 @@ protected function calculateFinishTimeByThreadId
   input Real iThreadReadyTime; //time when the thread has finished his last task
   input Real iPredecessorTaskLastFinished; //time when the last predecessor has finished
   input Integer iThreadId;
-  input Task iTask;
-  input list<tuple<Task,Integer>> iPredecessorTasks; //all child tasks
+  input HpcOmSimCode.Task iTask;
+  input list<tuple<HpcOmSimCode.Task,Integer>> iPredecessorTasks; //all child tasks
   input array<list<tuple<Integer, Integer, Integer>>> iCommCosts;
   output Real oFinishTime;
 protected
-  list<tuple<Task,Integer>> predecessorTasksOtherTh; //all predecessor scheduled to another thread
+  list<tuple<HpcOmSimCode.Task,Integer>> predecessorTasksOtherTh; //all predecessor scheduled to another thread
   Real commCost, calcTime;
   Real startTime;
 algorithm
   oFinishTime := match(iThreadReadyTime, iPredecessorTaskLastFinished, iThreadId, iTask, iPredecessorTasks, iCommCosts)
-    case(_,_,_,CALCTASK(calcTime=calcTime),_,_)
+    case(_,_,_,HpcOmSimCode.CALCTASK(calcTime=calcTime),_,_)
       equation
         predecessorTasksOtherTh = List.removeOnTrue(iThreadId, compareTaskWithThreadIdx, iPredecessorTasks);
         startTime = realMax(iThreadReadyTime, iPredecessorTaskLastFinished);
@@ -806,8 +756,8 @@ algorithm
 end calculateFinishTimeByThreadId;
 
 protected function getMaxCommCostsByTaskList
-  input Task iParentTask;
-  input list<tuple<Task,Integer>> iTaskList;
+  input HpcOmSimCode.Task iParentTask;
+  input list<tuple<HpcOmSimCode.Task,Integer>> iTaskList;
   input array<list<tuple<Integer, Integer, Integer>>> iCommCosts;
   output Real oCommCost;
 algorithm
@@ -815,8 +765,8 @@ algorithm
 end getMaxCommCostsByTaskList;
 
 protected function getMaxCommCostsByTaskList1
-  input tuple<Task,Integer> iTask;
-  input Task iParentTask;
+  input tuple<HpcOmSimCode.Task,Integer> iTask;
+  input HpcOmSimCode.Task iParentTask;
   input array<list<tuple<Integer, Integer, Integer>>> iCommCosts;
   input Real iCurrentMax;
   output Real oCommCost;
@@ -828,7 +778,7 @@ protected
   list<tuple<Integer, Integer, Integer>> childCommCosts;
 algorithm
   oCommCost := matchcontinue(iTask, iParentTask, iCommCosts, iCurrentMax)
-    case((CALCTASK(index=taskIdx,eqIdc=eqIdc),_),CALCTASK(eqIdc=parentEqIdc),_,_)
+    case((HpcOmSimCode.CALCTASK(index=taskIdx,eqIdc=eqIdc),_),HpcOmSimCode.CALCTASK(eqIdc=parentEqIdc),_,_)
       equation
         //print("Try to find edge cost from scc " +& intString(List.first(eqIdc)) +& " to scc " +& intString(List.first(parentEqIdc)) +& "\n");
         childCommCosts = arrayGet(iCommCosts,List.first(eqIdc));
@@ -863,25 +813,25 @@ end getMaxCommCostsByTaskList2;
 
 protected function getTaskByIndex
   input Integer iTaskIdx;
-  input array<tuple<Task,Integer>> iAllTasks;
-  output tuple<Task,Integer> oTask;
+  input array<tuple<HpcOmSimCode.Task,Integer>> iAllTasks;
+  output tuple<HpcOmSimCode.Task,Integer> oTask;
 algorithm
   oTask := arrayGet(iAllTasks,iTaskIdx);
 end getTaskByIndex;
 
 protected function getSuccessorsByTask
-  input Task iTask;
+  input HpcOmSimCode.Task iTask;
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
-  input array<tuple<Task,Integer>> iAllTasks;
-  output list<tuple<Task,Integer>> oTasks;
+  input array<tuple<HpcOmSimCode.Task,Integer>> iAllTasks;
+  output list<tuple<HpcOmSimCode.Task,Integer>> oTasks;
   output list<Integer> oTaskIdc;
 protected
   Integer taskIdx;
   list<Integer> successors;
-  list<tuple<Task,Integer>> tmpTasks;
+  list<tuple<HpcOmSimCode.Task,Integer>> tmpTasks;
 algorithm
   (oTasks, oTaskIdc) := matchcontinue(iTask,iTaskGraph,iAllTasks)
-    case(CALCTASK(index=taskIdx),_,_)
+    case(HpcOmSimCode.CALCTASK(index=taskIdx),_,_)
       equation
         successors = arrayGet(iTaskGraph,taskIdx);
         tmpTasks = List.map1(successors, getTaskByIndex, iAllTasks);
@@ -894,14 +844,14 @@ algorithm
 end getSuccessorsByTask;
 
 protected function compareTasksByWeighting
-  input Task iTask1;
-  input Task iTask2;
+  input HpcOmSimCode.Task iTask1;
+  input HpcOmSimCode.Task iTask2;
   output Boolean oResult;
 protected
   Integer weightingTask1,weightingTask2;
 algorithm
   oResult := match(iTask1,iTask2)
-    case(CALCTASK(weighting=weightingTask1), CALCTASK(weighting=weightingTask2))
+    case(HpcOmSimCode.CALCTASK(weighting=weightingTask1), HpcOmSimCode.CALCTASK(weighting=weightingTask2))
       then intGt(weightingTask1,weightingTask2);
     else
       equation
@@ -912,13 +862,13 @@ end compareTasksByWeighting;
 
 protected function compareTaskWithThreadIdx
   input Integer iThreadIdx;
-  input tuple<Task,Integer> iTask1;
+  input tuple<HpcOmSimCode.Task,Integer> iTask1;
   output Boolean oMatch; //True if the task has the same threadIdx as iThreadIdx
 protected
   Integer threadIdx;
 algorithm
   oMatch := match(iThreadIdx,iTask1)
-    case(_,(CALCTASK(threadIdx=threadIdx),_))
+    case(_,(HpcOmSimCode.CALCTASK(threadIdx=threadIdx),_))
       then intEq(threadIdx,iThreadIdx);
     else
       equation
@@ -928,7 +878,7 @@ algorithm
 end compareTaskWithThreadIdx;
 
 protected function printThreadSchedule
-  input list<Task> iTaskList;
+  input list<HpcOmSimCode.Task> iTaskList;
   input Integer iThreadIdx;
   output Integer oThreadIdx;
 algorithm
@@ -939,9 +889,9 @@ algorithm
 end printThreadSchedule;
 
 protected function printTaskDepSchedule
-  input tuple<Task,list<Integer>> iTaskInfo;
+  input tuple<HpcOmSimCode.Task,list<Integer>> iTaskInfo;
 protected
-  Task iTask;
+  HpcOmSimCode.Task iTask;
   list<Integer> iDependencies;
 algorithm
   (iTask,iDependencies) := iTaskInfo;
@@ -952,10 +902,10 @@ algorithm
 end printTaskDepSchedule;
 
 protected function printTaskList
-  input list<Task> iTaskList;
+  input list<HpcOmSimCode.Task> iTaskList;
 protected
-  Task head;
-  list<Task> rest;
+  HpcOmSimCode.Task head;
+  list<HpcOmSimCode.Task> rest;
 algorithm
   _ := match(iTaskList)
     case(head::rest)
@@ -969,7 +919,7 @@ algorithm
 end printTaskList;
 
 protected function dumpTask
-  input Task iTask;
+  input HpcOmSimCode.Task iTask;
   output String oString;
 protected
   Integer weighting;
@@ -981,15 +931,15 @@ protected
   String lockId;
 algorithm
   oString := match(iTask)
-    case(CALCTASK(weighting=weighting,timeFinished=timeFinished, index=index, eqIdc=eqIdc))
+    case(HpcOmSimCode.CALCTASK(weighting=weighting,timeFinished=timeFinished, index=index, eqIdc=eqIdc))
       then ("Calculation task with index " +& intString(index) +& " including the equations: "+&stringDelimitList(List.map(eqIdc,intString),", ")+& " is finished at  " +& realString(timeFinished) +& "\n");
-    case(CALCTASK_LEVEL(eqIdc=eqIdc))
+    case(HpcOmSimCode.CALCTASK_LEVEL(eqIdc=eqIdc))
       then ("Calculation task including the equations: "+&stringDelimitList(List.map(eqIdc,intString),", ")+&"\n");
-    case(ASSIGNLOCKTASK(lockId=lockId))
+    case(HpcOmSimCode.ASSIGNLOCKTASK(lockId=lockId))
       then ("Assign lock task with id " +& lockId +& "\n");
-    case(RELEASELOCKTASK(lockId=lockId))
+    case(HpcOmSimCode.RELEASELOCKTASK(lockId=lockId))
       then ("Release lock task with id " +& lockId +& "\n");
-    case(TASKEMPTY())
+    case(HpcOmSimCode.TASKEMPTY())
       then ("empty task\n");
     else
       equation
@@ -999,9 +949,9 @@ algorithm
 end dumpTask;
 
 protected function printTaskRefList
-  input list<tuple<Task,Integer>> iTaskList;
+  input list<tuple<HpcOmSimCode.Task,Integer>> iTaskList;
 protected
-  list<tuple<Task,Integer>> rest;
+  list<tuple<HpcOmSimCode.Task,Integer>> rest;
   Integer weighting;
   Integer index;
   Real calcTime;
@@ -1010,7 +960,7 @@ protected
   list<Integer> eqIdc;
 algorithm
   _ := match(iTaskList)
-    case(((CALCTASK(weighting=weighting, index=index),refCount))::rest)
+    case(((HpcOmSimCode.CALCTASK(weighting=weighting, index=index),refCount))::rest)
       equation
         print("Calculation task with index " +& intString(index) +& " and weighting " +& intString(weighting) +& " and ref count: " +& intString(refCount) +& "\n");
         printTaskRefList(rest);
@@ -1022,24 +972,24 @@ end printTaskRefList;
 
 public function convertScheduleStrucToInfo "author: marcusw
   Convert the given schedule-information into an node-array of informations."
-  input Schedule iSchedule;
+  input HpcOmSimCode.Schedule iSchedule;
   input Integer iTaskCount;
   output array<tuple<Integer,Integer,Real>> oScheduleInfo; //array which contains <threadId,taskNumber,finishTime> for each node (index)
 protected
   array<tuple<Integer,Integer,Real>> tmpScheduleInfo;
-  array<list<Task>> threadTasks;
+  array<list<HpcOmSimCode.Task>> threadTasks;
 algorithm
   oScheduleInfo := match(iSchedule,iTaskCount)
-    case(THREADSCHEDULE(threadTasks=threadTasks),_)
+    case(HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks),_)
       equation
         tmpScheduleInfo = arrayCreate(iTaskCount,(-1,-1,-1.0));
         tmpScheduleInfo = Util.arrayFold(threadTasks,convertScheduleStrucToInfo0,tmpScheduleInfo);
       then tmpScheduleInfo;
-    case(LEVELSCHEDULE(_),_)
+    case(HpcOmSimCode.LEVELSCHEDULE(_),_)
       equation
         tmpScheduleInfo = arrayCreate(iTaskCount,(-1,-1,-1.0));
       then tmpScheduleInfo;
-    case(TASKDEPSCHEDULE(_),_)
+    case(HpcOmSimCode.TASKDEPSCHEDULE(_),_)
       equation
         tmpScheduleInfo = arrayCreate(iTaskCount,(-1,-1,-1.0));
       then tmpScheduleInfo;
@@ -1052,7 +1002,7 @@ end convertScheduleStrucToInfo;
 
 protected function convertScheduleStrucToInfo0 "author: marcusw
   Convert the given task list into an node-array of informations."
-  input list<Task> iTaskList;
+  input list<HpcOmSimCode.Task> iTaskList;
   input array<tuple<Integer,Integer,Real>> iScheduleInfo;
   output array<tuple<Integer,Integer,Real>> oScheduleInfo;
 algorithm
@@ -1061,7 +1011,7 @@ end convertScheduleStrucToInfo0;
 
 protected function convertScheduleStrucToInfo1 "author: marcusw
   Convert the given task into a tuple of informations, if it is a CalcTask."
-  input Task iTask;
+  input HpcOmSimCode.Task iTask;
   input tuple<array<tuple<Integer,Integer,Real>>,Integer> iScheduleInfo; //ScheduleInfo and task number
   output tuple<array<tuple<Integer,Integer,Real>>,Integer> oScheduleInfo;
 protected
@@ -1071,12 +1021,12 @@ protected
   Real timeFinished;
 algorithm
   oScheduleInfo := match(iTask,iScheduleInfo)
-    case(CALCTASK(index=taskIdx,threadIdx=threadIdx,timeFinished=timeFinished),(tmpScheduleInfo,taskNumber))
+    case(HpcOmSimCode.CALCTASK(index=taskIdx,threadIdx=threadIdx,timeFinished=timeFinished),(tmpScheduleInfo,taskNumber))
       equation
         tmpScheduleInfo = arrayUpdate(tmpScheduleInfo,taskIdx,(threadIdx,taskNumber,timeFinished));
       then ((tmpScheduleInfo,taskNumber+1));
-    case (ASSIGNLOCKTASK(_),_) then iScheduleInfo;
-    case (RELEASELOCKTASK(_),_) then iScheduleInfo;
+    case (HpcOmSimCode.ASSIGNLOCKTASK(_),_) then iScheduleInfo;
+    case (HpcOmSimCode.RELEASELOCKTASK(_),_) then iScheduleInfo;
     else
       equation
         print("HpcOmScheduler.convertScheduleStrucToInfo1 failed. Unknown Task-Type.\n");
@@ -1092,13 +1042,13 @@ public function createLevelSchedule "function createLevelSchedule
   Creates a level scheduling for the given graph"
   input HpcOmTaskGraph.TaskGraphMeta iMeta;
   input array<list<Integer>> iSccSimEqMapping; //Maps each scc to a list of simEqs
-  output Schedule oSchedule;
+  output HpcOmSimCode.Schedule oSchedule;
 
 protected
   array<list<Integer>> inComps;
   array<Integer> nodeMark;
-  list<tuple<Integer,list<Task>>> tmpTaskLevelMapping; //maps the level-index to the tasks
-  list<list<Task>> flatTaskLevelMapping;
+  list<tuple<Integer,list<HpcOmSimCode.Task>>> tmpTaskLevelMapping; //maps the level-index to the tasks
+  list<list<HpcOmSimCode.Task>> flatTaskLevelMapping;
 algorithm
   oSchedule := match(iMeta,iSccSimEqMapping)
     case(HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMark),_)
@@ -1108,7 +1058,7 @@ algorithm
         tmpTaskLevelMapping = List.sort(tmpTaskLevelMapping, sortLevelInfo);
         //flattening
         flatTaskLevelMapping = List.map(tmpTaskLevelMapping, Util.tuple22);
-      then LEVELSCHEDULE(flatTaskLevelMapping);
+      then HpcOmSimCode.LEVELSCHEDULE(flatTaskLevelMapping);
     else
       equation
         print("CreateLevelSchedule failed.");
@@ -1123,16 +1073,16 @@ protected function createLevelSchedule0 "function createLevelSchedule0
   input array<list<Integer>> iComps;
   input array<list<Integer>> iSccSimEqMapping;
   input array<Integer> iNodeMarks;
-  input list<tuple<Integer,list<Task>>> iTaskLevelMapping;
-  output list<tuple<Integer,list<Task>>> oTaskLevelMapping;
+  input list<tuple<Integer,list<HpcOmSimCode.Task>>> iTaskLevelMapping;
+  output list<tuple<Integer,list<HpcOmSimCode.Task>>> oTaskLevelMapping;
 
 protected
   list<Integer> sccSimEqMapping, nodeComps;
   Integer nodeMark;
   Integer mapListIndex;
   Integer firstNodeComp;
-  list<Task> taskList;
-  list<tuple<Integer,list<Task>>> tmpTaskLevelMapping;
+  list<HpcOmSimCode.Task> taskList;
+  list<tuple<Integer,list<HpcOmSimCode.Task>>> tmpTaskLevelMapping;
 algorithm
   oTaskLevelMapping := matchcontinue(iNodeIdx,iComps,iSccSimEqMapping,iNodeMarks,iTaskLevelMapping)
     case(_,_,_,_,_)
@@ -1176,17 +1126,17 @@ protected function createLevelSchedule1 "function createLevelSchedule1
   input Integer iCompIdx;
   input array<list<Integer>> iSccSimEqMapping;
   input Integer iNodeIdx;
-  input list<Task> iList;
-  output list<Task> oList;
+  input list<HpcOmSimCode.Task> iList;
+  output list<HpcOmSimCode.Task> oList;
 
 protected
   list<Integer> simEqIdc;
   Integer lastSimEqIdx;
-  Task tmpTask;
+  HpcOmSimCode.Task tmpTask;
 algorithm
   simEqIdc := arrayGet(iSccSimEqMapping,iCompIdx);
   lastSimEqIdx := List.last(simEqIdc);
-  tmpTask := CALCTASK_LEVEL({lastSimEqIdx},iNodeIdx);
+  tmpTask := HpcOmSimCode.CALCTASK_LEVEL({lastSimEqIdx},{iNodeIdx});
   oList := tmpTask::iList;
 end createLevelSchedule1;
 
@@ -1195,20 +1145,20 @@ protected function getLevelListByLevel "function getLevelListByLevel
   Returns the level list of the searched index. If no level with the given index was found, a new list is appended to the mapping."
   input Integer iLevel;
   input Integer iCurrentListIndex;
-  input list<tuple<Integer,list<Task>>> restList;
-  input list<tuple<Integer,list<Task>>> iTaskLevelMapping; //list<<levelIndex,levelList>>
-  output list<tuple<Integer,list<Task>>> oTaskLevelMapping;
-  output list<Task> oTaskList;
+  input list<tuple<Integer,list<HpcOmSimCode.Task>>> restList;
+  input list<tuple<Integer,list<HpcOmSimCode.Task>>> iTaskLevelMapping; //list<<levelIndex,levelList>>
+  output list<tuple<Integer,list<HpcOmSimCode.Task>>> oTaskLevelMapping;
+  output list<HpcOmSimCode.Task> oTaskList;
   output Integer oMapListIndex;
 
 protected
   Integer curLevel, headIdx;
-  list<Task> headList;
-  list<tuple<Integer,list<Task>>> rest;
-  tuple<Integer,list<Task>> newElem;
+  list<HpcOmSimCode.Task> headList;
+  list<tuple<Integer,list<HpcOmSimCode.Task>>> rest;
+  tuple<Integer,list<HpcOmSimCode.Task>> newElem;
 
-  list<tuple<Integer,list<Task>>> tmpTaskLevelMapping;
-  list<Task> tmpTaskList;
+  list<tuple<Integer,list<HpcOmSimCode.Task>>> tmpTaskLevelMapping;
+  list<HpcOmSimCode.Task> tmpTaskList;
   Integer tmpMapListIndex;
 algorithm
   (oTaskLevelMapping,oTaskList,oMapListIndex) := matchcontinue(iLevel,iCurrentListIndex,restList,iTaskLevelMapping)
@@ -1230,8 +1180,8 @@ end getLevelListByLevel;
 protected function sortLevelInfo "function sortLevelInfo
   author: marcusw
   Use this function to sort a level list. The result is true if index1 > index2."
-  input tuple<Integer,list<Task>> iTuple1; //<index1,_>
-  input tuple<Integer,list<Task>> iTuple2; //<index2,_>
+  input tuple<Integer,list<HpcOmSimCode.Task>> iTuple1; //<index1,_>
+  input tuple<Integer,list<HpcOmSimCode.Task>> iTuple2; //<index2,_>
   output Boolean oResult;
 protected
   Integer index1,index2;
@@ -1244,7 +1194,7 @@ end sortLevelInfo;
 protected function printLevelSchedule "function printLevelSchedule
   author: marcusw
   Helper function to print one level."
-  input list<Task> iLevelInfo;
+  input list<HpcOmSimCode.Task> iLevelInfo;
   input Integer iLevel;
   output Integer oLevel;
 
@@ -1263,14 +1213,14 @@ public function createTaskDepSchedule "function createTaskDepSchedule
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   input array<list<Integer>> iSccSimEqMapping; //Maps each scc to a list of simEqs
-  output Schedule oSchedule;
+  output HpcOmSimCode.Schedule oSchedule;
 protected
-  Schedule tmpSchedule;
+  HpcOmSimCode.Schedule tmpSchedule;
   array<list<Integer>> inComps;
   array<Integer> nodeMark;
   HpcOmTaskGraph.TaskGraph taskGraphT;
-  list<tuple<Task,Integer,list<Integer>>> nodeLevelMap; //<task, levelIdx, parentTaskIdc>
-  list<tuple<Task,list<Integer>>> filteredNodeLevelMap;
+  list<tuple<HpcOmSimCode.Task,Integer,list<Integer>>> nodeLevelMap; //<task, levelIdx, parentTaskIdc>
+  list<tuple<HpcOmSimCode.Task,list<Integer>>> filteredNodeLevelMap;
 algorithm
   oSchedule := matchcontinue(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping)
     case(_,HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMark),_)
@@ -1279,7 +1229,7 @@ algorithm
         ((_,nodeLevelMap)) = Util.arrayFold3(taskGraphT, createNodeLevelMapping, nodeMark, inComps, iSccSimEqMapping, (1,{}));
         nodeLevelMap = List.sort(nodeLevelMap, sortNodeLevelMapping);
         filteredNodeLevelMap = List.map(nodeLevelMap, filterNodeLevelMapping);
-        tmpSchedule = TASKDEPSCHEDULE(filteredNodeLevelMap);
+        tmpSchedule = HpcOmSimCode.TASKDEPSCHEDULE(filteredNodeLevelMap);
       then tmpSchedule;
     else
       equation
@@ -1293,15 +1243,15 @@ protected function createNodeLevelMapping
   input array<Integer> nodeMarks;
   input array<list<Integer>> inComps;
   input array<list<Integer>> iSccSimEqMapping;
-  input tuple<Integer,list<tuple<Task,Integer,list<Integer>>>> iNodeInfo; //<taskIdx, list<task, levelIdx, parentTaskIdc>>
-  output tuple<Integer,list<tuple<Task,Integer,list<Integer>>>> oNodeInfo;
+  input tuple<Integer,list<tuple<HpcOmSimCode.Task,Integer,list<Integer>>>> iNodeInfo; //<taskIdx, list<task, levelIdx, parentTaskIdc>>
+  output tuple<Integer,list<tuple<HpcOmSimCode.Task,Integer,list<Integer>>>> oNodeInfo;
 protected
-  Task task;
+  HpcOmSimCode.Task task;
   Integer nodeIdx;
   Integer nodeMark;
   list<Integer> components;
   list<Integer> simEqIdc;
-  list<tuple<Task,Integer,list<Integer>>> nodeLevelMap;
+  list<tuple<HpcOmSimCode.Task,Integer,list<Integer>>> nodeLevelMap;
 algorithm
   (nodeIdx,nodeLevelMap) := iNodeInfo;
   //print("createNodeLevelMapping NodeIdx: " +& intString(nodeIdx) +& "\n");
@@ -1312,30 +1262,30 @@ algorithm
   //print("ISccSimEqMapping-Length: " +& intString(arrayLength(iSccSimEqMapping)) +& "\n");
   simEqIdc := List.map(List.map1(components,getSccSimEqMappingByIndex,iSccSimEqMapping), List.last);
   simEqIdc := listReverse(simEqIdc);
-  task := CALCTASK(-1,nodeIdx,-1.0,-1.0,-1,simEqIdc);
+  task := HpcOmSimCode.CALCTASK(-1,nodeIdx,-1.0,-1.0,-1,simEqIdc);
   nodeLevelMap := (task,nodeMark,iNodeDependenciesT)::nodeLevelMap;
   oNodeInfo := ((nodeIdx+1,nodeLevelMap));
 end createNodeLevelMapping;
 
 protected function sortNodeLevelMapping
-  input tuple<Task,Integer,list<Integer>> iElem1;
-  input tuple<Task,Integer,list<Integer>> iElem2;
+  input tuple<HpcOmSimCode.Task,Integer,list<Integer>> iElem1;
+  input tuple<HpcOmSimCode.Task,Integer,list<Integer>> iElem2;
   output Boolean oResult;
 protected
   Integer elemLvl1, elemLvl2;
   Integer task1Idx;
 algorithm
-  (CALCTASK(index=task1Idx),elemLvl1,_) := iElem1;
+  (HpcOmSimCode.CALCTASK(index=task1Idx),elemLvl1,_) := iElem1;
   (_,elemLvl2,_) := iElem2;
   //print("sortNodeLevelMapping: TaskIdx: " +& intString(task1Idx) +& " level: " +& intString(elemLvl1) +& "\n");
   oResult := intGe(elemLvl1,elemLvl2);
 end sortNodeLevelMapping;
 
 protected function filterNodeLevelMapping
-  input tuple<Task,Integer,list<Integer>> iElem;
-  output tuple<Task,list<Integer>> oElem;
+  input tuple<HpcOmSimCode.Task,Integer,list<Integer>> iElem;
+  output tuple<HpcOmSimCode.Task,list<Integer>> oElem;
 protected
-  Task task;
+  HpcOmSimCode.Task task;
   list<Integer> childTasks;
 algorithm
   (task,_,childTasks) := iElem;
@@ -1352,18 +1302,18 @@ public function createExtCSchedule "function createExtSchedule
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   input Integer iNumberOfThreads;
   input array<list<Integer>> iSccSimEqMapping; //Maps each scc to a list of simEqs
-  output Schedule oSchedule;
+  output HpcOmSimCode.Schedule oSchedule;
 protected
   list<Integer> extInfo;
   array<Integer> xadj, adjncy, vwgt, adjwgt;
-  Schedule tmpSchedule;
+  HpcOmSimCode.Schedule tmpSchedule;
   array<Integer> extInfoArr;
   HpcOmTaskGraph.TaskGraph taskGraphT;
-  array<list<Task>> threadTasks;
+  array<list<HpcOmSimCode.Task>> threadTasks;
   list<Integer> rootNodes;
-  array<tuple<Task, Integer>> allTasks;
-  list<tuple<Task,Integer>> nodeList_refCount; //list of nodes which are ready to schedule
-  list<Task> nodeList;
+  array<tuple<HpcOmSimCode.Task, Integer>> allTasks;
+  list<tuple<HpcOmSimCode.Task,Integer>> nodeList_refCount; //list of nodes which are ready to schedule
+  list<HpcOmSimCode.Task> nodeList;
 algorithm
   oSchedule := matchcontinue(iTaskGraph,iTaskGraphMeta,iNumberOfThreads,iSccSimEqMapping)
     case(_,_,_,_)
@@ -1383,7 +1333,7 @@ algorithm
         nodeList = List.map(nodeList_refCount, Util.tuple21);
         nodeList = List.sort(nodeList, compareTasksByWeighting);
         threadTasks = arrayCreate(iNumberOfThreads,{});
-        tmpSchedule = THREADSCHEDULE(threadTasks,{});
+        tmpSchedule = HpcOmSimCode.THREADSCHEDULE(threadTasks,{});
         tmpSchedule = createExtSchedule1(nodeList,extInfoArr, iTaskGraph, taskGraphT, allTasks, iSccSimEqMapping, getLocksByPredecessorList, tmpSchedule);
         tmpSchedule = addSuccessorLocksToSchedule(iTaskGraph,allTasks,addReleaseLocksToSchedule,tmpSchedule);
         //printSchedule(tmpSchedule);
@@ -1402,18 +1352,18 @@ public function createhmetSchedule "function createExtSchedule
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   input Integer iNumberOfThreads;
   input array<list<Integer>> iSccSimEqMapping; //Maps each scc to a list of simEqs
-  output Schedule oSchedule;
+  output HpcOmSimCode.Schedule oSchedule;
 protected
   list<Integer> extInfo;
   array<Integer> xadj, adjncy, vwgt, adjwgt;
-  Schedule tmpSchedule;
+  HpcOmSimCode.Schedule tmpSchedule;
   array<Integer> extInfoArr;
   HpcOmTaskGraph.TaskGraph taskGraphT;
-  array<list<Task>> threadTasks;
+  array<list<HpcOmSimCode.Task>> threadTasks;
   list<Integer> rootNodes;
-  array<tuple<Task, Integer>> allTasks;
-  list<tuple<Task,Integer>> nodeList_refCount; //list of nodes which are ready to schedule
-  list<Task> nodeList;
+  array<tuple<HpcOmSimCode.Task, Integer>> allTasks;
+  list<tuple<HpcOmSimCode.Task,Integer>> nodeList_refCount; //list of nodes which are ready to schedule
+  list<HpcOmSimCode.Task> nodeList;
 algorithm
   oSchedule := matchcontinue(iTaskGraph,iTaskGraphMeta,iNumberOfThreads,iSccSimEqMapping)
     case(_,_,_,_)
@@ -1433,7 +1383,7 @@ algorithm
         nodeList = List.map(nodeList_refCount, Util.tuple21);
         nodeList = List.sort(nodeList, compareTasksByWeighting);
         threadTasks = arrayCreate(iNumberOfThreads,{});
-        tmpSchedule = THREADSCHEDULE(threadTasks,{});
+        tmpSchedule = HpcOmSimCode.THREADSCHEDULE(threadTasks,{});
         tmpSchedule = createExtSchedule1(nodeList,extInfoArr, iTaskGraph, taskGraphT, allTasks, iSccSimEqMapping, getLocksByPredecessorList, tmpSchedule);
         tmpSchedule = addSuccessorLocksToSchedule(iTaskGraph,allTasks,addReleaseLocksToSchedule,tmpSchedule);
         //printSchedule(tmpSchedule);
@@ -1456,17 +1406,17 @@ public function createExtSchedule "function createExtSchedule
   input Integer iNumberOfThreads;
   input array<list<Integer>> iSccSimEqMapping; //Maps each scc to a list of simEqs
   input String iGraphMLFile; //the file containing schedule-informations
-  output Schedule oSchedule;
+  output HpcOmSimCode.Schedule oSchedule;
 protected
   list<Integer> extInfo;
   array<Integer> extInfoArr;
   HpcOmTaskGraph.TaskGraph taskGraphT;
-  Schedule tmpSchedule;
-  array<list<Task>> threadTasks;
+  HpcOmSimCode.Schedule tmpSchedule;
+  array<list<HpcOmSimCode.Task>> threadTasks;
   list<Integer> rootNodes;
-  array<tuple<Task, Integer>> allTasks;
-  list<tuple<Task,Integer>> nodeList_refCount; //list of nodes which are ready to schedule
-  list<Task> nodeList;
+  array<tuple<HpcOmSimCode.Task, Integer>> allTasks;
+  list<tuple<HpcOmSimCode.Task,Integer>> nodeList_refCount; //list of nodes which are ready to schedule
+  list<HpcOmSimCode.Task> nodeList;
 algorithm
   oSchedule := matchcontinue(iTaskGraph,iTaskGraphMeta,iNumberOfThreads,iSccSimEqMapping,iGraphMLFile)
     case(_,_,_,_,_)
@@ -1483,7 +1433,7 @@ algorithm
         nodeList = List.map(nodeList_refCount, Util.tuple21);
         nodeList = List.sort(nodeList, compareTasksByWeighting);
         threadTasks = arrayCreate(iNumberOfThreads,{});
-        tmpSchedule = THREADSCHEDULE(threadTasks,{});
+        tmpSchedule = HpcOmSimCode.THREADSCHEDULE(threadTasks,{});
         tmpSchedule = createExtSchedule1(nodeList,extInfoArr, iTaskGraph, taskGraphT, allTasks, iSccSimEqMapping, getLocksByPredecessorList, tmpSchedule);
         tmpSchedule = addSuccessorLocksToSchedule(iTaskGraph,allTasks,addReleaseLocksToSchedule,tmpSchedule);
         //printSchedule(tmpSchedule);
@@ -1496,49 +1446,49 @@ algorithm
 end createExtSchedule;
 
 protected function createExtSchedule1
-  input list<Task> iNodeList; //the sorted nodes -> this method will pick the first task
+  input list<HpcOmSimCode.Task> iNodeList; //the sorted nodes -> this method will pick the first task
   input array<Integer> iThreadAssignments; //assignment taskIdx -> threadIdx
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraph iTaskGraphT;
-  input array<tuple<Task,Integer>> iAllTasks; //all tasks with ref-counter
+  input array<tuple<HpcOmSimCode.Task,Integer>> iAllTasks; //all tasks with ref-counter
   input array<list<Integer>> iSccSimEqMapping; //Maps each scc to a list of simEqs
   input FuncType iLockWithPredecessorHandler; //Function which handles locks to all predecessors
-  input Schedule iSchedule;
-  output Schedule oSchedule;
+  input HpcOmSimCode.Schedule iSchedule;
+  output HpcOmSimCode.Schedule oSchedule;
 
   partial function FuncType
     input Integer iNodeIdx;
     input Integer iThreadIdx;
-    input list<tuple<Task,Integer>> iPredecessors;
-    output list<Task> oTasks; //lock tasks
+    input list<tuple<HpcOmSimCode.Task,Integer>> iPredecessors;
+    output list<HpcOmSimCode.Task> oTasks; //lock tasks
     output list<String> oLockNames; //lock names
   end FuncType;
 protected
-  Task head, newTask;
+  HpcOmSimCode.Task head, newTask;
   Integer newTaskRefCount;
-  list<Task> rest;
+  list<HpcOmSimCode.Task> rest;
   Real lastChildFinishTime; //The time when the last child has finished calculation
-  Task lastChild;
-  list<tuple<Task,Integer>> predecessors, successors;
+  HpcOmSimCode.Task lastChild;
+  list<tuple<HpcOmSimCode.Task,Integer>> predecessors, successors;
   list<Integer> successorIdc;
   list<String> lockIdc, newLockIdc;
   array<Real> threadFinishTimes;
   Integer firstEq;
-  array<list<Task>> allThreadTasks;
-  list<Task> threadTasks, lockTasks;
+  array<list<HpcOmSimCode.Task>> allThreadTasks;
+  list<HpcOmSimCode.Task> threadTasks, lockTasks;
   Integer threadId;
   Real threadFinishTime;
   array<Real> tmpThreadReadyTimes;
-  list<Task> tmpNodeList;
+  list<HpcOmSimCode.Task> tmpNodeList;
   Integer weighting;
   Integer index;
   Real calcTime;
   list<Integer> eqIdc, simEqIdc;
-  array<tuple<Task,Integer>> tmpAllTasks;
-  Schedule tmpSchedule;
+  array<tuple<HpcOmSimCode.Task,Integer>> tmpAllTasks;
+  HpcOmSimCode.Schedule tmpSchedule;
 algorithm
   oSchedule := matchcontinue(iNodeList,iThreadAssignments, iTaskGraph, iTaskGraphT, iAllTasks, iSccSimEqMapping, iLockWithPredecessorHandler, iSchedule)
-    case((head as CALCTASK(weighting=weighting,index=index,calcTime=calcTime,eqIdc=(eqIdc as firstEq::_)))::rest,_,_,_,_,_,_,THREADSCHEDULE(threadTasks=allThreadTasks, lockIdc=lockIdc))
+    case((head as HpcOmSimCode.CALCTASK(weighting=weighting,index=index,calcTime=calcTime,eqIdc=(eqIdc as firstEq::_)))::rest,_,_,_,_,_,_,HpcOmSimCode.THREADSCHEDULE(threadTasks=allThreadTasks, lockIdc=lockIdc))
       equation
         //get all predecessors (childs)
         (predecessors, _) = getSuccessorsByTask(head, iTaskGraphT, iAllTasks);
@@ -1562,7 +1512,7 @@ algorithm
         //print("Simcodeeq idc: " +& stringDelimitList(List.map(simEqIdc, intString), ",") +& "\n");
         //simEqIdc has the wrong order -> reverse list
         simEqIdc = listReverse(simEqIdc);
-        newTask = CALCTASK(weighting,index,calcTime,threadFinishTime,threadId,simEqIdc);
+        newTask = HpcOmSimCode.CALCTASK(weighting,index,calcTime,threadFinishTime,threadId,simEqIdc);
         threadTasks = newTask::threadTasks;
         allThreadTasks = arrayUpdate(allThreadTasks,threadId,threadTasks);
         //print("Successors: " +& stringDelimitList(List.map(successorIdc, intString), ",") +& "\n");
@@ -1572,9 +1522,9 @@ algorithm
         tmpNodeList = List.sort(tmpNodeList, compareTasksByWeighting);
         ((_,newTaskRefCount)) = arrayGet(iAllTasks,index);
         _ = arrayUpdate(iAllTasks,index,(newTask,newTaskRefCount));
-        tmpSchedule = createExtSchedule1(tmpNodeList,iThreadAssignments,iTaskGraph, iTaskGraphT, tmpAllTasks, iSccSimEqMapping, iLockWithPredecessorHandler, THREADSCHEDULE(allThreadTasks,lockIdc));
+        tmpSchedule = createExtSchedule1(tmpNodeList,iThreadAssignments,iTaskGraph, iTaskGraphT, tmpAllTasks, iSccSimEqMapping, iLockWithPredecessorHandler, HpcOmSimCode.THREADSCHEDULE(allThreadTasks,lockIdc));
       then tmpSchedule;
-    case((head as CALCTASK(weighting=weighting,index=index,calcTime=calcTime,eqIdc=(eqIdc as firstEq::_)))::rest,_,_,_,_,_,_,THREADSCHEDULE(threadTasks=allThreadTasks,lockIdc=lockIdc))
+    case((head as HpcOmSimCode.CALCTASK(weighting=weighting,index=index,calcTime=calcTime,eqIdc=(eqIdc as firstEq::_)))::rest,_,_,_,_,_,_,HpcOmSimCode.THREADSCHEDULE(threadTasks=allThreadTasks,lockIdc=lockIdc))
       equation
         (successors, successorIdc) = getSuccessorsByTask(head, iTaskGraph, iAllTasks);
         //print("Handle task " +& intString(index) +& " with 0 child nodes and " +& intString(listLength(successorIdc)) +& " parent nodes.\n");
@@ -1588,7 +1538,7 @@ algorithm
         simEqIdc = List.flatten(List.map1(eqIdc,getSccSimEqMappingByIndex,iSccSimEqMapping));
         //simEqIdc has the wrong order -> reverse list
         simEqIdc = listReverse(simEqIdc);
-        newTask = CALCTASK(weighting,index,calcTime,threadFinishTime,threadId,simEqIdc);
+        newTask = HpcOmSimCode.CALCTASK(weighting,index,calcTime,threadFinishTime,threadId,simEqIdc);
         allThreadTasks = arrayUpdate(allThreadTasks,threadId,newTask::threadTasks);
         //print("Successors: " +& stringDelimitList(List.map(successorIdc, intString), ",") +& "\n");
         //add all successors with refcounter = 1
@@ -1597,7 +1547,7 @@ algorithm
         tmpNodeList = List.sort(tmpNodeList, compareTasksByWeighting);
         ((_,newTaskRefCount)) = arrayGet(iAllTasks,index);
         _ = arrayUpdate(iAllTasks,index,(newTask,newTaskRefCount));
-        tmpSchedule = createExtSchedule1(tmpNodeList,iThreadAssignments,iTaskGraph, iTaskGraphT, tmpAllTasks, iSccSimEqMapping, iLockWithPredecessorHandler, THREADSCHEDULE(allThreadTasks,lockIdc));
+        tmpSchedule = createExtSchedule1(tmpNodeList,iThreadAssignments,iTaskGraph, iTaskGraphT, tmpAllTasks, iSccSimEqMapping, iLockWithPredecessorHandler, HpcOmSimCode.THREADSCHEDULE(allThreadTasks,lockIdc));
       then tmpSchedule;
     case({},_,_,_,_,_,_,_) then iSchedule;
     else
@@ -1619,19 +1569,19 @@ author: Waurich TUD 2013-10 "
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   input Integer numProc;
   input array<list<Integer>> iSccSimEqMapping;
-  output Schedule oSchedule;
+  output HpcOmSimCode.Schedule oSchedule;
 protected
   Integer size, numSfLocks;
-  array<list<Task>> threads;
+  array<list<HpcOmSimCode.Task>> threads;
   array<list<Integer>> taskGraphT;
   array<Real> alapArray;  // this is the latest possible starting time of every node
   list<Real> alapLst, alapSorted, priorityLst;
   list<Integer> order;
-  list<Task> removeLocks;
+  list<HpcOmSimCode.Task> removeLocks;
   array<Integer> taskAss; //<idx>=task, <value>=processor
   array<list<Integer>> procAss; //<idx>=processor, <value>=task;
-  array<list<Task>> threadTask;
-  Schedule schedule;
+  array<list<HpcOmSimCode.Task>> threadTask;
+  HpcOmSimCode.Schedule schedule;
 algorithm
   //compute the ALAP
   size := arrayLength(iTaskGraph);
@@ -1644,7 +1594,7 @@ algorithm
   (taskAss,procAss) := getTaskAssignmentMCP(order,alapArray,numProc,iTaskGraph,iTaskGraphMeta);
   // create the schedule
   threadTask := arrayCreate(numProc,{});
-  schedule := THREADSCHEDULE(threadTask,{});
+  schedule := HpcOmSimCode.THREADSCHEDULE(threadTask,{});
   removeLocks := {};
   (schedule,removeLocks) := createScheduleFromAssignments(taskAss,procAss,SOME(order),iTaskGraph,taskGraphT,iTaskGraphMeta,iSccSimEqMapping,removeLocks,order,schedule);
   // remove superfluous locks
@@ -1658,10 +1608,10 @@ end createMCPschedule;
 
 protected function updateLockIdcsInThreadschedule "executes the given function on the lockIdc in THREADSCHEDULE.
 author:Waurich TUD 2013-12"
-  input Schedule scheduleIn;
+  input HpcOmSimCode.Schedule scheduleIn;
   input FuncType inFunc;
   input ArgType extraArg;
-  output Schedule scheduleOut;
+  output HpcOmSimCode.Schedule scheduleOut;
 partial function FuncType
   input list<String> locksIn;
   input ArgType inArg;
@@ -1671,13 +1621,13 @@ replaceable type ArgType subtypeof Any;
 algorithm
   scheduleOut := match(scheduleIn,inFunc,extraArg)
     local
-      Schedule schedule;
-      array<list<Task>> threadTasks;
+      HpcOmSimCode.Schedule schedule;
+      array<list<HpcOmSimCode.Task>> threadTasks;
       list<String> lockIdc;
-    case(THREADSCHEDULE(threadTasks=threadTasks,lockIdc=lockIdc),_,_)
+    case(HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks,lockIdc=lockIdc),_,_)
       equation
         lockIdc = inFunc(lockIdc,extraArg);
-        schedule = THREADSCHEDULE(threadTasks,lockIdc);
+        schedule = HpcOmSimCode.THREADSCHEDULE(threadTasks,lockIdc);
       then
         schedule;
     else
@@ -1691,33 +1641,33 @@ end updateLockIdcsInThreadschedule;
 
 protected function traverseAndUpdateThreadsInSchedule "traverses all Threads in a schedule.
 author: Waurich TUD 2013-12"
-  input Schedule scheduleIn;
+  input HpcOmSimCode.Schedule scheduleIn;
   input FuncType funcIn;
   input ArgType extraArg;
-  output Schedule scheduleOut;
+  output HpcOmSimCode.Schedule scheduleOut;
 partial function FuncType
-  input list<Task> taskIn;
+  input list<HpcOmSimCode.Task> taskIn;
   input ArgType argIn;
-  output list<Task> outArg;
+  output list<HpcOmSimCode.Task> outArg;
 end FuncType;
 replaceable type ArgType subtypeof Any;
 algorithm
   scheduleOut := match(scheduleIn,funcIn,extraArg)
     local
-      array<list<Task>> threadTasks;
+      array<list<HpcOmSimCode.Task>> threadTasks;
       list<String> lockIdc;
-      list<list<Task>> tasksOfLevels;
-      Schedule schedule;
-    case(LEVELSCHEDULE(tasksOfLevels=_),_,_)
+      list<list<HpcOmSimCode.Task>> tasksOfLevels;
+      HpcOmSimCode.Schedule schedule;
+    case(HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=_),_,_)
       then
         scheduleIn;
-    case(THREADSCHEDULE(threadTasks=threadTasks,lockIdc=lockIdc),_,_)
+    case(HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks,lockIdc=lockIdc),_,_)
       equation
         threadTasks = Util.arrayMap1(threadTasks,funcIn,extraArg);
-        schedule = THREADSCHEDULE(threadTasks,lockIdc);
+        schedule = HpcOmSimCode.THREADSCHEDULE(threadTasks,lockIdc);
       then
         schedule;
-    case(EMPTYSCHEDULE(),_,_)
+    case(HpcOmSimCode.EMPTYSCHEDULE(),_,_)
       then
         scheduleIn;
   end match;
@@ -1733,11 +1683,11 @@ author:Waurich TUD 2013-12"
   input HpcOmTaskGraph.TaskGraph taskGraphTIn;
   input HpcOmTaskGraph.TaskGraphMeta taskGraphMetaIn;
   input array<list<Integer>> SccSimEqMappingIn;
-  input list<Task> removeLocksIn;
+  input list<HpcOmSimCode.Task> removeLocksIn;
   input list<Integer> orderIn;  // need the complete order for removeSuperfluousLocks
-  input Schedule scheduleIn;
-  output Schedule scheduleOut;
-  output list<Task> removeLocksOut;
+  input HpcOmSimCode.Schedule scheduleIn;
+  output HpcOmSimCode.Schedule scheduleOut;
+  output list<HpcOmSimCode.Task> removeLocksOut;
 algorithm
   (scheduleOut,removeLocksOut) := match(taskAss,procAss,orderOpt,taskGraphIn,taskGraphTIn,taskGraphMetaIn,SccSimEqMappingIn,removeLocksIn,orderIn,scheduleIn)
     local
@@ -1749,15 +1699,15 @@ algorithm
       array<list<Integer>> inComps;
       array<tuple<Integer,Real>> exeCosts;
       array<list<tuple<Integer,Integer,Integer>>> commCosts;
-      array<list<Task>> threadTasks;
-      list<Task> taskLst1,taskLst,taskLstAss,taskLstRel, removeLocks;
-      Schedule schedule;
-      Task task;
-    case(_,_,SOME({}),_,_,_,_,_,_,THREADSCHEDULE(lockIdc=_))
+      array<list<HpcOmSimCode.Task>> threadTasks;
+      list<HpcOmSimCode.Task> taskLst1,taskLst,taskLstAss,taskLstRel, removeLocks;
+      HpcOmSimCode.Schedule schedule;
+      HpcOmSimCode.Task task;
+    case(_,_,SOME({}),_,_,_,_,_,_,HpcOmSimCode.THREADSCHEDULE(lockIdc=_))
       equation
       then
         (scheduleIn,removeLocksIn);
-    case(_,_,SOME(order),_,_,_,_,_,_,THREADSCHEDULE(threadTasks=threadTasks, lockIdc=lockIdc))
+    case(_,_,SOME(order),_,_,_,_,_,_,HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks, lockIdc=lockIdc))
       equation
         numProc = arrayLength(procAss);
         (node::rest) = order;
@@ -1783,18 +1733,18 @@ algorithm
         ((_,exeCost)) = HpcOmTaskGraph.getExeCost(node,taskGraphMetaIn);
         simEqIdc = List.map(List.map1(components,getSccSimEqMappingByIndex,SccSimEqMappingIn), List.last);
         simEqIdc = listReverse(simEqIdc);
-        task = CALCTASK(mark,node,exeCost,-1.0,proc,simEqIdc);
+        task = HpcOmSimCode.CALCTASK(mark,node,exeCost,-1.0,proc,simEqIdc);
         taskLst1 = task::taskLstRel;
         taskLst1 = listAppend(taskLstAss,taskLst1);
         taskLst = listAppend(taskLst,taskLst1);
         //update schedule
         threadTasks = arrayUpdate(threadTasks,proc,taskLst);
         lockIdc = listAppend(lockIdc,assLockIdc);
-        schedule = THREADSCHEDULE(threadTasks,lockIdc);
+        schedule = HpcOmSimCode.THREADSCHEDULE(threadTasks,lockIdc);
         (schedule,removeLocks) = createScheduleFromAssignments(taskAss,procAss,SOME(rest),taskGraphIn,taskGraphTIn,taskGraphMetaIn,SccSimEqMappingIn,removeLocks,orderIn,schedule);
       then
         (schedule,removeLocks);
-    case(_,_,NONE(),_,_,_,_,_,_,THREADSCHEDULE(lockIdc=_))
+    case(_,_,NONE(),_,_,_,_,_,_,HpcOmSimCode.THREADSCHEDULE(lockIdc=_))
       equation
         print("createSchedulerFromAssignments failed.implement this!\n");
       then
@@ -1805,8 +1755,8 @@ end createScheduleFromAssignments;
 
 protected function isEqualTaskId"checks if the lockId or the calcTaskIdx is the same. emptyTasks are not handled as equal.
 author:Waurich TUD 2013-12"
-  input Task task1;
-  input Task task2;
+  input HpcOmSimCode.Task task1;
+  input HpcOmSimCode.Task task2;
   output Boolean isEqOut;
 algorithm
   isEqOut := match(task1,task2)
@@ -1814,22 +1764,22 @@ algorithm
       Boolean isEq;
       Integer id1,id2;
       String lockId1,lockId2;
-    case(ASSIGNLOCKTASK(lockId=lockId1),ASSIGNLOCKTASK(lockId=lockId2))
+    case(HpcOmSimCode.ASSIGNLOCKTASK(lockId=lockId1),HpcOmSimCode.ASSIGNLOCKTASK(lockId=lockId2))
       equation
         isEq = stringEq(lockId1,lockId2);
       then
         isEq;
-    case(RELEASELOCKTASK(lockId=lockId1),RELEASELOCKTASK(lockId=lockId2))
+    case(HpcOmSimCode.RELEASELOCKTASK(lockId=lockId1),HpcOmSimCode.RELEASELOCKTASK(lockId=lockId2))
       equation
         isEq = stringEq(lockId1,lockId2);
       then
         isEq;
-    case(CALCTASK(weighting=_,index=id1,calcTime=_,timeFinished=_,threadIdx=_,eqIdc=_),CALCTASK(weighting=_,index=id2,calcTime=_,timeFinished=_,threadIdx=_,eqIdc=_))
+    case(HpcOmSimCode.CALCTASK(weighting=_,index=id1,calcTime=_,timeFinished=_,threadIdx=_,eqIdc=_),HpcOmSimCode.CALCTASK(weighting=_,index=id2,calcTime=_,timeFinished=_,threadIdx=_,eqIdc=_))
       equation
         isEq = intEq(id1,id2);
       then
         isEq;
-    case(TASKEMPTY(),TASKEMPTY())
+    case(HpcOmSimCode.TASKEMPTY(),HpcOmSimCode.TASKEMPTY())
       equation
       then
         false;
@@ -1843,7 +1793,7 @@ end isEqualTaskId;
 protected function removeLocksFromLockIds "removes all locks from the list of locks.
 author:Waurich TUD 2013-12"
   input list<String> lockIdsIn;
-  input list<Task> lockTasks;
+  input list<HpcOmSimCode.Task> lockTasks;
   output list<String> lockIdsOut;
 protected
   list<String> lockIdStrings;
@@ -1855,9 +1805,9 @@ end removeLocksFromLockIds;
 
 protected function removeLocksFromThread "removes all lockTasks that are given in the locksLst from the thread.
 author:Waurich TUD 2013-12"
-  input list<Task> threadIn;
-  input list<Task> lockLst;
-  output list<Task> threadOut;
+  input list<HpcOmSimCode.Task> threadIn;
+  input list<HpcOmSimCode.Task> lockLst;
+  output list<HpcOmSimCode.Task> threadOut;
 algorithm
   (_,threadOut,_) := List.intersection1OnTrue(threadIn,lockLst,isEqualTaskId);
 end removeLocksFromThread;
@@ -1865,16 +1815,16 @@ end removeLocksFromThread;
 
 protected function getLockIdString "gets the lockId string.
 author:Waurich TUD 2013-12"
-  input Task taskIn;
+  input HpcOmSimCode.Task taskIn;
   output String idStringOut;
 algorithm
   idStringOut := match(taskIn)
     local
       String lockId;
-    case(ASSIGNLOCKTASK(lockId=lockId))
+    case(HpcOmSimCode.ASSIGNLOCKTASK(lockId=lockId))
       then
         lockId;
-    case(RELEASELOCKTASK(lockId=lockId))
+    case(HpcOmSimCode.RELEASELOCKTASK(lockId=lockId))
       then
         lockId;
     else
@@ -1891,15 +1841,15 @@ author:Waurich TUD 2013-12"
   input array<Integer> taskAssIn;
   input list<Integer> orderIn;
   input Integer numProc;
-  input list<Task> removeLocksIn;
-  output list<Task> removeLocksOut;
+  input list<HpcOmSimCode.Task> removeLocksIn;
+  output list<HpcOmSimCode.Task> removeLocksOut;
 protected
   array<list<Integer>> parentsOnThreads, arr;
   array<String> s;
   list<Integer> otherParentsProcs, lockCandidatesFlat;
   list<String> assLockIdc, relLockIdc;
   list<list<Integer>> lockCandidates;
-  list<Task> removeLocks, taskLstAss, taskLstRel;
+  list<HpcOmSimCode.Task> removeLocks, taskLstAss, taskLstRel;
 algorithm
   otherParentsProcs := List.map1(otherParentsIn,Util.arrayGetIndexFirst,taskAssIn);
   parentsOnThreads := arrayCreate(numProc,{});
@@ -1976,18 +1926,18 @@ end listIndecesForValues;
 protected function getAssignLockTask "outputs a AssignLockTsk for the given lockId.
 author:Waurich TUD 2013-11"
   input String lockId;
-  output Task taskOut;
+  output HpcOmSimCode.Task taskOut;
 algorithm
-  taskOut := ASSIGNLOCKTASK(lockId);
+  taskOut := HpcOmSimCode.ASSIGNLOCKTASK(lockId);
 end getAssignLockTask;
 
 
 protected function getReleaseLockTask "outputs a ReleaseLockTsk for the given lockId.
 author:Waurich TUD 2013-11"
   input String lockId;
-  output Task taskOut;
+  output HpcOmSimCode.Task taskOut;
 algorithm
-  taskOut := RELEASELOCKTASK(lockId);
+  taskOut := HpcOmSimCode.RELEASELOCKTASK(lockId);
 end getReleaseLockTask;
 
 
@@ -2443,55 +2393,24 @@ end getALAPCost1;
 //-----
 // Util
 //-----
-public function convertScheduleToSimCodeSchedule
-  input Schedule iSchedule;
-  output ScheduleSimCode oSchedule;
-protected
-  list<list<Task>> tasksOfLevels;
-  array<list<Task>> threadTasks;
-  list<list<Task>> tmpThreadTasks;
-  list<String> lockIdc;
-  list<tuple<Task, list<Integer>>> tasks;
-  ScheduleSimCode tmpSchedule;
-algorithm
-  oSchedule := match(iSchedule)
-    case(LEVELSCHEDULE(tasksOfLevels=tasksOfLevels))
-      equation
-        tmpSchedule = LEVELSCHEDULESC(tasksOfLevels);
-      then tmpSchedule;
-    case(THREADSCHEDULE(threadTasks=threadTasks, lockIdc=lockIdc))
-      equation
-        tmpThreadTasks = arrayList(threadTasks);
-        tmpSchedule = THREADSCHEDULESC(tmpThreadTasks,lockIdc);
-      then tmpSchedule;
-    case(TASKDEPSCHEDULE(tasks=tasks))
-      equation
-        tmpSchedule = TASKDEPSCHEDULESC(tasks);
-      then tmpSchedule;
-    else
-      equation
-        print("ConvertScheduleToSimCodeSchedule failed.\n");
-      then fail();
-  end match;
-end convertScheduleToSimCodeSchedule;
 
 public function printSchedule
-  input Schedule iSchedule;
+  input HpcOmSimCode.Schedule iSchedule;
 protected
-  array<list<Task>> threadTasks;
-  list<list<Task>> tasksOfLevels;
-  list<tuple<Task, list<Integer>>> taskDepTasks;
+  array<list<HpcOmSimCode.Task>> threadTasks;
+  list<list<HpcOmSimCode.Task>> tasksOfLevels;
+  list<tuple<HpcOmSimCode.Task, list<Integer>>> taskDepTasks;
 algorithm
   _ := match(iSchedule)
-    case(THREADSCHEDULE(threadTasks=threadTasks))
+    case(HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks))
       equation
         _ = Util.arrayFold(threadTasks, printThreadSchedule, 1);
       then ();
-    case(LEVELSCHEDULE(tasksOfLevels=tasksOfLevels))
+    case(HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=tasksOfLevels))
       equation
         _ = List.fold(tasksOfLevels,printLevelSchedule,1);
       then ();
-    case(TASKDEPSCHEDULE(tasks=taskDepTasks))
+    case(HpcOmSimCode.TASKDEPSCHEDULE(tasks=taskDepTasks))
       equation
         List.map_0(taskDepTasks,printTaskDepSchedule);
       then ();
@@ -2502,7 +2421,7 @@ end printSchedule;
 
 public function analyseScheduledTaskGraph"functions to analyse the scheduled task graph can be applied in here.
 author:Waurich TUD 2013-12"
-  input Schedule scheduleIn;
+  input HpcOmSimCode.Schedule scheduleIn;
   input Integer numProcIn;
   input HpcOmTaskGraph.TaskGraph taskGraphIn;
   input HpcOmTaskGraph.TaskGraphMeta taskGraphMetaIn;
@@ -2511,13 +2430,13 @@ algorithm
   criticalPathInfoOut := match(scheduleIn,numProcIn,taskGraphIn,taskGraphMetaIn)
     local
       list<String> lockIdc;
-      list<list<Task>> levels;
+      list<list<HpcOmSimCode.Task>> levels;
       list<list<Integer>> parallelSets;
       list<list<Integer>> criticalPaths, criticalPathsWoC;
-      array<list<Task>> threadTasks;
+      array<list<HpcOmSimCode.Task>> threadTasks;
       Real cpCosts, cpCostsWoC, serTime, parTime, speedUp, speedUpMax;
       String criticalPathInfo;
-    case(LEVELSCHEDULE(tasksOfLevels=_),_,_,_)
+    case(HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=_),_,_,_)
       equation
         //get the criticalPath
         ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC),_) = HpcOmTaskGraph.longestPathMethod(taskGraphIn,taskGraphMetaIn);
@@ -2525,7 +2444,7 @@ algorithm
         Debug.fcall(Flags.HPCOM_DUMP,print,criticalPathInfo);
       then
         criticalPathInfo;
-    case(THREADSCHEDULE(lockIdc=lockIdc),_,_,_)
+    case(HpcOmSimCode.THREADSCHEDULE(lockIdc=lockIdc),_,_,_)
       equation
         Debug.fcall(Flags.HPCOM_DUMP,print,"the number of locks: "+&intString(listLength(lockIdc))+&"\n");
         //get the criticalPath
@@ -2553,7 +2472,7 @@ end analyseScheduledTaskGraph;
 public function predictExecutionTime  "computes the theoretically execution time for the serial simulation and the parallel. a speedup ratio is determined by su=serTime/parTime.
 the max speedUp is computed via the serTime/criticalPathCosts.
 author:Waurich TUD 2013-11"
-  input Schedule scheduleIn;
+  input HpcOmSimCode.Schedule scheduleIn;
   input Option<Real> cpCostsOption;
   input Integer numProc;
   input HpcOmTaskGraph.TaskGraph taskGraphIn;
@@ -2566,7 +2485,7 @@ algorithm
   (serialTimeOut,parallelTimeOut,speedUpOut,speedUpMaxOut) := matchcontinue(scheduleIn,cpCostsOption,numProc,taskGraphIn,taskGraphMetaIn)
     local
       Real parTime, serTime, speedUp, speedUpMax, cpCosts;
-      Schedule schedule;
+      HpcOmSimCode.Schedule schedule;
     case(_,NONE(),_,_,_)
       equation
         true = intNe(arrayLength(taskGraphIn),0); //is an ODE system
@@ -2646,11 +2565,11 @@ end getSerialExecutionTime;
 
 protected function getFinishingTimesForSchedule"computes the finishing times for the schedule. Works not for empty systems!!!
 author:Waurich TUD 2013-11"
-  input Schedule scheduleIn;
+  input HpcOmSimCode.Schedule scheduleIn;
   input Integer numProc;
   input HpcOmTaskGraph.TaskGraph taskGraphIn;
   input HpcOmTaskGraph.TaskGraphMeta taskGraphMetaIn;
-  output Schedule scheduleOut;
+  output HpcOmSimCode.Schedule scheduleOut;
   output Real finishingTime;
 algorithm
   (scheduleOut,finishingTime) := match(scheduleIn,numProc,taskGraphIn,taskGraphMetaIn)
@@ -2659,30 +2578,30 @@ algorithm
       array<Integer> taskIdcs; // idcs of the current Task for every proc.
       array<Real> finTimes;
       HpcOmTaskGraph.TaskGraph taskGraphT;
-      array<Task> checkedTasks, lastTasks;
-      array<list<Task>> threadTasks, threadTasksNew;
+      array<HpcOmSimCode.Task> checkedTasks, lastTasks;
+      array<list<HpcOmSimCode.Task>> threadTasks, threadTasksNew;
       list<String> lockIdc;
-      list<list<Task>> tasksOfLevels;
-      Task task;
-      Schedule schedule;
-    case(THREADSCHEDULE(threadTasks=threadTasks,lockIdc=lockIdc),_,_,_)
+      list<list<HpcOmSimCode.Task>> tasksOfLevels;
+      HpcOmSimCode.Task task;
+      HpcOmSimCode.Schedule schedule;
+    case(HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks,lockIdc=lockIdc),_,_,_)
       equation
         taskIdcs = arrayCreate(arrayLength(threadTasks),1);  // the TaskIdcs to be checked for every thread
         taskGraphT = BackendDAEUtil.transposeMatrix(taskGraphIn,arrayLength(taskGraphIn));
-        checkedTasks = arrayCreate(arrayLength(taskGraphIn),TASKEMPTY());
+        checkedTasks = arrayCreate(arrayLength(taskGraphIn),HpcOmSimCode.TASKEMPTY());
         threadTasksNew = computeTimeFinished(threadTasks,taskIdcs,1,checkedTasks,taskGraphIn,taskGraphT,taskGraphMetaIn,numProc,{});
         finTimes = Util.arrayMap(threadTasksNew,getTimeFinishedOfLastTask);
         finTime = Util.arrayFold(finTimes,realMax,0.0);
-        schedule = THREADSCHEDULE(threadTasksNew,lockIdc);
+        schedule = HpcOmSimCode.THREADSCHEDULE(threadTasksNew,lockIdc);
       then
         (schedule,finTime);
-    case(LEVELSCHEDULE(_),_,_,_)
+    case(HpcOmSimCode.LEVELSCHEDULE(_),_,_,_)
       equation
         schedule = scheduleIn;
         finTime = 0.0;
       then
         (schedule,finTime);
-    case(EMPTYSCHEDULE(),_,_,_)
+    case(HpcOmSimCode.EMPTYSCHEDULE(),_,_,_)
       equation
         schedule = scheduleIn;
         finTime = -1.0;
@@ -2694,12 +2613,12 @@ end getFinishingTimesForSchedule;
 
 protected function getTimeFinishedOfLastTask "get the timeFinished of the last task of a thread. if the thread is empty its -1.0.
 author:Waurich TUD 2013-11"
-  input list<Task> threadTasksIn;
+  input list<HpcOmSimCode.Task> threadTasksIn;
   output Real finTimeOut;
 algorithm
   finTimeOut := matchcontinue(threadTasksIn)
     local
-      Task lastTask;
+      HpcOmSimCode.Task lastTask;
       Real finTime;
     case(_)
       equation
@@ -2717,16 +2636,16 @@ end getTimeFinishedOfLastTask;
 
 protected function computeTimeFinished  "traverses all threads bottoms up.
 author:Waurich TUD 2013-11"
-  input array<list<Task>> threadTasksIn;
+  input array<list<HpcOmSimCode.Task>> threadTasksIn;
   input array<Integer> taskIdcsIn;
   input Integer threadIdxIn;
-  input array<Task> checkedTasksIn;
+  input array<HpcOmSimCode.Task> checkedTasksIn;
   input HpcOmTaskGraph.TaskGraph taskGraphIn;
   input HpcOmTaskGraph.TaskGraph taskGraphTIn;
   input HpcOmTaskGraph.TaskGraphMeta taskGraphMetaIn;
   input Integer numProc;
   input list<Integer> closedThreads;
-  output array<list<Task>> threadTasksOut;
+  output array<list<HpcOmSimCode.Task>> threadTasksOut;
 algorithm
   threadTasksOut := matchcontinue(threadTasksIn,taskIdcsIn,threadIdxIn,checkedTasksIn,taskGraphIn,taskGraphTIn,taskGraphMetaIn,numProc,closedThreads)
     local
@@ -2734,10 +2653,10 @@ algorithm
       Integer taskIdx, nextThreadIdx, nextTaskIdx;
       array<Integer> taskIdcs;
       list<Integer> closedThreads1;
-      Task task;
-      array<list<Task>> threadTasks;
-      array<Task> checkedTasks;
-      list<Task> thread;
+      HpcOmSimCode.Task task;
+      array<list<HpcOmSimCode.Task>> threadTasks;
+      array<HpcOmSimCode.Task> checkedTasks;
+      list<HpcOmSimCode.Task> thread;
     case(_,_,_,_,_,_,_,_,_)
       equation
         // get the task
@@ -2810,15 +2729,15 @@ end getNextThreadIdx;
 
 protected function updateFinishingTime "updates the finishing times.
 author:Waurich TUD 2013-11"
-  input Task taskIn;
+  input HpcOmSimCode.Task taskIn;
   input Integer taskIdxIn;
   input Integer threadIdxIn;
-  input array<list<Task>> threadTasksIn;
-  input array<Task> checkedTasksIn;
+  input array<list<HpcOmSimCode.Task>> threadTasksIn;
+  input array<HpcOmSimCode.Task> checkedTasksIn;
   input HpcOmTaskGraph.TaskGraph taskGraphTIn;
   input HpcOmTaskGraph.TaskGraphMeta taskGraphMetaIn;
-  output array<list<Task>> threadTasksOut;
-  output array<Task> checkedTasksOut;
+  output array<list<HpcOmSimCode.Task>> threadTasksOut;
+  output array<HpcOmSimCode.Task> checkedTasksOut;
   output Integer taskIdxOut;
 algorithm
   (threadTasksOut,checkedTasksOut,taskIdxOut) := match(taskIn,taskIdxIn,threadIdxIn,threadTasksIn,checkedTasksIn,taskGraphTIn,taskGraphMetaIn)
@@ -2827,27 +2746,27 @@ algorithm
       Integer taskID, taskIdxNew;
       Real finishingTime;
       list<Integer> parentLst;
-      Task latestTask,startTask;
-      array<Task> checkedTasks;
-      array<list<Task>> threadTasks;
-    case(CALCTASK(weighting=_,index=taskID,calcTime=_,timeFinished=_,threadIdx=_,eqIdc=_),_,_,_,_,_,_)
+      HpcOmSimCode.Task latestTask,startTask;
+      array<HpcOmSimCode.Task> checkedTasks;
+      array<list<HpcOmSimCode.Task>> threadTasks;
+    case(HpcOmSimCode.CALCTASK(weighting=_,index=taskID,calcTime=_,timeFinished=_,threadIdx=_,eqIdc=_),_,_,_,_,_,_)
       equation
         parentLst = arrayGet(taskGraphTIn,taskID);
         // gets the parentIdcs which are not yet checked and computes the latest finishingTime of all parentNodes
-        ((parentLst, latestTask)) = List.fold1(parentLst, updateFinishingTime1, checkedTasksIn, ({},TASKEMPTY()));
+        ((parentLst, latestTask)) = List.fold1(parentLst, updateFinishingTime1, checkedTasksIn, ({},HpcOmSimCode.TASKEMPTY()));
         isComputable = List.isEmpty(parentLst);
         taskIdxNew = Util.if_(isComputable,taskIdxIn+1,taskIdxIn);
         //update the threadTasks and checked Tasks
         ((threadTasks,checkedTasks)) = Debug.bcallret1(isComputable, computeFinishingTimeForOneTask, (threadTasksIn,checkedTasksIn,taskIdxIn,threadIdxIn,latestTask,taskGraphMetaIn),(threadTasksIn,checkedTasksIn));
       then
         (threadTasks,checkedTasks,taskIdxNew);
-    case(ASSIGNLOCKTASK(lockId=_),_,_,_,_,_,_)
+    case(HpcOmSimCode.ASSIGNLOCKTASK(lockId=_),_,_,_,_,_,_)
       equation
         //skip the assignlock
         taskIdxNew = taskIdxIn+1;
       then
         (threadTasksIn,checkedTasksIn,taskIdxNew);
-    case(RELEASELOCKTASK(lockId=_),_,_,_,_,_,_)
+    case(HpcOmSimCode.RELEASELOCKTASK(lockId=_),_,_,_,_,_,_)
       equation
         //skip the releaselock
         taskIdxNew = taskIdxIn+1;
@@ -2860,14 +2779,14 @@ end updateFinishingTime;
 protected function updateFinishingTime1  "folding function that checks whether the parentNode is in the checkedNodes and looks for the task with the latest finishingTime.
 author:Waurich TUD 2013-11"
   input Integer parentIdx;
-  input array<Task> checkedTaskIn;
-  input tuple<list<Integer>,Task> tplIn;
-  output tuple<list<Integer>,Task> tplOut;
+  input array<HpcOmSimCode.Task> checkedTaskIn;
+  input tuple<list<Integer>,HpcOmSimCode.Task> tplIn;
+  output tuple<list<Integer>,HpcOmSimCode.Task> tplOut;
 protected
   Boolean isCalc;
   Real finishingTime, finishingTime1, finishingTimeIn;
   list<Integer> parentLst, parentLstIn;
-  Task task, taskIn;
+  HpcOmSimCode.Task task, taskIn;
 algorithm
   (parentLstIn,taskIn) := tplIn;
   finishingTimeIn := getTimeFinished(taskIn);
@@ -2882,19 +2801,19 @@ end updateFinishingTime1;
 
 protected function computeFinishingTimeForOneTask  "updated the timeFinished in the calcTask and adds the task to the checkedTasks.
 author: Waurich TUD 2013-11"
-  input tuple<array<list<Task>>,array<Task>,Integer,Integer,Task,HpcOmTaskGraph.TaskGraphMeta> tplIn;
-  output tuple<array<list<Task>>,array<Task>> tplOut;
+  input tuple<array<list<HpcOmSimCode.Task>>,array<HpcOmSimCode.Task>,Integer,Integer,HpcOmSimCode.Task,HpcOmTaskGraph.TaskGraphMeta> tplIn;
+  output tuple<array<list<HpcOmSimCode.Task>>,array<HpcOmSimCode.Task>> tplOut;
 algorithm
   tplOut := matchcontinue(tplIn)
     local
       Boolean isEmpty;
-      array<list<Task>> threadTasks,threadTasksIn;
-      array<Task> checkedTasksIn, checkedTasks;
+      array<list<HpcOmSimCode.Task>> threadTasks,threadTasksIn;
+      array<HpcOmSimCode.Task> checkedTasksIn, checkedTasks;
       Integer commCost, taskIdx,taskIdxLatest, taskNum, threadIdx, threadIdxLatest;
       Real finishingTime, finishingTime1, finishingTimeComm, exeCost, commCostR;
       HpcOmTaskGraph.TaskGraphMeta taskGraphMeta;
-      Task task, latestTask, preTask;
-      list<Task> thread;
+      HpcOmSimCode.Task task, latestTask, preTask;
+      list<HpcOmSimCode.Task> thread;
     case((threadTasksIn,checkedTasksIn,taskNum,threadIdx,latestTask,taskGraphMeta))
       // a rootNode
       equation
@@ -2948,20 +2867,20 @@ end computeFinishingTimeForOneTask;
 
 protected function getPredecessorCalcTask "gets the calctask before task at position <index> in the thread.
 author:Waurich TUD 2013-11"
-  input list<Task> threadIn;
+  input list<HpcOmSimCode.Task> threadIn;
   input Integer indexIn;
-  output Task taskOut;
+  output HpcOmSimCode.Task taskOut;
 algorithm
   taskOut := matchcontinue(threadIn,indexIn)
     local
       Boolean isCalc;
       Integer index;
-      Task preTask;
+      HpcOmSimCode.Task preTask;
     case(_,_)
       equation
         true = indexIn==1;
       then
-        TASKEMPTY();
+        HpcOmSimCode.TASKEMPTY();
     case(_,_)
       equation
         true = indexIn >= 2;
@@ -2977,9 +2896,9 @@ end getPredecessorCalcTask;
 
 protected function updateTimeFinished "replaces the timeFinished in the calcTask.
 author:Waurich TUD 2013-11"
-  input Task taskIn;
+  input HpcOmSimCode.Task taskIn;
   input Real timeFinishedIn;
-  output Task taskOut;
+  output HpcOmSimCode.Task taskOut;
 protected
   Integer weighting;
   Integer index;
@@ -2988,23 +2907,23 @@ protected
   Integer threadIdx;
   list<Integer> eqIdc;
 algorithm
-  CALCTASK(weighting=weighting,index=index,calcTime=calcTime,timeFinished=timeFinished,threadIdx=threadIdx,eqIdc=eqIdc) := taskIn;
-  taskOut := CALCTASK(weighting,index,calcTime,timeFinishedIn,threadIdx,eqIdc);
+  HpcOmSimCode.CALCTASK(weighting=weighting,index=index,calcTime=calcTime,timeFinished=timeFinished,threadIdx=threadIdx,eqIdc=eqIdc) := taskIn;
+  taskOut := HpcOmSimCode.CALCTASK(weighting,index,calcTime,timeFinishedIn,threadIdx,eqIdc);
 end updateTimeFinished;
 
 
 protected function getTimeFinished "gets the timeFinished of a calcTask, if its not a calctask its -1.0. if its an emptyTask its 0.0
 author:Waurich TUD 2013-11"
-  input Task taskIn;
+  input HpcOmSimCode.Task taskIn;
   output Real finishingTime;
 algorithm
   finishingTime := match(taskIn)
   local
     Real fTime;
-  case(CALCTASK(weighting=_,index=_,calcTime=_,timeFinished=fTime,threadIdx=_,eqIdc=_))
+  case(HpcOmSimCode.CALCTASK(weighting=_,index=_,calcTime=_,timeFinished=fTime,threadIdx=_,eqIdc=_))
     then
       fTime;
-  case(TASKEMPTY())
+  case(HpcOmSimCode.TASKEMPTY())
     then
       0.0;
   else
@@ -3016,13 +2935,13 @@ end getTimeFinished;
 
 protected function getThreadId "gets the threadIdx of a calcTask, if its not a calctask its -1
 author:Waurich TUD 2013-11"
-  input Task taskIn;
+  input HpcOmSimCode.Task taskIn;
   output Integer threadId;
 algorithm
   threadId := match(taskIn)
   local
     Integer threadIdx;
-  case(CALCTASK(weighting=_,index=_,calcTime=_,timeFinished=_,threadIdx=threadIdx,eqIdc=_))
+  case(HpcOmSimCode.CALCTASK(weighting=_,index=_,calcTime=_,timeFinished=_,threadIdx=threadIdx,eqIdc=_))
     then
       threadIdx;
   else
@@ -3034,13 +2953,13 @@ end getThreadId;
 
 protected function getTaskIdx "gets the idx of the calcTask.if its no calcTask, then -1.
 author: Waurich TUD 2013-11"
-  input Task taskIn;
+  input HpcOmSimCode.Task taskIn;
   output Integer idx;
 algorithm
   idx := match(taskIn)
     local
       Integer taskIdx;
-    case(CALCTASK(weighting=_,index=taskIdx,calcTime=_,timeFinished=_,threadIdx=_,eqIdc=_))
+    case(HpcOmSimCode.CALCTASK(weighting=_,index=taskIdx,calcTime=_,timeFinished=_,threadIdx=_,eqIdc=_))
       then
         taskIdx;
     else
@@ -3052,11 +2971,11 @@ end getTaskIdx;
 
 protected function isCalcTask "checks if the given task is a calcTask.
 author:Waurich TUD 2013-11"
-  input Task taskIn;
+  input HpcOmSimCode.Task taskIn;
   output Boolean isCalc;
 algorithm
   isCalc := match(taskIn)
-  case(CALCTASK(weighting=_,index=_,calcTime=_,timeFinished=_,threadIdx=_,eqIdc=_))
+  case(HpcOmSimCode.CALCTASK(weighting=_,index=_,calcTime=_,timeFinished=_,threadIdx=_,eqIdc=_))
     then
       true;
   else
@@ -3068,11 +2987,11 @@ end isCalcTask;
 
 protected function isEmptyTask "checks if the given task is an emptyTask.
 author:Waurich TUD 2013-11"
-  input Task taskIn;
+  input HpcOmSimCode.Task taskIn;
   output Boolean isEmpty;
 algorithm
   isEmpty := match(taskIn)
-  case(TASKEMPTY())
+  case(HpcOmSimCode.TASKEMPTY())
     then
       true;
   else

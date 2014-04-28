@@ -37,6 +37,8 @@
 #include <iostream>
 #include <set>
 #include <cstring>
+#include <sys/types.h>
+#include "regex.h"
 #include "expat.h"
 
 //--------------------------
@@ -54,6 +56,7 @@ struct Node
   int taskId;
 
   Node();
+  Node(std::string id, std::string name, double calcTime, std::string threadId, int taskNumber, int taskId);
   ~Node();
 };
 #endif //TGRC_NODE
@@ -70,6 +73,7 @@ struct Edge
   double commTime;
 
   Edge();
+  Edge(std::string id, std::string sourceId, std::string sourceName, std::string targetId, std::string targetName, double commTime);
   ~Edge();
 };
 #endif //TGRC_EDGE
@@ -99,9 +103,63 @@ public:
 };
 #endif //TGRC_GRAPH
 
+#ifndef TGRC_NODECOMPARATOR
+#define TGRC_NODECOMPARATOR
+class NodeComparator
+{
+public:
+	int (*comparator)(Node *n1, Node* n2);
+
+	NodeComparator(int (*comparator)(Node *n1, Node* n2));
+	~NodeComparator();
+
+    bool operator()(Node *node1, Node *node2) const {
+          return (comparator(node1,node2) > 0);
+    }
+
+	static int CompareNodeNamesInt(Node *n1, Node *n2);
+	static int CompareNodeIdsInt(Node *n1, Node *n2);
+	static int CompareNodeTaskIdsInt(Node *n1, Node *n2);
+};
+#endif //TGRC_NODECOMPARATOR
+
+#ifndef TGRC_EDGECOMPARATOR
+#define TGRC_EDGECOMPARATOR
+class EdgeComparator
+{
+public:
+	int (*comparator)(Edge *n1, Edge* n2);
+
+	EdgeComparator(int (*comparator)(Edge *n1, Edge* n2));
+	~EdgeComparator();
+
+    bool operator()(Edge *node1, Edge *node2) const {
+          return (comparator(node1,node2) > 0);
+    }
+
+    static int CompareEdgesByNodeIdsInt(Edge *e1, Edge *e2);
+    static int CompareEdgesByNodeNamesInt(Edge *e1, Edge *e2);
+
+};
+#endif //TGRC_EDGECOMPARATOR
+
+#ifndef TGRC_GRAPHPARSER
+#define TGRC_GRAPHPARSER
+class GraphParser
+{
+public:
+	GraphParser();
+	virtual ~GraphParser();
+
+	static bool CheckIfFileExists(const char* fileName);
+
+	virtual void ParseGraph(Graph *currentGraph, const char* fileName, NodeComparator nodeComparator, std::string *_errorMsg) = 0;
+};
+#endif //TGRC_GRAPHPARSER
+
 #ifndef TGRC_GRAPHMLPARSER
 #define TGRC_GRAPHMLPARSER
-class GraphMLParser
+class GraphMLParser : public GraphParser
 {
 private:
   struct ParserUserData
@@ -119,7 +177,7 @@ private:
 
     std::string* errorMsg;
     int level;
-    std::set<Node*, bool (*)(Node*, Node*)> *nodeSet;
+    std::set<Node*, NodeComparator> *nodeSet;
     std::string calcTimeAttributeId;
     std::string commCostAttributeId;
     std::string criticalPathAttributeId;
@@ -128,9 +186,6 @@ private:
     std::string taskNumberAttributeId;
     std::string taskIdAttributeId;
   };
-
-  GraphMLParser(void);
-  ~GraphMLParser(void);
 
 protected:
   //Handler for the expat-startElement-event.
@@ -146,11 +201,26 @@ protected:
   static std::string RemoveNamespace(const char* name);
 
 public:
-  static void ParseGraph(Graph *currentGraph, const char* fileName, bool (*nodeComparator)(Node*, Node*), std::string *_errorMsg);
+  GraphMLParser(void);
+  virtual ~GraphMLParser(void);
 
-  static bool CheckIfFileExists(const char* fileName);
+  virtual void ParseGraph(Graph *currentGraph, const char* fileName, NodeComparator nodeComparator, std::string *_errorMsg);
 };
 #endif //TGRC_GRAPHMLPARSER
+
+#ifndef TGRC_CODEPARSER
+#define TGRC_CODEPARSER
+class GraphCodeParser : public GraphParser
+{
+protected:
+	std::string Trim(const std::string& str);
+public:
+	GraphCodeParser();
+	virtual ~GraphCodeParser();
+
+	virtual void ParseGraph(Graph *currentGraph, const char* fileName, NodeComparator nodeComparator, std::string *_errorMsg);
+};
+#endif //TGRC_CODEPARSER
 
 #ifndef TGRC_GRAPHCOMPARATOR
 #define TGRC_GRAPHCOMPARATOR
@@ -161,20 +231,12 @@ private:
 public:
   //Compares the two given graphs and adds every error-message to the given string.
   static bool CompareGraphs(Graph *g1, Graph *g2, std::string *errorMsg);
+  static bool CompareGraphs(Graph *g1, Graph *g2, NodeComparator nodeComparator, EdgeComparator edgeComparator, bool checkCalcTime, bool checkCommTime, std::string *errorMsg);
 
   ~GraphComparator(void);
 
-  static bool CompareNodeNamesBool(Node *n1, Node *n2);
-  static int CompareNodeNamesInt(Node *n1, Node *n2);
-  static bool CompareNodeIdsBool(Node *n1, Node *n2);
-  static int CompareNodeIdsInt(Node *n1, Node *n2);
-  static bool CompareNodeTaskIdsBool(Node *n1, Node *n2);
-  static int CompareNodeTaskIdsInt(Node *n1, Node *n2);
-  static bool CompareEdgesBool(Edge *e1, Edge *e2);
-  static int CompareEdgesInt(Edge *e1, Edge *e2);
-
-  static bool IsNodePartOfGraph(Node *node, Graph *graph);
-  static bool IsEdgePartOfGraph(Edge *edge, Graph *graph);
+  static bool IsNodePartOfGraph(Node *node, Graph *graph, NodeComparator nodeComparator);
+  static bool IsEdgePartOfGraph(Edge *edge, Graph *graph, EdgeComparator edgeComparator);
 protected:
   static bool FillEdgesWithNodeNames(std::list<Edge*> edges, std::map<std::string, Node*> *nodeIdNodeMap);
 };

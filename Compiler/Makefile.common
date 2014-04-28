@@ -164,8 +164,10 @@ FindZeroCrossings.mo \
 HashTableCrSimVars.mo \
 HpcOmBenchmark.mo \
 HpcOmEqSystems.mo \
+HpcOmMemory.mo \
 HpcOmScheduler.mo \
 HpcOmSimCode.mo \
+HpcOmSimCodeMain.mo \
 HpcOmTaskGraph.mo \
 IndexReduction.mo \
 Initialization.mo \

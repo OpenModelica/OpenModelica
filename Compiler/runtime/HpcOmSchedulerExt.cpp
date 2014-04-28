@@ -19,6 +19,7 @@ void* HpcOmSchedulerExtImpl__readScheduleFromGraphMl(const char *filename)
   void *res = mk_nil();
   std::string errorMsg = std::string("");
   Graph g;
+  GraphMLParser parser;
 
   if (!GraphMLParser::CheckIfFileExists(filename))
   {
@@ -30,10 +31,10 @@ void* HpcOmSchedulerExtImpl__readScheduleFromGraphMl(const char *filename)
     return res;
   }
 
-  GraphMLParser::ParseGraph(&g, filename,GraphComparator::CompareNodeNamesBool, &errorMsg);
+  parser.ParseGraph(&g, filename,NodeComparator(&NodeComparator::CompareNodeNamesInt), &errorMsg);
 
   std::list<Node*> sortedNodeList = std::list<Node*>(g.nodes.begin(), g.nodes.end());
-  sortedNodeList.sort(GraphComparator::CompareNodeTaskIdsBool);
+  sortedNodeList.sort(NodeComparator(&NodeComparator::CompareNodeTaskIdsInt));
 
     for (std::list<Node*>::iterator iter = sortedNodeList.begin(); iter != sortedNodeList.end(); iter++) {
       //std::cerr << "Node " << (*iter)->taskId << " th " << atoi((*iter)->threadId.substr(3).c_str()) << std::endl;

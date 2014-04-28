@@ -7,9 +7,9 @@
 include Makefile.objs
 
 CPPFLAGS = -I. -I$(UTILPATH) -I. -I$(METAPATH) -I$(METAPATH)gc $(LIBF2CINC) -I$(top_builddir)/3rdParty/gc-7.2/include -I$(top_builddir)/3rdParty/FMIL/install/include/ -I$(top_builddir)/3rdParty/lis-1.4.12/include/ -I$(top_builddir)/3rdParty/Ipopt-3.11.6/include/ $(CONFIG_CPPFLAGS) -DGC_REDIRECT_TO_LOCAL
-CFLAGS = $(CPPFLAGS) $(CONFIG_CFLAGS) $(EXTRA_CFLAGS)
+CFLAGS = $(CPPFLAGS) $(CONFIG_CFLAGS) $(EXTRA_CFLAGS) -g
 CXXFLAGS = $(CFLAGS)
-FFLAGS  = -O -fexceptions
+FFLAGS  = -O0 -fexceptions
 # P.A: before, g77 had -O3 or -O2 but that caused a bug in DDASRT, giving infinite loop.
 builddir = ../../build
 

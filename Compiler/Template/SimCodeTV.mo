@@ -97,6 +97,19 @@ package builtin
     input array<TypeVar> arr;
     output list<TypeVar> lst;
   end arrayList;
+  
+  function arrayGet
+    replaceable type TypeVar subtypeof Any;
+    input array<TypeVar> arr;
+    input Integer index;
+    output TypeVar value;
+  end arrayGet;
+  
+  function arrayLength
+    replaceable type TypeVar subtypeof Any;
+    input array<TypeVar> arr;
+    output Integer length;
+  end arrayLength;
 
   function stringEq
     input String s1;
@@ -178,7 +191,8 @@ package SimCode
       list<JacobianMatrix> jacobianMatrixes;
       Option<SimulationSettings> simulationSettingsOpt;
       String fileNamePrefix;
-      Option<HpcOmScheduler.ScheduleSimCode> hpcOmSchedule;
+      Option<HpcOmSimCode.Schedule> hpcOmSchedule;
+      Option<HpcOmSimCode.MemoryMap> hpcOmMemory; 
     end SIMCODE;
 
   end SimCode;
@@ -2639,7 +2653,8 @@ end Config;
 
 package Flags
   uniontype DebugFlag end DebugFlag;
-
+  uniontype ConfigFlag end ConfigFlag;
+    
   constant DebugFlag PARMODAUTO;
   constant DebugFlag HPCOM;
   constant DebugFlag GEN_DEBUG_SYMBOLS;
@@ -3069,7 +3084,7 @@ package FMI
   end getEnumerationTypeFromTypes;
 end FMI;
 
-package HpcOmSimCode
+package HpcOmSimCodeMain
   function getSimCodeEqByIndex
     input list<SimCode.SimEqSystem> iEqs;
     input Integer iIdx;
@@ -3079,9 +3094,9 @@ package HpcOmSimCode
   function analyzeOdeEquations
     input list<list<SimCode.SimEqSystem>> systems;
   end analyzeOdeEquations;
-end HpcOmSimCode;
+end HpcOmSimCodeMain;
 
-package HpcOmScheduler
+package HpcOmSimCode
   uniontype Task
     record CALCTASK //Task which calculates something
       Integer weighting;
@@ -3100,22 +3115,36 @@ package HpcOmScheduler
     record RELEASELOCKTASK //Task which releases a lock
       String lockId;
     end RELEASELOCKTASK;
-    record TASKEMPTY //Dummy Task
-    end TASKEMPTY;
   end Task;
 
-  uniontype ScheduleSimCode
-    record LEVELSCHEDULESC
+  uniontype Schedule 
+    record LEVELSCHEDULE
       list<list<Task>> tasksOfLevels;
-    end LEVELSCHEDULESC;
-    record THREADSCHEDULESC
-      list<list<Task>> threadTasks;
+    end LEVELSCHEDULE;
+    record THREADSCHEDULE
+      array<list<Task>> threadTasks;
       list<String> lockIdc;
-    end THREADSCHEDULESC;
-    record TASKDEPSCHEDULESC
+    end THREADSCHEDULE;
+    record TASKDEPSCHEDULE
       list<tuple<Task,list<Integer>>> tasks;
-    end TASKDEPSCHEDULESC;
-  end ScheduleSimCode;
-end HpcOmScheduler;
+    end TASKDEPSCHEDULE;
+  end Schedule;
+
+  uniontype MemoryMap
+    record MEMORYMAP_ARRAY
+      array<tuple<Integer,Integer>> positionMapping; 
+      Integer floatArraySize;
+      HashTableCrILst.HashTable scVarNameIdxMapping;
+    end MEMORYMAP_ARRAY;
+  end MemoryMap;
+end HpcOmSimCode;
+
+package HpcOmMemory
+  function getPositionMappingByArrayName
+    input HpcOmSimCode.MemoryMap iMemoryMap;
+    input DAE.ComponentRef iVarName;
+    output Option<tuple<Integer,Integer>> oResult; 
+  end getPositionMappingByArrayName;
+end HpcOmMemory;
 
 end SimCodeTV;

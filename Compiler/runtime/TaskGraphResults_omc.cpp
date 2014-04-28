@@ -14,5 +14,10 @@ void* TaskGraphResults_checkTaskGraph(const char *filename,const char *reffilena
   return TaskGraphResultsCmp_checkTaskGraph(filename,reffilename);
 }
 
+void* TaskGraphResults_checkCodeGraph(const char *filename,const char *reffilename)
+{
+  return TaskGraphResultsCmp_checkCodeGraph(filename,reffilename);
+}
+
 }
 

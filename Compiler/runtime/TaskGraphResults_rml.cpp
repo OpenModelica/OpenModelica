@@ -45,4 +45,11 @@ RML_BEGIN_LABEL(TaskGraphResults__checkTaskGraph)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(TaskGraphResults__checkCodeGraph)
+{
+  rmlA0 = TaskGraphResultsCmp_checkCodeGraph(RML_STRINGDATA(rmlA0),RML_STRINGDATA(rmlA1));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 }

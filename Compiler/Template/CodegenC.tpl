@@ -2101,7 +2101,7 @@ end functionWhenReinitStatementThen;
 // Begin: Modified functions for HpcOm
 //------------------------------------
 
-template functionXXX_systems_HPCOM(list<list<SimEqSystem>> eqs, String name, Text &loop, Text &varDecls, Option<ScheduleSimCode> hpcOmScheduleOpt, String modelNamePrefixStr)
+template functionXXX_systems_HPCOM(list<list<SimEqSystem>> eqs, String name, Text &loop, Text &varDecls, Option<Schedule> hpcOmScheduleOpt, String modelNamePrefixStr)
 ::=
  let funcs = (eqs |> eq hasindex i0 fromindex 0 => functionXXX_system_HPCOM(eq,name,i0,hpcOmScheduleOpt, modelNamePrefixStr) ; separator="\n")
  match listLength(eqs)
@@ -2143,11 +2143,11 @@ template functionXXX_systems_HPCOM(list<list<SimEqSystem>> eqs, String name, Tex
        >>
 end functionXXX_systems_HPCOM;
 
-template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String name, Integer n, Option<ScheduleSimCode> hpcOmScheduleOpt, String modelNamePrefixStr)
+template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String name, Integer n, Option<Schedule> hpcOmScheduleOpt, String modelNamePrefixStr)
 ::=
   let type = getConfigString(HPCOM_CODE)
   match hpcOmScheduleOpt
-    case SOME(hpcOmSchedule as TASKDEPSCHEDULESC(__)) then
+    case SOME(hpcOmSchedule as TASKDEPSCHEDULE(__)) then
       let taskEqs = functionXXX_system0_HPCOM_TaskDep(hpcOmSchedule.tasks, derivativEquations, type, name, modelNamePrefixStr); separator="\n"
       <<
       void terminateHpcOmThreads()
@@ -2160,7 +2160,7 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
         <%taskEqs%>
       }
       >>
-    case SOME(hpcOmSchedule as LEVELSCHEDULESC(__)) then
+    case SOME(hpcOmSchedule as LEVELSCHEDULE(__)) then
       let odeEqs = hpcOmSchedule.tasksOfLevels |> tasks => functionXXX_system0_HPCOM_Level(derivativEquations,name,tasks,type,modelNamePrefixStr); separator="\n"
       <<
       void terminateHpcOmThreads()
@@ -2173,7 +2173,7 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
         <%odeEqs%>
       }
       >>
-   case SOME(hpcOmSchedule as THREADSCHEDULESC(__)) then
+   case SOME(hpcOmSchedule as THREADSCHEDULE(__)) then
       let locks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_createLock(idx, "lock", type); separator="\n"
       let initlocks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_initializeLock(idx, "lock", type); separator="\n"
       let assignLocks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_assignLock(idx, "lock", type); separator="\n"
@@ -2386,15 +2386,15 @@ template functionXXX_system0_HPCOM_TaskDep0(tuple<Task,list<Integer>> taskIn, li
         >>
 end functionXXX_system0_HPCOM_TaskDep0;
 
-template functionXXX_system0_HPCOM_Thread(list<SimEqSystem> derivativEquations, String name, list<list<Task>> threadTasks, String iType, String modelNamePrefixStr)
+template functionXXX_system0_HPCOM_Thread(list<SimEqSystem> derivativEquations, String name, array<list<Task>> threadTasks, String iType, String modelNamePrefixStr)
 ::=
-  let odeEqs = threadTasks |> tt => functionXXX_system0_HPCOM_Thread0(derivativEquations,name,tt,iType,modelNamePrefixStr); separator="\n"
+  let odeEqs = arrayList(threadTasks) |> tt => functionXXX_system0_HPCOM_Thread0(derivativEquations,name,tt,iType,modelNamePrefixStr); separator="\n"
   match iType
     case ("openmp") then
       <<
       if (omp_get_dynamic())
         omp_set_dynamic(0);
-      #pragma omp parallel sections num_threads(<%listLength(threadTasks)%>)
+      #pragma omp parallel sections num_threads(<%arrayLength(threadTasks)%>)
       {
          <%odeEqs%>
       }
@@ -2528,9 +2528,9 @@ template function_HPCOM_releaseLock(String lockIdx, String prefix, String iType)
       >>
 end function_HPCOM_releaseLock;
 
-template functionXXX_system0_HPCOM_PThread_func(list<SimEqSystem> derivativEquations, String name, Integer n, list<list<Task>> threadTasks, String iType, Integer idx, String modelNamePrefixStr)
+template functionXXX_system0_HPCOM_PThread_func(list<SimEqSystem> derivativEquations, String name, Integer n, array<list<Task>> threadTasks, String iType, Integer idx, String modelNamePrefixStr)
 ::=
-  let taskEqs = functionXXX_system0_HPCOM_Thread0(derivativEquations, name, listNth(threadTasks,idx), iType, modelNamePrefixStr); separator="\n"
+  let taskEqs = functionXXX_system0_HPCOM_Thread0(derivativEquations, name, arrayGet(threadTasks,idx), iType, modelNamePrefixStr); separator="\n"
   let assLock = function_HPCOM_assignLock(idx, "th_lock", "pthreads"); separator="\n"
   let relLock = function_HPCOM_releaseLock(idx, "th_lock1", "pthreads"); separator="\n"
   <<
@@ -2746,7 +2746,7 @@ match eqlstlst
   >>
 end functionXXX_systems_arrayFormat;
 
-template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Option<HpcOmScheduler.ScheduleSimCode> hpcOmSchedule, String modelNamePrefix)
+template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Option<HpcOmSimCode.Schedule> hpcOmSchedule, String modelNamePrefix)
  "Generates function in simulation file."
 ::=
   let () = System.tmpTickReset(0)

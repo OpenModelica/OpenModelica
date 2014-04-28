@@ -133,7 +133,7 @@ double rt_total(int ix) {
 
 static enum omc_rt_clock_t selectedClock = OMC_CLOCK_REALTIME;
 
-#if defined(__MINGW32__)
+#if !defined(_MSC_VER)
 inline long long RDTSC() {
    register long long TSC asm("eax");
    asm volatile (".byte 15, 49" : : : "eax", "edx");

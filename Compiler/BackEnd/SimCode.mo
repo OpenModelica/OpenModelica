@@ -55,7 +55,7 @@ encapsulated package SimCode
 public import Absyn;
 public import BackendDAE;
 public import DAE;
-public import HpcOmScheduler;
+public import HpcOmSimCode;
 
 public
 type ExtConstructor = tuple<DAE.ComponentRef, String, list<DAE.Exp>>;
@@ -112,9 +112,10 @@ uniontype SimCode
     list<JacobianMatrix> jacobianMatrixes;
     Option<SimulationSettings> simulationSettingsOpt;
     String fileNamePrefix;
+    Option<HpcOmSimCode.Schedule> hpcOmSchedule; 
+    Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
     //*** a protected section *** not exported to SimCodeTV
     HashTableCrefToSimVar crefToSimVarHT "hidden from typeview - used by cref2simvar() for cref -> SIMVAR lookup available in templates.";
-    Option<HpcOmScheduler.ScheduleSimCode> hpcOmSchedule;
     Option<BackendMapping> backendMapping;
   end SIMCODE;
 end SimCode;

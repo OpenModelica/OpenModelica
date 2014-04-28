@@ -45,4 +45,11 @@ public function checkTaskGraph
   external "C" res=TaskGraphResults_checkTaskGraph(filename,reffilename) annotation(Library = "omcruntime");
 end checkTaskGraph;
 
+public function checkCodeGraph
+  input String graphfile;
+  input String codefile;
+  output list<String> res;
+  external "C" res=TaskGraphResults_checkCodeGraph(graphfile,codefile) annotation(Library = "omcruntime");
+end checkCodeGraph;
+
 end TaskGraphResults;

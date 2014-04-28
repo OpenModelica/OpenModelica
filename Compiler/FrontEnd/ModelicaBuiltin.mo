@@ -2489,6 +2489,14 @@ external "builtin";
 annotation(preferredView="text");
 end checkTaskGraph;
 
+public function checkCodeGraph "Checks if the given taskgraph has the same structure as the graph described in the codefile."
+  input String graphfile;
+  input String codefile;
+  output String[:] result;
+external "builtin";
+annotation(preferredView="text");
+end checkCodeGraph;
+
 function val "Return the value of a variable at a given time in the simulation results"
   input VariableName var;
   input Real time;

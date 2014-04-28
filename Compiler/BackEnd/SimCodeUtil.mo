@@ -82,7 +82,7 @@ protected import FindZeroCrossings;
 protected import Flags;
 protected import GlobalScript;
 protected import HashSet;
-protected import HpcOmScheduler;
+protected import HpcOmSimCode;
 protected import Initialization;
 protected import Inline;
 protected import List;
@@ -1648,22 +1648,23 @@ algorithm
                                 algorithmAndEquationAsserts,
                                 equationsForZeroCrossings,
                                 jacobianEquations,
-                                stateSets,
-                                constraints,
-                                classAttributes,
-                                zeroCrossings,
-                                relations,
-                                timeEvents,
-                                whenClauses,
-                                discreteModelVars,
-                                extObjInfo,
-                                makefileParams,
-                                SimCode.DELAYED_EXPRESSIONS(delayedExps, maxDelayedExpIndex),
-                                SymbolicJacs,
-                                simSettingsOpt,
-                                filenamePrefix,
-                                crefToSimVarHT,
+                                stateSets, 
+                                constraints, 
+                                classAttributes, 
+                                zeroCrossings, 
+                                relations, 
+                                timeEvents, 
+                                whenClauses, 
+                                discreteModelVars, 
+                                extObjInfo, 
+                                makefileParams, 
+                                SimCode.DELAYED_EXPRESSIONS(delayedExps, maxDelayedExpIndex), 
+                                SymbolicJacs, 
+                                simSettingsOpt, 
+                                filenamePrefix, 
                                 NONE(),
+                                NONE(),
+                                crefToSimVarHT,
                                 SOME(backendMapping));
       (simCode, (_, _, lits)) = traverseExpsSimCode(simCode, findLiteralsHelper, literals);
       simCode = setSimCodeLiterals(simCode, listReverse(lits));
@@ -11484,8 +11485,9 @@ algorithm
       SimCode.SimVars vars;
       list<SimCode.Function> functions;
       SimCode.Files files "all the files from Absyn.Info and DAE.ELementSource";
-      Option<HpcOmScheduler.ScheduleSimCode> hpcOmSchedule;
+      Option<HpcOmSimCode.Schedule> hpcOmSchedule;
       Option<SimCode.BackendMapping> backendMapping;
+      Option<HpcOmSimCode.MemoryMap> hpcOmMemory; 
     case _
       equation
         true = Config.acceptMetaModelicaGrammar();
@@ -11493,7 +11495,7 @@ algorithm
 
     case SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                  parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
-                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT, hpcOmSchedule,backendMapping)
+                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, crefToSimVarHT, backendMapping)
       equation
         SimCode.MODELINFO(name, description, directory, varInfo, vars, functions, labels) = modelInfo;
         files = {};
@@ -11510,7 +11512,7 @@ algorithm
       then
         SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                   parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
-                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT, hpcOmSchedule,backendMapping);
+                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, crefToSimVarHT,backendMapping);
 
     case _
       equation
@@ -11798,8 +11800,9 @@ algorithm
       // *** a protected section *** not exported to SimCodeTV
       SimCode.HashTableCrefToSimVar crefToSimVarHT "hidden from typeview - used by cref2simvar() for cref -> SIMVAR lookup available in templates.";
       A a;
-      Option<HpcOmScheduler.ScheduleSimCode> hpcOmSchedule;
+      Option<HpcOmSimCode.Schedule> hpcOmSchedule;
       Option<SimCode.BackendMapping> backendMapping;
+      Option<HpcOmSimCode.MemoryMap> hpcOmMemory; 
 
     case (SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes,
                           allEquations, odeEquations, algebraicEquations, residualEquations,
@@ -11808,7 +11811,7 @@ algorithm
                           jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings,
                           relations, timeEvents, whenClauses, discreteModelVars, extObjInfo, makefileParams,
                           delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix,
-                          crefToSimVarHT, hpcOmSchedule,backendMapping), _, a)
+                          hpcOmSchedule,hpcOmMemory,crefToSimVarHT,backendMapping), _, a)
       equation
         (literals, a) = List.mapFoldTuple(literals, func, a);
         (allEquations, a) = traverseExpsEqSystems(allEquations, func, a, {});
@@ -11836,7 +11839,7 @@ algorithm
                             jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings,
                             relations, timeEvents, whenClauses, discreteModelVars, extObjInfo, makefileParams,
                             delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix,
-                            crefToSimVarHT, hpcOmSchedule,backendMapping), a);
+                             hpcOmSchedule,hpcOmMemory, crefToSimVarHT, backendMapping), a);
   end match;
 end traverseExpsSimCode;
 
@@ -12008,8 +12011,9 @@ algorithm
       String fileNamePrefix;
       // *** a protected section *** not exported to SimCodeTV
       SimCode.HashTableCrefToSimVar crefToSimVarHT "hidden from typeview - used by cref2simvar() for cref -> SIMVAR lookup available in templates.";
-      Option<HpcOmScheduler.ScheduleSimCode> hpcOmSchedule;
+      Option<HpcOmSimCode.Schedule> hpcOmSchedule;
       Option<SimCode.BackendMapping> backendMapping;
+      Option<HpcOmSimCode.MemoryMap> hpcOmMemory; 
 
     case (SimCode.SIMCODE(modelInfo, _, recordDecls, externalFunctionIncludes,
                           allEquations, odeEquations, algebraicEquations, residualEquations,
@@ -12017,14 +12021,14 @@ algorithm
                           parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings,
                           jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings,
                           relations, timeEvents, whenClauses, discreteModelVars, extObjInfo, makefileParams,
-                          delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT, hpcOmSchedule, backendMapping), _)
+                          delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, crefToSimVarHT, backendMapping), _)
       then SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes,
                            allEquations, odeEquations, algebraicEquations, residualEquations,
                            useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                            parameterEquations, removedEquations, algorithmAndEquationAsserts,equationsForZeroCrossings,
                            jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings,
                            relations, timeEvents, whenClauses, discreteModelVars, extObjInfo, makefileParams,
-                           delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT, hpcOmSchedule, backendMapping);
+                           delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, crefToSimVarHT, backendMapping);
   end match;
 end setSimCodeLiterals;
 
@@ -12062,6 +12066,107 @@ algorithm
     else false;
   end match;
 end getProtected;
+
+public function createIdxSCVarMapping "author: marcusw
+  Create a mapping from the SCVar-Index (array-Index) to the SCVariable."
+  input SimCode.SimVars simVars;
+  output array<Option<SimCode.SimVar>> oMapping;
+protected
+  Integer numStateVars;
+  list<SimCode.SimVar> stateVars;
+  list<SimCode.SimVar> derivativeVars;
+  list<SimCode.SimVar> algVars;
+  list<SimCode.SimVar> intAlgVars;
+  list<SimCode.SimVar> boolAlgVars;
+  list<SimCode.SimVar> inputVars;
+  list<SimCode.SimVar> outputVars;
+  list<SimCode.SimVar> aliasVars;
+  list<SimCode.SimVar> intAliasVars;
+  list<SimCode.SimVar> boolAliasVars;
+  list<SimCode.SimVar> paramVars;
+  list<SimCode.SimVar> intParamVars;
+  list<SimCode.SimVar> boolParamVars;
+  list<SimCode.SimVar> stringAlgVars;
+  list<SimCode.SimVar> stringParamVars;
+  list<SimCode.SimVar> stringAliasVars;
+  list<SimCode.SimVar> extObjVars;
+  list<SimCode.SimVar> constVars;
+  list<SimCode.SimVar> intConstVars;
+  list<SimCode.SimVar> boolConstVars;
+  list<SimCode.SimVar> stringConstVars;
+  list<SimCode.SimVar> jacobianVars;
+  list<SimCode.SimVar> realOptimizeConstraintsVars;
+  list<tuple<Integer,SimCode.SimVar>> idxSimVarMappingTplList;
+  Integer highestIdx;
+  array<Option<SimCode.SimVar>> mappingArray;
+algorithm
+  SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars, 
+      outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars, 
+      stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, realOptimizeConstraintsVars) := simVars;
+  
+  numStateVars := listLength(stateVars);
+  ((idxSimVarMappingTplList, highestIdx)) := List.fold1(stateVars, createAllSCVarMapping0, 0, ({},0));
+  ((idxSimVarMappingTplList, highestIdx)) := List.fold1(derivativeVars, createAllSCVarMapping0, numStateVars, (idxSimVarMappingTplList,highestIdx));
+  ((idxSimVarMappingTplList, highestIdx)) := List.fold1(algVars, createAllSCVarMapping0, numStateVars*2, (idxSimVarMappingTplList,highestIdx));
+  //((idxSimVarMappingTplList, highestIdx)) := List.fold1(intAlgVars, createAllSCVarMapping0, numStateVars, (idxSimVarMappingTplList,highestIdx));
+  //((idxSimVarMappingTplList, highestIdx)) := List.fold1(boolAlgVars, createAllSCVarMapping0, numStateVars, (idxSimVarMappingTplList,highestIdx));
+  //((idxSimVarMappingTplList, highestIdx)) := List.fold1(inputVars, createAllSCVarMapping0, numStateVars, (idxSimVarMappingTplList,highestIdx));
+  //((idxSimVarMappingTplList, highestIdx)) := List.fold1(outputVars, createAllSCVarMapping0, numStateVars, (idxSimVarMappingTplList,highestIdx));
+  //((idxSimVarMappingTplList, highestIdx)) := List.fold1(aliasVars, createAllSCVarMapping0, numStateVars, (idxSimVarMappingTplList,highestIdx));
+  //((idxSimVarMappingTplList, highestIdx)) := List.fold1(intAliasVars, createAllSCVarMapping0, numStateVars, (idxSimVarMappingTplList,highestIdx));
+  //((idxSimVarMappingTplList, highestIdx)) := List.fold1(boolAliasVars, createAllSCVarMapping0, numStateVars, (idxSimVarMappingTplList,highestIdx));
+  //((idxSimVarMappingTplList, highestIdx)) := List.fold1(paramVars, createAllSCVarMapping0, numStateVars, (idxSimVarMappingTplList,highestIdx));
+  //((idxSimVarMappingTplList, highestIdx)) := List.fold1(intParamVars, createAllSCVarMapping0, numStateVars, (idxSimVarMappingTplList,highestIdx));
+  //((idxSimVarMappingTplList, highestIdx)) := List.fold1(boolParamVars, createAllSCVarMapping0, numStateVars, (idxSimVarMappingTplList,highestIdx));
+  //((idxSimVarMappingTplList, highestIdx)) := List.fold1(stringAlgVars, createAllSCVarMapping0, numStateVars, (idxSimVarMappingTplList,highestIdx));
+  //((idxSimVarMappingTplList, highestIdx)) := List.fold1(stringParamVars, createAllSCVarMapping0, numStateVars, (idxSimVarMappingTplList,highestIdx));
+  //((idxSimVarMappingTplList, highestIdx)) := List.fold1(stringAliasVars, createAllSCVarMapping0, numStateVars, (idxSimVarMappingTplList,highestIdx));
+  //((idxSimVarMappingTplList, highestIdx)) := List.fold1(extObjVars, createAllSCVarMapping0, numStateVars, (idxSimVarMappingTplList,highestIdx));
+  //((idxSimVarMappingTplList, highestIdx)) := List.fold1(constVars, createAllSCVarMapping0, numStateVars, (idxSimVarMappingTplList,highestIdx));
+  //((idxSimVarMappingTplList, highestIdx)) := List.fold1(intConstVars, createAllSCVarMapping0, numStateVars, (idxSimVarMappingTplList,highestIdx));
+  //((idxSimVarMappingTplList, highestIdx)) := List.fold1(boolConstVars, createAllSCVarMapping0, numStateVars, (idxSimVarMappingTplList,highestIdx));
+  //((idxSimVarMappingTplList, highestIdx)) := List.fold1(stringConstVars, createAllSCVarMapping0, numStateVars, (idxSimVarMappingTplList,highestIdx));
+  //((idxSimVarMappingTplList, highestIdx)) := List.fold1(jacobianVars, createAllSCVarMapping0, numStateVars, (idxSimVarMappingTplList,highestIdx));
+  //((idxSimVarMappingTplList, highestIdx)) := List.fold1(realOptimizeConstraintsVars, createAllSCVarMapping0, numStateVars, (idxSimVarMappingTplList,highestIdx));
+  
+  mappingArray := arrayCreate(highestIdx, NONE());
+  mappingArray := List.fold(idxSimVarMappingTplList, createAllSCVarMapping1, mappingArray);
+  oMapping := mappingArray;
+end createIdxSCVarMapping;
+
+protected function createAllSCVarMapping0 "author: marcusw
+  Append the given variable to the Index/SimVar-List."
+  input SimCode.SimVar iSimVar;
+  input Integer iOffset; //an offset that should be added to the index (necessary for state derivatives)
+  input tuple<list<tuple<Integer,SimCode.SimVar>>, Integer> iSimVarIdxMapping;
+  output tuple<list<tuple<Integer,SimCode.SimVar>>, Integer> oSimVarIdxMapping; //<mapping index -> simvar, highestIndex>
+protected
+  Integer simVarIdx, highestIdx;
+  list<tuple<Integer,SimCode.SimVar>> iMapping;
+algorithm
+  (iMapping,highestIdx) := iSimVarIdxMapping;
+  //print("createAllSCVarMapping0: " +& intString(highestIdx) +& "\n");
+  SimCode.SIMVAR(index=simVarIdx) := iSimVar;
+  simVarIdx := simVarIdx + 1 + iOffset;
+  highestIdx := Util.if_(intGt(simVarIdx, highestIdx), simVarIdx, highestIdx);
+  iMapping := (simVarIdx, iSimVar)::iMapping;
+  //print("createAllSCVarMapping0: Mapping-Length: " +& intString(listLength(iMapping)) +& "\n");
+  oSimVarIdxMapping := (iMapping,highestIdx);
+end createAllSCVarMapping0;
+
+protected function createAllSCVarMapping1 "author: marcusw
+  Set the arrayIndex (iMapping) to the value given by the tuple."
+  input tuple<Integer,SimCode.SimVar> iSimVarIdxTpl; //<idx, elem>
+  input array<Option<SimCode.SimVar>> iMapping;
+  output array<Option<SimCode.SimVar>> oMapping;
+protected
+  Integer simVarIdx;
+  SimCode.SimVar simVar;
+algorithm
+  (simVarIdx,simVar) := iSimVarIdxTpl;
+  oMapping := arrayUpdate(iMapping,simVarIdx,SOME(simVar));
+end createAllSCVarMapping1;
+
 
 protected function aliasRecordDeclarations
   input SimCode.RecordDeclaration inDecl;
@@ -12783,6 +12888,32 @@ algorithm
   (_,bEq1) := eqTpl;
   b := listMember(bEq,bEq1);
 end findBEqs;
+
+public function dumpIdxScVarMapping
+  input array<Option<SimCode.SimVar>> iMapping;
+algorithm
+  print("Idx-ScVar-Mapping:\n");
+  _ := Util.arrayFold(iMapping, dumpIdxScVarMapping0, 1);
+end dumpIdxScVarMapping;
+
+protected function dumpIdxScVarMapping0
+  input Option<SimCode.SimVar> iVar;
+  input Integer iIdx;
+  output Integer oIdx;
+protected
+  DAE.ComponentRef name;
+  String refString;
+algorithm
+  oIdx := match(iVar, iIdx)
+    case(SOME(SimCode.SIMVAR(name=name)), _)
+      equation
+        print("Idx: " +& intString(iIdx) +& " -- ");
+        refString = ComponentReference.printComponentRefStr(name);
+        print(refString +& "\n");
+      then iIdx + 1;
+    else then iIdx + 1;
+  end match;
+end dumpIdxScVarMapping0;
 
 protected function dumpBackendMapping"dump function for the backendmapping
 author:Waurich TUD 2014-04"
