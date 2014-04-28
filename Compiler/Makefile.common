@@ -210,6 +210,7 @@ GraphvizDump.mo \
 NFInstDumpTpl.mo \
 SCodeDumpTpl.mo \
 SimCodeDump.mo \
+TaskSystemDump.mo \
 Tpl.mo \
 TplAbsyn.mo \
 TplCodegen.mo \

@@ -170,7 +170,7 @@ constant DebugFlag CEVAL = DEBUG_FLAG(2, "ceval", false,
   Util.gettext("Prints extra information from Ceval."));
 constant DebugFlag CHECK_BACKEND_DAE = DEBUG_FLAG(3, "checkBackendDae", false,
   Util.gettext("Do some simple analyses on the datastructure from the frontend to check if it is consistent."));
-constant DebugFlag OPENMP = DEBUG_FLAG(4, "openmp", false,
+constant DebugFlag PARMODAUTO = DEBUG_FLAG(4, "parmodauto", false,
   Util.gettext("Experimental: Enable parallelization of independent systems of equations in the translated model."));
 constant DebugFlag PTHREADS = DEBUG_FLAG(5, "pthreads", false,
   Util.gettext("Experimental: Unused parallelization."));
@@ -398,7 +398,7 @@ constant list<DebugFlag> allDebugFlags = {
   FAILTRACE,
   CEVAL,
   CHECK_BACKEND_DAE,
-  OPENMP,
+  PARMODAUTO,
   PTHREADS,
   EVENTS,
   DUMP_INLINE_SOLVER,

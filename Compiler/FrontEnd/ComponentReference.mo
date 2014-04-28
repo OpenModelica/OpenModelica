@@ -1686,6 +1686,14 @@ algorithm
   outCref := makeCrefQual(DAE.preNamePrefix, DAE.T_UNKNOWN_DEFAULT, {}, inCref);
 end crefPrefixPre;
 
+public function crefPrefixStart "public function crefPrefixStart
+  Appends $START to a cref, so a => $START.a"
+  input DAE.ComponentRef inCref;
+  output DAE.ComponentRef outCref;
+algorithm
+  outCref := makeCrefQual(DAE.startNamePrefix, DAE.T_UNKNOWN_DEFAULT, {}, inCref);
+end crefPrefixStart;
+
 public function crefPrefixString
   "Prefixes a cref with a string identifier, e.g.:
     crefPrefixString(a, b.c) => a.b.c"

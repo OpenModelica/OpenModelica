@@ -4551,6 +4551,368 @@ algorithm
   end match;
 end traverseExp;
 
+public function traverseExpDerPreStart
+"Traverses all subexpressions of an expression.
+  Takes a function and an extra argument passed through the traversal.
+  The function can potentially change the expression. In such cases,
+  the changes are made bottom-up, i.e. a subexpression is traversed
+  and changed before the complete expression is traversed.
+
+  NOTE: The user-provided function is not allowed to fail! If you want to
+  detect a failure, return NONE() in your user-provided datatype.
+  
+  mahge : This function will not treat der(), pre() and start() as calls
+  but as unique ids. i.e. x is different from der(x) and given der(x) x will not
+  be extreacted as a unique id. Instead you get $DER.x. Same oes for pre and start.
+"
+  replaceable type Type_a subtypeof Any;
+  input DAE.Exp inExp;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output tuple<DAE.Exp, Type_a> outTplExpTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  outTplExpTypeA := match (inExp,func,inTypeA)
+    local
+      DAE.Exp e1_1,e,e1,e2_1,e2,e3_1,e3;
+      Type_a ext_arg_1,ext_arg_2,ext_arg,ext_arg_3,ext_arg_4;
+      Operator op;
+      FuncExpType rel;
+      list<DAE.Exp> expl_1,expl;
+      Absyn.Path fn;
+      Boolean scalar;
+      Type tp;
+      Integer i;
+      list<list<DAE.Exp>> lstexpl_1,lstexpl;
+      Integer dim;
+      String str;
+      list<DAE.Element> localDecls;
+      tuple<DAE.Exp,Type_a> res;
+      list<String> fieldNames;
+      DAE.CallAttributes attr;
+      list<DAE.MatchCase> cases,cases_1;
+      DAE.MatchType matchTy;
+      Integer index_;
+      Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;
+      DAE.ReductionInfo reductionInfo;
+      DAE.ReductionIterators riters,riters_1;
+      DAE.ComponentRef cr,cr_1;
+      list<list<String>> aliases;
+
+    case ((e as DAE.EMPTY(scope = _)),rel,ext_arg)
+      equation
+        res = rel((e,ext_arg));
+      then res;
+
+    case ((e as DAE.ICONST(_)),rel,ext_arg)
+      equation
+        res = rel((e,ext_arg));
+      then res;
+
+    case ((e as DAE.RCONST(_)),rel,ext_arg)
+      equation
+        res = rel((e,ext_arg));
+      then res;
+
+    case ((e as DAE.SCONST(_)),rel,ext_arg)
+      equation
+        res = rel((e,ext_arg));
+      then res;
+
+    case ((e as DAE.BCONST(_)),rel,ext_arg)
+      equation
+        res = rel((e,ext_arg));
+      then res;
+
+    case ((e as DAE.ENUM_LITERAL(index=_)),rel,ext_arg)
+      equation
+        res = rel((e,ext_arg));
+      then res;
+
+    case (DAE.CREF(cr,tp),rel,ext_arg)
+      equation
+        (cr_1,ext_arg_1) = traverseExpCref(cr, rel, ext_arg);
+        e = Util.if_(referenceEq(cr,cr_1),inExp,DAE.CREF(cr_1,tp));
+        res = rel((e,ext_arg_1));
+      then res;
+
+    // unary
+    case (DAE.UNARY(operator = op,exp = e1),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExpDerPreStart(e1, rel, ext_arg);
+        e = Util.if_(referenceEq(e1,e1_1),inExp,DAE.UNARY(op,e1_1));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((e,ext_arg_2));
+
+    // binary
+    case (DAE.BINARY(exp1 = e1,operator = op,exp2 = e2),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExpDerPreStart(e1, rel, ext_arg);
+        ((e2_1,ext_arg_2)) = traverseExpDerPreStart(e2, rel, ext_arg_1);
+        e = Util.if_(referenceEq(e1,e1_1) and referenceEq(e2,e2_1),inExp,DAE.BINARY(e1_1,op,e2_1));
+        ((e,ext_arg_3)) = rel((e,ext_arg_2));
+      then
+        ((e,ext_arg_3));
+
+    // logical unary
+    case (DAE.LUNARY(operator = op,exp = e1),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExpDerPreStart(e1, rel, ext_arg);
+        e = Util.if_(referenceEq(e1,e1_1),inExp,DAE.LUNARY(op,e1_1));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((e,ext_arg_2));
+
+    // logical binary
+    case (DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExpDerPreStart(e1, rel, ext_arg);
+        ((e2_1,ext_arg_2)) = traverseExpDerPreStart(e2, rel, ext_arg_1);
+        e = Util.if_(referenceEq(e1,e1_1) and referenceEq(e2,e2_1),inExp,DAE.LBINARY(e1_1,op,e2_1));
+        ((e,ext_arg_3)) = rel((e,ext_arg_2));
+      then
+        ((e,ext_arg_3));
+
+    // relation
+    case (DAE.RELATION(exp1 = e1,operator = op,exp2 = e2, index=index_, optionExpisASUB= isExpisASUB),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExpDerPreStart(e1, rel, ext_arg);
+        ((e2_1,ext_arg_2)) = traverseExpDerPreStart(e2, rel, ext_arg_1);
+        e = Util.if_(referenceEq(e1,e1_1) and referenceEq(e2,e2_1),inExp,DAE.RELATION(e1_1,op,e2_1,index_,isExpisASUB));
+        ((e,ext_arg_3)) = rel((e,ext_arg_2));
+      then
+        ((e,ext_arg_3));
+
+    // if expressions
+    case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExpDerPreStart(e1, rel, ext_arg);
+        ((e2_1,ext_arg_2)) = traverseExpDerPreStart(e2, rel, ext_arg_1);
+        ((e3_1,ext_arg_3)) = traverseExpDerPreStart(e3, rel, ext_arg_2);
+        e = Util.if_(referenceEq(e1,e1_1) and referenceEq(e2,e2_1) and referenceEq(e3,e3_1),inExp,DAE.IFEXP(e1_1,e2_1,e3_1));
+        ((e,ext_arg_4)) = rel((e,ext_arg_3));
+      then
+        ((e,ext_arg_4));
+
+    case (DAE.CALL(path = fn,expLst = expl,attr = attr),rel,ext_arg)
+      equation
+        ((expl_1,ext_arg_1)) = traverseExpDerPreStartList(expl, rel, ext_arg);
+        e = Util.if_(referenceEq(expl,expl_1),inExp,DAE.CALL(fn,expl_1,attr));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((e,ext_arg_2));
+
+    case (DAE.RECORD(path = fn,exps = expl,comp = fieldNames, ty = tp),rel,ext_arg)
+      equation
+        ((expl_1,ext_arg_1)) = traverseExpDerPreStartList(expl, rel, ext_arg);
+        e = Util.if_(referenceEq(expl,expl_1),inExp,DAE.RECORD(fn,expl_1,fieldNames,tp));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((e,ext_arg_2));
+
+    case (DAE.PARTEVALFUNCTION(path = fn, expList = expl, ty = tp),rel,ext_arg)
+      equation
+        ((expl_1,ext_arg_1)) = traverseExpDerPreStartList(expl, rel, ext_arg);
+        e = Util.if_(referenceEq(expl,expl_1),inExp,DAE.PARTEVALFUNCTION(fn,expl_1,tp));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((e,ext_arg_2));
+
+    case (DAE.ARRAY(ty = tp,scalar = scalar,array = expl),rel,ext_arg)
+      equation
+        ((expl_1,ext_arg_1)) = traverseExpDerPreStartList(expl, rel, ext_arg);
+        e = Util.if_(referenceEq(expl,expl_1),inExp,DAE.ARRAY(tp,scalar,expl_1));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((e,ext_arg_2));
+
+    case (DAE.MATRIX(ty = tp,integer = dim, matrix=lstexpl),rel,ext_arg)
+      equation
+        (lstexpl_1,ext_arg_1) = traverseExpMatrix(lstexpl, rel, ext_arg);
+        e = Util.if_(referenceEq(lstexpl,lstexpl_1),inExp,DAE.MATRIX(tp,dim,lstexpl_1));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((e,ext_arg_2));
+
+    case (DAE.RANGE(ty = tp,start = e1,step = NONE(),stop = e2),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExpDerPreStart(e1, rel, ext_arg);
+        ((e2_1,ext_arg_2)) = traverseExpDerPreStart(e2, rel, ext_arg_1);
+        e = Util.if_(referenceEq(e1,e1_1) and referenceEq(e2,e2_1),inExp,DAE.RANGE(tp,e1_1,NONE(),e2_1));
+        ((e,ext_arg_3)) = rel((e,ext_arg_2));
+      then
+        ((e,ext_arg_3));
+
+    case (DAE.RANGE(ty = tp,start = e1,step = SOME(e2),stop = e3),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExpDerPreStart(e1, rel, ext_arg);
+        ((e2_1,ext_arg_2)) = traverseExpDerPreStart(e2, rel, ext_arg_1);
+        ((e3_1,ext_arg_3)) = traverseExpDerPreStart(e3, rel, ext_arg_2);
+        e = Util.if_(referenceEq(e1,e1_1) and referenceEq(e2,e2_1) and referenceEq(e3,e3_1),inExp,DAE.RANGE(tp,e1_1,SOME(e2_1),e3_1));
+        ((e,ext_arg_4)) = rel((e,ext_arg_3));
+      then
+        ((e,ext_arg_4));
+
+    case (DAE.TUPLE(PR = expl),rel,ext_arg)
+      equation
+        ((expl_1,ext_arg_1)) = traverseExpDerPreStartList(expl, rel, ext_arg);
+        e = Util.if_(referenceEq(expl,expl_1),inExp,DAE.TUPLE(expl_1));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((e,ext_arg_2));
+
+    case (DAE.CAST(ty = tp,exp = e1),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExpDerPreStart(e1, rel, ext_arg);
+        e = Util.if_(referenceEq(e1,e1_1),inExp,DAE.CAST(tp,e1_1));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((e,ext_arg_2));
+
+    case (DAE.ASUB(exp = e1,sub = expl),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExpDerPreStart(e1, rel, ext_arg);
+        ((expl_1,ext_arg_2)) = traverseExpDerPreStartList(expl, rel, ext_arg_1);
+        e = Util.if_(referenceEq(e1,e1_1) and referenceEq(expl,expl_1),inExp,makeASUB(e1_1,expl_1));
+        ((e,ext_arg_2)) = rel((e,ext_arg_2));
+      then
+        ((e,ext_arg_2));
+
+    case (DAE.TSUB(e1,i,tp),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExpDerPreStart(e1, rel, ext_arg);
+        e = Util.if_(referenceEq(e1,e1_1),inExp,DAE.TSUB(e1_1,i,tp));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((e,ext_arg_2));
+
+    case (DAE.SIZE(exp = e1,sz = NONE()),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExpDerPreStart(e1, rel, ext_arg);
+        e = Util.if_(referenceEq(e1,e1_1),inExp,DAE.SIZE(e1_1,NONE()));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((e,ext_arg_2));
+
+    case (DAE.SIZE(exp = e1,sz = SOME(e2)),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExpDerPreStart(e1, rel, ext_arg);
+        ((e2_1,ext_arg_2)) = traverseExpDerPreStart(e2, rel, ext_arg_1);
+        e = Util.if_(referenceEq(e1,e1_1) and referenceEq(e2,e2_1),inExp,DAE.SIZE(e1_1,SOME(e2_1)));
+        ((e,ext_arg_3)) = rel((e,ext_arg_2));
+      then
+        ((e,ext_arg_3));
+
+    case (DAE.REDUCTION(reductionInfo=reductionInfo,expr = e1,iterators = riters),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg)) = traverseExpDerPreStart(e1, rel, ext_arg);
+        (riters_1,ext_arg) = traverseReductionIterators(riters, rel, ext_arg);
+        e = Util.if_(referenceEq(e1,e1_1) and referenceEq(riters,riters_1),inExp,DAE.REDUCTION(reductionInfo,e1_1,riters_1));
+        ((e,ext_arg)) = rel((e,ext_arg));
+      then
+        ((e,ext_arg));
+
+    // MetaModelica list
+    case (DAE.CONS(e1,e2),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExpDerPreStart(e1, rel, ext_arg);
+        ((e2_1,ext_arg_2)) = traverseExpDerPreStart(e2, rel, ext_arg_1);
+        e = Util.if_(referenceEq(e1,e1_1) and referenceEq(e2,e2_1),inExp,DAE.CONS(e1_1,e2_1));
+        ((e,ext_arg_3)) = rel((e,ext_arg_2));
+      then
+        ((e,ext_arg_3));
+
+    case (DAE.LIST(expl),rel,ext_arg)
+      equation
+        ((expl_1,ext_arg_1)) = traverseExpDerPreStartList(expl, rel, ext_arg);
+        e = Util.if_(referenceEq(expl,expl_1),inExp,DAE.LIST(expl_1));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((e,ext_arg_2));
+
+    case (DAE.META_TUPLE(expl),rel,ext_arg)
+      equation
+        ((expl_1,ext_arg_1)) = traverseExpDerPreStartList(expl, rel, ext_arg);
+        e = Util.if_(referenceEq(expl,expl_1),inExp,DAE.META_TUPLE(expl_1));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((e,ext_arg_2));
+
+    case (DAE.META_OPTION(NONE()),rel,ext_arg)
+      equation
+        ((e,ext_arg_1)) = rel((inExp,ext_arg));
+      then
+        ((e,ext_arg_1));
+
+    case (DAE.META_OPTION(SOME(e1)),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExpDerPreStart(e1, rel, ext_arg);
+        e = Util.if_(referenceEq(e1,e1_1),inExp,DAE.META_OPTION(SOME(e1_1)));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((e,ext_arg_2));
+
+    case (DAE.BOX(e1),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExpDerPreStart(e1, rel, ext_arg);
+        e = Util.if_(referenceEq(e1,e1_1),inExp,DAE.BOX(e1_1));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((e,ext_arg_2));
+
+    case (DAE.UNBOX(e1,tp),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExpDerPreStart(e1, rel, ext_arg);
+        e = Util.if_(referenceEq(e1,e1_1),inExp,DAE.UNBOX(e1_1,tp));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((e,ext_arg_2));
+
+    case (DAE.METARECORDCALL(fn,expl,fieldNames,i),rel,ext_arg)
+      equation
+        ((expl_1,ext_arg_1)) = traverseExpDerPreStartList(expl, rel, ext_arg);
+        e = Util.if_(referenceEq(expl,expl_1),inExp,DAE.METARECORDCALL(fn,expl_1,fieldNames,i));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((e,ext_arg_2));
+    // ---------------------
+
+    case (DAE.MATCHEXPRESSION(matchTy,expl,aliases,localDecls,cases,tp),rel,ext_arg)
+      equation
+        // Don't traverse the local declarations; we don't store bindings there (yet)
+        ((expl_1,ext_arg_1)) = traverseExpDerPreStartList(expl, rel, ext_arg);
+        (cases_1,ext_arg_2) = Patternm.traverseCases(cases,rel,ext_arg_1);
+        e = Util.if_(referenceEq(expl,expl_1) and referenceEq(cases,cases_1),inExp,DAE.MATCHEXPRESSION(matchTy,expl_1,aliases,localDecls,cases_1,tp));
+        ((e,ext_arg_3)) = rel((e,ext_arg_2));
+      then
+        ((e,ext_arg_3));
+
+    case (DAE.SHARED_LITERAL(index = _),rel,ext_arg)
+      equation
+        res = rel((inExp,ext_arg));
+      then res;
+
+    case (DAE.PATTERN(pattern = _),rel,ext_arg)
+      equation
+        res = rel((inExp,ext_arg));
+      then res;
+
+    // Why don't we call rel() for these expressions?
+    case (DAE.CODE(code = _),_,ext_arg) then ((inExp,ext_arg));
+
+    case (_,_,_)
+      equation
+        str = ExpressionDump.printExpStr(inExp);
+        str = "Expression.traverseExpDerPreStart or one of the user-defined functions using it is not implemented correctly: " +& str;
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
+      then fail();
+  end match;
+end traverseExpDerPreStart;
+
 public function traverseSubexpressionsHelper
 "This function is used as input to a traverse function that does not traverse all subexpressions.
 The extra argument is a tuple of the actul function to call on each subexpression and the extra argument.
@@ -4636,6 +4998,40 @@ algorithm
         ((expl,ext_arg));
   end match;
 end traverseExpList;
+
+public function traverseExpDerPreStartList
+" author mahge: Same as traverseExpList except:
+  This function will not treat der(), pre() and start() as calls
+  but as unique ids. i.e. x is different from der(x) and given der(x) x will not
+  be extreacted as a unique id. Instead you get $DER.x. Same oes for pre and start.."
+
+  replaceable type Type_a subtypeof Any;
+  input list<DAE.Exp> inExpl;
+  input funcType rel;
+  input Type_a iext_arg;
+  output tuple<list<DAE.Exp>, Type_a> outTpl;
+  partial function funcType
+    input tuple<DAE.Exp, Type_a> tpl1;
+    output tuple<DAE.Exp, Type_a> tpl2;
+  end funcType;
+algorithm
+  outTpl := match(inExpl,rel,iext_arg)
+    local
+      DAE.Exp e,e1;
+      list<DAE.Exp> expl,expl1;
+      Type_a ext_arg;
+
+    case({},_,ext_arg) then ((inExpl,ext_arg));
+
+    case(e::expl,_,ext_arg)
+      equation
+        ((e1,ext_arg)) = traverseExpDerPreStart(e, rel, ext_arg);
+        ((expl1,ext_arg)) = traverseExpDerPreStartList(expl,rel,ext_arg);
+        expl = Util.if_(referenceEq(e,e1) and referenceEq(expl,expl1),inExpl,e1::expl1);
+      then
+        ((expl,ext_arg));
+  end match;
+end traverseExpDerPreStartList;
 
 public function traverseExpWithoutRelations
 "Traverses all subexpressions of an expression except relations.
@@ -5437,6 +5833,74 @@ algorithm
   // ocrefs := List.unique(List.flatten(List.map1(extractCrefsFromExp(inExp), ComponentReference.expandCref, true)));
   ocrefs := List.unique(extractCrefsFromExp(inExp));
 end extractUniqueCrefsFromExp;
+
+public function extractCrefsFromExpDerPreStart 
+" author mahge: Same as extractCrefsFromExp except:
+  This function will not treat der(), pre() and start() as calls
+  but as unique ids. i.e. x is different from der(x) and given der(x) x will not
+  be extreacted as a unique id. Instead you get $DER.x. Same oes for pre and start."
+  input DAE.Exp inExp;
+  output list<DAE.ComponentRef> ocrefs;
+algorithm
+  ((_,ocrefs)) := traverseExpDerPreStart(inExp, traversingComponentRefFinder, {});
+end extractCrefsFromExpDerPreStart;
+
+public function extractUniqueCrefsFromExpDerPreStart
+  "author mahge: Same as extractUniqueCrefsFromExp except:
+  This function will not treat der(), pre() and start() as calls
+  but as unique ids. i.e. x is different from der(x) and given der(x) x will not
+  be extreacted as a unique id. Instead you get $DER.x. Same oes for pre and start.."
+  input DAE.Exp inExp;
+  output list<DAE.ComponentRef> ocrefs;
+algorithm
+  // ocrefs := List.unique(List.flatten(List.map1(extractCrefsFromExp(inExp), ComponentReference.expandCref, true)));
+  ocrefs := List.unique(extractCrefsFromExpDerPreStart(inExp));
+end extractUniqueCrefsFromExpDerPreStart;
+
+
+public function extractUniqueCrefsFromStatmentS
+  "authot mahge: Extracts all unique ComponentRef from Statments."
+  input list<DAE.Statement> inStmts;
+  output tuple<list<DAE.ComponentRef>,list<DAE.ComponentRef>> ocrefs;
+protected
+  list<list<DAE.ComponentRef>> lhscreflstlst; 
+  list<list<DAE.ComponentRef>> rhscreflstlst; 
+  list<DAE.ComponentRef> orhscrefs; 
+  list<DAE.ComponentRef> olhscrefs; 
+algorithm  
+  (lhscreflstlst,rhscreflstlst) := List.map_2(inStmts,extractCrefsStatment);
+  orhscrefs := List.unique(List.flatten(rhscreflstlst));
+  olhscrefs := List.unique(List.flatten(lhscreflstlst));
+  ocrefs := (olhscrefs,orhscrefs);
+end extractUniqueCrefsFromStatmentS;
+
+
+public function extractCrefsStatment
+  "Extracts all ComponentRef from a Statment."
+  input DAE.Statement inStmt;
+  output list<DAE.ComponentRef> olcrefs;
+  output list<DAE.ComponentRef> orcrefs;
+algorithm
+  (olcrefs,orcrefs) := match(inStmt)  
+    local
+      Exp exp1,exp2;
+    case DAE.STMT_ASSERT(cond = exp1)
+      equation
+        orcrefs = extractCrefsFromExpDerPreStart(exp1);
+      then
+        ({},orcrefs);
+        
+    case DAE.STMT_ASSIGN(exp1 = exp1, exp = exp2)
+      equation
+        olcrefs = extractCrefsFromExpDerPreStart(exp1);
+        orcrefs = extractCrefsFromExpDerPreStart(exp2);
+      then
+        (olcrefs,orcrefs);
+        
+    case _ then  ({},{});
+      
+  end match;    
+end extractCrefsStatment;
 
 public function expHasCrefs "
 @author: adrpo 2011-04-29

@@ -77,6 +77,7 @@ protected import Flags;
 protected import HpcOmEqSystems;
 protected import HpcOmSimCode;
 protected import SimCodeDump;
+protected import TaskSystemDump;
 protected import SimCodeUtil;
 protected import System;
 protected import Util;
@@ -459,6 +460,7 @@ algorithm
         // print("SimCode -> init.xml: " + realString(System.realtimeTock(GlobalScript.RT_PROFILER0)*1000) + "ms\n");
         // System.realtimeTick(GlobalScript.RT_PROFILER0);
         Tpl.tplNoret2(SimCodeDump.dumpSimCode, simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
+        dumpTaskSystemIfFlag(simCode);
         // print("SimCode -> info.xml: " + realString(System.realtimeTock(GlobalScript.RT_PROFILER0)*1000) + "ms\n");
         // System.realtimeTick(GlobalScript.RT_PROFILER0);
         // SerializeModelInfo.serialize(simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS)); // TODO: Add this once we switch to the bootstrapped compiler
@@ -493,6 +495,19 @@ algorithm
     then fail();
   end match;
 end callTargetTemplates;
+
+protected function dumpTaskSystemIfFlag
+  input SimCode.SimCode simCode;
+algorithm
+  _ := matchcontinue(simCode)
+    case(_)
+      equation
+        true = Flags.isSet(Flags.PARMODAUTO);
+        Tpl.tplNoret2(TaskSystemDump.dumpTaskSystem, simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
+      then ();
+    else ();
+   end matchcontinue;
+end dumpTaskSystemIfFlag;
 
 protected function callTargetTemplatesCPP
   input SimCode.SimCode iSimCode;

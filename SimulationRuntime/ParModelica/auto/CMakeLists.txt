@@ -1,0 +1,43 @@
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+
+PROJECT(AutoParModelica)
+
+SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}")
+
+if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
+    SET(TBB_ARCHITECTURE intel64)
+elseif( CMAKE_SIZEOF_VOID_P EQUAL 4 ) 
+    SET(TBB_ARCHITECTURE ia32)
+else()
+    MESSAGE(FATAL "Unknown Compiler Architecture")
+endif()
+
+FIND_PACKAGE(TBB REQUIRED)
+FIND_PACKAGE(PugiXML REQUIRED)
+
+SET(PARMODELICA_SRC om_pm_equation.cpp
+                    om_pm_interface.cpp
+                    om_pm_model.cpp                   
+                    pm_utility.cpp)
+
+SET(PARMODELICA_TEST_SRC test_task_graph.cpp)
+                    
+IF(UNIX)
+    SET(PARMODELICA_SRC ${PARMODELICA_SRC} pm_posix_timer.cpp)
+ELSE(UNIX)
+    SET(PARMODELICA_SRC ${PARMODELICA_SRC} pm_win_timer.cpp)
+ENDIF(UNIX)
+
+IF(MSVC)
+    ADD_DEFINITIONS("/DNOMINMAX")
+ENDIF()
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${TBB_INCLUDE_DIR})
+INCLUDE_DIRECTORIES(${PUGIXML_INCLUDE_DIR})
+
+ADD_LIBRARY(ParModelica ${PARMODELICA_SRC})
+
+ADD_EXECUTABLE(ParModelicaTest ${PARMODELICA_TEST_SRC})
+
+TARGET_LINK_LIBRARIES(ParModelicaTest ParModelica ${TBB_LIBRARY} ${PUGIXML_LIBRARY})

@@ -117,6 +117,13 @@ package builtin
     output Real z;
   end realDiv;
 
+  function listGet
+    replaceable type TypeVar subtypeof Any;
+    input list<TypeVar> lst;
+    input Integer index;
+    output TypeVar result;
+  end listGet;
+
 end builtin;
 
 
@@ -2460,6 +2467,12 @@ package List
     input list<Type_a> inList;
     output list<Type_a> outParts;
   end restOrEmpty;
+  
+  function isEmpty
+    replaceable type TypeVar subtypeof Any;
+    input list<TypeVar> inList;
+    output Boolean outIsEmpty;
+  end isEmpty;
 
 end List;
 
@@ -2562,6 +2575,16 @@ package Expression
     output list<DAE.ComponentRef> ocrefs;
   end extractUniqueCrefsFromExp;
 
+    function extractUniqueCrefsFromExpDerPreStart
+    input DAE.Exp inExp;
+    output list<DAE.ComponentRef> ocrefs;
+  end extractUniqueCrefsFromExpDerPreStart;
+
+  function extractUniqueCrefsFromStatmentS
+    input list<DAE.Statement> inStmts;
+    output tuple<list<DAE.ComponentRef>,list<DAE.ComponentRef>> ocrefs;
+  end extractUniqueCrefsFromStatmentS;
+
 end Expression;
 
 package ExpressionDump
@@ -2617,7 +2640,7 @@ end Config;
 package Flags
   uniontype DebugFlag end DebugFlag;
 
-  constant DebugFlag OPENMP;
+  constant DebugFlag PARMODAUTO;
   constant DebugFlag HPCOM;
   constant DebugFlag GEN_DEBUG_SYMBOLS;
   constant DebugFlag WRITE_TO_BUFFER;

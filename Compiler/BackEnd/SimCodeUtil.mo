@@ -5115,7 +5115,7 @@ protected
   String omhome, ccompiler, cxxcompiler, linker, exeext, dllext, cflags, ldflags, rtlibs, platform, fopenmp,compileDir;
 algorithm
   ccompiler   := Util.if_(stringEq(Config.simCodeTarget(),"JavaScript"),"emcc",
-                 Util.if_(Flags.isSet(Flags.OPENMP) or Flags.isSet(Flags.HPCOM),System.getOMPCCompiler(),
+                 Util.if_(Flags.isSet(Flags.HPCOM),System.getOMPCCompiler(),
                  System.getCCompiler()));
   cxxcompiler := Util.if_(stringEq(Config.simCodeTarget(),"JavaScript"),"emcc",System.getCXXCompiler());
   linker := Util.if_(stringEq(Config.simCodeTarget(),"JavaScript"),"emcc",System.getLinker());
@@ -5124,7 +5124,7 @@ algorithm
   omhome := Settings.getInstallationDirectoryPath();
   omhome := System.trim(omhome, "\""); // Remove any quotation marks from omhome.
   cflags := System.getCFlags() +& " " +&
-            Util.if_(Flags.isSet(Flags.OPENMP) or Flags.isSet(Flags.HPCOM),"-fopenmp", "");
+            Util.if_(Flags.isSet(Flags.HPCOM),"-fopenmp", "");
   cflags := Util.if_(stringEq(Config.simCodeTarget(),"JavaScript"),"-Os -Wno-warn-absolute-paths",cflags);
   ldflags := System.getLDFlags();
   rtlibs := Util.if_(isFunction, System.getRTLibs(), System.getRTLibsSim());
@@ -11645,7 +11645,7 @@ algorithm
 
     case (lst, _)
       equation
-        false = Flags.isSet(Flags.OPENMP) or Flags.isSet(Flags.PTHREADS);
+        false = Flags.isSet(Flags.PTHREADS);
         l = List.flatten(lst);
       then l::{};
     case (lst, 0) then lst;
