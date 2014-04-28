@@ -2467,7 +2467,7 @@ package List
     input list<Type_a> inList;
     output list<Type_a> outParts;
   end restOrEmpty;
-  
+
   function isEmpty
     replaceable type TypeVar subtypeof Any;
     input list<TypeVar> inList;

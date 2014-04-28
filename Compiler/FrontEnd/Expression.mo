@@ -4560,7 +4560,7 @@ public function traverseExpDerPreStart
 
   NOTE: The user-provided function is not allowed to fail! If you want to
   detect a failure, return NONE() in your user-provided datatype.
-  
+
   mahge : This function will not treat der(), pre() and start() as calls
   but as unique ids. i.e. x is different from der(x) and given der(x) x will not
   be extreacted as a unique id. Instead you get $DER.x. Same oes for pre and start.
@@ -5834,7 +5834,7 @@ algorithm
   ocrefs := List.unique(extractCrefsFromExp(inExp));
 end extractUniqueCrefsFromExp;
 
-public function extractCrefsFromExpDerPreStart 
+public function extractCrefsFromExpDerPreStart
 " author mahge: Same as extractCrefsFromExp except:
   This function will not treat der(), pre() and start() as calls
   but as unique ids. i.e. x is different from der(x) and given der(x) x will not
@@ -5863,11 +5863,11 @@ public function extractUniqueCrefsFromStatmentS
   input list<DAE.Statement> inStmts;
   output tuple<list<DAE.ComponentRef>,list<DAE.ComponentRef>> ocrefs;
 protected
-  list<list<DAE.ComponentRef>> lhscreflstlst; 
-  list<list<DAE.ComponentRef>> rhscreflstlst; 
-  list<DAE.ComponentRef> orhscrefs; 
-  list<DAE.ComponentRef> olhscrefs; 
-algorithm  
+  list<list<DAE.ComponentRef>> lhscreflstlst;
+  list<list<DAE.ComponentRef>> rhscreflstlst;
+  list<DAE.ComponentRef> orhscrefs;
+  list<DAE.ComponentRef> olhscrefs;
+algorithm
   (lhscreflstlst,rhscreflstlst) := List.map_2(inStmts,extractCrefsStatment);
   orhscrefs := List.unique(List.flatten(rhscreflstlst));
   olhscrefs := List.unique(List.flatten(lhscreflstlst));
@@ -5881,7 +5881,7 @@ public function extractCrefsStatment
   output list<DAE.ComponentRef> olcrefs;
   output list<DAE.ComponentRef> orcrefs;
 algorithm
-  (olcrefs,orcrefs) := match(inStmt)  
+  (olcrefs,orcrefs) := match(inStmt)
     local
       Exp exp1,exp2;
     case DAE.STMT_ASSERT(cond = exp1)
@@ -5889,17 +5889,17 @@ algorithm
         orcrefs = extractCrefsFromExpDerPreStart(exp1);
       then
         ({},orcrefs);
-        
+
     case DAE.STMT_ASSIGN(exp1 = exp1, exp = exp2)
       equation
         olcrefs = extractCrefsFromExpDerPreStart(exp1);
         orcrefs = extractCrefsFromExpDerPreStart(exp2);
       then
         (olcrefs,orcrefs);
-        
+
     case _ then  ({},{});
-      
-  end match;    
+
+  end match;
 end extractCrefsStatment;
 
 public function expHasCrefs "
