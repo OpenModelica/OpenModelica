@@ -767,7 +767,7 @@ algorithm
   // remove the constant values
   //stmts1 := traverseStmtsAndUpdate(stmts1,stmtCanBeRemoved,replIn,{});
     stmts1 := listReverse(stmts1);
-  
+
   // build new crefs for the scalars
   (stmts1,_) := DAEUtil.traverseDAEEquationsStmts(stmts1,makeIdentCref,varScalarCrefs);
   (stmts1,_) := DAEUtil.traverseDAEEquationsStmts(stmts1,makeIdentCref,constScalarCrefs);
