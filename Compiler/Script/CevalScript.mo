@@ -2630,7 +2630,7 @@ algorithm
 
     case (cache,_,"checkTaskGraph",_,st,_)
       then (cache,Values.STRING("Error in checkTaskGraph"),st);
-        
+
     case (cache,env,"checkCodeGraph",{Values.STRING(filename),Values.STRING(filename_1)},st,_)
       equation
         pwd = System.pwd();
@@ -2641,10 +2641,10 @@ algorithm
         cvars = List.map(strings,ValuesUtil.makeString);
         v = ValuesUtil.makeArray(cvars);
       then (cache,v,st);
-    
+
     case (cache,env,"checkCodeGraph",_,st,_)
       then (cache,Values.STRING("Error in checkCodeGraph"),st);
-        
+
     case (cache,env,"getPlotSilent",{},st,_)
       equation
         b = Config.getPlotSilent();

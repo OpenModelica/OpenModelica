@@ -97,14 +97,14 @@ package builtin
     input array<TypeVar> arr;
     output list<TypeVar> lst;
   end arrayList;
-  
+
   function arrayGet
     replaceable type TypeVar subtypeof Any;
     input array<TypeVar> arr;
     input Integer index;
     output TypeVar value;
   end arrayGet;
-  
+
   function arrayLength
     replaceable type TypeVar subtypeof Any;
     input array<TypeVar> arr;
@@ -192,7 +192,7 @@ package SimCode
       Option<SimulationSettings> simulationSettingsOpt;
       String fileNamePrefix;
       Option<HpcOmSimCode.Schedule> hpcOmSchedule;
-      Option<HpcOmSimCode.MemoryMap> hpcOmMemory; 
+      Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
     end SIMCODE;
 
   end SimCode;
@@ -2654,7 +2654,7 @@ end Config;
 package Flags
   uniontype DebugFlag end DebugFlag;
   uniontype ConfigFlag end ConfigFlag;
-    
+
   constant DebugFlag PARMODAUTO;
   constant DebugFlag HPCOM;
   constant DebugFlag GEN_DEBUG_SYMBOLS;
@@ -3117,7 +3117,7 @@ package HpcOmSimCode
     end RELEASELOCKTASK;
   end Task;
 
-  uniontype Schedule 
+  uniontype Schedule
     record LEVELSCHEDULE
       list<list<Task>> tasksOfLevels;
     end LEVELSCHEDULE;
@@ -3132,7 +3132,7 @@ package HpcOmSimCode
 
   uniontype MemoryMap
     record MEMORYMAP_ARRAY
-      array<tuple<Integer,Integer>> positionMapping; 
+      array<tuple<Integer,Integer>> positionMapping;
       Integer floatArraySize;
       HashTableCrILst.HashTable scVarNameIdxMapping;
     end MEMORYMAP_ARRAY;
@@ -3143,7 +3143,7 @@ package HpcOmMemory
   function getPositionMappingByArrayName
     input HpcOmSimCode.MemoryMap iMemoryMap;
     input DAE.ComponentRef iVarName;
-    output Option<tuple<Integer,Integer>> oResult; 
+    output Option<tuple<Integer,Integer>> oResult;
   end getPositionMappingByArrayName;
 end HpcOmMemory;
 

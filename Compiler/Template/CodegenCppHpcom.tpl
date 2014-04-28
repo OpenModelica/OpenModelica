@@ -124,7 +124,7 @@ end generateClassDeclarationCode;
 template getAddHpcomStructHeaders(Option<Schedule> hpcOmScheduleOpt)
 ::=
   let type = getConfigString(HPCOM_CODE)
-  match hpcOmScheduleOpt 
+  match hpcOmScheduleOpt
     case SOME(hpcOmSchedule as TASKDEPSCHEDULE(__)) then
         match type
             case ("openmp") then
@@ -180,7 +180,7 @@ end getAddHpcomFunctionHeaders;
 
 template getAddHpcomVarArrays(Option<MemoryMap> optHpcomMemoryMap)
 ::=
-    match optHpcomMemoryMap 
+    match optHpcomMemoryMap
         case(SOME(hpcomMemoryMap)) then
             match hpcomMemoryMap
                 case(MEMORYMAP_ARRAY(__)) then
@@ -229,7 +229,7 @@ template getAddHpcomVarHeaders(Option<Schedule> hpcOmScheduleOpt)
                 <%threadDecl%>
                 >>
      case SOME(hpcOmSchedule as TASKDEPSCHEDULE(__)) then
-        match type 
+        match type
             case ("openmp") then
                 <<
                 >>
@@ -751,11 +751,11 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, Absyn.Path name, list<S
                 {
                   bool state_var_reinitialized = false;
                   omp_set_dynamic(1);
-        
+
                   <%&varDecls%>
                   <%taskEqs%>
                   <%reinit%>
-        
+
                   return state_var_reinitialized;
                 }
                 >>
@@ -763,16 +763,16 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, Absyn.Path name, list<S
                 let taskNodes = function_HPCOM_TaskDep_tbb(hpcOmSchedule.tasks, allEquationsPlusWhen, type, name, &varDecls, simCode); separator="\n"
                 let taskFuncs = function_HPCOM_TaskDep_voidfunc(hpcOmSchedule.tasks, allEquationsPlusWhen,type, name, &varDecls, simCode); separator="\n"
                 <<
-                    //using type: <%type%>              
-                                                                    
+                    //using type: <%type%>
+
                     //void functions for functionhandling in tbb_nodes
                     <%taskFuncs%>
-                    
+
                     bool <%lastIdentOfPath(name)%>::evaluate(const UPDATETYPE command)
                     {
                       using namespace tbb::flow;
                       bool state_var_reinitialized = false;
-                      
+
                       // Declaration of nodes and edges
                       <%taskNodes%>
                     }
@@ -839,16 +839,16 @@ template function_HPCOM_TaskDep_tbb(list<tuple<Task,list<Integer>>> tasks, list<
   <<
         //Init base node
         broadcast_node< continue_msg > tbb_start(tbb_graph);
-                    
+
         <%noteEqs%>
-                      
-        //Start 
+
+        //Start
         tbb_start.try_put(continue_msg());
         tbb_graph.wait_for_all();
         //End
-                  
+
         return state_var_reinitialized;
-       
+
   >>
 end function_HPCOM_TaskDep_tbb;
 
@@ -862,19 +862,19 @@ end function_HPCOM_TaskDep_voidfunc;
 
 template function_HPCOM_TaskDep_tbb0(tuple<Task,list<Integer>> taskIn, list<SimEqSystem> allEquationsPlusWhen, String iType, Absyn.Path name, Text &varDecls, SimCode simCode)
 ::=
-  match taskIn 
+  match taskIn
     case ((task as CALCTASK(__),parents)) then
         let parentEdges = parents |> p => 'make_edge(tbb_task_<%p%>,tbb_task_<%task.index%>);'; separator = "\n"
         <<
             continue_node < continue_msg > tbb_task_<%task.index%>(tbb_graph,VoidBody(boost::bind<void>(&<%lastIdentOfPath(name)%>::task_func_<%task.index%>,this)));
             <%parentEdges%>
-            
+
         >>
 end function_HPCOM_TaskDep_tbb0;
 
 template function_HPCOM_TaskDep_voidfunc0(tuple<Task,list<Integer>> taskIn, list<SimEqSystem> allEquationsPlusWhen, String iType, Absyn.Path name, Text &varDecls, SimCode simCode)
 ::=
-  match taskIn 
+  match taskIn
     case ((task as CALCTASK(__),parents)) then
         let &tempvarDecl = buffer "" /*BUFD*/
         let taskEqs = function_HPCOM_Task(allEquationsPlusWhen,task,iType,&tempvarDecl,simCode); separator="\n"

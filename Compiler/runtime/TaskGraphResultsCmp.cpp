@@ -34,7 +34,7 @@ Node::Node() : id(""), name(""), calcTime(-1), threadId(""), taskNumber(-1), tas
 }
 
 Node::Node(std::string id, std::string name, double calcTime, std::string threadId, int taskNumber, int taskId)
-	: id(id), name(name), calcTime(calcTime), threadId(threadId), taskNumber(taskNumber), taskId(taskId)
+  : id(id), name(name), calcTime(calcTime), threadId(threadId), taskNumber(taskNumber), taskId(taskId)
 {
 
 }
@@ -50,7 +50,7 @@ Edge::Edge() : id(""), sourceId(""), sourceName(""), targetId(""), targetName(""
 }
 
 Edge::Edge(std::string id, std::string sourceId, std::string sourceName, std::string targetId, std::string targetName, double commTime)
-	: id(id), sourceId(sourceId), sourceName(sourceName), targetId(targetId), targetName(targetName), commTime(commTime)
+  : id(id), sourceId(sourceId), sourceName(sourceName), targetId(targetId), targetName(targetName), commTime(commTime)
 {
 
 }
@@ -494,7 +494,7 @@ GraphCodeParser::~GraphCodeParser()
 
 std::string GraphCodeParser::Trim(const std::string& str)
 {
-	const std::string& whitespace = " \t";
+  const std::string& whitespace = " \t";
     const size_t strBegin = str.find_first_not_of(whitespace);
     if (strBegin == std::string::npos)
         return ""; // no content
@@ -507,85 +507,85 @@ std::string GraphCodeParser::Trim(const std::string& str)
 
 void GraphCodeParser::ParseGraph(Graph *currentGraph, const char* fileName,NodeComparator nodeComparator, std::string *_errorMsg)
 {
-	std::string line;
-	int MAX_MATCHES=1;
-	regmatch_t matches[MAX_MATCHES];
-	regex_t nodeRegex, nodeParentRegex, nodeDependencyRegex;
+  std::string line;
+  int MAX_MATCHES=1;
+  regmatch_t matches[MAX_MATCHES];
+  regex_t nodeRegex, nodeParentRegex, nodeDependencyRegex;
 
-	std::ifstream infile(fileName);
+  std::ifstream infile(fileName);
 
-	if(regcomp(&nodeRegex, "^[ \t]*//[ \t]*TG_NODE: [0-9]*$", REG_EXTENDED) != 0)
-	{
-		*_errorMsg = _errorMsg->append("Failed to compile node regex!\n");
-		return;
-	}
+  if(regcomp(&nodeRegex, "^[ \t]*//[ \t]*TG_NODE: [0-9]*$", REG_EXTENDED) != 0)
+  {
+    *_errorMsg = _errorMsg->append("Failed to compile node regex!\n");
+    return;
+  }
 
-	if(regcomp(&nodeParentRegex, "^[ \t]*//[ \t]*TG_NODE: [0-9]* TG_PARENTS: (()|(([0-9]*)(,[0-9]*)*))$", REG_EXTENDED) != 0)
-	{
-		*_errorMsg = _errorMsg->append("Failed to compile node parent regex!\n");
-		return;
-	}
+  if(regcomp(&nodeParentRegex, "^[ \t]*//[ \t]*TG_NODE: [0-9]* TG_PARENTS: (()|(([0-9]*)(,[0-9]*)*))$", REG_EXTENDED) != 0)
+  {
+    *_errorMsg = _errorMsg->append("Failed to compile node parent regex!\n");
+    return;
+  }
 
-	if(regcomp(&nodeDependencyRegex, "^[ \t]*//[ \t]*TG_DEPENDENCY: [0-9]* -> ([0-9]*)$", REG_EXTENDED) != 0)
-	{
-		*_errorMsg = _errorMsg->append("Failed to compile node dependency regex!\n");
-		return;
-	}
+  if(regcomp(&nodeDependencyRegex, "^[ \t]*//[ \t]*TG_DEPENDENCY: [0-9]* -> ([0-9]*)$", REG_EXTENDED) != 0)
+  {
+    *_errorMsg = _errorMsg->append("Failed to compile node dependency regex!\n");
+    return;
+  }
 
-	while (std::getline(infile, line))
-	{
-		std::istringstream iss(line);
+  while (std::getline(infile, line))
+  {
+    std::istringstream iss(line);
 
-		if (regexec(&nodeRegex, line.c_str(), MAX_MATCHES, matches, 0) == 0)
-		{
-			std::string trimmedLine = Trim(Trim(line).substr(2));
-			trimmedLine = trimmedLine.substr(9);
-			std::string nodeIdx = trimmedLine;
-			//std::cout << "Found node with index " << nodeIdx << std::endl;
-			std::string nodeId = "Node" + nodeIdx;
-			currentGraph->AddNode(new Node(nodeId,nodeId,0,"",0,0));
-		}
-		else if(regexec(&nodeParentRegex, line.c_str(), MAX_MATCHES, matches, 0) == 0)
-		{
-			std::string trimmedLine = Trim(Trim(line).substr(2));
-			trimmedLine = trimmedLine.substr(9);
-			unsigned int spaceIdx = trimmedLine.find(' ');
-			std::string nodeIdx = trimmedLine.substr(0, spaceIdx);
-			std::string nodeId = "Node" + nodeIdx;
-			currentGraph->AddNode(new Node(nodeId,nodeId,0,"",0,0));
-			//std::cout << "Found node with index " << nodeIdx;
+    if (regexec(&nodeRegex, line.c_str(), MAX_MATCHES, matches, 0) == 0)
+    {
+      std::string trimmedLine = Trim(Trim(line).substr(2));
+      trimmedLine = trimmedLine.substr(9);
+      std::string nodeIdx = trimmedLine;
+      //std::cout << "Found node with index " << nodeIdx << std::endl;
+      std::string nodeId = "Node" + nodeIdx;
+      currentGraph->AddNode(new Node(nodeId,nodeId,0,"",0,0));
+    }
+    else if(regexec(&nodeParentRegex, line.c_str(), MAX_MATCHES, matches, 0) == 0)
+    {
+      std::string trimmedLine = Trim(Trim(line).substr(2));
+      trimmedLine = trimmedLine.substr(9);
+      unsigned int spaceIdx = trimmedLine.find(' ');
+      std::string nodeIdx = trimmedLine.substr(0, spaceIdx);
+      std::string nodeId = "Node" + nodeIdx;
+      currentGraph->AddNode(new Node(nodeId,nodeId,0,"",0,0));
+      //std::cout << "Found node with index " << nodeIdx;
 
-			if(trimmedLine.size() < spaceIdx + 13)
-			{
-				//std::cout << std::endl;
-				continue;
-			}
+      if(trimmedLine.size() < spaceIdx + 13)
+      {
+        //std::cout << std::endl;
+        continue;
+      }
 
-			std::string parents = trimmedLine.substr(spaceIdx + 13);
-			//std::cout << " and parents: ";
+      std::string parents = trimmedLine.substr(spaceIdx + 13);
+      //std::cout << " and parents: ";
 
-			char* ptr = strtok((char*)parents.c_str(), ",");
+      char* ptr = strtok((char*)parents.c_str(), ",");
 
-			while(ptr != NULL) {
-				//std::cout << ptr << " ";
-				std::string parentIdx(ptr);
-				currentGraph->AddEdge(new Edge("Edge" + parentIdx + nodeIdx, "Node" + parentIdx, "Node" + parentIdx, nodeId, nodeId, 0));
-			 	ptr = strtok(NULL, ",");
-			}
+      while(ptr != NULL) {
+        //std::cout << ptr << " ";
+        std::string parentIdx(ptr);
+        currentGraph->AddEdge(new Edge("Edge" + parentIdx + nodeIdx, "Node" + parentIdx, "Node" + parentIdx, nodeId, nodeId, 0));
+         ptr = strtok(NULL, ",");
+      }
 
-			//std::cout << std::endl;
-		}
-		else if(regexec(&nodeDependencyRegex, line.c_str(), MAX_MATCHES, matches, 0) == 0)
-		{
-			std::string trimmedLine = Trim(Trim(line).substr(2));
-			trimmedLine = trimmedLine.substr(15);
-			int spaceIdx = trimmedLine.find(' ');
-			std::string parentIdx = trimmedLine.substr(0, spaceIdx);
-			std::string nodeIdx = trimmedLine.substr(spaceIdx + 4);
-			//std::cout << "Found dependency from " << parentIdx << " to " << nodeIdx << std::endl;
-			currentGraph->AddEdge(new Edge("Edge" + parentIdx + nodeIdx, "Node" + parentIdx, "Node" + parentIdx, "Node" + nodeIdx, "Node" + nodeIdx, 0));
-		}
-	}
+      //std::cout << std::endl;
+    }
+    else if(regexec(&nodeDependencyRegex, line.c_str(), MAX_MATCHES, matches, 0) == 0)
+    {
+      std::string trimmedLine = Trim(Trim(line).substr(2));
+      trimmedLine = trimmedLine.substr(15);
+      int spaceIdx = trimmedLine.find(' ');
+      std::string parentIdx = trimmedLine.substr(0, spaceIdx);
+      std::string nodeIdx = trimmedLine.substr(spaceIdx + 4);
+      //std::cout << "Found dependency from " << parentIdx << " to " << nodeIdx << std::endl;
+      currentGraph->AddEdge(new Edge("Edge" + parentIdx + nodeIdx, "Node" + parentIdx, "Node" + parentIdx, "Node" + nodeIdx, "Node" + nodeIdx, 0));
+    }
+  }
 }
 
 NodeComparator::NodeComparator(int (*comparator)(Node* n1, Node* n2)) : comparator(comparator) {
@@ -649,7 +649,7 @@ GraphComparator::~GraphComparator()
 
 bool GraphComparator::CompareGraphs(Graph *g1, Graph *g2,std::string *errorMsg)
 {
-	return GraphComparator::CompareGraphs(g1, g2, NodeComparator(&NodeComparator::CompareNodeNamesInt), EdgeComparator(&EdgeComparator::CompareEdgesByNodeNamesInt), true, true, errorMsg);
+  return GraphComparator::CompareGraphs(g1, g2, NodeComparator(&NodeComparator::CompareNodeNamesInt), EdgeComparator(&EdgeComparator::CompareEdgesByNodeNamesInt), true, true, errorMsg);
 }
 
 bool GraphComparator::CompareGraphs(Graph *g1, Graph *g2, NodeComparator nodeComparator, EdgeComparator edgeComparator, bool checkCalcTime, bool checkCommTime, std::string *errorMsg)

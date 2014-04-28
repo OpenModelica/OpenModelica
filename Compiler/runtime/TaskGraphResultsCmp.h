@@ -108,18 +108,18 @@ public:
 class NodeComparator
 {
 public:
-	int (*comparator)(Node *n1, Node* n2);
+  int (*comparator)(Node *n1, Node* n2);
 
-	NodeComparator(int (*comparator)(Node *n1, Node* n2));
-	~NodeComparator();
+  NodeComparator(int (*comparator)(Node *n1, Node* n2));
+  ~NodeComparator();
 
     bool operator()(Node *node1, Node *node2) const {
           return (comparator(node1,node2) > 0);
     }
 
-	static int CompareNodeNamesInt(Node *n1, Node *n2);
-	static int CompareNodeIdsInt(Node *n1, Node *n2);
-	static int CompareNodeTaskIdsInt(Node *n1, Node *n2);
+  static int CompareNodeNamesInt(Node *n1, Node *n2);
+  static int CompareNodeIdsInt(Node *n1, Node *n2);
+  static int CompareNodeTaskIdsInt(Node *n1, Node *n2);
 };
 #endif //TGRC_NODECOMPARATOR
 
@@ -128,10 +128,10 @@ public:
 class EdgeComparator
 {
 public:
-	int (*comparator)(Edge *n1, Edge* n2);
+  int (*comparator)(Edge *n1, Edge* n2);
 
-	EdgeComparator(int (*comparator)(Edge *n1, Edge* n2));
-	~EdgeComparator();
+  EdgeComparator(int (*comparator)(Edge *n1, Edge* n2));
+  ~EdgeComparator();
 
     bool operator()(Edge *node1, Edge *node2) const {
           return (comparator(node1,node2) > 0);
@@ -148,12 +148,12 @@ public:
 class GraphParser
 {
 public:
-	GraphParser();
-	virtual ~GraphParser();
+  GraphParser();
+  virtual ~GraphParser();
 
-	static bool CheckIfFileExists(const char* fileName);
+  static bool CheckIfFileExists(const char* fileName);
 
-	virtual void ParseGraph(Graph *currentGraph, const char* fileName, NodeComparator nodeComparator, std::string *_errorMsg) = 0;
+  virtual void ParseGraph(Graph *currentGraph, const char* fileName, NodeComparator nodeComparator, std::string *_errorMsg) = 0;
 };
 #endif //TGRC_GRAPHPARSER
 
@@ -213,12 +213,12 @@ public:
 class GraphCodeParser : public GraphParser
 {
 protected:
-	std::string Trim(const std::string& str);
+  std::string Trim(const std::string& str);
 public:
-	GraphCodeParser();
-	virtual ~GraphCodeParser();
+  GraphCodeParser();
+  virtual ~GraphCodeParser();
 
-	virtual void ParseGraph(Graph *currentGraph, const char* fileName, NodeComparator nodeComparator, std::string *_errorMsg);
+  virtual void ParseGraph(Graph *currentGraph, const char* fileName, NodeComparator nodeComparator, std::string *_errorMsg);
 };
 #endif //TGRC_CODEPARSER
 

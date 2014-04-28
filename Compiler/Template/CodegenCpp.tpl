@@ -1917,12 +1917,12 @@ case FUNCTION(outVars= vars as _::_) then
      //KERNEL_FUNCTION
      //typedef <%fname%>Type <%fname%>RetType out of functionHeaderRegularFunction1;
      >>
- case EXTERNAL_FUNCTION(__) then 
+ case EXTERNAL_FUNCTION(__) then
     let fname = underscorePath(name)
      <<
      //EXTERNAL_FUNCTION
      //typedef <%fname%>Type <%fname%>RetType out of functionHeaderRegularFunction1;
-     >>        
+     >>
 end functionHeaderRegularFunction1;
 
 template tupplearrayassign(Variable var,Integer index)
@@ -1960,7 +1960,7 @@ case EXTERNAL_FUNCTION(outVars={var}) then
   <<
     typedef boost::tuple< <%outVars |> var => funReturnDefinition1(var,simCode) ;separator=", "%> >  <%fname%>RetType /* functionHeaderExternFunction */;
   >>
- case FUNCTION(outVars= vars as _::_) then 
+ case FUNCTION(outVars= vars as _::_) then
   let fname = underscorePath(name)
   <<
   //FUNCTION
@@ -1985,7 +1985,7 @@ case EXTERNAL_FUNCTION(outVars={var}) then
   //KERNEL_FUNCTION
   //typedef <%fname%>Type <%fname%>RetType out of functionHeaderExternFunction;
   >>
-  
+
 end functionHeaderExternFunction;
 
 template recordDeclarationHeader(RecordDeclaration recDecl,SimCode simCode)
@@ -7122,7 +7122,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let retVar = tempDecl(retType, &varDecls /*BUFD*/)
     let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
     if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
-    
+
    case CALL(path=IDENT(name="log10"),
             expLst={e1},attr=attr as CALL_ATTR(__)) then
     let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")
@@ -7140,7 +7140,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let retVar = tempDecl(retType, &varDecls /*BUFD*/)
     let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%>sum(<%argStr%>);<%\n%>'
     if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
-    
+
    case CALL(path=IDENT(name="acos"),
             expLst={e1},attr=attr as CALL_ATTR(__)) then
     let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")

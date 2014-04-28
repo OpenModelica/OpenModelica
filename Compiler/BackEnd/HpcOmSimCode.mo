@@ -40,43 +40,43 @@ encapsulated package HpcOmSimCode
       HashTableCrILst.HashTable scVarNameIdxMapping; //maps each var-name to the scVar-idx
     end MEMORYMAP_ARRAY;
   end MemoryMap;
-  
-	public uniontype Task
-	  record CALCTASK //Task which calculates something
-	    Integer weighting;
-	    Integer index;
-	    Real calcTime;
-	    Real timeFinished;
-	    Integer threadIdx;
-	    list<Integer> eqIdc;
-	  end CALCTASK;
-	  record CALCTASK_LEVEL
-	    list<Integer> eqIdc;
-	    list<Integer> nodeIdc; //indices of the graph-node
-	  end CALCTASK_LEVEL;
-	  record ASSIGNLOCKTASK //Task which assignes a lock
-	    String lockId;
-	  end ASSIGNLOCKTASK;
-	  record RELEASELOCKTASK //Task which releases a lock
-	    String lockId;
-	  end RELEASELOCKTASK;
-	  record TASKEMPTY //Dummy Task
-	  end TASKEMPTY;
-	end Task;
-	
-	public uniontype Schedule   // stores all scheduling-informations
-	  record LEVELSCHEDULE
-	    list<list<Task>> tasksOfLevels; //List of tasks solved in the same level in parallel
-	  end LEVELSCHEDULE;
-	  record THREADSCHEDULE
-	    array<list<Task>> threadTasks; //List of tasks assigned to the thread <%idx%>
-	    list<String> lockIdc;
-	  end THREADSCHEDULE;
-	  record TASKDEPSCHEDULE
-	    list<tuple<Task,list<Integer>>> tasks; //topological sorted tasks with <taskIdx, parentTaskIdc>
-	  end TASKDEPSCHEDULE;
-	  record EMPTYSCHEDULE  // a dummy schedule. used if there is no ODE-system
-	  end EMPTYSCHEDULE;
-	end Schedule;
+
+  public uniontype Task
+    record CALCTASK //Task which calculates something
+      Integer weighting;
+      Integer index;
+      Real calcTime;
+      Real timeFinished;
+      Integer threadIdx;
+      list<Integer> eqIdc;
+    end CALCTASK;
+    record CALCTASK_LEVEL
+      list<Integer> eqIdc;
+      list<Integer> nodeIdc; //indices of the graph-node
+    end CALCTASK_LEVEL;
+    record ASSIGNLOCKTASK //Task which assignes a lock
+      String lockId;
+    end ASSIGNLOCKTASK;
+    record RELEASELOCKTASK //Task which releases a lock
+      String lockId;
+    end RELEASELOCKTASK;
+    record TASKEMPTY //Dummy Task
+    end TASKEMPTY;
+  end Task;
+
+  public uniontype Schedule   // stores all scheduling-informations
+    record LEVELSCHEDULE
+      list<list<Task>> tasksOfLevels; //List of tasks solved in the same level in parallel
+    end LEVELSCHEDULE;
+    record THREADSCHEDULE
+      array<list<Task>> threadTasks; //List of tasks assigned to the thread <%idx%>
+      list<String> lockIdc;
+    end THREADSCHEDULE;
+    record TASKDEPSCHEDULE
+      list<tuple<Task,list<Integer>>> tasks; //topological sorted tasks with <taskIdx, parentTaskIdc>
+    end TASKDEPSCHEDULE;
+    record EMPTYSCHEDULE  // a dummy schedule. used if there is no ODE-system
+    end EMPTYSCHEDULE;
+  end Schedule;
 
 end HpcOmSimCode;
