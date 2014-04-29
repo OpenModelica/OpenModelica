@@ -2,18 +2,15 @@
 #pragma once
 
 #include "FactoryExport.h"
-#include <kinsol.h>
-#include <nvector_serial.h>
-#include <kinsol_dense.h>
-#include <kinsol_spgmr.h>
+#include<kinsol.h>
+#include<nvector_serial.h>
+#include<kinsol_dense.h>
+#include<kinsol_spgmr.h>
 #include <kinsol_spbcgs.h>
 #include <kinsol_sptfqmr.h>
 #include <boost/math/special_functions/fpclassify.hpp>
 //#include<kinsol_lapack.h>
 
-#ifdef SCOREP_USER_ENABLE
-#include <scorep/SCOREP_User.h>
-#endif
 
 class Kinsol : public IAlgLoopSolver
 {
@@ -42,6 +39,7 @@ private:
   static int kin_fCallback(N_Vector y, N_Vector fval, void *user_data);
   void solveNLS();
   bool isfinite(double* u, int dim);
+  void check4EventRetry(double* y);
 
   // Member variables
   //---------------------------------------------------------------
@@ -84,4 +82,7 @@ private:
 
   bool
     _eventRetry;
+
+   realtype _fnorm,
+			 _currentIterateNorm;
 };
