@@ -195,7 +195,6 @@ void Kinsol::solve()
             return;
         }
 
-
         // Try Spbcg
         KINSpbcg(_kinMem,4);
         _iterationStatus = CONTINUE;
@@ -208,10 +207,9 @@ void Kinsol::solve()
             _iterationStatus = CONTINUE;
             return;
         }
-
+		
         // Try Sptfqmr
-
-    KINSptfqmr(_kinMem, _dimSys);
+		KINSptfqmr(_kinMem, _dimSys);
         _iterationStatus = CONTINUE;
         solveNLS();
         if(_iterationStatus == DONE)
@@ -320,7 +318,7 @@ void Kinsol::solveNLS()
         idid = KINSetMaxNewtonStep(_kinMem, maxSteps);
 
         // Reset initial guess
-        //memcpy(_y,_y0,_dimSys*sizeof(double));
+        memcpy(_y,_y0,_dimSys*sizeof(double));
 
         // Call Kinsol
         idid = KINSol(_kinMem, _Kin_y, method, _Kin_yScale, _Kin_yScale);
@@ -359,10 +357,12 @@ void Kinsol::solveNLS()
                 maxSteps = maxStepsStart;
                 limit = maxStepsHigh;
             }
-      if(_fnorm > _currentIterateNorm)
-        memcpy(_y,_y0,_dimSys*sizeof(double));
-      else
-        _currentIterateNorm = _fnorm;
+			/*
+			if(_fnorm > _currentIterateNorm)
+				memcpy(_y,_y0,_dimSys*sizeof(double));
+			else
+        _		currentIterateNorm = _fnorm;
+			*/
             break;
 
             // MaxStep too low
@@ -403,11 +403,13 @@ void Kinsol::solveNLS()
                     }else
                         maxSteps *= 10;
                 }
-        KINGetFuncNorm(_kinMem, &_fnorm);
-        if(_fnorm > _currentIterateNorm)
-          memcpy(_y,_y0,_dimSys*sizeof(double));
-        else
-          _currentIterateNorm = _fnorm;
+				/*
+				KINGetFuncNorm(_kinMem, &_fnorm);
+				if(_fnorm > _currentIterateNorm)
+				memcpy(_y,_y0,_dimSys*sizeof(double));
+				else
+					_currentIterateNorm = _fnorm;
+				*/
                 break;
 
                 // Max Iterations exceeded
@@ -431,11 +433,13 @@ void Kinsol::solveNLS()
                 {
                     _iterationStatus = SOLVERERROR;
                 }
-        KINGetFuncNorm(_kinMem, &_fnorm);
-        if(_fnorm > _currentIterateNorm)
-          memcpy(_y,_y0,_dimSys*sizeof(double));
-        else
-          _currentIterateNorm = _fnorm;
+				 /*
+				KINGetFuncNorm(_kinMem, &_fnorm);
+			    if(_fnorm > _currentIterateNorm)
+					memcpy(_y,_y0,_dimSys*sizeof(double));
+				else
+					_currentIterateNorm = _fnorm;
+				*/
                 break;
 
                 // Linesearch did not converge
@@ -456,19 +460,23 @@ void Kinsol::solveNLS()
                     }else
                         maxSteps *= 10;
                 KINGetFuncNorm(_kinMem, &_fnorm);
-        if(_fnorm > _currentIterateNorm)
-          memcpy(_y,_y0,_dimSys*sizeof(double));
-        else
-          _currentIterateNorm = _fnorm;
+				/*
+				if(_fnorm > _currentIterateNorm)
+					memcpy(_y,_y0,_dimSys*sizeof(double));
+				else
+					_currentIterateNorm = _fnorm;
+				*/
         break;
       // Other failures (setup etc) -> directly break
             default:
                 _iterationStatus = SOLVERERROR;
-        KINGetFuncNorm(_kinMem, &_fnorm);
-        if(_fnorm > _currentIterateNorm)
-          memcpy(_y,_y0,_dimSys*sizeof(double));
-         else
-          _currentIterateNorm = _fnorm;
+				/*
+				KINGetFuncNorm(_kinMem, &_fnorm);
+				if(_fnorm > _currentIterateNorm)
+					memcpy(_y,_y0,_dimSys*sizeof(double));
+				else
+					_currentIterateNorm = _fnorm;
+				*/
                 break;
         }
     }

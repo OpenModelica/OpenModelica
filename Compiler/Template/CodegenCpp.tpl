@@ -7110,14 +7110,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
     if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
 
-   case CALL(path=IDENT(name="sum"),
-            expLst={e1},attr=attr as CALL_ATTR(__)) then
-    let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")
-    let funName = '<%underscorePath(path)%>'
-    let retType = expTypeShort(attr.ty) /* exp. sum */
-    let retVar = tempDecl(retType, &varDecls /*BUFD*/)
-    let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%>sum(<%argStr%>);<%\n%>'
-    if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
+  
 
    case CALL(path=IDENT(name="acos"),
             expLst={e1},attr=attr as CALL_ATTR(__)) then
