@@ -569,5 +569,28 @@ algorithm
   outIntEnumConversion := Flags.getConfigBool(Flags.INT_ENUM_CONVERSION);
 end intEnumConversion;
 
+public function profileSome
+  output Boolean outBoolean;
+algorithm
+  outBoolean := 0==System.strncmp(Flags.getConfigString(Flags.PROFILING_LEVEL), "blocks", 6);
+end profileSome;
+
+public function profileAll
+  output Boolean outBoolean;
+algorithm
+  outBoolean := stringEq(Flags.getConfigString(Flags.PROFILING_LEVEL), "all");
+end profileAll;
+
+public function profileHtml
+  output Boolean outBoolean;
+algorithm
+  outBoolean := stringEq(Flags.getConfigString(Flags.PROFILING_LEVEL), "blocks+html");
+end profileHtml;
+
+public function profileFunctions
+  output Boolean outBoolean;
+algorithm
+  outBoolean := not stringEq(Flags.getConfigString(Flags.PROFILING_LEVEL), "none");
+end profileFunctions;
 
 end Config;

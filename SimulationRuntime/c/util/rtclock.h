@@ -95,6 +95,8 @@ unsigned long rt_ncall_max(int ix);
 unsigned long rt_ncall_total(int ix);
 void rt_add_ncall(int ix, int n);
 
+void rt_measure_overhead(int ix);
+
 #ifdef __cplusplus
 }
 #endif

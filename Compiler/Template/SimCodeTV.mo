@@ -264,8 +264,6 @@ package SimCode
     end ALGLOOP_CONTEXT;
     record OTHER_CONTEXT
     end OTHER_CONTEXT;
-    record INLINE_CONTEXT
-    end INLINE_CONTEXT;
     record PARALLEL_FUNCTION_CONTEXT
     end PARALLEL_FUNCTION_CONTEXT;
     record ZEROCROSSINGS_CONTEXT
@@ -599,7 +597,6 @@ package SimCode
 
   constant Context contextSimulationNonDiscrete;
   constant Context contextSimulationDiscrete;
-  constant Context contextInlineSolver;
   constant Context contextFunction;
   constant Context contextOther;
   constant Context contextAlgloopJacobian;
@@ -2649,6 +2646,21 @@ package Config
     output String outCodeTarget;
   end simulationCodeTarget;
 
+  function profileHtml
+    output Boolean outBoolean;
+  end profileHtml;
+
+  function profileSome
+    output Boolean outBoolean;
+  end profileSome;
+
+  function profileAll
+    output Boolean outBoolean;
+  end profileAll;
+
+  function profileFunctions
+    output Boolean outBoolean;
+  end profileFunctions;
 end Config;
 
 package Flags
@@ -2660,7 +2672,6 @@ package Flags
   constant DebugFlag GEN_DEBUG_SYMBOLS;
   constant DebugFlag WRITE_TO_BUFFER;
   constant DebugFlag HPCOM_ANALYZATION_MODE;
-  constant DebugFlag MEASURE_TIME;
   constant ConfigFlag NUM_PROC;
   constant ConfigFlag HPCOM_CODE;
 

@@ -33,6 +33,7 @@
 #endif
 
 #include "simulation_info_xml.h"
+#include "simulation_runtime.h"
 #include "omc_msvc.h" /* for asprintf */
 #include <expat.h>
 #include <errno.h>
@@ -62,6 +63,7 @@ static VAR_INFO var_info;
 static FILE_INFO file_info;
 static int maxVarsBuffer = 0;
 static const char **varsBuffer = 0;
+static int isChild = 0;
 
 static void add_variable(VAR_INFO vi)
 {
@@ -142,24 +144,25 @@ static void XMLCALL startElement(void *voidData, const char *name, const char **
   if(0 == strcmp("equation", name))
   {
     long ix;
-    if(userData->curIndex > userData->xml->nEquations)
-    {
+    if(userData->curIndex > userData->xml->nEquations) {
       throwStreamPrint(NULL, "%s: Info XML %s contained more equations than expected (%ld)", __FILE__, userData->xml->fileName, userData->xml->nEquations);
     }
-    if(strcmp("index", attr[0]))
-    {
+    if(!attr[0] || strcmp("index", attr[0])) {
       throwStreamPrint(NULL, "%s: Info XML %s contained equation without index", __FILE__, userData->xml->fileName);
     }
     ix = strtol(attr[1], NULL, 10);
-    if(userData->curIndex != ix)
-    {
+    if (attr[2] && 0==strcmp("parent", attr[2])) {
+      userData->xml->equationInfo[userData->curIndex].parent = strtol(attr[3], NULL, 10);
+    } else {
+      userData->xml->equationInfo[userData->curIndex].parent = 0;
+    }
+    if(userData->curIndex != ix) {
       throwStreamPrint(NULL, "%s: Info XML %s got equation with index %ld, expected %ld", __FILE__, userData->xml->fileName, ix, userData->curIndex);
     }
     userData->xml->equationInfo[userData->curIndex].id = userData->curIndex;
-    userData->xml->equationInfo[userData->curIndex].profileBlockIndex = -1; /* TODO: Set when parsing other tags */
+    userData->xml->equationInfo[userData->curIndex].profileBlockIndex = measure_time_flag & 2 ? userData->curIndex : -1; /* TODO: Set when parsing other tags */
     userData->xml->equationInfo[userData->curIndex].numVar = 0; /* TODO: Set when parsing other tags */
     userData->xml->equationInfo[userData->curIndex].vars = NULL; /* Set when parsing other tags (on close). */
-    return;
   }
   if(0 == strcmp("variable", name))
   {
@@ -211,17 +214,19 @@ static void XMLCALL endElement(void *voidData, const char *name)
 
     return;
   }
-  if(0 == strcmp("linear", name))
-  {
-    userData->xml->equationInfo[userData->curIndex].profileBlockIndex = userData->curProfileIndex;
-    userData->curProfileIndex++;
-    return;
-  }
-  if(0 == strcmp("nonlinear", name))
-  {
-    userData->xml->equationInfo[userData->curIndex].profileBlockIndex = userData->curProfileIndex;
-    userData->curProfileIndex++;
-    return;
+  if (measure_time_flag & 1) {
+    if(0 == strcmp("linear", name))
+    {
+      userData->xml->equationInfo[userData->curIndex].profileBlockIndex = userData->curProfileIndex;
+      userData->curProfileIndex++;
+      return;
+    }
+    if(0 == strcmp("nonlinear", name))
+    {
+      userData->xml->equationInfo[userData->curIndex].profileBlockIndex = userData->curProfileIndex;
+      userData->curProfileIndex++;
+      return;
+    }
   }
   if(0 == strcmp("function", name))
   {
@@ -261,7 +266,7 @@ void modelInfoXmlInit(MODEL_DATA_XML* xml)
   xml->functionNames = (FUNCTION_INFO*) calloc(xml->nFunctions, sizeof(FUNCTION_INFO));
   xml->equationInfo = (EQUATION_INFO*) calloc(1+xml->nEquations, sizeof(EQUATION_INFO));
   xml->equationInfo[0].id = 0;
-  xml->equationInfo[0].profileBlockIndex = -1;
+  xml->equationInfo[0].profileBlockIndex = measure_time_flag & 2 ? 0 : -1;
   xml->equationInfo[0].numVar = 0;
   xml->equationInfo[0].vars = NULL;
   XML_SetUserData(parser, (void*) &userData);
@@ -291,7 +296,7 @@ void modelInfoXmlInit(MODEL_DATA_XML* xml)
     }
   }
   assert(xml->nEquations == userData.curIndex);
-  xml->nProfileBlocks = userData.curProfileIndex; /* Set the number of profile blocks to the number we read */
+  xml->nProfileBlocks = measure_time_flag & 1 ? userData.curProfileIndex : measure_time_flag & 2 ? xml->nEquations : 0; /* Set the number of profile blocks to the number we read */
   assert(xml->nFunctions == userData.curFunctionIndex);
 }
 

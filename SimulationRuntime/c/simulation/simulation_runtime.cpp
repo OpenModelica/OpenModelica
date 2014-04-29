@@ -430,7 +430,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
 
   /* activated measure time option with LOG_STATS */
   int measure_time_flag_previous = measure_time_flag;
-  if(ACTIVE_STREAM(LOG_STATS) || (omc_flag[FLAG_CPU] && !measure_time_flag))
+  if (!measure_time_flag && (ACTIVE_STREAM(LOG_STATS) || omc_flag[FLAG_CPU]))
   {
     measure_time_flag = 1;
     measureSimTime = 1;
@@ -475,6 +475,8 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     rt_accumulate(SIM_TIMER_INFO_XML);
     //std::cerr << "ModelData with " << data->modelData.modelDataXml.nFunctions << " functions and " << data->modelData.modelDataXml.nEquations << " equations and " << data->modelData.modelDataXml.nProfileBlocks << " profileBlocks\n" << std::endl;
     rt_init(SIM_TIMER_FIRST_FUNCTION + data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nEquations + data->modelData.modelDataXml.nProfileBlocks + 4 /* sentinel */);
+    rt_measure_overhead(SIM_TIMER_TOTAL);
+    rt_clear(SIM_TIMER_TOTAL);
     rt_tick(SIM_TIMER_TOTAL);
     rt_tick(SIM_TIMER_PREINIT);
     rt_clear(SIM_TIMER_OUTPUT);

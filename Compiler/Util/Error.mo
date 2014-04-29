@@ -728,6 +728,8 @@ public constant Message INTEGER_TO_UNKNOWN_ENUMERATION = MESSAGE(543, TRANSLATIO
   Util.gettext("The Integer (%s) to enumeration conversion failed because information about the the enumeration type is missing."));
 public constant Message NORETCALL_INVALID_EXP = MESSAGE(544, TRANSLATION(), ERROR(),
   Util.gettext("Expression %s is not a valid statement - only function calls are allowed."));
+public constant Message INVALID_FLAG_TYPE_STRINGS = MESSAGE(545, SCRIPTING(), ERROR(),
+  Util.gettext("Invalid type of flag %s, expected one of %s but got %s."));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));

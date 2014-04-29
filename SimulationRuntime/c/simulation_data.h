@@ -76,6 +76,7 @@ typedef struct EQUATION_INFO
 {
   int id;
   int profileBlockIndex;
+  int parent;
   int numVar;
   const char **vars;
 }EQUATION_INFO;

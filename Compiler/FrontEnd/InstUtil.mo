@@ -8755,8 +8755,7 @@ algorithm
     case (DAE.STMT_ASSERT(cond=DAE.BCONST(false),msg=exp2,source=source),_,(_,_,unbound)) // TODO: Re-write these earlier from assert(false,msg) to terminate(msg)
       equation
         info = DAEUtil.getElementSourceFileInfo(source);
-        ((_,(unbound,_))) = Expression.traverseExpTopDown(exp2,findUnboundVariableUse,(unbound,info));
-      then ((true,true,unbound));
+      then ((true,true,{}));
     case (DAE.STMT_ASSERT(cond=exp1,msg=exp2,source=source),_,(_,_,unbound))
       equation
         info = DAEUtil.getElementSourceFileInfo(source);

@@ -50,7 +50,6 @@
 #include "simulation/solver/epsilon.h"
 
 #include "interfaceOptimization.h"
-#include "simulation_inline_solver.h"
 
 /*
  * #include "dopri45.h"
@@ -91,37 +90,27 @@ int solver_main_step(DATA* data, SOLVER_INFO* solverInfo)
 {
   switch(solverInfo->solverMethod)
   {
-  case 2:
+  case S_EULER:
+    return euler_ex_step(data, solverInfo);
+  case S_RUNGEKUTTA:
     return rungekutta_step(data, solverInfo);
 
-  case 3:
+  case S_DASSL:
     return dassl_step(data, solverInfo);
 
-  case 4:
-    data->callback->functionODE_inline(data, solverInfo->currentStepSize);
-    solverInfo->currentTime = data->localData[0]->timeValue;
-    return 0;
 #ifdef WITH_IPOPT
-  case 5:
+  case S_OPTIMIZATION:
     return ipopt_step(data, solverInfo);
 #endif
 #ifdef WITH_SUNDIALS
-  case 6:
-    return radau_lobatto_step(data, solverInfo);
-  case 7:
-    return radau_lobatto_step(data, solverInfo);
-  case 8:
-    return radau_lobatto_step(data, solverInfo);
-  case 9:
-    return radau_lobatto_step(data, solverInfo);
-  case 10:
-    return radau_lobatto_step(data, solverInfo);
-  case 11:
+  case S_RADAU5:
+  case S_RADAU3:
+  case S_RADAU1:
+  case S_LOBATTO2:
+  case S_LOBATTO4:
+  case S_LOBATTO6:
     return radau_lobatto_step(data, solverInfo);
 #endif
-
-  case 1:
-    return euler_ex_step(data, solverInfo);
   }
   return 1;
 }
@@ -160,7 +149,7 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   /* set tolerance for ZeroCrossings */
   setZCtol(min(simInfo->stepSize, simInfo->tolerance));
 
-  if(solverInfo->solverMethod == 2)
+  if(solverInfo->solverMethod == S_RUNGEKUTTA)
   {
     /* Allocate RK work arrays */
 
@@ -171,7 +160,7 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
       rungeData->work_states[i] = (double*) calloc(data->modelData.nStates, sizeof(double));
     solverInfo->solverData = rungeData;
   }
-  else if(solverInfo->solverMethod == 3)
+  else if(solverInfo->solverMethod == S_DASSL)
   {
     /* Initial DASSL solver */
     DASSL_DATA* dasslData = (DASSL_DATA*) malloc(sizeof(DASSL_DATA));
@@ -179,62 +168,55 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
     retValue = dassl_initial(data, solverInfo, dasslData);
     solverInfo->solverData = dasslData;
   }
-  else if(solverInfo->solverMethod == 4)
-  {
-    /* Enable inlining solvers */
-    work_states = (double**) malloc(inline_work_states_ndims * sizeof(double*));
-    for(i = 0; i < inline_work_states_ndims; i++)
-      work_states[i] = (double*) calloc(data->modelData.nVariablesReal, sizeof(double));
-  }
 #ifdef WITH_IPOPT
-  else if(solverInfo->solverMethod == 5)
+  else if(solverInfo->solverMethod == S_OPTIMIZATION)
   {
     infoStreamPrint(LOG_SOLVER, 0, "Initializing optimizer");
     solverInfo->solverData = malloc(1*sizeof(IPOPT_DATA_));
   }
 #endif
 #ifdef WITH_SUNDIALS
-  else if(solverInfo->solverMethod == 6)
+  else if(solverInfo->solverMethod == S_RADAU5)
   {
     /* Allocate Radau5 IIA work arrays */
     infoStreamPrint(LOG_SOLVER, 0, "Initializing Radau IIA of order 5");
     solverInfo->solverData = calloc(1, sizeof(KINODE));
-    allocateKinOde(data, solverInfo, 6, 3);
+    allocateKinOde(data, solverInfo, solverInfo->solverMethod, 3);
   }
-  else if(solverInfo->solverMethod == 7)
+  else if(solverInfo->solverMethod == S_RADAU3)
   {
     /* Allocate Radau3 IIA work arrays */
     infoStreamPrint(LOG_SOLVER, 0, "Initializing Radau IIA of order 3");
     solverInfo->solverData = calloc(1, sizeof(KINODE));
-    allocateKinOde(data, solverInfo, 7, 2);
+    allocateKinOde(data, solverInfo, solverInfo->solverMethod, 2);
   }
-  else if(solverInfo->solverMethod == 8)
+  else if(solverInfo->solverMethod == S_RADAU1)
   {
     /* Allocate Radau1 IIA work arrays */
     infoStreamPrint(LOG_SOLVER, 0, "Initializing Radau IIA of order 1 (implicit euler) ");
     solverInfo->solverData = calloc(1, sizeof(KINODE));
-    allocateKinOde(data, solverInfo, 8, 1);
+    allocateKinOde(data, solverInfo, solverInfo->solverMethod, 1);
   }
-  else if(solverInfo->solverMethod == 9)
+  else if(solverInfo->solverMethod == S_LOBATTO6)
   {
     /* Allocate Lobatto2 IIIA work arrays */
     infoStreamPrint(LOG_SOLVER, 0, "Initializing Lobatto IIIA of order 6");
     solverInfo->solverData = calloc(1, sizeof(KINODE));
-    allocateKinOde(data, solverInfo, 9, 1);
+    allocateKinOde(data, solverInfo, solverInfo->solverMethod, 3);
   }
-  else if(solverInfo->solverMethod == 10)
+  else if(solverInfo->solverMethod == S_LOBATTO4)
   {
     /* Allocate Lobatto4 IIIA work arrays */
     infoStreamPrint(LOG_SOLVER, 0, "Initializing Lobatto IIIA of order 4");
     solverInfo->solverData = calloc(1, sizeof(KINODE));
-    allocateKinOde(data, solverInfo, 10, 2);
+    allocateKinOde(data, solverInfo, solverInfo->solverMethod, 2);
   }
-  else if(solverInfo->solverMethod == 11)
+  else if(solverInfo->solverMethod == S_LOBATTO2)
   {
     /* Allocate Lobatto6 IIIA work arrays */
     infoStreamPrint(LOG_SOLVER, 0, "Initializing Lobatto IIIA of order 2 (trapeze rule)");
     solverInfo->solverData = calloc(1, sizeof(KINODE));
-    allocateKinOde(data, solverInfo, 11, 3);
+    allocateKinOde(data, solverInfo, solverInfo->solverMethod, 1);
   }
 #endif
 
@@ -262,7 +244,7 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   int i;
 
   /* deintialize solver related workspace */
-  if(solverInfo->solverMethod == 2)
+  if(solverInfo->solverMethod == S_RUNGEKUTTA)
   {
     /* free RK work arrays */
     for(i = 0; i < ((RK4_DATA*)(solverInfo->solverData))->work_states_ndims + 1; i++)
@@ -270,55 +252,48 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
     free(((RK4_DATA*)(solverInfo->solverData))->work_states);
     free((RK4_DATA*)solverInfo->solverData);
   }
-  else if(solverInfo->solverMethod == 3)
+  else if(solverInfo->solverMethod == S_DASSL)
   {
     /* De-Initial DASSL solver */
     dassl_deinitial(solverInfo->solverData);
   }
-  else if(solverInfo->solverMethod == 4)
-  {
-    /* De-Initial inline solver */
-    for(i = 0; i < inline_work_states_ndims; i++)
-      free(work_states[i]);
-    free(work_states);
-  }
 #ifdef WITH_IPOPT
-  else if(solverInfo->solverMethod == 5)
+  else if(solverInfo->solverMethod == S_OPTIMIZATION)
   {
     /* free  work arrays */
     /*destroyIpopt(solverInfo);*/
   }
 #endif
 #ifdef WITH_SUNDIALS
-  else if(solverInfo->solverMethod == 6)
+  else if(solverInfo->solverMethod == S_RADAU5)
   {
     /* free  work arrays */
-    freeKinOde(data, solverInfo, 6, 3);
+    freeKinOde(data, solverInfo, 3);
   }
-  else if(solverInfo->solverMethod == 7)
+  else if(solverInfo->solverMethod == S_RADAU3)
   {
     /* free  work arrays */
-    freeKinOde(data, solverInfo, 7, 2);
+    freeKinOde(data, solverInfo, 2);
   }
-  else if(solverInfo->solverMethod == 8)
+  else if(solverInfo->solverMethod == S_RADAU1)
   {
     /* free  work arrays */
-    freeKinOde(data, solverInfo, 8, 1);
+    freeKinOde(data, solverInfo, 1);
   }
-  else if(solverInfo->solverMethod == 9)
+  else if(solverInfo->solverMethod == S_LOBATTO6)
   {
     /* free  work arrays */
-    freeKinOde(data, solverInfo, 9, 1);
+    freeKinOde(data, solverInfo, 3);
   }
-  else if(solverInfo->solverMethod == 10)
+  else if(solverInfo->solverMethod == S_LOBATTO4)
   {
     /* free  work arrays */
-    freeKinOde(data, solverInfo, 10, 2);
+    freeKinOde(data, solverInfo, 2);
   }
-  else if(solverInfo->solverMethod == 11)
+  else if(solverInfo->solverMethod == S_LOBATTO2)
   {
     /* free  work arrays */
-    freeKinOde(data, solverInfo, 11, 3);
+    freeKinOde(data, solverInfo, 1);
   }
 #endif
   {
@@ -556,23 +531,6 @@ int solver_main(DATA* data, const char* init_initMethod,
     return 1;
 #endif
 
-
-  case S_INLINE_EULER:
-    if(!_omc_force_solver || strcmp(_omc_force_solver, "inline-euler"))
-    {
-      infoStreamPrint(LOG_SOLVER, 0, "Recognized solver: inline-euler, but the executable was not compiled with support for it. Compile with -D_OMC_INLINE_EULER.");
-      return 1;
-    }
-    break;
-
-  case S_INLINE_RUNGEKUTTA:
-    if(!_omc_force_solver || strcmp(_omc_force_solver, "inline-rungekutta"))
-    {
-      infoStreamPrint(LOG_SOLVER, 0, "Recognized solver: inline-rungekutta, but the executable was not compiled with support for it. Compile with -D_OMC_INLINE_RK.");
-      return 1;
-    }
-    solverInfo.solverMethod = S_INLINE_EULER;
-    break;
   }
 
   /* allocate SolverInfo memory */

@@ -73,21 +73,19 @@ typedef struct SOLVER_INFO
     S_EULER,         /*  1 */
     S_RUNGEKUTTA,    /*  2 */
     S_DASSL,         /*  3 */
-    S_INLINE_EULER,  /*  4 */
-    S_OPTIMIZATION,  /*  5 */
-    S_RADAU5,        /*  6 */
-    S_RADAU3,        /*  7 */
-    S_RADAU1,        /*  8 */
-    S_LOBATTO2,      /*  9 */
-    S_LOBATTO4,      /* 10 */
-    S_LOBATTO6,      /* 11 */
+    S_OPTIMIZATION,  /*  4 */
+    S_RADAU5,        /*  5 */
+    S_RADAU3,        /*  6 */
+    S_RADAU1,        /*  7 */
+    S_LOBATTO2,      /*  8 */
+    S_LOBATTO4,      /*  9 */
+    S_LOBATTO6,      /* 10 */
     S_DASSLWORT,
     S_DASSLTEST,
     S_DASSLSYMJAC,
     S_DASSLNUMJAC,
     S_DASSLCOLORSYMJAC,
     S_DASSLINTERNALNUMJAC,
-    S_INLINE_RUNGEKUTTA,
     S_QSS,
 
     S_MAX
@@ -98,7 +96,6 @@ typedef struct SOLVER_INFO
     "euler",
     "rungekutta",
     "dassl",
-    "inline-euler",
     "optimization",
     "radau5",
     "radau3",
@@ -112,7 +109,6 @@ typedef struct SOLVER_INFO
     "dasslNumJac",
     "dasslColorSymJac",
     "dasslInternalNumJac",
-    "inline-rungekutta",
     "qss"
   };
   static const char *SOLVER_METHOD_DESC[S_MAX] = {
@@ -120,7 +116,6 @@ typedef struct SOLVER_INFO
     "euler",
     "rungekutta",
     "dassl with colored numerical jacobian, with interval root finding - default",
-    "inline-euler",
     "optimization",
     "radau5 [sundial/kinsol needed]",
     "radau3 [sundial/kinsol needed]",
@@ -134,7 +129,6 @@ typedef struct SOLVER_INFO
     "dassl with numerical jacobian",
     "dassl with colored symbolic jacobian",
     "dassl with internal numerical jacobian",
-    "inline-rungekutta",
     "qss"
   };
 

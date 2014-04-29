@@ -54,34 +54,34 @@ template dumpSimCodeBase(SimCode code, Boolean withOperations)
     <%dumpVars(vars.jacobianVars,withOperations)%>
   </variables>
   <initial-equations size="<%listLength(initialEquations)%>">
-    <%dumpEqs(SimCodeUtil.sortEqSystems(initialEquations),withOperations)%>
+    <%dumpEqs(SimCodeUtil.sortEqSystems(initialEquations),0,withOperations)%>
   </initial-equations>
   <residual-equations size="<%listLength(residualEquations)%>">
-    <%dumpEqs(SimCodeUtil.sortEqSystems(residualEquations),withOperations)%>
+    <%dumpEqs(SimCodeUtil.sortEqSystems(residualEquations),0,withOperations)%>
   </residual-equations>
   <equations size="<%listLength(allEquations)%>">
-    <%dumpEqs(SimCodeUtil.sortEqSystems(allEquations),withOperations)%>
+    <%dumpEqs(SimCodeUtil.sortEqSystems(allEquations),0,withOperations)%>
   </equations>
   <start-equations size="<%listLength(startValueEquations)%>">
-    <%dumpEqs(SimCodeUtil.sortEqSystems(startValueEquations),withOperations)%>
+    <%dumpEqs(SimCodeUtil.sortEqSystems(startValueEquations),0,withOperations)%>
   </start-equations>
   <nominal-equations size="<%listLength(nominalValueEquations)%>">
-    <%dumpEqs(SimCodeUtil.sortEqSystems(nominalValueEquations),withOperations)%>
+    <%dumpEqs(SimCodeUtil.sortEqSystems(nominalValueEquations),0,withOperations)%>
   </nominal-equations>
   <min-equations size="<%listLength(minValueEquations)%>">
-    <%dumpEqs(SimCodeUtil.sortEqSystems(minValueEquations),withOperations)%>
+    <%dumpEqs(SimCodeUtil.sortEqSystems(minValueEquations),0,withOperations)%>
   </min-equations>
   <max-equations size="<%listLength(maxValueEquations)%>">
-    <%dumpEqs(SimCodeUtil.sortEqSystems(maxValueEquations),withOperations)%>
+    <%dumpEqs(SimCodeUtil.sortEqSystems(maxValueEquations),0,withOperations)%>
   </max-equations>
   <parameter-equations size="<%listLength(parameterEquations)%>">
-    <%dumpEqs(SimCodeUtil.sortEqSystems(parameterEquations),withOperations)%>
+    <%dumpEqs(SimCodeUtil.sortEqSystems(parameterEquations),0,withOperations)%>
   </parameter-equations>
   <assertions size="<%listLength(algorithmAndEquationAsserts)%>">
-    <%dumpEqs(SimCodeUtil.sortEqSystems(algorithmAndEquationAsserts),withOperations)%>
+    <%dumpEqs(SimCodeUtil.sortEqSystems(algorithmAndEquationAsserts),0,withOperations)%>
   </assertions>
   <jacobian-equations>
-    <%dumpEqs(SimCodeUtil.sortEqSystems(jacobianEquations),withOperations)%>
+    <%dumpEqs(SimCodeUtil.sortEqSystems(jacobianEquations),0,withOperations)%>
   </jacobian-equations>
   <literals size="<%listLength(literals)%>">
     <% literals |> exp => '<exp><%printExpStrEscaped(exp)%></exp>' ; separator="\n" %>
@@ -163,19 +163,24 @@ match eq
     else error(sourceInfo(), "dumpEqs: Unknown equation")
 end eqIndex;
 
-template dumpEqs(list<SimEqSystem> eqs, Boolean withOperations)
+template hasParent(Integer parent)
+::=
+  if intEq(parent,0) then "" else ' parent="<%parent%>"'
+end hasParent;
+
+template dumpEqs(list<SimEqSystem> eqs, Integer parent, Boolean withOperations)
 ::= eqs |> eq hasindex i0 =>
   match eq
     case e as SES_RESIDUAL(__) then
       <<
-      <equation index="<%eqIndex(eq)%>">
+      <equation index="<%eqIndex(eq)%>"<%hasParent(parent)%>>
         <residual><%printExpStrEscaped(e.exp)%></residual>
         <%dumpElementSource(e.source,withOperations)%>
       </equation><%\n%>
       >>
     case e as SES_SIMPLE_ASSIGN(__) then
       <<
-      <equation index="<%eqIndex(eq)%>">
+      <equation index="<%eqIndex(eq)%>"<%hasParent(parent)%>>
         <assign>
           <defines name="<%crefStrNoUnderscore(e.cref)%>" />
           <% extractUniqueCrefsFromExp(e.exp) |> cr => '<depends name="<%crefStrNoUnderscore(cr)%>" />' ; separator = "\n" %>
@@ -186,7 +191,7 @@ template dumpEqs(list<SimEqSystem> eqs, Boolean withOperations)
       >>
     case e as SES_ARRAY_CALL_ASSIGN(__) then
       <<
-      <equation index="<%eqIndex(eq)%>">
+      <equation index="<%eqIndex(eq)%>"<%hasParent(parent)%>>
         <assign type="array">
           <defines name="<%crefStrNoUnderscore(e.componentRef)%>" />
           <rhs><%printExpStrEscaped(e.exp)%></rhs>
@@ -198,7 +203,7 @@ template dumpEqs(list<SimEqSystem> eqs, Boolean withOperations)
     case e as SES_ALGORITHM(statements=first::_)
       then
       <<
-      <equation index="<%eqIndex(eq)%>">
+      <equation index="<%eqIndex(eq)%>"<%hasParent(parent)%>>
         <statement>
           <%e.statements |> stmt => escapeModelicaStringToXmlString(ppStmtStr(stmt,2)) %>
         </statement>
@@ -207,7 +212,7 @@ template dumpEqs(list<SimEqSystem> eqs, Boolean withOperations)
       >>
     case e as SES_LINEAR(__) then
       <<
-      <equation index="<%eqIndex(eq)%>">
+      <equation index="<%eqIndex(eq)%>"<%hasParent(parent)%>>
         <linear size="<%listLength(e.vars)%>" nnz="<%listLength(simJac)%>">
           <%e.vars |> SIMVAR(name=cr) => '<defines name="<%crefStrNoUnderscore(cr)%>" />' ; separator = "\n" %>
           <row>
@@ -232,9 +237,9 @@ template dumpEqs(list<SimEqSystem> eqs, Boolean withOperations)
       >>
     case e as SES_NONLINEAR(__) then
       <<
-      <%dumpEqs(SimCodeUtil.sortEqSystems(e.eqs),withOperations)%>
-      <%match e.jacobianMatrix case SOME(({(eqns,_,_)},_,_,_,_,_)) then dumpEqs(SimCodeUtil.sortEqSystems(eqns),withOperations) else ''%>
-      <equation index="<%eqIndex(eq)%>">
+      <%dumpEqs(SimCodeUtil.sortEqSystems(e.eqs),e.index,withOperations)%>
+      <%match e.jacobianMatrix case SOME(({(eqns,_,_)},_,_,_,_,_)) then dumpEqs(SimCodeUtil.sortEqSystems(eqns),e.index,withOperations) else ''%>
+      <equation index="<%eqIndex(eq)%>"<%hasParent(parent)%>>
         <nonlinear indexNonlinear="<%indexNonLinearSystem%>">
           <%e.crefs |> cr => '<defines name="<%crefStrNoUnderscore(cr)%>" />' ; separator = "\n" %>
           <%e.eqs |> eq => '<eq index="<%eqIndex(eq)%>"/>' ; separator = "\n" %>
@@ -243,9 +248,9 @@ template dumpEqs(list<SimEqSystem> eqs, Boolean withOperations)
       >>
     case e as SES_MIXED(__) then
       <<
-      <%dumpEqs(fill(e.cont,1),withOperations)%>
-      <%dumpEqs(e.discEqs,withOperations)%><%\n%>
-      <equation index="<%eqIndex(eq)%>">
+      <%dumpEqs(fill(e.cont,1),e.index,withOperations)%>
+      <%dumpEqs(e.discEqs,e.index,withOperations)%><%\n%>
+      <equation index="<%eqIndex(eq)%>"<%hasParent(parent)%>>
         <mixed>
           <continuous index="<%eqIndex(e.cont)%>" />
           <%e.discVars |> SIMVAR(name=cr) => '<defines name="<%crefStrNoUnderscore(cr)%>" />' ; separator = ","%>
@@ -255,22 +260,22 @@ template dumpEqs(list<SimEqSystem> eqs, Boolean withOperations)
       >>
     case e as SES_WHEN(__) then
       <<
-      <equation index="<%eqIndex(eq)%>">
-      <when>
-        <%conditions |> cond => '<cond><%crefStrNoUnderscore(cond)%></cond>' ; separator="\n" %>
-        <defines name="<%crefStrNoUnderscore(e.left)%>" />
-        <rhs><%printExpStrEscaped(e.right)%></rhs>
-      </when>
-      <%dumpElementSource(e.source,withOperations)%>
+      <equation index="<%eqIndex(eq)%>"<%hasParent(parent)%>>
+        <when>
+          <%conditions |> cond => '<cond><%crefStrNoUnderscore(cond)%></cond>' ; separator="\n" %>
+          <defines name="<%crefStrNoUnderscore(e.left)%>" />
+          <rhs><%printExpStrEscaped(e.right)%></rhs>
+        </when>
+        <%dumpElementSource(e.source,withOperations)%>
       </equation><%\n%>
       >>
     case e as SES_IFEQUATION(__) then
-      let branches = ifbranches |> (_,eqs) => dumpEqs(eqs,withOperations)
-      let elsebr = dumpEqs(elsebranch,withOperations)
+      let branches = ifbranches |> (_,eqs) => dumpEqs(eqs,e.index,withOperations)
+      let elsebr = dumpEqs(elsebranch,e.index,withOperations)
       <<
       <%branches%>
       <%elsebr%>
-      <equation index="<%eqIndex(eq)%>">
+      <equation index="<%eqIndex(eq)%>"<%hasParent(parent)%>>
       <ifequation /> <!-- TODO: Fix me -->
       <%dumpElementSource(e.source,withOperations)%>
       </equation><%\n%>

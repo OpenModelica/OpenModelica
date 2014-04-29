@@ -272,7 +272,7 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
       /***** end of Emit this time step *****/
 
       /* save dassl stats before reset */
-      if (solverInfo->didEventStep == 1 && solverInfo->solverMethod == 3)
+      if (solverInfo->didEventStep == 1 && solverInfo->solverMethod == S_DASSL)
       {
         for(ui=0; ui<numStatistics; ui++)
         {
@@ -352,7 +352,9 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
     }
   } /* end while solver */
 
-  if(fmt) fclose(fmt);
+  if(fmt) {
+    fclose(fmt);
+  }
 
   return retValue;
 }

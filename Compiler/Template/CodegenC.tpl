@@ -605,7 +605,7 @@ template simulationFile(SimCode simCode, String guid)
     #if defined(__cplusplus)
     extern "C" {
     #endif
-    int measure_time_flag = <% if isSet(MEASURE_TIME) then "1" else "0" %>;
+    int measure_time_flag = <% if profileHtml() then "5" else if profileSome() then "1" else if profileAll() then "2" else "0" %>;
 
     <%functionInput(modelInfo, modelNamePrefixStr)%>
 
@@ -671,7 +671,6 @@ template simulationFile(SimCode simCode, String guid)
        <%symbolName(modelNamePrefixStr,"input_function_init")%>,
        <%symbolName(modelNamePrefixStr,"output_function")%>,
        <%symbolName(modelNamePrefixStr,"function_storeDelayed")%>,
-       <%symbolName(modelNamePrefixStr,"functionODE_inline")%>,
        <%symbolName(modelNamePrefixStr,"updateBoundVariableAttributes")%>,
        <%symbolName(modelNamePrefixStr,"initialResidualDescription")%>,
        <%symbolName(modelNamePrefixStr,"initial_residual")%>,
@@ -1660,7 +1659,11 @@ template functionNonLinearResiduals(list<SimEqSystem> allEquations, String model
          let &preExp = buffer "" /*BUFD*/
          let expPart = daeExp(eq2.exp, contextSimulationDiscrete,
                             &preExp /*BUFC*/, &varDecls /*BUFD*/)
-         '<%preExp%>res[<%i0%>] = <%expPart%>;'
+         <<
+         <% if profileAll() then 'SIM_PROF_TICK_EQ(<%eq2.index%>);' %>
+         <%preExp%>res[<%i0%>] = <%expPart%>;
+         <% if profileAll() then 'SIM_PROF_ACC_EQ(<%eq2.index%>);' %>
+         >>
        ;separator="\n")
      <<
      <%innerEqs%>
@@ -1678,10 +1681,12 @@ template functionNonLinearResiduals(list<SimEqSystem> allEquations, String model
        DATA* data = (DATA*) dataIn;
        const int equationIndexes[2] = {1,<%index%>};
        <%varDecls%>
-       <% if isSet(MEASURE_TIME) then 'SIM_PROF_ADD_NCALL_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex,1);' %>
+       <% if profileAll() then 'SIM_PROF_TICK_EQ(<%index%>);' %>
+       <% if profileSome() then 'SIM_PROF_ADD_NCALL_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex,1);' %>
        <%xlocs%>
        <%prebody%>
        <%body%>
+       <% if profileAll() then 'SIM_PROF_ACC_EQ(<%index%>);' %>
      }
    >>
    )
@@ -2587,18 +2592,6 @@ case SIMULATION_CONTEXT(genDiscrete=true) then
   <<
   <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(data);
   >>
-  //<<
-  //#pragma omp section
-  //{
-  //#ifdef _OMC_MEASURE_TIME
-  //  SIM_PROF_TICK_EQEXT(<%ix%>);
-  //#endif
-  //eqFunction_<%ix%>(data);
-  //#ifdef _OMC_MEASURE_TIME
-  //  SIM_PROF_ACC_EQEXT(<%ix%>);
-  //#endif
-  //}
-  //>>
 else
  match getSimCodeEqByIndex(derivativEquations, idx)
   case e as SES_ALGORITHM(statements={})
@@ -2608,15 +2601,6 @@ else
   <<
   <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(data);
   >>
-  //<<
-  //#ifdef _OMC_MEASURE_TIME
-  //  SIM_PROF_TICK_EQEXT(<%ix%>);
-  //#endif
-  //eqFunction_<%ix%>(data);
-  //#ifdef _OMC_MEASURE_TIME
-  //  SIM_PROF_ACC_EQEXT(<%ix%>);
-  //#endif
-  //>>
 end equationNamesHPCOM_Thread_;
 
 //----------------------------------
@@ -2693,9 +2677,9 @@ case SIMULATION_CONTEXT(genDiscrete=true) then
   let &arrayEqs += '<%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>,<%\n%>'
   let &forwardEqs += 'extern void <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(DATA* data);<%\n%>'
   <<
-  <% if isSet(MEASURE_TIME) then 'SIM_PROF_TICK_EQEXT(<%ix%>);' %>
+  <% if profileAll() then 'SIM_PROF_TICK_EQ(<%ix%>);' %>
   function<%name%>_systems[<%arrayIndex%>](data);
-  <% if isSet(MEASURE_TIME) then 'SIM_PROF_ACC_EQEXT(<%ix%>);' %>
+  <% if profileAll() then 'SIM_PROF_ACC_EQ(<%ix%>);' %>
   >>
 else
  match eq
@@ -2706,10 +2690,10 @@ else
   let &arrayEqs += '<%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>,<%\n%>'
   let &forwardEqs += 'extern void <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(DATA* data);<%\n%>'
   <<
-  <% if isSet(MEASURE_TIME) then 'SIM_PROF_TICK_EQEXT(<%ix%>);' %>
+  <% if profileAll() then 'SIM_PROF_TICK_EQ(<%ix%>);' %>
   // <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(data);
   function<%name%>_systems[<%arrayIndex%>](data);
-  <% if isSet(MEASURE_TIME) then 'SIM_PROF_ACC_EQEXT(<%ix%>);' %>
+  <% if profileAll() then 'SIM_PROF_ACC_EQ(<%ix%>);' %>
   >>
 end equationNamesArrayFormat;
 
@@ -2763,17 +2747,13 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Op
                     (functionXXX_systems(derivativEquations, "ODE", &fncalls, &varDecls, modelNamePrefix))
   /* let systems = functionXXX_systems(derivativEquations, "ODE", &fncalls, &varDecls) */
   let &tmp = buffer ""
-  let stateContPartInline = (derivativEquations |> eqs => (eqs |> eq =>
-    equation_(eq, contextInlineSolver, &varDecls2 /*BUFC*/, &tmp, modelNamePrefix); separator="\n")
-    ;separator="\n")
-
   <<
   <%tmp%>
   <%systems%>
 
   int <%symbolName(modelNamePrefix,"functionODE")%>(DATA *data)
   {
-    <% if isSet(MEASURE_TIME) then "rt_tick(SIM_TIMER_FUNCTION_ODE);" %>
+    <% if profileFunctions() then "rt_tick(SIM_TIMER_FUNCTION_ODE);" %>
 
     <%varDecls%>
 
@@ -2781,42 +2761,10 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Op
     <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionODE(<%nrfuncs%>, data, functionODE_systems);'
     else '<%fncalls%>' %>
 
-    <% if isSet(MEASURE_TIME) then "rt_accumulate(SIM_TIMER_FUNCTION_ODE);" %>
+    <% if profileFunctions() then "rt_accumulate(SIM_TIMER_FUNCTION_ODE);" %>
 
     return 0;
   }
-
-  #include <simulation/solver/simulation_inline_solver.h>
-  const char *_omc_force_solver=_OMC_FORCE_SOLVER;
-  const int inline_work_states_ndims=_OMC_SOLVER_WORK_STATES_NDIMS;
-  <%match method
-  case "inline-euler"
-  case "inline-rungekutta" then
-  <<
-  /*
-   * we need to access the inline define that we compiled the simulation with
-   * from the simulation runtime.
-   */
-  int <%symbolName(modelNamePrefix,"functionODE_inline")%>(DATA* data, double stepSize)
-  {
-    const int *equationIndexes = NULL;
-    <%varDecls2%>
-    data->simulationInfo.discreteCall = 0;
-    begin_inline();
-    <%stateContPartInline%>
-    end_inline();
-
-    return 0;
-  }
-  >>
-  else
-  <<
-  int <%symbolName(modelNamePrefix,"functionODE_inline")%>(DATA* data, double stepSize)
-  {
-    return 0;
-  }
-  >>
-  %>
   >>
 end functionODE;
 
@@ -3627,7 +3575,6 @@ template equation_arrayFormat(SimEqSystem eq, String name, Context context, Inte
   This template should not be used for a SES_RESIDUAL.
   Residual equations are handled differently."
 ::=
-  match context case INLINE_CONTEXT() then old_equation_(eq,context,&varDecls,modelNamePrefix) else
   match eq
   case e as SES_ALGORITHM(statements={})
   then ""
@@ -3690,7 +3637,6 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Tex
   This template should not be used for a SES_RESIDUAL.
   Residual equations are handled differently."
 ::=
-  match context case INLINE_CONTEXT() then old_equation_(eq,context,&varDecls,modelNamePrefix) else
   match eq
   case e as SES_ALGORITHM(statements={})
   then ""
@@ -3740,7 +3686,9 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Tex
   }
   >>
   <<
+  <% if profileAll() then 'SIM_PROF_TICK_EQ(<%ix%>);' %>
   <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>(data);
+  <% if profileAll() then 'SIM_PROF_ACC_EQ(<%ix%>);' %>
   >>
   )
 end equation_;
@@ -3784,9 +3732,9 @@ case SIMULATION_CONTEXT(genDiscrete=true) then
   else
   let ix = equationIndex(eq)
   <<
-  <% if isSet(MEASURE_TIME) then 'SIM_PROF_TICK_EQEXT(<%ix%>);' %>
+  <% if profileAll() then 'SIM_PROF_TICK_EQ(<%ix%>);' %>
   <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(data);
-  <% if isSet(MEASURE_TIME) then 'SIM_PROF_ACC_EQEXT(<%ix%>);' %>
+  <% if profileAll() then 'SIM_PROF_ACC_EQ(<%ix%>);' %>
   >>
 else
  match eq
@@ -3795,71 +3743,11 @@ else
   else
   let ix = equationIndex(eq)
   <<
-  <% if isSet(MEASURE_TIME) then 'SIM_PROF_TICK_EQEXT(<%ix%>);' %>
+  <% if profileAll() then 'SIM_PROF_TICK_EQ(<%ix%>);' %>
   <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(data);
-  <% if isSet(MEASURE_TIME) then 'SIM_PROF_ACC_EQEXT(<%ix%>);' %>
+  <% if profileAll() then 'SIM_PROF_ACC_EQ(<%ix%>);' %>
   >>
 end equationNames_;
-
-template old_equation_(SimEqSystem eq, Context context, Text &varDecls, String modelNamePrefix)
- "Generates an equation.
-  This template should not be used for a SES_RESIDUAL.
-  Residual equations are handled differently."
-::=
-  match eq
-  case e as SES_MIXED(__)
-  case e as SES_SIMPLE_ASSIGN(__)
-    then equationSimpleAssign(e, context, &varDecls)
-  case e as SES_ARRAY_CALL_ASSIGN(__)
-    then equationArrayCallAssign(e, context, &varDecls)
-  case e as SES_ALGORITHM(__)
-    then equationAlgorithm(e, context, &varDecls)
-  case e as SES_LINEAR(__)
-    then equationLinear(e, context, &varDecls)
-  case e as SES_NONLINEAR(__)
-    then equationNonlinear(e, context, &varDecls, modelNamePrefix)
-  case e as SES_WHEN(__)
-    then equationWhen(e, context, &varDecls)
-  else
-    "NOT IMPLEMENTED EQUATION old_equation_"
-end old_equation_;
-
-template inlineArray(Context context, String arr, ComponentRef c)
-::= match context case INLINE_CONTEXT(__) then match c
-case CREF_QUAL(ident = "$DER") then <<
-
-inline_integrate_array(size_of_dimension_base_array(<%arr%>,1),<%cref(c)%>);
->>
-end inlineArray;
-
-
-template inlineVars(Context context, list<SimVar> simvars)
-::= match context case INLINE_CONTEXT(__) then match simvars
-case {} then ''
-else <<
-
-<%simvars |> var => match var case SIMVAR(name = cr as CREF_QUAL(ident = "$DER")) then 'inline_integrate(<%cref(cr)%>);' ;separator="\n"%>
->>
-end inlineVars;
-
-
-template inlineCrefs(Context context, list<ComponentRef> crefs)
-::= match context case INLINE_CONTEXT(__) then match crefs
-case {} then ''
-else <<
-
-<%crefs |> cr => match cr case CREF_QUAL(ident = "$DER") then 'inline_integrate(<%cref(cr)%>);' ;separator="\n"%>
->>
-end inlineCrefs;
-
-
-template inlineCref(Context context, ComponentRef cr)
-::= match context case INLINE_CONTEXT(__) then match cr case CREF_QUAL(ident = "$DER") then <<
-
-inline_integrate(<%cref(cr)%>);
->>
-end inlineCref;
-
 
 template equationSimpleAssign(SimEqSystem eq, Context context,
                               Text &varDecls /*BUFP*/)
@@ -3872,7 +3760,7 @@ case SES_SIMPLE_ASSIGN(__) then
   <<
   <%modelicaLine(eqInfo(eq))%>
   <%preExp%>
-  <%cref(cref)%> = <%expPart%>;<%inlineCref(context,cref)%>
+  <%cref(cref)%> = <%expPart%>;
   <%endModelicaLine()%>
   >>
 end equationSimpleAssign;
@@ -3895,24 +3783,24 @@ case eqn as SES_ARRAY_CALL_ASSIGN(__) then
     //let &preExp += 'cast_integer_array_to_real(&<%expPart%>, &<%tvar%>);<%\n%>'
     <<
     <%preExp%>
-    copy_boolean_array_data_mem(<%expPart%>, &<%cref(eqn.componentRef)%>);<%inlineArray(context,tvar,eqn.componentRef)%>
+    copy_boolean_array_data_mem(<%expPart%>, &<%cref(eqn.componentRef)%>);
     >>
   case "integer" then
     let tvar = tempDecl("integer_array", &varDecls /*BUFD*/)
     //let &preExp += 'cast_integer_array_to_real(&<%expPart%>, &<%tvar%>);<%\n%>'
     <<
     <%preExp%>
-    copy_integer_array_data_mem(<%expPart%>, &<%cref(eqn.componentRef)%>);<%inlineArray(context,tvar,eqn.componentRef)%>
+    copy_integer_array_data_mem(<%expPart%>, &<%cref(eqn.componentRef)%>);
     >>
   case "real" then
     <<
     <%preExp%>
-    copy_real_array_data_mem(<%expPart%>, &<%cref(eqn.componentRef)%>);<%inlineArray(context,expPart,eqn.componentRef)%>
+    copy_real_array_data_mem(<%expPart%>, &<%cref(eqn.componentRef)%>);
     >>
   case "string" then
     <<
     <%preExp%>
-    copy_string_array_data_mem(<%expPart%>, &<%cref(eqn.componentRef)%>);<%inlineArray(context,expPart,eqn.componentRef)%>
+    copy_string_array_data_mem(<%expPart%>, &<%cref(eqn.componentRef)%>);
     >>
   else error(sourceInfo(), 'No runtime support for this sort of array call: <%printExpStr(eqn.exp)%>')
 %>
@@ -3939,11 +3827,10 @@ match eq
 case SES_LINEAR(__) then
   <<
   /* Linear equation system */
-  <% if isSet(MEASURE_TIME) then 'SIM_PROF_TICK_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);' %>
+  <% if profileSome() then 'SIM_PROF_TICK_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);' %>
   solve_linear_system(data, <%indexLinearSystem%>);
   <%vars |> SIMVAR(__) hasindex i0 => '<%cref(name)%> = data->simulationInfo.linearSystemData[<%indexLinearSystem%>].x[<%i0%>];' ;separator="\n"%>
-  <%inlineVars(context,vars)%>
-  <% if isSet(MEASURE_TIME) then 'SIM_PROF_ACC_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);' %>
+  <% if profileSome() then 'SIM_PROF_ACC_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);' %>
   >>
 end equationLinear;
 
@@ -3957,11 +3844,11 @@ case eqn as SES_MIXED(__) then
   let numDiscVarsStr = listLength(discVars)
   <<
   /* Continuous equation part in <%contEqs%> */
-  <% if isSet(MEASURE_TIME) then 'SIM_PROF_TICK_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);' %>
+  <% if profileSome() then 'SIM_PROF_TICK_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);' %>
   <%discVars |> SIMVAR(__) hasindex i0 => 'data->simulationInfo.mixedSystemData[<%eqn.indexMixedSystem%>].iterationVarsPtr[<%i0%>] = (modelica_boolean*)&<%cref(name)%>;' ;separator="\n"%>;
   <%discVars |> SIMVAR(__) hasindex i0 => 'data->simulationInfo.mixedSystemData[<%eqn.indexMixedSystem%>].iterationPreVarsPtr[<%i0%>] = (modelica_boolean*)&$P$PRE<%cref(name)%>;' ;separator="\n"%>;
   solve_mixed_system(data, <%indexMixedSystem%>);
-  <% if isSet(MEASURE_TIME) then 'SIM_PROF_ACC_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);' %>
+  <% if profileSome() then 'SIM_PROF_ACC_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);' %>
   >>
 end equationMixed;
 
@@ -3979,7 +3866,7 @@ template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls /*BUF
       let nonlinindx = indexNonLinearSystem
       <<
       int retValue;
-      <% if isSet(MEASURE_TIME) then
+      <% if profileSome() then
       <<
       SIM_PROF_TICK_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);
       SIM_PROF_ADD_NCALL_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex,-1);
@@ -4002,24 +3889,11 @@ template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls /*BUF
       }
       /* write solution */
       <%crefs |> name hasindex i0 => '<%cref(name)%> = data->simulationInfo.nonlinearSystemData[<%indexNonLinearSystem%>].nlsx[<%i0%>];' ;separator="\n"%>
-      <%inlineCrefs(context,crefs)%>
       /* update inner equations */
       <%innerBody%>
-      <% if isSet(MEASURE_TIME) then 'SIM_PROF_ACC_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);' %>
+      <% if profileSome() then 'SIM_PROF_ACC_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);' %>
       >>
 end equationNonlinear;
-
-template equationNamesExtraResidualsPreBodyInline(SimEqSystem eq, Context context)
- "Generates an inline call from a simple assignment."
-::=
-  match eq
-    case e as SES_SIMPLE_ASSIGN(__) then
-      <<
-      <%inlineCref(context,cref)%>;
-      >>
-    else ""
-  end match
-end equationNamesExtraResidualsPreBodyInline;
 
 template equationWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
  "Generates a when equation."
@@ -4112,24 +3986,24 @@ match ty
       //let &preExp += 'cast_integer_array_to_real(&<%expPart%>, &<%tvar%>);<%\n%>'
       <<
       <%preExp%>
-      copy_boolean_array_data_mem(<%expPart%>, &<%cref(left)%>);<%inlineArray(context,tvar,left)%>
+      copy_boolean_array_data_mem(<%expPart%>, &<%cref(left)%>);
       >>
     case "integer" then
       let tvar = tempDecl("integer_array", &varDecls /*BUFD*/)
       //let &preExp += 'cast_integer_array_to_real(&<%expPart%>, &<%tvar%>);<%\n%>'
       <<
       <%preExp%>
-      copy_integer_array_data_mem(<%expPart%>, &<%cref(left)%>);<%inlineArray(context,tvar,left)%>
+      copy_integer_array_data_mem(<%expPart%>, &<%cref(left)%>);
       >>
     case "real" then
       <<
       <%preExp%>
-      copy_real_array_data_mem(<%expPart%>, &<%cref(left)%>);<%inlineArray(context,expPart,left)%>
+      copy_real_array_data_mem(<%expPart%>, &<%cref(left)%>);
       >>
     case "string" then
       <<
       <%preExp%>
-      copy_string_array_data_mem(<%expPart%>, &<%cref(left)%>);<%inlineArray(context,expPart,left)%>
+      copy_string_array_data_mem(<%expPart%>, &<%cref(left)%>);
       >>
     else
       error(sourceInfo(), 'No runtime support for this sort of array call: <%cref(left)%> = <%printExpStr(right)%>')
@@ -4333,11 +4207,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   let libsPos2 = if dirExtra then libsStr // else ""
   let ParModelicaExpLibs = if acceptParModelicaGrammar() then 'OMOCLRuntime.lib OpenCL.lib' // else ""
   let extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then
-    match s.method
-       case "inline-euler" then "-D_OMC_INLINE_EULER "
-       case "inline-rungekutta" then "-D_OMC_INLINE_RK "
-       case "dassljac" then "-D_OMC_JACOBIAN "
-
+    match s.method case "dassljac" then "-D_OMC_JACOBIAN "
   <<
   # Makefile generated by OpenModelica
 
@@ -4401,10 +4271,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   let ParModelicaExpLibs = if acceptParModelicaGrammar() then '-lOMOCLRuntime -lOpenCL' // else ""
   let ParModelicaAutoLibs = if Flags.isSet(Flags.PARMODAUTO) then '-lom_pm_autort -L. -ltbb' // else ""
   let extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then
-    match s.method
-       case "inline-euler" then "-D_OMC_INLINE_EULER "
-       case "inline-rungekutta" then "-D_OMC_INLINE_RK "
-       case "dassljac" then "-D_OMC_JACOBIAN "
+    match s.method case "dassljac" then "-D_OMC_JACOBIAN "
 
   <<
   # Makefile generated by OpenModelica
@@ -9010,7 +8877,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls)
       case FUNCTION_CONTEXT(__) then res
       case PARALLEL_FUNCTION_CONTEXT(__) then res
       else
-        if boolAnd(isSet(MEASURE_TIME),boolNot(attr.builtin)) then
+        if boolAnd(profileFunctions(),boolNot(attr.builtin)) then
           let funName = '<%underscorePath(exp.path)%>'
           let tvar = tempDecl((match attr.ty case T_TUPLE(tupleType=t::_) case t then expTypeArrayIf(t)),&varDecls)
           let &preExp += 'SIM_PROF_TICK_FN(<%funName%>_index);<%\n%>'

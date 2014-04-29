@@ -773,7 +773,6 @@ template equation_Xml(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, 
   This template should not be used for a SES_RESIDUAL.
   Residual equations are handled differently."
 ::=
-  match context case INLINE_CONTEXT() then old_equation_Xml(eq,context,&varDecls) else
   match eq
   case e as SES_MIXED(__) then " MIXED EQUATION NOT IMPLEMENTED "
   case e as SES_ALGORITHM(statements={}) then " "

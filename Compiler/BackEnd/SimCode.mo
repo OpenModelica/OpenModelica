@@ -571,9 +571,6 @@ uniontype Context
   record OTHER_CONTEXT
   end OTHER_CONTEXT;
 
-  record INLINE_CONTEXT
-  end INLINE_CONTEXT;
-
   record PARALLEL_FUNCTION_CONTEXT
   end PARALLEL_FUNCTION_CONTEXT;
 
@@ -586,7 +583,6 @@ end Context;
 
 public constant Context contextSimulationNonDiscrete  = SIMULATION_CONTEXT(false);
 public constant Context contextSimulationDiscrete     = SIMULATION_CONTEXT(true);
-public constant Context contextInlineSolver           = INLINE_CONTEXT();
 public constant Context contextFunction               = FUNCTION_CONTEXT();
 public constant Context contextJacobian               = JACOBIAN_CONTEXT();
 public constant Context contextAlgloopJacobian        = ALGLOOP_CONTEXT(false,true);

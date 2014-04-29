@@ -51,6 +51,9 @@ typedef uint64_t rtclock_t;
 typedef struct timespec rtclock_t;
 #endif
 
+/* If min_time is set, subtract this amount from measured times to avoid
+ * including the time of measuring in reported statistics */
+static double min_time = 0;
 static unsigned long default_rt_clock_ncall[NUM_RT_CLOCKS] = { 0 };
 static unsigned long default_rt_clock_ncall_min[NUM_RT_CLOCKS] = { 0 };
 static unsigned long default_rt_clock_ncall_max[NUM_RT_CLOCKS] = { 0 };
@@ -118,15 +121,25 @@ void rt_clear_total_ncall(int ix) {
 }
 
 double rt_accumulated(int ix) {
-  return rtclock_value(acc_tp[ix]);
+  double d = rtclock_value(acc_tp[ix]);
+  if (d > 0 && d < min_time * rt_clock_ncall[ix]) {
+    min_time = d / rt_clock_ncall[ix];
+  }
+  return d - min_time * rt_clock_ncall[ix];
 }
 
 double rt_max_accumulated(int ix) {
-  return rtclock_value(max_tp[ix]);
+  double d = rtclock_value(max_tp[ix]);
+  if (d > 0 && d < min_time) {
+    min_time = d;
+  }
+  return d - min_time;
 }
 
 double rt_total(int ix) {
-  return rtclock_value(total_tp[ix]);
+  double d = rtclock_value(total_tp[ix]) - min_time * rt_clock_ncall_total[ix];
+  assert(d >= 0);
+  return d;
 }
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
@@ -181,6 +194,7 @@ void rt_tick(int ix) {
 }
 
 double rt_tock(int ix) {
+  double d;
   if(selectedClock == OMC_CLOCK_REALTIME)
   {
     LARGE_INTEGER tock_tp;
@@ -188,14 +202,18 @@ double rt_tock(int ix) {
     QueryPerformanceCounter(&tock_tp);
     d1 = (double) (tock_tp.QuadPart - tick_tp[ix].QuadPart);
     d2 = (double) performance_frequency.QuadPart;
-    return d1 / d2;
+    d = d1 / d2;
   }
   else
   {
     LARGE_INTEGER tock_tp;
     tock_tp.QuadPart = RDTSC();
-    return (double) (tock_tp.QuadPart - tick_tp[ix].QuadPart);
+    d = (double) (tock_tp.QuadPart - tick_tp[ix].QuadPart);
   }
+  if (d < min_time) {
+    min_time = d;
+  }
+  return d - min_time;
 }
 
 void rt_clear(int ix) {
@@ -264,7 +282,11 @@ double rt_tock(int ix) {
   if(info.denom == 0)
   mach_timebase_info(&info);
   uint64_t elapsednano = (tock_tp-tick_tp[ix]) * (info.numer / info.denom);
-  return elapsednano * 1e-9;
+  double d = elapsednano * 1e-9;
+  if (d < min_time) {
+    min_time = d;
+  }
+  return d - min_time;
 }
 
 void rt_clear(int ix)
@@ -327,9 +349,14 @@ void rt_tick(int ix) {
 }
 
 double rt_tock(int ix) {
+  double d;
   struct timespec tock_tp = {0,0};
   clock_gettime(omc_clock, &tock_tp);
-  return (tock_tp.tv_sec - tick_tp[ix].tv_sec) + (tock_tp.tv_nsec - tick_tp[ix].tv_nsec)*1e-9;
+  d = (tock_tp.tv_sec - tick_tp[ix].tv_sec) + (tock_tp.tv_nsec - tick_tp[ix].tv_nsec)*1e-9;
+  if (d < min_time) {
+    min_time = d;
+  }
+  return d - min_time;
 }
 
 void rt_clear(int ix)
@@ -368,7 +395,8 @@ void rt_accumulate(int ix) {
 }
 
 static double rtclock_value(rtclock_t tp) {
-  return tp.tv_sec + tp.tv_nsec*1e-9;
+  double d = tp.tv_sec + tp.tv_nsec*1e-9;
+  return d;
 }
 
 int rtclock_compare(rtclock_t t1, rtclock_t t2) {
@@ -400,4 +428,16 @@ void rt_init(int numTimers) {
   alloc_and_copy((void**)&rt_clock_ncall_min,numTimers,sizeof(unsigned long));
   alloc_and_copy((void**)&rt_clock_ncall_max,numTimers,sizeof(unsigned long));
   memset(rt_clock_ncall_min + NUM_RT_CLOCKS*sizeof(unsigned long), 0xFF, (numTimers-NUM_RT_CLOCKS) * sizeof(unsigned long));
+}
+
+void rt_measure_overhead(int ix)
+{
+  int i;
+  min_time = 0;
+  rt_tick(ix);
+  min_time = rt_tock(ix);
+  for (i=0; i<300; i++) {
+    rt_tick(ix);
+    rt_tock(ix);
+  }
 }

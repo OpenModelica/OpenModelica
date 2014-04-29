@@ -114,10 +114,6 @@ int (*output_function)(DATA*);
  */
 int (*function_storeDelayed)(DATA *data);
 
-/* function for calculating states on explicit ODE form */
-/*used in functionDAE_res function*/
-int (*functionODE_inline)(DATA *data, double stepsize);
-
 /*! \fn updateBoundVariableAttributes
  *
  *  This function updates all bound start, nominal, min, and max values.

@@ -116,22 +116,22 @@ int allocateKinOde(DATA* data, SOLVER_INFO* solverInfo, int flag, int N)
   KINSetInfoHandlerFn(kinOde->kData->kmem, kinsol_infoHandler, NULL);
   switch(kinOde->flag)
   {
-    case 6:
+    case S_RADAU5:
       KINInit(kinOde->kData->kmem, radau5Res, kinOde->kData->x);
       break;
-    case 7:
+    case S_RADAU3:
       KINInit(kinOde->kData->kmem, radau3Res, kinOde->kData->x);
       break;
-    case 8:
+    case S_RADAU1:
       KINInit(kinOde->kData->kmem, radau1Res, kinOde->kData->x);
       break;
-    case 9:
+    case S_LOBATTO2:
       KINInit(kinOde->kData->kmem, lobatto2Res, kinOde->kData->x);
       break;
-    case 10:
+    case S_LOBATTO4:
       KINInit(kinOde->kData->kmem, lobatto4Res, kinOde->kData->x);
       break;
-    case 11:
+    case S_LOBATTO6:
       KINInit(kinOde->kData->kmem, lobatto6Res, kinOde->kData->x);
       break;
 
@@ -156,22 +156,22 @@ static int allocateNlpOde(KINODE *kinOde)
 
   switch(kinOde->flag)
   {
-  case 6:
+  case S_RADAU5:
     radau5Coeff(kinOde);
     break;
-  case 7:
+  case S_RADAU3:
     radau3Coeff(kinOde);
     break;
-  case 8:
+  case S_RADAU1:
     radau1Coeff(kinOde);
     break;
-  case 9:
-    radau1Coeff(kinOde);
+  case S_LOBATTO2:
+    radau1Coeff(kinOde); /* TODO: Is this right? */
     break;
-  case 10:
+  case S_LOBATTO4:
     lobatto4Coeff(kinOde);
     break;
-  case 11:
+  case S_LOBATTO6:
     lobatto6Coeff(kinOde);
     break;
   default:
@@ -358,7 +358,7 @@ static int allocateKINSOLODE(KINODE *kinOde)
   return 0;
 }
 
-int freeKinOde(DATA* data, SOLVER_INFO* solverInfo, int flag, int N)
+int freeKinOde(DATA* data, SOLVER_INFO* solverInfo, int N)
 {
   KINODE *kinOde = (KINODE*) solverInfo->solverData;
   freeImOde((void*) kinOde->nlp ,N);
@@ -375,8 +375,9 @@ static int freeImOde(void *nlpode, int N)
   free(nlp->max);
   free(nlp->s);
 
-  for(i=0; i<N; i++)
+  for(i=0; i<N; i++) {
     free(nlp->c[i]);
+  }
   free(nlp->c);
 
   free(nlp->a);

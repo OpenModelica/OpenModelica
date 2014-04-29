@@ -33,6 +33,7 @@
 #include "rtclock.h"
 #include "modelinfo.h"
 #include "simulation_info_xml.h"
+#include "simulation_runtime.h"
 
 #include <errno.h>
 #include <stdio.h>
@@ -41,9 +42,8 @@
 #include <assert.h>
 #include <stdint.h>
 
-/* UNDEF to debug the gnuplot file
+/* UNDEF to debug the gnuplot file */
 #define NO_PIPE
-*/
 
 /* Returns -1 if the file was not found */
 static size_t fileSize(const char *filename) {
@@ -465,7 +465,7 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
       sprintf(buf, "gnuplot %s", plotfile);
 #endif
       fclose(plotCommands);
-      if(0 != system(buf)) {
+      if (measure_time_flag & 4 && 0 != system(buf)) {
         warningStreamPrint(LOG_UTIL, 0, "Plot command failed: %s\n", buf);
       }
     }
@@ -487,7 +487,7 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
 #if defined(__MINGW32__) || defined(_MSC_VER)
       free(xsltproc);
 #endif
-      genHtmlRes = system(buf);
+      genHtmlRes = measure_time_flag & 4 && system(buf);
     }
     else
     {
@@ -498,7 +498,11 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
     {
       warningStreamPrint(LOG_STDOUT, 0, "Failed to generate html version of profiling results: %s\n", buf);
     }
-    infoStreamPrint(LOG_STDOUT, 0, "Time measurements are stored in %s_prof.html (human-readable) and %s_prof.xml (for XSL transforms or more details)", data->modelData.modelFilePrefix, data->modelData.modelFilePrefix);
+    if (measure_time_flag & 4) {
+      infoStreamPrint(LOG_STDOUT, 0, "Time measurements are stored in %s_prof.html (human-readable) and %s_prof.xml (for XSL transforms or more details)", data->modelData.modelFilePrefix, data->modelData.modelFilePrefix);
+    } else {
+      infoStreamPrint(LOG_STDOUT, 0, "Time measurements are stored in %s_prof.json", data->modelData.modelFilePrefix);
+    }
     free(buf);
   }
   return 0;
@@ -562,6 +566,8 @@ int printModelInfoJSON(DATA *data, const char *filename, const char *outputFilen
   char buf[256];
   FILE *fout = fopen(filename, "wb");
   time_t t;
+  long i;
+  double totalTimeEqs = 0;
   if (!fout) {
     throwStreamPrint(NULL, "Failed to open file %s for writing", filename);
   }
@@ -575,6 +581,13 @@ int printModelInfoJSON(DATA *data, const char *filename, const char *outputFilen
   {
     fclose(fout);
     throwStreamPrint(LOG_UTIL, 0, "strftime() failed");
+  }
+  for (i=data->modelData.modelDataXml.nFunctions; i<data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks; i++) {
+    if (modelInfoXmlGetEquation(&data->modelData.modelDataXml,i).parent == 0) {
+      /* The equation has no parent. The sum of all such equations is
+       * the total time of the profiled blocks including the children. */
+      totalTimeEqs += rt_total(i + SIM_TIMER_FIRST_FUNCTION);
+    }
   }
   fprintf(fout, "{\n\"name\":\"");
   escapeJSON(fout, data->modelData.modelName);
@@ -596,7 +609,8 @@ int printModelInfoJSON(DATA *data, const char *filename, const char *outputFilen
   fprintf(fout, ",\n\"outputTime\":%g",rt_accumulated(SIM_TIMER_OUTPUT));
   fprintf(fout, ",\n\"linearizeTime\":%g",rt_accumulated(SIM_TIMER_LINEARIZE));
   fprintf(fout, ",\n\"totalTime\":%g",rt_accumulated(SIM_TIMER_TOTAL));
-  fprintf(fout, ",\n\"totalStepsTime\":%g",rt_total(SIM_TIMER_STEP));
+  fprintf(fout, ",\n\"totalStepsTime\":%g",rt_accumulated(SIM_TIMER_STEP));
+  fprintf(fout, ",\n\"totalTimeProfileBlocks\":%g",totalTimeEqs); /* The overhead the profiling is huge if small equations are profiled */
   fprintf(fout, ",\n\"numStep\":%d", (int) rt_ncall_total(SIM_TIMER_STEP));
   fprintf(fout, ",\n\"maxTime\":%.9g", rt_max_accumulated(SIM_TIMER_STEP));
   fprintf(fout, ",\n\"functions\":[");

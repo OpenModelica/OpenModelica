@@ -1362,23 +1362,6 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
 end equation_;
 
 
-template inlineVars(Context context, list<SimVar> simvars)
-::= match context case INLINE_CONTEXT(__) then match simvars
-case {} then ''
-else <<
-
-<%simvars |> var => match var case SIMVAR(name = cr as CREF_QUAL(ident = "$DER")) then 'inline_integrate(<%cref(cr)%>);' ;separator="\n"%>
->>
-end inlineVars;
-
-template inlineCref(Context context, ComponentRef cr)
-::= match context case INLINE_CONTEXT(__) then match cr case CREF_QUAL(ident = "$DER") then <<
-
-inline_integrate(<%cref(cr)%>);
->>
-end inlineCref;
-
-
 template equationSimpleAssign(SimEqSystem eq, Context context,
                               Text &varDecls /*BUFP*/)
  "Generates an equation that is just a simple assignment."
@@ -1389,7 +1372,7 @@ case SES_SIMPLE_ASSIGN(__) then
   let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   <<
   <%preExp%>
-  <%cref(cref)%> = <%expPart%>; <%inlineCref(context,cref)%>
+  <%cref(cref)%> = <%expPart%>;
   >>
 end equationSimpleAssign;
 
@@ -1459,7 +1442,7 @@ case SES_LINEAR(__) then
   ;separator="\n"%>
   GETRF<%mixedPostfix%>(<%aname%>,<%size%>,<%pname%>);
   GETRS<%mixedPostfix%>(<%aname%>,<%size%>,<%pname%>,<%bname%>);
-  <%vars |> SIMVAR(__) hasindex i0 => '<%cref(name)%> = <%bname%>[<%i0%>];' ;separator="\n"%><%inlineVars(context,vars)%>
+  <%vars |> SIMVAR(__) hasindex i0 => '<%cref(name)%> = <%bname%>[<%i0%>];' ;separator="\n"%>
   <% if not partOfMixed then
   <<
   delete [] <%aname%>;

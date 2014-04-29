@@ -385,9 +385,7 @@ constant DebugFlag STRICT_RML = DEBUG_FLAG(109, "strictRml", false,
   Util.gettext("Turns on extra RML checks."));
 constant DebugFlag IMPL_ODE = DEBUG_FLAG(110, "implOde", false,
   Util.gettext("activates implicit codegen"));
-constant DebugFlag MEASURE_TIME = DEBUG_FLAG(111, "measureTime", false,
-  Util.gettext("Activates simulation code profiling (performance measurements)."));
-constant DebugFlag EVAL_FUNC_DUMP = DEBUG_FLAG(112, "evalFuncDump", false,
+constant DebugFlag EVAL_FUNC_DUMP = DEBUG_FLAG(111, "evalFuncDump", false,
   Util.gettext("dumps debug information about the function evaluation"));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
@@ -505,7 +503,6 @@ constant list<DebugFlag> allDebugFlags = {
   HPCOM_ANALYZATION_MODE,
   STRICT_RML,
   IMPL_ODE,
-  MEASURE_TIME,
   EVAL_FUNC_DUMP
 };
 
@@ -883,6 +880,14 @@ constant ConfigFlag INT_ENUM_CONVERSION = CONFIG_FLAG(57, "intEnumConversion",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Allow Integer to enumeration conversion."));
 
+constant ConfigFlag PROFILING_LEVEL = CONFIG_FLAG(58, "profiling",
+  NONE(), EXTERNAL(), STRING_FLAG("none"), SOME(STRING_DESC_OPTION({
+    ("none",Util.gettext("Generate code without profiling")),
+    ("blocks",Util.gettext("Generate code for profiling function calls as well as linear and non-linear systems of equations")),
+    ("blocks+html",Util.gettext("Like blocks, but also run xsltproc and gnuplot to generate an html report")),
+    ("all",Util.gettext("Generate code for profiling of all functions and equations"))
+    })),
+  Util.gettext("Sets the profiling level to use. Profiled equations and functions record execution time and count for each time step taken by the integrator."));
 
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
@@ -944,7 +949,8 @@ constant list<ConfigFlag> allConfigFlags = {
   REPLACE_HOMOTOPY,
   GENERATE_SYMBOLIC_JACOBIAN,
   GENERATE_SYMBOLIC_LINEARIZATION,
-  INT_ENUM_CONVERSION
+  INT_ENUM_CONVERSION,
+  PROFILING_LEVEL
 };
 
 public function new
@@ -1403,9 +1409,10 @@ protected function setConfigFlag
 protected
   FlagData data, default_value;
   String name;
+  Option<ValidOptions> validOptions;
 algorithm
-  CONFIG_FLAG(name = name, defaultValue = default_value) := inFlag;
-  data := stringFlagData(inValues, default_value, name);
+  CONFIG_FLAG(name = name, defaultValue = default_value, validOptions = validOptions) := inFlag;
+  data := stringFlagData(inValues, default_value, validOptions, name);
   _ := updateConfigFlagArray(inConfigData, data, inFlag);
 end setConfigFlag;
 
@@ -1414,28 +1421,31 @@ protected function stringFlagData
    given so that the value can be typechecked."
   input list<String> inValues;
   input FlagData inExpectedType;
+  input Option<ValidOptions> validOptions;
   input String inName;
   output FlagData outValue;
 algorithm
-  outValue := matchcontinue(inValues, inExpectedType, inName)
+  outValue := matchcontinue(inValues, inExpectedType, validOptions, inName)
     local
       Boolean b;
       Integer i;
       String s, et, at;
       list<tuple<String, Integer>> enums;
+      list<String> flags;
+      ValidOptions options;
 
     // A boolean value.
-    case ({s}, BOOL_FLAG(data = _), _)
+    case ({s}, BOOL_FLAG(data = _), _, _)
       equation
         b = Util.stringBool(s);
       then
         BOOL_FLAG(b);
 
     // No value, but a boolean flag => enable the flag.
-    case ({}, BOOL_FLAG(data = _), _) then BOOL_FLAG(true);
+    case ({}, BOOL_FLAG(data = _), _, _) then BOOL_FLAG(true);
 
     // An integer value.
-    case ({s}, INT_FLAG(data = _), _)
+    case ({s}, INT_FLAG(data = _), _, _)
       equation
         i = stringInt(s);
         true = stringEq(intString(i), s);
@@ -1443,7 +1453,7 @@ algorithm
         INT_FLAG(i);
 
     // A real value.
-    case ({_}, REAL_FLAG(data = _), _)
+    case ({_}, REAL_FLAG(data = _), _, _)
       equation
         //r = stringReal(s);
         Error.addMessage(Error.INTERNAL_ERROR,
@@ -1453,24 +1463,38 @@ algorithm
         //REAL_FLAG(r);
 
     // A string value.
-    case ({s}, STRING_FLAG(data = _), _) then STRING_FLAG(s);
+    case ({s}, STRING_FLAG(data = _), SOME(options), _)
+      equation
+        flags = getValidStringOptions(options);
+        true = listMember(s,flags);
+      then STRING_FLAG(s);
+    case ({s}, STRING_FLAG(data = _), NONE(), _) then STRING_FLAG(s);
 
     // A multiple-string value.
-    case (_, STRING_LIST_FLAG(data = _), _) then STRING_LIST_FLAG(inValues);
+    case (_, STRING_LIST_FLAG(data = _), _, _) then STRING_LIST_FLAG(inValues);
 
     // An enumeration value.
-    case ({s}, ENUM_FLAG(validValues = enums), _)
+    case ({s}, ENUM_FLAG(validValues = enums), _, _)
       equation
         i = Util.assoc(s, enums);
       then
         ENUM_FLAG(i, enums);
 
     // Type mismatch, print error.
-    else
+    case (_, _, NONE(), _)
       equation
         et = printExpectedTypeStr(inExpectedType);
         at = printActualTypeStr(inValues);
         Error.addMessage(Error.INVALID_FLAG_TYPE, {inName, et, at});
+      then
+        fail();
+
+    case (_, _, SOME(options), _)
+      equation
+        flags = getValidStringOptions(options);
+        et = stringDelimitList(flags, ", ");
+        at = printActualTypeStr(inValues);
+        Error.addMessage(Error.INVALID_FLAG_TYPE_STRINGS, {inName, et, at});
       then
         fail();
 
@@ -2029,5 +2053,17 @@ public function debugFlagName
 algorithm
   DEBUG_FLAG(name = name) := inFlag;
 end debugFlagName;
+
+protected function getValidStringOptions
+  input ValidOptions inOptions;
+  output list<String> validOptions;
+algorithm
+  validOptions := match inOptions
+    local
+      list<tuple<String, Util.TranslatableContent>> options;
+    case STRING_OPTION(validOptions) then validOptions;
+    case STRING_DESC_OPTION(options) then List.map(options,Util.tuple21);
+  end match;
+end getValidStringOptions;
 
 end Flags;
