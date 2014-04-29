@@ -86,7 +86,7 @@ fsync (int fd)
 #include "errorext.h"
 
 static int serversocket;
-static int fromlen;
+static unsigned fromlen;
 static struct sockaddr_in clientAddr;
 
 static int

@@ -115,7 +115,7 @@ Bool evalfDiffG(Index n, double * x, Bool new_x, Index m, Index njac, Index *iRo
     iData->sopt.updateM = !new_x;
     ipoptDebuge(iData,x);
 
-    tmp =  &iData->helper.tmp;
+    tmp = iData->helper.tmp;
 
     diff_functionODE(x, 0 , iData, df->J[iData->helper.i]);
 

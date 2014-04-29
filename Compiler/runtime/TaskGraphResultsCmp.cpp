@@ -439,7 +439,7 @@ void GraphMLParser::ParseGraph(Graph *currentGraph, const char* fileName, NodeCo
   userData.readStringValue = false;
   userData.stringValue = 0;
   userData.readDoubleValue = false;
-  userData.doubleValue = false;
+  userData.doubleValue = 0;
   userData.readIntValue = false;
   userData.intValue = 0;
   userData.nodeSet = new std::set<Node*, NodeComparator>(nodeComparator);

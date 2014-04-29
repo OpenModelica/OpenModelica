@@ -575,12 +575,12 @@ int printModelInfoJSON(DATA *data, const char *filename, const char *outputFilen
   if(time(&t) < 0)
   {
     fclose(fout);
-    throwStreamPrint(LOG_UTIL, 0, "time() failed: %s", strerror(errno));
+    throwStreamPrint(0, "time() failed: %s", strerror(errno));
   }
   if(!strftime(buf, 250, "%Y-%m-%d %H:%M:%S", localtime(&t)))
   {
     fclose(fout);
-    throwStreamPrint(LOG_UTIL, 0, "strftime() failed");
+    throwStreamPrint(0, "strftime() failed");
   }
   for (i=data->modelData.modelDataXml.nFunctions; i<data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks; i++) {
     if (modelInfoXmlGetEquation(&data->modelData.modelDataXml,i).parent == 0) {

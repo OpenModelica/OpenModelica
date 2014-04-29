@@ -51,7 +51,7 @@ void printErrorEqSyst(equationSystemError err, EQUATION_INFO eq, double time)
     warningStreamPrintWithEquationIndexes(LOG_NLS, 0, indexes, "improper input parameters to nonlinear eq. syst: %d at time %g", eq.id, time);
     break;
   default:
-    warningStreamPrintWithEquationIndexes(LOG_NLS, 0, indexes, "Unknown equation system error: %d %s %g", err, eq.id, time);
+    warningStreamPrintWithEquationIndexes(LOG_NLS, 0, indexes, "Unknown equation system error: %d %d %g", err, eq.id, time);
     break;
   }
 }

@@ -252,7 +252,7 @@
     for(i=0; i<size; ++i)
     {
       kinsolData->nlsData->nlsx[i] = NV_Ith_S(z, i);
-      infoStreamPrintWithEquationIndexes(LOG_NLS, 0, "[%ld] %s = %g", i+1, modelInfoXmlGetEquation(&kinsolData->data->modelData.modelDataXml,eqSystemNumber).vars[i],  kinsolData->nlsData->nlsx[i]);
+      infoStreamPrintWithEquationIndexes(LOG_NLS, 0, indexes, "[%ld] %s = %g", i+1, modelInfoXmlGetEquation(&kinsolData->data->modelData.modelDataXml,eqSystemNumber).vars[i],  kinsolData->nlsData->nlsx[i]);
     }
 
     infoStreamPrint(LOG_NLS, 0, "KINGetNumNonlinSolvIters = %5ld", nni);
