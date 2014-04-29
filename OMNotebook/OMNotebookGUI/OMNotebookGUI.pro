@@ -63,8 +63,7 @@ SOURCES += \
     ../OMSketch/Draw_Arc.cpp \
     ../OMSketch/CustomDailog.cpp \
     ../../OMEdit/OMEditGUI/Util/StringHandler.cpp \
-    ../../OMEdit/OMEditGUI/Util/Helper.cpp \
-    ../../OMEdit/OMEditGUI/Util/Utilities.cpp
+    ../../OMEdit/OMEditGUI/Util/Helper.cpp
 
 HEADERS += \
     omc_communication.h \
