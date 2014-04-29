@@ -164,7 +164,7 @@ LONG WINAPI exceptionFilter(LPEXCEPTION_POINTERS info)
   }
   // Dump a stack trace to a file.
   QFile stackTraceFile;
-  stackTraceFile.setFileName(QString("%1/openmodelica.stacktrace.%2").arg(OMEdit::tempDirectory()).arg(Helper::OMCServerName));
+  stackTraceFile.setFileName(QString("%1/openmodelica.stacktrace.%2").arg(OpenModelica::tempDirectory()).arg(Helper::OMCServerName));
   if (stackTraceFile.open(QIODevice::WriteOnly | QIODevice::Text))
   {
     QTextStream out(&stackTraceFile);
