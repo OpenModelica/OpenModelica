@@ -84,5 +84,5 @@ private:
     _eventRetry;
 
    realtype _fnorm,
-			 _currentIterateNorm;
+       _currentIterateNorm;
 };

@@ -15,8 +15,8 @@ Kinsol::Kinsol(IAlgLoop* algLoop, INonLinSolverSettings* settings)
     , _helpArray    (NULL)
     , _jac    (NULL)
     , _dimSys      (0)
-	, _fnorm(10.0)
-	, _currentIterateNorm (100.0)
+  , _fnorm(10.0)
+  , _currentIterateNorm (100.0)
     , _firstCall    (true)
     , _iterationStatus  (CONTINUE)
 {
@@ -153,19 +153,19 @@ void Kinsol::solve()
         _eventRetry = false;
         // Try Dense first
         //std::cerr << "Try dense...";
-		
-		/*
-		for(int i=0;i<_dimSys;i++) 
-			_y0[i] += _y[i] * 0.1;
-		memcpy(_y,_y0,_dimSys*sizeof(double));
-		*/
-		
-		/*
-		KINSetNoResMon(_kinMem,TRUE);
-		KINSetMaxSetupCalls(_kinMem,1);
-		KINSetMaxSubSetupCalls(_kinMem,1);
-		KINSetEtaForm(_kinMem,KIN_ETACHOICE1);
-		*/
+
+    /*
+    for(int i=0;i<_dimSys;i++)
+      _y0[i] += _y[i] * 0.1;
+    memcpy(_y,_y0,_dimSys*sizeof(double));
+    */
+
+    /*
+    KINSetNoResMon(_kinMem,TRUE);
+    KINSetMaxSetupCalls(_kinMem,1);
+    KINSetMaxSubSetupCalls(_kinMem,1);
+    KINSetEtaForm(_kinMem,KIN_ETACHOICE1);
+    */
 
         KINDense(_kinMem, _dimSys);
         solveNLS();
@@ -211,7 +211,7 @@ void Kinsol::solve()
 
         // Try Sptfqmr
 
-		KINSptfqmr(_kinMem, _dimSys);
+    KINSptfqmr(_kinMem, _dimSys);
         _iterationStatus = CONTINUE;
         solveNLS();
         if(_iterationStatus == DONE)
@@ -224,10 +224,10 @@ void Kinsol::solve()
             return;
         }
 
-		/*
+    /*
         if(_iterationStatus == SOLVERERROR && !_eventRetry)
             throw std::runtime_error("Nonlinear solver failed!");
-			*/
+      */
 
         if(_eventRetry)
         {
@@ -306,7 +306,7 @@ void Kinsol::solveNLS()
         method = KIN_NONE,
         iter = 0,
         idid;
-    double 
+    double
         maxStepsStart = 1e3*max(euclidNorm(_dimSys,_yScale),euclidNorm(_dimSys,_yScale)),
         maxSteps = maxStepsStart,
         maxStepsHigh = 1e15,
@@ -359,10 +359,10 @@ void Kinsol::solveNLS()
                 maxSteps = maxStepsStart;
                 limit = maxStepsHigh;
             }
-			if(_fnorm > _currentIterateNorm)
-				memcpy(_y,_y0,_dimSys*sizeof(double));
-			else
-				_currentIterateNorm = _fnorm;
+      if(_fnorm > _currentIterateNorm)
+        memcpy(_y,_y0,_dimSys*sizeof(double));
+      else
+        _currentIterateNorm = _fnorm;
             break;
 
             // MaxStep too low
@@ -371,8 +371,8 @@ void Kinsol::solveNLS()
                 if(method == KIN_NONE)
                 {
                     if (maxSteps > limit)
-                    {	
-                        // The starting maxSteps is reached again -> Try Linesearch 
+                    {
+                        // The starting maxSteps is reached again -> Try Linesearch
                         if (maxSteps > maxStepsStart)
                         {
                             method = KIN_LINESEARCH;
@@ -390,8 +390,8 @@ void Kinsol::solveNLS()
                 }else // already trying Linesearch
                 {
                     if (maxSteps > limit)
-                    {	
-                        // The starting maxSteps is reached again -> Solvererror 
+                    {
+                        // The starting maxSteps is reached again -> Solvererror
                         if (maxSteps > maxStepsStart)
                         {
                             _iterationStatus = SOLVERERROR;
@@ -403,11 +403,11 @@ void Kinsol::solveNLS()
                     }else
                         maxSteps *= 10;
                 }
-				KINGetFuncNorm(_kinMem, &_fnorm);
-				if(_fnorm > _currentIterateNorm)
-					memcpy(_y,_y0,_dimSys*sizeof(double));
-				else
-					_currentIterateNorm = _fnorm;
+        KINGetFuncNorm(_kinMem, &_fnorm);
+        if(_fnorm > _currentIterateNorm)
+          memcpy(_y,_y0,_dimSys*sizeof(double));
+        else
+          _currentIterateNorm = _fnorm;
                 break;
 
                 // Max Iterations exceeded
@@ -431,11 +431,11 @@ void Kinsol::solveNLS()
                 {
                     _iterationStatus = SOLVERERROR;
                 }
-				KINGetFuncNorm(_kinMem, &_fnorm);
-				if(_fnorm > _currentIterateNorm)
-					memcpy(_y,_y0,_dimSys*sizeof(double));
-				else
-					_currentIterateNorm = _fnorm;
+        KINGetFuncNorm(_kinMem, &_fnorm);
+        if(_fnorm > _currentIterateNorm)
+          memcpy(_y,_y0,_dimSys*sizeof(double));
+        else
+          _currentIterateNorm = _fnorm;
                 break;
 
                 // Linesearch did not converge
@@ -443,8 +443,8 @@ void Kinsol::solveNLS()
                 check4EventRetry(_y);
                 // Try diffent maxStsps
                 if (maxSteps > limit)
-                    {	
-                        // The starting maxSteps is reached again -> Solvererror 
+                    {
+                        // The starting maxSteps is reached again -> Solvererror
                         if (maxSteps > maxStepsStart)
                         {
                             _iterationStatus = SOLVERERROR;
@@ -456,19 +456,19 @@ void Kinsol::solveNLS()
                     }else
                         maxSteps *= 10;
                 KINGetFuncNorm(_kinMem, &_fnorm);
-				if(_fnorm > _currentIterateNorm)
-					memcpy(_y,_y0,_dimSys*sizeof(double));
-				else
-					_currentIterateNorm = _fnorm;
-				break;
-			// Other failures (setup etc) -> directly break
+        if(_fnorm > _currentIterateNorm)
+          memcpy(_y,_y0,_dimSys*sizeof(double));
+        else
+          _currentIterateNorm = _fnorm;
+        break;
+      // Other failures (setup etc) -> directly break
             default:
                 _iterationStatus = SOLVERERROR;
-				KINGetFuncNorm(_kinMem, &_fnorm); 
-				if(_fnorm > _currentIterateNorm)
-					memcpy(_y,_y0,_dimSys*sizeof(double));
-				 else
-					_currentIterateNorm = _fnorm;
+        KINGetFuncNorm(_kinMem, &_fnorm);
+        if(_fnorm > _currentIterateNorm)
+          memcpy(_y,_y0,_dimSys*sizeof(double));
+         else
+          _currentIterateNorm = _fnorm;
                 break;
         }
     }
@@ -486,7 +486,7 @@ bool Kinsol::isfinite(double* u, int dim)
 
 void Kinsol::check4EventRetry(double* y)
 {
-    _algLoop->setReal(y); 
+    _algLoop->setReal(y);
     if(!(_algLoop->isConsistent()) && !_eventRetry)
     {
         memcpy(_helpArray, y,_dimSys*sizeof(double));
