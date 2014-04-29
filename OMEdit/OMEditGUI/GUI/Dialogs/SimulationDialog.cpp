@@ -1179,7 +1179,7 @@ void SimulationDialog::simulationProcessFinished(int exitCode, QProcess::ExitSta
     if (mSimulationOptions.isProfiling())
     {
       QString fileName = QString(mSimulationOptions.getOutputFileName()).remove(QRegExp("(_res.mat|_res.plt|_res.csv)"));
-      QDesktopServices::openUrl(QUrl(mSimulationOptions.getWorkingDirectory() + "/" + fileName + "_prof.html"));
+      mpMainWindow->showTransformationsWidget(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getFileNamePrefix() + "_info.xml");
     }
   }
   /* if it is a re-simulation then we need to hide the progress dialog */
