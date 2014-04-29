@@ -72,6 +72,7 @@ using boost::tie;
 using boost::get;
 using boost::make_tuple;
 using boost::multi_array;
+using boost::array;
 using std::max;
 using std::min;
 using std::string;

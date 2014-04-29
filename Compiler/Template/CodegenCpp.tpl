@@ -7232,14 +7232,14 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
   case CALL(path=IDENT(name="max"), expLst={array}) then
     let &tmpVar = buffer "" /*BUFD*/
     let expVar = daeExp(array, context, &preExp /*BUFC*/, &tmpVar /*BUFD*/,simCode)
-    let arr_tp_str = '<%expTypeFromExpArray(array)%>'
+    let arr_tp_str = expTypeFromExpShort(array)
     let tvar = tempDecl(expTypeFromExpModelica(array), &varDecls /*BUFD*/)
     let &preExp += '<%tvar%> = min_max<<%arr_tp_str%>,1>(<%expVar%>).second;<%\n%>'
     '<%tvar%>'
   case CALL(path=IDENT(name="sum"), expLst={array}) then
     let &tmpVar = buffer "" /*BUFD*/
     let expVar = daeExp(array, context, &preExp /*BUFC*/, &tmpVar /*BUFD*/,simCode)
-    let arr_tp_str = '<%expTypeFromExpArray(array)%>'
+    let arr_tp_str = expTypeFromExpShort(array)
     let tvar = tempDecl(expTypeFromExpModelica(array), &varDecls /*BUFD*/)
     let &preExp += '<%tvar%> = sum_array<<%arr_tp_str%>,1>(<%expVar%>);<%\n%>'
     '<%tvar%>'
@@ -7247,7 +7247,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
   case CALL(path=IDENT(name="min"), expLst={array}) then
     let &tmpVar = buffer "" /*BUFD*/
     let expVar = daeExp(array, context, &preExp /*BUFC*/, &tmpVar /*BUFD*/,simCode)
-    let arr_tp_str = '<%expTypeFromExpArray(array)%>'
+    let arr_tp_str = expTypeFromExpShort(array)
     let tvar = tempDecl(expTypeFromExpModelica(array), &varDecls /*BUFD*/)
     let &preExp += '<%tvar%> = min_max<<%arr_tp_str%>,1>(<%expVar%>).first;<%\n%>'
     '<%tvar%>'
@@ -7256,7 +7256,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let valExp = daeExp(val, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let dimsExp = (dims |> dim =>
       daeExp(dim, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode) ;separator="][")
-    let ty_str = '<%expTypeArray(attr.ty)%>'
+    let ty_str = '<%expTypeShort(attr.ty)%>'
     let tmp_type_str =  'multi_array<<%ty_str%>,<%listLength(dims)%>>'
 
     let tvar = tempDecl(tmp_type_str, &varDecls /*BUFD*/)
@@ -7718,6 +7718,7 @@ case T_COMPLEX(complexClassType = record_state, varLst = var_lst) then
   '<%ret_var%>'
 end daeExpRecordCrefRhs;
 
+
 template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp /*BUFP*/,
                        Text &varDecls /*BUFP*/,SimCode simCode)
  "Generates code for a component reference."
@@ -7765,28 +7766,34 @@ template daeExpCrefRhsIndexSpec(list<Subscript> subs, Context context,
                                 Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/,SimCode simCode)
  "Helper to daeExpCrefRhs."
 ::=
-  let tmp = tempDecl("vector< vector<size_t> >", &varDecls /*BUFD*/)
+
   let nridx_str = listLength(subs)
+  //let tmp = tempDecl("index_type", &varDecls /*BUFD*/)
+  let tmp_shape = tempDecl("vector<size_t>", &varDecls /*BUFD*/)
+  let tmp_indeces = tempDecl("idx_type", &varDecls /*BUFD*/)
   let idx_str = (subs |> sub  hasindex i1 =>
       match sub
       case INDEX(__) then
-       /* let tmp_index = tempDecl("vector<size_t>", &varDecls)
-        let &preExp += '<%tmp_index%>.push_back(0);//<%\n%>
-                        <%tmp%>.push_back(<%tmp_index%>);<%\n%> '*/
+         let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+        let tmp_idx = tempDecl("vector<size_t>", &varDecls /*BUFD*/)
+        let &preExp += '<%tmp_shape%>.push_back(0);<%\n%>
+                        <%tmp_idx%>.push_back(<%expPart%>);<%\n%>
+                        <%tmp_indeces%>.push_back(<%tmp_idx%>);<%\n%>'
       ''
       case WHOLEDIM(__) then
-       let tmp_index = tempDecl("vector<size_t>", &varDecls /*BUFD*/)
-       let &preExp += '<%tmp_index%>.push_back(1);<%\n%>
-                       <%tmp%>.push_back(<%tmp_index%>);<%\n%>'
+       let tmp_idx = tempDecl("vector<size_t>", &varDecls /*BUFD*/)
+       let &preExp += '<%tmp_shape%>.push_back(1);<%\n%>
+                       <%tmp_indeces%>.push_back(<%tmp_idx%>);<%\n%>'
        ''
       case SLICE(__) then
-        let tmp_index = tempDecl("vector<size_t>", &varDecls /*BUFD*/)
+        let tmp_idx = tempDecl("vector<size_t>", &varDecls /*BUFD*/)
         let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-        let &preExp += '<%tmp_index%>.assign(<%expPart%>.data(),<%expPart%>.data()+<%expPart%>.num_elements());<%\n%>
-                        <%tmp%>.push_back(<%tmp_index%>);<%\n%>'
+        let &preExp +=  '<%tmp_idx%>.assign(<%expPart%>.data(),<%expPart%>.data()+<%expPart%>.num_elements());<%\n%>
+                         <%tmp_shape%>.push_back(<%expPart%>.shape()[0]);<%\n%>
+                         <%tmp_indeces%>.push_back(<%tmp_idx%>);<%\n%>'
        ''
     ;separator="\n ")
-   tmp
+   << make_pair(<%tmp_shape%>,<%tmp_indeces%>) >>
 end daeExpCrefRhsIndexSpec;
 
 

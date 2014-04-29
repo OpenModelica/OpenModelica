@@ -11,4 +11,11 @@
 //typedef ublas::vector<double, adaptor_t> shared_vector_t;
 //typedef ublas::matrix<double, adaptor_t> shared_matrix_t;
 #include <vector>
+#include "boost/tuple/tuple.hpp"
+#include <boost/array.hpp> 
 using std::vector;
+using boost::tuple;
+using boost::tie;
+using boost::get;
+using boost::make_tuple;
+using boost::array;

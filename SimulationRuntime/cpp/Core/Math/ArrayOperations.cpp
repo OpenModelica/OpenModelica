@@ -8,3 +8,10 @@ using namespace std;
 //{
 //  fprintf(stdout, "Range check failed for Array please check indices \n" );
 //}
+size_t getNextIndex(vector<size_t> idx,size_t k)
+{
+	if((idx.size()-1)<k)
+		return idx.back();
+	else
+		return idx[k];
+}
