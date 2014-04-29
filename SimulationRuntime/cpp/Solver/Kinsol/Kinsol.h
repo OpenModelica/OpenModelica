@@ -11,6 +11,9 @@
 #include <boost/math/special_functions/fpclassify.hpp>
 //#include<kinsol_lapack.h>
 
+#ifdef SCOREP_USER_ENABLE
+#include <scorep/SCOREP_User.h>
+#endif
 
 class Kinsol : public IAlgLoopSolver
 {

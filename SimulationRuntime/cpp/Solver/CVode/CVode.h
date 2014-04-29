@@ -8,7 +8,7 @@
 #include <nvector/nvector_serial.h>
 #include <cvodes/cvodes_dense.h>
 
-#ifdef SCOREP_TRACE
+#ifdef SCOREP_USER_ENABLE
 #include <scorep/SCOREP_User.h>
 #endif
 

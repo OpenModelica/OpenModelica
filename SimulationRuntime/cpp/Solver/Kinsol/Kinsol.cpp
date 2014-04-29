@@ -41,6 +41,10 @@ Kinsol::~Kinsol()
 
 void Kinsol::initialize()
 {
+#ifdef SCOREP_USER_ENABLE
+  SCOREP_USER_REGION_DEFINE(kinsol_initialization_handle)
+  SCOREP_USER_REGION_BEGIN(kinsol_initialization_handle, "Kinsol_initialization", SCOREP_USER_REGION_TYPE_FUNCTION )
+#endif
   int idid;
 
   _firstCall = false;
@@ -123,12 +127,17 @@ void Kinsol::initialize()
       _iterationStatus = SOLVERERROR;
     }
   }
-
-
+#ifdef SCOREP_USER_ENABLE
+  SCOREP_USER_REGION_END(kinsol_initialization_handle)
+#endif
 }
 
 void Kinsol::solve()
 {
+#ifdef SCOREP_USER_ENABLE
+  SCOREP_USER_REGION_DEFINE(kinsol_solve_handle)
+  SCOREP_USER_REGION_BEGIN(kinsol_solve_handle, "Kinsol_solve", SCOREP_USER_REGION_TYPE_FUNCTION )
+#endif
   if (_firstCall)
     initialize();
 
@@ -219,7 +228,9 @@ void Kinsol::solve()
       return;
     }
   }
-
+#ifdef SCOREP_USER_ENABLE
+  SCOREP_USER_REGION_END(kinsol_solve_handle)
+#endif
 }
 
 IAlgLoopSolver::ITERATIONSTATUS Kinsol::getIterationStatus()
