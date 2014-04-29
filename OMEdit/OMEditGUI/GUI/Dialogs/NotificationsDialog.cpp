@@ -184,7 +184,7 @@ QString NotificationsDialog::getNotificationLabelString()
                 "It is highly recommended to delete the old OMEdit settings file. Click \"OK\" to delete.<br />"
                 "Contact us [OpenModelica@ida.liu.se] or Adeel Asghar [adeel.asghar@liu.se] with any comments, suggestions or problems.");
     case NotificationsDialog::CrashReport:
-      tmpPath = OMEdit::tempDirectory();
+      tmpPath = OpenModelica::tempDirectory();
       OMCCommandsLogFilePath = QString("%1omeditcommands.log").arg(tmpPath);
       OMCOutputFile = QString("%1openmodelica.omc.output.%2").arg(tmpPath).arg(Helper::OMCServerName);
       stackTraceFile = QString("%1openmodelica.stacktrace.%2").arg(tmpPath).arg(Helper::OMCServerName);

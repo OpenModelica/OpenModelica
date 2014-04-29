@@ -284,4 +284,9 @@ public:
   static QString getMessage(int type);
 };
 
+
+namespace OpenModelica {
+  QString& tempDirectory();
+}
+
 #endif // HELPER_H

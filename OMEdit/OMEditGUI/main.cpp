@@ -116,7 +116,7 @@ void signalHandler(int signum)
   }
   // Dump a stack trace to a file.
   QFile stackTraceFile;
-  QString& tmpPath = OMEdit::tempDirectory();
+  QString& tmpPath = OpenModelica::tempDirectory();
   stackTraceFile.setFileName(QString("%1openmodelica.stacktrace.%2").arg(tmpPath).arg(Helper::OMCServerName));
   if (stackTraceFile.open(QIODevice::WriteOnly | QIODevice::Text))
   {

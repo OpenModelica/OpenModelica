@@ -37,6 +37,7 @@
  */
 
 #include "Helper.h"
+#include <QDir>
 
 /* Global non-translated variables */
 QString Helper::applicationName = "OMEdit";
@@ -452,4 +453,21 @@ QString GUIMessages::getMessage(int type)
     default:
       return "";
   }
+}
+
+QString& OpenModelica::tempDirectory()
+{
+  static int init = 0;
+  static QString tmpPath;
+  if (!init) {
+#ifdef WIN32
+    tmpPath = QDir::tempPath() + "/OpenModelica/OMEdit/";
+#else // UNIX environment
+    char *user = getenv("USER");
+    if (!user) { user = "nobody"; }
+    tmpPath = QDir::tempPath() + "/OpenModelica_" + QString(user) + "/OMEdit/";
+#endif
+    tmpPath.remove("\"");
+  }
+  return tmpPath;
 }

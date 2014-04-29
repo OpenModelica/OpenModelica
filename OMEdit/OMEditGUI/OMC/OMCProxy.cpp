@@ -287,7 +287,7 @@ void OMCProxy::removeCachedOMCCommand(QString className)
 bool OMCProxy::startServer()
 {
   /* create the tmp path */
-  QString& tmpPath = OMEdit::tempDirectory();
+  QString& tmpPath = OpenModelica::tempDirectory();
   if (!QDir().exists(tmpPath))
     QDir().mkpath(tmpPath);
   /* create a file to write OMEdit commands log */

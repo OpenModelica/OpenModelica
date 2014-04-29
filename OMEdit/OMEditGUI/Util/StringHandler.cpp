@@ -1029,7 +1029,7 @@ QString StringHandler::getOpenFileName(QWidget* parent, const QString &caption, 
 
   QFileDialog *dialog = new QFileDialog(parent, caption, dir_str, filter);
   QList<QUrl> urls = dialog->sidebarUrls();
-  urls << QUrl("file://" + OMEdit::tempDirectory());
+  urls << QUrl("file://" + OpenModelica::tempDirectory());
   dialog->setSidebarUrls(urls);
   dialog->setFileMode(QFileDialog::ExistingFile);
   dialog->setParent(parent);

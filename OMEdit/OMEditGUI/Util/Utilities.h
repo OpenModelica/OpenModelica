@@ -170,8 +170,4 @@ inline QDataStream& operator>>(QDataStream& in, FindText& findText)
   return in;
 }
 
-namespace OMEdit {
-  QString& tempDirectory();
-}
-
 #endif // UTILITIES_H
