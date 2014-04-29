@@ -920,9 +920,9 @@ void SimulationDialog::simulate()
     if (!mpCflagsTextBox->text().isEmpty())
       mSimulationParameters.append(", cflags=").append("\"").append(mpCflagsTextBox->text()).append("\"");
     if (mpProfilingCheckBox->isChecked()) {
-      mpMainWindow->getOMCProxy()->setDebugFlags("measureTime");
+      mpMainWindow->getOMCProxy()->setCommandLineOptions("+profiling=all");
     } else {
-      mpMainWindow->getOMCProxy()->setDebugFlags("nomeasureTime");
+      mpMainWindow->getOMCProxy()->setCommandLineOptions("+profiling=none");
     }
     // setup simulation flags
     // setup Model Setup file flag

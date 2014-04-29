@@ -287,22 +287,11 @@ void OMCProxy::removeCachedOMCCommand(QString className)
 bool OMCProxy::startServer()
 {
   /* create the tmp path */
-#ifdef WIN32
-  QString tmpPath = QDir::tempPath() + "/OpenModelica/OMEdit/";
-#else // UNIX environment
-  char *user = getenv("USER");
-  if (!user) { user = "nobody"; }
-  QString tmpPath = QDir::tempPath() + "/OpenModelica_" + QString(user) + "/OMEdit/";
-#endif
-  tmpPath.remove("\"");
+  QString& tmpPath = OMEdit::tempDirectory();
   if (!QDir().exists(tmpPath))
     QDir().mkpath(tmpPath);
   /* create a file to write OMEdit commands log */
-#ifdef WIN32
   mCommandsLogFile.setFileName(QString("%1omeditcommands.log").arg(tmpPath));
-#else // UNIX environment
-  mCommandsLogFile.setFileName(QString("%1omeditcommands.%2.log").arg(tmpPath).arg(QString(user)));
-#endif
   if (mCommandsLogFile.open(QIODevice::WriteOnly | QIODevice::Text))
   {
     mCommandsLogFileTextStream.setDevice(&mCommandsLogFile);
@@ -326,6 +315,8 @@ bool OMCProxy::startServer()
 #ifdef WIN32 // Win32
     objectRefFile.setFileName(QString("%1openmodelica.objid.%3%4").arg(tmpPath).arg(Helper::OMCServerName).arg(fileIdentifier));
 #else // UNIX environment
+    char *user = getenv("USER");
+    if (!user) { user = "nobody"; }
     objectRefFile.setFileName(QString("%1openmodelica.%3.objid.%4%5").arg(tmpPath).arg(QString(user)).arg(Helper::OMCServerName).arg(fileIdentifier));
 #endif
     if (objectRefFile.exists())
@@ -345,11 +336,7 @@ bool OMCProxy::startServer()
     QProcess *omcProcess = new QProcess;
     connect(omcProcess, SIGNAL(finished(int)), omcProcess, SLOT(deleteLater()));
     QFile omcOutputFile;
-#ifdef WIN32 // Win32
     omcOutputFile.setFileName(QString("%1openmodelica.omc.output.%2").arg(tmpPath).arg(Helper::OMCServerName));
-#else // UNIX environment
-    omcOutputFile.setFileName(QString("%1openmodelica.%2.omc.output.%3").arg(tmpPath).arg(QString(user)).arg(Helper::OMCServerName));
-#endif
     omcProcess->setProcessChannelMode(QProcess::MergedChannels);
     omcProcess->setStandardOutputFile(omcOutputFile.fileName());
     omcProcess->start(omcPath, parameters);

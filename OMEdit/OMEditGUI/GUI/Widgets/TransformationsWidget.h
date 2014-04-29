@@ -118,13 +118,17 @@ protected:
   virtual bool operator <(const QTreeWidgetItem &other) const
   {
     int column = mpTreeWidget ? mpTreeWidget->sortColumn() : 0;
-    switch (column)
-    {
-      case 0:
-        return text(column).toInt() < other.text(column).toInt();
-      default:
-        return text(column) < other.text(column);
+    QString text1 = text(column);
+    QString text2 = other.text(column);
+    bool ok1=true,ok2=true;
+    double d1,d2;
+    // Check if both values are doubles, if so use number compare instead of lexical
+    d1 = text1.remove("%").toDouble(&ok1);
+    d2 = text2.remove("%").toDouble(&ok2);
+    if (ok1 && ok2) {
+      return d1 < d2;
     }
+    return text1 < text2;
   }
 };
 
@@ -172,12 +176,12 @@ public:
   void fetchUsedInEquations(OMVariable &variable);
   void fetchOperations(OMVariable &variable);
   void fetchEquations();
-  void fetchNestedEquations(QTreeWidgetItem *pParentTreeWidgetItem, OMEquation &equation);
+  void fetchNestedEquations(QTreeWidgetItem *pParentTreeWidgetItem, int index);
   QTreeWidgetItem* findEquationTreeItem(int equationIndex);
   void fetchEquationData(int equationIndex);
-  void fetchDefines(OMEquation &equation);
-  void fetchDepends(OMEquation &equation);
-  void fetchOperations(OMEquation &equation);
+  void fetchDefines(OMEquation *equation);
+  void fetchDepends(OMEquation *equation);
+  void fetchOperations(OMEquation *equation);
   void clearTreeWidgetItems(QTreeWidget *pTreeWidget);
 private:
   MainWindow *mpMainWindow;
@@ -211,6 +215,7 @@ private:
   QSplitter *mpTransformationsHorizontalSplitter;
 
   void parseProfiling(QString fileName);
+  QTreeWidgetItem* makeEquationTreeWidgetItem(int equationIndex, int allowChild);
 public slots:
   void reloadTransformations();
   void findVariables();

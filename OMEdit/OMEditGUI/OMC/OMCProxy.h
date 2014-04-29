@@ -43,6 +43,7 @@
 #include "omc_communication.h"
 #include "Component.h"
 #include "StringHandler.h"
+#include "Utilities.h"
 
 class MainWindow;
 class CustomExpressionBox;

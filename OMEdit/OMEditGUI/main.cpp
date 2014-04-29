@@ -116,10 +116,8 @@ void signalHandler(int signum)
   }
   // Dump a stack trace to a file.
   QFile stackTraceFile;
-  char *user = getenv("USER");
-  if (!user) { user = "nobody"; }
-  QString tmpPath = QDir::tempPath() + "/OpenModelica_" + QString(user) + "/OMEdit/";
-  stackTraceFile.setFileName(QString("%1openmodelica.%2.stacktrace.%3").arg(tmpPath).arg(QString(user)).arg(Helper::OMCServerName));
+  QString& tmpPath = OMEdit::tempDirectory();
+  stackTraceFile.setFileName(QString("%1openmodelica.stacktrace.%2").arg(tmpPath).arg(Helper::OMCServerName));
   if (stackTraceFile.open(QIODevice::WriteOnly | QIODevice::Text))
   {
     printStackTrace(&stackTraceFile, signum, name);
@@ -166,7 +164,7 @@ LONG WINAPI exceptionFilter(LPEXCEPTION_POINTERS info)
   }
   // Dump a stack trace to a file.
   QFile stackTraceFile;
-  stackTraceFile.setFileName(QString("%1/OpenModelica/OMEdit/openmodelica.stacktrace.%2").arg(QDir::tempPath()).arg(Helper::OMCServerName));
+  stackTraceFile.setFileName(QString("%1/openmodelica.stacktrace.%2").arg(OMEdit::tempDirectory()).arg(Helper::OMCServerName));
   if (stackTraceFile.open(QIODevice::WriteOnly | QIODevice::Text))
   {
     QTextStream out(&stackTraceFile);

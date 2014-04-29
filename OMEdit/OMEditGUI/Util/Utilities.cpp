@@ -102,3 +102,20 @@ void Label::resizeEvent(QResizeEvent *event)
   }
   QLabel::resizeEvent(event);
 }
+
+QString& OMEdit::tempDirectory()
+{
+  static int init = 0;
+  static QString tmpPath;
+  if (!init) {
+#ifdef WIN32
+    tmpPath = QDir::tempPath() + "/OpenModelica/OMEdit/";
+#else // UNIX environment
+    char *user = getenv("USER");
+    if (!user) { user = "nobody"; }
+    tmpPath = QDir::tempPath() + "/OpenModelica_" + QString(user) + "/OMEdit/";
+#endif
+    tmpPath.remove("\"");
+  }
+  return tmpPath;
+}

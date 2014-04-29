@@ -312,13 +312,20 @@ MyHandler::MyHandler(QFile &file)
   }
 }
 
-OMEquation MyHandler::getOMEquation(int index)
+MyHandler::~MyHandler()
+{
+  foreach (OMEquation *eq, equations) {
+    delete eq;
+  }
+}
+
+OMEquation* MyHandler::getOMEquation(int index)
 {
   for (int i = 1 ; i < equations.size() ; i++) {
-    if (equations[i].index == index)
+    if (equations[i]->index == index)
       return equations[i];
   }
-  return OMEquation();
+  return NULL;
 }
 
 bool MyHandler::startDocument()
@@ -326,7 +333,7 @@ bool MyHandler::startDocument()
   variables.clear();
   equations.clear();
   /* use index from 1; add dummy element 0 */
-  equations.append(OMEquation());
+  equations.append(new OMEquation());
   currentKind = start;
   return true;
 }
@@ -334,7 +341,6 @@ bool MyHandler::startDocument()
 bool MyHandler::endDocument()
 {
   currentVariable.ops.clear(); /* avoid double delete */
-  currentEquation.ops.clear(); /* avoid double delete */
   return true;
 }
 
@@ -363,10 +369,10 @@ bool MyHandler::startElement( const QString & namespaceURI, const QString & loca
     currentInfo.colEnd = atts.value("colEnd").toLong();
     currentInfo.isValid = true;
   } else if (qName == "equation") {
-    currentEquation.defines.clear();
-    currentEquation.depends.clear();
-    currentEquation.index = atts.value("index").toLong();
-    currentEquation.kind = currentKind;
+    currentEquation = new OMEquation();
+    currentEquation->index = atts.value("index").toLong();
+    currentEquation->parent = atts.value("parent").toLong(); // Returns 0 on failure, which suits us
+    currentEquation->kind = currentKind;
     nestedEquations.clear();
     currentInfo = OMInfo();
   } else if (qName == "eq") {
@@ -381,9 +387,9 @@ bool MyHandler::startElement( const QString & namespaceURI, const QString & loca
   } else if (qName == "start-equations") {
     currentKind = start;
   } else if (qName == "defines") {
-    currentEquation.defines.append(atts.value("name"));
+    currentEquation->defines.append(atts.value("name"));
   } else if (qName == "depends") {
-    currentEquation.depends.append(atts.value("name"));
+    currentEquation->depends.append(atts.value("name"));
   } else if (qName == "operations") {
     operations.clear();
     hasOperationsEnabled = true;
@@ -411,36 +417,36 @@ bool MyHandler::endElement( const QString & namespaceURI, const QString & localN
     operations.clear();
     variables[currentVariable.name] = currentVariable;
   } else if (qName == "equation") {
-    currentEquation.info = currentInfo;
-    currentEquation.ops = operations;
-    currentEquation.eqs = nestedEquations;
+    currentEquation->info = currentInfo;
+    currentEquation->ops = operations;
+    currentEquation->eqs = nestedEquations;
     operations.clear();
-    if (currentEquation.index != equations.size()) {
-      printf("failing: %d expect %d\n", currentEquation.index, equations.size()+1);
+    if (currentEquation->index != equations.size()) {
+      printf("failing: %d expect %d\n", currentEquation->index, equations.size()+1);
       return false;
     }
     equations.append(currentEquation);
-    foreach (QString def, currentEquation.defines) {
+    foreach (QString def, currentEquation->defines) {
       if (!variables.contains(def)) {
         qDebug() << "Defines " << def << " not found in variables.";
         continue;
       }
-      int prev = variables[def].definedIn[currentEquation.kind];
+      int prev = variables[def].definedIn[currentEquation->kind];
       if (prev) {
-        qDebug() << "failing: multiple define of " << def << ": " << prev << " and " << currentEquation.index << " for kind: " << currentEquation.kind;
+        qDebug() << "failing: multiple define of " << def << ": " << prev << " and " << currentEquation->index << " for kind: " << currentEquation->kind;
         return false;
       }
-      variables[def].definedIn[currentEquation.kind] = currentEquation.index;
+      variables[def].definedIn[currentEquation->kind] = currentEquation->index;
     }
-    foreach (QString def, currentEquation.depends) {
+    foreach (QString def, currentEquation->depends) {
       if (variables.contains(def))
-        variables[def].usedIn[currentEquation.kind].append(currentEquation.index);
+        variables[def].usedIn[currentEquation->kind].append(currentEquation->index);
       else
         qDebug() << "Depends " << def << " not found in variables.";
     }
   } else if (equationTags.contains(qName)) {
-    currentEquation.text = texts;
-    currentEquation.text.prepend(qName);
+    currentEquation->text = texts;
+    currentEquation->text.prepend(qName);
     texts.clear();
   } else if (qName == "simplify") {
     operations.append(new OMOperationSimplify(texts));

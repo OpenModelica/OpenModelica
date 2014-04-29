@@ -40,6 +40,7 @@
 
 #include "StringHandler.h"
 #include "Helper.h"
+#include "Utilities.h"
 
 QString StringHandler::mLastOpenDir;
 
@@ -1026,13 +1027,22 @@ QString StringHandler::getOpenFileName(QWidget* parent, const QString &caption, 
     dir_str = mLastOpenDir.isEmpty() ? QDir::homePath() : mLastOpenDir;
   }
 
-  QString fileName = QFileDialog::getOpenFileName(parent, caption, dir_str, filter, selectedFilter);
-  if (!fileName.isEmpty())
+  QFileDialog *dialog = new QFileDialog(parent, caption, dir_str, filter);
+  QList<QUrl> urls = dialog->sidebarUrls();
+  urls << QUrl("file://" + OMEdit::tempDirectory());
+  dialog->setSidebarUrls(urls);
+  dialog->setFileMode(QFileDialog::ExistingFile);
+  dialog->setParent(parent);
+
+  if (dialog->exec())
   {
+    QString fileName = dialog->selectedFiles()[0];
+    delete dialog;
     QFileInfo fileInfo(fileName);
     mLastOpenDir = fileInfo.absolutePath();
     return fileName;
   }
+  delete dialog;
   return QString();
 }
 

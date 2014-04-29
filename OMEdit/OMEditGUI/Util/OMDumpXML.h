@@ -174,7 +174,8 @@ struct OMVariable {
 
 struct OMEquation {
   OMEquationType kind;
-  int index;
+  int index,parent,ncall;
+  double time,maxTime,fraction;
   QStringList text;
   OMInfo info;
   QStringList defines;
@@ -190,13 +191,14 @@ struct OMEquation {
 class MyHandler : private QXmlDefaultHandler {
 public:
   QHash<QString,OMVariable> variables;
-  QList<OMEquation> equations;
+  QList<OMEquation*> equations;
   bool hasOperationsEnabled;
   MyHandler(QFile &file);
-  OMEquation getOMEquation(int index);
+  ~MyHandler();
+  OMEquation* getOMEquation(int index);
 private:
   OMVariable currentVariable;
-  OMEquation currentEquation;
+  OMEquation *currentEquation;
   QList<int> nestedEquations;
   OMInfo currentInfo;
   OMEquationType currentKind;
