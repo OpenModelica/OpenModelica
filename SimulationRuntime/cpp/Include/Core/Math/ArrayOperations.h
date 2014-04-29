@@ -189,7 +189,7 @@ template<
   typename T, class F
 >
 
-boost::multi_array< T, 1 > array_operation( boost::multi_array_ref< T, 1 > a, boost::multi_array_ref< T, 1 > b, F& op ) 
+boost::multi_array< T, 1 > array_operation( boost::multi_array_ref< T, 1 > a, boost::multi_array_ref< T, 1 > b, F& op )
 {
   typename boost::multi_array_ref< T, 1 >::iterator j = b.begin();
   for ( typename boost::multi_array< T, 1 >::iterator i = a.begin();
@@ -441,7 +441,7 @@ template < typename T , size_t NumDims, size_t NumDims2>
 void create_array_from_shape(const spec_type& sp,boost::multi_array< T, NumDims >& s,boost::multi_array< T, NumDims2 >& d)
 {
      //alocate target array
-	 vector<size_t> shape;
+   vector<size_t> shape;
      vector<size_t>::const_iterator iter;
      for(iter = (sp.first).begin();iter!=(sp.first).end();++iter)
      {
@@ -452,44 +452,44 @@ void create_array_from_shape(const spec_type& sp,boost::multi_array< T, NumDims 
      d.resize(shape);
      d.reindex(1);
      //Check if the dimension of passed indices match the dimension of target array
-	 if(sp.second.size()!=s.num_dimensions())
-		 throw std::invalid_argument("Erro in create array from shape, number of dimensions does not match");
-	
-	 T* data = new T[d.num_elements()];
-     
-	 idx_type::const_iterator spec_iter;
-	 //calc number of indeces
-	 size_t n =1;
-	 for(spec_iter = sp.second.begin();spec_iter!=sp.second.end();++spec_iter)
+   if(sp.second.size()!=s.num_dimensions())
+     throw std::invalid_argument("Erro in create array from shape, number of dimensions does not match");
+
+   T* data = new T[d.num_elements()];
+
+   idx_type::const_iterator spec_iter;
+   //calc number of indeces
+   size_t n =1;
+   for(spec_iter = sp.second.begin();spec_iter!=sp.second.end();++spec_iter)
      {
 
         n*=spec_iter->size();
-	 }
-	 size_t k =0;
+   }
+   size_t k =0;
      size_t index=0;
-	 vector<size_t>::const_iterator indeces_iter;
-	 
-	 //initialize target array with elements of source array using passed indices 
-	 vector<size_t> idx;
-	 for(int i=0;i<n;i++)
-	 {
-		spec_iter = sp.second.begin();  
+   vector<size_t>::const_iterator indeces_iter;
+
+   //initialize target array with elements of source array using passed indices
+   vector<size_t> idx;
+   for(int i=0;i<n;i++)
+   {
+    spec_iter = sp.second.begin();
         for(int dim=0;dim<s.num_dimensions();dim++)
-		{
-			size_t idx1 = getNextIndex(*spec_iter,i);
-			idx.push_back(idx1);
-			spec_iter++;
-		}
-		if(index>(d.num_elements()-1))
-		{
-			throw std::invalid_argument("Erro in create array from shape, number of dimensions does not match");
-		}
-		data[index] = s(idx);
-		idx.clear();
-		index++;
-	 }
-	 //assign elemets to target array
-	 d.assign( data, data + d.num_elements() );
+    {
+      size_t idx1 = getNextIndex(*spec_iter,i);
+      idx.push_back(idx1);
+      spec_iter++;
+    }
+    if(index>(d.num_elements()-1))
+    {
+      throw std::invalid_argument("Erro in create array from shape, number of dimensions does not match");
+    }
+    data[index] = s(idx);
+    idx.clear();
+    index++;
+   }
+   //assign elemets to target array
+   d.assign( data, data + d.num_elements() );
      delete [] data;
 }
 
