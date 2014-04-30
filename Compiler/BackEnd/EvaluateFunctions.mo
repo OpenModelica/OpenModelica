@@ -67,7 +67,7 @@ protected import Util;
 /*
 - evaluation of for-loops
 - evaluation of while-loops
-- evaluation of xOut := funcCall1(funcCall2(xIn[1]));  with funcCall2(xIn[1]) = xIn[1,2] for example have a look at Media.Examples.ReferenceAir.MoistAir 
+- evaluation of xOut := funcCall1(funcCall2(xIn[1]));  with funcCall2(xIn[1]) = xIn[1,2] for example have a look at Media.Examples.ReferenceAir.MoistAir
 (I think the stmt in MoistAir.setState_pTX should be a STMT_IF instead of a STMT_ASSIGN, thats why its not evaluated)
 - run the msl models and check for failures in List.filter1OnTrueSync and List.filterOnTrueSync, this fails somewhere and could be improve something if fixed
 - evaluation of BackendDAE.ARRAY_EQUATION
@@ -263,7 +263,7 @@ algorithm
         inputCrefs = List.map(inputs1d,DAEUtil.varCref);  // the one dimensional variables
         allInputCrefs = listAppend(inputCrefs,List.flatten(scalarInputs));
         //print("\nallInputCrefs\n"+&stringDelimitList(List.map(allInputCrefs,ComponentReference.printComponentRefStr),"\n")+&"\n");
-        
+
         //((exps,_)) = Expression.traverseExpListTopDown(exps,evaluateConstantFunctionWrapper,(lhsExpIn,funcsIn,eqIdx,{}));// in case: xOut=func(func(xIn))
         scalarExp = List.map(exps,Expression.getComplexContents);
         inputExps = List.filterOnTrue(exps,Expression.isNotComplex);
@@ -1262,11 +1262,11 @@ algorithm
         // TODO: evaluate for-loops
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"For-statement:\n"+&DAEDump.ppStatementStr(alg));
         lhsExps = List.fold1(stmts1,getStatementLHSScalar,funcTree,{});
-        lhsExps = List.unique(lhsExps);       
+        lhsExps = List.unique(lhsExps);
         outputs = List.map(lhsExps,Expression.expCref);
         repl = Debug.bcallret3(true, BackendVarTransform.removeReplacements,replIn,outputs,NONE(),replIn);
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"evaluated For-statement to:\n"+&DAEDump.ppStatementStr(alg));
-        stmts2 = alg::lstIn;   
+        stmts2 = alg::lstIn;
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,repl,idx),stmts2);
       then (rest,(funcTree,repl,idx));
     case(DAE.STMT_WHILE(exp=_,statementLst=stmts1,source=_)::rest,(funcTree,replIn,idx),_)
@@ -1275,27 +1275,27 @@ algorithm
         // TODO: evaluate while-loops
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"While-statement:\n"+&DAEDump.ppStatementStr(alg));
         lhsExps = List.fold1(stmts1,getStatementLHSScalar,funcTree,{});
-        lhsExps = List.unique(lhsExps);       
-        outputs = List.map(lhsExps,Expression.expCref);       
+        lhsExps = List.unique(lhsExps);
+        outputs = List.map(lhsExps,Expression.expCref);
         repl = Debug.bcallret3(true, BackendVarTransform.removeReplacements,replIn,outputs,NONE(),replIn);
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"evaluated While-statement to:\n"+&DAEDump.ppStatementStr(alg));
-        stmts2 = alg::lstIn;   
+        stmts2 = alg::lstIn;
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,repl,idx),stmts2);
       then (rest,(funcTree,repl,idx));
     case(DAE.STMT_ASSERT(cond=_,msg=_,level=_,source=_)::rest,(funcTree,replIn,idx),_)
       equation
         alg = List.first(algsIn);
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"assert-statement (not evaluated):\n"+&DAEDump.ppStatementStr(alg));
-        stmts2 = alg::lstIn;   
+        stmts2 = alg::lstIn;
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,replIn,idx),stmts2);
-      then (rest,(funcTree,repl,idx));  
+      then (rest,(funcTree,repl,idx));
     case(DAE.STMT_NORETCALL(exp=_,source=_)::rest,(funcTree,replIn,idx),_)
       equation
         alg = List.first(algsIn);
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"noretcall-statement (not evaluated):\n"+&DAEDump.ppStatementStr(alg));
-        stmts2 = alg::lstIn;   
+        stmts2 = alg::lstIn;
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,replIn,idx),stmts2);
-      then (rest,(funcTree,repl,idx));  
+      then (rest,(funcTree,repl,idx));
     else
       equation
         print("evaluateFunctions_updateStatement failed for!\n"+&DAEDump.ppStatementStr(List.first(algsIn))+&"\n");
@@ -1495,7 +1495,7 @@ algorithm
   case(DAE.STMT_FOR(type_=_,iterIsArray=_,iter=_,index=_,range=_,statementLst=stmtLst1,source=_),_)
     equation
       expLst = List.fold(stmtLst1,getStatementLHS,expsIn);
-    then expLst; 
+    then expLst;
   case(DAE.STMT_PARFOR(type_=_,iterIsArray=_,iter=_,index=_,range=_,statementLst=stmtLst1,loopPrlVars=_,source=_),_)
     equation
       expLst = List.fold(stmtLst1,getStatementLHS,expsIn);
@@ -1506,38 +1506,38 @@ algorithm
     then expLst;
   case(DAE.STMT_WHEN(exp=_,conditions=_,initialCall=_,statementLst=_,elseWhen=_,source=_),_)
     equation
-      print("getStatementLHS update for WHEN!\n"+&DAEDump.ppStatementStr(stmt));   
+      print("getStatementLHS update for WHEN!\n"+&DAEDump.ppStatementStr(stmt));
     then fail();
   case(DAE.STMT_ASSERT(cond=_,msg=_,level=_,source=_),_)
     equation
-      print("getStatementLHS update for ASSERT!\n"+&DAEDump.ppStatementStr(stmt));   
+      print("getStatementLHS update for ASSERT!\n"+&DAEDump.ppStatementStr(stmt));
     then fail();
   case(DAE.STMT_TERMINATE(msg=_,source=_),_)
     equation
-      print("getStatementLHS update for TERMINATE!\n"+&DAEDump.ppStatementStr(stmt));   
+      print("getStatementLHS update for TERMINATE!\n"+&DAEDump.ppStatementStr(stmt));
     then fail();
   case(DAE.STMT_REINIT(var=_,value=_,source=_),_)
     equation
-      print("getStatementLHS update for REINIT!\n"+&DAEDump.ppStatementStr(stmt));   
+      print("getStatementLHS update for REINIT!\n"+&DAEDump.ppStatementStr(stmt));
     then fail();
   case(DAE.STMT_NORETCALL(exp=exp,source=_),_)
     equation
     then expsIn;
   case(DAE.STMT_RETURN(source=_),_)
     equation
-      print("getStatementLHS update for RETURN!\n"+&DAEDump.ppStatementStr(stmt));   
+      print("getStatementLHS update for RETURN!\n"+&DAEDump.ppStatementStr(stmt));
     then fail();
   case(DAE.STMT_BREAK(source=_),_)
     equation
-      print("getStatementLHS update for BREAK!\n"+&DAEDump.ppStatementStr(stmt));   
+      print("getStatementLHS update for BREAK!\n"+&DAEDump.ppStatementStr(stmt));
     then fail();
   case(DAE.STMT_ARRAY_INIT(name=_,ty=_,source=_),_)
     equation
-      print("getStatementLHS update for ARRAY_INIT!\n"+&DAEDump.ppStatementStr(stmt));   
+      print("getStatementLHS update for ARRAY_INIT!\n"+&DAEDump.ppStatementStr(stmt));
     then fail();
   else
     equation
-      print("getStatementLHS update for !\n"+&DAEDump.ppStatementStr(stmt));      
+      print("getStatementLHS update for !\n"+&DAEDump.ppStatementStr(stmt));
     then fail();
   end match;
 end getStatementLHS;
