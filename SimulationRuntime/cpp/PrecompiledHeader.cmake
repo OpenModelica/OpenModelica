@@ -77,7 +77,7 @@ MAKE_DIRECTORY(${_outdir})
 SET(_output "${_outdir}/${_name}.gch")
 STRING(TOUPPER "CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}" _flags_var_name)
 SET(_compiler_FLAGS ${${_flags_var_name}})
-#remove compiler flag for optimization becaus Modelics system is compiled without optimization
+#remove compiler flag for optimization becaus Modelica system is compiled without optimization
 string(REGEX REPLACE "O[1-9]" "O0" _compiler_FLAGS ${_compiler_FLAGS} )
 GET_DIRECTORY_PROPERTY(_directory_flags INCLUDE_DIRECTORIES)
 FOREACH(item ${_directory_flags})
