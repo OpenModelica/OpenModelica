@@ -1156,6 +1156,13 @@ algorithm
   end match;
 end failOnErrorMsg;
 
+public function addCompilerError "
+  Used to make a compiler warning"
+  input String message;
+algorithm
+  addMessage(COMPILER_ERROR, {message});
+end addCompilerError;
+
 public function addCompilerWarning "
   Used to make a compiler warning"
   input String message;

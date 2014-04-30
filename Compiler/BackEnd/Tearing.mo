@@ -2545,8 +2545,8 @@ algorithm
 end countImpossibleAss3;
 
 
-protected function Tarjan"Tarjan assignment.
-author:Waurich TUD 2012-11, enhanced: ptaeuber 2013-10"
+public function Tarjan "Tarjan assignment.
+  author: Waurich TUD 2012-11, enhanced: ptaeuber 2013-10"
   input BackendDAE.IncidenceMatrix mIn;
   input BackendDAE.IncidenceMatrixT mtIn;
   input BackendDAE.AdjacencyMatrixEnhanced meIn;

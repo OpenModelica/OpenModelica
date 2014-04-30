@@ -44,6 +44,7 @@ public import DAE;
 
 protected import Algorithm;
 protected import BackendDAEUtil;
+protected import BackendDump;
 protected import BackendVariable;
 protected import BaseHashTable;
 protected import BinaryTreeInt;
@@ -1676,6 +1677,60 @@ algorithm
   end matchcontinue;
 end equationNth1;
 
+public function equationNthSize
+  input BackendDAE.EquationArray inEquationArray;
+  input Integer pos;
+  output BackendDAE.Equation outEquation;
+protected
+  list<BackendDAE.Equation> eqns;
+algorithm
+  eqns := equationList(inEquationArray);
+  outEquation := equationNthSize1(eqns, pos, 1);
+end equationNthSize;
+
+public function equationNthSize1
+  input list<BackendDAE.Equation> inEqns;
+  input Integer pos;
+  input Integer acc;
+  output BackendDAE.Equation outEquation;
+algorithm
+  outEquation := matchcontinue (inEqns, pos, acc)
+    local
+      BackendDAE.Equation eqn;
+      list<BackendDAE.Equation> eqns;
+      Integer size;
+      array<Option<BackendDAE.Equation>> arr;
+      String str;
+      
+    case ({}, _, _)
+      equation
+        str = "BackendEquation.equationNthSize1 failed";
+        print(str +& "\n");
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
+      then fail();
+
+    case (eqn::_, _, _)
+      equation
+        size = equationSize(eqn);
+        true = (pos >= acc);
+        true = (pos < acc+size);
+      then eqn;
+        
+    case (eqn::eqns, _, _)
+      equation
+        size = equationSize(eqn);
+        true = (pos >= acc+size);
+      then equationNthSize1(eqns, pos, acc+size);
+      
+    else
+      equation
+        str = "BackendEquation.equationNthSize1 failed";
+        print(str +& "\n");
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
+      then fail();
+  end matchcontinue;
+end equationNthSize1;
+
 public function equationDelete "author: Frenkel TUD 2010-12
   Delets the equations from the list of Integers."
   input BackendDAE.EquationArray inEquationArray;
@@ -1762,9 +1817,8 @@ algorithm
   end matchcontinue;
 end equationRemove;
 
-public function compressEquations
-"  author: Frenkel TUD 2012-11
-  Closes the gabs "
+public function compressEquations "author: Frenkel TUD 2012-11
+  Closes the gabs"
   input BackendDAE.EquationArray inEquationArray;
   output BackendDAE.EquationArray outEquationArray;
 algorithm
@@ -1785,8 +1839,7 @@ algorithm
   end matchcontinue;
 end compressEquations;
 
-protected function compressEquations1
-"  author: Frenkel TUD 2012-09"
+protected function compressEquations1 "author: Frenkel TUD 2012-09"
   input Integer index;
   input Integer nEqns;
   input array<Option<BackendDAE.Equation>> equOptArr;
@@ -2200,7 +2253,7 @@ public function solveEquation "author: wbraun
   input DAE.Exp crefExp;
   output BackendDAE.Equation outEqn;
 algorithm
-  outEqn := matchcontinue(eqn,crefExp)
+  outEqn := matchcontinue (eqn, crefExp)
     local
       DAE.Exp e1,e2;
       DAE.Exp res;
@@ -2211,54 +2264,54 @@ algorithm
       DAE.ElementSource source;
       BackendDAE.EquationKind eqKind;
 
-    case (BackendDAE.EQUATION(exp=e1,scalar=e2,source=source,differentiated=differentiated,kind=eqKind),_)
+    case (BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, differentiated=differentiated, kind=eqKind), _)
       equation
-        (res,_) = ExpressionSolve.solve(e1,e2,crefExp);
+        (res, _) = ExpressionSolve.solve(e1, e2, crefExp);
       then (BackendDAE.EQUATION(crefExp, res ,source, differentiated, eqKind));
 
-    case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2,source=source,differentiated=differentiated,kind=eqKind),_)
+    case (BackendDAE.ARRAY_EQUATION(left=e1, right=e2, source=source, differentiated=differentiated, kind=eqKind), _)
       equation
-        (res,_) = ExpressionSolve.solve(e1,e2,crefExp);
-      then (BackendDAE.EQUATION(crefExp, res ,source, differentiated, eqKind));
+        (res, _) = ExpressionSolve.solve(e1, e2, crefExp);
+      then (BackendDAE.EQUATION(crefExp, res, source, differentiated, eqKind));
 
-    case (BackendDAE.SOLVED_EQUATION(componentRef=cref,exp=e2,source=source,differentiated=differentiated,kind=eqKind),_)
+    case (BackendDAE.SOLVED_EQUATION(componentRef=cref, exp=e2, source=source, differentiated=differentiated, kind=eqKind), _)
       equation
         cr = Expression.expCref(crefExp);
         true = ComponentReference.crefEqual(cref, cr);
-      then (BackendDAE.EQUATION(crefExp, e2 ,source, differentiated, eqKind));
+      then (BackendDAE.EQUATION(crefExp, e2, source, differentiated, eqKind));
 
-    case (BackendDAE.SOLVED_EQUATION(componentRef=cref,exp=e2,source=source,differentiated=differentiated,kind=eqKind),_)
+    case (BackendDAE.SOLVED_EQUATION(componentRef=cref, exp=e2, source=source, differentiated=differentiated, kind=eqKind), _)
       equation
         cr = Expression.expCref(crefExp);
         false = ComponentReference.crefEqual(cref, cr);
         e1 = Expression.crefExp(cref);
-        (res,_) = ExpressionSolve.solve(e1,e2,crefExp);
-      then (BackendDAE.EQUATION(crefExp, res ,source, differentiated, eqKind));
+        (res,_) = ExpressionSolve.solve(e1, e2, crefExp);
+      then (BackendDAE.EQUATION(crefExp, res, source, differentiated, eqKind));
 
-    case (BackendDAE.RESIDUAL_EQUATION(exp=e2,source=source,differentiated=differentiated,kind=eqKind),_)
+    case (BackendDAE.RESIDUAL_EQUATION(exp=e2, source=source, differentiated=differentiated, kind=eqKind), _)
       equation
         e1 = Expression.makeConstOne(Expression.typeof(e2));
-        (res,_) = ExpressionSolve.solve(e1,e2,crefExp);
-      then (BackendDAE.EQUATION(crefExp, res ,source, differentiated, eqKind));
+        (res, _) = ExpressionSolve.solve(e1, e2, crefExp);
+      then (BackendDAE.EQUATION(crefExp, res, source, differentiated, eqKind));
 
-    case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2,source=source,differentiated=differentiated,kind=eqKind),_)
+    case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source, differentiated=differentiated, kind=eqKind), _)
       equation
-        (res,_) = ExpressionSolve.solve(e1,e2,crefExp);
-      then (BackendDAE.EQUATION(crefExp, res ,source, differentiated, eqKind));
+        (res, _) = ExpressionSolve.solve(e1, e2, crefExp);
+      then (BackendDAE.EQUATION(crefExp, res, source, differentiated, eqKind));
 /*
-    case (eq as BackendDAE.ALGORITHM(alg=_),_)
+    case (eq as BackendDAE.ALGORITHM(alg=_), _)
       then eq;
 
-    case (eq as BackendDAE.WHEN_EQUATION(size=_),_)
+    case (eq as BackendDAE.WHEN_EQUATION(size=_), _)
       then eq;
 
-    case (eq as BackendDAE.IF_EQUATION(conditions=_),_)
+    case (eq as BackendDAE.IF_EQUATION(conditions=_), _)
       then eq;
 */
-    case(_,_)
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"BackendEquation.solveEquation failed"});
-      then fail();
+    else equation
+      BackendDump.dumpBackendDAEEqnList({eqn}, "function BackendEquation.solveEquation failed w.r.t " +& ExpressionDump.printExpStr(crefExp), true);
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendEquation.mo: function solveEquation failed"});
+    then fail();
   end matchcontinue;
 end solveEquation;
 

@@ -1050,7 +1050,7 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst, (unassignedStates,intString, ", ", "\n"));
         ilst = List.fold1(unassignedStates, statesWithUnusedDerivative, mt, {});
         ilst = List.select1(ilst, isStateonIndex, v);
-        // check also initial equations (this could be done alse once before
+        // check also initial equations (this could be done also once before)
         ((ilst,_)) = BackendDAEUtil.traverseBackendDAEExpsEqns(BackendEquation.daeInitialEqns(ishared),searchDerivativesEqn,(ilst,v));
         Debug.fcall(Flags.BLT_DUMP,print,"states without used derivative:\n");
         Debug.fcall(Flags.BLT_DUMP,BackendDump.debuglst,(ilst,intString,", ","\n"));
