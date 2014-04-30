@@ -1701,7 +1701,7 @@ algorithm
       Integer size;
       array<Option<BackendDAE.Equation>> arr;
       String str;
-      
+
     case ({}, _, _)
       equation
         str = "BackendEquation.equationNthSize1 failed";
@@ -1715,13 +1715,13 @@ algorithm
         true = (pos >= acc);
         true = (pos < acc+size);
       then eqn;
-        
+
     case (eqn::eqns, _, _)
       equation
         size = equationSize(eqn);
         true = (pos >= acc+size);
       then equationNthSize1(eqns, pos, acc+size);
-      
+
     else
       equation
         str = "BackendEquation.equationNthSize1 failed";

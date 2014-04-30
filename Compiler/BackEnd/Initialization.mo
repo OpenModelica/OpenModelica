@@ -1073,7 +1073,7 @@ algorithm
   outEqns := matchcontinue(inComps, inVec2, inEqns, inVars, inMapIncRowEqn)
     local
       Integer currEqID, currVarID, currID;
-      list<Integer> unassignedEqns, comps_all_eqs2; 
+      list<Integer> unassignedEqns, comps_all_eqs2;
       list<BackendDAE.Equation> eqns_list;
       list<BackendDAE.Equation> eqns_list_new;
       list<BackendDAE.Equation> eqns_list2;
@@ -1084,56 +1084,56 @@ algorithm
       BackendDAE.Var var;
       DAE.ComponentRef cref;
       BackendDAE.Type type_;
-      
+
     case ({}, _, _, _, _)
     then inEqns;
 
-    case (currEqID::comps_all_eqs2, _, _, _, _) equation 
+    case (currEqID::comps_all_eqs2, _, _, _, _) equation
       currVarID = inVec2[currEqID];
       true = currVarID > 0;      // eqn is already assigned
-      
+
       eqns_list = BackendEquation.equationList(inEqns);
       eqn = listGet(eqns_list, inMapIncRowEqn[currEqID]);
       //eqn = BackendEquation.equationNthSize1(eqns_list, currEqID, 1);
 
       var = BackendVariable.getVarAt(inVars, currVarID);
-      
+
       cref = BackendVariable.varCref(var);
       type_ = BackendVariable.varType(var);
       x = DAE.CREF(cref, type_);
 
       //BackendDAE.SOLVED_EQUATION(exp=exp) = BackendEquation.solveEquation(eqn, x);
       (eqn as BackendDAE.EQUATION(scalar=exp)) = BackendEquation.solveEquation(eqn, x);
-      
+
       eqns_list = substituteInEquationList(eqns_list, exp, x);
       eqns_list = List.set(eqns_list, inMapIncRowEqn[currEqID], eqn); // keep original equation
-    
+
       eqns = BackendEquation.listEquation(eqns_list);
     then substituteMatchedEquations(comps_all_eqs2, inVec2, eqns, inVars, inMapIncRowEqn);
-    
-    case (currEqID::comps_all_eqs2, _, _, _, _) equation 
+
+    case (currEqID::comps_all_eqs2, _, _, _, _) equation
       currVarID = inVec2[currEqID];
       true = currVarID > 0;      // eqn is already assigned
-      
+
       eqns_list = BackendEquation.equationList(inEqns);
       eqn = listGet(eqns_list, inMapIncRowEqn[currEqID]);
       //eqn = BackendEquation.equationNthSize1(eqns_list, currEqID, 1);
       //BackendDump.printEquation(eqn);
-      
+
       var = BackendVariable.getVarAt(inVars, currVarID);
       //BackendDump.printVar(var);
       Error.addInternalError("./Compiler/BackEnd/Initialization.mo: function substituteMatchedEquations failed");
     then fail();
-    
-    case (currEqID::comps_all_eqs2, _, _, _, _) equation 
+
+    case (currEqID::comps_all_eqs2, _, _, _, _) equation
       currVarID = inVec2[currEqID];
       true = currVarID > 0;      // eqn is already assigned
-      
+
       Error.addInternalError("./Compiler/BackEnd/Initialization.mo: function substituteMatchedEquations failed");
     then fail();
-    
+
     // skip unassigned equation
-    case (currEqID::comps_all_eqs2, _, _, _, _) equation 
+    case (currEqID::comps_all_eqs2, _, _, _, _) equation
       currVarID = inVec2[currEqID];
       false = currVarID > 0;     // eqn is not assigned
     then substituteMatchedEquations(comps_all_eqs2, inVec2, inEqns, inVars, inMapIncRowEqn);
@@ -1151,7 +1151,7 @@ algorithm
   (outUnassignedEqns, outConsistent) := matchcontinue(inUnassignedEqns, inEqns, inEqnsOrig, inM)
     local
       Integer currEqID, currVarID, currID;
-      list<Integer> unassignedEqns, unassignedEqns2; 
+      list<Integer> unassignedEqns, unassignedEqns2;
       list<BackendDAE.Equation> eqns_list;
       list<BackendDAE.Equation> eqns_list_new;
       list<BackendDAE.Equation> eqns_list2;
@@ -1163,7 +1163,7 @@ algorithm
       DAE.ComponentRef cref;
       BackendDAE.Type type_;
       Boolean consistent;
-      
+
     case ({}, _, _, _)
     then ({}, true);
 
@@ -1173,28 +1173,28 @@ algorithm
       exp = DAE.BINARY(lhs, DAE.SUB(DAE.T_REAL_DEFAULT), rhs);
       (exp, _) = ExpressionSimplify.simplify(exp);
       true = Expression.isZero(exp);
-      
+
       eqn = BackendEquation.equationNth1(inEqnsOrig, currID);
       Error.addCompilerNotification("The following equation is consistent and got removed from the initialization problem: " +& BackendDump.equationString(eqn));
-      
+
       (unassignedEqns2, consistent) = getConsistentEquations(unassignedEqns, inEqns, inEqnsOrig, inM);
     then (currID::unassignedEqns2, consistent);
-    
+
     case (currID::unassignedEqns, _, _, _) equation
       false = intEq(listLength(inM[currID]), 0);
       //print("skip unassigned equation\n");
       (unassignedEqns2, consistent) = getConsistentEquations(unassignedEqns, inEqns, inEqnsOrig, inM);
     then (unassignedEqns2, consistent);
-    
+
     case (currID::unassignedEqns, _, _, _) equation
       true = intEq(listLength(inM[currID]), 0);
-    
+
       eqn = BackendEquation.equationNth1(inEqns, currID);
       BackendDAE.EQUATION(exp=lhs, scalar=rhs) = eqn;
       exp = DAE.BINARY(lhs, DAE.SUB(DAE.T_REAL_DEFAULT), rhs);
       (exp, _) = ExpressionSimplify.simplify(exp);
       false = Expression.isZero(exp);
-      
+
       eqn2 = BackendEquation.equationNth1(inEqnsOrig, currID);
       Error.addCompilerError("The initialization problem is inconsistent due to the following equation: " +& BackendDump.equationString(eqn2) +& " (" +& BackendDump.equationString(eqn) +& ")");
       //_ = getConsistentEquations(unassignedEqns, inEqns, inEqnsOrig, inM); // show all messages
@@ -1204,12 +1204,12 @@ end getConsistentEquations;
 
 protected function substituteInEquationList "author: mwenzler"
   input list<BackendDAE.Equation> eqns_list;
-  input DAE.Exp outExp; 
+  input DAE.Exp outExp;
   input DAE.Exp x;
   output list<BackendDAE.Equation> out_eqns_list;
 algorithm
   out_eqns_list := matchcontinue(eqns_list, outExp, x)
-    local 
+    local
       BackendDAE.Equation target_eq;
       list<BackendDAE.Equation> eqns_list_new, rest;
       Integer size;
@@ -1221,7 +1221,7 @@ algorithm
     case ({}, _, _)
     then {};
 
-    case (target_eq::rest, _, _) equation 
+    case (target_eq::rest, _, _) equation
       BackendDAE.EQUATION(lhs, rhs, source, differentiated, eqKind) = target_eq;
       ((lhs, _)) = substitute((lhs, (x, outExp)));
       ((rhs, _)) = substitute((rhs, (x, outExp)));
@@ -1230,16 +1230,16 @@ algorithm
       target_eq = BackendDAE.EQUATION(lhs, rhs, source, differentiated, eqKind);
       eqns_list_new = substituteInEquationList(rest, outExp, x);
     then target_eq::eqns_list_new;
-    
-    case (target_eq::rest, _, _) equation 
+
+    case (target_eq::rest, _, _) equation
       BackendDAE.RESIDUAL_EQUATION(rhs, source, differentiated, eqKind) = target_eq;
       ((rhs, _)) = substitute((rhs, (x, outExp)));
       (rhs, _) = ExpressionSimplify.simplify(rhs);
       target_eq = BackendDAE.RESIDUAL_EQUATION(rhs, source, differentiated, eqKind);
       eqns_list_new = substituteInEquationList(rest, outExp, x);
     then target_eq::eqns_list_new;
-    
-    case (target_eq::rest, _, _) equation 
+
+    case (target_eq::rest, _, _) equation
       BackendDAE.COMPLEX_EQUATION(size, lhs, rhs, source, differentiated, eqKind) = target_eq;
       ((lhs, _)) = substitute((lhs, (x, outExp)));
       ((rhs, _)) = substitute((rhs, (x, outExp)));
@@ -1248,15 +1248,15 @@ algorithm
       target_eq = BackendDAE.COMPLEX_EQUATION(size, lhs, rhs, source, differentiated, eqKind);
       eqns_list_new = substituteInEquationList(rest, outExp, x);
     then target_eq::eqns_list_new;
-    
+
     else equation
-    //case (target_eq::rest, _, _) equation 
+    //case (target_eq::rest, _, _) equation
     //  BackendDump.dumpBackendDAEEqnList({target_eq}, "./Compiler/BackEnd/Initialization.mo: function substituteInEquationList failed", true);
     //  Error.addInternalError("./Compiler/BackEnd/Initialization.mo: function substituteInEquationList failed");
     then fail();
   end matchcontinue;
 end substituteInEquationList;
-    
+
 protected function substitute "author: mwenzler"
   input tuple<DAE.Exp, tuple<DAE.Exp /*var*/, DAE.Exp/*value*/>> inExp;
   output tuple<DAE.Exp, tuple<DAE.Exp /*var*/, DAE.Exp/*value*/>> outExp;
@@ -1277,11 +1277,11 @@ algorithm
       DAE.Exp var;
       DAE.Exp value;
       DAE.Exp exp;
-    
+
     case ((exp, (var, value))) equation
       true=Expression.expEqual(exp, var);
     then ((value, (var, value)));
-    
+
     else
     then inExp;
   end matchcontinue;
@@ -1316,23 +1316,23 @@ algorithm
       nVars = BackendVariable.varsSize(inVars);
       nEqns = BackendDAEUtil.equationSize(inEqns);
       true = intEq(nVars, nEqns);
-    then inEqns;	
+    then inEqns;
 
     case (_, _, _, _, _) equation
       nVars = BackendVariable.varsSize(inVars);
       nEqns = BackendDAEUtil.equationSize(inEqns);
       true = intLt(nVars, nEqns);
-      
+
       funcs = BackendDAEUtil.getFunctions(inShared);
-      
+
       system = BackendDAE.EQSYSTEM(inVars, inEqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {});
       (system, m, mt, mapEqnIncRow, mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(system, BackendDAE.NORMAL(), SOME(funcs));
       (me, meT, _, _)= BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(system, inShared);
-      
+
       //BackendDump.dumpIncidenceMatrix(mapEqnIncRow);
       //print(stringDelimitList(List.map(arrayList(mapIncRowEqn),intString),",") +& "\n");
       //BackendDump.dumpEqSystem(system, "over-determined initial system");
-      
+
       vec1 = arrayCreate(nVars, -1);
       vec2 = arrayCreate(nEqns, -1);
       vec1Lst = arrayList(vec1);
@@ -1341,27 +1341,27 @@ algorithm
       flatComps = List.flatten(comps);
       vec1 = listArray(vec1Lst);
       vec2 = listArray(vec2Lst);
-      
+
       //BackendDump.dumpList(flatComps, "sorted eqns: ");
       //BackendDump.dumpMatchingVars(vec1);
       //BackendDump.dumpMatchingEqns(vec2);
-      
+
       unassignedEqns = Matching.getUnassigned(nEqns, vec2, {});
       //print(intString(listLength(unassignedEqns)) +& " ?= " +& intString(nEqns-nVars) +& "\n");
-      
+
       true = intLt(listLength(unassignedEqns), inNUnassignedEqns);  // avoid inf. loops
       nUnassignedEqns = listLength(unassignedEqns);
-      
+
       //true = intEq(listLength(unassignedEqns), nEqns-nVars);
       //BackendDump.dumpEquationArray(eqnsOrig, "eqnsOrig");
-      
+
       substEqns = substituteMatchedEquations(flatComps, vec2, inEqns, inVars, mapIncRowEqn);
       //BackendDump.dumpEquationArray(substEqns, "substEqns #1");
 
       system = BackendDAE.EQSYSTEM(inVars, substEqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {});
       (_, m, _, _, _) = BackendDAEUtil.getIncidenceMatrixScalar(system, BackendDAE.NORMAL(), SOME(funcs));
       (unassignedEqns, true) = getConsistentEquations(unassignedEqns, substEqns, inOrigEqns, m);
-      
+
       // remove all unassigned equations
       substEqns = BackendEquation.equationDelete(substEqns, unassignedEqns);
       origEqns = BackendEquation.equationDelete(inOrigEqns, unassignedEqns);
@@ -1399,8 +1399,8 @@ algorithm
       true = intGt(nEqns, nVars);
 
       Error.addCompilerNotification("Trying to fix over-determined initial system with " +& intString(nVars) +& " variables and " +& intString(nEqns) +& " equations... [experimental support]");
-      
-	    eqns = fixOverDeterminedInitialSystem(vars, eqns, eqns, shared, nEqns);
+
+      eqns = fixOverDeterminedInitialSystem(vars, eqns, eqns, shared, nEqns);
       system = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {});
     then (system, (shared, (inDAE, initVars, dumpVars)));
 
