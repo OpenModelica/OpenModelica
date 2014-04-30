@@ -43,10 +43,6 @@ Cvode::~Cvode()
 
 void Cvode::initialize()
 {
-#ifdef SCOREP_USER_ENABLE
-  SCOREP_USER_REGION_DEFINE(cvode_initialization_handle)
-  SCOREP_USER_REGION_BEGIN(cvode_initialization_handle, "Cvode_initialization", SCOREP_USER_REGION_TYPE_FUNCTION )
-#endif
   _properties = dynamic_cast<ISystemProperties*>(_system);
   _continuous_system = dynamic_cast<IContinuous*>(_system);
   _event_system =  dynamic_cast<IEvent*>(_system);
@@ -196,17 +192,10 @@ void Cvode::initialize()
     //
 
   }
-#ifdef SCOREP_USER_ENABLE
-  SCOREP_USER_REGION_END(cvode_initialization_handle)
-#endif
 }
 
 void Cvode::solve(const SOLVERCALL action)
 {
-#ifdef SCOREP_USER_ENABLE
-  SCOREP_USER_REGION_DEFINE(cvode_solve_handle)
-  SCOREP_USER_REGION_BEGIN(cvode_solve_handle, "Cvode_solve", SCOREP_USER_REGION_TYPE_FUNCTION )
-#endif
   //_eulerSettings->getEventOutput() = true;
 
   if (_cvodesettings && _system)
@@ -278,10 +267,6 @@ void Cvode::solve(const SOLVERCALL action)
 
     throw std::invalid_argument("CVode::solve()");
   }
-
-#ifdef SCOREP_USER_ENABLE
-  SCOREP_USER_REGION_END(cvode_solve_handle)
-#endif
 }
 
 void Cvode::CVodeCore()
@@ -401,10 +386,6 @@ void Cvode::CVodeCore()
 
 void Cvode::writeCVodeOutput(const double &time,const double &h,const int &stp)
 {
-#ifdef SCOREP_USER_ENABLE
-  SCOREP_USER_REGION_DEFINE(cvode_writeOutput_handle)
-  SCOREP_USER_REGION_BEGIN(cvode_writeOutput_handle, "Cvode_writeOutput", SCOREP_USER_REGION_TYPE_FUNCTION )
-#endif
   if (stp > 0)
   {
     if (_cvodesettings->getDenseOutput())
@@ -438,9 +419,6 @@ void Cvode::writeCVodeOutput(const double &time,const double &h,const int &stp)
     else
       SolverDefaultImplementation::writeToFile(stp, time, h);
   }
-#ifdef SCOREP_USER_ENABLE
-  SCOREP_USER_REGION_END(cvode_writeOutput_handle)
-#endif
 }
 
 
