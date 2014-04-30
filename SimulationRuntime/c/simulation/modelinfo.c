@@ -34,6 +34,8 @@
 #include "modelinfo.h"
 #include "simulation_info_xml.h"
 #include "simulation_runtime.h"
+#include "omc_mmap.h"
+
 
 #include <errno.h>
 #include <stdio.h>
@@ -41,6 +43,8 @@
 #include <time.h>
 #include <assert.h>
 #include <stdint.h>
+#include "read_matlab4.h"
+
 
 /* UNDEF to debug the gnuplot file */
 #define NO_PIPE
@@ -64,60 +68,44 @@ static void indent(FILE *fout, int n) {
 static void convertProfileData(const char *prefix, int numFnsAndBlocks)
 {
   size_t len = strlen(prefix);
-  int i;
-  uint32_t step;
-  double time[2];
-  uint32_t *iarr = (uint32_t*)malloc(sizeof(uint32_t)*numFnsAndBlocks);
-  double *darr = (double*)malloc(sizeof(double)*numFnsAndBlocks);
-  char *inBinary = (char*)malloc(sizeof(char)*(len + 11));
+  char *inBinaryInt = (char*)malloc(sizeof(char)*(len + 14));
+  char *inBinaryReal = (char*)malloc(sizeof(char)*(len + 15));
   char *outCsv = (char*)malloc(sizeof(char)*(len + 10));
-  FILE *fin;
-  FILE *fout;
+  FILE *finInt, *finReal, *fout;
   int fail = 0;
-  memcpy(inBinary,prefix,len);
-  memcpy(outCsv,prefix,len);
-  strcpy(inBinary + len, "_prof.data");
-  strcpy(outCsv + len, "_prof.csv");
-  fin = fopen(inBinary, "rb");
-  if (!fin) {
-    throwStreamPrint(NULL, "Failed to open %s for reading", inBinary);
-  }
-  fout = fopen(outCsv, "wb");
-  if (!fout) {
-    fclose(fin);
-    throwStreamPrint(NULL, "Failed to open %s for writing", outCsv);
-  }
-  do {
-    fail |= 1 != fread(&step, sizeof(uint32_t), 1, fin);
-    fail |= 2 != fread(time, sizeof(double), 2, fin);
-    fail |= numFnsAndBlocks != fread(iarr, sizeof(uint32_t), numFnsAndBlocks, fin);
-    fail |= numFnsAndBlocks != fread(darr, sizeof(double), numFnsAndBlocks, fin);
-    if (fail) {
-      break;
-    }
-    fprintf(fout, "%d,%g,%g", step, time[0], time[1]);
-    for (i=0; i<numFnsAndBlocks; i++) {
-      fprintf(fout, ",%d", iarr[i]);
-    }
-    for (i=0; i<numFnsAndBlocks; i++) {
-      fprintf(fout, ",%g", darr[i]);
-    }
-    fputc('\n', fout);
-  } while (!feof(fin));
-  fclose(fin);
-  fclose(fout);
-  if (fail && !feof(fin)) {
-    throwStreamPrint(NULL, "Failed to read all data from %s", inBinary);
-  }
-  free(iarr);
-  free(darr);
-  free(inBinary);
+  size_t intRowSize = sizeof(uint32_t)*(1+numFnsAndBlocks);
+  size_t realRowSize = sizeof(double)*(2+numFnsAndBlocks);
+  uint32_t *intData;
+  double *realData;
+  /* There seems to be a very small performance gain from using mmap here.
+   * But it is not worse than in-memory and may be paged out on low memory. */
+  omc_mmap_write intMap,realMap;
+
+  memcpy(inBinaryInt,prefix,len);
+  memcpy(inBinaryReal,prefix,len);
+  strcpy(inBinaryInt + len, "_prof.intdata");
+  strcpy(inBinaryReal + len, "_prof.realdata");
+
+  intMap = omc_mmap_open_write(inBinaryInt,0);
+  intData = (uint32_t*)intMap.data;
+  assert(0 == intMap.size % intRowSize);
+  matrix_transpose_uint32(intData, 1+numFnsAndBlocks, intMap.size / intRowSize);
+  omc_mmap_close_write(intMap);
+
+  realMap = omc_mmap_open_write(inBinaryReal,0);
+  realData = (double*)realMap.data;
+  assert(0 == realMap.size % realRowSize);
+  matrix_transpose(realData, 2+numFnsAndBlocks, realMap.size / realRowSize);
+  omc_mmap_close_write(realMap);
+
+  free(inBinaryInt);
+  free(inBinaryReal);
   free(outCsv);
 }
 
 static void printPlotCommand(FILE *plt, const char *plotFormat, const char *title, const char *prefix, int numFnsAndBlocks, int i, int id, const char *idPrefix) {
-  const char *format = "plot \"%s_prof.data\" binary format=\"%%*uint32%%2double%%*%duint32%%%ddouble\" using 1:($%d>1e-9 ? $%d : 1e-30) w l lw %d\n";
-  const char *formatCount = "plot \"%s_prof.data\" binary format=\"%%*uint32%%*2double%%%duint32%%*%ddouble\" using %d w l lw %d\n";
+  const char *format = "plot \"%s_prof.realdata\" binary format=\"%%%ddouble\" using 1:($%d>1e-9 ? $%d : 1e-30) w l lw %d\n";
+  const char *formatCount = "plot \"%s_prof.intdata\" binary format=\"%%%duint32\" using %d w l lw %d\n";
   unsigned long nmin = 0, nmax = 0;
   double ymin = 0.0, ymax = 0.0;
   double ygraphmin = 1e-30, ygraphmax = 0.0;
@@ -154,7 +142,7 @@ static void printPlotCommand(FILE *plt, const char *plotFormat, const char *titl
     fprintf(plt, "set yrange [*:*]\n");
   }
   /* time */
-  fprintf(plt, format, prefix, numFnsAndBlocks, numFnsAndBlocks, 3+i, 3+i, 4);
+  fprintf(plt, format, prefix, 2+numFnsAndBlocks, 3+i, 3+i, 4);
   fprintf(plt, "set nolog xy\n");
   /* count */
   if(i >= 0) {
@@ -168,7 +156,7 @@ static void printPlotCommand(FILE *plt, const char *plotFormat, const char *titl
       fprintf(plt, "set yrange [*:*]\n");
     }
     fprintf(plt, "set output \"%s_prof.%s%d_count.thumb.svg\"\n", prefix, idPrefix, id);
-    fprintf(plt, formatCount, prefix, numFnsAndBlocks, numFnsAndBlocks, i+1, 4);
+    fprintf(plt, formatCount, prefix, 1+numFnsAndBlocks, 2+i, 4);
     fprintf(plt, "set ytics\n");
   }
 
@@ -190,7 +178,7 @@ static void printPlotCommand(FILE *plt, const char *plotFormat, const char *titl
   {
     fprintf(plt, "set yrange [*:*]\n");
   }
-  fprintf(plt, format, prefix, numFnsAndBlocks, numFnsAndBlocks, 3+i, 3+i, 2);
+  fprintf(plt, format, prefix, 2+numFnsAndBlocks, 3+i, 3+i, 2);
   /* count */
   fprintf(plt, "set nolog xy\n");
   if(i >= 0)
@@ -206,7 +194,7 @@ static void printPlotCommand(FILE *plt, const char *plotFormat, const char *titl
     fprintf(plt, "set xlabel \"Global step number\"\n");
     fprintf(plt, "set ylabel \"Execution count\"\n");
     fprintf(plt, "set output \"%s_prof.%s%d_count.%s\"\n", prefix, idPrefix, id, plotFormat);
-    fprintf(plt, formatCount, prefix, numFnsAndBlocks, numFnsAndBlocks, i+1, 2);
+    fprintf(plt, formatCount, prefix, 1+numFnsAndBlocks, 2+i, 2);
   }
 }
 
@@ -288,7 +276,7 @@ static void printEquations(FILE *fout, int n, MODEL_DATA_XML *xml) {
       indent(fout,6);fprintf(fout, "<ref refid=\"var%d\" />\n", 0 /* modelInfoXmlGetEquation(xml,i).vars[j]->id */);
     }
     indent(fout,4);fprintf(fout, "</refs>\n");
-    indent(fout,4);fprintf(fout, "<calcinfo time=\"%f\" count=\"%lu\"/>\n", rt_accumulated(SIM_TIMER_FIRST_FUNCTION + xml->nFunctions + xml->nProfileBlocks + modelInfoXmlGetEquation(xml,i).id), rt_ncall(SIM_TIMER_FIRST_FUNCTION + xml->nFunctions + xml->nProfileBlocks + modelInfoXmlGetEquation(xml,i).id));
+    indent(fout,4);fprintf(fout, "<calcinfo time=\"%f\" count=\"%lu\"/>\n", rt_accumulated(SIM_TIMER_FIRST_FUNCTION + xml->nFunctions + xml->nProfileBlocks + modelInfoXmlGetEquation(xml,i).id), (long) rt_ncall(SIM_TIMER_FIRST_FUNCTION + xml->nFunctions + xml->nProfileBlocks + modelInfoXmlGetEquation(xml,i).id));
     indent(fout,2);fprintf(fout, "</equation>\n");
   }
 }
@@ -402,7 +390,7 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
 
   fprintf(fout, "<modelinfo_ext>\n");
   indent(fout, 2); fprintf(fout, "<odeTime>%f</odeTime>\n", rt_accumulated(SIM_TIMER_FUNCTION_ODE));
-  indent(fout, 2); fprintf(fout, "<odeTimeTicks>%lu</odeTimeTicks>\n", rt_ncall(SIM_TIMER_FUNCTION_ODE));
+  indent(fout, 2); fprintf(fout, "<odeTimeTicks>%lu</odeTimeTicks>\n", (long) rt_ncall(SIM_TIMER_FUNCTION_ODE));
   fprintf(fout, "</modelinfo_ext>\n");
 
   fprintf(fout, "<profilingdataheader>\n");

@@ -83,7 +83,7 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
   int retValue=0;
   int i, ui, eventType, retry=0;
 
-  FILE *fmt = NULL;
+  FILE *fmtReal = NULL, *fmtInt = NULL;
   unsigned int stepNo=0;
 
   SIMULATION_INFO *simInfo = &(data->simulationInfo);
@@ -95,15 +95,19 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
   if(measure_time_flag)
   {
     size_t len = strlen(data->modelData.modelFilePrefix);
-    char* filename = (char*) malloc((len+11) * sizeof(char));
+    char* filename = (char*) malloc((len+15) * sizeof(char));
     strncpy(filename,data->modelData.modelFilePrefix,len);
-    strncpy(&filename[len],"_prof.data",11);
-    fmt = fopen(filename, "wb");
-    if(!fmt)
-    {
+    strncpy(&filename[len],"_prof.realdata",15);
+    fmtReal = fopen(filename, "wb");
+    if(!fmtReal) {
       warningStreamPrint(LOG_SOLVER, 0, "Time measurements output file %s could not be opened: %s", filename, strerror(errno));
-      fclose(fmt);
-      fmt = NULL;
+    }
+    strncpy(&filename[len],"_prof.intdata",14);
+    fmtInt = fopen(filename, "wb");
+    if(!fmtInt) {
+      warningStreamPrint(LOG_SOLVER, 0, "Time measurements output file %s could not be opened: %s", filename, strerror(errno));
+      fclose(fmtReal);
+      fmtReal = NULL;
     }
     free(filename);
   }
@@ -229,36 +233,34 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
       storeOldValues(data);
       saveZeroCrossings(data);
 
-      if (fmt)
+      if (fmtReal)
       {
         int flag = 1;
         double tmpdbl;
         unsigned int tmpint;
+        int total = data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks;
         rt_tick(SIM_TIMER_OVERHEAD);
         rt_accumulate(SIM_TIMER_STEP);
 
         /* Disable time measurements if we have trouble writing to the file... */
-        flag = flag && 1 == fwrite(&stepNo, sizeof(unsigned int), 1, fmt);
+        flag = flag && 1 == fwrite(&stepNo, sizeof(unsigned int), 1, fmtInt);
         stepNo++;
-        flag = flag && 1 == fwrite(&(data->localData[0]->timeValue), sizeof(double), 1, fmt);
+        flag = flag && 1 == fwrite(&(data->localData[0]->timeValue), sizeof(double), 1, fmtReal);
         tmpdbl = rt_accumulated(SIM_TIMER_STEP);
-        flag = flag && 1 == fwrite(&tmpdbl, sizeof(double), 1, fmt);
-        for(i=0; i<data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks; i++)
-        {
-          tmpint = rt_ncall(i + SIM_TIMER_FIRST_FUNCTION);
-          flag = flag && 1 == fwrite(&tmpint, sizeof(unsigned int), 1, fmt);
-        }
-        for(i=0; i<data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks; i++)
-        {
+        flag = flag && 1 == fwrite(&tmpdbl, sizeof(double), 1, fmtReal);
+        flag = flag && total == fwrite(rt_ncall_arr(SIM_TIMER_FIRST_FUNCTION), sizeof(uint32_t), total, fmtInt);
+        for(i=0; i<data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks; i++) {
           tmpdbl = rt_accumulated(i + SIM_TIMER_FIRST_FUNCTION);
-          flag = flag && 1 == fwrite(&tmpdbl, sizeof(double), 1, fmt);
+          flag = flag && 1 == fwrite(&tmpdbl, sizeof(double), 1, fmtReal);
         }
         rt_accumulate(SIM_TIMER_OVERHEAD);
         if (!flag)
         {
           warningStreamPrint(LOG_SOLVER, 0, "Disabled time measurements because the output file could not be generated: %s", strerror(errno));
-          fclose(fmt);
-          fmt = NULL;
+          fclose(fmtInt);
+          fclose(fmtReal);
+          fmtInt = NULL;
+          fmtReal = NULL;
         }
       }
 
@@ -352,8 +354,13 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
     }
   } /* end while solver */
 
-  if(fmt) {
-    fclose(fmt);
+  if(fmtInt) {
+    fclose(fmtInt);
+    fmtInt = NULL;
+  }
+  if(fmtReal) {
+    fclose(fmtReal);
+    fmtReal = NULL;
   }
 
   return retValue;

@@ -35,6 +35,8 @@
 extern "C" {
 #endif
 
+#include <stdint.h>
+
 #define NUM_RT_CLOCKS 33
 #define NUM_USER_RT_CLOCKS 32
 #define RT_CLOCK_SPECIAL_STOPWATCH 32 /* The 33rd clock */
@@ -89,10 +91,11 @@ double rt_accumulated(int ix);
 double rt_max_accumulated(int ix);
 double rt_total(int ix);
 /* Returns the number of times tick() was called since the last clear() */
-unsigned long rt_ncall(int ix);
-unsigned long rt_ncall_min(int ix);
-unsigned long rt_ncall_max(int ix);
-unsigned long rt_ncall_total(int ix);
+uint32_t rt_ncall(int ix);
+uint32_t* rt_ncall_arr(int offsetIndex);
+uint32_t rt_ncall_min(int ix);
+uint32_t rt_ncall_max(int ix);
+uint32_t rt_ncall_total(int ix);
 void rt_add_ncall(int ix, int n);
 
 void rt_measure_overhead(int ix);

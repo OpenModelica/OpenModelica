@@ -475,6 +475,28 @@ void matrix_transpose(double *m, int w, int h)
   }
 }
 
+void matrix_transpose_uint32(uint32_t *m, int w, int h)
+{
+  int start;
+  uint32_t tmp;
+
+  for (start = 0; start <= w * h - 1; start++) {
+    int next = start;
+    int i = 0;
+    do {  i++;
+      next = (next % h) * w + next / h;
+    } while (next > start);
+    if (next < start || i == 1) continue;
+
+    tmp = m[next = start];
+    do {
+      i = (next % h) * w + next / h;
+      m[next] = (i == start) ? tmp : m[i];
+      next = i;
+    } while (next > start);
+  }
+}
+
 int omc_matlab4_read_all_vals(ModelicaMatReader *reader)
 {
   int done = reader->readAll;

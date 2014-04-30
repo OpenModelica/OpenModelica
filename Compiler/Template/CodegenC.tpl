@@ -1859,7 +1859,9 @@ template functionInitialResidualBody(SimEqSystem eq, Text &varDecls /*BUFP*/, Te
       let &preExp = buffer "" /*BUFD*/
       let expPart = daeExp(exp, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       <<
+      <% if profileAll() then 'SIM_PROF_TICK_EQ(<%e.index%>);' %>
       <%preExp%>initialResiduals[i++] = <%expPart%>;
+      <% if profileAll() then 'SIM_PROF_ACC_EQ(<%e.index%>);' %>
       infoStreamPrint(LOG_RES_INIT, 0, "[%d]: %s = %g", i, <%symbolName(modelNamePrefix,"initialResidualDescription")%>(i-1), initialResiduals[i-1]);
       >>
     end match
@@ -8879,9 +8881,14 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls)
       else
         if boolAnd(profileFunctions(),boolNot(attr.builtin)) then
           let funName = '<%underscorePath(exp.path)%>'
-          let tvar = tempDecl((match attr.ty case T_TUPLE(tupleType=t::_) case t then expTypeArrayIf(t)),&varDecls)
+          let tvar = match attr.ty
+            case T_NORETCALL(__) then
+              ""
+            case T_TUPLE(tupleType=t::_)
+            case t
+            then tempDecl(expTypeArrayIf(t),&varDecls)
           let &preExp += 'SIM_PROF_TICK_FN(<%funName%>_index);<%\n%>'
-          let &preExp += '<%tvar%> = <%res%>;<%\n%>'
+          let &preExp += if tvar then '<%tvar%> = <%res%>;<%\n%>' else '<%res%>;<%\n%>'
           let &preExp += 'SIM_PROF_ACC_FN(<%funName%>_index);<%\n%>'
           tvar
         else res

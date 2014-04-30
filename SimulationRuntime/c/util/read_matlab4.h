@@ -66,6 +66,7 @@ double omc_matlab4_startTime(ModelicaMatReader *reader);
 
 double omc_matlab4_stopTime(ModelicaMatReader *reader);
 void matrix_transpose(double *m, int w, int h);
+void matrix_transpose_uint32(uint32_t *m, int w, int h);
 int omc_matlab4_read_all_vals(ModelicaMatReader *reader);
 
 #ifdef __cplusplus

@@ -54,14 +54,14 @@ typedef struct timespec rtclock_t;
 /* If min_time is set, subtract this amount from measured times to avoid
  * including the time of measuring in reported statistics */
 static double min_time = 0;
-static unsigned long default_rt_clock_ncall[NUM_RT_CLOCKS] = { 0 };
-static unsigned long default_rt_clock_ncall_min[NUM_RT_CLOCKS] = { 0 };
-static unsigned long default_rt_clock_ncall_max[NUM_RT_CLOCKS] = { 0 };
-static unsigned long default_rt_clock_ncall_total[NUM_RT_CLOCKS] = { 0 };
-static unsigned long *rt_clock_ncall = default_rt_clock_ncall;
-static unsigned long *rt_clock_ncall_min = default_rt_clock_ncall_min;
-static unsigned long *rt_clock_ncall_max = default_rt_clock_ncall_max;
-static unsigned long *rt_clock_ncall_total = default_rt_clock_ncall_total;
+static uint32_t default_rt_clock_ncall[NUM_RT_CLOCKS] = { 0 };
+static uint32_t default_rt_clock_ncall_min[NUM_RT_CLOCKS] = { 0 };
+static uint32_t default_rt_clock_ncall_max[NUM_RT_CLOCKS] = { 0 };
+static uint32_t default_rt_clock_ncall_total[NUM_RT_CLOCKS] = { 0 };
+static uint32_t *rt_clock_ncall = default_rt_clock_ncall;
+static uint32_t *rt_clock_ncall_min = default_rt_clock_ncall_min;
+static uint32_t *rt_clock_ncall_max = default_rt_clock_ncall_max;
+static uint32_t *rt_clock_ncall_total = default_rt_clock_ncall_total;
 
 static rtclock_t default_total_tp[NUM_RT_CLOCKS];
 static rtclock_t default_max_tp[NUM_RT_CLOCKS];
@@ -87,19 +87,23 @@ void rt_add_ncall(int ix, int n) {
   rt_clock_ncall[ix] += n;
 }
 
-unsigned long rt_ncall(int ix) {
+uint32_t rt_ncall(int ix) {
   return rt_clock_ncall[ix];
 }
 
-unsigned long rt_ncall_min(int ix) {
+uint32_t* rt_ncall_arr(int ix) {
+  return rt_clock_ncall+ix;
+}
+
+uint32_t rt_ncall_min(int ix) {
   return rt_clock_ncall_min[ix];
 }
 
-unsigned long rt_ncall_max(int ix) {
+uint32_t rt_ncall_max(int ix) {
   return rt_clock_ncall_max[ix];
 }
 
-unsigned long rt_ncall_total(int ix) {
+uint32_t rt_ncall_total(int ix) {
   return rt_clock_ncall_total[ix];
 }
 
@@ -116,12 +120,15 @@ void rt_update_min_max_ncall(int ix) {
 void rt_clear_total_ncall(int ix) {
   rt_clock_ncall[ix] = 0;
   rt_clock_ncall_total[ix] = 0;
-  rt_clock_ncall_min[ix] = ULONG_MAX;
+  rt_clock_ncall_min[ix] = UINT32_MAX;
   rt_clock_ncall_max[ix] = 0;
 }
 
 double rt_accumulated(int ix) {
   double d = rtclock_value(acc_tp[ix]);
+  if (d == 0) {
+    return d;
+  }
   if (d > 0 && d < min_time * rt_clock_ncall[ix]) {
     min_time = d / rt_clock_ncall[ix];
   }
@@ -130,6 +137,9 @@ double rt_accumulated(int ix) {
 
 double rt_max_accumulated(int ix) {
   double d = rtclock_value(max_tp[ix]);
+  if (d == 0) {
+    return d;
+  }
   if (d > 0 && d < min_time) {
     min_time = d;
   }
@@ -137,7 +147,11 @@ double rt_max_accumulated(int ix) {
 }
 
 double rt_total(int ix) {
-  double d = rtclock_value(total_tp[ix]) - min_time * rt_clock_ncall_total[ix];
+  double d = rtclock_value(total_tp[ix]);
+  if (d == 0) {
+    return d;
+  }
+  d = d - min_time * rt_clock_ncall_total[ix];
   assert(d >= 0);
   return d;
 }
@@ -423,11 +437,11 @@ void rt_init(int numTimers) {
   alloc_and_copy((void**)&max_tp,numTimers,sizeof(rtclock_t));
   alloc_and_copy((void**)&total_tp,numTimers,sizeof(rtclock_t));
   alloc_and_copy((void**)&tick_tp,numTimers,sizeof(rtclock_t));
-  alloc_and_copy((void**)&rt_clock_ncall,numTimers,sizeof(unsigned long));
-  alloc_and_copy((void**)&rt_clock_ncall_total,numTimers,sizeof(unsigned long));
-  alloc_and_copy((void**)&rt_clock_ncall_min,numTimers,sizeof(unsigned long));
-  alloc_and_copy((void**)&rt_clock_ncall_max,numTimers,sizeof(unsigned long));
-  memset(rt_clock_ncall_min + NUM_RT_CLOCKS*sizeof(unsigned long), 0xFF, (numTimers-NUM_RT_CLOCKS) * sizeof(unsigned long));
+  alloc_and_copy((void**)&rt_clock_ncall,numTimers,sizeof(uint32_t));
+  alloc_and_copy((void**)&rt_clock_ncall_total,numTimers,sizeof(uint32_t));
+  alloc_and_copy((void**)&rt_clock_ncall_min,numTimers,sizeof(uint32_t));
+  alloc_and_copy((void**)&rt_clock_ncall_max,numTimers,sizeof(uint32_t));
+  memset(rt_clock_ncall_min + NUM_RT_CLOCKS*sizeof(uint32_t), 0xFF, (numTimers-NUM_RT_CLOCKS) * sizeof(uint32_t));
 }
 
 void rt_measure_overhead(int ix)
