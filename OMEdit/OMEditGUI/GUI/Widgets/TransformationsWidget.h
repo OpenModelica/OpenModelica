@@ -185,7 +185,8 @@ public:
   void clearTreeWidgetItems(QTreeWidget *pTreeWidget);
 private:
   MainWindow *mpMainWindow;
-  QString mInfoXMLFullFileName, mProfJSONFullFileName;
+  QString mInfoXMLFullFileName, mProfJSONFullFileName, mProfilingDataRealFileName;
+  int profilingNumSteps;
   MyHandler *mpInfoXMLFileHandler;
   QLineEdit *mpFindVariablesTextBox;
   QComboBox *mpFindSyntaxComboBox;

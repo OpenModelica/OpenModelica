@@ -54,6 +54,7 @@ QString Helper::imageFileTypes = "SVG (*.svg);;PNG image (*.png);;Windows BMP im
 QString Helper::bitmapFileTypes = "PNG image (*.png);;Windows BMP image (*.bmp);;JPEG (*.jpg *.jpeg)";
 QString Helper::fmuFileTypes = "FMU Files (*.fmu)";
 QString Helper::xmlFileTypes = "XML Files (*.xml)";
+QString Helper::infoXmlFileTypes = "OM Info XML Files (*_info.xml)";
 QString Helper::matFileTypes = "MAT Files (*.mat)";
 QString Helper::omResultFileTypes = "OpenModelica Result Files (*.mat *.plt *.csv)";
 int Helper::treeIndentation = 13;

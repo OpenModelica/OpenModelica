@@ -440,8 +440,10 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
 {
   if (!mInfoXMLFullFileName.endsWith("_info.xml")) {
     mProfJSONFullFileName = "";
+    mProfilingDataRealFileName = "";
   } else {
     mProfJSONFullFileName = infoXMLFullFileName.left(infoXMLFullFileName.size() - 8) + "prof.json";
+    mProfilingDataRealFileName = infoXMLFullFileName.left(infoXMLFullFileName.size() - 8) + "prof.realdata";
   }
   setWindowIcon(QIcon(":/Resources/icons/debugger.svg"));
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::transformationalDebugger));
@@ -861,11 +863,13 @@ QTreeWidgetItem* TransformationsWidget::makeEquationTreeWidgetItem(int equationI
   QStringList values;
   values << QString::number(equation->index)
          << OMEquationTypeToString(equation->kind)
-         << equation->toString()
-         << QString::number(equation->ncall)
+         << equation->toString();
+  if (equation->profileBlock >= 0) {
+  values << QString::number(equation->ncall)
          << QString::number(equation->maxTime, 'g', 3)
          << QString::number(equation->time, 'g', 3)
          << QString::number(100 * equation->fraction, 'g', 3) + "%";
+  }
 
   QTreeWidgetItem *pEquationTreeItem = new IntegerTreeWidgetItem(values, mpEquationsTreeWidget);
   pEquationTreeItem->setToolTip(0, values[0]);
@@ -915,6 +919,8 @@ QTreeWidgetItem* TransformationsWidget::findEquationTreeItem(int equationIndex)
   return 0;
 }
 
+// #include <qwt_plot.h>
+
 void TransformationsWidget::fetchEquationData(int equationIndex)
 {
   OMEquation *equation = mpInfoXMLFileHandler->getOMEquation(equationIndex);
@@ -939,6 +945,37 @@ void TransformationsWidget::fetchEquationData(int equationIndex)
     file.close();
     mpTSourceEditor->goToLineNumber(equation->info.lineStart);
   }
+  /* TODO: This data is correct. Add this to some widget thingy somewhere.
+   * Maybe a small one that you can click to enlarge.
+   * Also add the count one (Model_prof.intdata)
+   */
+#if 0
+  if (equation->profileBlock >= 0) {
+    QFile file(mProfilingDataRealFileName);
+    if (file.open(QIODevice::ReadOnly)) {
+
+      QwtPlot *w;
+      long c1;
+      w = new QwtPlot();
+
+      size_t rowSize = sizeof(double) * profilingNumSteps;
+      qDebug() << file.size() / rowSize;
+      file.seek(0);
+      QByteArray datax = file.read(rowSize);
+      file.seek((equation->profileBlock+2) * rowSize);
+      QByteArray datay = file.read(rowSize);
+      double *x = (double*)datax.data();
+      double *y = (double*)datay.data();
+
+      QwtPlotCurve *curve = new QwtPlotCurve("Curve 1");
+
+      curve->setData(x, y, profilingNumSteps);
+      curve->attach(w);
+      w->replot();
+      w->show();
+    }
+  }
+#endif
 }
 
 void TransformationsWidget::fetchDefines(OMEquation *equation)
@@ -1135,14 +1172,17 @@ void TransformationsWidget::parseProfiling(QString fileName)
   bool ok;
   QVariantMap result = parser.parse(file, &ok).toMap();
   double totalStepsTime = result["totalTimeProfileBlocks"].toDouble();
-  foreach (QVariant v, result["profileBlocks"].toList()) {
-    QVariantMap eq = v.toMap();
+  QVariantList list = result["profileBlocks"].toList();
+  profilingNumSteps = result["numStep"].toInt() + 1; // Initialization is not a step, but part of the file
+  for (int i=0; i<list.size(); i++) {
+    QVariantMap eq = list[i].toMap();
     long id = eq["id"].toInt();
     double time = eq["time"].toDouble();
     mpInfoXMLFileHandler->equations[id]->ncall = eq["ncall"].toInt();
     mpInfoXMLFileHandler->equations[id]->maxTime = eq["maxTime"].toDouble();
     mpInfoXMLFileHandler->equations[id]->time = time;
     mpInfoXMLFileHandler->equations[id]->fraction = time / totalStepsTime;
+    mpInfoXMLFileHandler->equations[id]->profileBlock = i;
   }
   delete file;
 }

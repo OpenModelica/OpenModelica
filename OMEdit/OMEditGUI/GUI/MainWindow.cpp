@@ -1058,7 +1058,7 @@ void MainWindow::showOpenResultFileDialog()
 void MainWindow::showOpenTransformationFileDialog()
 {
   QString fileName = StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
-                                                    NULL, Helper::xmlFileTypes, NULL);
+                                                    NULL, Helper::infoXmlFileTypes, NULL);
   if (fileName.isEmpty())
     return;
 
