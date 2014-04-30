@@ -177,7 +177,7 @@ private:
   QLineEdit *mpLinearizationTimeTextBox;
   Label *mpOutputVariablesLabel;
   QLineEdit *mpOutputVariablesTextBox;
-  QCheckBox *mpProfilingCheckBox;
+  QComboBox *mpProfilingCheckBox;
   QCheckBox *mpCPUTimeCheckBox;
   QCheckBox *mpEnableAllWarningsCheckBox;
   QGroupBox *mpLoggingGroupBox;

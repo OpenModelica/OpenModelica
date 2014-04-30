@@ -212,6 +212,8 @@ public:
   QString getDerivedClassModifierValue(QString className, QString modifierName);
   bool getDocumentationClassAnnotation(QString className);
   QString numProcessors();
+  QString help(QString topic);
+  QStringList getConfigFlagValidOptions(QString topic, QString *mainDescription = 0, QStringList *descriptions = 0);
   bool setDebugFlags(QString flags);
 signals:
   void commandFinished();

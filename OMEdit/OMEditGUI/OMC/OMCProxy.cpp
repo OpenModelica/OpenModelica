@@ -2421,3 +2421,26 @@ bool OMCProxy::setDebugFlags(QString debugFlags)
   sendCommand("setDebugFlags(\"" + debugFlags + "\")");
   return StringHandler::unparseBool(getResult());
 }
+
+QString OMCProxy::help(QString topic)
+{
+  sendCommand("help(\"" + topic + "\")");
+  return StringHandler::unparse(getResult());
+}
+
+QStringList OMCProxy::getConfigFlagValidOptions(QString topic, QString *mainDescription, QStringList *descriptions)
+{
+  QStringList validOptions;
+  sendCommand("(v1,v2,v3):=getConfigFlagValidOptions(\"" + topic + "\")");
+  sendCommand("v1");
+  validOptions = StringHandler::unparseStrings(getResult());
+  if (mainDescription) {
+    sendCommand("v2");
+    *mainDescription = StringHandler::unparse(getResult());
+  }
+  if (descriptions) {
+    sendCommand("v3");
+    *descriptions = StringHandler::unparseStrings(getResult());
+  }
+  return validOptions;
+}
