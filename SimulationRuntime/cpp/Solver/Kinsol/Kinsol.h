@@ -82,7 +82,7 @@ private:
 
   bool
     _eventRetry,
-	_fValid;
+  _fValid;
 
    realtype _fnorm,
        _currentIterateNorm;

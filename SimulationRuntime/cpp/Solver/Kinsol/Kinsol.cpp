@@ -118,7 +118,7 @@ void Kinsol::initialize()
 
             idid = KINSetFuncNormTol(_kinMem, _fnormtol);
             idid = KINSetScaledStepTol(_kinMem, _scsteptol);
-			idid = KINSetRelErrFunc(_kinMem, 1e-12);
+      idid = KINSetRelErrFunc(_kinMem, 1e-12);
 
         }
         else
@@ -154,21 +154,21 @@ void Kinsol::solve()
         _eventRetry = false;
         // Try Dense first
         //std::cerr << "Try dense...";
-		
+
         KINDense(_kinMem, _dimSys);
         solveNLS();
         if(_iterationStatus == DONE)
             return;
 
         /*
-		if(_eventRetry)
+    if(_eventRetry)
         {
             //std::cerr << "Event Retry";
             memcpy(_y, _helpArray ,_dimSys*sizeof(double));
             _iterationStatus = CONTINUE;
             return;
         }
-		*/
+    */
 
         //std::cerr << "Try Spgmr...";
         // Try Spgmr
@@ -179,13 +179,13 @@ void Kinsol::solve()
             return;
 
         /*
-		if(_eventRetry)
+    if(_eventRetry)
         {
             memcpy(_y, _helpArray ,_dimSys*sizeof(double));
             _iterationStatus = CONTINUE;
             return;
         }
-		*/
+    */
 
         // Try Spbcg
         KINSpbcg(_kinMem,4);
@@ -193,33 +193,33 @@ void Kinsol::solve()
         solveNLS();
         if(_iterationStatus == DONE)
             return;
-        
-		/*
-		if(_eventRetry)
+
+    /*
+    if(_eventRetry)
         {
             memcpy(_y, _helpArray ,_dimSys*sizeof(double));
             _iterationStatus = CONTINUE;
             return;
         }
-		*/
-		
+    */
+
         // Try Sptfqmr
-		KINSptfqmr(_kinMem, _dimSys);
+    KINSptfqmr(_kinMem, _dimSys);
         _iterationStatus = CONTINUE;
         solveNLS();
         if(_iterationStatus == DONE)
             return;
 
-		// last try: Decrease steptol without any optimization
-		  KINSetScaledStepTol(_kinMem, 1e-6);
-		  KINSetNoResMon(_kinMem, TRUE);
-		  KINSetMaxSubSetupCalls(_kinMem, 1);
-		  KINSetNoMinEps(_kinMem, TRUE);
-		  //KINSetNoInitSetup(_kinMem, TRUE);
-		  _iterationStatus = CONTINUE;
-		  KINDense(_kinMem, _dimSys);
-		  solveNLS();
-		  if(_iterationStatus == DONE)
+    // last try: Decrease steptol without any optimization
+      KINSetScaledStepTol(_kinMem, 1e-6);
+      KINSetNoResMon(_kinMem, TRUE);
+      KINSetMaxSubSetupCalls(_kinMem, 1);
+      KINSetNoMinEps(_kinMem, TRUE);
+      //KINSetNoInitSetup(_kinMem, TRUE);
+      _iterationStatus = CONTINUE;
+      KINDense(_kinMem, _dimSys);
+      solveNLS();
+      if(_iterationStatus == DONE)
             return;
 
         if(_eventRetry)
@@ -229,10 +229,10 @@ void Kinsol::solve()
             return;
         }
 
-    
+
         if(_iterationStatus == SOLVERERROR && !_eventRetry)
             throw std::runtime_error("Nonlinear solver failed!");
-    
+
     }
 
 }
@@ -246,11 +246,11 @@ IAlgLoopSolver::ITERATIONSTATUS Kinsol::getIterationStatus()
 void Kinsol::calcFunction(const double *y, double *residual)
 {
      _fValid = true;
-	_algLoop->setReal(y);
+  _algLoop->setReal(y);
     _algLoop->evaluate();
     _algLoop->getRHS(residual);
 
-	 for(int i=0;i<_dimSys;i++)
+   for(int i=0;i<_dimSys;i++)
      {
         if(!(boost::math::isfinite(residual[i])) || !(boost::math::isfinite(y[i])))
            _fValid = false;
@@ -262,9 +262,9 @@ int Kinsol::kin_fCallback(N_Vector y,N_Vector fval, void *user_data)
     ((Kinsol*) user_data)->calcFunction(NV_DATA_S(y),NV_DATA_S(fval));
 
     if(((Kinsol*) user_data)->_fValid)
-		return(0);
-	else 
-		return(1);
+    return(0);
+  else
+    return(1);
 }
 
 
@@ -333,7 +333,7 @@ void Kinsol::solveNLS()
         // Call Kinsol
         idid = KINSol(_kinMem, _Kin_y, method, _Kin_yScale, _Kin_yScale);
 
-        
+
         // Check the return status for possible restarts
         switch (idid){
             // Success
@@ -441,10 +441,10 @@ void Kinsol::solveNLS()
                         }
                     }else
                         maxSteps *= 10;
-				break;
+        break;
       // Other failures (setup etc) -> directly break
             default:
-                _iterationStatus = SOLVERERROR;				
+                _iterationStatus = SOLVERERROR;
                 break;
         }
     }
