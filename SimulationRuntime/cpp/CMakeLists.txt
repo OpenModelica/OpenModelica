@@ -1,6 +1,9 @@
 cmake_minimum_required (VERSION 2.6)
 
 project(CppSolverInterface)
+include(${CMAKE_SOURCE_DIR}/PreCompiledHeader.cmake)
+#set(CMAKE_VERBOSE_MAKEFILE ON)
+
 
 option(ANALYZATION_MODE "ANALYZATION_MODE" OFF)
 
@@ -177,6 +180,10 @@ message(STATUS "Boost dirs '${Boost_LIBRARY_DIRS}', '${Boost_INCLUDE_DIR}'")
 include_directories ("Include")
 include_directories ("Include/Core")
 include_directories ("Include/SimCoreFactory")
+
+
+
+
 add_subdirectory (Core/Math)
 
 add_subdirectory (Core/Utils/Modelica)
@@ -197,6 +204,8 @@ include_directories ("Include/Solver")
 add_subdirectory (Solver/Euler)
 add_subdirectory (Solver/Newton)
 add_subdirectory (Solver/Hybrj)
+
+
 
 
 if(REDUCE_DAE)
@@ -312,7 +321,7 @@ ENDFOREACH(HEADER)
 ENDMACRO(INSTALL_HEADERS_WITH_DIRECTORY)
 
 
-
+add_precompiled_header(${ModelicaName} Include/Core/Modelica.h )
 
 install (FILES "${PROJECT_BINARY_DIR}/LibrariesConfig.h" DESTINATION include/omc/cpp)
 
