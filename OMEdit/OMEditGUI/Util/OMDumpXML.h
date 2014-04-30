@@ -174,7 +174,7 @@ struct OMVariable {
 
 struct OMEquation {
   OMEquationType kind;
-  int index,profileBlock=-1,parent,ncall;
+  int index,profileBlock,parent,ncall;
   double time,maxTime,fraction;
   QStringList text;
   OMInfo info;

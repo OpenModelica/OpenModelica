@@ -239,7 +239,7 @@ OMVariable::~OMVariable() {
 
 OMEquation::OMEquation()
 {
-
+  profileBlock = -1;
 }
 
 OMEquation::~OMEquation() {
