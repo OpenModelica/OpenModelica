@@ -7824,7 +7824,7 @@ algorithm
         (lst1,lst2);
     else
       equation
-        print("filterOnTrueSync failed");
+        Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"filter1OnTrueSync failed\n");
       then
         fail();
   end matchcontinue;
@@ -7861,7 +7861,7 @@ algorithm
         (lst1,lst2);
     else
       equation
-        print("filterOnTrueSync failed");
+        Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"filterOnTrueSync failed\n");
       then
         fail();
   end matchcontinue;

@@ -61,6 +61,18 @@ protected import Util;
 
 
 // =============================================================================
+// TODO:
+//
+// =============================================================================
+/*
+- evaluation of for-loops
+- evaluation of while-loops
+- evaluation of xOut := funcCall1(funcCall2(xIn[1]));  with funcCall2(xIn[1]) = xIn[1,2] for example have a look at Media.Examples.ReferenceAir.MoistAir 
+(I think the stmt in MoistAir.setState_pTX should be a STMT_IF instead of a STMT_ASSIGN, thats why its not evaluated)
+- run the msl models and check for failures in List.filter1OnTrueSync and List.filterOnTrueSync, this fails somewhere and could be improve something if fixed
+- evaluation of BackendDAE.ARRAY_EQUATION
+*/
+// =============================================================================
 // type definitions
 //
 // =============================================================================
@@ -172,7 +184,7 @@ algorithm
         (eq,(shared,addEqs,idx+1));
     case(BackendDAE.ARRAY_EQUATION(dimSize =_, left=_, right=_,  differentiated=_),_)
       equation
-        print("this is an array equation. update evalFunctions_findFuncs");
+        Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"this is an array equation. update evalFunctions_findFuncs\n");
       then
         (eqIn,tplIn);
     case(BackendDAE.COMPLEX_EQUATION(size =_, left=exp1, right=exp2, source=source, differentiated=diff,kind=kind),_)
@@ -209,7 +221,7 @@ author: Waurich TUD 2014-04"
   input DAE.Exp lhsExpIn;
   input DAE.FunctionTree funcsIn;
   input Integer eqIdx;
-  output tuple<DAE.Exp, DAE.Exp, list<BackendDAE.Equation>, DAE.FunctionTree,Integer> outTpl;
+  output tuple<DAE.Exp, DAE.Exp, list<BackendDAE.Equation>, DAE.FunctionTree,Integer> outTpl;  //rhs,lhs,addEqs,funcTre,idx
 algorithm
   outTpl := matchcontinue(rhsExpIn,lhsExpIn,funcsIn,eqIdx)
     local
@@ -251,7 +263,8 @@ algorithm
         inputCrefs = List.map(inputs1d,DAEUtil.varCref);  // the one dimensional variables
         allInputCrefs = listAppend(inputCrefs,List.flatten(scalarInputs));
         //print("\nallInputCrefs\n"+&stringDelimitList(List.map(allInputCrefs,ComponentReference.printComponentRefStr),"\n")+&"\n");
-
+        
+        //((exps,_)) = Expression.traverseExpListTopDown(exps,evaluateConstantFunctionWrapper,(lhsExpIn,funcsIn,eqIdx,{}));// in case: xOut=func(func(xIn))
         scalarExp = List.map(exps,Expression.getComplexContents);
         inputExps = List.filterOnTrue(exps,Expression.isNotComplex);
         allInputExps = listAppend(inputExps,List.flatten(scalarExp));
@@ -408,10 +421,6 @@ algorithm
     case(_,_,_,{},{},_,DAE.TUPLE(PR=expLst))
       equation
         // only 1d or complex outputs in a tuple exp
-        //print("\n scalarOutputs \n"+&stringDelimitList(List.map(List.flatten(scalarOutputs),ComponentReference.printComponentRefStr),"\n")+&"\n");
-        //print("\n constScalarCrefs \n"+&stringDelimitList(List.map(constScalarCrefs,ComponentReference.printComponentRefStr),"\n")+&"\n");
-        //print("\n allOutputs "+&"\n"+&DAEDump.dumpElementsStr(allOutputs)+&"\n");
-        //print("\n lhsExpIn "+&"\n"+&ExpressionDump.dumpExpStr(lhsExpIn,0)+&"\n");
         varScalarCrefsInFunc = {};
         allOutputCrefs = List.map(allOutputs,DAEUtil.varCref);
         (protCrefs,_,outputCrefs) = List.intersection1OnTrue(constComplexCrefs,allOutputCrefs,ComponentReference.crefEqual);
@@ -481,6 +490,10 @@ algorithm
     else
       equation
         print("buildVariableFunctionParts failed!\n");
+        print("\n scalarOutputs \n"+&stringDelimitList(List.map(List.flatten(scalarOutputs),ComponentReference.printComponentRefStr),"\n")+&"\n");
+        print("\n constScalarCrefs \n"+&stringDelimitList(List.map(constScalarCrefs,ComponentReference.printComponentRefStr),"\n")+&"\n");
+        print("\n allOutputs "+&"\n"+&DAEDump.dumpElementsStr(allOutputs)+&"\n");
+        print("\n lhsExpIn "+&"\n"+&ExpressionDump.dumpExpStr(lhsExpIn,0)+&"\n");
       then
         fail();
   end matchcontinue;
@@ -1082,8 +1095,7 @@ algorithm
     case({},(_,_,_),_)
       equation
         stmts1 = listReverse(lstIn);
-      then
-        (stmts1,tplIn);
+      then (stmts1,tplIn);
     case(DAE.STMT_ASSIGN(type_=typ, exp1=exp1, exp=exp2, source=source)::rest,(funcTree,replIn,idx),_)
       equation
         // replace, evaluate, simplify the assignment
@@ -1140,17 +1152,14 @@ algorithm
         stmts1 = listAppend(stmts1,lstIn);
         //print("\nthe traverse LIST after :"+&stringDelimitList(List.map(stmts1,DAEDump.ppStatementStr),"\n")+&"\n");
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,repl,idx),stmts1);
-      then
-        (rest,(funcTree,repl,idx));
-
+      then (rest,(funcTree,repl,idx));
     case (DAE.STMT_ASSIGN_ARR(type_=_, componentRef=_, exp=_)::rest,(funcTree,_,idx),_)
       equation
         //print("STMT_ASSIGN_ARR");
         //print("the STMT_ASSIGN_ARR: "+&DAEDump.ppStatementStr(List.first(algsIn))+&"\n");
         alg = List.first(algsIn);
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,tplIn,alg::lstIn);
-      then
-        (rest,(funcTree,repl,idx));
+      then (rest,(funcTree,repl,idx));
     case(DAE.STMT_IF(exp=exp0, statementLst=stmtsIf, else_=else_)::rest,(funcTree,replIn,idx),_)
       equation
         alg = List.first(algsIn);
@@ -1192,8 +1201,7 @@ algorithm
         stmts1 = listAppend(stmts1,lstIn);
         //print("\nthe traverse LIST after :"+&stringDelimitList(List.map(stmts1,DAEDump.ppStatementStr),"\n")+&"\n");
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,repl,idx),stmts1);
-      then
-        (rest,(funcTree,repl,idx));
+      then (rest,(funcTree,repl,idx));
     case(DAE.STMT_TUPLE_ASSIGN(type_=_, expExpLst=expLst, exp=exp0)::rest,(funcTree,replIn,idx),_)
       equation
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"Tuple-statement:\n"+&DAEDump.ppStatementStr(List.first(algsIn)));
@@ -1247,11 +1255,50 @@ algorithm
         //print("\nthe traverse LIST tpl after :"+&stringDelimitList(List.map(stmts2,DAEDump.ppStatementStr),"\n")+&"\n");
         //print("\nthe REST tpl after :"+&stringDelimitList(List.map(rest,DAEDump.ppStatementStr),"\n")+&"\n");
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree2,repl,idx),stmts2);
-      then
-        (rest,(funcTree,repl,idx));
+      then (rest,(funcTree,repl,idx));
+    case(DAE.STMT_FOR(type_=_,iterIsArray=_,iter=_,index=_,range=_,statementLst=stmts1,source=_)::rest,(funcTree,replIn,idx),_)
+      equation
+        alg = List.first(algsIn);
+        // TODO: evaluate for-loops
+          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"For-statement:\n"+&DAEDump.ppStatementStr(alg));
+        lhsExps = List.fold1(stmts1,getStatementLHSScalar,funcTree,{});
+        lhsExps = List.unique(lhsExps);       
+        outputs = List.map(lhsExps,Expression.expCref);
+        repl = Debug.bcallret3(true, BackendVarTransform.removeReplacements,replIn,outputs,NONE(),replIn);
+          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"evaluated For-statement to:\n"+&DAEDump.ppStatementStr(alg));
+        stmts2 = alg::lstIn;   
+        (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,repl,idx),stmts2);
+      then (rest,(funcTree,repl,idx));
+    case(DAE.STMT_WHILE(exp=_,statementLst=stmts1,source=_)::rest,(funcTree,replIn,idx),_)
+      equation
+        alg = List.first(algsIn);
+        // TODO: evaluate while-loops
+          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"While-statement:\n"+&DAEDump.ppStatementStr(alg));
+        lhsExps = List.fold1(stmts1,getStatementLHSScalar,funcTree,{});
+        lhsExps = List.unique(lhsExps);       
+        outputs = List.map(lhsExps,Expression.expCref);       
+        repl = Debug.bcallret3(true, BackendVarTransform.removeReplacements,replIn,outputs,NONE(),replIn);
+          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"evaluated While-statement to:\n"+&DAEDump.ppStatementStr(alg));
+        stmts2 = alg::lstIn;   
+        (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,repl,idx),stmts2);
+      then (rest,(funcTree,repl,idx));
+    case(DAE.STMT_ASSERT(cond=_,msg=_,level=_,source=_)::rest,(funcTree,replIn,idx),_)
+      equation
+        alg = List.first(algsIn);
+          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"assert-statement (not evaluated):\n"+&DAEDump.ppStatementStr(alg));
+        stmts2 = alg::lstIn;   
+        (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,replIn,idx),stmts2);
+      then (rest,(funcTree,repl,idx));  
+    case(DAE.STMT_NORETCALL(exp=_,source=_)::rest,(funcTree,replIn,idx),_)
+      equation
+        alg = List.first(algsIn);
+          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"noretcall-statement (not evaluated):\n"+&DAEDump.ppStatementStr(alg));
+        stmts2 = alg::lstIn;   
+        (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,replIn,idx),stmts2);
+      then (rest,(funcTree,repl,idx));  
     else
       equation
-        print("evaluateFunctions_updateStatement failed!\n");
+        print("evaluateFunctions_updateStatement failed for!\n"+&DAEDump.ppStatementStr(List.first(algsIn))+&"\n");
       then
         fail();
   end matchcontinue;
@@ -1433,24 +1480,64 @@ algorithm
   case(DAE.STMT_TUPLE_ASSIGN(type_=_,expExpLst=expLst,exp=_,source=_),_)
     equation
       expLst = listAppend(expLst,expsIn);
-    then
-      expLst;
+    then expLst;
   case(DAE.STMT_ASSIGN_ARR(type_=_,componentRef=_,exp=_,source=_),_)
     equation
       print("IMPLEMENT STMT_ASSIGN_ARR in getStatementLHS\n");
-    then
-      fail();
+    then fail();
   case(DAE.STMT_IF(exp=_,statementLst=stmtLst1,else_=else_,source=_),_)
     equation
       stmtLstLst = getDAEelseStatemntLsts(else_,{});
       stmtLst2 = List.flatten(stmtLstLst);
       stmtLst1 = listAppend(stmtLst1,stmtLst2);
       expLst = List.fold(stmtLst1,getStatementLHS,expsIn);
-    then
-      expLst;
+    then expLst;
+  case(DAE.STMT_FOR(type_=_,iterIsArray=_,iter=_,index=_,range=_,statementLst=stmtLst1,source=_),_)
+    equation
+      expLst = List.fold(stmtLst1,getStatementLHS,expsIn);
+    then expLst; 
+  case(DAE.STMT_PARFOR(type_=_,iterIsArray=_,iter=_,index=_,range=_,statementLst=stmtLst1,loopPrlVars=_,source=_),_)
+    equation
+      expLst = List.fold(stmtLst1,getStatementLHS,expsIn);
+    then expLst;
+  case(DAE.STMT_WHILE(exp=_,statementLst=stmtLst1,source=_),_)
+    equation
+      expLst = List.fold(stmtLst1,getStatementLHS,expsIn);
+    then expLst;
+  case(DAE.STMT_WHEN(exp=_,conditions=_,initialCall=_,statementLst=_,elseWhen=_,source=_),_)
+    equation
+      print("getStatementLHS update for WHEN!\n"+&DAEDump.ppStatementStr(stmt));   
+    then fail();
+  case(DAE.STMT_ASSERT(cond=_,msg=_,level=_,source=_),_)
+    equation
+      print("getStatementLHS update for ASSERT!\n"+&DAEDump.ppStatementStr(stmt));   
+    then fail();
+  case(DAE.STMT_TERMINATE(msg=_,source=_),_)
+    equation
+      print("getStatementLHS update for TERMINATE!\n"+&DAEDump.ppStatementStr(stmt));   
+    then fail();
+  case(DAE.STMT_REINIT(var=_,value=_,source=_),_)
+    equation
+      print("getStatementLHS update for REINIT!\n"+&DAEDump.ppStatementStr(stmt));   
+    then fail();
+  case(DAE.STMT_NORETCALL(exp=exp,source=_),_)
+    equation
+    then expsIn;
+  case(DAE.STMT_RETURN(source=_),_)
+    equation
+      print("getStatementLHS update for RETURN!\n"+&DAEDump.ppStatementStr(stmt));   
+    then fail();
+  case(DAE.STMT_BREAK(source=_),_)
+    equation
+      print("getStatementLHS update for BREAK!\n"+&DAEDump.ppStatementStr(stmt));   
+    then fail();
+  case(DAE.STMT_ARRAY_INIT(name=_,ty=_,source=_),_)
+    equation
+      print("getStatementLHS update for ARRAY_INIT!\n"+&DAEDump.ppStatementStr(stmt));   
+    then fail();
   else
     equation
-      print("getStatementLHS update!\n");
+      print("getStatementLHS update for !\n"+&DAEDump.ppStatementStr(stmt));      
     then fail();
   end match;
 end getStatementLHS;
@@ -1680,21 +1767,24 @@ algorithm
       list<DAE.Subscript> dims;
       list<list<DAE.Subscript>> subslst;
       DAE.ComponentRef cref;
+      DAE.Dimensions dimensions;
       DAE.Type ty;
       DAE.Exp exp;
       list<DAE.Exp> exps;
       list<DAE.Var> varLst;
       list<DAE.ComponentRef> crefs, lastCrefs;
+      list<list<DAE.ComponentRef>> crefLst;
       list<DAE.Type> types;
       list<String> names;
     case(DAE.VAR(componentRef = cref,ty=DAE.T_COMPLEX(varLst = varLst)))
       equation
         names = List.map(varLst,DAEUtil.typeVarIdent);
-        //print("the names for the scalar crefs: "+&stringDelimitList(names,"\n")+&"\n");
+        //print("the names for the scalar complex crefs: "+&stringDelimitList(names,"\n;")+&"\n");
         types = List.map(varLst,DAEUtil.VarType);
-        _ = Expression.crefExp(cref);
         crefs = List.map1(names,ComponentReference.appendStringCref,cref);
         crefs = setTypesForScalarCrefs(crefs,types,{});
+        crefLst = List.map1(crefs,ComponentReference.expandCref,true);
+        crefs = List.flatten(crefLst);
         crefs = listReverse(crefs);
       then
         crefs;
@@ -1709,6 +1799,23 @@ algorithm
         crefs = List.map1r(subslst,ComponentReference.subscriptCref,cref);
       then
         crefs;
+    case(DAE.VAR(componentRef=cref,ty=DAE.T_ARRAY(ty=_,dims=dimensions,source=_)))
+      equation
+        print("the array cref\n"+&stringDelimitList(List.map({cref},ComponentReference.printComponentRefStr),"\n")+&"\n");
+        crefs = ComponentReference.expandArrayCref(cref,dimensions);
+        print("the array cref\n"+&stringDelimitList(List.map(crefs,ComponentReference.printComponentRefStr),"\n")+&"\n");
+      then
+        crefs;
+    case(DAE.VAR(componentRef=cref,ty=DAE.T_ENUMERATION(index=_,path=_,names=_,literalVarLst=_,attributeLst=_,source=_)))
+      equation
+        print("the enum cref\n"+&stringDelimitList(List.map({cref},ComponentReference.printComponentRefStr),"\n")+&"\n");
+      then
+        {};
+    case(DAE.VAR(componentRef=cref,ty=DAE.T_TUPLE(tupleType=_,source=_)))
+      equation
+        print("the tupl cref\n"+&stringDelimitList(List.map({cref},ComponentReference.printComponentRefStr),"\n")+&"\n");
+      then
+        {};
     else
       equation
       then
@@ -1731,7 +1838,11 @@ algorithm
     case(DAE.VAR(componentRef=_,ty=DAE.T_REAL(varLst=_, source=_), dims=dims ))
       equation
         dim = Expression.subscriptsInt(dims);
-        true = intNe(List.first(dim),1);
+        true = intNe(List.first(dim),0);
+      then
+        false;
+    case(DAE.VAR(componentRef=_,ty=DAE.T_ARRAY(ty=_, dims=_, source=_), dims=dims ))
+      equation
       then
         false;
     else
@@ -2112,7 +2223,7 @@ end makeAssignment;
 //
 // =============================================================================
 
-protected function updateVarKinds"
+protected function updateVarKinds"if there is a variable declared as a state that is not longer present inside a der-call or selected as a state, change the status to VARIABLE
 author:Waurich TUD 2014-04"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
@@ -2132,11 +2243,11 @@ author:Waurich TUD 2014-04"
   output BackendDAE.EqSystem sysOut;
 protected
   BackendDAE.Variables vars;
-  list<BackendDAE.Var> states,varLst;
+  list<BackendDAE.Var> states,varLst,ssVarLst;
   BackendDAE.EquationArray eqs;
   BackendDAE.StateSets stateSets;
   BackendDAE.Matching matching;
-  list<DAE.ComponentRef> derVars;
+  list<DAE.ComponentRef> derVars,ssVars;
   Option<BackendDAE.IncidenceMatrix> m;
   Option<BackendDAE.IncidenceMatrixT> mT;
 algorithm
@@ -2144,10 +2255,26 @@ algorithm
   varLst := BackendVariable.varList(vars);
   states := List.filterOnTrue(varLst,BackendVariable.isStateorStateDerVar);
   derVars := BackendDAEUtil.traverseBackendDAEExpsEqns(eqs,findDerVarCrefs,{});
+  ssVarLst := List.filterOnTrue(varLst,varSSisPreferOrHigher);
+  ssVars := List.map(ssVarLst,BackendVariable.varCref);
+  derVars := listAppend(derVars,ssVars);
   derVars := List.unique(derVars);
   (vars,_) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars,setVarKindForStates,derVars);
   sysOut := BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching,stateSets);
 end updateVarKinds_eqSys;
+
+protected function varSSisPreferOrHigher"outputs true if the stateSelect attribute is prefer or always
+author:Waurich TUD 2014-04"
+  input BackendDAE.Var varIn;
+  output Boolean ssOut;
+protected
+  Integer i;
+  DAE.StateSelect ss;
+algorithm
+  ss := BackendVariable.varStateSelect(varIn);
+  i := BackendVariable.stateSelectToInteger(ss);
+  ssOut := intGe(i,2);
+end varSSisPreferOrHigher;
 
 protected function setVarKindForStates"if a state var is a memeber of the list of state-crefs, it remains a state. otherwise it will be changed to VarKind.Variable
 waurich TUD 2014-04"
