@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 2.6)
 
 project(CppSolverInterface)
-include(${CMAKE_SOURCE_DIR}/PreCompiledHeader.cmake)
+include(${CMAKE_SOURCE_DIR}/PrecompiledHeader.cmake)
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 
 
@@ -321,7 +321,7 @@ ENDFOREACH(HEADER)
 ENDMACRO(INSTALL_HEADERS_WITH_DIRECTORY)
 
 
-add_precompiled_header(${ModelicaName} Include/Core/Modelica.h )
+#add_precompiled_header(${ModelicaName} Include/Core/Modelica.h )
 
 install (FILES "${PROJECT_BINARY_DIR}/LibrariesConfig.h" DESTINATION include/omc/cpp)
 

@@ -81,7 +81,8 @@ private:
     *_data;           ///< Temp     - User data. Contains pointer to Kinsol
 
   bool
-    _eventRetry;
+    _eventRetry,
+	_fValid;
 
    realtype _fnorm,
        _currentIterateNorm;
