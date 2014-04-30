@@ -2244,19 +2244,23 @@ author:Waurich TUD 2014-04"
 protected
   BackendDAE.Variables vars;
   list<BackendDAE.Var> states,varLst,ssVarLst;
-  BackendDAE.EquationArray eqs;
+  BackendDAE.EquationArray eqs, initEqs;
   BackendDAE.StateSets stateSets;
   BackendDAE.Matching matching;
-  list<DAE.ComponentRef> derVars,ssVars;
+  list<DAE.ComponentRef> derVars,ssVars,derVarsInit;
   Option<BackendDAE.IncidenceMatrix> m;
   Option<BackendDAE.IncidenceMatrixT> mT;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,m=m,mT=mT,matching=matching,stateSets=stateSets) := sysIn;
   varLst := BackendVariable.varList(vars);
+  initEqs := BackendEquation.daeInitialEqns(shared);
   states := List.filterOnTrue(varLst,BackendVariable.isStateorStateDerVar);
-  derVars := BackendDAEUtil.traverseBackendDAEExpsEqns(eqs,findDerVarCrefs,{});
+  derVarsInit := BackendDAEUtil.traverseBackendDAEExpsEqns(initEqs,findDerVarCrefs,{});
+  derVars := BackendDAEUtil.traverseBackendDAEExpsEqns(eqs,findDerVarCrefs,derVarsInit);
+    //print("derVars\n"+&stringDelimitList(List.map(derVars,ComponentReference.printComponentRefStr),"\n")+&"\n\n");
   ssVarLst := List.filterOnTrue(varLst,varSSisPreferOrHigher);
   ssVars := List.map(ssVarLst,BackendVariable.varCref);
+    //print("ssVars\n"+&stringDelimitList(List.map(ssVars,ComponentReference.printComponentRefStr),"\n")+&"\n\n");
   derVars := listAppend(derVars,ssVars);
   derVars := List.unique(derVars);
   (vars,_) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars,setVarKindForStates,derVars);
