@@ -846,7 +846,7 @@ algorithm
       BackendDAE.EquationArray eqnarr;
       array<list<Integer>> m,mt;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
-      Values.Value ret_val,simValue,value,v,cvar,cvar2,v1,v2;
+      Values.Value ret_val,simValue,value,v,cvar,cvar2,v1,v2,v3;
       Absyn.ComponentRef cr_1;
       Integer size,resI,i,i1,i2,i3,n,curveStyle,numberOfIntervals;
       Option<Integer> fmiContext, fmiInstance, fmiModelVariablesInstance; /* void* implementation: DO NOT UNBOX THE POINTER AS THAT MIGHT CHANGE IT. Just treat this as an opaque type. */
@@ -1733,6 +1733,23 @@ algorithm
 
     case (cache,_,"clearDebugFlags",_,st,_)
       then (cache,Values.BOOL(false),st);
+
+    case (cache,_,"getConfigFlagValidOptions",{Values.STRING(str)},st,_)
+      equation
+        (strs1,str,strs2) = Flags.getValidOptionsAndDescription(str);
+        v1 = ValuesUtil.makeArray(List.map(strs1, ValuesUtil.makeString));
+        v2 = Values.STRING(str);
+        v3 = ValuesUtil.makeArray(List.map(strs2, ValuesUtil.makeString));
+        v = Values.TUPLE({v1,v2,v3});
+      then (cache,v,st);
+
+    case (cache,_,"getConfigFlagValidOptions",{Values.STRING(str)},st,_)
+      equation
+        v1 = ValuesUtil.makeArray({});
+        v2 = Values.STRING("");
+        v3 = ValuesUtil.makeArray({});
+        v = Values.TUPLE({v1,v2,v3});
+      then (cache,v,st);
 
     case (cache,_,"cd",{Values.STRING("")},st,_)
       equation

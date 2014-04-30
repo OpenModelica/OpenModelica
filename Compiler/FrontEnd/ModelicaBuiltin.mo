@@ -1360,6 +1360,16 @@ external "builtin";
 annotation(preferredView="text");
 end setCommandLineOptions;
 
+function getConfigFlagValidOptions
+  "Returns the list of valid options for a string config flag, and the description strings for these options if available"
+  input String flag;
+  output String validOptions[:];
+  output String mainDescription;
+  output String descriptions[:];
+external "builtin";
+annotation(preferredView="text");
+end getConfigFlagValidOptions;
+
 function clearCommandLineOptions
   "Resets all command-line flags to their default values."
   output Boolean success;

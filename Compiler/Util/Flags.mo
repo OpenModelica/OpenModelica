@@ -1834,11 +1834,10 @@ algorithm
     case {str}
       equation
         (config_flag as CONFIG_FLAG(name=name,description=desc)) = List.getMemberOnTrue(str, allConfigFlags, matchConfigFlag);
-        str = Util.translateContent(desc);
-        str = "    +" +& name +& " " +& str +& "\n";
-        str = stringAppendList(Util.stringWrap(str, System.getTerminalWidth(), descriptionIndent));
-        str2 = printFlagValidOptionsDesc(config_flag);
-        help = stringAppendList({str,"\n",str2});
+        str1 = "+" +& name;
+        str2 = stringAppendList(Util.stringWrap(Util.translateContent(desc), System.getTerminalWidth(), "\n"));
+        str = printFlagValidOptionsDesc(config_flag);
+        help = stringAppendList({str1,"\n",str2,"\n",str});
       then help;
 
     case {str}
@@ -1852,6 +1851,37 @@ algorithm
 
   end matchcontinue;
 end printHelp;
+
+public function getValidOptionsAndDescription
+  input String flagName;
+  output list<String> validStrings;
+  output String mainDescriptionStr;
+  output list<String> descriptions;
+protected
+  ValidOptions validOptions;
+  Util.TranslatableContent mainDescription;
+algorithm
+  CONFIG_FLAG(description=mainDescription,validOptions=SOME(validOptions)) := List.getMemberOnTrue(flagName, allConfigFlags, matchConfigFlag);
+  mainDescriptionStr := Util.translateContent(mainDescription);
+  (validStrings,descriptions) := getValidOptionsAndDescription2(validOptions);
+end getValidOptionsAndDescription;
+
+protected function getValidOptionsAndDescription2
+  input ValidOptions validOptions;
+  output list<String> validStrings;
+  output list<String> descriptions;
+algorithm
+  (validStrings,descriptions) := match validOptions
+    local
+      list<tuple<String,Util.TranslatableContent>> options;
+    case STRING_OPTION(validStrings) then (validStrings,{});
+    case STRING_DESC_OPTION(options)
+      equation
+        validStrings = List.map(options,Util.tuple21);
+        descriptions = List.map(List.map(options,Util.tuple22),Util.translateContent);
+      then (validStrings,descriptions);
+  end match;
+end getValidOptionsAndDescription2;
 
 protected function compareDebugFlags
   input DebugFlag flag1;
