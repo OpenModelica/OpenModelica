@@ -45,7 +45,6 @@
 #include <stdint.h>
 #include "read_matlab4.h"
 
-
 /* UNDEF to debug the gnuplot file */
 #define NO_PIPE
 

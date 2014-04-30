@@ -34,7 +34,7 @@
 #include <stdio.h>
 
 #if !defined(HAVE_MMAP)
-#if defined(unix)
+#if defined(unix) || defined(__APPLE__)
 #include <unistd.h>
 #endif
 #if _POSIX_MAPPED_FILES>0
