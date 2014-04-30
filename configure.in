@@ -829,7 +829,7 @@ if test "Darwin" = `uname`; then
   RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC $LD_LAPACK -lm -lgc"
   LINK="cp -fr"
   RPATH="-Wl,-rpath,'@loader_path/../lib/omc'"
-  RPATH_QMAKE=$(RPATH)
+  RPATH_QMAKE="-Wl,-rpath,'@loader_path/../../../../lib/omc'"
   MSL_EXTRA_ARGS="--disable-hdf5 --enable-static-zlib --enable-static --disable-shared"
   OS_TARGET="osx"
   LIS_LDFLAGS="-Wl,-install_name,@rpath/liblis.dylib"
@@ -889,11 +889,11 @@ fi
 
 AC_ARG_WITH(METIS, [  --with-METIS=DIR                 Compile with Metis graph partitioner in DIR],
 [
-	USE_METIS=1
-	USE_GRAPH=1
-	AC_MSG_RESULT([Enabling METIS... METISHOME="$withval"]);
-	METISHOME="$withval";
-	USE_PATOH=0
+  USE_METIS=1
+  USE_GRAPH=1
+  AC_MSG_RESULT([Enabling METIS... METISHOME="$withval"]);
+  METISHOME="$withval";
+  USE_PATOH=0
 ], [
     USE_GRAPH=0
     USE_METIS=0
@@ -912,7 +912,7 @@ AC_ARG_WITH(PATOH, [  --with-PATOH=DIR                 Compile with PATOH hyperg
     USE_METIS=0
     USE_GRAPH=1
     AC_MSG_RESULT([Enabling PATOH... PATOHHOME="$withval"]);
-	PATOHHOME="$withval";
+  PATOHHOME="$withval";
 ], [
     if test "$USE_METIS" = 0; then
         USE_GRAPH=0
@@ -922,20 +922,20 @@ AC_ARG_WITH(PATOH, [  --with-PATOH=DIR                 Compile with PATOH hyperg
 
 AC_ARG_WITH(MODPAR, [  --with-MODPAR                    Compile with automatic parallelization, requires boost],
 [
-	USE_MODPAR="-DUSE_MODPAR"
+  USE_MODPAR="-DUSE_MODPAR"
 ], [
 AC_MSG_RESULT([Not compiling ModPar]); USE_MODPAR=""; BOOSTHOME=""
 ])
 
 AC_ARG_WITH(BOOST, [  --with-BOOST=DIR                 With BOOST library in DIR],
 [
-	if test "$USE_MODPAR" = "-DUSE_MODPAR" ; then
-	  AC_MSG_RESULT([enabling BOOST... BOOSTHOME="$withval"]);
-	  BOOSTHOME="$withval";
+  if test "$USE_MODPAR" = "-DUSE_MODPAR" ; then
+    AC_MSG_RESULT([enabling BOOST... BOOSTHOME="$withval"]);
+    BOOSTHOME="$withval";
   else
     AC_MSG_RESULT([ Warning, MODPAR requires BOOST, disabling MODPAR ] )
-  	USE_MODPAR="";
-	  BOOSTHOME="";
+    USE_MODPAR="";
+    BOOSTHOME="";
   fi
 ], [
 AC_MSG_RESULT([Not compiling with BOOST]); USE_MODPAR=""; BOOSTHOME=""
