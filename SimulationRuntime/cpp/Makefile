@@ -10,7 +10,7 @@ builddir_inc=$(top_builddir)/build/include/omc
 
 runtimeCpp: clean
 	#cd ./Build && echo "change to Build" && cmake -D ANALYZATION_MODE=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX:PATH="$(builddir_build)"  ../
-	cd ./Build && echo "change to Build" &&	cmake -D CMAKE_BUILD_TYPE=RelWithDebInfo -D CMAKE_INSTALL_PREFIX:PATH="$(builddir_build)"  ../
+	cd ./Build && echo "change to Build" &&	cmake -D CMAKE_BUILD_TYPE=RelWithDebInfo -D CMAKE_INSTALL_PREFIX:PATH="$(builddir_build)"  -D CMAKE_CXX_COMPILER="g++-4.4"  ../
 	$(MAKE) -C Build
 
 install: runtimeCpp
