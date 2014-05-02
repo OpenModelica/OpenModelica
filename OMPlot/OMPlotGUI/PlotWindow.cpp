@@ -78,7 +78,7 @@ void PlotWindow::setUpWidget()
   // set the plot title
   setTitle(tr("Plot by OpenModelica"));
   // set the plot grid
-  setGrid(true);
+  setDetailedGrid(true);
   setXLabel(tr("time"));
   setMinimumHeight(250);
   setMinimumWidth(250);
@@ -91,9 +91,9 @@ void PlotWindow::initializePlot(QStringList arguments)
   //Set up arguments
   setTitle(QString(arguments[2]));
   if(QString(arguments[3]) == "true")
-    setGrid(true);
+    setDetailedGrid(true);
   else if(QString(arguments[3]) == "false")
-    setGrid(false);
+    setNoGrid(true);
   else
     throw PlotException("Invalid input" + arguments[4]);
   QString plotType = arguments[4];
@@ -210,9 +210,26 @@ void PlotWindow::setupToolbar()
   mpGridButton = new QToolButton(toolBar);
   mpGridButton->setText(tr("Grid"));
   mpGridButton->setCheckable(true);
-  mpGridButton->setChecked(true);
   connect(mpGridButton, SIGNAL(toggled(bool)), SLOT(setGrid(bool)));
   toolBar->addWidget(mpGridButton);
+  // Detailed grid
+  mpDetailedGridButton = new QToolButton(toolBar);
+  mpDetailedGridButton->setText(tr("Detailed Grid"));
+  mpDetailedGridButton->setCheckable(true);
+  connect(mpDetailedGridButton, SIGNAL(toggled(bool)), SLOT(setDetailedGrid(bool)));
+  toolBar->addWidget(mpDetailedGridButton);
+  // No Grid Button
+  mpNoGridButton = new QToolButton(toolBar);
+  mpNoGridButton->setText(tr("No Grid"));
+  mpNoGridButton->setCheckable(true);
+  connect(mpNoGridButton, SIGNAL(toggled(bool)), SLOT(setNoGrid(bool)));
+  toolBar->addWidget(mpNoGridButton);
+  // Add grid buttons to buttons group
+  QButtonGroup *pGridButtonGroup = new QButtonGroup;
+  pGridButtonGroup->setExclusive(true);
+  pGridButtonGroup->addButton(mpGridButton);
+  pGridButtonGroup->addButton(mpDetailedGridButton);
+  pGridButtonGroup->addButton(mpNoGridButton);
   toolBar->addSeparator();
   //LOG x LOG y
   mpLogXCheckBox = new QCheckBox(tr("Log X"), this);
@@ -895,15 +912,32 @@ void PlotWindow::printPlot()
 
 void PlotWindow::setGrid(bool on)
 {
-  if (!on)
+  if (on)
   {
-    mpPlot->getPlotGrid()->detach();
-    mpGridButton->setChecked(false);
-  }
-  else
-  {
+    mpPlot->getPlotGrid()->setGrid();
     mpPlot->getPlotGrid()->attach(mpPlot);
     mpGridButton->setChecked(true);
+  }
+  mpPlot->replot();
+}
+
+void PlotWindow::setDetailedGrid(bool on)
+{
+  if (on)
+  {
+    mpPlot->getPlotGrid()->setDetailedGrid();
+    mpPlot->getPlotGrid()->attach(mpPlot);
+    mpDetailedGridButton->setChecked(true);
+  }
+  mpPlot->replot();
+}
+
+void PlotWindow::setNoGrid(bool on)
+{
+  if (on)
+  {
+    mpPlot->getPlotGrid()->detach();
+    mpNoGridButton->setChecked(true);
   }
   mpPlot->replot();
 }

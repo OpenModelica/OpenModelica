@@ -43,6 +43,10 @@ class PlotGrid : public QwtPlotGrid
 public:
   PlotGrid(Plot *pParent);
   ~PlotGrid();
+  QPen getMajorPen() {return QPen(Qt::gray);}
+  QPen getMinorPen() {return QPen(Qt::lightGray, 0.0, Qt::DotLine);}
+  void setGrid();
+  void setDetailedGrid();
 };
 }
 

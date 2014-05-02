@@ -39,17 +39,27 @@ PlotGrid::PlotGrid(Plot *pParent)
 {
   attach(pParent);
 #if QWT_VERSION >= 0x060100
-  setMajorPen(QPen(Qt::gray));
-  setMinorPen(QPen(Qt::lightGray, 0.0, Qt::DotLine));
+  setMajorPen(getMajorPen());
+  setMinorPen(getMinorPen());
 #else
-  setMajPen(QPen(Qt::gray));
-  setMinPen(QPen(Qt::lightGray, 0.0, Qt::DotLine));
+  setMajPen(getMajorPen());
+  setMinPen(getMinorPen());
 #endif
-  enableXMin(true);
-  enableYMin(true);
 }
 
 PlotGrid::~PlotGrid()
 {
 
+}
+
+void PlotGrid::setGrid()
+{
+  enableXMin(false);
+  enableYMin(false);
+}
+
+void PlotGrid::setDetailedGrid()
+{
+  enableXMin(true);
+  enableYMin(true);
 }

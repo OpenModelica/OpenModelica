@@ -59,6 +59,8 @@ private:
     QCheckBox *mpLogXCheckBox;
     QCheckBox *mpLogYCheckBox;
     QToolButton *mpGridButton;
+    QToolButton *mpDetailedGridButton;
+    QToolButton *mpNoGridButton;
     QToolButton *mpZoomButton;
     QToolButton *mpPanButton;
     QTextStream *mpTextStream;
@@ -114,6 +116,8 @@ public slots:
     void exportDocument();
     void printPlot();
     void setGrid(bool on);
+    void setDetailedGrid(bool on);
+    void setNoGrid(bool on);
     void fitInView();
     void setLogX(bool on);
     void setLogY(bool on);
