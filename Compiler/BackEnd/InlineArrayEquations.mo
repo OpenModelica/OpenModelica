@@ -41,6 +41,7 @@ public import BackendDAE;
 public import DAE;
 
 protected import BackendDAEUtil;
+protected import BackendDump;
 protected import BackendEquation;
 protected import DAEUtil;
 protected import Debug;
@@ -119,7 +120,7 @@ algorithm
     then (listReverse(inAccEqnLst), inFound);
 
     case (eqn::eqns, _, _) equation
-      (eqns1, b) = getScalarArrayEqns1(eqn, inAccEqnLst);
+      (eqns1, b) = getScalarArrayEqns1(eqn, inAccEqnLst);    
       (eqns1, b) = getScalarArrayEqns0(eqns, eqns1, b or inFound);
     then (eqns1, b);
   end match;
@@ -143,6 +144,7 @@ algorithm
     case (BackendDAE.ARRAY_EQUATION(left=lhs, right=rhs, source=source, differentiated=differentiated, kind=eqKind), _) equation
       true = Expression.isArray(lhs) or Expression.isMatrix(lhs);
       true = Expression.isArray(rhs) or Expression.isMatrix(rhs);
+      true = 1 < BackendEquation.equationSize(inEqn);
       ea1 = Expression.flattenArrayExpToList(lhs);
       ea2 = Expression.flattenArrayExpToList(rhs);
       ((_, eqns)) = List.threadFold4(ea1, ea2, generateScalarArrayEqns2, source, differentiated, eqKind, DAE.EQUALITY_EXPS(lhs, rhs), (1, inAccEqnLst));
@@ -150,6 +152,7 @@ algorithm
 
     case (BackendDAE.ARRAY_EQUATION(left=lhs as DAE.CREF(componentRef=_), right=rhs, source=source, differentiated=differentiated, kind=eqKind), _) equation
       true = Expression.isArray(rhs) or Expression.isMatrix(rhs);
+      true = 1 < BackendEquation.equationSize(inEqn);
       ((e1_1, (_, _))) = BackendDAEUtil.extendArrExp((lhs, (NONE(), false)));
       ea1 = Expression.flattenArrayExpToList(e1_1);
       ea2 = Expression.flattenArrayExpToList(rhs);
@@ -158,6 +161,7 @@ algorithm
 
     case (BackendDAE.ARRAY_EQUATION(left=lhs, right=rhs as DAE.CREF(componentRef=_), source=source, differentiated=differentiated, kind=eqKind), _) equation
       true = Expression.isArray(lhs) or Expression.isMatrix(lhs);
+      true = 1 < BackendEquation.equationSize(inEqn);
       ((e2_1, (_, _))) = BackendDAEUtil.extendArrExp((rhs,(NONE(),false)));
       ea1 = Expression.flattenArrayExpToList(lhs);
       ea2 = Expression.flattenArrayExpToList(e2_1);
@@ -165,6 +169,7 @@ algorithm
     then (eqns,true);
 
     case (BackendDAE.ARRAY_EQUATION(left=lhs as DAE.CREF(componentRef=_),right=rhs as DAE.CREF(componentRef=_), source=source, differentiated=differentiated, kind=eqKind), _) equation
+      true = 1 < BackendEquation.equationSize(inEqn);
       ((e1_1, (_, _))) = BackendDAEUtil.extendArrExp((lhs, (NONE(), false)));
       ((e2_1, (_, _))) = BackendDAEUtil.extendArrExp((rhs, (NONE(), false)));
       ea1 = Expression.flattenArrayExpToList(e1_1);
