@@ -40,14 +40,14 @@ namespace OMPlot
 {
 class PlotZoomer : public QwtPlotZoomer
 {
-    Q_OBJECT
+  Q_OBJECT
 public:
 #if QWT_VERSION >= 0x060100
   PlotZoomer(int xAxis, int yAxis, QWidget *pParent);
 #else
   PlotZoomer(int xAxis, int yAxis, QwtPlotCanvas *pParent);
 #endif
-    ~PlotZoomer();
+  ~PlotZoomer();
 };
 }
 

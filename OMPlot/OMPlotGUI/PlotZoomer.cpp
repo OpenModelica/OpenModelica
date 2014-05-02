@@ -37,24 +37,24 @@ using namespace OMPlot;
 
 #if QWT_VERSION >= 0x060100
 PlotZoomer::PlotZoomer(int xAxis, int yAxis, QWidget *pParent)
-    : QwtPlotZoomer(xAxis, yAxis, pParent)
+  : QwtPlotZoomer(xAxis, yAxis, pParent)
 {
 #else
 PlotZoomer::PlotZoomer(int xAxis, int yAxis, QwtPlotCanvas *pParent)
-    : QwtPlotZoomer(xAxis, yAxis, pParent)
+  : QwtPlotZoomer(xAxis, yAxis, pParent)
 {
 #if QWT_VERSION < 0x060000
-    setSelectionFlags(QwtPicker::DragSelection | QwtPicker::CornerToCorner);
+  setSelectionFlags(QwtPicker::DragSelection | QwtPicker::CornerToCorner);
 #endif
 #endif
-    setTrackerMode(QwtPicker::AlwaysOff);
-    setRubberBand(QwtPicker::RectRubberBand);
-    setRubberBandPen(QPen(Qt::black, 1.0, Qt::DashLine));
+  setTrackerMode(QwtPicker::AlwaysOff);
+  setRubberBand(QwtPicker::RectRubberBand);
+  setRubberBandPen(QPen(Qt::black, 1.0, Qt::DashLine));
 
-    // RightButton: zoom out by 1
-    // Ctrl+RightButton: zoom out to full size
-    setMousePattern(QwtEventPattern::MouseSelect2, Qt::RightButton, Qt::ControlModifier);
-    setMousePattern(QwtEventPattern::MouseSelect3, Qt::RightButton);
+  // RightButton: zoom out by 1
+  // Ctrl+RightButton: zoom out to full size
+  setMousePattern(QwtEventPattern::MouseSelect2, Qt::RightButton, Qt::ControlModifier);
+  setMousePattern(QwtEventPattern::MouseSelect3, Qt::RightButton);
 }
 
 PlotZoomer::~PlotZoomer()

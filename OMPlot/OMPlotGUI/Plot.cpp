@@ -32,6 +32,7 @@
  */
 
 #include "PlotWindow.h"
+#include "qwt_plot_canvas.h"
 #if QWT_VERSION < 0x060100
 #include "qwt_legend_item.h"
 #endif
@@ -58,6 +59,8 @@ Plot::Plot(PlotWindow *pParent)
   mpPlotPicker->setRubberBandPen(QPen(Qt::black));
   mpPlotPicker->setTrackerMode(QwtPicker::AlwaysOn);
   // set canvas arrow
+  QwtPlotCanvas *pPlotCanvas = static_cast<QwtPlotCanvas*>(canvas());
+  pPlotCanvas->setFrameStyle(QFrame::NoFrame);
   canvas()->setCursor(Qt::ArrowCursor);
   setCanvasBackground(Qt::white);
   setContentsMargins(10, 10, 10, 10);

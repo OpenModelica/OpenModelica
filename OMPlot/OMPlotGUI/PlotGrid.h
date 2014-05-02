@@ -41,8 +41,8 @@ namespace OMPlot
 class PlotGrid : public QwtPlotGrid
 {
 public:
-    PlotGrid(Plot *pParent);
-    ~PlotGrid();
+  PlotGrid(Plot *pParent);
+  ~PlotGrid();
 };
 }
 
