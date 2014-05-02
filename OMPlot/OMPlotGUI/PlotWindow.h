@@ -51,98 +51,98 @@ class PlotCurve;
 
 class PlotWindow : public QMainWindow
 {
-    Q_OBJECT
+  Q_OBJECT
 public:
-    enum PlotType {PLOT, PLOTALL, PLOTPARAMETRIC};
+  enum PlotType {PLOT, PLOTALL, PLOTPARAMETRIC};
 private:
-    Plot *mpPlot;
-    QCheckBox *mpLogXCheckBox;
-    QCheckBox *mpLogYCheckBox;
-    QToolButton *mpGridButton;
-    QToolButton *mpDetailedGridButton;
-    QToolButton *mpNoGridButton;
-    QToolButton *mpZoomButton;
-    QToolButton *mpPanButton;
-    QTextStream *mpTextStream;
-    QFile mFile;
-    QStringList mVariablesList;
-    PlotType mPlotType;
-    QString mXRangeMin;
-    QString mXRangeMax;
-    QString mYRangeMin;
-    QString mYRangeMax;
-    double mCurveWidth;
-    int mCurveStyle;
+  Plot *mpPlot;
+  QCheckBox *mpLogXCheckBox;
+  QCheckBox *mpLogYCheckBox;
+  QToolButton *mpGridButton;
+  QToolButton *mpDetailedGridButton;
+  QToolButton *mpNoGridButton;
+  QToolButton *mpZoomButton;
+  QToolButton *mpPanButton;
+  QTextStream *mpTextStream;
+  QFile mFile;
+  QStringList mVariablesList;
+  PlotType mPlotType;
+  QString mXRangeMin;
+  QString mXRangeMax;
+  QString mYRangeMin;
+  QString mYRangeMax;
+  double mCurveWidth;
+  int mCurveStyle;
 public:
-    PlotWindow(QStringList arguments = QStringList(), QWidget *parent = 0);
-    ~PlotWindow();
+  PlotWindow(QStringList arguments = QStringList(), QWidget *parent = 0);
+  ~PlotWindow();
 
-    void setUpWidget();
-    void initializePlot(QStringList arguments);
-    void setVariablesList(QStringList variables);
-    void setPlotType(PlotType type);
-    PlotType getPlotType();
-    void initializeFile(QString file);
-    void setupToolbar();
-    void plot();
-    void plotParametric();
-    void setTitle(QString title);
-    QCheckBox* getLogXCheckBox();
-    QCheckBox* getLogYCheckBox();
-    void setXLabel(QString label);
-    void setYLabel(QString label);
-    void setXRange(double min, double max);
-    QString getXRangeMin();
-    QString getXRangeMax();
-    void setYRange(double min, double max);
-    QString getYRangeMin();
-    QString getYRangeMax();
-    void setCurveWidth(double width);
-    double getCurveWidth();
-    void setCurveStyle(int style);
-    int getCurveStyle();
-    void setLegendPosition(QString position);
-    QString getLegendPosition();
-    void checkForErrors(QStringList variables, QStringList variablesPlotted);
-    Plot* getPlot();
-    QToolButton* getPanButton();
-    void receiveMessage(QStringList arguments);
-    void closeEvent(QCloseEvent *event);
+  void setUpWidget();
+  void initializePlot(QStringList arguments);
+  void setVariablesList(QStringList variables);
+  void setPlotType(PlotType type);
+  PlotType getPlotType();
+  void initializeFile(QString file);
+  void setupToolbar();
+  void plot();
+  void plotParametric();
+  void setTitle(QString title);
+  QCheckBox* getLogXCheckBox();
+  QCheckBox* getLogYCheckBox();
+  void setXLabel(QString label);
+  void setYLabel(QString label);
+  void setXRange(double min, double max);
+  QString getXRangeMin();
+  QString getXRangeMax();
+  void setYRange(double min, double max);
+  QString getYRangeMin();
+  QString getYRangeMax();
+  void setCurveWidth(double width);
+  double getCurveWidth();
+  void setCurveStyle(int style);
+  int getCurveStyle();
+  void setLegendPosition(QString position);
+  QString getLegendPosition();
+  void checkForErrors(QStringList variables, QStringList variablesPlotted);
+  Plot* getPlot();
+  QToolButton* getPanButton();
+  void receiveMessage(QStringList arguments);
+  void closeEvent(QCloseEvent *event);
 signals:
-    void closingDown();
+  void closingDown();
 public slots:
-    void enableZoomMode(bool on);
-    void enablePanMode(bool on);
-    void exportDocument();
-    void printPlot();
-    void setGrid(bool on);
-    void setDetailedGrid(bool on);
-    void setNoGrid(bool on);
-    void fitInView();
-    void setLogX(bool on);
-    void setLogY(bool on);
+  void enableZoomMode(bool on);
+  void enablePanMode(bool on);
+  void exportDocument();
+  void printPlot();
+  void setGrid(bool on);
+  void setDetailedGrid(bool on);
+  void setNoGrid(bool on);
+  void fitInView();
+  void setLogX(bool on);
+  void setLogY(bool on);
 };
 
 //Exception classes
 class PlotException : public std::runtime_error
 {
 public:
-    PlotException(const char *e) : std::runtime_error(e) {}
-    PlotException(const QString str) : std::runtime_error(str.toStdString().c_str()) {}
+  PlotException(const char *e) : std::runtime_error(e) {}
+  PlotException(const QString str) : std::runtime_error(str.toStdString().c_str()) {}
 };
 
 class NoFileException : public PlotException
 {
 public:
-    NoFileException(const char *fileName) : PlotException(fileName) {}
+  NoFileException(const char *fileName) : PlotException(fileName) {}
 private:
-    const char *temp;
+  const char *temp;
 };
 
 class NoVariableException : public PlotException
 {
 public:
-    NoVariableException(const char *varName) : PlotException(varName) {}
+  NoVariableException(const char *varName) : PlotException(varName) {}
 };
 
 //Options Class
