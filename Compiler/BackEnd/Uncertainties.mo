@@ -1120,25 +1120,6 @@ varsOut:= match(m)
 end match;
 end getVariables;
 
-protected function listTail
-  input ExtIncidenceMatrix l;
-  output ExtIncidenceMatrix o;
-algorithm
-o:=matchcontinue(l)
-  local
-    ExtIncidenceMatrix t;
-  case({})
-    equation
-    then {};
-  case({_})
-    equation
-    then {};
-  case(_::t)
-    equation
-    then t;
-end matchcontinue;
-end listTail;
-
 protected function removeEquationInSquaredBlock
   input ExtIncidenceMatrix m;
   input list<Integer> knowns;
@@ -2557,24 +2538,6 @@ algorithm
       then out;
   end matchcontinue;
 end getAllVariablesForCref;
-
-protected function getVariablesForCref
-" Returns the variable asicoated to a cref taken variables or known variables"
-  input DAE.ComponentRef cr;
-  input BackendDAE.Variables vars;
-  output list<BackendDAE.Var> outVarLst;
-algorithm
-  outVarLst:=matchcontinue(cr,vars)
-    local
-      list<BackendDAE.Var> out;
-    case(_,_)
-      equation
-        (out,_)=BackendVariable.getVar(cr,vars);
-      then out;
-    case(_,_)
-      then {};
-  end matchcontinue;
-end getVariablesForCref;
 
 protected function rateVariable
 " Returns the ratign of a variable."
