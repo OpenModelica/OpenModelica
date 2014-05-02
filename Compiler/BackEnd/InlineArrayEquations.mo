@@ -41,7 +41,6 @@ public import BackendDAE;
 public import DAE;
 
 protected import BackendDAEUtil;
-protected import BackendDump;
 protected import BackendEquation;
 protected import DAEUtil;
 protected import Debug;
@@ -120,7 +119,7 @@ algorithm
     then (listReverse(inAccEqnLst), inFound);
 
     case (eqn::eqns, _, _) equation
-      (eqns1, b) = getScalarArrayEqns1(eqn, inAccEqnLst);    
+      (eqns1, b) = getScalarArrayEqns1(eqn, inAccEqnLst);
       (eqns1, b) = getScalarArrayEqns0(eqns, eqns1, b or inFound);
     then (eqns1, b);
   end match;
