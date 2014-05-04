@@ -23,10 +23,10 @@ bootstrap-from-tarball:
 	tar xJf bootstrap-sources.tar.xz
 	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1
 	$(MAKE) -f $(defaultMakefileTarget) clean
-	$(MAKE) -f $(defaultMakefileTarget) generate-files-in-steps
+	$(MAKE) -f $(defaultMakefileTarget) generate-files-in-steps OMC=$(BOOTSTRAP_OMC)
 	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1
 	$(MAKE) -f $(defaultMakefileTarget) clean
-	$(MAKE) -f $(defaultMakefileTarget) generate-files-in-steps
+	$(MAKE) -f $(defaultMakefileTarget) generate-files-in-steps OMC=$(BOOTSTRAP_OMC)
 	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1
 
 bootstrap-from-compiled: make-separate
@@ -67,7 +67,7 @@ interfaces: $(ALL_INTERFACES) $(ALL_FILES)
 	$(OMC) +n=1 $@.mos
 	@touch $@
 %.interface.mo: %.stamp.mo
-	
+
 ifeq ($(wildcard $(OMC)),)
 else
 Makefile.sources: LoadCompilerSources.mos MakeSources.mos

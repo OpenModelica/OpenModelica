@@ -10333,14 +10333,12 @@ template literalExpConst(Exp lit, Integer index) "These should all be declared s
       else */
       <<
       #define <%name%>_data "<%escstr%>"
-      static const size_t <%name%>_strlen = <%unescapedStringLength(escstr)%>;
       static const MMC_DEFSTRINGLIT(<%tmp%>,<%unescapedStringLength(escstr)%>,<%name%>_data);
       #define <%name%> MMC_REFSTRINGLIT(<%tmp%>)
       >>
     else
       <<
       #define <%name%>_data "<%escstr%>"
-      static const size_t <%name%>_strlen = <%unescapedStringLength(escstr)%>;
       static const char <%name%>[<%intAdd(1,unescapedStringLength(escstr))%>] = <%name%>_data;
       >>
   case lit as MATRIX(ty=ty as T_ARRAY(__))

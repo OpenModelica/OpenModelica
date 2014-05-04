@@ -17,6 +17,7 @@ SHREXT=@SHREXT@
 OMC=@OMC@
 RPATH=@RPATH@
 STATIC=@BOOTSTRAP_STATIC@
+BOOTSTRAP_OMC=../../build/bin/omc
 defaultMakefileTarget=Makefile
 
 default: all

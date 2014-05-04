@@ -426,8 +426,6 @@ public function checkAssignmentToInputs
   input list<DAE.Attributes> inAttributes;
   input Env.Env inEnv;
   input Absyn.Info inInfo;
-protected
-  Boolean func_scope;
 algorithm
   _ := matchcontinue(inExpCrefs, inAttributes, inEnv, inInfo)
     case (_, _, _, _)
@@ -7565,7 +7563,6 @@ protected
   DAE.FunctionTree functionTree;
   Util.Status status;
   Env.Cache cache;
-  Env.Env env;
   Boolean didInline;
   Boolean b,onlyOneFunction;
   IsExternalObject isExternalObject;
@@ -10542,7 +10539,6 @@ public function makeEnumerationArray
   output DAE.Type enumArrayType;
 
 protected
-  list<Absyn.Path> enum_lit_names;
   list<DAE.Exp> enum_lit_expl;
   Integer sz;
   DAE.Type ety;
