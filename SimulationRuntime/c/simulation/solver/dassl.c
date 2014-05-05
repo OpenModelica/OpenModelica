@@ -308,7 +308,7 @@ int dassl_step(DATA* simData, SOLVER_INFO* solverInfo)
   infoStreamPrint(LOG_DASSL, 0, "Calling DASSL from %.15g to %.15g", solverInfo->currentTime, tout);
   do
   {
-    infoStreamPrint(LOG_SOLVER, 0, "Start step %.15g to %.15g", solverInfo->currentTime, tout);
+    infoStreamPrint(LOG_SOLVER, 0, "new step: time=%.15g", solverInfo->currentTime);
     if(dasslData->idid == 1)
     {
       /* rotate RingBuffer before step is calculated */
