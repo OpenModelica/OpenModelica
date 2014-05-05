@@ -54,17 +54,22 @@ void ModelicaFormatMessage(const char* string,...) {
   va_end(args);
 }
 
+MODELICA_NORETURN void OpenModelica_Simulation_ModelicaError(const char* string) MODELICA_NORETURNATTR;
 void OpenModelica_Simulation_ModelicaError(const char* string) {
   fputs(string, stderr);
   fflush(stderr);
   omc_throw(NULL);
 }
 
+MODELICA_NORETURN void OpenModelica_Simulation_ModelicaVFormatError(const char*string, va_list args) MODELICA_NORETURNATTR;
 void OpenModelica_Simulation_ModelicaVFormatError(const char*string, va_list args) {
   vfprintf(stderr, string, args);
   fflush(stderr);
   omc_throw(NULL);
 }
+
+MODELICA_NORETURN void (*OpenModelica_ModelicaError)(const char*) MODELICA_NORETURNATTR;
+MODELICA_NORETURN void (*OpenModelica_ModelicaVFormatError)(const char*,va_list) MODELICA_NORETURNATTR;
 
 void (*OpenModelica_ModelicaError)(const char*) = OpenModelica_Simulation_ModelicaError;
 void (*OpenModelica_ModelicaVFormatError)(const char*,va_list) = OpenModelica_Simulation_ModelicaVFormatError;
