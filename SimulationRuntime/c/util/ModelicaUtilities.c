@@ -68,11 +68,8 @@ void OpenModelica_Simulation_ModelicaVFormatError(const char*string, va_list arg
   omc_throw(NULL);
 }
 
-MODELICA_NORETURN void (*OpenModelica_ModelicaError)(const char*) MODELICA_NORETURNATTR;
-MODELICA_NORETURN void (*OpenModelica_ModelicaVFormatError)(const char*,va_list) MODELICA_NORETURNATTR;
-
-void (*OpenModelica_ModelicaError)(const char*) = OpenModelica_Simulation_ModelicaError;
-void (*OpenModelica_ModelicaVFormatError)(const char*,va_list) = OpenModelica_Simulation_ModelicaVFormatError;
+MODELICA_NORETURN void (*OpenModelica_ModelicaError)(const char*) MODELICA_NORETURNATTR = OpenModelica_Simulation_ModelicaError;
+MODELICA_NORETURN void (*OpenModelica_ModelicaVFormatError)(const char*,va_list) MODELICA_NORETURNATTR = OpenModelica_Simulation_ModelicaVFormatError;
 
 void ModelicaError(const char* string) {
   OpenModelica_ModelicaError(string);
