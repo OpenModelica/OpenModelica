@@ -202,7 +202,7 @@ algorithm
 
       //Create Costs
       //------------
-      taskGraphData = HpcOmTaskGraph.createCosts(inBackendDAE, filenamePrefix +& "_eqs_prof.xml" , simeqCompMapping, taskGraphData);
+      taskGraphData = HpcOmTaskGraph.createCosts(inBackendDAE, filenamePrefix +& "_eqs_prof" , simeqCompMapping, taskGraphData);
       Debug.execStat("hpcom create costs", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
 
       //Get ODE System

@@ -24,8 +24,14 @@
 #include "expat.h"
 #include <list>
 #include <string>
+#include <sstream>
 #include <stdio.h>
 #include <fstream>
+
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
+#include <boost/foreach.hpp>
+#include <cassert>
 
 struct Equation {
   int id;
@@ -115,7 +121,7 @@ void* HpcOmBenchmarkExtImpl__requiredTimeForOp() {
 //  }
 //}
 //
-//void waitForMessage(int warmUp, int replications, int packageSize)
+//void waitForMessage(int warmUp, int replications, int packageSize)pt..str()
 //{
 //  double last[packageSize];
 //
@@ -281,8 +287,7 @@ public:
   ~XmlBenchReader(void) {
   }
 
-  static std::list<std::list<double> > ReadBenchFileEquations(
-      std::string filePath) {
+  static std::list<std::list<double> > ReadBenchFileEquations(std::string filePath) {
     FILE *xmlFile;
     const int bufferSize = 10000;
     char buffer[bufferSize];
@@ -333,10 +338,50 @@ public:
   }
 };
 
+class JsonBenchReader {
+public:
+	JsonBenchReader(void) {
+  }
+
+  ~JsonBenchReader(void) {
+  }
+
+  static std::list<std::list<double> > ReadBenchFileEquations(std::string filePath) {
+    std::list<std::list<double> > resultList = std::list<std::list<double> >();
+    boost::property_tree::ptree pt;
+
+    std::ifstream fileStream(filePath.c_str());
+
+    if(fileStream)
+    {
+		std::stringstream stringStream;
+		stringStream << fileStream.rdbuf();
+		boost::property_tree::read_json(stringStream, pt);
+
+		BOOST_FOREACH(boost::property_tree::ptree::value_type &v, pt.get_child("profileBlocks"))
+		{
+			std::list<double> tmpLst = std::list<double>();
+			assert(v.first.empty());
+			double id = v.second.get<double>("id");
+			double ncall = v.second.get<double>("ncall");
+			double time = v.second.get<double>("time");
+			//std::cerr << "id: " << id << " ncall: " << ncall << " time: " << time << std::endl;
+			tmpLst.push_back(id);
+			tmpLst.push_back(time);
+			tmpLst.push_back(ncall);
+			resultList.push_back(tmpLst);
+		}
+
+		fileStream.close();
+    }
+
+    return resultList;
+  }
+};
+
 void* HpcOmBenchmarkExtImpl__readCalcTimesFromXml(const char *filename)
 {
   void *res = mk_nil();
-  //std::cerr << "Blaaaa" << std::endl;
   std::string errorMsg = std::string("");
   std::ifstream ifile(filename);
   if (!ifile)
@@ -351,6 +396,38 @@ void* HpcOmBenchmarkExtImpl__readCalcTimesFromXml(const char *filename)
 
   std::list<std::list<double> > retLst =
       XmlBenchReader::ReadBenchFileEquations(filename);
+
+  for (std::list<std::list<double> >::iterator it = retLst.begin();
+      it != retLst.end(); it++) {
+    int i = 0;
+    for (std::list<double>::iterator iter = (*it).begin();
+        iter != (*it).end(); iter++) {
+      if (i >= 3)
+        break;
+      res = mk_cons(mk_rcon(*iter), res);
+      //std::cerr << "value " << *iter << std::endl;
+    }
+  }
+  //std::cerr << "Blaaaa2" << std::endl;
+  return res;
+}
+
+void* HpcOmBenchmarkExtImpl__readCalcTimesFromJson(const char *filename)
+{
+  void *res = mk_nil();
+  std::string errorMsg = std::string("");
+  std::ifstream ifile(filename);
+  if (!ifile)
+  {
+    errorMsg = "File '";
+    errorMsg += std::string(filename);
+    errorMsg += "' does not exist";
+    res = mk_cons(mk_scon(errorMsg.c_str()), mk_nil());
+    printf("%s\n",errorMsg.c_str());
+    return res;
+  }
+
+  std::list<std::list<double> > retLst = JsonBenchReader::ReadBenchFileEquations(filename);
 
   for (std::list<std::list<double> >::iterator it = retLst.begin();
       it != retLst.end(); it++) {
