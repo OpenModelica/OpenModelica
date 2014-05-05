@@ -4039,13 +4039,16 @@ public function dimensionsAdd
   output DAE.Dimension res;
 algorithm
   res := matchcontinue(dim1, dim2)
-    case (DAE.DIM_UNKNOWN(), _) then DAE.DIM_UNKNOWN();
-    case (_, DAE.DIM_UNKNOWN()) then DAE.DIM_UNKNOWN();
+    local
+      DAE.Exp e1, e2;
+
     case (_, _)
       equation
         res = intDimension(dimensionSize(dim1) + dimensionSize(dim2));
       then
         res;
+
+    else DAE.DIM_UNKNOWN();
   end matchcontinue;
 end dimensionsAdd;
 
