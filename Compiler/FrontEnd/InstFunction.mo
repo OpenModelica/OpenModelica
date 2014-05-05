@@ -180,6 +180,7 @@ public function instantiateExternalObject
   input Env.Env env "environment";
   input InnerOuter.InstHierarchy inIH;
   input list<SCode.Element> els "elements";
+  input DAE.Mod inMod;
   input Boolean impl;
   output Env.Cache outCache;
   output Env.Env outEnv;
@@ -187,7 +188,7 @@ public function instantiateExternalObject
   output DAE.DAElist dae "resulting dae";
   output ClassInf.State ciState;
 algorithm
-  (outCache,outEnv,outIH,dae,ciState) := matchcontinue(inCache,env,inIH,els,impl)
+  (outCache,outEnv,outIH,dae,ciState) := matchcontinue(inCache,env,inIH,els,inMod,impl)
     local
       SCode.Element destr,constr;
       Env.Env env1;
@@ -200,13 +201,14 @@ algorithm
       InstanceHierarchy ih;
       DAE.ElementSource source "the origin of the element";
       // Explicit instantiation, generate constructor and destructor and the function type.
-    case  (cache,_,ih,_,false)
+    case  (cache,_,ih,_,_,false)
       equation
+        className=Env.getClassName(env); // The external object classname is in top frame of environment.
+        checkExternalObjectMod(inMod, className);
         destr = SCode.getExternalObjectDestructor(els);
         constr = SCode.getExternalObjectConstructor(els);
         (cache,ih) = instantiateExternalObjectDestructor(cache,env,ih,destr);
         (cache,ih,functp) = instantiateExternalObjectConstructor(cache,env,ih,constr);
-        className=Env.getClassName(env); // The external object classname is in top frame of environment.
         SOME(classNameFQ)= Env.getEnvPath(env); // Fully qualified classname
         // Extend the frame with the type, one frame up at the same place as the class.
         f::fs = env;
@@ -219,19 +221,48 @@ algorithm
         (cache,env1,ih,DAE.DAE({DAE.EXTOBJECTCLASS(classNameFQ,source)}),ClassInf.EXTERNAL_OBJ(classNameFQ));
 
     // Implicit, do not instantiate constructor and destructor.
-    case (cache,_,ih,_,true)
+    case (cache,_,ih,_,_,true)
       equation
         SOME(classNameFQ)= Env.getEnvPath(env); // Fully qualified classname
       then
         (cache,env,ih,DAE.emptyDae,ClassInf.EXTERNAL_OBJ(classNameFQ));
 
     // failed
-    case (_,_,_,_,_)
+    else
       equation
-        print("Inst.instantiateExternalObject failed\n");
+        Debug.fprintln(Flags.FAILTRACE, "- InstFunction.instantiateExternalObject failed.");
       then fail();
   end matchcontinue;
 end instantiateExternalObject;
+
+protected function checkExternalObjectMod
+  "Checks that an external object instance does not have any modifiers. This is
+   done because an external object may only have two elements, a constructor and
+   a destructor, and there's no point in modifying these."
+  input DAE.Mod inMod;
+  input String inClassName;
+algorithm
+  _ := match(inMod, inClassName)
+    local
+      DAE.Ident id;
+      DAE.Mod mod;
+      Absyn.Info info;
+
+    case (DAE.NOMOD(), _) then ();
+    case (DAE.MOD(subModLst = {}), _) then ();
+
+    // The modifier contains a list of submods. Print an error for the first one
+    // to make it look like a normal modifier error.
+    case (DAE.MOD(subModLst = DAE.NAMEMOD(ident = id, mod = mod) :: _), _)
+      equation
+        info = Mod.getModInfo(mod);
+        Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
+          {id, inClassName}, info);
+      then
+        fail();
+
+  end match;
+end checkExternalObjectMod;
 
 protected function instantiateExternalObjectDestructor
 "instantiates the destructor function of an external object"
@@ -253,10 +284,9 @@ algorithm
         (cache,_,ih) = implicitFunctionInstantiation(cache,env,ih,DAE.NOMOD(),Prefix.NOPRE(),cl,{});
       then
         (cache,ih);
-    // failure
-    case (_,_,_,_)
+    else
       equation
-        print("Inst.instantiateExternalObjectDestructor failed\n");
+        Debug.fprintln(Flags.FAILTRACE, "- InstFunction.instantiateExternalObjectDestructor failed.");
       then fail();
    end matchcontinue;
 end instantiateExternalObjectDestructor;
@@ -284,9 +314,9 @@ algorithm
         (cache,ty,_) = Lookup.lookupType(cache,env1,Absyn.IDENT("constructor"),NONE());
       then
         (cache,ih,ty);
-    case (_,_,_,_)
+    else
       equation
-        print("Inst.instantiateExternalObjectConstructor failed\n");
+        Debug.fprintln(Flags.FAILTRACE, "- InstFunction.instantiateExternalObjectConstructor failed.");
       then fail();
   end matchcontinue;
 end instantiateExternalObjectConstructor;

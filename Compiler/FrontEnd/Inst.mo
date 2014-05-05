@@ -2213,9 +2213,9 @@ algorithm
       then
         fail();*/
 
-    // This case instantiates external objects. An external object inherits from ExternalOBject
+    // This case instantiates external objects. An external object inherits from ExternalObject
     // and have two local functions: constructor and destructor (and no other elements).
-    case (cache,env,ih,store,_,_,ci_state,_,
+    case (cache,env,ih,store,mods,_,ci_state,_,
           SCode.PARTS(elementLst = els,
                       normalEquationLst = _, initialEquationLst = _,
                       normalAlgorithmLst = _, initialAlgorithmLst = _),
@@ -2223,7 +2223,7 @@ algorithm
       equation
         false = Util.getStatefulBoolean(stopInst);
          true = SCode.isExternalObject(els);
-         (cache,env,ih,dae,ci_state) = InstFunction.instantiateExternalObject(cache,env,ih,els,impl);
+         (cache,env,ih,dae,ci_state) = InstFunction.instantiateExternalObject(cache,env,ih,els,mods,impl);
       then
         (cache,env,ih,store,dae,inSets,ci_state,{},NONE(),NONE(),NONE(),graph);
 
@@ -2237,6 +2237,7 @@ algorithm
         re,_,_,_,inst_dims,impl,callscope,graph,csets,_,_,_)
       equation
         false = Util.getStatefulBoolean(stopInst);
+        false = SCode.isExternalObject(els);
         Debug.bcall0(Flags.getConfigBool(Flags.UNIT_CHECKING),UnitParserExt.checkpoint);
         //Debug.traceln(" Instclassdef for: " +& PrefixUtil.printPrefixStr(pre) +& "." +&  className +& " mods: " +& Mod.printModStr(mods));
         ci_state1 = ClassInf.trans(ci_state, ClassInf.NEWDEF());
