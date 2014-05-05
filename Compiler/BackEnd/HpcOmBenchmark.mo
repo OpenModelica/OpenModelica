@@ -37,7 +37,6 @@ encapsulated package HpcOmBenchmark
 "
 
 protected import HpcOmBenchmarkExt;
-protected import System;
 
 public function benchSystem
   output tuple<tuple<Integer,Integer>,tuple<Integer,Integer>> oTime; //required time for <op,com>
@@ -66,68 +65,23 @@ algorithm
     oTime := ((opCostM,opCostN),(comCostM,comCostN));
 end benchSystem;
 
-public function readCalcTimesFromFile "author: marcusw
-  Tries to find a file named <%iFileNamePrefix%>.xml or <%iFileNamePrefix%>.json. If such a file exists, the
-  calculation times are read out. If not, the function will fail."
-  input String iFileNamePrefix;
-  output list<tuple<Integer,Integer,Real>> calcTimes; //<simEqIdx,numberOfCalcs,calcTimeSum>
-protected
-  String fullFileName;
-  list<tuple<Integer,Integer,Real>> tmpCalcTimes;
-algorithm
-  calcTimes := matchcontinue(iFileNamePrefix)
-    case(_)
-      equation
-        fullFileName = iFileNamePrefix +& ".json";
-        SOME(_) = System.getFileModificationTime(fullFileName);
-        //json-file does exist
-        print("Using json-file\n");
-        tmpCalcTimes = readCalcTimesFromJson(fullFileName);
-      then tmpCalcTimes;
-    case(_)
-      equation
-        fullFileName = iFileNamePrefix +& ".xml";
-        SOME(_) = System.getFileModificationTime(fullFileName);
-        //xml-file does exist
-        tmpCalcTimes = readCalcTimesFromXml(fullFileName);
-      then tmpCalcTimes;
-    else
-      equation
-        print("readCalcTimesFromFile: No valid profiling-file found.\n");
-      then fail();
-  end matchcontinue;
-end readCalcTimesFromFile;
-
-public function readCalcTimesFromXml "author: marcusw
-  Reads the calculation times of the different simCode-equations out of the given xml-file (fileName). Make sure that the file exists before invoking this
-  method, otherwise it will return an misleading error-message.
-  Deprecated since commit r20267. Use the generated *.json-file instead."
+public function readCalcTimesFromXml
   input String fileName;
-  output list<tuple<Integer,Integer,Real>> calcTimes; //<simEqIdx,numberOfCalcs,calcTimeSum>
+  output List<tuple<Integer,Integer,Real>> calcTimes; //<simEqIdx,numberOfCalcs,calcTimeSum>
+
 protected
   list<Real> tmpResult;
+
 algorithm
   tmpResult := HpcOmBenchmarkExt.readCalcTimesFromXml(fileName);
-  calcTimes := expandCalcTimes(tmpResult,{});
+  calcTimes := readCalcTimesFromXml1(tmpResult,{});
 end readCalcTimesFromXml;
 
-public function readCalcTimesFromJson "author: marcusw
-  Reads the calculation times of the different simCode-equations out of the given json-file (fileName). Make sure that the file exists before invoking this
-  method, otherwise it will return an misleading error-message."
-  input String fileName;
-  output list<tuple<Integer,Integer,Real>> calcTimes; //<simEqIdx,numberOfCalcs,calcTimeSum>
-protected
-  list<Real> tmpResult;
-algorithm
-  tmpResult := HpcOmBenchmarkExt.readCalcTimesFromJson(fileName);
-  calcTimes := expandCalcTimes(tmpResult,{});
-end readCalcTimesFromJson;
-
-protected function expandCalcTimes "author: marcusw
-  Takes a list of real vars and puts the first three entries into the tuple list. Afterwards it will cut off these entries and repeat with a tail-recursive call."
+protected function readCalcTimesFromXml1
   input list<Real> iList;
   input list<tuple<Integer,Integer,Real>> iTuples; //<eqIdx,numOfCalcs,calcTimeSum> attention: eqIdx starts with zero
   output list<tuple<Integer,Integer,Real>> oTuples;
+
 protected
   Real eqIdx, numOfCalcs, calcTimeSum;
   Integer intNumOfCalcs,intEqIdx;
@@ -140,15 +94,15 @@ algorithm
       //print("readCalcTimesFromXml1 eqIdx: " +& intString(realInt(eqIdx)) +& " numOfCalcs: " +& intString(realInt(numOfCalcs)) +& " calcTime: " +& realString(calcTimeSum) +& " \n");
       intNumOfCalcs = realInt(numOfCalcs);
       intEqIdx = realInt(eqIdx);
-      tmpTuples = expandCalcTimes(rest, (intEqIdx,intNumOfCalcs,calcTimeSum)::iTuples);
+      tmpTuples = readCalcTimesFromXml1(rest, (intEqIdx,intNumOfCalcs,calcTimeSum)::iTuples);
     then tmpTuples;
   case ({},_)
     then iTuples;
   else
     equation
-      print("expandCalcTimes: Invalid number of list-entries\n");
+      print("readCalcTimesFromXml1: Invalid number of arguments\n");
     then fail();
   end matchcontinue;
-end expandCalcTimes;
+end readCalcTimesFromXml1;
 
 end HpcOmBenchmark;

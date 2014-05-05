@@ -60,11 +60,4 @@ RML_BEGIN_LABEL(HpcOmBenchmarkExt__readCalcTimesFromXml)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
-
-RML_BEGIN_LABEL(HpcOmBenchmarkExt__readCalcTimesFromJson)
-{
-  rmlA0 = HpcOmBenchmarkExtImpl__readCalcTimesFromJson(RML_STRINGDATA(rmlA0));
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
 }
