@@ -1071,7 +1071,7 @@ QStringList StringHandler::getOpenFileNames(QWidget* parent, const QString &capt
   QList<QUrl> urls = dialog->sidebarUrls();
   urls << QUrl("file://" + OpenModelica::tempDirectory());
   dialog->setSidebarUrls(urls);
-  dialog->setFileMode(QFileDialog::ExistingFile);
+  dialog->setFileMode(QFileDialog::ExistingFiles);
   if (dialog->exec())
   {
     fileNames = dialog->selectedFiles();
