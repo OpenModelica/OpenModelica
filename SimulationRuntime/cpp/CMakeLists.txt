@@ -321,7 +321,7 @@ ENDFOREACH(HEADER)
 ENDMACRO(INSTALL_HEADERS_WITH_DIRECTORY)
 
 
-add_precompiled_header(${ModelicaName} Include/Core/Modelica.h )
+
 
 install (FILES "${PROJECT_BINARY_DIR}/LibrariesConfig.h" DESTINATION include/omc/cpp)
 

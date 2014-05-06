@@ -70,10 +70,13 @@ ENDIF(MSVC)
  
 IF(CMAKE_COMPILER_IS_GNUCXX)
 GET_FILENAME_COMPONENT(_name ${_input} NAME)
-SET(_source "${CMAKE_CURRENT_SOURCE_DIR}/${_input}")
-SET(_outdir "${CMAKE_CURRENT_BINARY_DIR}/${_name}.gch")
+#SET(_source "${CMAKE_CURRENT_SOURCE_DIR}/${_input}")
+#SET(_outdir "${CMAKE_CURRENT_BINARY_DIR}/${_name}.gch")
+SET(_source "${CMAKE_SOURCE_DIR}/${_input}")
+SET(_outdir "${CMAKE_BINARY_DIR}/${_name}.gch")
 MAKE_DIRECTORY(${_outdir})
 #SET(_output "${_outdir}/.c++")
+#changed output so that gcc automaticly finds pre compiled header for Modelica system
 SET(_output "${_outdir}/${_name}.gch")
 STRING(TOUPPER "CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}" _flags_var_name)
 SET(_compiler_FLAGS ${${_flags_var_name}})
@@ -82,18 +85,23 @@ string(REGEX REPLACE "O[1-9]" "O0" _compiler_FLAGS ${_compiler_FLAGS} )
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 set(_compiler_FLAGS "${_compiler_FLAGS} -fPIC")
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+
+#SYSTEM_FLAGS variable for configuration file to set used compiler flags
+GET_DIRECTORY_PROPERTY(_directory_flags DEFINITIONS)
+#LIST(APPEND _compiler_FLAGS ${_directory_flags})
+set(_compiler_FLAGS "${_compiler_FLAGS} ${_directory_flags}") 
+set(SYSTEM_CFLAGS ${_compiler_FLAGS})
 GET_DIRECTORY_PROPERTY(_directory_flags INCLUDE_DIRECTORIES)
+
 FOREACH(item ${_directory_flags})
 LIST(APPEND _compiler_FLAGS "-I${item}")
 ENDFOREACH(item)
- 
-GET_DIRECTORY_PROPERTY(_directory_flags DEFINITIONS)
-LIST(APPEND _compiler_FLAGS ${_directory_flags})
 
 
  
 SEPARATE_ARGUMENTS(_compiler_FLAGS)
 message(STATUS "${CMAKE_CXX_COMPILER} -DPCHCOMPILE ${_compiler_FLAGS} -x c++-header -o {_output} ${_source}")
+
 ADD_CUSTOM_COMMAND(
 OUTPUT ${_output}
 COMMAND ${CMAKE_CXX_COMPILER} ${_compiler_FLAGS} -x c++-header -o ${_output} ${_source}
@@ -101,7 +109,11 @@ DEPENDS ${_source} )
 ADD_CUSTOM_TARGET(${_targetName}_gch DEPENDS ${_output})
 ADD_DEPENDENCIES(${_targetName} ${_targetName}_gch)
 SET_TARGET_PROPERTIES(${_targetName} PROPERTIES COMPILE_FLAGS "-include ${_name} -Winvalid-pch")
+#copy pre compiled header file in installation directory
 install (FILES "${_output}" DESTINATION include/omc/cpp)
+
+
+
 ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 ENDMACRO()
 

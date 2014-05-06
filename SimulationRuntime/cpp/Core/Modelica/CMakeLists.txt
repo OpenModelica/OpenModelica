@@ -105,6 +105,8 @@ foreach(lib ${LAPACK_LIBRARIES})
 endforeach(lib ${LAPACK_LIBRARIES})
 #end Fix
 
+add_precompiled_header(${ModelicaName} Include/Core/Modelica.h )
+
  configure_file (
   "ModelicaConfig.inc.in"
   "${PROJECT_BINARY_DIR}/ModelicaConfig.inc"
@@ -115,7 +117,8 @@ configure_file (
  "${PROJECT_BINARY_DIR}/ModelicaLibraryConfig.inc"
  )
  
-  
+
+ 
 install (FILES
 				${PROJECT_BINARY_DIR}/ModelicaConfig.inc
 				${PROJECT_BINARY_DIR}/ModelicaLibraryConfig.inc
