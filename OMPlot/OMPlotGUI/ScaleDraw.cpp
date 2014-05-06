@@ -50,11 +50,16 @@ ScaleDraw::ScaleDraw()
 
 void ScaleDraw::drawBackbone( QPainter *painter ) const
 {
+#if QWT_VERSION >= 0x060000
   const bool doAlign = QwtPainter::roundingAlignment( painter );
+  const int pw = qMax( penWidth(), 1 );
+#else
+  const bool doAlign = true;
+  const int pw = 1;
+#endif
 
   const QPointF &position = pos();
   const double len = length();
-  const int pw = qMax( penWidth(), 1 );
 
   // pos indicates a border not the center of the backbone line
   // so we need to shift its position depending on the pen width
@@ -118,8 +123,13 @@ void ScaleDraw::drawTick( QPainter *painter, double value, double len ) const
 {
   if ( len <= 0 )
     return;
-
+#if QWT_VERSION >= 0x060000
   const bool roundingAlignment = QwtPainter::roundingAlignment( painter );
+  const int pw = penWidth();
+#else
+  const bool roundingAlignment = true;
+  const int pw = 1;
+#endif
 
   QPointF position = pos();
 
@@ -127,7 +137,6 @@ void ScaleDraw::drawTick( QPainter *painter, double value, double len ) const
   if ( roundingAlignment )
     tval = qRound( tval );
 
-  const int pw = penWidth();
   int a = 0;
   if ( pw > 1 && roundingAlignment )
     a = 1;
