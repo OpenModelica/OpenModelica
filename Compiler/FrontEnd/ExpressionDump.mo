@@ -1502,7 +1502,7 @@ algorithm
         res_str = stringAppendList({gen_str,"BOX ","\n",ct,""});
       then
         res_str;
-        
+
      case (DAE.UNBOX(exp=e,ty=_),level)
       equation
         gen_str = genStringNTime("   |", level);
@@ -1511,7 +1511,7 @@ algorithm
         res_str = stringAppendList({gen_str,"UNBOX ","\n",ct,""});
       then
         res_str;
-        
+
     case (_,level)
       equation
         gen_str = genStringNTime("   |", level);

@@ -1583,7 +1583,7 @@ algorithm
         noArr = listLength(expLst)==1;
         exp = List.first(expLst);
         noArr = noArr  and expEqual(exp,e);
-        expLst = Util.if_(noArr,{},expLst);    
+        expLst = Util.if_(noArr,{},expLst);
       then
         expLst;
     case(DAE.CALL(path=_,expLst=expLst,attr=_))
