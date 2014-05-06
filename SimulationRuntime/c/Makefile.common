@@ -26,7 +26,7 @@ RUNTIME_HEADERS = $(LIBF2CHEADER) \
 
 RUNTIMELINEAR_HEADERS = ./linearization/linearize.h
 
-RUNTIMEOPTIMZ_HEADERS = ./optimization/OptimizerData.h ./optimization/OptimizerLocalFunction.h ./optimization/OptimizerInterface.h
+RUNTIMEOPTIMZ_HEADERS = ./optimization/interfaceOptimization.h ./optimization/ipoptODEstruct.h ./optimization/localFunction.h
 
 RUNTIMESIMULATION_HEADERS = ./simulation/modelinfo.h \
 ./simulation/options.h \
