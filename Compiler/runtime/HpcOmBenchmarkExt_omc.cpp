@@ -20,4 +20,9 @@ extern void* HpcOmBenchmarkExt_readCalcTimesFromXml(const char *filename)
 {
   return HpcOmBenchmarkExtImpl__readCalcTimesFromXml(filename);
 }
+
+extern void* HpcOmBenchmarkExt_readCalcTimesFromJson(const char *filename)
+{
+  return HpcOmBenchmarkExtImpl__readCalcTimesFromJson(filename);
+}
 }

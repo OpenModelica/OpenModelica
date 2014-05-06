@@ -48,7 +48,11 @@ typedef LARGE_INTEGER rtclock_t;
 typedef uint64_t rtclock_t;
 #else
 #include <time.h>
-typedef struct timespec rtclock_t;
+typedef union rtclock_t {
+	struct timespec time;
+	unsigned long long cycles;
+} rtclock_t;
+//typedef struct timespec ;
 #endif
 
 /* If min_time is set, subtract this amount from measured times to avoid
@@ -357,67 +361,148 @@ int rt_set_clock(enum omc_rt_clock_t newClock) {
   return 0;
 }
 
+#if defined(__i386__)
+static __inline__ unsigned long long RDTSC(void)
+{
+    unsigned long long int x;
+    __asm__ volatile (".byte 0x0f, 0x31" : "=A" (x));
+    return x;
+}
+
+#elif defined(__x86_64__)
+static __inline__ unsigned long long RDTSC(void)
+{
+    unsigned hi, lo;
+    __asm__ __volatile__ ("rdtsc" : "=a"(lo), "=d"(hi));
+    return ( (unsigned long long)lo)|( ((unsigned long long)hi)<<32 );
+}
+#endif
+
 void rt_tick(int ix) {
-  clock_gettime(omc_clock, &tick_tp[ix]);
+  if(omc_clock == OMC_CPU_CYCLES)
+  {
+    tick_tp[ix].cycles = RDTSC();
+  }
+  else
+  {
+    clock_gettime(omc_clock, &tick_tp[ix].time);
+  }
+
   rt_clock_ncall[ix]++;
 }
 
 double rt_tock(int ix) {
   double d;
-  struct timespec tock_tp = {0,0};
-  clock_gettime(omc_clock, &tock_tp);
-  d = (tock_tp.tv_sec - tick_tp[ix].tv_sec) + (tock_tp.tv_nsec - tick_tp[ix].tv_nsec)*1e-9;
-  if (d < min_time) {
-    min_time = d;
+  if(omc_clock == OMC_CPU_CYCLES)
+  {
+    unsigned long long timer = RDTSC();
+    d = (double) (timer - tick_tp[ix].cycles);
+  }
+  else
+  {
+    struct timespec tock_tp = {0,0};
+    clock_gettime(omc_clock, &tock_tp);
+    d = (tock_tp.tv_sec - tick_tp[ix].time.tv_sec) + (tock_tp.tv_nsec - tick_tp[ix].time.tv_nsec)*1e-9;
+    if (d < min_time) {
+      min_time = d;
+    }
   }
   return d - min_time;
 }
 
 void rt_clear(int ix)
 {
-  total_tp[ix].tv_sec += acc_tp[ix].tv_sec;
-  total_tp[ix].tv_nsec += acc_tp[ix].tv_nsec;
-  rt_clock_ncall_total[ix] += rt_clock_ncall[ix];
-  max_tp[ix] = max_rtclock(max_tp[ix],acc_tp[ix]);
-  rt_update_min_max_ncall(ix);
+  if(omc_clock == OMC_CPU_CYCLES)
+  {
+    total_tp[ix].cycles += acc_tp[ix].cycles;
+    rt_clock_ncall_total[ix] += rt_clock_ncall[ix];
+    max_tp[ix] = max_rtclock(max_tp[ix],acc_tp[ix]);
+    rt_update_min_max_ncall(ix);
 
-  acc_tp[ix].tv_sec = 0;
-  acc_tp[ix].tv_nsec = 0;
-  rt_clock_ncall[ix] = 0;
+    acc_tp[ix].cycles = 0;
+    acc_tp[ix].cycles = 0;
+    rt_clock_ncall[ix] = 0;
+  }
+  else
+  {
+    total_tp[ix].time.tv_sec += acc_tp[ix].time.tv_sec;
+    total_tp[ix].time.tv_nsec += acc_tp[ix].time.tv_nsec;
+    rt_clock_ncall_total[ix] += rt_clock_ncall[ix];
+    max_tp[ix] = max_rtclock(max_tp[ix],acc_tp[ix]);
+    rt_update_min_max_ncall(ix);
+
+    acc_tp[ix].time.tv_sec = 0;
+    acc_tp[ix].time.tv_nsec = 0;
+    rt_clock_ncall[ix] = 0;
+  }
 }
 
 void rt_clear_total(int ix)
 {
-  total_tp[ix].tv_sec = 0;
-  total_tp[ix].tv_nsec = 0;
-  rt_clock_ncall_total[ix] = 0;
+  if(omc_clock == OMC_CPU_CYCLES)
+  {
+	  total_tp[ix].cycles = 0;
+	  rt_clock_ncall_total[ix] = 0;
 
-  acc_tp[ix].tv_sec = 0;
-  acc_tp[ix].tv_nsec = 0;
-  rt_clock_ncall[ix] = 0;
+	  acc_tp[ix].cycles = 0;
+	  rt_clock_ncall[ix] = 0;
+  }
+  else
+  {
+	  total_tp[ix].time.tv_sec = 0;
+	  total_tp[ix].time.tv_nsec = 0;
+	  rt_clock_ncall_total[ix] = 0;
+
+	  acc_tp[ix].time.tv_sec = 0;
+	  acc_tp[ix].time.tv_nsec = 0;
+	  rt_clock_ncall[ix] = 0;
+  }
 }
 
 void rt_accumulate(int ix) {
-  struct timespec tock_tp = {0,0};
-  clock_gettime(omc_clock, &tock_tp);
-  acc_tp[ix].tv_sec += tock_tp.tv_sec -tick_tp[ix].tv_sec;
-  acc_tp[ix].tv_nsec += tock_tp.tv_nsec-tick_tp[ix].tv_nsec;
-  if(acc_tp[ix].tv_nsec >= 1e9) {
-    acc_tp[ix].tv_sec++;
-    acc_tp[ix].tv_nsec -= 1e9;
+  if(omc_clock == OMC_CPU_CYCLES)
+  {
+    long long cycles = RDTSC();
+    acc_tp[ix].cycles += cycles -tick_tp[ix].cycles;
+  }
+  else
+  {
+    struct timespec tock_tp = {0,0};
+    clock_gettime(omc_clock, &tock_tp);
+    acc_tp[ix].time.tv_sec += tock_tp.tv_sec -tick_tp[ix].time.tv_sec;
+    acc_tp[ix].time.tv_nsec += tock_tp.tv_nsec-tick_tp[ix].time.tv_nsec;
+    if(acc_tp[ix].time.tv_nsec >= 1e9) {
+      acc_tp[ix].time.tv_sec++;
+      acc_tp[ix].time.tv_nsec -= 1e9;
+    }
   }
 }
 
 static double rtclock_value(rtclock_t tp) {
-  double d = tp.tv_sec + tp.tv_nsec*1e-9;
+  double d;
+  if(omc_clock == OMC_CPU_CYCLES)
+  {
+    d = tp.cycles;
+  }
+  else
+  {
+    d = tp.time.tv_sec + tp.time.tv_nsec*1e-9;
+  }
   return d;
 }
 
 int rtclock_compare(rtclock_t t1, rtclock_t t2) {
-  if(t1.tv_sec == t2.tv_sec) {
-    return t1.tv_nsec-t2.tv_nsec;
+  if(omc_clock == OMC_CPU_CYCLES)
+  {
+    return t1.cycles-t2.cycles;
   }
-  return t1.tv_sec-t2.tv_sec;
+  else
+  {
+    if(t1.time.tv_sec == t2.time.tv_sec) {
+      return t1.time.tv_nsec-t2.time.tv_nsec;
+    }
+    return t1.time.tv_sec-t2.time.tv_sec;
+  }
 }
 
 #endif

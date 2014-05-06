@@ -3643,7 +3643,7 @@ end copyTaskGraphMeta;
 public function createCosts "author: marcusw
   Updates the given TaskGraphMeta-Structure with the calculated exec und communication costs."
   input BackendDAE.BackendDAE iDae;
-  input String benchFileName; //The name of the xml-file
+  input String benchFilePrefix; //The prefix of the xml or json profiling-file
   input array<Integer> simeqCompMapping; //Map each simEq to the scc
   input TaskGraphMeta iTaskGraphMeta;
   output TaskGraphMeta oTaskGraphMeta;
@@ -3663,13 +3663,13 @@ protected
   array<list<tuple<Integer, Integer, Integer>>> commCosts;
 
 algorithm
-  oTaskGraphMeta := matchcontinue(iDae,benchFileName,simeqCompMapping,iTaskGraphMeta)
+  oTaskGraphMeta := matchcontinue(iDae,benchFilePrefix,simeqCompMapping,iTaskGraphMeta)
     case(BackendDAE.DAE(shared=shared),_,_,TASKGRAPHMETA(inComps=inComps, commCosts=commCosts))
       equation
         (comps,compMapping_withIdx) = getSystemComponents(iDae);
         compMapping = Util.arrayMap(compMapping_withIdx, Util.tuple21);
         ((_,reqTimeCom)) = HpcOmBenchmark.benchSystem();
-        reqTimeOpLstSimCode = HpcOmBenchmark.readCalcTimesFromXml(benchFileName);
+        reqTimeOpLstSimCode = HpcOmBenchmark.readCalcTimesFromFile(benchFilePrefix);
         reqTimeOpSimCode = arrayCreate(listLength(reqTimeOpLstSimCode),(-1,-1.0));
         reqTimeOpSimCode = List.fold(reqTimeOpLstSimCode, createCosts1, reqTimeOpSimCode);
         reqTimeOp = arrayCreate(listLength(comps),-1.0);
@@ -3680,7 +3680,7 @@ algorithm
     else
       equation
         tmpTaskGraphMeta = estimateCosts(iDae,iTaskGraphMeta);
-        print("Warning: The costs have been estimated. Maybe " +& benchFileName +& "-file is missing.\n");
+        print("Warning: The costs have been estimated. Maybe " +& benchFilePrefix +& "-file is missing.\n");
       then tmpTaskGraphMeta;
   end matchcontinue;
 end createCosts;
