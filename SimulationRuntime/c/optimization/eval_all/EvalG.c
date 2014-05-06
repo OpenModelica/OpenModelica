@@ -32,6 +32,7 @@
  */
 
 #include "../OptimizerData.h"
+#include "../OptimizerLocalFunction.h"
 #include "../../simulation/results/simulation_result.h"
 
 static inline void generated_jac_struc(OptData *, int*, int*);
