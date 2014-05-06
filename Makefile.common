@@ -310,7 +310,10 @@ gc-clean:
 	rm -f 3rdParty/gc-7.2/Makefile
 bootstrap-clean:
 	$(MAKE) -C Compiler/boot clean -f $(defaultMakefileTarget)
-clean: qtclean fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean Cdaskr-clean bootstrap-clean msgpack-clean graphstream-clean
+openblas-clean:
+	# OpenBLAS make clean actually gives error-messages. Let it do it, but silently
+	$(MAKE) -C 3rdParty/OpenBLAS-0.2.8 clean > /dev/null 2>&1
+clean: qtclean fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean Cdaskr-clean bootstrap-clean msgpack-clean graphstream-clean openblas-clean
 	(cd SimulationRuntime/c && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd SimulationRuntime/interactive && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean)
@@ -318,7 +321,6 @@ clean: qtclean fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMi
 	(cd mosh/src && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd PythonInterface && $(MAKE) -f $(defaultMakefileTarget) clean)
 	if test -f 3rdParty/modelica3d/build/Makefile; then $(MAKE) -C 3rdParty/modelica3d/build clean; fi
-	$(MAKE) -C 3rdParty/OpenBLAS-0.2.8 clean
 	if test -f 3rdParty/Ipopt-3.11.6/Makefile; then $(MAKE) -C 3rdParty/Ipopt-3.11.6 distclean || true; fi
 	(rm -rf 3rdParty/modelica3d/build)
 	(rm -rf SimulationRuntime/build_c)
