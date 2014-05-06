@@ -32,6 +32,7 @@
  */
 
 #include "PlotWindow.h"
+#include "ScaleDraw.h"
 #include "qwt_plot_canvas.h"
 #if QWT_VERSION < 0x060100
 #include "qwt_legend_item.h"
@@ -60,10 +61,18 @@ Plot::Plot(PlotWindow *pParent)
   mpPlotPicker->setTrackerMode(QwtPicker::AlwaysOn);
   // set canvas arrow
   QwtPlotCanvas *pPlotCanvas = static_cast<QwtPlotCanvas*>(canvas());
-  pPlotCanvas->setFrameStyle(QFrame::NoFrame);
+  pPlotCanvas->setFrameStyle(QFrame::NoFrame);  /* Ticket #2679 point 6. Remove the default frame from the canvas. */
   canvas()->setCursor(Qt::ArrowCursor);
   setCanvasBackground(Qt::white);
   setContentsMargins(10, 10, 10, 10);
+  /*
+    Ticket #2679 point 2.
+    Move the canvas little bit from bottom and left to align the axis at starting point.
+    There is a slight margin in the axis drawn so we have to subclass QwtScaleDraw to draw the backbone line and ticks at the proper location.
+    */
+  canvas()->setContentsMargins(-5, 0, 0, -5);
+  setAxisScaleDraw(QwtPlot::yLeft, new ScaleDraw);
+  setAxisScaleDraw(QwtPlot::xBottom, new ScaleDraw);
   // fill colors list
   fillColorsList();
   setAutoReplot(true);

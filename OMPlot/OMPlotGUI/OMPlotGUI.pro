@@ -20,6 +20,7 @@ SOURCES += main.cpp \
     Legend.cpp \
     PlotPanner.cpp \
     PlotGrid.cpp \
+    ScaleDraw.cpp \
     PlotCurve.cpp \
     PlotWindow.cpp \
     PlotApplication.cpp \
@@ -34,6 +35,7 @@ HEADERS  += ../../SimulationRuntime/c/util/read_matlab4.h \
     Legend.h \
     PlotPanner.h \
     PlotGrid.h \
+    ScaleDraw.h \
     PlotCurve.h \
     PlotWindow.h \
     PlotApplication.h \
