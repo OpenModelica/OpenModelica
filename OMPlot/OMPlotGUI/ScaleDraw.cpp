@@ -136,7 +136,7 @@ void ScaleDraw::drawTick( QPainter *painter, double value, double len ) const
 #if QWT_VERSION >= 0x060100
   double tval = scaleMap().transform( value );
 #else
-  double tval = const_cast<QwtScaleMap&>scaleMap().transform( value );
+  double tval = const_cast<QwtScaleMap&>(scaleMap()).transform( value );
 #endif
   if ( roundingAlignment )
     tval = qRound( tval );
