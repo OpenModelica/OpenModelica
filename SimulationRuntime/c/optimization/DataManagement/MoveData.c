@@ -288,7 +288,7 @@ static inline void calculatedScalingHelper(OptDataBounds * bounds, OptDataTime *
     bounds->scalb[i] = (long double**)malloc(np*sizeof(long double*));
     l = (i + 1 < nsi ) ? 0 : 1;
     for(j = 0; j < np; ++j){
-      bounds->scalb[i][j] = (long double*)malloc(nx*sizeof(long double)); 
+      bounds->scalb[i][j] = (long double*)malloc(nx*sizeof(long double));
       for(k = 0; k < nx; ++k)
         bounds->scalb[i][j][k] = time->dt[l]*rk->b[j];
     }
@@ -479,7 +479,7 @@ inline void res2file(OptData *optData, SOLVER_INFO* solverInfo, double *vopt){
       /******************/
       fprintf(pFile, "%lf ",(double)t[ii][jj]);
       for(i = 0; i < nu; ++i){
-    	data->simulationInfo.inputVars[i] = vopt[ii*nvnp+nx+i];
+      data->simulationInfo.inputVars[i] = vopt[ii*nvnp+nx+i];
         fprintf(pFile, "%lf ", (double)data->simulationInfo.inputVars[i]);
       }
       fprintf(pFile, "%s", "\n");

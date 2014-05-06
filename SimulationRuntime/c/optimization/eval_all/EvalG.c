@@ -99,7 +99,7 @@ Bool evalfG(Index n, double * vopt, Bool new_x, int m, Number *g, void * useData
   vv[0] = optData->sv0;
   for(j = 0; j < np; ++j){
     vv[j + 1] = vopt + j*nv;
-  } 
+  }
 
   for(i = 0, shift = 0; i <nsi; ++i){
 
@@ -135,7 +135,7 @@ Bool evalfG(Index n, double * vopt, Bool new_x, int m, Number *g, void * useData
 
     vv[0] = vv[np];
     for(j = 0; j < np; ++j)
-      vv[j + 1] = vv[j] + nv; 
+      vv[j + 1] = vv[j] + nv;
 
   }
   if(ACTIVE_STREAM(LOG_IPOPT_ERROR)){

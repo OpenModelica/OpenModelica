@@ -61,7 +61,7 @@ typedef struct OptDataDim{
  int index_con;
  int index_lagrange;
  int index_mayer;
- 
+
  int nJderx;
  int nH0;
  int nH1;
@@ -123,7 +123,7 @@ typedef struct OptDataStructure{
   modelica_real *pmayer;
   modelica_real *plagrange;
   modelica_real *** seedVec;
-  
+
 }OptDataStructure;
 
 

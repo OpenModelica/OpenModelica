@@ -183,7 +183,7 @@ static inline void local_jac_struct(DATA * data, OptDataDim * dim, OptDataStruct
         /**********************/
         for(ii = 1; ii < maxColors; ++ii){
           s->seedVec[index][ii] = (modelica_real*)calloc(sizeCols, sizeof(modelica_real));
-          for(i = 0; i < sizeCols; i++){ 
+          for(i = 0; i < sizeCols; i++){
             if(cC[i] == ii){
               s->seedVec[index][ii][i] = vnom[i];
               for(j = lindex[i]; j < lindex[i + 1]; ++j){
