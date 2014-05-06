@@ -1442,6 +1442,15 @@ algorithm
       then
         res_str;
 
+    case (DAE.ASUB(exp = e,sub = _),level)
+      equation
+        gen_str = genStringNTime("   |", level);
+        new_level1 = level + 1;
+        ct = dumpExpStr(e, new_level1);
+        res_str = stringAppendList({gen_str,"ASUB ","\n",ct,""});
+      then
+        res_str;
+
     case (DAE.SIZE(exp = cr,sz = SOME(dim)),level)
       equation
         gen_str = genStringNTime("   |", level);
@@ -1485,6 +1494,24 @@ algorithm
       then
         res_str;
 
+    case (DAE.BOX(exp=e),level)
+      equation
+        gen_str = genStringNTime("   |", level);
+        new_level1 = level + 1;
+        ct = dumpExpStr(e, new_level1);
+        res_str = stringAppendList({gen_str,"BOX ","\n",ct,""});
+      then
+        res_str;
+        
+     case (DAE.UNBOX(exp=e,ty=_),level)
+      equation
+        gen_str = genStringNTime("   |", level);
+        new_level1 = level + 1;
+        ct = dumpExpStr(e, new_level1);
+        res_str = stringAppendList({gen_str,"UNBOX ","\n",ct,""});
+      then
+        res_str;
+        
     case (_,level)
       equation
         gen_str = genStringNTime("   |", level);

@@ -1572,23 +1572,40 @@ author:Waurich TUD 2014-04"
 algorithm
   es := match(e)
     local
+      Boolean noArr;
       DAE.ComponentRef cref;
       DAE.Exp exp;
       list<DAE.Exp> expLst;
       list<DAE.ComponentRef> crefs;
+    case(DAE.CREF(componentRef=cref,ty=_))
+      equation
+        expLst = arrayElements(e);
+        noArr = listLength(expLst)==1;
+        exp = List.first(expLst);
+        noArr = noArr  and expEqual(exp,e);
+        expLst = Util.if_(noArr,{},expLst);    
+      then
+        expLst;
     case(DAE.CALL(path=_,expLst=expLst,attr=_))
       then
         expLst;
     case(DAE.RECORD(path=_,exps=expLst, comp=_,ty=_))
       then
         expLst;
-    case(DAE.ARRAY(ty=_,scalar=_,array=expLst))
+    case(DAE.ARRAY(ty=_,scalar=_,array=_))
+      equation
+      expLst = arrayElements(e);
       then
         expLst;
     case(DAE.TUPLE(PR=expLst))
       then
         expLst;
     case(DAE.CAST(ty=_,exp=exp))
+      equation
+        expLst = getComplexContents(exp);
+      then
+        expLst;
+    case(DAE.ASUB(exp=exp,sub=_))
       equation
         expLst = getComplexContents(exp);
       then
