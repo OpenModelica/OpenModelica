@@ -49,8 +49,8 @@ typedef uint64_t rtclock_t;
 #else
 #include <time.h>
 typedef union rtclock_t {
-	struct timespec time;
-	unsigned long long cycles;
+  struct timespec time;
+  unsigned long long cycles;
 } rtclock_t;
 //typedef struct timespec ;
 #endif
@@ -441,21 +441,21 @@ void rt_clear_total(int ix)
 {
   if(omc_clock == OMC_CPU_CYCLES)
   {
-	  total_tp[ix].cycles = 0;
-	  rt_clock_ncall_total[ix] = 0;
+    total_tp[ix].cycles = 0;
+    rt_clock_ncall_total[ix] = 0;
 
-	  acc_tp[ix].cycles = 0;
-	  rt_clock_ncall[ix] = 0;
+    acc_tp[ix].cycles = 0;
+    rt_clock_ncall[ix] = 0;
   }
   else
   {
-	  total_tp[ix].time.tv_sec = 0;
-	  total_tp[ix].time.tv_nsec = 0;
-	  rt_clock_ncall_total[ix] = 0;
+    total_tp[ix].time.tv_sec = 0;
+    total_tp[ix].time.tv_nsec = 0;
+    rt_clock_ncall_total[ix] = 0;
 
-	  acc_tp[ix].time.tv_sec = 0;
-	  acc_tp[ix].time.tv_nsec = 0;
-	  rt_clock_ncall[ix] = 0;
+    acc_tp[ix].time.tv_sec = 0;
+    acc_tp[ix].time.tv_nsec = 0;
+    rt_clock_ncall[ix] = 0;
   }
 }
 

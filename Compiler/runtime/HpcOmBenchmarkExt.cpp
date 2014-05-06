@@ -335,35 +335,35 @@ public:
 
 std::list<std::list<double> > ReadJsonBenchFileEquations(std::string filePath)
 {
-	std::list<std::list<double> > resultList = std::list<std::list<double> >();
+  std::list<std::list<double> > resultList = std::list<std::list<double> >();
 //    boost::property_tree::ptree pt;
 //
 //    std::ifstream fileStream(filePath.c_str());
 //
 //    if(fileStream)
 //    {
-//		std::stringstream stringStream;
-//		stringStream << fileStream.rdbuf();
-//		boost::property_tree::read_json(stringStream, pt);
+//    std::stringstream stringStream;
+//    stringStream << fileStream.rdbuf();
+//    boost::property_tree::read_json(stringStream, pt);
 //
-//		BOOST_FOREACH(boost::property_tree::ptree::value_type &v, pt.get_child("profileBlocks"))
-//		{
-//			std::list<double> tmpLst = std::list<double>();
-//			assert(v.first.empty());
-//			double id = v.second.get<double>("id");
-//			double ncall = v.second.get<double>("ncall");
-//			double time = v.second.get<double>("time");
-//			//std::cerr << "id: " << id << " ncall: " << ncall << " time: " << time << std::endl;
-//			tmpLst.push_back(id);
-//			tmpLst.push_back(time);
-//			tmpLst.push_back(ncall);
-//			resultList.push_back(tmpLst);
-//		}
+//    BOOST_FOREACH(boost::property_tree::ptree::value_type &v, pt.get_child("profileBlocks"))
+//    {
+//      std::list<double> tmpLst = std::list<double>();
+//      assert(v.first.empty());
+//      double id = v.second.get<double>("id");
+//      double ncall = v.second.get<double>("ncall");
+//      double time = v.second.get<double>("time");
+//      //std::cerr << "id: " << id << " ncall: " << ncall << " time: " << time << std::endl;
+//      tmpLst.push_back(id);
+//      tmpLst.push_back(time);
+//      tmpLst.push_back(ncall);
+//      resultList.push_back(tmpLst);
+//    }
 //
-//		fileStream.close();
+//    fileStream.close();
 //    }
 
-	return resultList;
+  return resultList;
 }
 
 void* HpcOmBenchmarkExtImpl__readCalcTimesFromXml(const char *filename)
