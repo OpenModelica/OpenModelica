@@ -65,6 +65,7 @@ Plot::Plot(PlotWindow *pParent)
   canvas()->setCursor(Qt::ArrowCursor);
   setCanvasBackground(Qt::white);
   setContentsMargins(10, 10, 10, 10);
+#if QWT_VERSION >= 0x060100
   /*
     Ticket #2679 point 2.
     Move the canvas little bit from bottom and left to align the axis at starting point.
@@ -73,6 +74,7 @@ Plot::Plot(PlotWindow *pParent)
   canvas()->setContentsMargins(-5, 0, 0, -5);
   setAxisScaleDraw(QwtPlot::yLeft, new ScaleDraw);
   setAxisScaleDraw(QwtPlot::xBottom, new ScaleDraw);
+#endif
   // fill colors list
   fillColorsList();
   setAutoReplot(true);

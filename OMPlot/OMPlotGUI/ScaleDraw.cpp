@@ -35,10 +35,11 @@
  *
  */
 
+#include "ScaleDraw.h"
+#if QWT_VERSION >= 0x060100
+
 #include "qwt_painter.h"
 #include "qwt_scale_map.h"
-
-#include "ScaleDraw.h"
 
 using namespace OMPlot;
 
@@ -50,16 +51,11 @@ ScaleDraw::ScaleDraw()
 
 void ScaleDraw::drawBackbone( QPainter *painter ) const
 {
-#if QWT_VERSION >= 0x060100
   const bool doAlign = QwtPainter::roundingAlignment( painter );
-  const int pw = qMax( penWidth(), 1 );
-#else
-  const bool doAlign = true;
-  const int pw = 1;
-#endif
 
   const QPointF &position = pos();
   const double len = length();
+  const int pw = qMax( penWidth(), 1 );
 
   // pos indicates a border not the center of the backbone line
   // so we need to shift its position depending on the pen width
@@ -75,7 +71,7 @@ void ScaleDraw::drawBackbone( QPainter *painter ) const
   }
   else
   {
-    off = 0.5 * pw;
+    off = 0.5 * penWidth();
   }
 
   switch ( alignment() )
@@ -123,24 +119,16 @@ void ScaleDraw::drawTick( QPainter *painter, double value, double len ) const
 {
   if ( len <= 0 )
     return;
-#if QWT_VERSION >= 0x060100
+
   const bool roundingAlignment = QwtPainter::roundingAlignment( painter );
-  const int pw = penWidth();
-#else
-  const bool roundingAlignment = true;
-  const int pw = 1;
-#endif
 
   QPointF position = pos();
 
-#if QWT_VERSION >= 0x060100
   double tval = scaleMap().transform( value );
-#else
-  double tval = const_cast<QwtScaleMap&>(scaleMap()).transform( value );
-#endif
   if ( roundingAlignment )
     tval = qRound( tval );
 
+  const int pw = penWidth();
   int a = 0;
   if ( pw > 1 && roundingAlignment )
     a = 1;
@@ -204,3 +192,5 @@ void ScaleDraw::drawTick( QPainter *painter, double value, double len ) const
     }
   }
 }
+
+#endif // #if QWT_VERSION >= 0x060100

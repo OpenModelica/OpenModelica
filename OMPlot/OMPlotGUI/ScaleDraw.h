@@ -39,6 +39,7 @@
 #define SCALEDRAW_H
 
 #include "qwt_scale_draw.h"
+#if QWT_VERSION >= 0x060100
 
 namespace OMPlot
 {
@@ -52,4 +53,5 @@ protected:
 };
 }
 
+#endif // #if QWT_VERSION >= 0x060100
 #endif // SCALEDRAW_H
