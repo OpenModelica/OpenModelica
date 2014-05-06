@@ -1027,23 +1027,27 @@ QString StringHandler::getOpenFileName(QWidget* parent, const QString &caption, 
     dir_str = mLastOpenDir.isEmpty() ? QDir::homePath() : mLastOpenDir;
   }
 
+  QString fileName = QString();
+#ifdef WIN32
+  fileName = QFileDialog::getOpenFileName(parent, caption, dir_str, filter, selectedFilter);
+#else
   QFileDialog *dialog = new QFileDialog(parent, caption, dir_str, filter);
   QList<QUrl> urls = dialog->sidebarUrls();
   urls << QUrl("file://" + OpenModelica::tempDirectory());
   dialog->setSidebarUrls(urls);
   dialog->setFileMode(QFileDialog::ExistingFile);
-  dialog->setParent(parent);
-
   if (dialog->exec())
   {
-    QString fileName = dialog->selectedFiles()[0];
-    delete dialog;
-    QFileInfo fileInfo(fileName);
-    mLastOpenDir = fileInfo.absolutePath();
-    return fileName;
+    fileName = dialog->selectedFiles()[0];
   }
   delete dialog;
-  return QString();
+#endif
+  if (!fileName.isEmpty())
+  {
+    QFileInfo fileInfo(fileName);
+    mLastOpenDir = fileInfo.absolutePath();
+  }
+  return fileName;
 }
 
 QStringList StringHandler::getOpenFileNames(QWidget* parent, const QString &caption, QString * dir, const QString &filter, QString * selectedFilter)
@@ -1059,14 +1063,27 @@ QStringList StringHandler::getOpenFileNames(QWidget* parent, const QString &capt
     dir_str = mLastOpenDir.isEmpty() ? QDir::homePath() : mLastOpenDir;
   }
 
-  QStringList fileNames = QFileDialog::getOpenFileNames(parent, caption, dir_str, filter, selectedFilter);
+  QStringList fileNames;
+#ifdef WIN32
+  fileNames = QFileDialog::getOpenFileNames(parent, caption, dir_str, filter, selectedFilter);
+#else
+  QFileDialog *dialog = new QFileDialog(parent, caption, dir_str, filter);
+  QList<QUrl> urls = dialog->sidebarUrls();
+  urls << QUrl("file://" + OpenModelica::tempDirectory());
+  dialog->setSidebarUrls(urls);
+  dialog->setFileMode(QFileDialog::ExistingFile);
+  if (dialog->exec())
+  {
+    fileNames = dialog->selectedFiles();
+  }
+  delete dialog;
+#endif
   if (!fileNames.isEmpty())
   {
     QFileInfo fileInfo(fileNames.at(0));
     mLastOpenDir = fileInfo.absolutePath();
-    return fileNames;
   }
-  return QStringList();
+  return fileNames;
 }
 
 QString StringHandler::getExistingDirectory(QWidget *parent, const QString &caption, QString *dir)
