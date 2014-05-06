@@ -1156,6 +1156,27 @@ algorithm
   end match;
 end generateConstEqs;
 
+protected function addReplacementRuleForAssignment"add a replacement rule according to the simple assigment like cref = const."
+  input DAE.Statement stmt;
+  input BackendVarTransform.VariableReplacements replIn;
+  output BackendVarTransform.VariableReplacements replOut;
+algorithm
+  replOut := match(stmt,replIn)
+    local
+      BackendVarTransform.VariableReplacements repl;
+      DAE.ComponentRef cref;
+      DAE.Exp lhs,rhs;
+    case(DAE.STMT_ASSIGN(type_=_,exp1=lhs,exp=rhs,source=_),_)
+      equation
+        cref = Expression.expCref(lhs);
+        repl = BackendVarTransform.addReplacement(replIn,cref,rhs,NONE());
+      then
+        repl;
+    else
+      then replIn;
+  end match;
+end addReplacementRuleForAssignment;
+
 protected function evaluateFunctions_updateAlgorithms"gets the statements from an algorithm in order to traverse them.
 author:Waurich TUD 2014-03"
   input DAE.Element algIn;
@@ -1219,7 +1240,11 @@ algorithm
         expLst = Expression.getComplexContents(exp2);
         //print("SIMPLIFIED\n"+&stringDelimitList(List.map({exp2},ExpressionDump.printExpStr),"\n")+&"\n");
 
-        // add the replacements for the addStmts
+        // add the replacements for the addStmts and remove the replacements for the variable outputs
+        repl = List.fold(addStmts,addReplacementRuleForAssignment,replIn);
+        lhsExps = Expression.getComplexContents(exp1);
+        outputs = List.map(lhsExps,Expression.expCref);
+        repl = BackendVarTransform.removeReplacements(repl,outputs,NONE());
 
         // check if its constant, a record or a tuple
         isCon = Expression.isConst(exp2);
@@ -1239,7 +1264,7 @@ algorithm
         //print("variable scalars\n"+&stringDelimitList(List.map(varScalars,ComponentReference.printComponentRefStr),"\n")+&"\n");
         //BackendVarTransform.dumpReplacements(replIn);
 
-        repl = Debug.bcallret4(isCon and not isRec, BackendVarTransform.addReplacement,replIn,cref,exp2,NONE(),replIn);
+        repl = Debug.bcallret4(isCon and not isRec, BackendVarTransform.addReplacement,repl,cref,exp2,NONE(),repl);
         repl = Debug.bcallret4(isCon and isRec, BackendVarTransform.addReplacements,repl,scalars,expLst,NONE(),repl);
         repl = Debug.bcallret3(not isCon and not isRec, BackendVarTransform.removeReplacement, repl,cref,NONE(),repl);
         repl = Debug.bcallret3(not isCon and isRec, BackendVarTransform.removeReplacements,repl,varScalars,NONE(),repl);
@@ -1247,6 +1272,7 @@ algorithm
 
         //Debug.bcall(isCon and not isRec,print,"add the replacement: "+&ComponentReference.crefStr(cref)+&" --> "+&ExpressionDump.printExpStr(exp2)+&"\n");
         //Debug.bcall(not isCon,print,"update the replacement for: "+&ComponentReference.crefStr(cref)+&"\n");
+        //BackendVarTransform.dumpReplacements(repl);
 
         // build the new statements
         alg = Util.if_(isCon,DAE.STMT_ASSIGN(typ,exp1,exp2,source),List.first(algsIn));
