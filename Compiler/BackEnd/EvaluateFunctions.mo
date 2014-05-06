@@ -375,7 +375,7 @@ end evaluateConstantFunction;
 
 protected function setRecordTypes"This is somehow a hack for FourBitBinaryAdder because there are function calls in the daelow on the lhs of a function call and this leads to an error in simcode creation
 they are used a s a cast for record types, but they should be a cast instead of a call, aren't they?
- func1(x) = func2(y). 
+ func1(x) = func2(y).
  this function removes the call and sets the type
  author:Waurich TUD 2014-04"
   input DAE.Exp inExp;
@@ -474,7 +474,7 @@ algorithm
         cref = List.first(crefs);
       then cref;
     else
-      then crefIn;      
+      then crefIn;
   end matchcontinue;
 end scalarRecCrefsForOneDimRec;
 
@@ -523,19 +523,19 @@ algorithm
         // a tuple including variable and constant parts
         // the protected and output variables of the function
         allOutputCrefs = List.map(allOutputs,DAEUtil.varCref);
-        
+
         //1d records are replaced by their scalar value
-        allOutputCrefs2 = List.map(allOutputCrefs,scalarRecCrefsForOneDimRec);   
+        allOutputCrefs2 = List.map(allOutputCrefs,scalarRecCrefsForOneDimRec);
         (_,_,varScalarCrefsInFunc) = List.intersection1OnTrue(allOutputCrefs,allOutputCrefs2,ComponentReference.crefEqual);
         allOutputCrefs = allOutputCrefs2;
         print("\n allOutputCrefs \n"+&stringDelimitList(List.map(allOutputCrefs,ComponentReference.printComponentRefStr),"\n")+&"\n");
         print("\n varScalarCrefsInFunc \n"+&stringDelimitList(List.map(varScalarCrefsInFunc,ComponentReference.printComponentRefStr),"\n")+&"\n");
-        
+
         (protCrefs,_,outputCrefs) = List.intersection1OnTrue(listAppend(constComplexCrefs,constScalarCrefs),allOutputCrefs,ComponentReference.crefEqual);
         funcOutputs = List.map2(outputCrefs,generateOutputElements,allOutputs,lhsExpIn);
         funcProts = List.map2(protCrefs,generateProtectedElements,allOutputs,lhsExpIn);
         varOutputs = listAppend(funcOutputs,funcProts);
-        
+
         //the lhs-exp of the evaluated function call
         pos = List.map1(outputCrefs,List.position,allOutputCrefs);
         pos = List.map1(pos,intAdd,1);
@@ -735,7 +735,7 @@ algorithm
         //print("generate output element\n");
         typ = ComponentReference.crefLastType(cref);
         cref1 = ComponentReference.crefStripLastIdent(cref);
-       
+
         // if the record is only 1-dimensional, use the scalar value
         crefs = getRecordScalars(cref);
         cref1 = Debug.bcallret1(intEq(listLength(crefs),1),List.first,crefs,cref1);
@@ -746,7 +746,7 @@ algorithm
         //print("the idents_ "+&i1+&"  and  "+&i2+&"\n");
         i1 = i1+&"_"+&i2;
         cref1 = ComponentReference.makeCrefIdent(i1,typ,sl);
-        
+
         //print("the inFuncOutputs \n"+&DAEDump.dumpElementsStr(inFuncOutputs)+&"\n");
         //vars = List.map(inFuncOutputs,DAEUtil.varCref);
         //print("all the crefs of the oldoutputs\n"+&stringDelimitList(List.map(vars,ComponentReference.printComponentRefStr),",")+&"\n");
