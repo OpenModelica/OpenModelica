@@ -691,7 +691,6 @@ algorithm
         description = DAEUtil.daeDescription(dae);
         dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
         dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,NONE(),NONE(),NONE(),NONE());
-        //modpar(dlow_1);
         Debug.execStat("Lowering Done",GlobalScript.RT_CLOCK_EXECSTAT_MAIN);
         simcodegen(dlow_1,classname,ap,dae);
       then
@@ -702,55 +701,6 @@ algorithm
       then ();
   end matchcontinue;
 end optimizeDae;
-
-// protected function modpar "The automatic paralellzation module."
-//   input BackendDAE.BackendDAE inBackendDAE;
-// algorithm
-//   _ := matchcontinue inBackendDAE
-//     local
-//       Integer n,nx,ny,np;
-//       BackendDAE.BackendDAE dae;
-//       Real l,b,t1,t2,t;
-//       String timestr,nps;
-//       BackendDAE.StrongComponents comps;
-//     case _
-//       equation
-//         true = 0==Config.noProc() or Flags.isSet(Flags.OPENMP) "If modpar not enabled, nproc = 0, return" ;
-//       then
-//         ();
-//     case (dae as BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))}))
-//       equation
-//         TaskGraph.buildTaskgraph(dae, comps);
-//         TaskGraphExt.dumpGraph("model.viz");
-//         l = Config.latency();
-//         b = Config.bandwidth();
-//         t1 = clock();
-//         TaskGraphExt.mergeTasks(l, b);
-//         t2 = clock();
-//         t = t2 -. t1;
-//         timestr = realString(t);
-//         print("task merging took ");
-//         print(timestr);
-//         print(" seconds\n");
-//         TaskGraphExt.dumpMergedGraph("merged_model.viz");
-//         n = Config.noProc();
-//         TaskGraphExt.schedule(n);
-//         (nx,ny,np,_,_,_,_,_,_,_,_,_) = BackendDAEUtil.calculateSizes(dae);
-//         nps = intString(np);
-//         print("=======\nnp =");
-//         print(nps);
-//         print("=======\n");
-//         TaskGraphExt.generateCode(nx, ny, np);
-//         print("done\n");
-//       then
-//         ();
-//     else
-//       equation
-//         Debug.fprint(Flags.FAILTRACE, "-modpar failed\n");
-//       then
-//         fail();
-//   end matchcontinue;
-// end modpar;
 
 protected function simcodegen "
   Genereates simulation code using the SimCode module"

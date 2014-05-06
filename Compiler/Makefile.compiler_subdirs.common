@@ -9,7 +9,7 @@ all : .testvariables .depend $(ALLMO) $(SRCSIGX)
 	# Updated dependencies; reload make and compile the target
 	$(MAKE) -f $(MAKETARGET) $(PROG)
 
-SUBDIRS	= runtime parser modpar
+SUBDIRS	= runtime parser
 SRCHSRCDIR = $(SRCH:%.h=$(srcdir)/%.h)
 
 .SUFFIXES: .o .mo .h .c
@@ -52,11 +52,9 @@ runtime: $(SRCHSRCDIR)
 	$(MAKE) -C ../runtime/ -f $(MAKETARGET)
 parser: $(SRCHSRCDIR)
 	$(MAKE) -C ../../Parser/ -f $(MAKETARGET)
-modpar: $(SRCHSRCDIR)
-	$(MAKE) -C ../modpar/ -f $(MAKETARGET)
 
 clean:
-	for d in ../runtime/ ../../Parser/ ../modpar/; do \
+	for d in ../runtime/ ../../Parser/; do \
 		(cd $$d && $(MAKE) -f $(MAKETARGET) clean) \
 	done
 	(cd $(srcdir) && $(RM) $(SRCH))

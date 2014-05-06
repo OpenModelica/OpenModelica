@@ -35,7 +35,7 @@ PROG = omc
 SCRIPT_FILES = openmodelica.lefty default_profiling.xsl replace-startValue.sh replace-startValue.xsl simcodedump.xsl
 
 #SUBDIRS= ast runtime
-SUBDIRS	= runtime modpar
+SUBDIRS	= runtime
 
 .SUFFIXES:
 .SUFFIXES: .o .mo .h

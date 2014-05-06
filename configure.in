@@ -32,8 +32,6 @@ AC_SUBST(USE_METIS)
 AC_SUBST(USE_PATOH)
 AC_SUBST(METISHOME)
 AC_SUBST(PATOHHOME)
-AC_SUBST(BOOSTHOME)
-AC_SUBST(USE_MODPAR)
 AC_SUBST(GENERATED_AUTOCONF_FILES)
 AC_SUBST(RT_LDFLAGS)
 AC_SUBST(RT_LDFLAGS_SIM)
@@ -920,27 +918,6 @@ AC_ARG_WITH(PATOH, [  --with-PATOH=DIR                 Compile with PATOH hyperg
     USE_PATOH=0;
 ])
 
-AC_ARG_WITH(MODPAR, [  --with-MODPAR                    Compile with automatic parallelization, requires boost],
-[
-  USE_MODPAR="-DUSE_MODPAR"
-], [
-AC_MSG_RESULT([Not compiling ModPar]); USE_MODPAR=""; BOOSTHOME=""
-])
-
-AC_ARG_WITH(BOOST, [  --with-BOOST=DIR                 With BOOST library in DIR],
-[
-  if test "$USE_MODPAR" = "-DUSE_MODPAR" ; then
-    AC_MSG_RESULT([enabling BOOST... BOOSTHOME="$withval"]);
-    BOOSTHOME="$withval";
-  else
-    AC_MSG_RESULT([ Warning, MODPAR requires BOOST, disabling MODPAR ] )
-    USE_MODPAR="";
-    BOOSTHOME="";
-  fi
-], [
-AC_MSG_RESULT([Not compiling with BOOST]); USE_MODPAR=""; BOOSTHOME=""
-])
-
 AC_MSG_CHECKING([for revision])
 SOURCE_REVISION=""
 test -f REVISION && SOURCE_REVISION=`head -n1 REVISION | grep -o @<:@0-9@:>@@<:@0-9@:>@*`
@@ -974,7 +951,6 @@ Compiler/Makefile \
 Compiler/Template/Makefile \
 Compiler/omc_release/Makefile \
 Compiler/runtime/Makefile \
-Compiler/modpar/Makefile \
 Compiler/runtime/config.unix.h \
 PythonInterface/Makefile \
 PythonInterface/OMPython/OMConfig.py \

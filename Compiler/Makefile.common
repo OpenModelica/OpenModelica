@@ -18,8 +18,7 @@ AST = $(top_builddir)/Parser/libomparse_rml.a $(top_builddir)/Parser/libantlr3.a
 RTOBJ   = \
 $(srcdir)/runtime/runtime.a \
 -lModelicaExternalC \
--lOpenModelicaRuntimeC \
-$(srcdir)/modpar/libmodpar.a
+-lOpenModelicaRuntimeC
 
 FRONTEND_DIR=$(srcdir)/FrontEnd
 FFRONTEND_DIR=$(srcdir)/FFrontEnd
@@ -182,7 +181,6 @@ ResolveLoops.mo \
 SimCode.mo \
 SimCodeMain.mo \
 SimCodeUtil.mo \
-TaskGraph.mo \
 Tearing.mo \
 Uncertainties.mo \
 XMLDump.mo
@@ -282,7 +280,6 @@ SimulationResults.mo \
 TaskGraphResults.mo \
 Socket.mo \
 System.mo \
-TaskGraphExt.mo \
 BackendDAEEXT.mo \
 FMIExt.mo \
 GraphStreamExt.mo \

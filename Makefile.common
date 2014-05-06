@@ -55,7 +55,6 @@ bootstrap-dependencies: omc-diff interactive docs fmi fmil opencl_rt lis graphst
 	$(MAKE) -C Compiler/runtime install
 	$(MAKE) -C Compiler builtin install_scripts
 	$(MAKE) -C Parser install
-	$(MAKE) -C Compiler/modpar install
 
 install-python:
 	(time $(MAKE) -C PythonInterface -f $(defaultMakefileTarget))
