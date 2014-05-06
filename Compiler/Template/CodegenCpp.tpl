@@ -7870,13 +7870,13 @@ template representationCref(ComponentRef inCref, SimCode simCode, Context contex
             case ALGLOOP_CONTEXT(genInitialisation = false, genJacobian=false)
                 then  <<_system-><%cref(inCref)%>>>
             case ALGLOOP_CONTEXT(genInitialisation = false, genJacobian=true)
-                then  <<_system-><%crefWithoutIndexOperator(inCref)%>>> 
+                then  <<_system-><%crefWithoutIndexOperator(inCref)%>>>
         else
             <<<%varToString(inCref,context)%>>>
   else
     match context
     case ALGLOOP_CONTEXT(genInitialisation = false)
-        then  
+        then
         let &varDecls += '//_system-><%cref(inCref)%>; definition of global variable<%\n%>'
         <<_system-><%cref(inCref)%> /*refToGlobalVariable*/ >>
     else
