@@ -32,7 +32,7 @@
  */
 
 #include "PlotCurve.h"
-#if QWT_VERSION < 0x060100
+#if QWT_VERSION < 0x060000
 #include "qwt_legend_item.h"
 #endif
 #include "qwt_symbol.h"

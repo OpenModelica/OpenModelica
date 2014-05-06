@@ -36,7 +36,7 @@
  */
 
 #include "ScaleDraw.h"
-#if QWT_VERSION >= 0x060100
+#if QWT_VERSION >= 0x060000
 
 #include "qwt_painter.h"
 #include "qwt_scale_map.h"
@@ -193,4 +193,4 @@ void ScaleDraw::drawTick( QPainter *painter, double value, double len ) const
   }
 }
 
-#endif // #if QWT_VERSION >= 0x060100
+#endif // #if QWT_VERSION >= 0x060000

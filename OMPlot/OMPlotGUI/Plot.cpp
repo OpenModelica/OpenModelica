@@ -34,7 +34,7 @@
 #include "PlotWindow.h"
 #include "ScaleDraw.h"
 #include "qwt_plot_canvas.h"
-#if QWT_VERSION < 0x060100
+#if QWT_VERSION < 0x060000
 #include "qwt_legend_item.h"
 #endif
 
@@ -65,7 +65,7 @@ Plot::Plot(PlotWindow *pParent)
   canvas()->setCursor(Qt::ArrowCursor);
   setCanvasBackground(Qt::white);
   setContentsMargins(10, 10, 10, 10);
-#if QWT_VERSION >= 0x060100
+#if QWT_VERSION >= 0x060000
   /*
     Ticket #2679 point 2.
     Move the canvas little bit from bottom and left to align the axis at starting point.
