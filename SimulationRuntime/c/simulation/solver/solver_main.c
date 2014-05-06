@@ -49,6 +49,7 @@
 #include "meta_modelica.h"
 #include "simulation/solver/epsilon.h"
 
+#include "OptimizerLocalFunction.h"
 #include "OptimizerInterface.h"
 
 /*
