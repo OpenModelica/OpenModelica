@@ -115,8 +115,9 @@ void rt_update_min_max_ncall(int ix) {
   unsigned long nmin = rt_clock_ncall_min[ix];
   unsigned long nmax = rt_clock_ncall_max[ix];
   unsigned long n = rt_clock_ncall[ix];
-  if (n == 0)
+  if (n == 0) {
     return;
+  }
   rt_clock_ncall_min[ix] = nmin && nmin < n ? nmin : n;
   rt_clock_ncall_max[ix] = nmax > n ? nmax : n;
 }
@@ -182,8 +183,9 @@ long long RDTSC() {
 #endif
 
 int rt_set_clock(enum omc_rt_clock_t newClock) {
-  if (newClock != OMC_CLOCK_REALTIME && newClock != OMC_CPU_CYCLES)
+  if (newClock != OMC_CLOCK_REALTIME && newClock != OMC_CPU_CYCLES) {
     return 1;
+  }
 
   selectedClock = newClock;
   return 0;
@@ -192,8 +194,7 @@ int rt_set_clock(enum omc_rt_clock_t newClock) {
 static LARGE_INTEGER performance_frequency;
 
 void rt_tick(int ix) {
-  if(selectedClock == OMC_CLOCK_REALTIME)
-  {
+  if(selectedClock == OMC_CLOCK_REALTIME) {
     static int init = 0;
     if (!init) {
 
@@ -201,9 +202,7 @@ void rt_tick(int ix) {
       QueryPerformanceFrequency(&performance_frequency);
     }
     QueryPerformanceCounter(&tick_tp[ix]);
-  }
-  else
-  {
+  } else {
     LARGE_INTEGER time;
     time.QuadPart = RDTSC();
     tick_tp[ix] = time;
@@ -213,17 +212,14 @@ void rt_tick(int ix) {
 
 double rt_tock(int ix) {
   double d;
-  if(selectedClock == OMC_CLOCK_REALTIME)
-  {
+  if(selectedClock == OMC_CLOCK_REALTIME) {
     LARGE_INTEGER tock_tp;
     double d1, d2;
     QueryPerformanceCounter(&tock_tp);
     d1 = (double) (tock_tp.QuadPart - tick_tp[ix].QuadPart);
     d2 = (double) performance_frequency.QuadPart;
     d = d1 / d2;
-  }
-  else
-  {
+  } else {
     LARGE_INTEGER tock_tp;
     tock_tp.QuadPart = RDTSC();
     d = (double) (tock_tp.QuadPart - tick_tp[ix].QuadPart);
@@ -250,14 +246,11 @@ void rt_clear_total(int ix) {
 }
 
 void rt_accumulate(int ix) {
-  if(selectedClock == OMC_CLOCK_REALTIME)
-  {
+  if(selectedClock == OMC_CLOCK_REALTIME) {
     LARGE_INTEGER tock_tp;
     QueryPerformanceCounter(&tock_tp);
     acc_tp[ix].QuadPart += tock_tp.QuadPart - tick_tp[ix].QuadPart;
-  }
-  else
-  {
+  } else {
     LARGE_INTEGER tock_tp;
     tock_tp.QuadPart = RDTSC();
     acc_tp[ix].QuadPart += tock_tp.QuadPart - tick_tp[ix].QuadPart;
@@ -269,15 +262,12 @@ int rtclock_compare(rtclock_t t1, rtclock_t t2) {
 }
 
 double rtclock_value(LARGE_INTEGER tp) {
-  if(selectedClock == OMC_CLOCK_REALTIME)
-  {
+  if(selectedClock == OMC_CLOCK_REALTIME) {
     double d1, d2;
     d1 = (double) (tp.QuadPart);
     d2 = (double) performance_frequency.QuadPart;
     return d1 / d2;
-  }
-  else
-  {
+  } else {
     return (double) (tp.QuadPart);
   }
 }
@@ -362,44 +352,42 @@ int rt_set_clock(enum omc_rt_clock_t newClock) {
 }
 
 #if defined(__i386__)
-static __inline__ unsigned long long RDTSC(void)
+static inline unsigned long long RDTSC(void)
 {
-    unsigned long long int x;
-    __asm__ volatile (".byte 0x0f, 0x31" : "=A" (x));
-    return x;
+  unsigned long long int x;
+  __asm__ volatile (".byte 0x0f, 0x31" : "=A" (x));
+  return x;
 }
-
 #elif defined(__x86_64__)
-static __inline__ unsigned long long RDTSC(void)
+static inline unsigned long long RDTSC(void)
 {
-    unsigned hi, lo;
-    __asm__ __volatile__ ("rdtsc" : "=a"(lo), "=d"(hi));
-    return ( (unsigned long long)lo)|( ((unsigned long long)hi)<<32 );
+  unsigned hi, lo;
+  __asm__ __volatile__ ("rdtsc" : "=a"(lo), "=d"(hi));
+  return ( (unsigned long long)lo)|( ((unsigned long long)hi)<<32 );
+}
+#else
+static inline unsigned long long RDTSC(void)
+{
+  fprintf(stderr, "No CPU clock implemented on this processor architecture\n");
+  abort();
 }
 #endif
 
 void rt_tick(int ix) {
-  if(omc_clock == OMC_CPU_CYCLES)
-  {
+  if(omc_clock == OMC_CPU_CYCLES) {
     tick_tp[ix].cycles = RDTSC();
-  }
-  else
-  {
+  } else {
     clock_gettime(omc_clock, &tick_tp[ix].time);
   }
-
   rt_clock_ncall[ix]++;
 }
 
 double rt_tock(int ix) {
   double d;
-  if(omc_clock == OMC_CPU_CYCLES)
-  {
+  if(omc_clock == OMC_CPU_CYCLES) {
     unsigned long long timer = RDTSC();
     d = (double) (timer - tick_tp[ix].cycles);
-  }
-  else
-  {
+  } else {
     struct timespec tock_tp = {0,0};
     clock_gettime(omc_clock, &tock_tp);
     d = (tock_tp.tv_sec - tick_tp[ix].time.tv_sec) + (tock_tp.tv_nsec - tick_tp[ix].time.tv_nsec)*1e-9;
@@ -412,8 +400,7 @@ double rt_tock(int ix) {
 
 void rt_clear(int ix)
 {
-  if(omc_clock == OMC_CPU_CYCLES)
-  {
+  if(omc_clock == OMC_CPU_CYCLES) {
     total_tp[ix].cycles += acc_tp[ix].cycles;
     rt_clock_ncall_total[ix] += rt_clock_ncall[ix];
     max_tp[ix] = max_rtclock(max_tp[ix],acc_tp[ix]);
@@ -422,9 +409,7 @@ void rt_clear(int ix)
     acc_tp[ix].cycles = 0;
     acc_tp[ix].cycles = 0;
     rt_clock_ncall[ix] = 0;
-  }
-  else
-  {
+  } else {
     total_tp[ix].time.tv_sec += acc_tp[ix].time.tv_sec;
     total_tp[ix].time.tv_nsec += acc_tp[ix].time.tv_nsec;
     rt_clock_ncall_total[ix] += rt_clock_ncall[ix];
@@ -439,16 +424,13 @@ void rt_clear(int ix)
 
 void rt_clear_total(int ix)
 {
-  if(omc_clock == OMC_CPU_CYCLES)
-  {
+  if(omc_clock == OMC_CPU_CYCLES) {
     total_tp[ix].cycles = 0;
     rt_clock_ncall_total[ix] = 0;
 
     acc_tp[ix].cycles = 0;
     rt_clock_ncall[ix] = 0;
-  }
-  else
-  {
+  } else {
     total_tp[ix].time.tv_sec = 0;
     total_tp[ix].time.tv_nsec = 0;
     rt_clock_ncall_total[ix] = 0;
@@ -460,13 +442,10 @@ void rt_clear_total(int ix)
 }
 
 void rt_accumulate(int ix) {
-  if(omc_clock == OMC_CPU_CYCLES)
-  {
+  if(omc_clock == OMC_CPU_CYCLES) {
     long long cycles = RDTSC();
     acc_tp[ix].cycles += cycles -tick_tp[ix].cycles;
-  }
-  else
-  {
+  } else {
     struct timespec tock_tp = {0,0};
     clock_gettime(omc_clock, &tock_tp);
     acc_tp[ix].time.tv_sec += tock_tp.tv_sec -tick_tp[ix].time.tv_sec;
@@ -480,24 +459,19 @@ void rt_accumulate(int ix) {
 
 static double rtclock_value(rtclock_t tp) {
   double d;
-  if(omc_clock == OMC_CPU_CYCLES)
-  {
+  if(omc_clock == OMC_CPU_CYCLES) {
     d = tp.cycles;
-  }
-  else
-  {
+  } else {
     d = tp.time.tv_sec + tp.time.tv_nsec*1e-9;
   }
   return d;
 }
 
-int rtclock_compare(rtclock_t t1, rtclock_t t2) {
-  if(omc_clock == OMC_CPU_CYCLES)
-  {
+int rtclock_compare(rtclock_t t1, rtclock_t t2)
+{
+  if(omc_clock == OMC_CPU_CYCLES) {
     return t1.cycles-t2.cycles;
-  }
-  else
-  {
+  } else {
     if(t1.time.tv_sec == t2.time.tv_sec) {
       return t1.time.tv_nsec-t2.time.tv_nsec;
     }
@@ -516,8 +490,9 @@ static OMC_INLINE void alloc_and_copy(void **ptr, size_t n, size_t sz)
 }
 
 void rt_init(int numTimers) {
-  if (numTimers < NUM_RT_CLOCKS)
+  if (numTimers < NUM_RT_CLOCKS) {
     return; /* We already have more than we need statically allocated */
+  }
   alloc_and_copy((void**)&acc_tp,numTimers,sizeof(rtclock_t));
   alloc_and_copy((void**)&max_tp,numTimers,sizeof(rtclock_t));
   alloc_and_copy((void**)&total_tp,numTimers,sizeof(rtclock_t));
