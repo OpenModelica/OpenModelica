@@ -50,7 +50,7 @@ ScaleDraw::ScaleDraw()
 
 void ScaleDraw::drawBackbone( QPainter *painter ) const
 {
-#if QWT_VERSION >= 0x060000
+#if QWT_VERSION >= 0x060100
   const bool doAlign = QwtPainter::roundingAlignment( painter );
   const int pw = qMax( penWidth(), 1 );
 #else
@@ -75,7 +75,7 @@ void ScaleDraw::drawBackbone( QPainter *painter ) const
   }
   else
   {
-    off = 0.5 * penWidth();
+    off = 0.5 * pw;
   }
 
   switch ( alignment() )
@@ -123,7 +123,7 @@ void ScaleDraw::drawTick( QPainter *painter, double value, double len ) const
 {
   if ( len <= 0 )
     return;
-#if QWT_VERSION >= 0x060000
+#if QWT_VERSION >= 0x060100
   const bool roundingAlignment = QwtPainter::roundingAlignment( painter );
   const int pw = penWidth();
 #else
@@ -133,7 +133,11 @@ void ScaleDraw::drawTick( QPainter *painter, double value, double len ) const
 
   QPointF position = pos();
 
+#if QWT_VERSION >= 0x060100
   double tval = scaleMap().transform( value );
+#else
+  double tval = const_cast<QwtScaleMap&>scaleMap().transform( value );
+#endif
   if ( roundingAlignment )
     tval = qRound( tval );
 
