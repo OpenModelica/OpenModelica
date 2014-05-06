@@ -45,6 +45,7 @@ protected import BackendDAEUtil;
 protected import BackendDump;
 protected import BackendEquation;
 protected import BackendVariable;
+protected import ClassInf;
 protected import ComponentReference;
 protected import DAEUtil;
 protected import DAEDump;
@@ -56,7 +57,6 @@ protected import Flags;
 protected import List;
 protected import RemoveSimpleEquations;
 protected import SCode;
-protected import Types;
 protected import Util;
 
 
@@ -359,6 +359,7 @@ algorithm
         //BackendDump.dumpEquationList(constEqs,"the additional equations\n");
         //print("LHS EXP:\n");
         //ExpressionDump.dumpExp(outputExp);
+        outputExp = setRecordTypes(outputExp,FUNCINFO(repl,funcs,idx));
         //print("RHS EXP:\n");
         //ExpressionDump.dumpExp(exp);
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"Finish evaluation in:\n"+&ExpressionDump.printExpStr(outputExp)+&" := "+&ExpressionDump.printExpStr(exp));
@@ -371,6 +372,39 @@ algorithm
         ((rhsExpIn,lhsExpIn,{},funcsIn,eqIdx));
   end matchcontinue;
 end evaluateConstantFunction;
+
+protected function setRecordTypes"This is somehow a hack for FourBitBinaryAdder because there are function calls in the daelow on the lhs of a function call and this leads to an error in simcode creation
+they are used a s a cast for record types, but they should be a cast instead of a call, aren't they?
+ func1(x) = func2(y). 
+ this function removes the call and sets the type
+ author:Waurich TUD 2014-04"
+  input DAE.Exp inExp;
+  input FuncInfo info;
+  output DAE.Exp outExp;
+algorithm
+  outExp := matchcontinue(inExp,info)
+    local
+      Integer idx;
+      DAE.CallAttributes attr;
+      DAE.ComponentRef cref;
+      DAE.Exp exp1;
+      list<DAE.Exp> expLst;
+      DAE.FunctionTree funcTree;
+      DAE.Type ty;
+      BackendVarTransform.VariableReplacements repl;
+    case(DAE.CALL(path=_,expLst=expLst,attr= attr as DAE.CALL_ATTR(ty=ty,tuple_=_,builtin=_,isImpure=_,inlineType=_,tailCall=_)),FUNCINFO(repl=repl,funcTree=funcTree,idx=idx))
+      equation
+        ExpressionDump.dumpExp(inExp);
+        true = Expression.isCall(inExp);
+        true = listLength(expLst) == 1;
+        exp1 = List.first(expLst);
+        cref = Expression.expCref(exp1);
+        exp1 = Expression.makeCrefExp(cref,ty);
+      then exp1;
+    else
+      then inExp;
+  end matchcontinue;
+end setRecordTypes;
 
 public function getCrefsForRecord"get all crefs of a record exp
 author:Waurich TUD 2014-04"
@@ -396,6 +430,54 @@ algorithm
   end match;
 end getCrefsForRecord;
 
+protected function scalarRecExpForOneDimRec"if the record contains only 1 scalar value, replace the scalar type definition with the record definition.
+author:Waurich TUD 2014-04"
+  input DAE.Exp expIn;
+  output DAE.Exp expOut;
+algorithm
+  expOut := matchcontinue(expIn)
+    local
+      Absyn.Path path;
+      DAE.Exp exp;
+      DAE.ComponentRef cref;
+      list<DAE.ComponentRef> crefs;
+      DAE.Type ty;
+      list<DAE.Var> varLst;
+    case(DAE.CREF(componentRef=cref,ty = DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path=path),varLst=varLst,equalityConstraint=_,source=_)))
+      equation
+        true = listLength(varLst)==1;
+        DAE.CREF(componentRef=cref,ty=ty) = expIn;
+        crefs = getRecordScalars(cref);
+        true = listLength(crefs)==1;
+        cref = List.first(crefs);
+        exp = Expression.crefExp(cref);
+      then exp;
+    else
+      equation
+      then expIn;
+  end matchcontinue;
+end scalarRecExpForOneDimRec;
+
+protected function scalarRecCrefsForOneDimRec"replace a 1 dimensional record through its scalar value
+author:Waurich TUD 2014-04"
+  input DAE.ComponentRef crefIn;
+  output DAE.ComponentRef crefOut;
+algorithm
+  crefOut := matchcontinue(crefIn)
+    local
+      DAE.ComponentRef cref;
+      list<DAE.ComponentRef> crefs;
+    case(_)
+      equation
+        crefs = getRecordScalars(crefIn);
+        true = listLength(crefs)==1;
+        cref = List.first(crefs);
+      then cref;
+    else
+      then crefIn;      
+  end matchcontinue;
+end scalarRecCrefsForOneDimRec;
+
 protected function buildVariableFunctionParts "builds the output elements of the new function, the output expression for the new function call (lhs-exp)
 and the crefs of the variable outputs of the new function
 author: Waurich TUD 2014-04"
@@ -406,14 +488,14 @@ author: Waurich TUD 2014-04"
   input list<DAE.ComponentRef> varScalarCrefs;
   input list<DAE.Element> allOutputs; // the complex (or 1-dimensional) output elements
   input DAE.Exp lhsExpIn; // the output expression
-  output list<DAE.Element> varOutputs;
-  output DAE.Exp outputExpOut;
-  output list<DAE.ComponentRef> varScalarCrefsInFunc;
+  output list<DAE.Element> varOutputs; // the protected and output variable elements of the function body
+  output DAE.Exp outputExpOut;  // the outputs(lhs) of the function call
+  output list<DAE.ComponentRef> varScalarCrefsInFunc;  // these crefs have to be updated (makeIdentCref) in the function algorithms
 protected
   list<Integer> pos;
   DAE.ComponentRef lhsCref;
   DAE.Exp outputExp,exp1,exp2;
-  list<DAE.ComponentRef> varScalarCrefs1, outputCrefs, outputSCrefs, allOutputCrefs, protCrefs, protSCrefs;
+  list<DAE.ComponentRef> varScalarCrefs1, outputCrefs, outputSCrefs, allOutputCrefs, allOutputCrefs2, protCrefs, protSCrefs;
   list<DAE.Element> funcOutputs,funcProts,funcSOutputs,funcSProts;
   list<DAE.Exp> expLst, varScalarExps;
 algorithm
@@ -431,6 +513,35 @@ algorithm
         funcOutputs = List.map2(outputCrefs,generateOutputElements,allOutputs,lhsExpIn);
         funcProts = List.map2(protCrefs,generateProtectedElements,allOutputs,lhsExpIn);
         varOutputs = listAppend(funcOutputs,funcProts);
+      then (varOutputs,outputExp,varScalarCrefsInFunc);
+    case(_,_,_,_,_,_,DAE.LBINARY(exp1=exp1,operator=_,exp2=exp2))
+      equation
+      then
+        ({},lhsExpIn,{});
+    case(_,_,_,_,_,_,DAE.TUPLE(PR=expLst))
+      equation
+        // a tuple including variable and constant parts
+        // the protected and output variables of the function
+        allOutputCrefs = List.map(allOutputs,DAEUtil.varCref);
+        
+        //1d records are replaced by their scalar value
+        allOutputCrefs2 = List.map(allOutputCrefs,scalarRecCrefsForOneDimRec);   
+        (_,_,varScalarCrefsInFunc) = List.intersection1OnTrue(allOutputCrefs,allOutputCrefs2,ComponentReference.crefEqual);
+        allOutputCrefs = allOutputCrefs2;
+        print("\n allOutputCrefs \n"+&stringDelimitList(List.map(allOutputCrefs,ComponentReference.printComponentRefStr),"\n")+&"\n");
+        print("\n varScalarCrefsInFunc \n"+&stringDelimitList(List.map(varScalarCrefsInFunc,ComponentReference.printComponentRefStr),"\n")+&"\n");
+        
+        (protCrefs,_,outputCrefs) = List.intersection1OnTrue(listAppend(constComplexCrefs,constScalarCrefs),allOutputCrefs,ComponentReference.crefEqual);
+        funcOutputs = List.map2(outputCrefs,generateOutputElements,allOutputs,lhsExpIn);
+        funcProts = List.map2(protCrefs,generateProtectedElements,allOutputs,lhsExpIn);
+        varOutputs = listAppend(funcOutputs,funcProts);
+        
+        //the lhs-exp of the evaluated function call
+        pos = List.map1(outputCrefs,List.position,allOutputCrefs);
+        pos = List.map1(pos,intAdd,1);
+        varScalarExps = List.map1(pos,List.getIndexFirst,expLst);
+        varScalarExps = List.map(varScalarExps,scalarRecExpForOneDimRec);
+        outputExp = Debug.bcallret1(List.hasOneElement(varScalarExps),List.first,varScalarExps,DAE.TUPLE(varScalarExps));
       then (varOutputs,outputExp,varScalarCrefsInFunc);
     case(_,_,_,_,_,_,DAE.LBINARY(exp1=exp1,operator=_,exp2=exp2))
       equation
@@ -469,18 +580,14 @@ algorithm
       equation
         lhsCref = Expression.expCref(lhsExpIn);
         allOutputCrefs = List.map(allOutputs,DAEUtil.varCref);
-
         funcOutputs = List.map2(varComplexCrefs,generateOutputElements,allOutputs,lhsExpIn);
         funcProts = List.map2(constComplexCrefs,generateProtectedElements,allOutputs,lhsExpIn);
         funcSOutputs = List.map2(varScalarCrefs,generateOutputElements,allOutputs,lhsExpIn);
         funcSProts = List.map2(constScalarCrefs,generateProtectedElements,allOutputs,lhsExpIn);
-
         funcProts = listAppend(funcProts,funcSProts);
         funcOutputs = listAppend(funcOutputs,funcSOutputs);
         varOutputs =  listAppend(funcOutputs,funcProts);
-
         //varOutputs = List.map2(varScalarCrefs,generateOutputElements,allOutputs,lhsExpIn);
-
         varScalarCrefs1 = List.map(varScalarCrefs,ComponentReference.crefStripFirstIdent);
         varScalarCrefs1 = List.map1(varScalarCrefs1,ComponentReference.joinCrefsR,lhsCref);
         varScalarExps = List.map(varScalarCrefs1,Expression.crefExp);
@@ -564,13 +671,12 @@ algorithm
         cref = DAEUtil.varCref(elem);
         scalars = getScalarsForComplexVar(elem);
         // function outputs a record, its either constCompl or constScalar and varScalar
-         //print("\scalars to check\n"+&stringDelimitList(List.map(scalars,ComponentReference.printComponentRefStr),"\n")+&"\n");
-         //print("\the cref\n"+&stringDelimitList(List.map({cref},ComponentReference.printComponentRefStr),"\n")+&"\n");
+        //print("the cref\n"+&stringDelimitList(List.map({cref},ComponentReference.printComponentRefStr),"\n")+&"\n");
+        //print("scalars to check\n"+&stringDelimitList(List.map(scalars,ComponentReference.printComponentRefStr),"\n")+&"\n");
 
         true = List.isNotEmpty(scalars);
         (constVars,_,_) = List.intersection1OnTrue(scalars,constCrefs,ComponentReference.crefEqual);
-        //print("\constVars\n"+&stringDelimitList(List.map(constVars,ComponentReference.printComponentRefStr),"\n")+&"\n");
-        //print("\varVars\n"+&stringDelimitList(List.map(varVars,ComponentReference.printComponentRefStr),"\n")+&"\n");
+        //print("constVars\n"+&stringDelimitList(List.map(constVars,ComponentReference.printComponentRefStr),"\n")+&"\n");
 
         const = intEq(listLength(scalars),listLength(constVars));
         constScalarCrefs = List.filter1OnTrue(constCrefs,ComponentReference.crefInLst,constVars);
@@ -617,19 +723,22 @@ algorithm
   newOutputs := match(cref,inFuncOutputs,recId)
     local
       DAE.Ident i1,i2;
-      DAE.ComponentRef cref1;
+      DAE.ComponentRef cref1,cref2;
       DAE.Element var;
       DAE.Exp exp;
       DAE.Type typ;
+      list<DAE.ComponentRef> crefs;
       list<DAE.Element> oldOutputs2;
       list<DAE.Subscript> sl;
     case(DAE.CREF_QUAL(ident=_,identType=_,subscriptLst=sl,componentRef=_),_,_)
       equation
         //print("generate output element\n");
         typ = ComponentReference.crefLastType(cref);
-        //cref1 = ComponentReference.crefStripLastIdent(cref);
-        //print("cref\n"+&ComponentReference.printComponentRefStr(cref)+&"\n");
-        _ = Expression.crefExp(cref);
+        cref1 = ComponentReference.crefStripLastIdent(cref);
+       
+        // if the record is only 1-dimensional, use the scalar value
+        crefs = getRecordScalars(cref);
+        cref1 = Debug.bcallret1(intEq(listLength(crefs),1),List.first,crefs,cref1);
 
         // its not possible to use qualified output crefs
         i1 = ComponentReference.crefFirstIdent(cref);
@@ -637,7 +746,7 @@ algorithm
         //print("the idents_ "+&i1+&"  and  "+&i2+&"\n");
         i1 = i1+&"_"+&i2;
         cref1 = ComponentReference.makeCrefIdent(i1,typ,sl);
-
+        
         //print("the inFuncOutputs \n"+&DAEDump.dumpElementsStr(inFuncOutputs)+&"\n");
         //vars = List.map(inFuncOutputs,DAEUtil.varCref);
         //print("all the crefs of the oldoutputs\n"+&stringDelimitList(List.map(vars,ComponentReference.printComponentRefStr),",")+&"\n");
@@ -1230,7 +1339,7 @@ algorithm
         // add the replacements
         varScalars = List.map(expLst,Expression.expCref);
         repl = Debug.bcallret3(not isCon,BackendVarTransform.removeReplacements,replIn,varScalars,NONE(),replIn); // remove the lhs crefs if tis not constant
-        repl = Debug.bcallret3(isCon,addTplReplacements,replIn,exp1,exp2,replIn);  // add all tuple exps to repl if the whole tuple is constant
+        repl = Debug.bcallret3(isCon,addTplReplacements,repl,exp1,exp2,repl);  // add all tuple exps to repl if the whole tuple is constant
 
         // build the new statements
         size = DAEUtil.getTupleSize(exp2);
