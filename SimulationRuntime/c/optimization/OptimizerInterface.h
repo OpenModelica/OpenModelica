@@ -36,7 +36,7 @@
 #define _OPTIMIZER_INTERFACE_H
 
 #include "../simulation/solver/solver_main.h"
-
+#include "OptimizerLocalFunction.h"
 int runOptimizier(DATA* data, SOLVER_INFO* solverInfo);
 
 #endif
