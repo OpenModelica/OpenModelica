@@ -726,9 +726,11 @@ algorithm
       DAE.Type ty;
       DAE.ReductionIterators riters;
     // match () case () then exp; end match => exp
-    case DAE.MATCHEXPRESSION(inputs={}, localDecls={}, cases={
+    case DAE.MATCHEXPRESSION(inputs={}, et=ty, localDecls={}, cases={
         DAE.CASE(patterns={},localDecls={},body={},result=SOME(e))
       })
+      equation
+        false = Types.isTuple(ty);
       then e;
 
     case DAE.MATCHEXPRESSION(inputs={e}, et=ty, localDecls={}, cases={
