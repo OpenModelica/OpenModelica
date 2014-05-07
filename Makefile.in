@@ -60,7 +60,7 @@ settings:
 
 omc: @OMCTARGET@
 
-omc-rml: omc-diff interactive docs fmil opencl_rt lis omc-rml-nolink graphstream
+omc-rml: omc-diff interactive docs fmil opencl_rt lis omc-rml-nolink graphstream cjson
 	$(MAKE) -C Compiler -f Makefile release
 	$(MAKE) omlibrary
 omc-rml-nolink:
