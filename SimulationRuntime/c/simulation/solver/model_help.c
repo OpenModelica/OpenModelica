@@ -352,7 +352,7 @@ void printRelationsDebug(DATA *data, int stream)
 {
   long i;
 
-  debugStreamPrint(stream, 1, "status of relations");
+  debugStreamPrint(stream, 1, "status of relations at time=%.12g", data->localData[0]->timeValue);
 
   for(i=0; i<data->modelData.nRelations; i++)
     debugStreamPrint(stream, 0, "[%ld] %s = %c | pre(%s) = %c", i, data->callback->relationDescription(i), data->simulationInfo.relations[i] ? 'T' : 'F', data->callback->relationDescription(i), data->simulationInfo.relationsPre[i] ? 'T' : 'F');
@@ -373,7 +373,7 @@ void printRelations(DATA *data, int stream)
   long i;
 
   if (!ACTIVE_STREAM(stream)) return;
-  infoStreamPrint(stream, 1, "status of relations");
+  infoStreamPrint(stream, 1, "status of relations at time=%.12g", data->localData[0]->timeValue);
 
   for(i=0; i<data->modelData.nRelations; i++) {
     infoStreamPrint(stream, 0, "[%ld] %s = %c | pre(%s) = %c", i, data->callback->relationDescription(i), data->simulationInfo.relations[i] ? 'T' : 'F', data->callback->relationDescription(i), data->simulationInfo.relationsPre[i] ? 'T' : 'F');

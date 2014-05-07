@@ -3098,11 +3098,11 @@ template functionCheckForDiscreteChanges(list<ComponentRef> discreteModelVars, S
       ;separator="\n")
 
   <<
-  int <%symbolName(modelNamePrefix,"checkForDiscreteChanges")%>(DATA *data)
+  int <%symbolName(modelNamePrefix, "checkForDiscreteChanges")%>(DATA *data)
   {
     int needToIterate = 0;
 
-    infoStreamPrint(LOG_EVENTS_V, 1, "check for discrete changes");
+    infoStreamPrint(LOG_EVENTS_V, 1, "check for discrete changes at time=%.12g", data->localData[0]->timeValue);
     <%changediscreteVars%>
     if (ACTIVE_STREAM(LOG_EVENTS_V)) messageClose(LOG_EVENTS_V);
 
