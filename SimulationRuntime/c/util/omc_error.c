@@ -333,27 +333,28 @@ void errorStreamPrint(int stream, int indentNext, const char *format, ...)
 #ifdef USE_DEBUG_OUTPUT
 void debugStreamPrint(int stream, int indentNext, const char *format, ...)
 {
-  if (!stream) {
+  if (useStream[stream]) {
     char logBuffer[SIZE_LOG_BUFFER];
     va_list args;
     va_start(args, format);
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
     va_end(args);
-    messageFunction(LOG_TYPE_DEBUG, LOG_ASSERT, indentNext, logBuffer, 0, NULL);
+    messageFunction(LOG_TYPE_DEBUG, stream, indentNext, logBuffer, 0, NULL);
   }
 }
 
 void debugStreamPrintWithEquationIndexes(int stream, int indentNext, const int *indexes, const char *format, ...)
 {
-  if (ACTIVE_WARNING_STREAM(stream)) {
+  if (useStream[stream]) {
     char logBuffer[SIZE_LOG_BUFFER];
     va_list args;
     va_start(args, format);
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
     va_end(args);
-    messageFunction(LOG_TYPE_WARNING, stream, indentNext, logBuffer, 0, indexes);
+    messageFunction(LOG_TYPE_DEBUG, stream, indentNext, logBuffer, 0, indexes);
   }
 }
+
 #endif
 
 void va_throwStreamPrint(threadData_t *threadData, const char *format, va_list args)
