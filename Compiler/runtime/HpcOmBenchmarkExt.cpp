@@ -336,52 +336,52 @@ public:
 
 std::list<std::list<double> > ReadJsonBenchFileEquations(std::string filePath)
 {
-		std::list<std::list<double> > resultList = std::list<std::list<double> >();
+    std::list<std::list<double> > resultList = std::list<std::list<double> >();
 
-//		FILE *fp;
-//		long lSize;
-//		char *buffer;
-//		int arraySize, i;
-//		cJSON *root;
-//		cJSON *profileBlocks;
+//    FILE *fp;
+//    long lSize;
+//    char *buffer;
+//    int arraySize, i;
+//    cJSON *root;
+//    cJSON *profileBlocks;
 //
-//		fp = fopen ( filePath.c_str() , "rb" );
-//		if( !fp ) perror(filePath.c_str()),exit(1);
+//    fp = fopen ( filePath.c_str() , "rb" );
+//    if( !fp ) perror(filePath.c_str()),exit(1);
 //
-//		fseek( fp , 0L , SEEK_END);
-//		lSize = ftell( fp );
-//		rewind( fp );
+//    fseek( fp , 0L , SEEK_END);
+//    lSize = ftell( fp );
+//    rewind( fp );
 //
-//		/* allocate memory for entire content */
-//		buffer = (char*)calloc( 1, lSize+1 );
-//		if( !buffer ) fclose(fp),fputs("memory alloc fails",stderr),exit(1);
+//    /* allocate memory for entire content */
+//    buffer = (char*)calloc( 1, lSize+1 );
+//    if( !buffer ) fclose(fp),fputs("memory alloc fails",stderr),exit(1);
 //
-//		/* copy the file into the buffer */
-//		if( 1!=fread( buffer , lSize, 1 , fp) )
-//		  fclose(fp),free(buffer),fputs("entire read fails",stderr),exit(1);
+//    /* copy the file into the buffer */
+//    if( 1!=fread( buffer , lSize, 1 , fp) )
+//      fclose(fp),free(buffer),fputs("entire read fails",stderr),exit(1);
 //
-//		/* do your work here, buffer is a string contains the whole text */
-//		root = cJSON_Parse(buffer);
-//		profileBlocks = cJSON_GetObjectItem(root,"profileBlocks");
-//		arraySize = cJSON_GetArraySize(profileBlocks);
-//		for(i = 0; i < arraySize; i++)
-//		{
-//			cJSON *item = cJSON_GetArrayItem(profileBlocks, i);
-//			cJSON *idItem = cJSON_GetObjectItem(item, "id");
-//			cJSON *ncallItem = cJSON_GetObjectItem(item, "ncall");
-//			cJSON *timeItem = cJSON_GetObjectItem(item, "time");
-//			std::list<double> tmpLst = std::list<double>();
+//    /* do your work here, buffer is a string contains the whole text */
+//    root = cJSON_Parse(buffer);
+//    profileBlocks = cJSON_GetObjectItem(root,"profileBlocks");
+//    arraySize = cJSON_GetArraySize(profileBlocks);
+//    for(i = 0; i < arraySize; i++)
+//    {
+//      cJSON *item = cJSON_GetArrayItem(profileBlocks, i);
+//      cJSON *idItem = cJSON_GetObjectItem(item, "id");
+//      cJSON *ncallItem = cJSON_GetObjectItem(item, "ncall");
+//      cJSON *timeItem = cJSON_GetObjectItem(item, "time");
+//      std::list<double> tmpLst = std::list<double>();
 //
-//			tmpLst.push_back(idItem->valuedouble);
-//			tmpLst.push_back(timeItem->valuedouble);
-//			tmpLst.push_back(ncallItem->valuedouble);
-//			resultList.push_back(tmpLst);
-//		}
+//      tmpLst.push_back(idItem->valuedouble);
+//      tmpLst.push_back(timeItem->valuedouble);
+//      tmpLst.push_back(ncallItem->valuedouble);
+//      resultList.push_back(tmpLst);
+//    }
 //
-//		fclose(fp);
-//		free(buffer);
+//    fclose(fp);
+//    free(buffer);
 
-		return resultList;
+    return resultList;
 }
 
 void* HpcOmBenchmarkExtImpl__readCalcTimesFromXml(const char *filename)
