@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -28,23 +28,15 @@
  *
  */
 
-/*
- * Developed by:
- * FH-Bielefeld
- * Developer: Vitalij Ruge
- * Contact: vitalij.ruge@fh-bielefeld.de
- *
+/*! OptimizerInterface.h
  */
 
-#ifndef INTERFACEOPTIMIZATION_H_
-#define INTERFACEOPTIMIZATION_H_
 
-#include "ipoptODEstruct.h"
+#ifndef _OPTIMIZER_INTERFACE_H
+#define _OPTIMIZER_INTERFACE_H
 
-#ifdef WITH_IPOPT
+#include "../simulation/solver/solver_main.h"
 
-int startIpopt(DATA * data,SOLVER_INFO * solverInfo, int flag);
-int destroyIpopt(SOLVER_INFO* solverInfo);
+int runOptimizier(DATA* data, SOLVER_INFO* solverInfo);
 
-#endif /* WITH_IPOPT */
-#endif /* INTERFACEOPTIMIZATION_H_ */
+#endif

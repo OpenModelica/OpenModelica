@@ -49,7 +49,7 @@
 #include "meta_modelica.h"
 #include "simulation/solver/epsilon.h"
 
-#include "interfaceOptimization.h"
+#include "OptimizerInterface.h"
 
 /*
  * #include "dopri45.h"
@@ -172,7 +172,7 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   else if(solverInfo->solverMethod == S_OPTIMIZATION)
   {
     infoStreamPrint(LOG_SOLVER, 0, "Initializing optimizer");
-    solverInfo->solverData = malloc(1*sizeof(IPOPT_DATA_));
+    /* solverInfo->solverData = malloc(sizeof(OptData)); */
   }
 #endif
 #ifdef WITH_SUNDIALS
@@ -644,9 +644,11 @@ static int rungekutta_step(DATA* data, SOLVER_INFO* solverInfo)
 #ifdef WITH_IPOPT
 static int ipopt_step(DATA* data, SOLVER_INFO* solverInfo)
 {
-  int cJ = data->threadData->currentErrorStage;
+  int cJ, res;
+
+  cJ = data->threadData->currentErrorStage;
   data->threadData->currentErrorStage = ERROR_OPTIMIZE;
-  startIpopt(data, solverInfo,5);
+  res = runOptimizier(data, solverInfo);
   data->threadData->currentErrorStage = cJ;
   return 0;
 }

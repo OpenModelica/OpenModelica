@@ -525,8 +525,8 @@ template simulationFile_opt_header(SimCode simCode, String guid)
     #if defined(__cplusplus)
       extern "C" {
     #endif
-      int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real* res);
-      int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real* res);
+      int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real** res);
+      int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real** res);
       int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start, modelica_real * startTimeOpt);
     #if defined(__cplusplus)
     }
@@ -652,8 +652,8 @@ template simulationFile(SimCode simCode, String guid)
     extern int <%symbolName(modelNamePrefixStr,"functionJacC_column")%>(void* data);
     extern int <%symbolName(modelNamePrefixStr,"functionJacD_column")%>(void* data);
     extern const char* <%symbolName(modelNamePrefixStr,"linear_model_frame")%>(void);
-    extern int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real* res);
-    extern int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real* res);
+    extern int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real** res);
+    extern int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real** res);
     extern int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start, modelica_real * startTimeOpt);
 
     struct OpenModelicaGeneratedFunctionCallbacks <%symbolName(modelNamePrefixStr,"callback")%> = {
@@ -9149,7 +9149,7 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp /*BUFP*/,
     { /* ASUB */
     <%expl%>
     default:
-      throwStreamPrint(threadData, "Index %d out of bounds [1..<%listLength(exp.array)%>] for array <%Util.escapeModelicaStringToCString(printExpStr(exp))%>", <%idx1%>);
+      assert(NULL == "index out of bounds");
     }
     <%\n%>
     >>
@@ -10632,8 +10632,8 @@ template optimizationComponents( list<DAE.ClassAttributes> classAttributes ,SimC
     match classAttributes
     case{} then
         <<
-        int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real* res){return -1;}
-        int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real* res){return -1;}
+        int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real** res){return -1;}
+        int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real** res){return -1;}
         int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start, modelica_real * startTimeOpt){return -1;}
         >>
       else
@@ -10653,7 +10653,7 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
       let objectiveFunction = match objetiveE
         case SOME(exp) then
         <<
-         *res =  $P$TMP_mayerTerm;
+         *res =  &$P$TMP_mayerTerm;
          return 0;
         >>
       let startTimeOpt = match startTimeE
@@ -10665,7 +10665,7 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
 
       let objectiveIntegrand = match objectiveIntegrandE case SOME(exp) then
         <<
-         *res =  $P$TMP_lagrangeTerm;
+         *res =  &$P$TMP_lagrangeTerm;
          return 0;
         >>
       let inputBounds = match simCode
@@ -10680,7 +10680,7 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
         <<
             /* objectiveFunction */
 
-           int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real* res)
+           int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real** res)
             {
               <%varDecls%>
               <%preExp%>
@@ -10689,7 +10689,7 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
             }
 
             /* objectiveIntegrand */
-            int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real* res)
+            int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real** res)
             {
               <%varDecls1%>
               <%preExp1%>
