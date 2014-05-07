@@ -114,8 +114,6 @@ static inline void initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solver
    if(!data->simulationInfo.external_input.active)
      for(i = 0; i< nu;++i)
        data->simulationInfo.inputVars[i] = u0[i]/*optData->bounds.scalF[i + nx]*/;
-   else
-     externalInputUpdate(data);
 
    printGuess = (short)(ACTIVE_STREAM(LOG_INIT) && !ACTIVE_STREAM(LOG_SOLVER));
 
@@ -127,6 +125,7 @@ static inline void initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solver
 
    for(i = 0, k=1; i < nsi; ++i){
      for(j = 0; j < np; ++j, ++k){
+       externalInputUpdate(data);
        smallIntSolverStep(data, solverInfo, (double)optData->time.t[i][j]);
 
        if(printGuess)
@@ -162,9 +161,6 @@ static inline void initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solver
   }
 
   dassl_deinitial(solverInfo->solverData);
-  externalInputFree(data);
-  data->simulationInfo.external_input.active = 0;
-
   solverInfo->solverData = (void*)optData;
   sInfo->solverMethod = "optimization";
   data->simulationInfo.tolerance = tol;
@@ -235,7 +231,9 @@ static inline void init_ipopt_data(OptData *optData){
   for(i = 0, shift = 0; i < nsi; ++i){
     for(j = 0; j < np; ++j, shift+=nv){
       memcpy(data->localData[0]->realVars, optData->v[i][j], nReal*sizeof(double));
-
+      externalInputUpdate(data);
+      data->localData[0]->timeValue = (modelica_real) optData->time.t[i][j];
+    
       for(l = 0; l<nx; ++l)
         ipop->vopt[l + shift] = optData->v[i][j][l]*optData->bounds.scalF[l];
 
@@ -244,6 +242,8 @@ static inline void init_ipopt_data(OptData *optData){
 
     }
   }
+
+  externalInputFree(data);
 
   for(j = 0; j< nc; ++j)
     for(i = nx; i < NRes; i += nJ)

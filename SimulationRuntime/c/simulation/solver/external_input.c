@@ -119,6 +119,7 @@ int externalInputFree(DATA* data)
     for(j = 0; j < data->simulationInfo.external_input.N; ++j)
       free(data->simulationInfo.external_input.u[j]);
     free(data->simulationInfo.external_input.u);
+    data->simulationInfo.external_input.active = 0;
   }
   return 0;
 }
