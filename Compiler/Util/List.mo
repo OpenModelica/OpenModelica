@@ -9284,7 +9284,7 @@ public function find
   input list<ElementInType> inList;
   input FindFunc inFindFunc;
   output ElementOutType outElement;
- 
+
   partial function FindFunc
     input ElementInType inElement;
     output ElementOutType outElement;
@@ -9295,7 +9295,7 @@ algorithm
       ElementInType ei;
       list<ElementInType> rest_ei;
       ElementOutType oe;
-     
+
     case (ei :: _, _)
       equation
         oe = inFindFunc(ei);

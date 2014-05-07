@@ -1131,7 +1131,7 @@ public function setTimeStampBool
   input TimeStamp its;
   input Boolean which "true for edit time, false for build time";
   output TimeStamp ots;
-algorithm 
+algorithm
   ots := match(its,which)
     local
       Real timer;
@@ -2301,7 +2301,7 @@ public function expComponentRefStr
   input Exp aexp;
   output String outString;
 algorithm
-  outString := printComponentRefStr(expCref(aexp));  
+  outString := printComponentRefStr(expCref(aexp));
 end expComponentRefStr;
 
 public function printComponentRefStr
@@ -3172,7 +3172,7 @@ algorithm
         newSubPath = stripLast(subPath);
         newSubPath=pathContainedIn(newSubPath,path);
       then joinPaths(newSubPath,IDENT(ident));
-      
+
   end matchcontinue;
 end pathContainedIn;
 

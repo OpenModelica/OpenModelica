@@ -29,8 +29,8 @@
  *
  */
 
-encapsulated package Main       
-" file:        Main.mo        
+encapsulated package Main
+" file:        Main.mo
   package:     Main
   description: Modelica main program
 
@@ -68,11 +68,11 @@ protected import Parser;
 protected import Print;
 protected import Settings;
 protected import SimCode;
-protected import SimCodeMain;            
+protected import SimCodeMain;
 protected import Socket;
 protected import System;
 protected import TplMain;
-protected import Util;              
+protected import Util;
 
 protected function serverLoop
 "This function is the main loop of the server listening
