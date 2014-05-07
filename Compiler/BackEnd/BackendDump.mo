@@ -1504,7 +1504,7 @@ algorithm
       str2 = stringAppendList({str," in equations [",eq_s,"] and when conditions [",wc_s,"]"});
     then str2;
 
-    else then "";
+    else "";
   end match;
 end zeroCrossingString;
 
@@ -1542,7 +1542,7 @@ algorithm
       str = stringAppendList({" whenclause = ",sc," then ",s1});
     then str;
 
-    else then "";
+    else "";
   end match;
 end whenClauseString;
 
@@ -1988,7 +1988,7 @@ algorithm
     local
       Type_A a;
     case (SOME(a), _) equation infunc(a); then();
-    else then ();
+    else ();
   end match;
 end dumpOption;
 

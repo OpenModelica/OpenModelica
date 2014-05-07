@@ -440,7 +440,7 @@ public function frameNotEncapsulated
 algorithm
   _ := match(frameType)
     case NFSCodeEnv.ENCAPSULATED_SCOPE() then fail();
-    else then ();
+    else ();
   end match;
 end frameNotEncapsulated;
 
@@ -1707,7 +1707,7 @@ public function joinCrefs
 algorithm
   outCref := match(inCref1, inCref2)
     case (_, Absyn.CREF_FULLYQUALIFIED(componentRef = _)) then inCref2;
-    else then Absyn.joinCrefs(inCref1, inCref2);
+    else Absyn.joinCrefs(inCref1, inCref2);
   end match;
 end joinCrefs;
 

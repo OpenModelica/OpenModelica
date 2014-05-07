@@ -73,7 +73,7 @@ algorithm
       SCode.Program spInitial, spAbsyn, sp;
       list<Absyn.Class> inClasses,initialClasses;
 
-    case (_)
+    case _
       equation
         Inst.initInstHashTable();
         // adrpo: TODO! FIXME! disable function caching for now as some tests fail.
@@ -1089,13 +1089,13 @@ protected function translateElementspec
   input Option<Absyn.ConstrainClass> cc;
   input Boolean finalPrefix;
   input Absyn.InnerOuter io;
-  input Option<Absyn.RedeclareKeywords> inAbsynRedeclareKeywordsOption2;
+  input Option<Absyn.RedeclareKeywords> inRedeclareKeywords;
   input SCode.Visibility inVisibility;
   input Absyn.ElementSpec inElementSpec4;
   input Absyn.Info inInfo;
   output list<SCode.Element> outElementLst;
 algorithm
-  outElementLst := match (cc,finalPrefix,io,inAbsynRedeclareKeywordsOption2,inVisibility,inElementSpec4,inInfo)
+  outElementLst := match (cc,finalPrefix,io,inRedeclareKeywords,inVisibility,inElementSpec4,inInfo)
     local
       SCode.ClassDef de_1;
       SCode.Restriction re_1;
@@ -2122,7 +2122,7 @@ algorithm
       then
         Absyn.MATCHEXP(matchType, inputExp, localDecls, cases, comment);
     // something else, just return the expression
-    case (_,_) then exp;
+    else exp;
   end matchcontinue;
 end prefixUnqualifiedCrefsFromExp;
 
@@ -2301,7 +2301,7 @@ algorithm
         SCode.MOD(f1, e1, subMods1, b1, info);
 
     // failure
-    case (_, _)
+    else
       equation
         print("SCodeUtil.mergeSCodeMods failed on:\nouterMod: " +& SCodeDump.printModStr(inModOuter,SCodeDump.defaultOptions) +&
                "\ninnerMod: " +& SCodeDump.printModStr(inModInner,SCodeDump.defaultOptions) +& "\n");

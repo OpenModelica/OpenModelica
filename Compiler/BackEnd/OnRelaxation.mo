@@ -75,7 +75,7 @@ algorithm
       (outDAE,_) = BackendDAEUtil.mapEqSystemAndFold(inDAE, relaxSystem0, false);
     then outDAE;
 
-    else then inDAE;
+    else inDAE;
   end matchcontinue;
 end relaxSystem;
 
@@ -3395,7 +3395,7 @@ algorithm
         //markEqns(vareqns,columark,mark);
       then
         listAppend(inNextQeue,vareqns);
-    else then inNextQeue;
+    else inNextQeue;
   end matchcontinue;
 end onefreeMatchingBFS1;
 

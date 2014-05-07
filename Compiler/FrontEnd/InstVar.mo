@@ -1171,7 +1171,7 @@ protected function instArray
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input String inIdent;
-  input tuple<SCode.Element, SCode.Attributes> inTplSCodeClassSCodeAttributes;
+  input tuple<SCode.Element, SCode.Attributes> inElement;
   input SCode.Prefixes inPrefixes;
   input Integer inInteger;
   input DAE.Dimension inDimension;
@@ -1193,7 +1193,10 @@ protected function instArray
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   checkDimensionGreaterThanZero(inDimension,inPrefix,inIdent,info);
-  (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph) := instArray2(inCache, inEnv, inIH, inStore, inState, inMod, inPrefix, inIdent, inTplSCodeClassSCodeAttributes, inPrefixes, inInteger, inDimension, inDimensionLst, inIntegerLst, inInstDims, inBoolean, inComment, info, inGraph, inSets);
+  (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph) :=
+    instArray2(inCache, inEnv, inIH, inStore, inState, inMod, inPrefix, inIdent,
+      inElement, inPrefixes, inInteger, inDimension, inDimensionLst,
+      inIntegerLst, inInstDims, inBoolean, inComment, info, inGraph, inSets);
 end instArray;
 
 protected function checkDimensionGreaterThanZero
@@ -1249,7 +1252,7 @@ protected function instArray2
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input String inIdent;
-  input tuple<SCode.Element, SCode.Attributes> inTplSCodeClassSCodeAttributes;
+  input tuple<SCode.Element, SCode.Attributes> inElement;
   input SCode.Prefixes inPrefixes;
   input Integer inInteger;
   input DAE.Dimension inDimension;
@@ -1271,7 +1274,7 @@ protected function instArray2
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph) :=
-  matchcontinue (inCache,inEnv,inIH,inStore,inState,inMod,inPrefix,inIdent,inTplSCodeClassSCodeAttributes,inPrefixes,inInteger,inDimension,inDimensionLst,inIntegerLst,inInstDims,inBoolean,inComment,info,inGraph,inSets)
+  matchcontinue (inCache,inEnv,inIH,inStore,inState,inMod,inPrefix,inIdent,inElement,inPrefixes,inInteger,inDimension,inDimensionLst,inIntegerLst,inInstDims,inBoolean,inComment,info,inGraph,inSets)
     local
       DAE.Exp e,lhs,rhs;
       DAE.Properties p;

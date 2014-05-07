@@ -121,7 +121,7 @@ algorithm
         eventInfo = inlineEventInfo(eventInfo,tpl);
       then
         BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constrs,clsAttrs,cache,env,functionTree,eventInfo,extObjClasses,btp,symjacs,ei));
-    case(_,_)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE,"Inline.inlineCalls failed");
       then
@@ -170,7 +170,7 @@ algorithm
         oInlined = inlineEquationOptArray(1,eqarr,i2,fns,false);
       then
         (BackendDAE.EQUATION_ARRAY(size,i1,i2,eqarr),oInlined);
-    case(_,_)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE,"Inline.inlineEquationArray failed");
       then
@@ -200,7 +200,7 @@ algorithm
         updateArrayCond(b,inEqnArray,Index,eqn);
       then
         inlineEquationOptArray(Index+1,inEqnArray,arraysize,fns,b or iInlined);
-    case(_,_,_,_,_)
+    else
       equation
         false = intLe(Index,arraysize);
       then
@@ -419,7 +419,7 @@ algorithm
         inlined = inlineVarOptArray(1,vararr,i4,fns,false);
       then
         (BackendDAE.VARIABLES(crefind,BackendDAE.VARIABLE_ARRAY(i3,i4,vararr),i1,i2),inlined);
-    case(_,_)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE,"Inline.inlineVariables failed");
       then
@@ -590,7 +590,7 @@ algorithm
       equation
         (r,source,true,_) = inlineExp(r,fns,isource);
       then (SOME(DAE.VAR_ATTR_ENUMERATION(quantity,min,SOME(r),fixed,equationBound,isProtected,finalPrefix,so)),source,true);
-    case (_,_,_) then (inVariableAttributesOption,isource,false);
+    else (inVariableAttributesOption,isource,false);
   end matchcontinue;
 end inlineStartAttribute;
 
@@ -616,7 +616,7 @@ algorithm
       ev = Util.if_(b1 or b2 or b3, BackendDAE.EVENT_INFO(timeEvents, wclst_1, zclst_1, samples, relations, numberOfRelations, numberOfMathEvents), inEventInfo);
     then ev;
 
-    case(_, _) equation
+    else equation
       Debug.fprintln(Flags.FAILTRACE, "Inline.inlineEventInfo failed");
     then fail();
   end matchcontinue;
@@ -663,8 +663,7 @@ algorithm
       (e_1, _, true, _) = inlineExp(e, fns, DAE.emptyElementSource/*TODO: Propagate operation info*/);
     then (BackendDAE.ZERO_CROSSING(e_1, ilst1, ilst2), true);
 
-    case(_, _)
-    then (inZeroCrossing, false);
+    else (inZeroCrossing, false);
   end matchcontinue;
 end inlineZeroCrossing;
 
@@ -715,9 +714,7 @@ algorithm
         true = b1 or b2;
       then
         (BackendDAE.WHEN_CLAUSE(e_1,rslst_1,io),true);
-    case(_,_)
-      then
-        (inWhenClause,false);
+    else (inWhenClause,false);
   end matchcontinue;
 end inlineWhenClause;
 
@@ -1073,7 +1070,7 @@ algorithm
         (stmts_1,inlined) = inlineStatements(stmts,fns,{},false);
       then
         (DAE.ALGORITHM_STMTS(stmts_1),inlined);
-    case(_,_)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE,"Inline.inlineAlgorithm failed");
       then
@@ -1558,7 +1555,7 @@ algorithm
     case (SOME(SCode.COMMENT(annotation_=SOME(anno))))
       then
         SCode.hasBooleanNamedAnnotation(anno,"GenerateEvents");
-    else then false;
+    else false;
   end match;
 end hasGenerateEventsAnnotation;
 
@@ -1792,7 +1789,7 @@ algorithm
       equation
        b = listMember(it,itlst);
       then b;
-    case (_,_) then false;
+    else false;
   end matchcontinue;
 end checkInlineType;
 
@@ -1920,7 +1917,7 @@ algorithm
         e1 = ComponentReference.crefPrependIdent(e,name,{},tp);
         exp = Expression.makeCrefExp(e1,tp);
       then ((c1,exp));
-    case(_,_,_)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE,"Inline.extendCrefRecords1 failed");
       then
@@ -1944,7 +1941,7 @@ algorithm
       equation
         c1 = ComponentReference.crefPrependIdent(c,name,{},tp);
       then c1;
-    case(_,_)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE,"Inline.extendCrefRecords2 failed");
       then
@@ -1968,7 +1965,7 @@ algorithm
       equation
         SOME(DAE.FUNCTION( functions = DAE.FUNCTION_DEF(body = body)::_,comment=comment)) = DAEUtil.avlTreeGet(ftree,p);
       then (body,comment);
-    case(_,_)
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("Inline.getFunctionBody failed for function: " +& Absyn.pathString(p));
@@ -2149,12 +2146,12 @@ protected function getInputCrefs
   input DAE.Element inElement;
   output DAE.ComponentRef outComponentRef;
 algorithm
-  outComponentRef := matchcontinue(inElement)
+  outComponentRef := match(inElement)
     local
       DAE.ComponentRef cref;
     case(DAE.VAR(componentRef=cref,direction=DAE.INPUT())) then cref;
-    case(_) then DAE.WILD();
-  end matchcontinue;
+    else DAE.WILD();
+  end match;
 end getInputCrefs;
 
 protected function removeWilds
@@ -2162,10 +2159,10 @@ protected function removeWilds
   input DAE.ComponentRef inComponentRef;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue(inComponentRef)
+  outBoolean := match(inComponentRef)
     case(DAE.WILD()) then false;
-    case(_) then true;
-  end matchcontinue;
+    else true;
+  end match;
 end removeWilds;
 
 public function printInlineTypeStr

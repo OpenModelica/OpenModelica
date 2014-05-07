@@ -548,7 +548,7 @@ algorithm
         Debug.bcall2(intLt(linInfo,0), Error.addMessage, Error.LINEAR_SYSTEM_INVALID, {"LAPACK/dgesv",syst});
       then
         false;
-    else then true;
+    else true;
   end matchcontinue;
 end analyzeConstantJacobian;
 
@@ -589,7 +589,7 @@ algorithm
       then
         BackendDAE.VAR(cr,BackendDAE.STATE_DER(),dir,prl,tp,exp,v,dim,source,attr,comment,ct);
 
-    else then inVar;
+    else inVar;
   end match;
 end transformXToXd;
 
@@ -1355,7 +1355,7 @@ algorithm
         (stack,comps) = checkStack(nv, istack, number, stackflag, {});
       then
         (stack,comps);
-    else then (istack,{});
+    else (istack,{});
   end matchcontinue;
 end checkRoot;
 
@@ -1386,7 +1386,7 @@ algorithm
         (stack,comp) = checkStack(vn, rest, number, stackflag, top :: icomp);
       then
         (stack,comp);
-    else then (istack,listReverse(icomp));
+    else (istack,listReverse(icomp));
   end matchcontinue;
 end checkStack;
 

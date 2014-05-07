@@ -1907,7 +1907,7 @@ algorithm
       sysIndexMap = arrayUpdate(inSysIndexMap, index, systemIndex);
     then sysIndexMap;
 
-    else then inSysIndexMap;
+    else inSysIndexMap;
   end match;
 end getSystemIndexMap;
 
@@ -2946,7 +2946,7 @@ algorithm
         e2 = Util.if_(b, e2, exp);
       then
         ((DAE.IFEXP(cond, e1, e2), (crexp, exp)));
-    else then inExp;
+    else inExp;
   end match;
 end replaceIFBrancheswithoutVar;
 
@@ -3057,7 +3057,7 @@ algorithm
       simWhenClause = findWhenEquation1(eq, simWhenClause);
     then ((eqn, simWhenClause));
 
-    else then inTpl;
+    else inTpl;
   end matchcontinue;
 end findWhenEquation;
 
@@ -4510,7 +4510,7 @@ algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {errorMessage});
       then (NONE(), iuniqueEqIndex, itempvars);
 
-    else then (NONE(), iuniqueEqIndex, itempvars);
+    else (NONE(), iuniqueEqIndex, itempvars);
 
   end matchcontinue;
 end createSymbolicSimulationJacobian;
@@ -4820,7 +4820,7 @@ algorithm
         true = (4 == listLength(injacobianMatrixes));
       then
         injacobianMatrixes;
-    else then {({}, {}, "A", ({}, ({}, {})), {}, 0), ({}, {}, "B", ({}, ({}, {})), {}, 0), ({}, {}, "C", ({}, ({}, {})), {}, 0), ({}, {}, "D", ({}, ({}, {})), {}, 0)};
+    else {({}, {}, "A", ({}, ({}, {})), {}, 0), ({}, {}, "B", ({}, ({}, {})), {}, 0), ({}, {}, "C", ({}, ({}, {})), {}, 0), ({}, {}, "D", ({}, ({}, {})), {}, 0)};
   end matchcontinue;
 end addLinearizationMatrixes;
 
@@ -6427,7 +6427,7 @@ algorithm
         false = BackendVariable.isVarOnTopLevelAndInput(v);
       then
         ((v, (uniqueEqIndex+1, SimCode.SES_SIMPLE_ASSIGN(uniqueEqIndex, cr, exp, source)::eqns)));
-    else then inTpl;
+    else inTpl;
   end matchcontinue;
 end traverseKnVarsToSimEqSystem;
 
@@ -7181,7 +7181,7 @@ algorithm
         vars = extractVarFromVar(var, aliasVars, v, vars);
       then
         ((var, (vars, aliasVars, v)));
-    else then inTpl;
+    else inTpl;
   end matchcontinue;
 end extractVarsFromList;
 
@@ -7691,7 +7691,7 @@ algorithm
         set = BaseHashSet.add(cr, iSet);
       then
        (var, set);
-    else then (iVar, iSet);
+    else (iVar, iSet);
   end matchcontinue;
 end setArrayElementnoFirst;
 
@@ -7743,7 +7743,7 @@ algorithm
         cr = ComponentReference.crefStripLastSubs(cr);
       then
         BaseHashSet.add(cr, iSet);
-    else then iSet;
+    else iSet;
   end match;
 end collectArrayFirstVars;
 
@@ -9616,7 +9616,7 @@ algorithm
         elseWhenEq = addDivExpErrorMsgtoSimEqSystem(elseWhen);
       then
         SimCode.SES_WHEN(index, conditions, initialCall, cr, e, SOME(elseWhenEq), source);
-    else then inSES;
+    else inSES;
   end matchcontinue;
 end addDivExpErrorMsgtoSimEqSystem;
 
@@ -12911,7 +12911,7 @@ algorithm
         refString = ComponentReference.printComponentRefStr(name);
         print(refString +& "\n");
       then iIdx + 1;
-    else then iIdx + 1;
+    else iIdx + 1;
   end match;
 end dumpIdxScVarMapping0;
 

@@ -564,7 +564,7 @@ algorithm
         true = intGt(size,0);
       then
         consN_impl(size,inElement,inList);
-    else then inList;
+    else inList;
   end matchcontinue;
 end consN;
 
@@ -578,7 +578,7 @@ protected function consN_impl
 algorithm
   outList := match(size,inElement,inList)
     case(0,_,_) then inList;
-    else then consN(size-1,inElement,inElement::inList);
+    else consN(size-1,inElement,inElement::inList);
   end match;
 end consN_impl;
 
@@ -1912,7 +1912,7 @@ algorithm
         a = addPos(inList2, a, 1);
       then
         intersectionIntVec(a, inN, {});
-    else then {};
+    else {};
  end matchcontinue;
 end intersectionIntN;
 
@@ -2086,7 +2086,7 @@ algorithm
         a = addPos(inList2, a, 1);
       then
         setDifferenceIntVec(a, inN, {});
-    else then {};
+    else {};
  end matchcontinue;
 end setDifferenceIntN;
 
@@ -2198,7 +2198,7 @@ algorithm
         a = addPos(inList2, a, 1);
       then
         unionIntVec(a, inN, {});
-    else then {};
+    else {};
  end matchcontinue;
 end unionIntN;
 
@@ -8567,7 +8567,7 @@ algorithm
       then
         (el, SOME(e));
 
-    else then (inList, NONE());
+    else (inList, NONE());
   end matchcontinue;
 end deleteMemberOnTrue;
 
@@ -8863,7 +8863,7 @@ algorithm
     local ElementType x;
     case ({_}) then false;
     case ({}) then false;
-    else then true;
+    else true;
   end match;
 end hasSeveralElements;
 
@@ -9277,6 +9277,29 @@ algorithm
   (a, b, _) := inTuple;
   outList := {a,b};
 end first2FromTuple3;
+
+public function find
+  "Takes a list of elements and a map function, and returns the first element
+   that the map function succeeds for."
+  input list<ElementInType> inList;
+  input FindFunc inFindFunc;
+  output ElementOutType outElement;
+ 
+  partial function FindFunc
+    input ElementInType inElement;
+    output ElementOutType outElement;
+  end FindFunc;
+algorithm
+  outElement := matchcontinue(inList, inFindFunc)
+    local
+      ElementInType ei;
+      list<ElementInType> rest_ei;
+     
+    case (ei :: _, _) then inFindFunc(ei);
+    case (_ :: rest_ei, _) then find(rest_ei, inFindFunc);
+
+  end matchcontinue;
+end find;
 
 public function findMap
   "Same as map, but stops when it find a certain element as indicated by the

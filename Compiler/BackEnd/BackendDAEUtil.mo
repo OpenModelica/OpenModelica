@@ -115,7 +115,7 @@ public function isInitializationDAE
 algorithm
   res := match(inShared)
    case (BackendDAE.SHARED(backendDAEType=BackendDAE.INITIALSYSTEM())) then true;
-    else then false;
+    else false;
   end match;
 end isInitializationDAE;
 
@@ -6104,7 +6104,7 @@ algorithm
         (jac, shared) = calculateJacobianRows(eqn_lst,vars,m,1,1,differentiateIfExp,iShared,varsInEqn,{});
       then
         (SOME(jac),shared);
-    else then (NONE(), iShared);  /* no analytic jacobian available */
+    else (NONE(), iShared);  /* no analytic jacobian available */
   end matchcontinue;
 end calculateJacobian;
 
@@ -6130,7 +6130,7 @@ algorithm
         (jac, shared) = calculateJacobianRows(eqn_lst,vars,m,1,1,differentiateIfExp,iShared,varsInEqnEnhanced,{});
       then
         (SOME(jac), shared);
-    else then (NONE(), iShared);  /* no analytic jacobian available */
+    else (NONE(), iShared);  /* no analytic jacobian available */
   end matchcontinue;
 end calculateJacobianEnhanced;
 
@@ -6741,7 +6741,7 @@ algorithm
         true = Expression.isConst(e);
       then
         jacobianConstant(eqns);
-    else then false;
+    else false;
   end matchcontinue;
 end jacobianConstant;
 
@@ -6769,7 +6769,7 @@ algorithm
       then
         jacobianNonlinear(vars, xs);
     case (_,{}) then false;
-    else then true;
+    else true;
   end matchcontinue;
 end jacobianNonlinear;
 
@@ -7099,7 +7099,7 @@ algorithm
         repl1 = BackendVarTransform.addReplacement(repl,cr,Expression.makeConstZero(ComponentReference.crefLastType(cr)),NONE());
       then
         ((var,repl1));
-    else then inTpl;
+    else inTpl;
   end matchcontinue;
 end makeZeroReplacement;
 
@@ -8452,7 +8452,7 @@ algorithm
         Debug.execStat("transformDAE -> state selection " +& methodstr,GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       then
          outDAE;
-    else then inDAE;
+    else inDAE;
   end match;
 end stateDeselectionDAE;
 

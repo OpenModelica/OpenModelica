@@ -562,7 +562,7 @@ algorithm
         es = DAE.BINARY(DAE.SCONST(estr),DAE.ADD(DAE.T_STRING_DEFAULT),es);
       then
         DAE.STMT_ASSERT(e,es,DAE.ASSERTIONLEVEL_ERROR,DAE.emptyElementSource)::inAsserts;
-    else then inAsserts;
+    else inAsserts;
   end match;
 end generateAssertType;
 
@@ -641,7 +641,7 @@ algorithm
       then
         true;
 
-    else then false;
+    else false;
 
   end matchcontinue;
 end hasOnlyFactors;
@@ -675,7 +675,7 @@ algorithm
       then
         true;
 
-    else then false;
+    else false;
 
   end matchcontinue;
 end isInverseCref;

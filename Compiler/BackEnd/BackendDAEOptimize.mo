@@ -1537,7 +1537,7 @@ algorithm
          treelst = DAEUtil.avlTreeToList(usedfuncs2);
          usedfuncs = DAEUtil.avlTreeAddLst(treelst, usedfuncs);
       then removeUnusedFunctionsSymJacs(rest,(funcs,usedfuncs));
-      //else then inFuncsTpl;
+      //else inFuncsTpl;
   end match;
 end removeUnusedFunctionsSymJacs;
 
@@ -2134,7 +2134,7 @@ algorithm
         (_, maxdegree) = List.mapFold(sparsepatternT, findDegrees, 1);
         print("analytical Jacobians[SPARSE] -> got sparse pattern nonZeroElements: "+& intString(nonZeroElements) +& " maxNodeDegree: " +& intString(maxdegree) +& " time : " +& realString(clock()) +& "\n");
       then ();
-    else then ();
+    else ();
   end match;
 end dumpSparsePatternStatistics;
 
@@ -2560,7 +2560,7 @@ algorithm
       eqn = BackendDAE.RESIDUAL_EQUATION(e1, DAE.emptyElementSource,false,BackendDAE.INITIAL_EQUATION());
     then ((var,eqn::eqns));
 
-    else then inTpl;
+    else inTpl;
   end matchcontinue;
 end generateImplicitInitialEquations;
 
@@ -2589,7 +2589,7 @@ algorithm
       eqn = BackendDAE.RESIDUAL_EQUATION(e1, DAE.emptyElementSource,false,BackendDAE.INITIAL_EQUATION());
     then ((var,eqn::eqns));
 
-    else then inTpl;
+    else inTpl;
   end matchcontinue;
 end generateImplicitInitialEquationsForParameters;
 
@@ -2669,7 +2669,7 @@ algorithm
         //true = BackendVariable.isVarOnTopLevelAndOutput(variable);
         var = BackendVariable.setVarDirection(var, DAE.BIDIR());
       then ((var,i));
-    else then inTpl;
+    else inTpl;
   end matchcontinue;
 end redirectOutputToBiDir;
 
@@ -2935,7 +2935,7 @@ algorithm
     _ = System.realtimeTock(GlobalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
   then outBackendDAE;
 
-  else then inBackendDAE;
+  else inBackendDAE;
   end matchcontinue;
 end generateSymbolicJacobianPast;
 
@@ -2969,7 +2969,7 @@ algorithm
     _  = System.realtimeTock(GlobalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
   then outBackendDAE;
 
-  else then inBackendDAE;
+  else inBackendDAE;
   end matchcontinue;
 end generateSymbolicLinearizationPast;
 
@@ -4086,7 +4086,7 @@ algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {errorMessage});
       then (BackendDAE.EMPTY_JACOBIAN(), inShared);
 
-        else then (BackendDAE.EMPTY_JACOBIAN(), inShared);
+        else (BackendDAE.EMPTY_JACOBIAN(), inShared);
   end matchcontinue;
 end getSymbolicJacobian;
 
@@ -4262,7 +4262,7 @@ algorithm
   b := match(inEqn)
     case BackendDAE.ARRAY_EQUATION(source=DAE.SOURCE(info=Absyn.INFO(fileName="stateselection"))) then false;
     case BackendDAE.EQUATION(source=DAE.SOURCE(info=Absyn.INFO(fileName="stateselection"))) then false;
-    else then true;
+    else true;
   end match;
 end removeStateSetEqn;
 
@@ -4771,7 +4771,7 @@ algorithm
         (outDAE,_) = BackendDAEUtil.mapEqSystemAndFold(inDAE,countOperations0,false);
       then
         outDAE;
-    else then inDAE;
+    else inDAE;
   end matchcontinue;
 end countOperations;
 
@@ -6431,7 +6431,7 @@ algorithm
       repl_1 = BackendVarTransform.addReplacement(repl, varName, exp, NONE());
     then ((v, repl_1));
 
-    else then inTpl;
+    else inTpl;
   end matchcontinue;
 end removeConstantsFinder;
 
@@ -6471,7 +6471,7 @@ algorithm
       _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs, traverserreplaceEdgeChange, false);
     then (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets), (shared, true));
 
-    else then (isyst, sharedChanged);
+    else (isyst, sharedChanged);
   end matchcontinue;
 end replaceEdgeChange0;
 
@@ -6505,7 +6505,7 @@ algorithm
       ty = Expression.typeof(e);
     then ((DAE.LBINARY(e, DAE.AND(ty), DAE.LUNARY(DAE.NOT(ty), DAE.CALL(Absyn.IDENT("pre"), {e}, DAE.CALL_ATTR(ty, false, true, false, DAE.NO_INLINE(), DAE.NO_TAIL())))), true));
 
-    else then tpl;
+    else tpl;
   end matchcontinue;
 end traverserExpreplaceEdgeChange;
 
@@ -7622,7 +7622,7 @@ algorithm
     then
       (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets), (shared, true));
 
-    else then (isyst, sharedChanged);
+    else (isyst, sharedChanged);
   end matchcontinue;
 end applyRewriteRulesBackend0;
 
@@ -7655,7 +7655,7 @@ algorithm
     then
       ((e, true));
 
-    else then tpl;
+    else tpl;
   end matchcontinue;
 end traverserExpapplyRewriteRulesBackend;
 

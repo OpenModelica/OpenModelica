@@ -663,7 +663,7 @@ public function varHasStateDerivative
 algorithm
   b := match(inVar)
     case BackendDAE.VAR(varKind=BackendDAE.STATE(derName=SOME(_))) then true;
-    else then false;
+    else false;
 end match;
 end varHasStateDerivative;
 
@@ -1558,7 +1558,7 @@ algorithm
   outBoolean:=
   matchcontinue (inVar)
     case BackendDAE.VAR(connectorType = DAE.FLOW()) then true;
-    else then false;
+    else false;
   end matchcontinue;
 end isFlowVar;
 
@@ -1719,7 +1719,7 @@ algorithm
     // Parameter with evaluate=true
     case BackendDAE.VAR(comment=SOME(SCode.COMMENT(annotation_=SOME(anno))))
       then SCode.hasBooleanNamedAnnotation(anno,"Evaluate");
-    else then false;
+    else false;
   end match;
 end hasVarEvaluateAnnotation;
 
@@ -2100,7 +2100,7 @@ algorithm
         BackendDAEUtil.checkAssertCondition(cond,msg,DAE.ASSERTIONLEVEL_WARNING,DAEUtil.getElementSourceFileInfo(source));
       then
         DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,DAE.ASSERTIONLEVEL_WARNING,source)})::iMinmax;
-    else then iMinmax;
+    else iMinmax;
   end matchcontinue;
 end getMinMaxAsserts;
 
@@ -2164,7 +2164,7 @@ algorithm
         BackendDAEUtil.checkAssertCondition(cond,msg,DAE.ASSERTIONLEVEL_WARNING,DAEUtil.getElementSourceFileInfo(source));
       then
         DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,DAE.ASSERTIONLEVEL_WARNING,source)})::iNominal;
-    else then iNominal;
+    else iNominal;
   end matchcontinue;
 end getNominalAssert;
 
@@ -2258,7 +2258,7 @@ protected function vararrayList2
 algorithm
   outVarLst := match (arr,pos,inVarLst)
     case (_,0,_) then inVarLst;
-    else then vararrayList2(arr,pos-1,List.consOption(arr[pos],inVarLst));
+    else vararrayList2(arr,pos-1,List.consOption(arr[pos],inVarLst));
   end match;
 end vararrayList2;
 
@@ -4419,7 +4419,7 @@ algorithm
     case ((e as DAE.CREF(componentRef=_), (vars,_,hs)))
       then
         ((e, (vars,true,hs)));
-    else then inTuple;
+    else inTuple;
   end matchcontinue;
 end replaceCrefWithBindExp;
 
@@ -4776,7 +4776,7 @@ algorithm
     // keep them a while untill we know which are needed
     //case DAE.CREF_QUAL(ident = "$DER") then true;
     case DAE.CREF_IDENT(ident = ident) then intEq(System.strncmp(ident,"$when",5),0);
-    else then false;
+    else false;
   end match;
 end selfGeneratedVar;
 

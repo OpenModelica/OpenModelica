@@ -559,7 +559,7 @@ algorithm
         bt = treeAdd(iBt,key,0);
       then
         bt;
-    else then iBt;
+    else iBt;
   end matchcontinue;
 end binTreeintersection1;
 

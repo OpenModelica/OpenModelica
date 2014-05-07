@@ -956,7 +956,7 @@ algorithm
         true;
 
     // all others forward to expEqual
-    else then Expression.expEqual(e1, e2);
+    else Expression.expEqual(e1, e2);
 
   end matchcontinue;
 end expEqual;

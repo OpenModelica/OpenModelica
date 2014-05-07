@@ -168,7 +168,7 @@ algorithm
       then
         Graphviz.NODE("ALGORITHMS",{},nl);
 
-    case (_) then Graphviz.NODE(" DumpGraphViz.printClassPart PART_ERROR",{},{});
+    else Graphviz.NODE(" DumpGraphViz.printClassPart PART_ERROR",{},{});
   end matchcontinue;
 end printClassPart;
 
@@ -282,9 +282,7 @@ algorithm
       then
         Graphviz.NODE("COMPONENTS",{},(pn :: cns));
 
-    case (_)
-      then
-        Graphviz.NODE(" DumpGraphviz.printElementspec ELSPEC_ERROR",{},{});
+    else Graphviz.NODE(" DumpGraphviz.printElementspec ELSPEC_ERROR",{},{});
   end matchcontinue;
 end printElementspec;
 
@@ -392,7 +390,7 @@ algorithm
       then
         Graphviz.LNODE("EQ_FOR",{es},{},eqn);
 
-    case (_) then Graphviz.NODE("EQ_ERROR",{},{});
+    else Graphviz.NODE("EQ_ERROR",{},{});
 
   end matchcontinue;
 end printEquation;
@@ -433,7 +431,7 @@ algorithm
         node = printAlgorithm(alg);
       then
         node;
-    case (_) then Graphviz.NODE("ALG_ERROR",{},{});
+    else Graphviz.NODE("ALG_ERROR",{},{});
   end matchcontinue;
 end printAlgorithmitem;
 
@@ -446,7 +444,7 @@ algorithm
       Absyn.Exp e;
 
     case (Absyn.ALG_ASSIGN(assignComponent = _,value = _)) then Graphviz.NODE("ALG_ASSIGN",{},{});
-    case (_) then Graphviz.NODE(" DumpGraphviz.printAlgorithm ALG_ERROR",{},{});
+    else Graphviz.NODE(" DumpGraphviz.printAlgorithm ALG_ERROR",{},{});
   end matchcontinue;
 end printAlgorithm;
 

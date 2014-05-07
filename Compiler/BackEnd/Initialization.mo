@@ -205,7 +205,7 @@ algorithm
       Debug.bcall2(b, BackendDump.dumpEqnsSolved, initdae, "initial system: eqns in order");
     then (SOME(initdae), useHomotopy);
 
-    else then (NONE(), false);
+    else (NONE(), false);
   end matchcontinue;
 end solveInitialSystem;
 
@@ -503,7 +503,7 @@ algorithm
       leftCrs = BaseHashTable.addUnique((cr, 0), iLeftCrs);
     then leftCrs;
 
-    else then iLeftCrs;
+    else iLeftCrs;
   end matchcontinue;
 end addWhenLeftCr;
 
@@ -623,7 +623,7 @@ algorithm
       ((_, hs)) = Expression.traverseExp(e, collectPreVariablesTrverseExp2, hs);
     then ((e, hs));
 
-    else then inTpl;
+    else inTpl;
   end match;
 end collectPreVariablesTrverseExp;
 
@@ -643,7 +643,7 @@ algorithm
       hs = List.fold(crefs, BaseHashSet.add, hs);
     then ((e, hs));
 
-    else then inTpl;
+    else inTpl;
   end match;
 end collectPreVariablesTrverseExp2;
 
@@ -779,7 +779,7 @@ algorithm
       vars = filterVarsWithoutStartValue(vars);
     then v::vars;
 
-    else then fail();
+    else fail();
   end matchcontinue;
 end filterVarsWithoutStartValue;
 
@@ -927,7 +927,7 @@ algorithm
       e1 = DAE.BINARY(e3, DAE.MUL(DAE.T_REAL_DEFAULT), simplified);
       e3 = DAE.BINARY(e2, DAE.ADD(DAE.T_REAL_DEFAULT), e1);
     then ((e3, true));
-    else then inExp;
+    else inExp;
   end matchcontinue;
 end simplifyInitialFunctionsExp;
 
@@ -1415,7 +1415,7 @@ algorithm
       system = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {});
     then (system, (shared, (inDAE, initVars, dumpVars)));
 
-    else then (isyst, sharedOptimized);
+    else (isyst, sharedOptimized);
   end matchcontinue;
 end analyzeInitialSystem2;
 
@@ -1852,7 +1852,7 @@ algorithm
       fixvars = Debug.bcallret2(preUsed, BackendVariable.addVar, preVar, fixvars, fixvars);
     then ((var, (vars, fixvars, eqns, hs)));
 
-    else then inTpl;
+    else inTpl;
   end matchcontinue;
 end introducePreVarsForAliasVariables;
 
@@ -2311,7 +2311,7 @@ end collectInitialBindings;
 //       i = System.strncmp("$STATESET", ident, 9);
 //     then intEq(i, 0);
 //
-//     else then false;
+//     else false;
 //   end match;
 // end isStateSetVar;
 
@@ -2387,7 +2387,7 @@ end collectInitialBindings;
 //       ((_, hs)) = Expression.traverseExp(exp, discreteStatesCref, hs);
 //     then ((exp, hs));
 //
-//     else then inTpl;
+//     else inTpl;
 //   end match;
 // end discreteStatesExp;
 //
@@ -2420,7 +2420,7 @@ end collectInitialBindings;
 //       hs = List.fold(crefs, BaseHashSet.add, hs);
 //     then ((e, hs));
 //
-//     else then inTpl;
+//     else inTpl;
 //   end match;
 // end discreteStatesCref;
 //
@@ -2459,7 +2459,7 @@ algorithm
       // do optimization
     then optimizeInitialSystemWork(optimizationfound, inDAE, eqnlst, initalAliases);
 
-    else then inDAE;
+    else inDAE;
   end matchcontinue;
 end optimizeInitialSystem;
 

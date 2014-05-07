@@ -243,7 +243,7 @@ algorithm
       equation
         ei = listAppend(ei1,ei2);
       then Absyn.PROTECTED(ei)::rest;
-    case (_,_) then cp::cps;
+    else cp::cps;
   end match;
 end mergeBefore;
 

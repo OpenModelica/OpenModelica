@@ -59,7 +59,7 @@ public function isList "author: KS
 algorithm
   bool := matchcontinue (prop)
     case (DAE.PROP(DAE.T_METALIST(listType = _),_)) then true;
-    case (_) then false;
+    else false;
   end matchcontinue;
 end isList;
 
@@ -142,8 +142,6 @@ algorithm
       then
         n::slst;
 
-    case(_) then fail();
-
   end match;
 end getListOfStrings;
 
@@ -152,13 +150,10 @@ public function classHasMetaRestriction
   input SCode.Element cl;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue(cl)
-    local
-      SCode.Restriction re1,re2;
-    case(SCode.CLASS(restriction = SCode.R_METARECORD(index=_)))
-      then true;
-    case(_) then false;
-  end matchcontinue;
+  outBoolean := match(cl)
+    case(SCode.CLASS(restriction = SCode.R_METARECORD(index=_))) then true;
+    else false;
+  end match;
 end classHasMetaRestriction;
 
 //Check if a class has a certain restriction, added by simbj
@@ -176,7 +171,7 @@ algorithm
         equality(re1 = re2);
       then true;
 
-    case(_,_) then false;
+    else false;
   end matchcontinue;
 end classHasRestriction;
 
@@ -331,7 +326,7 @@ algorithm
         els = fixElementItems(els,n,0,listLength(els)==1);
         cllst = convertElementsToClasses(els);
       then cllst;
-    case(_) then {};
+    else {};
   end matchcontinue;
 end createMetaClasses;
 
@@ -383,16 +378,15 @@ public function getRestriction
   input Absyn.Element el;
   output Absyn.Restriction res;
 algorithm
-  res := matchcontinue(el)
+  res := match(el)
     local
       Absyn.ElementSpec spec;
       Absyn.Class cl;
       Absyn.Restriction r;
     case(Absyn.ELEMENT(specification=Absyn.CLASSDEF(class_=Absyn.CLASS(restriction=r))))
       then r;
-    case(_)
-      then Absyn.R_UNKNOWN();
-  end matchcontinue;
+    else Absyn.R_UNKNOWN();
+  end match;
 end getRestriction;
 
 function fixRestriction
@@ -402,7 +396,7 @@ function fixRestriction
   input Boolean singleton;
   output Absyn.Restriction resout;
 algorithm
-  resout := matchcontinue(resin,name,index,singleton)
+  resout := match(resin,name,index,singleton)
     local
       Absyn.Ident ident;
       Absyn.Path path;
@@ -412,7 +406,7 @@ algorithm
         path = Absyn.IDENT(ident);
       then Absyn.R_METARECORD(path,index,singleton);
     else resin;
-  end matchcontinue;
+  end match;
 end fixRestriction;
 
 
@@ -423,7 +417,7 @@ function fixClass
   input Boolean singleton;
   output Absyn.Class classout;
 algorithm
-  classout := matchcontinue(classin,name,index,singleton)
+  classout := match(classin,name,index,singleton)
     local
       Absyn.Ident n;
       Boolean p;
@@ -438,7 +432,7 @@ algorithm
         res = fixRestriction(res,name,index,singleton);
       then Absyn.CLASS(n,p,f,e,res,b,i);
     else classin;
-  end matchcontinue;
+  end match;
 end fixClass;
 
 
@@ -449,7 +443,7 @@ function fixElementSpecification
   input Boolean singleton;
   output Absyn.ElementSpec specout;
 algorithm
-  specout := matchcontinue(specin,name,index,singleton)
+  specout := match(specin,name,index,singleton)
     local
       Boolean rep;
       Absyn.Class c;
@@ -458,7 +452,7 @@ algorithm
         c = fixClass(c,name,index,singleton);
       then Absyn.CLASSDEF(rep,c);
     else specin;
-  end matchcontinue;
+  end match;
 end fixElementSpecification;
 
 function fixElement
@@ -562,7 +556,7 @@ algorithm
       then
         SOME(DAE.T_METAUNIONTYPE(paths,b,ts));
 
-    case (_,_,_) then t;
+    else t;
   end matchcontinue;
 end fixUniontype;
 
@@ -589,7 +583,7 @@ algorithm
       list<Absyn.Exp> restList;
     case ({}) then true;
     case (Absyn.CREF(_) :: restList) then onlyCrefExpressions(restList);
-    case (_) then false;
+    else false;
   end matchcontinue;
 end onlyCrefExpressions;
 
@@ -667,7 +661,7 @@ algorithm
         innames = List.map(inelts, SCode.elementName);
         outnames = List.map(outelts, SCode.elementName);
       then strictRMLCheck2(increfs,outcrefs,innames,outnames,info);
-    case (_,_) then true;
+    else true;
   end matchcontinue;
 end strictRMLCheck;
 
@@ -724,7 +718,7 @@ algorithm
         failure(equality(names = outnames));
         Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"The output does not match"}, info);
       then false;
-    case (_,_,_,_,_) then true;
+    else true;
   end matchcontinue;
 end strictRMLCheck2;
 

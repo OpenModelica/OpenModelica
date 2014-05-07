@@ -1312,7 +1312,7 @@ algorithm
         repl = BackendVarTransform.addReplacement(repl,cr,exp,NONE());
     then
       ((repl,true));
-    else then iTpl;
+    else iTpl;
   end matchcontinue;
 end replaceFinalVarsGetExp;
 
@@ -1565,7 +1565,7 @@ algorithm
         statecount = Debug.bcallret2(b, intSub, statecount, 1, statecount);
       then
         ((var, statecount));
-    else then inTpl;
+    else inTpl;
   end match;
 end countStateCandidates;
 
@@ -1647,7 +1647,7 @@ algorithm
         e = Expression.crefExp(dcr);
       then
         ((e,so));
-    else then inTuple;
+    else inTuple;
   end matchcontinue;
 end replaceDerStatesStatesExp;
 
@@ -1685,7 +1685,7 @@ algorithm
         varlst = List.consOnTrue(not b, v, varlst);
         so = addStateOrder(cr, dcr, so);
       then ((v,(so,vars,varlst)));
-    else then inTpl;
+    else inTpl;
   end matchcontinue;
 end traversinghighestOrderDerivativesFinder;
 
@@ -1722,7 +1722,7 @@ algorithm
         vlst = List.map1(crlst,getVar,vars);
         vars2 = List.fold(vlst,BackendVariable.addVar,vars1);
       then ((v,(so,vars,vars2)));
-    else then inTpl;
+    else inTpl;
   end matchcontinue;
 end traversinglowerOrderDerivativesFinder;
 
@@ -2115,7 +2115,7 @@ algorithm
     case(BackendDAE.VAR(varName=_,varKind=BackendDAE.STATE(index=diffindx)),_,_,_,_)
       then
          List.consOnTrue(intGt(diffindx,level),inVar,iVars);
-    else then iVars;
+    else iVars;
   end matchcontinue;
 end getlowerOrderDerivatives;
 
@@ -2140,7 +2140,7 @@ algorithm
         vars = BackendVariable.addVar(v, iVars);
       then
          vars;
-    else then iVars;
+    else iVars;
   end matchcontinue;
 end fixDerivativeIndex;
 
@@ -3188,7 +3188,7 @@ algorithm
         print("Prio 6 : " +& realString(Prio6) +& "\n");
       then
         ();
-    else then ();
+    else ();
   end matchcontinue;
 end printVarListtateSelectHeuristicPrio;
 
@@ -3247,7 +3247,7 @@ algorithm
         b = BackendVariable.isDummyStateVar(v);
         prio = Util.if_(b,-1.0,3.0);
       then prio;
-    else then 0.0;
+    else 0.0;
   end matchcontinue;
 end varStateSelectHeuristicPrio4;
 
@@ -3268,7 +3268,7 @@ algorithm
         id = ComponentReference.crefFirstIdent(cr);
         true = stringEq(id,"$DER");
       then -100.0;
-    else then 0.0;
+    else 0.0;
   end matchcontinue;
 end varStateSelectHeuristicPrio3;
 
@@ -3284,7 +3284,7 @@ algorithm
       equation
         true = BackendVariable.varFixed(v);
       then 3.0;
-    else then 0.0;
+    else 0.0;
   end matchcontinue;
 end varStateSelectHeuristicPrio2;
 
@@ -3302,7 +3302,7 @@ algorithm
       equation
         _ = BackendVariable.varStartValueFail(v);
       then 1.0;
-    else then 0.0;
+    else 0.0;
   end matchcontinue;
 end varStateSelectHeuristicPrio1;
 
@@ -3560,7 +3560,7 @@ algorithm
         false = intEq(diffcount,level) or intEq(diffcount,1);
       then
         ();
-    else then ();
+    else ();
   end match;
 end notVarStateSelectAlways;
 
@@ -3572,7 +3572,7 @@ protected function varStateSelectAlways
 algorithm
   b := match(v)
     case BackendDAE.VAR(varKind=BackendDAE.STATE(index=_),values = SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS())))) then true;
-    else then false;
+    else false;
   end match;
 end varStateSelectAlways;
 
@@ -3616,7 +3616,7 @@ algorithm
 //    case ((i,BackendDAE.SOLVABILITY_TIMEVARYING(b=_)),_,_) then incidenceMatrixElementElementfromEnhanced2_1(i,vars,iRow);
 //    case ((i,BackendDAE.SOLVABILITY_NONLINEAR()),_,_) then incidenceMatrixElementElementfromEnhanced2_1(i,vars,iRow);
 //    case ((i,BackendDAE.SOLVABILITY_NONLINEAR()),_,_) then iRow;
-    else then iRow;
+    else iRow;
   end match;
 end incidenceMatrixElementElementfromEnhanced2;
 
@@ -3804,7 +3804,7 @@ algorithm
         true = intGt(diffcount,1);
         var = BackendVariable.setVarKind(inVar, BackendDAE.STATE(1,derName));
       then (var,iHt);
-    else then (inVar,iHt);
+    else (inVar,iHt);
   end matchcontinue;
 end getLevelStates;
 
@@ -4043,7 +4043,7 @@ algorithm
         source = DAEUtil.addSymbolicTransformation(source,DAE.NEW_DUMMY_DER(cr,{}));
       then
         ((BackendDAE.VAR(name,BackendDAE.DUMMY_STATE(),dir,prl,tp,bind,value,dim,source,attr,comment,ct),(vars,so,varlst,ht)));
-    else then inTpl;
+    else inTpl;
   end matchcontinue;
 end makeAllDummyVarandDummyDerivativeRepl;
 
@@ -5803,7 +5803,7 @@ algorithm
         (graph,_) = GraphML.addEdge("e" +& intString(id),"n" +& intString(e),"v" +& intString(v),GraphML.COLOR_BLACK,GraphML.LINE(),GraphML.LINEWIDTH_STANDARD,false,{label},(GraphML.ARROWNONE(),GraphML.ARROWNONE()),{},graph);
       then
         ((id+1,graph));
-    else then inTpl;
+    else inTpl;
   end matchcontinue;
 end addDirectedNumEdgeGraphEnhanced;
 

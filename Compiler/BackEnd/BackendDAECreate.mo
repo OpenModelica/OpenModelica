@@ -2531,7 +2531,7 @@ algorithm
         b = Expression.isConst(e1);
         v1 = Debug.bcallret2(not b, BackendVariable.setBindExp, v, SOME(e1), v);
       then ((v1, repl));
-    else then inTpl;
+    else inTpl;
   end matchcontinue;
 end replaceAliasVarTraverser;
 
@@ -3302,7 +3302,7 @@ algorithm
         (v, e) = addOptimizationVarsEqns2(inConstraint, 1, v, e, true);
 
     then (v, e);
-    else then (inVars, inEqns);
+    else (inVars, inEqns);
   end match;
 end addOptimizationVarsEqns;
 
@@ -3335,7 +3335,7 @@ algorithm
     eqns = listAppend(conEqn, inEqns);
     (v, eqns)= addOptimizationVarsEqns1(conLst, inI + 1, v, eqns, b);
    then (v, eqns);
-   else then (inVars, inEqns);
+   else (inVars, inEqns);
    end match;
 end addOptimizationVarsEqns1;
 
@@ -3356,7 +3356,7 @@ algorithm
     case({DAE.CONSTRAINT_EXPS(constraintLst = constraintLst)}, _, _, _, _) equation
       (v, e) = addOptimizationVarsEqns1(constraintLst, inI, inVars, inEqns, b);
       then (v, e);
-  else then (inVars, inEqns);
+  else (inVars, inEqns);
   end match;
 end addOptimizationVarsEqns2;
 

@@ -163,7 +163,7 @@ algorithm
       then
         (SCode.DERIVED(ty, mods, attr), inEnv);
 
-    else then (inClassDef, inEnv);
+    else (inClassDef, inEnv);
   end match;
 end flattenClassDef;
 
@@ -188,7 +188,7 @@ protected function isNotImport
 algorithm
   _ := match(inElement)
     case SCode.IMPORT(imp = _) then fail();
-    else then ();
+    else ();
   end match;
 end isNotImport;
 
@@ -225,7 +225,7 @@ algorithm
     case (SCode.EXTENDS(baseClassPath = _), _)
       then (flattenExtends(inElement, inEnv), inEnv);
 
-    else then (inElement, inEnv);
+    else (inElement, inEnv);
   end match;
 end flattenElement;
 

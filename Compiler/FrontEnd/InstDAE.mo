@@ -117,7 +117,7 @@ algorithm
         dae = daeDeclare2(vn, ty, ct1, var, dir, daeParallelism, vis, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars );
       then
         dae;
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE, "- Inst.daeDeclare failed");
       then
@@ -181,7 +181,7 @@ algorithm
         dae = daeDeclare3(vn, ty, ct,DAE.CONST(), dir, daePrl, vis, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars );
       then
         dae;
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE, "- Inst.daeDeclare2 failed");
       then
@@ -243,7 +243,7 @@ algorithm
         dae = daeDeclare4(vn, ty, ct, vk, DAE.BIDIR(), daePrl, prot1, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars);
       then
         dae;
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    else
       equation
         //Debug.fprintln(Flags.FAILTRACE, "- Inst.daeDeclare3 failed");
       then
@@ -412,7 +412,7 @@ algorithm
       then
         fail();
 
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_) then DAE.emptyDae;
+    else DAE.emptyDae;
   end matchcontinue;
 end daeDeclare4;
 

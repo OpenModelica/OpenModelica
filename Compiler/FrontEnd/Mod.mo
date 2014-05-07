@@ -932,7 +932,7 @@ algorithm
         mod_1 = lookupModificationP(mod, p);
       then
         mod_1;
-    case (_,_)
+    else
       equation
         Print.printBuf("- Mod.lookupModificationP failed\n");
       then
@@ -987,7 +987,7 @@ algorithm
       then
         m;
 
-    case (_, _, _)
+    else
       equation
         m = mergeModifiers(inMods, DAE.NOMOD(), inSMod);
       then
@@ -1092,7 +1092,7 @@ algorithm
     // eqmod is nomod!
     case (_, DAE.NOMOD(), _) then subMod;
     case (_,DAE.MOD(eqModOption = SOME(DAE.TYPED(modifierAsExp = _))), _) then eqMod;
-    case (_, _, _)
+    else
       equation
         mod = checkDuplicateModifications(subMod,eqMod,n);
       then
@@ -1128,7 +1128,7 @@ algorithm
       then
         m;
 
-    case (_,_)
+    else
       equation
         m = lookupCompModification(inMod,inIdent);
       then
@@ -1162,7 +1162,7 @@ algorithm
         mod = lookupComplexCompModification2(values,names,varLst,n,finalPrefix,each_,info);
       then mod;
 
-    case(_,_,_,_) then DAE.NOMOD();
+    else DAE.NOMOD();
 
   end matchcontinue;
 end lookupComplexCompModification;
@@ -1227,13 +1227,14 @@ algorithm
         mod2;
 
     // print error message
-    case(_,_,_) equation
-      s1 = printModStr(mod1);
-      s2 = printModStr(mod2);
-      s = s1 +& " and " +& s2;
-      Error.addMessage(Error.DUPLICATE_MODIFICATIONS,{s,n});
-    then
-      mod2;
+    else
+      equation
+        s1 = printModStr(mod1);
+        s2 = printModStr(mod2);
+        s = s1 +& " and " +& s2;
+        Error.addMessage(Error.DUPLICATE_MODIFICATIONS,{s,n});
+      then
+        mod2;
 
   end matchcontinue;
 end checkDuplicateModifications;
@@ -1272,7 +1273,7 @@ algorithm
     case(DAE.NOMOD(),DAE.NOMOD()) then (DAE.NOMOD(), true);
 
     // adrpo: do not fail, return false!
-    case (_, _) then (mod2, false);
+    else (mod2, false);
   end matchcontinue;
 end modEqualNoPrefix;
 
@@ -1408,7 +1409,7 @@ algorithm
       then
         mod;
 
-    case (_,_)
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Mod.lookupCompModification2 failed while searching for:" +&
@@ -1498,7 +1499,7 @@ algorithm
       then
         (mod,(sm :: xs_1));
 
-    case (_,_)
+    else
       equation
        Debug.fprint(Flags.FAILTRACE, "- Mod.lookupIdxModification2 failed\n");
       then
@@ -1661,7 +1662,7 @@ algorithm
       then
         inModOuter;
 
-    case(_,_,_,_)
+    else
       equation
         false = merge2(inModInner);
         false = modSubsetOrEqualOrNonOverlap(inModOuter,inModInner);
@@ -1692,7 +1693,7 @@ algorithm
         then false;
       case(DAE.MOD(finalPrefix = SCode.FINAL()))
         then false;
-      case(_) then true;
+      else true;
   end matchcontinue;
 end merge2;
 
@@ -2101,7 +2102,7 @@ algorithm
 
     case(DAE.NOMOD(),DAE.NOMOD()) then true;
 
-    case (_, _) then false;
+    else false;
 
   end matchcontinue;
 end modSubsetOrEqualOrNonOverlap;
@@ -2152,7 +2153,7 @@ algorithm
         true;
 
     // anything else gives false
-    case(_,_) then false;
+    else false;
   end matchcontinue;
 end eqModSubsetOrEqual;
 
@@ -2224,8 +2225,7 @@ algorithm
     case(DAE.NOMOD(),DAE.NOMOD()) then true;
 
     // adrpo: do not fail, return false!
-    case (_, _)
-      then false;
+    else false;
   end matchcontinue;
 end modEqual;
 
@@ -2349,7 +2349,7 @@ algorithm
         true;
 
     // anything else will give false
-    case(_,_) then false;
+    else false;
 
   end matchcontinue;
 end eqModEqual;
@@ -2394,7 +2394,7 @@ algorithm
       then
         str;
 
-    case(_) equation print(" failure in printModStr \n"); then fail();
+    else equation print(" failure in printModStr \n"); then fail();
 
   end matchcontinue;
 end printModStr;
@@ -2442,7 +2442,7 @@ algorithm
 
     case(DAE.NOMOD(),_) then "";
 
-    case(_,_)
+    else
       equation
         print(" failed prettyPrintMod\n");
       then
@@ -2636,7 +2636,7 @@ algorithm
       then
         res;
 
-    case(_)
+    else
       equation
         res = "---Mod.printEqmodStr FAILED---";
       then
@@ -2663,7 +2663,7 @@ algorithm
       then
         DAE.MOD(finalPrefix,each_,subModLst,eqModOption);
 
-    case (_,_,_) then mod;
+    else mod;
 
   end matchcontinue;
 end renameTopLevelNamedSubMod;
@@ -2682,7 +2682,7 @@ algorithm
       equation
         true = stringEq(id,oldIdent);
       then DAE.NAMEMOD(newIdent,mod);
-    case (_,_,_) then submod;
+    else submod;
   end matchcontinue;
 end renameNamedSubMod;
 
@@ -2721,7 +2721,7 @@ algorithm
         // either one of them is a substring of the other
         true = boolOr(0 == System.strncmp(i, idx, len1), 0 == System.strncmp(idx, i, len2));
       then true;
-    case (_, _) then false;
+    else false;
   end matchcontinue;
 end isPrefixOf;
 
@@ -2772,12 +2772,12 @@ protected function getFullModsFromModRedeclare
   Examples:
   x(redeclare package P = P, redeclare class C = C) => x.P, x.C"
   input DAE.ComponentRef inTopCref;
-  input list<tuple<SCode.Element, DAE.Mod>> inTplSCodeElementModLst;
+  input list<tuple<SCode.Element, DAE.Mod>> inElements;
   input SCode.Final finalPrefix;
   input SCode.Each eachPrefix;
   output list<FullMod> outFullMods;
 algorithm
-  outFullMods := matchcontinue(inTopCref, inTplSCodeElementModLst, finalPrefix, eachPrefix)
+  outFullMods := matchcontinue(inTopCref, inElements, finalPrefix, eachPrefix)
     local
       list<FullMod> fullMods;
       DAE.Ident id;
@@ -3252,7 +3252,7 @@ algorithm
       then
         (comp,mod)::outLst;
 
-    case(_,_)
+    else
       equation
         print("removeRedeclareMods failed\n");
       then fail();
@@ -3318,7 +3318,7 @@ algorithm
       then
         DAE.MOD(finalPrefix,eachPrefix,subs,eq);
 
-    case(_, _)
+    else
       equation
         print("Mod.addEachIfNeeded failed on: " +& printModStr(inMod) +& "\n");
       then
@@ -3351,7 +3351,7 @@ algorithm
       then
         DAE.MOD(finalPrefix,SCode.EACH(),subs,eq);
 
-    case(_)
+    else
       equation
         print("Mod.addEachOneLevel failed on: " +& printModStr(inMod) +& "\n");
       then

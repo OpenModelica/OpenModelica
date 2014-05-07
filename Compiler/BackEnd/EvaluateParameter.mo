@@ -606,7 +606,7 @@ algorithm
     // try to evaluate with initial equations
 
     // not evaluated
-    else then (inKnVars,iCache,iRepl);
+    else (inKnVars,iCache,iRepl);
   end matchcontinue;
 end evaluateParameter;
 
@@ -674,7 +674,7 @@ algorithm
         (v,knVars,cache,repl,mark) = evaluateFixedAttribute1(cr,e,attr,source,var,addVar,iKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl);
       then
         (v,knVars,cache,repl,mark);
-    else then (var,iKnVars,iCache,iRepl,iMark);
+    else (var,iKnVars,iCache,iRepl,iMark);
   end match;
 end evaluateFixedAttribute;
 
@@ -770,7 +770,7 @@ algorithm
     case ((e as DAE.CREF(componentRef=_), (vars,_,hs)))
       then
         ((e, (vars,true,hs)));
-    else then inTuple;
+    else inTuple;
   end matchcontinue;
 end replaceCrefWithBindStartExp;
 
@@ -951,7 +951,7 @@ algorithm
     case((exp as DAE.CREF(componentRef=_),(repl,b))) equation
       (exp,b1) = BackendVarTransform.replaceExp(exp,repl,NONE());
     then ((exp,(repl,b or b1)));
-    else then inTpl;
+    else inTpl;
   end matchcontinue;
 end traverseExpVisitorWrapper;
 

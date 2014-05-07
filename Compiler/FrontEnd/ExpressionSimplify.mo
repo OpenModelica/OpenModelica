@@ -1179,7 +1179,7 @@ algorithm
       equation
         (_,{_}) = Types.flattenArrayTypeOpt(Expression.typeof(inExp));
       then DAE.SIZE(exp,SOME(DAE.ICONST(1)));
-    case (_,_)
+    else
       equation
         (_,{}) = Types.flattenArrayTypeOpt(Expression.typeof(inExp));
       then inExp;
@@ -1206,7 +1206,7 @@ algorithm
       array<DAE.Exp> v1,v2;
       DAE.Exp exp;
     case (_,0,1) then ();
-    case (_,_,_)
+    else
       equation
         v1 = arrayGet(marr, i1);
         v2 = arrayGet(marr, i2);
@@ -1552,7 +1552,7 @@ algorithm
       then
        {DAE.ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(n)}, DAE.emptyTypeSource),true,rowExps)};
 
-    case(_,_) // bottom right
+    else // bottom right
       equation
         true = row < n;
         rowExps = simplifyIdentityMakeRow(n,1,row);
@@ -1580,7 +1580,7 @@ algorithm
       then
         {DAE.ICONST(i)};
 
-    case(_,_,_)
+    else
       equation
         true = col < n;
         i = Util.if_(intEq(col,row),1,0);
@@ -1952,7 +1952,7 @@ algorithm
       then
         Expression.negate(e2);
 
-    case(_,_,_)
+    else
       equation
         true = Expression.isZero(e2);
       then
@@ -2382,7 +2382,7 @@ algorithm
       then
         {e_1};
 
-    case (_)
+    else
       equation
         Debug.fprint(Flags.FAILTRACE,"- ExpressionSimplify.simplifyBinaryAddConstants failed\n");
       then
@@ -2548,7 +2548,7 @@ algorithm
       then
         expl_1;
 
-    case (_)
+    else
       equation
         Debug.fprint(Flags.FAILTRACE,"- ExpressionSimplify.simplifyAdd failed\n");
       then

@@ -960,7 +960,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    case (_)
+    else
       equation
         Print.printBuf(" ##ERROR## ");
       then
@@ -1068,7 +1068,7 @@ algorithm
       then
         ();
 
-    case (_)
+    else
       equation
         Print.printBuf(" ##ERROR## print_elementattr");
       then
@@ -1329,7 +1329,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    case (_)
+    else
       equation
         Print.printBuf("( ** MODIFICATION ** )");
       then
@@ -1476,7 +1476,7 @@ algorithm
       then
         ();
 
-    case (_)
+    else
       equation
         Print.printBuf(" ** UNKNOWN EQUATION ** ");
       then
@@ -1529,22 +1529,16 @@ algorithm
 end unparseEquationItemStrLst;
 
 protected function printEqElseif "Prints an Elseif branch to the Print buffer."
-  input tuple<Absyn.Exp, list<Absyn.EquationItem>> inTplAbsynExpAbsynEquationItemLst;
+  input tuple<Absyn.Exp, list<Absyn.EquationItem>> inElseIfBranch;
+protected
+  Absyn.Exp e;
+  list<Absyn.EquationItem> el;
 algorithm
-  _ := match (inTplAbsynExpAbsynEquationItemLst)
-    local
-      Absyn.Exp e;
-      list<Absyn.EquationItem> el;
-
-    case ((e,el))
-      equation
-        Print.printBuf(" ELSEIF ");
-        printExp(e);
-        Print.printBuf(" THEN ");
-        printListDebug("print_eq_elseif", el, printEquationitem, ";");
-      then
-        ();
-  end match;
+  (e, el) := inElseIfBranch;
+  Print.printBuf(" ELSEIF ");
+  printExp(e);
+  Print.printBuf(" THEN ");
+  printListDebug("print_eq_elseif", el, printEquationitem, ";");
 end printEqElseif;
 
 public function printAlgorithmitem "Algorithm clauses
@@ -1684,7 +1678,7 @@ algorithm
       then
         ();
 
-    case (_)
+    else
       equation
         Print.printBuf(" ** UNKNOWN ALGORITHM CLAUSE ** ");
       then
@@ -1711,22 +1705,16 @@ algorithm
 end unparseAlgorithmStr;
 
 protected function printAlgElseif "Prints an algorithm elseif branch to the Print buffer."
-  input tuple<Absyn.Exp, list<Absyn.AlgorithmItem>> inTplAbsynExpAbsynAlgorithmItemLst;
+  input tuple<Absyn.Exp, list<Absyn.AlgorithmItem>> inElseIfBranch;
+protected
+  Absyn.Exp e;
+  list<Absyn.AlgorithmItem> el;
 algorithm
-  _ := match (inTplAbsynExpAbsynAlgorithmItemLst)
-    local
-      Absyn.Exp e;
-      list<Absyn.AlgorithmItem> el;
-
-    case ((e,el))
-      equation
-        Print.printBuf(" ELSEIF ");
-        printExp(e);
-        Print.printBuf(" THEN ");
-        printListDebug("print_alg_elseif", el, printAlgorithmitem, ";");
-      then
-        ();
-  end match;
+  (e, el) := inElseIfBranch;
+  Print.printBuf(" ELSEIF ");
+  printExp(e);
+  Print.printBuf(" THEN ");
+  printListDebug("print_alg_elseif", el, printAlgorithmitem, ";");
 end printAlgElseif;
 
 public function printComponentRef "Component references and paths
@@ -2165,7 +2153,7 @@ algorithm
       then
         ();
 
-    case (_)
+    else
       equation
         Print.printBuf("#UNKNOWN EXPRESSION#");
       then

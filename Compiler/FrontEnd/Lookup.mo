@@ -564,7 +564,7 @@ algorithm
       equation
         true = id ==& sid;
       then (SOME(frame),prevFrames);
-    case (_,_) then (NONE(),{});
+    else (NONE(),{});
   end matchcontinue;
 end lookupPrevFrames;
 
@@ -1028,7 +1028,7 @@ algorithm
     case (_,DAE.ATTR(variability= SCode.CONST()),_,_) then ();
 
     // fail if is not a constant
-    case (_,_,_,_)
+    else
       equation
         s1 = ComponentReference.printComponentRefStr(cref);
         s2 = Env.printEnvPathStr(env);
@@ -1265,7 +1265,7 @@ algorithm
       then
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name);
 
-    case (_,_,_,_,_)
+    else
       equation
         //true = Flags.isSet(Flags.FAILTRACE);
         //Debug.traceln("- Lookup.lookupVarInPackages failed on exp:" +& ComponentReference.printComponentRefStr(cr) +& " in scope: " +& Env.printEnvPathStr(env));
@@ -1923,7 +1923,7 @@ algorithm
       then
         inNewEnv;
 
-    else then inOldEnv;
+    else inOldEnv;
   end matchcontinue;
 end selectUpdatedEnv;
 
@@ -1976,7 +1976,7 @@ algorithm
         cl = SCode.CLASS(id,SCode.defaultPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_FUNCTION(SCode.FR_RECORD_CONSTRUCTOR()),SCode.PARTS((reselt :: funcelts),{},{},{},{},{},{},NONE()),SCode.noComment,info);
       then
         (cache,env,cl);
-    case (_,_,_)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE,"buildRecordConstructorClass failed");
       then fail();
@@ -2025,7 +2025,7 @@ algorithm
       then (cache,env1,funcelts,elts);
 
     // fail
-    case(_,_,_,_) equation
+    else equation
       Debug.traceln("buildRecordConstructorClass2 failed, cl:"+&SCodeDump.unparseElementStr(cl,SCodeDump.defaultOptions)+&"\n");
     then fail();
       /* TODO: short class defs */
@@ -2041,7 +2041,7 @@ protected function selectModifier
 algorithm
   outMod := matchcontinue (inModID, inModNoID)
     case (DAE.NOMOD(),_) then inModNoID;
-    case (_, _) then inModID;
+    else inModID;
   end matchcontinue;
 end selectModifier;
 
@@ -2740,7 +2740,7 @@ Helper function for lookupvarF, to return an ComponentRef if there is one."
   input Option<DAE.Exp> oCref;
   output list<DAE.ComponentRef> lref;
 algorithm
-  lref := matchcontinue(oCref)
+  lref := match(oCref)
     local
       Option<DAE.Exp> exp;DAE.ComponentRef ecpr;
 
@@ -2750,8 +2750,8 @@ algorithm
     // expression is an qualified component reference
     case( SOME(DAE.CREF(ecpr as DAE.CREF_QUAL(_,_,_,_),_ ))) then (ecpr::{});
 
-    case(_) then {};
-  end matchcontinue;
+    else {};
+  end match;
 end elabComponentRecursive;
 
 protected function addArrayDimensions "This is the function where we add arrays representing the dimension of the type.
@@ -2772,8 +2772,7 @@ algorithm
         subs = List.map(dims, makeDimensionSubscript);
         subs = expandWholeDimSubScript(ss,subs);
       then subs;
-    case(_,_) // non array, return
-      equation then ss;
+    else ss; // non array, return
   end matchcontinue;
 end addArrayDimensions;
 

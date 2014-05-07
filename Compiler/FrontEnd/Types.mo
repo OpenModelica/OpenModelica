@@ -374,7 +374,7 @@ algorithm
     local Type ty;
     case (DAE.T_SUBTYPE_BASIC(complexType = ty)) then isComplexType(ty);
     case (DAE.T_COMPLEX(varLst = _::_)) then true; // not derived from baseclass
-    case(_) then false;
+    else false;
   end matchcontinue;
 end isComplexType;
 
@@ -384,7 +384,7 @@ public function isExternalObject "Returns true if type is COMPLEX and external o
 algorithm
   b := matchcontinue(tp)
     case (DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_))) then true;
-    case (_) then false;
+    else false;
   end matchcontinue;
 end isExternalObject;
 
@@ -467,7 +467,7 @@ algorithm
       then
         DAE.TYPES_VAR(name, attributes, ty, binding, constOfForIteratorRange);
 
-    case(_) equation print("error in Types.convertFromExpToTypesVar\n"); then fail();
+    else equation print("error in Types.convertFromExpToTypesVar\n"); then fail();
 
   end matchcontinue;
 end convertFromExpToTypesVar;
@@ -570,7 +570,7 @@ algorithm
      equation
        DAE.T_REAL(varLst = _) = arrayElementType(tp);
      then true;
-   case(_) then false;
+   else false;
  end matchcontinue;
 end isReal;
 
@@ -604,7 +604,7 @@ algorithm
         lb1 = boolOr(lb1,boolAnd(lb2,lb3));
     then lb1;
 
-    case(_) then false;
+    else false;
 
   end matchcontinue;
 end isRealOrSubTypeReal;
@@ -625,7 +625,7 @@ algorithm
         lb1 = boolOr(lb1,boolAnd(lb2,lb3));
         //lb1 = boolOr(lb1,lb2);
       then lb1;
-    case(_) then false;
+    else false;
 end matchcontinue;
 end isIntegerOrSubTypeInteger;
 
@@ -644,7 +644,7 @@ algorithm
         lb3 = subtype(DAE.T_BOOL_DEFAULT, ty);
         lb1 = boolOr(lb1,boolAnd(lb2,lb3));
       then lb1;
-    case(_) then false;
+    else false;
   end matchcontinue;
 end isBooleanOrSubTypeBoolean;
 
@@ -663,7 +663,7 @@ algorithm
         lb3 = subtype(DAE.T_STRING_DEFAULT, ty);
         lb1 = boolOr(lb1,boolAnd(lb2,lb3));
       then lb1;
-    case(_) then false;
+    else false;
   end matchcontinue;
 end isStringOrSubTypeString;
 
@@ -673,9 +673,9 @@ public function isIntegerOrRealOrSubTypeOfEither
   output Boolean b;
 algorithm
   b := matchcontinue(t)
-    case(_) equation true = isRealOrSubTypeReal(t); then true;
-    case(_) equation true = isIntegerOrSubTypeInteger(t); then true;
-    case(_) then false;
+    case _ equation true = isRealOrSubTypeReal(t); then true;
+    case _ equation true = isIntegerOrSubTypeInteger(t); then true;
+    else false;
   end matchcontinue;
 end isIntegerOrRealOrSubTypeOfEither;
 
@@ -685,10 +685,10 @@ public function isIntegerOrRealOrBooleanOrSubTypeOfEither
   output Boolean b;
 algorithm
   b := matchcontinue(t)
-    case(_) equation true = isRealOrSubTypeReal(t); then true;
-    case(_) equation true = isIntegerOrSubTypeInteger(t); then true;
-    case(_) equation true = isBooleanOrSubTypeBoolean(t); then true;
-    case(_) then false;
+    case _ equation true = isRealOrSubTypeReal(t); then true;
+    case _ equation true = isIntegerOrSubTypeInteger(t); then true;
+    case _ equation true = isBooleanOrSubTypeBoolean(t); then true;
+    else false;
   end matchcontinue;
 end isIntegerOrRealOrBooleanOrSubTypeOfEither;
 
@@ -702,7 +702,7 @@ algorithm
        DAE.T_INTEGER(varLst = _) = arrayElementType(tp);
      then true;
 
-   case(_) then false;
+   else false;
 
  end matchcontinue;
 end isInteger;
@@ -717,7 +717,7 @@ algorithm
        DAE.T_BOOL(varLst = _) = arrayElementType(tp);
       then true;
 
-   case(_) then false;
+   else false;
  end matchcontinue;
 end isBoolean;
 
@@ -758,7 +758,7 @@ algorithm
         b = List.applyAndFold1(tys, boolOr, isArray, {}, false);
       then
         b;
-    case (_,_) then false;
+    else false;
   end matchcontinue;
 end isArray;
 
@@ -766,30 +766,30 @@ public function isEmptyArray
   input DAE.Type inType;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue(inType)
+  outBoolean := match(inType)
     case DAE.T_ARRAY(dims = {DAE.DIM_INTEGER(0)}) then true;
-    case _ then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isEmptyArray;
 
 public function isString "Return true if Type is the builtin String type."
   input DAE.Type inType;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inType)
+  outBoolean := match(inType)
     case (DAE.T_STRING(varLst = _)) then true;
-    case (_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isString;
 
 public function isEnumeration "Return true if Type is the builtin String type."
   input DAE.Type inType;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inType)
+  outBoolean := match(inType)
     case (DAE.T_ENUMERATION(index = _)) then true;
-    case (_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isEnumeration;
 
 public function isArrayOrString "Return true if Type is array or the builtin String type."
@@ -808,7 +808,7 @@ algorithm
         true = isString(ty);
       then
         true;
-    case _ then false;
+    else false;
   end matchcontinue;
 end isArrayOrString;
 
@@ -867,7 +867,7 @@ algorithm
     case (DAE.T_SUBTYPE_BASIC(complexType = tp))
       then dimensionsKnown(tp);
 
-    case _ then true;
+    else true;
   end matchcontinue;
 end dimensionsKnown;
 
@@ -906,7 +906,7 @@ algorithm
     case (DAE.T_SUBTYPE_BASIC(complexType=tp))
       then getDimensionSizes(tp);
 
-    case (_)
+    else
       equation
         false = arrayType(inType);
       then
@@ -1033,7 +1033,7 @@ algorithm
       then
         (DAE.TYPES_VAR(id, DAE.dummyAttrVar, tp, DAE.UNBOUND(), NONE()) :: rest);
 
-    case (_,_)
+    else
       equation
         Debug.fprint(Flags.FAILTRACE, "-values_to_vars failed\n");
       then
@@ -1168,7 +1168,7 @@ algorithm
     case (DAE.T_STRING(source = _)) then true;
     case (DAE.T_BOOL(source = _)) then true;
     case (DAE.T_ENUMERATION(source = _)) then true;
-    case (_) then false;
+    else false;
   end match;
 end basicType;
 
@@ -1178,7 +1178,7 @@ public function extendsBasicType "Test whether a type extends one of the builtin
 algorithm
   outBoolean := matchcontinue (inType)
     case DAE.T_SUBTYPE_BASIC(complexType = _) then true;
-    case (_) then false;
+    else false;
   end matchcontinue;
 end extendsBasicType;
 
@@ -1324,7 +1324,7 @@ algorithm
         b1 = equivtypes(t1,t2);
         then
           b1;
-    case (_,_) then false;  /* default */
+    else false;  /* default */
   end matchcontinue;
 end semiEquivTypes;
 
@@ -1565,7 +1565,7 @@ algorithm
     case (t1,DAE.T_METATYPE(ty = t2),_) then subtype2(t1,t2,requireRecordNamesEqual);
     case (DAE.T_METATYPE(ty = t1),t2,_) then subtype2(t1,t2,requireRecordNamesEqual);
 
-    case (_,_,_)
+    else
       equation
         /* Uncomment for debugging
         l1 = unparseType(t1);
@@ -1701,7 +1701,7 @@ algorithm
       then
         DAE.TYPES_VAR(n,attr,ty_1,bnd,cnstForRange);
 
-    case (_,_)
+    else
       equation
         // Print.printBuf("- Looking up " +& id +& " in noncomplex type\n");
       then fail();
@@ -2212,7 +2212,7 @@ algorithm
     case (DAE.T_CODE(ty = codeType)) then printCodeTypeStr(codeType);
     case (DAE.T_FUNCTION_REFERENCE_VAR(functionType=ty)) then "#FUNCTION_REFERENCE_VAR#" +& unparseType(ty);
     case (DAE.T_FUNCTION_REFERENCE_FUNC(functionType=ty)) then "#FUNCTION_REFERENCE_FUNC#" +& unparseType(ty);
-    case (_) then "Internal error Types.unparseType: not implemented yet\n";
+    else "Internal error Types.unparseType: not implemented yet\n";
   end match;
 end unparseType;
 
@@ -2473,7 +2473,7 @@ algorithm
     case (DAE.T_CODE(DAE.C_VARIABLENAMES(),_)) then "$Code(VariableName[:])";
 
     // All the other ones we don't handle
-    case (_)
+    else
       equation
         str = "Types.printTypeStr failed";
         str = str +& printTypeSourceStr(getTypeSource(inType));
@@ -2520,7 +2520,7 @@ algorithm
       then
         (s,s2);
 
-    case (_) then ("", unparseType(it));
+    else ("", unparseType(it));
   end matchcontinue;
 end printConnectorTypeStr;
 
@@ -2574,7 +2574,7 @@ algorithm
         res = stringAppendList({n," = ",valStr});
       then
         res;
-    case(_) then "";
+    else "";
   end matchcontinue;
 end unparseVarAttr;
 
@@ -2695,7 +2695,7 @@ algorithm
         res = stringAppendList({"DAE.VALBOUND(",s,", ",str3,")"});
       then
         res;
-    case(_) then "";
+    else "";
   end matchcontinue;
 end printBindingStr;
 
@@ -2765,7 +2765,7 @@ algorithm
     case (_, DAE.T_ARRAY(ty = ty))
       then makeEnumerationType(inPath, ty);
 
-    case (_, _)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE, "- Types.makeEnumerationType failed on " +& printTypeStr(inType));
       then
@@ -2870,14 +2870,14 @@ public function getFixedVarAttributeParameterOrConstant
 algorithm
   fix :=  matchcontinue(tp)
     // there is a fixed!
-    case (_)
+    case _
       equation
         fix = getFixedVarAttribute(tp);
       then
         fix;
 
     // there is no fixed!
-    case (_) then true;
+    else true;
 
   end matchcontinue;
 end getFixedVarAttributeParameterOrConstant;
@@ -3363,7 +3363,7 @@ algorithm
       then
         res;
 
-    case (_) then false;
+    else false;
   end matchcontinue;
 end containReal;
 
@@ -3486,7 +3486,7 @@ algorithm
       then
         n;
 
-    case (_) then "Not nameable type or no type";
+    else "Not nameable type or no type";
   end matchcontinue;
 end getTypeName;
 
@@ -3663,7 +3663,7 @@ algorithm
         DAE.T_TUPLE(source = _) = getPropType(p);
       then
         true;
-    case(_) then false;
+    else false;
   end matchcontinue;
 end isPropTuple;
 
@@ -3854,7 +3854,7 @@ algorithm
         DAE.T_METABOXED(t_1, DAE.emptyTypeSource);
 
     // This is the case when the type is currently UNTYPED
-    case (_)
+    case _
       equation
         /*
         print(" untyped ");
@@ -4843,25 +4843,14 @@ end typeConvertArray;
 protected function typeConvertMatrix "
   Helper function to type_convert. Handles matrix expressions.
 "
-  input list<list<DAE.Exp>> inTplExpExpBooleanLstLst1;
-  input DAE.Type inType2;
-  input DAE.Type inType3;
+  input list<list<DAE.Exp>> inMatrix;
+  input DAE.Type inActualType;
+  input DAE.Type inExpectedType;
   input Boolean printFailtrace;
-  output list<list<DAE.Exp>> outTplExpExpBooleanLstLst;
+  output list<list<DAE.Exp>> outMatrix;
 algorithm
-  outTplExpExpBooleanLstLst :=
-  match (inTplExpExpBooleanLstLst1,inType2,inType3,printFailtrace)
-    local
-      list<list<DAE.Exp>> rest_1,rest;
-      list<DAE.Exp> first_1,first;
-      Type ty1,ty2;
-    case ({},_,_,_) then {};
-    case ((first :: rest),ty1,ty2,_)
-      equation
-        rest_1 = typeConvertMatrix(rest,ty1,ty2,printFailtrace);
-        first_1 = typeConvertArray(first,ty1,ty2,printFailtrace);
-      then (first_1 :: rest_1);
-  end match;
+  outMatrix := List.map3(inMatrix, typeConvertArray, inActualType,
+    inExpectedType, printFailtrace);
 end typeConvertMatrix;
 
 protected function typeConvertList "
@@ -4915,7 +4904,7 @@ algorithm
         _ = simplifyType(t1);
         (expl,_) = typeConvertMatrixToList(rest, inType, outType, printFailtrace);
       then (e::expl,DAE.T_METALIST(t1,DAE.emptyTypeSource));
-    case (_,_,_,_)
+    else
       equation
         Debug.fprintln(Flags.TYPES, "- typeConvertMatrixToList failed");
       then fail();
@@ -5074,7 +5063,7 @@ algorithm
       then
         DAE.PROP(DAE.T_REAL_DEFAULT,c);
 
-    case(_,_,_)
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.fprintln(Flags.FAILTRACE,"- Types.matchWithPromote failed on: " +&
@@ -5100,7 +5089,7 @@ algorithm
     case (DAE.C_PARAM(),DAE.C_PARAM()) then DAE.C_PARAM();
     case (DAE.C_UNKNOWN(), _) then DAE.C_UNKNOWN();
     case (_, DAE.C_UNKNOWN()) then DAE.C_UNKNOWN();
-    case (_,_) then DAE.C_VAR();
+    else DAE.C_VAR();
   end matchcontinue;
 end constAnd;
 
@@ -5131,7 +5120,7 @@ algorithm
     case (_,DAE.C_PARAM()) then DAE.C_PARAM();
     case (DAE.C_UNKNOWN(),_) then DAE.C_UNKNOWN();
     case (_, DAE.C_UNKNOWN()) then DAE.C_UNKNOWN();
-    case (_,_) then DAE.C_VAR();
+    else DAE.C_VAR();
   end matchcontinue;
 end constOr;
 
@@ -5186,7 +5175,7 @@ algorithm
         equality(c1 = c2);
       then
         true;
-    case (_, _) then false;
+    else false;
   end matchcontinue;
 end constEqual;
 
@@ -5566,7 +5555,7 @@ algorithm
         st = unboxedType(st);
         elist = listMatchSuperType2(ielist,typeList,st,printFailtrace);
       then (elist, st);
-    case (_,_,_)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE, "- Types.listMatchSuperType failed");
       then fail();
@@ -5830,7 +5819,7 @@ algorithm
         Debug.traceln("- Types." +& source +& " failed on:" +& ExpressionDump.printExpStr(e));
         Debug.traceln("  type:" +& unparseType(e_type) +& " differs from expected\n  type:" +& unparseType(expected_type));
       then ();
-    case (_, _, _, _, _)
+    else
       equation
         false = Flags.isSet(flag);
       then ();
@@ -5936,12 +5925,12 @@ algorithm
       then ty1;
 
     // Add Uniontype, Function reference(?)
-    case (_,_,_,_)
+    case (_, _, _, _)
       equation
         // failure(isPolymorphic(ty)); Recursive functions like to return polymorphic crap we don't know of
       then ty;
 
-    case (_,_,_,_)
+    else
       equation
         tstr = unparseType(ty);
         bstr = polymorphicBindingsStr(bindings);
@@ -6303,7 +6292,7 @@ algorithm
 
     case (_,_,{},_,_) then ();
 
-    case (_, _, _, _, _)
+    else
       equation
         pathStr = stringDelimitList(List.map(pathLst, Absyn.pathString), ", ");
         bindingsStr = polymorphicBindingsStr(bindings);
@@ -6692,7 +6681,7 @@ algorithm
         bindings = List.fold1(ids, addPolymorphicBinding, actual, bindings);
       then bindings;
 
-    case (_,_,_,_)
+    else
       equation
         // print("subtypePolymorphic failed: " +& unparseType(actual) +& " and " +& unparseType(expected) +& "\n");
       then fail();
@@ -6799,7 +6788,7 @@ algorithm
         /* So we can verify that the contents of the tuple is boxed */
         (oexp,oty) = matchType(exp,ty,DAE.T_METABOXED_DEFAULT,false);
       then (oexp,oty);
-    case (_,_) then (exp,ty);
+    else (exp,ty);
   end match;
 end convertTupleToMetaTuple;
 
@@ -7262,7 +7251,7 @@ algorithm
         v;
 
     // All the other ones we don't handle
-    case (_)
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- Types.typeToValue failed on unhandled Type ");
@@ -7299,7 +7288,7 @@ algorithm
       then
         (v::restVals, id::restIds);
 
-    case (_)
+    else
       equation
         Debug.fprint(Flags.FAILTRACE, "- Types.varsToValues failed\n");
       then
@@ -7749,7 +7738,7 @@ algorithm
     // we couldn't get the fixed attribute
     // assume true for constants and parameters
     // false otherwise
-    case (_, _)
+    else
       equation
         b = listMember(inVariability, {SCode.PARAM(), SCode.CONST()});
       then

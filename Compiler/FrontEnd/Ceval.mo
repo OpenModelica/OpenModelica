@@ -942,7 +942,7 @@ algorithm
       then
         fail();
 
-    case (_, _, _, _, _, _)
+    else
       equation
         // If we fail to evaluate, at least we should simplify the expression
         (e,_) = ExpressionSimplify.simplify1(inExp);
@@ -1022,7 +1022,7 @@ protected function cevalBuiltin
   input Env.Env inEnv;
   input DAE.Exp inExp;
   input Boolean inBoolean "impl";
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -1033,7 +1033,7 @@ protected function cevalBuiltin
     input Env.Env inEnvFrameLst;
     input list<DAE.Exp> inExpExpLst;
     input Boolean inBoolean;
-    input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+    input Option<GlobalScript.SymbolTable> inST;
     input Absyn.Msg inMsg;
     input Integer numIter;
     output Env.Cache outCache;
@@ -1042,7 +1042,7 @@ protected function cevalBuiltin
   end HandlerFunc;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExp,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  matchcontinue (inCache,inEnv,inExp,inBoolean,inST,inMsg,numIter)
     local
       Values.Value v,newval;
       Option<GlobalScript.SymbolTable> st;
@@ -1097,7 +1097,7 @@ protected function cevalBuiltinHandler
     input Env.Env inEnv;
     input list<DAE.Exp> inExpExpLst;
     input Boolean inBoolean;
-    input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+    input Option<GlobalScript.SymbolTable> inST;
     input Absyn.Msg inMsg;
     input Integer numIter;
     output Env.Cache outCache;
@@ -1410,15 +1410,15 @@ protected constant Absyn.Path EnumCompareGreater = Absyn.QUALIFIED("Modelica",Ab
 protected function cevalMatrixElt "Evaluates the expression of a matrix constructor, e.g. {1,2;3,4}"
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<list<DAE.Exp>> inTplExpExpBooleanLstLst "matrix constr. elts";
+  input list<list<DAE.Exp>> inMatrix "matrix constr. elts";
   input Boolean inBoolean "impl";
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
-  output list<Values.Value> outValuesValueLst;
+  output list<Values.Value> outValues;
 algorithm
-  (outCache,outValuesValueLst) :=
-  match (inCache,inEnv,inTplExpExpBooleanLstLst,inBoolean,inMsg,numIter)
+  (outCache, outValues) :=
+  match (inCache, inEnv, inMatrix, inBoolean, inMsg, numIter)
     local
       Values.Value v;
       list<Values.Value> vl;
@@ -1445,7 +1445,7 @@ protected function cevalBuiltinSize "Evaluates the size operator."
   input DAE.Exp inExp2;
   input DAE.Exp inDimExp;
   input Boolean inBoolean4;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption5;
+  input Option<GlobalScript.SymbolTable> inST5;
   input Absyn.Msg inMsg6;
   input Integer numIter;
   output Env.Cache outCache;
@@ -1453,7 +1453,7 @@ protected function cevalBuiltinSize "Evaluates the size operator."
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv1,inExp2,inDimExp,inBoolean4,inInteractiveInteractiveSymbolTableOption5,inMsg6,numIter)
+  matchcontinue (inCache,inEnv1,inExp2,inDimExp,inBoolean4,inST5,inMsg6,numIter)
     local
       DAE.Attributes attr;
       DAE.Type tp;
@@ -1634,7 +1634,7 @@ algorithm
       then
         dimVal;
 
-    case (_,_)
+    else
       equation
         Debug.fprint(Flags.FAILTRACE, "- Ceval.cevalBuiltinSize2 failed\n");
       then
@@ -1669,7 +1669,7 @@ protected function cevalBuiltinAbs "author: LP
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -1677,7 +1677,7 @@ protected function cevalBuiltinAbs "author: LP
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv,rv_1;
       Env.Env env;
@@ -1708,7 +1708,7 @@ protected function cevalBuiltinSign "author: PA
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -1716,7 +1716,7 @@ protected function cevalBuiltinSign "author: PA
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv;
       Boolean b1,b2,b3,impl;
@@ -1753,7 +1753,7 @@ protected function cevalBuiltinExp "author: PA
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -1761,7 +1761,7 @@ protected function cevalBuiltinExp "author: PA
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv,rv_1;
       Env.Env env;
@@ -1787,7 +1787,7 @@ protected function cevalBuiltinNoevent "author: PA
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -1795,7 +1795,7 @@ protected function cevalBuiltinNoevent "author: PA
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Values.Value v;
       Env.Env env;
@@ -1818,7 +1818,7 @@ protected function cevalBuiltinCat "author: PA
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -1826,7 +1826,7 @@ protected function cevalBuiltinCat "author: PA
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Integer dim_int;
       list<Values.Value> mat_lst;
@@ -1855,7 +1855,7 @@ protected function cevalBuiltinIdentity "author: PA
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -1863,7 +1863,7 @@ protected function cevalBuiltinIdentity "author: PA
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Integer dim_int,dim_int_1;
       list<DAE.Exp> expl;
@@ -1893,7 +1893,7 @@ protected function cevalBuiltinPromote "author: PA
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -1901,7 +1901,7 @@ protected function cevalBuiltinPromote "author: PA
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Values.Value arr_val,res;
       Integer dim_val;
@@ -1941,7 +1941,7 @@ algorithm
         (vs_1 as (Values.ARRAY(dimLst = il)::_)) = List.map1(vs, cevalBuiltinPromote2, n_1);
       then
         Values.ARRAY(vs_1,i::il);
-    case (_,_)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE, "- Ceval.cevalBuiltinPromote2 failed");
       then fail();
@@ -1956,7 +1956,7 @@ protected function cevalBuiltinSubstring "
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -1964,7 +1964,7 @@ protected function cevalBuiltinSubstring "
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Env.Env env;
       DAE.Exp str_exp, start_exp, stop_exp;
@@ -1994,7 +1994,7 @@ protected function cevalBuiltinString "
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -2002,7 +2002,7 @@ protected function cevalBuiltinString "
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Env.Env env;
       DAE.Exp exp, len_exp, justified_exp, sig_dig;
@@ -2092,7 +2092,7 @@ protected function cevalBuiltinPrint
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -2100,7 +2100,7 @@ protected function cevalBuiltinPrint
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Env.Env env;
       DAE.Exp exp;
@@ -2123,7 +2123,7 @@ protected function cevalIntString
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -2131,7 +2131,7 @@ protected function cevalIntString
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Env.Env env;
       DAE.Exp exp;
@@ -2155,7 +2155,7 @@ protected function cevalRealString
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -2163,7 +2163,7 @@ protected function cevalRealString
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Env.Env env;
       DAE.Exp exp;
@@ -2189,7 +2189,7 @@ protected function cevalStringCharInt
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -2197,7 +2197,7 @@ protected function cevalStringCharInt
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Env.Env env;
       DAE.Exp exp;
@@ -2221,7 +2221,7 @@ protected function cevalIntStringChar
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -2229,7 +2229,7 @@ protected function cevalIntStringChar
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Env.Env env;
       DAE.Exp exp;
@@ -2253,7 +2253,7 @@ protected function cevalStringInt
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -2261,7 +2261,7 @@ protected function cevalStringInt
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Env.Env env;
       DAE.Exp exp;
@@ -2286,7 +2286,7 @@ protected function cevalStringLength
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -2294,7 +2294,7 @@ protected function cevalStringLength
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Env.Env env;
       DAE.Exp exp;
@@ -2318,7 +2318,7 @@ protected function cevalStringListStringChar
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -2326,7 +2326,7 @@ protected function cevalStringListStringChar
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Env.Env env;
       DAE.Exp exp;
@@ -2360,7 +2360,7 @@ protected function cevalListStringCharString
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -2368,7 +2368,7 @@ protected function cevalListStringCharString
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Env.Env env;
       DAE.Exp exp;
@@ -2398,7 +2398,7 @@ protected function cevalStringAppendList
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -2406,7 +2406,7 @@ protected function cevalStringAppendList
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Env.Env env;
       DAE.Exp exp;
@@ -2432,7 +2432,7 @@ protected function cevalStringDelimitList
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -2440,7 +2440,7 @@ protected function cevalStringDelimitList
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Env.Env env;
       DAE.Exp exp1,exp2;
@@ -2467,7 +2467,7 @@ protected function cevalListLength
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -2475,7 +2475,7 @@ protected function cevalListLength
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Env.Env env;
       DAE.Exp exp;
@@ -2499,7 +2499,7 @@ protected function cevalListAppend
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -2507,7 +2507,7 @@ protected function cevalListAppend
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Env.Env env;
       DAE.Exp exp1,exp2;
@@ -2531,7 +2531,7 @@ protected function cevalListReverse
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -2539,7 +2539,7 @@ protected function cevalListReverse
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Env.Env env;
       DAE.Exp exp1;
@@ -2562,7 +2562,7 @@ protected function cevalListRest
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -2570,7 +2570,7 @@ protected function cevalListRest
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Env.Env env;
       DAE.Exp exp1;
@@ -2592,7 +2592,7 @@ protected function cevalAnyString
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -2600,7 +2600,7 @@ protected function cevalAnyString
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Env.Env env;
       DAE.Exp exp1;
@@ -2747,7 +2747,7 @@ protected function cevalListFirst
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -2755,7 +2755,7 @@ protected function cevalListFirst
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Env.Env env;
       DAE.Exp exp1;
@@ -2865,7 +2865,7 @@ protected function cevalBuiltinFloor "author: LP
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -2873,7 +2873,7 @@ protected function cevalBuiltinFloor "author: LP
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv,rv_1;
       Env.Env env;
@@ -2897,7 +2897,7 @@ protected function cevalBuiltinCeil "author: LP
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -2905,7 +2905,7 @@ protected function cevalBuiltinCeil "author: LP
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv,rv_1,rvt,realRet;
       Integer ri,ri_1;
@@ -2942,7 +2942,7 @@ protected function cevalBuiltinSqrt "author: LP
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -2950,7 +2950,7 @@ protected function cevalBuiltinSqrt "author: LP
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv,rv_1;
       Env.Env env;
@@ -2983,7 +2983,7 @@ protected function cevalBuiltinSin "author: LP
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -2991,7 +2991,7 @@ protected function cevalBuiltinSin "author: LP
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv,rv_1;
       Env.Env env;
@@ -3015,7 +3015,7 @@ protected function cevalBuiltinSinh "author: PA
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -3023,7 +3023,7 @@ protected function cevalBuiltinSinh "author: PA
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv,rv_1;
       Env.Env env;
@@ -3047,7 +3047,7 @@ protected function cevalBuiltinCos "author: LP
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -3055,7 +3055,7 @@ protected function cevalBuiltinCos "author: LP
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv,rv_1;
       Env.Env env;
@@ -3079,7 +3079,7 @@ protected function cevalBuiltinCosh "author: PA
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -3087,7 +3087,7 @@ protected function cevalBuiltinCosh "author: PA
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv,rv_1;
       Env.Env env;
@@ -3111,7 +3111,7 @@ protected function cevalBuiltinLog "author: LP
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -3119,7 +3119,7 @@ protected function cevalBuiltinLog "author: LP
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv,rv_1;
       Env.Env env;
@@ -3142,7 +3142,7 @@ protected function cevalBuiltinLog10
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -3150,7 +3150,7 @@ protected function cevalBuiltinLog10
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv,rv_1;
       Env.Env env;
@@ -3174,7 +3174,7 @@ protected function cevalBuiltinTan "author: LP
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -3182,7 +3182,7 @@ protected function cevalBuiltinTan "author: LP
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv,sv,cv,rv_1;
       Env.Env env;
@@ -3208,7 +3208,7 @@ protected function cevalBuiltinTanh "author: PA
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -3216,7 +3216,7 @@ protected function cevalBuiltinTanh "author: PA
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv,rv_1;
       Env.Env env;
@@ -3240,7 +3240,7 @@ protected function cevalBuiltinAsin "author: PA
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -3248,7 +3248,7 @@ protected function cevalBuiltinAsin "author: PA
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv,rv_1;
       Env.Env env;
@@ -3272,7 +3272,7 @@ protected function cevalBuiltinAcos "author: PA
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -3280,7 +3280,7 @@ protected function cevalBuiltinAcos "author: PA
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv,rv_1;
       Env.Env env;
@@ -3304,7 +3304,7 @@ protected function cevalBuiltinAtan "author: PA
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -3312,7 +3312,7 @@ protected function cevalBuiltinAtan "author: PA
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv,rv_1;
       Env.Env env;
@@ -3335,7 +3335,7 @@ protected function cevalBuiltinAtan2
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -3343,7 +3343,7 @@ protected function cevalBuiltinAtan2
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv,rv_1,rv_2;
       Env.Env env;
@@ -3368,7 +3368,7 @@ protected function cevalBuiltinDiv "author: LP
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -3376,7 +3376,7 @@ protected function cevalBuiltinDiv "author: LP
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv1,rv2,rv_1,rv_2;
       Integer ri,ri_1,ri1,ri2;
@@ -3464,7 +3464,7 @@ protected function cevalBuiltinMod "author: LP
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -3472,7 +3472,7 @@ protected function cevalBuiltinMod "author: LP
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv1,rv2,rva,rvb,rvc,rvd;
       Env.Env env;
@@ -3569,7 +3569,7 @@ protected function cevalBuiltinMax "author: LP
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -3577,7 +3577,7 @@ protected function cevalBuiltinMax "author: LP
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Values.Value v,v1,v2,v_1;
       Env.Env env;
@@ -3664,7 +3664,7 @@ algorithm
       then
         v;
 
-    case (_)
+    else
       equation
         //print("- Ceval.cevalBuiltinMax2 failed\n");
       then
@@ -3678,7 +3678,7 @@ protected function cevalBuiltinMin "author: PA
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -3686,7 +3686,7 @@ protected function cevalBuiltinMin "author: PA
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Values.Value v,v1,v2,v_1;
       Env.Env env;
@@ -3792,7 +3792,7 @@ protected function cevalBuiltinDifferentiate "author: LP
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -3800,7 +3800,7 @@ protected function cevalBuiltinDifferentiate "author: LP
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       DAE.Exp differentiated_exp,differentiated_exp_1,exp1;
       String ret_val;
@@ -3836,7 +3836,7 @@ protected function cevalBuiltinSimplify "author: LP
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -3844,7 +3844,7 @@ protected function cevalBuiltinSimplify "author: LP
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       DAE.Exp exp1_1,exp1;
       String ret_val;
@@ -3876,7 +3876,7 @@ protected function cevalBuiltinRem "author: LP
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -3884,7 +3884,7 @@ protected function cevalBuiltinRem "author: LP
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv1,rv2,rvd,dr;
       Integer ri,ri1,ri2,ri_1,di;
@@ -3958,7 +3958,7 @@ protected function cevalBuiltinInteger "author: LP
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -3966,7 +3966,7 @@ protected function cevalBuiltinInteger "author: LP
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv;
       Integer ri;
@@ -3991,7 +3991,7 @@ protected function cevalBuiltinBoolean " @author: adrpo
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -3999,7 +3999,7 @@ protected function cevalBuiltinBoolean " @author: adrpo
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv;
       Integer iv;
@@ -4043,7 +4043,7 @@ protected function cevalBuiltinRooted
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -4051,7 +4051,7 @@ protected function cevalBuiltinRooted
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Env.Env env;
       DAE.Exp exp;
@@ -4073,7 +4073,7 @@ protected function cevalBuiltinIntegerEnumeration "author: LP
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -4081,7 +4081,7 @@ protected function cevalBuiltinIntegerEnumeration "author: LP
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Integer ri;
       Env.Env env;
@@ -4105,7 +4105,7 @@ protected function cevalBuiltinDiagonal "This function generates a matrix{n,n} (
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -4113,7 +4113,7 @@ protected function cevalBuiltinDiagonal "This function generates a matrix{n,n} (
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       list<Values.Value> rv2,retExp;
       Integer dimension,correctDimension;
@@ -4150,7 +4150,7 @@ protected function cevalBuiltinDiagonal2 " This is a help function that is calli
   input Env.Env inEnv1;
   input DAE.Exp inExp2;
   input Boolean inBoolean3;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption4;
+  input Option<GlobalScript.SymbolTable> inST4;
   input Integer inInteger5 "matrix dimension";
   input Integer inInteger6 "row";
   input list<Values.Value> inValuesValueLst7;
@@ -4160,7 +4160,7 @@ protected function cevalBuiltinDiagonal2 " This is a help function that is calli
   output list<Values.Value> outValuesValueLst;
 algorithm
   (outCache,outValuesValueLst) :=
-  matchcontinue (inCache,inEnv1,inExp2,inBoolean3,inInteractiveInteractiveSymbolTableOption4,inInteger5,inInteger6,inValuesValueLst7,inMsg8,numIter)
+  matchcontinue (inCache,inEnv1,inExp2,inBoolean3,inST4,inInteger5,inInteger6,inValuesValueLst7,inMsg8,numIter)
     local
       Real rv2;
       Integer correctDim,correctPlace,newRow,matrixDimension,row,iv2;
@@ -4261,7 +4261,7 @@ protected function cevalBuiltinCross "
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -4269,7 +4269,7 @@ protected function cevalBuiltinCross "
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       list<Values.Value> xv,yv;
       Values.Value res;
@@ -4303,7 +4303,7 @@ protected function cevalBuiltinTranspose "This function transposes the two first
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -4311,7 +4311,7 @@ protected function cevalBuiltinTranspose "This function transposes the two first
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       list<Values.Value> vlst,vlst2,vlst_1;
       Integer i1,i2;
@@ -4360,7 +4360,7 @@ algorithm
         rest = cevalBuiltinTranspose2(vlst, indx_1, inDims);
       then
         (Values.ARRAY(transposed_row,inDims) :: rest);
-    case (_,_,_) then {};
+    else {};
   end matchcontinue;
 end cevalBuiltinTranspose2;
 
@@ -4369,7 +4369,7 @@ protected function cevalBuiltinSizeMatrix "Helper function for cevalBuiltinSize,
   input Env.Env inEnv;
   input DAE.Exp inExp;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -4377,7 +4377,7 @@ protected function cevalBuiltinSizeMatrix "Helper function for cevalBuiltinSize,
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption) :=
-  matchcontinue (inCache,inEnv,inExp,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  matchcontinue (inCache,inEnv,inExp,inBoolean,inST,inMsg,numIter)
     local
       DAE.Type tp;
       list<Integer> sizelst;
@@ -4723,7 +4723,7 @@ public function cevalList "This function does constant
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
@@ -4731,7 +4731,7 @@ public function cevalList "This function does constant
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValuesValueLst,outInteractiveInteractiveSymbolTableOption) :=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Env.Env env;
       Absyn.Msg msg;
@@ -5025,7 +5025,7 @@ algorithm
     case(_,_) equation
       res = Util.boolOrList(List.map1(Expression.extractCrefsFromExp(exp),ComponentReference.crefEqual,cr));
     then res;
-    case(_,_) then false;
+    else false;
   end matchcontinue;
 end isRecursiveBinding;
 
@@ -5300,7 +5300,7 @@ algorithm
         true = dimensionSliceInRange(Values.ARRAY(vlst,dims),dimSize);
       then true;
 
-    case(_,_) then false;
+    else false;
 
   end matchcontinue;
 end dimensionSliceInRange;
@@ -5461,7 +5461,7 @@ algorithm
       then
         Values.ARRAY(v1 :: vals, dim_size :: rest_dims);
 
-    else then Values.ARRAY({v1, v2}, {2});
+    else Values.ARRAY({v1, v2}, {2});
   end match;
 end valueArrayCons;
 
@@ -5668,14 +5668,14 @@ public function cevalAstExp
   input Env.Env inEnv;
   input Absyn.Exp inExp;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Absyn.Info info;
   output Env.Cache outCache;
   output Absyn.Exp outExp;
 algorithm
   (outCache,outExp) :=
-  matchcontinue (inCache,inEnv,inExp,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
+  matchcontinue (inCache,inEnv,inExp,inBoolean,inST,inMsg,info)
     local
       Absyn.Exp e,e1_1,e2_1,e1,e2,e_1,cond_1,then_1,else_1,cond,then_,else_,exp,e3_1,e3;
       Env.Env env;
@@ -5794,14 +5794,14 @@ public function cevalAstExpList
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<Absyn.Exp> outAbsynExpLst;
 algorithm
   (outCache,outAbsynExpLst) :=
-  match (inCache,inEnv,inAbsynExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
+  match (inCache,inEnv,inAbsynExpLst,inBoolean,inST,inMsg,info)
     local
       Env.Env env;
       Absyn.Msg msg;
@@ -5827,14 +5827,14 @@ protected function cevalAstExpListList "function: cevalAstExpListList"
   input Env.Env inEnv;
   input list<list<Absyn.Exp>> inAbsynExpLstLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<list<Absyn.Exp>> outAbsynExpLstLst;
 algorithm
   (outCache,outAbsynExpLstLst) :=
-  match (inCache,inEnv,inAbsynExpLstLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
+  match (inCache,inEnv,inAbsynExpLstLst,inBoolean,inST,inMsg,info)
     local
       Env.Env env;
       Absyn.Msg msg;
@@ -5862,13 +5862,13 @@ public function cevalAstElt
   input Env.Env inEnv;
   input Absyn.Element inElement;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   output Env.Cache outCache;
   output Absyn.Element outElement;
 algorithm
   (outCache,outElement) :=
-  match (inCache,inEnv,inElement,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inElement,inBoolean,inST,inMsg)
     local
       list<Absyn.ComponentItem> citems_1,citems;
       Env.Env env;
@@ -5898,14 +5898,14 @@ protected function cevalAstCitems
   input Env.Env inEnv;
   input list<Absyn.ComponentItem> inAbsynComponentItemLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<Absyn.ComponentItem> outAbsynComponentItemLst;
 algorithm
   (outCache,outAbsynComponentItemLst) :=
-  matchcontinue (inCache,inEnv,inAbsynComponentItemLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
+  matchcontinue (inCache,inEnv,inAbsynComponentItemLst,inBoolean,inST,inMsg,info)
     local
       Absyn.Msg msg;
       list<Absyn.ComponentItem> res,xs;
@@ -5941,14 +5941,14 @@ protected function cevalAstModopt
   input Env.Env inEnv;
   input Option<Absyn.Modification> inAbsynModificationOption;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Absyn.Info info;
   output Env.Cache outCache;
   output Option<Absyn.Modification> outAbsynModificationOption;
 algorithm
   (outCache,outAbsynModificationOption) :=
-  match (inCache,inEnv,inAbsynModificationOption,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
+  match (inCache,inEnv,inAbsynModificationOption,inBoolean,inST,inMsg,info)
     local
       Absyn.Modification res,mod;
       Env.Env env;
@@ -5971,14 +5971,14 @@ protected function cevalAstModification "This function evaluates Eval(variable) 
   input Env.Env inEnv;
   input Absyn.Modification inModification;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Absyn.Info info;
   output Env.Cache outCache;
   output Absyn.Modification outModification;
 algorithm
   (outCache,outModification) :=
-  match (inCache,inEnv,inModification,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
+  match (inCache,inEnv,inModification,inBoolean,inST,inMsg,info)
     local
       Absyn.Exp e_1,e;
       list<Absyn.ElementArg> eltargs_1,eltargs;
@@ -6007,14 +6007,14 @@ protected function cevalAstEltargs "Helper function to cevalAstModification."
   input Env.Env inEnv;
   input list<Absyn.ElementArg> inAbsynElementArgLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<Absyn.ElementArg> outAbsynElementArgLst;
 algorithm
   (outCache,outAbsynElementArgLst):=
-  matchcontinue (inCache,inEnv,inAbsynElementArgLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
+  matchcontinue (inCache,inEnv,inAbsynElementArgLst,inBoolean,inST,inMsg,info)
     local
       Env.Env env;
       Absyn.Msg msg;
@@ -6050,14 +6050,14 @@ protected function cevalAstArraydim "Helper function to cevaAstCitems"
   input Env.Env inEnv;
   input Absyn.ArrayDim inArrayDim;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Absyn.Info info;
   output Env.Cache outCache;
   output Absyn.ArrayDim outArrayDim;
 algorithm
   (outCache,outArrayDim) :=
-  match (inCache,inEnv,inArrayDim,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
+  match (inCache,inEnv,inArrayDim,inBoolean,inST,inMsg,info)
     local
       Env.Env env;
       Absyn.Msg msg;
@@ -6085,16 +6085,16 @@ protected function cevalAstExpexpList
 "For IFEXP"
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<tuple<Absyn.Exp, Absyn.Exp>> inTplAbsynExpAbsynExpLst;
+  input list<tuple<Absyn.Exp, Absyn.Exp>> inExpTpls;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
   input Absyn.Info info;
   output Env.Cache outCache;
-  output list<tuple<Absyn.Exp, Absyn.Exp>> outTplAbsynExpAbsynExpLst;
+  output list<tuple<Absyn.Exp, Absyn.Exp>> outExpTpls;
 algorithm
-  (outCache,outTplAbsynExpAbsynExpLst) :=
-  match (inCache,inEnv,inTplAbsynExpAbsynExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
+  (outCache, outExpTpls) :=
+  match (inCache, inEnv, inExpTpls, inBoolean, inST, inMsg, info)
     local
       Absyn.Msg msg;
       Absyn.Exp e1_1,e2_1,e1,e2;

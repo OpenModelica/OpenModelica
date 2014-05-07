@@ -2374,7 +2374,7 @@ algorithm
     local
       Values.Value val;
     case (DAE.VALBOUND(valBound = val), _) then val;
-    else then generateDefaultBinding(inType);
+    else generateDefaultBinding(inType);
   end match;
 end getBindingOrDefault;
 
@@ -2419,7 +2419,7 @@ algorithm
       then
         Values.RECORD(path, values, var_names, -1);
 
-    case (_)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE, "- CevalFunction.generateDefaultBinding failed\n");
       then
@@ -2498,7 +2498,7 @@ algorithm
         val;
 
     // All other variables we can just look up in the environment.
-    case (_, _, _)
+    else
       equation
         (_, val) = getVariableTypeAndValue(inCref, inEnv);
       then
@@ -2637,7 +2637,7 @@ algorithm
       then
         deps;
 
-    else then {};
+    else {};
   end matchcontinue;
 end getElementDependencies;
 
@@ -2666,7 +2666,7 @@ algorithm
        then
         (inSubscript, arg);
 
-    else then (inSubscript, inArg);
+    else (inSubscript, inArg);
   end matchcontinue;
 end getElementDependenciesFromDims;
 
@@ -2885,7 +2885,7 @@ algorithm
       then
         ((exp, env));
 
-    else then inTuple;
+    else inTuple;
   end match;
 end optimizeExpTraverser;
 

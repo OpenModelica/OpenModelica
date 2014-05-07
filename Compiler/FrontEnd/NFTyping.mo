@@ -742,7 +742,7 @@ protected function selectType
 algorithm
   outTy := match(inTy1,inTy2)
     case (DAE.T_UNKNOWN(_), _) then inTy2;
-    case (_, _) then inTy1;
+    else inTy1;
   end match;
 end selectType;
 

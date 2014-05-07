@@ -175,7 +175,7 @@ algorithm
     // is not an inner nor an outer
     case (Absyn.NOT_INNER_OUTER (),dae,ih,graphNew,_) then (dae,ih,graphNew);
     // something went totally wrong!
-    case (_,_,_,_,_)
+    else
       equation
         print("- InnerOuter.handleInnerOuterEquations failed!\n");
       then fail();
@@ -231,7 +231,7 @@ algorithm
         Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,Absyn.INNER(),f2,source);
 
     // none of left or right hand side are outer
-    else then inOC;
+    else inOC;
   end matchcontinue;
 end changeInnerOuterInOuterConnect2;
 
@@ -303,7 +303,7 @@ algorithm
         false = ComponentReference.crefLastIdentEqual(outerCr,innerCr);
       then false;
     // try the hard and expensive case.
-    case(_,_)
+    else
       equation
         // Strip the common part of inner outer cr.
         // For instance, innerCr = e.f.T1, outerCr = e.f.g.h.a.b.c.d.T1 results in
@@ -361,7 +361,7 @@ algorithm
       then
         c3;
 
-    case (_,_)
+    else
       equation
         c2 = ComponentReference.crefStripLastIdent(innerCref);
         cr3 = extractCommonPart(prefixedCref,c2);
@@ -445,7 +445,7 @@ algorithm
         crOuter;
 
     // something went wrong, print a failtrace and then
-    case (_, _)
+    else
       equation
         //true = Flags.isSet(Flags.FAILTRACE);
         //Debug.traceln("- InnerOuter.removeInnerPrefixFromCref failed on prefix: " +& PrefixUtil.printPrefixStr(inPrefix) +&
@@ -624,7 +624,7 @@ algorithm
         (Connect.SETS(sets, sc, cl, oc), graph);
 
     // This can fail, for innerouter, the inner part is not declared in env so instead the call to addOuterConnectIfEmptyNoEnv will succed.
-    case(_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    else
       equation
         //print("Failed lookup: " +& ComponentReference.printComponentRefStr(cr1) +& "\n");
         //print("Failed lookup: " +& ComponentReference.printComponentRefStr(cr2) +& "\n");
@@ -780,8 +780,8 @@ algorithm
         (isInner,isOuter) = innerOuterBooleans(io);
         ErrorExt.rollBack("lookupVarInnerOuterAttr");
       then (isInner,isOuter);
-     // failure
-    case(_,_,_,_,_)
+    // failure
+    else
       equation
         ErrorExt.rollBack("lookupVarInnerOuterAttr");
       then fail();
@@ -904,17 +904,17 @@ Special cases:
   output Boolean prefix1;
   output Boolean prefix2;
 algorithm
-  (prefix1,prefix2) := matchcontinue(io1,io2)
+  (prefix1,prefix2) := match(io1,io2)
     local Boolean b1,b2;
     case(Absyn.INNER_OUTER(),Absyn.NOT_INNER_OUTER()) then (true,false);
     case(Absyn.INNER_OUTER(),Absyn.OUTER()) then (false,true);
-    case(_,_)
+    else
       equation
         (_,b1) = innerOuterBooleans(io1);
         (_,b2) = innerOuterBooleans(io2);
       then
         (b1,b2);
-  end matchcontinue;
+  end match;
 end referOuter;
 
 public function outerConnection "Returns true if either Absyn.InnerOuter is OUTER."
@@ -922,13 +922,13 @@ public function outerConnection "Returns true if either Absyn.InnerOuter is OUTE
   input Absyn.InnerOuter io2;
   output Boolean isOuter;
 algorithm
-  isOuter := matchcontinue(io1,io2)
+  isOuter := match(io1,io2)
     case(Absyn.OUTER(),_) then true;
     case(_,Absyn.OUTER()) then true;
     case(Absyn.INNER_OUTER(),_) then true;
     case(_,Absyn.INNER_OUTER()) then true;
-    case(_,_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end outerConnection;
 
 public function assertDifferentFaces
@@ -1359,7 +1359,7 @@ algorithm
         Env.VAR(DAE.TYPES_VAR(name, attributes, ty, binding, cnstForRange), e, m, instStatus, env, it);
 
     // leave unchanged
-    case (_, _) then inItem;
+    else inItem;
 
   end matchcontinue;
 end switchInnerToOuterInAvlTreeValue;
@@ -1523,7 +1523,7 @@ algorithm
         outIH;
 
     // do nothing if not inner
-    else then inIH;
+    else inIH;
 
   end matchcontinue;
 end addClassIfInner;
@@ -1565,7 +1565,7 @@ algorithm
         TOP_INSTANCE(pathOpt, ht, outerPrefixes)::restIH;
 
     // failure
-    case(_,_, _)
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("InnerOuter.addOuterPrefix failed to add: outer cref: " +&
@@ -1609,7 +1609,7 @@ algorithm
         innerCref;
 
     // failure
-    case (_, _, _)
+    else
       equation
         // true = Flags.isSet(Flags.FAILTRACE);
         // Debug.traceln("- InnerOuter.prefixOuterCrefWithTheInnerPrefix failed to find prefix of inner for outer: prefix/cref " +& PrefixUtil.printPrefixStr(inPrefix) +& "/" +& ComponentReference.printComponentRefStr(inOuterComponentRef));
@@ -1897,7 +1897,7 @@ public function isEmpty "Returns true if hashtable is empty"
 algorithm
   res := matchcontinue(hashTable)
     case(HASHTABLE(_,_,_,0)) then true;
-    case(_) then false;
+    else false;
   end matchcontinue;
 end isEmpty;
 
@@ -1941,7 +1941,7 @@ algorithm
         varr_1 = valueArraySetnth(varr, indx, newv);
         // print("Updated NEW to IH: key:" +& ComponentReference.printComponentRefStr(key) +& " value: " +& printInnerDefStr(value) +& "\n");
       then HASHTABLE(hashvec,varr_1,bsize,n);
-    case (_,_)
+    else
       equation
         print("- InnerOuter.add failed\n");
       then
@@ -2213,7 +2213,7 @@ algorithm
         arr_2 = arrayUpdate(arr_1, n + 1, SOME(entry));
       then
         VALUE_ARRAY(n_1,newsize,arr_2);
-    case (_,_)
+    else
       equation
         print("-InstHierarchyHashTable.valueArrayAdd failed\n");
       then
@@ -2239,7 +2239,7 @@ algorithm
         arr_1 = arrayUpdate(arr, pos + 1, SOME(entry));
       then
         VALUE_ARRAY(n,size,arr_1);
-    case (_,_,_)
+    else
       equation
         print("-InstHierarchyHashTable.valueArraySetnth failed\n");
       then

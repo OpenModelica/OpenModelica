@@ -305,7 +305,7 @@ algorithm
     then
       Absyn.CALL(acref, Absyn.FOR_ITER_FARG(ae1, aiters));
 
-    case(_)
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         print("Expression.unelabExp failed on: " +& ExpressionDump.printExpStr(inExp) +& "\n");
@@ -547,7 +547,7 @@ algorithm
       then
         DAE.T_ARRAY(elt_tp,dims,ts);
 
-    case (_,_) then DAE.T_ARRAY(tp,{n},DAE.emptyTypeSource);
+    else DAE.T_ARRAY(tp,{n},DAE.emptyTypeSource);
 
   end matchcontinue;
 end liftArrayR;
@@ -1076,7 +1076,7 @@ algorithm
       then
         DAE.MATRIX(ty, i, mat);
 
-    case (_) then inExp;
+    else inExp;
 
   end matchcontinue;
 end unliftExp;
@@ -1192,7 +1192,7 @@ algorithm
     case (DAE.EQUAL(ty = _), _) then inOp;
     case (DAE.NEQUAL(ty = _), _) then inOp;
     case (DAE.USERDEFINED(fqName = _), _) then inOp;
-    case (_, _)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE,"- Expression.setOpType failed on unknown operator");
       then
@@ -1380,7 +1380,7 @@ algorithm
     local Type ty;
 
     case (_,0) then inType;
-    case(_,_)
+    else
       equation
         ty = unliftArray(inType);
       then
@@ -1413,7 +1413,7 @@ algorithm
       then
         DAE.ARRAY(DAE.T_ARRAY(ty, dims, ts), scalar, head :: expl);
 
-    case (_, _)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE, "- Expression.arrayAppend failed.");
       then
@@ -1841,7 +1841,7 @@ Get dimension of array.
 algorithm
   dims := matchcontinue(tp)
     case(DAE.T_ARRAY(dims = dims)) then dims;
-    case(_) then {};
+    else {};
   end matchcontinue;
 end arrayDimension;
 
@@ -1995,7 +1995,7 @@ algorithm
   dim := matchcontinue (dim1,dim2)
     local
       Integer i1,i2,i;
-    case (_,_)
+    case (_, _)
       equation
         i = dimensionSize(dim1)+dimensionSize(dim2);
       then DAE.DIM_INTEGER(i);
@@ -2263,7 +2263,7 @@ algorithm
       then
         rellst;
 
-    case (_) then {};
+    else {};
   end matchcontinue;
 end getRelations;
 
@@ -2448,7 +2448,7 @@ algorithm
     case (e as DAE.ASUB(exp = _)) then {e};
     case (e as DAE.SIZE(exp = _)) then {e};
     case (e as DAE.REDUCTION(expr = _)) then {e};
-    case (_) then {};
+    else {};
   end matchcontinue;
 end allTerms;
 
@@ -2751,7 +2751,7 @@ algorithm
         nonxt = Util.if_(res, zero, e);
       then
         (xt,nonxt);
-    case (_,_)
+    else
       equation
         /*Print.printBuf("Expression.getTerms_containingX failed: ");
         ExpressionDump.printExp(e);
@@ -2916,7 +2916,7 @@ algorithm
         exp;
 
     // do not check the DAE.ASUB
-    case(_,_)
+    case (_, _)
       equation
         false = Flags.isSet(Flags.CHECK_ASUB);
         exp = DAE.ASUB(inExp,inSubs);
@@ -2937,7 +2937,7 @@ algorithm
         exp;
 
     // check the DAE.ASUB -> was not a cref
-    case(_, _)
+    else
       equation
         true = Flags.isSet(Flags.CHECK_ASUB);
         exp = DAE.ASUB(inExp,inSubs);
@@ -3119,11 +3119,11 @@ algorithm
       Real r1,r2;
       Integer i1,i2;
       DAE.Exp e;
-    case(_,_)
+    case (_, _)
       equation
         true = isZero(e1);
       then e2;
-    case(_,_)
+    case (_, _)
       equation
         true = isZero(e2);
       then e1;
@@ -3144,7 +3144,7 @@ algorithm
     case (_,DAE.UNARY(operator=DAE.UMINUS_ARR(ty=_),exp=e))
       then
         expSub(e1,e);
-    case (_,_)
+    case (_, _)
       equation
         tp = typeof(e1);
         true = Types.isIntegerOrRealOrSubTypeOfEither(tp);
@@ -3152,7 +3152,7 @@ algorithm
         op = Util.if_(b,DAE.ADD_ARR(tp),DAE.ADD(tp));
       then
         DAE.BINARY(e1,op,e2);
-    case (_,_)
+    else
       equation
         tp = typeof(e1);
         true = Types.isEnumeration(tp);
@@ -3176,12 +3176,12 @@ algorithm
       Real r1,r2;
       Integer i1,i2;
       DAE.Exp e;
-    case(_,_)
+    case (_, _)
       equation
         true = isZero(e1);
       then
         negate(e2);
-    case(_,_)
+    case (_, _)
       equation
         true = isZero(e2);
       then
@@ -3214,7 +3214,7 @@ algorithm
         e = expAdd(e,e2);
       then
         negate(e);
-    case (_,_)
+    case (_, _)
       equation
         tp = typeof(e1);
         true = Types.isIntegerOrRealOrSubTypeOfEither(tp);
@@ -3222,7 +3222,7 @@ algorithm
         op = Util.if_(b,DAE.SUB_ARR(tp),DAE.SUB(tp));
       then
         DAE.BINARY(e1,op,e2);
-    case (_,_)
+    else
       equation
         tp = typeof(e1);
         true = Types.isEnumeration(tp);
@@ -3241,15 +3241,15 @@ algorithm
   res := matchcontinue(e1,e2)
     local
 
-    case(_,_) equation
+    case (_, _) equation
       true = isZero(e2);
     then e1;
 
-    case(_,_) equation
+    case (_, _) equation
       true = isZero(e1);
     then negate(e2);
 
-    case (_,_) then expSub(e1,e2);
+    else expSub(e1,e2);
   end matchcontinue;
 end makeDiff;
 
@@ -3263,16 +3263,15 @@ algorithm
   res := matchcontinue(e1,e2)
     local
 
-    case(_,_)
+    case (_, _)
       equation
         true = isZero(e2);
       then e1;
-    case(_,_)
+    case (_, _)
       equation
         true = isZero(e1);
       then negate(e2);
-    case(_,_)
-      then expAdd(e1,negate(e2));
+    else expAdd(e1,negate(e2));
   end matchcontinue;
 end makeDifference;
 
@@ -3386,11 +3385,11 @@ algorithm
       Real r1,r2;
       Integer i1,i2;
       DAE.Exp e1_1,e2_1;
-    case(_,_)
+    case (_, _)
       equation
         true = isZero(e1);
       then e1;
-    case(_,_)
+    case (_, _)
       equation
         true = isZero(e2);
       then e2;
@@ -3420,7 +3419,7 @@ algorithm
         i1 = intMul(i1,i2);
       then
         DAE.ICONST(i1);
-    case (_,_)
+    else
       equation
         tp = typeof(e1);
         true = Types.isIntegerOrRealOrSubTypeOfEither(tp);
@@ -3450,23 +3449,23 @@ algorithm
       Real r1,r2;
 
     // e1^1 = e1
-    case(_,_) equation
+    case(_, _) equation
       true = isOne(e2);
     then e1;
 
     // e1^0 = 1
-    case(_,_) equation
+    case (_, _) equation
       true = isZero(e2);
       false = isZero(e1);
     then makeConstOne(typeof(e1));
 
     // 1^e2 = 1
-    case (_,_) equation
+    case (_, _) equation
       true = isConstOne(e1);
     then e1;
 
     // 0^e2 = 0
-    case (_,_) equation
+    case (_, _) equation
       true = isZero(e1);
       false = isZero(e2);
     then makeConstZero(typeof(e1));
@@ -3709,13 +3708,13 @@ public function makeDiv "Takes two expressions and create a division"
   output DAE.Exp res;
 algorithm
   res := matchcontinue(e1,e2)
-    case(_,_) equation
+    case (_, _) equation
       true = isZero(e1);
     then e1;
-    case(_,_) equation
+    case (_, _) equation
       true = isOne(e2);
     then e1;
-    case (_,_) then expDiv(e1,e2);
+    else expDiv(e1,e2);
   end matchcontinue;
 end makeDiv;
 
@@ -3781,7 +3780,7 @@ algorithm
   outExp := matchcontinue (inType)
     case (DAE.T_INTEGER(varLst = _)) then DAE.ICONST(1);
     case (DAE.T_REAL(varLst = _)) then DAE.RCONST(1.0);
-    case(_) then DAE.RCONST(1.0);
+    else DAE.RCONST(1.0);
   end matchcontinue;
 end makeConstOne;
 
@@ -3793,7 +3792,7 @@ algorithm
   const := matchcontinue(inType)
     case (DAE.T_REAL(varLst = _)) then DAE.RCONST(0.0);
     case (DAE.T_INTEGER(varLst = _)) then DAE.ICONST(0);
-    case(_) then DAE.RCONST(0.0);
+    else DAE.RCONST(0.0);
   end matchcontinue;
 end makeConstZero;
 
@@ -3982,7 +3981,7 @@ algorithm
   oExp := matchcontinue(dims,inExp)
     local
     case({},_) then inExp;
-    case(_,_)
+    else
       equation
         oExp = arrayFill2(dims,inExp);
       then
@@ -4174,7 +4173,7 @@ algorithm
         true = ComponentReference.crefEqualNoStringCompare(cr, cr1);
       then
         ((target,(cr1,target)));
-    else then inTpl;
+    else inTpl;
   end matchcontinue;
 end replaceCref;
 
@@ -4562,7 +4561,7 @@ algorithm
     // Why don't we call rel() for these expressions?
     case (DAE.CODE(code = _),_,ext_arg) then ((inExp,ext_arg));
 
-    case (_,_,_)
+    else
       equation
         str = ExpressionDump.printExpStr(inExp);
         str = "Expression.traverseExp or one of the user-defined functions using it is not implemented correctly: " +& str;
@@ -4924,7 +4923,7 @@ algorithm
     // Why don't we call rel() for these expressions?
     case (DAE.CODE(code = _),_,ext_arg) then ((inExp,ext_arg));
 
-    case (_,_,_)
+    else
       equation
         str = ExpressionDump.printExpStr(inExp);
         str = "Expression.traverseExpDerPreStart or one of the user-defined functions using it is not implemented correctly: " +& str;
@@ -5399,10 +5398,10 @@ protected function traverseExpWithoutRelationsMatrix
 "author: Frenkel TUD
    Helper function to traverseExpWithoutRelations, traverses matrix expressions."
   replaceable type Type_a subtypeof Any;
-  input list<list<DAE.Exp>> inTplExpBooleanLstLst;
+  input list<list<DAE.Exp>> inMatrix;
   input FuncExpType func;
   input Type_a inTypeA;
-  output list<list<DAE.Exp>> outTplExpBooleanLstLst;
+  output list<list<DAE.Exp>> outMatrix;
   output Type_a outTypeA;
   partial function FuncExpType
     input tuple<DAE.Exp, Type_a> inTplExpTypeA;
@@ -5410,7 +5409,7 @@ protected function traverseExpWithoutRelationsMatrix
     replaceable type Type_a subtypeof Any;
   end FuncExpType;
 algorithm
-  (outTplExpBooleanLstLst,outTypeA) := match (inTplExpBooleanLstLst,func,inTypeA)
+  (outMatrix,outTypeA) := match (inMatrix,func,inTypeA)
     local
       FuncExpType rel;
       Type_a e_arg,e_arg_1,e_arg_2;
@@ -5728,7 +5727,7 @@ algorithm
     case (DAE.SHARED_LITERAL(index=_),_,ext_arg)
       then ((inExp,ext_arg));
 
-    case (_,_,_)
+    else
       equation
         str = ExpressionDump.printExpStr(inExp);
         str = "Expression.traverseExpTopDown1 not implemented correctly: " +& str;
@@ -5741,17 +5740,17 @@ protected function traverseExpMatrixTopDown
 "author: PA
    Helper function to traverseExpTopDown, traverses matrix expressions."
   replaceable type Type_a subtypeof Any;
-  input list<list<DAE.Exp>> inTplExpBooleanLstLst;
+  input list<list<DAE.Exp>> inMatrix;
   input FuncExpType func;
   input Type_a inTypeA;
-  output list<list<DAE.Exp>> outTplExpBooleanLstLst;
+  output list<list<DAE.Exp>> outMatrix;
   output Type_a outTypeA;
   partial function FuncExpType
     input tuple<DAE.Exp, Type_a> inTpl;
     output tuple<DAE.Exp, Boolean, Type_a> outTpl;
   end FuncExpType;
 algorithm
-  (outTplExpBooleanLstLst,outTypeA) := match (inTplExpBooleanLstLst,func,inTypeA)
+  (outMatrix,outTypeA) := match (inMatrix,func,inTypeA)
     local
       FuncExpType rel;
       Type_a e_arg,e_arg_1,e_arg_2;
@@ -6207,7 +6206,7 @@ Author: Frenkel TUD 2011-05, traverses all ComponentRef from an Expression."
 algorithm
   outArg := match(inExp,inFunc,inArg)
    local Type_a arg;
-    case(_,_,_)
+    case (_, _, _)
       equation
         ((_,(_,arg))) = traverseExp(inExp, traversingCrefFinder, (inFunc,inArg));
       then
@@ -6907,7 +6906,7 @@ algorithm
   res := matchcontinue(op)
     case(DAE.MUL(_)) then true;
     case(DAE.DIV(_)) then true;
-    case (_) then false;
+    else false;
   end matchcontinue;
 end operatorDivOrMul;
 
@@ -6953,7 +6952,7 @@ algorithm
         res = isOne(e) "Casting to one is still one" ;
       then
         res;
-    case (_) then false;
+    else false;
   end matchcontinue;
 end isOne;
 
@@ -7274,7 +7273,7 @@ algorithm
     case (DAE.CALL(path = Absyn.IDENT("ceil"))) then true;
     case (DAE.CALL(path = Absyn.IDENT("floor"))) then true;
     case (DAE.CALL(path = Absyn.IDENT("integer"))) then true;
-    case (_) then false;
+    else false;
   end matchcontinue;
 end isEventTriggeringFunctionExp;
 
@@ -7291,7 +7290,7 @@ public function isAdd "returns true if operator is ADD"
 algorithm
   res := matchcontinue(op)
     case(DAE.ADD(_)) then true;
-    case(_) then false;
+    else false;
   end matchcontinue;
 end isAdd;
 
@@ -7301,7 +7300,7 @@ public function isSub "returns true if operator is SUB"
 algorithm
   res := matchcontinue(op)
     case(DAE.SUB(_)) then true;
-    case(_) then false;
+    else false;
   end matchcontinue;
 end isSub;
 
@@ -7331,7 +7330,7 @@ algorithm b := matchcontinue(t1,t2)
       true = equalTypes(ty1,ty2);
     then
       true;
-  case (_,_) then false;
+  else false;
   end matchcontinue;
 end equalTypes;
 
@@ -7357,7 +7356,7 @@ algorithm
       then
         equalTypesComplexVars(vars1,vars2);
 
-    case(_,_) then false;
+    else false;
   end matchcontinue;
 end equalTypesComplexVars;
 
@@ -7371,7 +7370,7 @@ algorithm
     case (DAE.T_REAL(varLst = _)) then true;
     case (DAE.T_STRING(varLst = _)) then true;
     case (DAE.T_BOOL(varLst = _)) then true;
-    case (_) then false;
+    else false;
   end matchcontinue;
 end typeBuiltin;
 
@@ -7381,7 +7380,7 @@ public function isWholeDim ""
 algorithm
   b := matchcontinue(s)
     case(DAE.WHOLEDIM()) then true;
-    case(_) then false;
+    else false;
   end matchcontinue;
 end isWholeDim;
 
@@ -7396,7 +7395,7 @@ algorithm
       then
         isReal(t2);
     case(DAE.T_INTEGER(varLst = _)) then true;
-    case(_) then false;
+    else false;
   end matchcontinue;
 end isInt;
 
@@ -7411,7 +7410,7 @@ algorithm
       then
         isReal(t2);
     case(DAE.T_REAL(varLst = _)) then true;
-    case(_) then false;
+    else false;
   end matchcontinue;
 end isReal;
 
@@ -7442,7 +7441,7 @@ algorithm
   outBoolean:=
   matchcontinue (inExp)
     case DAE.BCONST(false) then true;
-    case (_) then false;
+    else false;
   end matchcontinue;
 end isConstFalse;
 
@@ -7454,7 +7453,7 @@ algorithm
   outBoolean:=
   matchcontinue (inExp)
     case DAE.BCONST(true) then true;
-    case (_) then false;
+    else false;
   end matchcontinue;
 end isConstTrue;
 
@@ -7481,7 +7480,7 @@ algorithm
         true;
 
     // anything else
-    case (_) then false;
+    else false;
   end matchcontinue;
 end isConstOne;
 
@@ -7508,7 +7507,7 @@ algorithm
         true;
 
     // anything else
-    case (_) then false;
+    else false;
   end matchcontinue;
 end isConstMinusOne;
 
@@ -7679,7 +7678,7 @@ algorithm
       then
         true;
     // any other expressions return false
-    case (_) then false;
+    else false;
   end matchcontinue;
 end containVectorFunctioncall;
 
@@ -7859,7 +7858,7 @@ algorithm
         true;
 
     // anything else
-    case (_) then false;
+    else false;
 
   end matchcontinue;
 end containFunctioncall;
@@ -7883,7 +7882,7 @@ algorithm
         b = expIntOrder(x1+1,expl);
       then
         b;
-    case(_,_) then false;
+    else false;
   end matchcontinue;
 end expIntOrder;
 
@@ -7895,7 +7894,7 @@ algorithm
   outB := match(inExp)
     case(DAE.ARRAY(array = _ )) then true;
     case(DAE.UNARY(operator=DAE.UMINUS_ARR(ty=_),exp=DAE.ARRAY(array=_))) then true;
-    else then false;
+    else false;
   end match;
 end isArray;
 
@@ -7907,7 +7906,7 @@ algorithm
   outB := match(inExp)
     case(DAE.MATRIX(ty = _ )) then true;
     case(DAE.UNARY(operator=DAE.UMINUS_ARR(ty=_),exp=DAE.MATRIX(ty=_))) then true;
-    else then false;
+    else false;
   end match;
 end isMatrix;
 
@@ -7938,7 +7937,7 @@ algorithm
     case(DAE.UNARY(operator =_))
       then
         true;
-    case(_)
+    else
     then
       false;
   end matchcontinue;
@@ -8840,7 +8839,7 @@ algorithm
   res := matchcontinue(e)
     case(DAE.CREF(_,_)) then true;
     case(DAE.IFEXP(_,_,_)) then true;
-    case(_) then false;
+    else false;
   end matchcontinue;
 end isExpCrefOrIfExp;
 
@@ -8891,7 +8890,7 @@ algorithm
         res = Absyn.pathEqual(p1, p2);
       then
         res;
-    case (_,_) then false;
+    else false;
   end matchcontinue;
 end operatorEqual;
 
@@ -8998,7 +8997,7 @@ algorithm
     case (DAE.DIM_EXP(exp = _), _) then true;
     case (_, DAE.DIM_EXP(exp = _)) then true;
 
-    case (_, _)
+    else
       equation
         b = intEq(dimensionSize(dim1), dimensionSize(dim2));
       then
@@ -9024,7 +9023,7 @@ algorithm
         true = dimsEqual(dl1, dl2);
       then
         true;
-    case (_, _) then false;
+    else false;
   end matchcontinue;
 end dimsEqual;
 
@@ -9047,7 +9046,7 @@ algorithm
         true = dimsEqualAllowZero(dl1, dl2);
       then
         true;
-    case (_, _) then false;
+    else false;
   end matchcontinue;
 end dimsEqualAllowZero;
 
@@ -9068,7 +9067,7 @@ algorithm
     case (DAE.DIM_EXP(exp = _), _) then true;
     case (_, DAE.DIM_EXP(exp = _)) then true;
 
-    case (_, _)
+    else
       equation
         d1 = dimensionSize(dim1);
         d2 = dimensionSize(dim2);
@@ -9170,7 +9169,7 @@ algorithm
         areConstant = subscriptConstants(subs);
       then
         areConstant;
-    case(_) then false;
+    else false;
   end matchcontinue;
 end subscriptConstants;
 
@@ -9233,7 +9232,7 @@ algorithm
         b = subscriptContain(ssl1,ssl2);
       then
         b;
-    case(_,_) then false;
+    else false;
   end matchcontinue;
 end subscriptContain;
 
@@ -9266,7 +9265,7 @@ algorithm
           b = Util.boolOrList({b,b2});
         then
           b;
-      case(_,_) then false;
+      else false;
   end matchcontinue;
 end subscriptContain2;
 
@@ -10245,7 +10244,7 @@ algorithm
  // case(DAE.EMPTY(scope=_))                        then 21; // TODO: implement hashing of EMTPY (needed ?)
  case(DAE.REDUCTION(info,e1,iters))                 then 22 + hashReductionInfo(info)+hashExp(e1)+List.reduce(List.map(iters,hashReductionIter),intAdd);
  // TODO: hashing of all MetaModelica extensions
- case(_) then stringHashDjb2(ExpressionDump.printExpStr(e));
+ else stringHashDjb2(ExpressionDump.printExpStr(e));
  end matchcontinue;
 end hashExp;
 
@@ -10694,7 +10693,7 @@ algorithm
         cref_exp = crefExp(cr);
       then
         ((cref_exp, NONE()));
-    case (_) then inExp;
+    else inExp;
   end matchcontinue;
 end replaceDerOpInExpTraverser;
 

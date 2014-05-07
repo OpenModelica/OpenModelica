@@ -278,7 +278,7 @@ algorithm
       then
         fail();
 
-    case (_)
+    else
       equation
         //name = NFInstUtil.getComponentName(inC);
         //nStr = "Found untyped component: " +& Absyn.pathString(name);
@@ -357,7 +357,7 @@ algorithm
      then
        ty;
     case (_, {}, _) then inTy;
-    case (_,  _, _) then DAE.T_ARRAY(inTy, inParentDimensions, DAE.emptyTypeSource);
+    else DAE.T_ARRAY(inTy, inParentDimensions, DAE.emptyTypeSource);
   end matchcontinue;
 end liftArray;
 
@@ -493,7 +493,7 @@ algorithm
         fail();
 
 
-    case(_,_,_,_,_)
+    else
       equation
         e1Str = ExpressionDump.printExpStr(inExp1);
         t1Str = Types.unparseType(inType1);
@@ -572,7 +572,7 @@ algorithm
         fail();
 
 
-    case(_,_,_,_,_)
+    else
       equation
         e1Str = ExpressionDump.printExpStr(inExp1);
         t1Str = Types.unparseType(inType1);
@@ -717,7 +717,7 @@ algorithm
         (exp,ty);
 
 
-    case(_,_,_,_,_)
+    else
       equation
         e1Str = ExpressionDump.printExpStr(inExp1);
         t1Str = Types.unparseType(inType1);
@@ -1094,7 +1094,7 @@ algorithm
         (exp,ty1);
 
     // Failure
-    case(_,_,_,_,_)
+    else
       equation
         e1Str = ExpressionDump.printExpStr(inExp1);
         t1Str = Types.unparseType(inType1);
@@ -1199,7 +1199,7 @@ algorithm
         ns = getArrayNumberOfDimensions(t) + listLength(dims);
       then
         ns;
-    case (_) then 0;
+    else 0;
   end match;
 end getArrayNumberOfDimensions;
 
@@ -1507,7 +1507,7 @@ algorithm
       then
         outExp;
 
-    case(_,_,_,_)
+    else
       equation
         argDims = Types.getDimensions(inArgType);
         expectedDims = Types.getDimensions(inExpectedType);
@@ -1646,7 +1646,7 @@ algorithm
       then
         (callArr, outtype);
 
-    case(_, _, _, _, _)
+    else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"NFTypeCheck.vectorizeCall failed."});
       then

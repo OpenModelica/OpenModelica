@@ -86,7 +86,7 @@ protected function isClass
 algorithm
   outIsClass := match(inClass)
     case SCode.CLASS(restriction = SCode.R_FUNCTION(_)) then false;
-    else then true;
+    else true;
   end match;
 end isClass;
 

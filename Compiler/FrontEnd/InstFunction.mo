@@ -811,7 +811,7 @@ algorithm
         daeextdecl = DAE.EXTERNALDECL(fname,fargs,rettype,lang,ann);
       then
         (cache,ih,daeextdecl);
-    case (_,_,_,_,_,_,_,_)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE, "#-- Inst.instExtDecl failed");
       then
@@ -968,7 +968,7 @@ algorithm
         then
           (cache,func);
 
-      case(_, _, _)
+      else
         equation
           true = Flags.isSet(Flags.FAILTRACE);
           Debug.fprint(Flags.FAILTRACE, "Inst.getRecordConstructorFunction failed for " +& Absyn.pathString(inPath) +& "\n");

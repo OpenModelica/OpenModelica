@@ -175,7 +175,7 @@ protected function hasOutgoingEdges
 algorithm
   outHasOutEdges := match(inNode)
     case ((_, {})) then false;
-    else then true;
+    else true;
   end match;
 end hasOutgoingEdges;
 

@@ -1034,7 +1034,7 @@ algorithm
         (localCache,temp) = prefixDecls(localCache,localEnv,ih,rest,localAccList,pre);
       then (localCache,temp);
     // failure
-    case (_,_,_,_,_,_)
+    else
       equation
         print("Prefix.prefixDecls failed\n");
       then fail();
@@ -1228,7 +1228,7 @@ algorithm
       then
        (inCache, inTy);
 
-    case (_, _, _, _, _)
+    else
       equation
         ((outTy, (outCache, _, _, _))) = Types.traverseType((inTy, (inCache, inEnv, inIH, inPre)), prefixArrayDimensions);
       then

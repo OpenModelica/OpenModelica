@@ -231,8 +231,6 @@ algorithm
         failure(_ = Mod.lookupIdxModification(mod, index));
       then
         NONE();
-    case (_,_,_,_,_)
-      then fail();
   end matchcontinue;
 end instBinding2;
 
@@ -508,7 +506,7 @@ algorithm
 
 
 
-    case (_,_,_,_,_) then NONE();
+    else NONE();
 
   end matchcontinue;
 end instDistributionBinding;
@@ -527,7 +525,7 @@ algorithm
     case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED("Uncertainty", path = Absyn.IDENT("sought"))))) then SOME(DAE.SOUGHT());
     case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED("Uncertainty", path = Absyn.IDENT("refine"))))) then SOME(DAE.REFINE());
     case (NONE()) then NONE();
-    case (_) then NONE();
+    else NONE();
   end matchcontinue;
 end getUncertainFromExpOption;
 
@@ -733,7 +731,7 @@ algorithm
       then
         fail();
 
-    case (_,_,_,_,_,_,_,_)
+    else
       equation
         Debug.fprint(Flags.FAILTRACE, "- Inst.makeBinding failed on component:" +& PrefixUtil.printPrefixStr(inPrefix) +& "." +& componentName +& "\n");
       then
@@ -997,7 +995,7 @@ algorithm
       then
         fail();
 
-    case (_,_,_,_,_,_)
+    else
       equation
         failure(SOME(DAE.TYPED(info=_)) = Mod.modEquation(mod));
       then

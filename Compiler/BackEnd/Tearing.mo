@@ -1030,7 +1030,7 @@ algorithm
         w = solvabilityWeights(s);
       then
         intAdd(w,iW);
-    else then iW;
+    else iW;
   end matchcontinue;
 end solvabilityWeightsnoStates;
 
@@ -1287,7 +1287,7 @@ algorithm
       then
         inNextQueue;
 */
-    else then inNextQueue;
+    else inNextQueue;
   end matchcontinue;
 end tearingBFS1;
 
@@ -2842,7 +2842,7 @@ algorithm
     eqn_enh = List.removeOnTrue(ass2, isAssignedSaveEnhanced,me_met[var]);
     b = solvableLst(eqn_enh);
        then Debug.bcallret1(boolNot(b),getpossibleEqnorVar,(rest,m_mt,me_met,ass1,ass2,mapEqnIncRow,2),(eqn,{var},{eqn}));
-    else then fail();
+    else fail();
    end match;
 end getpossibleEqnorVar;
 
@@ -2999,7 +2999,7 @@ algorithm
         true = indx <= length;
       then
         selectFromList_help(indx+1,inList,selList,actual::lst);
-    else then lst;
+    else lst;
   end matchcontinue;
 end selectFromList_help;
 
@@ -3124,7 +3124,7 @@ algorithm
         true = intEq(length1,length);
       then
         ((length1,row::ilst));
-    else then inValue;
+    else inValue;
   end matchcontinue;
 end findMostEntries;
 

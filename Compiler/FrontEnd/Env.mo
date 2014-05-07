@@ -321,10 +321,10 @@ public function isTyped
   input InstStatus is;
   output Boolean b;
 algorithm
-  b := matchcontinue(is)
+  b := match(is)
     case(VAR_UNTYPED()) then false;
-    case(_) then true;
-  end matchcontinue;
+    else true;
+  end match;
 end isTyped;
 
 public function openScope
@@ -373,7 +373,7 @@ protected function getFrameType
 algorithm
   outType := match(encapsulatedPrefix)
     case SCode.ENCAPSULATED() then ENCAPSULATED_SCOPE();
-    else then NORMAL_SCOPE();
+    else NORMAL_SCOPE();
   end match;
 end getFrameType;
 
@@ -389,7 +389,7 @@ algorithm
         true = stringEq(name, forScopeName);
       then true;
 
-    case(_) then false;
+    else false;
 
   end matchcontinue;
 end inForLoopScope;
@@ -411,7 +411,7 @@ algorithm
         true = stringEq(name, parForIterScopeName);
       then true;
 
-    case(_) then false;
+    else false;
   end matchcontinue;
 end inForOrParforIterLoopScope;
 
@@ -619,7 +619,7 @@ algorithm
       then
         FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs;
 
-    case (_,_)
+    else
       equation true = Flags.isSet(Flags.FAILTRACE);
         n = SCode.elementName(inClass);
         print("- Env.extendFrameC failed on element: " +& n +& "\n");
@@ -666,7 +666,7 @@ algorithm
       then
         FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs;
 
-    case (_,_,_)
+    else
       equation true = Flags.isSet(Flags.FAILTRACE);
         n = SCode.elementName(inClass);
         print("- Env.extendFrameCItemType failed on element: " +& n +& "\n");
@@ -776,7 +776,7 @@ algorithm
     case (SCode.PARTS(externalDecl = SOME(SCode.EXTERNALDECL(lang = SOME("builtin")))), _) then BUILTIN();
 
     // A user-defined class (i.e. not builtin).
-    else then USERDEFINED();
+    else USERDEFINED();
   end match;
 end getItemType;
 
@@ -1253,7 +1253,7 @@ algorithm
       then
         c;
 
-    case (_, _, _, _, _)
+     else
       equation
         print("Merge fail CE: " +& getEnvNameStr(inChildEnv) +& "\n" +&
               "           PE: " +& getEnvNameStr(inParentEnv) +& "\n" +&
@@ -1290,7 +1290,7 @@ algorithm
       then
         (inChildEnv, inParentEnv);
 
-    case (_, _, _)
+    else
       equation
         /*
         print("Split fail CE: " +& getEnvNameStr(inChildEnv) +& "\n" +&
@@ -1710,7 +1710,7 @@ algorithm
         false = isImplicitScope(oid);
         NONE() = getEnvPathNoImplicitScope(rest);
       then SOME(Absyn.IDENT(id));
-    case (_) then NONE();
+    else NONE();
   end matchcontinue;
 end getEnvPathNoImplicitScope;
 
@@ -1728,7 +1728,7 @@ algorithm
         //envPath = Absyn.makeFullyQualified(Absyn.joinPaths(envPath,inPath));
         envPath = Absyn.joinPaths(envPath,inPath);
       then envPath;
-    case (_,_)
+    else
       equation
         NONE() = getEnvPath(inEnv);
       then inPath;
@@ -1763,7 +1763,7 @@ algorithm
         pathstr = Absyn.pathString(path);
       then
         pathstr;
-    case (_) then "<global scope>";
+    else "<global scope>";
   end matchcontinue;
 end printEnvPathStr;
 
@@ -1783,7 +1783,7 @@ algorithm
         Print.printBuf(pathstr);
       then
         ();
-    case (_)
+    else
       equation
         Print.printBuf("TOPENV");
       then
@@ -2831,7 +2831,7 @@ algorithm
     local
       String name;
     case(VAR(instantiated=DAE.TYPES_VAR(name=name))) then {name};
-    case(_) then {};
+    else {};
   end matchcontinue;
 end getVariablesFromAvlValue;
 
@@ -2912,7 +2912,7 @@ algorithm
       then CACHE(ienv,ef,ht,p,program);
 
     // Non-FQ paths mean aliased functions; do not add these to the cache
-    case (_,_) then (cache);
+    else cache;
 
   end matchcontinue;
 end addCachedInstFuncGuard;
@@ -3245,7 +3245,7 @@ algorithm
       then
         true;
 
-    else then false;
+    else false;
   end matchcontinue;
 end compareQualifiedImportNames;
 

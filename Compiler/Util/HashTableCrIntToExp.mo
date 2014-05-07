@@ -103,7 +103,7 @@ algorithm
       equation
         true = intEq(i1,i2) "int compare is less expensive";
       then ComponentReference.crefEqual(cr1,cr2);
-    else then false;
+    else false;
   end matchcontinue;
 end keyEqual;
 

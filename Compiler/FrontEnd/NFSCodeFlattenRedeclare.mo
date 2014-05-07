@@ -374,7 +374,7 @@ algorithm
       then
         redeclares;
 
-    else then {};
+    else {};
   end match;
 end extractRedeclaresFromModifier;
 

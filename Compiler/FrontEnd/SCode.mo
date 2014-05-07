@@ -1250,7 +1250,7 @@ protected function classDefEqual
         failure(equality(cdef1=cdef2));
       then false;*/
 
-    case (_,_) then fail();
+    else fail();
   end match;
 end classDefEqual;
 
@@ -1524,7 +1524,7 @@ algorithm
       then
         true;
 
-    case(_,_) then false;
+    else false;
 
   end matchcontinue;
 end modEqual;
@@ -1666,7 +1666,7 @@ protected function arrayDimEqual
        then
          true;
 
-     case(_,_) then false;
+     else false;
    end matchcontinue;
 end arrayDimEqual;
 
@@ -2139,7 +2139,7 @@ algorithm
         then lst;
       case (id,ALG_NORETCALL(exp = e_1))
         then Absyn.findIteratorInExp(id,e_1);
-      else then {};
+      else {};
   end matchcontinue;
 end findIteratorInStatement;
 
@@ -2358,7 +2358,7 @@ algorithm
       then
         (EQ_WHEN(e1, eql, else_when, comment, info), tup);
 
-    else then (inEEquation, inTuple);
+    else (inEEquation, inTuple);
   end match;
 end traverseEEquations2;
 
@@ -2805,7 +2805,7 @@ algorithm
       then
         (ALG_FAILURE(stmts1, comment, info), tup);
 
-    else then (inStatement, inTuple);
+    else (inStatement, inTuple);
   end match;
 end traverseStatements2;
 
@@ -3339,7 +3339,7 @@ algorithm
   bFinal := match(inFinal1,inFinal2)
     case (FINAL(),FINAL()) then true;
     case (NOT_FINAL(),NOT_FINAL()) then true;
-    case (_, _) then false;
+    else false;
   end match;
 end finalEqual;
 
@@ -3546,7 +3546,7 @@ algorithm
       then
         true;
 
-    case(_,_) then false;
+    else false;
 
   end matchcontinue;
 end prefixesEqual;
@@ -4405,7 +4405,7 @@ public function equationsContainReinit
 algorithm
   hasReinit := match(inEqs)
     local Boolean b;
-    case (_)
+    case _
       equation
         b = List.applyAndFold(inEqs, boolOr, equationContainReinit, false);
       then
@@ -4461,7 +4461,7 @@ public function algorithmsContainReinit
 algorithm
   hasReinit := match(inAlgs)
     local Boolean b;
-    case (_)
+    case _
       equation
         b = List.applyAndFold(inAlgs, boolOr, algorithmContainReinit, false);
       then
@@ -5102,11 +5102,11 @@ public function propagateParallelism
 algorithm
   outNewParallelism := matchcontinue(inOriginalParallelism, inNewParallelism)
     case (_, NON_PARALLEL()) then inOriginalParallelism;
-    case (_,_)
+    case (_, _)
       equation
         // equality(inNewParallelism = inOriginalParallelism);
       then inNewParallelism;
-    case (_,_)
+    else
       equation
         print("failure in propagateParallelism: parallelism mismatch.");
       then
@@ -5132,11 +5132,11 @@ public function propagateDirection
 algorithm
   outNewDirection := matchcontinue(inOriginalDirection, inNewDirection)
     case (_, Absyn.BIDIR()) then inOriginalDirection;
-    case(_,_)
+    case (_, _)
       equation
         // equality(inNewDirection = inOriginalDirection);
       then inNewDirection;
-    case(_,_)
+    else
       equation
         print(" failure in propagateDirection, inner outer mismatch");
       then

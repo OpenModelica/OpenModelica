@@ -92,11 +92,12 @@ algorithm
          UnitAbsyn.INSTSTORE(st1,ht,SOME(UnitAbsyn.INCONSISTENT(su1,su2)));
 
      // failtrace
-     case (_,_) equation
-       Debug.fprint(Flags.FAILTRACE, "UnitChecker::check() failed\n");
-       print("check failed\n");
-      then
-        fail();
+     else
+       equation
+         Debug.fprint(Flags.FAILTRACE, "UnitChecker::check() failed\n");
+         print("check failed\n");
+       then
+         fail();
    end matchcontinue;
 end check;
 
@@ -228,7 +229,7 @@ algorithm
          su2 = powSpecUnit(su1,expo1);
        then(res1,su2,st2);
 
-     case (_,_)
+     else
        equation
          Debug.fprint(Flags.FAILTRACE, "UnitChecker::checkTerm() failed\n");
        then fail();
@@ -248,7 +249,7 @@ algorithm
     case(UnitAbsyn.CONSISTENT(),UnitAbsyn.CONSISTENT(),incon) then incon;
     case(UnitAbsyn.CONSISTENT(),incon,_) then incon;
     case(incon,_,_) then incon;
-    case(_,_,_) equation
+    else equation
       Debug.fprint(Flags.FAILTRACE, "UnitChecker::chooseResult() failed\n");
     then fail();
   end matchcontinue;
@@ -300,7 +301,7 @@ algorithm
         r1 = isSpecUnitEq(UnitAbsyn.SPECUNIT({},rest1),UnitAbsyn.SPECUNIT({},rest2));
       then r1;
 
-    case(_,_)
+    else
       then false;
   end matchcontinue;
 end isSpecUnitEq;
@@ -377,7 +378,7 @@ algorithm
         su2 = powSpecUnit(su1,expo2);
       then (loc1,su2);
 
-    case(_)
+    else
       equation
         Debug.fprint(Flags.FAILTRACE, "UnitChecker::getUnknown() failed\n");
       then
@@ -392,7 +393,7 @@ algorithm
   res := matchcontinue(su)
     case(UnitAbsyn.SPECUNIT({},_)) then false;
     case(UnitAbsyn.SPECUNIT(_,_)) then true;
-    case(_) equation
+    else equation
       Debug.fprint(Flags.FAILTRACE, "UnitChecker::hasUnknown() failed\n");
     then fail();
   end matchcontinue;
@@ -409,7 +410,7 @@ algorithm
       equation
         false = hasUnknown(su);
       then false;
-    case(_) then true;
+    else true;
   end matchcontinue;
 end unitHasUnknown;
 
@@ -431,7 +432,7 @@ algorithm
       then
         UnitAbsyn.SPECUNIT(tparams4,units);
 
-    case (_,_)
+    else
       equation
         Debug.fprint(Flags.FAILTRACE, "UnitChecker::mulSpecUnit() failed\n");
       then
@@ -470,7 +471,7 @@ algorithm
         rest3 = mulUnitVec({},rest1);
       then (expo1::rest3);
 
-    case(_,_)
+    else
       equation
         Debug.fprint(Flags.FAILTRACE, "UnitChecker::powUnitVec() failed\n");
       then fail();
@@ -496,7 +497,7 @@ algorithm
       then
         UnitAbsyn.SPECUNIT(tparams5,units);
 
-    case(_,_)
+    else
       equation
         Debug.fprint(Flags.FAILTRACE, "UnitChecker::divSpecUnit() failed\n");
       then fail();
@@ -535,7 +536,7 @@ algorithm
       then
         (expo2::rest3);
 
-    case(_,_)
+    else
       equation
         Debug.fprint(Flags.FAILTRACE, "UnitChecker::powUnitVec() failed\n");
       then fail();
@@ -559,7 +560,7 @@ algorithm
       then
         UnitAbsyn.SPECUNIT(params2,unitvec2);
 
-    case(_,_)
+    else
       equation
         Debug.fprint(Flags.FAILTRACE, "UnitChecker::powSpecUnit() failed\n");
       then
@@ -587,7 +588,7 @@ algorithm
       then
         ((expo3,param)::rest2);
 
-    case(_,_)
+    else
       equation
         Debug.fprint(Flags.FAILTRACE, "UnitChecker::powUnitParams() failed\n");
       then fail();
@@ -613,7 +614,7 @@ algorithm
       then
         (expo3::rest2);
 
-    case(_,_)
+    else
       equation
         Debug.fprint(Flags.FAILTRACE, "UnitChecker::powUnitVec() failed\n");
       then fail();
@@ -640,7 +641,7 @@ algorithm
         pres = negParamList(rest,(qr,UnitAbsyn.TYPEPARAMETER(name,indx))::ac2);
       then pres;
 
-    case(_,_)
+    else
       equation
         Debug.fprint(Flags.FAILTRACE, "UnitChecker::negParamList() failed\n");
       then fail();
@@ -684,7 +685,7 @@ algorithm
       then
         (UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(params3,unitvec2)),st2);
 
-    case (_,_)
+    else
       equation
         Debug.fprint(Flags.FAILTRACE, "UnitChecker::normalizeOnUnit() failed\n");
       then fail();
@@ -729,7 +730,7 @@ algorithm
       then
         (param::rest2);
 
-    case (_)
+    else
       equation
         Debug.fprint(Flags.FAILTRACE, "UnitChecker::normalizeParamsExponents() failed\n");
       then
@@ -767,7 +768,7 @@ algorithm
       then
         (found2,expo,param::rest2);
 
-    case (_,_)
+    else
       equation
         Debug.fprint(Flags.FAILTRACE, "UnitChecker::getParam() failed\n");
       then fail();
@@ -801,7 +802,7 @@ algorithm
       then
         (su3,st3);
 
-    case (_,_,_)
+    else
       equation
         Debug.fprint(Flags.FAILTRACE, "UnitChecker::normalizeParamsValues() failed\n");
       then fail();
@@ -832,7 +833,7 @@ algorithm
       then
         su4;
 
-    case(_,_,_,_,_)
+    else
       equation
         Debug.fprint(Flags.FAILTRACE, "UnitChecker::mulSpecUnitWithNorm() failed\n");
       then fail();

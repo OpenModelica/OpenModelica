@@ -99,7 +99,7 @@ hash := matchcontinue(cr)
 
   case(DAE.CREF_ITER(id,_,tp,subs))
   then stringHashDjb2(id)+ hashSubscripts(tp,subs);
-  case(_) then 0;
+  else 0;
 end matchcontinue;
 end hashComponentRef;
 
@@ -108,12 +108,12 @@ protected protected function hashSubscripts "help function, hashing subscripts m
   input list<DAE.Subscript> subs;
   output Integer hash;
 algorithm
-  hash := matchcontinue(tp,subs)
+  hash := match(tp,subs)
   case(_,{}) then 0;
   // TODO: Currently, the types of component references are wrong, they consider the subscripts but they should not.
   // For example, given Real a[10,10];  the component reference 'a[1,2]' should have type Real[10,10] but it has type Real.
-  case(_,_)  then hashSubscripts2(List.fill(1,listLength(subs)),/*DAEUtil.expTypeArrayDimensions(tp),*/subs,1);
-  end matchcontinue;
+  else hashSubscripts2(List.fill(1,listLength(subs)),/*DAEUtil.expTypeArrayDimensions(tp),*/subs,1);
+  end match;
 end hashSubscripts;
 
 protected protected function hashSubscripts2 "help function"
@@ -794,7 +794,7 @@ algorithm
         res;
 
     // anything else is false
-    case (_,_) then false;
+    else false;
   end matchcontinue;
 end crefContainedIn;
 
@@ -864,7 +864,7 @@ algorithm
         true;*/
 
     // they are not a prefix of one-another
-    case (_,_)
+    else
       equation
         // print("Expression.crefPrefixOf: " +& printComponentRefStr(cr1) +& " NOT PREFIX OF " +& printComponentRefStr(cr2) +& "\n");
       then false;
@@ -1001,7 +1001,7 @@ algorithm
       then
         true;
     // the crefs are not equal!
-     case (_,_) then false;
+    else false;
   end matchcontinue;
 end crefEqualVerySlowStringCompareDoNotUse;
 
@@ -1120,10 +1120,10 @@ public function crefIsIdent
   input DAE.ComponentRef cr;
   output Boolean res;
 algorithm
-  res := matchcontinue(cr)
+  res := match(cr)
     case(DAE.CREF_IDENT(_,_,_)) then true;
-    case(_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end crefIsIdent;
 
 public function crefIsNotIdent
@@ -1132,10 +1132,10 @@ public function crefIsNotIdent
   input DAE.ComponentRef cr;
   output Boolean res;
 algorithm
-  res := matchcontinue(cr)
+  res := match(cr)
     case(DAE.CREF_IDENT(_,_,_)) then false;
-    case(_) then true;
-  end matchcontinue;
+    else true;
+  end match;
 end crefIsNotIdent;
 
 public function isRecord "
@@ -1144,29 +1144,29 @@ function isRecord
   input DAE.ComponentRef cr;
   output Boolean b;
 algorithm
-  b := matchcontinue(cr)
+  b := match(cr)
   local
     DAE.ComponentRef comp;
     case(DAE.CREF_IDENT(identType = DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))) then true;
     /* this case is false because it is not the last ident.
     case(DAE.CREF_QUAL(identType = DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))) then true;*/
     case(DAE.CREF_QUAL(componentRef=comp)) then isRecord(comp);
-    case(_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isRecord;
 
 public function isArrayElement "returns true if cref is elemnt of an array"
   input DAE.ComponentRef cr;
   output Boolean b;
 algorithm
-  b := matchcontinue(cr)
+  b := match(cr)
   local
     DAE.ComponentRef comp;
     case(DAE.CREF_IDENT(identType = DAE.T_ARRAY(ty=_))) then true;
     case(DAE.CREF_QUAL(identType = DAE.T_ARRAY(ty=_))) then true;
     case(DAE.CREF_QUAL(componentRef=comp)) then isArrayElement(comp);
-    case(_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isArrayElement;
 
 public function isPreCref
@@ -1175,7 +1175,7 @@ public function isPreCref
 algorithm
   b := match(cr)
     case(DAE.CREF_QUAL(ident = "$PRE")) then true;
-    else then false;
+    else false;
   end match;
 end isPreCref;
 
@@ -1186,7 +1186,7 @@ algorithm
   outCR := match(inCR)
     local DAE.ComponentRef cr;
     case(DAE.CREF_QUAL(ident = "$PRE", componentRef=cr)) then cr;
-    else then inCR;
+    else inCR;
   end match;
 end popPreCref;
 
@@ -1197,7 +1197,7 @@ algorithm
   outCR := match(inCR)
     local DAE.ComponentRef cr;
     case(DAE.CREF_QUAL(componentRef=cr)) then cr;
-    else then inCR;
+    else inCR;
   end match;
 end popCref;
 
@@ -1244,7 +1244,7 @@ algorithm ob := matchcontinue(icr)
     equation
       b = crefHaveSubs(cr);
     then b;
-  case(_) then false;
+  else false;
 end matchcontinue;
 end crefHaveSubs;
 
@@ -1291,8 +1291,7 @@ public function containWholeDim " A function to check if a cref contains a [:] w
   output Boolean wholedim;
 
 algorithm
-  wholedim :=
-  matchcontinue(inRef)
+  wholedim := match(inRef)
     local
       DAE.ComponentRef cr;
       list<DAE.Subscript> ssl;
@@ -1308,8 +1307,8 @@ algorithm
         wholedim = containWholeDim(cr);
       then
         wholedim;
-    case(_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end containWholeDim;
 
 protected function containWholeDim2 "
@@ -1373,7 +1372,7 @@ algorithm
       then
         true;
 
-    case(_,_) then false;
+    else false;
   end matchcontinue;
 end containWholeDim3;
 

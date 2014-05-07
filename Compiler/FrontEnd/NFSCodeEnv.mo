@@ -274,7 +274,7 @@ protected function getFrameType
 algorithm
   outType := match(encapsulatedPrefix)
     case SCode.ENCAPSULATED() then ENCAPSULATED_SCOPE();
-    else then NORMAL_SCOPE();
+    else NORMAL_SCOPE();
   end match;
 end getFrameType;
 
@@ -382,7 +382,7 @@ algorithm
         lang = SOME("builtin")))))
       then BUILTIN();
     // A user-defined class (i.e. not builtin).
-    else then USERDEFINED();
+    else USERDEFINED();
   end match;
 end getClassType;
 
@@ -1036,7 +1036,7 @@ algorithm
       then
         true;
 
-    else then false;
+    else false;
   end matchcontinue;
 end compareQualifiedImportNames;
 
@@ -1156,7 +1156,7 @@ algorithm
       then
         env;
 
-    else then inEnv;
+    else inEnv;
   end match;
 end extendEnvWithElementItem;
 
@@ -1175,7 +1175,7 @@ algorithm
       then
         str;
 
-    else then "";
+    else "";
   end matchcontinue;
 end getEnvName;
 
@@ -1571,7 +1571,7 @@ algorithm
         rm;
 
     // else nothing
-    else then {};
+    else {};
 
   end matchcontinue;
 end getDerivedClassRedeclares;
@@ -1655,7 +1655,7 @@ algorithm
 
     // If the previous case failed (which will happen at the top-scope when
     // getEnvPath fails), just return the path as it is.
-    else then inTS;
+    else inTS;
 
   end matchcontinue;
 end mergeTypeSpecWithEnvPath;

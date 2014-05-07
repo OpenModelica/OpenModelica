@@ -638,18 +638,15 @@ uniontype Each "The each keyword can be present in both MODIFICATION\'s and REDE
 end Each;
 
 public
-uniontype ElementAttributes "- Component attributes"
+uniontype ElementAttributes "Element attributes"
   record ATTR
-    Boolean flowPrefix "flow" ;
-    Boolean streamPrefix "stream" ;
-//    Boolean inner_ "inner";
-//    Boolean outer_ "outer";
+    Boolean flowPrefix "flow";
+    Boolean streamPrefix "stream";
     Parallelism parallelism "for OpenCL/CUDA parglobal, parlocal ...";
-    Variability variability "parameter, constant etc." ;
-    Direction direction "direction" ;
-    ArrayDim arrayDim "arrayDim" ;
+    Variability variability "parameter, constant etc.";
+    Direction direction "input/output";
+    ArrayDim arrayDim "array dimensions";
   end ATTR;
-
 end ElementAttributes;
 
 public
@@ -954,7 +951,6 @@ uniontype Subscript "The Subscript uniontype is used both in array declarations 
   record SUBSCRIPT "dimension as an expression"
     Exp subscript "subscript";
   end SUBSCRIPT;
-
 end Subscript;
 
 
@@ -1124,47 +1120,54 @@ public constant TimeStamp newTimeStamp = TIMESTAMP(0.0,1.0);
 public constant Program dummyProgram = PROGRAM({},TOP(),dummyTimeStamp);
 
 public function getNewTimeStamp
-"generate a new timestamp with edittime>buildtime."
-output TimeStamp ts;
+  "generate a new timestamp with edittime>buildtime."
+  output TimeStamp ts;
 algorithm
   ts := newTimeStamp;
 annotation(__OpenModelica_EarlyInline = true);
 end getNewTimeStamp;
 
-public function setTimeStampBool ""
+public function setTimeStampBool
   input TimeStamp its;
   input Boolean which "true for edit time, false for build time";
   output TimeStamp ots;
-algorithm ots := match(its,which)
-  local Real timer; TimeStamp ts;
-  case(_,true)
-    equation
-      timer = System.getCurrentTime();
-      ts = setTimeStampEdit(its,timer);
-    then
-      ts;
-  case(_,false)
-    equation
-      timer = System.getCurrentTime();
-      ts = setTimeStampBuild(its,timer);
-    then
-      ts;
-end match;
+algorithm 
+  ots := match(its,which)
+    local
+      Real timer;
+      TimeStamp ts;
+
+    case(_, true)
+      equation
+        timer = System.getCurrentTime();
+        ts = setTimeStampEdit(its,timer);
+      then
+        ts;
+
+    case(_, false)
+      equation
+        timer = System.getCurrentTime();
+        ts = setTimeStampBuild(its,timer);
+      then
+        ts;
+
+  end match;
 end setTimeStampBool;
 
 // stefan
 public function traverseEquation
-"Traverses all subequations of an equation
-  takes a function and an extra argument passed through the traversal"
+  "Traverses all subequations of an equation.
+   Takes a function and an extra argument passed through the traversal"
   input Equation inEquation;
   input FuncTplToTpl inFunc;
   input TypeA inTypeA;
   output tuple<Equation, TypeA> outTpl;
+
   partial function FuncTplToTpl
     input tuple<Equation, TypeA> inTpl;
     output tuple<Equation, TypeA> outTpl;
-    replaceable type TypeA subtypeof Any;
   end FuncTplToTpl;
+
   replaceable type TypeA subtypeof Any;
 algorithm
   outTpl := matchcontinue (inEquation,inFunc,inTypeA)
@@ -1549,7 +1552,6 @@ public function traverseExpBidir
   end FuncType;
 
   replaceable type Argument subtypeof Any;
-
 algorithm
   (e, arg) := enterFunc(inExp, inArg);
   (e, arg) := traverseExpBidirSubExps(e, enterFunc, exitFunc, arg);
@@ -2185,7 +2187,7 @@ algorithm
   outElse := (e, eqil);
 end traverseEquationBidirElse;
 
-public function makeIdentPathFromString ""
+public function makeIdentPathFromString
   input String s;
   output Path p;
 algorithm
@@ -2193,7 +2195,7 @@ algorithm
 annotation(__OpenModelica_EarlyInline = true);
 end makeIdentPathFromString;
 
-public function makeQualifiedPathFromStrings ""
+public function makeQualifiedPathFromStrings
   input String s1;
   input String s2;
   output Path p;
@@ -2202,105 +2204,89 @@ algorithm
 annotation(__OpenModelica_EarlyInline = true);
 end makeQualifiedPathFromStrings;
 
-public function setTimeStampEdit "Function: getNewTimeStamp
-Update current TimeStamp with a new Edit-time.
-"
-input TimeStamp its;
-input Real editTime;
-output TimeStamp ots;
-algorithm ots := match(its,editTime)
-  local
-    Real buildTime;
-    TimeStamp ts;
-  case(TIMESTAMP(buildTime,_),_)
-    equation
-      ts = TIMESTAMP(buildTime,editTime);
-    then
-      ts;
-end match;
+public function setTimeStampEdit
+  "Update current TimeStamp with a new Edit-time."
+  input TimeStamp its;
+  input Real editTime;
+  output TimeStamp ots;
+protected
+  Real buildTime;
+algorithm
+  TIMESTAMP(buildTime, _) := its;
+  ots := TIMESTAMP(buildTime, editTime);
 end setTimeStampEdit;
 
-public function setTimeStampBuild "Function: getNewTimeStamp
-Update current TimeStamp with a new Build-time.
-"
-input TimeStamp its;
-input Real buildTime;
-output TimeStamp ots;
-algorithm ots := match(its,buildTime)
-  local
-    Real editTime;
-    TimeStamp ts;
-  case(TIMESTAMP(_,editTime),_)
-    equation
-      ts = TIMESTAMP(buildTime,editTime);
-    then
-      ts;
-end match;
+public function setTimeStampBuild
+  "Update current TimeStamp with a new Build-time."
+  input TimeStamp its;
+  input Real buildTime;
+  output TimeStamp ots;
+protected
+  Real editTime;
+algorithm
+  TIMESTAMP(_, editTime) := its;
+  ots := TIMESTAMP(buildTime, editTime);
 end setTimeStampBuild;
 
 public function className "returns the class name of a Class as a Path"
   input Class cl;
   output Path name;
+protected
+  String id;
 algorithm
-  name := match(cl)
-  local String id;
-    case(CLASS(name=id)) then IDENT(id);
-  end match;
+  CLASS(name = id) := cl;
+  name := IDENT(id);
 end className;
 
-public function elementSpecName "The ElementSpec type contans the name of the element, and this
-  function extracts this name."
+public function elementSpecName
+  "The ElementSpec type contains the name of the element, and this function
+   extracts this name."
   input ElementSpec inElementSpec;
   output Ident outIdent;
 algorithm
-  outIdent:=
-  match (inElementSpec)
+  outIdent := match (inElementSpec)
     local Ident n;
+
     case CLASSDEF(class_ = CLASS(name = n)) then n;
     case COMPONENTS(components = {COMPONENTITEM(component = COMPONENT(name = n))}) then n;
-    case EXTENDS(path = _)
-      equation
-        print("#- elementSpecName EXTENDS\n");
-      then
-        fail();
   end match;
 end elementSpecName;
 
-public function printImportString "Function: printImportString
-This function takes a Import and prints it as a flat-string.
-"
+public function printImportString
+  "This function takes a Import and prints it as a flat-string."
   input Import imp;
   output String ostring;
-algorithm ostring := match(imp)
-  local Path path; String name;
-  case(NAMED_IMPORT(name,_)) then name;
-  case(QUAL_IMPORT(path))
-    equation
-      name = pathString(path);
-    then name;
-  case(UNQUAL_IMPORT(path))
-    equation
-      name = pathString(path);
-    then name;
-end match;
+algorithm
+  ostring := match(imp)
+    local
+      Path path;
+      String name;
+
+    case(NAMED_IMPORT(name,_)) then name;
+    case(QUAL_IMPORT(path))
+      equation
+        name = pathString(path);
+      then name;
+
+    case(UNQUAL_IMPORT(path))
+      equation
+        name = pathString(path);
+      then name;
+  end match;
 end printImportString;
 
 public function expString "returns the string of an expression if it is a string constant."
   input Exp exp;
   output String str;
 algorithm
-  str := match(exp)
-    case(STRING(str)) then str;
-  end match;
+  STRING(str) := exp;
 end expString;
 
 public function expCref "returns the componentRef of an expression if matches."
   input Exp exp;
   output ComponentRef cr;
 algorithm
-  cr := match(exp)
-    case(CREF(cr)) then cr;
-  end match;
+  CREF(cr) := exp;
 end expCref;
 
 public function crefExp "returns the componentRef of an expression if matches."
@@ -2311,17 +2297,14 @@ algorithm
 annotation(__OpenModelica_EarlyInline = true);
 end crefExp;
 
-public function expComponentRefStr ""
+public function expComponentRefStr
   input Exp aexp;
   output String outString;
-algorithm outString := matchcontinue(aexp)
-  local ComponentRef cr;
-  case(CREF(cr)) then printComponentRefStr(cr);
-  case(_) equation print("Error input for exp_Component_Ref_Str was not a string\n"); then fail();
-end matchcontinue;
+algorithm
+  outString := printComponentRefStr(expCref(aexp));  
 end expComponentRefStr;
 
-public function printComponentRefStr ""
+public function printComponentRefStr
   input ComponentRef cr;
   output String ostring;
 algorithm
@@ -2372,9 +2355,9 @@ algorithm
   end match;
 end pathEqual;
 
-public function typeSpecEqual "
-Author BZ 2009-01
-Check whether two type specs are equal or not."
+public function typeSpecEqual
+  "Author BZ 2009-01
+   Check whether two type specs are equal or not."
   input TypeSpec a,b;
   output Boolean ob;
 algorithm
@@ -2400,14 +2383,13 @@ algorithm
         true = optArrayDimEqual(oad1,oad2);
       then
         true;
-    case(_,_) then false;
+    else false;
   end matchcontinue;
 end typeSpecEqual;
 
-public function optArrayDimEqual "
-Author BZ
-helperfunction for typeSpecEqual
-"
+public function optArrayDimEqual
+  "Author BZ
+   helper function for typeSpecEqual"
   input Option<ArrayDim> oad1,oad2;
   output Boolean b;
 algorithm b:= matchcontinue(oad1,oad2)
@@ -2418,7 +2400,7 @@ algorithm b:= matchcontinue(oad1,oad2)
     true = List.isEqualOnTrue(ad1,ad2,subscriptEqual);
     then true;
   case(NONE(),NONE()) then true;
-  case(_,_) then false;
+  else false;
 end matchcontinue;
 end optArrayDimEqual;
 
@@ -2433,7 +2415,7 @@ end match;
 end typeSpecPathString;
 
 public function typeSpecPath
-"convert TypeSpec to Path"
+  "Converts a TypeSpec to Path"
   input TypeSpec tp;
   output Path op;
 algorithm
@@ -2555,8 +2537,7 @@ public function optPathString "Returns a path converted to string or an empty st
   input Option<Path> inPathOption;
   output String outString;
 algorithm
-  outString:=
-  match (inPathOption)
+  outString := match (inPathOption)
     local
       Ident str;
       Path p;
@@ -2838,7 +2819,7 @@ algorithm
       then pathSuffixOf(suffix_path,p);
     case(_,QUALIFIED(name=_,path = p))
       then pathSuffixOf(suffix_path,p);
-    case(_,_) then false;
+    else false;
   end matchcontinue;
 end pathSuffixOf;
 
@@ -2893,8 +2874,8 @@ algorithm
   end match;
 end pathReplaceFirstIdent;
 
-public function addSubscriptsLast "
-Function for appending subscripts at end on last ident"
+public function addSubscriptsLast
+  "Function for appending subscripts at end of last ident"
   input ComponentRef icr;
   input list<Subscript> i;
   output ComponentRef ocr;
@@ -2972,7 +2953,7 @@ algorithm
         true = pathPrefixOf(p, p2);
       then
         true;
-    case (_, _) then false;
+    else false;
   end matchcontinue;
 end pathPrefixOf;
 
@@ -2993,7 +2974,7 @@ algorithm
       then true;
     case(_, _)
       then crefPrefixOf(prefixCr, crefStripLast(cr));
-    case(_, _) then false;
+    else false;
   end matchcontinue;
 end crefPrefixOf;
 
@@ -3096,9 +3077,9 @@ algorithm
   end match;
 end crefRemovePrefix;
 
-public function pathContains "
-Author BZ,
-checks if one IDENT(..) is contained in path."
+public function pathContains
+  "Author BZ,
+   checks if one IDENT(..) is contained in path."
   input Path fullPath;
   input Path pathId;
   output Boolean b;
@@ -3123,9 +3104,9 @@ algorithm
   end match;
 end pathContains;
 
-public function pathContainsString "
-Author OT,
-checks if Path contains the given string."
+public function pathContainsString
+  "Author OT,
+   checks if Path contains the given string."
   input Path p1;
   input String str;
   output Boolean b;
@@ -3149,18 +3130,18 @@ algorithm
       then
         b3;
 
-    case(FULLYQUALIFIED(qp), searchStr)
-    then pathContainsString(qp, searchStr);
+    case(FULLYQUALIFIED(qp), searchStr) then pathContainsString(qp, searchStr);
   end match;
 end pathContainsString;
 
-public function pathContainedIn "This function checks if subPath is contained in path.
-If it is the complete path is returned. Otherwise the function fails.
-For example,
-pathContainedIn( C.D, A.B.C) => A.B.C.D
-pathContainedIn(C.D, A.B.C.D) => A.B.C.D
-pathContainedIn(A.B.C.D, A.B.C.D) => A.B.C.D
-pathContainedIn(B.C,A.B) => A.B.C"
+public function pathContainedIn
+  "This function checks if subPath is contained in path.
+   If it is the complete path is returned. Otherwise the function fails.
+   For example,
+     pathContainedIn( C.D, A.B.C) => A.B.C.D
+     pathContainedIn(C.D, A.B.C.D) => A.B.C.D
+     pathContainedIn(A.B.C.D, A.B.C.D) => A.B.C.D
+     pathContainedIn(B.C,A.B) => A.B.C"
   input Path subPath;
   input Path path;
   output Path completePath;
@@ -3169,12 +3150,14 @@ algorithm
     local
       Ident ident;
       Path newPath,newSubPath;
+
     // A suffix, e.g. C.D in A.B.C.D
     case (_,_)
       equation
         true=pathSuffixOf(subPath,path);
       then path;
-     // strip last ident of path and recursively check if suffix.
+
+    // strip last ident of path and recursively check if suffix.
     case (_,_)
       equation
         ident = pathLastIdent(path);
@@ -3182,19 +3165,20 @@ algorithm
         newPath=pathContainedIn(subPath,newPath);
       then joinPaths(newPath,IDENT(ident));
 
-        // strip last ident of subpath and recursively check if suffix.
-    case (_,_)
+    // strip last ident of subpath and recursively check if suffix.
+    else
       equation
         ident = pathLastIdent(subPath);
         newSubPath = stripLast(subPath);
         newSubPath=pathContainedIn(newSubPath,path);
       then joinPaths(newSubPath,IDENT(ident));
+      
   end matchcontinue;
 end pathContainedIn;
 
-public function getCrefsFromSubs "
-Author BZ 2009-08
-Function for getting ComponentRefs out from Subscripts"
+public function getCrefsFromSubs
+  "Author BZ 2009-08
+   Function for getting ComponentRefs out from Subscripts"
   input list<Subscript> isubs;
   input Boolean includeSubs "include crefs from array subscripts";
   input Boolean includeFunctions "note that if you say includeSubs = false then you won't get the functions from array subscripts";
@@ -3215,15 +3199,14 @@ algorithm
         crefs1 = getCrefsFromSubs(subs,includeSubs,includeFunctions);
         crefs = getCrefFromExp(exp,includeSubs,includeFunctions);
         crefs = listAppend(crefs,crefs1);
-        //crefs = List.unionOnTrue(crefs,crefs1,crefEqual);
       then
         crefs;
   end match;
 end getCrefsFromSubs;
 
-public function getCrefFromExp "
-  Returns a flattened list of the
-  component references in an expression"
+public function getCrefFromExp
+  "Returns a flattened list of the
+   component references in an expression"
   input Exp inExp;
   input Boolean includeSubs "include crefs from array subscripts";
   input Boolean includeFunctions "note that if you say includeSubs = false then you won't get the functions from array subscripts";
@@ -4067,30 +4050,21 @@ end restrString;
 public function lastClassname "Returns the path (=name) of the last class in a program"
   input Program inProgram;
   output Path outPath;
+protected
+  list<Class> lst;
+  Ident id;
 algorithm
-  outPath:=
-  match (inProgram)
-    local
-      Ident id;
-      list<Class> lst;
-    case (PROGRAM(classes = lst))
-      equation
-        CLASS(id,_,_,_,_,_,_) = List.last(lst);
-      then
-        IDENT(id);
-  end match;
+  PROGRAM(classes = lst) := inProgram;
+  CLASS(name = id) := List.last(lst);
+  outPath := IDENT(id);
 end lastClassname;
 
-public function classFilename "author: PA
-  Retrieves the filename where the class is stored."
+public function classFilename
+  "Retrieves the filename where the class is stored."
   input Class inClass;
-  output String outString;
+  output String outFilename;
 algorithm
-  outString:=
-  match (inClass)
-    local Ident filename;
-    case (CLASS(info = INFO(fileName = filename))) then filename;
-  end match;
+  CLASS(info = INFO(fileName = outFilename)) := inClass;
 end classFilename;
 
 public function setClassFilename "author: PA
@@ -4100,8 +4074,7 @@ public function setClassFilename "author: PA
   input TimeStamp build1;
   output Class outClass;
 algorithm
-  outClass:=
-  match (inClass,inString,build1)
+  outClass := match (inClass,inString,build1)
     local
       Ident n,filename;
       Boolean p,f,e;
@@ -4113,31 +4086,20 @@ algorithm
   end match;
 end setClassFilename;
 
-public function emptyClassInfo "
-Return a class info with no content
-"
-output Info info;
-algorithm
-  info := dummyInfo; //INFO("",false,0,0,0,0,TIMESTAMP(0.0,0.0));
-end emptyClassInfo;
-
 public function setClassName "author: BZ
   Sets the name of the class"
   input Class inClass;
   input String newName;
   output Class outClass;
+protected
+  Ident n;
+  Boolean p,f,e;
+  Restriction r;
+  ClassDef body;
+  Info info;
 algorithm
-  outClass:=
-  match (inClass,newName)
-    local
-      Ident n;
-      Boolean p,f,e;
-      Restriction r;
-      ClassDef body;
-      Info nfo;
-    case (CLASS(name = _,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = body),_)
-      then CLASS(newName,p,f,e,r,body,INFO("",false,0,0,0,0, TIMESTAMP(0.0,0.0))  );
-  end match;
+  CLASS(_, p, f, e, r, body, info) := inClass;
+  outClass := CLASS(newName, p, f, e, r, body, info);
 end setClassName;
 
 public function crefEqual " Checks if the name of a ComponentRef is
@@ -4159,6 +4121,7 @@ algorithm
         true = subscriptsEqual(ss1,ss2);
       then
         true;
+
     case (CREF_QUAL(name = id,subscripts = ss1, componentRef = cr1),CREF_QUAL(name = id2,subscripts = ss2, componentRef = cr2))
       equation
         true = stringEq(id, id2);
@@ -4166,17 +4129,19 @@ algorithm
         true = crefEqual(cr1, cr2);
       then
         true;
+
     case (CREF_FULLYQUALIFIED(componentRef = cr1),CREF_FULLYQUALIFIED(componentRef = cr2))
       then
         crefEqual(cr1, cr2);
-    case (_,_) then false;
+
+    else false;
   end matchcontinue;
 end crefEqual;
 
 public function crefFirstEqual
-"@author: adrpo
- a.b, a -> true
- b.c, a -> false"
+  "@author: adrpo
+   a.b, a -> true
+   b.c, a -> false"
   input ComponentRef iCr1;
   input ComponentRef iCr2;
   output Boolean outBoolean;
@@ -4184,31 +4149,34 @@ algorithm
   outBoolean := stringEq(crefFirstIdent(iCr1),crefFirstIdent(iCr2));
 end crefFirstEqual;
 
-public function subscriptsEqual "
-Checks if two subscript lists are equal.
-See also crefEqual."
-  input list<Subscript> inSs1;
-  input list<Subscript> inSs2;
-  output Boolean equal;
+public function subscriptEqual
+  input Subscript inSubscript1;
+  input Subscript inSubscript2;
+  output Boolean outIsEqual;
 algorithm
-  equal := matchcontinue(inSs1,inSs2)
+  outIsEqual := match(inSubscript1, inSubscript2)
     local
-      Exp e1,e2;
-      list<Subscript> ss1,ss2;
+      Exp e1, e2;
 
-    case({},{}) then true;
-    case(NOSUB()::ss1, NOSUB()::ss2) then subscriptsEqual(ss1,ss2);
-    case(SUBSCRIPT(e1)::ss1,SUBSCRIPT(e2)::ss2) equation
-      true = expEqual(e1,e2);
-    then subscriptsEqual(ss1,ss2);
-    case(_,_) then false;
-  end matchcontinue;
+    case (NOSUB(), NOSUB()) then true;
+    case (SUBSCRIPT(e1), SUBSCRIPT(e2)) then expEqual(e1, e2);
+    else false;
+  end match;
+end subscriptEqual;
+
+public function subscriptsEqual
+  "Checks if two subscript lists are equal."
+  input list<Subscript> inSubList1;
+  input list<Subscript> inSubList2;
+  output Boolean outIsEqual;
+algorithm
+  outIsEqual := List.isEqualOnTrue(inSubList1, inSubList2, subscriptEqual);
 end subscriptsEqual;
 
-public function crefEqualNoSubs "
- Checks if the name of a ComponentRef is equal to the name
- of another ComponentRef without checking subscripts.
- See also crefEqual."
+public function crefEqualNoSubs
+  "Checks if the name of a ComponentRef is equal to the name
+   of another ComponentRef without checking subscripts.
+   See also crefEqual."
   input ComponentRef cr1;
   input ComponentRef cr2;
   output Boolean outBoolean;
@@ -4236,37 +4204,23 @@ end crefEqualNoSubs;
 
 public function isPackageRestriction "checks if the provided parameter is a package or not"
   input Restriction inRestriction;
-  output Boolean outBoolean;
+  output Boolean outIsPackage;
 algorithm
-  outBoolean := matchcontinue (inRestriction)
-    case (R_PACKAGE()) then true;
-    case (_) then false;
-  end matchcontinue;
+  outIsPackage := match(inRestriction)
+    case R_PACKAGE() then true;
+    else false;
+  end match;
 end isPackageRestriction;
 
 public function isFunctionRestriction "checks if restriction is a function or not"
   input Restriction inRestriction;
-  output Boolean outBoolean;
+  output Boolean outIsFunction;
 algorithm
-  outBoolean := matchcontinue (inRestriction)
-    case (R_FUNCTION(_)) then true;
-    case (_) then false;
-  end matchcontinue;
+  outIsFunction := match(inRestriction)
+    case R_FUNCTION(_) then true;
+    else false;
+  end match;
 end isFunctionRestriction;
-
-public function subscriptEqual "
-Author BZ, 2009-01
-Check if two subscripts are equal.
-"
-input Subscript ss1,ss2;
-output Boolean b;
-algorithm b:= matchcontinue(ss1,ss2)
-  local Exp e1,e2;
-  case(NOSUB(),NOSUB()) then true;
-  case(SUBSCRIPT(e1),SUBSCRIPT(e2)) then expEqual(e1,e2);
-  case(_,_) then false;
-  end matchcontinue;
-end subscriptEqual;
 
 public function expEqual "Returns true if two expressions are equal"
   input Exp exp1;
@@ -4302,11 +4256,11 @@ public function eachEqual "Returns true if two each attributes are equal"
   input Each each2;
   output Boolean equal;
 algorithm
-  equal := matchcontinue(each1,each2)
-    case(NON_EACH(),NON_EACH()) then true;
-    case(EACH(),EACH()) then true;
-    case(_,_) then false;
-  end matchcontinue;
+  equal := match(each1, each2)
+    case(NON_EACH(), NON_EACH()) then true;
+    case(EACH(), EACH()) then true;
+    else false;
+  end match;
 end eachEqual;
 
 protected function functionArgsEqual "Returns true if two FunctionArgs are equal"
@@ -4314,20 +4268,15 @@ protected function functionArgsEqual "Returns true if two FunctionArgs are equal
   input FunctionArgs args2;
   output Boolean equal;
 algorithm
-  equal := matchcontinue(args1,args2)
+  equal := match(args1,args2)
     local
-      ComponentRef cref1,cref2;
       list<Exp> expl1,expl2;
-      Boolean b1;
-      list<Boolean> blst;
-    case (FUNCTIONARGS(expl1,_),FUNCTIONARGS(expl2,_))
-      equation
-        // fails if not all are true
-        List.threadMapAllValue(expl1,expl2,expEqual,true);
-      then
-        true;
-    case(_,_) then false;
-  end matchcontinue;
+
+    case (FUNCTIONARGS(args = expl1), FUNCTIONARGS(args = expl2))
+      then List.isEqualOnTrue(expl1, expl2, expEqual);
+
+    else false;
+  end match;
 end functionArgsEqual;
 
 public function getClassName "author: adrpo
@@ -4635,7 +4584,7 @@ algorithm
         equation
           lst=findIteratorInExpLst(id,expLst);
         then lst;
-      case(_,_) then {};
+      else {};
   end matchcontinue;
 end findIteratorInExp;
 
@@ -4796,10 +4745,7 @@ public function getFileNameFromInfo
   input Info inInfo;
   output String inFileName;
 algorithm
-  inFileName := match(inInfo)
-    local String fileName;
-    case (INFO(fileName = fileName)) then fileName;
-  end match;
+  INFO(fileName = inFileName) := inInfo;
 end getFileNameFromInfo;
 
 public function isOuter
@@ -4934,7 +4880,7 @@ algorithm
         true = pathEqual(p1,p2);
       then
         true;
-    case (_,_) then false;
+    else false;
   end matchcontinue;
 end importEqual;
 
@@ -4994,7 +4940,7 @@ algorithm
         b;
 
     // failed above, return false
-    case (_) then false;
+    else false;
 
   end matchcontinue;
 end onlyLiteralsInAnnotationMod;
@@ -5203,10 +5149,9 @@ algorithm
   outExpOpt := match(inSub)
     local
       Exp e;
-      case SUBSCRIPT(subscript = e)
-        then SOME(e);
-      case NOSUB()
-        then NONE();
+
+    case SUBSCRIPT(subscript = e) then SOME(e);
+    case NOSUB() then NONE();
   end match;
 end subscriptExpOpt;
 
@@ -5425,7 +5370,8 @@ algorithm
   end match;
 end getShortClass;
 
-protected function stripClassDefComment "Strips out long class definitions"
+protected function stripClassDefComment
+  "Strips out class definition comments."
   input ClassDef cl;
   output ClassDef o;
 algorithm
@@ -5487,56 +5433,37 @@ algorithm
       equation
         elts1 = List.filter(elts1,filterAnnotationItem);
       then listAppend(elts1,elts2);
-    case (_,_) then elts;
+    else elts;
   end match;
 end getFunctionInterfaceParts;
 
 protected function filterAnnotationItem
   input ElementItem elt;
 algorithm
-  _ := match elt
-    case ELEMENTITEM(element=_) then ();
-  end match;
+  ELEMENTITEM(element = _) := elt;
 end filterAnnotationItem;
 
 public function getExternalDecl
-"@author: adrpo
- returns the EXTERNAL form parts if there is any.
- if there is none, it fails!"
- input Class inCls;
- output ClassPart outExternal;
+  "@author: adrpo
+   returns the EXTERNAL form parts if there is any.
+   if there is none, it fails!"
+  input Class inCls;
+  output ClassPart outExternal;
+protected
+  ClassPart cp;
+  list<ClassPart> class_parts;
 algorithm
- outExternal := match(inCls)
-   local
-     ClassPart cp;
-     list<ClassPart> classParts;
-
-   case (CLASS(body = PARTS(classParts = classParts)))
-     equation
-       cp = getExternalFromClassParts(classParts);
-     then
-       cp;
- end match;
+  CLASS(body = PARTS(classParts = class_parts)) := inCls;
+  outExternal := List.find(class_parts, getExternalFromClassPart);
 end getExternalDecl;
 
-public function getExternalFromClassParts
- input list<ClassPart> inClassParts;
- output ClassPart outExternal;
+protected function getExternalFromClassPart
+  input ClassPart inClassPart;
+  output ClassPart outExternal;
 algorithm
- outExternal := matchcontinue(inClassParts)
-   local
-     ClassPart cp;
-     list<ClassPart> rest;
-
-   case ((cp as EXTERNAL(externalDecl = _))::_) then cp;
-
-   case (_::rest)
-     equation
-       cp = getExternalFromClassParts(rest);
-     then
-       cp;
- end matchcontinue;
-end getExternalFromClassParts;
+  EXTERNAL(externalDecl = _) := inClassPart;
+  outExternal := inClassPart;
+end getExternalFromClassPart;
 
 public function isParts
   input ClassDef cl;
@@ -5551,13 +5478,12 @@ end isParts;
 public function makeClassElement "Makes a class into an ElementItem"
   input Class cl;
   output ElementItem el;
+protected
+  Info info;
+  Boolean fp;
 algorithm
-  el := match cl
-    local
-      Info info;
-      Boolean fp;
-    case CLASS(finalPrefix=fp,info=info) then ELEMENTITEM(ELEMENT(fp,NONE(),NOT_INNER_OUTER(),CLASSDEF(false,cl),info,NONE()));
-  end match;
+  CLASS(finalPrefix = fp, info = info) := cl;
+  el := ELEMENTITEM(ELEMENT(fp,NONE(),NOT_INNER_OUTER(),CLASSDEF(false,cl),info,NONE()));
 end makeClassElement;
 
 public function componentName
@@ -5607,7 +5533,7 @@ algorithm
         (_, b) = traverseExp(inExp, isInitialTraverseHelper, false);
       then
         b;
-    else then false;
+    else false;
   end matchcontinue;
 end expContainsInitial;
 
@@ -5822,27 +5748,8 @@ public function typeSpecStringNoQualNoDimsLst
   input list<TypeSpec> inTypeSpecLst;
   output String outString;
 algorithm
-  outString := matchcontinue (inTypeSpecLst)
-    local
-      String str, str1, str2, str3;
-      TypeSpec x;
-      list<TypeSpec> rest;
-
-    case ({x})
-      equation
-        str = typeSpecStringNoQualNoDims(x);
-      then
-        str;
-
-    case (x::rest)
-      equation
-        str1 = typeSpecStringNoQualNoDims(x);
-        str2 = typeSpecStringNoQualNoDimsLst(rest);
-        str3 = stringAppendList({str1, ", ", str2});
-      then
-        str3;
-
-  end matchcontinue;
+  outString := List.toString(inTypeSpecLst, typeSpecStringNoQualNoDims,
+    "", "", ", ", "", false);
 end typeSpecStringNoQualNoDimsLst;
 
 public function crefStringIgnoreSubs

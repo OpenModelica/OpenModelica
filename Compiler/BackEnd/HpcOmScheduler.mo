@@ -427,7 +427,7 @@ algorithm
         tmpLockString = intString(iTaskIdx) +& "_" +& intString(index);
         tmpLockIdc = tmpLockString :: iLockIdc;
       then tmpLockIdc;
-    else then iLockIdc;
+    else iLockIdc;
   end matchcontinue;
 end getLockIdcByPredecessorList;
 
@@ -465,7 +465,7 @@ algorithm
         tmpLockString = intString(index) +& "_" +& intString(iTaskIdx);
         tmpLockIdc = tmpLockString :: iLockIdc;
       then tmpLockIdc;
-    else then iLockIdc;
+    else iLockIdc;
   end matchcontinue;
 end getLockIdcByPredecessorListReverse;
 
@@ -516,7 +516,7 @@ algorithm
         tmpAllTasks = arrayUpdate(iAllTasks,head,(currentTask,currentRefCount-1));
         (tmpAllTasks,tmpRefZeroTasks) = updateRefCounterBySuccessorIdc(tmpAllTasks,rest,iRefZeroTasks);
       then (tmpAllTasks,tmpRefZeroTasks);
-    else then (iAllTasks,iRefZeroTasks);
+    else (iAllTasks,iRefZeroTasks);
   end matchcontinue;
 end updateRefCounterBySuccessorIdc;
 
@@ -539,7 +539,7 @@ algorithm
         threadFinishTime = arrayGet(iThreadFinishTimes, iThreadIdx);
         true = realLt(threadFinishTime,iCurrentMinFinishTime) or intEq(iCurrentMinThreadIdx,-1);
       then getThreadFinishTimesMin(iThreadIdx+1,iThreadFinishTimes, iThreadIdx, threadFinishTime);
-    else then getThreadFinishTimesMin(iThreadIdx+1,iThreadFinishTimes, iCurrentMinThreadIdx, iCurrentMinFinishTime);
+    else getThreadFinishTimesMin(iThreadIdx+1,iThreadFinishTimes, iCurrentMinThreadIdx, iCurrentMinFinishTime);
   end matchcontinue;
 end getThreadFinishTimesMin;
 
@@ -623,7 +623,7 @@ algorithm
         tmpTasks = arrayUpdate(iTasks, iIndex, (newTask,refCount));
         tmpTasks = convertTaskGraphToTasks1(iTaskGraphMeta,iTaskGraphT,iIndex+1,iConverterFunc,tmpTasks);
       then tmpTasks;
-    else then iTasks;
+    else iTasks;
   end matchcontinue;
 end convertTaskGraphToTasks1;
 
@@ -724,7 +724,7 @@ algorithm
         thFinishTime = calculateFinishTimeByThreadId(thReadyTime, iPredecessorTaskLastFinished, iThreadIdx, iTask, iPredecessorTasks, iCommCosts);
         tmpFinishTimes = arrayUpdate(iFinishTimes,iThreadIdx,thFinishTime);
       then calculateFinishTimes1(iPredecessorTaskLastFinished, iTask, iPredecessorTasks, iCommCosts, iThreadReadyTimes, iThreadIdx+1, tmpFinishTimes);
-    else then iFinishTimes;
+    else iFinishTimes;
   end matchcontinue;
 end calculateFinishTimes1;
 
@@ -786,7 +786,7 @@ algorithm
         reqCyclesReal = intReal(reqCycles);
         true = realGt(reqCyclesReal, iCurrentMax);
       then reqCyclesReal;
-    else then iCurrentMax;
+    else iCurrentMax;
   end matchcontinue;
 end getMaxCommCostsByTaskList1;
 
@@ -2414,7 +2414,7 @@ algorithm
       equation
         List.map_0(taskDepTasks,printTaskDepSchedule);
       then ();
-    else then fail();
+    else fail();
   end match;
 end printSchedule;
 

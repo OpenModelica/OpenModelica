@@ -142,7 +142,7 @@ public function intGcd "returns the greatest common divisor for two Integers"
 algorithm
   i := matchcontinue(i1,i2)
     case (_,0) then i1;
-    case (_,_) then intGcd(i2,intMod(i1,i2));
+    else intGcd(i2,intMod(i1,i2));
   end matchcontinue;
 end intGcd;
 
@@ -166,7 +166,7 @@ algorithm
       RATIONAL(1,2) = divRational(RATIONAL(1,3),RATIONAL(2,3));
       print("testRational succeeded\n");
     then ();
-    case() equation
+    else equation
       print("testRationals failed\n");
     then ();
 

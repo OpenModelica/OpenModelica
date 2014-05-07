@@ -441,7 +441,7 @@ algorithm
       then
         (cache,env,ih,DAE.emptyDae);
 
-    case (_,_,_,_)
+    else
       equation
         print("-Inst.instantiateClassImplicit failed\n");
       then
@@ -1883,7 +1883,7 @@ algorithm
       then
         (cache,env_1,ih,ci_state_1,vars);
 
-    case (_,_,_,_,_,_,_,_,_,_,_)
+    else
       equation
         System.setPartialInstantiation(partialInst);
       then
@@ -3941,37 +3941,38 @@ protected function updateCompeltsMods
   input Env.Env inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
-  input list<tuple<SCode.Element, DAE.Mod>> inTplSCodeElementModLst;
+  input list<tuple<SCode.Element, DAE.Mod>> inComponents;
   input ClassInf.State inState;
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output InnerOuter.InstHierarchy outIH;
-  output list<tuple<SCode.Element, DAE.Mod>> outTplSCodeElementModLst;
+  output list<tuple<SCode.Element, DAE.Mod>> outComponents;
 algorithm
-  (outCache,outEnv,outIH,outTplSCodeElementModLst) :=
-  matchcontinue (inCache,inEnv,inIH,inPrefix,inTplSCodeElementModLst,inState,inBoolean)
+  (outCache,outEnv,outIH,outComponents) :=
+  matchcontinue (inCache,inEnv,inIH,inPrefix,inComponents,inState,inBoolean)
 
     /*
     case (_,_,_,_,_,_,_)
       equation
         true = Config.acceptMetaModelicaGrammar();
       then
-        (inCache,inEnv,inIH,inTplSCodeElementModLst);*/
+        (inCache,inEnv,inIH,inComponents);*/
 
     case (_,_,_,_,_,_,_)
       equation
         ErrorExt.setCheckpoint("updateCompeltsMods");
-        (outCache,outEnv,outIH,outTplSCodeElementModLst) = updateCompeltsMods_dispatch(inCache,inEnv,inIH,inPrefix,inTplSCodeElementModLst,inState,inBoolean);
+        (outCache,outEnv,outIH,outComponents) =
+          updateCompeltsMods_dispatch(inCache,inEnv,inIH,inPrefix,inComponents,inState,inBoolean);
         ErrorExt.rollBack("updateCompeltsMods") "roll back any errors";
       then
-        (outCache,outEnv,outIH,outTplSCodeElementModLst);
+        (outCache,outEnv,outIH,outComponents);
 
-    case (_,_,_,_,_,_,_)
+    else
       equation
         ErrorExt.rollBack("updateCompeltsMods") "roll back any errors";
       then
-        (inCache,inEnv,inIH,inTplSCodeElementModLst);
+        (inCache,inEnv,inIH,inComponents);
   end matchcontinue;
 end updateCompeltsMods;
 
@@ -3984,16 +3985,16 @@ protected function updateCompeltsMods_dispatch
   input Env.Env inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
-  input list<tuple<SCode.Element, DAE.Mod>> inTplSCodeElementModLst;
+  input list<tuple<SCode.Element, DAE.Mod>> inComponents;
   input ClassInf.State inState;
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output InnerOuter.InstHierarchy outIH;
-  output list<tuple<SCode.Element, DAE.Mod>> outTplSCodeElementModLst;
+  output list<tuple<SCode.Element, DAE.Mod>> outComponents;
 algorithm
-  (outCache,outEnv,outIH,outTplSCodeElementModLst):=
-  matchcontinue (inCache,inEnv,inIH,inPrefix,inTplSCodeElementModLst,inState,inBoolean)
+  (outCache,outEnv,outIH,outComponents):=
+  matchcontinue (inCache,inEnv,inIH,inPrefix,inComponents,inState,inBoolean)
     local
       Env.Env env,env2,env3;
       Prefix.Prefix pre;
@@ -4281,7 +4282,7 @@ algorithm
       then
         (cache,env,ih,comp,m);
 
-    case (_,_,_,_,_,_,_,_,_)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE, "- Inst.redeclareType failed");
       then
@@ -4574,7 +4575,7 @@ algorithm
       then
         (cache,env,ih,updatedComps);
 
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    else
       equation
         ErrorExt.rollBack("Inst.updateComponentInEnv2");
       then
@@ -4736,7 +4737,7 @@ algorithm
       then
         (cache,env,ih,updatedComps);
 
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    else
       equation
         //Debug.traceln("- Inst.updateComponentInEnv2 failed");
       then fail();
@@ -4833,7 +4834,7 @@ algorithm
       then
         (cache,env,ih,DAE.emptyDae);
 
-    case (_,_,_,_,_,_,_)
+    else
       equation
         Debug.fprint(Flags.FAILTRACE, "- Inst.instClassDecl failed\n");
       then
@@ -5071,7 +5072,7 @@ algorithm
         dae = DAEUtil.joinDaes(constraints_1, constraints_2);
       then
         (cache,env2,dae,ci_state);
-    case (_,_,_,_,_,_)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE, "- Inst.instConstraints failed");
       then
@@ -5107,7 +5108,7 @@ algorithm
         clsAttrs = DAE.DAE({DAE.CLASS_ATTRIBUTES(DAE.OPTIMIZATION_ATTRS(NONE(),NONE(),NONE(),NONE()))});
         (cache,env,dae) = instClassAttributes2(inCache,inEnv,inPrefix,inAttrs,inBoolean,inInfo,clsAttrs);
       then (cache,env,dae);
-    case (_,_,_,_,_,_)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE, "- Inst.instClassAttributes failed");
       then
@@ -5155,7 +5156,7 @@ algorithm
       then
         (cache,env_2,clsAttrs);
 
-    case (_,_,_,_,_,_,_)
+    else
       equation
         Error.addMessage(Error.OPTIMICA_ERROR, {"Class Attributes allowed only for Optimization classes."});
       then fail();
@@ -5196,7 +5197,7 @@ algorithm
         DAE.DAE({DAE.CLASS_ATTRIBUTES(DAE.OPTIMIZATION_ATTRS(objectiveE,objectiveIntegrandE,startTimeE,_))}) = attrs;
         attrs = DAE.DAE({DAE.CLASS_ATTRIBUTES(DAE.OPTIMIZATION_ATTRS(objectiveE,objectiveIntegrandE,startTimeE,SOME(inAttrExp)))});
       then attrs;
-   case (_,_,_)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE, "- Inst.insertClassAttribute failed");
       then
@@ -5310,9 +5311,6 @@ algorithm
 
     case (cache,env,ih,{},_) then (cache,env,ih,DAE.emptyDae);
 
-    case (_,_,_,_,_)
-      /* //Debug.fprint(\"failtrace\", \"inst_class_in_program failed\\n\") */
-      then fail();
   end matchcontinue;
 end instBoschClassInProgram;
 
@@ -5347,8 +5345,7 @@ algorithm
       then
         (omod1,omod2);
 
-    case(_,_)
-      then (DAE.NOMOD(), inMod);
+    else (DAE.NOMOD(), inMod);
 
   end matchcontinue;
 end modifyInstantiateClass;
@@ -5727,7 +5724,7 @@ algorithm
         SOME(scope) = Env.getEnvPath(env);
         path = Absyn.joinPaths(scope, restPath);
       then path;
-    case(_,_)
+    else
       equation
         NONE() = Env.getEnvPath(env);
       then

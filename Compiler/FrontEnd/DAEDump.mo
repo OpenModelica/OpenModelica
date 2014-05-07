@@ -266,7 +266,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    case (_) then ();
+    else ();
   end matchcontinue;
 end dumpStartValue;
 
@@ -284,7 +284,7 @@ algorithm
         res = stringAppendList({"(start=",s,")"});
       then
         res;
-    case (_) then "";
+    else "";
   end matchcontinue;
 end dumpStartValueStr;
 
@@ -664,7 +664,7 @@ algorithm
 
     case (NONE()) then "";
 
-    case (_) then "unknown VariableAttributes";
+    else "unknown VariableAttributes";
   end matchcontinue;
 end dumpVariableAttributesStr;
 
@@ -682,7 +682,7 @@ algorithm
         str = Dump.getOptionWithConcatStr(inStartOrigin, ExpressionDump.printExpStr , "startOrigin = ");
       then
         str;
-    case (_)
+    else
       equation
         false = Flags.isSet(Flags.SHOW_START_ORIGIN);
       then
@@ -2524,7 +2524,7 @@ algorithm
       then
         str;
 
-    case (_,_)
+    else
       equation
         myStream = IOStream.create("dae", IOStream.LIST());
         myStream = dumpStream(inDAElist, functionTree, myStream);
@@ -3614,7 +3614,7 @@ algorithm
       then
         str;
 
-    case (_) then "";
+    else "";
 
   end matchcontinue;
 end cmtListToString;

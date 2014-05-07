@@ -122,7 +122,7 @@ public function elabExpList "Expression elaboration of Absyn.Exp list, i.e. list
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input Boolean inImplicit;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
@@ -132,7 +132,7 @@ public function elabExpList "Expression elaboration of Absyn.Exp list, i.e. list
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outExpExpLst,outTypesPropertiesLst,outInteractiveInteractiveSymbolTableOption):=
-  elabExpList2(inCache,inEnv,inAbsynExpLst,DAE.T_UNKNOWN_DEFAULT,inImplicit,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info);
+  elabExpList2(inCache,inEnv,inAbsynExpLst,DAE.T_UNKNOWN_DEFAULT,inImplicit,inST,performVectorization,inPrefix,info);
 end elabExpList;
 
 protected function elabExpList2 "Expression elaboration of Absyn.Exp list, i.e. lists of expressions."
@@ -141,7 +141,7 @@ protected function elabExpList2 "Expression elaboration of Absyn.Exp list, i.e. 
   input list<Absyn.Exp> inAbsynExpLst;
   input DAE.Type ty "The type of the last evaluated expression; used to speed up instantiation of enumerations :)";
   input Boolean inImplicit;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
@@ -151,7 +151,7 @@ protected function elabExpList2 "Expression elaboration of Absyn.Exp list, i.e. 
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outExpExpLst,outTypesPropertiesLst,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,ty,inImplicit,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,ty,inImplicit,inST,performVectorization,inPrefix,info)
     local
       Boolean impl;
       Option<GlobalScript.SymbolTable> st,st_1,st_2;
@@ -279,7 +279,7 @@ function: elabExp
   input Env.Env inEnv;
   input Absyn.Exp inExp;
   input Boolean inImplicit;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
@@ -288,7 +288,7 @@ function: elabExp
   output DAE.Properties outProperties;
   output Option<GlobalScript.SymbolTable> st;
 algorithm
-  (outCache,outExp,outProperties,st) := matchcontinue(inCache,inEnv,inExp,inImplicit,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info)
+  (outCache,outExp,outProperties,st) := matchcontinue(inCache,inEnv,inExp,inImplicit,inST,performVectorization,inPrefix,info)
     local
       Absyn.Exp expRewritten;
 
@@ -297,7 +297,7 @@ algorithm
       equation
         false = RewriteRules.noRewriteRulesFrontEnd();
         (expRewritten, _) = RewriteRules.rewriteFrontEnd(inExp);
-        (outCache,outExp,outProperties,st) = elabExp_dispatch(inCache,inEnv,expRewritten,inImplicit,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info);
+        (outCache,outExp,outProperties,st) = elabExp_dispatch(inCache,inEnv,expRewritten,inImplicit,inST,performVectorization,inPrefix,info);
       then
         (outCache,outExp,outProperties,st);
 
@@ -305,7 +305,7 @@ algorithm
     case (_, _, _, _, _, _, _, _)
       equation
         true = RewriteRules.noRewriteRulesFrontEnd();
-        (outCache,outExp,outProperties,st) = elabExp_dispatch(inCache,inEnv,inExp,inImplicit,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info);
+        (outCache,outExp,outProperties,st) = elabExp_dispatch(inCache,inEnv,inExp,inImplicit,inST,performVectorization,inPrefix,info);
       then
         (outCache,outExp,outProperties,st);
   end matchcontinue;
@@ -322,7 +322,7 @@ function: elabExp
   input Env.Env inEnv;
   input Absyn.Exp inExp;
   input Boolean inImplicit;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
@@ -331,7 +331,7 @@ function: elabExp
   output DAE.Properties outProperties;
   output Option<GlobalScript.SymbolTable> st;
 algorithm
-  (outCache,outExp,outProperties,st) := elabExp2(inCache,inEnv,inExp,inImplicit,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info,Error.getNumErrorMessages());
+  (outCache,outExp,outProperties,st) := elabExp2(inCache,inEnv,inExp,inImplicit,inST,performVectorization,inPrefix,info,Error.getNumErrorMessages());
 end elabExp_dispatch;
 
 public function elabExpInExpression "Like elabExp but casts PROP_TUPLE to a PROP"
@@ -449,7 +449,7 @@ public function elabExpCrefNoEvalList
   input Env.Env inEnv;
   input list<Absyn.Exp> inExpLst;
   input Boolean inImplicit;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
@@ -461,7 +461,7 @@ public function elabExpCrefNoEvalList
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outExpLst,outPropertiesLst,outAttributesLst,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpLst,inImplicit,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info,numErrorMessages)
+  matchcontinue (inCache,inEnv,inExpLst,inImplicit,inST,performVectorization,inPrefix,info,numErrorMessages)
     local
       Env.Cache cache;
       Env.Env env;
@@ -518,7 +518,7 @@ function: elabExp
   input Env.Env inEnv;
   input Absyn.Exp inExp;
   input Boolean inImplicit;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
@@ -529,7 +529,7 @@ function: elabExp
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outExp,outProperties,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExp,inImplicit,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info,numErrorMessages)
+  matchcontinue (inCache,inEnv,inExp,inImplicit,inST,performVectorization,inPrefix,info,numErrorMessages)
     local
       Boolean impl,a,b,havereal,doVect;
       Integer l,i,nmax;
@@ -960,7 +960,7 @@ This is used by Inst.mo when handling a var := {...} statement"
   input list<Absyn.Exp> inExpList;
   input DAE.Properties inProp;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
@@ -970,7 +970,7 @@ This is used by Inst.mo when handling a var := {...} statement"
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outExp,outProperties,outInteractiveInteractiveSymbolTableOption) :=
-  matchcontinue (inCache,inEnv,inExpList,inProp,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info)
+  matchcontinue (inCache,inEnv,inExpList,inProp,inBoolean,inST,performVectorization,inPrefix,info)
     local
       Env.Cache cache;
       Env.Env env;
@@ -1158,7 +1158,7 @@ algorithm
         res = Absyn.ALGORITHMITEM(Absyn.ALG_IF(e, algTrueItems, algBranches, algElseItems),comment,info);
       then (cache,{res});
 
-    case (_,_,_,_,_,_)
+    else
       equation
         str = Dump.equationName(eq);
         Error.addSourceMessage(Error.META_MATCH_EQUATION_FORBIDDEN, {str}, info);
@@ -1256,7 +1256,7 @@ algorithm
         res = intMax(tn, tn2);
       then
         res;
-    case (_)
+    else
       equation
         Debug.fprint(Flags.FAILTRACE, "-matrix_constr_max_dim failed\n");
       then
@@ -1331,7 +1331,7 @@ algorithm
         Error.addSourceMessage(Error.INTERNAL_ERROR, {"Reductions using multiple iterators is not yet implemented. Try rewriting the expression using nested reductions (e.g. array(i+j for i, j) => array(array(i+j for i) for j)."}, info);
       then fail();
 
-    case (_,_,_,_,_,_,_,_,_,_)
+    else
       equation
         Debug.fprint(Flags.FAILTRACE, "Static.elabCallReduction - failed!\n");
       then fail();
@@ -1634,7 +1634,7 @@ algorithm
     case (_, _, {DAE.T_FUNCTION(funcArg={(_,typeA,DAE.C_VAR(),_,_),(_,typeB,DAE.C_VAR(),_,_)},funcResultType = resType, source = {path})}, _)
       then (typeA,typeB,resType,path);
 
-    case (_, _, _, _)
+    else
       equation
         str1 = stringDelimitList(List.map(fnTypes, Types.unparseType), ",");
         Error.addSourceMessage(Error.UNSUPPORTED_REDUCTION_TYPE, {str1}, info);
@@ -2357,7 +2357,7 @@ algorithm
       then
         (cache,DAE.PARTEVALFUNCTION(p,args,ty),prop_1,st);
 
-    case(_,_,_,_,_,_,_,_)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE,"Static.elabPartEvalFunction failed");
       then
@@ -2384,7 +2384,7 @@ algorithm
       then
         DAE.T_FUNCTION(args,resType,functionAttributes,ts);
 
-    case(_,_)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE,"- Static.stripExtraArgsFromType failed");
       then
@@ -2540,7 +2540,7 @@ algorithm
       then
         c;
 
-    case (_) equation Debug.fprint(Flags.FAILTRACE, "-elabArrayConst failed\n"); then fail();
+    else equation Debug.fprint(Flags.FAILTRACE, "-elabArrayConst failed\n"); then fail();
   end matchcontinue;
 end elabArrayConst;
 
@@ -2709,7 +2709,7 @@ protected function elabMatrixComma "This function is a helper function for elabM
   input list<DAE.Exp> es;
   input list<DAE.Properties> inProps;
   input Boolean inBoolean3;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption4;
+  input Option<GlobalScript.SymbolTable> inST4;
   input Boolean inBoolean5;
   input Integer inInteger6;
   input Boolean performVectorization;
@@ -2722,7 +2722,7 @@ protected function elabMatrixComma "This function is a helper function for elabM
   output DAE.Dimension outInteger4;
 algorithm
   (outCache,outExp1,outProperties2,outInteger3,outInteger4):=
-  matchcontinue (inCache,inEnv1,es,inProps,inBoolean3,inInteractiveInteractiveSymbolTableOption4,inBoolean5,inInteger6,performVectorization,inPrefix,info)
+  matchcontinue (inCache,inEnv1,es,inProps,inBoolean3,inST4,inBoolean5,inInteger6,performVectorization,inPrefix,info)
     local
       DAE.Exp el_1,el_2;
       DAE.Properties prop,prop1,prop1_1,prop2;
@@ -2786,7 +2786,7 @@ algorithm
         res = elabMatrixCatTwo(expl);
       then
         res;
-    case (_)
+    else
       equation
         Debug.fprint(Flags.FAILTRACE, "-elab_matrix_cat_one failed\n");
       then
@@ -2957,7 +2957,7 @@ protected function elabMatrixSemi
   input list<list<DAE.Exp>> expss;
   input list<list<DAE.Properties>> inPropss;
   input Boolean inBoolean3;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption4;
+  input Option<GlobalScript.SymbolTable> inST4;
   input Boolean inBoolean5;
   input Integer inInteger6;
   input Boolean performVectorization;
@@ -2970,7 +2970,7 @@ protected function elabMatrixSemi
   output DAE.Dimension outInteger4;
 algorithm
   (outCache,outExp1,outProperties2,outInteger3,outInteger4) :=
-  matchcontinue (inCache,inEnv1,expss,inPropss,inBoolean3,inInteractiveInteractiveSymbolTableOption4,inBoolean5,inInteger6,performVectorization,inPrefix,info)
+  matchcontinue (inCache,inEnv1,expss,inPropss,inBoolean3,inST4,inBoolean5,inInteger6,performVectorization,inPrefix,info)
     local
       DAE.Exp exp,el_1,el_2;
       DAE.Properties prop,prop1,prop2;
@@ -3848,20 +3848,19 @@ algorithm
       then
         (DAE.ARRAY(tp,false,(e :: es)) :: rest);
 
-    case (_,_,_) then {};
+    else {};
   end matchcontinue;
 end elabBuiltinTranspose2;
 
 protected function elabBuiltinTranspose3 "author: PA
   Helper function to elab_builtin_transpose. Tries to symbolically transpose
   a MATRIX expression list"
-  input list<list<DAE.Exp>> inTplExpExpBooleanLstLst1;
+  input list<list<DAE.Exp>> inMatrix;
   input Integer inInteger2;
   input Integer inInteger3;
-  output list<list<DAE.Exp>> outTplExpExpBooleanLstLst;
+  output list<list<DAE.Exp>> outMatrix;
 algorithm
-  outTplExpExpBooleanLstLst:=
-  matchcontinue (inTplExpExpBooleanLstLst1,inInteger2,inInteger3)
+  outMatrix := matchcontinue (inMatrix,inInteger2,inInteger3)
     local
       Integer indx_1,indx,dim1;
       DAE.Exp e;
@@ -3880,7 +3879,7 @@ algorithm
         res = listAppend({(e :: es)}, rest);
       then
         res;
-    case (_,_,_) then {};
+    else {};
   end matchcontinue;
 end elabBuiltinTranspose3;
 
@@ -4526,7 +4525,7 @@ algorithm
         true = sameDimensions2(rest_dims);
       then
         true;
-    else then false;
+    else false;
   end matchcontinue;
 end sameDimensions2;
 
@@ -4550,7 +4549,7 @@ algorithm
         res_1 = boolAnd(res, res2);
       then
         res_1;
-    case (_) then false;
+    else false;
   end matchcontinue;
 end sameDimensions3;
 
@@ -4888,7 +4887,7 @@ algorithm
       then
         (cache, res, DAE.PROP(ty,c));
 
-    case (_,_,_,_,_,_,_)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE, "- Static.elabBuiltinDiagonal: Couldn't elaborate diagonal()");
       then
@@ -4982,7 +4981,7 @@ algorithm
         (cache, call, st);
 
     // failure
-    case (_,_,_,_,_,_,_)
+    else
       equation
         print("#-- elabBuiltinDifferentiate: Couldn't elaborate differentiate()\n");
       then
@@ -5037,7 +5036,7 @@ algorithm
         s1_1 = Expression.makeBuiltinCall("simplify", {s1_1}, DAE.T_INTEGER_DEFAULT);
       then
         (cache, s1_1, st);
-    case (_,_,_,_,_,_,_)
+    else
       equation
         // print("#-- elab_builtin_simplify: Couldn't elaborate simplify()\n");
       then
@@ -5076,7 +5075,7 @@ algorithm
         symbol_table_2 = absynCrefListToInteractiveVarList(rest, symbol_table_1, tp);
       then
         symbol_table_2;
-    case (_,_,_)
+    else
       equation
         Debug.fprint(Flags.FAILTRACE,
           "-absyn_cref_list_to_interactive_var_list failed\n");
@@ -6491,7 +6490,7 @@ function: elabCall
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   input Integer numErrorMessages;
@@ -6501,7 +6500,7 @@ function: elabCall
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outExp,outProperties,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inComponentRef,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inPrefix,info,numErrorMessages)
+  matchcontinue (inCache,inEnv,inComponentRef,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,inST,inPrefix,info,numErrorMessages)
     local
       DAE.Exp e;
       DAE.Properties prop;
@@ -6576,7 +6575,7 @@ algorithm
         ErrorExt.rollBack("elabCall_InteractiveFunction");
       then
         (cache,e,prop,st);
-    case(_,_,_,_,_,_,_,_,_,_)
+    else
         equation
           true=ErrorExt.isTopCheckpoint("elabCall_InteractiveFunction");
           ErrorExt.delCheckpoint("elabCall_InteractiveFunction");
@@ -6698,7 +6697,7 @@ public function getOptionalNamedArg " This function is used to \"elaborate\" int
 "
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Boolean inBoolean;
   input String inIdent;
   input DAE.Type inType;
@@ -6710,7 +6709,7 @@ public function getOptionalNamedArg " This function is used to \"elaborate\" int
   output DAE.Exp outExp;
 algorithm
   (outCache,outExp):=
-  matchcontinue (inCache,inEnv,inInteractiveInteractiveSymbolTableOption,inBoolean,inIdent,inType,inAbsynNamedArgLst,inExp,inPrefix,info)
+  matchcontinue (inCache,inEnv,inST,inBoolean,inIdent,inType,inAbsynNamedArgLst,inExp,inPrefix,info)
     local
       DAE.Exp exp,exp_1,exp_2,dexp;
       DAE.Type t,tp;
@@ -6833,7 +6832,7 @@ algorithm
         SOME(nfmt) = System.getFileModificationTime(newf);
         true = realGt(bt, nfmt); // the file was not modified since last build
       then false;
-    case (_,_,_) then true;
+    else true;
   end matchcontinue;
 end needToRebuild;
 
@@ -6842,14 +6841,15 @@ public function isFunctionInCflist
   is present in the list of precompiled functions that can be executed
   in the interactive mode. If it returns true, it also returns the
   functionHandle stored in the cflist."
-  input list<GlobalScript.CompiledCFunction> inTplAbsynPathTypesTypeLst;
+  input list<GlobalScript.CompiledCFunction> inFunctions;
   input Absyn.Path inPath;
   output Boolean outBoolean;
   output Integer outFuncHandle;
   output Real outBuildTime;
   output String outFileName;
 algorithm
-  (outBoolean,outFuncHandle,outBuildTime,outFileName) := matchcontinue (inTplAbsynPathTypesTypeLst,inPath)
+  (outBoolean,outFuncHandle,outBuildTime,outFileName) :=
+  matchcontinue (inFunctions,inPath)
     local
       Absyn.Path path1,path2;
       DAE.Type ty;
@@ -6990,9 +6990,8 @@ algorithm
            stringDelimitList(List.map(nArgs, Dump.printNamedArgStr), ", "));
      then
        nArgs;
-   // if there isn't a derived class, return nothing
-   case (_, _)
-     then {};
+    // if there isn't a derived class, return nothing
+    else {};
   end matchcontinue;
 end transformModificationsToNamedArguments;
 
@@ -7085,7 +7084,7 @@ function: elabCallArgs
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   input Boolean inBoolean;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
@@ -7093,7 +7092,7 @@ function: elabCallArgs
   output DAE.Properties outProperties;
 algorithm
   (outCache,SOME((outExp,outProperties))) :=
-  elabCallArgs2(inCache,inEnv,inPath,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,Util.makeStatefulBoolean(false),inInteractiveInteractiveSymbolTableOption,inPrefix,info,Error.getNumErrorMessages());
+  elabCallArgs2(inCache,inEnv,inPath,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,Util.makeStatefulBoolean(false),inST,inPrefix,info,Error.getNumErrorMessages());
   (outCache,outProperties) := elabCallArgsEvaluateArrayLength(outCache,inEnv,outProperties,inPrefix,info);
 end elabCallArgs;
 
@@ -7211,7 +7210,7 @@ function: elabCallArgs
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   input Boolean inBoolean;
   input Util.StatefulBoolean stopElab;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   input Integer numErrors;
@@ -7219,7 +7218,7 @@ function: elabCallArgs
   output Option<tuple<DAE.Exp,DAE.Properties>> expProps;
 algorithm
   (outCache,expProps) :=
-  matchcontinue (inCache,inEnv,inPath,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,stopElab,inInteractiveInteractiveSymbolTableOption,inPrefix,info,numErrors)
+  matchcontinue (inCache,inEnv,inPath,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,stopElab,inST,inPrefix,info,numErrors)
     local
       DAE.Type t,outtype,restype,functype,tp1;
       list<DAE.FuncArg> fargs;
@@ -7779,7 +7778,7 @@ algorithm
         false = stringEqual(scopeName,Absyn.pathString(inFn));
       then true;
 
-    case(_,_,_,_,_) then true;
+    else true;
         /*
     //Normal (non parallel) function call in a normal function scope is OK.
     case(DAE.FP_NON_PARALLEL(), Env.FRAME(scopeType = Env.FUNCTION_SCOPE())) then();
@@ -7804,14 +7803,14 @@ protected function elabCallArgsMetarecord
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   input Boolean inBoolean;
   input Util.StatefulBoolean stopElab;
-  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inST;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output Option<tuple<DAE.Exp,DAE.Properties>> expProps;
 algorithm
   (outCache,expProps) :=
-  matchcontinue (inCache,inEnv,inType,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,stopElab,inInteractiveInteractiveSymbolTableOption,inPrefix,info)
+  matchcontinue (inCache,inEnv,inType,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,stopElab,inST,inPrefix,info)
     local
       DAE.Type t;
       list<DAE.FuncArg> fargs;
@@ -8488,7 +8487,7 @@ algorithm
       then
         new_exp;
 
-    case (_,_,_,_)
+    else
       equation
         Debug.fprint(Flags.FAILTRACE, "-Static.vectorizeCallScalar failed\n");
       then
@@ -8525,7 +8524,7 @@ algorithm
         res = vectorizeCallScalar2(expl, slots, cur_dim_1, dim, inExp5);
       then
         (DAE.CALL(fn,callargs,attr) :: res);
-    case (_,_,_,_,_) then {};
+    else {};
   end matchcontinue;
 end vectorizeCallScalar2;
 
@@ -8706,7 +8705,7 @@ algorithm
 
     // get all the dims, bind the actual params to the formal params
     // build a new env frame with these bindings and evaluate dimensions
-    case (_, _, _, _, _, _)
+    else
       equation
         // Extract all dimensions from the parameters.
         tys = List.map(inParameters, funcArgType);
@@ -8966,7 +8965,7 @@ algorithm
       then
         outParam;
 
-    case(_, _, _, _, _)
+    else
       equation
         failure(SLOT(arg = SOME(DAE.ARRAY(ty = _))) = inSlot);
         failure(SLOT(arg = SOME(DAE.MATRIX(ty = _))) = inSlot);
@@ -9072,7 +9071,7 @@ algorithm
         ad = slotsVectorizable(rest);
       then
         ad;
-    case (_)
+    else
       equation
         Debug.fprint(Flags.FAILTRACE, "-slots_vectorizable failed\n");
       then
@@ -9697,14 +9696,14 @@ algorithm
       Values.Value val;
     case (NOT_EXTERNAL_OBJECT_MODEL_SCOPE(),_,_,_,_,_,_)
       then (inCache,inExp);
-    case (_,_,_,_,_,_,_)
+    case (_, _, _, _, _, _, _)
       equation
         true = Types.isParameterOrConstant(const);
         false = Expression.isConst(inExp);
         (outCache, val, _) = Ceval.ceval(inCache, inEnv, inExp, false, NONE(), Absyn.MSG(info), 0);
         outExp = ValuesUtil.valueExp(val);
       then (outCache,outExp);
-    case (_,_,_,_,_,_,_)
+    case (_, _, _, _, _, _, _)
       equation
         true = Types.isParameterOrConstant(const) or Types.isExternalObject(ty) or Expression.isConst(inExp);
       then (inCache,inExp);
@@ -10430,7 +10429,7 @@ algorithm
       then
         (outCache, outTypesTypeLst);
 
-    case (_, _, _, _)
+    else
       equation
         // rollback lookup errors!
         ErrorExt.rollBack("Static.lookupFunctionsInEnvNoError");
@@ -10527,7 +10526,7 @@ algorithm
     case (SCode.PARAM(), DAE.C_VAR()) then SCode.VAR();
     case (SCode.CONST(), DAE.C_VAR()) then SCode.VAR();
     case (SCode.CONST(), DAE.C_PARAM()) then SCode.PARAM();
-    case (_, _) then inVariability;
+    else inVariability;
   end matchcontinue;
 end applySubscriptsVariability;
 
@@ -10622,7 +10621,7 @@ algorithm
       then
         exp1;
 
-    else then inExp;
+    else inExp;
   end matchcontinue;
 end makeASUBArrayAdressing;
 
@@ -10679,7 +10678,7 @@ algorithm bool := matchcontinue( subs, ty )
       true = intEq(x, y );
     then
       true;
-  case(_,_) equation print(" not allowed qual_asub\n"); then false;
+  else equation print(" not allowed qual_asub\n"); then false;
 end matchcontinue;
 end allowQualSubscript;
 */
@@ -11641,7 +11640,7 @@ algorithm
         es_1 = callVectorize(callexp, es);
       then
         (DAE.CALL(fn,(e :: args),attr) :: es_1);
-    case (_,_)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE, "- Static.callVectorize failed");
       then
@@ -12409,7 +12408,7 @@ algorithm
       then
         fail();
 
-    case (_,_,_,_,_,_,_,_,_,_,_,_)
+    else
       equation
         Print.printBuf("- Static.makeIfexp failed\n");
       then
@@ -12687,12 +12686,12 @@ protected function elabArglist
 "Given a list of parameter types and an argument list, this
   function tries to match the two, promoting the type of
   arguments when necessary."
-  input list<DAE.Type> inTypesTypeLst;
-  input list<tuple<DAE.Exp, DAE.Type>> inTplExpExpTypesTypeLst;
-  output list<DAE.Exp> outExpExpLst;
-  output list<DAE.Type> outTypesTypeLst;
+  input list<DAE.Type> inTypes;
+  input list<tuple<DAE.Exp, DAE.Type>> inArgs;
+  output list<DAE.Exp> outArgs;
+  output list<DAE.Type> outTypes;
 algorithm
-  (outExpExpLst,outTypesTypeLst) := match (inTypesTypeLst,inTplExpExpTypesTypeLst)
+  (outArgs, outTypes) := match(inTypes, inArgs)
     local
       DAE.Exp arg_1,arg;
       DAE.Type atype_1,pt,atype;
@@ -12723,16 +12722,17 @@ protected function deoverload "Given several lists of parameter types and one ar
 
   The basic principle is that the first operator that matches is chosen.
   ."
-  input list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> inTplExpOperatorTypesTypeLstTypesTypeLst;
-  input list<tuple<DAE.Exp, DAE.Type>> inTplExpExpTypesTypeLst;
+  input list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> inOperators;
+  input list<tuple<DAE.Exp, DAE.Type>> inArgs;
   input Absyn.Exp aexp "for error-messages";
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output DAE.Operator outOperator;
-  output list<DAE.Exp> outExpExpLst;
+  output list<DAE.Exp> outArgs;
   output DAE.Type outType;
 algorithm
-  (outOperator,outExpExpLst,outType) := matchcontinue (inTplExpOperatorTypesTypeLstTypesTypeLst,inTplExpExpTypesTypeLst,aexp,inPrefix,info)
+  (outOperator, outArgs, outType) :=
+  matchcontinue (inOperators, inArgs, aexp, inPrefix, info)
     local
       list<DAE.Exp> exps,args_1;
       list<DAE.Type> types_1,params,tps;
@@ -13098,7 +13098,7 @@ algorithm
         true = Expression.dimensionsEqual(dim1, dim2);
       then
         true;
-    case (_, _) then false;
+    else false;
   end matchcontinue;
 end isValidMatrixProductDims;
 
@@ -13730,7 +13730,7 @@ algorithm
         outDAEExp = ExpressionSimplify.simplifyMatrixProductOfRecords(inDAEExp1,inDAEExp2,multPath,sumPath);
       then
         (outDAEExp);
-    case (_, _, _, _, _, _, _)
+    else
       equation
         // Error.addSourceMessage(Error.INTERNAL_ERROR, {"- Static.handleMatMultOfRecords failed."}, inInfo);
       then fail();
@@ -13780,7 +13780,7 @@ algorithm
       then
         path;
 
-    case (_, _, _, _, _)
+    else
       equation
         str1 = "- Failed to find scalar version of overloaded operator '" +& opSymbol +& "'" +&
                  " for expanding matrix multiplication of record type: '" +& Absyn.pathStringNoQual(inRecordPath) +&
@@ -14333,7 +14333,7 @@ algorithm
       then
         ((op, {inType1, inType2}, DAE.T_BOOL_DEFAULT));
 
-    case (_, _, _)
+    else
       then ((inOp, {DAE.T_ENUMERATION_DEFAULT, DAE.T_ENUMERATION_DEFAULT}, DAE.T_BOOL_DEFAULT));
   end matchcontinue;
 end makeEnumOperator;
@@ -14341,11 +14341,11 @@ end makeEnumOperator;
 protected function buildOperatorTypes
 "This function takes the types operator overloaded user functions and
   builds  the type list structure suitable for the deoverload function."
-  input list<DAE.Type> inTypesTypeLst;
+  input list<DAE.Type> inTypes;
   input Absyn.Path inPath;
-  output list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> outTplExpOperatorTypesTypeLstTypesTypeLst;
+  output list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> outOperatorTypes;
 algorithm
-  outTplExpOperatorTypesTypeLstTypesTypeLst := match (inTypesTypeLst,inPath)
+  outOperatorTypes := match (inTypes, inPath)
     local
       list<DAE.Type> argtypes,tps;
       list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> rest;
@@ -14404,14 +14404,13 @@ end nTypes;
 
 protected function operatorReturn "This function collects the types and operator lists into a tuple list, suitable
   for the deoverloading function for binary operations."
-  input DAE.Operator inOperator1;
-  input list<DAE.Type> inTypesTypeLst2;
-  input list<DAE.Type> inTypesTypeLst3;
-  input list<DAE.Type> inTypesTypeLst4;
-  output list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> outTplExpOperatorTypesTypeLstTypesTypeLst;
+  input DAE.Operator inOperator;
+  input list<DAE.Type> inLhsTypes;
+  input list<DAE.Type> inRhsTypes;
+  input list<DAE.Type> inReturnTypes;
+  output list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> outOperators;
 algorithm
-  outTplExpOperatorTypesTypeLstTypesTypeLst:=
-  match (inOperator1,inTypesTypeLst2,inTypesTypeLst3,inTypesTypeLst4)
+  outOperators := match(inOperator, inLhsTypes, inRhsTypes, inReturnTypes)
     local
       list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> rest;
       tuple<DAE.Operator, list<DAE.Type>, DAE.Type> t;
@@ -14431,13 +14430,12 @@ end operatorReturn;
 protected function operatorReturnUnary "This function collects the types and operator lists into a tuple list,
   suitable for the deoverloading function to be used for unary
   expressions."
-  input DAE.Operator inOperator1;
-  input list<DAE.Type> inTypesTypeLst2;
-  input list<DAE.Type> inTypesTypeLst3;
-  output list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> outTplExpOperatorTypesTypeLstTypesTypeLst;
+  input DAE.Operator inOperator;
+  input list<DAE.Type> inArgTypes;
+  input list<DAE.Type> inReturnTypes;
+  output list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> outOperators;
 algorithm
-  outTplExpOperatorTypesTypeLstTypesTypeLst:=
-  match (inOperator1,inTypesTypeLst2,inTypesTypeLst3)
+  outOperators := match(inOperator, inArgTypes, inReturnTypes)
     local
       list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> rest;
       tuple<DAE.Operator, list<DAE.Type>, DAE.Type> t;
@@ -14512,7 +14510,7 @@ algorithm
         Error.addMessage(Error.WARNING_RELATION_ON_REAL, {pre_str,stmtString,opString});
       then
         ();
-    case(_,_,_,_,_,_,_,_,_) then ();
+    else ();
   end matchcontinue;
 end warnUnsafeRelations;
 
@@ -14615,7 +14613,7 @@ algorithm
       then DAE.CODE(Absyn.C_EXPRESSION(exp),DAE.T_UNKNOWN_DEFAULT);
 
     // failure
-    case (_,_,_,_,_)
+    else
       equation
         failure(DAE.C_VARIABLENAMES() = ct);
         s1 = Dump.printExpStr(exp);

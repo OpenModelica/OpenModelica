@@ -146,7 +146,7 @@ algorithm
       list<String> argsNames;
       String str1,str2;
     case ({},_,_,_) then status;
-    case (_,_,_,_)
+    else
       equation
         (argsNames,_) = Absyn.getNamedFuncArgNamesAndValues(args);
         str1 = stringDelimitList(argsNames, ",");
@@ -355,7 +355,7 @@ algorithm
         (cache,patterns) = elabPatternTuple(cache,env,exps,tys,info,lhs);
       then (cache,pattern::patterns);
 
-    case (_,_,_,_,_,_)
+    else
       equation
         s = Dump.printExpStr(lhs);
         s = "pattern " +& s;

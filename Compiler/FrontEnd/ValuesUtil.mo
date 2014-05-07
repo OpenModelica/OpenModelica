@@ -150,16 +150,15 @@ public function isZero "Returns true if value is zero"
   input Values.Value inValue;
   output Boolean isZero;
 algorithm
-  isZero := matchcontinue(inValue)
-  local Real rval; Integer ival;
-    case(Values.REAL(rval)) equation
-      isZero = rval ==. 0.0;
-      then isZero;
-    case(Values.INTEGER(ival)) equation
-      isZero = ival == 0;
-      then isZero;
-    case(_) then false;
-  end matchcontinue;
+  isZero := match(inValue)
+    local
+      Real rval;
+      Integer ival;
+
+    case Values.REAL(rval) then realEq(rval, 0.0);
+    case Values.INTEGER(ival) then intEq(ival, 0);
+    else false;
+  end match;
 end isZero;
 
 
@@ -168,16 +167,8 @@ public function isArray "Return true if Value is an array."
   output Boolean outBoolean;
 algorithm
   outBoolean := match (inValue)
-    case (Values.INTEGER(integer = _)) then false;
-    case (Values.REAL(real = _)) then false;
-    case (Values.STRING(string = _)) then false;
-    case (Values.BOOL(boolean = _)) then false;
-    case (Values.ENUM_LITERAL(name = _)) then false;
-    case (Values.TUPLE(valueLst = _)) then false;
-    case (Values.META_TUPLE(valueLst = _)) then false;
-    case (Values.RECORD(orderd = _)) then false;
     case (Values.ARRAY(valueLst = _)) then true;
-    case (Values.LIST(_)) then false; //MetaModelica list
+    else false;
   end match;
 end isArray;
 
@@ -186,16 +177,8 @@ public function isRecord "Return true if Value is an array."
   output Boolean outBoolean;
 algorithm
   outBoolean := match (inValue)
-    case (Values.INTEGER(integer = _)) then false;
-    case (Values.REAL(real = _)) then false;
-    case (Values.STRING(string = _)) then false;
-    case (Values.BOOL(boolean = _)) then false;
-    case (Values.ENUM_LITERAL(name = _)) then false;
-    case (Values.TUPLE(valueLst = _)) then false;
-    case (Values.META_TUPLE(valueLst = _)) then false;
-    case (Values.ARRAY(valueLst = _)) then false;
-    case (Values.LIST(_)) then false; //MetaModelica list
     case (Values.RECORD(orderd = _)) then true;
+    else false;
   end match;
 end isRecord;
 
@@ -579,7 +562,7 @@ algorithm
     case ((Values.STRING(string = _) :: _)) then "s";
     case ((Values.BOOL(boolean = _) :: _)) then "b";
     case ({}) then "{}";
-    case (_) then "error";
+    else "error";
   end matchcontinue;
 end unparsePrimType;
 
@@ -599,7 +582,7 @@ algorithm
         i1 = unparseNumDims(vals);
       then
         i1 + 1;
-    case (_) then 1;
+    else 1;
   end matchcontinue;
 end unparseNumDims;
 
@@ -1699,7 +1682,7 @@ algorithm
         Values.REAL(r1) = multScalarProduct(vlst, col);
       then
         makeArray({Values.REAL(r1)});
-    case (_,_)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE, "Values.multScalarProduct failed");
       then
@@ -1715,8 +1698,7 @@ public function crossProduct "
   input list<Values.Value> inValueLst2;
   output Values.Value outValue;
 algorithm
-  outValue:=
-  matchcontinue (inValueLst1,inValueLst2)
+  outValue := match(inValueLst1,inValueLst2)
     local
       Integer ix1,ix2,ix3,iy1,iy2,iy3,iz1,iz2,iz3;
       Real x1,x2,x3,y1,y2,y3,z1,z2,z3;
@@ -1736,12 +1718,12 @@ algorithm
         iz3 = intSub(intMul(ix1,iy2),intMul(ix2,iy1));
       then
         makeArray({Values.INTEGER(iz1),Values.INTEGER(iz2),Values.INTEGER(iz3)});
-    case (_,_)
+    else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"ValuesUtil.crossProduct failed"});
       then
         fail();
-  end matchcontinue;
+  end match;
 end crossProduct;
 
 public function multMatrix "
@@ -2612,7 +2594,7 @@ algorithm
       then
         vOpt;
 
-    case (_) then NONE();
+    else NONE();
 
   end match;
 end containsEmpty;

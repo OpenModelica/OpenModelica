@@ -2279,7 +2279,7 @@ algorithm
       equation
         e = Expression.crefExp(dcr);
       then SOME(e);
-    else then NONE();
+    else NONE();
   end match;
 end varStateDerivative;
 
@@ -2343,7 +2343,7 @@ algorithm
   oRepl := match(state, derConstRepl, cr, iRepl)
     local DAE.Exp e;
     case(true, SOME(e), _, _) then BackendVarTransform.addDerConstRepl(cr, e, iRepl);
-    else then iRepl;
+    else iRepl;
   end match;
 end addDerConstRepl;
 
@@ -2583,7 +2583,7 @@ algorithm
         equation
           e = negateExpression(true, e, e, " in negateOptExp ");
         then SOME(e);
-      else then iExp;
+      else iExp;
   end match;
 end negateOptExp;
 
@@ -2757,7 +2757,7 @@ algorithm
       cr = BackendVariable.varCref(inVar);
     then ((nominal, cr)::iNominal);
 
-    else then (iNominal);
+    else (iNominal);
   end matchcontinue;
 end addNominalValue;
 
@@ -3103,7 +3103,7 @@ algorithm
     case ((e as DAE.CREF(componentRef=_), (vars, _, hs)))
       then
         ((e, (vars, true, hs)));
-    else then inTuple;
+    else inTuple;
   end matchcontinue;
 end replaceCrefWithBindExp;
 
@@ -3317,7 +3317,7 @@ algorithm
     local
       DAE.ComponentRef cr;
     case (DAE.CREF(componentRef=cr), _) then BackendVariable.setStateDerivative(inVar, SOME(cr));
-    else then BackendVariable.setStateDerivative(inVar, NONE());
+    else BackendVariable.setStateDerivative(inVar, NONE());
   end match;
 end updateStateOrder;
 
@@ -3463,7 +3463,7 @@ protected function assertWithCondTrue "author: Frenkel TUD 2012-12"
 algorithm
   b := match inEqn
     case BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond=DAE.BCONST(true))})) then false;
-    else then true;
+    else true;
   end match;
 end assertWithCondTrue;
 
@@ -3563,7 +3563,7 @@ algorithm
         b = Expression.expEqual(lhs, rhs);
       then
         List.consOnTrue(not b, iEqn, iEqns);
-    else then iEqn::iEqns;
+    else iEqn::iEqns;
   end matchcontinue;
 end removeEqualLshRshEqns;
 
@@ -3900,7 +3900,7 @@ algorithm
         hs = List.fold(stmts, addUnreplaceableFromWhenStmt, hs);
       then
        ((eqn, hs));
-    else then inTpl;
+    else inTpl;
   end match;
 end addUnreplaceableFromWhenEqn;
 

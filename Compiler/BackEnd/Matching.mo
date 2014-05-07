@@ -4401,7 +4401,7 @@ algorithm
     case(1,_,_,_,_,_,_,_) then cheapmatching(1,nv,ne,m,mT,ass1,ass2,{});
     case(3,_,_,_,_,_,_,_) then ks_rand_cheapmatching(nv,ne,m,mT,ass1,ass2);
     case(_,_,_,_,_,_,_,true) then getUnassigned(ne, ass1, {});
-    else then {};
+    else {};
   end match;
 end cheapmatchingalgorithm1;
 
@@ -5603,7 +5603,7 @@ algorithm
         acc = appendNonEmpty(eqns,iAcc);
       then
         removeEmptySubsets(index+1,length,subsets,acc);
-    else then iAcc;
+    else iAcc;
   end matchcontinue;
 end removeEmptySubsets;
 
@@ -5614,7 +5614,7 @@ protected function appendNonEmpty
 algorithm
   oAcc := match(eqns,iAcc)
     case ({},_) then iAcc;
-    else then eqns::iAcc;
+    else eqns::iAcc;
   end match;
 end appendNonEmpty;
 

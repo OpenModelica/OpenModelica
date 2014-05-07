@@ -68,30 +68,30 @@ public function algorithmEmpty "Returns true if algorithm is empty, i.e. no stat
   input DAE.Algorithm alg;
   output Boolean empty;
 algorithm
-  empty := matchcontinue(alg)
+  empty := match(alg)
     case(DAE.ALGORITHM_STMTS({})) then true;
-    case(_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end algorithmEmpty;
 
 public function isReinitStatement "returns true if statement is a reinit"
   input DAE.Statement stmt;
   output Boolean res;
 algorithm
-  res := matchcontinue(stmt)
+  res := match(stmt)
     case(DAE.STMT_REINIT(var = _)) then true;
-    case(_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isReinitStatement;
 
 public function isNotAssertStatement "returns true if statement is NOT an assert"
   input DAE.Statement stmt;
   output Boolean res;
 algorithm
-  res := matchcontinue(stmt)
+  res := match(stmt)
     case(DAE.STMT_ASSERT(cond = _)) then false;
-    case(_) then true;
-  end matchcontinue;
+    else true;
+  end match;
 end isNotAssertStatement;
 
 public function makeAssignmentNoTypeCheck
@@ -420,16 +420,16 @@ end getPropExpType;
 public function makeIf "This function creates an `DAE.STMT_IF\' construct, checking that the types
   of the parts are correct. Else part is generated using the makeElse
   function."
-  input DAE.Exp inExp1;
-  input DAE.Properties inProperties2;
-  input list<DAE.Statement> inStatementLst3;
-  input list<tuple<DAE.Exp, DAE.Properties, list<DAE.Statement>>> inTplExpExpTypesPropertiesStatementLstLst4;
-  input list<DAE.Statement> inStatementLst5;
+  input DAE.Exp inExp;
+  input DAE.Properties inProperties;
+  input list<DAE.Statement> inTrueBranch;
+  input list<tuple<DAE.Exp, DAE.Properties, list<DAE.Statement>>> inElseIfBranches;
+  input list<DAE.Statement> inElseBranch;
   input DAE.ElementSource source;
   output list<DAE.Statement> outStatements;
 algorithm
   outStatements :=
-  matchcontinue (inExp1, inProperties2, inStatementLst3, inTplExpExpTypesPropertiesStatementLstLst4, inStatementLst5, source)
+  matchcontinue (inExp, inProperties, inTrueBranch, inElseIfBranches, inElseBranch, source)
     local
       DAE.Else else_;
       DAE.Exp e;
@@ -519,7 +519,7 @@ algorithm
     case (DAE.BCONST(false), _, DAE.NOELSE(), _) then ({},true);
     case (DAE.BCONST(false), _, DAE.ELSE(stmts), _) then (stmts,true);
     case (DAE.BCONST(false), _, DAE.ELSEIF(cond, stmts, els), source) equation (ostmts,_) = optimizeIf(cond, stmts, els, source); then (ostmts,true);
-    else then (DAE.STMT_IF(icond, istmts, iels, isource)::{},false);
+    else (DAE.STMT_IF(icond, istmts, iels, isource)::{},false);
   end match;
 end optimizeIf;
 
@@ -721,7 +721,7 @@ algorithm
         (var_1, _) = Types.matchType(var, tp1, DAE.T_REAL_DEFAULT, true);
       then DAE.STMT_REINIT(var_1, val_1, source);
 
-   case (_, _, _, _, _)  equation
+  else  equation
       Error.addSourceMessage(Error.INTERNAL_ERROR, {"reinit called with wrong args"}, DAEUtil.getElementSourceFileInfo(source));
     then fail();
 

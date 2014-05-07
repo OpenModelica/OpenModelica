@@ -570,7 +570,7 @@ algorithm
         true = ComponentReference.crefEqualNoStringCompare(inCref, cr);
       then
         true;
-    else then false;
+    else false;
   end matchcontinue;
 end compareCrefStreamSet;
 

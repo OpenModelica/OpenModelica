@@ -552,7 +552,7 @@ algorithm
         print(refIdxStr +& ":" +& refCountStr +& " ");
         printReqScc(refSccIdx+1,requiredSccs);
       then ();
-    else then ();
+    else ();
   end matchcontinue;
 end printReqScc;
 
@@ -953,7 +953,7 @@ algorithm
         oldCount = iRequiredSccs[sccIdx];
         tmpRequiredSccs = arrayUpdate(tmpRequiredSccs,sccIdx,oldCount+1);
       then tmpRequiredSccs;
-   else then iRequiredSccs;
+   else iRequiredSccs;
   end matchcontinue;
 end fillSccList;
 
@@ -1314,7 +1314,7 @@ algorithm
         equality(int1 = int3);
         equality(int2 = int4);
       then true;
-    else then false;
+    else false;
  end matchcontinue;
 end compareIntTuple2;
 
@@ -3065,7 +3065,7 @@ algorithm
         true = intLe(iNodeIdx, arrayLength(iGraphT)); //Current index is in range
         tmpMergedNodes = mergeParentNodes0(iGraph,iGraphT,iGraphData,iNodeIdx+1,iMergedNodes);
       then tmpMergedNodes;
-    else then iMergedNodes;
+    else iMergedNodes;
   end matchcontinue;
 end mergeParentNodes0;
 
@@ -3134,7 +3134,7 @@ algorithm
       equation
         true = realGt(currentCost, highestCost);
       then getHighestExecCost(rest, iHighestTuple);
-    else then iHighestTuple;
+    else iHighestTuple;
   end matchcontinue;
 end getHighestExecCost;
 
@@ -3872,7 +3872,7 @@ algorithm
         tmpEdgeList = (preElem,elem)::tmpEdgeList;
         tmpEdgeList = convertNodeListToEdgeTuples0(iNodeList, iNodeIdx-1,tmpEdgeList);
       then tmpEdgeList;
-    else then iEdgeList;
+    else iEdgeList;
   end matchcontinue;
 end convertNodeListToEdgeTuples0;
 
@@ -4068,7 +4068,7 @@ algorithm
         tmpCosts = arrayUpdate(tmpCosts,iCurrentIndex,currentList);
         tmpCosts = createCommCosts(tmpCosts, iCurrentIndex+1,iReqTimeCom);
       then tmpCosts;
-    else then iCosts;
+    else iCosts;
   end matchcontinue;
 end createCommCosts;
 
@@ -4168,7 +4168,7 @@ algorithm
         true = checkForExecutionCosts(iTaskGraph);
         // Check if every node has an execution cost > 0.
       then true;
-    else then false;
+    else false;
   end matchcontinue;
 
 end validateTaskGraphMeta;
@@ -4191,7 +4191,7 @@ algorithm
         oCompEqSysMapping = (head,eqSysIdx)::iCompEqSysMapping;
         tmpCompsTpl = validateTaskGraphMeta0(iEqSysMapping,(currentIdx+1,rest,oCompEqSysMapping));
       then tmpCompsTpl;
-    else then iCompsTpl;
+    else iCompsTpl;
   end match;
 end validateTaskGraphMeta0;
 
@@ -4248,7 +4248,7 @@ algorithm
         false = compareComponents(currentComp_idx,lastComp_idx);
         print("Component duplicate detected in eqSystem " +& intString(idxCurrent) +& ": current: " +& BackendDump.printComponent(currentComp) +& " last " +& BackendDump.printComponent(lastComp) +& ".\n");
       then ((false,SOME(currentComp_idx)));
-    else then ((true, SOME(currentComp_idx)));
+    else ((true, SOME(currentComp_idx)));
   end matchcontinue;
 end checkForDuplicates0;
 
@@ -4715,7 +4715,7 @@ algorithm
       then getCriticalPath2(rest, iListIdx+1, cpCost, iListIdx);
     case((cpCost, criticalPath)::rest,_,_,_)
       then getCriticalPath2(rest, iListIdx+1, iLongestPath, iLongestPathIndex);
-    else then iLongestPathIndex;
+    else iLongestPathIndex;
   end matchcontinue;
 end getCriticalPath2;
 
@@ -4738,7 +4738,7 @@ algorithm
         cost = realAdd(cost, iExeCost);
         cost = addUpExeCostsForNode(rest, iExeCosts, cost);
       then cost;
-    else then iExeCost;
+    else iExeCost;
   end match;
 end addUpExeCostsForNode;
 
@@ -5146,7 +5146,7 @@ algorithm
         costs = (iParentCompIdx, numOfVars, reqCycles) :: costs;
         tmpCommCosts = arrayUpdate(iCommCosts, nodeIdx, costs);
       then tmpCommCosts;
-    else then iCommCosts;
+    else iCommCosts;
   end matchcontinue;
 end transposeCommCosts1;
 
@@ -5216,7 +5216,7 @@ algorithm
         true = List.isNotEmpty(filteredCommCosts);
         highestCommCost = getHighestCommCost(filteredCommCosts, (-1,-1,-1));
       then SOME(highestCommCost);
-    else then NONE();
+    else NONE();
   end matchcontinue;
 end getCommCostBetweenNodes0;
 
@@ -5251,7 +5251,7 @@ algorithm
       equation
         true = intGt(currentCost, highestCost);
       then getHighestCommCost(rest, iHighestTuple);
-    else then iHighestTuple;
+    else iHighestTuple;
   end matchcontinue;
 end getHighestCommCost;
 
@@ -5267,7 +5267,7 @@ algorithm
       equation
         costs = Util.arrayFold(exeCosts, sumUpExecCosts1, (0,0.0));
       then costs;
-    else then ((0,0.0));
+    else ((0,0.0));
   end match;
 end sumUpExecCosts;
 

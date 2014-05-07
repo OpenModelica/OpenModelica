@@ -90,38 +90,36 @@ public function expTypeSimple "returns true if type is simple type"
   input DAE.Type tp;
   output Boolean isSimple;
 algorithm
-  isSimple := matchcontinue(tp)
+  isSimple := match(tp)
     case(DAE.T_REAL(varLst = _)) then true;
     case(DAE.T_INTEGER(varLst = _)) then true;
     case(DAE.T_STRING(varLst = _)) then true;
     case(DAE.T_BOOL(varLst = _)) then true;
     case(DAE.T_ENUMERATION(path=_)) then true;
-
-    case(_) then false;
-
-  end matchcontinue;
+    else false;
+  end match;
 end expTypeSimple;
 
 public function expTypeElementType "returns the element type of an array"
   input DAE.Type tp;
   output DAE.Type eltTp;
 algorithm
-  eltTp := matchcontinue(tp)
+  eltTp := match(tp)
     local
       DAE.Type ty;
     case (DAE.T_ARRAY(ty=ty)) then expTypeElementType(ty);
     else tp;
-  end matchcontinue;
+  end match;
 end expTypeElementType;
 
 public function expTypeComplex "returns true if type is complex type"
   input DAE.Type tp;
   output Boolean isComplex;
 algorithm
-  isComplex := matchcontinue(tp)
+  isComplex := match(tp)
     case(DAE.T_COMPLEX(complexClassType = _)) then true;
-    case(_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end expTypeComplex;
 
 public function expTypeArray "returns true if type is array type
@@ -129,10 +127,10 @@ Alternative names: isArrayType, isExpTypeArray"
   input DAE.Type tp;
   output Boolean isArray;
 algorithm
-  isArray := matchcontinue(tp)
+  isArray := match(tp)
     case(DAE.T_ARRAY(ty=_)) then true;
-    case(_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end expTypeArray;
 
 public function expTypeArrayDimensions "returns the array dimensions of an ExpType"
@@ -681,7 +679,7 @@ algorithm
     local
       DAE.Exp u;
     case (SOME(DAE.VAR_ATTR_REAL(unit=SOME(u)))) then u;
-    case (_) then DAE.SCONST("");
+    else DAE.SCONST("");
   end matchcontinue;
 end getUnitAttr;
 
@@ -707,7 +705,7 @@ public function getMinMax "
 Author: BZ, returns a list of optional exp, {opt<Min> opt<Max} "
   input Option<DAE.VariableAttributes> inVariableAttributesOption;
   output list<Option<DAE.Exp>> oExps;
-algorithm oExps := matchcontinue(inVariableAttributesOption)
+algorithm oExps := match(inVariableAttributesOption)
   local
     Option<DAE.Exp> e1,e2;
   case(SOME(DAE.VAR_ATTR_ENUMERATION(min = (e1,e2))))
@@ -722,15 +720,15 @@ algorithm oExps := matchcontinue(inVariableAttributesOption)
     equation
     then
       e1::{e2};
-  case(_) then {};
-  end matchcontinue;
+  else {};
+  end match;
 end getMinMax;
 
 public function getMinMaxValues
   input Option<DAE.VariableAttributes> inVariableAttributesOption;
   output Option<DAE.Exp> outMinValue;
   output Option<DAE.Exp> outMaxValue;
-algorithm (outMinValue, outMaxValue) := matchcontinue(inVariableAttributesOption)
+algorithm (outMinValue, outMaxValue) := match(inVariableAttributesOption)
   local
     Option<DAE.Exp> minValue, maxValue;
 
@@ -743,9 +741,8 @@ algorithm (outMinValue, outMaxValue) := matchcontinue(inVariableAttributesOption
   case(SOME(DAE.VAR_ATTR_REAL(min=(minValue, maxValue)))) equation
   then (minValue, maxValue);
 
-  case(_)
-  then (NONE(), NONE());
-  end matchcontinue;
+  else (NONE(), NONE());
+  end match;
 end getMinMaxValues;
 
 public function setMinMax "
@@ -781,7 +778,7 @@ public function getStartAttr "
   input Option<DAE.VariableAttributes> inVariableAttributesOption;
   output DAE.Exp start;
 algorithm
-  start := matchcontinue (inVariableAttributesOption)
+  start := match(inVariableAttributesOption)
     local
       DAE.Exp r;
     case (SOME(DAE.VAR_ATTR_REAL(start = SOME(r)))) then r;
@@ -789,8 +786,8 @@ algorithm
     case (SOME(DAE.VAR_ATTR_BOOL(start = SOME(r)))) then r;
     case (SOME(DAE.VAR_ATTR_STRING(start = SOME(r)))) then r;
     case (SOME(DAE.VAR_ATTR_ENUMERATION(start = SOME(r)))) then r;
-    case (_) then DAE.RCONST(0.0);
-  end matchcontinue;
+    else DAE.RCONST(0.0);
+  end match;
 end getStartAttr;
 
 public function getStartOrigin  "
@@ -1010,7 +1007,7 @@ algorithm
     local
       DAE.Exp n;
     case (SOME(DAE.VAR_ATTR_REAL(nominal=SOME(n)))) then n;
-    case (_) then DAE.RCONST(1.0);
+    else DAE.RCONST(1.0);
   end match;
 end getNominalAttr;
 
@@ -1205,14 +1202,14 @@ public function getProtectedAttr "
   input Option<DAE.VariableAttributes> attr;
   output Boolean isProtected;
 algorithm
-  isProtected := matchcontinue (attr)
+  isProtected := match(attr)
     case (SOME(DAE.VAR_ATTR_REAL(isProtected=SOME(isProtected)))) then isProtected;
     case (SOME(DAE.VAR_ATTR_INT(isProtected=SOME(isProtected)))) then isProtected;
     case (SOME(DAE.VAR_ATTR_BOOL(isProtected=SOME(isProtected)))) then isProtected;
     case (SOME(DAE.VAR_ATTR_STRING(isProtected=SOME(isProtected)))) then isProtected;
     case (SOME(DAE.VAR_ATTR_ENUMERATION(isProtected=SOME(isProtected)))) then isProtected;
-    case(_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end getProtectedAttr;
 
 public function setFixedAttr "Function: setFixedAttr
@@ -1299,11 +1296,11 @@ Takes a DAE.varprotection and returns true/false (is_protected / not)"
   input DAE.VarVisibility vp;
   output Boolean prot;
 algorithm
-  prot := matchcontinue(vp)
+  prot := match(vp)
     case(DAE.PUBLIC()) then false;
     case(DAE.PROTECTED()) then true;
-    case(_) equation print("- DAEUtil.boolVa_Protection failed\n"); then fail();
-  end matchcontinue;
+    else equation print("- DAEUtil.boolVarVisibility failed\n"); then fail();
+  end match;
 end boolVarVisibility;
 
 public function hasStartAttr "
@@ -1311,16 +1308,15 @@ public function hasStartAttr "
   input Option<DAE.VariableAttributes> inVariableAttributesOption;
   output Boolean hasStart;
 algorithm
-  hasStart:=
-  matchcontinue (inVariableAttributesOption)
+  hasStart:= match(inVariableAttributesOption)
     local
       DAE.Exp r;
     case (SOME(DAE.VAR_ATTR_REAL(start = SOME(_)))) then true;
     case (SOME(DAE.VAR_ATTR_INT(start = SOME(_)))) then true;
     case (SOME(DAE.VAR_ATTR_BOOL(start = SOME(_)))) then true;
     case (SOME(DAE.VAR_ATTR_STRING(start = SOME(_)))) then true;
-    case (_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end hasStartAttr;
 
 public function getStartAttrString "
@@ -1345,7 +1341,7 @@ algorithm
         s = ExpressionDump.printExpStr(r);
       then
         s;
-    case (_) then "";
+    else "";
   end matchcontinue;
 end getStartAttrString;
 
@@ -1456,7 +1452,7 @@ output Boolean b;
 algorithm
   b := matchcontinue(inElem)
     case(DAE.FUNCTION(inlineType=DAE.AFTER_INDEX_RED_INLINE())) then true;
-    case(_) then false;
+    else false;
   end matchcontinue;
 end isAfterIndexInlineFunc;
 
@@ -1478,12 +1474,11 @@ public function isParameterOrConstant "
   input DAE.Element inElement;
   output Boolean b;
 algorithm
-  b:=
-  matchcontinue (inElement)
+  b := match(inElement)
     case DAE.VAR(kind = DAE.CONST()) then true;
     case DAE.VAR(kind = DAE.PARAM()) then true;
-    case(_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isParameterOrConstant;
 
 public function isParamOrConstVar
@@ -1860,7 +1855,7 @@ algorithm
 
     case (DAE.VAR(ty = tp)) then tp;
 
-    else then fail();
+    else fail();
   end match;
 end getVariableType;
 
@@ -2009,7 +2004,7 @@ algorithm
     case(DAE.NON_PARALLEL(),DAE.NON_PARALLEL()) then true;
     case(DAE.PARGLOBAL(),DAE.PARGLOBAL()) then true;
     case(DAE.PARLOCAL(),DAE.PARLOCAL()) then true;
-    case(_,_) then false;
+    else false;
   end match;
 end daeParallelismEqual;
 
@@ -2604,7 +2599,7 @@ algorithm
       String msg;
 
     case (_,_) then Util.getOption(avlTreeGet(functions, path));
-    case (_,_)
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         msg = stringDelimitList(List.mapMap(getFunctionList(functions), functionName, Absyn.pathString), "\n  ");
@@ -2773,7 +2768,7 @@ algorithm
     case (DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = stmts)))
     then
       stmts;
-    case (_)
+    else
       equation
         Debug.fprint(Flags.FAILTRACE, "- Differentiatte.getStatement failed\n");
       then
@@ -4884,10 +4879,10 @@ public function isExtFunction "returns true if element matches an external funct
   input DAE.Function elt;
   output Boolean res;
 algorithm
-  res := matchcontinue(elt)
+  res := match(elt)
     case(DAE.FUNCTION(functions=DAE.FUNCTION_EXT(body=_)::_)) then true;
-    case(_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isExtFunction;
 
 
@@ -4947,7 +4942,7 @@ algorithm
       equation
         comment2 = comment::comment1;
       then DAE.SOURCE(info,partOfLst1,instanceOpt1,connectEquationOptLst1,typeLst1, operations1,comment2);
-    case(_,_)
+    else
       then
         src1;
  end match;
@@ -5178,7 +5173,7 @@ algorithm
         bt = balance(DAE.AVLTREENODE(SOME(DAE.AVLTREEVALUE(rkey,rval)),h,SOME(t_1),right));
       then
         bt;
-    case (_,_,_)
+    else
       equation
         print("avlTreeAdd failed\n");
       then
@@ -5215,7 +5210,7 @@ algorithm
       d = differenceInHeight(bt);
       bt = doBalance(d,bt);
     then bt;
-    case(_) equation
+    else equation
       print("balance failed\n");
     then fail();
   end matchcontinue;
@@ -5759,7 +5754,7 @@ algorithm
       equation
         false = Config.acceptMetaModelicaGrammar();
       then {};
-    case (_, _)
+    else
       equation
         paths1 = getUniontypePathsFunctions(funcs);
         paths2 = getUniontypePathsElements(els,{});
@@ -5995,13 +5990,13 @@ public function collectFunctionRefVarPaths
   input list<Absyn.Path> acc;
   output list<Absyn.Path> outAcc;
 algorithm
-  outAcc := matchcontinue (inElem,acc)
+  outAcc := match(inElem,acc)
     local
       Absyn.Path path;
     case (DAE.VAR(ty = DAE.T_FUNCTION(source = {path})),_)
       then path::acc;
-    case (_,_) then acc;
-  end matchcontinue;
+    else acc;
+  end match;
 end collectFunctionRefVarPaths;
 
 public function addDaeFunction "add functions present in the element list to the function tree"
@@ -6062,7 +6057,7 @@ algorithm
         functions = listAppend(functions, {iFuncDef});
       then
         DAE.FUNCTION(path, functions, type_, partialPrefix, isImpure, inlineType, source, comment);
-    case (_, _) then ifunc;
+    else ifunc;
   end match;
 end addFunctionDefinition;
 
@@ -6318,7 +6313,7 @@ algorithm
       list<DAE.Exp> assertExps;
       DAE.SymbolicOperation op,op1,op2;
     case (false,_,_,_,_,_,_) then source;
-    case (_,_,_,_,_,_,_)
+    else
       equation
         assertExps = List.map(asserts,Algorithm.getAssertCond);
         op1 = DAE.SOLVE(cr,exp1,exp2,exp,assertExps);
@@ -6414,7 +6409,7 @@ public function isCompleteFunction "author: adrpo
  input DAE.Function f;
  output Boolean isComplete;
 algorithm
-  isComplete := matchcontinue(f)
+  isComplete := match(f)
     local
       list<DAE.FunctionDefinition> functions;
 
@@ -6423,14 +6418,10 @@ algorithm
 
     // functions are complete if they have inputs, outputs and algorithm section
     case (DAE.FUNCTION(functions = functions))
-      equation
-        true = isCompleteFunctionBody(functions);
-      then
-        true;
+      then isCompleteFunctionBody(functions);
 
-    case (_)
-      then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isCompleteFunction;
 
 public function isCompleteFunctionBody "author: adrpo
@@ -6459,13 +6450,9 @@ algorithm
         true;
 
     case (DAE.FUNCTION_DER_MAPPER(derivedFunction = _)::rest)
-      equation
-        true = isCompleteFunctionBody(rest);
-      then
-        true;
+      then isCompleteFunctionBody(rest);
 
-    case (_)
-      then false;
+    else false;
   end matchcontinue;
 end isCompleteFunctionBody;
 

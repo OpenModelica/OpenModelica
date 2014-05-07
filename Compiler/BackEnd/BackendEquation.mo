@@ -2214,7 +2214,7 @@ algorithm
     DAE.ComponentRef lhs;
     case (lhs, SOME(rhs), _)
       then {BackendDAE.SOLVED_EQUATION(lhs,rhs,Source,false,BackendDAE.UNKNOWN_EQUATION_KIND())};
-    else then {};
+    else {};
   end match;
 end generateSolvedEqnsfromOption;
 
@@ -2241,7 +2241,7 @@ algorithm
     case (lhs, DAE.RELATION(e1,DAE.GREATEREQ(_),e2,_,_), _) equation
       (rhs,_) = ExpressionSimplify.simplify(DAE.BINARY(e2,DAE.SUB(DAE.T_REAL_DEFAULT),e1));
       then {BackendDAE.SOLVED_EQUATION(lhs, rhs,Source,false,BackendDAE.UNKNOWN_EQUATION_KIND())};
-    else then {};
+    else {};
   end match;
 end generateResidualfromRealtion;
 
@@ -2782,7 +2782,7 @@ public function isWhenEquation
 algorithm
   b := match(inEqn)
     case BackendDAE.WHEN_EQUATION(whenEquation=_) then true;
-    else then false;
+    else false;
   end match;
 end isWhenEquation;
 
@@ -2792,7 +2792,7 @@ public function isArrayEquation
 algorithm
   b := match(inEqn)
     case BackendDAE.ARRAY_EQUATION(source=_) then true;
-    else then false;
+    else false;
   end match;
 end isArrayEquation;
 
@@ -2802,7 +2802,7 @@ public function isAlgorithm
 algorithm
   b := match(inEqn)
     case BackendDAE.ALGORITHM(source=_) then true;
-    else then false;
+    else false;
   end match;
 end isAlgorithm;
 

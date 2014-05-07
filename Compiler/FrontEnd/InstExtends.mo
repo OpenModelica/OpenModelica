@@ -84,24 +84,24 @@ protected function instExtendsList "
   input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
-  input list<SCode.Element> inSCodeElementLst;
+  input list<SCode.Element> inLocalElements;
   input list<SCode.Element> inElementsFromExtendsScope;
   input ClassInf.State inState;
   input String inClassName; // the class name whose elements are getting instantiated.
   input Boolean inImplicit;
   input Boolean isPartialInst;
   output Env.Cache outCache;
-  output Env.Env outEnv1;
+  output Env.Env outEnv;
   output InnerOuter.InstHierarchy outIH;
-  output DAE.Mod outMod2;
-  output list<tuple<SCode.Element, DAE.Mod, Boolean>> outTplSCodeElementModLst3;
-  output list<SCode.Equation> outSCodeEquationLst4;
-  output list<SCode.Equation> outSCodeEquationLst5;
-  output list<SCode.AlgorithmSection> outSCodeAlgorithmLst6;
-  output list<SCode.AlgorithmSection> outSCodeAlgorithmLst7;
+  output DAE.Mod outMod;
+  output list<tuple<SCode.Element, DAE.Mod, Boolean>> outElements;
+  output list<SCode.Equation> outNormalEqs;
+  output list<SCode.Equation> outInitialEqs;
+  output list<SCode.AlgorithmSection> outNormalAlgs;
+  output list<SCode.AlgorithmSection> outInitialAlgs;
 algorithm
-  (outCache,outEnv1,outIH,outMod2,outTplSCodeElementModLst3,outSCodeEquationLst4,outSCodeEquationLst5,outSCodeAlgorithmLst6,outSCodeAlgorithmLst7):=
-  matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSCodeElementLst,inElementsFromExtendsScope,inState,inClassName,inImplicit,isPartialInst)
+  (outCache,outEnv,outIH,outMod,outElements,outNormalEqs,outInitialEqs,outNormalAlgs,outInitialAlgs):=
+  matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inLocalElements,inElementsFromExtendsScope,inState,inClassName,inImplicit,isPartialInst)
     local
       SCode.Element c;
       String cn,s,scope_str,className;
@@ -355,22 +355,22 @@ public function instExtendsAndClassExtendsList "
   output Env.Env outEnv;
   output InnerOuter.InstHierarchy outIH;
   output DAE.Mod outMod;
-  output list<tuple<SCode.Element, DAE.Mod>> outTplSCodeElementModLst;
-  output list<SCode.Equation> outSCodeNormalEquationLst;
-  output list<SCode.Equation> outSCodeInitialEquationLst;
-  output list<SCode.AlgorithmSection> outSCodeNormalAlgorithmLst;
-  output list<SCode.AlgorithmSection> outSCodeInitialAlgorithmLst;
+  output list<tuple<SCode.Element, DAE.Mod>> outElements;
+  output list<SCode.Equation> outNormalEqs;
+  output list<SCode.Equation> outInitialEqs;
+  output list<SCode.AlgorithmSection> outNormalAlgs;
+  output list<SCode.AlgorithmSection> outInitialAlgs;
 protected
-  list<tuple<SCode.Element, DAE.Mod, Boolean>> outTplSCodeElementModLstTpl3;
+  list<tuple<SCode.Element, DAE.Mod, Boolean>> elts;
   list<SCode.Element> cdefelts,tmpelts;
 algorithm
   //Debug.fprintln(Flags.DEBUG,"instExtendsAndClassExtendsList: " +& inClassName);
-  (outCache,outEnv,outIH,outMod,outTplSCodeElementModLstTpl3,outSCodeNormalEquationLst,outSCodeInitialEquationLst,outSCodeNormalAlgorithmLst,outSCodeInitialAlgorithmLst):=
+  (outCache,outEnv,outIH,outMod,elts,outNormalEqs,outInitialEqs,outNormalAlgs,outInitialAlgs):=
   instExtendsAndClassExtendsList2(inCache,inEnv,inIH,inMod,inPrefix,inExtendsElementLst,inClassExtendsElementLst,inElementsFromExtendsScope,inState,inClassName,inImpl,isPartialInst);
   // Filter out the last boolean in the tuple
-  outTplSCodeElementModLst := List.map(outTplSCodeElementModLstTpl3, Util.tuple312);
+  outElements := List.map(elts, Util.tuple312);
   // Create a list of the class definitions, since these can't be properly added in the recursive call
-  tmpelts := List.map(outTplSCodeElementModLst,Util.tuple21);
+  tmpelts := List.map(outElements,Util.tuple21);
   (_,cdefelts,_,_) := InstUtil.splitEltsNoComponents(tmpelts);
   // Add the class definitions to the environment
   (outEnv,outIH) := InstUtil.addClassdefsToEnv(outEnv,outIH,inPrefix,cdefelts,inImpl,SOME(outMod));
@@ -398,15 +398,15 @@ protected function instExtendsAndClassExtendsList2 "
   output Env.Env outEnv;
   output InnerOuter.InstHierarchy outIH;
   output DAE.Mod outMod;
-  output list<tuple<SCode.Element, DAE.Mod, Boolean>> outTplSCodeElementModLst;
-  output list<SCode.Equation> outSCodeNormalEquationLst;
-  output list<SCode.Equation> outSCodeInitialEquationLst;
-  output list<SCode.AlgorithmSection> outSCodeNormalAlgorithmLst;
-  output list<SCode.AlgorithmSection> outSCodeInitialAlgorithmLst;
+  output list<tuple<SCode.Element, DAE.Mod, Boolean>> outElements;
+  output list<SCode.Equation> outNormalEqs;
+  output list<SCode.Equation> outInitialEqs;
+  output list<SCode.AlgorithmSection> outNormalAlgs;
+  output list<SCode.AlgorithmSection> outInitialAlgs;
 algorithm
-  (outCache,outEnv,outIH,outMod,outTplSCodeElementModLst,outSCodeNormalEquationLst,outSCodeInitialEquationLst,outSCodeNormalAlgorithmLst,outSCodeInitialAlgorithmLst):=
+  (outCache,outEnv,outIH,outMod,outElements,outNormalEqs,outInitialEqs,outNormalAlgs,outInitialAlgs):=
   instExtendsList(inCache,inEnv,inIH,inMod,inPrefix,inExtendsElementLst,inElementsFromExtendsScope,inState,inClassName,inImpl,isPartialInst);
-  (outMod,outTplSCodeElementModLst):=instClassExtendsList(inEnv,outMod,inClassExtendsElementLst,outTplSCodeElementModLst);
+  (outMod,outElements):=instClassExtendsList(inEnv,outMod,inClassExtendsElementLst,outElements);
 end instExtendsAndClassExtendsList2;
 
 protected function instClassExtendsList
@@ -416,11 +416,11 @@ will no longer be accessible."
   input Env.Env inEnv;
   input DAE.Mod inMod;
   input list<SCode.Element> inClassExtendsList;
-  input list<tuple<SCode.Element, DAE.Mod, Boolean>> inTplSCodeElementModLst;
+  input list<tuple<SCode.Element, DAE.Mod, Boolean>> inElements;
   output DAE.Mod outMod;
-  output list<tuple<SCode.Element, DAE.Mod, Boolean>> outTplSCodeElementModLst;
+  output list<tuple<SCode.Element, DAE.Mod, Boolean>> outElements;
 algorithm
-  (outMod,outTplSCodeElementModLst) := matchcontinue (inEnv,inMod,inClassExtendsList,inTplSCodeElementModLst)
+  (outMod,outElements) := matchcontinue (inEnv,inMod,inClassExtendsList,inElements)
     local
       SCode.Element first;
       list<SCode.Element> rest;
@@ -481,11 +481,11 @@ protected function instClassExtendsList2
   input DAE.Mod inMod;
   input String inName;
   input SCode.Element inClassExtendsElt;
-  input list<tuple<SCode.Element, DAE.Mod, Boolean>> inTplSCodeElementModLst;
+  input list<tuple<SCode.Element, DAE.Mod, Boolean>> inElements;
   output DAE.Mod outMod;
-  output list<tuple<SCode.Element, DAE.Mod, Boolean>> outTplSCodeElementModLst;
+  output list<tuple<SCode.Element, DAE.Mod, Boolean>> outElements;
 algorithm
-  (outMod,outTplSCodeElementModLst) := matchcontinue (inEnv,inMod,inName,inClassExtendsElt,inTplSCodeElementModLst)
+  (outMod,outElements) := matchcontinue (inEnv,inMod,inName,inClassExtendsElt,inElements)
     local
       SCode.Element elt,compelt,classExtendsElt;
       SCode.Element cl;
@@ -1597,7 +1597,7 @@ algorithm
         ErrorExt.rollBack("InstExtends.lookupVarNoErrorMessage");
       then
         (outEnv, id);
-    case (_, _, _)
+    else
       equation
         ErrorExt.rollBack("InstExtends.lookupVarNoErrorMessage");
       then
@@ -1978,5 +1978,4 @@ algorithm
       then (cache,(a,b)::rest);
   end match;
 end fixListTuple2;
-
 end InstExtends;

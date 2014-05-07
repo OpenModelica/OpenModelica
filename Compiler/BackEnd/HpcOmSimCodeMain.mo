@@ -445,7 +445,7 @@ algorithm
         (taskGraph1,taskGraphMeta1,changed2) = HpcOmTaskGraph.mergeParentNodes(taskGraph1, taskGraphMeta1);
         (taskGraph1,taskGraphMeta1) = applyFiltersToGraph(taskGraph1,taskGraphMeta1,inBackendDAE,changed1 or changed2);
       then (taskGraph1,taskGraphMeta1);
-    else then (iTaskGraph, iTaskGraphMeta);
+    else (iTaskGraph, iTaskGraphMeta);
   end matchcontinue;
 end applyFiltersToGraph;
 
@@ -689,7 +689,7 @@ algorithm
     case(SimCode.SES_NONLINEAR(index=index)) then index;
     case(SimCode.SES_MIXED(index=index)) then index;
     case(SimCode.SES_WHEN(index=index)) then index;
-    else then fail();
+    else fail();
   end match;
 end getIndexBySimCodeEq;
 

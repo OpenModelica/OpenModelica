@@ -66,7 +66,7 @@ algorithm
       DAE.ComponentRef cref2;
     case DAE.CREF_QUAL(ident,_,_,cref2) then (ident +& "&" +& cref2str(cref2));
     case DAE.CREF_IDENT(ident,_,_) then ident;
-    else then "unknown";
+    else "unknown";
   end match;
 end cref2str;
 

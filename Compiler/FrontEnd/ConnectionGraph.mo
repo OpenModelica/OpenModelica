@@ -138,7 +138,7 @@ algorithm
         (DAE.DAE(elts), connected, broken);
 
     // handle the connection breaking
-    case (_, _, _)
+    else
       equation
         Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.handleOverconstrainedConnections failed for model: " +& modelNameQualified);
       then
@@ -320,7 +320,7 @@ algorithm
         canon2 = canonical(partition,ref2);
         true = ComponentReference.crefEqualNoStringCompare(canon1, canon2);
       then true;
-    case(_,_,_) then false;
+    else false;
   end matchcontinue;
 end areInSameComponent;
 
@@ -900,7 +900,7 @@ algorithm
         table = BaseHashTable.add((cref1,cref2::crefs),itable);
       then
         table;
-    case(_,_,_)
+    else
       equation
         failure( _ = BaseHashTable.get(cref1,itable));
         table = BaseHashTable.add((cref1,{cref2}),itable);
@@ -925,7 +925,7 @@ algorithm
 
     case (_,_, {}) then {};
 
-    case (_,_, _)
+    else
       equation
         // built table
         table = HashTable3.emptyHashTable();
@@ -1065,7 +1065,7 @@ algorithm
         true = ComponentReference.crefEqualNoStringCompare(cr,cref1);
       then
         cref2;
-    case(_,_,_)
+    else
       equation
         true = ComponentReference.crefEqualNoStringCompare(cr,cref2);
       then
@@ -1472,7 +1472,7 @@ algorithm
       then
         "";
 
-    case (_, _)
+    else
       equation
         fileNameTraceRemovedConnections = modelNameQualified +& "_removed_connections.txt";
         Debug.traceln("Tyring to start GraphViz *lefty* to visualize the graph. You need to have lefty in your PATH variable");
@@ -1523,7 +1523,7 @@ algorithm
         {} = filterFromSet(inConnects, inBroken, {});
       then inConnects;
 
-    case (_, _, _)
+    else
       equation
         toRemove = filterFromSet(inConnects, inBroken, {});
         toKeep = filterFromSet(inConnects, inConnected, {});
@@ -1620,7 +1620,7 @@ algorithm
 
     case (_, {}) then inDAE;
 
-    case (_, _)
+    else
       equation
         equalityConstraintElements = List.flatten(List.map(inBroken, Util.tuple33));
         dae = DAEUtil.joinDaes(inDAE, DAE.DAE(equalityConstraintElements));

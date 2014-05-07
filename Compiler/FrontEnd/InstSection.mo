@@ -242,7 +242,7 @@ algorithm
       then
         (cache,env,ih,dae,csets_1,ci_state_1,graph);
 
-    case (_,_,_,_,_,_,_,_,_,_,_)
+    else
       equation
         Debug.fprint(Flags.FAILTRACE, "- instInitialEquation failed\n");
       then
@@ -375,7 +375,7 @@ algorithm
 
     // We only want to print a generic error message if no other error message was printed
     // Providing two error messages for the same error is confusing (but better than none)
-    case (_,_,_,_,_,_,_,_,_,_,_,_)
+    else
       equation
         true = errorCount == Error.getNumErrorMessages();
         s = "\n" +& SCodeDump.equationStr(inEEquation,SCodeDump.defaultOptions);
@@ -993,7 +993,7 @@ algorithm
     case(DAE.ARRAY_EQUATION(exp=DAE.CREF(componentRef=cr1),array=e,source=source))
       then DAE.REINIT(cr1,e,source);
 
-    case(_) equation print("Failure in: makeDAEArrayEqToReinitForm\n"); then fail();
+    else equation print("Failure in: makeDAEArrayEqToReinitForm\n"); then fail();
 
   end matchcontinue;
 end makeDAEArrayEqToReinitForm;
@@ -1097,7 +1097,7 @@ algorithm
     equation
       false = Types.isPropTuple(propCall);
       then (inExp,propTuple);
-      case(_,_,_) equation print("expand_Tuple_Equation_With_Wild failed \n");then fail();
+      else equation print("expand_Tuple_Equation_With_Wild failed \n");then fail();
   end matchcontinue;
 end expandTupleEquationWithWild;
 
@@ -2062,7 +2062,7 @@ algorithm
       equation
         true = isSubsLoopDependentHelper(rest, iteratorExp);
       then true;
-    case (_, _) then false;
+    else false;
   end matchcontinue;
 end isSubsLoopDependentHelper;
 
@@ -2191,7 +2191,7 @@ algorithm
     then dae;
 
     // complex equation that is not of restriction record is not allowed
-    case(_,_,_,_,_)
+    else
       equation
         false = Types.isRecord(tp);
         s = ExpressionDump.printExpStr(lhs) +& " = " +& ExpressionDump.printExpStr(rhs);
@@ -2282,7 +2282,7 @@ algorithm
         Error.addSourceMessage(Error.ALGORITHM_TRANSITION_FAILURE, {s}, info);
       then fail();
 
-    case (_,_,_,_,_,_,_,_,_,_,_)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE, "- InstSection.instAlgorithm failed");
       then
@@ -2341,7 +2341,7 @@ algorithm
       then
         (cache,env,ih,dae,csets,ci_state,graph);
 
-    case (_,_,_,_,_,_,_,_,_,_,_)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE, "- InstSection.instInitialAlgorithm failed");
       then
@@ -2395,7 +2395,7 @@ algorithm
         Error.addMessage(Error.ALGORITHM_TRANSITION_FAILURE,{s});
       then fail();
 */
-    case (_,_,_,_,_,_)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE, "- InstSection.instConstraints failed");
       then
@@ -2974,17 +2974,17 @@ protected function instElseIfs
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPre;
   input ClassInf.State ci_state;
-  input list<tuple<Absyn.Exp, list<SCode.Statement>>> inTplAbsynExpAbsynAlgorithmItemLstLst;
+  input list<tuple<Absyn.Exp, list<SCode.Statement>>> inElseIfBranches;
   input DAE.ElementSource source;
   input SCode.Initial initial_;
   input Boolean inBoolean;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
   input Absyn.Info info;
   output Env.Cache outCache;
-  output list<tuple<DAE.Exp, DAE.Properties, list<DAE.Statement>>> outTplExpExpTypesPropertiesAlgorithmStatementLstLst;
+  output list<tuple<DAE.Exp, DAE.Properties, list<DAE.Statement>>> outElseIfBranches;
 algorithm
-  (outCache,outTplExpExpTypesPropertiesAlgorithmStatementLstLst) :=
-  matchcontinue (inCache,inEnv,inIH,inPre,ci_state,inTplAbsynExpAbsynAlgorithmItemLstLst,source,initial_,inBoolean,unrollForLoops,info)
+  (outCache,outElseIfBranches) :=
+  matchcontinue (inCache,inEnv,inIH,inPre,ci_state,inElseIfBranches,source,initial_,inBoolean,unrollForLoops,info)
     local
       Env.Env env;
       Boolean impl;
@@ -3846,7 +3846,7 @@ algorithm
     case (DAE.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(_,true))) then true;
     // TODO! check if subtype is needed here
     case (DAE.T_SUBTYPE_BASIC(complexClassType = ClassInf.CONNECTOR(_,true))) then true;
-    case (_) then false;
+    else false;
   end match;
 end isExpandableConnectorType;
 
@@ -3864,7 +3864,7 @@ algorithm
     // TODO! check if subtype is needed here
     case (DAE.T_SUBTYPE_BASIC(complexClassType = state)) then state;
     // adpo: TODO! FIXME! add a debug print here!
-    case (_) then fail();
+    else fail();
   end match;
 end getStateFromType;
 
@@ -3878,7 +3878,7 @@ algorithm
     case (DAE.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(_,false))) then true;
     // TODO! check if subtype is needed here
     case (DAE.T_SUBTYPE_BASIC(complexClassType = ClassInf.CONNECTOR(_,false))) then true;
-    case (_) then false;
+    else false;
   end match;
 end isConnectorType;
 
@@ -4411,7 +4411,7 @@ algorithm
       then
         fail();
 
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE, "- InstSection.connectComponents failed\n");
       then
@@ -4693,17 +4693,8 @@ protected function checkWhenAlgorithm
 "
   input SCode.Statement inWhenAlgorithm;
 algorithm
-  _ := match(inWhenAlgorithm)
-
-    // check for reinit
-    case (_)
-      equation
-        checkForReinitInWhenInitialAlg(inWhenAlgorithm);
-        checkForNestedWhenInStatements(inWhenAlgorithm);
-      then
-        ();
-
-  end match;
+  checkForReinitInWhenInitialAlg(inWhenAlgorithm);
+  checkForNestedWhenInStatements(inWhenAlgorithm);
 end checkWhenAlgorithm;
 
 protected function checkForReinitInWhenInitialAlg
@@ -4778,14 +4769,8 @@ protected function checkWhenEquation
    end when;"
   input SCode.EEquation inWhenEq;
 algorithm
-  _ := match(inWhenEq)
-    case (_)
-      equation
-        checkForReinitInWhenInitialEq(inWhenEq);
-        checkForNestedWhenInEquation(inWhenEq);
-      then
-        ();
-  end match;
+  checkForReinitInWhenInitialEq(inWhenEq);
+  checkForNestedWhenInEquation(inWhenEq);
 end checkWhenEquation;
 
 protected function checkForReinitInWhenInitialEq
@@ -5185,7 +5170,7 @@ algorithm
     local
       String str;
     case (DAE.T_ARRAY(ty = oty),_,_) then oty;
-    case (_,_,_)
+    else
       equation
         str = Types.unparseType(ty);
         Error.addSourceMessage(Error.ITERATOR_NON_ARRAY,{id,str},info);
@@ -5342,7 +5327,7 @@ algorithm
         Error.addSourceMessage(Error.IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY,{i},info);
       then fail();
 
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_)
+    else
       equation
         Error.addSourceMessage(Error.INTERNAL_ERROR, {"instParForStatement_dispatch failed."}, info);
       then fail();

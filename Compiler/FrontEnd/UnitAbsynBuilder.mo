@@ -64,7 +64,7 @@ algorithm
    _ := matchcontinue(cache,env,dae)
    local
      list<DAE.Element> elts;
-   case(_,_,_) equation
+   case(_, _, _) equation
        false = Flags.getConfigBool(Flags.UNIT_CHECKING);
    then ();
 
@@ -87,10 +87,10 @@ algorithm
    du := matchcontinue(p,tpl)
      local
        Env.Env env;
-     case(_,_) equation
+     case(_, _) equation
        (_,_,Env.FRAME(defineUnits = du)::_) = Lookup.lookupClass(Util.tuple21(tpl),Util.tuple22(tpl),p,false);
      then du;
-     case (_,_) then {};
+     else {};
   end matchcontinue;
 end retrieveUnitsFromEnv;
 
@@ -132,7 +132,7 @@ algorithm
        SCode.DEFINEUNIT("Sv",SCode.PUBLIC(),SOME("cd.sr"),NONE()),
        SCode.DEFINEUNIT("kat",SCode.PUBLIC(),SOME("s-1.mol"),NONE())
        });   then ();
-     case _ equation registerUnitWeightDefineunits2(du); then ();
+     else equation registerUnitWeightDefineunits2(du); then ();
   end matchcontinue;
 end registerUnitWeightDefineunits;
 
@@ -170,7 +170,7 @@ algorithm
         ((_,_,_)) = Interactive.traverseClasses(prg,NONE(),registerUnitInClass,0,false); // defineunits must be in public section.
       then ();
 
-    case _
+    else
       equation
         false = Flags.getConfigBool(Flags.UNIT_CHECKING);
       then ();
@@ -345,7 +345,7 @@ algorithm
       vector = arrayUpdate(vector,index,SOME(unit)) "destroys ";
     then UnitAbsyn.STORE(vector,indx);
 
-    case(_,_,_) equation
+    else equation
       print("storing unit at index ");print(intString(index));print(" failed\n");
     then fail();
   end matchcontinue;
@@ -363,7 +363,7 @@ algorithm
     case(_,UnitAbsyn.STORE(vector,_)) equation
       SOME(unit) = vector[index];
     then unit;
-    case(_,_) equation
+    else equation
       print(" finding store at index ");print(intString(index));
       print(" failed\n");
     then fail();
@@ -733,7 +733,7 @@ algorithm
         // print("built type param, store :"); printStore(st);
         terms = listReverse(terms);
      then (UnitAbsyn.INSTSTORE(st,ht,res),terms);
-    case(_,_,_,_) equation
+    else equation
       print("instBuildUnitTerms failed!!\n");
     then fail();
   end matchcontinue;
@@ -826,7 +826,7 @@ algorithm
   outStore := matchcontinue(n,istore)
     local UnitAbsyn.Store store;
     case(0,store) then store;
-    case(_,_) equation
+    case(_, _) equation
       true = n < 0;
       print("addUnspecifiedStores n < 0!\n");
     then fail();
@@ -929,7 +929,7 @@ algorithm
     case(param::params,ht,nextElt) equation
        (params,ht,nextElt) = createTypeParameterLocations4(params,ht,nextElt);
     then(param::params,ht,nextElt);
-    case(_,_,_) equation
+    else equation
       print("createTypeParameterLocations4 failed\n");
     then fail();
   end matchcontinue;
@@ -1233,7 +1233,7 @@ algorithm
     case(DAE.T_FUNCTION(_,DAE.T_TUPLE(tupleType = typeLst),_,_),_,_,store) equation
       (terms,extraTerms,store) = buildTupleResultTerms(typeLst,funcInstId,funcCallExp,store);
      then (terms,extraTerms,store);
-    case(_,_,_,_) equation
+    else equation
       print("buildResultTerms failed\n");
     then fail();
   end matchcontinue;
@@ -1376,7 +1376,7 @@ algorithm
       terms = buildFormal2ActualParamTerms(formalParamIndxs,actualParamIndxs);
       e = origExpInTerm(ut);
     then UnitAbsyn.EQN(UnitAbsyn.LOC(loc1,e),ut,e)::terms;
-    case(_,_) equation
+    else equation
       print("buildFormal2ActualParamTerms failed\n");
     then fail();
   end matchcontinue;

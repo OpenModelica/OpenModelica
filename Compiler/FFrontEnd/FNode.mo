@@ -269,7 +269,7 @@ algorithm
       then
         true;
 
-    else then false;
+    else false;
   end matchcontinue;
 end compareQualifiedImportNames;
 

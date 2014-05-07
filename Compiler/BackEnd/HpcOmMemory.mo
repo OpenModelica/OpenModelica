@@ -1072,7 +1072,7 @@ encapsulated package HpcOmMemory
           edgeId = "edge_CL_" +& sourceId +& "_" +& targetId;
           (graphInfo,(_,_)) = GraphML.addEdge(edgeId, targetId, sourceId, GraphML.COLOR_GRAY, GraphML.DASHED(), GraphML.LINEWIDTH_STANDARD, true, {}, (GraphML.ARROWNONE(),GraphML.ARROWNONE()), {}, graphInfo);
         then ((nodeIdx,graphInfo));
-      else then iNodeIdxGraphInfo;
+      else iNodeIdxGraphInfo;
     end matchcontinue;
   end appendCacheLineEdgeToGraphSolvedVar0;
 
@@ -1269,7 +1269,7 @@ encapsulated package HpcOmMemory
           idx = listGet(idxList, 1) + listGet(idxList, 2);
           elem = arrayGet(positionMapping, idx);
         then SOME(elem);
-      else then NONE();
+      else NONE();
     end matchcontinue;
   end getPositionMappingByArrayName;
 
@@ -1566,7 +1566,7 @@ encapsulated package HpcOmMemory
           oldValue = iCLIdx :: oldValue;
           tmpCLTaskMapping = arrayUpdate(iTaskCLMapping,iTaskIdx,oldValue);
         then tmpCLTaskMapping;
-      else then iTaskCLMapping;
+      else iTaskCLMapping;
     end matchcontinue;
   end transposeCacheLineTaskMapping1;
 
@@ -1599,7 +1599,7 @@ encapsulated package HpcOmMemory
           //print("evaluateCacheBehaviour0 writing to cache lines: " +& stringDelimitList(List.map(taskCacheLines, intString), ",") +& "\n");
           List.map4_0(taskCacheLines, evaluateCacheBehaviour1, (iGraphData,iNodeIdx), iSchedulerInfoFull, iSchedulerInfo, iCLTaskMapping);
         then iNodeIdx + 1;
-      else then iNodeIdx + 1;
+      else iNodeIdx + 1;
     end matchcontinue;
   end evaluateCacheBehaviour0;
 
@@ -1626,7 +1626,7 @@ encapsulated package HpcOmMemory
           otherTasksCL = List.fold3(otherTasksCL, evaluateCacheBehaviour1Filter, iGraphData, iSchedulerInfoFull, (iNodeIdx,threadIdx),  {});
           print("Conflicting tasks: " +& stringDelimitList(List.map(otherTasksCL, intString), ",") +& "\n");
         then ();
-      else then ();
+      else ();
     end matchcontinue;
   end evaluateCacheBehaviour1;
 

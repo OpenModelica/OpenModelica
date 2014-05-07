@@ -482,7 +482,7 @@ algorithm
         repl_1 = makeTransitive12(lst,repl,singleRepl,inFuncTypeExpExpToBooleanOption,HashSet.emptyHashSet());
       then
         (repl_1,src,dst);
-    else then (repl,src,dst);
+    else (repl,src,dst);
   end matchcontinue;
 end makeTransitive1;
 
@@ -1498,7 +1498,7 @@ algorithm
     case DAE.CREF_QUAL(ident = "$pDER") then true;
     // keep same a while untill we know which are needed
     //case DAE.CREF_QUAL(ident = "$DER") then true;
-    else then false;
+    else false;
   end match;
 end selfGeneratedVar;
 
@@ -2586,7 +2586,7 @@ algorithm
         print("\n");
       then
         ();
-    else then ();
+    else ();
   end match;
 end dumpDerConstReplacements;
 

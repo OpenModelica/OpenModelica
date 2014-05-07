@@ -673,7 +673,7 @@ algorithm
       equation
         lits = listReverse(lits);
       then DAE.DIM_ENUM(p, lits, dim_size);
-    else then inDim;
+    else inDim;
   end match;
 end reverseEnumType;
 
@@ -848,7 +848,7 @@ algorithm
         _::_ = List.select2(oc,outerConnectionMatches,cr1,cr2);
       then sets;
     // add the outerconnect
-    case(_,_,_,_,_,_,_,_,_)
+    else
       equation
         new_oc = Connect.OUTERCONNECT(scope, cr1, io1, f1, cr2, io2, f2, source);
       then addOuterConnect(sets, new_oc);
@@ -2768,7 +2768,7 @@ algorithm
       then dae;
 
     // The general case with N inside connectors and M outside:
-    case (_)
+    else
       equation
         (outside, inside) = List.splitOnTrue(inElements, isOutsideStream);
         dae = List.fold2(outside, streamEquationGeneral,
@@ -3050,7 +3050,7 @@ algorithm
     // Skip this phase if we have no connection operators.
     case (false, false, _, _, _) then inDae;
 
-    case (_, _, _, _, _)
+    else
       equation
         (dae, _, _) = DAEUtil.traverseDAE(inDae, DAE.emptyFuncTree,
           evaluateConnectionOperators2,
@@ -3420,7 +3420,7 @@ algorithm
         true = ComponentReference.crefEqualNoStringCompare(inCref, cr);
       then
         true;
-    else then false;
+    else false;
   end matchcontinue;
 end compareCrefStreamSet;
 
