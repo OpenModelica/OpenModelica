@@ -868,11 +868,25 @@ algorithm
         patternMatrix = List.transposeList(List.map(cases,getCasePatterns));
         (true,outInputs,outAliases,patternMatrix) = filterUnusedPatterns2(inputs,inAliases,patternMatrix,false,{},{},{});
         patternMatrix = List.transposeList(patternMatrix);
-        cases = List.threadMap(cases,patternMatrix,setCasePatterns);
+        cases = setCasePatternsCheckZero(cases,patternMatrix);
       then (outInputs,outAliases,cases);
     else (inputs,inAliases,inCases);
   end matchcontinue;
 end filterUnusedPatterns;
+
+protected function setCasePatternsCheckZero
+  "Handles the case when the pattern matrix becomes empty because no input is matched"
+  input list<DAE.MatchCase> inCases;
+  input list<list<DAE.Pattern>> patternMatrix;
+  output list<DAE.MatchCase> outCases;
+algorithm
+  outCases := match (inCases,patternMatrix)
+    case ({},{}) then inCases;
+    case (_,{})
+      then List.map1(inCases,setCasePatterns,{});
+    else List.threadMap(inCases,patternMatrix,setCasePatterns);
+  end match;
+end setCasePatternsCheckZero;
 
 protected function filterUnusedPatterns2
   "case (1,_,_) then ...; case (2,_,_) then ...; =>"
