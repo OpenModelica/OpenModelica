@@ -143,6 +143,10 @@ int checkForStateEvent(DATA* data, LIST *eventList)
     } else {
       debugStreamPrint(LOG_EVENTS, 0, "unchanged: %s -> %s", (data->simulationInfo.zeroCrossingsPre[i]>0) ? "TRUE" : "FALSE", (data->simulationInfo.zeroCrossings[i]>0) ? "TRUE" : "FALSE");
     }
+	
+    if (DEBUG_STREAM(LOG_EVENTS)) {
+      messageClose(LOG_EVENTS);
+    }
   }
   if (DEBUG_STREAM(LOG_EVENTS)) {
     messageClose(LOG_EVENTS);
