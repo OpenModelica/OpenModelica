@@ -67,8 +67,11 @@ IF(MSVC)
 #MESSAGE(FATAL_ERROR "A source file for ${_input} was not found. Required for MSVC builds.")
 #ENDIF(NOT _sourceFound)
 ENDIF(MSVC)
+
+message(STATUS "Compiler for precompiled header: ${CMAKE_CXX_COMPILER_ID}")
  
-IF(CMAKE_COMPILER_IS_GNUCXX)
+#IF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLANGXX)
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 GET_FILENAME_COMPONENT(_name ${_input} NAME)
 #SET(_source "${CMAKE_CURRENT_SOURCE_DIR}/${_input}")
 #SET(_outdir "${CMAKE_CURRENT_BINARY_DIR}/${_name}.gch")
@@ -82,6 +85,8 @@ STRING(TOUPPER "CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}" _flags_var_name)
 SET(_compiler_FLAGS ${${_flags_var_name}})
 #remove compiler flag for optimization becaus Modelica system is compiled without optimization
 string(REGEX REPLACE "O[1-9]" "O0" _compiler_FLAGS ${_compiler_FLAGS} )
+string(REGEX REPLACE "-g" "" _compiler_FLAGS ${_compiler_FLAGS} )
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 set(_compiler_FLAGS "${_compiler_FLAGS} -fPIC")
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
@@ -114,6 +119,7 @@ install (FILES "${_output}" DESTINATION include/omc/cpp)
 
 
 
-ENDIF(CMAKE_COMPILER_IS_GNUCXX)
+#ENDIF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLANGXX)
+endif()
 ENDMACRO()
 
