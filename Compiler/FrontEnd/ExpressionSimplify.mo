@@ -725,6 +725,12 @@ algorithm
       Option<Values.Value> v;
       DAE.Type ty;
       DAE.ReductionIterators riters;
+    // match () case () then exp; end match => exp
+    case DAE.MATCHEXPRESSION(inputs={}, localDecls={}, cases={
+        DAE.CASE(patterns={},localDecls={},body={},result=SOME(e))
+      })
+      then e;
+
     case DAE.MATCHEXPRESSION(inputs={e}, et=ty, localDecls={}, cases={
         DAE.CASE(patterns={DAE.PAT_CONSTANT(exp=DAE.BCONST(b1))},localDecls={},body={},result=SOME(e1)),
         DAE.CASE(patterns={DAE.PAT_CONSTANT(exp=DAE.BCONST(b2))},localDecls={},body={},result=SOME(e2))
