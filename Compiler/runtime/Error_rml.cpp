@@ -195,7 +195,8 @@ RML_BEGIN_LABEL(ErrorExt__setShowErrorMessages)
 
 RML_BEGIN_LABEL(ErrorExt__registerModelicaFormatError)
 {
-  /* Bootstrapped compiler only */
+  OpenModelica_ModelicaError = OpenModelica_ErrorModule_ModelicaError;
+  OpenModelica_ModelicaVFormatError = OpenModelica_ErrorModule_ModelicaVFormatError;
   RML_TAILCALLK(rmlSC);
 }
 

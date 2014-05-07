@@ -37,7 +37,10 @@
 #include <stdlib.h>
 #include <utility>
 #include "errorext.h"
-#include <openmodelica.h>
+#include "openmodelica.h"
+#include "meta_modelica.h"
+#include "util/omc_error.h"
+#include "util/ModelicaUtilitiesExtra.h"
 
 using namespace std;
 
@@ -488,4 +491,24 @@ extern std::string ErrorImpl__printMessagesStr(threadData_t *threadData, int war
 int showErrorMessages(threadData_t *threadData)
 {
   return getMembers(threadData)->showErrorMessages;
+}
+
+/* Handle ModelicaFormatError called during translation (external Modelica packages, print to Error.mo instead of stdout) */
+extern "C" {
+
+void OpenModelica_ErrorModule_ModelicaVFormatError(const char *fmt, va_list ap)
+{
+  char *str;
+  vasprintf(&str, fmt, ap);
+  c_add_message(NULL,0,ErrorType_runtime,ErrorLevel_error,str,NULL,0);
+  free(str);
+  MMC_THROW();
+}
+
+void OpenModelica_ErrorModule_ModelicaError(const char *str)
+{
+  c_add_message(NULL,0,ErrorType_runtime,ErrorLevel_error,str,NULL,0);
+  MMC_THROW();
+}
+
 }
