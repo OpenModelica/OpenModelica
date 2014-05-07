@@ -27,6 +27,7 @@
 #include <sstream>
 #include <stdio.h>
 #include <fstream>
+#include "cJSON.h"
 
 struct Equation {
   int id;
@@ -335,35 +336,52 @@ public:
 
 std::list<std::list<double> > ReadJsonBenchFileEquations(std::string filePath)
 {
-  std::list<std::list<double> > resultList = std::list<std::list<double> >();
-//    boost::property_tree::ptree pt;
-//
-//    std::ifstream fileStream(filePath.c_str());
-//
-//    if(fileStream)
-//    {
-//    std::stringstream stringStream;
-//    stringStream << fileStream.rdbuf();
-//    boost::property_tree::read_json(stringStream, pt);
-//
-//    BOOST_FOREACH(boost::property_tree::ptree::value_type &v, pt.get_child("profileBlocks"))
-//    {
-//      std::list<double> tmpLst = std::list<double>();
-//      assert(v.first.empty());
-//      double id = v.second.get<double>("id");
-//      double ncall = v.second.get<double>("ncall");
-//      double time = v.second.get<double>("time");
-//      //std::cerr << "id: " << id << " ncall: " << ncall << " time: " << time << std::endl;
-//      tmpLst.push_back(id);
-//      tmpLst.push_back(time);
-//      tmpLst.push_back(ncall);
-//      resultList.push_back(tmpLst);
-//    }
-//
-//    fileStream.close();
-//    }
+		std::list<std::list<double> > resultList = std::list<std::list<double> >();
 
-  return resultList;
+		FILE *fp;
+		long lSize;
+		char *buffer;
+		int arraySize, i;
+		cJSON *root;
+		cJSON *profileBlocks;
+
+		fp = fopen ( filePath.c_str() , "rb" );
+		if( !fp ) perror(filePath.c_str()),exit(1);
+
+		fseek( fp , 0L , SEEK_END);
+		lSize = ftell( fp );
+		rewind( fp );
+
+		/* allocate memory for entire content */
+		buffer = (char*)calloc( 1, lSize+1 );
+		if( !buffer ) fclose(fp),fputs("memory alloc fails",stderr),exit(1);
+
+		/* copy the file into the buffer */
+		if( 1!=fread( buffer , lSize, 1 , fp) )
+		  fclose(fp),free(buffer),fputs("entire read fails",stderr),exit(1);
+
+		/* do your work here, buffer is a string contains the whole text */
+		root = cJSON_Parse(buffer);
+		profileBlocks = cJSON_GetObjectItem(root,"profileBlocks");
+		arraySize = cJSON_GetArraySize(profileBlocks);
+		for(i = 0; i < arraySize; i++)
+		{
+			cJSON *item = cJSON_GetArrayItem(profileBlocks, i);
+			cJSON *idItem = cJSON_GetObjectItem(item, "id");
+			cJSON *ncallItem = cJSON_GetObjectItem(item, "ncall");
+			cJSON *timeItem = cJSON_GetObjectItem(item, "time");
+			std::list<double> tmpLst = std::list<double>();
+
+			tmpLst.push_back(idItem->valuedouble);
+			tmpLst.push_back(timeItem->valuedouble);
+			tmpLst.push_back(ncallItem->valuedouble);
+			resultList.push_back(tmpLst);
+		}
+
+		fclose(fp);
+		free(buffer);
+
+		return resultList;
 }
 
 void* HpcOmBenchmarkExtImpl__readCalcTimesFromXml(const char *filename)

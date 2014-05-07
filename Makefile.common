@@ -49,7 +49,7 @@ mkbuilddirs:
 
 release: omc-diff omc
 
-bootstrap-dependencies: omc-diff interactive docs fmi fmil opencl_rt lis graphstream
+bootstrap-dependencies: omc-diff interactive docs fmi fmil opencl_rt lis graphstream cjson
 	# NOTE: OpenModelicaBootstrappingHeader.h has to be regenerated without any other process writing to so/etc or you get bus errors
 	$(MAKE) -C Compiler OpenModelicaBootstrappingHeader.h
 	$(MAKE) -C Compiler/runtime install
@@ -189,6 +189,7 @@ qjson:
 	test "(" ! `uname` = Darwin ")" -o "(" ! -f 3rdParty/qjson-0.8.1/build/lib/libqjson$(SHREXT) ")" || install_name_tool -id @rpath/libqjson$(SHREXT) 3rdParty/qjson-0.8.1/build/lib/libqjson$(SHREXT)
 	cp -a 3rdParty/qjson-0.8.1/build/lib/libqjson*$(SHREXT)* $(builddir_lib)/omc/
 	cp -a 3rdParty/qjson-0.8.1/src/*.h 3rdParty/qjson-0.8.1/build/include/qjson
+	
 CMinpack:
 	test -d 3rdParty/CMinpack
 	mkdir -p 3rdParty/CMinpack/build
@@ -313,7 +314,7 @@ bootstrap-clean:
 openblas-clean:
 	# OpenBLAS make clean actually gives error-messages. Let it do it, but silently
 	$(MAKE) -C 3rdParty/OpenBLAS-0.2.8 clean > /dev/null 2>&1
-clean: qtclean fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean Cdaskr-clean bootstrap-clean msgpack-clean graphstream-clean openblas-clean
+clean: qtclean fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean Cdaskr-clean bootstrap-clean msgpack-clean graphstream-clean openblas-clean cjson-clean
 	(cd SimulationRuntime/c && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd SimulationRuntime/interactive && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean)
