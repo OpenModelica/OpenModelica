@@ -96,7 +96,7 @@ void omc_mmap_close_write_unix(omc_mmap_write_unix map)
 
 static FILE* omc_mmap_common(const char *fileName, const char *mode, size_t *size, char **data)
 {
-  FILE *file = fopen(fileName, "r+");
+  FILE *file = fopen(fileName, mode);
   size_t fileSize;
   if (!file) {
     throwStreamPrint(NULL, "Failed to open file %s for reading: %s\n", fileName, strerror(errno));
@@ -122,7 +122,7 @@ omc_mmap_read_inmemory omc_mmap_open_read_inmemory(const char *fileName)
 {
   omc_mmap_read_inmemory res = {0};
   res.size = 0;
-  fclose(omc_mmap_common(fileName, "r", &res.size, (char**)&res.data));
+  fclose(omc_mmap_common(fileName, "rb", &res.size, (char**)&res.data));
   return res;
 }
 
