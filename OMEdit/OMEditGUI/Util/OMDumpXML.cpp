@@ -36,9 +36,11 @@
  *
  */
 
+#include <QtGui>
 #include <QDebug>
 #include <QXmlStreamReader>
 #include "OMDumpXML.h"
+#include "diff_match_patch.h"
 
 const char* OMEquationTypeToString(int t)
 {
@@ -51,15 +53,34 @@ QString OMOperation::toString()
   return "unknown operation";
 }
 
-OMOperationSimplify::OMOperationSimplify(QStringList ops)
+QString OMOperation::toHtml()
+{
+  return Qt::escape(toString());
+}
+
+QString OMOperation::diffHtml(QString &before, QString &after)
+{
+  diff_match_patch dmp;
+  dmp.Diff_EditCost = 6;
+  QList<Diff> diffs = dmp.diff_main(before,after);
+  dmp.diff_cleanupSemanticLossless(diffs);
+  return dmp.diff_prettyHtml(diffs);
+}
+
+OMOperationBeforeAfter::OMOperationBeforeAfter(QString name, QStringList ops) : name(name)
 {
   before = ops.size() > 0 ? ops[0] : "";
   after = ops.size() > 1 ? ops[1] : "";
 }
 
-QString OMOperationSimplify::toString()
+QString OMOperationBeforeAfter::toString()
 {
-  return "simplify: " + before + " => " + after;
+  return name + ": " + before + " => " + after;
+}
+
+QString OMOperationBeforeAfter::toHtml()
+{
+  return name + ": " + diffHtml(before,after);
 }
 
 OMOperationScalarize::OMOperationScalarize(int _index, QStringList ops)
@@ -72,28 +93,6 @@ OMOperationScalarize::OMOperationScalarize(int _index, QStringList ops)
 QString OMOperationScalarize::toString()
 {
   return QString("scalarize(%1): %2 => %3").arg(index).arg(before).arg(after);
-}
-
-OMOperationInline::OMOperationInline(QStringList ops)
-{
-  before = ops.size() > 0 ? ops[0] : "";
-  after = ops.size() > 1 ? ops[1] : "";
-}
-
-QString OMOperationInline::toString()
-{
-  return "inline: " + before + " => " + after;
-}
-
-OMOperationSubstitution::OMOperationSubstitution(QStringList ops)
-{
-  before = ops.takeFirst();
-  substitutions = ops;
-}
-
-QString OMOperationSubstitution::toString()
-{
-  return "substitute: " + before + " => " + substitutions.join(" => ");
 }
 
 OMOperationSolved::OMOperationSolved(QStringList ops)
@@ -152,17 +151,6 @@ OMOperationResidual::OMOperationResidual(QStringList ops)
 QString OMOperationResidual::toString()
 {
   return "residual: " + lhs + " = " + rhs + " => 0 = " + result;
-}
-
-OMOperationFlattening::OMOperationFlattening(QStringList ops)
-{
-  original = ops.size() > 0 ? ops[0] : "";
-  flattened = ops.size() > 1 ? ops[1] : "";
-}
-
-QString OMOperationFlattening::toString()
-{
-  return "original: " + original + " => flattened: " + flattened;
 }
 
 OMOperationDummyDerivative::OMOperationDummyDerivative(QStringList ops)
@@ -258,6 +246,8 @@ QString OMEquation::toString()
     return "(statement) " + text[1];
   } else if (text[0] == "nonlinear") {
     return QString("nonlinear, size %1").arg(eqs.size());
+  } else if (text[0] == "linear") {
+    return QString("linear, size %1").arg(defines.size());
   } else {
     return "(" + text.join(",") + ")";
   }

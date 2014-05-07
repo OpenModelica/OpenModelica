@@ -88,6 +88,7 @@ SOURCES += main.cpp\
     GUI/Dialogs/ShapePropertiesDialog.cpp \
     Util/OMDumpXML.cpp \
     Util/Utilities.cpp \
+    Util/diff_match_patch.cpp \
     GUI/Widgets/TransformationsWidget.cpp
 #    GUI/Widgets/SimulationBrowserWidget.cpp
 
@@ -123,6 +124,7 @@ HEADERS  += backtrace.h \
     GUI/Dialogs/ShapePropertiesDialog.h \
     Util/OMDumpXML.cpp \
     Util/Utilities.h \
+    Util/diff_match_patch.h \
     GUI/Widgets/TransformationsWidget.h
 #    GUI/Widgets/SimulationBrowserWidget.h
 
@@ -143,7 +145,7 @@ win32 {
         -L$$(OMDEV)/lib/qwt-6.1.0-mingw/lib \
         -lqwtd \
         -L../../3rdParty/gc-7.2/.libs -lgc \
-        -L../../build/lib/omc 
+        -L../../build/lib/omc
 } else {
 # In order to get the stack trace in Windows we must add -g flag. Qt automatically adds the -O2 flag for optimization.
 # We should also unset the QMAKE_LFLAGS_RELEASE define because it is defined as QMAKE_LFLAGS_RELEASE = -Wl,-s in qmake.conf file for MinGW

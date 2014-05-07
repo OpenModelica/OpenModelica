@@ -1022,12 +1022,12 @@ void TransformationsWidget::fetchOperations(OMEquation *equation)
   {
     foreach (OMOperation *op, equation->ops)
     {
-      QStringList values;
-      values << op->toString();
       QString toolTip = op->toString();
-      QTreeWidgetItem *pOperationTreeItem = new QTreeWidgetItem(values);
+      QTreeWidgetItem *pOperationTreeItem = new QTreeWidgetItem();
+      QLabel *text = new QLabel("<html>" + op->toHtml() + "</html>");
       pOperationTreeItem->setToolTip(0, toolTip);
       mpEquationOperationsTreeWidget->addTopLevelItem(pOperationTreeItem);
+      mpEquationOperationsTreeWidget->setItemWidget(pOperationTreeItem, 0, text);
     }
   }
   else

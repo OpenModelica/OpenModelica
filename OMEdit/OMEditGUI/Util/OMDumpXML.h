@@ -56,14 +56,23 @@ const char* OMEquationTypeToString(int);
 class OMOperation {
 public:
   virtual QString toString();
+  virtual QString toHtml();
+  QString diffHtml(QString &before, QString &after);
 };
 
-class OMOperationSimplify : public OMOperation
+class OMOperationBeforeAfter : public OMOperation
 {
 public:
-  QString before,after;
-  OMOperationSimplify(QStringList ops);
+  QString name,before,after;
+  OMOperationBeforeAfter(QString name, QStringList ops);
   QString toString();
+  QString toHtml();
+};
+
+class OMOperationSimplify : public OMOperationBeforeAfter
+{
+public:
+  OMOperationSimplify(QStringList ops) : OMOperationBeforeAfter("simplify",ops) {};
 };
 
 class OMOperationScalarize : public OMOperation
@@ -75,21 +84,16 @@ public:
   QString toString();
 };
 
-class OMOperationInline : public OMOperation
+class OMOperationInline : public OMOperationBeforeAfter
 {
 public:
-  QString before,after;
-  OMOperationInline(QStringList ops);
-  QString toString();
+  OMOperationInline(QStringList ops) : OMOperationBeforeAfter("inline",ops) {};
 };
 
-class OMOperationSubstitution : public OMOperation
+class OMOperationSubstitution : public OMOperationBeforeAfter
 {
 public:
-  QString before;
-  QStringList substitutions;
-  OMOperationSubstitution(QStringList ops);
-  QString toString();
+  OMOperationSubstitution(QStringList ops) : OMOperationBeforeAfter("substitution",ops) {};
 };
 
 class OMOperationSolved : public OMOperation
@@ -142,13 +146,10 @@ public:
   QString toString();
 };
 
-class OMOperationFlattening : public OMOperation
+class OMOperationFlattening : public OMOperationBeforeAfter
 {
 public:
-  QString original;
-  QString flattened;
-  OMOperationFlattening(QStringList ops);
-  QString toString();
+  OMOperationFlattening(QStringList ops) : OMOperationBeforeAfter("flattening", ops) {};
 };
 
 struct OMInfo {
