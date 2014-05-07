@@ -60,7 +60,7 @@ settings:
 
 omc: @OMCTARGET@
 
-omc-rml: omc-diff interactive docs fmil opencl_rt lis omc-rml-nolink graphstream cjson
+omc-rml: omc-diff interactive docs fmil opencl_rt lis omc-rml-nolink graphstream
 	$(MAKE) -C Compiler -f Makefile release
 	$(MAKE) omlibrary
 omc-rml-nolink:
@@ -217,11 +217,3 @@ emcc: msl-external-libs-emcc emcc-simulationruntime
 emcc-simulationruntime:
 	mkdir -p build/lib/omc/emcc/
 	$(MAKE) -C SimulationRuntime/c emcc
-
-cjson:
-	cd 3rdParty/cJSON && ./configure && $(MAKE)
-	cp 3rdParty/cJSON/libcjson.so build/lib/omc/
-
-cjson-clean:
-	rm -f 3rdParty/cJSON/*.o
-	rm -f 3rdParty/cJSON/*.so
