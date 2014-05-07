@@ -49,7 +49,7 @@ mkbuilddirs:
 
 release: omc-diff omc
 
-bootstrap-dependencies: omc-diff interactive docs fmi fmil opencl_rt lis graphstream cjson
+bootstrap-dependencies: omc-diff interactive docs fmi fmil opencl_rt lis graphstream
 	# NOTE: OpenModelicaBootstrappingHeader.h has to be regenerated without any other process writing to so/etc or you get bus errors
 	$(MAKE) -C Compiler OpenModelicaBootstrappingHeader.h
 	$(MAKE) -C Compiler/runtime install
