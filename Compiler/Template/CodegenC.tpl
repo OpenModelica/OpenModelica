@@ -8925,7 +8925,11 @@ template daeExpTailCall(list<DAE.Exp> es, list<String> vs, Context context, Text
           let &postExp += '_<%v%> = <%tmp%>;<%\n%>'
           '<%tmp%> = <%exp%>;<%\n%><%daeExpTailCall(erest, vrest, context, &preExp, &postExp, &varDecls)%>'
         else
-          '_<%v%> = <%exp%>;<%\n%><%daeExpTailCall(erest, vrest, context, &preExp, &postExp, &varDecls)%>')
+          let restText = daeExpTailCall(erest, vrest, context, &preExp, &postExp, &varDecls)
+          let v2 = '_<%v%>'
+          if stringEq(v2, exp)
+            then restText
+            else '<%v2%> = <%exp%>;<%\n%><%restText%>')
 end daeExpTailCall;
 
 template daeExpCallBuiltinPrefix(Boolean builtin)
