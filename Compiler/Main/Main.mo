@@ -29,8 +29,8 @@
  *
  */
 
-encapsulated package Main
-" file:        Main.mo
+encapsulated package Main       
+" file:        Main.mo        
   package:     Main
   description: Modelica main program
 
