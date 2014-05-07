@@ -9294,8 +9294,14 @@ algorithm
     local
       ElementInType ei;
       list<ElementInType> rest_ei;
+      ElementOutType oe;
      
-    case (ei :: _, _) then inFindFunc(ei);
+    case (ei :: _, _)
+      equation
+        oe = inFindFunc(ei);
+      then
+        oe;
+
     case (_ :: rest_ei, _) then find(rest_ei, inFindFunc);
 
   end matchcontinue;
