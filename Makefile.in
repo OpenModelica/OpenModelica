@@ -223,4 +223,5 @@ cjson:
 	cp 3rdParty/cJSON/libcjson.so build/lib/omc/
 
 cjson-clean:
-	cd 3rdParty/cJSON && $(MAKE) clean
+	rm -f 3rdParty/cJSON/*.o
+	rm -f 3rdParty/cJSON/*.so
