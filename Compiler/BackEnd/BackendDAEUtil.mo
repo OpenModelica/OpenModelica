@@ -2557,7 +2557,7 @@ algorithm outExp := matchcontinue(inExp)
   // CASE for Array
   case( (DAE.CREF(componentRef=cr,ty= t as DAE.T_ARRAY(ty=ty,dims=ad)), (funcs,_)) )
     equation
-        sublstcref = ComponentReference.crefSubs(cr);    
+        sublstcref = ComponentReference.crefSubs(cr);
             //print("subscript for cref "+&stringDelimitList(List.map(sublstcref,ExpressionDump.printSubscriptStr)," / ")+&"\n");
         subslst = dimensionsToRange(ad);
         subslst1 = rangesToSubscripts(subslst);
