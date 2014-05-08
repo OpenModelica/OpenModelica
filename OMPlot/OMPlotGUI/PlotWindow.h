@@ -63,6 +63,7 @@ private:
   QToolButton *mpNoGridButton;
   QToolButton *mpZoomButton;
   QToolButton *mpPanButton;
+  QToolButton *mpSetupButton;
   QTextStream *mpTextStream;
   QFile mFile;
   QStringList mVariablesList;
@@ -121,6 +122,8 @@ public slots:
   void fitInView();
   void setLogX(bool on);
   void setLogY(bool on);
+  void showSetupDialog();
+  void showSetupDialog(QString variable);
 };
 
 //Exception classes
@@ -145,38 +148,70 @@ public:
   NoVariableException(const char *varName) : PlotException(varName) {}
 };
 
-//Options Class
-//class Options : public QDialog
-//{
-//    Q_OBJECT
-//public:
-//    Options(PlotWindow *pPlotWindow);
+class SetupDialog;
+class VariablePageWidget : public QWidget
+{
+  Q_OBJECT
+private:
+  PlotCurve *mpPlotCurve;
+  QGroupBox *mpGeneralGroupBox;
+  QLabel *mpLegendLabel;
+  QLineEdit *mpLegendTextBox;
+  QPushButton *mpResetLabelButton;
+  QLabel *mpFileLabel;
+  QLabel *mpFileTextBox;
+  QGroupBox *mpAppearanceGroupBox;
+  QLabel *mpColorLabel;
+  QPushButton *mpPickColorButton;
+  QColor mCurveColor;
+  QCheckBox *mpAutomaticColorCheckBox;
+  QLabel *mpPatternLabel;
+  QComboBox *mpPatternComboBox;
+  QLabel *mpThicknessLabel;
+  QDoubleSpinBox *mpThicknessSpinBox;
+  QCheckBox *mpHideCheckBox;
+public:
+  VariablePageWidget(PlotCurve *pPlotCurve, SetupDialog *pSetupDialog);
+  void setCurvePickColorButtonIcon();
+  PlotCurve* getPlotCurve() {return mpPlotCurve;}
+  QLineEdit* getLegendTextBox() {return mpLegendTextBox;}
+  void setCurveColor(QColor color) {mCurveColor = color;}
+  QColor getCurveColor() {return mCurveColor;}
+  QCheckBox* getAutomaticColorCheckBox() {return mpAutomaticColorCheckBox;}
+  QComboBox* getPatternComboBox() {return mpPatternComboBox;}
+  QDoubleSpinBox* getThicknessSpinBox() {return mpThicknessSpinBox;}
+  QCheckBox* getHideCheckBox() {return mpHideCheckBox;}
+public slots:
+  void resetLabel();
+  void pickColor();
+};
 
-//    void setUpForm();
-//    void show();
+class SetupDialog : public QDialog
+{
+  Q_OBJECT
+private:
+  PlotWindow *mpPlotWindow;
+  QTabWidget *mpSetupTabWidget;
 
-//    //MainWindow *mpParentMainWindow;
-//private:
-//   QLineEdit *mpTitle;
-//   QLineEdit *mpXLabel;
-//   QLineEdit *mpYLabel;
+  QWidget *mpVariablesTab;
+  QLabel *mpVariableLabel;
+  QListWidget *mpVariablesListWidget;
+  QStackedWidget *mpVariablePagesStackedWidget;
 
-//   QLineEdit *mpXRangeMin;
-//   QLineEdit *mpXRangeMax;
-//   QLineEdit *mpYRangeMin;
-//   QLineEdit *mpYRangeMax;
+  QPushButton *mpOkButton;
+  QPushButton *mpApplyButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
+public:
+  SetupDialog(PlotWindow *pPlotWindow);
+  void selectVariable(QString variable);
+  void setupPlotCurve(VariablePageWidget *pVariablePageWidget);
+public slots:
+  void variableSelected(QListWidgetItem *current, QListWidgetItem *previous);
+  void saveSetup();
+  void applySetup();
+};
 
-//   QLabel *mpTitleLabel;
-
-//   QGroupBox *mpLabelGroup;
-
-//   QPushButton *mpOkButton;
-//   QPushButton *mpCancelButton;
-
-//   PlotWindow *mpPlotWindow;
-//public slots:
-//    void edit();
-//};
 }
 
 #endif // PLOTWINDOW_H

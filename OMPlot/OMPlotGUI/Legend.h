@@ -43,25 +43,18 @@ class PlotCurve;
 
 class Legend : public QwtLegend
 {
-    Q_OBJECT
+  Q_OBJECT
 public:
-    Legend(Plot *pParent);
-    ~Legend();
+  Legend(Plot *pParent);
+  ~Legend();
 public slots:
-    void legendMenu(const QPoint&);
-    void selectColor();
-    void toggleHide(bool hide);
-    void automaticColor(bool automatic);
-    void setLegendItemStr(QString value);
-    QAction* getAutomaticColorAction();
-    QAction* getHideAction();
+  void showSetupDialog();
+  void legendMenu(const QPoint&);
 private:
-    PlotCurve *mpPlotCurve;
-    Plot *mpPlot;
-    QString mLegendItemStr;
-    QAction *mpChangeColorAction;
-    QAction *mpAutomaticColorAction;
-    QAction *mpHideAction;
+  Plot *mpPlot;
+  PlotCurve *mpPlotCurve;
+  QAction *mpSetupAction;
+
 };
 }
 

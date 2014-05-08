@@ -141,6 +141,16 @@ QList<PlotCurve*> Plot::getPlotCurvesList()
   return mPlotCurvesList;
 }
 
+PlotCurve* Plot::getPlotCurve(QString nameStructure)
+{
+  foreach (PlotCurve *pPlotCurve, mPlotCurvesList)
+  {
+    if (pPlotCurve->getNameStructure().compare(nameStructure) == 0)
+      return pPlotCurve;
+  }
+  return 0;
+}
+
 void Plot::addPlotCurve(PlotCurve *pCurve)
 {
   mPlotCurvesList.append(pCurve);

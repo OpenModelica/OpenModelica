@@ -43,6 +43,8 @@ class PlotCurve : public QwtPlotCurve
 private:
   QwtArray<double> mXAxisVector;
   QwtArray<double> mYAxisVector;
+  QString mName;
+  QString mNameStructure;
   QString mFileName;
   QString mXVariable;
   QString mYVariable;
@@ -52,12 +54,14 @@ private:
 
   Plot *mpParentPlot;
 public:
-  PlotCurve(Plot *pParent);
+  PlotCurve(QString fileName, QString variableName, Plot *pParent);
   ~PlotCurve();
 
   Qt::PenStyle getPenStyle(int style);
   QwtPlotCurve::CurveStyle getCurveStyle(int style);
+  void setCurveWidth(qreal width);
   qreal getCurveWidth() {return mWidth;}
+  void setCurveStyle(int style);
   int getCurveStyle() {return mStyle;}
   void setXAxisVector(QVector<double> vector);
   void addXAxisValue(double value);
@@ -68,8 +72,11 @@ public:
   void addYAxisValue(double value);
   const double* getYAxisVector() const;
   int getSize();
+  QString getName() {return mName;}
   void setFileName(QString fileName);
   QString getFileName();
+  void setNameStructure(QString variableName);
+  QString getNameStructure() {return mNameStructure;}
   void setXVariable(QString xVariable);
   QString getXVariable();
   void setYVariable(QString yVariable);

@@ -75,6 +75,7 @@ public:
   PlotZoomer* getPlotZoomer();
   PlotPanner* getPlotPanner();
   QList<PlotCurve*> getPlotCurvesList();
+  PlotCurve* getPlotCurve(QString nameStructure);
   void addPlotCurve(PlotCurve *pCurve);
   void removeCurve(PlotCurve *pCurve);
   QColor getUniqueColor(int index, int total);

@@ -34,24 +34,29 @@
 #include "PlotCurve.h"
 #if QWT_VERSION < 0x060000
 #include "qwt_legend_item.h"
+#else
+#include "qwt_painter.h"
 #endif
 #include "qwt_symbol.h"
 
 using namespace OMPlot;
 
-PlotCurve::PlotCurve(Plot *pParent)
+PlotCurve::PlotCurve(QString fileName, QString variableName, Plot *pParent)
   : mCustomColor(false)
 {
+  mName = variableName;
+  mNameStructure = fileName + "." + variableName;
+  mFileName = fileName;
+  mCustomColor = false;
+  setTitle(variableName);
   mpParentPlot = pParent;
   /* set curve width and style */
-  mWidth = mpParentPlot->getParentPlotWindow()->getCurveWidth();
-  mStyle = mpParentPlot->getParentPlotWindow()->getCurveStyle();
-  QPen customPen = pen();
-  customPen.setWidthF(mWidth);
-  customPen.setStyle(getPenStyle(mStyle));
-  setPen(customPen);
-  if (mpParentPlot->getParentPlotWindow()->getCurveStyle() > 5)
-    setStyle(getCurveStyle(mStyle));
+  setCurveWidth(mpParentPlot->getParentPlotWindow()->getCurveWidth());
+  setCurveStyle(mpParentPlot->getParentPlotWindow()->getCurveStyle());
+#if QWT_VERSION > 0x060000
+  setLegendAttribute(QwtPlotCurve::LegendShowLine);
+  setLegendIconSize(QSize(30, 30));
+#endif
 }
 
 PlotCurve::~PlotCurve()
@@ -87,6 +92,25 @@ QwtPlotCurve::CurveStyle PlotCurve::getCurveStyle(int style)
     default:
       return QwtPlotCurve::Lines;
   }
+}
+
+void PlotCurve::setCurveWidth(qreal width)
+{
+  mWidth = width;
+  QPen customPen = pen();
+  customPen.setWidthF(mWidth);
+  setPen(customPen);
+}
+
+void PlotCurve::setCurveStyle(int style)
+{
+  setStyle(QwtPlotCurve::Lines);
+  mStyle = style;
+  QPen customPen = pen();
+  customPen.setStyle(getPenStyle(mStyle));
+  setPen(customPen);
+  if (mStyle > 5)
+    setStyle(getCurveStyle(mStyle));
 }
 
 void PlotCurve::setXAxisVector(QVector<double> vector)
@@ -144,6 +168,11 @@ QString PlotCurve::getFileName()
   return mFileName;
 }
 
+void PlotCurve::setNameStructure(QString variableName)
+{
+  mNameStructure = getFileName() + "." + variableName;
+}
+
 void PlotCurve::setXVariable(QString xVariable)
 {
   mXVariable = xVariable;
@@ -187,11 +216,11 @@ void PlotCurve::setData(const double* xData, const double* yData, int size)
 void PlotCurve::updateLegend(QwtLegend *legend) const
 {
   QwtPlotCurve::updateLegend(legend);
-  QwtLegendItem *lgdItem = dynamic_cast<QwtLegendItem*>(legend->find(this));
-  if (lgdItem)
+  QwtLegendItem *pQwtLegendItem = dynamic_cast<QwtLegendItem*>(legend->find(this));
+  if (pQwtLegendItem)
   {
-    lgdItem->setIdentifierMode(QwtLegendItem::ShowSymbol | QwtLegendItem::ShowText);
-    lgdItem->setSymbol(QwtSymbol(QwtSymbol::Rect, QBrush(pen().color()), QPen(Qt::black),QSize(20,20)));
+    pQwtLegendItem->setIdentifierMode(QwtLegendItem::ShowLine);
+    pQwtLegendItem->setIdentifierWidth(30);
   }
   QwtPlotItem::updateLegend(legend);
 }

@@ -239,6 +239,12 @@ void PlotWindow::setupToolbar()
   mpLogYCheckBox = new QCheckBox(tr("Log Y"), this);
   connect(mpLogYCheckBox, SIGNAL(toggled(bool)), SLOT(setLogY(bool)));
   toolBar->addWidget(mpLogYCheckBox);
+  toolBar->addSeparator();
+  // setup
+  mpSetupButton = new QToolButton(toolBar);
+  mpSetupButton->setText(tr("Setup"));
+  connect(mpSetupButton, SIGNAL(clicked()), SLOT(showSetupDialog()));
+  toolBar->addWidget(mpSetupButton);
   // finally add the tool bar to the mainwindow
   addToolBar(toolBar);
 }
@@ -279,8 +285,7 @@ void PlotWindow::plot()
         if (mVariablesList.contains(currentVariable) or getPlotType() == PlotWindow::PLOTALL)
         {
           variablesPlotted.append(currentVariable);
-          PlotCurve *pPlotCurve = new PlotCurve(mpPlot);
-          pPlotCurve->setFileName(QFileInfo(mFile).fileName());
+          PlotCurve *pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), currentVariable, mpPlot);
           mpPlot->addPlotCurve(pPlotCurve);
           // read the variable values now
           currentLine = mpTextStream->readLine();
@@ -291,7 +296,6 @@ void PlotWindow::plot()
             pPlotCurve->addYAxisValue(QString(values[1]).toDouble());
             currentLine = mpTextStream->readLine();
           }
-          pPlotCurve->setTitle(currentVariable);
           pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(),
                               pPlotCurve->getSize());
           pPlotCurve->attach(mpPlot);
@@ -332,10 +336,8 @@ void PlotWindow::plot()
         double *vals = read_csv_dataset(csvReader, csvReader->variables[i]);
         if (vals == NULL)
           throw NoVariableException(tr("Variable doesnt exist: %1").arg(csvReader->variables[i]).toStdString().c_str());
-        PlotCurve *pPlotCurve = new PlotCurve(mpPlot);
-        pPlotCurve->setFileName(QFileInfo(mFile).fileName());
+        PlotCurve *pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), csvReader->variables[i], mpPlot);
         mpPlot->addPlotCurve(pPlotCurve);
-        pPlotCurve->setTitle(csvReader->variables[i]);
         for (int i = 0 ; i < csvReader->numsteps ; i++)
         {
           pPlotCurve->addXAxisValue(timeVals[i]);
@@ -380,10 +382,8 @@ void PlotWindow::plot()
       {
         variablesPlotted.append(reader.allInfo[i].name);
         // create the plot curve for variable
-        PlotCurve *pPlotCurve = new PlotCurve(mpPlot);
-        pPlotCurve->setFileName(QFileInfo(mFile).fileName());
+        PlotCurve *pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), reader.allInfo[i].name, mpPlot);
         mpPlot->addPlotCurve(pPlotCurve);
-        pPlotCurve->setTitle(reader.allInfo[i].name);
         counter++;
         // read the variable values
         var = omc_matlab4_find_var(&reader, reader.allInfo[i].name);
@@ -476,8 +476,7 @@ void PlotWindow::plotParametric()
           PlotCurve *pPlotCurve;
           if (variablesPlotted.size() == 1)
           {
-            pPlotCurve = new PlotCurve(mpPlot);
-            pPlotCurve->setFileName(QFileInfo(mFile).fileName());
+            pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), yVariable + "(" + xVariable + ")", mpPlot);
             pPlotCurve->setXVariable(xVariable);
             pPlotCurve->setYVariable(yVariable);
             mpPlot->addPlotCurve(pPlotCurve);
@@ -497,7 +496,6 @@ void PlotWindow::plotParametric()
           // when two variables are found plot then plot them
           if (variablesPlotted.size() == 2)
           {
-            pPlotCurve->setTitle(yVariable + "(" + xVariable + ")");
             pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(),
                                 pPlotCurve->getSize());
             pPlotCurve->attach(mpPlot);
@@ -544,12 +542,10 @@ void PlotWindow::plotParametric()
     }
 
     // create plot curves
-    PlotCurve *pPlotCurve = new PlotCurve(mpPlot);
-    pPlotCurve->setFileName(QFileInfo(mFile).fileName());
+    PlotCurve *pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), yVariable + "(" + xVariable + ")", mpPlot);
     pPlotCurve->setXVariable(xVariable);
     pPlotCurve->setYVariable(yVariable);
     mpPlot->addPlotCurve(pPlotCurve);
-    pPlotCurve->setTitle(yVariable + "(" + xVariable + ")");
 
     //Assign Values
     while(!mpTextStream->atEnd())
@@ -583,8 +579,7 @@ void PlotWindow::plotParametric()
     if(0 != (msg = omc_new_matlab4_reader(mFile.fileName().toStdString().c_str(), &reader)))
       throw PlotException(msg);
 
-    PlotCurve *pPlotCurve = new PlotCurve(mpPlot);
-    pPlotCurve->setFileName(QFileInfo(mFile).fileName());
+    PlotCurve *pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), yVariable + "(" + xVariable + ")", mpPlot);
     pPlotCurve->setXVariable(xVariable);
     pPlotCurve->setYVariable(yVariable);
     mpPlot->addPlotCurve(pPlotCurve);
@@ -640,7 +635,6 @@ void PlotWindow::plotParametric()
       pPlotCurve->addYAxisValue(yval);
     }
     pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
-    pPlotCurve->setTitle(yVariable + "(" + xVariable + ")");
     pPlotCurve->attach(mpPlot);
     mpPlot->replot();
     omc_free_matlab4_reader(&reader);
@@ -747,6 +741,8 @@ void PlotWindow::setLegendPosition(QString position)
     mpPlot->insertLegend(0);
     mpPlot->setLegend(new Legend(mpPlot));
     mpPlot->insertLegend(mpPlot->getLegend(), QwtPlot::TopLegend);
+//    QwtLegend *pQwtLegend = qobject_cast<QwtLegend*>(mpPlot->legend());
+//    pQwtLegend->contentsWidget()->layout()->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   }
   else if (position.toLower().compare("bottom") == 0)
   {
@@ -998,4 +994,256 @@ void PlotWindow::setLogY(bool on)
     mpLogYCheckBox->blockSignals(false);
   }
   mpPlot->replot();
+}
+
+void PlotWindow::showSetupDialog()
+{
+  SetupDialog *pSetupDialog = new SetupDialog(this);
+  pSetupDialog->exec();
+}
+
+void PlotWindow::showSetupDialog(QString variable)
+{
+  SetupDialog *pSetupDialog = new SetupDialog(this);
+  pSetupDialog->selectVariable(variable);
+  pSetupDialog->exec();
+}
+
+/*!
+  \class VariablePageWidget
+  \brief Represent the attribute of a plot variable.
+  */
+VariablePageWidget::VariablePageWidget(PlotCurve *pPlotCurve, SetupDialog *pSetupDialog)
+  : QWidget(pSetupDialog)
+{
+  mpPlotCurve = pPlotCurve;
+  // general group box
+  mpGeneralGroupBox = new QGroupBox(tr("General"));
+  mpLegendLabel = new QLabel(tr("Legend"));
+  mpLegendTextBox = new QLineEdit(mpPlotCurve->title().text());
+  mpResetLabelButton = new QPushButton(tr("Reset"));
+  connect(mpResetLabelButton, SIGNAL(clicked()), SLOT(resetLabel()));
+  mpFileLabel = new QLabel(tr("File"));
+  mpFileTextBox = new QLabel(mpPlotCurve->getFileName());
+  // appearance layout
+  QGridLayout *pGeneralGroupBoxGridLayout = new QGridLayout;
+  pGeneralGroupBoxGridLayout->addWidget(mpLegendLabel, 0, 0);
+  pGeneralGroupBoxGridLayout->addWidget(mpLegendTextBox, 0, 1);
+  pGeneralGroupBoxGridLayout->addWidget(mpResetLabelButton, 0, 2);
+  pGeneralGroupBoxGridLayout->addWidget(mpFileLabel, 1, 0);
+  pGeneralGroupBoxGridLayout->addWidget(mpFileTextBox, 1, 1, 1, 2);
+  mpGeneralGroupBox->setLayout(pGeneralGroupBoxGridLayout);
+  // Appearance group box
+  mpAppearanceGroupBox = new QGroupBox(tr("Appearance"));
+  mpColorLabel = new QLabel(tr("Color"));
+  mpPickColorButton = new QPushButton(tr("Pick Color"));
+  //mpPickColorButton->setAutoDefault(false);
+  connect(mpPickColorButton, SIGNAL(clicked()), SLOT(pickColor()));
+  mCurveColor = mpPlotCurve->pen().color();
+  setCurvePickColorButtonIcon();
+  mpAutomaticColorCheckBox = new QCheckBox(tr("Automatic Color"));
+  mpAutomaticColorCheckBox->setChecked(!mpPlotCurve->hasCustomColor());
+  // pattern
+  mpPatternLabel = new QLabel(tr("Pattern"));
+  mpPatternComboBox = new QComboBox;
+  mpPatternComboBox->addItem("SolidLine", 1);
+  mpPatternComboBox->addItem("DashLine", 2);
+  mpPatternComboBox->addItem("DotLine", 3);
+  mpPatternComboBox->addItem("DashDotLine", 4);
+  mpPatternComboBox->addItem("DashDotDotLine", 5);
+  mpPatternComboBox->addItem("Sticks", 6);
+  mpPatternComboBox->addItem("Steps", 7);
+  int index = mpPatternComboBox->findData(mpPlotCurve->getCurveStyle());
+  if (index != -1) mpPatternComboBox->setCurrentIndex(index);
+  // thickness
+  mpThicknessLabel = new QLabel(tr("Thickness"));
+  mpThicknessSpinBox = new QDoubleSpinBox;
+  mpThicknessSpinBox->setValue(1);
+  mpThicknessSpinBox->setSingleStep(1);
+  mpThicknessSpinBox->setValue(mpPlotCurve->getCurveWidth());
+  // hide
+  mpHideCheckBox = new QCheckBox(tr("Hide"));
+  mpHideCheckBox->setChecked(!mpPlotCurve->isVisible());
+  // appearance layout
+  QGridLayout *pAppearanceGroupBoxGridLayout = new QGridLayout;
+  pAppearanceGroupBoxGridLayout->addWidget(mpColorLabel, 0, 0);
+  pAppearanceGroupBoxGridLayout->addWidget(mpPickColorButton, 0, 1);
+  pAppearanceGroupBoxGridLayout->addWidget(mpAutomaticColorCheckBox, 0, 2);
+  pAppearanceGroupBoxGridLayout->addWidget(mpPatternLabel, 1, 0);
+  pAppearanceGroupBoxGridLayout->addWidget(mpPatternComboBox, 1, 1, 1, 2);
+  pAppearanceGroupBoxGridLayout->addWidget(mpThicknessLabel, 2, 0);
+  pAppearanceGroupBoxGridLayout->addWidget(mpThicknessSpinBox, 2, 1, 1, 2);
+  pAppearanceGroupBoxGridLayout->addWidget(mpHideCheckBox, 3, 0, 1, 3);
+  mpAppearanceGroupBox->setLayout(pAppearanceGroupBoxGridLayout);
+  // set layout
+  QGridLayout *pMainLayout = new QGridLayout;
+  pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->addWidget(mpGeneralGroupBox, 0, 0);
+  pMainLayout->addWidget(mpAppearanceGroupBox, 1, 0);
+  setLayout(pMainLayout);
+}
+
+void VariablePageWidget::setCurvePickColorButtonIcon()
+{
+  QPixmap pixmap(QSize(10, 10));
+  pixmap.fill(getCurveColor());
+  mpPickColorButton->setIcon(pixmap);
+}
+
+void VariablePageWidget::resetLabel()
+{
+  mpLegendTextBox->setText(mpPlotCurve->getName());
+}
+
+void VariablePageWidget::pickColor()
+{
+  QColor color = QColorDialog::getColor(getCurveColor());
+  if (!color.isValid())
+    return;
+
+  setCurveColor(color);
+  setCurvePickColorButtonIcon();
+  mpAutomaticColorCheckBox->setChecked(false);
+}
+
+/*!
+  \class SetupDialog
+  \brief Contains a list of plot variables. Allows user to select the variable and then edit its attributes.
+  */
+/*!
+  \param pPlotWindow - pointer to PlotWindow
+  */
+SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
+  : QDialog(pPlotWindow, Qt::WindowTitleHint)
+{
+  setWindowTitle(tr("Plot Setup"));
+  setAttribute(Qt::WA_DeleteOnClose);
+
+  mpPlotWindow = pPlotWindow;
+  mpSetupTabWidget = new QTabWidget;
+  // Variables Tab
+  mpVariablesTab = new QWidget;
+  mpVariableLabel = new QLabel(tr("Select a variable, then edit its properties below:"));
+  // variables list
+  mpVariablesListWidget = new QListWidget;
+  mpVariablePagesStackedWidget = new QStackedWidget;
+  QList<PlotCurve*> plotCurves = mpPlotWindow->getPlot()->getPlotCurvesList();
+  foreach (PlotCurve *pPlotCurve, plotCurves)
+  {
+    mpVariablePagesStackedWidget->addWidget(new VariablePageWidget(pPlotCurve, this));
+    QListWidgetItem *pListItem = new QListWidgetItem(mpVariablesListWidget);
+    pListItem->setText(pPlotCurve->getName());
+    pListItem->setData(Qt::UserRole, pPlotCurve->getNameStructure());
+  }
+  connect(mpVariablesListWidget, SIGNAL(currentItemChanged(QListWidgetItem*,QListWidgetItem*)), SLOT(variableSelected(QListWidgetItem*,QListWidgetItem*)));
+  // Variables Tab Layout
+  QGridLayout *pVariablesTabGridLayout = new QGridLayout;
+  pVariablesTabGridLayout->addWidget(mpVariableLabel, 0, 0);
+  pVariablesTabGridLayout->addWidget(mpVariablesListWidget, 1, 0);
+  pVariablesTabGridLayout->addWidget(mpVariablePagesStackedWidget, 2, 0);
+  mpVariablesTab->setLayout(pVariablesTabGridLayout);
+  // add tabs
+  mpSetupTabWidget->addTab(mpVariablesTab, tr("Variables"));
+  // Create the buttons
+  mpOkButton = new QPushButton(tr("OK"));
+  mpOkButton->setAutoDefault(true);
+  connect(mpOkButton, SIGNAL(clicked()), this, SLOT(saveSetup()));
+  mpApplyButton = new QPushButton(tr("Apply"));
+  mpApplyButton->setAutoDefault(false);
+  connect(mpApplyButton, SIGNAL(clicked()), this, SLOT(applySetup()));
+  mpCancelButton = new QPushButton(tr("Cancel"));
+  mpCancelButton->setAutoDefault(false);
+  connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpApplyButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
+  // set the main layout
+  QGridLayout *pMainLayout = new QGridLayout;
+  pMainLayout->addWidget(mpSetupTabWidget, 0, 0);
+  pMainLayout->addWidget(mpButtonBox, 1, 0, 1, 1, Qt::AlignRight);
+  setLayout(pMainLayout);
+  // select the first variable if its available.
+  if (mpVariablesListWidget->count() > 0)
+  {
+    mpVariablesListWidget->setCurrentRow(0, QItemSelectionModel::Select);
+  }
+}
+
+void SetupDialog::selectVariable(QString variable)
+{
+  for (int i = 0 ; i < mpVariablesListWidget->count() ; i++)
+  {
+    if (mpVariablesListWidget->item(i)->data(Qt::UserRole).toString().compare(variable) == 0)
+    {
+      mpVariablesListWidget->setCurrentRow(i, QItemSelectionModel::ClearAndSelect);
+      break;
+    }
+  }
+}
+
+void SetupDialog::setupPlotCurve(VariablePageWidget *pVariablePageWidget)
+{
+  if (!pVariablePageWidget)
+    return;
+
+  PlotCurve *pPlotCurve = pVariablePageWidget->getPlotCurve();
+
+  /* set the legend title */
+  pPlotCurve->setTitle(pVariablePageWidget->getLegendTextBox()->text());
+  /* set the curve color title */
+  pPlotCurve->setCustomColor(!pVariablePageWidget->getAutomaticColorCheckBox()->isChecked());
+  if (pVariablePageWidget->getAutomaticColorCheckBox()->isChecked())
+  {
+    pVariablePageWidget->setCurveColor(pPlotCurve->pen().color());
+    pVariablePageWidget->setCurvePickColorButtonIcon();
+  }
+  else
+  {
+    QPen pen = pPlotCurve->pen();
+    pen.setColor(pVariablePageWidget->getCurveColor());
+    pPlotCurve->setPen(pen);
+  }
+  /* set the curve style */
+  QComboBox *pPatternComboBox = pVariablePageWidget->getPatternComboBox();
+  pPlotCurve->setCurveStyle(pPatternComboBox->itemData(pPatternComboBox->currentIndex()).toInt());
+  /* set the curve width */
+  pPlotCurve->setCurveWidth(pVariablePageWidget->getThicknessSpinBox()->value());
+  /* set the curve visibility */
+  pPlotCurve->setVisible(!pVariablePageWidget->getHideCheckBox()->isChecked());
+  if (pPlotCurve->isVisible())
+  {
+    QwtText text = pPlotCurve->title();
+    text.setColor(QColor(Qt::black));
+    pPlotCurve->setTitle(text);
+  }
+  else
+  {
+    QwtText text = pPlotCurve->title();
+    text.setColor(QColor(Qt::gray));
+    pPlotCurve->setTitle(text);
+  }
+}
+
+void SetupDialog::variableSelected(QListWidgetItem *current, QListWidgetItem *previous)
+{
+  if (!current)
+    current = previous;
+
+  mpVariablePagesStackedWidget->setCurrentIndex(mpVariablesListWidget->row(current));
+}
+
+void SetupDialog::saveSetup()
+{
+  applySetup();
+  accept();
+}
+
+void SetupDialog::applySetup()
+{
+  for (int i = 0 ; i < mpVariablePagesStackedWidget->count() ; i++)
+  {
+    setupPlotCurve(qobject_cast<VariablePageWidget*>(mpVariablePagesStackedWidget->widget(i)));
+  }
+  mpPlotWindow->getPlot()->replot();
 }
