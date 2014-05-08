@@ -118,6 +118,12 @@ elseif(MINGW)
 
 endif()
 
+find_library(mkl_rt mkl_rt)
+if (mkl_rt)
+  #workaround because find_package(lapack)-command returns the wrong libraries on Taurus (ZIH-TU Dresden)
+  SET(LAPACK_LIBRARIES ${mkl_rt})
+endif(mkl_rt)
+
 if(OMC_BUILD)
 add_definitions(-DOMC_BUILD)
 elseif(SIMSTER_BUILD)
