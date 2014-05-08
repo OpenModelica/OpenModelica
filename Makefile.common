@@ -416,7 +416,7 @@ graphstream-clean:
 	if test -f 3rdParty/graphstream/Makefile; then $(MAKE) -C 3rdParty/graphstream/ clean; fi
 	
 cjson:
-	cd 3rdParty/cJSON && CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -DCMAKE_BUILD_TYPE=Release ./ && make && cd ../../ && cp -f 3rdParty/cJSON/libcJSON.a build/lib/omc
+	cd 3rdParty/cJSON && CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -DCMAKE_BUILD_TYPE=Release ./ -G $(CMAKE_TARGET) && make && cd ../../ && cp -f 3rdParty/cJSON/libcJSON.a build/lib/omc
 	
 cjson-clean:
 	rm -f 3rdParty/cJSON/*.a
