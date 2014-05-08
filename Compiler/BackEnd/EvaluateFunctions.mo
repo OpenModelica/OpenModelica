@@ -105,6 +105,7 @@ algorithm
         true = Flags.isSet(Flags.EVALUATE_CONST_FUNCTIONS);
         BackendDAE.DAE(eqs = eqSysts,shared = shared) = inDAE;
         (eqSysts,(shared,_)) = List.mapFold(eqSysts,evalFunctions_main,(shared,1));
+        //shared = evaluateShared(shared);
         outDAE = BackendDAE.DAE(eqSysts,shared);
         outDAE = RemoveSimpleEquations.fastAcausal(outDAE);
         outDAE = updateVarKinds(outDAE);
@@ -115,6 +116,47 @@ algorithm
         inDAE;
   end matchcontinue;
 end evalFunctions;
+
+protected function evaluateShared"evaluate objects in the shared structure that could be dependent of a function. i.e. parameters
+author:Waurich TUD 2014-04"
+  input BackendDAE.Shared sharedIn;
+  output BackendDAE.Shared sharedOut;
+protected
+  BackendDAE.Variables knVars;
+  DAE.FunctionTree funcTree;
+  list<BackendDAE.Var> varLst;
+algorithm
+  knVars := BackendDAEUtil.getknvars(sharedIn);
+  funcTree := BackendDAEUtil.getFunctions(sharedIn);
+  varLst := BackendVariable.varList(knVars);
+  varLst := List.map1(varLst,evaluateParameter,funcTree);
+  knVars := BackendVariable.listVar(varLst);
+  sharedOut := BackendDAEUtil.replaceKnownVarsInShared(sharedIn,knVars);
+end evaluateShared;
+
+protected function evaluateParameter"evaluates a parameter"
+  input BackendDAE.Var varIn;
+  input DAE.FunctionTree funcTree;
+  output BackendDAE.Var varOut;
+algorithm
+  varOut := matchcontinue(varIn,funcTree)
+    local
+      DAE.Exp bindExp;
+    case(BackendDAE.VAR(varKind=BackendDAE.PARAM()),_)
+      equation
+        BackendDump.printVar(varIn);
+        bindExp = BackendVariable.varBindExp(varIn);
+        true = Expression.isCall(bindExp);
+        ExpressionDump.dumpExp(bindExp);
+        ((bindExp,_,_,_,_)) = evaluateConstantFunction(bindExp,bindExp,funcTree,1);
+        ExpressionDump.dumpExp(bindExp);
+      then
+        varIn;
+    else
+      equation
+        then varIn;
+  end matchcontinue;
+end evaluateParameter;
 
 protected function evalFunctions_main"traverses the eqSystems for function calls and tries to evaluate them"
   input BackendDAE.EqSystem eqSysIn;
@@ -1206,12 +1248,13 @@ author:Waurich TUD 2014-03"
 algorithm
   (algsOut,tplOut) := matchcontinue(algsIn,tplIn,lstIn)
     local
-      Boolean changed, isCon, simplified, isIf, isRec, isTpl, predicted, eqDim, isCall, isEval;
-      Integer idx, size,s;
+      Boolean changed, isCon, simplified, isIf, isRec, isTpl, predicted, eqDim, isCall, isEval, isArr;
+      Integer idx, size, s, iterIdx;
+      String iter;
       BackendVarTransform.VariableReplacements repl, replIn;
       DAE.ComponentRef cref;
       DAE.ElementSource source;
-      DAE.Exp exp0, exp1, exp2;
+      DAE.Exp exp0, exp1, exp2, range;
       DAE.Else else_;
       DAE.FunctionTree funcTree,funcTree2;
       DAE.Statement alg, alg2;
@@ -1391,19 +1434,28 @@ algorithm
         //print("\nthe REST tpl after :"+&stringDelimitList(List.map(rest,DAEDump.ppStatementStr),"\n")+&"\n");
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree2,repl,idx),stmts2);
       then (rest,(funcTree,repl,idx));
-    case(DAE.STMT_FOR(type_=_,iterIsArray=_,iter=_,index=_,range=_,statementLst=stmts1,source=_)::rest,(funcTree,replIn,idx),_)
+
+    case(DAE.STMT_FOR(type_=_,iterIsArray=isArr,iter=iter,index=iterIdx,range=range,statementLst=stmts1,source=_)::rest,(funcTree,replIn,idx),_)
       equation
         alg = List.first(algsIn);
         // TODO: evaluate for-loops
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"For-statement:\n"+&DAEDump.ppStatementStr(alg));
+        // at least remove the replacements for the lhs
         lhsExps = List.fold1(stmts1,getStatementLHSScalar,funcTree,{});
         lhsExps = List.unique(lhsExps);
+        lhsExpLst = List.map(lhsExps,Expression.getComplexContents); //consider arrays
+        lhsExps = List.flatten(lhsExpLst);
         outputs = List.map(lhsExps,Expression.expCref);
         repl = Debug.bcallret3(true, BackendVarTransform.removeReplacements,replIn,outputs,NONE(),replIn);
+
+        // lets see if we can evaluate it
+
+
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"evaluated For-statement to:\n"+&DAEDump.ppStatementStr(alg));
         stmts2 = alg::lstIn;
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,repl,idx),stmts2);
       then (rest,(funcTree,repl,idx));
+
     case(DAE.STMT_WHILE(exp=_,statementLst=stmts1,source=_)::rest,(funcTree,replIn,idx),_)
       equation
         alg = List.first(algsIn);
@@ -1645,8 +1697,8 @@ algorithm
     then fail();
   case(DAE.STMT_ASSERT(cond=_,msg=_,level=_,source=_),_)
     equation
-      print("getStatementLHS update for ASSERT!\n"+&DAEDump.ppStatementStr(stmt));
-    then fail();
+      //print("getStatementLHS update for ASSERT!\n"+&DAEDump.ppStatementStr(stmt));
+    then expsIn;
   case(DAE.STMT_TERMINATE(msg=_,source=_),_)
     equation
       print("getStatementLHS update for TERMINATE!\n"+&DAEDump.ppStatementStr(stmt));
