@@ -40,11 +40,11 @@
 #include "nonlinearSolverHybrd.h"
 #include "nonlinearSolverNewton.h"
 #include "simulation_info_xml.h"
-#include "blaswrap.h"
-#include "f2c.h"
 #include "simulation_runtime.h"
 
-extern doublereal enorm_(integer *n, doublereal *x);
+/* for try and catch simulationJumpBuffer */
+#include "meta_modelica.h"
+
 int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber);
 
 const char *NLS_NAME[NLS_MAX+1] = {
@@ -53,6 +53,7 @@ const char *NLS_NAME[NLS_MAX+1] = {
   /* NLS_HYBRID */       "hybrid",
   /* NLS_KINSOL */       "kinsol",
   /* NLS_NEWTON */       "newton",
+  /* NLS_MIXED */        "mixed",
 
   "NLS_MAX"
 };
@@ -63,8 +64,14 @@ const char *NLS_DESC[NLS_MAX+1] = {
   /* NLS_HYBRID */       "default method",
   /* NLS_KINSOL */       "sundials/kinsol",
   /* NLS_NEWTON */       "Newton Raphson",
+  /* NLS_MIXED */        "Mixed strategy start with Newton and fallback to hybrid",
 
   "NLS_MAX"
+};
+
+struct dataNewtonAndHybrid {
+  void* newtonData;
+  void* hybridData;
 };
 
 /*! \fn int allocateNonlinearSystem(DATA *data)
@@ -78,6 +85,7 @@ int allocateNonlinearSystem(DATA *data)
   int i;
   int size;
   NONLINEAR_SYSTEM_DATA *nonlinsys = data->simulationInfo.nonlinearSystemData;
+  struct dataNewtonAndHybrid *mixedSolverData;
 
   for(i=0; i<data->modelData.nNonLinearSystems; ++i)
   {
@@ -123,6 +131,15 @@ int allocateNonlinearSystem(DATA *data)
         break;
       case NLS_NEWTON:
         allocateNewtonData(size, &nonlinsys[i].solverData);
+        break;
+      case NLS_MIXED:
+        mixedSolverData = (struct dataNewtonAndHybrid*) malloc(sizeof(struct dataNewtonAndHybrid));
+        allocateNewtonData(size, &(mixedSolverData->newtonData));
+
+        allocateHybrdData(size, &(mixedSolverData->hybridData));
+
+        nonlinsys[i].solverData = (void*) mixedSolverData;
+
         break;
       default:
         throwStreamPrint(data->threadData, "unrecognized nonlinear solver");
@@ -172,6 +189,10 @@ int freeNonlinearSystem(DATA *data)
       case NLS_NEWTON:
         freeNewtonData(&nonlinsys[i].solverData);
         break;
+      case NLS_MIXED:
+        freeNewtonData(&((struct dataNewtonAndHybrid*) nonlinsys[i].solverData)->newtonData);
+        freeHybrdData(&((struct dataNewtonAndHybrid*) nonlinsys[i].solverData)->hybridData);
+        break;
       default:
         throwStreamPrint(data->threadData, "unrecognized nonlinear solver");
       }
@@ -193,7 +214,10 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
 {
   /* NONLINEAR_SYSTEM_DATA* system = &(data->simulationInfo.nonlinearSystemData[sysNumber]); */
   int success, saveJumpState;
-  NONLINEAR_SYSTEM_DATA* nonlinsys = data->simulationInfo.nonlinearSystemData;
+  NONLINEAR_SYSTEM_DATA* nonlinsys = &(data->simulationInfo.nonlinearSystemData[sysNumber]);
+  threadData_t *threadData = data->threadData;
+  struct dataNewtonAndHybrid *mixedSolverData;
+
 
   data->simulationInfo.currentNonlinearSystemIndex = sysNumber;
 
@@ -207,7 +231,7 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
    */
 
   /* for now just use hybrd solver as before */
-  if(nonlinsys[sysNumber].method == 1)
+  if(nonlinsys->method == 1)
   {
     success = solveNewton(data, sysNumber);
   }
@@ -227,11 +251,33 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
     case NLS_NEWTON:
       success = solveNewton(data, sysNumber);
       break;
+    case NLS_MIXED:
+      mixedSolverData = nonlinsys->solverData;
+      nonlinsys->solverData = mixedSolverData->newtonData;
+
+      saveJumpState = data->threadData->currentErrorStage;
+      data->threadData->currentErrorStage = ERROR_NONLINEARSOLVER;
+#ifndef OMC_EMCC
+      /* try */
+      MMC_TRY_INTERNAL(simulationJumpBuffer)
+#endif
+      success = solveNewton(data, sysNumber);
+      /* catch */
+#ifndef OMC_EMCC
+      MMC_CATCH_INTERNAL(simulationJumpBuffer)
+#endif
+      if (!success) {
+        nonlinsys->solverData = mixedSolverData->hybridData;
+        success = solveHybrd(data, sysNumber);
+      }
+      data->threadData->currentErrorStage = saveJumpState;
+      nonlinsys->solverData = mixedSolverData;
+      break;
     default:
       throwStreamPrint(data->threadData, "unrecognized nonlinear solver");
     }
   }
-  nonlinsys[sysNumber].solved = success;
+  nonlinsys->solved = success;
 
   /* enable to avoid division by zero */
   data->simulationInfo.noThrowDivZero = 0;
