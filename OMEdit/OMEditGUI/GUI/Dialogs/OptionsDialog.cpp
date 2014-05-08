@@ -1667,7 +1667,7 @@ ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsDialog *pParent)
   connect(mpFontSizeSpinBox, SIGNAL(valueChanged(double)), SLOT(fontSizeChanged(double)));
   // Item color label and pick color button
   mpItemColorLabel = new Label(tr("Item Color:"));
-  mpItemColorPickButton = new QPushButton(tr("Pick Color"));
+  mpItemColorPickButton = new QPushButton(Helper::pickColor);
   mpItemColorPickButton->setAutoDefault(false);
   connect(mpItemColorPickButton, SIGNAL(clicked()), SLOT(pickColor()));
   // Items list
