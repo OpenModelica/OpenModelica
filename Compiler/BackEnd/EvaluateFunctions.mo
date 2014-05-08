@@ -373,7 +373,7 @@ algorithm
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and hasAssert and funcIsConst,print,"the function output is completely constant but there is an assert\n");
           funcIsConst = Util.if_(hasAssert and funcIsConst,false,funcIsConst);
           funcIsPartConst = Util.if_(hasAssert and funcIsConst,true,funcIsPartConst);
-          
+
         true =  funcIsPartConst or funcIsConst;
 
         // build the new lhs, the new statements for the function, the constant parts...
