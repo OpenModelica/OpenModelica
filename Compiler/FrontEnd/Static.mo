@@ -13282,7 +13282,8 @@ protected function OverloadingValidForSpec_3_2
   input Boolean isArray1;
   input Boolean isArray2;
   input list<DAE.Type> inTypeList;
-  input list<DAE.Exp> inFuncArgs;
+  input Absyn.Path inPath;
+  input list<Absyn.Exp> inFuncArgs;
   input Boolean inImpl;
   input Option<GlobalScript.SymbolTable> inSyTabOpt;
   input Prefix.Prefix inPre;
@@ -13293,9 +13294,8 @@ protected function OverloadingValidForSpec_3_2
   output DAE.Properties outProp;
 
 algorithm
-  // (outCache,outExp,outProp) :=
-  _ :=
-  matchcontinue (inCache,inEnv,inOper,isArray1,isArray2,inTypeList,inFuncArgs,inImpl,inSyTabOpt,inPre,inInfo, lastRound)
+  (outCache,outExp,outProp) :=
+  matchcontinue (inCache,inEnv,inOper,isArray1,isArray2,inTypeList,inPath,inFuncArgs,inImpl,inSyTabOpt,inPre,inInfo, lastRound)
       local
         list<DAE.Type> types,scalartypes, arraytypes;
         Env.Cache cache;
@@ -13311,55 +13311,50 @@ algorithm
       */
 
     // If both are scalars everything should be OK.
-/* TODO: FIX ME
-     case (_, _, _ ,false, false, types, _, _, _, _, _, _, _)
+    case (_, _, _ ,false, false, types, _, _, _, _, _, _, _)
       equation
         (cache,SOME((daeExp,prop))) = elabCallArgs3(inCache,inEnv,types,inPath,inFuncArgs,{},inImpl,inSyTabOpt,inPre,inInfo);
       then (cache, daeExp, prop);
-*/
+
     // If the first one array and the second scalar with NON-ELEMWISE operation
     // we shouldn't expand. (remember here eventhough this
     // is normally invalid (e.g. {1,2} + 1),  the user might overload
     // the operator to match this kind of operation on his records..
     //)
-/* TODO: FIX ME
     case (_, _, _ ,true, false, types, _, _, _, _, _, _, _)
       equation
         false = isOpElemWise(inOper);
         (arraytypes,_) = List.splitOnTrue(types,isFuncWithArrayInput);
         (cache,SOME((daeExp,prop))) = elabCallArgs3(inCache,inEnv,arraytypes,inPath,inFuncArgs,{},inImpl,inSyTabOpt,inPre,inInfo);
     then (cache, daeExp, prop);
-*/
+
     // adrpo: v1 = n12 * v2; v1,v2 is array complex, n12 is real.
     //        see Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench
-/* TODO: FIX ME
     case (_, _, _ ,true, false, types, _, _, _, _, _, _, _)
       equation
         false = isOpElemWise(inOper);
         (_, scalartypes) = List.splitOnTrue(types,isFuncWithArrayInput);
         (cache,SOME((daeExp,prop))) = elabCallArgs3(inCache,inEnv,scalartypes,inPath,inFuncArgs,{},inImpl,inSyTabOpt,inPre,inInfo);
     then (cache, daeExp, prop);
-*/
+
     // the first one array the second a scalar with ELEMWISE operation
     // this should be expanded.
-/* TODO: FIX ME
     case (_, _, _ ,true, false, types, _, _, _, _, _, _, _)
       equation
         true = isOpElemWise(inOper);
         (_, scalartypes) = List.splitOnTrue(types,isFuncWithArrayInput);
         (cache,SOME((daeExp,prop))) = elabCallArgs3(inCache,inEnv,scalartypes,inPath,inFuncArgs,{},inImpl,inSyTabOpt,inPre,inInfo);
     then (cache, daeExp, prop);
-*/
+
     // Both are arrays with NON-ELEMWISE operator
     // Try without expanding first. (see Complex.'*'.scalarProduct)
-/* TODO: FIX ME
     case (_, _, _, true, true, types, _, _, _, _, _, _, _)
       equation
         false = isOpElemWise(inOper);
         (arraytypes,_) = List.splitOnTrue(types,isFuncWithArrayInput);
         (cache,SOME((daeExp,prop))) = elabCallArgs3(inCache,inEnv,arraytypes,inPath,inFuncArgs,{},inImpl,inSyTabOpt,inPre,inInfo);
     then (cache, daeExp, prop);
-*/
+
     // Both are arrays with NON-ELEMWISE operator
     // the above case (without Expanding) failed.)
     // Try expnding.
@@ -13368,7 +13363,6 @@ algorithm
     // But this shouldn't be since, again, the user can overload for this
     // specific case. For now we print a warning and allow this
     // (allowed for all operators!!!)
-/* TODO: FIX ME
     case (_, _, _, true, true, types, _, _, _, _, _, _, _)
       equation
         false = isOpElemWise(inOper);
@@ -13381,30 +13375,28 @@ algorithm
                    "- Automatically expanded using operator function: " +& Absyn.pathString(getCallPath(daeExp));
         Error.addSourceMessage(Error.OPERATOR_OVERLOADING_WARNING,
           {str1}, inInfo);
-      then (cache, daeExp, prop);
-*/
+    then (cache, daeExp, prop);
+
     // Both are arrays with ELEMWISE operator
     // this should be expanded.
-/* TODO: FIX ME
     case (_, _, _, true, true, types, _, _, _, _, _, _, _)
       equation
         true = isOpElemWise(inOper);
         (_, scalartypes) = List.splitOnTrue(types,isFuncWithArrayInput);
         (cache,SOME((daeExp,prop))) = elabCallArgs3(inCache,inEnv,scalartypes,inPath,inFuncArgs,{},inImpl,inSyTabOpt,inPre,inInfo);
-      then (cache, daeExp, prop);
-*/
+    then (cache, daeExp, prop);
+
     // If this is the last round then print the error.
-    case (_, _, _, _, _, _, _, _, _, _, _, true)
+    case (_, _, _, _, _, _, _, _, _, _, _, _, true)
       equation
-        str1 = "\n" +&
+      str1 = "\n" +&
                  "- Failed to deoverload operator '" +& Dump.opSymbol(inOper) +& "' " +&
-                 "  for record of type: ???";
-        Error.addSourceMessage(Error.OPERATOR_OVERLOADING_ERROR,
+                 "  for record of type: '" +& Absyn.pathString(Absyn.pathPrefix(inPath)) +& "'";
+      Error.addSourceMessage(Error.OPERATOR_OVERLOADING_ERROR,
           {str1}, inInfo);
       then fail();
 
   end matchcontinue;
-  assert(false, "");
 end OverloadingValidForSpec_3_2;
 
 
@@ -13416,14 +13408,15 @@ resulting expression. "
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Operator inOper;
-  input DAE.Exp inExp1;
-  input DAE.Exp inExp2;
+  input Absyn.Exp inExp1;
+  input Absyn.Exp inExp2;
   input DAE.Type inType1;
   input DAE.Type inType2;
   input Boolean inImpl;
   input Option<GlobalScript.SymbolTable> inSyTabOpt;
   input Prefix.Prefix inPre;
   input Absyn.Info inInfo;
+  input Boolean lastRound;
   output Env.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProp;
@@ -13431,43 +13424,55 @@ resulting expression. "
 algorithm
 
   (outCache,outExp,outProp) :=
-  matchcontinue (inCache, inEnv, inOper,inExp1,inExp2,inType1,inType2,inImpl,inSyTabOpt,inPre,inInfo)
+  matchcontinue (inCache, inEnv, inOper,inExp1,inExp2,inType1,inType2,inImpl,inSyTabOpt,inPre,inInfo,lastRound)
     local
       Boolean bool1,bool2;
-      String opStr;
+      String str1;
       Absyn.Path path,path2;
       list<Absyn.Path> operNames;
-      Env.Env recordEnv,env;
+      Env.Env recordEnv,operatorEnv,env;
       SCode.Element operatorCl;
       Env.Cache cache;
-      list<DAE.Type> types,types1,types2;
+      list<DAE.Type> types;
       DAE.Properties prop;
       DAE.Type type1, type2;
-      DAE.Exp exp1,exp2;
+      Absyn.Exp exp1,exp2;
       Absyn.Operator op;
       Absyn.ComponentRef comRef;
       DAE.Exp  daeExp;
 
-   case (cache, env, op, exp1, exp2, type1, type2, _, _, _, _)
+   case (cache, env, op, exp1, exp2, type1, type2, _, _, _, _,_)
       equation
-        opStr = "'" +& Dump.opSymbolCompact(op) +& "'";
-        (cache,types1) = getOperatorFuncsOrEmpty(cache,env,type1,opStr,inInfo);
-        (cache,types2) = getOperatorFuncsOrEmpty(cache,env,type2,opStr,inInfo);
-        // Spec: [...] function f in the union of A.op and B.op [...]
-        types = List.union(types1,types2);
-        types = List.select1(types, isOperatorBinaryFunctionOrWarn, inInfo);
+
+        // prepare the call path for the operator.
+        // if *   => recordPath.'*'  , !!also if .*   => recordPath.'*'
+        path = getRecordPath(type1);
+        path = Absyn.makeFullyQualified(path);
+        (cache,_,recordEnv) = Lookup.lookupClass(cache,env,path, false);
+
+        str1 = "'" +& Dump.opSymbolCompact(op) +& "'";
+        path = Absyn.joinPaths(path, Absyn.IDENT(str1));
+
+
+        // check if the operator is defined. i.e overloaded
+        (cache,operatorCl,operatorEnv) = Lookup.lookupClass(cache,recordEnv,path, false);
+        true = SCode.isOperator(operatorCl);
+
+
+        // get the list of functions in the operator. !! there can be multiple options
+        operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
+        (cache,types) = Lookup.lookupFunctionsListInEnv(cache, operatorEnv, operNames, inInfo, {});
+
         // Apply operation according to the Specifications.See the function.
         bool1 = Types.arrayType(type1);
         bool2 = Types.arrayType(type2);
-        print("TODO: Filter in types: " + Types.unparseType(DAE.T_TUPLE(types,{})) + "\n");
-        (cache,daeExp,prop) = OverloadingValidForSpec_3_2(cache,env,op,bool1,bool2,types,{exp1,exp2},inImpl,inSyTabOpt,inPre,inInfo, false /*Never last round here. look down*/);
+        (cache,daeExp,prop) = OverloadingValidForSpec_3_2(cache,env,op,bool1,bool2,types,path,{exp1,exp2},inImpl,inSyTabOpt,inPre,inInfo, false /*Never last round here. look down*/);
 
       then
         (cache,daeExp,prop);
 
 
     //Try constructing the right side(implicit) and then evaluate == L + r -> L.'+'(L,L(r))
-/*
     case (cache, env, op, exp1, exp2, type1, type2, _, _, _, _,_)
       equation
 
@@ -13491,11 +13496,11 @@ algorithm
         comRef = Absyn.pathToCref(path2);
         exp2 = Absyn.CALL(comRef, Absyn.FUNCTIONARGS({exp2}, {}));
 
-        (cache, daeExp , prop) = userDefOperatorDeoverloadBinary(cache,env,op,exp1,exp2,type1,type2,inImpl,inSyTabOpt,inPre,inInfo, lastRound); // Now it can be last round
+        (cache, daeExp , prop) = userDefOperatorDeoverloadBinary(cache,env,op,exp1,exp2,type1,type2,inImpl,inSyTabOpt,inPre,inInfo, lastRound); /*Now it can be last round*/
 
       then
         (cache,daeExp,prop);
-*/
+
   end matchcontinue;
 
 end userDefOperatorDeoverloadBinary;
@@ -13665,9 +13670,21 @@ algorithm
        // if we have a record on the left side check for overloaded operators
      case(cache, env, aboper, DAE.PROP(type1, _), _, DAE.PROP(type2, _), _, _, absexp1, absexp2, _, _, _, _)
        equation
-         true = typeIsRecord(Types.arrayElementType(type1)) or typeIsRecord(Types.arrayElementType(type2));
+         true = typeIsRecord(Types.arrayElementType(type1));
 
-         (cache, exp , prop) = userDefOperatorDeoverloadBinary(cache,env,aboper,inExp1,inExp2,type1,type2,inImpl,inSymTab,inPre,inInfo);
+         // If the right side is not record then (lastRound is true) which means we should print errors on this round (last one:).
+         lastRound = not typeIsRecord(Types.arrayElementType(type2));
+
+         (cache, exp , prop) = userDefOperatorDeoverloadBinary(cache,env,aboper,absexp1,absexp2,type1,type2,inImpl,inSymTab,inPre,inInfo,lastRound /**/);
+         (exp,_) = ExpressionSimplify.simplify(exp);
+       then
+         (cache, exp, prop);
+
+      // if we have a record on the right side check for overloaded operators
+     case(cache, env, aboper, DAE.PROP(type1, _), _, DAE.PROP(type2, _), _, _, absexp1, absexp2, _, _, _, _)
+       equation
+         true = typeIsRecord(Types.arrayElementType(type2));
+         (cache, exp , prop) = userDefOperatorDeoverloadBinary(cache,env,aboper,absexp2,absexp1,type2,type1,inImpl,inSymTab,inPre,inInfo, true); /*we have tried left side*/
          (exp,_) = ExpressionSimplify.simplify(exp);
        then
          (cache, exp, prop);
@@ -14952,81 +14969,5 @@ algorithm
   (ocr,_) := Absyn.traverseExpBidirCref(cr,replaceEndEnter,replaceEndExit,({Absyn.CREF(stripcr)},{0},{true}));
   // print("replaceEnd  end  " +& Dump.printExpStr(Absyn.CREF(ocr)) +& "\n");
 end replaceEnd2;
-
-protected function getOperatorFuncsOrEmpty
-  input Env.Cache inCache;
-  input Env.Env env;
-  input DAE.Type ty;
-  input String opName;
-  input Absyn.Info info;
-  output Env.Cache cache;
-  output list<DAE.Type> funcs;
-algorithm
-  (cache,funcs) := matchcontinue (inCache,env,ty,opName,info)
-    local
-      Absyn.Path path,opNamePath;
-      SCode.Element operatorCl;
-      Env.Env recordEnv,operEnv;
-      list<Absyn.Path> paths;
-    case (_,_,_,_,_)
-      equation
-        // prepare the call path for the operator.
-        // if *   => recordPath.'*'  , !!also if .*   => recordPath.'*'
-        path = getRecordPath(ty);
-        path = Absyn.makeFullyQualified(path);
-        (cache,_,recordEnv) = Lookup.lookupClass(inCache,env,path, false);
-        opNamePath = Absyn.IDENT(opName);
-        path = Absyn.joinPaths(path, opNamePath);
-        // check if the operator is defined. i.e overloaded
-        (cache,operatorCl,operEnv) = Lookup.lookupClass(cache,recordEnv,path,false);
-        true = SCode.isOperator(operatorCl);
-        // get the list of functions in the operator. !! there can be multiple options
-        paths = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
-        (cache,funcs) = Lookup.lookupFunctionsListInEnv(cache, operEnv, paths, info, {});
-        funcs = List.select2(funcs,checkOperatorFunctionOutput,ty,info);
-      then (cache,funcs);
-    else (inCache,{});
-  end matchcontinue;
-end getOperatorFuncsOrEmpty;
-
-protected function checkOperatorFunctionOutput
-  input DAE.Type ty;
-  input DAE.Type expected;
-  input Absyn.Info info;
-  output Boolean isOK;
-algorithm
-  isOK := match (ty,expected,info)
-    local
-      DAE.Type actual;
-    case (DAE.T_FUNCTION(funcResultType=actual),_,_)
-      equation
-        isOK = Types.equivtypes(actual,expected);
-        Error.assertionOrAddSourceMessage(isOK, Error.COMPILER_WARNING, {"TODO: Better warning for: " + Types.unparseType(actual) + ", expected: " + Types.unparseType(actual)}, info);
-      then isOK;
-    else false;
-  end match;
-end checkOperatorFunctionOutput;
-
-protected function isOperatorBinaryFunctionOrWarn
-  input DAE.Type ty;
-  input Absyn.Info info;
-  output Boolean isBinaryFunc;
-algorithm
-  print("isBinary? " + Types.unparseType(ty) + "\n");
-  isBinaryFunc := match (ty,info)
-    local
-      list<DAE.FuncArg> rest;
-    case (DAE.T_FUNCTION(funcArg={_}),_) then false; // Unary functions are legal even if we are not interested in them
-    case (DAE.T_FUNCTION(funcArg=(_,_,_,_,NONE())::(_,_,_,_,NONE())::rest),_)
-      equation
-        isBinaryFunc = Util.boolAndList(List.mapMap(rest, Util.tuple55, Util.isSome));
-        Error.assertionOrAddSourceMessage(isBinaryFunc, Error.COMPILER_WARNING, {"TODO: Better warning for: " + Types.unparseType(ty) + ", expected arguments 3..n to have default values"}, info);
-      then isBinaryFunc; // Unary functions are legal even if we are not interested in them
-    else
-      equation
-        Error.addSourceMessage(Error.COMPILER_WARNING, {"TODO: Better warning for: " + Types.unparseType(ty) + ", expected arguments 1&2 to not have default values"}, info);
-      then false;
-  end match;
-end isOperatorBinaryFunctionOrWarn;
 
 end Static;
