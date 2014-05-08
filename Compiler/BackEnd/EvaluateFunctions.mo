@@ -40,7 +40,6 @@ public import DAE;
 public import HashTable2;
 public import BackendVarTransform;
 
-
 protected import BackendDAEUtil;
 protected import BackendDump;
 protected import BackendEquation;
@@ -180,7 +179,6 @@ algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,m=m,mT=mT,matching=matching,stateSets=stateSets) := eqSysIn;
   eqLst := BackendEquation.equationList(eqs);
   varLst := BackendVariable.varList(vars);
-  //BackendDump.dumpEquationList(eqLst, "the equations before evaluationg the functions");
 
   //traverse the eqSystem for function calls
   (eqLst,(shared,addEqs,_)) := List.mapFold(eqLst,evalFunctions_findFuncs,(sharedIn,{},1));
@@ -188,7 +186,6 @@ algorithm
   eqs := BackendEquation.listEquation(eqLst);
   eqSysOut := BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching,stateSets);
 
-  //BackendDump.dumpEquationList(eqLst, "the equations after evaluationg the functions");
   tplOut := (shared,sysIdx+1);
 end evalFunctions_main;
 
@@ -241,9 +238,8 @@ algorithm
         addEqs = listAppend(addEqs1,addEqs);
         addEqs = listAppend(addEqs2,addEqs);
         shared = BackendDAEUtil.addFunctionTree(funcs,shared);
-        size = DAEUtil.getTupleSize(lhsExp);
+        size = getScalarExpSize(lhsExp);
         eq = Util.if_(intEq(size,0),BackendDAE.EQUATION(lhsExp,rhsExp,source,diff,kind),BackendDAE.COMPLEX_EQUATION(size,lhsExp,rhsExp,source,diff,kind));
-
         //since tuple=tuple is not supported, these equations are converted into a list of simple equations
         (eq,addEqs) = convertTupleEquations(eq,addEqs);
       then
@@ -570,8 +566,8 @@ algorithm
         allOutputCrefs2 = List.map(allOutputCrefs,scalarRecCrefsForOneDimRec);
         (_,_,varScalarCrefsInFunc) = List.intersection1OnTrue(allOutputCrefs,allOutputCrefs2,ComponentReference.crefEqual);
         allOutputCrefs = allOutputCrefs2;
-        print("\n allOutputCrefs \n"+&stringDelimitList(List.map(allOutputCrefs,ComponentReference.printComponentRefStr),"\n")+&"\n");
-        print("\n varScalarCrefsInFunc \n"+&stringDelimitList(List.map(varScalarCrefsInFunc,ComponentReference.printComponentRefStr),"\n")+&"\n");
+        //print("\n allOutputCrefs \n"+&stringDelimitList(List.map(allOutputCrefs,ComponentReference.printComponentRefStr),"\n")+&"\n");
+        //print("\n varScalarCrefsInFunc \n"+&stringDelimitList(List.map(varScalarCrefsInFunc,ComponentReference.printComponentRefStr),"\n")+&"\n");
 
         (protCrefs,_,outputCrefs) = List.intersection1OnTrue(listAppend(constComplexCrefs,constScalarCrefs),allOutputCrefs,ComponentReference.crefEqual);
         funcOutputs = List.map2(outputCrefs,generateOutputElements,allOutputs,lhsExpIn);
@@ -1670,7 +1666,7 @@ algorithm
     then expLst;
   case(DAE.STMT_ASSIGN_ARR(type_=_,componentRef=_,exp=_,source=_),_)
     equation
-      print("IMPLEMENT STMT_ASSIGN_ARR in getStatementLHS\n");
+      Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"IMPLEMENT STMT_ASSIGN_ARR in getStatementLHS\n");
     then fail();
   case(DAE.STMT_IF(exp=_,statementLst=stmtLst1,else_=else_,source=_),_)
     equation
@@ -1693,34 +1689,34 @@ algorithm
     then expLst;
   case(DAE.STMT_WHEN(exp=_,conditions=_,initialCall=_,statementLst=_,elseWhen=_,source=_),_)
     equation
-      print("getStatementLHS update for WHEN!\n"+&DAEDump.ppStatementStr(stmt));
+      Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"getStatementLHS update for WHEN!\n"+&DAEDump.ppStatementStr(stmt));
     then fail();
   case(DAE.STMT_ASSERT(cond=_,msg=_,level=_,source=_),_)
     equation
-      //print("getStatementLHS update for ASSERT!\n"+&DAEDump.ppStatementStr(stmt));
+      Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"getStatementLHS update for ASSERT!\n"+&DAEDump.ppStatementStr(stmt));
     then expsIn;
   case(DAE.STMT_TERMINATE(msg=_,source=_),_)
     equation
-      print("getStatementLHS update for TERMINATE!\n"+&DAEDump.ppStatementStr(stmt));
+      Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"getStatementLHS update for TERMINATE!\n"+&DAEDump.ppStatementStr(stmt));
     then fail();
   case(DAE.STMT_REINIT(var=_,value=_,source=_),_)
     equation
-      print("getStatementLHS update for REINIT!\n"+&DAEDump.ppStatementStr(stmt));
+      Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"getStatementLHS update for REINIT!\n"+&DAEDump.ppStatementStr(stmt));
     then fail();
   case(DAE.STMT_NORETCALL(exp=exp,source=_),_)
     equation
     then expsIn;
   case(DAE.STMT_RETURN(source=_),_)
     equation
-      print("getStatementLHS update for RETURN!\n"+&DAEDump.ppStatementStr(stmt));
+      Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"getStatementLHS update for RETURN!\n"+&DAEDump.ppStatementStr(stmt));
     then fail();
   case(DAE.STMT_BREAK(source=_),_)
     equation
-      print("getStatementLHS update for BREAK!\n"+&DAEDump.ppStatementStr(stmt));
+      Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"getStatementLHS update for BREAK!\n"+&DAEDump.ppStatementStr(stmt));
     then fail();
   case(DAE.STMT_ARRAY_INIT(name=_,ty=_,source=_),_)
     equation
-      print("getStatementLHS update for ARRAY_INIT!\n"+&DAEDump.ppStatementStr(stmt));
+      Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"getStatementLHS update for ARRAY_INIT!\n"+&DAEDump.ppStatementStr(stmt));
     then fail();
   else
     equation
@@ -1921,7 +1917,7 @@ algorithm
         // check if this could be evaluated
         const = Expression.isConst(exp);
         isElseIf = Debug.bcallret1(const,Expression.getBoolConst,exp,false);
-        print("do we have to use the elseif: "+&boolString(isElseIf)+&"\n");
+        //print("do we have to use the elseif: "+&boolString(isElseIf)+&"\n");
         (stmts,(funcs,repl,idx)) = Debug.bcallret3_2(const and isElseIf,evaluateFunctions_updateStatement,stmts,(funcs,replIn,idx),{},stmts,(funcs,replIn,idx));  // is this elseif case
         (stmts,(funcs,repl,idx,isElseIf)) = Debug.bcallret2_2(not isElseIf,simplifyElse,else_,(funcs,replIn,idx),stmts,(funcs,repl,idx,isElseIf)); // is the another elseif case or the else case
       then
@@ -1988,19 +1984,18 @@ algorithm
         crefs;
     case(DAE.VAR(componentRef=cref,ty=DAE.T_ARRAY(ty=_,dims=dimensions,source=_)))
       equation
-        print("the array cref\n"+&stringDelimitList(List.map({cref},ComponentReference.printComponentRefStr),"\n")+&"\n");
+        Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"the array cref before\n"+&stringDelimitList(List.map({cref},ComponentReference.printComponentRefStr),"\n")+&"\n");
         crefs = ComponentReference.expandArrayCref(cref,dimensions);
-        print("the array cref\n"+&stringDelimitList(List.map(crefs,ComponentReference.printComponentRefStr),"\n")+&"\n");
       then
         crefs;
     case(DAE.VAR(componentRef=cref,ty=DAE.T_ENUMERATION(index=_,path=_,names=_,literalVarLst=_,attributeLst=_,source=_)))
       equation
-        print("the enum cref\n"+&stringDelimitList(List.map({cref},ComponentReference.printComponentRefStr),"\n")+&"\n");
+        Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"update getScalarsForComplexVar for enumerations: the enum cref is :"+&stringDelimitList(List.map({cref},ComponentReference.printComponentRefStr),"\n")+&"\n");
       then
         {};
     case(DAE.VAR(componentRef=cref,ty=DAE.T_TUPLE(tupleType=_,source=_)))
       equation
-        print("the tupl cref\n"+&stringDelimitList(List.map({cref},ComponentReference.printComponentRefStr),"\n")+&"\n");
+        Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"update getScalarsForComplexVar for tuple types: the tupl cref is :\n"+&stringDelimitList(List.map({cref},ComponentReference.printComponentRefStr),"\n")+&"\n");
       then
         {};
     else
@@ -2101,6 +2096,29 @@ algorithm
   end matchcontinue;
 end getRecordScalars;
 
+protected function getScalarExpSize "gets the number of scalars of an expression.
+author:Waurich TUD 2014-04"
+  input DAE.Exp inExp;
+  output Integer size;
+algorithm
+  size := match(inExp)
+    local
+      list<DAE.Exp> exps;
+      list<DAE.Var> vl;
+    case(DAE.TUPLE(exps))
+      equation
+        size = listLength(exps);
+        then
+          size;
+    case(DAE.CREF(componentRef=_,ty=DAE.T_COMPLEX(varLst=vl)))
+      equation
+        then
+          listLength(vl);
+    else
+      then
+        0;
+  end match;
+end getScalarExpSize;
 
 // =============================================================================
 // predict if statements
