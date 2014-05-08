@@ -148,7 +148,7 @@ algorithm
       ((_, eqns)) = List.threadFold4(ea1, ea2, generateScalarArrayEqns2, source, differentiated, eqKind, DAE.EQUALITY_EXPS(lhs, rhs), (1, inAccEqnLst));
     then (eqns, true);
 
-    case (BackendDAE.ARRAY_EQUATION(left=lhs as DAE.CREF(componentRef=_), right=rhs, source=source, differentiated=differentiated, kind=eqKind), _) equation
+    case (BackendDAE.ARRAY_EQUATION(left=DAE.CREF(componentRef=_), right=rhs, source=source, differentiated=differentiated, kind=eqKind), _) equation
       // the lhs array is expressed as a cref
       BackendDAE.ARRAY_EQUATION(left=lhs, right=rhs, source=source, differentiated=differentiated, kind=eqKind) = inEqn;
       true = Expression.isArray(rhs) or Expression.isMatrix(rhs);

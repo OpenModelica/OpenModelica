@@ -2613,7 +2613,7 @@ algorithm
       Integer i;
       DAE.Subscript sub;
       list<DAE.Subscript> rest,lst,val;
-    case(DAE.WHOLEDIM::rest,{{DAE.INDEX(exp = DAE.ICONST(i))}},_)
+    case(DAE.WHOLEDIM()::rest,{{DAE.INDEX(exp = DAE.ICONST(i))}},_)
       equation
         // found a wholedim, replace with value, insert in lst
         val = List.first(value);
