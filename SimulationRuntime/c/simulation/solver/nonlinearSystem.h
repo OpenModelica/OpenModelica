@@ -53,7 +53,7 @@ enum NONLINEAR_SOLVER
   NLS_KINSOL,
   NLS_NEWTON,
   NLS_MIXED,
-  
+
   NLS_MAX
 };
 
