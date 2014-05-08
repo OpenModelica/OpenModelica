@@ -57,6 +57,7 @@ protected import List;
 protected import RemoveSimpleEquations;
 protected import SCode;
 protected import Util;
+protected import Types;
 
 
 // =============================================================================
@@ -103,11 +104,13 @@ algorithm
       equation
         true = Flags.isSet(Flags.EVALUATE_CONST_FUNCTIONS);
         BackendDAE.DAE(eqs = eqSysts,shared = shared) = inDAE;
+        //BackendDump.dumpBackendDAE(inDAE,"inDAE");
         (eqSysts,(shared,_)) = List.mapFold(eqSysts,evalFunctions_main,(shared,1));
         //shared = evaluateShared(shared);
         outDAE = BackendDAE.DAE(eqSysts,shared);
         outDAE = RemoveSimpleEquations.fastAcausal(outDAE);
         outDAE = updateVarKinds(outDAE);
+        //BackendDump.dumpBackendDAE(outDAE,"outDAE");
       then
         outDAE;
     else
@@ -197,7 +200,7 @@ protected function evalFunctions_findFuncs"traverses the lhs and rhs exps of an 
 algorithm
   (eqOut,tplOut) := matchcontinue(eqIn,tplIn)
     local
-      Integer size,idx;
+      Integer sizeL,sizeR,size,idx;
       Boolean b1,b2,diff;
       BackendDAE.Equation eq;
       BackendDAE.EquationKind kind;
@@ -235,10 +238,15 @@ algorithm
         funcs = BackendDAEUtil.getFunctions(shared);
         ((rhsExp,lhsExp,addEqs1,funcs,idx)) = Debug.bcallret4(b1,evaluateConstantFunction,exp1,exp2,funcs,idx,(exp2,exp1,{},funcs,idx));
         ((rhsExp,lhsExp,addEqs2,funcs,idx)) = Debug.bcallret4(b2,evaluateConstantFunction,exp2,exp1,funcs,idx,(rhsExp,lhsExp,{},funcs,idx));
+        //ExpressionDump.dumpExp(rhsExp);
         addEqs = listAppend(addEqs1,addEqs);
         addEqs = listAppend(addEqs2,addEqs);
         shared = BackendDAEUtil.addFunctionTree(funcs,shared);
-        size = getScalarExpSize(lhsExp);
+        sizeL = getScalarExpSize(lhsExp);
+        //print("sizeL "+&intString(sizeL)+&"\n");
+        sizeR = getScalarExpSize(rhsExp);
+        //print("sizeR "+&intString(sizeR)+&"\n");
+        size = intMax(sizeR,sizeL);
         eq = Util.if_(intEq(size,0),BackendDAE.EQUATION(lhsExp,rhsExp,source,diff,kind),BackendDAE.COMPLEX_EQUATION(size,lhsExp,rhsExp,source,diff,kind));
         //since tuple=tuple is not supported, these equations are converted into a list of simple equations
         (eq,addEqs) = convertTupleEquations(eq,addEqs);
@@ -2103,22 +2111,94 @@ author:Waurich TUD 2014-04"
 algorithm
   size := match(inExp)
     local
+      list<Integer> sizes;
       list<DAE.Exp> exps;
       list<DAE.Var> vl;
+      list<DAE.Type> tyl;
+      list<list<DAE.Var>> vlLst;
+      DAE.Type ty;
     case(DAE.TUPLE(exps))
       equation
-        size = listLength(exps);
+        sizes = List.map(exps,getScalarExpSize);//check if the expressions are records or something
+        size = List.fold(sizes,intAdd,0);
+        size = intMax(size,listLength(exps));
         then
           size;
     case(DAE.CREF(componentRef=_,ty=DAE.T_COMPLEX(varLst=vl)))
       equation
+        sizes = List.map(vl,getScalarVarSize);
+        size = List.fold(sizes,intAdd,0);
         then
-          listLength(vl);
+          size;
+    case(DAE.CALL(path=_,expLst=_,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(varLst=vl),tuple_=_,builtin=_,isImpure=_,inlineType=_,tailCall=_)))
+      equation
+        sizes = List.map(vl,getScalarVarSize);
+        size = List.fold(sizes,intAdd,0);
+        then size;
+    case(DAE.CALL(path=_,expLst=exps,attr=DAE.CALL_ATTR(ty=DAE.T_TUPLE(tupleType=tyl,source=_),tuple_=_,builtin=_,isImpure=_,inlineType=_,tailCall=_)))
+      equation
+        vlLst = List.map(tyl,getVarLstFromType);
+        vl = List.flatten(vlLst);
+        sizes = List.map(vl,getScalarVarSize);
+        size = List.fold(sizes,intAdd,0);
+        then size;
     else
-      then
-        0;
+      then 0;
   end match;
 end getScalarExpSize;
+
+protected function getVarLstFromType"gets the list of DAE.Var from a DAE.Type
+author:Waurich TUD 2014-04"
+  input DAE.Type tyIn;
+  output list<DAE.Var> varsOut;
+algorithm
+  varsOut := match(tyIn)
+    local
+      list<DAE.Var> varLst;
+      list<list<DAE.Var>> varLst2;
+      list<DAE.Type> tyLst;
+    case(DAE.T_TUPLE(tupleType=tyLst,source=_))
+      equation
+        varLst2 = List.map(tyLst,getVarLstFromType);
+        varLst = List.flatten(varLst2);
+        then
+          varLst;
+    case(DAE.T_COMPLEX(varLst = varLst))
+      equation
+        then
+          varLst;
+    case(DAE.T_SUBTYPE_BASIC(varLst = varLst))
+      equation
+        then
+          varLst;
+    else
+      then
+        {};
+  end match;
+end getVarLstFromType;
+
+protected function getScalarVarSize "gets the number of scalars of an DAE.Var.
+author:Waurich TUD 2014-04"
+  input DAE.Var inVar;
+  output Integer size;
+algorithm
+  size := matchcontinue(inVar)
+    local
+      list<Integer> sizes;
+      list<DAE.Exp> exps;
+      list<DAE.Var> vl;
+    case(DAE.TYPES_VAR(name=_,attributes=_,ty=DAE.T_COMPLEX(complexClassType=_,varLst=vl,equalityConstraint=_,source=_),binding=_,constOfForIteratorRange=_))
+      equation
+        sizes = List.map(vl,getScalarVarSize);
+        size = List.fold(sizes,intAdd,0);
+        then
+          size;
+    else
+      then
+        1;
+  end matchcontinue;
+end getScalarVarSize;
+
 
 // =============================================================================
 // predict if statements
