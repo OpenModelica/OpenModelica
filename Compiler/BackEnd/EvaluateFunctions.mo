@@ -102,7 +102,7 @@ algorithm
       BackendDAE.Shared shared;
     case(_)
       equation
-        true = Flags.isSet(Flags.EVALUATE_CONST_FUNCTIONS);
+        //true = Flags.isSet(Flags.EVALUATE_CONST_FUNCTIONS);
         BackendDAE.DAE(eqs = eqSysts,shared = shared) = inDAE;
         (eqSysts,(shared,_)) = List.mapFold(eqSysts,evalFunctions_main,(shared,1));
         //shared = evaluateShared(shared);
@@ -180,7 +180,7 @@ algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,m=m,mT=mT,matching=matching,stateSets=stateSets) := eqSysIn;
   eqLst := BackendEquation.equationList(eqs);
   varLst := BackendVariable.varList(vars);
-  BackendDump.dumpEquationList(eqLst, "the equations before evaluationg the functions");
+  //BackendDump.dumpEquationList(eqLst, "the equations before evaluationg the functions");
 
   //traverse the eqSystem for function calls
   (eqLst,(shared,addEqs,_)) := List.mapFold(eqLst,evalFunctions_findFuncs,(sharedIn,{},1));
@@ -188,7 +188,7 @@ algorithm
   eqs := BackendEquation.listEquation(eqLst);
   eqSysOut := BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching,stateSets);
 
-  BackendDump.dumpEquationList(eqLst, "the equations after evaluationg the functions");
+  //BackendDump.dumpEquationList(eqLst, "the equations after evaluationg the functions");
   tplOut := (shared,sysIdx+1);
 end evalFunctions_main;
 
