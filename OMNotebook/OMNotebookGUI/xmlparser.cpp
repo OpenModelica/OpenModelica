@@ -614,7 +614,7 @@ namespace IAEX
             QDomElement curveElement = n.toElement();
             if (curveElement.tagName() == XML_GRAPHCELL_CURVE)
             {
-              PlotCurve *pPlotCurve = new PlotCurve(gCell->mpPlotWindow->getPlot());
+              PlotCurve *pPlotCurve = new PlotCurve("", curveElement.attribute(XML_GRAPHCELL_TITLE), gCell->mpPlotWindow->getPlot());
               // read the curve data
               if (curveElement.hasAttribute(XML_GRAPHCELL_XDATA) && curveElement.hasAttribute(XML_GRAPHCELL_YDATA))
               {
@@ -640,7 +640,6 @@ namespace IAEX
               gCell->mpPlotWindow->getPlot()->addPlotCurve(pPlotCurve);
               pPlotCurve->attach(gCell->mpPlotWindow->getPlot());
               // read the curve attributes
-              pPlotCurve->setTitle(curveElement.attribute(XML_GRAPHCELL_TITLE));
               pPlotCurve->setCustomColor(true);
               QPen customPen = pPlotCurve->pen();
               customPen.setColor(curveElement.attribute(XML_GRAPHCELL_COLOR).toUInt());
@@ -651,14 +650,9 @@ namespace IAEX
                 pPlotCurve->setStyle(pPlotCurve->getCurveStyle(gCell->mpPlotWindow->getCurveStyle()));
               if (gCell->mpPlotWindow->getPlot()->legend())
               {
-                gCell->mpPlotWindow->getPlot()->getLegend()->getAutomaticColorAction()->blockSignals(true);
-                gCell->mpPlotWindow->getPlot()->getLegend()->getAutomaticColorAction()->setChecked(false);
-                gCell->mpPlotWindow->getPlot()->getLegend()->getAutomaticColorAction()->blockSignals(false);
                 if (curveElement.attribute(XML_GRAPHCELL_VISIBLE) == XML_FALSE)
                 {
-                  gCell->mpPlotWindow->getPlot()->getLegend()->setLegendItemStr(pPlotCurve->title().text());
-                  gCell->mpPlotWindow->getPlot()->getLegend()->getHideAction()->setChecked(true);
-                  gCell->mpPlotWindow->getPlot()->getLegend()->toggleHide(true);
+                  pPlotCurve->setVisible(false);
                 }
               }
             }
