@@ -1742,6 +1742,19 @@ algorithm
   end match;
 end isAlgorithm;
 
+public function isStmtAssert" outputs true if the stmt is an assert.
+author:Waurich TUD 2014-04"
+  input DAE.Statement stmt;
+  output Boolean b;
+algorithm
+  b := match(stmt)
+    case(DAE.STMT_ASSERT(cond=_,msg=_,level=_,source=_))
+      then true;
+    else
+     then false;
+  end match;
+end isStmtAssert;
+
 public function isComplexEquation "author: LS
   Succeeds if Element is an complex equation."
   input DAE.Element inElement;

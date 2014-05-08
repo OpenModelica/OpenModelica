@@ -271,7 +271,7 @@ author: Waurich TUD 2014-04"
 algorithm
   outTpl := matchcontinue(rhsExpIn,lhsExpIn,funcsIn,eqIdx)
     local
-      Boolean funcIsConst, funcIsPartConst, isConstRec;
+      Boolean funcIsConst, funcIsPartConst, isConstRec, hasAssert;
       Integer idx;
       list<Boolean> bList;
       list<Integer> constIdcs;
@@ -364,12 +364,16 @@ algorithm
         funcIsConst = List.isEmpty(varScalarCrefs) and List.isEmpty(varComplexCrefs);
         funcIsPartConst = (List.isNotEmpty(varScalarCrefs) or List.isNotEmpty(varComplexCrefs)) and (List.isNotEmpty(constScalarCrefs) or List.isNotEmpty(constComplexCrefs)) and not funcIsConst;
         isConstRec = intEq(listLength(constScalarCrefs),listLength(List.flatten(scalarOutputs))) and List.isEmpty(varScalarCrefs) and List.isEmpty(varComplexCrefs) and List.isEmpty(constComplexCrefs);
+        hasAssert = List.fold(algs,hasAssertFold,false);
 
         //Debug.bcall1(isConstRec,print,"the function output is completely constant and its a record\n");
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and funcIsConst,print,"the function output is completely constant\n");
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and funcIsPartConst,print,"the function output is partially constant\n");
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and not funcIsPartConst and not funcIsConst,print,"the function output is not constant in any case\n");
-
+          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and hasAssert and funcIsConst,print,"the function output is completely constant but there is an assert\n");
+          funcIsConst = Util.if_(hasAssert and funcIsConst,false,funcIsConst);
+          funcIsPartConst = Util.if_(hasAssert and funcIsConst,true,funcIsPartConst);
+          
         true =  funcIsPartConst or funcIsConst;
 
         // build the new lhs, the new statements for the function, the constant parts...
@@ -418,6 +422,20 @@ algorithm
         ((rhsExpIn,lhsExpIn,{},funcsIn,eqIdx));
   end matchcontinue;
 end evaluateConstantFunction;
+
+protected function hasAssertFold"fold functio to check if a list of stmts has an assert.
+author:Waurich TUD 2014-04"
+  input DAE.Element stmt;
+  input Boolean bIn;
+  output Boolean bOut;
+protected
+  list<Boolean> bLst;
+  list<DAE.Statement> stmtLst;
+algorithm
+  stmtLst := DAEUtil.getStatement(stmt);
+  bLst := List.map(stmtLst,DAEUtil.isStmtAssert);
+  bOut := List.fold(bLst,boolOr,bIn);
+end hasAssertFold;
 
 protected function setRecordTypes"This is somehow a hack for FourBitBinaryAdder because there are function calls in the daelow on the lhs of a function call and this leads to an error in simcode creation
 they are used a s a cast for record types, but they should be a cast instead of a call, aren't they?
@@ -1464,7 +1482,7 @@ algorithm
       equation
         alg = List.first(algsIn);
         // TODO: evaluate while-loops
-          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"While-statement:\n"+&DAEDump.ppStatementStr(alg));
+          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"While-statement (not evaluated):\n"+&DAEDump.ppStatementStr(alg));
         lhsExps = List.fold1(stmts1,getStatementLHSScalar,funcTree,{});
         lhsExps = List.unique(lhsExps);
         outputs = List.map(lhsExps,Expression.expCref);
