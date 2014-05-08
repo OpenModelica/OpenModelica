@@ -42,7 +42,7 @@ ifdef USE_GRAPH
  endif
 endif
 
-LDFLAGS = @LDFLAGS@ -lm -L$(RMLHOME)/lib/plain -lrml $(GRAPHSTREAMLIB) $(LIBSOCKET) $(CORBALIBS) $(LIBLPSOLVE55) $(METISLIB) $(PATOHLIB) -L../../build/lib/omc @RPATH@ @OMC_LIBS@ -lgc -lexpat @RT_LDFLAGS@
+LDFLAGS = @LDFLAGS@ -lm -L$(RMLHOME)/lib/plain -lrml $(GRAPHSTREAMLIB) $(LIBSOCKET) $(CORBALIBS) $(LIBLPSOLVE55) $(METISLIB) $(PATOHLIB) -L../../build/lib/omc @RPATH@ @OMC_LIBS@ -lgc -lexpat -lcJSON @RT_LDFLAGS@
 
 PROG = omc
 RMLC	= @rmlc_bin@
