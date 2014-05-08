@@ -143,24 +143,43 @@ algorithm
     case (BackendDAE.ARRAY_EQUATION(left=lhs, right=rhs, source=source, differentiated=differentiated, kind=eqKind), _) equation
       true = Expression.isArray(lhs) or Expression.isMatrix(lhs);
       true = Expression.isArray(rhs) or Expression.isMatrix(rhs);
-      true = 1 < BackendEquation.equationSize(inEqn);
       ea1 = Expression.flattenArrayExpToList(lhs);
       ea2 = Expression.flattenArrayExpToList(rhs);
       ((_, eqns)) = List.threadFold4(ea1, ea2, generateScalarArrayEqns2, source, differentiated, eqKind, DAE.EQUALITY_EXPS(lhs, rhs), (1, inAccEqnLst));
     then (eqns, true);
 
     case (BackendDAE.ARRAY_EQUATION(left=lhs as DAE.CREF(componentRef=_), right=rhs, source=source, differentiated=differentiated, kind=eqKind), _) equation
+      // the lhs array is expressed as a cref
+      BackendDAE.ARRAY_EQUATION(left=lhs, right=rhs, source=source, differentiated=differentiated, kind=eqKind) = inEqn;
       true = Expression.isArray(rhs) or Expression.isMatrix(rhs);
-      true = 1 < BackendEquation.equationSize(inEqn);
+     
+      //BackendDump.dumpEquationList({inEqn},"case2");
+      //print("LHS\n");
+      //ExpressionDump.dumpExp(lhs);
+      //print("RHS\n");
+      //ExpressionDump.dumpExp(rhs);
+      
       ((e1_1, (_, _))) = BackendDAEUtil.extendArrExp((lhs, (NONE(), false)));
+      
+      //print("e1_1\n");
+      //ExpressionDump.dumpExp(e1_1);
+      //print("rhs\n");
+      //ExpressionDump.dumpExp(rhs);
+      
       ea1 = Expression.flattenArrayExpToList(e1_1);
+      
+      //print("ea1\n");
+      //print(stringDelimitList(List.map1(ea1,ExpressionDump.dumpExpStr,0),"\n")+&"\n");
+      
       ea2 = Expression.flattenArrayExpToList(rhs);
+      //print("ea2\n");
+      //print(stringDelimitList(List.map1(ea2,ExpressionDump.dumpExpStr,0),"\n")+&"\n");
       ((_, eqns)) = List.threadFold4(ea1, ea2, generateScalarArrayEqns2, source, differentiated, eqKind, DAE.EQUALITY_EXPS(lhs, rhs), (1, inAccEqnLst));
+      //BackendDump.dumpEquationList(eqns,"eqns out");
     then (eqns, true);
 
     case (BackendDAE.ARRAY_EQUATION(left=lhs, right=rhs as DAE.CREF(componentRef=_), source=source, differentiated=differentiated, kind=eqKind), _) equation
       true = Expression.isArray(lhs) or Expression.isMatrix(lhs);
-      true = 1 < BackendEquation.equationSize(inEqn);
       ((e2_1, (_, _))) = BackendDAEUtil.extendArrExp((rhs,(NONE(),false)));
       ea1 = Expression.flattenArrayExpToList(lhs);
       ea2 = Expression.flattenArrayExpToList(e2_1);
@@ -168,7 +187,6 @@ algorithm
     then (eqns,true);
 
     case (BackendDAE.ARRAY_EQUATION(left=lhs as DAE.CREF(componentRef=_),right=rhs as DAE.CREF(componentRef=_), source=source, differentiated=differentiated, kind=eqKind), _) equation
-      true = 1 < BackendEquation.equationSize(inEqn);
       ((e1_1, (_, _))) = BackendDAEUtil.extendArrExp((lhs, (NONE(), false)));
       ((e2_1, (_, _))) = BackendDAEUtil.extendArrExp((rhs, (NONE(), false)));
       ea1 = Expression.flattenArrayExpToList(e1_1);
