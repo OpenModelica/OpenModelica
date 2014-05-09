@@ -261,7 +261,7 @@ namespace IAEX
       QDomElement omcPlotElement = domdoc_.createElement( XML_GRAPHCELL_OMCPLOT );
       // set all attributes
       omcPlotElement.setAttribute(XML_GRAPHCELL_TITLE, node->mpPlotWindow->getPlot()->title().text());
-      omcPlotElement.setAttribute(XML_GRAPHCELL_GRID, node->mpPlotWindow->getPlot()->getPlotGrid()->isVisible() ? "true" : "false");
+      omcPlotElement.setAttribute(XML_GRAPHCELL_GRID, node->mpPlotWindow->getGrid());
       omcPlotElement.setAttribute(XML_GRAPHCELL_PLOTTYPE, node->mpPlotWindow->getPlotType());
       omcPlotElement.setAttribute(XML_GRAPHCELL_LOGX, node->mpPlotWindow->getLogXCheckBox()->isChecked() ? "true" : "false");
       omcPlotElement.setAttribute(XML_GRAPHCELL_LOGY, node->mpPlotWindow->getLogXCheckBox()->isChecked() ? "true" : "false");

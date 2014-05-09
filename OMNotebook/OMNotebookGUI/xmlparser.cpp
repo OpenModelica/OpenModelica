@@ -591,7 +591,7 @@ namespace IAEX
           GraphCell *gCell = dynamic_cast<GraphCell*>(graphcell);
           // read attributes and set the plotwindow values
           gCell->mpPlotWindow->setTitle(e.attribute(XML_GRAPHCELL_TITLE));
-          gCell->mpPlotWindow->setGrid((e.attribute(XML_GRAPHCELL_GRID) == XML_TRUE) ? true : false);
+          gCell->mpPlotWindow->setGrid(e.attribute(XML_GRAPHCELL_GRID));
           int type = e.attribute(XML_GRAPHCELL_PLOTTYPE).toInt();
           if (type == 1)
             gCell->mpPlotWindow->setPlotType(PlotWindow::PLOTALL);
