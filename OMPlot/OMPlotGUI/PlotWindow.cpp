@@ -776,7 +776,9 @@ QString PlotWindow::getLegendPosition()
 
 void PlotWindow::setFooter(QString footer)
 {
+#if QWT_VERSION > 0x060000
   mpPlot->setFooter(footer);
+#endif
 }
 
 void PlotWindow::checkForErrors(QStringList variables, QStringList variablesPlotted)
@@ -1158,7 +1160,11 @@ SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
   mpHorizontalAxisLabel = new QLabel(tr("Horizontal Axis Title"));
   mpHorizontalAxisTextBox = new QLineEdit(mpPlotWindow->getPlot()->axisTitle(QwtPlot::xBottom).text());
   mpPlotFooterLabel = new QLabel(tr("Plot Footer"));
+#if QWT_VERSION > 0x060000
   mpPlotFooterTextBox = new QLineEdit(mpPlotWindow->getPlot()->footer().text());
+#else
+  mpPlotFooterTextBox = new QLineEdit;
+#endif
   // title tab layout
   QGridLayout *pTitlesTabGridLayout = new QGridLayout;
   pTitlesTabGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -1168,8 +1174,10 @@ SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
   pTitlesTabGridLayout->addWidget(mpVerticalAxisTextBox, 1, 1);
   pTitlesTabGridLayout->addWidget(mpHorizontalAxisLabel, 2, 0);
   pTitlesTabGridLayout->addWidget(mpHorizontalAxisTextBox, 2, 1);
+#if QWT_VERSION > 0x060000
   pTitlesTabGridLayout->addWidget(mpPlotFooterLabel, 3, 0);
   pTitlesTabGridLayout->addWidget(mpPlotFooterTextBox, 3, 1);
+#endif
   mpTitlesTab->setLayout(pTitlesTabGridLayout);
   // add tabs
   mpSetupTabWidget->addTab(mpVariablesTab, tr("Variables"));
@@ -1280,7 +1288,9 @@ void SetupDialog::applySetup()
   mpPlotWindow->getPlot()->setTitle(mpPlotTitleTextBox->text());
   mpPlotWindow->getPlot()->setAxisTitle(QwtPlot::yLeft, mpVerticalAxisTextBox->text());
   mpPlotWindow->getPlot()->setAxisTitle(QwtPlot::xBottom, mpHorizontalAxisTextBox->text());
+#if QWT_VERSION > 0x060000
   mpPlotWindow->getPlot()->setFooter(mpPlotFooterTextBox->text());
+#endif
   // replot
   mpPlotWindow->getPlot()->replot();
 }

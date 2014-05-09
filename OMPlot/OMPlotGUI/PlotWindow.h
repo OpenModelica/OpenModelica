@@ -208,6 +208,10 @@ private:
   QLineEdit *mpHorizontalAxisTextBox;
   QLabel *mpPlotFooterLabel;
   QLineEdit *mpPlotFooterTextBox;
+  /* legend tab */
+  QWidget *mpLegendTab;
+  QLabel *mpLegendPositionLabel;
+  QLineEdit *mpLegendPositionTextBox;
   /* buttons */
   QPushButton *mpOkButton;
   QPushButton *mpApplyButton;
