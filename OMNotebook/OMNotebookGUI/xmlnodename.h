@@ -83,6 +83,7 @@
 #define XML_GRAPHCELL_CURVE_WIDTH "CurveWidth"
 #define XML_GRAPHCELL_CURVE_STYLE "CurveStyle"
 #define XML_GRAPHCELL_LEGENDPOSITION "LegendPosition"
+#define XML_GRAPHCELL_FOOTER "Footer"
 
 #define XML_GRAPHCELL_CURVE "Curve"
 #define XML_GRAPHCELL_XDATA "XData"
