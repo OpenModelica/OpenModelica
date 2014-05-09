@@ -238,14 +238,11 @@ algorithm
         funcs = BackendDAEUtil.getFunctions(shared);
         ((rhsExp,lhsExp,addEqs1,funcs,idx)) = Debug.bcallret4(b1,evaluateConstantFunction,exp1,exp2,funcs,idx,(exp2,exp1,{},funcs,idx));
         ((rhsExp,lhsExp,addEqs2,funcs,idx)) = Debug.bcallret4(b2,evaluateConstantFunction,exp2,exp1,funcs,idx,(rhsExp,lhsExp,{},funcs,idx));
-        //ExpressionDump.dumpExp(rhsExp);
         addEqs = listAppend(addEqs1,addEqs);
         addEqs = listAppend(addEqs2,addEqs);
         shared = BackendDAEUtil.addFunctionTree(funcs,shared);
         sizeL = getScalarExpSize(lhsExp);
-        //print("sizeL "+&intString(sizeL)+&"\n");
         sizeR = getScalarExpSize(rhsExp);
-        //print("sizeR "+&intString(sizeR)+&"\n");
         size = intMax(sizeR,sizeL);
         eq = Util.if_(intEq(size,0),BackendDAE.EQUATION(lhsExp,rhsExp,source,diff,kind),BackendDAE.COMPLEX_EQUATION(size,lhsExp,rhsExp,source,diff,kind));
         //since tuple=tuple is not supported, these equations are converted into a list of simple equations
@@ -2137,6 +2134,7 @@ algorithm
       DAE.Type ty;
     case(DAE.TUPLE(exps))
       equation
+        exps = List.filterOnTrue(exps,Expression.isNotWild);
         sizes = List.map(exps,getScalarExpSize);//check if the expressions are records or something
         size = List.fold(sizes,intAdd,0);
         size = intMax(size,listLength(exps));
