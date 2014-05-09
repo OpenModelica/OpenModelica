@@ -256,7 +256,7 @@ protected
   BackendDAE.Variables knownVars, externalObjects, aliasVars;
   BackendDAE.EquationArray initialEqs, removedEqs;
   list<DAE.Constraint> constraints;
-  list<BackendDAE.ZeroCrossing> zeroCrossingLst, sampleLst;
+  list<BackendDAE.ZeroCrossing> zeroCrossingLst, sampleLst, relationsLst;
   list<BackendDAE.WhenClause> whenClauseLst;
   Integer relationsNumber;
   BackendDAE.ExternalObjectClasses extObjClasses;
@@ -269,7 +269,7 @@ algorithm
                     initialEqs=initialEqs,
                     removedEqs=removedEqs,
                     constraints=constraints,
-                    eventInfo=BackendDAE.EVENT_INFO(zeroCrossingLst=zeroCrossingLst, sampleLst=sampleLst, whenClauseLst=whenClauseLst, relationsNumber=relationsNumber),
+                    eventInfo=BackendDAE.EVENT_INFO(relationsLst=relationsLst, zeroCrossingLst=zeroCrossingLst, sampleLst=sampleLst, whenClauseLst=whenClauseLst, relationsNumber=relationsNumber),
                     extObjClasses=extObjClasses,
                     backendDAEType=backendDAEType,
                     symjacs=symjacs) := inShared;
@@ -284,6 +284,7 @@ algorithm
   dumpEquationArray(removedEqs, "Simple Equations");
   dumpEquationArray(initialEqs, "Initial Equations");
   dumpZeroCrossingList(zeroCrossingLst, "Zero Crossings (number of relations: " +& intString(relationsNumber) +& ")");
+  dumpZeroCrossingList(relationsLst, "Relations (number of relations: " +& intString(relationsNumber) +& ")");
   dumpZeroCrossingList(sampleLst, "Samples");
   dumpWhenClauseList(whenClauseLst, "When Clauses");
   dumpConstraintList(constraints, "Constraints");
