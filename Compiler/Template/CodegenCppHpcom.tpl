@@ -59,6 +59,24 @@ match simCode
 case SIMCODE(__) then
   <<
    <%generateHeaderInlcudeString(simCode)%>
+     #ifdef ANALYZATION_MODE
+      #include <boost/shared_ptr.hpp>
+      #include <boost/weak_ptr.hpp>
+      #include <boost/numeric/ublas/vector.hpp>
+      #include <boost/numeric/ublas/matrix.hpp>
+      #include <string>
+      #include <vector>
+      #include <map>
+      using std::string;
+      using std::vector;
+      using std::map;
+      #include <SimCoreFactory/Policies/FactoryConfig.h>
+      #include <SimController/ISimController.h>
+      #include <System/IMixedSystem.h>
+      
+      #include <boost/numeric/ublas/matrix_sparse.hpp>
+      typedef uBlas::compressed_matrix<double, uBlas::column_major, 0, uBlas::unbounded_array<int>, uBlas::unbounded_array<double> > SparseMatrix;
+     #endif
    <%generateHpcomSpecificIncludes(simCode)%>
    <%generateClassDeclarationCode(simCode)%>
 

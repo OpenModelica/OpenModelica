@@ -1,8 +1,12 @@
 #pragma once
 
-
-
-
+#ifdef ANALYZATION_MODE
+#include "FactoryExport.h"
+#include "System/SystemDefaultImplementation.h"
+#include "System/EventHandling.h"
+#include "HistoryImpl.h"
+#include "DataExchange/Policies/TextfileWriter.h"
+#endif
 
 /*****************************************************************************
 *

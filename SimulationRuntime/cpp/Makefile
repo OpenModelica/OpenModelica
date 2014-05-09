@@ -9,9 +9,13 @@ builddir_lib=$(top_builddir)/build/lib/omc
 builddir_inc=$(top_builddir)/build/include/omc
 
 runtimeCpp: clean
-	#cd ./Build && echo "change to Build" && cmake -D ANALYZATION_MODE=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX:PATH="$(builddir_build)"  ../
+ifeq ("$(ANALYZATION_MODE)","true")
+	cd ./Build && echo "change to Build" && cmake -DANALYZATION_MODE=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX:PATH="$(builddir_build)"  ../
+	$(MAKE) -C Build;
+else
 	cd ./Build && echo "change to Build" &&	cmake -D CMAKE_BUILD_TYPE=RelWithDebInfo -D CMAKE_INSTALL_PREFIX:PATH="$(builddir_build)"  ../
-	$(MAKE) -C Build
+	$(MAKE) -C Build;
+endif
 
 install: runtimeCpp
 	(cd Build; $(MAKE) install)

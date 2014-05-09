@@ -110,7 +110,9 @@ foreach(lib ${LAPACK_LIBRARIES})
 endforeach(lib ${LAPACK_LIBRARIES})
 #end Fix
 
-add_precompiled_header(${ModelicaName} Include/Core/Modelica.h )
+IF(NOT ANALYZATION_MODE)
+	add_precompiled_header(${ModelicaName} Include/Core/Modelica.h )
+ENDIF(NOT ANALYZATION_MODE)
 
  configure_file (
   "ModelicaConfig.inc.in"

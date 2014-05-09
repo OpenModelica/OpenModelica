@@ -1,6 +1,8 @@
 #pragma once
 
-
+#ifdef ANALYZATION_MODE
+#include <boost/multi_array.hpp>
+#endif
 
 class IStateSelection
 {

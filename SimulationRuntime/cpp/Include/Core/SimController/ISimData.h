@@ -1,6 +1,11 @@
 #pragma once
 #include <DataExchange/ISimVar.h>
 
+#ifdef ANALYZATION_MODE
+#include <string.h>
+#include <boost/numeric/ublas/fwd.hpp>
+#endif
+
 namespace uBlas = boost::numeric::ublas;
 
 class ISimData

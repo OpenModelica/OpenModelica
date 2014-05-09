@@ -12,6 +12,10 @@ Encapsulation of global simulation settings.
 /*****************************************************************************
 Copyright (c) 2008, OSMC
 *****************************************************************************/
+#ifdef ANALYZATION_MODE
+#include <string.h>
+using std::string;
+#endif
 
 enum OutputFormat {CSV, MAT, EMPTY};
 class IGlobalSettings
