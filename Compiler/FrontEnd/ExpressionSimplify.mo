@@ -4779,8 +4779,7 @@ algorithm
         //ty = Types.unliftArray(ty);
         ety = Types.simplifyType(ty);
         cref = DAE.CREF(DAE.CREF_IDENT(iter_name, ety, {}), ety);
-        values = List.map(List.map2r(values, Expression.replaceExp, expr, cref), Util.tuple21);
-
+        values = List.map2(values, replaceIteratorWithExp, expr, iter_name);
         expr = simplifyReductionFoldPhase(str,ety,values,defaultValue);
       then expr;
 
@@ -4788,6 +4787,56 @@ algorithm
 
   end matchcontinue;
 end simplifyReduction;
+
+protected function replaceIteratorWithExp
+  input DAE.Exp iterExp;
+  input DAE.Exp exp;
+  input String name;
+  output DAE.Exp outExp;
+algorithm
+  ((outExp,(_,_,true))) := Expression.traverseExp(exp, replaceIteratorWithExpTraverser, (name,iterExp,true));
+end replaceIteratorWithExp;
+
+protected function replaceIteratorWithExpTraverser
+  input tuple<DAE.Exp,tuple<String,DAE.Exp,Boolean>> inTpl;
+  output tuple<DAE.Exp,tuple<String,DAE.Exp,Boolean>> outTpl;
+algorithm
+  outTpl := matchcontinue inTpl
+    local
+      String id,name,replName;
+      DAE.Exp iterExp;
+      DAE.Type ty,ty1;
+      list<DAE.Subscript> ss;
+      Boolean b;
+      DAE.ComponentRef cr;
+      DAE.Exp exp;
+      tuple<String,DAE.Exp,Boolean> tpl;
+    case ((_,(_,_,false))) then inTpl;
+    case ((DAE.CREF(DAE.CREF_IDENT(id,_,{}),_),tpl as (name,iterExp,_)))
+      equation
+        true = stringEq(name,id);
+      then ((iterExp,tpl));
+    case ((exp as DAE.CREF(componentRef=DAE.CREF_IDENT(ident=id)),(name,iterExp,_)))
+      equation
+        true = stringEq(name,id);
+      then ((exp,(name,iterExp,false)));
+    case ((DAE.CREF(DAE.CREF_QUAL(id,ty1,ss,cr),ty),tpl as (name,DAE.CREF(componentRef=DAE.CREF_IDENT(ident=replName,subscriptLst={})),_)))
+      equation
+        true = stringEq(name,id);
+        exp = DAE.CREF(DAE.CREF_QUAL(replName,ty1,ss,cr),ty);
+      then ((exp,tpl));
+    case ((DAE.CREF(DAE.CREF_QUAL(id,ty1,{},cr),ty),tpl as (name,DAE.CREF(componentRef=DAE.CREF_IDENT(ident=replName,subscriptLst=ss)),_)))
+      equation
+        true = stringEq(name,id);
+        exp = DAE.CREF(DAE.CREF_QUAL(replName,ty1,ss,cr),ty);
+      then ((exp,tpl));
+    case ((exp as DAE.CREF(componentRef=DAE.CREF_QUAL(ident=id)),(name,iterExp,_)))
+      equation
+        true = stringEq(name,id);
+      then ((exp,(name,iterExp,false)));
+    else inTpl;
+  end matchcontinue;
+end replaceIteratorWithExpTraverser;
 
 protected function simplifyReductionFoldPhase
   input String str;
