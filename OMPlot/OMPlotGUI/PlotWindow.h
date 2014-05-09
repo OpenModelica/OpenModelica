@@ -68,6 +68,7 @@ private:
   QFile mFile;
   QStringList mVariablesList;
   PlotType mPlotType;
+  QString mGridType;
   QString mXRangeMin;
   QString mXRangeMax;
   QString mYRangeMin;
@@ -88,6 +89,8 @@ public:
   void plot();
   void plotParametric();
   void setTitle(QString title);
+  void setGrid(QString grid);
+  QString getGrid();
   QCheckBox* getLogXCheckBox();
   QCheckBox* getLogYCheckBox();
   void setXLabel(QString label);

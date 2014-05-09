@@ -49,7 +49,7 @@ void printUsage()
     printf("OPTIONS\n");
     printf("    --title=TITLE              Sets the TITLE of the plot window\n");
     printf("    --filename=NAME            Sets the NAME of the file to plot\n");
-    printf("    --grid=[true|false]        Enable a grid in the window\n");
+    printf("    --grid=GRID                Sets the GRID of the plot i.e simple, detailed, none\n");
     printf("    --logx=[true|false]        Use log scale for the x-axis\n");
     printf("    --logy=[true|false]        Use log scale for the y-axis\n");
     printf("    --xlabel=LABEL             Use LABEL as the label of the x-axis\n");
@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
     QStringList arguments;
     bool newApplication = false;
     QString title("");
-    bool grid = true;
+    QString grid = "detailed";
     QString plottype("plot");
     bool logx = false;
     bool logy = false;
@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
         } else if (strncmp(argv[i], "--title=", 8) == 0) {
           title = argv[i]+8;
         } else if (strncmp(argv[i], "--grid=",7) == 0) {
-          CONSUME_BOOL_ARG(i,7,grid);
+          grid = argv[i]+7;
         } else if (strncmp(argv[i], "--logx=",7) == 0) {
           CONSUME_BOOL_ARG(i,7,logx);
         } else if (strncmp(argv[i], "--logy=",7) == 0) {
@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
     arguments.append(argv[0]);
     arguments.append(filename);
     arguments.append(title);
-    arguments.append(grid ? "true" : "false");
+    arguments.append(grid);
     arguments.append(plottype);
     arguments.append(logx ? "true" : "false");
     arguments.append(logy ? "true" : "false");

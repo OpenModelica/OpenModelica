@@ -90,12 +90,7 @@ void PlotWindow::initializePlot(QStringList arguments)
   initializeFile(QString(arguments[1]));
   //Set up arguments
   setTitle(QString(arguments[2]));
-  if(QString(arguments[3]) == "true")
-    setDetailedGrid(true);
-  else if(QString(arguments[3]) == "false")
-    setNoGrid(true);
-  else
-    throw PlotException("Invalid input" + arguments[4]);
+  setGrid(QString(arguments[3]));
   QString plotType = arguments[4];
   if(QString(arguments[5]) == "true")
     setLogX(true);
@@ -647,6 +642,27 @@ void PlotWindow::setTitle(QString title)
   mpPlot->setTitle(title);
 }
 
+void PlotWindow::setGrid(QString grid)
+{
+  if (grid.toLower().compare("simple") == 0)
+  {
+    setGrid(true);
+  }
+  else if (grid.toLower().compare("none") == 0)
+  {
+    setNoGrid(true);
+  }
+  else
+  {
+    setDetailedGrid(true);
+  }
+}
+
+QString PlotWindow::getGrid()
+{
+  return mGridType;
+}
+
 QCheckBox* PlotWindow::getLogXCheckBox()
 {
   return mpLogXCheckBox;
@@ -939,6 +955,7 @@ void PlotWindow::setGrid(bool on)
 {
   if (on)
   {
+    mGridType = "simple";
     mpPlot->getPlotGrid()->setGrid();
     mpPlot->getPlotGrid()->attach(mpPlot);
     mpGridButton->setChecked(true);
@@ -950,6 +967,7 @@ void PlotWindow::setDetailedGrid(bool on)
 {
   if (on)
   {
+    mGridType = "detailed";
     mpPlot->getPlotGrid()->setDetailedGrid();
     mpPlot->getPlotGrid()->attach(mpPlot);
     mpDetailedGridButton->setChecked(true);
@@ -961,6 +979,7 @@ void PlotWindow::setNoGrid(bool on)
 {
   if (on)
   {
+    mGridType = "none";
     mpPlot->getPlotGrid()->detach();
     mpNoGridButton->setChecked(true);
   }
