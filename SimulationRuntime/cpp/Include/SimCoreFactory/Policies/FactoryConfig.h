@@ -52,6 +52,13 @@
      /*Defines*/
     #define PATH fs::path
     #include "LibrariesConfig.h"
+    #include <System/IAlgLoop.h>
+    #include <Solver/IAlgLoopSolver.h>
+    #include <System/IAlgLoopSolverFactory.h>
+    #include <SimController/ISimData.h>
+    #include <System/IMixedSystem.h>
+    #include <SimulationSettings/IGlobalSettings.h>
+    #include <SimController/ISimController.h>
     #include <SimCoreFactory/OMCFactory/OMCFactory.h>
 #else
     #error "operating system not supported"

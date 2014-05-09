@@ -1,7 +1,5 @@
 #pragma once
-//#include <DataExchange/IHistory.h>
-#include <boost/numeric/ublas/matrix_sparse.hpp>
-namespace uBlas = boost::numeric::ublas;
+
 
 /*****************************************************************************/
 /**

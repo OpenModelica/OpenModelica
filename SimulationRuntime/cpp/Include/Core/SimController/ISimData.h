@@ -1,7 +1,5 @@
 #pragma once
 #include <DataExchange/ISimVar.h>
-#include <string.h>
-#include <boost/numeric/ublas/fwd.hpp>
 
 namespace uBlas = boost::numeric::ublas;
 

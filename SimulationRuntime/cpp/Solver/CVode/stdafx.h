@@ -39,6 +39,8 @@
 #include <boost/range/algorithm/copy.hpp>
 #include <boost/math/tools/real_cast.hpp>
 #include <boost/multi_array.hpp>
+#include <boost/numeric/ublas/matrix_sparse.hpp>
+namespace uBlas = boost::numeric::ublas;
 using std::vector;
 using std::map;
 using std::string;

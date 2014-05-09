@@ -1,12 +1,4 @@
 #pragma once
-#include <SimulationSettings/IGlobalSettings.h>
-#include <DataExchange/IHistory.h>
-#include <map>
-#include <boost/range/adaptor/map.hpp>
-#include <boost/range/algorithm/copy.hpp>
-using std::map;
-
-
 
 template< template <unsigned long,unsigned long,unsigned long>  class ResultsPolicy,unsigned long dim_1,unsigned long dim_2,unsigned long dim_3>
 class HistoryImpl: public IHistory,

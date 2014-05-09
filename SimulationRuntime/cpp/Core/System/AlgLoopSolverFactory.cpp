@@ -1,5 +1,9 @@
 
 #include "stdafx.h"
+
+#include <System/IAlgLoopSolverFactory.h>
+#include <Solver/INonLinSolverSettings.h>
+#include <SimulationSettings/IGlobalSettings.h>
 #include <System/AlgLoopSolverFactory.h>
 
 #ifdef ANALYZATION_MODE

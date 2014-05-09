@@ -37,6 +37,10 @@
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
 #include <boost/math/tools/real_cast.hpp>
+#include <boost/unordered_map.hpp>
+#include <iostream>
+#include <boost/numeric/ublas/matrix_sparse.hpp>
+namespace uBlas = boost::numeric::ublas;
 using std::vector;
 using std::map;
 using std::string;

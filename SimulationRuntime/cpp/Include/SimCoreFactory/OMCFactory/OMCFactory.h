@@ -7,8 +7,6 @@
 #define LOADER_ERROR_FUNC_NOT_FOUND         ( -4 )
 typedef int LOADERRESULT;
 
-#include <map>
-#include <SimController/ISimController.h>
 class OMCFactory
 {
     public:

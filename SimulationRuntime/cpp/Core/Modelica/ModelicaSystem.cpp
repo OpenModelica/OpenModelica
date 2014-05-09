@@ -1,6 +1,11 @@
-#include "stdafx.h"
-
-#include "ModelicaSystem.h"
+ #include "Modelica.h"
+ #include <SimCoreFactory/Policies/FactoryConfig.h>
+ #include "FactoryExport.h"
+ #include "System/EventHandling.h"
+ #include "HistoryImpl.h"
+ #include "System/SystemDefaultImplementation.h"
+ #include "DataExchange/Policies/TextfileWriter.h" 
+ #include "ModelicaSystem.h"
 
 
 

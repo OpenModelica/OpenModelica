@@ -1,7 +1,5 @@
 #pragma once
 
-#include "IEvent.h"
-#include <boost/function.hpp>
 
 /**
 Auxiliary  class to handle system events

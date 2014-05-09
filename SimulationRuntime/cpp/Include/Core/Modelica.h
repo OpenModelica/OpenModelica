@@ -106,10 +106,6 @@ typedef double coshRetType;
 typedef ublas::shallow_array_adaptor<double> adaptor_t;
 typedef ublas::vector<double, adaptor_t> shared_vector_t;
 typedef ublas::matrix<double, adaptor_t> shared_matrix_t;
-#include <System/IMixedSystem.h>
-#include <SimulationSettings/IGlobalSettings.h>
-#include <System/IAlgLoopSolverFactory.h>
-#include <System/IMixedSystem.h>
 #include <System/IStateSelection.h>
 #include <System/ISystemProperties.h>
 #include <System/ISystemInitialization.h>
@@ -117,9 +113,5 @@ typedef ublas::matrix<double, adaptor_t> shared_matrix_t;
 #include <System/IContinuous.h>
 #include <System/ITime.h>
 #include <System/IEvent.h>
-#include <System/IAlgLoop.h>
 #include <Solver/INonLinSolverSettings.h>
-#include <Solver/IAlgLoopSolver.h>
-#include <System/IAlgLoopSolverFactory.h>
-#include <SimController/ISimData.h>
 #include <DataExchange/IHistory.h>

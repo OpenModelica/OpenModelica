@@ -42,6 +42,8 @@
 #include <boost/math/tools/real_cast.hpp>
 #include <boost/program_options.hpp>
 #include <boost/assign/list_of.hpp>
+#include <boost/numeric/ublas/matrix_sparse.hpp>
+namespace uBlas = boost::numeric::ublas;
 using std::vector;
 using std::map;
 using std::string;

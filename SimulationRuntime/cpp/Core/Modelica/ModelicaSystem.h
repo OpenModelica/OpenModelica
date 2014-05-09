@@ -1,10 +1,6 @@
 #pragma once
 
- #include "FactoryExport.h"
- #include "System/SystemDefaultImplementation.h"
- #include "System/EventHandling.h"
- #include "HistoryImpl.h"
- #include "DataExchange/Policies/TextfileWriter.h"
+
 
 
 
@@ -141,10 +137,4 @@ private:
 
    void resetHelpVar(const int index);
 
-  //Variables:
-  EventHandling _event_handling;
-
-
-
-  SparseMatrix _jacobian;
 };

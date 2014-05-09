@@ -233,7 +233,6 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   else
   <<
   #include "DataExchange/Policies/TextfileWriter.h"
-  #include "System/IWriteOutput.h"
   typedef HistoryImpl<TextFileWriter,<%numAlgvars(modelInfo)%>+<%numInOutvars(modelInfo)%>+<%numAliasvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>,0> HistoryImplType;
 
   >>%>
@@ -335,6 +334,14 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   <<
    #pragma once
    #include "Modelica.h"
+   #include <System/IMixedSystem.h>
+   #include <SimulationSettings/IGlobalSettings.h>
+   #include <System/IAlgLoopSolverFactory.h>
+   #include <System/IMixedSystem.h>
+   #include <System/IAlgLoop.h>
+   #include <Solver/IAlgLoopSolver.h>
+   #include <System/IAlgLoopSolverFactory.h>
+   #include <SimController/ISimData.h>
    #include "OMCpp<%fileNamePrefix%>Extension.h"
 
 
@@ -356,6 +363,14 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
    #include "Modelica.h"
+   #include <System/IMixedSystem.h>
+   #include <SimulationSettings/IGlobalSettings.h>
+   #include <System/IAlgLoopSolverFactory.h>
+   #include <System/IMixedSystem.h>
+   #include <System/IAlgLoop.h>
+   #include <Solver/IAlgLoopSolver.h>
+   #include <System/IAlgLoopSolverFactory.h>
+   #include <SimController/ISimData.h>
    #include "OMCpp<%fileNamePrefix%>Initialize.h"
    <%lastIdentOfPath(modelInfo.name)%>Initialize::<%lastIdentOfPath(modelInfo.name)%>Initialize(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData)
    : <%lastIdentOfPath(modelInfo.name)%>(globalSettings,nonlinsolverfactory,simData)
@@ -382,6 +397,14 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
    #include "Modelica.h"
+   #include <System/IMixedSystem.h>
+   #include <SimulationSettings/IGlobalSettings.h>
+   #include <System/IAlgLoopSolverFactory.h>
+   #include <System/IMixedSystem.h>
+   #include <System/IAlgLoop.h>
+   #include <Solver/IAlgLoopSolver.h>
+   #include <System/IAlgLoopSolverFactory.h>
+   #include <SimController/ISimData.h>
    #include "OMCpp<%fileNamePrefix%>Jacobian.h"
    <%lastIdentOfPath(modelInfo.name)%>Jacobian::<%lastIdentOfPath(modelInfo.name)%>Jacobian(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData)
    : <%lastIdentOfPath(modelInfo.name)%>(globalSettings,nonlinsolverfactory,simData)
@@ -407,6 +430,14 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
    #include "Modelica.h"
+   #include <System/IMixedSystem.h>
+   #include <SimulationSettings/IGlobalSettings.h>
+   #include <System/IAlgLoopSolverFactory.h>
+   #include <System/IMixedSystem.h>
+   #include <System/IAlgLoop.h>
+   #include <Solver/IAlgLoopSolver.h>
+   #include <System/IAlgLoopSolverFactory.h>
+   #include <SimController/ISimData.h>
    #include "OMCpp<%fileNamePrefix%>StateSelection.h"
    <%lastIdentOfPath(modelInfo.name)%>StateSelection::<%lastIdentOfPath(modelInfo.name)%>StateSelection(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData)
    : <%lastIdentOfPath(modelInfo.name)%>(globalSettings,nonlinsolverfactory,simData)
@@ -435,6 +466,14 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
    #include "Modelica.h"
+   #include <System/IMixedSystem.h>
+   #include <SimulationSettings/IGlobalSettings.h>
+   #include <System/IAlgLoopSolverFactory.h>
+   #include <System/IMixedSystem.h>
+   #include <System/IAlgLoop.h>
+   #include <Solver/IAlgLoopSolver.h>
+   #include <System/IAlgLoopSolverFactory.h>
+   #include <SimController/ISimData.h>
    #include "OMCpp<%fileNamePrefix%>WriteOutput.h"
 
    <%lastIdentOfPath(modelInfo.name)%>WriteOutput::<%lastIdentOfPath(modelInfo.name)%>WriteOutput(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData)
@@ -479,6 +518,14 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
   <<
    #include "Modelica.h"
+   #include <System/IMixedSystem.h>
+   #include <SimulationSettings/IGlobalSettings.h>
+   #include <System/IAlgLoopSolverFactory.h>
+   #include <System/IMixedSystem.h>
+   #include <System/IAlgLoop.h>
+   #include <Solver/IAlgLoopSolver.h>
+   #include <System/IAlgLoopSolverFactory.h>
+   #include <SimController/ISimData.h>
    #include "OMCpp<%fileNamePrefix%>Extension.h"
    <%lastIdentOfPath(modelInfo.name)%>Extension::<%lastIdentOfPath(modelInfo.name)%>Extension(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData)
    : <%lastIdentOfPath(modelInfo.name)%>(globalSettings,nonlinsolverfactory,simData)
@@ -1048,19 +1095,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
     #ifndef BOOST_ALL_DYN_LINK
   #define BOOST_ALL_DYN_LINK
     #endif
-  #include <boost/shared_ptr.hpp>
-  #include <boost/weak_ptr.hpp>
-  #include <boost/numeric/ublas/vector.hpp>
-  #include <boost/numeric/ublas/matrix.hpp>
-  #include <string>
-  #include <vector>
-  #include <map>
-  using std::string;
-  using std::vector;
-  using std::map;
-  namespace ublas = boost::numeric::ublas;
-  #include <SimCoreFactory/Policies/FactoryConfig.h>
-  #include <SimController/ISimController.h>
+  #include "Modelica.h"
+  #include <SimCoreFactory/Policies/FactoryConfig.h>  
   #if defined(_MSC_VER) || defined(__MINGW32__)
   #include <tchar.h>
   int _tmain(int argc, const _TCHAR* argv[])
@@ -1161,7 +1197,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   #include "Math/Functions.h"
   #include "Math/Utility.h"
   #include "LibrariesConfig.h"
-  #include "boost/tuple/tuple.hpp"
+
   /*****************************************************************************
   *
   * Simulation code for FunctionCall functions generated by the OpenModelica Compiler.
@@ -1254,7 +1290,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /I - Include Directories
   # /DNOMINMAX - Define NOMINMAX (does what it says)
   # /TP - Use C++ Compiler
-  CFLAGS=  /ZI /Od /EHa /MP /fp:except /I"<%makefileParams.omhome%>/include/omc/cpp/Core/" /I"<%makefileParams.omhome%>/include/omc/cpp/" -I. <%makefileParams.includes%>  -I"$(BOOST_INCLUDE)" /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY
+  CFLAGS=  $(SYSTEM_CFLAGS) /I"<%makefileParams.omhome%>/include/omc/cpp/Core/" /I"<%makefileParams.omhome%>/include/omc/cpp/" -I. <%makefileParams.includes%>  -I"$(BOOST_INCLUDE)" /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY  /Fp<%makefileParams.omhome%>/include/omc/cpp/Modelica.pch  /YuModelica.h
 
   CPPFLAGS = /DOMC_BUILD
   # /ZI enable Edit and Continue debug info
@@ -1264,8 +1300,10 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /link - [linker options and libraries]
   # /LIBPATH: - Directories where libs can be found
   #LDFLAGS=/MDd   /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppMath.lib
-  LDSYTEMFLAGS=/MD /Debug  /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppModelicaUtilities.lib  OMCppMath.lib   OMCppOMCFactory.lib
-  LDMAINFLAGS=/MD /Debug  /link /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/msvc" OMCppOMCFactory.lib  /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)"
+  #LDSYTEMFLAGS=/MD /Debug  /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppModelicaUtilities.lib  OMCppMath.lib   OMCppOMCFactory.lib
+  LDSYTEMFLAGS=  /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppModelicaUtilities.lib  OMCppMath.lib   OMCppOMCFactory.lib
+  #LDMAINFLAGS=/MD /Debug  /link /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/msvc" OMCppOMCFactory.lib  /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)"
+  LDMAINFLAGS=/link /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/msvc" OMCppOMCFactory.lib  /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)"
   # /MDd link with MSVCRTD.LIB debug lib
   # lib names should not be appended with a d just switch to lib/omc/cpp
 
@@ -1309,8 +1347,8 @@ LINK=<%makefileParams.linker%>
 EXEEXT=<%makefileParams.exeext%>
 DLLEXT=<%makefileParams.dllext%>
 CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
-CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(SYSTEM_CFLAGS) -I"<%makefileParams.omhome%>/include/omc/cpp/Core" -I"<%makefileParams.omhome%>/include/omc/cpp/"   -I. <%makefileParams.includes%> -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%>  <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %>
-LDSYTEMFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp"    -L"$(BOOST_LIBS)"
+CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(SYSTEM_CFLAGS) -I"<%makefileParams.omhome%>/include/omc/cpp/Core" -I"<%makefileParams.omhome%>/include/omc/cpp/"   -I. <%makefileParams.includes%> -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%>  <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %> 
+LDSYTEMFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp"  -lOMCppOMCFactory  -L"$(BOOST_LIBS)"
 LDMAINFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp"   -L"<%makefileParams.omhome%>/bin" -lOMCppOMCFactory -L"$(BOOST_LIBS)" $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(LINUX_LIB_DL)
 CPPFLAGS = $(CFLAGS) -DOMC_BUILD -DBOOST_SYSTEM_NO_DEPRICATED
 SYSTEMFILE=OMCpp<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
@@ -1354,6 +1392,14 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
    #include "Modelica.h"
+   #include <System/IMixedSystem.h>
+   #include <SimulationSettings/IGlobalSettings.h>
+   #include <System/IAlgLoopSolverFactory.h>
+   #include <System/IMixedSystem.h>
+   #include <System/IAlgLoop.h>
+   #include <Solver/IAlgLoopSolver.h>
+   #include <System/IAlgLoopSolverFactory.h>
+   #include <SimController/ISimData.h>
    #include "OMCpp<%fileNamePrefix%>.h"
 
 
@@ -1450,6 +1496,15 @@ match eq
 
   <<
    #include "Modelica.h"
+   #include <System/IMixedSystem.h>
+   #include <SimulationSettings/IGlobalSettings.h>
+   #include <System/IAlgLoopSolverFactory.h>
+   #include <System/IMixedSystem.h>
+   #include <System/IAlgLoop.h>
+   #include <Solver/IAlgLoopSolver.h>
+   #include <System/IAlgLoopSolverFactory.h>
+   #include <SimController/ISimData.h>
+   #include "OMCpp<%fileNamePrefix%>Extension.h"
    #include "OMCpp<%filename%>Algloop<%index%>.h"
    #include "OMCpp<%modelfilename%>.h"
    <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then '#include "Math/ArrayOperations.h"'%>
@@ -1517,7 +1572,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
 
   <<
-  void <%modelname%>Algloop<%index%>::evaluate(const IContinuous::UPDATETYPE command)
+  void <%modelname%>Algloop<%index%>::evaluate()
   {
         <%varDecls%>
 
@@ -1585,7 +1640,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
 
  <<
-   void <%modelname%>Algloop<%index%>::evaluate(const IContinuous::UPDATETYPE command)
+   void <%modelname%>Algloop<%index%>::evaluate()
   {
       <%varDecls%>
       <%Amatrix%>
@@ -2980,7 +3035,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
        AlgLoopDefaultImplementation::initialize();
 
     // Update the equations once before start of simulation
-    evaluate(IContinuous::ALL);
+    evaluate();
    }
   >>
  case SES_LINEAR(__) then
@@ -2990,7 +3045,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
          <%initAlgloopEquation(eq,varDecls,simCode,context)%>
         // Update the equations once before start of simulation
-        evaluate(IContinuous::ALL);
+        evaluate();
      }
    >>
 
@@ -3920,7 +3975,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     /// Set variables with given index to the system
     virtual void setReal(const double* vars)    ;
     /// Update transfer behavior of the system of equations according to command given by solver
-    virtual void evaluate(const  IContinuous::UPDATETYPE command =IContinuous::UNDEF_UPDATE);
+    virtual void evaluate();
     /// Provide the right hand side (according to the index)
     virtual void getRHS(double* vars);
     <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then

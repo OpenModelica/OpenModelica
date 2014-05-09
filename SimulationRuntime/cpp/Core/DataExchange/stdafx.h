@@ -1,6 +1,3 @@
-// stdafx.h :
-//
-
 #pragma once
 #ifndef BOOST_THREAD_USE_DLL
 #define BOOST_THREAD_USE_DLL
@@ -15,7 +12,7 @@
 #include <vector>
 #include <map>
 #include <string>
-#include <ostream>                  // Use stream for output
+#include <ostream>// Use stream for output
 
 #include <boost/ref.hpp>
 #include <boost/bind.hpp>
@@ -40,6 +37,9 @@
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
 #include <boost/math/tools/real_cast.hpp>
+#include <boost/program_options.hpp>
+#include <boost/numeric/ublas/matrix_sparse.hpp>
+namespace uBlas = boost::numeric::ublas;
 using std::vector;
 using std::map;
 using std::string;
@@ -65,9 +65,6 @@ typedef ublas::matrix<double, adaptor_t> shared_matrix_t;
 #include <System/IMixedSystem.h>
 #include <SimulationSettings/ISettingsFactory.h>
 #include <SimulationSettings/ISimControllerSettings.h>
-#include <SimulationSettings/IGlobalSettings.h>
-#include <System/IAlgLoopSolverFactory.h>
-#include <System/IMixedSystem.h>
 #include <System/ISystemProperties.h>
 #include <System/ISystemInitialization.h>
 #include <System/IContinuous.h>
@@ -75,23 +72,12 @@ typedef ublas::matrix<double, adaptor_t> shared_matrix_t;
 #include <System/IEvent.h>
 #include <System/IAlgLoop.h>
 #include <System/ICoupledSystem.h>
+#include <System/IWriteOutput.h>
 #include <Solver/INonLinSolverSettings.h>
 #include <Solver/IAlgLoopSolver.h>
 #include <System/IAlgLoopSolverFactory.h>
-#include <SimController/ISimController.h>
-#include <SimController/ISimData.h>
 #include <Extensions/IModelicaCompiler.h>
 #include <DataExchange/IHistory.h>
 #include <SimController/ISimData.h>
- #include "DataExchange/IHistory.h"
-
-
-
-
-
-
-
-
-
-
+#include "DataExchange/IHistory.h"
 

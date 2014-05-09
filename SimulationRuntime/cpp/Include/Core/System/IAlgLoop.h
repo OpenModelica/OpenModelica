@@ -1,8 +1,5 @@
 #pragma once
 
-#include "IMixedSystem.h"
-#include "IContinuous.h"
-#include "Object/IObject.h"
 /*****************************************************************************/
 /**
 
@@ -49,7 +46,7 @@ public:
   virtual void setReal(const double* lambda) = 0;
 
   /// Update transfer behavior of the system of equations according to command given by solver
-  virtual void evaluate(const IContinuous::UPDATETYPE command = IContinuous::UNDEF_UPDATE) = 0;   // vxworksupdate
+  virtual void evaluate() = 0;   // vxworksupdate
 
   /// Provide the right hand side (according to the index)
   virtual void getRHS(double* res) = 0;

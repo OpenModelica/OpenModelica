@@ -1,6 +1,5 @@
 #pragma once
 
-#include <string.h>
 
 /*
 Interface for all sim variables

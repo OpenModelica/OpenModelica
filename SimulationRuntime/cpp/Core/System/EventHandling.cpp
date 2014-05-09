@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "FactoryExport.h"
+#include <System/IEvent.h>
 #include <System/EventHandling.h>
 #include <Math/Functions.h>
 

@@ -1,7 +1,6 @@
-
-
 #include "stdafx.h"
 #include "FactoryExport.h"
+#include <System/IAlgLoop.h>
 #include <System/AlgLoopDefaultImplementation.h>
 
 

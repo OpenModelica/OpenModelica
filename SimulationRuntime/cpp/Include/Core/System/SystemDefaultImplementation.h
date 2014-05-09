@@ -1,12 +1,5 @@
 #pragma once
 
-#include <Math/Functions.h>
-#include <System/EventHandling.h>
-#include <boost/any.hpp>
-#include <boost/unordered_map.hpp>
-#include <boost/circular_buffer.hpp>
-#include <iostream>
-#include <System/IContinuous.h>
 
 
 /*****************************************************************************/

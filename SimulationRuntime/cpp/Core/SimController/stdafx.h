@@ -38,6 +38,8 @@
 #include <boost/range/algorithm/copy.hpp>
 #include <boost/math/tools/real_cast.hpp>
 #include <boost/program_options.hpp>
+#include <boost/numeric/ublas/matrix_sparse.hpp>
+namespace uBlas = boost::numeric::ublas;
 using std::vector;
 using std::map;
 using std::string;
@@ -71,8 +73,8 @@ typedef ublas::matrix<double, adaptor_t> shared_matrix_t;
 #include <System/IContinuous.h>
 #include <System/ITime.h>
 #include <System/IEvent.h>
-#include <System/IAlgLoop.h>
 #include <System/ICoupledSystem.h>
+#include <System/IWriteOutput.h>
 #include <Solver/INonLinSolverSettings.h>
 #include <Solver/IAlgLoopSolver.h>
 #include <System/IAlgLoopSolverFactory.h>
@@ -82,4 +84,4 @@ typedef ublas::matrix<double, adaptor_t> shared_matrix_t;
 #include <DataExchange/IHistory.h>
 #include <SimController/ISimData.h>
 #include "DataExchange/IHistory.h"
-
+#include <System/IAlgLoop.h>

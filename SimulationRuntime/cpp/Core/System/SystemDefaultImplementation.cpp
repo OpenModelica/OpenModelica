@@ -1,6 +1,9 @@
 
 #include "stdafx.h"
 #include "FactoryExport.h"
+#include <Math/Functions.h>
+#include <System/EventHandling.h>
+#include <System/IContinuous.h>
 #include <System/SystemDefaultImplementation.h>
 #include <System/AlgLoopSolverFactory.h>
 
