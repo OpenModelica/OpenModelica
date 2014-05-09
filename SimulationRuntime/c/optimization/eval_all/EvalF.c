@@ -126,9 +126,7 @@ Bool evalfDiffF(Index n, double * vopt, Bool new_x, Number *gradF, void * useDat
       }
     }
   }else{
-    int i;
-    for(i = 0; i<n;++i)
-      gradF[i] = 0.0;
+    memset(gradF,0.0,n*sizeof(Number));
   }
 
   if(ma){

@@ -509,14 +509,20 @@ void optData2ModelData(OptData *optData, double *vopt, const int index){
   const modelica_real *const vnom = optData->bounds.vnom;
   const long double *** const scalb = optData->bounds.scalb;
 
-  int i, j, k, shift;
+  modelica_real * realVars[3];
+
+  int i, j, k, shift, l;
   DATA * data = optData->data;
+
+  for(l = 0; l < 3; ++l)
+    realVars[l] = data->localData[l]->realVars;
 
   for(i = 0, shift = 0; i < nsi; ++i){
     for(j = 0; j < np; ++j, shift += nv){
 
-      memcpy(data->localData[2]->realVars, optData->v[i][j], nReal*sizeof(double));
-      memcpy(data->localData[1]->realVars, optData->v[i][j], nReal*sizeof(double));
+      for(l = 0; l < 3; ++l){
+        data->localData[l]->realVars = optData->v[i][j];
+      }
 
       for(k = 0; k < nx; ++k)
         data->localData[0]->realVars[k] = vopt[shift + k]*vnom[k];
@@ -536,13 +542,16 @@ void optData2ModelData(OptData *optData, double *vopt, const int index){
         diff_symColoredLagrange(optData, &optData->J[i][j][index_la], 2, scalb[i][j]);
       }
 
-      memcpy(optData->v[i][j], data->localData[0]->realVars, nReal*sizeof(double));
     }
   }
   if(ma && index == 3){
     const int index_ma = optData->s.derIndex[1];
     diff_symColoredMayer(optData, &optData->J[nsi-1][np-1][index_ma], 3);
   }
+
+  for(l = 0; l < 3; ++l)
+    data->localData[l]->realVars = realVars[l];
+
 }
 
 /*
