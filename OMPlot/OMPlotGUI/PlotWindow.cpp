@@ -742,17 +742,25 @@ void PlotWindow::setLegendPosition(QString position)
     mpPlot->insertLegend(0);
     mpPlot->setLegend(new Legend(mpPlot));
     mpPlot->insertLegend(mpPlot->getLegend(), QwtPlot::TopLegend);
-//    QwtLegend *pQwtLegend = qobject_cast<QwtLegend*>(mpPlot->legend());
-//    pQwtLegend->contentsWidget()->layout()->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+    /* we also want to align the legend to left. Stupid Qwt align it HCenter by default. */
+    QwtLegend *pQwtLegend = qobject_cast<QwtLegend*>(mpPlot->legend());
+    pQwtLegend->contentsWidget()->layout()->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+    mpPlot->updateLegend();
   }
   else if (position.toLower().compare("bottom") == 0)
   {
     mpPlot->insertLegend(0);
     mpPlot->setLegend(new Legend(mpPlot));
     mpPlot->insertLegend(mpPlot->getLegend(), QwtPlot::BottomLegend);
+    /* we also want to align the legend to left. Stupid Qwt align it HCenter by default. */
+    QwtLegend *pQwtLegend = qobject_cast<QwtLegend*>(mpPlot->legend());
+    pQwtLegend->contentsWidget()->layout()->setAlignment(Qt::AlignBottom | Qt::AlignLeft);
+    mpPlot->updateLegend();
   }
   else if (position.toLower().compare("none") == 0)
+  {
     mpPlot->insertLegend(0);
+  }
 }
 
 QString PlotWindow::getLegendPosition()
@@ -778,6 +786,15 @@ void PlotWindow::setFooter(QString footer)
 {
 #if QWT_VERSION > 0x060000
   mpPlot->setFooter(footer);
+#endif
+}
+
+QString PlotWindow::getFooter()
+{
+#if QWT_VERSION > 0x060000
+  return mpPlot->footer().text();
+#else
+  return "";
 #endif
 }
 
@@ -1160,11 +1177,7 @@ SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
   mpHorizontalAxisLabel = new QLabel(tr("Horizontal Axis Title"));
   mpHorizontalAxisTextBox = new QLineEdit(mpPlotWindow->getPlot()->axisTitle(QwtPlot::xBottom).text());
   mpPlotFooterLabel = new QLabel(tr("Plot Footer"));
-#if QWT_VERSION > 0x060000
-  mpPlotFooterTextBox = new QLineEdit(mpPlotWindow->getPlot()->footer().text());
-#else
-  mpPlotFooterTextBox = new QLineEdit;
-#endif
+  mpPlotFooterTextBox = new QLineEdit(mpPlotWindow->getFooter());
   // title tab layout
   QGridLayout *pTitlesTabGridLayout = new QGridLayout;
   pTitlesTabGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -1179,9 +1192,24 @@ SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
   pTitlesTabGridLayout->addWidget(mpPlotFooterTextBox, 3, 1);
 #endif
   mpTitlesTab->setLayout(pTitlesTabGridLayout);
+  // legend tab
+  mpLegendTab = new QWidget;
+  mpLegendPositionLabel = new QLabel(tr("Legend Position"));
+  mpLegendPositionComboBox = new QComboBox;
+  mpLegendPositionComboBox->addItem("Top", "top");
+  mpLegendPositionComboBox->addItem("Right", "right");
+  mpLegendPositionComboBox->addItem("Bottom", "bottom");
+  mpLegendPositionComboBox->addItem("Left", "left");
+  // title tab layout
+  QGridLayout *pLegendTabGridLayout = new QGridLayout;
+  pLegendTabGridLayout->setAlignment(Qt::AlignTop);
+  pLegendTabGridLayout->addWidget(mpLegendPositionLabel, 0, 0);
+  pLegendTabGridLayout->addWidget(mpLegendPositionComboBox, 0, 1);
+  mpLegendTab->setLayout(pLegendTabGridLayout);
   // add tabs
   mpSetupTabWidget->addTab(mpVariablesTab, tr("Variables"));
   mpSetupTabWidget->addTab(mpTitlesTab, tr("Titles"));
+  mpSetupTabWidget->addTab(mpLegendTab, tr("Legend"));
   // Create the buttons
   mpOkButton = new QPushButton(tr("OK"));
   mpOkButton->setAutoDefault(true);
@@ -1288,9 +1316,9 @@ void SetupDialog::applySetup()
   mpPlotWindow->getPlot()->setTitle(mpPlotTitleTextBox->text());
   mpPlotWindow->getPlot()->setAxisTitle(QwtPlot::yLeft, mpVerticalAxisTextBox->text());
   mpPlotWindow->getPlot()->setAxisTitle(QwtPlot::xBottom, mpHorizontalAxisTextBox->text());
-#if QWT_VERSION > 0x060000
-  mpPlotWindow->getPlot()->setFooter(mpPlotFooterTextBox->text());
-#endif
+  mpPlotWindow->setFooter(mpPlotFooterTextBox->text());
+  // set the legend
+  mpPlotWindow->setLegendPosition(mpLegendPositionComboBox->itemData(mpLegendPositionComboBox->currentIndex()).toString());
   // replot
   mpPlotWindow->getPlot()->replot();
 }

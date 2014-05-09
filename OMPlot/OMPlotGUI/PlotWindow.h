@@ -105,6 +105,7 @@ public:
   void setLegendPosition(QString position);
   QString getLegendPosition();
   void setFooter(QString footer);
+  QString getFooter();
   void checkForErrors(QStringList variables, QStringList variablesPlotted);
   Plot* getPlot();
   QToolButton* getPanButton();
@@ -211,7 +212,7 @@ private:
   /* legend tab */
   QWidget *mpLegendTab;
   QLabel *mpLegendPositionLabel;
-  QLineEdit *mpLegendPositionTextBox;
+  QComboBox *mpLegendPositionComboBox;
   /* buttons */
   QPushButton *mpOkButton;
   QPushButton *mpApplyButton;
