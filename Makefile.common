@@ -144,7 +144,7 @@ runtimeCPP: msl-external-libs CMinpack
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) CC="$(CC)" CXX="$(CXX)"
 
 runtimeCPPinstall: msl-external-libs CMinpack
-	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) CC="$(CC)" CXX="$(CXX)" install
+	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) CC="$(CC)" CXX="$(CXX)" install ANALYZATION_MODE="$(ANALYZATION_MODE)"
 	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppCVode.dylib build/lib/omc/cpp/libOMCppCVode.dylib
 	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppDataExchange.dylib build/lib/omc/cpp/libOMCppDataExchange.dylib
 	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppEuler.dylib build/lib/omc/cpp/libOMCppEuler.dylib
