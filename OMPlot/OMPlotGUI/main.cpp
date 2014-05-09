@@ -63,6 +63,7 @@ void printUsage()
     printf("    --curve-width=WIDTH        Sets the WIDTH of the curve\n");
     printf("    --curve-style=STYLE        Sets the STYLE of the curve. SolidLine=1, DashLine=2, DotLine=3, DashDotLine=4, DashDotDotLine=5, Sticks=6, Steps=7\n");
     printf("    --legend-position=POSITION Sets the POSITION of the legend i.e left, right, top, bottom, none\n");
+    printf("    --footer=FOOTER            Sets the FOOTER of the plot window\n");
 }
 
 int main(int argc, char *argv[])
@@ -84,6 +85,7 @@ int main(int argc, char *argv[])
     double curveWidth = 1.0;
     int curveStyle = 1;
     QString legendPosition = "top";
+    QString footer("");
     QStringList vars;
     QString filename;
     for(int i = 1; i < argc; i++)
@@ -135,6 +137,8 @@ int main(int argc, char *argv[])
           }
         } else if (strncmp(argv[i], "--legend-position=",18) == 0) {
           legendPosition = argv[i]+18;
+        } else if (strncmp(argv[i], "--footer=", 9) == 0) {
+          footer = argv[i]+9;
         } else if (strncmp(argv[i], "--", 2) == 0) {
           fprintf(stderr, "Error: Unknown option: %s\n", argv[i]);
           return 1;
@@ -164,6 +168,7 @@ int main(int argc, char *argv[])
     arguments.append(QString::number(curveWidth));
     arguments.append(QString::number(curveStyle));
     arguments.append(legendPosition);
+    arguments.append(footer);
     arguments.append(vars);
     // create the plot application object that is used to check that only one instance of application is running
     PlotApplication app(argc, argv, "OMPlot");

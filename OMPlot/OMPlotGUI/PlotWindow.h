@@ -104,6 +104,7 @@ public:
   int getCurveStyle();
   void setLegendPosition(QString position);
   QString getLegendPosition();
+  void setFooter(QString footer);
   void checkForErrors(QStringList variables, QStringList variablesPlotted);
   Plot* getPlot();
   QToolButton* getPanButton();
@@ -192,12 +193,22 @@ class SetupDialog : public QDialog
 private:
   PlotWindow *mpPlotWindow;
   QTabWidget *mpSetupTabWidget;
-
+  /* variables tab */
   QWidget *mpVariablesTab;
   QLabel *mpVariableLabel;
   QListWidget *mpVariablesListWidget;
   QStackedWidget *mpVariablePagesStackedWidget;
-
+  /* titles tab */
+  QWidget *mpTitlesTab;
+  QLabel *mpPlotTitleLabel;
+  QLineEdit *mpPlotTitleTextBox;
+  QLabel *mpVerticalAxisLabel;
+  QLineEdit *mpVerticalAxisTextBox;
+  QLabel *mpHorizontalAxisLabel;
+  QLineEdit *mpHorizontalAxisTextBox;
+  QLabel *mpPlotFooterLabel;
+  QLineEdit *mpPlotFooterTextBox;
+  /* buttons */
   QPushButton *mpOkButton;
   QPushButton *mpApplyButton;
   QPushButton *mpCancelButton;

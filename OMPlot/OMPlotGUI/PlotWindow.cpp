@@ -116,9 +116,10 @@ void PlotWindow::initializePlot(QStringList arguments)
   setCurveWidth(QString(arguments[13]).toDouble());
   setCurveStyle(QString(arguments[14]).toInt());
   setLegendPosition(QString(arguments[15]));
+  setFooter(QString(arguments[16]));
   /* read variables */
   QStringList variablesToRead;
-  for(int i = 16; i < arguments.length(); i++)
+  for(int i = 17; i < arguments.length(); i++)
     variablesToRead.append(QString(arguments[i]));
 
   setVariablesList(variablesToRead);
@@ -773,6 +774,11 @@ QString PlotWindow::getLegendPosition()
   }
 }
 
+void PlotWindow::setFooter(QString footer)
+{
+  mpPlot->setFooter(footer);
+}
+
 void PlotWindow::checkForErrors(QStringList variables, QStringList variablesPlotted)
 {
   QStringList nonExistingVariables;
@@ -1138,12 +1144,36 @@ SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
   connect(mpVariablesListWidget, SIGNAL(currentItemChanged(QListWidgetItem*,QListWidgetItem*)), SLOT(variableSelected(QListWidgetItem*,QListWidgetItem*)));
   // Variables Tab Layout
   QGridLayout *pVariablesTabGridLayout = new QGridLayout;
+  pVariablesTabGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pVariablesTabGridLayout->addWidget(mpVariableLabel, 0, 0);
   pVariablesTabGridLayout->addWidget(mpVariablesListWidget, 1, 0);
   pVariablesTabGridLayout->addWidget(mpVariablePagesStackedWidget, 2, 0);
   mpVariablesTab->setLayout(pVariablesTabGridLayout);
+  // title tab
+  mpTitlesTab = new QWidget;
+  mpPlotTitleLabel = new QLabel(tr("Plot Title"));
+  mpPlotTitleTextBox = new QLineEdit(mpPlotWindow->getPlot()->title().text());
+  mpVerticalAxisLabel = new QLabel(tr("Vertical Axis Title"));
+  mpVerticalAxisTextBox = new QLineEdit(mpPlotWindow->getPlot()->axisTitle(QwtPlot::yLeft).text());
+  mpHorizontalAxisLabel = new QLabel(tr("Horizontal Axis Title"));
+  mpHorizontalAxisTextBox = new QLineEdit(mpPlotWindow->getPlot()->axisTitle(QwtPlot::xBottom).text());
+  mpPlotFooterLabel = new QLabel(tr("Plot Footer"));
+  mpPlotFooterTextBox = new QLineEdit(mpPlotWindow->getPlot()->footer().text());
+  // title tab layout
+  QGridLayout *pTitlesTabGridLayout = new QGridLayout;
+  pTitlesTabGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pTitlesTabGridLayout->addWidget(mpPlotTitleLabel, 0, 0);
+  pTitlesTabGridLayout->addWidget(mpPlotTitleTextBox, 0, 1);
+  pTitlesTabGridLayout->addWidget(mpVerticalAxisLabel, 1, 0);
+  pTitlesTabGridLayout->addWidget(mpVerticalAxisTextBox, 1, 1);
+  pTitlesTabGridLayout->addWidget(mpHorizontalAxisLabel, 2, 0);
+  pTitlesTabGridLayout->addWidget(mpHorizontalAxisTextBox, 2, 1);
+  pTitlesTabGridLayout->addWidget(mpPlotFooterLabel, 3, 0);
+  pTitlesTabGridLayout->addWidget(mpPlotFooterTextBox, 3, 1);
+  mpTitlesTab->setLayout(pTitlesTabGridLayout);
   // add tabs
   mpSetupTabWidget->addTab(mpVariablesTab, tr("Variables"));
+  mpSetupTabWidget->addTab(mpTitlesTab, tr("Titles"));
   // Create the buttons
   mpOkButton = new QPushButton(tr("OK"));
   mpOkButton->setAutoDefault(true);
@@ -1241,9 +1271,16 @@ void SetupDialog::saveSetup()
 
 void SetupDialog::applySetup()
 {
+  // set the variables attributes
   for (int i = 0 ; i < mpVariablePagesStackedWidget->count() ; i++)
   {
     setupPlotCurve(qobject_cast<VariablePageWidget*>(mpVariablePagesStackedWidget->widget(i)));
   }
+  // set the titles
+  mpPlotWindow->getPlot()->setTitle(mpPlotTitleTextBox->text());
+  mpPlotWindow->getPlot()->setAxisTitle(QwtPlot::yLeft, mpVerticalAxisTextBox->text());
+  mpPlotWindow->getPlot()->setAxisTitle(QwtPlot::xBottom, mpHorizontalAxisTextBox->text());
+  mpPlotWindow->getPlot()->setFooter(mpPlotFooterTextBox->text());
+  // replot
   mpPlotWindow->getPlot()->replot();
 }
