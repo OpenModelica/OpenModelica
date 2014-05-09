@@ -742,20 +742,24 @@ void PlotWindow::setLegendPosition(QString position)
     mpPlot->insertLegend(0);
     mpPlot->setLegend(new Legend(mpPlot));
     mpPlot->insertLegend(mpPlot->getLegend(), QwtPlot::TopLegend);
+#if QWT_VERSION > 0x060000
     /* we also want to align the legend to left. Stupid Qwt align it HCenter by default. */
     QwtLegend *pQwtLegend = qobject_cast<QwtLegend*>(mpPlot->legend());
     pQwtLegend->contentsWidget()->layout()->setAlignment(Qt::AlignTop | Qt::AlignLeft);
     mpPlot->updateLegend();
+#endif
   }
   else if (position.toLower().compare("bottom") == 0)
   {
     mpPlot->insertLegend(0);
     mpPlot->setLegend(new Legend(mpPlot));
     mpPlot->insertLegend(mpPlot->getLegend(), QwtPlot::BottomLegend);
+#if QWT_VERSION > 0x060000
     /* we also want to align the legend to left. Stupid Qwt align it HCenter by default. */
     QwtLegend *pQwtLegend = qobject_cast<QwtLegend*>(mpPlot->legend());
     pQwtLegend->contentsWidget()->layout()->setAlignment(Qt::AlignBottom | Qt::AlignLeft);
     mpPlot->updateLegend();
+#endif
   }
   else if (position.toLower().compare("none") == 0)
   {
@@ -1196,10 +1200,10 @@ SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
   mpLegendTab = new QWidget;
   mpLegendPositionLabel = new QLabel(tr("Legend Position"));
   mpLegendPositionComboBox = new QComboBox;
-  mpLegendPositionComboBox->addItem("Top", "top");
-  mpLegendPositionComboBox->addItem("Right", "right");
-  mpLegendPositionComboBox->addItem("Bottom", "bottom");
-  mpLegendPositionComboBox->addItem("Left", "left");
+  mpLegendPositionComboBox->addItem(tr("Top"), "top");
+  mpLegendPositionComboBox->addItem(tr("Right"), "right");
+  mpLegendPositionComboBox->addItem(tr("Bottom"), "bottom");
+  mpLegendPositionComboBox->addItem(tr("Left"), "left");
   // title tab layout
   QGridLayout *pLegendTabGridLayout = new QGridLayout;
   pLegendTabGridLayout->setAlignment(Qt::AlignTop);
