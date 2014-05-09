@@ -2561,10 +2561,10 @@ algorithm outExp := matchcontinue(inExp)
             //print("subscript for cref "+&stringDelimitList(List.map(sublstcref,ExpressionDump.printSubscriptStr)," / ")+&"\n");
         subslst = dimensionsToRange(ad);
         subslst1 = rangesToSubscripts(subslst);
-            //print("subscript for arraytype "+&intString(listLength(subslst1))+&stringDelimitList(List.map(List.flatten(subslst1),ExpressionDump.printSubscriptStr)," ; ")+&"\n");
+            //print("subscript for arraytype "+&intString(listLength(subslst1))+&" :"+&stringDelimitList(List.map(List.flatten(subslst1),ExpressionDump.printSubscriptStr)," ; ")+&"\n");
         subslst = insertSubScripts(sublstcref,subslst1,{});
         subslst1 = subslst;
-            //print("subscript for new cref "+&intString(listLength(subslst1))+&stringDelimitList(List.map(List.flatten(subslst1),ExpressionDump.printSubscriptStr)," / ")+&"\n");
+            //print("subscript for new cref "+&intString(listLength(subslst1))+&" :"+&stringDelimitList(List.map(List.flatten(subslst1),ExpressionDump.printSubscriptStr)," / ")+&"\n");
         cr = ComponentReference.crefStripLastSubs(cr);
         crlst = List.map1r(subslst1,ComponentReference.subscriptCref,cr);
             //print(stringDelimitList(List.map(crlst,ComponentReference.debugPrintComponentRefTypeStr)," ; ")+&"\n");

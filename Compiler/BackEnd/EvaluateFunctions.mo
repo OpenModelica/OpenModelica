@@ -412,7 +412,7 @@ algorithm
         outputExp = setRecordTypes(outputExp,FUNCINFO(repl,funcs,idx));
         //print("RHS EXP:\n");
         //ExpressionDump.dumpExp(exp);
-          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"Finish evaluation in:\n"+&ExpressionDump.printExpStr(outputExp)+&" := "+&ExpressionDump.printExpStr(exp));
+          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"Finish evaluation in:\n"+&ExpressionDump.printExpStr(outputExp)+&" := "+&ExpressionDump.printExpStr(exp)+&"\n");
           Debug.bcall2(Flags.isSet(Flags.EVAL_FUNC_DUMP) and List.isNotEmpty(constEqs),BackendDump.dumpEquationList,constEqs,"including the additional equations:\n");
       then
         ((exp,outputExp,constEqs,funcs,idx));
@@ -1466,7 +1466,7 @@ algorithm
         lhsExps = List.fold1(stmts1,getStatementLHSScalar,funcTree,{});
         lhsExps = List.unique(lhsExps);
         lhsExpLst = List.map(lhsExps,Expression.getComplexContents); //consider arrays
-        lhsExps = List.flatten(lhsExpLst);
+        lhsExps = listAppend(List.flatten(lhsExpLst),lhsExps);
         outputs = List.map(lhsExps,Expression.expCref);
         repl = Debug.bcallret3(true, BackendVarTransform.removeReplacements,replIn,outputs,NONE(),replIn);
 

@@ -2107,7 +2107,7 @@ algorithm
         res = Absyn.pathString(ClassInf.getStateName(ci_state));
         st_str = ClassInf.printStateStr(ci_state);
         bc_tp_str = unparseType(bc_tp);
-        res = stringAppendList({"(",res," ",st_str," bc:",bc_tp_str,")"});
+        res = stringAppendList({"subType(",res," ",st_str," bc:",bc_tp_str,")"});
       then
         res;
 
@@ -2133,7 +2133,7 @@ algorithm
       equation
         tystrs = List.map(tys, unparseType);
         tystr = stringDelimitList(tystrs, ", ");
-        res = stringAppendList({"(",tystr,")"});
+        res = stringAppendList({"TUPLE(",tystr,")"});
       then
         res;
 

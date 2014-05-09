@@ -1576,6 +1576,7 @@ algorithm
       DAE.ComponentRef cref;
       DAE.Exp exp;
       list<DAE.Exp> expLst;
+      list<list<DAE.Exp>> expLstLst;
       list<DAE.ComponentRef> crefs;
     case(DAE.CREF(componentRef=cref,ty=_))
       equation
@@ -1587,14 +1588,17 @@ algorithm
       then
         expLst;
     case(DAE.CALL(path=_,expLst=expLst,attr=_))
-      then
+      equation
+         expLstLst = List.map(expLst,getComplexContentsInCall);
+         expLst = List.flatten(expLstLst);
+       then
         expLst;
     case(DAE.RECORD(path=_,exps=expLst, comp=_,ty=_))
       then
         expLst;
     case(DAE.ARRAY(ty=_,scalar=_,array=_))
       equation
-      expLst = arrayElements(e);
+        expLst = arrayElements(e);
       then
         expLst;
     case(DAE.TUPLE(PR=expLst))
@@ -1617,6 +1621,27 @@ algorithm
   end match;
 end getComplexContents;
 
+protected function getComplexContentsInCall"gets the scalars for the complex expressions inside a function call"
+  input DAE.Exp expIn;
+  output list<DAE.Exp> expsOut;
+algorithm
+  expsOut := matchcontinue(expIn)
+    local
+      list<DAE.Exp> expLst;
+    case(_)
+      equation
+         expLst = getComplexContents(expIn);
+         true = List.isEmpty(expLst);
+       then {expIn};
+    case(_)
+      equation
+         expLst = getComplexContents(expIn);
+         false = List.isEmpty(expLst);
+       then expLst;
+    else
+      then {};
+  end matchcontinue;
+end getComplexContentsInCall;
 
 public function getArrayOrRangeContents "returns the list of expressions in the array"
   input DAE.Exp e;
