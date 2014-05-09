@@ -268,7 +268,7 @@ author: Waurich TUD 2014-04"
 algorithm
   outTpl := matchcontinue(rhsExpIn,lhsExpIn,funcsIn,eqIdx)
     local
-      Boolean funcIsConst, funcIsPartConst, isConstRec, hasAssert;
+      Boolean funcIsConst, funcIsPartConst, isConstRec, hasAssert, hasReturn, hasTerminate, hasReinit, abort;
       Integer idx;
       list<Boolean> bList;
       list<Integer> constIdcs;
@@ -334,6 +334,13 @@ algorithm
         //repl = BackendVarTransform.addReplacements(repl,allInputCrefs,allInputExps,NONE());
          //BackendVarTransform.dumpReplacements(repl);
 
+        // recognize if there are statements we cannot evaluate at the moment
+        hasAssert = List.fold(algs,hasAssertFold,false);
+        hasReturn = List.fold(algs,hasReturnFold,false);
+        hasTerminate = List.fold(algs,hasReturnFold,false);
+        hasReinit = List.fold(algs,hasReinitFold,false);
+        abort = hasReturn or hasTerminate or hasReinit;
+
         // go through all algorithms and replace the variables with constants if possible, extend the ht after each algorithm
         (algs,(funcs,repl,idx)) = List.mapFold(algs,evaluateFunctions_updateAlgorithms,(funcsIn,repl,eqIdx));
           //print("\nall algs after"+&intString(listLength(algs))+&"\n"+&DAEDump.dumpElementsStr(algs)+&"\n");
@@ -361,15 +368,16 @@ algorithm
         funcIsConst = List.isEmpty(varScalarCrefs) and List.isEmpty(varComplexCrefs);
         funcIsPartConst = (List.isNotEmpty(varScalarCrefs) or List.isNotEmpty(varComplexCrefs)) and (List.isNotEmpty(constScalarCrefs) or List.isNotEmpty(constComplexCrefs)) and not funcIsConst;
         isConstRec = intEq(listLength(constScalarCrefs),listLength(List.flatten(scalarOutputs))) and List.isEmpty(varScalarCrefs) and List.isEmpty(varComplexCrefs) and List.isEmpty(constComplexCrefs);
-        hasAssert = List.fold(algs,hasAssertFold,false);
 
         //Debug.bcall1(isConstRec,print,"the function output is completely constant and its a record\n");
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and funcIsConst,print,"the function output is completely constant\n");
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and funcIsPartConst,print,"the function output is partially constant\n");
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and not funcIsPartConst and not funcIsConst,print,"the function output is not constant in any case\n");
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and hasAssert and funcIsConst,print,"the function output is completely constant but there is an assert\n");
-          funcIsConst = Util.if_(hasAssert and funcIsConst,false,funcIsConst);
-          funcIsPartConst = Util.if_(hasAssert and funcIsConst,true,funcIsPartConst);
+          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and abort,print,"the evaluated function is not used because there is a return or a terminate or a reinit statement\n");
+        funcIsConst = Util.if_((hasAssert and funcIsConst) or abort,false,funcIsConst); // quit if there is a return or terminate or use partial evaluation if there is an assert
+        funcIsPartConst = Util.if_(hasAssert and funcIsConst,true,funcIsPartConst);
+        funcIsPartConst = Util.if_(abort,false,funcIsPartConst);  // quit if there is a return or terminate
 
         true =  funcIsPartConst or funcIsConst;
 
@@ -420,7 +428,7 @@ algorithm
   end matchcontinue;
 end evaluateConstantFunction;
 
-protected function hasAssertFold"fold functio to check if a list of stmts has an assert.
+protected function hasAssertFold"fold function to check if a list of stmts has an assert.
 author:Waurich TUD 2014-04"
   input DAE.Element stmt;
   input Boolean bIn;
@@ -433,6 +441,48 @@ algorithm
   bLst := List.map(stmtLst,DAEUtil.isStmtAssert);
   bOut := List.fold(bLst,boolOr,bIn);
 end hasAssertFold;
+
+protected function hasReturnFold"fold function to check if a list of stmts has an return stmt.
+author:Waurich TUD 2014-04"
+  input DAE.Element stmt;
+  input Boolean bIn;
+  output Boolean bOut;
+protected
+  list<Boolean> bLst;
+  list<DAE.Statement> stmtLst;
+algorithm
+  stmtLst := DAEUtil.getStatement(stmt);
+  bLst := List.map(stmtLst,DAEUtil.isStmtReturn);
+  bOut := List.fold(bLst,boolOr,bIn);
+end hasReturnFold;
+
+protected function hasReinitFold "fold function to check if a list of stmts has an reinit stmt.
+author:Waurich TUD 2014-04"
+  input DAE.Element stmt;
+  input Boolean bIn;
+  output Boolean bOut;
+protected
+  list<Boolean> bLst;
+  list<DAE.Statement> stmtLst;
+algorithm
+  stmtLst := DAEUtil.getStatement(stmt);
+  bLst := List.map(stmtLst,DAEUtil.isStmtReturn);
+  bOut := List.fold(bLst,boolOr,bIn);
+end hasReinitFold;
+
+protected function hasTerminateFold"fold function to check if a list of stmts has an terminate stmt.
+author:Waurich TUD 2014-04"
+  input DAE.Element stmt;
+  input Boolean bIn;
+  output Boolean bOut;
+protected
+  list<Boolean> bLst;
+  list<DAE.Statement> stmtLst;
+algorithm
+  stmtLst := DAEUtil.getStatement(stmt);
+  bLst := List.map(stmtLst,DAEUtil.isStmtTerminate);
+  bOut := List.fold(bLst,boolOr,bIn);
+end hasTerminateFold;
 
 protected function setRecordTypes"This is somehow a hack for FourBitBinaryAdder because there are function calls in the daelow on the lhs of a function call and this leads to an error in simcode creation
 they are used a s a cast for record types, but they should be a cast instead of a call, aren't they?
@@ -1469,7 +1519,6 @@ algorithm
 
         // lets see if we can evaluate it
 
-
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"evaluated For-statement to:\n"+&DAEDump.ppStatementStr(alg));
         stmts2 = alg::lstIn;
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,repl,idx),stmts2);
@@ -1495,10 +1544,31 @@ algorithm
         stmts2 = alg::lstIn;
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,replIn,idx),stmts2);
       then (rest,(funcTree,repl,idx));
+    case(DAE.STMT_TERMINATE(msg=_,source=_)::rest,(funcTree,replIn,idx),_)
+      equation
+        alg = List.first(algsIn);
+          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"terminate-statement:\n"+&DAEDump.ppStatementStr(alg));
+        stmts2 = alg::lstIn;
+        (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,replIn,idx),stmts2);
+      then (rest,(funcTree,repl,idx));
+    case(DAE.STMT_REINIT(var=_,value=_,source=_)::rest,(funcTree,replIn,idx),_)
+      equation
+        alg = List.first(algsIn);
+          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"reinit-statement:\n"+&DAEDump.ppStatementStr(alg));
+        stmts2 = alg::lstIn;
+        (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,replIn,idx),stmts2);
+      then (rest,(funcTree,repl,idx));
     case(DAE.STMT_NORETCALL(exp=_,source=_)::rest,(funcTree,replIn,idx),_)
       equation
         alg = List.first(algsIn);
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"noretcall-statement (not evaluated):\n"+&DAEDump.ppStatementStr(alg));
+        stmts2 = alg::lstIn;
+        (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,replIn,idx),stmts2);
+      then (rest,(funcTree,repl,idx));
+    case(DAE.STMT_RETURN(source=_)::rest,(funcTree,replIn,idx),_)
+      equation
+        alg = List.first(algsIn);
+          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"return-statement:\n"+&DAEDump.ppStatementStr(alg));
         stmts2 = alg::lstIn;
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,replIn,idx),stmts2);
       then (rest,(funcTree,repl,idx));
@@ -1676,7 +1746,9 @@ algorithm
   local
     DAE.Else else_;
     DAE.Exp exp;
-    list<DAE.Exp> expLst;
+    DAE.ComponentRef cref;
+    DAE.Statement stmt1;
+    list<DAE.Exp> expLst,expLst2;
     list<DAE.Statement> stmtLst1,stmtLst2;
     list<list<DAE.Statement>> stmtLstLst;
   case(DAE.STMT_ASSIGN(type_=_,exp1=exp,exp=_),_)
@@ -1687,10 +1759,10 @@ algorithm
     equation
       expLst = listAppend(expLst,expsIn);
     then expLst;
-  case(DAE.STMT_ASSIGN_ARR(type_=_,componentRef=_,exp=_,source=_),_)
+  case(DAE.STMT_ASSIGN_ARR(type_=_,componentRef=cref,exp=exp,source=_),_)
     equation
-      Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"IMPLEMENT STMT_ASSIGN_ARR in getStatementLHS\n");
-    then fail();
+      exp = Expression.crefExp(cref);
+    then {exp};
   case(DAE.STMT_IF(exp=_,statementLst=stmtLst1,else_=else_,source=_),_)
     equation
       stmtLstLst = getDAEelseStatemntLsts(else_,{});
@@ -1710,13 +1782,20 @@ algorithm
     equation
       expLst = List.fold(stmtLst1,getStatementLHS,expsIn);
     then expLst;
-  case(DAE.STMT_WHEN(exp=_,conditions=_,initialCall=_,statementLst=_,elseWhen=_,source=_),_)
+  case(DAE.STMT_WHEN(exp=_,conditions=_,initialCall=_,statementLst=stmtLst1,elseWhen=SOME(stmt1),source=_),_)
     equation
-      Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"getStatementLHS update for WHEN!\n"+&DAEDump.ppStatementStr(stmt));
-    then fail();
+      Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print," check getStatementLHS for WHEN!\n"+&DAEDump.ppStatementStr(stmt));
+      expLst = List.fold(stmtLst1,getStatementLHS,expsIn);
+      expLst = List.fold({stmt1},getStatementLHS,expLst);
+    then expLst;
+  case(DAE.STMT_WHEN(exp=_,conditions=_,initialCall=_,statementLst=stmtLst1,elseWhen=NONE(),source=_),_)
+    equation
+      Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print," check getStatementLHS for WHEN!\n"+&DAEDump.ppStatementStr(stmt));
+      expLst = List.fold(stmtLst1,getStatementLHS,expsIn);
+    then expLst;
   case(DAE.STMT_ASSERT(cond=_,msg=_,level=_,source=_),_)
     equation
-      Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"getStatementLHS update for ASSERT!\n"+&DAEDump.ppStatementStr(stmt));
+      //Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"getStatementLHS update for ASSERT!\n"+&DAEDump.ppStatementStr(stmt));
     then expsIn;
   case(DAE.STMT_TERMINATE(msg=_,source=_),_)
     equation
@@ -1787,6 +1866,12 @@ algorithm
       expLst = listAppend(expLst,expsIn);
     then
       expLst;
+  case(DAE.STMT_ASSIGN_ARR(type_=_,componentRef=lhsCref,exp=exp,source=_),_,_)
+    equation
+      exp = Expression.crefExp(lhsCref);
+      expLst = Expression.getComplexContents(exp);
+      expLst = listAppend(expLst,expsIn);
+    then expLst;
   else
     equation
       expLst = getStatementLHS(stmt,expsIn);

@@ -1755,6 +1755,45 @@ algorithm
   end match;
 end isStmtAssert;
 
+public function isStmtReturn" outputs true if the stmt is a return.
+author:Waurich TUD 2014-04"
+  input DAE.Statement stmt;
+  output Boolean b;
+algorithm
+  b := match(stmt)
+    case(DAE.STMT_RETURN(source=_))
+      then true;
+    else
+     then false;
+  end match;
+end isStmtReturn;
+
+public function isStmtReinit" outputs true if the stmt is a reinit.
+author:Waurich TUD 2014-04"
+  input DAE.Statement stmt;
+  output Boolean b;
+algorithm
+  b := match(stmt)
+    case(DAE.STMT_REINIT(var=_, value=_, source=_))
+      then true;
+    else
+     then false;
+  end match;
+end isStmtReinit;
+
+public function isStmtTerminate" outputs true if the stmt is a terminate.
+author:Waurich TUD 2014-04"
+  input DAE.Statement stmt;
+  output Boolean b;
+algorithm
+  b := match(stmt)
+    case(DAE.STMT_TERMINATE(msg=_,source=_))
+      then true;
+    else
+     then false;
+  end match;
+end isStmtTerminate;
+
 public function isComplexEquation "author: LS
   Succeeds if Element is an complex equation."
   input DAE.Element inElement;
