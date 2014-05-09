@@ -73,7 +73,7 @@ case SIMCODE(__) then
       #include <SimCoreFactory/Policies/FactoryConfig.h>
       #include <SimController/ISimController.h>
       #include <System/IMixedSystem.h>
-      
+
       #include <boost/numeric/ublas/matrix_sparse.hpp>
       typedef uBlas::compressed_matrix<double, uBlas::column_major, 0, uBlas::unbounded_array<int>, uBlas::unbounded_array<double> > SparseMatrix;
      #endif
