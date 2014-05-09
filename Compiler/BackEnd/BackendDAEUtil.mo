@@ -2561,10 +2561,10 @@ algorithm outExp := matchcontinue(inExp)
             //print("subscript for cref "+&stringDelimitList(List.map(sublstcref,ExpressionDump.printSubscriptStr)," / ")+&"\n");
         subslst = dimensionsToRange(ad);
         subslst1 = rangesToSubscripts(subslst);
-            //print("subscript for arraytype "+&intString(listLength(subslst1))+&" :"+&stringDelimitList(List.map(List.flatten(subslst1),ExpressionDump.printSubscriptStr)," ; ")+&"\n");
+            //print("subscript for arraytype "+&intString(listLength(subslst1))+&" -->"+&stringDelimitList(List.map(List.flatten(subslst1),ExpressionDump.printSubscriptStr)," ; ")+&"\n");
         subslst = insertSubScripts(sublstcref,subslst1,{});
         subslst1 = subslst;
-            //print("subscript for new cref "+&intString(listLength(subslst1))+&" :"+&stringDelimitList(List.map(List.flatten(subslst1),ExpressionDump.printSubscriptStr)," / ")+&"\n");
+            //print("subscript for new cref "+&intString(listLength(subslst1))+&" -->"+&stringDelimitList(List.map(List.flatten(subslst1),ExpressionDump.printSubscriptStr)," / ")+&"\n");
         cr = ComponentReference.crefStripLastSubs(cr);
         crlst = List.map1r(subslst1,ComponentReference.subscriptCref,cr);
             //print(stringDelimitList(List.map(crlst,ComponentReference.debugPrintComponentRefTypeStr)," ; ")+&"\n");
@@ -2613,22 +2613,23 @@ algorithm
       Integer i;
       DAE.Subscript sub;
       list<DAE.Subscript> rest,lst,val;
-    case(DAE.WHOLEDIM()::rest,{{DAE.INDEX(exp = DAE.ICONST(i))}},_)
+      list<list<DAE.Subscript>> lsts;
+    case(DAE.WHOLEDIM()::rest,_,_)
       equation
         // found a wholedim, replace with value, insert in lst
-        val = List.first(value);
-        lst = listAppend(listReverse(val),lstIn);
+        lsts = List.map(value,listReverse);
+        lsts = List.map1(lsts,listAppend,lstIn);
         rest = listReverse(rest);
-        lst = listAppend(rest,lst);
-        lst = listReverse(lst);
+        lsts = List.map1(lsts,List.appendr,rest);
+        lsts = List.map(lsts,listReverse);
       then
-        {lst};
-    case(DAE.INDEX(exp=_)::rest,{{DAE.INDEX(exp = DAE.ICONST(i))}},_)
+        lsts;
+    case(DAE.INDEX(exp=_)::rest,_,_)
       equation
         sub = List.first(templSubScript);
-        {lst} = insertSubScripts(rest,value,sub::lstIn);
+        lsts = insertSubScripts(rest,value,sub::lstIn);
       then
-        {lst};
+        lsts;
     else
       then
         value;
