@@ -2950,21 +2950,21 @@ template zeroCrossingTpl(Integer index1, Exp relation, Text &varDecls /*BUFP*/)
     let e1 = daeExp(exp, contextZeroCross, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     <<
     <%preExp%>
-    ZEROCROSSING(<%index1%>, (<%e1%>)?1:-1);
+    gout[<%index1%>] = (<%e1%>) ? 1 : -1;
     >>
   case (exp1 as LBINARY(__)) then
     let &preExp = buffer "" /*BUFD*/
     let e1 = daeExp(exp1, contextZeroCross, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     <<
     <%preExp%>
-    ZEROCROSSING(<%index1%>, (<%e1%>)?1:-1);
+    gout[<%index1%>] = (<%e1%>) ? 1 : -1;
     >>
   case (exp1 as LUNARY(__)) then
     let &preExp = buffer "" /*BUFD*/
     let e1 = daeExp(exp1, contextZeroCross, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     <<
     <%preExp%>
-    ZEROCROSSING(<%index1%>, <%e1%>?1:-1);
+    gout[<%index1%>] = (<%e1%>) ? 1 : -1;
     >>
   case CALL(path=IDENT(name="sample"), expLst={_, start, interval}) then
     << >>
@@ -2974,7 +2974,7 @@ template zeroCrossingTpl(Integer index1, Exp relation, Text &varDecls /*BUFP*/)
     let indx = daeExp(idx, contextZeroCross, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     <<
     <%preExp%>
-    ZEROCROSSING(<%index1%>, (floor(<%e1%>) != floor(data->simulationInfo.mathEventsValuePre[<%indx%>]))?1:-1);
+    gout[<%index1%>] = (floor(<%e1%>) != floor(data->simulationInfo.mathEventsValuePre[<%indx%>])) ? 1 : -1;
     >>
   case CALL(path=IDENT(name="floor"), expLst={exp1, idx}) then
     let &preExp = buffer "" /*BUFD*/
@@ -2982,7 +2982,7 @@ template zeroCrossingTpl(Integer index1, Exp relation, Text &varDecls /*BUFP*/)
     let indx = daeExp(idx, contextZeroCross, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     <<
     <%preExp%>
-    ZEROCROSSING(<%index1%>, (floor(<%e1%>) != floor(data->simulationInfo.mathEventsValuePre[<%indx%>]))?1:-1);
+    gout[<%index1%>] = (floor(<%e1%>) != floor(data->simulationInfo.mathEventsValuePre[<%indx%>])) ? 1 : -1;
     >>
   case CALL(path=IDENT(name="ceil"), expLst={exp1, idx}) then
     let &preExp = buffer "" /*BUFD*/
@@ -2990,7 +2990,7 @@ template zeroCrossingTpl(Integer index1, Exp relation, Text &varDecls /*BUFP*/)
     let indx = daeExp(idx, contextZeroCross, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     <<
     <%preExp%>
-    ZEROCROSSING(<%index1%>, (ceil(<%e1%>) != ceil(data->simulationInfo.mathEventsValuePre[<%indx%>]))?1:-1);
+    gout[<%index1%>] = (ceil(<%e1%>) != ceil(data->simulationInfo.mathEventsValuePre[<%indx%>])) ? 1 : -1;
     >>
   case CALL(path=IDENT(name="div"), expLst={exp1, exp2, idx}) then
     let &preExp = buffer "" /*BUFD*/
@@ -2999,7 +2999,7 @@ template zeroCrossingTpl(Integer index1, Exp relation, Text &varDecls /*BUFP*/)
     let indx = daeExp(idx, contextZeroCross, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     <<
     <%preExp%>
-    ZEROCROSSING(<%index1%>, (trunc(<%e1%>/<%e2%>) != trunc(data->simulationInfo.mathEventsValuePre[<%indx%>]/data->simulationInfo.mathEventsValuePre[<%indx%>+1]))?1:-1);
+    gout[<%index1%>] = (trunc(<%e1%>/<%e2%>) != trunc(data->simulationInfo.mathEventsValuePre[<%indx%>]/data->simulationInfo.mathEventsValuePre[<%indx%>+1])) ? 1 : -1;
     >>
   else
     error(sourceInfo(), ' UNKNOWN ZERO CROSSING for <%index1%>')

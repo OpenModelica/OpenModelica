@@ -36,10 +36,6 @@ extern "C" {
 
 #include "simulation_data.h"
 
-#define ZEROCROSSING(ind,exp) { \
-  gout[ind] = exp; \
-}
-
 #define RELATION(res,exp1,exp2,index,op_w) { \
   if(data->simulationInfo.discreteCall == 0){ \
     res = data->simulationInfo.relationsPre[index]; \
