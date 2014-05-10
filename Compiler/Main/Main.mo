@@ -1120,5 +1120,5 @@ algorithm
   end matchcontinue;
 end main2;
 
-end Main;   
+end Main;
 
