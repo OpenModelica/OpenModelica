@@ -49,7 +49,7 @@ Bool evalfF(Index n, Number * vopt, Bool new_x, Number *objValue, void * useData
   long double mayer = 0.0;
   long double lagrange = 0.0;
 
-  if(1 || !new_x)
+  if(new_x)
     optData2ModelData(optData, vopt, 0);
 
   if(la){
@@ -106,7 +106,7 @@ Bool evalfDiffF(Index n, double * vopt, Bool new_x, Number *gradF, void * useDat
   const modelica_boolean la = optData->s.lagrange;
   const modelica_boolean ma = optData->s.mayer;
 
-  if(1 || !new_x)
+  if(new_x)
     optData2ModelData(optData, vopt, 3);
   else
     updateDer(optData);
@@ -157,14 +157,23 @@ static inline void updateDer(OptData *optData){
   const modelica_boolean la = optData->s.lagrange;
   const modelica_boolean ma = optData->s.mayer;
   DATA * data = optData->data;
+  modelica_real * realV[3]; 
+ 
+  {
+    int i;
+    for(i = 0; i < 3; ++i)
+      realV[i] = data->localData[i]->realVars; 
+  }
 
   if(la){
     const int index_la = optData->s.derIndex[0];
     const long double *** const scalb = optData->bounds.scalb;
-    int i, j;
+    int i, j, ii;
     for(i = 0; i < nsi; ++i){
       for(j = 0; j < np; ++j){
-        memcpy(data->localData[0]->realVars, optData->v[i][j], nReal*sizeof(double));
+        for(ii = 0; ii < 3; ++ii)
+          data->localData[ii]->realVars = optData->v[i][j];
+        
         data->localData[0]->timeValue = (modelica_real) optData->time.t[i][j];
         diff_symColoredLagrange(optData, &optData->J[i][j][index_la], 2, scalb[i][j]);
       }
@@ -175,9 +184,19 @@ static inline void updateDer(OptData *optData){
     const int index_ma = optData->s.derIndex[1];
     const int i = nsi - 1;
     const int j = np - 1;
-    memcpy(data->localData[0]->realVars, optData->v[i][j], nReal*sizeof(double));
+    int ii;
+
+    for(ii = 0; ii < 3; ++ii)
+      data->localData[ii]->realVars = optData->v[i][j];
+
     data->localData[0]->timeValue = (modelica_real) optData->time.t[i][j];
     diff_symColoredMayer(optData, &optData->J[i][j][index_ma], 3);
+  }
+
+  {
+    int ii;
+    for(ii = 0; ii < 3; ++ii)
+      data->localData[ii]->realVars = realV[ii]; 
   }
 
 }

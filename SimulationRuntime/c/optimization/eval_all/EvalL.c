@@ -127,7 +127,7 @@ Bool ipopt_h(int n, double *vopt, Bool new_x, double obj_factor, int m, double *
     modelica_boolean upC;
     modelica_boolean upC2;
     upC = obj_factor != 0;
-    if(!new_x){
+    if(new_x){
       optData2ModelData(optData, vopt, 4);
       if(upC)
         updateDerF(optData);

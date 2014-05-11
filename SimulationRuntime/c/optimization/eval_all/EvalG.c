@@ -89,7 +89,7 @@ Bool evalfG(Index n, double * vopt, Bool new_x, int m, Number *g, void * useData
   double * vv[np+1];
   int i, j, k, shift;
 
-  if(1|| !new_x)
+  if(new_x)
     optData2ModelData(optData, vopt, 0);
 
   v = optData->v;
@@ -195,7 +195,7 @@ Bool evalfDiffG(Index n, double * vopt, Bool new_x, Index m, Index njac, Index *
     const modelica_boolean ** const J = optData->s.J[4];
     int i, j, k, l, ii;
 
-    if(1 || !new_x)
+    if(new_x)
       optData2ModelData(optData, vopt, 4);
     else
       updateDer(optData);
@@ -567,18 +567,24 @@ static inline void updateDer(OptData *optData){
   const int nsi = optData->dim.nsi;
   const int np = optData->dim.np;
 
+  modelica_real * realVars[3];
   int i, j;
   DATA * data = optData->data;
 
+  for(i = 0; i < 3; ++i)
+    realVars[i] = data->localData[i]->realVars; 
+
   for(i = 0; i < nsi; ++i){
     for(j = 0; j < np; ++j){
-
-      memcpy(data->localData[0]->realVars, optData->v[i][j], nReal*sizeof(double));
+      data->localData[0]->realVars = optData->v[i][j];
       data->localData[0]->timeValue = (modelica_real) optData->time.t[i][j];
 
       diff_symColoredODE(optData, optData->J[i][j], 4, optData->bounds.scaldt[i]);
     }
   }
+
+  for(i = 0; i < 3; ++i)
+    data->localData[i]->realVars = realVars[i]; 
 }
 
 
@@ -591,7 +597,6 @@ static inline void printMaxError(Number *g, const int m, const int nx, const int
   double tmp;
   {
     int i, j, k;
-
 
     for(i = 0; i < m; ++i){
       k = i % nJ;
