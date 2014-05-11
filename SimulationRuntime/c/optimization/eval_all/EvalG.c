@@ -572,7 +572,7 @@ static inline void updateDer(OptData *optData){
   DATA * data = optData->data;
 
   for(i = 0; i < 3; ++i)
-    realVars[i] = data->localData[i]->realVars; 
+    realVars[i] = data->localData[i]->realVars;
 
   for(i = 0; i < nsi; ++i){
     for(j = 0; j < np; ++j){
@@ -584,7 +584,7 @@ static inline void updateDer(OptData *optData){
   }
 
   for(i = 0; i < 3; ++i)
-    data->localData[i]->realVars = realVars[i]; 
+    data->localData[i]->realVars = realVars[i];
 }
 
 

@@ -157,12 +157,12 @@ static inline void updateDer(OptData *optData){
   const modelica_boolean la = optData->s.lagrange;
   const modelica_boolean ma = optData->s.mayer;
   DATA * data = optData->data;
-  modelica_real * realV[3]; 
- 
+  modelica_real * realV[3];
+
   {
     int i;
     for(i = 0; i < 3; ++i)
-      realV[i] = data->localData[i]->realVars; 
+      realV[i] = data->localData[i]->realVars;
   }
 
   if(la){
@@ -173,7 +173,7 @@ static inline void updateDer(OptData *optData){
       for(j = 0; j < np; ++j){
         for(ii = 0; ii < 3; ++ii)
           data->localData[ii]->realVars = optData->v[i][j];
-        
+
         data->localData[0]->timeValue = (modelica_real) optData->time.t[i][j];
         diff_symColoredLagrange(optData, &optData->J[i][j][index_la], 2, scalb[i][j]);
       }
@@ -196,7 +196,7 @@ static inline void updateDer(OptData *optData){
   {
     int ii;
     for(ii = 0; ii < 3; ++ii)
-      data->localData[ii]->realVars = realV[ii]; 
+      data->localData[ii]->realVars = realV[ii];
   }
 
 }
