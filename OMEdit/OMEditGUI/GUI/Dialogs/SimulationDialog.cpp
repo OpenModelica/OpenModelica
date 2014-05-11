@@ -253,11 +253,11 @@ void SimulationDialog::setUpForm()
   mpOutputVariablesTextBox = new QLineEdit;
   // measure simulation time checkbox
   QLabel *mpProfilingLabel = new Label(tr("Profiling (enable performance measurements)"));
-  mpProfilingCheckBox = new QComboBox();
+  mpProfilingComboBox = new QComboBox;
   QStringList profilingOptions = mpMainWindow->getOMCProxy()->getConfigFlagValidOptions("profiling");
-  mpProfilingCheckBox->addItems(profilingOptions);
-  mpProfilingCheckBox->setCurrentIndex(0);
-  mpProfilingCheckBox->setToolTip(mpMainWindow->getOMCProxy()->help("profiling"));
+  mpProfilingComboBox->addItems(profilingOptions);
+  mpProfilingComboBox->setCurrentIndex(0);
+  mpProfilingComboBox->setToolTip(mpMainWindow->getOMCProxy()->help("profiling"));
   // cpu-time checkbox
   mpCPUTimeCheckBox = new QCheckBox(tr("CPU Time"));
   // enable all warnings
@@ -352,7 +352,7 @@ void SimulationDialog::setUpForm()
   pSimulationFlagsTabLayout->addWidget(mpOutputVariablesLabel, 9, 0);
   pSimulationFlagsTabLayout->addWidget(mpOutputVariablesTextBox, 9, 1, 1, 2);
   pSimulationFlagsTabLayout->addWidget(mpProfilingLabel, 10, 0);
-  pSimulationFlagsTabLayout->addWidget(mpProfilingCheckBox, 10, 1);
+  pSimulationFlagsTabLayout->addWidget(mpProfilingComboBox, 10, 1, 1, 2);
   pSimulationFlagsTabLayout->addWidget(mpCPUTimeCheckBox, 11, 0);
   pSimulationFlagsTabLayout->addWidget(mpEnableAllWarningsCheckBox, 12, 0);
   pSimulationFlagsTabLayout->addWidget(mpLoggingGroupBox, 13, 0, 1, 3);
@@ -925,7 +925,7 @@ void SimulationDialog::simulate()
       mSimulationParameters.append(", variableFilter=").append("\"").append(mpVariableFilterTextBox->text()).append("\"");
     if (!mpCflagsTextBox->text().isEmpty())
       mSimulationParameters.append(", cflags=").append("\"").append(mpCflagsTextBox->text()).append("\"");
-    mpMainWindow->getOMCProxy()->setCommandLineOptions("+profiling=" + mpProfilingCheckBox->currentText());
+    mpMainWindow->getOMCProxy()->setCommandLineOptions("+profiling=" + mpProfilingComboBox->currentText());
     // setup simulation flags
     // setup Model Setup file flag
     if (!mpModelSetupFileTextBox->text().isEmpty())
@@ -1101,7 +1101,7 @@ void SimulationDialog::compilationProcessFinished(int exitCode, QProcess::ExitSt
     }
     SimulationOptions simulationOptions(mpLibraryTreeNode->getNameStructure(), fileNamePrefix, outputFormat, mSimulationFlags,
                                         mpShowGeneratedFilesCheckBox->isChecked(),
-                                        mpProfilingCheckBox->currentText() != "none",
+                                        mpProfilingComboBox->currentText() != "none",
                                         mpMainWindow->getOMCProxy()->changeDirectory());
     /* show the Transformational Debugger */
     if (mpMainWindow->getOptionsDialog()->getSimulationPage()->getAlwaysShowTransformationsCheckBox()->isChecked())
@@ -1181,7 +1181,6 @@ void SimulationDialog::simulationProcessFinished(int exitCode, QProcess::ExitSta
   {
     if (mSimulationOptions.isProfiling())
     {
-      QString fileName = QString(mSimulationOptions.getOutputFileName()).remove(QRegExp("(_res.mat|_res.plt|_res.csv)"));
       mpMainWindow->showTransformationsWidget(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getFileNamePrefix() + "_info.xml");
     }
   }
