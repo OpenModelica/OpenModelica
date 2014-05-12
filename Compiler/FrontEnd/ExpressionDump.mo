@@ -415,6 +415,14 @@ algorithm
   end match;
 end printSubscriptStr;
 
+public function printSubscriptLstStr
+  "Print a list of Subscripts into a String."
+  input list<DAE.Subscript> inSubscriptLst;
+  output String outString;
+algorithm
+  outString := stringDelimitList(List.map(inSubscriptLst,printSubscriptStr)," , ");
+end printSubscriptLstStr;
+
 public function printExpListStr
 " prints a list of expressions with commas between expressions."
   input list<DAE.Exp> expl;
