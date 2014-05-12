@@ -367,12 +367,12 @@ static inline void sumLagrange0(const int i, const int j, double * res,
 
   long double sum = 0;
   int l;
-
-  for(l = 0; l< nJ; ++l){
-    if(optData->s.Hg[l][i][j])
-      sum += optData->H[l][i][j];
-  }
-  if(upC)
+  if(optData->s.H0[i][j])
+    for(l = 0; l< nJ; ++l){
+      if(optData->s.Hg[l][i][j])
+        sum += optData->H[l][i][j];
+    }
+  if(upC && optData->s.Hl[i][j])
     sum += optData->Hl[i][j];
 
   *res = (double) sum;
@@ -390,15 +390,16 @@ static inline void sumLagrange1(const int i, const int j, double * res,
   long double sum = 0;
   int l;
 
-  for(l = 0; l< nJ; ++l){
-    if(optData->s.Hg[l][i][j])
-      sum += optData->H[l][i][j];
-  }
+  if(optData->s.H0[i][j])
+    for(l = 0; l< nJ; ++l){
+      if(optData->s.Hg[l][i][j])
+        sum += optData->H[l][i][j];
+    }
 
-  if(upC)
+  if(upC && optData->s.Hl[i][j])
     sum += optData->Hl[i][j];
 
-  if(upC2)
+  if(upC2 && optData->s.Hm[i][j])
     sum += optData->Hm[i][j];
 
   *res = (double) sum;
