@@ -163,7 +163,7 @@ set(_compiler_FLAGS "${_compiler_FLAGS} -DBOOST_ALL_DYN_LINK ")
 #SYSTEM_FLAGS variable for configuration file to set used compiler flags
 GET_DIRECTORY_PROPERTY(_directory_flags DEFINITIONS)
 #LIST(APPEND _compiler_FLAGS ${_directory_flags})
-set(_compiler_FLAGS "${_compiler_FLAGS} ${_directory_flags} -include-pch ${_output}") 
+set(_compiler_FLAGS "${_compiler_FLAGS} ${_directory_flags}") 
 set(SYSTEM_CFLAGS ${_compiler_FLAGS})
 GET_DIRECTORY_PROPERTY(_directory_flags INCLUDE_DIRECTORIES)
 
