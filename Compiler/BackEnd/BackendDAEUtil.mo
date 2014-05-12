@@ -2558,16 +2558,12 @@ algorithm outExp := matchcontinue(inExp)
   case( (DAE.CREF(componentRef=cr,ty= t as DAE.T_ARRAY(ty=ty,dims=ad)), (funcs,_)) )
     equation
         sublstcref = ComponentReference.crefSubs(cr);
-            //print("subscript for cref "+&stringDelimitList(List.map(sublstcref,ExpressionDump.printSubscriptStr)," / ")+&"\n");
         subslst = dimensionsToRange(ad);
         subslst1 = rangesToSubscripts(subslst);
-            //print("subscript for arraytype "+&intString(listLength(subslst1))+&" -->"+&stringDelimitList(List.map(List.flatten(subslst1),ExpressionDump.printSubscriptStr)," ; ")+&"\n");
         subslst = insertSubScripts(sublstcref,subslst1,{});
         subslst1 = subslst;
-            //print("subscript for new cref "+&intString(listLength(subslst1))+&" -->"+&stringDelimitList(List.map(List.flatten(subslst1),ExpressionDump.printSubscriptStr)," / ")+&"\n");
         cr = ComponentReference.crefStripLastSubs(cr);
         crlst = List.map1r(subslst1,ComponentReference.subscriptCref,cr);
-            //print(stringDelimitList(List.map(crlst,ComponentReference.debugPrintComponentRefTypeStr)," ; ")+&"\n");
         expl = List.map1(crlst,Expression.makeCrefExp,ty);
         e_new = DAE.ARRAY(t,true,expl);
         restpl = Expression.traverseExp(e_new, traversingextendArrExp, (funcs,true));
@@ -2601,7 +2597,8 @@ algorithm outExp := matchcontinue(inExp)
 end matchcontinue;
 end traversingextendArrExp;
 
-protected function insertSubScripts"traverses the subscripts of the templSubScript and searches for wholedim. the value replaces the wholedim. this works only if there is just one value.
+protected function insertSubScripts"traverses the subscripts of the templSubScript and searches for wholedim. the value replaces the wholedim.
+If there are multiple values, the templSubScript will be used for each of them and multiple new subScriptLsts are created.
 author:Waurich TUD 2014-04"
   input list<DAE.Subscript> templSubScript;
   input list<list<DAE.Subscript>> value;
