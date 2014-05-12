@@ -501,7 +501,10 @@ void rt_init(int numTimers) {
   alloc_and_copy((void**)&rt_clock_ncall_total,numTimers,sizeof(uint32_t));
   alloc_and_copy((void**)&rt_clock_ncall_min,numTimers,sizeof(uint32_t));
   alloc_and_copy((void**)&rt_clock_ncall_max,numTimers,sizeof(uint32_t));
-  memset(rt_clock_ncall_min + NUM_RT_CLOCKS*sizeof(uint32_t), 0xFF, (numTimers-NUM_RT_CLOCKS) * sizeof(uint32_t));
+  /* This memset-command is not working properly, especially on windows.
+   * It's writing into the rt_clock_ncall_total-array and thus the values are wrong.
+   * However, the profiling-functionality seems to work without it. */
+  //memset(rt_clock_ncall_min + NUM_RT_CLOCKS*sizeof(uint32_t), 0xFF, (numTimers-NUM_RT_CLOCKS) * sizeof(uint32_t));
 }
 
 void rt_measure_overhead(int ix)
