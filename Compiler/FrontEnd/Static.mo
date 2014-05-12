@@ -10856,12 +10856,12 @@ algorithm
         (cache,e,DAE.C_VAR(),attr);
 
     // a discrete variable
-    case (cache,_,cr,attr as DAE.ATTR(variability = SCode.DISCRETE()),_,_,tt,_,doVect,InstTypes.SPLICEDEXPDATA(_,idTp),_,_,_)
+    case (cache,_,cr,attr as DAE.ATTR(variability = SCode.DISCRETE()),_,_,tt,_,doVect,InstTypes.SPLICEDEXPDATA(sexp,idTp),_,_,_)
       equation
         expTy = Types.simplifyType(tt);
-        cr_1 = fillCrefSubscripts(cr, tt);
         expIdTy = Types.simplifyType(idTp);
-        e = crefVectorize(doVect, Expression.makeCrefExp(cr_1,expTy), tt, NONE(), expIdTy);
+        cr_1 = fillCrefSubscripts(cr, tt);
+        e = crefVectorize(doVect, Expression.makeCrefExp(cr_1,expTy), tt, sexp, expIdTy);
       then
         (cache,e,DAE.C_VAR(),attr);
 
@@ -11718,16 +11718,16 @@ end createCrefArray;
 protected function createCrefArray2d
 "helper function to cref_vectorize, creates each
   individual cref, e.g. {x{1,1},x{2,1}, ...} from x."
-  input DAE.ComponentRef inComponentRef1;
-  input Integer inInteger2;
-  input Integer inInteger3;
-  input Integer inInteger4;
+  input DAE.ComponentRef inCref;
+  input Integer inIndex;
+  input Integer inDim1;
+  input Integer inDim2;
   input DAE.Type inType5;
   input DAE.Type inType6;
   input DAE.Type crefIdType;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue (inComponentRef1,inInteger2,inInteger3,inInteger4,inType5,inType6,crefIdType)
+  outExp := matchcontinue (inCref, inIndex, inDim1, inDim2, inType5,inType6,crefIdType)
     local
       DAE.ComponentRef cr,cr_1;
       Integer indx,ds,ds2,indx_1;
