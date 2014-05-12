@@ -513,7 +513,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   DLLEXT=<%makefileParams.dllext%>
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
 
-  CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -I"<%makefileParams.omhome%>/include/omc/cpp" -I"<%makefileParams.omhome%>/include/omc/cpp/Core" -I"<%makefileParams.omhome%>/include/omc/cpp/SimCoreFactory" -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %>
+  CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(SYSTEM_CFLAGS) -I"<%makefileParams.omhome%>/include/omc/cpp" -I"<%makefileParams.omhome%>/include/omc/cpp/Core" -I"<%makefileParams.omhome%>/include/omc/cpp/SimCoreFactory" -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%>
   LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" -L$(BOOST_LIBS)  -L"$(BOOST_LIBS)" -l:$(BOOST_SYSTEM_LIB) -l:$(BOOST_FILESYSTEM_LIB)  -l:$(BOOST_PROGRAM_OPTIONS_LIB)
   PLATFORM="<%platformstr%>"
   SRC=OMCpp<%modelName%>.cpp
