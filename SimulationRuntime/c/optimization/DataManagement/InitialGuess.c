@@ -230,8 +230,8 @@ static inline void init_ipopt_data(OptData *optData){
   for(i = 0, shift = 0; i < nsi; ++i){
     for(j = 0; j < np; ++j, shift+=nv){
       memcpy(data->localData[0]->realVars, optData->v[i][j], nReal*sizeof(double));
-      externalInputUpdate(data);
       data->localData[0]->timeValue = (modelica_real) optData->time.t[i][j];
+      externalInputUpdate(data);
 
       for(l = 0; l<nx; ++l)
         ipop->vopt[l + shift] = optData->v[i][j][l]*optData->bounds.scalF[l];

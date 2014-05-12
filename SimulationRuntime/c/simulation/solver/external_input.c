@@ -41,6 +41,7 @@
 #include "simulation/simulation_runtime.h"
 #include "simulation/solver/solver_main.h"
 #include "simulation/solver/model_help.h"
+#include "simulation/options.h"
 
 int externalInputallocate(DATA* data)
 {
@@ -48,7 +49,17 @@ int externalInputallocate(DATA* data)
   int n,m,c;
   int i,j;
 
-  pFile = fopen("externalInput.csv","r");
+  {
+    char * cflags = NULL;
+    cflags = (char*)omc_flagValue[FLAG_INPUT_FILE];
+    if(cflags){
+      pFile = fopen(cflags,"r");
+      if(pFile == NULL)
+        warningStreamPrint(LOG_STDOUT, 0, "OMC can't find the file %s.",cflags);
+    }else
+      pFile = fopen("externalInput.csv","r");
+  }
+
 
   data->simulationInfo.external_input.active = (modelica_boolean) (pFile != NULL);
   n = 0;

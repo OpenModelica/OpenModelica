@@ -34,6 +34,7 @@
 #include "../OptimizerData.h"
 #include "../OptimizerLocalFunction.h"
 #include "../../simulation/results/simulation_result.h"
+#include "../../simulation/options.h"
 
 static inline void pickUpDim(OptDataDim * dim, DATA* data);
 static inline void pickUpTime(OptDataTime * time, OptDataDim * dim, DATA* data);
@@ -87,7 +88,16 @@ int pickUpModelData(DATA* data, SOLVER_INFO* solverInfo){
  */
 static inline void pickUpDim(OptDataDim * dim, DATA* data){
 
-  dim->np = 3; /*ToDo*/
+  char * cflags = NULL;
+  cflags = (char*)omc_flagValue[FLAG_OPTIZER_NP];
+  if(cflags){
+    dim->np = atoi(cflags);
+    if(dim->np != 1 && dim->np!=3){
+      warningStreamPrint(LOG_STDOUT, 0, "FLAG_OPTIZER_NP is %i. Currently optimizer support only 1 and 3.\nFLAG_OPTIZER_NP set of 3", dim->np);
+      dim->np = 3;
+    }
+  }else
+    dim->np = 3; /*ToDo*/
   dim->nx = data->modelData.nStates;
   dim->nu = data->modelData.nInputVars;
   dim->nv = dim->nx + dim->nu;
