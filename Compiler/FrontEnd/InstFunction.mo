@@ -446,7 +446,8 @@ algorithm
           Inst.instClass(cache, env, ih, UnitAbsynBuilder.emptyInstStore(), mod, pre,
             c, inst_dims, true, cs, ConnectionGraph.EMPTY, Connect.emptySet);
         List.map2_0(daeElts,InstUtil.checkFunctionElement,false,info);
-        env_1 = Env.extendFrameC(env,c);
+        // do not add the stripped class to the env, is already there!
+        env_1 = env; // Env.extendFrameC(env,c);
         (cache,fpath) = Inst.makeFullyQualified(cache, env_1, Absyn.IDENT(n));
         cmt = InstUtil.extractClassDefComment(cache, env, cd, cmt);
         derFuncs = InstUtil.getDeriveAnnotation(cd, cmt,fpath,cache,cenv,ih,pre,info);

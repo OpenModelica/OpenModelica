@@ -2330,28 +2330,18 @@ algorithm
       String s;
       SCode.Comment cmt;
       SCode.Replaceable rpp;
+      DAE.Mod m;
 
     // we do have a redeclaration of class.
-    case (env,ih,pre,( (sel1 as SCode.CLASS(name = _))),_,SOME(_))
+    case (env,ih,pre,( (sel1 as SCode.CLASS(name = _))),_,SOME(m))
       equation
-        // extend first
+        false = valueEq(m, DAE.NOMOD());
         env_1 = Env.extendFrameC(env, sel1);
         // call to redeclareType which calls updateComponents in env wich updates the class frame
         (env_1,ih,cl2) = addClassdefsToEnv3(env_1, ih, pre, redeclareMod, sel1);
         ih = InnerOuter.addClassIfInner(cl2, pre, env_1, ih);
       then
         (env_1,ih);
-
-    // we do have a replaceable class?.
-    case (env,ih,_,(SCode.CLASS(name = s, prefixes = SCode.PREFIXES(replaceablePrefix = rpp))),_,_)
-      equation
-        // we have a replaceable class
-        true = SCode.replaceableBool(rpp);
-        // search first in env if we already have a redeclare definition for it!!
-        (_, SCode.CLASS(prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE())), _) = Lookup.lookupClass(Env.emptyCache(), env, Absyn.IDENT(s), false);
-        // do nothing, just move along!
-      then
-        (env,ih);
 
     // otherwise, extend frame with in class.
     case (env,ih,pre,(sel1 as SCode.CLASS(classDef = _)),_,_)
