@@ -122,9 +122,11 @@ static inline void pickUpTime(OptDataTime * time, OptDataDim * dim, DATA* data){
 
   time->dt[0] = (time->tf - time->t0)/nsi;
 
-  time->t = malloc(nsi*sizeof(long double));
+  time->t = (long double**)malloc(nsi*sizeof(long double*));
   for(i = 0; i<nsi; ++i)
-    time->t[i] = malloc(np*sizeof(long double));
+    time->t[i] = (long double*)malloc(np*sizeof(long double));
+  if(nsi < 1)
+    errorStreamPrint(LOG_STDOUT, 0, "Not support numberOfIntervals = %i < 1", nsi);
 
   if(np == 1){
     c[0] = 1.0;
@@ -133,7 +135,7 @@ static inline void pickUpTime(OptDataTime * time, OptDataDim * dim, DATA* data){
     c[1] = 0.64494897427831780981972840747058913919659474806567;
     c[2] = 1.00000;
   }else{
-    assert(0);
+    errorStreamPrint(LOG_STDOUT, 0, "Not support np = %i", np);
   }
 
   for(k = 0; k < np; ++k){
@@ -203,7 +205,7 @@ static inline void pickUpBounds(OptDataBounds * bounds, OptDataDim * dim, DATA* 
     x0 = data->localData[1]->realVars[i];
 
     check_nominal(bounds, min, max, nominal, nominalWasSet, i, x0);
-    nominal = bounds->vnom[i];
+    data->modelData.realVarsData[i].attribute.nominal = bounds->vnom[i];
     bounds->scalF[i] = 1.0/bounds->vnom[i];
     bounds->vmin[i] = min * bounds->scalF[i];
     bounds->vmax[i] = max * bounds->scalF[i];
@@ -241,17 +243,17 @@ static inline void check_nominal(OptDataBounds * bounds, const double min, const
   if(set){
     bounds->vnom[i] = fmax(fabs(nominal),1e-16);
   }else{
-    double amax, amin, ax0;
+    double amax, amin;
 
     amax = fabs(max);
     amin = fabs(min);
-    ax0 = fabs(x0);
 
     bounds->vnom[i] = fmax(amax,amin);
 
     if(bounds->vnom[i] > 1e12){
         double tmp = fmin(amax,amin);
-        bounds->vnom[i] = (tmp < 1e12) ? fmax(tmp,x0) : 1.0 + x0;
+        double ax0 = fabs(x0);
+        bounds->vnom[i] = (tmp < 1e12) ? fmax(tmp,ax0) : 1.0 + ax0;
       }
 
     bounds->vnom[i] = fmax(bounds->vnom[i], 1e-16);
@@ -436,6 +438,8 @@ void res2file(OptData *optData, SOLVER_INFO* solverInfo, double *vopt){
     a[2] = 0.33333333333333333333333333333333333333333333333333;
   }else if(np == 1){
     a[0] = 1.000;
+  }else{
+    errorStreamPrint(LOG_STDOUT, 0, "Not support np = %i", np);
   }
 
   optData2ModelData(optData, vopt, 0);
@@ -497,7 +501,6 @@ void res2file(OptData *optData, SOLVER_INFO* solverInfo, double *vopt){
  *  author: Vitalij Ruge
  **/
 void optData2ModelData(OptData *optData, double *vopt, const int index){
-  const int nReal = optData->dim.nReal;
   const int nx = optData->dim.nx;
   const int nv = optData->dim.nv;
   const int nsi = optData->dim.nsi;
@@ -568,8 +571,6 @@ void diff_symColoredODE(OptData *optData, modelica_real **J, const int index, co
   const int Cmax = data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors + 1;
   const int dnx = optData->dim.nx;
   const modelica_real * const resultVars = data->simulationInfo.analyticJacobians[index].resultVars;
-  const modelica_real  * const vnom = optData->bounds.vnom;
-  const long double  * const sF = optData->bounds.scalF;
   const unsigned int * const sPindex = data->simulationInfo.analyticJacobians[index].sparsePattern.index;
 
   for(i = 1; i < Cmax; ++i){
@@ -595,7 +596,7 @@ void diff_symColoredODE(OptData *optData, modelica_real **J, const int index, co
  *  function calculates a symbolic colored jacobian matrix
  *  authors: Willi Braun, Vitalij Ruge
  */
-void diff_symColoredLagrange(OptData *optData, modelica_real **J, const int index, const long double * const scaldt){
+void diff_symColoredLagrange(OptData *optData, modelica_real **J, const int index, const long double * const scalb){
   DATA * data = optData->data;
   int i,j,l,ii;
 
@@ -603,10 +604,7 @@ void diff_symColoredLagrange(OptData *optData, modelica_real **J, const int inde
   const unsigned int * const lindex  = optData->s.lindex[index];
   const int nx = data->simulationInfo.analyticJacobians[index].sizeCols;
   const int Cmax = data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors + 1;
-  const int dnx = optData->dim.nx;
   const modelica_real * const resultVars = data->simulationInfo.analyticJacobians[index].resultVars;
-  const modelica_real  * const vnom = optData->bounds.vnom;
-  const long double  * const sF = optData->bounds.scalF;
   const unsigned int * const sPindex = data->simulationInfo.analyticJacobians[index].sparsePattern.index;
 
   for(i = 1; i < Cmax; ++i){
@@ -617,7 +615,7 @@ void diff_symColoredLagrange(OptData *optData, modelica_real **J, const int inde
       if(cC[ii] == i){
         for(j = lindex[ii]; j < lindex[ii + 1]; ++j){
           l = sPindex[j];
-          J[l][ii] = (modelica_real) resultVars[l] * scaldt[l];
+          J[l][ii] = (modelica_real) resultVars[l] * scalb[l];
         }
       }
     }
@@ -637,10 +635,7 @@ void diff_symColoredMayer(OptData *optData, modelica_real **J, const int index){
   const unsigned int * const lindex  = optData->s.lindex[index];
   const int nx = data->simulationInfo.analyticJacobians[index].sizeCols;
   const int Cmax = data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors + 1;
-  const int dnx = optData->dim.nx;
   const modelica_real * const resultVars = data->simulationInfo.analyticJacobians[index].resultVars;
-  const modelica_real  * const vnom = optData->bounds.vnom;
-  const long double  * const sF = optData->bounds.scalF;
   const unsigned int * const sPindex = data->simulationInfo.analyticJacobians[index].sparsePattern.index;
 
   for(i = 1; i < Cmax; ++i){

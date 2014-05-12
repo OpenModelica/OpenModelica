@@ -83,7 +83,6 @@ static inline void initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solver
 
   const int nx = optData->dim.nx;
   const int nu = optData->dim.nu;
-  const int nv = optData->dim.nv;
   const int np = optData->dim.np;
   const int nsi = optData->dim.nsi;
   const int nReal = optData->dim.nReal;

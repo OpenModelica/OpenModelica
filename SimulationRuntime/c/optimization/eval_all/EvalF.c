@@ -114,8 +114,6 @@ Bool evalfDiffF(Index n, double * vopt, Bool new_x, Number *gradF, void * useDat
   if(la){
 
     const int k = optData->s.derIndex[0];
-    const long double * const b = optData->rk.b;
-    const long double * const dt = optData->time.dt;
     int i, j, ii;
     modelica_real * gradL;
 
@@ -150,8 +148,6 @@ Bool evalfDiffF(Index n, double * vopt, Bool new_x, Number *gradF, void * useDat
  *  author: Vitalij Ruge
  **/
 static inline void updateDer(OptData *optData){
-  const int nReal = optData->dim.nReal;
-  const int nv = optData->dim.nv;
   const int nsi = optData->dim.nsi;
   const int np = optData->dim.np;
   const modelica_boolean la = optData->s.lagrange;

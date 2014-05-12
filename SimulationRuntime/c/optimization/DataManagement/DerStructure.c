@@ -181,16 +181,18 @@ static inline void local_jac_struct(DATA * data, OptDataDim * dim, OptDataStruct
         s->seedVec[index] = (modelica_real **)malloc((maxColors)*sizeof(modelica_real*));
         free(data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex);
         /**********************/
-        for(ii = 1; ii < maxColors; ++ii){
-          s->seedVec[index][ii] = (modelica_real*)calloc(sizeCols, sizeof(modelica_real));
-          for(i = 0; i < sizeCols; i++){
-            if(cC[i] == ii){
-              s->seedVec[index][ii][i] = vnom[i];
-              for(j = lindex[i]; j < lindex[i + 1]; ++j){
-                l = pindex[j];
-                J[l][i] = (modelica_boolean)1;
-                if(index == 4)
-                  ++dim->nJderx;
+        if(sizeCols > 0){
+          for(ii = 1; ii < maxColors; ++ii){
+            s->seedVec[index][ii] = (modelica_real*)calloc(sizeCols, sizeof(modelica_real));
+            for(i = 0; i < sizeCols; i++){
+              if(cC[i] == ii){
+                s->seedVec[index][ii][i] = vnom[i];
+                for(j = lindex[i]; j < lindex[i + 1]; ++j){
+                  l = pindex[j];
+                  J[l][i] = (modelica_boolean)1;
+                  if(index == 4)
+                    ++dim->nJderx;
+                }
               }
             }
           }
@@ -360,7 +362,6 @@ static inline void print_local_hessian_struct(DATA * data, OptDataDim * dim, Opt
   modelica_boolean **H0 = s->H0;
   modelica_boolean **H1 = s->H1;
   const int nv = dim->nv;
-  const int nJ = dim->nJ;
   const int n1 = dim->nH1;
   const int n0 = dim->nH0;
 

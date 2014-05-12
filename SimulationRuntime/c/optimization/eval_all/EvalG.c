@@ -74,13 +74,11 @@ static inline void printMaxError(Number *g, const int m, const int nx, const int
 Bool evalfG(Index n, double * vopt, Bool new_x, int m, Number *g, void * useData){
   OptData *optData = (OptData*)useData;
 
-  const int nu = optData->dim.nu;
   const int nx = optData->dim.nx;
   const int nv = optData->dim.nv;
   const int nc = optData->dim.nc;
   const int nsi = optData->dim.nsi;
   const int np = optData->dim.np;
-  const int nReal = optData->dim.nReal;
   const int index_con = optData->dim.index_con;
 
   modelica_real ***v;
@@ -132,17 +130,25 @@ Bool evalfG(Index n, double * vopt, Bool new_x, int m, Number *g, void * useData
       memcpy(g + shift, &v[i][2][index_con], nc*sizeof(double));
       shift +=nc;
 
+      vv[0] = vv[np];
+      for(j = 0; j < np; ++j)
+        vv[j + 1] = vv[j] + nv;
+
+    }else if(np == 1){
+      for(k = 0; k < nx; ++k)
+        g[shift++] = vv[0][k] + (sdt[k]*v[i][0][k+nx] - vv[1][k]);
+
+      memcpy(g + shift, &v[i][0][index_con], nc*sizeof(double));
+      shift += nc;
+      vv[0] = vv[np];
+      vv[1] = vv[0] + nv;
     }
-
-    vv[0] = vv[np];
-    for(j = 0; j < np; ++j)
-      vv[j + 1] = vv[j] + nv;
-
   }
   if(ACTIVE_STREAM(LOG_IPOPT_ERROR)){
     const int nJ = optData->dim.nJ;
     printMaxError(g, m, nx, nJ, optData->time.t, np ,nsi ,optData->data);
   }
+
   return TRUE;
 }
 
@@ -191,7 +197,6 @@ Bool evalfDiffG(Index n, double * vopt, Bool new_x, Index m, Index njac, Index *
     const int nx = optData->dim.nx;
     const int nv = optData->dim.nv;
     const int nJ = optData->dim.nJ;
-    const int NJ = optData->dim.nJderx;
     const modelica_boolean ** const J = optData->s.J[4];
     int i, j, k, l, ii;
 
@@ -199,55 +204,78 @@ Bool evalfDiffG(Index n, double * vopt, Bool new_x, Index m, Index njac, Index *
       optData2ModelData(optData, vopt, 4);
     else
       updateDer(optData);
-
-    /*****************************/
-    for(j = 0, k = 0; j < np; ++j){
-      for(l = 0; l < nx; ++l){
-        switch(j){
-          case 0:
-            structJac01(optData->rk.a[j], optData->J[0][j][l],
-                values, nv, &k, l, J[l]);
-            break;
-          case 1:
-            structJac02(optData->rk.a[j], optData->J[0][j][l],
-                values, nv, &k, l, J[l]);
-            break;
-          case 2:
-            structJac03(optData->rk.a[j], optData->J[0][j][l],
-                values, nv, &k, l, J[l]);
-            break;
-        }
-      }
-      for(; l< nJ; ++l){
-        structJacC(optData->J[0][j][l], values, nv, &k, J[l]);
-      }
-    }
-
-    /*****************************/
-    for(i = 1; i < nsi; ++i){
-      for(j = 0; j < np; ++j){
+    if(np == 3){
+      /*****************************/
+      for(j = 0, k = 0; j < np; ++j){
         for(l = 0; l < nx; ++l){
           switch(j){
             case 0:
-              structJac1(optData->rk.a[j], optData->J[i][j][l],
+              structJac01(optData->rk.a[j], optData->J[0][j][l],
                   values, nv, &k, l, J[l]);
               break;
             case 1:
-              structJac2(optData->rk.a[j], optData->J[i][j][l],
+              structJac02(optData->rk.a[j], optData->J[0][j][l],
                   values, nv, &k, l, J[l]);
               break;
             case 2:
-              structJac3(optData->rk.a[j], optData->J[i][j][l],
+              structJac03(optData->rk.a[j], optData->J[0][j][l],
                   values, nv, &k, l, J[l]);
               break;
           }
         }
         for(; l< nJ; ++l){
-          structJacC(optData->J[i][j][l], values, nv, &k, J[l]);
+          structJacC(optData->J[0][j][l], values, nv, &k, J[l]);
         }
       }
-    }
 
+      /*****************************/
+      for(i = 1; i < nsi; ++i){
+        for(j = 0; j < np; ++j){
+          for(l = 0; l < nx; ++l){
+            switch(j){
+              case 0:
+                structJac1(optData->rk.a[j], optData->J[i][j][l],
+                    values, nv, &k, l, J[l]);
+                break;
+              case 1:
+                structJac2(optData->rk.a[j], optData->J[i][j][l],
+                    values, nv, &k, l, J[l]);
+                break;
+              case 2:
+                structJac3(optData->rk.a[j], optData->J[i][j][l],
+                    values, nv, &k, l, J[l]);
+                break;
+            }
+          }
+          for(; l< nJ; ++l){
+              structJacC(optData->J[i][j][l], values, nv, &k, J[l]);
+          }
+        }
+      }
+    }else if(np == 1){
+      /*****************************/
+      for(j = 0, k = 0; j < np; ++j){
+        for(l = 0; l < nJ; ++l){
+          for(ii = 0; ii < nv; ++ii)
+            if(J[l][ii])
+              values[k++] = (modelica_real)((ii == l && l < nx) ? optData->J[0][j][l][ii] - 1.0 : optData->J[0][j][l][ii]);
+
+        }
+      }
+      /*****************************/
+      for(i = 1; i < nsi; ++i){
+        for(j = 0; j < np; ++j){
+          for(l = 0; l < nJ; ++l){
+            values[k++] = 1.0;
+            for(ii = 0; ii < nv; ++ii)
+              if(J[l][ii])
+                values[k++] = (modelica_real)((ii == l && l < nx) ? optData->J[i][j][l][ii] - 1.0 : optData->J[i][j][l][ii]);
+
+          }
+        }
+      }
+
+    }
     /*****************************/
     /*
     {
@@ -456,64 +484,19 @@ static inline void generated_jac_struc(OptData * optData, int *iRow, int* iCol){
   r = 0;
   c = 0;
   k = 0;
-
-  /* 1 */
-  for(j = 0; j <nx; ++j){
-    tmp_r = r + j;
-    tmp_c = c + j;
-
-    set_row(&k, iRow, iCol, J[j], nv, tmp_r, c);
-    set_cell(&k, iRow, iCol, tmp_r, tmp_c + nv);
-    set_cell(&k, iRow, iCol, tmp_r, tmp_c + 2*nv);
-  }
-  for(; j<nJ; ++j){
-    set_row(&k, iRow, iCol, J[j], nv, r+j, c);
-  }
-
-  r += nJ;
-  /* 2 */
-  for(j = 0; j <nx; ++j){
-    tmp_r = r + j;
-    tmp_c = c + j;
-
-    set_cell(&k, iRow, iCol, tmp_r, tmp_c);
-    set_row(&k, iRow, iCol, J[j], nv, tmp_r, c + nv);
-    set_cell(&k, iRow, iCol, tmp_r, tmp_c + 2*nv);
-  }
-  for(; j<nJ; ++j){
-    set_row(&k, iRow, iCol, J[j], nv, r+j, c + nv);
-  }
-
-  r += nJ;
-  /* 3 */
-  for(j = 0; j <nx; ++j){
-    tmp_r = r + j;
-    tmp_c = c + j;
-
-    set_cell(&k, iRow, iCol, tmp_r, tmp_c);
-    set_cell(&k, iRow, iCol, tmp_r, tmp_c + nv);
-    set_row(&k, iRow, iCol, J[j], nv, tmp_r, c + 2*nv);
-  }
-  for(; j<nJ; ++j){
-    set_row(&k, iRow, iCol, J[j], nv, r+j, c + 2*nv);
-  }
-
-  /**********************************/
-  r += nJ;
-  c = (np-1)*nv;
-  for(i = 1; i < nsi; ++i,  r += nJ, c += npv){
+  if(np == 3){
     /* 1 */
     for(j = 0; j <nx; ++j){
       tmp_r = r + j;
       tmp_c = c + j;
 
-      set_cell(&k, iRow, iCol, tmp_r, tmp_c);
-      set_row(&k, iRow, iCol, J[j], nv, tmp_r, c + nv);
-      set_cell(&k, iRow, iCol, tmp_r, tmp_c + 2*nv);
-      set_cell(&k, iRow, iCol, tmp_r, tmp_c + 3*nv);
+     set_row(&k, iRow, iCol, J[j], nv, tmp_r, c);
+     set_cell(&k, iRow, iCol, tmp_r, tmp_c + nv);
+     set_cell(&k, iRow, iCol, tmp_r, tmp_c + 2*nv);
+
     }
     for(; j<nJ; ++j){
-      set_row(&k, iRow, iCol, J[j], nv, r + j, c+nv);
+      set_row(&k, iRow, iCol, J[j], nv, r+j, c);
     }
 
     r += nJ;
@@ -523,12 +506,11 @@ static inline void generated_jac_struc(OptData * optData, int *iRow, int* iCol){
       tmp_c = c + j;
 
       set_cell(&k, iRow, iCol, tmp_r, tmp_c);
-      set_cell(&k, iRow, iCol, tmp_r, tmp_c + nv);
-      set_row(&k, iRow, iCol, J[j], nv, tmp_r, c + 2*nv);
-      set_cell(&k, iRow, iCol, tmp_r, tmp_c + 3*nv);
+      set_row(&k, iRow, iCol, J[j], nv, tmp_r, c + nv);
+      set_cell(&k, iRow, iCol, tmp_r, tmp_c + 2*nv);
     }
     for(; j<nJ; ++j){
-      set_row(&k, iRow, iCol, J[j], nv, r+j, c+2*nv);
+      set_row(&k, iRow, iCol, J[j], nv, r+j, c + nv);
     }
 
     r += nJ;
@@ -539,12 +521,83 @@ static inline void generated_jac_struc(OptData * optData, int *iRow, int* iCol){
 
       set_cell(&k, iRow, iCol, tmp_r, tmp_c);
       set_cell(&k, iRow, iCol, tmp_r, tmp_c + nv);
-      set_cell(&k, iRow, iCol, tmp_r, tmp_c + 2*nv);
-      set_row(&k, iRow, iCol, J[j], nv, tmp_r, c + 3*nv);
+      set_row(&k, iRow, iCol, J[j], nv, tmp_r, c + 2*nv);
     }
     for(; j<nJ; ++j){
-      set_row(&k, iRow, iCol, J[j], nv, r+j, c+3*nv);
+      set_row(&k, iRow, iCol, J[j], nv, r+j, c + 2*nv);
     }
+
+    /**********************************/
+    r += nJ;
+    c = (np-1)*nv;
+    for(i = 1; i < nsi; ++i,  r += nJ, c += npv){
+      /* 1 */
+      for(j = 0; j <nx; ++j){
+        tmp_r = r + j;
+        tmp_c = c + j;
+
+        set_cell(&k, iRow, iCol, tmp_r, tmp_c);
+        set_row(&k, iRow, iCol, J[j], nv, tmp_r, c + nv);
+        set_cell(&k, iRow, iCol, tmp_r, tmp_c + 2*nv);
+        set_cell(&k, iRow, iCol, tmp_r, tmp_c + 3*nv);
+      }
+      for(; j<nJ; ++j){
+        set_row(&k, iRow, iCol, J[j], nv, r + j, c+nv);
+      }
+
+      r += nJ;
+      /* 2 */
+      for(j = 0; j <nx; ++j){
+        tmp_r = r + j;
+        tmp_c = c + j;
+
+        set_cell(&k, iRow, iCol, tmp_r, tmp_c);
+        set_cell(&k, iRow, iCol, tmp_r, tmp_c + nv);
+        set_row(&k, iRow, iCol, J[j], nv, tmp_r, c + 2*nv);
+        set_cell(&k, iRow, iCol, tmp_r, tmp_c + 3*nv);
+      }
+      for(; j<nJ; ++j){
+        set_row(&k, iRow, iCol, J[j], nv, r+j, c+2*nv);
+      }
+
+      r += nJ;
+      /* 3 */
+      for(j = 0; j <nx; ++j){
+        tmp_r = r + j;
+        tmp_c = c + j;
+
+        set_cell(&k, iRow, iCol, tmp_r, tmp_c);
+        set_cell(&k, iRow, iCol, tmp_r, tmp_c + nv);
+        set_cell(&k, iRow, iCol, tmp_r, tmp_c + 2*nv);
+        set_row(&k, iRow, iCol, J[j], nv, tmp_r, c + 3*nv);
+      }
+      for(; j<nJ; ++j){
+        set_row(&k, iRow, iCol, J[j], nv, r+j, c+3*nv);
+      }
+    }
+  }else if(np == 1){
+
+    for(j = 0; j <nJ; ++j){
+      set_row(&k, iRow, iCol, J[j], nv, r+j, c);
+    }
+
+    r += nJ;
+    c = (np-1)*nv;
+
+    for(i = 1; i < nsi; ++i,  r += nJ, c += npv){
+      for(j = 0; j <nx; ++j){
+        tmp_r = r + j;
+        tmp_c = c + j;
+
+        set_cell(&k, iRow, iCol, tmp_r, tmp_c);
+        set_row(&k, iRow, iCol, J[j], nv, tmp_r, c + nv);
+      }
+      for(; j<nJ; ++j){
+        set_row(&k, iRow, iCol, J[j], nv, r+j, c+nv);
+      }
+
+    }
+
   }
   /*
   {
@@ -553,7 +606,7 @@ static inline void generated_jac_struc(OptData * optData, int *iRow, int* iCol){
       assert(0);
   }
   */
-
+  
 }
 
 
@@ -562,8 +615,6 @@ static inline void generated_jac_struc(OptData * optData, int *iRow, int* iCol){
  *  author: Vitalij Ruge
  **/
 static inline void updateDer(OptData *optData){
-  const int nReal = optData->dim.nReal;
-  const int nv = optData->dim.nv;
   const int nsi = optData->dim.nsi;
   const int np = optData->dim.np;
 
@@ -572,7 +623,7 @@ static inline void updateDer(OptData *optData){
   DATA * data = optData->data;
 
   for(i = 0; i < 3; ++i)
-    realVars[i] = data->localData[i]->realVars;
+    realVars[i] = data->localData[i]->realVars; 
 
   for(i = 0; i < nsi; ++i){
     for(j = 0; j < np; ++j){
@@ -584,7 +635,7 @@ static inline void updateDer(OptData *optData){
   }
 
   for(i = 0; i < 3; ++i)
-    data->localData[i]->realVars = realVars[i];
+    data->localData[i]->realVars = realVars[i]; 
 }
 
 
@@ -609,7 +660,7 @@ static inline void printMaxError(Number *g, const int m, const int nx, const int
         }
       }else{
         if(g[i] > gmax){
-          gmax  = tmp;
+          gmax  = g[i];
           index = i;
           index_x = k;
         }

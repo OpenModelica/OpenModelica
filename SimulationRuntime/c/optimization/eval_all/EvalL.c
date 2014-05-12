@@ -71,7 +71,6 @@ Bool ipopt_h(int n, double *vopt, Bool new_x, double obj_factor, int m, double *
       }
     }
 
-    i = nsi - 1;
     for(p = 1; p < np1; ++p, r += nv, c += nv){
       /*******************/
       for(j = 0; j< nv; ++j){
@@ -189,7 +188,6 @@ static inline void num_hessian0(double * v, const double * const lambda,
   const long double * const scalb = optData->bounds.scalb[i][j];
   DATA * data = optData->data;
 
-  const int nReal = optData->dim.nReal;
   const int nv = optData->dim.nv;
   const int nx = optData->dim.nx;
   const int nJ = optData->dim.nJ;
@@ -271,7 +269,6 @@ static inline void num_hessian1(double * v, const double * const lambda,
   const long double * const scalb = optData->bounds.scalb[i][j];
   const int index_la = optData->s.derIndex[0];
 
-  const int nReal = optData->dim.nReal;
   const int nv = optData->dim.nv;
   const int nx = optData->dim.nx;
   const int np = optData->dim.np;
@@ -362,7 +359,6 @@ static inline void num_hessian1(double * v, const double * const lambda,
  */
 static inline void sumLagrange0(const int i, const int j, double * res,
     const modelica_boolean upC, OptData *optData){
-  const int nx = optData->dim.nx;
   const int nJ = optData->dim.nJ;
 
   long double sum = 0;
@@ -384,7 +380,6 @@ static inline void sumLagrange0(const int i, const int j, double * res,
  */
 static inline void sumLagrange1(const int i, const int j, double * res,
     const modelica_boolean upC, const modelica_boolean upC2, OptData *optData){
-  const int nx = optData->dim.nx;
   const int nJ = optData->dim.nJ;
 
   long double sum = 0;
@@ -412,7 +407,6 @@ static inline void sumLagrange1(const int i, const int j, double * res,
  **/
 static inline void updateDerF(OptData *optData){
   const int nReal = optData->dim.nReal;
-  const int nv = optData->dim.nv;
   const int nsi = optData->dim.nsi;
   const int np = optData->dim.np;
   const modelica_boolean la = optData->s.lagrange;

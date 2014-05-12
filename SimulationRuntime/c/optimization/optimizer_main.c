@@ -69,8 +69,6 @@ static inline void optimizationWithIpopt(OptData*optData){
   const int nsi = optData->dim.nsi;
   const int np = optData->dim.np;
   const int nx = optData->dim.nx;
-  const int nJ = optData->dim.nJ;
-  const int nv = optData->dim.nv;
   const int NJ = optData->dim.nJderx;
   const int nH0 = optData->dim.nH0_;
   const int nH1 = optData->dim.nH1_;
@@ -193,7 +191,6 @@ static inline void freeOptimizerData(OptData*optData){
   const int nsi = optData->dim.nsi;
   const int np = optData->dim.np;
   const int nv = optData->dim.nv;
-  const int nx = optData->dim.nx;
   const int nJ = optData->dim.nJ;
 
   int i,j,k;
