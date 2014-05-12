@@ -134,20 +134,16 @@ static inline void initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solver
 
        for(l = 0; l < nx; ++l){
 
-         if( (v[i][j][l] < optData->bounds.vmin[l]*optData->bounds.vnom[l]) || (v[i][j][l] > optData->bounds.vmax[l]*optData->bounds.vnom[l])){
+         if( ((double) v[i][j][l] < (double)optData->bounds.vmin[l]*optData->bounds.vnom[l])
+             || (double) (v[i][j][l] > (double) optData->bounds.vmax[l]*optData->bounds.vnom[l])){
            printf("\n********************************************\n");
-           warningStreamPrint(LOG_STDOUT, 0, "Initial guess failure at time %.12g",(double)optData->time.t[i][j]);
-           warningStreamPrint(LOG_STDOUT, 0, "%.12g<= %s = %.12g <=.12%g",
-               optData->bounds.vmin[l]*optData->bounds.vnom[l],
-               data->modelData.realVarsData[l].info.name,v[i][j][l],
-               optData->bounds.vmax[l]*optData->bounds.vnom[l]);
+           warningStreamPrint(LOG_STDOUT, 0, "Initial guess failure at time %g",(double)optData->time.t[i][j]);
+           warningStreamPrint(LOG_STDOUT, 0, "%g<= (%s=%g) <=%g",
+               (double)optData->bounds.vmin[l]*optData->bounds.vnom[l],
+               data->modelData.realVarsData[l].info.name,
+               (double)v[i][j][l],
+               (double)optData->bounds.vmax[l]*optData->bounds.vnom[l]);
            printf("\n********************************************");
-           for(; i < nsi; ++i){
-             for(j = 0; j < np; ++j){
-               memcpy(optData->v[i][j], optData->v0, nReal*sizeof(modelica_real));
-             }
-           }
-           break;
          }
        }
      }

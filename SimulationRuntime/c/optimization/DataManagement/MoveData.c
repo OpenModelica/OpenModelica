@@ -470,7 +470,7 @@ void res2file(OptData *optData, SOLVER_INFO* solverInfo, double *vopt){
       tmpv += a[k]*vopt[k*nv + j];
     }
     data->simulationInfo.inputVars[i] = (double)tmpv*vnom[j];
-    fprintf(pFile, "%lf ", data->simulationInfo.inputVars[i]);
+    fprintf(pFile, "%lf ", (float)data->simulationInfo.inputVars[i]);
   }
   fprintf(pFile, "%s", "\n");
   /******************/
@@ -493,8 +493,8 @@ void res2file(OptData *optData, SOLVER_INFO* solverInfo, double *vopt){
       /******************/
       fprintf(pFile, "%lf ",(double)t[ii][jj]);
       for(i = 0; i < nu; ++i){
-      data->simulationInfo.inputVars[i] = vopt[ii*nvnp+nx+i];
-        fprintf(pFile, "%lf ", (double)data->simulationInfo.inputVars[i]);
+      data->simulationInfo.inputVars[i] = vopt[ii*nvnp+nx+i]*vnom[i + nx];
+        fprintf(pFile, "%lf ", (float)data->simulationInfo.inputVars[i]);
       }
       fprintf(pFile, "%s", "\n");
       /******************/
