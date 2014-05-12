@@ -454,6 +454,14 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   let memoryExtension = MemberVariableAssign(modelInfo, hpcOmMemory)
   <<
    #include "Modelica.h"
+   #include <System/IMixedSystem.h>
+   #include <SimulationSettings/IGlobalSettings.h>
+   #include <System/IAlgLoopSolverFactory.h>
+   #include <System/IMixedSystem.h>
+   #include <System/IAlgLoop.h>
+   #include <Solver/IAlgLoopSolver.h>
+   #include <System/IAlgLoopSolverFactory.h>
+   #include <SimController/ISimData.h>
    #include "OMCpp<%fileNamePrefix%>.h"
 
 
