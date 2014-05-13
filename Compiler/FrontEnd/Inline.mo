@@ -55,6 +55,7 @@ public import Values;
 protected type Ident = String;
 public type Functiontuple = tuple<Option<DAE.FunctionTree>,list<DAE.InlineType>>;
 
+protected import ClassInf;
 protected import ComponentReference;
 protected import Config;
 protected import DAEUtil;
@@ -1429,6 +1430,7 @@ algorithm
       VarTransform.VariableReplacements repl;
       Boolean generateEvents;
       Option<SCode.Comment> comment;
+      DAE.Type ty;
 
       /* If we disable inlining by use of flags, we still inline builtin functions */
     case ((DAE.CALL(attr=DAE.CALL_ATTR(inlineType=inlineType)),_))
@@ -1460,7 +1462,7 @@ algorithm
       then
         ((newExp1,(fns,true,assrtLst)));
 
-    case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_,assrtLstIn)))
+    case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(ty=ty,inlineType=inlineType)),(fns,_,assrtLstIn)))
       // no assert detected
       equation
         false = Config.acceptMetaModelicaGrammar();
@@ -1472,7 +1474,7 @@ algorithm
         // merge statements to one line
         (repl,assrtStmts) = mergeFunctionBody(stmts,repl,{});
         true = List.isEmpty(assrtStmts);
-        newExp = VarTransform.getReplacement(repl,cr);
+        newExp = getReplacementCheckComplex(repl,cr,ty);
         argmap = List.threadTuple(crefs,args);
         (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
         // compare types
@@ -1487,7 +1489,7 @@ algorithm
       then
         ((newExp1,(fns,true,assrtLst)));
 
-    case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_,assrtLstIn)))
+    case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(ty=ty,inlineType=inlineType)),(fns,_,assrtLstIn)))
       // assert detected
       equation
         false = Config.acceptMetaModelicaGrammar();
@@ -1502,7 +1504,7 @@ algorithm
         true = listLength(assrtStmts) == 1;
         assrt = listGet(assrtStmts,1);
         DAE.STMT_ASSERT(source=_) = assrt;
-        newExp = VarTransform.getReplacement(repl,cr);  // the function that replaces the output variable
+        newExp = getReplacementCheckComplex(repl,cr,ty); // the function that replaces the output variable
         argmap = List.threadTuple(crefs,args);
         (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
         // compare types
@@ -2258,5 +2260,27 @@ algorithm
       then fail();
   end match;
 end inlineEquationExp;
+
+protected function getReplacementCheckComplex
+  input VarTransform.VariableReplacements repl;
+  input DAE.ComponentRef cr;
+  input DAE.Type ty;
+  output DAE.Exp exp;
+algorithm
+  exp := matchcontinue (repl,cr,ty)
+    local
+      list<DAE.Var> vars;
+      list<DAE.ComponentRef> crs;
+      list<String> strs;
+      list<DAE.Exp> exps;
+      Absyn.Path path;
+    case (_,_,_) then VarTransform.getReplacement(repl,cr);
+    case (_,_,DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path),varLst=vars))
+      equation
+        crs = List.map1(List.map(vars,Types.varName),ComponentReference.appendStringCref,cr);
+        exps = List.map1r(crs, VarTransform.getReplacement, repl);
+      then DAE.CALL(path,exps,DAE.CALL_ATTR(ty,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+  end matchcontinue;
+end getReplacementCheckComplex;
 
 end Inline;
