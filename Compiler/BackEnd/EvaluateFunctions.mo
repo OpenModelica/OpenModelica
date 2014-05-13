@@ -102,7 +102,7 @@ algorithm
       BackendDAE.Shared shared;
     case(_)
       equation
-        //true = Flags.isSet(Flags.EVALUATE_CONST_FUNCTIONS);
+        true = Flags.isSet(Flags.EVALUATE_CONST_FUNCTIONS);
         BackendDAE.DAE(eqs = eqSysts,shared = shared) = inDAE;
         (eqSysts,(shared,_)) = List.mapFold(eqSysts,evalFunctions_main,(shared,1));
         //shared = evaluateShared(shared);
