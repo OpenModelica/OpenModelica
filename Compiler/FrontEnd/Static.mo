@@ -11689,8 +11689,8 @@ algorithm
     case (cr,indx,ds,et,t,_)
       equation
         indx_1 = indx + 1;
-        DAE.ARRAY(_,_,expl) = createCrefArray(cr, indx_1, ds, et, t,crefIdType);
         cr_1 = ComponentReference.replaceWholeDimSubscript(cr,indx);
+        DAE.ARRAY(_,_,expl) = createCrefArray(cr, indx_1, ds, et, t,crefIdType);
         elt_tp = Expression.unliftArray(et);
         e_1 = crefVectorize(true,Expression.makeCrefExp(cr_1,elt_tp), t,NONE(),crefIdType);
       then
