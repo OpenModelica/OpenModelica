@@ -3030,7 +3030,7 @@ template functionRelations(list<ZeroCrossing> relations, String modelNamePrefix)
                {
                  const char *res[] = {<%resDesc%>};
                  return res[i];
-               };
+               }
                >>
 
   <<

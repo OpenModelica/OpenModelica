@@ -469,7 +469,7 @@ typedef struct SIMULATION_INFO
   modelica_boolean needToIterate;      /* =1 if reinit has been activated, iteration about the system is needed */
   modelica_boolean simulationSuccess;  /* =0 the simulation run successful, otherwise an error code is set */
   modelica_boolean sampleActivated;    /* =1 a sample expresion if going to be actived, 0 otherwise */
-  modelica_boolean solveContinuous;    /* =1 during the continuous integration to avoid zero-crossings jums,  0 otherwise. */
+  modelica_boolean solveContinuous;    /* =1 during the continuous integration to avoid zero-crossings jumps,  0 otherwise. */
   modelica_boolean noThrowDivZero;     /* =1 if solving nonlinear system to avoid THROW for division by zero,  0 otherwise. */
 
   void** extObjs;                      /* External objects */

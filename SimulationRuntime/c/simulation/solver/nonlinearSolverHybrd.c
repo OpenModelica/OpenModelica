@@ -590,7 +590,7 @@ int solveHybrd(DATA *data, int sysNumber)
         if(!assertMessage)
         {
           if (ACTIVE_WARNING_STREAM(LOG_STDOUT)) {
-            warningStreamPrint(LOG_STDOUT, 1, "While solving non-linear system an assertion failed.");
+            warningStreamPrint(LOG_STDOUT, 1, "While solving non-linear system an assertion failed at time %g.", data->localData[0]->timeValue);
             warningStreamPrint(LOG_STDOUT, 0, "The non-linear solver tries to solve the problem that could take some time.");
             warningStreamPrint(LOG_STDOUT, 0, "It could help to provide better start-values for the iteration variables.");
             if (!ACTIVE_STREAM(LOG_NLS)) {

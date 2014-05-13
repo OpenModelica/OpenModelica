@@ -36,6 +36,7 @@ extern "C" {
 
 #include "simulation_data.h"
 
+/* lochel: I guess this is used for discrete relations */
 #define RELATION(res,exp1,exp2,index,op_w) { \
   if(data->simulationInfo.discreteCall == 0){ \
     res = data->simulationInfo.relationsPre[index]; \
@@ -50,18 +51,19 @@ extern "C" {
   }\
 }
 
+/* lochel: I guess this is used for continuous relations */
 #define RELATIONHYSTERESIS(res,exp1,exp2,index,op_w) { \
-  if(data->simulationInfo.discreteCall == 0){ \
-      res = data->simulationInfo.relationsPre[index]; \
-  } else{ \
-    if(data->simulationInfo.initial){\
-      if(data->simulationInfo.solveContinuous){ \
+  if(data->simulationInfo.discreteCall == 0) { \
+    res = data->simulationInfo.relationsPre[index]; \
+  } else { \
+    if(data->simulationInfo.initial) { \
+      if(data->simulationInfo.solveContinuous) { \
         res = data->simulationInfo.relationsPre[index]; \
         data->simulationInfo.relations[index] = ((op_w)((exp1),(exp2))); \
       } else { \
         res = ((op_w)((exp1),(exp2))); \
         data->simulationInfo.relations[index] = res; \
-      }\
+      } \
     } else { \
       if(data->simulationInfo.solveContinuous){ \
         res = data->simulationInfo.relationsPre[index]; \
@@ -69,9 +71,9 @@ extern "C" {
       } else { \
         res = ((op_w##ZC)((exp1),(exp2),data->simulationInfo.hysteresisEnabled[index])); \
         data->simulationInfo.relations[index] = res; \
-      }\
-    }\
-  }\
+      } \
+    } \
+  } \
 }
 
 
