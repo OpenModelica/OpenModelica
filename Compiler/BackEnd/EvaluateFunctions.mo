@@ -1509,8 +1509,9 @@ algorithm
         // at least remove the replacements for the lhs
         lhsExps = List.fold1(stmts1,getStatementLHSScalar,funcTree,{});
         lhsExps = List.unique(lhsExps);
-        lhsExpLst = List.map(lhsExps,Expression.getComplexContents); //consider arrays
+        lhsExpLst = List.map(lhsExps,Expression.getComplexContents); //consider arrays etc.
         lhsExps = listAppend(List.flatten(lhsExpLst),lhsExps);
+        lhsExps = List.filterOnTrue(lhsExps,Expression.isCref); //remove e.g. ASUBs and consider only the scalar subs
         outputs = List.map(lhsExps,Expression.expCref);
         repl = Debug.bcallret3(true, BackendVarTransform.removeReplacements,replIn,outputs,NONE(),replIn);
 
