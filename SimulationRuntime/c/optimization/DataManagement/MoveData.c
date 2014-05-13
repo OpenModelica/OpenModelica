@@ -135,8 +135,10 @@ static inline void pickUpTime(OptDataTime * time, OptDataDim * dim, DATA* data){
   time->t = (long double**)malloc(nsi*sizeof(long double*));
   for(i = 0; i<nsi; ++i)
     time->t[i] = (long double*)malloc(np*sizeof(long double));
-  if(nsi < 1)
+  if(nsi < 1){
     errorStreamPrint(LOG_STDOUT, 0, "Not support numberOfIntervals = %i < 1", nsi);
+    assert(0);
+  }
 
   if(np == 1){
     c[0] = 1.0;
@@ -146,6 +148,7 @@ static inline void pickUpTime(OptDataTime * time, OptDataDim * dim, DATA* data){
     c[2] = 1.00000;
   }else{
     errorStreamPrint(LOG_STDOUT, 0, "Not support np = %i", np);
+    assert(0);
   }
 
   for(k = 0; k < np; ++k){
@@ -450,6 +453,7 @@ void res2file(OptData *optData, SOLVER_INFO* solverInfo, double *vopt){
     a[0] = 1.000;
   }else{
     errorStreamPrint(LOG_STDOUT, 0, "Not support np = %i", np);
+    assert(0);
   }
 
   optData2ModelData(optData, vopt, 0);
