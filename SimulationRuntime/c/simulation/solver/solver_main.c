@@ -650,7 +650,7 @@ static int ipopt_step(DATA* data, SOLVER_INFO* solverInfo)
   data->threadData->currentErrorStage = ERROR_OPTIMIZE;
   res = runOptimizier(data, solverInfo);
   data->threadData->currentErrorStage = cJ;
-  return 0;
+  return res;
 }
 #endif
 
