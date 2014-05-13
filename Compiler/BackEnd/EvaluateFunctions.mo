@@ -242,7 +242,7 @@ algorithm
         sizeL = getScalarExpSize(lhsExp);
         sizeR = getScalarExpSize(rhsExp);
         size = intMax(sizeR,sizeL);
-        eq = Util.if_(intEq(size,0) or intEq(size,1),BackendDAE.EQUATION(lhsExp,rhsExp,source,diff,kind),BackendDAE.COMPLEX_EQUATION(size,lhsExp,rhsExp,source,diff,kind));
+        eq = Util.if_(intEq(size,0),BackendDAE.EQUATION(lhsExp,rhsExp,source,diff,kind),BackendDAE.COMPLEX_EQUATION(size,lhsExp,rhsExp,source,diff,kind));
         //since tuple=tuple is not supported, these equations are converted into a list of simple equations
         (eq,addEqs) = convertTupleEquations(eq,addEqs);
       then
