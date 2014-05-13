@@ -1080,6 +1080,7 @@ template function_HPCOM_initializeLock(String lockIdx, String lockPrefix, String
       >>
     case ("pthreads_spin") then
       <<
+      <%lockPrefix%>_<%lockIdx%> = BOOST_DETAIL_SPINLOCK_INIT;
       >>
 end function_HPCOM_initializeLock;
 
