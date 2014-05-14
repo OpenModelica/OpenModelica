@@ -3905,6 +3905,14 @@ algorithm
         res = Expression.makeConstOne(ty);
         false = Expression.isZero(e2);
       then res;
+        
+    // a * a  = a^2
+    case (_,DAE.MUL(ty = ty),e1,e2,_,_)
+      equation
+        true = Expression.expEqual(e1,e2);
+        res = DAE.BINARY(e1,DAE.POW(ty),DAE.RCONST(2.0));
+        false = Expression.isZero(e2);
+      then res;
 
     // exp / r = exp * (1/r)
     case(_, DAE.DIV(ty=tp), e1, DAE.RCONST(real=r1), _, _)
