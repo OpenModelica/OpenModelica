@@ -10388,11 +10388,12 @@ algorithm
       DAE.TypeSource ty_src;
       list<Exp> expl;
       list<list<Exp>> matrix;
+      Integer i;
 
-    case DAE.ARRAY(DAE.T_ARRAY(ty, {dim1, dim2}, ty_src), false, {})
+    case DAE.ARRAY(DAE.T_ARRAY(ty, {dim1, dim2}, ty_src), _, {})
       then (DAE.ARRAY(DAE.T_ARRAY(ty, {dim2, dim1}, ty_src), false, {}), true);
 
-    case DAE.ARRAY(DAE.T_ARRAY(ty, {dim1, dim2}, ty_src), false, expl)
+    case DAE.ARRAY(DAE.T_ARRAY(ty, {dim1, dim2}, ty_src), _, expl)
       equation
         row_ty = DAE.T_ARRAY(ty, {dim1}, ty_src);
         matrix = List.map(expl, getArrayContents);
@@ -10400,6 +10401,13 @@ algorithm
         expl = List.map2(matrix, makeArray, row_ty, true);
       then
         (DAE.ARRAY(DAE.T_ARRAY(ty, {dim2, dim1}, ty_src), false, expl), true);
+
+    case DAE.MATRIX (matrix=matrix,ty=DAE.T_ARRAY(ty, {dim1, dim2}, ty_src))
+      equation
+        matrix = List.transposeList(matrix);
+        ty = DAE.T_ARRAY(ty, {dim2, dim1}, ty_src);
+        i = listLength(matrix);
+      then (DAE.MATRIX(ty,i,matrix), true);
 
     else (inArray, false);
 
