@@ -101,6 +101,7 @@ void PlotWindowContainer::addPlotWindow()
     pPlotWindow->setPlotType(PlotWindow::PLOT);
     pPlotWindow->setWindowTitle(getUniqueName("Plot : "));
     pPlotWindow->setTitle("");
+    pPlotWindow->setLegendPosition("top");
     pPlotWindow->installEventFilter(this);
     QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
     pSubWindow->setWindowIcon(QIcon(":/Resources/icons/plotwindow.png"));
@@ -123,6 +124,7 @@ void PlotWindowContainer::addPlotParametricWindow()
     pPlotWindow->setPlotType(PlotWindow::PLOTPARAMETRIC);
     pPlotWindow->setWindowTitle(getUniqueName("Plot Parametric : "));
     pPlotWindow->setTitle("");
+    pPlotWindow->setLegendPosition("top");
     pPlotWindow->installEventFilter(this);
     QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
     pSubWindow->setWindowIcon(QIcon(":/Resources/icons/plotparametricwindow.png"));
