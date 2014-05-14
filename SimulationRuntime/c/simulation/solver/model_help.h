@@ -38,16 +38,11 @@ extern "C" {
 
 /* lochel: I guess this is used for discrete relations */
 #define RELATION(res,exp1,exp2,index,op_w) { \
-  if(data->simulationInfo.discreteCall == 0){ \
+  if(data->simulationInfo.discreteCall == 0 || data->simulationInfo.solveContinuous){ \
     res = data->simulationInfo.relationsPre[index]; \
-  } else{ \
-    if(data->simulationInfo.solveContinuous){ \
-      res = data->simulationInfo.relationsPre[index]; \
-      data->simulationInfo.relations[index] = ((op_w)((exp1),(exp2))); \
-    } else { \
-      res = ((op_w)((exp1),(exp2))); \
-      data->simulationInfo.relations[index] = res; \
-    } \
+  } else { \
+    res = ((op_w)((exp1),(exp2))); \
+    data->simulationInfo.relations[index] = res; \
   } \
 }
 
@@ -57,16 +52,11 @@ extern "C" {
     res = ((op_w)((exp1),(exp2))); \
     data->simulationInfo.relations[index] = res; \
   } else { \
-    if(data->simulationInfo.discreteCall == 0) { \
+    if(data->simulationInfo.discreteCall == 0 || data->simulationInfo.solveContinuous) { \
       res = data->simulationInfo.relationsPre[index]; \
     } else { \
-      if(data->simulationInfo.solveContinuous){ \
-        res = data->simulationInfo.relationsPre[index]; \
-        data->simulationInfo.relations[index] = ((op_w##ZC)((exp1),(exp2),data->simulationInfo.hysteresisEnabled[index])); \
-      } else { \
-        res = ((op_w##ZC)((exp1),(exp2),data->simulationInfo.hysteresisEnabled[index])); \
-        data->simulationInfo.relations[index] = res; \
-      } \
+      res = ((op_w##ZC)((exp1),(exp2),data->simulationInfo.hysteresisEnabled[index])); \
+      data->simulationInfo.relations[index] = res; \
     } \
   } \
 }
