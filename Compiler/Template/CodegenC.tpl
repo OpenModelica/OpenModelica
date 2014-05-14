@@ -8121,7 +8121,7 @@ case BINARY(__) then
         let &preExp += '<%tmp%> = <%e1%>;<%\n%>'
         let &preExp += '<%tmp%> *= <%tmp%>;<%\n%>'
         '(<%tmp%> * <%tmp%>)'
-      case SOME(i) then 'real_int_pow(<%e1%>, <%i%>)'
+      case SOME(i) then 'real_int_pow(threadData, <%e1%>, <%i%>)'
       else 'pow(<%e1%>, <%e2%>)'
   case UMINUS(__) then daeExpUnary(exp, context, &preExp, &varDecls)
   case ADD_ARR(__) then

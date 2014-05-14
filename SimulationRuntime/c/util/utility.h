@@ -129,7 +129,7 @@ static inline modelica_real modelica_real_max(modelica_real x,modelica_real y)
 #define reduction_product(X,Y) ((X)*(Y))
 
 /* pow(), but for integer exponents (faster implementation) */
-extern modelica_real real_int_pow(modelica_real base,modelica_integer n);
+extern modelica_real real_int_pow(threadData_t *threadData, modelica_real base,modelica_integer n);
 /* Returns 0 on failure. The first element in nmatches contains the error-message. */
 extern int OpenModelica_regexImpl(const char* str, const char* re, const int maxn, int extended, int sensitive, void*(*)(const char*), void **result);
 /* Wrapper for the builtin call */
