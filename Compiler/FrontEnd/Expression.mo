@@ -1652,7 +1652,14 @@ algorithm
       Boolean bstart,bstop;
       Integer istart,istep,istop;
       Real rstart,rstep,rstop;
+      list<list<DAE.Exp>> matrix;
+      DAE.Type ty;
     case DAE.ARRAY(array=es) then es;
+    case DAE.MATRIX(matrix=matrix,ty=ty)
+      equation
+        ty = Types.unliftArray(ty);
+        es = List.map2(matrix,makeArray,ty,not Types.arrayType(ty));
+      then es;
     case DAE.RANGE(DAE.T_BOOL(varLst = _), DAE.BCONST(bstart), NONE(), DAE.BCONST(bstop))
       then List.map(ExpressionSimplify.simplifyRangeBool(bstart, bstop), makeBoolExp);
 
@@ -2113,9 +2120,11 @@ algorithm
     case (DAE.TSUB(ty = tp)) then tp;
     case (DAE.CODE(ty = tp)) then tp;
       /* array reduction with known size */
-    case (DAE.REDUCTION(iterators={DAE.REDUCTIONITER(exp=e,guardExp=NONE())},reductionInfo=DAE.REDUCTIONINFO(exprType=ty,path = Absyn.IDENT("array"))))
+    case (DAE.REDUCTION(iterators={DAE.REDUCTIONITER(exp=e,guardExp=NONE())},reductionInfo=DAE.REDUCTIONINFO(exprType=ty as DAE.T_ARRAY(dims=dim::_),path = Absyn.IDENT("array"))))
       equation
+        false = dimensionKnown(dim);
         DAE.T_ARRAY(dims={dim}) = typeof(e);
+        true = dimensionKnown(dim);
         tp = liftArrayR(Types.unliftArray(Types.simplifyType(ty)),dim);
       then tp;
     case (DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(exprType=ty)))
