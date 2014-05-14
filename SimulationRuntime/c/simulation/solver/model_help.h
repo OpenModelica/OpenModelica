@@ -47,14 +47,15 @@ extern "C" {
     } else { \
       res = ((op_w)((exp1),(exp2))); \
       data->simulationInfo.relations[index] = res; \
-    }\
-  }\
+    } \
+  } \
 }
 
 /* lochel: I guess this is used for continuous relations */
 #define RELATIONHYSTERESIS(res,exp1,exp2,index,op_w) { \
   if(data->simulationInfo.initial) { \
-    RELATION(res,exp1,exp2,index,op_w); \
+    res = ((op_w)((exp1),(exp2))); \
+    data->simulationInfo.relations[index] = res; \
   } else { \
     if(data->simulationInfo.discreteCall == 0) { \
       res = data->simulationInfo.relationsPre[index]; \
