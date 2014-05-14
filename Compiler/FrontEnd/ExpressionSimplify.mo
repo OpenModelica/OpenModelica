@@ -3905,7 +3905,7 @@ algorithm
         res = Expression.makeConstOne(ty);
         false = Expression.isZero(e2);
       then res;
-        
+
     // a * a  = a^2
     case (_,DAE.MUL(ty = ty),e1,e2,_,_)
       equation
