@@ -53,17 +53,11 @@ extern "C" {
 
 /* lochel: I guess this is used for continuous relations */
 #define RELATIONHYSTERESIS(res,exp1,exp2,index,op_w) { \
-  if(data->simulationInfo.discreteCall == 0) { \
-    res = data->simulationInfo.relationsPre[index]; \
+  if(data->simulationInfo.initial) { \
+    RELATION(res,exp1,exp2,index,op_w); \
   } else { \
-    if(data->simulationInfo.initial) { \
-      if(data->simulationInfo.solveContinuous) { \
-        res = data->simulationInfo.relationsPre[index]; \
-        data->simulationInfo.relations[index] = ((op_w)((exp1),(exp2))); \
-      } else { \
-        res = ((op_w)((exp1),(exp2))); \
-        data->simulationInfo.relations[index] = res; \
-      } \
+    if(data->simulationInfo.discreteCall == 0) { \
+      res = data->simulationInfo.relationsPre[index]; \
     } else { \
       if(data->simulationInfo.solveContinuous){ \
         res = data->simulationInfo.relationsPre[index]; \
