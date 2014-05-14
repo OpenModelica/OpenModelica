@@ -227,7 +227,7 @@ algorithm
         false = Expression.expHasDerCref(inExp2, cr);
       then
         (inExp1,{});
-        
+
     // log(a) = b => a = exp(b)
     case (DAE.CALL(path = Absyn.IDENT(name = "log"),expLst = {DAE.CREF(componentRef = cr1)}),_,DAE.CREF(componentRef = cr))
        equation
@@ -236,7 +236,7 @@ algorithm
          e2 = Expression.makeBuiltinCall("exp",{inExp2},DAE.T_REAL_DEFAULT);
        then
          (e2,{});
-         
+
     // b = log(a)=> a = exp(b)
     case (_,DAE.CALL(path = Absyn.IDENT(name = "log"),expLst = {DAE.CREF(componentRef = cr1)}),DAE.CREF(componentRef = cr))
        equation
@@ -245,7 +245,7 @@ algorithm
          e2 = Expression.makeBuiltinCall("exp",{inExp1},DAE.T_REAL_DEFAULT);
        then
          (e2,{});
-         
+
     // exp(a) = b => a = log(b)
     case (DAE.CALL(path = Absyn.IDENT(name = "exp"),expLst = {DAE.CREF(componentRef = cr1)}),_,DAE.CREF(componentRef = cr))
        equation
@@ -254,7 +254,7 @@ algorithm
          e2 = Expression.makeBuiltinCall("log",{inExp2},DAE.T_REAL_DEFAULT);
        then
          (e2,{});
-         
+
     // b = exp(a)=> a = exp(b)
     case (_,DAE.CALL(path = Absyn.IDENT(name = "exp"),expLst = {DAE.CREF(componentRef = cr1)}),DAE.CREF(componentRef = cr))
        equation
@@ -263,7 +263,7 @@ algorithm
          e2 = Expression.makeBuiltinCall("log",{inExp1},DAE.T_REAL_DEFAULT);
        then
          (e2,{});
-       
+
     // a^n = c => a = c^-n
     // where n is odd
     case (DAE.BINARY(DAE.CREF(componentRef = cr1),DAE.POW(tp),DAE.RCONST(r)), _, DAE.CREF(componentRef = cr))
@@ -276,7 +276,7 @@ algorithm
          e2 = DAE.BINARY(inExp2,DAE.POW(tp),e1);
        then
          (e2,{});
-         
+
     // c = a^n  => a = c^-n
     // where n is odd
     case (_, DAE.BINARY(DAE.CREF(componentRef = cr1),DAE.POW(tp),DAE.RCONST(r)), DAE.CREF(componentRef = cr))
@@ -289,7 +289,7 @@ algorithm
          e2 = DAE.BINARY(inExp1,DAE.POW(tp),e1);
        then
          (e2,{});
-      
+
     // -cr = exp
     case (DAE.UNARY(operator = DAE.UMINUS(ty=_), exp = DAE.CREF(componentRef = cr1)),_,DAE.CREF(componentRef = cr))
       equation
