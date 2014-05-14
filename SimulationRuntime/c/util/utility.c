@@ -31,6 +31,8 @@
 
 #include "utility.h"
 #include "modelica_string.h"
+#include "simulation_data.h"
+#include "../simulation/options.h"
 #include <regex.h>
 #include <string.h>
 
@@ -39,7 +41,9 @@ modelica_real real_int_pow(modelica_real base, modelica_integer n)
   modelica_real result = 1.0;
   modelica_integer m = n < 0;
   if(m) {
-      n = -n;
+    if(base == 0.0)
+      errorStreamPrint(LOG_STDOUT, 0, "evaluation problem for 0^%i ",n);
+    n = -n;
   }
   while(n != 0) {
     if((n % 2) != 0) {
