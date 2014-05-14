@@ -3877,10 +3877,10 @@ algorithm
     // a-(-b) = a+b
     case (_,DAE.SUB(ty = ty),e1,DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = e2),_,_)
       then DAE.BINARY(e1,DAE.ADD(ty),e2);
-        
+
     // a-(-b)*c = a+b*c
     case (_,DAE.SUB(ty = ty),e1,DAE.BINARY(DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = e2),op1 as DAE.MUL(_),e3),_,_)
-      then DAE.BINARY(e1,DAE.ADD(ty),DAE.BINARY(e2,op1,e3));    
+      then DAE.BINARY(e1,DAE.ADD(ty),DAE.BINARY(e2,op1,e3));
 
     // 0 / x = 0
     case (_,DAE.DIV(ty=_),e1,e2,true,false)
