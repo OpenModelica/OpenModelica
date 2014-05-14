@@ -484,7 +484,7 @@ typedef struct SIMULATION_INFO
   modelica_boolean* relationsPre;
   modelica_boolean* hysteresisEnabled;
   modelica_real* mathEventsValuePre;
-  long* zeroCrossingIndex;             /* pointer for a list events at event instants */
+  long* zeroCrossingIndex;             /* := {0, 1, 2, ..., data->modelData.nZeroCrossings-1}; pointer for a list events at event instants */
 
   /* old vars for event handling */
   modelica_real timeValueOld;
