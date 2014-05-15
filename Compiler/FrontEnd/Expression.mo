@@ -3887,6 +3887,35 @@ algorithm
   end match;
 end makeZeroExpression;
 
+public function makeOneExpression
+" creates a Real or array<Real> one expression with given dimensions, also returns its type"
+  input DAE.Dimensions inDims;
+  output DAE.Exp outExp;
+  output DAE.Type outType;
+algorithm
+  (outExp,outType) := match(inDims)
+    local
+      Integer i;
+      DAE.Dimension d;
+      DAE.Dimensions dims;
+      DAE.Exp e;
+      list<DAE.Exp> eLst;
+      DAE.Type ty;
+      Boolean scalar;
+
+    case {} then (DAE.RCONST(1.0), DAE.T_REAL_DEFAULT);
+
+    case d::dims
+      equation
+        i = dimensionSize(d);
+        (e, ty) = makeOneExpression(dims);
+        eLst = List.fill(e,i);
+        scalar = List.isEmpty(dims);
+      then
+        (DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,d::dims,DAE.emptyTypeSource),scalar,eLst),
+         DAE.T_ARRAY(ty,{d},DAE.emptyTypeSource));
+  end match;
+end makeOneExpression;
 
 public function listToArray
 " @mahge:
