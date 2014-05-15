@@ -43,7 +43,7 @@ modelica_real real_int_pow(threadData_t *threadData, modelica_real base, modelic
   FILE_INFO info = omc_dummyFileInfo;
   if(m) {
     if(base == 0.0)
-      omc_assert(threadData, info, "evaluation problem for 0^%i ", n);
+      omc_assert(threadData, info, "Model error - 0^%i is not defined", n);
     n = -n;
   }
   while(n != 0) {
