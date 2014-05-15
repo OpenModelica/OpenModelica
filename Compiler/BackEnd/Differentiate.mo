@@ -2149,7 +2149,7 @@ algorithm
 
       BackendDAE.DifferentiateInputData inputData, diffFuncData;
 
-      DAE.Exp e, zero, ezero;
+      DAE.Exp e, exp, zero, ezero;
       list<DAE.Exp> expl,expl1,dexpl,dexplZero;
       BackendDAE.Variables timevars;
       Absyn.Path path,dpath;
@@ -2267,14 +2267,14 @@ algorithm
         //print(stringDelimitList(List.map(dexpl, ExpressionDump.printExpStr), ", ") +& "\n");
         //print(" output Type: "  +& Types.printTypeStr(ty) +& "\n");
         e = DAE.CALL(dpath,dexpl,DAE.CALL_ATTR(ty,b,false,isImpure,DAE.NO_INLINE(),tc));
-        e = createPartialArguments(ty, dexpl, dexplZero, expl, e);
+        exp = createPartialArguments(ty, dexpl, dexplZero, expl, e);
 
         // debug
         //print("Finished differentiate Expression in Call.\n");
         //print("DER.Function call : \n" +& ExpressionDump.printExpStr(e) +& "\n");
 
       then
-        (e, functions);
+        (exp, functions);
 
       else
       equation
