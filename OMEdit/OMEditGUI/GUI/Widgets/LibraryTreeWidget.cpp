@@ -597,6 +597,10 @@ void LibraryTreeWidget::createActions()
   mpExportXMLAction = new QAction(QIcon(":/Resources/icons/export-xml.svg"), Helper::exportXML, this);
   mpExportXMLAction->setStatusTip(Helper::exportXMLTip);
   connect(mpExportXMLAction, SIGNAL(triggered()), SLOT(exportModelXML()));
+  // Export Figaro Action
+  mpExportFigaroAction = new QAction(QIcon(":/Resources/icons/console.png"), Helper::exportFigaro, this);
+  mpExportFigaroAction->setStatusTip(Helper::exportFigaroTip);
+  connect(mpExportFigaroAction, SIGNAL(triggered()), SLOT(exportModelFigaro()));
 }
 
 //! Let the user add the OM Standard Library to library widget.
@@ -1353,6 +1357,7 @@ void LibraryTreeWidget::showContextMenu(QPoint point)
     menu.addSeparator();
     menu.addAction(mpExportFMUAction);
     menu.addAction(mpExportXMLAction);
+    menu.addAction(mpExportFigaroAction);
     point.setY(point.y() + adjust);
     menu.exec(mapToGlobal(point));
   }
@@ -1474,6 +1479,16 @@ void LibraryTreeWidget::exportModelXML()
   LibraryTreeNode *pLibraryTreeNode = dynamic_cast<LibraryTreeNode*>(selectedItemsList.at(0));
   if (pLibraryTreeNode)
     mpMainWindow->exportModelXML(pLibraryTreeNode);
+}
+
+void LibraryTreeWidget::exportModelFigaro()
+{
+  QList<QTreeWidgetItem*> selectedItemsList = selectedItems();
+  if (selectedItemsList.isEmpty())
+    return;
+  LibraryTreeNode *pLibraryTreeNode = dynamic_cast<LibraryTreeNode*>(selectedItemsList.at(0));
+  if (pLibraryTreeNode)
+    mpMainWindow->exportModelFigaro(pLibraryTreeNode);
 }
 
 void LibraryTreeWidget::openFile(QString fileName, QString encoding, bool showProgress, bool checkFileExists)

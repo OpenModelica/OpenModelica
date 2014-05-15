@@ -192,6 +192,7 @@ private:
   QAction *mpRefreshAction;
   QAction *mpExportFMUAction;
   QAction *mpExportXMLAction;
+  QAction *mpExportFigaroAction;
   bool saveLibraryTreeNodeHelper(LibraryTreeNode *pLibraryTreeNode);
   bool saveLibraryTreeNodeOneFileHelper(LibraryTreeNode *pLibraryTreeNode);
   bool setSubModelsFileNameOneFileHelper(LibraryTreeNode *pLibraryTreeNode, QString filePath);
@@ -213,6 +214,7 @@ public slots:
   void refresh();
   void exportModelFMU();
   void exportModelXML();
+  void exportModelFigaro();
   void openFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool checkFileExists = false);
   void parseAndLoadModelicaText(QString modelText);
   void showModelWidget(LibraryTreeNode *pLibraryTreeNode = 0, bool newClass = false, bool extendsClass = false);

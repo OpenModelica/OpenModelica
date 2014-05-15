@@ -215,6 +215,7 @@ public:
   QString help(QString topic);
   QStringList getConfigFlagValidOptions(QString topic, QString *mainDescription = 0, QStringList *descriptions = 0);
   bool setDebugFlags(QString flags);
+  bool exportToFigaro(QString className, QString library, QString mode, QString processor);
 signals:
   void commandFinished();
 public slots:

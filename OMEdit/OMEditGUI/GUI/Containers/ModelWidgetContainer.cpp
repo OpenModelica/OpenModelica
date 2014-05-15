@@ -3046,6 +3046,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   getMainWindow()->getCheckAllModelsAction()->setEnabled(enabled);
   getMainWindow()->getExportFMUAction()->setEnabled(enabled);
   getMainWindow()->getExportXMLAction()->setEnabled(enabled);
+  getMainWindow()->getExportFigaroAction()->setEnabled(enabled);
   getMainWindow()->getExportToOMNotebookAction()->setEnabled(enabled);
   getMainWindow()->getExportAsImageAction()->setEnabled(enabled);
   getMainWindow()->getPrintModelAction()->setEnabled(enabled);

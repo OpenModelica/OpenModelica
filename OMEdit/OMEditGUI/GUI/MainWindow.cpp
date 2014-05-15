@@ -433,6 +433,11 @@ QAction* MainWindow::getExportXMLAction()
   return mpExportXMLAction;
 }
 
+QAction* MainWindow::getExportFigaroAction()
+{
+  return mpExportFigaroAction;
+}
+
 QAction* MainWindow::getLineShapeAction()
 {
   return mpLineShapeAction;
@@ -852,6 +857,35 @@ void MainWindow::exportModelXML(LibraryTreeNode *pLibraryTreeNode)
   mpStatusBar->clearMessage();
 }
 
+void MainWindow::exportModelFigaro(LibraryTreeNode *pLibraryTreeNode)
+{
+  /* if Modelica text is changed manually by user then validate it before saving. */
+  if (pLibraryTreeNode->getModelWidget())
+  {
+    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->getModelicaTextEdit()->validateModelicaText())
+      return;
+  }
+  // set the status message.
+  mpStatusBar->showMessage(tr("Exporting model as Figaro"));
+  // show the progress bar
+  mpProgressBar->setRange(0, 0);
+  showProgressBar();
+  FigaroPage *pFigaroPage = mpOptionsDialog->getFigaroPage();
+  QString library = pFigaroPage->getFigaroLibraryFileTextBox()->text();
+  QString mode = pFigaroPage->getFigaroModeComboBox()->itemData(pFigaroPage->getFigaroModeComboBox()->currentIndex()).toString();
+  QString processor = pFigaroPage->getFigaroProcessTextBox()->text();
+  if (mpOMCProxy->exportToFigaro(pLibraryTreeNode->getNameStructure(), library, mode, processor))
+  {
+    mpMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::FIGARO_GENERATED),
+                                                         Helper::scriptingKind, Helper::notificationLevel, 0,
+                                                         mpMessagesWidget->getMessagesTreeWidget()));
+  }
+  // hide progress bar
+  hideProgressBar();
+  // clear the status bar message
+  mpStatusBar->clearMessage();
+}
+
 void MainWindow::exportModelToOMNotebook(LibraryTreeNode *pLibraryTreeNode)
 {
   /* if Modelica text is changed manually by user then validate it before saving. */
@@ -1238,8 +1272,8 @@ void MainWindow::instantiatesModel()
   else
   {
     mpMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
-                                                    .arg(tr("instantiating")), Helper::scriptingKind, Helper::notificationLevel,
-                                                    0, mpMessagesWidget->getMessagesTreeWidget()));
+                                                         .arg(tr("instantiating")), Helper::scriptingKind, Helper::notificationLevel,
+                                                         0, mpMessagesWidget->getMessagesTreeWidget()));
   }
 }
 
@@ -1255,8 +1289,8 @@ void MainWindow::checkModel()
   else
   {
     mpMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
-                                                    .arg(tr("checking")), Helper::scriptingKind, Helper::notificationLevel,
-                                                    0, mpMessagesWidget->getMessagesTreeWidget()));
+                                                         .arg(tr("checking")), Helper::scriptingKind, Helper::notificationLevel,
+                                                         0, mpMessagesWidget->getMessagesTreeWidget()));
   }
 }
 
@@ -1272,8 +1306,8 @@ void MainWindow::checkAllModels()
   else
   {
     mpMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
-                                                    .arg(tr("checking")), Helper::scriptingKind, Helper::notificationLevel,
-                                                    0, mpMessagesWidget->getMessagesTreeWidget()));
+                                                         .arg(tr("checking")), Helper::scriptingKind, Helper::notificationLevel,
+                                                         0, mpMessagesWidget->getMessagesTreeWidget()));
   }
 }
 
@@ -1320,8 +1354,8 @@ void MainWindow::exportModelFMU()
   else
   {
     mpMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
-                                                    .arg(tr("making FMU")), Helper::scriptingKind, Helper::notificationLevel,
-                                                    0, mpMessagesWidget->getMessagesTreeWidget()));
+                                                         .arg(tr("making FMU")), Helper::scriptingKind, Helper::notificationLevel,
+                                                         0, mpMessagesWidget->getMessagesTreeWidget()));
   }
 }
 
@@ -1338,8 +1372,26 @@ void MainWindow::exportModelXML()
   else
   {
     mpMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
-                                                    .arg(tr("making XML")), Helper::scriptingKind, Helper::notificationLevel,
-                                                    0, mpMessagesWidget->getMessagesTreeWidget()));
+                                                         .arg(tr("making XML")), Helper::scriptingKind, Helper::notificationLevel,
+                                                         0, mpMessagesWidget->getMessagesTreeWidget()));
+  }
+}
+
+//! Exports the current model to XML
+void MainWindow::exportModelFigaro()
+{
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  if (pModelWidget)
+  {
+    LibraryTreeNode *pLibraryTreeNode = pModelWidget->getLibraryTreeNode();
+    if (pLibraryTreeNode)
+      exportModelFigaro(pLibraryTreeNode);
+  }
+  else
+  {
+    mpMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+                                                         .arg(tr("exporting to Figaro")), Helper::scriptingKind, Helper::notificationLevel,
+                                                         0, mpMessagesWidget->getMessagesTreeWidget()));
   }
 }
 
@@ -1365,8 +1417,8 @@ void MainWindow::exportModelToOMNotebook()
   else
   {
     mpMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
-                                                    .arg(tr("exporting to OMNotebook")), Helper::scriptingKind, Helper::notificationLevel,
-                                                    0, mpMessagesWidget->getMessagesTreeWidget()));
+                                                         .arg(tr("exporting to OMNotebook")), Helper::scriptingKind, Helper::notificationLevel,
+                                                         0, mpMessagesWidget->getMessagesTreeWidget()));
   }
 }
 
@@ -1863,6 +1915,11 @@ void MainWindow::createActions()
   mpExportXMLAction->setStatusTip(Helper::exportXMLTip);
   mpExportXMLAction->setEnabled(false);
   connect(mpExportXMLAction, SIGNAL(triggered()), SLOT(exportModelXML()));
+  // export XML action
+  mpExportFigaroAction = new QAction(QIcon(":/Resources/icons/console.png"), Helper::exportFigaro, this);
+  mpExportFigaroAction->setStatusTip(Helper::exportFigaroTip);
+  mpExportFigaroAction->setEnabled(false);
+  connect(mpExportFigaroAction, SIGNAL(triggered()), SLOT(exportModelFigaro()));
   // Tools Menu
   // show OMC Logger widget action
   mpShowOMCLoggerWidgetAction = new QAction(QIcon(":/Resources/icons/console.png"), tr("OMC Logger"), this);
@@ -2092,13 +2149,14 @@ void MainWindow::createMenus()
   pFMIMenu->addAction(mpImportFMUAction);
   // add FMI menu to menu bar
   menuBar()->addAction(pFMIMenu->menuAction());
-  // XML menu
-  QMenu *pXMLMenu = new QMenu(menuBar());
-  pXMLMenu->setTitle(tr("&XML"));
-  // add actions to XML menu
-  pXMLMenu->addAction(mpExportXMLAction);
-  // add XML menu to menu bar
-  menuBar()->addAction(pXMLMenu->menuAction());
+  // Export menu
+  QMenu *pExportMenu = new QMenu(menuBar());
+  pExportMenu->setTitle(tr("&Export"));
+  // add actions to Export menu
+  pExportMenu->addAction(mpExportXMLAction);
+  pExportMenu->addAction(mpExportFigaroAction);
+  // add Export menu to menu bar
+  menuBar()->addAction(pExportMenu->menuAction());
   // Tools menu
   QMenu *pToolsMenu = new QMenu(menuBar());
   pToolsMenu->setTitle(tr("&Tools"));

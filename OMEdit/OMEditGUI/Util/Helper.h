@@ -147,6 +147,8 @@ public:
   static QString importFromOMNotebookTip;
   static QString exportAsImage;
   static QString exportAsImageTip;
+  static QString exportFigaro;
+  static QString exportFigaroTip;
   static QString deleteStr;
   static QString copy;
   static QString paste;
@@ -194,6 +196,7 @@ public:
   static QString startAngle;
   static QString endAngle;
   static QString curveStyle;
+  static QString figaro;
   static QString remove;
   static QString errorLocation;
   static QString fileLocation;
@@ -275,6 +278,7 @@ public:
     INNER_MODEL_NAME_CHANGED,
     FMU_GENERATED,
     XML_GENERATED,
+    FIGARO_GENERATED,
     DELETE_CLASS_MSG,
     WRONG_MODIFIER,
     SET_INFO_XML_FLAG,

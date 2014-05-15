@@ -127,6 +127,7 @@ public:
   QAction* getCheckAllModelsAction() {return mpCheckAllModelsAction;}
   QAction* getExportFMUAction();
   QAction* getExportXMLAction();
+  QAction* getExportFigaroAction();
   QAction* getLineShapeAction();
   QAction* getPolygonShapeAction();
   QAction* getRectangleShapeAction();
@@ -154,6 +155,7 @@ public:
   void checkAllModels(LibraryTreeNode *pLibraryTreeNode);
   void exportModelFMU(LibraryTreeNode *pLibraryTreeNode);
   void exportModelXML(LibraryTreeNode *pLibraryTreeNode);
+  void exportModelFigaro(LibraryTreeNode *pLibraryTreeNode);
   void exportModelToOMNotebook(LibraryTreeNode *pLibraryTreeNode);
   void createOMNotebookTitleCell(LibraryTreeNode *pLibraryTreeNode, QDomDocument xmlDocument, QDomElement domElement);
   void createOMNotebookImageCell(LibraryTreeNode *pLibraryTreeNode, QDomDocument xmlDocument, QDomElement domElement, QString filePath);
@@ -226,8 +228,9 @@ private:
   // FMI Menu
   QAction *mpExportFMUAction;
   QAction *mpImportFMUAction;
-  // XML Menu
+  // Export Menu
   QAction *mpExportXMLAction;
+  QAction *mpExportFigaroAction;
   // Tools Menu
   QAction *mpShowOMCLoggerWidgetAction;
   QAction *mpExportToOMNotebookAction;
@@ -297,6 +300,7 @@ public slots:
   void exportModelFMU();
   void importModelFMU();
   void exportModelXML();
+  void exportModelFigaro();
   void exportModelToOMNotebook();
   void importModelfromOMNotebook();
   void exportModelAsImage();

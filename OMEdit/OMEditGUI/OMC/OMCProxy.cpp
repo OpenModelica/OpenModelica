@@ -2386,6 +2386,43 @@ QString OMCProxy::numProcessors()
   return getResult();
 }
 
+QString OMCProxy::help(QString topic)
+{
+  sendCommand("help(\"" + topic + "\")");
+  return StringHandler::unparse(getResult());
+}
+
+QStringList OMCProxy::getConfigFlagValidOptions(QString topic, QString *mainDescription, QStringList *descriptions)
+{
+  QStringList validOptions;
+  sendCommand("(v1,v2,v3):=getConfigFlagValidOptions(\"" + topic + "\")");
+  sendCommand("v1");
+  validOptions = StringHandler::unparseStrings(getResult());
+  if (mainDescription) {
+    sendCommand("v2");
+    *mainDescription = StringHandler::unparse(getResult());
+  }
+  if (descriptions) {
+    sendCommand("v3");
+    *descriptions = StringHandler::unparseStrings(getResult());
+  }
+  return validOptions;
+}
+
+bool OMCProxy::setDebugFlags(QString debugFlags)
+{
+  sendCommand("setDebugFlags(\"" + debugFlags + "\")");
+  return StringHandler::unparseBool(getResult());
+}
+
+bool OMCProxy::exportToFigaro(QString className, QString library, QString mode, QString processor)
+{
+  sendCommand("exportToFigaro(" + className + ",\"" + library + "\",\"" + mode + "\",\"" + processor + "\")");
+  bool result = StringHandler::unparseBool(getResult());
+  if (!result) printMessagesStringInternal();
+  return result;
+}
+
 /*!
   \class CustomExpressionBox
   \brief A text box for executing OMC commands.
@@ -2414,33 +2451,4 @@ void CustomExpressionBox::keyPressEvent(QKeyEvent *event)
     default:
       QLineEdit::keyPressEvent(event);
   }
-}
-
-bool OMCProxy::setDebugFlags(QString debugFlags)
-{
-  sendCommand("setDebugFlags(\"" + debugFlags + "\")");
-  return StringHandler::unparseBool(getResult());
-}
-
-QString OMCProxy::help(QString topic)
-{
-  sendCommand("help(\"" + topic + "\")");
-  return StringHandler::unparse(getResult());
-}
-
-QStringList OMCProxy::getConfigFlagValidOptions(QString topic, QString *mainDescription, QStringList *descriptions)
-{
-  QStringList validOptions;
-  sendCommand("(v1,v2,v3):=getConfigFlagValidOptions(\"" + topic + "\")");
-  sendCommand("v1");
-  validOptions = StringHandler::unparseStrings(getResult());
-  if (mainDescription) {
-    sendCommand("v2");
-    *mainDescription = StringHandler::unparse(getResult());
-  }
-  if (descriptions) {
-    sendCommand("v3");
-    *descriptions = StringHandler::unparseStrings(getResult());
-  }
-  return validOptions;
 }

@@ -142,6 +142,8 @@ QString Helper::importFromOMNotebook;
 QString Helper::importFromOMNotebookTip;
 QString Helper::exportAsImage;
 QString Helper::exportAsImageTip;
+QString Helper::exportFigaro;
+QString Helper::exportFigaroTip;
 QString Helper::deleteStr;
 QString Helper::copy;
 QString Helper::paste;
@@ -189,6 +191,7 @@ QString Helper::radius;
 QString Helper::startAngle;
 QString Helper::endAngle;
 QString Helper::curveStyle;
+QString Helper::figaro;
 QString Helper::remove;
 QString Helper::fileLocation;
 QString Helper::errorLocation;
@@ -277,6 +280,8 @@ void Helper::initHelperVariables()
   Helper::importFromOMNotebookTip = tr("Imports the model(s) from OMNotebook");
   Helper::exportAsImage = tr("Export as an Image");
   Helper::exportAsImageTip = tr("Exports the current model to Image");
+  Helper::exportFigaro = tr("Export Figaro");
+  Helper::exportFigaroTip = tr("Exports the current model to Figaro");
   Helper::deleteStr = tr("Delete");
   Helper::copy = tr("Copy");
   Helper::paste = tr("Paste");
@@ -324,6 +329,7 @@ void Helper::initHelperVariables()
   Helper::startAngle = tr("Start Angle:");
   Helper::endAngle = tr("End Angle:");
   Helper::curveStyle = tr("Curve Style");
+  Helper::figaro = tr("Figaro");
   Helper::remove = tr("Remove");
   Helper::fileLocation = tr("Location", "For files");
   Helper::errorLocation = tr("Location", "For errors");
@@ -441,6 +447,8 @@ QString GUIMessages::getMessage(int type)
       return tr("The FMU is generated at %1/%2.fmu");
     case XML_GENERATED:
       return tr("The XML is generated at %1/%2.xml");
+    case FIGARO_GENERATED:
+      return tr("The FIGARO is generated.");
     case DELETE_CLASS_MSG:
       return tr("Are you sure you want to unload <b>%1</b>? Everything contained inside this class will also be unloaded.");
     case WRONG_MODIFIER:

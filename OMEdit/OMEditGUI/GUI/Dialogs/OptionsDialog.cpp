@@ -61,6 +61,7 @@ OptionsDialog::OptionsDialog(MainWindow *pParent)
   mpLineStylePage = new LineStylePage(this);
   mpFillStylePage = new FillStylePage(this);
   mpCurveStylePage = new CurveStylePage(this);
+  mpFigaroPage = new FigaroPage(this);
   // get the settings
   readSettings();
   // set up the Options Dialog
@@ -87,6 +88,7 @@ void OptionsDialog::readSettings()
   readLineStyleSettings();
   readFillStyleSettings();
   readCurveStyleSettings();
+  readFigaroSettings();
 }
 
 //! Reads the General section settings from omedit.ini
@@ -346,6 +348,20 @@ void OptionsDialog::readCurveStyleSettings()
     mpCurveStylePage->setCurveThickness(mSettings.value("curvestyle/thickness").toFloat());
 }
 
+//! Reads the Fiagro section settings from omedit.ini
+void OptionsDialog::readFigaroSettings()
+{
+  if (mSettings.contains("figaro/libraryfile"))
+    mpFigaroPage->getFigaroLibraryFileTextBox()->setText(mSettings.value("figaro/libraryfile").toString());
+  if (mSettings.contains("figaro/mode"))
+  {
+    int currentIndex = mpFigaroPage->getFigaroModeComboBox()->findData(mSettings.value("figaro/mode").toString(), Qt::UserRole, Qt::MatchExactly);
+    if (currentIndex > -1) mpFigaroPage->getFigaroModeComboBox()->setCurrentIndex(currentIndex);
+  }
+  if (mSettings.contains("figaro/process"))
+    mpFigaroPage->getFigaroProcessTextBox()->setText(mSettings.value("figaro/process").toString());
+}
+
 //! Saves the General section settings to omedit.ini
 void OptionsDialog::saveGeneralSettings()
 {
@@ -555,6 +571,14 @@ void OptionsDialog::saveCurveStyleSettings()
   mSettings.setValue("curvestyle/thickness", mpCurveStylePage->getCurveThickness());
 }
 
+//! Saves the Figaro section settings to omedit.ini
+void OptionsDialog::saveFigaroSettings()
+{
+  mSettings.setValue("figaro/libraryfile", mpFigaroPage->getFigaroLibraryFileTextBox()->text());
+  mSettings.setValue("figaro/mode", mpFigaroPage->getFigaroModeComboBox()->itemData(mpFigaroPage->getFigaroModeComboBox()->currentIndex()).toString());
+  mSettings.setValue("figaro/process", mpFigaroPage->getFigaroProcessTextBox()->text());
+}
+
 //! Sets up the Options Widget dialog
 void OptionsDialog::setUpDialog()
 {
@@ -635,6 +659,10 @@ void OptionsDialog::addListItems()
   QListWidgetItem *pCurveStyleItem = new QListWidgetItem(mpOptionsList);
   pCurveStyleItem->setIcon(QIcon(":/Resources/icons/omplot.png"));
   pCurveStyleItem->setText(Helper::curveStyle);
+  // Figaro Item
+  QListWidgetItem *pFigaroItem = new QListWidgetItem(mpOptionsList);
+  pFigaroItem->setIcon(QIcon(":/Resources/icons/console.png"));
+  pFigaroItem->setText(Helper::figaro);
 }
 
 //! Creates pages for the Options Widget. The pages are created as stacked widget and are mapped with mpOptionsList.
@@ -650,6 +678,7 @@ void OptionsDialog::createPages()
   mpPagesWidget->addWidget(mpLineStylePage);
   mpPagesWidget->addWidget(mpFillStylePage);
   mpPagesWidget->addWidget(mpCurveStylePage);
+  mpPagesWidget->addWidget(mpFigaroPage);
 }
 
 MainWindow* OptionsDialog::getMainWindow()
@@ -702,6 +731,11 @@ CurveStylePage* OptionsDialog::getCurveStylePage()
   return mpCurveStylePage;
 }
 
+FigaroPage* OptionsDialog::getFigaroPage()
+{
+  return mpFigaroPage;
+}
+
 //! Change the page in Options Widget when the mpOptionsList currentItemChanged Signal is raised.
 void OptionsDialog::changePage(QListWidgetItem *current, QListWidgetItem *previous)
 {
@@ -735,6 +769,7 @@ void OptionsDialog::saveSettings()
   saveLineStyleSettings();
   saveFillStyleSettings();
   saveCurveStyleSettings();
+  saveFigaroSettings();
   mSettings.sync();
   accept();
 }
@@ -2403,6 +2438,7 @@ LineStylePage::LineStylePage(OptionsDialog *pParent)
   // Line Color
   mpLineColorLabel = new Label(Helper::color);
   mpLinePickColorButton = new QPushButton(Helper::pickColor);
+  mpLinePickColorButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   mpLinePickColorButton->setAutoDefault(false);
   connect(mpLinePickColorButton, SIGNAL(clicked()), SLOT(linePickColor()));
   setLineColor(Qt::black);
@@ -2576,6 +2612,7 @@ FillStylePage::FillStylePage(OptionsDialog *pParent)
   // Fill Color
   mpFillColorLabel = new Label(Helper::color);
   mpFillPickColorButton = new QPushButton(Helper::pickColor);
+  mpFillPickColorButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   mpFillPickColorButton->setAutoDefault(false);
   connect(mpFillPickColorButton, SIGNAL(clicked()), SLOT(fillPickColor()));
   setFillColor(Qt::black);
@@ -2638,7 +2675,6 @@ void FillStylePage::fillPickColor()
   setFillPickColorButtonIcon();
 }
 
-
 //! @class CurveStylePage
 //! @brief Creates an interface for curve style settings.
 
@@ -2652,6 +2688,7 @@ CurveStylePage::CurveStylePage(OptionsDialog *pParent)
   // Curve Pattern
   mpCurvePatternLabel = new Label(Helper::pattern);
   mpCurvePatternComboBox = new QComboBox;
+  mpCurvePatternComboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   mpCurvePatternComboBox->addItem("SolidLine", 1);
   mpCurvePatternComboBox->addItem("DashLine", 2);
   mpCurvePatternComboBox->addItem("DotLine", 3);
@@ -2707,4 +2744,60 @@ void CurveStylePage::setCurveThickness(qreal thickness)
 qreal CurveStylePage::getCurveThickness()
 {
   return mpCurveThicknessSpinBox->value();
+}
+
+//! @class FigaroPage
+//! @brief Creates an interface for Figaro settings.
+
+//! Constructor
+//! @param pParent is the pointer to OptionsDialog
+FigaroPage::FigaroPage(OptionsDialog *pParent)
+  : QWidget(pParent)
+{
+  mpOptionsDialog = pParent;
+  mpFigaroGroupBox = new QGroupBox(Helper::figaro);
+  // Figaro library file
+  mpFigaroLibraryFileLabel = new Label(tr("Figaro Library File:"));
+  mpFigaroLibraryFileTextBox = new QLineEdit;
+  mpBrowseFigaroLibraryFileButton = new QPushButton(Helper::browse);
+  connect(mpBrowseFigaroLibraryFileButton, SIGNAL(clicked()), SLOT(browseFigaroLibraryFile()));
+  // Figaro model
+  mpFigaroModeLabel = new Label(tr("Figaro Mode:"));
+  mpFigaroModeComboBox = new QComboBox;
+  mpFigaroModeComboBox->addItem(tr("figaro0"), "figaro0");
+  mpFigaroModeComboBox->addItem(tr("fault-tree"), "fault-tree");
+  // figaro process
+  mpFigaroProcessLabel = new Label(tr("Figaro Process:"));
+  mpFigaroProcessTextBox = new QLineEdit;
+  mpBrowseFigaroProcessButton = new QPushButton(Helper::browse);
+  connect(mpBrowseFigaroProcessButton, SIGNAL(clicked()), SLOT(browseFigaroProcessFile()));
+  // set the layout
+  QGridLayout *pFigaroLayout = new QGridLayout;
+  pFigaroLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pFigaroLayout->addWidget(mpFigaroLibraryFileLabel, 0, 0);
+  pFigaroLayout->addWidget(mpFigaroLibraryFileTextBox, 0, 1);
+  pFigaroLayout->addWidget(mpBrowseFigaroLibraryFileButton, 0, 2);
+  pFigaroLayout->addWidget(mpFigaroModeLabel, 1, 0);
+  pFigaroLayout->addWidget(mpFigaroModeComboBox, 1, 1, 1, 2);
+  pFigaroLayout->addWidget(mpFigaroProcessLabel, 2, 0);
+  pFigaroLayout->addWidget(mpFigaroProcessTextBox, 2, 1);
+  pFigaroLayout->addWidget(mpBrowseFigaroProcessButton, 2, 2);
+  mpFigaroGroupBox->setLayout(pFigaroLayout);
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setAlignment(Qt::AlignTop);
+  pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->addWidget(mpFigaroGroupBox);
+  setLayout(pMainLayout);
+}
+
+void FigaroPage::browseFigaroLibraryFile()
+{
+  mpFigaroLibraryFileTextBox->setText(StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
+                                                                     NULL, "", NULL));
+}
+
+void FigaroPage::browseFigaroProcessFile()
+{
+  mpFigaroProcessTextBox->setText(StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
+                                                                 NULL, "", NULL));
 }

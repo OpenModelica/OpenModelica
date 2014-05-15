@@ -54,6 +54,7 @@ class NotificationsPage;
 class LineStylePage;
 class FillStylePage;
 class CurveStylePage;
+class FigaroPage;
 
 class OptionsDialog : public QDialog
 {
@@ -71,6 +72,7 @@ public:
   void readLineStyleSettings();
   void readFillStyleSettings();
   void readCurveStyleSettings();
+  void readFigaroSettings();
   void saveGeneralSettings();
   void saveLibrariesSettings();
   void saveModelicaTextSettings();
@@ -80,6 +82,7 @@ public:
   void saveLineStyleSettings();
   void saveFillStyleSettings();
   void saveCurveStyleSettings();
+  void saveFigaroSettings();
   void setUpDialog();
   void addListItems();
   void createPages();
@@ -93,6 +96,7 @@ public:
   LineStylePage* getLineStylePage();
   FillStylePage* getFillStylePage();
   CurveStylePage* getCurveStylePage();
+  FigaroPage* getFigaroPage();
 signals:
   void modelicaTextSettingsChanged();
   void updateLineWrapping();
@@ -112,6 +116,7 @@ private:
   LineStylePage *mpLineStylePage;
   FillStylePage *mpFillStylePage;
   CurveStylePage *mpCurveStylePage;
+  FigaroPage *mpFigaroPage;
   QSettings mSettings;
   QListWidget *mpOptionsList;
   QStackedWidget *mpPagesWidget;
@@ -536,6 +541,30 @@ private:
   QComboBox *mpCurvePatternComboBox;
   Label *mpCurveThicknessLabel;
   DoubleSpinBox *mpCurveThicknessSpinBox;
+};
+
+class FigaroPage : public QWidget
+{
+  Q_OBJECT
+public:
+  FigaroPage(OptionsDialog *pParent);
+  QLineEdit* getFigaroLibraryFileTextBox() {return mpFigaroLibraryFileTextBox;}
+  QComboBox* getFigaroModeComboBox() {return mpFigaroModeComboBox;}
+  QLineEdit* getFigaroProcessTextBox() {return mpFigaroProcessTextBox;}
+private:
+  OptionsDialog *mpOptionsDialog;
+  QGroupBox *mpFigaroGroupBox;
+  Label *mpFigaroLibraryFileLabel;
+  QLineEdit *mpFigaroLibraryFileTextBox;
+  QPushButton *mpBrowseFigaroLibraryFileButton;
+  Label *mpFigaroModeLabel;
+  QComboBox *mpFigaroModeComboBox;
+  Label *mpFigaroProcessLabel;
+  QLineEdit *mpFigaroProcessTextBox;
+  QPushButton *mpBrowseFigaroProcessButton;
+private slots:
+  void browseFigaroLibraryFile();
+  void browseFigaroProcessFile();
 };
 
 #endif // OPTIONSDIALOG_H
