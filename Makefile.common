@@ -104,7 +104,7 @@ build/include/omc/c/gc_pthread_redirects.h: 3rdParty/gc-7.2/include/gc_pthread_r
 	(cd 3rdParty/gc-7.2 && ./configure "--host=$(host)" $(LIBGC_EXTRA_CONFIGURATION) --disable-gcj-support --disable-java-finalization --enable-large-config CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS) -DLARGE_CONFIG -DTHREAD_LOCAL_ALLOC")
 
 3rdParty/Ipopt-3.11.6/Makefile: $(LAPACK_TARGET)
-	(cd 3rdParty/Ipopt-3.11.6 && ./configure --with-pic "CC=$(CC)" CXX="$(CXX)" F77="$(FC)" LDFLAGS="-L${abs_top_builddir}/build/lib/omc $(LDFLAGS)" --with-lapack="$(LD_LAPACK)" --with-blas="$(LD_LAPACK)" --without-metis)
+	(cd 3rdParty/Ipopt-3.11.6 && ./configure --with-pic "CC=$(CC)" CXX="$(CXX)" F77="$(FC)" LDFLAGS="-L${abs_top_builddir}/build/lib/omc $(LDFLAGS)" --with-lapack-lib="$(LD_LAPACK)" --with-blas-lib="$(LD_LAPACK)" --without-metis --without-HSLold --without-HSL)
 
 build/lib/omc/libipopt.la: 3rdParty/Ipopt-3.11.6/Makefile
 	$(MAKE) -C 3rdParty/Ipopt-3.11.6
