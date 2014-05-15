@@ -1981,6 +1981,17 @@ empty string is returned.</p>
   preferredView="text");
 end list;
 
+// exportToFigaro added by Alexander Carlqvist
+function exportToFigaro
+  input TypeName path;
+  input String library;
+  input String mode := "figaro0";
+  input String processor := "C:/st/figp.exe";
+  output Boolean success;
+external "builtin";
+annotation(preferredView="text");
+end exportToFigaro;
+
 function realpath "Get full path name of file or directory name"
   input String name "Absolute or relative file or directory name";
   output String fullName "Full path of 'name'";

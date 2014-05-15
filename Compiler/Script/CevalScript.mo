@@ -61,6 +61,10 @@ public import Interactive;
 public import Values;
 public import SimCode;
 public import UnitAbsyn;
+/* exportToFigaro added by Alexander Carlqvist
+The following line of code should be commented out when building from trunk.
+Uncomment when bootstrapping. */
+//public import Figaro;
 
 // protected imports
 protected import BackendDump;
@@ -1139,6 +1143,18 @@ algorithm
         (cache,Values.STRING(str),st);
 
     case (cache,_,"list",_,st,_) then (cache,Values.STRING(""),st);
+	
+	// exportToFigaro cases added by Alexander Carlqvist
+    case (cache, _, "exportToFigaro", {Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(filename), Values.STRING(str), Values.STRING(filename2)}, st as GlobalScript.SYMBOLTABLE(ast = p), _)
+      equation
+		(scodeP, _) = Interactive.symbolTableToSCode(st);
+		/* The following line of code should be commented out when building from trunk.
+		Uncomment when bootstrapping. */
+		//Figaro.run(scodeP, path, filename, str, filename2);
+      then (cache, Values.BOOL(true), st);
+    
+    case (cache, _, "exportToFigaro", _, st, _)
+      then (cache, Values.BOOL(false), st);
 
     case (cache,_,"listVariables",{},st as GlobalScript.SYMBOLTABLE(lstVarVal = iv),_)
       equation

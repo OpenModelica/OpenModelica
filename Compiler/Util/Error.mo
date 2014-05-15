@@ -822,6 +822,9 @@ public constant Message FILE_NOT_FOUND_ERROR = MESSAGE(7007, SCRIPTING(), ERROR(
   Util.gettext("File not Found: %s."));
 public constant Message UNKNOWN_FMU_VERSION = MESSAGE(7008, SCRIPTING(), ERROR(),
   Util.gettext("Unknown FMU version %s. Only version 1.0 & 2.0 are supported."));
+// FIGARO_ERROR added by Alexander Carlqvist
+public constant Message FIGARO_ERROR = MESSAGE(7009, SCRIPTING(), ERROR(),
+  Util.notrans("Figaro: %s."));
 
 protected import ErrorExt;
 
