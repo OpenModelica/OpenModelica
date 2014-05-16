@@ -99,12 +99,14 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
     strncpy(filename,data->modelData.modelFilePrefix,len);
     strncpy(&filename[len],"_prof.realdata",15);
     fmtReal = fopen(filename, "wb");
-    if(!fmtReal) {
+    if(!fmtReal)
+    {
       warningStreamPrint(LOG_SOLVER, 0, "Time measurements output file %s could not be opened: %s", filename, strerror(errno));
     }
     strncpy(&filename[len],"_prof.intdata",14);
     fmtInt = fopen(filename, "wb");
-    if(!fmtInt) {
+    if(!fmtInt)
+    {
       warningStreamPrint(LOG_SOLVER, 0, "Time measurements output file %s could not be opened: %s", filename, strerror(errno));
       fclose(fmtReal);
       fmtReal = NULL;
@@ -150,7 +152,7 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
       solverInfo->currentStepSize = (double)(__currStepNo*(simInfo->stopTime-simInfo->startTime))/(simInfo->numSteps) + simInfo->startTime - solverInfo->currentTime;
 
       // if retry reduce stepsize
-      if(retry)
+      if(0 != retry)
       {
         solverInfo->currentStepSize /= 2;
       }
@@ -223,16 +225,12 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
       /* Check for warning of variables out of range assert(min<x || x>xmax, ...)*/
       data->callback->checkForAsserts(data);
 
-      if(retry)
-      {
-        retry=0;
-      }
+      retry = 0; /* reset retry */
 
-      /***** Emit this time step *****/
       storePreValues(data);
       storeOldValues(data);
-      saveZeroCrossings(data);
 
+      /***** Emit this time step *****/
       if (fmtReal)
       {
         int flag = 1;
@@ -327,7 +325,7 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
 #endif
     if (!success) /* catch */
     {
-      if(!retry)
+      if(0 == retry)
       {
         /* reduce step size by a half and try again */
         solverInfo->laststep = solverInfo->currentTime - solverInfo->laststep;
