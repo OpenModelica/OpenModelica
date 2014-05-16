@@ -224,7 +224,7 @@ static inline void num_hessian0(double * v, const double * const lambda,
       diff_symColoredLagrange(optData, &optData->tmpJ[index_la], 2, scalb);
     diff_symColoredODE(optData, optData->tmpJ, 4, optData->bounds.scaldt[i]);
     /********************/
-    for(jj = 0; jj <nv; ++jj){
+    for(jj = 0; jj <ii+1; ++jj){
       if(optData->s.H0[ii][jj]){
         for(l = 0; l < nJ; ++l){
           if(optData->s.Hg[l][ii][jj] && lambda[l] != 0){
@@ -240,7 +240,7 @@ static inline void num_hessian0(double * v, const double * const lambda,
     if(upCost){
       const int index_la = optData->s.derIndex[0];
       h = objFactor/h;
-      for(jj = 0; jj <nv; ++jj){
+      for(jj = 0; jj <ii+1; ++jj){
         if(optData->s.Hl[ii][jj]){
           optData->Hl[ii][jj] = (long double)(optData->tmpJ[index_la][jj] - optData->J[i][j][index_la][jj])*h;
         }else{
@@ -308,7 +308,7 @@ static inline void num_hessian1(double * v, const double * const lambda,
       diff_symColoredLagrange(optData, &optData->tmpJ[index_la], 2, scalb);
     diff_symColoredODE(optData, optData->tmpJ, 4, optData->bounds.scaldt[i]);
     /********************/
-    for(jj = 0; jj <nv; ++jj){
+    for(jj = 0; jj <ii+1; ++jj){
       if(optData->s.H0[ii][jj]){
         for(l = 0; l < nJ; ++l){
           if(optData->s.Hg[l][ii][jj])
@@ -324,7 +324,7 @@ static inline void num_hessian1(double * v, const double * const lambda,
       const int index_la = optData->s.derIndex[0];
       long double hh;
       hh = objFactor/h;
-      for(jj = 0; jj <nv; ++jj){
+      for(jj = 0; jj <ii+1; ++jj){
         if(optData->s.Hl[ii][jj]){
           optData->Hl[ii][jj] = (long double)(optData->tmpJ[index_la][jj] - optData->J[i][j][index_la][jj])*hh;
         }else{
@@ -339,7 +339,7 @@ static inline void num_hessian1(double * v, const double * const lambda,
       long double hh;
       diff_symColoredMayer(optData, &optData->tmpJ[index_ma], 3);
       hh = objFactor/h;
-      for(jj = 0; jj <nv; ++jj){
+      for(jj = 0; jj <ii+1; ++jj){
         if(optData->s.Hm[ii][jj]){
           optData->Hm[ii][jj] = (long double)(optData->tmpJ[index_ma][jj] - optData->J[i][j][index_ma][jj])*hh;
         }else{
