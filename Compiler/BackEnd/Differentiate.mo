@@ -923,7 +923,7 @@ algorithm
         (derivedRHS as DAE.TUPLE(expLstRHS), functions) = differentiateExp(rhs, inDiffwrtCref, inInputData, inDiffType, functions);
         (DAE.TUPLE(expLstRHS),_) = ExpressionSimplify.simplify(derivedRHS);
         exptl = List.threadTuple(dexpLst, expLstRHS);
-        derivedStatements1 = List.map1(exptl, Algorithm.makeSimpleAssingment, source); 
+        derivedStatements1 = List.map1(exptl, Algorithm.makeSimpleAssingment, source);
         derivedStatements1 = listAppend(derivedStatements1, {currStatement});
         derivedStatements1 = listAppend(derivedStatements1, inStmtsAccum);
         (derivedStatements2, functions) = differentiateStatements(restStatements, inDiffwrtCref, inInputData, inDiffType, derivedStatements1, functions);
