@@ -63,12 +63,21 @@ Bool evalfF(Index n, Number * vopt, Bool new_x, Number *objValue, void * useData
     modelica_real *** v = optData->v;
     long double erg = 0.0;
     long double erg1 = 0.0;
+    long double erg0[np];
     int i,j;
 
-    for(i = 0; i + 1 < nsi; ++i){
+    for(j = 0; j< np; ++j){
+      erg0[j] = v[0][j][il];
+    }
+
+    for(i = 1; i + 1 < nsi; ++i){
       for(j = 0; j< np; ++j){
-        erg += b[j]*v[i][j][il];
+        erg0[j] += v[i][j][il];
       }
+    }
+
+    for(j = 0; j< np; ++j){
+      erg += b[j]*erg0[j];
     }
 
     i = nsi - 1;
@@ -130,10 +139,8 @@ Bool evalfDiffF(Index n, double * vopt, Bool new_x, Number *gradF, void * useDat
   if(ma){
     const int k = optData->s.derIndex[1];
     modelica_real * gradM = optData->J[nsi - 1][np -1][k];
-
-    int i, ii;
-
     if(la){
+      int i, ii;
       for(i = 0, ii = n - nv; i < nv; ++i, ++ii)
         gradF[ii] += gradM[i];
     }else{
