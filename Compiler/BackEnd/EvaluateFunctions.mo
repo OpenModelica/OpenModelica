@@ -1571,7 +1571,7 @@ algorithm
       then (rest,(funcTree,repl,idx));
     else
       equation
-        print("evaluateFunctions_updateStatement failed for!\n"+&DAEDump.ppStatementStr(List.first(algsIn))+&"\n");
+        Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"evaluateFunctions_updateStatement failed for!\n"+&DAEDump.ppStatementStr(List.first(algsIn))+&"\n");
       then
         fail();
   end matchcontinue;
@@ -1618,7 +1618,7 @@ algorithm
        (eval,stmts1);
      else
        equation
-         print("evaluateIfStatement failed \n");
+         Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"evaluateIfStatement failed \n");
        then
          fail();
   end matchcontinue;
