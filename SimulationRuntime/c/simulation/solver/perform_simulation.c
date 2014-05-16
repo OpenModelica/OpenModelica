@@ -271,7 +271,7 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
       }
 
       printAllVarsDebug(data, 0, LOG_DEBUG);  /* ??? */
-      /***** end of Emit this time step *****/
+      /***** End of Emit this time step *****/
 
       /* save dassl stats before reset */
       if (solverInfo->didEventStep == 1 && solverInfo->solverMethod == S_DASSL)
@@ -296,36 +296,28 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
        * - non-linear system failed to solve
        * - assert was called
        */
-      if (retValIntegrator != 0
-       || check_nonlinear_solutions(data, 0)
-       || check_linear_solutions(data, 0)
-       || check_mixed_solutions(data, 0))
+      if(retValIntegrator)
       {
-        if(retValIntegrator)
-        {
-          retValue = -1 + retValIntegrator;
-          infoStreamPrint(LOG_STDOUT, 0, "model terminate | Integrator failed. | Simulation terminated at time %g", solverInfo->currentTime);
-        }
-        else if(check_nonlinear_solutions(data, 0))
-        {
-          retValue = -2;
-          infoStreamPrint(LOG_STDOUT, 0, "model terminate | non-linear system solver failed. | Simulation terminated at time %g", solverInfo->currentTime);
-        }
-        else if(check_linear_solutions(data, 0))
-        {
-          retValue = -3;
-          infoStreamPrint(LOG_STDOUT, 0, "model terminate | linear system solver failed. | Simulation terminated at time %g", solverInfo->currentTime);
-        }
-        else if(check_mixed_solutions(data, 0))
-        {
-          retValue = -3;
-          infoStreamPrint(LOG_STDOUT, 0, "model terminate | mixed system solver failed. | Simulation terminated at time %g", solverInfo->currentTime);
-        }
-        else
-        {
-          retValue = -1;
-          infoStreamPrint(LOG_STDOUT, 0, "model terminate | probably a strong component solver failed. For more information use flags -lv LOG_NLS, LOG_LS. | Simulation terminated at time %g", solverInfo->currentTime);
-        }
+        retValue = -1 + retValIntegrator;
+        infoStreamPrint(LOG_STDOUT, 0, "model terminate | Integrator failed. | Simulation terminated at time %g", solverInfo->currentTime);
+        break;
+      }
+      else if(check_nonlinear_solutions(data, 0))
+      {
+        retValue = -2;
+        infoStreamPrint(LOG_STDOUT, 0, "model terminate | non-linear system solver failed. | Simulation terminated at time %g", solverInfo->currentTime);
+        break;
+      }
+      else if(check_linear_solutions(data, 0))
+      {
+        retValue = -3;
+        infoStreamPrint(LOG_STDOUT, 0, "model terminate | linear system solver failed. | Simulation terminated at time %g", solverInfo->currentTime);
+        break;
+      }
+      else if(check_mixed_solutions(data, 0))
+      {
+        retValue = -4;
+        infoStreamPrint(LOG_STDOUT, 0, "model terminate | mixed system solver failed. | Simulation terminated at time %g", solverInfo->currentTime);
         break;
       }
       success = 1;
@@ -333,7 +325,8 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
 #if !defined(OMC_EMCC)
     MMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
-    if (!success) { /* catch */
+    if (!success) /* catch */
+    {
       if(!retry)
       {
         /* reduce step size by a half and try again */
@@ -346,7 +339,9 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
         warningStreamPrint(LOG_STDOUT, 0, "Integrator attempt to handle a problem with a called assert.");
         retry = 1;
         solverInfo->didEventStep = 1;
-      } else {
+      }
+      else
+      {
         retValue =  -1;
         infoStreamPrint(LOG_STDOUT, 0, "model terminate | Simulation terminated by an assert at time: %g", data->localData[0]->timeValue);
         break;
@@ -354,11 +349,13 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
     }
   } /* end while solver */
 
-  if(fmtInt) {
+  if(fmtInt)
+  {
     fclose(fmtInt);
     fmtInt = NULL;
   }
-  if(fmtReal) {
+  if(fmtReal)
+  {
     fclose(fmtReal);
     fmtReal = NULL;
   }

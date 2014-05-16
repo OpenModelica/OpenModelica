@@ -136,25 +136,24 @@ int checkForStateEvent(DATA* data, LIST *eventList)
     const char *exp_str = data->callback->zeroCrossingDescription(i,&eq_indexes);
     debugStreamPrintWithEquationIndexes(LOG_EVENTS, 1, eq_indexes, "%s", exp_str);
 
-    if((data->simulationInfo.zeroCrossings[i] == 1 && data->simulationInfo.zeroCrossingsPre[i] == -1) ||
-       (data->simulationInfo.zeroCrossings[i] == -1 && data->simulationInfo.zeroCrossingsPre[i] == 1)) {
-      debugStreamPrint(LOG_EVENTS, 0, "changed:   %s -> %s", (data->simulationInfo.zeroCrossingsPre[i]>0) ? "TRUE" : "FALSE", (data->simulationInfo.zeroCrossings[i]>0) ? "TRUE" : "FALSE");
+    if(sign(data->simulationInfo.zeroCrossings[i]) != sign(data->simulationInfo.zeroCrossingsPre[i]))
+    {
+      debugStreamPrint(LOG_EVENTS, 0, "changed:   %s", (data->simulationInfo.zeroCrossingsPre[i] > 0) ? "TRUE -> FALSE" : "FALSE -> TRUE");
       listPushFront(eventList, &(data->simulationInfo.zeroCrossingIndex[i]));
-    } else {
-      debugStreamPrint(LOG_EVENTS, 0, "unchanged: %s -> %s", (data->simulationInfo.zeroCrossingsPre[i]>0) ? "TRUE" : "FALSE", (data->simulationInfo.zeroCrossings[i]>0) ? "TRUE" : "FALSE");
+    }
+    else
+    {
+      debugStreamPrint(LOG_EVENTS, 0, "unchanged: %s", (data->simulationInfo.zeroCrossingsPre[i] > 0) ? "TRUE -- TRUE" : "FALSE -- FALSE");
     }
 
-    if (DEBUG_STREAM(LOG_EVENTS)) {
+    if (DEBUG_STREAM(LOG_EVENTS))
       messageClose(LOG_EVENTS);
-    }
   }
-  if (DEBUG_STREAM(LOG_EVENTS)) {
+  if (DEBUG_STREAM(LOG_EVENTS))
     messageClose(LOG_EVENTS);
-  }
 
-  if(listLen(eventList) > 0) {
+  if(listLen(eventList) > 0)
     return 1;
-  }
   return 0;
 }
 
