@@ -415,7 +415,7 @@ static inline void updateDerF(OptData *optData){
 
   if(la){
     const int index_la = optData->s.derIndex[0];
-    const long double *** scalb = optData->bounds.scalb;
+    long double *** scalb = optData->bounds.scalb;
     int i, j;
     for(i = 0; i < nsi; ++i){
       for(j = 0; j < np; ++j){

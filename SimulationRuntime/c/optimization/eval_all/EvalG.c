@@ -197,7 +197,7 @@ Bool evalfDiffG(Index n, double * vopt, Bool new_x, Index m, Index njac, Index *
     const int nx = optData->dim.nx;
     const int nv = optData->dim.nv;
     const int nJ = optData->dim.nJ;
-    const modelica_boolean ** J = optData->s.J[4];
+    modelica_boolean ** J = optData->s.J[4];
     int i, j, k, l, ii;
 
     if(new_x)

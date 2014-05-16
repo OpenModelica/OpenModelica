@@ -524,7 +524,7 @@ void optData2ModelData(OptData *optData, double *vopt, const int index){
   const int index_la = optData->s.derIndex[0];
 
   const modelica_real * vnom = optData->bounds.vnom;
-  const long double *** scalb = optData->bounds.scalb;
+  long double *** scalb = optData->bounds.scalb;
 
   modelica_real * realVars[3];
 
