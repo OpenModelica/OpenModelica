@@ -133,8 +133,11 @@ Bool evalfDiffF(Index n, double * vopt, Bool new_x, Number *gradF, void * useDat
 
     int i, ii;
 
-    for(i = 0, ii = n - nv; i < nv; ++i, ++ii){
-      gradF[ii] += gradM[i];
+    if(la){
+      for(i = 0, ii = n - nv; i < nv; ++i, ++ii)
+        gradF[ii] += gradM[i];
+    }else{
+      memcpy(gradF + n - nv, gradM, nv*sizeof(modelica_real));
     }
 
   }
