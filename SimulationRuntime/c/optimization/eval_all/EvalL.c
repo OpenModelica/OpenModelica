@@ -197,6 +197,13 @@ static inline void num_hessian0(double * v, const double * const lambda,
   int ii,jj, l;
   long double v_save, h;
 
+  modelica_real * realV[3];
+
+  for(l = 1; l<3; ++l){
+    realV[l] = data->localData[l]->realVars;
+    data->localData[l]->realVars = optData->v[i][j];
+  }
+
   for(ii = 0; ii < nv; ++ii){
     /********************/
     v_save = (long double) v[ii];
@@ -218,7 +225,7 @@ static inline void num_hessian0(double * v, const double * const lambda,
     data->callback->input_function(data);
     data->callback->functionDAE(data);
     /********************/
-    v[ii] = v_save;
+    v[ii] = (double)v_save;
     /********************/
     if(upCost)
       diff_symColoredLagrange(optData, &optData->tmpJ[index_la], 2, scalb);
@@ -252,6 +259,10 @@ static inline void num_hessian0(double * v, const double * const lambda,
     /********************/
   }
 
+  for(l = 1; l<3; ++l){
+    data->localData[l]->realVars = realV[l];
+  }
+
 }
 
 
@@ -281,6 +292,13 @@ static inline void num_hessian1(double * v, const double * const lambda,
   long double v_save, h;
   DATA * data = optData->data;
 
+  modelica_real * realV[3];
+
+  for(l = 1; l<3; ++l){
+    realV[l] = data->localData[l]->realVars;
+    data->localData[l]->realVars = optData->v[i][j];
+  }
+
   for(ii = 0; ii < nv; ++ii){
     /********************/
     v_save = (long double) v[ii];
@@ -302,7 +320,7 @@ static inline void num_hessian1(double * v, const double * const lambda,
     data->callback->input_function(data);
     data->callback->functionDAE(data);
     /********************/
-    v[ii] = v_save;
+    v[ii] = (double)v_save;
     /********************/
     if(upCost)
       diff_symColoredLagrange(optData, &optData->tmpJ[index_la], 2, scalb);
@@ -351,6 +369,10 @@ static inline void num_hessian1(double * v, const double * const lambda,
     /********************/
   }
 
+  for(l = 1; l<3; ++l){
+    data->localData[l]->realVars = realV[l];
+  }
+
 }
 
 
@@ -361,13 +383,14 @@ static inline void sumLagrange0(const int i, const int j, double * res,
     const modelica_boolean upC, OptData *optData){
   const int nJ = optData->dim.nJ;
 
-  long double sum = 0;
+  long double sum = 0.0;
   int l;
-  if(optData->s.H0[i][j])
-    for(l = 0; l< nJ; ++l){
-      if(optData->s.Hg[l][i][j])
-        sum += optData->H[l][i][j];
-    }
+
+  for(l = 0; l< nJ; ++l){
+    if(optData->s.Hg[l][i][j])
+      sum += optData->H[l][i][j];
+  }
+
   if(upC && optData->s.Hl[i][j])
     sum += optData->Hl[i][j];
 
@@ -382,17 +405,18 @@ static inline void sumLagrange1(const int i, const int j, double * res,
     const modelica_boolean upC, const modelica_boolean upC2, OptData *optData){
   const int nJ = optData->dim.nJ;
 
-  long double sum = 0;
-  int l;
+  long double sum = 0.0;
 
-  if(optData->s.H0[i][j])
+  if(optData->s.H0[i][j]){
+    int l;
     for(l = 0; l< nJ; ++l){
       if(optData->s.Hg[l][i][j])
         sum += optData->H[l][i][j];
     }
 
-  if(upC && optData->s.Hl[i][j])
-    sum += optData->Hl[i][j];
+    if(upC && optData->s.Hl[i][j])
+      sum += optData->Hl[i][j];
+  }
 
   if(upC2 && optData->s.Hm[i][j])
     sum += optData->Hm[i][j];
