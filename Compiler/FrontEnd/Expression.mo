@@ -1570,7 +1570,7 @@ author:Waurich TUD 2014-04"
   input DAE.Exp e;
   output list<DAE.Exp> es;
 algorithm
-  es := match(e)
+  es := matchcontinue(e)
     local
       Boolean noArr;
       DAE.ComponentRef cref;
@@ -1618,7 +1618,7 @@ algorithm
     equation
     then
       {};
-  end match;
+  end matchcontinue;
 end getComplexContents;
 
 protected function getComplexContentsInCall"gets the scalars for the complex expressions inside a function call"

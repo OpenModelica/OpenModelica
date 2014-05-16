@@ -298,16 +298,12 @@ algorithm
 
         // get all input crefs and expresssions (scalar and one dimensioanl)
         allInputs = List.filter(elements,DAEUtil.isInputVar);
-        scalarInputs = List.map(allInputs,getScalarsForComplexVar);
-        inputs1d = List.filterOnTrue(allInputs,isNotComplexVar);
-        inputCrefs = List.map(inputs1d,DAEUtil.varCref);  // the one dimensional variables
-        allInputCrefs = listAppend(inputCrefs,List.flatten(scalarInputs));
+        scalarInputs = List.map(allInputs,expandComplexElementsToCrefs);
+        allInputCrefs = List.flatten(scalarInputs);
         //print("\nallInputCrefs\n"+&stringDelimitList(List.map(allInputCrefs,ComponentReference.printComponentRefStr),"\n")+&"\n");
 
-        //((exps,_)) = Expression.traverseExpListTopDown(exps,evaluateConstantFunctionWrapper,(lhsExpIn,funcsIn,eqIdx,{}));// in case: xOut=func(func(xIn))
-        scalarExp = List.map(exps,Expression.getComplexContents);
-        inputExps = List.filterOnTrue(exps,Expression.isNotComplex);
-        allInputExps = listAppend(inputExps,List.flatten(scalarExp));
+        scalarExp = List.map(exps,expandComplexEpressions);
+        allInputExps = List.flatten(scalarExp);
         //print("\nallInputExps\n"+&stringDelimitList(List.map(allInputExps,ExpressionDump.printExpStr),"\n")+&"\n");
 
         // get all output crefs (complex and scalar)
@@ -424,6 +420,47 @@ algorithm
         ((rhsExpIn,lhsExpIn,{},funcsIn,eqIdx));
   end matchcontinue;
 end evaluateConstantFunction;
+
+protected function expandComplexEpressions"gets the complex contents or if its not complex, then the exp itself
+author:Waurich TUD 2014-05"
+  input DAE.Exp e;
+  output list<DAE.Exp> eLst;
+algorithm
+  eLst := matchcontinue(e)
+    local
+      list<DAE.Exp> lst;
+    case(_)
+      equation
+        lst = Expression.getComplexContents(e);
+        true = List.isNotEmpty(lst);
+      then
+        lst;
+    else
+      then {e};
+  end matchcontinue;
+end expandComplexEpressions;
+
+protected function expandComplexElementsToCrefs"gets the complex contents or if its not complex, then the element itself and converts them to crefs.
+author:Waurich TUD 2014-05"
+  input DAE.Element e;
+  output list<DAE.ComponentRef> eLst;
+algorithm
+  eLst := matchcontinue(e)
+    local
+      DAE.ComponentRef cref;
+      list<DAE.ComponentRef> lst;
+    case(_)
+      equation
+        false = isNotComplexVar(e);
+        lst = getScalarsForComplexVar(e);
+      then
+        lst;
+    else
+      equation
+        cref = DAEUtil.varCref(e);
+      then {cref};
+  end matchcontinue;
+end expandComplexElementsToCrefs;
 
 protected function hasAssertFold"fold function to check if a list of stmts has an assert.
 author:Waurich TUD 2014-04"
