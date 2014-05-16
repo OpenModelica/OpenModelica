@@ -13,10 +13,10 @@ Kinsol::Kinsol(IAlgLoop* algLoop, INonLinSolverSettings* settings)
     , _fScale   (NULL)
     , _f        (NULL)
     , _helpArray    (NULL)
-	, _zeroVec (NULL)
+  , _zeroVec (NULL)
     , _jac    (NULL)
-	,_fHelp(NULL)
-	,_yHelp(NULL)
+  ,_fHelp(NULL)
+  ,_yHelp(NULL)
     , _dimSys      (0)
   , _fnorm(10.0)
   , _currentIterateNorm (100.0)
@@ -36,7 +36,7 @@ Kinsol::~Kinsol()
     if(_helpArray)      delete []  _helpArray;
     if(_jac)      delete []  _jac;
     if(_fHelp)    delete []    _fHelp;
-	if(_zeroVec)    delete []    _zeroVec;
+  if(_zeroVec)    delete []    _zeroVec;
     N_VDestroy_Serial(_Kin_y);
     N_VDestroy_Serial(_Kin_y0);
     N_VDestroy_Serial(_Kin_yScale);
@@ -77,14 +77,14 @@ void Kinsol::initialize()
             if(_jac)     delete []  _jac;
             if(_yHelp)    delete []    _yHelp;
              if(_fHelp)    delete []    _fHelp;
-			 if(_zeroVec)    delete []    _zeroVec;
+       if(_zeroVec)    delete []    _zeroVec;
             _y      = new double[_dimSys];
             _y0         = new double[_dimSys];
             _yScale     = new double[_dimSys];
             _fScale     = new double[_dimSys];
             _f      = new double[_dimSys];
             _helpArray    = new double[_dimSys];
-			_zeroVec   = new double[_dimSys];
+      _zeroVec   = new double[_dimSys];
 
             _jac      = new double[_dimSys*_dimSys];
             _yHelp        = new double[_dimSys];
@@ -97,7 +97,7 @@ void Kinsol::initialize()
             memset(_yHelp,0,_dimSys*sizeof(double));
             memset(_fHelp,0,_dimSys*sizeof(double));
             memset(_jac,0,_dimSys*_dimSys*sizeof(double));
-			 memset(_zeroVec,0,_dimSys*sizeof(double));
+       memset(_zeroVec,0,_dimSys*sizeof(double));
 
             _algLoop->getNominalReal(_yScale);
 
@@ -166,23 +166,23 @@ void Kinsol::solve()
         long int dimRHS  = 1;          // Dimension of right hand side of linear system (=b)
         long int dimSys = _dimSys;
         long int irtrn  = 0;          // Retrun-flag of Fortran code
-         
-		 _algLoop->setReal(_zeroVec);
-		 _algLoop->evaluate();
+
+     _algLoop->setReal(_zeroVec);
+     _algLoop->evaluate();
          _algLoop->getRHS(_f);
-		 _algLoop->getReal(_y);
-		  calcJacobian(_f,_y);
+     _algLoop->getReal(_y);
+      calcJacobian(_f,_y);
         dgesv_(&dimSys,&dimRHS,_jac,&dimSys,_fHelp,_f,&dimSys,&irtrn);
-		for(int i=0;i<_dimSys;i++)
-			_f[i]*=-1.0;
+    for(int i=0;i<_dimSys;i++)
+      _f[i]*=-1.0;
         memcpy(_y,_f,_dimSys*sizeof(double));
-     	_algLoop->setReal(_y);
-		 //_algLoop->evaluate();
-		if(irtrn != 0)
+       _algLoop->setReal(_y);
+     //_algLoop->evaluate();
+    if(irtrn != 0)
             throw std::runtime_error("error solving linear tearing system");
         else
           _iterationStatus = DONE;
-    
+
     }
     else
     {

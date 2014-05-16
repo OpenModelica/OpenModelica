@@ -1542,7 +1542,7 @@ match eq
    <%getAMatrixCode(simCode,eq)%>
    <%isLinearCode(simCode,eq)%>
    <%isLinearTearingCode(simCode,eq)%>
-   
+
     >>
 end algloopCppFile;
 
@@ -3171,7 +3171,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
          return false;
    }
   >>
-  
+
  case SES_LINEAR(__) then
    <<
      bool <%modelname%>Algloop<%index%>::isLinear()
@@ -3492,7 +3492,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       >>
     %>
     }
-     
+
    }
    <%writeoutput1(modelInfo)%>
   >>
