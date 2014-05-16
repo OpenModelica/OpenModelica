@@ -290,6 +290,19 @@ algorithm
   end matchcontinue;
 end makeAssignment2;
 
+public function makeSimpleAssingment
+  input tuple<DAE.Exp, DAE.Exp> inTpl;
+  input DAE.ElementSource source;
+  output DAE.Statement outStmt;
+protected
+  DAE.Exp e1, e2;
+  DAE.ComponentRef cr;
+  DAE.Type tp;
+algorithm
+  (e1 as DAE.CREF(cr, tp), e2) := inTpl;
+  outStmt := DAE.STMT_ASSIGN(tp, e1, e2, source);
+end makeSimpleAssingment;
+
 public function makeAssignmentsList
   input list<DAE.Exp> lhsExps;
   input list<DAE.Properties> lhsProps;

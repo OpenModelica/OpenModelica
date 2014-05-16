@@ -50,6 +50,7 @@ public import DAEUtil;
 public import Types;
 
 // protected imports
+protected import Algorithm;
 protected import BackendDump;
 protected import BackendDAECreate;
 protected import BackendDAEUtil;
@@ -896,8 +897,9 @@ algorithm
     DAE.Exp exp;
     DAE.Exp elseif_exp;
     DAE.Else elseif_else_;
-    list<DAE.Exp> expLst, dexpLst;
+    list<DAE.Exp> expLst, dexpLst, expLstRHS;
     Integer index;
+    list<tuple<DAE.Exp, DAE.Exp>> exptl;
 
     list<DAE.Statement> statementLst, restStatements, derivedStatements1, derivedStatements2, else_statementLst, elseif_statementLst;
 
@@ -918,9 +920,11 @@ algorithm
     case ((currStatement as DAE.STMT_TUPLE_ASSIGN(expExpLst= expLst, exp=rhs, type_=type_, source=source))::restStatements, _, _, _, _, _)
       equation
         (dexpLst,functions) = List.map3Fold(expLst, differentiateExp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
-        (derivedRHS, functions) = differentiateExp(rhs, inDiffwrtCref, inInputData, inDiffType, functions);
-        (derivedRHS,_) = ExpressionSimplify.simplify(derivedRHS);
-        derivedStatements1 = {DAE.STMT_TUPLE_ASSIGN(type_, dexpLst, derivedRHS, source), currStatement};
+        (derivedRHS as DAE.TUPLE(expLstRHS), functions) = differentiateExp(rhs, inDiffwrtCref, inInputData, inDiffType, functions);
+        (DAE.TUPLE(expLstRHS),_) = ExpressionSimplify.simplify(derivedRHS);
+        exptl = List.threadTuple(dexpLst, expLstRHS);
+        derivedStatements1 = List.map1(exptl, Algorithm.makeSimpleAssingment, source); 
+        derivedStatements1 = listAppend(derivedStatements1, {currStatement});
         derivedStatements1 = listAppend(derivedStatements1, inStmtsAccum);
         (derivedStatements2, functions) = differentiateStatements(restStatements, inDiffwrtCref, inInputData, inDiffType, derivedStatements1, functions);
     then (derivedStatements2, functions);
