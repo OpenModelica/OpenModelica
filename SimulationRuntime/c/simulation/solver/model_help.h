@@ -38,7 +38,12 @@ extern "C" {
 
 /* lochel: I guess this is used for discrete relations */
 #define RELATION(res,exp1,exp2,index,op_w) { \
-  if(data->simulationInfo.discreteCall == 0 || data->simulationInfo.solveContinuous) \
+  if(data->simulationInfo.initial) \
+  { \
+    res = ((op_w)((exp1),(exp2))); \
+    data->simulationInfo.relations[index] = res; \
+  } \
+  else if(data->simulationInfo.discreteCall == 0 || data->simulationInfo.solveContinuous) \
   { \
     res = data->simulationInfo.relationsPre[index]; \
   } \
@@ -62,7 +67,7 @@ extern "C" {
   } \
   else \
   { \
-    res = ((op_w##ZC)((exp1),(exp2),data->simulationInfo.hysteresisEnabled[index])); \
+    res = ((op_w##ZC)((exp1),(exp2),data->simulationInfo.relationsPre[index])); \
     data->simulationInfo.relations[index] = res; \
   } \
 }
@@ -106,13 +111,13 @@ void restoreOldValues(DATA *data);
 
 void storePreValues(DATA *data);
 
-void storeRelations(DATA *data);
+void updateRelationsPre(DATA *data);
 
 modelica_boolean checkRelations(DATA *data);
 
 void printHysteresisRelations(DATA *data);
 void activateHysteresis(DATA* data);
-void updateHysteresis(DATA* data);
+void storeRelations(DATA* data);
 void setZCtol(double relativeTol);
 
 double getNextSampleTimeFMU(DATA *data);

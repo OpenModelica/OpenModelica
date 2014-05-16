@@ -377,7 +377,7 @@ void findRoot(DATA* data, LIST *eventList, double *eventTime)
 
   /* determined continuous system */
   updateContinuousSystem(data);
-  storeRelations(data);
+  updateRelationsPre(data);
   /*sim_result_emit(data);*/
 
   data->localData[0]->timeValue = *eventTime;

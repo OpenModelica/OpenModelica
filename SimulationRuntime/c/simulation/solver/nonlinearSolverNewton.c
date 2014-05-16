@@ -299,7 +299,7 @@ int solveNewton(DATA *data, int sysNumber)
         wrapper_fvec_newton(&solverData->n, solverData->x, solverData->fvec, &iflag, data, sysNumber);
 
         ((DATA*)data)->simulationInfo.solveContinuous = 1;
-        storeRelations(data);
+        updateRelationsPre(data);
       }
     }
     /* check for error  */

@@ -8415,19 +8415,19 @@ case rel as RELATION(__) then
         let isReal = if isRealType(typeof(rel.exp1)) then (if isRealType(typeof(rel.exp2)) then 'true' else '') else ''
         match rel.operator
         case LESS(__) then
-          let hysteresisfunction = if isReal then 'LessZC(<%e1%>,<%e2%>, data->simulationInfo.hysteresisEnabled[<%rel.index%>])' else 'Less(<%e1%>,<%e2%>)'
+          let hysteresisfunction = if isReal then 'LessZC(<%e1%>, <%e2%>, data->simulationInfo.storedRelations[<%rel.index%>])' else 'Less(<%e1%>,<%e2%>)'
           let &preExp += '<%res%> = <%hysteresisfunction%>;<%\n%>'
           res
         case LESSEQ(__) then
-          let hysteresisfunction = if isReal then 'LessEqZC(<%e1%>,<%e2%>, data->simulationInfo.hysteresisEnabled[<%rel.index%>])' else 'LessEq(<%e1%>,<%e2%>)'
+          let hysteresisfunction = if isReal then 'LessEqZC(<%e1%>, <%e2%>, data->simulationInfo.storedRelations[<%rel.index%>])' else 'LessEq(<%e1%>,<%e2%>)'
           let &preExp += '<%res%> = <%hysteresisfunction%>;<%\n%>'
           res
         case GREATER(__) then
-          let hysteresisfunction = if isReal then 'GreaterZC(<%e1%>,<%e2%>, data->simulationInfo.hysteresisEnabled[<%rel.index%>])' else 'Greater(<%e1%>,<%e2%>)'
+          let hysteresisfunction = if isReal then 'GreaterZC(<%e1%>, <%e2%>, data->simulationInfo.storedRelations[<%rel.index%>])' else 'Greater(<%e1%>,<%e2%>)'
           let &preExp += '<%res%> = <%hysteresisfunction%>;<%\n%>'
           res
         case GREATEREQ(__) then
-          let hysteresisfunction = if isReal then 'GreaterEqZC(<%e1%>,<%e2%>, data->simulationInfo.hysteresisEnabled[<%rel.index%>])' else 'GreaterEq(<%e1%>,<%e2%>)'
+          let hysteresisfunction = if isReal then 'GreaterEqZC(<%e1%>, <%e2%>, data->simulationInfo.storedRelations[<%rel.index%>])' else 'GreaterEq(<%e1%>,<%e2%>)'
           let &preExp += '<%res%> = <%hysteresisfunction%>;<%\n%>'
           res
         end match
@@ -8454,19 +8454,19 @@ case rel as RELATION(__) then
         let isReal = if isRealType(typeof(rel.exp1)) then (if isRealType(typeof(rel.exp2)) then 'true' else '') else ''
         match rel.operator
         case LESS(__) then
-          let hysteresisfunction = if isReal then 'LessZC(<%e1%>,<%e2%>, data->simulationInfo.hysteresisEnabled[<%rel.index%>])' else 'Less(<%e1%>,<%e2%>)'
+          let hysteresisfunction = if isReal then 'LessZC(<%e1%>, <%e2%>, data->simulationInfo.storedRelations[<%rel.index%>])' else 'Less(<%e1%>,<%e2%>)'
           let &preExp += '<%res%> = <%hysteresisfunction%>;<%\n%>'
           res
         case LESSEQ(__) then
-          let hysteresisfunction = if isReal then 'LessEqZC(<%e1%>,<%e2%>, data->simulationInfo.hysteresisEnabled[<%rel.index%>])' else 'LessEq(<%e1%>,<%e2%>)'
+          let hysteresisfunction = if isReal then 'LessEqZC(<%e1%>, <%e2%>, data->simulationInfo.storedRelations[<%rel.index%>])' else 'LessEq(<%e1%>,<%e2%>)'
           let &preExp += '<%res%> = <%hysteresisfunction%>;<%\n%>'
           res
         case GREATER(__) then
-          let hysteresisfunction = if isReal then 'GreaterZC(<%e1%>,<%e2%>, data->simulationInfo.hysteresisEnabled[<%rel.index%>])' else 'Greater(<%e1%>,<%e2%>)'
+          let hysteresisfunction = if isReal then 'GreaterZC(<%e1%>, <%e2%>, data->simulationInfo.storedRelations[<%rel.index%>])' else 'Greater(<%e1%>,<%e2%>)'
           let &preExp += '<%res%> = <%hysteresisfunction%>;<%\n%>'
           res
         case GREATEREQ(__) then
-          let hysteresisfunction = if isReal then 'GreaterEqZC(<%e1%>,<%e2%>, data->simulationInfo.hysteresisEnabled[<%rel.index%>])' else 'GreaterEq(<%e1%>,<%e2%>)'
+          let hysteresisfunction = if isReal then 'GreaterEqZC(<%e1%>, <%e2%>, data->simulationInfo.storedRelations[<%rel.index%>])' else 'GreaterEq(<%e1%>,<%e2%>)'
           let &preExp += '<%res%> = <%hysteresisfunction%>;<%\n%>'
           res
         end match

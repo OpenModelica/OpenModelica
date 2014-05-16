@@ -216,7 +216,7 @@ int solveMixedSearch(DATA *data, int sysNumber)
     /* restart if any relation has changed */
     if(checkRelations(data))
     {
-      storeRelations(data);
+      updateRelationsPre(data);
       systemData->updateIterationExps(data);
       debugStreamPrint(LOG_NLS, 0, "#### System relation changed restart iteration");
       if(mixedIterations++ > 200)

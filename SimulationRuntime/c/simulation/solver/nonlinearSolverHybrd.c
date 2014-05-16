@@ -666,7 +666,7 @@ int solveHybrd(DATA *data, int sysNumber)
         if(scaling)
           solverData->useXScaling = 1;
 
-        storeRelations(data);
+        updateRelationsPre(data);
       }
     }
 

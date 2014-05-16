@@ -67,8 +67,8 @@ void updateDiscreteSystem(DATA *data)
   data->simulationInfo.needToIterate = 0;
 
   data->callback->function_updateRelations(data, 1);
+  updateRelationsPre(data);
   storeRelations(data);
-  updateHysteresis(data);
 
   /* should we print the relations before functionDAE?
    * printRelations(data, LOG_EVENTS_V);
@@ -91,7 +91,7 @@ void updateDiscreteSystem(DATA *data)
       debugStreamPrint(LOG_EVENTS_V, 0, "discrete Variable changed. Iteration needed.");
 
     storePreValues(data);
-    storeRelations(data);
+    updateRelationsPre(data);
 
     printRelations(data, LOG_EVENTS_V);
 
@@ -104,7 +104,7 @@ void updateDiscreteSystem(DATA *data)
     relationChanged = checkRelations(data);
     discreteChanged = data->callback->checkForDiscreteChanges(data);
   }
-  updateHysteresis(data);
+  storeRelations(data);
 }
 
 /*! \fn updateContinuousSystem
@@ -606,22 +606,6 @@ void storePreValues(DATA *data)
   memcpy(sInfo->stringVarsPre, sData->stringVars, sizeof(modelica_string)*mData->nVariablesString);
 }
 
-/*! \fn storeRelations
- *
- *  This function copys all the relations results  into their pre-values.
- *
- *  \param [ref] [data]
- *
- *  \author wbraun
- */
-void storeRelations(DATA *data){
-
-  MODEL_DATA      *mData = &(data->modelData);
-  SIMULATION_INFO *sInfo = &(data->simulationInfo);
-
-  memcpy(sInfo->relationsPre, sInfo->relations, sizeof(modelica_boolean)*mData->nRelations);
-}
-
 /*! \fn checkRelations
  *
  *  This function check if at least one backupRelation has changed
@@ -630,16 +614,18 @@ void storeRelations(DATA *data){
  *
  *  \author wbraun
  */
-modelica_boolean checkRelations(DATA *data){
-
+modelica_boolean checkRelations(DATA *data)
+{
   int i;
   modelica_boolean check=0;
 
   MODEL_DATA      *mData = &(data->modelData);
   SIMULATION_INFO *sInfo = &(data->simulationInfo);
 
-  for(i=0;i<mData->nRelations;++i){
-    if(sInfo->relationsPre[i] != sInfo->relations[i]){
+  for(i=0;i<mData->nRelations;++i)
+  {
+    if(sInfo->relationsPre[i] != sInfo->relations[i])
+    {
       check = 1;
       break;
     }
@@ -648,66 +634,32 @@ modelica_boolean checkRelations(DATA *data){
   return check;
 }
 
-/*! \fn printHysteresisRelations
+/*! \fn updateRelationsPre
  *
+ *  This function stores a copy of relations into relationsPre.
  *
- *  \param [out] [data]
+ *  \param [ref] [data]
  *
- *  \author wbraun
+ *  \author lochel
  */
-void printHysteresisRelations(DATA *data)
+void updateRelationsPre(DATA *data)
 {
-  long i;
-
-  if (ACTIVE_STREAM(LOG_STDOUT)) {
-    infoStreamPrint(LOG_STDOUT, 1, "Status of hysteresisEnabled:");
-    for(i=0; i<data->modelData.nRelations; i++)
-    {
-      infoStreamPrint(LOG_STDOUT, 0, "[%ld] %s = %c | relation(%s) = %c", i, data->callback->relationDescription(i), data->simulationInfo.hysteresisEnabled[i]>0 ? 'T' : 'F', data->callback->relationDescription(i), data->simulationInfo.relations[i] ? 'T' : 'F');
-    }
-    messageClose(LOG_STDOUT);
-  }
+  memcpy(data->simulationInfo.relationsPre, data->simulationInfo.relations, sizeof(modelica_boolean)*data->modelData.nRelations);
 }
 
-/*! \fn activateHysteresis
+/*! \fn storeRelations
  *
+ *  This function stores a copy of relationPre. This is needed for the event 
+ *  iteration.
  *
  *  \param [out] [data]
  *
- *  \author wbraun
+ *  \author lochel
  */
-void activateHysteresis(DATA* data){
-
-  int i;
-
-  MODEL_DATA      *mData = &(data->modelData);
-  SIMULATION_INFO *sInfo = &(data->simulationInfo);
-
-  for(i=0;i<mData->nRelations;++i){
-    sInfo->hysteresisEnabled[i] = sInfo->relations[i]?0:1;
-  }
+void storeRelations(DATA* data)
+{
+  memcpy(data->simulationInfo.storedRelations, data->simulationInfo.relations, sizeof(modelica_boolean)*data->modelData.nRelations);
 }
-
-/*! \fn updateHysteresis
- *
- *
- *  \param [out] [data]
- *
- *  \author wbraun
- */
-void updateHysteresis(DATA* data){
-
-  int i;
-
-  MODEL_DATA      *mData = &(data->modelData);
-  SIMULATION_INFO *sInfo = &(data->simulationInfo);
-
-  for(i=0;i<mData->nRelations;++i){
-    sInfo->hysteresisEnabled[i] = sInfo->relations[i]?1:0;
-  }
-}
-
-
 
 /*! \fn getNextSampleTimeFMU
  *
@@ -719,7 +671,8 @@ void updateHysteresis(DATA* data){
  */
 double getNextSampleTimeFMU(DATA *data)
 {
-  if(0 < data->modelData.nSamples){
+  if(0 < data->modelData.nSamples)
+  {
     infoStreamPrint(LOG_EVENTS, 0, "Next event time = %f", data->simulationInfo.nextSampleEvent);
     return data->simulationInfo.nextSampleEvent;
   }
@@ -795,7 +748,7 @@ void initializeDataStruc(DATA *data)
   data->simulationInfo.zeroCrossingsPre = (modelica_real*) calloc(data->modelData.nZeroCrossings, sizeof(modelica_real));
   data->simulationInfo.relations = (modelica_boolean*) calloc(data->modelData.nRelations, sizeof(modelica_boolean));
   data->simulationInfo.relationsPre = (modelica_boolean*) calloc(data->modelData.nRelations, sizeof(modelica_boolean));
-  data->simulationInfo.hysteresisEnabled = (modelica_boolean*) calloc(data->modelData.nRelations, sizeof(modelica_boolean));
+  data->simulationInfo.storedRelations = (modelica_boolean*) calloc(data->modelData.nRelations, sizeof(modelica_boolean));
   data->simulationInfo.zeroCrossingIndex = (long*) malloc(data->modelData.nZeroCrossings*sizeof(long));
   data->simulationInfo.mathEventsValuePre = (modelica_real*) malloc(data->modelData.nMathEvents*sizeof(modelica_real));
   /* initialize zeroCrossingsIndex with corresponding index is used by events lists */
@@ -963,7 +916,7 @@ void deInitializeDataStruc(DATA *data)
   free(data->simulationInfo.zeroCrossingsPre);
   free(data->simulationInfo.relations);
   free(data->simulationInfo.relationsPre);
-  free(data->simulationInfo.hysteresisEnabled);
+  free(data->simulationInfo.storedRelations);
   free(data->simulationInfo.zeroCrossingIndex);
 
   /* free buffer for old state variables */

@@ -624,7 +624,7 @@ static int numeric_initialization(DATA *data, int optiMethod, int lambda_steps)
   /* and restore start values */
   restoreExtrapolationDataOld(data);
   initializeStateSetPivoting(data);   /* reset state selection */
-  storeRelations(data);
+  updateRelationsPre(data);
   storePreValues(data);
 
   retVal = initialize(data, optiMethod, lambda_steps);
@@ -746,16 +746,13 @@ static int symbolic_initialization(DATA *data, long numLambdaSteps)
     data->simulationInfo.lambda = 1.0;
     data->callback->functionInitialEquations(data);
   }
-
-  /* update saved value for
-     hysteresis relations */
-  updateHysteresis(data);
+  storeRelations(data);
 
   /* do pivoting for dynamic state selection if selection changed try again an */
   if(stateSelection(data, 1, 1) == 1)
   {
     data->callback->functionInitialEquations(data);
-    updateHysteresis(data);
+    storeRelations(data);
 
     /* report a warning about strange start values */
     if(stateSelection(data, 1, 1) == 1)
