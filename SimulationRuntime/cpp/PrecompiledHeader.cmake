@@ -56,7 +56,10 @@ SET(_sourceFound FALSE)
 string (REPLACE "/Zm1000" " " CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
 STRING(TOUPPER "CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}" _flags_var_name)
 SET(_compiler_FLAGS ${${_flags_var_name}})
-set(_compiler_FLAGS "/EHa /fp:except  /W4  /MP ${_compiler_FLAGS}")
+set(_compiler_FLAGS "/EHa /fp:except   /W4  /MP ${_compiler_FLAGS}")
+#disable optimization
+string(REGEX REPLACE "/O[1-9]*[b,d,g,i,s,t,x]*[1-9]*" "" _compiler_FLAGS ${_compiler_FLAGS} )
+set(_compiler_FLAGS "/Od ${_compiler_FLAGS}")
 SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${_compiler_FLAGS}")
 
 #only generate precompiled header in relase mode in debug mode precompiled header can not generated because of different pdb files
@@ -74,7 +77,7 @@ IF(FORCEINCLUDE)
 SET(PCH_COMPILE_FLAGS "${PCH_COMPILE_FLAGS} /FI${_name}")
 ENDIF(FORCEINCLUDE)
 ENDIF(_sourceWe STREQUAL ${_inputWe})
-SET_SOURCE_FILES_PROPERTIES(${_source} PROPERTIES COMPILE_FLAGS "${PCH_COMPILE_FLAGS}")
+SET_SOURCE_FILES_PROPERTIES(${_source} PROPERTIES COMPILE_FLAGS "${PCH_COMPILE_FLAGS} ${CMAKE_CXX_FLAGS}")
 ENDIF(_source MATCHES \\.\(cc|cxx|cpp\)$)
 ENDFOREACH()
 IF(NOT _sourceFound)
@@ -107,7 +110,7 @@ STRING(TOUPPER "CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}" _flags_var_name)
 SET(_compiler_FLAGS ${${_flags_var_name}})
 #remove compiler flag for optimization becaus Modelica system is compiled without optimization
 string(REGEX REPLACE "O[1-9]" "O0" _compiler_FLAGS ${_compiler_FLAGS} )
-string(REGEX REPLACE "-g" "" _compiler_FLAGS ${_compiler_FLAGS} )
+#string(REGEX REPLACE "-g" "" _compiler_FLAGS ${_compiler_FLAGS} )
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 set(_compiler_FLAGS "${_compiler_FLAGS} -fPIC ")
@@ -154,7 +157,7 @@ STRING(TOUPPER "CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}" _flags_var_name)
 SET(_compiler_FLAGS ${${_flags_var_name}})
 #remove compiler flag for optimization becaus Modelica system is compiled without optimization
 string(REGEX REPLACE "O[1-9]" "O0" _compiler_FLAGS ${_compiler_FLAGS} )
-string(REGEX REPLACE "-g" "" _compiler_FLAGS ${_compiler_FLAGS} )
+#string(REGEX REPLACE "-g" "" _compiler_FLAGS ${_compiler_FLAGS} )
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 set(_compiler_FLAGS "${_compiler_FLAGS} -fPIC ")

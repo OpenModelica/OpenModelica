@@ -54,6 +54,7 @@ public:
   virtual void getSystemMatrix(double* A_matrix) = 0;
 
   virtual bool isLinear() = 0;
+  virtual bool isLinearTearing()=0;
   virtual bool isConsistent() = 0;
   /*/// Fügt das übergebene Objekt als Across-Kante hinzu
   void addAcrossEdge(IObject& new_obj);

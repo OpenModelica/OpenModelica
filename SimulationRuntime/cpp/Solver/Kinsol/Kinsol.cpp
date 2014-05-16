@@ -13,7 +13,10 @@ Kinsol::Kinsol(IAlgLoop* algLoop, INonLinSolverSettings* settings)
     , _fScale   (NULL)
     , _f        (NULL)
     , _helpArray    (NULL)
+	, _zeroVec (NULL)
     , _jac    (NULL)
+	,_fHelp(NULL)
+	,_yHelp(NULL)
     , _dimSys      (0)
   , _fnorm(10.0)
   , _currentIterateNorm (100.0)
@@ -32,7 +35,8 @@ Kinsol::~Kinsol()
     if(_f)      delete []  _f;
     if(_helpArray)      delete []  _helpArray;
     if(_jac)      delete []  _jac;
-
+    if(_fHelp)    delete []    _fHelp;
+	if(_zeroVec)    delete []    _zeroVec;
     N_VDestroy_Serial(_Kin_y);
     N_VDestroy_Serial(_Kin_y0);
     N_VDestroy_Serial(_Kin_yScale);
@@ -71,21 +75,29 @@ void Kinsol::initialize()
             if(_f)         delete []  _f;
             if(_helpArray)     delete []  _helpArray;
             if(_jac)     delete []  _jac;
-
+            if(_yHelp)    delete []    _yHelp;
+             if(_fHelp)    delete []    _fHelp;
+			 if(_zeroVec)    delete []    _zeroVec;
             _y      = new double[_dimSys];
             _y0         = new double[_dimSys];
             _yScale     = new double[_dimSys];
             _fScale     = new double[_dimSys];
             _f      = new double[_dimSys];
             _helpArray    = new double[_dimSys];
-            _jac      = new double[_dimSys*_dimSys];
+			_zeroVec   = new double[_dimSys];
 
+            _jac      = new double[_dimSys*_dimSys];
+            _yHelp        = new double[_dimSys];
+            _fHelp        = new double[_dimSys];
             _algLoop->getReal(_y);
             _algLoop->getReal(_y0);
 
             memset(_f,0,_dimSys*sizeof(double));
             memset(_helpArray,0,_dimSys*sizeof(double));
-
+            memset(_yHelp,0,_dimSys*sizeof(double));
+            memset(_fHelp,0,_dimSys*sizeof(double));
+            memset(_jac,0,_dimSys*_dimSys*sizeof(double));
+			 memset(_zeroVec,0,_dimSys*sizeof(double));
 
             _algLoop->getNominalReal(_yScale);
 
@@ -148,6 +160,29 @@ void Kinsol::solve()
         dgesv_(&dimSys,&dimRHS,_jac,&dimSys,_helpArray,_f,&dimSys,&irtrn);
         memcpy(_y,_f,_dimSys*sizeof(double));
         _algLoop->setReal(_y);
+    }
+    else if(_algLoop->isLinearTearing())
+    {
+        long int dimRHS  = 1;          // Dimension of right hand side of linear system (=b)
+        long int dimSys = _dimSys;
+        long int irtrn  = 0;          // Retrun-flag of Fortran code
+         
+		 _algLoop->setReal(_zeroVec);
+		 _algLoop->evaluate();
+         _algLoop->getRHS(_f);
+		 _algLoop->getReal(_y);
+		  calcJacobian(_f,_y);
+        dgesv_(&dimSys,&dimRHS,_jac,&dimSys,_fHelp,_f,&dimSys,&irtrn);
+		for(int i=0;i<_dimSys;i++)
+			_f[i]*=-1.0;
+        memcpy(_y,_f,_dimSys*sizeof(double));
+     	_algLoop->setReal(_y);
+		 //_algLoop->evaluate();
+		if(irtrn != 0)
+            throw std::runtime_error("error solving linear tearing system");
+        else
+          _iterationStatus = DONE;
+    
     }
     else
     {
@@ -459,7 +494,28 @@ bool Kinsol::isfinite(double* u, int dim)
     }
     return true;
 }
+void Kinsol::calcJacobian(double* f,double* y)
+{
+    double y_old;
+    for(int j=0; j<_dimSys; ++j)
+    {
+        // Reset variables for every column
+        memcpy(_yHelp,y,_dimSys*sizeof(double));
+        double stepsize=1;//+(1.e-6*_yHelp[j]);
 
+        y_old=_yHelp[j];
+        // Finitializee difference
+        _yHelp[j] += stepsize;
+
+        calcFunction(_yHelp,_fHelp);
+
+        // Build Jacobian in Fortran format
+        for(int i=0; i<_dimSys; ++i)
+            _jac[i+j*_dimSys] = (_fHelp[i] - f[i]) / stepsize;
+
+        _yHelp[j] = y_old;
+    }
+}
 void Kinsol::check4EventRetry(double* y)
 {
     _algLoop->setReal(y);

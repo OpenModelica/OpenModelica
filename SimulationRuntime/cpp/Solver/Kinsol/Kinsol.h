@@ -33,7 +33,8 @@ public:
 private:
   /// Encapsulation of determination of residuals to given unknowns
   void calcFunction(const double* y, double* residual);
-
+  /// Encapsulation of determination of Jacobian
+  void calcJacobian(double* f,double* y);
 
   int check_flag(void *flagvalue, char *funcname, int opt);
   static int kin_fCallback(N_Vector y, N_Vector fval, void *user_data);
@@ -65,7 +66,10 @@ private:
     *_y0,            ///< Temp   - Auxillary variables
   *_yScale,       ///< Temp   - Auxillary variables
   *_fScale,    ///< Temp   - Auxillary variables
-  *_jac;
+  *_jac,
+  *_yHelp,                    ///< Temp        - Auxillary variables
+  *_fHelp,                    ///< Temp        - Auxillary variables
+  *_zeroVec;
 
   double  _fnormtol,
       _scsteptol;

@@ -1374,7 +1374,7 @@ OFILES=$(CPPFILES:.cpp=.o)
 .PHONY: <%lastIdentOfPath(modelInfo.name)%> $(CPPFILES)
 
 <%fileNamePrefix%>: $(MAINFILE) $(OFILES)
-<%\t%>$(CXX) -shared -I. -o $(SYSTEMOBJ) $(OFILES) $(CPPFLAGS) $(LDSYTEMFLAGS)  <%dirExtra%> <%libsPos1%> <%libsPos2%> -lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath
+<%\t%>$(CXX) -shared -I. -o $(SYSTEMOBJ) $(OFILES) $(CPPFLAGS) $(LDMAINFLAGS)  <%dirExtra%> <%libsPos1%> <%libsPos2%> -lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath
 <%\t%>$(CXX) $(CPPFLAGS) -I. -o $(MAINOBJ) $(MAINFILE) $(LDMAINFLAGS)
 <% if boolNot(stringEq(makefileParams.platform, "win32")) then
   <<
@@ -1541,6 +1541,8 @@ match eq
    <%AlgloopDefaultImplementationCode(simCode,eq,context)%>
    <%getAMatrixCode(simCode,eq)%>
    <%isLinearCode(simCode,eq)%>
+   <%isLinearTearingCode(simCode,eq)%>
+   
     >>
 end algloopCppFile;
 
@@ -3169,6 +3171,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
          return false;
    }
   >>
+  
  case SES_LINEAR(__) then
    <<
      bool <%modelname%>Algloop<%index%>::isLinear()
@@ -3178,6 +3181,35 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    >>
 
 end isLinearCode;
+
+template isLinearTearingCode(SimCode simCode,SimEqSystem eq)
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(__)) then
+  let modelname = lastIdentOfPath(modelInfo.name)
+   let &varDecls = buffer ""
+   let &preExp = buffer ""
+
+
+  match eq
+  case SES_NONLINEAR(__) then
+  let lineartearing = if linearTearing then 'true' else 'false'
+  <<
+  bool <%modelname%>Algloop<%index%>::isLinearTearing()
+  {
+        return <%lineartearing%>;
+   }
+  >>
+ case SES_LINEAR(__) then
+   <<
+     bool <%modelname%>Algloop<%index%>::isLinearTearing()
+     {
+          return false;
+     }
+   >>
+
+end isLinearTearingCode;
+
 
 
 template initAlgloopEquation(SimEqSystem eq, Text &varDecls /*BUFP*/,SimCode simCode,Context context)
@@ -3460,7 +3492,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       >>
     %>
     }
-     saveAll();
+     
    }
    <%writeoutput1(modelInfo)%>
   >>
@@ -3991,6 +4023,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     /// Output routine (to be called by the solver after every successful integration step)
     virtual void getSystemMatrix(double* A_matrix);
     virtual bool isLinear();
+     virtual bool isLinearTearing();
     virtual bool isConsistent();
     /// Set stream for output
     virtual void setOutput(std::ostream* outputStream)     ;
