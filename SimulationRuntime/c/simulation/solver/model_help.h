@@ -67,7 +67,7 @@ extern "C" {
   } \
   else \
   { \
-    res = ((op_w##ZC)((exp1),(exp2),data->simulationInfo.relationsPre[index])); \
+    res = ((op_w##ZC)((exp1),(exp2),data->simulationInfo.storedRelations[index])); \
     data->simulationInfo.relations[index] = res; \
   } \
 }
