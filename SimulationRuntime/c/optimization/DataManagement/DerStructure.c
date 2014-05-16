@@ -171,7 +171,7 @@ static inline void local_jac_struct(DATA * data, OptDataDim * dim, OptDataStruct
         J = s->J[index];
         sizeCols = data->simulationInfo.analyticJacobians[index].sizeCols;
         maxColors = data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors + 1;
-        cC =  (int*) data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols;
+        cC = (unsigned int*) data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols;
         lindex = (unsigned int*) data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex;
         pindex = data->simulationInfo.analyticJacobians[index].sparsePattern.index;
 

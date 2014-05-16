@@ -163,7 +163,7 @@ static inline void updateDer(OptData *optData){
 
   if(la){
     const int index_la = optData->s.derIndex[0];
-    const long double *** const scalb = optData->bounds.scalb;
+    const long double *** scalb = optData->bounds.scalb;
     int i, j, ii;
     for(i = 0; i < nsi; ++i){
       for(j = 0; j < np; ++j){
