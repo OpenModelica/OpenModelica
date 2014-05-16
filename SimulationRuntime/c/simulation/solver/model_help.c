@@ -649,7 +649,7 @@ void updateRelationsPre(DATA *data)
 
 /*! \fn storeRelations
  *
- *  This function stores a copy of relationPre. This is needed for the event 
+ *  This function stores a copy of relationPre. This is needed for the event
  *  iteration.
  *
  *  \param [out] [data]
