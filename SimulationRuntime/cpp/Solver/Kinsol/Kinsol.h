@@ -90,4 +90,6 @@ private:
 
    realtype _fnorm,
        _currentIterateNorm;
+
+   int _counter;
 };

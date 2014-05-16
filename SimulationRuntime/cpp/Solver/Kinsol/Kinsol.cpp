@@ -100,10 +100,19 @@ void Kinsol::initialize()
        memset(_zeroVec,0,_dimSys*sizeof(double));
 
             _algLoop->getNominalReal(_yScale);
+			_algLoop->setReal(_y);
+			_algLoop->evaluate();
+			_algLoop->getRHS(_fScale);
 
             for (int i=0;i<_dimSys;i++)
             {
-                _fScale[i] = 1;
+                
+				if(abs(_fScale[i]) > 1e-12)
+					_fScale[i] = 1/_fScale[i];
+				else
+					_fScale[i] = 1;
+				
+				_yScale[i] = 1/_yScale[i];
             }
 
             _Kin_y = N_VMake_Serial(_dimSys, _y);
@@ -130,7 +139,9 @@ void Kinsol::initialize()
 
             idid = KINSetFuncNormTol(_kinMem, _fnormtol);
             idid = KINSetScaledStepTol(_kinMem, _scsteptol);
-      idid = KINSetRelErrFunc(_kinMem, 1e-12);
+			idid = KINSetRelErrFunc(_kinMem, 1e-12);
+
+			_counter = 0;
 
         }
         else
@@ -186,14 +197,18 @@ void Kinsol::solve()
     }
     else
     {
-        _eventRetry = false;
+        _counter++;
+		_eventRetry = false;
         // Try Dense first
         //std::cerr << "Try dense...";
 
         KINDense(_kinMem, _dimSys);
         solveNLS();
         if(_iterationStatus == DONE)
-            return;
+         {  
+			//_firstCall = false; 
+			 return;
+		  } 
 
         /*
     if(_eventRetry)
@@ -207,56 +222,79 @@ void Kinsol::solve()
 
         //std::cerr << "Try Spgmr...";
         // Try Spgmr
-        KINSpgmr(_kinMem,5);
+       // for(int i=0;i<50;i++)
+		//{
+		KINSpgmr(_kinMem,_dimSys);
         _iterationStatus = CONTINUE;
         solveNLS();
         if(_iterationStatus == DONE)
-            return;
-
-        /*
-    if(_eventRetry)
+        {  
+			//_firstCall = false; 
+			 return;
+		  }
+		//}
+		
+        
+		/*
+		if(_eventRetry)
         {
             memcpy(_y, _helpArray ,_dimSys*sizeof(double));
             _iterationStatus = CONTINUE;
             return;
         }
-    */
-
+		*/
+		
         // Try Spbcg
-        KINSpbcg(_kinMem,4);
+       //for(int i=0;i<50;i++)
+		//{
+		KINSpbcg(_kinMem,_dimSys);
         _iterationStatus = CONTINUE;
         solveNLS();
         if(_iterationStatus == DONE)
-            return;
-
-    /*
-    if(_eventRetry)
+        {  
+			//_firstCall = false; 
+			 return;
+		  }
+		//}
+		/*
+		if(_eventRetry)
         {
             memcpy(_y, _helpArray ,_dimSys*sizeof(double));
             _iterationStatus = CONTINUE;
             return;
         }
-    */
-
+		*/
+		
         // Try Sptfqmr
-    KINSptfqmr(_kinMem, _dimSys);
+		  for(int i=1;i<_dimSys+1;i++)
+		{
+		KINSptfqmr(_kinMem, i);
         _iterationStatus = CONTINUE;
         solveNLS();
         if(_iterationStatus == DONE)
-            return;
+        {  
+			//_firstCall = false; 
+			 return;
+		 }
+		 }
 
-    // last try: Decrease steptol without any optimization
-      KINSetScaledStepTol(_kinMem, 1e-6);
-      KINSetNoResMon(_kinMem, TRUE);
-      KINSetMaxSubSetupCalls(_kinMem, 1);
-      KINSetNoMinEps(_kinMem, TRUE);
-      //KINSetNoInitSetup(_kinMem, TRUE);
-      _iterationStatus = CONTINUE;
-      KINDense(_kinMem, _dimSys);
-      solveNLS();
-      if(_iterationStatus == DONE)
-            return;
-
+		
+		// last try: Decrease steptol without any optimization
+		/* 
+		KINSetScaledStepTol(_kinMem, 1e-6);
+		  KINSetNoResMon(_kinMem, TRUE);
+		  KINSetMaxSubSetupCalls(_kinMem, 1);
+		  KINSetNoMinEps(_kinMem, TRUE);
+		  //KINSetNoInitSetup(_kinMem, TRUE);
+		  _iterationStatus = CONTINUE;
+		 KINSptfqmr(_kinMem, _dimSys);
+		  solveNLS();
+		  if(_iterationStatus == DONE)
+          {  
+			//_firstCall = false; 
+			 return;
+		   }
+		*/
         if(_eventRetry)
         {
             memcpy(_y, _helpArray ,_dimSys*sizeof(double));
@@ -297,9 +335,9 @@ int Kinsol::kin_fCallback(N_Vector y,N_Vector fval, void *user_data)
     ((Kinsol*) user_data)->calcFunction(NV_DATA_S(y),NV_DATA_S(fval));
 
     if(((Kinsol*) user_data)->_fValid)
-    return(0);
-  else
-    return(1);
+		return(0);
+	else 
+		return(-1);
 }
 
 
@@ -352,7 +390,7 @@ void Kinsol::solveNLS()
     double
         maxStepsStart = 1e3*max(euclidNorm(_dimSys,_yScale),euclidNorm(_dimSys,_yScale)),
         maxSteps = maxStepsStart,
-        maxStepsHigh = 1e20,
+        maxStepsHigh = 1e16,
         maxStepsLow = 1e-3,
         limit = maxStepsHigh;
 
@@ -384,7 +422,8 @@ void Kinsol::solveNLS()
             // Did we reach a saddle point
         case KIN_STEP_LT_STPTOL:
             KINGetFuncNorm(_kinMem, &_fnorm);
-            if(_fnorm/euclidNorm(_dimSys,_yScale) < 1e-4)
+            //if(_fnorm/euclidNorm(_dimSys,_yScale) < 1e-4)
+			if(_fnorm < 1e-8)
             {
                 _iterationStatus = DONE;
             }else
