@@ -2221,7 +2221,6 @@ algorithm
       equation
         // tuple
         exps = List.filterOnTrue(exps,Expression.isNotWild);
-        //List.map_0(exps,ExpressionDump.dumpExp);
         sizes = List.map(exps,getScalarExpSize);//check if the expressions are records or something
         size = List.fold(sizes,intAdd,0);
         size = intMax(size,listLength(exps));
@@ -2296,6 +2295,7 @@ author:Waurich TUD 2014-04"
 algorithm
   size := matchcontinue(inVar)
     local
+      DAE.Type ty;
       list<Integer> sizes;
       list<DAE.Exp> exps;
       list<DAE.Var> vl;
@@ -2305,7 +2305,15 @@ algorithm
         size = List.fold(sizes,intAdd,0);
         then
           size;
+    case(DAE.TYPES_VAR(name=_,attributes=_,ty=DAE.T_ARRAY(ty=_,dims=_,source=_),binding=_,constOfForIteratorRange=_))
+      equation
+        ty = DAEUtil.VarType(inVar);
+        sizes = DAEUtil.expTypeArrayDimensions(ty);
+        size = List.fold(sizes,intAdd,0);
+        then
+          size;
     else
+    equation
       then
         1;
   end matchcontinue;
