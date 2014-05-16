@@ -130,19 +130,17 @@ Bool evalfG(Index n, double * vopt, Bool new_x, int m, Number *g, void * useData
       memcpy(g + shift, &v[i][2][index_con], nc*sizeof(double));
       shift +=nc;
 
-      vv[0] = vv[np];
-      for(j = 0; j < np; ++j)
-        vv[j + 1] = vv[j] + nv;
-
     }else if(np == 1){
       for(k = 0; k < nx; ++k)
         g[shift++] = vv[0][k] + (sdt[k]*v[i][0][k+nx] - vv[1][k]);
 
       memcpy(g + shift, &v[i][0][index_con], nc*sizeof(double));
       shift += nc;
-      vv[0] = vv[np];
-      vv[1] = vv[0] + nv;
     }
+
+    vv[0] = vv[np];
+    for(j = 0; j < np; ++j)
+      vv[j + 1] = vv[j] + nv;
   }
   if(ACTIVE_STREAM(LOG_IPOPT_ERROR)){
     const int nJ = optData->dim.nJ;
@@ -646,10 +644,10 @@ static inline void printMaxError(Number *g, const int m, const int nx, const int
   int index = 0;
   int index_x = 0;
   double gmax = -1;
-  double tmp;
-  {
-    int i, j, k;
+  int i, j, k;
 
+  {
+    double tmp;
     for(i = 0; i < m; ++i){
       k = i % nJ;
       if(k < nx){
@@ -669,18 +667,16 @@ static inline void printMaxError(Number *g, const int m, const int nx, const int
     }
   }
 
-  {
-    int i,j,k;
-    i = index/(nJ*np);
-    j = index/(nsi*nJ);
-    k = index_x;
+  i = index/(nJ*np);
+  j = index/(nsi*nJ);
+  k = index_x;
 
-    if(k < nx){
-      printf("\nmax error for |%s(%g) - collocation_poly| = %g\n",
-                                data->modelData.realVarsData[k].info.name, (double)t[i][j], gmax);
-    }else{
-      printf("\nmax error for |cosntrain[%i](%g)| = %g\n", k - nx, (double)t[i][j], gmax);
-    }
+  if(k < nx){
+    printf("\nmax error for |%s(%g) - collocation_poly| = %g\n",
+                              data->modelData.realVarsData[k].info.name, (double)t[i][j], gmax);
+  }else{
+    printf("\nmax error for |cosntrain[%i](%g)| = %g\n", k - nx, (double)t[i][j], gmax);
   }
+
 
 }
