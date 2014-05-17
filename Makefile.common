@@ -322,7 +322,7 @@ clean: qtclean fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMi
 	(cd PythonInterface && $(MAKE) -f $(defaultMakefileTarget) clean)
 	if test -f 3rdParty/modelica3d/build/Makefile; then $(MAKE) -C 3rdParty/modelica3d/build clean; fi
 	# remove Ipopt-3.11.6/Makefile if there is no Ipopt-3.11.6/Ipopt/Makefile to run configure again!
-	if test -f 3rdParty/Ipopt-3.11.6/Ipopt/Makefile; then rm -f 3rdParty/Ipopt-3.11.6/Makefile || true; fi
+	if test -f 3rdParty/Ipopt-3.11.6/Ipopt/Makefile; then true; else rm -f 3rdParty/Ipopt-3.11.6/Makefile || true; fi
 	if test -f 3rdParty/Ipopt-3.11.6/Makefile; then $(MAKE) -C 3rdParty/Ipopt-3.11.6 distclean || true; fi
 	(rm -rf 3rdParty/modelica3d/build)
 	(rm -rf SimulationRuntime/build_c)
