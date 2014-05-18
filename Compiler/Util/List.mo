@@ -7896,7 +7896,7 @@ protected function filterOnTrue_tail
     output Boolean outResult;
   end FilterFunc;
 algorithm
-  outList := matchcontinue(inList, inFilterFunc, inAccumList)
+  outList := match (inList, inFilterFunc, inAccumList)
     local
       ElementType e;
       list<ElementType> rest;
@@ -7911,7 +7911,7 @@ algorithm
       then
         filterOnTrue_tail(rest, inFilterFunc, consOnTrue(b, e, inAccumList));
 
-  end matchcontinue;
+  end match;
 end filterOnTrue_tail;
 
 protected function filterOnTrueSync_tail
