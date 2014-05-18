@@ -47,6 +47,7 @@ class ScaleDraw : public QwtScaleDraw
 {
 public:
   ScaleDraw();
+  virtual QwtText label(double value) const;
 protected:
   virtual void drawBackbone(QPainter *painter) const;
   virtual void drawTick(QPainter *painter, double val, double len) const;

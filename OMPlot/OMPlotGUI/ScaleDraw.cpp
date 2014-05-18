@@ -49,6 +49,19 @@ ScaleDraw::ScaleDraw()
 
 }
 
+/*!
+  Override QwtAbstractScaleDraw::label since the default implementation uses 6 as precision value.
+  \param value -  the actual value.
+  \return the display representation of the value.
+  */
+QwtText ScaleDraw::label(double value) const
+{
+  if (qFuzzyCompare(value + 1.0, 1.0))
+    value = 0.0;
+
+  return QLocale().toString(value, 'g', 5);
+}
+
 void ScaleDraw::drawBackbone( QPainter *painter ) const
 {
   const bool doAlign = QwtPainter::roundingAlignment( painter );
