@@ -2726,9 +2726,9 @@ algorithm
 
     // a component
     case (cache,env,ih,mods,pre,ci_state,
-          ((comp as SCode.COMPONENT(n,SCode.PREFIXES(vis,_,_,io,_),
-                                    SCode.ATTR(_,ct,prl,var,dir),
-                                    _,_,_,_,_),cmod) :: xs),
+          ((comp as SCode.COMPONENT(name=n,prefixes=SCode.PREFIXES(vis,_,_,io,_),
+                                    attributes=SCode.ATTR(_,ct,prl,var,dir),
+                                    comment=comment),cmod) :: xs),
           inst_dims,impl)
       equation
         // compmod = Mod.getModifs(mods, n, m);
@@ -4112,7 +4112,7 @@ algorithm
           connectorType = ct2,
           source = source,
           variableAttributesOption = var_attrs,
-          absynCommentOption = cmt,
+          comment = cmt,
           innerOuter = io2),
         SCode.ATTR(
           connectorType = ct1,
@@ -5315,7 +5315,7 @@ algorithm
     local
       Option<SCode.Comment> cmt;
       DAE.ComponentRef cr;
-    case DAE.VAR(componentRef=_,absynCommentOption = cmt)
+    case DAE.VAR(comment = cmt)
       equation
         result = SCode.optCommentHasBooleanNamedAnnotation(cmt, "__OpenModelica_UnusedVariable");
       then not result;

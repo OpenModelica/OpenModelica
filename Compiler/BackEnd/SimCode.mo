@@ -453,6 +453,7 @@ uniontype SimEqSystem
     Boolean partOfMixed;
     list<SimVar> vars;
     list<DAE.Exp> beqs;
+    list<DAE.ElementSource> sources;
     list<tuple<Integer, Integer, SimEqSystem>> simJac;
     Integer indexLinearSystem;
   end SES_LINEAR;

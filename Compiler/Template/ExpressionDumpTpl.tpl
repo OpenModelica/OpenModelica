@@ -101,11 +101,11 @@ match exp
   case EMPTY(__) then
     let name_str = dumpCref(name)
     '<EMPTY(scope: <%scope%>, name: <%name_str%>, ty: <%tyStr%>)>'
-  case REDUCTION(reductionInfo = REDUCTIONINFO(path = name)) then
-    let name_str = AbsynDumpTpl.dumpPathNoQual(name)
+  case REDUCTION(reductionInfo = ri as REDUCTIONINFO(__)) then
+    let name_str = AbsynDumpTpl.dumpPathNoQual(ri.path)
     let exp_str = dumpExp(expr, stringDelimiter)
     let iter_str = (iterators |> it => dumpReductionIterator(it, stringDelimiter) ;separator=", ")
-    '<%name_str%>(<%exp_str%> for <%iter_str%>)'
+    '<%name_str%>(<%exp_str%> for <% match ri.iterType case THREAD() then "threaded " %><%iter_str%>)'
   case LIST(__) then
     let expl_str = dumpExpList(valList, stringDelimiter, ", ")
     'List(<%expl_str%>)'
@@ -356,7 +356,7 @@ match ty
 end dumpType;
 
 template dumpFuncArg(DAE.FuncArg arg)
-::= match arg case (name, _, _, _, _) then name
+::= match arg case arg as FUNCARG() then arg.name
 end dumpFuncArg;
 
 template dumpDimensions(DAE.Dimensions dims)
@@ -534,11 +534,11 @@ match exp
   case EMPTY(__) then
     let name_str = dumpCref(name)
     '<EMPTY(scope: <%scope%>, name: <%name_str%>, ty: <%tyStr%>)>'
-  case REDUCTION(reductionInfo = REDUCTIONINFO(path = name)) then
+  case REDUCTION(reductionInfo = ri as REDUCTIONINFO(path = name)) then
     let name_str = AbsynDumpTpl.dumpPathNoQual(name)
     let exp_str = dumpExp(expr, stringDelimiter)
     let iter_str = (iterators |> it => dumpReductionIterator(it, stringDelimiter) ;separator=", ")
-    '<%name_str%>(<%exp_str%> for <%iter_str%>)'
+    '<%name_str%>(<%exp_str%> for <% match ri.iterType case THREAD() then "threaded " %><%iter_str%>)'
   case LIST(__) then
     let expl_str = dumpExpList(valList, stringDelimiter, ", ")
     'List(<%expl_str%>)'

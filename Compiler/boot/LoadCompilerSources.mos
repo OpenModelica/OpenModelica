@@ -46,6 +46,7 @@ if true then /* Suppress output */
     "../FrontEnd/MetaUtil.mo",
     "../FrontEnd/MMath.mo",
     "../FrontEnd/Mod.mo",
+    "../FrontEnd/OperatorOverloading.mo",
     "../FrontEnd/Parser.mo",
     "../FrontEnd/ParserExt.mo",
     "../FrontEnd/Patternm.mo",

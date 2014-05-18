@@ -558,7 +558,7 @@ constant Util.TranslatableContent removeSimpleEquationDesc = Util.gettext("Perfo
 public
 constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
-    "evaluateReplaceFinalEvaluateParameters",
+    "evaluateReplaceProtectedFinalEvaluateParameters",
     "simplifyIfEquations",
     "removeEqualFunctionCalls",
     "partitionIndependentBlocks",
@@ -581,6 +581,7 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     ("evaluateReplaceFinalParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
     ("evaluateReplaceEvaluateParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
     ("evaluateReplaceFinalEvaluateParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
+    ("evaluateReplaceProtectedFinalEvaluateParameters", Util.gettext("Structural parameters and parameters declared as final or protected are removed and replaced with their value. They may no longer be changed in the init file.")),
     ("removeEqualFunctionCalls", Util.notrans("DESCRIBE ME")),
     ("removeProtectedParameters", Util.gettext("Replace all parameters with protected=true in the system.")),
     ("removeUnusedParameter", Util.gettext("Strips all parameter not present in the equations from the system.")),

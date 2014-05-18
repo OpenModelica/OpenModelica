@@ -2722,7 +2722,7 @@ algorithm
     case (_,DAE.FUNCTION_DER_MAPPER(derivativeFunction=inDFuncName,derivativeOrder=derivativeOrder,conditionRefs=cr),DAE.T_FUNCTION(funcArg=funcArg),_,_)
       equation
          true = intEq(1,derivativeOrder);
-         tplst = List.map(funcArg,Util.tuple52);
+         tplst = List.map(funcArg,Types.funcArgType);
          bl = List.map(tplst,Types.isRealOrSubTypeReal);
          bl1 = checkDerFunctionConds(bl,cr,expl,inDiffArgs);
       then
@@ -2773,8 +2773,8 @@ algorithm
         (falst1,_) = List.splitOnBoolList(falst,blst);
         falst2 = listAppend(falst,falst1);
         // compare with derivative function inputs
-        tlst = List.map(falst2,Util.tuple52);
-        dtlst = List.map(dfalst,Util.tuple52);
+        tlst = List.map(falst2,Types.funcArgType);
+        dtlst = List.map(dfalst,Types.funcArgType);
         ret = List.isEqualOnTrue(tlst,dtlst,Types.equivtypes);
       then
         (ret,tlst);

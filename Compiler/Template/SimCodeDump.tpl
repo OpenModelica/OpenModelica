@@ -222,16 +222,12 @@ template dumpEqs(list<SimEqSystem> eqs, Integer parent, Boolean withOperations)
             <%simJac |> (i1,i2,eq) =>
             <<
             <cell row="<%i1%>" col="<%i2%>">
-              <%match eq case e as SES_RESIDUAL(__) then
-                <<
-                <residual><%printExpStrEscaped(e.exp)%></residual>
-                <%dumpElementSource(e.source,withOperations)%>
-                >>
-               %>
+              <%match eq case e as SES_RESIDUAL(__) then '<residual><%printExpStrEscaped(e.exp)%></residual>' %>
             </cell>
             >>
             %>
           </matrix>
+          <%e.sources |> source => dumpElementSource(source,withOperations) %>
         </linear>
       </equation><%\n%>
       >>

@@ -1660,6 +1660,11 @@ algorithm
         ty = Types.unliftArray(ty);
         es = List.map2(matrix,makeArray,ty,not Types.arrayType(ty));
       then es;
+    case DAE.CREF(componentRef=DAE.CREF_IDENT(ident=_),ty=DAE.T_ARRAY(ty,dims=DAE.DIM_INTEGER(istop)::_))
+      equation
+        es = List.map(ExpressionSimplify.simplifyRange(1,1,istop), makeIntegerExp);
+        es = List.map1r(es, makeASUBSingleSub, e);
+      then es;
     case DAE.RANGE(DAE.T_BOOL(varLst = _), DAE.BCONST(bstart), NONE(), DAE.BCONST(bstop))
       then List.map(ExpressionSimplify.simplifyRangeBool(bstart, bstop), makeBoolExp);
 
@@ -2979,6 +2984,14 @@ algorithm
         exp;
   end matchcontinue;
 end makeASUB;
+
+public function makeASUBSingleSub
+  input DAE.Exp exp;
+  input DAE.Exp sub;
+  output DAE.Exp outExp;
+algorithm
+  outExp := makeASUB(exp,{sub});
+end makeASUBSingleSub;
 
 public function generateCrefsExpFromExpVar "
 Author: Frenkel TUD 2010-05"
@@ -10321,7 +10334,7 @@ algorithm
     Absyn.Path path;
 
     // TODO: complete hasing of all subexpressions
-    case(DAE.REDUCTIONINFO(path,_,_,_))            then 22 + stringHashDjb2(Absyn.pathString(path));
+    case (DAE.REDUCTIONINFO(path=path)) then 22 + stringHashDjb2(Absyn.pathString(path));
   end match;
 end hashReductionInfo;
 

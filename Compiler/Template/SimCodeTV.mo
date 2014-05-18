@@ -339,6 +339,7 @@ package SimCode
       Boolean partOfMixed;
       list<SimVar> vars;
       list<DAE.Exp> beqs;
+      list<DAE.ElementSource> sources;
       list<tuple<Integer, Integer, SimEqSystem>> simJac;
       Integer indexLinearSystem;
     end SES_LINEAR;
@@ -1213,11 +1214,21 @@ package DAE
 
   type ReductionIterators = list<ReductionIterator>;
 
+  uniontype ReductionIterType
+    record COMBINE
+    end COMBINE;
+    record THREAD
+    end THREAD;
+  end ReductionIterType;
+
   uniontype ReductionInfo
     record REDUCTIONINFO "A separate uniontype containing the information not required by traverseExp, etc"
       Absyn.Path path "array, sum,..";
+      ReductionIterType iterType;
       Type exprType;
       Option<Values.Value> defaultValue "if there is no default value, the reduction is not defined for 0-length arrays/lists";
+      String foldName;
+      String resultName;
       Option<Exp> foldExp "For example, max(ident,$res) or ident+$res; array() does not use this feature; DO NOT TRAVERSE THIS EXPRESSION!";
     end REDUCTIONINFO;
   end ReductionInfo;
@@ -1506,8 +1517,6 @@ package DAE
     end TYPES_VAR;
   end Var;
 
-  type FuncArg = tuple<Ident, Type, Const, Option<Exp>> "Function Argument; name, type, variability and default binding (should probably be constant)" ;
-
   type TypeSource = list<Absyn.Path> "the class(es) where the type originated";
 
   uniontype Type "models the different front-end and back-end types"
@@ -1575,7 +1584,6 @@ package DAE
     end T_SUBTYPE_BASIC;
 
     record T_FUNCTION
-      list<FuncArg> funcArg "funcArg" ;
       Type funcResultType "Only single-result" ;
       FunctionAttributes functionAttributes;
       TypeSource source;

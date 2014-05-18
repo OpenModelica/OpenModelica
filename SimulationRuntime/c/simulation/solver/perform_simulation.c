@@ -101,13 +101,13 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
     fmtReal = fopen(filename, "wb");
     if(!fmtReal)
     {
-      warningStreamPrint(LOG_SOLVER, 0, "Time measurements output file %s could not be opened: %s", filename, strerror(errno));
+      warningStreamPrint(LOG_STDOUT, 0, "Time measurements output file %s could not be opened: %s", filename, strerror(errno));
     }
     strncpy(&filename[len],"_prof.intdata",14);
     fmtInt = fopen(filename, "wb");
     if(!fmtInt)
     {
-      warningStreamPrint(LOG_SOLVER, 0, "Time measurements output file %s could not be opened: %s", filename, strerror(errno));
+      warningStreamPrint(LOG_STDOUT, 0, "Time measurements output file %s could not be opened: %s", filename, strerror(errno));
       fclose(fmtReal);
       fmtReal = NULL;
     }

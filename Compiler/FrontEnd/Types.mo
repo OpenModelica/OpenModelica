@@ -1532,8 +1532,8 @@ algorithm
     // MM Function Reference
     case (DAE.T_FUNCTION(funcArg = farg1,funcResultType = t1),DAE.T_FUNCTION(funcArg = farg2,funcResultType = t2),_)
       equation
-        tList1 = List.map(farg1, Util.tuple52);
-        tList2 = List.map(farg2, Util.tuple52);
+        tList1 = List.map(farg1, funcArgType);
+        tList2 = List.map(farg2, funcArgType);
         true = subtypeTypelist(tList1,tList2,requireRecordNamesEqual);
         true = subtype2(t1,t2,requireRecordNamesEqual);
       then true;
@@ -2535,13 +2535,13 @@ algorithm
       list<DAE.FuncArg> params;
       String s1,s2;
     case {} then "";
-    case {(n,t,_,_,_)}
+    case {DAE.FUNCARG(name=n,ty=t)}
       equation
         s1 = printTypeStr(t);
         str = stringAppendList({n," :: ",s1});
       then
         str;
-    case (((n,t,_,_,_) :: params))
+    case (DAE.FUNCARG(name=n,ty=t)::params)
       equation
         s1 = printTypeStr(t);
         s2 = printParamsStr(params);
@@ -2608,7 +2608,7 @@ algorithm
       DAE.Const c;
       DAE.VarParallelism p;
       DAE.Exp exp;
-    case ((id,ty,c,p,NONE()))
+    case DAE.FUNCARG(id,ty,c,p,NONE())
       equation
         tstr = unparseType(ty);
         cstr = DAEUtil.constStrFriendly(c);
@@ -2616,7 +2616,7 @@ algorithm
         res = stringAppendList({tstr," ",cstr,pstr,id});
       then
         res;
-    case ((id,ty,c,p,SOME(exp)))
+    case DAE.FUNCARG(id,ty,c,p,SOME(exp))
       equation
         tstr = unparseType(ty);
         cstr = DAEUtil.constStrFriendly(c);
@@ -2813,7 +2813,7 @@ algorithm
     local
       String n;
       DAE.Type ty;
-    case ((n,ty,_,_,_))
+    case DAE.FUNCARG(name=n,ty=ty)
       equation
         Print.printErrorBuf(printTypeStr(ty));
         Print.printErrorBuf(" ");
@@ -2834,7 +2834,7 @@ algorithm
       DAE.Const c;
       DAE.VarParallelism p;
 
-    case ((n,ty,c,p,_))
+    case DAE.FUNCARG(n,ty,c,p,_)
       equation
         s = unparseType(ty);
         cs = DAEUtil.constStrFriendly(c);
@@ -3181,13 +3181,14 @@ algorithm
       SCode.Variability var;
       SCode.Parallelism par;
       Option<DAE.Exp> oexp;
+      Option<SCode.Comment> comment;
 
     case DAE.TYPES_VAR(name = n,attributes = DAE.ATTR(variability = var, parallelism = par),ty = ty,binding = bnd)
       equation
         c = variabilityToConst(var);
         p = DAEUtil.scodePrlToDaePrl(par);
         oexp = DAEUtil.bindingExp(bnd);
-      then ((n,ty,c,p,oexp));
+      then DAE.FUNCARG(n,ty,c,p,oexp);
   end match;
 end makeFarg;
 
@@ -3207,11 +3208,10 @@ algorithm
       DAE.ComponentRef cref;
       DAE.VarParallelism parallelism;
 
-    case (DAE.VAR(componentRef=cref), (_, ty, c, parallelism, binding) )
+    case (DAE.VAR(componentRef=cref), _)
       equation
         name = ComponentReference.crefLastIdent(cref);
-    then
-      ((name, ty, c, parallelism, binding));
+      then setFuncArgName(inFarg, name);
   end match;
 end makeElementFarg;
 
@@ -3808,8 +3808,8 @@ algorithm
 
     case (t as DAE.T_ARRAY(source = _))
       equation
-        (_,dims) = flattenArrayTypeOpt(t);
-        t_1 = simplifyType(arrayElementType(t));
+        (t,dims) = flattenArrayTypeOpt(t);
+        t_1 = simplifyType(t);
       then
         DAE.T_ARRAY(t_1,dims,DAE.emptyTypeSource);
 
@@ -5355,7 +5355,7 @@ algorithm
 
     case DAE.T_FUNCTION(funcArg = fargs,funcResultType = ty)
       equation
-        tys = List.map(fargs, Util.tuple52);
+        tys = List.map(fargs, funcArgType);
         explists = List.map(tys, getAllExps);
         tyexps = getAllExps(ty);
         exps = List.flatten((tyexps :: explists));
@@ -5913,14 +5913,10 @@ algorithm
 
     case (DAE.T_FUNCTION(args1,ty1,functionAttributes,ts1),_,_,_)
       equation
-        names1 = List.map(args1, Util.tuple51);
-        tys1 = List.map(args1, Util.tuple52);
-        cs = List.map(args1, Util.tuple53);
-        ps = List.map(args1, Util.tuple54);
-        oe = List.map(args1, Util.tuple55);
+        tys1 = List.map(args1, funcArgType);
         tys1 = List.map3(tys1, fixPolymorphicRestype2, prefix, bindings, info);
         ty1 = fixPolymorphicRestype2(ty1,prefix,bindings,info);
-        args1 = List.thread5Tuple(names1,tys1,cs,ps,oe);
+        args1 = List.threadMap(args1,tys1,setFuncArgType);
         ty1 = DAE.T_FUNCTION(args1,ty1,functionAttributes,ts1);
       then ty1;
 
@@ -6039,7 +6035,7 @@ algorithm
 
     case ((first as DAE.T_FUNCTION(funcArgs,ty,_,_))::rest,acc,_)
       equation
-        tys = List.map(funcArgs, Util.tuple52);
+        tys = List.map(funcArgs, funcArgType);
         acc = getAllInnerTypes(tys,List.consOnSuccess(first,acc,fn),fn);
       then getAllInnerTypes(ty::rest,acc,fn);
 
@@ -6098,14 +6094,10 @@ algorithm
 
     case (DAE.T_FUNCTION(funcArgs1,resType1,functionAttributes,{path}))
       equation
-        funcArgNames = List.map(funcArgs1, Util.tuple51);
-        funcArgTypes1 = List.map(funcArgs1, Util.tuple52);
-        cs = List.map(funcArgs1, Util.tuple53);
-        ps = List.map(funcArgs1, Util.tuple54);
-        oe = List.map(funcArgs1, Util.tuple55);
+        funcArgTypes1 = List.map(funcArgs1, funcArgType);
         (dummyExpList,dummyBoxedTypeList) = makeDummyExpAndTypeLists(funcArgTypes1);
         (_,funcArgTypes2) = matchTypeTuple(dummyExpList, funcArgTypes1, dummyBoxedTypeList, false);
-        funcArgs2 = List.thread5Tuple(funcArgNames,funcArgTypes2,cs,ps,oe);
+        funcArgs2 = List.threadMap(funcArgs1,funcArgTypes2,setFuncArgType);
         resType2 = makeFunctionPolymorphicReferenceResType(resType1);
         ty2 = DAE.T_FUNCTION(funcArgs2,resType2,functionAttributes,{path});
       then ty2;
@@ -6436,14 +6428,12 @@ algorithm
 
     case (DAE.T_FUNCTION(args1,ty1,functionAttributes1,ts1)::_,DAE.T_FUNCTION(args2,ty2,_,_)::rest,solvedBindings)
       equation
-        names1 = List.map(args1, Util.tuple51);
-        cs1 = List.map(args1, Util.tuple53);
-        ps1 = List.map(args1, Util.tuple54);
-        tys1 = List.map(args1, Util.tuple52);
-        tys2 = List.map(args2, Util.tuple52);
+        tys1 = List.map(args1, funcArgType);
+        tys2 = List.map(args2, funcArgType);
         (ty1::tys1,solvedBindings) = solveBindingsThread(ty1::tys1,ty2::tys2,false,solvedBindings);
         tys1 = List.map(tys1, boxIfUnboxedType);
-        args1 = List.thread5Tuple(names1,tys1,cs1,ps1,List.fill(NONE(),listLength(names1)));
+        args1 = List.threadMap(args1,tys1,setFuncArgType);
+        args1 = List.map(args1,clearDefaultBinding);
         ty1 = DAE.T_FUNCTION(args1,ty1,functionAttributes1,ts1);
       then (ty1::rest,solvedBindings);
 
@@ -6562,15 +6552,11 @@ algorithm
 
     case (DAE.T_FUNCTION(args,resType,functionAttributes,ts),solvedBindings)
       equation
-        tys = List.map(args, Util.tuple52);
+        tys = List.map(args, funcArgType);
         tys = replaceSolvedBindings(resType::tys,solvedBindings,false);
         tys = List.map(tys, unboxedType);
         ty::tys = List.map(tys, boxIfUnboxedType);
-        names = List.map(args, Util.tuple51);
-        cs = List.map(args, Util.tuple53);
-        ps = List.map(args, Util.tuple54);
-        oe = List.map(args, Util.tuple55);
-        args = List.thread5Tuple(names,tys,cs,ps,oe);
+        args = List.threadMap(args,tys,setFuncArgType);
         ty = makeRegularTupleFromMetaTupleOnTrue(isTuple(resType),ty);
         ty = DAE.T_FUNCTION(args,ty,functionAttributes,ts);
       then ty;
@@ -6650,8 +6636,8 @@ algorithm
     case (DAE.T_FUNCTION(farg1,ty1,_,{path1}),DAE.T_FUNCTION(farg2,ty2,_,{_}),_,bindings)
       equation
         true = Absyn.pathPrefixOf(Util.getOptionOrDefault(envPath,Absyn.IDENT("$TOP$")),path1); // Don't rename the result type for recursive calls...
-        tList1 = List.map(farg1, Util.tuple52);
-        tList2 = List.map(farg2, Util.tuple52);
+        tList1 = List.map(farg1, funcArgType);
+        tList2 = List.map(farg2, funcArgType);
         bindings = subtypePolymorphicList(tList1,tList2,envPath,bindings);
         bindings = subtypePolymorphic(ty1,ty2,envPath,bindings);
       then bindings;
@@ -6661,8 +6647,8 @@ algorithm
         false = Absyn.pathPrefixOf(Util.getOptionOrDefault(envPath,Absyn.IDENT("$TOP$")),path1);
         prefix = "$" +& Absyn.pathString(path1) +& ".";
         ((DAE.T_FUNCTION(farg1,ty1,_,_),_)) = traverseType((actual,prefix),prefixTraversedPolymorphicType);
-        tList1 = List.map(farg1, Util.tuple52);
-        tList2 = List.map(farg2, Util.tuple52);
+        tList1 = List.map(farg1, funcArgType);
+        tList2 = List.map(farg2, funcArgType);
         bindings = subtypePolymorphicList(tList1,tList2,envPath,bindings);
         bindings = subtypePolymorphic(ty1,ty2,envPath,bindings);
       then bindings;
@@ -7064,13 +7050,15 @@ algorithm
       Option<DAE.Exp> d;
       list<DAE.FuncArg> args;
       A a;
+      DAE.FuncArg arg;
 
     case ({},a,_) then ({},a);
-    case ((b,ty,c,p,d)::args,a,_)
+    case ((arg as DAE.FUNCARG(ty=ty))::args,a,_)
       equation
         ((ty,a)) = traverseType((ty,a),fn);
+        arg = setFuncArgType(arg,ty);
         (args,a) = traverseFuncArg(args,a,fn);
-      then ((b,ty,c,p,d)::args,a);
+      then (arg::args,a);
   end match;
 end traverseFuncArg;
 
@@ -7123,14 +7111,10 @@ algorithm
 
     case (DAE.T_FUNCTION(args1,ty1,functionAttributes,ts))
       equation
-        names1 = List.map(args1, Util.tuple51);
-        tys1 = List.map(args1, Util.tuple52);
-        cs1 = List.map(args1, Util.tuple53);
-        ps1 = List.map(args1, Util.tuple54);
-        oe1 = List.map(args1, Util.tuple55);
+        tys1 = List.map(args1, funcArgType);
         tys1 = List.map(tys1, unboxedType);
         ty1 = unboxedType(ty1);
-        args1 = List.thread5Tuple(names1,tys1,cs1,ps1,oe1);
+        args1 = List.threadMap(args1,tys1,setFuncArgType);
       then (DAE.T_FUNCTION(args1,ty1,functionAttributes,ts));
   end match;
 end unboxedFunctionType;
@@ -8003,5 +7987,131 @@ algorithm
     else inTpl;
   end match;
 end getUniontypeIfMetarecordTraverse;
+
+protected function isBuiltin
+  input DAE.FunctionBuiltin a;
+  output Boolean b;
+algorithm
+  b := match a
+    case DAE.FUNCTION_NOT_BUILTIN() then false;
+    else true;
+  end match;
+end isBuiltin;
+
+public function makeCallAttr
+  input DAE.Type ty;
+  input DAE.FunctionAttributes attr;
+  output DAE.CallAttributes callAttr;
+protected
+  Boolean isImpure,isT,isB;
+  DAE.FunctionBuiltin builtin;
+  DAE.InlineType inline;
+algorithm
+  DAE.FUNCTION_ATTRIBUTES(isBuiltin=builtin,isImpure=isImpure,inline=inline) := attr;
+  isT := isTuple(ty);
+  isB := isBuiltin(builtin);
+  callAttr := DAE.CALL_ATTR(ty,isT,isB,isImpure,inline,DAE.NO_TAIL());
+end makeCallAttr;
+
+public function getFuncArg
+  input DAE.Type ty;
+  output list<DAE.FuncArg> args;
+algorithm
+  DAE.T_FUNCTION(funcArg=args) := ty;
+end getFuncArg;
+
+public function isArray1D
+  input DAE.Type inType;
+  output Boolean b;
+algorithm
+  b := match inType
+    local
+      DAE.Type ty;
+    case DAE.T_ARRAY(ty = ty) then not arrayType(ty);
+    else false;
+  end match;
+end isArray1D;
+
+public function isArray2D
+  input DAE.Type inType;
+  output Boolean b;
+algorithm
+  b := match inType
+    local
+      DAE.Type ty;
+    case DAE.T_ARRAY(ty = DAE.T_ARRAY(ty = ty)) then not arrayType(ty);
+    else false;
+  end match;
+end isArray2D;
+
+public function funcArgName
+  input DAE.FuncArg arg;
+  output String name;
+algorithm
+  DAE.FUNCARG(name=name) := arg;
+end funcArgName;
+
+public function funcArgType
+  input DAE.FuncArg arg;
+  output DAE.Type ty;
+algorithm
+  DAE.FUNCARG(ty=ty) := arg;
+end funcArgType;
+
+public function funcArgDefaultBinding
+  input DAE.FuncArg arg;
+  output Option<DAE.Exp> defaultBinding;
+algorithm
+  DAE.FUNCARG(defaultBinding=defaultBinding) := arg;
+end funcArgDefaultBinding;
+
+public function setFuncArgType
+  input DAE.FuncArg arg;
+  input DAE.Type ty;
+  output DAE.FuncArg outArg;
+protected
+  String name;
+  DAE.Const const;
+  DAE.VarParallelism par;
+  Option<DAE.Exp> defaultBinding;
+algorithm
+  DAE.FUNCARG(name,_,const,par,defaultBinding) := arg;
+  outArg := DAE.FUNCARG(name,ty,const,par,defaultBinding);
+end setFuncArgType;
+
+public function setFuncArgName
+  input DAE.FuncArg arg;
+  input String name;
+  output DAE.FuncArg outArg;
+protected
+  DAE.Type ty;
+  DAE.Const const;
+  DAE.VarParallelism par;
+  Option<DAE.Exp> defaultBinding;
+algorithm
+  DAE.FUNCARG(_,ty,const,par,defaultBinding) := arg;
+  outArg := DAE.FUNCARG(name,ty,const,par,defaultBinding);
+end setFuncArgName;
+
+public function clearDefaultBinding
+  input DAE.FuncArg arg;
+  output DAE.FuncArg outArg;
+protected
+  String name;
+  DAE.Type ty;
+  DAE.Const const;
+  DAE.VarParallelism par;
+algorithm
+  DAE.FUNCARG(name,ty,const,par,_) := arg;
+  outArg := DAE.FUNCARG(name,ty,const,par,NONE());
+end clearDefaultBinding;
+
+public function makeDefaultFuncArg
+  input String name;
+  input DAE.Type ty;
+  output DAE.FuncArg arg;
+algorithm
+  arg := DAE.FUNCARG(name,ty,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE());
+end makeDefaultFuncArg;
 
 end Types;

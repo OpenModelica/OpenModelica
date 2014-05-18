@@ -897,7 +897,7 @@ protected function isNotFunctionType
   output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue(inFuncArg)
-    case((_,DAE.T_FUNCTION(funcArg = _),_,_,_)) then false;
+    case DAE.FUNCARG(ty=DAE.T_FUNCTION(funcArg = _)) then false;
     case(_) then true;
   end matchcontinue;
 end isNotFunctionType;
@@ -961,7 +961,7 @@ algorithm
         // The full type needs the dimensions
         ty = Types.makeArraySubscripts(ty,dims);
         // TODO: FIXME: binding?
-        res = DAE.TYPES_VAR(i,DAE.ATTR(SCode.POTENTIAL(),SCode.NON_PARALLEL(), SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER(),SCode.PUBLIC()),ty,DAE.UNBOUND(),NONE());
+        res = DAE.TYPES_VAR(i,DAE.dummyAttrInput,ty,DAE.UNBOUND(),NONE());
       then
         res;
     case(_)

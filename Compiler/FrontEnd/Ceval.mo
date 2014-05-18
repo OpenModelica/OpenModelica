@@ -173,7 +173,7 @@ algorithm
       Integer start_1,stop_1,step_1,i,indx_1,indx,index;
       Option<GlobalScript.SymbolTable> stOpt;
       Real lhvReal,rhvReal,sum,r,realStart1,realStop1,realStep1;
-      String str,lhvStr,rhvStr,s;
+      String str,lhvStr,rhvStr,s,foldName,resultName;
       Boolean impl,b,b_1,lhvBool,rhvBool,resBool, bstart, bstop;
       Absyn.Exp exp_1,exp;
       Env.Env env;
@@ -856,7 +856,7 @@ algorithm
       then
         (cache,v,stOpt);
 
-    case (cache, env, DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = path, foldExp = foldExp, defaultValue = ov, exprType = ty), expr = daeExp, iterators = iterators), impl, stOpt, msg,_)
+    case (cache, env, DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = path, foldName=foldName, resultName=resultName, foldExp = foldExp, defaultValue = ov, exprType = ty), expr = daeExp, iterators = iterators), impl, stOpt, msg,_)
       equation
         env = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(Env.forScopeName), NONE());
         (cache, valMatrix, names, dims, tys, stOpt) = cevalReductionIterators(cache, env, iterators, impl, stOpt,msg,numIter+1);
@@ -864,7 +864,7 @@ algorithm
         valMatrix = Util.allCombinations(valMatrix,SOME(100000),Absyn.dummyInfo);
         // print("After:\n");print(stringDelimitList(List.map1(List.mapList(valMatrix, ValuesUtil.valString), stringDelimitList, ","), "\n") +& "\n");
         // print("Start cevalReduction: " +& Absyn.pathString(path) +& " " +& ValuesUtil.valString(startValue) +& " " +& ValuesUtil.valString(Values.TUPLE(vals)) +& " " +& ExpressionDump.printExpStr(daeExp) +& "\n");
-        (cache, ov, stOpt) = cevalReduction(cache, env, path, ov, daeExp, ty, foldExp, names, listReverse(valMatrix), tys, impl, stOpt,msg,numIter+1);
+        (cache, ov, stOpt) = cevalReduction(cache, env, path, ov, daeExp, ty, foldName, resultName, foldExp, names, listReverse(valMatrix), tys, impl, stOpt,msg,numIter+1);
         value = Util.getOptionOrDefault(ov, Values.META_FAIL());
         value = backpatchArrayReduction(path, value, dims);
       then (cache, value, stOpt);
@@ -5314,6 +5314,8 @@ protected function cevalReduction
   input Option<Values.Value> inCurValue;
   input DAE.Exp exp;
   input DAE.Type exprType;
+  input String foldName;
+  input String resultName;
   input Option<DAE.Exp> foldExp;
   input list<String> iteratorNames;
   input list<list<Values.Value>> inValueMatrix;
@@ -5326,7 +5328,7 @@ protected function cevalReduction
   output Option<Values.Value> result;
   output Option<GlobalScript.SymbolTable> newSymbolTable;
 algorithm
-  (newCache, result, newSymbolTable) := matchcontinue (inCache, inEnv, opPath, inCurValue, exp, exprType, foldExp, iteratorNames, inValueMatrix, iterTypes, impl, inSt, msg, numIter)
+  (newCache, result, newSymbolTable) := matchcontinue (inCache, inEnv, opPath, inCurValue, exp, exprType, foldName, resultName, foldExp, iteratorNames, inValueMatrix, iterTypes, impl, inSt, msg, numIter)
     local
       list<Values.Value> vals;
       Env.Env new_env,env;
@@ -5336,25 +5338,25 @@ algorithm
       list<list<Values.Value>> valueMatrix;
       Option<Values.Value> curValue;
 
-    case (cache, _, Absyn.IDENT("listReverse"), SOME(Values.LIST(vals)), _, _, _, _, {}, _, _, st, _, _)
+    case (cache, _, Absyn.IDENT("listReverse"), SOME(Values.LIST(vals)), _, _, _, _, _, _, {}, _, _, st, _, _)
       equation
         vals = listReverse(vals);
       then (cache, SOME(Values.LIST(vals)), st);
-    case (cache, _, Absyn.IDENT("array"), SOME(Values.ARRAY(vals,dims)), _, _, _, _, {}, _, _, st, _, _)
+    case (cache, _, Absyn.IDENT("array"), SOME(Values.ARRAY(vals,dims)), _, _, _, _, _, _, {}, _, _, st, _, _)
       then (cache, SOME(Values.ARRAY(vals,dims)), st);
 
-    case (cache, _, _, curValue, _, _, _, _, {}, _, _, st, _, _)
+    case (cache, _, _, curValue, _, _, _, _, _, _, {}, _, _, st, _, _)
       then (cache, curValue, st);
 
-    case (cache, env, _, curValue, _, _, _, _, vals :: valueMatrix, _, _, st, _, _)
+    case (cache, env, _, curValue, _, _, _, _, _, _, vals :: valueMatrix, _, _, st, _, _)
       equation
         // Bind the iterator
         // print("iterator: " +& iteratorName +& " => " +& ValuesUtil.valString(value) +& "\n");
         new_env = extendFrameForIterators(env, iteratorNames, vals, iterTypes);
         // Calculate var1 of the folding function
-        (cache, curValue, st) = cevalReductionEvalAndFold(cache, new_env, opPath, curValue, exp, exprType, foldExp, impl, st,msg,numIter+1);
+        (cache, curValue, st) = cevalReductionEvalAndFold(cache, new_env, opPath, curValue, exp, exprType, foldName, resultName, foldExp, impl, st,msg,numIter+1);
         // Fold the rest of the reduction
-        (cache, curValue, st) = cevalReduction(cache, env, opPath, curValue, exp, exprType, foldExp, iteratorNames, valueMatrix, iterTypes, impl, st,msg,numIter);
+        (cache, curValue, st) = cevalReduction(cache, env, opPath, curValue, exp, exprType, foldName, resultName, foldExp, iteratorNames, valueMatrix, iterTypes, impl, st,msg,numIter);
       then (cache, curValue, st);
   end matchcontinue;
 end cevalReduction;
@@ -5366,6 +5368,8 @@ protected function cevalReductionEvalAndFold "Evaluate the reduction body and fo
   input Option<Values.Value> inCurValue;
   input DAE.Exp exp;
   input DAE.Type exprType;
+  input String foldName;
+  input String resultName;
   input Option<DAE.Exp> foldExp;
   input Boolean impl;
   input Option<GlobalScript.SymbolTable> inSt;
@@ -5375,7 +5379,7 @@ protected function cevalReductionEvalAndFold "Evaluate the reduction body and fo
   output Option<Values.Value> result;
   output Option<GlobalScript.SymbolTable> newSymbolTable;
 algorithm
-  (newCache,result,newSymbolTable) := match (inCache,inEnv,opPath,inCurValue,exp,exprType,foldExp,impl,inSt,msg,numIter)
+  (newCache,result,newSymbolTable) := match (inCache,inEnv,opPath,inCurValue,exp,exprType,foldName,resultName,foldExp,impl,inSt,msg,numIter)
     local
       Values.Value value;
       Option<Values.Value> curValue;
@@ -5383,11 +5387,11 @@ algorithm
       Env.Env env;
       Option<GlobalScript.SymbolTable> st;
 
-    case (cache,env,_,curValue,_,_,_,_,st,_,_)
+    case (cache,env,_,curValue,_,_,_,_,_,_,st,_,_)
       equation
         (cache, value, st) = ceval(cache, env, exp, impl, st,msg,numIter+1);
         // print("cevalReductionEval: " +& ExpressionDump.printExpStr(exp) +& " => " +& ValuesUtil.valString(value) +& "\n");
-        (cache, result, st) = cevalReductionFold(cache, env, opPath, curValue, value, foldExp, exprType, impl, st,msg,numIter);
+        (cache, result, st) = cevalReductionFold(cache, env, opPath, curValue, value, foldName, resultName, foldExp, exprType, impl, st,msg,numIter);
       then (cache, result, st);
   end match;
 end cevalReductionEvalAndFold;
@@ -5398,6 +5402,8 @@ protected function cevalReductionFold "Fold the reduction body"
   input Absyn.Path opPath;
   input Option<Values.Value> inCurValue;
   input Values.Value inValue;
+  input String foldName;
+  input String resultName;
   input Option<DAE.Exp> foldExp;
   input DAE.Type exprType;
   input Boolean impl;
@@ -5409,7 +5415,7 @@ protected function cevalReductionFold "Fold the reduction body"
   output Option<GlobalScript.SymbolTable> newSymbolTable;
 algorithm
   (newCache,result,newSymbolTable) :=
-  match (inCache,inEnv,opPath,inCurValue,inValue,foldExp,exprType,impl,inSt,msg,numIter)
+  match (inCache,inEnv,opPath,inCurValue,inValue,foldName,resultName,foldExp,exprType,impl,inSt,msg,numIter)
     local
       DAE.Exp exp;
       Values.Value value;
@@ -5417,27 +5423,27 @@ algorithm
       Env.Env env;
       Option<GlobalScript.SymbolTable> st;
 
-    case (cache,_,Absyn.IDENT("array"),SOME(value),_,_,_,_,st,_,_)
+    case (cache,_,Absyn.IDENT("array"),SOME(value),_,_,_,_,_,_,st,_,_)
       equation
         value = valueArrayCons(ValuesUtil.unboxIfBoxedVal(inValue),value);
       then (cache,SOME(value),st);
-    case (cache,_,Absyn.IDENT("list"),SOME(value),_,_,_,_,st,_,_)
+    case (cache,_,Absyn.IDENT("list"),SOME(value),_,_,_,_,_,_,st,_,_)
       equation
         value = valueCons(ValuesUtil.unboxIfBoxedVal(inValue),value);
       then (cache,SOME(value),st);
-    case (cache,_,Absyn.IDENT("listReverse"),SOME(value),_,_,_,_,st,_,_)
+    case (cache,_,Absyn.IDENT("listReverse"),SOME(value),_,_,_,_,_,_,st,_,_)
       equation
         value = valueCons(ValuesUtil.unboxIfBoxedVal(inValue),value);
       then (cache,SOME(value),st);
-    case (cache,_,_,NONE(),_,_,_,_,st,_,_)
+    case (cache,_,_,NONE(),_,_,_,_,_,_,st,_,_)
       then (cache,SOME(inValue),st);
 
-    case (cache,env,_,SOME(value),_,SOME(exp),_,_,st,_,_)
+    case (cache,env,_,SOME(value),_,_,_,SOME(exp),_,_,st,_,_)
       equation
         // print("cevalReductionFold " +& ExpressionDump.printExpStr(exp) +& ", " +& ValuesUtil.valString(inValue) +& ", " +& ValuesUtil.valString(value) +& "\n");
         /* TODO: Store the actual types somewhere... */
-        env = Env.extendFrameForIterator(env, "$reductionFoldTmpA", exprType, DAE.VALBOUND(inValue, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.VAR(), SOME(DAE.C_CONST()));
-        env = Env.extendFrameForIterator(env, "$reductionFoldTmpB", exprType, DAE.VALBOUND(value, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.VAR(), SOME(DAE.C_CONST()));
+        env = Env.extendFrameForIterator(env, foldName, exprType, DAE.VALBOUND(inValue, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.VAR(), SOME(DAE.C_CONST()));
+        env = Env.extendFrameForIterator(env, resultName, exprType, DAE.VALBOUND(value, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.VAR(), SOME(DAE.C_CONST()));
         (cache, value, st) = ceval(cache, env, exp, impl, st,msg,numIter+1);
       then (cache, SOME(value), st);
   end match;

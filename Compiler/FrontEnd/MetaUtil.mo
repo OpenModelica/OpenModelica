@@ -525,8 +525,8 @@ algorithm
 
     case (DAE.T_FUNCTION(funcArg = fargs,funcResultType = DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_))))
       equation
-        names = List.map(fargs, Util.tuple51);
-        types = List.map(fargs, Util.tuple52);
+        names = List.map(fargs, Types.funcArgName);
+        types = List.map(fargs, Types.funcArgType);
       then (names,types);
   end match;
 end constructorCallTypeToNamesAndTypes;

@@ -3814,7 +3814,7 @@ algorithm
            " mod_1: " +& Mod.printModStr(mod_1) +&
            "\n");*/
 
-        dae_attr = DAEUtil.translateSCodeAttrToDAEAttr(attr, prefixes);
+        dae_attr = DAEUtil.translateSCodeAttrToDAEAttr(attr, prefixes, comment);
         new_var = DAE.TYPES_VAR(name, dae_attr, ty, binding, NONE());
 
         // Type info present. Now we can also put the binding into the dae.
@@ -3886,7 +3886,7 @@ algorithm
         (cache, binding) = InstBinding.makeBinding(cache, env, attr, m_1, ty, pre, name, info);
 
         // true in update_frame means the variable is now instantiated.
-        dae_attr = DAEUtil.translateSCodeAttrToDAEAttr(attr, prefixes);
+        dae_attr = DAEUtil.translateSCodeAttrToDAEAttr(attr, prefixes, comment);
         new_var = DAE.TYPES_VAR(name, dae_attr, ty, binding, NONE()) ;
 
         // type info present Now we can also put the binding into the dae.
@@ -4444,6 +4444,7 @@ algorithm
         crefs_2 = InstUtil.removeCrefFromCrefs(crefs_1, cref);
         updatedComps = BaseHashTable.add((cref,0),updatedComps);
         (cache,env2,ih,SOME(updatedComps)) = updateComponentsInEnv2(cache, env, ih, pre, DAE.NOMOD(), crefs_2, ci_state, impl, SOME(updatedComps), SOME(cref));
+
         (cache,env_1,ih,updatedComps) = updateComponentInEnv2(cache,env2,cenv,ih,pre,t,n,ad,cl,attr,pf,DAE.ATTR(ct,prl1,var1,dir,io,visibility),info,m,cmod,mods,cref,ci_state,impl,updatedComps);
 
         //print("updateComponentInEnv: NEW ENV:\n" +& Env.printEnvStr(env_1) +& "\n");
@@ -5470,6 +5471,7 @@ algorithm
 
         io = SCode.prefixesInnerOuter(inPrefixes);
         vis = SCode.prefixesVisibility(inPrefixes);
+
         new_var = DAE.TYPES_VAR(n,DAE.ATTR(ct,prl1,var1,dir,io,vis),ty,DAE.UNBOUND(),NONE());
         env = Env.updateFrameV(env, new_var, Env.VAR_TYPED(), compenv);
         ErrorExt.rollBack("Inst.removeSelfReferenceAndUpdate");
@@ -5508,6 +5510,7 @@ algorithm
 
         io = SCode.prefixesInnerOuter(inPrefixes);
         vis = SCode.prefixesVisibility(inPrefixes);
+
         new_var = DAE.TYPES_VAR(n,DAE.ATTR(ct,prl1,var1,dir,io,vis),ty,DAE.UNBOUND(),NONE());
         env = Env.updateFrameV(env, new_var, Env.VAR_TYPED(), compenv);
         ErrorExt.rollBack("Inst.removeSelfReferenceAndUpdate");
@@ -5546,6 +5549,7 @@ algorithm
 
         io = SCode.prefixesInnerOuter(inPrefixes);
         vis = SCode.prefixesVisibility(inPrefixes);
+
         new_var = DAE.TYPES_VAR(n,DAE.ATTR(ct,prl1,var1,dir,io,vis),ty,DAE.UNBOUND(),NONE());
         env = Env.updateFrameV(env, new_var, Env.VAR_TYPED(), compenv);
         ErrorExt.rollBack("Inst.removeSelfReferenceAndUpdate");
@@ -5585,6 +5589,7 @@ algorithm
 
         io = SCode.prefixesInnerOuter(inPrefixes);
         vis = SCode.prefixesVisibility(inPrefixes);
+
         new_var = DAE.TYPES_VAR(n,DAE.ATTR(ct,prl1,var1,dir,io,vis),ty,DAE.UNBOUND(),NONE());
         env = Env.updateFrameV(env, new_var, Env.VAR_TYPED(), compenv);
         ErrorExt.rollBack("Inst.removeSelfReferenceAndUpdate");

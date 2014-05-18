@@ -107,6 +107,7 @@ NFSCodeFlatten.mo \
 NFSCodeMod.mo \
 NFTypeCheck.mo \
 NFTyping.mo \
+OperatorOverloading.mo \
 Parser.mo \
 Patternm.mo \
 Prefix.mo \

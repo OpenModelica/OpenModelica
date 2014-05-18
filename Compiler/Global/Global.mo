@@ -66,6 +66,8 @@ constant Integer backendDAE_jacobianSeq = 21;
 // Real-time clocks have nothing to do with the roots
 constant Integer RT_CLOCK_EXECSTAT_MAIN = 11 /* See GlobalScript.mo */;
 
+constant Integer tmpVariableIndex = 4;
+
 public function initialize "Called to initialize global roots (when needed)"
 algorithm
   setGlobalRoot(instOnlyForcedFunctions,  NONE());

@@ -3716,6 +3716,21 @@ algorithm
   end match;
 end optCommentHasBooleanNamedAnnotation;
 
+public function commentHasBooleanNamedAnnotation
+"check if the named annotation is present and has value true"
+  input Comment comm;
+  input String annotationName;
+  output Boolean outB;
+algorithm
+  outB := match (comm,annotationName)
+    local
+      Annotation ann;
+    case (COMMENT(annotation_=SOME(ann)),_)
+      then hasBooleanNamedAnnotation(ann,annotationName);
+    else false;
+  end match;
+end commentHasBooleanNamedAnnotation;
+
 public function hasBooleanNamedAnnotation
   "Checks if the given annotation contains an entry with the given name with the
    value true."

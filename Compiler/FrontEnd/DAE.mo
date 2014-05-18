@@ -186,7 +186,7 @@ public uniontype Element
     ConnectorType connectorType "The connector type: flow, stream, no prefix, or not a connector element.";
     ElementSource source "the origins of the component/equation/algorithm";
     Option<VariableAttributes> variableAttributesOption;
-    Option<SCode.Comment> absynCommentOption;
+    Option<SCode.Comment> comment;
     Absyn.InnerOuter innerOuter "inner/outer required to 'change' outer references";
   end VAR;
 
@@ -753,7 +753,7 @@ public
 constant Attributes dummyAttrVar   = ATTR(SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(),   Absyn.BIDIR(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC());
 constant Attributes dummyAttrParam = ATTR(SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.PARAM(), Absyn.BIDIR(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC());
 constant Attributes dummyAttrConst = ATTR(SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC());
-constant Attributes dummyAttrInput = ATTR(SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.PARAM(), Absyn.INPUT(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC());
+constant Attributes dummyAttrInput = ATTR(SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(),   Absyn.INPUT(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC());
 
 public uniontype BindingSource "where this binding came from: either default binding or start value"
   record BINDING_FROM_DEFAULT_VALUE "the binding came from the default value" end BINDING_FROM_DEFAULT_VALUE;
@@ -1055,7 +1055,15 @@ public uniontype DimensionBinding
 end DimensionBinding;
 
 public
-type FuncArg = tuple<Ident, Type, Const, VarParallelism, Option<Exp>> "Function Argument; name, type, variability parallelism, and default binding (should probably be constant)" ;
+uniontype FuncArg
+  record FUNCARG
+    String name;
+    Type ty;
+    Const const;
+    VarParallelism par;
+    Option<Exp> defaultBinding;
+  end FUNCARG;
+end FuncArg;
 
 public
 uniontype Const "The degree of constantness of an expression is determined by the Const
@@ -1419,11 +1427,21 @@ uniontype CallAttributes
   end CALL_ATTR;
 end CallAttributes;
 
+public uniontype ReductionIterType
+  record COMBINE "Reductions are by default calculated as all combinations of the iterators"
+  end COMBINE;
+  record THREAD "With this option, all iterators must have the same length"
+  end THREAD;
+end ReductionIterType;
+
 public uniontype ReductionInfo
   record REDUCTIONINFO "A separate uniontype containing the information not required by traverseExp, etc"
     Absyn.Path path "array, sum,..";
+    ReductionIterType iterType;
     Type exprType;
     Option<Values.Value> defaultValue "if there is no default value, the reduction is not defined for 0-length arrays/lists";
+    String foldName;
+    String resultName "Unique identifier for the resulting expression";
     Option<Exp> foldExp "For example, max(ident,$res) or ident+$res; array() does not use this feature; DO NOT TRAVERSE THIS EXPRESSION!";
   end REDUCTIONINFO;
 end ReductionInfo;

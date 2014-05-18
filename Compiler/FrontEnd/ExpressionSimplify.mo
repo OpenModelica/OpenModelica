@@ -636,6 +636,8 @@ algorithm
       Option<Values.Value> v;
       DAE.Type ty;
       DAE.ReductionIterators riters;
+      String foldName,resultName;
+      DAE.ReductionIterType rit;
 
     case DAE.CALL(path=Absyn.IDENT("listAppend"),expLst={DAE.LIST(el),e2})
       equation
@@ -666,14 +668,14 @@ algorithm
         e1_1 = DAE.LIST(el);
       then e1_1;
 
-    case DAE.CALL(path=Absyn.IDENT("listReverse"),expLst={DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("list"),ty,v,foldExp),e1,riters)})
+    case DAE.CALL(path=Absyn.IDENT("listReverse"),expLst={DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("list"),rit,ty,v,foldName,resultName,foldExp),e1,riters)})
       equation
-        e1 = DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("listReverse"),ty,v,foldExp),e1,riters);
+        e1 = DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("listReverse"),rit,ty,v,foldName,resultName,foldExp),e1,riters);
       then e1;
 
-    case DAE.CALL(path=Absyn.IDENT("listReverse"),expLst={DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("listReverse"),ty,v,foldExp),e1,riters)})
+    case DAE.CALL(path=Absyn.IDENT("listReverse"),expLst={DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("listReverse"),rit,ty,v,foldName,resultName,foldExp),e1,riters)})
       equation
-        e1 = DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("list"),ty,v,foldExp),e1,riters);
+        e1 = DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("list"),rit,ty,v,foldName,resultName,foldExp),e1,riters);
       then e1;
 
     case DAE.CALL(path=Absyn.IDENT("listLength"),expLst={DAE.LIST(el)})
@@ -929,6 +931,17 @@ algorithm
         es = List.union(es,es);
         i2 = listLength(es);
         false = i1 == i2;
+        e = Expression.makeScalarArray(es,tp);
+      then Expression.makeBuiltinCall("max",{e},tp);
+
+    case (DAE.CALL(path=Absyn.IDENT("max"),expLst={DAE.ARRAY(array=es)},attr=DAE.CALL_ATTR(ty=tp)))
+      equation
+        i1 = listLength(es);
+        SOME(e) = List.fold(es, maxElement, NONE());
+        es = List.select(es, removeMinMaxFoldableValues);
+        es = e::es;
+        i2 = listLength(es);
+        true = i2 < i1;
         e = Expression.makeScalarArray(es,tp);
       then Expression.makeBuiltinCall("max",{e},tp);
 
@@ -2786,6 +2799,7 @@ algorithm
       Real rstart,rstop,rstep,rval;
       DAE.ComponentRef c,c_1;
       Integer n;
+      list<DAE.ReductionIterator> iters;
 
     // subscript of an array
     case(DAE.ARRAY(_,_,exps),_, _)
@@ -2915,6 +2929,8 @@ algorithm
       Boolean b;
       list<DAE.Exp> exps,expl;
       list<list<DAE.Exp>> lstexps;
+      list<DAE.ReductionIterator> iters;
+      DAE.ReductionIterator iter;
 
     case (e,sub)
       equation
@@ -3105,8 +3121,36 @@ algorithm
         e2_1 = simplifyAsub(e2, sub);
       then DAE.IFEXP(cond,e1_1,e2_1);
 
+    case(DAE.REDUCTION(DAE.REDUCTIONINFO(path=Absyn.IDENT("array"),iterType=DAE.THREAD()),exp,iters), sub)
+      equation
+        exp = List.fold1(iters,simplifyAsubArrayReduction,sub,exp);
+      then exp;
+
+    case(DAE.REDUCTION(DAE.REDUCTIONINFO(path=Absyn.IDENT("array"),iterType=DAE.COMBINE()),exp,{iter}), sub)
+      equation
+        exp = simplifyAsubArrayReduction(iter,sub,exp);
+      then exp;
+
   end matchcontinue;
 end simplifyAsub;
+
+protected function simplifyAsubArrayReduction
+  input DAE.ReductionIterator iter;
+  input DAE.Exp sub;
+  input DAE.Exp acc;
+  output DAE.Exp res;
+algorithm
+  res := match (iter,sub,acc)
+    local
+      DAE.Exp exp;
+      String id;
+    case (DAE.REDUCTIONITER(id=id,exp=exp,guardExp=NONE()),_,_)
+      equation
+        exp = Expression.makeASUB(exp, {sub});
+        exp = replaceIteratorWithExp(exp, acc, id);
+      then exp;
+  end match;
+end simplifyAsubArrayReduction;
 
 protected function simplifyAsubOperator
   input DAE.Exp inExp1;
@@ -4769,6 +4813,8 @@ algorithm
       DAE.Type ty;
       DAE.Type ety;
       list<DAE.ReductionIterator> iterators;
+      String foldName,resultName;
+      Absyn.Path path;
 
     case DAE.REDUCTION(iterators = iterators, reductionInfo=DAE.REDUCTIONINFO(defaultValue = SOME(v)))
       equation
@@ -4782,23 +4828,47 @@ algorithm
         expr = ValuesUtil.valueExp(Values.META_FAIL());
       then expr;
 
-    case DAE.REDUCTION(reductionInfo = DAE.REDUCTIONINFO(path = Absyn.IDENT(str), exprType = ty, defaultValue = defaultValue), expr = expr, iterators = iterators)
+    case DAE.REDUCTION(reductionInfo = DAE.REDUCTIONINFO(path = path, foldName=foldName, resultName=resultName, foldExp=foldExp, exprType = ty, defaultValue = defaultValue), expr = expr, iterators = {DAE.REDUCTIONITER(id = iter_name, guardExp = NONE(), exp = range)})
       equation
-        true = listMember(str,{"array","min","max","sum","product"});
-        {DAE.REDUCTIONITER(id = iter_name, guardExp = NONE(), exp = range)} = iterators;
         values = Expression.getArrayOrRangeContents(range);
         // TODO: Use foldExp
         //ty = Types.unliftArray(ty);
         ety = Types.simplifyType(ty);
-        cref = DAE.CREF(DAE.CREF_IDENT(iter_name, ety, {}), ety);
         values = List.map2(values, replaceIteratorWithExp, expr, iter_name);
-        expr = simplifyReductionFoldPhase(str,ety,values,defaultValue);
+        expr = simplifyReductionFoldPhase(path,foldExp,foldName,resultName,ety,values,defaultValue);
+      then expr;
+
+    // iterType=THREAD() can handle multiple iterators
+    case DAE.REDUCTION(reductionInfo = DAE.REDUCTIONINFO(path = path, iterType = DAE.THREAD(), foldName=foldName, resultName=resultName, exprType = ty, foldExp=foldExp, defaultValue = defaultValue), expr = expr, iterators = iterators)
+      equation
+        // Start like for the normal reductions
+        DAE.REDUCTIONITER(id = iter_name, guardExp = NONE(), exp = range)::iterators = iterators;
+        values = Expression.getArrayOrRangeContents(range);
+        ety = Types.simplifyType(ty);
+        values = List.map2(values, replaceIteratorWithExp, expr, iter_name);
+        // Then also fix the rest of the iterators
+        values = List.fold(iterators, getIteratorValues, values);
+        // And fold
+        expr = simplifyReductionFoldPhase(path,foldExp,foldName,resultName,ety,values,defaultValue);
       then expr;
 
     else inReduction;
 
   end matchcontinue;
 end simplifyReduction;
+
+protected function getIteratorValues
+  input DAE.ReductionIterator iter;
+  input list<DAE.Exp> inValues;
+  output list<DAE.Exp> values;
+protected
+  String iter_name;
+  DAE.Exp range;
+algorithm
+  DAE.REDUCTIONITER(id = iter_name, guardExp = NONE(), exp = range) := iter;
+  values := Expression.getArrayOrRangeContents(range);
+  values := List.threadMap1(values, inValues, replaceIteratorWithExp, iter_name);
+end getIteratorValues;
 
 protected function replaceIteratorWithExp
   input DAE.Exp iterExp;
@@ -4851,43 +4921,77 @@ algorithm
 end replaceIteratorWithExpTraverser;
 
 protected function simplifyReductionFoldPhase
-  input String str;
+  input Absyn.Path path;
+  input Option<DAE.Exp> optFoldExp;
+  input String foldName,resultName;
   input DAE.Type ty;
-  input list<DAE.Exp> exps;
+  input list<DAE.Exp> inExps;
   input Option<Values.Value> defaultValue;
   output DAE.Exp exp;
 algorithm
-  exp := match (str,ty,exps,defaultValue)
+  exp := match (path,optFoldExp,foldName,resultName,ty,inExps,defaultValue)
     local
       Values.Value val;
-      DAE.Exp arr_exp;
+      DAE.Exp arr_exp,foldExp;
       DAE.Type aty;
+      list<DAE.Exp> exps;
 
-    case (_,_,{},SOME(val)) then ValuesUtil.valueExp(val);
-    case (_,_,{},NONE()) then fail();
-
-    case ("array",_,_,_)
+    case (Absyn.IDENT("array"),_,_,_,_,_,_)
       equation
         aty = Types.unliftArray(ty);
-      then
-        Expression.makeScalarArray(exps, aty);
+      then Expression.makeScalarArray(inExps, aty);
 
-    case ("min",_,_,_)
+    case (_,_,_,_,_,{},SOME(val)) then ValuesUtil.valueExp(val);
+    case (_,_,_,_,_,{},NONE()) then fail();
+
+    case (Absyn.IDENT("min"),_,_,_,_,_,_)
       equation
-        arr_exp = Expression.makeScalarArray(exps, ty);
-      then
-        Expression.makeBuiltinCall("min", {arr_exp}, ty);
+        arr_exp = Expression.makeScalarArray(inExps, ty);
+      then Expression.makeBuiltinCall("min", {arr_exp}, ty);
 
-    case ("max",_,_,_)
+    case (Absyn.IDENT("max"),_,_,_,_,_,_)
       equation
-        arr_exp = Expression.makeScalarArray(exps, ty);
-      then
-        Expression.makeBuiltinCall("max", {arr_exp}, ty);
+        arr_exp = Expression.makeScalarArray(inExps, ty);
+      then Expression.makeBuiltinCall("max", {arr_exp}, ty);
 
-    case ("product",_,_,_) then Expression.makeProductLst(exps);
-    case ("sum",_,_,_) then Expression.makeSum(exps);
+    case (_,SOME(_),_,_,_,{exp},_)
+      then exp;
+
+
+    // foldExp=(a+b) ; exps={1,2,3,4}
+    // step 1: result=4
+    // step 2: result= (replace b in (a+b) with 4, a with 3): 3+4
+    // ...
+    // Why reverse order? Smaller expressions to perform the replacements in
+    case (_,SOME(foldExp),_,_,_,_,_)
+      equation
+        exp::exps = listReverse(inExps);
+        exp = simplifyReductionFoldPhase2(exps,foldExp,foldName,resultName,exp);
+      then exp;
+
   end match;
 end simplifyReductionFoldPhase;
+
+protected function simplifyReductionFoldPhase2
+  input list<DAE.Exp> inExps;
+  input DAE.Exp foldExp;
+  input String foldName,resultName;
+  input DAE.Exp acc;
+  output DAE.Exp exp;
+algorithm
+  exp := match (inExps,foldExp,foldName,resultName,acc)
+    local
+      list<DAE.Exp> exps;
+
+    case ({},_,_,_,_) then acc;
+    case (exp::exps,_,_,_,_)
+      equation
+        exp = replaceIteratorWithExp(exp, foldExp, foldName);
+        exp = replaceIteratorWithExp(acc, exp, resultName);
+      then simplifyReductionFoldPhase2(exps,foldExp,foldName,resultName,exp);
+
+  end match;
+end simplifyReductionFoldPhase2;
 
 protected function hasZeroLengthIterator
   input list<DAE.ReductionIterator> inIters;
@@ -5039,96 +5143,6 @@ algorithm
   end match;
 end condSimplifyAddSymbolicOperation;
 
-
-public function simplifyMatrixProductOfRecords
-  "mahge: Simplifies matrix multiplication of record types by using overloaded
-  multiplication and addition functions."
-  input DAE.Exp inMatrix1;
-  input DAE.Exp inMatrix2;
-  input Absyn.Path mulFunc;
-  input Absyn.Path sumFunc;
-  output DAE.Exp outProduct;
-protected
-  DAE.Exp mat1, mat2;
-algorithm
-  mat1 := Expression.matrixToArray(inMatrix1);
-  mat2 := Expression.matrixToArray(inMatrix2);
-  // Transpose the second matrix. This makes it easier to do the multiplication,
-  // since we can do row-row multiplications instead of row-column.
-  (mat2, _) := Expression.transposeArray(mat2);
-  outProduct := simplifyMatrixProductOfRecords2(mat1, mat2, mulFunc, sumFunc);
-end simplifyMatrixProductOfRecords;
-
-
-protected function simplifyMatrixProductOfRecords2
-" Simplifies the scalar product of two vectors of record types using overloaded
-  scalar addition and multiplication functions."
-  input DAE.Exp inMatrix1;
-  input DAE.Exp inMatrix2;
-  input Absyn.Path mulFunc;
-  input Absyn.Path sumFunc;
-  output DAE.Exp outProduct;
-algorithm
-  outProduct := match(inMatrix1, inMatrix2, mulFunc, sumFunc)
-    local
-      DAE.Dimension n, m, p;
-      list<DAE.Exp> expl1, expl2;
-      DAE.Type ty, row_ty;
-      DAE.TypeSource tp;
-      list<list<DAE.Exp>> matrix;
-
-    // Matrix-matrix multiplication, c[n, p] = a[n, m] * b[m, p].
-    case (DAE.ARRAY(ty = DAE.T_ARRAY(ty, {n, _}, tp), array = expl1),
-          DAE.ARRAY(ty = DAE.T_ARRAY(dims = {p, _}), array = expl2), _, _)
-      equation
-        // c[i, j] = a[i, :] * b[:, j] for i in 1:n, j in 1:p
-        matrix = List.map3(expl1, simplifyMatrixProductOfRecords3, expl2, mulFunc, sumFunc);
-        row_ty = DAE.T_ARRAY(ty, {p}, tp);
-        expl1 = List.map2(matrix, Expression.makeArray, row_ty, true);
-      then
-        DAE.ARRAY(DAE.T_ARRAY(ty, {n, p}, tp), false, expl1);
-
-  end match;
-end simplifyMatrixProductOfRecords2;
-
-protected function simplifyMatrixProductOfRecords3
-  "mahge: Simplifies the scalar product of two vectors of record types using overloaded
-  scalar addition and multiplication functions."
-  input DAE.Exp inRow;
-  input list<DAE.Exp> inMatrix;
-  input Absyn.Path mulFunc;
-  input Absyn.Path sumFunc;
-  output list<DAE.Exp> outRow;
-algorithm
-  outRow := List.map3(inMatrix, simplifyScalarProductOfRecords, inRow, mulFunc, sumFunc);
-end simplifyMatrixProductOfRecords3;
-
-
-public function simplifyScalarProductOfRecords
-  "mahge: Simplifies the scalar product of two vectors of record types using overloaded
-  scalar addition and multiplication functions."
-  input DAE.Exp inVector1;
-  input DAE.Exp inVector2;
-  input Absyn.Path mulFunc;
-  input Absyn.Path sumFunc;
-  output DAE.Exp outProduct;
-algorithm
-  outProduct := match(inVector1, inVector2, mulFunc, sumFunc)
-    local
-      list<DAE.Exp> expl, expl1, expl2;
-      DAE.Exp exp;
-      Type   tp;
-
-    case (DAE.ARRAY(array = expl1), DAE.ARRAY(array = expl2), _, _)
-      equation
-        expl = List.threadMap1(expl2, expl1, makeDaeCall, mulFunc);
-        exp = List.reduce1(expl, makeDaeCall, sumFunc);
-      then
-        exp;
-
-  end match;
-end simplifyScalarProductOfRecords;
-
 protected function makeDaeCall
   input DAE.Exp inArg1;
   input DAE.Exp inArg2;
@@ -5193,5 +5207,36 @@ protected function simplifyNoEvent "Adds noEvent() only to required subexpressio
 algorithm
   e := Expression.addNoEventToEventTriggeringFunctions(Expression.addNoEventToRelations(Expression.stripNoEvent(inExp)));
 end simplifyNoEvent;
+
+protected function maxElement
+  input DAE.Exp e1;
+  input Option<DAE.Exp> e2;
+  output Option<DAE.Exp> elt;
+algorithm
+  elt := match (e1,e2)
+    local
+      Real r1,r2;
+      Integer i1,i2;
+    case (DAE.RCONST(_),NONE()) then SOME(e1);
+    case (DAE.ICONST(_),NONE()) then SOME(e1);
+    case (DAE.BCONST(_),NONE()) then SOME(e1);
+    case (DAE.RCONST(r1),SOME(DAE.RCONST(r2))) equation r1=realMax(r1,r2); then SOME(DAE.RCONST(r1));
+    case (DAE.ICONST(i1),SOME(DAE.ICONST(i2))) equation i1=intMax(i1,i2); then SOME(DAE.ICONST(i1));
+    case (DAE.BCONST(true),SOME(DAE.BCONST(false))) then SOME(DAE.BCONST(true));
+    else e2;
+  end match;
+end maxElement;
+
+protected function removeMinMaxFoldableValues
+  input DAE.Exp e;
+  output Boolean filter;
+algorithm
+  filter := match e
+    case DAE.RCONST(_) then false;
+    case DAE.ICONST(_) then false;
+    case DAE.BCONST(_) then false;
+    else true;
+  end match;
+end removeMinMaxFoldableValues;
 
 end ExpressionSimplify;

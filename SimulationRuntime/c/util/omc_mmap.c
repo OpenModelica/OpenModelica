@@ -74,7 +74,7 @@ omc_mmap_write_unix omc_mmap_open_write_unix(const char *fileName, size_t size)
     res.size = size;
     lseek(fd, size, SEEK_SET);
   }
-  res.data = (char*) mmap(0, res.size, PROT_WRITE, MAP_SHARED, fd, 0);
+  res.data = res.size == 0 ? NULL : (char*) mmap(0, res.size, PROT_WRITE, MAP_SHARED, fd, 0);
   close(fd);
   if (res.data == MAP_FAILED) {
     throwStreamPrint(NULL, "mmap(file=\"%s\",fd=%d,size=%ld kB) failed: %s\n", fileName, fd, (long) res.size, strerror(errno));

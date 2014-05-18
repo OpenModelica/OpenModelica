@@ -1124,7 +1124,7 @@ public function switchInnerToOuterAndPrefix
                    connectorType = ct,
                    source = source,
                    variableAttributesOption = dae_var_attr,
-                   absynCommentOption = comment,
+                   comment = comment,
                    innerOuter=Absyn.INNER()) :: r),_,_)
       equation
         (_,cr) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,pre, cr);
@@ -1197,7 +1197,7 @@ public function prefixOuterDaeVars
                    connectorType = ct,
                    source = source,
                    variableAttributesOption = dae_var_attr,
-                   absynCommentOption = comment,
+                   comment = comment,
                    innerOuter=io) :: r),_)
       equation
         (_,cr) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,crefPrefix, cr);

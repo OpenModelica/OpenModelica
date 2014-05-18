@@ -109,7 +109,7 @@ public function evaluateFinalParameters
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
-  (outDAE,_ ) := evaluateParameters(inDAE,BackendVariable.isFinalVar);
+  (outDAE,_ ) := evaluateParameters(inDAE,BackendVariable.isFinalOrProtectedVar);
 end evaluateFinalParameters;
 
 public function evaluateEvaluateParameters
@@ -138,7 +138,7 @@ public function evaluateReplaceFinalParameters
 protected
   BackendVarTransform.VariableReplacements repl;
 algorithm
-  (outDAE,repl) := evaluateParameters(inDAE,BackendVariable.isFinalVar);
+  (outDAE,repl) := evaluateParameters(inDAE,BackendVariable.isFinalOrProtectedVar);
   outDAE := replaceEvaluatedParametersEqns(BackendVarTransform.replacementEmpty(repl),outDAE,repl);
 end evaluateReplaceFinalParameters;
 
@@ -164,6 +164,17 @@ algorithm
   (outDAE,repl) := evaluateParameters(inDAE,BackendVariable.hasVarEvaluateAnnotationOrFinal);
   outDAE := replaceEvaluatedParametersEqns(BackendVarTransform.replacementEmpty(repl),outDAE,repl);
 end evaluateReplaceFinalEvaluateParameters;
+
+public function evaluateReplaceProtectedFinalEvaluateParameters "author: Frenkel TUD
+  Evaluates and replaces parameters with final=true in variables and parameters."
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+protected
+  BackendVarTransform.VariableReplacements repl;
+algorithm
+  (outDAE,repl) := evaluateParameters(inDAE,BackendVariable.hasVarEvaluateAnnotationOrFinalOrProtected);
+  outDAE := replaceEvaluatedParametersEqns(BackendVarTransform.replacementEmpty(repl),outDAE,repl);
+end evaluateReplaceProtectedFinalEvaluateParameters;
 
 /*
  * protected section

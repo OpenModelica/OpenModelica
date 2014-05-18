@@ -378,7 +378,16 @@ package DAE
     end PATTERN;
   end Exp;
 
-  type FuncArg = tuple<Ident, Type, Const, VarParallelism, Option<Exp>>;
+  uniontype FuncArg
+    record FUNCARG
+      String name;
+      Type ty;
+      Const const;
+      VarParallelism par;
+      Option<Exp> defaultBinding;
+      Boolean structural;
+    end FUNCARG;
+  end FuncArg;
 
   uniontype MatchCase
     record CASE
@@ -582,11 +591,18 @@ package DAE
     end CALL_ATTR;
   end CallAttributes;
 
+  uniontype ReductionIterType
+    record COMBINE
+    end COMBINE;
+    record THREAD
+    end THREAD;
+  end ReductionIterType;
+
   uniontype ReductionInfo
     record REDUCTIONINFO
       Absyn.Path path;
+      ReductionIterType iterType;
       Type exprType;
-      //Option<Values.Value> defaultValue;
       Option<Exp> foldExp;
     end REDUCTIONINFO;
   end ReductionInfo;

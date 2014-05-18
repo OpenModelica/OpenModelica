@@ -5992,6 +5992,22 @@ algorithm
   isEqual := valueEq(op1, op2);
 end opEqual;
 
+public function opIsElementWise
+ input Operator op;
+ output Boolean isElementWise;
+algorithm
+  isElementWise := match op
+    case ADD_EW() then true;
+    case SUB_EW() then true;
+    case MUL_EW() then true;
+    case DIV_EW() then true;
+    case POW_EW() then true;
+    case UPLUS_EW() then true;
+    case UMINUS_EW() then true;
+    else false;
+  end match;
+end opIsElementWise;
+
 protected function dummyTraverseExp
   input Exp inExp;
   input Arg inArg;

@@ -649,6 +649,10 @@ public constant Message NAMED_ARG_TYPE_MISMATCH = MESSAGE(244, TRANSLATION(), ER
   Util.gettext("Type mismatch for named argument in %s(%s=%s). The argument has type:\n  %s\nexpected type:\n  %s"));
 public constant Message ARG_TYPE_MISMATCH = MESSAGE(245, TRANSLATION(), ERROR(),
   Util.gettext("Type mismatch for positional argument %s in %s(%s=%s). The argument has type:\n  %s\nexpected type:\n  %s"));
+public constant Message OP_OVERLOAD_MULTIPLE_VALID = MESSAGE(246, TRANSLATION(), ERROR(),
+  Util.gettext("Operator overloading requires exactly one matching expression, but found %s expressions: %s"));
+public constant Message OP_OVERLOAD_OPERATOR_NOT_INPUT = MESSAGE(246, TRANSLATION(), ERROR(),
+  Util.gettext("Operator %s is not an input to the overloaded function: %s"));
 
 public constant Message UNBOUND_PARAMETER_WITH_START_VALUE_WARNING = MESSAGE(499, TRANSLATION(), WARNING(),
   Util.gettext("Parameter %s has no value, and is fixed during initialization (fixed=true), using available start value (start=%s) as default value."));

@@ -1090,7 +1090,7 @@ algorithm
                connectorType = ct,
                source = source,
                variableAttributesOption = dae_var_attr,
-               absynCommentOption = comment,
+               comment = comment,
                innerOuter=io),_)
       then
         DAE.VAR(cr,kind,dir,prl,inVisibility,tp,bind,dim,ct,source,dae_var_attr,comment,io);
@@ -1129,7 +1129,7 @@ algorithm
                connectorType = ct,
                source = source,
                variableAttributesOption = dae_var_attr,
-               absynCommentOption = comment,
+               comment = comment,
                innerOuter=io),_)
       then
         DAE.VAR(cr,kind,inDirection,prl,prot,tp,bind,dim,ct,source,dae_var_attr,comment,io);
@@ -2286,7 +2286,7 @@ algorithm
                connectorType = ct,
                source=source,
                variableAttributesOption = dae_var_attr,
-               absynCommentOption = comment,
+               comment = comment,
                innerOuter=io)::elts))
       equation
         str = ComponentReference.printComponentRefStr(cr);
@@ -3202,7 +3202,7 @@ algorithm
       Boolean b,b1;
     case (_,DAE.COMP(dAElist = sublist),pv)
       then List.fold1r(sublist,evaluateAnnotation1Fold,pv,tpl);
-    case ((ht,_),DAE.VAR(componentRef = cr,kind=DAE.PARAM(),binding=SOME(e),absynCommentOption=SOME(comment)),pv)
+    case ((ht,_),DAE.VAR(componentRef = cr,kind=DAE.PARAM(),binding=SOME(e),comment=SOME(comment)),pv)
       equation
         SCode.COMMENT(annotation_=SOME(anno)) = comment;
         true = SCode.hasBooleanNamedAnnotation(anno,"Evaluate");
@@ -3350,7 +3350,7 @@ algorithm
     case (DAE.VAR(componentRef = cr,kind=DAE.PARAM(),direction=direction,parallelism=parallelism,
                   protection=protection,ty=ty,binding=SOME(e),dims=dims,connectorType=ct,
                   source=source,variableAttributesOption=variableAttributesOption,
-                  absynCommentOption=absynCommentOption,innerOuter=innerOuter),(ht,cache,env))
+                  comment=absynCommentOption,innerOuter=innerOuter),(ht,cache,env))
       equation
         ((e1,(_,i,j))) = Expression.traverseExp(e,evaluateAnnotationTraverse,(ht,0,0));
         (e2,ht1,cache) = evaluateAnnotation4(cache,env,cr,e1,i,j,ht);
@@ -4775,7 +4775,7 @@ algorithm
                connectorType = ct,
                source = source,
                variableAttributesOption = dae_var_attr,
-               absynCommentOption = comment,
+               comment = comment,
                innerOuter=io),newtype)
       equation
         source = addElementSourceType(source, newtype);
@@ -6385,6 +6385,7 @@ end getSymbolicTransformations;
 public function translateSCodeAttrToDAEAttr
   input SCode.Attributes inAttributes;
   input SCode.Prefixes inPrefixes;
+  input SCode.Comment comment;
   output DAE.Attributes outAttributes;
 protected
   SCode.ConnectorType ct;

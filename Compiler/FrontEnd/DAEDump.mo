@@ -1988,7 +1988,7 @@ algorithm
              direction = _,
              binding = NONE(),
              variableAttributesOption = dae_var_attr,
-             absynCommentOption = comment)
+             comment = comment)
       equation
         Print.printBuf("VAR(");
         ComponentReference.printComponentRef(cr);
@@ -2007,7 +2007,7 @@ algorithm
              direction = _,
              binding = SOME(e),
              variableAttributesOption = dae_var_attr,
-             absynCommentOption = comment)
+             comment = comment)
       equation
         Print.printBuf("VAR(");
         ComponentReference.printComponentRef(cr);
@@ -3265,7 +3265,7 @@ algorithm
                   dims = dims,
                   binding = binding,
                   variableAttributesOption = attr,
-                  absynCommentOption = cmt), _, str)
+                  comment = cmt), _, str)
       equation
         final_str = Util.if_(DAEUtil.getFinalAttr(attr), "final ", "");
         kind_str = dumpKindStr(kind);

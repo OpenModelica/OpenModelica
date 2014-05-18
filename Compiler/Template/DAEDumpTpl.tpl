@@ -214,7 +214,7 @@ match lst
    let varName = dumpCref(componentRef)
    let bindingExp = match binding case SOME(exp) then dumpExp(exp)
    let varAttr = match variableAttributesOption case SOME(VariableAttributes) then dumpVariableAttributesStr(VariableAttributes)
-   let cmt_str = dumpCommentOpt(absynCommentOption)
+   let cmt_str = dumpCommentOpt(comment)
    if bindingExp then
    <<
     <%final%><%varVisibility%><%varParallelism%><%varKind%><%varDirection%> <%varType%><%dim_str%> <%varName%><%varAttr%> = <%bindingExp%><%cmt_str%>;

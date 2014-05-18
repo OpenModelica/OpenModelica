@@ -7900,19 +7900,16 @@ algorithm
     local
       ElementType e;
       list<ElementType> rest;
+      Boolean b;
 
     case ({}, _, _) then inAccumList;
 
     // Add to front if the condition works.
     case (e :: rest, _, _)
       equation
-        true = inFilterFunc(e);
+        b = inFilterFunc(e);
       then
-        filterOnTrue_tail(rest, inFilterFunc, e :: inAccumList);
-
-    // Filter out and move along.
-    case (_ :: rest, _, _)
-      then filterOnTrue_tail(rest, inFilterFunc, inAccumList);
+        filterOnTrue_tail(rest, inFilterFunc, consOnTrue(b, e, inAccumList));
 
   end matchcontinue;
 end filterOnTrue_tail;

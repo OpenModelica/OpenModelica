@@ -105,6 +105,7 @@ protected import InnerOuter;
 protected import Interactive;
 protected import List;
 protected import Lookup;
+protected import OperatorOverloading;
 protected import Patternm;
 protected import Print;
 protected import System;
@@ -614,7 +615,7 @@ algorithm
       equation
         (cache,e1_1,prop1,st_1) = elabExp(cache,env, e1, impl, st,doVect,pre,info);
         (cache,e2_1,prop2,st_2) = elabExp(cache,env, e2, impl, st_1,doVect,pre,info);
-        (cache,exp_1,prop) = operatorDeoverloadBinary(cache,env,op,prop1,e1_1,prop2,e2_1,e,e1,e2,impl,st_2,pre,info);
+        (cache,exp_1,prop) = OperatorOverloading.binary(cache,env,op,prop1,e1_1,prop2,e2_1,e,e1,e2,impl,st_2,pre,info);
       then
         (cache,exp_1,prop,st_2);
 
@@ -629,7 +630,7 @@ algorithm
     case (cache,env,(e as Absyn.UNARY(op = op,exp = e1)),impl,st,doVect,pre,_,_)
       equation
         (cache,e_1,prop1,st_1) = elabExp(cache,env,e1,impl,st,doVect,pre,info);
-        (cache,exp_1,prop) = operatorDeoverloadUnary(cache,env,op,prop1,e_1,e,e1,impl,st_1,pre,info);
+        (cache,exp_1,prop) = OperatorOverloading.unary(cache,env,op,prop1,e_1,e,e1,impl,st_1,pre,info);
       then
         (cache,exp_1,prop,st_1);
 
@@ -637,14 +638,14 @@ algorithm
       equation
         (cache,e1_1,prop1,st_1) = elabExp(cache,env, e1, impl, st,doVect,pre,info);
         (cache,e2_1,prop2,st_2) = elabExp(cache,env, e2, impl, st_1,doVect,pre,info);
-        (cache,exp_1,prop) = operatorDeoverloadBinary(cache,env,op,prop1,e1_1,prop2,e2_1,e,e1,e2,impl,st_2,pre,info);
+        (cache,exp_1,prop) = OperatorOverloading.binary(cache,env,op,prop1,e1_1,prop2,e2_1,e,e1,e2,impl,st_2,pre,info);
       then
         (cache,exp_1,prop,st_2);
 
     case (cache,env,(e as Absyn.LUNARY(op = op,exp = e1)),impl,st,doVect,pre,_,_)
       equation
         (cache,e_1,prop1,st_1) = elabExp(cache,env,e1,impl,st,doVect,pre,info);
-        (cache,exp_1,prop) = operatorDeoverloadUnary(cache,env,op,prop1,e_1,e,e1,impl,st_1,pre,info);
+        (cache,exp_1,prop) = OperatorOverloading.unary(cache,env,op,prop1,e_1,e,e1,impl,st_1,pre,info);
       then
         (cache,exp_1,prop,st_1);
 
@@ -653,7 +654,7 @@ algorithm
       equation
         (cache,e1_1,prop1,st_1) = elabExp(cache,env, e1, impl, st,doVect,pre,info);
         (cache,e2_1,prop2,st_2) = elabExp(cache,env, e2, impl, st_1,doVect,pre,info);
-        (cache,exp_1,prop) = operatorDeoverloadBinary(cache,env,op,prop1,e1_1,prop2,e2_1,e,e1,e2,impl,st_2,pre,info);
+        (cache,exp_1,prop) = OperatorOverloading.binary(cache,env,op,prop1,e1_1,prop2,e2_1,e,e1,e2,impl,st_2,pre,info);
       then
         (cache,exp_1,prop,st_2);
 
@@ -709,7 +710,7 @@ algorithm
     //However elab call prints error messags if it can not elaborate it even though the function might be overloaded.
     case (cache,env, e as Absyn.CALL(function_ = Absyn.CREF_IDENT("String",_),functionArgs = Absyn.FUNCTIONARGS(argNames = _)),impl,st,doVect,pre,_,_)
       equation
-        (cache,exp_1,prop,st_1) = userDefOperatorDeoverloadString(cache,env,e,impl,st,doVect,pre,info);
+        (cache,exp_1,prop,st_1) = OperatorOverloading.string(cache,env,e,impl,st,doVect,pre,info);
       then
         (cache,exp_1,prop,st_1);
 
@@ -1305,6 +1306,7 @@ algorithm
       DAE.Dimensions dims;
       DAE.Properties props;
       Absyn.ForIterators iters;
+      String foldId,resultId;
 
     case (cache,env,fn,exp,iters,_,st,doVect,pre,_)
       equation
@@ -1319,10 +1321,12 @@ algorithm
         fn_1 = Absyn.crefToPath(fn);
         (cache,exp_1,expty,v,fn_1) = reductionType(cache, env, fn_1, exp_1, expty, Types.unboxedType(expty), dims, hasGuardExp, info);
         prop = DAE.PROP(expty, const);
-        (env_foldExp,afoldExp) = makeReductionFoldExp(env_1,fn_1,expty);
+        foldId = Util.getTempVariableIndex();
+        resultId = Util.getTempVariableIndex();
+        (env_foldExp,afoldExp) = makeReductionFoldExp(env_1,fn_1,expty,foldId,resultId);
         (cache,foldExp,_,st) = elabExpOptAndMatchType(cache, env_foldExp, afoldExp, expty, impl, st, doVect,pre,info);
         // print("make reduction: " +& Absyn.pathString(fn_1) +& " exp_1: " +& ExpressionDump.printExpStr(exp_1) +& "\n");
-        exp_1 = DAE.REDUCTION(DAE.REDUCTIONINFO(fn_1,expty,v,foldExp),exp_1,reductionIters);
+        exp_1 = DAE.REDUCTION(DAE.REDUCTIONINFO(fn_1,DAE.COMBINE(),expty,v,foldId,resultId,foldExp),exp_1,reductionIters);
       then
         (cache,exp_1,prop,st);
 
@@ -1403,34 +1407,36 @@ protected function makeReductionFoldExp
   input Env.Env inEnv;
   input Absyn.Path path;
   input DAE.Type expty;
+  input String foldId;
+  input String resultId;
   output Env.Env outEnv;
   output Option<Absyn.Exp> afoldExp;
 algorithm
-  (outEnv,afoldExp) := match (inEnv,path,expty)
+  (outEnv,afoldExp) := match (inEnv,path,expty,foldId,resultId)
     local
       Absyn.Exp exp;
       Absyn.ComponentRef cr,cr1,cr2;
       Env.Env env;
 
-    case (env,Absyn.IDENT("array"),_) then (env,NONE());
-    case (env,Absyn.IDENT("list"),_) then (env,NONE());
-    case (env,Absyn.IDENT("listReverse"),_) then (env,NONE());
-    case (env,Absyn.IDENT("sum"),_)
+    case (env,Absyn.IDENT("array"),_,_,_) then (env,NONE());
+    case (env,Absyn.IDENT("list"),_,_,_) then (env,NONE());
+    case (env,Absyn.IDENT("listReverse"),_,_,_) then (env,NONE());
+    case (env,Absyn.IDENT("sum"),_,_,_)
       equation
         _ = Absyn.pathToCref(path);
-        env = Env.extendFrameForIterator(env, "$reductionFoldTmpA", expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
-        env = Env.extendFrameForIterator(env, "$reductionFoldTmpB", expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
-        cr1 = Absyn.CREF_IDENT("$reductionFoldTmpA",{});
-        cr2 = Absyn.CREF_IDENT("$reductionFoldTmpB",{});
+        env = Env.extendFrameForIterator(env, foldId, expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
+        env = Env.extendFrameForIterator(env, resultId, expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
+        cr1 = Absyn.CREF_IDENT(foldId,{});
+        cr2 = Absyn.CREF_IDENT(resultId,{});
         exp = Absyn.BINARY(Absyn.CREF(cr1),Absyn.ADD(),Absyn.CREF(cr2));
       then (env,SOME(exp));
-    case (env,Absyn.IDENT("product"),_)
+    case (env,Absyn.IDENT("product"),_,_,_)
       equation
         _ = Absyn.pathToCref(path);
-        env = Env.extendFrameForIterator(env, "$reductionFoldTmpA", expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
-        env = Env.extendFrameForIterator(env, "$reductionFoldTmpB", expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
-        cr1 = Absyn.CREF_IDENT("$reductionFoldTmpA",{});
-        cr2 = Absyn.CREF_IDENT("$reductionFoldTmpB",{});
+        env = Env.extendFrameForIterator(env, foldId, expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
+        env = Env.extendFrameForIterator(env, resultId, expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
+        cr1 = Absyn.CREF_IDENT(foldId,{});
+        cr2 = Absyn.CREF_IDENT(resultId,{});
         exp = Absyn.BINARY(Absyn.CREF(cr1),Absyn.MUL(),Absyn.CREF(cr2));
       then (env,SOME(exp));
     else
@@ -1438,10 +1444,10 @@ algorithm
         env = inEnv;
         cr = Absyn.pathToCref(path);
         // print("makeReductionFoldExp => " +& Absyn.pathString(path) +& Types.unparseType(expty) +& "\n");
-        env = Env.extendFrameForIterator(env, "$reductionFoldTmpA", expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
-        env = Env.extendFrameForIterator(env, "$reductionFoldTmpB", expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
-        cr1 = Absyn.CREF_IDENT("$reductionFoldTmpA",{});
-        cr2 = Absyn.CREF_IDENT("$reductionFoldTmpB",{});
+        env = Env.extendFrameForIterator(env, foldId, expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
+        env = Env.extendFrameForIterator(env, resultId, expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
+        cr1 = Absyn.CREF_IDENT(foldId,{});
+        cr2 = Absyn.CREF_IDENT(resultId,{});
         exp = Absyn.CALL(cr,Absyn.FUNCTIONARGS({Absyn.CREF(cr1),Absyn.CREF(cr2)},{}));
       then (env,SOME(exp));
   end match;
@@ -1631,7 +1637,7 @@ algorithm
         Error.addSourceMessage(Error.LOOKUP_FUNCTION_ERROR, {str1,str2}, info);
       then fail();
 
-    case (_, _, {DAE.T_FUNCTION(funcArg={(_,typeA,DAE.C_VAR(),_,_),(_,typeB,DAE.C_VAR(),_,_)},funcResultType = resType, source = {path})}, _)
+    case (_, _, {DAE.T_FUNCTION(funcArg={DAE.FUNCARG(ty=typeA,const=DAE.C_VAR()),DAE.FUNCARG(ty=typeB,const=DAE.C_VAR())},funcResultType = resType, source = {path})}, _)
       then (typeA,typeB,resType,path);
 
     else
@@ -1729,54 +1735,6 @@ algorithm
         DAE.T_ARRAY(ty, {dim}, ts);
   end match;
 end constructArrayType;
-
-protected function replaceOperatorWithFcall "Replaces a userdefined operator expression with a corresponding function
-  call expression. Other expressions just passes through."
-  input Absyn.Exp AbExp;
-  input DAE.Exp inExp1;
-  input DAE.Operator inOper;
-  input Option<DAE.Exp> inExp2;
-  input DAE.Const inConst;
-  output DAE.Exp outExp;
-algorithm
-  outExp := matchcontinue (AbExp,inExp1,inOper,inExp2,inConst)
-    local
-      DAE.Exp e1,e2;
-      Absyn.Path funcname;
-      DAE.Const c;
-
-    case (Absyn.BINARY(_,_,_), e1, DAE.USERDEFINED(fqName = funcname), SOME(e2), _)
-      then DAE.CALL(funcname,{e1,e2},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
-
-    case (Absyn.BINARY(_,_,_), e1, _, SOME(e2), _)
-      then DAE.BINARY(e1, inOper, e2);
-
-    case (Absyn.UNARY(_, _), e1, DAE.USERDEFINED(fqName = funcname), NONE(), _)
-      then DAE.CALL(funcname,{e1},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
-
-    case (Absyn.UNARY(_, _), e1, _, NONE(), _)
-        then DAE.UNARY(inOper,e1);
-
-    case (Absyn.LBINARY(_, _, _), e1, DAE.USERDEFINED(fqName = funcname), SOME(e2), _)
-       then DAE.CALL(funcname,{e1,e2},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
-
-    case (Absyn.LBINARY(_,_,_), e1, _, SOME(e2), _)
-      then DAE.LBINARY(e1, inOper, e2);
-
-    case (Absyn.LUNARY(_, _), e1, DAE.USERDEFINED(fqName = funcname), NONE(),_)
-      then DAE.CALL(funcname,{e1},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
-
-    case (Absyn.LUNARY(_, _), e1, _, NONE(), _)
-        then DAE.LUNARY(inOper,e1);
-
-    case (Absyn.RELATION(_, _, _), e1, DAE.USERDEFINED(fqName = funcname), SOME(e2),_)
-      then DAE.CALL(funcname,{e1,e2},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
-
-    case (Absyn.RELATION(_,_,_), e1, _, SOME(e2), _)
-      then DAE.RELATION(e1, inOper, e2, -1, NONE());
-
-  end matchcontinue;
-end replaceOperatorWithFcall;
 
 protected function elabCodeType "This function will construct the correct type for the given Code
   expression. The types are built-in classes of different types. E.g.
@@ -1893,7 +1851,7 @@ algorithm
       equation
         (cache,e1_1,prop1) = elabGraphicsExp(cache,env, e1, impl,pre,info);
         (cache,e2_1,prop2) = elabGraphicsExp(cache,env, e2, impl,pre,info);
-        (cache, dexp, prop) = operatorDeoverloadBinary(cache, env, op, prop1, e1_1, prop2, e2_1, exp, e1, e2, impl, NONE(), pre, info);
+        (cache, dexp, prop) = OperatorOverloading.binary(cache, env, op, prop1, e1_1, prop2, e2_1, exp, e1, e2, impl, NONE(), pre, info);
       then
         (cache, dexp, prop);
     case (cache,env,(e as Absyn.UNARY(op = Absyn.UPLUS(),exp = _)),impl,pre,_)
@@ -1906,7 +1864,7 @@ algorithm
     case (cache,env,(exp as Absyn.UNARY(op = op,exp = e)),impl,pre,_)
       equation
         (cache,e_1,prop1) = elabGraphicsExp(cache,env, e, impl,pre,info);
-        (cache, dexp, prop) = operatorDeoverloadUnary(cache,env, op, prop1, e_1, exp, e, impl, NONE(), pre, info);
+        (cache, dexp, prop) = OperatorOverloading.unary(cache,env, op, prop1, e_1, exp, e, impl, NONE(), pre, info);
       then
         (cache, dexp, prop);
 
@@ -1915,7 +1873,7 @@ algorithm
       equation
         (cache,e1_1,prop1) = elabGraphicsExp(cache,env, e1, impl,pre,info);
         (cache,e2_1,prop2) = elabGraphicsExp(cache,env, e2, impl,pre,info);
-        (cache, dexp, prop) = operatorDeoverloadBinary(cache, env, op, prop1, e1_1, prop2, e2_1, exp, e1, e2, impl, NONE(), pre, info);
+        (cache, dexp, prop) = OperatorOverloading.binary(cache, env, op, prop1, e1_1, prop2, e2_1, exp, e1, e2, impl, NONE(), pre, info);
       then
         (cache, dexp, prop);
 
@@ -1923,7 +1881,7 @@ algorithm
     case (cache,env,(exp as Absyn.LUNARY(op = op,exp = e)),impl,pre,_)
       equation
         (cache,e_1,prop1) = elabGraphicsExp(cache,env, e, impl,pre,info);
-        (cache, dexp, prop) = operatorDeoverloadUnary(cache,env, op, prop1, e_1, exp, e, impl, NONE(), pre, info);
+        (cache, dexp, prop) = OperatorOverloading.unary(cache,env, op, prop1, e_1, exp, e, impl, NONE(), pre, info);
       then
         (cache, dexp, prop);
 
@@ -1932,7 +1890,7 @@ algorithm
       equation
         (cache,e1_1,prop1) = elabGraphicsExp(cache,env, e1, impl,pre,info);
         (cache,e2_1,prop2) = elabGraphicsExp(cache,env, e2, impl,pre,info);
-        (cache, dexp, prop) = operatorDeoverloadBinary(cache, env, op, prop1, e1_1, prop2, e2_1, exp, e1, e2, impl, NONE(), pre, info);
+        (cache, dexp, prop) = OperatorOverloading.binary(cache, env, op, prop1, e1_1, prop2, e2_1, exp, e1, e2, impl, NONE(), pre, info);
       then
         (cache, dexp, prop);
 
@@ -2062,14 +2020,14 @@ algorithm
 
     case ((e1, t1), NONE(), (e3, t3))
       equation
-        ({e1_1, e3_1},_) = elabArglist({DAE.T_REAL_DEFAULT, DAE.T_REAL_DEFAULT},
+        ({e1_1, e3_1},_) = OperatorOverloading.elabArglist({DAE.T_REAL_DEFAULT, DAE.T_REAL_DEFAULT},
           {(e1, t1), (e3, t3)});
       then
         (e1_1, NONE(), e3_1, DAE.T_REAL_DEFAULT);
 
     case ((e1, t1), SOME((e2, t2)),(e3, t3))
       equation
-        ({e1_1, e2_1, e3_1},_) = elabArglist(
+        ({e1_1, e2_1, e3_1},_) = OperatorOverloading.elabArglist(
           {DAE.T_REAL_DEFAULT, DAE.T_REAL_DEFAULT, DAE.T_REAL_DEFAULT},
           {(e1, t1), (e2, t2), (e3, t3)});
       then
@@ -4732,15 +4690,15 @@ algorithm
       equation
         i = listLength(args);
         ty1 = DAE.T_FUNCTION(
-                {("expr",DAE.T_REAL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
-                 ("delayTime",DAE.T_REAL_DEFAULT,DAE.C_PARAM(),DAE.NON_PARALLEL(),NONE())},
+                {DAE.FUNCARG("expr",DAE.T_REAL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
+                 DAE.FUNCARG("delayTime",DAE.T_REAL_DEFAULT,DAE.C_PARAM(),DAE.NON_PARALLEL(),NONE())},
                 DAE.T_REAL_DEFAULT,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN,
                 DAE.emptyTypeSource);
         ty2 = DAE.T_FUNCTION(
-                {("expr",DAE.T_REAL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
-                 ("delayTime",DAE.T_REAL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
-                 ("delayMax",DAE.T_REAL_DEFAULT,DAE.C_PARAM(),DAE.NON_PARALLEL(),NONE())},
+                {DAE.FUNCARG("expr",DAE.T_REAL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
+                 DAE.FUNCARG("delayTime",DAE.T_REAL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
+                 DAE.FUNCARG("delayMax",DAE.T_REAL_DEFAULT,DAE.C_PARAM(),DAE.NON_PARALLEL(),NONE())},
                 DAE.T_REAL_DEFAULT,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN,
                 DAE.emptyTypeSource);
@@ -5734,14 +5692,14 @@ algorithm
       equation
         (cache,exp,DAE.PROP(tp,c),_) = elabExp(cache,env, e, impl,NONE(),true,pre,info);
         // Create argument slots for String function.
-        slots = {SLOT(("x",tp,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,NONE(),{},1),
-                 SLOT(("minimumLength",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.ICONST(0)),{},2),
-                 SLOT(("leftJustified",DAE.T_BOOL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.BCONST(true)),{},3)};
+        slots = {SLOT(DAE.FUNCARG("x",tp,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,NONE(),{},1),
+                 SLOT(DAE.FUNCARG("minimumLength",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.ICONST(0)),{},2),
+                 SLOT(DAE.FUNCARG("leftJustified",DAE.T_BOOL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.BCONST(true)),{},3)};
         // Only String(Real) has the significantDigits option.
         slots = Util.if_(Types.isRealOrSubTypeReal(tp),
-          listAppend(slots, {SLOT(("significantDigits",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.ICONST(6)),{},4)}),
+          listAppend(slots, {SLOT(DAE.FUNCARG("significantDigits",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.ICONST(6)),{},4)}),
           slots);
-        (cache,args_1,_,constlist,_) = elabInputArgs(cache,env, args, nargs, slots, false, true/*checkTypes*/ ,impl, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), {}, NONE(), pre, info, Absyn.IDENT("String"));
+        (cache,args_1,_,constlist,_) = elabInputArgs(cache,env, args, nargs, slots, false, true/*checkTypes*/ ,impl, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), {}, NONE(), pre, info, DAE.T_UNKNOWN_DEFAULT, Absyn.IDENT("String"));
         c = List.fold(constlist, Types.constAnd, DAE.C_CONST());
         exp = Expression.makeBuiltinCall("String", args_1, DAE.T_STRING_DEFAULT);
       then
@@ -5752,18 +5710,18 @@ algorithm
       equation
         (cache,exp,DAE.PROP(tp,c),_) = elabExp(cache,env, e, impl,NONE(),true,pre,info);
 
-        slots = {SLOT(("x",tp,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,NONE(),{},1)};
+        slots = {SLOT(DAE.FUNCARG("x",tp,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,NONE(),{},1)};
 
         slots = Util.if_(Types.isRealOrSubTypeReal(tp),
-          listAppend(slots, {SLOT(("format",DAE.T_STRING_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.SCONST("f")),{},2)}),
+          listAppend(slots, {SLOT(DAE.FUNCARG("format",DAE.T_STRING_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.SCONST("f")),{},2)}),
           slots);
         slots = Util.if_(Types.isIntegerOrSubTypeInteger(tp),
-          listAppend(slots, {SLOT(("format",DAE.T_STRING_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.SCONST("d")),{},2)}),
+          listAppend(slots, {SLOT(DAE.FUNCARG("format",DAE.T_STRING_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.SCONST("d")),{},2)}),
           slots);
         slots = Util.if_(Types.isString(tp),
-          listAppend(slots, {SLOT(("format",DAE.T_STRING_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.SCONST("s")),{},2)}),
+          listAppend(slots, {SLOT(DAE.FUNCARG("format",DAE.T_STRING_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.SCONST("s")),{},2)}),
           slots);
-        (cache,args_1,_,constlist,_) = elabInputArgs(cache, env, args, nargs, slots, false, true /*checkTypes*/, impl, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), {}, NONE(), pre, info, Absyn.IDENT("String"));
+        (cache,args_1,_,constlist,_) = elabInputArgs(cache, env, args, nargs, slots, false, true /*checkTypes*/, impl, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), {}, NONE(), pre, info, DAE.T_UNKNOWN_DEFAULT, Absyn.IDENT("String"));
         c = List.fold(constlist, Types.constAnd, DAE.C_CONST());
         exp = Expression.makeBuiltinCall("String", args_1, DAE.T_STRING_DEFAULT);
       then
@@ -6957,7 +6915,7 @@ protected function createDummyFarg
   input String name;
   output DAE.FuncArg farg;
 algorithm
-  farg := (name, DAE.T_UNKNOWN_DEFAULT, DAE.C_VAR(), DAE.NON_PARALLEL(), NONE());
+  farg := DAE.FUNCARG(name, DAE.T_UNKNOWN_DEFAULT, DAE.C_VAR(), DAE.NON_PARALLEL(), NONE());
 end createDummyFarg;
 
 protected function transformModificationsToNamedArguments
@@ -7180,7 +7138,7 @@ algorithm
     case ({}, i) then i;
 
     // only interested in filled slots that have a optional expression
-    case (SLOT(defaultArg = (id, _, _, _, _), slotFilled = true, arg = SOME(e))::rest, i)
+    case (SLOT(defaultArg = DAE.FUNCARG(name=id), slotFilled = true, arg = SOME(e))::rest, i)
       equation
         o = VarTransform.addReplacement(i, ComponentReference.makeCrefIdent(id, DAE.T_UNKNOWN_DEFAULT, {}), e);
         o = createInputVariableReplacements(rest, o);
@@ -7275,7 +7233,7 @@ algorithm
         */
         fargs = List.map(names, createDummyFarg);
         slots = makeEmptySlots(fargs);
-        (cache,_,newslots,constInputArgs,_) = elabInputArgs(cache, env, args, nargs, slots, true, false /*checkTypes*/ ,impl,NOT_EXTERNAL_OBJECT_MODEL_SCOPE(),  {},st,pre,info,fn);
+        (cache,_,newslots,constInputArgs,_) = elabInputArgs(cache, env, args, nargs, slots, true, false /*checkTypes*/ ,impl,NOT_EXTERNAL_OBJECT_MODEL_SCOPE(),  {},st,pre,info,DAE.T_UNKNOWN_DEFAULT,fn);
         (cache,newslots2,constDefaultArgs,_) = fillGraphicsDefaultSlots(cache, newslots, cl, env_2, impl, {}, pre, info);
         constlist = listAppend(constInputArgs, constDefaultArgs);
         _ = List.fold(constlist, Types.constAnd, DAE.C_CONST());
@@ -7353,7 +7311,7 @@ algorithm
 
 
         slots = makeEmptySlots(fargs);
-        (cache,_,newslots,constInputArgs,_) = elabInputArgs(cache,env, args, nargs, slots,true,true,impl, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(),  {},st,pre,info,path);
+        (cache,_,newslots,constInputArgs,_) = elabInputArgs(cache,env, args, nargs, slots,true,true,impl, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(),  {},st,pre,info,tp1,path);
 
         (args_2, newslots2) = addDefaultArgs(newslots, info);
         vect_dims = slotsVectorizable(newslots2);
@@ -7529,7 +7487,7 @@ algorithm
   end matchcontinue;
 end elabCallArgs2;
 
-protected function elabCallArgs3
+public function elabCallArgs3
   "Elaborates the input given a set of viable function candidates, and vectorizes the arguments+performs type checking"
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -7580,7 +7538,6 @@ algorithm
    vect_dims,
    slots) := elabTypes(cache, inEnv, args, nargs, typelist, onlyOneFunction, true/* Check types*/, impl,isExternalObject,st,pre,info)
    "The constness of a function depends on the inputs. If all inputs are constant the call itself is constant." ;
-
   (fn_1,functype) := deoverloadFuncname(fn, functype, inEnv);
   tuple_ := Types.isTuple(restype);
   (isBuiltin,builtin,fn_1) := isBuiltinFunc(fn_1,functype);
@@ -7616,7 +7573,7 @@ algorithm
   /* Instantiate any implicit record constructors needed and add them to the dae function tree */
   cache := instantiateImplicitRecordConstructors(cache, inEnv, args_1, st);
   functionTree := Env.getFunctionTree(cache);
-  ((call_exp,(_,didInline,_))) := Inline.inlineCall((call_exp,((SOME(functionTree),{DAE.BUILTIN_EARLY_INLINE(),DAE.EARLY_INLINE()}),false,{})));
+  (call_exp,_,didInline,_) := Inline.inlineExp(call_exp,(SOME(functionTree),{DAE.BUILTIN_EARLY_INLINE(),DAE.EARLY_INLINE()}),DAE.emptyElementSource);
   (call_exp,_) := ExpressionSimplify.condsimplify(didInline,call_exp);
   didInline := didInline and (not Config.acceptMetaModelicaGrammar() /* Some weird errors when inlining. Becomes boxed even if it shouldn't... */);
   prop_1 := Debug.bcallret2(didInline, Types.setPropType, prop_1, restype, prop_1);
@@ -7856,9 +7813,9 @@ algorithm
       equation
         fieldNames = List.map(vars, Types.getVarName);
         tys = List.map(vars, Types.getVarType);
-        fargs = List.thread5Tuple(fieldNames, tys, List.fill(DAE.C_VAR(),listLength(tys)), List.fill(DAE.NON_PARALLEL(),listLength(tys)), List.fill(NONE(),listLength(tys)));
+        fargs = List.threadMap(fieldNames, tys, Types.makeDefaultFuncArg);
         slots = makeEmptySlots(fargs);
-        (cache,_,newslots,constlist,_) = elabInputArgs(cache,env, args, nargs, slots, true, true , impl, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), {}, st, pre, info, utPath);
+        (cache,_,newslots,constlist,_) = elabInputArgs(cache,env, args, nargs, slots, true, true , impl, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), {}, st, pre, info, t, utPath);
         const = List.fold(constlist, Types.constAnd, DAE.C_CONST());
         tyconst = elabConsts(t, const);
 //      t = DAE.T_METAUNIONTYPE({},knownSingleton,{utPath});
@@ -7907,6 +7864,32 @@ functiontree of a newly created dae"
 algorithm
   (outCache,status) := instantiateDaeFunction2(inCache, env, name, builtin, clOpt, Error.getNumErrorMessages(), printErrorMsg, Util.isSome(getGlobalRoot(Global.instOnlyForcedFunctions)), NORMAL_FUNCTION_INST());
 end instantiateDaeFunction;
+
+public function instantiateDaeFunctionFromTypes "help function to elabCallArgs. Instantiates the function as a dae and adds it to the
+functiontree of a newly created dae"
+  input Env.Cache inCache;
+  input Env.Env env;
+  input list<DAE.Type> tys;
+  input Boolean builtin "builtin functions create empty dae";
+  input Option<SCode.Element> clOpt "if not present, looked up by name in environment";
+  input Boolean printErrorMsg "if true, prints an error message if the function could not be instantiated";
+  input Util.Status acc;
+  output Env.Cache outCache;
+  output Util.Status status;
+algorithm
+  (outCache,status) := match (inCache, env, tys, builtin, clOpt, printErrorMsg, acc)
+    local
+      Absyn.Path name;
+      list<DAE.Type> rest;
+      Util.Status status1,status2;
+    case (_, _, DAE.T_FUNCTION(source={name})::rest, _, _, _, Util.SUCCESS())
+      equation
+        (outCache,status) = instantiateDaeFunction(inCache, env, name, builtin, clOpt, printErrorMsg);
+        (outCache,status) = instantiateDaeFunctionFromTypes(inCache, env, rest, builtin, clOpt, printErrorMsg, status);
+      then (outCache, status);
+    else (inCache, acc);
+  end match;
+end instantiateDaeFunctionFromTypes;
 
 public function instantiateDaeFunctionForceInst "help function to elabCallArgs. Instantiates the function as a dae and adds it to the
 functiontree of a newly created dae"
@@ -8078,7 +8061,7 @@ algorithm
     case (SLOT(slotFilled = true, arg = SOME(arg)), _, _) then (arg, inSlot);
 
     // Slot not filled by function argument, but has default value.
-    case (SLOT(slotFilled = false, defaultArg = (_, _, _, _, SOME(_)), idx = idx), _, _)
+    case (SLOT(slotFilled = false, defaultArg = DAE.FUNCARG(defaultBinding=SOME(_)), idx = idx), _, _)
       equation
         aslot = arrayGet(inSlotArray, idx);
         (arg, slot) = fillDefaultSlot2(aslot, inSlotArray, inInfo);
@@ -8086,7 +8069,7 @@ algorithm
         (arg, slot);
 
     // Slot not filled, and has no default value => error.
-    case (SLOT(defaultArg = (id, _, _, _, _)), _, _)
+    case (SLOT(defaultArg = DAE.FUNCARG(name=id)), _, _)
       equation
         Error.addSourceMessage(Error.UNFILLED_SLOT, {id}, inInfo);
       then
@@ -8115,14 +8098,14 @@ algorithm
 
     case ((slot as SLOT(arg = SOME(exp)), 2), _, _) then (exp, slot);
 
-    case ((SLOT(defaultArg = (id, _, _, _, _)), 1), _, _)
+    case ((SLOT(defaultArg = DAE.FUNCARG(name=id)), 1), _, _)
       equation
         Error.addSourceMessage(Error.CYCLIC_DEFAULT_VALUE,
           {id}, inInfo);
       then
         fail();
 
-    case ((slot as SLOT(defaultArg = da as (_, _, _, _, SOME(exp)), dims = dims, idx = idx), 0), _, _)
+    case ((slot as SLOT(defaultArg = da as DAE.FUNCARG(defaultBinding=SOME(exp)), dims = dims, idx = idx), 0), _, _)
       equation
         _ = arrayUpdate(inSlotArray, idx, (slot, 1));
         exp = evaluateSlotExp(exp, inSlotArray, inInfo);
@@ -8174,7 +8157,7 @@ protected function isSlotNamed
 protected
   String id;
 algorithm
-  (SLOT(defaultArg = (id, _, _, _, _)), _) := inSlot;
+  (SLOT(defaultArg = DAE.FUNCARG(name=id)), _) := inSlot;
   outIsNamed := stringEq(id, inName);
 end isSlotNamed;
 
@@ -8263,6 +8246,7 @@ algorithm
       DAE.CallAttributes attr;
       DAE.ReductionInfo rinfo;
       DAE.ReductionIterator riter;
+      String foldName,resultName;
 
     case (e,{},_,prop,_) then (e,prop);
 
@@ -8286,7 +8270,9 @@ algorithm
         prop = DAE.PROP(tp,c);
         e = DAE.CALL(fn,es,attr);
         _ = Types.simplifyType(tp0);
-        rinfo = DAE.REDUCTIONINFO(Absyn.IDENT("array"),tp,SOME(Values.ARRAY({},{0})),NONE());
+        foldName = Util.getTempVariableIndex();
+        resultName = Util.getTempVariableIndex();
+        rinfo = DAE.REDUCTIONINFO(Absyn.IDENT("array"),DAE.COMBINE(),tp,SOME(Values.ARRAY({},{0})),foldName,resultName,NONE());
         tp = Types.expTypetoTypesType(Expression.typeof(vect_exp));
         riter = DAE.REDUCTIONITER(vectorizeArg,vect_exp,NONE(),tp);
         e = DAE.REDUCTION(rinfo,e,{riter});
@@ -8628,7 +8614,7 @@ algorithm
       Env.Env env;
       list<Absyn.Exp> args;
       list<Absyn.NamedArg> nargs;
-      DAE.Type t,restype;
+      DAE.Type funcType,t,restype;
       list<DAE.FuncArg> params;
       list<DAE.Type> trest;
       Env.Cache cache;
@@ -8638,10 +8624,10 @@ algorithm
       DAE.TypeSource ts;
 
     // We found a match.
-    case (cache,env,args,nargs,DAE.T_FUNCTION(funcArg=params, funcResultType=restype, functionAttributes=functionAttributes, source=ts)::_,_,_,_,_,_,pre,_)
+    case (cache,env,args,nargs,(funcType as DAE.T_FUNCTION(funcArg=params, funcResultType=restype, functionAttributes=functionAttributes, source=ts))::_,_,_,_,_,_,pre,_)
       equation
         slots = makeEmptySlots(params);
-        (cache,args_1,newslots,clist,polymorphicBindings) = elabInputArgs(cache, env, args, nargs, slots, onlyOneFunction, checkTypes, impl, isExternalObject,{},st,pre,info,Util.makeValueOrDefault(List.first,ts,Absyn.IDENT("builtinFunction")));
+        (cache,args_1,newslots,clist,polymorphicBindings) = elabInputArgs(cache, env, args, nargs, slots, onlyOneFunction, checkTypes, impl, isExternalObject,{},st,pre,info,funcType,Util.makeValueOrDefault(List.first,ts,Absyn.IDENT("builtinFunction")));
         // Check the sanity of function parameters whose types are dependent on other parameters.
         // e.g. input Integer i; input Integer a[i];  // type of 'a' depends on te value 'i'
         (params, restype) = applyArgTypesToFuncType(newslots, params, restype, env, checkTypes, info);
@@ -8654,7 +8640,7 @@ algorithm
         (cache,args_1,clist,restype,t,dims,newslots);
 
     // We didn't find a match, try next function type
-    case (cache,env,args,nargs,DAE.T_FUNCTION(funcArg=_, funcResultType=_)::trest,_,_,_,_,_,pre,_)
+    case (cache,env,args,nargs,t::trest,_,_,_,_,_,pre,_)
       equation
         (cache,args_1,clist,restype,t,dims,slots) = elabTypes(cache, env, args, nargs, trest, onlyOneFunction, checkTypes, impl, isExternalObject, st, pre, info);
       then
@@ -8708,7 +8694,7 @@ algorithm
     else
       equation
         // Extract all dimensions from the parameters.
-        tys = List.map(inParameters, funcArgType);
+        tys = List.map(inParameters, Types.funcArgType);
         dims = getAllOutputDimensions(inResultType);
         dims = List.mapFlat_tail(tys, Types.getDimensions, dims);
         // Use the dimensions to figure out which parameters are referenced by
@@ -8719,6 +8705,7 @@ algorithm
 
         // Create DAE.Vars from the slots.
         cache = Env.noCache();
+
         vars = List.map2(used_slots, makeVarFromSlot, inEnv, cache);
 
         // Use a dummy SCode.Element, because we're only interested in the DAE.Vars.
@@ -8733,7 +8720,6 @@ algorithm
 
         // add variables to the environment
         env = makeDummyFuncEnv(env, vars, dummy_var);
-
         // Evaluate the dimensions in the types.
         params = List.threadMap3(inSlots,inParameters, evaluateFuncParamDimAndMatchTypes, env, cache, inInfo);
 
@@ -8743,14 +8729,6 @@ algorithm
 
   end matchcontinue;
 end applyArgTypesToFuncType;
-
-protected function funcArgType
-  "Returns the type of a FuncArg."
-  input DAE.FuncArg inFuncArg;
-  output DAE.Type outType;
-algorithm
-  (_, outType, _, _, _) := inFuncArg;
-end funcArgType;
 
 protected function getAllOutputDimensions
   "Return the dimensions of an output type."
@@ -8827,7 +8805,7 @@ protected function isSlotUsed
 protected
   String slot_name;
 algorithm
-  SLOT(defaultArg = (slot_name, _, _, _, _)) := inSlot;
+  SLOT(defaultArg = DAE.FUNCARG(name=slot_name)) := inSlot;
   outIsUsed := List.isMemberOnTrue(slot_name, inUsedNames, stringEq);
 end isSlotUsed;
 
@@ -8838,44 +8816,124 @@ protected function makeVarFromSlot
   input Env.Cache inCache;
   output DAE.Var outVar;
 algorithm
-  outVar := matchcontinue(inSlot, inEnv, inCache)
+  outVar := matchcontinue (inSlot, inEnv, inCache)
     local
       DAE.Ident name;
       DAE.Type ty;
       DAE.Exp exp;
       DAE.Binding binding;
       Values.Value val;
+      DAE.FuncArg defaultArg;
+      Boolean slotFilled;
+      DAE.Dimensions dims;
+      Integer idx;
+      DAE.Var var;
 
     // If the argument expression already has known dimensions, no need to
     // constant evaluate it.
-    case (SLOT(defaultArg = (name, _, _, _, _), arg = SOME(exp)), _, _)
+    case (SLOT(defaultArg = DAE.FUNCARG(name=name), arg = SOME(exp)), _, _)
       equation
         false = Expression.expHasCref(exp,ComponentReference.makeCrefIdent(name,DAE.T_UNKNOWN_DEFAULT,{}));
         ty = Expression.typeof(exp);
         true = Types.dimensionsKnown(ty);
-        binding = DAE.EQBOUND(exp, NONE(), DAE.C_CONST(),
-          DAE.BINDING_FROM_DEFAULT_VALUE());
-      then
-        DAE.TYPES_VAR(name, DAE.dummyAttrParam, ty, binding, NONE());
+        binding = DAE.EQBOUND(exp, NONE(), DAE.C_CONST(), DAE.BINDING_FROM_DEFAULT_VALUE());
+      then (DAE.TYPES_VAR(name, DAE.dummyAttrParam, ty, binding, NONE()));
 
     // Otherwise, try to constant evaluate the expression.
-    case (SLOT(defaultArg = (name, _, _, _, _), arg = SOME(exp)), _, _)
+    case (SLOT(defaultArg = DAE.FUNCARG(name=name), arg = SOME(exp)), _, _)
       equation
         // Constant evaluate the bound expression.
         (_, val, _) = Ceval.ceval(inCache, inEnv, exp, false, NONE(), Absyn.NO_MSG(), 0);
         exp = ValuesUtil.valueExp(val);
         ty = Expression.typeof(exp);
         // Create a binding from the evaluated expression.
-        binding = DAE.EQBOUND(exp, SOME(val), DAE.C_CONST(),
-          DAE.BINDING_FROM_DEFAULT_VALUE());
-      then
-        DAE.TYPES_VAR(name, DAE.dummyAttrParam, ty, binding, NONE());
+        binding = DAE.EQBOUND(exp, SOME(val), DAE.C_CONST(), DAE.BINDING_FROM_DEFAULT_VALUE());
+      then DAE.TYPES_VAR(name, DAE.dummyAttrParam, ty, binding, NONE());
 
-    case (SLOT(defaultArg = (name, ty, _, _, _)), _, _)
-      then DAE.TYPES_VAR(name, DAE.dummyAttrParam, ty, DAE.UNBOUND(), NONE());
+    case (SLOT(defaultArg = DAE.FUNCARG(name=name, ty=ty)), _, _)
+      then (DAE.TYPES_VAR(name, DAE.dummyAttrParam, ty, DAE.UNBOUND(), NONE()));
 
   end matchcontinue;
 end makeVarFromSlot;
+
+protected function evaluateStructuralSlots2
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Slot> inSlots;
+  input list<String> usedSlots;
+  input list<Slot> acc;
+  output Env.Cache cache;
+  output list<Slot> slots;
+algorithm
+  (cache,slots) := matchcontinue (inCache,inEnv,inSlots,usedSlots,acc)
+    local
+      String name;
+      Boolean slotFilled;
+      DAE.Exp exp;
+      Slot slot;
+      list<Slot> rest;
+      DAE.FuncArg defaultArg;
+      list<DAE.Dimension> dims;
+      Integer idx;
+      Values.Value val;
+      DAE.Type ty;
+      DAE.Binding binding;
+    case (_,_,{},_,_) then (inCache,listReverse(acc));
+
+    case (_,_,slot::rest,_,_)
+      equation
+        false = isSlotUsed(slot, usedSlots);
+        (cache,slots) = evaluateStructuralSlots2(inCache,inEnv,rest,usedSlots,slot::acc);
+      then (cache,slots);
+
+      // If we are suggested the argument is structural, evaluate it
+    case (_,_,SLOT(defaultArg as DAE.FUNCARG(name=name), slotFilled, SOME(exp), dims, idx)::rest, _, _)
+      equation
+        // Constant evaluate the bound expression.
+        (cache, val, _) = Ceval.ceval(inCache, inEnv, exp, false, NONE(), Absyn.NO_MSG(), 0);
+        exp = ValuesUtil.valueExp(val);
+        ty = Expression.typeof(exp);
+        // Create a binding from the evaluated expression.
+        binding = DAE.EQBOUND(exp, SOME(val), DAE.C_CONST(), DAE.BINDING_FROM_DEFAULT_VALUE());
+        slot = SLOT(defaultArg,true,SOME(exp),dims,idx);
+        (cache,slots) = evaluateStructuralSlots2(cache,inEnv,rest,usedSlots,slot::acc);
+      then (cache,slots);
+    case (_,_,slot::rest,_,_)
+      equation
+        (cache,slots) = evaluateStructuralSlots2(inCache,inEnv,rest,usedSlots,slot::acc);
+      then (cache,slots);
+  end matchcontinue;
+end evaluateStructuralSlots2;
+
+protected function evaluateStructuralSlots
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Slot> inSlots;
+  input DAE.Type funcType;
+  output Env.Cache cache;
+  output list<Slot> slots;
+algorithm
+  (cache,slots) := match (inCache,inEnv,inSlots,funcType)
+    local
+      list<DAE.Type> tys;
+      list<DAE.Dimension> dims;
+      list<String> used_args;
+      list<DAE.FuncArg> funcArg;
+      DAE.Type funcResultType;
+    case (_,_,_,DAE.T_FUNCTION(funcArg=funcArg,funcResultType=funcResultType))
+      equation
+        tys = List.map(funcArg, Types.funcArgType);
+        dims = getAllOutputDimensions(funcResultType);
+        dims = List.mapFlat_tail(tys, Types.getDimensions, dims);
+        // Use the dimensions to figure out which parameters are referenced by
+        // other parameters' dimensions. This is done to minimize the things we
+        // need to constant evaluate, a.k.a. 'things that go wrong'.
+        used_args = extractNamesFromDims(dims, {});
+        (cache,slots) = evaluateStructuralSlots2(inCache,inEnv,inSlots,used_args,{});
+      then (cache,slots);
+    else (inCache,inSlots); // T_METARECORD, T_NOTYPE etc for builtins
+  end match;
+end evaluateStructuralSlots;
 
 protected function makeDummyFuncEnv
   "Helper function to applyArgTypesToFuncType, creates a dummy function
@@ -8924,11 +8982,12 @@ algorithm
     DAE.Dimensions dims1, dims2;
     String t_str1,t_str2;
     DAE.Dimensions vdims;
+    Boolean b;
 
 
     // If we have a code exp argument we can't check dims...
     // There are all kinds of scripting function that complicate things.
-    case(_, (_,DAE.T_CODE(_,_),_,_,_), _, _, _)
+    case(_, DAE.FUNCARG(ty=DAE.T_CODE(_,_)), _, _, _)
       then
         inParam;
 
@@ -8936,7 +8995,7 @@ algorithm
     // They add up
     case(SLOT(arg = SOME(DAE.ARRAY(ty = sty)), dims = vdims), _, _, _, _)
       equation
-        (ident, pty, c, p, oexp) = inParam;
+        DAE.FUNCARG(ty=pty) = inParam;
         // evaluate the dimesions
         pty = evaluateFuncArgTypeDims(pty, inEnv, inCache);
         // append the vectorization dim if argument is vectorized.
@@ -8946,13 +9005,13 @@ algorithm
         dims2 = Types.getDimensions(sty);
         true = Expression.dimsEqual(dims1, dims2);
 
-        outParam = (ident, pty, c, p, oexp);
+        outParam = Types.setFuncArgType(inParam, pty);
       then
         outParam;
 
     case(SLOT(arg = SOME(DAE.MATRIX(ty = sty)), dims = vdims), _, _, _, _)
       equation
-        (ident, pty, c, p, oexp) = inParam;
+        DAE.FUNCARG(ty=pty) = inParam;
         // evaluate the dimesions
         pty = evaluateFuncArgTypeDims(pty, inEnv, inCache);
         // append the vectorization dim if argument is vectorized.
@@ -8961,7 +9020,7 @@ algorithm
         dims2 = Types.getDimensions(sty);
         true = Expression.dimsEqual(dims1, dims2);
 
-        outParam = (ident, pty, c, p, oexp);
+        outParam = Types.setFuncArgType(inParam, pty);
       then
         outParam;
 
@@ -8969,9 +9028,9 @@ algorithm
       equation
         failure(SLOT(arg = SOME(DAE.ARRAY(ty = _))) = inSlot);
         failure(SLOT(arg = SOME(DAE.MATRIX(ty = _))) = inSlot);
-        (ident, pty, c, p, oexp) = inParam;
+        DAE.FUNCARG(ty=pty) = inParam;
         pty = evaluateFuncArgTypeDims(pty, inEnv, inCache);
-        outParam = (ident, pty, c, p, oexp);
+        outParam = Types.setFuncArgType(inParam, pty);
       then
         outParam;
 
@@ -9341,7 +9400,7 @@ protected function getTypes
   input list<DAE.FuncArg> farg;
   output list<DAE.Type> outTypesTypeLst;
 algorithm
-  outTypesTypeLst := List.map(farg,Util.tuple52);
+  outTypesTypeLst := List.map(farg,Types.funcArgType);
 end getTypes;
 
 /*
@@ -9429,15 +9488,16 @@ protected function elabInputArgs
   input Option<GlobalScript.SymbolTable> st;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
+  input DAE.Type funcType "Used to determine which arguments are structural. We will evaluate them later to figure if they are used in dimensions. So we evaluate them here to get a more optimised DAE";
   input Absyn.Path path;
   output Env.Cache outCache;
-  output list<DAE.Exp> outExpExpLst;
+  output list<DAE.Exp> outExps;
   output list<Slot> outSlotLst;
   output list<DAE.Const> outTypesConstLst;
   output InstTypes.PolymorphicBindings outPolymorphicBindings;
 algorithm
-  (outCache,outExpExpLst,outSlotLst,outTypesConstLst,outPolymorphicBindings):=
-  match (inCache,inEnv,inAbsynExpLst,inAbsynNamedArgLst,inSlotLst,onlyOneFunction,checkTypes,impl,isExternalObject,inPolymorphicBindings,st,inPrefix,info,path)
+  (outCache,outExps,outSlotLst,outTypesConstLst,outPolymorphicBindings):=
+  match (inCache,inEnv,inAbsynExpLst,inAbsynNamedArgLst,inSlotLst,onlyOneFunction,checkTypes,impl,isExternalObject,inPolymorphicBindings,st,inPrefix,info,funcType,path)
     local
       list<DAE.FuncArg> farg;
       list<Slot> slots_1,newslots,slots;
@@ -9451,33 +9511,36 @@ algorithm
       InstTypes.PolymorphicBindings polymorphicBindings;
 
     // impl const Fill slots with positional arguments
-    case (cache,env,(exp as (_ :: _)),narg,slots,_,_,_,_,polymorphicBindings,_,pre,_,_)
+    case (cache,env,(exp as (_ :: _)),narg,slots,_,_,_,_,polymorphicBindings,_,pre,_,_,_)
       equation
         farg = funcArgsFromSlots(slots);
         (cache,slots_1,clist1,polymorphicBindings) =
           elabPositionalInputArgs(cache, env, exp, farg, 1, slots, onlyOneFunction, checkTypes, impl, isExternalObject, polymorphicBindings,st,pre,info,path);
-        (cache,_,newslots,clist2,polymorphicBindings) =
-          elabInputArgs(cache, env, {}, narg, slots_1, onlyOneFunction, checkTypes, impl, isExternalObject, polymorphicBindings,st,pre,info,path)
+        (cache,explst,newslots,clist2,polymorphicBindings) =
+          elabInputArgs(cache, env, {}, narg, slots_1, onlyOneFunction, checkTypes, impl, isExternalObject, polymorphicBindings,st,pre,info,funcType,path)
           "recursive call fills named arguments" ;
         clist = listAppend(clist1, clist2);
-        explst = slotListArgs(newslots);
       then
         (cache,explst,newslots,clist,polymorphicBindings);
 
     // Fill slots with named arguments
-    case (cache,env,{},narg as _::_,slots,_,_,_,_,polymorphicBindings,_,pre,_,_)
+    case (cache,env,{},narg as _::_,slots,_,_,_,_,polymorphicBindings,_,pre,_,_,_)
       equation
         farg = funcArgsFromSlots(slots);
         (cache,newslots,clist,polymorphicBindings) =
           elabNamedInputArgs(cache, env, narg, farg, slots, onlyOneFunction, checkTypes, impl, isExternalObject, polymorphicBindings,st,pre,info,path);
+        (cache,newslots) = evaluateStructuralSlots(cache,env,newslots,funcType);
         newexp = slotListArgs(newslots);
       then
         (cache,newexp,newslots,clist,polymorphicBindings);
 
     // Empty function call, e.g foo(), is always constant
     // arpo 2010-11-09: TODO! FIXME! this is not always true, RecordCall() can contain DEFAULT bindings that are par
-    case (cache,_,{},{},slots,_,_,_,_,polymorphicBindings,_,_,_,_)
-      then (cache,{},slots,{DAE.C_CONST()},polymorphicBindings);
+    case (cache,env,{},{},slots,_,_,_,_,polymorphicBindings,_,_,_,_,_)
+      equation
+        (cache,slots) = evaluateStructuralSlots(cache,env,slots,funcType);
+        newexp = slotListArgs(slots);
+      then (cache,newexp,slots,{DAE.C_CONST()},polymorphicBindings);
 
     // fail trace
     else
@@ -9545,7 +9608,7 @@ algorithm
       then
         DAE.T_COMPLEX(complexClassType, {}, NONE(), DAE.emptyTypeSource);
 
-    case(SLOT(defaultArg = (id,ty,_,_,_))::slots,_)
+    case(SLOT(defaultArg = DAE.FUNCARG(name=id,ty=ty))::slots,_)
       equation
         etp = Types.simplifyType(ty);
         DAE.T_COMPLEX(ci,vLst,ec,ts) = complexTypeFromSlots(slots,complexClassType);
@@ -9618,7 +9681,7 @@ algorithm
       then
         (cache, SLOT(fa,true,e,ds,idx) :: res, constLst, polymorphicBindings);
 
-    case (cache,(SLOT((id,tp,c2,pr,e), false, NONE(), ds, idx) :: xs),class_,env,impl,polymorphicBindings,pre,_)
+    case (cache,(SLOT(DAE.FUNCARG(id,tp,c2,pr,e), false, NONE(), ds, idx) :: xs),class_,env,impl,polymorphicBindings,pre,_)
       equation
         (cache,res,constLst,polymorphicBindings) = fillGraphicsDefaultSlots(cache, xs, class_, env, impl, polymorphicBindings, pre, info);
 
@@ -9629,7 +9692,7 @@ algorithm
         (exp_1,_,polymorphicBindings) = Types.matchTypePolymorphic(exp,t,tp,Env.getEnvPathNoImplicitScope(env),polymorphicBindings,false);
         true = Types.constEqualOrHigher(c1,c2);
       then
-        (cache, SLOT((id,tp,c2,pr,e),true,SOME(exp_1),ds,idx) :: res, c1::constLst, polymorphicBindings);
+        (cache, SLOT(DAE.FUNCARG(id,tp,c2,pr,e),true,SOME(exp_1),ds,idx) :: res, c1::constLst, polymorphicBindings);
 
     case (cache,(SLOT(fa, false, e, ds, idx) :: xs),class_,env,impl,polymorphicBindings,pre,_)
       equation
@@ -9827,15 +9890,15 @@ algorithm
       InstTypes.PolymorphicBindings polymorphicBindings;
       String s1,s2,s3,s4,s5;
 
-    case (cache, env, e, (id,vt as DAE.T_CODE(ct,_),_,pr,_), _, slots, _, true, _, _, polymorphicBindings,_,pre,_,_,_)
+    case (cache, env, e, DAE.FUNCARG(name=id,ty = vt as DAE.T_CODE(ct,_),par=pr), _, slots, _, true, _, _, polymorphicBindings,_,pre,_,_,_)
       equation
         e_1 = elabCodeExp(e,cache,env,ct,info);
-        slots_1 = fillSlot((id,vt,DAE.C_VAR(),pr,NONE()), e_1, {}, slots,checkTypes,pre,info);
+        slots_1 = fillSlot(DAE.FUNCARG(id,vt,DAE.C_VAR(),pr,NONE()), e_1, {}, slots,checkTypes,pre,info);
       then
         (cache,slots_1,DAE.C_VAR(),polymorphicBindings);
 
     // exact match
-    case (cache, env, e, (id,vt,_,pr,_), _, slots, _, true, _, _, polymorphicBindings,_,pre,_,_,_)
+    case (cache, env, e, DAE.FUNCARG(name=id,ty=vt,par=pr), _, slots, _, true, _, _, polymorphicBindings,_,pre,_,_,_)
       equation
         (cache,e_1,props,_) = elabExp(cache,env, e, impl,st, true,pre,info);
         t = Types.getPropType(props);
@@ -9843,12 +9906,12 @@ algorithm
         c1 = Types.propAllConst(props);
         (cache,e_1) = evalExternalObjectInput(isExternalObject, vt, c1, cache, env, e_1, info);
         (e_2,_,polymorphicBindings) = Types.matchTypePolymorphic(e_1,t,vt,Env.getEnvPathNoImplicitScope(env),polymorphicBindings,false);
-        slots_1 = fillSlot((id,vt,c1,pr,NONE()), e_2, {}, slots,checkTypes,pre,info) "no vectorized dim" ;
+        slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_2, {}, slots,checkTypes,pre,info) "no vectorized dim" ;
       then
         (cache,slots_1,c1,polymorphicBindings);
 
     // check if vectorized argument
-    case (cache, env, e, (id,vt,_,pr,_), _, slots, _, true, _, _, polymorphicBindings,_,pre,_,_,_)
+    case (cache, env, e, DAE.FUNCARG(name=id,ty=vt,par=pr), _, slots, _, true, _, _, polymorphicBindings,_,pre,_,_,_)
       equation
         (cache,e_1,props,_) = elabExp(cache,env, e, impl,st,true,pre,info);
         t = Types.getPropType(props);
@@ -9856,24 +9919,24 @@ algorithm
         c1 = Types.propAllConst(props);
         (cache,e_1) = evalExternalObjectInput(isExternalObject, vt, c1, cache, env, e_1, info);
         (e_2,_,ds,polymorphicBindings) = Types.vectorizableType(e_1, t, vt, Env.getEnvPathNoImplicitScope(env));
-        slots_1 = fillSlot((id,vt,c1,pr,NONE()), e_2, ds, slots, checkTypes,pre,info);
+        slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_2, ds, slots, checkTypes,pre,info);
       then
         (cache,slots_1,c1,polymorphicBindings);
 
     // not checking types
-    case (cache, env, e, (id,_,_,pr,_), _, slots, _, false, _, _, polymorphicBindings,_,pre,_,_,_)
+    case (cache, env, e, DAE.FUNCARG(name=id,par=pr), _, slots, _, false, _, _, polymorphicBindings,_,pre,_,_,_)
       equation
         (cache,e_1,props,_) = elabExp(cache,env, e, impl,st,true,pre,info);
         t = Types.getPropType(props);
         c1 = Types.propAllConst(props);
         (cache,e_1) = evalExternalObjectInput(isExternalObject, t, c1, cache, env, e_1, info);
         /* fill slot with actual type for error message*/
-        slots_1 = fillSlot((id,t,c1,pr,NONE()), e_1, {}, slots, checkTypes,pre,info);
+        slots_1 = fillSlot(DAE.FUNCARG(id,t,c1,pr,NONE()), e_1, {}, slots, checkTypes,pre,info);
       then
         (cache,slots_1,c1,polymorphicBindings);
 
     // check types and display error
-    case (cache,env,e,(id,vt,_,_,_),_,_, true /* 1 function */,true /* checkTypes */,_,_,_,_,pre,_,_,_)
+    case (cache,env,e,DAE.FUNCARG(name=id,ty=vt),_,_, true /* 1 function */,true /* checkTypes */,_,_,_,_,pre,_,_,_)
       equation
         true = Error.getNumErrorMessages() == numErrors;
         (cache,e_1,prop,_) = elabExp(cache, env, e, impl,st, true,pre,info);
@@ -10005,7 +10068,7 @@ algorithm
         (vt as DAE.T_CODE(ty=ct)) = findNamedArgType(id, farg);
         pr = findNamedArgParallelism(id,farg);
         e_1 = elabCodeExp(e,cache,env,ct,info);
-        slots_1 = fillSlot((id,vt,DAE.C_VAR(),pr,NONE()), e_1, {}, slots,checkTypes,pre,info);
+        slots_1 = fillSlot(DAE.FUNCARG(id,vt,DAE.C_VAR(),pr,NONE()), e_1, {}, slots,checkTypes,pre,info);
       then (cache,slots_1,DAE.C_VAR(),polymorphicBindings);
 
     // check types exact match
@@ -10016,7 +10079,7 @@ algorithm
         (cache,e_1,DAE.PROP(t,c1),_) = elabExp(cache, env, e, impl,st, true,pre,info);
         (cache,e_1) = evalExternalObjectInput(isExternalObject, t, c1, cache, env, e_1, info);
         (e_2,_,polymorphicBindings) = Types.matchTypePolymorphic(e_1,t,vt,Env.getEnvPathNoImplicitScope(env),polymorphicBindings,false);
-        slots_1 = fillSlot((id,vt,c1,pr,NONE()), e_2, {}, slots,checkTypes,pre,info);
+        slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_2, {}, slots,checkTypes,pre,info);
       then (cache,slots_1,c1,polymorphicBindings);
 
     // check types vectorized argument
@@ -10027,7 +10090,7 @@ algorithm
         vt = findNamedArgType(id, farg);
         pr = findNamedArgParallelism(id,farg);
         (e_2,_,ds,polymorphicBindings) = Types.vectorizableType(e_1, t, vt, Env.getEnvPathNoImplicitScope(env));
-        slots_1 = fillSlot((id,vt,c1,pr,NONE()), e_2, ds, slots, checkTypes,pre,info);
+        slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_2, ds, slots, checkTypes,pre,info);
       then (cache,slots_1,c1,polymorphicBindings);
 
     // do not check types
@@ -10037,7 +10100,7 @@ algorithm
         (cache,e_1) = evalExternalObjectInput(isExternalObject, t, c1, cache, env, e_1, info);
         vt = findNamedArgType(id, farg);
         pr = findNamedArgParallelism(id,farg);
-        slots_1 = fillSlot((id,vt,c1,pr,NONE()), e_1, {}, slots,checkTypes,pre,info);
+        slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_1, {}, slots,checkTypes,pre,info);
       then (cache,slots_1,c1,polymorphicBindings);
 
     // failure
@@ -10069,12 +10132,12 @@ algorithm
       String id,id2;
       DAE.Type ty;
       list<DAE.FuncArg> ts;
-    case (id,(id2,ty,_,_,_) :: _)
+    case (id,DAE.FUNCARG(name=id2,ty=ty) :: _)
       equation
         true = stringEq(id, id2);
       then
         ty;
-    case (id,(id2,_,_,_,_) :: ts)
+    case (id,DAE.FUNCARG(name=id2) :: ts)
       equation
         false = stringEq(id, id2);
         ty = findNamedArgType(id, ts);
@@ -10096,12 +10159,12 @@ algorithm
       String id,id2;
       DAE.VarParallelism pr;
       list<DAE.FuncArg> ts;
-    case (id,(id2,_,_,pr,_) :: _)
+    case (id,DAE.FUNCARG(name=id2,par=pr) :: _)
       equation
         true = stringEq(id, id2);
       then
         pr;
-    case (id,(id2,_,_,_,_) :: ts)
+    case (id,DAE.FUNCARG(name=id2) :: ts)
       equation
         false = stringEq(id, id2);
         pr = findNamedArgParallelism(id, ts);
@@ -10139,15 +10202,15 @@ algorithm
       Option<DAE.Exp> oe;
       Integer idx;
 
-    case ((fa1,b,c1,_,_),exp,ds,(SLOT(defaultArg = (fa2,_,c2,prl,oe),slotFilled = false,idx = idx) :: xs),_,_,_)
+    case (DAE.FUNCARG(name=fa1,ty=b,const=c1),exp,ds,(SLOT(defaultArg = DAE.FUNCARG(name=fa2,const=c2,par=prl,defaultBinding=oe),slotFilled = false,idx = idx) :: xs),_,_,_)
       equation
         true = stringEq(fa1, fa2);
         true = Types.constEqualOrHigher(c1,c2);
       then
-        (SLOT((fa2,b,c2,prl,oe),true,SOME(exp),ds,idx) :: xs);
+        (SLOT(DAE.FUNCARG(fa2,b,c2,prl,oe),true,SOME(exp),ds,idx) :: xs);
 
     // fail if variability is wrong
-    case ((fa1,_,c1,_,_),exp,_,(SLOT(defaultArg = (fa2,_,c2,_,_),slotFilled = false) :: _),_,_,_)
+    case (DAE.FUNCARG(name=fa1,const=c1),exp,_,(SLOT(defaultArg = DAE.FUNCARG(name=fa2,const=c2),slotFilled = false) :: _),_,_,_)
       equation
         true = stringEq(fa1, fa2);
         false = Types.constEqualOrHigher(c1,c2);
@@ -10158,7 +10221,7 @@ algorithm
         fail();
 
     // fail if slot already filled
-    case ((fa1,_,_,_,_),_,_,(SLOT(defaultArg = (fa2,_,_,_,_),slotFilled = true) :: _), _,pre,_)
+    case (DAE.FUNCARG(name=fa1),_,_,(SLOT(defaultArg = DAE.FUNCARG(name=fa2),slotFilled = true) :: _), _,pre,_)
       equation
         true = stringEq(fa1, fa2);
         ps = PrefixUtil.printPrefixStr3(pre);
@@ -10167,7 +10230,7 @@ algorithm
         fail();
 
     // no equal, try next
-    case ((farg as (fa1,_,_,_,_)),exp,ds,((s1 as SLOT(defaultArg = (fa2,_,_,_,_))) :: xs),_,pre,_)
+    case ((farg as DAE.FUNCARG(name=fa1)),exp,ds,((s1 as SLOT(defaultArg = DAE.FUNCARG(name=fa2))) :: xs),_,pre,_)
       equation
         false = stringEq(fa1, fa2);
         newslots = fillSlot(farg, exp, ds, xs,checkTypes,pre,info);
@@ -10175,7 +10238,7 @@ algorithm
         (s1 :: newslots);
 
     // failure
-    case ((fa,_,_,_,_),_,_,{},_,_,_)
+    case (DAE.FUNCARG(name=fa),_,_,{},_,_,_)
       equation
         Error.addSourceMessage(Error.NO_SUCH_ARGUMENT, {"",fa}, info);
       then
@@ -12667,465 +12730,6 @@ algorithm
   end match;
 end eqSubscript;
 
-/*
- * - Argument type casting and operator de-overloading
- *
- *  If a function is called with arguments that don\'t match the
- *  expected parameter types, implicit type conversions are performed
- *  in some cases.  Usually it is an integer argument that is promoted
- *  to a real.
- *
- *  Many operators in Modelica are overloaded, meaning that they can
- *  operate on several different types of arguments.  To describe what
- *  it means to add, say, an integer and a real number, the
- *  expressions have to be de-overloaded, with one operator for each
- *  distinct operation.
- */
-
-protected function elabArglist
-"Given a list of parameter types and an argument list, this
-  function tries to match the two, promoting the type of
-  arguments when necessary."
-  input list<DAE.Type> inTypes;
-  input list<tuple<DAE.Exp, DAE.Type>> inArgs;
-  output list<DAE.Exp> outArgs;
-  output list<DAE.Type> outTypes;
-algorithm
-  (outArgs, outTypes) := match(inTypes, inArgs)
-    local
-      DAE.Exp arg_1,arg;
-      DAE.Type atype_1,pt,atype;
-      list<DAE.Exp> args_1;
-      list<DAE.Type> atypes_1,pts;
-      list<tuple<DAE.Exp, DAE.Type>> args;
-
-    // empty lists
-    case ({},{}) then ({},{});
-
-    // we have something
-    case ((pt :: pts),((arg,atype) :: args))
-      equation
-        (arg_1,atype_1) = Types.matchType(arg, atype, pt, false);
-        (args_1,atypes_1) = elabArglist(pts, args);
-      then
-        ((arg_1 :: args_1),(atype_1 :: atypes_1));
-  end match;
-end elabArglist;
-
-protected function deoverload "Given several lists of parameter types and one argument list,
-  this function tries to find one list of parameter types which
-  is compatible with the argument list. It uses elabArglist to
-  do the matching, which means that automatic type conversions
-  will be made when necessary.  The new argument list, together
-  with a new operator that corresponds to the parameter type list
-  is returned.
-
-  The basic principle is that the first operator that matches is chosen.
-  ."
-  input list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> inOperators;
-  input list<tuple<DAE.Exp, DAE.Type>> inArgs;
-  input Absyn.Exp aexp "for error-messages";
-  input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
-  output DAE.Operator outOperator;
-  output list<DAE.Exp> outArgs;
-  output DAE.Type outType;
-algorithm
-  (outOperator, outArgs, outType) :=
-  matchcontinue (inOperators, inArgs, aexp, inPrefix, info)
-    local
-      list<DAE.Exp> exps,args_1;
-      list<DAE.Type> types_1,params,tps;
-      DAE.Type rtype_1,rtype;
-      DAE.Operator op;
-      list<tuple<DAE.Exp, DAE.Type>> args;
-      list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> xs;
-      Prefix.Prefix pre;
-      DAE.Type ty;
-      list<String> exps_str,tps_str;
-      String estr, pre_str, s, tpsstr;
-
-    case (((op,params,rtype) :: _),args,_,pre,_)
-      equation
-        //Debug.fprint(Flags.DOVL, stringDelimitList(List.map(params, Types.printTypeStr),"\n"));
-        //Debug.fprint(Flags.DOVL, "\n===\n");
-        (args_1,types_1) = elabArglist(params, args);
-        rtype_1 = computeReturnType(op, types_1, rtype,pre,info);
-        ty = Types.simplifyType(rtype_1);
-        op = Expression.setOpType(op, ty);
-      then
-        (op,args_1,rtype_1);
-
-    case ((_ :: xs),args,_,pre,_)
-      equation
-        (op,args_1,rtype) = deoverload(xs,args,aexp,pre,info);
-      then
-        (op,args_1,rtype);
-
-    //Don't fail and dont print error messages. Operators can be overloaded
-    //for records.
-    //mahge: TODO move this to the proper place and print.
-    case ({},args,_,pre,_)
-      equation
-        s = Dump.printExpStr(aexp);
-        exps = List.map(args, Util.tuple21);
-        tps = List.map(args, Util.tuple22);
-        exps_str = List.map(exps, ExpressionDump.printExpStr);
-        _ = stringDelimitList(exps_str, ", ");
-        tps_str = List.map(tps, Types.unparseType);
-        tpsstr = stringDelimitList(tps_str, ", ");
-        pre_str = PrefixUtil.printPrefixStr3(pre);
-        Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s,tpsstr,pre_str}, info);
-      then
-        fail();
-  end matchcontinue;
-end deoverload;
-
-protected function computeReturnType "This function determines the return type of
-  an operator and the types of the operands."
-  input DAE.Operator inOperator;
-  input list<DAE.Type> inTypesTypeLst;
-  input DAE.Type inType;
-  input Prefix.Prefix inPrefix;
-  input Absyn.Info inInfo;
-  output DAE.Type outType;
-algorithm
-  outType := matchcontinue (inOperator,inTypesTypeLst,inType,inPrefix, inInfo)
-    local
-      DAE.Type typ1,typ2,rtype,etype,typ;
-      String t1_str,t2_str,pre_str;
-      DAE.Dimension n1,n2,m,n,m1,m2,p;
-      Prefix.Prefix pre;
-
-    case (DAE.ADD_ARR(ty = _),{typ1,typ2},_,_, _)
-      equation
-        true = Types.subtype(typ1, typ2);
-      then
-        typ1;
-
-    case (DAE.ADD_ARR(ty = _),{typ1,typ2},_,_, _)
-      equation
-        true = Types.subtype(typ2, typ1);
-      then
-        typ1;
-
-    case (DAE.ADD_ARR(ty = _),{typ1,typ2},_,pre, _)
-      equation
-        t1_str = Types.unparseType(typ1);
-        t2_str = Types.unparseType(typ2);
-        pre_str = PrefixUtil.printPrefixStr3(pre);
-        Error.addSourceMessage(Error.INCOMPATIBLE_TYPES,
-          {"vector addition", pre_str, t1_str, t2_str}, inInfo);
-      then
-        fail();
-
-    case (DAE.SUB_ARR(ty = _),{typ1,typ2},_,_, _)
-      equation
-        true = Types.subtype(typ1, typ2);
-      then
-        typ1;
-
-    case (DAE.SUB_ARR(ty = _),{typ1,typ2},_,_, _)
-      equation
-        true = Types.subtype(typ2, typ1);
-      then
-        typ1;
-
-    case (DAE.SUB_ARR(ty = _),{typ1,typ2},_,pre, _)
-      equation
-        t1_str = Types.unparseType(typ1);
-        t2_str = Types.unparseType(typ2);
-        pre_str = PrefixUtil.printPrefixStr3(pre);
-        Error.addSourceMessage(Error.INCOMPATIBLE_TYPES,
-          {"vector subtraction", pre_str, t1_str, t2_str}, inInfo);
-      then
-        fail();
-
-    case (DAE.MUL_ARR(ty = _),{typ1,typ2},_,_, _)
-      equation
-        true = Types.subtype(typ1, typ2);
-      then
-        typ1;
-
-    case (DAE.MUL_ARR(ty = _),{typ1,typ2},_,_, _)
-      equation
-        true = Types.subtype(typ2, typ1);
-      then
-        typ1;
-
-    case (DAE.MUL_ARR(ty = _),{typ1,typ2},_,pre, _)
-      equation
-        t1_str = Types.unparseType(typ1);
-        t2_str = Types.unparseType(typ2);
-        pre_str = PrefixUtil.printPrefixStr3(pre);
-        Error.addSourceMessage(Error.INCOMPATIBLE_TYPES,
-          {"vector elementwise multiplication", pre_str, t1_str, t2_str}, inInfo);
-      then
-        fail();
-
-    case (DAE.DIV_ARR(ty = _),{typ1,typ2},_,_, _)
-      equation
-        true = Types.subtype(typ1, typ2);
-      then
-        typ1;
-
-    case (DAE.DIV_ARR(ty = _),{typ1,typ2},_,_, _)
-      equation
-        true = Types.subtype(typ2, typ1);
-      then
-        typ1;
-
-    case (DAE.DIV_ARR(ty = _),{typ1,typ2},_,pre, _)
-      equation
-        t1_str = Types.unparseType(typ1);
-        t2_str = Types.unparseType(typ2);
-        pre_str = PrefixUtil.printPrefixStr3(pre);
-        Error.addSourceMessage(Error.INCOMPATIBLE_TYPES,
-          {"vector elementwise division", pre_str, t1_str, t2_str}, inInfo);
-      then
-        fail();
-
-    // Matrix[n,m]^i
-    case (DAE.POW_ARR(ty = _),{typ1,_},_,_, _)
-      equation
-        2 = nDims(typ1);
-        n = Types.getDimensionNth(typ1, 1);
-        m = Types.getDimensionNth(typ1, 2);
-        true = Expression.dimensionsKnownAndEqual(n, m);
-      then
-        typ1;
-
-    case (DAE.POW_ARR2(ty = _),{typ1,typ2},_,_, _)
-      equation
-        true = Types.subtype(typ1, typ2);
-      then
-        typ1;
-
-    case (DAE.POW_ARR2(ty = _),{typ1,typ2},_,_, _)
-      equation
-        true = Types.subtype(typ2, typ1);
-      then
-        typ1;
-
-    case (DAE.POW_ARR2(ty = _),{typ1,typ2},_,pre, _)
-      equation
-        t1_str = Types.unparseType(typ1);
-        t2_str = Types.unparseType(typ2);
-        pre_str = PrefixUtil.printPrefixStr3(pre);
-        Error.addSourceMessage(Error.INCOMPATIBLE_TYPES,
-          {"elementwise vector^vector", pre_str, t1_str, t2_str}, inInfo);
-      then
-        fail();
-
-    case (DAE.MUL_SCALAR_PRODUCT(ty = _),{typ1,typ2},rtype,_, _)
-      equation
-        true = Types.subtype(typ1, typ2);
-      then
-        rtype;
-
-    case (DAE.MUL_SCALAR_PRODUCT(ty = _),{typ1,typ2},rtype,_, _)
-      equation
-        true = Types.subtype(typ2, typ1);
-      then
-        rtype;
-
-    case (DAE.MUL_SCALAR_PRODUCT(ty = _),{typ1,typ2},_,pre, _)
-      equation
-        t1_str = Types.unparseType(typ1);
-        t2_str = Types.unparseType(typ2);
-        pre_str = PrefixUtil.printPrefixStr3(pre);
-        Error.addSourceMessage(Error.INCOMPATIBLE_TYPES,
-          {"scalar product", pre_str, t1_str, t2_str}, inInfo);
-      then
-        fail();
-
-    // Vector[n]*Matrix[n,m] = Vector[m]
-    case (DAE.MUL_MATRIX_PRODUCT(ty = _),{typ1,typ2},_,_, _)
-      equation
-        1 = nDims(typ1);
-        2 = nDims(typ2);
-
-        n1 = Types.getDimensionNth(typ1, 1);
-        n2 = Types.getDimensionNth(typ2, 1);
-        m = Types.getDimensionNth(typ2, 2);
-
-        true = isValidMatrixProductDims(n1, n2);
-        etype = elementType(typ1);
-        rtype = Types.liftArray(etype, m);
-      then
-        rtype;
-
-    // Matrix[n,m]*Vector[m] = Vector[n]
-    case (DAE.MUL_MATRIX_PRODUCT(ty = _),{typ1,typ2},_,_, _)
-      equation
-        2 = nDims(typ1);
-        1 = nDims(typ2);
-
-        n = Types.getDimensionNth(typ1, 1);
-        m1 = Types.getDimensionNth(typ1, 2);
-        m2 = Types.getDimensionNth(typ2, 1);
-
-        true = isValidMatrixProductDims(m1, m2);
-        etype = elementType(typ2);
-        rtype = Types.liftArray(etype, n);
-      then
-        rtype;
-
-    // Matrix[n,m] * Matrix[m,p] = Matrix[n, p]
-    case (DAE.MUL_MATRIX_PRODUCT(ty = _),{typ1,typ2},_,_, _)
-      equation
-        2 = nDims(typ1);
-        2 = nDims(typ2);
-
-        n = Types.getDimensionNth(typ1, 1);
-        m1 = Types.getDimensionNth(typ1, 2);
-        m2 = Types.getDimensionNth(typ2, 1);
-        p = Types.getDimensionNth(typ2, 2);
-
-        true = isValidMatrixProductDims(m1, m2);
-        etype = elementType(typ1);
-        rtype = Types.liftArrayListDims(etype, {n, p});
-      then
-        rtype;
-
-    case (DAE.MUL_MATRIX_PRODUCT(ty = _),{typ1,typ2},_,pre, _)
-      equation
-        t1_str = Types.unparseType(typ1);
-        t2_str = Types.unparseType(typ2);
-        pre_str = PrefixUtil.printPrefixStr3(pre);
-        Error.addSourceMessage(Error.INCOMPATIBLE_TYPES,
-          {"matrix multiplication", pre_str, t1_str, t2_str}, inInfo);
-      then
-        fail();
-
-    case (DAE.MUL_ARRAY_SCALAR(ty = _),{typ1,_},_,_, _) then typ1;  /* rtype */
-
-    case (DAE.ADD_ARRAY_SCALAR(ty = _),{typ1,_},_,_, _) then typ1;  /* rtype */
-
-    case (DAE.SUB_SCALAR_ARRAY(ty = _),{_,typ2},_,_, _) then typ2;  /* rtype */
-
-    case (DAE.DIV_SCALAR_ARRAY(ty = _),{_,typ2},_,_, _) then typ2;  /* rtype */
-
-    case (DAE.DIV_ARRAY_SCALAR(ty = _),{typ1,_},_,_, _) then typ1;  /* rtype */
-
-    case (DAE.POW_ARRAY_SCALAR(ty = _),{typ1,_},_,_, _) then typ1;  /* rtype */
-
-    case (DAE.POW_SCALAR_ARRAY(ty = _),{_,typ2},_,_, _) then typ2;  /* rtype */
-
-    case (DAE.ADD(ty = _),_,typ,_, _) then typ;
-
-    case (DAE.SUB(ty = _),_,typ,_, _) then typ;
-
-    case (DAE.MUL(ty = _),_,typ,_, _) then typ;
-
-    case (DAE.DIV(ty = _),_,typ,_, _) then typ;
-
-    case (DAE.POW(ty = _),_,typ,_, _) then typ;
-
-    case (DAE.UMINUS(ty = _),_,typ,_, _) then typ;
-
-    case (DAE.UMINUS_ARR(ty = _),(typ1 :: _),_,_, _) then typ1;
-
-    case (DAE.AND(ty = _), {typ1, typ2}, _, _, _)
-      equation
-        true = Types.equivtypes(typ1, typ2);
-      then
-        typ1;
-
-    case (DAE.AND(ty = _), {typ1, typ2}, _, pre, _)
-      equation
-        t1_str = Types.unparseType(typ1);
-        t2_str = Types.unparseType(typ2);
-        pre_str = PrefixUtil.printPrefixStr3(pre);
-        Error.addSourceMessage(Error.INCOMPATIBLE_TYPES,
-          {"and", pre_str, t1_str, t2_str}, inInfo);
-      then
-        fail();
-
-    case (DAE.OR(ty = _), {typ1, typ2}, _, _, _)
-      equation
-        true = Types.equivtypes(typ1, typ2);
-      then
-        typ1;
-
-    case (DAE.OR(ty = _), {typ1, typ2}, _, pre, _)
-      equation
-        t1_str = Types.unparseType(typ1);
-        t2_str = Types.unparseType(typ2);
-        pre_str = PrefixUtil.printPrefixStr3(pre);
-        Error.addSourceMessage(Error.INCOMPATIBLE_TYPES,
-          {"or", pre_str, t1_str, t2_str}, inInfo);
-      then
-        fail();
-
-    case (DAE.NOT(ty = _),{typ1},_,_, _) then typ1;
-
-    case (DAE.LESS(ty = _),_,typ,_, _) then typ;
-
-    case (DAE.LESSEQ(ty = _),_,typ,_, _) then typ;
-
-    case (DAE.GREATER(ty = _),_,typ,_, _) then typ;
-
-    case (DAE.GREATEREQ(ty = _),_,typ,_, _) then typ;
-
-    case (DAE.EQUAL(ty = _),_,typ,_, _) then typ;
-
-    case (DAE.NEQUAL(ty = _),_,typ,_, _) then typ;
-
-    case (DAE.USERDEFINED(fqName = _),_,typ,_, _) then typ;
-  end matchcontinue;
-end computeReturnType;
-
-protected function isValidMatrixProductDims
-  "Checks if two dimensions are equal, which is a prerequisite for matrix
-  multiplication."
-  input DAE.Dimension dim1;
-  input DAE.Dimension dim2;
-  output Boolean res;
-algorithm
-  res := matchcontinue(dim1, dim2)
-    // The dimensions are both known and equal.
-    case (_, _)
-      equation
-        true = Expression.dimensionsKnownAndEqual(dim1, dim2);
-      then
-        true;
-    // If checkModel is used we might get unknown dimensions. So use
-    // dimensionsEqual instead, which matches anything against DIM_UNKNOWN.
-    case (_, _)
-      equation
-        true = Flags.getConfigBool(Flags.CHECK_MODEL);
-        true = Expression.dimensionsEqual(dim1, dim2);
-      then
-        true;
-    else false;
-  end matchcontinue;
-end isValidMatrixProductDims;
-
-public function nDims "Returns the number of dimensions of a Type."
-  input DAE.Type inType;
-  output Integer outInteger;
-algorithm
-  outInteger := match (inType)
-    local
-      Integer ns;
-      DAE.Type t;
-    case (DAE.T_INTEGER(varLst = _)) then 0;
-    case (DAE.T_REAL(varLst = _)) then 0;
-    case (DAE.T_STRING(varLst = _)) then 0;
-    case (DAE.T_BOOL(varLst = _)) then 0;
-    case (DAE.T_ARRAY(ty = t))
-      equation
-        ns = nDims(t);
-      then
-        ns + 1;
-    case (DAE.T_SUBTYPE_BASIC(complexType = t))
-      equation
-        ns = nDims(t);
-      then ns;
-  end match;
-end nDims;
-
 protected function elementType "Returns the element type of a type, i.e. for arrays, return the
   element type, and for bulitin scalar types return the type itself."
   input DAE.Type inType;
@@ -13148,1381 +12752,6 @@ algorithm
       then t_1;
   end match;
 end elementType;
-
-/* We have these as constants instead of function calls as done previously
- * because it takes a long time to generate these types over and over again.
- * The types are a bit hard to read, but they are simply 1 through 9-dimensional
- * arrays of the basic types. */
-protected constant list<DAE.Type> intarrtypes = {
-  DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 1-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 2-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 3-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 4-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 5-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 6-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 7-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 8-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource) // 9-dim
-};
-protected constant list<DAE.Type> realarrtypes = {
-  DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 1-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 2-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 3-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 4-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 5-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 6-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 7-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 8-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource) // 9-dim
-};
-protected constant list<DAE.Type> boolarrtypes = {
-  DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 1-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 2-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 3-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 4-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 5-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 6-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 7-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 8-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource) // 9-dim
-};
-protected constant list<DAE.Type> stringarrtypes = {
-  DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 1-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 2-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 3-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 4-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 5-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 6-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 7-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource), // 8-dim
-  DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource) // 9-dim
-};
-/* Simply a list of 9 of that basic type; used to match with the array types */
-protected constant list<DAE.Type> inttypes = {
-  DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT
-};
-protected constant list<DAE.Type> realtypes = {
-  DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT
-};
-protected constant list<DAE.Type> stringtypes = {
-  DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT
-};
-
-
-
-protected function typeIsRecord
-  input DAE.Type inType1;
-  output Boolean outBool;
-algorithm
-  outBool := match(inType1)
-    case (DAE.T_COMPLEX(ClassInf.RECORD(_),_, _,_)) then true;
-    case (DAE.T_ARRAY(DAE.T_COMPLEX(ClassInf.RECORD(_),_, _,_),_,_)) then true;
-    else false;
-  end match;
-
-end typeIsRecord;
-
-protected function getRecordPath
-  input DAE.Type inType1;
-  output Absyn.Path outPath;
-algorithm
-  DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), source = outPath :: _) :=
-    Types.arrayElementType(inType1);
-end getRecordPath;
-
-protected function getCallPath
-  input DAE.Exp inExp;
-  output Absyn.Path outPath;
-algorithm
-  outPath := match(inExp)
-  local
-    Absyn.Path path;
-    case (DAE.CALL(path,_,_)) then path;
-    case (DAE.ARRAY(_, _, DAE.CALL(path,_,_)::_ )) then path;
-    else fail();
-  end match;
-
-end getCallPath;
-
-protected function isOpElemWise
-  input Absyn.Operator inOper;
-  output Boolean isElemWise;
-algorithm
-  isElemWise := match(inOper)
-    case (Absyn.ADD_EW()) then true;
-    case (Absyn.SUB_EW()) then true;
-    case (Absyn.MUL_EW()) then true;
-    case (Absyn.DIV_EW()) then true;
-    case (Absyn.POW_EW()) then true;
-    case (Absyn.UMINUS_EW()) then true;
-  else false;
-  end match;
-end isOpElemWise;
-
-public function isFuncWithArrayInput
-  input DAE.Type inType;
-  output Boolean outBool;
-algorithm
-  outBool := matchcontinue(inType)
-    local
-      DAE.Type ty;
-    case (DAE.T_FUNCTION((_, ty, _, _, _)::_, _, _, _))
-    equation
-        true = Types.arrayType(ty);
-    then true;
-
-    else false;
-   end matchcontinue;
-end isFuncWithArrayInput;
-
-protected function OverloadingValidForSpec_3_2
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input Absyn.Operator inOper;
-  input Boolean isArray1;
-  input Boolean isArray2;
-  input list<DAE.Type> inTypeList;
-  input Absyn.Path inPath;
-  input list<Absyn.Exp> inFuncArgs;
-  input Boolean inImpl;
-  input Option<GlobalScript.SymbolTable> inSyTabOpt;
-  input Prefix.Prefix inPre;
-  input Absyn.Info inInfo;
-  input Boolean lastRound;    /*This is true if we have tried all possiblities and should print error.  ie all of => left, right implicit constr, right, left impl const*/
-  output Env.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProp;
-
-algorithm
-  (outCache,outExp,outProp) :=
-  matchcontinue (inCache,inEnv,inOper,isArray1,isArray2,inTypeList,inPath,inFuncArgs,inImpl,inSyTabOpt,inPre,inInfo, lastRound)
-      local
-        list<DAE.Type> types,scalartypes, arraytypes;
-        Env.Cache cache;
-        DAE.Exp daeExp;
-        DAE.Properties prop;
-        String str1;
-    /*
-    case (_, _, _, {})
-      equation
-      Error.addSourceMessage(Error.INCOMPATIBLE_TYPES,
-          {"Operator overload: No overloaded Operator found", "", "", ""}, inInfo);
-      then fail();
-      */
-
-    // If both are scalars everything should be OK.
-    case (_, _, _ ,false, false, types, _, _, _, _, _, _, _)
-      equation
-        (cache,SOME((daeExp,prop))) = elabCallArgs3(inCache,inEnv,types,inPath,inFuncArgs,{},inImpl,inSyTabOpt,inPre,inInfo);
-      then (cache, daeExp, prop);
-
-    // If the first one array and the second scalar with NON-ELEMWISE operation
-    // we shouldn't expand. (remember here eventhough this
-    // is normally invalid (e.g. {1,2} + 1),  the user might overload
-    // the operator to match this kind of operation on his records..
-    //)
-    case (_, _, _ ,true, false, types, _, _, _, _, _, _, _)
-      equation
-        false = isOpElemWise(inOper);
-        (arraytypes,_) = List.splitOnTrue(types,isFuncWithArrayInput);
-        (cache,SOME((daeExp,prop))) = elabCallArgs3(inCache,inEnv,arraytypes,inPath,inFuncArgs,{},inImpl,inSyTabOpt,inPre,inInfo);
-    then (cache, daeExp, prop);
-
-    // adrpo: v1 = n12 * v2; v1,v2 is array complex, n12 is real.
-    //        see Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench
-    case (_, _, _ ,true, false, types, _, _, _, _, _, _, _)
-      equation
-        false = isOpElemWise(inOper);
-        (_, scalartypes) = List.splitOnTrue(types,isFuncWithArrayInput);
-        (cache,SOME((daeExp,prop))) = elabCallArgs3(inCache,inEnv,scalartypes,inPath,inFuncArgs,{},inImpl,inSyTabOpt,inPre,inInfo);
-    then (cache, daeExp, prop);
-
-    // the first one array the second a scalar with ELEMWISE operation
-    // this should be expanded.
-    case (_, _, _ ,true, false, types, _, _, _, _, _, _, _)
-      equation
-        true = isOpElemWise(inOper);
-        (_, scalartypes) = List.splitOnTrue(types,isFuncWithArrayInput);
-        (cache,SOME((daeExp,prop))) = elabCallArgs3(inCache,inEnv,scalartypes,inPath,inFuncArgs,{},inImpl,inSyTabOpt,inPre,inInfo);
-    then (cache, daeExp, prop);
-
-    // Both are arrays with NON-ELEMWISE operator
-    // Try without expanding first. (see Complex.'*'.scalarProduct)
-    case (_, _, _, true, true, types, _, _, _, _, _, _, _)
-      equation
-        false = isOpElemWise(inOper);
-        (arraytypes,_) = List.splitOnTrue(types,isFuncWithArrayInput);
-        (cache,SOME((daeExp,prop))) = elabCallArgs3(inCache,inEnv,arraytypes,inPath,inFuncArgs,{},inImpl,inSyTabOpt,inPre,inInfo);
-    then (cache, daeExp, prop);
-
-    // Both are arrays with NON-ELEMWISE operator
-    // the above case (without Expanding) failed.)
-    // Try expnding.
-    // Spec 3.2 says this should be expanded for + and - by default.
-    // The same way as {1,2} + {2,3} is expanded, i.e elementwise.
-    // But this shouldn't be since, again, the user can overload for this
-    // specific case. For now we print a warning and allow this
-    // (allowed for all operators!!!)
-    case (_, _, _, true, true, types, _, _, _, _, _, _, _)
-      equation
-        false = isOpElemWise(inOper);
-        (_, scalartypes) = List.splitOnTrue(types,isFuncWithArrayInput);
-        (cache,SOME((daeExp,prop))) = elabCallArgs3(inCache,inEnv,scalartypes,inPath,inFuncArgs,{},inImpl,inSyTabOpt,inPre,inInfo);
-
-        str1 = "\n" +&
-                  "- No exact match overloading found for operator '" +& Dump.opSymbol(inOper) +& "' " +&
-                  "on record array of type: '" +& Absyn.pathString(Absyn.pathPrefix(inPath)) +& "'\n" +&
-                   "- Automatically expanded using operator function: " +& Absyn.pathString(getCallPath(daeExp));
-        Error.addSourceMessage(Error.OPERATOR_OVERLOADING_WARNING,
-          {str1}, inInfo);
-    then (cache, daeExp, prop);
-
-    // Both are arrays with ELEMWISE operator
-    // this should be expanded.
-    case (_, _, _, true, true, types, _, _, _, _, _, _, _)
-      equation
-        true = isOpElemWise(inOper);
-        (_, scalartypes) = List.splitOnTrue(types,isFuncWithArrayInput);
-        (cache,SOME((daeExp,prop))) = elabCallArgs3(inCache,inEnv,scalartypes,inPath,inFuncArgs,{},inImpl,inSyTabOpt,inPre,inInfo);
-    then (cache, daeExp, prop);
-
-    // If this is the last round then print the error.
-    case (_, _, _, _, _, _, _, _, _, _, _, _, true)
-      equation
-      str1 = "\n" +&
-                 "- Failed to deoverload operator '" +& Dump.opSymbol(inOper) +& "' " +&
-                 "  for record of type: '" +& Absyn.pathString(Absyn.pathPrefix(inPath)) +& "'";
-      Error.addSourceMessage(Error.OPERATOR_OVERLOADING_ERROR,
-          {str1}, inInfo);
-      then fail();
-
-  end matchcontinue;
-end OverloadingValidForSpec_3_2;
-
-
-protected function userDefOperatorDeoverloadBinary
-"used to resolve overloaded binary operators for operator records
-It looks if there is an operator function defined for the specific
-operation. If there is then it will call that function and returns the
-resulting expression. "
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input Absyn.Operator inOper;
-  input Absyn.Exp inExp1;
-  input Absyn.Exp inExp2;
-  input DAE.Type inType1;
-  input DAE.Type inType2;
-  input Boolean inImpl;
-  input Option<GlobalScript.SymbolTable> inSyTabOpt;
-  input Prefix.Prefix inPre;
-  input Absyn.Info inInfo;
-  input Boolean lastRound;
-  output Env.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProp;
-
-algorithm
-
-  (outCache,outExp,outProp) :=
-  matchcontinue (inCache, inEnv, inOper,inExp1,inExp2,inType1,inType2,inImpl,inSyTabOpt,inPre,inInfo,lastRound)
-    local
-      Boolean bool1,bool2;
-      String str1;
-      Absyn.Path path,path2;
-      list<Absyn.Path> operNames;
-      Env.Env recordEnv,operatorEnv,env;
-      SCode.Element operatorCl;
-      Env.Cache cache;
-      list<DAE.Type> types;
-      DAE.Properties prop;
-      DAE.Type type1, type2;
-      Absyn.Exp exp1,exp2;
-      Absyn.Operator op;
-      Absyn.ComponentRef comRef;
-      DAE.Exp  daeExp;
-
-   case (cache, env, op, exp1, exp2, type1, type2, _, _, _, _,_)
-      equation
-
-        // prepare the call path for the operator.
-        // if *   => recordPath.'*'  , !!also if .*   => recordPath.'*'
-        path = getRecordPath(type1);
-        path = Absyn.makeFullyQualified(path);
-        (cache,_,recordEnv) = Lookup.lookupClass(cache,env,path, false);
-
-        str1 = "'" +& Dump.opSymbolCompact(op) +& "'";
-        path = Absyn.joinPaths(path, Absyn.IDENT(str1));
-
-
-        // check if the operator is defined. i.e overloaded
-        (cache,operatorCl,operatorEnv) = Lookup.lookupClass(cache,recordEnv,path, false);
-        true = SCode.isOperator(operatorCl);
-
-
-        // get the list of functions in the operator. !! there can be multiple options
-        operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
-        (cache,types) = Lookup.lookupFunctionsListInEnv(cache, operatorEnv, operNames, inInfo, {});
-
-        // Apply operation according to the Specifications.See the function.
-        bool1 = Types.arrayType(type1);
-        bool2 = Types.arrayType(type2);
-        (cache,daeExp,prop) = OverloadingValidForSpec_3_2(cache,env,op,bool1,bool2,types,path,{exp1,exp2},inImpl,inSyTabOpt,inPre,inInfo, false /*Never last round here. look down*/);
-
-      then
-        (cache,daeExp,prop);
-
-
-    //Try constructing the right side(implicit) and then evaluate == L + r -> L.'+'(L,L(r))
-    case (cache, env, op, exp1, exp2, type1, type2, _, _, _, _,_)
-      equation
-
-        path = getRecordPath(type1);
-        path = Absyn.makeFullyQualified(path);
-        (cache,_,recordEnv) = Lookup.lookupClass(cache,env,path, false);
-
-        str1 = "'constructor'";
-        path2 = Absyn.joinPaths(path, Absyn.IDENT(str1));
-
-        (cache,operatorCl,operatorEnv) = Lookup.lookupClass(cache,recordEnv,path2, false);
-        true = SCode.isOperator(operatorCl);
-
-        operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
-        (cache,types) = Lookup.lookupFunctionsListInEnv(cache, operatorEnv, operNames, inInfo, {});
-
-        (cache,SOME((daeExp, DAE.PROP(type2,_)))) = elabCallArgs3(cache,env,types,path2,{exp2},{},inImpl,inSyTabOpt,inPre,inInfo);
-
-        path2 = getCallPath(daeExp);
-
-        comRef = Absyn.pathToCref(path2);
-        exp2 = Absyn.CALL(comRef, Absyn.FUNCTIONARGS({exp2}, {}));
-
-        (cache, daeExp , prop) = userDefOperatorDeoverloadBinary(cache,env,op,exp1,exp2,type1,type2,inImpl,inSyTabOpt,inPre,inInfo, lastRound); /*Now it can be last round*/
-
-      then
-        (cache,daeExp,prop);
-
-  end matchcontinue;
-
-end userDefOperatorDeoverloadBinary;
-
-protected function userDefOperatorDeoverloadString
-"This functions checks if the builtin function string is overloaded for opertor records"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input Absyn.Exp inExp1;
-  input Boolean inImpl;
-  input Option<GlobalScript.SymbolTable> inSyTabOpt;
-  input Boolean inDoVect;
-  input Prefix.Prefix inPre;
-  input Absyn.Info inInfo;
-  output Env.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProp;
-  output Option<GlobalScript.SymbolTable> outSyTabOpt;
-
-algorithm
-
-  (outCache,outExp,outProp,outSyTabOpt) :=
-  match (inCache, inEnv,inExp1,inImpl,inSyTabOpt,inDoVect,inPre,inInfo)
-    local
-      String str1;
-      Absyn.Path path;
-      Option<GlobalScript.SymbolTable> st_1;
-      list<Absyn.Path> operNames;
-      Env.Env recordEnv,operatorEnv,env;
-      SCode.Element operatorCl;
-      Env.Cache cache;
-      list<DAE.Type> types;
-      DAE.Properties prop;
-      DAE.Type type1;
-      Absyn.Exp exp1;
-      DAE.Exp  daeExp;
-      list<Absyn.Exp> restargs;
-      list<Absyn.NamedArg> nargs;
-
-    case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT("String",_),functionArgs = Absyn.FUNCTIONARGS(args = exp1::restargs,argNames = nargs)),_,_,_,_,_)
-      equation
-        (cache,_,DAE.PROP(type1,_),st_1) = elabExp(cache,env,exp1,inImpl,inSyTabOpt,inDoVect,inPre,inInfo);
-
-        path = getRecordPath(type1);
-        path = Absyn.makeFullyQualified(path);
-        (cache,_,recordEnv) = Lookup.lookupClass(cache,env,path, false);
-
-        str1 = "'String'";
-        path = Absyn.joinPaths(path, Absyn.IDENT(str1));
-
-        (cache,operatorCl,operatorEnv) = Lookup.lookupClass(cache,recordEnv,path, false);
-        true = SCode.isOperator(operatorCl);
-
-        operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
-        (cache,types as _::_) = Lookup.lookupFunctionsListInEnv(cache, operatorEnv, operNames, inInfo, {});
-
-        (cache,SOME((daeExp,prop))) = elabCallArgs3(cache,env,types,path,exp1::restargs,nargs,inImpl,st_1,inPre,inInfo);
-      then
-        (cache,daeExp,prop,st_1);
-
-   end match;
-
-end userDefOperatorDeoverloadString;
-
-protected function operatorDeoverloadBinary
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input Absyn.Operator inOperator1;
-  input DAE.Properties inProp1;
-  input DAE.Exp inExp1;
-  input DAE.Properties inProp2;
-  input DAE.Exp inExp2;
-  input Absyn.Exp AbExp "needed for function replaceOperatorWithFcall (not  really sure what is done in there though.)";
-  input Absyn.Exp AbExp1 "We need this when/if we elaborate user defined operator functions";
-  input Absyn.Exp AbExp2 "We need this when/if we elaborate user defined operator functions";
-  input Boolean inImpl;
-  input Option<GlobalScript.SymbolTable> inSymTab;
-  input Prefix.Prefix inPre "For error-messages only";
-  input Absyn.Info inInfo "For error-messages only";
-  output Env.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProp;
-algorithm
-  (outCache, outExp, outProp) :=
-   matchcontinue(inCache,inEnv,inOperator1, inProp1, inExp1, inProp2, inExp2, AbExp, AbExp1, AbExp2, inImpl, inSymTab, inPre, inInfo)
-       local
-         Env.Cache cache;
-         Env.Env env;
-         list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> opList;
-         DAE.Type type1,type2, otype;
-         DAE.Exp exp1,exp2,exp;
-         DAE.Const const1,const2, const;
-         DAE.Operator oper;
-         Absyn.Operator aboper;
-         DAE.Properties prop, props1, props2;
-         Absyn.Exp  absexp1, absexp2;
-         Boolean lastRound;
-         DAE.Dimension n,m1,m2,p;
-
-     // handle tuple op non_tuple
-     case (_, _, _, props1 as DAE.PROP_TUPLE(type_ = _), _, DAE.PROP(type_ = _), _, _, _, _, _, _, _, _)
-       equation
-         false = Config.acceptMetaModelicaGrammar();
-         (prop as DAE.PROP(type1, _)) = Types.propTupleFirstProp(props1);
-         exp = DAE.TSUB(inExp1, 1, type1);
-         (_, exp, prop) = operatorDeoverloadBinary(inCache, inEnv, inOperator1, prop, exp, inProp2, inExp2, AbExp, AbExp1, AbExp2, inImpl, inSymTab, inPre, inInfo);
-       then
-         (inCache, exp, prop);
-
-     // handle non_tuple op tuple
-     case (_, _, _, DAE.PROP(type_ = _), _, props2 as DAE.PROP_TUPLE(type_ = _), _, _, _, _, _, _, _, _)
-       equation
-         false = Config.acceptMetaModelicaGrammar();
-         (prop as DAE.PROP(type2, _)) = Types.propTupleFirstProp(props2);
-         exp = DAE.TSUB(inExp2, 1, type2);
-         (_, exp, prop) = operatorDeoverloadBinary(inCache, inEnv, inOperator1, inProp1, inExp1, prop, exp, AbExp, AbExp1, AbExp2, inImpl, inSymTab, inPre, inInfo);
-       then
-         (inCache, exp, prop);
-
-     case (_, _, aboper, DAE.PROP(type1,const1), exp1, DAE.PROP(type2,const2), exp2, _, _, _, _, _, _, _)
-       equation
-         false = typeIsRecord(Types.arrayElementType(type1));
-         false = typeIsRecord(Types.arrayElementType(type2));
-         (opList, type1,exp1,type2,exp2) = operatorsBinary(aboper, type1, exp1, type2, exp2);
-         (oper, {exp1,exp2}, otype) = deoverload(opList, {(exp1,type1), (exp2,type2)}, AbExp, inPre, inInfo);
-         const = Types.constAnd(const1, const2);
-         exp = replaceOperatorWithFcall(AbExp, exp1,oper,SOME(exp2), const);
-         (exp,_) = ExpressionSimplify.simplify(exp);
-         prop = DAE.PROP(otype,const);
-         warnUnsafeRelations(inEnv,AbExp,const, type1,type2,exp1,exp2,oper,inPre);
-       then
-         (inCache,exp, prop);
-
-     /* We have a matrix multiplication of records. According to Spec. 3.2 Section 14.4 and 10.6.4, this should be handled
-        the same way as matrix multilication of numeric matrics.
-        - Not sure what will happen when users want to overload multiplication '*' for matrices of their records with their own algorithm.
-        Which one should be chosen?
-        - Also if the user hasn't overloaded either of '+' or '*'(for scalar records) then what should happen? The matrix multiplication needs both to be overloaded.
-     */
-     case (cache, env, Absyn.MUL(), DAE.PROP(type1,const1), exp1, DAE.PROP(type2,const2), exp2, _, _, _, _, _, _, _)
-       equation
-         true = typeIsRecord(Types.arrayElementType(type1));
-         true = typeIsRecord(Types.arrayElementType(type2));
-         2 = Types.numberOfDimensions(type1);
-         2 = Types.numberOfDimensions(type2);
-         n = Types.getDimensionNth(type1, 1);
-         m1 = Types.getDimensionNth(type1, 2);
-         m2 = Types.getDimensionNth(type2, 1);
-         p = Types.getDimensionNth(type2, 2);
-
-         true = isValidMatrixProductDims(m1, m2);
-         otype = Types.arrayElementType(type1);
-         otype = Types.liftArrayListDims(otype, {n, p});
-
-         exp = handleMatMultOfRecords(cache,env,type1,type2,exp1,exp2,inInfo);
-         const = Types.constAnd(const1, const2);
-         prop = DAE.PROP(otype,const);
-       then
-         (inCache,exp, prop);
-
-      // The order of this two cases determines the priority given to operators
-      // Now left has priority for all.
-      // Different from spec a bit (They say it should be error if there are two possible matches)
-      // Here it is evaluated by priority. Allows safe combination of code or libraries from two sources.
-      // (e.g if they overload their operators for each others records.)
-
-       // if we have a record on the left side check for overloaded operators
-     case(cache, env, aboper, DAE.PROP(type1, _), _, DAE.PROP(type2, _), _, _, absexp1, absexp2, _, _, _, _)
-       equation
-         true = typeIsRecord(Types.arrayElementType(type1));
-
-         // If the right side is not record then (lastRound is true) which means we should print errors on this round (last one:).
-         lastRound = not typeIsRecord(Types.arrayElementType(type2));
-
-         (cache, exp , prop) = userDefOperatorDeoverloadBinary(cache,env,aboper,absexp1,absexp2,type1,type2,inImpl,inSymTab,inPre,inInfo,lastRound /**/);
-         (exp,_) = ExpressionSimplify.simplify(exp);
-       then
-         (cache, exp, prop);
-
-      // if we have a record on the right side check for overloaded operators
-     case(cache, env, aboper, DAE.PROP(type1, _), _, DAE.PROP(type2, _), _, _, absexp1, absexp2, _, _, _, _)
-       equation
-         true = typeIsRecord(Types.arrayElementType(type2));
-         (cache, exp , prop) = userDefOperatorDeoverloadBinary(cache,env,aboper,absexp2,absexp1,type2,type1,inImpl,inSymTab,inPre,inInfo, true); /*we have tried left side*/
-         (exp,_) = ExpressionSimplify.simplify(exp);
-       then
-         (cache, exp, prop);
-
-  end matchcontinue;
-end operatorDeoverloadBinary;
-
-
-protected function handleMatMultOfRecords
-"handles matrix multiplication of record types. It looks up the scalar versions of overloaded
-addition and multiplication operations and uses them to expand and simplify the matrix multiplication."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input DAE.Type inType1;
-  input DAE.Type inType2;
-  input DAE.Exp inDAEExp1;
-  input DAE.Exp inDAEExp2;
-  input Absyn.Info inInfo;
-  output DAE.Exp outDAEExp;
-algorithm
-  (outDAEExp) :=
-  match (inCache,inEnv,inType1,inType2,inDAEExp1,inDAEExp2,inInfo)
-    local
-      Absyn.Path path, multPath, sumPath;
-      list<Absyn.Path> operNames;
-      Env.Env recordEnv,env;
-      SCode.Element operatorCl;
-      Env.Cache cache;
-      list<DAE.Type> types,scalartypes,arraytypes;
-      DAE.Type type1, type2, funcType;
-
-    case (cache, env, type1, _, _, _, _)
-      equation
-        path = getRecordPath(type1);
-        path = Absyn.makeFullyQualified(path);
-        (cache,_,recordEnv) = Lookup.lookupClass(cache,env,path, false);
-
-        // Get the overloaded scalar multiplication function
-        multPath = getOverloadedScalarOperator(cache, recordEnv, path, "*", inInfo);
-        // Get the overloaded scalar addition function
-        sumPath = getOverloadedScalarOperator(cache, recordEnv, path, "+", inInfo);
-
-        outDAEExp = ExpressionSimplify.simplifyMatrixProductOfRecords(inDAEExp1,inDAEExp2,multPath,sumPath);
-      then
-        (outDAEExp);
-    else
-      equation
-        // Error.addSourceMessage(Error.INTERNAL_ERROR, {"- Static.handleMatMultOfRecords failed."}, inInfo);
-      then fail();
-
-  end match;
-end handleMatMultOfRecords;
-
-protected function getOverloadedScalarOperator
-"Given the symobl of an operator this function finds its overloaded operator function (scalar version)
-and returns the full path to it. Currently used in handleMatMultOfRecords to find '*' and '+' operators
-to handle matrix multiplication of records."
-  input Env.Cache inCache;
-  input Env.Env inRecordEnv;
-  input Absyn.Path inRecordPath;
-  input String opSymbol;
-  input Absyn.Info inInfo;
-  output Absyn.Path outMultPath;
-algorithm
-  (outMultPath) :=
-  matchcontinue (inCache,inRecordEnv,inRecordPath,opSymbol,inInfo)
-    local
-      Env.Cache cache;
-      Absyn.Path path;
-      list<Absyn.Path> operNames;
-      Env.Env operatorEnv;
-      SCode.Element operatorCl;
-      list<DAE.Type> types,scalartypes;
-      DAE.Type funcType;
-      String str1;
-
-    case (_, _, _, _, _)
-      equation
-        str1 = "'" +& opSymbol +& "'";
-        path = Absyn.joinPaths(inRecordPath, Absyn.IDENT(str1));
-
-        // check if the operator is defined. i.e overloaded
-        (_,operatorCl,operatorEnv) = Lookup.lookupClass(inCache,inRecordEnv,path, false);
-        true = SCode.isOperator(operatorCl);
-
-        // get the list of functions in the operator. there can be multiple options
-        operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
-        (_,types) = Lookup.lookupFunctionsListInEnv(inCache, operatorEnv, operNames, inInfo, {});
-
-        (_, scalartypes) = List.splitOnTrue(types,isFuncWithArrayInput);
-        funcType::_ = scalartypes;
-        path = Types.getClassname(funcType);
-      then
-        path;
-
-    else
-      equation
-        str1 = "- Failed to find scalar version of overloaded operator '" +& opSymbol +& "'" +&
-                 " for expanding matrix multiplication of record type: '" +& Absyn.pathStringNoQual(inRecordPath) +&
-                 "'. OMC will try to vectorize the multiplication";
-        Error.addSourceMessage(Error.OPERATOR_OVERLOADING_ERROR,
-          {str1}, inInfo);
-      then fail();
-  end matchcontinue;
-end getOverloadedScalarOperator;
-
-
-protected function operatorDeoverloadUnary
-"used to resolve unary operations.
-
-also used to resolve user overloaded unary operators for operator records
-It looks if there is an operator function defined for the specific
-operation. If there is then it will call that function and returns the
-resulting expression. "
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input Absyn.Operator inOperator1;
-  input DAE.Properties inProp1;
-  input DAE.Exp inExp1;
-  input Absyn.Exp AbExp "needed for function replaceOperatorWithFcall (not  really sure what is done in there though.)";
-  input Absyn.Exp AbExp1 "We need this when/if we elaborate user defined operator functions";
-  input Boolean inImpl;
-  input Option<GlobalScript.SymbolTable> inSymTab;
-  input Prefix.Prefix inPre "For error-messages only";
-  input Absyn.Info inInfo "For error-messages only";
-  output Env.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProp;
-algorithm
-  (outCache, outExp, outProp) :=
-   matchcontinue(inCache,inEnv,inOperator1, inProp1, inExp1, AbExp, AbExp1, inImpl, inSymTab, inPre, inInfo)
-     local
-       String str1;
-       Env.Cache cache;
-       list<Absyn.Path> operNames;
-       Absyn.Path path;
-       Env.Env operatorEnv,recordEnv;
-       SCode.Element operatorCl;
-       list<DAE.Type> types;
-       Env.Env env;
-       list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> opList;
-       DAE.Type type1, otype;
-       DAE.Exp exp1,exp;
-       DAE.Const const;
-       DAE.Operator oper;
-       Absyn.Operator aboper;
-       DAE.Properties prop;
-       Absyn.Exp  absexp1;
-
-     // handle op tuple
-     case (_, _, _, DAE.PROP_TUPLE(type_ = _), exp1, _, _, _, _, _, _)
-       equation
-         false = Config.acceptMetaModelicaGrammar();
-         (prop as DAE.PROP(type1, _)) = Types.propTupleFirstProp(inProp1);
-         exp = DAE.TSUB(exp1, 1, type1);
-         (cache, exp, prop) = operatorDeoverloadUnary(inCache, inEnv, inOperator1, prop, exp, AbExp, AbExp1, inImpl, inSymTab, inPre, inInfo);
-       then
-         (cache, exp, prop);
-
-     case (_, _, aboper, DAE.PROP(type1,const), exp1, _, _, _, _, _, _)
-       equation
-         false = typeIsRecord(Types.arrayElementType(type1));
-         opList = operatorsUnary(aboper);
-         (oper, {exp1}, otype) = deoverload(opList, {(exp1,type1)}, AbExp, inPre, inInfo);
-         exp = replaceOperatorWithFcall(AbExp, exp1,oper,NONE(), const);
-         // (exp,_) = ExpressionSimplify.simplify(exp);
-         prop = DAE.PROP(otype,const);
-       then
-         (inCache,exp, prop);
-
-      // if we have a record check for overloaded operators
-     case(cache, env, aboper, DAE.PROP(type1,_) , _, _, absexp1, _, _, _, _)
-       equation
-
-         path = getRecordPath(type1);
-         path = Absyn.makeFullyQualified(path);
-         (cache,_,recordEnv) = Lookup.lookupClass(cache,env,path, false);
-
-         str1 = "'" +& Dump.opSymbolCompact(aboper) +& "'";
-         path = Absyn.joinPaths(path, Absyn.IDENT(str1));
-
-         (cache,operatorCl,operatorEnv) = Lookup.lookupClass(cache,recordEnv,path, false);
-         true = SCode.isOperator(operatorCl);
-
-         operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
-         (cache,types as _::_) = Lookup.lookupFunctionsListInEnv(cache, operatorEnv, operNames, inInfo, {});
-
-         (cache,SOME((exp,prop))) = elabCallArgs3(cache,env,types,path,{absexp1},{},inImpl,inSymTab,inPre,inInfo);
-
-       then
-         (cache,exp,prop);
-
-  end matchcontinue;
-end operatorDeoverloadUnary;
-
-
-protected function operatorsBinary "This function relates the operators in the abstract syntax to the
-  de-overloaded operators in the SCode. It produces a list of available
-  types for a specific operator, that the overload function chooses from.
-  Therefore, in order for the builtin type conversion from Integer to
-  Real to work, operators that work on both Integers and Reals must
-  return the Integer type -before- the Real type in the list."
-  input Absyn.Operator inOperator1;
-  input DAE.Type inType3;
-  input DAE.Exp inE1;
-  input DAE.Type inType4;
-  input DAE.Exp inE2;
-  output list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> ops;
-  output DAE.Type oty1;
-  output DAE.Exp oe1;
-  output DAE.Type oty2;
-  output DAE.Exp oe2;
-algorithm
-  (ops,oty1,oe1,oty2,oe2) :=
-  matchcontinue (inOperator1,inType3,inE1,inType4,inE2)
-    local
-      list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> intarrs,realarrs,boolarrs,stringarrs,scalars,arrays,types,scalarprod,matrixprod,intscalararrs,realscalararrs,intarrsscalar,realarrsscalar,realarrscalar,arrscalar,stringarrsscalar;
-      tuple<DAE.Operator, list<DAE.Type>, DAE.Type> enum_op;
-      DAE.Type t1,t2,int_scalar,int_vector,int_matrix,real_scalar,real_vector,real_matrix;
-      DAE.Operator int_mul,real_mul,int_mul_sp,real_mul_sp,int_mul_mp,real_mul_mp,real_div,real_pow;
-      Absyn.Operator op;
-      DAE.Exp e1,e2;
-
-    // arithmetical operators
-    case (Absyn.ADD(),t1,e1,t2,e2)
-      equation
-        intarrs = operatorReturn(DAE.ADD_ARR(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-                    intarrtypes, intarrtypes, intarrtypes);
-        realarrs = operatorReturn(DAE.ADD_ARR(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-                     realarrtypes, realarrtypes, realarrtypes);
-        stringarrs = operatorReturn(DAE.ADD_ARR(DAE.T_ARRAY(DAE.T_STRING_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-                       stringarrtypes, stringarrtypes, stringarrtypes);
-        scalars = {
-          (DAE.ADD(DAE.T_INTEGER_DEFAULT),
-          {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_INTEGER_DEFAULT),
-          (DAE.ADD(DAE.T_REAL_DEFAULT),
-          {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_REAL_DEFAULT),
-          (DAE.ADD(DAE.T_STRING_DEFAULT),
-          {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_STRING_DEFAULT)};
-        arrays = List.flatten({intarrs,realarrs,stringarrs});
-        types = List.flatten({scalars,arrays});
-      then
-        (types,t1,e1,t2,e2);
-
-    // arithmetical element wise operators
-    case (Absyn.ADD_EW(),t1,e1,t2,e2)
-      equation
-        false = Types.isArray(t2,{}) and (not Types.isArray(t1,{}));
-        intarrs = operatorReturn(DAE.ADD_ARR(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-                    intarrtypes, intarrtypes, intarrtypes);
-        realarrs = operatorReturn(DAE.ADD_ARR(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-                     realarrtypes, realarrtypes, realarrtypes);
-        stringarrs = operatorReturn(DAE.ADD_ARR(DAE.T_ARRAY(DAE.T_STRING_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-                       stringarrtypes, stringarrtypes, stringarrtypes);
-        scalars = {
-          (DAE.ADD(DAE.T_INTEGER_DEFAULT),
-          {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_INTEGER_DEFAULT),
-          (DAE.ADD(DAE.T_REAL_DEFAULT),
-          {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_REAL_DEFAULT),
-          (DAE.ADD(DAE.T_STRING_DEFAULT),
-          {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_STRING_DEFAULT)};
-        intarrsscalar = operatorReturn(DAE.ADD_ARRAY_SCALAR(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-                          intarrtypes, inttypes, intarrtypes);
-        realarrsscalar = operatorReturn(DAE.ADD_ARRAY_SCALAR(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-                           realarrtypes, realtypes, realarrtypes);
-        stringarrsscalar = operatorReturn(DAE.ADD_ARRAY_SCALAR(DAE.T_ARRAY(DAE.T_STRING_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-                             stringarrtypes, stringtypes, stringarrtypes);
-        types = List.flatten({scalars,intarrsscalar,realarrsscalar,stringarrsscalar,intarrs,realarrs,stringarrs});
-      then
-        (types,t1,e1,t2,e2);
-
-    // arithmetical operators
-    case (Absyn.SUB(),t1,e1,t2,e2)
-      equation
-        intarrs = operatorReturn(DAE.SUB_ARR(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-                    intarrtypes, intarrtypes, intarrtypes);
-        realarrs = operatorReturn(DAE.SUB_ARR(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-                     realarrtypes, realarrtypes, realarrtypes);
-        scalars = {
-          (DAE.SUB(DAE.T_INTEGER_DEFAULT),
-          {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_INTEGER_DEFAULT),
-          (DAE.SUB(DAE.T_REAL_DEFAULT),
-          {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_REAL_DEFAULT)};
-        types = List.flatten({scalars,intarrs,realarrs});
-      then
-        (types,t1,e1,t2,e2);
-
-    // arithmetical element wise operators
-    case (Absyn.SUB_EW(),t1,e1,t2,e2)
-      equation
-        false = Types.isArray(t1,{}) and (not Types.isArray(t2,{}));
-        intarrs = operatorReturn(DAE.SUB_ARR(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-                    intarrtypes, intarrtypes, intarrtypes);
-        realarrs = operatorReturn(DAE.SUB_ARR(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-                     realarrtypes, realarrtypes, realarrtypes);
-        scalars = {
-          (DAE.SUB(DAE.T_INTEGER_DEFAULT),
-          {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_INTEGER_DEFAULT),
-          (DAE.SUB(DAE.T_REAL_DEFAULT),
-          {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_REAL_DEFAULT)};
-        intscalararrs = operatorReturn(DAE.SUB_SCALAR_ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-                          inttypes, intarrtypes, intarrtypes);
-        realscalararrs = operatorReturn(DAE.SUB_SCALAR_ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-                           realtypes, realarrtypes, realarrtypes);
-        types = List.flatten({scalars,intscalararrs,realscalararrs,intarrs,realarrs});
-      then
-        (types,t1,e1,t2,e2);
-
-    case (Absyn.MUL(),t1,e1,t2,e2)
-      equation
-        false = Types.isArray(t2,{}) and (not Types.isArray(t1,{}));
-        int_mul = DAE.MUL(DAE.T_INTEGER_DEFAULT);
-        real_mul = DAE.MUL(DAE.T_REAL_DEFAULT);
-        int_mul_sp = DAE.MUL_SCALAR_PRODUCT(DAE.T_INTEGER_DEFAULT);
-        real_mul_sp = DAE.MUL_SCALAR_PRODUCT(DAE.T_REAL_DEFAULT);
-        int_mul_mp = DAE.MUL_MATRIX_PRODUCT(DAE.T_INTEGER_DEFAULT);
-        real_mul_mp = DAE.MUL_MATRIX_PRODUCT(DAE.T_REAL_DEFAULT);
-        int_scalar = DAE.T_INTEGER_DEFAULT;
-        int_vector = DAE.T_ARRAY(int_scalar,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource);
-        int_matrix = DAE.T_ARRAY(int_vector,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource);
-        real_scalar = DAE.T_REAL_DEFAULT;
-        real_vector = DAE.T_ARRAY(real_scalar,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource);
-        real_matrix = DAE.T_ARRAY(real_vector,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource);
-        scalars = {(int_mul,{int_scalar,int_scalar},int_scalar),
-          (real_mul,{real_scalar,real_scalar},real_scalar)};
-        scalarprod = {(int_mul_sp,{int_vector,int_vector},int_scalar),
-          (real_mul_sp,{real_vector,real_vector},real_scalar)};
-        matrixprod = {(int_mul_mp,{int_vector,int_matrix},int_vector),
-          (int_mul_mp,{int_matrix,int_vector},int_vector),(int_mul_mp,{int_matrix,int_matrix},int_matrix),
-          (real_mul_mp,{real_vector,real_matrix},real_vector),(real_mul_mp,{real_matrix,real_vector},real_vector),
-          (real_mul_mp,{real_matrix,real_matrix},real_matrix)};
-        intarrsscalar = operatorReturn(DAE.MUL_ARRAY_SCALAR(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-                          intarrtypes, inttypes, intarrtypes);
-        realarrsscalar = operatorReturn(DAE.MUL_ARRAY_SCALAR(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-                           realarrtypes, realtypes, realarrtypes);
-        types = List.flatten({scalars,intarrsscalar,realarrsscalar,scalarprod,matrixprod});
-      then
-        (types,t1,e1,t2,e2);
-
-    case (Absyn.MUL_EW(),t1,e1,t2,e2) /* Arithmetical operators */
-      equation
-        false = Types.isArray(t2,{}) and (not Types.isArray(t1,{}));
-        intarrs = operatorReturn(DAE.MUL_ARR(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-          intarrtypes, intarrtypes, intarrtypes);
-        realarrs = operatorReturn(DAE.MUL_ARR(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-          realarrtypes, realarrtypes, realarrtypes);
-        scalars = {
-          (DAE.MUL(DAE.T_INTEGER_DEFAULT),
-          {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_INTEGER_DEFAULT),
-          (DAE.MUL(DAE.T_REAL_DEFAULT),
-          {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_REAL_DEFAULT)};
-        intarrsscalar = operatorReturn(DAE.MUL_ARRAY_SCALAR(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-          intarrtypes, inttypes, intarrtypes);
-        realarrsscalar = operatorReturn(DAE.MUL_ARRAY_SCALAR(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-          realarrtypes, realtypes, realarrtypes);
-        types = List.flatten({scalars,intarrsscalar,realarrsscalar,intarrs,realarrs});
-      then
-        (types,t1,e1,t2,e2);
-
-    case (Absyn.DIV(),t1,e1,t2,e2)
-      equation
-        real_div = DAE.DIV(DAE.T_REAL_DEFAULT);
-        real_scalar = DAE.T_REAL_DEFAULT;
-        scalars = {(real_div,{real_scalar,real_scalar},real_scalar)};
-        realarrscalar = operatorReturn(DAE.DIV_ARRAY_SCALAR(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-          realarrtypes, realtypes, realarrtypes);
-        types = List.flatten({scalars,realarrscalar});
-      then
-        (types,t1,e1,t2,e2);
-
-    case (Absyn.DIV_EW(),t1,e1,t2,e2) /* Arithmetical operators */
-      equation
-        realarrs = operatorReturn(DAE.DIV_ARR(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-          realarrtypes, realarrtypes, realarrtypes);
-        scalars = {
-          (DAE.DIV(DAE.T_REAL_DEFAULT),
-          {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_REAL_DEFAULT)};
-        realscalararrs = operatorReturn(DAE.DIV_SCALAR_ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-          realtypes, realarrtypes, realarrtypes);
-        realarrsscalar = operatorReturn(DAE.DIV_ARRAY_SCALAR(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-          realarrtypes, realtypes, realarrtypes);
-        types = List.flatten({scalars,realscalararrs,
-          realarrsscalar,realarrs});
-      then
-        (types,t1,e1,t2,e2);
-
-    case (Absyn.POW(),t1,e1,t2,e2)
-      equation
-        // Note: POW_ARR uses Integer exponents, while POW only uses Real exponents
-        real_scalar = DAE.T_REAL_DEFAULT;
-        int_scalar = DAE.T_INTEGER_DEFAULT;
-        real_vector = DAE.T_ARRAY(real_scalar,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource);
-        real_matrix = DAE.T_ARRAY(real_vector,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource);
-        real_pow = DAE.POW(DAE.T_REAL_DEFAULT);
-        scalars = {(real_pow,{real_scalar,real_scalar},real_scalar)};
-        arrscalar = {
-          (DAE.POW_ARR(DAE.T_REAL_DEFAULT),{real_matrix,int_scalar},
-          real_matrix)};
-        types = List.flatten({scalars,arrscalar});
-      then
-        (types,t1,e1,t2,e2);
-
-    case (Absyn.POW_EW(),t1,e1,t2,e2)
-      equation
-        realarrs = operatorReturn(DAE.POW_ARR2(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-          realarrtypes, realarrtypes, realarrtypes);
-        scalars = {
-          (DAE.POW(DAE.T_REAL_DEFAULT),
-          {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_REAL_DEFAULT)};
-        realscalararrs = operatorReturn(DAE.POW_SCALAR_ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-          realtypes, realarrtypes, realarrtypes);
-        realarrsscalar = operatorReturn(DAE.POW_ARRAY_SCALAR(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-          realarrtypes, realtypes, realarrtypes);
-        types = List.flatten({scalars,realscalararrs,
-          realarrsscalar,realarrs});
-      then
-        (types,t1,e1,t2,e2);
-
-    case (Absyn.AND(), t1, e1, t2, e2)
-      equation
-        scalars = {(DAE.AND(DAE.T_BOOL_DEFAULT), {DAE.T_BOOL_DEFAULT, DAE.T_BOOL_DEFAULT}, DAE.T_BOOL_DEFAULT)};
-        boolarrs = operatorReturn(DAE.AND(DAE.T_BOOL_DEFAULT), boolarrtypes, boolarrtypes, boolarrtypes);
-        types = List.flatten({scalars, boolarrs});
-      then (types,t1,e1,t2,e2);
-
-    case (Absyn.OR(), t1, e1, t2, e2)
-      equation
-        scalars = {(DAE.OR(DAE.T_BOOL_DEFAULT), {DAE.T_BOOL_DEFAULT, DAE.T_BOOL_DEFAULT}, DAE.T_BOOL_DEFAULT)};
-        boolarrs = operatorReturn(DAE.OR(DAE.T_BOOL_DEFAULT), boolarrtypes, boolarrtypes, boolarrtypes);
-        types = List.flatten({scalars, boolarrs});
-      then (types,t1,e1,t2,e2);
-
-    // Relational operators
-    case (Absyn.LESS(),t1,e1,t2,e2)
-      equation
-        enum_op = makeEnumOperator(DAE.LESS(DAE.T_ENUMERATION_DEFAULT), t1, t2);
-        scalars = {
-          (DAE.LESS(DAE.T_INTEGER_DEFAULT),
-            {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_BOOL_DEFAULT),
-          enum_op,
-          (DAE.LESS(DAE.T_REAL_DEFAULT),
-            {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_BOOL_DEFAULT),
-          (DAE.LESS(DAE.T_BOOL_DEFAULT),
-            {DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT},DAE.T_BOOL_DEFAULT),
-          (DAE.LESS(DAE.T_STRING_DEFAULT),
-            {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_BOOL_DEFAULT)};
-        types = List.flatten({scalars});
-      then (types,t1,e1,t2,e2);
-
-    case (Absyn.LESSEQ(),t1,e1,t2,e2)
-      equation
-        enum_op = makeEnumOperator(DAE.LESSEQ(DAE.T_ENUMERATION_DEFAULT), t1, t2);
-        scalars = {
-          (DAE.LESSEQ(DAE.T_INTEGER_DEFAULT),
-            {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_BOOL_DEFAULT),
-          enum_op,
-          (DAE.LESSEQ(DAE.T_REAL_DEFAULT),
-            {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_BOOL_DEFAULT),
-          (DAE.LESSEQ(DAE.T_BOOL_DEFAULT),
-            {DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT},DAE.T_BOOL_DEFAULT),
-          (DAE.LESSEQ(DAE.T_STRING_DEFAULT),
-            {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_BOOL_DEFAULT)};
-        types = List.flatten({scalars});
-      then (types,t1,e1,t2,e2);
-
-    case (Absyn.GREATER(),t1,e1,t2,e2)
-      equation
-        enum_op = makeEnumOperator(DAE.GREATER(DAE.T_ENUMERATION_DEFAULT), t1, t2);
-        scalars = {
-          (DAE.GREATER(DAE.T_INTEGER_DEFAULT),
-            {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_BOOL_DEFAULT),
-          enum_op,
-          (DAE.GREATER(DAE.T_REAL_DEFAULT),
-            {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_BOOL_DEFAULT),
-          (DAE.GREATER(DAE.T_BOOL_DEFAULT),
-            {DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT},DAE.T_BOOL_DEFAULT),
-          (DAE.GREATER(DAE.T_STRING_DEFAULT),
-            {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_BOOL_DEFAULT)};
-        types = List.flatten({scalars});
-      then (types,t1,e1,t2,e2);
-
-    case (Absyn.GREATEREQ(),t1,e1,t2,e2)
-      equation
-        enum_op = makeEnumOperator(DAE.GREATEREQ(DAE.T_ENUMERATION_DEFAULT), t1, t2);
-        scalars = {
-          (DAE.GREATEREQ(DAE.T_INTEGER_DEFAULT),
-            {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_BOOL_DEFAULT),
-          enum_op,
-          (DAE.GREATEREQ(DAE.T_REAL_DEFAULT),
-            {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_BOOL_DEFAULT),
-          (DAE.GREATEREQ(DAE.T_BOOL_DEFAULT),
-            {DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT},DAE.T_BOOL_DEFAULT),
-          (DAE.GREATEREQ(DAE.T_STRING_DEFAULT),
-            {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_BOOL_DEFAULT)};
-        types = List.flatten({scalars});
-      then (types,t1,e1,t2,e2);
-
-    case (Absyn.EQUAL(),t1,e1,t2,e2)
-      equation
-        enum_op = makeEnumOperator(DAE.EQUAL(DAE.T_ENUMERATION_DEFAULT), t1, t2);
-        types = Util.if_(Types.isBoxedType(t1) and Types.isBoxedType(t2),
-                                  {(DAE.EQUAL(DAE.T_METABOXED_DEFAULT),{t1,t2},DAE.T_BOOL_DEFAULT)},
-                                  {});
-        types =
-          (DAE.EQUAL(DAE.T_INTEGER_DEFAULT),
-            {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_BOOL_DEFAULT)::
-          enum_op::
-          (DAE.EQUAL(DAE.T_REAL_DEFAULT),
-            {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_BOOL_DEFAULT)::
-          (DAE.EQUAL(DAE.T_STRING_DEFAULT),
-            {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_BOOL_DEFAULT)::
-          (DAE.EQUAL(DAE.T_BOOL_DEFAULT),
-            {DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT},DAE.T_BOOL_DEFAULT)::
-          types;
-      then
-        (types,t1,e1,t2,e2);
-
-    case (Absyn.NEQUAL(),t1,e1,t2,e2)
-      equation
-        enum_op = makeEnumOperator(DAE.NEQUAL(DAE.T_ENUMERATION_DEFAULT), t1, t2);
-        types = Util.if_(Types.isBoxedType(t1) and Types.isBoxedType(t2),
-                                  {(DAE.NEQUAL(DAE.T_METABOXED_DEFAULT),{t1,t2},DAE.T_BOOL_DEFAULT)},
-                                  {});
-        types =
-          (DAE.NEQUAL(DAE.T_INTEGER_DEFAULT),
-            {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_BOOL_DEFAULT)::
-          enum_op::
-          (DAE.NEQUAL(DAE.T_REAL_DEFAULT),
-            {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_BOOL_DEFAULT)::
-          (DAE.NEQUAL(DAE.T_STRING_DEFAULT),
-            {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_BOOL_DEFAULT)::
-          (DAE.NEQUAL(DAE.T_BOOL_DEFAULT),
-            {DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT},DAE.T_BOOL_DEFAULT)::
-          types;
-      then
-        (types,t1,e1,t2,e2);
-
-    // element-wise equivalent operators
-    case (Absyn.ADD_EW(),t1,e1,t2,e2)
-      equation
-        true = Types.isArray(t2,{}) and (not Types.isArray(t1,{}));
-        (types,t1,e1,t2,e2) = operatorsBinary(Absyn.ADD_EW(),t2,e2,t1,e1);
-      then (types,t1,e1,t2,e2);
-
-    case (Absyn.SUB_EW(),t1,e1,t2,e2)
-      equation
-        true = Types.isArray(t1,{}) and (not Types.isArray(t2,{}));
-        e2 = Expression.negate(e2);
-        (types,t1,e1,t2,e2) = operatorsBinary(Absyn.ADD_EW(),t1,e1,t2,e2);
-      then (types,t1,e1,t2,e2);
-
-    case (Absyn.MUL(),t1,e1,t2,e2)
-      equation
-        true = Types.isArray(t2,{}) and (not Types.isArray(t1,{}));
-        (types,t1,e1,t2,e2) = operatorsBinary(Absyn.MUL(),t2,e2,t1,e1);
-      then (types,t1,e1,t2,e2);
-
-    case (Absyn.MUL_EW(),t1,e1,t2,e2)
-      equation
-        true = Types.isArray(t2,{}) and (not Types.isArray(t1,{}));
-        (types,t1,e1,t2,e2) = operatorsBinary(Absyn.MUL_EW(),t2,e2,t1,e1);
-      then (types,t1,e1,t2,e2);
-
-    case (op,_,_,_,_)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Static.operatorsBinary failed, op: " +& Dump.opSymbol(op));
-      then
-        fail();
-  end matchcontinue;
-end operatorsBinary;
-
-protected function operatorsUnary "This function relates the operators in the abstract syntax to the
-  de-overloaded operators in the SCode. It produces a list of available
-  types for a specific operator, that the overload function chooses from.
-  Therefore, in order for the builtin type conversion from Integer to
-  Real to work, operators that work on both Integers and Reals must
-  return the Integer type -before- the Real type in the list."
-  input Absyn.Operator op;
-  output list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> ops;
-algorithm
-  ops := match op
-    local
-      list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> intarrs,realarrs,boolarrs,scalars,types;
-
-    case Absyn.UMINUS()
-      equation
-        scalars = {
-          (DAE.UMINUS(DAE.T_INTEGER_DEFAULT),{DAE.T_INTEGER_DEFAULT},
-          DAE.T_INTEGER_DEFAULT),
-          (DAE.UMINUS(DAE.T_REAL_DEFAULT),{DAE.T_REAL_DEFAULT},
-          DAE.T_REAL_DEFAULT)} "The UMINUS operator, unary minus" ;
-        intarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-          intarrtypes, intarrtypes);
-        realarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource)),
-          realarrtypes, realarrtypes);
-        types = List.flatten({scalars,intarrs,realarrs});
-      then types;
-
-    case Absyn.NOT()
-      equation
-        scalars = {(DAE.NOT(DAE.T_BOOL_DEFAULT), {DAE.T_BOOL_DEFAULT}, DAE.T_BOOL_DEFAULT)};
-        boolarrs = operatorReturnUnary(DAE.NOT(DAE.T_BOOL_DEFAULT), boolarrtypes, boolarrtypes);
-        types = List.flatten({scalars, boolarrs});
-      then types;
-
-    case _
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Static.operatorsUnary failed, op: " +& Dump.opSymbol(op));
-      then fail();
-  end match;
-end operatorsUnary;
-
-protected function makeEnumOperator
-  "Used by operators to create an operator with enumeration type. It sets the
-  correct expected type of the operator, so that for example integer=>enum type
-  casts work correctly without matching things that it shouldn't match."
-  input DAE.Operator inOp;
-  input DAE.Type inType1;
-  input DAE.Type inType2;
-  output tuple<DAE.Operator, list<DAE.Type>, DAE.Type> outOp;
-algorithm
-  outOp := matchcontinue(inOp, inType1, inType2)
-    local
-      DAE.Type op_ty;
-      DAE.Operator op;
-
-    case (_, DAE.T_ENUMERATION(path = _), DAE.T_ENUMERATION(path = _))
-      equation
-        op_ty = Types.simplifyType(inType1);
-        op = Expression.setOpType(inOp, op_ty);
-      then ((op, {inType1, inType2}, DAE.T_BOOL_DEFAULT));
-
-    case (_, DAE.T_ENUMERATION(path = _), _)
-      equation
-        op_ty = Types.simplifyType(inType1);
-        op = Expression.setOpType(inOp, op_ty);
-      then
-        ((op, {inType1, inType1}, DAE.T_BOOL_DEFAULT));
-
-    case (_, _, DAE.T_ENUMERATION(path = _))
-      equation
-        op_ty = Types.simplifyType(inType1);
-        op = Expression.setOpType(inOp, op_ty);
-      then
-        ((op, {inType1, inType2}, DAE.T_BOOL_DEFAULT));
-
-    else
-      then ((inOp, {DAE.T_ENUMERATION_DEFAULT, DAE.T_ENUMERATION_DEFAULT}, DAE.T_BOOL_DEFAULT));
-  end matchcontinue;
-end makeEnumOperator;
-
-protected function buildOperatorTypes
-"This function takes the types operator overloaded user functions and
-  builds  the type list structure suitable for the deoverload function."
-  input list<DAE.Type> inTypes;
-  input Absyn.Path inPath;
-  output list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> outOperatorTypes;
-algorithm
-  outOperatorTypes := match (inTypes, inPath)
-    local
-      list<DAE.Type> argtypes,tps;
-      list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> rest;
-      list<DAE.FuncArg> args;
-      DAE.Type tp;
-      Absyn.Path funcname;
-    case ({},_) then {};
-    case (DAE.T_FUNCTION(funcArg = args,funcResultType = tp) :: tps,funcname)
-      equation
-        argtypes = List.map(args, Util.tuple52);
-        rest = buildOperatorTypes(tps, funcname);
-      then
-        ((DAE.USERDEFINED(funcname),argtypes,tp) :: rest);
-  end match;
-end buildOperatorTypes;
-
-protected function nDimArray "Returns a type based on the type given as input but as an array type with n dimensions."
-  input Integer inInteger;
-  input DAE.Type inType;
-  output DAE.Type outType;
-algorithm
-  outType := matchcontinue (inInteger,inType)
-    local
-      DAE.Type t,t_1;
-      Integer n_1,n;
-    case (0,t) then t;  /* n orig type array type of n dimensions with element type = orig type */
-    case (n,t)
-      equation
-        n_1 = n - 1;
-        t_1 = nDimArray(n_1, t);
-      then
-        DAE.T_ARRAY(t_1,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource);
-  end matchcontinue;
-end nDimArray;
-
-protected function nTypes "Creates n copies of the type type.
-  This could instead be accomplished with Util.list_fill..."
-  input Integer inInteger;
-  input DAE.Type inType;
-  output list<DAE.Type> outTypesTypeLst;
-algorithm
-  outTypesTypeLst := matchcontinue (inInteger,inType)
-    local
-      Integer n_1,n;
-      list<DAE.Type> l;
-      DAE.Type t;
-    case (0,_) then {};
-    case (n,t)
-      equation
-        n_1 = n - 1;
-        l = nTypes(n_1, t);
-      then
-        (t :: l);
-  end matchcontinue;
-end nTypes;
-
-protected function operatorReturn "This function collects the types and operator lists into a tuple list, suitable
-  for the deoverloading function for binary operations."
-  input DAE.Operator inOperator;
-  input list<DAE.Type> inLhsTypes;
-  input list<DAE.Type> inRhsTypes;
-  input list<DAE.Type> inReturnTypes;
-  output list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> outOperators;
-algorithm
-  outOperators := match(inOperator, inLhsTypes, inRhsTypes, inReturnTypes)
-    local
-      list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> rest;
-      tuple<DAE.Operator, list<DAE.Type>, DAE.Type> t;
-      DAE.Operator op;
-      DAE.Type l,r,re;
-      list<DAE.Type> lr,rr,rer;
-    case (_,{},{},{}) then {};
-    case (op,(l :: lr),(r :: rr),(re :: rer))
-      equation
-        rest = operatorReturn(op, lr, rr, rer);
-        t = (op,{l,r},re) "list contains two types, i.e. BINARY operations" ;
-      then
-        (t :: rest);
-  end match;
-end operatorReturn;
-
-protected function operatorReturnUnary "This function collects the types and operator lists into a tuple list,
-  suitable for the deoverloading function to be used for unary
-  expressions."
-  input DAE.Operator inOperator;
-  input list<DAE.Type> inArgTypes;
-  input list<DAE.Type> inReturnTypes;
-  output list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> outOperators;
-algorithm
-  outOperators := match(inOperator, inArgTypes, inReturnTypes)
-    local
-      list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> rest;
-      tuple<DAE.Operator, list<DAE.Type>, DAE.Type> t;
-      DAE.Operator op;
-      DAE.Type l,re;
-      list<DAE.Type> lr,rer;
-    case (_,{},{}) then {};
-    case (op,(l :: lr),(re :: rer))
-      equation
-        rest = operatorReturnUnary(op, lr, rer);
-        t = (op,{l},re) "list only contains one type, i.e. for UNARY operations" ;
-      then
-        (t :: rest);
-  end match;
-end operatorReturnUnary;
-
-protected function arrayTypeList "This function creates a list of types using the original type passed as input, but
-  as array types up to n dimensions."
-  input Integer inInteger;
-  input DAE.Type inType;
-  output list<DAE.Type> outTypesTypeLst;
-algorithm
-  outTypesTypeLst:=
-  matchcontinue (inInteger,inType)
-    local
-      Integer n_1,n;
-      DAE.Type f,t;
-      list<DAE.Type> r;
-    case (0,_) then {};  /* n orig type array types */
-    case (n,t)
-      equation
-        n_1 = n - 1;
-        f = nDimArray(n, t);
-        r = arrayTypeList(n_1, t);
-      then
-        (f :: r);
-  end matchcontinue;
-end arrayTypeList;
-
-protected function warnUnsafeRelations "
-  Author: BZ, 2008-08
-  Check if we have Real == Real or Real != Real, if so give a warning."
-  input Env.Env inEnv;
-  input Absyn.Exp inExp;
-  input DAE.Const variability;
-  input DAE.Type t1,t2;
-  input DAE.Exp e1,e2;
-  input DAE.Operator op;
-  input Prefix.Prefix inPrefix;
-algorithm
-  _ := matchcontinue(inEnv,inExp,variability,t1,t2,e1,e2,op,inPrefix)
-    local
-      Boolean b1,b2;
-      String stmtString,opString,pre_str;
-      Prefix.Prefix pre;
-    // == or != on Real is permitted in functions, so don't print an error if
-    // we're in a function.
-    case (_, _, _, _, _, _, _, _, _)
-      equation
-        true = Env.inFunctionScope(inEnv);
-      then ();
-
-    case(_, Absyn.RELATION(_, _, _), DAE.C_VAR(),_,_,_,_,_,pre)
-      equation
-        b1 = Types.isReal(t1);
-        b2 = Types.isReal(t1);
-        true = boolOr(b1,b2);
-        verifyOp(op);
-        opString = ExpressionDump.relopSymbol(op);
-        stmtString = ExpressionDump.printExpStr(e1) +& opString +& ExpressionDump.printExpStr(e2);
-        pre_str = PrefixUtil.printPrefixStr3(pre);
-        Error.addMessage(Error.WARNING_RELATION_ON_REAL, {pre_str,stmtString,opString});
-      then
-        ();
-    else ();
-  end matchcontinue;
-end warnUnsafeRelations;
-
-protected function verifyOp "
-Helper function for warnUnsafeRelations
-We only want to check DAE.EQUAL and Expression.NEQUAL since they are the only illegal real operations."
-input DAE.Operator op;
-algorithm _ := match(op)
-  case(DAE.EQUAL(_)) then ();
-  case(DAE.NEQUAL(_)) then ();
-  end match;
-end verifyOp;
 
 protected function unevaluatedFunctionVariability
   "In a function we might have input arguments with unknown dimensions, and in

@@ -229,6 +229,7 @@ algorithm
     case (comp,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),_,ass1,ass2,_,_,_,_)
       equation
         vlst = List.map1r(comp,arrayGet,ass2);
+        vlst = List.select1(vlst,intGt,0);
         varlst = List.map1r(vlst,BackendVariable.getVarAt,vars);
         var_varindx_lst = List.threadTuple(varlst,vlst);
         // get from scalar eqns indexes the indexes in the equation array

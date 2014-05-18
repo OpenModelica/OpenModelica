@@ -691,7 +691,7 @@ algorithm
                   connectorType = ct,
                   source = source,
                   variableAttributesOption = dae_var_attr,
-                  absynCommentOption = comment), _)
+                  comment = comment), _)
       equation
         (kind_1) = lowerVarkind(kind, t, name, dir, ct, dae_var_attr);
         tp = lowerType(t);
@@ -748,7 +748,7 @@ algorithm
                   connectorType = ct,
                   source = source,
                   variableAttributesOption = dae_var_attr,
-                  absynCommentOption = comment), _, _)
+                  comment = comment), _, _)
       equation
         kind_1 = lowerKnownVarkind(kind, name, dir, ct);
         // bind = fixParameterStartBinding(bind, t, dae_var_attr, kind_1);
@@ -1119,7 +1119,6 @@ algorithm
       DAE.Type t;
 
     case (DAE.VAR(componentRef = name,
-
                   direction = dir,
                   parallelism = prl,
                   ty = t,
@@ -1128,7 +1127,7 @@ algorithm
                   connectorType = ct,
                   source = source,
                   variableAttributesOption = dae_var_attr,
-                  absynCommentOption = comment), _)
+                  comment = comment), _)
       equation
         kind_1 = lowerExtObjVarkind(t);
         tp = lowerType(t);

@@ -271,7 +271,7 @@ package DAE
       Stream streamPrefix "Stream variables in connectors" ;
       ElementSource source "the origins of the component/equation/algorithm";
       Option<VariableAttributes> variableAttributesOption;
-      Option<SCode.Comment> absynCommentOption;
+      Option<SCode.Comment> comment;
       Absyn.InnerOuter innerOuter "inner/outer required to 'change' outer references";
     end VAR;
 
@@ -960,7 +960,6 @@ package DAE
     end T_SUBTYPE_BASIC;
 
     record T_FUNCTION
-      list<FuncArg> funcArg "funcArg" ;
       Type funcResultType "Only single-result" ;
       FunctionAttributes functionAttributes;
       TypeSource source;

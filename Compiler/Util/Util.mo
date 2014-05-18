@@ -90,6 +90,7 @@ protected import Config;
 protected import Debug;
 protected import Error;
 protected import Flags;
+protected import Global;
 protected import List;
 protected import Print;
 protected import System;
@@ -4277,5 +4278,11 @@ algorithm
         truncatedStr;
   end matchcontinue;
 end stringTrunc;
+
+public function getTempVariableIndex "Create an iterator or the like with a unique name"
+  output String name;
+algorithm
+  name := stringAppend("$tmpVar",intString(System.tmpTickIndex(Global.tmpVariableIndex)));
+end getTempVariableIndex;
 
 end Util;

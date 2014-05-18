@@ -1709,6 +1709,13 @@ algorithm
   select := isFinalVar(inVar) or hasVarEvaluateAnnotation(inVar);
 end hasVarEvaluateAnnotationOrFinal;
 
+public function hasVarEvaluateAnnotationOrFinalOrProtected
+  input BackendDAE.Var inVar;
+  output Boolean select;
+algorithm
+  select := isFinalOrProtectedVar(inVar) or hasVarEvaluateAnnotation(inVar);
+end hasVarEvaluateAnnotationOrFinalOrProtected;
+
 public function hasVarEvaluateAnnotation
   input BackendDAE.Var inVar;
   output Boolean select;
@@ -2035,6 +2042,20 @@ algorithm
       then b;
    end match;
 end isFinalVar;
+
+public function isFinalOrProtectedVar
+  input BackendDAE.Var v;
+  output Boolean b;
+algorithm
+  b := match(v)
+    local
+      Option<DAE.VariableAttributes> attr;
+    case (BackendDAE.VAR(values = attr))
+      equation
+        b = DAEUtil.getFinalAttr(attr) or DAEUtil.getProtectedAttr(attr);
+      then b;
+   end match;
+end isFinalOrProtectedVar;
 
 public function getVariableAttributes "author: Frenkel TUD 2011-04
   returns the DAE.VariableAttributes of a variable"
@@ -3390,8 +3411,7 @@ algorithm
         v;
     case (BackendDAE.VARIABLES(varArr = _),_)
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprintln(Flags.FAILTRACE, "getVarAt failed to get the variable at index:" +& intString(inInteger));
+        Error.addInternalError("BackendVariable.getVarAt failed to get the variable at index: " +& intString(inInteger));
       then
         fail();
   end matchcontinue;

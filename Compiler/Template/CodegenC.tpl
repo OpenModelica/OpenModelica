@@ -9155,8 +9155,21 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp /*BUFP*/,
     >>
     res
 
+  case ASUB(exp=range as RANGE(ty=T_INTEGER(),step=NONE()), sub={idx}) then
+    let res = tempDecl("modelica_integer", &varDecls)
+    let idx1 = daeExp(idx, context, &preExp, &varDecls)
+    let start = daeExp(range.start, context, &preExp, &varDecls)
+    let stop = daeExp(range.stop, context, &preExp, &varDecls)
+    let &preExp += <<
+    <%res%> = <%idx1%> + <%start%> - 1;
+    if (<%res%> > <%stop%>) {
+      throwStreamPrint(threadData, "Value %ld out of bounds for range <%Util.escapeModelicaStringToCString(printExpStr(range))%>", (long) <%res%>);
+    }
+    >>
+    res
+
   case ASUB(exp=RANGE(ty=t), sub={idx}) then
-    error(sourceInfo(),'ASUB_EASY_CASE <%printExpStr(exp)%>')
+    error(sourceInfo(),'ASUB_EASY_CASE type:<%unparseType(t)%> range:<%printExpStr(exp)%> index:<%printExpStr(idx)%>')
 
   case ASUB(exp=ecr as CREF(__), sub=subs) then
     let arrName = daeExpCrefRhs(buildCrefExpFromAsub(ecr, subs), context,
@@ -9248,7 +9261,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
   special reduction functions (list, listReverse, array) and handles both list and array as input"
 ::=
   match exp
-  case r as REDUCTION(reductionInfo=ri as REDUCTIONINFO(__),iterators={iter as REDUCTIONITER(__)}) then
+  case r as REDUCTION(reductionInfo=ri as REDUCTIONINFO(iterType=COMBINE()),iterators={iter as REDUCTIONITER(__)}) then
   let &tmpVarDecls = buffer ""
   let &tmpExpPre = buffer ""
   let &bodyExpPre = buffer ""
@@ -9265,7 +9278,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
   let foundFirst = if not ri.defaultValue then tempDecl("int",&tmpVarDecls)
   let rangeExp = daeExp(iter.exp,context,&rangeExpPre,&tmpVarDecls)
   let resType = expTypeArrayIf(typeof(exp))
-  let res = contextCref(makeUntypedCrefIdent("$reductionFoldTmpB"), context)
+  let res = contextCref(makeUntypedCrefIdent(ri.resultName), context)
   let &tmpVarDecls += '<%resType%> <%res%>;<%\n%>'
   let resTmp = tempDecl(resType,&varDecls)
   let &preDefault = buffer ""
@@ -9276,7 +9289,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
   let guardCond = match iter.guardExp case SOME(grd) then daeExp(grd, context, &guardExpPre, &tmpVarDecls) else "1"
   let empty = match identType case "modelica_metatype" then 'listEmpty(<%loopVar%>)' else '0 == size_of_dimension_base_array(<%loopVar%>, 1)'
   let length = match identType case "modelica_metatype" then 'listLength(<%loopVar%>)' else 'size_of_dimension_base_array(<%loopVar%>, 1)'
-  let reductionBodyExpr = contextCref(makeUntypedCrefIdent("$reductionFoldTmpA"), context)
+  let reductionBodyExpr = contextCref(makeUntypedCrefIdent(ri.foldName), context)
   let bodyExprType = expTypeArrayIf(typeof(r.expr))
   let reductionBodyExprWork = daeExp(r.expr, context, &bodyExpPre, &tmpVarDecls)
   let &tmpVarDecls += '<%bodyExprType%> <%reductionBodyExpr%>;<%\n%>'
@@ -10353,7 +10366,7 @@ template literalExpConst(Exp lit, Integer index) "These should all be declared s
     let data = flattenArrayExpToList(lit) |> exp => literalExpConstArrayVal(exp) ; separator=", "
     <<
     static _index_t <%name%>_dims[<%ndim%>] = {<%dims%>};
-    <% match getDimensionSizes(ty) case {0} then
+    <% match data case "" then
     <<
     static base_array_t const <%name%> = {
       <%ndim%>, <%name%>_dims, (void*) 0

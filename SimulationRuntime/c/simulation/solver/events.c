@@ -247,6 +247,9 @@ void handleEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* so
         const char *exp_str = data->callback->zeroCrossingDescription(ix,&eq_indexes);
         infoStreamPrintWithEquationIndexes(LOG_STDOUT, 0, eq_indexes, "Chattering detected around time %.12g..%.12g (%d state events in a row with a total time delta less than the step size %.12g). This can be a performance bottleneck. Use -lv LOG_EVENTS for more information. The zero-crossing was: %s", t0, time, numEventLimit, data->simulationInfo.stepSize, exp_str);
         data->simulationInfo.chatteringInfo.messageEmitted = 1;
+        if (omc_flag[FLAG_ABORT_SLOW]) {
+          throwStreamPrintWithEquationIndexes(data->threadData, eq_indexes, "Aborting simulation due to chattering being detected and the simulation flags requesting we do not continue further.");
+        }
       }
     }
 
