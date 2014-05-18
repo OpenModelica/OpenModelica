@@ -1088,6 +1088,8 @@ algorithm
       then inType;
     case (DAE.T_ARRAY(ty = _))
       then inType;
+    case (DAE.T_FUNCTION(funcResultType = _))
+      then inType;
     else equation print("lowerType: " +& Types.printTypeStr(inType) +& " failed\n"); then fail();
   end matchcontinue;
 end lowerType;

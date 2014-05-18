@@ -59,7 +59,7 @@ protected import BackendVariable;
 protected import ClassInf;
 protected import ComponentReference;
 protected import DAEDump;
-//protected import DAEDumpTpl;
+protected import DAEDumpTpl;
 protected import Debug;
 protected import Error;
 protected import Expression;
@@ -68,7 +68,7 @@ protected import ExpressionDump;
 protected import Flags;
 protected import Inline;
 protected import List;
-//protected import Tpl;
+protected import Tpl;
 protected import Util;
 
 
@@ -221,7 +221,7 @@ algorithm
         //Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, DAEUtil.getElementSourceFileInfo(DAE.emptyElementSource));
 
         true = Flags.isSet(Flags.FAILTRACE);
-        msg = "\nDifferentiate.differentiateExpTime failed for " +& ExpressionDump.printExpStr(inExp) +& "\n\n";
+        msg = "\nDifferentiate.differentiateExpCref failed for " +& ExpressionDump.printExpStr(inExp) +& "\n\n";
         Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {msg});
       then fail();
 
@@ -254,7 +254,7 @@ algorithm
         //Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, DAEUtil.getElementSourceFileInfo(DAE.emptyElementSource));
 
         true = Flags.isSet(Flags.FAILTRACE);
-        msg = "\nDifferentiate.differentiateExpTime failed for " +& ExpressionDump.printExpStr(inExp) +& "\n\n";
+        msg = "\nDifferentiate.differentiateExpCrefFunction failed for " +& ExpressionDump.printExpStr(inExp) +& "\n\n";
         Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {msg});
       then fail();
 
@@ -295,7 +295,7 @@ algorithm
         //Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, DAEUtil.getElementSourceFileInfo(DAE.emptyElementSource));
 
         true = Flags.isSet(Flags.FAILTRACE);
-        msg = "\nDifferentiate.differentiateExpTime failed for " +& ExpressionDump.printExpStr(inExp) +& "\n\n";
+        msg = "\nDifferentiate.differentiateCrefFullJacobian failed for " +& ExpressionDump.printExpStr(inExp) +& "\n\n";
         Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {msg});
       then fail();
 
@@ -2059,7 +2059,7 @@ algorithm
       DAE.FunctionDefinition derfuncdef;
       DAE.Function func,dfunc;
       list<DAE.Function> fns;
-      String funcname;
+      String funcname, s1;
       list<DAE.FuncArg> falst;
 
     case (DAE.CALL(path=path,expLst=expl,attr=DAE.CALL_ATTR(tuple_=b,builtin=c,isImpure=isImpure,ty=ty,tailCall=tc)), _, _, BackendDAE.DIFFERENTATION_TIME(), _)
@@ -2098,8 +2098,7 @@ algorithm
     // try to inline
     case (DAE.CALL(expLst = _,attr=DAE.CALL_ATTR(tuple_=_,builtin=false,tailCall=_)), _, _, _, _)
       equation
-        //s1 = ExpressionDump.printExpStr(e);
-        //print("\nExp-CALL\n build-funcs force-inline: " +& s1);
+        failure(BackendDAE.DIFF_FULL_JACOBIAN() = inDiffType);
         (e,_,true) = Inline.forceInlineExp(inExp,(SOME(inFunctionTree),{DAE.NORM_INLINE(),DAE.NO_INLINE()}),DAE.emptyElementSource);
         e = Expression.addNoEventToRelations(e);
         (e, functions) = differentiateExp(e, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
