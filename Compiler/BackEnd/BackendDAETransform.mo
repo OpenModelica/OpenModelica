@@ -198,11 +198,6 @@ algorithm
         (acomp,mark) = analyseStrongComponentScalar(comp,syst,shared,inAss1,inAss2,mapEqnIncRow,mapIncRowEqn,imark,markarray);
       then
         analyseStrongComponentsScalar(comps,syst,shared,inAss1,inAss2,mapEqnIncRow,mapIncRowEqn,mark,markarray,acomp::iAcc);
-    else
-      equation
-        Error.addInternalError("./Compiler/BackEnd/BackendDAETransform.mo: function analyseStrongComponentsScalar failed");
-      then
-        fail();
   end match;
 end analyseStrongComponentsScalar;
 
