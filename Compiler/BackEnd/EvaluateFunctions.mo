@@ -280,7 +280,7 @@ algorithm
       DAE.Type ty;
       list<BackendDAE.Equation> constEqs;
       list<DAE.ComponentRef> inputCrefs, outputCrefs, allInputCrefs, allOutputCrefs, constInputCrefs, constCrefs, varScalarCrefsInFunc,constComplexCrefs,varComplexCrefs,constScalarCrefs, constScalarCrefsOut,varScalarCrefs;
-      list<DAE.Element> elements, algs, allInputs, protectVars, inputs1d, allOutputs, varOutputs;
+      list<DAE.Element> elements, algs, allInputs, protectVars, allOutputs, varOutputs;
       list<DAE.Exp> exps, inputExps, complexExp, allInputExps, constInputExps, constExps, constComplexExps, constScalarExps, lhsExps;
       list<list<DAE.Exp>> scalarExp;
       list<DAE.Statement> stmts;
@@ -387,18 +387,18 @@ algorithm
         elements = listAppend(elements,protectVars);
         elements = listAppend(elements,algs);
         elements = List.unique(elements);
-        (func,path) = updateFunctionBody(func,elements,idx);
-        attr2 = DAEUtil.replaceCallAttrType(attr1,DAE.T_TUPLE({},DAE.emptyTypeSource));
-        attr2 = Util.if_(intEq(listLength(varOutputs),1),attr1,attr2);
-        //DAEDump.dumpCallAttr(attr2);
+        (func,path) = updateFunctionBody(func,elements,idx, varOutputs, allOutputs);
         funcs = Debug.bcallret2(funcIsPartConst,DAEUtil.addDaeFunction,{func},funcs,funcs);
         idx = Util.if_(funcIsPartConst or funcIsConst,idx+1,idx);
 
-        //decide which lhs or which rhs to take
+        //decide which lhs to take (tuple or 1d)
         outputExp = Util.if_(funcIsPartConst,outputExp,lhsExpIn);
         lhsExps = getCrefsForRecord(lhsExpIn);
         outputExp = Util.if_(isConstRec,DAE.TUPLE(lhsExps),outputExp);
-
+        // which rhs
+        attr2 = DAEUtil.replaceCallAttrType(attr1,DAE.T_TUPLE({},DAE.emptyTypeSource));
+        attr2 = Util.if_(intEq(listLength(varOutputs),1),attr1,attr2);
+        //DAEDump.dumpCallAttr(attr2);
         exp2 = Debug.bcallret1(List.hasOneElement(constComplexExps) and funcIsConst,List.first,constComplexExps,DAE.TUPLE(constComplexExps));  // either a single equation or a tuple equation
         exp = Util.if_(funcIsConst,exp2,rhsExpIn);
         exp = Util.if_(funcIsPartConst,DAE.CALL(path, exps, attr2),exp);
@@ -959,15 +959,17 @@ algorithm
   end match;
 end generateProtectedElements;
 
-protected function updateFunctionBody"udpates the function with the new elements and create a new path name.
+protected function updateFunctionBody"udpates the function with the new elementsm update the type and create a new path name.
 author:Waurich TUD 2014-04"
   input DAE.Function funcIn;
   input list<DAE.Element> body;
   input Integer idx;
+  input list<DAE.Element> outputs;
+  input list<DAE.Element> origOutputs;
   output DAE.Function funcOut;
   output Absyn.Path pathOut;
 algorithm
-  (funcOut,pathOut) := match(funcIn, body, idx)
+  (funcOut,pathOut) := match(funcIn, body, idx, outputs, origOutputs)
     local
       String s;
       list<String> chars;
@@ -979,15 +981,20 @@ algorithm
       DAE.ElementSource source;
       DAE.Function func;
       Option<SCode.Comment> comment;
-    case(DAE.FUNCTION(path=path,functions=_,type_=typ,partialPrefix=pP,isImpure=iI,inlineType=iType,source=source,comment=comment),_,_)
+    case(DAE.FUNCTION(path=path,functions=_,type_=typ,partialPrefix=pP,isImpure=iI,inlineType=iType,source=source,comment=comment),_,_,_,_)
       equation
         //print("the pathname before: "+&Absyn.pathString(path)+&"\n");
         //print("THE FUNCTION BEFORE \n"+&DAEDump.dumpFunctionStr(funcIn)+&"\n");
+        // assemble the path-name
         s = Absyn.pathString(path);
         chars = stringListStringChar(s);
         chars = listDelete(chars,0);
         s = stringCharListString(chars);
         path = Absyn.stringPath(s+&"_eval"+&intString(idx));
+        // update the type
+        //print("the old type: "+&Types.unparseType(typ)+&"\n");
+        typ = updateFunctionType(typ,outputs,origOutputs);
+        //print("the new type: "+&Types.unparseType(typ)+&"\n");
         func = DAE.FUNCTION(path,{DAE.FUNCTION_DEF(body)},typ,pP,iI,iType,source,comment);
         //print("THE FUNCTION AFTER \n"+&DAEDump.dumpFunctionStr(func)+&"\n");
         //print("the pathname after: "+&Absyn.pathString(path)+&"\n");
@@ -1000,6 +1007,34 @@ algorithm
           fail();
   end match;
 end updateFunctionBody;
+
+protected function updateFunctionType"sets the resultTypes in the functionType
+author:Waurich TUD 2014-05"
+  input DAE.Type typIn;
+  input list<DAE.Element> outputs;  // the new outputs of the function
+  input list<DAE.Element> originOutputs; // the original outputs of the function
+  output DAE.Type typOut;
+algorithm
+  typOut := matchcontinue(typIn,outputs,originOutputs)
+    local
+      DAE.FunctionAttributes atts;
+      DAE.TypeSource source;
+      DAE.Type outType;
+      list<DAE.Type> outTypeLst;
+      list<DAE.FuncArg> inputs;
+  case(DAE.T_FUNCTION(funcArg = inputs, funcResultType = outType, functionAttributes = atts, source = source),_,_)
+    equation
+      //print("the out types1: "+&Types.unparseType(outType)+&"\n");
+      outTypeLst = List.map(outputs,DAEUtil.getVariableType);
+      outType = Debug.bcallret1(intEq(listLength(outTypeLst),1),List.first,outTypeLst,DAE.T_TUPLE(outTypeLst,DAE.emptyTypeSource));
+      outType = DAE.T_FUNCTION(inputs,outType,atts,source);
+      //print("the out types2: "+&Types.unparseType(outType)+&"\n");
+    then
+      outType;
+  else
+    then typIn;
+  end matchcontinue;
+end updateFunctionType;
 
 protected function buildPartialFunction "build a partial function for the variable outputs of a complex function and generate some simple equations for the constant outputs.
 author:Waurich TUD 2014-03"
