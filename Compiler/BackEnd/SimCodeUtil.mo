@@ -508,6 +508,7 @@ algorithm
     case (_, dae, dlow as BackendDAE.DAE(shared=BackendDAE.SHARED(functionTree=functionTree)), _)
       equation
         // get all the used functions from the function tree
+
         funcelems = DAEUtil.getFunctionList(functionTree);
         part_func_elems = PartFn.createPartEvalFunctions(funcelems);
         (dae, part_func_elems) = PartFn.partEvalDAE(dae, part_func_elems);
@@ -12706,7 +12707,7 @@ algorithm
   simVars := List.map1(bVars,getSimVarForBackendVar,map);
 end getSimVarsInSimEq;
 
-public function getSimEqsOfSimVar"gets the indeces for the simVars occuring in the given simEq
+public function getSimEqsOfSimVar"gets the indeces for the simEqs for the given simVar
 author:Waurich TUD 2014-04"
   input Integer simVar;
   input SimCode.BackendMapping map;
@@ -12722,8 +12723,10 @@ algorithm
   SimCode.BACKENDMAPPING(m=m,mT=mt,eqMapping=eqMapping,varMapping=varMapping) := map;
   bVar := getBackendVarForSimVar(simVar,map);
   bEqs := arrayGet(mt,bVar);
-  bEqs := List.filter1OnTrue(bEqs,intGe,0);
+  //bEqs := List.filter1OnTrue(bEqs,intGe,0);
+  bEqs := List.map(bEqs,intAbs);
   simEqs := List.map1(bEqs,getSimEqsForBackendEqs,map);
+  simEqs := List.unique(simEqs);
 end getSimEqsOfSimVar;
 
 public function getReqSimEqSysForSimVar
