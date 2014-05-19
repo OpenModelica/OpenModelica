@@ -2244,8 +2244,7 @@ protected function valListString "
 "
   input list<Values.Value> inValueLst;
 algorithm
-  _ :=
-  matchcontinue (inValueLst)
+  _ := match (inValueLst)
     local
       Values.Value v;
       list<Values.Value> vs;
@@ -2262,12 +2261,7 @@ algorithm
         valListString(vs);
       then
         ();
-    case _
-      equation
-        Debug.fprintln(Flags.FAILTRACE, "- ValuesUtil.valListString failed");
-      then
-        fail();
-  end matchcontinue;
+  end match;
 end valListString;
 
 public function writePtolemyplotDataset "

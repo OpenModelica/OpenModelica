@@ -5328,7 +5328,7 @@ protected function cevalReduction
   output Option<Values.Value> result;
   output Option<GlobalScript.SymbolTable> newSymbolTable;
 algorithm
-  (newCache, result, newSymbolTable) := matchcontinue (inCache, inEnv, opPath, inCurValue, exp, exprType, foldName, resultName, foldExp, iteratorNames, inValueMatrix, iterTypes, impl, inSt, msg, numIter)
+  (newCache, result, newSymbolTable) := match (inCache, inEnv, opPath, inCurValue, exp, exprType, foldName, resultName, foldExp, iteratorNames, inValueMatrix, iterTypes, impl, inSt, msg, numIter)
     local
       list<Values.Value> vals;
       Env.Env new_env,env;
@@ -5358,7 +5358,7 @@ algorithm
         // Fold the rest of the reduction
         (cache, curValue, st) = cevalReduction(cache, env, opPath, curValue, exp, exprType, foldName, resultName, foldExp, iteratorNames, valueMatrix, iterTypes, impl, st,msg,numIter);
       then (cache, curValue, st);
-  end matchcontinue;
+  end match;
 end cevalReduction;
 
 protected function cevalReductionEvalAndFold "Evaluate the reduction body and fold"
