@@ -5562,12 +5562,13 @@ template expTypeShort(DAE.Type type)
   case T_STRING(__)      then if acceptMetaModelicaGrammar() then "metatype" else "string"
   case T_BOOL(__)        then "bool"
   case T_ENUMERATION(__) then "int"
-  case T_UNKNOWN(__)     then "complex"
-  case T_ANYTYPE(__)     then "complex"
+  /* assumming real for uknown type! */
+  case T_UNKNOWN(__)     then "double /*W1*/"
+  case T_ANYTYPE(__)     then "complex2"
   case T_ARRAY(__)       then expTypeShort(ty)
   case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
                       then "void*"
-  case T_COMPLEX(__)     then 'complex'
+  case T_COMPLEX(__)     then 'complex3'
   case T_METATYPE(__) case T_METABOXED(__)    then "metatype"
   case T_FUNCTION_REFERENCE_VAR(__) then "fnptr"
   else "expTypeShort:ERROR"
@@ -6568,7 +6569,7 @@ case SES_SIMPLE_ASSIGN(__) then
   else
   <<
   <%preExp%>
-  /*blubb*/
+  
   <%cref1(cref, simCode, context, varDecls)%>=<%expPart%>;
   >>
  end match
