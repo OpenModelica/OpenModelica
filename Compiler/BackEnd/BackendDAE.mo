@@ -644,25 +644,25 @@ end DifferentiateInputData;
 public constant DifferentiateInputData noInputData = DIFFINPUTDATA(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
 
 public
-type DifferentiateInputArguments = tuple< .DAE.ComponentRef, DifferentiateInputData, DiffentiationType, .DAE.FunctionTree>;
+type DifferentiateInputArguments = tuple< .DAE.ComponentRef, DifferentiateInputData, DifferentiationType, .DAE.FunctionTree>;
 
 public
-uniontype DiffentiationType "Define the behavoir of differentation method for (e.g. index reduction, ...)"
-  record DIFFERENTATION_TIME "Used for index reduction differentation w.r.t. time (e.g. create dummy derivative variables)"
-  end DIFFERENTATION_TIME;
+uniontype DifferentiationType "Define the behavoir of differentiation method for (e.g. index reduction, ...)"
+  record DIFFERENTIATION_TIME "Used for index reduction differentiation w.r.t. time (e.g. create dummy derivative variables)"
+  end DIFFERENTIATION_TIME;
 
-  record SIMPLE_DIFFERENTAION "Used to solve expression for a cref or by the older jacobian generation, differation w.r.t. a given cref"
-  end SIMPLE_DIFFERENTAION;
+  record SIMPLE_DIFFERENTIATION "Used to solve expression for a cref or by the older jacobian generation, differentiation w.r.t. a given cref"
+  end SIMPLE_DIFFERENTIATION;
 
-  record DIFFERENTAION_FUNCTION "Used to differentiate a function call w.r.t. a given cref, which need to expand the input arguments
+  record DIFFERENTIATION_FUNCTION "Used to differentiate a function call w.r.t. a given cref, which need to expand the input arguments
                                   by differentiate arguments."
-  end DIFFERENTAION_FUNCTION;
+  end DIFFERENTIATION_FUNCTION;
 
   record DIFF_FULL_JACOBIAN "Used to generate a full jacobian matrix"
   end DIFF_FULL_JACOBIAN;
 
   record GENERIC_GRADIENT "Used to generate a generic gradient for generation the jacobian matrix while the runtime."
   end GENERIC_GRADIENT;
-end DiffentiationType;
+end DifferentiationType;
 
 end BackendDAE;
