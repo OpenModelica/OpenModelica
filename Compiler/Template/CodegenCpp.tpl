@@ -6569,7 +6569,7 @@ case SES_SIMPLE_ASSIGN(__) then
   else
   <<
   <%preExp%>
-  
+
   <%cref1(cref, simCode, context, varDecls)%>=<%expPart%>;
   >>
  end match
