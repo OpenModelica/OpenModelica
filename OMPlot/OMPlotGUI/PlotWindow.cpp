@@ -905,7 +905,9 @@ void PlotWindow::exportDocument()
     {
 #if QWT_VERSION < 0x060000
       QPixmap pixmap(mpPlot->size());
-      mpPlot->render(&pixmap);
+      /* removes the gray widget background when OMPlot is used as library. */
+      pixmap.fill(Qt::white);
+      mpPlot->render(&pixmap, QPoint(), QRegion(), DrawChildren);
       if (!pixmap.save(fileName)) {
         QMessageBox::critical(this, "Error", "Failed to save image " + fileName);
       }
