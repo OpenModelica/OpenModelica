@@ -2511,7 +2511,7 @@ algorithm
       Boolean replaceable_, globalnegated1, diffed, replaceble1, negatedCr1, negatedCr2, negated;
       DAE.ElementSource source;
       DAE.Exp crexp, exp1;
-      Option<DAE.Exp> dexp;
+      Option<DAE.Exp> dexp, derReplacement;
       String msg;
       VarSetAttributes vsattr;
       BackendDAE.EquationKind eqKind;
@@ -2526,16 +2526,16 @@ algorithm
         // negate if necessary
         globalnegated1 = Util.if_(negated, not globalnegated, globalnegated);
         exp1 = negateExpression(globalnegated1, exp, exp, " ALIAS_1 ");
-        _ = Debug.bcallret1(globalnegated1, negateOptExp, derReplaceState, derReplaceState);
+        derReplacement = Debug.bcallret1(globalnegated1, negateOptExp, derReplaceState, derReplaceState);
         // replace alias with selected variable if replaceable_
         source = Debug.bcallret3(replaceable_, addSubstitutionOption, optExp, crexp, source, source);
-        (vars, eqnslst, shared, repl) = handleSetVar(replaceable_ and replaceble1, derReplaceState, v, i, (source, diffed, eqKind), exp1, iMT, iVars, iEqnslst, ishared, iRepl);
+        (vars, eqnslst, shared, repl) = handleSetVar(replaceable_ and replaceble1, derReplacement, v, i, (source, diffed, eqKind), exp1, iMT, iVars, iEqnslst, ishared, iRepl);
         vsattr = Debug.bcallret5(replaceable_ and replaceble1, addVarSetAttributes, v, globalnegated1, mark, simpleeqnsarr, iAttributes, iAttributes);
         // negate if necessary
         crexp = negateExpression(negated, crexp, crexp, " ALIAS_2 ");
         rows = List.removeOnTrue(r, intEq, iMT[i]);
         _ = arrayUpdate(iMT, i, {});
-        (vars, eqnslst, shared, repl, vsattr) = traverseAliasTree(rows, i, exp, SOME(crexp), globalnegated1, derReplaceState, mark, simpleeqnsarr, iMT, unReplaceable, vars, eqnslst, shared, repl, vsattr);
+        (vars, eqnslst, shared, repl, vsattr) = traverseAliasTree(rows, i, exp, SOME(crexp), globalnegated1, derReplacement, mark, simpleeqnsarr, iMT, unReplaceable, vars, eqnslst, shared, repl, vsattr);
       then
         (vars, eqnslst, shared, repl, vsattr);
 
