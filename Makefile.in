@@ -77,7 +77,8 @@ qtclean-common:
 	rm -rf OMShell/bin/OMShell$(EXE) OMShell/OMShellGUI/omc_communication.*
 	rm -rf OMNotebook/bin/OMNotebook$(EXE) OMNotebook/OMNotebookGUI/omc_communication.*
 	rm -rf OMOptim/build/OMOptim$(EXE) OMOptim/build/omc_communication.*
-	for f in OMEdit/OMEditGUI \
+	for f in 3rdParty/qwt \
+	         OMEdit/OMEditGUI \
 	         OMNotebook/OMNotebookGUI \
 	         OMOptim/build \
 	         OMOptimBasis/build \
@@ -93,14 +94,16 @@ qtclients:
 	@echo "*** OpenModelica configured without support for CORBA"
 qtclean: qtclean-common
 else
-omnotebook: mkbuilddirs omplot
+qwt:
+	$(MAKE) -C 3rdParty/qwt -f Makefile.unix
+omnotebook: mkbuilddirs qwt omplot
 	mkdir -p $(builddir_share)/omnotebook
 	$(MAKE) -C OMNotebook/OMNotebookGUI -f Makefile.unix
 omshell: mkbuilddirs
 	$(MAKE) -C OMShell/OMShellGUI -f Makefile.unix
-omplot: mkbuilddirs boehm-gc-lib
+omplot: mkbuilddirs qwt boehm-gc-lib
 	$(MAKE) -C OMPlot/OMPlotGUI -f Makefile.unix
-omedit: mkbuilddirs omplot boehm-gc-lib qjson
+omedit: mkbuilddirs qwt omplot boehm-gc-lib qjson
 	$(MAKE) -C OMEdit/OMEditGUI -f Makefile.unix
 ifeq (@with_paradiseo@,)
 omoptim:
@@ -108,13 +111,13 @@ omoptim:
 omoptimbasis:
 	@echo "*** OpenModelica configured without support for OMOptim (--without-paradisEO)"
 else
-omoptim: mkbuilddirs omoptimbasis
+omoptim: mkbuilddirs qwt omoptimbasis
 	$(MAKE) -C OMOptim/build -f Makefile.unix
-omoptimbasis: mkbuilddirs
+omoptimbasis: mkbuilddirs qwt
 	$(MAKE) -C OMOptimBasis/build -f Makefile.unix
 endif
 
-qtclients: @OMNOTEBOOK@ omshell omedit omplot omoptim omoptimbasis
+qtclients: qwt @OMNOTEBOOK@ omshell omedit omplot omoptim omoptimbasis
 
 qtclean: qtclean-common
 	$(MAKE) -C OMShell/OMShellGUI -f Makefile.unix clean
