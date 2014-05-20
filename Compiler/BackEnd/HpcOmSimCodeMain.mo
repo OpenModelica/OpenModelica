@@ -399,9 +399,9 @@ algorithm
       equation
         numProcSys = System.numProcessors();
         numProc = Util.if_(intGt(numProcFlag,numProcSys),numProcSys,numProcFlag); // the system does not provide so many cores
-        Debug.bcall(intGt(numProcFlag,numProcSys),print,"Warning: Your system provides only "+&intString(numProcSys)+&" processors!\n");
+        Debug.bcall(intGt(numProcFlag,numProcSys) and Flags.isSet(Flags.HPCOM_DUMP),print,"Warning: Your system provides only "+&intString(numProcSys)+&" processors!\n");
       then
-        (numProc,true);
+        (numProcFlag,true);
   end match;
 end setNumProc;
 
