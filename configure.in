@@ -700,41 +700,6 @@ if test -n "$QMAKE"; then
 fi
 
 if test -n "$QMAKE"; then
-  AC_MSG_CHECKING([for qwt])
-  AC_ARG_WITH(qwt, [  --with-qwt                       Compile plotting libraries using qwt5. Default searches PREFIX/include/{qwt5,qwt,qwt-qt4}], [], [with_qwt=yes])
-
-  if test x"$with_qwt" = "xyes"; then
-    with_qwt_checked=""
-    with_qwt_suffix=""
-    for f in {/usr,/opt,$PREFIX}/include/{qwt5,qwt,qwt-qt4,qwt5-qt4}/; do
-      test -f "$f/qwt.h" && with_qwt="$f" || with_qwt_checked="$with_qwt_checked $f"
-    done
-    if grep -q 'QWT_VERSION *0x05@<:@0-9@:>@\{4\}$' "$with_qwt/qwt_global.h"; then
-      # Arch Linux AUR qwt5 package uses library name=qwt5 for both include and lib
-      for f in {/usr,/opt,/usr/local,$PREFIX}/lib/libqwt5.so; do
-        test -e "$f" && with_qwt_suffix="5"
-      done
-    # Look for QWT_VERSION 5 or 6 since we support both
-    elif grep -q 'QWT_VERSION *0x0@<:@5-6@:>@@<:@0-9@:>@\{4\}$' "$with_qwt/qwt_global.h"; then
-      true
-    else
-      with_qwt="bad"
-    fi
-    with_qwt_res=$with_qwt
-    echo $with_qwt | grep -q -- -qt4 && with_qwt_suffix="-qt4"
-    echo with_qwt_suffix=$with_qwt_suffix
-  fi
-
-  if test x"$with_qwt" = "xno"; then
-    QMAKE=""
-    AC_MSG_RESULT([disabled])
-  elif test x"$with_qwt" = "xyes"; then
-    AC_MSG_ERROR([not found (searched $with_qwt_checked)])
-  elif test x"$with_qwt" = "xbad"; then
-    AC_MSG_ERROR([$with_qwt_res/qwt_global.h is not a qwt5 header])
-  else
-    AC_MSG_RESULT($with_qwt)
-  fi
 
   AC_MSG_CHECKING([if the user wants OMNotebook])
   AC_ARG_ENABLE(omnotebook, [  --disable-omnotebook          OMNotebook is a notebook for Modelica. Enabled by default if CORBA is enabled. Does not work on OSX.],[test "xno" = x"$enableval" && OMNOTEBOOK=""],[OMNOTEBOOK="omnotebook"])
