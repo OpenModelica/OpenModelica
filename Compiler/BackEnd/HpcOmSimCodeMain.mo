@@ -193,7 +193,7 @@ algorithm
       Debug.execStat("hpcom createTaskGraph", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
       fileName = ("taskGraph"+&filenamePrefix+&".graphml");
       schedulerInfo = arrayCreate(arrayLength(taskGraph), (-1,-1,-1.0));
-      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph, taskGraphData, fileName, "", {}, {}, sccSimEqMapping ,schedulerInfo);
+      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph, taskGraphData,inBackendDAE, fileName, "", {}, {}, sccSimEqMapping ,schedulerInfo);
       Debug.execStat("hpcom dump TaskGraph", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
 
       HpcOmTaskGraph.TASKGRAPHMETA(varCompMapping=varCompMapping,eqCompMapping=eqCompMapping) = taskGraphData;
@@ -231,7 +231,7 @@ algorithm
       fileName = ("taskGraph"+&filenamePrefix+&"ODE.graphml");
       schedulerInfo = arrayCreate(arrayLength(taskGraphOde), (-1,-1,-1.0));
       Debug.execStat("hpcom assign levels / get crit. path", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
-      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOde, taskGraphDataOde, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo);
+      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOde, taskGraphDataOde,inBackendDAE, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo);
       Debug.execStat("hpcom dump ODE TaskGraph", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
 
       //Apply filters
@@ -255,7 +255,7 @@ algorithm
       Debug.execStat("hpcom create schedule", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
       fileName = ("taskGraph"+&filenamePrefix+&"ODE_schedule.graphml");
 
-      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph1, taskGraphData1, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo);
+      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph1, taskGraphData1, inBackendDAE, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo);
       //HpcOmScheduler.printSchedule(schedule);
 
       Debug.execStat("hpcom dump schedule TaskGraph", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
@@ -386,15 +386,15 @@ algorithm
         maxSpeedUp = realDiv(serCosts,cpCosts);
         numProcSched = realInt(realAdd(maxSpeedUp,1.0));
         numProcSys = System.numProcessors();
-        _ = intMin(numProcSched,numProcSys);
+        numProc = intMin(numProcSched,numProcSys);
         string1 = "Your system provides only "+&intString(numProcSys)+&" processors!\n";
         string2 = intString(numProcSched)+&" processors might be a reasonable number of processors.\n";
         string1 = Util.if_(intGt(numProcSched,numProcSys),string1,string2);
-        _ =  Util.if_(intGt(numProcSched,numProcSys),true,false);
         print("Please set the number of processors you want to use!\n");
         print(string1);
+        Flags.setConfigInt(Flags.NUM_PROC,numProc);
       then
-        fail();
+        (numProc,true);
     else
       equation
         numProcSys = System.numProcessors();

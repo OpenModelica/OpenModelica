@@ -113,6 +113,7 @@ encapsulated package HpcOmMemory
     Integer numScVars, numCL, threadAttIdx;
     array<list<Integer>> clTaskMapping;
     array<Integer> scVarTaskMapping, sccNodeMapping;
+    array<String> annotInfo;
     array<tuple<Integer,Integer>> scVarCLMapping, memoryPositionMapping;
     CacheMap cacheMap;
     Integer graphIdx;
@@ -150,7 +151,8 @@ encapsulated package HpcOmMemory
           graphInfo = GraphML.createGraphInfo();
           (graphInfo, (_,graphIdx)) = GraphML.addGraph("TasksGroupGraph", true, graphInfo);
           (graphInfo, (_,_),(_,graphIdx)) = GraphML.addGroupNode("TasksGroup", graphIdx, false, "TG", graphInfo);
-          graphInfo = HpcOmTaskGraph.convertToGraphMLSccLevelSubgraph(iTaskGraph, iTaskGraphMeta, iCriticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(iCriticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(iCriticalPathsWoC)), iSccSimEqMapping, iSchedulerInfo, graphIdx, graphInfo);
+          annotInfo = arrayCreate(arrayLength(iTaskGraph),"nothing");
+          graphInfo = HpcOmTaskGraph.convertToGraphMLSccLevelSubgraph(iTaskGraph, iTaskGraphMeta, iCriticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(iCriticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(iCriticalPathsWoC)), iSccSimEqMapping, iSchedulerInfo, annotInfo, graphIdx, graphInfo);
           HpcOmTaskGraph.TASKGRAPHMETA(eqCompMapping=eqCompMapping,varCompMapping=varCompMapping) = iTaskGraphMeta;
           SOME((_,threadAttIdx)) = GraphML.getAttributeByNameAndTarget("ThreadId", GraphML.TARGET_NODE(), graphInfo);
           (_,incidenceMatrix,_) = BackendDAEUtil.getIncidenceMatrix(List.first(iEqSystems), BackendDAE.ABSOLUTE(), NONE());

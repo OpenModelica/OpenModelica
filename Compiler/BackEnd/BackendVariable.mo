@@ -41,6 +41,7 @@ encapsulated package BackendVariable
 public import BackendDAE;
 public import DAE;
 public import Env;
+public import SCode;
 public import Values;
 
 protected import Absyn;
@@ -58,7 +59,6 @@ protected import Flags;
 protected import GlobalScript;
 protected import HashSet;
 protected import List;
-protected import SCode;
 protected import System;
 protected import Util;
 protected import Types;
@@ -1730,6 +1730,29 @@ algorithm
   end match;
 end hasVarEvaluateAnnotation;
 
+public function hasAnnotation"checks if the variable has an annotation"
+  input BackendDAE.Var inVar;
+  output Boolean hasAnnot;
+algorithm
+  hasAnnot := match(inVar)
+    local
+    case BackendDAE.VAR(comment=SOME(SCode.COMMENT(annotation_=SOME(_))))
+      then true;
+    else false;
+  end match;
+end hasAnnotation;
+
+public function getAnnotationComment"gets the annotation comment, if there is one"
+  input BackendDAE.Var inVar;
+  output Option<SCode.Comment> comment;
+algorithm
+  annot := match(inVar)
+    local
+    case BackendDAE.VAR(comment=comment)
+      then comment;
+    else fail();
+  end match;
+end getAnnotationComment;
 
 public function createpDerVar "author: wbraun
   Create variable with $pDER.v as cref for jacobian variables."

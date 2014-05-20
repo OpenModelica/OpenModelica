@@ -397,6 +397,12 @@ algorithm
 
     case(_, _, _, _, _, _, _, _, _, _, _, _) equation
       true = Flags.isSet(Flags.HPCOM);
+
+      // either generate code for profiling or for parallel simulation
+      Debug.bcall(not stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL)),print,"Deactivate profiling if you want to simulate in parallel.\n");
+      _ = Debug.bcallret2(not stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL)),Flags.set,Flags.HPCOM,false,true);
+      true = stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL));
+
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
       true = numProc == 0;
       print("hpcom computes the ideal number of processors. If you want to set the number manually, use the flag +n=_ \n");
@@ -405,6 +411,12 @@ algorithm
 
     case(_, _, _, _, _, _, _, _, _, _, _, _) equation
       true = Flags.isSet(Flags.HPCOM);
+
+      // either generate code for profiling or for parallel simulation
+      Debug.bcall(not stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL)),print,"Deactivate profiling if you want to simulate in parallel.\n");
+      _ = Debug.bcallret2(not stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL)),Flags.set,Flags.HPCOM,false,true);
+      true = stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL));
+
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
       true = (numProc > 0);
       backendDAE2 = Debug.fcallret3(Flags.PARTLINTORNSYSTEM, HpcOmEqSystems.traverseEqSystemsWithIndex, 1,1, inBackendDAE, inBackendDAE);

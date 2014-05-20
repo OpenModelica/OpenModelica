@@ -45,11 +45,14 @@ protected import BackendDAEUtil;
 protected import BackendDump;
 protected import BackendEquation;
 protected import BackendVariable;
+protected import ComponentReference;
+protected import DAEDump;
 protected import Debug;
 protected import Expression;
 protected import ExpressionSolve;
 protected import HpcOmBenchmark;
 protected import List;
+protected import SCode;
 protected import System;
 protected import Util;
 
@@ -1779,7 +1782,7 @@ end markRemovedNodes;
 protected function getCompInComps "finds the node in the current task graph which contains that component(index from the original task graph). nodeMark is needed to check for deleted components
 author: Waurich TUD 2013-07"
   input Integer compIn;
-  input Integer compIdx;
+  input Integer compIdx;  // start idx for iteration
   input array<list<Integer>> inComps;
   input array<Integer> nodeMark;
   output Integer compOut;
@@ -2172,6 +2175,7 @@ public function dumpAsGraphMLSccLevel "author: marcusw, waurich
   Write out the given graph as a graphml file."
   input TaskGraph iGraph;
   input TaskGraphMeta iGraphData;
+  input BackendDAE.BackendDAE backendDAE;
   input String fileName;
   input String criticalPathInfo; //Critical path as String
   input list<tuple<Integer,Integer>> iCriticalPath; //Critical path as list of edges
@@ -2181,7 +2185,7 @@ public function dumpAsGraphMLSccLevel "author: marcusw, waurich
 protected
   GraphML.GraphInfo graphInfo;
 algorithm
-  graphInfo := convertToGraphMLSccLevel(iGraph,iGraphData,criticalPathInfo,iCriticalPath,iCriticalPathWoC,sccSimEqMapping,schedulerInfo);
+  graphInfo := convertToGraphMLSccLevel(iGraph,iGraphData,backendDAE,criticalPathInfo,iCriticalPath,iCriticalPathWoC,sccSimEqMapping,schedulerInfo);
   GraphML.dumpGraph(graphInfo, fileName);
 end dumpAsGraphMLSccLevel;
 
@@ -2189,6 +2193,7 @@ public function convertToGraphMLSccLevel "author: marcusw, waurich
   Convert the given graph into a graphml-structure."
   input TaskGraph iGraph;
   input TaskGraphMeta iGraphData;
+  input BackendDAE.BackendDAE backendDAE;
   input String criticalPathInfo; //Critical path as String
   input list<tuple<Integer,Integer>> iCriticalPath; //Critical path as list of edges
   input list<tuple<Integer,Integer>> iCriticalPathWoC; //Critical path without communciation as list of edges
@@ -2197,11 +2202,14 @@ public function convertToGraphMLSccLevel "author: marcusw, waurich
   output GraphML.GraphInfo oGraphInfo;
 protected
   Integer graphIdx;
+  array<String> annotationInfo;
   GraphML.GraphInfo graphInfo;
 algorithm
   graphInfo := GraphML.createGraphInfo();
   (graphInfo, (_,graphIdx)) := GraphML.addGraph("TaskGraph", true, graphInfo);
-  oGraphInfo := convertToGraphMLSccLevelSubgraph(iGraph,iGraphData,criticalPathInfo,iCriticalPath,iCriticalPathWoC,sccSimEqMapping,schedulerInfo,graphIdx,graphInfo);
+  annotationInfo := arrayCreate(arrayLength(iGraph),"uncomment in HpcOmTaskGraph and +showAnnotations");
+  //annotationInfo := setAnnotationsForTasks(iGraphData,backendDAE,annotationInfo);
+  oGraphInfo := convertToGraphMLSccLevelSubgraph(iGraph,iGraphData,criticalPathInfo,iCriticalPath,iCriticalPathWoC,sccSimEqMapping,schedulerInfo,annotationInfo,graphIdx,graphInfo);
 end convertToGraphMLSccLevel;
 
 public function convertToGraphMLSccLevelSubgraph "author: marcusw, waurich
@@ -2213,6 +2221,7 @@ public function convertToGraphMLSccLevelSubgraph "author: marcusw, waurich
   input list<tuple<Integer,Integer>> iCriticalPathWoC; //Critical path without communciation as list of edges
   input array<list<Integer>> sccSimEqMapping; //maps each scc to simEqSystems
   input array<tuple<Integer,Integer,Real>> schedulerInfo; //maps each Task to <threadId, orderId, startCalcTime>
+  input array<String> annotationInfo;  //annotations for the variables in a task
   input Integer iGraphIdx;
   input GraphML.GraphInfo iGraphInfo;
   output GraphML.GraphInfo oGraphInfo;
@@ -2221,8 +2230,8 @@ protected
   Integer nameAttIdx, calcTimeAttIdx, opCountAttIdx, yCoordAttIdx, taskIdAttIdx, commCostAttIdx, commVarsAttIdx, critPathAttIdx, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx, annotAttIdx;
   list<Integer> nodeIdc;
 algorithm
-  oGraphInfo := match(iGraph, iGraphData, criticalPathInfo, iCriticalPath, iCriticalPathWoC, sccSimEqMapping, schedulerInfo, iGraphIdx, iGraphInfo)
-    case(_,_,_,_,_,_,_,_,_)
+  oGraphInfo := match(iGraph, iGraphData, criticalPathInfo, iCriticalPath, iCriticalPathWoC, sccSimEqMapping, schedulerInfo, annotationInfo, iGraphIdx, iGraphInfo)
+    case(_,_,_,_,_,_,_,_,_,_)
       equation
         (graphInfo,(_,nameAttIdx)) = GraphML.addAttribute("", "Name", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), iGraphInfo);
         (graphInfo,(_,opCountAttIdx)) = GraphML.addAttribute("-1", "Operations", GraphML.TYPE_INTEGER(), GraphML.TARGET_NODE(), graphInfo);
@@ -2238,7 +2247,7 @@ algorithm
         (graphInfo,(_,critPathAttIdx)) = GraphML.addAttribute("", "CriticalPath", GraphML.TYPE_STRING(), GraphML.TARGET_GRAPH(), graphInfo);
         graphInfo = GraphML.addGraphAttributeValue((critPathAttIdx, criticalPathInfo), iGraphIdx, graphInfo);
         nodeIdc = List.intRange(arrayLength(iGraph));
-        ((graphInfo,_)) = List.fold4(nodeIdc, addNodeToGraphML, (iGraph, iGraphData), (nameAttIdx,opCountAttIdx,calcTimeAttIdx,taskIdAttIdx,yCoordAttIdx,commCostAttIdx, commVarsAttIdx, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx,annotAttIdx), sccSimEqMapping, (iCriticalPath,iCriticalPathWoC,schedulerInfo), (graphInfo,iGraphIdx));
+        ((graphInfo,_)) = List.fold4(nodeIdc, addNodeToGraphML, (iGraph, iGraphData), (nameAttIdx,opCountAttIdx,calcTimeAttIdx,taskIdAttIdx,yCoordAttIdx,commCostAttIdx, commVarsAttIdx, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx,annotAttIdx), sccSimEqMapping, (iCriticalPath,iCriticalPathWoC,schedulerInfo, annotationInfo), (graphInfo,iGraphIdx));
       then graphInfo;
   end match;
 end convertToGraphMLSccLevelSubgraph;
@@ -2251,7 +2260,7 @@ protected function addNodeToGraphML "author: marcusw, waurich
   input tuple<Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer> attIdc;
   //Attribute index for <nameAttIdx,opCountAttIdx, calcTimeAttIdx, taskIdAttIdx, yCoordAttIdx, commCostAttIdx, commVarsAttIdx, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx, annotationAttIdx>
   input array<list<Integer>> sccSimEqMapping;
-  input tuple<list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,array<tuple<Integer,Integer,Real>>> iSchedulerInfoCritPath; //<criticalPath,criticalPathWoC,schedulerInfo>
+  input tuple<list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,array<tuple<Integer,Integer,Real>>,array<String>> iSchedulerInfoCritPath; //<criticalPath,criticalPathWoC,schedulerInfo,annotationInfo>
   input tuple<GraphML.GraphInfo,Integer> iGraph;
   output tuple<GraphML.GraphInfo,Integer> oGraph; //<GraphInfo, GraphIdx>
 algorithm
@@ -2274,6 +2283,7 @@ algorithm
       array<list<Integer>> inComps;
       array<String> nodeNames;
       array<String> nodeDescs;
+      array<String> annotationInfo;
       array<list<tuple<Integer,Integer,Integer>>> commCosts;
       String calcTimeString, opCountString, yCoordString, taskFinishTimeString, taskStartTimeString;
       String compText;
@@ -2282,11 +2292,12 @@ algorithm
       String componentsString;
       String simCodeEqString;
       String threadIdxString, taskNumberString;
+      String annotationString;
       Integer schedulerThreadId, schedulerTaskNumber;
       list<GraphML.NodeLabel> nodeLabels;
       array<tuple<Integer,Integer,Real>> schedulerInfo;
       list<tuple<Integer,Integer>> criticalPath, criticalPathWoC;
-    case(_,(tGraphIn,tGraphDataIn),_,_,(criticalPath,criticalPathWoC,schedulerInfo),(tmpGraph,graphIdx))
+    case(_,(tGraphIn,tGraphDataIn),_,_,(criticalPath,criticalPathWoC,schedulerInfo,annotationInfo),(tmpGraph,graphIdx))
       equation
         false = nodeIdx == 0 or nodeIdx == -1;
         (nameAttIdx, opCountAttIdx, calcTimeAttIdx, taskIdAttIdx, yCoordAttIdx, commCostAttIdx, commVarsAttIdx, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx,annotationAttIdx) = attIdc;
@@ -2297,6 +2308,7 @@ algorithm
         //print("node in the taskGraph "+&intString(nodeIdx)+&" primalComp "+&intString(primalComp)+&"\n");
         compText = arrayGet(nodeNames,primalComp);
         nodeDesc = arrayGet(nodeDescs,primalComp);
+        annotationString = arrayGet(annotationInfo,nodeIdx);
         ((_,calcTime)) = arrayGet(exeCosts,primalComp);
         ((opCount,calcTime)) = arrayGet(exeCosts,primalComp);
         calcTimeString = realString(calcTime);
@@ -2325,13 +2337,13 @@ algorithm
                                               nodeLabels,
                                               GraphML.RECTANGLE(),
                                               SOME(nodeDesc),
-                                              {((nameAttIdx,compText)),((calcTimeAttIdx,calcTimeString)),((opCountAttIdx, opCountString)),((taskIdAttIdx,componentsString)),((yCoordAttIdx,yCoordString)),((simCodeEqAttIdx,simCodeEqString)),((threadIdAttIdx,threadIdxString)),((taskNumberAttIdx,taskNumberString)),((annotationAttIdx,"no annotation"))},
+                                              {((nameAttIdx,compText)),((calcTimeAttIdx,calcTimeString)),((opCountAttIdx, opCountString)),((taskIdAttIdx,componentsString)),((yCoordAttIdx,yCoordString)),((simCodeEqAttIdx,simCodeEqString)),((threadIdAttIdx,threadIdxString)),((taskNumberAttIdx,taskNumberString)),((annotationAttIdx,annotationString))},
                                               graphIdx,
                                               tmpGraph);
         tmpGraph = List.fold4(childNodes, addDepToGraph, nodeIdx, tGraphDataIn, (commCostAttIdx, commVarsAttIdx), (criticalPath,criticalPathWoC), tmpGraph);
       then
         ((tmpGraph,graphIdx));
-    case(_,(tGraphIn,tGraphDataIn),_,_,(criticalPath,criticalPathWoC,schedulerInfo),(tmpGraph,graphIdx))
+    case(_,(tGraphIn,tGraphDataIn),_,_,(criticalPath,criticalPathWoC,schedulerInfo,annotationInfo),(tmpGraph,graphIdx))
       equation
         // for a node that consists of contracted nodes
         false = nodeIdx == 0 or nodeIdx == -1;
@@ -2343,6 +2355,7 @@ algorithm
         //print("node in the taskGraph (case 2) "+&intString(nodeIdx)+&" primalComp "+&intString(primalComp)+&"\n");
         compText = arrayGet(nodeNames,primalComp);
         nodeDesc = arrayGet(nodeDescs,primalComp);
+        annotationString = arrayGet(annotationInfo,nodeIdx);
         ((opCount,calcTime)) = List.fold1(components, addNodeToGraphML1, exeCosts, (0,0.0));
         calcTimeString = realString(calcTime);
         opCountString = intString(opCount);
@@ -2367,7 +2380,7 @@ algorithm
                                       nodeLabels,
                                       GraphML.RECTANGLE(),
                                       SOME(nodeDesc),
-                                      {((nameAttIdx,compText)),((calcTimeAttIdx,calcTimeString)),((opCountAttIdx, opCountString)),((taskIdAttIdx,componentsString)), ((simCodeEqAttIdx,simCodeEqString)),((threadIdAttIdx,threadIdxString)),((taskNumberAttIdx,taskNumberString)),((annotationAttIdx,"no annotation"))},
+                                      {((nameAttIdx,compText)),((calcTimeAttIdx,calcTimeString)),((opCountAttIdx, opCountString)),((taskIdAttIdx,componentsString)), ((simCodeEqAttIdx,simCodeEqString)),((threadIdAttIdx,threadIdxString)),((taskNumberAttIdx,taskNumberString)),((annotationAttIdx,annotationString))},
                                       graphIdx,
                                       tmpGraph);
         tmpGraph = List.fold4(childNodes, addDepToGraph, nodeIdx, tGraphDataIn, (commCostAttIdx, commVarsAttIdx), (criticalPath,criticalPathWoC), tmpGraph);
@@ -2661,7 +2674,7 @@ algorithm
     equation
       true = arrayLength(varCompMapping)>= varIdx;
       ((comp,eqSysIdx,varOffset)) = arrayGet(varCompMapping,varIdx);
-      print("variable "+&intString(varIdx-varOffset)+&" (offset: " +& intString(varOffset) +& ") of equation system " +& intString(eqSysIdx) +& " is solved in component: "+&intString(comp)+&"\n");
+      print("variable "+&intString(varIdx-varOffset)+&" (offset: " +& intString(varOffset) +& ") of equation system " +& intString(eqSysIdx) +& " is solved in the node: "+&intString(comp)+&"\n");
       printVarCompMapping(varCompMapping,varIdx+1);
       then
         ();
@@ -5499,5 +5512,78 @@ algorithm
   hewgts := listArray(l_hewgts);
 end preparehMetis;
 
+//-----------------------------------------------------
+// get annotations from backendDAE and display in graphML
+//-----------------------------------------------------
+protected function setAnnotationsForTasks"sets annotations of variables and equations for every task in the array (index: task idx)
+author:Waurich TUD 2014-05 "
+  input TaskGraphMeta taskGraphInfo;
+  input BackendDAE.BackendDAE backendDAE;
+  input array<String> annotInfoIn;
+  output array<String> annotInfoOut;
+protected
+  BackendDAE.EqSystems systs;
+algorithm
+  BackendDAE.DAE(eqs=systs) := backendDAE;
+  ((_,annotInfoOut)) := List.fold1(systs,setAnnotationsForTasks1,taskGraphInfo,(0,annotInfoIn));
+end setAnnotationsForTasks;
+
+protected function setAnnotationsForTasks1"sets annotations for a task of vars and equations of an equationsystem
+author: Waurich TUD 2014-05"
+  input BackendDAE.EqSystem syst;
+  input TaskGraphMeta taskGraphInfo;
+  input tuple<Integer,array<String>> infoIn;
+  output tuple<Integer,array<String>> infoOut;
+protected
+  Integer idx;
+  array<String> annots;
+  BackendDAE.Variables vars;
+  BackendDAE.EquationArray eqs;
+algorithm
+  (idx,annots) := infoIn;
+  BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs) := syst;
+  //set annotations of variables
+  annots := List.fold3(List.intRange(BackendVariable.numVariables(vars)),setAnnotationsForVar,vars,taskGraphInfo,idx,annots);
+  infoOut := (BackendVariable.numVariables(vars)+idx,annots);
+end setAnnotationsForTasks1;
+
+protected function setAnnotationsForVar"sets the annotations of a variable in the annotArray"
+  input Integer backendVarIdx;
+  input BackendDAE.Variables vars;
+  input TaskGraphMeta taskGraphInfo;
+  input Integer eqSysOffset;
+  input array<String> annotInfoIn;
+  output array<String> annotInfoOut;
+algorithm
+  annotInfoOut := matchcontinue(backendVarIdx,vars,taskGraphInfo,eqSysOffset,annotInfoIn)
+    local
+      Integer compIdx, taskIdx;
+      String annotString;
+      BackendDAE.Var var;
+      DAE.ComponentRef cr;
+      Option<SCode.Comment> annot;
+      array<list<Integer>> inComps;
+      array<tuple<Integer,Integer,Integer>> varCompMapping;
+      array<tuple<Integer,Integer,Integer>> eqCompMapping;
+      array<Integer> nodeMark;
+    case(_,_,TASKGRAPHMETA(inComps = inComps,varCompMapping=varCompMapping, eqCompMapping=eqCompMapping, nodeMark=nodeMark),_,_)
+      equation
+        var = BackendVariable.getVarAt(vars,backendVarIdx);
+        BackendDump.printVar(var);
+        true = BackendVariable.hasAnnotation(var);
+        ((compIdx,_,_)) = arrayGet(varCompMapping,backendVarIdx+eqSysOffset);
+        taskIdx = getCompInComps(compIdx,1,inComps,nodeMark);
+        annot = BackendVariable.getAnnotationComment(var);
+        annotString = arrayGet(annotInfoIn,taskIdx);
+        cr = BackendVariable.varCref(var);
+        annotString = annotString +& "("+&ComponentReference.printComponentRefStr(cr)+&": "+&DAEDump.dumpCommentAnnotationStr(annot)+&") ";
+        _ = arrayUpdate(annotInfoIn,taskIdx,annotString);
+      then
+        annotInfoIn;
+    else
+      then
+        annotInfoIn;
+  end matchcontinue;
+end setAnnotationsForVar;
 
 end HpcOmTaskGraph;
