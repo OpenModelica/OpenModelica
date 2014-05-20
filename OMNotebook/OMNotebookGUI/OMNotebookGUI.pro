@@ -159,10 +159,10 @@ win32 {
   CORBAINC = $$(OMDEV)/lib/omniORB-4.1.6-mingw/include
   CORBALIBS = -L$$(OMDEV)/lib/omniORB-4.1.6-mingw/lib/x86_win32 -lomniORB416_rt -lomnithread34_rt
   USE_CORBA = USE_OMNIORB
-  PLOTLIBS = -L$$(OMDEV)/lib/qwt-6.1.0-mingw/lib -lqwt \
-             -L../../OMPlot/bin -lOMPlot \
+  PLOTLIBS = -L../../OMPlot/bin -lOMPlot \
+             -L../../3rdParty/qwt/build/lib -lqwt \
              -L../../3rdParty/gc-7.2/.libs -lgc
-  PLOTINC = $$(OMDEV)/lib/qwt-6.1.0-mingw/include \
+  PLOTINC = ../../3rdParty/qwt/build/include \
             ../../OMPlot/OMPlotGUI
 } else {
   include(OMNotebook.config)
