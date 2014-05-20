@@ -3313,8 +3313,8 @@ template giveAlgloopNominalvars2(ComponentRef inCref,Text &preExp,Text &varDecls
  cref2simvar(inCref, simCode) |> var  =>
  match var
  case SIMVAR(nominalValue=SOME(exp)) then
-  
-  
+
+
    let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   <<
   <%expPart%>
