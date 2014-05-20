@@ -4032,6 +4032,13 @@ algorithm
         true = Expression.expEqual(e1,e2);
       then Expression.makeBuiltinCall("sqrt",{e1},DAE.T_REAL_DEFAULT);
 
+    // e^a/e = e^(a-1)
+    case (_,DAE.DIV(ty = _),DAE.BINARY(e1,op1 as DAE.POW(ty), e2), e3,_,_)
+      equation
+        true = Expression.expEqual(e1,e3);
+        e4 = DAE.BINARY(e2,DAE.SUB(ty), DAE.RCONST(1.0));
+      then DAE.BINARY(e1,op1, e4);
+
     // 1 ^ e => 1
     case (_,DAE.POW(ty = _),e1,_,true,_)
       equation
