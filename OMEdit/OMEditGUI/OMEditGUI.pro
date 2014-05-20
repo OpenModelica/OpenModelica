@@ -142,7 +142,7 @@ win32 {
         -lomnithread34_rtd \
         -L../../OMPlot/bin \
         -lOMPlot \
-        -L$$(OMDEV)/lib/qwt-6.1.0-mingw/lib \
+        -L../../3rdParty/qwt/build/lib \
         -lqwtd \
         -L../../3rdParty/gc-7.2/.libs -lgc \
         -L../../build/lib/omc
@@ -157,7 +157,7 @@ win32 {
         -lomnithread34_rt \
         -L../../OMPlot/bin \
         -lOMPlot \
-        -L$$(OMDEV)/lib/qwt-6.1.0-mingw/lib \
+        -L../../3rdParty/qwt/build/lib \
         -lqwt \
         -L../../3rdParty/gc-7.2/.libs -lgc \
         -L../../build/lib/omc \
@@ -167,7 +167,7 @@ win32 {
         -lbfd -liberty -limagehlp
 }
 INCLUDEPATH += $$(OMDEV)/lib/omniORB-4.1.6-mingw/include \
-               $$(OMDEV)/lib/qwt-6.1.0-mingw/include \
+               ../../3rdParty/qwt/build/include \
                ../../OMPlot/OMPlotGUI \
                ../../
 } else { # Unix libraries and includes
