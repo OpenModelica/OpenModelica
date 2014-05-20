@@ -1746,10 +1746,11 @@ public function getAnnotationComment"gets the annotation comment, if there is on
   input BackendDAE.Var inVar;
   output Option<SCode.Comment> comment;
 algorithm
-  annot := match(inVar)
+  comment := match(inVar)
     local
-    case BackendDAE.VAR(comment=comment)
-      then comment;
+      Option<SCode.Comment> com;
+    case BackendDAE.VAR(comment=com)
+      then com;
     else fail();
   end match;
 end getAnnotationComment;
