@@ -97,17 +97,18 @@ author:Waurich TUD 2014-04"
 algorithm
   outDAE := matchcontinue(inDAE)
     local
+      Boolean changed;
       BackendDAE.EqSystems eqSysts;
       BackendDAE.Shared shared;
     case(_)
       equation
         false = Flags.isSet(Flags.EVALUATE_CONST_FUNCTIONS);
         BackendDAE.DAE(eqs = eqSysts,shared = shared) = inDAE;
-        (eqSysts,(shared,_)) = List.mapFold(eqSysts,evalFunctions_main,(shared,1));
+        (eqSysts,(shared,_,changed)) = List.mapFold(eqSysts,evalFunctions_main,(shared,1,false));
         //shared = evaluateShared(shared);
-        outDAE = BackendDAE.DAE(eqSysts,shared);
-        outDAE = RemoveSimpleEquations.fastAcausal(outDAE);
-        outDAE = updateVarKinds(outDAE);
+        outDAE = Util.if_(changed,BackendDAE.DAE(eqSysts,shared),inDAE);
+        outDAE = Debug.bcallret1(changed,RemoveSimpleEquations.fastAcausal,outDAE,inDAE);
+        outDAE = Debug.bcallret1(changed,updateVarKinds,outDAE,inDAE);
       then
         outDAE;
     else
@@ -147,7 +148,7 @@ algorithm
         bindExp = BackendVariable.varBindExp(varIn);
         true = Expression.isCall(bindExp);
         ExpressionDump.dumpExp(bindExp);
-        ((bindExp,_,_,_,_)) = evaluateConstantFunction(bindExp,bindExp,funcTree,1);
+        ((bindExp,_,_,_,_,_)) = evaluateConstantFunction(bindExp,bindExp,funcTree,1);
         ExpressionDump.dumpExp(bindExp);
       then
         varIn;
@@ -159,10 +160,11 @@ end evaluateParameter;
 
 protected function evalFunctions_main"traverses the eqSystems for function calls and tries to evaluate them"
   input BackendDAE.EqSystem eqSysIn;
-  input tuple<BackendDAE.Shared,Integer> tplIn;
+  input tuple<BackendDAE.Shared,Integer,Boolean> tplIn;
   output BackendDAE.EqSystem eqSysOut;
-  output tuple<BackendDAE.Shared,Integer> tplOut;
+  output tuple<BackendDAE.Shared,Integer,Boolean> tplOut;
 protected
+  Boolean changed;
   Integer sysIdx;
   Option<BackendDAE.IncidenceMatrix> m;
   Option<BackendDAE.IncidenceMatrixT> mT;
@@ -175,30 +177,30 @@ protected
   list<BackendDAE.Equation> eqLst, addEqs;
   BackendDAE.StateSets stateSets;
 algorithm
-  (sharedIn,sysIdx) := tplIn;
+  (sharedIn,sysIdx,changed) := tplIn;
   BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,m=m,mT=mT,matching=matching,stateSets=stateSets) := eqSysIn;
   eqLst := BackendEquation.equationList(eqs);
   varLst := BackendVariable.varList(vars);
 
   //traverse the eqSystem for function calls
-  (eqLst,(shared,addEqs,_)) := List.mapFold(eqLst,evalFunctions_findFuncs,(sharedIn,{},1));
+  (eqLst,(shared,addEqs,_,changed)) := List.mapFold(eqLst,evalFunctions_findFuncs,(sharedIn,{},1,changed));
   eqLst := listAppend(eqLst,addEqs);
   eqs := BackendEquation.listEquation(eqLst);
   eqSysOut := BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching,stateSets);
 
-  tplOut := (shared,sysIdx+1);
+  tplOut := (shared,sysIdx+1,changed);
 end evalFunctions_main;
 
 protected function evalFunctions_findFuncs"traverses the lhs and rhs exps of an equation and tries to evaluate function calls "
   input BackendDAE.Equation eqIn;
-  input tuple<BackendDAE.Shared,list<BackendDAE.Equation>,Integer> tplIn;
+  input tuple<BackendDAE.Shared,list<BackendDAE.Equation>,Integer,Boolean> tplIn;
   output BackendDAE.Equation eqOut;
-  output tuple<BackendDAE.Shared,list<BackendDAE.Equation>,Integer> tplOut;
+  output tuple<BackendDAE.Shared,list<BackendDAE.Equation>,Integer,Boolean> tplOut;
 algorithm
   (eqOut,tplOut) := matchcontinue(eqIn,tplIn)
     local
       Integer sizeL,sizeR,size,idx;
-      Boolean b1,b2,diff;
+      Boolean b1,b2,diff,changed, changed1;
       BackendDAE.Equation eq;
       BackendDAE.EquationKind kind;
       BackendDAE.Shared shared;
@@ -212,15 +214,17 @@ algorithm
         b1 = Expression.containFunctioncall(exp1);
         b2 = Expression.containFunctioncall(exp2);
         true = b1 or b2;
-        (shared,addEqs,idx) = tplIn;
+        (shared,addEqs,idx,changed) = tplIn;
         funcs = BackendDAEUtil.getFunctions(shared);
-        ((rhsExp,lhsExp,addEqs1,funcs,idx)) = Debug.bcallret4(b1,evaluateConstantFunction,exp1,exp2,funcs,idx,(exp2,exp1,{},funcs,idx));
-        ((rhsExp,lhsExp,addEqs2,funcs,idx)) = Debug.bcallret4(b2,evaluateConstantFunction,exp2,exp1,funcs,idx,(rhsExp,lhsExp,{},funcs,idx));
+        ((rhsExp,lhsExp,addEqs1,funcs,idx,changed1)) = Debug.bcallret4(b1,evaluateConstantFunction,exp1,exp2,funcs,idx,(exp2,exp1,{},funcs,idx,changed));
+        changed = changed1 or changed;
+        ((rhsExp,lhsExp,addEqs2,funcs,idx,changed1)) = Debug.bcallret4(b2,evaluateConstantFunction,exp2,exp1,funcs,idx,(rhsExp,lhsExp,{},funcs,idx,changed));
+        changed = changed1 or changed;
         addEqs = listAppend(addEqs1,addEqs);
         addEqs = listAppend(addEqs2,addEqs);
         eq = BackendDAE.EQUATION(lhsExp,rhsExp,source,diff,kind);
       then
-        (eq,(shared,addEqs,idx+1));
+        (eq,(shared,addEqs,idx+1,changed));
     case(BackendDAE.ARRAY_EQUATION(dimSize =_, left=_, right=_,  differentiated=_),_)
       equation
         Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"this is an array equation. update evalFunctions_findFuncs\n");
@@ -231,10 +235,12 @@ algorithm
         b1 = Expression.containFunctioncall(exp1);
         b2 = Expression.containFunctioncall(exp2);
         true = b1 or b2;
-        (shared,addEqs,idx) = tplIn;
+        (shared,addEqs,idx,changed) = tplIn;
         funcs = BackendDAEUtil.getFunctions(shared);
-        ((rhsExp,lhsExp,addEqs1,funcs,idx)) = Debug.bcallret4(b1,evaluateConstantFunction,exp1,exp2,funcs,idx,(exp2,exp1,{},funcs,idx));
-        ((rhsExp,lhsExp,addEqs2,funcs,idx)) = Debug.bcallret4(b2,evaluateConstantFunction,exp2,exp1,funcs,idx,(rhsExp,lhsExp,{},funcs,idx));
+        ((rhsExp,lhsExp,addEqs1,funcs,idx,changed1)) = Debug.bcallret4(b1,evaluateConstantFunction,exp1,exp2,funcs,idx,(exp2,exp1,{},funcs,idx,changed));
+        changed = changed or changed1;
+        ((rhsExp,lhsExp,addEqs2,funcs,idx,changed1)) = Debug.bcallret4(b2,evaluateConstantFunction,exp2,exp1,funcs,idx,(rhsExp,lhsExp,{},funcs,idx,changed));
+        changed = changed or changed1;
         addEqs = listAppend(addEqs1,addEqs);
         addEqs = listAppend(addEqs2,addEqs);
         shared = BackendDAEUtil.addFunctionTree(funcs,shared);
@@ -245,7 +251,7 @@ algorithm
         //since tuple=tuple is not supported, these equations are converted into a list of simple equations
         (eq,addEqs) = convertTupleEquations(eq,addEqs);
       then
-        (eq,(shared,addEqs,idx+1));
+        (eq,(shared,addEqs,idx+1,changed));
     else
       equation
       then
@@ -261,11 +267,11 @@ author: Waurich TUD 2014-04"
   input DAE.Exp lhsExpIn;
   input DAE.FunctionTree funcsIn;
   input Integer eqIdx;
-  output tuple<DAE.Exp, DAE.Exp, list<BackendDAE.Equation>, DAE.FunctionTree,Integer> outTpl;  //rhs,lhs,addEqs,funcTre,idx
+  output tuple<DAE.Exp, DAE.Exp, list<BackendDAE.Equation>, DAE.FunctionTree,Integer,Boolean> outTpl;  //rhs,lhs,addEqs,funcTre,idx
 algorithm
   outTpl := matchcontinue(rhsExpIn,lhsExpIn,funcsIn,eqIdx)
     local
-      Boolean funcIsConst, funcIsPartConst, isConstRec, hasAssert, hasReturn, hasTerminate, hasReinit, abort;
+      Boolean funcIsConst, funcIsPartConst, isConstRec, hasAssert, hasReturn, hasTerminate, hasReinit, abort, changed;
       Integer idx;
       list<Boolean> bList;
       list<Integer> constIdcs;
@@ -373,7 +379,7 @@ algorithm
         funcIsPartConst = Util.if_(abort,false,funcIsPartConst);  // quit if there is a return or terminate
 
         true =  funcIsPartConst or funcIsConst;
-
+        changed = funcIsPartConst or funcIsConst;
         // build the new lhs, the new statements for the function, the constant parts...
         (varOutputs,outputExp,varScalarCrefsInFunc) = buildVariableFunctionParts(scalarOutputs,constComplexCrefs,varComplexCrefs,constScalarCrefs,varScalarCrefs,allOutputs,lhsExpIn);
         (constScalarCrefsOut,constComplexCrefs) = buildConstFunctionCrefs(constScalarCrefs,constComplexCrefs,allOutputCrefs,lhsExpIn);
@@ -413,11 +419,11 @@ algorithm
           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"Finish evaluation in:\n"+&ExpressionDump.printExpStr(outputExp)+&" := "+&ExpressionDump.printExpStr(exp)+&"\n");
           Debug.bcall2(Flags.isSet(Flags.EVAL_FUNC_DUMP) and List.isNotEmpty(constEqs),BackendDump.dumpEquationList,constEqs,"including the additional equations:\n");
       then
-        ((exp,outputExp,constEqs,funcs,idx));
+        ((exp,outputExp,constEqs,funcs,idx,changed));
     else
       equation
       then
-        ((rhsExpIn,lhsExpIn,{},funcsIn,eqIdx));
+        ((rhsExpIn,lhsExpIn,{},funcsIn,eqIdx,false));
   end matchcontinue;
 end evaluateConstantFunction;
 
@@ -1531,7 +1537,7 @@ algorithm
         //print(ExpressionDump.printExpStr(exp1)+&"\n");
 
         exp2 = DAE.TUPLE(expLst);
-        ((exp1,exp2,addEqs,funcTree2,idx)) = evaluateConstantFunction(exp1,exp2,funcTree,idx);
+        ((exp1,exp2,addEqs,funcTree2,idx,_)) = evaluateConstantFunction(exp1,exp2,funcTree,idx);
         //print("\nthe LHS after\n");
         //print(ExpressionDump.printExpStr(exp2));
         //ExpressionDump.dumpExp(exp2);
@@ -2005,7 +2011,7 @@ algorithm
   case((rhs,(lhs,funcs,idx,stmtsIn)))
     equation
       DAE.CALL(path=_,expLst=_,attr=_) = rhs;
-      ((rhs,lhs,addEqs,funcs,idx)) = evaluateConstantFunction(rhs,lhs,funcs,idx);
+      ((rhs,lhs,addEqs,funcs,idx,_)) = evaluateConstantFunction(rhs,lhs,funcs,idx);
 
       stmts = List.map(addEqs,equationToStmt);
 
