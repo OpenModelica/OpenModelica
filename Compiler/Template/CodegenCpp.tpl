@@ -2915,8 +2915,8 @@ case modelInfo as MODELINFO(vars=SIMVARS(__))  then
    let init3  = initValst(varDecls3,vars.algVars, simCode,contextOther)
    let init4  = initValst(varDecls4,vars.intAlgVars, simCode,contextOther)
    let init5  =initValst(varDecls5,vars.boolAlgVars, simCode,contextOther)
-   let init6  =initValst(varDecls6,vars.aliasVars, simCode,contextOther)
-   let init7  =initValst(varDecls7,vars.intAliasVars, simCode,contextOther)
+   let init6  =initAliasValst(varDecls6,vars.aliasVars, simCode,contextOther)
+   let init7  =initAliasValst(varDecls7,vars.intAliasVars, simCode,contextOther)
    let init8  =initValst(varDecls8,vars.boolAliasVars, simCode,contextOther)
    let init9  =initValst(varDecls9,vars.paramVars, simCode,contextOther)
    <<
@@ -3287,33 +3287,34 @@ template giveAlgloopNominalvars(SimEqSystem eq,SimCode simCode,Context context)
 match eq
 case SES_NONLINEAR(__) then
   let size = listLength(crefs)
+  let &preExp = buffer "" //dummy ... the value is always a constant
+  let &varDecls = buffer "" /*BUFD*/
+  let nominalVars = (crefs |> name hasindex i0 =>
+     let namestr = giveAlgloopNominalvars2(name,preExp,varDecls,simCode,context)
+            'vars[<%i0%>] = <%namestr%>;'
+     ;separator="\n")
   <<
-
-   <%crefs |> name hasindex i0 =>
-     let namestr = giveAlgloopNominalvars2(name,simCode,context)
-     <<
-       vars[<%i0%>] = <%namestr%>;
-     >>
-     ;separator="\n"
-   %>
+   <%varDecls%>
+   <%preExp%>
+   <%nominalVars%>
   >>
  case SES_LINEAR(__) then
-   let &varDeclsCref = buffer "" /*BUFD*/
+   let &varDecls = buffer "" /*BUFD*/
    <<
-      <%vars |> SIMVAR(__) hasindex i0 => 'vars[<%i0%>] =<%cref1(name,simCode,context,varDeclsCref)%>;' ;separator="\n"%>
+      <%vars |> SIMVAR(__) hasindex i0 => 'vars[<%i0%>] =<%cref1(name,simCode,context,varDecls)%>;' ;separator="\n"%>
    >>
 
 end giveAlgloopNominalvars;
 
 
-template giveAlgloopNominalvars2(ComponentRef inCref,SimCode simCode,Context context)
+template giveAlgloopNominalvars2(ComponentRef inCref,Text &preExp,Text &varDecls,SimCode simCode,Context context)
  "Generates a non linear equation system."
 ::=
  cref2simvar(inCref, simCode) |> var  =>
  match var
  case SIMVAR(nominalValue=SOME(exp)) then
-   let &preExp = buffer "" //dummy ... the value is always a constant
-   let &varDecls = buffer ""
+  
+  
    let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   <<
   <%expPart%>
@@ -5181,6 +5182,18 @@ template getAliasVar(AliasVariable aliasvar, SimCode simCode,Context context)
     else 'noAlias'
 end getAliasVar;
 
+
+template getAliasVarName(AliasVariable aliasvar, SimCode simCode,Context context)
+ "Returns the alias Attribute of ScalarVariable."
+::=
+  let &varDeclsCref = buffer "" /*BUFD*/
+  match aliasvar
+    case NOALIAS(__) then 'noAlias'
+    case ALIAS(__) then '<%cref1(varName,simCode,context,varDeclsCref)%>'
+    case NEGATEDALIAS(__) then '<%cref1(varName,simCode,context,varDeclsCref)%>'
+    else 'noAlias'
+end getAliasVarName;
+
 template writeoutput2(ModelInfo modelInfo,SimCode simCode)
 
 ::=
@@ -5398,10 +5411,43 @@ template initValst(Text &varDecls /*BUFP*/,list<SimVar> varsLst, SimCode simCode
         end match
       else
         '<%preExp%>
-        <%cref1(sv.name,simCode,context,varDeclsCref)%>=<%startValue(sv.type_)%>;
+        <%cref1(sv.name,simCode,context,varDeclsCref)%>=<%startValue(sv.type_)%>;////<%crefStr(sv.name)%>
        _start_values["<%cref(sv.name)%>"]=<%startValue(sv.type_)%>;'
   ;separator="\n"
 end initValst;
+
+
+
+template initAliasValst(Text &varDecls /*BUFP*/,list<SimVar> varsLst, SimCode simCode, Context context) ::=
+  varsLst |> sv as SIMVAR(__) =>
+      let &preExp = buffer "" /*BUFD*/
+      let &varDeclsCref = buffer "" /*BUFD*/
+    match initialValue
+      case SOME(v) then
+      match daeExp(v, contextOther, &preExp, &varDecls,simCode)
+      case vStr as "0"
+      case vStr as "0.0"
+      case vStr as "(0)" then
+       '<%preExp%>
+        <%getAliasVarName(sv.aliasvar, simCode,context)%>=<%vStr%>;//<%cref(sv.name)%>
+       _start_values["<%getAliasVarName(sv.aliasvar, simCode,context)%>"]=<%vStr%>;'
+      case vStr as "" then
+       '<%preExp%>
+       <%getAliasVarName(sv.aliasvar, simCode,context)%>=0;//<%cref(sv.name)%>
+        _start_values["<%getAliasVarName(sv.aliasvar, simCode,context)%>"]=<%vStr%>;'
+      case vStr then
+       '<%preExp%>
+       <%getAliasVarName(sv.aliasvar, simCode,context)%>=<%vStr%>;//<%cref(sv.name)%>
+       _start_values["<%getAliasVarName(sv.aliasvar, simCode,context)%>"]=<%vStr%>;'
+        end match
+      else
+        '<%preExp%>
+        <%getAliasVarName(sv.aliasvar, simCode,context)%>=<%startValue(sv.type_)%>;////<%crefStr(sv.name)%>
+       _start_values["<%getAliasVarName(sv.aliasvar, simCode,context)%>"]=<%startValue(sv.type_)%>;'
+  ;separator="\n"
+end initAliasValst;
+
+
 
 //template initValst1(list<SimVar> varsLst, SimCode simCode) ::=
   //varsLst |> sv as SIMVAR(__) =>
@@ -7950,9 +7996,9 @@ template representationCref(ComponentRef inCref, SimCode simCode, Context contex
   cref2simvar(inCref, simCode) |> var as SIMVAR(__) =>
   match varKind
     case STATE(__)        then
-        << <%representationCref1(inCref,var,simCode,context)%> >>
+        <<<%representationCref1(inCref,var,simCode,context)%>>>
     case STATE_DER(__)   then
-        << <%representationCref2(inCref,var,simCode,context)%> >>
+        <<<%representationCref2(inCref,var,simCode,context)%>>>
     case VARIABLE(__) then
      match var
         case SIMVAR(index=-2) then
@@ -7970,7 +8016,7 @@ template representationCref(ComponentRef inCref, SimCode simCode, Context contex
     case ALGLOOP_CONTEXT(genInitialisation = false)
         then
         let &varDecls += '//_system-><%cref(inCref)%>; definition of global variable<%\n%>'
-        <<_system-><%cref(inCref)%> /*refToGlobalVariable*/ >>
+        <<_system-><%cref(inCref)%> >>
     else
         <<<%cref(inCref)%>>>
 end representationCref;
@@ -7990,7 +8036,7 @@ template representationCref1(ComponentRef inCref,SimVar var, SimCode simCode, Co
    case -1 then
    << <%cref2(inCref)%>>>
    case _  then
-   << __z[<%i%>] >>
+   <<__z[<%i%>]>>
 end representationCref1;
 
 template representationCref2(ComponentRef inCref, SimVar var,SimCode simCode, Context context) ::=
