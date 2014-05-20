@@ -955,6 +955,7 @@ Compiler/runtime/config.unix.h \
 PythonInterface/Makefile \
 PythonInterface/OMPython/OMConfig.py \
 Parser/Makefile \
+3rdParty/qwt/Makefile.unix \
 OMNotebook/OMNotebookGUI/OMNotebook.config \
 OMNotebook/OMNotebookGUI/Makefile.unix \
 OMShell/OMShellGUI/OMShell.config \
