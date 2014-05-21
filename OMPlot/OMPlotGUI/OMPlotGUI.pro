@@ -41,6 +41,7 @@ INCLUDEPATH += ../../3rdParty/qwt/build/include \
     ../../3rdParty/gc-7.2/include
 } else {
   include(OMPlotGUI.config)
+  LIBS += -lOMPlot
 }
 
 INCLUDEPATH += .
