@@ -10,22 +10,7 @@ TARGET = OMPlot
 TEMPLATE = app
 CONFIG += console
 
-SOURCES += main.cpp \
-    ../../SimulationRuntime/c/util/read_matlab4.c \
-    ../../SimulationRuntime/c/util/libcsv.c \
-    ../../SimulationRuntime/c/util/read_csv.c \
-    ../../SimulationRuntime/c/util/string_util.c \
-    Plot.cpp \
-    PlotZoomer.cpp \
-    Legend.cpp \
-    PlotPanner.cpp \
-    PlotGrid.cpp \
-    ScaleDraw.cpp \
-    PlotCurve.cpp \
-    PlotWindow.cpp \
-    PlotApplication.cpp \
-    PlotWindowContainer.cpp \
-    PlotMainWindow.cpp
+SOURCES += main.cpp
 
 HEADERS  += ../../SimulationRuntime/c/util/read_matlab4.h \
     ../../SimulationRuntime/c/util/libcsv.h \
@@ -45,11 +30,11 @@ HEADERS  += ../../SimulationRuntime/c/util/read_matlab4.h \
 win32 {
 QMAKE_LFLAGS += -enable-auto-import
 CONFIG(debug, debug|release){
-LIBS += -L../../3rdParty/qwt/build/lib -lqwtd \
+LIBS += -lOMPlot -L../../3rdParty/qwt/build/lib -lqwtd \
     -L../../3rdParty/gc-7.2/.libs -lgc
 }
 else {
-LIBS += -L../../3rdParty/qwt/build/lib -lqwt \
+LIBS += -lOMPlot -L../../3rdParty/qwt/build/lib -lqwt \
     -L../../3rdParty/gc-7.2/.libs -lgc
 }
 INCLUDEPATH += ../../3rdParty/qwt/build/include \

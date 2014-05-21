@@ -15,8 +15,7 @@ win32 {
 }
 QMAKE_LFLAGS += -enable-auto-import
 
-SOURCES += main.cpp \
-    ../../SimulationRuntime/c/util/read_matlab4.c \
+SOURCES += ../../SimulationRuntime/c/util/read_matlab4.c \
     ../../SimulationRuntime/c/util/libcsv.c \
     ../../SimulationRuntime/c/util/read_csv.c \
     ../../SimulationRuntime/c/util/string_util.c \
