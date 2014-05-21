@@ -30,11 +30,11 @@ HEADERS  += ../../SimulationRuntime/c/util/read_matlab4.h \
 win32 {
 QMAKE_LFLAGS += -enable-auto-import
 CONFIG(debug, debug|release){
-LIBS += -lOMPlot -L../../3rdParty/qwt/build/lib -lqwtd \
+LIBS += -lOMPlot -L../../3rdParty/qwt/build/lib -lomqwtd \
     -L../../3rdParty/gc-7.2/.libs -lgc
 }
 else {
-LIBS += -lOMPlot -L../../3rdParty/qwt/build/lib -lqwt \
+LIBS += -lOMPlot -L../../3rdParty/qwt/build/lib -lomqwt \
     -L../../3rdParty/gc-7.2/.libs -lgc
 }
 INCLUDEPATH += ../../3rdParty/qwt/build/include \

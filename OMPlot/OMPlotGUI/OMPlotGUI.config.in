@@ -2,7 +2,7 @@ QMAKE_CC  = @CC@
 QMAKE_CXX = @CXX@
 QMAKE_LINK = @CXX@
 
-LIBS += -L ../../build/lib/omc -lOMPlot -lqwt -lgc @RPATH_QMAKE@
+LIBS += -L ../../build/lib/omc -lOMPlot -lomqwt -lgc @RPATH_QMAKE@
 INCLUDEPATH += ../../3rdParty/qwt/src ../../3rdParty/gc-7.2/include
 
 QMAKE_CFLAGS = @CFLAGS@ @CPPFLAGS@
