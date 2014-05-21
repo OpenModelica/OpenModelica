@@ -22,7 +22,6 @@ Windows
   OR
   - Load the file OMNotebookGUI/OMNotebookGUI.pro in Qt Creator IDE. Qt Creator is included in Qt SDK.
   - Copy omniORB416_rt.dll, omniORB416_rtd.dll, omnithread34_rt.dll and omnithread34_rtd.dll from c:/OMDev/lib/omniORB-4.1.6-mingw/bin/x86_win32 to /location-where-OMEdit.exe-is-created.
-  - Copy qwt.dll and qwtd.dll from c:/OMDev/lib/qwt-6.1.0-mingw/lib to /location-where-OMEdit.exe-is-created.
   - You must run the makefile once so that the omc_communication.h and omc_communication.cc file is generated.
   - Build and run the project.
 
