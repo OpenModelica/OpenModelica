@@ -1064,7 +1064,7 @@ template simulationResults(Boolean test, SimCode simCode)
 ::=
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__),makefileParams=MAKEFILE_PARAMS(__),simulationSettingsOpt = SOME(settings as SIMULATION_SETTINGS(__))) then
-let results = if test then ""  else '<%makefileParamst.compileDir%>/'
+let results = if test then ""  else '<%makefileParams.compileDir%>/'
 <<
 <%results%><%fileNamePrefix%>_res.<%settings.outputFormat%>
 >>
