@@ -96,13 +96,13 @@ qtclean: qtclean-common
 else
 qwt-build:
 	$(MAKE) -C 3rdParty/qwt -f Makefile.unix
-build/lib/omc/libqwt.so: qwt-build
-	cp -a 3rdParty/qwt/lib/libqwt.so* build/lib/omc/
-build/lib/omc/libqwt.dylib: qwt-build
-	cp -a 3rdParty/qwt/lib/libqwt*dylib build/lib/omc/
-	install_name_tool -id @rpath/libqwt.6.2.0.dylib build/lib/omc/libqwt.6.2.0.dylib
+build/lib/omc/libomqwt.so: qwt-build
+	cp -a 3rdParty/qwt/lib/libomqwt.so* build/lib/omc/
+build/lib/omc/libomqwt.dylib: qwt-build
+	cp -a 3rdParty/qwt/lib/libomqwt*dylib build/lib/omc/
+	install_name_tool -id @rpath/libomqwt.6.2.0.dylib build/lib/omc/libomqwt.6.2.0.dylib
 
-qwt: build/lib/omc/libqwt@SHREXT@
+qwt: build/lib/omc/libomqwt@SHREXT@
 
 omnotebook: mkbuilddirs qwt omplot
 	mkdir -p $(builddir_share)/omnotebook
