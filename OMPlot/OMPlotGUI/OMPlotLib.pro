@@ -9,7 +9,10 @@ QT += core gui
 TARGET = OMPlot
 TEMPLATE = lib
 
-CONFIG += release staticlib
+CONFIG += release
+win32 {
+ CONFIG += staticlib
+}
 QMAKE_LFLAGS += -enable-auto-import
 
 SOURCES += main.cpp \
@@ -50,8 +53,7 @@ LIBS += -L../../3rdParty/qwt/build/lib -lqwtd \
     -L../../3rdParty/gc-7.2/.libs -lgc
 }
 else {
-LIBS += -L../../3rdParty/qwt/build/lib -lqwt \
-    -L../../3rdParty/gc-7.2/.libs -lgc
+LIBS += -L../../build/lib/omc/ -lqwt -lgc
 }
 INCLUDEPATH += ../../3rdParty/qwt/build/include \
     ../../3rdParty/gc-7.2/include
