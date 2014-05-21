@@ -4031,7 +4031,7 @@ algorithm
       equation
         true = Expression.expEqual(e1,e2);
       then Expression.makeBuiltinCall("sqrt",{e1},DAE.T_REAL_DEFAULT);
-    // x^y/x => x^(y-1) 
+    // x^y/x => x^(y-1)
     case (_,DAE.DIV(ty = _),DAE.BINARY(e1,op1 as DAE.POW(ty), e2), e3,_,_)
        equation
          true = Expression.expEqual(e1,e3);

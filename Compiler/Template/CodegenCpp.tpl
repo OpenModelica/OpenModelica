@@ -10208,12 +10208,12 @@ case MODELINFO(vars=SIMVARS(__)) then
 
   void <%lastIdentOfPath(name)%>::getString(string* z)
   {
-  
+
   <%System.tmpTickReset(0)%>
   <%vars.stringAlgVars |> var => giveVariablesDefault(var, System.tmpTick()) ;separator="\n"%>
   <%vars.stringParamVars |> var => giveVariablesDefault(var, System.tmpTick()) ;separator="\n"%>
   <%vars.stringAliasVars |> var => giveVariablesDefault(var, System.tmpTick()) ;separator="\n"%>
-  
+
   }
 
   void <%lastIdentOfPath(name)%>::setReal(const double* z)
