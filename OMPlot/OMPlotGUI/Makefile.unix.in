@@ -24,7 +24,7 @@ Makefile.lib: Makefile OMPlotLib.pro OMPlotGUI.config
 clean:
 	test ! -f Makefile || $(MAKE) -f Makefile clean
 	test ! -f Makefile.lib || $(MAKE) -f Makefile.lib clean
-	rm -rf $(NAME) $(NAME)$(APP) Makefile
+	rm -rf $(NAME) $(NAME)$(APP) Makefile ../bin/
 
 $(NAME)$(APP): Makefile $(LIB)
 	$(MAKE) -f Makefile
