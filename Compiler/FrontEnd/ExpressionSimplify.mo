@@ -3668,7 +3668,7 @@ algorithm
         e = Expression.makeConstOne(tp);
       then
         DAE.BINARY(e1,op1,DAE.BINARY(e,DAE.ADD(tp),e4));
-    
+
   end matchcontinue;
 end simplifyBinaryCommutativeWork;
 
