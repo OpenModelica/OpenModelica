@@ -4691,10 +4691,9 @@ algorithm
       Absyn.Exp i_exp2;
       Absyn.Exp i_e;
       Absyn.Exp i_exp1;
-      Boolean i_value_3;
-      String i_value_2;
+      Boolean i_value_2;
       Absyn.ComponentRef i_componentRef;
-      Real i_value_1;
+      String i_value_1;
       Integer i_value;
       Tpl.Text l_list__str;
       Tpl.Text l_rest__str;
@@ -4721,7 +4720,7 @@ algorithm
     case ( txt,
            Absyn.REAL(value = i_value_1) )
       equation
-        txt = Tpl.writeStr(txt, realString(i_value_1));
+        txt = Tpl.writeStr(txt, i_value_1);
       then txt;
 
     case ( txt,
@@ -4731,17 +4730,17 @@ algorithm
       then txt;
 
     case ( txt,
-           Absyn.STRING(value = i_value_2) )
+           Absyn.STRING(value = i_value_1) )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
-        txt = Tpl.writeStr(txt, i_value_2);
+        txt = Tpl.writeStr(txt, i_value_1);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
       then txt;
 
     case ( txt,
-           Absyn.BOOL(value = i_value_3) )
+           Absyn.BOOL(value = i_value_2) )
       equation
-        txt = Tpl.writeStr(txt, Tpl.booleanString(i_value_3));
+        txt = Tpl.writeStr(txt, Tpl.booleanString(i_value_2));
       then txt;
 
     case ( txt,

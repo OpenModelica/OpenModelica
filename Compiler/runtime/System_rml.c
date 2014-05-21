@@ -2001,3 +2001,10 @@ RML_BEGIN_LABEL(System__strtokIncludingDelimiters)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__stringReal)
+{
+  void *threadData = NULL;
+  rmlA0 = mk_rcon(stringReal(rmlA0));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL

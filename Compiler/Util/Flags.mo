@@ -1459,7 +1459,7 @@ algorithm
     // A real value.
     case ({_}, REAL_FLAG(data = _), _, _)
       equation
-        //r = stringReal(s);
+        //r = System.stringReal(s);
         Error.addMessage(Error.INTERNAL_ERROR,
           {"Flags.stringFlagData: RML doesn't have stringReal, enable this for the bootstrapped compiler"});
       then
@@ -1550,7 +1550,7 @@ algorithm
         "the number " +& intString(i);
     //case {s}
     //  equation
-    //    _ = stringReal(s);
+    //    _ = System.stringReal(s);
     //  then
     //    "the number " +& intString(i);
     case {s} then "the string \"" +& s +& "\"";

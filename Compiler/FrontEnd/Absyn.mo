@@ -700,7 +700,7 @@ uniontype Exp "The Exp uniontype is the container of a Modelica expression.
   end INTEGER;
 
   record REAL
-    Real value;
+    String value "String representation of a Real, in order to unparse without changing the user's display preference";
   end REAL;
 
   record CREF
@@ -4229,25 +4229,24 @@ public function expEqual "Returns true if two expressions are equal"
 algorithm
   equal := matchcontinue(exp1,exp2)
     local
+      Boolean b;
       Exp x, y;
-      Integer   i; Real   r;
+      Integer i;
+      String r;
 
     // real vs. integer
     case (INTEGER(i), REAL(r))
       equation
-        true = realEq(intReal(i), r);
-      then
-        true;
+        b = realEq(intReal(i), System.stringReal(r));
+      then b;
 
     case (REAL(r), INTEGER(i))
       equation
-        true = realEq(intReal(i), r);
-      then
-        true;
+        b = realEq(intReal(i), System.stringReal(r));
+      then b;
 
     // anything else, exact match!
-    case (x, y) equation equality(x = y);          then true;
-    case (x, y) equation failure(equality(x = y)); then false;
+    case (x, y) then valueEq(x,y);
   end matchcontinue;
 end expEqual;
 

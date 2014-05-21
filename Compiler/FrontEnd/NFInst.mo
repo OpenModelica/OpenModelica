@@ -1921,7 +1921,9 @@ algorithm
       Option<DAE.Exp> odexp;
       Globals globals;
 
-    case (Absyn.REAL(value = rval), _, _, globals)
+    case (Absyn.REAL(value = sval), _, _, globals)
+      equation
+        rval = System.stringReal(sval);
       then (DAE.RCONST(rval), globals);
 
     case (Absyn.INTEGER(value = ival), _, _, globals)

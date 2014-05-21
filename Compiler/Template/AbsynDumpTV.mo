@@ -477,7 +477,7 @@ package Absyn
     end INTEGER;
 
     record REAL
-      Real value;
+      String value;
     end REAL;
 
     record CREF

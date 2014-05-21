@@ -3071,15 +3071,15 @@ algorithm
       list<Absyn.Exp> exp_list_1,exp_list;
       list<list<Absyn.Exp>> exp_list_list_1,exp_list_list;
       Absyn.CodeNode code_1,code;
-    case (Absyn.INTEGER(value = i),_,_) then Absyn.INTEGER(i);
-    case (Absyn.REAL(value = r),_,_) then Absyn.REAL(r);
+    case (Absyn.INTEGER(value = _),_,_) then inExp1;
+    case (Absyn.REAL(value = _),_,_) then inExp1;
     case (Absyn.CREF(componentRef = cr),old_comp,new_comp)
       equation
         cr_1 = replaceStartInComponentRef(cr, old_comp, new_comp);
       then
         Absyn.CREF(cr_1);
-    case (Absyn.STRING(value = s),_,_) then Absyn.STRING(s);
-    case (Absyn.BOOL(value = b),_,_) then Absyn.BOOL(b);
+    case (Absyn.STRING(value = _),_,_) then inExp1;
+    case (Absyn.BOOL(value = _),_,_) then inExp1;
     case (Absyn.BINARY(exp1 = exp1,op = op,exp2 = exp2),old_comp,new_comp)
       equation
         exp1_1 = renameComponentInExp(exp1, old_comp, new_comp);

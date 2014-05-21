@@ -75,6 +75,7 @@ protected import List;
 protected import Patternm;
 protected import Prefix;
 protected import Static;
+protected import System; // stringReal
 protected import Types;
 protected import Util;
 
@@ -168,7 +169,10 @@ algorithm
       DAE.Dimensions dims;
 
     case (DAE.ICONST(integer = i)) then Absyn.INTEGER(i);
-    case (DAE.RCONST(real = r)) then Absyn.REAL(r);
+    case (DAE.RCONST(real = r))
+      equation
+        s = realString(r);
+      then Absyn.REAL(s);
     case (DAE.SCONST(string = s)) then Absyn.STRING(s);
     case (DAE.BCONST(bool = b)) then Absyn.BOOL(b);
     case (DAE.ENUM_LITERAL(name = path))
@@ -356,8 +360,8 @@ algorithm
     case DAE.T_BOOL(source=_) then Absyn.BOOL(false);
     case DAE.T_STRING(source=_) then Absyn.STRING("");
     case DAE.T_INTEGER(source=_) then Absyn.INTEGER(0);
-    case DAE.T_REAL(source=_) then Absyn.REAL(0.0);
-    case DAE.T_UNKNOWN(source=_) then Absyn.REAL(0.0); /* Look at the crap unelabMod needs... */
+    case DAE.T_REAL(source=_) then Absyn.REAL("0.0");
+    case DAE.T_UNKNOWN(source=_) then Absyn.REAL("0.0"); /* Look at the crap unelabMod needs... */
   end match;
 end unleabZeroExpFromType;
 
@@ -10526,7 +10530,10 @@ algorithm
       Option<DAE.Exp> oe;
 
     case (Absyn.INTEGER(i)) then DAE.ICONST(i);
-    case (Absyn.REAL(r)) then DAE.RCONST(r);
+    case (Absyn.REAL(s))
+      equation
+        r = System.stringReal(s);
+      then DAE.RCONST(r);
     case (Absyn.BOOL(b)) then DAE.BCONST(b);
     case (Absyn.STRING(s)) then DAE.SCONST(s);
 

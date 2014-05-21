@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linkoping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -44,11 +44,11 @@ import MetaModelica_Lexer; /* Makes all tokens defined, imported in OptiMo_Lexer
   #include <stdio.h>
   #include <errno.h>
   #include <time.h>
-  
+
   #include "ModelicaParserCommon.h"
   #include "runtime/errorext.h"
   #include "util/string_util.h"
-  
+
   #define ModelicaParserException 100
   #define ModelicaLexerException  200
   #define modelicaParserAssert(cond,msg,func,_line1,_offset1,_line2,_offset2) {if (!(cond)) { \
@@ -157,19 +157,19 @@ class_type returns [void* ast]
   | ( e=EXPANDABLE )? CONNECTOR { ast = e ? Absyn__R_5fEXP_5fCONNECTOR : Absyn__R_5fCONNECTOR; }
   | TYPE { ast = Absyn__R_5fTYPE; }
   | T_PACKAGE { ast = Absyn__R_5fPACKAGE; }
-  | (pur=PURE | impur=IMPURE)? (opr=OPERATOR | prl=T_PARALLEL | ker=T_KERNEL)? FUNCTION 
-		  { 
-		    ast = opr ? Absyn__R_5fFUNCTION(Absyn__FR_5fOPERATOR_5fFUNCTION) :
-		          prl ? Absyn__R_5fFUNCTION(Absyn__FR_5fPARALLEL_5fFUNCTION) :
-		          ker ? Absyn__R_5fFUNCTION(Absyn__FR_5fKERNEL_5fFUNCTION) :
-		          pur ? Absyn__R_5fFUNCTION(Absyn__FR_5fNORMAL_5fFUNCTION(Absyn__PURE)) :
-		          impur ? Absyn__R_5fFUNCTION(Absyn__FR_5fNORMAL_5fFUNCTION(Absyn__IMPURE)) :
-		          Absyn__R_5fFUNCTION(Absyn__FR_5fNORMAL_5fFUNCTION(Absyn__NO_5fPURITY));
-		  } 
+  | (pur=PURE | impur=IMPURE)? (opr=OPERATOR | prl=T_PARALLEL | ker=T_KERNEL)? FUNCTION
+      {
+        ast = opr ? Absyn__R_5fFUNCTION(Absyn__FR_5fOPERATOR_5fFUNCTION) :
+              prl ? Absyn__R_5fFUNCTION(Absyn__FR_5fPARALLEL_5fFUNCTION) :
+              ker ? Absyn__R_5fFUNCTION(Absyn__FR_5fKERNEL_5fFUNCTION) :
+              pur ? Absyn__R_5fFUNCTION(Absyn__FR_5fNORMAL_5fFUNCTION(Absyn__PURE)) :
+              impur ? Absyn__R_5fFUNCTION(Absyn__FR_5fNORMAL_5fFUNCTION(Absyn__IMPURE)) :
+              Absyn__R_5fFUNCTION(Absyn__FR_5fNORMAL_5fFUNCTION(Absyn__NO_5fPURITY));
+      }
   | UNIONTYPE { ast = Absyn__R_5fUNIONTYPE; }
-  | OPERATOR (r=RECORD)? 
-          { 
-            ast = r ? Absyn__R_5fOPERATOR_5fRECORD : 
+  | OPERATOR (r=RECORD)?
+          {
+            ast = r ? Absyn__R_5fOPERATOR_5fRECORD :
                   Absyn__R_5fOPERATOR;
           }
   )
@@ -193,15 +193,15 @@ class_specifier returns [void* ast, void* name]
         $name = mk_scon(s1);
         $ast = Absyn__CLASS_5fEXTENDS($name, or_nil(mod), mk_some_or_none(cmt), $comp.ast, $comp.ann);
       }
-    )  
+    )
     ;
 
-class_specifier2 returns [void* ast, const char *s2] 
-@init { 
-  $s2 = 0; ids = 0; gt = 0; cmtStr = 0; cmt = 0; c.ast = 0; c.ann = 0; 
+class_specifier2 returns [void* ast, const char *s2]
+@init {
+  $s2 = 0; ids = 0; gt = 0; cmtStr = 0; cmt = 0; c.ast = 0; c.ann = 0;
   na = 0; rp = 0; attr = 0; path.ast = 0; cm = 0; cs = 0; ts.ast = 0;
 } :
-( 
+(
   (lt=LESS ids=ident_list gt=GREATER)? cmtStr=string_comment c=composition id=END_IDENT
     {
       $s2 = (char*)$id.text->chars;
@@ -291,12 +291,12 @@ enumeration_literal returns [void* ast]
   i1=IDENT c1=comment { ast = Absyn__ENUMLITERAL(token_to_scon(i1),mk_some_or_none(c1)); }
   ;
 
-composition returns [void* ast, void* ann] 
+composition returns [void* ast, void* ann]
 @init { $ann = mk_nil(); el = 0; els = 0; a = 0; } :
-  el=element_list[&$ann] els=composition2[&$ann] (a=annotation SEMICOLON)? 
-  { 
-    $ast = mk_cons(Absyn__PUBLIC(el),els); 
-    $ann = a ? mk_cons(a,$ann) : $ann; 
+  el=element_list[&$ann] els=composition2[&$ann] (a=annotation SEMICOLON)?
+  {
+    $ast = mk_cons(Absyn__PUBLIC(el),els);
+    $ann = a ? mk_cons(a,$ann) : $ann;
   }
   ;
 
@@ -314,7 +314,7 @@ composition2 [void **ann] returns [void* ast]
   )
   ;
 
-external_clause returns [void* ast] 
+external_clause returns [void* ast]
 @init { retexp.ast = 0; lang = 0; funcname = 0; expl = 0; ann1 = 0;} :
         EXTERNAL
         ( lang=language_specification )?
@@ -323,10 +323,10 @@ external_clause returns [void* ast]
         ( ann1 = annotation )? SEMICOLON
           {
             ast = Absyn__EXTERNALDECL(
-                    funcname ? mk_some(token_to_scon(funcname)) : mk_none(), 
-                    mk_some_or_none(lang), 
-                    mk_some_or_none(retexp.ast), 
-                    or_nil(expl), 
+                    funcname ? mk_some(token_to_scon(funcname)) : mk_none(),
+                    mk_some_or_none(lang),
+                    mk_some_or_none(retexp.ast),
+                    or_nil(expl),
                     mk_some_or_none(ann1));
             ast = mk_cons(Absyn__EXTERNAL(ast, mk_none()), mk_nil());
           }
@@ -351,7 +351,7 @@ language_specification returns [void* ast] :
   id=STRING {ast = token_to_scon(id);}
   ;
 
-element_list [void **ann] returns [void* ast] 
+element_list [void **ann] returns [void* ast]
 @init {
   int first = 0, last = 0;
   e.ast = 0;
@@ -436,7 +436,7 @@ defineunit_clause returns [void* ast]
     }
   ;
 
-explicit_import_name returns [void* ast] 
+explicit_import_name returns [void* ast]
 @init { id = 0; p = 0; } :
   (id=IDENT|id=CODE) EQUALS p=name_path {ast = Absyn__NAMED_5fIMPORT(token_to_scon(id),p);}
   ;
@@ -457,7 +457,7 @@ implicit_import_name returns [void* ast]
 // allowing the comment.
 extends_clause returns [void* ast]
 @init { path = 0; mod = 0; ann = 0; } :
-  EXTENDS path=name_path (mod=class_modification)? (ann=annotation)? 
+  EXTENDS path=name_path (mod=class_modification)? (ann=annotation)?
   {
     ast = Absyn__EXTENDS(path,or_nil(mod),mk_some_or_none(ann));
   }
@@ -478,41 +478,41 @@ constraining_clause returns [void* ast]
  * 2.2.4 Component clause
  */
 
-component_clause returns [void* ast] 
+component_clause returns [void* ast]
 @declarations { void *arr = 0, *ar_option = 0; }
 @init { path.ast = 0; clst = 0; ast = 0; } :
   tp=type_prefix path=type_specifier clst=component_list
     {
       // Take the last (array subscripts) from type and move it to ATTR
       if (RML_GETHDR($path.ast) == RML_STRUCTHDR(2, Absyn__TPATH_3dBOX2)) // is TPATH(path, arr)
-			{
-				struct rml_struct *p = (struct rml_struct*)RML_UNTAGPTR($path.ast);
-				ar_option = p->data[1+UNBOX_OFFSET];  // get the array option
-				p->data[1+UNBOX_OFFSET] = mk_none();  // replace the array with nothing
-			}
-			else if (RML_GETHDR($path.ast) == RML_STRUCTHDR(3, Absyn__TCOMPLEX_3dBOX3))
-			{
-				struct rml_struct *p = (struct rml_struct*)RML_UNTAGPTR($path.ast);
-				ar_option = p->data[2+UNBOX_OFFSET];         // get the array option
-				p->data[2+UNBOX_OFFSET] = mk_none();  // replace the array with nothing
-			}
+      {
+        struct rml_struct *p = (struct rml_struct*)RML_UNTAGPTR($path.ast);
+        ar_option = p->data[1+UNBOX_OFFSET];  // get the array option
+        p->data[1+UNBOX_OFFSET] = mk_none();  // replace the array with nothing
+      }
+      else if (RML_GETHDR($path.ast) == RML_STRUCTHDR(3, Absyn__TCOMPLEX_3dBOX3))
+      {
+        struct rml_struct *p = (struct rml_struct*)RML_UNTAGPTR($path.ast);
+        ar_option = p->data[2+UNBOX_OFFSET];         // get the array option
+        p->data[2+UNBOX_OFFSET] = mk_none();  // replace the array with nothing
+      }
       else
       {
         fprintf(stderr, "component_clause error\n");
       }
 
       { /* adrpo - use the ANSI C standard */
-				// no arr was set, inspect ar_option and fix it
-				struct rml_struct *p = (struct rml_struct*)RML_UNTAGPTR(ar_option);
-				if (optionNone(ar_option))
-				{
-					arr = mk_nil();
-				}
-				else // is SOME(arr)
-				{
-					arr = p->data[0];
-				}
-		  }
+        // no arr was set, inspect ar_option and fix it
+        struct rml_struct *p = (struct rml_struct*)RML_UNTAGPTR(ar_option);
+        if (optionNone(ar_option))
+        {
+          arr = mk_nil();
+        }
+        else // is SOME(arr)
+        {
+          arr = p->data[0];
+        }
+      }
 
       ast = Absyn__COMPONENTS(Absyn__ATTR(tp.flow, tp.stream, tp.parallelism, tp.variability, tp.direction, arr), $path.ast, clst);
     }
@@ -524,7 +524,7 @@ type_prefix returns [void* flow, void* stream, void* parallelism, void* variabil
     {
       $flow = mk_bcon(fl);
       $stream = mk_bcon(st);
-	    $parallelism = srd ? Absyn__PARLOCAL : glb ? Absyn__PARGLOBAL : Absyn__NON_5fPARALLEL;
+      $parallelism = srd ? Absyn__PARLOCAL : glb ? Absyn__PARGLOBAL : Absyn__NON_5fPARALLEL;
       $variability = di ? Absyn__DISCRETE : pa ? Absyn__PARAM : co ? Absyn__CONST : Absyn__VAR;
       $direction = in ? Absyn__INPUT : out ? Absyn__OUTPUT : Absyn__BIDIR;
     }
@@ -579,7 +579,7 @@ declaration returns [void* ast]
  * 2.2.5 Modification
  */
 
-modification returns [void* ast] 
+modification returns [void* ast]
 @init { e = 0; eq = 0; cm = 0; } :
   ( cm=class_modification ( eq=EQUALS e=expression )?
   | eq=EQUALS e=expression
@@ -607,17 +607,17 @@ argument returns [void* ast]
   )
   ;
 
-element_modification_or_replaceable returns [void* ast] 
+element_modification_or_replaceable returns [void* ast]
 @init { ast = NULL; em.ast = NULL; e = 0; f = 0; } :
-    (e=EACH)? (f=FINAL)? ( em=element_modification[e ? Absyn__EACH : Absyn__NON_5fEACH, mk_bcon(f)] 
-                         | er=element_replaceable[e != NULL,f != NULL,false] 
+    (e=EACH)? (f=FINAL)? ( em=element_modification[e ? Absyn__EACH : Absyn__NON_5fEACH, mk_bcon(f)]
+                         | er=element_replaceable[e != NULL,f != NULL,false]
                          )
       {
         ast = $em.ast ? $em.ast : $er.ast;
       }
     ;
 
-element_modification [void *each, void *final] returns [void* ast] 
+element_modification [void *each, void *final] returns [void* ast]
 @init { $ast = NULL; mod = 0; cmt = 0; br = 0;} :
   path=name_path2 (br=LBRACK | ((mod=modification)? cmt=string_comment))
   {
@@ -644,7 +644,7 @@ element_redeclaration returns [void* ast]
      }
   ;
 
-element_replaceable [int each, int final, int redeclare] returns [void* ast] 
+element_replaceable [int each, int final, int redeclare] returns [void* ast]
 @init { $ast = NULL; e_spec = 0; cd.ast = 0; constr = 0; } :
   REPLACEABLE ( cd=class_definition[final] | e_spec=component_clause1 ) constr=constraining_clause_comment?
   {
@@ -653,7 +653,7 @@ element_replaceable [int each, int final, int redeclare] returns [void* ast]
                                   mk_some_or_none(constr), PARSER_INFO($start));
   }
   ;
-  
+
 component_clause1 returns [void* ast]
 @init { attr = NULL; ts.ast = 0; comp_decl = 0; } :
   attr=base_prefix ts=type_specifier comp_decl=component_declaration1
@@ -719,13 +719,13 @@ equation_annotation_list [void **ann] returns [void* ast]
     }
   ;
 
-constraint_annotation_list [void **ann] returns [void* ast] 
+constraint_annotation_list [void **ann] returns [void* ast]
 @init { co = 0; c = 0; }
 :
-  { LA(1) == END_IDENT || LA(1) == CONSTRAINT || LA(1) == EQUATION || LA(1) == T_ALGORITHM || LA(1)==INITIAL || LA(1) == PROTECTED || LA(1) == PUBLIC }? 
+  { LA(1) == END_IDENT || LA(1) == CONSTRAINT || LA(1) == EQUATION || LA(1) == T_ALGORITHM || LA(1)==INITIAL || LA(1) == PROTECTED || LA(1) == PUBLIC }?
     { ast = mk_nil(); }
   |
-  ( co=constraint SEMICOLON { c = co; } 
+  ( co=constraint SEMICOLON { c = co; }
   | c=annotation SEMICOLON { *ann = mk_cons(c,ann); }
   ) cs=constraint_annotation_list[ann] { ast = c ? mk_cons(c,cs) : cs; }
   ;
@@ -786,7 +786,7 @@ equation returns [void* ast]
   | e=for_clause_e
   | e=parfor_clause_e
   | e=connect_clause
-  | e=when_clause_e   
+  | e=when_clause_e
   | FAILURE LPAR eq=equation RPAR { e = Absyn__EQ_5fFAILURE(eq.ast); }
   | EQUALITY LPAR e1=expression EQUALS e2=expression RPAR
     {
@@ -844,7 +844,7 @@ algorithm returns [void* ast]
   }
   ;
 
-assign_clause_a returns [void* ast] 
+assign_clause_a returns [void* ast]
 @declarations { char *s1 = 0; }
 @init { e1 = 0; eq = 0; e2 = 0; } :
   /* MetaModelica allows pattern matching on arbitrary expressions in algorithm sections... */
@@ -867,7 +867,7 @@ assign_clause_a returns [void* ast]
         }
         $ast = Absyn__ALG_5fASSIGN(e1,e2);
       }
-    | 
+    |
       {
         modelicaParserAssert(RML_GETHDR(e1) == RML_STRUCTHDR(2, Absyn__CALL_3dBOX2), "Only function call expressions may stand alone in an algorithm section",
                              assign_clause_a, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
@@ -879,7 +879,7 @@ assign_clause_a returns [void* ast]
     )
   ;
 
-equality_or_noretcall_equation returns [void* ast] 
+equality_or_noretcall_equation returns [void* ast]
 @init { ass = 0; e1 = 0; ass = 0; e2 = 0; } :
   e1=simple_expression
     (  (EQUALS | ass=ASSIGN) e2=expression
@@ -897,7 +897,7 @@ equality_or_noretcall_equation returns [void* ast]
     )
   ;
 
-conditional_equation_e returns [void* ast] 
+conditional_equation_e returns [void* ast]
 @init { i = 0; else_b = 0; then_b = 0; else_if_b = 0; } :
   IF e=expression THEN then_b=equation_list else_if_b=equation_elseif_list? ( ELSE else_b=equation_list )? (i=END_IF|t=END_IDENT|t=END_FOR|t=END_WHEN)
     {
@@ -906,8 +906,8 @@ conditional_equation_e returns [void* ast]
     }
   ;
 
-conditional_equation_a returns [void* ast] 
-@init { i = 0; else_b = 0; else_if_b = 0; } : 
+conditional_equation_a returns [void* ast]
+@init { i = 0; else_b = 0; else_if_b = 0; } :
   IF e=expression THEN then_b=algorithm_list else_if_b=algorithm_elseif_list? ( ELSE else_b=algorithm_list )? (i=END_IF|t=END_IDENT|t=END_FOR|t=END_WHEN|t=END_WHILE)
   {
     modelicaParserAssert(i,else_b ? "Expected 'end if'; did you use a nested 'else if' instead of 'elseif'?" : "Expected 'end if'",conditional_equation_a,t->line, t->charPosition+1, LT(1)->line, LT(1)->charPosition+1);
@@ -940,7 +940,7 @@ while_clause returns [void* ast]
   WHILE e=expression LOOP as=algorithm_list END_WHILE { ast = Absyn__ALG_5fWHILE(e,as); }
   ;
 
-when_clause_e returns [void* ast] 
+when_clause_e returns [void* ast]
 @init{ es = 0; body = 0; es = 0; } :
   WHEN e=expression THEN body=equation_list es=else_when_e_list? END_WHEN
     {
@@ -948,12 +948,12 @@ when_clause_e returns [void* ast]
     }
   ;
 
-else_when_e_list returns [void* ast] 
+else_when_e_list returns [void* ast]
 @init{ es = 0; e = 0;} :
   e=else_when_e es=else_when_e_list? { ast = mk_cons(e,or_nil(es)); }
   ;
 
-else_when_e returns [void* ast] 
+else_when_e returns [void* ast]
 @init{ es = 0; es = 0; } :
   ELSEWHEN e=expression THEN es=equation_list { ast = mk_tuple2(e,es); }
   ;
@@ -966,37 +966,37 @@ when_clause_a returns [void* ast]
     }
   ;
 
-else_when_a_list returns [void* ast] 
+else_when_a_list returns [void* ast]
 @init{ e = 0; es = 0; } :
   e=else_when_a es=else_when_a_list? { ast = mk_cons(e,or_nil(es)); }
   ;
 
-else_when_a returns [void* ast] 
+else_when_a returns [void* ast]
 @init{ e = 0; as = 0; } :
   ELSEWHEN e=expression THEN as=algorithm_list { ast = mk_tuple2(e,as); }
   ;
 
-equation_elseif_list returns [void* ast] 
+equation_elseif_list returns [void* ast]
 @init{ e = 0; es = 0; } :
   e=equation_elseif es=equation_elseif_list? { ast = mk_cons(e,or_nil(es)); }
   ;
 
-equation_elseif returns [void* ast] 
+equation_elseif returns [void* ast]
 @init{ e = 0; es = 0; } :
   ELSEIF e=expression THEN es=equation_list { ast = mk_tuple2(e,es); }
   ;
 
-algorithm_elseif_list returns [void* ast] 
+algorithm_elseif_list returns [void* ast]
 @init{ a = 0; as = 0; } :
   a=algorithm_elseif as=algorithm_elseif_list? { ast = mk_cons(a,or_nil(as)); }
   ;
 
-algorithm_elseif returns [void* ast] 
+algorithm_elseif returns [void* ast]
 @init{ e = 0; as = 0; } :
   ELSEIF e=expression THEN as=algorithm_list { ast = mk_tuple2(e,as); }
   ;
 
-equation_list_then returns [void* ast] 
+equation_list_then returns [void* ast]
 @init{ e.ast = 0; es = 0; } :
     { LA(1) == THEN }? {ast = mk_nil();}
   | (e=equation SEMICOLON es=equation_list_then) { ast = mk_cons(e.ast,es); }
@@ -1011,7 +1011,7 @@ equation_list returns [void* ast]
   last = LT(1)->getTokenIndex(LT(1));
   omc_first_comment = last;
 } :
-  {LA(1) != END_IDENT || LA(1) != END_IF || LA(1) != END_WHEN || LA(1) != END_FOR}? 
+  {LA(1) != END_IDENT || LA(1) != END_IF || LA(1) != END_WHEN || LA(1) != END_FOR}?
     {
        ast = mk_nil();
       for (;first<last;last--) {
@@ -1036,26 +1036,26 @@ equation_list returns [void* ast]
 
 algorithm_list returns [void* ast]
 @init { a.ast = 0; as = 0; } :
-  {LA(1) != END_IDENT || LA(1) != END_IF || LA(1) != END_WHEN || LA(1) != END_FOR || LA(1) != END_WHILE}? 
+  {LA(1) != END_IDENT || LA(1) != END_IF || LA(1) != END_WHEN || LA(1) != END_FOR || LA(1) != END_WHILE}?
     { ast = mk_nil(); }
   | a=algorithm SEMICOLON as=algorithm_list { ast = mk_cons(a.ast,as); }
   ;
 
 connect_clause returns [void* ast] :
-  CONNECT LPAR cr1=component_reference COMMA cr2=component_reference RPAR 
+  CONNECT LPAR cr1=component_reference COMMA cr2=component_reference RPAR
   {
     ast = Absyn__EQ_5fCONNECT(cr1.ast,cr2.ast);
   }
   ;
 
 /* adrpo: 2010-10-11, replaced commented-out part with the rule above
-                      which is conform to the grammar in the Modelica specification! 
+                      which is conform to the grammar in the Modelica specification!
 connect_clause returns [void* ast] :
   CONNECT LPAR cr1=connector_ref COMMA cr2=connector_ref RPAR {ast = Absyn__EQ_5fCONNECT(cr1,cr2);}
   ;
 
 connector_ref returns [void* ast]
-@init{ as = 0; cr2 = 0; } : 
+@init{ as = 0; cr2 = 0; } :
   id=IDENT ( as=array_subscripts )? ( DOT cr2=connector_ref_2 )?
     {
       if (cr2)
@@ -1089,13 +1089,13 @@ part_eval_function_expression returns [void* ast]
 
 if_expression returns [void* ast]
 @init{ cond = 0; e1 = 0; es = 0; e2 = 0; } :
-  IF cond=expression THEN e1=expression es=elseif_expression_list? ELSE e2=expression 
+  IF cond=expression THEN e1=expression es=elseif_expression_list? ELSE e2=expression
   {
     ast = Absyn__IFEXP(cond,e1,e2,or_nil(es));
   }
   ;
 
-elseif_expression_list returns [void* ast] 
+elseif_expression_list returns [void* ast]
 @init{ e = 0; es = 0; } :
   e=elseif_expression es=elseif_expression_list? { ast = mk_cons(e,or_nil(es)); }
   ;
@@ -1105,21 +1105,21 @@ elseif_expression returns [void* ast]
   ELSEIF e1=expression THEN e2=expression { ast = mk_tuple2(e1,e2); }
   ;
 
-for_indices returns [void* ast] 
+for_indices returns [void* ast]
 @init{ i = 0; is = 0; } :
   i=for_index (COMMA is=for_indices)? { ast = mk_cons(i, or_nil(is)); }
   ;
 
-for_index returns [void* ast] 
+for_index returns [void* ast]
 @init{ i = 0; e = 0; guard = 0; } :
-  (i=IDENT ((GUARD guard=expression)? T_IN e=expression)? 
-   { 
+  (i=IDENT ((GUARD guard=expression)? T_IN e=expression)?
+   {
      ast = Absyn__ITERATOR(token_to_scon(i),mk_some_or_none(guard),mk_some_or_none(e));
    }
   )
   ;
 
-simple_expression returns [void* ast] 
+simple_expression returns [void* ast]
 @init{ e1 = 0; e2 = 0; i = 0; e = 0; } :
     e1=simple_expr { ast = e; } (COLONCOLON e2=simple_expression)?
     {
@@ -1128,7 +1128,7 @@ simple_expression returns [void* ast]
       else
         ast = e1;
     }
-  | i=IDENT AS e=simple_expression 
+  | i=IDENT AS e=simple_expression
     {
       ast = Absyn__AS(token_to_scon(i),e);
     }
@@ -1147,7 +1147,7 @@ simple_expr returns [void* ast]
     }
   ;
 
-logical_expression returns [void* ast] 
+logical_expression returns [void* ast]
 @init{ e1 = 0; e2 = 0; } :
   e1=logical_term { ast = e1; } ( T_OR e2=logical_term { ast = Absyn__LBINARY(ast,Absyn__OR,e2); } )*
   ;
@@ -1157,15 +1157,15 @@ logical_term returns [void* ast]
   e1=logical_factor { ast = e1; } ( T_AND e2=logical_factor { ast = Absyn__LBINARY(ast,Absyn__AND,e2); } )*
   ;
 
-logical_factor returns [void* ast] 
+logical_factor returns [void* ast]
 @init{ n = 0; e = 0; } :
   ( n=T_NOT )? e=relation { ast = n ? Absyn__LUNARY(Absyn__NOT, e) : e; }
   ;
 
 relation returns [void* ast]
-@declarations { void* op = NULL; } 
+@declarations { void* op = NULL; }
 @init { e1 = 0; e2 = 0; } :
-  e1=arithmetic_expression 
+  e1=arithmetic_expression
   ( ( LESS {op = Absyn__LESS;} | LESSEQ {op = Absyn__LESSEQ;}
     | GREATER {op = Absyn__GREATER;} | GREATEREQ {op = Absyn__GREATEREQ;}
     | EQEQ {op = Absyn__EQUAL;} | LESSGT {op = Absyn__NEQUAL;}
@@ -1175,8 +1175,8 @@ relation returns [void* ast]
     }
   ;
 
-arithmetic_expression returns [void* ast] 
-@declarations { void* op = NULL; } 
+arithmetic_expression returns [void* ast]
+@declarations { void* op = NULL; }
 @init { e1 = 0; e2 = 0; } :
   e1=unary_arithmetic_expression { ast = e1; }
     ( ( PLUS {op=Absyn__ADD;} | MINUS {op=Absyn__SUB;} | PLUS_EW {op=Absyn__ADD_5fEW;} | MINUS_EW {op=Absyn__SUB_5fEW;}
@@ -1193,8 +1193,8 @@ unary_arithmetic_expression returns [void* ast] :
   )
   ;
 
-term returns [void* ast] 
-@declarations { void* op = NULL; } 
+term returns [void* ast]
+@declarations { void* op = NULL; }
 @init { e1 = 0; e2 = 0; } :
   e1=factor { ast = e1; }
     (
@@ -1203,7 +1203,7 @@ term returns [void* ast]
     )*
   ;
 
-factor returns [void* ast] 
+factor returns [void* ast]
 @init{ e1.ast = 0; pw = 0; e2.ast = 0; } :
   e1=primary ( ( pw=POWER | pw=POWER_EW ) e2=primary )?
     {
@@ -1211,7 +1211,7 @@ factor returns [void* ast]
     }
   ;
 
-primary returns [void* ast] 
+primary returns [void* ast]
 @declarations { int tupleExpressionIsTuple = 0; }
 @init { v = 0; ptr.ast = 0; el = 0; for_or_el.ast = 0; for_or_el.isFor = 0; } :
   ( v=UNSIGNED_INTEGER
@@ -1226,16 +1226,16 @@ primary returns [void* ast]
       args[1] = RML_SIZE_INT == 8 ? "OpenModelica (64-bit) only supports 63"
                                   : errno || *endptr != 0 ? "Modelica only supports 32"
                                                           : "OpenModelica only supports 31";
-      
+
       if (errno || *endptr != 0) {
         double d = 0;
         errno = 0;
-        d = om_strtod(chars,&endptr);
-        modelicaParserAssert(*endptr == 0 && errno==0, "Number is too large to represent as a long or double on this machine", primary, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1);
+        d = strtod(chars,&endptr);
+        modelicaParserAssert(*endptr == 0 && errno==0, "Number is too large to be represented by a double on this machine", primary, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1);
         c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, "\%s-bit signed integers! Transforming: \%s into a real",
           args, 2, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
           ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
-        $ast = Absyn__REAL(mk_rcon(d));
+        $ast = Absyn__REAL(mk_scon(chars));
       } else {
         if (((long)1<<(RML_SIZE_INT*8-2))-1 >= l) {
           $ast = Absyn__INTEGER(RML_IMMEDIATE(RML_TAGFIXNUM(l))); /* We can't use mk_icon here - it takes "int"; not "long" */
@@ -1248,12 +1248,23 @@ primary returns [void* ast]
                                  ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
             $ast = Absyn__INTEGER(RML_IMMEDIATE(RML_TAGFIXNUM(lt)));
           } else {
-            $ast = Absyn__REAL(mk_rcon((double)l));
+            $ast = Absyn__REAL(mk_scon(chars));
           }
         }
       }
     }
-  | v=UNSIGNED_REAL    { $ast = Absyn__REAL(mk_rcon(atof((char*)$v.text->chars))); }
+  | v=UNSIGNED_REAL
+    {
+      char* chars = (char*)$v.text->chars;
+      char *endptr;
+      errno = 0;
+      double d = strtod(chars,&endptr);
+      if (!(*endptr == 0 && errno==0)) {
+        c_add_source_message(NULL,2,ErrorType_syntax, ErrorLevel_error, "\%s cannot be represented by a double on this machine", &chars, 1, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1, ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
+        ModelicaParser_lexerError = ANTLR3_TRUE;
+      }
+      $ast = Absyn__REAL(mk_scon(chars));
+    }
   | v=STRING           { $ast = Absyn__STRING(mk_scon((char*)$v.text->chars)); }
   | T_FALSE            { $ast = Absyn__BOOL(RML_FALSE); }
   | T_TRUE             { $ast = Absyn__BOOL(RML_TRUE); }
@@ -1277,12 +1288,12 @@ primary returns [void* ast]
   )
   ;
 
-matrix_expression_list returns [void* ast] 
+matrix_expression_list returns [void* ast]
 @init{ e1 = 0; e2 = 0; } :
   e1=expression_list (SEMICOLON e2=matrix_expression_list)? { ast = mk_cons(e1, or_nil(e2)); }
   ;
 
-component_reference__function_call returns [void* ast] 
+component_reference__function_call returns [void* ast]
 @init{ cr.ast = 0; fc = 0; i = 0; } :
   cr=component_reference ( fc=function_call )? {
       if (fc != NULL)
@@ -1297,11 +1308,11 @@ component_reference__function_call returns [void* ast]
     }
   ;
 
-name_path returns [void* ast] 
+name_path returns [void* ast]
 @init{ dot = 0; np = 0; } :
   (dot=DOT)? np=name_path2
-  { 
-    ast = dot ? Absyn__FULLYQUALIFIED(np) : np; 
+  {
+    ast = dot ? Absyn__FULLYQUALIFIED(np) : np;
   }
   ;
 
@@ -1311,7 +1322,7 @@ name_path2 returns [void* ast]
   | (id=IDENT | id=CODE) DOT p=name_path { ast = Absyn__QUALIFIED(token_to_scon(id),p); }
   ;
 
-name_path_star returns [void* ast, int unqual, void* lst] 
+name_path_star returns [void* ast, int unqual, void* lst]
 @init{ dot = 0; np.lst = 0; np.unqual = 0; } :
   (dot=DOT)? np=name_path_star2
   {
@@ -1321,7 +1332,7 @@ name_path_star returns [void* ast, int unqual, void* lst]
   }
   ;
 
-name_path_star2 returns [void* ast, int unqual, void* lst] 
+name_path_star2 returns [void* ast, int unqual, void* lst]
 @init{ id = 0; uq = 0; mlst = 0; p.ast = 0; p.lst = 0; } :
     { LA(2) != DOT || LA(3) == LBRACE }? (id=IDENT|id=CODE) ( uq=STAR_EW | DOT LBRACE mlst=name_path_group RBRACE )?
     {
@@ -1337,7 +1348,7 @@ name_path_star2 returns [void* ast, int unqual, void* lst]
     }
   ;
 
-name_path_group returns [void* ast] 
+name_path_group returns [void* ast]
 @init{ id1 = 0; id2 = 0; rest = 0; } :
   (id1=IDENT|id1=CODE) (EQUALS (id2=IDENT|id2=CODE))? (COMMA rest=name_path_group)?
     {
@@ -1358,7 +1369,7 @@ component_reference returns [void* ast, int isNone]
   | WILD {$ast = Absyn__WILD; $isNone = false;}
   ;
 
-component_reference2 returns [void* ast, int isNone] 
+component_reference2 returns [void* ast, int isNone]
 @init { id = 0; cr.ast = 0; arr = 0; } :
     (id=IDENT | id=OPERATOR) ( arr=array_subscripts )? ( DOT cr=component_reference2 )?
     {
@@ -1378,7 +1389,7 @@ function_call returns [void* ast]
   LPAR fa=function_arguments RPAR { ast = fa; }
   ;
 
-function_arguments returns [void* ast] 
+function_arguments returns [void* ast]
 @init{ for_or_el.ast = 0; for_or_el.isFor = 0; namel = 0; } :
   for_or_el=for_or_expression_list (namel=named_arguments)?
     {
@@ -1410,13 +1421,13 @@ for_or_expression_list returns [void* ast, int isFor]
   )
   ;
 
-for_or_expression_list2 returns [void* ast] 
+for_or_expression_list2 returns [void* ast]
 @init{ e = 0; el = 0; } :
     {LA(2) == EQUALS}? { ast = mk_nil(); }
   | (e=expression | e=part_eval_function_expression) (COMMA el=for_or_expression_list2)? { ast = mk_cons(e, or_nil(el)); }
   ;
 
-named_arguments returns [void* ast] 
+named_arguments returns [void* ast]
 @init{ a = 0; as = 0; } :
   a=named_argument (COMMA as=named_arguments)? { ast = mk_cons(a, or_nil(as)); }
   ;
@@ -1467,7 +1478,7 @@ array_subscripts returns [void* ast]
   LBRACK sl=subscript_list RBRACK { ast = sl; }
   ;
 
-subscript_list returns [void* ast] 
+subscript_list returns [void* ast]
 @init{ s1 = 0; s2 = 0; } :
   s1=subscript ( COMMA s2=subscript_list )? { ast = mk_cons(s1, or_nil(s2)); }
   ;
@@ -1478,7 +1489,7 @@ subscript returns [void* ast]
   | COLON { ast = Absyn__NOSUB; }
   ;
 
-comment returns [void* ast] 
+comment returns [void* ast]
 @init{ cmt = 0; ann = 0; ast = 0; } :
   (cmt=string_comment (ann=annotation)?)
     {
@@ -1504,10 +1515,10 @@ annotation returns [void* ast]
 
 /* Code quotation mechanism */
 
-code_expression returns [void* ast] 
+code_expression returns [void* ast]
 @init{ initial = 0; eq = 0; constr = 0; alg = 0; e = 0; m = 0; el.ast = 0; name = 0; cr.ast = 0; } :
   ( CODE LPAR
-    ( (initial=INITIAL)? 
+    ( (initial=INITIAL)?
       ( (EQUATION eq=code_equation_clause)
        |(CONSTRAINT constr=code_constraint_clause)
        |(T_ALGORITHM alg=code_algorithm_clause))
@@ -1536,7 +1547,7 @@ code_expression returns [void* ast]
   )
   ;
 
-code_equation_clause returns [void* ast] 
+code_equation_clause returns [void* ast]
 @init{ e.ast = 0; as = 0; } :
   ( e=equation SEMICOLON as=code_equation_clause?
     {
@@ -1604,7 +1615,7 @@ interactive_stmt returns [void* ast]
     }
   ;
 
-interactive_stmt_list [int *last_sc] returns [void* ast] 
+interactive_stmt_list [int *last_sc] returns [void* ast]
 @init { a.ast = 0; a.isExp = 0; ss = 0; $ast = 0; } :
   a=top_algorithm ( (SEMICOLON ss=interactive_stmt_list[last_sc]) | (SEMICOLON { *last_sc = 1; }) | /* empty */ )
     {
@@ -1617,7 +1628,7 @@ interactive_stmt_list [int *last_sc] returns [void* ast]
 
 /* MetaModelica */
 match_expression returns [void* ast]
-@init{ ty = 0; exp = 0; cmt = 0; es = 0; cs = 0; } : 
+@init{ ty = 0; exp = 0; cmt = 0; es = 0; cs = 0; } :
   ( (ty=MATCHCONTINUE exp=expression cmt=string_comment
      es=local_clause
      cs=cases

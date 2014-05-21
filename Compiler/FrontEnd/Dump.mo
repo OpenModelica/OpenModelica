@@ -1924,9 +1924,8 @@ algorithm
       then
         ();
 
-    case (Absyn.REAL(value = r))
+    case (Absyn.REAL(value = s))
       equation
-        s = realString(r);
         Print.printBuf("Absyn.REAL(");
         Print.printBuf(s);
         Print.printBuf(")");
@@ -4514,10 +4513,10 @@ algorithm
         Print.printBuf(intString(i));
         Print.printBuf(" end Absyn.INTEGER;");
       then ();
-    case Absyn.REAL(value = r)
+    case Absyn.REAL(value = s)
       equation
         Print.printBuf("record Absyn.REAL value = ");
-        Print.printBuf(realString(r));
+        Print.printBuf(s);
         Print.printBuf(" end Absyn.REAL;");
       then ();
     case Absyn.CREF(componentRef)

@@ -493,7 +493,8 @@ protected function getConst
 algorithm
   outExp := matchcontinue(inAbsynExp, inExpType)
     local
-      Integer i; Real r;
+      Integer i;
+      Real r;
       Absyn.Exp exp;
       String str;
 
@@ -512,7 +513,7 @@ algorithm
         DAE.RCONST(r);
 
     case (Absyn.INTEGER(i), DAE.T_INTEGER(source = _))  then DAE.ICONST(i);
-    case (Absyn.REAL(r),    DAE.T_REAL(source = _)) then DAE.RCONST(r);
+    case (Absyn.REAL(str),    DAE.T_REAL(source = _)) equation r = System.stringReal(str); then DAE.RCONST(r);
     case (Absyn.INTEGER(i), DAE.T_REAL(source = _)) equation r = intReal(i); then DAE.RCONST(r);
 
     case (exp,    _)

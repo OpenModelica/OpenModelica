@@ -1124,4 +1124,10 @@ public function isRML
 external "C" b=System_isRML() annotation(Library = {"omcruntime"});
 end isRML;
 
+public function stringReal
+  input String str;
+  output Real r;
+external "builtin";
+end stringReal;
+
 end System;

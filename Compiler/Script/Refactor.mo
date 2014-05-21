@@ -46,6 +46,7 @@ protected import List;
 protected import Interactive;
 protected import Inst;
 protected import Env;
+protected import System; // stringReal
 
 public function refactorGraphicalAnnotation "This function refactors the graphical annotations of a class to the modelica standard.
 "
@@ -871,14 +872,15 @@ protected function getAspectRatioAnn"
 algorithm
   aspectRatio := match (x1,x2,y1,y2,cx1,cy1,cx2,cy2)
     local
-      Real aspect;
-      Real   crx1,cry1,crx2,cry2,rx1,rx2,ry1,ry2;
+      Real aspect,crx1,cry1,crx2,cry2,rx1,rx2,ry1,ry2;
+      String s;
 
     case(rx1,rx2,ry1,ry2,crx1,cry1,crx2,cry2)
       equation
         aspect = (realAbs(ry2 -. ry1) *. (realAbs(cry2 -. cry1))) /. (realAbs(rx2 -. rx1) *. (realAbs(crx2 -. crx1)));
+        s = realString(aspect);
       then
-      Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT("aspectRatio"),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.REAL(aspect),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo);
+      Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT("aspectRatio"),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.REAL(s),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo);
 
   end match;
 end getAspectRatioAnn;
@@ -897,12 +899,13 @@ algorithm
       Real x1,x2;
       Real value;
       Absyn.Ident n;
-
+      String s;
     case(x1,x2,n)
       equation
         value = (x1 +. x2) /. 2.0;
+        s = realString(value);
       then
-        Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT(n),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.REAL(value),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo);
+        Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT(n),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.REAL(s),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo);
   end match;
 end getXYAnn;
 
@@ -919,12 +922,13 @@ algorithm
   scale := match(ax1,ax2,cx1,cx2)
     local
       Real arx1,arx2,crx1,crx2,scaleFac;
-
+      String s;
     case(arx1,arx2,crx1,crx2)
       equation
         scaleFac = (realAbs(arx1 -. arx2)) /. (realAbs(crx1 -. crx2));
+        s = realString(scaleFac);
       then
-        Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT("scale"),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.REAL(scaleFac),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo);
+        Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT("scale"),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.REAL(s),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo);
 
   end match;
 end getScaleAnn;
@@ -954,9 +958,11 @@ protected function getRotationAnn"Helper function to getIconTransformation and g
   output Absyn.ElementArg rotation;
 protected
   Real r;
+  String s;
 algorithm
   r := rot *. (-1.0);
-  rotation := Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT("rotation"),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.REAL(r),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo);
+  s := realString(r);
+  rotation := Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT("rotation"),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.REAL(s),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo);
 end getRotationAnn;
 
 
@@ -1068,7 +1074,7 @@ algorithm
       list<Absyn.ElementArg> rest,args;
       Context context;
 
-    case({},_) then (Absyn.REAL(-100.0),Absyn.REAL(-100.0),Absyn.REAL(100.0),Absyn.REAL(100.0))/*If coordsys is not explicit defined, old implicit standard is [-100,-100;100,100]*/;
+    case({},_) then (Absyn.REAL("-100.0"),Absyn.REAL("-100.0"),Absyn.REAL("100.0"),Absyn.REAL("100.0"))/*If coordsys is not explicit defined, old implicit standard is [-100,-100;100,100]*/;
     case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "Coordsys"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args)))::_,_)
       equation
         (x1,y1,x2,y2) = getCoordsFromCoordSysArgs(args);
@@ -1190,7 +1196,7 @@ algorithm
       list<list<Absyn.Exp>> expMatrix;
       list<Absyn.Exp> expLst;
       Integer x,color1,color2,color3;
-      String val,val1,val2;
+      String val,val1,val2,s;
       list<String> arrows;
       Real thick;
       list<Absyn.ElementArg> args,rest,res;
@@ -1249,7 +1255,8 @@ algorithm
       equation
         thick = arrayGet(listArray(thicknessMapList),x);
         res = transformConnectAnnList(rest,context,res,p);
-      then Absyn.MODIFICATION(fi,e,Absyn.IDENT("thickness"), SOME(Absyn.CLASSMOD(args,Absyn.EQMOD(Absyn.REAL(thick),Absyn.dummyInfo))),com,mod_info):: res;
+        s = realString(thick);
+      then Absyn.MODIFICATION(fi,e,Absyn.IDENT("thickness"), SOME(Absyn.CLASSMOD(args,Absyn.EQMOD(Absyn.REAL(s),Absyn.dummyInfo))),com,mod_info):: res;
 
     case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "smooth"), modification = SOME(Absyn.CLASSMOD( elementArgLst = args , eqMod = eqMod)), comment = com, info = mod_info) :: rest,context as ("Line" :: _),res,p)
       equation
@@ -1561,7 +1568,7 @@ algorithm
       list<String> arrows;
       Absyn.Exp x1,x2,y1,y2;
       Integer color1,color2,color3,x;
-      String  val,val1,val2;
+      String  val,val1,val2,s;
       Real thick;
 
     case({},_) then {} ;
@@ -1619,13 +1626,15 @@ algorithm
       equation
         thick = arrayGet(listArray(thicknessMapList),x);
         restRes = transAnnLstToNamedArgs(rest,context);
-      then Absyn.NAMEDARG("thickness",Absyn.REAL(thick)) :: restRes;
+        s = realString(thick);
+      then Absyn.NAMEDARG("thickness",Absyn.REAL(s)) :: restRes;
 
     case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "thickness"), modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=Absyn.INTEGER(value = x))   ))) :: rest,context )
       equation
         thick = arrayGet(listArray(thicknessMapList),x);
         restRes = transAnnLstToNamedArgs(rest,context);
-      then Absyn.NAMEDARG("lineThickness",Absyn.REAL(thick)) :: restRes;
+        s = realString(thick);
+      then Absyn.NAMEDARG("lineThickness",Absyn.REAL(s)) :: restRes;
 
     case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "gradient"), modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=Absyn.INTEGER(value = x)) ))) :: rest,context)
       equation
@@ -2226,13 +2235,13 @@ protected function getValueFromExp
 algorithm
   value := match(expr)
     local
-      Real realVal;
+      String realVal;
       Integer intVal;
     case(Absyn.REAL(value = realVal))
-    then realVal;
+    then System.stringReal(realVal);
 
     case(Absyn.UNARY(exp = Absyn.REAL(value = realVal)))
-    then -. realVal;
+    then -. System.stringReal(realVal);
 
     case(Absyn.INTEGER(value = intVal))
     then intReal(intVal);

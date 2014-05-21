@@ -1072,12 +1072,15 @@ protected function translateDefineunitParam2 " help function to translateElement
 algorithm
   weightOpt := matchcontinue(inArgs,inArg)
     local
-      String name, arg; Real r;
+      String name, arg, s;
+      Real r;
       list<Absyn.NamedArg> args;
 
-    case(Absyn.NAMEDARG(name,Absyn.REAL(r))::_,arg) equation
-      true = name ==& arg;
-    then SOME(r);
+    case(Absyn.NAMEDARG(name,Absyn.REAL(s))::_,arg)
+      equation
+        true = name ==& arg;
+        r = System.stringReal(s);
+      then SOME(r);
     case({},_) then NONE();
     case(_::args,arg) then translateDefineunitParam2(args,arg);
   end matchcontinue;

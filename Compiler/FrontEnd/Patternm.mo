@@ -203,9 +203,10 @@ algorithm
         et = validPatternType(ty,DAE.T_INTEGER_DEFAULT,inLhs,info);
       then (cache,DAE.PAT_CONSTANT(et,DAE.ICONST(i)));
 
-    case (cache,_,Absyn.REAL(r),_,_,_)
+    case (cache,_,Absyn.REAL(str),_,_,_)
       equation
         et = validPatternType(ty,DAE.T_REAL_DEFAULT,inLhs,info);
+        r = System.stringReal(str);
       then (cache,DAE.PAT_CONSTANT(et,DAE.RCONST(r)));
 
     case (cache,_,Absyn.UNARY(Absyn.UMINUS(),Absyn.INTEGER(i)),_,_,_)
@@ -214,9 +215,10 @@ algorithm
         i = -i;
       then (cache,DAE.PAT_CONSTANT(et,DAE.ICONST(i)));
 
-    case (cache,_,Absyn.UNARY(Absyn.UMINUS(),Absyn.REAL(r)),_,_,_)
+    case (cache,_,Absyn.UNARY(Absyn.UMINUS(),Absyn.REAL(str)),_,_,_)
       equation
         et = validPatternType(ty,DAE.T_REAL_DEFAULT,inLhs,info);
+        r = System.stringReal(str);
         r = realNeg(r);
       then (cache,DAE.PAT_CONSTANT(et,DAE.RCONST(r)));
 

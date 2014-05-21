@@ -579,9 +579,10 @@ algorithm
     case (cache,_,Absyn.INTEGER(value = i),_,st,_,_,_,_)
       then (cache,DAE.ICONST(i),DAE.PROP(DAE.T_INTEGER_DEFAULT,DAE.C_CONST()),st);
 
-    case (cache,_,Absyn.REAL(value = r),_,st,_,_,_,_)
-      then
-        (cache,DAE.RCONST(r),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_CONST()),st);
+    case (cache,_,Absyn.REAL(value = s),_,st,_,_,_,_)
+      equation
+        r = System.stringReal(s);
+      then (cache,DAE.RCONST(r),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_CONST()),st);
 
     case (cache,_,Absyn.STRING(value = s),_,st,_,_,_,_)
       equation
@@ -1817,7 +1818,9 @@ algorithm
 
     case (cache,_,Absyn.INTEGER(value = i),_,_,_) then (cache,DAE.ICONST(i),DAE.PROP(DAE.T_INTEGER_DEFAULT,DAE.C_CONST()));  /* impl */
 
-    case (cache,_,Absyn.REAL(value = r),_,_,_)
+    case (cache,_,Absyn.REAL(value = s),_,_,_)
+      equation
+        r = System.stringReal(s);
       then
         (cache,DAE.RCONST(r),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_CONST()));
 
