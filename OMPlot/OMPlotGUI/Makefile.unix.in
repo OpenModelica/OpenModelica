@@ -20,7 +20,6 @@ Makefile: OMPlotGUI.pro OMPlotGUI.config
 Makefile.lib: Makefile OMPlotLib.pro OMPlotGUI.config
 	@rm -f $@
 	$(QMAKE) OMPlotLib.pro -o $@
-	cp -a ../bin/libOMPlot* $(top_builddir)/build/lib/omc/
 clean:
 	test ! -f Makefile || $(MAKE) -f Makefile clean
 	test ! -f Makefile.lib || $(MAKE) -f Makefile.lib clean
@@ -35,6 +34,7 @@ endif
 
 $(LIB): Makefile.lib
 	$(MAKE) -f $<
+	cp -a ../bin/libOMPlot* $(top_builddir)/build/lib/omc/
 
 build: $(NAME) $(LIB)
 	cp -p ../bin/$(NAME) $(builddir_bin)
