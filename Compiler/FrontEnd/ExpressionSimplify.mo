@@ -4031,6 +4031,29 @@ algorithm
       equation
         true = Expression.expEqual(e1,e2);
       then Expression.makeBuiltinCall("sqrt",{e1},DAE.T_REAL_DEFAULT);
+    // x^y/x => x^(y-1) 
+    case (_,DAE.DIV(ty = _),DAE.BINARY(e1,op1 as DAE.POW(ty), e2), e3,_,_)
+       equation
+         true = Expression.expEqual(e1,e3);
+         e4 = Expression.makeConstOne(ty);
+         e4 = DAE.BINARY(e2,DAE.SUB(ty), e4);
+       then DAE.BINARY(e1,op1, e4);
+    // x^y*z/x = x^(y-1)*z
+    case (_,DAE.DIV(ty = _),DAE.BINARY(DAE.BINARY(e1,op1 as DAE.POW(ty), e2),op2 as DAE.MUL(_),e5), e3,_,_)
+      equation
+        true = Expression.expEqual(e1,e3);
+        e4 = Expression.makeConstOne(ty);
+        e4 = DAE.BINARY(e2,DAE.SUB(ty), e4);
+      then DAE.BINARY(DAE.BINARY(e1,op1, e4),op2,e5);
+    //x/x^y => x^(1-y)
+    case (_,DAE.DIV(ty = _),e3, DAE.BINARY(e1,op1 as DAE.POW(ty), e2),_,_)
+       equation
+         true = Expression.expEqual(e1,e3);
+         e4 = Expression.makeConstOne(ty);
+         e4 = DAE.BINARY(e4,DAE.SUB(ty), e2);
+       then DAE.BINARY(e1,op1, e4);
+
+
 
     // 1 ^ e => 1
     case (_,DAE.POW(ty = _),e1,_,true,_)
