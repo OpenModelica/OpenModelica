@@ -1002,6 +1002,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
           timeValue = q[numVars()-1];
           <%(vars.stateVars |> SIMVAR(__) => '<%cref(name)%>=q[<%index%>];') ;separator="\n"%>
       }
+      bound_params();
       <%allEqns(allEquations,whenClauses,removedEquations)%>
       // Alias assignments
       <%aliasAssign%>
