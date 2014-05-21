@@ -1,7 +1,7 @@
 package CodegenCpp
 
 import interface SimCodeTV;
-
+import CodegenUtil.*;
 // SECTION: SIMULATION TARGET, ROOT TEMPLATE
 
 
@@ -1064,7 +1064,7 @@ template simulationResults(Boolean test, SimCode simCode)
 ::=
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__),makefileParams=MAKEFILE_PARAMS(__),simulationSettingsOpt = SOME(settings as SIMULATION_SETTINGS(__))) then
-let results = if test then ""  else '<%makefileParams.compileDir%>/'
+let results = if test then ""  else '<%makefileParamst.compileDir%>/'
 <<
 <%results%><%fileNamePrefix%>_res.<%settings.outputFormat%>
 >>
@@ -2123,13 +2123,13 @@ case FUNCTION(outVars={}) then
 case FUNCTION(outVars=_) then
   let fname = underscorePath(name)
   <<
-        /* functionHeaderRegularFunction2 */
+        /* functionHeaderRegularFunction2*/
         <%fname%>RetType <%fname%>(<%functionArguments |> var => funArgDefinition(var,simCode) ;separator=", "%>);
   >>
 case EXTERNAL_FUNCTION(outVars=var::_) then
 let fname = underscorePath(name)
    <<
-        /* functionHeaderRegularFunction2 */
+        /* functionHeaderRegularFunction2*/
         <%fname%>RetType <%fname%>(<%funArgs |> var => funArgDefinition(var,simCode) ;separator=", "%>);
    >>
 case EXTERNAL_FUNCTION(outVars={}) then
@@ -5430,20 +5430,20 @@ template initAliasValst(Text &varDecls /*BUFP*/,list<SimVar> varsLst, SimCode si
       case vStr as "(0)" then
        '<%preExp%>
         <%getAliasVarName(sv.aliasvar, simCode,context)%>=<%vStr%>;//<%cref(sv.name)%>
-       _start_values["<%getAliasVarName(sv.aliasvar, simCode,context)%>"]=<%vStr%>;'
+       _start_values["<%cref(sv.name)%>"]=<%vStr%>;'
       case vStr as "" then
        '<%preExp%>
        <%getAliasVarName(sv.aliasvar, simCode,context)%>=0;//<%cref(sv.name)%>
-        _start_values["<%getAliasVarName(sv.aliasvar, simCode,context)%>"]=<%vStr%>;'
+        _start_values["<%cref(sv.name)%>"]=<%vStr%>;'
       case vStr then
        '<%preExp%>
        <%getAliasVarName(sv.aliasvar, simCode,context)%>=<%vStr%>;//<%cref(sv.name)%>
-       _start_values["<%getAliasVarName(sv.aliasvar, simCode,context)%>"]=<%vStr%>;'
+       _start_values["<%cref(sv.name)%>"]=<%vStr%>;'
         end match
       else
         '<%preExp%>
         <%getAliasVarName(sv.aliasvar, simCode,context)%>=<%startValue(sv.type_)%>;////<%crefStr(sv.name)%>
-       _start_values["<%getAliasVarName(sv.aliasvar, simCode,context)%>"]=<%startValue(sv.type_)%>;'
+       _start_values["<%cref(sv.name)%>"]=<%startValue(sv.type_)%>;'
   ;separator="\n"
 end initAliasValst;
 
@@ -5614,7 +5614,7 @@ template expTypeShort(DAE.Type type)
   case T_ARRAY(__)       then expTypeShort(ty)
   case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
                       then "void*"
-  case T_COMPLEX(__)     then 'complex3'
+  case T_COMPLEX(__)     then 'ComplexType'
   case T_METATYPE(__) case T_METABOXED(__)    then "metatype"
   case T_FUNCTION_REFERENCE_VAR(__) then "fnptr"
   else "expTypeShort:ERROR"
@@ -5645,7 +5645,7 @@ template arrayCrefCStr2(ComponentRef cr)
   case CREF_QUAL(__) then '<%unquoteIdentifier(ident)%>_P_<%arrayCrefCStr2(componentRef)%>'
   else "CREF_NOT_IDENT_OR_QUAL"
 end arrayCrefCStr2;
-
+/*
 template underscorePath(Path path)
  "Generate paths with components separated by underscores.
   Replaces also the . in identifiers with _.
@@ -5659,7 +5659,7 @@ template underscorePath(Path path)
   case FULLYQUALIFIED(__) then
     underscorePath(path)
 end underscorePath;
-
+*/
 template replaceDotAndUnderscore(String str)
  "Replace _ with __ and dot in identifiers with _"
 ::=
@@ -10208,12 +10208,12 @@ case MODELINFO(vars=SIMVARS(__)) then
 
   void <%lastIdentOfPath(name)%>::getString(string* z)
   {
-  /*
+  
   <%System.tmpTickReset(0)%>
   <%vars.stringAlgVars |> var => giveVariablesDefault(var, System.tmpTick()) ;separator="\n"%>
   <%vars.stringParamVars |> var => giveVariablesDefault(var, System.tmpTick()) ;separator="\n"%>
   <%vars.stringAliasVars |> var => giveVariablesDefault(var, System.tmpTick()) ;separator="\n"%>
-  */
+  
   }
 
   void <%lastIdentOfPath(name)%>::setReal(const double* z)
@@ -10267,7 +10267,7 @@ template giveVariablesDefault(SimVar simVar, Integer valueReference)
 ::=
 match simVar
   case SIMVAR(__) then
-  let description = if comment then '// "<%comment%>"'
+  let description = if comment then '/* <%comment%> */'
   <<
   z[<%valueReference%>] = <%cref(name)%>; <%description%>
   >>
