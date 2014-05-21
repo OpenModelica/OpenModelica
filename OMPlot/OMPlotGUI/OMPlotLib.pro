@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT += core gui
+QT += core gui svg
 
 TARGET = OMPlot
 TEMPLATE = lib
