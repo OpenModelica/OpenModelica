@@ -4337,17 +4337,22 @@ algorithm
     list<DAE.Statement> st,st_1;
     DAE.Else el,el_1;
     Type_a extraArg;
+    Boolean b;
   case (DAE.NOELSE(),_,_,extraArg) then (DAE.NOELSE(),extraArg);
   case (DAE.ELSEIF(e,st,el),_,_,extraArg)
     equation
       (el_1,extraArg) = traverseDAEEquationsStmtsElse(el,func,opt,extraArg);
       (st_1,extraArg) = traverseDAEEquationsStmtsList(st,func,opt,extraArg);
       ((e_1,extraArg)) = func((e, extraArg));
-    then (Algorithm.optimizeElseIf(e_1,st_1,el_1),extraArg);
+      outElse = Algorithm.optimizeElseIf(e_1,st_1,el_1);
+      b = referenceEq(el,el_1) and referenceEq(st,st_1) and referenceEq(e,e_1);
+      outElse = Util.if_(b,inElse,outElse);
+    then (outElse,extraArg);
   case(DAE.ELSE(st),_,_,extraArg)
     equation
       (st_1,extraArg) = traverseDAEEquationsStmtsList(st,func,opt,extraArg);
-    then (DAE.ELSE(st_1),extraArg);
+      outElse = Util.if_(referenceEq(st,st_1),inElse,DAE.ELSE(st_1));
+    then (outElse,extraArg);
 end match;
 end traverseDAEEquationsStmtsElse;
 
