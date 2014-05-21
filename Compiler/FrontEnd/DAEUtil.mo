@@ -5929,13 +5929,36 @@ public function transformationsBeforeBackend
   output DAE.DAElist outDAElist;
 protected
   list<DAE.Element> elts;
+  HashTable.HashTable ht;
 algorithm
   DAE.DAE(elts) := inDAElist;
-  elts := List.map1(elts, makeEvaluatedParamFinal, Env.getEvaluatedParams(cache));
+  ht := Env.getEvaluatedParams(cache);
+  elts := List.map1(elts, makeEvaluatedParamFinal, ht);
+  Debug.bcall(Flags.isSet(Flags.PRINT_STRUCTURAL), transformationsBeforeBackendNotification, ht);
   outDAElist := DAE.DAE(elts);
   // Don't even run the function to try and do this; it doesn't work very well
   // outDAElist := transformDerInline(outDAElist);
 end transformationsBeforeBackend;
+
+protected function transformationsBeforeBackendNotification
+  input HashTable.HashTable ht;
+algorithm
+  _ := matchcontinue ht
+    local
+      list<DAE.ComponentRef> crs;
+      list<String> strs;
+      String str;
+    case _
+      equation
+        (crs as _::_) = BaseHashTable.hashTableKeyList(ht);
+        strs = List.map(crs, ComponentReference.printComponentRefStr);
+        strs = List.sort(strs, Util.strcmpBool);
+        str = stringDelimitList(strs, ", ");
+        Error.addMessage(Error.NOTIFY_FRONTEND_STRUCTURAL_PARAMETERS, {str});
+      then ();
+    else ();
+  end matchcontinue;
+end transformationsBeforeBackendNotification;
 
 protected function makeEvaluatedParamFinal "
   This function makes all evaluated parameters final."

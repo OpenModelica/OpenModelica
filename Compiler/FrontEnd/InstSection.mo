@@ -3236,14 +3236,6 @@ algorithm
 end matchcontinue;
 end checkConstantVariability;
 
-protected function stringGte
-  input String s1;
-  input String s2;
-  output Boolean b;
-algorithm
-  b := stringCompare(s1, s2) >= 0;
-end stringGte;
-
 protected function connectExpandableConnectors
 "@author: adrpo
   this function handle the connections of expandable connectors"
@@ -3333,7 +3325,7 @@ algorithm
         // Debug.fprintln(Flags.EXPANDABLE, "Variables2: " +& stringDelimitList(variables2, ", "));
         variablesUnion = List.union(variables1, variables2);
         // sort so we have them in order
-        variablesUnion = List.sort(variablesUnion, stringGte);
+        variablesUnion = List.sort(variablesUnion, Util.strcmpBool);
         // Debug.fprintln(Flags.EXPANDABLE, "Union of expandable connector variables: " +& stringDelimitList(variablesUnion, ", "));
 
         // Debug.fprintln(Flags.EXPANDABLE, "2 connect(expandable, expandable)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");

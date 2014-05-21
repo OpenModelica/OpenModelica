@@ -387,6 +387,8 @@ constant DebugFlag IMPL_ODE = DEBUG_FLAG(110, "implOde", false,
   Util.gettext("activates implicit codegen"));
 constant DebugFlag EVAL_FUNC_DUMP = DEBUG_FLAG(111, "evalFuncDump", false,
   Util.gettext("dumps debug information about the function evaluation"));
+constant DebugFlag PRINT_STRUCTURAL = DEBUG_FLAG(112, "printStructuralParameters", false,
+  Util.gettext("Prints the structural parameters identified by the front-end"));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -503,7 +505,8 @@ constant list<DebugFlag> allDebugFlags = {
   HPCOM_ANALYZATION_MODE,
   STRICT_RML,
   IMPL_ODE,
-  EVAL_FUNC_DUMP
+  EVAL_FUNC_DUMP,
+  PRINT_STRUCTURAL
 };
 
 // CONFIGURATION FLAGS
