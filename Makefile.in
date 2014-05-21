@@ -94,8 +94,16 @@ qtclients:
 	@echo "*** OpenModelica configured without support for CORBA"
 qtclean: qtclean-common
 else
-qwt:
+qwt-build:
 	$(MAKE) -C 3rdParty/qwt -f Makefile.unix
+build/lib/omc/libqwt.so: qwt-build
+	cp -a 3rdParty/qwt/lib/libqwt.so* build/lib/omc/
+build/lib/omc/libqwt.dylib: qwt-build
+	cp -a 3rdParty/qwt/lib/libqwt*dylib build/lib/omc/
+	install_name_tool -id @rpath/libqwt.6.2.0.dylib build/lib/omc/libqwt.6.2.0.dylib
+
+qwt: build/lib/omc/libqwt@SHREXT@
+
 omnotebook: mkbuilddirs qwt omplot
 	mkdir -p $(builddir_share)/omnotebook
 	$(MAKE) -C OMNotebook/OMNotebookGUI -f Makefile.unix
