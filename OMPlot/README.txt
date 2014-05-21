@@ -17,7 +17,6 @@ Windows
   - Run the OMPlotGUI/Makefile.omdev.mingw via Qt Command Prompt.
   OR
   - Load the file OMPlotGUI/OMPlotLib.pro in Qt Creator IDE. Qt Creator is included in Qt SDK.
-  - Copy qwt.dll and qwtd.dll from c:/OMDev/qwt-6.1.0-mingw/lib to /location-where-OMPlot.exe-is-created.
   - Build and run the project.
 
 Linux
