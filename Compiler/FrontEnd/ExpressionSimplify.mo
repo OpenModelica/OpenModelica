@@ -4066,12 +4066,19 @@ algorithm
          e4 = Expression.makeConstOne(ty);
          e4 = DAE.BINARY(e4,DAE.SUB(ty), e2);
        then DAE.BINARY(e1,op1, e4);
+   //(x/y)^(-r) => (y/x)^r
+   case (_,op2 as DAE.POW(ty = _),DAE.BINARY(e1, op1 as DAE.DIV(_), e2), DAE.RCONST(r),_,_)
+     equation
+       true = realLt(r,0.0);
+       r = realNeg(r);
+     then DAE.BINARY(DAE.BINARY(e2,op1,e1),op2,DAE.RCONST(r));
     //x^y/x^z => x^(y-z)
     case (_,DAE.DIV(ty = _),DAE.BINARY(e3,DAE.POW(_),e5), DAE.BINARY(e1,op1 as DAE.POW(ty), e2),_,_)
        equation
          true = Expression.expEqual(e1,e3);
          e4 = DAE.BINARY(e5,DAE.SUB(ty), e2);
        then DAE.BINARY(e1,op1, e4);
+
 
     // 1 ^ e => 1
     case (_,DAE.POW(ty = _),e1,_,true,_)
