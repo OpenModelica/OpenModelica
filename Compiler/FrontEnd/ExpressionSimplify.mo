@@ -3655,6 +3655,20 @@ algorithm
         true = Expression.expEqual(e1,e2);
       then
         DAE.BINARY(e1,DAE.POW(DAE.T_REAL_DEFAULT),DAE.BINARY(e,DAE.ADD(DAE.T_REAL_DEFAULT),DAE.RCONST(0.5)));
+    // x^y*x^z => x^(y+z)
+    case (DAE.MUL(ty=_),DAE.BINARY(e1,op1 as DAE.POW(tp),e2),DAE.BINARY(e3, DAE.POW(_),e4))
+      equation
+        true = Expression.expEqual(e1,e3);
+      then
+        DAE.BINARY(e1,op1,DAE.BINARY(e2,DAE.ADD(tp),e4));
+    // x*x^y => x^(y+1)
+    case (DAE.MUL(ty=_),e1,DAE.BINARY(e3, op1 as DAE.POW(tp),e4))
+      equation
+        true = Expression.expEqual(e1,e3);
+        e = Expression.makeConstOne(tp);
+      then
+        DAE.BINARY(e1,op1,DAE.BINARY(e,DAE.ADD(tp),e4));
+    
   end matchcontinue;
 end simplifyBinaryCommutativeWork;
 
@@ -4052,8 +4066,12 @@ algorithm
          e4 = Expression.makeConstOne(ty);
          e4 = DAE.BINARY(e4,DAE.SUB(ty), e2);
        then DAE.BINARY(e1,op1, e4);
-
-
+    //x^y/x^z => x^(y-z)
+    case (_,DAE.DIV(ty = _),DAE.BINARY(e3,DAE.POW(_),e5), DAE.BINARY(e1,op1 as DAE.POW(ty), e2),_,_)
+       equation
+         true = Expression.expEqual(e1,e3);
+         e4 = DAE.BINARY(e5,DAE.SUB(ty), e2);
+       then DAE.BINARY(e1,op1, e4);
 
     // 1 ^ e => 1
     case (_,DAE.POW(ty = _),e1,_,true,_)
