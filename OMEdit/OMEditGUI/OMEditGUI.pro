@@ -143,7 +143,7 @@ win32 {
         -L../../OMPlot/bin \
         -lOMPlot \
         -L../../3rdParty/qwt/build/lib \
-        -lqwtd \
+        -lomqwtd \
         -L../../3rdParty/gc-7.2/.libs -lgc \
         -L../../build/lib/omc
 } else {
@@ -158,7 +158,7 @@ win32 {
         -L../../OMPlot/bin \
         -lOMPlot \
         -L../../3rdParty/qwt/build/lib \
-        -lqwt \
+        -lomqwt \
         -L../../3rdParty/gc-7.2/.libs -lgc \
         -L../../build/lib/omc \
         # required for backtrace
