@@ -1561,8 +1561,13 @@ end createExtSchedule1;
 // Task Duplication-based Scheduler
 //---------------------------------
 
-public function createTDSschedule"task duplication schedule by Samantha Ranaweera and Dharma P. Agrawal
-est:earliest starting time, ect: earliest completion time, last:latest allowable starting time, lact: latest allowable completion time, fpred:favourite predecessor
+public function createTDSschedule"task duplication schedule by Samantha Ranaweera and Dharma P. Agrawal,
+see:
+'A Task Duplication Based Scheduling Algorithm for Heterogeneous Systems'
+or
+'A Scalable Task Duplication Based Scheduling Algorithm for Heterogeneous Systems'
+including slight adaptations from my side, since in reality, nothing is exactly the same like the smart guys thought of.
+notation: est:earliest starting time, ect: earliest completion time, last:latest allowable starting time, lact: latest allowable completion time, fpred:favourite predecessor
 author: Waurich TUD 2015-05"
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
@@ -1570,11 +1575,12 @@ author: Waurich TUD 2015-05"
   input array<list<Integer>> iSccSimEqMapping;
   output HpcOmSimCode.Schedule oSchedule;
 protected
-  Integer size;
+  Integer size,numClusters;
   list<Integer> queue;
   list<Real> levels;
   array<Real> estArray,lastArray,ectArray,lactArray,tdsLevelArray,alap,asap;
   array<Integer> fpredArray;
+  list<list<Integer>> initClusters;
 algorithm
   HpcOmTaskGraph.printTaskGraph(iTaskGraph);
   HpcOmTaskGraph.printTaskGraphMeta(iTaskGraphMeta);
@@ -1583,23 +1589,130 @@ algorithm
   (asap,estArray,ectArray) := computeGraphValuesBottomUp(iTaskGraph,iTaskGraphMeta);
   (alap,lastArray,lactArray,tdsLevelArray) := computeGraphValuesTopDown(iTaskGraph,iTaskGraphMeta);
 
-  printRealArray(estArray,"est");
-  printRealArray(ectArray,"ect");
-  printRealArray(lastArray,"last");
-  printRealArray(lactArray,"lact");
+  //printRealArray(estArray,"est");
+  //printRealArray(ectArray,"ect");
+  //printRealArray(lastArray,"last");
+  //printRealArray(lactArray,"lact");
   printRealArray(tdsLevelArray,"tdsLevel");
-  printRealArray(alap,"alap");
-  printRealArray(asap,"asap");
+  //printRealArray(alap,"alap");
+  //printRealArray(asap,"asap");
 
   fpredArray := computeFavouritePred(iTaskGraph,iTaskGraphMeta,ectArray); //the favourite predecessor of each node
   printRealArray(Util.arrayMap(fpredArray,intReal),"fpred");
 
   (levels,queue) := quicksortWithOrder(arrayList(tdsLevelArray));
-  //print("queue "+&stringDelimitList(List.map(queue,intString)," ; ")+&"\n");
-  //printRealArray(listArray(levels),"levels");
+  print("queue "+&stringDelimitList(List.map(queue,intString)," ; ")+&"\n");
+
+  initClusters := createTDSInitialCluster(iTaskGraph,iTaskGraphMeta,fpredArray,queue);
+  print("initClusters:\n"+&stringDelimitList(List.map(initClusters,intListString),"\n")+&"\n");
+  numClusters := listLength(initClusters);
 
   oSchedule := HpcOmSimCode.EMPTYSCHEDULE();
 end createTDSschedule;
+
+protected function createTDSInitialCluster"creates the initial Clusters for the task duplication scheduler.
+author: waurich TUD 2014-05"
+  input HpcOmTaskGraph.TaskGraph iTaskGraph;
+  input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+  input array<Integer> fpredArrayIn;
+  input list<Integer> queue;
+  output list<list<Integer>> clustersOut;
+protected
+  array<Integer> taskAssignments;
+  list<Integer> rootNodes;
+algorithm
+  taskAssignments := arrayCreate(arrayLength(iTaskGraph),-1);
+  rootNodes := HpcOmTaskGraph.getRootNodes(iTaskGraph);
+  clustersOut := createTDSInitialCluster1(iTaskGraph,iTaskGraphMeta,fpredArrayIn,rootNodes,taskAssignments,1,queue,{{}});
+end createTDSInitialCluster;
+
+protected function createTDSInitialCluster1"implementation of function createTDSInitialCluster.
+author: waurich TUD 2014-05"
+  input HpcOmTaskGraph.TaskGraph iTaskGraph;
+  input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+  input array<Integer> fpredArrayIn;
+  input list<Integer> rootNodes;
+  input array<Integer> taskAssIn; // rootNodes are not assigned
+  input Integer currThread;
+  input list<Integer> queue;
+  input list<list<Integer>> clustersIn;
+  output list<list<Integer>> clustersOut;
+algorithm
+  clustersOut := matchcontinue(iTaskGraph,iTaskGraphMeta,fpredArrayIn,rootNodes,taskAssIn,currThread,queue,clustersIn)
+    local
+      Integer front, fpred,pos;
+      Real maxExeCost;
+      list<Real> parentExeCost;
+      list<Integer> rest, parents, parentAssgmnts, unAssParents, thread;
+      list<list<Integer>> clusters;
+    case(_,_,_,_,_,_,{},_)
+      equation
+        clusters = List.map(clustersIn,listReverse);
+      then clusters;
+    case(_,_,_,_,_,_,front::rest,_)
+      equation
+        // the node is an rootNode
+        true = List.isMemberOnTrue(front,rootNodes,intEq);
+        //print("node (root): "+&intString(front)+&"\n");
+        //assign rootNode to current thread and start a new thread(cluster)
+        thread = listGet(clustersIn,currThread);
+        thread = front::thread;
+        clusters = List.replaceAt(thread,currThread-1,clustersIn);
+        //print("cluster: "+&intListString(thread)+&"\n");
+        clusters = listAppend(clusters,{{}});
+        clusters = createTDSInitialCluster1(iTaskGraph,iTaskGraphMeta,fpredArrayIn,rootNodes,taskAssIn,currThread+1,rest,clusters);
+      then clusters;
+    case(_,_,_,_,_,_,front::rest,_)
+      equation
+        // the favourite predecessor is not yet assigned
+        fpred = arrayGet(fpredArrayIn,front);
+        true = intEq(arrayGet(taskAssIn,fpred),-1);
+        //print("node (new pred): "+&intString(front)+&"\n");
+        //assign node from queue to a thread (in reversed order)
+        thread = listGet(clustersIn,currThread);
+        thread = front::thread;
+        clusters = List.replaceAt(thread,currThread-1,clustersIn);
+        //print("cluster: "+&intListString(thread)+&"\n");
+        _ = arrayUpdate(taskAssIn,front,currThread);
+        // go to predecessor
+        rest = List.removeOnTrue(fpred,intEq,rest);
+        rest = fpred::rest;
+        clusters = createTDSInitialCluster1(iTaskGraph,iTaskGraphMeta,fpredArrayIn,rootNodes,taskAssIn,currThread,rest,clusters);
+      then clusters;
+    case(_,_,_,_,_,_,front::rest,_)
+      equation
+        // the favourite predecessor is already assigned
+        fpred = arrayGet(fpredArrayIn,front);
+        true = intNe(arrayGet(taskAssIn,fpred),-1);
+        print("node (NOT THE FPRED): "+&intString(front)+&"\n");
+        //assign node from queue to a thread (in reversed order)
+        thread = listGet(clustersIn,currThread);
+        thread = front::thread;
+        clusters = List.replaceAt(thread,currThread-1,clustersIn);
+        //print("cluster: "+&intListString(thread)+&"\n");
+        _ = arrayUpdate(taskAssIn,front,currThread);
+        // check for other parents to get the next fpred
+        parents = arrayGet(iTaskGraph,front);
+        parentAssgmnts = List.map1(parents,Util.arrayGetIndexFirst,taskAssIn);
+        (_,unAssParents) = List.filter1OnTrueSync(parentAssgmnts,intEq,-1,parents); // not yet assigned parents
+        // if there are unassigned parents, use them, otherwise all parents.take the one with the least execution cost
+        parents = Util.if_(List.isEmpty(unAssParents),parents,unAssParents);
+        parentExeCost = List.map1(parents,HpcOmTaskGraph.getExeCostReqCycles,iTaskGraphMeta);
+        maxExeCost = List.fold(parentExeCost,realMax,0.0);
+        pos = List.position(maxExeCost,parentExeCost) - 1;
+        fpred = listGet(parents,pos);
+        // go to predecessor
+        rest = List.removeOnTrue(fpred,intEq,rest);
+        rest = fpred::rest;
+        clusters = createTDSInitialCluster1(iTaskGraph,iTaskGraphMeta,fpredArrayIn,rootNodes,taskAssIn,currThread,rest,clusters);
+      then clusters;
+    else
+     equation
+       print("createTDSInitialCluster1 failed\n");
+     then
+       fail();
+  end matchcontinue;
+end createTDSInitialCluster1;
 
 protected function computeFavouritePred"gets the favourite Predecessors of each task. needed for the task duplication scheduler
 author:Waurich TUD 2014-05"
@@ -3136,5 +3249,12 @@ algorithm
   print("node: "+&intString(idxIn)+&" has the "+&header+&": "+&realString(inValue)+&"\n");
   idxOut := idxIn +1;
 end printRealArray1;
+
+protected function intListString
+  input list<Integer> lstIn;
+  output String s;
+algorithm
+  s := stringDelimitList(List.map(lstIn,intString)," , ");
+end intListString;
 
 end HpcOmScheduler;
