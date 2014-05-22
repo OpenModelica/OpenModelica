@@ -1393,6 +1393,8 @@ template simulationCppFile(SimCode simCode)
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
+  let className = lastIdentOfPath(modelInfo.name)
+
   <<
    #include "Modelica.h"
    #include <System/IMixedSystem.h>
@@ -1408,12 +1410,12 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
 
 
-
-    <%lastIdentOfPath(modelInfo.name)%>::<%lastIdentOfPath(modelInfo.name)%>(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData)
-   :SystemDefaultImplementation(*globalSettings)
-    ,_algLoopSolverFactory(nonlinsolverfactory)
-    ,_simData(simData)
-    <%simulationInitFile(simCode)%>
+    /* Constructor */
+    <%className%>::<%className%>(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData)
+        :SystemDefaultImplementation(*globalSettings)
+        ,_algLoopSolverFactory(nonlinsolverfactory)
+        ,_simData(simData)
+        <%simulationInitFile(simCode)%>
     {
     //Number of equations
     <%dimension1(simCode)%>
@@ -1431,19 +1433,24 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     //Initialize the state vector
     SystemDefaultImplementation::initialize();
     //Instantiate auxiliary object for event handling functionality
-    _event_handling.getCondition =  boost::bind(&<%lastIdentOfPath(modelInfo.name)%>::getCondition, this, _1);
+    _event_handling.getCondition =  boost::bind(&<%className%>::getCondition, this, _1);
      <%arrayReindex(modelInfo)%>
     //Initialize array elements
     <%initializeArrayElements(simCode)%>
 
+    /*Initialize the equations array. Point to each equation function*/
+    initialize_equations_array();
 
 
     }
-    <%lastIdentOfPath(modelInfo.name)%>::~<%lastIdentOfPath(modelInfo.name)%>()
+    
+    /* Destructor */
+    <%className%>::~<%className%>()
     {
 
     }
 
+    <%InitializeEquationsArray(allEquations, className)%>
 
    <%Update(simCode)%>
 
@@ -2124,13 +2131,13 @@ case FUNCTION(outVars={}) then
 case FUNCTION(outVars=_) then
   let fname = underscorePath(name)
   <<
-        /* functionHeaderRegularFunction2*/
+        /* functionHeaderRegularFunction2 */
         <%fname%>RetType <%fname%>(<%functionArguments |> var => funArgDefinition(var,simCode) ;separator=", "%>);
   >>
 case EXTERNAL_FUNCTION(outVars=var::_) then
 let fname = underscorePath(name)
    <<
-        /* functionHeaderRegularFunction2*/
+        /* functionHeaderRegularFunction2 */
         <%fname%>RetType <%fname%>(<%funArgs |> var => funArgDefinition(var,simCode) ;separator=", "%>);
    >>
 case EXTERNAL_FUNCTION(outVars={}) then
@@ -3297,7 +3304,7 @@ case SES_NONLINEAR(__) then
    <%varDecls%>
    <%preExp%>
    <%nominalVars%>
-  >>
+     >>
  case SES_LINEAR(__) then
    let &varDecls = buffer "" /*BUFD*/
    <<
@@ -3444,6 +3451,28 @@ case SIMCODE(__) then
   >>
 end Update;
 /*<%update(odeEquations,algebraicEquations,whenClauses,parameterEquations,simCode)%>*/
+
+
+template InitializeEquationsArray(list<SimEqSystem> allEquations, String className)
+::=
+  match allEquations
+  case feq::_ then
+  
+    let equation_inits = (allEquations |> eq hasindex i0 =>
+                    'equations_array[<%i0%>] = &<%className%>::evaluate_<%equationIndex(eq)%>;' ; separator="\n")
+  
+    <<
+    void <%className%>::initialize_equations_array() {
+      /*! Index of the first equation. We use this to calculate the offset of an equation in the
+        equation array given the index of the equation.*/
+      first_equation_index = <%equationIndex(feq)%>;
+    
+      <%equation_inits%>
+    }
+    >>
+  end match
+end InitializeEquationsArray;
+
 
 
 template writeoutput(SimCode simCode)
@@ -3627,7 +3656,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   protected:
     //Methods:
 
-    bool isConsistent();
+     bool isConsistent();
     //Called to handle all  events occured at same time
     bool handleSystemEvents( bool* events);
      //Saves all variables before an event is handled, is needed for the pre, edge and change operator
@@ -3649,9 +3678,38 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
     boost::shared_ptr<ISimData> _simData;
 
+    
+    
+    <%generateEquationMemberFuncDecls(allEquations)%>
+    
+    /*! Equations Array. pointers to all the equation functions listed above stored in this
+      array. It is used to randomly access and evaluate a single equation by index.
+    */
+    typedef void (<%lastIdentOfPath(modelInfo.name)%>::*EquFuncPtr)();
+    boost::array< EquFuncPtr, <%listLength(allEquations)%> > equations_array;
+
+    void initialize_equations_array();
    };
   >>
 end generateClassDeclarationCode;
+
+template generateEquationMemberFuncDecls(list<SimEqSystem> allEquations)
+::=
+  match allEquations
+  case _ then
+    let equation_func_decls = (allEquations |> eq => 'void evaluate_<%equationIndex(eq)%>();' ;separator="\n")
+    << 
+    /*! Index of the first equation. We use this to calculate the offset of an equation in the
+      equation array given the index of the equation.*/
+    int first_equation_index;
+    
+    /*! Equations*/
+    <%equation_func_decls%>
+    
+    >>
+  end match
+end generateEquationMemberFuncDecls;
+
  /*
  <%modelname%>Algloop<%index%>(
                                        <%constructorParams%>
@@ -3821,6 +3879,7 @@ void <%lastIdentOfPath(modelInfo.name)%>::handleEvent(const bool* events)
 {
  <%handleEvent(simCode)%>
 }
+
 >>
 end DefaultImplementationCode;
 
@@ -3900,11 +3959,11 @@ template generateMethodDeclarationCode(SimCode simCode)
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
 <<
-     //Releases the Modelica System
+    /// Releases the Modelica System
     virtual void destroy();
-    //provide number (dimension) of variables according to the index
+    /// Provide number (dimension) of variables according to the index
     virtual int getDimContinuousStates() const;
-      /// Provide number (dimension) of boolean variables
+    /// Provide number (dimension) of boolean variables
     virtual int getDimBoolean() const;
     /// Provide number (dimension) of integer variables
     virtual int getDimInteger() const;
@@ -3912,19 +3971,28 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     virtual int getDimReal() const ;
     /// Provide number (dimension) of string variables
     virtual int getDimString() const ;
-    //Provide number (dimension) of right hand sides (equations and/or residuals) according to the index
+    /// Provide number (dimension) of right hand sides (equations and/or residuals) according to the index
     virtual int getDimRHS()const;
-      //Resets all time events
+    
+    //Resets all time events
 
 
-    //Provide variables with given index to the system
+    // Provide variables with given index to the system
     virtual void getContinuousStates(double* z);
-    //Set variables with given index to the system
+    
+    // Set variables with given index to the system
     virtual void setContinuousStates(const double* z);
-    //Update transfer behavior of the system of equations according to command given by solver
+    
+    // Update transfer behavior of the system of equations according to command given by solver
     virtual bool evaluate(const UPDATETYPE command =IContinuous::UNDEF_UPDATE);
+    
+    /*! Evaluates only the equations whose indices are passed to it. */
+    bool evaluate_selective(const std::vector<int>& indices);
+    
+    /*! Evaluates only a single equation by index. */
+    bool evaluate_single(const int index);
 
-    //Provide the right hand side (according to the index)
+    // Provide the right hand side (according to the index)
     virtual void getRHS(double* f);
 
 
@@ -3961,19 +4029,19 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     // System is able to provide the Jacobian symbolically
     virtual bool provideSymbolicJacobian();
 
-   virtual void stepCompleted(double time);
+    virtual void stepCompleted(double time);
+    
     <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
     <<
-
-
     // Returns labels for a labeled DAE
     virtual label_list_type getLabels();
-    //Sets all algebraic and state varibales for current time
+    // Sets all algebraic and state varibales for current time
     virtual void setVariables(const ublas::vector<double>& variables, const ublas::vector<double>& variables2);
 
-    >>%>
+    >>
+    %>
 
-     /// Provide boolean variables
+    /// Provide boolean variables
     virtual void getBoolean(bool* z);
     /// Provide integer variables
     virtual void getInteger(int* z);
@@ -4574,6 +4642,12 @@ template lastIdentOfPath(Path modelName) ::=
   case IDENT(__)     then name
   case FULLYQUALIFIED(__) then lastIdentOfPath(path)
 end lastIdentOfPath;
+
+template lastIdentOfPathFromSimCode(SimCode simCode) ::=
+  match simCode 
+  case SIMCODE(modelInfo = MODELINFO(__)) then
+    lastIdentOfPath(modelInfo.name)
+end lastIdentOfPathFromSimCode;
 
 template cref(ComponentRef cr)
  "Generates C equivalent name for component reference."
@@ -5332,7 +5406,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
      ;separator="\n"%>
 
      _event_handling.saveH();
-*/
+   */
 template savediscreteVars(ModelInfo modelInfo, SimCode simCode)
 
 ::=
@@ -5818,7 +5892,7 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
     then equationWhen(e, context, &varDecls /*BUFD*/,simCode)
   case e as SES_ARRAY_CALL_ASSIGN(__)
     then equationArrayCallAssign(e, context, &varDecls /*BUFD*/,simCode)
-  case SES_LINEAR(__)
+  case e as SES_LINEAR(__)
   case e as SES_NONLINEAR(__)
 
     then
@@ -5938,6 +6012,66 @@ end equation_;
        else _algLoop<%i%>->initialize();
  */
 
+ 
+
+template equation_function_format(SimEqSystem eq, Integer arrayIndex, Context context, Text &varDecls, Text &eqfuncs, SimCode simCode)
+ "Generates an equation.
+  This template should not be used for a SES_RESIDUAL.
+  Residual equations are handled differently."
+::=
+  match eq
+  case _ then
+    let ix_str = equationIndex(eq)
+    
+    let &varDeclsLocal = buffer "" /*BUFL*/
+    let &eqfuncs += equation_function_format_single_func(eq, context, &varDeclsLocal, simCode)
+    
+    <<
+    (this->*equations_array[<%arrayIndex%>])();
+    >>
+  end match
+end equation_function_format;
+
+
+template equation_function_format_single_func(SimEqSystem eq, Context context, Text &varDeclsLocal, SimCode simCode)
+::=
+  let ix_str = equationIndex(eq)
+  let body = 
+  match eq
+    case e as SES_SIMPLE_ASSIGN(__)
+      then equationSimpleAssign(e, context,&varDeclsLocal,simCode)
+    case e as SES_ALGORITHM(__)
+      then equationAlgorithm(e, context, &varDeclsLocal,simCode)
+    case e as SES_WHEN(__)
+      then equationWhen(e, context, &varDeclsLocal,simCode)
+    case e as SES_ARRAY_CALL_ASSIGN(__)
+      then equationArrayCallAssign(e, context, &varDeclsLocal,simCode)
+    case e as SES_LINEAR(__)
+    case e as SES_NONLINEAR(__)
+      then equationLinearOrNonLinear(e, context, &varDeclsLocal,simCode)
+    case e as SES_MIXED(__)
+      /*<%equationMixed(e, context, &varDeclsLocal, simCode)%>*/
+      then
+      <<
+          throw std::runtime_error("Mixed systems are not supported yet");
+       >>
+    else
+      "NOT IMPLEMENTED EQUATION"
+  end match
+  
+  <<
+  /*
+   <%dumpEqs(fill(eq,1))%>
+   */
+  void <%lastIdentOfPathFromSimCode(simCode)%>::evaluate_<%ix_str%>()
+  {
+    <%varDeclsLocal%>
+    <%body%>
+  }
+  
+  >>
+  
+end equation_function_format_single_func;
 
 
 
@@ -6683,17 +6817,115 @@ case SES_SIMPLE_ASSIGN(__) then
   case CREF(ty = t as  T_ARRAY(__)) then
   <<
   //Array assign
-  <%cref1(cref, simCode,context,varDecls)%>=<%expPart%>;
+  <%cref1(cref, simCode,context,varDecls)%> = <%expPart%>;
   >>
   else
   <<
   <%preExp%>
-
-  <%cref1(cref, simCode, context, varDecls)%>=<%expPart%>;
+  <%cref1(cref, simCode, context, varDecls)%> = <%expPart%>;
   >>
  end match
 end match
 end equationSimpleAssign;
+
+template equationLinearOrNonLinear(SimEqSystem eq, Context context,Text &varDecls,
+                              SimCode simCode)
+ "Generates an equations for a linear or non linear system."
+::=
+  match eq
+    case SES_LINEAR(__)
+    case SES_NONLINEAR(__) then
+    let i = index
+    match context
+      case  ALGLOOP_CONTEXT(genInitialisation=true) then
+         <<
+         try
+         {
+             _algLoopSolver<%index%>->initialize();
+             _algLoop<%index%>->evaluate();
+             for(int i=0; i<_dimZeroFunc; i++) {
+                 getCondition(i);
+             }
+             IContinuous::UPDATETYPE calltype = _callType;
+             _callType = IContinuous::CONTINUOUS;
+             _algLoopSolver<%index%>->solve();
+             _callType = calltype;
+         }
+         catch(std::exception& ex)
+         {
+             throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what());
+         }
+       
+         >>
+      
+      else
+        <<
+        bool restart<%index%> = true;
+        bool* conditions0<%index%> = new bool[_dimZeroFunc];
+        bool* conditions1<%index%> = new bool[_dimZeroFunc];
+        unsigned int iterations<%index%> = 0;
+        unsigned int dim<%index%> = _algLoop<%index%>->getDimReal();
+        double* algloop<%index%>Vars = new double[dim<%index%>];
+        _algLoop<%index%>->getReal(algloop<%index%>Vars );
+        
+        try
+        {        
+            _algLoop<%index%>->evaluate();
+            
+            if( _callType == IContinuous::DISCRETE )
+            {
+                while(restart<%index%> && !(iterations<%index%>++>500))
+                {
+                    
+                    getConditions(conditions0<%index%>);
+                    _callType = IContinuous::CONTINUOUS;
+                    _algLoopSolver<%index%>->solve();
+                    _callType = IContinuous::DISCRETE;
+                    for(int i=0;i<_dimZeroFunc;i++)
+                    {
+                        getCondition(i);
+                    }
+                    
+                    getConditions(conditions1<%index%>);
+                    restart<%index%> = !std::equal (conditions1<%index%>, conditions1<%index%>+_dimZeroFunc,conditions0<%index%>);
+                }
+            }
+            else
+            _algLoopSolver<%index%>->solve();
+            
+        }
+        catch(std::exception &ex)
+        {
+            delete[] conditions0<%index%>;
+            delete[] conditions1<%index%>;
+            throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what());
+        }
+        
+        delete[] conditions0<%index%>;
+        delete[] conditions1<%index%>;
+        
+        if(restart<%index%> && iterations<%index%> > 0)
+        {
+            try
+            {  //workaround: try to solve algoop discrete (evaluate all zero crossing conditions) since we do not have the information which zercrossing contains a algloop var
+                IContinuous::UPDATETYPE calltype = _callType;
+                _callType = IContinuous::DISCRETE;
+                _algLoop<%index%>->setReal(algloop<%index%>Vars );
+                _algLoopSolver<%index%>->solve();
+                _callType = calltype;
+            }
+            catch(std::exception& ex)
+            {
+                delete[] algloop<%index%>Vars;
+                throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what());
+            }
+            
+        }
+        delete[] algloop<%index%>Vars;
+        >>
+      end match
+  end match
+end equationLinearOrNonLinear;
 
 
 
@@ -8069,9 +8301,9 @@ template representationCref(ComponentRef inCref, SimCode simCode, Context contex
   cref2simvar(inCref, simCode) |> var as SIMVAR(__) =>
   match varKind
     case STATE(__)        then
-        <<<%representationCref1(inCref,var,simCode,context)%>>>
+        << <%representationCref1(inCref,var,simCode,context)%> >>
     case STATE_DER(__)   then
-        <<<%representationCref2(inCref,var,simCode,context)%>>>
+        << <%representationCref2(inCref,var,simCode,context)%> >>
     case VARIABLE(__) then
      match var
         case SIMVAR(index=-2) then
@@ -8109,7 +8341,7 @@ template representationCref1(ComponentRef inCref,SimVar var, SimCode simCode, Co
    case -1 then
    << <%cref2(inCref)%>>>
    case _  then
-   <<__z[<%i%>]>>
+   << __z[<%i%>] >>
 end representationCref1;
 
 template representationCref2(ComponentRef inCref, SimVar var,SimCode simCode, Context context) ::=
@@ -9341,31 +9573,57 @@ template update(list<list<SimEqSystem>> continousEquations,list<SimEqSystem> dis
   >>
 end update;
 */
-template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> whenClauses,SimCode simCode, Context context)
+template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> whenClauses, SimCode simCode, Context context)
 ::=
+  let className = lastIdentOfPathFromSimCode(simCode)
   let &varDecls = buffer "" /*BUFD*/
-  let all_equations = (allEquationsPlusWhen |> eqs => (eqs |> eq =>
-      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFC*/,simCode))
-    ;separator="\n")
+    
+  let &eqfuncs = buffer ""
+  let equation_func_calls = (allEquationsPlusWhen |> eq hasindex i0 =>
+                    equation_function_format(eq, i0, contextSimulationDiscrete, &varDecls /*BUFC*/, &eqfuncs, simCode)
+                    ;separator="\n")
+                    
+                    
 
   let reinit = (whenClauses |> when hasindex i0 =>
          genreinits(when, &varDecls,i0,simCode,context)
     ;separator="\n";empty)
-  match simCode
-  case SIMCODE(modelInfo = MODELINFO(__)) then
 
   <<
 
-  bool <%lastIdentOfPath(modelInfo.name)%>::evaluate(const UPDATETYPE command)
-
+  <%eqfuncs%>
+  
+  bool <%className%>::evaluate(const UPDATETYPE command)
   {
     bool state_var_reinitialized = false;
-    <%varDecls%>
-      <%all_equations%>
-    <%reinit%>
 
+    <%varDecls%>
+    
+    /* Evaluate Equations*/
+    <%equation_func_calls%>
+    
+    /* Reinits */
+    <%reinit%>
+    
     return state_var_reinitialized;
   }
+  
+  /*! Evaluates only the equations whose indexs are passed to it. */
+  bool <%className%>::evaluate_selective(const std::vector<int>& indices) {
+    std::vector<int>::const_iterator iter = indices.begin();
+    int offset;
+    for( ; iter != indices.end(); ++iter) {
+        int offset = (*iter) - first_equation_index;
+        (this->*equations_array[offset])();
+    }
+  }
+  
+  /*! Evaluates only a single equation by index. */
+  bool <%className%>::evaluate_single(const int index) {
+    int offset = index - first_equation_index;
+    (this->*equations_array[offset])();
+  }
+  
   >>
 end update;
  /*Ranking: removed from update: if(command & IContinuous::RANKING) checkConditions();*/
@@ -10400,7 +10658,6 @@ template subscriptToCStrWithoutIndexOperator(Subscript subscript)
       end match
   else "UNKNOWN_SUBSCRIPT"
 end subscriptToCStrWithoutIndexOperator;
-
 
 end CodegenCpp;
 

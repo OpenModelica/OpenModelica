@@ -48,10 +48,6 @@ package CodegenC
 import interface SimCodeTV;
 import CodegenUtil.*;
 
-template escapeCComments(String stringWithCComments)
-"escape the C comments inside a string, replaces them with /* */->(* *)"
-::= '<%System.stringReplace(System.stringReplace(stringWithCComments, "/*", "(*"), "*/", "*)")%>'
-end escapeCComments;
 
 template translateModel(SimCode simCode, String guid)
   "Generates C code and Makefile for compiling and running a simulation of a
@@ -3481,127 +3477,6 @@ template intArr(list<Integer> values)
   <%values ;separator=", "%>
   >>
 end intArr;
-
-template equationIndex(SimEqSystem eq)
- "Generates an equation."
-::=
-  match eq
-  case SES_RESIDUAL(__)
-  case SES_SIMPLE_ASSIGN(__)
-  case SES_ARRAY_CALL_ASSIGN(__)
-  case SES_IFEQUATION(__)
-  case SES_ALGORITHM(__)
-  case SES_LINEAR(__)
-  case SES_NONLINEAR(__)
-  case SES_MIXED(__)
-  case SES_WHEN(__)
-    then index
-end equationIndex;
-
-template dumpEqs(list<SimEqSystem> eqs)
-::= eqs |> eq hasindex i0 =>
-  match eq
-    case e as SES_RESIDUAL(__) then
-      <<
-      equation index: <%equationIndex(eq)%>
-      type: RESIDUAL
-
-      <%escapeCComments(printExpStr(e.exp))%>
-      >>
-    case e as SES_SIMPLE_ASSIGN(__) then
-      <<
-      equation index: <%equationIndex(eq)%>
-      type: SIMPLE_ASSIGN
-      <%crefStr(e.cref)%> = <%escapeCComments(printExpStr(e.exp))%>
-      >>
-    case e as SES_ARRAY_CALL_ASSIGN(__) then
-      <<
-      equation index: <%equationIndex(eq)%>
-      type: ARRAY_CALL_ASSIGN
-
-      <%crefStr(e.componentRef)%> = <%escapeCComments(printExpStr(e.exp))%>
-      >>
-    case e as SES_ALGORITHM(statements={}) then
-      <<
-      empty algorithm
-      >>
-    case e as SES_ALGORITHM(statements=first::_) then
-      <<
-      equation index: <%equationIndex(eq)%>
-      type: ALGORITHM
-
-      <%e.statements |> stmt => escapeCComments(ppStmtStr(stmt,2))%>
-      >>
-    case e as SES_LINEAR(__) then
-      <<
-      equation index: <%equationIndex(eq)%>
-      type: LINEAR
-
-      <%e.vars |> SIMVAR(name=cr) => '<var><%crefStr(cr)%></var>' ; separator = "\n" %>
-      <row>
-        <%beqs |> exp => '<cell><%escapeCComments(printExpStr(exp))%></cell>' ; separator = "\n" %><%\n%>
-      </row>
-      <matrix>
-        <%simJac |> (i1,i2,eq) =>
-        <<
-        <cell row="<%i1%>" col="<%i2%>">
-          <%match eq case e as SES_RESIDUAL(__) then
-            <<
-            <residual><%escapeCComments(printExpStr(e.exp))%></residual>
-            >>
-           %>
-        </cell>
-        >>
-        %>
-      </matrix>
-      >>
-    case e as SES_NONLINEAR(__) then
-      <<
-      equation index: <%equationIndex(eq)%>
-      indexNonlinear: <%indexNonLinearSystem%>
-      type: NONLINEAR
-
-      vars: {<%e.crefs |> cr => '<%crefStr(cr)%>' ; separator = ", "%>}
-      eqns: {<%e.eqs |> eq => '<%equationIndex(eq)%>' ; separator = ", "%>}
-      >>
-    case e as SES_MIXED(__) then
-      <<
-      equation index: <%equationIndex(eq)%>
-      type: MIXED
-
-      <%dumpEqs(fill(e.cont,1))%>
-      <%dumpEqs(e.discEqs)%><%\n%>
-
-      <mixed>
-        <continuous index="<%equationIndex(e.cont)%>" />
-        <%e.discVars |> SIMVAR(name=cr) => '<var><%crefStr(cr)%></var>' ; separator = ","%>
-        <%e.discEqs |> eq => '<discrete index="<%equationIndex(eq)%>" />'%>
-      </mixed>
-      >>
-    case e as SES_WHEN(__) then
-      <<
-      equation index: <%equationIndex(eq)%>
-      type: WHEN
-
-      when {<%conditions |> cond => '<%crefStr(cond)%>' ; separator=", " %>} then
-        <%crefStr(e.left)%> = <%escapeCComments(printExpStr(e.right))%>;
-      end when;
-      >>
-    case e as SES_IFEQUATION(__) then
-      let branches = ifbranches |> (_,eqs) => dumpEqs(eqs)
-      let elsebr = dumpEqs(elsebranch)
-      <<
-      equation index: <%equationIndex(eq)%>
-      type: IFEQUATION
-
-      <%branches%>
-      <%elsebr%>
-      >>
-    else
-      <<
-      unknown equation
-      >>
-end dumpEqs;
 
 template equation_arrayFormat(SimEqSystem eq, String name, Context context, Integer arrayIndex, Text &varDecls /*BUFP*/, Text &eqArray, Text &eqfuncs, String modelNamePrefix)
  "Generates an equation.
