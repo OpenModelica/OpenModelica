@@ -1646,7 +1646,7 @@ algorithm
         true = List.isEmpty(parents);
         fpredOut = arrayUpdate(fpredIn,nodeIdx,0);
       then fpredOut;
-  end matchcontinue;      
+  end matchcontinue;
 end computeFavouritePred1;
 
 //---------------------------------
