@@ -290,5 +290,7 @@ static inline void freeOptimizerData(OptData*optData){
   }
   free(optData->Hl);
   free(optData->Hm);
+  if(optData->dim.updateHessian > 0)
+    free(optData->oldH);
 
 }

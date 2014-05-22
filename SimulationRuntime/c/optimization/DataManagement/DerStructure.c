@@ -33,6 +33,7 @@
 
 #include "../OptimizerData.h"
 #include "../OptimizerLocalFunction.h"
+#include "../../simulation/options.h"
 
 static inline void local_jac_struct(DATA * data, OptDataDim * dim, OptDataStructure *s, const modelica_real* const vnom);
 static inline void print_local_jac_struct(DATA * data, OptDataDim * dim, OptDataStructure *s);
@@ -51,6 +52,22 @@ inline void allocate_der_struct(OptDataStructure *s, OptDataDim * dim, DATA* dat
   const int nJ2 = dim->nJ2;
   const int nx = dim->nx;
   int i, j, k;
+  const int nH0 = optData->dim.nH0_;
+  const int nH1 = optData->dim.nH1_;
+  const int nhess = (nsi*np-1)*nH0+nH1;
+  char * cflags;
+
+  cflags = (char*)omc_flagValue[FLAG_UP_HESSIAN];
+  if(cflags){
+    optData->dim.updateHessian = atoi(cflags);
+    if(optData->dim.updateHessian < 0){
+      warningStreamPrint(LOG_STDOUT, 1, "not support %i for keep hessian-matrix constant.", optData->dim.updateHessian);
+      optData->dim.updateHessian = 0;
+    }
+  }else{
+    optData->dim.updateHessian = 0;
+  }
+
 
   s->matrix[1] = (modelica_boolean)(data->callback->initialAnalyticJacobianA((void*) data) == 0);
   s->matrix[2] = (modelica_boolean)(data->callback->initialAnalyticJacobianB((void*) data) == 0);
@@ -146,6 +163,11 @@ inline void allocate_der_struct(OptDataStructure *s, OptDataDim * dim, DATA* dat
   optData->Hl = (long double **) malloc(nv*sizeof(long double*));
   for(j = 0; j < nv; ++j)
     optData->Hl[j] = (long double *)calloc(nv, sizeof(long double));
+
+  if(optData->dim.updateHessian > 0)
+    optData->oldH = (double *)malloc(nhess*sizeof(double));
+
+  optData->dim.iter_updateHessian = 0;
 
 }
 

@@ -70,6 +70,10 @@ typedef struct OptDataDim{
 
  char ** inputName;
 
+
+ int updateHessian;
+ int iter_updateHessian;
+
 }OptDataDim;
 
 typedef struct OptDataTime{
@@ -145,6 +149,7 @@ typedef struct OptData{
   long double **Hm;
   DATA *data;
 
+  double *oldH;
 
 }OptData;
 

@@ -51,6 +51,7 @@ Bool ipopt_h(int n, double *vopt, Bool new_x, double obj_factor, int m, double *
   const int np1 = np + 1;
   const int nv = optData->dim.nv;
   const int nsi = optData->dim.nsi;
+  modelica_boolean NotupH = optData->dim.updateHessian> 0 && optData->dim.updateHessian != optData->dim.iter_updateHessian++;
 
   if(values == NULL){
     int i, j, k, p, l, r, c;
@@ -116,8 +117,9 @@ Bool ipopt_h(int n, double *vopt, Bool new_x, double obj_factor, int m, double *
     }
     assert(0);
 #endif
-
-
+  }else if(NotupH){
+    optData->dim.iter_updateHessian = 0;
+    memcpy(values,optData->oldH,nele_hess*sizeof(double));
   }else{
     int ii, p, i, j, k;
     double * v;
@@ -168,7 +170,8 @@ Bool ipopt_h(int n, double *vopt, Bool new_x, double obj_factor, int m, double *
         printf("values[%i] = %g\n",i,values[i]);
       }*/
     }
-
+    if(optData->dim.updateHessian > 0)
+      memcpy(optData->oldH, values, nele_hess*sizeof(double));
   }
 
 
@@ -212,7 +215,7 @@ static inline void num_hessian0(double * v, const double * const lambda,
     if(v[ii] + h <= vmax[ii]){
       v[ii] += h;
     }else{
-      h = vmax[ii] - v[ii];
+      h *= -1.0;
       h = (1.0 + h) - 1.0;
       v[ii] += h;
     }
@@ -302,12 +305,12 @@ static inline void num_hessian1(double * v, const double * const lambda,
   for(ii = 0; ii < nv; ++ii){
     /********************/
     v_save = (long double) v[ii];
-    h = (long double)(1e-4 *fmax(fabs(v_save),1e2) + 1e-8);
+    h = (long double)(1e-4 *fmin(fabs(v_save),1e2) + 1e-8);
     h = (1.0 + h) - 1.0;
     if(v[ii] + h <= vmax[ii]){
       v[ii] += h;
     }else{
-      h = vmax[ii] - v[ii];
+      h *= -1.0;
       h = (1.0 + h) - 1.0;
       v[ii] += h;
     }
