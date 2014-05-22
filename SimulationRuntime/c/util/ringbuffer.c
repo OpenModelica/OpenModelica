@@ -122,6 +122,8 @@ int ringBufferLength(RINGBUFFER *rb)
 
 void rotateRingBuffer(RINGBUFFER *rb, int n, void **lookup)
 {
+  TRACE_PUSH
+  
   assertStreamPrint(NULL, rb->nElements > 0, "empty RingBuffer");
   assertStreamPrint(NULL, n < rb->nElements, "index [%d] out of range [%d:%d]", n, 0, rb->nElements-1);
   assertStreamPrint(NULL, 0 <= n, "index [%d] out of range [%d:%d]", n, 0, rb->nElements-1);
@@ -136,6 +138,8 @@ void rotateRingBuffer(RINGBUFFER *rb, int n, void **lookup)
       lookup[i] = getRingData(rb, i);
     }
   }
+  
+  TRACE_POP
 }
 
 void infoRingBuffer(RINGBUFFER *rb)

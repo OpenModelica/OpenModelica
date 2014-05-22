@@ -65,6 +65,7 @@ const char *LOG_STREAM_NAME[LOG_MAX] = {
   "LOG_SOLVER",
   "LOG_SOTI",
   "LOG_STATS",
+  "LOG_STATS_V",
   "LOG_UTIL",
   "LOG_ZEROCROSSINGS",
 };
@@ -98,6 +99,7 @@ const char *LOG_STREAM_DESC[LOG_MAX] = {
   "additional information about solver process",        /* LOG_SOLVER */
   "final solution of the initialization",               /* LOG_SOTI */
   "additional statistics about timer/events/solver",    /* LOG_STATS */
+  "additional statistics for LOG_STATS",                /* LOG_STATS_V */
   "???",                                                /* LOG_UTIL*/
   "additional information about the zerocrossings"      /* LOG_ZEROCROSSINGS */
 };

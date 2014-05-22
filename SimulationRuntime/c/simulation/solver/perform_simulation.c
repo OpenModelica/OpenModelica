@@ -58,6 +58,8 @@
  */
 void updateContinuousSystem(DATA *data)
 {
+  TRACE_PUSH
+  
   externalInputUpdate(data);
   data->callback->input_function(data);
   data->callback->functionODE(data);
@@ -65,6 +67,8 @@ void updateContinuousSystem(DATA *data)
   data->callback->output_function(data);
   data->callback->function_storeDelayed(data);
   storePreValues(data);
+  
+  TRACE_POP
 }
 
 
@@ -91,6 +95,8 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
   solverInfo->currentTime = simInfo->startTime;
 
   unsigned int __currStepNo = 0;
+  
+  TRACE_PUSH
 
   if(measure_time_flag)
   {
@@ -120,9 +126,14 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
   while(solverInfo->currentTime < simInfo->stopTime)
   {
     int success = 0;
-    omc_alloc_interface.collect_a_little();
-
     threadData->currentErrorStage = ERROR_SIMULATION;
+    
+#ifdef USE_DEBUG_TRACE
+    printf("TRACE: push loop step=%ld, time=%.12g\n", __currStepNo, solverInfo->currentTime);
+#endif
+    
+    omc_alloc_interface.collect_a_little();
+    
     /* try */
 #if !defined(OMC_EMCC)
     MMC_TRY_INTERNAL(simulationJumpBuffer)
@@ -345,6 +356,8 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
         break;
       }
     }
+    
+    TRACE_POP /* pop loop */
   } /* end while solver */
 
   if(fmtInt)
@@ -358,5 +371,6 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
     fmtReal = NULL;
   }
 
+  TRACE_POP
   return retValue;
 }

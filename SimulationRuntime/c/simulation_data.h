@@ -105,6 +105,14 @@ typedef struct CHATTERING_INFO
   int messageEmitted;
 } CHATTERING_INFO;
 
+typedef struct CALL_STATISTICS
+{
+  long functionODE;
+  long updateDiscreteSystem;
+  long functionZeroCrossingsEquations;
+  long functionZeroCrossings;
+} CALL_STATISTICS;
+
 typedef enum {ERROR_AT_TIME,NO_PROGRESS_START_POINT,NO_PROGRESS_FACTOR,IMPROPER_INPUT} equationSystemError;
 
 /* SPARSE_PATTERN
@@ -525,6 +533,7 @@ typedef struct SIMULATION_INFO
   const char *OPENMODELICAHOME;
 
   CHATTERING_INFO chatteringInfo;
+  CALL_STATISTICS callStatistics;      /* used to store the number of function evaluations */
 } SIMULATION_INFO;
 
 /* collects all dynamic model data like the variabel-values */

@@ -88,19 +88,31 @@ static void writeOutputVars(char* names, DATA* data);
 
 int solver_main_step(DATA* data, SOLVER_INFO* solverInfo)
 {
+  int retVal;
+  
+  TRACE_PUSH
+  
   switch(solverInfo->solverMethod)
   {
   case S_EULER:
-    return euler_ex_step(data, solverInfo);
+    retVal = euler_ex_step(data, solverInfo);
+    TRACE_POP
+    return retVal;
   case S_RUNGEKUTTA:
-    return rungekutta_step(data, solverInfo);
+    retVal = rungekutta_step(data, solverInfo);
+    TRACE_POP
+    return retVal;
 
   case S_DASSL:
-    return dassl_step(data, solverInfo);
+    retVal = dassl_step(data, solverInfo);;
+    TRACE_POP
+    return retVal;
 
 #ifdef WITH_IPOPT
   case S_OPTIMIZATION:
-    return ipopt_step(data, solverInfo);
+    retVal = ipopt_step(data, solverInfo);
+    TRACE_POP
+    return retVal;
 #endif
 #ifdef WITH_SUNDIALS
   case S_RADAU5:
@@ -109,9 +121,13 @@ int solver_main_step(DATA* data, SOLVER_INFO* solverInfo)
   case S_LOBATTO2:
   case S_LOBATTO4:
   case S_LOBATTO6:
-    return radau_lobatto_step(data, solverInfo);
+    retVal = radau_lobatto_step(data, solverInfo);
+    TRACE_POP
+    return retVal;
 #endif
   }
+  
+  TRACE_POP
   return 1;
 }
 
@@ -470,6 +486,13 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
       infoStreamPrint(LOG_STATS, 0, "sorry - no solver statistics available. [not yet implemented]");
       messageClose(LOG_STATS);
     }
+    
+    infoStreamPrint(LOG_STATS_V, 1, "function calls");
+    infoStreamPrint(LOG_STATS_V, 0, "%5ld calls of functionODE", data->simulationInfo.callStatistics.functionODE);
+    infoStreamPrint(LOG_STATS_V, 0, "%5ld calls of updateDiscreteSystem", data->simulationInfo.callStatistics.updateDiscreteSystem);
+    infoStreamPrint(LOG_STATS_V, 0, "%5ld calls of functionZeroCrossingsEquations", data->simulationInfo.callStatistics.functionZeroCrossingsEquations);
+    infoStreamPrint(LOG_STATS_V, 0, "%5ld calls of functionZeroCrossings", data->simulationInfo.callStatistics.functionZeroCrossings);
+    messageClose(LOG_STATS_V);
 
     infoStreamPrint(LOG_STATS, 0, "### END STATISTICS ###");
 

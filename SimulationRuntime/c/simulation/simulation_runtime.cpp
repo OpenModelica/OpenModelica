@@ -215,6 +215,10 @@ void setGlobalVerboseLevel(int argc, char**argv)
   /* print LOG_STATS if LOG_SOLVER if active */
   if(useStream[LOG_SOLVER] == 1)
     useStream[LOG_STATS] = 1;
+    
+  /* print LOG_STATS if LOG_STATS_V if active */
+  if(useStream[LOG_STATS_V] == 1)
+    useStream[LOG_STATS] = 1;
 
   /* print LOG_NLS if LOG_NLS_V if active */
   if(useStream[LOG_NLS_V])

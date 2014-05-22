@@ -270,6 +270,9 @@ int dassl_step(DATA* simData, SOLVER_INFO* solverInfo)
   modelica_real* stateDer = sDataOld->realVars + simData->modelData.nStates;
   dasslData->rpar[0] = (double*) (void*) simData;
   dasslData->rpar[1] = (double*) (void*) dasslData;
+  
+  TRACE_PUSH
+  
   assertStreamPrint(simData->threadData, 0 != dasslData->rpar, "could not passed to DDASKR");
 
   /* If an event is triggered and processed restart dassl. */
@@ -302,6 +305,7 @@ int dassl_step(DATA* simData, SOLVER_INFO* solverInfo)
     solverInfo->currentTime = tout;
 
     /* TODO: interpolate states and evaluate the system again */
+    TRACE_POP
     return retVal;
   }
 
@@ -389,6 +393,7 @@ int dassl_step(DATA* simData, SOLVER_INFO* solverInfo)
       simData->callback->input_function(simData);
       simData->callback->functionODE(simData);
       warningStreamPrint(LOG_STDOUT, 0, "can't continue. time = %f", sData->timeValue);
+      TRACE_POP
       return retVal;
     } else if(dasslData->idid == 5) {
       simData->threadData->currentErrorStage = ERROR_EVENTSEARCH;
@@ -422,6 +427,7 @@ int dassl_step(DATA* simData, SOLVER_INFO* solverInfo)
 
   infoStreamPrint(LOG_DASSL, 0, "Finished DDASKR step.");
 
+  TRACE_POP
   return retVal;
 }
 

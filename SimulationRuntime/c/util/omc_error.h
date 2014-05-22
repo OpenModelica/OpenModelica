@@ -67,6 +67,7 @@ void omc_terminate_function(FILE_INFO info, const char *msg, ...);
 void omc_throw_function(threadData_t*) __attribute__ ((noreturn));
 
 /* #define USE_DEBUG_OUTPUT */
+/* #define USE_DEBUG_TRACE */
 
 enum LOG_STREAM
 {
@@ -98,6 +99,7 @@ enum LOG_STREAM
   LOG_SOLVER,
   LOG_SOTI,
   LOG_STATS,
+  LOG_STATS_V,
   LOG_UTIL,
   LOG_ZEROCROSSINGS,
 
@@ -136,6 +138,14 @@ void setStreamPrintXML(int isXML);
   #define DEBUG_STREAM(stream)    (useStream[stream])
 #else
   #define DEBUG_STREAM(stream)    (0)
+#endif
+
+#ifdef USE_DEBUG_TRACE
+  #define TRACE_PUSH printf("TRACE: push %s (%s:%d)\n", __FUNCTION__, __FILE__, __LINE__);
+  #define TRACE_POP printf("TRACE: pop\n");
+#else
+  #define TRACE_PUSH
+  #define TRACE_POP
 #endif
 
 extern void (*messageClose)(int stream);

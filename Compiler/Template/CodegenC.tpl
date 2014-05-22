@@ -2759,12 +2759,16 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Op
 
     <%varDecls%>
 
+    TRACE_PUSH
+    data->simulationInfo.callStatistics.functionODE++;
+
     data->simulationInfo.discreteCall = 0;
     <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionODE(<%nrfuncs%>, data, functionODE_systems);'
     else '<%fncalls%>' %>
 
     <% if profileFunctions() then "rt_accumulate(SIM_TIMER_FUNCTION_ODE);" %>
 
+    TRACE_POP
     return 0;
   }
   >>
@@ -2788,9 +2792,14 @@ template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations, String mo
   int <%symbolName(modelNamePrefix,"functionAlgebraics")%>(DATA *data)
   {
     <%varDecls%>
+    
+    TRACE_PUSH
+  
     data->simulationInfo.discreteCall = 0;
     <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionAlg(<%nrfuncs%>, data, functionAlg_systems);'
     else '<%fncalls%>' %>
+    
+    TRACE_POP
     return 0;
   }
   >>
@@ -2810,9 +2819,13 @@ template functionAliasEquation(list<SimEqSystem> removedEquations, String modelN
   int functionAliasEquations(DATA *data)
   {
     <%varDecls%>
+    
+    TRACE_PUSH
+    
     data->simulationInfo.discreteCall = 0;
     <%removedPart%>
 
+    TRACE_POP
     return 0;
   }
   >>
@@ -2858,12 +2871,16 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause>
   int <%symbolName(modelNamePrefix,"functionDAE")%>(DATA *data)
   {
     <%varDecls%>
+    
+    TRACE_PUSH
+    
     data->simulationInfo.needToIterate = 0;
     data->simulationInfo.discreteCall = 1;
     <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionDAE(<%nrfuncs%>, data, functionDAE_systems);'
     else '<%fncalls%>' %>
     <%reinit%>
 
+    TRACE_POP
     return 0;
   }
   >>
@@ -2914,10 +2931,14 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
   int <%symbolName(modelNamePrefix,"function_ZeroCrossingsEquations")%>(DATA *data)
   {
     <%varDecls%>
+    
+    TRACE_PUSH
+    data->simulationInfo.callStatistics.functionZeroCrossingsEquations++;
 
     data->simulationInfo.discreteCall = 0;
     <%eqs%>
 
+    TRACE_POP
     return 0;
   }
 
@@ -2925,8 +2946,12 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
   {
     <%varDecls2%>
 
+    TRACE_PUSH
+    data->simulationInfo.callStatistics.functionZeroCrossings++;
+
     <%zeroCrossingsCode%>
 
+    TRACE_POP
     return 0;
   }
   >>
@@ -3040,6 +3065,8 @@ template functionRelations(list<ZeroCrossing> relations, String modelNamePrefix)
   {
     <%varDecls%>
 
+    TRACE_PUSH
+    
     if(evalforZeroCross)
     {
       <%relationsCode%>
@@ -3049,6 +3076,7 @@ template functionRelations(list<ZeroCrossing> relations, String modelNamePrefix)
       <%relationsCodeElse%>
     }
 
+    TRACE_POP
     return 0;
   }
   >>
@@ -3102,10 +3130,13 @@ template functionCheckForDiscreteChanges(list<ComponentRef> discreteModelVars, S
   {
     int needToIterate = 0;
 
+    TRACE_PUSH
+
     infoStreamPrint(LOG_EVENTS_V, 1, "check for discrete changes at time=%.12g", data->localData[0]->timeValue);
     <%changediscreteVars%>
     if (ACTIVE_STREAM(LOG_EVENTS_V)) messageClose(LOG_EVENTS_V);
 
+    TRACE_POP
     return needToIterate;
   }
   >>
