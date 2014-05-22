@@ -51,7 +51,7 @@ Bool ipopt_h(int n, double *vopt, Bool new_x, double obj_factor, int m, double *
   const int np1 = np + 1;
   const int nv = optData->dim.nv;
   const int nsi = optData->dim.nsi;
-  modelica_boolean NotupH = optData->dim.updateHessian> 0 && optData->dim.updateHessian != optData->dim.iter_updateHessian++;
+  modelica_boolean keepH = optData->dim.updateHessian > optData->dim.iter_updateHessian++;
 
   if(values == NULL){
     int i, j, k, p, l, r, c;
@@ -117,8 +117,7 @@ Bool ipopt_h(int n, double *vopt, Bool new_x, double obj_factor, int m, double *
     }
     assert(0);
 #endif
-  }else if(NotupH){
-    optData->dim.iter_updateHessian = 0;
+  }else if(keepH){
     memcpy(values,optData->oldH,nele_hess*sizeof(double));
   }else{
     int ii, p, i, j, k;
@@ -133,7 +132,7 @@ Bool ipopt_h(int n, double *vopt, Bool new_x, double obj_factor, int m, double *
       if(upC)
         updateDerF(optData);
     }
-
+    optData->dim.iter_updateHessian = 0;
     upC2 = upC && optData->s.mayer;
     upC = upC && optData->s.lagrange;
 

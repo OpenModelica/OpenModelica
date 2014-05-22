@@ -167,7 +167,7 @@ inline void allocate_der_struct(OptDataStructure *s, OptDataDim * dim, DATA* dat
   if(optData->dim.updateHessian > 0)
     optData->oldH = (double *)malloc(nhess*sizeof(double));
 
-  optData->dim.iter_updateHessian = 0;
+  optData->dim.iter_updateHessian = optData->dim.updateHessian-1;
 
 }
 
