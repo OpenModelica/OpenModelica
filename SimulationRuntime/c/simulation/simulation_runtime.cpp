@@ -425,6 +425,8 @@ void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilte
  */
 int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
 {
+  TRACE_PUSH
+  
   int retVal = -1;
   int measureSimTime = 0;
 
@@ -585,6 +587,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     retVal = printModelInfoJSON(data, jsonInfo.c_str(), result_file_cstr.c_str()) && retVal;
   }
 
+  TRACE_POP
   return retVal;
 }
 
@@ -654,9 +657,14 @@ int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
   long i;
   long solverID = S_UNKNOWN;
   const char* outVars = (outputVariablesAtEnd.size() == 0) ? NULL : outputVariablesAtEnd.c_str();
+  
+  TRACE_PUSH
 
   if(initializeResultData(simData, result_file_cstr, cpuTime))
+  {
+    TRACE_POP
     return -1;
+  }
 
   if(std::string("") == simData->simulationInfo.solverMethod)
     solverID = S_DASSL;
@@ -697,6 +705,7 @@ int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
 
   sim_result.free(&sim_result, simData);
 
+  TRACE_POP
   return retVal;
 }
 

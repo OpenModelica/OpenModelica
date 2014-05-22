@@ -523,6 +523,8 @@ int solver_main(DATA* data, const char* init_initMethod,
   SOLVER_INFO solverInfo;
   SIMULATION_INFO *simInfo = &(data->simulationInfo);
 
+  TRACE_PUSH
+  
   solverInfo.solverMethod = solverID;
 
   /* do some solver specific checks */
@@ -545,12 +547,14 @@ int solver_main(DATA* data, const char* init_initMethod,
   case S_LOBATTO4:
   case S_LOBATTO6:
     warningStreamPrint(LOG_STDOUT, 0, "Sundial/kinsol is needed but not available. Please choose other solver.");
+    TRACE_POP
     return 1;
 #endif
 
 #ifndef WITH_IPOPT
   case S_OPTIMIZATION:
     warningStreamPrint(LOG_STDOUT, 0, "Ipopt is needed but not available.");
+    TRACE_POP
     return 1;
 #endif
 
@@ -590,6 +594,7 @@ int solver_main(DATA* data, const char* init_initMethod,
   /* free SolverInfo memory */
   freeSolverData(data, &solverInfo);
 
+  TRACE_POP
   return retVal;
 }
 

@@ -984,13 +984,19 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   int optiMethod = IOM_NELDER_MEAD_EX;                                      /* default method */
   int retVal = -1;
   int i;
+  
+  TRACE_PUSH
 
   infoStreamPrint(LOG_INIT, 0, "### START INITIALIZATION ###");
 
   /* import start values from extern mat-file */
-  if(pInitFile && strcmp(pInitFile, "")) {
+  if(pInitFile && strcmp(pInitFile, ""))
+  {
     if(importStartValues(data, pInitFile, initTime))
+    {
+      TRACE_POP
       return 1;
+    }
   }
 
   /* set up all variables and parameters with their start-values */
@@ -1099,5 +1105,6 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   data->callback->function_updateRelations(data, 1);
 
   /* valid system for the first time! */
+  TRACE_POP
   return retVal;
 }
