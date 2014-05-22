@@ -270,9 +270,9 @@ int dassl_step(DATA* simData, SOLVER_INFO* solverInfo)
   modelica_real* stateDer = sDataOld->realVars + simData->modelData.nStates;
   dasslData->rpar[0] = (double*) (void*) simData;
   dasslData->rpar[1] = (double*) (void*) dasslData;
-  
+
   TRACE_PUSH
-  
+
   assertStreamPrint(simData->threadData, 0 != dasslData->rpar, "could not passed to DDASKR");
 
   /* If an event is triggered and processed restart dassl. */

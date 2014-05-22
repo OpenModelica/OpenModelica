@@ -2792,13 +2792,13 @@ template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations, String mo
   int <%symbolName(modelNamePrefix,"functionAlgebraics")%>(DATA *data)
   {
     <%varDecls%>
-    
+
     TRACE_PUSH
-  
+
     data->simulationInfo.discreteCall = 0;
     <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionAlg(<%nrfuncs%>, data, functionAlg_systems);'
     else '<%fncalls%>' %>
-    
+
     TRACE_POP
     return 0;
   }
@@ -2819,9 +2819,9 @@ template functionAliasEquation(list<SimEqSystem> removedEquations, String modelN
   int functionAliasEquations(DATA *data)
   {
     <%varDecls%>
-    
+
     TRACE_PUSH
-    
+
     data->simulationInfo.discreteCall = 0;
     <%removedPart%>
 
@@ -2871,9 +2871,9 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause>
   int <%symbolName(modelNamePrefix,"functionDAE")%>(DATA *data)
   {
     <%varDecls%>
-    
+
     TRACE_PUSH
-    
+
     data->simulationInfo.needToIterate = 0;
     data->simulationInfo.discreteCall = 1;
     <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionDAE(<%nrfuncs%>, data, functionDAE_systems);'
@@ -2931,7 +2931,7 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
   int <%symbolName(modelNamePrefix,"function_ZeroCrossingsEquations")%>(DATA *data)
   {
     <%varDecls%>
-    
+
     TRACE_PUSH
     data->simulationInfo.callStatistics.functionZeroCrossingsEquations++;
 
@@ -3066,7 +3066,7 @@ template functionRelations(list<ZeroCrossing> relations, String modelNamePrefix)
     <%varDecls%>
 
     TRACE_PUSH
-    
+
     if(evalforZeroCross)
     {
       <%relationsCode%>

@@ -68,7 +68,7 @@ void updateDiscreteSystem(DATA *data)
 
   TRACE_PUSH
   data->simulationInfo.callStatistics.updateDiscreteSystem++;
-  
+
   data->callback->function_updateRelations(data, 1);
   updateRelationsPre(data);
   storeRelations(data);
@@ -417,7 +417,7 @@ void restoreExtrapolationDataOld(DATA *data)
     memcpy(data->localData[i-1]->booleanVars, data->localData[i]->booleanVars, sizeof(modelica_boolean)*data->modelData.nVariablesBoolean);
     memcpy(data->localData[i-1]->stringVars, data->localData[i]->stringVars, sizeof(modelica_string)*data->modelData.nVariablesString);
   }
-  
+
   TRACE_POP
 }
 
@@ -434,7 +434,7 @@ void setAllVarsToStart(DATA *data)
   SIMULATION_DATA *sData = data->localData[0];
   MODEL_DATA      *mData = &(data->modelData);
   long i;
-  
+
   TRACE_PUSH
 
   for(i=0; i<mData->nVariablesReal; ++i)
@@ -457,7 +457,7 @@ void setAllVarsToStart(DATA *data)
     sData->stringVars[i] = mData->stringVarsData[i].attribute.start;
     debugStreamPrint(LOG_DEBUG, 0, "set String var %s = %s", mData->stringVarsData[i].info.name, sData->stringVars[i]);
   }
-  
+
   TRACE_POP
 }
 
@@ -474,9 +474,9 @@ void setAllStartToVars(DATA *data)
   SIMULATION_DATA *sData = data->localData[0];
   MODEL_DATA      *mData = &(data->modelData);
   long i;
-  
+
   TRACE_PUSH
-  
+
   debugStreamPrint(LOG_DEBUG, 1, "the start-attribute of all variables to their current values:");
   for(i=0; i<mData->nVariablesReal; ++i)
   {
@@ -501,7 +501,7 @@ void setAllStartToVars(DATA *data)
   if (DEBUG_STREAM(LOG_DEBUG)) {
     messageClose(LOG_DEBUG);
   }
-  
+
   TRACE_POP
 }
 
@@ -520,7 +520,7 @@ void setAllParamsToStart(DATA *data)
   long i;
 
   TRACE_PUSH
-  
+
   for(i=0; i<mData->nParametersReal; ++i)
   {
     sInfo->realParameter[i] = mData->realParameterData[i].attribute.start;
@@ -541,7 +541,7 @@ void setAllParamsToStart(DATA *data)
     sInfo->stringParameter[i] = mData->stringParameterData[i].attribute.start;
     debugStreamPrint(LOG_DEBUG, 0, "set String var %s = %s", mData->stringParameterData[i].info.name, sInfo->stringParameter[i]);
   }
-  
+
   TRACE_POP
 }
 
@@ -558,7 +558,7 @@ void storeOldValues(DATA *data)
   SIMULATION_DATA *sData = data->localData[0];
   MODEL_DATA      *mData = &(data->modelData);
   SIMULATION_INFO *sInfo = &(data->simulationInfo);
-  
+
   TRACE_PUSH
 
   sInfo->timeValueOld = sData->timeValue;
@@ -566,7 +566,7 @@ void storeOldValues(DATA *data)
   memcpy(sInfo->integerVarsOld, sData->integerVars, sizeof(modelica_integer)*mData->nVariablesInteger);
   memcpy(sInfo->booleanVarsOld, sData->booleanVars, sizeof(modelica_boolean)*mData->nVariablesBoolean);
   memcpy(sInfo->stringVarsOld, sData->stringVars, sizeof(modelica_string)*mData->nVariablesString);
-  
+
   TRACE_POP
 }
 
@@ -583,7 +583,7 @@ void restoreOldValues(DATA *data)
   SIMULATION_DATA *sData = data->localData[0];
   MODEL_DATA      *mData = &(data->modelData);
   SIMULATION_INFO *sInfo = &(data->simulationInfo);
-  
+
   TRACE_PUSH
 
   sData->timeValue = sInfo->timeValueOld;
@@ -591,7 +591,7 @@ void restoreOldValues(DATA *data)
   memcpy(sData->integerVars, sInfo->integerVarsOld, sizeof(modelica_integer)*mData->nVariablesInteger);
   memcpy(sData->booleanVars, sInfo->booleanVarsOld,  sizeof(modelica_boolean)*mData->nVariablesBoolean);
   memcpy( sData->stringVars, sInfo->stringVarsOld, sizeof(modelica_string)*mData->nVariablesString);
-  
+
   TRACE_POP
 }
 
@@ -608,14 +608,14 @@ void storePreValues(DATA *data)
   SIMULATION_DATA *sData = data->localData[0];
   MODEL_DATA      *mData = &(data->modelData);
   SIMULATION_INFO *sInfo = &(data->simulationInfo);
-  
+
   TRACE_PUSH
 
   memcpy(sInfo->realVarsPre, sData->realVars, sizeof(modelica_real)*mData->nVariablesReal);
   memcpy(sInfo->integerVarsPre, sData->integerVars, sizeof(modelica_integer)*mData->nVariablesInteger);
   memcpy(sInfo->booleanVarsPre, sData->booleanVars, sizeof(modelica_boolean)*mData->nVariablesBoolean);
   memcpy(sInfo->stringVarsPre, sData->stringVars, sizeof(modelica_string)*mData->nVariablesString);
-  
+
   TRACE_POP
 }
 
@@ -634,7 +634,7 @@ modelica_boolean checkRelations(DATA *data)
 
   MODEL_DATA      *mData = &(data->modelData);
   SIMULATION_INFO *sInfo = &(data->simulationInfo);
-  
+
   TRACE_PUSH
 
   for(i=0;i<mData->nRelations;++i)
@@ -661,9 +661,9 @@ modelica_boolean checkRelations(DATA *data)
 void updateRelationsPre(DATA *data)
 {
   TRACE_PUSH
-  
+
   memcpy(data->simulationInfo.relationsPre, data->simulationInfo.relations, sizeof(modelica_boolean)*data->modelData.nRelations);
-  
+
   TRACE_POP
 }
 
@@ -679,9 +679,9 @@ void updateRelationsPre(DATA *data)
 void storeRelations(DATA* data)
 {
   TRACE_PUSH
-  
+
   memcpy(data->simulationInfo.storedRelations, data->simulationInfo.relations, sizeof(modelica_boolean)*data->modelData.nRelations);
-  
+
   TRACE_POP
 }
 
@@ -696,7 +696,7 @@ void storeRelations(DATA* data)
 double getNextSampleTimeFMU(DATA *data)
 {
   TRACE_PUSH
-  
+
   if(0 < data->modelData.nSamples)
   {
     infoStreamPrint(LOG_EVENTS, 0, "Next event time = %f", data->simulationInfo.nextSampleEvent);
@@ -719,9 +719,9 @@ void initializeDataStruc(DATA *data)
 {
   SIMULATION_DATA tmpSimData;
   size_t i = 0;
-  
+
   TRACE_PUSH
-  
+
   /* RingBuffer */
   data->simulationData = 0;
   data->simulationData = allocRingBuffer(SIZERINGBUFFER, sizeof(SIMULATION_DATA));
@@ -842,7 +842,7 @@ void initializeDataStruc(DATA *data)
   data->simulationInfo.chatteringInfo.currentIndex = 0;
   data->simulationInfo.chatteringInfo.lastStepsNumStateEvents = 0;
   data->simulationInfo.chatteringInfo.messageEmitted = 0;
-  
+
   /* initial call statistics */
   data->simulationInfo.callStatistics.functionODE = 0;
   data->simulationInfo.callStatistics.updateDiscreteSystem = 0;
@@ -871,7 +871,7 @@ void initializeDataStruc(DATA *data)
   for(i=0; i<data->modelData.nDelayExpressions; i++) {
     data->simulationInfo.delayStructure[i] = allocRingBuffer(1024, sizeof(TIME_AND_VALUE));
   }
-  
+
   TRACE_POP
 }
 
@@ -887,7 +887,7 @@ void deInitializeDataStruc(DATA *data)
   size_t i = 0;
 
   TRACE_PUSH
-  
+
   /* prepair RingBuffer */
   for(i=0; i<SIZERINGBUFFER; i++){
     SIMULATION_DATA* tmpSimData = (SIMULATION_DATA*) data->localData[i];
@@ -1012,7 +1012,7 @@ void deInitializeDataStruc(DATA *data)
     freeRingBuffer(data->simulationInfo.delayStructure[i]);
 
   free(data->simulationInfo.delayStructure);
-  
+
   TRACE_POP
 }
 
@@ -1028,7 +1028,7 @@ void setZCtol(double relativeTol)
   /* lochel: force tolZC > 0 */
   tolZC = max(TOL_HYSTERESIS_ZEROCROSSINGS*relativeTol, TOL_HYSTERESIS_ZEROCROSSINGS*MINIMAL_STEP_SIZE);
   infoStreamPrint(LOG_EVENTS_V, 0, "Set tolerance for zero-crossing hysteresis to: %e", tolZC);
-  
+
   TRACE_POP
 }
 

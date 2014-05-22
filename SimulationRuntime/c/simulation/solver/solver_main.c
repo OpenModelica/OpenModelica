@@ -89,9 +89,9 @@ static void writeOutputVars(char* names, DATA* data);
 int solver_main_step(DATA* data, SOLVER_INFO* solverInfo)
 {
   int retVal;
-  
+
   TRACE_PUSH
-  
+
   switch(solverInfo->solverMethod)
   {
   case S_EULER:
@@ -126,7 +126,7 @@ int solver_main_step(DATA* data, SOLVER_INFO* solverInfo)
     return retVal;
 #endif
   }
-  
+
   TRACE_POP
   return 1;
 }
@@ -486,7 +486,7 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
       infoStreamPrint(LOG_STATS, 0, "sorry - no solver statistics available. [not yet implemented]");
       messageClose(LOG_STATS);
     }
-    
+
     infoStreamPrint(LOG_STATS_V, 1, "function calls");
     infoStreamPrint(LOG_STATS_V, 0, "%5ld calls of functionODE", data->simulationInfo.callStatistics.functionODE);
     infoStreamPrint(LOG_STATS_V, 0, "%5ld calls of updateDiscreteSystem", data->simulationInfo.callStatistics.updateDiscreteSystem);
