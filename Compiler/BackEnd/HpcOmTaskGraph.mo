@@ -2113,14 +2113,14 @@ algorithm
   end matchcontinue;
 end arrayCopyRows;
 
-public function getLeaveNodes "function getLeaveNodes
+public function getLeafNodes "function getLeafNodes
   author: marcusw
   Get all leave-nodes of the given graph."
   input TaskGraph iTaskGraph;
   output List<Integer> oLeaveNodes;
 algorithm
   oLeaveNodes := getLeaves(iTaskGraph,{},1);
-end getLeaveNodes;
+end getLeafNodes;
 
 protected function getLeaves "gets the end of the branches i.e. a node with no successors(no entries in the adjacencyList)
 author:Waurich TUD 2013-06"
@@ -3095,6 +3095,23 @@ algorithm
   (op2,ex2) := iExeCost2;
   oExeCost := ((op1+op2,realAdd(ex1,ex2)));
 end addUpExeCosts;
+
+public function getExeCostReqCycles"author: waurich
+  gets the execution cost of the node in cycles."
+  input Integer iNodeIdx;
+  input TaskGraphMeta iGraphData;
+  output Real oExeCost;
+protected
+  array<list<Integer>> inComps;
+  list<Integer> comps;
+  array<tuple<Integer, Real>> exeCosts;
+  tuple<Integer,Real> tmpExeCost;
+algorithm
+  TASKGRAPHMETA(inComps=inComps, exeCosts=exeCosts) := iGraphData;
+  tmpExeCost := (0,0.0);
+  comps := arrayGet(inComps, iNodeIdx);
+  ((_,oExeCost)) := List.fold1(comps, getExeCost0, exeCosts, tmpExeCost);
+end getExeCostReqCycles;
 
 public function getExeCost "author: marcusw
   gets the execution cost of the node."
@@ -4410,8 +4427,7 @@ algorithm
       equation
         true = arrayLength(graphIn) <> 0;
         TASKGRAPHMETA(inComps = inComps, nodeMark=nodeMark) = graphDataIn;
-        graphInT = transposeTaskGraph(graphIn);
-        rootNodes = getRootNodes(graphInT);
+        rootNodes = getRootNodes(graphIn);
         nodeInfo = arrayCreate(arrayLength(graphIn),(-1,-1.0,0));
         nodeInfo = List.fold1(List.intRange(arrayLength(graphIn)),setParentCount,graphIn,nodeInfo);
         nodeInfo = longestPathMethod1(graphIn,graphDataIn,rootNodes,List.fill(0,listLength(rootNodes)),nodeInfo);
@@ -5165,32 +5181,31 @@ algorithm
 end transposeCommCosts1;
 
 public function getRootNodes "function getRootNodes
-  author: marcusw
+  author: marcusw,waurich
   Get all root nodes of the graph."
-  input TaskGraph iTaskGraphT; //The transposed graph
+  input TaskGraph iTaskGraph; //the original graph
   output list<Integer> rootsOut;
+protected
+  Integer size;
+  TaskGraph taskGraphT;
 algorithm
-  ((rootsOut,_)) := Util.arrayFold(iTaskGraphT, getRootNodes0, ({},1));
+  size := arrayLength(iTaskGraph);
+  taskGraphT := BackendDAEUtil.transposeMatrix(iTaskGraph,size);
+  rootsOut := getLeafNodes(taskGraphT);  // gets the exit nodes of the transposed graph
 end getRootNodes;
 
-protected function getRootNodes0 "function getRootNodes0
-  author: marcusw
-  Helper function of getRootNodes to handle one entry of the adjacence-list-array."
-  input list<Integer> iChildren;
-  input tuple<list<Integer>,Integer> iRoots; //<rootNodes, nodeIdx>
-  output tuple<list<Integer>,Integer> oRoots;
+public function getCommCostBetweenNodesInCycles"author: waurich TUD 2014-05
+  Get the highest communication costs between the given nodes."
+  input Integer iParentNodeIdx;
+  input Integer iChildNodeIdx;
+  input TaskGraphMeta iTaskGraphMeta;
+  output Real oCommCost;
 protected
-  list<Integer> tmpRoots;
-  Integer nodeIdx;
+  Integer commCost;
 algorithm
-  oRoots := match(iChildren,iRoots)
-    case({},(tmpRoots,nodeIdx))
-      equation
-        tmpRoots = nodeIdx::tmpRoots;
-      then ((tmpRoots,nodeIdx+1));
-    case(_,(tmpRoots,nodeIdx)) then ((tmpRoots,nodeIdx+1));
-  end match;
-end getRootNodes0;
+  ((_,_,commCost)) := getCommCostBetweenNodes(iParentNodeIdx,iChildNodeIdx,iTaskGraphMeta);
+  oCommCost := intReal(commCost);
+end getCommCostBetweenNodesInCycles;
 
 public function getCommCostBetweenNodes "author: marcusw
   Get the edge with highest communication costs between the given nodes."

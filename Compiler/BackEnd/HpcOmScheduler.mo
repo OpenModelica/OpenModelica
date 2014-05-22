@@ -74,7 +74,7 @@ protected
 algorithm
   HpcOmTaskGraph.TASKGRAPHMETA(commCosts=commCosts) := iTaskGraphMeta;
   taskGraphT := HpcOmTaskGraph.transposeTaskGraph(iTaskGraph);
-  rootNodes := HpcOmTaskGraph.getRootNodes(taskGraphT);
+  rootNodes := HpcOmTaskGraph.getRootNodes(iTaskGraph);
   allTasks := convertTaskGraphToTasks(taskGraphT,iTaskGraphMeta,convertNodeToTask);
   nodeList_refCount := List.map1(rootNodes, getTaskByIndex, allTasks);
   nodeList := List.map(nodeList_refCount, Util.tuple21);
@@ -236,7 +236,7 @@ algorithm
   taskGraphT := HpcOmTaskGraph.transposeTaskGraph(iTaskGraph);
   //() := HpcOmTaskGraph.printTaskGraph(taskGraphT);
   commCostsT := HpcOmTaskGraph.transposeCommCosts(commCosts);
-  leaveNodes := HpcOmTaskGraph.getLeaveNodes(iTaskGraph);
+  leaveNodes := HpcOmTaskGraph.getLeafNodes(iTaskGraph);
   //print("Leave nodes: " +& stringDelimitList(List.map(leaveNodes,intString),", ") +& "\n");
   allTasks := convertTaskGraphToTasks(iTaskGraph,iTaskGraphMeta,convertNodeToTaskReverse);
   nodeList_refCount := List.map1(leaveNodes, getTaskByIndex, allTasks);
@@ -1327,7 +1327,7 @@ algorithm
         true = intEq(arrayLength(iTaskGraph),arrayLength(extInfoArr));
 
         taskGraphT = HpcOmTaskGraph.transposeTaskGraph(iTaskGraph);
-        rootNodes = HpcOmTaskGraph.getRootNodes(taskGraphT);
+        rootNodes = HpcOmTaskGraph.getRootNodes(iTaskGraph);
         allTasks = convertTaskGraphToTasks(taskGraphT,iTaskGraphMeta,convertNodeToTask);
         nodeList_refCount = List.map1(rootNodes, getTaskByIndex, allTasks);
         nodeList = List.map(nodeList_refCount, Util.tuple21);
@@ -1377,7 +1377,7 @@ algorithm
         true = intEq(arrayLength(iTaskGraph),arrayLength(extInfoArr));
 
         taskGraphT = HpcOmTaskGraph.transposeTaskGraph(iTaskGraph);
-        rootNodes = HpcOmTaskGraph.getRootNodes(taskGraphT);
+        rootNodes = HpcOmTaskGraph.getRootNodes(iTaskGraph);
         allTasks = convertTaskGraphToTasks(taskGraphT,iTaskGraphMeta,convertNodeToTask);
         nodeList_refCount = List.map1(rootNodes, getTaskByIndex, allTasks);
         nodeList = List.map(nodeList_refCount, Util.tuple21);
@@ -1425,9 +1425,8 @@ algorithm
         extInfoArr = listArray(extInfo);
         true = intEq(arrayLength(iTaskGraph),arrayLength(extInfoArr));
         //print("External scheduling info: " +& stringDelimitList(List.map(extInfo, intString), ",") +& "\n");
-
         taskGraphT = HpcOmTaskGraph.transposeTaskGraph(iTaskGraph);
-        rootNodes = HpcOmTaskGraph.getRootNodes(taskGraphT);
+        rootNodes = HpcOmTaskGraph.getRootNodes(iTaskGraph);
         allTasks = convertTaskGraphToTasks(taskGraphT,iTaskGraphMeta,convertNodeToTask);
         nodeList_refCount = List.map1(rootNodes, getTaskByIndex, allTasks);
         nodeList = List.map(nodeList_refCount, Util.tuple21);
@@ -1558,9 +1557,101 @@ algorithm
   end matchcontinue;
 end createExtSchedule1;
 
-//-----------------------
-// Modified Critical Path
-//-----------------------
+//---------------------------------
+// Task Duplication-based Scheduler
+//---------------------------------
+
+public function createTDSschedule"task duplication schedule by Samantha Ranaweera and Dharma P. Agrawal
+est:earliest starting time, ect: earliest completion time, last:latest allowable starting time, lact: latest allowable completion time, fpred:favourite predecessor
+author: Waurich TUD 2015-05"
+  input HpcOmTaskGraph.TaskGraph iTaskGraph;
+  input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+  input Integer numProc;
+  input array<list<Integer>> iSccSimEqMapping;
+  output HpcOmSimCode.Schedule oSchedule;
+protected
+  Integer size;
+  array<Real> estArray,lastArray,ectArray,lactArray;
+  array<Integer> fpredArray;
+algorithm
+  HpcOmTaskGraph.printTaskGraph(iTaskGraph);
+  HpcOmTaskGraph.printTaskGraphMeta(iTaskGraphMeta);
+  //compute the ASAP
+  size := arrayLength(iTaskGraph);
+  (estArray,ectArray) := computeASAP(iTaskGraph,iTaskGraphMeta);
+  (lastArray,lactArray) := computeALAP(iTaskGraph,iTaskGraphMeta);
+  /*
+  print("est\n");
+  printALAP(estArray);
+  print("ect\n");
+  printALAP(ectArray);
+  print("last\n");
+  printALAP(lastArray);
+  print("lact\n");
+  printALAP(lactArray);
+  */
+  fpredArray := computeFavouritePred(iTaskGraph,iTaskGraphMeta,ectArray); //the favourite predecessor of each node
+  //print("fpred\n");
+  //printALAP(Util.arrayMap(fpredArray,intReal));
+  oSchedule := HpcOmSimCode.EMPTYSCHEDULE();
+end createTDSschedule;
+
+protected function computeFavouritePred"gets the favourite Predecessors of each task. needed for the task duplication scheduler
+author:Waurich TUD 2014-05"
+  input HpcOmTaskGraph.TaskGraph iTaskGraph;
+  input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+  input array<Real> ect;
+  output array<Integer> fpredOut;
+protected
+  Integer size;
+  array<Integer> fpred;
+  HpcOmTaskGraph.TaskGraph taskGraphT;
+algorithm
+  size := arrayLength(iTaskGraph);
+  taskGraphT := BackendDAEUtil.transposeMatrix(iTaskGraph,size);
+  fpred := arrayCreate(size,-1);
+  fpredOut := List.fold3(List.intRange(size),computeFavouritePred1,taskGraphT,iTaskGraphMeta,ect,fpred);
+end computeFavouritePred;
+
+protected function computeFavouritePred1"folding function for computeFavouritePred to traverse all nodes and get their favourite predecessors
+author:Waurich TUD 2014-05"
+  input Integer nodeIdx;
+  input HpcOmTaskGraph.TaskGraph graphT;
+  input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+  input array<Real> ect;
+  input array<Integer> fpredIn;
+  output array<Integer> fpredOut;
+algorithm
+  fpredOut := matchcontinue(nodeIdx,graphT,iTaskGraphMeta,ect,fpredIn)
+    local
+      Integer fpredPos,fpred;
+      Real maxCost;
+      list<Integer> parents;
+      list<Real> parentECTs,commCosts,costs;
+    case(_,_,_,_,_)
+      equation
+        parents = arrayGet(graphT,nodeIdx);
+        true = List.isNotEmpty(parents);
+        parentECTs = List.map1(parents,Util.arrayGetIndexFirst,ect);
+        commCosts = List.map2(parents,HpcOmTaskGraph.getCommCostBetweenNodesInCycles,nodeIdx,iTaskGraphMeta);
+        costs = List.threadMap(parentECTs,commCosts,realAdd);
+        maxCost = List.fold(costs,realMax,0.0);
+        fpredPos = List.position(maxCost,costs)+1;
+        fpred = listGet(parents,fpredPos); // if there is no predecessor, the fpred value is 0
+        fpredOut = arrayUpdate(fpredIn,nodeIdx,fpred);
+      then fpredOut;
+    case(_,_,_,_,_)
+      equation
+        parents = arrayGet(graphT,nodeIdx);
+        true = List.isEmpty(parents);
+        fpredOut = arrayUpdate(fpredIn,nodeIdx,0);
+      then fpredOut;
+  end matchcontinue;      
+end computeFavouritePred1;
+
+//---------------------------------
+// Modified Critical Path scheduler
+//---------------------------------
 
 public function createMCPschedule "scheduler Modified Critical Path.
 computes the ALAP i.e. latest possible start time  for every task. The task with the smallest values gets the highest priority.
@@ -1586,7 +1677,7 @@ algorithm
   //compute the ALAP
   size := arrayLength(iTaskGraph);
   taskGraphT := BackendDAEUtil.transposeMatrix(iTaskGraph,size);
-  alapArray := computeALAP(iTaskGraph,iTaskGraphMeta);
+  (alapArray,_) := computeALAP(iTaskGraph,iTaskGraphMeta);
   //printALAP(alapArray);
   alapLst := arrayList(alapArray);
   // get the order of the task, assign to processors
@@ -1604,7 +1695,6 @@ algorithm
   schedule := updateLockIdcsInThreadschedule(schedule,removeLocksFromLockIds,removeLocks);
   oSchedule := schedule;
 end createMCPschedule;
-
 
 protected function updateLockIdcsInThreadschedule "executes the given function on the lockIdc in THREADSCHEDULE.
 author:Waurich TUD 2013-12"
@@ -1637,7 +1727,6 @@ algorithm
         scheduleIn;
   end match;
 end updateLockIdcsInThreadschedule;
-
 
 protected function traverseAndUpdateThreadsInSchedule "traverses all Threads in a schedule.
 author: Waurich TUD 2013-12"
@@ -1672,7 +1761,6 @@ algorithm
         scheduleIn;
   end match;
 end traverseAndUpdateThreadsInSchedule;
-
 
 protected function createScheduleFromAssignments"creates the ThreadSchedule from the taskAssignment i.e. which task is computed in which thread.
 author:Waurich TUD 2013-12"
@@ -1752,7 +1840,6 @@ algorithm
   end match;
 end createScheduleFromAssignments;
 
-
 protected function isEqualTaskId"checks if the lockId or the calcTaskIdx is the same. emptyTasks are not handled as equal.
 author:Waurich TUD 2013-12"
   input HpcOmSimCode.Task task1;
@@ -1789,7 +1876,6 @@ algorithm
   end match;
 end isEqualTaskId;
 
-
 protected function removeLocksFromLockIds "removes all locks from the list of locks.
 author:Waurich TUD 2013-12"
   input list<String> lockIdsIn;
@@ -1802,7 +1888,6 @@ algorithm
   (_,lockIdsOut,_) := List.intersection1OnTrue(lockIdsIn,lockIdStrings,stringEq);
 end removeLocksFromLockIds;
 
-
 protected function removeLocksFromThread "removes all lockTasks that are given in the locksLst from the thread.
 author:Waurich TUD 2013-12"
   input list<HpcOmSimCode.Task> threadIn;
@@ -1811,7 +1896,6 @@ author:Waurich TUD 2013-12"
 algorithm
   (_,threadOut,_) := List.intersection1OnTrue(threadIn,lockLst,isEqualTaskId);
 end removeLocksFromThread;
-
 
 protected function getLockIdString "gets the lockId string.
 author:Waurich TUD 2013-12"
@@ -1832,7 +1916,6 @@ algorithm
         "";
   end match;
 end getLockIdString;
-
 
 protected function getSuperfluousLocks "gets the locks that are unnecessary. e.g. if a task has multiple parentTasks from one thread, we just need the lock from the last executed task.
 author:Waurich TUD 2013-12"
@@ -1866,7 +1949,6 @@ algorithm
   removeLocksOut := listAppend(removeLocks,taskLstRel);
 end getSuperfluousLocks;
 
-
 protected function removeLatestTaskFromList
   input list<Integer> taskLstIn;
   input list<Integer> taskOrderIn;
@@ -1890,7 +1972,6 @@ algorithm
        taskLst;
   end match;
 end removeLatestTaskFromList;
-
 
 protected function lengthNotOne
   input list<Integer> lstIn;
@@ -1922,7 +2003,6 @@ algorithm
   arrayOut := arrayUpdate(arrayIn,value,valueLst);
 end listIndecesForValues;
 
-
 protected function getAssignLockTask "outputs a AssignLockTsk for the given lockId.
 author:Waurich TUD 2013-11"
   input String lockId;
@@ -1930,7 +2010,6 @@ author:Waurich TUD 2013-11"
 algorithm
   taskOut := HpcOmSimCode.ASSIGNLOCKTASK(lockId);
 end getAssignLockTask;
-
 
 protected function getReleaseLockTask "outputs a ReleaseLockTsk for the given lockId.
 author:Waurich TUD 2013-11"
@@ -1940,7 +2019,6 @@ algorithm
   taskOut := HpcOmSimCode.RELEASELOCKTASK(lockId);
 end getReleaseLockTask;
 
-
 protected function getAssignLockString
   input Integer predecessor;
   input Integer taskIdx;
@@ -1948,7 +2026,6 @@ protected function getAssignLockString
 algorithm
   lockId := intString(taskIdx)+&"_"+&intString(predecessor);
 end getAssignLockString;
-
 
 protected function getReleaseLockString
   input Integer successor;
@@ -1958,7 +2035,6 @@ algorithm
   lockId := intString(successor)+&"_"+&intString(taskIdx);
 end getReleaseLockString;
 
-
 protected function getReleaseLockStringR
   input Integer successor;
   input Integer taskIdx;
@@ -1966,7 +2042,6 @@ protected function getReleaseLockStringR
 algorithm
   lockId := intString(taskIdx)+&"_"+&intString(successor);
 end getReleaseLockStringR;
-
 
 protected function getTaskAssignmentMCP "gets the assignment which nodes is computed of which processor for the MCP algorithm.
 author:Waurich TUD 2013-10"
@@ -1987,7 +2062,6 @@ algorithm
   procAss := arrayCreate(numProc,{});
   (taskAssOut,procAssOut) := getTaskAssignmentMCP1(orderIn,taskAss,procAss,processorTime,taskGraphIn,taskGraphMetaIn);
 end getTaskAssignmentMCP;
-
 
 protected function getTaskAssignmentMCP1
   input list<Integer> orderIn;
@@ -2035,6 +2109,9 @@ algorithm
   end matchcontinue;
 end getTaskAssignmentMCP1;
 
+//---------------------------
+// quicksort with order
+//---------------------------
 
 protected function quicksortWithOrder "sorts a list of Reals with the quicksort algorithm and outputs an additional list with the changed order of the original indeces.
 author: Waurich TUD 2013-11"
@@ -2066,7 +2143,6 @@ algorithm
         ({r1},{1});
   end matchcontinue;
 end quicksortWithOrder;
-
 
 protected function quicksortWithOrder1
   input list<Real> lstIn;
@@ -2115,7 +2191,6 @@ algorithm
   end match;
 end quicksortWithOrder1;
 
-
 protected function getNextPivot "removes the pivot from the markedLst and computes a new one.
 author:Waurich TUD 2013-11"
   input list<Real> lstIn;
@@ -2147,7 +2222,6 @@ algorithm
   end match;
 end getNextPivot;
 
-
 protected function getMemberOnTrueWithIdx "same as getMemberOnTrue, but with index of the found element and a Boolean, if the element was found.!function does not fail!
 author:Waurich TUD 2013-11"
   input Real inValue;
@@ -2164,7 +2238,6 @@ author:Waurich TUD 2013-11"
 algorithm
   (outElement,outIdx,found) := getMemberOnTrueWithIdx1(1,inValue,inList,inCompFunc);
 end getMemberOnTrueWithIdx;
-
 
 public function getMemberOnTrueWithIdx1 "implementation of getMemberOnTrueWithIdx.
 author:Waurich TUD 2013-11"
@@ -2204,7 +2277,6 @@ algorithm
   end matchcontinue;
 end getMemberOnTrueWithIdx1;
 
-
 protected function swapEntriesInList"swaps the entries given by the indeces.
 author:Waurich TUD 2013-11"
   replaceable type ElementType subtypeof Any;
@@ -2222,7 +2294,6 @@ algorithm
   lstOut := List.replaceAt(r2,idx1-1,lstTmp);
 end swapEntriesInList;
 
-
 protected function getMedian3 "gets the median of the 3 reals and the info which of the inputs is the median"
   input Real r1;
   input Real r2;
@@ -2237,36 +2308,120 @@ algorithm
   which := List.position(rOut,{r1,r2,r3})+1;
 end getMedian3;
 
-protected function computeALAP "computes the latest possible start time (As Late As Possible) for every node in the task graph.
+//----------------------------
+// As-Soon-As-Possible Times
+//----------------------------
+
+protected function computeASAP "the graph is traversed bottom up
+computes the earliest possible start time (As Soon As Possible) and the earliest completion time for every node in the task graph.
+author:Waurich TUD 2014-05"
+  input HpcOmTaskGraph.TaskGraph iTaskGraph;
+  input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+  output array<Real> asapOut;  //earliest starting time
+  output array<Real> ectOut;  // earliest completion time
+protected
+  Integer size;
+  list<Integer> rootNodes;
+  array<Real> asap, ect;
+  HpcOmTaskGraph.TaskGraph taskGraphT;
+algorithm
+  size := arrayLength(iTaskGraph);
+  // traverse the taskGraph bottom up to get the asap times
+  rootNodes := HpcOmTaskGraph.getRootNodes(iTaskGraph);
+  taskGraphT := BackendDAEUtil.transposeMatrix(iTaskGraph,size);
+  //print("the rootNodes "+&stringDelimitList(List.map(rootNodes,intString),",")+&"\n");
+  asap := arrayCreate(size,-1.0);
+  ect := arrayCreate(size,-1.0);
+  (asapOut,ectOut) := computeASAP1(rootNodes,iTaskGraph,taskGraphT,iTaskGraphMeta,asap,ect);
+end computeASAP;
+
+protected function computeASAP1"implementation of computeASAP"
+  input list<Integer> parentsIn;
+  input HpcOmTaskGraph.TaskGraph graph;
+  input HpcOmTaskGraph.TaskGraph graphT;
+  input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+  input array<Real> asapIn;
+  input array<Real> ectIn;
+  output array<Real> asapOut;
+  output array<Real> ectOut;
+algorithm
+  (asapOut,ectOut) := matchcontinue(parentsIn,graph,graphT,iTaskGraphMeta,asapIn,ectIn)
+    local
+      Integer node;
+      Real maxASAP, exeCost;
+      array<Real> asap, ect;
+      list<Integer> rest, parents, children;
+      list<Real> asaps, parentECTs, parentsExeCosts, commCosts, ectsWithComm; //ect: earliestCompletionTime
+  case(node::rest,_,_,_,_,_)
+    equation
+      // no parents without asap, update asap and append childNodes to parentLst with next nodes in parentLst
+      //print("node: "+&intString(node)+&"\n");
+      parents = arrayGet(graphT,node);
+      //print("the parents "+&stringDelimitList(List.map(parents,intString),",")+&"\n");
+      asaps = List.map1(parents,Util.arrayGetIndexFirst,asapIn);
+      //print("the asaps "+&stringDelimitList(List.map(asaps,realString),",")+&"\n");
+      false = List.isMemberOnTrue(-1.0,asaps,realEq);
+      parentsExeCosts = List.map1(parents,HpcOmTaskGraph.getExeCostReqCycles,iTaskGraphMeta);
+      parentECTs = List.threadMap(asaps,parentsExeCosts,realAdd);  // the earliest completionTime of the parent tasks
+      commCosts = List.map2(parents,HpcOmTaskGraph.getCommCostBetweenNodesInCycles,node,iTaskGraphMeta);
+      ectsWithComm = List.threadMap(commCosts,parentECTs,realAdd);// the earliest completionTime of the parent tasks including communication costst to the current node
+      //print("the ectsWithComm "+&stringDelimitList(List.map(ectsWithComm,realString),",")+&"\n");
+      maxASAP = List.fold(listAppend(parentECTs,ectsWithComm),realMax,0.0);
+      exeCost = HpcOmTaskGraph.getExeCostReqCycles(node,iTaskGraphMeta);
+      asap = arrayUpdate(asapIn,node,maxASAP);
+      ect = arrayUpdate(ectIn,node,realAdd(maxASAP,exeCost));
+      children = arrayGet(graph,node);
+      //print("the children "+&stringDelimitList(List.map(children,intString),",")+&"\n");
+      rest = listAppend(rest,children);
+      //print("the following nodes "+&stringDelimitList(List.map(rest,intString),",")+&"\n");
+      (asap,ect) = computeASAP1(rest,graph,graphT,iTaskGraphMeta,asap,ect);
+    then (asap,ect);
+  case(node::rest,_,_,_,_,_)
+    equation
+      // some parents without asap, skip this node
+      parents = arrayGet(graphT,node);
+      asaps = List.map1(parents,Util.arrayGetIndexFirst,asapIn);
+      true = List.isMemberOnTrue(-1.0,asaps,realEq);
+      rest = listAppend(rest,{node});
+      //print("the next nodes "+&stringDelimitList(List.map(rest,intString),",")+&"\n");
+      (asap,ect) = computeASAP1(rest,graph,graphT,iTaskGraphMeta,asapIn,ectIn);
+    then
+      (asap,ect);
+  case({},_,_,_,_,_)
+    then (asapIn,ectIn);
+  end matchcontinue;
+end computeASAP1;
+
+//----------------------------
+// As-Late-As-Possible Times
+//----------------------------
+
+protected function computeALAP "traverse the graph top down (the transposed graph bottom up)
+computes the latest allowable start time (As Late As Possible) and the latest allowable compeltino time for every node in the task graph.
 author:Waurich TUD 2013-10"
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
-  output array<Real> alapOut;
+  output array<Real> alapOut; // = last,alap
+  output array<Real> lactOut; // = lact
 protected
   Integer size;
   Real cp;
   list<Integer> endNodes;
-  array<Real> alap;
+  array<Real> alap, lact, tdsLevel;
   array<list<Integer>> taskGraphT;
 algorithm
   size := arrayLength(iTaskGraph);
   // traverse the taskGraph topdown to get the alap times
   taskGraphT := BackendDAEUtil.transposeMatrix(iTaskGraph,size);
-  endNodes := HpcOmTaskGraph.getRootNodes(iTaskGraph);
+  endNodes := HpcOmTaskGraph.getLeafNodes(iTaskGraph);
   alap := arrayCreate(size,0.0);
-  alap := computeALAP1(iTaskGraph,taskGraphT,{},endNodes,iTaskGraphMeta,alap);
+  lact := arrayCreate(size,0.0);
+  lact := arrayCreate(size,-1.0);
+  (alap,lact) := computeALAP1(iTaskGraph,taskGraphT,{},endNodes,iTaskGraphMeta,alap,lact);
   cp := Util.arrayFold(alap,realMax,0.0);
-  alap := Util.arrayMap1(alap,realSubr,cp);
-  alapOut := alap;
+  alapOut := Util.arrayMap1(alap,realSubr,cp);
+  lactOut := Util.arrayMap1(lact,realSubr,cp);
 end computeALAP;
-
-protected function realSubr
-  input Real r1;
-  input Real r2;
-  output Real r3;
-algorithm
-  r3 := realSub(r2,r1);
-end realSubr;
 
 protected function computeALAP1 "traverses the taskGraph topdown starting with the end nodes of the original non-transposed graph.
 author: Waurich TUD 2013-10"
@@ -2276,66 +2431,42 @@ author: Waurich TUD 2013-10"
   input list<Integer> nextNodesIn;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   input array<Real> alapIn;
+  input array<Real> lactIn;
   output array<Real> alapOut;
+  output array<Real> lactOut;
 algorithm
-  alapOut := matchcontinue(iTaskGraph,iTaskGraphT,assignedNodesIn,nextNodesIn,iTaskGraphMeta,alapIn)
+  (alapOut,lactOut) := matchcontinue(iTaskGraph,iTaskGraphT,assignedNodesIn,nextNodesIn,iTaskGraphMeta,alapIn,lactIn)
     local
-      Boolean notChecked;
+      Boolean notChecked, noLevelYet;
       Integer node,child;
       Real exeCost1,exeCost2;
-      array<Real> alap;
-      list<Integer> rest, parentLst, assignedNodes, nextNodes;
-      list<Real> parentCosts;
-  case(_,_,_,_,_,_)
+      array<Real> alap,lact;
+      list<Integer> rest, parentLst, childLst, assignedNodes, nextNodes;
+      list<Real> parentCosts,childLevels;
+  case(_,_,_,_,_,_,_)
     equation
       (node::nextNodes) = nextNodesIn;
-      exeCost1 = getALAPCost(node,alapIn,iTaskGraph,iTaskGraphMeta); // gets the higest alapTime of all childNodes
+      exeCost1 = getALAPCost(node,alapIn,iTaskGraph,iTaskGraphMeta); // gets the highest alapTime of all childNodes
       ((_,exeCost2)) = HpcOmTaskGraph.getExeCost(node, iTaskGraphMeta);
       exeCost2 = realAdd(exeCost1,exeCost2);
       alap = arrayUpdate(alapIn,node,exeCost2);
+      lact = arrayUpdate(lactIn,node,exeCost1);
       parentLst = arrayGet(iTaskGraphT,node);
       parentLst = getParentsWithOneLeftChild(parentLst,assignedNodesIn,iTaskGraph);
       assignedNodes = node::assignedNodesIn;
       nextNodes = listAppend(nextNodes,parentLst);
-      alap = computeALAP1(iTaskGraph,iTaskGraphT,assignedNodes,nextNodes,iTaskGraphMeta,alap);
-    then alap;
-  case(_,_,_,{},_,_)
+      (alap,lact) = computeALAP1(iTaskGraph,iTaskGraphT,assignedNodes,nextNodes,iTaskGraphMeta,alap,lact);
+    then (alap,lact);
+  case(_,_,_,{},_,_,_)
     equation
       true = listLength(assignedNodesIn) == arrayLength(iTaskGraph);
-    then alapIn;
+    then (alapIn,lactIn);
   else
     equation
       print("computeALAP1 failed!\n");
     then fail();
   end matchcontinue;
 end computeALAP1;
-
-protected function getParentsWithOneLeftChild "gets the nodes from the parentlst, that have jsut on child that is not in the nodeLst.
-author: Waurich TUD 2013-11"
-  input list<Integer> parentLstIn;
-  input list<Integer> nodeLst;  // the nodes that are not concerned
-  input HpcOmTaskGraph.TaskGraph taskGraphIn;
-  output list<Integer> parentLstOut;
-algorithm
-  parentLstOut := List.fold2(parentLstIn,getParentsWithOneLeftChild1,nodeLst,taskGraphIn,{});
-end getParentsWithOneLeftChild;
-
-protected function getParentsWithOneLeftChild1 "folding function of getParentsWithOneLeftChild.
-author:Waurich TUD 2013-11"
-  input Integer parent;
-  input list<Integer> nodeLst;
-  input HpcOmTaskGraph.TaskGraph taskGraphIn;
-  input list<Integer> parentLstIn;
-  output list<Integer> parentLstOut;
-protected
-  Boolean justOneChild;
-  list<Integer> childNodes;
-algorithm
-  childNodes := arrayGet(taskGraphIn,parent);
-  (_,childNodes,_) := List.intersection1OnTrue(childNodes,nodeLst,intEq);
-  justOneChild := intEq(listLength(childNodes),1) and List.isNotEmpty(childNodes);
-  parentLstOut := Util.if_(justOneChild,parent::parentLstIn,parentLstIn);
-end getParentsWithOneLeftChild1;
 
 protected function getALAPCost "gets the alap time and commCost for the parentNode with the highest alapTime
 author: Waurich TUD 2013-10"
@@ -2389,6 +2520,40 @@ algorithm
   alapTimeOut := realAdd(alapTime,commCostR);
 end getALAPCost1;
 
+protected function getParentsWithOneLeftChild "gets the nodes from the parentlst, that have jsut on child that is not in the nodeLst.
+author: Waurich TUD 2013-11"
+  input list<Integer> parentLstIn;
+  input list<Integer> nodeLst;  // the nodes that are not concerned
+  input HpcOmTaskGraph.TaskGraph taskGraphIn;
+  output list<Integer> parentLstOut;
+algorithm
+  parentLstOut := List.fold2(parentLstIn,getParentsWithOneLeftChild1,nodeLst,taskGraphIn,{});
+end getParentsWithOneLeftChild;
+
+protected function getParentsWithOneLeftChild1 "folding function of getParentsWithOneLeftChild.
+author:Waurich TUD 2013-11"
+  input Integer parent;
+  input list<Integer> nodeLst;
+  input HpcOmTaskGraph.TaskGraph taskGraphIn;
+  input list<Integer> parentLstIn;
+  output list<Integer> parentLstOut;
+protected
+  Boolean justOneChild;
+  list<Integer> childNodes;
+algorithm
+  childNodes := arrayGet(taskGraphIn,parent);
+  (_,childNodes,_) := List.intersection1OnTrue(childNodes,nodeLst,intEq);
+  justOneChild := intEq(listLength(childNodes),1) and List.isNotEmpty(childNodes);
+  parentLstOut := Util.if_(justOneChild,parent::parentLstIn,parentLstIn);
+end getParentsWithOneLeftChild1;
+
+protected function realSubr
+  input Real r1;
+  input Real r2;
+  output Real r3;
+algorithm
+  r3 := realSub(r2,r1);
+end realSubr;
 
 //-----
 // Util
@@ -2417,7 +2582,6 @@ algorithm
     else fail();
   end match;
 end printSchedule;
-
 
 public function analyseScheduledTaskGraph"functions to analyse the scheduled task graph can be applied in here.
 author:Waurich TUD 2013-12"
@@ -2468,7 +2632,6 @@ algorithm
   end match;
 end analyseScheduledTaskGraph;
 
-
 public function predictExecutionTime  "computes the theoretically execution time for the serial simulation and the parallel. a speedup ratio is determined by su=serTime/parTime.
 the max speedUp is computed via the serTime/criticalPathCosts.
 author:Waurich TUD 2013-11"
@@ -2510,7 +2673,6 @@ algorithm
   end matchcontinue;
 end predictExecutionTime;
 
-
 public function printPredictedExeTimeInfo "function to print the information about the predicted execution times.
 author:Waurich TUD 2013-11"
   input Real serTime;
@@ -2543,7 +2705,6 @@ algorithm
   end matchcontinue;
 end printPredictedExeTimeInfo;
 
-
 public function getSerialExecutionTime  "computes thes serial execution time by summing up all exeCosts of all tasks.
 author:Waurich TUD 2013-11"
   input HpcOmTaskGraph.TaskGraphMeta taskGraphMetaIn;
@@ -2561,7 +2722,6 @@ algorithm
   exeCostsReal := List.map1(odeComps,Util.arrayGetIndexFirst,exeCosts1);
   serialTimeOut := List.fold(exeCostsReal,realAdd,0.0);
 end getSerialExecutionTime;
-
 
 protected function getFinishingTimesForSchedule"computes the finishing times for the schedule. Works not for empty systems!!!
 author:Waurich TUD 2013-11"
@@ -2610,7 +2770,6 @@ algorithm
   end match;
 end getFinishingTimesForSchedule;
 
-
 protected function getTimeFinishedOfLastTask "get the timeFinished of the last task of a thread. if the thread is empty its -1.0.
 author:Waurich TUD 2013-11"
   input list<HpcOmSimCode.Task> threadTasksIn;
@@ -2632,7 +2791,6 @@ algorithm
         -1.0;
   end matchcontinue;
 end getTimeFinishedOfLastTask;
-
 
 protected function computeTimeFinished  "traverses all threads bottoms up.
 author:Waurich TUD 2013-11"
@@ -2708,7 +2866,6 @@ algorithm
   end matchcontinue;
 end computeTimeFinished;
 
-
 protected function getNextThreadIdx "computes the index of the next thread that should be analysed.
 The closed threads are not possible and if the last thread is input, the first is chosen.
 author:Waurich TUD 2013-11"
@@ -2725,7 +2882,6 @@ algorithm
   isClosed := List.isMemberOnTrue(nextThread,closedThreads,intEq);
   nextThreadOut := Debug.bcallret3(isClosed, getNextThreadIdx, nextThread, closedThreads, numThreads, nextThread);
 end getNextThreadIdx;
-
 
 protected function updateFinishingTime "updates the finishing times.
 author:Waurich TUD 2013-11"
@@ -2775,7 +2931,6 @@ algorithm
   end match;
 end updateFinishingTime;
 
-
 protected function updateFinishingTime1  "folding function that checks whether the parentNode is in the checkedNodes and looks for the task with the latest finishingTime.
 author:Waurich TUD 2013-11"
   input Integer parentIdx;
@@ -2797,7 +2952,6 @@ algorithm
   parentLst := Util.if_(isCalc,parentLstIn,parentIdx::parentLstIn);
   tplOut := (parentLst,task);
 end updateFinishingTime1;
-
 
 protected function computeFinishingTimeForOneTask  "updated the timeFinished in the calcTask and adds the task to the checkedTasks.
 author: Waurich TUD 2013-11"
@@ -2864,7 +3018,6 @@ algorithm
   end matchcontinue;
 end computeFinishingTimeForOneTask;
 
-
 protected function getPredecessorCalcTask "gets the calctask before task at position <index> in the thread.
 author:Waurich TUD 2013-11"
   input list<HpcOmSimCode.Task> threadIn;
@@ -2893,7 +3046,6 @@ algorithm
   end matchcontinue;
 end getPredecessorCalcTask;
 
-
 protected function updateTimeFinished "replaces the timeFinished in the calcTask.
 author:Waurich TUD 2013-11"
   input HpcOmSimCode.Task taskIn;
@@ -2910,7 +3062,6 @@ algorithm
   HpcOmSimCode.CALCTASK(weighting=weighting,index=index,calcTime=calcTime,timeFinished=timeFinished,threadIdx=threadIdx,eqIdc=eqIdc) := taskIn;
   taskOut := HpcOmSimCode.CALCTASK(weighting,index,calcTime,timeFinishedIn,threadIdx,eqIdc);
 end updateTimeFinished;
-
 
 protected function getTimeFinished "gets the timeFinished of a calcTask, if its not a calctask its -1.0. if its an emptyTask its 0.0
 author:Waurich TUD 2013-11"
@@ -2932,7 +3083,6 @@ algorithm
   end match;
 end getTimeFinished;
 
-
 protected function getThreadId "gets the threadIdx of a calcTask, if its not a calctask its -1
 author:Waurich TUD 2013-11"
   input HpcOmSimCode.Task taskIn;
@@ -2949,7 +3099,6 @@ algorithm
       -1;
   end match;
 end getThreadId;
-
 
 protected function getTaskIdx "gets the idx of the calcTask.if its no calcTask, then -1.
 author: Waurich TUD 2013-11"
@@ -2968,7 +3117,6 @@ algorithm
   end match;
 end getTaskIdx;
 
-
 protected function isCalcTask "checks if the given task is a calcTask.
 author:Waurich TUD 2013-11"
   input HpcOmSimCode.Task taskIn;
@@ -2983,7 +3131,6 @@ algorithm
       false;
   end match;
 end isCalcTask;
-
 
 protected function isEmptyTask "checks if the given task is an emptyTask.
 author:Waurich TUD 2013-11"
@@ -3000,14 +3147,12 @@ algorithm
   end match;
 end isEmptyTask;
 
-
 protected function printALAP"prints the information of the ALAP array
 author:Waurich TUD 2013-11"
   input array<Real> inArray;
 algorithm
   _ := Util.arrayFold(inArray,printALAP1,1);
 end printALAP;
-
 
 protected function printALAP1
   input Real inValue;

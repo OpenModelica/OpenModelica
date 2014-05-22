@@ -519,6 +519,12 @@ algorithm
     case(_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
+        true = stringEq(flagValue, "tds");
+        print("Using Task Duplication-based Scheduling\n");
+      then HpcOmScheduler.createTDSschedule(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping);
+    case(_,_,_,_,_)
+      equation
+        flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         print("HpcOmScheduler.createSchedule warning: The scheduler '" +& flagValue +& "' is unknown. The list-scheduling algorithm is used instead.\n");
       then HpcOmScheduler.createListSchedule(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping);
     else
