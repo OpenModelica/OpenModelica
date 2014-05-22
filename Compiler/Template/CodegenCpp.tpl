@@ -1443,7 +1443,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
 
     }
-    
+
     /* Destructor */
     <%className%>::~<%className%>()
     {
@@ -3457,16 +3457,16 @@ template InitializeEquationsArray(list<SimEqSystem> allEquations, String classNa
 ::=
   match allEquations
   case feq::_ then
-  
+
     let equation_inits = (allEquations |> eq hasindex i0 =>
                     'equations_array[<%i0%>] = &<%className%>::evaluate_<%equationIndex(eq)%>;' ; separator="\n")
-  
+
     <<
     void <%className%>::initialize_equations_array() {
       /*! Index of the first equation. We use this to calculate the offset of an equation in the
         equation array given the index of the equation.*/
       first_equation_index = <%equationIndex(feq)%>;
-    
+
       <%equation_inits%>
     }
     >>
@@ -3678,10 +3678,10 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
     boost::shared_ptr<ISimData> _simData;
 
-    
-    
+
+
     <%generateEquationMemberFuncDecls(allEquations)%>
-    
+
     /*! Equations Array. pointers to all the equation functions listed above stored in this
       array. It is used to randomly access and evaluate a single equation by index.
     */
@@ -3698,14 +3698,14 @@ template generateEquationMemberFuncDecls(list<SimEqSystem> allEquations)
   match allEquations
   case _ then
     let equation_func_decls = (allEquations |> eq => 'void evaluate_<%equationIndex(eq)%>();' ;separator="\n")
-    << 
+    <<
     /*! Index of the first equation. We use this to calculate the offset of an equation in the
       equation array given the index of the equation.*/
     int first_equation_index;
-    
+
     /*! Equations*/
     <%equation_func_decls%>
-    
+
     >>
   end match
 end generateEquationMemberFuncDecls;
@@ -3973,22 +3973,22 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     virtual int getDimString() const ;
     /// Provide number (dimension) of right hand sides (equations and/or residuals) according to the index
     virtual int getDimRHS()const;
-    
+
     //Resets all time events
 
 
     // Provide variables with given index to the system
     virtual void getContinuousStates(double* z);
-    
+
     // Set variables with given index to the system
     virtual void setContinuousStates(const double* z);
-    
+
     // Update transfer behavior of the system of equations according to command given by solver
     virtual bool evaluate(const UPDATETYPE command =IContinuous::UNDEF_UPDATE);
-    
+
     /*! Evaluates only the equations whose indices are passed to it. */
     bool evaluate_selective(const std::vector<int>& indices);
-    
+
     /*! Evaluates only a single equation by index. */
     bool evaluate_single(const int index);
 
@@ -4030,7 +4030,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     virtual bool provideSymbolicJacobian();
 
     virtual void stepCompleted(double time);
-    
+
     <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
     <<
     // Returns labels for a labeled DAE
@@ -4644,7 +4644,7 @@ template lastIdentOfPath(Path modelName) ::=
 end lastIdentOfPath;
 
 template lastIdentOfPathFromSimCode(SimCode simCode) ::=
-  match simCode 
+  match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
     lastIdentOfPath(modelInfo.name)
 end lastIdentOfPathFromSimCode;
@@ -6012,7 +6012,7 @@ end equation_;
        else _algLoop<%i%>->initialize();
  */
 
- 
+
 
 template equation_function_format(SimEqSystem eq, Integer arrayIndex, Context context, Text &varDecls, Text &eqfuncs, SimCode simCode)
  "Generates an equation.
@@ -6022,10 +6022,10 @@ template equation_function_format(SimEqSystem eq, Integer arrayIndex, Context co
   match eq
   case _ then
     let ix_str = equationIndex(eq)
-    
+
     let &varDeclsLocal = buffer "" /*BUFL*/
     let &eqfuncs += equation_function_format_single_func(eq, context, &varDeclsLocal, simCode)
-    
+
     <<
     (this->*equations_array[<%arrayIndex%>])();
     >>
@@ -6036,7 +6036,7 @@ end equation_function_format;
 template equation_function_format_single_func(SimEqSystem eq, Context context, Text &varDeclsLocal, SimCode simCode)
 ::=
   let ix_str = equationIndex(eq)
-  let body = 
+  let body =
   match eq
     case e as SES_SIMPLE_ASSIGN(__)
       then equationSimpleAssign(e, context,&varDeclsLocal,simCode)
@@ -6058,7 +6058,7 @@ template equation_function_format_single_func(SimEqSystem eq, Context context, T
     else
       "NOT IMPLEMENTED EQUATION"
   end match
-  
+
   <<
   /*
    <%dumpEqs(fill(eq,1))%>
@@ -6068,9 +6068,9 @@ template equation_function_format_single_func(SimEqSystem eq, Context context, T
     <%varDeclsLocal%>
     <%body%>
   }
-  
+
   >>
-  
+
 end equation_function_format_single_func;
 
 
@@ -6855,9 +6855,9 @@ template equationLinearOrNonLinear(SimEqSystem eq, Context context,Text &varDecl
          {
              throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what());
          }
-       
+
          >>
-      
+
       else
         <<
         bool restart<%index%> = true;
@@ -6867,16 +6867,16 @@ template equationLinearOrNonLinear(SimEqSystem eq, Context context,Text &varDecl
         unsigned int dim<%index%> = _algLoop<%index%>->getDimReal();
         double* algloop<%index%>Vars = new double[dim<%index%>];
         _algLoop<%index%>->getReal(algloop<%index%>Vars );
-        
+
         try
-        {        
+        {
             _algLoop<%index%>->evaluate();
-            
+
             if( _callType == IContinuous::DISCRETE )
             {
                 while(restart<%index%> && !(iterations<%index%>++>500))
                 {
-                    
+
                     getConditions(conditions0<%index%>);
                     _callType = IContinuous::CONTINUOUS;
                     _algLoopSolver<%index%>->solve();
@@ -6885,14 +6885,14 @@ template equationLinearOrNonLinear(SimEqSystem eq, Context context,Text &varDecl
                     {
                         getCondition(i);
                     }
-                    
+
                     getConditions(conditions1<%index%>);
                     restart<%index%> = !std::equal (conditions1<%index%>, conditions1<%index%>+_dimZeroFunc,conditions0<%index%>);
                 }
             }
             else
             _algLoopSolver<%index%>->solve();
-            
+
         }
         catch(std::exception &ex)
         {
@@ -6900,10 +6900,10 @@ template equationLinearOrNonLinear(SimEqSystem eq, Context context,Text &varDecl
             delete[] conditions1<%index%>;
             throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what());
         }
-        
+
         delete[] conditions0<%index%>;
         delete[] conditions1<%index%>;
-        
+
         if(restart<%index%> && iterations<%index%> > 0)
         {
             try
@@ -6919,7 +6919,7 @@ template equationLinearOrNonLinear(SimEqSystem eq, Context context,Text &varDecl
                 delete[] algloop<%index%>Vars;
                 throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what());
             }
-            
+
         }
         delete[] algloop<%index%>Vars;
         >>
@@ -9577,13 +9577,13 @@ template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> when
 ::=
   let className = lastIdentOfPathFromSimCode(simCode)
   let &varDecls = buffer "" /*BUFD*/
-    
+
   let &eqfuncs = buffer ""
   let equation_func_calls = (allEquationsPlusWhen |> eq hasindex i0 =>
                     equation_function_format(eq, i0, contextSimulationDiscrete, &varDecls /*BUFC*/, &eqfuncs, simCode)
                     ;separator="\n")
-                    
-                    
+
+
 
   let reinit = (whenClauses |> when hasindex i0 =>
          genreinits(when, &varDecls,i0,simCode,context)
@@ -9592,22 +9592,22 @@ template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> when
   <<
 
   <%eqfuncs%>
-  
+
   bool <%className%>::evaluate(const UPDATETYPE command)
   {
     bool state_var_reinitialized = false;
 
     <%varDecls%>
-    
+
     /* Evaluate Equations*/
     <%equation_func_calls%>
-    
+
     /* Reinits */
     <%reinit%>
-    
+
     return state_var_reinitialized;
   }
-  
+
   /*! Evaluates only the equations whose indexs are passed to it. */
   bool <%className%>::evaluate_selective(const std::vector<int>& indices) {
     std::vector<int>::const_iterator iter = indices.begin();
@@ -9617,13 +9617,13 @@ template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> when
         (this->*equations_array[offset])();
     }
   }
-  
+
   /*! Evaluates only a single equation by index. */
   bool <%className%>::evaluate_single(const int index) {
     int offset = index - first_equation_index;
     (this->*equations_array[offset])();
   }
-  
+
   >>
 end update;
  /*Ranking: removed from update: if(command & IContinuous::RANKING) checkConditions();*/
