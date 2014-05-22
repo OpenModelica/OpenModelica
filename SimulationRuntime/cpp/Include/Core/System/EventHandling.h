@@ -8,28 +8,31 @@ Holds a help vector for the discrete variables
 Holds an event queue to handle all events occured at the same time
 */
 typedef boost::function<bool (unsigned int)> getCondition_type;
+typedef boost::function<void (unordered_map<string,unsigned int>&,unordered_map<string,unsigned int>&)> init_prevars_type;
 class BOOST_EXTENSION_EVENTHANDLING_DECL EventHandling
 {
 public:
     EventHandling();
     ~EventHandling(void);
     //Inits the event variables
-    void initialize(IEvent* system,int dim);
+    void initialize(IEvent* system,int dim,init_prevars_type init_prevars);
     //Returns the help vector
-    void getHelpVars(double* h);
+    //void getHelpVars(double* h);
     //sets the help vector
-    void setHelpVars(const double* h);
+    //void setHelpVars(const double* h);
     //returns the dimension of the help vector
-    int getDimHelpVars() const;
+    //int getDimHelpVars() const;
 
 
-
+    
     //saves a variable in _pre_vars vector
     void save(double var,string key);
+    void savePreVars(double vars [], unsigned int n);
+    void saveDiscretPreVars(double vars [], unsigned int n);
     //saves all helpvariables
-    void saveH();
-    void setHelpVar(unsigned int i,double var);
-    const double& operator[](unsigned int i) const;
+    //void saveH();
+   // void setHelpVar(unsigned int i,double var);
+    //const double& operator[](unsigned int i) const;
     //Implementation of the Modelica pre  operator
     double pre(double var,string key);
     //Implementation of the Modelica edge  operator
@@ -37,9 +40,9 @@ public:
     //Implementation of the Modelica change  operator
     bool change(double var,string key);
       //Adds an event to the eventqueue
-    void addEvent(long index);
+    //void addEvent(long index);
     //removes an event from the eventqueue
-    void removeEvent(long index);
+    //void removeEvent(long index);
     //Handles  all events occured a the same time. Returns true if a second event iteration is needed
     bool IterateEventQueue(bool& state_vars_reinitialized);
 
@@ -50,13 +53,15 @@ public:
     getCondition_type  getCondition;
 private:
     //Stores all varibales occured before an event
-    unordered_map<string,double> _pre_vars;
+    unordered_map<string,unsigned int> _pre_vars_idx;
     //stores all eventes
-    unordered_map<string,double> _pre_discrete_vars; // i guess this was used in a wrong way. it might be obsolete.
+    unordered_map<string,unsigned int> _pre_discrete_vars_idx; // i guess this was used in a wrong way. it might be obsolete.
     IEvent* _event_system;
     //Helpvarsvector for discrete variables
-    double* _h;
+    //double* _h;
     //Dimesion of Helpvarsvector
-    int _dimH;
+    //int _dimH;
      event_times_type _time_events;
+     boost::multi_array<double,1> _pre_vars;
+     boost::multi_array<double,1> _pre_discrete_vars;
 };

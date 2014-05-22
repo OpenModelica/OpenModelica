@@ -2,7 +2,8 @@
 #include <stdexcept>
 #include <exception>
 #include <string>
-
+#include <stdio.h>
+#include <stdarg.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -14,12 +15,16 @@ void ModelicaMessage(const char* string)
 
 void ModelicaVFormatMessage(const char*string, va_list args)
 {
-  throw std::invalid_argument("ModelicaVFormatMessage not implemented yet");
+  vfprintf(stdout, string, args);
+  fflush(stdout);
 }
 
 void ModelicaFormatMessage(const char* string,...)
 {
- throw std::invalid_argument("ModelicaFormatMessage not implemented yet");
+  va_list args;
+  va_start(args, string);
+  ModelicaVFormatMessage(string, args);
+  va_end(args);
 }
 
 void ModelicaError(const char* string)

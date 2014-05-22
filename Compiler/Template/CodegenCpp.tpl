@@ -1467,6 +1467,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <%getCondition(zeroCrossings,whenClauses,simCode)%>
    <%handleSystemEvents(zeroCrossings,whenClauses,simCode)%>
    <%saveall(modelInfo,simCode)%>
+   <%initPrevars(modelInfo,simCode)%>
    <%savediscreteVars(modelInfo,simCode)%>
    <%LabeledDAE(modelInfo.labels,simCode)%>
     <%giveVariables(modelInfo)%>
@@ -2864,12 +2865,11 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
     initializeStateVars();
      initializeDerVars();
    <%initFunctions%>
-     _event_handling.initialize(this,<%helpvarlength(simCode)%>);
+     _event_handling.initialize(this,<%helpvarlength(simCode)%>,boost::bind(&<%lastIdentOfPath(modelInfo.name)%>::initPreVars, this, _1,_2));
 
 
 
     <%initEventHandling%>
-
    <%initextvars%>
    initEquations();
 
@@ -3623,10 +3623,11 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
        <%generateMethodDeclarationCode(simCode)%>
      virtual  bool getCondition(unsigned int index);
+     virtual void initPreVars(unordered_map<string,unsigned int>&,unordered_map<string,unsigned int>&);
   protected:
     //Methods:
 
-     bool isConsistent();
+    bool isConsistent();
     //Called to handle all  events occured at same time
     bool handleSystemEvents( bool* events);
      //Saves all variables before an event is handled, is needed for the pre, edge and change operator
@@ -5235,10 +5236,88 @@ template saveall(ModelInfo modelInfo, SimCode simCode)
 match simCode
 case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
   then
+  let n_vars = intAdd(listLength(vars.algVars), intAdd( listLength(vars.intAlgVars) , intAdd(listLength(vars.boolAlgVars ), listLength(vars.stateVars ))))
   <<
     void <%lastIdentOfPath(modelInfo.name)%>::saveAll()
     {
+      unsigned int n = <%n_vars%>;
+      double  pre_vars[] = {
       <%{(vars.algVars |> SIMVAR(__) =>
+        '<%cref(name)%>'
+      ;separator=","; align=10;alignSeparator=",\n"  ),
+      (vars.intAlgVars |> SIMVAR(__) =>
+       '<%cref(name)%>'
+      ;separator=","; align=10;alignSeparator=",\n"  ),
+      (vars.boolAlgVars |> SIMVAR(__) =>
+        '<%cref(name)%>'
+      ;separator=","; align=10;alignSeparator=",\n"  ),
+      (vars.stateVars |> SIMVAR(__)   =>
+        '__z[<%index%>]'
+      ;separator=","; align=10;alignSeparator=",\n"   )}
+     ;separator=","%>
+     };
+        _event_handling.savePreVars(pre_vars,n);
+    }
+  >>
+  /*
+  //save all zero crossing condtions
+   <%saveconditionvar(zeroCrossings,simCode)%>
+   */
+end saveall;
+
+template initPrevars(ModelInfo modelInfo, SimCode simCode)
+
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
+  then
+  let n1 = listLength(vars.algVars)
+  let n2 = intAdd( listLength(vars.algVars),  listLength(vars.intAlgVars))
+  let n3 = intAdd(intAdd(listLength(vars.algVars),  listLength(vars.intAlgVars)) , listLength(vars.boolAlgVars ))
+  <<
+    void <%lastIdentOfPath(modelInfo.name)%>::initPreVars(unordered_map<string,unsigned int>& vars1, unordered_map<string,unsigned int>& vars2)
+    {
+      vars1 = map_list_of
+      <%{(vars.algVars |> SIMVAR(__) hasindex i0  =>
+        '("<%cref(name)%>",<%i0%>)'
+      ;separator=" "; align=10;alignSeparator=" \n"  ),
+      (vars.intAlgVars |> SIMVAR(__)  hasindex i1  =>
+       '("<%cref(name)%>",(<%i1%>+<%n1%>))'
+      ;separator=" "; align=10;alignSeparator=" \n"  ),
+      (vars.boolAlgVars |> SIMVAR(__) hasindex i2=>
+        '("<%cref(name)%>",(<%i2%>+<%n2%>))'
+      ;separator=" "; align=10;alignSeparator=" \n"  ),
+      (vars.stateVars |> SIMVAR(__) hasindex i3  =>
+        '("<%cref(name)%>",(<%i3%>+<%n3%>))'
+      ;separator=" "; align=10;alignSeparator=" \n"   )}
+     ;separator=" "%>;
+
+    
+     
+      vars2 = map_list_of
+      <%{
+       (vars.algVars |> SIMVAR(__) hasindex i0 =>
+        '("<%cref(name)%>",<%i0%>)'
+      ;separator=" ";align=10;alignSeparator=" \n"),
+      (vars.intAlgVars |> SIMVAR(__) hasindex i1=>
+       '("<%cref(name)%>",(<%i1%>+<%n1%>))'
+      ;separator=" ";align=10;alignSeparator=" \n"),
+      (vars.boolAlgVars |> SIMVAR(__) hasindex i2 =>
+        '("<%cref(name)%>",(<%i2%>+<%n2%>))'
+      ;separator=" ";align=10;alignSeparator=" \n")}
+     ;separator=" ";align=10;alignSeparator=" \n"
+     %>;
+
+      
+      
+    }
+  >>
+ end initPrevars;
+
+
+
+/*
+<%{(vars.algVars |> SIMVAR(__) =>
         '_event_handling.save(<%cref(name)%>,"<%cref(name)%>");'
       ;separator="\n"),
       (vars.intAlgVars |> SIMVAR(__) =>
@@ -5253,38 +5332,32 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
      ;separator="\n"%>
 
      _event_handling.saveH();
-
-    }
-  >>
-  /*
-  //save all zero crossing condtions
-   <%saveconditionvar(zeroCrossings,simCode)%>
-   */
-end saveall;
-
+*/
 template savediscreteVars(ModelInfo modelInfo, SimCode simCode)
 
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
   then
+  let n_vars = intAdd(listLength(vars.algVars), intAdd( listLength(vars.intAlgVars) , listLength(vars.boolAlgVars )))
   <<
     void <%lastIdentOfPath(modelInfo.name)%>::saveDiscreteVars()
     {
-
+       unsigned int n = <%n_vars%>; 
+       double  pre_vars[] = {
       <%{
        (vars.algVars |> SIMVAR(__) =>
-        '_event_handling.saveDiscreteVar(<%cref(name)%>,"<%cref(name)%>");'
-      ;separator="\n"),
+        '<%cref(name)%>'
+      ;separator=",";align=10;alignSeparator=",\n"),
       (vars.intAlgVars |> SIMVAR(__) =>
-       '_event_handling.saveDiscreteVar(<%cref(name)%>,"<%cref(name)%>");'
-      ;separator="\n"),
+       '<%cref(name)%>'
+      ;separator=",";align=10;alignSeparator=",\n"),
       (vars.boolAlgVars |> SIMVAR(__) =>
-        '_event_handling.saveDiscreteVar(<%cref(name)%>,"<%cref(name)%>");'
-      ;separator="\n")}
-     ;separator="\n"%>
-
-
+        '<%cref(name)%>'
+      ;separator=",";align=10;alignSeparator=",\n")}
+     ;separator=",";align=10;alignSeparator=",\n"%>
+       };
+     _event_handling.saveDiscretPreVars(pre_vars,n);
 
     }
   >>

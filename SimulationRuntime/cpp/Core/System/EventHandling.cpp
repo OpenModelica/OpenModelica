@@ -11,32 +11,37 @@ Constructor
 \param dim Dimenson of help variables
 */
 EventHandling::EventHandling()
-:_h(NULL)
+//:_h(NULL)
 {
 }
 
 EventHandling::~EventHandling(void)
 {
-    if(_h) delete [] _h;
+   // if(_h) delete [] _h;
 }
 /**
 Inits the event variables
 */
-void EventHandling::initialize(IEvent* system,int dim)
+void EventHandling::initialize(IEvent* system,int dim,init_prevars_type init_prevars)
 {
-    _dimH=dim;
+   // _dimH=dim;
     _event_system=system;
-    if(_dimH > 0)
+    init_prevars(_pre_vars_idx,_pre_discrete_vars_idx);
+    _pre_vars.resize((boost::extents[_pre_vars_idx.size()]));
+    _pre_discrete_vars.resize((boost::extents[_pre_discrete_vars_idx.size()]));
+    /*if(_dimH > 0)
     {
         // Initialize help vars vector
         if(_h) delete [] _h ;
         _h = new double[_dimH];
         memset(_h,0,(_dimH)*sizeof(double));
     }
+    */
 }
 /**
 Returns the help vector
 */
+/*
 void EventHandling::getHelpVars(double* h)
 {
     for(int i=0; i<_dimH; ++i)
@@ -44,9 +49,11 @@ void EventHandling::getHelpVars(double* h)
         h[i] = _h[i];
     }
 }
+*/
 /**
 Sets the help vector
 */
+/*
 void EventHandling::setHelpVars(const double* h)
 {
     for(int i=0; i<_dimH; ++i)
@@ -54,9 +61,11 @@ void EventHandling::setHelpVars(const double* h)
         _h[i] = h[i];
     }
 }
+*/
 /**
 Saves all helpvariables
 */
+/*
 void EventHandling::saveH()
 {
     for(int i=0; i<_dimH; ++i)
@@ -66,38 +75,58 @@ void EventHandling::saveH()
         save(_h[i],s1.str());
     }
 }
+*/
 /**
 Returns the dimension of the help vector
 */
+/*
 int EventHandling::getDimHelpVars() const
 {
     return _dimH;
 }
+
 void EventHandling::setHelpVar(unsigned int i,double var)
 {
 
   assert(i >= 0 && i < _dimH);
   _h[i]=var;
 }
+*/
+/*
 const double& EventHandling::operator[](unsigned int i) const
 {
   assert(i >= 0 && i < _dimH);
 
   return _h[i];
 }
+*/
+void EventHandling::savePreVars(double vars[], unsigned int n)
+{
+   _pre_vars.assign(vars,vars+n);
+}
+
+void EventHandling::saveDiscretPreVars(double vars [], unsigned int n)
+{
+    _pre_discrete_vars.assign(vars,vars+n);
+}
 /**
 Saves a variable in _pre_vars vector
 */
+
 void EventHandling::save(double var,string key)
 {
-    _pre_vars[key]=var;
+    unsigned int i = _pre_vars_idx[key];
+    _pre_vars[i]=var;
 }
+
 /**
 Implementation of the Modelica pre  operator
 */
 double EventHandling::pre(double var,string key)
 {
-    return _pre_vars[key];
+    unsigned int i = _pre_vars_idx[key];
+    return _pre_vars[i];
+    
 }
 /**
 Implementation of the Modelica edge  operator
@@ -105,7 +134,7 @@ Returns true for a variable when it  changes from false to true
 */
 bool EventHandling::edge(double var,string key)
 {
-    return var && !pre(var,key);
+   return var && !pre(var,key);
 }
 /**
 Implementation of the Modelica change  operator
@@ -118,11 +147,15 @@ bool EventHandling::change(double var,string key)
 
 void EventHandling::saveDiscreteVar(double var,string key)
 {
-    _pre_discrete_vars[key]=var;
+     unsigned int i = _pre_discrete_vars_idx[key];
+    _pre_discrete_vars[i]=var;
+  
 }
 bool EventHandling::changeDiscreteVar(double var,string key)
 {
-    return var != _pre_discrete_vars[key];
+   unsigned int i = _pre_discrete_vars_idx[key];
+   return var != _pre_discrete_vars[i];
+  
 }
 
 
