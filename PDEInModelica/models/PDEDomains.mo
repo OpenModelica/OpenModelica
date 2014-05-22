@@ -2,21 +2,49 @@
 
 package PDEDomains
   import C = Modelica.Constants;
-  type Domain  //Domain is built-in, but hes this "interface"
+
+  type Domain  //Domain is built-in, but this is his "interface"
     prameter Integer ndim;
+    Coordinate coord[ndim];
     replaceable Region interior;
+    replaceable function shapeFunc
+      input Real u[ndim-1];
+      output Real coord[ndim];
+    end shapeFunc;
   end Domain
+
+type Region //Region is built-in, looks like
+  parameter Integer ndimS; //dimension of the space, where the region exists
+  parameter Integer  ndim; //dimension of the region
+  //e.g. sphere in 3D has ndimS = 3, ndim = 2
+  replaceable function shape;
+    input Real u[ndim];
+    output Real coord[ndimS];
+  end shape;
+  parameter Real[ndim][2] interval;
+equation
+  assert(ndim <= ndimS, "Dimension of region must be lower or equal to dimension of space where it is defined.");
+end Region;
+
+type Region0D = Region(ndim = 0);
+type Region1D = Region(ndim = 1);
+type Region2D = Region(ndim = 2);
+type Region3D = Region(ndim = 3);
+
+
+
+    
 
 //approach 1:
   class DomainLineSegment1D
     extends Domain;
     parameter Real l = 1;
     parameter Real a = 0;
-    function shapeFunc
+    redeclare function shapeFunc
       input Real v;
       output Real x = l*v + a;
     end shapeFunc;
-    Coordinate x (name = "cartesian");
+    Coordinate x(name = "cartesian") = coord[1];
     Region1D interior(shape = shapeFunc, interval = {0,1});
     Region0D left(shape = shapeFunc, interval = 0);
     Region0D right(shape = shapeFunc, interval = 1);
@@ -146,17 +174,17 @@ package PDEDomains
 
 //approach 1:
   class DomainBlock3D
-    extends Domain;
+    extends Domain(ndim=3);
     parameter Real Lx = 1, Ly = 1, Lz = 1;
     parameter Real ax = 0, ay = 0, az = 0;
-    function shapeFunc
+    redeclare function shapeFunc
       input Real vx, vy, vz;
       output Real x = ax + Lx * vx, y = ay + Ly * vy, z = az + Lz * vz;
     end shapeFunc;
-    coordinate x (name="cartesian");
-    coordinate y (name="cartesian");
-    coordinate z (name="cartesian");
-    coordinate cartesian[3] = {x,y,z};
+    Coordinate x (name="cartesian");
+    Coordinate y (name="cartesian");
+    Coordinate z (name="cartesian");
+    coord = {x,y,z};
     Region3D interior(shape = shapeFunc, interval = {{0,1},{0,1},{0,1}});
     Region2D right(shape = shapeFunc, interval = {1,{0,1},{0,1}});
     Region2D bottom(shape = shapeFunc, interval = {{0,1},{0,1},1});
@@ -164,9 +192,9 @@ package PDEDomains
     Region2D top(shape = shapeFunc, interval = {{0,1},{0,1},1});
     Region2D front(shape = shapeFunc, interval = {{0,1},0,{0,1}});
     Region2D rear(shape = shapeFunc, interval = {{0,1},1,{0,1}});
-    Region2D boundary = right + bottom + left + top + front + rare;
   end DomainBlock3D;
 
   //and others ...
+
 end PDEDomains;
 

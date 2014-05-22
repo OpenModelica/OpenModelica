@@ -1588,6 +1588,20 @@ For check: the result should be in agreement with Moens–Korteweg equation.
 \end_layout
 
 \begin_layout Subsection
+Vocal cords
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Horacek"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
 Vibrating membrane (drum) in air
 \begin_inset CommandInset label
 LatexCommand label

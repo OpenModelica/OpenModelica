@@ -71,10 +71,11 @@ Articles and books
 
 \lang british
 I want to read:
-\begin_inset Newline newline
-\end_inset
+\end_layout
 
-
+\begin_layout Standard
+Other parts of Saldamli's thesis, e.g.
+ first sections of chapter 7 and 9.3.
 \end_layout
 
 \begin_layout Standard
@@ -177,6 +178,21 @@ important topics are written in bold
 
 \lang british
 Modelica language extension
+\end_layout
+
+\begin_layout Itemize
+
+\lang british
+is it necessary to specifie the domain using 
+\begin_inset Quotes eld
+\end_inset
+
+in
+\begin_inset Quotes erd
+\end_inset
+
+ within equations, when it is actualy determined by the fields used in equations
+?
 \end_layout
 
 \begin_layout Standard

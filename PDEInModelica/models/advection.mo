@@ -1,4 +1,5 @@
 model advection "advection equation"
+  import PDEDomains.*
   import C = Modelica.Constants;
   parameter Real L = 1; // length
   parameter Real c = 1;

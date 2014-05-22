@@ -712,12 +712,117 @@ in
 New concepts and language elements
 \end_layout
 
-\begin_layout Description
-domain
-\begin_inset space ~
+\begin_layout Subsection
+Domain deffinition
+\end_layout
+
+\begin_layout Standard
+Three concurent aproaches - one has to be chosen:
+\end_layout
+
+\begin_layout Subsubsection
+By boundary
+\end_layout
+
+\begin_layout Standard
+This is the aproach from 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "saldamli2006pdemodelica"
+
 \end_inset
 
-type Any domain type extends built-in 
+.
+ Defining domains using curves (that have one parameter) to build up the
+ boundary works very well in 2D.
+ Parameters of these curves are bounded in one dimensional interval.
+ In 3D we have to use surfaces (heaving two parameters) instead of curves.
+ Parameters must be bounded in some subsets of R2 now.
+ If the boundary is composed of several surfaces, parameters of these surfaces
+ must be often bounded not just in Cartesian product of two intervals but
+ in some more complex sets so that these surfaces are continuously connected.
+ There is no way to write this in the current extension.
+ It is possible to just slightly generalize this method and allow specification
+ of more general sets for these parameters.
+ But this is questionable, as user would have to calculate bound- aries
+ where surfaces mutually intersect.
+ This could be often quite hard.
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Domain type
+\end_layout
+
+\begin_layout Standard
+There is also a built-in Domain type here to be inherited in all other domain
+ types, but it has different members.
+ It is defined as follows:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float algorithm
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+type Domain
+\end_layout
+
+\begin_layout Plain Layout
+parameter Integer ndim;
+\end_layout
+
+\begin_layout Plain Layout
+replaceable Region interior;
+\end_layout
+
+\begin_layout Plain Layout
+end Domain;
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+Using shape-function
+\end_layout
+
+\begin_layout Standard
+Other approach was introduced in 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "fritzson2010principles"
+
+\end_inset
+
+.
+ A so called shape-function is used to map Cartesian product of intervals
+ onto the interior and boundaries of the domain.
+ These functions allows to simply generate points in the domain or if inverted
+ gives straightforward rule to determine whether any given point belongs
+ to the domain.
+ This would later simplify generating the computational grid to simulate
+ the model.
+ This description is also perhaps closer to the way how such a region (subsets
+ of 
+\begin_inset Formula $\mathbb{R}^{n}$
+\end_inset
+
+) is usually described in mathematics.
+ To allow this approach we need some changes to the language.
+\end_layout
+
+\begin_layout Subsection
+Domain type
+\end_layout
+
+\begin_layout Standard
+Any domain type extends built-in 
 \family typewriter
 type Domain
 \family default
@@ -781,30 +886,59 @@ DomainBlock3D
 Needs OMC modification.
 \end_layout
 
-\begin_layout Description
+\begin_layout Subsection
 
 \family typewriter
 coordinate
-\family default
- key-word (or modifier) to define new coordinates.
- Syntaxe is
-\family typewriter
- 
-\family default
-e.g.
-
-\family typewriter
- coordinate Cartesian[3];
-\family default
-
-\begin_inset Newline newline
-\end_inset
-
-New language element.
 \end_layout
 
-\begin_layout Description
-interval to define parameter interval for a shape-function.
+\begin_layout Standard
+Space coordinate variables are of a different kind than other variables.
+ They are similar to the time variable in Modelica.
+ Both coordinates and time are independent variables.
+ They can get any value from the domain resp.
+ time interval.
+ Other (dependent) variables are actually functions of time and as for fields
+ also of space coordinates.
+ Thus coordinate variables should not hold any particular value of the physical
+ quantity they represent.
+ They have rather a symbolic meaning.
+\end_layout
+
+\begin_layout Standard
+New keyword 
+\family typewriter
+coordinate
+\family default
+ is used as a modifier to define coordinates.
+ The syntax is
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+"coordinate Real" coordName;
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Or without Real?
+\end_layout
+
+\begin_layout Subsection
+interval
+\end_layout
+
+\begin_layout Standard
+to define parameter interval for a shape-function.
  E.g.
  
 \family typewriter
@@ -819,14 +953,14 @@ Used in domain records.
 New language element.
 \end_layout
 
-\begin_layout Description
-shape
-\begin_inset space ~
-\end_inset
+\begin_layout Subsection
+shape function
+\end_layout
 
-function one-to-one map of points in k-dimensional interval (usualy cartesian
- product of intervals) to points in n-dimensional domain and thus deffine
- a coordinate system in domain
+\begin_layout Standard
+one-to-one map of points in k-dimensional interval (usualy cartesian product
+ of intervals) to points in n-dimensional domain and thus deffine a coordinate
+ system in domain
 \begin_inset Newline newline
 \end_inset
 
@@ -906,14 +1040,37 @@ Region2D left (shape = shapeFunc, interval = {0,{0,1}}).
 New language element.
 \end_layout
 
-\begin_layout Description
-fields A variable whose value depends on space position, is called field.
+\begin_layout Subsection
+fields
+\begin_inset CommandInset label
+LatexCommand label
+name "fields"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+A variable whose value depends on space position, is called field.
  It is defined with keyword 
 \family typewriter
 field
 \family default
 .
- Field can be of any type.
+ Field can be of either 
+\family typewriter
+Real
+\family default
+, 
+\family typewriter
+Integer
+\family default
+ or 
+\family typewriter
+Boolean
+\family default
+ type.
  It can be defined also as a parameter.
  Field may be an array to represent vector field.
  Mandatory attribute is 
@@ -971,20 +1128,18 @@ fixed
 \family typewriter
 stateSelect
 \family default
-.) Attribute 
+.) Fields may be initialized in initialEquation section or us- ing start
+ attribute in declaration as other variables.
+ Because higher derivatives are allowed for fields it is sometimes necessary
+ to specify start value for some field derivative.
+ This is not a problem in the initialEquation.
+ To initialize field derivative using start attribute we can treat it as
+ an array.
+ Here it is confusing that arrays are indexed starting with 1, so that start[1]
+ is start value the field itself, start[2] is for first derivative etc.
+ They can be assigned either constant values or field literals.
 \family typewriter
-start
-\family default
- can be assigned constant value or a field literal.
- Start attribute can be treated as scalar or as array to assign initial
- values also to derivatives.
- E.g.
-\family typewriter
-
-\begin_inset Newline newline
-\end_inset
-
-field Real x(domain = omega, start[0] = xInit, start[1] = 0)
+.
 \begin_inset Newline newline
 \end_inset
 
@@ -1000,25 +1155,66 @@ reference "String-equation-(1D)"
 \end_inset
 
 
-\begin_inset Newline newline
-\end_inset
+\end_layout
 
-
-\family default
+\begin_layout Standard
 New language element.
 \end_layout
 
-\begin_layout Description
+\begin_layout Standard
+
+\family typewriter
+\begin_inset Box Boxed
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+??Use 
+\family typewriter
+in
+\family default
+ operator to specifie the domain in field declaration instead of 
+\family typewriter
+domain
+\family default
+ attribute:
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+field Real u in omega;
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+field literal constructor
+\begin_inset CommandInset label
+LatexCommand label
+name "field-literal-constructor"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
 \align left
-field
-\begin_inset space ~
-\end_inset
 
-literal
-\begin_inset space ~
-\end_inset
-
-constructor 
+\family typewriter
 \begin_inset Quotes sld
 \end_inset
 
@@ -1030,7 +1226,9 @@ field
 \begin_inset Quotes sld
 \end_inset
 
-(” expr1 ”in” expr2 ”)”, 
+(” expr1 ”in” expr2 ”)”
+\family default
+, 
 \begin_inset Newline newline
 \end_inset
 
@@ -1038,11 +1236,24 @@ or just shortcut
 \begin_inset Newline newline
 \end_inset
 
+
+\family typewriter
 ”{” expr1 ”in” expr2 ”}”
+\family default
+
 \begin_inset Newline newline
 \end_inset
 
-e.g.
+where 
+\family typewriter
+expr2
+\family default
+ is a domain and 
+\family typewriter
+expr1
+\family default
+ may depend on coordinates defined in this domain.
+ E.g.
  
 \family typewriter
 
@@ -1146,16 +1357,31 @@ region.n
 New language element.
 \end_layout
 
-\begin_layout Description
+\begin_layout Subsection
 
 \family typewriter
 in
 \family default
+ operator
+\begin_inset CommandInset label
+LatexCommand label
+name "in-operator"
 
-\begin_inset space ~
 \end_inset
 
-operator to define where PDE, boundary conditions and other equations hold.
+
+\end_layout
+
+\begin_layout Standard
+is used to define where PDE, boundary conditions and other equations hold
+ and to acces field values in particular point (see 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "heatPID.mo"
+
+\end_inset
+
+).
  On left is an equation on right is a region where the equation hold.
  
 \begin_inset Newline newline
@@ -1374,6 +1600,150 @@ div,
 \end_inset
 
 rot
+\end_layout
+
+\begin_layout Section
+Changes and additions to Levon Saldamlis proposals
+\end_layout
+
+\begin_layout Subsection*
+Field literal constructor
+\end_layout
+
+\begin_layout Standard
+is modified to handle several different coordinate systems.
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Previously
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+"field" "(" expr1 "for" iter "in" aDomain ")"
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+or
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+"{" expr1 "for" iter "in" aDomain "}"
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+where 
+\family typewriter
+iter
+\family default
+ is one variable or touple of variables of arbitrary name that are binded
+ to coordinates in 
+\family typewriter
+aDomain.
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Now
+\end_layout
+
+\begin_layout Standard
+see 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "field-literal-constructor"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection*
+Disable accessing field values in function-like style
+\end_layout
+
+\begin_layout Standard
+Accessing field values in function-like style should not be allowed, if
+ possible, for two reasons: first it is not allowed in current Modelica
+ for regular (non-field) variables (that are unknown functions of time)
+ in ODE.
+ We should be in agreement with current Modelica.
+ Second, if more than one coordinate system are defined in a domain, it
+ is not indicated which coordinates are used in the argument.
+ Regions consisting of one point and the 
+\family typewriter
+in
+\family default
+ operator may be used instead, see 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "in-operator"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Subsection*
+Initialization of derivatives of fields
+\end_layout
+
+\begin_layout Standard
+in case of field that is differentiated at least twice (in constructor,
+ not in initial equation section).
+ Previously not solved, now see 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fields"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Subsection*
+Coordinates
+\end_layout
+
+\begin_layout Standard
+new keyword 
+\family typewriter
+coordinate
+\family default
+.
+ They were previously member of built-in class 
+\family typewriter
+domain
+\family default
+, that was inherited by all other domains.
 \end_layout
 
 \end_body

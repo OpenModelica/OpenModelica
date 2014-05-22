@@ -3,9 +3,9 @@ model membraneInAir
 
   //room deffinitions:
   parameter Real lx = 5, ly = 4, lz = 3;
-  coordinates cartesian[3] = {x,y,z};
-  DomainBlock3D room(cartesian = cartesian, Lx=lx, Ly=ly, Lz=lz);
-
+  coordinate Real x, y, z;
+  DomainBlock3D room(cartesian = {x,y,z}, Lx=lx, Ly=ly, Lz=lz);
+  
   parameter Real p_0 = 101300;  //mean pressure
 
   field Real v[3](domain=room, start = zeros(3)); //air speed
@@ -18,25 +18,7 @@ model membraneInAir
   parameter Point membranePos(x=lx/2,y=ly/2,z=lz/2); //position of membrane center in the room
   r = 0.15; //membrane radius
 
-
-//There are several options to define membrane domain. They are not concurrent, but should be all possible.
-
-  //two options, first per coordinates
-  CircularDomian2D membrane1(radius = r, x=x-membranePos.x, y=y-membranePos.y, 0=z-membranePos.z); //equation "0=z-membranePos.z" holds just in "membrane" domain. Perhaps should not be considered to be an equation but somethik else.
-
-  //other in vector notation
-  coordinates shiftCartesian[3] = cartesian - {membranePos.x, membranePos.y, membranePos.z};
-  CircularDomain2D membrane2(radius = r, cat(1,cartesian,{0}) = shiftCartesian); //3th of the vector equations "cat(1,cartesian,{0}) = shiftCartesian" i.e. "0=z-membranePos.z" holds only in membrane.
-
-//if the membrane is rotated then, first option:
-  parameter Real phi = C.Pi/2;
-  CircularDomain2D membrane3(radius = r, x=cos(phi)*(x-membranePos.x) + sin(phi)*(z-membranePos.z), y=y-membranePos.y, 0=-sin(phi)*(x-membranePos.x)+ cos(phi)*(z-membranePos.z)); //"0=-sin(phi)*(x-membranePos.x)+ cos(phi)*(z-membranePos.z)" - same, hold only in "membrane"
-
-//other option in matrix notation:
-  parameter Real rotM[3,3] = {{cos(phi),0,sin(phi)},{0,1,0},{-sin(phi),0,cos(phi)}};
-  CircularDomain2D membrane4(radius = r, cat(1,cartesian,{0})=rotM*shiftCartesian); //last row of matrix eq. holds only in "membrane"
-
-
+  CircularDomian2D membrane1(x=x-membranePos.x, y=y-membranePos.y, 0=z-membranePos.z in interior, radius = r);
 
   parameter Real c_m = 100; //wave speed traversing the membrane
 
@@ -49,6 +31,12 @@ model membraneInAir
 
 
 equation
+  //algernative aproach to match multiple domains(first -- equations in domain constructor):
+  //is it OK that fields from different domain appeare here?
+  membrane.x = room.x-membranePos.x in membrane.interior;
+  membrane.y = room.y-membranePos.y in membrane.interior;
+  0 = room.z-membranePos.z          in membrane.interior;
+
   //membrane equations:
   pder(u,t,t) = c_m^2*grad(diverg(u))  in membrane.interior;
   u = 0  in membrane.boundary;

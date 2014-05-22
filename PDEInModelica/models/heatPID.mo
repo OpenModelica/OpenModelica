@@ -1,5 +1,5 @@
 model heatPID
-  record Room
+  class Room
     extends DomainBlock3D;
     Region0D sensorPosition(shape = shapeFunc, range = {{1,1},{0.5,0.5},{0.5,0.5}})  ;
   end Room
@@ -13,7 +13,7 @@ model heatPID
   Real Ts, P, eInt;
   parameter Real kp = 100, ki = 200, kd = 100, Td = 20;
  equation
-  1/(c*rho)*diverg(W) = - pder(T,t)    in room.interior;
+  1/(c*rho)*diverg(W) = - pder(T,time) in room.interior;
   W = -lambda*grad(T)                  in room.interior;
   W*region.n = P/(lx*ly)               in room.left;
   W*region.n = 0                       in room.front, room.rare, room.top, room.bottom;

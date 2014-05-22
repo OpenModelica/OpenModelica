@@ -62,6 +62,26 @@
 
 \begin_body
 
+\begin_layout Title
+Changes over Levons's extension
+\end_layout
+
+\begin_layout Part*
+Domains
+\end_layout
+
+\begin_layout Standard
+originaly see 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "saldamli2006pdemodelica"
+
+\end_inset
+
+ p.
+ 74.
+\end_layout
+
 \begin_layout Standard
 \begin_inset Tabular
 <lyxtabular version="3" rows="4" columns="3">
@@ -1503,6 +1523,57 @@ end DomainRectangle2D;
 </cell>
 </row>
 </lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Part*
+Accesing field values
+\end_layout
+
+\begin_layout Part*
+Differential operators
+\end_layout
+
+\begin_layout Part*
+Normal vector
+\end_layout
+
+\begin_layout Part*
+Shortcuts to coordinate variables
+\end_layout
+
+\begin_layout Part*
+Usage of 
+\family typewriter
+in
+\family default
+ operator
+\end_layout
+
+\begin_layout Part*
+Start values of derivatives
+\end_layout
+
+\begin_layout Part*
+Coordinates and consequent changes
+\end_layout
+
+\begin_layout Section*
+Coordinates
+\end_layout
+
+\begin_layout Section*
+Field literal constructor
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset bibtex
+LatexCommand bibtex
+bibfiles "bibliography"
+options "plain"
 
 \end_inset
 
