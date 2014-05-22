@@ -24,7 +24,7 @@ public:
     //int getDimHelpVars() const;
 
 
-    
+
     //saves a variable in _pre_vars vector
     void save(double var,string key);
     void savePreVars(double vars [], unsigned int n);

@@ -126,7 +126,7 @@ double EventHandling::pre(double var,string key)
 {
     unsigned int i = _pre_vars_idx[key];
     return _pre_vars[i];
-    
+
 }
 /**
 Implementation of the Modelica edge  operator
@@ -149,13 +149,13 @@ void EventHandling::saveDiscreteVar(double var,string key)
 {
      unsigned int i = _pre_discrete_vars_idx[key];
     _pre_discrete_vars[i]=var;
-  
+
 }
 bool EventHandling::changeDiscreteVar(double var,string key)
 {
    unsigned int i = _pre_discrete_vars_idx[key];
    return var != _pre_discrete_vars[i];
-  
+
 }
 
 

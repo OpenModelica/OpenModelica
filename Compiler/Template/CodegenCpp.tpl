@@ -5292,8 +5292,8 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
       ;separator=" "; align=10;alignSeparator=" \n"   )}
      ;separator=" "%>;
 
-    
-     
+
+
       vars2 = map_list_of
       <%{
        (vars.algVars |> SIMVAR(__) hasindex i0 =>
@@ -5308,8 +5308,8 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
      ;separator=" ";align=10;alignSeparator=" \n"
      %>;
 
-      
-      
+
+
     }
   >>
  end initPrevars;
@@ -5343,7 +5343,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
   <<
     void <%lastIdentOfPath(modelInfo.name)%>::saveDiscreteVars()
     {
-       unsigned int n = <%n_vars%>; 
+       unsigned int n = <%n_vars%>;
        double  pre_vars[] = {
       <%{
        (vars.algVars |> SIMVAR(__) =>
