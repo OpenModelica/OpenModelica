@@ -5,7 +5,7 @@ model membraneInAir
   parameter Real lx = 5, ly = 4, lz = 3;
   coordinate Real x, y, z;
   DomainBlock3D room(cartesian = {x,y,z}, Lx=lx, Ly=ly, Lz=lz);
-  
+
   parameter Real p_0 = 101300;  //mean pressure
 
   field Real v[3](domain=room, start = zeros(3)); //air speed
