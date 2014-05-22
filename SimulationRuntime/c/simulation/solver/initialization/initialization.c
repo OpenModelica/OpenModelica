@@ -984,7 +984,7 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   int optiMethod = IOM_NELDER_MEAD_EX;                                      /* default method */
   int retVal = -1;
   int i;
-  
+
   TRACE_PUSH
 
   infoStreamPrint(LOG_INIT, 0, "### START INITIALIZATION ###");

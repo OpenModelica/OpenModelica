@@ -524,7 +524,7 @@ int solver_main(DATA* data, const char* init_initMethod,
   SIMULATION_INFO *simInfo = &(data->simulationInfo);
 
   TRACE_PUSH
-  
+
   solverInfo.solverMethod = solverID;
 
   /* do some solver specific checks */

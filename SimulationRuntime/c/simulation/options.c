@@ -134,7 +134,7 @@ int checkCommandLineArguments(int argc, char **argv)
       return 1;
     }
   }
-  
+
 #ifdef USE_DEBUG_OUTPUT
   messageClose(LOG_STDOUT);
 #endif
