@@ -3118,6 +3118,60 @@ algorithm
   end match;
 end map2_tail;
 
+public function map2rm
+  "Takes a list, a function and two extra argument, and creates a new list
+   by applying the function to each element of the list. The given map
+   function has it's arguments in another order compared to map2 and map2r."
+  input list<ElementInType> inList;
+  input MapFunc inFunc;
+  input ArgType1 inArg1;
+  input ArgType2 inArg2;
+  output list<ElementOutType> outList;
+
+  partial function MapFunc
+    input ArgType1 inArg1;
+    input ElementInType inElement;
+    input ArgType2 inArg2;
+    output ElementOutType outElement;
+  end MapFunc;
+algorithm
+  outList := listReverse(map2rm_tail(inList, inFunc, inArg1, inArg2, {}));
+end map2rm;
+
+protected function map2rm_tail
+  "Tail-recursive implementation of map2rm"
+  input list<ElementInType> inList;
+  input MapFunc inFunc;
+  input ArgType1 inArg1;
+  input ArgType2 inArg2;
+  input list<ElementOutType> inAccumList;
+  output list<ElementOutType> outList;
+
+  partial function MapFunc
+    input ArgType1 inArg1;
+    input ElementInType inElement;
+    input ArgType2 inArg2;
+    output ElementOutType outElement;
+  end MapFunc;
+algorithm
+  outList := match(inList, inFunc, inArg1, inArg2, inAccumList)
+    local
+      ElementInType head;
+      ElementOutType new_head;
+      list<ElementInType> rest;
+      list<ElementOutType> accum;
+
+    case ({}, _, _, _, _) then inAccumList;
+
+    case (head :: rest, _, _, _, _)
+      equation
+        new_head = inFunc(inArg1, head, inArg2);
+        accum = map2rm_tail(rest, inFunc, inArg1, inArg2, new_head :: inAccumList);
+      then
+        accum;
+  end match;
+end map2rm_tail;
+
 public function map2r
   "Takes a list, a function and two extra argument, and creates a new list
    by applying the function to each element of the list. The given map

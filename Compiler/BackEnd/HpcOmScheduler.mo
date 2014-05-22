@@ -1571,28 +1571,33 @@ author: Waurich TUD 2015-05"
   output HpcOmSimCode.Schedule oSchedule;
 protected
   Integer size;
-  array<Real> estArray,lastArray,ectArray,lactArray;
+  list<Integer> queue;
+  list<Real> levels;
+  array<Real> estArray,lastArray,ectArray,lactArray,tdsLevelArray,alap,asap;
   array<Integer> fpredArray;
 algorithm
   HpcOmTaskGraph.printTaskGraph(iTaskGraph);
   HpcOmTaskGraph.printTaskGraphMeta(iTaskGraphMeta);
-  //compute the ASAP
+  //compute the necessary node parameters
   size := arrayLength(iTaskGraph);
-  (estArray,ectArray) := computeASAP(iTaskGraph,iTaskGraphMeta);
-  (lastArray,lactArray) := computeALAP(iTaskGraph,iTaskGraphMeta);
-  /*
-  print("est\n");
-  printALAP(estArray);
-  print("ect\n");
-  printALAP(ectArray);
-  print("last\n");
-  printALAP(lastArray);
-  print("lact\n");
-  printALAP(lactArray);
-  */
+  (asap,estArray,ectArray) := computeGraphValuesBottomUp(iTaskGraph,iTaskGraphMeta);
+  (alap,lastArray,lactArray,tdsLevelArray) := computeGraphValuesTopDown(iTaskGraph,iTaskGraphMeta);
+
+  printRealArray(estArray,"est");
+  printRealArray(ectArray,"ect");
+  printRealArray(lastArray,"last");
+  printRealArray(lactArray,"lact");
+  printRealArray(tdsLevelArray,"tdsLevel");
+  printRealArray(alap,"alap");
+  printRealArray(asap,"asap");
+
   fpredArray := computeFavouritePred(iTaskGraph,iTaskGraphMeta,ectArray); //the favourite predecessor of each node
-  //print("fpred\n");
-  //printALAP(Util.arrayMap(fpredArray,intReal));
+  printRealArray(Util.arrayMap(fpredArray,intReal),"fpred");
+
+  (levels,queue) := quicksortWithOrder(arrayList(tdsLevelArray));
+  //print("queue "+&stringDelimitList(List.map(queue,intString)," ; ")+&"\n");
+  //printRealArray(listArray(levels),"levels");
+
   oSchedule := HpcOmSimCode.EMPTYSCHEDULE();
 end createTDSschedule;
 
@@ -1677,8 +1682,8 @@ algorithm
   //compute the ALAP
   size := arrayLength(iTaskGraph);
   taskGraphT := BackendDAEUtil.transposeMatrix(iTaskGraph,size);
-  (alapArray,_) := computeALAP(iTaskGraph,iTaskGraphMeta);
-  //printALAP(alapArray);
+  (alapArray,_,_,_) := computeGraphValuesTopDown(iTaskGraph,iTaskGraphMeta);
+  //printRealArray(alapArray,"alap");
   alapLst := arrayList(alapArray);
   // get the order of the task, assign to processors
   (priorityLst,order) := quicksortWithOrder(alapLst);
@@ -2309,243 +2314,207 @@ algorithm
 end getMedian3;
 
 //----------------------------
-// As-Soon-As-Possible Times
+// traverse the task graph bottoms up (beginning at the root nodes)
 //----------------------------
 
-protected function computeASAP "the graph is traversed bottom up
+protected function computeGraphValuesBottomUp "the graph is traversed bottom up
 computes the earliest possible start time (As Soon As Possible) and the earliest completion time for every node in the task graph.
 author:Waurich TUD 2014-05"
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
-  output array<Real> asapOut;  //earliest starting time
-  output array<Real> ectOut;  // earliest completion time
+  output array<Real> asapOut;  //as-soon-as-possible times, taking communication costs into accout
+  output array<Real> estOut; // earliest start time, does not consider communication costs (all tasks on one processor)
+  output array<Real> ectOut;  // earliest completion time, does not consider communication costs (all tasks on one processor)
 protected
   Integer size;
   list<Integer> rootNodes;
-  array<Real> asap, ect;
+  array<Real> asap, ect, est;
   HpcOmTaskGraph.TaskGraph taskGraphT;
 algorithm
   size := arrayLength(iTaskGraph);
-  // traverse the taskGraph bottom up to get the asap times
   rootNodes := HpcOmTaskGraph.getRootNodes(iTaskGraph);
   taskGraphT := BackendDAEUtil.transposeMatrix(iTaskGraph,size);
-  //print("the rootNodes "+&stringDelimitList(List.map(rootNodes,intString),",")+&"\n");
   asap := arrayCreate(size,-1.0);
+  est := arrayCreate(size,-1.0);
   ect := arrayCreate(size,-1.0);
-  (asapOut,ectOut) := computeASAP1(rootNodes,iTaskGraph,taskGraphT,iTaskGraphMeta,asap,ect);
-end computeASAP;
+  (asapOut,estOut,ectOut) := computeGraphValuesBottomUp1(rootNodes,iTaskGraph,taskGraphT,iTaskGraphMeta,asap,est,ect);
+end computeGraphValuesBottomUp;
 
-protected function computeASAP1"implementation of computeASAP"
+protected function computeGraphValuesBottomUp1"implementation of computeGraphValuesBottomUp"
   input list<Integer> parentsIn;
   input HpcOmTaskGraph.TaskGraph graph;
   input HpcOmTaskGraph.TaskGraph graphT;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   input array<Real> asapIn;
+  input array<Real> estIn;
   input array<Real> ectIn;
   output array<Real> asapOut;
+  output array<Real> estOut;
   output array<Real> ectOut;
 algorithm
-  (asapOut,ectOut) := matchcontinue(parentsIn,graph,graphT,iTaskGraphMeta,asapIn,ectIn)
+  (asapOut,estOut,ectOut) := matchcontinue(parentsIn,graph,graphT,iTaskGraphMeta,asapIn,estIn,ectIn)
     local
       Integer node;
-      Real maxASAP, exeCost;
-      array<Real> asap, ect;
+      Real maxASAP, maxEct, exeCost;
+      array<Real> asap, ect, est;
       list<Integer> rest, parents, children;
-      list<Real> asaps, parentECTs, parentsExeCosts, commCosts, ectsWithComm; //ect: earliestCompletionTime
-  case(node::rest,_,_,_,_,_)
+      list<Real> parentEcts, parentAsaps, parentAsaps2, parentsExeCosts, commCosts, ectsWithComm; //ect: earliestCompletionTime
+  case(node::rest,_,_,_,_,_,_)
     equation
-      // no parents without asap, update asap and append childNodes to parentLst with next nodes in parentLst
-      //print("node: "+&intString(node)+&"\n");
+      // all parents have been investigated, update this node
       parents = arrayGet(graphT,node);
-      //print("the parents "+&stringDelimitList(List.map(parents,intString),",")+&"\n");
-      asaps = List.map1(parents,Util.arrayGetIndexFirst,asapIn);
-      //print("the asaps "+&stringDelimitList(List.map(asaps,realString),",")+&"\n");
-      false = List.isMemberOnTrue(-1.0,asaps,realEq);
-      parentsExeCosts = List.map1(parents,HpcOmTaskGraph.getExeCostReqCycles,iTaskGraphMeta);
-      parentECTs = List.threadMap(asaps,parentsExeCosts,realAdd);  // the earliest completionTime of the parent tasks
-      commCosts = List.map2(parents,HpcOmTaskGraph.getCommCostBetweenNodesInCycles,node,iTaskGraphMeta);
-      ectsWithComm = List.threadMap(commCosts,parentECTs,realAdd);// the earliest completionTime of the parent tasks including communication costst to the current node
-      //print("the ectsWithComm "+&stringDelimitList(List.map(ectsWithComm,realString),",")+&"\n");
-      maxASAP = List.fold(listAppend(parentECTs,ectsWithComm),realMax,0.0);
+      parentAsaps = List.map1(parents,Util.arrayGetIndexFirst,asapIn); // the parent asaps
+      false = List.isMemberOnTrue(-1.0,parentAsaps,realEq);
       exeCost = HpcOmTaskGraph.getExeCostReqCycles(node,iTaskGraphMeta);
+      parentsExeCosts = List.map1(parents,HpcOmTaskGraph.getExeCostReqCycles,iTaskGraphMeta);
+      commCosts = List.map2(parents,HpcOmTaskGraph.getCommCostBetweenNodesInCycles,node,iTaskGraphMeta);
+      parentAsaps2 = List.threadMap(parentAsaps,parentsExeCosts,realAdd); // add the exeCosts
+      parentAsaps2 = List.threadMap(parentAsaps2,commCosts,realAdd); // add commCosts
+      maxASAP = List.fold(parentAsaps2,realMax,0.0);
       asap = arrayUpdate(asapIn,node,maxASAP);
-      ect = arrayUpdate(ectIn,node,realAdd(maxASAP,exeCost));
+      parentEcts = List.map1(parents,Util.arrayGetIndexFirst,ectIn);
+      maxEct = List.fold(parentEcts,realMax,0.0);
+      est = arrayUpdate(estIn,node,maxEct);
+      ect = arrayUpdate(ectIn,node,realAdd(maxEct,exeCost));
       children = arrayGet(graph,node);
-      //print("the children "+&stringDelimitList(List.map(children,intString),",")+&"\n");
       rest = listAppend(rest,children);
-      //print("the following nodes "+&stringDelimitList(List.map(rest,intString),",")+&"\n");
-      (asap,ect) = computeASAP1(rest,graph,graphT,iTaskGraphMeta,asap,ect);
-    then (asap,ect);
-  case(node::rest,_,_,_,_,_)
+      (asap,est,ect) = computeGraphValuesBottomUp1(rest,graph,graphT,iTaskGraphMeta,asap,est,ect);
+    then (asap,est,ect);
+  case(node::rest,_,_,_,_,_,_)
     equation
-      // some parents without asap, skip this node
+      // some parents have not been investigated, skip this node
       parents = arrayGet(graphT,node);
-      asaps = List.map1(parents,Util.arrayGetIndexFirst,asapIn);
-      true = List.isMemberOnTrue(-1.0,asaps,realEq);
+      parentAsaps = List.map1(parents,Util.arrayGetIndexFirst,asapIn);
+      true = List.isMemberOnTrue(-1.0,parentAsaps,realEq);
       rest = listAppend(rest,{node});
-      //print("the next nodes "+&stringDelimitList(List.map(rest,intString),",")+&"\n");
-      (asap,ect) = computeASAP1(rest,graph,graphT,iTaskGraphMeta,asapIn,ectIn);
+      (asap,est,ect) = computeGraphValuesBottomUp1(rest,graph,graphT,iTaskGraphMeta,asapIn,estIn,ectIn);
     then
-      (asap,ect);
-  case({},_,_,_,_,_)
-    then (asapIn,ectIn);
+      (asap,est,ect);
+  case({},_,_,_,_,_,_)
+    then (asapIn,estIn,ectIn);
+  else
+    equation
+      print("computeGraphValuesBottomUp1 failed!\n");
+    then fail();
   end matchcontinue;
-end computeASAP1;
+end computeGraphValuesBottomUp1;
 
 //----------------------------
-// As-Late-As-Possible Times
+// traverse the task graph top down (beginning at the leaf nodes)
 //----------------------------
 
-protected function computeALAP "traverse the graph top down (the transposed graph bottom up)
+protected function computeGraphValuesTopDown "traverse the graph top down (the transposed graph bottom up)
 computes the latest allowable start time (As Late As Possible) and the latest allowable compeltino time for every node in the task graph.
 author:Waurich TUD 2013-10"
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
-  output array<Real> alapOut; // = last,alap
-  output array<Real> lactOut; // = lact
+  output array<Real> alapOut; // = as-late-as-possble times, taking communication time between every node into account, used for mcp-scheduler
+  output array<Real> lastOut; // = latest allowed starting time, does not consider communication costs, used for tds
+  output array<Real> lactOut; // = latest allowed completion time, does not consider communication costs, used for tds
+  output array<Real> tdsLevelOut;  // = the longest path to a leaf node, considering only execution costs (no! commCosts), used for tds
 protected
-  Integer size;
-  Real cp;
+  Integer size, lastNodeInCP;
+  Real cp,cpWithComm, lastExeCost;
   list<Integer> endNodes;
-  array<Real> alap, lact, tdsLevel;
+  array<Real> alap, lact, last, tdsLevel;
   array<list<Integer>> taskGraphT;
 algorithm
   size := arrayLength(iTaskGraph);
   // traverse the taskGraph topdown to get the alap times
   taskGraphT := BackendDAEUtil.transposeMatrix(iTaskGraph,size);
   endNodes := HpcOmTaskGraph.getLeafNodes(iTaskGraph);
-  alap := arrayCreate(size,0.0);
-  lact := arrayCreate(size,0.0);
+  alap := arrayCreate(size,-1.0);
+  last := arrayCreate(size,-1.0);
   lact := arrayCreate(size,-1.0);
-  (alap,lact) := computeALAP1(iTaskGraph,taskGraphT,{},endNodes,iTaskGraphMeta,alap,lact);
-  cp := Util.arrayFold(alap,realMax,0.0);
-  alapOut := Util.arrayMap1(alap,realSubr,cp);
+  tdsLevel := arrayCreate(size,-1.0);
+  (alap,last,lact,tdsLevelOut) := computeGraphValuesTopDown1(endNodes,iTaskGraph,taskGraphT,iTaskGraphMeta,alap,last,lact,tdsLevel);
+  cpWithComm := Util.arrayFold(alap,realMax,0.0);
+  lastNodeInCP := Util.arrayMemberNoOpt(alap,size,cpWithComm);
+  lastExeCost := HpcOmTaskGraph.getExeCostReqCycles(lastNodeInCP,iTaskGraphMeta);
+  cp := Util.arrayFold(last,realMax,0.0);
+  alapOut := Util.arrayMap1(alap,realSubr,cpWithComm);
   lactOut := Util.arrayMap1(lact,realSubr,cp);
-end computeALAP;
+  lastOut := Util.arrayMap1(last,realSubr,cp);
+end computeGraphValuesTopDown;
 
-protected function computeALAP1 "traverses the taskGraph topdown starting with the end nodes of the original non-transposed graph.
+protected function computeGraphValuesTopDown1 "traverses the taskGraph topdown starting with the end nodes of the original non-transposed graph.
 author: Waurich TUD 2013-10"
+  input list<Integer> nodesIn;
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraph iTaskGraphT;
-  input list<Integer> assignedNodesIn;
-  input list<Integer> nextNodesIn;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   input array<Real> alapIn;
+  input array<Real> lastIn;
   input array<Real> lactIn;
+  input array<Real> tdsLevelIn;
   output array<Real> alapOut;
+  output array<Real> lastOut;
   output array<Real> lactOut;
+  output array<Real> tdsLevelOut;
 algorithm
-  (alapOut,lactOut) := matchcontinue(iTaskGraph,iTaskGraphT,assignedNodesIn,nextNodesIn,iTaskGraphMeta,alapIn,lactIn)
+  (alapOut,lastOut,lactOut,tdsLevelOut) := matchcontinue(nodesIn,iTaskGraph,iTaskGraphT,iTaskGraphMeta,alapIn,lastIn,lactIn,tdsLevelIn)
     local
-      Boolean notChecked, noLevelYet;
-      Integer node,child;
-      Real exeCost1,exeCost2;
-      array<Real> alap,lact;
-      list<Integer> rest, parentLst, childLst, assignedNodes, nextNodes;
-      list<Real> parentCosts,childLevels;
-  case(_,_,_,_,_,_,_)
+      Boolean computeValues;
+      Integer nodeIdx, pos;
+      Real nodeExeCost, maxLevel, maxAlap, maxLast, maxLact;
+      list<Integer> rest, parentNodes, childNodes;
+      list<Real> childTDSLevels, childAlaps, childLasts, childLacts, commCostsToChilds;
+      array<Real> alap,last,lact,tdsLevel;
+  case({},_,_,_,_,_,_,_)
+    then (alapIn,lastIn,lactIn,tdsLevelIn);
+  case(nodeIdx::rest,_,_,_,_,_,_,_)
     equation
-      (node::nextNodes) = nextNodesIn;
-      exeCost1 = getALAPCost(node,alapIn,iTaskGraph,iTaskGraphMeta); // gets the highest alapTime of all childNodes
-      ((_,exeCost2)) = HpcOmTaskGraph.getExeCost(node, iTaskGraphMeta);
-      exeCost2 = realAdd(exeCost1,exeCost2);
-      alap = arrayUpdate(alapIn,node,exeCost2);
-      lact = arrayUpdate(lactIn,node,exeCost1);
-      parentLst = arrayGet(iTaskGraphT,node);
-      parentLst = getParentsWithOneLeftChild(parentLst,assignedNodesIn,iTaskGraph);
-      assignedNodes = node::assignedNodesIn;
-      nextNodes = listAppend(nextNodes,parentLst);
-      (alap,lact) = computeALAP1(iTaskGraph,iTaskGraphT,assignedNodes,nextNodes,iTaskGraphMeta,alap,lact);
-    then (alap,lact);
-  case(_,_,_,{},_,_,_)
+      // the current Node is a leaf node
+      childNodes = arrayGet(iTaskGraph,nodeIdx);
+      true = List.isEmpty(childNodes);
+      nodeExeCost = HpcOmTaskGraph.getExeCostReqCycles(nodeIdx,iTaskGraphMeta);
+      alap = arrayUpdate(alapIn,nodeIdx,nodeExeCost);
+      last = arrayUpdate(lastIn,nodeIdx,nodeExeCost);
+      lact = arrayUpdate(lactIn,nodeIdx,0.0);
+      tdsLevel = arrayUpdate(tdsLevelIn,nodeIdx,nodeExeCost);
+      parentNodes = arrayGet(iTaskGraphT,nodeIdx);
+      rest = listAppend(rest,parentNodes);
+      (alap,last,lact,tdsLevel) = computeGraphValuesTopDown1(rest,iTaskGraph,iTaskGraphT,iTaskGraphMeta,alap,last,lact,tdsLevel);
+    then (alap,last,lact,tdsLevel);
+  case(nodeIdx::rest,_,_,_,_,_,_,_)
     equation
-      true = listLength(assignedNodesIn) == arrayLength(iTaskGraph);
-    then (alapIn,lactIn);
+      // all of the childNodes of the current Node have been investigated
+      childNodes = arrayGet(iTaskGraph,nodeIdx);
+      childTDSLevels = List.map1(childNodes,Util.arrayGetIndexFirst,tdsLevelIn);
+      false = List.isMemberOnTrue(-1.0,childTDSLevels,realEq);
+      nodeExeCost = HpcOmTaskGraph.getExeCostReqCycles(nodeIdx,iTaskGraphMeta);
+      commCostsToChilds = List.map2rm(childNodes,HpcOmTaskGraph.getCommCostBetweenNodesInCycles,nodeIdx,iTaskGraphMeta);  // only for alap
+      childAlaps = List.map1(childNodes,Util.arrayGetIndexFirst,alapIn);
+      childAlaps = List.threadMap(childAlaps,commCostsToChilds,realAdd);
+      childLasts = List.map1(childNodes,Util.arrayGetIndexFirst,lastIn);
+      childLacts = List.map1(childNodes,Util.arrayGetIndexFirst,lactIn);
+      maxLevel = List.fold(childTDSLevels,realMax,0.0);
+      maxAlap = List.fold(childAlaps,realMax,0.0);
+      maxLast = List.fold(childLasts,realMax,0.0);
+      maxLact = List.fold(childLacts,realMax,0.0);
+      tdsLevel = arrayUpdate(tdsLevelIn,nodeIdx,nodeExeCost +. maxLevel);
+      alap = arrayUpdate(alapIn,nodeIdx,nodeExeCost +. maxAlap);
+      last = arrayUpdate(lastIn,nodeIdx,nodeExeCost +. maxLast);
+      lact = arrayUpdate(lactIn,nodeIdx,maxLast);
+      parentNodes = arrayGet(iTaskGraphT,nodeIdx);
+      rest = listAppend(rest,parentNodes);
+      (alap,last,lact,tdsLevel) = computeGraphValuesTopDown1(rest,iTaskGraph,iTaskGraphT,iTaskGraphMeta,alap,last,lact,tdsLevel);
+    then (alap,last,lact,tdsLevel);
+  case(nodeIdx::rest,_,_,_,_,_,_,_)
+    equation
+      // not all of the childNodes of the current Node have been investigated
+      childNodes = arrayGet(iTaskGraph,nodeIdx);
+      childTDSLevels = List.map1(childNodes,Util.arrayGetIndexFirst,tdsLevelIn);
+      true = List.isMemberOnTrue(-1.0,childTDSLevels,realEq);
+      rest = listAppend(rest,{nodeIdx});
+      (alap,last,lact,tdsLevel) = computeGraphValuesTopDown1(rest,iTaskGraph,iTaskGraphT,iTaskGraphMeta,alapIn,lastIn,lactIn,tdsLevelIn);
+    then (alap,last,lact,tdsLevel);
   else
     equation
-      print("computeALAP1 failed!\n");
+      print("computeGraphValuesTopDown1 failed!\n");
     then fail();
   end matchcontinue;
-end computeALAP1;
-
-protected function getALAPCost "gets the alap time and commCost for the parentNode with the highest alapTime
-author: Waurich TUD 2013-10"
-  input Integer parent;
-  input array<Real> allALAPTimesIn;
-  input HpcOmTaskGraph.TaskGraph taskGraphIn;
-  input HpcOmTaskGraph.TaskGraphMeta taskGraphMetaIn;
-  output Real alapTimeOut;
-algorithm
-  alapTimeOut := matchcontinue(parent,allALAPTimesIn,taskGraphIn,taskGraphMetaIn)
-    local
-      Real alapTime, commCostR;
-      Integer node, commCostInt;
-      list<Integer> allChildren;
-      list<Real> allChildAlaps;
-    case(_,_,_,_)
-      equation
-        allChildren = arrayGet(taskGraphIn,parent);
-        true = List.isNotEmpty(allChildren);
-        allChildAlaps = List.map3(allChildren,getALAPCost1,parent,allALAPTimesIn,taskGraphMetaIn);
-        alapTime = List.fold(allChildAlaps,realMax,0.0);
-      then
-        alapTime;
-    case(_,_,_,_)
-      equation
-        allChildren = arrayGet(taskGraphIn,parent);
-        true = List.isEmpty(allChildren);
-      then
-        0.0;
-    else
-      equation
-        print("getALAPCost failed!\n");
-      then
-        fail();
-   end matchcontinue;
-end getALAPCost;
-
-protected function getALAPCost1
-  input Integer child;
-  input Integer parent;
-  input array<Real> allALAPTimesIn;
-  input HpcOmTaskGraph.TaskGraphMeta taskGraphMetaIn;
-  output Real alapTimeOut;
-protected
-  Integer commCostInt;
-  Real alapTime, commCostR;
-algorithm
-  alapTime := arrayGet(allALAPTimesIn,child);
-  ((_,_,commCostInt)) := HpcOmTaskGraph.getCommCostBetweenNodes(parent,child,taskGraphMetaIn); //TODO: think about whether we need the highest commCost for contracted nodes, or just the cost from last parent to first child
-  commCostR := intReal(commCostInt);
-  alapTimeOut := realAdd(alapTime,commCostR);
-end getALAPCost1;
-
-protected function getParentsWithOneLeftChild "gets the nodes from the parentlst, that have jsut on child that is not in the nodeLst.
-author: Waurich TUD 2013-11"
-  input list<Integer> parentLstIn;
-  input list<Integer> nodeLst;  // the nodes that are not concerned
-  input HpcOmTaskGraph.TaskGraph taskGraphIn;
-  output list<Integer> parentLstOut;
-algorithm
-  parentLstOut := List.fold2(parentLstIn,getParentsWithOneLeftChild1,nodeLst,taskGraphIn,{});
-end getParentsWithOneLeftChild;
-
-protected function getParentsWithOneLeftChild1 "folding function of getParentsWithOneLeftChild.
-author:Waurich TUD 2013-11"
-  input Integer parent;
-  input list<Integer> nodeLst;
-  input HpcOmTaskGraph.TaskGraph taskGraphIn;
-  input list<Integer> parentLstIn;
-  output list<Integer> parentLstOut;
-protected
-  Boolean justOneChild;
-  list<Integer> childNodes;
-algorithm
-  childNodes := arrayGet(taskGraphIn,parent);
-  (_,childNodes,_) := List.intersection1OnTrue(childNodes,nodeLst,intEq);
-  justOneChild := intEq(listLength(childNodes),1) and List.isNotEmpty(childNodes);
-  parentLstOut := Util.if_(justOneChild,parent::parentLstIn,parentLstIn);
-end getParentsWithOneLeftChild1;
+end computeGraphValuesTopDown1;
 
 protected function realSubr
   input Real r1;
@@ -3147,20 +3116,25 @@ algorithm
   end match;
 end isEmptyTask;
 
-protected function printALAP"prints the information of the ALAP array
+protected function printRealArray"prints the information of the ALAP array
 author:Waurich TUD 2013-11"
   input array<Real> inArray;
+  input String header;
 algorithm
-  _ := Util.arrayFold(inArray,printALAP1,1);
-end printALAP;
+  print("The "+&header+&"\n");
+  print("-----------------------------------------\n");
+  _ := Util.arrayFold1(inArray,printRealArray1,header,1);
+  print("\n");
+end printRealArray;
 
-protected function printALAP1
+protected function printRealArray1
   input Real inValue;
+  input String header;
   input Integer idxIn;
   output Integer idxOut;
 algorithm
-  print("node: "+&intString(idxIn)+&" has the alap: "+&realString(inValue)+&"\n");
+  print("node: "+&intString(idxIn)+&" has the "+&header+&": "+&realString(inValue)+&"\n");
   idxOut := idxIn +1;
-end printALAP1;
+end printRealArray1;
 
 end HpcOmScheduler;
