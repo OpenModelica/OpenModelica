@@ -314,7 +314,7 @@ RML_BEGIN_LABEL(BackendDAEEXT__getAssignment)
   long len2 = RML_HDRSLOTS(RML_GETHDR(rmlA1));
   if (n > len1 || m > len2) {
     char nstr[64],mstr[64],len1str[64],len2str[64];
-    const char *tokens[4] = {nstr,len1str,mstr,len2str};
+    const char *tokens[4] = {len2str,mstr,len1str,nstr};
     snprintf(nstr,64,"%ld", (long) n);
     snprintf(mstr,64,"%ld", (long) m);
     snprintf(len1str,64,"%ld", (long) len1);
