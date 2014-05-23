@@ -194,7 +194,7 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
       updateContinuousSystem(data);
 
       saveZeroCrossings(data);
-      if (ACTIVE_STREAM(LOG_SOLVER)) messageClose(LOG_SOLVER);
+      messageClose(LOG_SOLVER);
 
 
       /***** Event handling *****/
@@ -209,7 +209,7 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
         if (!(omc_flag[FLAG_NOEVENTEMIT])) /* output left limit */
           sim_result.emit(&sim_result,data);
         handleEvents(data, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo);
-        if (ACTIVE_STREAM(LOG_EVENTS)) messageClose(LOG_EVENTS);
+        messageClose(LOG_EVENTS);
         threadData->currentErrorStage = ERROR_SIMULATION;
 
         solverInfo->didEventStep = 1;

@@ -397,7 +397,7 @@ void read_input_xml(MODEL_DATA* modelData,
 
   read_value(mi.md["OPENMODELICAHOME"], &simulationInfo->OPENMODELICAHOME);
   infoStreamPrint(LOG_SIMULATION, 0, "OPENMODELICAHOME: %s", simulationInfo->OPENMODELICAHOME);
-  if (ACTIVE_STREAM(LOG_SIMULATION)) messageClose(LOG_SIMULATION);
+  messageClose(LOG_SIMULATION);
 
   modelica_integer nxchk, nychk, npchk;
   modelica_integer nyintchk, npintchk;
@@ -427,7 +427,8 @@ void read_input_xml(MODEL_DATA* modelData,
     || npstrchk != modelData->nParametersString
     || nystrchk != modelData->nVariablesString)
   {
-    if (ACTIVE_WARNING_STREAM(LOG_SIMULATION)) {
+    if (ACTIVE_WARNING_STREAM(LOG_SIMULATION))
+    {
       warningStreamPrint(LOG_SIMULATION, 1, "Error, input data file does not match model.");
       warningStreamPrint(LOG_SIMULATION, 0, "nx in setup file: %ld from model code: %d", nxchk, (int)modelData->nStates);
       warningStreamPrint(LOG_SIMULATION, 0, "ny in setup file: %ld from model code: %ld", nychk, modelData->nVariablesReal - 2*modelData->nStates);
@@ -465,7 +466,7 @@ void read_input_xml(MODEL_DATA* modelData,
     mapAlias[info.name] = j; /* create a mapping for Alias variable to get the correct index */ \
     debugStreamPrint(LOG_DEBUG, 0, "real %s: mapAlias[%s] = %ld", debugName, info.name, j); \
   } \
-  if (ACTIVE_STREAM(LOG_DEBUG)) messageClose(LOG_DEBUG);
+  messageClose(LOG_DEBUG);
 
   READ_VARIABLES(modelData->realVarsData,mi.rSta,REAL_ATTRIBUTE,"real states",0,modelData->nStates,mapAlias);
   READ_VARIABLES(modelData->realVarsData,mi.rDer,REAL_ATTRIBUTE,"real state derivatives",modelData->nStates,modelData->nStates,mapAlias);
@@ -528,7 +529,7 @@ void read_input_xml(MODEL_DATA* modelData,
                 modelData->realAlias[i].nameID,
                 modelData->realAlias[i].aliasType ? ((modelData->realAlias[i].aliasType==2) ? "time" : "real parameters") : "real variables");
   }
-  if (ACTIVE_STREAM(LOG_DEBUG)) messageClose(LOG_DEBUG);
+  messageClose(LOG_DEBUG);
 
   /*
    * integer all alias vars
@@ -576,7 +577,7 @@ void read_input_xml(MODEL_DATA* modelData,
                 modelData->integerAlias[i].nameID,
                 modelData->integerAlias[i].aliasType?"integer parameters":"integer variables");
   }
-  if (ACTIVE_STREAM(LOG_DEBUG)) messageClose(LOG_DEBUG);
+  messageClose(LOG_DEBUG);
 
   /*
    * boolean all alias vars
@@ -624,7 +625,7 @@ void read_input_xml(MODEL_DATA* modelData,
                 modelData->booleanAlias[i].nameID,
                 modelData->booleanAlias[i].aliasType ? "boolean parameters" : "boolean variables");
   }
-  if (ACTIVE_STREAM(LOG_DEBUG)) messageClose(LOG_DEBUG);
+  messageClose(LOG_DEBUG);
 
   /*
    * string all alias vars
@@ -672,7 +673,7 @@ void read_input_xml(MODEL_DATA* modelData,
                 modelData->stringAlias[i].nameID,
                 modelData->stringAlias[i].aliasType ? "string parameters" : "string variables");
   }
-  if (ACTIVE_STREAM(LOG_DEBUG)) messageClose(LOG_DEBUG);
+  messageClose(LOG_DEBUG);
 
   XML_ParserFree(parser);
 }

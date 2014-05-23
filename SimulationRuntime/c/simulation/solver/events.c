@@ -383,14 +383,19 @@ void findRoot(DATA* data, LIST *eventList, double *eventTime)
 
   listClear(eventList);
 
-  if(ACTIVE_STREAM(LOG_EVENTS)) {
-    if(listLen(tmpEventList) > 0) {
+  if(ACTIVE_STREAM(LOG_EVENTS))
+  {
+    if(listLen(tmpEventList) > 0)
+    {
       debugStreamPrint(LOG_EVENTS, 0, "found events: ");
-    } else {
+    }
+    else
+    {
       debugStreamPrint(LOG_EVENTS, 0, "found event: ");
     }
   }
-  while(listLen(tmpEventList) > 0) {
+  while(listLen(tmpEventList) > 0)
+  {
     event_id = *((long*)listFirstData(tmpEventList));
     listPopFront(tmpEventList);
 

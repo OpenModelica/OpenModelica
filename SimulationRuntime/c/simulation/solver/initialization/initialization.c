@@ -73,7 +73,8 @@ int reportResidualValue(INIT_DATA *initData)
 
   if(1e-5 < funcValue)
   {
-    if (ACTIVE_STREAM(LOG_INIT)) {
+    if (ACTIVE_STREAM(LOG_INIT))
+    {
       infoStreamPrint(LOG_INIT, 1, "error in initialization. System of initial equations are not consistent\n(least square function value is %g)", funcValue);
       for(i=0; i<initData->nInitResiduals; i++) {
         if(1e-5 < fabs(initData->initialResiduals[i])) {
@@ -594,7 +595,7 @@ static int initialize(DATA *data, int optiMethod, int lambda_steps)
   infoStreamPrint(LOG_INIT, 1, "### FINAL INITIALIZATION RESULTS ###");
   dumpInitialization(data,initData);
   retVal = reportResidualValue(initData);
-  if (ACTIVE_STREAM(LOG_INIT)) messageClose(LOG_INIT);
+  messageClose(LOG_INIT);
   freeInitData(initData);
 
   return retVal;

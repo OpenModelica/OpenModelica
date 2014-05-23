@@ -380,7 +380,7 @@ int solveNewton(DATA *data, int sysNumber)
     }
   }
 
-  if (ACTIVE_STREAM(LOG_NLS)) messageClose(LOG_NLS);
+  messageClose(LOG_NLS);
 
   return success;
 }

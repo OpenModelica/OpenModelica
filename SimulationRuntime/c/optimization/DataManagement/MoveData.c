@@ -49,7 +49,8 @@ static inline void printSomeModelInfos(OptDataBounds * bounds, OptDataDim * dim,
 /* pick up model data
  * author: Vitalij Ruge
  */
-int pickUpModelData(DATA* data, SOLVER_INFO* solverInfo){
+int pickUpModelData(DATA* data, SOLVER_INFO* solverInfo)
+{
   const int nReal = data->modelData.nVariablesReal;
   int i, j;
   OptData *optData =  (OptData*) solverInfo->solverData;

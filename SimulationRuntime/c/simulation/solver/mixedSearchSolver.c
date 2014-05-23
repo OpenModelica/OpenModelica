@@ -302,7 +302,7 @@ int solveMixedSearch(DATA *data, int sysNumber)
 
   }while(!found_solution);
 
-  if(ACTIVE_STREAM(LOG_NLS)) messageClose(LOG_NLS);
+  messageClose(LOG_NLS);
   debugStreamPrint(LOG_NLS, 0, "####  Finished mixed equation system in steps %d.\n", stepCount);
   return success;
 }

@@ -215,7 +215,8 @@
          *
          */
         infoStreamPrint(LOG_INIT, 0, "ipopt using symbolic sparse jacobian G");
-        if(ACTIVE_STREAM(LOG_INIT)) {
+        if(ACTIVE_STREAM(LOG_INIT))
+        {
           infoStreamPrint(LOG_INIT, 0, "sparsity pattern");
           for(i=0; i<n; ++i) {
             printf("        | | column %3d: [ ", i+1);

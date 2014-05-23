@@ -259,7 +259,7 @@
     infoStreamPrint(LOG_NLS, 0, "KINGetNumFuncEvals       = %5ld", nfe);
     infoStreamPrint(LOG_NLS, 0, "KINDlsGetNumJacEvals     = %5ld", nje);
     infoStreamPrint(LOG_NLS, 0, "KINDlsGetNumFuncEvals    = %5ld", nfeD);
-    if (ACTIVE_STREAM(LOG_NLS)) messageClose(LOG_NLS);
+    messageClose(LOG_NLS);
 
     /* free memory */
     N_VDestroy_Serial(z);

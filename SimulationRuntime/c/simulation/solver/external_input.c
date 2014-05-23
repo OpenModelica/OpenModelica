@@ -102,7 +102,8 @@ int externalInputallocate(DATA* data)
         data->simulationInfo.external_input.n = i;
     }
 
-    if(ACTIVE_STREAM(LOG_SIMULATION)){
+    if(ACTIVE_STREAM(LOG_SIMULATION))
+    {
       printf("\nExternal Input");
       printf("\n========================================================");
       for(i = 0; i < data->simulationInfo.external_input.n; ++i){

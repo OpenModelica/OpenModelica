@@ -280,7 +280,7 @@ static int comparePivot(modelica_integer *oldPivot, modelica_integer *newPivot, 
       {
         infoStreamPrint(LOG_DSS, 1, "select new states at time %f", data->localData[0]->timeValue);
         setAMatrix(newEnable, nCandidates, nStates, A, states, statecandidates, data);
-        if (ACTIVE_STREAM(LOG_DSS)) messageClose(LOG_DSS);
+        messageClose(LOG_DSS);
       }
       ret = -1;
       break;
