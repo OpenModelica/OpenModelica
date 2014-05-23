@@ -9625,7 +9625,7 @@ template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> when
     (this->*equations_array[offset])();
     return false;
   }
-   
+
   >>
 end update;
  /*Ranking: removed from update: if(command & IContinuous::RANKING) checkConditions();*/

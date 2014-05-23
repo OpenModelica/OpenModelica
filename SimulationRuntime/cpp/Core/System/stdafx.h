@@ -134,11 +134,11 @@ namespace fs = boost::filesystem;
 using boost::unordered_map;
 #endif
 /*
-template class boost::multi_array<double,2>; 
+template class boost::multi_array<double,2>;
 template class boost::multi_array<double,1>;
-template class boost::multi_array<int,2>; 
+template class boost::multi_array<int,2>;
 template class boost::multi_array<int,1>;
 template class ublas::vector<double>;
-template class ublas::vector<int>; 
+template class ublas::vector<int>;
 template class uBlas::compressed_matrix<double, uBlas::column_major, 0, uBlas::unbounded_array<int>, uBlas::unbounded_array<double> > ;
 */

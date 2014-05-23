@@ -141,11 +141,11 @@ typedef ublas::matrix<double, adaptor_t> shared_matrix_t;
 #include <Solver/INonLinSolverSettings.h>
 #include <DataExchange/IHistory.h>
 /*
-extern template class boost::multi_array<double,2>; 
+extern template class boost::multi_array<double,2>;
 extern template class boost::multi_array<double,1>;
-extern template class boost::multi_array<int,2>; 
+extern template class boost::multi_array<int,2>;
 extern template class boost::multi_array<int,1>;
 extern template class ublas::vector<double>;
-extern template class ublas::vector<int>; 
+extern template class ublas::vector<int>;
 extern template class uBlas::compressed_matrix<double, uBlas::column_major, 0, uBlas::unbounded_array<int>, uBlas::unbounded_array<double> > ;
 */
