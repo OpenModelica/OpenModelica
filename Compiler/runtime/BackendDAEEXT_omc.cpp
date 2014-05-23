@@ -45,6 +45,7 @@
 #include "rml_compatibility.h"
 #include "BackendDAEEXT.cpp"
 #include <stdlib.h>
+#include "errorext.h"
 
 extern "C" {
 
@@ -144,6 +145,18 @@ extern void BackendDAEEXT_matching(modelica_integer nv, modelica_integer ne, mod
 extern void BackendDAEEXT_getAssignment(modelica_metatype ass1, modelica_metatype ass2)
 {
   int i=0;
+  long len1 = MMC_HDRSLOTS(MMC_GETHDR(ass1));
+  long len2 = MMC_HDRSLOTS(MMC_GETHDR(ass2));
+  if (n > len1 || m > len2) {
+    char nstr[64],mstr[64],len1str[64],len2str[64];
+    const char *tokens[4] = {nstr,len1str,mstr,len2str};
+    snprintf(nstr,64,"%ld", (long) n);
+    snprintf(mstr,64,"%ld", (long) m);
+    snprintf(len1str,64,"%ld", (long) len1);
+    snprintf(len2str,64,"%ld", (long) len2);
+    c_add_message(NULL,-1,ErrorType_symbolic,ErrorLevel_internal,"BackendDAEEXT.getAssignment failed because n=%s>arrayLength(ass1)=%s or m=%s>arrayLength(ass2)=%s",tokens,4);
+    MMC_THROW();
+  }
   if (match != NULL) {
     for(i=0; i<n; ++i) {
       if (match[i] >= 0)
