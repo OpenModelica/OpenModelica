@@ -2720,7 +2720,7 @@ algorithm
         // create the path till OMPlot
         str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
         // create the list of arguments for OMPlot
-        str3 = "--filename=\"" +& filename +& "\" --title=\"" +& title +& "\" --grid=" +& gridStr +& " --plotAll --logx=" +& boolString(logX) +& " --logy=" +& boolString(logY) +& " --xlabel=\"" +& xLabel +& "\" --ylabel=\"" +& yLabel +& "\" --xrange=" +& realString(x1) +& ":" +& realString(x2) +& " --yrange=" +& realString(y1) +& ":" +& realString(y2) +& " --new-window=" +& boolString(externalWindow) +& " --curve-width=" +& realString(curveWidth) +& " --curve-style=" +& intString(curveStyle) +& " --legend-position=\"" +& legendPosition +& " --footer=\"" +& footer +& "\"";
+        str3 = "--filename=\"" +& filename +& "\" --title=\"" +& title +& "\" --grid=" +& gridStr +& " --plotAll --logx=" +& boolString(logX) +& " --logy=" +& boolString(logY) +& " --xlabel=\"" +& xLabel +& "\" --ylabel=\"" +& yLabel +& "\" --xrange=" +& realString(x1) +& ":" +& realString(x2) +& " --yrange=" +& realString(y1) +& ":" +& realString(y2) +& " --new-window=" +& boolString(externalWindow) +& " --curve-width=" +& realString(curveWidth) +& " --curve-style=" +& intString(curveStyle) +& " --legend-position=\"" +& legendPosition +& "\" --footer=\"" +& footer +& "\"";
         call = stringAppendList({"\"",str2,"\""," ",str3});
         0 = System.spawnCall(str2, call);
       then
@@ -3142,7 +3142,7 @@ algorithm
         // create the path till OMPlot
         str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
         // create the list of arguments for OMPlot
-        str3 = "--filename=\"" +& filename +& "\" --title=\"" +& title +& "\" --grid=" +& gridStr +& " --plotParametric --logx=" +& boolString(logX) +& " --logy=" +& boolString(logY) +& " --xlabel=\"" +& xLabel +& "\" --ylabel=\"" +& yLabel +& "\" --xrange=" +& realString(x1) +& ":" +& realString(x2) +& " --yrange=" +& realString(y1) +& ":" +& realString(y2) +& " --new-window=" +& boolString(externalWindow) +& " --curve-width=" +& realString(curveWidth) +& " --curve-style=" +& intString(curveStyle) +& " --legend-position=\"" +& legendPosition +& " --footer=\"" +& footer +& "\" \"" +& str +& "\"";
+        str3 = "--filename=\"" +& filename +& "\" --title=\"" +& title +& "\" --grid=" +& gridStr +& " --plotParametric --logx=" +& boolString(logX) +& " --logy=" +& boolString(logY) +& " --xlabel=\"" +& xLabel +& "\" --ylabel=\"" +& yLabel +& "\" --xrange=" +& realString(x1) +& ":" +& realString(x2) +& " --yrange=" +& realString(y1) +& ":" +& realString(y2) +& " --new-window=" +& boolString(externalWindow) +& " --curve-width=" +& realString(curveWidth) +& " --curve-style=" +& intString(curveStyle) +& " --legend-position=\"" +& legendPosition +& "\" --footer=\"" +& footer +& "\" \"" +& str +& "\"";
         call = stringAppendList({"\"",str2,"\""," ",str3});
         0 = System.spawnCall(str2, call);
       then
