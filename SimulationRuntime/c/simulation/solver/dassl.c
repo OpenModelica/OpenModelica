@@ -503,7 +503,7 @@ int functionODE_residual(double *t, double *y, double *yd, double* cj, double *d
   long i;
   int saveJumpState;
   int success = 0;
-  
+
   TRACE_PUSH
 
   timeBackup = data->localData[0]->timeValue;

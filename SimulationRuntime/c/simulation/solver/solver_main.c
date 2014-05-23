@@ -410,7 +410,7 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
   int ui;
 
   SIMULATION_INFO *simInfo = &(data->simulationInfo);
-  
+
   TRACE_PUSH
 
   /* Last step with terminal()=true */
@@ -500,7 +500,7 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
 
     rt_tick(SIM_TIMER_TOTAL);
   }
-  
+
   TRACE_POP
   return retValue;
 }
