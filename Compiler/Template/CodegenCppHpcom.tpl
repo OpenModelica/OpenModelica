@@ -687,7 +687,7 @@ template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> when
       let parCode = update2(allEquationsPlusWhen, modelInfo.name, whenClauses, simCode, hpcOmSchedule, context, lastIdentOfPath(modelInfo.name))
       <<
       <%eqfuncs%>
-      
+
       <%parCode%>
       >>
 end update;
