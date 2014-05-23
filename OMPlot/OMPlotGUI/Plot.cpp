@@ -34,6 +34,7 @@
 #include "PlotWindow.h"
 #include "ScaleDraw.h"
 #include "qwt_plot_canvas.h"
+#include "qwt_scale_widget.h"
 #if QWT_VERSION < 0x060000
 #include "qwt_legend_item.h"
 #endif
@@ -71,9 +72,15 @@ Plot::Plot(PlotWindow *pParent)
     Move the canvas little bit from bottom and left to align the axis at starting point.
     There is a slight margin in the axis drawn so we have to subclass QwtScaleDraw to draw the backbone line and ticks at the proper location.
     */
-  canvas()->setContentsMargins(-5, 0, 0, -5);
-  setAxisScaleDraw(QwtPlot::yLeft, new ScaleDraw);
-  setAxisScaleDraw(QwtPlot::xBottom, new ScaleDraw);
+//  canvas()->setContentsMargins(-5, 0, 0, -5);
+//  setAxisScaleDraw(QwtPlot::yLeft, new ScaleDraw);
+//  setAxisScaleDraw(QwtPlot::xBottom, new ScaleDraw);
+  /*
+    The above code doesn't work as expected. The values drawn at 0 are not shown if we align the axis.
+    We need to reimplement the scale engine.
+    */
+    axisWidget(QwtPlot::yLeft)->setMargin(0);
+    axisWidget(QwtPlot::xBottom)->setMargin(0);
 #endif
   // fill colors list
   fillColorsList();

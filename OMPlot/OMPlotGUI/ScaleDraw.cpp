@@ -35,9 +35,9 @@
  *
  */
 
+#include <QPainter>
 #include "ScaleDraw.h"
 #if QWT_VERSION >= 0x060000
-
 #include "qwt_painter.h"
 #include "qwt_scale_map.h"
 
@@ -62,148 +62,222 @@ QwtText ScaleDraw::label(double value) const
   return QLocale().toString(value, 'g', 5);
 }
 
-void ScaleDraw::drawBackbone( QPainter *painter ) const
-{
-  const bool doAlign = QwtPainter::roundingAlignment( painter );
+///*!
+//  Override QwtAbstractScaleDraw::draw since we don't want to draw the first tick.
+//  */
+//void ScaleDraw::draw(QPainter *painter, const QPalette &palette) const
+//{
+//  double tickLength[QwtScaleDiv::NTickTypes];
+//  tickLength[QwtScaleDiv::MinorTick] = 4.0;
+//  tickLength[QwtScaleDiv::MediumTick] = 6.0;
+//  tickLength[QwtScaleDiv::MajorTick] = 8.0;
 
-  const QPointF &position = pos();
-  const double len = length();
-  const int pw = qMax( penWidth(), 1 );
+//  painter->save();
 
-  // pos indicates a border not the center of the backbone line
-  // so we need to shift its position depending on the pen width
-  // and the alignment of the scale
+//  QPen pen = painter->pen();
+//  pen.setWidth(penWidth());
+//  pen.setCosmetic(false);
+//  painter->setPen(pen);
 
-  double off;
-  if ( doAlign )
-  {
-    if ( alignment() == LeftScale || alignment() == TopScale )
-      off = ( pw - 1 ) / 2;
-    else
-      off = pw / 2;
-  }
-  else
-  {
-    off = 0.5 * penWidth();
-  }
+//  if (hasComponent(QwtAbstractScaleDraw::Labels))
+//  {
+//    painter->save();
 
-  switch ( alignment() )
-  {
-    case LeftScale:
-    {
-      double x = position.x() - off;
-      if ( doAlign )
-        x = qRound( x );
+//    painter->setPen(palette.color(QPalette::Text)); // ignore pen style
 
-      QwtPainter::drawLine( painter, x + 2, position.y(), x + 2, position.y() + len + 6 );
-      break;
-    }
-    case RightScale:
-    {
-      double x = position.x() + off;
-      if ( doAlign )
-        x = qRound( x );
+//    const QList<double> &majorTicks = scaleDiv().ticks(QwtScaleDiv::MajorTick);
+//    for (int i = 0; i < majorTicks.count(); i++)
+//    {
+//      const double v = majorTicks[i];
+//      if (scaleDiv().contains(v))
+//        drawLabel( painter, v );
+//    }
 
-      QwtPainter::drawLine( painter, x, position.y(), x, position.y() + len );
-      break;
-    }
-    case TopScale:
-    {
-      double y = position.y() - off;
-      if ( doAlign )
-        y = qRound( y );
+//    painter->restore();
+//  }
 
-      QwtPainter::drawLine( painter, position.x(), y, position.x() + len, y );
-      break;
-    }
-    case BottomScale:
-    {
-      double y = position.y() + off;
-      if ( doAlign )
-        y = qRound( y );
+//  if (hasComponent( QwtAbstractScaleDraw::Ticks))
+//  {
+//    painter->save();
 
-      QwtPainter::drawLine( painter, position.x(), y  - 2, position.x() + len, y - 2 );
-      break;
-    }
-  }
-}
+//    QPen pen = painter->pen();
+//    pen.setColor(palette.color(QPalette::WindowText));
+//    pen.setCapStyle(Qt::FlatCap);
+//    painter->setPen(pen);
 
-void ScaleDraw::drawTick( QPainter *painter, double value, double len ) const
-{
-  if ( len <= 0 )
-    return;
+//    for (int tickType = QwtScaleDiv::MinorTick; tickType < QwtScaleDiv::NTickTypes; tickType++)
+//    {
+//      const QList<double> &ticks = scaleDiv().ticks(tickType);
+//      for (int i = 0; i < ticks.count(); i++)
+//      {
+//        const double v = ticks[i];
+//        qDebug() << tickType << ticks.count() << v;
+//        if (scaleDiv().contains(v))
+//          drawTick(painter, v, tickLength[tickType]);
+//      }
+//    }
 
-  const bool roundingAlignment = QwtPainter::roundingAlignment( painter );
+//    painter->restore();
+//  }
 
-  QPointF position = pos();
+//  if (hasComponent(QwtAbstractScaleDraw::Backbone))
+//  {
+//    painter->save();
 
-  double tval = scaleMap().transform( value );
-  if ( roundingAlignment )
-    tval = qRound( tval );
+//    QPen pen = painter->pen();
+//    pen.setColor(palette.color(QPalette::WindowText));
+//    pen.setCapStyle(Qt::FlatCap);
+//    painter->setPen(pen);
 
-  const int pw = penWidth();
-  int a = 0;
-  if ( pw > 1 && roundingAlignment )
-    a = 1;
+//    drawBackbone(painter);
 
-  switch ( alignment() )
-  {
-    case LeftScale:
-    {
-      double x1 = position.x() + a;
-      double x2 = position.x() + a - pw - len;
-      if ( roundingAlignment )
-      {
-        x1 = qRound( x1 );
-        x2 = qRound( x2 );
-      }
+//    painter->restore();
+//  }
+//  painter->restore();
+//}
 
-      QwtPainter::drawLine( painter, x1 + 2, tval, x2 + 2, tval );
-      break;
-    }
+//void ScaleDraw::drawBackbone(QPainter *painter) const
+//{
+//  const bool doAlign = QwtPainter::roundingAlignment( painter );
 
-    case RightScale:
-    {
-      double x1 = position.x();
-      double x2 = position.x() + pw + len;
-      if ( roundingAlignment )
-      {
-        x1 = qRound( x1 );
-        x2 = qRound( x2 );
-      }
+//  const QPointF &position = pos();
+//  const double len = length();
+//  const int pw = qMax( penWidth(), 1 );
 
-      QwtPainter::drawLine( painter, x1, tval, x2, tval );
-      break;
-    }
+//  // pos indicates a border not the center of the backbone line
+//  // so we need to shift its position depending on the pen width
+//  // and the alignment of the scale
 
-    case BottomScale:
-    {
-      double y1 = position.y();
-      double y2 = position.y() + pw + len;
-      if ( roundingAlignment )
-      {
-        y1 = qRound( y1 );
-        y2 = qRound( y2 );
-      }
+//  double off;
+//  if ( doAlign )
+//  {
+//    if ( alignment() == LeftScale || alignment() == TopScale )
+//      off = ( pw - 1 ) / 2;
+//    else
+//      off = pw / 2;
+//  }
+//  else
+//  {
+//    off = 0.5 * penWidth();
+//  }
 
-      QwtPainter::drawLine( painter, tval, y1 - 2, tval, y2 - 2);
-      break;
-    }
+//  switch ( alignment() )
+//  {
+//    case LeftScale:
+//    {
+//      double x = position.x() - off;
+//      if ( doAlign )
+//        x = qRound( x );
 
-    case TopScale:
-    {
-      double y1 = position.y() + a;
-      double y2 = position.y() - pw - len + a;
-      if ( roundingAlignment )
-      {
-        y1 = qRound( y1 );
-        y2 = qRound( y2 );
-      }
+//      QwtPainter::drawLine( painter, x + 2, position.y(), x + 2, position.y() + len + 6 );
+//      break;
+//    }
+//    case RightScale:
+//    {
+//      double x = position.x() + off;
+//      if ( doAlign )
+//        x = qRound( x );
 
-      QwtPainter::drawLine( painter, tval, y1, tval, y2 );
-      break;
-    }
-  }
-}
+//      QwtPainter::drawLine( painter, x, position.y(), x, position.y() + len );
+//      break;
+//    }
+//    case TopScale:
+//    {
+//      double y = position.y() - off;
+//      if ( doAlign )
+//        y = qRound( y );
+
+//      QwtPainter::drawLine( painter, position.x(), y, position.x() + len, y );
+//      break;
+//    }
+//    case BottomScale:
+//    {
+//      double y = position.y() + off;
+//      if ( doAlign )
+//        y = qRound( y );
+
+//      QwtPainter::drawLine( painter, position.x(), y  - 2, position.x() + len, y - 2 );
+//      break;
+//    }
+//  }
+//}
+
+//void ScaleDraw::drawTick(QPainter *painter, double value, double len) const
+//{
+//  if ( len <= 0 )
+//    return;
+
+//  const bool roundingAlignment = QwtPainter::roundingAlignment( painter );
+
+//  QPointF position = pos();
+
+//  double tval = scaleMap().transform( value );
+//  if ( roundingAlignment )
+//    tval = qRound( tval );
+
+//  const int pw = penWidth();
+//  int a = 0;
+//  if ( pw > 1 && roundingAlignment )
+//    a = 1;
+
+//  switch ( alignment() )
+//  {
+//    case LeftScale:
+//    {
+//      double x1 = position.x() + a;
+//      double x2 = position.x() + a - pw - len;
+//      if ( roundingAlignment )
+//      {
+//        x1 = qRound( x1 );
+//        x2 = qRound( x2 );
+//      }
+
+//      QwtPainter::drawLine( painter, x1, tval, x2, tval );
+//      break;
+//    }
+
+//    case RightScale:
+//    {
+//      double x1 = position.x();
+//      double x2 = position.x() + pw + len;
+//      if ( roundingAlignment )
+//      {
+//        x1 = qRound( x1 );
+//        x2 = qRound( x2 );
+//      }
+
+//      QwtPainter::drawLine( painter, x1, tval, x2, tval );
+//      break;
+//    }
+
+//    case BottomScale:
+//    {
+//      double y1 = position.y();
+//      double y2 = position.y() + pw + len;
+//      if ( roundingAlignment )
+//      {
+//        y1 = qRound( y1 );
+//        y2 = qRound( y2 );
+//      }
+
+//      QwtPainter::drawLine( painter, tval, y1 - 2, tval, y2 - 2);
+//      break;
+//    }
+
+//    case TopScale:
+//    {
+//      double y1 = position.y() + a;
+//      double y2 = position.y() - pw - len + a;
+//      if ( roundingAlignment )
+//      {
+//        y1 = qRound( y1 );
+//        y2 = qRound( y2 );
+//      }
+
+//      QwtPainter::drawLine( painter, tval, y1, tval, y2 );
+//      break;
+//    }
+//  }
+//}
 
 #endif // #if QWT_VERSION >= 0x060000
