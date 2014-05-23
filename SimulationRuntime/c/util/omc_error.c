@@ -250,13 +250,17 @@ void messageXML(int type, int stream, int indentNext, char *msg, int subline, co
 
 static void messageCloseText(int stream)
 {
-  level[stream]--;
+  if(ACTIVE_STREAM(stream))
+    level[stream]--;
 }
 
 static void messageCloseXML(int stream)
 {
-  fputs("</message>\n", stdout);
-  fflush(stdout);
+  if(ACTIVE_STREAM(stream))
+  {
+    fputs("</message>\n", stdout);
+    fflush(stdout);
+  }
 }
 
 static void (*messageFunction)(int type, int stream, int indentNext, char *msg, int subline, const int *indexes) = messageText;
