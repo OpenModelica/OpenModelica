@@ -1575,40 +1575,165 @@ author: Waurich TUD 2015-05"
   input array<list<Integer>> iSccSimEqMapping;
   output HpcOmSimCode.Schedule oSchedule;
 protected
-  Integer size,numClusters;
+  Integer size;
   list<Integer> queue;
   list<Real> levels;
-  array<Real> estArray,lastArray,ectArray,lactArray,tdsLevelArray,alap,asap;
+  array<Real> ectArray,tdsLevelArray;
   array<Integer> fpredArray;
   list<list<Integer>> initClusters;
+  HpcOmTaskGraph.TaskGraph taskGraphT;
 algorithm
-  HpcOmTaskGraph.printTaskGraph(iTaskGraph);
-  HpcOmTaskGraph.printTaskGraphMeta(iTaskGraphMeta);
+  //HpcOmTaskGraph.printTaskGraph(iTaskGraph);
+  //HpcOmTaskGraph.printTaskGraphMeta(iTaskGraphMeta);
   //compute the necessary node parameters
   size := arrayLength(iTaskGraph);
-  (asap,estArray,ectArray) := computeGraphValuesBottomUp(iTaskGraph,iTaskGraphMeta);
-  (alap,lastArray,lactArray,tdsLevelArray) := computeGraphValuesTopDown(iTaskGraph,iTaskGraphMeta);
-
-  //printRealArray(estArray,"est");
+  taskGraphT := BackendDAEUtil.transposeMatrix(iTaskGraph,size);
+  (_,_,ectArray) := computeGraphValuesBottomUp(iTaskGraph,iTaskGraphMeta);
+  (_,_,_,tdsLevelArray) := computeGraphValuesTopDown(iTaskGraph,iTaskGraphMeta);
   //printRealArray(ectArray,"ect");
-  //printRealArray(lastArray,"last");
-  //printRealArray(lactArray,"lact");
-  printRealArray(tdsLevelArray,"tdsLevel");
-  //printRealArray(alap,"alap");
-  //printRealArray(asap,"asap");
-
+  //printRealArray(tdsLevelArray,"tdsLevel");
   fpredArray := computeFavouritePred(iTaskGraph,iTaskGraphMeta,ectArray); //the favourite predecessor of each node
-  printRealArray(Util.arrayMap(fpredArray,intReal),"fpred");
-
+  //printRealArray(Util.arrayMap(fpredArray,intReal),"fpred");
   (levels,queue) := quicksortWithOrder(arrayList(tdsLevelArray));
-  print("queue "+&stringDelimitList(List.map(queue,intString)," ; ")+&"\n");
-
   initClusters := createTDSInitialCluster(iTaskGraph,iTaskGraphMeta,fpredArray,queue);
-  print("initClusters:\n"+&stringDelimitList(List.map(initClusters,intListString),"\n")+&"\n");
-  numClusters := listLength(initClusters);
-
-  oSchedule := HpcOmSimCode.EMPTYSCHEDULE();
+  //print("initClusters:\n"+&stringDelimitList(List.map(initClusters,intListString),"\n")+&"\n");
+  oSchedule := createTDSschedule1(initClusters,iTaskGraph,taskGraphT,iTaskGraphMeta,tdsLevelArray,numProc,iSccSimEqMapping);
 end createTDSschedule;
+
+protected function createTDSschedule1
+  input list<list<Integer>> clustersIn;
+  input HpcOmTaskGraph.TaskGraph iTaskGraph;
+  input HpcOmTaskGraph.TaskGraph iTaskGraphT;
+  input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+  input array<Real> TDSLevel;
+  input Integer numProc;
+  input array<list<Integer>> iSccSimEqMapping;
+  output HpcOmSimCode.Schedule oSchedule;
+algorithm
+  oSchedule := matchcontinue(clustersIn,iTaskGraph,iTaskGraphT,iTaskGraphMeta,TDSLevel,numProc,iSccSimEqMapping)
+    local
+      Integer size, numSfLocks;
+      array<Integer> taskAss;
+      array<list<Integer>> procAss;
+      list<Integer> order;
+      list<list<Integer>> clusters;
+      HpcOmSimCode.Schedule schedule;
+      array<list<HpcOmSimCode.Task>> threadTask;
+      list<HpcOmSimCode.Task> removeLocks;
+    case(_,_,_,_,_,_,_)
+      equation
+        // we need cluster duplication, repeat until numProc=num(clusters)
+        true = listLength(clustersIn) < numProc;
+        print("There are less initial clusters than processors. we need duplication, but since this is a rare case, it is not done. Less processors are used.\n");
+        clusters = List.map(clustersIn,listReverse);
+        Flags.setConfigInt(Flags.NUM_PROC,listLength(clustersIn));
+        schedule = createTDSschedule1(clusters,iTaskGraph,iTaskGraphT,iTaskGraphMeta,TDSLevel,listLength(clustersIn),iSccSimEqMapping);
+      then
+        schedule;
+    case(_,_,_,_,_,_,_)
+      equation
+        // we need cluster compaction, repeat until numProc=num(clusters)
+        true = listLength(clustersIn) > numProc;
+        clusters = createTDSCompactClusters(clustersIn,iTaskGraph,iTaskGraphMeta,TDSLevel,numProc);
+        schedule = createTDSschedule1(clusters,iTaskGraph,iTaskGraphT,iTaskGraphMeta,TDSLevel,numProc,iSccSimEqMapping);
+      then
+        schedule;
+    case(_,_,_,_,_,_,_)
+      equation
+        // the clusters can be scheduled, build assignments
+        true = listLength(clustersIn) == numProc;
+        clusters = List.map1(clustersIn,createTDSSortCompactClusters,TDSLevel);
+        //print("clusters:\n"+&stringDelimitList(List.map(clusters,intListString),"\n")+&"\n");
+        procAss = listArray(clusters);
+        size = arrayLength(iTaskGraph);
+        taskAss = arrayCreate(size,-1);
+        List.map2_0(List.intRange(arrayLength(procAss)),getTaskAssignmentTDS,procAss,taskAss);  // update the task assignments
+        (_,order) = quicksortWithOrder(arrayList(TDSLevel));
+        order = listReverse(order);
+        //create schedule from assignments
+        threadTask = arrayCreate(numProc,{});
+        schedule = HpcOmSimCode.THREADSCHEDULE(threadTask,{});
+        (schedule,removeLocks) = createScheduleFromAssignments(taskAss,procAss,SOME(order),iTaskGraph,iTaskGraphT,iTaskGraphMeta,iSccSimEqMapping,{},order,schedule);
+        // remove superfluous locks
+        numSfLocks = intDiv(listLength(removeLocks),2);
+        Debug.fcall(Flags.HPCOM_DUMP,print,"number of removed superfluous locks: "+&intString(numSfLocks)+&"\n");
+        schedule = traverseAndUpdateThreadsInSchedule(schedule,removeLocksFromThread,removeLocks);
+        schedule = updateLockIdcsInThreadschedule(schedule,removeLocksFromLockIds,removeLocks);
+      then
+        schedule;
+    else
+      equation
+        print("createTDSschedule1 failed!\n");
+      then fail();
+  end matchcontinue;
+end createTDSschedule1;
+
+protected function getTaskAssignmentTDS"sets the assigned processor for each task.
+author:Waurich TUD 2014-05"
+  input Integer procIdx;
+  input array<list<Integer>> clusterArrayIn;
+  input array<Integer> taskAssIn;
+protected
+  array<Integer> taskAss;
+  list<Integer> procTasks;
+algorithm
+  procTasks := arrayGet(clusterArrayIn,procIdx);
+  List.map2_0(procTasks,Util.arrayUpdateIndexFirst,procIdx,taskAssIn);
+end getTaskAssignmentTDS;
+
+protected function createTDSCompactClusters"performs compaction to the cluster set. the least crowded (lowest exe costs) cluster is marged with the crowded cluster and so on.
+author:Waurich TUD 2015-05"
+  input list<list<Integer>> clustersIn;
+  input HpcOmTaskGraph.TaskGraph iTaskGraph;
+  input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+  input array<Real> TDSLevel;
+  input Integer numProc;
+  output list<list<Integer>> clustersOut;
+protected
+  Integer numMergeClusters;
+  list<Real> clusterExeCosts;
+  list<Integer> clusterOrder;
+  list<list<Integer>> firstClusters,lastClusters, middleCluster,clusters, mergedClusters;
+algorithm
+  clusterExeCosts := List.map1(clustersIn,createTDScomputeClusterCosts,iTaskGraphMeta);
+  (_,clusterOrder) := quicksortWithOrder(clusterExeCosts);
+  clusterOrder := listReverse(clusterOrder);
+  clusters := List.map1(clusterOrder,List.getIndexFirst,clustersIn);  // the clusters, sorted in descending order of their accumulated execution costs
+  numMergeClusters := intMin(intDiv(listLength(clustersIn),2),intSub(listLength(clustersIn),numProc));
+  (firstClusters,lastClusters) := List.split(clusters,numMergeClusters);
+  (middleCluster,lastClusters) := List.split(lastClusters,intSub(listLength(lastClusters),numMergeClusters));
+  lastClusters := listReverse(lastClusters);
+  mergedClusters := List.threadMap(firstClusters,lastClusters,listAppend);
+  clustersOut := listAppend(mergedClusters,middleCluster);
+  //print("mergedClustersOut:\n"+&stringDelimitList(List.map(clustersOut,intListString),"\n")+&"\n");
+end createTDSCompactClusters;
+
+protected function createTDSSortCompactClusters"sorts the tasks in the cluster to descending order of their tds level value.
+author:Waurich TUD 2014-05"
+  input list<Integer> clusterIn;
+  input array<Real> tdsLevelIn;
+  output list<Integer> clusterOut;
+protected
+  list<Integer> order;
+  list<Real> tdsLevels;
+algorithm
+  tdsLevels := List.map1(clusterIn,Util.arrayGetIndexFirst,tdsLevelIn);
+  (_,order) := quicksortWithOrder(tdsLevels);
+  order := listReverse(order);
+  clusterOut :=List.map1(order,List.getIndexFirst,clusterIn);
+end createTDSSortCompactClusters;
+
+protected function createTDScomputeClusterCosts"accumulates the execution costs of all tasks in one cluster.
+author:Waurich TUD 2014-05"
+  input list<Integer> clusters;
+  input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+  output Real costs;
+protected
+  list<Real> nodeCosts;
+algorithm
+  nodeCosts := List.map1(clusters,HpcOmTaskGraph.getExeCostReqCycles,iTaskGraphMeta);
+  costs := List.fold(nodeCosts,realAdd,0.0);
+end createTDScomputeClusterCosts;
 
 protected function createTDSInitialCluster"creates the initial Clusters for the task duplication scheduler.
 author: waurich TUD 2014-05"
@@ -1647,7 +1772,8 @@ algorithm
       list<list<Integer>> clusters;
     case(_,_,_,_,_,_,{},_)
       equation
-        clusters = List.map(clustersIn,listReverse);
+        clusters = List.filterOnTrue(clustersIn,List.isNotEmpty);
+        clusters = List.map(clusters,listReverse);
       then clusters;
     case(_,_,_,_,_,_,front::rest,_)
       equation

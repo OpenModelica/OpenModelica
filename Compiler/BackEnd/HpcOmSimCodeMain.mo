@@ -249,6 +249,7 @@ algorithm
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
       (numProc,numFixed) = setNumProc(numProc,cpCostsWoC,taskGraphDataOde);
       schedule = createSchedule(taskGraph1,taskGraphData1,sccSimEqMapping,filenamePrefix,numProc);
+      numProc = Flags.getConfigInt(Flags.NUM_PROC);
       (schedule,numProc) = repeatScheduleWithOtherNumProc(taskGraph1,taskGraphData1,sccSimEqMapping,filenamePrefix,cpCostsWoC,schedule,numProc,numFixed);
       criticalPathInfo = HpcOmScheduler.analyseScheduledTaskGraph(schedule,numProc,taskGraph1,taskGraphData1);
       schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(schedule,arrayLength(taskGraph));
