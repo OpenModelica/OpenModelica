@@ -169,39 +169,33 @@ void printAllVars(DATA *data, int ringSegment, int stream)
   infoStreamPrint(stream, 1, "Print values for buffer segment %d regarding point in time : %e", ringSegment, data->localData[ringSegment]->timeValue);
 
   infoStreamPrint(stream, 1, "states variables");
-  for(i=0; i<mData->nStates; ++i) {
+  for(i=0; i<mData->nStates; ++i)
     infoStreamPrint(stream, 0, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
-  }
   messageClose(stream);
 
   infoStreamPrint(stream, 1, "derivatives variables");
-  for(i=mData->nStates; i<2*mData->nStates; ++i) {
+  for(i=mData->nStates; i<2*mData->nStates; ++i)
     infoStreamPrint(stream, 0, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
-  }
   messageClose(stream);
 
   infoStreamPrint(stream, 1, "other real values");
-  for(i=2*mData->nStates; i<mData->nVariablesReal; ++i) {
+  for(i=2*mData->nStates; i<mData->nVariablesReal; ++i)
     infoStreamPrint(stream, 0, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
-  }
   messageClose(stream);
 
   infoStreamPrint(stream, 1, "integer variables");
-  for(i=0; i<mData->nVariablesInteger; ++i) {
+  for(i=0; i<mData->nVariablesInteger; ++i)
     infoStreamPrint(stream, 0, "%ld: %s = %ld (pre: %ld)", i+1, mData->integerVarsData[i].info.name, data->localData[ringSegment]->integerVars[i], sInfo->integerVarsPre[i]);
-  }
   messageClose(stream);
 
   infoStreamPrint(stream, 1, "boolean variables");
-  for(i=0; i<mData->nVariablesBoolean; ++i) {
+  for(i=0; i<mData->nVariablesBoolean; ++i)
     infoStreamPrint(stream, 0, "%ld: %s = %s (pre: %s)", i+1, mData->booleanVarsData[i].info.name, data->localData[ringSegment]->booleanVars[i] ? "true" : "false", sInfo->booleanVarsPre[i] ? "true" : "false");
-  }
   messageClose(stream);
 
   infoStreamPrint(stream, 1, "string variables");
-  for(i=0; i<mData->nVariablesString; ++i) {
+  for(i=0; i<mData->nVariablesString; ++i)
     infoStreamPrint(stream, 0, "%ld: %s = %s (pre: %s)", i+1, mData->stringVarsData[i].info.name, data->localData[ringSegment]->stringVars[i], sInfo->stringVarsPre[i]);
-  }
   messageClose(stream);
 
   messageClose(stream);
@@ -236,15 +230,18 @@ void printAllVarsDebug(DATA *data, int ringSegment, int stream)
   debugStreamPrint(stream, 1, "other real values");
   for(i=2*mData->nStates; i<mData->nVariablesReal; ++i)
     debugStreamPrint(stream, 0, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
-
+  messageClose(stream);
+  
   debugStreamPrint(stream, 1, "integer variables");
   for(i=0; i<mData->nVariablesInteger; ++i)
     debugStreamPrint(stream, 0, "%ld: %s = %ld (pre: %ld)", i+1, mData->integerVarsData[i].info.name, data->localData[ringSegment]->integerVars[i], sInfo->integerVarsPre[i]);
-
+  messageClose(stream);
+  
   debugStreamPrint(stream, 1, "boolean variables");
   for(i=0; i<mData->nVariablesBoolean; ++i)
     debugStreamPrint(stream, 0, "%ld: %s = %s (pre: %s)", i+1, mData->booleanVarsData[i].info.name, data->localData[ringSegment]->booleanVars[i] ? "true" : "false", sInfo->booleanVarsPre[i] ? "true" : "false");
-
+  messageClose(stream);
+  
   debugStreamPrint(stream, 1, "string variables");
   for(i=0; i<mData->nVariablesString; ++i)
     debugStreamPrint(stream, 0, "%ld: %s = %s (pre: %s)", i+1, mData->stringVarsData[i].info.name, data->localData[ringSegment]->stringVars[i], sInfo->stringVarsPre[i]);
