@@ -2229,7 +2229,7 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpMatching, indexmap);
         Debug.fcall(Flags.BLT_DUMP, print, "\n states index maping inverse\n");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpMatching, invindexmap);
-        
+
         //  BackendDump.dumpMatching(indexmap);
         m1 = arrayCreate(ne1,{});
         mT1 = arrayCreate(nv1,{});
@@ -2243,11 +2243,11 @@ algorithm
         // match the variables not the equations, to have prevered states unmatched
         vec1 = Util.arrayExpand(nfreeStates,ass1,-1);
         vec2 = Util.arrayExpand(neqns,ass2,-1);
-       
+
         Debug.fcall(Flags.BLT_DUMP, print, "\nbefore matching\n");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpMatching, vec1);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpMatching, vec2);
- 
+
         true = BackendDAEEXT.setAssignment(nv1,ne1,vec1,vec2);
         Matching.matchingExternalsetIncidenceMatrix(ne1, nv1, mT1);
         BackendDAEEXT.matching(ne1, nv1, 3, -1, 0.0, 0);
@@ -2256,7 +2256,7 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP, print, "\nafter matching\n");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpMatching, vec1);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpMatching, vec2);
- 
+
         comps = BackendDAETransform.tarjanAlgorithm(mT1,vec2);
         // remove blocks without differentiated equations
         comps = List.select1(comps, selectBlock, ne);
