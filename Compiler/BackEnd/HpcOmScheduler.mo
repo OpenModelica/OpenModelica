@@ -882,6 +882,7 @@ protected function printThreadSchedule
   input Integer iThreadIdx;
   output Integer oThreadIdx;
 algorithm
+  print("--------------\n");
   print("Thread " +& intString(iThreadIdx) +& "\n");
   print("--------------\n");
   printTaskList(iTaskList);
@@ -1595,7 +1596,9 @@ algorithm
   fpredArray := computeFavouritePred(iTaskGraph,iTaskGraphMeta,ectArray); //the favourite predecessor of each node
   //printRealArray(Util.arrayMap(fpredArray,intReal),"fpred");
   (levels,queue) := quicksortWithOrder(arrayList(tdsLevelArray));
-  initClusters := createTDSInitialCluster(iTaskGraph,iTaskGraphMeta,fpredArray,queue);
+  //print("queue:\n"+&stringDelimitList(List.map(queue,intString)," , ")+&"\n");
+  //print("levels:\n"+&stringDelimitList(List.map(levels,realString)," , ")+&"\n");
+  initClusters := createTDSInitialCluster(iTaskGraph,taskGraphT,iTaskGraphMeta,fpredArray,queue);
   //print("initClusters:\n"+&stringDelimitList(List.map(initClusters,intListString),"\n")+&"\n");
   oSchedule := createTDSschedule1(initClusters,iTaskGraph,taskGraphT,iTaskGraphMeta,tdsLevelArray,numProc,iSccSimEqMapping);
 end createTDSschedule;
@@ -1738,6 +1741,7 @@ end createTDScomputeClusterCosts;
 protected function createTDSInitialCluster"creates the initial Clusters for the task duplication scheduler.
 author: waurich TUD 2014-05"
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
+  input HpcOmTaskGraph.TaskGraph iTaskGraphT;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   input array<Integer> fpredArrayIn;
   input list<Integer> queue;
@@ -1748,12 +1752,13 @@ protected
 algorithm
   taskAssignments := arrayCreate(arrayLength(iTaskGraph),-1);
   rootNodes := HpcOmTaskGraph.getRootNodes(iTaskGraph);
-  clustersOut := createTDSInitialCluster1(iTaskGraph,iTaskGraphMeta,fpredArrayIn,rootNodes,taskAssignments,1,queue,{{}});
+  clustersOut := createTDSInitialCluster1(iTaskGraph,iTaskGraphT,iTaskGraphMeta,fpredArrayIn,rootNodes,taskAssignments,1,queue,{{}});
 end createTDSInitialCluster;
 
 protected function createTDSInitialCluster1"implementation of function createTDSInitialCluster.
 author: waurich TUD 2014-05"
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
+  input HpcOmTaskGraph.TaskGraph iTaskGraphT;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   input array<Integer> fpredArrayIn;
   input list<Integer> rootNodes;
@@ -1763,19 +1768,19 @@ author: waurich TUD 2014-05"
   input list<list<Integer>> clustersIn;
   output list<list<Integer>> clustersOut;
 algorithm
-  clustersOut := matchcontinue(iTaskGraph,iTaskGraphMeta,fpredArrayIn,rootNodes,taskAssIn,currThread,queue,clustersIn)
+  clustersOut := matchcontinue(iTaskGraph,iTaskGraphT,iTaskGraphMeta,fpredArrayIn,rootNodes,taskAssIn,currThread,queue,clustersIn)
     local
       Integer front, fpred,pos;
       Real maxExeCost;
       list<Real> parentExeCost;
       list<Integer> rest, parents, parentAssgmnts, unAssParents, thread;
       list<list<Integer>> clusters;
-    case(_,_,_,_,_,_,{},_)
+    case(_,_,_,_,_,_,_,{},_)
       equation
         clusters = List.filterOnTrue(clustersIn,List.isNotEmpty);
         clusters = List.map(clusters,listReverse);
       then clusters;
-    case(_,_,_,_,_,_,front::rest,_)
+    case(_,_,_,_,_,_,_,front::rest,_)
       equation
         // the node is an rootNode
         true = List.isMemberOnTrue(front,rootNodes,intEq);
@@ -1786,9 +1791,9 @@ algorithm
         clusters = List.replaceAt(thread,currThread-1,clustersIn);
         //print("cluster: "+&intListString(thread)+&"\n");
         clusters = listAppend(clusters,{{}});
-        clusters = createTDSInitialCluster1(iTaskGraph,iTaskGraphMeta,fpredArrayIn,rootNodes,taskAssIn,currThread+1,rest,clusters);
+        clusters = createTDSInitialCluster1(iTaskGraph,iTaskGraphT,iTaskGraphMeta,fpredArrayIn,rootNodes,taskAssIn,currThread+1,rest,clusters);
       then clusters;
-    case(_,_,_,_,_,_,front::rest,_)
+    case(_,_,_,_,_,_,_,front::rest,_)
       equation
         // the favourite predecessor is not yet assigned
         fpred = arrayGet(fpredArrayIn,front);
@@ -1803,14 +1808,14 @@ algorithm
         // go to predecessor
         rest = List.removeOnTrue(fpred,intEq,rest);
         rest = fpred::rest;
-        clusters = createTDSInitialCluster1(iTaskGraph,iTaskGraphMeta,fpredArrayIn,rootNodes,taskAssIn,currThread,rest,clusters);
+        clusters = createTDSInitialCluster1(iTaskGraph,iTaskGraphT,iTaskGraphMeta,fpredArrayIn,rootNodes,taskAssIn,currThread,rest,clusters);
       then clusters;
-    case(_,_,_,_,_,_,front::rest,_)
+    case(_,_,_,_,_,_,_,front::rest,_)
       equation
         // the favourite predecessor is already assigned
         fpred = arrayGet(fpredArrayIn,front);
         true = intNe(arrayGet(taskAssIn,fpred),-1);
-        print("node (NOT THE FPRED): "+&intString(front)+&"\n");
+        //print("node (fpred is assigned): "+&intString(front)+&"\n");
         //assign node from queue to a thread (in reversed order)
         thread = listGet(clustersIn,currThread);
         thread = front::thread;
@@ -1818,19 +1823,19 @@ algorithm
         //print("cluster: "+&intListString(thread)+&"\n");
         _ = arrayUpdate(taskAssIn,front,currThread);
         // check for other parents to get the next fpred
-        parents = arrayGet(iTaskGraph,front);
+        parents = arrayGet(iTaskGraphT,front);
         parentAssgmnts = List.map1(parents,Util.arrayGetIndexFirst,taskAssIn);
         (_,unAssParents) = List.filter1OnTrueSync(parentAssgmnts,intEq,-1,parents); // not yet assigned parents
-        // if there are unassigned parents, use them, otherwise all parents.take the one with the least execution cost
+        // if there are unassigned parents, use them, otherwise all parents. take the one with the least execution cost
         parents = Util.if_(List.isEmpty(unAssParents),parents,unAssParents);
         parentExeCost = List.map1(parents,HpcOmTaskGraph.getExeCostReqCycles,iTaskGraphMeta);
         maxExeCost = List.fold(parentExeCost,realMax,0.0);
-        pos = List.position(maxExeCost,parentExeCost) - 1;
+        pos = List.position(maxExeCost,parentExeCost) + 1;
         fpred = listGet(parents,pos);
         // go to predecessor
         rest = List.removeOnTrue(fpred,intEq,rest);
         rest = fpred::rest;
-        clusters = createTDSInitialCluster1(iTaskGraph,iTaskGraphMeta,fpredArrayIn,rootNodes,taskAssIn,currThread,rest,clusters);
+        clusters = createTDSInitialCluster1(iTaskGraph,iTaskGraphT,iTaskGraphMeta,fpredArrayIn,rootNodes,taskAssIn,currThread,rest,clusters);
       then clusters;
     else
      equation
