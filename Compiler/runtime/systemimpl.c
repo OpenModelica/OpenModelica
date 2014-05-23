@@ -162,6 +162,8 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #include <unistd.h>
 #include <dlfcn.h>
 #include <stdlib.h>
+#include <spawn.h>
+extern char **environ;
 
 #define HAVE_SCANDIR
 
@@ -746,26 +748,12 @@ int SystemImpl__spawnCall(const char* path, const char* str)
 #if defined(__MINGW32__) || defined(_MSC_VER)
   ret_val = spawnl(P_DETACH, path, str, "", NULL);
 #else
-  pid_t pID = vfork();
-  if (pID == 0) { // child
-    execl("/bin/sh", "/bin/sh", "-c", str, NULL);
-    if (debug) {
-      fprintf(stderr, "System.spawnCall: execl failed %s\n", strerror(errno));
-      fflush(NULL);
-    }
-    _exit(1);
-  } else if (pID < 0) {
-    const char *tokens[2] = {strerror(errno),str};
-    c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("system(%s) failed: %s"),tokens,2);
-    return -1;
-  }
-  ret_val = 0;
+  pid_t pid;
+  int status;
+  const char *argv[4] = {"/bin/sh","-c",str,NULL};
+  ret_val = 0 == posix_spawn(&pid, "/bin/sh", NULL, NULL, argv, environ);
 #endif
   fflush(NULL); /* flush output so the testsuite is deterministic */
-
-  if (debug) {
-    fprintf(stderr, "System.spawnCall: returned\n"); fflush(NULL);
-  }
 
   if (debug) {
     fprintf(stderr, "System.spawnCall: returned value: %d\n", ret_val); fflush(NULL);
