@@ -503,6 +503,8 @@ int functionODE_residual(double *t, double *y, double *yd, double* cj, double *d
   long i;
   int saveJumpState;
   int success = 0;
+  
+  TRACE_PUSH
 
   timeBackup = data->localData[0]->timeValue;
   data->localData[0]->timeValue = *t;
@@ -524,7 +526,8 @@ int functionODE_residual(double *t, double *y, double *yd, double* cj, double *d
 
     /* get the difference between the temp_xd(=localData->statesDerivatives)
        and xd(=statesDerivativesBackup) */
-    for(i=0; i < data->modelData.nStates; i++) {
+    for(i=0; i < data->modelData.nStates; i++)
+    {
       delta[i] = data->localData[0]->realVars[data->modelData.nStates + i] - yd[i];
     }
     success = 1;
@@ -540,6 +543,7 @@ int functionODE_residual(double *t, double *y, double *yd, double* cj, double *d
 
   data->localData[0]->timeValue = timeBackup;
 
+  TRACE_POP
   return 0;
 }
 

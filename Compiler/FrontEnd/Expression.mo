@@ -7201,7 +7201,6 @@ algorithm
 
     case (DAE.TUPLE(PR = ae),_) then isConstWorkList(ae,true);
 
-
     case (DAE.ASUB(exp=e,sub=ae),_) then isConstWorkList(ae,isConstWork(e,true));
 
     case (DAE.TSUB(exp=e),_) then isConstWork(e,true);
@@ -7219,7 +7218,6 @@ algorithm
       then isConstWork(e1,isConstWork(e2,true));
 
     else false;
-
   end match;
 end isConstWork;
 

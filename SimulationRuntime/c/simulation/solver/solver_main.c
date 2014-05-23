@@ -410,6 +410,8 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
   int ui;
 
   SIMULATION_INFO *simInfo = &(data->simulationInfo);
+  
+  TRACE_PUSH
 
   /* Last step with terminal()=true */
   if(solverInfo->currentTime >= simInfo->stopTime && solverInfo->solverMethod != S_OPTIMIZATION)
@@ -498,6 +500,8 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
 
     rt_tick(SIM_TIMER_TOTAL);
   }
+  
+  TRACE_POP
   return retValue;
 }
 
