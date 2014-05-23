@@ -35,6 +35,7 @@ endif
 $(LIB): Makefile.lib
 	$(MAKE) -f $<
 	cp -a ../bin/libOMPlot* $(top_builddir)/build/lib/omc/
+	install_name_tool -id @rpath/libOMPlot.1.0.0.dylib $(top_builddir)/build/lib/omc/libOMPlot.1.0.0.dylib
 
 build: $(NAME) $(LIB)
 	cp -p ../bin/$(NAME) $(builddir_bin)
