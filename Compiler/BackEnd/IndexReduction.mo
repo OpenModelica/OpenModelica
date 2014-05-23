@@ -2199,7 +2199,7 @@ algorithm
         true = intGt(nfreeStates,1);
         false = intGt(neqns,nfreeStates);
         Debug.fcall(Flags.BLT_DUMP, print, "try to select dummy vars with natural matching(newer)\n");
-        Debug.fcall(Flags.BLT_DUMP, print, "Vars " +& intString(nfreeStates) +& " Eqns " +& intString(neqns) +& "\n");
+        //  print("Vars " +& intString(nfreeStates) +& " Eqns " +& intString(neqns) +& "\n");
         // sort vars with heuristic
         hovvars = BackendVariable.listVar1(statecandidates);
         eqns1 = BackendEquation.listEquation(eqnslst);
@@ -2207,12 +2207,8 @@ algorithm
         (me,meT,_,_) =  BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst,ishared);
         m1 = incidenceMatrixfromEnhanced2(me,hovvars);
         mT1 = BackendDAEUtil.transposeMatrix(m1,nfreeStates);
-
-        Debug.fcall(Flags.BLT_DUMP, print, "\n System at begin\n");
-        Debug.fcall(Flags.BLT_DUMP,BackendDump.printEqSystem, syst);
-
+        //  BackendDump.printEqSystem(syst);
         hovvars = sortStateCandidatesVars(hovvars,BackendVariable.daeVars(isyst),SOME(mT1));
-        hovvars = BackendVariable.compressVariables(hovvars);
         Debug.fcall(Flags.BLT_DUMP, print, "highest Order Derivatives:\n");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.printVariables, hovvars);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.printEquationList, eqnslst);
@@ -2221,47 +2217,31 @@ algorithm
         ne = BackendDAEUtil.equationSize(eqns);
         neqnarr = BackendDAEUtil.equationArraySize(eqns);
         ne1 = ne + neqns;
-        indexmap = arrayCreate(nfreeStates + nv, -1);
-        invindexmap = arrayCreate(nfreeStates, -1);
+        indexmap = arrayCreate(nfreeStates  + nv,-1);
+        invindexmap = arrayCreate(nfreeStates,-1);
         // workaround to get state indexes
-        (vars,(indexmap,invindexmap,nv1,_,_,_)) = BackendVariable.traverseBackendDAEVarsWithUpdate(vars,getStateIndexes,(indexmap,invindexmap,1,nv,hovvars,{}));
-        Debug.fcall(Flags.BLT_DUMP, print, "\n states index maping\n");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpMatching, indexmap);
-        Debug.fcall(Flags.BLT_DUMP, print, "\n states index maping inverse\n");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpMatching, invindexmap);
-
+        (vars,(indexmap,invindexmap,nv1,_,_,_)) = BackendVariable.traverseBackendDAEVarsWithUpdate(vars,getStateIndexes,(indexmap,invindexmap,nv,nv,hovvars,{}));
         //  BackendDump.dumpMatching(indexmap);
         m1 = arrayCreate(ne1,{});
         mT1 = arrayCreate(nv1,{});
         mapEqnIncRow = Util.arrayExpand(neqns,iMapEqnIncRow,{});
         mapIncRowEqn = Util.arrayExpand(neqns,iMapIncRowEqn,-1);
         // replace state indexes in original incidencematrix
-        getIncidenceMatrixSelectStates(ne,m1,mT1,m,invindexmap);
+        getIncidenceMatrixSelectStates(ne,m1,mT1,m,indexmap);
         // add level equations
         funcs = BackendDAEUtil.getFunctions(ishared);
         getIncidenceMatrixLevelEquations(eqnslst,vars,neqnarr,ne,m1,mT1,m,mapEqnIncRow,mapIncRowEqn,indexmap,funcs);
         // match the variables not the equations, to have prevered states unmatched
         vec1 = Util.arrayExpand(nfreeStates,ass1,-1);
         vec2 = Util.arrayExpand(neqns,ass2,-1);
-
-        Debug.fcall(Flags.BLT_DUMP, print, "\nbefore matching\n");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpMatching, vec1);
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpMatching, vec2);
-
         true = BackendDAEEXT.setAssignment(nv1,ne1,vec1,vec2);
         Matching.matchingExternalsetIncidenceMatrix(ne1, nv1, mT1);
         BackendDAEEXT.matching(ne1, nv1, 3, -1, 0.0, 0);
         BackendDAEEXT.getAssignment(vec1, vec2);
-
-        Debug.fcall(Flags.BLT_DUMP, print, "\nafter matching\n");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpMatching, vec1);
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpMatching, vec2);
-
         comps = BackendDAETransform.tarjanAlgorithm(mT1,vec2);
         // remove blocks without differentiated equations
         comps = List.select1(comps, selectBlock, ne);
-        Debug.fcall(Flags.BLT_DUMP, print, "\n Components after tarjan\n");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpComponentsOLD, comps);
+        //  BackendDump.dumpComponentsOLD(comps);
         //  eqns1 = BackendEquation.listEquation(BackendEquation.equationList(eqns));
         //  eqns1 = BackendEquation.addEquations(eqnslst, eqns1);
         //  List.map3_0(comps, dumpBlock, mapIncRowEqn, nv, BackendDAE.EQSYSTEM(vars,eqns1,SOME(m1),NONE(),BackendDAE.MATCHING(invindexmap,vec2,{}),{}) );
@@ -2278,7 +2258,6 @@ algorithm
         vars = BackendVariable.listVar1(vlst);
         vars = BackendVariable.addVars(BackendVariable.varList(hovvars), vars);
         syst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),{});
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.printEqSystem, syst);
         // get advanced incidence Matrix
         (me,meT,mapEqnIncRow,mapIncRowEqn) =  BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst,ishared);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpAdjacencyMatrixEnhanced,me);
@@ -2290,11 +2269,10 @@ algorithm
         mT = BackendDAEUtil.transposeMatrix(m,nv);
         // match the variables not the equations, to have prevered states unmatched
         Matching.matchingExternalsetIncidenceMatrix(ne,nv,mT);
-        BackendDAEEXT.matching(ne, nv, 3, -1, 1.0, 1);
+        BackendDAEEXT.matching(ne,nv,3,-1,1.0,1);
         vec1 = arrayCreate(nv,-1);
         vec2 = arrayCreate(ne,-1);
         BackendDAEEXT.getAssignment(vec1,vec2);
-        Debug.fcall(Flags.BLT_DUMP, print, "\n Second matching: \n");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpMatching, vec1);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpMatching, vec2);
         // get the matched state candidates -> dummyVars
@@ -2311,14 +2289,12 @@ algorithm
         // splitt it into sets
         syst = BackendDAEUtil.setEqSystemMatching(syst, BackendDAE.MATCHING(vec1,vec2,{}));
         //  dumpSystemGraphML(syst,ishared,NONE(),"StateSelection" +& intString(arrayLength(m)) +& ".graphml");
-        (syst,m,mT,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(syst, BackendDAE.ABSOLUTE(), SOME(funcs));
+        (syst,m,mT,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(syst,BackendDAE.ABSOLUTE(), SOME(funcs));
         // TODO: partition the system
         comps = partitionSystem(m,mT);
-        Debug.fcall(Flags.BLT_DUMP, print, "Sets:\n");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpIncidenceMatrix, m);
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpIncidenceMatrix, mT);
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpIncidenceMatrix, listArray(comps));
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.printEqSystem, syst);
+        //  print("Sets:\n");
+        //  BackendDump.dumpIncidenceMatrix(listArray(comps));
+        //  BackendDump.printEqSystem(syst);
         (vlst,_,stateSets) = processComps4New(comps,nv,ne,vars,eqns,m,mT,mapEqnIncRow,mapIncRowEqn,vec2,vec1,level,ishared,{},{},iStateSets);
         vlst = List.select(vlst, BackendVariable.isStateVar);
         dummyVars = listAppend(dummyVars,vlst);
@@ -2440,10 +2416,8 @@ algorithm
     case ((v as BackendDAE.VAR(varName=cr,varKind=BackendDAE.STATE(derName=_)),(stateindexs,invmap,indx,nv,hov,derstatesindexs)))
       equation
         (_::_,{s}) = BackendVariable.getVar(cr, hov);
-        //print("getStateIndexes: " +& ComponentReference.printComponentRefStr(cr) +& "\n" +&
-        //       "index : " +& intString(indx) +& "  s: " +& intString(s) +& "\n");
         _= arrayUpdate(stateindexs,indx,s);
-        _= arrayUpdate(invmap,s,indx);
+        _= arrayUpdate(invmap,s-nv,indx);
       then
         ((v,(stateindexs,invmap,indx+1,nv,hov,indx::derstatesindexs)));
     case ((v,(stateindexs,invmap,indx,nv,hov,derstatesindexs)))
@@ -2725,21 +2699,21 @@ algorithm
         (varlst,dummyStates,stateSets);
     case (seteqns::sets,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        Debug.fcall(Flags.BLT_DUMP, print, "seteqns: " +& intString(listLength(seteqns)) +& "\n");
-        Debug.fcall(Flags.BLT_DUMP, print, stringDelimitList(List.map(seteqns,intString),", ") +& "\n");
+        //  print("seteqns: " +& intString(listLength(seteqns)) +& "\n");
+        //  print(stringDelimitList(List.map(seteqns,intString),", ") +& "\n");
         unassigned = List.select1r(seteqns,Matching.isUnAssigned,vec1);
         n = arrayLength(inM);
         set = getEqnsforDynamicStateSelection(unassigned,n,inM,inMT,vec1,vec2,inMapEqnIncRow,inMapIncRowEqn);
         assigned = List.select1r(set,Matching.isAssigned,vec1);
-        Debug.fcall(Flags.BLT_DUMP, print, "Set: " +& intString(listLength(set)) +& "\n");
-        Debug.fcall(Flags.BLT_DUMP, print, stringDelimitList(List.map(set,intString),", ") +& "\n");
-        Debug.fcall(Flags.BLT_DUMP, print, "assigned: " +& intString(listLength(assigned)) +& "\n");
-        Debug.fcall(Flags.BLT_DUMP, print, stringDelimitList(List.map(assigned,intString),", ") +& "\n");
+        //  print("Set: " +& intString(listLength(set)) +& "\n");
+        //  print(stringDelimitList(List.map(set,intString),", ") +& "\n");
+        //  print("assigned: " +& intString(listLength(assigned)) +& "\n");
+        //  print(stringDelimitList(List.map(assigned,intString),", ") +& "\n");
         flag = arrayCreate(inVarSize,true);
         ((statevars,_)) = List.fold3(set,getSetStates,flag,inM,vec2,({},{}));
-        Debug.fcall(Flags.BLT_DUMP, print, "Statevars: " +& intString(listLength(statevars)) +& "\n");
-        Debug.fcall(Flags.BLT_DUMP, print, stringDelimitList(List.map(statevars,intString),", ") +& "\n");
-        Debug.fcall(Flags.BLT_DUMP, print, "Select " +& intString(listLength(unassigned)) +& " from " +& intString(listLength(statevars)) +& "\n");
+        //  print("Statevars: " +& intString(listLength(statevars)) +& "\n");
+        //  print(stringDelimitList(List.map(statevars,intString),", ") +& "\n");
+        //  print("Select " +& intString(listLength(unassigned)) +& " from " +& intString(listLength(statevars)) +& "\n");
         nstatevars = listLength(statevars);
         ass1 = List.consN(nstatevars, -1, {});
         nunassigned = listLength(unassigned);
@@ -2748,9 +2722,9 @@ algorithm
         assigend1 = List.map1r(unassigned,arrayGet,inMapIncRowEqn);
         n = arrayLength(inMapIncRowEqn);
         assigend1 = List.uniqueIntN(assigend1,n);
-        Debug.fcall(Flags.BLT_DUMP, print, "BackendEquation.getEqns " +& stringDelimitList(List.map(assigend1,intString),", ") +& "\n");
+        //  print("BackendEquation.getEqns " +& stringDelimitList(List.map(assigend1,intString),", ") +& "\n");
         eqnlst = BackendEquation.getEqns(assigend1,iEqns);
-        Debug.fcall(Flags.BLT_DUMP, print, "BackendEquation.equationRemove " +& stringDelimitList(List.map(assigend1,intString),", ") +& "\n");
+        //  print("BackendEquation.equationRemove " +& stringDelimitList(List.map(assigend1,intString),", ") +& "\n");
         eqns1 = List.fold(assigend1,BackendEquation.equationRemove,iEqns);
         nassigned = listLength(assigned);
         flag = arrayCreate(inEqnsSize,true);
@@ -2758,9 +2732,9 @@ algorithm
         eqns = BackendEquation.listEquation(eqnlst);
         vars = BackendVariable.listVar1(varlst);
         syst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),{});
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.printEqSystem, syst);
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpMatching, listArray(ass1));
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpMatching, listArray(ass2));
+        //  BackendDump.printEqSystem(syst);
+        //  BackendDump.dumpMatching(listArray(ass1));
+        //  BackendDump.dumpMatching(listArray(ass2));
         (_,_,_,mapIncRowEqn1) = BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst,iShared);
         ass1arr = listArray(ass1);
         nass1arr = arrayLength(ass1arr);
