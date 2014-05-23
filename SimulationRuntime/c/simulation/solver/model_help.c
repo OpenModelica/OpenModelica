@@ -231,17 +231,17 @@ void printAllVarsDebug(DATA *data, int ringSegment, int stream)
   for(i=2*mData->nStates; i<mData->nVariablesReal; ++i)
     debugStreamPrint(stream, 0, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
   messageClose(stream);
-  
+
   debugStreamPrint(stream, 1, "integer variables");
   for(i=0; i<mData->nVariablesInteger; ++i)
     debugStreamPrint(stream, 0, "%ld: %s = %ld (pre: %ld)", i+1, mData->integerVarsData[i].info.name, data->localData[ringSegment]->integerVars[i], sInfo->integerVarsPre[i]);
   messageClose(stream);
-  
+
   debugStreamPrint(stream, 1, "boolean variables");
   for(i=0; i<mData->nVariablesBoolean; ++i)
     debugStreamPrint(stream, 0, "%ld: %s = %s (pre: %s)", i+1, mData->booleanVarsData[i].info.name, data->localData[ringSegment]->booleanVars[i] ? "true" : "false", sInfo->booleanVarsPre[i] ? "true" : "false");
   messageClose(stream);
-  
+
   debugStreamPrint(stream, 1, "string variables");
   for(i=0; i<mData->nVariablesString; ++i)
     debugStreamPrint(stream, 0, "%ld: %s = %s (pre: %s)", i+1, mData->stringVarsData[i].info.name, data->localData[ringSegment]->stringVars[i], sInfo->stringVarsPre[i]);
