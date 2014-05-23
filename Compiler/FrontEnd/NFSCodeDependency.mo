@@ -1542,8 +1542,9 @@ algorithm
       then
         inEnv;
 
-    case (Absyn.CALL(functionArgs = Absyn.FOR_ITER_FARG(iterators = iters)), _, _)
+    case (Absyn.CALL(function_ = cref, functionArgs = Absyn.FOR_ITER_FARG(iterators = iters)), _, _)
       equation
+        analyseCref(cref, inEnv, inInfo); // For user-defined reductions
         env = NFSCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), inEnv);
       then
         env;
