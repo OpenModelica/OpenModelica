@@ -104,6 +104,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
        <%generateMethodDeclarationCode(simCode)%>
      virtual  bool getCondition(unsigned int index);
+     virtual void initPreVars(unordered_map<string,unsigned int>&,unordered_map<string,unsigned int>&);
   protected:
 
     //Methods:
@@ -134,6 +135,16 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      <%generateAlgloopsolverVariables(listAppend(allEquations,initialEquations),simCode)%>
 
     boost::shared_ptr<ISimData> _simData;
+
+    <%generateEquationMemberFuncDecls(allEquations)%>
+
+    /*! Equations Array. pointers to all the equation functions listed above stored in this
+      array. It is used to randomly access and evaluate a single equation by index.
+    */
+    typedef void (<%lastIdentOfPath(modelInfo.name)%>::*EquFuncPtr)();
+    boost::array< EquFuncPtr, <%listLength(allEquations)%> > equations_array;
+
+    void initialize_equations_array();
 
    };
   >>
@@ -452,6 +463,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   let hpcomConstructorExtension = getHpcomConstructorExtension(hpcOmSchedule, lastIdentOfPath(modelInfo.name))
   let hpcomDestructorExtension = getHpcomDestructorExtension(hpcOmSchedule)
   let memoryExtension = MemberVariableAssign(modelInfo, hpcOmMemory)
+  let className = lastIdentOfPath(modelInfo.name)
   <<
    #include "Modelica.h"
    #include <System/IMixedSystem.h>
@@ -465,12 +477,14 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    #include "OMCpp<%fileNamePrefix%>.h"
 
 
-    <%lastIdentOfPath(modelInfo.name)%>::<%lastIdentOfPath(modelInfo.name)%>(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData)
-   :SystemDefaultImplementation(*globalSettings)
-    ,_algLoopSolverFactory(nonlinsolverfactory)
-    ,_simData(simData)
-    <%simulationInitFile(simCode)%>
-    <%memoryExtension%>
+
+
+    /* Constructor */
+    <%className%>::<%className%>(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData)
+        :SystemDefaultImplementation(*globalSettings)
+        ,_algLoopSolverFactory(nonlinsolverfactory)
+        ,_simData(simData)
+        <%simulationInitFile(simCode)%>
     {
     //Number of equations
     <%dimension1(simCode)%>
@@ -481,16 +495,20 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       <<
       _dimResidues=<%numResidues(allEquations)%>;
       >>
+
     %>
     //DAE's are not supported yet, Index reduction is enabled
     _dimAE = 0; // algebraic equations
     //Initialize the state vector
     SystemDefaultImplementation::initialize();
     //Instantiate auxiliary object for event handling functionality
-    _event_handling.getCondition =  boost::bind(&<%lastIdentOfPath(modelInfo.name)%>::getCondition, this, _1);
+    _event_handling.getCondition =  boost::bind(&<%className%>::getCondition, this, _1);
      <%arrayReindex(modelInfo)%>
     //Initialize array elements
     <%initializeArrayElements(simCode)%>
+
+    /*Initialize the equations array. Point to each equation function*/
+    initialize_equations_array();
 
     <%hpcomConstructorExtension%>
 
@@ -500,6 +518,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
        <%hpcomDestructorExtension%>
     }
 
+
+    <%InitializeEquationsArray(allEquations, className)%>
 
    <%Update(simCode)%>
 
@@ -523,6 +543,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <%getCondition(zeroCrossings,whenClauses,simCode)%>
    <%handleSystemEvents(zeroCrossings,whenClauses,simCode)%>
    <%saveall(modelInfo,simCode)%>
+   <%initPrevars(modelInfo,simCode)%>
    <%savediscreteVars(modelInfo,simCode)%>
    <%LabeledDAE(modelInfo.labels,simCode)%>
     <%giveVariables(modelInfo)%>
@@ -656,10 +677,17 @@ end getHpcomDestructorExtension;
 
 template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> whenClauses, SimCode simCode, Context context)
 ::=
+  let &varDecls = buffer "" /*BUFD*/
+  let &eqfuncs = buffer ""
+  let equation_func_calls = (allEquationsPlusWhen |> eq hasindex i0 =>
+                    equation_function_format(eq, i0, contextSimulationDiscrete, &varDecls /*BUFC*/, &eqfuncs, simCode)
+                    ;separator="\n")
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
       let parCode = update2(allEquationsPlusWhen, modelInfo.name, whenClauses, simCode, hpcOmSchedule, context, lastIdentOfPath(modelInfo.name))
       <<
+      <%eqfuncs%>
+      
       <%parCode%>
       >>
 end update;
@@ -667,13 +695,12 @@ end update;
 template update2(list<SimEqSystem> allEquationsPlusWhen, Absyn.Path name, list<SimWhenClause> whenClauses, SimCode simCode, Option<Schedule> hpcOmScheduleOpt, Context context, String modelNamePrefixStr)
 ::=
   let &varDecls = buffer "" /*BUFD*/
-  let all_equations = (allEquationsPlusWhen |> eqs => (eqs |> eq =>
+  /* let all_equations = (allEquationsPlusWhen |> eqs => (eqs |> eq =>
       equation_(eq, contextSimulationDiscrete, &varDecls /*BUFC*/,simCode))
-    ;separator="\n")
+    ;separator="\n") */
 
-  let reinit = (whenClauses |> when hasindex i0 =>
-         genreinits(when, &varDecls,i0,simCode,context)
-    ;separator="\n";empty)
+  /* let reinit = (whenClauses |> when hasindex i0 => genreinits(when, &varDecls,i0,simCode,context)
+    ;separator="\n";empty) */
   let type = getConfigString(HPCOM_CODE)
 
   match hpcOmScheduleOpt
@@ -702,7 +729,7 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, Absyn.Path name, list<S
                         <%function_HPCOM_releaseLock("finishedEvaluateLock","","pthreads")%>
 
                     <%odeEqs%>
-                    <%reinit%>
+
                     #pragma omp barrier
                     #pragma omp master
                     {
@@ -733,7 +760,6 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, Absyn.Path name, list<S
         case ("openmp") then
           let taskEqs = function_HPCOM_Thread(allEquationsPlusWhen,hpcOmSchedule.threadTasks, type, &varDecls, simCode); separator="\n"
           <<
-
           //using type: <%type%>
           bool <%lastIdentOfPath(name)%>::evaluate(const UPDATETYPE command)
           {
@@ -742,7 +768,6 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, Absyn.Path name, list<S
 
             <%&varDecls%>
             <%taskEqs%>
-            <%reinit%>
 
             return state_var_reinitialized;
           }
@@ -752,7 +777,6 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, Absyn.Path name, list<S
           let threadAssignLocks1 = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_assignLock(i0, "th_lock1", type); separator="\n"
           let threadReleaseLocks = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_releaseLock(i0, "th_lock", type); separator="\n"
           <<
-
           <%threadFuncs%>
 
           //using type: <%type%>
@@ -762,7 +786,6 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, Absyn.Path name, list<S
             this->command = command;
             <%threadReleaseLocks%>
             <%threadAssignLocks1%>
-            <%reinit%>
 
             return state_var_reinitialized;
           }
@@ -780,7 +803,6 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, Absyn.Path name, list<S
 
                   <%&varDecls%>
                   <%taskEqs%>
-                  <%reinit%>
 
                   return state_var_reinitialized;
                 }
@@ -983,6 +1005,7 @@ template function_HPCOM_Task(list<SimEqSystem> allEquationsPlusWhen, Task iTask,
   match iTask
     case (task as CALCTASK(__)) then
       let odeEqs = task.eqIdc |> eq => equationNamesHPCOM_(eq,allEquationsPlusWhen,contextSimulationNonDiscrete,&varDecls, simCode); separator="\n"
+      let &varDeclsLocal = buffer "" /*BUFL*/
       <<
       // Task <%task.index%>
       <%odeEqs%>
@@ -990,6 +1013,7 @@ template function_HPCOM_Task(list<SimEqSystem> allEquationsPlusWhen, Task iTask,
       >>
     case (task as CALCTASK_LEVEL(__)) then
       let odeEqs = task.eqIdc |> eq => equationNamesHPCOM_(eq,allEquationsPlusWhen,contextSimulationNonDiscrete,&varDecls, simCode); separator="\n"
+      let &varDeclsLocal = buffer "" /*BUFL*/
       <<
       <%odeEqs%>
       >>
@@ -1008,13 +1032,10 @@ template function_HPCOM_Task(list<SimEqSystem> allEquationsPlusWhen, Task iTask,
 end function_HPCOM_Task;
 
 template equationNamesHPCOM_(Integer idx, list<SimEqSystem> allEquationsPlusWhen, Context context, Text &varDecls, SimCode simCode)
- "Generates an equation.
-  This template should not be used for a SES_RESIDUAL.
-  Residual equations are handled differently."
 ::=
-    let eq =  equation_(getSimCodeEqByIndex(allEquationsPlusWhen, idx), context, &varDecls, simCode)
+    //let eq =  equation_(getSimCodeEqByIndex(allEquationsPlusWhen, idx), context, &varDecls, simCode)
     <<
-    <%eq%>
+    evaluate_<%idx%>();
     >>
 end equationNamesHPCOM_;
 
@@ -1362,7 +1383,7 @@ OFILES=$(CPPFILES:.cpp=.o)
 .PHONY: <%lastIdentOfPath(modelInfo.name)%> $(CPPFILES)
 
 <%fileNamePrefix%>: $(MAINFILE) $(OFILES)
-<%if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then "#"%><%\t%>$(CXX) -shared -I. -o $(SYSTEMOBJ) $(OFILES) $(CPPFLAGS) $(LDSYTEMFLAGS)  <%dirExtra%> <%libsPos1%> <%libsPos2%> -lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath
+<%if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then "#"%><%\t%>$(CXX) -shared -I. -o $(SYSTEMOBJ) $(OFILES) $(CPPFLAGS) $(LDMAINFLAGS)  <%dirExtra%> <%libsPos1%> <%libsPos2%> -lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath
 <%if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then "#"%><%\t%>$(CXX) $(CPPFLAGS) -I. -o $(MAINOBJ) $(MAINFILE) $(LDMAINFLAGS)
 <%if boolNot(Flags.isSet(Flags.HPCOM_ANALYZATION_MODE)) then "#"%><%\t%>$(CXX) -I. -o $(MAINOBJ) $(MAINFILE) $(OFILES) -D BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR $(CPPFLAGS) -I. $(LDMAINFLAGS)
 <% if boolNot(stringEq(makefileParams.platform, "win32")) then
