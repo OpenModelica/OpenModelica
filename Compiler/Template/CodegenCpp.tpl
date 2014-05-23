@@ -9616,14 +9616,16 @@ template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> when
         int offset = (*iter) - first_equation_index;
         (this->*equations_array[offset])();
     }
+   return false;
   }
 
   /*! Evaluates only a single equation by index. */
   bool <%className%>::evaluate_single(const int index) {
     int offset = index - first_equation_index;
     (this->*equations_array[offset])();
+    return false;
   }
-
+   
   >>
 end update;
  /*Ranking: removed from update: if(command & IContinuous::RANKING) checkConditions();*/

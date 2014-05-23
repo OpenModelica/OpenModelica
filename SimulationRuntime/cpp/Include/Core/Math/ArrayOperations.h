@@ -1,7 +1,5 @@
 #pragma once
 //#define BOOST_ENABLE_ASSERT_HANDLER
-#include <boost/assert.hpp>
-#include <boost/algorithm/minmax_element.hpp>
 
 /*****************************************************************************/
 /**
@@ -23,18 +21,8 @@ Assertion function
 */
 //void boost::assertion_failed(char const * expr, char const * function,
 //                             char const * file, long line);
-#include <boost/multi_array.hpp>
-#include <functional>
-#define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
-#include <boost/numeric/ublas/storage.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/io.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
-using namespace boost::numeric;
-using boost::multi_array;
-using boost::const_multi_array_ref;
-using boost::multi_array_ref;
+
+
 /*index type for multi array, first shape, second indeces*/
 typedef std::vector<std::vector<size_t> > idx_type;
 typedef std::pair<vector<size_t>,idx_type >  spec_type;

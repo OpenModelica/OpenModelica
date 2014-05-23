@@ -48,10 +48,20 @@
 #include "Utils/extension/factory_map.hpp"
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
-//#include <boost/archive/xml_oarchive.hpp>
-//#include <boost/archive/xml_iarchive.hpp>
 #include <boost/multi_array.hpp>
-#include <boost/unordered_map.hpp>
+#include <functional>
+#define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
+#include <boost/numeric/ublas/storage.hpp>
+#include <boost/numeric/ublas/vector.hpp>
+#include <boost/numeric/ublas/io.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/matrix_proxy.hpp>
+#include <boost/assert.hpp>
+#include <boost/algorithm/minmax_element.hpp>
+using namespace boost::numeric;
+using boost::multi_array;
+using boost::const_multi_array_ref;
+using boost::multi_array_ref;
 
     /*Namespaces*/
 using namespace boost::extensions;
@@ -123,4 +133,12 @@ using namespace boost::extensions;
 namespace fs = boost::filesystem;
 using boost::unordered_map;
 #endif
-
+/*
+template class boost::multi_array<double,2>; 
+template class boost::multi_array<double,1>;
+template class boost::multi_array<int,2>; 
+template class boost::multi_array<int,1>;
+template class ublas::vector<double>;
+template class ublas::vector<int>; 
+template class uBlas::compressed_matrix<double, uBlas::column_major, 0, uBlas::unbounded_array<int>, uBlas::unbounded_array<double> > ;
+*/

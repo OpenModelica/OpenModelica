@@ -66,9 +66,16 @@ using namespace std;
 #include "Utils/extension/factory_map.hpp"
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
-//#include <boost/archive/xml_oarchive.hpp>
-//#include <boost/archive/xml_iarchive.hpp>
-
+#include <boost/assert.hpp>
+#include <boost/algorithm/minmax_element.hpp>
+#include <boost/multi_array.hpp>
+#include <functional>
+#define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
+#include <boost/numeric/ublas/storage.hpp>
+#include <boost/numeric/ublas/vector.hpp>
+#include <boost/numeric/ublas/io.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/unordered_map.hpp>
 
     /*Namespaces*/
@@ -79,8 +86,9 @@ namespace uBlas = boost::numeric::ublas;
 using namespace boost::extensions;
 using namespace boost::assign;
 using namespace boost::numeric;
-
-
+using boost::multi_array;
+using boost::const_multi_array_ref;
+using boost::multi_array_ref;
 using boost::unordered_map;
 using boost::lexical_cast;
 using boost::numeric_cast;
@@ -132,3 +140,12 @@ typedef ublas::matrix<double, adaptor_t> shared_matrix_t;
 #include <System/IEvent.h>
 #include <Solver/INonLinSolverSettings.h>
 #include <DataExchange/IHistory.h>
+/*
+extern template class boost::multi_array<double,2>; 
+extern template class boost::multi_array<double,1>;
+extern template class boost::multi_array<int,2>; 
+extern template class boost::multi_array<int,1>;
+extern template class ublas::vector<double>;
+extern template class ublas::vector<int>; 
+extern template class uBlas::compressed_matrix<double, uBlas::column_major, 0, uBlas::unbounded_array<int>, uBlas::unbounded_array<double> > ;
+*/

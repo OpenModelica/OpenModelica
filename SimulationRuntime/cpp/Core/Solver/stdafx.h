@@ -54,6 +54,17 @@
 //#include <boost/archive/xml_iarchive.hpp>
 
 #include <boost/unordered_map.hpp>
+#include <boost/numeric/ublas/storage.hpp>
+#include <boost/numeric/ublas/vector.hpp>
+#include <boost/numeric/ublas/io.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/matrix_proxy.hpp>
+#include <boost/assert.hpp>
+#include <boost/algorithm/minmax_element.hpp>
+using namespace boost::numeric;
+using boost::multi_array;
+using boost::const_multi_array_ref;
+using boost::multi_array_ref;
 
     /*Namespaces*/
 using namespace boost::extensions;
