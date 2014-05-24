@@ -2036,8 +2036,8 @@ algorithm
         nv1 = BackendVariable.varsSize(BackendVariable.daeVars(syst));
         ne1 = BackendDAEUtil.systemSize(syst);
         ass1 = Util.arrayExpand(nv1-nv,ass1,-1);
-        ass2 =Util.arrayExpand(ne1-ne,ass2,-1);
-        true = BackendDAEEXT.setAssignment(nv1,ne1,ass2,ass1);
+        ass2 = Util.arrayExpand(ne1-ne,ass2,-1);
+        true = BackendDAEEXT.setAssignment(ne1,nv1,ass2,ass1);
         Matching.matchingExternalsetIncidenceMatrix(nv1, ne1, m);
         BackendDAEEXT.matching(nv1, ne1, 5, -1, 0.0, 0);
         BackendDAEEXT.getAssignment(ass2, ass1);
@@ -2220,7 +2220,8 @@ algorithm
         indexmap = arrayCreate(nfreeStates  + nv,-1);
         invindexmap = arrayCreate(nfreeStates,-1);
         // workaround to get state indexes
-        (vars,(indexmap,invindexmap,_,nv1,_,_,_)) = BackendVariable.traverseBackendDAEVarsWithUpdate(vars,getStateIndexes,(indexmap,invindexmap,1,nv,nv,hovvars,{}));
+        nv1 = nv + nfreeStates;
+        (vars,(indexmap,invindexmap,_,_,_,_)) = BackendVariable.traverseBackendDAEVarsWithUpdate(vars,getStateIndexes,(indexmap,invindexmap,1,nv,hovvars,{}));
         //  BackendDump.dumpMatching(indexmap);
         m1 = arrayCreate(ne1,{});
         mT1 = arrayCreate(nv1,{});
@@ -2233,7 +2234,7 @@ algorithm
         getIncidenceMatrixLevelEquations(eqnslst,vars,neqnarr,ne,m1,mT1,m,mapEqnIncRow,mapIncRowEqn,indexmap,funcs);
         // match the variables not the equations, to have prevered states unmatched
         vec1 = Util.arrayExpand(nfreeStates,ass1,-1);
-        vec2 =Util.arrayExpand(neqns,ass2,-1);
+        vec2 = Util.arrayExpand(neqns,ass2,-1);
         true = BackendDAEEXT.setAssignment(nv1,ne1,vec1,vec2);
         Matching.matchingExternalsetIncidenceMatrix(ne1, nv1, mT1);
         BackendDAEEXT.matching(ne1, nv1, 3, -1, 0.0, 0);
@@ -2401,29 +2402,29 @@ algorithm
 end dumpBlock;
 
 protected function getStateIndexes
-  input tuple<BackendDAE.Var, tuple<array<Integer>,array<Integer>,Integer,Integer,Integer,BackendDAE.Variables,list<Integer>>> inTpl;
-  output tuple<BackendDAE.Var, tuple<array<Integer>,array<Integer>,Integer,Integer,Integer,BackendDAE.Variables,list<Integer>>> outTpl;
+  input tuple<BackendDAE.Var, tuple<array<Integer>,array<Integer>,Integer,Integer,BackendDAE.Variables,list<Integer>>> inTpl;
+  output tuple<BackendDAE.Var, tuple<array<Integer>,array<Integer>,Integer,Integer,BackendDAE.Variables,list<Integer>>> outTpl;
 algorithm
   outTpl := matchcontinue(inTpl)
     local
       DAE.ComponentRef cr;
       BackendDAE.Var v;
       array<Integer> stateindexs,invmap;
-      Integer indx,s,nv;
+      Integer indx,s,nv,newindx;
       BackendDAE.Variables hov;
       list<Integer> derstatesindexs;
       Option<DAE.ComponentRef> derName;
-    case ((v as BackendDAE.VAR(varName=cr,varKind=BackendDAE.STATE(derName=_)),(stateindexs,invmap,indx,s,nv,hov,derstatesindexs)))
+    case ((v as BackendDAE.VAR(varName=cr,varKind=BackendDAE.STATE(derName=_)),(stateindexs,invmap,indx,nv,hov,derstatesindexs)))
       equation
-        (_::_,_) = BackendVariable.getVar(cr, hov);
-        s = s+1;
-        _= arrayUpdate(stateindexs,indx,s);
-        _= arrayUpdate(invmap,s-nv,indx);
+        (_::_,{s}) = BackendVariable.getVar(cr, hov);
+        newindx = nv+s;
+        _= arrayUpdate(stateindexs,indx,newindx);
+        _= arrayUpdate(invmap,s,indx);
       then
-        ((v,(stateindexs,invmap,indx+1,s,nv,hov,indx::derstatesindexs)));
-    case ((v,(stateindexs,invmap,indx,s,nv,hov,derstatesindexs)))
+        ((v,(stateindexs,invmap,indx+1,nv,hov,indx::derstatesindexs)));
+   case ((v,(stateindexs,invmap,indx,nv,hov,derstatesindexs)))
       then
-        ((v,(stateindexs,invmap,indx+1,s,nv,hov,derstatesindexs)));
+        ((v,(stateindexs,invmap,indx+1,nv,hov,derstatesindexs)));
   end matchcontinue;
 end getStateIndexes;
 
