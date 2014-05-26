@@ -538,7 +538,7 @@ match eq
     end if
     >>
   case EQ_EQUALS(__) then
-    let lhs = dumpExp(leftSide)
+    let lhs = dumpLhsExp(leftSide)
     let rhs = dumpExp(rightSide)
     '<%lhs%> = <%rhs%>'
   case EQ_CONNECT(__) then
@@ -599,7 +599,7 @@ template dumpAlgorithm(Absyn.Algorithm alg)
 ::=
 match alg
   case ALG_ASSIGN(__) then
-    let lhs_str = dumpExp(assignComponent)
+    let lhs_str = dumpLhsExp(assignComponent)
     let rhs_str = dumpExp(value)
     '<%lhs_str%> := <%rhs_str%>'
   case ALG_IF(__) then
@@ -801,6 +801,13 @@ match exp
     '{<%list_str%>}'
   case _ then '/* AbsynDumpTpl.dumpExp: UNHANDLED Abyn.Exp */'
 end dumpExp;
+
+template dumpLhsExp(Absyn.Exp lhs)
+::=
+match lhs
+  case IFEXP(__) then '(<%dumpExp(lhs)%>)'
+  else dumpExp(lhs)
+end dumpLhsExp;
 
 template dumpOperand(Absyn.Exp operand, Absyn.Exp operation, Boolean lhs)
 ::=

@@ -278,7 +278,7 @@ template dumpEEquation(SCode.EEquation equation, SCodeDumpOptions options)
 match equation
   case EQ_IF(__) then dumpIfEEquation(equation, options)
   case EQ_EQUALS(__) then
-    let lhs_str = AbsynDumpTpl.dumpExp(expLeft)
+    let lhs_str = AbsynDumpTpl.dumpLhsExp(expLeft)
     let rhs_str = AbsynDumpTpl.dumpExp(expRight)
     let cmt_str = dumpComment(comment, options)
     '<%lhs_str%> = <%rhs_str%><%cmt_str%>;'
@@ -415,7 +415,7 @@ template dumpStatement(SCode.Statement statement, SCodeDumpOptions options)
 ::=
 match statement
   case ALG_ASSIGN(__) then
-    let lhs_str = AbsynDumpTpl.dumpExp(assignComponent)
+    let lhs_str = AbsynDumpTpl.dumpLhsExp(assignComponent)
     let rhs_str = AbsynDumpTpl.dumpExp(value)
     let cmt_str = dumpComment(comment, options)
     '<%lhs_str%> := <%rhs_str%><%cmt_str%>;'

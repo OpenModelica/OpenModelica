@@ -611,7 +611,7 @@ end dumpEquationElement;
 
 template dumpEquation(DAE.Exp lhs, DAE.Exp rhs, DAE.ElementSource src)
 ::=
-  let lhs_str = dumpExp(lhs)
+  let lhs_str = match lhs case IFEXP(__) then '(<%dumpExp(lhs)%>)' else dumpExp(lhs)
   let rhs_str = dumpExp(rhs)
   let src_str = dumpSource(src)
   <<
@@ -812,7 +812,7 @@ end dumpStatement;
 
 template dumpAssignment(DAE.Exp lhs, DAE.Exp rhs, DAE.ElementSource src)
 ::=
-  let lhs_str = dumpExp(lhs)
+  let lhs_str = match lhs case IFEXP(__) then '(<%dumpExp(lhs)%>)' else dumpExp(lhs)
   let rhs_str = dumpExp(rhs)
   let src_str = dumpSource(src)
   <<
