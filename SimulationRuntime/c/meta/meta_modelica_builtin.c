@@ -564,12 +564,16 @@ modelica_metatype boxptr_listDelete(threadData_t *threadData,modelica_metatype l
 
 modelica_metatype arrayCreate(modelica_integer nelts, modelica_metatype val)
 {
-  void* arr = (struct mmc_struct*)mmc_mk_box_no_assign(nelts, MMC_ARRAY_TAG);
-  void **arrp = MMC_STRUCTDATA(arr);
-  int i = 0;
-  for(i=0; i<nelts; i++)
-    arrp[i] = val;
-  return arr;
+  if (nelts < 0) {
+    MMC_THROW();
+  } else {
+    void* arr = (struct mmc_struct*)mmc_mk_box_no_assign(nelts, MMC_ARRAY_TAG);
+    void **arrp = MMC_STRUCTDATA(arr);
+    int i = 0;
+    for(i=0; i<nelts; i++)
+      arrp[i] = val;
+    return arr;
+  }
 }
 
 modelica_metatype arrayList(modelica_metatype arr)
@@ -578,9 +582,9 @@ modelica_metatype arrayList(modelica_metatype arr)
   int nelts = MMC_HDRSLOTS(MMC_GETHDR(arr))-1;
   void **vecp = MMC_STRUCTDATA(arr);
   void *res = mmc_mk_nil();
-
-  for(; nelts >= 0; --nelts)
+  for(; nelts >= 0; --nelts) {
     res = mmc_mk_cons(vecp[nelts],res);
+  }
   return res;
 }
 

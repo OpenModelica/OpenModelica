@@ -713,8 +713,8 @@ algorithm
 
         ne=listLength(yEqMap);
         nv=listLength(yVarMap);
-        ass1=listArray(List.fill(-1,ne));
-        ass2=listArray(List.fill(-1,nv));
+        ass1=arrayCreate(ne,-1);
+        ass2=arrayCreate(nv,-1);
         true = BackendDAEEXT.setAssignment(ne,nv,ass1,ass2);
         Matching.matchingExternalsetIncidenceMatrix(nv,ne,my);
         BackendDAEEXT.matching(nv,ne,1,-1,0.0,0);
