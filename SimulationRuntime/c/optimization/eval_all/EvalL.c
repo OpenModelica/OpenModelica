@@ -240,7 +240,6 @@ static inline void num_hessian0(double * v, const double * const lambda,
           }else{
             optData->H[l][ii][jj] = (long double)0.0;
           }
-          optData->H[l][jj][ii] = optData->H[l][ii][jj];
         }
       }
     }
@@ -253,7 +252,6 @@ static inline void num_hessian0(double * v, const double * const lambda,
           optData->Hl[ii][jj] = (long double)(optData->tmpJ[index_la][jj] - optData->J[i][j][index_la][jj])*h;
         }else{
           optData->Hl[ii][jj] = 0.0;
-          optData->Hl[jj][ii] = optData->Hl[ii][jj];
         }
       }
     }
@@ -330,9 +328,6 @@ static inline void num_hessian1(double * v, const double * const lambda,
         for(l = 0; l < nJ; ++l){
           if(optData->s.Hg[l][ii][jj])
             optData->H[l][ii][jj] = (long double)(optData->tmpJ[l][jj] - optData->J[i][j][l][jj])*lambda[l]/h;
-          else
-            optData->H[l][ii][jj] = 0.0;
-          optData->H[l][jj][ii] = optData->H[l][ii][jj];
         }
       }
     }
@@ -344,10 +339,7 @@ static inline void num_hessian1(double * v, const double * const lambda,
       for(jj = 0; jj <ii+1; ++jj){
         if(optData->s.Hl[ii][jj]){
           optData->Hl[ii][jj] = (long double)(optData->tmpJ[index_la][jj] - optData->J[i][j][index_la][jj])*hh;
-        }else{
-          optData->Hl[ii][jj] = 0.0;
         }
-        optData->Hl[jj][ii] = optData->Hl[ii][jj];
       }
     }
     /********************/
@@ -359,9 +351,6 @@ static inline void num_hessian1(double * v, const double * const lambda,
       for(jj = 0; jj <ii+1; ++jj){
         if(optData->s.Hm[ii][jj]){
           optData->Hm[ii][jj] = (long double)(optData->tmpJ[index_ma][jj] - optData->J[i][j][index_ma][jj])*hh;
-        }else{
-          optData->Hm[ii][jj] = 0.0;
-          optData->Hm[jj][ii] = optData->Hm[ii][jj];
         }
       }
     }
