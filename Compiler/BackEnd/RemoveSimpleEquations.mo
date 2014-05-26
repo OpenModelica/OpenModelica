@@ -1374,29 +1374,29 @@ algorithm
 
     case ((e as DAE.CREF(DAE.CREF_IDENT(ident = "time", subscriptLst = {}), _), (_, vars, knvars, b1, b2, ilst)))
     then ((e, false, (true, vars, knvars, b1, b2, ilst)));
-    
+
     case ((e as DAE.CREF(cr, _), (_, vars, knvars, b1, b2, ilst))) equation
       (varlst, _::_)= BackendVariable.getVar(cr, knvars) "input variables stored in known variables are input on top level" ;
       false = List.mapAllValueBool(varlst, toplevelInputOrUnfixed, false);
     then ((e, false, (true, vars, knvars, b1, b2, ilst)));
-    
+
     case ((e as DAE.CALL(path = Absyn.IDENT(name = "pre")), (_, vars, knvars, b1, b2, ilst))) then ((e, false, (true, vars, knvars, b1, b2, ilst) ));
     case ((e as DAE.CALL(path = Absyn.IDENT(name = "change")), (_, vars, knvars, b1, b2, ilst))) then ((e, false, (true, vars, knvars, b1, b2, ilst) ));
     case ((e as DAE.CALL(path = Absyn.IDENT(name = "edge")), (_, vars, knvars, b1, b2, ilst))) then ((e, false, (true, vars, knvars, b1, b2, ilst) ));
-    
+
     // case for finding simple equation in jacobians
     // there are all known variables mark as input and they are all time-depending
     case ((e as DAE.CREF(cr, _), (_, vars, knvars, true, b2, ilst))) equation
       (var::_, _::_)= BackendVariable.getVar(cr, knvars) "input variables stored in known variables are input on top level" ;
       DAE.INPUT() = BackendVariable.getVarDirection(var);
     then ((e, false, (true, vars, knvars, true, b2, ilst)));
-    
+
     // var
     case ((e as DAE.CREF(cr, _), (b, vars, knvars, b1, b2, ilst))) equation
       (_::_, vlst)= BackendVariable.getVar(cr, vars);
       ilst = listAppend(ilst, vlst);
     then ((e, true, (b, vars, knvars, b1, b2, ilst)));
-    
+
     case ((e, (b, vars, knvars, b1, b2, ilst)))
     then ((e, not b, (b, vars, knvars, b1, b2, ilst)));
   end matchcontinue;
