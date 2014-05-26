@@ -389,7 +389,7 @@ constant DebugFlag PRINT_STRUCTURAL = DEBUG_FLAG(111, "printStructuralParameters
   Util.gettext("Prints the structural parameters identified by the front-end"));
 constant DebugFlag ITERATION_VARS = DEBUG_FLAG(113, "iterationVars", false,
   Util.gettext("Shows a list of all iteration variables."));
-  
+
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
 // initialization so that all flags are sorted by index (and thus have unique

@@ -7717,10 +7717,10 @@ algorithm
     local
       BackendDAE.EqSystem eq;
       list<BackendDAE.EqSystem> eqs;
-      
+
     case ({})
     then ();
-    
+
     case (eq::eqs) equation
       listAllIterationVariables1(eq);
       listAllIterationVariables0(eqs);
