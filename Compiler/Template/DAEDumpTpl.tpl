@@ -159,7 +159,7 @@ match attr
   case DAE.ATTR(variability = SCode.CONST()) then 'constant '
   else 'input '
 end dumpRecordConstructorInputAttr;
-   
+
 template dumpRecordConstructorBinding(DAE.Binding binding)
 ::=
 match binding
@@ -211,7 +211,7 @@ end dumpInlineType;
  *     SECTION: VARIABLE SECTION                                             *
  *****************************************************************************/
 template dumpVars(list<DAE.Element> v)
-::= (v |> var => dumpVar(var,false) ;separator="\n") 
+::= (v |> var => dumpVar(var,false) ;separator="\n")
 end dumpVars;
 
 template dumpVar(DAE.Element lst, Boolean printTypeDimension)
@@ -333,7 +333,7 @@ match ty
 end dumpArrayType;
 
 template dumpTupleType(list<Type> tys, String ty_begin, String ty_end)
-::= 
+::=
   let &attr = buffer ""
   '<%ty_begin%><%(tys |> ty => dumpType(ty, &attr) ;separator=", ")%><%ty_end%>'
 end dumpTupleType;
@@ -348,7 +348,7 @@ match ty
     let res_str = dumpType(funcResultType, &attr)
     '<%src_str%><function>(<%args_str%>) => <%res_str%>'
 end dumpFunctionType;
-    
+
 template dumpFuncArg(FuncArg arg)
 ::=
 match arg
@@ -367,7 +367,7 @@ match c
   case C_PARAM() then "parameter "
   case C_CONST() then "constant "
 end dumpConst;
-    
+
 template dumpParallelism(DAE.VarParallelism p)
 ::=
 match p
@@ -628,7 +628,7 @@ template dumpEquEquation(DAE.ComponentRef lhs, DAE.ComponentRef rhs, DAE.Element
   <%lhs_str%> = <%rhs_str%><%src_str%>;
   >>
 end dumpEquEquation;
-  
+
 template dumpDefine(DAE.ComponentRef lhs, DAE.Exp rhs, DAE.ElementSource src)
 ::=
   let lhs_str = dumpCref(lhs)
@@ -960,7 +960,7 @@ template dumpCompAnnotation(Option<SCode.Comment> comment)
   let cmt_str = dumpCommentAnnotation(comment)
   if cmt_str then ' <%cmt_str%>'
 end dumpCompAnnotation;
-  
+
 template dumpCommentAnnotation(Option<SCode.Comment> comment)
 ::=
 if Config.showAnnotations() then
@@ -968,7 +968,7 @@ if Config.showAnnotations() then
     case SOME(SCode.COMMENT(annotation_ = SOME(SCode.ANNOTATION(modification = ann_mod)))) then
       'annotation<%SCodeDumpTpl.dumpModifier(ann_mod, SCodeDump.defaultOptions)%>'
 end dumpCommentAnnotation;
-      
+
 template dumpCommentOpt(Option<SCode.Comment> comment)
 ::= match comment case SOME(cmt) then dumpComment(cmt)
 end dumpCommentOpt;

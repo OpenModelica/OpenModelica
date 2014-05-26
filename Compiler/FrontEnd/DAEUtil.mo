@@ -707,7 +707,7 @@ algorithm
   oExps := match(inVariableAttributesOption)
     local
       Option<DAE.Exp> e1,e2;
-      
+
     case(SOME(DAE.VAR_ATTR_ENUMERATION(min = e1, max = e2))) then {e1, e2};
     case(SOME(DAE.VAR_ATTR_INT(min = e1, max = e2))) then {e1, e2};
     case(SOME(DAE.VAR_ATTR_REAL(min = e1, max = e2))) then {e1, e2};
@@ -720,7 +720,7 @@ public function getMinMaxValues
   input Option<DAE.VariableAttributes> inVariableAttributesOption;
   output Option<DAE.Exp> outMinValue;
   output Option<DAE.Exp> outMaxValue;
-algorithm 
+algorithm
   (outMinValue, outMaxValue) := match(inVariableAttributesOption)
     local
       Option<DAE.Exp> minValue, maxValue;
@@ -833,7 +833,7 @@ public function getMinAttrFail "
   input Option<DAE.VariableAttributes> inVariableAttributesOption;
   output DAE.Exp outMin;
 algorithm
-  SOME(DAE.VAR_ATTR_REAL(min = SOME(outMin))) := inVariableAttributesOption; 
+  SOME(DAE.VAR_ATTR_REAL(min = SOME(outMin))) := inVariableAttributesOption;
 end getMinAttrFail;
 
 public function getMaxAttrFail "
