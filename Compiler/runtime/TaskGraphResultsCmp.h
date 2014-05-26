@@ -224,16 +224,20 @@ public:
 
 #ifndef TGRC_GRAPHCOMPARATOR
 #define TGRC_GRAPHCOMPARATOR
+
+enum CompareMode { FULL, LEVEL };
+
 class GraphComparator
 {
 private:
   GraphComparator(void);
 public:
   //Compares the two given graphs and adds every error-message to the given string.
-  static bool CompareGraphs(Graph *g1, Graph *g2, std::string *errorMsg);
-  static bool CompareGraphs(Graph *g1, Graph *g2, NodeComparator nodeComparator, EdgeComparator edgeComparator, bool checkCalcTime, bool checkCommTime, std::string *errorMsg);
+  static bool CompareGraphs(Graph *g1, Graph *g2, CompareMode mode, std::string *errorMsg);
+  static bool CompareGraphs(Graph *g1, Graph *g2, NodeComparator nodeComparator, EdgeComparator edgeComparator, bool checkCalcTime, bool checkCommTime, CompareMode mode, std::string *errorMsg);
 
   ~GraphComparator(void);
+
 
   static bool IsNodePartOfGraph(Node *node, Graph *graph, NodeComparator nodeComparator);
   static bool IsEdgePartOfGraph(Edge *edge, Graph *graph, EdgeComparator edgeComparator);

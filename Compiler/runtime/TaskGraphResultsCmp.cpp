@@ -647,12 +647,12 @@ GraphComparator::~GraphComparator()
 {
 }
 
-bool GraphComparator::CompareGraphs(Graph *g1, Graph *g2,std::string *errorMsg)
+bool GraphComparator::CompareGraphs(Graph *g1, Graph *g2, CompareMode mode, std::string *errorMsg)
 {
-  return GraphComparator::CompareGraphs(g1, g2, NodeComparator(&NodeComparator::CompareNodeNamesInt), EdgeComparator(&EdgeComparator::CompareEdgesByNodeNamesInt), true, true, errorMsg);
+  return GraphComparator::CompareGraphs(g1, g2, NodeComparator(&NodeComparator::CompareNodeNamesInt), EdgeComparator(&EdgeComparator::CompareEdgesByNodeNamesInt), true, true, mode, errorMsg);
 }
 
-bool GraphComparator::CompareGraphs(Graph *g1, Graph *g2, NodeComparator nodeComparator, EdgeComparator edgeComparator, bool checkCalcTime, bool checkCommTime, std::string *errorMsg)
+bool GraphComparator::CompareGraphs(Graph *g1, Graph *g2, NodeComparator nodeComparator, EdgeComparator edgeComparator, bool checkCalcTime, bool checkCommTime, CompareMode mode, std::string *errorMsg)
 {
   std::stringstream ss;
 
@@ -836,7 +836,7 @@ void* TaskGraphResultsCmp_checkTaskGraph(const char *filename, const char *reffi
   parser.ParseGraph(&g1, filename, NodeComparator(&NodeComparator::CompareNodeNamesInt), &errorMsg);
   parser.ParseGraph(&g2, reffilename, NodeComparator(&NodeComparator::CompareNodeNamesInt), &errorMsg);
 
-  if (GraphComparator::CompareGraphs(&g1, &g2, &errorMsg))
+  if (GraphComparator::CompareGraphs(&g1, &g2, FULL, &errorMsg))
     res = mk_cons(mk_scon("Taskgraph correct"), mk_nil());
   else
     res = mk_cons(mk_scon("Taskgraph not correct"), mk_nil());
@@ -877,7 +877,7 @@ void* TaskGraphResultsCmp_checkCodeGraph(const char *filename, const char *codeF
   parser.ParseGraph(&g1, filename, NodeComparator(&NodeComparator::CompareNodeNamesInt), &errorMsg);
   codeParser.ParseGraph(&g2, codeFileName, NodeComparator(&NodeComparator::CompareNodeNamesInt), &errorMsg);
 
-  if (GraphComparator::CompareGraphs(&g1, &g2, NodeComparator(&NodeComparator::CompareNodeIdsInt),EdgeComparator(&EdgeComparator::CompareEdgesByNodeIdsInt), false, false, &errorMsg))
+  if (GraphComparator::CompareGraphs(&g1, &g2, NodeComparator(&NodeComparator::CompareNodeIdsInt),EdgeComparator(&EdgeComparator::CompareEdgesByNodeIdsInt), false, false, FULL, &errorMsg))
     res = mk_cons(mk_scon("Codegraph correct"), mk_nil());
   else
     res = mk_cons(mk_scon("Codegraph not correct"), mk_nil());
