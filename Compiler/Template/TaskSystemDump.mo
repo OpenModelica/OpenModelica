@@ -1829,7 +1829,7 @@ algorithm
            SOME(i_dae) )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("<flattened>"));
-        txt_0 = DAEDumpTpl.dumpEquation(Tpl.emptyTxt, i_dae);
+        txt_0 = DAEDumpTpl.dumpEquationElement(Tpl.emptyTxt, i_dae);
         ret_1 = Util.escapeModelicaStringToXmlString(Tpl.textString(txt_0));
         txt = Tpl.writeStr(txt, ret_1);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("</flattened>"));

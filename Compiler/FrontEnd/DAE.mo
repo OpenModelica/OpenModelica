@@ -406,7 +406,8 @@ uniontype VariableAttributes
     Option<Exp> quantity "quantity";
     Option<Exp> unit "unit";
     Option<Exp> displayUnit "displayUnit";
-    tuple<Option<Exp>, Option<Exp>> min "min, max";
+    Option<Exp> min;
+    Option<Exp> max;
     Option<Exp> start "start value";
     Option<Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables";
     Option<Exp> nominal "nominal";
@@ -421,7 +422,8 @@ uniontype VariableAttributes
 
   record VAR_ATTR_INT
     Option<Exp> quantity "quantity";
-    tuple<Option<Exp>, Option<Exp>> min "min, max";
+    Option<Exp> min;
+    Option<Exp> max;
     Option<Exp> start "start value";
     Option<Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables";
     Option<Uncertainty> uncertainOption;
@@ -453,7 +455,8 @@ uniontype VariableAttributes
 
   record VAR_ATTR_ENUMERATION
     Option<Exp> quantity "quantity";
-    tuple<Option<Exp>, Option<Exp>> min "min, max";
+    Option<Exp> min;
+    Option<Exp> max;
     Option<Exp> start "start";
     Option<Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables";
     Option<Exp> equationBound;
@@ -465,21 +468,15 @@ end VariableAttributes;
 
 public uniontype StateSelect
   record NEVER end NEVER;
-
   record AVOID end AVOID;
-
   record DEFAULT end DEFAULT;
-
   record PREFER end PREFER;
-
   record ALWAYS end ALWAYS;
 end StateSelect;
 
 public uniontype Uncertainty
   record GIVEN end GIVEN;
-
   record SOUGHT end SOUGHT;
-
   record REFINE end REFINE;
 end Uncertainty;
 
@@ -702,9 +699,6 @@ uniontype Statement "There are four kinds of statements:
     list<Statement> body;
     ElementSource source "the origin of the component/equation/algorithm" ;
   end STMT_FAILURE;
-
-  //-----
-
 end Statement;
 
 public

@@ -572,7 +572,7 @@ algorithm
       Option<DAE.Uncertainty> uncertainty;
       Option<DAE.Distribution> dist;
 
-    case (SOME(DAE.VAR_ATTR_REAL(quant,unit,displayUnit,(min,max),initialExp,fixed,nominal,stateSel,uncertainty,dist,_,_,_,startOrigin)))
+    case (SOME(DAE.VAR_ATTR_REAL(quant,unit,displayUnit,min,max,initialExp,fixed,nominal,stateSel,uncertainty,dist,_,_,_,startOrigin)))
       equation
         quantity = Dump.getOptionWithConcatStr(quant, ExpressionDump.printExpStr, "quantity = ");
         unit_str = Dump.getOptionWithConcatStr(unit, ExpressionDump.printExpStr, "unit = ");
@@ -597,7 +597,7 @@ algorithm
       then
         res;
 
-    case (SOME(DAE.VAR_ATTR_INT(quant,(min,max),initialExp,fixed,uncertainty,dist,_,_,_,startOrigin)))
+    case (SOME(DAE.VAR_ATTR_INT(quant,min,max,initialExp,fixed,uncertainty,dist,_,_,_,startOrigin)))
       equation
         quantity = Dump.getOptionWithConcatStr(quant, ExpressionDump.printExpStr, "quantity = ");
         min_str = Dump.getOptionWithConcatStr(min, ExpressionDump.printExpStr, "min = ");
@@ -645,7 +645,7 @@ algorithm
       then
         res;
 
-    case (SOME(DAE.VAR_ATTR_ENUMERATION(quant,(min,max),initialExp,fixed,_,_,_,startOrigin)))
+    case (SOME(DAE.VAR_ATTR_ENUMERATION(quant,min,max,initialExp,fixed,_,_,_,startOrigin)))
       equation
         quantity = Dump.getOptionWithConcatStr(quant, ExpressionDump.printExpStr, "quantity = ");
         min_str = Dump.getOptionWithConcatStr(min, ExpressionDump.printExpStr, "min = ");
@@ -2502,36 +2502,15 @@ public function dumpStr "This function prints the DAE to a string."
   input DAE.DAElist inDAElist;
   input DAE.FunctionTree functionTree;
   output String outString;
+protected
+  list<DAE.Element> daelist;
+  functionList funList;
+  list<compWithSplitElements> fixedDae;
 algorithm
-  outString := matchcontinue (inDAElist,functionTree)
-    local
-      IOStream.IOStream myStream;
-      String str;
-      list<DAE.Element> daelist;
-      list<compWithSplitElements> fixedDae;
-      functionList funList;
-    case (DAE.DAE(daelist), _)
-      equation
-
-        true = Flags.isSet(Flags.DUMP_DAE);
-
-        funList = dumpFunctionList(functionTree);
-
-        fixedDae = List.map(daelist, dumpDAEList);
-
-        str = Tpl.tplString2(DAEDumpTpl.dumpDAE, fixedDae, funList);
-
-      then
-        str;
-
-    else
-      equation
-        myStream = IOStream.create("dae", IOStream.LIST());
-        myStream = dumpStream(inDAElist, functionTree, myStream);
-        str = IOStream.string(myStream);
-      then
-        str;
-  end matchcontinue;
+  DAE.DAE(elementLst = daelist) := inDAElist;
+  funList := dumpFunctionList(functionTree);
+  fixedDae := List.map(daelist, dumpDAEList);
+  outString := Tpl.tplString2(DAEDumpTpl.dumpDAE, fixedDae, funList);
 end dumpStr;
 
 public function dumpElementsStr "This function prints the DAE to a string."
@@ -2668,18 +2647,50 @@ algorithm
   (funList) := match (functionTree)
     local
       list<DAE.Function> funcs;
+
     case _
       equation
         funcs = DAEUtil.getFunctionList(functionTree);
+        funcs = List.filter2OnTrue(funcs, isVisibleFunction,
+          Flags.isSet(Flags.DISABLE_RECORD_CONSTRUCTOR_OUTPUT),
+          Flags.isSet(Flags.INLINE_FUNCTIONS));
         funcs = sortFunctions(funcs);
         funList = FUNCTION_LIST(funcs) ;
-
       then
         (funList);
+
   end match;
 end dumpFunctionList;
 
+protected function isVisibleFunction
+  "Returns true if the given function should be visible in the flattened output."
+  input DAE.Function inFunc;
+  input Boolean inHideRecordCons "Hides record constructors if true.";
+  input Boolean inInliningEnabled "Hides early inlined functions if true.";
+  output Boolean outIsVisible;
+algorithm
+  outIsVisible := match(inFunc, inHideRecordCons, inInliningEnabled)
+    local
+      Option<SCode.Comment> cmt;
 
+    // Hide functions with 'external "builtin"'.
+    case (DAE.FUNCTION(functions = DAE.FUNCTION_EXT(externalDecl =
+        DAE.EXTERNALDECL(language = "builtin")) :: _), _, _) then false;
+    // Hide functions in package OpenModelica.
+    case (DAE.FUNCTION(path = Absyn.FULLYQUALIFIED(
+        Absyn.QUALIFIED(name = "OpenModelica"))), _, _) then false;
+    // Hide functions which should always be inlined.
+    case (DAE.FUNCTION(inlineType = DAE.BUILTIN_EARLY_INLINE()), _, _) then false;
+    // Hide functions which should be inlined unless inlining is disabled.
+    case (DAE.FUNCTION(inlineType = DAE.EARLY_INLINE()), _, true) then false;
+    // Hide functions with annotation __OpenModelica_builtin = true.
+    case (DAE.FUNCTION(comment = cmt), _, _)
+      then not SCode.optCommentHasBooleanNamedAnnotation(cmt, "__OpenModelica_builtin");
+    // Hide record constructors if requested.
+    case (DAE.RECORD_CONSTRUCTOR(path = _), true, _) then false;
+    else true;
+  end match;
+end isVisibleFunction;
 
 protected function dumpCompElementStream "Dumps components to a stream."
   input DAE.Element inElement;

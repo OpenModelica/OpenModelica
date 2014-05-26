@@ -537,7 +537,8 @@ interface package GraphvizDumpTV
         Option<Exp> quantity "quantity";
         Option<Exp> unit "unit";
         Option<Exp> displayUnit "displayUnit";
-        tuple<Option<Exp>, Option<Exp>> min "min, max";
+        Option<Exp> min;
+        Option<Exp> max;
         Option<Exp> start "start value";
         Option<Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables";
         Option<Exp> nominal "nominal";
@@ -552,7 +553,8 @@ interface package GraphvizDumpTV
 
       record VAR_ATTR_INT
         Option<Exp> quantity "quantity";
-        tuple<Option<Exp>, Option<Exp>> min "min, max";
+        Option<Exp> min;
+        Option<Exp> max;
         Option<Exp> start "start value";
         Option<Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables";
         Option<Uncertainty> uncertainOption;
@@ -584,7 +586,8 @@ interface package GraphvizDumpTV
 
       record VAR_ATTR_ENUMERATION
         Option<Exp> quantity "quantity";
-        tuple<Option<Exp>, Option<Exp>> min "min, max";
+        Option<Exp> min;
+        Option<Exp> max;
         Option<Exp> start "start";
         Option<Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables";
         Option<Exp> equationBound;

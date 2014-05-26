@@ -441,7 +441,7 @@ algorithm
       Option<DAE.Exp> eb;
       Option<Boolean> ip,fn;
 
-    case(SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),initial_,fixed,nominal,stateSelect,unc,dist,eb,ip,fn,startOrigin)),_,_)
+    case(SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,min,max,initial_,fixed,nominal,stateSelect,unc,dist,eb,ip,fn,startOrigin)),_,_)
       equation
         (quantity) = replaceExpOpt(quantity,repl,condExpFunc);
         (unit) = replaceExpOpt(unit,repl,condExpFunc);
@@ -452,16 +452,16 @@ algorithm
         (fixed) = replaceExpOpt(fixed,repl,condExpFunc);
         (nominal) = replaceExpOpt(nominal,repl,condExpFunc);
         //TODO: replace expressions also in uncertainty attributes (unc and dist)
-      then SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),initial_,fixed,nominal,stateSelect,unc,dist,eb,ip,fn,startOrigin));
+      then SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,min,max,initial_,fixed,nominal,stateSelect,unc,dist,eb,ip,fn,startOrigin));
 
-    case(SOME(DAE.VAR_ATTR_INT(quantity,(min,max),initial_,fixed,unc,dist,eb,ip,fn,startOrigin)),_,_)
+    case(SOME(DAE.VAR_ATTR_INT(quantity,min,max,initial_,fixed,unc,dist,eb,ip,fn,startOrigin)),_,_)
       equation
         (quantity) = replaceExpOpt(quantity,repl,condExpFunc);
         (min) = replaceExpOpt(min,repl,condExpFunc);
         (max) = replaceExpOpt(max,repl,condExpFunc);
         (initial_) = replaceExpOpt(initial_,repl,condExpFunc);
         (fixed) = replaceExpOpt(fixed,repl,condExpFunc);
-      then SOME(DAE.VAR_ATTR_INT(quantity,(min,max),initial_,fixed,unc,dist,eb,ip,fn,startOrigin));
+      then SOME(DAE.VAR_ATTR_INT(quantity,min,max,initial_,fixed,unc,dist,eb,ip,fn,startOrigin));
 
       case(SOME(DAE.VAR_ATTR_BOOL(quantity,initial_,fixed,eb,ip,fn,startOrigin)),_,_)
         equation

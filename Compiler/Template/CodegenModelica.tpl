@@ -32,17 +32,15 @@ template dumpBackendDAE(BackendDAE.BackendDAE backendDAE)
                     case SOME(e) then 'nominal=<%ExpressionDump.printExpStr(e)%>, '
                     else ''
                   end match
-                  let miniMaxStr = (min |> (e1, e2) =>
-                    let minStr = match e1
-                      case SOME(e) then 'min=<%ExpressionDump.printExpStr(e)%>, '
-                      else ''
-                    end match
-                    let maxStr = match e2
-                      case SOME(e) then 'max=<%ExpressionDump.printExpStr(e)%>, '
-                      else ''
-                    end match
-                    '<%minStr%><%maxStr%>')
-                  '<%startStr%><%fixedStr%><%nominalStr%><%miniMaxStr%>'
+                  let minStr = match min
+                    case SOME(e) then 'min=<%ExpressionDump.printExpStr(e)%>, '
+                    else ''
+                  end match
+                  let maxStr = match max
+                    case SOME(e) then 'max=<%ExpressionDump.printExpStr(e)%>, '
+                    else ''
+                  end match
+                  '<%startStr%><%fixedStr%><%nominalStr%><%minStr%><%maxStr%>'
                 case VAR_ATTR_INT(__) then
                   let startStr = match start
                     case SOME(e) then 'start=<%ExpressionDump.printExpStr(e)%>, '

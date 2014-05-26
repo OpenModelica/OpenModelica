@@ -739,11 +739,11 @@ algorithm
     case (Connect.SETS(sets, sc, c, o), _, DAE.SOURCE(info=_), _)
       equation
         sc = sc + 1;
-        src = DAEUtil.addAdditionalComment(inSource, " add inside flow(" +&
-                PrefixUtil.printPrefixStr(inPrefix) +& "/" +&
-                ComponentReference.printComponentRefStr(inCref) +&
-                ")");
-        e = newElement(inCref, Connect.INSIDE(), Connect.FLOW(), src, sc);
+        //src = DAEUtil.addAdditionalComment(inSource, " add inside flow(" +&
+        //        PrefixUtil.printPrefixStr(inPrefix) +& "/" +&
+        //        ComponentReference.printComponentRefStr(inCref) +&
+        //        ")");
+        e = newElement(inCref, Connect.INSIDE(), Connect.FLOW(), inSource, sc);
         sets = setTrieAdd(e, sets);
       then
         Connect.SETS(sets, sc, c, o);

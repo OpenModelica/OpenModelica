@@ -251,6 +251,12 @@ algorithm
   Flags.setConfigBool(Flags.SHOW_ANNOTATIONS, show);
 end setShowAnnotations;
 
+public function showStartOrigin
+  output Boolean show;
+algorithm
+  show := Flags.isSet(Flags.SHOW_START_ORIGIN);
+end showStartOrigin;
+
 public function getRunningTestsuite
   output Boolean runningTestsuite;
 algorithm

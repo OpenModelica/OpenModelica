@@ -709,18 +709,18 @@ public function getVariableAttributefromType
   output DAE.VariableAttributes attr;
 algorithm
   attr := match(inType)
-    case DAE.T_REAL(source=_) then DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
-    case DAE.T_INTEGER(source=_) then DAE.VAR_ATTR_INT(NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
-    case DAE.T_INTEGER(source=_) then DAE.VAR_ATTR_INT(NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+    case DAE.T_REAL(source=_) then DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+    case DAE.T_INTEGER(source=_) then DAE.VAR_ATTR_INT(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+    case DAE.T_INTEGER(source=_) then DAE.VAR_ATTR_INT(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
     case DAE.T_BOOL(source=_) then DAE.VAR_ATTR_BOOL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
     case DAE.T_STRING(source=_) then DAE.VAR_ATTR_STRING(NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
-    case DAE.T_ENUMERATION(source=_) then DAE.VAR_ATTR_ENUMERATION(NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+    case DAE.T_ENUMERATION(source=_) then DAE.VAR_ATTR_ENUMERATION(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
     else
       equation
         // repord a warning on failtrace
         Debug.fprint(Flags.FAILTRACE,"getVariableAttributefromType called with unsopported Type!\n");
       then
-        DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+        DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
   end match;
 end getVariableAttributefromType;
 
@@ -794,7 +794,7 @@ algorithm
       DAE.VarDirection c;
       DAE.VarParallelism prl;
       BackendDAE.Type d;
-      Option<DAE.Exp> e;
+      Option<DAE.Exp> e,min,max;
       Option<Values.Value> f;
       list<DAE.Subscript> g;
       DAE.ElementSource source;
@@ -814,10 +814,10 @@ algorithm
               source = source,
               values = NONE(),
               comment = s,
-              connectorType = ct),_)
+              connectorType = ct), (min, max))
       equation
         attr = getVariableAttributefromType(d);
-        oattr1 = DAEUtil.setMinMax(SOME(attr),minMax);
+        oattr1 = DAEUtil.setMinMax(SOME(attr),min,max);
     then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
 
     case (BackendDAE.VAR(varName = a,
@@ -831,9 +831,9 @@ algorithm
               source = source,
               values = SOME(attr),
               comment = s,
-              connectorType = ct),_)
+              connectorType = ct), (min, max))
       equation
-        oattr1 = DAEUtil.setMinMax(SOME(attr),minMax);
+        oattr1 = DAEUtil.setMinMax(SOME(attr),min,max);
     then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
   end match;
 end setVarMinMax;
@@ -1776,7 +1776,7 @@ algorithm
   outCr := ComponentReference.makeCrefIdent("$dummy",DAE.T_REAL_DEFAULT,{});
   outVar := BackendDAE.VAR(outCr, BackendDAE.STATE(1,NONE()),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},
                             DAE.emptyElementSource,
-                            SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(true)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
+                            SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),SOME(DAE.BCONST(true)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
                             NONE(),DAE.NON_CONNECTOR());
 end createDummyVar;
 

@@ -48,7 +48,23 @@ public import ValuesUtil;
 public import HashTable;
 public import HashTable2;
 
+protected import Algorithm;
+protected import BackendDAEUtil;
+protected import BaseHashTable;
+protected import Ceval;
+protected import ComponentReference;
+protected import Config;
 protected import ConnectUtil;
+protected import DAEDump;
+protected import Debug;
+protected import Error;
+protected import Expression;
+protected import ExpressionDump;
+protected import Flags;
+protected import List;
+protected import System;
+protected import Types;
+protected import Util;
 
 public function constStr "return the DAE.Const as a string. (VAR|PARAM|CONST)
 Used for debugging."
@@ -195,43 +211,42 @@ Set the optional equationBound value"
   input Option<DAE.VariableAttributes> attr;
   output Option<DAE.VariableAttributes> oattr;
 algorithm
-  oattr := matchcontinue (bindExp,attr)
+  oattr := match(bindExp,attr)
     local
-       Option<DAE.Exp> e1,e2,e3,e4,e5,e6,so;
-      tuple<Option<DAE.Exp>, Option<DAE.Exp>> min;
+      Option<DAE.Exp> e1,e2,e3,e4,e5,e6,so,min,max;
       Option<DAE.StateSelect> sSelectOption,sSelectOption2;
       Option<DAE.Uncertainty> unc;
       Option<DAE.Distribution> distOption;
       Option<Boolean> ip,fn;
       String s;
 
-    case (_,SOME(DAE.VAR_ATTR_REAL(e1,e2,e3,min,e4,e5,e6,sSelectOption,unc,distOption,_,ip,fn,so)))
-    then (SOME(DAE.VAR_ATTR_REAL(e1,e2,e3,min,e4,e5,e6,sSelectOption,unc,distOption,SOME(bindExp),ip,fn,so)));
+    case (_,SOME(DAE.VAR_ATTR_REAL(e1,e2,e3,min,max,e4,e5,e6,sSelectOption,unc,distOption,_,ip,fn,so)))
+      then (SOME(DAE.VAR_ATTR_REAL(e1,e2,e3,min,max,e4,e5,e6,sSelectOption,unc,distOption,SOME(bindExp),ip,fn,so)));
 
-    case (_,SOME(DAE.VAR_ATTR_INT(e1,min,e2,e3,unc,distOption,_,ip,fn,so)))
-    then SOME(DAE.VAR_ATTR_INT(e1,min,e2,e3,unc,distOption,SOME(bindExp),ip,fn,so));
+    case (_,SOME(DAE.VAR_ATTR_INT(e1,min,max,e2,e3,unc,distOption,_,ip,fn,so)))
+      then SOME(DAE.VAR_ATTR_INT(e1,min,max,e2,e3,unc,distOption,SOME(bindExp),ip,fn,so));
 
     case (_,SOME(DAE.VAR_ATTR_BOOL(e1,e2,e3,_,ip,fn,so)))
-    then SOME(DAE.VAR_ATTR_BOOL(e1,e2,e3,SOME(bindExp),ip,fn,so));
+      then SOME(DAE.VAR_ATTR_BOOL(e1,e2,e3,SOME(bindExp),ip,fn,so));
 
     case (_,SOME(DAE.VAR_ATTR_STRING(e1,e2,_,ip,fn,so)))
-    then SOME(DAE.VAR_ATTR_STRING(e1,e2,SOME(bindExp),ip,fn,so));
+      then SOME(DAE.VAR_ATTR_STRING(e1,e2,SOME(bindExp),ip,fn,so));
 
-    case (_,SOME(DAE.VAR_ATTR_ENUMERATION(e1,min,e2,e3,_,ip,fn,so)))
-    then SOME(DAE.VAR_ATTR_ENUMERATION(e1,min,e2,e3,SOME(bindExp),ip,fn,so));
+    case (_,SOME(DAE.VAR_ATTR_ENUMERATION(e1,min,max,e2,e3,_,ip,fn,so)))
+      then SOME(DAE.VAR_ATTR_ENUMERATION(e1,min,max,e2,e3,SOME(bindExp),ip,fn,so));
 
     else equation print("-failure in DAEUtil.addEquationBoundString\n"); then fail();
-  end matchcontinue;
+  end match;
 end addEquationBoundString;
 
 public function getClassList "get list of classes from Var"
   input DAE.Element v;
   output list<Absyn.Path> lst;
 algorithm
-  lst := matchcontinue(v)
+  lst := match(v)
     case DAE.VAR(source = DAE.SOURCE(typeLst=lst)) then lst;
-    case _ then {};
-  end matchcontinue;
+    else {};
+  end match;
 end getClassList;
 
 public function getBoundStartEquation "
@@ -247,23 +262,6 @@ algorithm
     case (DAE.VAR_ATTR_ENUMERATION(equationBound = SOME(beq))) then beq;
   end match;
 end getBoundStartEquation;
-
-protected import Algorithm;
-protected import BaseHashTable;
-protected import BackendDAEUtil;
-protected import Ceval;
-protected import ComponentReference;
-protected import Config;
-protected import Debug;
-protected import Error;
-protected import Expression;
-protected import ExpressionDump;
-protected import Flags;
-protected import List;
-protected import System;
-protected import Types;
-protected import Util;
-protected import DAEDump;
 
 public function splitDAEIntoVarsAndEquations
 "Splits the DAE into one with vars and no equations and algorithms
@@ -705,22 +703,16 @@ public function getMinMax "
 Author: BZ, returns a list of optional exp, {opt<Min> opt<Max} "
   input Option<DAE.VariableAttributes> inVariableAttributesOption;
   output list<Option<DAE.Exp>> oExps;
-algorithm oExps := match(inVariableAttributesOption)
-  local
-    Option<DAE.Exp> e1,e2;
-  case(SOME(DAE.VAR_ATTR_ENUMERATION(min = (e1,e2))))
-    equation
-    then
-      e1::{e2};
-  case(SOME(DAE.VAR_ATTR_INT(min = (e1,e2))))
-    equation
-    then
-      e1::{e2};
-  case(SOME(DAE.VAR_ATTR_REAL(min = (e1,e2))))
-    equation
-    then
-      e1::{e2};
-  else {};
+algorithm
+  oExps := match(inVariableAttributesOption)
+    local
+      Option<DAE.Exp> e1,e2;
+      
+    case(SOME(DAE.VAR_ATTR_ENUMERATION(min = e1, max = e2))) then {e1, e2};
+    case(SOME(DAE.VAR_ATTR_INT(min = e1, max = e2))) then {e1, e2};
+    case(SOME(DAE.VAR_ATTR_REAL(min = e1, max = e2))) then {e1, e2};
+    else {};
+
   end match;
 end getMinMax;
 
@@ -728,31 +720,32 @@ public function getMinMaxValues
   input Option<DAE.VariableAttributes> inVariableAttributesOption;
   output Option<DAE.Exp> outMinValue;
   output Option<DAE.Exp> outMaxValue;
-algorithm (outMinValue, outMaxValue) := match(inVariableAttributesOption)
-  local
-    Option<DAE.Exp> minValue, maxValue;
+algorithm 
+  (outMinValue, outMaxValue) := match(inVariableAttributesOption)
+    local
+      Option<DAE.Exp> minValue, maxValue;
 
-  case(SOME(DAE.VAR_ATTR_ENUMERATION(min=(minValue, maxValue)))) equation
-  then (minValue, maxValue);
+    case(SOME(DAE.VAR_ATTR_ENUMERATION(min = minValue, max = maxValue)))
+      then (minValue, maxValue);
 
-  case(SOME(DAE.VAR_ATTR_INT(min=(minValue, maxValue)))) equation
-  then (minValue, maxValue);
+    case(SOME(DAE.VAR_ATTR_INT(min = minValue, max = maxValue)))
+      then (minValue, maxValue);
 
-  case(SOME(DAE.VAR_ATTR_REAL(min=(minValue, maxValue)))) equation
-  then (minValue, maxValue);
+    case(SOME(DAE.VAR_ATTR_REAL(min = minValue, max = maxValue)))
+      then (minValue, maxValue);
 
-  else (NONE(), NONE());
+    else (NONE(), NONE());
   end match;
 end getMinMaxValues;
 
-public function setMinMax "
-  sets the minmax attribute. If NONE(), assumes Real attributes."
-  input Option<DAE.VariableAttributes> attr;
-  input tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
+public function setMinMax
+  "Sets the min and max attributes. If inAttr is NONE(), assumes Real attributes."
+  input Option<DAE.VariableAttributes> inAttr;
+  input Option<DAE.Exp> inMin;
+  input Option<DAE.Exp> inMax;
   output Option<DAE.VariableAttributes> outAttr;
 algorithm
-  outAttr:=
-  match (attr,minMax)
+  outAttr := match(inAttr, inMin, inMax)
     local
       Option<DAE.Exp> q,u,du,f,n,i;
       Option<DAE.StateSelect> ss;
@@ -762,14 +755,17 @@ algorithm
       Option<Boolean> ip,fn;
       Option<DAE.Exp> so;
 
-    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,_,i,f,n,ss,unc,distOpt,eb,ip,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,i,f,n,ss,unc,distOpt,eb,ip,fn,so));
-    case (SOME(DAE.VAR_ATTR_INT(q,_,i,f,unc,distOpt,eb,ip,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_INT(q,minMax,i,f,unc,distOpt,eb,ip,fn,so));
-    case (SOME(DAE.VAR_ATTR_ENUMERATION(q,_,u,du,eb,ip,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,u,du,eb,ip,fn,so));
-    case (NONE(),_)
-      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),minMax,NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE()));
+    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,_,_,i,f,n,ss,unc,distOpt,eb,ip,fn,so)), _, _)
+      then SOME(DAE.VAR_ATTR_REAL(q,u,du,inMin,inMax,i,f,n,ss,unc,distOpt,eb,ip,fn,so));
+
+    case (SOME(DAE.VAR_ATTR_INT(q,_,_,i,f,unc,distOpt,eb,ip,fn,so)), _, _)
+      then SOME(DAE.VAR_ATTR_INT(q,inMin,inMax,i,f,unc,distOpt,eb,ip,fn,so));
+
+    case (SOME(DAE.VAR_ATTR_ENUMERATION(q,_,_,u,du,eb,ip,fn,so)), _, _)
+      then SOME(DAE.VAR_ATTR_ENUMERATION(q,inMin,inMax,u,du,eb,ip,fn,so));
+
+    case (NONE(), _, _)
+      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),inMin,inMax,NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE()));
   end match;
 end setMinMax;
 
@@ -835,23 +831,17 @@ end getNominalAttrFail;
 public function getMinAttrFail "
   Return the min attribute. or fails"
   input Option<DAE.VariableAttributes> inVariableAttributesOption;
-  output DAE.Exp nominal;
-algorithm nominal := match(inVariableAttributesOption)
-    local
-      DAE.Exp r;
-    case (SOME(DAE.VAR_ATTR_REAL(min = (SOME(r), _)))) then r;
-  end match;
+  output DAE.Exp outMin;
+algorithm
+  SOME(DAE.VAR_ATTR_REAL(min = SOME(outMin))) := inVariableAttributesOption; 
 end getMinAttrFail;
 
 public function getMaxAttrFail "
   Return the max attribute. or fails"
   input Option<DAE.VariableAttributes> inVariableAttributesOption;
-  output DAE.Exp nominal;
-algorithm nominal := match(inVariableAttributesOption)
-    local
-      DAE.Exp r;
-    case (SOME(DAE.VAR_ATTR_REAL(min = (_, SOME(r))))) then r;
-  end match;
+  output DAE.Exp outMax;
+algorithm
+  SOME(DAE.VAR_ATTR_REAL(max = SOME(outMax))) := inVariableAttributesOption;
 end getMaxAttrFail;
 
 public function setVariableAttributes "sets the attributes of a DAE.Element that is VAR"
@@ -882,21 +872,16 @@ algorithm
   outAttr:=
   match (attr,s)
     local
-      Option<DAE.Exp> q,u,du,f,n,so,start;
-      tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
+      Option<DAE.Exp> q,u,du,f,n,so,start,min,max;
       Option<DAE.Uncertainty> unc;
       Option<DAE.Distribution> distOpt;
       Option<DAE.Exp> eb;
       Option<Boolean> ip,fn;
 
-    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,start,f,n,_,unc,distOpt,eb,ip,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,start,f,n,SOME(s),unc,distOpt,eb,ip,fn,so));
-    case (SOME(DAE.VAR_ATTR_INT(quantity =_)),_) then fail();
-    case (SOME(DAE.VAR_ATTR_BOOL(quantity =_)),_) then fail();
-    case (SOME(DAE.VAR_ATTR_STRING(quantity =_)),_) then fail();
-    case (SOME(DAE.VAR_ATTR_ENUMERATION(quantity =_)),_) then fail();
+    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,min,max,start,f,n,_,unc,distOpt,eb,ip,fn,so)),_)
+      then SOME(DAE.VAR_ATTR_REAL(q,u,du,min,max,start,f,n,SOME(s),unc,distOpt,eb,ip,fn,so));
     case (NONE(),_)
-      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),SOME(s),NONE(),NONE(),NONE(),NONE(),NONE(),NONE()));
+      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),SOME(s),NONE(),NONE(),NONE(),NONE(),NONE(),NONE()));
   end match;
 end setStateSelect;
 
@@ -909,26 +894,25 @@ algorithm
   outAttr:=
   match (attr,start)
     local
-      Option<DAE.Exp> q,u,du,f,n,so;
-      tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
+      Option<DAE.Exp> q,u,du,f,n,so,min,max;
       Option<DAE.StateSelect> ss;
       Option<DAE.Uncertainty> unc;
       Option<DAE.Distribution> distOpt;
       Option<DAE.Exp> eb;
       Option<Boolean> ip,fn;
 
-    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,_,f,n,ss,unc,distOpt,eb,ip,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,SOME(start),f,n,ss,unc,distOpt,eb,ip,fn,so));
-    case (SOME(DAE.VAR_ATTR_INT(q,minMax,_,f,unc,distOpt,eb,ip,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_INT(q,minMax,SOME(start),f,unc,distOpt,eb,ip,fn,so));
+    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,min,max,_,f,n,ss,unc,distOpt,eb,ip,fn,so)),_)
+      then SOME(DAE.VAR_ATTR_REAL(q,u,du,min,max,SOME(start),f,n,ss,unc,distOpt,eb,ip,fn,so));
+    case (SOME(DAE.VAR_ATTR_INT(q,min,max,_,f,unc,distOpt,eb,ip,fn,so)),_)
+      then SOME(DAE.VAR_ATTR_INT(q,min,max,SOME(start),f,unc,distOpt,eb,ip,fn,so));
     case (SOME(DAE.VAR_ATTR_BOOL(q,_,f,eb,ip,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_BOOL(q,SOME(start),f,eb,ip,fn,so));
+      then SOME(DAE.VAR_ATTR_BOOL(q,SOME(start),f,eb,ip,fn,so));
     case (SOME(DAE.VAR_ATTR_STRING(q,_,eb,ip,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_STRING(q,SOME(start),eb,ip,fn,so));
-    case (SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,_,du,eb,ip,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,SOME(start),du,eb,ip,fn,so));
+      then SOME(DAE.VAR_ATTR_STRING(q,SOME(start),eb,ip,fn,so));
+    case (SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,_,du,eb,ip,fn,so)),_)
+      then SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,SOME(start),du,eb,ip,fn,so));
     case (NONE(),_)
-      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),SOME(start),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE()));
+      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),SOME(start),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE()));
   end match;
 end setStartAttr;
 
@@ -941,27 +925,26 @@ algorithm
   outAttr:=
   match (attr,start)
     local
-      Option<DAE.Exp> q,u,du,f,n,so;
-      tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
+      Option<DAE.Exp> q,u,du,f,n,so,min,max;
       Option<DAE.StateSelect> ss;
       Option<DAE.Uncertainty> unc;
       Option<DAE.Distribution> distOpt;
       Option<DAE.Exp> eb;
       Option<Boolean> ip,fn;
 
-    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,_,f,n,ss,unc,distOpt,eb,ip,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,start,f,n,ss,unc,distOpt,eb,ip,fn,so));
-    case (SOME(DAE.VAR_ATTR_INT(q,minMax,_,f,unc,distOpt,eb,ip,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_INT(q,minMax,start,f,unc,distOpt,eb,ip,fn,so));
+    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,min,max,_,f,n,ss,unc,distOpt,eb,ip,fn,so)),_)
+      then SOME(DAE.VAR_ATTR_REAL(q,u,du,min,max,start,f,n,ss,unc,distOpt,eb,ip,fn,so));
+    case (SOME(DAE.VAR_ATTR_INT(q,min,max,_,f,unc,distOpt,eb,ip,fn,so)),_)
+      then SOME(DAE.VAR_ATTR_INT(q,min,max,start,f,unc,distOpt,eb,ip,fn,so));
     case (SOME(DAE.VAR_ATTR_BOOL(q,_,f,eb,ip,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_BOOL(q,start,f,eb,ip,fn,so));
+      then SOME(DAE.VAR_ATTR_BOOL(q,start,f,eb,ip,fn,so));
     case (SOME(DAE.VAR_ATTR_STRING(q,_,eb,ip,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_STRING(q,start,eb,ip,fn,so));
-    case (SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,_,du,eb,ip,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,start,du,eb,ip,fn,so));
+      then SOME(DAE.VAR_ATTR_STRING(q,start,eb,ip,fn,so));
+    case (SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,_,du,eb,ip,fn,so)),_)
+      then SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,start,du,eb,ip,fn,so));
     case (NONE(),NONE()) then NONE();
     case (NONE(),_)
-      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),start,NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE()));
+      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),start,NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE()));
   end match;
 end setStartAttrOption;
 
@@ -974,7 +957,7 @@ algorithm
   outAttr:=
   match (attr,startOrigin)
     local
-      Option<DAE.Exp> q,u,du,f,n,s;
+      Option<DAE.Exp> q,u,du,f,n,s,min,max;
       tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
       Option<DAE.StateSelect> ss;
       Option<DAE.Uncertainty> unc;
@@ -982,18 +965,18 @@ algorithm
       Option<DAE.Exp> eb;
       Option<Boolean> ip,fn;
 
-    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,s,f,n,ss,unc,distOpt,eb,ip,fn,_)),_)
-    then SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,s,f,n,ss,unc,distOpt,eb,ip,fn,startOrigin));
-    case (SOME(DAE.VAR_ATTR_INT(q,minMax,s,f,unc,distOpt,eb,ip,fn,_)),_)
-    then SOME(DAE.VAR_ATTR_INT(q,minMax,s,f,unc,distOpt,eb,ip,fn,startOrigin));
+    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,min,max,s,f,n,ss,unc,distOpt,eb,ip,fn,_)),_)
+      then SOME(DAE.VAR_ATTR_REAL(q,u,du,min,max,s,f,n,ss,unc,distOpt,eb,ip,fn,startOrigin));
+    case (SOME(DAE.VAR_ATTR_INT(q,min,max,s,f,unc,distOpt,eb,ip,fn,_)),_)
+      then SOME(DAE.VAR_ATTR_INT(q,min,max,s,f,unc,distOpt,eb,ip,fn,startOrigin));
     case (SOME(DAE.VAR_ATTR_BOOL(q,s,f,eb,ip,fn,_)),_)
-    then SOME(DAE.VAR_ATTR_BOOL(q,s,f,eb,ip,fn,startOrigin));
+      then SOME(DAE.VAR_ATTR_BOOL(q,s,f,eb,ip,fn,startOrigin));
     case (SOME(DAE.VAR_ATTR_STRING(q,s,eb,ip,fn,_)),_)
-    then SOME(DAE.VAR_ATTR_STRING(q,s,eb,ip,fn,startOrigin));
-    case (SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,s,du,eb,ip,fn,_)),_)
-    then SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,s,du,eb,ip,fn,startOrigin));
+      then SOME(DAE.VAR_ATTR_STRING(q,s,eb,ip,fn,startOrigin));
+    case (SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,s,du,eb,ip,fn,_)),_)
+      then SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,s,du,eb,ip,fn,startOrigin));
     case (NONE(),_)
-      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),startOrigin));
+      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),startOrigin));
   end match;
 end setStartOrigin;
 
@@ -1020,18 +1003,17 @@ algorithm
   outAttr:=
   match (attr,nominal)
     local
-      Option<DAE.Exp> q,u,du,f,s,so;
-      tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
+      Option<DAE.Exp> q,u,du,f,s,so,min,max;
       Option<DAE.StateSelect> ss;
       Option<DAE.Uncertainty> unc;
       Option<DAE.Distribution> distOpt;
       Option<DAE.Exp> eb;
       Option<Boolean> ip,fn;
 
-    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,s,f,_,ss,unc,distOpt,eb,ip,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,s,f,SOME(nominal),ss,unc,distOpt,eb,ip,fn,so));
+    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,min,max,s,f,_,ss,unc,distOpt,eb,ip,fn,so)),_)
+      then SOME(DAE.VAR_ATTR_REAL(q,u,du,min,max,s,f,SOME(nominal),ss,unc,distOpt,eb,ip,fn,so));
     case (NONE(),_)
-      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),SOME(nominal),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE()));
+      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),SOME(nominal),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE()));
   end match;
 end setNominalAttr;
 
@@ -1044,18 +1026,17 @@ algorithm
   outAttr:=
   match (attr,unit)
     local
-      Option<DAE.Exp> q,u,du,f,n,s,so;
-      tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
+      Option<DAE.Exp> q,u,du,f,n,s,so,min,max;
       Option<DAE.StateSelect> ss;
       Option<DAE.Uncertainty> unc;
       Option<DAE.Distribution> distOpt;
       Option<DAE.Exp> eb;
       Option<Boolean> ip,fn;
 
-    case (SOME(DAE.VAR_ATTR_REAL(q,_,du,minMax,s,f,n,ss,unc,distOpt,eb,ip,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_REAL(q,SOME(unit),du,minMax,s,f,n,ss,unc,distOpt,eb,ip,fn,so));
+    case (SOME(DAE.VAR_ATTR_REAL(q,_,du,min,max,s,f,n,ss,unc,distOpt,eb,ip,fn,so)),_)
+      then SOME(DAE.VAR_ATTR_REAL(q,SOME(unit),du,min,max,s,f,n,ss,unc,distOpt,eb,ip,fn,so));
     case (NONE(),_)
-      then SOME(DAE.VAR_ATTR_REAL(NONE(),SOME(unit),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE()));
+      then SOME(DAE.VAR_ATTR_REAL(NONE(),SOME(unit),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE()));
   end match;
 end setUnitAttr;
 
@@ -1174,26 +1155,25 @@ algorithm
   outAttr:=
   match (attr,isProtected)
     local
-      Option<DAE.Exp> q,u,du,i,f,n,so;
-      tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
+      Option<DAE.Exp> q,u,du,i,f,n,so,min,max;
       Option<DAE.StateSelect> ss;
       Option<DAE.Uncertainty> unc;
       Option<DAE.Distribution> distOpt;
       Option<DAE.Exp> eb;
       Option<Boolean> ip,fn;
 
-    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,i,f,n,ss,unc,distOpt,eb,_,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,i,f,n,ss,unc,distOpt,eb,SOME(isProtected),fn,so));
-    case (SOME(DAE.VAR_ATTR_INT(q,minMax,i,f,unc,distOpt,eb,_,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_INT(q,minMax,i,f,unc,distOpt,eb,SOME(isProtected),fn,so));
+    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,min,max,i,f,n,ss,unc,distOpt,eb,_,fn,so)),_)
+      then SOME(DAE.VAR_ATTR_REAL(q,u,du,min,max,i,f,n,ss,unc,distOpt,eb,SOME(isProtected),fn,so));
+    case (SOME(DAE.VAR_ATTR_INT(q,min,max,i,f,unc,distOpt,eb,_,fn,so)),_)
+      then SOME(DAE.VAR_ATTR_INT(q,min,max,i,f,unc,distOpt,eb,SOME(isProtected),fn,so));
     case (SOME(DAE.VAR_ATTR_BOOL(q,i,f,eb,_,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_BOOL(q,i,f,eb,SOME(isProtected),fn,so));
+      then SOME(DAE.VAR_ATTR_BOOL(q,i,f,eb,SOME(isProtected),fn,so));
     case (SOME(DAE.VAR_ATTR_STRING(q,i,eb,_,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_STRING(q,i,eb,SOME(isProtected),fn,so));
-    case (SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,u,du,eb,_,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,u,du,eb,SOME(isProtected),fn,so));
+      then SOME(DAE.VAR_ATTR_STRING(q,i,eb,SOME(isProtected),fn,so));
+    case (SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,u,du,eb,_,fn,so)),_)
+      then SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,u,du,eb,SOME(isProtected),fn,so));
     case (NONE(),_)
-      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),SOME(isProtected),NONE(),NONE()));
+      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),SOME(isProtected),NONE(),NONE()));
   end match;
 end setProtectedAttr;
 
@@ -1221,24 +1201,23 @@ algorithm
   outAttr:=
   match (attr,fixed)
     local
-      Option<DAE.Exp> q,u,du,n,ini,so;
-      tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
+      Option<DAE.Exp> q,u,du,n,ini,so,min,max;
       Option<DAE.StateSelect> ss;
       Option<DAE.Uncertainty> unc;
       Option<DAE.Distribution> distOpt;
       Option<DAE.Exp> eb;
       Option<Boolean> ip,fn;
 
-    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,ini,_,n,ss,unc,distOpt,eb,ip,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,ini,fixed,n,ss,unc,distOpt,eb,ip,fn,so));
-    case (SOME(DAE.VAR_ATTR_INT(q,minMax,ini,_,unc,distOpt,eb,ip,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_INT(q,minMax,ini,fixed,unc,distOpt,eb,ip,fn,so));
+    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,min,max,ini,_,n,ss,unc,distOpt,eb,ip,fn,so)),_)
+      then SOME(DAE.VAR_ATTR_REAL(q,u,du,min,max,ini,fixed,n,ss,unc,distOpt,eb,ip,fn,so));
+    case (SOME(DAE.VAR_ATTR_INT(q,min,max,ini,_,unc,distOpt,eb,ip,fn,so)),_)
+      then SOME(DAE.VAR_ATTR_INT(q,min,max,ini,fixed,unc,distOpt,eb,ip,fn,so));
     case (SOME(DAE.VAR_ATTR_BOOL(q,ini,_,eb,ip,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_BOOL(q,ini,fixed,eb,ip,fn,so));
+      then SOME(DAE.VAR_ATTR_BOOL(q,ini,fixed,eb,ip,fn,so));
     case (SOME(DAE.VAR_ATTR_STRING(q,ini,eb,ip,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_STRING(q,ini,eb,ip,fn,so));
-    case (SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,u,_,eb,ip,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,u,fixed,eb,ip,fn,so));
+      then SOME(DAE.VAR_ATTR_STRING(q,ini,eb,ip,fn,so));
+    case (SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,u,_,eb,ip,fn,so)),_)
+      then SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,u,fixed,eb,ip,fn,so));
   end match;
 end setFixedAttr;
 
@@ -1250,28 +1229,25 @@ public function setFinalAttr "
 algorithm
   outAttr := match (attr,finalPrefix)
     local
-      Option<DAE.Exp> q,u,du,i,f,n,so;
-      tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
+      Option<DAE.Exp> q,u,du,i,f,n,so,min,max;
       Option<DAE.StateSelect> ss;
       Option<DAE.Uncertainty> unc;
       Option<DAE.Distribution> distOpt;
       Option<DAE.Exp> eb;
       Option<Boolean> ip;
 
-    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,i,f,n,ss,unc,distOpt,eb,ip,_,so)),_)
-    then SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,i,f,n,ss,unc,distOpt,eb,ip,SOME(finalPrefix),so));
-    case (SOME(DAE.VAR_ATTR_INT(q,minMax,i,f,unc,distOpt,eb,ip,_,so)),_)
-    then SOME(DAE.VAR_ATTR_INT(q,minMax,i,f,unc,distOpt,eb,ip,SOME(finalPrefix),so));
+    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,min,max,i,f,n,ss,unc,distOpt,eb,ip,_,so)),_)
+      then SOME(DAE.VAR_ATTR_REAL(q,u,du,min,max,i,f,n,ss,unc,distOpt,eb,ip,SOME(finalPrefix),so));
+    case (SOME(DAE.VAR_ATTR_INT(q,min,max,i,f,unc,distOpt,eb,ip,_,so)),_)
+      then SOME(DAE.VAR_ATTR_INT(q,min,max,i,f,unc,distOpt,eb,ip,SOME(finalPrefix),so));
     case (SOME(DAE.VAR_ATTR_BOOL(q,i,f,eb,ip,_,so)),_)
-    then SOME(DAE.VAR_ATTR_BOOL(q,i,f,eb,ip,SOME(finalPrefix),so));
+      then SOME(DAE.VAR_ATTR_BOOL(q,i,f,eb,ip,SOME(finalPrefix),so));
     case (SOME(DAE.VAR_ATTR_STRING(q,i,eb,ip,_,so)),_)
-    then SOME(DAE.VAR_ATTR_STRING(q,i,eb,ip,SOME(finalPrefix),so));
-
-    case (SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,u,du,eb,ip,_,so)),_)
-    then SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,u,du,eb,ip,SOME(finalPrefix),so));
-
+      then SOME(DAE.VAR_ATTR_STRING(q,i,eb,ip,SOME(finalPrefix),so));
+    case (SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,u,du,eb,ip,_,so)),_)
+      then SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,u,du,eb,ip,SOME(finalPrefix),so));
     case (NONE(),_)
-      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),SOME(finalPrefix),NONE()));
+      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),SOME(finalPrefix),NONE()));
   end match;
 end setFinalAttr;
 
@@ -4608,7 +4584,7 @@ algorithm
       Option<Boolean> ip,fn;
       Type_a extraArg;
 
-    case(SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),start,fixed,nominal,stateSelect,uncertainty,distribution,eb,ip,fn,so)),_,extraArg)
+    case(SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,min,max,start,fixed,nominal,stateSelect,uncertainty,distribution,eb,ip,fn,so)),_,extraArg)
       equation
         (quantity,extraArg) = traverseDAEOptExp(quantity,func,extraArg);
         (unit,extraArg) = traverseDAEOptExp(unit,func,extraArg);
@@ -4618,16 +4594,16 @@ algorithm
         (start,extraArg) = traverseDAEOptExp(start,func,extraArg);
         (fixed,extraArg) = traverseDAEOptExp(fixed,func,extraArg);
         (nominal,extraArg) = traverseDAEOptExp(nominal,func,extraArg);
-      then (SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),start,fixed,nominal,stateSelect,uncertainty,distribution,eb,ip,fn,so)),extraArg);
+      then (SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,min,max,start,fixed,nominal,stateSelect,uncertainty,distribution,eb,ip,fn,so)),extraArg);
 
-    case(SOME(DAE.VAR_ATTR_INT(quantity,(min,max),start,fixed,uncertainty,distribution,eb,ip,fn,so)),_,extraArg)
+    case(SOME(DAE.VAR_ATTR_INT(quantity,min,max,start,fixed,uncertainty,distribution,eb,ip,fn,so)),_,extraArg)
       equation
         (quantity,extraArg) = traverseDAEOptExp(quantity,func,extraArg);
         (min,extraArg) = traverseDAEOptExp(min,func,extraArg);
         (max,extraArg) = traverseDAEOptExp(max,func,extraArg);
         (start,extraArg) = traverseDAEOptExp(start,func,extraArg);
         (fixed,extraArg) = traverseDAEOptExp(fixed,func,extraArg);
-      then (SOME(DAE.VAR_ATTR_INT(quantity,(min,max),start,fixed,uncertainty,distribution,eb,ip,fn,so)),extraArg);
+      then (SOME(DAE.VAR_ATTR_INT(quantity,min,max,start,fixed,uncertainty,distribution,eb,ip,fn,so)),extraArg);
 
       case(SOME(DAE.VAR_ATTR_BOOL(quantity,start,fixed,eb,ip,fn,so)),_,extraArg)
         equation
@@ -4642,11 +4618,11 @@ algorithm
           (start,extraArg) = traverseDAEOptExp(start,func,extraArg);
         then (SOME(DAE.VAR_ATTR_STRING(quantity,start,eb,ip,fn,so)),extraArg);
 
-      case(SOME(DAE.VAR_ATTR_ENUMERATION(quantity,(min,max),start,fixed,eb,ip,fn,so)),_,extraArg)
+      case(SOME(DAE.VAR_ATTR_ENUMERATION(quantity,min,max,start,fixed,eb,ip,fn,so)),_,extraArg)
         equation
           (quantity,extraArg) = traverseDAEOptExp(quantity,func,extraArg);
           (start,extraArg) = traverseDAEOptExp(start,func,extraArg);
-        then (SOME(DAE.VAR_ATTR_ENUMERATION(quantity,(min,max),start,fixed,eb,ip,fn,so)),extraArg);
+        then (SOME(DAE.VAR_ATTR_ENUMERATION(quantity,min,max,start,fixed,eb,ip,fn,so)),extraArg);
 
       case (NONE(),_,extraArg) then (NONE(),extraArg);
   end match;

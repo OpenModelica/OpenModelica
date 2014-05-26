@@ -13,6 +13,10 @@ package ExpressionDumpTpl
 end ExpressionDumpTpl;
 
 package ClassInf
+  function getStateName
+    input State inState;
+    output Absyn.Path outPath;
+  end getStateName;
 
   uniontype State "- Machine states, the string contains the classname."
     record UNKNOWN
@@ -121,6 +125,15 @@ package ClassInf
 
 end ClassInf;
 
+package Config
+  function showAnnotations
+    output Boolean outShowAnnotations;
+  end showAnnotations;
+
+  function showStartOrigin
+    output Boolean show;
+  end showStartOrigin;
+end Config;
 
 package Absyn
 
@@ -377,6 +390,7 @@ package DAE
     record ASSERT " The Modelica builtin assert"
       Exp condition;
       Exp message;
+      Exp level;
       ElementSource source "the origin of the component/equation/algorithm";
     end ASSERT;
 
@@ -394,8 +408,7 @@ package DAE
     record NORETCALL "call with no return value, i.e. no equation.
       Typically sideeffect call of external function but also
       Connections.* i.e. Connections.root(...) functions."
-      Absyn.Path functionName;
-      list<Exp> functionArgs;
+      Exp exp;
       ElementSource source "the origin of the component/equation/algorithm";
     end NORETCALL;
 
@@ -418,22 +431,26 @@ package DAE
     record STMT_ASSIGN
       Exp exp1;
       Exp exp;
+      ElementSource source;
     end STMT_ASSIGN;
 
     record STMT_TUPLE_ASSIGN
       list<Exp> expExpLst;
       Exp exp;
+      ElementSource source;
     end STMT_TUPLE_ASSIGN;
 
     record STMT_ASSIGN_ARR
       ComponentRef componentRef;
       Exp exp;
+      ElementSource source;
     end STMT_ASSIGN_ARR;
 
     record STMT_IF
       Exp exp;
       list<Statement> statementLst;
       Else else_;
+      ElementSource source;
     end STMT_IF;
 
     record STMT_FOR
@@ -441,11 +458,13 @@ package DAE
       Ident iter;
       Exp range;
       list<Statement> statementLst;
+      ElementSource source;
     end STMT_FOR;
 
     record STMT_WHILE
       Exp exp;
       list<Statement> statementLst;
+      ElementSource source;
     end STMT_WHILE;
 
     record STMT_WHEN
@@ -453,50 +472,47 @@ package DAE
       list<Statement> statementLst;
       Option<Statement> elseWhen;
       list<Integer> helpVarIndices;
+      ElementSource source;
     end STMT_WHEN;
 
     record STMT_ASSERT
       Exp cond;
       Exp msg;
+      Exp level;
+      ElementSource source;
     end STMT_ASSERT;
 
     record STMT_TERMINATE
       Exp msg;
+      ElementSource source;
     end STMT_TERMINATE;
 
     record STMT_REINIT
       Exp var;
       Exp value;
+      ElementSource source;
     end STMT_REINIT;
 
     record STMT_NORETCALL
       Exp exp;
+      ElementSource source;
     end STMT_NORETCALL;
 
     record STMT_RETURN
       ElementSource source;
+      ElementSource source;
     end STMT_RETURN;
 
     record STMT_BREAK
+      ElementSource source;
       ElementSource source;
     end STMT_BREAK;
 
     record STMT_FAILURE
       list<Statement> body;
       ElementSource source;
-    end STMT_FAILURE;
-
-    record STMT_TRY
-      list<Statement> tryBody;
-    end STMT_TRY;
-
-    record STMT_CATCH
-      list<Statement> catchBody;
-    end STMT_CATCH;
-
-    record STMT_THROW
       ElementSource source;
-    end STMT_THROW;
+    end STMT_FAILURE;
   end Statement;
 
   uniontype Else "An if statements can one or more `elseif\' branches and an
@@ -764,35 +780,39 @@ package DAE
 
   uniontype StateSelect
     record NEVER end NEVER;
-
     record AVOID end AVOID;
-
     record DEFAULT end DEFAULT;
-
     record PREFER end PREFER;
-
     record ALWAYS end ALWAYS;
   end StateSelect;
 
   uniontype Uncertainty
     record GIVEN end GIVEN;
-
     record SOUGHT end SOUGHT;
-
     record REFINE end REFINE;
   end Uncertainty;
+
+  uniontype Distribution
+    record DISTRIBUTION
+      Exp name;
+      Exp params;
+      Exp paramNames;
+    end DISTRIBUTION;
+  end Distribution;
 
   uniontype VariableAttributes
     record VAR_ATTR_REAL
       Option<Exp> quantity "quantity";
       Option<Exp> unit "unit";
       Option<Exp> displayUnit "displayUnit";
-      tuple<Option<Exp>, Option<Exp>> min "min, max";
+      Option<Exp> min;
+      Option<Exp> max;
       Option<Exp> start "start value";
       Option<Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables";
       Option<Exp> nominal "nominal";
       Option<StateSelect> stateSelectOption;
       Option<Uncertainty> uncertainOption;
+      Option<Distribution> distributionOption;
       Option<Exp> equationBound;
       Option<Boolean> isProtected;
       Option<Boolean> finalPrefix;
@@ -801,10 +821,12 @@ package DAE
 
     record VAR_ATTR_INT
       Option<Exp> quantity "quantity";
-      tuple<Option<Exp>, Option<Exp>> min "min, max";
+      Option<Exp> min;
+      Option<Exp> max;
       Option<Exp> start "start value";
       Option<Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables";
       Option<Uncertainty> uncertainOption;
+      Option<Distribution> distributionOption;
       Option<Exp> equationBound;
       Option<Boolean> isProtected; // ,eb,ip
       Option<Boolean> finalPrefix;
@@ -832,7 +854,8 @@ package DAE
 
     record VAR_ATTR_ENUMERATION
       Option<Exp> quantity "quantity";
-      tuple<Option<Exp>, Option<Exp>> min "min, max";
+      Option<Exp> min;
+      Option<Exp> max;
       Option<Exp> start "start";
       Option<Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables";
       Option<Exp> equationBound;
@@ -894,6 +917,8 @@ package DAE
       Exp binding;
     end NO_DERIVATIVE;
   end derivativeCond;
+
+  type TypeSource = list<Absyn.Path>;
 
   uniontype Type "models the different front-end and back-end types"
 
@@ -960,6 +985,7 @@ package DAE
     end T_SUBTYPE_BASIC;
 
     record T_FUNCTION
+      list<FuncArg> funcArg;
       Type funcResultType "Only single-result" ;
       FunctionAttributes functionAttributes;
       TypeSource source;
@@ -1103,6 +1129,23 @@ package DAE
       //DimensionBinding dimensionBinding "unknown dimension can be bound or unbound";
     end DIM_UNKNOWN;
   end Dimension;
+
+  uniontype FuncArg
+    record FUNCARG
+      String name;
+      Type ty;
+      Const const;
+      VarParallelism par;
+      Option<Exp> defaultBinding;
+    end FUNCARG;
+  end FuncArg;
+
+  uniontype Const
+    record C_CONST end C_CONST;
+    record C_PARAM end C_PARAM;
+    record C_VAR end C_VAR;
+    record C_UNKNOWN end C_UNKNOWN;
+  end Const;
 
   uniontype Exp "Expressions
       The `Exp\' datatype closely corresponds to the `Absyn.Exp\'
@@ -1320,16 +1363,12 @@ package DAE
     record PATTERN "(x,1,ROOT(a as _,false,_)) := rhs; MetaModelica extension"
       Pattern pattern;
     end PATTERN;
-
-    /* --- */
-
   end Exp;
-
-
-
-
 end DAE;
 
+package SCodeDump
+  constant SCodeDumpOptions defaultOptions;
+end SCodeDump;
 
 package Tpl
   function addTemplateError

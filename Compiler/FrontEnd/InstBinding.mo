@@ -357,7 +357,7 @@ algorithm
         //TODO: check for protected attribute (here and below matches)
       then
         (cache,SOME(
-          DAE.VAR_ATTR_REAL(quantity_str,unit_str,displayunit_str,(min_val,max_val),
+          DAE.VAR_ATTR_REAL(quantity_str,unit_str,displayunit_str,min_val,max_val,
           start_val,fixed_val,nominal_val,stateSelect_value,uncertainty_value,distribution_value,NONE(),NONE(),NONE(),startOrigin)));
 
     // Integer
@@ -374,7 +374,7 @@ algorithm
 
         startOrigin = instStartOrigin(mod, varLst, "start");
       then
-        (cache,SOME(DAE.VAR_ATTR_INT(quantity_str,(min_val,max_val),start_val,fixed_val,uncertainty_value,distribution_value,NONE(),NONE(),NONE(),startOrigin)));
+        (cache,SOME(DAE.VAR_ATTR_INT(quantity_str,min_val,max_val,start_val,fixed_val,uncertainty_value,distribution_value,NONE(),NONE(),NONE(),startOrigin)));
 
     // Boolean
     case (cache,_,mod,tp as DAE.T_BOOL(varLst = varLst, source = _),index_list)
@@ -405,7 +405,7 @@ algorithm
         (fixed_val) = instBinding(mod, varLst, DAE.T_BOOL_DEFAULT, index_list, "fixed",true);
         startOrigin = instStartOrigin(mod, varLst, "start");
       then
-        (cache,SOME(DAE.VAR_ATTR_ENUMERATION(quantity_str,(exp_bind_min,exp_bind_max),exp_bind_start,fixed_val,NONE(),NONE(),NONE(),startOrigin)));
+        (cache,SOME(DAE.VAR_ATTR_ENUMERATION(quantity_str,exp_bind_min,exp_bind_max,exp_bind_start,fixed_val,NONE(),NONE(),NONE(),startOrigin)));
 
     // not a basic type?
     case (cache,_,_,_,_)

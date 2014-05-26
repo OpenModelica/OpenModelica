@@ -118,9 +118,8 @@ extern modelica_metatype arrayCopy(modelica_metatype);
 #define arrayGet(X,Y) nobox_arrayGet(threadData,X,Y)
 static inline modelica_metatype nobox_arrayGet(threadData_t *threadData,modelica_metatype arr,modelica_integer ix)
 {
-  if (ix < 1)
-    MMC_THROW_INTERNAL();
-  if((unsigned)ix-1 >= MMC_HDRSLOTS(MMC_GETHDR(arr)))
+  int nelts = MMC_HDRSLOTS(MMC_GETHDR(arr));
+  if (ix < 1 || ix > nelts)
     MMC_THROW_INTERNAL();
   return MMC_STRUCTDATA(arr)[ix-1];
 }

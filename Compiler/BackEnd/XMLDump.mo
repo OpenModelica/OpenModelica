@@ -1314,7 +1314,7 @@ sudh as:
  algorithm
    _:= matchcontinue(dae_var_attr,Content,addMathMLCode)
      local
-       tuple<Option<DAE.Exp>, Option<DAE.Exp>> min_max;
+       Option<DAE.Exp> min, max;
        Option<DAE.Exp> quant,unit,displayUnit,startOrigin;
        Option<DAE.Exp> Initial,nominal;
        Option<DAE.Exp> fixed;
@@ -1326,12 +1326,12 @@ sudh as:
        Option<Boolean> isProtected;
        Option<Boolean> finalPrefix;
 
-   case (SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),NONE(),_,_,_,_,_)),_,_) then ();
-   case (SOME(DAE.VAR_ATTR_INT(NONE(),(NONE(),NONE()),NONE(),NONE(),_,_,_,_,_,_)),_,_) then ();
+   case (SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),_,_,_,_,_)),_,_) then ();
+   case (SOME(DAE.VAR_ATTR_INT(NONE(),NONE(),NONE(),NONE(),NONE(),_,_,_,_,_,_)),_,_) then ();
    case (SOME(DAE.VAR_ATTR_BOOL(NONE(),NONE(),NONE(),_,_,_,_)),_,_) then ();
    case (SOME(DAE.VAR_ATTR_STRING(NONE(),NONE(),_,_,_,_)),_,_) then ();
-   case (SOME(DAE.VAR_ATTR_ENUMERATION(NONE(),(NONE(),NONE()),NONE(),NONE(),_,_,_,_)),_,_) then ();
-   case (SOME(DAE.VAR_ATTR_REAL(quant,unit,displayUnit,min_max,Initial,fixed,nominal,stateSel,_,_,
+   case (SOME(DAE.VAR_ATTR_ENUMERATION(NONE(),NONE(),NONE(),NONE(),NONE(),_,_,_,_)),_,_) then ();
+   case (SOME(DAE.VAR_ATTR_REAL(quant,unit,displayUnit,min,max,Initial,fixed,nominal,stateSel,_,_,
                                 _,_,_,_)),_,addMMLCode)
       equation
         dumpStrOpenTag(Content);
@@ -1339,20 +1339,20 @@ sudh as:
         dumpOptExp(unit,VAR_ATTR_UNIT,addMMLCode);
         dumpOptExp(displayUnit,VAR_ATTR_DISPLAY_UNIT,addMMLCode);
         dumpOptionDAEStateSelect(stateSel,VAR_ATTR_STATESELECT);
-        dumpOptExp(Util.tuple21(min_max),VAR_ATTR_MINVALUE,addMMLCode);
-        dumpOptExp(Util.tuple22(min_max),VAR_ATTR_MAXVALUE,addMMLCode);
+        dumpOptExp(min,VAR_ATTR_MINVALUE,addMMLCode);
+        dumpOptExp(max,VAR_ATTR_MAXVALUE,addMMLCode);
         dumpOptExp(nominal,VAR_ATTR_NOMINAL,addMMLCode);
         dumpOptExp(Initial,VAR_ATTR_INITIALVALUE,addMMLCode);
         dumpOptExp(fixed,VAR_ATTR_FIXED,addMMLCode);
         // adrpo: TODO! FIXME! add the new information about equationBound,isProtected,finalPrefix
         dumpStrCloseTag(Content);
       then();
-    case (SOME(DAE.VAR_ATTR_INT(quant,min_max,Initial,fixed,_,_,_,_,_,_)),_,addMMLCode)
+    case (SOME(DAE.VAR_ATTR_INT(quant,min,max,Initial,fixed,_,_,_,_,_,_)),_,addMMLCode)
       equation
         dumpStrOpenTag(Content);
         dumpOptExp(quant,VAR_ATTR_QUANTITY,addMMLCode);
-        dumpOptExp(Util.tuple21(min_max),VAR_ATTR_MINVALUE,addMMLCode);
-        dumpOptExp(Util.tuple22(min_max),VAR_ATTR_MAXVALUE,addMMLCode);
+        dumpOptExp(min,VAR_ATTR_MINVALUE,addMMLCode);
+        dumpOptExp(max,VAR_ATTR_MAXVALUE,addMMLCode);
         dumpOptExp(Initial,VAR_ATTR_INITIALVALUE,addMMLCode);
         dumpOptExp(fixed,VAR_ATTR_FIXED,addMMLCode);
         dumpStrCloseTag(Content);
@@ -1372,12 +1372,12 @@ sudh as:
         dumpOptExp(Initial,VAR_ATTR_INITIALVALUE,addMMLCode);
         dumpStrCloseTag(Content);
       then();
-    case (SOME(DAE.VAR_ATTR_ENUMERATION(quant,min_max,Initial,fixed,_,_,_,_)),_,addMMLCode)
+    case (SOME(DAE.VAR_ATTR_ENUMERATION(quant,min,max,Initial,fixed,_,_,_,_)),_,addMMLCode)
       equation
         dumpStrOpenTag(Content);
         dumpOptExp(quant,VAR_ATTR_QUANTITY,addMMLCode);
-        dumpOptExp(Util.tuple21(min_max),VAR_ATTR_MINVALUE,addMMLCode);
-        dumpOptExp(Util.tuple22(min_max),VAR_ATTR_MAXVALUE,addMMLCode);
+        dumpOptExp(min,VAR_ATTR_MINVALUE,addMMLCode);
+        dumpOptExp(max,VAR_ATTR_MAXVALUE,addMMLCode);
         dumpOptExp(Initial,VAR_ATTR_INITIALVALUE,addMMLCode);
         dumpOptExp(fixed,VAR_ATTR_FIXED,addMMLCode);
         dumpStrCloseTag(Content);

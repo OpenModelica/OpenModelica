@@ -302,7 +302,7 @@ function linspace
 algorithm
   // assert(n >= 2, "linspace requires n>=2 but got " + String(n));
   v := {x1 + (x2-x1)*(i-1)/(n-1) for i in 1:n};
-annotation(__OpenModelica_EarlyInline=true,Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true,__OpenModelica_EarlyInline=true,Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'linspace()'\">linspace()</a>
 </html>"));
 end linspace;
@@ -337,7 +337,7 @@ function outerProduct "Outer product of two vectors"
   output Real[size(v1,1),size(v2,1)] o;
 algorithm
   o := matrix(v1) * transpose(matrix(v2));
-annotation(__OpenModelica_EarlyInline=true,preferredView="text",Documentation(info="<html>
+annotation(__OpenModelica_builtin=true,__OpenModelica_EarlyInline=true,preferredView="text",Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'outerProduct()'\">outerProduct()</a>
 </html>"));
 end outerProduct;
