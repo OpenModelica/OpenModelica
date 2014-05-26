@@ -375,13 +375,15 @@ double extraPolate(DATA *data, double old1, double old2)
 {
   double retValue;
 
-  if(data->localData[1]->timeValue == data->localData[2]->timeValue)
+  if( data->localData[1]->timeValue == data->localData[2]->timeValue || old1 == old2)
   {
     retValue = old1;
   }
   else
   {
-    retValue = old2 + ((data->localData[0]->timeValue - data->localData[2]->timeValue)/(data->localData[1]->timeValue - data->localData[2]->timeValue)) * (old1-old2);
+    retValue =  ((data->localData[0]->timeValue - data->localData[2]->timeValue)*old1 + 
+                 (data->localData[1]->timeValue - data->localData[0]->timeValue)*old2)/
+                 (data->localData[1]->timeValue - data->localData[2]->timeValue);
   }
 
   return retValue;

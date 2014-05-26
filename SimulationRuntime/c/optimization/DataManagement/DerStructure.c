@@ -52,9 +52,6 @@ inline void allocate_der_struct(OptDataStructure *s, OptDataDim * dim, DATA* dat
   const int nJ2 = dim->nJ2;
   const int nx = dim->nx;
   int i, j, k;
-  const int nH0 = optData->dim.nH0_;
-  const int nH1 = optData->dim.nH1_;
-  const int nhess = (nsi*np-1)*nH0+nH1;
   char * cflags;
 
   cflags = (char*)omc_flagValue[FLAG_UP_HESSIAN];
@@ -164,8 +161,12 @@ inline void allocate_der_struct(OptDataStructure *s, OptDataDim * dim, DATA* dat
   for(j = 0; j < nv; ++j)
     optData->Hl[j] = (long double *)calloc(nv, sizeof(long double));
 
-  if(optData->dim.updateHessian > 0)
+  if(optData->dim.updateHessian > 0){
+    const int nH0 = optData->dim.nH0_;
+    const int nH1 = optData->dim.nH1_;
+    const int nhess = (nsi*np-1)*nH0+nH1;
     optData->oldH = (double *)malloc(nhess*sizeof(double));
+  }
 
   optData->dim.iter_updateHessian = optData->dim.updateHessian-1;
 
