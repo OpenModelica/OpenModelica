@@ -372,18 +372,18 @@ void printRelations(DATA *data, int stream)
   long i;
 
   TRACE_PUSH
-  
+
   if (!ACTIVE_STREAM(stream))
   {
     TRACE_POP
     return;
   }
-  
+
   infoStreamPrint(stream, 1, "status of relations at time=%.12g", data->localData[0]->timeValue);
   for(i=0; i<data->modelData.nRelations; i++)
     infoStreamPrint(stream, 0, "[%ld] %s = %c | pre(%s) = %c", i, data->callback->relationDescription(i), data->simulationInfo.relations[i] ? 'T' : 'F', data->callback->relationDescription(i), data->simulationInfo.relationsPre[i] ? 'T' : 'F');
   messageClose(stream);
-  
+
   TRACE_POP
 }
 

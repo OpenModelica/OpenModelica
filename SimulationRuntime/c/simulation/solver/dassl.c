@@ -247,7 +247,7 @@ int dassl_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
 int dassl_deinitial(DASSL_DATA *dasslData)
 {
   TRACE_PUSH
-  
+
   /* free work arrays for DASSL */
   free(dasslData->rwork);
   free(dasslData->iwork);
@@ -502,7 +502,7 @@ continue_DASSL(fortran_integer* idid, double* atol)
     retValue = -33;
     break;
   }
-  
+
   TRACE_POP
   return retValue;
 }
@@ -589,7 +589,7 @@ int function_ZeroCrossingsDASSL(fortran_integer *neqm, double *t, double *y, dou
   data->threadData->currentErrorStage = saveJumpState;
   data->localData[0]->timeValue = timeBackup;
 
-  TRACE_POP  
+  TRACE_POP
   return 0;
 }
 
@@ -802,7 +802,7 @@ int jacA_num(DATA* data, double *t, double *y, double *yprime, double *delta, do
   double ysave;
   fortran_integer ires;
   int i,j;
-  
+
   TRACE_PUSH
 
   for(i=data->modelData.nStates-1; i >= 0; i--)
@@ -893,7 +893,7 @@ int jacA_numColored(DATA* data, double *t, double *y, double *yprime, double *de
   double* ysave = dasslData->ysave;
 
   int i,j,l,k,ii;
-  
+
   TRACE_PUSH
 
   for(i = 0; i < data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors; i++)
