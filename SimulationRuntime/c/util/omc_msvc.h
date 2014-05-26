@@ -78,6 +78,10 @@ unsigned int alarm (unsigned int seconds);
 
 #else /* not msvc */
 
+#if defined(__MINGW32__)
+unsigned int alarm (unsigned int seconds);
+#endif
+
 /* define inline for non-MSVC */
 #define OMC_INLINE inline
 

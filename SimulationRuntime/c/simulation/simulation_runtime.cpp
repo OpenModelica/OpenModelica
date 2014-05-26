@@ -28,9 +28,7 @@
  *
  */
 
-#ifdef _MSC_VER
-  #include <windows.h>
-#endif
+#include "omc_msvc.h"
 
 #include <setjmp.h>
 #include <string>

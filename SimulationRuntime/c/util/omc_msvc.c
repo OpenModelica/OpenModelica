@@ -34,6 +34,9 @@
 #include <stdlib.h>
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
+#include <windows.h>
+#include <time.h>
+
 int asprintf(char **strp, const char *fmt, ...) {
   int len;
   va_list ap;
@@ -85,7 +88,7 @@ unsigned int alarm (unsigned int seconds)
 
   pending = seconds;
 
-  if (nsec) {
+  if (seconds) {
       time (&t0);   // keep track of when count down started
       DWORD threadId;
       thread = CreateThread (0, 0, killProcess, (void*)seconds, 0, &threadId);
