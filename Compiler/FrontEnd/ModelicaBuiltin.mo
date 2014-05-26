@@ -371,7 +371,7 @@ end skew;
 
 function delay "Delay expression"
   external "builtin";
-  annotation(Documentation(info="<html>
+  annotation(__OpenModelica_Impure = true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'delay()'\">delay()</a>
 </html>"));
 end delay;
