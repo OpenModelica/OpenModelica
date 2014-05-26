@@ -1655,7 +1655,7 @@ algorithm
         clusters = List.map1(clustersIn,createTDSSortCompactClusters,TDSLevel);
         print("clusters:\n"+&stringDelimitList(List.map(clusters,intListString),"\n")+&"\n");
 
-        
+
         procAss = listArray(clusters);
         size = arrayLength(iTaskGraph);
         taskAss = arrayCreate(size,-1);
