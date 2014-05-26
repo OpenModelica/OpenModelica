@@ -39,6 +39,7 @@ static inline void sumLagrange0(const int i, const int j, double * res,  const m
 static inline void num_hessian1(double * v, const double * const lambda, const double objFactor, OptData *optData, const int i, const int j);
 static inline void sumLagrange1(const int i, const int j, double * res,  const modelica_boolean upC, const modelica_boolean upC2, OptData *optData);
 static inline void updateDerF(OptData *optData);
+#define DF_STEP(v) ((1.0 + 1e-5*fmin(1.5e3,fabs(v)) + 1e-8) - 1.0)
 
 /* eval hessian
  * author: Vitalij Ruge
@@ -209,13 +210,11 @@ static inline void num_hessian0(double * v, const double * const lambda,
   for(ii = 0; ii < nv; ++ii){
     /********************/
     v_save = (long double) v[ii];
-    h = (long double)(1e-4 *fmin(fabs(v_save),1e6) + 1e-8);
-    h = (1.0 + h) - 1.0;
+    h = (long double)DF_STEP(v_save);
     if(v[ii] + h <= vmax[ii]){
       v[ii] += h;
     }else{
       h *= -1.0;
-      h = (1.0 + h) - 1.0;
       v[ii] += h;
     }
     /********************/
@@ -304,13 +303,11 @@ static inline void num_hessian1(double * v, const double * const lambda,
   for(ii = 0; ii < nv; ++ii){
     /********************/
     v_save = (long double) v[ii];
-    h = (long double)(1e-4 *fmin(fabs(v_save),1e2) + 1e-8);
-    h = (1.0 + h) - 1.0;
+    h = (long double)DF_STEP(v_save);
     if(v[ii] + h <= vmax[ii]){
       v[ii] += h;
     }else{
       h *= -1.0;
-      h = (1.0 + h) - 1.0;
       v[ii] += h;
     }
     /********************/
@@ -462,3 +459,5 @@ static inline void updateDerF(OptData *optData){
   }
 
 }
+
+#undef DF_STEP
