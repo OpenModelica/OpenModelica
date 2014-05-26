@@ -387,7 +387,9 @@ constant DebugFlag EVAL_FUNC_DUMP = DEBUG_FLAG(110, "evalFuncDump", false,
   Util.gettext("dumps debug information about the function evaluation"));
 constant DebugFlag PRINT_STRUCTURAL = DEBUG_FLAG(111, "printStructuralParameters", false,
   Util.gettext("Prints the structural parameters identified by the front-end"));
-
+constant DebugFlag ITERATION_VARS = DEBUG_FLAG(113, "iterationVars", false,
+  Util.gettext("Shows a list of all iteration variables."));
+  
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
 // initialization so that all flags are sorted by index (and thus have unique
@@ -503,7 +505,8 @@ constant list<DebugFlag> allDebugFlags = {
   STRICT_RML,
   IMPL_ODE,
   EVAL_FUNC_DUMP,
-  PRINT_STRUCTURAL
+  PRINT_STRUCTURAL,
+  ITERATION_VARS
 };
 
 // CONFIGURATION FLAGS

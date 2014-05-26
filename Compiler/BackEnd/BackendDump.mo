@@ -293,15 +293,22 @@ end printShared;
 public function printBackendDAEType "This is a helper for printShared."
   input BackendDAE.BackendDAEType btp;
 algorithm
-  _ := match(btp)
-    case (BackendDAE.SIMULATION()) equation print("simulation"); then ();
-    case (BackendDAE.JACOBIAN()) equation print("jacobian"); then ();
-    case (BackendDAE.ALGEQSYSTEM()) equation print("algebraic loop"); then ();
-    case (BackendDAE.ARRAYSYSTEM()) equation print("multidim equation arrays"); then ();
-    case (BackendDAE.PARAMETERSYSTEM()) equation print("parameter system"); then ();
-    case (BackendDAE.INITIALSYSTEM()) equation print("initial system"); then ();
-  end match;
+  print(printBackendDAEType2String(btp));
 end printBackendDAEType;
+
+public function printBackendDAEType2String "This is a helper for printShared."
+  input BackendDAE.BackendDAEType btp;
+  output String str;
+algorithm
+  str := match(btp)
+    case (BackendDAE.SIMULATION()) then "simulation";
+    case (BackendDAE.JACOBIAN()) then "jacobian";
+    case (BackendDAE.ALGEQSYSTEM()) then "algebraic loop";
+    case (BackendDAE.ARRAYSYSTEM()) then "multidim equation arrays";
+    case (BackendDAE.PARAMETERSYSTEM()) then "parameter system";
+    case (BackendDAE.INITIALSYSTEM()) then "initial system";
+  end match;
+end printBackendDAEType2String;
 
 public function printStateSets "author: Frenkel TUD"
   input BackendDAE.StateSets stateSets;

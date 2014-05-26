@@ -203,6 +203,8 @@ algorithm
 
       b = Flags.isSet(Flags.DUMP_EQNINORDER) and Flags.isSet(Flags.DUMP_INITIAL_SYSTEM);
       Debug.bcall2(b, BackendDump.dumpEqnsSolved, initdae, "initial system: eqns in order");
+      
+      Debug.fcall(Flags.ITERATION_VARS, BackendDAEOptimize.listAllIterationVariables, initdae);
     then (SOME(initdae), useHomotopy);
 
     else (NONE(), false);
