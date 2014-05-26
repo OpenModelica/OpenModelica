@@ -67,6 +67,7 @@ void updateDiscreteSystem(DATA *data)
   data->simulationInfo.needToIterate = 0;
 
   TRACE_PUSH
+
   data->simulationInfo.callStatistics.updateDiscreteSystem++;
 
   data->callback->function_updateRelations(data, 1);
@@ -108,6 +109,7 @@ void updateDiscreteSystem(DATA *data)
     discreteChanged = data->callback->checkForDiscreteChanges(data);
   }
   storeRelations(data);
+
   TRACE_POP
 }
 
@@ -119,15 +121,17 @@ void updateDiscreteSystem(DATA *data)
  */
 void saveZeroCrossings(DATA* data)
 {
-  TRACE_PUSH
   long i = 0;
 
-  debugStreamPrint(LOG_ZEROCROSSINGS, 0, "save all zerocrossings"); /* ??? */
+  TRACE_PUSH
+
+  debugStreamPrint(LOG_ZEROCROSSINGS, 0, "save all zerocrossings");
 
   for(i=0;i<data->modelData.nZeroCrossings;i++)
     data->simulationInfo.zeroCrossingsPre[i] = data->simulationInfo.zeroCrossings[i];
 
   data->callback->function_ZeroCrossings(data, data->simulationInfo.zeroCrossings);
+
   TRACE_POP
 }
 
@@ -140,11 +144,13 @@ void saveZeroCrossings(DATA* data)
 void copyStartValuestoInitValues(DATA *data)
 {
   TRACE_PUSH
+
   /* just copy all start values to initial */
   setAllParamsToStart(data);
   setAllVarsToStart(data);
   storePreValues(data);
   overwriteOldSimulationData(data);
+
   TRACE_POP
 }
 
@@ -163,6 +169,8 @@ void printAllVars(DATA *data, int ringSegment, int stream)
   long i;
   MODEL_DATA      *mData = &(data->modelData);
   SIMULATION_INFO *sInfo = &(data->simulationInfo);
+
+  TRACE_PUSH
 
   if (!ACTIVE_STREAM(stream)) return;
 
@@ -199,6 +207,8 @@ void printAllVars(DATA *data, int ringSegment, int stream)
   messageClose(stream);
 
   messageClose(stream);
+
+  TRACE_POP
 }
 
 #ifdef USE_DEBUG_OUTPUT
@@ -214,6 +224,8 @@ void printAllVarsDebug(DATA *data, int ringSegment, int stream)
   long i;
   MODEL_DATA      *mData = &(data->modelData);
   SIMULATION_INFO *sInfo = &(data->simulationInfo);
+
+  TRACE_PUSH
 
   debugStreamPrint(stream, 1, "Print values for buffer segment %d regarding point in time : %e", ringSegment, data->localData[ringSegment]->timeValue);
 
@@ -248,6 +260,8 @@ void printAllVarsDebug(DATA *data, int ringSegment, int stream)
   messageClose(stream);
 
   messageClose(stream);
+
+  TRACE_POP
 }
 #endif
 
@@ -264,6 +278,8 @@ void printParameters(DATA *data, int stream)
 {
   long i;
   MODEL_DATA *mData = &(data->modelData);
+
+  TRACE_PUSH
 
   if (!ACTIVE_STREAM(stream)) return;
 
@@ -317,6 +333,8 @@ void printParameters(DATA *data, int stream)
   }
 
   messageClose(stream);
+
+  TRACE_POP
 }
 
 #ifdef USE_DEBUG_OUTPUT
@@ -331,12 +349,14 @@ void printRelationsDebug(DATA *data, int stream)
 {
   long i;
 
-  debugStreamPrint(stream, 1, "status of relations at time=%.12g", data->localData[0]->timeValue);
+  TRACE_PUSH
 
+  debugStreamPrint(stream, 1, "status of relations at time=%.12g", data->localData[0]->timeValue);
   for(i=0; i<data->modelData.nRelations; i++)
     debugStreamPrint(stream, 0, "[%ld] %s = %c | pre(%s) = %c", i, data->callback->relationDescription(i), data->simulationInfo.relations[i] ? 'T' : 'F', data->callback->relationDescription(i), data->simulationInfo.relationsPre[i] ? 'T' : 'F');
-
   messageClose(stream);
+
+  TRACE_POP
 }
 #endif
 
@@ -351,13 +371,20 @@ void printRelations(DATA *data, int stream)
 {
   long i;
 
-  if (!ACTIVE_STREAM(stream)) return;
-  infoStreamPrint(stream, 1, "status of relations at time=%.12g", data->localData[0]->timeValue);
-
-  for(i=0; i<data->modelData.nRelations; i++) {
-    infoStreamPrint(stream, 0, "[%ld] %s = %c | pre(%s) = %c", i, data->callback->relationDescription(i), data->simulationInfo.relations[i] ? 'T' : 'F', data->callback->relationDescription(i), data->simulationInfo.relationsPre[i] ? 'T' : 'F');
+  TRACE_PUSH
+  
+  if (!ACTIVE_STREAM(stream))
+  {
+    TRACE_POP
+    return;
   }
+  
+  infoStreamPrint(stream, 1, "status of relations at time=%.12g", data->localData[0]->timeValue);
+  for(i=0; i<data->modelData.nRelations; i++)
+    infoStreamPrint(stream, 0, "[%ld] %s = %c | pre(%s) = %c", i, data->callback->relationDescription(i), data->simulationInfo.relations[i] ? 'T' : 'F', data->callback->relationDescription(i), data->simulationInfo.relationsPre[i] ? 'T' : 'F');
   messageClose(stream);
+  
+  TRACE_POP
 }
 
 /*! \fn overwriteOldSimulationData
@@ -374,8 +401,9 @@ void printRelations(DATA *data, int stream)
  */
 void overwriteOldSimulationData(DATA *data)
 {
-  TRACE_PUSH
   long i;
+
+  TRACE_PUSH
 
   for(i=1; i<ringBufferLength(data->simulationData); ++i)
   {
@@ -385,6 +413,7 @@ void overwriteOldSimulationData(DATA *data)
     memcpy(data->localData[i]->booleanVars, data->localData[i-1]->booleanVars, sizeof(modelica_boolean)*data->modelData.nVariablesBoolean);
     memcpy(data->localData[i]->stringVars, data->localData[i-1]->stringVars, sizeof(modelica_string)*data->modelData.nVariablesString);
   }
+
   TRACE_POP
 }
 

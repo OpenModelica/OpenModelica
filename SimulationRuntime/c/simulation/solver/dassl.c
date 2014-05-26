@@ -120,8 +120,7 @@ dummy_precondition(fortran_integer *neq, double *t, double *y, double *yprime, d
 }
 
 
-static int
-continue_DASSL(fortran_integer* idid, double* tolarence);
+static int continue_DASSL(fortran_integer* idid, double* tolarence);
 
 
 
@@ -132,39 +131,46 @@ static int functionODE_residual(double *t, double *x, double *xprime, double *cj
 static int function_ZeroCrossingsDASSL(fortran_integer *neqm, double *t, double *y, double *yp,
         fortran_integer *ng, double *gout, double *rpar, fortran_integer* ipar);
 
-int
-dassl_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData){
-
+int dassl_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
+{
   /* work arrays for DASSL */
   int i;
   SIMULATION_INFO *simInfo = &(simData->simulationInfo);
 
+  TRACE_PUSH
+
   dasslData->dasslMethod = 0;
 
-  for(i=1; i< DASSL_MAX;i++) {
-    if(!strcmp((const char*)simInfo->solverMethod, dasslMethodStr[i])){
+  for(i=1; i< DASSL_MAX;i++)
+  {
+    if(!strcmp((const char*)simInfo->solverMethod, dasslMethodStr[i]))
+    {
       dasslData->dasslMethod = i;
       break;
     }
   }
 
-  if(dasslData->dasslMethod == DASSL_UNKNOWN) {
-    if (ACTIVE_WARNING_STREAM(LOG_SOLVER)) {
+  if(dasslData->dasslMethod == DASSL_UNKNOWN)
+  {
+    if (ACTIVE_WARNING_STREAM(LOG_SOLVER))
+    {
       warningStreamPrint(LOG_SOLVER, 1, "unrecognized solver method %s, current options are:", simInfo->solverMethod);
-      for(i=1; i < DASSL_MAX; ++i) {
+      for(i=1; i < DASSL_MAX; ++i)
+      {
         warningStreamPrint(LOG_SOLVER, 0, "  %-15s [%s]", dasslMethodStr[i], dasslMethodStrDescStr[i]);
       }
       messageClose(LOG_SOLVER);
     }
     throwStreamPrint(simData->threadData,"unrecognized dassl solver method %s", simInfo->solverMethod);
-  } else {
-    infoStreamPrint(LOG_SOLVER, 0, "| solver | Use solver method: %s\t%s",dasslMethodStr[dasslData->dasslMethod],dasslMethodStrDescStr[dasslData->dasslMethod]);
+  }
+  else
+  {
+    infoStreamPrint(LOG_SOLVER, 0, "Use solver method: %s\t%s",dasslMethodStr[dasslData->dasslMethod],dasslMethodStrDescStr[dasslData->dasslMethod]);
   }
 
 
   dasslData->liw = 40 + simData->modelData.nStates;
-  dasslData->lrw = 60 + ((maxOrder + 4) * simData->modelData.nStates)
-              + (simData->modelData.nStates * simData->modelData.nStates)  + (3*simData->modelData.nZeroCrossings);
+  dasslData->lrw = 60 + ((maxOrder + 4) * simData->modelData.nStates) + (simData->modelData.nStates * simData->modelData.nStates)  + (3*simData->modelData.nZeroCrossings);
   dasslData->rwork = (double*) calloc(dasslData->lrw, sizeof(double));
   assertStreamPrint(simData->threadData, 0 != dasslData->rwork,"out of memory");
   dasslData->iwork = (fortran_integer*)  calloc(dasslData->liw, sizeof(fortran_integer));
@@ -227,18 +233,21 @@ dassl_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData){
   /* Setup nominal values of the states
    * as relative tolerances */
   dasslData->info[1] = 1;
-  for(i=0;i<simData->modelData.nStates;++i){
+  for(i=0;i<simData->modelData.nStates;++i)
+  {
     dasslData->rtol[i] = simData->simulationInfo.tolerance;
     dasslData->atol[i] = simData->simulationInfo.tolerance * simData->modelData.realVarsData[i].attribute.nominal;
   }
 
+  TRACE_POP
   return 0;
 }
 
 
-int
-dassl_deinitial(DASSL_DATA *dasslData){
-
+int dassl_deinitial(DASSL_DATA *dasslData)
+{
+  TRACE_PUSH
+  
   /* free work arrays for DASSL */
   free(dasslData->rwork);
   free(dasslData->iwork);
@@ -247,6 +256,8 @@ dassl_deinitial(DASSL_DATA *dasslData){
   free(dasslData->dasslStatistics);
   free(dasslData->dasslStatisticsTmp);
   free(dasslData);
+
+  TRACE_POP
   return 0;
 }
 
@@ -436,6 +447,8 @@ continue_DASSL(fortran_integer* idid, double* atol)
 {
   int retValue = -1;
 
+  TRACE_PUSH
+
   switch(*idid)
   {
   case 1:
@@ -489,6 +502,8 @@ continue_DASSL(fortran_integer* idid, double* atol)
     retValue = -33;
     break;
   }
+  
+  TRACE_POP
   return retValue;
 }
 
@@ -555,6 +570,8 @@ int function_ZeroCrossingsDASSL(fortran_integer *neqm, double *t, double *y, dou
   double timeBackup;
   int saveJumpState;
 
+  TRACE_PUSH
+
   saveJumpState = data->threadData->currentErrorStage;
   data->threadData->currentErrorStage = ERROR_EVENTSEARCH;
 
@@ -572,6 +589,7 @@ int function_ZeroCrossingsDASSL(fortran_integer *neqm, double *t, double *y, dou
   data->threadData->currentErrorStage = saveJumpState;
   data->localData[0]->timeValue = timeBackup;
 
+  TRACE_POP  
   return 0;
 }
 
@@ -580,6 +598,9 @@ int functionJacAColored(DATA* data, double* jac)
 {
   const int index = data->callback->INDEX_JAC_A;
   int i,j,l,k,ii;
+
+  TRACE_PUSH
+
   for(i=0; i < data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors; i++)
   {
     for(ii=0; ii < data->simulationInfo.analyticJacobians[index].sizeCols; ii++)
@@ -631,6 +652,8 @@ int functionJacAColored(DATA* data, double* jac)
     }
     */
   }
+
+  TRACE_POP
   return 0;
 }
 
@@ -639,6 +662,9 @@ int functionJacASym(DATA* data, double* jac)
 {
   const int index = data->callback->INDEX_JAC_A;
   unsigned int i,j,k;
+
+  TRACE_PUSH
+
   k = 0;
   for(i=0; i < data->simulationInfo.analyticJacobians[index].sizeCols; i++)
   {
@@ -675,6 +701,8 @@ int functionJacASym(DATA* data, double* jac)
       printf("\n");
     }
   } */
+
+  TRACE_POP
   return 0;
 }
 
@@ -690,6 +718,8 @@ static int JacobianSymbolicColored(double *t, double *y, double *yprime, double 
   double timeBackup;
   int i;
   int j;
+
+  TRACE_PUSH
 
   backupStates = data->localData[0]->realVars;
   timeBackup = data->localData[0]->timeValue;
@@ -714,6 +744,7 @@ static int JacobianSymbolicColored(double *t, double *y, double *yprime, double 
   data->localData[0]->realVars = backupStates;
   data->localData[0]->timeValue = timeBackup;
 
+  TRACE_POP
   return 0;
 }
 
@@ -728,6 +759,8 @@ static int JacobianSymbolic(double *t, double *y, double *yprime, double *deltaD
   double timeBackup;
   int i;
   int j;
+
+  TRACE_PUSH
 
   backupStates = data->localData[0]->realVars;
   timeBackup = data->localData[0]->timeValue;
@@ -751,6 +784,7 @@ static int JacobianSymbolic(double *t, double *y, double *yprime, double *deltaD
   data->localData[0]->realVars = backupStates;
   data->localData[0]->timeValue = timeBackup;
 
+  TRACE_POP
   return 0;
 }
 
@@ -768,8 +802,10 @@ int jacA_num(DATA* data, double *t, double *y, double *yprime, double *delta, do
   double ysave;
   fortran_integer ires;
   int i,j;
+  
+  TRACE_PUSH
 
-  for(i = data->modelData.nStates-1; i >=0 ; i--)
+  for(i=data->modelData.nStates-1; i >= 0; i--)
   {
     delta_hhh = *h * yprime[i];
     delta_hh = delta_h * fmax(fmax(abs(y[i]),abs(delta_hhh)),abs(1. / wt[i]));
@@ -808,6 +844,7 @@ int jacA_num(DATA* data, double *t, double *y, double *yprime, double *delta, do
   }
   */
 
+  TRACE_POP
   return 0;
 }
 
@@ -820,10 +857,12 @@ static int JacobianOwnNum(double *t, double *y, double *yprime, double *deltaD, 
   int i,j;
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
 
+  TRACE_PUSH
 
   if(jacA_num(data, t, y, yprime, deltaD, pd, cj, h, wt, rpar, ipar))
   {
     throwStreamPrint(data->threadData, "Error, can not get Matrix A ");
+    TRACE_POP
     return 1;
   }
   j = 0;
@@ -834,6 +873,7 @@ static int JacobianOwnNum(double *t, double *y, double *yprime, double *deltaD, 
     j += data->modelData.nStates + 1;
   }
 
+  TRACE_POP
   return 0;
 }
 
@@ -853,6 +893,8 @@ int jacA_numColored(DATA* data, double *t, double *y, double *yprime, double *de
   double* ysave = dasslData->ysave;
 
   int i,j,l,k,ii;
+  
+  TRACE_PUSH
 
   for(i = 0; i < data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors; i++)
   {
@@ -909,6 +951,7 @@ int jacA_numColored(DATA* data, double *t, double *y, double *yprime, double *de
   }
   */
 
+  TRACE_POP
   return 0;
 }
 
@@ -921,10 +964,12 @@ static int JacobianOwnNumColored(double *t, double *y, double *yprime, double *d
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
   int i,j;
 
+  TRACE_PUSH
 
   if(jacA_numColored(data, t, y, yprime, deltaD, pd, cj, h, wt, rpar, ipar))
   {
     throwStreamPrint(data->threadData, "Error, can not get Matrix A ");
+    TRACE_POP
     return 1;
   }
 
@@ -936,6 +981,7 @@ static int JacobianOwnNumColored(double *t, double *y, double *yprime, double *d
     j += data->modelData.nStates + 1;
   }
 
+  TRACE_POP
   return 0;
 }
 
