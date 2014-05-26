@@ -715,7 +715,7 @@ algorithm
         nv=listLength(yVarMap);
         ass1=listArray(List.fill(-1,ne));
         ass2=listArray(List.fill(-1,nv));
-        true = BackendDAEEXT.setAssignment(nv,ne,ass1,ass2);
+        true = BackendDAEEXT.setAssignment(ne,nv,ass1,ass2);
         Matching.matchingExternalsetIncidenceMatrix(nv,ne,my);
         BackendDAEEXT.matching(nv,ne,1,-1,0.0,0);
         BackendDAEEXT.getAssignment(ass1,ass2);
