@@ -89,8 +89,8 @@ unsigned int alarm (unsigned int seconds)
   pending = seconds;
 
   if (seconds) {
-      time (&t0);   // keep track of when count down started
       DWORD threadId;
+      time (&t0);   // keep track of when count down started
       thread = CreateThread (0, 0, killProcess, (void*)seconds, 0, &threadId);
   }
 
