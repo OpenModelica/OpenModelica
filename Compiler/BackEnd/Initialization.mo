@@ -751,7 +751,7 @@ algorithm
       false = List.isEmpty(varlst);
 
       str = Util.if_(linear, "linear", "nonlinear");
-      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "Iteration variables with default zero start attribute in torn " +& str +& "equation system:\n" +& warnAboutVars2(varlst));
+      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "Iteration variables with default zero start attribute in torn " +& str +& " equation system:\n" +& warnAboutVars2(varlst));
       _ = warnAboutIterationVariablesWithDefaultZeroStartAttribute2(rest, inVars);
     then true;
 

@@ -7791,7 +7791,7 @@ algorithm
       false = List.isEmpty(varlst);
 
       str = Util.if_(linear, "linear", "nonlinear");
-      Error.addCompilerNotification("Iteration variables of torn " +& str +& "equation system:\n" +& warnAboutVars(varlst));
+      Error.addCompilerNotification("Iteration variables of torn " +& str +& " equation system:\n" +& warnAboutVars(varlst));
       listAllIterationVariables2(rest, inVars);
     then ();
 
