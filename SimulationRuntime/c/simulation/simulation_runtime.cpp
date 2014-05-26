@@ -441,6 +441,15 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     measure_time_flag = 1;
     measureSimTime = 1;
   }
+  errno = 0;
+  if (omc_flag[FLAG_ALARM]) {
+    char *endptr;
+    long alarmVal = strtol(omc_flagValue[FLAG_ALARM],&endptr,10);
+    if (errno || *endptr != 0) {
+      throwStreamPrint(data->threadData, "-alarm takes an integer argument (got '%s')", omc_flagValue[FLAG_ALARM]);
+    }
+    alarm(alarmVal);
+  }
 
   /* calc numStep */
   data->simulationInfo.numSteps = static_cast<modelica_integer>(round((data->simulationInfo.stopTime - data->simulationInfo.startTime)/data->simulationInfo.stepSize));
@@ -449,33 +458,23 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   { /* Setup the clock */
     enum omc_rt_clock_t clock = OMC_CLOCK_REALTIME;
     const char *clockName;
-    if((clockName = omc_flagValue[FLAG_CLOCK]) != NULL)
-    {
-      if(0 == strcmp(clockName, "CPU"))
-      {
+    if((clockName = omc_flagValue[FLAG_CLOCK]) != NULL) {
+      if(0 == strcmp(clockName, "CPU")) {
         clock = OMC_CLOCK_CPUTIME;
-      }
-      else if(0 == strcmp(clockName, "RT"))
-      {
+      } else if(0 == strcmp(clockName, "RT")) {
         clock = OMC_CLOCK_REALTIME;
-      }
-      else if(0 == strcmp(clockName, "CYC"))
-      {
+      } else if(0 == strcmp(clockName, "CYC")) {
         clock = OMC_CPU_CYCLES;
-      }
-      else
-      {
+      } else {
         warningStreamPrint(LOG_STDOUT, 0, "[unknown clock-type] got %s, expected CPU|RT|CYC. Defaulting to RT.", clockName);
       }
     }
-    if(rt_set_clock(clock))
-    {
+    if(rt_set_clock(clock)) {
       warningStreamPrint(LOG_STDOUT, 0, "Chosen clock-type: %s not available for the current platform. Defaulting to real-time.", clockName);
     }
   }
 
-  if(measure_time_flag)
-  {
+  if(measure_time_flag) {
     rt_tick(SIM_TIMER_INFO_XML);
     modelInfoXmlInit(&data->modelData.modelDataXml);
     rt_accumulate(SIM_TIMER_INFO_XML);
@@ -492,18 +491,17 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
 
   if(create_linearmodel)
   {
-    if(lintime == NULL)
+    if(lintime == NULL) {
       data->simulationInfo.stopTime = data->simulationInfo.startTime;
-    else
+    } else {
       data->simulationInfo.stopTime = atof(lintime);
+    }
     infoStreamPrint(LOG_STDOUT, 0, "Linearization will performed at point of time: %f", data->simulationInfo.stopTime);
   }
 
-  if(omc_flag[FLAG_S])
-  {
+  if(omc_flag[FLAG_S]) {
     const string *method = new string(omc_flagValue[FLAG_S]);
-    if(method)
-    {
+    if(method) {
       data->simulationInfo.solverMethod = method->c_str();
       infoStreamPrint(LOG_SOLVER, 0, "overwrite solver method: %s [from command line]", data->simulationInfo.solverMethod);
     }
@@ -512,10 +510,11 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   // Create a result file
   const char *result_file = omc_flagValue[FLAG_R];
   string result_file_cstr;
-  if(!result_file)
+  if(!result_file) {
     result_file_cstr = string(data->modelData.modelFilePrefix) + string("_res.") + data->simulationInfo.outputFormat; /* TODO: Fix result file name based on mode */
-  else
+  } else {
     result_file_cstr = result_file;
+  }
 
   string init_initMethod = "";
   string init_optiMethod = "";
@@ -527,42 +526,39 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   string outputVariablesAtEnd = "";
   int cpuTime = omc_flag[FLAG_CPU];
 
-  if(omc_flag[FLAG_IIM])
-  {
+  if(omc_flag[FLAG_IIM]) {
     init_initMethod = omc_flagValue[FLAG_IIM];
   }
-
-  if(omc_flag[FLAG_IOM])
-  {
+  if(omc_flag[FLAG_IOM]) {
     init_optiMethod = omc_flagValue[FLAG_IOM];
   }
-
-  if(omc_flag[FLAG_IIF])
-  {
+  if(omc_flag[FLAG_IIF]) {
     init_file = omc_flagValue[FLAG_IIF];
   }
-
-  if(omc_flag[FLAG_IIT])
-  {
+  if(omc_flag[FLAG_IIT]) {
     init_time_string = omc_flagValue[FLAG_IIT];
     init_time = atof(init_time_string.c_str());
   }
-
-  if(omc_flag[FLAG_ILS])
-  {
+  if(omc_flag[FLAG_ILS]) {
     init_lambda_steps_string = omc_flagValue[FLAG_ILS];
     init_lambda_steps = atoi(init_lambda_steps_string.c_str());
   }
-
-  if(omc_flag[FLAG_OUTPUT])
-  {
+  if(omc_flag[FLAG_OUTPUT]) {
     outputVariablesAtEnd = omc_flagValue[FLAG_OUTPUT];
   }
 
   retVal = callSolver(data, result_file_cstr, init_initMethod, init_optiMethod, init_file, init_time, init_lambda_steps, outputVariablesAtEnd, cpuTime);
 
-  if(0 == retVal && create_linearmodel)
-  {
+  if (omc_flag[FLAG_ALARM]) {
+    char *endptr;
+    long alarmVal = strtol(omc_flagValue[FLAG_ALARM],&endptr,10);
+    if (errno || *endptr != 0) {
+      throwStreamPrint(data->threadData, "-alarm takes an integer argument (got '%s')", omc_flagValue[FLAG_ALARM]);
+    }
+    alarm(0);
+  }
+
+  if(0 == retVal && create_linearmodel) {
     rt_tick(SIM_TIMER_LINEARIZE);
     retVal = linearize(data);
     rt_accumulate(SIM_TIMER_LINEARIZE);
@@ -575,8 +571,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
    */
   measure_time_flag = measure_time_flag_previous;
 
-  if(0 == retVal && measure_time_flag)
-  {
+  if(0 == retVal && measure_time_flag) {
     const string jsonInfo = string(data->modelData.modelFilePrefix) + "_prof.json";
     const string modelInfo = string(data->modelData.modelFilePrefix) + "_prof.xml";
     const string plotFile = string(data->modelData.modelFilePrefix) + "_prof.plt";

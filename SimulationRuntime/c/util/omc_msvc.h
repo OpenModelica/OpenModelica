@@ -74,6 +74,8 @@ char *realpath(const char *path, char *resolved_path);
 int asprintf(char **strp, const char *fmt, ...);
 int vasprintf(char **strp, const char *fmt, va_list ap);
 
+unsigned int alarm (unsigned int seconds);
+
 #else /* not msvc */
 
 /* define inline for non-MSVC */

@@ -54,4 +54,44 @@ int vasprintf(char **strp, const char *fmt, va_list ap) {
   len = vsnprintf(*strp, len+1, fmt, ap);
   return len;
 }
+
+#ifndef SIGALRM
+#define SIGALRM         SIGTERM
+#endif
+
+static HANDLE thread    = 0; // thread handle
+
+static DWORD WINAPI killProcess (LPVOID arg)
+{
+  Sleep (1000 * ((unsigned int)arg));
+  fprintf(stdout, "Killed"); fflush(NULL);
+  TerminateProcess(GetCurrentProcess(), 1);
+  return 0;
+}
+
+unsigned int alarm (unsigned int seconds)
+{
+  static unsigned pending = 0;   // previous alarm() argument
+  static time_t t0        = 0;   // start of previous alarm()
+  time_t unslept          = 0;   // seconds until previous alarm expires
+
+  if (thread) {
+      // previous alarm is still pending, cancel it
+      unslept = pending - (time (0) - t0);
+      TerminateThread (thread, 0);
+      CloseHandle (thread);
+      thread = 0;
+  }
+
+  pending = seconds;
+
+  if (nsec) {
+      time (&t0);   // keep track of when count down started
+      DWORD threadId;
+      thread = CreateThread (0, 0, killProcess, (void*)seconds, 0, &threadId);
+  }
+
+  return (unsigned int)(unslept);
+}
+
 #endif
