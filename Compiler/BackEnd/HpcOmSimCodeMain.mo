@@ -247,10 +247,9 @@ algorithm
       //Create schedule
       //---------------
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
-      (numProc,numFixed) = setNumProc(numProc,cpCostsWoC,taskGraphDataOde);
-      schedule = createSchedule(taskGraph1,taskGraphData1,sccSimEqMapping,filenamePrefix,numProc);
-      numProc = Flags.getConfigInt(Flags.NUM_PROC);
-      (schedule,numProc) = repeatScheduleWithOtherNumProc(taskGraph1,taskGraphData1,sccSimEqMapping,filenamePrefix,cpCostsWoC,schedule,numProc,numFixed);
+      (numProc,_) = setNumProc(numProc,cpCostsWoC,taskGraphDataOde);//in case n-flag is not set
+      schedule = createSchedule(taskGraph1,taskGraphData1,sccSimEqMapping,filenamePrefix,numProc,inBackendDAE,simCode);
+      //(schedule,numProc) = repeatScheduleWithOtherNumProc(taskGraph1,taskGraphData1,sccSimEqMapping,filenamePrefix,cpCostsWoC,schedule,numProc,numFixed);
       criticalPathInfo = HpcOmScheduler.analyseScheduledTaskGraph(schedule,numProc,taskGraph1,taskGraphData1);
       schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(schedule,arrayLength(taskGraph));
       Debug.execStat("hpcom create schedule", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
@@ -282,89 +281,6 @@ algorithm
     then fail();
   end matchcontinue;
 end createSimCode;
-
-
-protected function repeatScheduleWithOtherNumProc"checks if the scheduling with the given numProc is fine.
- if n=auto, more cores are available and more speedup could be achieved repeat schedule with increased num of procs.
- author:Waurich TUD 2013-011"
-  input HpcOmTaskGraph.TaskGraph taskGraphIn;
-  input HpcOmTaskGraph.TaskGraphMeta taskGraphMetaIn;
-  input array<list<Integer>> sccSimEqMappingIn;
-  input String fileNamePrefix;
-  input Real cpCostsWoC;
-  input HpcOmSimCode.Schedule scheduleIn;
-  input Integer numProcIn;
-  input Boolean numFixed;
-  output HpcOmSimCode.Schedule scheduleOut;
-  output Integer numProcOut;
-protected
-  Integer maxNumProc, maxIter;
-  Real maxDiff;
-algorithm
-  maxNumProc := System.numProcessors();
-  maxIter := 3;
-  maxDiff := 0.5;
-  (scheduleOut,numProcOut,_) := repeatScheduleWithOtherNumProc1(taskGraphIn,taskGraphMetaIn,sccSimEqMappingIn,fileNamePrefix,cpCostsWoC,scheduleIn,numProcIn,numFixed,maxNumProc,maxDiff,maxIter);
-end repeatScheduleWithOtherNumProc;
-
-
-protected function repeatScheduleWithOtherNumProc1"checks if the scheduling with the given numProc is fine.
- if n=auto, more cores are available and more speedup could be achieved repeat schedule with increased num of procs.
- author:Waurich TUD 2013-011"
-  input HpcOmTaskGraph.TaskGraph taskGraphIn;
-  input HpcOmTaskGraph.TaskGraphMeta taskGraphMetaIn;
-  input array<list<Integer>> sccSimEqMappingIn;
-  input String fileNamePrefix;
-  input Real cpCostsWoC;
-  input HpcOmSimCode.Schedule scheduleIn;
-  input Integer numProcIn;
-  input Boolean numFixed;
-  input Integer maxNumProc;
-  input Real maxDiff;
-  input Integer numIterIn;
-  output HpcOmSimCode.Schedule scheduleOut;
-  output Integer numProcOut;
-  output Integer numIterOut;
-algorithm
-  (scheduleOut,numProcOut,numIterOut) := matchcontinue(taskGraphIn,taskGraphMetaIn,sccSimEqMappingIn,fileNamePrefix,cpCostsWoC,scheduleIn,numProcIn,numFixed,maxNumProc,maxDiff,numIterIn)
-    local
-      Boolean scheduleAgain;
-      Integer numProc, numIt;
-      Real serTime,parTime,speedup,speedUp,speedUpMax,diff;
-      HpcOmSimCode.Schedule schedule;
-    case(_,_,_,_,_,_,_,true,_,_,_)
-      equation // do not schedule again because the number of procs was given
-        then
-          (scheduleIn,numProcIn,0);
-    case(_,_,_,_,_,_,_,false,_,_,_)
-      equation
-        true = numIterIn == 0; // the max number of schedules with increased num of procs
-        then
-          (scheduleIn,numProcIn,0);
-    case(_,_,_,_,_,_,_,false,_,_,_)
-      equation
-        (_,_,speedUp,speedUpMax) = HpcOmScheduler.predictExecutionTime(scheduleIn,SOME(cpCostsWoC),numProcIn,taskGraphIn,taskGraphMetaIn);
-        diff = speedUpMax -. speedUp;
-        //print("the new speedUp with "+&intString(numProcIn)+&" processors: "+&realString(speedUp)+&"\n");
-        true = diff <. maxDiff;
-        //print("the schedule is fine\n");
-      then
-        (scheduleIn,numProcIn,numIterIn);
-    else
-      equation
-        numProc = numProcIn+1; // increase the number of procs
-        numIt = numIterIn-1; // lower the counter of scheduling runs
-        scheduleAgain = intLe(numProc,maxNumProc);
-        //print("schedule again\n");
-        numProc = Util.if_(scheduleAgain,numProc,numProcIn);
-        numIt = Util.if_(scheduleAgain,numIt,0);
-        schedule= Debug.bcallret5(scheduleAgain,createSchedule,taskGraphIn,taskGraphMetaIn,sccSimEqMappingIn,fileNamePrefix,numProc,scheduleIn);
-        (schedule,numProc,numIt) = repeatScheduleWithOtherNumProc1(taskGraphIn,taskGraphMetaIn,sccSimEqMappingIn,fileNamePrefix,cpCostsWoC,schedule,numProc,numFixed,maxNumProc,maxDiff,numIt);
-      then
-        (schedule,numProc,numIt);
-  end matchcontinue;
-end repeatScheduleWithOtherNumProc1;
-
 
 protected function setNumProc "sets the number of processors. its upper limit is the number of processsors provided by the system.
 if no n-flag is set, a ideal number is suggested but the simulation fails.
@@ -456,6 +372,8 @@ protected function createSchedule
   input array<list<Integer>> iSccSimEqMapping;
   input String iFilenamePrefix;
   input Integer numProc;
+  input BackendDAE.BackendDAE iDAE;
+  input SimCode.SimCode iSimCode;
   output HpcOmSimCode.Schedule oSchedule;
 protected
   String flagValue;
@@ -463,67 +381,67 @@ protected
   HpcOmTaskGraph.TaskGraph taskGraph1;
   HpcOmTaskGraph.TaskGraphMeta taskGraphMeta1;
 algorithm
-  oSchedule := matchcontinue(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping,iFilenamePrefix,numProc)
-    case(_,_,_,_,_)
+  oSchedule := matchcontinue(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping,iFilenamePrefix,numProc,iDAE,iSimCode)
+    case(_,_,_,_,_,_,_)
       equation
         true = arrayLength(iTaskGraph) == 0;
         print("There is no ODE system that can be parallelized!\n");
         // just did this because this works fine. TODO: make something reasonable here and do not use a scheduler.
       then
         HpcOmScheduler.createLevelSchedule(iTaskGraphMeta,iSccSimEqMapping);
-    case(_,_,_,_,_)
+    case(_,_,_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "level");
         print("Using level Scheduler\n");
       then HpcOmScheduler.createLevelSchedule(iTaskGraphMeta,iSccSimEqMapping);
-    case(_,_,_,_,_)
+    case(_,_,_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "ext");
         print("Using external Scheduler\n");
       then HpcOmScheduler.createExtSchedule(iTaskGraph, iTaskGraphMeta, numProc, iSccSimEqMapping, "taskGraph" +& iFilenamePrefix +& "_ext.graphml");
-    case(_,_,_,_,_)
+    case(_,_,_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "metis");
         print("Using METIS Scheduler\n");
       then HpcOmScheduler.createExtCSchedule(iTaskGraph, iTaskGraphMeta, numProc, iSccSimEqMapping);
-    case(_,_,_,_,_)
+    case(_,_,_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "hmet");
         print("Using hMETIS Scheduler\n");
       then HpcOmScheduler.createhmetSchedule(iTaskGraph, iTaskGraphMeta, numProc, iSccSimEqMapping);
-    case(_,_,_,_,_)
+    case(_,_,_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "listr");
       then HpcOmScheduler.createListScheduleReverse(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping);
-    case(_,_,_,_,_)
+    case(_,_,_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "list");
       then HpcOmScheduler.createListSchedule(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping);
-    case(_,_,_,_,_)
+    case(_,_,_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "mcp");
         print("Using Modified Critical Path Scheduler\n");
       then HpcOmScheduler.createMCPschedule(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping);
-    case(_,_,_,_,_)
+    case(_,_,_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "taskdep");
         print("Using OpenMP task dependencies\n");
       then HpcOmScheduler.createTaskDepSchedule(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
-    case(_,_,_,_,_)
+    case(_,_,_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "tds");
         print("Using Task Duplication-based Scheduling\n");
-      then HpcOmScheduler.createTDSschedule(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping);
-    case(_,_,_,_,_)
+      then HpcOmScheduler.createTDSschedule(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping,iDAE,iSimCode);
+    case(_,_,_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         print("HpcOmScheduler.createSchedule warning: The scheduler '" +& flagValue +& "' is unknown. The list-scheduling algorithm is used instead.\n");
@@ -827,5 +745,89 @@ algorithm
         ();
   end matchcontinue;
 end checkOdeSystemSize;
+
+/*
+protected function repeatScheduleWithOtherNumProc"checks if the scheduling with the given numProc is fine.
+ if n=auto, more cores are available and more speedup could be achieved repeat schedule with increased num of procs.
+ author:Waurich TUD 2013-011"
+  input HpcOmTaskGraph.TaskGraph taskGraphIn;
+  input HpcOmTaskGraph.TaskGraphMeta taskGraphMetaIn;
+  input array<list<Integer>> sccSimEqMappingIn;
+  input String fileNamePrefix;
+  input Real cpCostsWoC;
+  input HpcOmSimCode.Schedule scheduleIn;
+  input Integer numProcIn;
+  input Boolean numFixed;
+  output HpcOmSimCode.Schedule scheduleOut;
+  output Integer numProcOut;
+protected
+  Integer maxNumProc, maxIter;
+  Real maxDiff;
+algorithm
+  maxNumProc := System.numProcessors();
+  maxIter := 3;
+  maxDiff := 0.5;
+  (scheduleOut,numProcOut,_) := repeatScheduleWithOtherNumProc1(taskGraphIn,taskGraphMetaIn,sccSimEqMappingIn,fileNamePrefix,cpCostsWoC,scheduleIn,numProcIn,numFixed,maxNumProc,maxDiff,maxIter);
+end repeatScheduleWithOtherNumProc;
+
+
+protected function repeatScheduleWithOtherNumProc1"checks if the scheduling with the given numProc is fine.
+ if n=auto, more cores are available and more speedup could be achieved repeat schedule with increased num of procs.
+ author:Waurich TUD 2013-011"
+  input HpcOmTaskGraph.TaskGraph taskGraphIn;
+  input HpcOmTaskGraph.TaskGraphMeta taskGraphMetaIn;
+  input BackendDAE.BackendDAE inDAE;
+  input array<list<Integer>> sccSimEqMappingIn;
+  input String fileNamePrefix;
+  input Real cpCostsWoC;
+  input HpcOmSimCode.Schedule scheduleIn;
+  input Integer numProcIn;
+  input Boolean numFixed;
+  input Integer maxNumProc;
+  input Real maxDiff;
+  input Integer numIterIn;
+  output HpcOmSimCode.Schedule scheduleOut;
+  output Integer numProcOut;
+  output Integer numIterOut;
+algorithm
+  (scheduleOut,numProcOut,numIterOut) := matchcontinue(taskGraphIn,taskGraphMetaIn,inDAE,sccSimEqMappingIn,fileNamePrefix,cpCostsWoC,scheduleIn,numProcIn,numFixed,maxNumProc,maxDiff,numIterIn)
+    local
+      Boolean scheduleAgain;
+      Integer numProc, numIt;
+      Real serTime,parTime,speedup,speedUp,speedUpMax,diff;
+      HpcOmSimCode.Schedule schedule;
+    case(_,_,_,_,_,_,_,_,true,_,_,_)
+      equation // do not schedule again because the number of procs was given
+        then
+          (scheduleIn,numProcIn,0);
+    case(_,_,_,_,_,_,_,_,false,_,_,_)
+      equation
+        true = numIterIn == 0; // the max number of schedules with increased num of procs
+        then
+          (scheduleIn,numProcIn,0);
+    case(_,_,_,_,_,_,_,_,false,_,_,_)
+      equation
+        (_,_,speedUp,speedUpMax) = HpcOmScheduler.predictExecutionTime(scheduleIn,SOME(cpCostsWoC),numProcIn,taskGraphIn,taskGraphMetaIn);
+        diff = speedUpMax -. speedUp;
+        //print("the new speedUp with "+&intString(numProcIn)+&" processors: "+&realString(speedUp)+&"\n");
+        true = diff <. maxDiff;
+        //print("the schedule is fine\n");
+      then
+        (scheduleIn,numProcIn,numIterIn);
+    else
+      equation
+        numProc = numProcIn+1; // increase the number of procs
+        numIt = numIterIn-1; // lower the counter of scheduling runs
+        scheduleAgain = intLe(numProc,maxNumProc);
+        //print("schedule again\n");
+        numProc = Util.if_(scheduleAgain,numProc,numProcIn);
+        numIt = Util.if_(scheduleAgain,numIt,0);
+        schedule= Debug.bcallret6(scheduleAgain,createSchedule,taskGraphIn,taskGraphMetaIn,sccSimEqMappingIn,fileNamePrefix,numProc,scheduleIn);
+        (schedule,numProc,numIt) = repeatScheduleWithOtherNumProc1(taskGraphIn,taskGraphMetaIn,sccSimEqMappingIn,fileNamePrefix,cpCostsWoC,schedule,numProc,numFixed,maxNumProc,maxDiff,numIt);
+      then
+        (schedule,numProc,numIt);
+  end matchcontinue;
+end repeatScheduleWithOtherNumProc1;
+*/
 
 end HpcOmSimCodeMain;

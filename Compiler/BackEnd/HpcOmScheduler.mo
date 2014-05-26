@@ -36,8 +36,10 @@ encapsulated package HpcOmScheduler
   RCS: $Id: HpcOmScheduler.mo 15486 2013-08-07 12:46:00Z marcusw $
 "
 
+public import BackendDAE;
 public import HpcOmTaskGraph;
 public import HpcOmSimCode;
+public import SimCode;
 
 protected import BackendDAEUtil;
 protected import Debug;
@@ -1574,6 +1576,8 @@ author: Waurich TUD 2015-05"
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   input Integer numProc;
   input array<list<Integer>> iSccSimEqMapping;
+  input BackendDAE.BackendDAE iDAE;
+  input SimCode.SimCode iSimCode;
   output HpcOmSimCode.Schedule oSchedule;
 protected
   Integer size;
@@ -1600,7 +1604,7 @@ algorithm
   //print("levels:\n"+&stringDelimitList(List.map(levels,realString)," , ")+&"\n");
   initClusters := createTDSInitialCluster(iTaskGraph,taskGraphT,iTaskGraphMeta,lastArray,lactArray,fpredArray,queue);
   print("initClusters:\n"+&stringDelimitList(List.map(initClusters,intListString),"\n")+&"\n");
-  oSchedule := createTDSschedule1(initClusters,iTaskGraph,taskGraphT,iTaskGraphMeta,tdsLevelArray,numProc,iSccSimEqMapping);
+  oSchedule := createTDSschedule1(initClusters,iTaskGraph,taskGraphT,iTaskGraphMeta,tdsLevelArray,numProc,iSccSimEqMapping,iDAE,iSimCode);
 end createTDSschedule;
 
 protected function createTDSschedule1"takes the initial Cluster and compactes or duplicates them to the given number of threads.
@@ -1612,9 +1616,11 @@ author:Waurich TUD 2014-05"
   input array<Real> TDSLevel;
   input Integer numProc;
   input array<list<Integer>> iSccSimEqMapping;
+  input BackendDAE.BackendDAE inDAE;
+  input SimCode.SimCode iSimCode;
   output HpcOmSimCode.Schedule oSchedule;
 algorithm
-  oSchedule := matchcontinue(clustersIn,iTaskGraph,iTaskGraphT,iTaskGraphMeta,TDSLevel,numProc,iSccSimEqMapping)
+  oSchedule := matchcontinue(clustersIn,iTaskGraph,iTaskGraphT,iTaskGraphMeta,TDSLevel,numProc,iSccSimEqMapping,inDAE,iSimCode)
     local
       Integer size, numSfLocks;
       array<Integer> taskAss;
@@ -1624,30 +1630,32 @@ algorithm
       HpcOmSimCode.Schedule schedule;
       array<list<HpcOmSimCode.Task>> threadTask;
       list<HpcOmSimCode.Task> removeLocks;
-    case(_,_,_,_,_,_,_)
+    case(_,_,_,_,_,_,_,_,_)
       equation
         // we need cluster duplication, repeat until numProc=num(clusters)
         true = listLength(clustersIn) < numProc;
         print("There are less initial clusters than processors. we need duplication, but since this is a rare case, it is not done. Less processors are used.\n");
         clusters = List.map(clustersIn,listReverse);
         Flags.setConfigInt(Flags.NUM_PROC,listLength(clustersIn));
-        schedule = createTDSschedule1(clusters,iTaskGraph,iTaskGraphT,iTaskGraphMeta,TDSLevel,listLength(clustersIn),iSccSimEqMapping);
+        schedule = createTDSschedule1(clusters,iTaskGraph,iTaskGraphT,iTaskGraphMeta,TDSLevel,listLength(clustersIn),iSccSimEqMapping,inDAE,iSimCode);
       then
         schedule;
-    case(_,_,_,_,_,_,_)
+    case(_,_,_,_,_,_,_,_,_)
       equation
         // we need cluster compaction, repeat until numProc=num(clusters)
         true = listLength(clustersIn) > numProc;
         clusters = createTDSCompactClusters(clustersIn,iTaskGraph,iTaskGraphMeta,TDSLevel,numProc);
-        schedule = createTDSschedule1(clusters,iTaskGraph,iTaskGraphT,iTaskGraphMeta,TDSLevel,numProc,iSccSimEqMapping);
+        schedule = createTDSschedule1(clusters,iTaskGraph,iTaskGraphT,iTaskGraphMeta,TDSLevel,numProc,iSccSimEqMapping,inDAE,iSimCode);
       then
         schedule;
-    case(_,_,_,_,_,_,_)
+    case(_,_,_,_,_,_,_,_,_)
       equation
-        // the clusters can be scheduled, build assignments
+        // the clusters can be scheduled,
         true = listLength(clustersIn) == numProc;
         clusters = List.map1(clustersIn,createTDSSortCompactClusters,TDSLevel);
         print("clusters:\n"+&stringDelimitList(List.map(clusters,intListString),"\n")+&"\n");
+
+        
         procAss = listArray(clusters);
         size = arrayLength(iTaskGraph);
         taskAss = arrayCreate(size,-1);
