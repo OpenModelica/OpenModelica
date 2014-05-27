@@ -1542,7 +1542,7 @@ algorithm
     // const
     case (_, _, _, _, _, (vars, shared, eqns, seqns, index, mT, _))
       equation
-        true = Expression.isConst(exp); // lochel: this is at least needed for impure functions
+        false = Expression.isImpure(exp); // lochel: this is at least needed for impure functions
         Debug.fcall(Flags.DEBUG_ALIAS, BackendDump.debugStrCrefStrExpStr, ("Const Equation ", cr, " = ", exp, " found.\n"));
         colum = mT[i];
         _ = arrayUpdate(mT, i, index::colum);

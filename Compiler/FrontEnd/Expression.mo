@@ -7145,6 +7145,36 @@ algorithm
   end match;
 end isHalf;
 
+public function isImpure "author: lochel
+  Returns true if an expression contains an impure function call."
+  input DAE.Exp inExp;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := isConstWork(inExp, true);
+  ((_, outBoolean)) := traverseExp(inExp, isImpureWork, false);
+end isImpure;
+
+protected function isImpureWork "author: lochel"
+  input tuple<DAE.Exp, Boolean> inExp;
+  output tuple<DAE.Exp, Boolean> outExp;
+algorithm
+  outExp := matchcontinue(inExp)
+    local
+      DAE.Exp e;
+      DAE.Type ty;
+      Boolean b;
+      
+    case ((_, true))
+    then inExp;
+
+    case (((e as DAE.CALL(attr=DAE.CALL_ATTR(isImpure=true))), _))
+    then ((e, true));
+
+    else
+    then inExp;
+  end matchcontinue;
+end isImpureWork;
+
 public function isConst
 "Returns true if an expression is constant"
   input DAE.Exp inExp;
