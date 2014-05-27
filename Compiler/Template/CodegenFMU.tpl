@@ -89,7 +89,7 @@ case SIMCODE(__) then
   >>
 end fmuModelDescriptionFile;
 
-// Code for generating modelDescription.xml file for FMI 2.0.
+// Code for generating modelDescription.xml file for FMI 2.0 ModelExchange.
 template fmi2ModelDescription(SimCode simCode, String guid)
  "Generates code for ModelDescription file for FMU target."
 ::=
@@ -104,6 +104,7 @@ case SIMCODE(__) then
     <%TypeDefinitions(modelInfo, "2.0")%>
     <%DefaultExperiment(simulationSettingsOpt)%>
     <%ModelVariables(modelInfo, "2.0")%>
+    <%ModelStructure()%>
   </fmiModelDescription>
   >>
 end fmi2ModelDescription;
@@ -150,12 +151,14 @@ template ScalarVariableAttribute2(SimVar simVar)
 ::=
 match simVar
   case SIMVAR(__) then
+  let ind = index
   let valueReference = '<%System.tmpTick()%>'
   let description = if comment then 'description="<%Util.escapeModelicaStringToXmlString(comment)%>"'
   let variability = getVariability2(varKind)
   let caus = getCausality2(causality, varKind, isValueChangeable)
   let initial = hasStartValue(varKind, initialValue)
   <<
+  index="<%ind%>"
   name="<%System.stringReplace(crefStrNoUnderscore(name),"$", "_D_")%>"
   valueReference="<%valueReference%>"
   <%description%>
@@ -606,6 +609,14 @@ template externalFunction(Function fn)
       >>
 end externalFunction;
 
+template ModelStructure()
+ "Generates Model Structure definitions."
+::=
+  <<
+  <ModelStructure>
+  </ModelStructure>
+  >>
+end ModelStructure;
 
 template fmumodel_identifierFile(SimCode simCode, String guid, String FMUVersion)
  "Generates code for ModelDescription file for FMU target."
