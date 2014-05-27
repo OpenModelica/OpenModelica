@@ -28,10 +28,15 @@
  *
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "omc_msvc.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #include <windows.h>
@@ -97,4 +102,8 @@ unsigned int alarm (unsigned int seconds)
   return (unsigned int)(unslept);
 }
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif

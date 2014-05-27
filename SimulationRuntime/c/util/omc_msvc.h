@@ -30,6 +30,10 @@
 #ifndef __OPENMODELICA_MSVC_H
 #define __OPENMODELICA_MSVC_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <math.h> /* Make sure we try to get INFINITY and NAN from the system. They are way cooler */
 
 union MSVC_FLOAT_HACK
@@ -78,10 +82,6 @@ unsigned int alarm (unsigned int seconds);
 
 #else /* not msvc */
 
-#if defined(__MINGW32__)
-unsigned int alarm (unsigned int seconds);
-#endif
-
 /* define inline for non-MSVC */
 #define OMC_INLINE inline
 
@@ -92,11 +92,16 @@ unsigned int alarm (unsigned int seconds);
 char *realpath(const char *path, char *resolved_path);
 int asprintf(char **strp, const char *fmt, ...);
 int vasprintf(char **strp, const char *fmt, va_list ap);
+unsigned int alarm (unsigned int seconds);
 #endif
 
 /* for non GNU compilers */
 #ifndef __GNUC__
 #define __attribute__(x)
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif
