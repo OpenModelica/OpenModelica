@@ -217,6 +217,55 @@ fmiStatus fmiGetDirectionalDerivative(fmiComponent c, const fmiValueReference vU
 /***************************************************
 Functions for FMI for Model Exchange
 ****************************************************/
+fmiStatus fmiEnterEventMode(fmiComponent c) {
+  // TODO Write code here
+  return fmiOK;
+}
+
+fmiStatus fmiNewDiscreteStates(fmiComponent c, fmiEventInfo* eventInfo) {
+  // TODO Write code here
+  return fmiOK;
+}
+
+fmiStatus fmiEnterContinuousTimeMode(fmiComponent c) {
+  // TODO Write code here
+  return fmiOK;
+}
+
+fmiStatus fmiCompletedIntegratorStep(fmiComponent c, fmiBoolean noSetFMUStatePriorToCurrentPoint, fmiBoolean* enterEventMode, fmiBoolean* terminateSimulation) {
+  // TODO Write code here
+  return fmiOK;
+}
+
+fmiStatus fmiSetTime(fmiComponent c, fmiReal time) {
+  // TODO Write code here
+  return fmiOK;
+}
+
+fmiStatus fmiSetContinuousStates(fmiComponent c, const fmiReal x[], size_t nx) {
+  // TODO Write code here
+  return fmiOK;
+}
+
+fmiStatus fmiGetDerivatives(fmiComponent c, fmiReal derivatives[], size_t nx) {
+  // TODO Write code here
+  return fmiOK;
+}
+
+fmiStatus fmiGetEventIndicators(fmiComponent c, fmiReal eventIndicators[], size_t nx) {
+  // TODO Write code here
+  return fmiOK;
+}
+
+fmiStatus fmiGetContinuousStates(fmiComponent c, fmiReal x[], size_t nx) {
+  // TODO Write code here
+  return fmiOK;
+}
+
+fmiStatus fmiGetNominalsOfContinuousStates(fmiComponent c, fmiReal x_nominal[], size_t nx) {
+  // TODO Write code here
+  return fmiOK;
+}
 
 /***************************************************
 Functions for FMI for Co-Simulation
