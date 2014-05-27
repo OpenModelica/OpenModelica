@@ -151,14 +151,12 @@ template ScalarVariableAttribute2(SimVar simVar)
 ::=
 match simVar
   case SIMVAR(__) then
-  let ind = index
   let valueReference = '<%System.tmpTick()%>'
   let description = if comment then 'description="<%Util.escapeModelicaStringToXmlString(comment)%>"'
   let variability = getVariability2(varKind)
   let caus = getCausality2(causality, varKind, isValueChangeable)
   let initial = hasStartValue(varKind, initialValue)
   <<
-  index="<%ind%>"
   name="<%System.stringReplace(crefStrNoUnderscore(name),"$", "_D_")%>"
   valueReference="<%valueReference%>"
   <%description%>
