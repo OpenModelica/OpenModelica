@@ -7163,7 +7163,7 @@ algorithm
       DAE.Exp e;
       DAE.Type ty;
       Boolean b;
-      
+
     case ((_, true))
     then inExp;
 
