@@ -325,7 +325,7 @@ static void* SimulationResultsImpl__readDataset(const char *filename, void *vars
       var = RML_STRINGDATA(RML_CAR(vars));
       vars = RML_CDR(vars);
       mat_var = omc_matlab4_find_var(&simresglob->matReader,var);
-      if (mat_var == NULL) {      
+      if (mat_var == NULL) {
         msg[0] = runningTestsuite ? SystemImpl__basename(filename) : filename;
         msg[1] = var;
         c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Could not read variable %s in file %s."), msg, 2);
