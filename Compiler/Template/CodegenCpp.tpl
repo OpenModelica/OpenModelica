@@ -5910,7 +5910,7 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
 
          _algLoop<%index%>->evaluate();
 
-          
+
           if( _callType == IContinuous::DISCRETE )
           {
              while(restart<%index%> && !(iterations<%index%>++>500))
@@ -5935,11 +5935,11 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
       }
       catch(std::exception &ex)
        {
-          
+
           restatDiscrete<%index%>=true;
 
        }
-      
+
        if((restart<%index%>&& iterations<%index%> > 0)|| restatDiscrete<%index%>)
        {
             try
@@ -6869,7 +6869,7 @@ template equationLinearOrNonLinear(SimEqSystem eq, Context context,Text &varDecl
              restatDiscrete<%index%>=true;
         }
 
-        
+
 
         if((restart<%index%>&& iterations<%index%> > 0)|| restatDiscrete<%index%>)
         {
