@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 2.6)
 
 project(${SystemName})
 add_library(${BasiLibName} STATIC tpl.cpp )
-set_target_properties(${BasiLibName}_static PROPERTIES COMPILE_FLAGS -fPIC)
+set_target_properties(${BasiLibName} PROPERTIES COMPILE_FLAGS -fPIC)
 # add the system default implementation library
 IF(ANALYZATION_MODE)
 	add_library(${SystemName} STATIC AlgLoopDefaultImplementation.cpp AlgLoopSolverFactory.cpp EventHandling.cpp SystemDefaultImplementation.cpp FactoryExport.cpp  )
