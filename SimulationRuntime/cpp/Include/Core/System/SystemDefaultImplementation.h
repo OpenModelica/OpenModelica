@@ -34,7 +34,7 @@ Copyright (c) 2008, OSMC
 
 //typedef boost::unordered_map<std::string, boost::any> SValuesMap;
 
-template <class T> 
+template <class T>
 class InitVars
 {
  public:
@@ -128,15 +128,15 @@ protected:
      void storeTime(double time);
      double delay(unsigned int expr_id,double expr_value, double delayTime, double delayMax);
      bool isConsistent();
-   
-     
+
+
     double getRealStartValue(string key);
     bool  getBoolStartValue(string key);
     int   getIntStartValue(string key);
     void setRealStartValue(double& var,double val,string key);
     void setBoolStartValue(bool& var,bool val, string key);
     void setIntStartValue(int& var,int val, string key);
-   
+
     double
         _simTime;        ///< current simulation time (given by the solver)
 
@@ -170,8 +170,8 @@ protected:
     InitVars<double> _real_start_values;
     InitVars<int> _int_start_values;
     InitVars<bool> _bool_start_values;
-    
-    
+
+
     EventHandling _event_handling;
 
     typedef boost::circular_buffer<double> buffer_type;
@@ -183,4 +183,3 @@ protected:
 };
 
 
- 

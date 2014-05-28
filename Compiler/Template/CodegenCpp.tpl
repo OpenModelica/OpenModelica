@@ -223,7 +223,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   <<
    #pragma once
     #include "OMCpp<%fileNamePrefix%>.h"
-  
+
     <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
   <<
   #include "ReduceDAE/Interfaces/IReduceDAE.h"
@@ -233,7 +233,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   >>
   else
   <<
- 
+
   typedef HistoryImpl<TextFileWriter,<%numAlgvars(modelInfo)%>+<%numInOutvars(modelInfo)%>+<%numAliasvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>,0> HistoryImplType;
 
   >>%>
@@ -1332,7 +1332,7 @@ OFILES=$(CPPFILES:.cpp=.o)
 .PHONY: <%lastIdentOfPath(modelInfo.name)%> $(CPPFILES)
 
 <%fileNamePrefix%>: $(MAINFILE) $(OFILES)
-<%\t%>$(CXX) -shared -I. -o $(SYSTEMOBJ) $(OFILES) $(CPPFLAGS) $(LDSYTEMFLAGS)  <%dirExtra%> <%libsPos1%> <%libsPos2%> 
+<%\t%>$(CXX) -shared -I. -o $(SYSTEMOBJ) $(OFILES) $(CPPFLAGS) $(LDSYTEMFLAGS)  <%dirExtra%> <%libsPos1%> <%libsPos2%>
 <%\t%>$(CXX) $(CPPFLAGS) -I. -o $(MAINOBJ) $(MAINFILE) $(LDMAINFLAGS)
 <% if boolNot(stringEq(makefileParams.platform, "win32")) then
   <<
@@ -5478,8 +5478,8 @@ end initValst;
 /*
 template initValst(Text &varDecls , list<SimVar> varsLst, SimCode simCode, Context context) ::=
   varsLst |> sv as SIMVAR(__) =>
-      let &preExp = buffer "" 
-      let &varDeclsCref = buffer "" 
+      let &preExp = buffer ""
+      let &varDeclsCref = buffer ""
     match initialValue
       case SOME(v) then
       match daeExp(v, contextOther, &preExp, &varDecls,simCode)
@@ -5508,8 +5508,8 @@ end initValst;
 /*
 template initAliasValst(Text &varDecls ,list<SimVar> varsLst, SimCode simCode, Context context) ::=
   varsLst |> sv as SIMVAR(__) =>
-      let &preExp = buffer "" 
-      let &varDeclsCref = buffer "" 
+      let &preExp = buffer ""
+      let &varDeclsCref = buffer ""
     match initialValue
       case SOME(v) then
       match daeExp(v, contextOther, &preExp, &varDecls,simCode)
@@ -5547,12 +5547,12 @@ template initAliasValst(Text &varDecls ,Text type,list<SimVar> varsLst, SimCode 
       case vStr as "(0)" then
        '<%preExp%>
         set<%type%>StartValue(<%getAliasVarName(sv.aliasvar, simCode,context)%>,<%vStr%>,"<%cref(sv.name)%>");'
-        
-      
+
+
       case vStr as "" then
        '<%preExp%>
         set<%type%>StartValue(<%getAliasVarName(sv.aliasvar, simCode,context)%>,<%vStr%>,"<%cref(sv.name)%>");'
-      
+
       case vStr then
        '<%preExp%>
        set<%type%>StartValue(<%getAliasVarName(sv.aliasvar, simCode,context)%>,<%vStr%>,"<%cref(sv.name)%>");'
@@ -7892,7 +7892,7 @@ template crefStartValueType2(DAE.Type ty)
     case T_BOOL(__) then 'Bool'
   else "error start value type"
 end match
-  
+
 
 end crefStartValueType2;
 

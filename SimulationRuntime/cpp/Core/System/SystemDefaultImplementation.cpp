@@ -7,12 +7,12 @@
 #include <System/AlgLoopSolverFactory.h>
 
 
-template <class T> 
+template <class T>
 void InitVars<T>::setStartValue(T variable,string key)
 {
     _start_values[key] = variable;
 };
-template <class T> 
+template <class T>
 T InitVars<T>::getGetStartValue(string key)
 {
   return _start_values[key];
@@ -458,15 +458,15 @@ double SystemDefaultImplementation::delay(unsigned int expr_id,double expr_value
  {
     var=val;
     _bool_start_values.setStartValue(val,key);
- 
+
  }
  void SystemDefaultImplementation::setIntStartValue(int& var,int val, string key)
  {
-    var=val;   
+    var=val;
    _int_start_values.setStartValue(val,key);
- 
+
  }
- 
+
 
 /*
 template int SystemDefaultImplementation::getStartValue(int variable,string key);

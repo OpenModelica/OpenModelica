@@ -49,7 +49,7 @@
     #include <SimulationSettings/IGlobalSettings.h>
     #include <SimController/ISimController.h>  */
     #include <SimCoreFactory/OMCFactory/OMCFactory.h>
-  
+
 #else
     #error "operating system not supported"
 #endif
