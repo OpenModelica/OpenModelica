@@ -266,7 +266,7 @@ void Kinsol::solve()
     */
 
         // Try Sptfqmr
-		KINSptfqmr(_kinMem, _dimSys);
+    KINSptfqmr(_kinMem, _dimSys);
         _iterationStatus = CONTINUE;
         solveNLS();
         if(_iterationStatus == DONE)
@@ -274,7 +274,7 @@ void Kinsol::solve()
       //_firstCall = false;
        return;
        }
-  
+
 
 
     // last try: Decrease steptol without any optimization
@@ -428,13 +428,13 @@ void Kinsol::solveNLS()
             {
                 check4EventRetry(_y);
                 if(method==KIN_NONE)
-				{
-					method = KIN_LINESEARCH;
-					maxSteps = maxStepsStart;
-					limit = maxStepsHigh;
-				}
-				else
-					_iterationStatus = SOLVERERROR;
+        {
+          method = KIN_LINESEARCH;
+          maxSteps = maxStepsStart;
+          limit = maxStepsHigh;
+        }
+        else
+          _iterationStatus = SOLVERERROR;
             }
             break;
 

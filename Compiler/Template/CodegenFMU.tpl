@@ -1240,7 +1240,7 @@ match platform
   <%\t%>mkdir.exe -p <%fmudirname%>/binaries
   <%\t%>mkdir.exe -p <%fmudirname%>/binaries/<%platform%>
   <%\t%>mkdir.exe -p <%fmudirname%>/sources
-  
+
   <%\t%>dlltool -d <%fileNamePrefix%>.def --dllname <%fileNamePrefix%>$(DLLEXT) --output-lib <%fileNamePrefix%>.lib --kill-at
   <%\t%>cp <%fileNamePrefix%>$(DLLEXT) <%fmudirname%>/binaries/<%platform%>/
   <%\t%>cp <%fileNamePrefix%>.lib <%fmudirname%>/binaries/<%platform%>/
