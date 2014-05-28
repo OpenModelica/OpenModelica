@@ -3832,7 +3832,7 @@ algorithm
   outComment := match(inAnnotation, inComment)
     local
       Option<String> cmt;
-      SCode.Final fp;
+      Final fp;
       Each ep;
       list<SubMod> mods1, mods2;
       Option<tuple<Absyn.Exp, Boolean>> b;
