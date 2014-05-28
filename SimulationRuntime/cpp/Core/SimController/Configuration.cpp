@@ -1,4 +1,6 @@
-#include "stdafx.h"
+#include "Modelica.h"
+#include <Policies/FactoryConfig.h>
+#include <OMCFactory/OMCFactory.h>
 #include "Configuration.h"
 #include "LibrariesConfig.h"
 

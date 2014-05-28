@@ -7,8 +7,7 @@ Implements the Modelica pre,edge,change operators
 Holds a help vector for the discrete variables
 Holds an event queue to handle all events occured at the same time
 */
-typedef boost::function<bool (unsigned int)> getCondition_type;
-typedef boost::function<void (unordered_map<string,unsigned int>&,unordered_map<string,unsigned int>&)> init_prevars_type;
+
 class BOOST_EXTENSION_EVENTHANDLING_DECL EventHandling
 {
 public:

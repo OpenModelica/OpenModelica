@@ -1,11 +1,26 @@
-
-#include "stdafx.h"
+#include "Modelica.h"
 #include "FactoryExport.h"
-#include <Math/Functions.h>
+#include <Policies/FactoryConfig.h>
+#include <OMCFactory/OMCFactory.h>
 #include <System/EventHandling.h>
-#include <System/IContinuous.h>
 #include <System/SystemDefaultImplementation.h>
 #include <System/AlgLoopSolverFactory.h>
+
+
+template <class T> 
+void InitVars<T>::setStartValue(T variable,string key)
+{
+    _start_values[key] = variable;
+};
+template <class T> 
+T InitVars<T>::getGetStartValue(string key)
+{
+  return _start_values[key];
+};
+
+
+
+
 
 bool greaterTime( pair<unsigned int,double> t1, double t2)
 {
@@ -25,7 +40,20 @@ SystemDefaultImplementation::SystemDefaultImplementation(IGlobalSettings& global
 
 
 }
-
+/*
+template<class T>
+T SystemDefaultImplementation::getStartValue(T variable,string key)
+ {
+    try
+    {
+       return boost::any_cast<T>(_start_values[key]);
+    }
+    catch(const boost::bad_any_cast & ex)
+    {
+      std::runtime_error("No such start value");
+    }
+}
+*/
 SystemDefaultImplementation::~SystemDefaultImplementation()
 {
   if(__z) delete [] __z;
@@ -409,4 +437,39 @@ double SystemDefaultImplementation::delay(unsigned int expr_id,double expr_value
 
 
 }
+ double SystemDefaultImplementation::getRealStartValue(string key)
+ {
+     return _real_start_values.getGetStartValue(key);
+ }
+ bool SystemDefaultImplementation::getBoolStartValue(string key)
+ {
+     return _bool_start_values.getGetStartValue(key);
+ }
+ int SystemDefaultImplementation::getIntStartValue(string key)
+ {
+    return _int_start_values.getGetStartValue(key);
+ }
+ void SystemDefaultImplementation::setRealStartValue(double& var,double val,string key)
+ {
+    var=val;
+    _real_start_values.setStartValue(val,key);
+ }
+ void SystemDefaultImplementation::setBoolStartValue(bool& var,bool val, string key)
+ {
+    var=val;
+    _bool_start_values.setStartValue(val,key);
+ 
+ }
+ void SystemDefaultImplementation::setIntStartValue(int& var,int val, string key)
+ {
+    var=val;   
+   _int_start_values.setStartValue(val,key);
+ 
+ }
+ 
 
+/*
+template int SystemDefaultImplementation::getStartValue(int variable,string key);
+template double SystemDefaultImplementation::getStartValue(double variable,string key);
+template bool SystemDefaultImplementation::getStartValue(bool variable,string key);
+*/

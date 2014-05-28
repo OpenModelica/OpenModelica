@@ -12,6 +12,7 @@ install (TARGETS ${MathName} DESTINATION lib/omc/${LIBINSTALLEXT})
 install (FILES ${CMAKE_SOURCE_DIR}/Include/Core/Math/Functions.h
           ${CMAKE_SOURCE_DIR}/Include/Core/Math/ArrayOperations.h
           ${CMAKE_SOURCE_DIR}/Include/Core/Math/Utility.h
+          ${CMAKE_SOURCE_DIR}/Include/Core/Math/Constants.h
       DESTINATION include/omc/cpp/Core/Math)
 install (FILES ${CMAKE_SOURCE_DIR}/Include/Core/Math/ILapack.h
          ${CMAKE_SOURCE_DIR}/Include/Core/Math/OMAPI.h

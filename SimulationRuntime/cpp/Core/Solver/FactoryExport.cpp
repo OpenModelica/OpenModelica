@@ -6,7 +6,9 @@
 
 #elif defined(OMC_BUILD)
 
-#include "stdafx.h"
+#include "Modelica.h"
+#include <Policies/FactoryConfig.h>
+#include <OMCFactory/OMCFactory.h>
 #include "FactoryExport.h"
 #include <Solver/SolverDefaultImplementation.h>
 #include <Solver/SolverSettings.h>
@@ -22,7 +24,7 @@ BOOST_EXTENSION_TYPE_MAP_FUNCTION {
     ["SolverSettings"].set<SolverSettings>();
 }
 #elif defined(SIMSTER_BUILD)
-#include "stdafx.h"
+#include "Modelica.h"
 #include "FactoryExport.h"
 #include <Solver/SolverDefaultImplementation.h>
 #include <Solver/SolverSettings.h>

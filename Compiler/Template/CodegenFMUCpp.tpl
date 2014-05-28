@@ -159,6 +159,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   #define MODEL_GUID "{<%guid%>}"
 
   #include "Modelica.h"
+  #include "ModelicaDefine.h"
   #include <System/IMixedSystem.h>
    #include <SimulationSettings/IGlobalSettings.h>
    #include <System/IAlgLoopSolverFactory.h>
@@ -471,7 +472,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /MD - link with MSVCRT.LIB
   # /link - [linker options and libraries]
   # /LIBPATH: - Directories where libs can be found
-  LDFLAGS=/MD   /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/" /LIBPATH:"<%makefileParams.omhome%>/bin" OMCppSystem.lib OMCppMath.lib OMCppModelicaExternalC.lib
+  LDFLAGS=/MD   /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/" /LIBPATH:"<%makefileParams.omhome%>/bin" OMCppSystem.lib OMCppBase.lib OMCppMath.lib OMCppModelicaExternalC.lib
 
   # /MDd link with MSVCRTD.LIB debug lib
   # lib names should not be appended with a d just switch to lib/omc/cpp
@@ -526,7 +527,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   SRC+= OMCpp<%fileNamePrefix%>Jacobian.cpp
   SRC+= <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%>
   SRC+=  OMCpp<%fileNamePrefix%>StateSelection.cpp
-  LIBS= -lOMCppSystem_static -lOMCppDataExchange_static -lOMCppOMCFactory
+  LIBS= -lOMCppSystem_static -lOMCppDataExchange_static -lOMCppOMCFactory -lOMCppBase
   LIBS+= $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_SERIALIZATION_LIB)
   LIBS+= $(LINUX_LIB_DL)
 

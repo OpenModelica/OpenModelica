@@ -6,7 +6,8 @@
 #define LOADER_ERROR_FILE_NOT_FOUND         ( -3 )
 #define LOADER_ERROR_FUNC_NOT_FOUND         ( -4 )
 typedef int LOADERRESULT;
-
+class ISimController;
+struct SimSettings;
 class OMCFactory
 {
     public:

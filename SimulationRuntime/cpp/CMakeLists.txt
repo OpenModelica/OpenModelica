@@ -90,6 +90,7 @@ set(NewtonName ${LIBPREFIX}Newton)
 set(HybrjName ${LIBPREFIX}Hybrj)
 set(DataExchangeName ${LIBPREFIX}DataExchange)
 set(ModelicaUtilitiesName ${LIBPREFIX}ModelicaUtilities)
+set(BasiLibName ${LIBPREFIX}Base)
 
 SET(USE_MICO OFF)
 SET(REDUCE_DAE OFF)

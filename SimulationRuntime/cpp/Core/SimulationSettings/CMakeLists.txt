@@ -16,6 +16,7 @@ install (FILES "config/GlobalSettings.xml"
   DESTINATION share/omc/runtime/cpp/config)
 install (FILES ${CMAKE_SOURCE_DIR}/Include/Core/SimulationSettings/IGlobalSettings.h
 			   ${CMAKE_SOURCE_DIR}/Include/Core/SimulationSettings/ISettingsFactory.h
+               ${CMAKE_SOURCE_DIR}/Include/Core/SimulationSettings/ISimControllerSettings.h
   DESTINATION include/omc/cpp/Core/SimulationSettings)
 
 

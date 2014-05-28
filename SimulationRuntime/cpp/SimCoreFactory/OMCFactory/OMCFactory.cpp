@@ -1,8 +1,8 @@
-#include "stdafx.h"
+#include "Modelica.h"
+#include <Policies/FactoryConfig.h>
 #include <OMCFactory/OMCFactory.h>
+#include <SimController/ISimController.h>
 
-namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 OMCFactory::OMCFactory(PATH library_path, PATH modelicasystem_path)
     : _library_path(library_path)

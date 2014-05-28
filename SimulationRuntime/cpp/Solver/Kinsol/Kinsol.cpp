@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "Modelica.h"
 #include "Kinsol.h"
 #include "KinsolSettings.h"
 

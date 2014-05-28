@@ -1,5 +1,5 @@
 
-#include "stdafx.h"
+#include "Modelica.h"
 #include "Configuration.h"
 #include <boost/program_options.hpp>
 #include "SimController.h"

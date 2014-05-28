@@ -1,6 +1,5 @@
-#include "stdafx.h"
+#include "Modelica.h"
 #include "FactoryExport.h"
-#include <System/IAlgLoop.h>
 #include <System/AlgLoopDefaultImplementation.h>
 
 

@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "Modelica.h"
 #include "FactoryExport.h"
 #include <Solver/SystemStateSelection.h>
 #include <Math/ArrayOperations.h>

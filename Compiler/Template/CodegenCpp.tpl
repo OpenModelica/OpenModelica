@@ -223,6 +223,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   <<
    #pragma once
     #include "OMCpp<%fileNamePrefix%>.h"
+  
     <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
   <<
   #include "ReduceDAE/Interfaces/IReduceDAE.h"
@@ -232,7 +233,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   >>
   else
   <<
-  #include "DataExchange/Policies/TextfileWriter.h"
+ 
   typedef HistoryImpl<TextFileWriter,<%numAlgvars(modelInfo)%>+<%numInOutvars(modelInfo)%>+<%numAliasvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>,0> HistoryImplType;
 
   >>%>
@@ -332,16 +333,8 @@ template simulationFactoryFile(SimCode simCode)
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__)) then
   <<
-   #pragma once
    #include "Modelica.h"
-   #include <System/IMixedSystem.h>
-   #include <SimulationSettings/IGlobalSettings.h>
-   #include <System/IAlgLoopSolverFactory.h>
-   #include <System/IMixedSystem.h>
-   #include <System/IAlgLoop.h>
-   #include <Solver/IAlgLoopSolver.h>
-   #include <System/IAlgLoopSolverFactory.h>
-   #include <SimController/ISimData.h>
+   #include "ModelicaDefine.h"
    #include "OMCpp<%fileNamePrefix%>Extension.h"
 
 
@@ -363,14 +356,7 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
    #include "Modelica.h"
-   #include <System/IMixedSystem.h>
-   #include <SimulationSettings/IGlobalSettings.h>
-   #include <System/IAlgLoopSolverFactory.h>
-   #include <System/IMixedSystem.h>
-   #include <System/IAlgLoop.h>
-   #include <Solver/IAlgLoopSolver.h>
-   #include <System/IAlgLoopSolverFactory.h>
-   #include <SimController/ISimData.h>
+   #include "ModelicaDefine.h"
    #include "OMCpp<%fileNamePrefix%>Initialize.h"
    <%lastIdentOfPath(modelInfo.name)%>Initialize::<%lastIdentOfPath(modelInfo.name)%>Initialize(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData)
    : <%lastIdentOfPath(modelInfo.name)%>(globalSettings,nonlinsolverfactory,simData)
@@ -397,14 +383,7 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
    #include "Modelica.h"
-   #include <System/IMixedSystem.h>
-   #include <SimulationSettings/IGlobalSettings.h>
-   #include <System/IAlgLoopSolverFactory.h>
-   #include <System/IMixedSystem.h>
-   #include <System/IAlgLoop.h>
-   #include <Solver/IAlgLoopSolver.h>
-   #include <System/IAlgLoopSolverFactory.h>
-   #include <SimController/ISimData.h>
+   #include "ModelicaDefine.h"
    #include "OMCpp<%fileNamePrefix%>Jacobian.h"
    <%lastIdentOfPath(modelInfo.name)%>Jacobian::<%lastIdentOfPath(modelInfo.name)%>Jacobian(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData)
    : <%lastIdentOfPath(modelInfo.name)%>(globalSettings,nonlinsolverfactory,simData)
@@ -430,14 +409,7 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
    #include "Modelica.h"
-   #include <System/IMixedSystem.h>
-   #include <SimulationSettings/IGlobalSettings.h>
-   #include <System/IAlgLoopSolverFactory.h>
-   #include <System/IMixedSystem.h>
-   #include <System/IAlgLoop.h>
-   #include <Solver/IAlgLoopSolver.h>
-   #include <System/IAlgLoopSolverFactory.h>
-   #include <SimController/ISimData.h>
+   #include "ModelicaDefine.h"
    #include "OMCpp<%fileNamePrefix%>StateSelection.h"
    <%lastIdentOfPath(modelInfo.name)%>StateSelection::<%lastIdentOfPath(modelInfo.name)%>StateSelection(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData)
    : <%lastIdentOfPath(modelInfo.name)%>(globalSettings,nonlinsolverfactory,simData)
@@ -466,14 +438,7 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
    #include "Modelica.h"
-   #include <System/IMixedSystem.h>
-   #include <SimulationSettings/IGlobalSettings.h>
-   #include <System/IAlgLoopSolverFactory.h>
-   #include <System/IMixedSystem.h>
-   #include <System/IAlgLoop.h>
-   #include <Solver/IAlgLoopSolver.h>
-   #include <System/IAlgLoopSolverFactory.h>
-   #include <SimController/ISimData.h>
+   #include "ModelicaDefine.h"
    #include "OMCpp<%fileNamePrefix%>WriteOutput.h"
 
    <%lastIdentOfPath(modelInfo.name)%>WriteOutput::<%lastIdentOfPath(modelInfo.name)%>WriteOutput(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData)
@@ -518,14 +483,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
   <<
    #include "Modelica.h"
-   #include <System/IMixedSystem.h>
-   #include <SimulationSettings/IGlobalSettings.h>
-   #include <System/IAlgLoopSolverFactory.h>
-   #include <System/IMixedSystem.h>
-   #include <System/IAlgLoop.h>
-   #include <Solver/IAlgLoopSolver.h>
-   #include <System/IAlgLoopSolverFactory.h>
-   #include <SimController/ISimData.h>
+   #include "ModelicaDefine.h"
    #include "OMCpp<%fileNamePrefix%>Extension.h"
    <%lastIdentOfPath(modelInfo.name)%>Extension::<%lastIdentOfPath(modelInfo.name)%>Extension(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData)
    : <%lastIdentOfPath(modelInfo.name)%>(globalSettings,nonlinsolverfactory,simData)
@@ -1096,7 +1054,9 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
   #define BOOST_ALL_DYN_LINK
     #endif
   #include "Modelica.h"
+  #include "ModelicaDefine.h"
   #include <SimCoreFactory/Policies/FactoryConfig.h>
+  #include <SimController/ISimController.h>
   #if defined(_MSC_VER) || defined(__MINGW32__)
   #include <tchar.h>
   int _tmain(int argc, const _TCHAR* argv[])
@@ -1149,6 +1109,7 @@ match simCode
 case SIMCODE(modelInfo=MODELINFO(__)) then
   <<
   #include "Modelica.h"
+  #include "ModelicaDefine.h"
   #include "OMCpp<%fileNamePrefix%>Functions.h"
 
   <%externalFunctionIncludes(includes)%>
@@ -1193,9 +1154,6 @@ match simCode
 case SIMCODE(modelInfo=MODELINFO(__)) then
   <<
   #pragma once
-  #include "Math/ArrayOperations.h"
-  #include "Math/Functions.h"
-  #include "Math/Utility.h"
   #include "LibrariesConfig.h"
 
   /*****************************************************************************
@@ -1351,8 +1309,8 @@ EXEEXT=<%makefileParams.exeext%>
 DLLEXT=<%makefileParams.dllext%>
 CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
 CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(SYSTEM_CFLAGS) -I"<%makefileParams.omhome%>/include/omc/cpp/Core" -I"<%makefileParams.omhome%>/include/omc/cpp/"   -I. <%makefileParams.includes%> -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%>  <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %>
-LDSYTEMFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp"  -lOMCppOMCFactory  -L"$(BOOST_LIBS)"
-LDMAINFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp"   -L"<%makefileParams.omhome%>/bin" -lOMCppOMCFactory -L"$(BOOST_LIBS)" $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(LINUX_LIB_DL)
+LDSYTEMFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" -lOMCppBase  -lOMCppOMCFactory -lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath  -L"$(BOOST_LIBS)"  $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(LINUX_LIB_DL)
+LDMAINFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp"   -L"<%makefileParams.omhome%>/bin"  -lOMCppOMCFactory -L"$(BOOST_LIBS)" $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(LINUX_LIB_DL)
 CPPFLAGS = $(CFLAGS) -DOMC_BUILD -DBOOST_SYSTEM_NO_DEPRICATED
 SYSTEMFILE=OMCpp<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
 FUNCTIONFILE=OMCpp<%fileNamePrefix%>Functions.cpp
@@ -1374,7 +1332,7 @@ OFILES=$(CPPFILES:.cpp=.o)
 .PHONY: <%lastIdentOfPath(modelInfo.name)%> $(CPPFILES)
 
 <%fileNamePrefix%>: $(MAINFILE) $(OFILES)
-<%\t%>$(CXX) -shared -I. -o $(SYSTEMOBJ) $(OFILES) $(CPPFLAGS) $(LDMAINFLAGS)  <%dirExtra%> <%libsPos1%> <%libsPos2%> -lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath
+<%\t%>$(CXX) -shared -I. -o $(SYSTEMOBJ) $(OFILES) $(CPPFLAGS) $(LDSYTEMFLAGS)  <%dirExtra%> <%libsPos1%> <%libsPos2%> 
 <%\t%>$(CXX) $(CPPFLAGS) -I. -o $(MAINOBJ) $(MAINFILE) $(LDMAINFLAGS)
 <% if boolNot(stringEq(makefileParams.platform, "win32")) then
   <<
@@ -1397,14 +1355,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
   <<
    #include "Modelica.h"
-   #include <System/IMixedSystem.h>
-   #include <SimulationSettings/IGlobalSettings.h>
-   #include <System/IAlgLoopSolverFactory.h>
-   #include <System/IMixedSystem.h>
-   #include <System/IAlgLoop.h>
-   #include <Solver/IAlgLoopSolver.h>
-   #include <System/IAlgLoopSolverFactory.h>
-   #include <SimController/ISimData.h>
+   #include "ModelicaDefine.h"
    #include "OMCpp<%fileNamePrefix%>.h"
 
 
@@ -1507,14 +1458,7 @@ match eq
 
   <<
    #include "Modelica.h"
-   #include <System/IMixedSystem.h>
-   #include <SimulationSettings/IGlobalSettings.h>
-   #include <System/IAlgLoopSolverFactory.h>
-   #include <System/IMixedSystem.h>
-   #include <System/IAlgLoop.h>
-   #include <Solver/IAlgLoopSolver.h>
-   #include <System/IAlgLoopSolverFactory.h>
-   #include <SimController/ISimData.h>
+   #include "ModelicaDefine.h"
    #include "OMCpp<%fileNamePrefix%>Extension.h"
    #include "OMCpp<%filename%>Algloop<%index%>.h"
    #include "OMCpp<%modelfilename%>.h"
@@ -2917,15 +2861,15 @@ case modelInfo as MODELINFO(vars=SIMVARS(__))  then
    let &varDecls7 = buffer "" /*BUFD*/
    let &varDecls8 = buffer "" /*BUFD*/
    let &varDecls9 = buffer "" /*BUFD*/
-   let init1  = initValst(varDecls1,vars.stateVars, simCode,contextOther)
-   let init2  = initValst(varDecls2,vars.derivativeVars, simCode,contextOther)
-   let init3  = initValst(varDecls3,vars.algVars, simCode,contextOther)
-   let init4  = initValst(varDecls4,vars.intAlgVars, simCode,contextOther)
-   let init5  =initValst(varDecls5,vars.boolAlgVars, simCode,contextOther)
-   let init6  =initAliasValst(varDecls6,vars.aliasVars, simCode,contextOther)
-   let init7  =initAliasValst(varDecls7,vars.intAliasVars, simCode,contextOther)
-   let init8  =initValst(varDecls8,vars.boolAliasVars, simCode,contextOther)
-   let init9  =initValst(varDecls9,vars.paramVars, simCode,contextOther)
+   let init1  = initValst(varDecls1,"Real",vars.stateVars, simCode,contextOther)
+   let init2  = initValst(varDecls2,"Real",vars.derivativeVars, simCode,contextOther)
+   let init3  = initValst(varDecls3,"Real",vars.algVars, simCode,contextOther)
+   let init4  = initValst(varDecls4,"Int",vars.intAlgVars, simCode,contextOther)
+   let init5  =initValst(varDecls5,"Bool",vars.boolAlgVars, simCode,contextOther)
+   let init6  =initAliasValst(varDecls6,"Real",vars.aliasVars, simCode,contextOther)
+   let init7  =initAliasValst(varDecls7,"Int",vars.intAliasVars, simCode,contextOther)
+   let init8  =initValst(varDecls8,"Bool",vars.boolAliasVars, simCode,contextOther)
+   let init9  =initValst(varDecls9,"Real",vars.paramVars, simCode,contextOther)
    <<
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeStateVars()
    {
@@ -3596,12 +3540,11 @@ match simCode
 case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   <<
   #pragma once
-  #define BOOST_EXTENSION_SYSTEM_DECL BOOST_EXTENSION_EXPORT_DECL
-  #define BOOST_EXTENSION_EVENTHANDLING_DECL BOOST_EXTENSION_EXPORT_DECL
+  #define BOOST_EXTENSION_SYSTEM_DECL BOOST_EXTENSION_IMPORT_DECL
+  #define BOOST_EXTENSION_EVENTHANDLING_DECL BOOST_EXTENSION_IMPORT_DECL
   #include "System/EventHandling.h"
   #include "System/SystemDefaultImplementation.h"
   #include "OMCpp<%fileNamePrefix%>Functions.h"
-  #include "HistoryImpl.h"
   <%algloopfilesInclude(listAppend(allEquations,initialEquations),simCode)%>
 
   /*****************************************************************************
@@ -3624,9 +3567,8 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   let systemname = match context case  ALGLOOP_CONTEXT(genInitialisation=false,genJacobian=true) then '<%modelname%>Jacobian' else '<%modelname%>'
   <<
   #pragma once
-  #define BOOST_EXTENSION_ALGLOOPDEFAULTIMPL_DECL BOOST_EXTENSION_EXPORT_DECL
-  #define BOOST_EXTENSION_EVENTHANDLING_DECL BOOST_EXTENSION_EXPORT_DECL
-  #include "System/IMixedSystem.h"
+  #define BOOST_EXTENSION_ALGLOOPDEFAULTIMPL_DECL BOOST_EXTENSION_IMPORT_DECL
+  #define BOOST_EXTENSION_EVENTHANDLING_DECL BOOST_EXTENSION_IMPORT_DECL
   #include "System/AlgLoopDefaultImplementation.h"
   #include "System/EventHandling.h"
   #include "OMCpp<%fileNamePrefix%>Functions.h"
@@ -5437,33 +5379,8 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
   >>
  end savediscreteVars;
 
-template initvar( Text &varDecls /*BUFP*/,ModelInfo modelInfo,SimCode simCode)
-::=
-match modelInfo
-case MODELINFO(vars=SIMVARS(__)) then
- <<
-  <%initValst(varDecls,vars.stateVars, simCode,contextOther)%>
-  <%initValst(varDecls,vars.derivativeVars, simCode,contextOther)%>
-  <%initValst(varDecls,vars.algVars, simCode,contextOther)%>
-  <%initValst(varDecls,vars.intAlgVars, simCode,contextOther)%>
-  <%initValst(varDecls,vars.boolAlgVars, simCode,contextOther)%>
-  <%initValst(varDecls,vars.aliasVars, simCode,contextOther)%>
-  <%initValst(varDecls,vars.intAliasVars, simCode,contextOther)%>
-  <%initValst(varDecls,vars.boolAliasVars, simCode,contextOther)%>
-  <%initValst(varDecls,vars.paramVars, simCode,contextOther)%>
 
- >>
-end initvar;
 
-template initvarExtVar( Text &varDecls /*BUFP*/,ModelInfo modelInfo,SimCode simCode)
-::=
-match modelInfo
-case MODELINFO(vars=SIMVARS(__)) then
- <<
-  <%initValst(varDecls,vars.extObjVars, simCode,contextOther)%>
-
- >>
-end initvarExtVar;
 
 template initAlgloopvars( Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/,ModelInfo modelInfo,SimCode simCode,Context context)
 ::=
@@ -5471,9 +5388,9 @@ match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
   let &varDecls = buffer "" /*BUFD*/
 
- let algvars =initValst(varDecls,vars.algVars, simCode,context)
- let intvars = initValst(varDecls,vars.intAlgVars, simCode,context)
- let boolvars = initValst(varDecls,vars.boolAlgVars, simCode,context)
+ let algvars =initValst(varDecls,"Real",vars.algVars, simCode,context)
+ let intvars = initValst(varDecls,"Int",vars.intAlgVars, simCode,context)
+ let boolvars = initValst(varDecls,"Bool",vars.boolAlgVars, simCode,context)
  <<
   <%varDecls%>
 
@@ -5534,10 +5451,35 @@ match c
   case OUTPUT(__) then "output"
 end isOutput;
 
-template initValst(Text &varDecls /*BUFP*/,list<SimVar> varsLst, SimCode simCode, Context context) ::=
+template initValst(Text &varDecls /*BUFP*/,Text type, list<SimVar> varsLst, SimCode simCode, Context context) ::=
   varsLst |> sv as SIMVAR(__) =>
       let &preExp = buffer "" /*BUFD*/
       let &varDeclsCref = buffer "" /*BUFD*/
+    match initialValue
+      case SOME(v) then
+      match daeExp(v, contextOther, &preExp, &varDecls,simCode)
+      case vStr as "0"
+      case vStr as "0.0"
+      case vStr as "(0)" then
+       '<%preExp%>
+       set<%type%>StartValue(<%cref1(sv.name,simCode,context,varDeclsCref)%>,<%vStr%>,"<%cref(sv.name)%>");'
+      case vStr as "" then
+       '<%preExp%>
+        set<%type%>StartValue(<%cref1(sv.name,simCode,context,varDeclsCref)%>,<%vStr%>,"<%cref(sv.name)%>");'
+      case vStr then
+       '<%preExp%>
+       set<%type%>StartValue(<%cref1(sv.name,simCode,context,varDeclsCref)%>,<%vStr%>,"<%cref(sv.name)%>");'
+        end match
+      else
+        '<%preExp%>
+       set<%type%>StartValue(<%cref1(sv.name,simCode,context,varDeclsCref)%>,<%startValue(sv.type_)%> ,"<%cref(sv.name)%>");'
+      ;separator="\n"
+end initValst;
+/*
+template initValst(Text &varDecls , list<SimVar> varsLst, SimCode simCode, Context context) ::=
+  varsLst |> sv as SIMVAR(__) =>
+      let &preExp = buffer "" 
+      let &varDeclsCref = buffer "" 
     match initialValue
       case SOME(v) then
       match daeExp(v, contextOther, &preExp, &varDecls,simCode)
@@ -5562,13 +5504,12 @@ template initValst(Text &varDecls /*BUFP*/,list<SimVar> varsLst, SimCode simCode
        _start_values["<%cref(sv.name)%>"]=<%startValue(sv.type_)%>;'
   ;separator="\n"
 end initValst;
-
-
-
-template initAliasValst(Text &varDecls /*BUFP*/,list<SimVar> varsLst, SimCode simCode, Context context) ::=
+*/
+/*
+template initAliasValst(Text &varDecls ,list<SimVar> varsLst, SimCode simCode, Context context) ::=
   varsLst |> sv as SIMVAR(__) =>
-      let &preExp = buffer "" /*BUFD*/
-      let &varDeclsCref = buffer "" /*BUFD*/
+      let &preExp = buffer "" 
+      let &varDeclsCref = buffer "" 
     match initialValue
       case SOME(v) then
       match daeExp(v, contextOther, &preExp, &varDecls,simCode)
@@ -5592,6 +5533,34 @@ template initAliasValst(Text &varDecls /*BUFP*/,list<SimVar> varsLst, SimCode si
         <%getAliasVarName(sv.aliasvar, simCode,context)%>=<%startValue(sv.type_)%>;////<%crefStr(sv.name)%>
        _start_values["<%cref(sv.name)%>"]=<%startValue(sv.type_)%>;'
   ;separator="\n"
+end initAliasValst;
+*/
+template initAliasValst(Text &varDecls ,Text type,list<SimVar> varsLst, SimCode simCode, Context context) ::=
+  varsLst |> sv as SIMVAR(__) =>
+      let &preExp = buffer "" /*BUFD*/
+      let &varDeclsCref = buffer "" /*BUFD*/
+    match initialValue
+      case SOME(v) then
+      match daeExp(v, contextOther, &preExp, &varDecls,simCode)
+      case vStr as "0"
+      case vStr as "0.0"
+      case vStr as "(0)" then
+       '<%preExp%>
+        set<%type%>StartValue(<%getAliasVarName(sv.aliasvar, simCode,context)%>,<%vStr%>,"<%cref(sv.name)%>");'
+        
+      
+      case vStr as "" then
+       '<%preExp%>
+        set<%type%>StartValue(<%getAliasVarName(sv.aliasvar, simCode,context)%>,<%vStr%>,"<%cref(sv.name)%>");'
+      
+      case vStr then
+       '<%preExp%>
+       set<%type%>StartValue(<%getAliasVarName(sv.aliasvar, simCode,context)%>,<%vStr%>,"<%cref(sv.name)%>");'
+           end match
+      else
+        '<%preExp%>
+         set<%type%>StartValue(<%getAliasVarName(sv.aliasvar, simCode,context)%>,<%startValue(sv.type_)%>,"<%cref(sv.name)%>");'
+    ;separator="\n"
 end initAliasValst;
 
 
@@ -6311,7 +6280,7 @@ template generateAlgloopsolvers2(SimEqSystem eq, Context context, Text &varDecls
   case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
 
-  _algLoop<%num%> =  boost::shared_ptr<<%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>>(new <%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>(this,__z,__zDot,_conditions,_event_handling )
+  _algLoop<%num%> =  boost::shared_ptr<IAlgLoop>(new <%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>(this,__z,__zDot,_conditions,_event_handling )
                                                                                                                                   );
   _algLoopSolver<%num%> = boost::shared_ptr<IAlgLoopSolver>(_algLoopSolverFactory->createAlgLoopSolver(_algLoop<%num%>.get()));
    >>
@@ -6325,8 +6294,7 @@ template generateAlgloopsolvers2(SimEqSystem eq, Context context, Text &varDecls
     ""
  end generateAlgloopsolvers2;
 
-/*_algLoop<%num%> =  boost::shared_ptr<<%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>>(new <%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>(<%CallAlgloopParams(modelInfo)%>__z,__zDot,_event_handling )*/
-
+//_algLoop<%num%> =  boost::shared_ptr<<%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>>(new <%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>(this,__z,__zDot,_conditions,_event_handling )
 
 template generateAlgloopsolverVariables(list<SimEqSystem> allEquationsPlusWhen,SimCode simCode)
 ::=
@@ -6354,7 +6322,7 @@ template generateAlgloopsolverVariables2(SimEqSystem eq, Context context, Text &
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
-      boost::shared_ptr<<%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>>  //Algloop  which holds equation system
+     boost::shared_ptr<IAlgLoop>  //Algloop  which holds equation system
         _algLoop<%num%>;
     boost::shared_ptr<IAlgLoopSolver>
         _algLoopSolver<%num%>;        ///< Solver for algebraic loop */
@@ -6369,7 +6337,7 @@ template generateAlgloopsolverVariables2(SimEqSystem eq, Context context, Text &
     ""
  end generateAlgloopsolverVariables2;
 
-
+// boost::shared_ptr<<%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>>  //Algloop  which holds equation system
 template initAlgloopsolvers(list<list<SimEqSystem>> continousEquations,SimCode simCode)
 ::=
   let &varDecls = buffer "" /*BUFD*/
@@ -7892,7 +7860,7 @@ template daeExpCallStart(Exp exp, Context context, Text &preExp /*BUFP*/,
   let &varDeclsCref = buffer "" /*BUFD*/
   match exp
   case cr as CREF(__) then
-    'getStartValue(<%cref1(cr.componentRef,simCode,context,varDeclsCref)%>,"<%cref(cr.componentRef)%>")'
+    'get<%crefStartValueType(cr.componentRef)%>StartValue("<%cref(cr.componentRef)%>")'
   case ASUB(exp = cr as CREF(__), sub = {sub_exp}) then
     let offset = daeExp(sub_exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let cref = cref1(cr.componentRef,simCode,context,varDeclsCref)
@@ -7900,6 +7868,38 @@ template daeExpCallStart(Exp exp, Context context, Text &preExp /*BUFP*/,
   else
     error(sourceInfo(), 'Code generation does not support start(<%printExpStr(exp)%>)')
 end daeExpCallStart;
+
+
+template crefStartValueType(ComponentRef cr) "template crefType
+  Like cref but with cast if type is integer."
+::=
+  match cr
+  case CREF_IDENT(__) then '<%crefStartValueType2(identType)%>'
+  case CREF_QUAL(__)  then '<%crefStartValueType(componentRef)%>'
+  else "crefType:ERROR"
+  end match
+end crefStartValueType;
+
+
+
+
+
+template crefStartValueType2(DAE.Type ty)
+::=
+  match ty
+    case T_INTEGER(__) then 'Int'
+    case T_REAL(__) then 'Real'
+    case T_BOOL(__) then 'Bool'
+  else "error start value type"
+end match
+  
+
+end crefStartValueType2;
+
+
+
+
+
 
 template expTypeFromExpShort(Exp exp)
 

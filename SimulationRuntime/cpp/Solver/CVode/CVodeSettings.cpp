@@ -1,5 +1,5 @@
 //#pragma once
-#include "stdafx.h"
+#include "Modelica.h"
 #include "CVodeSettings.h"
 
 CVodeSettings::CVodeSettings(IGlobalSettings* globalSettings)

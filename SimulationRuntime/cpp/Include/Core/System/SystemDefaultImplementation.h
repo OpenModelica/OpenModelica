@@ -32,7 +32,18 @@ for Open Modelica", September, 10 th, 2008
 Copyright (c) 2008, OSMC
 *****************************************************************************/
 
-typedef boost::unordered_map<std::string, boost::any> SValuesMap;
+//typedef boost::unordered_map<std::string, boost::any> SValuesMap;
+
+template <class T> 
+class InitVars
+{
+ public:
+    void setStartValue(T variable,string key);
+    T getGetStartValue(string key);
+  private:
+   boost::unordered_map<std::string, T> _start_values;
+};
+
 
 class BOOST_EXTENSION_SYSTEM_DECL SystemDefaultImplementation
 {
@@ -117,18 +128,15 @@ protected:
      void storeTime(double time);
      double delay(unsigned int expr_id,double expr_value, double delayTime, double delayMax);
      bool isConsistent();
-    template<class T>
-    T getStartValue(T variable,string key)
-    {
-        try
-        {
-            return boost::any_cast<T>(_start_values[key]);
-        }
-        catch(const boost::bad_any_cast & ex)
-        {
-            std::runtime_error("No such start value");
-        }
-    };
+   
+     
+    double getRealStartValue(string key);
+    bool  getBoolStartValue(string key);
+    int   getIntStartValue(string key);
+    void setRealStartValue(double& var,double val,string key);
+    void setBoolStartValue(bool& var,bool val, string key);
+    void setIntStartValue(int& var,int val, string key);
+   
     double
         _simTime;        ///< current simulation time (given by the solver)
 
@@ -158,7 +166,12 @@ protected:
 
 
     bool _initial;
-    SValuesMap _start_values;
+    //SValuesMap _start_values;
+    InitVars<double> _real_start_values;
+    InitVars<int> _int_start_values;
+    InitVars<bool> _bool_start_values;
+    
+    
     EventHandling _event_handling;
 
     typedef boost::circular_buffer<double> buffer_type;
@@ -169,3 +182,5 @@ protected:
 
 };
 
+
+ 

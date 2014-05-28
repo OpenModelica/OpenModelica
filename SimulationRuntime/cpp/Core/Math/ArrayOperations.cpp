@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "Modelica.h"
 #include <Math/ArrayOperations.h>
 #include <sstream>
 #include <stdio.h>
@@ -15,3 +15,4 @@ size_t getNextIndex(vector<size_t> idx,size_t k)
   else
     return idx[k];
 }
+

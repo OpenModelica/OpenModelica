@@ -1,5 +1,6 @@
-#include "stdafx.h"
-
+#include "Modelica.h"
+#include <Policies/FactoryConfig.h>
+#include <OMCFactory/OMCFactory.h>
 #include "Euler.h"
 #include "EulerSettings.h"
 

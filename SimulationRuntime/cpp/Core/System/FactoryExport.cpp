@@ -2,7 +2,7 @@
 
 #if defined(__vxworks)
 
-  #include "stdafx.h"
+  #include "Modelica.h"
  #include <System/AlgLoopSolverFactory.h>
   extern "C" IAlgLoopSolverFactory* createAlgLoopSolverFactory(IGlobalSettings* globalSettings,PATH library_path,PATH modelicasystem_path)
   {
@@ -10,7 +10,9 @@
   }
 
 #elif defined(SIMSTER_BUILD)
-#include "stdafx.h"
+#include "Modelica.h"
+#include <Policies/FactoryConfig.h>
+#include <OMCFactory/OMCFactory.h>
 #include "FactoryExport.h"
 #include "ModelicaSystem.h"
 #include "AlgLoopSolverFactory.h"
@@ -29,7 +31,9 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_modelica(boost::ext
 }
 
 #elif defined(OMC_BUILD)
-#include "stdafx.h"
+#include "Modelica.h"
+#include <Policies/FactoryConfig.h>
+#include <OMCFactory/OMCFactory.h>
 #include "FactoryExport.h"
 #include <System/AlgLoopSolverFactory.h>
 
@@ -46,6 +50,7 @@ BOOST_EXTENSION_TYPE_MAP_FUNCTION {
 #else
     error "operating system not supported"
 #endif
+
 
 
 

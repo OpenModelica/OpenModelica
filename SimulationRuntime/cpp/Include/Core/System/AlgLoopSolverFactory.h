@@ -1,10 +1,5 @@
 #pragma once
 
-
-#include <System/IAlgLoopSolverFactory.h>
-#include <Solver/INonLinSolverSettings.h>
-#include <SimulationSettings/IGlobalSettings.h>
-
 /*****************************************************************************/
 /**
 Factory used by the system to create a solver for the solution of a (possibly

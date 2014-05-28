@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "Modelica.h"
 #include "CVode.h"
 #include <Math/Functions.h>
 

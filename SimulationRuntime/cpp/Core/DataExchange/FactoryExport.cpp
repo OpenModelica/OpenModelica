@@ -5,7 +5,7 @@
 
 
 #elif defined(OMC_BUILD)
-#include "stdafx.h"
+#include "Modelica.h"
 #include <DataExchange/SimData.h>
 
 /* OMC factory*/
@@ -16,7 +16,7 @@ BOOST_EXTENSION_TYPE_MAP_FUNCTION {
     ["SimData"].set<SimData>();
 }
 #elif defined(SIMSTER_BUILD)
-#include "stdafx.h"
+#include "Modelica.h"
 #include <DataExchange/SimData.h>
 
 /*Simster factory*/

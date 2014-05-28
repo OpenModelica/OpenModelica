@@ -1,9 +1,7 @@
 
-#include "stdafx.h"
-
-#include <System/IAlgLoopSolverFactory.h>
-#include <Solver/INonLinSolverSettings.h>
-#include <SimulationSettings/IGlobalSettings.h>
+#include "Modelica.h"
+#include <Policies/FactoryConfig.h>
+#include <OMCFactory/OMCFactory.h>
 #include <System/AlgLoopSolverFactory.h>
 
 #ifdef ANALYZATION_MODE

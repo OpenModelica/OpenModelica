@@ -1,9 +1,5 @@
 #pragma once
 
-#include <iostream>
-#include <vector>
-
-#include <System/IAlgLoop.h>
 
 /*****************************************************************************/
 /**

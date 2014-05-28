@@ -1,7 +1,6 @@
 #pragma once
 
-#include <System/IAlgLoop.h>
-#include <Solver/IAlgLoopSolver.h>
+
 
 /*****************************************************************************/
 /**

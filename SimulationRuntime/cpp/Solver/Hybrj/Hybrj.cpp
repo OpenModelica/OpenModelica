@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "Modelica.h"
 #include "Hybrj.h"
 
 #include <Math/ILapack.h>        // needed for solution of linear system with Lapack

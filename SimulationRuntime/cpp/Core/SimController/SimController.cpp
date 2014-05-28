@@ -1,11 +1,7 @@
-#include "stdafx.h"
-#include <SimController/ISimData.h>
-#include <System/IMixedSystem.h>
-#include <System/IAlgLoopSolverFactory.h>
-#include <SimulationSettings/IGlobalSettings.h>
-#include <boost/weak_ptr.hpp>
-#include <boost/shared_ptr.hpp>
-
+#include "Modelica.h"
+#include <Policies/FactoryConfig.h>
+#include <OMCFactory/OMCFactory.h>
+#include <SimController/ISimController.h>
 #include "SimController.h"
 #include "LibrariesConfig.h"
 #include "Configuration.h"

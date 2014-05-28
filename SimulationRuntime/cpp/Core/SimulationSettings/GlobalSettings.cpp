@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "Modelica.h"
 //#define BOOST_EXTENSION_GLOBALSETTINGS_DECL BOOST_EXTENSION_EXPORT_DECL
 #include "GlobalSettings.h"
 

@@ -2,7 +2,7 @@
 
 #if defined(__vxworks)
 
-  #include "stdafx.h"
+  #include "Modelica.h"
     #include "SimController.h"
   extern "C" ISimController* createSimController(PATH library_path,PATH modelicasystem_path)
   {
@@ -11,7 +11,7 @@
 
 #elif defined(SIMSTER_BUILD)
 
-#include "stdafx.h"
+#include "Modelica.h"
 #include "SimController.h"
 /*Simster factory*/
 extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_simcontroller(boost::extensions::factory_map & fm)
@@ -23,7 +23,10 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_simcontroller(boost
 
  #elif defined(OMC_BUILD)
 
-#include "stdafx.h"
+#include "Modelica.h"
+#include <Policies/FactoryConfig.h>
+#include <OMCFactory/OMCFactory.h>
+#include <SimController/ISimController.h>
 #include "SimController.h"
 
 /*OMC factory*/
