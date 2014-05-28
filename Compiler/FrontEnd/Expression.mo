@@ -9928,7 +9928,6 @@ algorithm
     case DAE.ADD(ty = _) then true;
     case DAE.MUL(ty = _) then true;
     case DAE.ADD_ARR(ty = _) then true;
-    case DAE.MUL_ARR(ty = _) then true;
     case DAE.MUL_ARRAY_SCALAR(ty = _) then true;
     case DAE.ADD_ARRAY_SCALAR(ty = _) then true;
     else false;

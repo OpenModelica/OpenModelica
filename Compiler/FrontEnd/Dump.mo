@@ -2457,7 +2457,6 @@ protected function isAssociativeOp
 algorithm
   outIsAssociative := match(inOperator)
     case Absyn.ADD() then true;
-    case Absyn.MUL() then true;
     case Absyn.ADD_EW() then true;
     case Absyn.MUL_EW() then true;
     else false;
