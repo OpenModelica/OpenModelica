@@ -81,7 +81,7 @@ typedef struct SOLVER_INFO
     S_LOBATTO4,      /*  9 */
     S_LOBATTO6,      /* 10 */
     S_DASSLWORT,
-    S_DASSLTEST,
+    S_DASSLSTEPS,
     S_DASSLSYMJAC,
     S_DASSLNUMJAC,
     S_DASSLCOLORSYMJAC,
@@ -104,7 +104,7 @@ typedef struct SOLVER_INFO
     "lobatto4",
     "lobatto6",
     "dasslwort",
-    "dassltest",
+    "dasslsteps",
     "dasslSymJac",
     "dasslNumJac",
     "dasslColorSymJac",
@@ -124,7 +124,7 @@ typedef struct SOLVER_INFO
     "lobatto4 [sundial/kinsol needed]",
     "lobatto6 [sundial/kinsol needed]",
     "dassl without internal root finding",
-    "dassl for debug propose",
+    "dassl as default, but without consideration of numberOfintervals or stepSize. Output point are internal dassl steps.",
     "dassl with symbolic jacobian",
     "dassl with numerical jacobian",
     "dassl with colored symbolic jacobian",

@@ -535,7 +535,7 @@ int solver_main(DATA* data, const char* init_initMethod,
   switch(solverInfo.solverMethod)
   {
   case S_DASSLWORT:
-  case S_DASSLTEST:
+  case S_DASSLSTEPS:
   case S_DASSLSYMJAC:
   case S_DASSLNUMJAC:
   case S_DASSLCOLORSYMJAC:

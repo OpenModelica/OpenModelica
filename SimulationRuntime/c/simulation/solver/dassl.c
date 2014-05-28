@@ -39,6 +39,7 @@
 #include "util/memory_pool.h"
 
 #include "simulation/simulation_runtime.h"
+#include "simulation/results/simulation_result.h"
 #include "simulation/solver/solver_main.h"
 #include "simulation/solver/model_help.h"
 #include "simulation/solver/external_input.h"
@@ -52,20 +53,20 @@
 static const char *dasslMethodStr[DASSL_MAX] = {"unknown",
                                                 "dassl",
                                                 "dasslwort",
+                                                "dasslsteps",
                                                 "dasslSymJac",
                                                 "dasslNumJac",
                                                 "dasslColorSymJac",
-                                                "dasslInternalNumJac",
-                                                "dassltest"};
+                                                "dasslInternalNumJac"};
 
 static const char *dasslMethodStrDescStr[DASSL_MAX] = {"unknown",
-                                                       "dassl with colored numerical jacobian, with interval root finding",
+                                                       "dassl with colored numerical jacobian, with interval root finding - default",
                                                        "dassl without internal root finding",
+                                                       "dassl as default, but without consideration of numberOfintervals or stepSize. Output point are internal dassl steps.",
                                                        "dassl with symbolic jacobian",
                                                        "dassl with numerical jacobian",
                                                        "dassl with colored symbolic jacobian",
-                                                       "dassl with internal numerical jacobian",
-                                                       "dassl for debug propose"};
+                                                       "dassl with internal numerical jacobian"};
 
 
 
@@ -213,7 +214,7 @@ int dassl_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
       dasslData->dasslMethod == DASSL_NUMJAC ||
       dasslData->dasslMethod == DASSL_WORT ||
       dasslData->dasslMethod == DASSL_RT ||
-      dasslData->dasslMethod == DASSL_TEST){
+      dasslData->dasslMethod == DASSL_STEPS){
     if (simData->callback->initialAnalyticJacobianA(simData)){
       /* TODO: check that the one states is dummy */
       if(simData->modelData.nStates == 1) {
@@ -295,9 +296,13 @@ int dassl_step(DATA* simData, SOLVER_INFO* solverInfo)
     dasslData->idid = 0;
   }
 
-  /* Calculate time steps until TOUT is reached
-   * (DASSL calculates beyond TOUT unless info[6] is set to 1!) */
-  tout = solverInfo->currentTime + solverInfo->currentStepSize;
+  /* Calculate steps until TOUT is reached */
+  /* If dasslsteps is selected, the dassl run to stopTime */
+  if  (dasslData->dasslMethod == DASSL_STEPS){
+    tout = simData->simulationInfo.stopTime;
+  }else {
+    tout = solverInfo->currentTime + solverInfo->currentStepSize;
+  }
 
   /* Check that tout is not less than timeValue
    * else will dassl get in trouble. If that is the case we skip the current step. */
@@ -366,13 +371,6 @@ int dassl_step(DATA* simData, SOLVER_INFO* solverInfo)
           dasslData->rwork, &dasslData->lrw, dasslData->iwork, &dasslData->liw,
           (double*) (void*) dasslData->rpar, dasslData->ipar, dummy_Jacobian, dummy_precondition,
           function_ZeroCrossingsDASSL, (fortran_integer*) &dasslData->ng, dasslData->jroot);
-    } else if(dasslData->dasslMethod ==  DASSL_TEST) {
-      DDASKR(functionODE_residual, &mData->nStates,
-          &solverInfo->currentTime, sData->realVars, stateDer, &tout,
-          dasslData->info, dasslData->rtol, dasslData->atol, &dasslData->idid,
-          dasslData->rwork, &dasslData->lrw, dasslData->iwork, &dasslData->liw,
-          (double*) (void*) dasslData->rpar, dasslData->ipar, JacobianOwnNumColored, dummy_precondition,
-          dummy_zeroCrossing, &dasslData->ngdummy, NULL);
     } else if(dasslData->dasslMethod ==  DASSL_WORT) {
       DDASKR(functionODE_residual, &mData->nStates,
           &solverInfo->currentTime, sData->realVars, stateDer, &tout,
@@ -408,6 +406,13 @@ int dassl_step(DATA* simData, SOLVER_INFO* solverInfo)
       return retVal;
     } else if(dasslData->idid == 5) {
       simData->threadData->currentErrorStage = ERROR_EVENTSEARCH;
+    }
+
+    /* emit step, if dasslsteps is selected */
+    if  (dasslData->dasslMethod == DASSL_STEPS){
+        sData->timeValue = solverInfo->currentTime;
+        updateContinuousSystem(simData);
+        sim_result.emit(&sim_result, simData);
     }
 
   } while(dasslData->idid == 1 ||
