@@ -5293,34 +5293,34 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
   <<
     void <%lastIdentOfPath(modelInfo.name)%>::initPreVars(unordered_map<string,unsigned int>& vars1, unordered_map<string,unsigned int>& vars2)
     {
-      vars1 = map_list_of
+      insert( vars1 )
       <%{(vars.algVars |> SIMVAR(__) hasindex i0  =>
         '("<%cref(name)%>",<%i0%>)'
-      ;separator=" "; align=10;alignSeparator=" \n"  ),
+      ;separator=" "; align=10;alignSeparator=";\n insert( vars1 ) \n"  ),
       (vars.intAlgVars |> SIMVAR(__)  hasindex i1  =>
        '("<%cref(name)%>",(<%i1%>+<%n1%>))'
-      ;separator=" "; align=10;alignSeparator=" \n"  ),
+      ;separator=" "; align=10;alignSeparator=";\n insert( vars1 ) \n"  ),
       (vars.boolAlgVars |> SIMVAR(__) hasindex i2=>
         '("<%cref(name)%>",(<%i2%>+<%n2%>))'
-      ;separator=" "; align=10;alignSeparator=" \n"  ),
+      ;separator=" "; align=10;alignSeparator=";\n insert( vars1 ) \n"  ),
       (vars.stateVars |> SIMVAR(__) hasindex i3  =>
         '("<%cref(name)%>",(<%i3%>+<%n3%>))'
-      ;separator=" "; align=10;alignSeparator=" \n"   )}
+      ;separator=" "; align=10;alignSeparator="\n"   )}
      ;separator=" "%>;
 
 
 
-      vars2 = map_list_of
+      insert( vars2 )
       <%{
        (vars.algVars |> SIMVAR(__) hasindex i0 =>
         '("<%cref(name)%>",<%i0%>)'
-      ;separator=" ";align=10;alignSeparator=" \n"),
+      ;separator=" ";align=10;alignSeparator=";\n insert( vars2 ) \n"),
       (vars.intAlgVars |> SIMVAR(__) hasindex i1=>
        '("<%cref(name)%>",(<%i1%>+<%n1%>))'
-      ;separator=" ";align=10;alignSeparator=" \n"),
+      ;separator=" ";align=10;alignSeparator=";\n insert( vars2 ) \n"),
       (vars.boolAlgVars |> SIMVAR(__) hasindex i2 =>
         '("<%cref(name)%>",(<%i2%>+<%n2%>))'
-      ;separator=" ";align=10;alignSeparator=" \n")}
+      ;separator=" ";align=10;alignSeparator=";\n insert( vars2 ) \n")}
      ;separator=" ";align=10;alignSeparator=" \n"
      %>;
 
@@ -5904,13 +5904,13 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
     unsigned int dim<%index%> =   _algLoop<%index%>->getDimReal();
     double* algloop<%index%>Vars = new double[dim<%index%>];
     _algLoop<%index%>->getReal(algloop<%index%>Vars );
-
+    bool restatDiscrete<%index%>= false;
     try
       {
 
          _algLoop<%index%>->evaluate();
 
-
+          
           if( _callType == IContinuous::DISCRETE )
           {
              while(restart<%index%> && !(iterations<%index%>++>500))
@@ -5935,14 +5935,12 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
       }
       catch(std::exception &ex)
        {
-          delete[] conditions0<%index%>;
-          delete[] conditions1<%index%>;
-          throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what());
+          
+          restatDiscrete<%index%>=true;
 
        }
-       delete[] conditions0<%index%>;
-       delete[] conditions1<%index%>;
-       if(restart<%index%>&& iterations<%index%> > 0)
+      
+       if((restart<%index%>&& iterations<%index%> > 0)|| restatDiscrete<%index%>)
        {
             try
              {  //workaround: try to solve algoop discrete (evaluate all zero crossing conditions) since we do not have the information which zercrossing contains a algloop var
@@ -5955,11 +5953,15 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
              catch(std::exception &ex)
              {
                 delete[] algloop<%index%>Vars;
+                delete[] conditions0<%index%>;
+                delete[] conditions1<%index%>;
                 throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what());
              }
 
        }
         delete[] algloop<%index%>Vars;
+        delete[] conditions0<%index%>;
+        delete[] conditions1<%index%>;
       >>
     end match
 
@@ -6835,7 +6837,7 @@ template equationLinearOrNonLinear(SimEqSystem eq, Context context,Text &varDecl
         unsigned int dim<%index%> = _algLoop<%index%>->getDimReal();
         double* algloop<%index%>Vars = new double[dim<%index%>];
         _algLoop<%index%>->getReal(algloop<%index%>Vars );
-
+        bool restatDiscrete<%index%>= false;
         try
         {
             _algLoop<%index%>->evaluate();
@@ -6864,15 +6866,12 @@ template equationLinearOrNonLinear(SimEqSystem eq, Context context,Text &varDecl
         }
         catch(std::exception &ex)
         {
-            delete[] conditions0<%index%>;
-            delete[] conditions1<%index%>;
-            throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what());
+             restatDiscrete<%index%>=true;
         }
 
-        delete[] conditions0<%index%>;
-        delete[] conditions1<%index%>;
+        
 
-        if(restart<%index%> && iterations<%index%> > 0)
+        if((restart<%index%>&& iterations<%index%> > 0)|| restatDiscrete<%index%>)
         {
             try
             {  //workaround: try to solve algoop discrete (evaluate all zero crossing conditions) since we do not have the information which zercrossing contains a algloop var
@@ -6885,11 +6884,15 @@ template equationLinearOrNonLinear(SimEqSystem eq, Context context,Text &varDecl
             catch(std::exception& ex)
             {
                 delete[] algloop<%index%>Vars;
+                delete[] conditions0<%index%>;
+                delete[] conditions1<%index%>;
                 throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what());
             }
 
         }
         delete[] algloop<%index%>Vars;
+        delete[] conditions0<%index%>;
+        delete[] conditions1<%index%>;
         >>
       end match
   end match
@@ -8109,11 +8112,15 @@ case UNARY(__) then
   match operator
   case UMINUS(__)     then '(-<%e%>)'
   case UMINUS_ARR(ty=T_ARRAY(ty=T_REAL(__))) then
-    let &preExp += 'usub_array<double,<%listLength(ty.dims)%>>(<%e%>);<%\n%>'
-    '<%e%>'
+    let tmp_type_str =  'multi_array<double,<%listLength(ty.dims)%>>'
+    let tvar = tempDecl(tmp_type_str, &varDecls /*BUFD*/)
+    let &preExp += 'usub_array<double,<%listLength(ty.dims)%>>(<%e%>,<%tvar%>);<%\n%>'
+    '<%tvar%>'
   case UMINUS_ARR(ty=T_ARRAY(ty=T_INTEGER(__))) then
-    let &preExp += 'usub_array<int,<%listLength(ty.dims)%>>(<%e%>);<%\n%>'
-    '<%e%>'
+    let tmp_type_str =  'multi_array<int,<%listLength(ty.dims)%>>'
+    let tvar = tempDecl(tmp_type_str, &varDecls /*BUFD*/)
+    let &preExp += 'usub_array<int,<%listLength(ty.dims)%>>(<%e%>,<%tvar%>);<%\n%>'
+    '<%tvar%>'
   case UMINUS_ARR(__) then 'unary minus for non-real arrays not implemented'
   else "daeExpUnary:ERR"
 end daeExpUnary;

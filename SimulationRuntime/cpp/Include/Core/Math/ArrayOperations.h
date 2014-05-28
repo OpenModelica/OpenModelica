@@ -149,9 +149,10 @@ boost::multi_array< T, 1 > cross_array( boost::multi_array_ref< T, 1 > a ,  boos
 - array (a)
 */
 template < typename T, size_t dims >
-void usub_array(boost::multi_array_ref< T, dims > &a)
+void usub_array(boost::multi_array_ref< T, dims > a,boost::multi_array< T, dims >& b)
 {
-  for ( typename boost::multi_array< T, dims >::iterator i = a.begin();  i != a.end(); i++)
+  assign_array(b,a);
+  for ( typename boost::multi_array< T, dims >::iterator i = b.begin();  i != b.end(); i++)
     (*i) = -(*i);
 }
 
