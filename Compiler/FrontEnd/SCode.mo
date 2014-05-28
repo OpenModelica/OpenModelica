@@ -3778,6 +3778,79 @@ algorithm
   end match;
 end getEvaluateAnnotation;
 
+public function getInlineTypeAnnotationFromCmt
+  input Comment inComment;
+  output Option<Annotation> outAnnotation;
+algorithm
+  outAnnotation := match(inComment)
+    local
+      Annotation ann;
+      
+    case COMMENT(annotation_ = SOME(ann)) then getInlineTypeAnnotation(ann);
+    else NONE();
+  end match;
+end getInlineTypeAnnotationFromCmt;
+
+protected function getInlineTypeAnnotation
+  input Annotation inAnnotation;
+  output Option<Annotation> outAnnotation;
+algorithm
+  outAnnotation := matchcontinue(inAnnotation)
+    local
+      list<SubMod> submods;
+      SubMod inline_mod;
+      Final fp;
+      Each ep;
+      Absyn.Info info;
+
+    case ANNOTATION(MOD(fp, ep, submods, _, info))
+      equation
+        inline_mod = List.selectFirst(submods, isInlineTypeSubMod);
+      then
+        SOME(ANNOTATION(MOD(fp, ep, {inline_mod}, NONE(), info)));
+        
+    else NONE();
+  end matchcontinue;
+end getInlineTypeAnnotation; 
+
+protected function isInlineTypeSubMod
+  input SubMod inSubMod;
+  output Boolean outIsInlineType;
+algorithm
+  outIsInlineType := match(inSubMod)
+    case NAMEMOD(ident = "Inline") then true;
+    case NAMEMOD(ident = "LateInline") then true;
+    case NAMEMOD(ident = "InlineAfterIndexReduction") then true;
+  end match;
+end isInlineTypeSubMod;
+
+public function appendAnnotationToComment
+  input Annotation inAnnotation;
+  input Comment inComment;
+  output Comment outComment;
+algorithm
+  outComment := match(inAnnotation, inComment)
+    local
+      Option<String> cmt;
+      SCode.Final fp;
+      Each ep;
+      list<SubMod> mods1, mods2;
+      Option<tuple<Absyn.Exp, Boolean>> b;
+      Absyn.Info info;
+
+    case (_, COMMENT(NONE(), cmt))
+      then COMMENT(SOME(inAnnotation), cmt);
+
+    case (ANNOTATION(modification = MOD(subModLst = mods1)), 
+          COMMENT(SOME(ANNOTATION(MOD(fp, ep, mods2, b, info))), cmt))
+      equation
+        mods2 = listAppend(mods1, mods2);
+      then
+        COMMENT(SOME(ANNOTATION(MOD(fp, ep, mods2, b, info))), cmt);
+      
+  end match;
+end appendAnnotationToComment;
+
 public function getModifierInfo
   input Mod inMod;
   output Absyn.Info outInfo;

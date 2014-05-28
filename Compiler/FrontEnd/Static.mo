@@ -6996,16 +6996,17 @@ algorithm
         // enableTrace();
         // change the class name from gravityAcceleration to be world.gravityAcceleration
         name = componentName +& "__" +& name;
+        // lookup the derived class
+        (_, extendedClass, _) = Lookup.lookupClass(cache, classEnv, extendsPath, true);
         // remove modifications as they are added via transformModificationsToNamedArguments
         // also change extendsPath to world.gravityAccelerationTypes
         extendsCn = componentName +& "__" +& Absyn.pathString(extendsPath);
         newExtendsPath = Absyn.IDENT(extendsCn);
+        comment = propagateDerivedInlineAnnotation(extendedClass, comment);
         sc = SCode.CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction,
                SCode.DERIVED(Absyn.TPATH(newExtendsPath, arrayDim), SCode.NOMOD(), attributes), comment,info);
         // add the class function to the environment
         env = Env.extendFrameC(env, sc);
-        // lookup the derived class
-        (_, extendedClass, _) = Lookup.lookupClass(cache, classEnv, extendsPath, true);
         // construct the extended class gravityAccelerationType
         // with a different name: world.gravityAccelerationType
         SCode.CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, classDef, cmt, info) = extendedClass;
@@ -7032,6 +7033,30 @@ algorithm
   end matchcontinue;
 end addComponentFunctionsToCurrentEnvironment;
 
+protected function propagateDerivedInlineAnnotation
+  "Inserts an inline annotation from the given class into the given comment, if
+   the comment doesn't already have such an annotation."
+  input SCode.Element inExtendedClass;
+  input SCode.Comment inComment;
+  output SCode.Comment outComment;
+algorithm
+  outComment := matchcontinue(inExtendedClass, inComment)
+    local
+      SCode.Comment cmt;
+      SCode.Annotation ann;
+
+    case (SCode.CLASS(cmt = cmt), _)
+      equation
+        NONE() = SCode.getInlineTypeAnnotationFromCmt(inComment);
+        SOME(ann) = SCode.getInlineTypeAnnotationFromCmt(cmt);
+        cmt = SCode.appendAnnotationToComment(ann, cmt);
+      then
+        cmt;
+
+    else inComment;
+  end matchcontinue; 
+end propagateDerivedInlineAnnotation;
+        
 public function elabCallArgs "
 function: elabCallArgs
   Given the name of a function and two lists of expression and
