@@ -3785,7 +3785,7 @@ algorithm
   outAnnotation := match(inComment)
     local
       Annotation ann;
-      
+
     case COMMENT(annotation_ = SOME(ann)) then getInlineTypeAnnotation(ann);
     else NONE();
   end match;
@@ -3808,10 +3808,10 @@ algorithm
         inline_mod = List.selectFirst(submods, isInlineTypeSubMod);
       then
         SOME(ANNOTATION(MOD(fp, ep, {inline_mod}, NONE(), info)));
-        
+
     else NONE();
   end matchcontinue;
-end getInlineTypeAnnotation; 
+end getInlineTypeAnnotation;
 
 protected function isInlineTypeSubMod
   input SubMod inSubMod;
@@ -3841,13 +3841,13 @@ algorithm
     case (_, COMMENT(NONE(), cmt))
       then COMMENT(SOME(inAnnotation), cmt);
 
-    case (ANNOTATION(modification = MOD(subModLst = mods1)), 
+    case (ANNOTATION(modification = MOD(subModLst = mods1)),
           COMMENT(SOME(ANNOTATION(MOD(fp, ep, mods2, b, info))), cmt))
       equation
         mods2 = listAppend(mods1, mods2);
       then
         COMMENT(SOME(ANNOTATION(MOD(fp, ep, mods2, b, info))), cmt);
-      
+
   end match;
 end appendAnnotationToComment;
 

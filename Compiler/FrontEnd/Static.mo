@@ -7054,9 +7054,9 @@ algorithm
         cmt;
 
     else inComment;
-  end matchcontinue; 
+  end matchcontinue;
 end propagateDerivedInlineAnnotation;
-        
+
 public function elabCallArgs "
 function: elabCallArgs
   Given the name of a function and two lists of expression and
