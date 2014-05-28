@@ -297,7 +297,7 @@ static void* SimulationResultsImpl__readVarsFilterAliases(const char *filename, 
   }
 }
 
-static void* SimulationResultsImpl__readDataset(const char *filename, void *vars, int dimsize, int suggestReadAllVars, SimulationResult_Globals* simresglob)
+static void* SimulationResultsImpl__readDataset(const char *filename, void *vars, int dimsize, int suggestReadAllVars, SimulationResult_Globals* simresglob, int runningTestsuite)
 {
   const char *msg[2] = {"",""};
   void *res,*col;
@@ -325,9 +325,9 @@ static void* SimulationResultsImpl__readDataset(const char *filename, void *vars
       var = RML_STRINGDATA(RML_CAR(vars));
       vars = RML_CDR(vars);
       mat_var = omc_matlab4_find_var(&simresglob->matReader,var);
-      if (mat_var == NULL) {
+      if (mat_var == NULL) {      
+        msg[0] = runningTestsuite ? SystemImpl__basename(filename) : filename;
         msg[1] = var;
-        msg[0] = filename;
         c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Could not read variable %s in file %s."), msg, 2);
         return NULL;
       } else if (mat_var->isParam) {
@@ -352,8 +352,8 @@ static void* SimulationResultsImpl__readDataset(const char *filename, void *vars
       vars = RML_CDR(vars);
       vals = simresglob->csvReader ? read_csv_dataset(simresglob->csvReader,var) : NULL;
       if (vals == NULL) {
+        msg[0] = runningTestsuite ? SystemImpl__basename(filename) : filename;
         msg[1] = var;
-        msg[0] = filename;
         c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Could not read variable %s in file %s."), msg, 2);
         return NULL;
       } else {
