@@ -767,7 +767,7 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
     }
   } else {
     if (success) {
-      *success = 0==vardiffindx;
+      *success = ((ddf.n == 0) && (ngetfailedvars == 0) && (vardiffindx == 0));
     }
   }
 
