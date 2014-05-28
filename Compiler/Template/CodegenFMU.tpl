@@ -1233,9 +1233,16 @@ let fmudirname = '<%fileNamePrefix%>.fmutmp'
 match platform
   case "win32" then
   <<
-  <%fileNamePrefix%>_FMU: <%fileNamePrefix%>.def <%fileNamePrefix%>.dll
-  <%\t%>dlltool -d <%fileNamePrefix%>.def --dllname <%fileNamePrefix%>.dll --output-lib <%fileNamePrefix%>.lib --kill-at
-  <%\t%>cp <%fileNamePrefix%>.dll <%fmudirname%>/binaries/<%platform%>/
+  <%fileNamePrefix%>_FMU: $(MAINOBJ) <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_literals.h $(OFILES)
+  <%\t%>$(CXX) -shared -I. -o <%modelNamePrefix%>$(DLLEXT) $(MAINOBJ) $(OFILES) $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) -Wl,-Bstatic -lf2c -Wl,-Bdynamic -llis -Wl,--kill-at
+
+  <%\t%>mkdir.exe -p <%fmudirname%>
+  <%\t%>mkdir.exe -p <%fmudirname%>/binaries
+  <%\t%>mkdir.exe -p <%fmudirname%>/binaries/<%platform%>
+  <%\t%>mkdir.exe -p <%fmudirname%>/sources
+  
+  <%\t%>dlltool -d <%fileNamePrefix%>.def --dllname <%fileNamePrefix%>$(DLLEXT) --output-lib <%fileNamePrefix%>.lib --kill-at
+  <%\t%>cp <%fileNamePrefix%>$(DLLEXT) <%fmudirname%>/binaries/<%platform%>/
   <%\t%>cp <%fileNamePrefix%>.lib <%fmudirname%>/binaries/<%platform%>/
   <%\t%>cp $(GENERATEDFILES) <%fmudirname%>/sources/
   <%\t%>cp modelDescription.xml <%fmudirname%>/modelDescription.xml
@@ -1244,14 +1251,7 @@ match platform
   <%\t%>cp <%omhome%>/bin/libgfortran-3.dll <%fmudirname%>/binaries/<%platform%>/
   <%\t%>cd <%fmudirname%>&& rm -f ../<%fileNamePrefix%>.fmu&& zip -r ../<%fileNamePrefix%>.fmu *
   <%\t%>rm -rf <%fmudirname%>
-
-  <%fileNamePrefix%>.dll: clean $(MAINOBJ) $(OFILES)
-  <%\t%>$(CXX) -shared -I. -o <%modelNamePrefix%>.dll $(MAINOBJ) $(OFILES) $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) -Wl,-Bstatic -lf2c -Wl,-Bdynamic -llis -Wl,--kill-at
-
-  <%\t%>mkdir.exe -p <%fmudirname%>
-  <%\t%>mkdir.exe -p <%fmudirname%>/binaries
-  <%\t%>mkdir.exe -p <%fmudirname%>/binaries/<%platform%>
-  <%\t%>mkdir.exe -p <%fmudirname%>/sources
+  <%\t%>rm -f <%fileNamePrefix%>.def <%fileNamePrefix%>.o <%fileNamePrefix%>_FMU.libs <%fileNamePrefix%>_FMU.makefile <%fileNamePrefix%>_*.o
   >>
   else
   <<
@@ -1388,7 +1388,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
   PLATFORM = <%platformstr%>
   PLAT34 = <%makefileParams.platform%>
-  CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -I"<%makefileParams.omhome%>/include/omc/c" <%if stringEq(FMUVersion, "2.0") then '-I"<%makefileParams.omhome%>/include/omc/c/fmi2"' else '-I"<%makefileParams.omhome%>/include/omc/c/fmi1"'%> <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags /* From the simulate() command */%>
+  CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags /* From the simulate() command */%>
   CPPFLAGS=-I"<%makefileParams.omhome%>/include/omc/c" <%if stringEq(FMUVersion, "2.0") then '-I"<%makefileParams.omhome%>/include/omc/c/fmi2"' else '-I"<%makefileParams.omhome%>/include/omc/c/fmi1"'%> -I. <%makefileParams.includes ; separator=" "%>
   LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" -Wl,-rpath,'<%makefileParams.omhome%>/lib/omc' -lSimulationRuntimeC -linteractive <%makefileParams.ldflags%> <%makefileParams.runtimelibs%> <%dirExtra%>
   PERL=perl
@@ -1400,16 +1400,11 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   OFILES=$(CFILES:.c=.o)
   GENERATEDFILES=$(MAINFILE) <%fileNamePrefix%>_FMU.makefile <%fileNamePrefix%>_literals.h <%fileNamePrefix%>_model.h <%fileNamePrefix%>_functions.h  <%fileNamePrefix%>_11mix.h <%fileNamePrefix%>_12jac.h <%fileNamePrefix%>_13opt.h <%fileNamePrefix%>_init.c <%fileNamePrefix%>_info.c $(CFILES) <%fileNamePrefix%>_FMU.libs
 
-  .PHONY: omc_main_target clean bundle
-
   # This is to make sure that <%fileNamePrefix%>_*.c are always compiled.
   .PHONY: $(CFILES)
 
   PHONY: <%fileNamePrefix%>_FMU
   <%compilecmds%>
-
-  clean:
-  <%\t%>@rm -f <%fileNamePrefix%>_records.o $(MAINOBJ) <%fileNamePrefix%>_FMU.o <%fileNamePrefix%>.o
   >>
 end match
 else
