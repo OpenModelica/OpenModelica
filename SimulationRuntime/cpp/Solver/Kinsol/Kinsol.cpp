@@ -1,4 +1,4 @@
-#include "Modelica.h"
+#include "stdafx.h"
 #include "Kinsol.h"
 #include "KinsolSettings.h"
 
@@ -107,8 +107,8 @@ void Kinsol::initialize()
             for (int i=0;i<_dimSys;i++)
             {
 
-        if(abs(_fScale[i]) > 1e-12)
-          _fScale[i] = 1/_fScale[i];
+        if(abs(_fScale[i]) > 1e-1)
+          _fScale[i] = abs(1/_fScale[i]);
         else
           _fScale[i] = 1;
 
@@ -135,11 +135,11 @@ void Kinsol::initialize()
             idid = KINSetNumMaxIters(_kinMem, 1000);
 
             _fnormtol  = 1.e-12;     /* function tolerance */
-            _scsteptol = 1.e-12;     /* step tolerance */
+            _scsteptol = 1.e-13;     /* step tolerance */
 
             idid = KINSetFuncNormTol(_kinMem, _fnormtol);
             idid = KINSetScaledStepTol(_kinMem, _scsteptol);
-      idid = KINSetRelErrFunc(_kinMem, 1e-12);
+      idid = KINSetRelErrFunc(_kinMem, 1e-14);
 
       _counter = 0;
 
@@ -266,17 +266,15 @@ void Kinsol::solve()
     */
 
         // Try Sptfqmr
-      for(int i=1;i<_dimSys+1;i++)
-    {
-    KINSptfqmr(_kinMem, i);
+		KINSptfqmr(_kinMem, _dimSys);
         _iterationStatus = CONTINUE;
         solveNLS();
         if(_iterationStatus == DONE)
         {
       //_firstCall = false;
        return;
-     }
-     }
+       }
+  
 
 
     // last try: Decrease steptol without any optimization
@@ -423,15 +421,20 @@ void Kinsol::solveNLS()
         case KIN_STEP_LT_STPTOL:
             KINGetFuncNorm(_kinMem, &_fnorm);
             //if(_fnorm/euclidNorm(_dimSys,_yScale) < 1e-4)
-      if(_fnorm < 1e-8)
+      if(_fnorm < 1e-7)
             {
                 _iterationStatus = DONE;
             }else
             {
                 check4EventRetry(_y);
-                method = KIN_LINESEARCH;
-                maxSteps = maxStepsStart;
-                limit = maxStepsHigh;
+                if(method==KIN_NONE)
+				{
+					method = KIN_LINESEARCH;
+					maxSteps = maxStepsStart;
+					limit = maxStepsHigh;
+				}
+				else
+					_iterationStatus = SOLVERERROR;
             }
             break;
 
