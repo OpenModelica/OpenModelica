@@ -45,24 +45,24 @@ extern "C" {
 #define not_modelError (modelInstantiated|modelInitialized|modelTerminated)
 
 typedef enum {
-    modelInstantiated = 1<<0,
-    modelInitialized  = 1<<1,
-    modelTerminated   = 1<<2,
-    modelError        = 1<<3
+  modelInstantiated = 1<<0,
+  modelInitialized  = 1<<1,
+  modelTerminated   = 1<<2,
+  modelError        = 1<<3
 } ModelState;
 
 typedef struct {
-    fmiString instanceName;
-    fmiString GUID;
-    fmiCallbackFunctions functions;
-    fmiBoolean loggingOn;
-    fmiEventInfo eventInfo;
-    ModelState state;
-    DATA* fmuData;
+  fmiString instanceName;
+  fmiString GUID;
+  fmiCallbackFunctions functions;
+  fmiBoolean loggingOn;
+  fmiEventInfo eventInfo;
+  ModelState state;
+  DATA* fmuData;
 } ModelInstance;
 
 fmiStatus setString(fmiComponent comp, fmiValueReference vr, fmiString value){
-    return fmiSetString(comp, &vr, 1, &value);
+  return fmiSetString(comp, &vr, 1, &value);
 }
 
 #ifdef __cplusplus

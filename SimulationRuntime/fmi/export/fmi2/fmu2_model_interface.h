@@ -42,28 +42,42 @@ extern "C" {
 #define pos(z) comp->isPositive[z]
 #define copy(vr, value) setString(comp, vr, value)
 
-#define not_modelError (modelInstantiated|modelInitialized|modelTerminated)
+// categories of logging supported by model.
+// Value is the index in logCategories of a ModelInstance.
+#define LOG_ALL       0
+#define LOG_ERROR     1
+#define LOG_FMI_CALL  2
+#define LOG_EVENT     3
+
+#define NUMBER_OF_CATEGORIES 4
 
 typedef enum {
-    modelInstantiated = 1<<0,
-    modelInitialized  = 1<<1,
-    modelTerminated   = 1<<2,
-    modelError        = 1<<3
+  modelInstantiated       = 1<<0,
+  modelInitializationMode = 1<<1,
+  modelInitialized        = 1<<2, // state just after fmiExitInitializationMode
+  modelStepping           = 1<<3, // state after initialization
+  modelTerminated         = 1<<4,
+  modelError              = 1<<5
 } ModelState;
 
 typedef struct {
-    fmiString instanceName;
-    fmiString GUID;
-    fmiCallbackFunctions functions;
-    fmiBoolean loggingOn;
-    fmiEventInfo eventInfo;
-    ModelState state;
-    DATA* fmuData;
-} ModelInstance;
+  fmiString instanceName;
+  fmiType type;
+  fmiString GUID;
+  const fmiCallbackFunctions *functions;
+  fmiBoolean loggingOn;
+  fmiBoolean logCategories[NUMBER_OF_CATEGORIES];
+  fmiComponentEnvironment componentEnvironment;
+  ModelState state;
+  fmiEventInfo eventInfo;
 
-fmiStatus setString(fmiComponent comp, fmiValueReference vr, fmiString value){
-    return fmiSetString(comp, &vr, 1, &value);
-}
+  DATA* fmuData;
+  fmiBoolean toleranceDefined;
+  fmiReal tolerance;
+  fmiReal startTime;
+  fmiBoolean stopTimeDefined;
+  fmiReal stopTime;
+} ModelInstance;
 
 #ifdef __cplusplus
 }

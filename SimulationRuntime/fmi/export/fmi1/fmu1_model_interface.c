@@ -529,8 +529,8 @@ fmiStatus fmiGetEventIndicators(fmiComponent c, fmiReal eventIndicators[], size_
      * getEventIndicator(comp, eventIndicators); // to be implemented by the includer of this file */
     eventIndicators[i] = comp->fmuData->simulationInfo.zeroCrossings[i];
     if (comp->loggingOn){
-        comp->functions.logger(c, comp->instanceName, fmiOK, "log",
-            "fmiGetEventIndicators: z%d = %.16g", i, eventIndicators[i]);
+      comp->functions.logger(c, comp->instanceName, fmiOK, "log",
+          "fmiGetEventIndicators: z%d = %.16g", i, eventIndicators[i]);
     }
   }
 #endif
@@ -631,7 +631,7 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
   if (stateSelection(comp->fmuData, 1, 1))
   {
     if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
-      "fmiEventUpdate: Need to iterate state values changed!");
+        "fmiEventUpdate: Need to iterate state values changed!");
     /* if new set is calculated reinit the solver */
     eventInfo->stateValuesChanged = fmiTrue;
   }
@@ -748,7 +748,7 @@ fmiStatus fmiCompletedIntegratorStep(fmiComponent c, fmiBoolean* callEventUpdate
   if (stateSelection(comp->fmuData,1, 0))
   {
     if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
-      "fmiEventUpdate: Need to iterate state values changed!");
+        "fmiEventUpdate: Need to iterate state values changed!");
     /* if new set is calculated reinit the solver */
     *callEventUpdate = fmiTrue;
   }
