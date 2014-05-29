@@ -44,12 +44,19 @@ extern "C" {
 
 // categories of logging supported by model.
 // Value is the index in logCategories of a ModelInstance.
-#define LOG_ALL       0
-#define LOG_ERROR     1
-#define LOG_FMI_CALL  2
-#define LOG_EVENT     3
+#define LOG_EVENTS                      0
+#define LOG_SINGULARLINEARSYSTEMS       1
+#define LOG_NONLINEARSYSTEMS            2
+#define LOG_DYNAMICSTATESELECTION       3
+#define LOG_STATUSWARNING               4
+#define LOG_STATUSDISCARD               5
+#define LOG_STATUSERROR                 6
+#define LOG_STATUSFATAL                 7
+#define LOG_STATUSPENDING               8
+#define LOG_ALL                         9
+#define LOG_FMI_CALL                    10
 
-#define NUMBER_OF_CATEGORIES 4
+#define NUMBER_OF_CATEGORIES 11
 
 typedef enum {
   modelInstantiated       = 1<<0,

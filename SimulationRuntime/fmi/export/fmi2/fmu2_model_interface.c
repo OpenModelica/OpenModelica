@@ -44,7 +44,8 @@
     instance->functions->logger(instance->functions->componentEnvironment, instance->instanceName, status, \
         logCategoriesNames[categoryIndex], message, ##__VA_ARGS__);
 
-static fmiString logCategoriesNames[] = {"logAll", "logError", "logFmiCall", "logEvent"};
+static fmiString logCategoriesNames[] = {"logEvents", "logSingularLinearSystems", "logNonlinearSystems", "logDynamicStateSelection",
+    "logStatusWarning", "logStatusDiscard", "logStatusError", "logStatusFatal", "logStatusPending", "logAll", "logFmiCall"};
 
 // array of value references of states
 #if NUMBER_OF_REALS>0
@@ -57,7 +58,7 @@ fmiValueReference vrStates[NUMBER_OF_STATES] = STATES;
 static fmiBoolean invalidNumber(ModelInstance *comp, const char *f, const char *arg, int n, int nExpected) {
   if (n != nExpected) {
     comp->state = modelError;
-    FILTERED_LOG(comp, fmiError, LOG_ERROR, "%s: Invalid argument %s = %d. Expected %d.", f, arg, n, nExpected)
+    FILTERED_LOG(comp, fmiError, LOG_STATUSERROR, "%s: Invalid argument %s = %d. Expected %d.", f, arg, n, nExpected)
     return fmiTrue;
   }
   return fmiFalse;
@@ -68,7 +69,7 @@ static fmiBoolean invalidState(ModelInstance *comp, const char *f, int statesExp
     return fmiTrue;
   if (!(comp->state & statesExpected)) {
     comp->state = modelError;
-    FILTERED_LOG(comp, fmiError, LOG_ERROR, "%s: Illegal call sequence.", f)
+    FILTERED_LOG(comp, fmiError, LOG_STATUSERROR, "%s: Illegal call sequence.", f)
     return fmiTrue;
   }
   return fmiFalse;
@@ -77,7 +78,7 @@ static fmiBoolean invalidState(ModelInstance *comp, const char *f, int statesExp
 static fmiBoolean nullPointer(ModelInstance* comp, const char *f, const char *arg, const void *p) {
   if (!p) {
     comp->state = modelError;
-    FILTERED_LOG(comp, fmiError, LOG_ERROR, "%s: Invalid argument %s = NULL.", f, arg)
+    FILTERED_LOG(comp, fmiError, LOG_STATUSERROR, "%s: Invalid argument %s = NULL.", f, arg)
     return fmiTrue;
   }
   return fmiFalse;
@@ -86,7 +87,7 @@ static fmiBoolean nullPointer(ModelInstance* comp, const char *f, const char *ar
 static fmiBoolean vrOutOfRange(ModelInstance *comp, const char *f, fmiValueReference vr, int end) {
   if (vr >= end) {
     comp->state = modelError;
-    FILTERED_LOG(comp, fmiError, LOG_ERROR, "%s: Illegal value reference %u.", f, vr)
+    FILTERED_LOG(comp, fmiError, LOG_STATUSERROR, "%s: Illegal value reference %u.", f, vr)
     return fmiTrue;
   }
   return fmiFalse;
@@ -98,7 +99,7 @@ static fmiStatus unsupportedFunction(fmiComponent c, const char *fName, int stat
   if (invalidState(comp, fName, statesExpected))
     return fmiError;
   if (comp->loggingOn) log(c, comp->instanceName, fmiOK, "log", fName);
-  FILTERED_LOG(comp, fmiError, LOG_ERROR, "%s: Function not implemented.", fName)
+  FILTERED_LOG(comp, fmiError, LOG_STATUSERROR, "%s: Function not implemented.", fName)
   return fmiError;
 }
 
@@ -129,7 +130,29 @@ const char* fmiGetVersion() {
 }
 
 fmiStatus fmiSetDebugLogging(fmiComponent c, fmiBoolean loggingOn, size_t nCategories, const fmiString categories[]) {
-  // TODO Write code here
+  int i, j;
+  ModelInstance *comp = (ModelInstance *)c;
+  comp->loggingOn = loggingOn;
+
+  for (j = 0; j < NUMBER_OF_CATEGORIES; j++) {
+    comp->logCategories[j] = fmiFalse;
+  }
+  for (i = 0; i < nCategories; i++) {
+    fmiBoolean categoryFound = fmiFalse;
+    for (j = 0; j < NUMBER_OF_CATEGORIES; j++) {
+      if (strcmp(logCategoriesNames[j], categories[i]) == 0) {
+        comp->logCategories[j] = loggingOn;
+        categoryFound = fmiTrue;
+        break;
+      }
+    }
+    if (!categoryFound) {
+      comp->functions->logger(comp->componentEnvironment, comp->instanceName, fmiWarning, logCategoriesNames[LOG_STATUSERROR],
+          "logging category '%s' is not supported by model", categories[i]);
+    }
+  }
+
+  FILTERED_LOG(comp, fmiOK, LOG_FMI_CALL, "fmiSetDebugLogging")
   return fmiOK;
 }
 
@@ -202,8 +225,24 @@ void fmiFreeInstance(fmiComponent c) {
     return;
   FILTERED_LOG(comp, fmiOK, LOG_FMI_CALL, "fmiFreeInstance")
 
+  /* deinitDelay(comp->fmuData); */
+  comp->fmuData->callback->callExternalObjectDestructors(comp->fmuData);
+  /* free nonlinear system data */
+  freeNonlinearSystem(comp->fmuData);
+  /* free mixed system data */
+  freemixedSystem(comp->fmuData);
+  /* free linear system data */
+  freelinearSystem(comp->fmuData);
+  /* free stateset data */
+  freeStateSetData(comp->fmuData);
+  deInitializeDataStruc(comp->fmuData);
+  /* free fmuData */
+  comp->functions->freeMemory(comp->fmuData->threadData);
+  comp->functions->freeMemory(comp->fmuData);
+  /* free instanceName & GUID */
   if (comp->instanceName) comp->functions->freeMemory(comp->instanceName);
   if (comp->GUID) comp->functions->freeMemory(comp->GUID);
+  /* free comp */
   comp->functions->freeMemory(comp);
 }
 
@@ -289,11 +328,12 @@ fmiStatus fmiExitInitializationMode(fmiComponent c) {
 }
 
 fmiStatus fmiTerminate(fmiComponent c) {
-//  ModelInstance* comp = (ModelInstance *)c;
-//  if (invalidState(comp, "fmiTerminate", modelInitialized))
-//    return fmiError;
-//  if (comp->loggingOn) comp->functions->logger(c, comp->instanceName, fmiOK, "log", "fmiTerminate");
-//  comp->state = modelTerminated;
+  ModelInstance *comp = (ModelInstance *)c;
+  if (invalidState(comp, "fmiTerminate", modelInitialized|modelStepping))
+    return fmiError;
+  FILTERED_LOG(comp, fmiOK, LOG_FMI_CALL, "fmiTerminate")
+
+  comp->state = modelTerminated;
   return fmiOK;
 }
 
@@ -387,12 +427,44 @@ fmiStatus fmiEnterEventMode(fmiComponent c) {
 }
 
 fmiStatus fmiNewDiscreteStates(fmiComponent c, fmiEventInfo* eventInfo) {
-  // TODO Write code here
+  ModelInstance *comp = (ModelInstance *)c;
+  if (invalidState(comp, "fmiNewDiscreteStates", modelInitialized|modelStepping))
+    return fmiError;
+  FILTERED_LOG(comp, fmiOK, LOG_FMI_CALL, "fmiNewDiscreteStates")
+
+  if (comp->state == modelStepping) {
+    comp->eventInfo.newDiscreteStatesNeeded = fmiFalse;
+    comp->eventInfo.terminateSimulation = fmiFalse;
+    comp->eventInfo.nominalsOfContinuousStatesChanged = fmiFalse;
+    comp->eventInfo.valuesOfContinuousStatesChanged = fmiFalse;
+    double nextSampleEvent = 0;
+    nextSampleEvent = getNextSampleTimeFMU(comp->fmuData);
+    if (nextSampleEvent == -1){
+      comp->eventInfo.nextEventTimeDefined = fmiFalse;
+    }else{
+      comp->eventInfo.nextEventTimeDefined = fmiTrue;
+      comp->eventInfo.nextEventTime = nextSampleEvent;
+      //fmiEventUpdate(comp, fmiFalse, &(comp->eventInfo));
+    }
+  }
+  // model in stepping state
+  comp->state = modelStepping;
+  // copy internal eventInfo of component to output eventInfo
+  eventInfo->newDiscreteStatesNeeded = comp->eventInfo.newDiscreteStatesNeeded;
+  eventInfo->terminateSimulation = comp->eventInfo.terminateSimulation;
+  eventInfo->nominalsOfContinuousStatesChanged = comp->eventInfo.nominalsOfContinuousStatesChanged;
+  eventInfo->valuesOfContinuousStatesChanged = comp->eventInfo.valuesOfContinuousStatesChanged;
+  eventInfo->nextEventTimeDefined = comp->eventInfo.nextEventTimeDefined;
+  eventInfo->nextEventTime = comp->eventInfo.nextEventTime;
+
   return fmiOK;
 }
 
 fmiStatus fmiEnterContinuousTimeMode(fmiComponent c) {
-  // TODO Write code here
+  ModelInstance *comp = (ModelInstance *)c;
+  if (invalidState(comp, "fmiEnterContinuousTimeMode", modelStepping))
+    return fmiError;
+  FILTERED_LOG(comp, fmiOK, LOG_FMI_CALL,"fmiEnterContinuousTimeMode")
   return fmiOK;
 }
 
