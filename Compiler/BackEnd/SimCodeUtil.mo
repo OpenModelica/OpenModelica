@@ -7324,7 +7324,7 @@ algorithm
 end derVarFromStateVar;
 
 
-protected function dumpVar
+public function dumpVar
   input SimCode.SimVar inVar;
 algorithm
   _ := match(inVar)
@@ -7353,6 +7353,30 @@ algorithm
    end match;
 end dumpVar;
 
+public function dumpVarLst"dumps a list of SimVars to stdout.
+author:Waurich TUD 2014-05"
+  input list<SimCode.SimVar> varLst;
+  input String header;
+algorithm
+  print(header+&":\n");
+  print("----------------------\n");
+  List.map_0(varLst,dumpVar);
+  print("\n");
+end dumpVarLst;
+
+public function dumpSimVars"dumps the SimVars to stdout
+author:Waurich TUD 2014-05"
+  input SimCode.SimVars simVars;
+protected
+  list<SimCode.SimVar> stateVars;
+  list<SimCode.SimVar> derivativeVars;
+  list<SimCode.SimVar> algVars;
+algorithm
+  SimCode.SIMVARS(stateVars=stateVars,derivativeVars=derivativeVars,algVars=algVars) := simVars;
+  Debug.bcall2(List.isNotEmpty(stateVars),dumpVarLst,stateVars,"stateVars");
+  Debug.bcall2(List.isNotEmpty(derivativeVars),dumpVarLst,derivativeVars,"derivativeVars");
+  Debug.bcall2(List.isNotEmpty(algVars),dumpVarLst,algVars,"algVars");
+end dumpSimVars;
 
 public function dumpSimEqSystemLst
   input list<SimCode.SimEqSystem> eqSysLstIn;
@@ -8229,7 +8253,7 @@ algorithm
   end matchcontinue;
 end createCrefToSimVarHT;
 
-protected function addSimVarToHashTable
+public function addSimVarToHashTable
   input SimCode.SimVar simvarIn;
   input  SimCode.HashTableCrefToSimVar inHT;
   output SimCode.HashTableCrefToSimVar outHT;
@@ -10941,8 +10965,12 @@ algorithm (new_index) := matchcontinue(var, odered_vars)
 end matchcontinue;
 end stateindex;
 
-
-
+public function varIndex
+  input SimCode.SimVar var;
+  output Integer index;
+algorithm
+  SimCode.SIMVAR(index=index) := var;
+end varIndex;
 
 public function varName
   input SimCode.SimVar var;
@@ -12747,7 +12775,7 @@ algorithm
   ses := List.map1(sesIdcs,getSimEqSysForIndex,sesLst);
 end getReqSimEqSysForSimVar;
 
-protected function getSimEqSysForIndex
+public function getSimEqSysForIndex
   input Integer idx;
   input list<SimCode.SimEqSystem> allSimEqs;
   output SimCode.SimEqSystem outSimEq;
@@ -12897,6 +12925,335 @@ algorithm
   (_,bEq1) := eqTpl;
   b := listMember(bEq,bEq1);
 end findBEqs;
+
+public function getSimVarByIndex
+  input Integer idx;
+  input SimCode.SimVars allSimVars;
+  output SimCode.SimVar simVar;
+algorithm
+  simVar := matchcontinue(idx,allSimVars)
+    local
+      Integer size,idx2;
+      list<SimCode.SimVar> stateVars,algVars;
+      SimCode.SimVar var;
+  case(_,SimCode.SIMVARS(stateVars=stateVars,algVars=algVars))
+    equation
+      size = listLength(stateVars);
+      true = idx > size;
+      //its not a stateVar
+      idx2 = idx - 2*size + 1;
+      var = listGet(algVars,idx2);
+      then var;
+  case(_,SimCode.SIMVARS(stateVars=stateVars,algVars=algVars))
+    equation
+      size = listLength(stateVars);
+      true = idx <= size;
+      //its a stateVar
+      var = listGet(stateVars,idx);
+      then var;
+  else
+    equation
+      print("SimCodeUtil.getSimVarByIndex failed!\n");
+    then fail();
+  end matchcontinue;
+end getSimVarByIndex;
+
+public function getAssignedCrefsOfSimEq"gets the crefs of the vars that are assigned (the lhs) of the simEqSystems
+author:Waurich TUD 2014-05"
+  input Integer idx;
+  input SimCode.SimCode simCode;
+  output list<DAE.ComponentRef> crefsOut;
+algorithm
+  crefsOut := matchcontinue(idx,simCode)
+    local
+      SimCode.SimEqSystem simEqSyst;
+      list<SimCode.SimEqSystem> allEqs;
+      list<DAE.ComponentRef> crefs;
+    case(_,SimCode.SIMCODE(allEquations=allEqs))
+      equation
+        simEqSyst = List.getMemberOnTrue(idx,allEqs,indexIsEqual);
+        crefs = getSimEqSystemCrefsLHS(simEqSyst);
+    then crefs;
+  end matchcontinue;
+end getAssignedCrefsOfSimEq;
+
+protected function getSimEqSystemCrefsLHS"gets the crefs of the vars that are assigned (the lhs) for a simEqSystem
+author:Waurich TUD 2014-05"
+  input SimCode.SimEqSystem simEqSys;
+  output list<DAE.ComponentRef> crefsOut;
+algorithm
+  crefsOut := match(simEqSys)
+    local
+      DAE.ComponentRef cref;
+      list<DAE.ComponentRef> crefs;
+      list<SimCode.SimVar> simVars;
+    case(SimCode.SES_RESIDUAL(index=_,exp=_,source=_))
+      equation
+        print("implement SES_RESIDUAL in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
+    then {};
+    case(SimCode.SES_SIMPLE_ASSIGN(index=_,cref=cref,exp=_,source=_))
+      equation
+    then {cref};
+    case(SimCode.SES_ARRAY_CALL_ASSIGN(index=_,componentRef=cref,exp=_,source=_))
+      equation
+    then {cref};
+    case(SimCode.SES_IFEQUATION(index=_,ifbranches=_,elsebranch=_,source=_))
+      equation
+        print("implement SES_IFEQUATION in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
+    then {};
+    case(SimCode.SES_ALGORITHM(index=_,statements=_))
+      equation
+        print("implement SES_ALGORITHM in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
+    then {};
+    case(SimCode.SES_LINEAR(index=_,partOfMixed=_,vars=simVars,beqs=_,sources=_,simJac=_,indexLinearSystem=_))
+      equation
+        crefs = List.map(simVars,varName);
+    then crefs;
+    case(SimCode.SES_NONLINEAR(index=_,eqs=_,crefs=crefs,indexNonLinearSystem=_,jacobianMatrix=_,linearTearing=_))
+      equation
+    then crefs;
+    case(SimCode.SES_MIXED(index=_,cont=_,discVars=simVars,discEqs=_,indexMixedSystem=_))
+      equation
+        crefs = List.map(simVars,varName);
+    then crefs;
+    case(SimCode.SES_WHEN(index=_,conditions=_,initialCall=_,left=cref,right=_,elseWhen=_,source=_))
+      equation
+    then {cref};
+  end match;
+end getSimEqSystemCrefsLHS;
+
+public function replaceSimVarName"updates the name of simVarIn.
+author:Waurich TUD 2014-05"
+  input DAE.ComponentRef cref;
+  input SimCode.SimVar simVarIn;
+  output SimCode.SimVar simVarOut;
+protected
+  BackendDAE.VarKind varKind;
+  String comment, unit, displayUnit;
+  Integer index;
+  Option<DAE.Exp> minValue, maxValue, initialValue, nominalValue;
+  Boolean isFixed;
+  DAE.Type type_;
+  Boolean isDiscrete, isValueChangeable;
+  SimCode.AliasVariable aliasvar;
+  DAE.ElementSource source;
+  SimCode.Causality causality;
+  Option<Integer> variable_index;
+  Option<DAE.ComponentRef> arrayCref;
+  list<String> numArrayElement;
+  Boolean isProtected;
+algorithm
+  SimCode.SIMVAR(name=_, varKind=varKind, comment=comment, unit=unit, displayUnit=displayUnit, index=index,
+                         minValue=minValue, maxValue=maxValue, initialValue=initialValue, nominalValue=nominalValue,
+                         isFixed=isFixed, type_=type_, isDiscrete=isDiscrete, arrayCref=arrayCref, aliasvar=aliasvar, source=source,
+                         causality=causality, variable_index=variable_index, numArrayElement=numArrayElement, isValueChangeable=isValueChangeable, isProtected=isProtected) := simVarIn;
+  simVarOut := SimCode.SIMVAR(cref, varKind, comment, unit, displayUnit, index, minValue, maxValue, initialValue, nominalValue,
+                         isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement, isValueChangeable, isProtected);
+end replaceSimVarName;
+
+public function replaceSimVarIndex"updates the index of simVarIn.
+author:Waurich TUD 2014-05"
+  input Integer idx;
+  input SimCode.SimVar simVarIn;
+  output SimCode.SimVar simVarOut;
+protected
+  DAE.ComponentRef cref;
+  BackendDAE.VarKind varKind;
+  String comment, unit, displayUnit;
+  Option<DAE.Exp> minValue, maxValue, initialValue, nominalValue;
+  Boolean isFixed;
+  DAE.Type type_;
+  Boolean isDiscrete, isValueChangeable;
+  SimCode.AliasVariable aliasvar;
+  DAE.ElementSource source;
+  SimCode.Causality causality;
+  Option<Integer> variable_index;
+  Option<DAE.ComponentRef> arrayCref;
+  list<String> numArrayElement;
+  Boolean isProtected;
+algorithm
+  SimCode.SIMVAR(name=cref, varKind=varKind, comment=comment, unit=unit, displayUnit=displayUnit, index=_,
+                         minValue=minValue, maxValue=maxValue, initialValue=initialValue, nominalValue=nominalValue,
+                         isFixed=isFixed, type_=type_, isDiscrete=isDiscrete, arrayCref=arrayCref, aliasvar=aliasvar, source=source,
+                         causality=causality, variable_index=variable_index, numArrayElement=numArrayElement, isValueChangeable=isValueChangeable, isProtected=isProtected) := simVarIn;
+  simVarOut := SimCode.SIMVAR(cref, varKind, comment, unit, displayUnit, idx, minValue, maxValue, initialValue, nominalValue,
+                         isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement, isValueChangeable, isProtected);
+end replaceSimVarIndex;
+
+public function addSimVarToAlgVars
+  input SimCode.SimVar simVar;
+  input SimCode.SimCode simCodeIn;
+  output SimCode.SimCode simCodeOut;
+protected
+      SimCode.ModelInfo modelInfo;
+      list<DAE.Exp> literals;
+      list<SimCode.RecordDeclaration> recordDecls;
+      list<String> externalFunctionIncludes;
+      list<list<SimCode.SimEqSystem>> eqsTmp;
+      list<list<SimCode.SimEqSystem>> odeEquations, algebraicEquations;
+      list<SimCode.SimEqSystem> allEquations, residualEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations, parameterEquations, removedEquations, algorithmAndEquationAsserts, jacobianEquations, equationsForZeroCrossings;
+      list<SimCode.StateSet> stateSets;
+      Boolean useSymbolicInitialization, useHomotopy;
+      list<SimCode.SimEqSystem> initialEquations;
+      list<DAE.Constraint> constraints;
+      list<DAE.ClassAttributes> classAttributes;
+      list<BackendDAE.ZeroCrossing> zeroCrossings, relations;
+      list<SimCode.SimWhenClause> whenClauses;
+      list<DAE.ComponentRef> discreteModelVars;
+      SimCode.ExtObjInfo extObjInfo;
+      SimCode.MakefileParams makefileParams;
+      SimCode.DelayedExpression delayedExps;
+      list<SimCode.JacobianMatrix> jacobianMatrixes;
+      list<String> labels;
+      Option<SimCode.SimulationSettings> simulationSettingsOpt;
+      list<BackendDAE.TimeEvent> timeEvents;
+      String fileNamePrefix;
+      SimCode.HashTableCrefToSimVar crefToSimVarHT;
+      Absyn.Path name;
+      String description,directory;
+      SimCode.VarInfo varInfo;
+      SimCode.SimVars vars;
+      list<SimCode.Function> functions;
+      SimCode.Files files;
+      Option<HpcOmSimCode.Schedule> hpcOmSchedule;
+      Option<SimCode.BackendMapping> backendMapping;
+      Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
+      list<SimCode.SimVar> stateVars,derivativeVars,algVars,intAlgVars,boolAlgVars,inputVars,outputVars,aliasVars,intAliasVars,boolAliasVars,paramVars,intParamVars,boolParamVars,stringAlgVars,stringParamVars,stringAliasVars,extObjVars,constVars,intConstVars,boolConstVars,stringConstVars,jacobianVars,realOptimizeConstraintsVars;
+algorithm
+  simCodeOut := match(simVar,simCodeIn)
+    case (_,SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
+                 parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
+                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, crefToSimVarHT, backendMapping))
+      equation
+        SimCode.MODELINFO(name=name, description=description, directory=directory, varInfo=varInfo, vars=vars, functions=functions, labels=labels) = modelInfo;
+        SimCode.SIMVARS(stateVars=stateVars,derivativeVars=derivativeVars,algVars=algVars,intAlgVars=intAlgVars,boolAlgVars=boolAlgVars,inputVars=inputVars,outputVars=outputVars,aliasVars=aliasVars,intAliasVars=intAliasVars,boolAliasVars=boolAliasVars,paramVars=paramVars,intParamVars=intParamVars,boolParamVars=boolParamVars,stringAlgVars=stringAlgVars,
+        stringParamVars=stringParamVars,stringAliasVars=stringAliasVars,extObjVars=extObjVars,constVars=constVars,intConstVars=intConstVars,boolConstVars=boolConstVars,stringConstVars=stringConstVars,jacobianVars=jacobianVars,realOptimizeConstraintsVars=realOptimizeConstraintsVars) = vars;
+        algVars = listAppend(algVars,{simVar});
+        vars = SimCode.SIMVARS(stateVars,derivativeVars,algVars,intAlgVars,boolAlgVars,inputVars,outputVars,aliasVars,intAliasVars,boolAliasVars,paramVars,intParamVars,boolParamVars,stringAlgVars,
+        stringParamVars,stringAliasVars,extObjVars,constVars,intConstVars,boolConstVars,stringConstVars,jacobianVars,realOptimizeConstraintsVars);
+        modelInfo = SimCode.MODELINFO(name, description, directory, varInfo, vars, functions, labels);
+      then
+        SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
+                  parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
+                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, crefToSimVarHT,backendMapping);
+  end match;
+end addSimVarToAlgVars;
+
+public function addSimEqSysToODEquations
+  input SimCode.SimEqSystem simEqSys;
+  input SimCode.SimCode simCodeIn;
+  output SimCode.SimCode simCodeOut;
+protected
+      SimCode.ModelInfo modelInfo;
+      list<DAE.Exp> literals;
+      list<SimCode.RecordDeclaration> recordDecls;
+      list<String> externalFunctionIncludes;
+      list<list<SimCode.SimEqSystem>> eqsTmp;
+      list<list<SimCode.SimEqSystem>> odeEquations, algebraicEquations;
+      list<SimCode.SimEqSystem> allEquations, residualEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations, parameterEquations, removedEquations, algorithmAndEquationAsserts, jacobianEquations, equationsForZeroCrossings;
+      list<SimCode.StateSet> stateSets;
+      Boolean useSymbolicInitialization, useHomotopy;
+      list<SimCode.SimEqSystem> initialEquations;
+      list<DAE.Constraint> constraints;
+      list<DAE.ClassAttributes> classAttributes;
+      list<BackendDAE.ZeroCrossing> zeroCrossings, relations;
+      list<SimCode.SimWhenClause> whenClauses;
+      list<DAE.ComponentRef> discreteModelVars;
+      SimCode.ExtObjInfo extObjInfo;
+      SimCode.MakefileParams makefileParams;
+      SimCode.DelayedExpression delayedExps;
+      list<SimCode.JacobianMatrix> jacobianMatrixes;
+      list<String> labels;
+      Option<SimCode.SimulationSettings> simulationSettingsOpt;
+      list<BackendDAE.TimeEvent> timeEvents;
+      String fileNamePrefix;
+      SimCode.HashTableCrefToSimVar crefToSimVarHT;
+      Absyn.Path name;
+      String description,directory;
+      SimCode.VarInfo varInfo;
+      SimCode.SimVars vars;
+      list<SimCode.Function> functions;
+      SimCode.Files files;
+      Option<HpcOmSimCode.Schedule> hpcOmSchedule;
+      Option<SimCode.BackendMapping> backendMapping;
+      Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
+algorithm
+  simCodeOut := match(simEqSys,simCodeIn)
+    case (_,SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
+                 parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
+                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, crefToSimVarHT, backendMapping))
+      equation
+        //odeEquations = listAppend(odeEquations,{simEqSys});
+      then
+        SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
+                  parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
+                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, crefToSimVarHT,backendMapping);
+  end match;
+end addSimEqSysToODEquations;
+
+public function replaceSimEqSysIndex"updated the index of the given SimEqSysIn.
+author:Waurich TUD 2014-05"
+  input SimCode.SimEqSystem simEqSysIn;
+  input Integer idx;
+  output SimCode.SimEqSystem simEqSysOut;
+algorithm
+    simEqSysOut := match(simEqSysIn,idx)
+    local
+      Boolean pom,lt,changed,ic;
+      Integer idxLS,idxNLS,idxMX;
+      list<Boolean> bLst;
+      DAE.ComponentRef cref;
+      DAE.ElementSource source;
+      DAE.Exp exp;
+      SimCode.SimEqSystem simEqSys;
+      list<DAE.Exp> expLst;
+      list<DAE.Statement> stmts;
+      list<DAE.ComponentRef> crefs;
+      list<DAE.ElementSource> sources;
+      list<SimCode.SimEqSystem> simEqSysLst,elsebranch;
+      list<SimCode.SimVar> simVars;
+      list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
+      list<tuple<DAE.Exp,list<SimCode.SimEqSystem>>> ifbranches;
+      Option<SimCode.JacobianMatrix> jac;
+      Option<SimCode.SimEqSystem> elseWhen;
+    case(SimCode.SES_RESIDUAL(index=_,exp=exp,source=source),_)
+      equation
+        simEqSys = SimCode.SES_RESIDUAL(idx,exp,source);
+    then simEqSys;
+    case(SimCode.SES_SIMPLE_ASSIGN(index=_,cref=cref,exp=exp,source=source),_)
+      equation
+        simEqSys = SimCode.SES_SIMPLE_ASSIGN(idx,cref,exp,source);
+    then simEqSys;
+    case(SimCode.SES_ARRAY_CALL_ASSIGN(index=_,componentRef=cref,exp=exp,source=source),_)
+      equation
+        simEqSys = SimCode.SES_ARRAY_CALL_ASSIGN(idx,cref,exp,source);
+    then simEqSys;
+    case(SimCode.SES_IFEQUATION(index=_,ifbranches=ifbranches,elsebranch=elsebranch,source=source),_)
+      equation
+        simEqSys = SimCode.SES_IFEQUATION(idx,ifbranches,elsebranch,source);
+    then simEqSys;
+    case(SimCode.SES_ALGORITHM(index=_,statements=stmts),_)
+      equation
+        simEqSys = SimCode.SES_ALGORITHM(idx,stmts);
+    then simEqSys;
+    case(SimCode.SES_LINEAR(index=_,partOfMixed=pom,vars=simVars,beqs=expLst,sources=sources,simJac=simJac,indexLinearSystem=idxLS),_)
+      equation
+        simEqSys = SimCode.SES_LINEAR(idx,pom,simVars,expLst,sources,simJac,idxLS);
+    then simEqSys;
+    case(SimCode.SES_NONLINEAR(index=_,eqs=simEqSysLst,crefs=crefs,indexNonLinearSystem=idxNLS,jacobianMatrix=jac,linearTearing=lt),_)
+      equation
+        simEqSys = SimCode.SES_NONLINEAR(idx,simEqSysLst,crefs,idxNLS,jac,lt);
+    then simEqSys;
+    case(SimCode.SES_MIXED(index=_,cont=simEqSys,discVars=simVars,discEqs=simEqSysLst,indexMixedSystem=idxMX),_)
+      equation
+        simEqSys = SimCode.SES_MIXED(idx,simEqSys,simVars,simEqSysLst,idxMX);
+    then simEqSys;
+    case(SimCode.SES_WHEN(index=_,conditions=crefs,initialCall=ic,left=cref,right=exp,elseWhen=elseWhen,source=source),_)
+      equation
+        simEqSys = SimCode.SES_WHEN(idx,crefs,ic,cref,exp,elseWhen,source);
+    then simEqSys;
+  end match;
+end replaceSimEqSysIndex;
 
 public function dumpIdxScVarMapping
   input array<Option<SimCode.SimVar>> iMapping;

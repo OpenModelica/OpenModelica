@@ -1829,6 +1829,23 @@ algorithm
   end match;
 end systemSize;
 
+public function numOfComps "Returns the number of StrongComponents in the EqSystem
+  author: waurich TUD"
+  input BackendDAE.EqSystem syst;
+  output Integer num;
+algorithm
+  num:=
+  match (syst)
+    local
+      BackendDAE.StrongComponents comps;
+      Integer n;
+    case BackendDAE.EQSYSTEM(matching = BackendDAE.MATCHING(comps = comps))
+      equation
+        n = listLength(comps);
+      then n;
+  end match;
+end numOfComps;
+
 public function equationSize "author: PA
 
   Returns the size of the equations in an EquationArray, which not
