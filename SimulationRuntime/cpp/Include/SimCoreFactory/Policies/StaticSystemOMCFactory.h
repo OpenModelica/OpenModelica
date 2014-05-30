@@ -1,5 +1,6 @@
 #pragma once
 
+#include <System/IAlgLoopSolverFactory.h>
 #include <Policies/SystemOMCFactory.h>
 #include <System/AlgLoopSolverFactory.h>
 #include <SimController/ISimData.h>

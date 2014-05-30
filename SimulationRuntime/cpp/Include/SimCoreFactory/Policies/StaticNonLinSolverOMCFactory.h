@@ -4,6 +4,7 @@
 #include <Solver/Newton/Newton.h>
 #include <Solver/Kinsol/Kinsol.h>
 #include <Solver/Kinsol/KinsolSettings.h>
+#include <Solver/IAlgLoopSolver.h>
 
 template<class T>
 struct ObjectFactory;

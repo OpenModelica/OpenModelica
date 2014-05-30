@@ -4,6 +4,7 @@
 #include <SimulationSettings/ISettingsFactory.h>
 #include <Solver/ISolver.h>
 #include <Solver/ISolverSettings.h>
+#include <SimulationSettings/ISimControllerSettings.h>
 #include <System/IMixedSystem.h>
 #include <Core/SimulationSettings/Factory.h>
 #include <Solver/CVode/CVode.h>
