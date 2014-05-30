@@ -7716,7 +7716,7 @@ protected function listAllIterationVariables0 "author: lochel"
   input list<BackendDAE.EqSystem> inEqs;
   output list<String> outWarnings;
 algorithm
-  _ := match(inEqs)
+  outWarnings := match(inEqs)
     local
       BackendDAE.EqSystem eq;
       list<BackendDAE.EqSystem> eqs;
