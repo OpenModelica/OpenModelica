@@ -7170,7 +7170,38 @@ algorithm
     case (((e as DAE.CALL(attr=DAE.CALL_ATTR(isImpure=true))), _))
     then ((e, true));
 
-    case (((e as DAE.CALL(path = Absyn.IDENT(name="sample"))), _))
+    // workaround for builtin functions that are impure, but not marked as impure
+    case (((e as DAE.CALL(path = Absyn.IDENT(name="alarm"), attr=DAE.CALL_ATTR(builtin=true))), _))
+    then ((e, true));
+
+    case (((e as DAE.CALL(path = Absyn.IDENT(name="compareFilesAndMove"), attr=DAE.CALL_ATTR(builtin=true))), _))
+    then ((e, true));
+
+    case (((e as DAE.CALL(path = Absyn.IDENT(name="delay"), attr=DAE.CALL_ATTR(builtin=true))), _))
+    then ((e, true));
+
+    case (((e as DAE.CALL(path = Absyn.IDENT(name="initial"), attr=DAE.CALL_ATTR(builtin=true))), _))
+    then ((e, true));
+
+    case (((e as DAE.CALL(path = Absyn.IDENT(name="print"), attr=DAE.CALL_ATTR(builtin=true))), _))
+    then ((e, true));
+
+    case (((e as DAE.CALL(path = Absyn.IDENT(name="readFile"), attr=DAE.CALL_ATTR(builtin=true))), _))
+    then ((e, true));
+
+    case (((e as DAE.CALL(path = Absyn.IDENT(name="sample"), attr=DAE.CALL_ATTR(builtin=true))), _))
+    then ((e, true));
+
+    case (((e as DAE.CALL(path = Absyn.IDENT(name="system"), attr=DAE.CALL_ATTR(builtin=true))), _))
+    then ((e, true));
+
+    case (((e as DAE.CALL(path = Absyn.IDENT(name="system_parallel"), attr=DAE.CALL_ATTR(builtin=true))), _))
+    then ((e, true));
+
+    case (((e as DAE.CALL(path = Absyn.IDENT(name="terminal"), attr=DAE.CALL_ATTR(builtin=true))), _))
+    then ((e, true));
+
+    case (((e as DAE.CALL(path = Absyn.IDENT(name="writeFile"), attr=DAE.CALL_ATTR(builtin=true))), _))
     then ((e, true));
 
     else
