@@ -5957,7 +5957,7 @@ end getIfExpBranchVarOccurency;
 protected function adjacencyRowExpEnhanced1
 "author: Frenkel TUD 2012-05
   Helper function to traversingadjacencyRowExpSolvableEnhancedFinder, fill the variable indexes
-  int the list and update the array to mark the variables."
+  in the list and update the array to mark the variables."
   input list<BackendDAE.Var> inVarLst;
   input list<Integer> inIntegerLst;
   input list<Integer> vars;

@@ -7704,100 +7704,109 @@ public function listAllIterationVariables "author: lochel"
 protected
   list<BackendDAE.EqSystem> eqs;
   BackendDAE.BackendDAEType backendDAEType;
+  list<String> warnings;
 algorithm
   BackendDAE.DAE(eqs=eqs, shared=BackendDAE.SHARED(backendDAEType=backendDAEType)) := inBackendDAE;
-  Error.addCompilerNotification("\nList of all iteration variable (DAE kind: " +& BackendDump.printBackendDAEType2String(backendDAEType) +& ")\n########################################\n\n");
-  listAllIterationVariables0(eqs);
+  warnings := listAllIterationVariables0(eqs);
+
+  Error.addCompilerNotification("List of all iteration variables (DAE kind: " +& BackendDump.printBackendDAEType2String(backendDAEType) +& ")\n" +& stringDelimitList(warnings, "\n"));
 end listAllIterationVariables;
 
 protected function listAllIterationVariables0 "author: lochel"
   input list<BackendDAE.EqSystem> inEqs;
+  output list<String> outWarnings;
 algorithm
   _ := match(inEqs)
     local
       BackendDAE.EqSystem eq;
       list<BackendDAE.EqSystem> eqs;
+      list<String> warning;
+      list<String> warningList;
 
     case ({})
-    then ();
+    then {};
 
     case (eq::eqs) equation
-      listAllIterationVariables1(eq);
-      listAllIterationVariables0(eqs);
-    then ();
+      warning = listAllIterationVariables1(eq);
+      warningList = listAllIterationVariables0(eqs);
+    then listAppend(warning, warningList);
   end match;
 end listAllIterationVariables0;
 
 protected function listAllIterationVariables1 "author: lochel"
   input BackendDAE.EqSystem inEqSystem;
+  output list<String> outWarning;
 protected
   BackendDAE.Variables vars;
   BackendDAE.StrongComponents comps;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars,
                       matching=BackendDAE.MATCHING(comps=comps)) := inEqSystem;
-  listAllIterationVariables2(comps, vars);
+  outWarning := listAllIterationVariables2(comps, vars);
 end listAllIterationVariables1;
 
 protected function listAllIterationVariables2 "author: lochel"
   input BackendDAE.StrongComponents inComps;
   input BackendDAE.Variables inVars;
+  output list<String> outWarning;
 algorithm
-  _ := matchcontinue(inComps, inVars)
+  outWarning := matchcontinue(inComps, inVars)
     local
       BackendDAE.StrongComponents rest;
       list<BackendDAE.Var> varlst;
       list<Integer> vlst;
       Boolean linear;
       String str;
+      String warning;
+      list<String> warningList;
 
     case ({}, _)
-    then ();
+    then {};
 
     case (BackendDAE.MIXEDEQUATIONSYSTEM(disc_vars=vlst)::rest, _) equation
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
       false = List.isEmpty(varlst);
 
-      Error.addCompilerNotification("Iteration variables of mixed equation system:\n" +& warnAboutVars(varlst));
-      listAllIterationVariables2(rest, inVars);
-    then ();
+      warning = "Iteration variables of mixed equation system:\n" +& warnAboutVars(varlst);
+      warningList = listAllIterationVariables2(rest, inVars);
+    then warning::warningList;
 
     case (BackendDAE.EQUATIONSYSTEM(vars=vlst, jacType=BackendDAE.JAC_NONLINEAR())::rest, _) equation
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
       false = List.isEmpty(varlst);
 
-      Error.addCompilerNotification("Iteration variables of nonlinear equation system:\n" +& warnAboutVars(varlst));
-      listAllIterationVariables2(rest, inVars);
-    then ();
+      warning = "Iteration variables of nonlinear equation system:\n" +& warnAboutVars(varlst);
+      warningList = listAllIterationVariables2(rest, inVars);
+    then warning::warningList;
 
      case (BackendDAE.EQUATIONSYSTEM(vars=vlst, jacType=BackendDAE.JAC_GENERIC())::rest, _) equation
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
       false = List.isEmpty(varlst);
 
-      Error.addCompilerNotification("Iteration variables of equation system w/o analytic Jacobian:\n" +& warnAboutVars(varlst));
-      listAllIterationVariables2(rest, inVars);
-    then ();
+      warning = "Iteration variables of equation system w/o analytic Jacobian:\n" +& warnAboutVars(varlst);
+      warningList = listAllIterationVariables2(rest, inVars);
+    then warning::warningList;
 
     case (BackendDAE.EQUATIONSYSTEM(vars=vlst, jacType=BackendDAE.JAC_NO_ANALYTIC())::rest, _) equation
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
       false = List.isEmpty(varlst);
 
-      Error.addCompilerNotification("Iteration variables of equation system w/o analytic Jacobian:\n" +& warnAboutVars(varlst));
-      listAllIterationVariables2(rest, inVars);
-    then ();
+      warning = "Iteration variables of equation system w/o analytic Jacobian:\n" +& warnAboutVars(varlst);
+      warningList = listAllIterationVariables2(rest, inVars);
+    then warning::warningList;
 
     case (BackendDAE.TORNSYSTEM(tearingvars=vlst, linear=linear)::rest, _) equation
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
       false = List.isEmpty(varlst);
 
       str = Util.if_(linear, "linear", "nonlinear");
-      Error.addCompilerNotification("Iteration variables of torn " +& str +& " equation system:\n" +& warnAboutVars(varlst));
-      listAllIterationVariables2(rest, inVars);
-    then ();
+      warning = "Iteration variables of torn " +& str +& " equation system:\n" +& warnAboutVars(varlst);
+      warningList = listAllIterationVariables2(rest, inVars);
+    then warning::warningList;
 
     case (_::rest, _) equation
-      listAllIterationVariables2(rest, inVars);
-    then ();
+      warningList = listAllIterationVariables2(rest, inVars);
+    then warningList;
   end matchcontinue;
 end listAllIterationVariables2;
 
