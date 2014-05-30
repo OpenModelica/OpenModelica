@@ -1037,20 +1037,26 @@ template globalDataParDefine(SimVar simVar, String arrayName)
  match simVar
   case SIMVAR(arrayCref=SOME(c),aliasvar=NOALIAS()) then
     <<
+    /* <%crefStr(c)%> */
     #define <%cref(c)%> data->simulationInfo.<%arrayName%>[<%index%>]
+
+    /* <%crefStr(name)%> */
+    #define <%cref(name)%> data->simulationInfo.<%arrayName%>[<%index%>]
     #define $P$ATTRIBUTE<%cref(name)%> data->modelData.<%arrayName%>Data[<%index%>].attribute
     #define $P$ATTRIBUTE$P$PRE<%cref(name)%> $P$ATTRIBUTE<%cref(name)%>
-    #define <%cref(name)%> data->simulationInfo.<%arrayName%>[<%index%>]
     #define _<%cref(name)%>(i) <%cref(name)%>
     #define <%cref(name)%>__varInfo data->modelData.<%arrayName%>Data[<%index%>].info
+    
     >>
   case SIMVAR(aliasvar=NOALIAS()) then
     <<
+    /* <%crefStr(name)%> */
     #define <%cref(name)%> data->simulationInfo.<%arrayName%>[<%index%>]
     #define _<%cref(name)%>(i) <%cref(name)%>
     #define $P$ATTRIBUTE<%cref(name)%> data->modelData.<%arrayName%>Data[<%index%>].attribute
     #define $P$ATTRIBUTE$P$PRE<%cref(name)%> $P$ATTRIBUTE<%cref(name)%>
     #define <%cref(name)%>__varInfo data->modelData.<%arrayName%>Data[<%index%>].info
+    
     >>
   end match
 end globalDataParDefine;
@@ -1062,28 +1068,34 @@ template globalDataVarDefine(SimVar simVar, String arrayName, Integer offset) "t
   case SIMVAR(arrayCref=SOME(c),aliasvar=NOALIAS()) then
   let tmp = System.tmpTick()
     <<
+    /* <%crefStr(c)%> */
     #define _<%cref(c)%>(i) data->localData[i]-><%arrayName%>[<%intAdd(offset,index)%>]
-    #define <%cref(c)%> _<%cref(name)%>(0)
+    #define <%cref(c)%> _<%cref(c)%>(0)
+    #define $P$PRE<%cref(c)%> data->simulationInfo.<%arrayName%>Pre[<%intAdd(offset,index)%>]
+
+    /* <%crefStr(name)%> */
     #define _<%cref(name)%>(i) data->localData[i]-><%arrayName%>[<%intAdd(offset,index)%>]
     #define <%cref(name)%> _<%cref(name)%>(0)
-    #define $P$PRE<%cref(c)%> data->simulationInfo.<%arrayName%>Pre[<%intAdd(offset,index)%>]
     #define $P$PRE<%cref(name)%> data->simulationInfo.<%arrayName%>Pre[<%intAdd(offset,index)%>]
     #define $P$ATTRIBUTE<%cref(name)%> data->modelData.<%arrayName%>Data[<%intAdd(offset,index)%>].attribute
     #define $P$ATTRIBUTE$P$PRE<%cref(name)%> $P$ATTRIBUTE<%cref(name)%>
     #define <%cref(name)%>__varInfo data->modelData.<%arrayName%>Data[<%intAdd(offset,index)%>].info
     #define $P$PRE<%cref(name)%>__varInfo data->modelData.<%arrayName%>Data[<%intAdd(offset,index)%>].info
+    
     >>
   case SIMVAR(aliasvar=NOALIAS()) then
   let tmp = System.tmpTick()
     <<
+    /* <%crefStr(name)%> */
     #define _<%cref(name)%>(i) data->localData[i]-><%arrayName%>[<%intAdd(offset,index)%>]
-    #define _$P$PRE<%cref(name)%>(i) $P$PRE<%cref(name)%>
     #define <%cref(name)%> _<%cref(name)%>(0)
     #define $P$PRE<%cref(name)%> data->simulationInfo.<%arrayName%>Pre[<%intAdd(offset,index)%>]
     #define $P$ATTRIBUTE<%cref(name)%> data->modelData.<%arrayName%>Data[<%intAdd(offset,index)%>].attribute
     #define $P$ATTRIBUTE$P$PRE<%cref(name)%> $P$ATTRIBUTE<%cref(name)%>
     #define <%cref(name)%>__varInfo data->modelData.<%arrayName%>Data[<%intAdd(offset,index)%>].info
     #define $P$PRE<%cref(name)%>__varInfo data->modelData.<%arrayName%>Data[<%intAdd(offset,index)%>].info
+    #define _$P$PRE<%cref(name)%>(i) $P$PRE<%cref(name)%>
+
     >>
   end match
 end globalDataVarDefine;

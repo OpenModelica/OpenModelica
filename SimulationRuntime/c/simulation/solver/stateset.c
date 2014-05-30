@@ -91,7 +91,7 @@ void initializeStateSetPivoting(DATA *data)
       set->colPivot[n] = set->nCandidates-n-1;
 
     for(n=0; n<set->nStates; n++)
-      A[n + n *set->nStates] = 1;  /* set A[row, col] */
+      A[n*set->nCandidates + n] = 1;  /* set A[row, col] */
   }
 }
 
@@ -233,7 +233,7 @@ static void setAMatrix(modelica_integer* newEnable, modelica_integer nCandidates
       unsigned int sid = states[row]->id-firstrealid;
       infoStreamPrint(LOG_DSS, 0, "select %s", statecandidates[col]->name);
       /* set A[row, col] */
-      A[row + col * nStates] = 1;
+      A[row*nCandidates + col] = 1;
       /* reinit state */
       data->localData[0]->realVars[sid] = data->localData[0]->realVars[id];
       row++;
