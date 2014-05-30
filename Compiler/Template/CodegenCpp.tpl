@@ -5358,7 +5358,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
   let n_vars = intAdd(listLength(vars.algVars), intAdd( listLength(vars.intAlgVars) , listLength(vars.boolAlgVars )))
   let modelname = lastIdentOfPath(modelInfo.name)
   match n_vars
-  case "0" then 
+  case "0" then
   <<
     void <%modelname%>::saveDiscreteVars()
     {
