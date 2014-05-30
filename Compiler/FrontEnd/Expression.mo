@@ -7169,7 +7169,7 @@ algorithm
 
     case (((e as DAE.CALL(attr=DAE.CALL_ATTR(isImpure=true))), _))
     then ((e, true));
-    
+
     case (((e as DAE.CALL(path = Absyn.IDENT(name="sample"))), _))
     then ((e, true));
 
