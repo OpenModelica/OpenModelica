@@ -5356,8 +5356,17 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
   then
   let n_vars = intAdd(listLength(vars.algVars), intAdd( listLength(vars.intAlgVars) , listLength(vars.boolAlgVars )))
+  let modelname = lastIdentOfPath(modelInfo.name)
+  match n_vars
+  case "0" then 
   <<
-    void <%lastIdentOfPath(modelInfo.name)%>::saveDiscreteVars()
+    void <%modelname%>::saveDiscreteVars()
+    {
+    }
+  >>
+  else
+  <<
+    void <%modelname%>::saveDiscreteVars()
     {
        unsigned int n = <%n_vars%>;
        double  pre_vars[] = {
